@@ -1396,9 +1396,9 @@ undefined4 param_3;
 // object linked list instead, filtering by param_4 (-0x80 = all
 // objects, 0 = creatures only excluding a specific slot index
 // param_2, -0x40 = a third mode) and calling the callback as
-// (x,y,object,tile,param_2). Known caller: FUN_00035cb0 (not yet
-// named) uses it as a "who can hear this sound" 15x15-tile scan
-// around the player. See project_position_by_heading and
+// (x,y,object,tile,param_2). Known caller: emit_noise_alert uses it
+// as a "who can hear this sound" 15x15-tile scan around the noise
+// source. See project_position_by_heading and
 // scan_area_ahead_of_object for the "area in front of an object"
 // variant built on top of this.
 void scan_area_for_matching_objects(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)

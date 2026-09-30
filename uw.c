@@ -2196,7 +2196,6 @@ undefined4 DAT_00101954;
 undefined4 DAT_00101950;
 byte DAT_0010195c;
 ushort *DAT_00101958;
-undefined DAT_001007ee;
 undefined2 DAT_00101960;
 undefined1 DAT_0024d008;
 undefined1 DAT_0024fa10;
@@ -9574,100 +9573,6 @@ short param_1;
 
 
 
-undefined4 FUN_00035a18(param_1,param_2,param_3)
-int param_1;
-int param_2;
-ushort * param_3;
-
-{
-  ushort uVar1;
-  ushort uVar2;
-  int iVar3;
-  undefined4 uVar4;
-  int iVar5;
-  uint uVar6;
-  int iVar7;
-  uint uVar8;
-  int iVar9;
-  int iVar10;
-  int iVar11;
-  int iVar12;
-  undefined1 auStack_74 [80];
-  
-  iVar10 = (*param_3 & 0x3f) * 0x30;
-  if (((((&DAT_001007d9)[iVar10] == (DAT_0010195c & 0x1f)) &&
-       (((param_3[5] & 0x80) == 0 || ((DAT_0010195c & 0x20) != 0)))) &&
-      ((DAT_0010195c != 0x20 || ((param_3[5] & 0x80) != 0)))) &&
-     ((DAT_0010195c != 0xd || (*(byte *)(DAT_00086df8 + 0x69) < 3)))) {
-    uVar1 = param_3[1];
-    iVar3 = (uint)(uVar1 >> 0xd) + param_1 * 8;
-    iVar5 = ((uVar1 & 0x1c00) >> 10) + param_2 * 8;
-    uVar2 = DAT_00101958[1];
-    iVar7 = (uint)(uVar2 >> 0xd) + DAT_002020a0 * 8;
-    iVar9 = ((uVar2 & 0x1c00) >> 10) + DAT_002020a4 * 8;
-    iVar11 = (iVar3 * 0x10000 >> 0x10) - (iVar7 * 0x10000 >> 0x10);
-    if (iVar11 < 0) {
-      iVar11 = iVar11 + 7;
-    }
-    iVar11 = (int)(short)(iVar11 >> 3);
-    iVar12 = (iVar5 * 0x10000 >> 0x10) - (iVar9 * 0x10000 >> 0x10);
-    if (iVar12 < 0) {
-      iVar12 = iVar12 + 7;
-    }
-    iVar12 = (int)(short)(iVar12 >> 3);
-    if ((iVar11 * iVar11 + iVar12 * iVar12 <=
-         (int)((uint)((byte)(&DAT_001007ee)[iVar10] >> 4) *
-              (uint)((byte)(&DAT_001007ee)[iVar10] >> 4))) &&
-       (iVar10 = check_fine_line_of_sight(iVar3,iVar5,
-                              (uint)(byte)(&DAT_00202c90)[(*param_3 & 0x1ff) * 0xd] + (uVar1 & 0x7f)
-                              ,iVar7,(short)iVar9,
-                              (ushort)(byte)(&DAT_00202c90)[(*DAT_00101958 & 0x1ff) * 0xd] +
-                              (uVar2 & 0x7f) + 0xc), iVar10 != 0)) {
-      uVar8 = (*(ushort *)((char *)param_3 + 0xd) >> 0xe) - 1;
-      if ((int)(uVar8 * 0x10000) >> 0x10 < 0) {
-        uVar8 = 0;
-      }
-      uVar6 = *(ushort *)((char *)param_3 + 0xd) & 0x3fff;
-      *(char *)((char *)param_3 + 0xd) = (char)uVar6;
-      *(byte *)(param_3 + 7) = (byte)(uVar6 >> 8) | (byte)(((uVar8 & 3) << 0xe) >> 8);
-      build_object_display_name(auStack_74,param_3,1,0);
-      uVar4 = get_message_string(uVar8 + 0xe1 | 0x200);
-      Ordinal_1063(auStack_74,uVar4);
-      message_scroll_print_wrapped(auStack_74);
-      return 1;
-    }
-  }
-  return 0;
-}
-
-
-
-void FUN_00035cb0(param_1,param_2)
-ushort * param_1;
-byte param_2;
-
-{
-  byte bVar1;
-  uint uVar2;
-  
-  DAT_0010195c = 0;
-  bVar1 = param_2;
-  if ((param_2 == 0) &&
-     (bVar1 = DAT_0010195c, g_object_type_props[*param_1 & 0x1ff].is_container)) {
-    bVar1 = (byte)param_1[3] & 0x3f;
-  }
-  DAT_0010195c = bVar1;
-  if (DAT_0010195c != 0) {
-    DAT_00101958 = param_1;
-    scan_area_for_matching_objects(0x14,0,FUN_00035a18,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
-    if ((param_1[3] & 0x1f) < 0x1c) {
-      uVar2 = param_1[3] & 0xffc0;
-      *(char *)(param_1 + 3) = (char)uVar2;
-      *(char *)((char *)param_1 + 7) = (char)(uVar2 >> 8);
-    }
-  }
-  return;
-}
 
 
 
@@ -12032,7 +11937,7 @@ void FUN_0003a29c(param_1)
 undefined1 param_1;
 
 {
-  FUN_00035cb0(g_player_object,param_1);
+  emit_noise_alert(g_player_object,param_1);
   return;
 }
 

@@ -4190,3 +4190,115 @@ void clear_last_attacker_record()
   reset_npc_path_cache();
   return;
 }
+
+
+// was FUN_00035a18 -- scan_area_for_matching_objects callback used by
+// emit_noise_alert: for a candidate NPC (param_3) whose class matches
+// the current noise type (DAT_0010195c) and is either awake or the
+// noise is loud enough to wake it, checks it's within the class's
+// perception-range table entry AND has clear line of sight
+// (check_fine_line_of_sight) to the noise source object
+// (DAT_00101958, at tile param_1,param_2). If so, decrements the
+// noise's remaining reaction-message counter (byte 0xd's top 2 bits)
+// and prints a graduated named reaction message for that NPC.
+undefined4 alert_npc_to_noise_callback(param_1,param_2,param_3)
+int param_1;
+int param_2;
+ushort * param_3;
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  int iVar3;
+  undefined4 uVar4;
+  int iVar5;
+  uint uVar6;
+  int iVar7;
+  uint uVar8;
+  int iVar9;
+  int iVar10;
+  int iVar11;
+  int iVar12;
+  undefined1 auStack_74 [80];
+  
+  iVar10 = (*param_3 & 0x3f) * 0x30;
+  if (((((&DAT_001007d9)[iVar10] == (DAT_0010195c & 0x1f)) &&
+       (((param_3[5] & 0x80) == 0 || ((DAT_0010195c & 0x20) != 0)))) &&
+      ((DAT_0010195c != 0x20 || ((param_3[5] & 0x80) != 0)))) &&
+     ((DAT_0010195c != 0xd || (*(byte *)(DAT_00086df8 + 0x69) < 3)))) {
+    uVar1 = param_3[1];
+    iVar3 = (uint)(uVar1 >> 0xd) + param_1 * 8;
+    iVar5 = ((uVar1 & 0x1c00) >> 10) + param_2 * 8;
+    uVar2 = DAT_00101958[1];
+    iVar7 = (uint)(uVar2 >> 0xd) + DAT_002020a0 * 8;
+    iVar9 = ((uVar2 & 0x1c00) >> 10) + DAT_002020a4 * 8;
+    iVar11 = (iVar3 * 0x10000 >> 0x10) - (iVar7 * 0x10000 >> 0x10);
+    if (iVar11 < 0) {
+      iVar11 = iVar11 + 7;
+    }
+    iVar11 = (int)(short)(iVar11 >> 3);
+    iVar12 = (iVar5 * 0x10000 >> 0x10) - (iVar9 * 0x10000 >> 0x10);
+    if (iVar12 < 0) {
+      iVar12 = iVar12 + 7;
+    }
+    iVar12 = (int)(short)(iVar12 >> 3);
+    if ((iVar11 * iVar11 + iVar12 * iVar12 <=
+         (int)((uint)((byte)(&DAT_001007ee)[iVar10] >> 4) *
+              (uint)((byte)(&DAT_001007ee)[iVar10] >> 4))) &&
+       (iVar10 = check_fine_line_of_sight(iVar3,iVar5,
+                              (uint)(byte)(&DAT_00202c90)[(*param_3 & 0x1ff) * 0xd] + (uVar1 & 0x7f)
+                              ,iVar7,(short)iVar9,
+                              (ushort)(byte)(&DAT_00202c90)[(*DAT_00101958 & 0x1ff) * 0xd] +
+                              (uVar2 & 0x7f) + 0xc), iVar10 != 0)) {
+      uVar8 = (*(ushort *)((char *)param_3 + 0xd) >> 0xe) - 1;
+      if ((int)(uVar8 * 0x10000) >> 0x10 < 0) {
+        uVar8 = 0;
+      }
+      uVar6 = *(ushort *)((char *)param_3 + 0xd) & 0x3fff;
+      *(char *)((char *)param_3 + 0xd) = (char)uVar6;
+      *(byte *)(param_3 + 7) = (byte)(uVar6 >> 8) | (byte)(((uVar8 & 3) << 0xe) >> 8);
+      build_object_display_name(auStack_74,param_3,1,0);
+      uVar4 = get_message_string(uVar8 + 0xe1 | 0x200);
+      Ordinal_1063(auStack_74,uVar4);
+      message_scroll_print_wrapped(auStack_74);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+
+// was FUN_00035cb0 -- makes noise at object param_1 (e.g. a trap
+// triggering, a loud action): resolves the noise type/volume to use
+// (param_2, or if 0 and the object is a container, a class-specific
+// field off the object itself), and if nonzero, scans a 15x15-tile
+// area around it via alert_npc_to_noise_callback so any NPC that can
+// perceive it reacts. Clears the object's own remaining-uses field
+// (byte 3's low 5 bits) once it's run low.
+void emit_noise_alert(param_1,param_2)
+ushort * param_1;
+byte param_2;
+
+{
+  byte bVar1;
+  uint uVar2;
+
+  DAT_0010195c = 0;
+  bVar1 = param_2;
+  if ((param_2 == 0) &&
+     (bVar1 = DAT_0010195c, g_object_type_props[*param_1 & 0x1ff].is_container)) {
+    bVar1 = (byte)param_1[3] & 0x3f;
+  }
+  DAT_0010195c = bVar1;
+  if (DAT_0010195c != 0) {
+    DAT_00101958 = param_1;
+    scan_area_for_matching_objects(0x14,0,alert_npc_to_noise_callback,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
+    if ((param_1[3] & 0x1f) < 0x1c) {
+      uVar2 = param_1[3] & 0xffc0;
+      *(char *)(param_1 + 3) = (char)uVar2;
+      *(char *)((char *)param_1 + 7) = (char)(uVar2 >> 8);
+    }
+  }
+  return;
+}

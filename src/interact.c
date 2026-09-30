@@ -86,7 +86,7 @@ void interact_default()
       if (iVar1 != 0) {
         *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf0;
       }
-      FUN_00035cb0(g_interact_target,0);
+      emit_noise_alert(g_interact_target,0);
       FUN_0003ee10(g_interact_target);
       g_cursor_holding_state = 1;
       attach_picked_up_object_to_cursor(g_interact_target);
