@@ -1576,3 +1576,84 @@ undefined1 param_7;
   apply_melee_damage(param_7);
   return;
 }
+
+
+// was FUN_00027ce0 -- resolves an NPC's melee attack: computes its
+// to-hit base (DAT_00100608) and damage dice pool (DAT_0010061c) from
+// its own monster-stat table (&DAT_001007d0/&DAT_001007d5/&DAT_001007e1),
+// adding a random wander-offset spread when flag bit 2 of param_1[0xe]
+// is set, marks it as attacker (DAT_00100610), then calls
+// process_melee_attack_swing to actually resolve the hit. If the
+// player was struck and their own facing/awareness threshold allows,
+// updates a "being attacked from direction" flag on the player record.
+// Own "[npc-wander]" debug trace (reused from a related channel).
+int resolve_npc_melee_attack(param_1,param_2,param_3,param_4,param_5)
+byte * param_1;
+undefined2 param_2;
+undefined1 param_3;
+short param_4;
+short param_5;
+
+{
+  byte bVar1;
+  char cVar2;
+  short sVar3;
+  undefined4 uVar4;
+  int iVar5;
+  short extraout_r1;
+  short extraout_r1_00;
+  int iVar6;
+  uint uVar7;
+  
+  DAT_001005f4 = 2;
+  DAT_00100610 = encode_object_slot_index(param_1);
+  iVar6 = (*param_1 & 0x3f) * 0x30;
+  iVar5 = param_4 * 3 + iVar6;
+  bVar1 = (&DAT_001007d0)[iVar5 + 0x14];
+  DAT_0010061c = (ushort)bVar1;
+  DAT_001005f8 = param_2;
+  DAT_001005fc = param_3;
+  sVar3 = Ordinal_2005(5,(&DAT_001007d5)[(*param_1 & 0x3f) * 0x30]);
+  DAT_0010061c = (ushort)bVar1 + sVar3;
+  DAT_00100608 = (short)(char)(&DAT_001007d0)[iVar5 + 0x13] +
+                 (short)((int)(char)(&DAT_001007e1)[iVar6] >> 1);
+  if ((param_1[0xe] & 4) != 0) {
+    /* Both Ordinal_2005 calls below were the same fabricated-remainder
+       bug fixed elsewhere this session (this port's Ordinal_2005 never
+       populates extraout_r1/extraout_r1_00); computed each remainder
+       directly instead. This randomizes a wander/patrol target offset,
+       so previously always added a fixed +7/+4 instead of a real
+       0-5/0-11 random spread -- contributing to (not the sole cause of)
+       the "NPC teleports far away on its first tick" bug this session's
+       QA pass reported, traced to npc_ai_tick's own dropped 5th argument
+       to this function (see its call site's comment). */
+    uVar4 = Ordinal_1053();
+    DAT_00100608 = DAT_00100608 + (short)(uVar4 % 6) + 7;
+    uVar4 = Ordinal_1053();
+    DAT_0010061c = DAT_0010061c + (short)(uVar4 % 0xc) + 4;
+  }
+  if (getenv("UW_DEBUG_NPC_WANDER")) {
+    ushort _pos = *(ushort *)(param_1 + 0x16);
+    fprintf(stderr, "[npc-wander] obj=%p param_2=%d param_3=%d param_4=%d param_5=%d"
+            " base_iVar5=%d bVar1=%d DAT_00100608=%d DAT_0010061c=%d src_tile=(%u,%u)\n",
+            (void *)param_1, (int)(short)param_2, (int)param_3, (int)param_4, (int)param_5,
+            iVar5, (int)bVar1, (int)DAT_00100608, (int)DAT_0010061c,
+            (unsigned)(_pos >> 10), (unsigned)((_pos & 0x3f0) >> 4));
+  }
+  iVar5 = process_melee_attack_swing();
+  if (getenv("UW_DEBUG_NPC_WANDER")) {
+    ushort _pos = *(ushort *)(param_1 + 0x16);
+    fprintf(stderr, "[npc-wander] process_melee_attack_swing returned %d DAT_00100620=%d dst_tile=(%u,%u)\n",
+            iVar5, (int)DAT_00100620,
+            (unsigned)(_pos >> 10), (unsigned)((_pos & 0x3f0) >> 4));
+  }
+  if ((iVar5 != 0) && (DAT_00100620 == 1)) {
+    if (((short)(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) < param_5) &&
+       (cVar2 = FUN_000382cc(g_player_object,1,0x10), cVar2 != '\0')) {
+      uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
+      *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar7 | (byte)(((int)param_5 & 0xfU) << 2);
+      *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
+    }
+  }
+  return iVar5;
+}

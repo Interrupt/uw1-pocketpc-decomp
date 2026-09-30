@@ -776,12 +776,12 @@ LAB_000337fc:
     bVar3 = *(byte *)((char *)DAT_0010190c + 0x15);
     uVar1 = (&DAT_000853d8)[(uint)(byte)((byte)DAT_0010190c[8] >> 4) * 2];
     /* Was `Ordinal_2005(9,uVar7,*(byte*)(DAT_0010190c+0xf),Ordinal_2005_exref,
-       DAT_00101404[0xf]); FUN_00027ce0(puVar11,(int)extraout_r1_01,uVar1,
+       DAT_00101404[0xf]); resolve_npc_melee_attack(puVar11,(int)extraout_r1_01,uVar1,
        (bVar3&0x3f)-1);` -- badly garbled. Real disassembly (0x335b8-0x33628)
        shows this is genuinely TWO separate things the decompiler folded
        together: a plain `Ordinal_2005(9,uVar7)` (same fabricated-remainder
        bug fixed throughout this session -- computed the remainder
-       directly), and FUN_00027ce0's own 5th argument (it takes 5 params,
+       directly), and resolve_npc_melee_attack's own 5th argument (it takes 5 params,
        confirmed at its definition; this call was silently dropping the
        last one) -- DAT_00101404[0xf], stashed on the stack by the real
        ARM code before the Ordinal_2005 call and read back after it, which
@@ -790,12 +790,12 @@ LAB_000337fc:
        Ordinal_2005_exref placeholder). Confirmed live: this whole branch
        (an NPC's "pick a new wander/patrol target" state) is exactly what
        the QA-reported "NPC teleports away on its first tick" bug was
-       tracing back to -- FUN_00027ce0 computes DAT_00100608/DAT_0010061c
+       tracing back to -- resolve_npc_melee_attack computes DAT_00100608/DAT_0010061c
        (target position deltas) then calls process_melee_attack_swing to path there;
        with param_5 uninitialized/garbage and param_2 (the modulo-9
        remainder) also fabricated-garbage before this fix, the computed
        target tile could land anywhere. */
-    FUN_00027ce0(puVar11,(short)(uVar7 % 9),uVar1,(bVar3 & 0x3f) - 1,(short)DAT_00101404[0xf]);
+    resolve_npc_melee_attack(puVar11,(short)(uVar7 % 9),uVar1,(bVar3 & 0x3f) - 1,(short)DAT_00101404[0xf]);
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
     uVar9 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
     *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar9;
