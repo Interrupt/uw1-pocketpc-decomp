@@ -2558,7 +2558,7 @@ void build_rgb565_palette();
 void flush_dirty_rect_to_display();
 void flush_dirty_rect_to_display_240();
 void end_gx_draw_session();
-void FUN_000232ec();
+void init_new_character_record();
 undefined4 FUN_000238b4();
 void FUN_00023a00();
 void FUN_00023b38();

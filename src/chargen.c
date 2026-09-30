@@ -459,7 +459,7 @@ int run_character_generator()
   if (DAT_00201c98 != 0) {
     FUN_0005b36c();
   }
-  FUN_000232ec(0);
+  init_new_character_record(0);
   FUN_00040df0();
   FUN_0003c3c8(5);
   return 1;
@@ -474,9 +474,163 @@ undefined4 character_generator_start()
   undefined4 uVar1;
 
   DEBUG(TRACE, "[chargen] character generation starting");
-  FUN_000232ec(1);
+  init_new_character_record(1);
   uVar1 = run_character_generator();
   load_weapon_combat_maneuver_data();
   DEBUG(TRACE, "[chargen] character generation returning, result=%u", uVar1);
   return uVar1;
+}
+
+
+// was FUN_000232ec -- resets the player record (DAT_00086df8, base
+// &DAT_0023bca8 set by reset_player_object_record) to new-character
+// defaults: zeroes/reinitializes combat flags, equipment slots, and
+// misc stat fields, then rolls the starting attribute/skill-point
+// arrays. param_1 selects which of the two real call sites this is:
+// character_generator_start passes 1 (reset-only, all rolled fields
+// zeroed, called before the interactive chargen UI runs so the player
+// starts from a blank sheet), while run_character_generator's own tail
+// (chargen.c) and the uw.c ~18695 call site pass 0 (actually roll
+// random starting stats via roll_dice_sum, called once chargen/a new
+// game is finalizing).
+void init_new_character_record(param_1)
+int param_1;
+
+{
+  int uw_ord2005_rem_0 = 0; int uw_ord2005_rem_1 = 0;
+  byte bVar1;
+  undefined1 uVar2;
+  char cVar3;
+  undefined4 uVar4;
+  char extraout_r1;
+  uint extraout_r1_00;
+  uint uVar5;
+  int iVar6;
+  
+  *(byte *)(DAT_00086df8 + 100) = *(byte *)(DAT_00086df8 + 100) | 1;
+  *(undefined1 *)(DAT_00086df8 + 0x4e) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x4f) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x50) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x51) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x52) = 1;
+  *(undefined1 *)(DAT_00086df8 + 0x53) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x3d) = 1;
+  *(undefined1 *)(DAT_00086df8 + 0xce) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0xcf) = 0x30;
+  *(undefined1 *)(DAT_00086df8 + 0xd0) = 0xb;
+  *(undefined1 *)(DAT_00086df8 + 0xd1) = 1;
+  *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf2 | 2;
+  *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
+  *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfc3f;
+  *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xf3ff;
+  *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xefff;
+  *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xdfff;
+  *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0x7fff;
+  *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xbfff;
+  *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x61) & 0xfbff;
+  *(char *)(DAT_00086df8 + 0x61) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x62) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x61) & 0xf7ff;
+  *(char *)(DAT_00086df8 + 0x61) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x62) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x61) & 0xefff;
+  *(char *)(DAT_00086df8 + 0x61) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x62) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x61) & 0xfffc;
+  *(char *)(DAT_00086df8 + 0x61) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x62) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x61) & 0xfc0f;
+  *(char *)(DAT_00086df8 + 0x61) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x62) = (char)(uVar5 >> 8);
+  uVar5 = *(ushort *)(DAT_00086df8 + 0x61) & 0xfff3;
+  *(char *)(DAT_00086df8 + 0x61) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0x62) = (char)(uVar5 >> 8);
+  *(byte *)(DAT_00086df8 + 0xb5) = *(byte *)(DAT_00086df8 + 0xb5) & 0xf | 0x30;
+  FUN_0005d2b0();
+  *(undefined1 *)(DAT_00086df8 + 0x6d) = 8;
+  *(undefined1 *)(DAT_00086df8 + 0x65) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x66) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x67) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x68) = 0;
+  if (getenv("UW_DEBUG_FORCE_QUEST_TEST")) {
+    *(unsigned int *)(DAT_00086df8 + 0x65) = 0x12345678;
+    fprintf(stderr, "[quest-persist] forced test quest_bits=0x%x at new-game init\n", *(unsigned int *)(DAT_00086df8 + 0x65));
+  }
+  *(undefined1 *)(DAT_00086df8 + 0x6e) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x6f) = 0;
+  uVar5 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xfff8;
+  *(char *)(DAT_00086df8 + 0xb6) = (char)uVar5;
+  *(char *)(DAT_00086df8 + 0xb7) = (char)(uVar5 >> 8);
+  *(undefined1 *)(DAT_00086df8 + 0xb8) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0xb9) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x3a) = 0x40;
+  *(undefined1 *)(DAT_00086df8 + 0x3b) = 0x40;
+  *(undefined1 *)(DAT_00086df8 + 0x3c) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x69) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x6a) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x6b) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x6c) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x47) = 0x18;
+  *(undefined1 *)(DAT_00086df8 + 0x48) = 0x18;
+  *(undefined1 *)(DAT_00086df8 + 0x49) = 0x18;
+  *(undefined1 *)(DAT_00086df8 + 0x44) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x45) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x46) = 0;
+  Ordinal_1047(DAT_00086df8 + 0x70,0,0x40);
+  Ordinal_1047(DAT_00086df8 + 0xc2,0,8);
+  *(undefined1 *)(DAT_00086df8 + 0x8a) = 0x35;
+  *(undefined1 *)(DAT_00086df8 + 0x39) = 0xc0;
+  uVar4 = Ordinal_1053();
+  uw_ord2005_rem_0 = ((int)(uVar4)) % (5);
+  *(byte *)(DAT_00086df8 + 100) =
+       (byte)((uw_ord2005_rem_0 & 7) << 2) | *(byte *)(DAT_00086df8 + 100) & 0xe3;
+  bVar1 = Ordinal_1053();
+  iVar6 = 0;
+  *(byte *)(DAT_00086df8 + 100) = *(byte *)(DAT_00086df8 + 100) & 0xfd | (bVar1 & 1) << 1;
+  do {
+    if (param_1 == 0) {
+      uVar2 = roll_dice_sum(3,4);
+    }
+    else {
+      uVar2 = 0;
+    }
+    *(undefined1 *)(iVar6 + DAT_00086df8 + 0x21) = uVar2;
+    iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+  } while (iVar6 < 0x14);
+  iVar6 = 0;
+  do {
+    if (param_1 == 0) {
+      cVar3 = roll_dice_sum(2,10);
+      cVar3 = cVar3 + '\n';
+    }
+    else {
+      cVar3 = '\0';
+    }
+    *(char *)(iVar6 + DAT_0023be74 + 5) = cVar3;
+    iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+  } while (iVar6 < 3);
+  recompute_level7_hazard_from_character_level(1);
+  *(undefined1 *)(DAT_00086df8 + 0x4a) = 0;
+  *(undefined1 *)(DAT_00086df8 + 0x4b) = 0;
+  uVar4 = Ordinal_1053();
+  uw_ord2005_rem_1 = ((int)(uVar4)) % (6);
+  *(char *)((char *)g_player_object + 8) = (-6 - uw_ord2005_rem_1) + *(char *)(DAT_0023be74 + 4);
+  DAT_00201b68 = 1;
+  refresh_player_equipment_effects();
+  return;
 }
