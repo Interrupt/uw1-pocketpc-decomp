@@ -6426,3 +6426,44 @@ int param_2;
   babl_render_op_wrap_message(param_1,param_2);
   return 3;
 }
+
+
+// was FUN_000366a0 -- plays a fixed sound effect (id 0x11, centered
+// pan) and returns 0. No confirmed caller in the current decompile
+// (not called by name anywhere); plausibly another entry in the babl
+// conversation-text render opcode table (see PTR_FUN_00085408's own
+// comment), matching that family's (no visible args here, but a
+// 0-consumed-words-style return) shape more than any other known
+// caller pattern.
+undefined4 babl_render_op_play_sound()
+
+{
+  play_sound_effect_with_pan(0x11,0x40,0);
+  return 0;
+}
+
+
+
+// was FUN_000366bc -- per-tick housekeeping for the babl conversation
+// render state (param_1): advances the menu music track, and if a
+// voice sample is currently playing (flag 0x40 set, sample id != -1)
+// and has finished (is_voice_sample_finished), clears the voice
+// fields back to "none".
+void babl_render_tick(param_1)
+int param_1;
+
+{
+  int iVar1;
+
+  advance_menu_music_track();
+  if (((*(byte *)(param_1 + 0x45) & 0x40) != 0) && (*(short *)(param_1 + 0x3f) != -1)) {
+    voice_sample_cluster_stub_1();
+    iVar1 = is_voice_sample_finished();
+    if (iVar1 != 0) {
+      *(undefined1 *)(param_1 + 0x3f) = 0xff;
+      *(byte *)(param_1 + 0x45) = *(byte *)(param_1 + 0x45) & 0xbf;
+      *(undefined1 *)(param_1 + 0x40) = 0xff;
+    }
+  }
+  return;
+}

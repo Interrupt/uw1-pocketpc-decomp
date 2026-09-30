@@ -9625,33 +9625,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_000366a0()
-
-{
-  play_sound_effect_with_pan(0x11,0x40,0);
-  return 0;
-}
-
-
-
-void FUN_000366bc(param_1)
-int param_1;
-
-{
-  int iVar1;
-  
-  advance_menu_music_track();
-  if (((*(byte *)(param_1 + 0x45) & 0x40) != 0) && (*(short *)(param_1 + 0x3f) != -1)) {
-    voice_sample_cluster_stub_1();
-    iVar1 = is_voice_sample_finished();
-    if (iVar1 != 0) {
-      *(undefined1 *)(param_1 + 0x3f) = 0xff;
-      *(byte *)(param_1 + 0x45) = *(byte *)(param_1 + 0x45) & 0xbf;
-      *(undefined1 *)(param_1 + 0x40) = 0xff;
-    }
-  }
-  return;
-}
 
 
 
@@ -10017,7 +9990,7 @@ LAB_00036ca4:
                   if (param_1 != 10) {
                     tick_book_illustration_palette_cycles(uVar14 + 0x80);
                   }
-                  FUN_000366bc(acStack_d0);
+                  babl_render_tick(acStack_d0);
                   sVar6 = -1;
                   do {
                     sVar20 = sVar6;
@@ -10162,7 +10135,7 @@ LAB_00036ca4:
                   if (param_1 != 10) {
                     tick_book_illustration_palette_cycles(local_88 + 0x80);
                   }
-                  FUN_000366bc(acStack_d0);
+                  babl_render_tick(acStack_d0);
                   if (((local_8b & 0x80) != 0) && (iVar9 = is_voice_sample_finished(), iVar9 != 0)) {
                     local_8b = local_8b & 0x7f;
                     iVar9 = read_realtime_clock_units();
@@ -10202,7 +10175,7 @@ LAB_00036ca4:
                 local_8d = -2;
                 local_8f = -1;
               }
-              FUN_000366bc(acStack_d0);
+              babl_render_tick(acStack_d0);
               uVar16 = uVar16 + 1 & 0xffff;
               bVar3 = false;
               DAT_00101a6c = DAT_00101a6c + 1;
