@@ -9641,93 +9641,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_00038028(param_1,param_2,param_3,param_4,param_5)
-ushort * param_1;
-undefined4 param_2;
-uint param_3;
-undefined4 param_4;
-short param_5;
-
-{
-  ushort uVar1;
-  short sVar2;
-  int iVar3;
-  undefined4 uVar4;
-  uint uVar5;
-  uint uVar6;
-  
-  sVar2 = (short)param_4;
-  uVar6 = 0xfffffffe;
-  if (sVar2 < 0) {
-LAB_000382ac:
-    uVar4 = 1;
-  }
-  else {
-    uVar1 = *param_1;
-    if ((uVar1 & 0x1f0) == 0x140) {
-      if ((uVar1 & 0xf) < 8) {
-        DAT_002020a4 = param_5;
-        DAT_002020a0 = sVar2;
-        close_door_object(param_2,param_1);
-      }
-      discard_container_contents(param_1,1);
-LAB_00038100:
-      uVar6 = 0xffffffff;
-    }
-    else if (((uVar1 & 0x1ff) == 0x15d) || ((uVar1 & 0x1ff) == 0x15b)) {
-      DAT_002020a4 = param_5;
-      DAT_002020a0 = sVar2;
-      discard_container_contents(param_1,0);
-      try_combine_or_stow_object(0,param_1,0);
-    }
-    else if ((uVar1 & 0x1f0) == 0x80) {
-      iVar3 = roll_object_destroy_chance(10,param_1);
-      if (iVar3 == 0) goto LAB_00038100;
-      try_empty_container(param_1,0);
-    }
-    else {
-      if ((param_3 & 8) != 0) {
-        if (((uVar1 & 0x1ff) == 0xd5) || ((uVar1 & 0x1ff) == 0xd6)) {
-          /* was folded into `int iVar3` (reused elsewhere in this function
-             for unrelated int values) -- truncated tilemap_lookup's real
-             `void *` return */
-          char *_tile3 = (char *)tilemap_lookup(param_4,(int)param_5);
-          iVar3 = reset_burnt_out_item_state(_tile3 + 2,param_1);
-          if (iVar3 != 0) goto LAB_000382ac;
-          uVar6 = 0xffffffff;
-        }
-        else {
-          uVar5 = Ordinal_1053();
-          if ((uVar5 & 3) == 0) {
-            uVar4 = roll_dice_sum(6,10);
-            spawn_scheduled_effect_object(param_1,8,uVar4,0,0,sVar2,param_5);
-            sVar2 = rand_below(2);
-            uVar6 = (int)sVar2 + 0xd5;
-          }
-        }
-      }
-      if (((*param_1 & 0x8000) == 0) && ((param_1[3] & 0xffc0) != 0)) {
-        free_linked_object_recursive();
-      }
-    }
-    if ((short)uVar6 < -1) {
-      sVar2 = rand_below(2);
-      uVar6 = (int)sVar2 + 0xd5;
-    }
-    if (-1 < (short)uVar6) {
-      uVar5 = (*param_1 ^ uVar6) & 0x1ff ^ (uint)*param_1;
-      *(char *)param_1 = (char)uVar5;
-      *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
-      if ((DAT_002046c4 <= param_1) &&
-         (iVar3 = settle_dropped_object(param_1,param_4,(int)param_5,1), iVar3 == 0)) goto LAB_000382ac;
-    }
-    uVar4 = 1;
-    if (-2 < (short)uVar6) {
-      uVar4 = 0;
-    }
-  }
-  return uVar4;
-}
 
 
 
@@ -9784,7 +9697,7 @@ undefined1 param_6;
       uVar2 = 0;
     }
     else {
-      uVar2 = FUN_00038028(param_1,param_2,param_6,param_3,param_4);
+      uVar2 = apply_object_destruction_effect(param_1,param_2,param_6,param_3,param_4);
     }
   }
   return uVar2;
