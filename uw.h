@@ -2748,7 +2748,7 @@ undefined4 can_step_between_tiles();
 undefined4 creature_find_path_to_tile();
 void reconstruct_path_from_bfs();
 int try_direct_line_walk();
-undefined4 FUN_0002d4e8();
+undefined4 check_fine_line_of_sight();
 undefined4 FUN_0002d9f4();
 undefined4 FUN_0002db4c();
 void FUN_0002dba4();

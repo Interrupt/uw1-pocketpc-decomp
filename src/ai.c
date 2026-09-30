@@ -1996,3 +1996,233 @@ LAB_0002d340:
                        ,(intptr_t)&DAT_00101734 + iVar5,auStack_30);
   return (int)sVar3;
 }
+
+
+// was FUN_0002d4e8 -- checks line-of-sight between two fine-grained
+// (sub-tile) positions, walking a Bresenham-style line and testing
+// each crossed tile boundary via can_step_between_tiles, similar to
+// try_direct_line_walk but operating on precise coordinates (>>3 for
+// tile conversion) rather than whole tiles. Used by NPC combat AI to
+// decide whether a spell/ranged attack has a clear line to its target.
+// Contains 2 confirmed dropped-argument fixes (Ordinal_2005 calls
+// reconstructed from their own sibling branches, see their own
+// comments).
+undefined4 check_fine_line_of_sight(param_1,param_2,param_3,param_4,param_5,param_6)
+uint param_1;
+uint param_2;
+uint param_3;
+short param_4;
+short param_5;
+short param_6;
+
+{
+  short sVar1;
+  int iVar2;
+  int iVar3;
+  byte bVar4;
+  uint uVar5;
+  undefined4 uVar6;
+  int iVar7;
+  int iVar8;
+  uint uVar9;
+  uint uVar10;
+  ushort uVar11;
+  ushort uVar12;
+  ushort uVar13;
+  ushort uVar14;
+  byte local_3c;
+  byte local_3b;
+  char local_3a;
+  char local_39;
+  char local_38;
+  byte local_37;
+  byte local_36;
+  byte local_35;
+  byte local_34;
+  byte local_33;
+  short local_32;
+  byte *local_30;
+  byte *local_2c;
+  int local_28;
+  
+  uVar9 = (uint)(short)param_1;
+  iVar7 = ((int)param_4 - uVar9) * 0x10000;
+  iVar3 = iVar7 >> 0x10;
+  uVar10 = (uint)(short)param_2;
+  iVar2 = ((int)param_5 - uVar10) * 0x10000;
+  local_28 = (int)(short)param_3;
+  local_32 = (short)((uint)((param_6 - local_28) * 0x10000) >> 0x10);
+  local_34 = (byte)(param_4 >> 3);
+  uVar13 = (short)param_1 >> 3;
+  uVar14 = uVar13 & 0xff;
+  local_3b = (byte)uVar13;
+  iVar8 = (int)param_5 >> 3;
+  local_33 = (byte)iVar8;
+  uVar13 = (short)param_2 >> 3;
+  if (iVar3 == 0) {
+    iVar8 = (iVar2 >> 0x10) << 0x10;
+  }
+  uVar12 = uVar13 & 0xff;
+  local_3c = (byte)uVar13;
+  if (iVar3 == 0 && iVar8 >> 0x10 == 0) {
+    return 1;
+  }
+  sVar1 = (short)((uint)iVar2 >> 0x10);
+  iVar2 = (int)sVar1;
+  iVar8 = -iVar2;
+  local_37 = local_3b;
+  local_36 = local_3c;
+  if (iVar3 < iVar2) {
+    if (iVar3 < iVar8) {
+      local_2c = &local_3b;
+      local_3a = -1;
+      local_38 = (char)(-iVar3 >> 3);
+      local_39 = -1;
+      local_30 = &local_3c;
+      if (0 < iVar2) {
+        local_3a = '\x01';
+      }
+      if (local_3a == '\x01') {
+        /* Was a dropped register-forwarding argument -- was
+           `Ordinal_2005();` with no args. Reconstructed as this exact
+           branch's own sibling call (the `else` just below,
+           `Ordinal_2005(iVar3,iVar2 << 7)`) wrapped in the negation
+           this code already applies afterward (`uVar5 = -iVar7`) --
+           mathematically the same sign-flip trick the other two
+           if/else pairs in this function apply via a `* -0x80`
+           operand instead of a post-call negation. */
+        iVar7 = Ordinal_2005(iVar3,iVar2 << 7);
+        uVar5 = -iVar7;
+        uVar9 = uVar9 & 7;
+        goto LAB_0002d808;
+      }
+      uVar5 = Ordinal_2005(iVar3,iVar2 << 7);
+      uVar9 = uVar9 & 7;
+LAB_0002d824:
+      uVar5 = uVar5 & 0xff;
+      iVar7 = uVar9 * uVar5;
+      param_1 = param_2;
+    }
+    else {
+      local_2c = &local_3c;
+      local_38 = (char)(sVar1 >> 3);
+      local_30 = &local_3b;
+      local_3a = '\x01';
+      local_39 = '\x01';
+      if (iVar3 < 1) {
+        local_3a = -1;
+      }
+      if (local_3a != '\x01') {
+        uVar5 = Ordinal_2005(iVar2,iVar3 * -0x80);
+        uVar10 = 7 - (uVar10 & 7);
+        goto LAB_0002d6c0;
+      }
+      uVar5 = Ordinal_2005(iVar2,iVar3 << 7);
+      uVar10 = 7 - (uVar10 & 7);
+LAB_0002d768:
+      uVar5 = uVar5 & 0xff;
+      iVar7 = uVar10 * uVar5;
+    }
+    if (iVar7 < 0) {
+      iVar7 = iVar7 + 7;
+    }
+    uVar9 = (iVar7 >> 3 & 0xffU) + (param_1 & 7) * 0x10;
+  }
+  else {
+    if (iVar3 < iVar8) {
+      local_2c = &local_3c;
+      local_3a = -1;
+      local_38 = (char)(iVar8 >> 3);
+      local_39 = -1;
+      local_30 = &local_3b;
+      if (0 < iVar3) {
+        local_3a = '\x01';
+      }
+      if (local_3a != '\x01') {
+        uVar5 = Ordinal_2005(iVar2,iVar3 << 7);
+        uVar10 = uVar10 & 7;
+        goto LAB_0002d768;
+      }
+      /* Was a dropped register-forwarding argument -- same class as
+         this function's own earlier fix (uw.c ~8942): reconstructed
+         as this branch's own sibling call above
+         (`Ordinal_2005(iVar2,iVar3 << 7)`) wrapped in the negation
+         this code already applies afterward. */
+      iVar7 = Ordinal_2005(iVar2,iVar3 << 7);
+      uVar5 = -iVar7;
+      uVar10 = uVar10 & 7;
+LAB_0002d6c0:
+      uVar5 = uVar5 & 0xff;
+      iVar7 = uVar10 * uVar5;
+    }
+    else {
+      local_38 = (char)(short)(iVar7 >> 0x13);
+      local_30 = &local_3c;
+      local_39 = '\x01';
+      local_3a = '\x01';
+      if (iVar2 < 1) {
+        local_3a = -1;
+      }
+      local_2c = &local_3b;
+      if (local_3a == '\x01') {
+        uVar5 = Ordinal_2005(iVar3,iVar2 << 7);
+        uVar9 = 7 - (uVar9 & 7);
+        goto LAB_0002d824;
+      }
+      uVar5 = Ordinal_2005(iVar3,iVar2 * -0x80);
+      uVar9 = 7 - (uVar9 & 7);
+LAB_0002d808:
+      uVar5 = uVar5 & 0xff;
+      iVar7 = uVar9 * uVar5;
+      param_1 = param_2;
+    }
+    if (iVar7 < 0) {
+      iVar7 = iVar7 + 7;
+    }
+    uVar9 = (iVar7 >> 3 & 0xffU) + (param_1 & 7) * -0x10 + 0x70;
+  }
+  param_3 = param_3 & 0xff;
+  local_35 = 0;
+  while( true ) {
+    bVar4 = local_36;
+    uVar13 = uVar14;
+    uVar11 = uVar12;
+    if ((uVar9 & 0x80) != 0) {
+      uVar9 = uVar9 & 0x7f;
+      *local_30 = local_3a + *local_30;
+      uVar11 = (ushort)local_3c;
+      uVar13 = (ushort)local_3b;
+      iVar7 = can_step_between_tiles(local_37,bVar4,uVar14,uVar12,local_3b,local_3c,(char)param_3);
+      if (iVar7 == 0) {
+        return 0;
+      }
+      if ((uVar13 == local_34) && (uVar11 == local_33)) {
+        uVar6 = can_step_between_tiles(uVar14,uVar12,uVar13,uVar11,0,0,(char)param_3);
+        return uVar6;
+      }
+      local_37 = (byte)uVar14;
+      local_36 = (byte)uVar12;
+    }
+    *local_2c = local_39 + *local_2c;
+    local_35 = local_35 + 1;
+    if (10 < local_35) {
+      return 0;
+    }
+    if (local_38 != '\0') {
+      iVar7 = Ordinal_2005(local_38,(int)local_32 * (uint)local_35);
+      param_3 = local_28 + iVar7 & 0xff;
+    }
+    uVar12 = (ushort)local_3c;
+    uVar14 = (ushort)local_3b;
+    iVar7 = can_step_between_tiles(local_37,local_36,uVar13,uVar11,local_3b,local_3c,(char)param_3);
+    if (iVar7 == 0) break;
+    if ((uVar14 == local_34) && (uVar12 == local_33)) {
+      uVar6 = can_step_between_tiles(uVar13,uVar11,uVar14,uVar12,0,0,(char)param_3);
+      return uVar6;
+    }
+    local_37 = (byte)uVar13;
+    local_36 = (byte)uVar11;
+    uVar9 = uVar5 + uVar9;
+  }
+  return 0;
+}
