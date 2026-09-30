@@ -2828,7 +2828,7 @@ ushort * param_1;
 // via npc_combat_approach_tick's own comment describing its "far:
 // random walk reposition" branch, which calls this): if not already
 // at the given wander tile (param_1,param_2), has a 1-in-8 chance to
-// pick a nearby random tile via FUN_00032180 (adjusting a special-goal
+// pick a nearby random tile via detect_npc_wander_proximity (adjusting a special-goal
 // flag on a couple of outcomes) instead of walking straight there, then
 // steers toward whichever tile was settled on via npc_walk_toward_tile,
 // clearing the special-goal flag if that walk reports blocked.
@@ -2860,7 +2860,7 @@ undefined4 param_4;
     uVar3 = Ordinal_1053();
     uw_ord2005_rem_57 = ((int)(uVar3)) % (8);
     if (uw_ord2005_rem_57 == 0) {
-      cVar2 = FUN_00032180(&local_10,&local_c);
+      cVar2 = detect_npc_wander_proximity(&local_10,&local_c);
       if (cVar2 != '\0') {
         if (cVar2 == '\x01') {
           *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfe;
@@ -2950,4 +2950,85 @@ void npc_react_to_nearby_player()
     }
   }
   return;
+}
+
+
+// was FUN_00032180 -- checks the NPC's proximity to its current
+// wander/goal tile against two stat-template-derived radii (byte
+// 0x1e's two nibbles, each multiplied against a per-monster-class
+// table entry): outputs the goal tile itself via param_1/param_2, and
+// returns 0 if outside the larger radius, 1 if within the smaller
+// "close" radius (also checking heading + line-of-sight to gate a
+// side-effect flag), or 2 for the band between them. Called from
+// npc_wander_reposition to decide whether/how to pick a fresh random
+// wander tile. Contains a confirmed dropped-argument fix (see its own
+// comment).
+undefined4 detect_npc_wander_proximity(param_1,param_2)
+char * param_1;
+char * param_2;
+
+{
+  int uw_ord2005_rem_86 = 0;
+  int iVar1;
+  int iVar2;
+  ushort uVar3;
+  char cVar4;
+  int iVar5;
+  undefined4 uVar6;
+  char extraout_r1;
+  ushort *puVar7;
+  /* Preserved separately from iVar1/iVar2 below, which get overwritten
+     with the squared distance before compute_movement_heading's own
+     call further down needs them -- see that dropped-argument fix. */
+  int deltaX;
+  int deltaY;
+
+  *param_1 = DAT_00101408;
+  *param_2 = DAT_00101410;
+  iVar1 = ((int)DAT_00101408 - (int)DAT_00101918) * 0x1000000 >> 0x18;
+  iVar2 = ((int)DAT_00101410 - (int)DAT_001013f8) * 0x1000000 >> 0x18;
+  deltaX = iVar1;
+  deltaY = iVar2;
+  iVar2 = (iVar1 * iVar1 + iVar2 * iVar2) * 0x10000 >> 0x10;
+  iVar1 = (int)((*(byte *)(DAT_00101404 + 0x1e) & 0xf) *
+               ((byte)(&DAT_001007ed)[((byte)*DAT_00101400 & 0x3f) * 0x30] & 0xf)) >> 4;
+  iVar1 = iVar1 * iVar1 * 0x10000;
+  if (iVar2 < iVar1 >> 0x12) {
+LAB_000323ac:
+    uVar6 = 0;
+  }
+  else {
+    iVar5 = (int)((uint)(*(byte *)(DAT_00101404 + 0x1e) >> 4) *
+                 (uint)((byte)(&DAT_001007ed)[((byte)*DAT_00101400 & 0x3f) * 0x30] >> 4)) >> 4;
+    puVar7 = DAT_0010190c;
+    if (iVar2 <= iVar5 * iVar5 * 0x10000 >> 0x10) {
+      /* Was a dropped register-forwarding argument -- was
+         `compute_movement_heading();` with no args. deltaX/deltaY,
+         preserved above from this function's own delta computation
+         (before it got squashed into the squared-distance iVar2), are
+         exactly what this call needs. */
+      cVar4 = compute_movement_heading(deltaX,deltaY);
+      puVar7 = DAT_0010190c;
+      uVar3 = DAT_0010190c[1];
+      uw_ord2005_rem_86 = ((int)(((int)cVar4 - ((int)(char)(uVar3 >> 7) & 7U)) + 8)) % (8);
+      if ((((uw_ord2005_rem_86 == '\0') || (uw_ord2005_rem_86 == '\x01')) || (uw_ord2005_rem_86 == '\a')) &&
+         (iVar5 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
+                               (ushort)(byte)(&DAT_00202c90)[(*puVar7 & 0x1ff) * 0xd] +
+                               (uVar3 & 0x7f),DAT_00101908,DAT_00101418,
+                               (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
+                               ((byte)DAT_00101400[1] & 0x7f)), puVar7 = DAT_0010190c, iVar5 != 0))
+      {
+        *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
+        goto LAB_000323ac;
+      }
+    }
+    if (iVar2 < (iVar1 >> 0x10) * 4) {
+      uVar6 = 2;
+    }
+    else {
+      uVar6 = 1;
+      *(byte *)((char *)puVar7 + 0x19) = *(byte *)((char *)puVar7 + 0x19) & 0xfe;
+    }
+  }
+  return uVar6;
 }

@@ -2784,7 +2784,7 @@ uint adjust_heading_away_from_player();
 void npc_combat_disengage_tick();
 void npc_react_to_nearby_player();
 void npc_wander_return_home_exact_tick();
-undefined4 FUN_00032180();
+undefined4 detect_npc_wander_proximity();
 undefined4 FUN_00032410();
 undefined4 FUN_0003276c();
 int FUN_0003298c();

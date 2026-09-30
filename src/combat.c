@@ -586,7 +586,7 @@ LAB_000314d0:
 
 
 // was FUN_00031a94 -- goal 10: checks line-of-sight/distance
-// (FUN_00032180, dist^2>399); if lost, reverts straight to idle state
+// (detect_npc_wander_proximity, dist^2>399); if lost, reverts straight to idle state
 // 0x20, otherwise continues closing on the target
 void npc_combat_disengage_tick()
 
@@ -613,7 +613,7 @@ void npc_combat_disengage_tick()
     *(char *)(DAT_0010190c + 0xc) = (char)(uVar7 >> 8);
     FUN_00034044();
     uVar6 = DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448;
-    cVar3 = FUN_00032180(auStack_1b,&uStack_1c);
+    cVar3 = detect_npc_wander_proximity(auStack_1b,&uStack_1c);
     if ((cVar3 == '\x01') || (399 < uVar6)) {
       *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfe | 6;
       *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;

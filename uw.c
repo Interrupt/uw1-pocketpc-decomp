@@ -9251,7 +9251,7 @@ LAB_0002fe88:
     bVar1 = *(byte *)(DAT_00101404 + 0x1f);
     uw_ord2005_rem_42 = ((int)(uVar4)) % (0x10);
     if (uw_ord2005_rem_42 < (int)(uint)(bVar1 >> 4)) {
-      cVar3 = FUN_00032180(local_17,&local_18);
+      cVar3 = detect_npc_wander_proximity(local_17,&local_18);
       if (cVar3 == '\0') {
         *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
         npc_set_walk_target(local_17[0],local_18,DAT_00101420);
@@ -9385,63 +9385,6 @@ void npc_wander_return_home_exact_tick()
 // WARNING: Removing unreachable block (ram,0x00032258)
 // WARNING: Removing unreachable block (ram,0x00032278)
 
-undefined4 FUN_00032180(param_1,param_2)
-char * param_1;
-char * param_2;
-
-{
-  int uw_ord2005_rem_86 = 0;
-  int iVar1;
-  int iVar2;
-  ushort uVar3;
-  char cVar4;
-  int iVar5;
-  undefined4 uVar6;
-  char extraout_r1;
-  ushort *puVar7;
-  
-  *param_1 = DAT_00101408;
-  *param_2 = DAT_00101410;
-  iVar1 = ((int)DAT_00101408 - (int)DAT_00101918) * 0x1000000 >> 0x18;
-  iVar2 = ((int)DAT_00101410 - (int)DAT_001013f8) * 0x1000000 >> 0x18;
-  iVar2 = (iVar1 * iVar1 + iVar2 * iVar2) * 0x10000 >> 0x10;
-  iVar1 = (int)((*(byte *)(DAT_00101404 + 0x1e) & 0xf) *
-               ((byte)(&DAT_001007ed)[((byte)*DAT_00101400 & 0x3f) * 0x30] & 0xf)) >> 4;
-  iVar1 = iVar1 * iVar1 * 0x10000;
-  if (iVar2 < iVar1 >> 0x12) {
-LAB_000323ac:
-    uVar6 = 0;
-  }
-  else {
-    iVar5 = (int)((uint)(*(byte *)(DAT_00101404 + 0x1e) >> 4) *
-                 (uint)((byte)(&DAT_001007ed)[((byte)*DAT_00101400 & 0x3f) * 0x30] >> 4)) >> 4;
-    puVar7 = DAT_0010190c;
-    if (iVar2 <= iVar5 * iVar5 * 0x10000 >> 0x10) {
-      cVar4 = compute_movement_heading();
-      puVar7 = DAT_0010190c;
-      uVar3 = DAT_0010190c[1];
-      uw_ord2005_rem_86 = ((int)(((int)cVar4 - ((int)(char)(uVar3 >> 7) & 7U)) + 8)) % (8);
-      if ((((uw_ord2005_rem_86 == '\0') || (uw_ord2005_rem_86 == '\x01')) || (uw_ord2005_rem_86 == '\a')) &&
-         (iVar5 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
-                               (ushort)(byte)(&DAT_00202c90)[(*puVar7 & 0x1ff) * 0xd] +
-                               (uVar3 & 0x7f),DAT_00101908,DAT_00101418,
-                               (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
-                               ((byte)DAT_00101400[1] & 0x7f)), puVar7 = DAT_0010190c, iVar5 != 0))
-      {
-        *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
-        goto LAB_000323ac;
-      }
-    }
-    if (iVar2 < (iVar1 >> 0x10) * 4) {
-      uVar6 = 2;
-    }
-    else {
-      uVar6 = 1;
-      *(byte *)((char *)puVar7 + 0x19) = *(byte *)((char *)puVar7 + 0x19) & 0xfe;
-    }
-  }
-  return uVar6;
-}
 
 
 
