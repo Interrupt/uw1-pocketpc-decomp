@@ -4450,3 +4450,84 @@ void refresh_equipment_display_if_visible()
   FUN_00048110();
   return;
 }
+
+
+// was FUN_00044814 -- clears the player's rune-bag bitset (the 8-byte
+// field at DAT_00086df8+0x44, the same bits place_rune_in_bag sets),
+// emptying the bag of every rune.
+void clear_rune_bag_contents()
+
+{
+  int iVar1;
+
+  iVar1 = 0;
+  do {
+    *(undefined1 *)(iVar1 + DAT_00086df8 + 0x44) = 0;
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 8);
+  return;
+}
+
+
+
+// was FUN_00044848 -- draws a single rune's icon (param_1, a rune
+// index 0-0x17) at its grid position in the rune-bag panel.
+void draw_rune_icon(param_1)
+uint param_1;
+
+{
+  int iVar1;
+  int iVar2;
+
+  FUN_00057118();
+  iVar1 = ((int)(short)param_1 >> 2) * 0xf;
+  iVar2 = (param_1 & 3) * 0x12;
+  draw_sprite_by_id(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
+  cursor_show_idle_tick();
+  return;
+}
+
+
+
+// was FUN_000448a8 -- the rune-bag panel's redraw callback (used
+// alongside refresh_equipment_display_if_visible/draw_stats_panel_content
+// in the stats-panel redraw dispatch table): draws every rune
+// currently set in the bag's bitset via draw_rune_icon.
+void redraw_rune_bag_display()
+
+{
+  uint uVar1;
+
+  FUN_00057118();
+  uVar1 = 0;
+  do {
+    if ((*(byte *)(DAT_00086df8 + ((int)uVar1 >> 3) + 0x44) >> (7 - (uVar1 & 7) & 0xff) & 1) != 0) {
+      g_blit_transparent_mode = 1;
+      draw_rune_icon(uVar1);
+      g_blit_transparent_mode = 0;
+    }
+    uVar1 = (int)((uVar1 + 1) * 0x10000) >> 0x10;
+  } while ((int)uVar1 < 0x18);
+  cursor_show_idle_tick();
+  return;
+}
+
+
+
+// was FUN_00044920 -- clears the player's 3 "readied rune" slots
+// (DAT_00086df8+0x47/+0x48/+0x49, 0x18 = "empty") and a matching flag
+// field, then refreshes their icons via update_ready_rune_slot_icons.
+void reset_ready_rune_slots()
+
+{
+  uint uVar1;
+
+  *(undefined1 *)(DAT_00086df8 + 0x47) = 0x18;
+  *(undefined1 *)(DAT_00086df8 + 0x48) = 0x18;
+  *(undefined1 *)(DAT_00086df8 + 0x49) = 0x18;
+  uVar1 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xf3ff;
+  *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
+  *(char *)(DAT_00086df8 + 0x60) = (char)(uVar1 >> 8);
+  update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
+  return;
+}

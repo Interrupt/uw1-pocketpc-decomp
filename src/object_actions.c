@@ -2226,8 +2226,8 @@ LAB_00075a0c:
   case 0xc:
     free_player_inventory_chain((char *)g_player_object + 6);
     reset_level_arena_and_invalidate(0);
-    FUN_00044814();
-    FUN_00044920();
+    clear_rune_bag_contents();
+    reset_ready_rune_slots();
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
     *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x10;

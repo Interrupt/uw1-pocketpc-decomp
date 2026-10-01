@@ -5643,7 +5643,7 @@ char *DAT_0023cca4;
    needs to change -- `(&g_hud_panel_handlers)[i]` already scales by the
    (now-real, 8-byte-on-this-host) pointer size. */
 void (*const g_hud_panel_handlers_table[13])(void) = {
-  (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))FUN_000448a8, (void(*)(void))draw_stats_panel_content, 0,
+  (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))redraw_rune_bag_display, (void(*)(void))draw_stats_panel_content, 0,
   (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))update_hud_status_icon_frame,
   (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))tick_hud_panel_transition, (void(*)(void))hud_panel_wipe_transition_tick,
   (void(*)(void))advance_action_animation_frame,
@@ -11324,73 +11324,6 @@ short param_1;
 
 
 
-void FUN_00044814()
-
-{
-  int iVar1;
-  
-  iVar1 = 0;
-  do {
-    *(undefined1 *)(iVar1 + DAT_00086df8 + 0x44) = 0;
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar1 < 8);
-  return;
-}
-
-
-
-void FUN_00044848(param_1)
-uint param_1;
-
-{
-  int iVar1;
-  int iVar2;
-  
-  FUN_00057118();
-  iVar1 = ((int)(short)param_1 >> 2) * 0xf;
-  iVar2 = (param_1 & 3) * 0x12;
-  draw_sprite_by_id(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
-  cursor_show_idle_tick();
-  return;
-}
-
-
-
-void FUN_000448a8()
-
-{
-  uint uVar1;
-  
-  FUN_00057118();
-  uVar1 = 0;
-  do {
-    if ((*(byte *)(DAT_00086df8 + ((int)uVar1 >> 3) + 0x44) >> (7 - (uVar1 & 7) & 0xff) & 1) != 0) {
-      g_blit_transparent_mode = 1;
-      FUN_00044848(uVar1);
-      g_blit_transparent_mode = 0;
-    }
-    uVar1 = (int)((uVar1 + 1) * 0x10000) >> 0x10;
-  } while ((int)uVar1 < 0x18);
-  cursor_show_idle_tick();
-  return;
-}
-
-
-
-void FUN_00044920()
-
-{
-  uint uVar1;
-  
-  *(undefined1 *)(DAT_00086df8 + 0x47) = 0x18;
-  *(undefined1 *)(DAT_00086df8 + 0x48) = 0x18;
-  *(undefined1 *)(DAT_00086df8 + 0x49) = 0x18;
-  uVar1 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xf3ff;
-  *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
-  *(char *)(DAT_00086df8 + 0x60) = (char)(uVar1 >> 8);
-  update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
-  return;
-}
 
 
 
@@ -11424,7 +11357,7 @@ void FUN_0004497c()
   psVar3 = DAT_00085a6c;
   if (g_cursor_holding_state == 0) {
     if (DAT_00085a6c[1] < 0x12) {
-      FUN_00044920();
+      reset_ready_rune_slots();
     }
     else {
       sVar4 = Ordinal_2005(0xf,DAT_00085a6c[1] + -0x12);
@@ -11434,7 +11367,7 @@ void FUN_0004497c()
            (7 - (iVar6 * 0x10000 >> 0x10 & 7U) & 0xff) & 1) != 0) {
         if ((psVar3[3] & 2U) == 0) {
           if (DAT_002028d0 != 0) {
-            FUN_00044920();
+            reset_ready_rune_slots();
           }
           DAT_002028d0 = 0;
           if ((*(byte *)(DAT_00086df8 + 0x60) & 0xc) == 0xc) {
