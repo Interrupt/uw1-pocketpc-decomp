@@ -2160,7 +2160,7 @@ void run_game_startup_sequence()
   Ordinal_1063(acStack_62c,s__DATA_pres2_byt_00085780);
   blit_fullscreen_bitmap_file(6,acStack_62c,1);
   Ordinal_496(0x5dc);
-  sVar2 = FUN_00041aac();
+  sVar2 = load_startup_gr_resources();
   if (sVar2 != 0) {
     report_fatal_error_and_exit();
   }
@@ -2633,4 +2633,115 @@ void play_view_restore_transition()
   full_dungeon_redraw();
   weapon_overlay_flash_restore(5);
   return;
+}
+
+
+// was FUN_00041aac -- called once during game startup (src/game.c:2163,
+// inside run_game_startup_sequence, right after the second splash
+// screen); a report_fatal_error_and_exit failure here is fatal. Loads
+// ALLPALS.DAT (into DAT_00202520), then runs the entire .GR
+// preload chain (QUESTION/VIEWS/OBJECTS/ANIMO/BUTTONS/CURSORS/3DWIN/
+// TMFLAT/TMOBJ/LFTI/the HUD icon group), snapshotting several resource
+// base-frame globals (DAT_0020272c/DAT_00202730/DAT_00202734/
+// DAT_00202738) along the way, and finally loads the critter
+// association tables. Returns a fatal-error code (0x3004/0x3008/0x3009)
+// on the first failure, 0 on success.
+undefined4 load_startup_gr_resources()
+
+{
+  char stack0xffdc3230_buf [256];
+  char *stack0xffdc3230_ptr;
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  undefined4 uVar4;
+  uint uVar5;
+  uint uVar6;
+  uint uVar7;
+  uint uVar8;
+  uint uVar9;
+  uint uVar10;
+  uint uVar11;
+  uint uVar12;
+  uint uVar13;
+  uint uVar14;
+  uint uVar15;
+  uint uVar16;
+  uint uVar17;
+  uint uVar18;
+  uint uVar19;
+  uint uVar20;
+  uint uVar21;
+  uint uVar22;
+  uint uVar23;
+  uint uVar24;
+  char acStack_128 [260];
+  
+  Ordinal_1047(acStack_128,0,0x104);
+  pcVar2 = &DAT_0023cca8;
+    stack0xffdc3230_ptr = acStack_128;
+  do {
+    cVar1 = *pcVar2;
+    *stack0xffdc3230_ptr = cVar1; stack0xffdc3230_ptr = stack0xffdc3230_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_128,s__DATA_allpals_dat_00085a50);
+  iVar3 = open_file_for_read(acStack_128);
+  if (iVar3 == -1) {
+    uVar4 = 0x3008;
+  }
+  else {
+    read_file_handle(iVar3,&DAT_00202520,0x200);
+    Ordinal_553(iVar3);
+    uVar5 = load_gr_resource_group(s_question_00085a44);
+    uVar6 = load_gr_resource_group(s_views_00085a3c);
+    DAT_0020272c = DAT_00202744;
+    uVar7 = load_objects_gr(s_objects_00085a34);
+    DAT_0024fa1c = DAT_00202744;
+    DAT_00202744 = 0x1c0;
+    uVar8 = load_gr_resource_group(s_animo_00085a2c);
+    DAT_00202730 = DAT_00202744;
+    uVar9 = load_gr_resource_group(s_buttons_00085a24);
+    uVar10 = load_gr_resource_group(s_cursors_00085a1c);
+    uVar11 = load_gr_resource_group(s_3dwin_00085a14);
+    DAT_00202734 = DAT_00202744;
+    uVar12 = load_tmflat_gr(s_tmflat_00085a0c,0x170,0x10);
+    /* DAT_00202738 is snapshotted AFTER this call, i.e. it's the base for
+       whatever loads NEXT (LFTI.GR, see s_lfti_000859fc), not TMOBJ's own
+       base -- confirmed by instrumenting this exact spot (DAT_00202744
+       went 643 -> 681 across the load_gr_resource_group call below), so TMOBJ's
+       real 38 frames are absolute indices 643-680. See
+       emit_tile_objects's class-2 sign branch and decode_tile_object_billboard_texture's
+       negative-param_1 comment for where this matters. */
+    uVar13 = load_gr_resource_group(s_tmobj_00085a04);
+    DAT_00202738 = DAT_00202744;
+    uVar14 = load_hud_icon_gr(s_lfti_000859fc);
+    uVar15 = load_hud_icon_gr(s_flasks_000859f4);
+    uVar16 = load_hud_icon_gr(s_compass_000859ec);
+    uVar17 = load_hud_icon_gr(s_dragons_000859e4);
+    uVar18 = load_hud_icon_gr(s_inv_000859e0);
+    uVar19 = load_hud_icon_gr(s_power_000859d8);
+    uVar20 = load_hud_icon_gr(s_eyes_000859d0);
+    uVar21 = load_hud_icon_gr(s_chains_000859c8);
+    uVar22 = load_hud_icon_gr(s_spells_000859c0);
+    uVar23 = load_hud_icon_gr(s_scrledge_000859b4);
+    uVar24 = load_hud_icon_gr(s_optb_000859ac);
+    if ((uVar23 & uVar24 & uVar22 & uVar21 & uVar20 & uVar19 & uVar18 & uVar17 & uVar16 & uVar15 &
+         uVar14 & uVar13 & uVar12 & uVar11 & uVar10 & uVar9 & uVar8 & uVar7 & uVar6 & uVar5 & 1) ==
+        0) {
+      uVar4 = 0x3004;
+    }
+    else {
+      DAT_00085988 = DAT_00085988 + '\x01';
+      DAT_0024fa28 = DAT_0024d000 + '\t';
+      iVar3 = load_critter_association_tables(1);
+      if (iVar3 == 0) {
+        uVar4 = 0x3009;
+      }
+      else {
+        uVar4 = 0;
+      }
+    }
+  }
+  return uVar4;
 }
