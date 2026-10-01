@@ -502,10 +502,12 @@ int param_1;
 // (called there as `FUN_0007e12c(param_1,param_2,param_3)`, the trap/
 // link record and its tile x,y). Switches on the record's quality
 // field (bits 0x3f at +4) across ~20 distinct codes, mostly
-// delegating to still-unnamed helpers (FUN_0003a4a0, apply_quest_event_numeric_effect,
-// emit_player_noise_alert, handle_level4_maze_puzzle_button, try_combine_shrine_markers, FUN_0003a57c,
-// FUN_0003a5ec, FUN_0003dc78) whose own purpose isn't pinned down
-// yet. A few codes are more legible: code 2 calls
+// delegating to helper functions (trigger_exploding_book_trap_at_tile, apply_quest_event_numeric_effect,
+// emit_player_noise_alert, handle_level4_maze_puzzle_button, try_combine_shrine_markers, trigger_scripted_npc_conversation,
+// advance_scheduler_and_show_page3) whose own exact quest semantics
+// mostly aren't pinned down beyond what each one's own comment
+// confirms. FUN_0003dc78 (one remaining case) is still unnamed. A
+// few codes are more legible: code 2 calls
 // restore_view_from_object_record; code 0x32 sweeps every class-0xd8
 // object via for_each_object_of_type(reset_object_ui_state_callback);
 // codes 0x3b-0x3e are gated on DAT_0024cff4 == g_player_object (the
@@ -525,7 +527,7 @@ undefined4 param_3;
   uVar1 = *(ushort *)(param_1 + 4) & 0x3f;
   if (uVar1 < 0x2a) {
     if (uVar1 == 0x29) {
-      FUN_0003a4a0();
+      trigger_exploding_book_trap_at_tile(0,param_2,param_3);
     }
     else if (uVar1 == 2) {
       restore_view_from_object_record();
@@ -546,13 +548,13 @@ undefined4 param_3;
     }
   }
   else if (uVar1 == 0x2a) {
-    FUN_0003a57c();
+    trigger_scripted_npc_conversation();
   }
   else if (uVar1 == 0x32) {
     for_each_object_of_type(0xd8,0,0,reset_object_ui_state_callback);
   }
   else if (uVar1 == 0x39) {
-    FUN_0003a5ec();
+    advance_scheduler_and_show_page3();
   }
   else if (0x3b < uVar1) {
     if (uVar1 < 0x3f) {
@@ -1416,5 +1418,82 @@ void trigger_exploding_book_trap()
     FUN_00048110();
     refresh_player_equipment_effects();
   }
+  return;
+}
+
+
+// was FUN_0003a4a0 -- confirmed as dispatch_quest_event_code's case
+// 0x29 handler, a parameterized sibling of trigger_exploding_book_trap:
+// the same "book explodes" effect but checking a caller-specified
+// tile (param_2,param_3) rather than the player's own position
+// (param_1 unused throughout). Only known caller dropped all 3
+// arguments; fixed to forward the trap record's own tile position,
+// matching the established pattern for this dispatcher's other
+// dropped-arg cases (e.g. try_combine_shrine_markers).
+void trigger_exploding_book_trap_at_tile(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  ushort *local_c;   /* was int -- tilemap_lookup()+2 (64-bit ptr) */
+
+  local_c = (ushort *)((char *)tilemap_lookup(param_2,param_3) + 2);
+  iVar2 = FUN_000537d0(&local_c,1,4,1,4);
+  if (iVar2 != 0) {
+    message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
+    uVar1 = *(undefined4 *)(DAT_00086df8 + 0x65);
+    *(char *)(DAT_00086df8 + 0x65) = (char)uVar1;
+    *(byte *)(DAT_00086df8 + 0x66) = (byte)((uint)uVar1 >> 8) | 1;
+    *(char *)(DAT_00086df8 + 0x67) = (char)((uint)uVar1 >> 0x10);
+    *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
+    reduce_item_quality_on_use(g_player_object,3);
+    decrement_object_count(iVar2);
+    discard_misplaced_object(0,iVar2,1);
+    FUN_00048110();
+    refresh_player_equipment_effects();
+  }
+  return;
+}
+
+
+
+// was FUN_0003a57c -- confirmed as dispatch_quest_event_code's case
+// 0x2a handler: spawns a temporary NPC object (catalog id 0x40),
+// sets its goal/state fields to force an immediate conversation, runs
+// interact_talk_npc() against it, then frees the slot -- a "trigger a
+// scripted conversation with a throwaway speaker" effect.
+void trigger_scripted_npc_conversation()
+
+{
+  undefined2 uVar1;
+  char *iVar2;  /* was `int` -- truncated spawn_new_object's real pointer */
+  uint uVar3;
+
+  iVar2 = (char *)spawn_new_object(0x40,1);
+  *(undefined1 *)(iVar2 + 0x1a) = 0x19;
+  uVar1 = *(undefined2 *)(iVar2 + 0xd);
+  *(char *)(iVar2 + 0xd) = (char)uVar1;
+  *(byte *)(iVar2 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0xc0;
+  uVar3 = CONCAT11(*(undefined1 *)(iVar2 + 0xc),*(undefined1 *)(iVar2 + 0xb)) & 0xfffa;
+  *(byte *)(iVar2 + 0xb) = (byte)uVar3 | 10;
+  *(char *)(iVar2 + 0xc) = (char)(uVar3 >> 8);
+  interact_talk_npc();
+  free_object_slot(iVar2);
+  return;
+}
+
+
+
+// was FUN_0003a5ec -- confirmed as dispatch_quest_event_code's case
+// 0x39 handler: advances the scheduler by 4 units then displays book/
+// scroll page 3.
+void advance_scheduler_and_show_page3()
+
+{
+  scheduler_tick(4);
+  display_book_or_scroll_page(3);
   return;
 }

@@ -9698,65 +9698,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_0003a4a0(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  ushort *local_c;   /* was int -- tilemap_lookup()+2 (64-bit ptr) */
-
-  local_c = (ushort *)((char *)tilemap_lookup(param_2,param_3) + 2);
-  iVar2 = FUN_000537d0(&local_c,1,4,1,4);
-  if (iVar2 != 0) {
-    message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
-    uVar1 = *(undefined4 *)(DAT_00086df8 + 0x65);
-    *(char *)(DAT_00086df8 + 0x65) = (char)uVar1;
-    *(byte *)(DAT_00086df8 + 0x66) = (byte)((uint)uVar1 >> 8) | 1;
-    *(char *)(DAT_00086df8 + 0x67) = (char)((uint)uVar1 >> 0x10);
-    *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
-    reduce_item_quality_on_use(g_player_object,3);
-    decrement_object_count(iVar2);
-    discard_misplaced_object(0,iVar2,1);
-    FUN_00048110();
-    refresh_player_equipment_effects();
-  }
-  return;
-}
-
-
-
-void FUN_0003a57c()
-
-{
-  undefined2 uVar1;
-  char *iVar2;  /* was `int` -- truncated spawn_new_object's real pointer */
-  uint uVar3;
-
-  iVar2 = (char *)spawn_new_object(0x40,1);
-  *(undefined1 *)(iVar2 + 0x1a) = 0x19;
-  uVar1 = *(undefined2 *)(iVar2 + 0xd);
-  *(char *)(iVar2 + 0xd) = (char)uVar1;
-  *(byte *)(iVar2 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0xc0;
-  uVar3 = CONCAT11(*(undefined1 *)(iVar2 + 0xc),*(undefined1 *)(iVar2 + 0xb)) & 0xfffa;
-  *(byte *)(iVar2 + 0xb) = (byte)uVar3 | 10;
-  *(char *)(iVar2 + 0xc) = (char)(uVar3 >> 8);
-  interact_talk_npc();
-  free_object_slot(iVar2);
-  return;
-}
-
-
-
-void FUN_0003a5ec()
-
-{
-  scheduler_tick(4);
-  display_book_or_scroll_page(3);
-  return;
-}
 
 
 
