@@ -893,7 +893,7 @@ int param_4;
     goto LAB_00073c90;
   case 1:
     if (((param_2 & 0x3f) == 3) || ((param_2 & 0x3f) == 5)) {
-      FUN_0003dba0(param_3);
+      trigger_player_jump_if_grounded(param_3);
     }
     goto LAB_00073c90;
   case 2:

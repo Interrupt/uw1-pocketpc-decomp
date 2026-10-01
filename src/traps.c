@@ -506,7 +506,7 @@ int param_1;
 // emit_player_noise_alert, handle_level4_maze_puzzle_button, try_combine_shrine_markers, trigger_scripted_npc_conversation,
 // advance_scheduler_and_show_page3) whose own exact quest semantics
 // mostly aren't pinned down beyond what each one's own comment
-// confirms. FUN_0003dc78 (one remaining case) is still unnamed. A
+// confirms. apply_quest_vertical_effect (one remaining case) is still unnamed. A
 // few codes are more legible: code 2 calls
 // restore_view_from_object_record; code 0x32 sweeps every class-0xd8
 // object via for_each_object_of_type(reset_object_ui_state_callback);
@@ -559,7 +559,7 @@ undefined4 param_3;
   else if (0x3b < uVar1) {
     if (uVar1 < 0x3f) {
       if (DAT_0024cff4 == g_player_object) {
-        FUN_0003dc78((*(ushort *)(param_1 + 4) & 0x3f) - 0x3b,*(ushort *)(param_1 + 6) & 0x3f);
+        apply_quest_vertical_effect((*(ushort *)(param_1 + 4) & 0x3f) - 0x3b,*(ushort *)(param_1 + 6) & 0x3f);
       }
     }
     else if (uVar1 == 0x3f) {

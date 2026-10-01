@@ -756,7 +756,7 @@ LAB_000669a8:
     load_shading_level_config(6);
   }
   update_screen_flicker_effect((*(byte *)(DAT_00086df8 + 0x61) & 0xc) != 0);
-  FUN_0003dbd8();
+  force_locomotion_state_refresh();
   FUN_0003dca4(0xffffffff);
   return;
 }
@@ -3786,5 +3786,117 @@ LAB_0003c780:
   }
   uVar2 = Ordinal_1053();
   set_hud_status_value(2,uVar2 & 0xf);
+  return;
+}
+
+
+// was FUN_0003dba0 -- dispatch_special_action's case-1 handler for
+// sub-codes 3/5 (uw.c, src/object_actions.c:896). If the target is the
+// player and the player isn't already airborne (DAT_002048a8 bit 0x10,
+// the locomotion-state "jumping/falling" bit), launches them upward
+// (g_vertical_velocity = 0x8d) and resets fall acceleration to 0 --
+// reads as "trigger a jump if grounded" (e.g. a jump-pad tile effect).
+void trigger_player_jump_if_grounded(param_1)
+int param_1;
+
+{
+  if (param_1 == g_player_object) {
+    if ((DAT_002048a8 & 0x10) == 0) {
+      g_vertical_velocity = 0x8d;
+    }
+    g_fall_accel = 0;
+  }
+  return;
+}
+
+
+
+// was FUN_0003dbd8 -- called once per player-update tick
+// (src/player.c:759, right after the per-frame ambient-light/flicker
+// update). Forces set_locomotion_state to recompute off the current
+// DAT_002048a8 state (param_2=1, the "force" flag) and sets
+// DAT_000858a0, a movement-dirty flag checked alongside g_fall_accel
+// in src/movement.c's redraw/update-pending conditions.
+void force_locomotion_state_refresh()
+
+{
+  set_locomotion_state(DAT_002048a8,1);
+  DAT_000858a0 = 1;
+  return;
+}
+
+
+
+// was FUN_0003dc04 -- one of apply_quest_vertical_effect's two
+// sub-effects (bit 2). Computes a vertical launch velocity from
+// param_1 (rounds toward zero before the >>2, then scales), forces
+// fall acceleration into its "in flight" state (-2, unless already in
+// the steeper -4 state), and halves the horizontal momentum decay
+// counters DAT_00204886/DAT_00204888 (also rounding toward zero).
+void apply_vertical_launch_impulse(param_1)
+short param_1;
+
+{
+  int iVar1;
+
+  if (g_fall_accel != -4) {
+    g_fall_accel = -2;
+  }
+  iVar1 = param_1 * 0x2f;
+  if (iVar1 < 0) {
+    iVar1 = iVar1 + 3;
+  }
+  g_vertical_velocity = (short)(iVar1 >> 2);
+  iVar1 = (int)DAT_00204886;
+  if (iVar1 < 0) {
+    iVar1 = iVar1 + 1;
+  }
+  DAT_00204886 = (short)(iVar1 >> 1);
+  iVar1 = (int)DAT_00204888;
+  if (iVar1 < 0) {
+    iVar1 = iVar1 + 1;
+  }
+  DAT_00204888 = (short)(iVar1 >> 1);
+  return;
+}
+
+
+
+// was FUN_0003dc6c -- apply_quest_vertical_effect's other sub-effect
+// (bit 1). Always the same fixed-duration animation-timer trigger
+// (set_movement_animation_timer(0x40,0x1e)); reads as a scripted
+// "stumble" animation cue. Its only call site passes an argument this
+// function's own declaration doesn't accept (K&R silently discards
+// it) -- unlike report_categorized_fatal_error's dropped PARAMETER
+// earlier in this pass, there's only ONE call site here and the
+// animation is always the same fixed timing, so this is left as a
+// no-arg function rather than guessed into taking one.
+void trigger_quest_stumble_animation()
+
+{
+  set_movement_animation_timer(0x40,0x1e);
+  return;
+}
+
+
+
+// was FUN_0003dc78 -- dispatch_quest_event_code's handler for quest
+// codes 0x3c-0x3e (src/traps.c:562, gated on the trap/link record's
+// trigger context being the player), called as
+// apply_quest_vertical_effect(code-0x3b, linkval&0x3f) so param_1 in {1,2,3}. Bit 0
+// (codes 0x3c,0x3e) triggers the stumble animation; bit 1 (codes
+// 0x3d,0x3e) applies the vertical launch impulse sized by param_2.
+// Reads as a scripted "quest event moves/jolts the player" dispatcher.
+void apply_quest_vertical_effect(param_1,param_2)
+ushort param_1;
+undefined4 param_2;
+
+{
+  if ((param_1 & 1) != 0) {
+    trigger_quest_stumble_animation(param_2);
+  }
+  if ((param_1 & 2) != 0) {
+    apply_vertical_launch_impulse(param_2);
+  }
   return;
 }
