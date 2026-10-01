@@ -226,9 +226,9 @@ void weapon_swing_draw_tick()
     fprintf(stderr, "[wswing] SKIPPED: DAT_0023c130=%d DAT_000870e4=%d DAT_000870dc=%d g_weapon_overlay_enabled=%d\n",
             (int)DAT_0023c130, (int)DAT_000870e4, (int)DAT_000870dc, (int)g_weapon_overlay_enabled);
   }
-  FUN_00040bc0(0x107f,0x3e,3);
-  FUN_00040bc0(0x1080,0,0xd);
-  FUN_00040bc0(0x1081,0xab,0xd);
+  draw_hud_icon_sprite(0x107f,0x3e,3);
+  draw_hud_icon_sprite(0x1080,0,0xd);
+  draw_hud_icon_sprite(0x1081,0xab,0xd);
   g_blit_transparent_mode = 0;
   return;
 }
@@ -750,5 +750,59 @@ LAB_00027754:
       DAT_00100614 = 0;
     }
   }
+  return;
+}
+
+
+// was FUN_00040bc0 -- resolves a sprite id to its .GR frame, decodes
+// it, and blits it at (param_2,param_3). Only known caller is
+// src/weapon_swing.c's weapon-swing HUD icon draw (ids
+// 0x107f/0x1080/0x1081, drawn back-to-back every frame), but the body
+// is a generic "draw this icon sprite" helper, not swing-specific.
+void draw_hud_icon_sprite(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+
+{
+  char cVar1;
+  char cVar2;
+  char *pcVar3;
+  undefined4 unaff_r4;
+  undefined4 unaff_r5;
+  uint resolved;
+
+  /* Dropped arguments (2 calls) -- same idiom as the identical
+     `resolved = resolve_sprite_id_to_frame(param_1); lookup_grtile_by_id(resolved);` pair
+     used correctly elsewhere in this file (see e.g. the call site
+     right above this function). Both calls here ran bare, so the
+     resolved icon graphic came from whatever register happened to be
+     left over from the PREVIOUS call instead of this call's own
+     param_1 -- three icon draws happen back-to-back every single
+     frame from weapon_swing_draw_tick (ids 0x107f/0x1080/0x1081), so
+     with this bug each one actually drew whatever the icon 2 calls
+     earlier resolved to, and the leftover register value alternated
+     between two stale states frame to frame. Confirmed live: this
+     produced a real 2-frame-period flicker in exactly that HUD icon
+     area during a held wind-up. */
+  resolved = resolve_sprite_id_to_frame(param_1);
+  pcVar3 = (char *)lookup_grtile_by_id(resolved);
+  cVar1 = pcVar3[1];
+  cVar2 = pcVar3[2];
+  if (*pcVar3 == '\x04') {
+    pcVar3 = pcVar3 + 5;
+  }
+  else {
+    /* HACK: dropped 3rd argument (the .GR entry's own compression-mode
+       byte, *pcVar3) -- the same bug already found and fixed twice
+       elsewhere in this file for this identical decompress_gr_bitmap
+       call shape (decode_gr_entry_bitmap and the call site ~130 lines
+       above this one; see object-rendering-findings.txt's "MILESTONE:
+       objects render" entry). Without it, decompress_gr_bitmap took
+       its param_3==0 path and returned NULL for this icon's real
+       .GR entries. */
+    pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
+  }
+  bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1,unaff_r4,unaff_r5);
   return;
 }

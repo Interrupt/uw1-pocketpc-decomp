@@ -2129,7 +2129,7 @@ void run_game_startup_sequence()
   debug_print_init();
   store_window_extra_data_ptr(DAT_0023c540);
   cache_ambient_sound_handle();
-  iVar3 = FUN_00040cd4();
+  iVar3 = select_default_hud_font();
   if (iVar3 == 0) {
     report_fatal_error_and_exit(0x3003);
   }
@@ -2595,4 +2595,19 @@ LAB_0003f584:
     wait_for_click_release(1);
   }
   return;
+}
+
+
+// was FUN_00040cd4 -- called once from run_game_startup_sequence (see
+// src/game.c:2132) to load/select the game's default HUD font
+// (FONT5X6P.SYS).
+undefined4 select_default_hud_font()
+
+{
+  /* Ghidra dropped select_active_font's return value here and always returned 0
+     (failure) regardless -- the font file loads successfully, but the
+     caller (run_game_startup_sequence) treats a 0 return as fatal and calls the
+     "Underworld can no longer run" handler unconditionally. Propagate the
+     real result. */
+  return select_active_font(s_FONT5X6P_SYS_00084e9c);
 }

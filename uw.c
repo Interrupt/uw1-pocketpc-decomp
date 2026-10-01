@@ -10704,53 +10704,6 @@ int param_1;
 
 
 
-void FUN_00040bc0(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-
-{
-  char cVar1;
-  char cVar2;
-  char *pcVar3;
-  undefined4 unaff_r4;
-  undefined4 unaff_r5;
-  uint resolved;
-
-  /* Dropped arguments (2 calls) -- same idiom as the identical
-     `resolved = resolve_sprite_id_to_frame(param_1); lookup_grtile_by_id(resolved);` pair
-     used correctly elsewhere in this file (see e.g. the call site
-     right above this function). Both calls here ran bare, so the
-     resolved icon graphic came from whatever register happened to be
-     left over from the PREVIOUS call instead of this call's own
-     param_1 -- three icon draws happen back-to-back every single
-     frame from weapon_swing_draw_tick (ids 0x107f/0x1080/0x1081), so
-     with this bug each one actually drew whatever the icon 2 calls
-     earlier resolved to, and the leftover register value alternated
-     between two stale states frame to frame. Confirmed live: this
-     produced a real 2-frame-period flicker in exactly that HUD icon
-     area during a held wind-up. */
-  resolved = resolve_sprite_id_to_frame(param_1);
-  pcVar3 = (char *)lookup_grtile_by_id(resolved);
-  cVar1 = pcVar3[1];
-  cVar2 = pcVar3[2];
-  if (*pcVar3 == '\x04') {
-    pcVar3 = pcVar3 + 5;
-  }
-  else {
-    /* HACK: dropped 3rd argument (the .GR entry's own compression-mode
-       byte, *pcVar3) -- the same bug already found and fixed twice
-       elsewhere in this file for this identical decompress_gr_bitmap
-       call shape (decode_gr_entry_bitmap and the call site ~130 lines
-       above this one; see object-rendering-findings.txt's "MILESTONE:
-       objects render" entry). Without it, decompress_gr_bitmap took
-       its param_3==0 path and returned NULL for this icon's real
-       .GR entries. */
-    pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
-  }
-  bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1,unaff_r4,unaff_r5);
-  return;
-}
 
 
 
@@ -10787,16 +10740,6 @@ short param_1;
 
 
 
-undefined4 FUN_00040cd4()
-
-{
-  /* Ghidra dropped select_active_font's return value here and always returned 0
-     (failure) regardless -- the font file loads successfully, but the
-     caller (run_game_startup_sequence) treats a 0 return as fatal and calls the
-     "Underworld can no longer run" handler unconditionally. Propagate the
-     real result. */
-  return select_active_font(s_FONT5X6P_SYS_00084e9c);
-}
 
 
 
@@ -11339,7 +11282,7 @@ char *param_1;
 
 {
   /* Ghidra dropped load_gr_resource_entries's result and always returned failure
-     (see FUN_00040cd4 for the same pattern); propagate the real result. */
+     (see select_default_hud_font for the same pattern); propagate the real result. */
   undefined4 uVar1;
   short _dbg_before;
   _dbg_before = DAT_00202744;

@@ -345,7 +345,7 @@ short param_6;
      r0, so the real ARM code passes this function's own param_1
      through to resolve_sprite_id_to_frame via register reuse -- same idiom already
      fixed for the identical pair of calls in the sibling function
-     FUN_00040bc0, just missed here). Without it, sVar1 came from
+     draw_hud_icon_sprite, just missed here). Without it, sVar1 came from
      whatever register was left over from an unrelated recent call,
      resolving to a stale/wrong slot in the absolute-frame table
      (g_grtile_registry) -- e.g. showing whatever sprite (a door, etc.) had
