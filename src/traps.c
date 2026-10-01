@@ -1563,7 +1563,7 @@ void trigger_quest_milestone_cleanup_event()
 // one of two tables depending on a 2-bit sub-code in its low word:
 // sub-code 0 indexes DAT_00202807, sub-codes 2/3 index DAT_002026d1.
 // Returns -1 for anything outside class 0 or sub-code 1. Only known
-// caller (FUN_0003a99c, a skill-check resolver) treats the result as
+// caller (attempt_pick_lock, a skill-check resolver) treats the result as
 // a difficulty fed into roll_skill_check -- plausibly a lock/trap
 // difficulty rating, matching this class-0 object range's established
 // role elsewhere as door/lock-type records.
@@ -1585,4 +1585,95 @@ ushort * param_1;
     }
   }
   return -1;
+}
+
+
+// WARNING: Removing unreachable block (ram,0x0003a9ec)
+
+// was FUN_0003a99c -- the lockpicking skill-check resolver: looks up
+// the lock's difficulty (resolve_lock_difficulty_rating), writes an
+// estimated difficulty display value to *param_3, then rolls a skill
+// check (roll_skill_check) against the player's lockpicking skill
+// (param_2). Based on the outcome (critical failure, or success
+// tiers 0/1/2), adjusts the lock's own condition/wear byte
+// (param_1+4) and returns a status code: 0 = not pickable at all,
+// 1 = fully picked (success), 3 = lock jammed/no further progress
+// possible, 0xfffffffe = the attempt broke something (pick or lock),
+// 0xffffffff = a lesser setback. Matches UW1's gradual lockpicking
+// mechanic (repeated attempts wear the lock down or risk breaking the
+// pick).
+uint attempt_pick_lock(param_1,param_2,param_3)
+int param_1;
+int param_2;
+undefined2 * param_3;
+
+{
+  undefined1 uVar1;
+  byte bVar2;
+  short sVar3;
+  ushort uVar4;
+  int iVar5;
+  uint uVar6;
+  undefined2 uVar7;
+  ushort uVar9;
+  short local_20;
+  int iVar8;
+  
+  iVar5 = resolve_lock_difficulty_rating(param_1);
+  if ((short)iVar5 == -1) {
+    return 0;
+  }
+  uVar9 = *(byte *)(param_1 + 4) & 0x3f;
+  iVar8 = (iVar5 * 3 - (int)(short)((int)(short)uVar9 >> 1)) - param_2;
+  uVar7 = (undefined2)iVar8;
+  if (iVar8 * 0x10000 >> 0x10 < 0xf) {
+    uVar7 = 0xf;
+  }
+  *param_3 = uVar7;
+  sVar3 = roll_skill_check(param_2,iVar5);
+  if (sVar3 == -1) {
+    uVar6 = Ordinal_1053();
+    if ((int)((*(byte *)(param_1 + 4) & 0x3f) + (int)(short)param_2) < (int)(uVar6 & 0x3f)) {
+      return 0xfffffffe;
+    }
+    uVar4 = Ordinal_1053();
+    local_20 = -4 - (uVar4 & 7);
+  }
+  else {
+    if (sVar3 == 0) {
+      return 1;
+    }
+    if (sVar3 == 1) {
+      sVar3 = Ordinal_2005(5,(int)(short)param_2);
+      local_20 = sVar3 + 3;
+    }
+    else if (sVar3 == 2) {
+      local_20 = 0x40;
+    }
+  }
+  iVar5 = (int)local_20;
+  uVar1 = *(undefined1 *)(param_1 + 5);
+  iVar8 = iVar5 + (short)uVar9;
+  if (0x3f < iVar8) {
+    *(byte *)(param_1 + 4) = *(byte *)(param_1 + 4) | 0x3f;
+    *(undefined1 *)(param_1 + 5) = uVar1;
+    return 3;
+  }
+  if (iVar8 < 1) {
+    uVar6 = CONCAT11(uVar1,*(undefined1 *)(param_1 + 4)) & 0xffc0;
+    *(char *)(param_1 + 4) = (char)uVar6;
+    *(char *)(param_1 + 5) = (char)(uVar6 >> 8);
+    return 0xfffffffe;
+  }
+  bVar2 = *(byte *)(param_1 + 4);
+  uVar6 = (uint)CONCAT11(uVar1,bVar2);
+  *(byte *)(param_1 + 4) = (bVar2 ^ (char)local_20 + (char)uVar9) & 0x3f ^ bVar2;
+  if (0 < iVar5) {
+    uVar6 = 2;
+  }
+  *(undefined1 *)(param_1 + 5) = uVar1;
+  if (iVar5 < 1) {
+    return 0xffffffff;
+  }
+  return uVar6;
 }

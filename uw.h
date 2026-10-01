@@ -3004,7 +3004,7 @@ undefined4 unlink_object_from_tile_callback();
 void trigger_quest_milestone_cleanup_event();
 undefined4 resolve_unique_npc_special_behavior();
 int resolve_lock_difficulty_rating();
-uint FUN_0003a99c();
+uint attempt_pick_lock();
 void FUN_0003ab90();
 undefined4 FUN_0003ae00();
 void FUN_0003aea8();
