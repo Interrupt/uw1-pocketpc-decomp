@@ -1550,7 +1550,7 @@ undefined4 param_2;
 // complete_use_item_special_quest_event (if param_3==0, using
 // param_2 as the item and skipping the target-click prompt) or arms
 // it as a deferred-target-click completion (otherwise); 0x114 calls
-// FUN_0003a398 (not yet named) when param_3!=0; 0x115 advances a
+// trigger_exploding_book_trap when param_3!=0; 0x115 advances a
 // 3-state player counter (DAT_00086df8+0x61, wrapping) and triggers
 // an effect via display_book_or_scroll_page, then rewrites the
 // item's own low byte to 0xd5 and clears one bit of its high byte
@@ -1583,7 +1583,7 @@ int param_3;
   }
   else if (uVar3 == 0x114) {
     if (param_3 != 0) {
-      FUN_0003a398();
+      trigger_exploding_book_trap();
     }
   }
   else if (uVar3 == 0x115) {

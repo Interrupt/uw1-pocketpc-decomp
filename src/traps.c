@@ -502,8 +502,8 @@ int param_1;
 // (called there as `FUN_0007e12c(param_1,param_2,param_3)`, the trap/
 // link record and its tile x,y). Switches on the record's quality
 // field (bits 0x3f at +4) across ~20 distinct codes, mostly
-// delegating to still-unnamed helpers (FUN_0003a4a0, FUN_0003a2b0,
-// FUN_0003a29c, handle_level4_maze_puzzle_button, try_combine_shrine_markers, FUN_0003a57c,
+// delegating to still-unnamed helpers (FUN_0003a4a0, apply_quest_event_numeric_effect,
+// emit_player_noise_alert, handle_level4_maze_puzzle_button, try_combine_shrine_markers, FUN_0003a57c,
 // FUN_0003a5ec, FUN_0003dc78) whose own purpose isn't pinned down
 // yet. A few codes are more legible: code 2 calls
 // restore_view_from_object_record; code 0x32 sweeps every class-0xd8
@@ -532,10 +532,10 @@ undefined4 param_3;
     }
     else if (2 < uVar1) {
       if (uVar1 < 5) {
-        FUN_0003a2b0((*(byte *)(DAT_0024cff0 + 1) & 0x1e) >> 1,param_1,param_2,param_3);
+        apply_quest_event_numeric_effect((*(byte *)(DAT_0024cff0 + 1) & 0x1e) >> 1,param_1,param_2,param_3);
       }
       else if (uVar1 == 5) {
-        FUN_0003a29c(*(ushort *)(param_1 + 6) & 0x3f);
+        emit_player_noise_alert(*(ushort *)(param_1 + 6) & 0x3f);
       }
       else if (uVar1 == 0x18) {
         handle_level4_maze_puzzle_button(*(ushort *)(param_1 + 6) & 0x3f);
@@ -1329,6 +1329,92 @@ int param_3;
       discard_misplaced_object((char *)local_34[iVar5] + 2,local_44[iVar5],1);
       iVar5 = (iVar5 + 1) * 0x1000000 >> 0x18;
     } while (iVar5 < 4);
+  }
+  return;
+}
+
+
+// was FUN_0003a29c -- confirmed as dispatch_quest_event_code's case 5
+// handler: emits a noise alert of type param_1 centered on the player.
+void emit_player_noise_alert(param_1)
+undefined1 param_1;
+
+{
+  emit_noise_alert(g_player_object,param_1);
+  return;
+}
+
+
+
+// was FUN_0003a2b0 -- confirmed as dispatch_quest_event_code's case
+// 3/4 handler: computes a value from param_2's (the quest/trap
+// record) own position byte plus param_1*8 (a context-object type
+// nibble from DAT_0024cff0). If the record's own quality field is 3,
+// applies a scaled terrain-height effect via
+// apply_area_terrain_effect at tile (param_3,param_4) when the
+// computed value is small enough; otherwise resolves a linked object
+// (FUN_000535fc, not yet named) and toggles one of its low 7 bits.
+// Exact quest semantics not pinned down.
+void apply_quest_event_numeric_effect(param_1,param_2,param_3,param_4)
+int param_1;
+int param_2;
+undefined4 param_3;
+undefined4 param_4;
+
+{
+  undefined2 uVar1;
+  byte bVar2;
+  int iVar3;
+  int iVar4;
+  
+  iVar4 = (*(byte *)(param_2 + 2) & 0x7f) + param_1 * 8;
+  if ((*(byte *)(param_2 + 4) & 0x3f) == 3) {
+    if (iVar4 * 0x10000 >> 0x10 < 0x68) {
+      apply_area_terrain_effect(param_3,param_4,0xff,0xff,(short)(iVar4 * 0x10000 >> 0x13),0xff,0,0,0);
+    }
+  }
+  else {
+    iVar3 = FUN_000535fc((*(ushort *)(param_2 + 6) & 0x7fc0) >> 6);
+    uVar1 = *(undefined2 *)(iVar3 + 2);
+    bVar2 = (byte)uVar1;
+    *(byte *)(iVar3 + 2) = (bVar2 ^ (byte)iVar4) & 0x7f ^ bVar2;
+    *(char *)(iVar3 + 3) = (char)((ushort)uVar1 >> 8);
+  }
+  return;
+}
+
+
+
+// was FUN_0003a398 -- the "booby-trapped book" item-use effect:
+// confirmed by its own message ("The book explodes in your face!").
+// Finds a specific marker object on the player's own tile; if found,
+// prints the message, applies a poison/damage-style effect to the
+// player's status fields (DAT_00086df8+0x65..0x68), reduces the
+// book's own item quality, decrements its stack count, and discards
+// it. Called from item_use.c's item-id-0x114 case when triggered with
+// a target.
+void trigger_exploding_book_trap()
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  ushort *local_10;   /* was int -- tilemap_lookup()+2 (64-bit ptr) */
+
+  local_10 = (ushort *)((char *)tilemap_lookup(*(ushort *)((char *)g_player_object + 0x16) >> 10,
+                          (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) + 2);
+  iVar2 = FUN_000537d0(&local_10,1,4,1,4);
+  if (iVar2 != 0) {
+    message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
+    uVar1 = *(undefined4 *)(DAT_00086df8 + 0x65);
+    *(char *)(DAT_00086df8 + 0x65) = (char)uVar1;
+    *(byte *)(DAT_00086df8 + 0x66) = (byte)((uint)uVar1 >> 8) | 1;
+    *(char *)(DAT_00086df8 + 0x67) = (char)((uint)uVar1 >> 0x10);
+    *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
+    reduce_item_quality_on_use(g_player_object,3);
+    decrement_object_count(iVar2);
+    discard_misplaced_object(0,iVar2,1);
+    FUN_00048110();
+    refresh_player_equipment_effects();
   }
   return;
 }
