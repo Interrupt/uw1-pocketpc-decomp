@@ -1072,7 +1072,7 @@ undefined4 param_2;
     uVar6 = Ordinal_1053();
     DAT_0010061c = (short)((int)((uVar6 & 0x1f) + 0x30) >> 5) * DAT_0010061c;
     if ((short)param_2 == 1) {
-      FUN_000411e0(0xb8);
+      weapon_overlay_flash_once(0xb8);
       uVar8 = DAT_00100624 + 1U & 3;
       if (uVar8 == 3) {
         uVar4 = Ordinal_1053();

@@ -2648,7 +2648,7 @@ LAB_0007158c:
     full_dungeon_redraw();
     set_pending_music_track(0xd);
     update_ingame_music_track();
-    FUN_000411b8(5);
+    weapon_overlay_flash_hold(5);
     if (-1 < param_1) {
       print_scroll_message_by_id(0x10);
     }
@@ -2773,7 +2773,7 @@ LAB_0007158c:
       full_dungeon_redraw();
       pick_random_pending_music_track();
       if (bVar2) {
-        FUN_000411cc(5);
+        weapon_overlay_flash_restore(5);
       }
       else {
         weapon_overlay_and_full_redraw();
@@ -2885,7 +2885,7 @@ void handle_game_victory_sequence()
       }
       print_scroll_message_by_id(0x117);
       spin_view_full_rotation(0xffffffff);
-      FUN_000411b8(5);
+      weapon_overlay_flash_hold(5);
       if (puVar5 != (undefined2 *)0x0) {
         object_list_unlink(local_11c,puVar5);
         free_object_slot(puVar5);
@@ -2981,7 +2981,7 @@ void handle_starvation_penalty()
   play_music_track(10,1);
   grant_experience_points((int)((uint)(*(uint3 *)(DAT_00086df8 + 0x4e) >> 3) * -0x10000) >> 0x10);
   full_dungeon_redraw();
-  FUN_000411b8(5);
+  weapon_overlay_flash_hold(5);
   cancel_weapon_swing();
   if (g_selected_object != 0) {
     if ((g_cursor_holding_state == 1) || (g_cursor_holding_state == 0)) {
@@ -3727,7 +3727,7 @@ short param_1;
 // was FUN_0003c6ac -- confirmed by its only call site as a level-9
 // (the final/Abyss level) exclusive random environmental hazard: only
 // ever rolled 1-in-32 per tick while on that level. Plays effect
-// FUN_000411e0(0xb5), then randomly reduces the player's HP (byte
+// weapon_overlay_flash_once(0xb5), then randomly reduces the player's HP (byte
 // g_player_object+8) by a smaller amount at higher HP tiers (0-5 at
 // full-ish health, down to a chance of just 1 near death) so it can't
 // outright kill, occasionally triggers a stumble animation
@@ -3748,7 +3748,7 @@ void apply_level9_random_hazard_tick()
   uint extraout_r1_03;
   byte bVar6;
 
-  FUN_000411e0(0xb5);
+  weapon_overlay_flash_once(0xb5);
   bVar6 = *(byte *)((char *)g_player_object + 8);
   uVar1 = (uint)(short)(ushort)bVar6;
   if (uVar1 < 0x65) {

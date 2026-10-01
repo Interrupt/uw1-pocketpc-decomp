@@ -2677,7 +2677,7 @@ byte DAT_00085730;
 // extend_visibility_ray_row as the automap-reveal flood's real
 // max-ring-passes limit (was a flat hardcoded 16). Also still passed
 // (dropped-argument bug, unrelated, not fixed here) to
-// FUN_000411b8/FUN_000411cc, and to the otherwise-dead
+// weapon_overlay_flash_hold/weapon_overlay_flash_restore, and to the otherwise-dead
 // build_visibility_light_grid.
 short g_visibility_max_ring_passes;
 code *DAT_00201c9c;
@@ -9867,7 +9867,7 @@ undefined4 dungeon_view_anim_tick()
   if (0 < DAT_00201c90) {
     if ((DAT_00085730 & 1) != 0) {
       full_dungeon_redraw();
-      FUN_000411b8((int)g_visibility_max_ring_passes);
+      weapon_overlay_flash_hold((int)g_visibility_max_ring_passes);
     }
     if (DAT_00201b68 != DAT_00201c7c) {
       iVar1 = transition_to_level();
@@ -9892,7 +9892,7 @@ undefined4 dungeon_view_anim_tick()
     set_player_tile_position((int)local_20,(int)local_1e,1);
     if ((DAT_00085730 & 2) != 0) {
       full_dungeon_redraw();
-      FUN_000411cc((int)g_visibility_max_ring_passes);
+      weapon_overlay_flash_restore((int)g_visibility_max_ring_passes);
     }
     DAT_00201c90 = 0;
     if ((DAT_00085730 & 2) != 0) {
@@ -10824,81 +10824,9 @@ undefined4 param_1;
 
 
 
-void FUN_000411b8()
-
-{
-  int iVar1;
-  
-  FUN_00057118();
-  g_weapon_overlay_enabled = 0;
-  iVar1 = 0;
-  do {
-    debug_noop_frame_hook(iVar1);
-    weapon_overlay_and_full_redraw();
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar1 < 0xd);
-  thunk_FUN_0003c310(0xf1);
-  weapon_overlay_and_full_redraw();
-  g_weapon_overlay_enabled = 1;
-  cursor_show_idle_tick();
-  return;
-}
 
 
 
-void FUN_000411cc()
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  
-  FUN_00057118(0xc,debug_noop_frame_hook,0xf1);
-  uVar1 = Ordinal_1041(0x4bec);
-  Ordinal_1044(uVar1,DAT_00248410,0x4bec);
-  g_weapon_overlay_enabled = 0;
-  weapon_overlay_and_full_redraw();
-  for (iVar2 = 0xc; 0 < iVar2; iVar2 = (iVar2 + -1) * 0x10000 >> 0x10) {
-    weapon_overlay_and_full_redraw();
-    Ordinal_1044(DAT_00248410,uVar1,0x4bec);
-  }
-  weapon_overlay_and_full_redraw();
-  g_weapon_overlay_enabled = 1;
-  cursor_show_idle_tick();
-  return;
-}
-
-
-
-void FUN_000411e0()
-
-{
-  thunk_FUN_0003c310();
-  FUN_00057118();
-  g_weapon_overlay_enabled = 0;
-  weapon_overlay_and_full_redraw();
-  g_weapon_overlay_enabled = 1;
-  cursor_show_idle_tick();
-  return;
-}
-
-
-
-void FUN_00041210()
-
-{
-  full_dungeon_redraw();
-  set_view_subject_by_command(0xffffffff);
-  FUN_000411b8(5);
-  full_dungeon_redraw();
-  FUN_000411cc(5);
-  wait_for_click_release(1);
-  full_dungeon_redraw();
-  FUN_000411b8(5);
-  set_view_subject_by_command(1);
-  full_dungeon_redraw();
-  FUN_000411cc(5);
-  return;
-}
 
 
 
@@ -20316,7 +20244,7 @@ void FUN_000541d0()
   if (0x78 < *(byte *)(DAT_00086df8 + 0xb9)) {
     iVar3 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x34),uVar1);
     if ((-(int)iVar3 + 2) * 0x10000 >> 0x10 != 0) {
-      FUN_000411e0(0xc6);
+      weapon_overlay_flash_once(0xc6);
       FUN_00049924(2);
       uVar1 = roll_dice_sum(2,-(int)iVar3 + 4);
       apply_typed_damage_to_object(g_player_object,0,0,0,uVar1,0);

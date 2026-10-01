@@ -994,7 +994,7 @@ char param_2;
       }
       *(char *)(param_1 + 4) = cVar2;
       if (param_1 == g_player_object) {
-        FUN_000411e0(0xa8);
+        weapon_overlay_flash_once(0xa8);
       }
     }
   }

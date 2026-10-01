@@ -484,7 +484,7 @@ bool load_weapon_combat_maneuver_data()
 
 // was FUN_00012948 -- always returns immediately and does nothing
 // else; confirmed used two ways at its real call sites (uw.c): once
-// inside a 13-iteration animation loop (FUN_000411b8) alongside
+// inside a 13-iteration animation loop (weapon_overlay_flash_hold) alongside
 // weapon_overlay_and_full_redraw, and once passed BY ADDRESS as a
 // callback argument to FUN_00057118 (the same helper
 // wait_for_click_to_continue calls). Matches the same "dead/stripped
@@ -804,5 +804,81 @@ undefined4 param_3;
     pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
   }
   bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1,unaff_r4,unaff_r5);
+  return;
+}
+
+
+// was FUN_000411b8 -- generic "flash and hold" weapon-overlay
+// transition: hides the cursor, disables the weapon overlay, redraws
+// ~13 blank frames with it hidden (the no-op thunk_FUN_0003c310 call
+// is dead weight -- same empty-body stub as show_error_dialog_stub),
+// redraws once more, then re-enables the overlay and shows the idle
+// cursor. Called with various (ignored, the function takes no
+// parameters) codes across combat/player/object-action damage and
+// hazard events, and paired with weapon_overlay_flash_restore in
+// play_view_restore_transition below.
+void weapon_overlay_flash_hold()
+
+{
+  int iVar1;
+
+  FUN_00057118();
+  g_weapon_overlay_enabled = 0;
+  iVar1 = 0;
+  do {
+    debug_noop_frame_hook(iVar1);
+    weapon_overlay_and_full_redraw();
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 0xd);
+  thunk_FUN_0003c310(0xf1);
+  weapon_overlay_and_full_redraw();
+  g_weapon_overlay_enabled = 1;
+  cursor_show_idle_tick();
+  return;
+}
+
+
+
+// was FUN_000411cc -- sibling to weapon_overlay_flash_hold: instead of
+// blank redraws, snapshots the live screen region (DAT_00248410) and
+// repeatedly restores it over the overlay-disabled redraw loop,
+// holding a frozen frame while the overlay stays hidden.
+void weapon_overlay_flash_restore()
+
+{
+  undefined4 uVar1;
+  int iVar2;
+
+  FUN_00057118(0xc,debug_noop_frame_hook,0xf1);
+  uVar1 = Ordinal_1041(0x4bec);
+  Ordinal_1044(uVar1,DAT_00248410,0x4bec);
+  g_weapon_overlay_enabled = 0;
+  weapon_overlay_and_full_redraw();
+  for (iVar2 = 0xc; 0 < iVar2; iVar2 = (iVar2 + -1) * 0x10000 >> 0x10) {
+    weapon_overlay_and_full_redraw();
+    Ordinal_1044(DAT_00248410,uVar1,0x4bec);
+  }
+  weapon_overlay_and_full_redraw();
+  g_weapon_overlay_enabled = 1;
+  cursor_show_idle_tick();
+  return;
+}
+
+
+
+// was FUN_000411e0 -- the simplest of the three: a single
+// disable-redraw-reenable cycle, used as a quick screen flash cue for
+// damage/hazard events (src/combat.c, src/player.c, src/object_actions.c
+// call it with various scroll-message-like codes, all ignored since it
+// takes no parameters).
+void weapon_overlay_flash_once()
+
+{
+  thunk_FUN_0003c310();
+  FUN_00057118();
+  g_weapon_overlay_enabled = 0;
+  weapon_overlay_and_full_redraw();
+  g_weapon_overlay_enabled = 1;
+  cursor_show_idle_tick();
   return;
 }

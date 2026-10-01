@@ -994,7 +994,7 @@ void enter_free_camera_mode()
 // state (position/facing) from an object record (param_1) with
 // explicit x/y overrides (param_2/param_3), resets a couple of
 // tracked deltas, forces a camera resync, briefly clears then
-// restores an unrelated toggle (DAT_00086b20) around FUN_00041210,
+// restores an unrelated toggle (DAT_00086b20) around play_view_restore_transition,
 // and refreshes equipment effects. Purpose consistent with restoring
 // a saved/teleported viewpoint; exact caller context not traced.
 void restore_view_from_object_record(param_1,param_2,param_3)
@@ -1016,7 +1016,7 @@ short param_3;
   if (DAT_00086b20 != 0) {
     DAT_00086b20 = 0;
   }
-  FUN_00041210();
+  play_view_restore_transition();
   if (iVar1 != 0) {
     DAT_00086b20 = 1;
   }
@@ -2610,4 +2610,27 @@ undefined4 select_default_hud_font()
      "Underworld can no longer run" handler unconditionally. Propagate the
      real result. */
   return select_active_font(s_FONT5X6P_SYS_00084e9c);
+}
+
+
+// was FUN_00041210 -- called from restore_view_from_object_record
+// (teleport/saved-viewpoint restore): switches to free-camera view,
+// redraws and flashes the weapon overlay out then back in, waits for
+// a click, flashes it out and in again, then restores the normal
+// player view subject. Reads as the view-restore transition effect.
+void play_view_restore_transition()
+
+{
+  full_dungeon_redraw();
+  set_view_subject_by_command(0xffffffff);
+  weapon_overlay_flash_hold(5);
+  full_dungeon_redraw();
+  weapon_overlay_flash_restore(5);
+  wait_for_click_release(1);
+  full_dungeon_redraw();
+  weapon_overlay_flash_hold(5);
+  set_view_subject_by_command(1);
+  full_dungeon_redraw();
+  weapon_overlay_flash_restore(5);
+  return;
 }
