@@ -671,7 +671,7 @@ void uw_pump_events(void) {
                     break;
                 }
                 if (is_right) {
-                    /* Right-click = interact (FUN_0003f420's right-button
+                    /* Right-click = interact (handle_game_view_click's right-button
                        branch). Dispatch down and up straight through --
                        none of the left button's click-hold-to-walk
                        deferral machinery applies.

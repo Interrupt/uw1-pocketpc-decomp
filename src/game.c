@@ -1078,7 +1078,7 @@ void spin_view_full_rotation()
 
 // was FUN_00068260 -- the "3D-viewport's own click-and-hold-to-walk
 // region" handler (per input.c's own comment), called from
-// FUN_0003f420 while a button is held: drives ordinary player
+// handle_game_view_click while a button is held: drives ordinary player
 // movement (move_command_dispatch) normally, or
 // move_custom_view_target when free-camera mode (DAT_002020d8) is
 // active.
@@ -2456,5 +2456,143 @@ char *param_1;
   Ordinal_1071(&DAT_00201b70,param_1,uVar1);
   run_game_shutdown_sequence(0);
   terminate_process(0xffffffe8);
+  return;
+}
+
+
+// was FUN_0003f420 -- the 3D-viewport's click region handler
+// (registered in src/input.c:970 alongside the sibling
+// handle_game_view_click_hold), fired on click release. Reads the
+// current cursor sub-mode/button-state from DAT_00085a6c, handles the
+// door/inventory-panel interact-use case (sub-mode 0x10), and otherwise
+// dispatches through PTR_FUN_000858c8_table by cursor mode (use/look/
+// get/attack/talk) or, while holding/casting, routes to the
+// drop-target/cast-completion handlers.
+void handle_game_view_click()
+
+{
+  int iVar1;
+  uint uVar2;
+  if (getenv("UW_DEBUG_COMBAT")) {
+    fprintf(stderr, "[combat] handle_game_view_click entry: mode=%d btnstate=0x%x\n",
+            (int)*(short *)(DAT_00085a6c + 8), (unsigned)*(ushort *)(DAT_00085a6c + 6));
+  }
+  if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
+    handle_game_view_click_hold();
+  }
+  if (*(short *)(DAT_00085a6c + 8) != 1) {
+    if (*(short *)(DAT_00085a6c + 8) != 0x10) {
+      return;
+    }
+    if (*(short *)(DAT_00085a6c + 6) != 2) {
+      return;
+    }
+    g_interact_target = pick_object_under_cursor(2);
+    if (g_interact_target == 0) {
+      return;
+    }
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] handle_game_view_click -> interact_use\n");
+    interact_use();
+    return;
+  }
+  g_interact_target = 0;
+  if (getenv("UW_DEBUG_COMBAT")) {
+    fprintf(stderr, "[combat] handle_game_view_click past mode gate: DAT_00085a6c[6]=0x%x g_cursor_mode=%d g_cursor_holding_state=%d\n",
+            (unsigned)*(ushort *)(DAT_00085a6c + 6), (int)g_cursor_mode, (int)g_cursor_holding_state);
+  }
+  if ((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) {
+    g_interact_target = 0;
+    return;
+  }
+  if (g_cursor_holding_state == 0) {
+    uint _dispatch;
+    if (g_cursor_mode == 0) {
+      uVar2 = 2;
+    }
+    else {
+      uVar2 = ((int)g_cursor_mode & 0xffU) - 1;
+    }
+    if (getenv("UW_DEBUG_COMBAT")) {
+      fprintf(stderr, "[combat] uVar2=%u bit1=0x%x\n", uVar2, (unsigned)(*(ushort *)(DAT_00085a6c + 6) & 1));
+    }
+    /* Was `(g_cursor_mode == 0) ? 0 : uVar2` -- a forced index-0 override
+       for the no-mode-selected case. That matched the table's OLD, wrong
+       order (where index 0 happened to be interact_look), but real ARM
+       disassembly (0x3f590-0x3f5a8: `moveq r4,#0x2` when g_cursor_mode
+       is 0, `subne r4,r3,#0x1` otherwise) never special-cases 0 at all --
+       it's the exact same value uVar2 already computes above. With the
+       dispatch table now in its real order (see its own comment),
+       index 2 is interact_look, so using uVar2 directly still lands a
+       bare right-click on "You see a <name>", now via the real index
+       instead of a special-cased one. */
+    _dispatch = uVar2;
+    if ((uVar2 & 0xff) != 1) {
+      if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
+        g_interact_target = 0;
+        return;
+      }
+      g_interact_target = pick_object_under_cursor(2);
+      /* Was `(g_interact_target == 0) && (uVar2 != 4)` -- an extra skip
+         added under the OLD, wrong table order, meant to let attack
+         (then assumed to be table[4]) fall through to the dispatch
+         table even with no object under the cursor, matching live
+         testing that showed swings need that (not every swing lands
+         dead-center under the cursor). Real attack (table[1], uVar2==1)
+         is already excluded from this whole block by the outer
+         `uVar2 != 1` check above -- confirmed via ARM disassembly
+         (0x3f5b4 `beq 0x3f5f0` branches straight to the table call for
+         uVar2==1, before ever reaching this object-pick/describe code),
+         so this fallthrough only runs for modes 0, 2, or 3 now (real
+         table[0]/[2]/[3] = use/look/get), none of which need a
+         "no object" carve-out -- real disassembly (0x3f5d4-0x3f5e4)
+         unconditionally describes the terrain and returns here. Dropping
+         the `uVar2 != 4` half avoids silently calling table[4]
+         (interact_talk_npc) with a NULL g_interact_target when nothing
+         is under the cursor. */
+      if (g_interact_target == 0) {
+        describe_picked_terrain(uVar2,(int)DAT_002020ac);
+        goto LAB_0003f584;
+      }
+    }
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] handle_game_view_click: about to dispatch table[%u], btnstate=0x%x mode=%d\n",
+              _dispatch & 0xff, (unsigned)*(ushort *)(DAT_00085a6c + 6), (int)*(short *)(DAT_00085a6c + 8));
+    if ((_dispatch & 0xff) < 5 && PTR_FUN_000858c8_table[_dispatch & 0xff] != 0) {
+      PTR_FUN_000858c8_table[_dispatch & 0xff]();
+    }
+  }
+  else {
+    if (g_cursor_holding_state == 1) {
+      handle_object_drop_target(0x17);
+    }
+    else {
+      if (g_cursor_holding_state != 2) {
+        if (g_cursor_holding_state != 3) {
+          g_interact_target = 0;
+          return;
+        }
+        complete_cast_spell_on_target();
+        return;
+      }
+      g_interact_target = pick_object_under_cursor(2);
+      if (g_interact_target != 0) {
+        iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
+        if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,g_interact_target), iVar1 != 0)) {
+          print_scroll_message_by_id(0x5e);
+        }
+        else {
+          (*DAT_002020b8)(g_interact_target,1,0);
+        }
+      }
+      if (g_selected_object != 0) {
+        FUN_00057cac(3);
+        g_selected_object = 0;
+        g_cursor_holding_state = 0;
+      }
+    }
+LAB_0003f584:
+    wait_for_click_release(1);
+  }
   return;
 }

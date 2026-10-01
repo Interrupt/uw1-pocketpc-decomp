@@ -87,7 +87,7 @@ void interact_default()
         *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf0;
       }
       emit_noise_alert(g_interact_target,0);
-      FUN_0003ee10(g_interact_target);
+      finalize_object_pickup(g_interact_target);
       g_cursor_holding_state = 1;
       attach_picked_up_object_to_cursor(g_interact_target);
       return;
@@ -724,5 +724,25 @@ LAB_0002865c:
      same pattern too (uw.c ~19211) printing "You get no response"
      before the crash. */
   message_scroll_print_wrapped(get_message_string(uVar3));
+  return;
+}
+
+
+// was FUN_0003ee10 -- called from interact_default (src/interact.c:90)
+// right before a grabbed object is attached to the cursor. Only acts
+// while DAT_002020ec (the "grab mode" flag interact_default itself
+// gates on) is still set: triggers the object's pickup trap/use action,
+// unlinks it from its tile's object list (it's leaving the tile for the
+// cursor/inventory), ticks the scheduler, and clears the grab-mode flag.
+void finalize_object_pickup(param_1)
+char *param_1;
+
+{
+  if (DAT_002020ec != 0) {
+    trigger_object_trap_or_use_action(g_player_object,param_1,2,(int)DAT_002020a0,DAT_002020a4);
+    object_list_unlink(DAT_002020a8,param_1);
+    FUN_00049924(2);
+    DAT_002020ec = 0;
+  }
   return;
 }

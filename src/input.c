@@ -466,7 +466,7 @@ undefined1 * param_1;
      records, register_click_region's array), and this variable held one record's
      address, not a plain offset. Confirmed crashing (EXC_BAD_ACCESS) the
      first time this function's match-loop ever actually ran on this
-     recompile -- FUN_0003f420 (the 3D-viewport's own click-and-hold-to-
+     recompile -- handle_game_view_click (the 3D-viewport's own click-and-hold-to-
      walk region, registered by register_game_view_interact_zones) is only reachable through
      here, and nothing in this whole project's testing had ever clicked
      inside the viewport before. */
@@ -485,13 +485,13 @@ undefined1 * param_1;
       param_1[6] = (char)uVar1;
       param_1[7] = (char)((uint)uVar1 >> 8);
       /* The mouse-button-state field of the DAT_00085a6c struct is at
-         BYTE offset 12: every reader (FUN_0003f420's click-and-hold walk,
+         BYTE offset 12: every reader (handle_game_view_click's click-and-hold walk,
          spawn_new_object, ...) does `*(ushort *)(DAT_00085a6c + 6)`, which is
          byte 12 because DAT_00085a6c is typed `short *`, and the reset
          (input_bindings_init) clears byte 12 too. param_1 here is a plain
          byte pointer, so param_1[6] above wrote byte 6 -- a dead field no
          one reads, which is why a click in the 3D viewport reached
-         FUN_0003f420 but never walked. Write byte 12 as well. */
+         handle_game_view_click but never walked. Write byte 12 as well. */
       param_1[12] = (char)uVar1;
       param_1[13] = (char)((uint)uVar1 >> 8);
       FUN_00057528(&local_28,&local_26);
@@ -933,7 +933,7 @@ undefined4 param_1;
 
 // was FUN_0006764c -- divides the game viewport rect (param_1=x,
 // param_2=y, param_3=width, param_4=height) into 8 click regions, all
-// sharing the same handler (FUN_0003f420, the "3D-viewport's own
+// sharing the same handler (handle_game_view_click, the "3D-viewport's own
 // click-and-hold-to-walk region" per input.c's own comment), plus a
 // single key binding covering the whole rect. Records the rect and
 // each region's handle for unregister_game_view_interact_zones' own
@@ -967,7 +967,7 @@ int param_4;
   DAT_0023be5c = sVar2;
   DAT_0023be80 = sVar3;
   DAT_0023be88 = sVar5;
-  DAT_0023be8c = register_click_region(param_1,param_2,iVar10,iVar9,0,0x1b,FUN_0003f420);
+  DAT_0023be8c = register_click_region(param_1,param_2,iVar10,iVar9,0,0x1b,handle_game_view_click);
   iVar6 = Ordinal_2005(0xf,sVar5 * 3);
   iVar6 = (sVar3 - iVar6) * 0x10000 >> 0x10;
   iVar7 = Ordinal_2005(0xf,sVar4 * 5);
@@ -1263,7 +1263,7 @@ int param_4;
      button. FUN_00058738 reports the right button as bit 1 (value 2) of
      the mouse state via DAT_002506ab -- which nothing else ever writes --
      and poll_input_bindings then feeds code 2 to the viewport click
-     region, whose handler FUN_0003f420 runs its interact branch on
+     region, whose handler handle_game_view_click runs its interact branch on
      `state & 2`. Cursor position was already stored at the top. */
   if (param_2 == 0x204) {
     *DAT_000876c4 = 1;

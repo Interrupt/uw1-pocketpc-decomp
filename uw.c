@@ -2841,7 +2841,7 @@ short DAT_0023be88;
 short DAT_0023bd80;
 /* Was a lone `undefined *` -- the real thing is a small function-pointer
    dispatch table for the 3D-view right-click "interact" modes, indexed by
-   FUN_0003f420 as `table[uVar2]` where uVar2 = cursor mode
+   handle_game_view_click as `table[uVar2]` where uVar2 = cursor mode
    (g_cursor_mode) - 1. Link-time-init data the decompile never populated,
    so every right-click on an object jumped through garbage.
 
@@ -2875,7 +2875,7 @@ short DAT_0023bd80;
    pre-session value (`g_cursor_mode = 2`, see its own comment) and by
    cursor_mode_button_click's mode-2 special case, which sets the exact
    same weapon-ready HUD state (flags5f |= 2, set_hud_status_value(8,4))
-   as ready_weapon. FUN_0003f420's real ARM (0x3f590-0x3f5a8) computes
+   as ready_weapon. handle_game_view_click's real ARM (0x3f590-0x3f5a8) computes
    the dispatch index as 2 when no cursor mode is selected (not 0), so a
    bare right-click still lands on interact_look either way -- see that
    function's own comment for the matching `_dispatch` fix.
@@ -2899,7 +2899,7 @@ extern void interact_talk_npc(void);
 extern void interact_look(void);
 extern void interact_use(void);
 extern void interact_attack(void);
-static void (*const PTR_FUN_000858c8_table[5])(void) = {
+void (*const PTR_FUN_000858c8_table[5])(void) = {
   interact_use,        /* 0: use (mode 1, bottommost icon) */
   interact_attack,      /* 1: attack (mode 2) */
   interact_look,        /* 2: look / examine (mode 3) */
@@ -10448,11 +10448,11 @@ ushort *pick_object_under_cursor()
      g_mouse_x/g_mouse_y against the 3D viewport's own registered rect
      (DAT_0023be5c/DAT_0023bd80 x-range, DAT_0023be80-DAT_0023be88..
      DAT_0023be80 y-range -- the same rect register_game_view_interact_zones registers for
-     FUN_0003f420 and hit_test_inventory_widget already reuses for its own 0x17
+     handle_game_view_click and hit_test_inventory_widget already reuses for its own 0x17
      special case) before indexing the pick stencil DAT_0023cca0. That
      was harmless while every right-click interact stayed inside the
      viewport, but a held drag whose release lands elsewhere (e.g. the
-     inventory panel) still routes through here -- see FUN_0003f420,
+     inventory panel) still routes through here -- see handle_game_view_click,
      called every tick a mouse button is held regardless of the
      cursor's current position -- and reads/interprets whatever stale
      byte happens to sit at that (out-of-viewport) stencil offset as a
@@ -10551,149 +10551,9 @@ short param_2;
 
 
 
-void FUN_0003ee10(param_1)
-char *param_1;
-
-{
-  if (DAT_002020ec != 0) {
-    trigger_object_trap_or_use_action(g_player_object,param_1,2,(int)DAT_002020a0,DAT_002020a4);
-    object_list_unlink(DAT_002020a8,param_1);
-    FUN_00049924(2);
-    DAT_002020ec = 0;
-  }
-  return;
-}
 
 
 
-void FUN_0003f420()
-
-{
-  int iVar1;
-  uint uVar2;
-  if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[combat] FUN_0003f420 entry: mode=%d btnstate=0x%x\n",
-            (int)*(short *)(DAT_00085a6c + 8), (unsigned)*(ushort *)(DAT_00085a6c + 6));
-  }
-  if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
-    handle_game_view_click_hold();
-  }
-  if (*(short *)(DAT_00085a6c + 8) != 1) {
-    if (*(short *)(DAT_00085a6c + 8) != 0x10) {
-      return;
-    }
-    if (*(short *)(DAT_00085a6c + 6) != 2) {
-      return;
-    }
-    g_interact_target = pick_object_under_cursor(2);
-    if (g_interact_target == 0) {
-      return;
-    }
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] FUN_0003f420 -> interact_use\n");
-    interact_use();
-    return;
-  }
-  g_interact_target = 0;
-  if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[combat] FUN_0003f420 past mode gate: DAT_00085a6c[6]=0x%x g_cursor_mode=%d g_cursor_holding_state=%d\n",
-            (unsigned)*(ushort *)(DAT_00085a6c + 6), (int)g_cursor_mode, (int)g_cursor_holding_state);
-  }
-  if ((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) {
-    g_interact_target = 0;
-    return;
-  }
-  if (g_cursor_holding_state == 0) {
-    uint _dispatch;
-    if (g_cursor_mode == 0) {
-      uVar2 = 2;
-    }
-    else {
-      uVar2 = ((int)g_cursor_mode & 0xffU) - 1;
-    }
-    if (getenv("UW_DEBUG_COMBAT")) {
-      fprintf(stderr, "[combat] uVar2=%u bit1=0x%x\n", uVar2, (unsigned)(*(ushort *)(DAT_00085a6c + 6) & 1));
-    }
-    /* Was `(g_cursor_mode == 0) ? 0 : uVar2` -- a forced index-0 override
-       for the no-mode-selected case. That matched the table's OLD, wrong
-       order (where index 0 happened to be interact_look), but real ARM
-       disassembly (0x3f590-0x3f5a8: `moveq r4,#0x2` when g_cursor_mode
-       is 0, `subne r4,r3,#0x1` otherwise) never special-cases 0 at all --
-       it's the exact same value uVar2 already computes above. With the
-       dispatch table now in its real order (see its own comment),
-       index 2 is interact_look, so using uVar2 directly still lands a
-       bare right-click on "You see a <name>", now via the real index
-       instead of a special-cased one. */
-    _dispatch = uVar2;
-    if ((uVar2 & 0xff) != 1) {
-      if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
-        g_interact_target = 0;
-        return;
-      }
-      g_interact_target = pick_object_under_cursor(2);
-      /* Was `(g_interact_target == 0) && (uVar2 != 4)` -- an extra skip
-         added under the OLD, wrong table order, meant to let attack
-         (then assumed to be table[4]) fall through to the dispatch
-         table even with no object under the cursor, matching live
-         testing that showed swings need that (not every swing lands
-         dead-center under the cursor). Real attack (table[1], uVar2==1)
-         is already excluded from this whole block by the outer
-         `uVar2 != 1` check above -- confirmed via ARM disassembly
-         (0x3f5b4 `beq 0x3f5f0` branches straight to the table call for
-         uVar2==1, before ever reaching this object-pick/describe code),
-         so this fallthrough only runs for modes 0, 2, or 3 now (real
-         table[0]/[2]/[3] = use/look/get), none of which need a
-         "no object" carve-out -- real disassembly (0x3f5d4-0x3f5e4)
-         unconditionally describes the terrain and returns here. Dropping
-         the `uVar2 != 4` half avoids silently calling table[4]
-         (interact_talk_npc) with a NULL g_interact_target when nothing
-         is under the cursor. */
-      if (g_interact_target == 0) {
-        describe_picked_terrain(uVar2,(int)DAT_002020ac);
-        goto LAB_0003f584;
-      }
-    }
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] FUN_0003f420: about to dispatch table[%u], btnstate=0x%x mode=%d\n",
-              _dispatch & 0xff, (unsigned)*(ushort *)(DAT_00085a6c + 6), (int)*(short *)(DAT_00085a6c + 8));
-    if ((_dispatch & 0xff) < 5 && PTR_FUN_000858c8_table[_dispatch & 0xff] != 0) {
-      PTR_FUN_000858c8_table[_dispatch & 0xff]();
-    }
-  }
-  else {
-    if (g_cursor_holding_state == 1) {
-      handle_object_drop_target(0x17);
-    }
-    else {
-      if (g_cursor_holding_state != 2) {
-        if (g_cursor_holding_state != 3) {
-          g_interact_target = 0;
-          return;
-        }
-        complete_cast_spell_on_target();
-        return;
-      }
-      g_interact_target = pick_object_under_cursor(2);
-      if (g_interact_target != 0) {
-        iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
-        if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,g_interact_target), iVar1 != 0)) {
-          print_scroll_message_by_id(0x5e);
-        }
-        else {
-          (*DAT_002020b8)(g_interact_target,1,0);
-        }
-      }
-      if (g_selected_object != 0) {
-        FUN_00057cac(3);
-        g_selected_object = 0;
-        g_cursor_holding_state = 0;
-      }
-    }
-LAB_0003f584:
-    wait_for_click_release(1);
-  }
-  return;
-}
 
 
 
