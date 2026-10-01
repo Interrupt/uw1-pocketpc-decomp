@@ -1368,7 +1368,7 @@ ushort * param_1;
 
 // was FUN_0007a418 -- deferred-target-click completion callback,
 // gated on both param_2 and param_3 being nonzero: resets the
-// click-target UI state, then runs FUN_0003ab90 (not yet named -- a
+// click-target UI state, then runs use_lockpick_on_object (a
 // skill-difficulty-check interaction that builds the target's
 // display name and compares its own difficulty rating against the
 // player's skill byte at offset +0x2f) against the target. No
@@ -1383,7 +1383,7 @@ int param_3;
     FUN_00057cac(3);
     g_selected_object = 0;
     g_cursor_holding_state = 0;
-    FUN_0003ab90(param_1,*(undefined1 *)(DAT_00086df8 + 0x2f),1);
+    use_lockpick_on_object(param_1,*(undefined1 *)(DAT_00086df8 + 0x2f),1);
   }
   return;
 }
@@ -2476,4 +2476,104 @@ undefined4 try_climb_wall()
   }
   print_scroll_message_by_id(uVar3);
   return 0;
+}
+
+
+// was FUN_0003ab90 -- the "use lockpick on this lock" item-use
+// handler: when param_3 is set, first prompts the player with a
+// difficulty-flavored confirmation message (via prompt_yes_no_scroll)
+// before proceeding; otherwise/always then shows the lockpicking UI
+// page (0x104) and calls attempt_pick_lock. On success/failure,
+// advances game time by a cost scaled to the lock's difficulty, rolls
+// a chance to destroy the lockpick on a bad outcome
+// (roll_object_destroy_chance), and prints the matching result
+// message.
+void use_lockpick_on_object(param_1,param_2,param_3)
+undefined4 param_1;
+int param_2;
+int param_3;
+
+{
+  short sVar1;
+  int iVar2;
+  int iVar3;
+  short local_6c [2];
+  uint local_68;
+  undefined1 auStack_64 [80];
+  
+  local_68 = 1;
+  build_object_display_name(auStack_64,param_1,0,0);
+  if (param_3 != 0) {
+    iVar2 = resolve_lock_difficulty_rating(param_1);
+    if ((short)iVar2 < 0) {
+      print_scroll_message_by_id(0x8e);
+      return;
+    }
+    iVar2 = ((iVar2 - param_2) + 0xf) * 0x10000 >> 0x10;
+    if (iVar2 < 0) {
+      iVar2 = 0;
+    }
+    else if (iVar2 < 0x1f) {
+      sVar1 = Ordinal_2005(10);
+      iVar2 = sVar1 + 1;
+    }
+    else {
+      iVar2 = 4;
+    }
+    print_scroll_message_by_id(0xd8);
+    print_scroll_message_by_id(iVar2 + 0xdb);
+    print_scroll_message_by_id(0xd9);
+    message_scroll_print_wrapped(auStack_64);
+    sVar1 = prompt_yes_no_scroll(0,0xda,&local_68);
+    if ((sVar1 != 0) && (sVar1 < 4)) {
+      local_68 = (uint)(sVar1 == 2);
+      /* HACK: was a bare `echo_yes_no_to_scroll();` -- dropped
+         argument, the same class of bug fixed repeatedly elsewhere in
+         this file. local_68, just set on the line above from the
+         prompt's own answer, is obviously the intended argument
+         here. */
+      echo_yes_no_to_scroll(local_68);
+    }
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
+    if (local_68 == 0) {
+      return;
+    }
+  }
+  display_book_or_scroll_page(0x104);
+  iVar2 = attempt_pick_lock(param_1,param_2,local_6c);
+  if (param_3 == 0) {
+    if ((short)iVar2 == -2) {
+      /* was folded into `int iVar2` (reused elsewhere in this function for
+         unrelated int values) -- truncated tilemap_lookup's real
+         `void *` return */
+      char *_tile2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
+      discard_misplaced_object(_tile2 + 2,param_1,0);
+    }
+  }
+  else {
+    *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) | 0xf;
+    iVar3 = local_6c[0] * 0x3c00 + *(int *)(DAT_00086df8 + 0xce);
+    *(char *)(DAT_00086df8 + 0xce) = (char)iVar3;
+    *(char *)(DAT_00086df8 + 0xcf) = (char)((uint)iVar3 >> 8);
+    *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar3 >> 0x10);
+    *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar3 >> 0x18);
+    if ((short)iVar2 == -2) {
+      iVar3 = roll_object_destroy_chance(10,param_1);
+      if (iVar3 == 0) {
+        iVar2 = 0;
+      }
+      else {
+        decrement_object_count(param_1);
+        discard_misplaced_object(0,param_1,1);
+      }
+    }
+    print_scroll_message_by_id(iVar2 + 0x8e);
+    if ((short)iVar2 != 0) {
+      message_scroll_print_wrapped(auStack_64);
+      print_scroll_message_by_id(0x53);
+    }
+    refresh_player_equipment_effects();
+    FUN_00049924(0x200);
+  }
+  return;
 }
