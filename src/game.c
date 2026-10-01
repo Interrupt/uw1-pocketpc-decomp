@@ -39,7 +39,7 @@ undefined4 param_4;
          see g_uw_framebuffer's declaration comment. */
       g_uw_framebuffer = uVar3;
       uVar3 = Ordinal_1041(0x25800);
-      FUN_0003af28(param_1,0xca,uVar3);
+      load_bmp_resource_to_rgb565(param_1,0xca,uVar3);
       dirty_rect_union(0,0xf0,0,0x140);
       Ordinal_1044(g_uw_framebuffer,uVar3,0x25800);
       flush_dirty_rect_to_display_240();
@@ -1822,7 +1822,7 @@ undefined4 param_2;
 
 
 // was FUN_00077868 -- stores &DAT_00242010 into the window's extra-
-// data slot 0x94 via FUN_0003af28 (a SetWindowLong-style helper --
+// data slot 0x94 via load_bmp_resource_to_rgb565 (a SetWindowLong-style helper --
 // see its other use in create_main_window_and_init_display storing
 // g_uw_framebuffer at slot 0xca). WinCE window-procedure plumbing,
 // very likely inert on this SDL-based host port.
@@ -1830,7 +1830,7 @@ void store_window_extra_data_ptr(param_1)
 undefined4 param_1;
 
 {
-  FUN_0003af28(param_1,0x94,&DAT_00242010);
+  load_bmp_resource_to_rgb565(param_1,0x94,&DAT_00242010);
   return;
 }
 

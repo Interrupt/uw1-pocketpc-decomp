@@ -3008,7 +3008,7 @@ uint attempt_pick_lock();
 void use_lockpick_on_object();
 undefined4 clear_object_temp_flag_callback();
 void clear_temp_flags_on_all_objects();
-undefined4 FUN_0003af28();
+undefined4 load_bmp_resource_to_rgb565();
 void FUN_0003b0e4();
 uint FUN_0003b31c();
 uint FUN_0003b344();
