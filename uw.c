@@ -2507,8 +2507,14 @@ undefined DAT_002035cf;
    on this 64-bit host. */
 undefined1 DAT_00085638[10]; /* indices 1-9 are the ones actually read (index 0 unused) */
 char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in_your_face!";
-undefined DAT_002026d1;
-undefined DAT_00202807;
+/* Both were single `undefined` scalars, but resolve_lock_difficulty_rating
+   (the only function anywhere in this decompile that touches either)
+   indexes each one via `(&DAT_xxx)[i]` up to the extents below -- the
+   same out-of-bounds scalar-as-array bug class as DAT_001007ee and
+   the glyph-table globals fixed earlier this session. Widened to real
+   arrays, sized to the highest index each is ever read at. */
+undefined DAT_002026d1[253];
+undefined DAT_00202807[121];
 char *DAT_002029cc;
 /* Typed views onto the object/tile arenas above (see uw.h's
    uw_object_hdr_t/uw_mobile_object_t/uw_tile_t for the recovered field
@@ -9720,25 +9726,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-int FUN_0003a924(param_1)
-ushort * param_1;
-
-{
-  ushort uVar1;
-  ushort uVar2;
-  
-  uVar1 = *param_1;
-  if ((uVar1 & 0x1c0) == 0) {
-    uVar2 = uVar1 >> 4;
-    if ((uVar2 & 3) == 0) {
-      return (int)(char)(&DAT_00202807)[(short)(uVar1 & 0xf) * 8];
-    }
-    if ((((uVar2 & 3) != 1) && ((uVar2 & 3) != 0)) && ((uVar2 & 3) < 4)) {
-      return (int)(char)(&DAT_002026d1)[(uVar1 & 0x3f) * 4];
-    }
-  }
-  return -1;
-}
 
 
 
@@ -9761,7 +9748,7 @@ undefined2 * param_3;
   short local_20;
   int iVar8;
   
-  iVar5 = FUN_0003a924();
+  iVar5 = resolve_lock_difficulty_rating(param_1);
   if ((short)iVar5 == -1) {
     return 0;
   }
@@ -9838,7 +9825,7 @@ int param_3;
   local_68 = 1;
   build_object_display_name(auStack_64,param_1,0,0);
   if (param_3 != 0) {
-    iVar2 = FUN_0003a924(param_1);
+    iVar2 = resolve_lock_difficulty_rating(param_1);
     if ((short)iVar2 < 0) {
       print_scroll_message_by_id(0x8e);
       return;

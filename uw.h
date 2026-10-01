@@ -1519,6 +1519,8 @@ extern undefined1 DAT_00086da8;
 extern byte DAT_001013a4;
 extern short DAT_00201c70;
 extern undefined1 DAT_00085638[10]; // zero-initialized fallback for an unrecovered 9-entry object-type table; see uw.c's own comment at its declaration
+extern undefined DAT_002026d1[253];
+extern undefined DAT_00202807[121];
 extern undefined2 DAT_00201c78;
 extern short DAT_00202080;
 extern short DAT_00202088;
@@ -3001,7 +3003,7 @@ void advance_scheduler_and_show_page3();
 undefined4 unlink_object_from_tile_callback();
 void trigger_quest_milestone_cleanup_event();
 undefined4 resolve_unique_npc_special_behavior();
-int FUN_0003a924();
+int resolve_lock_difficulty_rating();
 uint FUN_0003a99c();
 void FUN_0003ab90();
 undefined4 FUN_0003ae00();

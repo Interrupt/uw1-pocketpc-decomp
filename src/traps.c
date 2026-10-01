@@ -1556,3 +1556,33 @@ void trigger_quest_milestone_cleanup_event()
   }
   return;
 }
+
+
+// was FUN_0003a924 -- resolves a difficulty/rating value for a
+// class-0 (quality bits 0x1c0==0) object record param_1 by looking up
+// one of two tables depending on a 2-bit sub-code in its low word:
+// sub-code 0 indexes DAT_00202807, sub-codes 2/3 index DAT_002026d1.
+// Returns -1 for anything outside class 0 or sub-code 1. Only known
+// caller (FUN_0003a99c, a skill-check resolver) treats the result as
+// a difficulty fed into roll_skill_check -- plausibly a lock/trap
+// difficulty rating, matching this class-0 object range's established
+// role elsewhere as door/lock-type records.
+int resolve_lock_difficulty_rating(param_1)
+ushort * param_1;
+
+{
+  ushort uVar1;
+  ushort uVar2;
+
+  uVar1 = *param_1;
+  if ((uVar1 & 0x1c0) == 0) {
+    uVar2 = uVar1 >> 4;
+    if ((uVar2 & 3) == 0) {
+      return (int)(char)DAT_00202807[(short)(uVar1 & 0xf) * 8];
+    }
+    if ((((uVar2 & 3) != 1) && ((uVar2 & 3) != 0)) && ((uVar2 & 3) < 4)) {
+      return (int)(char)DAT_002026d1[(uVar1 & 0x3f) * 4];
+    }
+  }
+  return -1;
+}
