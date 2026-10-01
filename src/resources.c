@@ -293,7 +293,7 @@ uint param_2;
      store/compare/pass into restore_captured_grtile_backdrop/capture_framebuffer_rect_to_grtile ("does this key
      match a record's stored key"): self-consistent lookups that don't
      need the real address, so leave this alone. The one caller that DOES
-     need the real, dereferenceable pointer (FUN_00041708, feeding a
+     need the real, dereferenceable pointer (register_grtile_entry, feeding a
      memmove) gets it from uw_alloc_grtile() instead -- see there -- not
      from this function's return value. */
   void *uVar1;
@@ -340,12 +340,12 @@ void *uw_alloc_grtile(param_1,param_2)
 uint param_1;
 uint param_2;
 {
-  /* FUN_00041708 needs a real, dereferenceable pointer (it memmoves into
+  /* register_grtile_entry needs a real, dereferenceable pointer (it memmoves into
      the result) rather than grtile_alloc_registered's opaque truncated handle -- see
      the comment there. Same size computation, no registration into
      grtile_alloc_registered's own DAT_0023c3fc identity-key table since nothing
      ever looks buffers from this call path up that way (see
-     FUN_00041708). */
+     register_grtile_entry). */
   unsigned int size;
   void *p;
   size = (param_1 & 0xffff) * (param_2 & 0xffff);
@@ -1884,4 +1884,74 @@ void *param_2;
     }
   }
   return uVar4;
+}
+
+
+// was FUN_00041708 -- load_gr_resource_entries's post-process callback
+// for the flasks/compass/etc. resource group (passed as its param_5 at
+// uw.c's "LAB_000416e8"-paired call site): allocates a fresh grtile
+// buffer sized from the entry's own width/height header bytes, copies
+// the decoded data in, and registers it at
+// g_grtile_registry[DAT_00202744 + entry_index]. Same registration
+// shape as uw_register_gr_entry, for a resource group that already had
+// a real (not stubbed) registrar.
+bool register_grtile_entry(param_1,param_2,param_3)
+void *param_1;
+undefined4 param_2;
+short param_3;
+
+{
+  void *pvVar1;
+
+  /* param_1 (a real buffer pointer, from load_gr_resource_entries's allocator
+     callback) was declared int here and silently truncated to 32 bits on
+     dereference -- see uw_alloc_grtile()'s comment for why this uses that
+     helper instead of grtile_alloc_registered directly. g_grtile_registry is
+     a flat pointer array -- see its declaration comment. */
+  pvVar1 = uw_alloc_grtile(*(undefined1 *)((char *)param_1 + 1),*(byte *)((char *)param_1 + 2) + 1);
+  if (pvVar1 != 0) {
+    Ordinal_1044(pvVar1,param_1,(uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
+    g_grtile_registry[(uint)DAT_00202744 + (int)param_3] = pvVar1;
+  }
+  return pvVar1 != 0;
+}
+
+
+
+// was FUN_00041770 -- register_grtile_entry's "slot may already be
+// populated" sibling, used for reload paths (e.g. the save/load menu's
+// level reload): always allocates a FRESH buffer sized for this write
+// rather than reusing/overwriting whatever the slot already points to
+// (fixed heap-buffer-overflow -- see this function's own body comment).
+undefined4 reregister_grtile_entry(param_1,param_2,param_3)
+void *param_1;
+undefined4 param_2;
+short param_3;
+
+{
+  /* See register_grtile_entry -- same param_1/g_grtile_registry truncation fix.
+     This "overwrite an already-allocated slot" path blindly memcpy'd
+     width*height bytes into whatever pointer g_grtile_registry's table
+     already held for this slot -- fine as long as that's still the SAME
+     size it was originally allocated at, but nothing guarantees that:
+     confirmed via AddressSanitizer, a real heap-buffer-overflow, 100%
+     reproducible opening the in-game options/pause menu and picking
+     Save or Load. The existing 888-byte allocation there came from an
+     unrelated resource loaded into this same slot at startup
+     (app_main_loop's initial preload); the save/load menu's own level
+     reload (FUN_00044624 -> FUN_0004638c -> ... -> here) later reuses
+     the slot for a bigger (2484-byte) one, overflowing it. Rather than
+     assume the existing allocation is still big enough, allocate a
+     fresh one sized for THIS write (same sizing register_grtile_entry uses for
+     a brand new slot) and replace the table pointer -- the old
+     allocation leaks, but that beats corrupting the heap. */
+  void *pvVar1 = uw_alloc_grtile(*(byte *)((char *)param_1 + 1),
+                                  (uint)*(byte *)((char *)param_1 + 2) + 1);
+  if (pvVar1 == 0) {
+    return 0;
+  }
+  Ordinal_1044(pvVar1,param_1,
+               (uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
+  g_grtile_registry[(uint)DAT_00202744 + (int)param_3] = pvVar1;
+  return 1;
 }

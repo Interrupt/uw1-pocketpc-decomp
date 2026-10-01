@@ -3001,7 +3001,7 @@ undefined1 DAT_0023ce71;
 /* struct-recovery-plan.md's "DAT_0024e090 pointer table" candidate:
    a large table of glyph/resource-pointer slots indexed by font/char/
    frame id (see lookup_grtile_by_id and its populators uw_register_gr_entry/
-   FUN_00041708/FUN_00041770, read back by lookup_grtile_by_id/
+   register_grtile_entry/reregister_grtile_entry, read back by lookup_grtile_by_id/
    blit_object_sprite_by_frame/sprite_list_flush_blit_raw). Was a raw byte buffer
    (DAT_0024e090_backing[524288]) with every access site manually
    computing `&DAT_0024e090 + slot*8` and casting to a pointer type --
@@ -3067,8 +3067,8 @@ unsigned int param_1;
    no-op stub read every .GR file but never REGISTERED the loaded buffers,
    so lookup_grtile_by_id's g_grtile_registry[] pointer table stayed empty for every
    resource loaded through here (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/
-   3DWIN/OBJECTS/TMFLAT/TMOBJ). Only FUN_00041708 (flasks/compass/...) was
-   a real registrar. Register the buffer the same way FUN_00041708 does:
+   3DWIN/OBJECTS/TMFLAT/TMOBJ). Only register_grtile_entry (flasks/compass/...) was
+   a real registrar. Register the buffer the same way register_grtile_entry does:
    at g_grtile_registry[base + entry_index]. */
 #define UW_DAT_0024E090_SLOTS (sizeof(g_grtile_registry) / sizeof(g_grtile_registry[0]))
 static void uw_register_gr_entry(unsigned base, void *buf, int idx)
@@ -10832,61 +10832,6 @@ undefined4 param_1;
 
 
 
-bool FUN_00041708(param_1,param_2,param_3)
-void *param_1;
-undefined4 param_2;
-short param_3;
-
-{
-  void *pvVar1;
-
-  /* param_1 (a real buffer pointer, from load_gr_resource_entries's allocator
-     callback) was declared int here and silently truncated to 32 bits on
-     dereference -- see uw_alloc_grtile()'s comment for why this uses that
-     helper instead of grtile_alloc_registered directly. g_grtile_registry is
-     a flat pointer array -- see its declaration comment. */
-  pvVar1 = uw_alloc_grtile(*(undefined1 *)((char *)param_1 + 1),*(byte *)((char *)param_1 + 2) + 1);
-  if (pvVar1 != 0) {
-    Ordinal_1044(pvVar1,param_1,(uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
-    g_grtile_registry[(uint)DAT_00202744 + (int)param_3] = pvVar1;
-  }
-  return pvVar1 != 0;
-}
-
-
-
-undefined4 FUN_00041770(param_1,param_2,param_3)
-void *param_1;
-undefined4 param_2;
-short param_3;
-
-{
-  /* See FUN_00041708 -- same param_1/g_grtile_registry truncation fix.
-     This "overwrite an already-allocated slot" path blindly memcpy'd
-     width*height bytes into whatever pointer g_grtile_registry's table
-     already held for this slot -- fine as long as that's still the SAME
-     size it was originally allocated at, but nothing guarantees that:
-     confirmed via AddressSanitizer, a real heap-buffer-overflow, 100%
-     reproducible opening the in-game options/pause menu and picking
-     Save or Load. The existing 888-byte allocation there came from an
-     unrelated resource loaded into this same slot at startup
-     (app_main_loop's initial preload); the save/load menu's own level
-     reload (FUN_00044624 -> FUN_0004638c -> ... -> here) later reuses
-     the slot for a bigger (2484-byte) one, overflowing it. Rather than
-     assume the existing allocation is still big enough, allocate a
-     fresh one sized for THIS write (same sizing FUN_00041708 uses for
-     a brand new slot) and replace the table pointer -- the old
-     allocation leaks, but that beats corrupting the heap. */
-  void *pvVar1 = uw_alloc_grtile(*(byte *)((char *)param_1 + 1),
-                                  (uint)*(byte *)((char *)param_1 + 2) + 1);
-  if (pvVar1 == 0) {
-    return 0;
-  }
-  Ordinal_1044(pvVar1,param_1,
-               (uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
-  g_grtile_registry[(uint)DAT_00202744 + (int)param_3] = pvVar1;
-  return 1;
-}
 
 
 
@@ -11051,7 +10996,7 @@ char *param_1;
   undefined4 uVar1;
   short _dbg_before;
   _dbg_before = DAT_00202744;
-  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000416e8,FUN_00041708);
+  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000416e8,register_grtile_entry);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
   if (getenv("UW_DEBUG_DUMP_GR")) {
     fprintf(stderr, "[dumpgr] FUN_000419c8(\"%s\") frames [%d, %d) count=%d ok=%d\n",
@@ -11076,7 +11021,7 @@ undefined4 param_3;
 
   uVar1 = DAT_00202744;
   DAT_00202744 = DAT_00202738 + param_1 + -0x2000;
-  load_gr_resource_entries(param_2,param_3,1,&LAB_000416e8,FUN_00041770);
+  load_gr_resource_entries(param_2,param_3,1,&LAB_000416e8,reregister_grtile_entry);
   DAT_00202744 = uVar1;
   return;
 }

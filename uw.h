@@ -90,7 +90,7 @@ typedef undefined4 codeval();
  * hosts. */
 typedef void *codeptr();
 
-/* Forward declaration needed because FUN_00041708 (much earlier in uw.c)
+/* Forward declaration needed because register_grtile_entry (much earlier in uw.c)
    calls this before its own definition later in the file -- see its
    definition, right after grtile_alloc_registered, for why it exists. */
 void *uw_alloc_grtile();
@@ -3177,8 +3177,8 @@ undefined4 load_gr_format3_extra_table();
 undefined4 open_gr_resource_file();
 void close_gr_resource_file();
 uint read_gr_resource_record();
-bool FUN_00041708();
-undefined4 FUN_00041770();
+bool register_grtile_entry();
+undefined4 reregister_grtile_entry();
 uint load_gr_resource_entries();
 unsigned char *uw_get_default_palette(const char *gr_name);
 undefined4 FUN_00041910();

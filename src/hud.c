@@ -1991,7 +1991,13 @@ LAB_0007fa30:
       || (32 < s_wrap_recursion_depth))
   {
     uVar4 = Ordinal_1068(param_1);
-    if (param_1[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] == '\n') {
+    /* Guard against param_1 being an empty string: (uVar4 & 0xffff) - 1
+       underflows to 0xffff (index -1), reading/writing one byte before
+       the string -- a stack-buffer-underflow confirmed live via
+       AddressSanitizer (msg_scroll_split_newline_segments can hand this
+       an empty trailing segment after splitting on '\n'). Nothing to
+       strip from an empty span, so just skip the check. */
+    if ((uVar4 != 0) && (param_1[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] == '\n')) {
       param_1[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] = '\0';
       *(undefined1 *)(DAT_00250704 + 0x10) = 1;
       *(undefined1 *)(DAT_00250704 + 0x11) = 0;
