@@ -55,9 +55,18 @@ long Ordinal_58()
     return 0;
 }
 
-long Ordinal_61()
+/* Wide-string copy-shaped call (identity inferred from call sites).
+ * Receives (destination, source) after FUN_0002295c converts a game path;
+ * used to fill source/destination buffers for the new-game archive copy.
+ * This native port keeps converted paths as ANSI strings, matching the
+ * CreateDirectory/FindFirstFile adapters, so copy the bytes here. */
+long Ordinal_61(destination, source)
+char *destination;
+const char *source;
 {
-    return 0;
+    if (!destination || !source) return 0;
+    strcpy(destination, source);
+    return (long)(uintptr_t)destination;
 }
 
 long Ordinal_63()
@@ -119,9 +128,24 @@ long Ordinal_161()
     return 0;
 }
 
-long Ordinal_164()
+/* CopyFileW-shaped call (source path, destination path, fail-if-exists).
+ * Used to seed SAVE0\lev.ark from DATA\lev.ark for a new game, and by
+ * older save-slot copy paths. The native conversion adapters retain ANSI
+ * paths; uw_file_copy resolves them against UW_DATA_DIR and copies bytes. */
+long Ordinal_164(source, destination, fail_if_exists)
+const char *source;
+const char *destination;
+int fail_if_exists;
 {
-    return 0;
+    if (!source || !destination) return 0;
+    if (fail_if_exists) {
+        int handle = uw_file_open_read(destination);
+        if (handle >= 0) {
+            uw_file_close(handle);
+            return 0;
+        }
+    }
+    return uw_file_copy(source, destination);
 }
 
 /* uw.c is riddled with call sites that pass a real pointer through an
@@ -216,9 +240,30 @@ int Ordinal_184(void *path, unsigned int flags, void *out_struct, unsigned int *
     return 1;
 }
 
-long Ordinal_196()
+/* MultiByteToWideChar-shaped call (API identity inferred from arguments).
+ * FUN_0002295c passes (0, 2, ANSI path, -1, output buffer, 0xff) to prepare
+ * a path for WinCE file APIs. This native port retains ANSI bytes because
+ * its file API adapters accept narrow paths, rather than UTF-16. Returns
+ * the copied byte count (including NUL when source_count is -1), or zero
+ * when the destination is too small. This is a path adapter, not a general
+ * implementation of Windows code-page conversion. */
+long Ordinal_196(code_page, flags, source, source_count, destination, capacity)
+unsigned int code_page;
+unsigned int flags;
+const char *source;
+int source_count;
+char *destination;
+int capacity;
 {
-    return 0;
+    size_t count;
+    (void)code_page;
+    (void)flags;
+    if (!source || source_count == 0 || source_count < -1) return 0;
+    count = source_count == -1 ? strlen(source) + 1 : (size_t)source_count;
+    if (!destination && capacity == 0) return (long)count;
+    if (!destination || capacity < 0 || count > (size_t)capacity) return 0;
+    memmove(destination, source, count);
+    return (long)count;
 }
 
 long Ordinal_197()
@@ -627,6 +672,9 @@ unsigned int n;
     return dest;
 }
 
+/* memset: fills n bytes at ptr with val, returning ptr. Used throughout
+ * startup to clear records and buffers; the old new-game menu also used
+ * (path_buffer, 0, 0x104) before assembling file paths. Null ptr is ignored. */
 void *Ordinal_1047(void *ptr, int val, unsigned int n)
 {
     if (ptr) memset(ptr, val, n);
@@ -668,6 +716,10 @@ long Ordinal_1061()
     return 0;
 }
 
+/* strcat: appends src to the NUL-terminated string in dest and returns
+ * dest. Used to assemble game/save paths from an install-directory prefix
+ * and suffixes such as \DATA\lev.ark and \SAVE0. Does not check capacity;
+ * both arguments must be valid strings. Null arguments skip the append. */
 char *Ordinal_1063(dest, src)
 char *dest;
 char *src;
@@ -1208,4 +1260,3 @@ long Ordinal_2588()
 {
     return 0;
 }
-

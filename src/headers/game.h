@@ -8,5 +8,7 @@
 
 undefined4 app_main_loop();
 void main_menu_loop();
+bool prepare_new_game(void);
+void begin_gameplay(void);
 
 #endif

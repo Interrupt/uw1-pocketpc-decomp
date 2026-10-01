@@ -35,6 +35,69 @@ purpose — see "Architecture notes" below.
 For crash hunting, add `-fsanitize=address` (catches bad memory accesses
 precisely) — the two are not mutually exclusive with the flags above.
 
+## Unit tests
+
+The C unit tests use [Unity](https://github.com/ThrowTheSwitch/Unity),
+vendored under `third_party/unity`. Tests also require Python 3. Build and run them with:
+
+```sh
+cmake -S . -B build
+cmake --build build --target test_math test_chargen test_new_game test_teleport test_movement
+ctest --test-dir build --output-on-failure
+```
+
+`tests/test_math.c` checks `step_value_toward_limit` in both directions,
+including exact limits and rejected steps. It compiles the real `src/math.c`
+with test stubs for unrelated game services; no game data or SDL window is
+needed. The existing CMake configuration still requires SDL2 to be installed.
+
+`tests/test_chargen.c` tests new-character defaults, starting rolls, class
+attributes and bonus caps, skill-tree traversal, and confirmed skill picks.
+It tests functions from `src/chargen.c` without UI code, with deterministic random
+values and stubs for game services (including skill training). Run just this
+suite with `ctest --test-dir build -R '^chargen$' --output-on-failure`.
+
+`tests/test_new_game.c` creates a stub character, seeds an in-memory level-1
+archive fixture, runs the real `load_level`/`load_level_object_table` code,
+and enters gameplay through the real game-mode transition. It checks the
+character survives loading, the level data and free-list offsets are loaded,
+the spawn request is tile (32, 2), and input dispatch switches to gameplay.
+Archive I/O, save records, scheduler/texture/automap services, player placement,
+and display/audio services are stubbed; no original game data or window is
+needed. It also checks cancellation and copy/load failures. Run it with
+`ctest --test-dir build -R '^new_game$' --output-on-failure`.
+
+`tests/test_teleport.c` queues a player teleport and ticks the real
+`dungeon_view_anim_tick` once to process it. It checks the old level is saved,
+the destination is loaded, held-item state is cleared, the player is placed,
+and the pending request is consumed.
+The successful teleport then runs a real `movement_tick` on the destination
+level and verifies the player remains alive with unchanged HP; NPC/physics
+services are stubbed. It also covers same-level teleports, blocked destinations,
+placement fallback, and save/load failures. Level I/O,
+placement search, and display services are stubbed. Run it with
+`ctest --test-dir build -R '^teleport$' --output-on-failure`.
+
+`tests/test_movement.c` checks a head-on wall hit stops the movement sweep,
+45-degree hits deflect left or right along the wall, a hard block clears all
+velocity, and open floor leaves movement unchanged. It compiles the real
+wall-collision response and heading-deflection code from `src/movement.c`.
+Stair cases use the real `collision_corner_flags` and `sweep_collision_flags`
+from `src/collision.c` and `uw.c`: rises of 4 and 8 succeed with a step limit of 8;
+rises of 9 and 32 are blocked without raising the player's feet. Tile heights,
+the height envelope, and sub-step rollback/restart are fixtures, so no original
+map data is needed.
+Run it with `ctest --test-dir build -R '^movement$' --output-on-failure`.
+
+Game functions remain in their original files. For the larger modules,
+`tests/tools/extract_functions.py` generates test-only translation units in
+the build directory from the exact selected function bodies. CMake regenerates
+them when the original sources change; tests provide the isolated globals and
+service stubs. No duplicate implementations are maintained in the repository.
+
+Add cases using `RUN_TEST` in the test runner. Set `-DBUILD_TESTING=OFF` to
+omit the test targets.
+
 ## Running
 
 The game needs its original data files. Extract them from the WinCE

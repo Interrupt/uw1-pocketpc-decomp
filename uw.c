@@ -1375,7 +1375,7 @@ char *DAT_001005c4;
 /* Not `static` -- also used by chargen.c; see the extern declaration and
    DAT_000fb860 macro alias in uw.h. */
 undefined1 DAT_000fb860_backing[256];
-undefined DAT_000fb863;
+/* DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. */
 /* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]`
    (4-byte stride) with idx up to a CONCAT11 of two record byte fields
    (draw_chargen_field_value). Real populator recovered this session: LAB_000255d0
@@ -4254,7 +4254,6 @@ undefined1 DAT_002046e4;
    at the name-derived offsets so both views alias. */
  unsigned char DAT_002049c8_backing[64];
 #define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
-#define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
 /* Offset 4 -- the third field of the X(0)/Y(2)/?(4)/heading(6) layout, and
    never given a name because nothing in the decompile reads it by a plain
    global symbol; every access is through the indexed `DAT_00202c6c[4]`
@@ -4266,7 +4265,6 @@ undefined1 DAT_002046e4;
    height) matches that reading too. The X/Y sync fix in sweep_collision_
    flags (commit ed49786) stopped short of this one -- added here as its
    natural third line, mirroring the existing pattern exactly. */
-#define DAT_002049cc (*(short *)(DAT_002049c8_backing + 0x04))
 #define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
 #define DAT_002049d0 (DAT_002049c8_backing[0x08])
 #define DAT_002049d1 (DAT_002049c8_backing[0x09])
@@ -4298,7 +4296,6 @@ int DAT_002046ec;
 #define DAT_0008699a  (DAT_00086998_backing[2])
 #define DAT_0008699b  (DAT_00086998_backing[3])
 #define DAT_0008699f  (DAT_00086998_backing[7])
-#define DAT_000869a0  (DAT_00086998_backing[8])
 #define DAT_000869a1  (DAT_00086998_backing[9])
 #define DAT_000869a2  (DAT_00086998_backing[10])
 int DAT_002046f8;
@@ -8317,7 +8314,7 @@ uint read_realtime_clock_units()
 
 
 undefined *FUN_0002295c(param_1)
-undefined4 param_1;
+char *param_1;
 
 {
   Ordinal_196(0,2,param_1,0xffffffff,&DAT_000fb650,0xff);
@@ -9868,7 +9865,7 @@ undefined4 dungeon_view_anim_tick()
       weapon_overlay_flash_hold((int)g_visibility_max_ring_passes);
     }
     if (DAT_00201b68 != DAT_00201c7c) {
-      iVar1 = transition_to_level();
+      iVar1 = transition_to_level(DAT_00201b68, DAT_00201c7c);
       if (iVar1 == 0) {
         report_fatal_error_and_exit(0x300c);
       }

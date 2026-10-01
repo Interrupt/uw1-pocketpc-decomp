@@ -673,7 +673,8 @@ extern undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb880 DAT_000fb880_backing[0]
 #define DAT_000fb884 (((undefined1 *)DAT_000fb880_backing)[4])
 #define DAT_000fb898 (((int *)DAT_000fb880_backing)[6])
-extern undefined DAT_000fb863;
+/* Fourth byte of each loaded class row is its attribute bonus pool. */
+#define DAT_000fb863 DAT_000fb860_backing[3]
 extern char s_key_to_continue_00084e60[];
 extern char s_then_press_the_Enter_00084e70[];
 extern char s_Enter_your_name_and_00084e88[];
@@ -2097,9 +2098,12 @@ extern short * g_sweep_velocity;
 #define DAT_0008699a  (DAT_00086998_backing[2])
 #define DAT_0008699b  (DAT_00086998_backing[3])
 #define DAT_0008699f  (DAT_00086998_backing[7])
+#define DAT_000869a0 (DAT_00086998_backing[8])
 #define DAT_000869a1  (DAT_00086998_backing[9])
 #define DAT_000869a2  (DAT_00086998_backing[10])
 #define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
+#define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
+#define DAT_002049cc (*(short *)(DAT_002049c8_backing + 0x04))
 #define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
 #define DAT_002049d0 (DAT_002049c8_backing[0x08])
 #define DAT_002049d1 (DAT_002049c8_backing[0x09])

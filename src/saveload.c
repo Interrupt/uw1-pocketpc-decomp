@@ -361,6 +361,7 @@ undefined4 load_game_from_slot(param_1)
 char param_1;
 
 {
+  char *converted_path;
   char *wptr_50330;
   char stack0xffdc2d28_buf [256];
   char *stack0xffdc2d28_ptr;
@@ -418,8 +419,8 @@ char param_1;
     pcVar6 = pcVar6 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_630,&DAT_000857a0);
-  uVar3 = FUN_0002295c(acStack_630);
-  Ordinal_61(auStack_420,uVar3);
+  converted_path = (char *)FUN_0002295c(acStack_630);
+  Ordinal_61(auStack_420,converted_path);
   /* Was `stack0xffdc2e30_ptr = stack0xffdc2e30_buf;` above -- a stack
      slot Ghidra split into two names (same bug class as the acStack_650
      fix above), so this copy of DAT_0023cca8 landed in a buffer
@@ -439,8 +440,8 @@ char param_1;
     pcVar5 = pcVar5 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_528,acStack_650);
-  uVar3 = FUN_0002295c(acStack_528);
-  Ordinal_61(auStack_218,uVar3);
+  converted_path = (char *)FUN_0002295c(acStack_528);
+  Ordinal_61(auStack_218,converted_path);
   print_scroll_message_by_id(0xa6);
   iVar4 = ensure_save_directory_exists(acStack_630);
   if (iVar4 != 0) {
@@ -521,6 +522,7 @@ char param_1;
 char *param_2;
 
 {
+  char *converted_path;
   char stack0xffdc2d20_buf [256];
   char *stack0xffdc2d20_ptr;
   char stack0xffdc2e28_buf [256];
@@ -575,7 +577,7 @@ char *param_2;
       iVar4 = iVar4 + 1;
     } while (*pcVar6 != '\0');
     uVar5 = Ordinal_1063(local_638,s__PLAYER_DAT_00087088);
-    iVar4 = win_file_exists(uVar5,0);
+    iVar4 = win_file_exists(local_638,0);
     if (iVar4 == -1) {
       FUN_0002295c(local_530);
       Ordinal_161();
@@ -613,10 +615,10 @@ char *param_2;
           iVar4 = commit_level_to_save_slot((int)DAT_00201b68);
           if (iVar4 != 0) {
             print_scroll_message_by_id(0xaa);
-            uVar5 = FUN_0002295c(local_530);
-            Ordinal_61(auStack_428,uVar5);
-            uVar5 = FUN_0002295c(local_638);
-            Ordinal_61(auStack_220,uVar5);
+            converted_path = (char *)FUN_0002295c(local_530);
+            Ordinal_61(auStack_428,converted_path);
+            converted_path = (char *)FUN_0002295c(local_638);
+            Ordinal_61(auStack_220,converted_path);
             /* Was copy_save_slot_files(local_638,local_530) -- i.e.
                (dest="\SAVE0", src="\SAVEn"), copying the CHOSEN SLOT
                back onto the active session. That's backwards for this

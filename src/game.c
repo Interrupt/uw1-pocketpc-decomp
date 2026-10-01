@@ -138,15 +138,14 @@ undefined4 param_1;
 
 {
   /* stack0xffdc2b6c/2c74/2d7c are leftover placeholder scalars (from an
-     early undeclared-identifier fix pass) that 8 separate "copy the
+     early undeclared-identifier fix pass) that separate "copy the
      install-dir base path" loops below used as
      `pcVar5[(int)&placeholder] = cVar1;` -- the classic "broken index
      copy loop" Ghidra artifact documented in the README, missed by the
      earlier systematic fix_stack_copy_loops.py/refix_stack_copy_loops.py
      passes. Each loop is immediately followed by Ordinal_1047(REALBUF,
      0,0x104) + Ordinal_1063(REALBUF,...) using the buffer this copy was
-     actually meant to fill (acStack_7ec/acStack_6e4/acStack_5dc
-     respectively) -- redirected via a real incrementing destination
+     actually meant to fill -- redirected via a real incrementing destination
      pointer instead. */
   char *pcVar_dst;
   unsigned int stack0xffdc2b6c;
@@ -201,11 +200,7 @@ undefined4 param_1;
      keeping them as separate, non-aliasing scalars. */
   char local_82c [256];
   char acStack_7ec [264];
-  char acStack_6e4 [264];
-  char acStack_5dc [264];
   undefined1 auStack_4d4 [160];
-  undefined1 auStack_434 [520];
-  undefined1 auStack_22c [520];
   
   /* local_82c is now a real array (see its declaration) -- zero the
      whole thing rather than just its first 4 bytes, since it's read
@@ -339,81 +334,7 @@ undefined4 param_1;
     else if (local_838 == 1) {
       g_text_use_palette_color = 1;
       fade_out(0,0,g_uw_framebuffer,200);
-      iVar4 = character_generator_start();
-      if (iVar4 != 0) {
-        Ordinal_1047(acStack_6e4,0,0x104);
-        pcVar5 = &DAT_0023cca8;
-        pcVar_dst = acStack_6e4;
-        do {
-          cVar1 = *pcVar5;
-          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
-          pcVar5 = pcVar5 + 1;
-        } while (cVar1 != '\0');
-        Ordinal_1063(acStack_6e4,&DAT_000857a0);
-        ensure_save_directory_exists(acStack_6e4);
-        /* load_game_from_slot (was FUN_0006c0c0; the numbered-save-slot
-           "Save Game" path) reads \SAVE0\player.dat before duplicating
-           SAVE0 into the chosen slot, but nothing ever created that file
-           for a freshly-started character. write_player_save_record
-           (was FUN_00043fd8) is the only other writer (confirmed by its
-           body: malloc+serialize+CreateFile+WriteFile) -- called here
-           too, alongside the \SAVE0\lev.ark seed a few lines down. First
-           attempt chased a red herring: this newly reaches
-           write_player_status_block->write_xor_scrambled_block with a genuinely truncated pointer
-           (fixed, write_xor_scrambled_block's param_3), but the *fatal* oversized-
-           write abort seen afterward was a false trail from a completely
-           unrelated, pre-existing bug in seed_conversation_globals_for_new_game (also fixed, see
-           its own comment) that this code path happens to run right
-           past. */
-        write_player_save_record(acStack_6e4);
-        Ordinal_1047(acStack_6e4,0,0x104);
-        pcVar5 = &DAT_0023cca8;
-        pcVar_dst = acStack_6e4;
-        do {
-          cVar1 = *pcVar5;
-          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
-          pcVar5 = pcVar5 + 1;
-        } while (cVar1 != '\0');
-        Ordinal_1063(acStack_6e4,s__DATA_lev_ark_00085734);
-        uVar7 = FUN_0002295c(acStack_6e4);
-        Ordinal_61(auStack_22c,uVar7);
-        Ordinal_1047(acStack_5dc,0,0x104);
-        pcVar5 = &DAT_0023cca8;
-        pcVar_dst = acStack_5dc;
-        do {
-          cVar1 = *pcVar5;
-          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
-          pcVar5 = pcVar5 + 1;
-        } while (cVar1 != '\0');
-        Ordinal_1063(acStack_5dc,s__SAVE0_lev_ark_000842fc);
-        uVar7 = FUN_0002295c(acStack_5dc);
-        Ordinal_61(auStack_434,uVar7);
-        /* The original does CopyFileW(auStack_22c, auStack_434) here to
-           seed the new game's world from the pristine template. That path
-           relies on the coredll wide-string ordinals (Ordinal_196/61/164),
-           which are no-op stubs -- and the pointer FUN_0002295c returns
-           gets truncated through this function's `undefined4` locals, so
-           making them real would crash. Do the copy directly against the
-           game paths instead: without it \SAVE0\lev.ark never exists and
-           load_level below fails, bouncing straight back to the menu
-           instead of entering the dungeon. */
-        Ordinal_164(auStack_22c,auStack_434,0);
-        uw_file_copy(s__DATA_lev_ark_00085734, s__SAVE0_lev_ark_000842fc);
-        sVar3 = seed_conversation_globals_for_new_game();
-        if (sVar3 != 0) {
-          report_fatal_error_and_exit();
-        }
-        sVar3 = load_level(1);
-        if (sVar3 < 1) {
-          bVar11 = false;
-        }
-        else {
-          bVar11 = true;
-          set_player_tile_position(0x20,2,1);
-          debug_print_player_position("chargen-spawn");
-          save_or_restore_level_special_state(1,0);
-        }
-      }
+      bVar11 = prepare_new_game();
       g_text_use_palette_color = 0;
     }
     else if (local_838 == 2) {
@@ -500,11 +421,7 @@ undefined4 param_1;
     }
     Ordinal_1018(local_834);
   } while (!bVar11);
-  FUN_00057cac(3);
-  cursor_show_idle_tick();
-  set_game_mode(1);
-  FUN_00049924(0x7ffe);
-  DAT_000868d8 = 0;
+  begin_gameplay();
   return;
 }
 
@@ -2107,6 +2024,7 @@ void compute_dimension_volume()
 void run_game_startup_sequence()
 
 {
+  char *converted_path;
   char stack0xffdc2d2c_buf [256];
   char *stack0xffdc2d2c_ptr;
   char stack0xffdc2e34_buf [256];
@@ -2204,8 +2122,8 @@ void run_game_startup_sequence()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_62c,s__DATA_lev_ark_00085734);
-  uVar5 = FUN_0002295c(acStack_62c);
-  Ordinal_61(auStack_214,uVar5);
+  converted_path = (char *)FUN_0002295c(acStack_62c);
+  Ordinal_61(auStack_214,converted_path);
   Ordinal_1047(acStack_524,0,0x104);
   do {
     cVar1 = *pcVar6;
@@ -2213,8 +2131,8 @@ void run_game_startup_sequence()
     pcVar6 = pcVar6 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_524,s__SAVE0_lev_ark_000842fc);
-  uVar5 = FUN_0002295c(acStack_524);
-  Ordinal_61(auStack_41c,uVar5);
+  converted_path = (char *)FUN_0002295c(acStack_524);
+  Ordinal_61(auStack_41c,converted_path);
   Ordinal_164(auStack_214,auStack_41c,0);
   sVar2 = seed_conversation_globals_for_new_game();
   if (sVar2 != 0) {
@@ -2744,4 +2662,68 @@ undefined4 load_startup_gr_resources()
     }
   }
   return uVar4;
+}
+
+bool prepare_new_game(void)
+{
+    char save_directory[264];
+    char destination_path[264];
+    undefined1 source_copy_path[520];
+    undefined1 destination_copy_path[520];
+    char *converted_path;
+    char *source;
+    char *destination;
+
+    if (!character_generator_start()) return false;
+
+    Ordinal_1047(save_directory, 0, 0x104);
+    source = (char *)&DAT_0023cca8;
+    destination = save_directory;
+    do {
+        *destination++ = *source;
+    } while (*source++ != '\0');
+    Ordinal_1063(save_directory, (char *)&DAT_000857a0);
+    ensure_save_directory_exists(save_directory);
+    write_player_save_record(save_directory);
+
+    Ordinal_1047(save_directory, 0, 0x104);
+    source = (char *)&DAT_0023cca8;
+    destination = save_directory;
+    do {
+        *destination++ = *source;
+    } while (*source++ != '\0');
+    Ordinal_1063(save_directory, s__DATA_lev_ark_00085734);
+    converted_path = (char *)FUN_0002295c(save_directory);
+    Ordinal_61(source_copy_path, converted_path);
+
+    Ordinal_1047(destination_path, 0, 0x104);
+    source = (char *)&DAT_0023cca8;
+    destination = destination_path;
+    do {
+        *destination++ = *source;
+    } while (*source++ != '\0');
+    Ordinal_1063(destination_path, s__SAVE0_lev_ark_000842fc);
+    converted_path = (char *)FUN_0002295c(destination_path);
+    Ordinal_61(destination_copy_path, converted_path);
+    if (!Ordinal_164(source_copy_path, destination_copy_path, 0)) return false;
+
+    if (seed_conversation_globals_for_new_game() != 0) {
+        report_fatal_error_and_exit();
+        return false;
+    }
+    if (load_level(1) < 1) return false;
+
+    set_player_tile_position(0x20, 2, 1);
+    debug_print_player_position("chargen-spawn");
+    save_or_restore_level_special_state(1, 0);
+    return true;
+}
+
+void begin_gameplay(void)
+{
+    FUN_00057cac(3);
+    cursor_show_idle_tick();
+    set_game_mode(1);
+    FUN_00049924(0x7ffe);
+    DAT_000868d8 = 0;
 }

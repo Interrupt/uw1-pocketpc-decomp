@@ -100,33 +100,18 @@ undefined1 * param_1;
 int param_2;
 
 {
-  bool bVar1;
   short sVar2;
   char *iVar3;
-  int iVar4;
-  undefined1 *puVar5;
-  undefined1 *puVar6;
   short *psVar7;
   undefined1 auStack_20 [16];
-  
-  if (param_1 == (undefined1 *)0x0) {
-    iVar3 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
-    if (iVar3 == 0) {
-      return 0;
-    }
+
+  if (param_1 == NULL) {
+    if (!open_level_archive(auStack_20, s__SAVE0_lev_ark_000842fc)) return 0;
   }
   else {
-    iVar3 = 0xf;
-    puVar5 = param_1;
-    puVar6 = auStack_20;
-    do {
-      iVar4 = iVar3 + -1;
-      *puVar6 = *puVar5;
-      bVar1 = 0 < iVar3;
-      iVar3 = iVar4;
-      puVar5 = puVar5 + 1;
-      puVar6 = puVar6 + 1;
-    } while (iVar4 != 0 && bVar1);
+    /* The archive handle is a 16-byte record. Ghidra's pointer-as-loop-
+     * counter copy only copied 15 bytes and required int/pointer casts. */
+    memcpy(auStack_20, param_1, sizeof(auStack_20));
   }
   iVar3 = DAT_002029cc;
   psVar7 = (short *)(DAT_002029cc + 0x7c06);

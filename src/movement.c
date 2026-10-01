@@ -627,7 +627,11 @@ uint param_1;
   undefined4 uVar5;
   uint uVar6;
   int extraout_r1;
-  char *iVar7;
+  /* Heading differences and velocity arithmetic must stay signed integers.
+   * Ghidra merged these with a later record-pointer role; pointer comparisons
+   * treated negative heading differences as large positive addresses. */
+  int iVar7;
+  char *movement_record;
   char *iVar8;
   bool bVar9;
   
@@ -688,10 +692,10 @@ uint param_1;
       iVar7 = (uint)*(ushort *)(iVar8 + 0x29) + (uVar6 & 0xffff);
       *(char *)(iVar8 + 0x29) = (char)iVar7;
       *(char *)(DAT_00204874 + 0x2a) = (char)((uint)iVar7 >> 8);
-      iVar7 = DAT_00204874;
+      movement_record = DAT_00204874;
       uVar4 = Ordinal_2005(0xf,(uint)*(byte *)(DAT_00204874 + 0x16) *
                                (int)*(short *)(DAT_00204874 + 0x14));
-      *(char *)(iVar7 + 0x14) = (char)uVar4;
+      *(char *)(movement_record + 0x14) = (char)uVar4;
       *(char *)(DAT_00204874 + 0x15) = (char)((ushort)uVar4 >> 8);
       iVar8 = DAT_00204874;
     }

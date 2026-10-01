@@ -18,17 +18,16 @@
 
 // was FUN_000226e8 -- CreateFile(GENERIC_READ, OPEN_EXISTING) immediately
 // followed by CloseHandle: a "does this file exist" probe, not a real
-// open. The filename comes from FUN_0002295c (a LoadString-shaped
-// resource-string loader, unrelated to the file-I/O cluster below --
-// left unnamed/out of scope for this pass).
-undefined4 win_file_exists()
+// open. FUN_0002295c prepares the supplied path for the ordinal file API.
+undefined4 win_file_exists(path)
+const char *path;
 
 {
   undefined4 uVar1;
   int iVar2;
 
-  uVar1 = FUN_0002295c();
-  iVar2 = Ordinal_168(uVar1,0x80000000,1,0,3,0x80,0);
+  char *converted_path = (char *)FUN_0002295c(path);
+  iVar2 = Ordinal_168(converted_path,0x80000000,1,0,3,0x80,0);
   if (iVar2 == -1) {
     uVar1 = 0xffffffff;
   }

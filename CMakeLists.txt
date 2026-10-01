@@ -109,3 +109,60 @@ target_link_options(uw_asan PRIVATE -fsanitize=address)
 set_target_properties(uw_asan PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
+include(CTest)
+if(BUILD_TESTING)
+  add_library(unity STATIC third_party/unity/src/unity.c)
+  target_include_directories(unity PUBLIC third_party/unity/src)
+
+  add_executable(test_math tests/test_math.c tests/math_stubs.c src/math.c)
+  target_include_directories(test_math PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_compile_options(test_math PRIVATE -Wno-deprecated-non-prototype)
+  target_link_libraries(test_math PRIVATE unity)
+  add_test(NAME math COMMAND test_math)
+
+  # Generate isolated test units from the original function bodies. Game
+  # functions stay in their existing files, and tests never keep code copies.
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  function(add_game_unit_test name)
+    set(test_source "${CMAKE_CURRENT_BINARY_DIR}/tests/${name}_functions.c")
+    set(dependencies)
+    foreach(entry IN LISTS ARGN)
+      string(REGEX REPLACE ":.*$" "" source_file "${entry}")
+      list(APPEND dependencies "${CMAKE_CURRENT_SOURCE_DIR}/${source_file}")
+    endforeach()
+    add_custom_command(OUTPUT "${test_source}"
+      COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/tools/extract_functions.py"
+        --root "${CMAKE_CURRENT_SOURCE_DIR}" --output "${test_source}" ${ARGN}
+      DEPENDS tests/tools/extract_functions.py ${dependencies}
+      VERBATIM)
+    add_executable(test_${name} tests/test_${name}.c "${test_source}")
+    target_include_directories(test_${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_compile_options(test_${name} PRIVATE -Wno-deprecated-non-prototype
+      -Wno-int-conversion -Wno-pointer-to-int-cast)
+    target_link_libraries(test_${name} PRIVATE unity)
+    add_test(NAME ${name} COMMAND test_${name})
+  endfunction()
+
+  add_game_unit_test(chargen
+    src/chargen.c:init_new_character_record
+    src/chargen.c:advance_skill_tree_node
+    src/chargen.c:apply_confirmed_skill_picks
+    src/chargen.c:reroll_attributes_for_class_race)
+  add_game_unit_test(new_game
+    src/game.c:prepare_new_game src/game.c:begin_gameplay
+    src/level.c:load_level_object_table src/level.c:load_level
+    uw.c:set_game_mode
+    src/ordinal_stubs.c:Ordinal_61 src/ordinal_stubs.c:Ordinal_164
+    src/ordinal_stubs.c:Ordinal_196 src/ordinal_stubs.c:Ordinal_1047
+    src/ordinal_stubs.c:Ordinal_1063)
+  add_game_unit_test(teleport
+    src/level.c:transition_to_level src/level.c:teleport_object_to_level_tile
+    uw.c:dungeon_view_anim_tick src/movement.c:movement_tick)
+  add_game_unit_test(movement
+    src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading
+    src/movement.c:sweep_slide_along_wall src/movement.c:sweep_apply_collision
+    uw.c:collision_flags_to_locomotion_code uw.c:sweep_collision_flags
+    src/collision.c:collision_corner_flags)
+endif()
