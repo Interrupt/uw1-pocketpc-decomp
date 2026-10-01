@@ -2705,6 +2705,21 @@ void uw_debug_dump_critter_sheet_once(void);
 void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_force_item_id_once(void);
 undefined4 LAB_000415d0(void *buf, unsigned size, int idx);
+/* Forward declarations needed because load_gr_resource_group,
+   load_objects_gr, load_tmflat_gr, load_hud_icon_gr,
+   reload_single_grtile_entry, and decode_gr_entry_to_buffer (now in
+   src/resources.c) take these LAB_ callbacks' addresses and reference
+   these globals; their own definitions stay in uw.c (see
+   LAB_000415b0/LAB_000416e8's matching comment above for what this
+   callback family does). */
+void *LAB_000415b0();
+undefined4 LAB_00041610(void *buf, unsigned size, int idx);
+extern undefined2 DAT_000859a8;
+undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx);
+void *LAB_000416e8();
+extern void *DAT_00202510;
+void *LAB_000416f8();
+unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx);
 void *alloc_door_frame_buffer();
 void close_door_object();
 void open_door_object();
@@ -3181,12 +3196,12 @@ bool register_grtile_entry();
 undefined4 reregister_grtile_entry();
 uint load_gr_resource_entries();
 unsigned char *uw_get_default_palette(const char *gr_name);
-undefined4 FUN_00041910();
-undefined4 FUN_00041960();
+undefined4 load_gr_resource_group();
+undefined4 load_objects_gr();
 undefined4 load_tmflat_gr();
-undefined4 FUN_000419c8();
-void FUN_00041a18();
-undefined4 FUN_00041a78();
+undefined4 load_hud_icon_gr();
+void reload_single_grtile_entry();
+undefined4 decode_gr_entry_to_buffer();
 undefined4 FUN_00041aac();
 void load_door_frames();
 void load_armor_variant_tables();

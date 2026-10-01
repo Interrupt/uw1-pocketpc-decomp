@@ -304,7 +304,7 @@ undefined4 param_1;
       cursor_show_idle_tick();
       if ((DAT_0023bf70 == 0) ||
          /* Was a literal 0 here (an earlier fix pass believed this
-            mirrored sibling call sites like FUN_00041a78's genuine
+            mirrored sibling call sites like decode_gr_entry_to_buffer's genuine
             "no postprocessing needed" case) -- but populate_menu_button_bitmap_entry is
             exactly the postprocess_cb this resource load needs: same
             3-arg shape as chargen's LAB_000255d0 (see its comment near

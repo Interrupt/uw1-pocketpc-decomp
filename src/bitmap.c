@@ -920,7 +920,7 @@ uint param_2;
        resolve_sprite_id_to_frame's ">= 0x2000 -> DAT_00202738 + id - 0x2000" TMOBJ
        convention assumes DAT_00202738 is TMOBJ's own starting base, but
        it's actually snapshotted right AFTER TMOBJ's own
-       FUN_00041910(s_tmobj) call finishes -- confirmed by instrumenting
+       load_gr_resource_group(s_tmobj) call finishes -- confirmed by instrumenting
        the loader directly (DAT_00202744 went 643 -> 681 across that one
        call, so TMOBJ's real 38 frames are absolute 643-680, and
        DAT_00202738=681 is the NEXT resource's base). No non-negative

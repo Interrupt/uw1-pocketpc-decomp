@@ -922,7 +922,7 @@ void redraw_hud_panels()
   snap_compass_to_heading();
   sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
   update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
-  FUN_00041a78(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
+  decode_gr_entry_to_buffer(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
   /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
      parameter -- it reads the global g_blit_transparent_mode instead (see its own
      definition in graphics.c: g_blit_transparent_mode==0 draws every source byte
@@ -1683,7 +1683,7 @@ void redraw_active_hud_panel()
 {
   int iVar1;
   
-  iVar1 = FUN_00041a78(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
+  iVar1 = decode_gr_entry_to_buffer(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
   if (iVar1 == 0) {
     debug_print(&DAT_00087298);
   }
@@ -2565,13 +2565,13 @@ undefined2 param_5;
   /* Was `ushort` -- too narrow for alloc_flip_grtile_slot's real 4-byte
      grtile key now that it's no longer a stub (harmless before, when
      it always returned 0). Still reused a few lines down as a plain
-     0/1 success flag (FUN_00041a78's return), which fits fine in the
+     0/1 success flag (decode_gr_entry_to_buffer's return), which fits fine in the
      wider type too. */
   undefined4 uVar2;
   ushort uVar3;
   /* Was `undefined4` -- truncated resolve_flip_grtile_slot's real
      pointer return (see its own comment) to 32 bits on this host
-     before handing it to FUN_00041a78/bitmap_blit_to_framebuffer.
+     before handing it to decode_gr_entry_to_buffer/bitmap_blit_to_framebuffer.
      Harmless while resolve_flip_grtile_slot was a stub always
      returning 0; a real truncated-pointer bug now that it isn't. */
   char *uVar4;
@@ -2625,9 +2625,9 @@ undefined2 param_5;
             (int)param_1, (unsigned)g_flip_grtile_cache_ready, (int)DAT_0023c278, (int)uVar6);
   if ((g_flip_grtile_cache_ready & 1) != 0) {
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
-    uVar2 = FUN_00041a78(s_panels_00087260,param_1,uVar4);
+    uVar2 = decode_gr_entry_to_buffer(s_panels_00087260,param_1,uVar4);
     iVar5 = resolve_flip_grtile_slot(DAT_0023c200);
-    uVar3 = FUN_00041a78(s_panels_00087260,3,iVar5 + 0x2800);
+    uVar3 = decode_gr_entry_to_buffer(s_panels_00087260,3,iVar5 + 0x2800);
     if (getenv("UW_DEBUG_CLICKREGION"))
       fprintf(stderr, "[stats] begin_hud_panel_flip: uVar4(dst202)=%u uVar2(decode1 ok)=%u iVar5(dst200)=%d uVar3(decode2 ok)=%u\n",
               (unsigned)uVar4, (unsigned)uVar2, iVar5, (unsigned)uVar3);
@@ -2937,7 +2937,7 @@ bool advance_hud_panel_flip()
              call's C syntax. Previously left as the original 3-arg
              dropped-argument call because applying this fix crashed a
              few ticks later -- that turned out to be a side effect of
-             capture_framebuffer_rect_to_grtile_paletted/FUN_00041a78 being broken (this rect_fill
+             capture_framebuffer_rect_to_grtile_paletted/decode_gr_entry_to_buffer being broken (this rect_fill
              finally actually running exposed their bugs, rather than
              being wrong itself); now that both are fixed, re-applying
              this fix is what it takes for the panel-flip's "erase old
@@ -3003,7 +3003,7 @@ bool advance_hud_panel_flip()
   }
   if (DAT_0023c208 == '\x02') {
     DAT_0023c208 = bVar2;
-    FUN_00041a78(s_panels_00087260,3,DAT_0023cca4);
+    decode_gr_entry_to_buffer(s_panels_00087260,3,DAT_0023cca4);
     FUN_00057118();
     set_draw_color(0xf1);
     rect_fill_or_save_restore(0xec,8,0x13f,0x7a);
@@ -3016,7 +3016,7 @@ LAB_0006f008:
   else {
     if (DAT_0023c208 == '\x05') {
       DAT_0023c208 = bVar2;
-      FUN_00041a78(s_panels_00087260,(int)DAT_0023c134,DAT_0023cca4);
+      decode_gr_entry_to_buffer(s_panels_00087260,(int)DAT_0023c134,DAT_0023cca4);
       FUN_00057118();
       set_draw_color(0xf1);
       rect_fill_or_save_restore(0x114,5,0x117,0x7d);
@@ -3579,7 +3579,7 @@ void flush_sprite_list_compositor()
    verbatim -- but the grtile buffers here and copy_hud_panel_flip_column's whole
    squash-blit loop are 8bpp paletted (1 byte/pixel, confirmed via
    disassembly-recovered pointer stepping), same format
-   decode_gr_entry_bitmap/FUN_00041a78 already decoded into this exact
+   decode_gr_entry_bitmap/decode_gr_entry_to_buffer already decoded into this exact
    buffer just before draw_stats_panel_content ran. A real fix needs
    an actual 16bpp->8bpp palette-matching capture, which doesn't exist
    anywhere else in this codebase -- implemented here as a per-pixel
@@ -3590,7 +3590,7 @@ void flush_sprite_list_compositor()
 
    Writes tightly-packed rows (stride = width, no padding) starting at
    the destination buffer's own base -- matching the layout
-   FUN_00041a78's decode already established for this same buffer
+   decode_gr_entry_to_buffer's decode already established for this same buffer
    (bitmap_blit_to_framebuffer reads it back with that same width as
    its own row stride, no separate pitch).
 

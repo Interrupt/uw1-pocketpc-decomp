@@ -3080,7 +3080,7 @@ static void uw_register_gr_entry(unsigned base, void *buf, int idx)
 }
 undefined4 LAB_000415d0(void *buf, unsigned size, int idx)
 {
-  /* Caller FUN_00041910 loads at the running cursor DAT_00202744 and
+  /* Caller load_gr_resource_group loads at the running cursor DAT_00202744 and
      advances it by the file's entry count afterwards. */
   (void)size;
   uw_register_gr_entry((unsigned)DAT_00202744, buf, idx);
@@ -3088,7 +3088,7 @@ undefined4 LAB_000415d0(void *buf, unsigned size, int idx)
 }
 undefined4 LAB_00041610(void *buf, unsigned size, int idx)
 {
-  /* Caller FUN_00041960 (OBJECTS.GR) -- does not advance the cursor; the
+  /* Caller load_objects_gr (OBJECTS.GR) -- does not advance the cursor; the
      next file resets DAT_00202744 to 0x1c0, so OBJECTS.GR occupies the
      absolute [0, entry_count) range (frame N == object type N). */
   (void)size;
@@ -3123,12 +3123,12 @@ unsigned int param_1;
 
 {
   /* Allocator callback, same role as LAB_000415b0 -- see there. Used by
-     FUN_000419c8/FUN_00041a18 (flasks/compass/dragons/power/chains/
+     load_hud_icon_gr/reload_single_grtile_entry (flasks/compass/dragons/power/chains/
      spells/scrledge and friends). */
   return Ordinal_1041(param_1);
 }
 /* Was `undefined4` -- truncated the real 64-bit destination pointer
-   FUN_00041a78 assigns here (see that function's own comment on why
+   decode_gr_entry_to_buffer assigns here (see that function's own comment on why
    this global exists at all: load_gr_resource_entries always decodes
    into its OWN malloc'd buffer via the allocator callback and only
    ever hands that buffer back through the post-process callback, so
@@ -3139,10 +3139,10 @@ unsigned int param_1;
 
 {
   /* Allocator callback, same role as LAB_000415b0 -- see there. Used by
-     FUN_00041a78, which passes no post-process callback (param_5 == 0). */
+     decode_gr_entry_to_buffer, which passes no post-process callback (param_5 == 0). */
   return Ordinal_1041(param_1);
 }
-/* Not decompiled -- FUN_00041a78's post-process callback. Ghidra never
+/* Not decompiled -- decode_gr_entry_to_buffer's post-process callback. Ghidra never
    recovered a real one here (it hardcoded param_5=0, "no callback"),
    but that leaves load_gr_resource_entries's freshly-decoded buffer
    completely unreachable: it's malloc'd fresh by LAB_000416f8, never
@@ -3154,13 +3154,13 @@ unsigned int param_1;
    success while leaving their destination grtile buffer entirely
    zeroed (0/9462 nonzero bytes), which is exactly what "decode
    succeeds but the caller's buffer is never touched" looks like. Since
-   FUN_00041a78 stashes its REAL destination in DAT_00202510 (see that
+   decode_gr_entry_to_buffer stashes its REAL destination in DAT_00202510 (see that
    global's own comment) specifically to route around the missing
    callback, the callback this decode always needed is simply "copy the
    decoded bytes there" -- same leak-the-temporary-allocation posture
    as Ordinal_1018's own documented precedent (freeing a possibly-
    garbage pointer is worse than a short-lived leak). */
-static unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx)
+unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx)
 {
   (void)idx;
   if (DAT_00202510 != 0) {
@@ -10871,7 +10871,7 @@ codeval * param_5;
        BUG (found tracing the mode-icon "door sprite" report): this
        early return never touches DAT_00202728 (the just-loaded
        resource's frame count), so it's left holding whatever the
-       PREVIOUS real load set it to. FUN_00041910/FUN_000419c8's
+       PREVIOUS real load set it to. load_gr_resource_group/load_hud_icon_gr's
        callers unconditionally do `DAT_00202744 += DAT_00202728`
        right after calling this regardless of success/failure -- so
        every one of these "nothing to load" resources silently
@@ -10947,114 +10947,6 @@ codeval * param_5;
 
 
 
-undefined4 FUN_00041910(param_1)
-char *param_1;
-
-{
-  undefined4 uVar1;
-  short _dbg_before;
-  _dbg_before = DAT_00202744;
-  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_000415d0);
-  DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
-  if (getenv("UW_DEBUG_DUMP_GR")) {
-    fprintf(stderr, "[dumpgr] FUN_00041910(\"%s\") frames [%d, %d) count=%d ok=%d\n",
-            param_1, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
-  }
-  return uVar1;
-}
-
-
-
-undefined4 FUN_00041960(param_1)
-char *param_1;
-
-{
-  return load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_00041610);
-}
-
-
-
-// was FUN_00041990
-undefined4 load_tmflat_gr(param_1,param_2,param_3)
-char *param_1;
-undefined2 param_2;
-undefined4 param_3;
-
-{
-  DAT_000859a8 = param_2;
-  return load_gr_resource_entries(param_1,0,param_3,&LAB_000415b0,&register_tmflat_gr_entry);
-}
-
-
-
-undefined4 FUN_000419c8(param_1)
-char *param_1;
-
-{
-  /* Ghidra dropped load_gr_resource_entries's result and always returned failure
-     (see select_default_hud_font for the same pattern); propagate the real result. */
-  undefined4 uVar1;
-  short _dbg_before;
-  _dbg_before = DAT_00202744;
-  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000416e8,register_grtile_entry);
-  DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
-  if (getenv("UW_DEBUG_DUMP_GR")) {
-    fprintf(stderr, "[dumpgr] FUN_000419c8(\"%s\") frames [%d, %d) count=%d ok=%d\n",
-            param_1, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
-  }
-  return uVar1;
-}
-
-
-
-void FUN_00041a18(param_1,param_2,param_3)
-short param_1;
-/* Was `undefined4`, truncating the real resource-name string pointer
-   callers pass (e.g. FUN_0004638c's s_bodies_00085c58) before it reaches
-   load_gr_resource_entries's own `char *param_1`, which then crashed dereferencing
-   it. Same pointer-truncation class as everywhere else this session. */
-char *param_2;
-undefined4 param_3;
-
-{
-  undefined2 uVar1;
-
-  uVar1 = DAT_00202744;
-  DAT_00202744 = DAT_00202738 + param_1 + -0x2000;
-  load_gr_resource_entries(param_2,param_3,1,&LAB_000416e8,reregister_grtile_entry);
-  DAT_00202744 = uVar1;
-  return;
-}
-
-
-
-/* Was `load_gr_resource_entries(...); return 0;` -- a dropped return
-   value (same class as FUN_00045054/get_scanned_object_class_effect_ptr
-   elsewhere this session): load_gr_resource_entries has a real `uint`
-   return (used directly by its other callers, e.g. FUN_00041a4c/
-   FUN_00041a90's own `return load_gr_resource_entries(...)`), but this
-   wrapper discarded it and always reported success. Harmless at
-   redraw_hud_panels's own call site (doesn't check the return value),
-   but begin_hud_panel_flip/redraw_active_hud_panel both DO check it, and with
-   the hardcoded 0 they always took their "decode failed" error branch
-   -- confirmed live once alloc_flip_grtile_slot/resolve_flip_grtile_slot
-   stopped being stubs and this path actually ran for the first time. */
-undefined4 FUN_00041a78(param_1,param_2,param_3)
-char *param_1;
-undefined4 param_2;
-void *param_3;
-
-{
-  DAT_00202510 = param_3;
-  /* Was a hardcoded `0` (no post-process callback) -- see
-     uw_copy_gr_entry_to_dest's own comment: without a real callback
-     here, load_gr_resource_entries decodes into its own throwaway
-     buffer and DAT_00202510 (this function's whole reason for
-     existing) is never actually consulted, so this decode always
-     reported success while leaving the caller's destination buffer
-     untouched. */
-  return load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,&uw_copy_gr_entry_to_dest);
-}
 
 
 
@@ -11105,39 +10997,39 @@ undefined4 FUN_00041aac()
   else {
     read_file_handle(iVar3,&DAT_00202520,0x200);
     Ordinal_553(iVar3);
-    uVar5 = FUN_00041910(s_question_00085a44);
-    uVar6 = FUN_00041910(s_views_00085a3c);
+    uVar5 = load_gr_resource_group(s_question_00085a44);
+    uVar6 = load_gr_resource_group(s_views_00085a3c);
     DAT_0020272c = DAT_00202744;
-    uVar7 = FUN_00041960(s_objects_00085a34);
+    uVar7 = load_objects_gr(s_objects_00085a34);
     DAT_0024fa1c = DAT_00202744;
     DAT_00202744 = 0x1c0;
-    uVar8 = FUN_00041910(s_animo_00085a2c);
+    uVar8 = load_gr_resource_group(s_animo_00085a2c);
     DAT_00202730 = DAT_00202744;
-    uVar9 = FUN_00041910(s_buttons_00085a24);
-    uVar10 = FUN_00041910(s_cursors_00085a1c);
-    uVar11 = FUN_00041910(s_3dwin_00085a14);
+    uVar9 = load_gr_resource_group(s_buttons_00085a24);
+    uVar10 = load_gr_resource_group(s_cursors_00085a1c);
+    uVar11 = load_gr_resource_group(s_3dwin_00085a14);
     DAT_00202734 = DAT_00202744;
     uVar12 = load_tmflat_gr(s_tmflat_00085a0c,0x170,0x10);
     /* DAT_00202738 is snapshotted AFTER this call, i.e. it's the base for
        whatever loads NEXT (LFTI.GR, see s_lfti_000859fc), not TMOBJ's own
        base -- confirmed by instrumenting this exact spot (DAT_00202744
-       went 643 -> 681 across the FUN_00041910 call below), so TMOBJ's
+       went 643 -> 681 across the load_gr_resource_group call below), so TMOBJ's
        real 38 frames are absolute indices 643-680. See
        emit_tile_objects's class-2 sign branch and decode_tile_object_billboard_texture's
        negative-param_1 comment for where this matters. */
-    uVar13 = FUN_00041910(s_tmobj_00085a04);
+    uVar13 = load_gr_resource_group(s_tmobj_00085a04);
     DAT_00202738 = DAT_00202744;
-    uVar14 = FUN_000419c8(s_lfti_000859fc);
-    uVar15 = FUN_000419c8(s_flasks_000859f4);
-    uVar16 = FUN_000419c8(s_compass_000859ec);
-    uVar17 = FUN_000419c8(s_dragons_000859e4);
-    uVar18 = FUN_000419c8(s_inv_000859e0);
-    uVar19 = FUN_000419c8(s_power_000859d8);
-    uVar20 = FUN_000419c8(s_eyes_000859d0);
-    uVar21 = FUN_000419c8(s_chains_000859c8);
-    uVar22 = FUN_000419c8(s_spells_000859c0);
-    uVar23 = FUN_000419c8(s_scrledge_000859b4);
-    uVar24 = FUN_000419c8(s_optb_000859ac);
+    uVar14 = load_hud_icon_gr(s_lfti_000859fc);
+    uVar15 = load_hud_icon_gr(s_flasks_000859f4);
+    uVar16 = load_hud_icon_gr(s_compass_000859ec);
+    uVar17 = load_hud_icon_gr(s_dragons_000859e4);
+    uVar18 = load_hud_icon_gr(s_inv_000859e0);
+    uVar19 = load_hud_icon_gr(s_power_000859d8);
+    uVar20 = load_hud_icon_gr(s_eyes_000859d0);
+    uVar21 = load_hud_icon_gr(s_chains_000859c8);
+    uVar22 = load_hud_icon_gr(s_spells_000859c0);
+    uVar23 = load_hud_icon_gr(s_scrledge_000859b4);
+    uVar24 = load_hud_icon_gr(s_optb_000859ac);
     if ((uVar23 & uVar24 & uVar22 & uVar21 & uVar20 & uVar19 & uVar18 & uVar17 & uVar16 & uVar15 &
          uVar14 & uVar13 & uVar12 & uVar11 & uVar10 & uVar9 & uVar8 & uVar7 & uVar6 & uVar5 & 1) ==
         0) {
@@ -12958,7 +12850,7 @@ void FUN_0004638c()
 {
   int iVar1;
   
-  FUN_00041a18(0x2091,s_bodies_00085c58,
+  reload_single_grtile_entry(0x2091,s_bodies_00085c58,
                (*(byte *)(DAT_00086df8 + 100) >> 2 & 7) +
                (int)(short)((int)((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 10) >> 1));
   iVar1 = 1;
@@ -13068,7 +12960,7 @@ void FUN_000465c8()
    comments) that's never read back afterward. The REAL destination,
    acStack_28 (6 bytes) + local_22 (the dynamically-picked gender
    letter, right after it), never actually got "armor_" copied into
-   it -- so FUN_00041a18 loaded a resource file named by 6 bytes of
+   it -- so reload_single_grtile_entry loaded a resource file named by 6 bytes of
    uninitialized stack instead of "armor_f"/"armor_m", explaining why
    an equipped item's paper-doll overlay renders as a solid block
    (whatever placeholder/error frame a failed .GR load falls back to)
@@ -13093,7 +12985,7 @@ undefined4 param_2;
     armor_name[6] = 0x66;
   }
   armor_name[7] = '\0';
-  FUN_00041a18(param_1 + 0x2091,armor_name,param_2);
+  reload_single_grtile_entry(param_1 + 0x2091,armor_name,param_2);
   return 1;
 }
 
@@ -20961,7 +20853,7 @@ void FUN_00056640(param_1)
 undefined4 param_1;
 
 {
-  FUN_00041a18(0x20eb,s_optbtns_00086954,param_1);
+  reload_single_grtile_entry(0x20eb,s_optbtns_00086954,param_1);
   draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   return;
 }
@@ -20973,7 +20865,7 @@ int param_1;
 undefined4 param_2;
 
 {
-  FUN_00041a18(0x20ec,s_optbtns_00086954,param_2);
+  reload_single_grtile_entry(0x20ec,s_optbtns_00086954,param_2);
   draw_sprite_by_id(0x20ec,5,param_1 * -0xf + 0x67,0xe,0x1f);
   return;
 }
@@ -21007,7 +20899,7 @@ void close_ui_panel_return_to_game()
   FUN_00057118();
   DAT_000868d8 = 0;
   DAT_000868dc = 7;
-  FUN_00041a18(0x20eb,s_optbtns_00086954,0);
+  reload_single_grtile_entry(0x20eb,s_optbtns_00086954,0);
   draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   if (0 < g_cursor_mode) {
     /* Dropped argument -- same idiom as the identical bug in
@@ -21089,7 +20981,7 @@ void FUN_0005693c()
   uVar1 = (uint)(*(byte *)(DAT_00086df8 + 0xb5) >> 4);
   DAT_002046f0 = 0xffff;
   FUN_00056640(5);
-  FUN_00041a18(0x20ed,s_optbtns_00086954,uVar1 + 0x35);
+  reload_single_grtile_entry(0x20ed,s_optbtns_00086954,uVar1 + 0x35);
   draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
   FUN_000566dc(4 - uVar1,(uVar1 + 0x13) * 2);
   return;
@@ -21170,7 +21062,7 @@ int param_1;
     FUN_0005d2b0();
     full_dungeon_redraw();
     weapon_overlay_and_full_redraw();
-    FUN_00041a18(0x20ed,s_optbtns_00086954,param_1 + 0x39);
+    reload_single_grtile_entry(0x20ed,s_optbtns_00086954,param_1 + 0x39);
     draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
     FUN_000566dc(4 - (param_1 + 4),(param_1 + 0x17) * 2);
   }

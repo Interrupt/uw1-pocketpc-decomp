@@ -183,10 +183,10 @@ void load_door_frames()
        -- with no registrar, even a successful allocate+read never stores
        the decoded buffer into lookup_grtile_by_id's DAT_0024e090[] pointer
        table, so every door frame stayed permanently unresolved (0x0
-       width/height, drawing nothing). LAB_000415d0 (FUN_00041910/
+       width/height, drawing nothing). LAB_000415d0 (load_gr_resource_group/
        QUESTION-VIEWS-etc.'s own registrar) already does exactly what's
        needed here: register at the running cursor DAT_00202744, which
-       this loop already manages by hand the same way FUN_00041910's
+       this loop already manages by hand the same way load_gr_resource_group's
        caller does. */
     uint _ok = load_gr_resource_entries(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&alloc_door_frame_buffer,&LAB_000415d0);
     if (getenv("UW_DEBUG_DOOR"))
@@ -1954,4 +1954,146 @@ short param_3;
                (uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
   g_grtile_registry[(uint)DAT_00202744 + (int)param_3] = pvVar1;
   return 1;
+}
+
+
+// was FUN_00041910 -- the generic .GR resource-group loader: registers
+// every entry at the running absolute-frame cursor DAT_00202744 (via
+// LAB_000415d0 -> uw_register_gr_entry) then advances the cursor by
+// the file's own entry count. Used for most of the startup preload
+// chain (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/3DWIN/TMOBJ and friends)
+// -- everything except OBJECTS.GR (load_objects_gr, which doesn't
+// advance the cursor) and the flasks/compass HUD icon group
+// (load_hud_icon_gr, which registers via register_grtile_entry
+// instead).
+undefined4 load_gr_resource_group(param_1)
+char *param_1;
+
+{
+  undefined4 uVar1;
+  short _dbg_before;
+  _dbg_before = DAT_00202744;
+  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_000415d0);
+  DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
+  if (getenv("UW_DEBUG_DUMP_GR")) {
+    fprintf(stderr, "[dumpgr] load_gr_resource_group(\"%s\") frames [%d, %d) count=%d ok=%d\n",
+            param_1, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
+  }
+  return uVar1;
+}
+
+
+
+// was FUN_00041960 -- loads OBJECTS.GR specifically: registers each
+// entry at absolute cursor 0 (LAB_00041610) rather than the running
+// DAT_00202744 cursor, and does NOT advance it -- OBJECTS.GR occupies
+// the absolute [0, entry_count) frame range (frame N == object type
+// N), with the running cursor reset to 0x1c0 by the next load in the
+// preload chain.
+undefined4 load_objects_gr(param_1)
+char *param_1;
+
+{
+  return load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_00041610);
+}
+
+
+
+// was FUN_00041990
+undefined4 load_tmflat_gr(param_1,param_2,param_3)
+char *param_1;
+undefined2 param_2;
+undefined4 param_3;
+
+{
+  DAT_000859a8 = param_2;
+  return load_gr_resource_entries(param_1,0,param_3,&LAB_000415b0,&register_tmflat_gr_entry);
+}
+
+
+
+// was FUN_000419c8 -- loads a HUD icon .GR resource (flasks, compass,
+// dragons, power, eyes, chains, spells, scroll-edge, etc.) by
+// registering each entry via register_grtile_entry rather than
+// uw_register_gr_entry, otherwise identical in shape to
+// load_gr_resource_group (same running-cursor advance/debug dump).
+undefined4 load_hud_icon_gr(param_1)
+char *param_1;
+
+{
+  /* Ghidra dropped load_gr_resource_entries's result and always returned failure
+     (see select_default_hud_font for the same pattern); propagate the real result. */
+  undefined4 uVar1;
+  short _dbg_before;
+  _dbg_before = DAT_00202744;
+  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000416e8,register_grtile_entry);
+  DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
+  if (getenv("UW_DEBUG_DUMP_GR")) {
+    fprintf(stderr, "[dumpgr] load_hud_icon_gr(\"%s\") frames [%d, %d) count=%d ok=%d\n",
+            param_1, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
+  }
+  return uVar1;
+}
+
+
+
+// was FUN_00041a18 -- reloads a SINGLE .GR entry (count=1) into its
+// existing grtile slot via reregister_grtile_entry, temporarily
+// repointing the running cursor DAT_00202744 at the entry's own
+// absolute frame (derived from param_1, a symbolic sprite id >= 0x2000)
+// for the one call, then restoring it. Used for live reloads of a
+// single already-loaded sprite (e.g. a paperdoll body entry) without
+// disturbing the rest of the preload chain's frame numbering.
+void reload_single_grtile_entry(param_1,param_2,param_3)
+short param_1;
+/* Was `undefined4`, truncating the real resource-name string pointer
+   callers pass (e.g. FUN_0004638c's s_bodies_00085c58) before it reaches
+   load_gr_resource_entries's own `char *param_1`, which then crashed dereferencing
+   it. Same pointer-truncation class as everywhere else this session. */
+char *param_2;
+undefined4 param_3;
+
+{
+  undefined2 uVar1;
+
+  uVar1 = DAT_00202744;
+  DAT_00202744 = DAT_00202738 + param_1 + -0x2000;
+  load_gr_resource_entries(param_2,param_3,1,&LAB_000416e8,reregister_grtile_entry);
+  DAT_00202744 = uVar1;
+  return;
+}
+
+
+
+/* Was `load_gr_resource_entries(...); return 0;` -- a dropped return
+   value (same class as FUN_00045054/get_scanned_object_class_effect_ptr
+   elsewhere this session): load_gr_resource_entries has a real `uint`
+   return (used directly by its other callers, e.g. FUN_00041a4c/
+   FUN_00041a90's own `return load_gr_resource_entries(...)`), but this
+   wrapper discarded it and always reported success. Harmless at
+   redraw_hud_panels's own call site (doesn't check the return value),
+   but begin_hud_panel_flip/redraw_active_hud_panel both DO check it, and with
+   the hardcoded 0 they always took their "decode failed" error branch
+   -- confirmed live once alloc_flip_grtile_slot/resolve_flip_grtile_slot
+   stopped being stubs and this path actually ran for the first time. */
+// was FUN_00041a78 -- decodes a single .GR entry directly into a
+// caller-supplied destination buffer (param_3, stashed in DAT_00202510
+// and consumed by uw_copy_gr_entry_to_dest) rather than registering it
+// in g_grtile_registry. No registry involvement at all; purely a
+// "decode this one resource entry into my own buffer" helper.
+undefined4 decode_gr_entry_to_buffer(param_1,param_2,param_3)
+char *param_1;
+undefined4 param_2;
+void *param_3;
+
+{
+  DAT_00202510 = param_3;
+  /* Was a hardcoded `0` (no post-process callback) -- see
+     uw_copy_gr_entry_to_dest's own comment: without a real callback
+     here, load_gr_resource_entries decodes into its own throwaway
+     buffer and DAT_00202510 (this function's whole reason for
+     existing) is never actually consulted, so this decode always
+     reported success while leaving the caller's destination buffer
+     untouched. */
+  return load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,&uw_copy_gr_entry_to_dest);
 }
