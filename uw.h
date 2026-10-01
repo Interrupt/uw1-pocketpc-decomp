@@ -2262,6 +2262,11 @@ extern char DAT_00202c2c;
    input.c (key bindings, movement commands, mouse) -- extern'd here
    so both translation units see the same storage. */
 #define DAT_00086e68 15
+#define DAT_0008589c 0x3ac
+#define DAT_00085898 0xeb
+#define DAT_00085894 0xbc
+extern short DAT_00085890;
+extern short DAT_00202074;
 extern void (*g_keybind_handler[512])(int);
 extern int g_keybind_handler_n;
 extern void (*g_click_region_handler[128])(int);
@@ -3081,7 +3086,7 @@ void force_locomotion_state_refresh();
 void apply_vertical_launch_impulse();
 void trigger_quest_stumble_animation();
 void apply_quest_vertical_effect();
-void FUN_0003dca4();
+void apply_movement_mode_profile();
 void toggle_stats_panel();
 void FUN_0003df28();
 void FUN_0003e0b4();

@@ -757,7 +757,7 @@ LAB_000669a8:
   }
   update_screen_flicker_effect((*(byte *)(DAT_00086df8 + 0x61) & 0xc) != 0);
   force_locomotion_state_refresh();
-  FUN_0003dca4(0xffffffff);
+  apply_movement_mode_profile(0xffffffff);
   return;
 }
 
@@ -873,7 +873,7 @@ undefined4 param_1;
   set_sound_effects_enabled(*(byte *)(DAT_00086df8 + 0xb5) & 3);
   set_music_enabled(*(byte *)(DAT_00086df8 + 0xb5) >> 2 & 3);
   FUN_0005d2b0();
-  FUN_0003dca4(*(ushort *)(DAT_00086df8 + 0xb6) & 7);
+  apply_movement_mode_profile(*(ushort *)(DAT_00086df8 + 0xb6) & 7);
   return;
 }
 

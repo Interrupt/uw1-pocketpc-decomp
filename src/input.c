@@ -16,7 +16,7 @@
 
 // was FUN_0003c524 -- set the player's locomotion state from a collision-state
 // mask (param_1): when it changes, pick the movement mode (walk / swim / fly /
-// fall) via FUN_0003dca4. While the airborne bit (0x10) is set it also keeps the
+// fall) via apply_movement_mode_profile. While the airborne bit (0x10) is set it also keeps the
 // gravity fall armed each tick (g_fall_accel = -4) and clamps the fall velocity
 // (g_vertical_velocity) to terminal when DAT_0020208c & 2. Called every tick from
 // commit_player_move with the current state byte DAT_002048a8.
@@ -80,7 +80,7 @@ int param_2;
     if (getenv("UW_DEBUG_LOCO"))
       fprintf(stderr, "[loco] -> uVar2(anim mode)=%d iVar3=%d DAT_0020208c=0x%x\n",
               (int)uVar2, iVar3, (unsigned)DAT_0020208c);
-    FUN_0003dca4(uVar2);
+    apply_movement_mode_profile(uVar2);
     if (iVar3 == 0) {
       *(undefined1 *)(DAT_00086df8 + 0xb9) = 0;
     }
@@ -1275,4 +1275,85 @@ int param_4;
     *DAT_000876c0 = 0;
   }
   return 0;
+}
+
+
+// was FUN_0003dca4 -- called from set_locomotion_state (src/input.c:83)
+// with an "anim mode" code (0=walk,1=swim,2=fly-ish,4/5/6=fall variants;
+// see that function's own comment) whenever the locomotion state
+// changes, and with the -1 sentinel (re-derive the current mode from
+// the player record) from force_locomotion_state_refresh and on
+// save-load. For a real mode code: writes the new mode into the
+// player record's anim-mode/facing fields (+0xb6..+0xb8) via the
+// local_24 per-mode bit table, then uses the local_1c per-mode
+// magnitude table (indexed by mode) to scale the per-facing-direction
+// speed constants DAT_0008589c/85898/85894/86e68 into
+// DAT_00202078/7a/7c/74 -- the forward/turn/strafe speed and jump
+// duration-ish constants resolve_move_vector and the jump-arc code in
+// src/movement.c and src/player.c read back. Reads as "apply the
+// current locomotion mode's movement-speed profile".
+void apply_movement_mode_profile(param_1)
+byte param_1;
+
+{
+  int iVar1;
+  byte *pbVar2;
+  undefined2 uVar3;
+  short sVar4;
+  uint uVar5;
+  int *piVar6;
+  char local_24 [8];
+  byte local_1c [8];
+  
+  local_1c[1] = 3;
+  local_1c[2] = 5;
+  local_1c[0] = 10;
+  local_1c[3] = 10;
+  local_1c[4] = 1;
+  builtin_strncpy(local_24 + 1,"\x01\x02\x04\b\b",5);
+  local_1c[6] = 2;
+  iVar1 = (int)(char)param_1;
+  local_1c[5] = 7;
+  /* Was `piVar6 = (int *)&DAT_00086df8;` (address of the global itself)
+     with every subsequent `*piVar6` in this branch meant to read
+     DAT_00086df8's real value back out -- but piVar6 was typed `int *`,
+     so each of those dereferences only read the first 4 of
+     DAT_00086df8's 8 bytes, truncating it (this is what fed a garbage
+     record pointer into the rest of the function, further down, and
+     eventually segfaulted). Both branches want the same thing (the
+     record pointer's real value); use DAT_00086df8 directly instead of
+     this indirection, which sidesteps the truncation instead of trying
+     to preserve the double-indirect shape with a wider type. */
+  piVar6 = (int *)DAT_00086df8;
+  local_24[0] = '\0';
+  local_24[6] = 0;
+  if (iVar1 == -1) {
+    param_1 = *(byte *)((char *)piVar6 + 0xb6) & 7;
+  }
+  else {
+    *(byte *)((char *)DAT_00086df8 + 0xb8) = local_24[iVar1] + (*(byte *)((char *)DAT_00086df8 + 0xb8) & 0xe0);
+    pbVar2 = (byte *)((char *)DAT_00086df8 + 0xb6);
+    uVar3 = *(undefined2 *)pbVar2;
+    *(byte *)((char *)DAT_00086df8 + 0xb6) = (*pbVar2 ^ param_1) & 7 ^ (byte)uVar3;
+    *(char *)((char *)DAT_00086df8 + 0xb7) = (char)((ushort)uVar3 >> 8);
+  }
+  uVar5 = (uint)local_1c[(char)param_1];
+  DAT_00202078 = Ordinal_2005(10,(int)DAT_0008589c * uVar5);
+  DAT_0020207a = Ordinal_2005(10,(int)DAT_00085898 * uVar5);
+  DAT_0020207c = Ordinal_2005(10,(int)DAT_00085894 * uVar5);
+  if ((char)param_1 < 4) {
+    DAT_00202074 = Ordinal_2005(10,(int)DAT_00086e68 * uVar5);
+  }
+  else {
+    DAT_00202074 = DAT_00086e68;
+  }
+  uVar5 = (uint)*(ushort *)(piVar6 + 0x13);
+  if ((uVar5 == 0) || ((uint)*(ushort *)((char *)piVar6 + 0x4a) * 2 <= uVar5)) {
+    DAT_00085890 = 0x60;
+  }
+  else {
+    sVar4 = Ordinal_2005(uVar5 << 1,(uint)*(ushort *)((char *)piVar6 + 0x4a) * 0x60);
+    DAT_00085890 = 0x60 - sVar4;
+  }
+  return;
 }

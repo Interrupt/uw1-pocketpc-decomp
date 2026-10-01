@@ -1218,7 +1218,7 @@ undefined4 param_2;
       iVar2 = 5;
       /* load_game_from_slot's own success branch just below (the mirror
          Load path) calls load_weapon_combat_maneuver_data/sync_player_stats_to_hud/
-         redraw_hud_panels/FUN_0003dca4(0xffffffff)/FUN_00049924(0x7ffe)
+         redraw_hud_panels/apply_movement_mode_profile(0xffffffff)/FUN_00049924(0x7ffe)
          after a successful load; this Save branch called none of them.
          Most of those are Load-specific (resyncing HUD/stats after
          reloading a possibly-different character), but FUN_00049924
@@ -1264,7 +1264,7 @@ undefined4 param_2;
       iVar2 = 2;
       sync_player_stats_to_hud();
       redraw_hud_panels();
-      FUN_0003dca4(0xffffffff);
+      apply_movement_mode_profile(0xffffffff);
       DAT_000858a0 = 1;
       FUN_00049924(0x7ffe);
     }

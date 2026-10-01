@@ -2707,7 +2707,7 @@ short DAT_0023bf4c;
    DAT_00085728: nothing in this decompile ever writes it, and an
    exhaustive whole-binary Ghidra reference search confirms that's true
    of the real UU.exe too -- every one of its 4 references, in
-   resolve_move_vector/FUN_0003dca4/apply_heading_turn, is a read). Left as a
+   resolve_move_vector/apply_movement_mode_profile/apply_heading_turn, is a read). Left as a
    bare zero-initialized global, this turn-rate constant (multiplied
    into every heading-step computation in apply_heading_turn's case-1
    branch) made every turn compute to a zero step no matter how long a
@@ -2776,16 +2776,15 @@ short DAT_00202074;
    same situation as DAT_00086e68 right above's fix (nothing in this
    decompile writes any of the three, and an exhaustive whole-binary
    Ghidra reference search confirms the real UU.exe agrees -- their
-   only references, all in FUN_0003dca4, are reads). Sibling constants
+   only references, all in apply_movement_mode_profile, are reads). Sibling constants
    to DAT_00086e68 in the exact same per-facing-direction table
-   (FUN_0003dca4 multiplies each by the same `uVar5` direction-lookup
+   (apply_movement_mode_profile multiplies each by the same `uVar5` direction-lookup
    value right next to where it uses DAT_00086e68), so almost
    certainly hit the same bug for the same reason. Recovered the real
    values by reading UU.exe's .data bytes directly via Ghidra:
-   0x3ac (940), 0xeb (235), 0xbc (188) respectively. */
-#define DAT_0008589c 0x3ac
-#define DAT_00085898 0xeb
-#define DAT_00085894 0xbc
+   0x3ac (940), 0xeb (235), 0xbc (188) respectively. Macro defines now
+   live in uw.h alongside DAT_00086e68, since apply_movement_mode_profile
+   (their only reader) moved into src/input.c. */
 undefined DAT_001c2000_backing[8192];
 #define DAT_001c2000 DAT_001c2000_backing[0]
 char s_out_of_000858dc[] = "out_of";
@@ -10215,71 +10214,6 @@ undefined4 param_1;
 
 
 
-void FUN_0003dca4(param_1)
-byte param_1;
-
-{
-  int iVar1;
-  byte *pbVar2;
-  undefined2 uVar3;
-  short sVar4;
-  uint uVar5;
-  int *piVar6;
-  char local_24 [8];
-  byte local_1c [8];
-  
-  local_1c[1] = 3;
-  local_1c[2] = 5;
-  local_1c[0] = 10;
-  local_1c[3] = 10;
-  local_1c[4] = 1;
-  builtin_strncpy(local_24 + 1,"\x01\x02\x04\b\b",5);
-  local_1c[6] = 2;
-  iVar1 = (int)(char)param_1;
-  local_1c[5] = 7;
-  /* Was `piVar6 = (int *)&DAT_00086df8;` (address of the global itself)
-     with every subsequent `*piVar6` in this branch meant to read
-     DAT_00086df8's real value back out -- but piVar6 was typed `int *`,
-     so each of those dereferences only read the first 4 of
-     DAT_00086df8's 8 bytes, truncating it (this is what fed a garbage
-     record pointer into the rest of the function, further down, and
-     eventually segfaulted). Both branches want the same thing (the
-     record pointer's real value); use DAT_00086df8 directly instead of
-     this indirection, which sidesteps the truncation instead of trying
-     to preserve the double-indirect shape with a wider type. */
-  piVar6 = (int *)DAT_00086df8;
-  local_24[0] = '\0';
-  local_24[6] = 0;
-  if (iVar1 == -1) {
-    param_1 = *(byte *)((char *)piVar6 + 0xb6) & 7;
-  }
-  else {
-    *(byte *)((char *)DAT_00086df8 + 0xb8) = local_24[iVar1] + (*(byte *)((char *)DAT_00086df8 + 0xb8) & 0xe0);
-    pbVar2 = (byte *)((char *)DAT_00086df8 + 0xb6);
-    uVar3 = *(undefined2 *)pbVar2;
-    *(byte *)((char *)DAT_00086df8 + 0xb6) = (*pbVar2 ^ param_1) & 7 ^ (byte)uVar3;
-    *(char *)((char *)DAT_00086df8 + 0xb7) = (char)((ushort)uVar3 >> 8);
-  }
-  uVar5 = (uint)local_1c[(char)param_1];
-  DAT_00202078 = Ordinal_2005(10,(int)DAT_0008589c * uVar5);
-  DAT_0020207a = Ordinal_2005(10,(int)DAT_00085898 * uVar5);
-  DAT_0020207c = Ordinal_2005(10,(int)DAT_00085894 * uVar5);
-  if ((char)param_1 < 4) {
-    DAT_00202074 = Ordinal_2005(10,(int)DAT_00086e68 * uVar5);
-  }
-  else {
-    DAT_00202074 = DAT_00086e68;
-  }
-  uVar5 = (uint)*(ushort *)(piVar6 + 0x13);
-  if ((uVar5 == 0) || ((uint)*(ushort *)((char *)piVar6 + 0x4a) * 2 <= uVar5)) {
-    DAT_00085890 = 0x60;
-  }
-  else {
-    sVar4 = Ordinal_2005(uVar5 << 1,(uint)*(ushort *)((char *)piVar6 + 0x4a) * 0x60);
-    DAT_00085890 = 0x60 - sVar4;
-  }
-  return;
-}
 
 
 
