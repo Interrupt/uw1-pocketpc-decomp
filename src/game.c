@@ -718,7 +718,7 @@ void init_gameplay_session()
   register_key_binding(0x86,0,0x1b,toggle_stats_panel);
   register_key_binding(0x89,0,0x1b,&debug_force_rest_action);
   register_key_binding(0x88,2,0x1b,&print_debug_stat_message);
-  register_key_binding(0x87,1,0x1b,FUN_00044d14);
+  register_key_binding(0x87,1,0x1b,handle_cast_spell_click);
   register_key_binding(0x173,0x173,1,FUN_00056ebc);
   register_key_binding(0x172,0x172,1,FUN_00056ebc);
   register_key_binding(0x16d,0x16d,1,FUN_00056ebc);

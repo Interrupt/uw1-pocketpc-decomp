@@ -4401,7 +4401,7 @@ void show_flask_value_tooltip()
 
 // was FUN_0003e2a4 -- registers the stats panel's click regions: the
 // cursor-mode button (normal and restricted variants), the two
-// still-unnamed widget handlers FUN_00044d14/FUN_00044bd8, and this
+// still-unnamed widget handlers handle_cast_spell_click/handle_light_source_click, and this
 // pass's print_character_description_scroll (name/portrait) and
 // show_flask_value_tooltip (HP/mana flask).
 void register_stats_panel_click_regions()
@@ -4410,8 +4410,8 @@ void register_stats_panel_click_regions()
   DAT_000868d8 = 0;
   DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,1,cursor_mode_button_click);
   DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
-  DAT_002020c8 = register_click_region(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
-  DAT_002020bc = register_click_region(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
+  DAT_002020c8 = register_click_region(0xb0,0x9b,0xde,0x8b,0,1,handle_cast_spell_click);
+  DAT_002020bc = register_click_region(0x34,0x99,0x66,0x89,0,1,handle_light_source_click);
   DAT_0020209c = register_click_region(0x7a,0x97,0x98,0x88,0,1,print_character_description_scroll);
   DAT_002020b4 = register_click_region(0xf4,0x9c,0x135,0x78,0,1,show_flask_value_tooltip);
   return;
@@ -4622,4 +4622,179 @@ void print_not_a_spell_message()
 {
   message_scroll_print_wrapped(s_Not_a_spell_00085a80);
   return;
+}
+
+
+// was FUN_00044bd8 -- light-source icon click handler on the stats
+// panel: a normal click cycles the active light source
+// (FUN_00053ab0, not yet named) and refreshes equipment effects on a
+// change; the DAT_00085a6c[3]&2 "look" modifier instead prints the
+// light source's name followed by a fuel-remaining description
+// (print_scroll_message_by_id, ranges by remaining-fuel byte
+// thresholds 3/10).
+void handle_light_source_click()
+
+{
+  byte bVar1;
+  int iVar2;
+  short local_10;
+  byte abStack_e [6];
+
+  if ((g_cursor_holding_state < 1) || (3 < g_cursor_holding_state)) {
+    iVar2 = 2 - ((int)*DAT_00085a6c >> 4);
+    local_10 = (short)iVar2;
+    if (iVar2 * 0x10000 >> 0x10 < (int)(*(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf)) {
+      if ((DAT_00085a6c[3] & 2U) == 0) {
+        iVar2 = FUN_00053ab0(&local_10);
+        if (iVar2 != 0) {
+          refresh_player_equipment_effects();
+        }
+      }
+      else {
+        compute_light_source_colors(abStack_e);
+        get_message_string(abStack_e[local_10] + 0x180 | 0xc00);
+        message_scroll_print_wrapped();
+        bVar1 = *(byte *)(DAT_00086df8 + local_10 * 2 + 0x3f);
+        if (bVar1 < 3) {
+          iVar2 = 0;
+        }
+        else {
+          iVar2 = 1;
+          if (10 < bVar1) {
+            iVar2 = 2;
+          }
+        }
+        print_scroll_message_by_id(iVar2 + 0x89);
+      }
+      wait_for_click_release(1);
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00044d14 -- the "cast spell" button click handler
+// (registered in register_stats_panel_click_regions at (0xb0,0x9b),
+// also bound as a key binding in run_game_startup_sequence): checks
+// the player has enough mana for the readied rune combo's cost
+// (DAT_002028d4+DAT_002028d8), plays a fizzle sound if not, otherwise
+// looks the combo up in the 0x30-entry spell table (&DAT_00087531)
+// and either reports "not a spell" (print_not_a_spell_message) or
+// attempts the cast via cast_spell_from_rune_combo.
+void handle_cast_spell_click(param_1)
+short param_1;
+
+{
+  int iVar1;
+
+  if (g_cursor_holding_state == 0) {
+    if (((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) || (param_1 != 0)) {
+      DAT_002028d0 = 1;
+      if (*(uint *)(DAT_00086df8 + 0xce) < (uint)DAT_002028d4 + DAT_002028d8) {
+        play_sound_effect_with_pan(0x15,0x40,0);
+      }
+      else {
+        wait_for_click_release(1);
+        iVar1 = 0;
+        do {
+          if ((ushort)((ushort)*(byte *)(DAT_00086df8 + 0x49) +
+                      ((ushort)*(byte *)(DAT_00086df8 + 0x48) +
+                      (ushort)*(byte *)(DAT_00086df8 + 0x47) * 0x20) * 0x20) ==
+              *(short *)(&DAT_00087531 + iVar1 * 4)) break;
+          iVar1 = (iVar1 + 1) * 0x1000000 >> 0x18;
+        } while (iVar1 < 0x30);
+        if ((char)iVar1 == '0') {
+          print_not_a_spell_message();
+        }
+        else {
+          cast_spell_from_rune_combo();
+        }
+      }
+    }
+    else {
+      wait_for_click_release(1);
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00044e74 -- shared spell-cast-failure reporter: plays the
+// fizzle sound and prints the failure-reason scroll message (param_1,
+// a reason code 0-3) from cast_spell_from_rune_combo. Always returns 0.
+undefined4 report_spell_cast_failure(param_1)
+int param_1;
+
+{
+  play_sound_effect_with_pan(0x16,0x40,0);
+  print_scroll_message_by_id(param_1 + 0xd2);
+  return 0;
+}
+
+
+
+// WARNING: Removing unreachable block (ram,0x00044ee8)
+
+// was FUN_00044e9c -- resolves and attempts to cast the spell matched
+// by handle_cast_spell_click's rune-combo lookup: checks caster-level
+// requirement, mana cost, rolls a casting skill check, and on success
+// dispatches the actual spell effect via dispatch_special_action,
+// playing the cast sound. Reports failure (insufficient level/mana/
+// skill-check, or a failed dispatch) through report_spell_cast_failure.
+undefined4 cast_spell_from_rune_combo(param_1)
+uint param_1;
+
+{
+  byte bVar1;
+  char cVar2;
+  short sVar3;
+  undefined4 uVar4;
+  int iVar5;
+  byte bVar6;
+  byte bVar7;
+  
+  cVar2 = Ordinal_2005(6,param_1 & 0xff);
+  bVar6 = cVar2 + 1;
+  iVar5 = (param_1 & 0xff) * 4;
+  bVar7 = (byte)(&DAT_00087530)[iVar5] >> 3;
+  if ((uint)((int)(*(byte *)(DAT_00086df8 + 0x3d) + 1) >> 1) < (uint)bVar6) {
+    uVar4 = 0;
+  }
+  else if ((uint)*(byte *)(DAT_00086df8 + 0x37) < (uint)bVar6 * 3) {
+    uVar4 = 1;
+  }
+  else {
+    sVar3 = roll_skill_check(*(byte *)(DAT_00086df8 + 0x2a) + 5,(uint)bVar6 << 1);
+    if (sVar3 == 0) {
+      uVar4 = 2;
+    }
+    else {
+      if (sVar3 == -1) {
+        print_scroll_message_by_id(0xd6);
+        bVar7 = 9;
+        bVar1 = bVar6 >> 1;
+      }
+      else {
+        bVar1 = (&DAT_00087533)[iVar5];
+      }
+      DAT_002028d4 = (cVar2 + '\t') * '\b' + *(char *)(DAT_00086df8 + 0x3d) * -4;
+      DAT_002028d8 = *(undefined4 *)(DAT_00086df8 + 0xce);
+      DAT_0023c3e0 = bVar6 * '\x03';
+      if (bVar7 != 5) {
+        *(byte *)(DAT_00086df8 + 0x37) = *(char *)(DAT_00086df8 + 0x37) + bVar6 * -3;
+        DAT_0023c3e0 = '\0';
+      }
+      iVar5 = dispatch_special_action(bVar7,bVar1,g_player_object,g_player_object);
+      if (iVar5 != 0) {
+        play_sound_effect_with_pan(0x10,0x40,0);
+        return 1;
+      }
+      DAT_0023c3e0 = 0;
+      uVar4 = 3;
+    }
+  }
+  uVar4 = report_spell_cast_failure(uVar4);
+  return uVar4;
 }
