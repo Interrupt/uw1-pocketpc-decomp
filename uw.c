@@ -2626,7 +2626,7 @@ void (*const DAT_00085668_real_table[48])(void) = {
   /* mode 0 (in-game/dungeon view) */
   (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))dungeon_view_anim_tick,
   0, 0, 0, 0,
-  0, (void(*)(void))FUN_0003e644, (void(*)(void))handle_game_victory_sequence, (void(*)(void))movement_pacing_handler,
+  0, (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))handle_game_victory_sequence, (void(*)(void))movement_pacing_handler,
   (void(*)(void))sync_player_stats_to_hud, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
   /* mode 1 */
   0, (void(*)(void))enter_automap_screen, 0, 0,
@@ -5647,7 +5647,7 @@ char *DAT_0023cca4;
    needs to change -- `(&g_hud_panel_handlers)[i]` already scales by the
    (now-real, 8-byte-on-this-host) pointer size. */
 void (*const g_hud_panel_handlers_table[13])(void) = {
-  (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))draw_stats_panel_content, 0,
+  (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))FUN_000448a8, (void(*)(void))draw_stats_panel_content, 0,
   (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))update_hud_status_icon_frame,
   (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))tick_hud_panel_transition, (void(*)(void))hud_panel_wipe_transition_tick,
   (void(*)(void))advance_action_animation_frame,
@@ -10241,132 +10241,6 @@ void toggle_stats_panel()
 
 
 
-void FUN_0003df28()
-
-{
-  int uw_ord2005_rem_111 = 0;
-  short sVar1;
-  short sVar2;
-  int iVar3;
-  short extraout_r1;
-  
-  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
-  sVar1 = Ordinal_2005(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
-  print_scroll_message_concat(0x40,sVar1 + 0x68,0x67);
-  sVar1 = Ordinal_2005(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
-  iVar3 = (int)sVar1;
-  if (5 < iVar3) {
-    iVar3 = 5;
-  }
-  print_scroll_message_by_id(0x76 - iVar3);
-  message_scroll_print_wrapped(&DAT_00084f20);
-  print_scroll_message_concat(0x41,DAT_00201b68 + 0x19a,0x42);
-  sVar1 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
-  sVar2 = Ordinal_2005(0xc,(int)sVar1);
-  uw_ord2005_rem_111 = ((int)((int)sVar1)) % (0xc);
-  if (sVar2 < 0x65) {
-    print_scroll_message_concat(0x43,sVar2 + 0x19b,0x44);
-  }
-  else {
-    print_scroll_message_by_id(0x45);
-  }
-  print_scroll_message_concat(0x46,uw_ord2005_rem_111 + 0x47,0x53);
-  wait_for_click_release(1);
-  return;
-}
-
-
-
-void FUN_0003e0b4()
-
-{
-  char cVar1;
-  short sVar2;
-  char *pcVar3;
-  char *pcVar4;
-  undefined1 auStack_a4 [16];
-  undefined1 auStack_94 [16];
-  char local_84 [120];
-  
-  sVar2 = *DAT_00085a6c;
-  if (getenv("UW_DEBUG_CLICKREGION"))
-    fprintf(stderr, "[flask] FUN_0003e0b4 entry: xoff=%d yoff=%d\n", (int)sVar2, (int)DAT_00085a6c[1]);
-  if ((sVar2 < 0x1a) || (0x27 < sVar2)) {
-    if (DAT_00085a6c[1] < 0x1f) {
-      pcVar3 = (char *)get_message_string((int)(short)(ushort)(0x1e < sVar2) + 0x59U | 0x200);
-      pcVar4 = local_84;
-      do {
-        cVar1 = *pcVar3;
-        pcVar3 = pcVar3 + 1;
-        *pcVar4 = cVar1;
-        pcVar4 = pcVar4 + 1;
-      } while (cVar1 != '\0');
-      if (*DAT_00085a6c < 0x1e) {
-        itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
-        itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
-        if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
-          sVar2 = Ordinal_2005(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
-          print_scroll_message_concat(0x5b,sVar2 + 0x54,0x5c);
-        }
-      }
-      else {
-        itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_94,10);
-        itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_a4,10);
-      }
-      Ordinal_1063(local_84,auStack_94);
-      Ordinal_1063(local_84,s_out_of_000858dc);
-      Ordinal_1063(local_84,auStack_a4);
-      Ordinal_1063(local_84,&s_scroll_newline_0008522c);
-      message_scroll_print_wrapped(local_84);
-      wait_for_click_release(1);
-    }
-  }
-  else if (0xd < DAT_00085a6c[1]) {
-    toggle_stats_panel(0);
-  }
-  return;
-}
-
-
-
-void FUN_0003e2a4()
-
-{
-  DAT_000868d8 = 0;
-  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,1,cursor_mode_button_click);
-  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
-  DAT_002020c8 = register_click_region(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
-  DAT_002020bc = register_click_region(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
-  DAT_0020209c = register_click_region(0x7a,0x97,0x98,0x88,0,1,FUN_0003df28);
-  DAT_002020b4 = register_click_region(0xf4,0x9c,0x135,0x78,0,1,FUN_0003e0b4);
-  return;
-}
-
-
-
-void FUN_0003e404()
-
-{
-  unregister_key_binding((int)DAT_002020c8);
-  unregister_key_binding((int)DAT_002020bc);
-  unregister_key_binding((int)DAT_002020b4);
-  unregister_key_binding((int)DAT_0020209c);
-  return;
-}
-
-
-
-void FUN_0003e644()
-
-{
-  if ((g_active_hud_panel != '\0') && (*(short *)(DAT_00085a6c + 8) != 4)) {
-    return;
-  }
-  FUN_0004638c();
-  redraw_armor_overlay_widgets();
-  FUN_00048110();
-  return;
-}
 
 
 

@@ -300,7 +300,7 @@ void enter_dungeon_view_hud_init()
   FUN_00046414();
   init_msg_scroll_panel();
   resume_music_playback();
-  FUN_0003e2a4();
+  register_stats_panel_click_regions();
   if (DAT_000868d8 == 0) {
     if (g_cursor_mode != 0) {
       /* Dropped argument (confirmed via disassembly of 0x3e44c: r0
@@ -4288,3 +4288,159 @@ LAB_00080918:
 
 
 
+
+
+// was FUN_0003df28 -- click handler for the stats-panel name/portrait
+// click region (registered below in register_stats_panel_click_regions
+// at (0x7a,0x97,0x98,0x88)). Prints a multi-part descriptive "scroll"
+// paragraph about the player built from stat bytes at DAT_00086df8+0x39
+// (scaled via Ordinal_2005 into a 0-5 clamped adjective index) and
+// +0x3a, plus a percentile derived from Ordinal_2008 against table
+// DAT_001c2000 and field +0xce -- reads as the character sheet's
+// descriptive personality/background text.
+void print_character_description_scroll()
+
+{
+  int uw_ord2005_rem_111 = 0;
+  short sVar1;
+  short sVar2;
+  int iVar3;
+  short extraout_r1;
+  
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
+  sVar1 = Ordinal_2005(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
+  print_scroll_message_concat(0x40,sVar1 + 0x68,0x67);
+  sVar1 = Ordinal_2005(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
+  iVar3 = (int)sVar1;
+  if (5 < iVar3) {
+    iVar3 = 5;
+  }
+  print_scroll_message_by_id(0x76 - iVar3);
+  message_scroll_print_wrapped(&DAT_00084f20);
+  print_scroll_message_concat(0x41,DAT_00201b68 + 0x19a,0x42);
+  sVar1 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
+  sVar2 = Ordinal_2005(0xc,(int)sVar1);
+  uw_ord2005_rem_111 = ((int)((int)sVar1)) % (0xc);
+  if (sVar2 < 0x65) {
+    print_scroll_message_concat(0x43,sVar2 + 0x19b,0x44);
+  }
+  else {
+    print_scroll_message_by_id(0x45);
+  }
+  print_scroll_message_concat(0x46,uw_ord2005_rem_111 + 0x47,0x53);
+  wait_for_click_release(1);
+  return;
+}
+
+
+
+// was FUN_0003e0b4 -- click handler for the stats-panel flask click
+// region (registered below at (0xf4,0x9c,0x135,0x78); own debug label
+// already says "[flask]"). Reads the click-local offset DAT_00085a6c
+// (xoff/yoff within the flask widget) to decide which flask was hit and
+// prints a "current/max" scroll message (HP or mana, depending on
+// offset and the player record's class/stat-point bytes), or toggles
+// the stats panel if the click landed below the flask.
+void show_flask_value_tooltip()
+
+{
+  char cVar1;
+  short sVar2;
+  char *pcVar3;
+  char *pcVar4;
+  undefined1 auStack_a4 [16];
+  undefined1 auStack_94 [16];
+  char local_84 [120];
+
+  sVar2 = *DAT_00085a6c;
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[flask] show_flask_value_tooltip entry: xoff=%d yoff=%d\n", (int)sVar2, (int)DAT_00085a6c[1]);
+  if ((sVar2 < 0x1a) || (0x27 < sVar2)) {
+    if (DAT_00085a6c[1] < 0x1f) {
+      pcVar3 = (char *)get_message_string((int)(short)(ushort)(0x1e < sVar2) + 0x59U | 0x200);
+      pcVar4 = local_84;
+      do {
+        cVar1 = *pcVar3;
+        pcVar3 = pcVar3 + 1;
+        *pcVar4 = cVar1;
+        pcVar4 = pcVar4 + 1;
+      } while (cVar1 != '\0');
+      if (*DAT_00085a6c < 0x1e) {
+        itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
+        itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
+        if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
+          sVar2 = Ordinal_2005(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
+          print_scroll_message_concat(0x5b,sVar2 + 0x54,0x5c);
+        }
+      }
+      else {
+        itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_94,10);
+        itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_a4,10);
+      }
+      Ordinal_1063(local_84,auStack_94);
+      Ordinal_1063(local_84,s_out_of_000858dc);
+      Ordinal_1063(local_84,auStack_a4);
+      Ordinal_1063(local_84,&s_scroll_newline_0008522c);
+      message_scroll_print_wrapped(local_84);
+      wait_for_click_release(1);
+    }
+  }
+  else if (0xd < DAT_00085a6c[1]) {
+    toggle_stats_panel(0);
+  }
+  return;
+}
+
+
+
+// was FUN_0003e2a4 -- registers the stats panel's click regions: the
+// cursor-mode button (normal and restricted variants), the two
+// still-unnamed widget handlers FUN_00044d14/FUN_00044bd8, and this
+// pass's print_character_description_scroll (name/portrait) and
+// show_flask_value_tooltip (HP/mana flask).
+void register_stats_panel_click_regions()
+
+{
+  DAT_000868d8 = 0;
+  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,1,cursor_mode_button_click);
+  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
+  DAT_002020c8 = register_click_region(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
+  DAT_002020bc = register_click_region(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
+  DAT_0020209c = register_click_region(0x7a,0x97,0x98,0x88,0,1,print_character_description_scroll);
+  DAT_002020b4 = register_click_region(0xf4,0x9c,0x135,0x78,0,1,show_flask_value_tooltip);
+  return;
+}
+
+
+
+// was FUN_0003e404 -- unwinds register_stats_panel_click_regions'
+// four non-cursor-mode regions.
+void unregister_stats_panel_click_regions()
+
+{
+  unregister_key_binding((int)DAT_002020c8);
+  unregister_key_binding((int)DAT_002020bc);
+  unregister_key_binding((int)DAT_002020b4);
+  unregister_key_binding((int)DAT_0020209c);
+  return;
+}
+
+
+
+// was FUN_0003e644 -- skips the refresh unless the compass/main view
+// is active (g_active_hud_panel == 0) or the stats-panel sub-view index
+// (DAT_00085a6c+8) is 4 (the equipment/paperdoll sub-view); otherwise
+// redraws the armor overlay plus the two still-unnamed
+// FUN_0004638c/FUN_00048110 refreshes. Reads as "refresh the equipment
+// display if it's currently visible".
+void refresh_equipment_display_if_visible()
+
+{
+  if ((g_active_hud_panel != '\0') && (*(short *)(DAT_00085a6c + 8) != 4)) {
+    return;
+  }
+  FUN_0004638c();
+  redraw_armor_overlay_widgets();
+  FUN_00048110();
+  return;
+}

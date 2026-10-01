@@ -2170,7 +2170,7 @@ void FUN_000286cc()
     g_active_hud_panel = 0;
     DAT_00085c54 = 0;
     FUN_00046414();
-    FUN_0003e644();
+    refresh_equipment_display_if_visible();
     DAT_00085c54 = 1;
     select_msg_scroll_mode_2();
     msg_scroll_panel_reset(0);
