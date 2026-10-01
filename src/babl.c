@@ -6825,7 +6825,7 @@ LAB_00036ca4:
                   Ordinal_1044(DAT_00101a70,pcVar8 + 2,64000);
                 }
                 else if (*pcVar8 == '\x01') {
-                  FUN_0003b0e4(DAT_00101a70,pcVar8 + 2);
+                  decompress_rle_stream(DAT_00101a70,pcVar8 + 2);
                 }
               }
               if ((local_8b & 1) == 0) {
@@ -7273,4 +7273,110 @@ undefined4 param_4;
     display_book_or_scroll_page(param_1);
   }
   return;
+}
+
+
+// was FUN_0003b0e4 -- a run-length-style stream decompressor: reads
+// successive op codes from the compressed input (FUN_0003b344, not
+// yet named) and drives the output (param_1) from the input
+// (param_2). Code 1000 is a byte-fill run (length + fill byte from
+// the input, repeated into the output via pack_byte_into_word's
+// shared low/high-byte accumulators); code 0x3e9 is a shorter
+// run/skip variant (terminating the stream via FUN_0003b3a8 when its
+// computed length hits zero); code 0x3ea is a raw byte-for-byte copy
+// (Ordinal_1044) of a given length. Loops until the "done" flag
+// (DAT_00201b58) is set. Confirmed caller: render_babl_dialog_window
+// uses it to decompress illustrated-book/scroll picture data into the
+// DAT_00101a70 bitmap buffer before display.
+void decompress_rle_stream(param_1,param_2)
+undefined1 * param_1;
+undefined1 * param_2;
+
+{
+  byte *pbVar1;
+  uint uVar2;
+  int iVar3;
+
+  DAT_00201b54 = 0;
+  DAT_00201b4c = 0;
+  DAT_00201b58 = 0;
+  DAT_00201b48 = 0;
+  DAT_00201b44 = 0;
+  DAT_00201b40 = param_1;
+  DAT_00201b50 = param_2;
+  do {
+    DAT_00201b3c = FUN_0003b344();
+    if (DAT_00201b3c == 1000) {
+      DAT_00201b48 = pack_byte_into_word(DAT_00201b48,*DAT_00201b50,0);
+      DAT_00201b54 = DAT_00201b54 + 1;
+      DAT_00201b50 = DAT_00201b50 + 1;
+      DAT_00201b44 = pack_byte_into_word(DAT_00201b44,*DAT_00201b50,0);
+      DAT_00201b50 = DAT_00201b50 + 1;
+      DAT_00201b54 = DAT_00201b54 + 1;
+      iVar3 = 0;
+      if (DAT_00201b48 != 0) {
+        do {
+          *DAT_00201b40 = (char)DAT_00201b44;
+          iVar3 = iVar3 + 1;
+          DAT_00201b40 = DAT_00201b40 + 1;
+          DAT_00201b4c = DAT_00201b4c + 1;
+        } while (iVar3 < (int)(uint)DAT_00201b48);
+      }
+    }
+    else if (DAT_00201b3c == 0x3e9) {
+      DAT_00201b48 = pack_byte_into_word(DAT_00201b48,(DAT_00201b48 & 0xff) + 0x80,0);
+      if ((char)DAT_00201b48 == '\0') {
+        uVar2 = pack_byte_into_word(DAT_00201b44,*DAT_00201b50,0);
+        pbVar1 = DAT_00201b50 + 1;
+        DAT_00201b50 = DAT_00201b50 + 2;
+        uVar2 = uVar2 & 0xff | (uint)*pbVar1 << 8;
+        DAT_00201b44 = (short)uVar2;
+        DAT_00201b54 = DAT_00201b54 + 2;
+        if (DAT_00201b44 < 1) {
+          FUN_0003b3a8();
+        }
+        else {
+          DAT_00201b40 = DAT_00201b40 + uVar2;
+          DAT_00201b4c = DAT_00201b4c + uVar2;
+        }
+      }
+      else {
+        DAT_00201b40 = DAT_00201b40 + DAT_00201b48;
+        DAT_00201b4c = (uint)DAT_00201b48 + DAT_00201b4c;
+      }
+    }
+    else if (DAT_00201b3c == 0x3ea) {
+      Ordinal_1044(DAT_00201b40,DAT_00201b50,DAT_00201b48);
+      uVar2 = (uint)DAT_00201b48;
+      DAT_00201b40 = DAT_00201b40 + uVar2;
+      DAT_00201b50 = DAT_00201b50 + uVar2;
+      DAT_00201b4c = uVar2 + DAT_00201b4c;
+      DAT_00201b54 = uVar2 + DAT_00201b54;
+    }
+  } while (DAT_00201b58 == 0);
+  return;
+}
+
+
+
+// was FUN_0003b31c -- merges a byte into one half of a 16-bit value:
+// param_3==0 replaces the low byte of param_1 with param_2's low
+// byte (keeping param_1's high byte); nonzero replaces the high byte
+// instead. Used by decompress_rle_stream to assemble multi-byte
+// values a byte at a time from its input stream.
+uint pack_byte_into_word(param_1,param_2,param_3)
+uint param_1;
+uint param_2;
+int param_3;
+
+{
+  uint uVar1;
+
+  if (param_3 == 0) {
+    uVar1 = param_1 & 0xff00 | param_2 & 0xff;
+  }
+  else {
+    uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
+  }
+  return uVar1;
 }

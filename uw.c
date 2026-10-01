@@ -2529,14 +2529,18 @@ char *DAT_002029cc;
 #define g_mobile_objects ((uw_mobile_object_t *)DAT_002046b8)
 #define g_static_objects ((uw_object_hdr_t *)DAT_002046c4)
 #define g_level_tiles ((uw_tile_t *)DAT_002029cc)
-undefined1 *DAT_00201b40;
-int DAT_00201b54;
-int DAT_00201b4c;
-int DAT_00201b58;
-ushort DAT_00201b48;
-undefined1 *DAT_00201b50;
-short DAT_00201b44;
-int DAT_00201b3c;
+/* decompress_rle_stream's own shared codec state (output/input
+   cursors, byte counts, and the current/pending op-code value),
+   threaded through its several sibling op-code handler functions
+   (FUN_0003b344 and others still unnamed below it). */
+undefined1 *DAT_00201b40; // output cursor
+int DAT_00201b54; // input bytes consumed so far
+int DAT_00201b4c; // output bytes written so far
+int DAT_00201b58; // "done" flag
+ushort DAT_00201b48; // current run/length value
+undefined1 *DAT_00201b50; // input cursor
+short DAT_00201b44; // current fill-byte/length accumulator
+int DAT_00201b3c; // current op code
 char s__DATA_pres1_byt_00085790[] = "\\DATA\\pres1.byt";
 undefined4 DAT_0023c540;
 char s__DATA_lev_ark_00085734[] = "\\DATA\\lev.ark";
@@ -9738,93 +9742,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_0003b0e4(param_1,param_2)
-undefined1 * param_1;
-undefined1 * param_2;
-
-{
-  byte *pbVar1;
-  uint uVar2;
-  int iVar3;
-  
-  DAT_00201b54 = 0;
-  DAT_00201b4c = 0;
-  DAT_00201b58 = 0;
-  DAT_00201b48 = 0;
-  DAT_00201b44 = 0;
-  DAT_00201b40 = param_1;
-  DAT_00201b50 = param_2;
-  do {
-    DAT_00201b3c = FUN_0003b344();
-    if (DAT_00201b3c == 1000) {
-      DAT_00201b48 = FUN_0003b31c(DAT_00201b48,*DAT_00201b50,0);
-      DAT_00201b54 = DAT_00201b54 + 1;
-      DAT_00201b50 = DAT_00201b50 + 1;
-      DAT_00201b44 = FUN_0003b31c(DAT_00201b44,*DAT_00201b50,0);
-      DAT_00201b50 = DAT_00201b50 + 1;
-      DAT_00201b54 = DAT_00201b54 + 1;
-      iVar3 = 0;
-      if (DAT_00201b48 != 0) {
-        do {
-          *DAT_00201b40 = (char)DAT_00201b44;
-          iVar3 = iVar3 + 1;
-          DAT_00201b40 = DAT_00201b40 + 1;
-          DAT_00201b4c = DAT_00201b4c + 1;
-        } while (iVar3 < (int)(uint)DAT_00201b48);
-      }
-    }
-    else if (DAT_00201b3c == 0x3e9) {
-      DAT_00201b48 = FUN_0003b31c(DAT_00201b48,(DAT_00201b48 & 0xff) + 0x80,0);
-      if ((char)DAT_00201b48 == '\0') {
-        uVar2 = FUN_0003b31c(DAT_00201b44,*DAT_00201b50,0);
-        pbVar1 = DAT_00201b50 + 1;
-        DAT_00201b50 = DAT_00201b50 + 2;
-        uVar2 = uVar2 & 0xff | (uint)*pbVar1 << 8;
-        DAT_00201b44 = (short)uVar2;
-        DAT_00201b54 = DAT_00201b54 + 2;
-        if (DAT_00201b44 < 1) {
-          FUN_0003b3a8();
-        }
-        else {
-          DAT_00201b40 = DAT_00201b40 + uVar2;
-          DAT_00201b4c = DAT_00201b4c + uVar2;
-        }
-      }
-      else {
-        DAT_00201b40 = DAT_00201b40 + DAT_00201b48;
-        DAT_00201b4c = (uint)DAT_00201b48 + DAT_00201b4c;
-      }
-    }
-    else if (DAT_00201b3c == 0x3ea) {
-      Ordinal_1044(DAT_00201b40,DAT_00201b50,DAT_00201b48);
-      uVar2 = (uint)DAT_00201b48;
-      DAT_00201b40 = DAT_00201b40 + uVar2;
-      DAT_00201b50 = DAT_00201b50 + uVar2;
-      DAT_00201b4c = uVar2 + DAT_00201b4c;
-      DAT_00201b54 = uVar2 + DAT_00201b54;
-    }
-  } while (DAT_00201b58 == 0);
-  return;
-}
-
-
-
-uint FUN_0003b31c(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-int param_3;
-
-{
-  uint uVar1;
-  
-  if (param_3 == 0) {
-    uVar1 = param_1 & 0xff00 | param_2 & 0xff;
-  }
-  else {
-    uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
-  }
-  return uVar1;
-}
 
 
 
@@ -9834,7 +9751,7 @@ uint FUN_0003b344()
   uint uVar1;
   bool bVar2;
   
-  uVar1 = FUN_0003b31c(DAT_00201b48,*DAT_00201b50,0);
+  uVar1 = pack_byte_into_word(DAT_00201b48,*DAT_00201b50,0);
   DAT_00201b48 = (short)uVar1;
   DAT_00201b50 = DAT_00201b50 + 1;
   bVar2 = (uVar1 & 0xffff) == 0;
@@ -9960,7 +9877,7 @@ void FUN_0003b608()
   int iVar3;
   
   DAT_00201b48 = DAT_00201b48 & 0xff | ((DAT_00201b48 >> 8) - 0x40) * 0x100;
-  uVar2 = FUN_0003b31c(DAT_00201b44,*DAT_00201b50,0);
+  uVar2 = pack_byte_into_word(DAT_00201b44,*DAT_00201b50,0);
   DAT_00201b50 = DAT_00201b50 + 1;
   DAT_00201b54 = DAT_00201b54 + 1;
   DAT_00201b44 = CONCAT11(uVar2,uVar2);

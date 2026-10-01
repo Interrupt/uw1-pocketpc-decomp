@@ -1302,6 +1302,16 @@ extern char DAT_000ba9d4;
 extern undefined4 DAT_000bbef4;
 extern int DAT_000bbefc;
 extern char * DAT_002029cc;
+/* decompress_rle_stream's shared codec state -- see uw.c's own
+   comment at the declarations for what each field tracks. */
+extern undefined1 *DAT_00201b40;
+extern int DAT_00201b54;
+extern int DAT_00201b4c;
+extern int DAT_00201b58;
+extern ushort DAT_00201b48;
+extern undefined1 *DAT_00201b50;
+extern short DAT_00201b44;
+extern int DAT_00201b3c;
 extern char s__DATA_blnkmap_byt_00084338[];
 extern char s_fontbig_sys_0008432c[];
 /* Globals defined in uw.c but also used by functions that now live in
@@ -3009,8 +3019,8 @@ void use_lockpick_on_object();
 undefined4 clear_object_temp_flag_callback();
 void clear_temp_flags_on_all_objects();
 undefined4 load_bmp_resource_to_rgb565();
-void FUN_0003b0e4();
-uint FUN_0003b31c();
+void decompress_rle_stream();
+uint pack_byte_into_word();
 uint FUN_0003b344();
 void FUN_0003b3a8();
 void FUN_0003b48c();
