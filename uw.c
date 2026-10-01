@@ -2934,25 +2934,22 @@ char DAT_00085910;
 char DAT_00085911;
 char DAT_00085918;
 char DAT_00085919;
-static undefined DAT_00085908_backing[8192];
-#define DAT_00085908 DAT_00085908_backing[0]
+undefined DAT_00085908_backing[8192];
 char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
-static undefined1 DAT_0023c460_backing[32768];
-#define DAT_0023c460 DAT_0023c460_backing[0]
+undefined1 DAT_0023c460_backing[32768];
 /* DAT_0023c4c0/DAT_0023c5b8/DAT_0024ac18 (a resource-slot status table,
-   FUN_00040160) were lone-byte scalars indexed up to 0x80 (128) --
+   load_critter_association_tables) were lone-byte scalars indexed up to 0x80 (128) --
    confirmed overflowing into the unrelated DAT_00248410 (a malloc'd
    buffer pointer) via an lldb watchpoint, corrupting it and causing a
    later crash in seed_conversation_globals_for_new_game far away from this actual bad write.
-   Widened with the usual backing-buffer pattern. */
-static undefined1 DAT_0023c4c0_backing[256];
-#define DAT_0023c4c0 DAT_0023c4c0_backing[0]
-static undefined1 DAT_0023c5b8_backing[256];
-#define DAT_0023c5b8 DAT_0023c5b8_backing[0]
+   Widened with the usual backing-buffer pattern. Macro defines for all
+   four backing arrays now live in uw.h, since load_critter_association_tables
+   (their only reader) moved into src/ai.c. */
+undefined1 DAT_0023c4c0_backing[256];
+undefined1 DAT_0023c5b8_backing[256];
  undefined1 DAT_0023ce70_backing[8192];
 #define DAT_0023ce70 DAT_0023ce70_backing[0]
-static undefined1 DAT_0024ac18_backing[256];
-#define DAT_0024ac18 DAT_0024ac18_backing[0]
+undefined1 DAT_0024ac18_backing[256];
 /* Real string, recovered via Ghidra disassembly of decode_critter_sprite_page
    (the caching "\CRIT\CR<pp>PAGE.N<nn>" per-page critter-animation
    resource loader): the decompile showed DAT_00085928/29/30/31 as four
@@ -10581,156 +10578,9 @@ void toggle_weapon_ready()
 
 
 
-bool FUN_000400dc()
-
-{
-  short sVar1;
-  
-  sVar1 = 0;
-  if (g_cursor_holding_state != 0) {
-    sVar1 = 0xa0;
-  }
-  if (DAT_00201b68 == 9) {
-    sVar1 = 0x9f;
-  }
-  if (sVar1 != 0) {
-    print_scroll_message_by_id();
-  }
-  return sVar1 == 0;
-}
 
 
 
-undefined4 FUN_00040130()
-
-{
-  if (g_cursor_holding_state != 0) {
-    g_cursor_holding_state = 0;
-    FUN_00057cac(0);
-  }
-  return 1;
-}
-
-
-
-undefined4 FUN_00040160(param_1)
-int param_1;
-
-{
-  int uw_ord2005_rem_112 = 0;
-  char *wptr_26821;
-  char *wptr_26852;
-  unsigned int stack0xffdc3230;
-  int iVar1;
-  char cVar2;
-  uint uVar3;
-  char *pcVar4;
-  int iVar5;
-  undefined1 *puVar6;
-  int iVar7;
-  char extraout_r1;
-  int iVar8;
-  int extraout_r2;
-  int extraout_r2_00;
-  ushort uVar9;
-  int iVar10;
-  byte local_130;
-  byte local_12f;
-  undefined1 *local_12c;
-  char acStack_128 [260];
-  
-  iVar8 = 0;
-  uVar3 = (uint)DAT_0024fa18;
-  if (uVar3 != 0) {
-    iVar8 = 0;
-    do {
-      (&DAT_0023c4c0)[iVar8] = 0xfe;
-      iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
-    } while (iVar8 < (int)uVar3);
-  }
-  for (iVar8 = iVar8 << 0x10; iVar8 = iVar8 >> 0x10, iVar8 < 0x80; iVar8 = (iVar8 + 1) * 0x10000) {
-    (&DAT_0023c4c0)[iVar8] = 0xff;
-  }
-  iVar8 = 0;
-  do {
-    (&DAT_0023c5b8)[iVar8] = 0xff;
-    (&DAT_0024ac18)[iVar8] = 0xff;
-    iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
-  } while (iVar8 < 0x80);
-  clear_ambient_sound_target();
-  if (param_1 != 0) {
-    /* Was pointed at the placeholder stack0xffdc3230 scalar (from an
-       earlier undeclared-identifier pass) instead of the real 260-byte
-       path buffer acStack_128 that both copy loops below (and the
-       Ordinal_1063/open_file_for_read calls right after) actually operate on. */
-    local_12c = (undefined1 *)acStack_128;
-    pcVar4 = &DAT_0023cca8;
-    wptr_26821 = local_12c;
-    do {
-      cVar2 = *pcVar4;
-      *wptr_26821 = cVar2; wptr_26821 = wptr_26821 + 1;
-      pcVar4 = pcVar4 + 1;
-    } while (cVar2 != '\0');
-    Ordinal_1063(acStack_128,s__CRIT_assoc_anm_00085934);
-    iVar8 = open_file_for_read(acStack_128);
-    if (iVar8 == -1) {
-      iVar8 = 0;
-      do {
-        (&DAT_0023ce70)[iVar8] = 0xff;
-        iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
-      } while (iVar8 < 0x80);
-      return 0;
-    }
-    seek_file_handle(iVar8,0x100,0);
-    read_file_handle(iVar8,&DAT_0023ce70,0x80);
-    iVar10 = 0;
-    do {
-      DAT_00085910 = (char)((short)iVar10 >> 3) + '0';
-      DAT_00085911 = ((byte)iVar10 & 7) + 0x30;
-      iVar5 = 0;
-      do {
-        iVar5 = (int)(short)iVar5;
-        cVar2 = Ordinal_2005(10,iVar5);
-        DAT_00085918 = cVar2 + '0';
-        uw_ord2005_rem_112 = ((int)(iVar5)) % (10);
-        DAT_00085919 = uw_ord2005_rem_112 + '0';
-        uVar9 = 0xa0;
-        Ordinal_1047(acStack_128,0,0x104);
-        pcVar4 = &DAT_0023cca8;
-    wptr_26852 = local_12c;
-        do {
-          cVar2 = *pcVar4;
-          *wptr_26852 = cVar2; wptr_26852 = wptr_26852 + 1;
-          pcVar4 = pcVar4 + 1;
-        } while (cVar2 != '\0');
-        Ordinal_1063(acStack_128,&DAT_00085908);
-        puVar6 = (undefined1 *)open_file_for_read(acStack_128);
-        iVar7 = extraout_r2;
-        if (puVar6 != (undefined1 *)0xffffffff) {
-          iVar7 = read_file_handle(puVar6,&local_130,2);
-          uVar9 = 0xa0;
-          if (iVar7 == 2) {
-            uVar9 = (ushort)local_12f + (ushort)local_130;
-          }
-          puVar6 = (undefined1 *)Ordinal_553(puVar6);
-          iVar7 = extraout_r2_00;
-        }
-        if (iVar5 < 3) {
-          puVar6 = &DAT_0023c460;
-          iVar7 = (short)iVar10 * 3 + iVar5;
-        }
-        iVar1 = (iVar5 + 1) * 0x10000;
-        if (iVar5 < 3) {
-          puVar6[iVar7] = (char)uVar9;
-        }
-        iVar5 = iVar1 >> 0x10;
-      } while ((uVar9 < 0xa0) && ((short)((uint)iVar1 >> 0x10) < 4));
-      iVar10 = iVar10 + 1;
-    } while (iVar10 * 0x10000 >> 0x10 < 0x20);
-    Ordinal_553(iVar8);
-  }
-  return 1;
-}
 
 
 
@@ -11774,7 +11624,7 @@ undefined4 FUN_00041aac()
     else {
       DAT_00085988 = DAT_00085988 + '\x01';
       DAT_0024fa28 = DAT_0024d000 + '\t';
-      iVar3 = FUN_00040160(1);
+      iVar3 = load_critter_association_tables(1);
       if (iVar3 == 0) {
         uVar4 = 0x3009;
       }
@@ -21840,7 +21690,7 @@ short param_1;
       uVar2 = 2;
     }
     else if (param_1 == 5) {
-      iVar1 = FUN_00040130();
+      iVar1 = check_can_load_game();
       if (iVar1 == 0) {
         return;
       }
@@ -21850,7 +21700,7 @@ short param_1;
       if (param_1 != 6) {
         return;
       }
-      iVar1 = FUN_000400dc();
+      iVar1 = check_can_save_game();
       if (iVar1 == 0) {
         return;
       }

@@ -2276,6 +2276,21 @@ extern undefined2 DAT_002020bc;
 extern char *DAT_002020a8;
 extern short DAT_002020ac;
 extern void (*const PTR_FUN_000858c8_table[5])(void);
+extern char DAT_00085910;
+extern char DAT_00085911;
+extern char DAT_00085918;
+extern char DAT_00085919;
+extern char s__CRIT_assoc_anm_00085934[];
+extern undefined DAT_00085908_backing[8192];
+#define DAT_00085908 DAT_00085908_backing[0]
+extern undefined1 DAT_0023c460_backing[32768];
+#define DAT_0023c460 DAT_0023c460_backing[0]
+extern undefined1 DAT_0023c4c0_backing[256];
+#define DAT_0023c4c0 DAT_0023c4c0_backing[0]
+extern undefined1 DAT_0023c5b8_backing[256];
+#define DAT_0023c5b8 DAT_0023c5b8_backing[0]
+extern undefined1 DAT_0024ac18_backing[256];
+#define DAT_0024ac18 DAT_0024ac18_backing[0]
 extern void (*g_keybind_handler[512])(int);
 extern int g_keybind_handler_n;
 extern void (*g_click_region_handler[128])(int);
@@ -3127,9 +3142,9 @@ void cursor_mode_button_click_restricted();
 void ready_weapon();
 void unready_weapon();
 void toggle_weapon_ready();
-bool FUN_000400dc();
-undefined4 FUN_00040130();
-undefined4 FUN_00040160();
+bool check_can_save_game();
+undefined4 check_can_load_game();
+undefined4 load_critter_association_tables();
 void FUN_00040440();
 undefined4 FUN_000404a0();
 undefined4 FUN_00040770();

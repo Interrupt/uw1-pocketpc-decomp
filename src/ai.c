@@ -4396,3 +4396,132 @@ int param_2;
   }
   return 1;
 }
+
+
+// was FUN_00040160 -- called during the bitmap-loading stage of game
+// startup (uw.c, right after every HUD bitmap resource load succeeds)
+// with param_1=1. Clears several 0x80-entry per-tile/per-sound cache
+// arrays and the ambient sound target; when param_1 is set, also loads
+// the per-level "CRIT_assoc_anm.NN" critter-animation-association
+// files (one per level, 0-0x1f) into DAT_0023c460, falling back to an
+// all-0xff table and failing out early if the base association file
+// can't be opened at all. Reads as "load the critter animation
+// association tables".
+undefined4 load_critter_association_tables(param_1)
+int param_1;
+
+{
+  int uw_ord2005_rem_112 = 0;
+  char *wptr_26821;
+  char *wptr_26852;
+  unsigned int stack0xffdc3230;
+  int iVar1;
+  char cVar2;
+  uint uVar3;
+  char *pcVar4;
+  int iVar5;
+  undefined1 *puVar6;
+  int iVar7;
+  char extraout_r1;
+  int iVar8;
+  int extraout_r2;
+  int extraout_r2_00;
+  ushort uVar9;
+  int iVar10;
+  byte local_130;
+  byte local_12f;
+  undefined1 *local_12c;
+  char acStack_128 [260];
+  
+  iVar8 = 0;
+  uVar3 = (uint)DAT_0024fa18;
+  if (uVar3 != 0) {
+    iVar8 = 0;
+    do {
+      (&DAT_0023c4c0)[iVar8] = 0xfe;
+      iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
+    } while (iVar8 < (int)uVar3);
+  }
+  for (iVar8 = iVar8 << 0x10; iVar8 = iVar8 >> 0x10, iVar8 < 0x80; iVar8 = (iVar8 + 1) * 0x10000) {
+    (&DAT_0023c4c0)[iVar8] = 0xff;
+  }
+  iVar8 = 0;
+  do {
+    (&DAT_0023c5b8)[iVar8] = 0xff;
+    (&DAT_0024ac18)[iVar8] = 0xff;
+    iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
+  } while (iVar8 < 0x80);
+  clear_ambient_sound_target();
+  if (param_1 != 0) {
+    /* Was pointed at the placeholder stack0xffdc3230 scalar (from an
+       earlier undeclared-identifier pass) instead of the real 260-byte
+       path buffer acStack_128 that both copy loops below (and the
+       Ordinal_1063/open_file_for_read calls right after) actually operate on. */
+    local_12c = (undefined1 *)acStack_128;
+    pcVar4 = &DAT_0023cca8;
+    wptr_26821 = local_12c;
+    do {
+      cVar2 = *pcVar4;
+      *wptr_26821 = cVar2; wptr_26821 = wptr_26821 + 1;
+      pcVar4 = pcVar4 + 1;
+    } while (cVar2 != '\0');
+    Ordinal_1063(acStack_128,s__CRIT_assoc_anm_00085934);
+    iVar8 = open_file_for_read(acStack_128);
+    if (iVar8 == -1) {
+      iVar8 = 0;
+      do {
+        (&DAT_0023ce70)[iVar8] = 0xff;
+        iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
+      } while (iVar8 < 0x80);
+      return 0;
+    }
+    seek_file_handle(iVar8,0x100,0);
+    read_file_handle(iVar8,&DAT_0023ce70,0x80);
+    iVar10 = 0;
+    do {
+      DAT_00085910 = (char)((short)iVar10 >> 3) + '0';
+      DAT_00085911 = ((byte)iVar10 & 7) + 0x30;
+      iVar5 = 0;
+      do {
+        iVar5 = (int)(short)iVar5;
+        cVar2 = Ordinal_2005(10,iVar5);
+        DAT_00085918 = cVar2 + '0';
+        uw_ord2005_rem_112 = ((int)(iVar5)) % (10);
+        DAT_00085919 = uw_ord2005_rem_112 + '0';
+        uVar9 = 0xa0;
+        Ordinal_1047(acStack_128,0,0x104);
+        pcVar4 = &DAT_0023cca8;
+    wptr_26852 = local_12c;
+        do {
+          cVar2 = *pcVar4;
+          *wptr_26852 = cVar2; wptr_26852 = wptr_26852 + 1;
+          pcVar4 = pcVar4 + 1;
+        } while (cVar2 != '\0');
+        Ordinal_1063(acStack_128,&DAT_00085908);
+        puVar6 = (undefined1 *)open_file_for_read(acStack_128);
+        iVar7 = extraout_r2;
+        if (puVar6 != (undefined1 *)0xffffffff) {
+          iVar7 = read_file_handle(puVar6,&local_130,2);
+          uVar9 = 0xa0;
+          if (iVar7 == 2) {
+            uVar9 = (ushort)local_12f + (ushort)local_130;
+          }
+          puVar6 = (undefined1 *)Ordinal_553(puVar6);
+          iVar7 = extraout_r2_00;
+        }
+        if (iVar5 < 3) {
+          puVar6 = &DAT_0023c460;
+          iVar7 = (short)iVar10 * 3 + iVar5;
+        }
+        iVar1 = (iVar5 + 1) * 0x10000;
+        if (iVar5 < 3) {
+          puVar6[iVar7] = (char)uVar9;
+        }
+        iVar5 = iVar1 >> 0x10;
+      } while ((uVar9 < 0xa0) && ((short)((uint)iVar1 >> 0x10) < 4));
+      iVar10 = iVar10 + 1;
+    } while (iVar10 * 0x10000 >> 0x10 < 0x20);
+    Ordinal_553(iVar8);
+  }
+  return 1;
+}

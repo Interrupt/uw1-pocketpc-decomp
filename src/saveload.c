@@ -449,7 +449,7 @@ char param_1;
        src="\SAVE0"), copying the ACTIVE SESSION onto the chosen slot --
        a save-direction copy. That's backwards for this function: live
        testing confirms load_game_from_slot's own status text is "Restoring
-       Game " (this is the Load path, gated by FUN_00040130's
+       Game " (this is the Load path, gated by check_can_load_game's
        unconditional-allow "can load" semantics; save_game_to_slot -- own
        status text "Saving Game " -- is the Save path, see its matching
        fix). An earlier session's comment here ("chosen slot,
@@ -622,7 +622,7 @@ char *param_2;
                back onto the active session. That's backwards for this
                function: save_game_to_slot is the SAVE path (confirmed live --
                its own status text is "Saving Game ", gated by
-               FUN_000400dc's real save preconditions, and it just
+               check_can_save_game's real save preconditions, and it just
                finished writing the current name/player.dat/lev.ark
                state into local_638="\SAVE0" a few lines up) -- copying
                SAVEn back onto SAVE0 immediately discards all of that
@@ -1471,3 +1471,45 @@ ushort param_3;
 
 
 
+
+
+// was FUN_000400dc -- gates save_game_to_slot's "can save now" check
+// (confirmed via src/saveload.c's own comment on save_game_to_slot):
+// refuses (printing a scroll warning) while the cursor is holding an
+// object, or while on level 9 (the final/Abyss level), otherwise
+// allows the save.
+bool check_can_save_game()
+
+{
+  short sVar1;
+
+  sVar1 = 0;
+  if (g_cursor_holding_state != 0) {
+    sVar1 = 0xa0;
+  }
+  if (DAT_00201b68 == 9) {
+    sVar1 = 0x9f;
+  }
+  if (sVar1 != 0) {
+    print_scroll_message_by_id();
+  }
+  return sVar1 == 0;
+}
+
+
+
+// was FUN_00040130 -- gates load_game_from_slot's "can load now" check
+// (src/saveload.c's own comment on load_game_from_slot confirms this
+// "unconditional-allow" semantics): unlike check_can_save_game, never
+// refuses -- just releases any cursor-held object first (via
+// FUN_00057cac, not yet named) so loading never leaves a stale held
+// item -- then always returns true.
+undefined4 check_can_load_game()
+
+{
+  if (g_cursor_holding_state != 0) {
+    g_cursor_holding_state = 0;
+    FUN_00057cac(0);
+  }
+  return 1;
+}
