@@ -716,7 +716,7 @@ LAB_000669a8:
   do {
     g_scratch_object_ptr = (ushort *)get_equipped_item_at_slot(iVar4);
     if ((g_scratch_object_ptr != (ushort *)0x0) &&
-       (iVar5 = FUN_00045f9c(*g_scratch_object_ptr & 0x1ff,iVar4), iVar5 != 0)) {
+       (iVar5 = is_valid_equipment_slot_item(*g_scratch_object_ptr & 0x1ff,iVar4), iVar5 != 0)) {
       iVar5 = resolve_object_variant_or_special_link(g_scratch_object_ptr,local_2c,local_2e,&local_28);
       if ((iVar5 == 0) || (local_28 != 0)) {
         if ((*g_scratch_object_ptr & 0x1ff) == 0x2f) {
@@ -979,7 +979,7 @@ int param_1;
 // state param_3 and an equipment-slot/object index param_4. Called
 // from refresh_player_equipment_effects for both the fixed light-
 // radius contributions packed at DAT_00086df8+0x3e and per-equipped-
-// item property effects it resolves via FUN_00045f9c/resolve_object_variant_or_special_link.
+// item property effects it resolves via is_valid_equipment_slot_item/resolve_object_variant_or_special_link.
 // Individual opcode semantics aren't all confirmed (several, e.g. 4-8
 // and 10, are no-ops in this decompile); named for the dispatcher's
 // overall role, not a verified meaning of every case.

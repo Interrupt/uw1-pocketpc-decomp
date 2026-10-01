@@ -3741,8 +3741,7 @@ undefined DAT_00087533_backing[210];
 undefined4 DAT_002046b4;
 undefined DAT_00085a90;
 char s_were_00085a98[] = "were";
-static undefined1 DAT_00085aa0_backing[32768];
-#define DAT_00085aa0 DAT_00085aa0_backing[0]
+undefined1 DAT_00085aa0_backing[32768];
 char s_damaged__00085aa8[] = "damaged.";
 char s_destroyed__00085ab4[] = "destroyed.";
 // was DAT_0023bcf4, offset +0x4c of the "large fixed-offset record"
@@ -12069,119 +12068,6 @@ ushort param_5;
 
 
 
-undefined4 FUN_00045f9c(param_1,param_2)
-ushort param_1;
-short param_2;
-
-{
-  int iVar1;
-  undefined4 uVar2;
-  
-  iVar1 = (int)param_2;
-  if (((((iVar1 < 0) || (4 < iVar1)) && (iVar1 != 10)) && (iVar1 != 9)) &&
-     (((iVar1 != (*(byte *)(DAT_00086df8 + 100) & 1) + 7 || ((param_1 & 0xffc0) != 0)) ||
-      (((param_1 & 0x30) < 0x20 || (((param_1 & 0xf) < 0xb || (0xf < (param_1 & 0xf))))))))) {
-    uVar2 = 0;
-  }
-  else {
-    uVar2 = 1;
-  }
-  return uVar2;
-}
-
-
-
-undefined4 FUN_00046030(param_1,param_2,param_3,param_4,param_5)
-undefined4 param_1;
-undefined1 param_2;
-undefined1 param_3;
-short param_4;
-int param_5;
-
-{
-  char *wptr_30396;
-  byte bVar1;
-  char cVar2;
-  undefined2 uVar3;
-  short sVar4;
-  undefined2 *puVar5;
-  int iVar6;
-  undefined4 uVar7;
-  char *pcVar8;
-  char *pcVar9;
-  char *pDropObj;  /* was `uVar7` (undefined4) for this use -- truncated
-                       spawn_new_object's real object pointer; uVar7 itself
-                       is only reused as a 0/1 message-select flag right
-                       after, so this needed a separate typed local */
-  char acStackY_85aec [547480];
-  char acStack_4d [53];
-  
-  puVar5 = (undefined2 *)get_equipped_item_at_slot();
-  if (puVar5 == (undefined2 *)0x0) {
-    return 0xfffffffe;
-  }
-  if (param_4 != 2) {
-    if (param_4 == 0) {
-      if ((CONCAT11(*(undefined1 *)((char *)puVar5 + 1),*(undefined1 *)puVar5) & 0x1f0) != 0) {
-        return 0xfffffffe;
-      }
-    }
-    else {
-      iVar6 = FUN_00045f9c(CONCAT11(*(undefined1 *)((char *)puVar5 + 1),*(undefined1 *)puVar5) & 0x1ff,
-                           param_1);
-      if (iVar6 == 0) {
-        return 0xfffffffe;
-      }
-    }
-  }
-  bVar1 = *(byte *)(puVar5 + 2);
-  iVar6 = apply_typed_damage_to_object(puVar5,0,0xffffffff,0xffffffff,param_2,param_3);
-  if (iVar6 == 0) {
-    if ((*(byte *)(puVar5 + 2) & 0x3f) == (bVar1 & 0x3f)) {
-      return 0xffffffff;
-    }
-    pcVar9 = s_damaged__00085aa8;
-    uVar7 = 0;
-  }
-  else {
-    if (param_5 != 0) {
-      sVar4 = rand_below(2);
-      pDropObj = (char *)spawn_new_object(sVar4 + 0xd5,0);
-      drop_object_near_target(g_player_object,pDropObj,6,0);
-    }
-    decrement_object_count(puVar5);
-    discard_misplaced_object(0,puVar5,1);
-    refresh_player_equipment_effects();
-    pcVar9 = s_destroyed__00085ab4;
-    uVar7 = 1;
-  }
-  pcVar8 = &DAT_00085aa0;
-    wptr_30396 = acStackY_85aec;
-  do {
-    cVar2 = *pcVar8;
-    *wptr_30396 = cVar2; wptr_30396 = wptr_30396 + 1;
-    pcVar8 = pcVar8 + 1;
-  } while (cVar2 != '\0');
-  if (puVar5 == g_player_object) {
-    uVar3 = *puVar5;
-    *(undefined1 *)puVar5 = 0xf;
-    *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar3 >> 8) & 0xfe;
-  }
-  iVar6 = Ordinal_1068(acStack_4d + 1);
-  build_object_display_name(acStack_4d + iVar6 + 1,puVar5,0,0);
-  iVar6 = Ordinal_1068(acStack_4d + 1);
-  if (acStack_4d[iVar6] == 's') {
-    pcVar8 = s_were_00085a98;
-  }
-  else {
-    pcVar8 = &DAT_00085a90;
-  }
-  Ordinal_1063(acStack_4d + 1,pcVar8);
-  Ordinal_1063(acStack_4d + 1,pcVar9);
-  message_scroll_print_wrapped(acStack_4d + 1);
-  redraw_backpack_slot_widget(param_1);
-  return uVar7;
-}
 
 
 
