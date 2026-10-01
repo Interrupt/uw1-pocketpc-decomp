@@ -512,7 +512,7 @@ undefined4 param_1;
 
 // was FUN_00066c90 -- closes the backpack container UI and clears the
 // player's transient inventory-view state before a level transition
-// (FUN_0003bee4, a resurrect/reset-position path) or a fresh level
+// (reset_player_for_resurrection, a resurrect/reset-position path) or a fresh level
 // load (load_level), so no dangling container reference survives the
 // change.
 void close_panels_before_level_change()

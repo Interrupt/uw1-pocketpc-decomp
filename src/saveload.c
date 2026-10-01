@@ -483,7 +483,7 @@ char param_1;
          bytes of "Level 1" overwriting the first 7 bytes of "HELLO
          WORLD", "ORLD" being the un-overwritten remainder). Load has no
          business rewriting the slot's description at all -- removed. */
-      FUN_0003bee4();
+      reset_player_for_resurrection();
       iVar4 = FUN_00044624(&DAT_000857a0);
       if (iVar4 != 0) {
         print_scroll_message_by_id(0xaa);

@@ -1360,6 +1360,8 @@ extern char * g_backpack_slot_table;
 #define g_equipped_items g_backpack_slot_table[0]
 extern char * g_current_container_record;
 extern undefined2 g_cursor_holding_state;
+extern short DAT_00201c94;
+extern undefined4 DAT_002028d8;
 extern ushort * g_interact_target;
 extern char * g_open_container_list;
 extern char * g_selected_object;
@@ -3042,7 +3044,7 @@ void reset_level_arena_and_invalidate();
 void set_game_mode();
 void change_game_mode();
 void enter_dungeon_view();
-void FUN_0003bee4();
+void reset_player_for_resurrection();
 void FUN_0003c038();
 undefined4 dungeon_view_anim_tick();
 void FUN_0003c310();

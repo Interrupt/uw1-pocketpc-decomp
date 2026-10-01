@@ -9851,43 +9851,6 @@ int param_1;
 
 
 
-void FUN_0003bee4()
-
-{
-  uint uVar1;
-  
-  close_panels_before_level_change();
-  refresh_player_equipment_effects();
-  uVar1 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f;
-  *(char *)((char *)g_player_object + 2) = (char)uVar1;
-  *(char *)((char *)g_player_object + 3) = (char)(uVar1 >> 8);
-  *(byte *)((char *)g_player_object + 0x18) = *(byte *)((char *)g_player_object + 0x18) & 0xe0;
-  DAT_00201c70 = 0;
-  DAT_00201c78 = 0;
-  DAT_00086b20 = 1;
-  reset_hud_panel_animation_state();
-  DAT_00201c94 = 0;
-  unready_weapon();
-  DAT_000868d8 = 2;
-  if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
-    FUN_00057cac(3);
-  }
-  g_cursor_mode = 0;
-  DAT_0024cfc8 = 0;
-  DAT_002028d8 = 0;
-  if (g_cursor_holding_state != 0) {
-    if (g_cursor_holding_state < 4) {
-      FUN_00057cac(3);
-      g_selected_object = 0;
-      g_cursor_holding_state = 0;
-    }
-    else {
-      g_cursor_holding_state = 0;
-      set_view_subject_by_command(1);
-    }
-  }
-  return;
-}
 
 
 
@@ -9939,7 +9902,7 @@ short param_1;
   if (param_1 == 1) {
     FUN_00057118();
   }
-  FUN_0003bee4();
+  reset_player_for_resurrection();
   Ordinal_1044(auStack_31c,&DAT_00088d98,0x300);
   FUN_00040f64(auStack_31c,2);
   main_menu_loop(0);
