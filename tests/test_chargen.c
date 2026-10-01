@@ -63,8 +63,14 @@ void setUp(void)
     memset(record, 0xa5, sizeof(record));
     memset(attributes, 0, sizeof(attributes));
     memset(player_object, 0, sizeof(player_object));
-    memset(DAT_000fb860_backing, 0, sizeof(DAT_000fb860_backing));
+    /* Match character_generator_start's SKILLS.DAT load without its UI. */
+    FILE *skills = fopen(UW_TEST_DATA_DIR "/DATA/SKILLS.DAT", "rb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(skills, "data/DATA/SKILLS.DAT is required");
     memset(DAT_000fb8f0_backing, 0, sizeof(DAT_000fb8f0_backing));
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT(0x28,
+        fread(DAT_000fb8f0_backing, 1, 0x348, skills));
+    TEST_ASSERT_EQUAL_INT(0, fclose(skills));
+    memcpy(DAT_000fb860_backing, DAT_000fb8f0_backing, 0x20);
     memset(random_values, 0, sizeof(random_values));
     random_count = random_index = dice_calls = hazard_calls = 0;
     equipment_calls = reset_calls = trained_count = 0;
@@ -130,15 +136,20 @@ static void test_finalization_rolls_twenty_skills_and_three_attributes(void)
 static void test_each_class_uses_its_own_base_attributes(void)
 {
     for (int cls = 0; cls < 8; cls++) {
-        for (int stat = 0; stat < 3; stat++)
-            DAT_000fb860_backing[cls * 4 + stat] = 10 + cls + stat;
-    }
-    for (int cls = 0; cls < 8; cls++) {
+        const byte *row = DAT_000fb860_backing + cls * 4;
+        random_index = 0;
+        random_count = row[3] * 2;
+        for (int i = 0; i < row[3]; i++) {
+            random_values[i * 2] = 0; /* spend one point */
+            random_values[i * 2 + 1] = i % 3;
+        }
         record[100] = (cls << 5) | 0x1b;
         memset(record + 0x21, 9, 20);
         reroll_attributes_for_class_race();
         for (int stat = 0; stat < 3; stat++)
-            TEST_ASSERT_EQUAL_UINT8(10 + cls + stat, attributes[5 + stat]);
+            TEST_ASSERT_EQUAL_UINT8(row[stat] + row[3] / 3 + (stat < row[3] % 3),
+                                   attributes[5 + stat]);
+        TEST_ASSERT_EQUAL_INT(random_count, random_index);
         for (int skill = 0; skill < 20; skill++)
             TEST_ASSERT_EQUAL_UINT8(0, record[0x21 + skill]);
         TEST_ASSERT_EQUAL_UINT8((cls << 5) | 0x1b, record[100]);
@@ -192,7 +203,7 @@ static void test_skill_tree_branch_populates_choices_then_resumes(void)
 {
     const char tree[] = {1, 2, 2, 5, 9, 1, 7, 1, 12, 1, 19};
     char picks[6] = {20, 20, 20, 20, 20, 99}, field[20] = {0};
-    int list_offset = 100;
+    int list_offset = 1000;
     memcpy(field + 6, &list_offset, sizeof(list_offset));
     byte cursor = 0;
     record[100] = 0;
@@ -202,9 +213,9 @@ static void test_skill_tree_branch_populates_choices_then_resumes(void)
     TEST_ASSERT_EQUAL_UINT8(20, picks[1]);
     TEST_ASSERT_EQUAL_UINT8(2, field[10]);
     TEST_ASSERT_EQUAL_UINT8(0, field[11]);
-    TEST_ASSERT_EQUAL_UINT8(5 + 31, DAT_000fb8f0_backing[100]);
-    TEST_ASSERT_EQUAL_UINT8(9 + 31, DAT_000fb8f0_backing[102]);
-    TEST_ASSERT_EQUAL_UINT8(0, DAT_000fb8f0_backing[101]);
+    TEST_ASSERT_EQUAL_UINT8(5 + 31, DAT_000fb8f0_backing[1000]);
+    TEST_ASSERT_EQUAL_UINT8(9 + 31, DAT_000fb8f0_backing[1002]);
+    TEST_ASSERT_EQUAL_UINT8(0, DAT_000fb8f0_backing[1001]);
     picks[1] = 9; /* confirmed choice normally supplied by input code */
     TEST_ASSERT_EQUAL_UINT32(0, advance_skill_tree_node(&cursor, picks, field, tree));
     const char expected[] = {2, 9, 7, 12, 19, 99};

@@ -156,7 +156,13 @@ if(BUILD_TESTING)
     uw.c:set_game_mode
     src/ordinal_stubs.c:Ordinal_61 src/ordinal_stubs.c:Ordinal_164
     src/ordinal_stubs.c:Ordinal_196 src/ordinal_stubs.c:Ordinal_1047
-    src/ordinal_stubs.c:Ordinal_1063)
+    src/ordinal_stubs.c:Ordinal_1063
+    src/saveload.c:read_archive_entry)
+  foreach(name chargen new_game)
+    target_compile_definitions(test_${name} PRIVATE
+      UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  endforeach()
+  target_sources(test_new_game PRIVATE src/file_io.c src/debug.c)
   add_game_unit_test(teleport
     src/level.c:transition_to_level src/level.c:teleport_object_to_level_tile
     uw.c:dungeon_view_anim_tick src/movement.c:movement_tick)

@@ -54,17 +54,22 @@ needed. The existing CMake configuration still requires SDL2 to be installed.
 `tests/test_chargen.c` tests new-character defaults, starting rolls, class
 attributes and bonus caps, skill-tree traversal, and confirmed skill picks.
 It tests functions from `src/chargen.c` without UI code, with deterministic random
-values and stubs for game services (including skill training). Run just this
+values and stubs for game services (including skill training). Class attributes
+and bonus pools come from `data/DATA/SKILLS.DAT`; synthetic trees and cap cases
+remain for testing specific edge conditions. Run just this
 suite with `ctest --test-dir build -R '^chargen$' --output-on-failure`.
 
-`tests/test_new_game.c` creates a stub character, seeds an in-memory level-1
-archive fixture, runs the real `load_level`/`load_level_object_table` code,
+`tests/test_new_game.c` creates a stub character, copies the real
+`data/DATA/LEV.ARK`, runs the real archive-entry reader and level loader,
 and enters gameplay through the real game-mode transition. It checks the
 character survives loading, the level data and free-list offsets are loaded,
 the spawn request is tile (32, 2), and input dispatch switches to gameplay.
-Archive I/O, save records, scheduler/texture/automap services, player placement,
-and display/audio services are stubbed; no original game data or window is
-needed. It also checks cancellation and copy/load failures. Run it with
+File I/O and copying use `src/file_io.c`; writes go to a temporary SAVE0,
+leaving the supplied data and saves unchanged. Archive lifecycle bookkeeping,
+save records, scheduler/texture/automap services, player placement, and UI
+remain stubbed. Cancellation and copy/load failures are also checked.
+Both chargen and new-game tests require the copied `data/DATA` files and fail
+if they are missing. Run new-game with
 `ctest --test-dir build -R '^new_game$' --output-on-failure`.
 
 `tests/test_teleport.c` queues a player teleport and ticks the real
