@@ -2592,7 +2592,7 @@ short DAT_00201b64;
 short DAT_00202080 = -1;
 short DAT_00201c94;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
-   dispatch_sticky_mode_handlers/enter_dungeon_view/FUN_0003c038/change_game_mode (DAT_00201b64 = the
+   dispatch_sticky_mode_handlers/enter_dungeon_view/handle_player_death_and_menu_transition/change_game_mode (DAT_00201b64 = the
    mode: 0 is the normal in-game/dungeon view, seen so far; 1 and 2 are
    some other screen). It's link-time-initialized data in the original
    binary -- nothing in this decompile ever writes to it at runtime -- so
@@ -2622,7 +2622,7 @@ short DAT_00201c94;
    math was written for, so every read site's byte-stride constant is
    doubled (0x40 -> 0x80 per 16-entry mode row, 4 -> 8 per single entry;
    see each site's own comment). */
-static void (*const DAT_00085668_real_table[48])(void) = {
+void (*const DAT_00085668_real_table[48])(void) = {
   /* mode 0 (in-game/dungeon view) */
   (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))dungeon_view_anim_tick,
   0, 0, 0, 0,
@@ -2639,14 +2639,13 @@ static void (*const DAT_00085668_real_table[48])(void) = {
   0, 0, 0, 0,
   0, 0, 0, (void(*)(void))exit_talk_mode,
 };
-#define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)
-#define DAT_00085668 DAT_00085668_backing[0]
-/* Alias into the same table at entry 15 (byte offset 15*8) -- Ghidra's
-   own decompile of the real UU.exe shows this used as `&DAT_000856a4 +
-   mode*0x80`, i.e. "entry 15 of whichever mode", the same table
-   dispatch_sticky_mode_handlers reads -- not a separate byte the way it was declared
-   before (that left it permanently 0/NULL too). */
-#define DAT_000856a4 (DAT_00085668_backing[15 * 8])
+/* DAT_00085668_backing/DAT_00085668/DAT_000856a4 macros now live in
+   uw.h (DAT_000856a4 aliases into the same table at entry 15, byte
+   offset 15*8 -- Ghidra's own decompile of the real UU.exe shows this
+   used as `&DAT_000856a4 + mode*0x80`, i.e. "entry 15 of whichever
+   mode", the same table dispatch_sticky_mode_handlers reads -- not a
+   separate byte the way it was declared before, which left it
+   permanently 0/NULL too). */
 char s__DATA_main_byt_000857a8[] = "\\DATA\\main.byt";
 undefined2 DAT_000868d8;
 undefined4 DAT_0024cfc8;
@@ -9854,65 +9853,6 @@ int param_1;
 
 
 
-void FUN_0003c038(param_1)
-short param_1;
-
-{
-  short sVar1;
-  code *pcVar2;
-  bool bVar3;
-  undefined1 auStack_31c [768];
-
-  DAT_0023bf0c = 0;
-  reset_cursor_confine_rect();
-  if (param_1 == 1) {
-    set_hud_status_value(2,0);
-    snap_compass_to_heading();
-    hud_vitals_threshold_shake(0);
-    message_scroll_print_wrapped(s_You_died_000857b8);
-    display_book_or_scroll_page(0x103);
-    Ordinal_496(2000);
-  }
-  do {
-    sVar1 = next_input_event();
-  } while (sVar1 < 0);
-  msg_scroll_panel_reset(1);
-  /* 0x80, see DAT_00085668's comment. Guarded the same way
-     change_game_mode guards its own identical table-callback call --
-     this call site was missing the NULL/0xffffffff check entirely,
-     so any mode with no registered exit callback (e.g. mode 2, the
-     NPC-conversation mode) crashed here with a NULL indirect call. */
-  pcVar2 = (code *)(int)DAT_00201b64;
-  /* Same 64-bit pointer-sentinel fix as change_game_mode's own identical
-     guard -- see its comment. */
-  bVar3 = DAT_00201b64 != -1;
-  if (bVar3) {
-    pcVar2 = *(code **)(&DAT_000856a4 + (int)pcVar2 * 0x80);
-  }
-  if (bVar3 && pcVar2 != (code *)0x0) {
-    (*pcVar2)();
-  }
-  *(undefined1 *)(DAT_00085a6c + 8) = 0;
-  *(undefined1 *)(DAT_00085a6c + 9) = 0;
-  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
-  sVar1 = DAT_00201b64;
-  DAT_00201b60 = 0;
-  DAT_00201b64 = 0xffff;
-  DAT_00201c98 = 0;
-  if (param_1 == 1) {
-    FUN_00057118();
-  }
-  reset_player_for_resurrection();
-  Ordinal_1044(auStack_31c,&DAT_00088d98,0x300);
-  FUN_00040f64(auStack_31c,2);
-  main_menu_loop(0);
-  DAT_00201c98 = 1;
-  DAT_00201b60 = (undefined2)(1 << ((int)sVar1 & 0xffU));
-  DAT_00201b64 = sVar1;
-  /* 0x80, see DAT_00085668's comment. */
-  (**(code **)(&DAT_00085668 + sVar1 * 0x80))();
-  return;
-}
 
 
 

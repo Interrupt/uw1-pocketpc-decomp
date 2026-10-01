@@ -3135,7 +3135,7 @@ ushort * param_1;
        conversation end then faithfully wrote that 0 into the REAL
        player HP byte, zeroing it and triggering
        sync_player_stats_to_hud's death-sequence branch, which then hit
-       a separate missing-NULL-guard crash in FUN_0003c038 (fixed
+       a separate missing-NULL-guard crash in handle_player_death_and_menu_transition (fixed
        there to match change_game_mode's own existing guard). */
     local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)*(byte *)((char *)g_player_object + 8) << 8);
   }

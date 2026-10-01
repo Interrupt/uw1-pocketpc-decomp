@@ -2360,6 +2360,11 @@ extern char *g_scheduler_table;
 #define DAT_0025077c g_scheduler_table[4]
 #define DAT_0025077d g_scheduler_table[5]
 extern char s__DATA_main_byt_000857a8[];
+extern char s_You_died_000857b8[];
+extern void (*const DAT_00085668_real_table[48])(void);
+#define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)
+#define DAT_00085668 DAT_00085668_backing[0]
+#define DAT_000856a4 (DAT_00085668_backing[15 * 8])
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -3045,7 +3050,7 @@ void set_game_mode();
 void change_game_mode();
 void enter_dungeon_view();
 void reset_player_for_resurrection();
-void FUN_0003c038();
+void handle_player_death_and_menu_transition();
 undefined4 dungeon_view_anim_tick();
 void FUN_0003c310();
 void FUN_0003c318();

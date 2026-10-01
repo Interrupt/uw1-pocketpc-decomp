@@ -2934,7 +2934,7 @@ void handle_game_victory_sequence()
     do {
       sVar3 = next_input_event();
     } while (sVar3 < 0);
-    FUN_0003c038(0);
+    handle_player_death_and_menu_transition(0);
     DAT_0023c27c = '\0';
   }
   return;
@@ -3034,7 +3034,7 @@ LAB_00072374:
       return;
     }
   }
-  FUN_0003c038(1);
+  handle_player_death_and_menu_transition(1);
   return;
 }
 
@@ -3651,5 +3651,74 @@ void reset_player_for_resurrection()
       set_view_subject_by_command(1);
     }
   }
+  return;
+}
+
+
+// was FUN_0003c038 -- exits the current game mode and transitions
+// through the main menu before resuming: for param_1==1 (the player
+// death case), shows the "You died" message, the death illustration
+// page (0x103), and a 2-second pause before continuing. Waits out any
+// pending input, runs the current mode's exit callback (from the
+// mode-dispatch table at DAT_000856a4), resets mode state, calls
+// reset_player_for_resurrection, runs main_menu_loop(0), then restores
+// and re-enters the previous mode's entry callback.
+void handle_player_death_and_menu_transition(param_1)
+short param_1;
+
+{
+  short sVar1;
+  code *pcVar2;
+  bool bVar3;
+  undefined1 auStack_31c [768];
+
+  DAT_0023bf0c = 0;
+  reset_cursor_confine_rect();
+  if (param_1 == 1) {
+    set_hud_status_value(2,0);
+    snap_compass_to_heading();
+    hud_vitals_threshold_shake(0);
+    message_scroll_print_wrapped(s_You_died_000857b8);
+    display_book_or_scroll_page(0x103);
+    Ordinal_496(2000);
+  }
+  do {
+    sVar1 = next_input_event();
+  } while (sVar1 < 0);
+  msg_scroll_panel_reset(1);
+  /* 0x80, see DAT_00085668's comment. Guarded the same way
+     change_game_mode guards its own identical table-callback call --
+     this call site was missing the NULL/0xffffffff check entirely,
+     so any mode with no registered exit callback (e.g. mode 2, the
+     NPC-conversation mode) crashed here with a NULL indirect call. */
+  pcVar2 = (code *)(int)DAT_00201b64;
+  /* Same 64-bit pointer-sentinel fix as change_game_mode's own identical
+     guard -- see its comment. */
+  bVar3 = DAT_00201b64 != -1;
+  if (bVar3) {
+    pcVar2 = *(code **)(&DAT_000856a4 + (int)pcVar2 * 0x80);
+  }
+  if (bVar3 && pcVar2 != (code *)0x0) {
+    (*pcVar2)();
+  }
+  *(undefined1 *)(DAT_00085a6c + 8) = 0;
+  *(undefined1 *)(DAT_00085a6c + 9) = 0;
+  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
+  sVar1 = DAT_00201b64;
+  DAT_00201b60 = 0;
+  DAT_00201b64 = 0xffff;
+  DAT_00201c98 = 0;
+  if (param_1 == 1) {
+    FUN_00057118();
+  }
+  reset_player_for_resurrection();
+  Ordinal_1044(auStack_31c,&DAT_00088d98,0x300);
+  FUN_00040f64(auStack_31c,2);
+  main_menu_loop(0);
+  DAT_00201c98 = 1;
+  DAT_00201b60 = (undefined2)(1 << ((int)sVar1 & 0xffU));
+  DAT_00201b64 = sVar1;
+  /* 0x80, see DAT_00085668's comment. */
+  (**(code **)(&DAT_00085668 + sVar1 * 0x80))();
   return;
 }
