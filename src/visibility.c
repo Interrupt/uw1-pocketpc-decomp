@@ -340,7 +340,7 @@ void full_dungeon_redraw()
   build_frame_draw_list();
   draw_command_list_rewind();
   rebuild_dungeon_view();
-  FUN_00038c14(0xa0);
+  finalize_glyph_draw_command(0xa0);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
@@ -373,7 +373,7 @@ void render_dungeon_frame_timed()
   if (iVar8 != 0) {
     draw_command_list_rewind();
     rebuild_dungeon_view();
-    FUN_00038c14(0xa0);
+    finalize_glyph_draw_command(0xa0);
     *DAT_00110fc0 = 0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
   }
@@ -1326,7 +1326,7 @@ void rebuild_dungeon_view()
   DAT_0023b4d4 = (&DAT_00086b48)[iVar4];
   *DAT_00110fc0 = 0x38;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_00038ae8(0xa0,1);
+  emit_glyph_draw_command(0xa0,1);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0x2200;
@@ -1351,14 +1351,14 @@ void rebuild_dungeon_view()
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  uVar2 = FUN_00038a8c(9);
+  uVar2 = get_catalog_sprite_width(9);
   *DAT_00110fc0 = uVar2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  uVar2 = FUN_00038a8c(8);
+  uVar2 = get_catalog_sprite_width(8);
   *DAT_00110fc0 = uVar2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = (ushort)(DAT_00086b2c == 0);
@@ -1369,14 +1369,14 @@ void rebuild_dungeon_view()
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   if (bVar5) {
-    uVar2 = FUN_00038a8c(4);
+    uVar2 = get_catalog_sprite_width(4);
     *DAT_00110fc0 = uVar2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0;
     DAT_00086b30 = 0;
   }
   else {
-    uVar2 = FUN_00038a8c(4);
+    uVar2 = get_catalog_sprite_width(4);
     *DAT_00110fc0 = uVar2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)DAT_00086b34;

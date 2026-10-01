@@ -2852,7 +2852,7 @@ short param_1;
 // per game, guarded by DAT_00086df8+0x6d) spawns a special object
 // (catalog id 0x15a), links it into the current tile, spins the camera
 // a full rotation, then unlinks/frees the object and applies an effect
-// to the player (FUN_000396a0). The stats-screen stage blits
+// to the player (teleport_object_to_level_tile). The stats-screen stage blits
 // win1.byt/win2.byt as backgrounds, draws render_endgame_character_stats
 // on top, waits for input, then resets DAT_0023c27c to end the sequence.
 void handle_game_victory_sequence()
@@ -2890,7 +2890,7 @@ void handle_game_victory_sequence()
         object_list_unlink(local_11c,puVar5);
         free_object_slot(puVar5);
       }
-      FUN_000396a0(g_player_object,0x1b,0x17,9);
+      teleport_object_to_level_tile(g_player_object,0x1b,0x17,9);
       *(undefined1 *)(DAT_00086df8 + 0x6d) = 0xff;
       print_scroll_message_by_id(0x118);
       DAT_00085730 = DAT_00085730 & 0xfe;
@@ -3022,7 +3022,7 @@ LAB_00072374:
     settle_dropped_object(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
-    FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
+    teleport_object_to_level_tile(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
     DAT_00201c9c = apply_special_object_use_effect;
     DAT_00085730 = 0;
     iVar6 = dungeon_view_anim_tick();

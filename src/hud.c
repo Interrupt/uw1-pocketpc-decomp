@@ -729,7 +729,7 @@ void main_loop_hud_flush()
 
 
 
-// was FUN_0005d704 -- append the fixed HUD draw-command opcode sequence (compass, panels, sprite ids from FUN_00038a8c) to the draw-command list DAT_00110fc0
+// was FUN_0005d704 -- append the fixed HUD draw-command opcode sequence (compass, panels, sprite ids from get_catalog_sprite_width) to the draw-command list DAT_00110fc0
 void emit_hud_draw_commands()
 
 {
@@ -746,7 +746,7 @@ void emit_hud_draw_commands()
   DAT_0023b4dc = (uint)(bVar3 && sVar1 == 0);
   *DAT_00110fc0 = 0x38;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_00038ae8(0xa0,1);
+  emit_glyph_draw_command(0xa0,1);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0x2200;
@@ -771,21 +771,21 @@ void emit_hud_draw_commands()
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  uVar2 = FUN_00038a8c(9);
+  uVar2 = get_catalog_sprite_width(9);
   *DAT_00110fc0 = uVar2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  uVar2 = FUN_00038a8c(8);
+  uVar2 = get_catalog_sprite_width(8);
   *DAT_00110fc0 = uVar2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  uVar2 = FUN_00038a8c(4);
+  uVar2 = get_catalog_sprite_width(4);
   *DAT_00110fc0 = uVar2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;

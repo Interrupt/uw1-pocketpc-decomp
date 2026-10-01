@@ -334,7 +334,7 @@ undefined4 param_1;
       terminate_process(1);
     }
     else if (local_838 == 0) {
-      FUN_00037c14(0);
+      display_book_or_scroll_page(0);
     }
     else if (local_838 == 1) {
       g_text_use_palette_color = 1;
@@ -1180,7 +1180,7 @@ void animate_title_palette_cycle()
 
 // was FUN_0006a1c4 -- if param_1 is set, probes the save-slot archives via
 // probe_save_slots and, when no valid save slot exists, calls
-// FUN_00037c14(0) to disable/grey out the "Journey Onward" main-menu
+// display_book_or_scroll_page(0) to disable/grey out the "Journey Onward" main-menu
 // option.
 void update_journey_onward_availability(param_1)
 short param_1;
@@ -1190,7 +1190,7 @@ short param_1;
   undefined1 auStack_a4 [160];
 
   if ((param_1 != 0) && (probe_save_slots(auStack_a4,local_ac), local_ac[0] == 0)) {
-    FUN_00037c14(0);
+    display_book_or_scroll_page(0);
   }
   return;
 }

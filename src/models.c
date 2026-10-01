@@ -219,7 +219,7 @@ short frame_or_texid;
   local_7a = 0xffff;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   local_58 = (byte *)0x0;
-  uVar10 = FUN_00038a8c(10);
+  uVar10 = get_catalog_sprite_width(10);
   *DAT_00110fc0 = uVar10;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = (ushort)DAT_0023bc88 * DAT_00086b30;
@@ -234,7 +234,7 @@ short frame_or_texid;
         do {
           *puVar25 = 2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          tex_w = FUN_00038a8c(iVar29);
+          tex_w = get_catalog_sprite_width(iVar29);
           *DAT_00110fc0 = tex_w;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 =
@@ -268,7 +268,7 @@ short frame_or_texid;
         do {
           *puVar25 = 2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          tex_w = FUN_00038a8c(iVar29);
+          tex_w = get_catalog_sprite_width(iVar29);
           *DAT_00110fc0 = tex_w;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 =
@@ -299,14 +299,14 @@ short frame_or_texid;
     bVar5 = *local_58;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    tex_w = FUN_00038a8c(0);
+    tex_w = get_catalog_sprite_width(0);
     *DAT_00110fc0 = tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)bVar5;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    tex_w = FUN_00038a8c(10);
+    tex_w = get_catalog_sprite_width(10);
     *DAT_00110fc0 = tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)DAT_0023b4e0 * DAT_00086b30;
@@ -330,7 +330,7 @@ short frame_or_texid;
           *puVar25 = 2;
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1 + uVar21 + 0x10;
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          tex_w = FUN_00038a8c(0xb);
+          tex_w = get_catalog_sprite_width(0xb);
           *DAT_00110fc0 = tex_w;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 = *(ushort *)(&DAT_00086d60 + (*(byte *)(obj + 1) >> 1 & 0xf) * 2);
@@ -448,7 +448,7 @@ short frame_or_texid;
     }
     *puVar25 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    tex_h = FUN_00038a8c(5);
+    tex_h = get_catalog_sprite_width(5);
     *DAT_00110fc0 = tex_h;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = tex_w;
@@ -466,7 +466,7 @@ short frame_or_texid;
   if (local_7a != 0xffff) {
     *puVar25 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    tex_w = FUN_00038a8c(8);
+    tex_w = get_catalog_sprite_width(8);
     *DAT_00110fc0 = tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = local_7a;
@@ -1313,7 +1313,7 @@ LAB_000640ec:
   if (local_7a != 0xffff) {
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    tex_w = FUN_00038a8c(8);
+    tex_w = get_catalog_sprite_width(8);
     *DAT_00110fc0 = tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = local_7a - 1 & 1;
@@ -1382,7 +1382,7 @@ ushort * obj;
     local_32 = DAT_0023b91c + (short)((*(byte *)((char *)obj + 1) & 0xe) >> 1) * -0x30;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    uVar5 = FUN_00038a8c(5);
+    uVar5 = get_catalog_sprite_width(5);
     *DAT_00110fc0 = uVar5;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = *(byte *)((char *)obj + 1) >> 1 & 7;
@@ -1435,7 +1435,7 @@ ushort * obj;
        overriding its result with a fixed, oversized substitute instead
        of reading it. */
     iVar8 = ((bVar4 >> 5 & 1) * 2 + -1) * (bVar4 >> 1 & 7);
-    uVar5 = FUN_00038a8c(5);
+    uVar5 = get_catalog_sprite_width(5);
     *DAT_00110fc0 = uVar5;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)((uint)(iVar8 * 0x10000000) >> 0x10);
@@ -1500,7 +1500,7 @@ LAB_00064750:
 LAB_000647e4:
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  uVar7 = FUN_00038a8c(3);
+  uVar7 = get_catalog_sprite_width(3);
   *DAT_00110fc0 = uVar7;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = (*(byte *)((char *)obj + 1) >> 1 & 7) + (ushort)(-1 < local_34);
@@ -1524,14 +1524,14 @@ LAB_000647e4:
         DAT_00110fc0 = DAT_00110fc0 + 1;
         *DAT_00110fc0 = 2;
         DAT_00110fc0 = DAT_00110fc0 + 1;
-        uVar7 = FUN_00038a8c(7);
+        uVar7 = get_catalog_sprite_width(7);
         *DAT_00110fc0 = uVar7;
         DAT_00110fc0 = DAT_00110fc0 + 1;
         *DAT_00110fc0 = DAT_0023b824 * DAT_0023b824 - 1;
         DAT_00110fc0 = DAT_00110fc0 + 1;
         *DAT_00110fc0 = 2;
         DAT_00110fc0 = DAT_00110fc0 + 1;
-        uVar7 = FUN_00038a8c(6);
+        uVar7 = get_catalog_sprite_width(6);
         *DAT_00110fc0 = uVar7;
         DAT_00110fc0 = DAT_00110fc0 + 1;
         *DAT_00110fc0 = DAT_000b4620 + DAT_0023b81c * 8;

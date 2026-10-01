@@ -1464,7 +1464,7 @@ undefined1 * param_2;
    like one -- traced both of its two real call sites (uw.c ~37381 and
    ~68657) and they're gated on a special object flag right where the
    game prints "You read the..." and dispatches to
-   FUN_00037c14((param_1[3]>>6&0x1ff)+0x100): this is the SPECIAL
+   display_book_or_scroll_page((param_1[3]>>6&0x1ff)+0x100): this is the SPECIAL
    ILLUSTRATED BOOK/SCROLL full-screen view feature (a rare object
    class that shows a picture, with a few small animated palette-cycled
    details, when read -- distinct from an ordinary scroll's text
@@ -1479,7 +1479,7 @@ undefined1 * param_2;
    Ordinal_2005'd against 0x38e, then a start/end palette-index byte
    pair) -- genuinely reusable for animating multiple independent
    palette ranges, but nothing in its enclosing function
-   (FUN_0003671c) was found writing real per-object data into that
+   (render_babl_dialog_window) was found writing real per-object data into that
    table; it may be uninitialized/link-time data this decompile never
    recovered, same class of gap as other tables in this file. */
 void tick_book_illustration_palette_cycles(param_1)

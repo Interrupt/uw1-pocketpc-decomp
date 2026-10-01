@@ -503,7 +503,7 @@ int param_1;
 // link record and its tile x,y). Switches on the record's quality
 // field (bits 0x3f at +4) across ~20 distinct codes, mostly
 // delegating to still-unnamed helpers (FUN_0003a4a0, FUN_0003a2b0,
-// FUN_0003a29c, handle_level4_maze_puzzle_button, FUN_0003a0e8, FUN_0003a57c,
+// FUN_0003a29c, handle_level4_maze_puzzle_button, try_combine_shrine_markers, FUN_0003a57c,
 // FUN_0003a5ec, FUN_0003dc78) whose own purpose isn't pinned down
 // yet. A few codes are more legible: code 2 calls
 // restore_view_from_object_record; code 0x32 sweeps every class-0xd8
@@ -541,7 +541,7 @@ undefined4 param_3;
         handle_level4_maze_puzzle_button(*(ushort *)(param_1 + 6) & 0x3f);
       }
       else if (uVar1 == 0x28) {
-        FUN_0003a0e8();
+        try_combine_shrine_markers(0,param_2,param_3);
       }
     }
   }
@@ -1247,5 +1247,88 @@ short param_1;
     uVar5 = 0xbf;
   }
   print_scroll_message_by_id(uVar5);
+  return;
+}
+
+
+// was FUN_0003a0e8 -- dispatch_quest_event_code's code 0x28 handler
+// (param_1 unused throughout). Checks the 4 tiles diagonally offset
+// from (param_2,param_3) by (+-4,+-4) each for a specific marker
+// object (FUN_000537d0's search); if all 4 are found, spawns a new
+// object (catalog id 0xfd) at (param_2,param_3+1) and discards all 4
+// markers -- a "place 4 items around a shrine/altar to trigger a
+// reward" style puzzle. Only known caller drops all 3 arguments
+// (garbage param_1/param_2/param_3); the natural fix -- forwarding
+// the trap record's own tile position, matching the sibling case-<5
+// call a few lines above it -- is applied at that call site.
+void try_combine_shrine_markers(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+int param_3;
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  uint uVar4;
+  int iVar5;
+  char cVar6;
+  char cVar7;
+  int aiStackY_244 [4];
+  int aiStackY_234 [89];
+  char acStackY_d0 [4];
+  char acStackY_cc [108];
+  /* local_34[] / local_44[] / local_54 held 64-bit tile-record and
+     object-list pointers -- Ghidra typed them `int`, truncating every one
+     (tilemap_lookup / FUN_000537d0 / spawn_new_object results are all real
+     pointers). local_54's address is handed to FUN_000537d0 (now
+     ushort **), so it must be pointer-sized or that call scribbles past
+     the slot. */
+  void *local_54;
+  char local_50 [4];
+  char local_4c [8];
+  void *local_44 [4];
+  void *local_34 [4];
+  char *pTile;
+  char *pNew;
+
+  iVar5 = 0;
+  cVar7 = -4;
+  iVar1 = -4;
+  do {
+    cVar6 = -4;
+    iVar3 = -4;
+    do {
+      pTile = (char *)tilemap_lookup(((short)param_2 + iVar1) * 0x10000 >> 0x10,
+                           ((short)param_3 + iVar3) * 0x10000 >> 0x10);
+      iVar3 = (int)(char)iVar5;
+      local_34[iVar3] = pTile;
+      local_54 = pTile + 2;
+      local_44[iVar3] = FUN_000537d0((ushort **)&local_54,0,2,2,7);
+      if (local_44[iVar3] != 0) {
+        local_50[iVar3] = cVar7 + (char)param_2;
+        local_4c[iVar3] = cVar6 + (char)param_3;
+        iVar5 = (iVar3 + 1) * 0x1000000 >> 0x18;
+      }
+      cVar6 = cVar6 + '\b';
+      iVar3 = (int)cVar6;
+    } while (iVar3 < 5);
+    cVar7 = cVar7 + '\b';
+    iVar1 = (int)cVar7;
+  } while (iVar1 < 5);
+  if ((char)iVar5 == '\x04') {
+    pNew = (char *)spawn_new_object(0xfd,0);
+    pTile = (char *)tilemap_lookup(param_2,param_3 + 1);
+    uVar4 = *(ushort *)(pNew + 2) & 0x380 | 0x6c40;
+    *(char *)(pNew + 2) = (char)uVar4;
+    *(char *)(pNew + 3) = (char)(uVar4 >> 8);
+    object_list_insert_head(pTile + 2,pNew);
+    settle_dropped_object(pNew,param_2,param_3 + 1,1);
+    iVar5 = 0;
+    do {
+      discard_misplaced_object((char *)local_34[iVar5] + 2,local_44[iVar5],1);
+      iVar5 = (iVar5 + 1) * 0x1000000 >> 0x18;
+    } while (iVar5 < 4);
+  }
   return;
 }

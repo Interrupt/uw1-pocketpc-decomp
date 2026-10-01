@@ -47,7 +47,7 @@ void draw_save_load_slot_list()
      on to have any visible effect at all, matching a QA report that the
      original game rendered this list in green. Bracket it narrowly
      around just this function's own prints (mirrors draw_menu_item_list
-     and FUN_0006a3d8/FUN_00037c14's own established "caller forces it
+     and FUN_0006a3d8/display_book_or_scroll_page's own established "caller forces it
      for the scope of its own draw, then restores" pattern) rather than
      forcing it on inside message_scroll_print_wrapped itself -- an
      earlier attempt did that and leaked this panel's now-colored
