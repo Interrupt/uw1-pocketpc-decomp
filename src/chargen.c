@@ -460,7 +460,7 @@ int run_character_generator()
     FUN_0005b36c();
   }
   init_new_character_record(0);
-  FUN_00040df0();
+  clear_screen_and_restore_cursor();
   report_fatal_error_and_exit(5);
   return 1;
 }

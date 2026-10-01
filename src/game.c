@@ -2220,7 +2220,7 @@ void run_game_startup_sequence()
   if (sVar2 != 0) {
     report_fatal_error_and_exit();
   }
-  FUN_00040df0();
+  clear_screen_and_restore_cursor();
   set_palette_bank(5);
   return;
 }

@@ -53,7 +53,7 @@ void exit_automap_screen()
     close_level_archive(auStack_1c);
   }
   pick_random_pending_music_track();
-  FUN_00040df0();
+  clear_screen_and_restore_cursor();
   DAT_000bbef4 = 0;
   reset_cursor_confine_rect();
   cursor_show_idle_tick();

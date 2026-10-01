@@ -10763,16 +10763,6 @@ void thunk_FUN_00057118()
 
 
 
-void FUN_00040df0()
-
-{
-  FUN_00057118();
-  set_viewport_clip_rect(0,0,0x13f,199);
-  set_draw_color(0);
-  fill_viewport_and_flush();
-  cursor_show_idle_tick();
-  return;
-}
 
 
 

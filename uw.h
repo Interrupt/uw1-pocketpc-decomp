@@ -3160,7 +3160,7 @@ void *get_texture_page();
 undefined4 select_default_hud_font();
 bool select_active_font();
 void thunk_FUN_00057118();
-void FUN_00040df0();
+void clear_screen_and_restore_cursor();
 bool load_pals_bank();
 bool set_palette_bank();
 void FUN_00040f34();

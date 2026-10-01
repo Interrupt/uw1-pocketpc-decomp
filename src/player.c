@@ -2906,7 +2906,7 @@ void handle_game_victory_sequence()
     DAT_000868d8 = 2;
     display_book_or_scroll_page(1);
     FUN_00057118();
-    FUN_00040df0();
+    clear_screen_and_restore_cursor();
     Ordinal_1047(acStack_114,0,0x104);
     pcVar7 = &DAT_0023cca8;
     stack0xffdc3244_ptr = stack0xffdc3244_buf;

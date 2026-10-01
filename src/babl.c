@@ -7078,7 +7078,7 @@ LAB_00037a94:
           fade_out(0,0,g_uw_framebuffer,200,CONCAT22(uVar24,0x140),0
                        ,0,local_b8,2,1);
         }
-        FUN_00040df0();
+        clear_screen_and_restore_cursor();
       }
       thunk_FUN_0007ec1c();
       iVar12 = local_5c;
