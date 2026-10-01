@@ -347,7 +347,7 @@ undefined4 param_2;
 // clears DAT_00086b20 outright rather than saving/restoring it. Only
 // takes the save/restore/clear path when DAT_00086df8+0x60's bit 4 is
 // clear or this is a save/clear call (param_2!=0); a restore
-// (param_2==0) with that bit set instead calls FUN_0003bc1c(0).
+// (param_2==0) with that bit set instead calls reset_level_arena_and_invalidate(0).
 void save_or_restore_level_special_state(param_1,param_2)
 short param_1;
 short param_2;
@@ -388,7 +388,7 @@ short param_2;
     }
   }
   else {
-    FUN_0003bc1c(0);
+    reset_level_arena_and_invalidate(0);
   }
   return;
 }
@@ -515,4 +515,20 @@ LAB_00039784:
     uVar3 = 2;
   }
   return uVar3;
+}
+
+
+// was FUN_0003bc1c -- hard-resets the level object arena
+// (reset_level_object_arena), flushes a redraw, and invalidates
+// DAT_00202080 (a loaded-level data marker). Used in place of the
+// normal save/restore path when a level's transient state can't be
+// trusted (save_or_restore_level_special_state's own "needs reset"
+// bit case).
+void reset_level_arena_and_invalidate()
+
+{
+  reset_level_object_arena();
+  FUN_00049924(2);
+  DAT_00202080 = 0xffff;
+  return;
 }

@@ -2225,7 +2225,7 @@ LAB_00075a0c:
     break;
   case 0xc:
     FUN_000444b0((char *)g_player_object + 6);
-    FUN_0003bc1c(0);
+    reset_level_arena_and_invalidate(0);
     FUN_00044814();
     FUN_00044920();
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);

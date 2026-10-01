@@ -3038,7 +3038,7 @@ void run_game_shutdown_sequence();
 void wait_and_show_intro_page();
 void init_main_loop_state();
 void request_game_exit();
-void FUN_0003bc1c();
+void reset_level_arena_and_invalidate();
 void set_game_mode();
 void change_game_mode();
 void enter_dungeon_view();

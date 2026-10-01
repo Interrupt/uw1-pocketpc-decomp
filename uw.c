@@ -9757,14 +9757,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_0003bc1c()
-
-{
-  reset_level_object_arena();
-  FUN_00049924(2);
-  DAT_00202080 = 0xffff;
-  return;
-}
 
 
 
