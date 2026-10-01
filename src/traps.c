@@ -1497,3 +1497,62 @@ void advance_scheduler_and_show_page3()
   display_book_or_scroll_page(3);
   return;
 }
+
+
+// was FUN_0003a604 -- for_each_object_of_type callback: unlinks and
+// frees the given object (param_1) from its own current tile. Used
+// by trigger_quest_milestone_cleanup_event to sweep away every
+// instance of a set of object types.
+undefined4 unlink_object_from_tile_callback(param_1)
+int param_1;
+
+{
+  int iVar1;
+
+  iVar1 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
+  ;
+  unlink_and_free_object(iVar1 + 2,param_1);
+  return 1;
+}
+
+
+
+// was FUN_0003a654 -- triggered by FUN_0003a73c's dispatch for a
+// specific object "special behavior" byte (0x1a) value 0xe7: shows
+// book/scroll page 2, sets a quest-flag bit (DAT_00086df8+0x6e), then
+// sweeps away every instance of a small list of object types
+// (indexed from DAT_00085638, 9 entries) via
+// unlink_object_from_tile_callback, and finally removes any object of
+// type 0x1a0 specifically from tile (0x17,0x38). Reads as a major
+// quest-milestone cutscene/cleanup trigger; the item/event's exact
+// in-game identity isn't confirmed here.
+void trigger_quest_milestone_cleanup_event()
+
+{
+  undefined2 uVar1;
+  ushort *puVar2;
+  ushort *puVar3;
+  intptr_t iVar4;  /* was `int` -- reused as a plain int loop counter above,
+                       then as tilemap_lookup's real `void *` return below;
+                       intptr_t is safe for both */
+
+  display_book_or_scroll_page(2);
+  iVar4 = 9;
+  uVar1 = *(undefined2 *)(DAT_00086df8 + 0x6e);
+  *(byte *)(DAT_00086df8 + 0x6e) = (byte)uVar1 | 4;
+  *(char *)(DAT_00086df8 + 0x6f) = (char)((ushort)uVar1 >> 8);
+  do {
+    for_each_object_of_type(DAT_00085638[iVar4],0,0,unlink_object_from_tile_callback);
+    iVar4 = (iVar4 + -1) * 0x1000000 >> 0x18;
+  } while (0 < iVar4);
+  iVar4 = tilemap_lookup(0x17,0x38);
+  puVar3 = (ushort *)resolve_object_link(iVar4 + 2);
+  while (puVar2 = puVar3, puVar2 != (ushort *)0x0) {
+    puVar3 = (ushort *)resolve_object_link(puVar2 + 2);
+    if ((*puVar2 & 0x1ff) == 0x1a0) {
+      object_list_unlink(iVar4 + 2,puVar2);
+      free_object_slot(puVar2);
+    }
+  }
+  return;
+}

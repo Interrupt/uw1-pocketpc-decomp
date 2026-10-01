@@ -2493,6 +2493,19 @@ undefined1 DAT_0023c3d8;
 #define DAT_002048aa DAT_00204880_backing[0x2a]
 short DAT_00201c70;
 undefined DAT_002035cf;
+/* was a raw `iVar4 + 0x85638` absolute-address literal inside
+   trigger_quest_milestone_cleanup_event (no declared global at all --
+   Ghidra never recovered this one), read as a 9-entry object-type-id
+   table. Its address falls in the same static-data run as the two
+   named globals immediately around it here (s__DATA3D_DFRAME_E_00085620
+   ends ~0x85632; this string starts at 0x85644), so it's genuinely
+   static data, not a wild pointer -- but since the real byte values
+   were never recovered, a zero-initialized fallback (matching this
+   file's established "safe stand-in, not recovered data" pattern,
+   e.g. DAT_00110fc0's own scratch buffer) replaces what would
+   otherwise be an absolute-address dereference into unmapped memory
+   on this 64-bit host. */
+undefined1 DAT_00085638[10]; /* indices 1-9 are the ones actually read (index 0 unused) */
 char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in_your_face!";
 undefined DAT_002026d1;
 undefined DAT_00202807;
@@ -9701,50 +9714,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_0003a604(param_1)
-int param_1;
-
-{
-  int iVar1;
-  
-  iVar1 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
-  ;
-  unlink_and_free_object(iVar1 + 2,param_1);
-  return 1;
-}
-
-
-
-void FUN_0003a654()
-
-{
-  undefined2 uVar1;
-  ushort *puVar2;
-  ushort *puVar3;
-  intptr_t iVar4;  /* was `int` -- reused as a plain int loop counter above,
-                       then as tilemap_lookup's real `void *` return below;
-                       intptr_t is safe for both */
-
-  display_book_or_scroll_page(2);
-  iVar4 = 9;
-  uVar1 = *(undefined2 *)(DAT_00086df8 + 0x6e);
-  *(byte *)(DAT_00086df8 + 0x6e) = (byte)uVar1 | 4;
-  *(char *)(DAT_00086df8 + 0x6f) = (char)((ushort)uVar1 >> 8);
-  do {
-    for_each_object_of_type(*(undefined1 *)(iVar4 + 0x85638),0,0,FUN_0003a604);
-    iVar4 = (iVar4 + -1) * 0x1000000 >> 0x18;
-  } while (0 < iVar4);
-  iVar4 = tilemap_lookup(0x17,0x38);
-  puVar3 = (ushort *)resolve_object_link(iVar4 + 2);
-  while (puVar2 = puVar3, puVar2 != (ushort *)0x0) {
-    puVar3 = (ushort *)resolve_object_link(puVar2 + 2);
-    if ((*puVar2 & 0x1ff) == 0x1a0) {
-      object_list_unlink(iVar4 + 2,puVar2);
-      free_object_slot(puVar2);
-    }
-  }
-  return;
-}
 
 
 
@@ -9811,7 +9780,7 @@ int param_2;
           if (param_2 == 0) {
             return 1;
           }
-          FUN_0003a654();
+          trigger_quest_milestone_cleanup_event();
           return 1;
         }
         if (param_2 == 0) {
