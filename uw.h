@@ -3117,7 +3117,7 @@ void interact_look();
 void interact_use();
 void interact_attack();
 void handle_game_view_click();
-void FUN_0003f648();
+void perform_object_search_check();
 void handle_inventory_panel_normal_click();
 void inventory_panel_click_region();
 void mode_icon_highlight_on();

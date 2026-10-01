@@ -321,7 +321,7 @@ short param_1;
         return;
       }
       if (param_1 == -2) {
-        FUN_0003f648();
+        perform_object_search_check();
       }
     }
   }
@@ -624,3 +624,61 @@ short param_2;
   return iVar3;
 }
 
+
+
+// was FUN_0003f648 -- called from handle_inventory_panel_click's
+// param_1==-2 sentinel case (src/inventory.c:324, a distinct
+// interaction gesture on an inventory/container slot). Runs the
+// trap/use check (action code 5) on the target, then -- unless it's
+// one of two exempt classes (0x140/0x180) or flagged non-searchable in
+// the per-class table &DAT_00202c9a -- rolls a skill check (the skill
+// id byte at DAT_00086df8+0x29, also reused for other skill checks
+// elsewhere) and records the result into a 3-bit "search level" field
+// in the object's quality bits (0x380), without re-rolling once that
+// field already holds a value. Finishes by dispatching the object
+// action and refreshing the inventory panel. Reads as a "search this
+// object" (e.g. a corpse or container) interaction.
+void perform_object_search_check()
+
+{
+  int iVar1;
+  uint uVar2;
+  uint uVar3;
+
+  trigger_object_trap_or_use_action(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
+  if (g_interact_target == (ushort *)0x0) {
+    g_interact_target = (ushort *)FUN_00045678(2);
+    if (g_interact_target != (ushort *)0x0) goto LAB_0003f69c;
+  }
+  else {
+LAB_0003f69c:
+    uVar3 = *g_interact_target & 0x1c0;
+    if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
+       (((&DAT_00202c9a)[(*g_interact_target & 0x1ff) * 0xd] & 3) != 2)) {
+      uVar3 = (g_interact_target[1] & 0x380) >> 7;
+      if ((uVar3 & 4) == 0) {
+        iVar1 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x29),10);
+        uVar2 = iVar1 + 1;
+        if ((int)(uVar2 * 0x10000) >> 0x10 == 0) {
+          uVar2 = 1;
+        }
+        if ((short)uVar2 < (short)((ushort)uVar3 & 3)) {
+          uVar2 = uVar3 & 3;
+        }
+        uVar3 = CONCAT11(*(undefined1 *)((char *)g_interact_target + 3),(char)g_interact_target[1]) & 0xfe7f |
+                (uVar2 & 3 | 4) << 7;
+        *(char *)(g_interact_target + 1) = (char)uVar3;
+        *(char *)((char *)g_interact_target + 3) = (char)(uVar3 >> 8);
+      }
+      else {
+        uVar2 = uVar3 & 3;
+      }
+      goto LAB_0003f7cc;
+    }
+  }
+  uVar2 = 1;
+LAB_0003f7cc:
+  dispatch_object_action(g_interact_target,uVar2);
+  handle_inventory_panel_click(0xffffffff);
+  return;
+}
