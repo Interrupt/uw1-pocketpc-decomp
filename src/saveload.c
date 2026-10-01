@@ -1131,10 +1131,10 @@ undefined4 param_1;
   
   write_player_save_record(0);
   /* Was `+ 3` -- confirmed wrong via Ghidra decompile of the real ARM
-     binary (0x6bcd4): it passes `+ 6`. FUN_000444b0 treats its argument
+     binary (0x6bcd4): it passes `+ 6`. free_player_inventory_chain treats its argument
      as a pointer to a 2-byte object link field (it immediately calls
      resolve_object_link on it) -- offset 6 is the player object's real
-     "contents" field (sp_link, matching FUN_000444b0's own recursive
+     "contents" field (sp_link, matching free_player_inventory_chain's own recursive
      calls at +4/+6 a few lines into that function), the head of the
      player's carried-inventory chain, which this function walks and
      frees before the save write below (the inventory itself gets
@@ -1148,7 +1148,7 @@ undefined4 param_1;
      player disappear": whatever real object that garbage link
      happened to resolve to (plausibly something tile-adjacent, given
      it's derived from position bytes) got deleted on every save. */
-  FUN_000444b0((char *)g_player_object + 6);
+  free_player_inventory_chain((char *)g_player_object + 6);
   if (-1 < DAT_00202080) {
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }

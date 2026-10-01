@@ -2224,7 +2224,7 @@ LAB_00075a0c:
     FUN_000542f8(0xb,uVar3,param_2);
     break;
   case 0xc:
-    FUN_000444b0((char *)g_player_object + 6);
+    free_player_inventory_chain((char *)g_player_object + 6);
     reset_level_arena_and_invalidate(0);
     FUN_00044814();
     FUN_00044920();

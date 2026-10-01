@@ -11315,41 +11315,6 @@ short param_1;
 
 
 
-void FUN_000444b0(param_1)
-char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
-                   pointer close_panels_before_level_change passes in. Pre-existing bug, but
-                   never bit until resolve_object_link (this function's
-                   own first call) started actually using its argument
-                   instead of being called with no argument at all. */
-
-{
-  /* Was `int iVar1;` -- truncated resolve_object_link's real 64-bit
-     `void *` return to 32 bits on this recompile (harmless on the
-     original 32-bit ARM binary). This code path (the recursive
-     inventory-unlink walk) was never actually exercised in any session
-     until Enter started working correctly in the save/load name-entry
-     field (see gx_stub.c's g_keychar_deferred) and a save finally ran
-     all the way through to this function -- confirmed via lldb: the
-     fault address was exactly g_player_object's low 32 bits (+0x1b),
-     the classic signature of a pointer silently narrowed to `int`. Same
-     bug class as this function's own param_1 fix above. */
-  char *iVar1;
-
-  iVar1 = resolve_object_link(param_1);
-  if (iVar1 != 0) {
-    if ((*(byte *)(iVar1 + 1) & 0x80) == 0) {
-      if ((*(ushort *)(iVar1 + 6) & 0xffc0) != 0) {
-        FUN_000444b0(iVar1 + 6); /* was called with no argument; confirmed via ARM disassembly, 0x44500 */
-      }
-    }
-    if ((*(ushort *)(iVar1 + 4) & 0xffc0) != 0) {
-      FUN_000444b0(iVar1 + 4); /* was called with no argument; confirmed via ARM disassembly, 0x4451c */
-    }
-    object_list_unlink(param_1,iVar1);
-    free_object_slot(iVar1);
-  }
-  return;
-}
 
 
 

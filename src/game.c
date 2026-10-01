@@ -519,7 +519,7 @@ void close_panels_before_level_change()
 
 {
   close_backpack_container();
-  FUN_000444b0((char *)g_player_object + 6);
+  free_player_inventory_chain((char *)g_player_object + 6);
   FUN_000465c8();
   return;
 }

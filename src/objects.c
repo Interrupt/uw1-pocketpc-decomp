@@ -1109,3 +1109,52 @@ void clear_temp_flags_on_all_objects()
   } while (iVar4 * 0x10000 >> 0x10 < 0x40);
   return;
 }
+
+
+// was FUN_000444b0 -- free_linked_object_recursive's sibling,
+// specifically for the player's own carried-inventory chain: every
+// known call site passes g_player_object+6 (the "contents"/sp_link
+// field). Recurses into offsets +6 (nested contents, unless the
+// object's own 0x80 flag bit is set) and +4 (next-in-chain) before
+// unlinking and freeing the object itself -- no trap-class special
+// case, unlike free_linked_object_recursive. Used both to tear the
+// live inventory arena state down after it's been separately
+// serialized to a save (commit_level_to_save_slot), and before a level
+// transition/arena reset (close_panels_before_level_change), since the
+// save/restore path -- not direct memory carryover -- is what
+// preserves the player's items across levels.
+void free_player_inventory_chain(param_1)
+char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
+                   pointer close_panels_before_level_change passes in. Pre-existing bug, but
+                   never bit until resolve_object_link (this function's
+                   own first call) started actually using its argument
+                   instead of being called with no argument at all. */
+
+{
+  /* Was `int iVar1;` -- truncated resolve_object_link's real 64-bit
+     `void *` return to 32 bits on this recompile (harmless on the
+     original 32-bit ARM binary). This code path (the recursive
+     inventory-unlink walk) was never actually exercised in any session
+     until Enter started working correctly in the save/load name-entry
+     field (see gx_stub.c's g_keychar_deferred) and a save finally ran
+     all the way through to this function -- confirmed via lldb: the
+     fault address was exactly g_player_object's low 32 bits (+0x1b),
+     the classic signature of a pointer silently narrowed to `int`. Same
+     bug class as this function's own param_1 fix above. */
+  char *iVar1;
+
+  iVar1 = resolve_object_link(param_1);
+  if (iVar1 != 0) {
+    if ((*(byte *)(iVar1 + 1) & 0x80) == 0) {
+      if ((*(ushort *)(iVar1 + 6) & 0xffc0) != 0) {
+        free_player_inventory_chain(iVar1 + 6); /* was called with no argument; confirmed via ARM disassembly, 0x44500 */
+      }
+    }
+    if ((*(ushort *)(iVar1 + 4) & 0xffc0) != 0) {
+      free_player_inventory_chain(iVar1 + 4); /* was called with no argument; confirmed via ARM disassembly, 0x4451c */
+    }
+    object_list_unlink(param_1,iVar1);
+    free_object_slot(iVar1);
+  }
+  return;
+}

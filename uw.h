@@ -3258,7 +3258,7 @@ void *alloc_save_record_slot();
 void *save_record_slot_from_index();
 void decode_equipped_item_index();
 void deserialize_inventory_link_chain();
-void FUN_000444b0();
+void free_player_inventory_chain();
 void restore_player_save_record();
 undefined4 FUN_00044624();
 undefined4 FUN_0004479c();
