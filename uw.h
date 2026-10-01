@@ -3065,7 +3065,7 @@ void show_error_dialog_stub();
 void log_categorized_error_message();
 void report_categorized_fatal_error();
 void report_fatal_error_and_exit();
-void FUN_0003c4a8();
+void report_fatal_error_message_and_exit();
 bool apply_swim_wade_pose();
 void set_locomotion_state();
 void FUN_0003c6ac();

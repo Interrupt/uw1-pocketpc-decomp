@@ -9911,23 +9911,6 @@ undefined4 dungeon_view_anim_tick()
 
 
 
-void FUN_0003c4a8(param_1)
-char *param_1;
-
-{
-  undefined4 uVar1;
-
-  /* See report_fatal_error_and_exit's identical fprintf -- Ordinal_1071 (the real
-     message-box display) isn't implemented, so this is the only
-     visibility into which fatal message actually fired. param_1 here is
-     the message text directly, not a numeric code. */
-  fprintf(stderr, "[fatal] FUN_0003c4a8: %s\n", param_1 ? param_1 : "(null)");
-  uVar1 = Ordinal_1068(param_1); // was a dropped arg -- param_1 itself, same class as babl_builtin_compare's own comment (uw.c ~10977)
-  Ordinal_1071(&DAT_00201b70,param_1,uVar1);
-  run_game_shutdown_sequence(0);
-  terminate_process(0xffffffe8);
-  return;
-}
 
 
 
@@ -25797,7 +25780,7 @@ undefined4 * param_2;
 // low ROM/trap address to hand control back to the OS. That jump was
 // the real point: it's called both at normal shutdown from entry()
 // and, critically, from fatal-error handlers like report_fatal_error_and_exit/
-// FUN_0003c4a8 ("Underworld can no longer run...") that rely on it to
+// report_fatal_error_message_and_exit ("Underworld can no longer run...") that rely on it to
 // never return. A no-op here was wrong -- callers that hit a fatal
 // error kept running with broken state and looped back into the same
 // failure forever. Actually terminates the process.

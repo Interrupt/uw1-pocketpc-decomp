@@ -1601,7 +1601,7 @@ void load_light_tables()
   DAT_0024fa2c = Ordinal_1041(0x1000);
   if (getenv("UW_DEBUG_BAG_TRACE")) fprintf(stderr, "[bag-trace] DAT_0024fa2c allocated at %p\n", (void *)DAT_0024fa2c);
   if (DAT_0024fa2c == 0) {
-    FUN_0003c4a8(s_cLightTabs_allocation_error_____000872e8);
+    report_fatal_error_message_and_exit(s_cLightTabs_allocation_error_____000872e8);
   }
   Ordinal_1047(acStack_11c,0,0x104);
   pcVar4 = &DAT_0023cca8;

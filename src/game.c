@@ -2193,7 +2193,7 @@ void run_game_startup_sequence()
   load_combat_data_file();
   iVar3 = check_save_disk_space();
   if (iVar3 == 0) {
-    FUN_0003c4a8(s_Not_enough_disk_space_for_save_g_00085744);
+    report_fatal_error_message_and_exit(s_Not_enough_disk_space_for_save_g_00085744);
   }
   Ordinal_1047(acStack_62c,0,0x104);
   pcVar4 = pcVar6;
@@ -2431,6 +2431,29 @@ ushort param_1;
   local_27 = ((byte)param_1 & 7) + 0x30;
   uVar2 = Ordinal_1068(acStack_54);
   Ordinal_1071(&DAT_00201b70,acStack_54,uVar2);
+  run_game_shutdown_sequence(0);
+  terminate_process(0xffffffe8);
+  return;
+}
+
+
+// was FUN_0003c4a8 -- text-message sibling of
+// report_fatal_error_and_exit: shows a direct message string (rather
+// than a numeric error code) via Ordinal_1071, then runs the same
+// shutdown-and-terminate sequence.
+void report_fatal_error_message_and_exit(param_1)
+char *param_1;
+
+{
+  undefined4 uVar1;
+
+  /* See report_fatal_error_and_exit's identical fprintf -- Ordinal_1071 (the real
+     message-box display) isn't implemented, so this is the only
+     visibility into which fatal message actually fired. param_1 here is
+     the message text directly, not a numeric code. */
+  fprintf(stderr, "[fatal] report_fatal_error_message_and_exit: %s\n", param_1 ? param_1 : "(null)");
+  uVar1 = Ordinal_1068(param_1); // was a dropped arg -- param_1 itself, same class as babl_builtin_compare's own comment (uw.c ~10977)
+  Ordinal_1071(&DAT_00201b70,param_1,uVar1);
   run_game_shutdown_sequence(0);
   terminate_process(0xffffffe8);
   return;
