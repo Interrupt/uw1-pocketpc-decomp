@@ -74,7 +74,7 @@ undefined4 param_4;
       *DAT_000876bc = 0;
       *DAT_000876c0 = 0;
       compute_dimension_volume();
-      FUN_0003b820();
+      run_game_startup_sequence();
       build_trig_tables();
       FUN_0003bb60();
       main_menu_loop(1);
@@ -2091,5 +2091,136 @@ void compute_dimension_volume()
 
   Ordinal_25(auStack_14);
   Ordinal_1061((local_6 + 1) * (local_8 + 1) * (local_a + 1));
+  return;
+}
+
+
+// was FUN_0003b820 -- the game's startup/boot sequence: starts
+// ambient sound, initializes the string/level-object/input/debug
+// subsystems, shows the three presentation splash screens
+// (pres1.byt, pres2.byt, the copyright screen -- each with a 1.5s
+// dwell), initializes the cursor subsystem, texture-id lists, and
+// gameplay session, loads the collision-response profiles, a fresh
+// character record, sprite-list buffers, light tables, and combat
+// data, and checks available save disk space. Called once from
+// src/game.c's own startup chain, right before main_menu_loop.
+void run_game_startup_sequence()
+
+{
+  char stack0xffdc2d2c_buf [256];
+  char *stack0xffdc2d2c_ptr;
+  char stack0xffdc2e34_buf [256];
+  char *stack0xffdc2e34_ptr;
+  char cVar1;
+  short sVar2;
+  int iVar3;
+  char *pcVar4;
+  undefined4 uVar5;
+  char *pcVar6;
+  char acStack_62c [264];
+  char acStack_524 [264];
+  undefined1 auStack_41c [520];
+  undefined1 auStack_214 [520];
+  
+  start_ambient_sound_effect(2);
+  init_string_resource_cache();
+  init_level_object_arena();
+  input_bindings_init();
+  debug_print_init();
+  store_window_extra_data_ptr(DAT_0023c540);
+  cache_ambient_sound_handle();
+  iVar3 = FUN_00040cd4();
+  if (iVar3 == 0) {
+    FUN_0003c3c8(0x3003);
+  }
+  DAT_0024af70 = 1;
+  Ordinal_1047(acStack_62c,0,0x104);
+  pcVar6 = &DAT_0023cca8;
+    stack0xffdc2e34_ptr = stack0xffdc2e34_buf;
+  pcVar4 = pcVar6;
+    stack0xffdc2d2c_ptr = acStack_62c;
+  do {
+    cVar1 = *pcVar4;
+    *stack0xffdc2d2c_ptr = cVar1; stack0xffdc2d2c_ptr = stack0xffdc2d2c_ptr + 1;
+    pcVar4 = pcVar4 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_62c,s__DATA_pres1_byt_00085790);
+  blit_fullscreen_bitmap_file(5,acStack_62c,1);
+  Ordinal_496(0x5dc);
+  play_music_track(1,1);
+  init_grtile_registry();
+  Ordinal_1047(acStack_62c,0,0x104);
+  pcVar4 = pcVar6;
+    stack0xffdc2d2c_ptr = acStack_62c;
+  do {
+    cVar1 = *pcVar4;
+    *stack0xffdc2d2c_ptr = cVar1; stack0xffdc2d2c_ptr = stack0xffdc2d2c_ptr + 1;
+    pcVar4 = pcVar4 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_62c,s__DATA_pres2_byt_00085780);
+  blit_fullscreen_bitmap_file(6,acStack_62c,1);
+  Ordinal_496(0x5dc);
+  sVar2 = FUN_00041aac();
+  if (sVar2 != 0) {
+    FUN_0003c3c8();
+  }
+  Ordinal_1047(acStack_62c,0,0x104);
+  pcVar4 = pcVar6;
+    stack0xffdc2d2c_ptr = acStack_62c;
+  do {
+    cVar1 = *pcVar4;
+    *stack0xffdc2d2c_ptr = cVar1; stack0xffdc2d2c_ptr = stack0xffdc2d2c_ptr + 1;
+    pcVar4 = pcVar4 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_62c,s__DATA_COPYRIGHT_BYT_0008576c);
+  blit_fullscreen_bitmap_file(2,acStack_62c,1);
+  sVar2 = init_cursor_subsystem();
+  if (sVar2 < 0) {
+    FUN_0003c3c8(2);
+  }
+  sVar2 = FUN_00052674();
+  if (sVar2 != 0) {
+    FUN_0003c3c8();
+  }
+  reset_texture_id_lists();
+  FUN_0005b828();
+  init_gameplay_session();
+  init_collision_response_profiles();
+  init_new_character_record(0);
+  init_sprite_list_buffers();
+  FUN_0003bb84();
+  load_light_tables();
+  load_combat_data_file();
+  iVar3 = check_save_disk_space();
+  if (iVar3 == 0) {
+    FUN_0003c4a8(s_Not_enough_disk_space_for_save_g_00085744);
+  }
+  Ordinal_1047(acStack_62c,0,0x104);
+  pcVar4 = pcVar6;
+    stack0xffdc2d2c_ptr = acStack_62c;
+  do {
+    cVar1 = *pcVar4;
+    *stack0xffdc2d2c_ptr = cVar1; stack0xffdc2d2c_ptr = stack0xffdc2d2c_ptr + 1;
+    pcVar4 = pcVar4 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_62c,s__DATA_lev_ark_00085734);
+  uVar5 = FUN_0002295c(acStack_62c);
+  Ordinal_61(auStack_214,uVar5);
+  Ordinal_1047(acStack_524,0,0x104);
+  do {
+    cVar1 = *pcVar6;
+    *stack0xffdc2e34_ptr = cVar1; stack0xffdc2e34_ptr = stack0xffdc2e34_ptr + 1;
+    pcVar6 = pcVar6 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_524,s__SAVE0_lev_ark_000842fc);
+  uVar5 = FUN_0002295c(acStack_524);
+  Ordinal_61(auStack_41c,uVar5);
+  Ordinal_164(auStack_214,auStack_41c,0);
+  sVar2 = seed_conversation_globals_for_new_game();
+  if (sVar2 != 0) {
+    FUN_0003c3c8();
+  }
+  FUN_00040df0();
+  set_palette_bank(5);
   return;
 }
