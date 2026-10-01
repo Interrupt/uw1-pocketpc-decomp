@@ -2281,6 +2281,10 @@ extern char DAT_00085911;
 extern char DAT_00085918;
 extern char DAT_00085919;
 extern char s__CRIT_assoc_anm_00085934[];
+extern int DAT_00202720_backing[128];
+extern int *DAT_00202720;
+extern undefined1 DAT_00202724_backing[8192];
+#define DAT_00202724 DAT_00202724_backing[0]
 extern undefined DAT_00085908_backing[8192];
 #define DAT_00085908 DAT_00085908_backing[0]
 extern undefined1 DAT_0023c460_backing[32768];
@@ -3169,10 +3173,10 @@ void weapon_overlay_flash_hold();
 void weapon_overlay_flash_restore();
 void weapon_overlay_flash_once();
 void play_view_restore_transition();
-undefined4 FUN_00041260();
+undefined4 load_gr_format3_extra_table();
 undefined4 open_gr_resource_file();
-void FUN_000414c8();
-uint FUN_000414f4();
+void close_gr_resource_file();
+uint read_gr_resource_record();
 bool FUN_00041708();
 undefined4 FUN_00041770();
 uint load_gr_resource_entries();

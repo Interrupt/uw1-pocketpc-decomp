@@ -107,7 +107,7 @@ char param_2;
     if (((((iVar3 == 1) && (local_11c[0] == uVar1)) &&
          ((uVar1 != 2 || (iVar3 = read_file_handle(DAT_00202514,&DAT_00202518,1), iVar3 == 1)))) &&
         (iVar3 = read_file_handle(DAT_00202514,&DAT_00202728,2), iVar3 == 2)) &&
-       (((uVar1 != 3 || (iVar3 = FUN_00041260(), iVar3 != 0)) &&
+       (((uVar1 != 3 || (iVar3 = load_gr_format3_extra_table(), iVar3 != 0)) &&
         (DAT_0020274c = Ordinal_1041(((ushort)DAT_00202728 + 1) * 4), DAT_0020274c != 0)))) {
       iVar3 = read_file_handle(DAT_00202514,DAT_0020274c,((ushort)DAT_00202728 + 1) * 4);
       if (iVar3 == ((ushort)DAT_00202728 + 1) * 4) {
@@ -1787,4 +1787,101 @@ LAB_00013530:
       DAT_000b461c = DAT_000b461c + 1;
     }
   } while( true );
+}
+
+
+// was FUN_00041260 -- called from open_gr_resource_file (src/resources.c:110)
+// only for format-type-3 .GR files, right after the frame count
+// (DAT_00202728) is read and before the main offset table: reads a
+// separate count (DAT_00202724) and either skips past that many
+// 32-byte entries (if no destination buffer DAT_00202720 was set) or
+// allocates and loads them. Reads as an optional extra metadata table
+// specific to format-3 resource files.
+undefined4 load_gr_format3_extra_table()
+
+{
+  int iVar1;
+  undefined4 uVar2;
+
+  iVar1 = read_file_handle(DAT_00202514,&DAT_00202724,1);
+  if (iVar1 == 1) {
+    if (*DAT_00202720 == 0) {
+      seek_file_handle(DAT_00202514,(uint)DAT_00202724 << 5,1);
+    }
+    else {
+      iVar1 = Ordinal_1041((uint)DAT_00202724 << 5);
+      *DAT_00202720 = iVar1;
+      iVar1 = read_file_handle(DAT_00202514,*DAT_00202720,(uint)DAT_00202724 << 5);
+      if (iVar1 != (uint)DAT_00202724 * 0x20) goto LAB_000412d8;
+    }
+    uVar2 = 1;
+  }
+  else {
+LAB_000412d8:
+    uVar2 = 0;
+  }
+  return uVar2;
+}
+
+
+
+// was FUN_000414c8 -- closes the .GR resource file opened by
+// open_gr_resource_file and frees its offset table, mirroring that
+// function's open.
+void close_gr_resource_file()
+
+{
+  Ordinal_553(DAT_00202514);
+  if (DAT_0020274c != 0) {
+    Ordinal_1018();
+  }
+  return;
+}
+
+
+
+// was FUN_000414f4 -- reads one .GR resource record by index (param_1)
+// into param_2, using the offset table open_gr_resource_file loaded to
+// compute the record's file offset and size.
+uint read_gr_resource_record(param_1,param_2)
+uint param_1;
+void *param_2;
+
+{
+  int *piVar1;
+  int iVar2;
+  uint uVar3;
+  uint uVar4;
+  int iVar5;
+  uint uVar6;
+  
+  param_1 = param_1 & 0xffff;
+  if (param_1 == (ushort)DAT_00202728 - 1) {
+    iVar2 = seek_file_handle(DAT_00202514,0,2);
+    iVar5 = *(int *)(DAT_0020274c + param_1 * 4);
+    uVar6 = iVar2 - iVar5;
+  }
+  else {
+    piVar1 = (int *)(DAT_0020274c + param_1 * 4);
+    iVar5 = *piVar1;
+    uVar6 = piVar1[1] - iVar5;
+  }
+  iVar5 = seek_file_handle(DAT_00202514,iVar5,0);
+  if (iVar5 == -1) {
+    uVar4 = 0xffffffff;
+  }
+  else {
+    uVar6 = uVar6 & 0xffff;
+    if (uVar6 == 0) {
+      uVar4 = 0;
+    }
+    else {
+      uVar3 = read_file_handle(DAT_00202514,param_2,uVar6);
+      uVar4 = 0xffffffff;
+      if (uVar3 == uVar6) {
+        uVar4 = uVar6;
+      }
+    }
+  }
+  return uVar4;
 }

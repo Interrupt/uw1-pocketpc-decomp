@@ -3042,8 +3042,7 @@ undefined4 g_weapon_overlay_enabled;
 undefined4 DAT_00202514;
 int DAT_00202720_backing[128];
 int *DAT_00202720 = DAT_00202720_backing;
-static undefined1 DAT_00202724_backing[8192];
-#define DAT_00202724 DAT_00202724_backing[0]
+undefined1 DAT_00202724_backing[8192];
 undefined4 DAT_00202728;
 char *DAT_0020274c;
  undefined DAT_00202518_backing[8192];
@@ -10830,88 +10829,6 @@ undefined4 param_1;
 
 
 
-undefined4 FUN_00041260()
-
-{
-  int iVar1;
-  undefined4 uVar2;
-  
-  iVar1 = read_file_handle(DAT_00202514,&DAT_00202724,1);
-  if (iVar1 == 1) {
-    if (*DAT_00202720 == 0) {
-      seek_file_handle(DAT_00202514,(uint)DAT_00202724 << 5,1);
-    }
-    else {
-      iVar1 = Ordinal_1041((uint)DAT_00202724 << 5);
-      *DAT_00202720 = iVar1;
-      iVar1 = read_file_handle(DAT_00202514,*DAT_00202720,(uint)DAT_00202724 << 5);
-      if (iVar1 != (uint)DAT_00202724 * 0x20) goto LAB_000412d8;
-    }
-    uVar2 = 1;
-  }
-  else {
-LAB_000412d8:
-    uVar2 = 0;
-  }
-  return uVar2;
-}
-
-
-
-void FUN_000414c8()
-
-{
-  Ordinal_553(DAT_00202514);
-  if (DAT_0020274c != 0) {
-    Ordinal_1018();
-  }
-  return;
-}
-
-
-
-uint FUN_000414f4(param_1,param_2)
-uint param_1;
-void *param_2;
-
-{
-  int *piVar1;
-  int iVar2;
-  uint uVar3;
-  uint uVar4;
-  int iVar5;
-  uint uVar6;
-  
-  param_1 = param_1 & 0xffff;
-  if (param_1 == (ushort)DAT_00202728 - 1) {
-    iVar2 = seek_file_handle(DAT_00202514,0,2);
-    iVar5 = *(int *)(DAT_0020274c + param_1 * 4);
-    uVar6 = iVar2 - iVar5;
-  }
-  else {
-    piVar1 = (int *)(DAT_0020274c + param_1 * 4);
-    iVar5 = *piVar1;
-    uVar6 = piVar1[1] - iVar5;
-  }
-  iVar5 = seek_file_handle(DAT_00202514,iVar5,0);
-  if (iVar5 == -1) {
-    uVar4 = 0xffffffff;
-  }
-  else {
-    uVar6 = uVar6 & 0xffff;
-    if (uVar6 == 0) {
-      uVar4 = 0;
-    }
-    else {
-      uVar3 = read_file_handle(DAT_00202514,param_2,uVar6);
-      uVar4 = 0xffffffff;
-      if (uVar3 == uVar6) {
-        uVar4 = uVar6;
-      }
-    }
-  }
-  return uVar4;
-}
 
 
 
@@ -11059,7 +10976,7 @@ codeval * param_5;
         }
         iVar4 = *(int *)(DAT_0020274c + iVar2 * 4 + 4) - *(int *)(DAT_0020274c + iVar2 * 4);
         pvVar_buf = (*param_4)(iVar4);
-        if ((pvVar_buf == 0) || (iVar1 = FUN_000414f4(iVar1,pvVar_buf), iVar4 != iVar1)) {
+        if ((pvVar_buf == 0) || (iVar1 = read_gr_resource_record(iVar1,pvVar_buf), iVar4 != iVar1)) {
           uVar6 = 0;
         }
         else {
@@ -11078,7 +10995,7 @@ codeval * param_5;
         iVar1 = (int)local_8;
       }
     }
-    FUN_000414c8();
+    close_gr_resource_file();
   }
   return uVar6;
 }
