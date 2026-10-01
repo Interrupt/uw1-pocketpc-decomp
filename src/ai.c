@@ -730,7 +730,7 @@ LAB_00033830:
   bVar3 = *(byte *)((char *)DAT_0010190c + 0x15) & 0x3f;
   if (bVar3 == 0xc) {
     if ((uVar9 & 0xf000) == 0x3000) {
-      FUN_0003a73c(DAT_0010190c,1);
+      resolve_unique_npc_special_behavior(DAT_0010190c,1);
       DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
       DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
       iVar5 = tilemap_lookup();
@@ -3612,7 +3612,7 @@ int compute_pathfind_search_radius()
 // was FUN_000345b8 -- transitions an NPC object into the death state
 // (goal 0xc, the state npc_ai_default_tick's own goal-0xc branch reads
 // to drop loot and free the slot): allowed unconditionally if byte
-// 0x1a is 0 (a "not immortal/scripted" marker), or via FUN_0003a73c's
+// 0x1a is 0 (a "not immortal/scripted" marker), or via resolve_unique_npc_special_behavior's
 // own eligibility check otherwise. On success, sets goal 0xc, clears
 // the animation-frame nibble, and zeroes HP (byte 8). Returns 1 if the
 // transition happened, 0 if blocked.
@@ -3624,7 +3624,7 @@ int param_1;
   undefined4 uVar2;
   uint uVar3;
 
-  if ((*(char *)(param_1 + 0x1a) == '\0') || (iVar1 = FUN_0003a73c(param_1,0), iVar1 != 0)) {
+  if ((*(char *)(param_1 + 0x1a) == '\0') || (iVar1 = resolve_unique_npc_special_behavior(param_1,0), iVar1 != 0)) {
     uVar2 = 1;
     *(byte *)(param_1 + 0x15) = *(byte *)(param_1 + 0x15) & 0xcc | 0xc;
     uVar3 = CONCAT11(*(undefined1 *)(param_1 + 0xc),*(undefined1 *)(param_1 + 0xb)) & 0xfff;
@@ -4301,4 +4301,98 @@ byte param_2;
     }
   }
   return;
+}
+
+
+// was FUN_0003a73c -- special-behavior dispatcher for "unique" NPCs,
+// keyed by their own byte 0x1a (a per-record special-event code, 0
+// meaning "ordinary, no special handling"). Called two ways: with
+// param_2==0 as initiate_npc_death's own eligibility check (codes 0xb
+// and 0x16 intercept it -- talk instead of dying, 0x16 also granting
+// one-time 500 XP -- returning 0 to block the normal death
+// transition; every other code just returns 1, allowing it); with
+// param_2!=0 after the NPC has actually died, where most codes set a
+// specific quest-flag bit (DAT_00086df8+0x65, or clear one at +0x61
+// for code 0x1b) and code 0xe7 instead fires
+// trigger_quest_milestone_cleanup_event. Each code corresponds to a
+// specific named/quest-critical NPC; their individual in-game
+// identities aren't confirmed here.
+undefined4 resolve_unique_npc_special_behavior(param_1,param_2)
+char *param_1;
+int param_2;
+
+{
+  char cVar1;
+  uint uVar2;
+
+  cVar1 = *(char *)(param_1 + 0x1a);
+  if (cVar1 == '\v') {
+    if (param_2 == 0) {
+      attempt_talk_interaction(param_1);
+      *(undefined1 *)(param_1 + 8) = 0x3c;
+      return 0;
+    }
+  }
+  else if (cVar1 == '\x16') {
+    if (param_2 == 0) {
+      if ((*(byte *)(param_1 + 10) & 0x70) == 0) {
+        *(byte *)(param_1 + 10) = *(byte *)(param_1 + 10) & 0x9f | 0x10;
+        grant_experience_points(500);
+      }
+      *(undefined1 *)(param_1 + 0x12) = 0;
+      cancel_weapon_swing();
+      *(byte *)(param_1 + 0x15) = *(byte *)(param_1 + 0x15) & 0xe0 | 0x20;
+      uVar2 = CONCAT11(*(undefined1 *)(param_1 + 0xc),*(undefined1 *)(param_1 + 0xb)) & 0xfff;
+      *(char *)(param_1 + 0xb) = (char)uVar2;
+      *(char *)(param_1 + 0xc) = (char)(uVar2 >> 8);
+      attempt_talk_interaction(param_1);
+      return 0;
+    }
+  }
+  else {
+    if (cVar1 == '\x18') {
+      if (param_2 == 0) {
+        return 1;
+      }
+      uVar2 = *(uint *)(DAT_00086df8 + 0x65) | 0x40;
+    }
+    else {
+      if (cVar1 == '\x1b') {
+        if (param_2 == 0) {
+          return 1;
+        }
+        uVar2 = *(ushort *)(DAT_00086df8 + 0x61) & 0xfbff;
+        *(char *)(DAT_00086df8 + 0x61) = (char)uVar2;
+        *(char *)(DAT_00086df8 + 0x62) = (char)(uVar2 >> 8);
+        return 1;
+      }
+      if (cVar1 == 'n') {
+        if (param_2 == 0) {
+          return 1;
+        }
+        uVar2 = *(uint *)(DAT_00086df8 + 0x65) | 0x10;
+      }
+      else {
+        if (cVar1 != -0x72) {
+          if (cVar1 != -0x19) {
+            return 1;
+          }
+          if (param_2 == 0) {
+            return 1;
+          }
+          trigger_quest_milestone_cleanup_event();
+          return 1;
+        }
+        if (param_2 == 0) {
+          return 1;
+        }
+        uVar2 = *(uint *)(DAT_00086df8 + 0x65) | 0x800;
+      }
+    }
+    *(char *)(DAT_00086df8 + 0x65) = (char)uVar2;
+    *(char *)(DAT_00086df8 + 0x66) = (char)(uVar2 >> 8);
+    *(char *)(DAT_00086df8 + 0x67) = (char)(uVar2 >> 0x10);
+    *(char *)(DAT_00086df8 + 0x68) = (char)(uVar2 >> 0x18);
+  }
+  return 1;
 }

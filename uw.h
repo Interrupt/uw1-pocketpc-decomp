@@ -3000,7 +3000,7 @@ void trigger_scripted_npc_conversation();
 void advance_scheduler_and_show_page3();
 undefined4 unlink_object_from_tile_callback();
 void trigger_quest_milestone_cleanup_event();
-undefined4 FUN_0003a73c();
+undefined4 resolve_unique_npc_special_behavior();
 int FUN_0003a924();
 uint FUN_0003a99c();
 void FUN_0003ab90();

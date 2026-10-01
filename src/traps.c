@@ -1517,7 +1517,7 @@ int param_1;
 
 
 
-// was FUN_0003a654 -- triggered by FUN_0003a73c's dispatch for a
+// was FUN_0003a654 -- triggered by resolve_unique_npc_special_behavior's dispatch for a
 // specific object "special behavior" byte (0x1a) value 0xe7: shows
 // book/scroll page 2, sets a quest-flag bit (DAT_00086df8+0x6e), then
 // sweeps away every instance of a small list of object types
