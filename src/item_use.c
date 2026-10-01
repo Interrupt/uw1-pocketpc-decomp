@@ -515,7 +515,7 @@ int param_2;
         set_ambient_bias_without_light(0);
       }
       refresh_player_equipment_effects();
-      FUN_0004503c(iVar6);
+      redraw_backpack_slot_widget(iVar6);
       return;
     }
     uVar5 = 0x7c;
@@ -1649,7 +1649,7 @@ uint param_2;
         param_1[1] = (byte)((ushort)uVar1 >> 8);
         print_scroll_message_by_id(0x7d);
         find_or_assign_object_widget(param_1);
-        FUN_0004503c();
+        redraw_backpack_slot_widget();
       }
     }
   }
@@ -1814,7 +1814,7 @@ int param_3;
       *(undefined1 *)param_1 = 0x91;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8) & 0xfe;
       find_or_assign_object_widget(param_1);
-      FUN_0004503c();
+      redraw_backpack_slot_widget();
     }
   }
   return;
@@ -1899,7 +1899,7 @@ int param_3;
       *(byte *)(puVar4 + 3) = (byte)iVar3 ^ (byte)puVar4[3] & 0x3f;
       *(char *)((char *)puVar4 + 7) = (char)((uint)iVar3 >> 8);
       if (local_20[0] == 1) {
-        FUN_0004503c((int)local_22);
+        redraw_backpack_slot_widget((int)local_22);
       }
       else if (local_20[0] == 2) {
         refresh_container_view();
@@ -2663,4 +2663,15 @@ undefined4 param_2;
     puVar10 = puVar6 + 2;
   }
   return false;
+}
+
+
+// was FUN_0004503c -- redraws the inventory widget for backpack slot
+// param_1, via the slot-to-widget-index lookup table.
+void redraw_backpack_slot_widget(param_1)
+short param_1;
+
+{
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_1]);
+  return;
 }

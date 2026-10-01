@@ -11333,13 +11333,6 @@ short param_1;
 
 
 
-void FUN_0004503c(param_1)
-short param_1;
-
-{
-  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_1]);
-  return;
-}
 
 
 
@@ -12186,7 +12179,7 @@ int param_5;
   Ordinal_1063(acStack_4d + 1,pcVar8);
   Ordinal_1063(acStack_4d + 1,pcVar9);
   message_scroll_print_wrapped(acStack_4d + 1);
-  FUN_0004503c(param_1);
+  redraw_backpack_slot_widget(param_1);
   return uVar7;
 }
 
@@ -19341,7 +19334,7 @@ undefined1 param_2;
             bVar4 = (byte)uVar2;
             *(byte *)puVar6 = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
             *(byte *)((char *)puVar6 + 1) = (byte)(uVar2 >> 8);
-            FUN_0004503c((int)(char)(&g_light_source_slots)[iVar9]);
+            redraw_backpack_slot_widget((int)(char)(&g_light_source_slots)[iVar9]);
             uVar10 = 1;
             set_ambient_bias_without_light(0);
           }

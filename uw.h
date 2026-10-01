@@ -3275,7 +3275,7 @@ void handle_light_source_click();
 void handle_cast_spell_click();
 undefined4 report_spell_cast_failure();
 undefined4 cast_spell_from_rune_combo();
-void FUN_0004503c();
+void redraw_backpack_slot_widget();
 void *get_equipped_item_at_slot();
 undefined4 place_object_in_backpack_slot();
 int FUN_000451b0();
