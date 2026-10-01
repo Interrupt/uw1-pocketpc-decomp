@@ -7282,7 +7282,7 @@ undefined4 param_4;
 // (param_2). Code 1000 is a byte-fill run (length + fill byte from
 // the input, repeated into the output via pack_byte_into_word's
 // shared low/high-byte accumulators); code 0x3e9 is a shorter
-// run/skip variant (terminating the stream via FUN_0003b3a8 when its
+// run/skip variant (terminating the stream via rle_op_handle_short_run when its
 // computed length hits zero); code 0x3ea is a raw byte-for-byte copy
 // (Ordinal_1044) of a given length. Loops until the "done" flag
 // (DAT_00201b58) is set. Confirmed caller: render_babl_dialog_window
@@ -7333,7 +7333,7 @@ undefined1 * param_2;
         DAT_00201b44 = (short)uVar2;
         DAT_00201b54 = DAT_00201b54 + 2;
         if (DAT_00201b44 < 1) {
-          FUN_0003b3a8();
+          rle_op_handle_short_run();
         }
         else {
           DAT_00201b40 = DAT_00201b40 + uVar2;
@@ -7410,4 +7410,208 @@ uint read_rle_op_code()
     }
   }
   return uVar1;
+}
+
+
+// was FUN_0003b3a8 -- decompress_rle_stream's op-0x3e9 handler (a
+// "short run" variant): if the accumulated fill value (DAT_00201b44)
+// is 0, marks the stream done (rle_op_mark_stream_done); otherwise
+// recomputes the run length and, for shorter runs (<0x40), optionally
+// emits one literal byte before continuing into
+// rle_op_copy_pairs_even, or for longer runs delegates to
+// rle_op_fill_doubled_byte_even.
+void rle_op_handle_short_run()
+
+{
+  int uw_ord2005_rem_104 = 0;
+  ushort uVar1;
+  int extraout_r1;
+
+  if (DAT_00201b44 == 0) {
+    rle_op_mark_stream_done();
+  }
+  else if (DAT_00201b58 == 0) {
+    uVar1 = (DAT_00201b44 >> 8) + 0x80;
+    DAT_00201b48 = DAT_00201b44 & 0xff | uVar1 * 0x100;
+    if ((uVar1 & 0xff) < 0x40) {
+      uw_ord2005_rem_104 = ((int)(DAT_00201b54)) % (2);
+      if (uw_ord2005_rem_104 != 0) {
+        *DAT_00201b40 = *DAT_00201b50;
+        DAT_00201b40 = DAT_00201b40 + 1;
+        DAT_00201b4c = DAT_00201b4c + 1;
+        DAT_00201b50 = DAT_00201b50 + 1;
+        DAT_00201b54 = DAT_00201b54 + 1;
+        DAT_00201b48 = DAT_00201b48 - 1;
+      }
+      rle_op_copy_pairs_even();
+    }
+    else {
+      rle_op_fill_doubled_byte_even();
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_0003b48c -- copies DAT_00201b48/2 byte-pairs from input to
+// output (direct copy, not a fill); if the run length's low bit is
+// set, delegates to rle_op_copy_pairs_odd for one extra trailing
+// byte, otherwise finalizes via rle_op_finalize_length.
+void rle_op_copy_pairs_even()
+
+{
+  ushort uVar1;
+  int iVar2;
+
+  if (DAT_00201b58 == 0) {
+    uVar1 = DAT_00201b48 & 1;
+    DAT_00201b48 = DAT_00201b48 >> 1;
+    if (uVar1 == 0) {
+      iVar2 = 0;
+      if (DAT_00201b48 != 0) {
+        do {
+          iVar2 = iVar2 + 1;
+          *DAT_00201b40 = *DAT_00201b50;
+          DAT_00201b40[1] = DAT_00201b50[1];
+          DAT_00201b4c = DAT_00201b4c + 2;
+          DAT_00201b40 = DAT_00201b40 + 2;
+          DAT_00201b50 = DAT_00201b50 + 2;
+          DAT_00201b54 = DAT_00201b54 + 2;
+        } while (iVar2 < (int)(uint)DAT_00201b48);
+      }
+      rle_op_finalize_length();
+    }
+    else {
+      rle_op_copy_pairs_odd();
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_0003b54c -- rle_op_copy_pairs_even's odd-length tail: copies
+// the same byte-pairs, then one final single byte, before finalizing.
+void rle_op_copy_pairs_odd()
+
+{
+  int iVar1;
+
+  iVar1 = 0;
+  if (DAT_00201b48 != 0) {
+    do {
+      iVar1 = iVar1 + 1;
+      *DAT_00201b40 = *DAT_00201b50;
+      DAT_00201b40[1] = DAT_00201b50[1];
+      DAT_00201b4c = DAT_00201b4c + 2;
+      DAT_00201b40 = DAT_00201b40 + 2;
+      DAT_00201b50 = DAT_00201b50 + 2;
+      DAT_00201b54 = DAT_00201b54 + 2;
+    } while (iVar1 < (int)(uint)DAT_00201b48);
+  }
+  *DAT_00201b40 = *DAT_00201b50;
+  DAT_00201b40 = DAT_00201b40 + 1;
+  DAT_00201b4c = DAT_00201b4c + 1;
+  DAT_00201b50 = DAT_00201b50 + 1;
+  DAT_00201b54 = DAT_00201b54 + 1;
+  rle_op_finalize_length();
+  return;
+}
+
+
+
+// was FUN_0003b608 -- fills output with a doubled byte value (read
+// once from input, replicated into both halves of DAT_00201b44) in
+// byte-pairs; if the run length's low bit is set, delegates to
+// rle_op_fill_doubled_byte_odd for one extra trailing byte, otherwise
+// finalizes via rle_op_finalize_length.
+void rle_op_fill_doubled_byte_even()
+
+{
+  int uw_ord2005_rem_105 = 0;
+  ushort uVar1;
+  undefined1 uVar2;
+  int extraout_r1;
+  int iVar3;
+
+  DAT_00201b48 = DAT_00201b48 & 0xff | ((DAT_00201b48 >> 8) - 0x40) * 0x100;
+  uVar2 = pack_byte_into_word(DAT_00201b44,*DAT_00201b50,0);
+  DAT_00201b50 = DAT_00201b50 + 1;
+  DAT_00201b54 = DAT_00201b54 + 1;
+  DAT_00201b44 = CONCAT11(uVar2,uVar2);
+  uw_ord2005_rem_105 = ((int)(DAT_00201b4c)) % (2);
+  if (uw_ord2005_rem_105 != 0) {
+    *DAT_00201b40 = uVar2;
+    DAT_00201b40 = DAT_00201b40 + 1;
+    DAT_00201b4c = DAT_00201b4c + 1;
+    DAT_00201b48 = DAT_00201b48 - 1;
+  }
+  uVar1 = DAT_00201b48 & 1;
+  DAT_00201b48 = DAT_00201b48 >> 1;
+  if (uVar1 == 0) {
+    iVar3 = 0;
+    if (DAT_00201b48 != 0) {
+      do {
+        iVar3 = iVar3 + 1;
+        *DAT_00201b40 = (char)DAT_00201b44;
+        DAT_00201b40[1] = (char)((ushort)DAT_00201b44 >> 8);
+        DAT_00201b4c = DAT_00201b4c + 2;
+        DAT_00201b40 = DAT_00201b40 + 2;
+      } while (iVar3 < (int)(uint)DAT_00201b48);
+    }
+    rle_op_finalize_length();
+  }
+  else {
+    rle_op_fill_doubled_byte_odd();
+  }
+  return;
+}
+
+
+
+// was FUN_0003b770 -- rle_op_fill_doubled_byte_even's odd-length
+// tail: fills the same doubled-byte pairs, then one final single
+// byte (the high half of DAT_00201b44), before finalizing.
+void rle_op_fill_doubled_byte_odd()
+
+{
+  int iVar1;
+
+  iVar1 = 0;
+  if (DAT_00201b48 != 0) {
+    do {
+      iVar1 = iVar1 + 1;
+      *DAT_00201b40 = (char)DAT_00201b44;
+      DAT_00201b40[1] = (char)((ushort)DAT_00201b44 >> 8);
+      DAT_00201b4c = DAT_00201b4c + 2;
+      DAT_00201b40 = DAT_00201b40 + 2;
+    } while (iVar1 < (int)(uint)DAT_00201b48);
+  }
+  *DAT_00201b40 = (char)((ushort)DAT_00201b44 >> 8);
+  DAT_00201b40 = DAT_00201b40 + 1;
+  DAT_00201b4c = DAT_00201b4c + 1;
+  rle_op_finalize_length();
+  return;
+}
+
+
+
+// was FUN_0003b7f4 -- masks the run-length state back down to its low
+// byte once a run has been fully emitted.
+void rle_op_finalize_length()
+
+{
+  DAT_00201b48 = DAT_00201b48 & 0xff;
+  return;
+}
+
+
+
+// was FUN_0003b80c -- marks the decompression stream as finished.
+void rle_op_mark_stream_done()
+
+{
+  DAT_00201b58 = 1;
+  return;
 }
