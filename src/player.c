@@ -2761,7 +2761,7 @@ LAB_0007158c:
         *(char *)(DAT_00086df8 + 0x62) = (char)(uVar6 >> 8);
       }
       refresh_player_equipment_effects();
-      FUN_00040440();
+      flush_pending_critter_resource_slots();
       g_jump_ascent_timer = 0;
       g_fall_accel = 0;
       DAT_0020488e = 0;

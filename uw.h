@@ -3145,7 +3145,7 @@ void toggle_weapon_ready();
 bool check_can_save_game();
 undefined4 check_can_load_game();
 undefined4 load_critter_association_tables();
-void FUN_00040440();
+void flush_pending_critter_resource_slots();
 undefined4 FUN_000404a0();
 undefined4 FUN_00040770();
 undefined4 FUN_0004083c();

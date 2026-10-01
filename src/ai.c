@@ -4525,3 +4525,34 @@ int param_1;
   }
   return 1;
 }
+
+
+// was FUN_00040440 -- called once from handle_rest_action, right after
+// resting/sleeping finishes (before the jump/fall timers get reset for
+// the new tick). Walks the same 0x80-entry resource-slot status table
+// load_critter_association_tables initializes (DAT_0023c5b8/
+// DAT_0024ac18/DAT_0023c4c0): any slot flagged "1" is treated as a
+// completed/expired load -- its target cache entry (DAT_0023c4c0) is
+// marked stale (0xfe) and the slot itself is freed back to 0xff.
+// Finishes by clearing the ambient sound target, same as
+// load_critter_association_tables does. Reads as "flush pending
+// critter resource slots" after time has passed.
+void flush_pending_critter_resource_slots()
+
+{
+  byte bVar1;
+  int iVar2;
+
+  iVar2 = 0;
+  do {
+    if ((&DAT_0023c5b8)[iVar2] == '\x01') {
+      bVar1 = (&DAT_0024ac18)[iVar2];
+      (&DAT_0023c5b8)[iVar2] = 0xff;
+      (&DAT_0024ac18)[iVar2] = 0xff;
+      (&DAT_0023c4c0)[(short)(ushort)bVar1] = 0xfe;
+    }
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 0x80);
+  clear_ambient_sound_target();
+  return;
+}

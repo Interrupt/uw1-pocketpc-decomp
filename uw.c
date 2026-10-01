@@ -10584,25 +10584,6 @@ void toggle_weapon_ready()
 
 
 
-void FUN_00040440()
-
-{
-  byte bVar1;
-  int iVar2;
-  
-  iVar2 = 0;
-  do {
-    if ((&DAT_0023c5b8)[iVar2] == '\x01') {
-      bVar1 = (&DAT_0024ac18)[iVar2];
-      (&DAT_0023c5b8)[iVar2] = 0xff;
-      (&DAT_0024ac18)[iVar2] = 0xff;
-      (&DAT_0023c4c0)[(short)(ushort)bVar1] = 0xfe;
-    }
-    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-  } while (iVar2 < 0x80);
-  clear_ambient_sound_target();
-  return;
-}
 
 
 
