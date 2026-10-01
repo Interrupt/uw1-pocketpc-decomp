@@ -1049,3 +1049,63 @@ LAB_00039638:
     }
   } while( true );
 }
+
+
+// was FUN_0003ae00 -- object-tree-walk callback (via
+// FUN_00052af4/clear_temp_flags_on_all_objects): for a non-arena
+// object (object_ptr_in_arena) whose class isn't a door (0x140) or
+// other special type (0x180), and whose object-type props don't flag
+// it with sub-category 2, clears bit 0x200 of its second word -- a
+// "temporary/recently-used" style flag reset.
+undefined4 clear_object_temp_flag_callback(param_1)
+ushort * param_1;
+
+{
+  ushort uVar1;
+  int iVar2;
+  uint uVar3;
+
+  iVar2 = object_ptr_in_arena(param_1);
+  if (iVar2 == 0) {
+    uVar3 = *param_1 & 0x1c0;
+    if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
+       (((&DAT_00202c9a)[(*param_1 & 0x1ff) * 0xd] & 3) != 2)) {
+      uVar1 = param_1[1];
+      *(char *)(param_1 + 1) = (char)(uVar1 & 0xfdff);
+      *(char *)((char *)param_1 + 3) = (char)((uVar1 & 0xfdff) >> 8);
+    }
+  }
+  return 0;
+}
+
+
+
+// was FUN_0003aea8 -- sweeps the entire 64x64 tile grid (DAT_002029cc)
+// and, for every tile with a non-empty object list, recursively walks
+// each object's tree (FUN_00052af4, not yet named) applying
+// clear_object_temp_flag_callback to every object found -- a global
+// "reset the temporary flag on everything in the world" pass.
+void clear_temp_flags_on_all_objects()
+
+{
+  undefined4 uVar1;
+  char *iVar2;
+  int iVar3;
+  int iVar4;
+
+  iVar4 = 0;
+  iVar2 = DAT_002029cc;
+  do {
+    iVar3 = 0;
+    do {
+      if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
+        uVar1 = resolve_object_link((ushort *)(iVar2 + 2));
+        FUN_00052af4(uVar1,clear_object_temp_flag_callback);
+      }
+      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+      iVar2 = iVar2 + 4;
+    } while (iVar3 < 0x40);
+    iVar4 = iVar4 + 1;
+  } while (iVar4 * 0x10000 >> 0x10 < 0x40);
+  return;
+}

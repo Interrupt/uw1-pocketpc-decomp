@@ -2138,7 +2138,7 @@ char param_1;
     }
   }
   if (iVar1 == 8) {
-    FUN_0003aea8();
+    clear_temp_flags_on_all_objects();
     if (DAT_00201b68 < 9) {
       *(undefined1 *)(DAT_00201b68 + DAT_00086df8 + 0xc2) = *(undefined1 *)(DAT_00086df8 + 0x29);
     }

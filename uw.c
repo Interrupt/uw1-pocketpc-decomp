@@ -9732,53 +9732,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_0003ae00(param_1)
-ushort * param_1;
-
-{
-  ushort uVar1;
-  int iVar2;
-  uint uVar3;
-  
-  iVar2 = object_ptr_in_arena();
-  if (iVar2 == 0) {
-    uVar3 = *param_1 & 0x1c0;
-    if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
-       (((&DAT_00202c9a)[(*param_1 & 0x1ff) * 0xd] & 3) != 2)) {
-      uVar1 = param_1[1];
-      *(char *)(param_1 + 1) = (char)(uVar1 & 0xfdff);
-      *(char *)((char *)param_1 + 3) = (char)((uVar1 & 0xfdff) >> 8);
-    }
-  }
-  return 0;
-}
-
-
-
-void FUN_0003aea8()
-
-{
-  undefined4 uVar1;
-  char *iVar2;
-  int iVar3;
-  int iVar4;
-  
-  iVar4 = 0;
-  iVar2 = DAT_002029cc;
-  do {
-    iVar3 = 0;
-    do {
-      if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
-        uVar1 = resolve_object_link((ushort *)(iVar2 + 2));
-        FUN_00052af4(uVar1,FUN_0003ae00);
-      }
-      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-      iVar2 = iVar2 + 4;
-    } while (iVar3 < 0x40);
-    iVar4 = iVar4 + 1;
-  } while (iVar4 * 0x10000 >> 0x10 < 0x40);
-  return;
-}
 
 
 
