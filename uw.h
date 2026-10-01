@@ -3021,7 +3021,7 @@ void clear_temp_flags_on_all_objects();
 undefined4 load_bmp_resource_to_rgb565();
 void decompress_rle_stream();
 uint pack_byte_into_word();
-uint FUN_0003b344();
+uint read_rle_op_code();
 void FUN_0003b3a8();
 void FUN_0003b48c();
 void FUN_0003b54c();

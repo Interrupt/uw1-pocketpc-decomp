@@ -7277,7 +7277,7 @@ undefined4 param_4;
 
 
 // was FUN_0003b0e4 -- a run-length-style stream decompressor: reads
-// successive op codes from the compressed input (FUN_0003b344, not
+// successive op codes from the compressed input (read_rle_op_code, not
 // yet named) and drives the output (param_1) from the input
 // (param_2). Code 1000 is a byte-fill run (length + fill byte from
 // the input, repeated into the output via pack_byte_into_word's
@@ -7305,7 +7305,7 @@ undefined1 * param_2;
   DAT_00201b40 = param_1;
   DAT_00201b50 = param_2;
   do {
-    DAT_00201b3c = FUN_0003b344();
+    DAT_00201b3c = read_rle_op_code();
     if (DAT_00201b3c == 1000) {
       DAT_00201b48 = pack_byte_into_word(DAT_00201b48,*DAT_00201b50,0);
       DAT_00201b54 = DAT_00201b54 + 1;
@@ -7377,6 +7377,37 @@ int param_3;
   }
   else {
     uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
+  }
+  return uVar1;
+}
+
+
+// was FUN_0003b344 -- reads the next op code from
+// decompress_rle_stream's input stream: a zero byte maps to op 1000
+// (byte-fill run); a nonzero byte with its top bit set maps to op
+// 0x3e9; otherwise op 0x3ea. See decompress_rle_stream's own comment
+// for what each op does.
+uint read_rle_op_code()
+
+{
+  uint uVar1;
+  bool bVar2;
+
+  uVar1 = pack_byte_into_word(DAT_00201b48,*DAT_00201b50,0);
+  DAT_00201b48 = (short)uVar1;
+  DAT_00201b50 = DAT_00201b50 + 1;
+  bVar2 = (uVar1 & 0xffff) == 0;
+  if (bVar2) {
+    uVar1 = 1000;
+  }
+  DAT_00201b54 = DAT_00201b54 + 1;
+  if (!bVar2) {
+    if ((char)uVar1 < '\0') {
+      uVar1 = 0x3e9;
+    }
+    else {
+      uVar1 = 0x3ea;
+    }
   }
   return uVar1;
 }

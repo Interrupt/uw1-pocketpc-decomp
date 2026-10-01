@@ -2532,7 +2532,7 @@ char *DAT_002029cc;
 /* decompress_rle_stream's own shared codec state (output/input
    cursors, byte counts, and the current/pending op-code value),
    threaded through its several sibling op-code handler functions
-   (FUN_0003b344 and others still unnamed below it). */
+   (read_rle_op_code and others still unnamed below it). */
 undefined1 *DAT_00201b40; // output cursor
 int DAT_00201b54; // input bytes consumed so far
 int DAT_00201b4c; // output bytes written so far
@@ -9745,30 +9745,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-uint FUN_0003b344()
-
-{
-  uint uVar1;
-  bool bVar2;
-  
-  uVar1 = pack_byte_into_word(DAT_00201b48,*DAT_00201b50,0);
-  DAT_00201b48 = (short)uVar1;
-  DAT_00201b50 = DAT_00201b50 + 1;
-  bVar2 = (uVar1 & 0xffff) == 0;
-  if (bVar2) {
-    uVar1 = 1000;
-  }
-  DAT_00201b54 = DAT_00201b54 + 1;
-  if (!bVar2) {
-    if ((char)uVar1 < '\0') {
-      uVar1 = 0x3e9;
-    }
-    else {
-      uVar1 = 0x3ea;
-    }
-  }
-  return uVar1;
-}
 
 
 
