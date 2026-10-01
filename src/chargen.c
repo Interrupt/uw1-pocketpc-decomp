@@ -461,7 +461,7 @@ int run_character_generator()
   }
   init_new_character_record(0);
   FUN_00040df0();
-  FUN_0003c3c8(5);
+  report_fatal_error_and_exit(5);
   return 1;
 }
 

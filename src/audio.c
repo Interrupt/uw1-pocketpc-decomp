@@ -1060,9 +1060,9 @@ void voice_sample_cluster_stub_2()
 // it lands, tries to acquire an ambient-sound-class resource
 // (FUN_00049940(0x1e), not yet named -- reads as "get a free slot/
 // count for class 0x1e"). On failure to get any (result 0), reports a
-// fatal error (FUN_0003c3b4(0x2001), not yet named -- confirmed
+// fatal error (report_categorized_fatal_error(0x2001), not yet named -- confirmed
 // elsewhere in this file as an Ordinal_1041-allocation-failure
-// handler, e.g. init_level_object_arena's FUN_0003c3b4(0x1002));
+// handler, e.g. init_level_object_arena's report_categorized_fatal_error(0x1002));
 // otherwise, if the acquired value is below the roll threshold and
 // above 0x23, releases it and retries with an adjusted count,
 // falling back to another fatal-error report if that retry still
@@ -1090,7 +1090,7 @@ void start_ambient_sound_effect()
     DAT_002506f0 = (short)iVar4;
     iVar2 = (int)DAT_002506f0;
     if (iVar2 == 0) {
-      FUN_0003c3b4(0x2001);
+      report_categorized_fatal_error(0x2001);
     }
     else {
       if ((iVar2 < iVar1) && (0x23 < iVar2)) {
@@ -1098,7 +1098,7 @@ void start_ambient_sound_effect()
         iVar4 = FUN_00049940(0x1e,iVar4 + -6);
         DAT_002506f0 = (short)iVar4;
         if (DAT_002506f0 < 0x1e) {
-          FUN_0003c3b4(0x2002);
+          report_categorized_fatal_error(0x2002);
           iVar4 = (int)DAT_002506f0;
         }
       }
@@ -1107,7 +1107,7 @@ void start_ambient_sound_effect()
   }
   DAT_002506ec = Ordinal_1041(0x10010);
   if (DAT_002506ec == 0) {
-    FUN_0003c3b4(0x1007);
+    report_categorized_fatal_error(0x1007);
   }
   return;
 }

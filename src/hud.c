@@ -2627,8 +2627,8 @@ undefined2 param_5;
               (unsigned)uVar4, (unsigned)uVar2, iVar5, (unsigned)uVar3);
     if ((uVar2 & uVar3 & uVar6) == 0) {
       if (getenv("UW_DEBUG_CLICKREGION"))
-        fprintf(stderr, "[stats] begin_hud_panel_flip: DECODE FAILED, calling FUN_0003c3c8(0x300e)\n");
-      FUN_0003c3c8(0x300e);
+        fprintf(stderr, "[stats] begin_hud_panel_flip: DECODE FAILED, calling report_fatal_error_and_exit(0x300e)\n");
+      report_fatal_error_and_exit(0x300e);
     }
     FUN_00057118();
     /* Not decompiled -- capture the CURRENT (source/old panel's) live

@@ -197,14 +197,14 @@ char *param_4;
   }
   read_file_handle(iVar1,local_24,1);
   if (local_24[0] != 2) {
-    FUN_0003c3c8(0x3010);
+    report_fatal_error_and_exit(0x3010);
   }
   read_file_handle(iVar1,local_24,1);
   iVar5 = (uint)local_24[0] * (uint)local_24[0];
   read_file_handle(iVar1,&local_22,2);
   iVar2 = Ordinal_1346(4,(int)local_22);
   if (iVar2 == 0) {
-    FUN_0003c3c8(0x1008);
+    report_fatal_error_and_exit(0x1008);
     iVar3 = (int)local_22;
   }
   else {
@@ -225,7 +225,7 @@ char *param_4;
         seek_file_handle(iVar1,*(undefined4 *)(iVar2 + iVar4 * 4),0);
         iVar4 = read_file_handle(iVar1,param_4,iVar5);
         if (iVar4 != iVar5) {
-          FUN_0003c3c8(0x3012);
+          report_fatal_error_and_exit(0x3012);
         }
         iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
         param_4 = iVar5 + param_4;

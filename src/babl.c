@@ -3285,12 +3285,12 @@ undefined1 *param_2;
   DAT_000bbf20 = param_1;
   iVar2 = open_level_archive(auStack_20,param_1);
   if (iVar2 == 0) {
-    FUN_0003c3c8(0x300a);
+    report_fatal_error_and_exit(0x300a);
   }
   else {
     DAT_000bbf18 = babl_alloc(0x4000);
     if (DAT_000bbf18 == 0) {
-      FUN_0003c3c8(4);
+      report_fatal_error_and_exit(4);
     }
     local_28 = DAT_000bbf18;
     /* Was `read_archive_entry(auStack_20,DAT_001007c4)` -- a dropped 3rd

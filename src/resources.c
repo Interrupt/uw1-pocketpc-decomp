@@ -633,7 +633,7 @@ short * param_1;
 // an empty/sentinel state (DAT_0024bfa0/1 = 0xffff, the page-id
 // short field; DAT_0024c7a2/3 and the 512-entry DAT_0024bfa2/3/4/5
 // sub-arrays zeroed), then calls open_strings_pak_file and,
-// conditionally, FUN_0003c3b4 -- likely a "load the default/startup
+// conditionally, report_categorized_fatal_error -- likely a "load the default/startup
 // string table" step. This cache grows unboundedly at runtime as
 // more pages are registered; this only seeds its initial 2 slots.
 undefined4 init_string_resource_cache()
@@ -664,7 +664,12 @@ undefined4 init_string_resource_cache()
   } while (iVar4 < 2);
   sVar2 = open_strings_pak_file();
   if (sVar2 != 0) {
-    FUN_0003c3b4();
+    /* Was called bare -- dropped argument. open_strings_pak_file's own
+       return values (e.g. 0x1001) are already fully-formed error
+       codes in report_categorized_fatal_error's expected
+       category*0x1000+subcode shape, confirming sVar2 itself is the
+       intended argument. */
+    report_categorized_fatal_error(sVar2);
   }
   return 1;
 }

@@ -281,7 +281,7 @@ void *param_4;   /* was undefined4 -- the handler function pointer; 32-bit
      returns a real pointer, iVar2 was truncating it. */
   pvVar4 = Ordinal_1054(DAT_0020289c,((iVar2 + 1) * 0x10000 >> 0x10) * 0xc);
   if (pvVar4 == 0) {
-    FUN_0003c3c8(0x1006);
+    report_fatal_error_and_exit(0x1006);
   }
   sVar1 = DAT_00085a70;
   iVar3 = (char *)((char *)pvVar4 + DAT_0020288c * 0xc);
@@ -446,7 +446,7 @@ LAB_00042510:
     uVar4 = 0x1005;
     DAT_00202890 = (short *)0x0;
   }
-  FUN_0003c3c8(uVar4);
+  report_fatal_error_and_exit(uVar4);
   return;
 }
 

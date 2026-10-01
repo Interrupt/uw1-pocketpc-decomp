@@ -57,7 +57,7 @@ void enter_dungeon_view()
   Ordinal_1063(acStack_41c,s__DATA_main_byt_000857a8);
   iVar3 = blit_fullscreen_bitmap_file(0xffffffff,acStack_41c,0);
   if (iVar3 == 0) {
-    FUN_0003c3c8(0x300b);
+    report_fatal_error_and_exit(0x300b);
   }
   enter_dungeon_view_hud_init();
   FUN_00049924(0x7dfe);
@@ -85,7 +85,7 @@ undefined4 init_level_object_arena()
        comment. */
     DAT_002029cc = Ordinal_1041(0x7c08 + 0x3a + 0x180);
     if (DAT_002029cc == 0) {
-      FUN_0003c3b4(0x1002);
+      report_categorized_fatal_error(0x1002);
     }
   }
   reset_level_object_arena();
@@ -180,7 +180,7 @@ int param_2;
     }
   }
   else {
-    FUN_0003c3c8(3);
+    report_fatal_error_and_exit(3);
   }
   sVar2 = scheduler_load(auStack_20,param_2);
   if (param_1 == (undefined1 *)0x0) {

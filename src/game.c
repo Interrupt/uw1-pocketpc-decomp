@@ -316,7 +316,7 @@ undefined4 param_1;
             decompiled as a named function instead of staying raw
             undecompiled ARM. */
          (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,&populate_menu_button_bitmap_entry), iVar10 == 0)) {
-        FUN_0003c3c8(0x300d);
+        report_fatal_error_and_exit(0x300d);
       }
       if (local_838 != 3) {
         draw_menu_item_list(uVar8,DAT_0023bf6c,0,uVar2);
@@ -401,7 +401,7 @@ undefined4 param_1;
         uw_file_copy(s__DATA_lev_ark_00085734, s__SAVE0_lev_ark_000842fc);
         sVar3 = seed_conversation_globals_for_new_game();
         if (sVar3 != 0) {
-          FUN_0003c3c8();
+          report_fatal_error_and_exit();
         }
         sVar3 = load_level(1);
         if (sVar3 < 1) {
@@ -2131,7 +2131,7 @@ void run_game_startup_sequence()
   cache_ambient_sound_handle();
   iVar3 = FUN_00040cd4();
   if (iVar3 == 0) {
-    FUN_0003c3c8(0x3003);
+    report_fatal_error_and_exit(0x3003);
   }
   DAT_0024af70 = 1;
   Ordinal_1047(acStack_62c,0,0x104);
@@ -2162,7 +2162,7 @@ void run_game_startup_sequence()
   Ordinal_496(0x5dc);
   sVar2 = FUN_00041aac();
   if (sVar2 != 0) {
-    FUN_0003c3c8();
+    report_fatal_error_and_exit();
   }
   Ordinal_1047(acStack_62c,0,0x104);
   pcVar4 = pcVar6;
@@ -2176,11 +2176,11 @@ void run_game_startup_sequence()
   blit_fullscreen_bitmap_file(2,acStack_62c,1);
   sVar2 = init_cursor_subsystem();
   if (sVar2 < 0) {
-    FUN_0003c3c8(2);
+    report_fatal_error_and_exit(2);
   }
   sVar2 = FUN_00052674();
   if (sVar2 != 0) {
-    FUN_0003c3c8();
+    report_fatal_error_and_exit();
   }
   reset_texture_id_lists();
   FUN_0005b828();
@@ -2218,7 +2218,7 @@ void run_game_startup_sequence()
   Ordinal_164(auStack_214,auStack_41c,0);
   sVar2 = seed_conversation_globals_for_new_game();
   if (sVar2 != 0) {
-    FUN_0003c3c8();
+    report_fatal_error_and_exit();
   }
   FUN_00040df0();
   set_palette_bank(5);
@@ -2308,5 +2308,130 @@ void request_game_exit()
 
 {
   DAT_00201b6c = 0;
+  return;
+}
+
+
+// was FUN_0003c310 -- empty body (just returns), same no-op as its
+// split-symbol duplicate thunk_FUN_0003c310. Called from both fatal
+// and non-fatal error paths with and without an argument; plausibly a
+// disabled error/message-dialog display stub (Ordinal_1071, the real
+// message-box display referenced near report_fatal_error_and_exit below, is itself
+// unimplemented in this port) -- not confirmed via disassembly.
+void show_error_dialog_stub()
+
+{
+  return;
+}
+
+
+
+// was FUN_0003c318 -- logs a categorized error message: the error
+// code's top nibble selects one of 5 category strings (Low Memory,
+// EMS Memory, read-data, write-data, resource/internal), logged via
+// Ordinal_1102, then builds an "Error code XXXX" string (not actually
+// filled in with the real code digits here). Used by
+// report_categorized_fatal_error as a precursor to terminating.
+void log_categorized_error_message(param_1)
+short param_1;
+
+{
+  char *wptr_24610;
+  char cVar1;
+  ushort uVar2;
+  char *pcVar3;
+  char acStack_857f4 [546760];
+  char acStack_2c [40];
+
+  uVar2 = param_1 >> 0xc & 0xf;
+  if (uVar2 == 1) {
+    pcVar3 = s_Out_of_Low_Memory___000857dc;
+  }
+  else if (uVar2 == 2) {
+    pcVar3 = s_Out_of_EMS_Memory___000857f0;
+  }
+  else if (uVar2 == 3) {
+    pcVar3 = s_Could_not_read_data___00085804;
+  }
+  else if (uVar2 == 4) {
+    pcVar3 = s_Could_not_write_data___0008581c;
+  }
+  else {
+    pcVar3 = s_Resource_problem_or_internal_err_00085834;
+  }
+  Ordinal_1102(pcVar3);
+  pcVar3 = s_Error_code_XXXX___000857c8;
+    wptr_24610 = acStack_857f4;
+  do {
+    cVar1 = *pcVar3;
+    *wptr_24610 = cVar1; wptr_24610 = wptr_24610 + 1;
+    pcVar3 = pcVar3 + 1;
+  } while (cVar1 != '\0');
+  return;
+}
+
+
+
+// was FUN_0003c3b4 -- logs a categorized fatal error
+// (log_categorized_error_message) then terminates the process. Was
+// missing its own `short param_1` parameter entirely (Ghidra dropped
+// it from the function's own signature, not just a call site) --
+// every other known caller passes an error code (e.g. 0x1002, 0x2001,
+// 0x1007), confirming the real signature. Restored the parameter and
+// forwarded it to log_categorized_error_message, which was also
+// being called bare.
+void report_categorized_fatal_error(param_1)
+short param_1;
+
+{
+  log_categorized_error_message(param_1);
+  terminate_process(0xffffffff);
+  return;
+}
+
+
+
+// was FUN_0003c3c8 -- the general-purpose "fatal error" handler used
+// throughout this decompile: formats an "Underworld can no longer
+// run, Error XNNN" code string from param_1 (category letter + 3
+// octal digits), shows it via Ordinal_1071 (unimplemented in this
+// port, see the fprintf below), runs run_game_shutdown_sequence, and
+// terminates the process.
+void report_fatal_error_and_exit(param_1)
+ushort param_1;
+
+{
+  /* Ordinal_1071 (the real message-box display for this error) isn't
+     implemented, so this is currently the only visibility into which
+     fatal error actually fired -- kept as a permanent log line, not a
+     one-off diagnostic. */
+  fprintf(stderr, "[fatal] report_fatal_error_and_exit: error code 0x%x\n", param_1);
+  char *wptr_24645;
+  char cVar1;
+  undefined4 uVar2;
+  char *pcVar3;
+  char acStack_858b0 [546908];
+  char acStack_54 [42];
+  char local_2a;
+  char local_29;
+  char local_28;
+  char local_27;
+  
+  pcVar3 = s_Underworld_can_no_longer_run__Er_0008585c;
+    wptr_24645 = acStack_858b0;
+  do {
+    cVar1 = *pcVar3;
+    *wptr_24645 = cVar1; wptr_24645 = wptr_24645 + 1;
+    pcVar3 = pcVar3 + 1;
+  } while (cVar1 != '\0');
+  local_2a = ((byte)((short)param_1 >> 0xc) & 0xf) + 0x41;
+  param_1 = param_1 & 0xfff;
+  local_29 = ((byte)((short)param_1 >> 6) & 7) + 0x30;
+  local_28 = ((byte)((short)param_1 >> 3) & 7) + 0x30;
+  local_27 = ((byte)param_1 & 7) + 0x30;
+  uVar2 = Ordinal_1068(acStack_54);
+  Ordinal_1071(&DAT_00201b70,acStack_54,uVar2);
+  run_game_shutdown_sequence(0);
+  terminate_process(0xffffffe8);
   return;
 }

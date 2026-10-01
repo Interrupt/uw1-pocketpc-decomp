@@ -2688,8 +2688,7 @@ char s_Could_not_read_data___00085804[] = "Could_not_read_data.$";
 char s_Could_not_write_data___0008581c[] = "Could_not_write_data.$";
 char s_Resource_problem_or_internal_err_00085834[] = "Resource_problem_or_internal_err";
 char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld_can_no_longer_run._Er";
-static undefined DAT_00201b70_backing[8192];
-#define DAT_00201b70 DAT_00201b70_backing[0]
+undefined DAT_00201b70_backing[8192];
 ushort DAT_00202084;
 byte DAT_0020208c;
 short DAT_00085890;
@@ -5369,7 +5368,7 @@ unsigned int param_1;
      address" -- see their comments): a no-op stub returning 0 here
      failed the whole "opbtn" resource batch even though the underlying
      OPBTN.GR file loaded successfully, which was fatal
-     (FUN_0003c3c8(0x300d)) at this specific call site. */
+     (report_fatal_error_and_exit(0x300d)) at this specific call site. */
   return Ordinal_1041(param_1);
 }
 char s__DATA_OPSCR_BYT_00086efc[] = "\\DATA\\OPSCR.BYT";
@@ -9877,7 +9876,7 @@ undefined4 dungeon_view_anim_tick()
     if (DAT_00201b68 != DAT_00201c7c) {
       iVar1 = transition_to_level();
       if (iVar1 == 0) {
-        FUN_0003c3c8(0x300c);
+        report_fatal_error_and_exit(0x300c);
       }
       DAT_00201b68 = DAT_00201c7c;
     }
@@ -9909,102 +9908,6 @@ undefined4 dungeon_view_anim_tick()
 
 
 
-void FUN_0003c310()
-
-{
-  return;
-}
-
-
-
-void FUN_0003c318(param_1)
-short param_1;
-
-{
-  char *wptr_24610;
-  char cVar1;
-  ushort uVar2;
-  char *pcVar3;
-  char acStack_857f4 [546760];
-  char acStack_2c [40];
-  
-  uVar2 = param_1 >> 0xc & 0xf;
-  if (uVar2 == 1) {
-    pcVar3 = s_Out_of_Low_Memory___000857dc;
-  }
-  else if (uVar2 == 2) {
-    pcVar3 = s_Out_of_EMS_Memory___000857f0;
-  }
-  else if (uVar2 == 3) {
-    pcVar3 = s_Could_not_read_data___00085804;
-  }
-  else if (uVar2 == 4) {
-    pcVar3 = s_Could_not_write_data___0008581c;
-  }
-  else {
-    pcVar3 = s_Resource_problem_or_internal_err_00085834;
-  }
-  Ordinal_1102(pcVar3);
-  pcVar3 = s_Error_code_XXXX___000857c8;
-    wptr_24610 = acStack_857f4;
-  do {
-    cVar1 = *pcVar3;
-    *wptr_24610 = cVar1; wptr_24610 = wptr_24610 + 1;
-    pcVar3 = pcVar3 + 1;
-  } while (cVar1 != '\0');
-  return;
-}
-
-
-
-void FUN_0003c3b4()
-
-{
-  FUN_0003c318();
-  terminate_process(0xffffffff);
-  return;
-}
-
-
-
-void FUN_0003c3c8(param_1)
-ushort param_1;
-
-{
-  /* Ordinal_1071 (the real message-box display for this error) isn't
-     implemented, so this is currently the only visibility into which
-     fatal error actually fired -- kept as a permanent log line, not a
-     one-off diagnostic. */
-  fprintf(stderr, "[fatal] FUN_0003c3c8: error code 0x%x\n", param_1);
-  char *wptr_24645;
-  char cVar1;
-  undefined4 uVar2;
-  char *pcVar3;
-  char acStack_858b0 [546908];
-  char acStack_54 [42];
-  char local_2a;
-  char local_29;
-  char local_28;
-  char local_27;
-  
-  pcVar3 = s_Underworld_can_no_longer_run__Er_0008585c;
-    wptr_24645 = acStack_858b0;
-  do {
-    cVar1 = *pcVar3;
-    *wptr_24645 = cVar1; wptr_24645 = wptr_24645 + 1;
-    pcVar3 = pcVar3 + 1;
-  } while (cVar1 != '\0');
-  local_2a = ((byte)((short)param_1 >> 0xc) & 0xf) + 0x41;
-  param_1 = param_1 & 0xfff;
-  local_29 = ((byte)((short)param_1 >> 6) & 7) + 0x30;
-  local_28 = ((byte)((short)param_1 >> 3) & 7) + 0x30;
-  local_27 = ((byte)param_1 & 7) + 0x30;
-  uVar2 = Ordinal_1068(acStack_54);
-  Ordinal_1071(&DAT_00201b70,acStack_54,uVar2);
-  run_game_shutdown_sequence(0);
-  terminate_process(0xffffffe8);
-  return;
-}
 
 
 
@@ -10014,7 +9917,7 @@ char *param_1;
 {
   undefined4 uVar1;
 
-  /* See FUN_0003c3c8's identical fprintf -- Ordinal_1071 (the real
+  /* See report_fatal_error_and_exit's identical fprintf -- Ordinal_1071 (the real
      message-box display) isn't implemented, so this is the only
      visibility into which fatal message actually fired. param_1 here is
      the message text directly, not a numeric code. */
@@ -12437,7 +12340,7 @@ void input_bindings_init()
   DAT_00202890 = Ordinal_1041(0x12);
   DAT_0020289c = Ordinal_1041(0xc);
   if ((DAT_00202890 == 0) || (DAT_0020289c == 0)) {
-    FUN_0003c3b4(0x1003);
+    report_categorized_fatal_error(0x1003);
   }
   DAT_00202898 = 0;
   DAT_0020288c = 0;
@@ -12497,7 +12400,7 @@ void *param_7;   /* was undefined4 -- handler fn pointer; see g_click_region_han
      counter just above). */
   pvVar4 = Ordinal_1054(DAT_00202890,((iVar2 + 1) * 0x10000 >> 0x10) * 0x12);
   if (pvVar4 == 0) {
-    FUN_0003c3c8(0x1005);
+    report_fatal_error_and_exit(0x1005);
   }
   sVar1 = DAT_00202894;
   iVar3 = (char *)((char *)pvVar4 + DAT_00202898 * 0x12);
@@ -25893,7 +25796,7 @@ undefined4 * param_2;
 // see run_static_initializers), and finally jumped through a fixed
 // low ROM/trap address to hand control back to the OS. That jump was
 // the real point: it's called both at normal shutdown from entry()
-// and, critically, from fatal-error handlers like FUN_0003c3c8/
+// and, critically, from fatal-error handlers like report_fatal_error_and_exit/
 // FUN_0003c4a8 ("Underworld can no longer run...") that rely on it to
 // never return. A no-op here was wrong -- callers that hit a fatal
 // error kept running with broken state and looped back into the same

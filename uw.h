@@ -2360,6 +2360,15 @@ extern char *g_scheduler_table;
 #define DAT_0025077c g_scheduler_table[4]
 #define DAT_0025077d g_scheduler_table[5]
 extern char s__DATA_main_byt_000857a8[];
+extern char s_Error_code_XXXX___000857c8[];
+extern char s_Out_of_Low_Memory___000857dc[];
+extern char s_Out_of_EMS_Memory___000857f0[];
+extern char s_Could_not_read_data___00085804[];
+extern char s_Could_not_write_data___0008581c[];
+extern char s_Resource_problem_or_internal_err_00085834[];
+extern char s_Underworld_can_no_longer_run__Er_0008585c[];
+extern undefined DAT_00201b70_backing[8192];
+#define DAT_00201b70 DAT_00201b70_backing[0]
 extern char s_You_died_000857b8[];
 extern void (*const DAT_00085668_real_table[48])(void);
 #define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)
@@ -3052,10 +3061,10 @@ void enter_dungeon_view();
 void reset_player_for_resurrection();
 void handle_player_death_and_menu_transition();
 undefined4 dungeon_view_anim_tick();
-void FUN_0003c310();
-void FUN_0003c318();
-void FUN_0003c3b4();
-void FUN_0003c3c8();
+void show_error_dialog_stub();
+void log_categorized_error_message();
+void report_categorized_fatal_error();
+void report_fatal_error_and_exit();
 void FUN_0003c4a8();
 bool apply_swim_wade_pose();
 void set_locomotion_state();
