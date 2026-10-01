@@ -11327,88 +11327,6 @@ short param_1;
 
 
 
-void FUN_0004497c()
-
-{
-  ushort uVar1;
-  byte bVar2;
-  short *psVar3;
-  short sVar4;
-  short sVar5;
-  int iVar6;
-  /* Was two separately-declared locals, `ushort local_20[3]` immediately
-     followed by `undefined2 local_1a` -- Ghidra's own offset naming
-     (-0x20, then -0x1a, exactly 6 bytes later) confirms the real ARM
-     stack frame packs them contiguously, and the real code below relies
-     on that: dispatch_object_action_dup reads its param_1[3] (the
-     synthetic "look" object's owner field) as the 4th ushort of what
-     it's handed, but only 3 are ever declared, and local_1a (explicitly
-     zeroed, the very next line) is what's meant to BE that 4th slot.
-     C gives no such adjacency guarantee on this host -- confirmed live:
-     local_20[3] read real stack garbage that happened to decode to a
-     "headless" creature's owner-name index, so right-clicking a rune in
-     this alphabet grid printed "belonging to a headless" instead of
-     just the rune's name. Backing array + #define, same pattern used
-     throughout this file for exactly this class of bug. */
-  undefined1 local_20_backing[8];
-#define local_20 ((ushort *)(local_20_backing + 0))
-#define local_1a (*(undefined2 *)(local_20_backing + 6))
-
-  psVar3 = DAT_00085a6c;
-  if (g_cursor_holding_state == 0) {
-    if (DAT_00085a6c[1] < 0x12) {
-      reset_ready_rune_slots();
-    }
-    else {
-      sVar4 = Ordinal_2005(0xf,DAT_00085a6c[1] + -0x12);
-      sVar5 = Ordinal_2005(0x12,*psVar3 + -3);
-      iVar6 = (5 - sVar4) * 4 + (int)sVar5;
-      if ((*(byte *)(DAT_00086df8 + (iVar6 * 0x10000 >> 0x13) + 0x44) >>
-           (7 - (iVar6 * 0x10000 >> 0x10 & 7U) & 0xff) & 1) != 0) {
-        if ((psVar3[3] & 2U) == 0) {
-          if (DAT_002028d0 != 0) {
-            reset_ready_rune_slots();
-          }
-          DAT_002028d0 = 0;
-          if ((*(byte *)(DAT_00086df8 + 0x60) & 0xc) == 0xc) {
-            *(undefined1 *)(DAT_00086df8 + 0x47) = *(undefined1 *)(DAT_00086df8 + 0x48);
-            *(undefined1 *)(DAT_00086df8 + 0x48) = *(undefined1 *)(DAT_00086df8 + 0x49);
-            uVar1 = *(ushort *)(DAT_00086df8 + 0x5f);
-            bVar2 = (byte)(uVar1 >> 8);
-            *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
-            *(byte *)(DAT_00086df8 + 0x60) =
-                 ((byte)((uVar1 & 0xfc00) - 1 >> 8) ^ bVar2) & 0xc ^ bVar2;
-          }
-          *(char *)((*(byte *)(DAT_00086df8 + 0x60) >> 2 & 3) + DAT_00086df8 + 0x47) = (char)iVar6;
-          uVar1 = *(ushort *)(DAT_00086df8 + 0x5f);
-          bVar2 = (byte)(uVar1 >> 8);
-          *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
-          *(byte *)(DAT_00086df8 + 0x60) =
-               ((byte)((uVar1 & 0xfc00) + 0x400 >> 8) ^ bVar2) & 0xc ^ bVar2;
-          update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
-        }
-        else {
-          local_20[0] = ((short)iVar6 + 0xe8U ^ local_20[0]) & 0x1ff ^ local_20[0];
-          local_1a = 0;
-          dispatch_object_action_dup(local_20,0);
-        }
-      }
-    }
-    wait_for_click_release(1);
-  }
-  return;
-}
-#undef local_20
-#undef local_1a
-
-
-
-void FUN_00044bcc()
-
-{
-  message_scroll_print_wrapped(s_Not_a_spell_00085a80);
-  return;
-}
 
 
 
@@ -11477,7 +11395,7 @@ short param_1;
           iVar1 = (iVar1 + 1) * 0x1000000 >> 0x18;
         } while (iVar1 < 0x30);
         if ((char)iVar1 == '0') {
-          FUN_00044bcc();
+          print_not_a_spell_message();
         }
         else {
           FUN_00044e9c();

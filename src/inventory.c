@@ -78,7 +78,7 @@ void inventory_panel_click_region()
     handle_inventory_panel_normal_click();
   }
   else if (g_active_hud_panel == '\x01') {
-    FUN_0004497c();
+    handle_rune_bag_click();
   }
   else if (g_active_hud_panel == '\x02') {
     handle_stats_panel_skill_scroll_click();
