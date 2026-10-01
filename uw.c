@@ -2993,15 +2993,15 @@ int DAT_0023b83c;
    object, freed each frame by free_frame_geometry_buffers. Ghidra typed it
    `undefined4` (4 bytes), truncating the 64-bit Ordinal_1041 pointer -- the
    memcpy into it (Ordinal_1044) would fault. Widened to a real pointer
-   array; only FUN_00040770, free_frame_geometry_buffers and app_main_loop's
+   array; only decode_tile_object_billboard_texture, free_frame_geometry_buffers and app_main_loop's
    startup zero-fill touch it. */
 void *DAT_0023c7a0_arr[0x140];
 #define DAT_0023c7a0 DAT_0023c7a0_arr[0]
 undefined1 DAT_0023ce71;
 /* struct-recovery-plan.md's "DAT_0024e090 pointer table" candidate:
    a large table of glyph/resource-pointer slots indexed by font/char/
-   frame id (see FUN_000408fc and its populators uw_register_gr_entry/
-   FUN_00041708/FUN_00041770, read back by FUN_000408fc/
+   frame id (see lookup_grtile_by_id and its populators uw_register_gr_entry/
+   FUN_00041708/FUN_00041770, read back by lookup_grtile_by_id/
    blit_object_sprite_by_frame/sprite_list_flush_blit_raw). Was a raw byte buffer
    (DAT_0024e090_backing[524288]) with every access site manually
    computing `&DAT_0024e090 + slot*8` and casting to a pointer type --
@@ -3066,7 +3066,7 @@ unsigned int param_1;
 /* load_gr_resource_entries's post-process callback: (decoded_buffer, byte_size,
    entry_index). Ghidra lost the real body (indirect-jump target); the old
    no-op stub read every .GR file but never REGISTERED the loaded buffers,
-   so FUN_000408fc's g_grtile_registry[] pointer table stayed empty for every
+   so lookup_grtile_by_id's g_grtile_registry[] pointer table stayed empty for every
    resource loaded through here (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/
    3DWIN/OBJECTS/TMFLAT/TMOBJ). Only FUN_00041708 (flasks/compass/...) was
    a real registrar. Register the buffer the same way FUN_00041708 does:
@@ -10666,118 +10666,6 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
 
 
 
-/* param_1 = object sprite id, param_2 = shade -- both were dropped by
-   Ghidra at the emit_tile_objects call site AND on the resolve_sprite_id_to_frame /
-   FUN_000408fc calls below, so the sprite loader ran with a garbage id
-   and FUN_000408fc handed back its zeroed dummy glyph -> every object
-   billboard decoded to a 0x0 texture (invisible). Forward the id, and
-   resolve it through resolve_sprite_id_to_frame the way draw_sprite_by_id does. */
-undefined4 FUN_00040770(param_1,param_2)
-short param_1;
-uint param_2;
-
-{
-  byte bVar1;
-  byte bVar2;
-  char *pcVar3;
-  void *buf;
-  int iVar5;
-  int resolved;
-
-  (void)param_2;
-  if (param_1 < 0) {
-    /* Escape hatch: a negative param_1 names an ABSOLUTE frame directly
-       (-param_1), bypassing resolve_sprite_id_to_frame's id-range resolution entirely.
-       Needed for TMOBJ signs (emit_tile_objects's class-2 branch):
-       resolve_sprite_id_to_frame's ">= 0x2000 -> DAT_00202738 + id - 0x2000" TMOBJ
-       convention assumes DAT_00202738 is TMOBJ's own starting base, but
-       it's actually snapshotted right AFTER TMOBJ's own
-       FUN_00041910(s_tmobj) call finishes -- confirmed by instrumenting
-       the loader directly (DAT_00202744 went 643 -> 681 across that one
-       call, so TMOBJ's real 38 frames are absolute 643-680, and
-       DAT_00202738=681 is the NEXT resource's base). No non-negative
-       encoding through resolve_sprite_id_to_frame's existing branches can reach frames
-       *before* DAT_00202738, so bypass it here instead of reworking the
-       shared id convention every other caller (OBJECTS/ANIMO ids) relies
-       on. */
-    resolved = -(int)param_1;
-  } else {
-    resolved = resolve_sprite_id_to_frame(param_1);
-  }
-  pcVar3 = (char *)FUN_000408fc(resolved);
-  bVar1 = pcVar3[1];
-  bVar2 = pcVar3[2];
-  if (getenv("UW_DEBUG_THROW") && param_1 == 0x80)
-    fprintf(stderr, "[throw-sprite] param_1(type)=0x%x resolved_frame=%d w=%d h=%d compressed_flag=%d\n",
-            (unsigned)param_1, resolved, (int)bVar1, (int)bVar2, (int)*pcVar3);
-  if (*pcVar3 == '\x04') {
-    pcVar3 = pcVar3 + 5;
-  }
-  else {
-    /* Ghidra dropped decompress_gr_bitmap's 3rd arg, the .GR entry's compression
-       mode (*pcVar3 -- 6/8/0xa RLE variants). Without it the decoder took
-       its param_3==0 path and produced an all-zero (fully transparent)
-       bitmap, so every object billboard sampled nothing. */
-    pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,
-                                  *pcVar3);
-  }
-  iVar5 = (int)(short)(ushort)bVar2 * (int)(short)(ushort)bVar1;
-  /* decode this object's sprite into a fresh per-record buffer (keep the
-     full 64-bit pointer -- Ordinal_1041's result was truncated through the
-     `undefined4` DAT_0023c7a0). */
-  buf = Ordinal_1041(iVar5);
-  (&DAT_0023c7a0)[DAT_0023b83c] = buf;
-  Ordinal_1047(buf,0,iVar5);
-  Ordinal_1044(buf,pcVar3,iVar5);
-  DAT_002022fc = (int)(intptr_t)buf;
-  DAT_00202508 = (ushort)bVar1;
-  DAT_002022f8 = (ushort)bVar2;
-  /* render_visible_tile_list reads each record's texture from the
-     g_tile_texptr_out[] side channel (the in-record field is 4 bytes and
-     truncates on 64-bit). process_visible_tile_cell writes
-     g_tile_texptr_emit[DAT_0023b83c] for tiles; do the same for this
-     object record so its billboard gets its sprite instead of a stale
-     tile texture. DAT_0023b83c here is the object's own record index. */
-  if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) {
-    g_tile_texptr_emit[DAT_0023b83c] = buf;
-  }
-  return 1;
-}
-
-
-
-void *FUN_000408fc(param_1)
-short param_1;
-
-{
-  /* Glyph/font-resource-by-id lookup (g_grtile_registry is indexed by
-     param_1). Several callers (FUN_00040770, FUN_00057dc0, etc.) call
-     this with the argument dropped by Ghidra at their call site and then
-     dereference the result unconditionally, so returning a real NULL for
-     the param_1==0 case -- which is otherwise correct -- crashes them.
-     Fall back to a small zeroed dummy glyph buffer instead of NULL.
-     Return type widened from undefined4 to void* so the pointer this
-     hands back doesn't get truncated on a 64-bit host. */
-  static undefined1 dummy_glyph[16];
-  void *uVar1;
-
-  if (param_1 == 0) {
-    uVar1 = dummy_glyph;
-  }
-  else {
-    /* Fixed: g_grtile_registry is a real pointer array (see its
-       declaration comment); this used to be a 4-byte truncated read. */
-    uVar1 = g_grtile_registry[param_1];
-    if (uVar1 == 0) {
-      /* Table slot never populated (the resource that would have filled
-         it, e.g. a missing/failed auxiliary .SYS load) -- same safe
-         fallback as param_1==0 rather than handing callers a NULL they
-         don't check. */
-      uVar1 = dummy_glyph;
-    }
-  }
-  return uVar1;
-}
 
 
 
@@ -10830,7 +10718,7 @@ undefined4 param_3;
   uint resolved;
 
   /* Dropped arguments (2 calls) -- same idiom as the identical
-     `resolved = resolve_sprite_id_to_frame(param_1); FUN_000408fc(resolved);` pair
+     `resolved = resolve_sprite_id_to_frame(param_1); lookup_grtile_by_id(resolved);` pair
      used correctly elsewhere in this file (see e.g. the call site
      right above this function). Both calls here ran bare, so the
      resolved icon graphic came from whatever register happened to be
@@ -10843,7 +10731,7 @@ undefined4 param_3;
      produced a real 2-frame-period flicker in exactly that HUD icon
      area during a held wind-up. */
   resolved = resolve_sprite_id_to_frame(param_1);
-  pcVar3 = (char *)FUN_000408fc(resolved);
+  pcVar3 = (char *)lookup_grtile_by_id(resolved);
   cVar1 = pcVar3[1];
   cVar2 = pcVar3[2];
   if (*pcVar3 == '\x04') {
@@ -11582,7 +11470,7 @@ undefined4 FUN_00041aac()
        base -- confirmed by instrumenting this exact spot (DAT_00202744
        went 643 -> 681 across the FUN_00041910 call below), so TMOBJ's
        real 38 frames are absolute indices 643-680. See
-       emit_tile_objects's class-2 sign branch and FUN_00040770's
+       emit_tile_objects's class-2 sign branch and decode_tile_object_billboard_texture's
        negative-param_1 comment for where this matters. */
     uVar13 = FUN_00041910(s_tmobj_00085a04);
     DAT_00202738 = DAT_00202744;
@@ -21062,7 +20950,7 @@ ushort * param_1;
 // was FUN_0005578c -- finalize an object record's placement at tile
 // (param_2,param_3): recomputes its render/collision height from the
 // low 7 bits of its own offset 2-3 field (the same "height_field =
-// (raw&0x7f)<<3" formula emit_tile_objects and FUN_00040770 both use),
+// (raw&0x7f)<<3" formula emit_tile_objects and decode_tile_object_billboard_texture both use),
 // caching it into offsets 0xb-0x12 alongside the tile sub-position, and
 // sets a handful of per-object flag bytes (0x13/0x14/0x16-0x18). Called
 // by both spawn_object_near_player and reallocate_object_to_arena
@@ -22671,20 +22559,20 @@ void FUN_00057dc0(param_1)
 undefined4 param_1;
 
 {
-  /* FUN_000408fc's argument is dropped by Ghidra at this call site;
+  /* lookup_grtile_by_id's argument is dropped by Ghidra at this call site;
      forwarding param_1 matches the resolve_sprite_id_to_frame(param_1) call right
-     above it and FUN_000408fc's own g_grtile_registry-indexed-by-id shape. */
+     above it and lookup_grtile_by_id's own g_grtile_registry-indexed-by-id shape. */
   char *iVar1;
 
   FUN_00056fe8();
   resolve_sprite_id_to_frame(param_1);
-  /* Was unconditional `iVar1 = FUN_000408fc(param_1);` -- FUN_000408fc
+  /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id
      only covers ids below DAT_00202738 (the "still-compressed .GR
      resource entry, needs decoding" range); ids at or above it are
      already-resident raw sprites living directly in g_grtile_registry's own
      table (see blit_object_sprite_by_frame's own identical branch,
      which this function was missing). For those higher ids
-     FUN_000408fc's own table lookup misses (a *different* resource's
+     lookup_grtile_by_id's own table lookup misses (a *different* resource's
      entries live there) and falls back to its zeroed dummy glyph,
      silently handing back width=height=0 here. First found while
      chasing a user report of several items (a map, a bag, apple,
@@ -22699,7 +22587,7 @@ undefined4 param_1;
      already-correct behavior, for whatever legitimately-high-id items
      do reach here. */
   iVar1 = (int)(short)param_1 < (int)(uint)DAT_00202738 ?
-          FUN_000408fc(param_1) : (char *)g_grtile_registry[(int)(short)param_1];
+          lookup_grtile_by_id(param_1) : (char *)g_grtile_registry[(int)(short)param_1];
   if (iVar1 == (char *)0x0) {
     /* Same "table slot never populated" fallback as
        blit_object_sprite_by_frame's own identical guard. */
@@ -24321,7 +24209,7 @@ LAB_emit_mesh_sprite_quad:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0x7f8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    FUN_00040770(uVar27,(uint)DAT_0023bc88 * (int)DAT_00086b30);
+    decode_tile_object_billboard_texture(uVar27,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     /* DAT_000d9ed8/DAT_000d9930[angle] = sin/cos(angle degrees) (see
        build_trig_tables). Normally angle = DAT_000db44c, the CAMERA's yaw,
        which is what makes this quad extend along the camera's own

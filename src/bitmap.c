@@ -236,7 +236,7 @@ undefined4 param_3;
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] blit_object_sprite_by_frame: resolved_frame=%d DAT_00202738=%d slot_ptr=%p branch=%s\n",
             (int)param_1, (int)(uint)DAT_00202738, (void *)iVar4,
-            (int)param_1 < (int)(uint)DAT_00202738 ? "registered-resource(FUN_000408fc)" : "absolute-frame-table(g_grtile_registry)");
+            (int)param_1 < (int)(uint)DAT_00202738 ? "registered-resource(lookup_grtile_by_id)" : "absolute-frame-table(g_grtile_registry)");
   if (iVar4 == (char *)0x0) {
     /* Table slot never populated. This used to be caused by 4 .GR
        resource names in the preload sequence around SCRLEDGE.GR
@@ -247,13 +247,13 @@ undefined4 param_3;
        in load_gr_resource_entries). Kept as a defensive fallback for
        any other still-unpopulated slot: draw nothing rather than
        dereferencing NULL and taking the game down mid-message. Same
-       safe-fallback shape as FUN_000408fc. */
+       safe-fallback shape as lookup_grtile_by_id. */
     static char dummy_sprite[8];
     iVar4 = dummy_sprite;
   }
   if ((int)param_1 < (int)(uint)DAT_00202738) {
     /* argument dropped by Ghidra here; param_1 matches the lookup right above */
-    pcVar3 = (char *)FUN_000408fc(param_1);
+    pcVar3 = (char *)lookup_grtile_by_id(param_1);
     if (pcVar3 != (char *)0x0) {
       cVar1 = pcVar3[1];
       cVar2 = pcVar3[2];
@@ -266,12 +266,12 @@ undefined4 param_3;
       }
       else {
         /* Same dropped 3rd argument (the .GR entry's compression mode,
-           6/8/0xa) already root-caused and fixed in FUN_00040770's
+           6/8/0xa) already root-caused and fixed in decode_tile_object_billboard_texture's
            identical call (see object-rendering-findings.txt's
            "MILESTONE: objects render" section) -- without it,
            decompress_gr_bitmap takes its param_3==0 path, which for this call
            site returns NULL instead of an all-transparent buffer
-           (unlike FUN_00040770's case), and the caller here has no
+           (unlike decode_tile_object_billboard_texture's case), and the caller here has no
            NULL-guard on the result -- confirmed live: picking up the
            starting sack and calling attach_picked_up_object_to_cursor to attach it to the
            cursor crashed here with a NULL source pointer reaching
@@ -891,3 +891,119 @@ undefined4 param_2;
   return uVar1;
 }
 
+
+
+/* param_1 = object sprite id, param_2 = shade -- both were dropped by
+   Ghidra at the emit_tile_objects call site AND on the resolve_sprite_id_to_frame /
+   lookup_grtile_by_id calls below, so the sprite loader ran with a garbage id
+   and lookup_grtile_by_id handed back its zeroed dummy glyph -> every object
+   billboard decoded to a 0x0 texture (invisible). Forward the id, and
+   resolve it through resolve_sprite_id_to_frame the way draw_sprite_by_id does. */
+// was FUN_00040770
+undefined4 decode_tile_object_billboard_texture(param_1,param_2)
+short param_1;
+uint param_2;
+
+{
+  byte bVar1;
+  byte bVar2;
+  char *pcVar3;
+  void *buf;
+  int iVar5;
+  int resolved;
+
+  (void)param_2;
+  if (param_1 < 0) {
+    /* Escape hatch: a negative param_1 names an ABSOLUTE frame directly
+       (-param_1), bypassing resolve_sprite_id_to_frame's id-range resolution entirely.
+       Needed for TMOBJ signs (emit_tile_objects's class-2 branch):
+       resolve_sprite_id_to_frame's ">= 0x2000 -> DAT_00202738 + id - 0x2000" TMOBJ
+       convention assumes DAT_00202738 is TMOBJ's own starting base, but
+       it's actually snapshotted right AFTER TMOBJ's own
+       FUN_00041910(s_tmobj) call finishes -- confirmed by instrumenting
+       the loader directly (DAT_00202744 went 643 -> 681 across that one
+       call, so TMOBJ's real 38 frames are absolute 643-680, and
+       DAT_00202738=681 is the NEXT resource's base). No non-negative
+       encoding through resolve_sprite_id_to_frame's existing branches can reach frames
+       *before* DAT_00202738, so bypass it here instead of reworking the
+       shared id convention every other caller (OBJECTS/ANIMO ids) relies
+       on. */
+    resolved = -(int)param_1;
+  } else {
+    resolved = resolve_sprite_id_to_frame(param_1);
+  }
+  pcVar3 = (char *)lookup_grtile_by_id(resolved);
+  bVar1 = pcVar3[1];
+  bVar2 = pcVar3[2];
+  if (getenv("UW_DEBUG_THROW") && param_1 == 0x80)
+    fprintf(stderr, "[throw-sprite] param_1(type)=0x%x resolved_frame=%d w=%d h=%d compressed_flag=%d\n",
+            (unsigned)param_1, resolved, (int)bVar1, (int)bVar2, (int)*pcVar3);
+  if (*pcVar3 == '\x04') {
+    pcVar3 = pcVar3 + 5;
+  }
+  else {
+    /* Ghidra dropped decompress_gr_bitmap's 3rd arg, the .GR entry's compression
+       mode (*pcVar3 -- 6/8/0xa RLE variants). Without it the decoder took
+       its param_3==0 path and produced an all-zero (fully transparent)
+       bitmap, so every object billboard sampled nothing. */
+    pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,
+                                  *pcVar3);
+  }
+  iVar5 = (int)(short)(ushort)bVar2 * (int)(short)(ushort)bVar1;
+  /* decode this object's sprite into a fresh per-record buffer (keep the
+     full 64-bit pointer -- Ordinal_1041's result was truncated through the
+     `undefined4` DAT_0023c7a0). */
+  buf = Ordinal_1041(iVar5);
+  (&DAT_0023c7a0)[DAT_0023b83c] = buf;
+  Ordinal_1047(buf,0,iVar5);
+  Ordinal_1044(buf,pcVar3,iVar5);
+  DAT_002022fc = (int)(intptr_t)buf;
+  DAT_00202508 = (ushort)bVar1;
+  DAT_002022f8 = (ushort)bVar2;
+  /* render_visible_tile_list reads each record's texture from the
+     g_tile_texptr_out[] side channel (the in-record field is 4 bytes and
+     truncates on 64-bit). process_visible_tile_cell writes
+     g_tile_texptr_emit[DAT_0023b83c] for tiles; do the same for this
+     object record so its billboard gets its sprite instead of a stale
+     tile texture. DAT_0023b83c here is the object's own record index. */
+  if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) {
+    g_tile_texptr_emit[DAT_0023b83c] = buf;
+  }
+  return 1;
+}
+
+
+
+// was FUN_000408fc
+void *lookup_grtile_by_id(param_1)
+short param_1;
+
+{
+  /* Glyph/font-resource-by-id lookup (g_grtile_registry is indexed by
+     param_1). Several callers (decode_tile_object_billboard_texture, FUN_00057dc0, etc.) call
+     this with the argument dropped by Ghidra at their call site and then
+     dereference the result unconditionally, so returning a real NULL for
+     the param_1==0 case -- which is otherwise correct -- crashes them.
+     Fall back to a small zeroed dummy glyph buffer instead of NULL.
+     Return type widened from undefined4 to void* so the pointer this
+     hands back doesn't get truncated on a 64-bit host. */
+  static undefined1 dummy_glyph[16];
+  void *uVar1;
+
+  if (param_1 == 0) {
+    uVar1 = dummy_glyph;
+  }
+  else {
+    /* Fixed: g_grtile_registry is a real pointer array (see its
+       declaration comment); this used to be a 4-byte truncated read. */
+    uVar1 = g_grtile_registry[param_1];
+    if (uVar1 == 0) {
+      /* Table slot never populated (the resource that would have filled
+         it, e.g. a missing/failed auxiliary .SYS load) -- same safe
+         fallback as param_1==0 rather than handing callers a NULL they
+         don't check. */
+      uVar1 = dummy_glyph;
+    }
+  }
+  return uVar1;
+}

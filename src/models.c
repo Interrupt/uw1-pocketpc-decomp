@@ -480,7 +480,7 @@ short frame_or_texid;
     texptr = (byte *)0x0;
   }
   else if (local_58 == (byte *)0x0) {
-    pcVar15 = (char *)FUN_000408fc(iVar29);
+    pcVar15 = (char *)lookup_grtile_by_id(iVar29);
     tex_w = (ushort)(byte)pcVar15[1];
     tex_h = (ushort)(byte)pcVar15[2];
     if (*pcVar15 == '\x04') {

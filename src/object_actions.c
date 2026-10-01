@@ -204,7 +204,7 @@ short param_5;
        from emit_tile_objects's class-1 branch via resolve_critter_sprite_tier, one
        specific door ~17 tiles from spawn). Same "graceful skip instead
        of crash" treatment already used for other missing/unregistered
-       resources this session (FUN_000408fc, blit_object_sprite_by_frame) -- return the
+       resources this session (lookup_grtile_by_id, blit_object_sprite_by_frame) -- return the
        shared dummy_glyph-shaped sentinel instead of taking the whole
        game down over one unavailable page file. */
     static undefined1 dummy_page[8];

@@ -181,7 +181,7 @@ void load_door_frames()
   do {
     /* Was passed `0` for the post-process/registration callback (param_5)
        -- with no registrar, even a successful allocate+read never stores
-       the decoded buffer into FUN_000408fc's DAT_0024e090[] pointer
+       the decoded buffer into lookup_grtile_by_id's DAT_0024e090[] pointer
        table, so every door frame stayed permanently unresolved (0x0
        width/height, drawing nothing). LAB_000415d0 (FUN_00041910/
        QUESTION-VIEWS-etc.'s own registrar) already does exactly what's
@@ -1361,7 +1361,7 @@ short param_7;
 // RLE decode paths, several confirmed live via real .GR data during
 // that investigation -- e.g. mode 8's RLE fill through
 // decode_gr_rle_stream). Two confirmed real callers (decode_gr_entry_bitmap
-// and FUN_00040770) each independently had this exact "dropped
+// and decode_tile_object_billboard_texture) each independently had this exact "dropped
 // compression-mode argument" bug found and fixed in an earlier
 // session (see decode_gr_entry_bitmap's own HACK comment and
 // object-rendering-findings.txt's "MILESTONE: objects render" entry).
