@@ -274,7 +274,7 @@ undefined4 param_1;
   else {
     sVar1 = load_level_object_table(auStack_1c,param_1);
     iVar2 = (int)sVar1;
-    FUN_00044624(0);
+    load_player_save_record(0);
     if (0 < iVar2) {
       load_level_texture_ids(auStack_1c,param_1);
       clear_automap_reveal_buffer();

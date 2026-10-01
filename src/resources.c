@@ -1939,7 +1939,7 @@ short param_3;
      Save or Load. The existing 888-byte allocation there came from an
      unrelated resource loaded into this same slot at startup
      (app_main_loop's initial preload); the save/load menu's own level
-     reload (FUN_00044624 -> FUN_0004638c -> ... -> here) later reuses
+     reload (load_player_save_record -> FUN_0004638c -> ... -> here) later reuses
      the slot for a bigger (2484-byte) one, overflowing it. Rather than
      assume the existing allocation is still big enough, allocate a
      fresh one sized for THIS write (same sizing register_grtile_entry uses for

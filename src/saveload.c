@@ -236,7 +236,7 @@ undefined4 journey_onward_load_slot_menu()
       uVar5 = 0xffffffff;
     }
     else {
-      FUN_00044624(&DAT_000857a0);
+      load_player_save_record(&DAT_000857a0);
       /* DAT_00201b68 (current level) isn't meaningfully set yet at a
          fresh title screen with no dungeon loaded -- unlike
          load_game_from_slot's own use of it, which only ever runs mid-game.
@@ -484,7 +484,7 @@ char param_1;
          WORLD", "ORLD" being the un-overwritten remainder). Load has no
          business rewriting the slot's description at all -- removed. */
       reset_player_for_resurrection();
-      iVar4 = FUN_00044624(&DAT_000857a0);
+      iVar4 = load_player_save_record(&DAT_000857a0);
       if (iVar4 != 0) {
         print_scroll_message_by_id(0xaa);
         sVar2 = load_level((int)DAT_00201b68);
@@ -1177,7 +1177,7 @@ undefined4 param_1;
     uVar3 = 0;
   }
 LAB_0006bdbc:
-  FUN_00044624(0);
+  load_player_save_record(0);
   return uVar3;
 }
 
@@ -1512,4 +1512,79 @@ undefined4 check_can_load_game()
     FUN_00057cac(0);
   }
   return 1;
+}
+
+
+// was FUN_00044624 -- dual-purpose player-save loader: given a real
+// path (load_game_from_slot passes &DAT_000857a0, the chosen slot's
+// directory), opens that slot's player.dat, reads the player status
+// block and save-record buffer from it, then restores the live player
+// state via restore_player_save_record; given 0/NULL (src/level.c,
+// src/saveload.c's own level-reload path), skips the file read
+// entirely and just re-applies whatever's already sitting in
+// g_save_record_buffer -- a "refresh from the current in-memory save
+// state" mode used for same-session level reloads rather than an
+// actual slot load.
+undefined4 load_player_save_record(param_1)
+char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
+                   load_game_from_slot passes in (the save-slot-copy path), which
+                   only started actually running once the save-directory-
+                   creation fixes above stopped it from bailing out
+                   earlier. Every other call site passes 0/NULL, so this
+                   was latent until now. */
+
+{
+  char stack0xffdc3234_buf [256];
+  char *stack0xffdc3234_ptr;
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  undefined4 uVar4;
+  char acStack_124 [260];
+  
+  uVar4 = 1;
+  if ((param_1 != 0) && (-1 < DAT_00202080)) {
+    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
+  }
+  close_panels_before_level_change();
+  if ((g_save_record_buffer == 0) && (g_save_record_buffer = Ordinal_1041(0x4000), g_save_record_buffer == 0)) {
+    return 0;
+  }
+  if (param_1 != 0) {
+    pcVar2 = &DAT_0023cca8;
+    stack0xffdc3234_ptr = acStack_124;
+    do {
+      cVar1 = *pcVar2;
+      *stack0xffdc3234_ptr = cVar1; stack0xffdc3234_ptr = stack0xffdc3234_ptr + 1;
+      pcVar2 = pcVar2 + 1;
+    } while (cVar1 != '\0');
+    Ordinal_1063(acStack_124,param_1);
+    Ordinal_1063(acStack_124,s_player_dat_00085a74);
+    iVar3 = open_file_for_read(acStack_124);
+    if (iVar3 == -1) {
+      uVar4 = 0;
+      goto LAB_00044730;
+    }
+    /* BUG FIX: was `read_player_status_block()` with no arguments,
+       relying on leftover register state -- iVar3 (the file handle,
+       used the very next line) is the value that belongs here,
+       matching read_player_status_block's own param_1 role (same
+       dropped-argument bug class documented throughout this project). */
+    read_player_status_block(iVar3);
+    read_file_handle(iVar3,&g_save_record_count,2);
+    read_file_handle(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
+    Ordinal_553(iVar3);
+    FUN_0004638c();
+  }
+  restore_player_save_record(g_save_record_buffer);
+  refresh_player_equipment_effects();
+LAB_00044730:
+  if (g_save_record_buffer != 0) {
+    Ordinal_1018();
+    g_save_record_buffer = 0;
+  }
+  if ((param_1 != 0) && (-1 < DAT_00202080)) {
+    object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
+  }
+  return uVar4;
 }

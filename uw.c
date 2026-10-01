@@ -2580,7 +2580,7 @@ short DAT_00201b64;
    container open" resting state. Every genuine reset in this file
    (FUN_0003bcd8, probe_save_slots's caller, journey_onward_load_slot_menu's
    own setup) explicitly sets this to 0xffff/-1, and every reader treats
-   it as signed (`-1 < DAT_00202080` gates FUN_00044624's
+   it as signed (`-1 < DAT_00202080` gates load_player_save_record's
    object_list_unlink call below) -- 0 reads as "container slot 0 is
    open", spuriously unlinking g_player_object from a wild address
    computed off a container that was never really open. Confirmed live:
@@ -3712,7 +3712,7 @@ undefined1 *g_save_record_base_ptr;
 char *g_save_record_buffer;
 /* Was missing its leading backslash -- both call sites append this
    straight onto a directory path built with no trailing separator (e.g.
-   FUN_00044624 builds "<root>\SAVE0" then appends this), so the file name
+   load_player_save_record builds "<root>\SAVE0" then appends this), so the file name
    ran into the directory name with nothing between them
    ("...\SAVE0player.dat"). A leading "\\" here is harmless even for a
    caller whose own prefix already ends in one (resolve_path collapses
@@ -11318,69 +11318,6 @@ short param_1;
 
 
 
-undefined4 FUN_00044624(param_1)
-char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
-                   load_game_from_slot passes in (the save-slot-copy path), which
-                   only started actually running once the save-directory-
-                   creation fixes above stopped it from bailing out
-                   earlier. Every other call site passes 0/NULL, so this
-                   was latent until now. */
-
-{
-  char stack0xffdc3234_buf [256];
-  char *stack0xffdc3234_ptr;
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  undefined4 uVar4;
-  char acStack_124 [260];
-  
-  uVar4 = 1;
-  if ((param_1 != 0) && (-1 < DAT_00202080)) {
-    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
-  }
-  close_panels_before_level_change();
-  if ((g_save_record_buffer == 0) && (g_save_record_buffer = Ordinal_1041(0x4000), g_save_record_buffer == 0)) {
-    return 0;
-  }
-  if (param_1 != 0) {
-    pcVar2 = &DAT_0023cca8;
-    stack0xffdc3234_ptr = acStack_124;
-    do {
-      cVar1 = *pcVar2;
-      *stack0xffdc3234_ptr = cVar1; stack0xffdc3234_ptr = stack0xffdc3234_ptr + 1;
-      pcVar2 = pcVar2 + 1;
-    } while (cVar1 != '\0');
-    Ordinal_1063(acStack_124,param_1);
-    Ordinal_1063(acStack_124,s_player_dat_00085a74);
-    iVar3 = open_file_for_read(acStack_124);
-    if (iVar3 == -1) {
-      uVar4 = 0;
-      goto LAB_00044730;
-    }
-    /* BUG FIX: was `read_player_status_block()` with no arguments,
-       relying on leftover register state -- iVar3 (the file handle,
-       used the very next line) is the value that belongs here,
-       matching read_player_status_block's own param_1 role (same
-       dropped-argument bug class documented throughout this project). */
-    read_player_status_block(iVar3);
-    read_file_handle(iVar3,&g_save_record_count,2);
-    read_file_handle(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
-    Ordinal_553(iVar3);
-    FUN_0004638c();
-  }
-  restore_player_save_record(g_save_record_buffer);
-  refresh_player_equipment_effects();
-LAB_00044730:
-  if (g_save_record_buffer != 0) {
-    Ordinal_1018();
-    g_save_record_buffer = 0;
-  }
-  if ((param_1 != 0) && (-1 < DAT_00202080)) {
-    object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
-  }
-  return uVar4;
-}
 
 
 

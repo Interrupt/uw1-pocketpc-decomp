@@ -3260,7 +3260,7 @@ void decode_equipped_item_index();
 void deserialize_inventory_link_chain();
 void free_player_inventory_chain();
 void restore_player_save_record();
-undefined4 FUN_00044624();
+undefined4 load_player_save_record();
 undefined4 FUN_0004479c();
 void FUN_00044814();
 void FUN_00044848();

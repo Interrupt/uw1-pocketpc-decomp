@@ -3474,7 +3474,7 @@ byte param_2;
 char *param_3;  /* was `int` -- same DAT_00086df8-pointer truncation bug
                    as its sibling write_xor_scrambled_block (see that function's
                    comment); this one is reached from the save-slot-copy
-                   path (read_player_status_block <- FUN_00044624) rather than
+                   path (read_player_status_block <- load_player_save_record) rather than
                    write_player_status_block's caller */
 short param_4;
 
