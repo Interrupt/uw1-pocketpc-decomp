@@ -3713,7 +3713,7 @@ short param_1;
   }
   reset_player_for_resurrection();
   Ordinal_1044(auStack_31c,&DAT_00088d98,0x300);
-  FUN_00040f64(auStack_31c,2);
+  fade_active_palette_to_black(auStack_31c,2);
   main_menu_loop(0);
   DAT_00201c98 = 1;
   DAT_00201b60 = (undefined2)(1 << ((int)sVar1 & 0xffU));

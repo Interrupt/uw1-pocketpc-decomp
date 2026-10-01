@@ -481,10 +481,10 @@ ushort *param_3;
      where the same two incoming arguments got modeled twice (once as
      real parameters, once as phantom "leftover on the stack" locals)
      due to a calling-convention mismatch; param_1/param_2 are what
-     FUN_00040f34 actually needs here. */
+     apply_palette_buffer actually needs here. */
 
   puVar3 = (ushort *)Ordinal_1041(0x1f400);
-  FUN_00040f34(param_1,param_2);
+  apply_palette_buffer(param_1,param_2);
   Ordinal_1044(puVar3,param_3,0x1f400);
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
@@ -549,7 +549,7 @@ undefined2 * param_3;
      right above -- see its comment. */
 
   puVar4 = (ushort *)Ordinal_1041(0x1f400);
-  FUN_00040f34(param_1,param_2);
+  apply_palette_buffer(param_1,param_2);
   Ordinal_1044(puVar4,param_3,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
@@ -1615,5 +1615,90 @@ void clear_screen_and_restore_cursor()
   set_draw_color(0);
   fill_viewport_and_flush();
   cursor_show_idle_tick();
+  return;
+}
+
+
+// was FUN_00040f34 -- generic "install this 768-byte palette buffer as
+// the active palette" helper, shared by set_palette_bank (a specific
+// PALS.DAT bank) and the fade_in/fade_out RGB framebuffer crossfades
+// (src/graphics.c), which also keep the indexed palette in step with
+// their own RGB565 interpolation.
+void apply_palette_buffer(param_1,param_2)
+undefined4 param_1;
+undefined4 param_2;
+
+{
+  Ordinal_1044(&DAT_00088d98,param_1,0x300);
+  reinstall_active_palette(0x100,0,param_2);
+  return;
+}
+
+
+
+// was FUN_00040f64 -- fades the active palette down to black over
+// param_2 steps (frame-paced via read_realtime_clock_units, at least 8
+// clock units apart), re-applying the dimmed palette via
+// apply_palette_buffer each step; param_2==0 instead snaps straight to
+// black. Only known caller (src/player.c:3716, after
+// reset_player_for_resurrection) captures the current palette into
+// param_1 first and fades it out over 2 steps before the death
+// main-menu transition.
+void fade_active_palette_to_black(param_1,param_2)
+int param_1;
+short param_2;
+
+{
+  int iVar1;
+  char *iVar2;
+  undefined1 uVar3;
+  int iVar4;
+  int iVar5;
+  short *psVar6;
+  short sVar7;
+  int iVar8;
+  int iVar9;
+  
+  iVar2 = DAT_0024af78;
+  iVar9 = DAT_0024af78 + 0x300;
+  iVar4 = read_realtime_clock_units();
+  if (param_2 == 0) {
+    iVar4 = 0;
+    do {
+      *(undefined1 *)(iVar4 + iVar2) = 0;
+      iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+    } while (iVar4 < 0x300);
+    apply_palette_buffer(iVar2,0);
+  }
+  else {
+    iVar1 = (int)param_2 << 0x13;
+    iVar5 = 0;
+    do {
+      *(short *)(iVar9 + iVar5 * 2) =
+           (short)((uint)*(byte *)(iVar5 + param_1) * (iVar1 >> 0x10 & 0xffffU) * 0x10000 >> 0x10);
+      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
+    } while (iVar5 < 0x300);
+    iVar1 = (int)(short)((uint)iVar1 >> 0x10);
+    iVar5 = 0;
+    if (0 < iVar1) {
+      do {
+        iVar8 = 0;
+        do {
+          psVar6 = (short *)(iVar9 + iVar8 * 2);
+          sVar7 = *psVar6 - (ushort)*(byte *)(iVar8 + param_1);
+          *psVar6 = sVar7;
+          uVar3 = Ordinal_2005(iVar1,sVar7);
+          *(undefined1 *)(iVar8 + iVar2) = uVar3;
+          iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
+        } while (iVar8 < 0x300);
+        do {
+          iVar8 = read_realtime_clock_units();
+        } while ((uint)(iVar8 - iVar4) < 8);
+        apply_palette_buffer(iVar2,0);
+        iVar4 = read_realtime_clock_units();
+        iVar5 = iVar5 + 1;
+      } while (iVar5 * 0x10000 >> 0x10 < iVar1);
+    }
+  }
   return;
 }
