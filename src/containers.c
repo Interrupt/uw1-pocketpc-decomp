@@ -923,23 +923,23 @@ LAB_0004386c:
       local_28 = 0;
     }
     if ((*puVar4 & 0x1ff) == 0x8f) {
-      /* Real ARM binary calls FUN_0004479c() with 0 args here too
+      /* Real ARM binary calls place_rune_in_bag() with 0 args here too
          (confirmed via Ghidra decompile of the real auto_place_in_container
          at 0x43734) -- same "leftover register" reliance already found
          3 times this session (blit_sprite_row_remapped,
          draw_hotspot_crosshair_marker's caller in handle_barter_slot_click,
-         collision_build_height_field's neighbor lookups). FUN_0004479c's
+         collision_build_height_field's neighbor lookups). place_rune_in_bag's
          param_1 is the object being checked against the rune item-id
          range (0xe8-0x100) -- exactly this function's own param_1,
          untouched since entry (last read a few lines up in
          check_object_fits_in_slot's call), so that's what's actually
          sitting in the register at this point. Passed explicitly since a
          C recompile has no equivalent "whatever's left in the register"
-         state: the previously-uninitialized read made FUN_0004479c
+         state: the previously-uninitialized read made place_rune_in_bag
          almost always reject a genuine rune, always printing "You can
          only put runes in the runes bag" even when dragging a real rune
          into the rune bag. */
-      iVar10 = FUN_0004479c(param_1);
+      iVar10 = place_rune_in_bag(param_1);
       if (iVar10 == 0) {
         print_scroll_message_by_id(0xf7);
         goto LAB_000438ac;
@@ -1316,4 +1316,62 @@ int param_2;
     uVar2 = 0;
   }
   return uVar2;
+}
+
+
+// was FUN_0004479c -- called from auto_place_in_container (src/containers.c:942)
+// when dropping an item onto the rune bag (item id 0x8f): rejects
+// anything outside the rune id range (0xe8..0xe8+0x18), printing "You
+// can only put runes in the runes bag" at the call site on failure.
+// For a real rune, frees its object slot (runes don't stay separate
+// inventory objects) and sets the matching bit in the player's
+// rune-bag record instead.
+undefined4 place_rune_in_bag(param_1)
+short * param_1;
+
+{
+  uint uVar1;
+  int iVar2;
+  undefined4 uVar3;
+  byte *pbVar4;   /* was folded into iVar2 (a 32-bit int) -- see below */
+
+  iVar2 = (((int)*param_1 & 0x1ffU) - 0xe8) * 0x10000;
+  uVar1 = iVar2 >> 0x10;
+  if (((int)uVar1 < 0) || (0x18 < (int)uVar1)) {
+    uVar3 = 0;
+  }
+  else {
+    /* Was called with 0 args -- real ARM binary does the same bare call
+       (confirmed via Ghidra: FUN_00053004(), free_object_slot's real
+       address, at this exact spot) -- the same "leftover register"
+       reliance already found 4 times this session. param_1 (the rune
+       being placed) is read at this function's very entry (`*param_1`
+       just above) and never touched again before this call, so it's
+       what's actually still sitting in the register. free_object_slot's
+       own param_1 is dereferenced immediately (see its own body), so a
+       genuinely garbage argument crashes hard -- confirmed live: SIGSEGV
+       inside this function the moment a real rune (not the always-
+       rejected garbage from the OUTER dropped-argument bug fixed in the
+       previous commit) actually reached here. Runes get absorbed into
+       the bag's own internal bit-flags rather than remaining separate
+       inventory objects, so their own object slot needs freeing here --
+       matches this function's very next line setting a bit in
+       DAT_00086df8's rune-bag record. */
+    free_object_slot(param_1);
+    /* Was `iVar2 = DAT_00086df8 + (iVar2 >> 0x13); *(byte *)(iVar2 + 0x44) = ...`
+       -- DAT_00086df8 is a real 64-bit char* (the player stats/quest-flags
+       struct, DAT_0023bca8) on this host, but `iVar2` is a 32-bit int;
+       assigning the pointer sum into it silently truncated to the low 32
+       bits, then dereferenced that wrong, truncated address. Same
+       pointer-truncation bug class as dozens of other fixes across this
+       file. Confirmed live via a temporary diagnostic (UW_DEBUG_RUNEBAG):
+       DAT_00086df8 was a real, valid, in-bounds pointer with a value
+       above 0xffffffff, so truncating it landed on unmapped memory --
+       SIGSEGV placing a genuine rune into the rune bag, the exact
+       reported crash. Uses a real pointer-typed local instead. */
+    pbVar4 = (byte *)(DAT_00086df8 + (iVar2 >> 0x13));
+    pbVar4[0x44] = (byte)(1 << (7 - (uVar1 & 7) & 0xff)) | pbVar4[0x44];
+    uVar3 = 1;
+  }
+  return uVar3;
 }

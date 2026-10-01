@@ -3261,7 +3261,7 @@ void deserialize_inventory_link_chain();
 void free_player_inventory_chain();
 void restore_player_save_record();
 undefined4 load_player_save_record();
-undefined4 FUN_0004479c();
+undefined4 place_rune_in_bag();
 void FUN_00044814();
 void FUN_00044848();
 void FUN_000448a8();
