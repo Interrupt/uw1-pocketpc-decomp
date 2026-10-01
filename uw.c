@@ -9754,73 +9754,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_0003baf4()
-
-{
-  char stack0xffdc3250_buf [256];
-  char *stack0xffdc3250_ptr;
-  char cVar1;
-  char *pcVar2;
-  char acStack_108 [260];
-  
-  thunk_FUN_00057118();
-  input_bindings_free();
-  stop_ambient_sound_effect();
-  FUN_000499a4();
-  release_panel_wipe_grtiles();
-  shutdown_sound_effects();
-  shutdown_music_module();
-  thunk_FUN_00078e28();
-  pcVar2 = &DAT_0023cca8;
-    stack0xffdc3250_ptr = acStack_108;
-  do {
-    cVar1 = *pcVar2;
-    *stack0xffdc3250_ptr = cVar1; stack0xffdc3250_ptr = stack0xffdc3250_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_108,&DAT_000857a0);
-  ensure_save_directory_exists(acStack_108);
-  return;
-}
-
-
-
-void FUN_0003bb60()
-
-{
-  short sVar1;
-  
-  do {
-    sVar1 = next_input_event();
-  } while (3 < sVar1);
-  display_book_or_scroll_page(9);
-  return;
-}
-
-
-
-void FUN_0003bb84()
-
-{
-  register_key_binding(0x278,0,0xbd,FUN_0003bc08);
-  DAT_00201b6c = 1;
-  DAT_00201c84 = 0x7fff;
-  DAT_00201b60 = 0;
-  DAT_00201b64 = 0xffff;
-  *(undefined1 *)(DAT_00085a6c + 8) = 0;
-  *(undefined1 *)(DAT_00085a6c + 9) = 0;
-  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
-  return;
-}
-
-
-
-void FUN_0003bc08()
-
-{
-  DAT_00201b6c = 0;
-  return;
-}
 
 
 
@@ -10173,7 +10106,7 @@ ushort param_1;
   local_27 = ((byte)param_1 & 7) + 0x30;
   uVar2 = Ordinal_1068(acStack_54);
   Ordinal_1071(&DAT_00201b70,acStack_54,uVar2);
-  FUN_0003baf4(0);
+  run_game_shutdown_sequence(0);
   terminate_process(0xffffffe8);
   return;
 }
@@ -10193,7 +10126,7 @@ char *param_1;
   fprintf(stderr, "[fatal] FUN_0003c4a8: %s\n", param_1 ? param_1 : "(null)");
   uVar1 = Ordinal_1068(param_1); // was a dropped arg -- param_1 itself, same class as babl_builtin_compare's own comment (uw.c ~10977)
   Ordinal_1071(&DAT_00201b70,param_1,uVar1);
-  FUN_0003baf4(0);
+  run_game_shutdown_sequence(0);
   terminate_process(0xffffffe8);
   return;
 }
@@ -22705,7 +22638,7 @@ short param_1;
     }
     FUN_000566dc(4,0x39);
     cursor_show_idle_tick();
-    FUN_0003bc08(0);
+    request_game_exit(0);
     FUN_00057118();
   }
   close_ui_panel_return_to_game();

@@ -76,7 +76,7 @@ undefined4 param_4;
       compute_dimension_volume();
       run_game_startup_sequence();
       build_trig_tables();
-      FUN_0003bb60();
+      wait_and_show_intro_page();
       main_menu_loop(1);
       DAT_00201c98 = 1;
       while (DAT_00201b6c != 0) {
@@ -330,7 +330,7 @@ undefined4 param_1;
     local_838 = (int)sVar3;
     if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] uVar8=%d uVar2=%d navigate->%d\n", (int)uVar8, (int)uVar2, local_838);
     if (local_838 == -1) {
-      FUN_0003baf4(0);
+      run_game_shutdown_sequence(0);
       terminate_process(1);
     }
     else if (local_838 == 0) {
@@ -1914,7 +1914,7 @@ undefined4 shutdown_game_resources()
     piVar2 = piVar2 + 1;
   } while (iVar1 != 0);
   Ordinal_1018(&DAT_00202308);
-  FUN_0003baf4(0);
+  run_game_shutdown_sequence(0);
   GXCloseDisplay();
   GXCloseInput();
   Ordinal_866(0);
@@ -2188,7 +2188,7 @@ void run_game_startup_sequence()
   init_collision_response_profiles();
   init_new_character_record(0);
   init_sprite_list_buffers();
-  FUN_0003bb84();
+  init_main_loop_state();
   load_light_tables();
   load_combat_data_file();
   iVar3 = check_save_disk_space();
@@ -2222,5 +2222,91 @@ void run_game_startup_sequence()
   }
   FUN_00040df0();
   set_palette_bank(5);
+  return;
+}
+
+
+// was FUN_0003baf4 -- the game's shutdown counterpart to
+// run_game_startup_sequence: frees input bindings, stops ambient
+// sound and other sound effects/music, releases panel-wipe grtiles,
+// then builds the save directory path and ensures it exists.
+void run_game_shutdown_sequence()
+
+{
+  char stack0xffdc3250_buf [256];
+  char *stack0xffdc3250_ptr;
+  char cVar1;
+  char *pcVar2;
+  char acStack_108 [260];
+
+  thunk_FUN_00057118();
+  input_bindings_free();
+  stop_ambient_sound_effect();
+  FUN_000499a4();
+  release_panel_wipe_grtiles();
+  shutdown_sound_effects();
+  shutdown_music_module();
+  thunk_FUN_00078e28();
+  pcVar2 = &DAT_0023cca8;
+    stack0xffdc3250_ptr = acStack_108;
+  do {
+    cVar1 = *pcVar2;
+    *stack0xffdc3250_ptr = cVar1; stack0xffdc3250_ptr = stack0xffdc3250_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_108,&DAT_000857a0);
+  ensure_save_directory_exists(acStack_108);
+  return;
+}
+
+
+
+// was FUN_0003bb60 -- waits for a pending input event to clear, then
+// shows book/scroll page 9. Called once during startup, right after
+// run_game_startup_sequence/build_trig_tables and before
+// main_menu_loop -- plausibly a "press any key" instructions/title
+// page shown before the main menu.
+void wait_and_show_intro_page()
+
+{
+  short sVar1;
+
+  do {
+    sVar1 = next_input_event();
+  } while (3 < sVar1);
+  display_book_or_scroll_page(9);
+  return;
+}
+
+
+
+// was FUN_0003bb84 -- initializes main-loop state: registers a key
+// binding (request_game_exit) that signals the main loop to stop, sets
+// the "game running" flag (DAT_00201b6c) that gates it, and resets a
+// few related UI/mode fields. Called once from
+// run_game_startup_sequence.
+void init_main_loop_state()
+
+{
+  register_key_binding(0x278,0,0xbd,request_game_exit);
+  DAT_00201b6c = 1;
+  DAT_00201c84 = 0x7fff;
+  DAT_00201b60 = 0;
+  DAT_00201b64 = 0xffff;
+  *(undefined1 *)(DAT_00085a6c + 8) = 0;
+  *(undefined1 *)(DAT_00085a6c + 9) = 0;
+  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
+  return;
+}
+
+
+
+// was FUN_0003bc08 -- key-binding callback (registered by
+// init_main_loop_state) that clears the "game running" flag,
+// signaling the main loop to exit.
+void request_game_exit()
+
+{
+  DAT_00201b6c = 0;
   return;
 }
