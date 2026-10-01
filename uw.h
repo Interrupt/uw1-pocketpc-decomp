@@ -3068,7 +3068,7 @@ void report_fatal_error_and_exit();
 void report_fatal_error_message_and_exit();
 bool apply_swim_wade_pose();
 void set_locomotion_state();
-void FUN_0003c6ac();
+void apply_level9_random_hazard_tick();
 undefined4 begin_directional_move();
 void apply_heading_turn();
 void set_player_tile_position();

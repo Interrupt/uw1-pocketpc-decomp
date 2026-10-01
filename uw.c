@@ -9939,62 +9939,6 @@ ushort param_1;
 
 
 
-void FUN_0003c6ac()
-
-{
-  int uw_ord2005_rem_106 = 0; int uw_ord2005_rem_107 = 0; int uw_ord2005_rem_108 = 0; int uw_ord2005_rem_109 = 0; int uw_ord2005_rem_110 = 0;
-  uint uVar1;
-  ushort uVar2;
-  undefined4 uVar3;
-  uint uVar4;
-  char extraout_r1;
-  char cVar5;
-  char extraout_r1_00;
-  char extraout_r1_01;
-  int extraout_r1_02;
-  uint extraout_r1_03;
-  byte bVar6;
-  
-  FUN_000411e0(0xb5);
-  bVar6 = *(byte *)((char *)g_player_object + 8);
-  uVar1 = (uint)(short)(ushort)bVar6;
-  if (uVar1 < 0x65) {
-    if (uVar1 < 0x33) {
-      if ((uVar1 < 0x15) || (uVar4 = Ordinal_1053(), (uVar4 & 3) != 0)) {
-        if ((1 < uVar1) && (uVar4 = Ordinal_1053(), (uVar4 & 7) == 0)) {
-          bVar6 = (byte)((uVar1 - 1) * 0x10000 >> 0x10);
-        }
-        goto LAB_0003c780;
-      }
-      uVar3 = Ordinal_1053();
-      uw_ord2005_rem_106 = ((int)(uVar3)) % (3);
-      cVar5 = uw_ord2005_rem_106;
-    }
-    else {
-      uVar3 = Ordinal_1053();
-      uw_ord2005_rem_107 = ((int)(uVar3)) % (4);
-      cVar5 = uw_ord2005_rem_107;
-    }
-  }
-  else {
-    uVar3 = Ordinal_1053();
-    uw_ord2005_rem_108 = ((int)(uVar3)) % (6);
-    cVar5 = uw_ord2005_rem_108;
-  }
-  bVar6 = bVar6 - cVar5;
-LAB_0003c780:
-  *(byte *)((char *)g_player_object + 8) = bVar6;
-  uVar3 = Ordinal_1053();
-  uw_ord2005_rem_109 = ((int)(uVar3)) % (0xc);
-  if (uw_ord2005_rem_109 != 0) {
-    uVar3 = Ordinal_1053();
-    uw_ord2005_rem_110 = ((int)(uVar3)) % (0x1e);
-    set_movement_animation_timer(0x40,(uw_ord2005_rem_110 & 0xff) + 0xf);
-  }
-  uVar2 = Ordinal_1053();
-  set_hud_status_value(2,uVar2 & 0xf);
-  return;
-}
 
 
 
