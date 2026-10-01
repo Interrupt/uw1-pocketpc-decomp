@@ -11267,84 +11267,6 @@ LAB_00042a10:
 
 
 
-bool FUN_00043b78(param_1,param_2)
-ushort * param_1;
-undefined4 param_2;
-
-{
-  short sVar1;
-  short sVar2;
-  short sVar3;
-  int iVar4;
-  ushort *puVar5;
-  ushort *puVar6;
-  uint uVar7;
-  int iVar8;
-  byte *pbVar9;
-  ushort *puVar10;
-  char *pAncestor;
-
-  /* Was `resolve_object_link(g_current_container_record + 8)` -- a
-     tracking record lives outside the level's object arena
-     resolve_object_link bounds-checks against, so this always returned
-     NULL on this host (same class as the several already-fixed
-     `resolve_object_link(g_current_container_record + 8)` call sites
-     elsewhere in this file -- search "g_current_container_link holds
-     the same identity"). Route through that same established
-     global-copy workaround instead of resolving through the record's
-     own memory directly. Also was truncating the resolved 64-bit
-     contents-head pointer through `int iVar4` before adding +6 --
-     fixed by giving it its own pointer-typed local rather than reusing
-     `iVar4`, which has two unrelated plain-int roles later in this
-     function. */
-  g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
-  puVar10 = (ushort *)((char *)resolve_object_link(&g_current_container_link) + 6);
-  iVar4 = (short)param_2 * 2;
-  pbVar9 = &g_equipped_items + iVar4;
-  puVar5 = (ushort *)resolve_object_link(pbVar9);
-  while( true ) {
-    puVar6 = (ushort *)resolve_object_link(puVar10);
-    if (puVar5 == puVar6) {
-      swap_cursor_and_slot_item(param_2,0);
-      sVar1 = check_object_fits_in_slot(param_1,param_2);
-      if (sVar1 == 0) {
-        g_selected_object = param_1;
-        FUN_00057cac(3);
-        /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
-           own identical fix comment. */
-        FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
-        param_1 = puVar5;
-      }
-      object_list_insert_head(puVar10,param_1);
-      uVar7 = encode_object_slot_index(param_1);
-      *pbVar9 = *pbVar9 & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
-      (&DAT_00202951)[iVar4] = (char)((uVar7 << 0x16) >> 0x18);
-      sVar2 = FUN_00046260(param_1);
-      sVar3 = FUN_00046260(puVar5);
-      /* Legacy truncated "prev" walk -- same fix as
-         place_object_in_backpack_slot's sibling copy (search "still
-         broken for genuine container nesting"); given its own dedicated
-         local (pAncestor) since `iVar4` has unrelated plain-int roles
-         elsewhere in this function. */
-      for (pAncestor = g_current_container_record; pAncestor != 0;
-          pAncestor = *(char **)(pAncestor + 0x14)) {
-        iVar8 = (int)*(short *)(pAncestor + 10) + (((int)sVar2 - (int)sVar3) * 0x10000 >> 0x10);
-        *(char *)(pAncestor + 10) = (char)iVar8;
-        *(char *)(pAncestor + 0xb) = (char)((uint)iVar8 >> 8);
-      }
-      sVar2 = FUN_00046260(param_1);
-      g_player_carry_weight = g_player_carry_weight + sVar2;
-      refresh_player_equipment_effects();
-      repopulate_container_grid_slots();
-      redraw_inventory_widget_range((int)(char)(&g_backpack_slot_to_widget)[(short)param_2],
-                   (int)(char)(&g_backpack_slot_to_widget)[(short)param_2]);
-      return sVar1 != 0;
-    }
-    if (puVar6 == (ushort *)0x0) break;
-    puVar10 = puVar6 + 2;
-  }
-  return false;
-}
 
 
 
@@ -13549,7 +13471,7 @@ uint param_2;
         }
       }
       else {
-        FUN_00043b78(param_1,param_2);
+        place_object_in_equipment_slot(param_1,param_2);
       }
     }
     else {

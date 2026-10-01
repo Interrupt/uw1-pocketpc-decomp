@@ -3248,7 +3248,7 @@ void open_backpack_container();
 void FUN_00043614();
 void FUN_0004365c();
 undefined4 auto_place_in_container();
-bool FUN_00043b78();
+bool place_object_in_equipment_slot();
 void sum_container_weight();
 void build_player_save_record();
 bool write_player_save_record();
