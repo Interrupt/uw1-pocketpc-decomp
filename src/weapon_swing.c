@@ -678,7 +678,7 @@ LAB_00027754:
             if ((!bVar2) && (-1 < DAT_00100618)) {
               iVar5 = FUN_000571c0();
               if (iVar5 != 0) {
-                FUN_0004a210(*DAT_001005e0 & 0xf);
+                fire_ranged_weapon(*DAT_001005e0 & 0xf);
               }
               reset_weapon_swing_state();
               return;
@@ -880,5 +880,80 @@ void weapon_overlay_flash_once()
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
   cursor_show_idle_tick();
+  return;
+}
+
+
+// was FUN_0004a210 -- fires a ranged weapon (param_1, a weapon type):
+// finds and consumes a matching ammo item (find_and_consume_ammo),
+// sets up the throw/aim state and spawns a projectile object near the
+// player, copies damage-type/quality/charge fields from the consumed
+// ammo's own template (FUN_00045a7c) onto the new projectile, frees
+// the consumed ammo's object slot, and plays the bow/sling release
+// sound for weapon types 9/10.
+void fire_ranged_weapon(param_1)
+short param_1;
+
+{
+  int iVar1;
+  byte bVar2;
+  char cVar3;
+  ushort uVar4;
+  undefined4 uVar5;
+  ushort *puVar6;
+  ushort *puVar7;
+  uint uVar8;
+  
+  /* Was a dropped argument -- find_and_consume_ammo's own param_1 (weapon
+     type). The very next line re-derives the identical
+     `(&DAT_002027d2)[param_1*3]` table lookup find_and_consume_ammo's own
+     body performs internally, confirming this caller's param_1 is the
+     value that belongs here. */
+  uVar5 = find_and_consume_ammo(param_1);
+  if (-1 < (short)uVar5) {
+    iVar1 = (int)param_1;
+    cVar3 = (&DAT_002027d2)[iVar1 * 3];
+    DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[(short)cVar3 * 3];
+    DAT_00202a38 = cVar3 + 0x10;
+    DAT_00202a4c = (ushort)(*(byte *)((char *)g_player_object + 0x17) >> 2);
+    DAT_00202a44 = g_player_object;
+    DAT_00202a50 = (undefined2)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4);
+    DAT_00202a54 = 1;
+    compute_drop_aim_from_cursor();
+    puVar6 = (ushort *)spawn_object_near_player();
+    if (puVar6 == (ushort *)0x0) {
+      print_scroll_message_by_id(0xfe);
+    }
+    else {
+      puVar7 = (ushort *)FUN_00045a7c(0,1,(int)cVar3,uVar5);
+      uVar8 = (*puVar7 ^ *puVar6) & 0x7fff ^ (uint)*puVar7;
+      *(char *)puVar6 = (char)uVar8;
+      *(char *)((char *)puVar6 + 1) = (char)(uVar8 >> 8);
+      uVar4 = puVar7[3];
+      bVar2 = (byte)uVar4;
+      *(byte *)(puVar6 + 3) = ((byte)puVar6[3] ^ bVar2) & 0x3f ^ bVar2;
+      *(char *)((char *)puVar6 + 7) = (char)(uVar4 >> 8);
+      bVar2 = *(byte *)((char *)puVar7 + 1);
+      *(char *)puVar6 = (char)*puVar6;
+      *(byte *)((char *)puVar6 + 1) =
+           (bVar2 ^ *(byte *)((char *)puVar6 + 1)) & 0x1e ^ *(byte *)((char *)puVar6 + 1);
+      *(byte *)(puVar6 + 4) = (byte)puVar7[2] & 0x3f;
+      *(byte *)(puVar6 + 3) = ((byte)puVar7[3] ^ (byte)puVar6[3]) & 0x3f ^ (byte)puVar6[3];
+      *(undefined1 *)((char *)puVar6 + 7) = *(undefined1 *)((char *)puVar6 + 7);
+      bVar2 = *(byte *)((char *)puVar7 + 1);
+      *(char *)puVar6 = (char)*puVar6;
+      *(byte *)((char *)puVar6 + 1) =
+           (bVar2 ^ *(byte *)((char *)puVar6 + 1)) & 0x20 ^ *(byte *)((char *)puVar6 + 1);
+      if ((*puVar7 & 0x1c0) != 0x140) {
+        if (((&DAT_00202c9a)[(*puVar7 & 0x1ff) * 0xd] & 3) != 2) {
+          *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;
+        }
+      }
+      free_object_slot();
+    }
+    if ((iVar1 == 9) || (iVar1 == 10)) {
+      play_sound_effect_with_pan(9,0x40,0);
+    }
+  }
   return;
 }

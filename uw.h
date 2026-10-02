@@ -3379,7 +3379,7 @@ int lookup_arctan_reciprocal_range();
 int compute_angle_from_slope();
 void load_light_food_effect_tables();
 bool compute_drop_aim_from_cursor();
-void FUN_0004a210();
+void fire_ranged_weapon();
 void FUN_0004a510();
 bool FUN_0004a588();
 undefined4 drop_held_object_near_player();
