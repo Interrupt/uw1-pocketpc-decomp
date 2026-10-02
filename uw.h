@@ -3397,7 +3397,7 @@ undefined4 destroy_mod_player();
 void reset_mod_player_state();
 undefined4 start_mod_player_playback();
 undefined4 stop_mod_player_playback();
-bool FUN_0004d050();
+bool queue_mod_audio_buffer();
 void FUN_0004d79c();
 undefined4 FUN_0004e324();
 void FUN_0004e6e0();
