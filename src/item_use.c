@@ -2142,7 +2142,7 @@ ushort * param_2;
   else {
     if (uVar4 == 2) {
       if (((uVar5 & 0xf) != 1) && ((uVar5 & 0xf) != 2)) {
-        FUN_00049008(param_2,0xffffffff);
+        look_at_inscribed_object(param_2,0xffffffff);
         return;
       }
       uVar5 = ((uVar5 >> 9) + 1) * 0x200 & 0xe00 | uVar5 & 0xe1ff;

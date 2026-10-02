@@ -53,7 +53,7 @@ int param_2;
   iVar9 = (*param_1 & 0x1ff) * 0xd;
   if (!g_object_type_props[*param_1 & 0x1ff].has_look_description) {
     if ((*param_1 & 0x1f0) == 0x160) {
-      FUN_00049008(param_1,param_2);
+      look_at_inscribed_object(param_1,param_2);
     }
     goto LAB_00048b58;
   }
@@ -191,7 +191,7 @@ short param_5;
   /* iVar5 above is a real int (file handle) for open_file_for_read's return,
      reused later in this same function as if it held Ordinal_1041's
      `void *` return (the decoded glyph buffer) -- same "reused scalar"
-     bug already fixed in FUN_00049008 this session. Separate real
+     bug already fixed in look_at_inscribed_object this session. Separate real
      pointer local for that use. */
   void *pvVar_glyphbuf;
 
@@ -507,7 +507,7 @@ int param_2;
   iVar9 = (*param_1 & 0x1ff) * 0xd;
   if (!g_object_type_props[*param_1 & 0x1ff].has_look_description) {
     if ((*param_1 & 0x1f0) == 0x160) {
-      FUN_00049008(param_1,param_2);
+      look_at_inscribed_object(param_1,param_2);
     }
     goto LAB_00048b58;
   }
@@ -3141,4 +3141,130 @@ LAB_00048e80:
     uVar6 = 1;
   }
   return uVar6;
+}
+
+
+// was FUN_00049008 -- "look" handler for inscribed objects (class
+// range 0x160, dispatched from object_actions.c's look-description
+// builder): terrain-plaque text for class 4, a gravestone epitaph
+// looked up by index in grave.dat for class 5, or a sign/TMOBJ
+// inscription (fetched via get_message_string, word-wrapped to the
+// message scroll) for class 6, triggering the matching illustration
+// popup once the full text has been shown.
+void look_at_inscribed_object(param_1,param_2)
+ushort * param_1;
+short param_2;
+
+{
+  char stack0xffdc3238_buf [256];
+  char *stack0xffdc3238_ptr;
+  char cVar1;
+  ushort uVar2;
+  byte bVar3;
+  char *pcVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  uint uVar8;
+  uint uVar9;
+  short sVar10;
+  char local_128 [8];
+  char acStack_120 [260];
+  /* iVar5 above is a real int (file handle) for the uVar8==5/grave.dat
+     branch's open_file_for_read/Ordinal_553 calls -- but is reused later in the
+     shared tail (untouched by that branch, e.g. the sign/TMOBJ uVar8==6
+     case) to hold get_message_string's real `char *` return, truncating it on
+     this 64-bit host. Confirmed via lldb: right-clicking a rendered sign
+     (object type 0x166) crashed in strchr with a wild pointer, called
+     from format_object_display_name(iVar5,...) here. Separate real-pointer local so
+     each use keeps its own type. */
+  char *pcVar_str;
+
+  DEBUG(INFO, "Look mode object interact?");
+  
+  local_128[0] = '\0';
+  sVar10 = 0x160;
+  uVar2 = *param_1;
+  uVar8 = uVar2 & 0xf;
+  if (uVar8 == 4) {
+    uVar8 = uVar2 & 0x1e00;
+    if (uVar8 < 0x400) {
+      print_scroll_message_by_id(0xab);
+    }
+    else {
+      describe_picked_terrain(2,(uVar8 >> 9) + 0x2f);
+    }
+  }
+  else {
+    if (uVar8 != 5) {
+      if (uVar8 != 6) {
+        if (uVar8 < 0xe) {
+          return;
+        }
+        if (0xf < uVar8) {
+          return;
+        }
+        if (-1 < param_2) {
+          describe_picked_terrain(2,((byte)param_1[3] & 0x3f) + 1);
+        }
+        if (param_2 < 1) {
+          return;
+        }
+        if (((&DAT_0023add0)[(byte)param_1[3] & 0x3f] & 0xff) != 9) {
+          return;
+        }
+        trigger_terrain_discovery_illustration();
+        return;
+      }
+      sVar10 = 0x170;
+    }
+    if ((uVar2 & 0x8000) == 0) {
+      uVar9 = (byte)param_1[3] & 0x3f;
+    }
+    else {
+      uVar9 = (CONCAT11(*(undefined1 *)((char *)param_1 + 7),(byte)param_1[3]) & 0x7fc0) >> 6;
+    }
+    if (uVar8 == 5) {
+      Ordinal_1047(acStack_120,0,0x104);
+      pcVar4 = &DAT_0023cca8;
+    stack0xffdc3238_ptr = acStack_120;
+      do {
+        cVar1 = *pcVar4;
+        *stack0xffdc3238_ptr = cVar1; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
+        pcVar4 = pcVar4 + 1;
+      } while (cVar1 != '\0');
+      Ordinal_1063(acStack_120,s__DATA_grave_dat_00085cf8);
+      iVar5 = open_file_for_read(acStack_120);
+      iVar6 = seek_file_handle(iVar5,(short)uVar9,0);
+      iVar7 = read_file_handle(iVar5,local_128,1);
+      bVar3 = Ordinal_553(iVar5);
+      if ((iVar7 == 1 & bVar3 & (iVar5 != -1 && iVar6 != -1)) == 0) {
+        return;
+      }
+    }
+    pcVar_str = (char *)get_message_string(uVar9 | 0x1000);
+    if (pcVar_str != (char *)0x0 && local_128[0] != '\0') {
+      msg_scroll_panel_reset(1);
+    }
+    if (((*param_1 & 0xf) == 6) || (local_128[0] == '\0')) {
+      /* was two separate calls with message_scroll_print_wrapped()'s arg
+         dropped -- same pattern already fixed at line ~9137: get_message_string's
+         return (char *) flows straight into message_scroll_print_wrapped
+         as its argument. Confirmed via UW_DEBUG_OBJPOS: this is the
+         sign/plaque "The writing reads: " lead-in line. */
+      message_scroll_print_wrapped((char *)get_message_string((*param_1 >> 9 & 0xf) + sVar10 | 0x1000));
+    }
+    if (pcVar_str != (char *)0x0) {
+      /* Same dropped-argument pattern: format_object_display_name's real `undefined1 *`
+         return (pcVar_str word-wrapped for the message scroll) is the
+         actual real sign/inscription text ("We attacked the entrance
+         with all manner of tools..."), confirmed via UW_DEBUG_OBJPOS. */
+      message_scroll_print_wrapped((char *)format_object_display_name(pcVar_str,1,0));
+      message_scroll_print_wrapped(&s_scroll_newline_0008522c);
+    }
+    if (local_128[0] != '\0') {
+      trigger_inscription_illustration(local_128[0]);
+    }
+  }
+  return;
 }
