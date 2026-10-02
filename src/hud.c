@@ -593,7 +593,11 @@ void main_loop_hud_flush()
         _last_c90 = (int)DAT_00201c90;
       }
     }
-    if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0) {
+    /* Bit 0's enter_dungeon_view handler must fade the outgoing screen
+       before drawing the dungeon. Do not overwrite it with this added
+       per-tick redraw before the original transition handler runs. */
+    if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0 &&
+        (DAT_00201c84 & 1) == 0) {
       _did_force_redraw = 1;
       /* Rebuild AND re-rasterise the 3D dungeon view every main-loop
          iteration. An earlier version called only render_dungeon_view()
@@ -666,7 +670,11 @@ void main_loop_hud_flush()
   }
   { unsigned int _t1 = 0, _t2 = 0;
     if (_dbg_hf) _t1 = read_realtime_clock_units() * 4;
+    /* Input callbacks can run blocking prompt/menu loops. Keep their
+       presentations immediate rather than annotating every such loop. */
+    uw_suspend_present_batch();
     poll_input_bindings(DAT_00085a6c);
+    uw_resume_present_batch();
     if (_dbg_hf) {
       _t2 = read_realtime_clock_units() * 4;
       fprintf(stderr, "[hudsplit] pre_pib_ms=%u pib_ms=%u\n", _t1 - _dbg_hf_t0, _t2 - _t1);
@@ -3946,7 +3954,7 @@ int param_1;
 undefined4 scroll_text_entry_prompt(param_1,param_2,param_3,param_4,param_5)
 undefined * param_1;
 char * param_2;
-int param_3;
+intptr_t param_3;
 int param_4;
 short param_5;
 
@@ -3996,7 +4004,8 @@ short param_5;
     pcVar6 = param_2;
     do {
       cVar1 = *pcVar6;
-      pcVar6[(int)(acStack_a1 + (1 - (int)param_2))] = cVar1;
+      /* Preserve Ghidra's relative-copy idiom without truncating pointers. */
+      pcVar6[(intptr_t)(acStack_a1 + 1) - (intptr_t)param_2] = cVar1;
       pcVar6 = pcVar6 + 1;
     } while (cVar1 != '\0');
     iVar7 = Ordinal_1068(param_2);
@@ -4028,7 +4037,7 @@ short param_5;
       }
       cursor_show_idle_tick();
       if ((short)uVar8 == 0x1b) {
-        param_3 = param_3 - (int)param_2;
+        param_3 = param_3 - (intptr_t)param_2;
         do {
           cVar1 = *param_2;
           param_2[param_3] = cVar1;
@@ -4048,7 +4057,7 @@ short param_5;
         do {
           pcVar6 = pcVar6 + 1;
           cVar1 = *pcVar6;
-          pcVar6[param_3 - (int)(acStack_a1 + 1)] = cVar1;
+          pcVar6[param_3 - (intptr_t)(acStack_a1 + 1)] = cVar1;
         } while (cVar1 != '\0');
         *(char *)(DAT_00250704 + 8) = (char)iVar7;
         *(char *)(DAT_00250704 + 9) = (char)((uint)iVar7 >> 8);

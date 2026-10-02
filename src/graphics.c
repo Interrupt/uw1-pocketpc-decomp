@@ -483,6 +483,10 @@ ushort *param_3;
      due to a calling-convention mismatch; param_1/param_2 are what
      apply_palette_buffer actually needs here. */
 
+  /* A fade must present every step even inside a batched gameplay tick
+     or while the click that started the transition is still held. */
+  uw_begin_modal_present();
+  dirty_rect_union(0,200,0,0x140);
   puVar3 = (ushort *)Ordinal_1041(0x1f400);
   /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
   if (param_1 != 0) apply_palette_buffer(param_1,param_2);
@@ -490,6 +494,10 @@ ushort *param_3;
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
+  /* Match fade_active_palette_to_black's eight clock units (32 ms) per
+     step. GX's 60 Hz presentations alone advance this fade twice as fast. */
+  uint fade_step_start = (uint)Ordinal_535();
+  uint fade_step_elapsed;
   do {
     uVar4 = Ordinal_2032(iVar9);
     uVar4 = Ordinal_2026(uVar4,0x3e000000);
@@ -511,6 +519,9 @@ ushort *param_3;
       puVar6 = puVar6 + 1;
     } while (iVar7 != 0);
     flush_dirty_rect_to_display(1);
+    while ((fade_step_elapsed = (uint)Ordinal_535() - fade_step_start) < 32)
+      Ordinal_496(32 - fade_step_elapsed);
+    fade_step_start = (uint)Ordinal_535();
     iVar9 = iVar9 + 1;
   } while (iVar9 < 9);
   iVar9 = 64000;
@@ -521,9 +532,10 @@ ushort *param_3;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", read_realtime_clock_units() - diag_t0);
+  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
   debug_framebuffer_dump("fade_in");
   Ordinal_1018(puVar3);
+  uw_end_modal_present();
   return;
 }
 
@@ -550,6 +562,9 @@ undefined2 * param_3;
   /* Same phantom in_stack_/unused-param_1,2 artifact as fade_in
      right above -- see its comment. */
 
+  /* Use the same presentation scope as fade_in. */
+  uw_begin_modal_present();
+  dirty_rect_union(0,200,0,0x140);
   puVar4 = (ushort *)Ordinal_1041(0x1f400);
   /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
   if (param_1 != 0) apply_palette_buffer(param_1,param_2);
@@ -558,6 +573,9 @@ undefined2 * param_3;
   iVar10 = 64000;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
+  /* Match the original timed palette fade's 32 ms step interval. */
+  uint fade_step_start = (uint)Ordinal_535();
+  uint fade_step_elapsed;
   do {
     uVar5 = Ordinal_2032(iVar11);
     uVar5 = Ordinal_2026(uVar5,0x3e000000);
@@ -581,6 +599,9 @@ undefined2 * param_3;
       *puVar8 = uVar3 | (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * iVar6 >> 0x12);
     } while (iVar9 != 0);
     flush_dirty_rect_to_display(1);
+    while ((fade_step_elapsed = (uint)Ordinal_535() - fade_step_start) < 32)
+      Ordinal_496(32 - fade_step_elapsed);
+    fade_step_start = (uint)Ordinal_535();
     iVar11 = iVar11 + -1;
   } while (0 < iVar11);
   while (iVar10 = iVar10 + -1, -1 < iVar10) {
@@ -588,9 +609,12 @@ undefined2 * param_3;
     param_3 = param_3 + 1;
   }
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", read_realtime_clock_units() - diag_t0);
+  while ((fade_step_elapsed = (uint)Ordinal_535() - fade_step_start) < 32)
+    Ordinal_496(32 - fade_step_elapsed);
+  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
   debug_framebuffer_dump("fade_out");
   Ordinal_1018(puVar4);
+  uw_end_modal_present();
   return;
 }
 

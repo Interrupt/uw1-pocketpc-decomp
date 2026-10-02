@@ -20019,6 +20019,9 @@ short param_1;
   short local_c;
   short local_a;
   
+  /* This loop waits inside an input handler; show its redraws immediately
+     instead of deferring them until the surrounding gameplay tick ends. */
+  uw_begin_modal_present();
   DAT_000868d8 = 1;
   if (param_1 != 0) {
     FUN_00057118();
@@ -20092,6 +20095,7 @@ LAB_000565a4:
     }
 LAB_000565a8:
     if (DAT_002046f8 != 0) {
+      uw_end_modal_present();
       return;
     }
   } while( true );

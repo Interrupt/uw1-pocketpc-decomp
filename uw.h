@@ -594,6 +594,7 @@ extern byte *g_draw_color_index;
 extern undefined1 DAT_000857a0_backing[32768];
 #define DAT_000857a0 DAT_000857a0_backing[0]
 extern undefined2 DAT_000868d8;
+extern int DAT_002046f8; /* Set when the in-game options loop closes. */
 extern ushort *DAT_000876bc;
 extern short *DAT_000876c0;
 extern int DAT_000876c8;

@@ -229,12 +229,17 @@ if(BUILD_TESTING)
     src/graphics.c:build_rgb565_palette
     src/graphics.c:bitmap_blit_to_framebuffer
     src/graphics.c:fade_in src/graphics.c:fade_out
+    src/chargen.c:run_character_generator src/level.c:enter_dungeon_view
+    uw.c:FUN_000564f8
+    src/graphics.c:blit_fullscreen_bitmap_file
     src/hud.c:flush_dirty_rect_to_display src/hud.c:dirty_rect_union
     src/hud.c:main_loop_hud_flush src/graphics.c:flush_dungeon_frame
+    src/hud.c:scroll_text_entry_prompt src/ordinal_stubs.c:Ordinal_1068
     uw.c:FUN_00049924
     uw.c:@DAT_00085668_real_table
     src/gx_stub.c:@uw_present_state src/gx_stub.c:@g_present_state
     src/gx_stub.c:uw_begin_present_batch src/gx_stub.c:uw_end_present_batch
+    src/gx_stub.c:uw_suspend_present_batch src/gx_stub.c:uw_resume_present_batch
     src/gx_stub.c:uw_begin_modal_present src/gx_stub.c:uw_end_modal_present
     src/gx_stub.c:uw_defer_present
     src/ordinal_stubs.c:Ordinal_172
