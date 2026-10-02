@@ -3240,7 +3240,7 @@ undefined2 DAT_00202748;
 char s_doors_00085a64[] = "doors";
  undefined1 DAT_0023b840_backing[8192];
 #define DAT_0023b840 DAT_0023b840_backing[0]
-static undefined1 DAT_00202750_backing[256];
+undefined1 DAT_00202750_backing[256];
 #define DAT_00202750 DAT_00202750_backing[0]
 char *DAT_00202890;
 char *DAT_0020289c;
@@ -7177,156 +7177,10 @@ uint read_realtime_clock_units()
 
 
 
-/* Extracted from decode_critter_sprite_page (was inlined at its top) so
-   resolve_critter_sprite_tier can also load/cache a candidate tier's
-   page and inspect its real (base, span) -- see that function's own
-   comment for why. Behavior unchanged: same page-cache array
-   (DAT_00202308), same filename-building convention, same graceful
-   NULL-return-on-missing-file contract (decode_critter_sprite_page's
-   caller-visible dummy_page sentinel is now applied at its own call
-   site instead of inside this helper). */
-byte *uw_load_critter_page_cached(int param_1, int param_2) {
-  char stack0xffdc3238_buf [256];
-  char *stack0xffdc3238_ptr;
-  int iVar1;
-  char cVar2;
-  char *pcVar4;
-  int iVar5;
-  byte *pbVar11;
-
-  /* Tracks (page,tier) slots already confirmed to have no file, separate
-     from DAT_00202308 (0=never tried, else=a real Ordinal_1041 pointer
-     that shutdown_game_resources unconditionally frees at shutdown -- stuffing a
-     sentinel in there instead would make that loop free garbage).
-     Needed because resolve_critter_sprite_tier now probes every tier
-     0-3 looking for the one whose range covers a given direction, and
-     most creatures only ever have tiers 0-1 (see that function's own
-     comment); without this, tiers 2-3 would re-attempt a failing disk
-     open every single call. */
-  static char known_missing[256];
-
-  iVar1 = (param_2 + param_1 * 4) * 0x10000 >> 0x10;
-  if ((unsigned)iVar1 < sizeof(known_missing) && known_missing[iVar1]) {
-    return (byte *)0;
-  }
-  pbVar11 = (byte *)(&DAT_00202308)[iVar1];
-  if (pbVar11 == (byte *)0x0) {
-    DAT_00085928 = (char)((short)param_1 >> 3) + '0';
-    DAT_00085929 = ((byte)param_1 & 7) + 0x30;
-    DAT_00085930 = (char)((short)param_2 >> 3) + '0';
-    DAT_00085931 = ((byte)param_2 & 7) + 0x30;
-    pcVar4 = &DAT_0023cca8;
-    stack0xffdc3238_ptr = stack0xffdc3238_buf;
-    do {
-      cVar2 = *pcVar4;
-      *stack0xffdc3238_ptr = cVar2; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
-      pcVar4 = pcVar4 + 1;
-    } while (cVar2 != '\0');
-    Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920);
-    iVar5 = open_file_for_read(stack0xffdc3238_buf);
-    if (getenv("UW_DEBUG_CRITTER"))
-      fprintf(stderr, "[critter] load_critter_page_cached: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
-              iVar1, param_1, param_2, stack0xffdc3238_buf, iVar5 == -1 ? "FAIL" : "ok");
-    if (iVar5 == -1) {
-      DEBUG(ERR, "[glyphpage] open FAILED, skipping: %s (param_1=%d param_2=%d)\n",
-            stack0xffdc3238_buf, param_1, param_2);
-      if ((unsigned)iVar1 < sizeof(known_missing)) known_missing[iVar1] = 1;
-      return (byte *)0;
-    }
-    pbVar11 = (byte *)Ordinal_1041(0x7fff);
-    (&DAT_00202308)[iVar1] = pbVar11;
-    read_file_handle(iVar5,pbVar11,0x7fff);
-    Ordinal_553(iVar5);
-  }
-  if (getenv("UW_DEBUG_CRITTER_TABLESPAN")) {
-    static int seen[256 * 4];
-    static int seen_n = 0;
-    int key = param_1 * 4 + param_2;
-    int already = 0;
-    for (int _i = 0; _i < seen_n; _i++) if (seen[_i] == key) { already = 1; break; }
-    if (!already && seen_n < (int)(sizeof(seen)/sizeof(seen[0]))) {
-      seen[seen_n++] = key;
-      fprintf(stderr, "[critter-tablespan] page=%d tier=%d base=%d span=%d valid_dir=[%d,%d]\n",
-              param_1, param_2, (int)*pbVar11, (int)pbVar11[1],
-              (int)*pbVar11, (int)*pbVar11 + (int)pbVar11[1] - 1);
-    }
-  }
-  return pbVar11;
-}
-
-
-
-
-
-
-// was FUN_00040aa8 -- the central symbolic-id -> absolute-frame
-// resolver used throughout the HUD/object draw paths: id<0x1000 is
-// already an absolute OBJECTS.GR frame, 0x1000<=id<0x2000 resolves
-// via DAT_00202730 (BUTTONS.GR's base), id>=0x2000 resolves via
-// DAT_00202738 (LFTI's base, i.e. "whatever preloaded resource comes
-// right after TMOBJ.GR" -- see that global's own comment). Same
-// formula this whole session's HUD work reconstructed independently
-// as "resolved = base + (id - range_start)".
-uint resolve_sprite_id_to_frame(param_1)
-int param_1;
-
-{
-  int iVar1;
-  uint uVar2;
-  
-  iVar1 = (int)(short)param_1;
-  if (iVar1 < 0x2000) {
-    if (iVar1 < 0x1000) {
-      /* DAT_0024d090 (an object-type -> OBJECTS.GR frame remap) is never
-         populated in this decompile. OBJECTS.GR is now registered at
-         absolute frame indices (LAB_00041610), so the id IS the frame. */
-      uVar2 = (uint)(ushort)param_1;
-    }
-    else {
-      uVar2 = ((uint)DAT_00202730 + param_1) - 0x1000;
-    }
-  }
-  else {
-    uVar2 = ((uint)DAT_00202738 + param_1) - 0x2000;
-  }
-  return uVar2;
-}
-
-
-
-
 
 
-/* Return type was `int`, truncating the real 64-bit pointer every
-   caller casts back to (byte *) and dereferences. */
-// was FUN_00040c5c
-void *get_texture_page(param_1)
-short param_1;
 
-{
-  int iVar1;
-  char **ppcVar2;
 
-  iVar1 = (int)param_1;
-  if (iVar1 < 0x30) {
-    return DAT_0023ae38 + iVar1 * 0x1000;
-  }
-  if (iVar1 < 0x3a) {
-    return DAT_0023ae34 + (iVar1 + -0x30) * 0x400;
-  }
-  if (iVar1 < 0x6a) {
-    iVar1 = iVar1 + -0x3a;
-    ppcVar2 = &DAT_0023ae3c;
-  }
-  else {
-    if (0x73 < iVar1) {
-      return 0;
-    }
-    iVar1 = iVar1 + -0x6a;
-    ppcVar2 = &DAT_0023ae30;
-  }
-  return *ppcVar2 + iVar1 * 0x100;
-}
 
 
 
@@ -7339,211 +7193,32 @@ short param_1;
 
 
 
-// was load_pals_bank -- read PALS.DAT bank param_1 (768 raw bytes) into param_2 and
-// install it via build_rgb565_palette
-bool load_pals_bank(param_1,param_2)
-undefined4 param_1;
-void *param_2;
 
-{
-  char stack0xffdc2f38_buf [256];
-  char *stack0xffdc2f38_ptr;
-  char cVar1;
-  short sVar2;
-  char *pcVar3;
-  undefined4 uVar4;
-  char acStack_420 [264];
-  undefined1 auStack_318 [768];
 
-  DEBUG(TRACE, "[palette] load_pals_bank loading pals.dat index=%u", param_1);
-  pcVar3 = &DAT_0023cca8;
-    stack0xffdc2f38_ptr = acStack_420;
-  do {
-    cVar1 = *pcVar3;
-    *stack0xffdc2f38_ptr = cVar1; stack0xffdc2f38_ptr = stack0xffdc2f38_ptr + 1;
-    pcVar3 = pcVar3 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_420,s__DATA_pals_dat_00085978);
-  uVar4 = open_file_for_read(acStack_420);
-  seek_file_handle(uVar4,(short)param_1 * 0x300,0);
-  sVar2 = read_file_handle(uVar4,param_2,0x300);
-  Ordinal_553(uVar4);
-  if (sVar2 == 0x300) {
-    expand_pals_bytes(auStack_318,param_2,0);
-    build_rgb565_palette(auStack_318,param_1);
-  }
-  return sVar2 == 0x300;
-}
-
-
-
-// was set_palette_bank -- switch active palette to PALS.DAT bank param_1 (load into
-// DAT_00088d98, install, reinstall_active_palette)
-bool set_palette_bank(param_1)
-undefined4 param_1;
-
-{
-  int iVar1;
-  
-  iVar1 = load_pals_bank(param_1,&DAT_00088d98);
-  if (iVar1 != 0) {
-    reinstall_active_palette(0x100,0,0);
-  }
-  return iVar1 != 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// was FUN_000417b4
-uint load_gr_resource_entries(param_1,param_2,param_3,param_4,param_5)
-char *param_1;
-int param_2;
-short param_3;
-codeptr * param_4;
-codeval * param_5;
-
-{
-  int iVar1;
-  int iVar2;
-  uint uVar3;
-  int extraout_r2;
-  int iVar4;
-  int iVar5;
-  uint uVar6;
-  undefined2 local_8;
-  /* param_4 is an allocator callback (returns a real buffer pointer, sized
-     by the byte count in iVar4) -- Ghidra's 'iVar2' held both the item
-     index (int arithmetic, above) and the allocator's return value at
-     different points in the loop, which silently truncated the pointer to
-     32 bits on this 64-bit host. Split the pointer use into its own
-     variable. */
-  void *pvVar_buf;
-  
-  uVar6 = 1;
-  if (param_1 == 0 || param_1[0] == '\0') {
-    /* A handful of resource-name string constants at this call site's
-       original address were never recovered by Ghidra (no content, just
-       a dangling address -- see README "Unrecoverable string tables").
-       Treat "nothing to load" as success rather than failing the whole
-       resource-preload batch this participates in.
-
-       BUG (found tracing the mode-icon "door sprite" report): this
-       early return never touches DAT_00202728 (the just-loaded
-       resource's frame count), so it's left holding whatever the
-       PREVIOUS real load set it to. load_gr_resource_group/load_hud_icon_gr's
-       callers unconditionally do `DAT_00202744 += DAT_00202728`
-       right after calling this regardless of success/failure -- so
-       every one of these "nothing to load" resources silently
-       RE-ADDS the previous resource's frame count to the running
-       absolute-frame counter instead of contributing zero. Confirmed
-       live via UW_DEBUG_DUMP_GR: all 4 unrecovered resource names in
-       the post-TMOBJ preload chain (this project's own prior
-       "Unrecoverable string tables" investigation already knew these
-       fail to load, but not that the failure corrupts every
-       subsequent resource's frame numbering) each duplicate the
-       immediately-preceding real resource's exact frame count
-       (e.g. the one right after TMOBJ.GR claims TMOBJ's own 38
-       frames a second time). This is why the mode-icon highlight
-       (which indexes into this same running counter, expecting the
-       resource that comes right after TMOBJ) actually landed on
-       TMOBJ's OWN leftover frame data (a wall-mounted decorative tile
-       object) instead of whatever the missing resource's real icon
-       content should have been -- a door/gate-like TMOBJ decoration,
-       matching the user's report exactly. Zero the count so a missing
-       resource correctly contributes no frames instead of duplicating
-       the previous one. */
-    DAT_00202728 = 0;
-    return uVar6;
-  }
-  iVar1 = open_gr_resource_file(param_1,1);
-  if (iVar1 == 0) {
-    uVar6 = 0;
-  }
-  else {
-    iVar1 = extraout_r2;
-    if (param_3 < 0) {
-      iVar1 = param_2 << 0x10;
-    }
-    iVar5 = 0;
-    if (param_3 < 0) {
-      param_3 = (short)((uint)(((int)(short)(ushort)DAT_00202728 - (iVar1 >> 0x10)) * 0x10000) >>
-                       0x10);
-    }
-    iVar1 = param_2;
-    if (0 < param_3) {
-      while (uVar6 != 0) {
-        iVar1 = iVar1 + (short)iVar5;
-        iVar2 = iVar1 * 0x10000 >> 0x10;
-        if ((int)(uint)(ushort)DAT_00202728 <= iVar2) {
-          uVar6 = 0;
-          break;
-        }
-        iVar4 = *(int *)(DAT_0020274c + iVar2 * 4 + 4) - *(int *)(DAT_0020274c + iVar2 * 4);
-        pvVar_buf = (*param_4)(iVar4);
-        if ((pvVar_buf == 0) || (iVar1 = read_gr_resource_record(iVar1,pvVar_buf), iVar4 != iVar1)) {
-          uVar6 = 0;
-        }
-        else {
-          /* Debug-only hook, not in the original decompile: dumps this
-             entry's raw bytes to a BMP under debug/gr/ when
-             UW_DEBUG_DUMP_GR is set. No-op otherwise. */
-          uw_debug_dump_gr_entry(param_1,iVar5,(unsigned char *)pvVar_buf,iVar4);
-          if (param_5 != (code *)0x0) {
-            uVar3 = (*param_5)(pvVar_buf,iVar4,iVar5);
-            uVar6 = uVar6 & uVar3;
-          }
-        }
-        iVar5 = ((short)iVar5 + 1) * 0x10000 >> 0x10;
-        if (param_3 <= iVar5) break;
-        local_8 = (short)param_2;
-        iVar1 = (int)local_8;
-      }
-    }
-    close_gr_resource_file();
-  }
-  return uVar6;
-}
-
-
-
-
-
-
-
-
-
-void load_armor_variant_tables(param_1)
-undefined4 param_1;
-
-{
-  read_file_handle(param_1,&DAT_00202800,0x80);
-  read_file_handle(param_1,&DAT_002027d0,0x30);
-  read_file_handle(param_1,&DAT_00202750,0x80);
-  if (getenv("UW_DEBUG_ARMOR_TABLES")) {
-    int _i;
-    for (_i = 0; _i < 32; _i++)
-      fprintf(stderr, "[armor] DAT_00202750[%d] (family%d nibble%d): %02x %02x %02x %02x\n",
-              _i, _i < 16 ? 2 : 3, _i < 16 ? _i : _i - 16,
-              (unsigned char)(&DAT_00202750)[_i*4], (unsigned char)(&DAT_00202750)[_i*4+1],
-              (unsigned char)(&DAT_00202750)[_i*4+2], (unsigned char)(&DAT_00202750)[_i*4+3]);
-  }
-  return;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

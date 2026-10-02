@@ -1007,3 +1007,37 @@ short param_1;
   }
   return uVar1;
 }
+
+
+// was FUN_00040aa8 -- the central symbolic-id -> absolute-frame
+// resolver used throughout the HUD/object draw paths: id<0x1000 is
+// already an absolute OBJECTS.GR frame, 0x1000<=id<0x2000 resolves
+// via DAT_00202730 (BUTTONS.GR's base), id>=0x2000 resolves via
+// DAT_00202738 (LFTI's base, i.e. "whatever preloaded resource comes
+// right after TMOBJ.GR" -- see that global's own comment). Same
+// formula this whole session's HUD work reconstructed independently
+// as "resolved = base + (id - range_start)".
+uint resolve_sprite_id_to_frame(param_1)
+int param_1;
+
+{
+  int iVar1;
+  uint uVar2;
+  
+  iVar1 = (int)(short)param_1;
+  if (iVar1 < 0x2000) {
+    if (iVar1 < 0x1000) {
+      /* DAT_0024d090 (an object-type -> OBJECTS.GR frame remap) is never
+         populated in this decompile. OBJECTS.GR is now registered at
+         absolute frame indices (LAB_00041610), so the id IS the frame. */
+      uVar2 = (uint)(ushort)param_1;
+    }
+    else {
+      uVar2 = ((uint)DAT_00202730 + param_1) - 0x1000;
+    }
+  }
+  else {
+    uVar2 = ((uint)DAT_00202738 + param_1) - 0x2000;
+  }
+  return uVar2;
+}

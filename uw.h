@@ -2066,6 +2066,15 @@ extern undefined2 DAT_00202748;
 extern char * DAT_0020274c;
 extern undefined1 DAT_0023b840_backing[8192];
 #define DAT_0023b840 DAT_0023b840_backing[0]
+extern undefined1 DAT_00202750_backing[256];
+#define DAT_00202750 DAT_00202750_backing[0]
+extern char s__DATA_pals_dat_00085978[];
+extern char DAT_00085920_backing[20];
+#define DAT_00085920 DAT_00085920_backing[0]
+#define DAT_00085928 DAT_00085920_backing[8]
+#define DAT_00085929 DAT_00085920_backing[9]
+#define DAT_00085930 DAT_00085920_backing[0x10]
+#define DAT_00085931 DAT_00085920_backing[0x11]
 extern char * DAT_0023c3fc;
 extern undefined4 * DAT_0023c404;
 extern void * g_grtile_real_ptrs[320];

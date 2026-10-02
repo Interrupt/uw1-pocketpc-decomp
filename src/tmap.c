@@ -1956,3 +1956,35 @@ int param_2;
   uw_tile_t *tile = (uw_tile_t *)tilemap_lookup(param_1,param_2);
   return tile->no_magic;
 }
+
+
+/* Return type was `int`, truncating the real 64-bit pointer every
+   caller casts back to (byte *) and dereferences. */
+// was FUN_00040c5c
+void *get_texture_page(param_1)
+short param_1;
+
+{
+  int iVar1;
+  char **ppcVar2;
+
+  iVar1 = (int)param_1;
+  if (iVar1 < 0x30) {
+    return DAT_0023ae38 + iVar1 * 0x1000;
+  }
+  if (iVar1 < 0x3a) {
+    return DAT_0023ae34 + (iVar1 + -0x30) * 0x400;
+  }
+  if (iVar1 < 0x6a) {
+    iVar1 = iVar1 + -0x3a;
+    ppcVar2 = &DAT_0023ae3c;
+  }
+  else {
+    if (0x73 < iVar1) {
+      return 0;
+    }
+    iVar1 = iVar1 + -0x6a;
+    ppcVar2 = &DAT_0023ae30;
+  }
+  return *ppcVar2 + iVar1 * 0x100;
+}
