@@ -2228,6 +2228,8 @@ extern undefined2 g_text_flat_color;
 /* Globals defined in uw.c but also used by functions that now live in
    collision.c (collision geometry) -- extern'd here so both
    translation units see the same storage. */
+extern undefined1 DAT_00202a58_backing[65536];
+#define DAT_00202a58 DAT_00202a58_backing[0]
 extern undefined1 DAT_00202bf8_backing[32768];
 #define DAT_00202bf8 DAT_00202bf8_backing[0]
 extern undefined1 DAT_00202c70_backing[65536];
@@ -3415,11 +3417,11 @@ int read_mod_word_length_field();
 bool arm_sfx_trigger_slot();
 undefined4 start_sfx_trigger_slot();
 undefined4 stop_sfx_trigger_slot();
-void FUN_0004f7e0();
-void FUN_0004f7f0();
-void FUN_0004f828();
+void register_sound_channel_pool_cleanup();
+void init_all_sound_channel_slots();
+void release_all_sound_channel_slots();
 undefined1 is_sfx_trigger_slot_active();
-void FUN_0004f874();
+void resize_mod_event_row_array();
 void FUN_0004f9a0();
 void FUN_0004faf4();
 void FUN_0004fb38();

@@ -4033,8 +4033,7 @@ undefined4 DAT_00086370_backing[296];
    the access safe. */
 undefined1 DAT_00086810_backing[32];
 #define DAT_00086810 DAT_00086810_backing[0]
-static undefined1 DAT_00202a58_backing[65536];
-#define DAT_00202a58 DAT_00202a58_backing[0]
+undefined1 DAT_00202a58_backing[65536];
 /* collision_build_height_field's collision height-field: five 5-byte corner records at
    0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the
    fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads
@@ -13333,133 +13332,6 @@ bool compute_drop_aim_from_cursor()
 
 
 
-void FUN_0004f7e0()
-
-{
-  FUN_0004f7f0();
-  register_default_atexit_handler(FUN_0004f828);
-  return;
-}
-
-
-
-void FUN_0004f7f0()
-
-{
-  undefined *puVar1;
-  int iVar2;
-  
-  puVar1 = &DAT_00202a58;
-  iVar2 = 0x10;
-  do {
-    init_sound_channel_slot(puVar1);
-    iVar2 = iVar2 + -1;
-    puVar1 = puVar1 + 0x1a;
-  } while (iVar2 != 0);
-  return;
-}
-
-
-
-void FUN_0004f828()
-
-{
-  undefined1 *puVar1;
-  int iVar2;
-  
-  iVar2 = 0x10;
-  puVar1 = &DAT_00202bf8;
-  do {
-    puVar1 = puVar1 + -0x1a;
-    release_sound_channel_slot(puVar1);
-    iVar2 = iVar2 + -1;
-  } while (iVar2 != 0);
-  return;
-}
-
-
-
-
-
-
-void FUN_0004f874(param_1,param_2,param_3)
-int param_1;
-int param_2;
-int param_3;
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  bool bVar5;
-  bool bVar6;
-  
-  if (param_3 != -1) {
-    *(int *)(param_1 + 0x10) = param_3;
-  }
-  if (param_2 == 0) {
-    param_2 = 0;
-    if (*(int *)(param_1 + 4) != 0) {
-      Ordinal_1094();
-      *(undefined4 *)(param_1 + 4) = 0;
-    }
-  }
-  else {
-    if (*(int *)(param_1 + 4) != 0) {
-      if (*(int *)(param_1 + 0xc) < param_2) {
-        iVar2 = *(int *)(param_1 + 0x10);
-        if (*(int *)(param_1 + 0x10) == 0) {
-          iVar2 = *(int *)(param_1 + 8);
-          if (iVar2 < 0) {
-            iVar2 = iVar2 + 7;
-          }
-          iVar2 = iVar2 >> 3;
-          bVar6 = SBORROW4(iVar2,4);
-          iVar3 = iVar2 + -4;
-          bVar5 = iVar2 == 4;
-          if (iVar2 < 4) {
-            iVar2 = 4;
-            iVar4 = param_2;
-          }
-          else {
-            iVar4 = 0x400;
-            bVar6 = SBORROW4(iVar2,0x400);
-            iVar3 = iVar2 + -0x400;
-            bVar5 = iVar2 == 0x400;
-          }
-          if (!bVar5 && iVar3 < 0 == bVar6) {
-            iVar2 = iVar4;
-          }
-        }
-        iVar2 = *(int *)(param_1 + 0xc) + iVar2;
-        if (iVar2 <= param_2) {
-          iVar2 = param_2;
-        }
-        iVar3 = Ordinal_1095(iVar2 << 4);
-        Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 4);
-        FUN_000504c0(iVar3 + *(int *)(param_1 + 8) * 0x10,param_2 - *(int *)(param_1 + 8));
-        Ordinal_1094(*(undefined4 *)(param_1 + 4));
-        *(int *)(param_1 + 4) = iVar3;
-        *(int *)(param_1 + 0xc) = iVar2;
-      }
-      else {
-        iVar2 = *(int *)(param_1 + 8);
-        if (iVar2 < param_2) {
-          FUN_000504c0(*(int *)(param_1 + 4) + iVar2 * 0x10,param_2 - iVar2);
-        }
-      }
-      goto LAB_0004f994;
-    }
-    uVar1 = Ordinal_1095(param_2 << 4);
-    *(undefined4 *)(param_1 + 4) = uVar1;
-    FUN_000504c0(uVar1,param_2);
-  }
-  *(int *)(param_1 + 0xc) = param_2;
-LAB_0004f994:
-  *(int *)(param_1 + 8) = param_2;
-  return;
-}
 
 
 
@@ -14259,7 +14131,7 @@ int param_2;
   }
   else {
     uVar1 = Ordinal_2142(param_2);
-    FUN_0004f874(param_1,uVar1,0xffffffff);
+    resize_mod_event_row_array(param_1,uVar1,0xffffffff);
   }
   FUN_000505e0(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
   return;
@@ -20808,7 +20680,7 @@ undefined4 param_1;
 // dropped argument, the same class of bug fixed repeatedly elsewhere
 // in this file. Unlike most such cases, this one has a confirmed real
 // parameter: its own only call site (uw.c) passes an explicit
-// function-pointer argument (`register_default_atexit_handler(FUN_0004f828)`)
+// function-pointer argument (`register_default_atexit_handler(release_all_sound_channel_slots)`)
 // despite this K&R signature declaring no parameters -- the same
 // "real ABI argument the Ghidra-recovered signature omits" pattern as
 // other dropped-argument fixes in this file. Added the parameter back

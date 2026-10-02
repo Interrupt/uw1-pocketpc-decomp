@@ -1330,7 +1330,7 @@ undefined4 acquire_sound_resource_slot()
 
 // was FUN_0004b600 -- initializes one 0x1a-byte sound-channel slot
 // (zeroing its +0x12..+0x19 playback-state fields): called in a loop
-// over all 0x10 slots at startup (uw.c's FUN_0004f7f0), and per-slot
+// over all 0x10 slots at startup (uw.c's init_all_sound_channel_slots), and per-slot
 // right after Ordinal_1095(0x1a) allocates a fresh one in
 // src/audio.c. Always returns 0.
 undefined4 init_sound_channel_slot(param_1)
@@ -1892,7 +1892,7 @@ LAB_0004c038:
       FUN_0004f9a0(iVar4 + *piVar13,0x40,0xffffffff);
       iVar3 = 0;
       do {
-        FUN_0004f874(*(int *)(iVar4 + *piVar13 + 4) + iVar3,*piVar15,0xffffffff);
+        resize_mod_event_row_array(*(int *)(iVar4 + *piVar13 + 4) + iVar3,*piVar15,0xffffffff);
         local_334 = (undefined1 *)0x0;
         if (0 < *piVar15) {
           iVar10 = 0;
@@ -3549,4 +3549,154 @@ int param_2;
     *(undefined1 *)(param_1 + 0x1040b) = 0;
   }
   return uVar1;
+}
+
+
+// was FUN_0004f7e0 -- one-time startup entry point for the hardware
+// sound-channel slot pool: initializes all 16 slots now
+// (init_all_sound_channel_slots) and registers their teardown to run
+// automatically at exit.
+void register_sound_channel_pool_cleanup()
+
+{
+  init_all_sound_channel_slots();
+  register_default_atexit_handler(release_all_sound_channel_slots);
+  return;
+}
+
+
+
+// was FUN_0004f7f0 -- initializes all 16 hardware sound-channel slots
+// (0x1a/26-byte records starting at the shared scratch buffer
+// DAT_00202a58) via init_sound_channel_slot.
+void init_all_sound_channel_slots()
+
+{
+  undefined *puVar1;
+  int iVar2;
+
+  puVar1 = &DAT_00202a58;
+  iVar2 = 0x10;
+  do {
+    init_sound_channel_slot(puVar1);
+    iVar2 = iVar2 + -1;
+    puVar1 = puVar1 + 0x1a;
+  } while (iVar2 != 0);
+  return;
+}
+
+
+
+// was FUN_0004f828 -- releases all 16 hardware sound-channel slots in
+// reverse order via release_sound_channel_slot; DAT_00202bf8 is
+// confirmed (by address arithmetic: 0x202bf8 - 0x202a58 == 0x1a0 ==
+// 16*0x1a) to be exactly the one-past-the-end address of the same
+// slot array init_all_sound_channel_slots walks forward from.
+void release_all_sound_channel_slots()
+
+{
+  undefined1 *puVar1;
+  int iVar2;
+
+  iVar2 = 0x10;
+  puVar1 = &DAT_00202bf8;
+  do {
+    puVar1 = puVar1 + -0x1a;
+    release_sound_channel_slot(puVar1);
+    iVar2 = iVar2 + -1;
+  } while (iVar2 != 0);
+  return;
+}
+
+
+
+
+
+
+// was FUN_0004f874 -- generic growable-array resize for 16-byte,
+// zero-initializable elements (grows via Ordinal_1095/realloc-style
+// copy, zero-fills new slots via FUN_000504c0's Ordinal_1047 memset).
+// Confirmed used only by the MOD pattern loader (both call sites are
+// building per-row note-event storage: note/sample/period/effect,
+// each field 4 bytes = 16 bytes/event) -- a sibling of the 20-byte
+// variant (still-unnamed FUN_0004f9a0) used one level up for the
+// per-pattern channel-row array. param_3 (-1 = "leave unchanged")
+// optionally overrides the growth-hint field at +0x10.
+void resize_mod_event_row_array(param_1,param_2,param_3)
+int param_1;
+int param_2;
+int param_3;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  bool bVar5;
+  bool bVar6;
+
+  if (param_3 != -1) {
+    *(int *)(param_1 + 0x10) = param_3;
+  }
+  if (param_2 == 0) {
+    param_2 = 0;
+    if (*(int *)(param_1 + 4) != 0) {
+      Ordinal_1094();
+      *(undefined4 *)(param_1 + 4) = 0;
+    }
+  }
+  else {
+    if (*(int *)(param_1 + 4) != 0) {
+      if (*(int *)(param_1 + 0xc) < param_2) {
+        iVar2 = *(int *)(param_1 + 0x10);
+        if (*(int *)(param_1 + 0x10) == 0) {
+          iVar2 = *(int *)(param_1 + 8);
+          if (iVar2 < 0) {
+            iVar2 = iVar2 + 7;
+          }
+          iVar2 = iVar2 >> 3;
+          bVar6 = SBORROW4(iVar2,4);
+          iVar3 = iVar2 + -4;
+          bVar5 = iVar2 == 4;
+          if (iVar2 < 4) {
+            iVar2 = 4;
+            iVar4 = param_2;
+          }
+          else {
+            iVar4 = 0x400;
+            bVar6 = SBORROW4(iVar2,0x400);
+            iVar3 = iVar2 + -0x400;
+            bVar5 = iVar2 == 0x400;
+          }
+          if (!bVar5 && iVar3 < 0 == bVar6) {
+            iVar2 = iVar4;
+          }
+        }
+        iVar2 = *(int *)(param_1 + 0xc) + iVar2;
+        if (iVar2 <= param_2) {
+          iVar2 = param_2;
+        }
+        iVar3 = Ordinal_1095(iVar2 << 4);
+        Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 4);
+        FUN_000504c0(iVar3 + *(int *)(param_1 + 8) * 0x10,param_2 - *(int *)(param_1 + 8));
+        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        *(int *)(param_1 + 4) = iVar3;
+        *(int *)(param_1 + 0xc) = iVar2;
+      }
+      else {
+        iVar2 = *(int *)(param_1 + 8);
+        if (iVar2 < param_2) {
+          FUN_000504c0(*(int *)(param_1 + 4) + iVar2 * 0x10,param_2 - iVar2);
+        }
+      }
+      goto LAB_0004f994;
+    }
+    uVar1 = Ordinal_1095(param_2 << 4);
+    *(undefined4 *)(param_1 + 4) = uVar1;
+    FUN_000504c0(uVar1,param_2);
+  }
+  *(int *)(param_1 + 0xc) = param_2;
+LAB_0004f994:
+  *(int *)(param_1 + 8) = param_2;
+  return;
 }
