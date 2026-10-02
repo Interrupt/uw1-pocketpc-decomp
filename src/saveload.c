@@ -1574,7 +1574,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     read_file_handle(iVar3,&g_save_record_count,2);
     read_file_handle(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
     Ordinal_553(iVar3);
-    FUN_0004638c();
+    reload_paperdoll_body_sprite();
   }
   restore_player_save_record(g_save_record_buffer);
   refresh_player_equipment_effects();

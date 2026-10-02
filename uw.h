@@ -2753,6 +2753,9 @@ extern undefined1 DAT_00085aa0_backing[32768];
 #define DAT_00085aa0 DAT_00085aa0_backing[0]
 extern char s_damaged__00085aa8[];
 extern char s_destroyed__00085ab4[];
+extern char s_bodies_00085c58[];
+extern undefined1 DAT_00202988_backing[16];
+#define DAT_00202988 DAT_00202988_backing[0]
 extern char s_Not_a_spell_00085a80[];
 void *alloc_door_frame_buffer();
 void close_door_object();
@@ -3298,9 +3301,9 @@ ushort *extract_and_refresh_slot_item();
 ushort *extract_matching_object_from_slot();
 undefined4 is_valid_equipment_slot_item();
 undefined4 damage_equipped_item_in_slot();
-uint FUN_00046260();
+uint calculate_object_weight();
 bool check_object_carry_weight();
-void FUN_0004638c();
+void reload_paperdoll_body_sprite();
 void FUN_00046414();
 void FUN_000465c8();
 void handle_inventory_panel_click();

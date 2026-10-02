@@ -3399,13 +3399,12 @@ undefined4 DAT_002029a0;
 undefined4 DAT_0020299c;
 /* Ghidra left 0x202988 and 0x2028e0 as bare literal addresses (no symbol)
    -- small per-hand "currently drawn weapon / hand state" arrays indexed
-   0..5 by FUN_000465c8/FUN_0004638c (which zero them) and FUN_00046xxx
+   0..5 by FUN_000465c8/reload_paperdoll_body_sprite (which zero them) and FUN_00046xxx
    (which reads+rewrites them to gate a paperdoll redraw). On the 32-bit
    binary `idx + 0x202988` was real addressing; here it hits an unmapped
    low address and segfaults level init. Give them real backing storage
    and address them as `&DAT_00202988 + idx`. */
 undefined1 DAT_00202988_backing[16];
-#define DAT_00202988 DAT_00202988_backing[0]
 undefined1 DAT_002028e0_backing[16];
 #define DAT_002028e0 DAT_002028e0_backing[0]
  undefined DAT_00202978_backing[8192];
@@ -11339,7 +11338,7 @@ undefined4 place_object_in_backpack_slot(param_1,param_2)
 /* Was `undefined4 param_1` -- same 64-bit-pointer-truncated-through-a-
    32-bit-typedef-parameter bug as place_held_item_in_empty_slot's identical fix just
    above (and sum_container_weight's, elsewhere in this file): param_1 is
-   dereferenced further down (FUN_00046260(param_1), etc.) as a real
+   dereferenced further down (calculate_object_weight(param_1), etc.) as a real
    object pointer. */
 ushort *param_1;
 short param_2;
@@ -11393,7 +11392,7 @@ short param_2;
     }
   }
   else {
-    iVar3 = FUN_00046260(param_1);
+    iVar3 = calculate_object_weight(param_1);
     if (-1 < iVar1) {
       if (0x12 < iVar1) {
         /* Was `resolve_object_link(g_current_container_record + 8)` --
@@ -11703,7 +11702,7 @@ undefined4 param_1;
 void decrement_object_count(param_1)
 /* Was `undefined4 param_1` -- a real object-record pointer (forwarded
    straight to reduce_object_count, which dereferences it via
-   encode_object_slot_index/FUN_00046260), truncated to 32 bits on this
+   encode_object_slot_index/calculate_object_weight), truncated to 32 bits on this
    host -- same class as many other fixes this session. */
 ushort *param_1;
 
@@ -11733,13 +11732,13 @@ uint param_2;
   uint uVar9;
   char *pObj;
 
-  /* Dropped argument: FUN_00046260 dereferences its own declared
+  /* Dropped argument: calculate_object_weight dereferences its own declared
      param_1 immediately -- called bare here, same idiom as this whole
      session's other fixes. Confirmed live (UW_DEBUG_INV +
      demo_container_click_test.txt): clicking a food item (bread)
      inside an open backpack container crashed here on first use of
      this never-before-exercised "use item" dispatch path. */
-  iVar3 = FUN_00046260(param_1);
+  iVar3 = calculate_object_weight(param_1);
   uVar4 = encode_object_slot_index(param_1);
   iVar7 = 0;
   do {
@@ -12023,7 +12022,7 @@ ushort param_5;
         (&DAT_00202951)[iVar4 * 2] = (char)(uVar7 >> 8);
       }
       object_list_unlink(local_28 + 6,puVar3);
-      iVar4 = FUN_00046260(puVar3);
+      iVar4 = calculate_object_weight(puVar3);
       g_player_carry_weight = g_player_carry_weight - (short)iVar4;
       if (g_current_container_record == 0) {
         return puVar3;
@@ -12071,52 +12070,9 @@ ushort param_5;
 
 
 
-uint FUN_00046260(param_1)
-ushort * param_1;
-
-{
-  ushort uVar1;
-  uint uVar2;
-  int iVar3;
-  ushort local_8 [2];
-  
-  uVar1 = *param_1;
-  iVar3 = (uVar1 & 0x1ff) * 0xd;
-  if (((uVar1 & 0x8000) == 0) || ((param_1[3] & 0x8000) != 0)) {
-    local_8[0] = *(ushort *)(&DAT_00202c91 + iVar3) >> 4;
-    uVar2 = (uint)local_8[0];
-    if ((uVar1 & 0x8000) == 0) {
-      if ((param_1[3] & 0xffc0) != 0) {
-        sum_container_weight(param_1 + 3,local_8);
-        uVar2 = (uint)(short)local_8[0];
-      }
-    }
-  }
-  else {
-    uVar2 = (uint)(*(ushort *)(&DAT_00202c91 + iVar3) >> 4) * (uint)(param_1[3] >> 6);
-  }
-  return uVar2;
-}
 
 
 
-// WARNING: Removing unreachable block (ram,0x000463bc)
-
-void FUN_0004638c()
-
-{
-  int iVar1;
-  
-  reload_single_grtile_entry(0x2091,s_bodies_00085c58,
-               (*(byte *)(DAT_00086df8 + 100) >> 2 & 7) +
-               (int)(short)((int)((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 10) >> 1));
-  iVar1 = 1;
-  do {
-    *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar1 < 6);
-  return;
-}
 
 
 
@@ -12132,7 +12088,7 @@ void FUN_00046414()
   if (DAT_002029a4 == 0) {
     DAT_002029a4 = 1;
     g_blit_transparent_mode = 1;
-    FUN_0004638c();
+    reload_paperdoll_body_sprite();
     iVar5 = 6;
     do {
       uVar1 = grtile_alloc_registered((&g_inv_hotspot_dirty_w)[iVar5 * 0xe],
@@ -12620,7 +12576,7 @@ LAB_00047a0c:
     return (byte)local_48[3] >> 5 & 1;
   }
   bVar6 = 1;
-  local_54[0] = FUN_00046260(param_1);
+  local_54[0] = calculate_object_weight(param_1);
   iVar12 = g_current_container_record;
   bVar7 = 1;
   if (0x13 < iVar15) {

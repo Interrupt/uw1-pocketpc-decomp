@@ -946,7 +946,7 @@ LAB_0004386c:
       }
     }
     else {
-      iVar10 = FUN_00046260(param_1);
+      iVar10 = calculate_object_weight(param_1);
       g_player_carry_weight = g_player_carry_weight + (short)iVar10;
       /* Legacy truncated "prev" walk -- same fix as
          place_object_in_backpack_slot's sibling copy (search "still

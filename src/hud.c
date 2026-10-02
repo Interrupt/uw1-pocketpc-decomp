@@ -4437,7 +4437,7 @@ void unregister_stats_panel_click_regions()
 // is active (g_active_hud_panel == 0) or the stats-panel sub-view index
 // (DAT_00085a6c+8) is 4 (the equipment/paperdoll sub-view); otherwise
 // redraws the armor overlay plus the two still-unnamed
-// FUN_0004638c/FUN_00048110 refreshes. Reads as "refresh the equipment
+// reload_paperdoll_body_sprite/FUN_00048110 refreshes. Reads as "refresh the equipment
 // display if it's currently visible".
 void refresh_equipment_display_if_visible()
 
@@ -4445,7 +4445,7 @@ void refresh_equipment_display_if_visible()
   if ((g_active_hud_panel != '\0') && (*(short *)(DAT_00085a6c + 8) != 4)) {
     return;
   }
-  FUN_0004638c();
+  reload_paperdoll_body_sprite();
   redraw_armor_overlay_widgets();
   FUN_00048110();
   return;
@@ -4797,4 +4797,29 @@ uint param_1;
   }
   uVar4 = report_spell_cast_failure(uVar4);
   return uVar4;
+}
+
+
+// was FUN_0004638c -- reloads the player's paperdoll body sprite
+// (BODIES.GR, the frame selected by gender/race bits at
+// DAT_00086df8+100) via reload_single_grtile_entry, then clears 5
+// bytes of the cached equipment-icon slot array (DAT_00202988+1..+5).
+// Called whenever the player's appearance or equipped-item display
+// needs a full refresh (equipment changes, panel reloads, resting).
+// WARNING: Removing unreachable block (ram,0x000463bc)
+
+void reload_paperdoll_body_sprite()
+
+{
+  int iVar1;
+
+  reload_single_grtile_entry(0x2091,s_bodies_00085c58,
+               (*(byte *)(DAT_00086df8 + 100) >> 2 & 7) +
+               (int)(short)((int)((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 10) >> 1));
+  iVar1 = 1;
+  do {
+    *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 6);
+  return;
 }

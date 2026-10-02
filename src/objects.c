@@ -1158,3 +1158,37 @@ char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
   }
   return;
 }
+
+
+// was FUN_00046260 -- computes an object's weight: looks up the
+// per-class base weight (&DAT_00202c91, stride 0xd), multiplied by
+// quantity for stackable items (the 0x8000 flag set), or -- for a
+// non-stackable object that's itself a container -- adds the weight
+// of everything it contains via sum_container_weight. Used throughout
+// the inventory/equipment code for carry-weight bookkeeping.
+uint calculate_object_weight(param_1)
+ushort * param_1;
+
+{
+  ushort uVar1;
+  uint uVar2;
+  int iVar3;
+  ushort local_8 [2];
+
+  uVar1 = *param_1;
+  iVar3 = (uVar1 & 0x1ff) * 0xd;
+  if (((uVar1 & 0x8000) == 0) || ((param_1[3] & 0x8000) != 0)) {
+    local_8[0] = *(ushort *)(&DAT_00202c91 + iVar3) >> 4;
+    uVar2 = (uint)local_8[0];
+    if ((uVar1 & 0x8000) == 0) {
+      if ((param_1[3] & 0xffc0) != 0) {
+        sum_container_weight(param_1 + 3,local_8);
+        uVar2 = (uint)(short)local_8[0];
+      }
+    }
+  }
+  else {
+    uVar2 = (uint)(*(ushort *)(&DAT_00202c91 + iVar3) >> 4) * (uint)(param_1[3] >> 6);
+  }
+  return uVar2;
+}

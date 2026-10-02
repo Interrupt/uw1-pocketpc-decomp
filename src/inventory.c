@@ -288,7 +288,7 @@ short param_1;
              untruncated prev pointer at +0x14 instead, same fix as
              leave_nested_container_level/free_open_container_chain. */
           for (; iVar6 != 0; iVar6 = *(char **)(iVar6 + 0x14)) {
-            iVar9 = FUN_00046260(puVar7);
+            iVar9 = calculate_object_weight(puVar7);
             iVar9 = *(short *)(iVar6 + 10) - iVar9;
             *(char *)(iVar6 + 10) = (char)iVar9;
             *(char *)(iVar6 + 0xb) = (char)((uint)iVar9 >> 8);

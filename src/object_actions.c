@@ -448,8 +448,8 @@ uint param_4;
 // Dropped argument: both real call sites (uw.c:11074 `check_object_carry_weight(iVar2)`,
 // and interact_default's own `check_object_carry_weight(g_interact_target)` -- the object
 // being picked up) pass an object pointer, but this function's own
-// recovered signature took none, so it silently called FUN_00046260()
-// bare too instead of forwarding it -- FUN_00046260's very first line
+// recovered signature took none, so it silently called calculate_object_weight()
+// bare too instead of forwarding it -- calculate_object_weight's very first line
 // unconditionally dereferences its parameter, so with nothing passed
 // through, it dereferenced whatever ARM register-leftover garbage was
 // sitting there and crashed. Confirmed live: interact_default's "grab
@@ -464,7 +464,7 @@ ushort *param_1;
 {
   short sVar1;
 
-  sVar1 = FUN_00046260(param_1);
+  sVar1 = calculate_object_weight(param_1);
   if (getenv("UW_DEBUG_WEIGHT"))
     fprintf(stderr, "[weight] objid=0x%03x item_weight=%d current_load=%u max_capacity=%u fits=%d\n",
             (int)(*param_1 & 0x1ff), (int)sVar1, (unsigned)g_player_carry_weight, (unsigned)g_player_max_carry_weight,

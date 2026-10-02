@@ -1358,11 +1358,26 @@ LAB_00019bc8:
           }
         }
         if (cVar12 == 'I') {
+          /* Was `pcVar9[(int)pcVar11 - (int)local_30] = cVar1;` --
+             Ghidra swapped which pointer is the array base and which
+             is the index, AND truncated the pointer difference to 32
+             bits. The real intent (confirmed by the
+             `pcVar11 = pcVar7 + Ordinal_1068(pcVar7)` recompute right
+             after this whole if/else -- a strlen-based cursor resync
+             that only makes sense if this loop just appended into
+             pcVar7) is to APPEND the formatted number into the output
+             buffer at the current pcVar11 cursor, copying from
+             local_30: write pcVar11[pcVar9-local_30], not
+             pcVar9[pcVar11-local_30]. Same bug class as this whole
+             session's other truncated-pointer-arithmetic fixes; see
+             the identical sibling case a few lines below (the
+             get_message_string/babl_expand_string_refs branch) for the
+             same fix. */
           itoa_radix((int)sVar3,local_30,10);
           pcVar9 = local_30;
           do {
             cVar1 = *pcVar9;
-            pcVar9[(int)pcVar11 - (int)local_30] = cVar1;
+            pcVar11[(intptr_t)pcVar9 - (intptr_t)local_30] = cVar1;
             pcVar9 = pcVar9 + 1;
           } while (cVar1 != '\0');
         }
@@ -1381,9 +1396,25 @@ LAB_00019bc8:
           if (pcVar9 != (char *)0x0) {
             pcVar8 = (char *)babl_expand_string_refs(pcVar9);
             pcVar10 = pcVar8;
+            /* BUG FIX: was `pcVar10[(int)pcVar11 - (int)pcVar8] =
+               cVar1;` -- same swapped-base/truncated-pointer-difference
+               bug as the 'I' branch above (see its comment): writes
+               into pcVar10's own buffer at a 32-bit-truncated offset
+               instead of appending into pcVar11's (pcVar7's) output
+               cursor. On this 64-bit host, pcVar8/pcVar11 routinely
+               differ in their high 32 bits (separate babl_alloc
+               allocations), so the truncated difference used as an
+               index into pcVar10 is frequently huge/garbage --
+               confirmed live via lldb: SIGSEGV writing through a wild
+               pointer inside this exact loop
+               (EXC_BAD_ACCESS at babl.c, address far outside any valid
+               allocation) the first time a real NPC conversation line
+               reached this branch under realistic (100ms demo-delay)
+               pacing. Write through pcVar11 instead, offset by how far
+               pcVar10 has advanced past its own base pcVar8. */
             do {
               cVar1 = *pcVar10;
-              pcVar10[(int)pcVar11 - (int)pcVar8] = cVar1;
+              pcVar11[(intptr_t)pcVar10 - (intptr_t)pcVar8] = cVar1;
               pcVar10 = pcVar10 + 1;
             } while (cVar1 != '\0');
             if (pcVar9 != pcVar8) {

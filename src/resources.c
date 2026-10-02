@@ -1939,7 +1939,7 @@ short param_3;
      Save or Load. The existing 888-byte allocation there came from an
      unrelated resource loaded into this same slot at startup
      (app_main_loop's initial preload); the save/load menu's own level
-     reload (load_player_save_record -> FUN_0004638c -> ... -> here) later reuses
+     reload (load_player_save_record -> reload_paperdoll_body_sprite -> ... -> here) later reuses
      the slot for a bigger (2484-byte) one, overflowing it. Rather than
      assume the existing allocation is still big enough, allocate a
      fresh one sized for THIS write (same sizing register_grtile_entry uses for
@@ -2047,7 +2047,7 @@ char *param_1;
 void reload_single_grtile_entry(param_1,param_2,param_3)
 short param_1;
 /* Was `undefined4`, truncating the real resource-name string pointer
-   callers pass (e.g. FUN_0004638c's s_bodies_00085c58) before it reaches
+   callers pass (e.g. reload_paperdoll_body_sprite's s_bodies_00085c58) before it reaches
    load_gr_resource_entries's own `char *param_1`, which then crashed dereferencing
    it. Same pointer-truncation class as everywhere else this session. */
 char *param_2;

@@ -2638,8 +2638,8 @@ undefined4 param_2;
       uVar7 = encode_object_slot_index(param_1);
       *pbVar9 = *pbVar9 & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
       (&DAT_00202951)[iVar4] = (char)((uVar7 << 0x16) >> 0x18);
-      sVar2 = FUN_00046260(param_1);
-      sVar3 = FUN_00046260(puVar5);
+      sVar2 = calculate_object_weight(param_1);
+      sVar3 = calculate_object_weight(puVar5);
       /* Legacy truncated "prev" walk -- same fix as
          place_object_in_backpack_slot's sibling copy (search "still
          broken for genuine container nesting"); given its own dedicated
@@ -2651,7 +2651,7 @@ undefined4 param_2;
         *(char *)(pAncestor + 10) = (char)iVar8;
         *(char *)(pAncestor + 0xb) = (char)((uint)iVar8 >> 8);
       }
-      sVar2 = FUN_00046260(param_1);
+      sVar2 = calculate_object_weight(param_1);
       g_player_carry_weight = g_player_carry_weight + sVar2;
       refresh_player_equipment_effects();
       repopulate_container_grid_slots();
