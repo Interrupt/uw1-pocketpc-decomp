@@ -498,7 +498,7 @@ int param_2;
           }
           decrement_object_count(param_1);
           place_object_in_backpack_slot(param_1,iVar6);
-          FUN_00048110();
+          redraw_container_icon_slot();
         }
       }
       uVar10 = *param_1;
@@ -1554,7 +1554,7 @@ undefined4 param_2;
 // 3-state player counter (DAT_00086df8+0x61, wrapping) and triggers
 // an effect via display_book_or_scroll_page, then rewrites the
 // item's own low byte to 0xd5 and clears one bit of its high byte
-// before flushing a redraw (FUN_00049924 or FUN_00048110 depending
+// before flushing a redraw (FUN_00049924 or redraw_container_icon_slot depending
 // on param_3); 0x11b uses a food item directly. Confirmed real
 // caller: use_object_on_target's class-1/family-1 branch
 // (src/item_use.c).
@@ -1605,7 +1605,7 @@ int param_3;
       FUN_00049924(2);
     }
     else {
-      FUN_00048110();
+      redraw_container_icon_slot();
     }
   }
   else if (uVar3 == 0x11b) {
@@ -2414,7 +2414,7 @@ undefined4 check_offering_container_puzzle()
       uVar9 = *puVar5 & 0xff1b | 0x11b;
       *(char *)puVar5 = (char)uVar9;
       *(char *)((char *)puVar5 + 1) = (char)(uVar9 >> 8);
-      FUN_00048110();
+      redraw_container_icon_slot();
       print_scroll_message_by_id(0x95);
       return 1;
     }

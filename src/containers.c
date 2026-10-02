@@ -121,7 +121,7 @@ void close_backpack_container()
     FUN_00057118();
     if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (g_active_hud_panel == '\0')) {
       restore_captured_grtile_backdrop(DAT_002028ec);
-      FUN_00048110();
+      redraw_container_icon_slot();
     }
     cursor_show_idle_tick();
     DAT_002029a0 = 0;
@@ -1007,7 +1007,7 @@ LAB_0004386c:
 LAB_000439a0:
       if ((g_current_container_record == 0) ||
          (sVar3 = encode_object_slot_index(puVar4), (int)sVar3 != (uint)(*(ushort *)(g_current_container_record + 8) >> 6))) {
-        iVar10 = FUN_00048514(1);
+        iVar10 = update_carry_weight_display(1);
         if (iVar10 != 0) {
           select_active_font(s_font5x6p_sys_0008430c);
         }

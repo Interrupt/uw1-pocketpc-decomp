@@ -4437,7 +4437,7 @@ void unregister_stats_panel_click_regions()
 // is active (g_active_hud_panel == 0) or the stats-panel sub-view index
 // (DAT_00085a6c+8) is 4 (the equipment/paperdoll sub-view); otherwise
 // redraws the armor overlay plus the two still-unnamed
-// reload_paperdoll_body_sprite/FUN_00048110 refreshes. Reads as "refresh the equipment
+// reload_paperdoll_body_sprite/redraw_container_icon_slot refreshes. Reads as "refresh the equipment
 // display if it's currently visible".
 void refresh_equipment_display_if_visible()
 
@@ -4447,7 +4447,7 @@ void refresh_equipment_display_if_visible()
   }
   reload_paperdoll_body_sprite();
   redraw_armor_overlay_widgets();
-  FUN_00048110();
+  redraw_container_icon_slot();
   return;
 }
 
@@ -4891,4 +4891,64 @@ LAB_000464c8:
     DAT_00202998 = register_click_region(0xf0,0x76,0x13b,0xb,0,5,inventory_panel_click_region);
   }
   return;
+}
+
+
+// was FUN_00048110 -- redraws the bag/container icon slot on the
+// compass-view HUD: restores its plain backdrop when no container is
+// open, or draws the "open container" icon sprite when one is, then
+// refreshes the equipment widget range. Resets the carry-weight
+// display sentinel (DAT_00085c50) so update_carry_weight_display
+// redraws fresh next tick.
+void redraw_container_icon_slot()
+
+{
+  if (g_active_hud_panel == '\0') {
+    DAT_00085c50 = 0xffff;
+    if (g_current_container_record == 0) {
+      restore_captured_grtile_backdrop(DAT_002028ec);
+    }
+    else {
+      draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
+    }
+    redraw_inventory_widget_range(6,0x16);
+  }
+  return;
+}
+
+
+
+// was FUN_00048514 -- the HUD carry-weight/encumbrance display: only
+// redraws when the weight-capacity-remaining value actually changed
+// since last tick (tracked via DAT_00085c50), restoring the flask-slot
+// backdrop and drawing the remaining-capacity percentage as text.
+bool update_carry_weight_display(param_1)
+int param_1;
+
+{
+  int iVar1;
+  short sVar2;
+  undefined4 uVar3;
+  int iVar4;
+  bool bVar5;
+  undefined1 auStack_24 [8];
+  
+  bVar5 = false;
+  iVar4 = ((int)g_player_max_carry_weight - (int)g_player_carry_weight) * 0x10000;
+  iVar1 = iVar4 >> 0x10;
+  if (DAT_00085c50 != iVar1) {
+    restore_captured_grtile_backdrop(DAT_002028e8);
+    DAT_00085c50 = (short)((uint)iVar4 >> 0x10);
+    bVar5 = param_1 != 0;
+    *g_draw_color_index = 0xe0;
+    uVar3 = Ordinal_2005(10,iVar1);
+    itoa_radix(uVar3,auStack_24,10);
+    sVar2 = measure_text_width(auStack_24);
+    iVar4 = (int)sVar2;
+    if (iVar4 < 0) {
+      iVar4 = iVar4 + 1;
+    }
+    draw_text_string(auStack_24,0x131 - (short)(iVar4 >> 1),0x3c);
+  }
+  return bVar5;
 }

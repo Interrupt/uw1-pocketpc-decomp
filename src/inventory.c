@@ -440,7 +440,7 @@ short param_2;
   undefined1 auStack_60 [12];
   /* Was `ushort auStack_54 [20]` (matching the real ARM binary's own
      stack layout exactly, confirmed via Ghidra decompile of the real
-     FUN_00048198 at 0x48198) -- but FUN_00048110's real call site also
+     FUN_00048198 at 0x48198) -- but redraw_container_icon_slot's real call site also
      matches ours exactly: `redraw_inventory_widget_range(6,0x16)`, a
      loop upper bound of 22, writing auStack_54[21] and auStack_54[22]
      (index 20 is separately special-cased via local_2c, never touches
@@ -546,7 +546,7 @@ joined_r0x00048308:
         }
         select_active_font(s_font5x6p_sys_0008430c);
       }
-      FUN_00048514(0);
+      update_carry_weight_display(0);
       cursor_show_idle_tick();
       return;
     }

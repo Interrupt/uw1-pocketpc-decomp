@@ -1415,7 +1415,7 @@ void trigger_exploding_book_trap()
     reduce_item_quality_on_use(g_player_object,3);
     decrement_object_count(iVar2);
     discard_misplaced_object(0,iVar2,1);
-    FUN_00048110();
+    redraw_container_icon_slot();
     refresh_player_equipment_effects();
   }
   return;
@@ -1452,7 +1452,7 @@ undefined4 param_3;
     reduce_item_quality_on_use(g_player_object,3);
     decrement_object_count(iVar2);
     discard_misplaced_object(0,iVar2,1);
-    FUN_00048110();
+    redraw_container_icon_slot();
     refresh_player_equipment_effects();
   }
   return;

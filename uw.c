@@ -3774,7 +3774,7 @@ char s_destroyed__00085ab4[] = "destroyed.";
 // - Confirmed via a real Ghidra reference search against UU.exe (not
 //   just this decompile): every access to +0x4c anywhere in the shipped
 //   binary is a READ (check_object_carry_weight's "can I pick this up" check, and
-//   FUN_00048514, apparently a HUD burden/encumbrance display) -- there
+//   update_carry_weight_display, apparently a HUD burden/encumbrance display) -- there
 //   is no write to it ANYWHERE, so it stays at its zero BSS default for
 //   the life of the process. Net effect: every pickup attempt failed
 //   with "too heavy" regardless of the item (confirmed live: a 30-unit
@@ -12173,7 +12173,7 @@ void redraw_armor_overlay_widgets()
       rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76);
       screen_backup_restore_rect(0xf0,0xb,0x13b,0x76);
     }
-    iVar4 = FUN_00048514(1);
+    iVar4 = update_carry_weight_display(1);
     if (iVar4 != 0) {
       select_active_font(s_font5x6p_sys_0008430c);
     }
@@ -12825,54 +12825,6 @@ uint param_2;
 
 
 
-void FUN_00048110()
-
-{
-  if (g_active_hud_panel == '\0') {
-    DAT_00085c50 = 0xffff;
-    if (g_current_container_record == 0) {
-      restore_captured_grtile_backdrop(DAT_002028ec);
-    }
-    else {
-      draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
-    }
-    redraw_inventory_widget_range(6,0x16);
-  }
-  return;
-}
-
-
-
-bool FUN_00048514(param_1)
-int param_1;
-
-{
-  int iVar1;
-  short sVar2;
-  undefined4 uVar3;
-  int iVar4;
-  bool bVar5;
-  undefined1 auStack_24 [8];
-  
-  bVar5 = false;
-  iVar4 = ((int)g_player_max_carry_weight - (int)g_player_carry_weight) * 0x10000;
-  iVar1 = iVar4 >> 0x10;
-  if (DAT_00085c50 != iVar1) {
-    restore_captured_grtile_backdrop(DAT_002028e8);
-    DAT_00085c50 = (short)((uint)iVar4 >> 0x10);
-    bVar5 = param_1 != 0;
-    *g_draw_color_index = 0xe0;
-    uVar3 = Ordinal_2005(10,iVar1);
-    itoa_radix(uVar3,auStack_24,10);
-    sVar2 = measure_text_width(auStack_24);
-    iVar4 = (int)sVar2;
-    if (iVar4 < 0) {
-      iVar4 = iVar4 + 1;
-    }
-    draw_text_string(auStack_24,0x131 - (short)(iVar4 >> 1),0x3c);
-  }
-  return bVar5;
-}
 
 
 
