@@ -529,7 +529,7 @@ LAB_00073108:
 // (DAT_00087448==0) and lazily allocates the sample-set handle
 // (DAT_0023c3bc) on first use, then triggers sample id param_1+800
 // as a one-shot note into the module player (load_and_resample_wave_sample/
-// FUN_0004f594/FUN_0004f6b0), all through the audio interface
+// arm_sfx_trigger_slot/start_sfx_trigger_slot), all through the audio interface
 // DAT_0023c3b8.
 void trigger_sound_sample_note(param_1)
 int param_1;
@@ -579,11 +579,11 @@ int param_1;
         DAT_0023c3bc = iVar2;
       }
     }
-    FUN_0004f748(DAT_0023c3b8,0);
+    stop_sfx_trigger_slot(DAT_0023c3b8,0);
     cVar1 = load_and_resample_wave_sample(DAT_0023c3bc,DAT_0023c540,param_1 + 800);
     if (cVar1 != '\0') {
-      FUN_0004f594(DAT_0023c3b8,DAT_0023c3bc,0);
-      FUN_0004f6b0(DAT_0023c3b8,0);
+      arm_sfx_trigger_slot(DAT_0023c3b8,DAT_0023c3bc,0);
+      start_sfx_trigger_slot(DAT_0023c3b8,0);
     }
   }
   return;
@@ -732,7 +732,7 @@ void shutdown_music_module()
 
 {
   if (DAT_0023c3b8 != (undefined4 *)0x0) {
-    FUN_0004f748(DAT_0023c3b8,0);
+    stop_sfx_trigger_slot(DAT_0023c3b8,0);
     stop_mod_player_playback(DAT_0023c3b8);
     if (DAT_0023c3b8 != (undefined4 *)0x0) {
       (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
@@ -978,7 +978,7 @@ short param_1;
       DAT_00087448 = 1;
     }
     do {
-      cVar1 = FUN_0004f858(DAT_0023c3b8,0);
+      cVar1 = is_sfx_trigger_slot_active(DAT_0023c3b8,0);
     } while (cVar1 != '\0');
     if (DAT_0023c3bc == 0) {
       iVar3 = Ordinal_1095(0x1a);
@@ -1014,8 +1014,8 @@ short param_1;
     Ordinal_1063(acStack_118,acStack_220);
     uVar2 = FUN_0002295c(acStack_118);
     load_and_resample_wave_file(DAT_0023c3bc,DAT_0023c540,uVar2);
-    FUN_0004f594(DAT_0023c3b8,DAT_0023c3bc,0);
-    FUN_0004f6b0(DAT_0023c3b8,0);
+    arm_sfx_trigger_slot(DAT_0023c3b8,DAT_0023c3bc,0);
+    start_sfx_trigger_slot(DAT_0023c3b8,0);
     uVar2 = 1;
   }
   return uVar2;
@@ -1044,7 +1044,7 @@ bool is_voice_sample_finished()
 {
   char cVar1;
 
-  cVar1 = FUN_0004f858(DAT_0023c3b8,0);
+  cVar1 = is_sfx_trigger_slot_active(DAT_0023c3b8,0);
   return cVar1 == '\0';
 }
 
@@ -1056,7 +1056,7 @@ void stop_voice_sample()
 
 {
   if (DAT_0023c3b8 != 0) {
-    FUN_0004f748(DAT_0023c3b8,0);
+    stop_sfx_trigger_slot(DAT_0023c3b8,0);
   }
   return;
 }
@@ -1801,7 +1801,7 @@ LAB_0004c038:
       Ordinal_321(*piVar13 + iVar3,uVar5);
       Ordinal_297(&local_33c);
       local_340 = local_340 + 0x16;
-      uVar5 = FUN_0004f560(param_1,auStack_330,&local_340);
+      uVar5 = read_mod_word_length_field(param_1,auStack_330,&local_340);
       iVar10 = *piVar13 + iVar3;
       *(char *)(iVar10 + 4) = (char)uVar5;
       *(char *)(iVar10 + 5) = (char)((uint)uVar5 >> 8);
@@ -1828,13 +1828,13 @@ LAB_0004c038:
       *(undefined1 *)(iVar10 + 0xd) = 0;
       *(undefined1 *)(iVar10 + 0xe) = 0;
       *(undefined1 *)(iVar10 + 0xf) = 0;
-      uVar5 = FUN_0004f560(param_1,auStack_330,&local_340);
+      uVar5 = read_mod_word_length_field(param_1,auStack_330,&local_340);
       iVar10 = *piVar13 + iVar3;
       *(char *)(iVar10 + 0x10) = (char)uVar5;
       *(char *)(iVar10 + 0x11) = (char)((uint)uVar5 >> 8);
       *(char *)(iVar10 + 0x12) = (char)((uint)uVar5 >> 0x10);
       *(char *)(iVar10 + 0x13) = (char)((uint)uVar5 >> 0x18);
-      uVar5 = FUN_0004f560(param_1,auStack_330,&local_340);
+      uVar5 = read_mod_word_length_field(param_1,auStack_330,&local_340);
       iVar10 = *piVar13 + iVar3;
       *(char *)(iVar10 + 0x14) = (char)uVar5;
       *(char *)(iVar10 + 0x15) = (char)((uint)uVar5 >> 8);
@@ -3406,4 +3406,147 @@ int param_2;
     param_1 = param_1 + 0x400;
   } while (iVar5 < 0x41);
   return;
+}
+
+
+// was FUN_0004f858 -- queries whether SFX trigger slot param_2 is
+// currently playing (reads its "playing" flag at +0x10410 directly,
+// same field start_sfx_trigger_slot sets and stop_sfx_trigger_slot
+// clears).
+undefined1 is_sfx_trigger_slot_active(param_1,param_2)
+char *param_1;
+int param_2;
+
+{
+  return *(undefined1 *)(param_2 * 0xd + param_1 + 0x10410);
+}
+
+
+// was FUN_0004f560 -- reads a big-endian 16-bit word count from the
+// MOD file buffer (param_2+4) at the cursor position *param_3,
+// advances the cursor by 2, and returns the count doubled to a byte
+// count. Confirmed by its three call sites inside the MOD instrument-
+// header parser (still-unnamed FUN_0004bc94): classic ProTracker
+// instrument fields (sample length/repeat offset/repeat length) are
+// stored as big-endian word counts.
+int read_mod_word_length_field(param_1,param_2,param_3)
+undefined4 param_1;
+int param_2;
+int * param_3;
+
+{
+  byte bVar1;
+  int iVar2;
+
+  iVar2 = *param_3;
+  *param_3 = iVar2 + 1;
+  bVar1 = *(byte *)(*(int *)(param_2 + 4) + iVar2);
+  *param_3 = iVar2 + 2;
+  return ((uint)*(byte *)(*(int *)(param_2 + 4) + iVar2 + 1) + (uint)bVar1 * 0x100) * 2;
+}
+
+
+
+// was FUN_0004f594 -- arms one-shot SFX trigger slot param_3 (of 16,
+// each a 13-byte record at player+0x10404+slot*0xd) with the sample
+// data pointer+length from loaded wave handle param_2's fields
+// +0x12/+0x16, canceling (stop_sfx_trigger_slot) any trigger already
+// playing in that slot first. Leaves the slot's "playing" flag
+// (+0x10410) cleared -- start_sfx_trigger_slot flips it on. Confirmed
+// by the consumer loop in queue_mod_audio_buffer's tail, which mixes
+// raw unsigned-to-signed sample bytes from +0x10404 directly into the
+// output while +0x10410 is set and the position (+0x10408) is below
+// the length (+0x1040c).
+bool arm_sfx_trigger_slot(param_1,param_2,param_3)
+char *param_1;
+int param_2;
+int param_3;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  bool bVar3;
+
+  iVar2 = param_3 * 0xd + param_1;
+  if (*(char *)(iVar2 + 0x10410) != '\0') {
+    stop_sfx_trigger_slot(param_1,param_3);
+  }
+  bVar3 = *(int *)(param_2 + 0x12) != 0;
+  if (bVar3) {
+    *(char *)(iVar2 + 0x10410) = '\0';
+    *(undefined1 *)(iVar2 + 0x10408) = 0;
+    *(undefined1 *)(iVar2 + 0x10409) = 0;
+    *(undefined1 *)(iVar2 + 0x1040a) = 0;
+    *(undefined1 *)(iVar2 + 0x1040b) = 0;
+    uVar1 = *(undefined4 *)(param_2 + 0x12);
+    *(char *)(iVar2 + 0x10404) = (char)uVar1;
+    *(char *)(iVar2 + 0x10405) = (char)((uint)uVar1 >> 8);
+    *(char *)(iVar2 + 0x10406) = (char)((uint)uVar1 >> 0x10);
+    *(char *)(iVar2 + 0x10407) = (char)((uint)uVar1 >> 0x18);
+    uVar1 = *(undefined4 *)(param_2 + 0x16);
+    *(char *)(iVar2 + 0x1040c) = (char)uVar1;
+    *(char *)(iVar2 + 0x1040d) = (char)((uint)uVar1 >> 8);
+    *(char *)(iVar2 + 0x1040e) = (char)((uint)uVar1 >> 0x10);
+    *(char *)(iVar2 + 0x1040f) = (char)((uint)uVar1 >> 0x18);
+  }
+  return bVar3;
+}
+
+
+
+// was FUN_0004f6b0 -- starts SFX trigger slot param_2 playing: resets
+// its position (+0x10408) to 0 and sets the "playing" flag (+0x10410)
+// -- the counterpart to arm_sfx_trigger_slot, which loads the sample
+// data but leaves this flag cleared. Fails (returns 0) if the slot
+// has no armed sample (+0x10404==0) or the index is out of range.
+undefined4 start_sfx_trigger_slot(param_1,param_2)
+char *param_1;
+int param_2;
+
+{
+  undefined4 uVar1;
+
+  param_1 = param_2 * 0xd + param_1;
+  if ((*(int *)(param_1 + 0x10404) == 0) || (0xf < param_2)) {
+    uVar1 = 0;
+  }
+  else {
+    *(undefined1 *)(param_1 + 0x10408) = 0;
+    *(undefined1 *)(param_1 + 0x10409) = 0;
+    *(undefined1 *)(param_1 + 0x1040a) = 0;
+    *(undefined1 *)(param_1 + 0x1040b) = 0;
+    *(undefined1 *)(param_1 + 0x10410) = 1;
+    uVar1 = 1;
+  }
+  return uVar1;
+}
+
+
+
+// was FUN_0004f748 -- stops SFX trigger slot param_2: clears its
+// "playing" flag (+0x10410) and resets its position (+0x10408) to 0,
+// but leaves the armed sample pointer/length (+0x10404/+0x1040c)
+// intact so arm_sfx_trigger_slot can detect and cancel a still-armed
+// slot before overwriting it. Returns whether the slot had an armed
+// sample at all.
+undefined4 stop_sfx_trigger_slot(param_1,param_2)
+char *param_1;
+int param_2;
+
+{
+  undefined4 uVar1;
+
+  param_1 = param_2 * 0xd + param_1;
+  if ((*(int *)(param_1 + 0x10404) == 0) || (0xf < param_2)) {
+    uVar1 = 0;
+  }
+  else {
+    *(undefined1 *)(param_1 + 0x10410) = 0;
+    *(undefined1 *)(param_1 + 0x10408) = 0;
+    uVar1 = 1;
+    *(undefined1 *)(param_1 + 0x10409) = 0;
+    *(undefined1 *)(param_1 + 0x1040a) = 0;
+    *(undefined1 *)(param_1 + 0x1040b) = 0;
+  }
+  return uVar1;
 }
