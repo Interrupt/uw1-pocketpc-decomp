@@ -4403,7 +4403,7 @@ int DAT_002046fc;
    the "handle a click/button-index within this state" table (FUN_00056cf8
    calls table[state](clicked_index)). Link-time-init data the decompile
    never populated -> clicking the top-left panel's "menu" button (which
-   calls FUN_000564f8 -> FUN_00056cc8(6), the top-level list) jumped
+   calls run_pause_menu_modal_loop -> FUN_00056cc8(6), the top-level list) jumped
    through a null pointer.
 
    Entries 0-3 and 6 were correctly reconstructed by an earlier session
@@ -14026,171 +14026,15 @@ uint param_3;
 
 
 
-void FUN_000564f8(param_1)
-short param_1;
-
-{
-  short sVar1;
-  undefined4 uVar2;
-  int iVar3;
-  int iVar4;
-  bool bVar5;
-  short local_c;
-  short local_a;
-  
-  DAT_000868d8 = 1;
-  if (param_1 != 0) {
-    FUN_00057118();
-    FUN_00056cc8(6);
-    cursor_show_idle_tick();
-    wait_for_click_release(0);
-  }
-  DAT_002046f8 = 0;
-  do {
-    while( true ) {
-      sVar1 = next_input_event();
-      if (-1 < sVar1) break;
-      advance_menu_music_track();
-      flush_dirty_rect_to_display(1);
-    }
-    if (getenv("UW_DEBUG_PAUSEMENU"))
-      fprintf(stderr, "[pausemenu] loop event=0x%x\n", (int)sVar1);
-    if (sVar1 < 0x8e) {
-      if (sVar1 == 0x8d) {
-LAB_00056638:
-        uVar2 = 2;
-        goto LAB_000565a4;
-      }
-      if (0 < sVar1) {
-        if (sVar1 < 4) {
-          FUN_00057504(&local_c,&local_a);
-          iVar3 = (int)local_c;
-          iVar4 = (int)local_a;
-          local_c = (short)(iVar3 + -4);
-          local_a = (short)(0x76 - iVar4);
-          if (getenv("UW_DEBUG_PAUSEMENU"))
-            fprintf(stderr, "[pausemenu] click event=%d raw=(%d,%d) rel=(%d,%d)\n",
-                    (int)sVar1, iVar3, iVar4, (int)local_c, (int)local_a);
-          iVar3 = (iVar3 + -4) * 0x10000 >> 0x10;
-          if ((-1 < iVar3) && (iVar3 < 0x24)) {
-            iVar3 = (0x76 - iVar4) * 0x10000 >> 0x10;
-            if ((-1 < iVar3) && (iVar3 < 0x6d)) {
-              /* Was called with both args dropped (same missing-argument
-                 idiom as elsewhere in this file) -- FUN_00056d38 only
-                 actually uses its 2nd (Y) argument, but the sibling call
-                 site in cursor_mode_button_click passes (x,y) in this
-                 order, so match it here with the just-computed
-                 region-relative click position. */
-              FUN_00056d38(local_c, local_a);
-            }
-          }
-        }
-        else {
-          if (sVar1 == 0xd) {
-            uVar2 = 1;
-            goto LAB_000565a4;
-          }
-          if (sVar1 != 0x1b) {
-            bVar5 = sVar1 == 0x20;
-            goto LAB_0005659c;
-          }
-          close_ui_panel_return_to_game();
-        }
-      }
-    }
-    else {
-      if (sVar1 != 0x93) {
-        if (sVar1 == 0xa6) goto LAB_00056638;
-        bVar5 = sVar1 == 0xab;
-LAB_0005659c:
-        if (!bVar5) goto LAB_000565a8;
-      }
-      uVar2 = 0;
-LAB_000565a4:
-      FUN_00056d6c(uVar2);
-    }
-LAB_000565a8:
-    if (DAT_002046f8 != 0) {
-      return;
-    }
-  } while( true );
-}
-
-
-
-void FUN_00056640(param_1)
-undefined4 param_1;
-
-{
-  reload_single_grtile_entry(0x20eb,s_optbtns_00086954,param_1);
-  draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
-  return;
-}
-
-
-
-void FUN_00056688(param_1,param_2)
-int param_1;
-undefined4 param_2;
-
-{
-  reload_single_grtile_entry(0x20ec,s_optbtns_00086954,param_2);
-  draw_sprite_by_id(0x20ec,5,param_1 * -0xf + 0x67,0xe,0x1f);
-  return;
-}
-
-
-
-void FUN_000566dc(param_1,param_2)
-undefined4 param_1;
-int param_2;
-
-{
-  if (-1 < DAT_002046f0) {
-    FUN_00056688((int)DAT_002046f4,DAT_002046f0 + -1);
-  }
-  FUN_00056688(param_1,param_2 + 1);
-  DAT_002046f0 = (short)(param_2 + 1);
-  DAT_002046f4 = (short)param_1;
-  return;
-}
-
-
-
-// was FUN_00056724 -- closes whatever UI panel/popup is currently
-// open (DAT_000868d8 = 0) and redraws the icon-bar's "options button"
-// background (OPTBTNS.GR), re-establishing the mode-icon highlight if
-// a mode is already selected. Called on Escape and other panel-close
-// paths.
-void close_ui_panel_return_to_game()
-
-{
-  FUN_00057118();
-  DAT_000868d8 = 0;
-  DAT_000868dc = 7;
-  reload_single_grtile_entry(0x20eb,s_optbtns_00086954,0);
-  draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
-  if (0 < g_cursor_mode) {
-    /* Dropped argument -- same idiom as the identical bug in
-       enter_dungeon_view_hud_init right above this function's sibling call (see its
-       comment); confirmed via disassembly of 0x56724 the same way:
-       r0 holds g_cursor_mode, untouched from the guard's own load
-       through to `blgt 0x3f99c`. */
-    mode_icon_highlight_on((int)g_cursor_mode);
-  }
-  DAT_002046f8 = 1;
-  cursor_show_idle_tick();
-  return;
-}
 
 
 
 void FUN_000567c0()
 
 {
-  FUN_00056640(1);
+  redraw_pause_menu_icon(1);
   DAT_002046f0 = 0xffff;
-  FUN_000566dc(6,6);
+  update_pause_submenu_highlight(6,6);
   return;
 }
 
@@ -14199,9 +14043,9 @@ void FUN_000567c0()
 void FUN_00056838()
 
 {
-  FUN_00056640(3);
+  redraw_pause_menu_icon(3);
   DAT_002046f0 = 0xffff;
-  FUN_000566dc(3,0x3b);
+  update_pause_submenu_highlight(3,0x3b);
   return;
 }
 
@@ -14215,7 +14059,7 @@ void FUN_00056864()
   char cVar3;
   undefined4 uVar4;
   
-  FUN_00056640(4);
+  redraw_pause_menu_icon(4);
   DAT_002046f0 = 0xffff;
   if (DAT_000868dc == 2) {
     uVar4 = 0x33;
@@ -14230,13 +14074,13 @@ void FUN_00056864()
     iVar2 = is_sound_effects_enabled();
   }
   iVar2 = (short)(ushort)(iVar2 != 0) + 3;
-  FUN_00056688(6,cVar3);
-  FUN_00056688(5,uVar4);
+  redraw_pause_submenu_icon(6,cVar3);
+  redraw_pause_submenu_icon(5,uVar4);
   sVar1 = 2;
   if (iVar2 * 0x10000 >> 0x10 != 3) {
     sVar1 = 0;
   }
-  FUN_000566dc(iVar2,sVar1 + 0x14);
+  update_pause_submenu_highlight(iVar2,sVar1 + 0x14);
   return;
 }
 
@@ -14249,10 +14093,10 @@ void FUN_0005693c()
   
   uVar1 = (uint)(*(byte *)(DAT_00086df8 + 0xb5) >> 4);
   DAT_002046f0 = 0xffff;
-  FUN_00056640(5);
+  redraw_pause_menu_icon(5);
   reload_single_grtile_entry(0x20ed,s_optbtns_00086954,uVar1 + 0x35);
   draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
-  FUN_000566dc(4 - uVar1,(uVar1 + 0x13) * 2);
+  update_pause_submenu_highlight(4 - uVar1,(uVar1 + 0x13) * 2);
   return;
 }
 
@@ -14333,7 +14177,7 @@ int param_1;
     weapon_overlay_and_full_redraw();
     reload_single_grtile_entry(0x20ed,s_optbtns_00086954,param_1 + 0x39);
     draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
-    FUN_000566dc(4 - (param_1 + 4),(param_1 + 0x17) * 2);
+    update_pause_submenu_highlight(4 - (param_1 + 4),(param_1 + 0x17) * 2);
   }
   if (sVar1 == 0) {
     if (DAT_002046fc == 0) {
@@ -14406,7 +14250,7 @@ int param_1;
   sVar1 = (short)param_1;
   iVar2 = 4;
   if ((0 < sVar1) && (sVar1 < 6)) {
-    FUN_000566dc(param_1,(0x14 - param_1) * 2);
+    update_pause_submenu_highlight(param_1,(0x14 - param_1) * 2);
     msg_scroll_panel_reset(0);
     if (sVar1 != 1) {
       if (sVar1 != 2) {
@@ -14442,7 +14286,7 @@ short param_1;
     if (param_1 != 4) {
       return;
     }
-    FUN_000566dc(4,0x39);
+    update_pause_submenu_highlight(4,0x39);
     cursor_show_idle_tick();
     request_game_exit(0);
     FUN_00057118();
@@ -14511,15 +14355,15 @@ short param_2;
    through a wild pointer and crashes -- confirmed via lldb, EXC_BAD_ACCESS
    at 0x86924. Never hit until the Enter-key WM_CHAR fix (see
    [[save-load-name-entry-crash]]'s g_keychar_deferred) let VK_RETURN's
-   GXGetDefaultKeys() "start button" code (0x93) reach FUN_000564f8's own
+   GXGetDefaultKeys() "start button" code (0x93) reach run_pause_menu_modal_loop's own
    event loop cleanly for the first time -- that's what calls FUN_00056d6c
    with a real highlighted-item index. Real bytes recovered via a Ghidra
    headless memory dump of the original binary at 0x86920 (8 rows x 7
    columns, one row per menu state 0-7, one column per D-pad-navigable
    list position 0-6): each nonzero byte is the widget-highlight value
-   FUN_000566dc's own 2nd argument expects for that slot (matches the
+   update_pause_submenu_highlight's own 2nd argument expects for that slot (matches the
    literal values each state's own draw function already passes it,
-   e.g. FUN_000567c0's `FUN_000566dc(6,6)`). */
+   e.g. FUN_000567c0's `update_pause_submenu_highlight(6,6)`). */
 static const unsigned char g_menu_nav_highlight_table[8][7] = {
   {  0,  24,  36,  34,  32,  30,   0 },
   {  0,  24,  36,  34,  32,  30,   0 },
@@ -14559,7 +14403,7 @@ LAB_00056ddc:
           return;
         }
         FUN_00057118();
-        FUN_000566dc(iVar3 + sVar1,(int)g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2]);
+        update_pause_submenu_highlight(iVar3 + sVar1,(int)g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2]);
         cursor_show_idle_tick();
         return;
       }
@@ -14606,7 +14450,7 @@ void FUN_00056ebc()
     DAT_002046fc = 1;
     DAT_000868dc = 6;
     FUN_00056d6c();
-    FUN_000564f8(DAT_000868dc == 6);
+    run_pause_menu_modal_loop(DAT_000868dc == 6);
     DAT_002046fc = 0;
   }
   else {

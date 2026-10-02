@@ -24,11 +24,11 @@ void draw_save_load_slot_list()
   char *local_bc [4];
   undefined1 auStack_ac [160];
   
-  FUN_00056640(2);
+  redraw_pause_menu_icon(2);
   DAT_002046f0 = 0xffff;
-  FUN_000566dc(5,0x1e);
+  update_pause_submenu_highlight(5,0x1e);
   if (DAT_000868dc == 1) {
-    FUN_00056688(6,0x2e);
+    redraw_pause_submenu_icon(6,0x2e);
   }
   local_bc[0] = &s_I__00087074;
   local_bc[1] = &s_II__0008706c;

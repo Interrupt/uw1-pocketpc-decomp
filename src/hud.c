@@ -313,7 +313,7 @@ void enter_dungeon_view_hud_init()
     }
   }
   else {
-    FUN_000564f8(1);
+    run_pause_menu_modal_loop(1);
   }
   sync_player_stats_to_hud();
   redraw_hud_panels();
@@ -425,7 +425,7 @@ short param_1;
       }
     }
     if (iVar7 == 5) {
-      FUN_000564f8(1);
+      run_pause_menu_modal_loop(1);
     }
     else {
       set_hud_status_value(8,6);
@@ -524,7 +524,7 @@ short param_1;
       }
     }
     if (iVar5 == 5) {
-      FUN_000564f8(1);
+      run_pause_menu_modal_loop(1);
     }
     else {
       set_hud_status_value(8,6);
@@ -4961,5 +4961,185 @@ int param_1;
 void release_grtile_handle()
 
 {
+  return;
+}
+
+
+// was FUN_000564f8 -- the pause-menu's modal event loop: on a fresh
+// open (param_1 != 0) clears/redraws the panel and waits for click
+// release; then loops reading input events, dispatching clicks within
+// the button region to redraw_pause_submenu_icon's sibling
+// FUN_00056d38, Escape to close_ui_panel_return_to_game, and a
+// handful of other codes to FUN_00056d6c (not yet named) with a
+// result code (0/1/2), until DAT_002046f8 (set by
+// close_ui_panel_return_to_game) signals the panel closed. Confirmed
+// as the pause menu by hud.c's callers and the GXGetDefaultKeys
+// "start button" comment just below.
+void run_pause_menu_modal_loop(param_1)
+short param_1;
+
+{
+  short sVar1;
+  undefined4 uVar2;
+  int iVar3;
+  int iVar4;
+  bool bVar5;
+  short local_c;
+  short local_a;
+  
+  DAT_000868d8 = 1;
+  if (param_1 != 0) {
+    FUN_00057118();
+    FUN_00056cc8(6);
+    cursor_show_idle_tick();
+    wait_for_click_release(0);
+  }
+  DAT_002046f8 = 0;
+  do {
+    while( true ) {
+      sVar1 = next_input_event();
+      if (-1 < sVar1) break;
+      advance_menu_music_track();
+      flush_dirty_rect_to_display(1);
+    }
+    if (getenv("UW_DEBUG_PAUSEMENU"))
+      fprintf(stderr, "[pausemenu] loop event=0x%x\n", (int)sVar1);
+    if (sVar1 < 0x8e) {
+      if (sVar1 == 0x8d) {
+LAB_00056638:
+        uVar2 = 2;
+        goto LAB_000565a4;
+      }
+      if (0 < sVar1) {
+        if (sVar1 < 4) {
+          FUN_00057504(&local_c,&local_a);
+          iVar3 = (int)local_c;
+          iVar4 = (int)local_a;
+          local_c = (short)(iVar3 + -4);
+          local_a = (short)(0x76 - iVar4);
+          if (getenv("UW_DEBUG_PAUSEMENU"))
+            fprintf(stderr, "[pausemenu] click event=%d raw=(%d,%d) rel=(%d,%d)\n",
+                    (int)sVar1, iVar3, iVar4, (int)local_c, (int)local_a);
+          iVar3 = (iVar3 + -4) * 0x10000 >> 0x10;
+          if ((-1 < iVar3) && (iVar3 < 0x24)) {
+            iVar3 = (0x76 - iVar4) * 0x10000 >> 0x10;
+            if ((-1 < iVar3) && (iVar3 < 0x6d)) {
+              /* Was called with both args dropped (same missing-argument
+                 idiom as elsewhere in this file) -- FUN_00056d38 only
+                 actually uses its 2nd (Y) argument, but the sibling call
+                 site in cursor_mode_button_click passes (x,y) in this
+                 order, so match it here with the just-computed
+                 region-relative click position. */
+              FUN_00056d38(local_c, local_a);
+            }
+          }
+        }
+        else {
+          if (sVar1 == 0xd) {
+            uVar2 = 1;
+            goto LAB_000565a4;
+          }
+          if (sVar1 != 0x1b) {
+            bVar5 = sVar1 == 0x20;
+            goto LAB_0005659c;
+          }
+          close_ui_panel_return_to_game();
+        }
+      }
+    }
+    else {
+      if (sVar1 != 0x93) {
+        if (sVar1 == 0xa6) goto LAB_00056638;
+        bVar5 = sVar1 == 0xab;
+LAB_0005659c:
+        if (!bVar5) goto LAB_000565a8;
+      }
+      uVar2 = 0;
+LAB_000565a4:
+      FUN_00056d6c(uVar2);
+    }
+LAB_000565a8:
+    if (DAT_002046f8 != 0) {
+      return;
+    }
+  } while( true );
+}
+
+
+
+// was FUN_00056640 -- redraws the pause-menu's main icon slot
+// (OPTBTNS.GR tile 0x20eb) showing sub-panel/highlight variant
+// param_1. Confirmed called with distinct variant indices (1,2,3,4,5)
+// from each sub-panel setup function and saveload.c's save/load panel.
+void redraw_pause_menu_icon(param_1)
+undefined4 param_1;
+
+{
+  reload_single_grtile_entry(0x20eb,s_optbtns_00086954,param_1);
+  draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
+  return;
+}
+
+
+
+// was FUN_00056688 -- redraws one row of the pause-menu's sub-icon
+// strip (OPTBTNS.GR tile 0x20ec) at a position derived from row index
+// param_1, showing highlight/content variant param_2.
+void redraw_pause_submenu_icon(param_1,param_2)
+int param_1;
+undefined4 param_2;
+
+{
+  reload_single_grtile_entry(0x20ec,s_optbtns_00086954,param_2);
+  draw_sprite_by_id(0x20ec,5,param_1 * -0xf + 0x67,0xe,0x1f);
+  return;
+}
+
+
+
+// was FUN_000566dc -- moves the pause-menu's sub-icon highlight: un-
+// highlights the previously-highlighted row (tracked in
+// DAT_002046f0/DAT_002046f4) via redraw_pause_submenu_icon, then
+// highlights row param_1 with content param_2, recording the new
+// state.
+void update_pause_submenu_highlight(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  if (-1 < DAT_002046f0) {
+    redraw_pause_submenu_icon((int)DAT_002046f4,DAT_002046f0 + -1);
+  }
+  redraw_pause_submenu_icon(param_1,param_2 + 1);
+  DAT_002046f0 = (short)(param_2 + 1);
+  DAT_002046f4 = (short)param_1;
+  return;
+}
+
+
+
+// was FUN_00056724 -- closes whatever UI panel/popup is currently
+// open (DAT_000868d8 = 0) and redraws the icon-bar's "options button"
+// background (OPTBTNS.GR), re-establishing the mode-icon highlight if
+// a mode is already selected. Called on Escape and other panel-close
+// paths.
+void close_ui_panel_return_to_game()
+
+{
+  FUN_00057118();
+  DAT_000868d8 = 0;
+  DAT_000868dc = 7;
+  reload_single_grtile_entry(0x20eb,s_optbtns_00086954,0);
+  draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
+  if (0 < g_cursor_mode) {
+    /* Dropped argument -- same idiom as the identical bug in
+       enter_dungeon_view_hud_init right above this function's sibling call (see its
+       comment); confirmed via disassembly of 0x56724 the same way:
+       r0 holds g_cursor_mode, untouched from the guard's own load
+       through to `blgt 0x3f99c`. */
+    mode_icon_highlight_on((int)g_cursor_mode);
+  }
+  DAT_002046f8 = 1;
+  cursor_show_idle_tick();
   return;
 }

@@ -2218,6 +2218,9 @@ extern undefined DAT_00087030_backing[8192];
 extern undefined DAT_00087084_backing[8192];
 #define DAT_00087084 DAT_00087084_backing[0]
 extern short DAT_002046f0;
+extern short DAT_002046f4;
+extern int DAT_002046f8;
+extern char s_optbtns_00086954[];
 extern char s__6_Save_Game_Descriptions_0008703c[];
 extern char s__DATA_OPSCR_BYT_00086efc[];
 extern char s__not_used_yet__00087020[];
@@ -3549,10 +3552,10 @@ void compute_object_placement_fields();
 ushort *settle_mobile_to_immobile(); // was FUN_0005596c
 void randomize_settled_snapshot_position();
 ushort *settle_dropped_object();
-void FUN_000564f8();
-void FUN_00056640();
-void FUN_00056688();
-void FUN_000566dc();
+void run_pause_menu_modal_loop();
+void redraw_pause_menu_icon();
+void redraw_pause_submenu_icon();
+void update_pause_submenu_highlight();
 void close_ui_panel_return_to_game();
 void FUN_000567c0();
 void draw_save_load_slot_list();
