@@ -1164,7 +1164,7 @@ undefined4 param_1;
     iVar2 = write_level_tilemap_to_archive(auStack_20,param_1);
     if (getenv("UW_DEBUG_INPUTEVENT"))
       fprintf(stderr, "[0006bcd4] write_level_tilemap_to_archive=%d\n", iVar2);
-    if (((iVar2 != 0) && (iVar2 = FUN_0005b298(auStack_20,param_1), iVar2 != 0)) &&
+    if (((iVar2 != 0) && (iVar2 = write_level_quest_flags_to_archive(auStack_20,param_1), iVar2 != 0)) &&
        (iVar2 = save_automap_reveal_to_archive(auStack_20,param_1), iVar2 != 0)) {
       iVar2 = close_level_archive(auStack_20);
       uVar3 = 1;
@@ -1649,4 +1649,73 @@ int param_2;
     close_level_archive(auStack_20);
   }
   return (int)sVar3;
+}
+
+
+// was FUN_0005b298 -- assembles a fixed 0x7a-byte level-state block
+// (quest-flag-shaped: three fixed .data regions, DAT_0023ae58/adb8/
+// b841+b840) and writes it to the level archive via
+// write_archive_entry. Confirmed as part of the per-level save
+// sequence (write_level_tilemap_to_archive -> this ->
+// save_automap_reveal_to_archive) by its sole call site.
+undefined4 write_level_quest_flags_to_archive(param_1,param_2)
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before
+   write_archive_entry. */
+undefined1 * param_1;
+int param_2;
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  undefined2 *puVar5;
+  undefined2 *puVar6;
+  /* Was three separate locals (local_8c[48], local_2c[10], local_18[6])
+     -- a stack-slot-splitting artifact (same bug class as
+     stack0xffdc2e30_buf/acStack_528 in load_game_from_slot, or
+     acStack_86af8/etc in FUN_0005b36c right below this function): real
+     ARM disassembly (0x5b29c: `sub sp,sp,#0x80`) allocates ONE 128-byte
+     (64-undefined2) buffer, and this function's own writes to
+     `local_8c[iVar2+0x30]` (indices 48-57) and `local_8c[iVar2+0x3a]`
+     (indices 58-60) already prove it -- those are past a real 48-element
+     array's bounds. With the split, those writes silently corrupted
+     local_2c/local_18's stack space at every call; on this recompile
+     (stack-protector enabled) that finally tripped `__stack_chk_fail`
+     and aborted -- confirmed via lldb, never hit before because nothing
+     reached this function successfully until the write-path bugs above
+     it (Ordinal_1407, open_level_archive's read-only handle,
+     write_archive_entry/scheduler_save's own pointer-truncation and fabricated-
+     return-0 bugs) were fixed. One properly-sized buffer instead. */
+  undefined2 local_8c [64];
+
+  iVar2 = 0;
+  do {
+    puVar5 = &DAT_0023ae58 + iVar2;
+    puVar6 = local_8c + iVar2;
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    *puVar6 = *puVar5;
+  } while (iVar2 < 0x30);
+  iVar2 = 0;
+  do {
+    puVar6 = &DAT_0023adb8 + iVar2;
+    iVar3 = iVar2 + 0x30;
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    local_8c[iVar3] = *puVar6;
+  } while (iVar2 < 10);
+  iVar2 = 0;
+  do {
+    iVar3 = iVar2 * 2;
+    iVar1 = iVar2 * 2;
+    iVar4 = iVar2 + 0x3a;
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    local_8c[iVar4] = CONCAT11((&DAT_0023b841)[iVar3],(&DAT_0023b840)[iVar1]);
+  } while (iVar2 < 3);
+  /* Was `write_archive_entry(...); return 0;` -- a fabricated `return 0`
+     masking a real result, same bug class as scheduler_save right above
+     this function. Real disassembly (0x5b354-0x5b35c) shows a plain
+     `bl 0x15b94` with no instruction overwriting r0 before the function
+     returns -- r0 (write_archive_entry's own return value) falls straight
+     through as this function's return value, it's never hardcoded to 0. */
+  return write_archive_entry(param_1,param_2 + 0x11,local_8c,0x7a);
 }

@@ -1816,7 +1816,7 @@ LAB_0002bb2c:
     goto LAB_0002bb2c;
   }
   if ((uVar1 & 0x400) != 0) {
-    iVar3 = FUN_0005aea0(&DAT_00101424,&DAT_00101428);
+    iVar3 = find_nearby_door_in_candidates(&DAT_00101424,&DAT_00101428);
     if (iVar3 != 0) {
       DAT_00101560 = 1;
       DAT_00101924 = 1;
@@ -1826,7 +1826,7 @@ LAB_0002bb2c:
     }
     DAT_00101924 = 1;
     DAT_001013fc = 1;
-    DAT_00101904 = FUN_0005b010();
+    DAT_00101904 = get_first_nearby_candidate_object();
   }
   if (DAT_00101924 == 0) {
     return 0;
@@ -1856,7 +1856,7 @@ ushort * param_1;
     if ((*param_1 & 0x400) != 0) {
       DAT_00101924 = 1;
       DAT_001013fc = 1;
-      DAT_00101904 = FUN_0005b010();
+      DAT_00101904 = get_first_nearby_candidate_object();
     }
     if ((DAT_00101924 != 0) && (DAT_00101734 != 0)) {
       return 1;
@@ -1883,7 +1883,7 @@ ushort * param_1;
       DAT_00204956 = 0;
       DAT_00101924 = 1;
       DAT_001013fc = 1;
-      DAT_00101904 = FUN_0005b010();
+      DAT_00101904 = get_first_nearby_candidate_object();
     }
     if ((*param_1 & 8) != 0) {
       DAT_00204958 = 0;
@@ -1981,4 +1981,67 @@ LAB_0002caa4:
     return 0;
   }
   return 0;
+}
+
+
+// was FUN_0005aea0 -- scans the nearby collision-candidate list
+// (DAT_002049dd count, base DAT_002049de) for a door object (type
+// 0x140-0x147), writing relative tile-offset deltas (param_1,param_2)
+// for each candidate as it scans and returning the door object (via
+// resolve_object_link) the moment one is found, else 0. Confirmed
+// used by movement.c alongside get_first_nearby_candidate_object in
+// NPC movement/pathfinding.
+undefined4 find_nearby_door_in_candidates(param_1,param_2)
+undefined1 * param_1;
+byte * param_2;
+
+{
+  ushort uVar1;
+  ushort *puVar2;
+  uint uVar3;
+  undefined4 uVar4;
+  int iVar5;
+  int iVar6;
+  
+  iVar6 = 0;
+  if (DAT_002049dd != 0) {
+    do {
+      puVar2 = (ushort *)resolve_object_link(&DAT_00202c3a + (iVar6 + DAT_002049de) * 6);
+      uVar1 = *puVar2;
+      uVar3 = (uint)(byte)(&DAT_00202c3c)[(iVar6 + DAT_002049de) * 6] +
+              ((int)DAT_002049c8 >> 3 & 0xffU) & 0x3f;
+      *param_1 = (char)uVar3;
+      iVar5 = (int)*(short *)(&DAT_00202c3c + (iVar6 + DAT_002049de) * 6) -
+              ((int)((uVar3 - (((int)DAT_002049c8 << 0x10) >> 0x13)) * 0x10000) >> 0x10);
+      if (iVar5 < 0) {
+        iVar5 = iVar5 + 0x3f;
+      }
+      *param_2 = (char)(iVar5 >> 6) + (char)(DAT_002049ca >> 3) & 0x3f;
+      if (((uVar1 & 0x1f0) == 0x140) && ((uVar1 & 0xf) < 8)) {
+        uVar4 = resolve_object_link(&DAT_00202c3a + ((int)DAT_002049de + (int)(short)iVar6) * 6);
+        return uVar4;
+      }
+      iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+    } while (iVar6 < (int)(uint)DAT_002049dd);
+  }
+  return 0;
+}
+
+
+
+// was FUN_0005b010 -- returns the first entry of the nearby
+// collision-candidate list (DAT_002049de), or 0 if the list
+// (DAT_002049dd) is empty.
+undefined4 get_first_nearby_candidate_object()
+
+{
+  undefined4 uVar1;
+
+  if (DAT_002049dd == '\0') {
+    uVar1 = 0;
+  }
+  else {
+    uVar1 = resolve_object_link(&DAT_00202c3a + DAT_002049de * 6);
+  }
+  return uVar1;
 }
