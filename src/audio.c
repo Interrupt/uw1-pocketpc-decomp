@@ -1706,7 +1706,7 @@ undefined4 param_4;
   iVar3 = Ordinal_167(local_c,auStack_268);
   if (iVar3 == -1) {
     param_1[0x10580] = 0;
-    FUN_0004f4ec(param_1,0x40);
+    build_mod_volume_sample_table(param_1,0x40);
     param_1[0x10554] = 0;
     param_1[0x10555] = 0;
     param_1[0x10556] = 0;
@@ -1987,7 +1987,7 @@ LAB_0004c038:
       iVar3 = iVar3 + 0x30;
     } while (iVar4 != 0);
   }
-  FUN_0004f4ec(param_1,0x3c);
+  build_mod_volume_sample_table(param_1,0x3c);
   param_1[0x10554] = 0;
   param_1[0x10555] = 0;
   param_1[0x10556] = 0;
@@ -3359,5 +3359,51 @@ int param_2;
     *(char *)(param_2 + 0x3e) = (char)(uVar6 >> 0x10);
     *(char *)(param_2 + 0x3f) = (char)(uVar6 >> 0x18);
   }
+  return;
+}
+
+
+// was FUN_0004f4ec -- builds a 65-row (volume 0..0x40) x 256-column
+// (signed sample byte) lookup table of pre-scaled int32 mix
+// contributions: table[vol][sample] = round(sample * vol * scale / 64).
+// Confirmed by mix_mod_channels_to_buffer's read side, which indexes
+// this exact table as `param_1 + channel_volume*0x400 +
+// sample_byte*4` while mixing, avoiding a per-sample multiply.
+// param_2 is a master scale factor -- called with 0x40 (the default)
+// when a MOD-embedded sample fails to load, and with 0x3c after a
+// real sample has been resampled.
+void build_mod_volume_sample_table(param_1,param_2)
+undefined1 * param_1;
+int param_2;
+
+{
+  char cVar1;
+  int iVar2;
+  undefined1 *puVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+
+  iVar5 = 0;
+  do {
+    iVar4 = 0;
+    puVar3 = param_1;
+    do {
+      cVar1 = (char)iVar4;
+      iVar4 = iVar4 + 1;
+      iVar6 = cVar1 * iVar5 * param_2;
+      if (iVar6 < 0) {
+        iVar6 = iVar6 + 0x3f;
+      }
+      iVar2 = iVar6 >> 6;
+      puVar3[4] = (char)iVar2;
+      puVar3[5] = (char)((uint)iVar2 >> 8);
+      puVar3[6] = (char)((uint)iVar2 >> 0x10);
+      puVar3[7] = (char)(iVar6 >> 0x1e);
+      puVar3 = puVar3 + 4;
+    } while (iVar4 < 0x100);
+    iVar5 = iVar5 + 1;
+    param_1 = param_1 + 0x400;
+  } while (iVar5 < 0x41);
   return;
 }

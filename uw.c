@@ -13327,41 +13327,6 @@ bool compute_drop_aim_from_cursor()
 
 
 
-void FUN_0004f4ec(param_1,param_2)
-undefined1 * param_1;
-int param_2;
-
-{
-  char cVar1;
-  int iVar2;
-  undefined1 *puVar3;
-  int iVar4;
-  int iVar5;
-  int iVar6;
-  
-  iVar5 = 0;
-  do {
-    iVar4 = 0;
-    puVar3 = param_1;
-    do {
-      cVar1 = (char)iVar4;
-      iVar4 = iVar4 + 1;
-      iVar6 = cVar1 * iVar5 * param_2;
-      if (iVar6 < 0) {
-        iVar6 = iVar6 + 0x3f;
-      }
-      iVar2 = iVar6 >> 6;
-      puVar3[4] = (char)iVar2;
-      puVar3[5] = (char)((uint)iVar2 >> 8);
-      puVar3[6] = (char)((uint)iVar2 >> 0x10);
-      puVar3[7] = (char)(iVar6 >> 0x1e);
-      puVar3 = puVar3 + 4;
-    } while (iVar4 < 0x100);
-    iVar5 = iVar5 + 1;
-    param_1 = param_1 + 0x400;
-  } while (iVar5 < 0x41);
-  return;
-}
 
 
 

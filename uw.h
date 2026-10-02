@@ -3410,7 +3410,7 @@ void adjust_mod_channel_volume();
 void apply_mod_tone_portamento();
 void apply_mod_vibrato_effect();
 void apply_mod_tremolo_effect();
-void FUN_0004f4ec();
+void build_mod_volume_sample_table();
 int FUN_0004f560();
 bool FUN_0004f594();
 undefined4 FUN_0004f6b0();
