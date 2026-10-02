@@ -3401,7 +3401,7 @@ undefined4 start_mod_player_playback();
 undefined4 stop_mod_player_playback();
 bool queue_mod_audio_buffer();
 void process_mod_tracker_row();
-undefined4 FUN_0004e324();
+undefined4 mix_mod_channels_to_buffer();
 void FUN_0004e6e0();
 void FUN_0004ecd4();
 void FUN_0004edf8();
