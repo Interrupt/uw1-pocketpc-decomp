@@ -969,7 +969,9 @@ undefined4 resolve_melee_swing_hit()
     if (iVar5 < 0) {
       iVar5 = iVar5 + 0x1ff;
     }
-    sVar3 = sVar3 + (short)(iVar5 >> 9);
+    /* The original adds pitch. SDL look controls use negative pitch for up,
+       so invert its contribution to the world-space strike height here. */
+    sVar3 = sVar3 - (short)(iVar5 >> 9);
   }
   local_38 = sVar3;
   cVar2 = Ordinal_2005(6,(&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd]);
@@ -1227,7 +1229,7 @@ undefined1 param_1;
           cVar10 = DAT_001005dc;
         }
         if (((&DAT_001007d8)[(uVar1 & 0x3f) * 0x30] & 0x18) != 0) {
-          spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,(short)*(char *)((short)uVar8 + 0x84f18),
+          spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,(short)(&DAT_00084f18)[(short)uVar8],
                        DAT_00100600,DAT_00100604);
           if (DAT_001005d8 == 0) {
             return;
@@ -1237,7 +1239,7 @@ undefined1 param_1;
           }
           uVar5 = Ordinal_1053();
           spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,
-                       (uVar5 & 1) * 5 + (short)*(char *)((short)DAT_00100624 + 0x84f18) + -2,
+                       (uVar5 & 1) * 5 + (short)(&DAT_00084f18)[(short)DAT_00100624] + -2,
                        DAT_00100600,DAT_00100604);
           return;
         }

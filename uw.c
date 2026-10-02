@@ -1620,9 +1620,12 @@ undefined1 DAT_0010060c;
 short DAT_00100608;
 byte DAT_00100628;
 undefined4 DAT_001005d8;
-undefined DAT_001007d8;
+#define DAT_001007d8 DAT_001007d0_backing[8]
 byte DAT_001005fc;
-char DAT_00084f1c;
+/* Original blood hit-zone heights at 0x84f18; the fifth entry is set at runtime. */
+char DAT_00084f18_backing[5] = {5, 3, 1, 7, 0};
+#define DAT_00084f18 DAT_00084f18_backing[0]
+#define DAT_00084f1c DAT_00084f18_backing[4]
 /* Was `int` despite being assigned real pointer values derived from
    DAT_002046b8 (see there) and itself assigned into g_player_object
    (`char *`) -- truncating on this 64-bit host, part of the same crash

@@ -191,7 +191,10 @@ if(BUILD_TESTING)
     src/ai.c:resolve_unique_npc_special_behavior
     src/hud.c:set_hud_status_value src/hud.c:hud_panel_redraw_dispatch
     src/hud.c:hud_panel_wipe_transition_tick
-    src/combat.c:resolve_melee_swing_hit)
+    src/combat.c:resolve_melee_swing_hit src/combat.c:spawn_blood_splat_object
+    src/combat.c:load_monster_combat_stats)
+  target_compile_definitions(test_combat PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
   add_game_unit_test(scheduler
     src/scheduler.c:scheduler_tick src/scheduler.c:scheduler_step_entry

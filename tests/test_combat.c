@@ -1,6 +1,7 @@
 #include "unity.h"
 #include "uw.h"
 #include "src/headers/ordinal_stubs.h"
+#include <stdio.h>
 
 /* Exercise real melee hit resolution/selection; world collision is a fixture. */
 static byte mobile_objects[256 * 27];
@@ -15,17 +16,20 @@ undefined2 DAT_00100600, DAT_00100624;
 static int candidate_count, lookup_count;
 static ushort lookup_slots[32];
 static int wall_collision;
+static int wall_in_front;
+static ushort wall_effect[4];
+static byte wall_tile[4];
 byte DAT_00100628, DAT_001005fc;
 short DAT_0010061c;
 undefined4 DAT_001005d8;
-char DAT_00084f1c;
-undefined DAT_001007d8;
+char DAT_00084f18_backing[5] = {5, 3, 1, 7, 0};
 undefined1 DAT_001007d0_backing[6144];
 undefined1 DAT_001007d4_backing[8192];
 static byte player_stats[256];
 char *DAT_00086df8 = (char *)player_stats;
 char *DAT_0023b82c;
 static int skill_result, skill_checks, effects, impact_sounds;
+static int effect_types[2], effect_heights[2];
 static int experience, experience_awards, talks, death_sounds;
 static ushort *expected_effect_target;
 ushort *g_player_object;
@@ -40,6 +44,7 @@ ushort DAT_00101910, DAT_0010141c;
 static uint music_track;
 int encode_object_slot_index(ushort *object)
 {
+    if (object == wall_effect) return 0x100;
     for (int slot = 1; slot < 256; slot++)
         if ((byte *)object == mobile_objects + slot * 27) return slot;
     TEST_FAIL_MESSAGE("Expected an actual mobile object pointer");
@@ -105,8 +110,10 @@ undefined4 spawn_scheduled_effect_object(ushort *target, int type, int mode, int
                                         int height, int x, int y)
 {
     TEST_ASSERT_EQUAL_PTR(expected_effect_target, target);
-    TEST_ASSERT_EQUAL_INT(0xb, type);
-    (void)mode; (void)intensity; (void)height; (void)x; (void)y;
+    TEST_ASSERT_LESS_THAN_INT(2, effects);
+    effect_types[effects] = type;
+    effect_heights[effects] = height;
+    (void)mode; (void)intensity; (void)x; (void)y;
     effects++;
     return 0;
 }
@@ -128,7 +135,13 @@ void collision_height_envelope(int mode, int collision)
     DAT_00202c6c[0x14] = candidate_count;
 }
 void collision_build_height_field(int mode)
-{ TEST_ASSERT_EQUAL_INT(0, mode); }
+{
+    TEST_ASSERT_EQUAL_INT(0, mode);
+    if (wall_in_front) {
+        ushort flags = 0x100;
+        memcpy(DAT_00202c6c + 0xc, &flags, sizeof flags);
+    }
+}
 void FUN_00051dd0(void)
 {
     DAT_00202c6c[0x15] = candidate_count;
@@ -144,8 +157,54 @@ void *FUN_000535fc(int slot)
 }
 undefined4 object_ptr_in_arena(ushort *object)
 { TEST_ASSERT_NOT_NULL(object); return 1; }
-void spawn_blood_splat_object(int heading, int distance, void *position)
-{ (void)heading; (void)distance; (void)position; wall_collision++; }
+void *spawn_new_object(int type, int mobile)
+{
+    TEST_ASSERT_EQUAL_HEX16(0x1cb, type);
+    TEST_ASSERT_EQUAL_INT(0, mobile);
+    wall_effect[0] = type;
+    return wall_effect;
+}
+uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y)
+{
+    TEST_ASSERT_EQUAL_UINT(0x100, slot);
+    TEST_ASSERT_EQUAL_INT(2, delay);
+    TEST_ASSERT_EQUAL_INT(0, frame);
+    TEST_ASSERT_EQUAL_INT(10, x);
+    TEST_ASSERT_EQUAL_INT(10, y);
+    return 1;
+}
+void *tilemap_lookup(int x, int y)
+{
+    TEST_ASSERT_EQUAL_INT(10, x);
+    TEST_ASSERT_EQUAL_INT(10, y);
+    return wall_tile;
+}
+void object_list_append_tail(void *head, void *object)
+{
+    TEST_ASSERT_EQUAL_PTR(wall_tile + 2, head);
+    TEST_ASSERT_EQUAL_PTR(wall_effect, object);
+    wall_collision++;
+}
+void free_object_slot(void) { TEST_FAIL_MESSAGE("Unexpected full effect queue"); }
+
+static FILE *monster_data;
+undefined4 read_file_handle(int handle, void *destination, int count)
+{
+    TEST_ASSERT_EQUAL_INT(1, handle);
+    TEST_ASSERT_NOT_NULL(monster_data);
+    size_t bytes = fread(destination, 1, count, monster_data);
+    TEST_ASSERT_EQUAL_UINT(count, bytes);
+    return bytes;
+}
+static void load_real_monster_data(void)
+{
+    monster_data = fopen(UW_TEST_DATA_DIR "/DATA/OBJECTS.DAT", "rb");
+    TEST_ASSERT_NOT_NULL(monster_data);
+    TEST_ASSERT_EQUAL_INT(0, fseek(monster_data, 2 + 0x80 + 0x30 + 0x80, SEEK_SET));
+    load_monster_combat_stats(1);
+    fclose(monster_data);
+    monster_data = NULL;
+}
 
 static ushort *object_at(unsigned slot)
 { return (ushort *)(mobile_objects + slot * 27); }
@@ -169,7 +228,10 @@ void setUp(void)
     DAT_00100624 = 0xffff;
     DAT_00100600 = DAT_00100604 = 0;
     DAT_001005f4 = DAT_001005f8 = DAT_0023beb4 = 0;
-    candidate_count = lookup_count = wall_collision = 0;
+    DAT_001005dc = DAT_00084f1c = 0;
+    candidate_count = lookup_count = wall_collision = wall_in_front = 0;
+    memset(wall_effect, 0, sizeof wall_effect);
+    memset(wall_tile, 0, sizeof wall_tile);
     DAT_00100628 = DAT_001005fc = DAT_001005d8 = 0;
     DAT_0010061c = 6;
     skill_result = skill_checks = effects = impact_sounds = 0;
@@ -374,6 +436,107 @@ static void test_combat_hud_wipe_finishes_and_clears_dirty_bit(void)
     TEST_ASSERT_EQUAL_UINT16(0, DAT_0023c220);
 }
 
+static ushort wall_spark_height(short pitch)
+{
+    DAT_0023beb4 = pitch;
+    wall_in_front = 1;
+    TEST_ASSERT_EQUAL_UINT(0, resolve_melee_swing_hit());
+    TEST_ASSERT_EQUAL_INT(1, wall_collision);
+    TEST_ASSERT_EQUAL_HEX16(0x1cb, wall_effect[0]);
+    return wall_effect[1] & 0x7f;
+}
+static void test_looking_up_raises_the_wall_spark(void)
+{
+    /* SDL look-up uses negative pitch; a level strike lands at z=48. */
+    TEST_ASSERT_EQUAL_UINT16(56, wall_spark_height(-0x1000));
+}
+static void test_looking_down_lowers_the_wall_spark(void)
+{
+    TEST_ASSERT_EQUAL_UINT16(40, wall_spark_height(0x1000));
+}
+static void test_level_look_keeps_the_wall_spark_at_strike_height(void)
+{
+    TEST_ASSERT_EQUAL_UINT16(48, wall_spark_height(0));
+}
+static void test_vertical_aim_rounds_small_pitch_toward_zero(void)
+{
+    const short pitches[] = {-511, -512, 511, 512};
+    const ushort heights[] = {48, 49, 48, 47};
+    for (unsigned i = 0; i < 4; i++) {
+        wall_collision = 0;
+        TEST_ASSERT_EQUAL_UINT16(heights[i], wall_spark_height(pitches[i]));
+    }
+}
+static void test_blood_producing_monster_uses_loaded_data(void)
+{
+    load_real_monster_data();
+    object_at(2)[0] = 0x40;
+    object_at(2)[4] = 5;
+    candidate(0, 2, 0);
+    TEST_ASSERT_EQUAL_UINT(1, process_melee_attack_swing());
+    TEST_ASSERT_EQUAL_INT(1, effects);
+    TEST_ASSERT_EQUAL_INT(0, effect_types[0]);
+    TEST_ASSERT_LESS_THAN_UINT8(5, (byte)object_at(2)[4]);
+}
+static void test_bloodless_monster_still_uses_a_spark(void)
+{
+    load_real_monster_data();
+    object_at(2)[0] = 0x4a;
+    object_at(2)[4] = 20;
+    candidate(0, 2, 0);
+    TEST_ASSERT_EQUAL_UINT(1, process_melee_attack_swing());
+    TEST_ASSERT_EQUAL_INT(1, effects);
+    TEST_ASSERT_EQUAL_INT(0xb, effect_types[0]);
+}
+static void test_blood_height_offsets_cover_each_hit_zone(void)
+{
+    load_real_monster_data();
+    object_at(2)[0] = 0x46; /* All four armor slots in this record are valid. */
+    DAT_00100620 = 2;
+    DAT_00100628 = 12;
+    DAT_001005dc = 40;
+    const int expected[] = {5, 3, 1, 7}; /* Original UU.exe table at 0x84f18. */
+    for (int zone = 0; zone < 4; zone++) {
+        object_at(2)[4] = 21;
+        DAT_00100624 = zone;
+        effects = 0;
+        apply_melee_damage(4);
+        TEST_ASSERT_EQUAL_INT(1, effects);
+        TEST_ASSERT_EQUAL_INT(0, effect_types[0]);
+        TEST_ASSERT_EQUAL_INT(expected[zone], effect_heights[0]);
+    }
+}
+static void test_special_blood_hit_spawns_the_second_splat(void)
+{
+    load_real_monster_data();
+    object_at(2)[0] = 0x46;
+    object_at(2)[4] = 21;
+    DAT_00100620 = 2;
+    DAT_00100624 = 2;
+    DAT_00100628 = 12;
+    DAT_001005d8 = 1;
+    apply_melee_damage(4);
+    TEST_ASSERT_EQUAL_INT(2, effects);
+    TEST_ASSERT_EQUAL_INT(0, effect_types[0]);
+    TEST_ASSERT_EQUAL_INT(0, effect_types[1]);
+    TEST_ASSERT_EQUAL_INT(1, effect_heights[0]);
+    TEST_ASSERT_EQUAL_INT(4, effect_heights[1]);
+}
+static void test_blood_hit_outside_zones_uses_runtime_height(void)
+{
+    load_real_monster_data();
+    object_at(2)[0] = 0x46;
+    object_at(2)[4] = 21;
+    DAT_00100620 = 2;
+    DAT_00100624 = 4;
+    DAT_00100628 = 12;
+    DAT_001005dc = 40;
+    apply_melee_damage(4);
+    TEST_ASSERT_EQUAL_INT(1, effects);
+    TEST_ASSERT_EQUAL_INT(0, effect_types[0]);
+    TEST_ASSERT_EQUAL_INT(-40, effect_heights[0]);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -393,5 +556,14 @@ int main(void)
     RUN_TEST(test_critter_kill_does_not_award_player_experience);
     RUN_TEST(test_successful_critter_hit_redraws_hud_wipe);
     RUN_TEST(test_combat_hud_wipe_finishes_and_clears_dirty_bit);
+    RUN_TEST(test_looking_up_raises_the_wall_spark);
+    RUN_TEST(test_looking_down_lowers_the_wall_spark);
+    RUN_TEST(test_level_look_keeps_the_wall_spark_at_strike_height);
+    RUN_TEST(test_vertical_aim_rounds_small_pitch_toward_zero);
+    RUN_TEST(test_blood_producing_monster_uses_loaded_data);
+    RUN_TEST(test_bloodless_monster_still_uses_a_spark);
+    RUN_TEST(test_blood_height_offsets_cover_each_hit_zone);
+    RUN_TEST(test_special_blood_hit_spawns_the_second_splat);
+    RUN_TEST(test_blood_hit_outside_zones_uses_runtime_height);
     return UNITY_END();
 }

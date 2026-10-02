@@ -1552,9 +1552,12 @@ extern short DAT_0010061c;
 extern short DAT_00100608;
 extern byte DAT_00100628;
 extern undefined4 DAT_001005d8;
-extern undefined DAT_001007d8;
+/* Monster effect flags at offset 8 of each loaded 0x30-byte record. */
+#define DAT_001007d8 DAT_001007d0_backing[8]
 extern byte DAT_001005fc;
-extern char DAT_00084f1c;
+extern char DAT_00084f18_backing[5];
+#define DAT_00084f18 DAT_00084f18_backing[0]
+#define DAT_00084f1c DAT_00084f18_backing[4]
 extern undefined DAT_001007e0;
 extern undefined DAT_001007e1;
 #define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
