@@ -2770,6 +2770,7 @@ extern undefined1 DAT_00085cce;
 extern undefined DAT_00085cb4_backing[8192];
 #define DAT_00085cb4 DAT_00085cb4_backing[0]
 extern char s__DATA_grave_dat_00085cf8[];
+extern char s_an_adventurer__00085d08[];
 extern undefined1 DAT_00202988_backing[16];
 #define DAT_00202988 DAT_00202988_backing[0]
 extern char s_Not_a_spell_00085a80[];
@@ -3343,10 +3344,10 @@ undefined4 append_object_property_tag();
 undefined4 append_object_special_name();
 void read_object_text();
 void look_at_inscribed_object();
-void FUN_000492bc();
-void FUN_000493cc();
+void describe_object_owner();
+void print_object_flavor_text();
 void build_creature_look_text();
-void FUN_000495d0();
+void describe_special_object_property();
 undefined4 FUN_000496b0();
 void main_loop_hud_flush();
 void dispatch_sticky_mode_handlers();

@@ -158,7 +158,7 @@ LAB_000489fc:
   Ordinal_1063(acStack_7c,"\n");
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
-  FUN_000495d0(param_1,param_2);
+  describe_special_object_property(param_1,param_2);
   return;
 }
 
@@ -604,7 +604,7 @@ LAB_000489fc:
   Ordinal_1063(acStack_7c,"\n");
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
-  FUN_000495d0(param_1,param_2);
+  describe_special_object_property(param_1,param_2);
   return;
 }
 
@@ -3264,6 +3264,124 @@ short param_2;
     }
     if (local_128[0] != '\0') {
       trigger_inscription_illustration(local_128[0]);
+    }
+  }
+  return;
+}
+
+
+// was FUN_000492bc -- describes who a key/quest item belongs to: for
+// an object whose quality field names an owner (not 0, 0x28, or the
+// 0x3c-0x3e range), prints a scroll message (picking the "key" vs
+// generic wording by class/flag) followed by either "an adventurer."
+// (sentinel owner 0x3f) or the real owner's display name, built via a
+// synthetic object record offset by the owner id.
+void describe_object_owner(param_1,param_2)
+ushort * param_1;
+short param_2;
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  undefined4 uVar3;
+  char *pcVar4;
+  ushort local_54 [13];
+  undefined1 local_3a;
+  undefined1 auStack_34 [40];
+  
+  if (param_2 != 0) {
+    uVar2 = param_1[3];
+    uVar1 = uVar2 & 0x3f;
+    if ((((uVar2 & 0x3f) != 0) && (uVar1 != 0x28)) && ((uVar1 < 0x3c || (uVar1 == 0x3f)))) {
+      uVar3 = 0x16;
+      if (((*param_1 & 0x1ff) == 0xc6) || (0x40 < (uVar2 & 0xffc0))) {
+        uVar3 = 0x17;
+      }
+      print_scroll_message_by_id(uVar3);
+      uVar2 = (byte)param_1[3] & 0x3f;
+      if (uVar2 == 0x3f) {
+        pcVar4 = s_an_adventurer__00085d08;
+      }
+      else {
+        local_54[0] = (uVar2 + 0x40 ^ local_54[0]) & 0x1ff ^ local_54[0];
+        local_3a = 0;
+        build_object_display_name(auStack_34,local_54,1,0);
+        message_scroll_print_wrapped(auStack_34);
+        pcVar4 = &DAT_00084f20;
+      }
+      message_scroll_print_wrapped(pcVar4);
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_000493cc -- prints a flavor-text scroll message keyed by
+// the object's own sub-quality field (offset+6 & 0x3f, message range
+// 100-163), if one exists for this object.
+void print_object_flavor_text(param_1,param_2)
+int param_1;
+short param_2;
+
+{
+  int iVar1;
+  
+  if ((param_2 != 0) &&
+     (iVar1 = get_message_string((*(byte *)(param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
+    message_scroll_print_wrapped();
+  }
+  return;
+}
+
+
+
+// was FUN_000495d0 -- dispatches a "look" sub-description by object
+// class bit-fields (subcategory uVar2, sub-subcategory uVar3): keys
+// in class 0xc2-0xc6 get describe_object_owner; class-4 sub-type 3
+// objects get read_object_text (books/scrolls); sub-type 0 gets
+// print_object_flavor_text; class-5 sub-type 0 objects (ids 0-7) with
+// their own quality flag bit set print a fixed scroll message.
+// BUG FIX: param_2 was missing from this function's own declaration
+// -- both of its real call sites (object_actions.c:161/607) pass two
+// arguments, and every sibling it dispatches to
+// (describe_object_owner/print_object_flavor_text/read_object_text)
+// declares a real `short param_2` that gates its entire body
+// (`if (param_2 != 0)`/`if (0 < param_2)`). Without param_2 declared
+// here, those bare calls forwarded whatever garbage was left in that
+// register instead of the caller's real value -- same dropped-
+// parameter bug class as report_categorized_fatal_error earlier this
+// session. Declare it and forward explicitly.
+void describe_special_object_property(param_1,param_2)
+ushort * param_1;
+short param_2;
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  ushort uVar3;
+
+  uVar1 = *param_1;
+  uVar3 = uVar1 >> 4 & 3;
+  uVar2 = uVar1 >> 6 & 7;
+  if (uVar2 == 3) {
+    if (uVar3 == 0) {
+      if ((0xc1 < (uVar1 & 0x1ff)) && ((uVar1 & 0x1ff) < 199)) {
+        describe_object_owner(param_1,param_2);
+      }
+    }
+  }
+  else if (uVar2 == 4) {
+    if (uVar3 == 3) {
+      read_object_text(param_1,param_2);
+    }
+    else if (uVar3 == 0) {
+      print_object_flavor_text(param_1,param_2);
+    }
+  }
+  else if (((uVar2 == 5) && (uVar3 == 0)) && ((uVar1 & 0xf) < 8)) {
+    if ((param_1[3] & 1) != 0) {
+      print_scroll_message_by_id(0x83);
     }
   }
   return;
