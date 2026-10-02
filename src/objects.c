@@ -2057,3 +2057,174 @@ LAB_000564d8:
     bVar5 = (&DAT_00202c93)[iVar12];
   } while( true );
 }
+
+
+/* was FUN_0001582c: dispatch slot 7 of FUN_00052674's boot-time
+   objects.dat table-loader list (siblings load_armor_variant_tables/
+   load_light_food_effect_tables sit at slots 0/2, called the same way:
+   `(*local_13c[i])(iVar3)` with iVar3 = the open objects.dat handle).
+   Reads 0x40 bytes -- 16 nibble-indexed entries at a 4-byte stride --
+   into DAT_00250730, the exact buffer class7_variant_effect_table_lookup
+   indexes below. Recovered via Ghidra headless; read_file_handle is this
+   file's uw_file_read wrapper. */
+void load_class7_variant_effect_table(param_1)
+int param_1;
+{
+  read_file_handle(param_1,&DAT_00250730,0x40);
+  return;
+}
+/* was FUN_0007cd6c: dispatch slot 6, same boot-time loader list. Reads
+   0x10 bytes -- 16 nibble-indexed entries at a 1-byte stride -- into
+   DAT_0024cfe0, the buffer class6_variant_effect_table_lookup indexes
+   below (which is also why that global needed widening from a lone
+   scalar to a real 16-byte array). */
+void load_class6_variant_effect_table(param_1)
+int param_1;
+{
+  read_file_handle(param_1,&DAT_0024cfe0,0x10);
+  return;
+}
+/* was FUN_0007cd7c: class6_variant_effect_table_lookup, dispatch slot 6
+   of get_scanned_object_class_effect_ptr's per-class table (uw.c below,
+   local_c -- Ghidra split the trailing 4 array slots of local_24[4] into
+   separate stack variables local_14/local_10/local_c/local_8 for classes
+   4-7, the same split-symbol-cluster pattern as several other stack
+   arrays in this file). Same id-split-then-table-lookup shape as
+   class0_variant_effect_table_lookup/class2_variant_effect_table_lookup,
+   but only defined for family==2 (id&0x30==0x20): indexes DAT_0024cfe0
+   (loaded above by load_class6_variant_effect_table) at 1-byte stride;
+   every other family returns 0, matching this table's real, deliberately
+   partial coverage. */
+void *class6_variant_effect_table_lookup()
+
+{
+  ushort uVar1;
+
+  uVar1 = *(ushort *)g_scratch_object_ptr;
+  if ((uVar1 & 0x30) == 0x20) {
+    return &DAT_0024cfe0 + (uVar1 & 0xf);
+  }
+  return 0;
+}
+/* was FUN_0001583c: class7_variant_effect_table_lookup, dispatch slot 7
+   (local_8). Indexes DAT_00250730 (loaded above by
+   load_class7_variant_effect_table) at 4-byte stride, unconditionally --
+   unlike its class6 sibling, every family/nibble combination is valid
+   here. */
+void *class7_variant_effect_table_lookup()
+
+{
+  return &DAT_00250730 + (*(byte *)g_scratch_object_ptr & 0xf) * 4;
+}
+/* was FUN_0002a2d8: class1_variant_effect_table_lookup, dispatch slot 1
+   of get_scanned_object_class_effect_ptr's local_24 array (the same
+   4-entry array class0/class2/class3's handlers sit in). Same id-split
+   as its siblings, but ALSO caches the split family/nibble into
+   DAT_001013f4/DAT_001013f0 as a side effect (two freshly-declared
+   globals -- not otherwise read/written by any already-named code in
+   this file, so their consumer, if any, is still unrecovered) before
+   indexing DAT_001007d0 at a 0x30-byte stride, family*16+nibble. */
+short DAT_001013f4;
+short DAT_001013f0;
+void *class1_variant_effect_table_lookup()
+
+{
+  short sVar1;
+  ushort uVar2;
+  byte *pbVar3;
+
+  pbVar3 = (byte *)g_scratch_object_ptr;
+  sVar1 = (short)((*pbVar3 & 0x30) >> 4);
+  DAT_001013f4 = sVar1;
+  uVar2 = *pbVar3 & 0xf;
+  DAT_001013f0 = uVar2;
+  return &DAT_001007d0 + (sVar1 * 0x10 + (int)(short)uVar2) * 0x30;
+}
+
+
+/* class0_variant_effect_table_lookup: dispatch target index 0 of get_scanned_object_class_
+   effect_ptr's 8-entry table -- reached for any object whose class is
+   0 (id&0x1c0)>>6==0, which check_object_fits_in_slot treats as the
+   ARMOR class (its own uVar1==0 checks gate the body-slot validation
+   at uw.c ~36952). Was a no-op `return 0;` stub like
+   class2_variant_effect_table_lookup used to be, and for the exact
+   same reason: check_object_fits_in_slot dereferences this function's
+   return value at `+3` to read the equipped piece's slot-type byte,
+   so a hardcoded 0 crashed on address 3 the instant a real armor
+   piece was checked. Real disassembly (0x41e84-0x41f2c) shows the
+   same id-split-then-table-lookup shape as
+   class2_variant_effect_table_lookup, just with 3 possible tables
+   instead of one: family=(id&0x30)>>4 selects DAT_00202800 (stride 8,
+   family 0), DAT_002027d0 (stride 3, family 1), or DAT_00202750
+   (stride 4, families 2 and 3 -- family 3 adds 16 to the nibble index
+   into the same table). All three are already real, non-orphaned
+   globals loaded from objects.dat by the already-correct load_armor_variant_tables
+   (called via load_object_catalog_data's boot-time dispatch table, same loader
+   that reaches load_light_food_effect_tables) and already read
+   elsewhere in this file (resolve_equipped_weapon_attack, uw.c ~17840). */
+void *class0_variant_effect_table_lookup()
+
+{
+  ushort uVar1;
+  int family;
+  int nibble;
+
+  uVar1 = *(ushort *)g_scratch_object_ptr;
+  family = (uVar1 & 0x30) >> 4;
+  nibble = uVar1 & 0xf;
+  if (family == 0) {
+    return &DAT_00202800 + nibble * 8;
+  }
+  if (family == 1) {
+    return &DAT_002027d0 + nibble * 3;
+  }
+  if (family == 3) {
+    nibble = nibble + 16;
+  }
+  return &DAT_00202750 + nibble * 4;
+}
+/* class2_variant_effect_table_lookup: was `undefined DAT_0004a070;` -- a plain data byte, not a
+   function. get_scanned_object_class_effect_ptr takes its address and CALLS it (`local_24[2] =
+   &DAT_0004a070; (*(code*)local_24[idx])();`) for any object whose class
+   is 2 (id&0x1c0)>>6==2 -- exactly the 0x90-class light sources
+   refresh_player_equipment_effects's and decay_equipped_light_sources's light-scan loops filter for. Taking
+   the address of a data byte and jumping into it crashed the instant a
+   real torch was found by the (now-fixed) scan loop. Real disassembly
+   (0x4a070-0x4a108) shows this reads the scanned object's id (via
+   g_scratch_object_ptr, the same object pointer get_scanned_object_class_effect_ptr's other handlers
+   already read), splits it into family=(id&0x30)>>4 and nibble=(id&0xf),
+   then returns a pointer into one of three already-recovered runtime
+   tables (g_carry_weight_limit_table/g_light_radius_table/g_food_effect_table, populated from
+   objects.dat by load_light_food_effect_tables via load_object_catalog_data's boot-time loader --
+   confirmed reachable, not orphaned) indexed by nibble at that family's
+   stride (3/2/1 bytes). Family 2 (torches' actual family, id=0x9X ->
+   (0x9X&0x30)>>4==1 -- so torches hit the *1*-stride table, not this
+   branch, but it's included for the other 0x90-class objects that do
+   route here) returns 0, matching the sibling LAB_ stub functions'
+   "Ghidra couldn't resolve, no-op returns 0" convention for entries
+   this table genuinely leaves unused. */
+/* Return type was `undefined4` -- same 64-bit-pointer-truncation bug
+   already flagged on get_scanned_object_class_effect_ptr itself: this handler hands back a
+   pointer into a runtime table, and undefined4 drops its upper 32 bits
+   on a 64-bit build, producing a wild address in the caller. */
+void *class2_variant_effect_table_lookup()
+
+{
+  ushort uVar1;
+  int family;
+  int nibble;
+
+  uVar1 = *(ushort *)g_scratch_object_ptr;
+  family = (uVar1 & 0x30) >> 4;
+  nibble = uVar1 & 0xf;
+  if (family == 0) {
+    return &g_carry_weight_limit_table + nibble * 3;
+  }
+  if (family == 1) {
+    return &g_light_radius_table + nibble * 2;
+  }
+  if (family == 2) {
+    return 0;
+  }
+  return &g_food_effect_table + nibble;
+}
