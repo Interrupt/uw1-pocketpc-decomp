@@ -13335,187 +13335,6 @@ bool compute_drop_aim_from_cursor()
 
 
 
-void FUN_0004f9a0(param_1,param_2,param_3)
-int param_1;
-int param_2;
-int param_3;
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  bool bVar5;
-  bool bVar6;
-  
-  if (param_3 != -1) {
-    *(int *)(param_1 + 0x10) = param_3;
-  }
-  if (param_2 == 0) {
-    param_2 = 0;
-    if (*(int *)(param_1 + 4) != 0) {
-      FUN_000504cc(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
-      Ordinal_1094(*(undefined4 *)(param_1 + 4));
-      *(undefined4 *)(param_1 + 4) = 0;
-    }
-  }
-  else {
-    iVar4 = *(int *)(param_1 + 4);
-    if (iVar4 != 0) {
-      if (*(int *)(param_1 + 0xc) < param_2) {
-        iVar4 = *(int *)(param_1 + 0x10);
-        if (*(int *)(param_1 + 0x10) == 0) {
-          iVar4 = *(int *)(param_1 + 8);
-          if (iVar4 < 0) {
-            iVar4 = iVar4 + 7;
-          }
-          iVar4 = iVar4 >> 3;
-          bVar6 = SBORROW4(iVar4,4);
-          iVar2 = iVar4 + -4;
-          bVar5 = iVar4 == 4;
-          if (iVar4 < 4) {
-            iVar4 = 4;
-            iVar3 = param_2;
-          }
-          else {
-            iVar3 = 0x400;
-            bVar6 = SBORROW4(iVar4,0x400);
-            iVar2 = iVar4 + -0x400;
-            bVar5 = iVar4 == 0x400;
-          }
-          if (!bVar5 && iVar2 < 0 == bVar6) {
-            iVar4 = iVar3;
-          }
-        }
-        iVar4 = *(int *)(param_1 + 0xc) + iVar4;
-        if (iVar4 <= param_2) {
-          iVar4 = param_2;
-        }
-        iVar2 = Ordinal_1095(iVar4 * 0x14);
-        Ordinal_1044(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x14);
-        FUN_00050604(*(int *)(param_1 + 8) * 0x14 + iVar2,param_2 - *(int *)(param_1 + 8));
-        Ordinal_1094(*(undefined4 *)(param_1 + 4));
-        *(int *)(param_1 + 4) = iVar2;
-        *(int *)(param_1 + 0xc) = iVar4;
-      }
-      else {
-        iVar2 = *(int *)(param_1 + 8);
-        if (iVar2 < param_2) {
-          FUN_00050604(iVar2 * 0x14 + iVar4,param_2 - iVar2);
-        }
-        else if (param_2 < iVar2) {
-          FUN_000504cc(param_2 * 0x14 + iVar4,iVar2 - param_2);
-        }
-      }
-      goto LAB_0004faec;
-    }
-    uVar1 = Ordinal_1095(param_2 * 0x14);
-    *(undefined4 *)(param_1 + 4) = uVar1;
-    FUN_00050604(uVar1,param_2);
-  }
-  *(int *)(param_1 + 0xc) = param_2;
-LAB_0004faec:
-  *(int *)(param_1 + 8) = param_2;
-  return;
-}
-
-
-
-void FUN_0004faf4(param_1)
-undefined1 * param_1;
-
-{
-  *param_1 = 8;
-  param_1[1] = 0x30;
-  *(undefined4 *)(param_1 + 4) = 0;
-  *(undefined4 *)(param_1 + 0x10) = 0;
-  param_1[2] = 8;
-  *(undefined4 *)(param_1 + 0xc) = 0;
-  *(undefined4 *)(param_1 + 8) = 0;
-  param_1[3] = 0;
-  return;
-}
-
-
-
-void FUN_0004fb38(param_1,param_2,param_3)
-int param_1;
-int param_2;
-int param_3;
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  bool bVar5;
-  bool bVar6;
-  
-  if (param_3 != -1) {
-    *(int *)(param_1 + 0x10) = param_3;
-  }
-  if (param_2 == 0) {
-    param_2 = 0;
-    if (*(int *)(param_1 + 4) != 0) {
-      Ordinal_1094();
-      *(undefined4 *)(param_1 + 4) = 0;
-    }
-  }
-  else {
-    if (*(int *)(param_1 + 4) != 0) {
-      if (*(int *)(param_1 + 0xc) < param_2) {
-        iVar2 = *(int *)(param_1 + 0x10);
-        if (*(int *)(param_1 + 0x10) == 0) {
-          iVar2 = *(int *)(param_1 + 8);
-          if (iVar2 < 0) {
-            iVar2 = iVar2 + 7;
-          }
-          iVar2 = iVar2 >> 3;
-          bVar6 = SBORROW4(iVar2,4);
-          iVar3 = iVar2 + -4;
-          bVar5 = iVar2 == 4;
-          if (iVar2 < 4) {
-            iVar2 = 4;
-            iVar4 = param_2;
-          }
-          else {
-            iVar4 = 0x400;
-            bVar6 = SBORROW4(iVar2,0x400);
-            iVar3 = iVar2 + -0x400;
-            bVar5 = iVar2 == 0x400;
-          }
-          if (!bVar5 && iVar3 < 0 == bVar6) {
-            iVar2 = iVar4;
-          }
-        }
-        iVar2 = *(int *)(param_1 + 0xc) + iVar2;
-        if (iVar2 <= param_2) {
-          iVar2 = param_2;
-        }
-        iVar3 = Ordinal_1095(iVar2 << 2);
-        Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 2);
-        FUN_00050648(iVar3 + *(int *)(param_1 + 8) * 4,param_2 - *(int *)(param_1 + 8));
-        Ordinal_1094(*(undefined4 *)(param_1 + 4));
-        *(int *)(param_1 + 4) = iVar3;
-        *(int *)(param_1 + 0xc) = iVar2;
-      }
-      else {
-        iVar2 = *(int *)(param_1 + 8);
-        if (iVar2 < param_2) {
-          FUN_00050648(*(int *)(param_1 + 4) + iVar2 * 4,param_2 - iVar2);
-        }
-      }
-      goto LAB_0004fc58;
-    }
-    uVar1 = Ordinal_1095(param_2 << 2);
-    *(undefined4 *)(param_1 + 4) = uVar1;
-    FUN_00050648(uVar1,param_2);
-  }
-  *(int *)(param_1 + 0xc) = param_2;
-LAB_0004fc58:
-  *(int *)(param_1 + 8) = param_2;
-  return;
-}
 
 
 
@@ -13570,7 +13389,7 @@ int param_2;
   }
   else {
     uVar1 = Ordinal_2142(param_2);
-    FUN_0004fb38(param_1,uVar1,0xffffffff);
+    resize_mod_int_array(param_1,uVar1,0xffffffff);
   }
   uVar2 = *(uint *)(param_2 + 0x14) & 1;
   if (uVar2 == 0) {
@@ -14245,7 +14064,7 @@ int param_2;
   }
   else {
     uVar1 = Ordinal_2142(param_2);
-    FUN_0004f9a0(param_1,uVar1,0xffffffff);
+    resize_mod_pattern_row_array(param_1,uVar1,0xffffffff);
   }
   FUN_0005078c(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
   return;

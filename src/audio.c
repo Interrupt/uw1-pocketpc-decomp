@@ -1692,13 +1692,13 @@ undefined4 param_4;
   uStack_8 = param_3;
   uStack_4 = param_4;
   Ordinal_181(param_1 + 0x104d8);
-  FUN_0004faf4(param_1 + 0x104e0);
+  init_mod_dynamic_array(param_1 + 0x104e0);
   local_334 = param_1 + 0x104f4;
   FUN_0004fd68();
   FUN_0004ffb8(param_1 + 0x10508);
   FUN_00050208(param_1 + 0x10520);
-  FUN_0004faf4(param_1 + 0x10558);
-  FUN_0004faf4(param_1 + 0x1056c);
+  init_mod_dynamic_array(param_1 + 0x10558);
+  init_mod_dynamic_array(param_1 + 0x1056c);
   *param_1 = 0;
   param_1[1] = 0x30;
   param_1[2] = 8;
@@ -1866,7 +1866,7 @@ LAB_0004c038:
   param_1[0x104de] = 0;
   param_1[0x104df] = 0;
   local_340 = local_340 + 2;
-  FUN_0004fb38(param_1 + 0x104e0,0x80,0xffffffff);
+  resize_mod_int_array(param_1 + 0x104e0,0x80,0xffffffff);
   iVar10 = *(int *)(param_1 + 0x104e4);
   iVar11 = 0;
   iVar4 = local_340;
@@ -1889,7 +1889,7 @@ LAB_0004c038:
     iVar4 = 0;
     local_33c = iVar3;
     do {
-      FUN_0004f9a0(iVar4 + *piVar13,0x40,0xffffffff);
+      resize_mod_pattern_row_array(iVar4 + *piVar13,0x40,0xffffffff);
       iVar3 = 0;
       do {
         resize_mod_event_row_array(*(int *)(iVar4 + *piVar13 + 4) + iVar3,*piVar15,0xffffffff);
@@ -2280,10 +2280,10 @@ int param_1;
   iVar2 = DAT_00086368;
   uVar3 = Ordinal_2005(uVar3,DAT_00086368);
   iVar8 = iVar2 >> 3;
-  FUN_0004faf4(auStack_7c);
-  FUN_0004faf4(auStack_94);
-  FUN_0004fb38(auStack_7c,iVar8,0xffffffff);
-  FUN_0004fb38(auStack_94,iVar8,0xffffffff);
+  init_mod_dynamic_array(auStack_7c);
+  init_mod_dynamic_array(auStack_94);
+  resize_mod_int_array(auStack_7c,iVar8,0xffffffff);
+  resize_mod_int_array(auStack_94,iVar8,0xffffffff);
   puVar4 = (undefined1 *)Ordinal_1095(8);
   *puVar4 = (char)param_1;
   puVar4[1] = (char)((uint)param_1 >> 8);
@@ -3619,7 +3619,7 @@ void release_all_sound_channel_slots()
 // Confirmed used only by the MOD pattern loader (both call sites are
 // building per-row note-event storage: note/sample/period/effect,
 // each field 4 bytes = 16 bytes/event) -- a sibling of the 20-byte
-// variant (still-unnamed FUN_0004f9a0) used one level up for the
+// variant (still-unnamed resize_mod_pattern_row_array) used one level up for the
 // per-pattern channel-row array. param_3 (-1 = "leave unchanged")
 // optionally overrides the growth-hint field at +0x10.
 void resize_mod_event_row_array(param_1,param_2,param_3)
@@ -3697,6 +3697,213 @@ int param_3;
   }
   *(int *)(param_1 + 0xc) = param_2;
 LAB_0004f994:
+  *(int *)(param_1 + 8) = param_2;
+  return;
+}
+
+
+// was FUN_0004f9a0 -- generic growable-array resize for 20-byte
+// elements with real construct/destruct lifecycle (FUN_00050604 on
+// grow, FUN_000504cc on shrink/clear). Confirmed used only by the MOD
+// pattern loader to size the per-pattern row array to 0x40 (64) --
+// the standard ProTracker row count -- making each element one
+// pattern row's channel-event descriptors (the sibling 16-byte
+// variant, resize_mod_event_row_array, handles the per-channel event
+// storage one level down). param_3 (-1 = "leave unchanged")
+// optionally overrides the growth-hint field at +0x10.
+void resize_mod_pattern_row_array(param_1,param_2,param_3)
+int param_1;
+int param_2;
+int param_3;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  bool bVar5;
+  bool bVar6;
+
+  if (param_3 != -1) {
+    *(int *)(param_1 + 0x10) = param_3;
+  }
+  if (param_2 == 0) {
+    param_2 = 0;
+    if (*(int *)(param_1 + 4) != 0) {
+      FUN_000504cc(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+      Ordinal_1094(*(undefined4 *)(param_1 + 4));
+      *(undefined4 *)(param_1 + 4) = 0;
+    }
+  }
+  else {
+    iVar4 = *(int *)(param_1 + 4);
+    if (iVar4 != 0) {
+      if (*(int *)(param_1 + 0xc) < param_2) {
+        iVar4 = *(int *)(param_1 + 0x10);
+        if (*(int *)(param_1 + 0x10) == 0) {
+          iVar4 = *(int *)(param_1 + 8);
+          if (iVar4 < 0) {
+            iVar4 = iVar4 + 7;
+          }
+          iVar4 = iVar4 >> 3;
+          bVar6 = SBORROW4(iVar4,4);
+          iVar2 = iVar4 + -4;
+          bVar5 = iVar4 == 4;
+          if (iVar4 < 4) {
+            iVar4 = 4;
+            iVar3 = param_2;
+          }
+          else {
+            iVar3 = 0x400;
+            bVar6 = SBORROW4(iVar4,0x400);
+            iVar2 = iVar4 + -0x400;
+            bVar5 = iVar4 == 0x400;
+          }
+          if (!bVar5 && iVar2 < 0 == bVar6) {
+            iVar4 = iVar3;
+          }
+        }
+        iVar4 = *(int *)(param_1 + 0xc) + iVar4;
+        if (iVar4 <= param_2) {
+          iVar4 = param_2;
+        }
+        iVar2 = Ordinal_1095(iVar4 * 0x14);
+        Ordinal_1044(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x14);
+        FUN_00050604(*(int *)(param_1 + 8) * 0x14 + iVar2,param_2 - *(int *)(param_1 + 8));
+        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        *(int *)(param_1 + 4) = iVar2;
+        *(int *)(param_1 + 0xc) = iVar4;
+      }
+      else {
+        iVar2 = *(int *)(param_1 + 8);
+        if (iVar2 < param_2) {
+          FUN_00050604(iVar2 * 0x14 + iVar4,param_2 - iVar2);
+        }
+        else if (param_2 < iVar2) {
+          FUN_000504cc(param_2 * 0x14 + iVar4,iVar2 - param_2);
+        }
+      }
+      goto LAB_0004faec;
+    }
+    uVar1 = Ordinal_1095(param_2 * 0x14);
+    *(undefined4 *)(param_1 + 4) = uVar1;
+    FUN_00050604(uVar1,param_2);
+  }
+  *(int *)(param_1 + 0xc) = param_2;
+LAB_0004faec:
+  *(int *)(param_1 + 8) = param_2;
+  return;
+}
+
+
+
+// was FUN_0004faf4 -- default-constructs one empty dynamic-array
+// instance in place: zeroes the array header (data pointer, count,
+// capacity, growth-hint at +4/+8/+0xc/+0x10) and resets a leading
+// 4-byte tag immediately before it to its default state. Called
+// directly (never through a resize function) on three distinct
+// per-player struct fields that are each later grown by
+// resize_mod_int_array, confirming this constructs that same array-
+// header struct type.
+void init_mod_dynamic_array(param_1)
+undefined1 * param_1;
+
+{
+  *param_1 = 8;
+  param_1[1] = 0x30;
+  *(undefined4 *)(param_1 + 4) = 0;
+  *(undefined4 *)(param_1 + 0x10) = 0;
+  param_1[2] = 8;
+  *(undefined4 *)(param_1 + 0xc) = 0;
+  *(undefined4 *)(param_1 + 8) = 0;
+  param_1[3] = 0;
+  return;
+}
+
+
+
+// was FUN_0004fb38 -- generic growable-array resize for plain 4-byte
+// (int) elements: no construct/destruct step, new slots are just
+// zero-filled (FUN_00050648 -> memset). Confirmed by its 4-byte
+// stride (`<< 2` throughout, vs. the 16/20-byte MOD-event/row
+// variants) and by operating on the same per-player struct fields
+// init_mod_dynamic_array constructs. param_3 (-1 = "leave unchanged")
+// optionally overrides the growth-hint field at +0x10.
+void resize_mod_int_array(param_1,param_2,param_3)
+int param_1;
+int param_2;
+int param_3;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  bool bVar5;
+  bool bVar6;
+
+  if (param_3 != -1) {
+    *(int *)(param_1 + 0x10) = param_3;
+  }
+  if (param_2 == 0) {
+    param_2 = 0;
+    if (*(int *)(param_1 + 4) != 0) {
+      Ordinal_1094();
+      *(undefined4 *)(param_1 + 4) = 0;
+    }
+  }
+  else {
+    if (*(int *)(param_1 + 4) != 0) {
+      if (*(int *)(param_1 + 0xc) < param_2) {
+        iVar2 = *(int *)(param_1 + 0x10);
+        if (*(int *)(param_1 + 0x10) == 0) {
+          iVar2 = *(int *)(param_1 + 8);
+          if (iVar2 < 0) {
+            iVar2 = iVar2 + 7;
+          }
+          iVar2 = iVar2 >> 3;
+          bVar6 = SBORROW4(iVar2,4);
+          iVar3 = iVar2 + -4;
+          bVar5 = iVar2 == 4;
+          if (iVar2 < 4) {
+            iVar2 = 4;
+            iVar4 = param_2;
+          }
+          else {
+            iVar4 = 0x400;
+            bVar6 = SBORROW4(iVar2,0x400);
+            iVar3 = iVar2 + -0x400;
+            bVar5 = iVar2 == 0x400;
+          }
+          if (!bVar5 && iVar3 < 0 == bVar6) {
+            iVar2 = iVar4;
+          }
+        }
+        iVar2 = *(int *)(param_1 + 0xc) + iVar2;
+        if (iVar2 <= param_2) {
+          iVar2 = param_2;
+        }
+        iVar3 = Ordinal_1095(iVar2 << 2);
+        Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 2);
+        FUN_00050648(iVar3 + *(int *)(param_1 + 8) * 4,param_2 - *(int *)(param_1 + 8));
+        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        *(int *)(param_1 + 4) = iVar3;
+        *(int *)(param_1 + 0xc) = iVar2;
+      }
+      else {
+        iVar2 = *(int *)(param_1 + 8);
+        if (iVar2 < param_2) {
+          FUN_00050648(*(int *)(param_1 + 4) + iVar2 * 4,param_2 - iVar2);
+        }
+      }
+      goto LAB_0004fc58;
+    }
+    uVar1 = Ordinal_1095(param_2 << 2);
+    *(undefined4 *)(param_1 + 4) = uVar1;
+    FUN_00050648(uVar1,param_2);
+  }
+  *(int *)(param_1 + 0xc) = param_2;
+LAB_0004fc58:
   *(int *)(param_1 + 8) = param_2;
   return;
 }
