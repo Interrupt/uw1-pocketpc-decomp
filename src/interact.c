@@ -294,7 +294,7 @@ undefined4 param_2;
   
   if ((((*(byte *)(param_1 + 1) & 0x80) == 0) &&
       (local_c = (ushort *)(param_1 + 6), (*local_c & 0xffc0) != 0)) &&
-     (pbVar1 = (byte *)FUN_000537d0(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
+     (pbVar1 = (byte *)find_object_in_chain(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
     if (0x1f < (*pbVar1 & 0x30)) {
       pbVar1 = (byte *)resolve_object_link((ushort *)(pbVar1 + 6)); /* confirmed via ARM disassembly, 0x72628 */
     }
@@ -346,7 +346,7 @@ undefined4 param_2;
   uVar8 = 0;
   if (((*(byte *)(param_1 + 1) & 0x80) == 0) &&
      (local_34[0] = (ushort *)(param_1 + 6), (*local_34[0] & 0xffc0) != 0)) {
-    pbVar3 = (byte *)FUN_000537d0(local_34,0,6,0xffffffff,0xffff);
+    pbVar3 = (byte *)find_object_in_chain(local_34,0,6,0xffffffff,0xffff);
     if (pbVar3 != (byte *)0x0) {
       if ((*pbVar3 & 0x30) < 0x20) {
         pbVar7 = (byte *)0x0;
@@ -602,7 +602,7 @@ ushort *param_1;  /* was `undefined4` -- truncated the real object-record
 // object slot (DAT_002029cc, up to 0x1000 entries) with a link chain,
 // calling purge_tagged_objects_from_chain on each to remove any
 // stale 0x1a0-class markers tagged with this record. Afterward, looks
-// up param_1 via FUN_00053644 (not yet named) and, if found, unlinks
+// up param_1 via find_object_by_encoded_slot_in_chain (not yet named) and, if found, unlinks
 // and frees DAT_002046b4 (a global whose own role isn't pinned down
 // here).
 void refresh_object_link_chain(param_1,param_2)
@@ -629,7 +629,7 @@ int param_2;
     }
   }
   uVar1 = encode_object_slot_index(param_2);
-  iVar2 = FUN_00053644(param_1,1,uVar1);
+  iVar2 = find_object_by_encoded_slot_in_chain(param_1,1,uVar1);
   if (iVar2 != 0) {
     unlink_and_free_object(DAT_002046b4);
   }

@@ -1611,3 +1611,153 @@ short param_1;
   }
   return (void *)iVar1;
 }
+
+
+// was FUN_00053644 -- recursively searches the chain/contents
+// rooted at link param_1 for an object whose encode_object_slot_index()
+// matches target slot param_3 (param_2 is always passed 1, a recurse-
+// into-contents flag like find_object_in_chain's); tracks the current
+// search object in DAT_002046b4. Confirmed used both directly
+// (interact.c's "look up by slot index and unlink if found") and by
+// item_use.c for the same pattern.
+int find_object_by_encoded_slot_in_chain(param_1,param_2,param_3)
+ushort * param_1;
+undefined4 param_2;
+undefined4 param_3;
+
+{
+  ushort *puVar1;
+  short sVar2;
+  int iVar3;
+  int iVar4;
+  
+  if ((*param_1 & 0xffc0) == 0) {
+LAB_00053720:
+    iVar4 = 0;
+    puVar1 = DAT_002046b4;
+  }
+  else {
+    DAT_002046b4 = param_1;
+    iVar3 = resolve_object_link(param_1);
+    while ((sVar2 = encode_object_slot_index(), iVar4 = iVar3, puVar1 = param_1, sVar2 != (short)param_3 &&
+           ((((*(byte *)(iVar3 + 1) & 0x80) != 0 || ((*(ushort *)(iVar3 + 6) & 0xffc0) == 0)) ||
+            (iVar4 = find_object_by_encoded_slot_in_chain((ushort *)(iVar3 + 6),param_2,param_3), puVar1 = DAT_002046b4,
+            iVar4 == 0))))) {
+      if ((*(ushort *)(iVar3 + 4) & 0xffc0) == 0) goto LAB_00053720;
+      iVar3 = resolve_object_link((ushort *)(iVar3 + 4));
+    }
+  }
+  DAT_002046b4 = puVar1;
+  return iVar4;
+}
+
+
+
+// was FUN_00053728
+undefined4 object_ptr_in_arena(param_1)
+char *param_1;
+
+{
+  undefined4 uVar1;
+  
+  if ((param_1 == 0) || (uVar1 = 1, DAT_002046c4 <= param_1)) {
+    uVar1 = 0;
+  }
+  return uVar1;
+}
+
+
+
+// was active_mobile_list_add
+void active_mobile_list_add(param_1)
+undefined1 param_1;
+
+{
+  *DAT_002046c8 = param_1;
+  DAT_002046c8 = DAT_002046c8 + 1;
+  return;
+}
+
+
+
+// was active_mobile_list_remove
+void active_mobile_list_remove(param_1)
+char param_1;
+
+{
+  char *pcVar1;
+  
+  pcVar1 = DAT_002046c0;
+  while( true ) {
+    if (DAT_002046c8 <= pcVar1) {
+      return;
+    }
+    if (*pcVar1 == param_1) break;
+    pcVar1 = pcVar1 + 1;
+  }
+  DAT_002046c8 = DAT_002046c8 + -1;
+  if (DAT_002046c8 <= pcVar1) {
+    return;
+  }
+  *pcVar1 = *DAT_002046c8;
+  return;
+}
+
+
+
+/* param_1 was `undefined4 *`, so `resolve_object_link(*param_1)` and
+   `*param_1 = local_28` truncated the 64-bit object-list pointer the
+   callers hand in by address (crashing e.g. a right-click "look" at the
+   spawn-room sack: trigger_object_trap_or_use_action -> here -> resolve_object_link(garbage)).
+   It's a pointer-to-pointer -- ushort **. */
+// was FUN_000537d0 -- searches the object chain starting at *param_1
+// for one matching class param_3 (>>6&7 of the type word), subclass
+// param_4 (>>4&3), and quality param_5 (&0xf), each -1/0xffff
+// ("wildcard") skipping that check; recurses into an object's own
+// contents when param_2 is set and it isn't flagged "no contents".
+// On success, advances *param_1 to the matching object's own link
+// (letting the caller resume the search past it on a repeat call --
+// the classic "find next matching object" pattern). Confirmed by
+// dozens of call sites across babl.c/containers.c/item_use.c/
+// interact.c/object_actions.c/traps.c, all passing a class/subclass/
+// quality filter triple.
+ushort *find_object_in_chain(param_1,param_2,param_3,param_4,param_5)
+ushort ** param_1;
+int param_2;
+undefined4 param_3;
+undefined4 param_4;
+short param_5;
+
+{
+  ushort *puVar1;
+  ushort *puVar2;
+  uint uVar3;
+  ushort *local_28;
+  
+  puVar1 = (ushort *)resolve_object_link(*param_1);
+  if (puVar1 != (ushort *)0x0) {
+    do {
+      if ((((int)(short)param_3 == 0xffffffff) ||
+          (uVar3 = (uint)*puVar1, (*puVar1 >> 6 & 7) == (int)(short)param_3)) &&
+         (((int)(short)param_4 == 0xffffffff ||
+          (uVar3 = (uint)*puVar1, (*puVar1 >> 4 & 3) == (int)(short)param_4)))) {
+        if ((int)param_5 == 0xffffffff) {
+          return puVar1;
+        }
+        uVar3 = (uint)*puVar1;
+        if ((uVar3 & 0xf) == (int)param_5) {
+          return puVar1;
+        }
+      }
+      if ((((param_2 != 0) && ((uVar3 & 0x8000) == 0)) && ((puVar1[3] & 0xffc0) != 0)) &&
+         (local_28 = puVar1 + 3,
+         puVar2 = (ushort *)find_object_in_chain(&local_28,param_2,param_3,param_4,param_5),
+         puVar2 != (ushort *)0x0)) {
+        *param_1 = local_28;
+        return puVar2;
+      }
+      puVar1 = (ushort *)resolve_object_link(puVar1 + 2);
+    } while (puVar1 != (ushort *)0x0);
+  }
+  return (ushort *)0x0;
+}

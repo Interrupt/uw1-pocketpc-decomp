@@ -655,7 +655,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short sVar3;
   undefined4 uVar4;
   undefined4 uVar5;
-  /* HACK: was plain `int iVar6` -- truncated FUN_000537d0's real
+  /* HACK: was plain `int iVar6` -- truncated find_object_in_chain's real
      `ushort *` return (same bug class as its own signature comment)
      on this 64-bit host. Confirmed live (UW_DEBUG_DOOR) chasing a
      pull-chain-vs-direct-click door toggle report: this is the real
@@ -669,9 +669,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   uVar4 = babl_read_var_word((int)*(short *)(param_1 + -4));
   uVar5 = babl_read_var_word((int)*(short *)(param_1 + -6));
   local_24 = (ushort *)((char *)tilemap_lookup(uVar5,uVar4) + 2);
-  iVar6 = FUN_000537d0(&local_24,0,5,0,0xffff);
+  iVar6 = find_object_in_chain(&local_24,0,5,0,0xffff);
   if ((iVar6 == (ushort *)0x0) &&
-     (iVar6 = FUN_000537d0(&local_24,0,7,0,0xf), iVar6 == (ushort *)0x0)) {
+     (iVar6 = find_object_in_chain(&local_24,0,7,0,0xf), iVar6 == (ushort *)0x0)) {
     uVar4 = 0;
   }
   else {
@@ -2905,7 +2905,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     iVar1 = (int)(short)((short)uVar4 + -1000 >> 2);
     uVar2 = 0xffff;
   }
-  FUN_000537d0(&local_10,1,iVar1,uVar4 & 3,uVar2);
+  find_object_in_chain(&local_10,1,iVar1,uVar4 & 3,uVar2);
   encode_object_slot_index();
   return;
 }

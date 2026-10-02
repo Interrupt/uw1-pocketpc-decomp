@@ -67,7 +67,7 @@ uint param_3;
   undefined1 *puVar9;
   undefined1 *puVar10;
   int iVar11;
-  /* HACK: case 8's own two FUN_000537d0 results (real `ushort *`
+  /* HACK: case 8's own two find_object_in_chain results (real `ushort *`
      returns, see that function's own signature) were stored into
      iVar16/iVar11 -- both plain `int`, truncating a real 64-bit
      pointer on this host. Confirmed live (bug-pull-chain-crash.txt):
@@ -224,11 +224,11 @@ uint param_3;
   case 8:
     local_34 = (char *)tilemap_lookup(param_2,param_3);
     local_34 = local_34 + 2;
-    _case8_p1 = FUN_000537d0(&local_34,0,5,0,CONCAT22(uVar20,0xffff));
+    _case8_p1 = find_object_in_chain(&local_34,0,5,0,CONCAT22(uVar20,0xffff));
     DAT_002020a0 = (undefined2)param_2;
     DAT_002020a4 = sVar3;
     if (_case8_p1 == (ushort *)0x0) {
-      _case8_p1 = FUN_000537d0(&local_34,0,7,0xffffffff,0xf);
+      _case8_p1 = find_object_in_chain(&local_34,0,7,0xffffffff,0xf);
       if (_case8_p1 == (ushort *)0x0) {
         return 2;
       }
@@ -251,7 +251,7 @@ uint param_3;
     }
     else {
       local_34 = (char *)_case8_p1 + 6;
-      _case8_p2 = FUN_000537d0(&local_34,0,4,0,0xf);
+      _case8_p2 = find_object_in_chain(&local_34,0,4,0,0xf);
       if (_case8_p2 != (ushort *)0x0) {
         object_list_unlink(local_34,_case8_p2);
         free_object_slot(_case8_p2);
@@ -293,9 +293,9 @@ LAB_0007dbc0:
            truncated-pointer class as _case8_p1's own fix a few lines
            above (see this switch case's top comment). This label is
            reached either by falling through from here (where
-           _case8_p1 still holds this case's first FUN_000537d0 call)
+           _case8_p1 still holds this case's first find_object_in_chain call)
            or by `goto` from the if-branch above (where _case8_p1 was
-           reassigned to that branch's own FUN_000537d0 call) -- in
+           reassigned to that branch's own find_object_in_chain call) -- in
            both cases _case8_p1 is the object close_door_object needs,
            `iVar16` (a plain, truncated int here) was never it. */
         close_door_object(DAT_0024cff4,_case8_p1);
@@ -1256,7 +1256,7 @@ short param_1;
 // was FUN_0003a0e8 -- dispatch_quest_event_code's code 0x28 handler
 // (param_1 unused throughout). Checks the 4 tiles diagonally offset
 // from (param_2,param_3) by (+-4,+-4) each for a specific marker
-// object (FUN_000537d0's search); if all 4 are found, spawns a new
+// object (find_object_in_chain's search); if all 4 are found, spawns a new
 // object (catalog id 0xfd) at (param_2,param_3+1) and discards all 4
 // markers -- a "place 4 items around a shrine/altar to trigger a
 // reward" style puzzle. Only known caller drops all 3 arguments
@@ -1282,8 +1282,8 @@ int param_3;
   char acStackY_cc [108];
   /* local_34[] / local_44[] / local_54 held 64-bit tile-record and
      object-list pointers -- Ghidra typed them `int`, truncating every one
-     (tilemap_lookup / FUN_000537d0 / spawn_new_object results are all real
-     pointers). local_54's address is handed to FUN_000537d0 (now
+     (tilemap_lookup / find_object_in_chain / spawn_new_object results are all real
+     pointers). local_54's address is handed to find_object_in_chain (now
      ushort **), so it must be pointer-sized or that call scribbles past
      the slot. */
   void *local_54;
@@ -1306,7 +1306,7 @@ int param_3;
       iVar3 = (int)(char)iVar5;
       local_34[iVar3] = pTile;
       local_54 = pTile + 2;
-      local_44[iVar3] = FUN_000537d0((ushort **)&local_54,0,2,2,7);
+      local_44[iVar3] = find_object_in_chain((ushort **)&local_54,0,2,2,7);
       if (local_44[iVar3] != 0) {
         local_50[iVar3] = cVar7 + (char)param_2;
         local_4c[iVar3] = cVar6 + (char)param_3;
@@ -1404,7 +1404,7 @@ void trigger_exploding_book_trap()
 
   local_10 = (ushort *)((char *)tilemap_lookup(*(ushort *)((char *)g_player_object + 0x16) >> 10,
                           (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) + 2);
-  iVar2 = FUN_000537d0(&local_10,1,4,1,4);
+  iVar2 = find_object_in_chain(&local_10,1,4,1,4);
   if (iVar2 != 0) {
     message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
     uVar1 = *(undefined4 *)(DAT_00086df8 + 0x65);
@@ -1441,7 +1441,7 @@ undefined4 param_3;
   ushort *local_c;   /* was int -- tilemap_lookup()+2 (64-bit ptr) */
 
   local_c = (ushort *)((char *)tilemap_lookup(param_2,param_3) + 2);
-  iVar2 = FUN_000537d0(&local_c,1,4,1,4);
+  iVar2 = find_object_in_chain(&local_c,1,4,1,4);
   if (iVar2 != 0) {
     message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
     uVar1 = *(undefined4 *)(DAT_00086df8 + 0x65);

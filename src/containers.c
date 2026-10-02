@@ -1283,7 +1283,7 @@ int param_2;
 // was FUN_00037f1c -- for a container-like object param_1 (skipped if
 // its class-flag byte's top bit is set) with a nonempty contents
 // chain (offset 6), unlinks and frees matching contained objects one
-// at a time via FUN_000537d0's scan; if param_2 is 0, removes only
+// at a time via find_object_in_chain's scan; if param_2 is 0, removes only
 // the first match and stops, otherwise keeps removing until none are
 // left. Returns whether anything was removed. Sibling to
 // try_empty_container (a different implementation for a different
@@ -1301,7 +1301,7 @@ int param_2;
   uVar2 = 0;
   if (((*(byte *)(param_1 + 1) & 0x80) == 0) &&
      (local_18 = (ushort *)(param_1 + 6), (*local_18 & 0xffc0) != 0)) {
-    iVar1 = FUN_000537d0(&local_18,1,4,0,0xf);
+    iVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
     while (iVar1 != 0) {
       object_list_unlink(local_18,iVar1);
       free_object_slot(iVar1);
@@ -1309,7 +1309,7 @@ int param_2;
         return uVar2;
       }
       uVar2 = 1;
-      iVar1 = FUN_000537d0(&local_18,1,4,0,0xf);
+      iVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
     }
   }
   else {

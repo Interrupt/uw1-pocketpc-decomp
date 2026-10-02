@@ -776,7 +776,7 @@ short param_3;
   ushort *local_18;
   
   if ((((*param_2 & 0x8000) != 0) || (local_18 = param_2 + 3, (*local_18 & 0xffc0) == 0)) ||
-     (puVar4 = (ushort *)FUN_000537d0(&local_18,0,4,0,0xf), puVar4 == (ushort *)0x0)) {
+     (puVar4 = (ushort *)find_object_in_chain(&local_18,0,4,0,0xf), puVar4 == (ushort *)0x0)) {
     return 1;
   }
   uVar1 = *puVar4;
@@ -1083,7 +1083,7 @@ byte * param_2;
 // the object already has bit 0x8000 set, if its "lock" field (offset
 // +3, bits 0xffc0) is zero (nothing to unlock), or if it's a
 // disallowed class (0x1c0 == 0x180). Otherwise looks up the
-// container/link (FUN_000537d0) and, IF found, temporarily forces the
+// container/link (find_object_in_chain) and, IF found, temporarily forces the
 // player's pick-locks skill byte (DAT_00086df8+0x2c) to a guaranteed-
 // pass value (0x2d) before invoking force_unlock_target_object's
 // underlying "use item on object" resolver (resolve_skill_gated_unlock_or_use, action code
@@ -1103,7 +1103,7 @@ ushort * param_3;
   ushort *local_14;
   
   if (((((*param_3 & 0x8000) == 0) && (local_14 = param_3 + 3, (*local_14 & 0xffc0) != 0)) &&
-      ((*param_3 & 0x1c0) != 0x180)) && (iVar2 = FUN_000537d0(&local_14,0,6,2,3), iVar2 != 0)) {
+      ((*param_3 & 0x1c0) != 0x180)) && (iVar2 = find_object_in_chain(&local_14,0,6,2,3), iVar2 != 0)) {
     uVar1 = *(undefined1 *)(DAT_00086df8 + 0x2c);
     *(undefined1 *)(DAT_00086df8 + 0x2c) = 0x2d;
     resolve_skill_gated_unlock_or_use(g_player_object,param_3,iVar2,5);
@@ -2489,7 +2489,7 @@ uint * param_4;
   uVar2 = *param_1;
   if ((uVar2 & 0x1c0) != 0x180) {
     if (((uVar2 & 0x8000) == 0) && (local_20 = param_1 + 3, (*local_20 & 0xffc0) != 0)) {
-      param_1 = (ushort *)FUN_000537d0(&local_20,0,4,2,0);
+      param_1 = (ushort *)find_object_in_chain(&local_20,0,4,2,0);
       if (param_1 == (ushort *)0x0) {
         return 0;
       }
@@ -2580,7 +2580,7 @@ ushort * param_1;
 // was FUN_0007cc78 -- trigger_object_use_babl_script's "finalize" step
 // for the interacting object (src/item_use.c's own comment already
 // names this function). Looks up param_1's linked/special sub-object
-// via the same FUN_000537d0 quality-link resolver
+// via the same find_object_in_chain quality-link resolver
 // resolve_object_variant_or_special_link uses, and if that linked
 // object's byte+1 bit 3 (0x8) is set, reads its quality/charge field
 // (ushort at +4). When the low-6-bit charge count is already 0, rolls
@@ -2602,7 +2602,7 @@ int param_1;
   
   if (((((*(byte *)(param_1 + 1) & 0x80) == 0) &&
        (local_c = (ushort *)(param_1 + 6), (*local_c & 0xffc0) != 0)) &&
-      (iVar3 = FUN_000537d0(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
+      (iVar3 = find_object_in_chain(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
     uVar1 = *(ushort *)(iVar3 + 4);
     if ((uVar1 & 0x3f) == 0) {
       iVar4 = rand_below(10);
@@ -3102,7 +3102,7 @@ LAB_00048e80:
     if ((param_1[1] & 0x80) == 0) {
       local_1c = param_1 + 6;
       uVar8 = 0xffff;
-      iVar2 = FUN_000537d0(&local_1c,0,4,2,0);
+      iVar2 = find_object_in_chain(&local_1c,0,4,2,0);
       bVar9 = iVar2 == 0;
       if (!bVar9) {
         bVar9 = (*(byte *)(iVar2 + 1) & 8) == 0;

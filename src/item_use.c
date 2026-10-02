@@ -1005,7 +1005,7 @@ undefined4 param_3;
   short sVar1;
   char *iVar2;  /* was `int` -- truncated tilemap_lookup's/discard_misplaced_object's
                    real `void *`/`ushort *` returns; only ever compared to
-                   0 (FUN_00053644's plain int return also lands here, but
+                   0 (find_object_by_encoded_slot_in_chain's plain int return also lands here, but
                    is likewise only ever compared to 0, so char* is safe) */
   undefined4 uVar3;
   ushort local_14 [2];
@@ -1013,7 +1013,7 @@ undefined4 param_3;
   if (param_2 == 0) {
     iVar2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
     uVar3 = encode_object_slot_index(param_1);
-    iVar2 = (char *)(intptr_t)FUN_00053644(iVar2 + 2,1,uVar3);
+    iVar2 = (char *)(intptr_t)find_object_by_encoded_slot_in_chain(iVar2 + 2,1,uVar3);
     if (iVar2 == 0) {
       sVar1 = encode_object_slot_index(param_1);
       local_14[0] = local_14[0] & 0x3f | sVar1 << 6;
@@ -1622,7 +1622,7 @@ int param_3;
 // gated on the item's low nibble being outside 0xc-0xf (a "not
 // already refueled" state check) and its "already used" flag (offset
 // +1 bit 0x80) being clear. Looks for a matching fuel source in the
-// item's own contents (FUN_000537d0), and on success advances the
+// item's own contents (find_object_in_chain), and on success advances the
 // item's state nibble by 4, prints a "refueled" message (id 0x7d),
 // and refreshes its inventory widget. Confirmed real caller:
 // use_object_on_target's class-2 branch.
@@ -1641,7 +1641,7 @@ uint param_2;
     trigger_object_use_babl_script((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
     if ((param_1[1] & 0x80) == 0) {
       local_1c = param_1 + 6;
-      iVar3 = FUN_000537d0(&local_1c,0,4,2,param_2 & 0xffff0000);
+      iVar3 = find_object_in_chain(&local_1c,0,4,2,param_2 & 0xffff0000);
       if (iVar3 == 0) {
         uVar1 = *(undefined2 *)param_1;
         bVar2 = (byte)uVar1;
@@ -1695,7 +1695,7 @@ int param_3;
   g_cursor_holding_state = 0;
   if ((param_2 != 0) && (param_3 == 0)) {
     uVar5 = encode_object_slot_index(param_1);
-    iVar6 = FUN_00053644((char *)g_player_object + 6,1,uVar5);
+    iVar6 = find_object_by_encoded_slot_in_chain((char *)g_player_object + 6,1,uVar5);
     if (iVar6 == 0) {
       uVar11 = (int)*param_1 & 0x1ff;
       if (((ushort)uVar11 < 0x153) || (0x156 < (ushort)uVar11)) {
@@ -2220,7 +2220,7 @@ LAB_0007c2b8:
 // the use-object interaction paths: if the interacting object
 // (param_2) isn't already flagged and has trapped/linked contents
 // (offset +6 quality bits), searches its container chain
-// (FUN_000537d0) for a matching entry -- a low-class match with an
+// (find_object_in_chain) for a matching entry -- a low-class match with an
 // empty extra-flags field and param_3==4 triggers a trap effect
 // (apply_trap_or_link_effect/refresh_object_link_chain, not yet named); a higher-class match
 // instead runs the general "use item on object" resolver
@@ -2239,7 +2239,7 @@ undefined2 param_5;
   
   if (((param_2 != 0) && ((*(byte *)(param_2 + 1) & 0x80) == 0)) &&
      (local_1c = (ushort *)(param_2 + 6), (*local_1c & 0xffc0) != 0)) {
-    puVar1 = (ushort *)FUN_000537d0(&local_1c,0,6,0xffffffff,0xffff);
+    puVar1 = (ushort *)find_object_in_chain(&local_1c,0,6,0xffffffff,0xffff);
     if (puVar1 != (ushort *)0x0) {
       if ((*puVar1 & 0x30) < 0x20) {
         if (((*puVar1 & 0x1e00) == 0) && ((short)param_3 == 4)) {
