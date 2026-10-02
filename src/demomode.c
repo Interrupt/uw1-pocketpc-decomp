@@ -1051,3 +1051,17 @@ void demomode_pump(void) {
     }
     g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
 }
+
+
+/* Diagnostic accessor (DAT_00110fc0_scratch is static, so demomode.c can't
+   read it directly): how far the shared draw/pick-buffer write cursor has
+   drifted from its scratch buffer's base, and how much headroom is left
+   before it walks off the end into whatever global happens to follow --
+   see draw_command_list_rewind's comment and init_gameplay_session's "stray write
+   corrupts an unrelated global, never root-caused" comment. */
+long uw_debug_pickbuf_drift(void) {
+  return (long)(DAT_00110fc0 - DAT_00110fc0_scratch);
+}
+long uw_debug_pickbuf_capacity(void) {
+  return (long)sizeof(DAT_00110fc0_scratch);
+}

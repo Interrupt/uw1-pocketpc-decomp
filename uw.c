@@ -2344,20 +2344,8 @@ char * DAT_00110fc8 = 0;
    safe; this is a fallback, not a recovered value, so whatever
    downstream code reads this data back may not see the real original
    content. */
-static char DAT_00110fc0_scratch[65536];
+char DAT_00110fc0_scratch[65536];
 char *DAT_00110fc0 = DAT_00110fc0_scratch;
-/* Diagnostic accessor (DAT_00110fc0_scratch is static, so demomode.c can't
-   read it directly): how far the shared draw/pick-buffer write cursor has
-   drifted from its scratch buffer's base, and how much headroom is left
-   before it walks off the end into whatever global happens to follow --
-   see draw_command_list_rewind's comment and init_gameplay_session's "stray write
-   corrupts an unrelated global, never root-caused" comment. */
-long uw_debug_pickbuf_drift(void) {
-  return (long)(DAT_00110fc0 - DAT_00110fc0_scratch);
-}
-long uw_debug_pickbuf_capacity(void) {
-  return (long)sizeof(DAT_00110fc0_scratch);
-}
 undefined1 DAT_00110fc4;
 undefined4 DAT_00110bb8;
 /* Was `undefined4` (4 bytes) despite init_draw_command_cursor using it to reset

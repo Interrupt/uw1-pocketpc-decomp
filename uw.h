@@ -870,6 +870,7 @@ extern undefined1 DAT_00086d60_backing[65536];
 #define DAT_00086d60 DAT_00086d60_backing[0]
 extern short DAT_000b4620;
 extern char *DAT_00110fc0;
+extern char DAT_00110fc0_scratch[65536];
 extern undefined DAT_00110ff0_backing[985856];
 #define DAT_00110ff0 DAT_00110ff0_backing[0]
 extern undefined DAT_00110ffc;
