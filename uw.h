@@ -1557,7 +1557,7 @@ extern byte DAT_001005fc;
 extern char DAT_00084f1c;
 extern undefined DAT_001007e0;
 extern undefined DAT_001007e1;
-extern undefined DAT_001007f8;
+#define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
 extern char s__DATA_cmb_dat_00084f40[];
 extern undefined2 DAT_00100630_backing[32768];
 #define DAT_00100630 DAT_00100630_backing[0]
@@ -2944,13 +2944,13 @@ uint character_generator_touch_select();
 uint wait_for_chargen_field_input();
 void palette_cycle_range();
 undefined4 resolve_combat_hit_zone();
-int find_nearest_hit_target();
+int find_nearest_hit_target(short *param_1);
 void spawn_blood_splat_object();
 undefined4 resolve_melee_swing_hit();
 int resolve_weapon_hit_skill_check();
 void apply_melee_damage();
 undefined4 play_weapon_impact_sound();
-void compute_attack_relative_facing();
+void compute_attack_relative_facing(void);
 undefined4 process_melee_attack_swing();
 int find_and_consume_ammo();
 undefined4 resolve_equipped_weapon_attack();
@@ -3051,8 +3051,8 @@ undefined4 check_npc_morale_flee();
 int compute_pathfind_search_radius();
 void npc_set_goal();
 void npc_clear_special_goal();
-undefined4 initiate_npc_death();
-undefined4 handle_monster_death();
+undefined4 initiate_npc_death(char *param_1);
+undefined4 handle_monster_death(char *param_1);
 undefined4 apply_damage_to_object();
 undefined4 object_tick_is_due(); // was FUN_0003495c
 void tick_mobile_objects(); // was FUN_000349bc

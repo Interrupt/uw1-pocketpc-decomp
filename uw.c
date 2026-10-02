@@ -1706,7 +1706,7 @@ unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
 #define DAT_00084f0b DAT_00084f0b_backing[0]
 undefined DAT_00250658;
 undefined DAT_001007e1;
-undefined DAT_001007f8;
+#define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
 char s__DATA_cmb_dat_00084f40[] = "\\DATA\\cmb.dat";
 undefined2 DAT_00100630_backing[32768];
 #define DAT_00100630 DAT_00100630_backing[0]

@@ -181,6 +181,15 @@ if(BUILD_TESTING)
     src/player.c:commit_player_move src/movement.c:sweep_init_position
     src/objects.c:resolve_object_link uw.c:FUN_0005aea0 uw.c:FUN_0005b010)
   target_sources(test_movement PRIVATE src/debug.c)
+  add_game_unit_test(combat
+    src/combat.c:find_nearest_hit_target src/combat.c:resolve_combat_hit_zone
+    src/combat.c:compute_attack_relative_facing
+    src/combat.c:process_melee_attack_swing src/combat.c:apply_melee_damage
+    src/combat.c:apply_typed_damage_to_object src/combat.c:resolve_damage_type_resistance
+    src/combat.c:apply_damage_to_object src/combat.c:award_monster_kill_experience
+    src/ai.c:handle_monster_death src/ai.c:initiate_npc_death
+    src/ai.c:resolve_unique_npc_special_behavior
+    src/combat.c:resolve_melee_swing_hit)
   add_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
   target_compile_definitions(test_traps PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")

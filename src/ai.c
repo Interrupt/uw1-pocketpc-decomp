@@ -3616,8 +3616,9 @@ int compute_pathfind_search_radius()
 // own eligibility check otherwise. On success, sets goal 0xc, clears
 // the animation-frame nibble, and zeroes HP (byte 8). Returns 1 if the
 // transition happened, 0 if blocked.
+/* ARM 0x345bc..0x3462c uses the full object pointer with byte offsets. */
 undefined4 initiate_npc_death(param_1)
-int param_1;
+char *param_1;
 
 {
   int iVar1;
@@ -3646,8 +3647,9 @@ int param_1;
 // refuses the transition; otherwise plays a positional death sound
 // (only for goal-category 1 NPCs) and returns 1. Callers use the
 // return value to gate award_monster_kill_experience().
+/* ARM 0x34638..0x34648 uses the full object pointer with byte offsets. */
 undefined4 handle_monster_death(param_1)
-int param_1;
+char *param_1;
 
 {
   int iVar1;

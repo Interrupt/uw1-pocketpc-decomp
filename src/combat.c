@@ -737,6 +737,7 @@ short * param_1;
   ushort uVar3;
   ushort uVar4;
   int iVar5;
+  char *pcAttacker;
   ushort *puVar6;
   uint uVar7;
   uint uVar8;
@@ -754,13 +755,15 @@ short * param_1;
   local_34 = (short)cVar2;
   iVar9 = (int)(((int)cVar2 + (uint)*(byte *)((char *)param_1 + 0x15)) * 0x10000) >> 0x10;
   iVar10 = (int)(short)cVar2;
-  iVar5 = (short)DAT_00100610 * 0x1b + DAT_002046b8;
-  uVar3 = *(ushort *)(iVar5 + 0x16);
-  bVar1 = *(byte *)(iVar5 + 3);
+  /* ARM 0x25bdc..0x25bf4 retains the attacker record as a pointer. */
+  pcAttacker = (short)DAT_00100610 * 0x1b + DAT_002046b8;
+  uVar3 = *(ushort *)(pcAttacker + 0x16);
+  bVar1 = *(byte *)(pcAttacker + 3);
   if (iVar10 < iVar9) {
     do {
       uVar4 = *(ushort *)(&DAT_00202c3a + iVar10 * 6);
-      puVar6 = (ushort *)FUN_000535fc();
+      /* ARM 0x25c84..0x25c8c passes the candidate link's slot index. */
+      puVar6 = (ushort *)FUN_000535fc(uVar4 >> 6);
       if ((((*puVar6 & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
          (((DAT_00100610 != 1 ||
            ((iVar5 = object_ptr_in_arena(puVar6), iVar5 == 0 ||
@@ -996,7 +999,8 @@ undefined4 resolve_melee_swing_hit()
     FUN_00051dd0();
     if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: blocked path, creature_hit_flag=%d\n", (int)*(char *)((char *)DAT_00202c6c + 0x15));
     if (*(char *)((char *)DAT_00202c6c + 0x15) != '\0') {
-      sVar3 = find_nearest_hit_target();
+      /* ARM 0x263c0..0x263d0 passes the current collision record in r0. */
+      sVar3 = find_nearest_hit_target((short *)DAT_00202c6c);
       if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: find_nearest_hit_target returned %d\n", (int)sVar3);
       if (-1 < sVar3) {
         iVar5 = sVar3 * 6;
@@ -1117,7 +1121,7 @@ undefined1 param_1;
   ushort uVar4;
   ushort uVar5;
   ushort *puVar6;
-  undefined4 uVar7;
+  ushort *uVar7; /* ARM 0x26b58..0x26b80 forwards the attacker pointer in r1. */
   short extraout_r1;
   int extraout_r1_00;
   ushort uVar8;
@@ -1324,8 +1328,9 @@ void compute_attack_relative_facing()
 
 {
   int uw_ord2005_rem_9 = 0;
-  int iVar1;
-  int iVar2;
+  /* ARM 0x27038..0x27068 reads both returned object pointers directly. */
+  char *iVar1;
+  char *iVar2;
   uint extraout_r1;
   
   iVar1 = FUN_000535fc((int)DAT_00100620);
@@ -1353,8 +1358,11 @@ undefined4 process_melee_attack_swing()
   int iVar1;
   undefined4 uVar2;
   int iVar3;
-  undefined4 uVar4;
-  undefined4 uVar5;
+  /* ARM 0x27174..0x271a8 keeps attacker/target pointers for damage dispatch. */
+  ushort *uVar4;
+  ushort *uVar5;
+  ushort *puTarget;
+  ushort *puAttacker;
   
   iVar1 = resolve_melee_swing_hit();
   if (iVar1 == 0) {
@@ -1362,18 +1370,19 @@ undefined4 process_melee_attack_swing()
   }
   else {
     if ((DAT_00100610 != 1) && (iVar1 = (int)DAT_00100620, DAT_00100620 != 1)) {
-      FUN_000535fc();
-      iVar3 = object_ptr_in_arena();
+      /* ARM 0x27110..0x27114 forwards the resolved target pointer. */
+      puTarget = FUN_000535fc((int)DAT_00100620);
+      iVar3 = object_ptr_in_arena(puTarget);
       iVar1 = 0;
       if (iVar3 != 0) {
-        iVar3 = FUN_000535fc((int)DAT_00100620);
-        iVar1 = FUN_000535fc((int)DAT_00100610);
-        if (((*(byte *)(iVar3 + 0x19) ^ *(byte *)(iVar1 + 0x19)) & 0x40) == 0) {
+        puTarget = FUN_000535fc((int)DAT_00100620);
+        puAttacker = FUN_000535fc((int)DAT_00100610);
+        if (((*(byte *)((char *)puTarget + 0x19) ^ *(byte *)((char *)puAttacker + 0x19)) & 0x40) == 0) {
           return 0;
         }
       }
     }
-    compute_attack_relative_facing(iVar1);
+    compute_attack_relative_facing();
     uVar2 = resolve_weapon_hit_skill_check((int)DAT_00100610,(int)DAT_00100620);
     if ((short)uVar2 == 0) {
       apply_melee_damage(4);
@@ -2220,7 +2229,7 @@ uint param_3;
 // destroy/transform handling.
 undefined4 apply_typed_damage_to_object(param_1,param_2,param_3,param_4,param_5,param_6)
 ushort * param_1;
-undefined4 param_2;
+ushort *param_2; /* damaging object, forwarded to apply_damage_to_object */
 undefined4 param_3;
 undefined2 param_4;
 undefined1 param_5;

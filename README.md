@@ -107,6 +107,17 @@ Object links, widget slots, and message output are
 fixtures; no UI is needed.
 Run it with `ctest --test-dir build -R '^inventory$' --output-on-failure`.
 
+`tests/test_combat.c` exercises the real melee hit resolver, nearest-target
+selector, hit-zone and facing calculations, swing processing, melee damage
+calculation, HP updates, death-state transitions, scripted death exceptions,
+and kill experience. It covers hitting a critter, missing,
+excluding the attacker, nearest-target selection, all 64 heading pairs,
+failed skill checks, critter faction checks, lethal hits, repeat hits on dead
+critters, and kills by other critters. Collision candidates,
+object lookup, position projection, skill/random rolls, effects, conversation
+UI, and the final XP grant are fixtures; HP and death-state changes are real.
+Run it with `ctest --test-dir build -R '^combat$' --output-on-failure`.
+
 `tests/test_traps.c` follows the real level-one orb at (58,13), near (57,13),
 to its linked text trap and checks that message `0x1201` reaches the scroll
 without pointer truncation. It also covers an absent message.
