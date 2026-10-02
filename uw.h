@@ -2737,6 +2737,7 @@ extern undefined1 g_msg_scroll_panel_state_backing[65536];
 #define g_msg_scroll_panel_state g_msg_scroll_panel_state_backing[0]
 extern undefined4 g_scroll_control_codes_enabled;
 extern unsigned int g_uw_frame_clock_units;
+unsigned int uw_frame_clock_ms();
 extern char PTR_DAT_00087198_arr[16];
 #define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
 extern char PTR_DAT_000871a8_arr[16];

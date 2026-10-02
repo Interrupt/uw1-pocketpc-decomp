@@ -2557,3 +2557,13 @@ ushort *param_1;
   }
   return uVar2;
 }
+
+
+/* Accessor for g_uw_frame_clock_units -- see its own comment. Use this,
+   not the raw global, from any new gameplay-tick-paced timing code (the
+   same shape as movement_pacing_handler's own use) that wants
+   deterministic, tick-count-driven pacing instead of read_realtime_clock_units()'s
+   real wall-clock time. */
+unsigned int uw_frame_clock_ms() {
+  return g_uw_frame_clock_units;
+}

@@ -4909,14 +4909,6 @@ short DAT_0024af6c;
    accessor, uw_frame_clock_ms() below, so a caller has to deliberately
    opt in rather than being silently affected by a global redefinition. */
 unsigned int g_uw_frame_clock_units;
-/* Accessor for g_uw_frame_clock_units -- see its own comment. Use this,
-   not the raw global, from any new gameplay-tick-paced timing code (the
-   same shape as movement_pacing_handler's own use) that wants
-   deterministic, tick-count-driven pacing instead of read_realtime_clock_units()'s
-   real wall-clock time. */
-unsigned int uw_frame_clock_ms() {
-  return g_uw_frame_clock_units;
-}
 char DAT_00087950_backing[128];
 char *DAT_00087950 = DAT_00087950_backing;
 char DAT_00087948_backing[128];
