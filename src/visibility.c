@@ -71,7 +71,7 @@ undefined4 reset_texture_id_lists()
   } while (iVar3 < 6);
   DAT_0023adb0 = 0x30;
   DAT_0023aeb8 = 10;
-  FUN_0005b36c();
+  load_dungeon_texture_arenas();
   iVar3 = 0;
   puVar4 = extraout_r1;
   do {
@@ -152,7 +152,7 @@ int param_2;
     (&DAT_0023b841)[iVar4 * 2] = (char)((ushort)uVar2 >> 8);
     iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
   } while (iVar4 < 3);
-  FUN_0005b36c();
+  load_dungeon_texture_arenas();
   return sVar3 == 0x7a;
 }
 

@@ -1674,7 +1674,7 @@ int param_2;
   /* Was three separate locals (local_8c[48], local_2c[10], local_18[6])
      -- a stack-slot-splitting artifact (same bug class as
      stack0xffdc2e30_buf/acStack_528 in load_game_from_slot, or
-     acStack_86af8/etc in FUN_0005b36c right below this function): real
+     acStack_86af8/etc in load_dungeon_texture_arenas right below this function): real
      ARM disassembly (0x5b29c: `sub sp,sp,#0x80`) allocates ONE 128-byte
      (64-undefined2) buffer, and this function's own writes to
      `local_8c[iVar2+0x30]` (indices 48-57) and `local_8c[iVar2+0x3a]`

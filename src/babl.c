@@ -7204,7 +7204,7 @@ uint param_1;
   render_babl_dialog_window(param_1,uVar2,unaff_r6,unaff_r7,unaff_r8);
   select_active_font(s_font5x6p_sys_0008430c);
   if (DAT_00201c98 != 0) {
-    FUN_0005b36c();
+    load_dungeon_texture_arenas();
   }
   if (uVar1 < 0x100) {
     if (*(short *)(DAT_00085a6c + 8) == 1) {

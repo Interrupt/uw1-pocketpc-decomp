@@ -637,7 +637,7 @@ void main_loop_hud_flush()
          uw_debug_blit_pick_buffer). */
       { static int _pv = -1;
         if (_pv < 0) _pv = (getenv("UW_DEBUG_PICK_VIEW") != NULL);
-        if (_pv) { FUN_0005bac0(); uw_debug_blit_pick_buffer(); }
+        if (_pv) { render_dungeon_view_frame(); uw_debug_blit_pick_buffer(); }
       }
       g_force_redraw_no_xp = 0;
     }

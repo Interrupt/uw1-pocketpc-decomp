@@ -1045,6 +1045,21 @@ extern undefined g_object_weight_table_backing[2048];
 #define g_object_weight_table g_object_weight_table_backing[0]
 extern undefined2 DAT_0023beb8;
 extern undefined2 DAT_0023be8c;
+extern char *DAT_0023ae38;
+extern char *DAT_0023ae3c;
+extern undefined2 DAT_0023aed8;
+extern undefined2 DAT_0023b49c;
+extern undefined2 DAT_00250650;
+extern const char DAT_000869cc_str[];
+#define DAT_000869cc (DAT_000869cc_str[0])
+extern const char DAT_000869d4_str[];
+#define DAT_000869d4 (DAT_000869d4_str[0])
+extern const char DAT_000869dc_str[];
+#define DAT_000869dc (DAT_000869dc_str[0])
+extern const char DAT_000869e4_str[];
+#define DAT_000869e4 (DAT_000869e4_str[0])
+extern undefined1 DAT_002049e0_backing[0x100000];
+#define DAT_002049e0 DAT_002049e0_backing[0]
 extern int g_npc_tick_enabled;
 extern undefined DAT_00028bfc_backing[8192];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
@@ -3668,14 +3683,14 @@ undefined4 get_first_nearby_candidate_object();
 undefined4 reset_texture_id_lists();
 bool load_level_texture_ids();
 undefined4 write_level_quest_flags_to_archive();
-void FUN_0005b36c();
+void load_dungeon_texture_arenas();
 void load_texture_arena();
 void load_terrain_texture_props();
-void FUN_0005b758();
-void FUN_0005b828();
+void configure_dungeon_viewport();
+void init_dungeon_rendering();
 void draw_command_list_rewind();
 void free_frame_geometry_buffers();
-void FUN_0005bac0();
+void render_dungeon_view_frame();
 void full_dungeon_redraw();
 void automap_reveal_all_tiles(void);
 byte automap_reveal_byte(byte *tile_rec);

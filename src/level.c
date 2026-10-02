@@ -31,7 +31,7 @@ void enter_dungeon_view()
   decrement_cursor_hide_depth();
   dirty_rect_union(0,200,0,0x140);
   unregister_game_view_interact_zones();
-  FUN_0005b758(0x34,0x14,0xab,0x70);
+  configure_dungeon_viewport(0x34,0x14,0xab,0x70);
   Ordinal_1044(auStack_314,&DAT_00088d98,0x300);
   fade_out(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   load_pals_bank(0,auStack_314);

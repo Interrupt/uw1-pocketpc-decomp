@@ -1469,3 +1469,201 @@ void build_trig_tables()
   } while (iVar2 < 0x169);
   return;
 }
+
+
+// was FUN_0005b36c -- loads the dungeon-view texture/shade/door-
+// frame arenas at game/level startup: builds "\DATA\<filename>" paths
+// and calls load_texture_arena four times for the wall/floor texture
+// sets, then load_door_frames. Confirmed called at chargen/level-load
+// time (chargen.c, visibility.c, babl.c).
+void load_dungeon_texture_arenas()
+
+{
+  char *wptr_42257;
+  char *wptr_42265;
+  char *wptr_42273;
+  char *wptr_42281;
+  char *stack0xffdc3244_ptr;
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  short local_11c [4];
+  char acStack_114 [260];
+  /* acStack_86af8 / _86af0 / _86ae8 / _86ae0 were four separate stack
+     locals (8, 8, 8, 551364 bytes), but every use is `<base> + iVar3`
+     where iVar3 is strlen(acStack_114) after the "\DATA\" prefix -- i.e.
+     the code appends each texture filename at path + strlen(path). They
+     are all really acStack_114 (the path buffer); Ghidra split the
+     `+ iVar3` writes onto per-file base names. Same "one buffer, many
+     Ghidra names" bug as build_view_matrix's matrices. With them separate,
+     the filename suffix was written to a stray 8-byte local, so
+     load_texture_arena opened the bare "...\DATA\" directory and the whole
+     texture / shade / colour-light arena (DAT_002049e0) stayed zero --
+     which is why the (now-running) 3D span rasterizer drew nothing.
+     Fixed by pointing all four `+ iVar3` writes at acStack_114. */
+
+  DAT_0023ae38 = &DAT_002049e0;
+  Ordinal_1047(acStack_114,0,0x104);
+  pcVar2 = &DAT_0023cca8;
+    stack0xffdc3244_ptr = acStack_114;
+  do {
+    cVar1 = *pcVar2;
+    *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_114,s__DATA__00085970);
+  iVar3 = Ordinal_1068(acStack_114);
+  pcVar2 = &DAT_000869e4;
+    wptr_42257 = (acStack_114 + iVar3);
+  do {
+    cVar1 = *pcVar2;
+    *wptr_42257 = cVar1; wptr_42257 = wptr_42257 + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  local_11c[0] = DAT_0023adb0;
+  load_texture_arena(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae38);
+  pcVar2 = &DAT_000869dc;
+    wptr_42265 = (acStack_114 + iVar3);
+  do {
+    cVar1 = *pcVar2;
+    *wptr_42265 = cVar1; wptr_42265 = wptr_42265 + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  DAT_0023ae34 = DAT_0023ae38 + DAT_0023adb0 * 0x1000;
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
+  pcVar2 = &DAT_000869d4;
+    wptr_42273 = (acStack_114 + iVar3);
+  do {
+    cVar1 = *pcVar2;
+    *wptr_42273 = cVar1; wptr_42273 = wptr_42273 + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  DAT_0023ae3c = DAT_0023ae34 + DAT_0023aeb8 * 0x400;
+  load_texture_arena(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae3c);
+  pcVar2 = &DAT_000869cc;
+    wptr_42281 = (acStack_114 + iVar3);
+  do {
+    cVar1 = *pcVar2;
+    *wptr_42281 = cVar1; wptr_42281 = wptr_42281 + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] load_dungeon_texture_arenas: about to call load_door_frames (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
+  load_door_frames();
+  return;
+}
+
+
+
+// was FUN_0005b758 -- configures the dungeon-view viewport region
+// (x=param_1,y=param_2,width=param_3,height=param_4): sets up the
+// view-Y bound, tracked hotspot rect, and interact zones for it, and
+// picks a frame-time budget based on the current display-mode flags.
+// Confirmed called once at level load with the fixed standard
+// viewport bounds (level.c).
+void configure_dungeon_viewport(param_1,param_2,param_3,param_4)
+undefined4 param_1;
+int param_2;
+undefined4 param_3;
+int param_4;
+
+{
+  g_dungeon_view_active = 0;
+  DAT_0023b020 = (undefined2)param_3;
+  DAT_0023aed4 = (undefined2)param_4;
+  /* HACK: was `FUN_000129d4(param_1);` -- dropped 2 of 3 arguments,
+     the same class of bug fixed repeatedly elsewhere in this file.
+     Nothing between this function's own entry and this call touches
+     param_2/param_3, so on ARM's register-passthrough calling
+     convention they're still sitting in r1/r2 unchanged -- this
+     function's own first 3 parameters are the obviously-intended
+     arguments. The callee's return value is discarded either way (see
+     compute_view_y_bound's own comment on why this fix has no
+     observable behavioral effect). */
+  compute_view_y_bound(param_1,param_2,param_3);
+  set_tracked_hotspot_rect(param_1,param_2,param_3,param_4);
+  register_game_view_interact_zones(param_1,param_2 + param_4 + -1,param_3,param_4);
+  if ((*(ushort *)(DAT_00085a6c + 8) & 8) == 0) {
+    if ((*(ushort *)(DAT_00085a6c + 8) & 1) == 0) {
+      DAT_0023aed8 = 0x7ed2;
+    }
+    else {
+      g_dungeon_view_active = 1;
+      DAT_0023aed8 = 25000;
+    }
+  }
+  else {
+    DAT_0023aed8 = 0x6062;
+  }
+  return;
+}
+
+
+
+// was FUN_0005b828 -- one-time dungeon-view rendering init: resets
+// the viewport, loads the 3D object models, initializes the glyph-
+// width table and draw-command cursor, and builds the initial
+// visibility light grid. Confirmed called once from game.c's startup
+// sequence.
+void init_dungeon_rendering()
+
+{
+  reset_viewport_to_fullscreen();
+  load_3d_object_models();
+  if (getenv("UW_DUMP_MODEL_RAW")) {
+    unsigned char *_b = (unsigned char *)&DAT_00123ccc;
+    int _k;
+    int _npts = *(int *)_b;
+    int _nparts = *(int *)(_b + 4);
+    fprintf(stderr, "[modelraw] npts=%d nparts=%d\n", _npts, _nparts);
+    for (_k = 0; _k < _npts; _k++) {
+      float x = *(float *)(_b + 8 + _k*0xc);
+      float y = *(float *)(_b + 8 + _k*0xc + 4);
+      float z = *(float *)(_b + 8 + _k*0xc + 8);
+      fprintf(stderr, "[modelraw] pt[%d] = (%g,%g,%g)\n", _k, x, y, z);
+    }
+    for (_k = 0; _k < _nparts && _k < 40; _k++) {
+      int base = 0xc14 + _k*0x60;
+      int vcount = *(int *)(_b + base);
+      fprintf(stderr, "[modelraw] part[%d] vcount=%d verts=", _k, vcount);
+      int j;
+      for (j = 0; j < vcount && j < 8; j++) {
+        fprintf(stderr, "%d ", *(int *)(_b + base + 4 + j*4));
+      }
+      fprintf(stderr, "\n");
+    }
+  }
+  init_glyph_width_table();
+  init_draw_command_cursor();
+  save_draw_command_cursor();
+  DAT_0023aed0 = DAT_00110fc0;
+  *DAT_00110fc0 = 0;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  build_visibility_light_grid(8);
+  DAT_0023b49c = DAT_00250650;
+  return;
+}
+
+
+
+// was FUN_0005bac0 -- renders one dungeon-view frame (HUD draw
+// commands + the 3D render pass) within the dungeon viewport's clip
+// rect. Confirmed used both for normal frame rendering and (per an
+// existing comment) to re-render in "pick" mode for mouse-object
+// selection (hud.c).
+void render_dungeon_view_frame()
+
+{
+  draw_command_list_rewind();
+  emit_hud_draw_commands();
+  finalize_glyph_draw_command(0xa0);
+  *DAT_00110fc0 = 0;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  set_viewport_clip_rect(0,0,DAT_0023b020 + -1,DAT_0023aed4 + -1);
+  set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
+  render_dungeon_view();
+  set_viewport_clip_rect(0,0,0x13f,199);
+  return;
+}

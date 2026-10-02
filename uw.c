@@ -2394,7 +2394,7 @@ undefined2 DAT_00189572;
 undefined2 DAT_00189574;
 char * DAT_00110fc8 = 0;
 /* DAT_00110fc0 is a byte-cursor written through directly by other
-   functions too (e.g. FUN_0005b828: `*DAT_00110fc0 = 0;
+   functions too (e.g. init_dungeon_rendering: `*DAT_00110fc0 = 0;
    DAT_00110fc0 = DAT_00110fc0 + 1;`), not just by init_glyph_width_table (which
    would normally seed it from DAT_00110fc8 -- see that function's
    comment on why it skips instead). Left NULL by default (same
@@ -2424,7 +2424,7 @@ undefined4 DAT_00110bb8;
    DAT_00110fc0 (`char *`) -- truncating on this 64-bit host, and
    overwriting the DAT_00110fc0_scratch fallback (see DAT_00110fc0's own
    comment) with a truncated garbage/NULL pointer right before
-   FUN_0005b828 dereferences it. Retyped to a real pointer, defaulted to
+   init_dungeon_rendering dereferences it. Retyped to a real pointer, defaulted to
    the same scratch buffer for the same "no real initializer found,
    avoid crashing" reason. */
 char *DAT_00110fcc = DAT_00110fc0_scratch;
@@ -4595,27 +4595,23 @@ undefined1 DAT_0024f090;
 char s_bad_tmap_ids_size_000869b7[] = "bad_tmap_ids_size";
 undefined1 DAT_0023b841;
 /* Recovered from UU.exe .data: the four texture-file basenames
-   FUN_0005b36c appends to "\DATA\" and loads into the arena. Were
+   load_dungeon_texture_arenas appends to "\DATA\" and loads into the arena. Were
    silently-zero 32KB arrays, so every path was just the bare "\DATA\"
    directory -> load_texture_arena failed -> DAT_002049e0 stayed all zero. */
-static const char DAT_000869cc_str[] = "f16.tr";
-#define DAT_000869cc (DAT_000869cc_str[0])
-static const char DAT_000869d4_str[] = "w16.tr";
-#define DAT_000869d4 (DAT_000869d4_str[0])
-static const char DAT_000869dc_str[] = "f32.tr";
-#define DAT_000869dc (DAT_000869dc_str[0])
-static const char DAT_000869e4_str[] = "w64.tr";
-#define DAT_000869e4 (DAT_000869e4_str[0])
+const char DAT_000869cc_str[] = "f16.tr";
+const char DAT_000869d4_str[] = "w16.tr";
+const char DAT_000869dc_str[] = "f32.tr";
+const char DAT_000869e4_str[] = "w64.tr";
 /* Was a lone `undefined` scalar. It is the base of the texture / shade /
-   colour-light table arena: FUN_00042174 sets DAT_0023ae38 = &DAT_002049e0
-   and loads several .tr/.dat files into it, then get_texture_page hands out
-   `&DAT_002049e0 + page*stride` pointers. Needs real backing storage
-   (1 MB is comfortably more than UW1's texture set). */
-static undefined1 DAT_002049e0_backing[0x100000];
-#define DAT_002049e0 DAT_002049e0_backing[0]
+   colour-light table arena: load_dungeon_texture_arenas sets
+   DAT_0023ae38 = &DAT_002049e0 and loads several .tr/.dat files into
+   it, then get_texture_page hands out `&DAT_002049e0 + page*stride`
+   pointers. Needs real backing storage (1 MB is comfortably more
+   than UW1's texture set). */
+undefined1 DAT_002049e0_backing[0x100000];
 char s__DATA_terrain_dat_000869ec[] = "\\DATA\\terrain.dat";
 // was DAT_0023b01c -- set by the 3D-viewport setup function
-// (FUN_0005b758) whenever the real in-game dungeon-view mode (game
+// (configure_dungeon_viewport) whenever the real in-game dungeon-view mode (game
 // mode bit 0, not a menu/conversation overlay) is active; gates
 // weapon_overlay_and_full_redraw's weapon-overlay draw.
 undefined4 g_dungeon_view_active;
@@ -5472,7 +5468,7 @@ short DAT_0023c22c;
    below, the ellipse is centered around (136,142) in native
    (320x200-ish) coordinates -- right at the bottom edge of the 3D
    viewport (registered at native (52,20)-(223,132), see
-   FUN_0005b758's caller), exactly where the "pedestal" decoration
+   configure_dungeon_viewport's caller), exactly where the "pedestal" decoration
    sits in a real reference screenshot of the shipping game. Verified
    live: with these real values, the needle no longer appears at the
    top-left corner (the previous x=0/y=0 bug); it now subtly cycles
@@ -10378,7 +10374,7 @@ ushort *pick_object_under_cursor()
   int iVar2;
   ushort *puVar3;
   uint uVar4;
-  /* FUN_0005bac0() re-renders the HUD+3D view in "pick" mode so the
+  /* render_dungeon_view_frame() re-renders the HUD+3D view in "pick" mode so the
      per-pixel object/texture id buffer DAT_0023cca0 this function reads
      below is fresh for the current cursor position. It used to crash via
      process_visible_tile_cell (the DAT_0023b4f4 split-symbol -- a short[]
@@ -10387,7 +10383,7 @@ ushort *pick_object_under_cursor()
      to skip it (picks then read a stale buffer). */
   { static int _rr = -1;
     if (_rr < 0) _rr = (getenv("UW_DISABLE_PICK_RERENDER") == NULL);
-    if (_rr) FUN_0005bac0();
+    if (_rr) render_dungeon_view_frame();
   }
   iVar2 = 0;
   DAT_002020ac = 0;
@@ -12782,7 +12778,7 @@ uint param_2;
 /* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer
    DAT_0023cca0 over the 3D viewport instead of the rendered dungeon, so
    the pick/stencil coverage is directly visible. Call *after* a pick-mode
-   render pass (FUN_0005bac0) has populated the buffer. Colour key:
+   render pass (render_dungeon_view_frame) has populated the buffer. Colour key:
      0x00           empty (no geometry)      -> dark blue
      0x01..0xbe     object slot id           -> bright cycling colour
      0xc0..0xfa     wall texture (v-0xbf)    -> grey ramp
@@ -14349,181 +14345,6 @@ LAB_0005abe4:
 
 
 
-void FUN_0005b36c()
-
-{
-  char *wptr_42257;
-  char *wptr_42265;
-  char *wptr_42273;
-  char *wptr_42281;
-  char *stack0xffdc3244_ptr;
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  short local_11c [4];
-  char acStack_114 [260];
-  /* acStack_86af8 / _86af0 / _86ae8 / _86ae0 were four separate stack
-     locals (8, 8, 8, 551364 bytes), but every use is `<base> + iVar3`
-     where iVar3 is strlen(acStack_114) after the "\DATA\" prefix -- i.e.
-     the code appends each texture filename at path + strlen(path). They
-     are all really acStack_114 (the path buffer); Ghidra split the
-     `+ iVar3` writes onto per-file base names. Same "one buffer, many
-     Ghidra names" bug as build_view_matrix's matrices. With them separate,
-     the filename suffix was written to a stray 8-byte local, so
-     load_texture_arena opened the bare "...\DATA\" directory and the whole
-     texture / shade / colour-light arena (DAT_002049e0) stayed zero --
-     which is why the (now-running) 3D span rasterizer drew nothing.
-     Fixed by pointing all four `+ iVar3` writes at acStack_114. */
-
-  DAT_0023ae38 = &DAT_002049e0;
-  Ordinal_1047(acStack_114,0,0x104);
-  pcVar2 = &DAT_0023cca8;
-    stack0xffdc3244_ptr = acStack_114;
-  do {
-    cVar1 = *pcVar2;
-    *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_114,s__DATA__00085970);
-  iVar3 = Ordinal_1068(acStack_114);
-  pcVar2 = &DAT_000869e4;
-    wptr_42257 = (acStack_114 + iVar3);
-  do {
-    cVar1 = *pcVar2;
-    *wptr_42257 = cVar1; wptr_42257 = wptr_42257 + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  local_11c[0] = DAT_0023adb0;
-  load_texture_arena(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae38);
-  pcVar2 = &DAT_000869dc;
-    wptr_42265 = (acStack_114 + iVar3);
-  do {
-    cVar1 = *pcVar2;
-    *wptr_42265 = cVar1; wptr_42265 = wptr_42265 + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  DAT_0023ae34 = DAT_0023ae38 + DAT_0023adb0 * 0x1000;
-  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
-  pcVar2 = &DAT_000869d4;
-    wptr_42273 = (acStack_114 + iVar3);
-  do {
-    cVar1 = *pcVar2;
-    *wptr_42273 = cVar1; wptr_42273 = wptr_42273 + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  DAT_0023ae3c = DAT_0023ae34 + DAT_0023aeb8 * 0x400;
-  load_texture_arena(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae3c);
-  pcVar2 = &DAT_000869cc;
-    wptr_42281 = (acStack_114 + iVar3);
-  do {
-    cVar1 = *pcVar2;
-    *wptr_42281 = cVar1; wptr_42281 = wptr_42281 + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
-  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] FUN_0005b36c: about to call load_door_frames (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
-  load_door_frames();
-  return;
-}
-
-
-
-void FUN_0005b758(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-int param_2;
-undefined4 param_3;
-int param_4;
-
-{
-  g_dungeon_view_active = 0;
-  DAT_0023b020 = (undefined2)param_3;
-  DAT_0023aed4 = (undefined2)param_4;
-  /* HACK: was `FUN_000129d4(param_1);` -- dropped 2 of 3 arguments,
-     the same class of bug fixed repeatedly elsewhere in this file.
-     Nothing between this function's own entry and this call touches
-     param_2/param_3, so on ARM's register-passthrough calling
-     convention they're still sitting in r1/r2 unchanged -- this
-     function's own first 3 parameters are the obviously-intended
-     arguments. The callee's return value is discarded either way (see
-     compute_view_y_bound's own comment on why this fix has no
-     observable behavioral effect). */
-  compute_view_y_bound(param_1,param_2,param_3);
-  set_tracked_hotspot_rect(param_1,param_2,param_3,param_4);
-  register_game_view_interact_zones(param_1,param_2 + param_4 + -1,param_3,param_4);
-  if ((*(ushort *)(DAT_00085a6c + 8) & 8) == 0) {
-    if ((*(ushort *)(DAT_00085a6c + 8) & 1) == 0) {
-      DAT_0023aed8 = 0x7ed2;
-    }
-    else {
-      g_dungeon_view_active = 1;
-      DAT_0023aed8 = 25000;
-    }
-  }
-  else {
-    DAT_0023aed8 = 0x6062;
-  }
-  return;
-}
-
-
-
-void FUN_0005b828()
-
-{
-  reset_viewport_to_fullscreen();
-  load_3d_object_models();
-  if (getenv("UW_DUMP_MODEL_RAW")) {
-    unsigned char *_b = (unsigned char *)&DAT_00123ccc;
-    int _k;
-    int _npts = *(int *)_b;
-    int _nparts = *(int *)(_b + 4);
-    fprintf(stderr, "[modelraw] npts=%d nparts=%d\n", _npts, _nparts);
-    for (_k = 0; _k < _npts; _k++) {
-      float x = *(float *)(_b + 8 + _k*0xc);
-      float y = *(float *)(_b + 8 + _k*0xc + 4);
-      float z = *(float *)(_b + 8 + _k*0xc + 8);
-      fprintf(stderr, "[modelraw] pt[%d] = (%g,%g,%g)\n", _k, x, y, z);
-    }
-    for (_k = 0; _k < _nparts && _k < 40; _k++) {
-      int base = 0xc14 + _k*0x60;
-      int vcount = *(int *)(_b + base);
-      fprintf(stderr, "[modelraw] part[%d] vcount=%d verts=", _k, vcount);
-      int j;
-      for (j = 0; j < vcount && j < 8; j++) {
-        fprintf(stderr, "%d ", *(int *)(_b + base + 4 + j*4));
-      }
-      fprintf(stderr, "\n");
-    }
-  }
-  init_glyph_width_table();
-  init_draw_command_cursor();
-  save_draw_command_cursor();
-  DAT_0023aed0 = DAT_00110fc0;
-  *DAT_00110fc0 = 0;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  build_visibility_light_grid(8);
-  DAT_0023b49c = DAT_00250650;
-  return;
-}
-
-
-
-void FUN_0005bac0()
-
-{
-  draw_command_list_rewind();
-  emit_hud_draw_commands();
-  finalize_glyph_draw_command(0xa0);
-  *DAT_00110fc0 = 0;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  set_viewport_clip_rect(0,0,DAT_0023b020 + -1,DAT_0023aed4 + -1);
-  set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
-  render_dungeon_view();
-  set_viewport_clip_rect(0,0,0x13f,199);
-  return;
-}
 
 
 

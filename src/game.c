@@ -2183,7 +2183,7 @@ void run_game_startup_sequence()
     report_fatal_error_and_exit();
   }
   reset_texture_id_lists();
-  FUN_0005b828();
+  init_dungeon_rendering();
   init_gameplay_session();
   init_collision_response_profiles();
   init_new_character_record(0);

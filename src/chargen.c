@@ -426,7 +426,7 @@ int run_character_generator()
             iVar4 = character_generator_loop(DAT_000fb858,&DAT_000fb8f0,puVar8);
             select_active_font(s_FONT5X6P_SYS_00084e9c);
             if (DAT_00201c98 != 0) {
-              FUN_0005b36c();
+              load_dungeon_texture_arenas();
             }
             if (iVar4 == 0) {
               chargen_ui_transition_hook(1);
@@ -457,7 +457,7 @@ int run_character_generator()
     DAT_001005c8 = 0;
   }
   if (DAT_00201c98 != 0) {
-    FUN_0005b36c();
+    load_dungeon_texture_arenas();
   }
   init_new_character_record(0);
   clear_screen_and_restore_cursor();
