@@ -1072,3 +1072,37 @@ undefined4 debug_noop_overflow_hook()
 
 
 
+
+
+/* Compute the automap reveal byte for a just-explored tile.
+
+   tile_rec points at this tile's 4-byte record. Bits:
+     0-3  shape nibble  (tile type: 0 solid, 1 open, 2-5 diag, 6-9 slope)
+     4-5  fill style, consumed by draw_automap_cell:
+            0 = shaded "explored" floor
+            1/2 = blue water dither
+            3 = leave parchment (floor not painted at all)
+
+   Built as DAT_0023ae40[floor_tex_index] | shape, matching the
+   Pocket-PC disasm.  DAT_0023ae40 is the per-level floor-texture
+   property table (loaded from the .ark): water textures read 0x10
+   there (-> fill style 1 -> blue), everything else reads 0 (-> fill
+   style 0 -> shaded floor).  floor-tex index is tile-record byte 1
+   bits 2-5.  The simple ring-walk was instead using DAT_00086bf0[type],
+   which has no floor-texture info and so couldn't tell water from
+   normal floor.  (The floor being *too dark* vs the reference is a
+   separate issue, fixed in draw_automap_cell by using a 25% darken
+   for the fill instead of darken_pixel's 50%.) */
+byte automap_reveal_byte(byte *tile_rec)
+{
+  if (getenv("UW_DEBUG_AUTOMAP_REVEAL")) {
+    intptr_t idx = (tile_rec - (byte *)DAT_002029cc) / 4;
+    ushort *pp = (ushort *)g_player_object;
+    fprintf(stderr, "[automap-reveal] tile_rec=%p idx=%ld tile=(%ld,%ld) player_tile=(%u,%u) heading=0x%x\n",
+            (void *)tile_rec, (long)idx, (long)(idx & 0x3f), (long)(idx >> 6),
+            (unsigned)(pp[0xb] >> 10), (unsigned)((pp[0xb] & 0x3f0) >> 4),
+            (unsigned)(ushort)DAT_00201c70);
+  }
+  return (byte)DAT_0023ae40_backing[tile_rec[1] >> 2 & 0xf] |
+         (*tile_rec & 0xf);
+}

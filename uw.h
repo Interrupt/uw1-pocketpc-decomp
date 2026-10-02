@@ -986,6 +986,11 @@ extern undefined1 DAT_00201b18[0x20];
 extern short DAT_00189576;
 extern undefined2 DAT_00189578;
 extern ushort DAT_0018957a;
+extern unsigned short DAT_00086c80_backing[32];
+#define DAT_00086c80 (*(unsigned char *)&DAT_00086c80_backing[0])
+extern const unsigned char DAT_00086cc0_arr[32];
+#define DAT_00086cc0 (DAT_00086cc0_arr[0])
+extern int g_billboard_angle_override_deg;
 extern short DAT_0018957c;
 extern short DAT_0018957e;
 extern ushort DAT_00189580;
