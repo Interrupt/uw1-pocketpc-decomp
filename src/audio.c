@@ -3622,7 +3622,7 @@ void release_all_sound_channel_slots()
 
 // was FUN_0004f874 -- generic growable-array resize for 16-byte,
 // zero-initializable elements (grows via Ordinal_1095/realloc-style
-// copy, zero-fills new slots via FUN_000504c0's Ordinal_1047 memset).
+// copy, zero-fills new slots via construct_mod_event_array_range's Ordinal_1047 memset).
 // Confirmed used only by the MOD pattern loader (both call sites are
 // building per-row note-event storage: note/sample/period/effect,
 // each field 4 bytes = 16 bytes/event) -- a sibling of the 20-byte
@@ -3685,7 +3685,7 @@ int param_3;
         }
         iVar3 = Ordinal_1095(iVar2 << 4);
         Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 4);
-        FUN_000504c0(iVar3 + *(int *)(param_1 + 8) * 0x10,param_2 - *(int *)(param_1 + 8));
+        construct_mod_event_array_range(iVar3 + *(int *)(param_1 + 8) * 0x10,param_2 - *(int *)(param_1 + 8));
         Ordinal_1094(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar3;
         *(int *)(param_1 + 0xc) = iVar2;
@@ -3693,14 +3693,14 @@ int param_3;
       else {
         iVar2 = *(int *)(param_1 + 8);
         if (iVar2 < param_2) {
-          FUN_000504c0(*(int *)(param_1 + 4) + iVar2 * 0x10,param_2 - iVar2);
+          construct_mod_event_array_range(*(int *)(param_1 + 4) + iVar2 * 0x10,param_2 - iVar2);
         }
       }
       goto LAB_0004f994;
     }
     uVar1 = Ordinal_1095(param_2 << 4);
     *(undefined4 *)(param_1 + 4) = uVar1;
-    FUN_000504c0(uVar1,param_2);
+    construct_mod_event_array_range(uVar1,param_2);
   }
   *(int *)(param_1 + 0xc) = param_2;
 LAB_0004f994:
@@ -3710,8 +3710,8 @@ LAB_0004f994:
 
 
 // was FUN_0004f9a0 -- generic growable-array resize for 20-byte
-// elements with real construct/destruct lifecycle (FUN_00050604 on
-// grow, FUN_000504cc on shrink/clear). Confirmed used only by the MOD
+// elements with real construct/destruct lifecycle (construct_mod_row_array_range on
+// grow, destroy_mod_row_array_range on shrink/clear). Confirmed used only by the MOD
 // pattern loader to size the per-pattern row array to 0x40 (64) --
 // the standard ProTracker row count -- making each element one
 // pattern row's channel-event descriptors (the sibling 16-byte
@@ -3737,7 +3737,7 @@ int param_3;
   if (param_2 == 0) {
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
-      FUN_000504cc(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+      destroy_mod_row_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
       Ordinal_1094(*(undefined4 *)(param_1 + 4));
       *(undefined4 *)(param_1 + 4) = 0;
     }
@@ -3776,7 +3776,7 @@ int param_3;
         }
         iVar2 = Ordinal_1095(iVar4 * 0x14);
         Ordinal_1044(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x14);
-        FUN_00050604(*(int *)(param_1 + 8) * 0x14 + iVar2,param_2 - *(int *)(param_1 + 8));
+        construct_mod_row_array_range(*(int *)(param_1 + 8) * 0x14 + iVar2,param_2 - *(int *)(param_1 + 8));
         Ordinal_1094(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar2;
         *(int *)(param_1 + 0xc) = iVar4;
@@ -3784,17 +3784,17 @@ int param_3;
       else {
         iVar2 = *(int *)(param_1 + 8);
         if (iVar2 < param_2) {
-          FUN_00050604(iVar2 * 0x14 + iVar4,param_2 - iVar2);
+          construct_mod_row_array_range(iVar2 * 0x14 + iVar4,param_2 - iVar2);
         }
         else if (param_2 < iVar2) {
-          FUN_000504cc(param_2 * 0x14 + iVar4,iVar2 - param_2);
+          destroy_mod_row_array_range(param_2 * 0x14 + iVar4,iVar2 - param_2);
         }
       }
       goto LAB_0004faec;
     }
     uVar1 = Ordinal_1095(param_2 * 0x14);
     *(undefined4 *)(param_1 + 4) = uVar1;
-    FUN_00050604(uVar1,param_2);
+    construct_mod_row_array_range(uVar1,param_2);
   }
   *(int *)(param_1 + 0xc) = param_2;
 LAB_0004faec:
@@ -3831,7 +3831,7 @@ undefined1 * param_1;
 
 // was FUN_0004fb38 -- generic growable-array resize for plain 4-byte
 // (int) elements: no construct/destruct step, new slots are just
-// zero-filled (FUN_00050648 -> memset). Confirmed by its 4-byte
+// zero-filled (construct_mod_int_array_range -> memset). Confirmed by its 4-byte
 // stride (`<< 2` throughout, vs. the 16/20-byte MOD-event/row
 // variants) and by operating on the same per-player struct fields
 // init_mod_dynamic_array constructs. param_3 (-1 = "leave unchanged")
@@ -3892,7 +3892,7 @@ int param_3;
         }
         iVar3 = Ordinal_1095(iVar2 << 2);
         Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 2);
-        FUN_00050648(iVar3 + *(int *)(param_1 + 8) * 4,param_2 - *(int *)(param_1 + 8));
+        construct_mod_int_array_range(iVar3 + *(int *)(param_1 + 8) * 4,param_2 - *(int *)(param_1 + 8));
         Ordinal_1094(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar3;
         *(int *)(param_1 + 0xc) = iVar2;
@@ -3900,14 +3900,14 @@ int param_3;
       else {
         iVar2 = *(int *)(param_1 + 8);
         if (iVar2 < param_2) {
-          FUN_00050648(*(int *)(param_1 + 4) + iVar2 * 4,param_2 - iVar2);
+          construct_mod_int_array_range(*(int *)(param_1 + 4) + iVar2 * 4,param_2 - iVar2);
         }
       }
       goto LAB_0004fc58;
     }
     uVar1 = Ordinal_1095(param_2 << 2);
     *(undefined4 *)(param_1 + 4) = uVar1;
-    FUN_00050648(uVar1,param_2);
+    construct_mod_int_array_range(uVar1,param_2);
   }
   *(int *)(param_1 + 0xc) = param_2;
 LAB_0004fc58:
@@ -4026,7 +4026,7 @@ undefined1 * param_1;
 // was FUN_0004fda4 -- resizes the top-level "array of patterns":
 // each 20-byte element is itself a nested resize_mod_pattern_row_array-
 // style header for one pattern's rows, constructed/destroyed via
-// FUN_00050678/the still-unnamed per-element helpers one level down
+// destroy_mod_pattern_array_range/the still-unnamed per-element helpers one level down
 // (next pass). The matching constructor is init_mod_pattern_array.
 void resize_mod_pattern_array(param_1,param_2,param_3)
 int param_1;
@@ -4047,7 +4047,7 @@ int param_3;
   if (param_2 == 0) {
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
-      FUN_00050678(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+      destroy_mod_pattern_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
       Ordinal_1094(*(undefined4 *)(param_1 + 4));
       *(undefined4 *)(param_1 + 4) = 0;
     }
@@ -4086,7 +4086,7 @@ int param_3;
         }
         iVar2 = Ordinal_1095(iVar4 * 0x14);
         Ordinal_1044(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x14);
-        FUN_000507b8(*(int *)(param_1 + 8) * 0x14 + iVar2,param_2 - *(int *)(param_1 + 8));
+        construct_mod_pattern_array_range(*(int *)(param_1 + 8) * 0x14 + iVar2,param_2 - *(int *)(param_1 + 8));
         Ordinal_1094(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar2;
         *(int *)(param_1 + 0xc) = iVar4;
@@ -4094,17 +4094,17 @@ int param_3;
       else {
         iVar2 = *(int *)(param_1 + 8);
         if (iVar2 < param_2) {
-          FUN_000507b8(iVar2 * 0x14 + iVar4,param_2 - iVar2);
+          construct_mod_pattern_array_range(iVar2 * 0x14 + iVar4,param_2 - iVar2);
         }
         else if (param_2 < iVar2) {
-          FUN_00050678(param_2 * 0x14 + iVar4,iVar2 - param_2);
+          destroy_mod_pattern_array_range(param_2 * 0x14 + iVar4,iVar2 - param_2);
         }
       }
       goto LAB_0004fef0;
     }
     uVar1 = Ordinal_1095(param_2 * 0x14);
     *(undefined4 *)(param_1 + 4) = uVar1;
-    FUN_000507b8(uVar1,param_2);
+    construct_mod_pattern_array_range(uVar1,param_2);
   }
   *(int *)(param_1 + 0xc) = param_2;
 LAB_0004fef0:
@@ -4114,7 +4114,7 @@ LAB_0004fef0:
 
 
 // was FUN_0004fef8 -- destroys the top-level "array of patterns" in
-// place: frees each pattern's own nested row-array (FUN_00050678,
+// place: frees each pattern's own nested row-array (destroy_mod_pattern_array_range,
 // the same destroy-range callback resize_mod_pattern_array uses) then
 // the outer buffer, and resets the tag to closed. The in-place
 // counterpart to init_mod_pattern_array.
@@ -4127,7 +4127,7 @@ undefined1 * param_1;
   param_1[2] = 8;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
-    FUN_00050678(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+    destroy_mod_pattern_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
     Ordinal_1094(*(undefined4 *)(param_1 + 4));
   }
   *param_1 = 0x20;
@@ -4141,7 +4141,7 @@ undefined1 * param_1;
 
 // was FUN_0004ff68 -- MFC CArchive-style serialize for the top-level
 // "array of patterns" (loading resizes via resize_mod_pattern_array,
-// storing writes via still-unnamed FUN_000507fc). No call sites found
+// storing writes via still-unnamed write_mod_pattern_array). No call sites found
 // in this codebase -- likely an unused template instantiation, kept
 // for parity with serialize_mod_int_array/serialize_mod_instrument_array.
 void serialize_mod_pattern_array(param_1,param_2)
@@ -4158,7 +4158,7 @@ int param_2;
     uVar1 = Ordinal_2142(param_2);
     resize_mod_pattern_array(param_1,uVar1,0xffffffff);
   }
-  FUN_000507fc(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+  write_mod_pattern_array(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
   return;
 }
 
@@ -4189,8 +4189,8 @@ undefined1 * param_1;
 
 
 // was FUN_0004fff4 -- resizes the MOD instrument/sample-descriptor
-// array (48-byte elements, construct/destruct via FUN_00050860/
-// FUN_00050828). The matching constructor is init_mod_instrument_array.
+// array (48-byte elements, construct/destruct via construct_mod_instrument_array_range/
+// destroy_mod_instrument_array_range). The matching constructor is init_mod_instrument_array.
 void resize_mod_instrument_array(param_1,param_2,param_3)
 int param_1;
 int param_2;
@@ -4210,7 +4210,7 @@ int param_3;
   if (param_2 == 0) {
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
-      FUN_00050828(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+      destroy_mod_instrument_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
       Ordinal_1094(*(undefined4 *)(param_1 + 4));
       *(undefined4 *)(param_1 + 4) = 0;
     }
@@ -4249,7 +4249,7 @@ int param_3;
         }
         iVar2 = Ordinal_1095(iVar4 * 0x30);
         Ordinal_1044(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x30);
-        FUN_00050860(*(int *)(param_1 + 8) * 0x30 + iVar2,param_2 - *(int *)(param_1 + 8));
+        construct_mod_instrument_array_range(*(int *)(param_1 + 8) * 0x30 + iVar2,param_2 - *(int *)(param_1 + 8));
         Ordinal_1094(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar2;
         *(int *)(param_1 + 0xc) = iVar4;
@@ -4257,17 +4257,17 @@ int param_3;
       else {
         iVar2 = *(int *)(param_1 + 8);
         if (iVar2 < param_2) {
-          FUN_00050860(iVar2 * 0x30 + iVar4,param_2 - iVar2);
+          construct_mod_instrument_array_range(iVar2 * 0x30 + iVar4,param_2 - iVar2);
         }
         else if (param_2 < iVar2) {
-          FUN_00050828(param_2 * 0x30 + iVar4,iVar2 - param_2);
+          destroy_mod_instrument_array_range(param_2 * 0x30 + iVar4,iVar2 - param_2);
         }
       }
       goto LAB_00050140;
     }
     uVar1 = Ordinal_1095(param_2 * 0x30);
     *(undefined4 *)(param_1 + 4) = uVar1;
-    FUN_00050860(uVar1,param_2);
+    construct_mod_instrument_array_range(uVar1,param_2);
   }
   *(int *)(param_1 + 0xc) = param_2;
 LAB_00050140:
@@ -4279,7 +4279,7 @@ LAB_00050140:
 
 // was FUN_00050148 -- destroys the MOD instrument/sample-descriptor
 // array in place: frees each element via the destroy-range callback
-// FUN_00050828 (same one resize_mod_instrument_array uses), then the
+// destroy_mod_instrument_array_range (same one resize_mod_instrument_array uses), then the
 // outer buffer, and resets the tag to closed.
 void destroy_mod_instrument_array(param_1)
 undefined1 * param_1;
@@ -4290,7 +4290,7 @@ undefined1 * param_1;
   param_1[2] = 8;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
-    FUN_00050828(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+    destroy_mod_instrument_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
     Ordinal_1094(*(undefined4 *)(param_1 + 4));
   }
   *param_1 = 0x20;
@@ -4305,7 +4305,7 @@ undefined1 * param_1;
 // was FUN_000501b8 -- MFC CArchive-style serialize for the MOD
 // instrument/sample-descriptor array (loading resizes via
 // resize_mod_instrument_array, storing writes via still-unnamed
-// FUN_000508b0).
+// write_mod_instrument_array).
 void serialize_mod_instrument_array(param_1,param_2)
 int param_1;
 int param_2;
@@ -4320,7 +4320,7 @@ int param_2;
     uVar1 = Ordinal_2142(param_2);
     resize_mod_instrument_array(param_1,uVar1,0xffffffff);
   }
-  FUN_000508b0(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+  write_mod_instrument_array(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
   return;
 }
 
@@ -4352,7 +4352,7 @@ undefined1 * param_1;
 
 // was FUN_00050244 -- resizes the MOD channel runtime-state array
 // (64-byte elements, no element construct/destruct -- new slots are
-// just zero-filled via FUN_000508dc). The matching constructor is
+// just zero-filled via construct_mod_channel_state_array_range). The matching constructor is
 // init_mod_channel_state_array.
 void resize_mod_channel_state_array(param_1,param_2,param_3)
 int param_1;
@@ -4410,7 +4410,7 @@ int param_3;
         }
         iVar3 = Ordinal_1095(iVar2 << 6);
         Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 6);
-        FUN_000508dc(iVar3 + *(int *)(param_1 + 8) * 0x40,param_2 - *(int *)(param_1 + 8));
+        construct_mod_channel_state_array_range(iVar3 + *(int *)(param_1 + 8) * 0x40,param_2 - *(int *)(param_1 + 8));
         Ordinal_1094(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar3;
         *(int *)(param_1 + 0xc) = iVar2;
@@ -4418,14 +4418,14 @@ int param_3;
       else {
         iVar2 = *(int *)(param_1 + 8);
         if (iVar2 < param_2) {
-          FUN_000508dc(*(int *)(param_1 + 4) + iVar2 * 0x40,param_2 - iVar2);
+          construct_mod_channel_state_array_range(*(int *)(param_1 + 4) + iVar2 * 0x40,param_2 - iVar2);
         }
       }
       goto LAB_00050364;
     }
     uVar1 = Ordinal_1095(param_2 << 6);
     *(undefined4 *)(param_1 + 4) = uVar1;
-    FUN_000508dc(uVar1,param_2);
+    construct_mod_channel_state_array_range(uVar1,param_2);
   }
   *(int *)(param_1 + 0xc) = param_2;
 LAB_00050364:
@@ -4570,4 +4570,428 @@ uint param_2;
     Ordinal_1094(param_1);
   }
   return param_1;
+}
+
+
+// was FUN_000504c0 -- zero-fills param_2 16-byte "event" elements in
+// one memset. The construct-range callback resize_mod_event_row_array
+// passes to Ordinal_1044/its grow path.
+void construct_mod_event_array_range(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  Ordinal_1047(param_1,0,param_2 << 4);
+  return;
+}
+
+
+
+// was FUN_000504cc -- destroys param_2 20-byte "row" elements (each a
+// nested event-array header, destroyed via destroy_mod_row_array_elem).
+// The destroy-range callback resize_mod_pattern_row_array uses, and
+// also used directly by destroy_mod_pattern_array_elem to tear down
+// one pattern's own row array.
+void destroy_mod_row_array_range(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  for (; param_2 != 0; param_2 = param_2 + -1) {
+    destroy_mod_row_array_elem(param_1);
+    param_1 = param_1 + 0x14;
+  }
+  return;
+}
+
+
+
+// was FUN_000504fc -- destroys one "row" element in place: frees its
+// nested event-array buffer (if allocated) and resets the tag to
+// closed. The per-element destructor resize_mod_pattern_row_array's
+// destroy-range (destroy_mod_row_array_range) calls for each row.
+void destroy_mod_row_array_elem(param_1)
+undefined1 * param_1;
+
+{
+  *param_1 = 0x80;
+  param_1[1] = 0x30;
+  param_1[2] = 8;
+  param_1[3] = 0;
+  if (*(int *)(param_1 + 4) != 0) {
+    Ordinal_1094();
+  }
+  *param_1 = 0x20;
+  param_1[1] = 0x30;
+  param_1[2] = 8;
+  param_1[3] = 0;
+  return;
+}
+
+
+
+// was FUN_0005056c -- MFC CArchive-style serialize for the event-row
+// array (16-byte elements, one row's channel events): loading resizes
+// via resize_mod_event_row_array, storing writes via write_mod_event_array.
+void serialize_mod_event_row_array(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  undefined4 uVar1;
+
+  if ((*(uint *)(param_2 + 0x14) & 1) == 0) {
+    Ordinal_2588(param_2,*(undefined4 *)(param_1 + 8));
+  }
+  else {
+    uVar1 = Ordinal_2142(param_2);
+    resize_mod_event_row_array(param_1,uVar1,0xffffffff);
+  }
+  write_mod_event_array(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+  return;
+}
+
+
+
+// was FUN_000505bc -- "scalar deleting destructor" for the "row"
+// element type (see destroy_mod_dynamic_array_and_maybe_free).
+// BUG FIX: was `FUN_000504fc();` (destroy_mod_row_array_elem) -- the
+// same dropped-argument bug fixed four times in pass 387, confirmed
+// again here: param_1 is the obvious intended argument, and
+// destroy_mod_row_array_elem is called correctly (with param_1)
+// everywhere else in this file (e.g. destroy_mod_row_array_range).
+undefined4 destroy_mod_row_array_elem_and_maybe_free(param_1,param_2)
+undefined4 param_1;
+uint param_2;
+
+{
+  destroy_mod_row_array_elem(param_1);
+  if ((param_2 & 1) != 0) {
+    Ordinal_1094(param_1);
+  }
+  return param_1;
+}
+
+
+
+// was FUN_000505e0 -- MFC CArchive write helper for the event-array
+// (16-byte elements): writes param_3 elements of param_2 via
+// Ordinal_2135 if storing, else asserts/no-ops (Ordinal_2582) --
+// mirrors write_mod_pattern_row_array/write_mod_pattern_array/
+// write_mod_instrument_array for their own element sizes.
+void write_mod_event_array(param_1,param_2,param_3)
+int param_1;
+undefined4 param_2;
+int param_3;
+
+{
+  if ((*(uint *)(param_1 + 0x14) & 1) == 0) {
+    Ordinal_2582();
+  }
+  else {
+    Ordinal_2135(param_1,param_2,param_3 << 4);
+  }
+  return;
+}
+
+
+
+// was FUN_00050604 -- zero-fills param_2 20-byte "row" elements then
+// default-constructs each one (construct_mod_row_array_elem). The
+// construct-range callback resize_mod_pattern_row_array uses on grow.
+void construct_mod_row_array_range(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  Ordinal_1047(param_1,0,param_2 * 0x14);
+  for (; param_2 != 0; param_2 = param_2 + -1) {
+    if (param_1 != 0) {
+      construct_mod_row_array_elem(param_1);
+    }
+    param_1 = param_1 + 0x14;
+  }
+  return;
+}
+
+
+
+// was FUN_00050648 -- zero-fills param_2 plain int elements in one
+// memset. The construct-range callback resize_mod_int_array passes
+// on grow/shrink.
+void construct_mod_int_array_range(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  Ordinal_1047(param_1,0,param_2 << 2);
+  return;
+}
+
+
+
+// was FUN_00050678 -- destroys param_2 20-byte "pattern" elements
+// (each a nested row-array header, destroyed via
+// destroy_mod_pattern_array_elem). The destroy-range callback
+// resize_mod_pattern_array uses, and also used directly by
+// destroy_mod_pattern_array to tear down the whole top-level array.
+void destroy_mod_pattern_array_range(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  for (; param_2 != 0; param_2 = param_2 + -1) {
+    destroy_mod_pattern_array_elem(param_1);
+    param_1 = param_1 + 0x14;
+  }
+  return;
+}
+
+
+
+// was FUN_000506a8 -- destroys one "pattern" element in place: frees
+// its nested row array (destroy_mod_row_array_range, same callback
+// resize_mod_pattern_row_array's destructor uses) then the row array's
+// own buffer, and resets the tag to closed. The per-element destructor
+// destroy_mod_pattern_array_range calls for each pattern.
+void destroy_mod_pattern_array_elem(param_1)
+undefined1 * param_1;
+
+{
+  *param_1 = 0x98;
+  param_1[1] = 0x30;
+  param_1[2] = 8;
+  param_1[3] = 0;
+  if (*(int *)(param_1 + 4) != 0) {
+    destroy_mod_row_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+    Ordinal_1094(*(undefined4 *)(param_1 + 4));
+  }
+  *param_1 = 0x20;
+  param_1[1] = 0x30;
+  param_1[2] = 8;
+  param_1[3] = 0;
+  return;
+}
+
+
+
+// was FUN_00050718 -- MFC CArchive-style serialize for the per-pattern
+// row array (20-byte elements, one pattern's rows): loading resizes
+// via resize_mod_pattern_row_array, storing writes via
+// write_mod_pattern_row_array.
+void serialize_mod_pattern_row_array(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  undefined4 uVar1;
+
+  if ((*(uint *)(param_2 + 0x14) & 1) == 0) {
+    Ordinal_2588(param_2,*(undefined4 *)(param_1 + 8));
+  }
+  else {
+    uVar1 = Ordinal_2142(param_2);
+    resize_mod_pattern_row_array(param_1,uVar1,0xffffffff);
+  }
+  write_mod_pattern_row_array(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+  return;
+}
+
+
+
+// was FUN_00050768 -- "scalar deleting destructor" for the "pattern"
+// element type (see destroy_mod_dynamic_array_and_maybe_free).
+// BUG FIX: was `FUN_000506a8();` (destroy_mod_pattern_array_elem) --
+// the same dropped-argument bug flagged after pass 386 and fixed four
+// times over in pass 387: param_1 is the obvious intended argument,
+// and destroy_mod_pattern_array_elem is called correctly (with
+// param_1) everywhere else in this file (e.g.
+// destroy_mod_pattern_array_range).
+undefined4 destroy_mod_pattern_array_elem_and_maybe_free(param_1,param_2)
+undefined4 param_1;
+uint param_2;
+
+{
+  destroy_mod_pattern_array_elem(param_1);
+  if ((param_2 & 1) != 0) {
+    Ordinal_1094(param_1);
+  }
+  return param_1;
+}
+
+
+
+// was FUN_0005078c -- MFC CArchive write helper for the per-pattern
+// row array (20-byte elements).
+void write_mod_pattern_row_array(param_1,param_2,param_3)
+int param_1;
+undefined4 param_2;
+int param_3;
+
+{
+  if ((*(uint *)(param_1 + 0x14) & 1) == 0) {
+    Ordinal_2582();
+  }
+  else {
+    Ordinal_2135(param_1,param_2,param_3 * 0x14);
+  }
+  return;
+}
+
+
+
+// was FUN_000507b8 -- zero-fills param_2 20-byte "pattern" elements
+// then default-constructs each one (construct_mod_pattern_array_elem).
+// The construct-range callback resize_mod_pattern_array uses on grow.
+void construct_mod_pattern_array_range(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  Ordinal_1047(param_1,0,param_2 * 0x14);
+  for (; param_2 != 0; param_2 = param_2 + -1) {
+    if (param_1 != 0) {
+      construct_mod_pattern_array_elem(param_1);
+    }
+    param_1 = param_1 + 0x14;
+  }
+  return;
+}
+
+
+
+// was FUN_000507fc -- MFC CArchive write helper for the top-level
+// pattern array (20-byte elements) -- used by serialize_mod_pattern_array.
+void write_mod_pattern_array(param_1,param_2,param_3)
+int param_1;
+undefined4 param_2;
+int param_3;
+
+{
+  if ((*(uint *)(param_1 + 0x14) & 1) == 0) {
+    Ordinal_2582();
+  }
+  else {
+    Ordinal_2135(param_1,param_2,param_3 * 0x14);
+  }
+  return;
+}
+
+
+
+// was FUN_00050828 -- destroys param_2 48-byte instrument elements:
+// releases an embedded object (likely a CString sample name, given
+// Ordinal_297's use alongside name-reading code in the MOD loader)
+// per element via Ordinal_218/Ordinal_297. The destroy-range callback
+// resize_mod_instrument_array/destroy_mod_instrument_array use.
+void destroy_mod_instrument_array_range(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  for (; param_2 != 0; param_2 = param_2 + -1) {
+    Ordinal_218(param_1 + 0x1c);
+    Ordinal_297(param_1);
+    param_1 = param_1 + 0x30;
+  }
+  return;
+}
+
+
+
+// was FUN_00050860 -- zero-fills param_2 48-byte instrument elements
+// then default-constructs each one's embedded object (Ordinal_181/
+// Ordinal_47, the construct counterpart to destroy_mod_instrument_array_range's
+// Ordinal_297/Ordinal_218). The construct-range callback
+// resize_mod_instrument_array uses on grow.
+void construct_mod_instrument_array_range(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  Ordinal_1047(param_1,0,param_2 * 0x30);
+  for (; param_2 != 0; param_2 = param_2 + -1) {
+    if (param_1 != 0) {
+      Ordinal_181(param_1);
+      Ordinal_47(param_1 + 0x1c);
+    }
+    param_1 = param_1 + 0x30;
+  }
+  return;
+}
+
+
+
+// was FUN_000508b0 -- MFC CArchive write helper for the instrument
+// array (48-byte elements) -- used by serialize_mod_instrument_array.
+void write_mod_instrument_array(param_1,param_2,param_3)
+int param_1;
+undefined4 param_2;
+int param_3;
+
+{
+  if ((*(uint *)(param_1 + 0x14) & 1) == 0) {
+    Ordinal_2582();
+  }
+  else {
+    Ordinal_2135(param_1,param_2,param_3 * 0x30);
+  }
+  return;
+}
+
+
+
+// was FUN_000508dc -- zero-fills param_2 64-byte channel-state
+// elements in one memset. The construct-range callback
+// resize_mod_channel_state_array passes on grow (no per-element
+// constructor needed -- see resize_mod_channel_state_array's own
+// comment).
+void construct_mod_channel_state_array_range(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  Ordinal_1047(param_1,0,param_2 << 6);
+  return;
+}
+
+
+
+// was FUN_0005090c -- default-constructs one "row" element in place
+// (tag 0x80, zeroed nested event-array header). The per-element
+// constructor construct_mod_row_array_range calls for each new row.
+void construct_mod_row_array_elem(param_1)
+undefined1 * param_1;
+
+{
+  *param_1 = 0x80;
+  param_1[1] = 0x30;
+  *(undefined4 *)(param_1 + 4) = 0;
+  *(undefined4 *)(param_1 + 0x10) = 0;
+  param_1[2] = 8;
+  *(undefined4 *)(param_1 + 0xc) = 0;
+  *(undefined4 *)(param_1 + 8) = 0;
+  param_1[3] = 0;
+  return;
+}
+
+
+
+// was FUN_00050948 -- default-constructs one "pattern" element in
+// place (tag 0x98, zeroed nested row-array header). The per-element
+// constructor construct_mod_pattern_array_range calls for each new
+// pattern.
+void construct_mod_pattern_array_elem(param_1)
+undefined1 * param_1;
+
+{
+  *param_1 = 0x98;
+  param_1[1] = 0x30;
+  *(undefined4 *)(param_1 + 4) = 0;
+  *(undefined4 *)(param_1 + 0x10) = 0;
+  param_1[2] = 8;
+  *(undefined4 *)(param_1 + 0xc) = 0;
+  *(undefined4 *)(param_1 + 8) = 0;
+  param_1[3] = 0;
+  return;
 }

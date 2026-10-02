@@ -50,10 +50,21 @@
       is obviously the intended argument, and each inner destructor is
       called correctly everywhere else in this file. All four fixed by
       passing `param_1` explicitly. 19/19 regression scripts clean.
-      (`FUN_00050768` -> `FUN_000506a8` from the earlier note is the
-      same cluster's fifth instance, still not yet fixed -- revisit
-      next pass alongside `FUN_00050678`/`FUN_00050718`/`FUN_0005078c`/
-      `FUN_000507b8`.)
+- [x] Closed out the fifth and sixth instances of the same "scalar
+      deleting destructor" dropped-argument bug while finishing the
+      rest of this container-template cluster:
+      `destroy_mod_row_array_elem_and_maybe_free` (was `FUN_000505bc`,
+      called `FUN_000504fc();`/destroy_mod_row_array_elem with no
+      argument) and `destroy_mod_pattern_array_elem_and_maybe_free`
+      (was `FUN_00050768`, called `FUN_000506a8();`/
+      destroy_mod_pattern_array_elem with no argument -- this is the
+      exact instance flagged after pass 386). Six total confirmed
+      instances of this one bug shape across the whole cluster, all
+      fixed the same way (pass `param_1` explicitly). 19/19 regression
+      scripts clean. Cross-checked the remaining 19 newly-named
+      functions in this batch via check-for-dropped-args-and-params --
+      no further instances found; every other call site's argument
+      count matches its declaration.
 
 ## Fixed this round (code-cleanup-first-pass, babl.c extraction batch)
 - [x] `change_game_mode` / its sibling exit-mode dispatcher (~uw.c:27610/
