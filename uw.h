@@ -1997,6 +1997,7 @@ extern undefined DAT_00101733;
 extern undefined4 DAT_00101728;
 extern undefined DAT_00101749;
 extern undefined DAT_000853c4;
+extern undefined DAT_000853cc;
 extern undefined1 DAT_0010174a;
 extern undefined2 DAT_00101418;
 extern undefined2 DAT_00101908;
