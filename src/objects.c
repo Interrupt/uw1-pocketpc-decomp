@@ -2482,3 +2482,32 @@ short param_5;
   }
   return 1;
 }
+
+
+undefined4 class3_variant_effect_stub()
+
+{
+  /* Confirmed via a direct Ghidra headless lookup by address
+     (0x7913c): `undefined4 FUN_0007913c(void) { return 0; }` -- this
+     genuinely IS a no-op in the real binary too, not a "Ghidra gave
+     up" placeholder. Kept as-is; not a bug. */
+  return 0;
+}
+undefined4 class5_variant_effect_stub()
+
+{
+  /* Confirmed via a direct Ghidra headless lookup by address
+     (0x6b3d4): `undefined4 FUN_0006b3d4(void) { return 0; }` -- this
+     genuinely IS a no-op in the real binary too, not a "Ghidra gave
+     up" placeholder. Kept as-is; not a bug. */
+  return 0;
+}
+undefined4 class4_variant_effect_stub()
+
+{
+  /* Confirmed via a direct Ghidra headless lookup by address
+     (0x73b10): `undefined4 FUN_00073b10(void) { return 0; }` -- this
+     genuinely IS a no-op in the real binary too, not a "Ghidra gave
+     up" placeholder. Kept as-is; not a bug. */
+  return 0;
+}

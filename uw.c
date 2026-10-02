@@ -509,22 +509,6 @@ short DAT_000bbf24;
    call sites compiling as-is. */
 intptr_t DAT_000bbf70;
 intptr_t DAT_000bbf00; // was `int` -- babl_alloc'd function-pointer-table base, same bug
-// was LAB_0001a120 -- default placeholder handler installed into every
-// slot of build_babl_symbol_table's builtin function-pointer table
-undefined4 babl_builtin_default_handler()
-
-{
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on). Recovered via
-     Ghidra headless: the real body is a linked-list scan (walking a
-     chain off *(int*)(DAT_0001a18c+0x34), stepping +0x20 per node,
-     terminated by a zero short at +0x38) that unconditionally
-     `return 0;` on every path -- whether or not it finds a match, it
-     never returns anything else and has no side effects. Confirmed
-     behaviorally equivalent to this stub, so left as-is rather than
-     porting the dead search loop verbatim. */
-  return 0;
-}
 short DAT_000bbf78;
 short DAT_000bbf2c;
 short DAT_000bbf74;
@@ -1426,55 +1410,6 @@ short DAT_001005c0;
    array instead. See uw.h. */
 undefined1 DAT_000fb8f0_backing[1680];
 int DAT_00201c98;
-/* Ghidra's auto-analysis never recognized chrbtns_bump_alloc_entry/chrbtns_offset_table_builder as
-   real functions -- they're only reached indirectly (passed as callback
-   pointers to load_gr_resource_entries at run_character_generator's call site below), so no
-   `bl` ever pointed at them for the analyzer to follow, and they were
-   left as raw undecompiled ARM code, previously stubbed here as no-ops.
-   That silently made DAT_000fb858/DAT_000fb880 stay permanently
-   uninitialized, which is the real root cause behind this session's
-   "DAT_000fb880 is never written anywhere in this decompile" findings
-   throughout draw_chargen_field_value/draw_chargen_field_options/wait_for_chargen_field_input/etc. -- their
-   fallback-to-0 guards were masking a genuine missing-callback bug, not
-   a genuine data-recovery gap. Recovered by disassembling this address
-   range directly (via Ghidra's headless analyzer against the original
-   UU.exe): both are real, small functions with real logic. */
-
-/* r1 = &DAT_000fb858; r2 = *r1 (current cursor); r0 = r2 + param_1;
-   *r1 = r0 (advance cursor by param_1 bytes); return r2 (the position
-   *before* advancing) -- a bump-pointer sub-allocator carving fixed-
-   size chunks out of whatever buffer DAT_000fb858 currently points to. */
-char *chrbtns_bump_alloc_entry(param_1)
-int param_1;
-{
-  char *old = DAT_000fb858;
-  DAT_000fb858 = DAT_000fb858 + param_1;
-  return old;
-}
-
-/* r0 is loaded fresh from a literal (&DAT_000fb880), discarding
-   whatever was passed in that register -- this callback's real
-   parameters are param_2 (r1) and param_3 (r2, only its low 16 bits
-   used, sign-extended, as a table index). Builds DAT_000fb880 as a
-   running total: table[0] seeded to 5 the first time idx==0 is seen,
-   then table[idx+1] = table[idx] + param_2 each call -- a cumulative
-   per-entry byte-offset table (matches every read site indexing it by
-   a record's portrait/race selector). Returns 0 when param_2==0
-   (signals "empty entry"/no more data to the load_gr_resource_entries driver),
-   else 1. */
-undefined4 chrbtns_offset_table_builder(param_1,param_2,param_3)
-int param_1;
-int param_2;
-int param_3;
-{
-  int idx = (short)(param_3 & 0xffff);
-  if (idx == 0) {
-    DAT_000fb880_backing[0] = 5;
-  }
-  int old = DAT_000fb880_backing[idx];
-  DAT_000fb880_backing[idx + 1] = old + param_2;
-  return (param_2 == 0) ? 0 : 1;
-}
 char s_FONT5X6P_SYS_00084e9c[] = "FONT5X6P.SYS";
 char s__DATA_CHARGEN_BYT_00084eac[] = "\\DATA\\CHARGEN.BYT";
 char s_FONTCHAR_SYS_00084ec0[] = "FONTCHAR.SYS";
@@ -1725,34 +1660,6 @@ short DAT_00201c74;
 char *DAT_001007c0; // was `undefined4` -- assigned a real 64-bit pointer (DAT_00100784, uw.c ~19277) and used as a real string buffer by babl_builtin_respond/echo_selected_conversation_choice/etc.; truncated on 64-bit, crashing the first time any of those functions actually ran (selecting a babl_menu response)
 undefined1 DAT_0023bf0c;
 undefined2 g_cursor_mode;
-/* Recovered by disassembling the original UU.exe (same method as
-   chrbtns_bump_alloc_entry/chrbtns_offset_table_builder -- see their comment): load_gr_resource_entries's
-   allocator callback for the "heads"/"converse"/"genhead"/"charhead"
-   resource loads. Bumps DAT_00100670 (the cursor into the DAT_00100784
-   buffer) by param_1 bytes and returns the pre-advance position. */
-char *converse_res_bump_alloc_entry(param_1)
-int param_1;
-{
-  char *old = DAT_00100670;
-  DAT_00100670 = DAT_00100670 + param_1;
-  return old;
-}
-
-/* Recovered the same way: load_gr_resource_entries's post-process callback for the
-   same resource loads. Stores the allocated buffer pointer (skipping a
-   5-byte per-item header) into DAT_00100728[idx], where idx is
-   param_3's low 16 bits sign-extended (the item index, matching
-   load_gr_resource_entries's `(*param_5)(pvVar_buf,iVar4,iVar5)` call shape).
-   Returns 0 when param_2 (item byte size) == 0, else 1. */
-undefined4 converse_res_slot_store_callback(param_1,param_2,param_3)
-char *param_1;
-int param_2;
-int param_3;
-{
-  int idx = (short)(param_3 & 0xffff);
-  DAT_00100728_backing[idx] = param_1 + 5;
-  return (param_2 == 0) ? 0 : 1;
-}
 char s_genhead_00084fd8[] = "genhead";
 char s_charhead_00084fe0[] = "charhead";
 char s_heads_00084fec[] = "heads";
@@ -3901,33 +3808,6 @@ char DAT_00202c18;
 char DAT_00202c1c;
 char s__DATA_comobj_dat_00086894[] = "\\DATA\\comobj.dat";
 char s__DATA_objects_dat_000868a8[] = "\\DATA\\objects.dat";
-undefined4 class3_variant_effect_stub()
-
-{
-  /* Confirmed via a direct Ghidra headless lookup by address
-     (0x7913c): `undefined4 FUN_0007913c(void) { return 0; }` -- this
-     genuinely IS a no-op in the real binary too, not a "Ghidra gave
-     up" placeholder. Kept as-is; not a bug. */
-  return 0;
-}
-undefined4 class5_variant_effect_stub()
-
-{
-  /* Confirmed via a direct Ghidra headless lookup by address
-     (0x6b3d4): `undefined4 FUN_0006b3d4(void) { return 0; }` -- this
-     genuinely IS a no-op in the real binary too, not a "Ghidra gave
-     up" placeholder. Kept as-is; not a bug. */
-  return 0;
-}
-undefined4 class4_variant_effect_stub()
-
-{
-  /* Confirmed via a direct Ghidra headless lookup by address
-     (0x73b10): `undefined4 FUN_00073b10(void) { return 0; }` -- this
-     genuinely IS a no-op in the real binary too, not a "Ghidra gave
-     up" placeholder. Kept as-is; not a bug. */
-  return 0;
-}
 /* Both were `int` -- real 64-bit pointers (DAT_002046a8/DAT_0020469c,
    both `char *`) stored through a 32-bit global truncate them on this
    host. DAT_002046a0 feeds DAT_002046c0/DAT_002046c8's own bases
@@ -4978,18 +4858,6 @@ char s__DATA_opscr_byt_00086eec[] = "\\DATA\\opscr.byt";
    pointer arithmetic (`iVar9 + DAT_0023bf70`) -- truncating on this
    64-bit host. */
 char *DAT_0023bf70;
-void *opbtn_gr_bump_alloc_entry(param_1)
-unsigned int param_1;
-
-{
-  /* Same allocator-callback role as gr_resource_bump_alloc_entry/hud_icon_gr_bump_alloc_entry/
-     decode_gr_entry_bump_alloc_entry (load_gr_resource_entries's param_4, "Ghidra couldn't resolve this
-     address" -- see their comments): a no-op stub returning 0 here
-     failed the whole "opbtn" resource batch even though the underlying
-     OPBTN.GR file loaded successfully, which was fatal
-     (report_fatal_error_and_exit(0x300d)) at this specific call site. */
-  return Ordinal_1041(param_1);
-}
 char s__DATA_OPSCR_BYT_00086efc[] = "\\DATA\\OPSCR.BYT";
 /* Read as a pointer (codewheel_letter_at_index/codewheel_index_of_letter both
    dereference it as `short *`), same truncated-pointer-in-an-int bug

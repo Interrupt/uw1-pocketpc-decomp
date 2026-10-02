@@ -1626,3 +1626,54 @@ void chargen_ui_transition_hook()
 {
   return;
 }
+
+
+/* Ghidra's auto-analysis never recognized chrbtns_bump_alloc_entry/chrbtns_offset_table_builder as
+   real functions -- they're only reached indirectly (passed as callback
+   pointers to load_gr_resource_entries at run_character_generator's call site below), so no
+   `bl` ever pointed at them for the analyzer to follow, and they were
+   left as raw undecompiled ARM code, previously stubbed here as no-ops.
+   That silently made DAT_000fb858/DAT_000fb880 stay permanently
+   uninitialized, which is the real root cause behind this session's
+   "DAT_000fb880 is never written anywhere in this decompile" findings
+   throughout draw_chargen_field_value/draw_chargen_field_options/wait_for_chargen_field_input/etc. -- their
+   fallback-to-0 guards were masking a genuine missing-callback bug, not
+   a genuine data-recovery gap. Recovered by disassembling this address
+   range directly (via Ghidra's headless analyzer against the original
+   UU.exe): both are real, small functions with real logic. */
+
+/* r1 = &DAT_000fb858; r2 = *r1 (current cursor); r0 = r2 + param_1;
+   *r1 = r0 (advance cursor by param_1 bytes); return r2 (the position
+   *before* advancing) -- a bump-pointer sub-allocator carving fixed-
+   size chunks out of whatever buffer DAT_000fb858 currently points to. */
+char *chrbtns_bump_alloc_entry(param_1)
+int param_1;
+{
+  char *old = DAT_000fb858;
+  DAT_000fb858 = DAT_000fb858 + param_1;
+  return old;
+}
+
+/* r0 is loaded fresh from a literal (&DAT_000fb880), discarding
+   whatever was passed in that register -- this callback's real
+   parameters are param_2 (r1) and param_3 (r2, only its low 16 bits
+   used, sign-extended, as a table index). Builds DAT_000fb880 as a
+   running total: table[0] seeded to 5 the first time idx==0 is seen,
+   then table[idx+1] = table[idx] + param_2 each call -- a cumulative
+   per-entry byte-offset table (matches every read site indexing it by
+   a record's portrait/race selector). Returns 0 when param_2==0
+   (signals "empty entry"/no more data to the load_gr_resource_entries driver),
+   else 1. */
+undefined4 chrbtns_offset_table_builder(param_1,param_2,param_3)
+int param_1;
+int param_2;
+int param_3;
+{
+  int idx = (short)(param_3 & 0xffff);
+  if (idx == 0) {
+    DAT_000fb880_backing[0] = 5;
+  }
+  int old = DAT_000fb880_backing[idx];
+  DAT_000fb880_backing[idx + 1] = old + param_2;
+  return (param_2 == 0) ? 0 : 1;
+}

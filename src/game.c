@@ -2854,3 +2854,17 @@ int param_1;
   }
   return;
 }
+
+
+void *opbtn_gr_bump_alloc_entry(param_1)
+unsigned int param_1;
+
+{
+  /* Same allocator-callback role as gr_resource_bump_alloc_entry/hud_icon_gr_bump_alloc_entry/
+     decode_gr_entry_bump_alloc_entry (load_gr_resource_entries's param_4, "Ghidra couldn't resolve this
+     address" -- see their comments): a no-op stub returning 0 here
+     failed the whole "opbtn" resource batch even though the underlying
+     OPBTN.GR file loaded successfully, which was fatal
+     (report_fatal_error_and_exit(0x300d)) at this specific call site. */
+  return Ordinal_1041(param_1);
+}

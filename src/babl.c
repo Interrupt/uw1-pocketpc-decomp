@@ -7881,3 +7881,51 @@ short param_2;
   }
   return;
 }
+
+
+/* Recovered by disassembling the original UU.exe (same method as
+   chrbtns_bump_alloc_entry/chrbtns_offset_table_builder -- see their comment): load_gr_resource_entries's
+   allocator callback for the "heads"/"converse"/"genhead"/"charhead"
+   resource loads. Bumps DAT_00100670 (the cursor into the DAT_00100784
+   buffer) by param_1 bytes and returns the pre-advance position. */
+char *converse_res_bump_alloc_entry(param_1)
+int param_1;
+{
+  char *old = DAT_00100670;
+  DAT_00100670 = DAT_00100670 + param_1;
+  return old;
+}
+
+/* Recovered the same way: load_gr_resource_entries's post-process callback for the
+   same resource loads. Stores the allocated buffer pointer (skipping a
+   5-byte per-item header) into DAT_00100728[idx], where idx is
+   param_3's low 16 bits sign-extended (the item index, matching
+   load_gr_resource_entries's `(*param_5)(pvVar_buf,iVar4,iVar5)` call shape).
+   Returns 0 when param_2 (item byte size) == 0, else 1. */
+undefined4 converse_res_slot_store_callback(param_1,param_2,param_3)
+char *param_1;
+int param_2;
+int param_3;
+{
+  int idx = (short)(param_3 & 0xffff);
+  DAT_00100728_backing[idx] = param_1 + 5;
+  return (param_2 == 0) ? 0 : 1;
+}
+
+
+// was LAB_0001a120 -- default placeholder handler installed into every
+// slot of build_babl_symbol_table's builtin function-pointer table
+undefined4 babl_builtin_default_handler()
+
+{
+  /* Ghidra couldn't resolve this address into a proper function
+     (an indirect-jump/jumptable target it gave up on). Recovered via
+     Ghidra headless: the real body is a linked-list scan (walking a
+     chain off *(int*)(DAT_0001a18c+0x34), stepping +0x20 per node,
+     terminated by a zero short at +0x38) that unconditionally
+     `return 0;` on every path -- whether or not it finds a match, it
+     never returns anything else and has no side effects. Confirmed
+     behaviorally equivalent to this stub, so left as-is rather than
+     porting the dead search loop verbatim. */
+  return 0;
+}
