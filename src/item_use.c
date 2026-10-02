@@ -3545,3 +3545,843 @@ undefined1 * param_1;
   wait_for_key_or_mouse_move(1);
   return puVar4;
 }
+
+
+undefined4 place_object_in_backpack_slot(param_1,param_2)
+/* Was `undefined4 param_1` -- same 64-bit-pointer-truncated-through-a-
+   32-bit-typedef-parameter bug as place_held_item_in_empty_slot's identical fix just
+   above (and sum_container_weight's, elsewhere in this file): param_1 is
+   dereferenced further down (calculate_object_weight(param_1), etc.) as a real
+   object pointer. */
+ushort *param_1;
+short param_2;
+
+{
+  int iVar1;
+  short sVar2;
+  int iVar3;
+  char *iVar4;
+  /* Was `int iVar5;` -- truncated g_current_container_record's real
+     64-bit pointer on assignment (`iVar5 = g_current_container_record;`
+     just below), then dereferenced the truncated wild value at
+     `*(short *)(iVar5 + 10)`. Same class as this whole session's other
+     narrow-local-for-a-pointer fixes. Confirmed live: crashed
+     immediately on the loop's first iteration, right after fixing this
+     same function's sibling resolve_object_link(record+8) bug just
+     above (both reached by the same "drag an item to a different slot
+     inside an open container" user repro). The CONCAT13-based "next"
+     pointer reconstruction two lines below has its own separate,
+     not-fixed-here 64-bit truncation (same as free_open_container_chain's
+     identical idiom) -- harmless for a single, non-nested open
+     container (next is always a real zero there), still broken for
+     genuine container nesting. */
+  char *iVar5;
+  uint uVar6;
+  int iVar7;
+  undefined4 uVar8;
+
+  iVar4 = g_player_object;
+  iVar1 = (int)param_2;
+  uVar8 = param_1;
+  if (iVar1 == -1) {
+    uVar8 = 1;
+  }
+  sVar2 = (short)uVar8;
+  uVar8 = 0;
+  if (iVar1 != -1) {
+    /* Dropped arguments: check_object_fits_in_slot's declared signature is
+       (object, slot_index) and dereferences its first argument
+       immediately -- called bare here (same idiom as the
+       handle_backpack_slot_click/place_held_item_in_empty_slot chain just above it), so with a real
+       slot index now actually reaching this far (see handle_backpack_slot_click's own
+       fix), the leftover-register param_1 it got instead was frequently
+       NULL/garbage, segfaulting on first dereference the moment a real
+       backpack-slot placement was attempted. */
+    sVar2 = check_object_fits_in_slot(param_1, param_2);
+  }
+  if (sVar2 < 1) {
+    if (sVar2 == -1) {
+      uVar8 = 0;
+    }
+  }
+  else {
+    iVar3 = calculate_object_weight(param_1);
+    if (-1 < iVar1) {
+      if (0x12 < iVar1) {
+        /* Was `resolve_object_link(g_current_container_record + 8)` --
+           same bug, same fix, as extract_matching_object_from_slot's
+           and check_object_fits_in_slot's own identical calls (see
+           their comments): g_current_container_record is a small heap
+           allocation outside the object arena resolve_object_link
+           bounds-checks against, so this was always NULL on this
+           64-bit host. iVar4 (initialized to g_player_object at this
+           function's top) is used below unconditionally
+           (`object_list_append_tail(iVar4 + 6, param_1)`), so the NULL
+           result crashed immediately. g_current_container_link holds
+           the same identity and is normal-global arena-resolvable.
+           Confirmed live: this was the very next crash after fixing
+           check_object_fits_in_slot's own copy of the same bug,
+           reached by the identical "drag an item to a different slot
+           inside an open container" user repro. */
+        iVar4 = resolve_object_link(&g_current_container_link);
+        /* Was walking the ancestor chain via the legacy 4-byte "prev"
+           field (CONCAT13/12/11 of bytes 4-7) -- only ever a truncated
+           half of a real 64-bit pointer (see open_backpack_container's
+           record-widening comment); this exact spot was already flagged
+           as a known, deliberately-deferred gap by an earlier session
+           ("harmless for a single, non-nested open container... still
+           broken for genuine container nesting" -- see this function's
+           own comment a few lines up). Real nesting exists now,
+           courtesy of this session's container fixes -- walk the real,
+           untruncated prev pointer at +0x14 instead. */
+        for (iVar5 = g_current_container_record; iVar5 != 0;
+            iVar5 = *(char **)(iVar5 + 0x14)) {
+          iVar7 = *(short *)(iVar5 + 10) + iVar3;
+          *(char *)(iVar5 + 10) = (char)iVar7;
+          *(char *)(iVar5 + 0xb) = (char)((uint)iVar7 >> 8);
+        }
+      }
+      uVar6 = encode_object_slot_index(param_1);
+      (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
+      (&DAT_00202951)[iVar1 * 2] = (char)((uVar6 << 0x16) >> 0x18);
+    }
+    object_list_append_tail(iVar4 + 6,param_1);
+    g_player_carry_weight = g_player_carry_weight + (short)iVar3;
+    uVar8 = 1;
+  }
+  refresh_player_equipment_effects();
+  return uVar8;
+}
+
+
+
+// was FUN_000451b0 -- given an object, find which currently-displayed
+// backpack-grid widget shows it (or allocate it one if it isn't shown
+// yet).
+/* Was declared with no parameters at all, and its body called
+   encode_object_slot_index() bare -- but every one of its 4 real call
+   sites passes a real object pointer, so this silently relied on ARM
+   register leftover (the caller's arg still sitting in r0, unclobbered)
+   to accidentally forward the right value. That's the same
+   dropped-argument idiom already fixed dozens of times in this file,
+   except here BOTH this function's own argument and its inner
+   encode_object_slot_index() call were dropped in tandem -- confirmed
+   to crash for real: try_combine_or_stow_object's "open a nested
+   container" branch calls find_or_assign_object_widget(container) then
+   open_backpack_container() (also bare -- see that call site's own fix),
+   and whatever register leftover reached open_backpack_container's
+   param_1 there was garbage in a fresh call context, producing a wild
+   resolve_object_link() dereference the instant a SECOND level of
+   container nesting was opened (a top-level open happened to work by
+   the same lucky-leftover coincidence one level up). */
+int find_or_assign_object_widget(param_1)
+ushort *param_1;
+
+{
+  char cVar1;
+  undefined4 uVar2;
+  ushort *puVar3;
+  ushort *iVar4;
+  ushort *puVar5;
+  int iVar6;
+
+  uVar2 = encode_object_slot_index((char *)param_1);
+  iVar6 = 0;
+  do {
+    cVar1 = (&g_backpack_widget_to_slot)[iVar6];
+    puVar5 = (ushort *)(&g_equipped_items + (short)cVar1 * 2);
+    if ((*puVar5 & 0xffc0) != 0) {
+      if ((uint)(*puVar5 >> 6) == (int)(short)uVar2) {
+        return (int)cVar1;
+      }
+      puVar3 = (ushort *)resolve_object_link(puVar5);
+      if (((((*puVar3 & 0x8000) == 0) && (g_current_container_record == 0)) ||
+          (((*puVar3 & 0x8000) == 0 && (((*(ushort *)(g_current_container_record + 8) ^ *puVar5) & 0xffc0) != 0)))
+          ) && (iVar4 = find_object_by_encoded_slot_in_chain(puVar3 + 3,1,uVar2), iVar4 != 0)) {
+        return (short)cVar1 * -0x10000 >> 0x10;
+      }
+    }
+    iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+    if (0x13 < iVar6) {
+      return -1;
+    }
+  } while( true );
+}
+
+
+
+
+
+
+uint check_object_fits_in_slot(param_1,param_2)
+ushort * param_1;
+undefined4 param_2;
+
+{
+  char *wptr_31150;
+  ushort uVar1;
+  uint uVar2;
+  char cVar3;
+  byte bVar4;
+  ushort uVar5;
+  byte bVar6;
+  byte bVar7;
+  uint uVar8;
+  short sVar9;
+  undefined1 *puVar10;
+  ushort *puVar11;
+  char *iVar12;
+  byte *pbVar13;
+  char *pcVar14;
+  int iVar15;
+  bool bVar16;
+  /* Was 544528 bytes -- same Ghidra stack-frame-size-miscalculation
+     artifact already fixed in dispatch_object_action's acStack_85978
+     (see its own comment): this is just a scratch copy of the short
+     "UNNAMED" string (s_UNNAMED_00084f24) that's never read back
+     afterward (only acStack_40 feeds the real message_scroll_print_wrapped
+     calls below). Never triggered before because nothing reached this
+     deep into check_object_fits_in_slot until the handle_backpack_slot_click/place_object_in_backpack_slot dropped
+     arguments were forwarded correctly (see their own fixes) -- with a
+     real object now reaching here, allocating the huge frame crashed on
+     entry (SIGSEGV touching the stack guard page). Shrunk to a sane size. */
+  char acStack_84f64 [64];
+  short local_54 [2];
+  int local_50;
+  uint local_4c;
+  undefined *local_48;
+  char acStack_40 [28];
+  char *_parentRec;
+  undefined2 _savedLink;
+
+  local_4c = (uint)(short)(*param_1 & 0x1ff);
+  local_48 = &DAT_00202c90 + local_4c * 0xd;
+  uVar1 = *param_1 >> 6 & 7;
+  uVar5 = ((byte)*param_1 & 0x30) >> 4;
+  bVar4 = (byte)*param_1 & 0xf;
+  iVar15 = (int)(short)param_2;
+  g_scratch_object_ptr = param_1;
+  if (iVar15 == 0x13) {
+    if (g_current_container_record == 0) {
+      return 0;
+    }
+    /* Both `g_current_container_record + 4` reads below were the legacy
+       4-byte "prev" field -- only ever a truncated half of a real
+       64-bit pointer (same class as the whole Update-29 sweep --
+       search "still broken for genuine container nesting"). The second
+       one compounded it: it fed the truncated value + 8 straight into
+       resolve_object_link as an object-pointer base, the same
+       "tracking record lives outside the object arena" bug already
+       fixed at several other call sites -- confirmed live: this is the
+       exact crash from "dropping [a held item] in another inventory
+       slot" while viewing a nested container (check_object_fits_in_slot,
+       via place_object_in_backpack_slot/place_held_item_in_empty_slot/
+       handle_backpack_slot_click). Walk the real +0x14 prev pointer to
+       find the parent record, then resolve its own saved link through
+       the established g_current_container_link global-copy workaround
+       (save/restore, since this function runs while a CHILD container
+       is still the "current" one). */
+    _parentRec = *(char **)(g_current_container_record + 0x14);
+    if (_parentRec == 0) {
+      iVar15 = 0xb;
+      do {
+        if ((*(ushort *)(&g_equipped_items + iVar15 * 2) & 0xffc0) == 0) break;
+        iVar15 = (iVar15 + 1) * 0x10000 >> 0x10;
+      } while (iVar15 < 0x13);
+      if ((short)iVar15 < 0x13) {
+        return 1;
+      }
+      print_scroll_message_by_id(0x102);
+      if ((short)iVar15 < 0x13) {
+        return 1;
+      }
+      return 0;
+    }
+    _savedLink = g_current_container_link;
+    g_current_container_link = *(undefined2 *)(_parentRec + 8);
+    puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
+    g_current_container_link = _savedLink;
+  }
+  else {
+    if (iVar15 < 0x14) {
+      puVar10 = &g_equipped_items + iVar15 * 2;
+      puVar11 = (ushort *)resolve_object_link(puVar10);
+    }
+    else {
+      puVar11 = (ushort *)resolve_object_link(&g_equipped_items + iVar15 * 2);
+      if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
+        puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
+      }
+    }
+  }
+  if (iVar15 < 5) {
+    if (uVar1 != 0) {
+      if (iVar15 != 0) {
+        return 0;
+      }
+      sVar9 = use_food_item(g_player_object,param_1,0);
+      if (sVar9 < 1) {
+        return 0;
+      }
+      return 0xffffffff;
+    }
+    if (((byte)*param_1 & 0x30) < 0x20) {
+      return 0;
+    }
+    iVar12 = get_scanned_object_class_effect_ptr();
+    if (iVar15 == 0) {
+      bVar16 = *(char *)(iVar12 + 3) == '\b';
+    }
+    else if (iVar15 == 1) {
+      bVar16 = *(char *)(iVar12 + 3) == '\x01';
+    }
+    else if (iVar15 == 2) {
+      bVar16 = *(char *)(iVar12 + 3) == '\x04';
+    }
+    else if (iVar15 == 3) {
+      bVar16 = *(char *)(iVar12 + 3) == '\x03';
+    }
+    else {
+      if (iVar15 != 4) {
+        return 0;
+      }
+      bVar16 = *(char *)(iVar12 + 3) == '\x05';
+    }
+LAB_00047a68:
+    if (!bVar16) {
+      return 0;
+    }
+    return 1;
+  }
+  if ((iVar15 == 9) || (iVar15 == 10)) {
+    if (uVar1 != 0) {
+      return 0;
+    }
+    if (((byte)*param_1 & 0x30) < 0x20) {
+      return 0;
+    }
+    iVar15 = get_scanned_object_class_effect_ptr();
+    bVar16 = *(char *)(iVar15 + 3) == '\t';
+    goto LAB_00047a68;
+  }
+  if ((iVar15 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) && ((uVar1 == 0 && (uVar5 == 0)))) {
+    if ((puVar11 != (ushort *)0x0) && ((*puVar11 & 0x1ff) == local_4c)) {
+      return 0;
+    }
+    if ((((*param_1 & 0x8000) != 0) && ((param_1[3] & 0x8000) == 0)) &&
+       (0x40 < (param_1[3] & 0xffc0))) {
+      return 0;
+    }
+  }
+  else {
+    local_50 = (int)(short)uVar1;
+    if ((local_50 == 2) && (((uVar5 == 1 && (3 < bVar4)) && (bVar4 < 8)))) {
+      iVar12 = 0;
+      do {
+        if (iVar15 == (char)(&g_light_source_slots)[(int)iVar12]) {
+          return 1;
+        }
+        iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
+      } while (iVar12 < 4);
+      uVar1 = *param_1;
+      bVar6 = (byte)uVar1;
+      *(byte *)param_1 = (bVar4 - 4 ^ bVar6) & 0xf ^ bVar6;
+      *(byte *)((char *)param_1 + 1) = (byte)(uVar1 >> 8);
+      set_ambient_bias_without_light(0);
+      sVar9 = check_object_fits_in_slot(param_1,param_2);
+      if (sVar9 != 0) {
+        return 1;
+      }
+      uVar1 = *param_1;
+      bVar6 = (byte)uVar1;
+      *(byte *)param_1 = (bVar6 ^ bVar4) & 0xf ^ bVar6;
+      *(byte *)((char *)param_1 + 1) = (byte)(uVar1 >> 8);
+      return 0;
+    }
+  }
+  local_50 = (int)(short)uVar1;
+  if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
+LAB_00047a0c:
+    return (byte)local_48[3] >> 5 & 1;
+  }
+  bVar6 = 1;
+  local_54[0] = calculate_object_weight(param_1);
+  iVar12 = g_current_container_record;
+  bVar7 = 1;
+  if (0x13 < iVar15) {
+    /* Was `iVar12 = *(int *)(iVar12 + 4)` walking the legacy 4-byte
+       "prev" field (truncated half of a real 64-bit pointer, same class
+       as this whole file's Update-29 sweep) -- an EARLIER pass through
+       this exact loop already found and partly fixed the DIFFERENT bug
+       right below (resolve_object_link(iVar12+8) always NULL for a
+       tracking record, outside the object arena), but that fix only
+       covered the FIRST iteration (the innermost/currently-open
+       container, via the ternary onto g_current_container_link) and
+       explicitly flagged deeper ancestors as "untested and likely
+       still-broken" for lack of an "equivalent stand-in" at the time --
+       that stand-in is the same g_current_container_link save/restore
+       workaround, just needed on every iteration, not only the first,
+       now that the walk pointer itself is also fixed. Confirmed live:
+       still the exact same crash (check_object_fits_in_slot via
+       place_object_in_backpack_slot/place_held_item_in_empty_slot/
+       handle_backpack_slot_click) the moment a real 2-level-deep
+       ancestor chain existed to walk into on this loop's SECOND
+       iteration. */
+    for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(char **)(iVar12 + 0x14)) {
+      _savedLink = g_current_container_link;
+      g_current_container_link = *(undefined2 *)(iVar12 + 8);
+      pbVar13 = (byte *)resolve_object_link(&g_current_container_link);
+      g_current_container_link = _savedLink;
+      if (pbVar13 == (byte *)0x0) {
+        bVar7 = 1;
+      }
+      else if (((short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3] == 0) ||
+         (bVar7 = 0,
+         (int)*(short *)(iVar12 + 10) + (int)local_54[0] <=
+         (int)(short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3])) {
+        bVar7 = 1;
+      }
+      bVar7 = bVar6 & bVar7;
+    }
+  }
+  sum_container_weight(puVar11 + 3,local_54);
+  uVar8 = local_4c;
+  iVar15 = ((byte)*puVar11 & 0xf) * 3;
+  if (((byte)(&g_carry_weight_limit_table)[iVar15] == 0) ||
+     (bVar7 = 0, local_54[0] <= (short)(ushort)(byte)(&g_carry_weight_limit_table)[iVar15])) {
+    bVar7 = 1;
+  }
+  if (!(bool)(bVar7 & bVar6)) {
+    sVar9 = build_object_display_name(acStack_40,puVar11,0,0);
+    if (sVar9 == 0) {
+      pcVar14 = s_UNNAMED_00084f24;
+    wptr_31150 = acStack_84f64;
+      do {
+        cVar3 = *pcVar14;
+        *wptr_31150 = cVar3; wptr_31150 = wptr_31150 + 1;
+        pcVar14 = pcVar14 + 1;
+      } while (cVar3 != '\0');
+    }
+    message_scroll_print_wrapped(&DAT_00085c88);
+    message_scroll_print_wrapped(acStack_40);
+    message_scroll_print_wrapped(s_is_too_full__00085c78);
+    return 0;
+  }
+  uVar2 = (uint)*(short *)(&DAT_002029f9 + iVar15);
+  /* DAT_002029f9 (this container-type's "specific item id required" table,
+     alongside its sibling g_carry_weight_limit_table used for the weight-capacity check
+     just above) is loaded by load_light_food_effect_tables -- but that loader itself has
+     no caller anywhere in the decompiled binary (confirmed via a real
+     Ghidra xref search: the only reference to load_light_food_effect_tables's address is
+     a DATA reference, meaning it's stored into some struct as a function
+     pointer for an indirect call this project hasn't traced/wired up
+     yet), so this table is permanently all-zero. The sibling capacity
+     table (g_carry_weight_limit_table) already treats a zero entry as "no limit" (see
+     the `(&g_carry_weight_limit_table)[iVar15] == 0` check just above); this table's
+     own zero-entry case was instead falling into the "must be this
+     exact item id" branch below with a real zero, incorrectly requiring
+     the placed item's id to literally be 0 -- rejecting every real
+     item with the "does not fit" message (print_scroll_message_by_id(0xf8)).
+     Confirmed live: dragging an item to an empty slot inside an open
+     container printed "That item does not fit." on every attempt.
+     Treat an unpopulated (zero) entry the same permissive way its
+     sibling table already does, via the same LAB_00047a0c fallback
+     already used for the table's other explicit "no restriction"
+     sentinel (a negative entry) -- a narrow, local fix for the
+     immediate symptom; the deeper root cause (wiring up load_light_food_effect_tables's
+     real call so this table, g_carry_weight_limit_table, and g_food_effect_table all
+     get their real game data) is a separate, larger task. */
+  if ((int)uVar2 <= 0) goto LAB_00047a0c;
+  if ((int)uVar2 < 0x200) {
+    if ((local_4c != uVar2) && (print_scroll_message_by_id(0xf8), uVar8 != uVar2)) {
+      return 0;
+    }
+    return 1;
+  }
+  if (uVar2 == 0x200) {
+    if ((local_50 != 3) || ((uVar5 != 3 && ((uVar5 != 2 || (bVar4 < 8)))))) {
+      print_scroll_message_by_id(0xf7);
+      return 0;
+    }
+  }
+  else if (uVar2 == 0x201) {
+    if (((local_50 != 0) || (uVar5 != 1)) || (2 < bVar4)) goto LAB_000479b4;
+  }
+  else if (uVar2 == 0x202) {
+    if (((local_50 != 4) || (uVar5 != 3)) || (bVar4 < 8)) goto LAB_000479b4;
+  }
+  else if ((uVar2 != 0x203) ||
+          (((local_50 != 2 || (uVar5 != 3)) &&
+           ((local_4c != 0xce &&
+            ((((local_4c != 0xcf && (local_4c != 0x92)) && (local_4c != 0x125)) &&
+             ((local_4c != 0x11b && (local_4c != 0xd9)))))))))) {
+LAB_000479b4:
+    sVar9 = 0;
+    print_scroll_message_by_id(0xf8);
+    goto LAB_000479c0;
+  }
+  sVar9 = 1;
+LAB_000479c0:
+  return (int)sVar9;
+}
+
+
+
+void handle_backpack_slot_click(param_1)
+short param_1;
+
+{
+  int iVar1;
+
+  /* Dropped arguments: both branches call a 2-param function with only
+     one arg -- place_held_item_in_empty_slot/handle_backpack_slot_interact's own declared signatures take
+     (held_object, slot_index), but this wrapper only forwards
+     g_selected_object (the held object) and drops its own param_1 (the slot
+     index that hit_test_inventory_widget just resolved from the click). Same
+     "wrapper forgot to forward its own argument" idiom as
+     check_object_carry_weight/blit_object_sprite_by_frame earlier this session -- traced by hand
+     while wiring up backpack-slot placement (the click hit-boxes and
+     widget-to-slot mapping in g_inv_hotspot_click_x1/g_backpack_widget_to_slot were the other
+     missing pieces, see their own comments). */
+  if ((*(ushort *)(&g_equipped_items + param_1 * 2) & 0xffc0) == 0) {
+    iVar1 = place_held_item_in_empty_slot(g_selected_object, param_1);
+  }
+  else {
+    iVar1 = handle_backpack_slot_interact(g_selected_object, param_1);
+  }
+  if (iVar1 != 0) {
+    g_selected_object = 0;
+  }
+  return;
+}
+
+
+
+undefined4 place_held_item_in_empty_slot(param_1,param_2)
+/* Was `undefined4 param_1` -- a 64-bit pointer truncates to its low 32
+   bits the moment a caller passes it to a function whose own signature
+   declares this narrower type (matches sum_container_weight's identical fix
+   elsewhere in this file). Latent until handle_backpack_slot_click's dropped argument
+   was fixed and a real g_selected_object object pointer started actually
+   reaching here -- then this truncated pointer segfaulted three frames
+   further down in check_object_fits_in_slot's first dereference. */
+ushort *param_1;
+short param_2;
+
+{
+  int iVar1;
+  int iVar2;
+  undefined4 uVar3;
+  
+  iVar1 = (int)param_2;
+  uVar3 = 0;
+  if (iVar1 == 0x13) {
+    uVar3 = 0;
+  }
+  else {
+    /* Dropped argument: place_object_in_backpack_slot's own declared signature takes
+       (object, slot_index) and writes the object's link into
+       &g_equipped_items + slot_index*2 -- the real "place held item into
+       this backpack slot" primitive -- but slot_index was never
+       forwarded here, so it placed nothing at a real slot. */
+    iVar2 = place_object_in_backpack_slot(param_1, param_2);
+    if (iVar2 != 0) {
+      if (iVar1 < 0x13) {
+        redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
+      }
+      else {
+        repopulate_container_grid_slots();
+        refresh_container_view();
+      }
+      uVar3 = 1;
+    }
+  }
+  return uVar3;
+}
+
+
+
+
+
+
+// WARNING: Removing unreachable block (ram,0x00047f40)
+
+undefined4 handle_backpack_slot_interact(param_1,param_2)
+ushort * param_1;
+uint param_2;
+
+{
+  int iVar1;
+  byte bVar2;
+  short sVar3;
+  ushort *puVar4;
+  char *iVar5;
+  undefined4 uVar6;
+  ushort *puVar7;
+  int iVar8;
+  uint uVar9;
+  int iVar10;
+  undefined4 uVar11;
+  bool bVar12;
+  
+  iVar1 = (int)(short)param_2;
+  uVar11 = 0;
+  puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar1 * 2);
+  if (((*puVar4 & 0x1c0) == 0x80) && ((*puVar4 & 0x30) == 0)) {
+    uVar11 = auto_place_in_container(param_1,param_2);
+    refresh_player_equipment_effects();
+    return uVar11;
+  }
+  iVar5 = objects_can_stack(param_1,puVar4);
+  if (iVar5 == 0) {
+    uVar6 = objects_are_combinable(param_1,puVar4);
+    if ((short)uVar6 < 0) {
+      if (iVar1 < 0x13) {
+        puVar4 = (ushort *)extract_and_refresh_slot_item(0xffffffff,0xffffffff,0xffffffff,param_2,0);
+        iVar5 = place_held_item_in_empty_slot(param_1,param_2);
+        if (iVar5 == 0) {
+          place_held_item_in_empty_slot(puVar4,param_2);
+          puVar4 = g_selected_object;
+        }
+        g_selected_object = puVar4;
+        if (g_selected_object != (ushort *)0x0) {
+          pop_cursor_icon(0);
+          /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+             own identical fix comment. */
+          push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
+        }
+      }
+      else {
+        place_object_in_equipment_slot(param_1,param_2);
+      }
+    }
+    else {
+      /* Was a dropped argument -- spawn_combined_object's own combination
+         index, matching objects_are_combinable's return value (uVar6)
+         used at every other call site in this branch. */
+      puVar7 = (ushort *)spawn_combined_object(uVar6);
+      if (puVar7 == (ushort *)0x0) {
+        return 0;
+      }
+      iVar5 = is_object_consumed_in_combination(param_1,uVar6);
+      if (iVar5 == 1) {
+        discard_misplaced_object(0,param_1,1);
+        g_cursor_holding_state = 1;
+        g_selected_object = puVar7;
+        pop_cursor_icon(3);
+        /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+           own identical fix comment. */
+        push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
+      }
+      iVar8 = is_object_consumed_in_combination(puVar4,uVar6);
+      if (iVar8 != 0) {
+        if (iVar5 == 0) {
+          place_held_item_in_empty_slot(puVar7,param_2);
+        }
+        deplete_object_count(puVar4);
+        discard_misplaced_object(0,puVar4,1);
+      }
+      uVar11 = 0;
+    }
+  }
+  else {
+    sVar3 = check_object_fits_in_slot(param_1,param_2);
+    if (sVar3 != 1) {
+      return 0;
+    }
+    uVar9 = (*(byte *)((char *)param_1 + 1) & 0x80) << 8;
+    bVar12 = (*(byte *)((char *)param_1 + 1) & 0x80) != 0;
+    if (bVar12) {
+      uVar9 = (uint)param_1[3];
+    }
+    if (bVar12) {
+      param_2 = uVar9 >> 6;
+    }
+    if (!bVar12) {
+      param_2 = 1;
+    }
+    if ((*(byte *)((char *)puVar4 + 1) & 0x80) == 0) {
+      *(char *)puVar4 = (char)*puVar4;
+      *(byte *)((char *)puVar4 + 1) = *(byte *)((char *)puVar4 + 1) | 0x80;
+      *(byte *)(puVar4 + 3) = (byte)puVar4[3] & 0x3f | 0x40;
+      *(undefined1 *)((char *)puVar4 + 7) = 0;
+    }
+    iVar8 = (*(ushort *)(&DAT_00202c91 + (*param_1 & 0x1ff) * 0xd) >> 4) * param_2;
+    iVar5 = g_current_container_record;
+    /* Legacy truncated "prev" walk -- same fix as
+       place_object_in_backpack_slot's sibling copy (search "still
+       broken for genuine container nesting"). */
+    if (0x13 < iVar1) {
+      for (; iVar5 != 0; iVar5 = *(char **)(iVar5 + 0x14)) {
+        iVar10 = *(short *)(iVar5 + 10) + iVar8;
+        *(char *)(iVar5 + 10) = (char)iVar10;
+        *(char *)(iVar5 + 0xb) = (char)((uint)iVar10 >> 8);
+      }
+    }
+    g_player_carry_weight = g_player_carry_weight + (short)iVar8;
+    refresh_player_equipment_effects();
+    iVar5 = (puVar4[3] & 0xffc0) + param_2 * 0x40;
+    bVar2 = (byte)puVar4[2];
+    *(byte *)(puVar4 + 3) = (byte)iVar5 ^ (byte)puVar4[3] & 0x3f;
+    *(char *)((char *)puVar4 + 7) = (char)((uint)iVar5 >> 8);
+    *(byte *)(puVar4 + 2) =
+         (bVar2 ^ (byte)((int)(((byte)param_1[2] & 0x3f) +
+                              (CONCAT11(*(undefined1 *)((char *)puVar4 + 5),bVar2) & 0x3f)) >> 1)) &
+         0x3f ^ bVar2;
+    *(undefined1 *)((char *)puVar4 + 5) = *(undefined1 *)((char *)puVar4 + 5);
+    free_object_slot(param_1);
+    uVar11 = 1;
+  }
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
+  return uVar11;
+}
+
+
+void handle_object_drop_target(param_1)
+short param_1;
+
+{
+  ushort *puVar1;
+  int iVar2;
+  ushort *puVar2;
+  ushort uVar3;
+  bool bVar4;
+
+  bVar4 = g_selected_object != 0;
+  iVar2 = (int)param_1;
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] handle_object_drop_target entry: param_1=%d g_selected_object=%p\n", (int)param_1, (void *)g_selected_object);
+  if (7 < iVar2) {
+    if (iVar2 < 10) {
+      if (iVar2 == 9 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
+        puVar1 = (ushort *)resolve_object_link(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
+        /* Was missing a NULL check -- resolve_object_link legitimately
+           returns 0 for an empty slot (its own link word has no
+           object-table bits set, see its own comment), and every fresh
+           character's weapon-hand slot IS empty by default (confirmed
+           live). Widgets 8/9 had no click rect at all before this round
+           (see g_inventory_hotspot_table's comment), so this branch was
+           never reachable, and the bug went unnoticed. Now that the
+           click rect exists, clicking an empty weapon hand would
+           otherwise crash here on the very first try. */
+        if ((puVar1 != 0) && (uVar3 = *puVar1 & 0x1ff,
+           ((((*puVar1 & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
+           ((uVar3 == 0x1a || (uVar3 == 0x1f))))) {
+          toggle_weapon_ready();
+          goto LAB_00042a10;
+        }
+      }
+    }
+    else {
+      if (iVar2 == 0x14) {
+        /* Widget 20, the real "leave container" indicator -- see
+           DAT_00085c4c's own comment for the display side. This used
+           to be a synthetic CONTAINER_ICON_WIDGET_ID special-cased
+           directly in hit_test_inventory_widget plus 3 separate
+           near-identical copies of the logic below scattered across
+           handle_inventory_panel_click (x2) and
+           attach_picked_up_object_to_cursor -- now that widget 20 is a
+           real, correctly-positioned table entry, all 3 of those
+           dispatch here naturally instead, so this is the one place
+           that needs it.
+
+           Was unconditional (just leave_nested_container_level()):
+           dropping a held item onto this icon (drag it out of the open
+           container back to the parent) closed the container without
+           ever placing the item anywhere, leaving it stuck on the
+           cursor -- the user then had to click again, now on the
+           parent's own backpack grid, to actually place it. This
+           specific "drop here auto-places into the parent" behavior is
+           this project's own addition (not constrained by the original
+           binary), using the same auto_place_in_container(...,0x13)
+           "find an empty slot" sentinel its other callers (and
+           check_object_fits_in_slot's matching special-case) already
+           establish. Matches a user report: "dragging from a container
+           to the parent requires an extra click".
+
+           Whether to ALSO auto-close the container after that drop
+           (the original behavior, matching a plain click on this same
+           icon with nothing held) is a deliberate opt-in via
+           UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF, per user
+           request -- placing the item and leaving the container open
+           lets the user drag several items out in a row without it
+           snapping shut after the first one. A plain click here
+           (nothing held) always closes/pops one level as before,
+           unaffected by this toggle. */
+        if (g_selected_object != (ushort *)0x0) {
+          if (auto_place_in_container(g_selected_object, 0x13) != 0) {
+            g_selected_object = (ushort *)0x0;
+            g_cursor_holding_state = 0;
+            pop_cursor_icon(3);
+          }
+          refresh_player_equipment_effects();
+          if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+            leave_nested_container_level();
+          }
+          else {
+            redraw_inventory_widget_range(0xc,0x13);
+          }
+        }
+        else {
+          leave_nested_container_level();
+        }
+        /* Same "drain the still-pending click" protection the original
+           3 copies of this logic each had -- see their own history:
+           without it, leave_nested_container_level could fire 2-3
+           times per real single click and pop more than one level. */
+        wait_for_click_release(1);
+        goto LAB_00042a10;
+      }
+      if (iVar2 == 0x15) {
+        scroll_container_grid_up();
+        goto LAB_00042a10;
+      }
+      if (iVar2 == 0x16) {
+        scroll_container_grid_down();
+        goto LAB_00042a10;
+      }
+      if (iVar2 == 0x17) {
+        if ((g_selected_object != 0) && (iVar2 = drop_held_object_near_player(g_selected_object,1), iVar2 != 0)) {
+          iVar2 = object_or_contents_has_type(g_selected_object,0x126);
+          if (iVar2 != 0) {
+            *(byte *)(DAT_00086df8 + 0x5e) =
+                 ((byte)DAT_00201b68 ^ *(byte *)(DAT_00086df8 + 0x5e)) & 0xf ^
+                 *(byte *)(DAT_00086df8 + 0x5e);
+          }
+          g_selected_object = 0;
+          refresh_player_equipment_effects();
+        }
+        goto LAB_00042a10;
+      }
+      if (iVar2 == 0x18) {
+        handle_barter_player_slot_drop();
+        goto LAB_00042a10;
+      }
+    }
+  }
+  /* Was reusing `iVar2` (an `int`) for resolve_object_link's real
+     pointer return, truncating it to 32 bits on this 64-bit host --
+     same "narrow local for a pointer" idiom already fixed at several
+     call sites this session. Only reached once a click actually landed
+     on an occupied backpack slot for the first time (see the arena
+     storage fix a few functions up), immediately segfaulting one frame
+     further in on use_object_on_target's own dereference of the same
+     truncated value. */
+  puVar2 = (ushort *)resolve_object_link(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
+  if (puVar2 != 0) {
+    /* Page 4 of comobj's string data is the base object-name table,
+       indexed directly by id (0x800 | id) -- same lookup the
+       UW_DUMP_OBJECTS_FILE census tool already uses. */
+    char *_useName = (char *)get_message_string(0x800 | (*puVar2 & 0x1ff));
+    DEBUG(INFO, "[inv] use item: id=0x%03x type=0x%03x name=\"%s\"\n",
+          (unsigned)(*puVar2 & 0x1ff), (unsigned)(*puVar2 & 0x1f0),
+          (_useName && _useName[0]) ? _useName : "(unnamed)");
+    use_object_on_target(g_player_object,puVar2,1);
+  }
+LAB_00042a10:
+  if ((bVar4) && (g_selected_object == 0)) {
+    pop_cursor_icon(3);
+    g_cursor_holding_state = 0;
+  }
+  return;
+}

@@ -2035,6 +2035,10 @@ extern char s_named_00085d18[];
    here so both translation units see the same storage. */
 extern undefined1 DAT_00085c88_backing[32768];
 #define DAT_00085c88 DAT_00085c88_backing[0]
+extern char s_is_too_full__00085c78[];
+extern undefined1 DAT_002029f8_backing[256];
+#define g_carry_weight_limit_table DAT_002029f8_backing[0]
+extern undefined DAT_002029f9;
 extern undefined4 DAT_002028a0_backing[64];
 #define DAT_002028a0 DAT_002028a0_backing[0]
 extern undefined DAT_00202978_backing[8192];

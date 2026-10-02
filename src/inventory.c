@@ -702,3 +702,47 @@ void toggle_weapon_ready()
     fprintf(stderr, "[weapon-ready] toggle_weapon_ready DONE: flags5f=0x%x g_cursor_mode=%d\n", (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)g_cursor_mode);
   return;
 }
+
+
+/* Was `int` -- g_save_record_base_ptr is a real `undefined1 *` heap pointer (the
+   inventory-serialization scratch buffer allocated in write_player_save_record/
+   build_player_save_record), so `g_save_record_base_ptr + g_save_record_count * 8` is real pointer
+   arithmetic, but returning it as a 32-bit `int` truncated the pointer
+   before the caller's `(undefined1 *)` cast sign-extended the truncated
+   low 32 bits back out to 64 -- producing a wild address. Confirmed via
+   lldb disassembly of this port's own compiled binary (not the original
+   ARM code): serialize_inventory_link_chain's call site does exactly `mov x8, x0; sxtw
+   x8, w8` on this function's return value, then dereferences it a few
+   instructions later -- the crash a QA report reproduced by saving with
+   an item in inventory (any inventory contents send serialize_inventory_link_chain
+   through the resolve_object_link/alloc_save_record_slot loop that hits this).
+   Same pointer-truncation bug class fixed many times elsewhere this
+   session, just via a return type this time instead of a parameter or
+   local. */
+// was FUN_00044294
+void *alloc_save_record_slot()
+
+{
+  g_save_record_count = g_save_record_count + 1;
+  return g_save_record_base_ptr + g_save_record_count * 8;
+}
+
+
+
+/* Same truncated-pointer-return bug as alloc_save_record_slot just above, same
+   fix. */
+// was FUN_000442bc
+void *save_record_slot_from_index(param_1)
+short param_1;
+
+{
+  void *iVar1;
+
+  if (param_1 == 0) {
+    iVar1 = 0;
+  }
+  else {
+    iVar1 = g_save_record_base_ptr + param_1 * 8;
+  }
+  return iVar1;
+}
