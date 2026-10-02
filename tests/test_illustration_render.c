@@ -15,6 +15,9 @@ static void *allocations[64];
 static int alloc_count, frees, opens, blits, clicks, dungeon_redraws;
 static uint clock_units;
 static int dismiss_event, missing_resource, opening_click_pending, releases;
+static int testing_fade, intro_fade_test, palette_installs, presents;
+static unsigned long long fade_brightness[256];
+static unsigned fade_samples;
 static ushort gameplay_palette[256];
 static char opened[4][260];
 codeval *const PTR_FUN_00085408[16] = {
@@ -23,8 +26,8 @@ codeval *const PTR_FUN_00085408[16] = {
     babl_render_op_show_code, FUN_000365bc, FUN_000365fc, FUN_0003663c,
     FUN_00036698, babl_render_op_say, FUN_00036344, babl_render_op_play_sound
 };
-undefined4 babl_render_op_wrap_message(void) { TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
-undefined4 babl_render_op_say(void) { TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
+undefined4 babl_render_op_wrap_message(void) { if (intro_fade_test) return 2; TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
+undefined4 babl_render_op_say(void) { if (intro_fade_test) return 3; TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
 undefined4 babl_render_op_play_sound(void) { return 0; }
 void *Ordinal_1041(unsigned int count)
 {
@@ -104,7 +107,12 @@ int Ordinal_864(void *msg, void *hwnd, unsigned int low,
         releases++;
         return 1;
     }
-    if (blits > 0 && idle_polls++ >= 3 && !dismissal_sent) {
+    if (intro_fade_test && fade_samples && fade_brightness[fade_samples - 1] && !dismissal_sent) {
+        dismissal_sent = 1;
+        DAT_0023c448 = 0x1b;
+        return 1;
+    }
+    if (!intro_fade_test && blits > 0 && idle_polls++ >= 3 && !dismissal_sent) {
         dismissal_sent = 1;
         if (dismiss_event < 4) {
             DAT_0023c63c = dismiss_event & 1;
@@ -135,7 +143,7 @@ short *DAT_00085a6c;
 char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
 void debug_framebuffer_dump(const char *tag) { (void)tag; }
-void fade_out(void) {}
+void apply_palette_buffer(void) { palette_installs++; }
 void tick_book_illustration_palette_cycles(void) {}
 void clear_ambient_sound_target(void) {}
 void voice_sample_cluster_stub_1(void) {}
@@ -159,7 +167,7 @@ void change_game_mode(void) {}
 undefined4 cursor_show_idle_tick(void) { return 0; }
 
 static ushort framebuffer[320 * 200], hardware_framebuffer[240 * 320];
-static int presents, testing_game_tick, input_opens_window;
+static int testing_game_tick, input_opens_window;
 int g_force_flush, g_force_redraw_no_xp;
 unsigned int g_uw_frame_clock_units;
 char *g_selected_object;
@@ -182,7 +190,16 @@ int GXEndDraw(void)
 {
     if (uw_defer_present()) return 1;
     presents++;
-    if (!testing_game_tick) assert_visible_picture();
+    if (testing_fade || intro_fade_test) {
+        TEST_ASSERT_LESS_THAN_UINT(256, fade_samples);
+        unsigned long long brightness = 0;
+        for (unsigned row = 0; row < 200; row++)
+            for (unsigned col = 0; col < 320; col++) {
+                ushort pixel = hardware_framebuffer[(319 - col) * 240 + row];
+                brightness += (pixel >> 11) + ((pixel >> 5) & 63) + (pixel & 31);
+            }
+        fade_brightness[fade_samples++] = brightness;
+    } else if (!testing_game_tick) assert_visible_picture();
     return 1;
 }
 static void assert_visible_picture(void)
@@ -232,6 +249,8 @@ void setUp(void)
     memset(framebuffer, 0, sizeof framebuffer);
     memset(hardware_framebuffer, 0, sizeof hardware_framebuffer);
     presents = testing_game_tick = input_opens_window = 0;
+    testing_fade = intro_fade_test = palette_installs = 0;
+    fade_samples = 0;
     DAT_0023cdb8 = 2; DAT_0023cdbc = 480; DAT_0023cdc0 = 16;
     DAT_00088954 = DAT_00088950 = 0;
     DAT_0008895c = 200; DAT_00088958 = 320;
@@ -456,6 +475,54 @@ static void test_unbatched_animation_frames_present_immediately(void)
     GXEndDraw();
     TEST_ASSERT_EQUAL_INT(2, presents);
 }
+static void test_fade_in_presents_progressive_brightness_and_keeps_palette(void)
+{
+    testing_fade = 1;
+    for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
+    g_force_flush = 1;
+    fade_in(0, 0, framebuffer);
+    TEST_ASSERT_EQUAL_UINT(9, fade_samples);
+    for (unsigned step = 1; step <= 8; step++)
+        TEST_ASSERT_EQUAL_UINT64(64000ULL * (2 * (31 * step / 8) + 63 * step / 8), fade_brightness[step - 1]);
+    TEST_ASSERT_EQUAL_UINT64(64000ULL * 125, fade_brightness[8]);
+    TEST_ASSERT_EQUAL_HEX16(0xffff, framebuffer[0]);
+    TEST_ASSERT_EQUAL_INT(0, palette_installs);
+    TEST_ASSERT_EQUAL_HEX16_ARRAY(gameplay_palette, g_palette_rgb565_backing, 256);
+}
+static void test_fade_out_presents_progressive_brightness_to_black(void)
+{
+    testing_fade = 1;
+    for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
+    g_force_flush = 1;
+    fade_out(0, 0, framebuffer);
+    TEST_ASSERT_EQUAL_UINT(8, fade_samples);
+    for (unsigned step = 7; step > 0; step--)
+        TEST_ASSERT_EQUAL_UINT64(64000ULL * (2 * (31 * step / 8) + 63 * step / 8), fade_brightness[7 - step]);
+    TEST_ASSERT_EQUAL_UINT64(0, fade_brightness[7]);
+    TEST_ASSERT_EQUAL_HEX16(0, framebuffer[0]);
+    TEST_ASSERT_EQUAL_INT(0, palette_installs);
+}
+static void test_intro_first_face_fades_in_before_full_brightness(void)
+{
+    intro_fade_test = 1;
+    opening_click_pending = DAT_002506ab = 0;
+    uw_begin_modal_present();
+    render_babl_dialog_window(0, 0, 199, 320, 200);
+    uw_end_modal_present();
+    /* N01 is black behind the opening text; N02 contains the first face.
+       Dismiss only after that face has actually been presented. */
+    TEST_ASSERT_EQUAL_INT(3, opens);
+    TEST_ASSERT_EQUAL_STRING("\\CUTS\\CS000.n02", opened[2]);
+    unsigned first_face = 0;
+    while (first_face < fade_samples && !fade_brightness[first_face]) first_face++;
+    TEST_ASSERT_LESS_THAN_UINT(fade_samples, first_face + 8);
+    for (unsigned step = 1; step < 8; step++)
+        TEST_ASSERT_TRUE(fade_brightness[first_face + step] > fade_brightness[first_face + step - 1]);
+    TEST_ASSERT_EQUAL_UINT64(fade_brightness[first_face + 7], fade_brightness[first_face + 8]);
+    TEST_ASSERT_EQUAL_INT(1, dismissal_sent);
+    TEST_ASSERT_EQUAL_INT(0, palette_installs);
+    TEST_ASSERT_EQUAL_INT(alloc_count, frees);
+}
 int main(void)
 {
     UNITY_BEGIN();
@@ -474,5 +541,8 @@ int main(void)
     RUN_TEST(test_nested_batches_wait_for_outer_tick_to_finish);
     RUN_TEST(test_modal_restores_batching_and_previous_flush_gate);
     RUN_TEST(test_unbatched_animation_frames_present_immediately);
+    RUN_TEST(test_fade_in_presents_progressive_brightness_and_keeps_palette);
+    RUN_TEST(test_fade_out_presents_progressive_brightness_to_black);
+    RUN_TEST(test_intro_first_face_fades_in_before_full_brightness);
     return UNITY_END();
 }

@@ -484,7 +484,8 @@ ushort *param_3;
      apply_palette_buffer actually needs here. */
 
   puVar3 = (ushort *)Ordinal_1041(0x1f400);
-  apply_palette_buffer(param_1,param_2);
+  /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
+  if (param_1 != 0) apply_palette_buffer(param_1,param_2);
   Ordinal_1044(puVar3,param_3,0x1f400);
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
@@ -492,8 +493,9 @@ ushort *param_3;
   do {
     uVar4 = Ordinal_2032(iVar9);
     uVar4 = Ordinal_2026(uVar4,0x3e000000);
-    Ordinal_2026(uVar4,0x45800000);
-    iVar5 = Ordinal_2020();
+    uVar4 = Ordinal_2026(uVar4,0x45800000);
+    /* Ghidra omitted the soft-float result passed to the conversion. */
+    iVar5 = Ordinal_2020(uVar4);
     iVar8 = (intptr_t)param_3 - (intptr_t)puVar3;
     iVar7 = 64000;
     puVar6 = puVar3;
@@ -549,7 +551,8 @@ undefined2 * param_3;
      right above -- see its comment. */
 
   puVar4 = (ushort *)Ordinal_1041(0x1f400);
-  apply_palette_buffer(param_1,param_2);
+  /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
+  if (param_1 != 0) apply_palette_buffer(param_1,param_2);
   Ordinal_1044(puVar4,param_3,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
@@ -558,8 +561,9 @@ undefined2 * param_3;
   do {
     uVar5 = Ordinal_2032(iVar11);
     uVar5 = Ordinal_2026(uVar5,0x3e000000);
-    Ordinal_2026(uVar5,0x45800000);
-    iVar6 = Ordinal_2020();
+    uVar5 = Ordinal_2026(uVar5,0x45800000);
+    /* Ghidra omitted the soft-float result passed to the conversion. */
+    iVar6 = Ordinal_2020(uVar5);
     iVar9 = 64000;
     puVar7 = puVar4;
     do {

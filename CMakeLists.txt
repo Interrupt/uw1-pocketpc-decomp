@@ -228,6 +228,7 @@ if(BUILD_TESTING)
     src/graphics.c:convert_palette_bgrx_to_rgb
     src/graphics.c:build_rgb565_palette
     src/graphics.c:bitmap_blit_to_framebuffer
+    src/graphics.c:fade_in src/graphics.c:fade_out
     src/hud.c:flush_dirty_rect_to_display src/hud.c:dirty_rect_union
     src/hud.c:main_loop_hud_flush src/graphics.c:flush_dungeon_frame
     uw.c:FUN_00049924
@@ -242,6 +243,17 @@ if(BUILD_TESTING)
     uw.c:FUN_00058738 uw.c:FUN_00057904 uw.c:FUN_000578fc)
   target_sources(test_illustration_render PRIVATE src/debug.c src/file_io.c)
   target_compile_definitions(test_illustration_render PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  add_game_unit_test(introduction
+    src/babl.c:babl_render_op_say src/babl.c:babl_render_op_wrap_message
+    src/babl.c:babl_render_op_show_code
+    src/ordinal_stubs.c:Ordinal_1047 src/ordinal_stubs.c:Ordinal_1063
+    src/resources.c:get_message_string src/resources.c:decode_strings_pak_entry
+    src/resources.c:walk_strings_pak_huffman_tree src/resources.c:read_strings_pak_bit
+    src/ordinal_stubs.c:Ordinal_1064 src/text.c:measure_text_width
+    src/text.c:load_font_metrics)
+  target_sources(test_introduction PRIVATE src/file_io.c src/debug.c)
+  target_compile_definitions(test_introduction PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(scheduler
     src/scheduler.c:scheduler_tick src/scheduler.c:scheduler_step_entry

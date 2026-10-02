@@ -6377,36 +6377,36 @@ intptr_t param_2;
 // by param_1's own 16-bit id field, splits it on newlines into up to
 // 6 paragraphs, then word-wraps each paragraph at the 0x140-pixel
 // (320px) viewport width via measure_text_width, storing up to 6
-// resulting line-start pointers into the render state's line table
-// (param_2+0x1c..). Returns 2 (opcode word-count consumed by its
-// caller's script-stream cursor).
+// resulting line-start pointers into the render state's native line table.
+// Returns 2 (opcode word-count consumed by the script-stream cursor).
 undefined4 babl_render_op_wrap_message(param_1,param_2)
 undefined1 * param_1;
-int param_2;
+intptr_t param_2;
 
 {
   undefined1 uVar1;
   short sVar2;
-  int iVar3;
+  intptr_t iVar3;
   undefined1 *puVar4;
-  int iVar5;
-  int *piVar6;
-  int *piVar7;
-  undefined1 *puVar8;
+  intptr_t iVar5;
+  intptr_t *piVar6;
+  intptr_t *piVar7;
+  char **puVar8;
   int iVar9;
   undefined1 *puVar10;
   int iVar11;
   int iVar12;
   int local_4c;
-  int local_44 [6];
+  /* Six paragraph starts plus the next-newline scratch and sentinel. */
+  intptr_t local_44 [8] = {0};
   
   if ((*(byte *)(param_2 + 0x45) & 1) != 0) {
     *(undefined1 *)(param_2 + 0x34) = *param_1;
-    local_44[0] = get_message_string((int)*(short *)(param_1 + 2));
+    local_44[0] = (intptr_t)get_message_string((int)*(short *)(param_1 + 2));
     iVar12 = 0;
     iVar11 = 0;
     iVar9 = 0;
-    local_44[1] = Ordinal_1064(local_44[0],10);
+    local_44[1] = (intptr_t)Ordinal_1064(local_44[0],10);
     if (local_44[1] != 0) {
       piVar6 = local_44;
       do {
@@ -6415,8 +6415,8 @@ int param_2;
         iVar9 = iVar9 + 1;
         puVar4 = (undefined1 *)*piVar7 + 1;
         *(undefined1 *)*piVar7 = 0;
-        *piVar7 = (int)puVar4;
-        iVar3 = Ordinal_1064(puVar4,10);
+        *piVar7 = (intptr_t)puVar4;
+        iVar3 = (intptr_t)Ordinal_1064(puVar4,10);
         piVar6[2] = iVar3;
         piVar6 = piVar7;
       } while (iVar3 != 0);
@@ -6428,9 +6428,9 @@ int param_2;
       if ((puVar4 == (undefined1 *)0x0) || (5 < iVar11)) break;
       iVar9 = 0;
       if (puVar4 != (undefined1 *)0x0) {
-        puVar8 = (undefined1 *)(param_2 + (iVar11 + 7) * 4);
+        puVar8 = ((struct babl_render_state *)param_2)->lines + iVar11;
         do {
-          iVar3 = Ordinal_1064(puVar4,0x20);
+          iVar3 = (intptr_t)Ordinal_1064(puVar4,0x20);
           if (iVar3 == 0) {
             sVar2 = measure_text_width(puVar4);
             iVar3 = (int)sVar2;
@@ -6439,11 +6439,8 @@ int param_2;
               iVar5 = *piVar6;
               iVar11 = iVar11 + 1;
               iVar12 = iVar12 + 1;
-              *puVar8 = (char)iVar5;
-              puVar8[1] = (char)((uint)iVar5 >> 8);
-              puVar8[2] = (char)((uint)iVar5 >> 0x10);
-              puVar8[3] = (char)((uint)iVar5 >> 0x18);
-              puVar8 = puVar8 + 4;
+              *puVar8 = (char *)iVar5;
+              puVar8 = puVar8 + 1;
             }
           }
           else {
@@ -6459,14 +6456,11 @@ int param_2;
             puVar4[-1] = 0;
             iVar11 = iVar11 + 1;
             iVar3 = *piVar6;
-            *piVar6 = (int)puVar4;
+            *piVar6 = (intptr_t)puVar4;
             iVar12 = iVar12 + 1;
-            *puVar8 = (char)iVar3;
+            *puVar8 = (char *)iVar3;
             iVar9 = 0;
-            puVar8[1] = (char)((uint)iVar3 >> 8);
-            puVar8[2] = (char)((uint)iVar3 >> 0x10);
-            puVar8[3] = (char)((uint)iVar3 >> 0x18);
-            puVar8 = puVar8 + 4;
+            puVar8 = puVar8 + 1;
             puVar10 = puVar4;
           }
           puVar4 = puVar10;
@@ -6487,21 +6481,17 @@ int param_2;
 
 
 // was FUN_00036460 -- babl conversation-text render opcode handler
-// (see PTR_FUN_00085408's own comment): unpacks 5 octal digits (0-7,
-// three 3-bit fields from param_1's first word, two more from its
-// second) into a "DDD-DD"-shaped scratch message buffer at fixed
-// positions, copies a template string (DAT_0023c698) into
-// DAT_00101968, then formats it with that buffer via Ordinal_1063.
-// Confirmed name uncertain -- no direct evidence of what game feature
-// displays a 5-digit octal code this way (a lock combination or
-// puzzle answer are plausible). Returns 2.
+// (see PTR_FUN_00085408's own comment): selects the next cutscene LPF
+// section. The two words encode its CSxxx.nxx name in octal; rebuilds
+// DAT_00101968 with the cutscene directory for the viewer's next open.
+// Returns 2 consumed words. Introduction uses this to chain its scenes.
 undefined4 babl_render_op_show_code(param_1,param_2)
 ushort * param_1;
 intptr_t param_2;
 
 {
-  char cVar1;
-  char *pcVar2;
+  /* Match the viewer's initial-load fallback when the registry is empty. */
+  const char *pcVar2 = DAT_0023c698 ? (char *)&DAT_0023c698 : "\\CUTS";
 
   *(byte *)(param_2 + 3) = ((byte)(*param_1 >> 6) & 7) + 0x30;
   *(byte *)(param_2 + 4) = ((byte)(*param_1 >> 3) & 7) + 0x30;
@@ -6515,8 +6505,8 @@ intptr_t param_2;
      wild pointer (ASan: global-buffer-overflow). Bounded indexed copy. */
   {
     int _i = 0;
-    while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
-      (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+    while (_i < 0x103 && pcVar2[_i] != '\0') {
+      (&DAT_00101968)[_i] = pcVar2[_i]; _i++;
     }
     (&DAT_00101968)[_i] = '\0';
   }
@@ -6666,7 +6656,7 @@ short param_5;
   byte local_d8;
   /* ARM 0x36774 builds one state at sp+0x20. The callbacks access
      fields through that pointer; keep the decompiled locals as aliases. */
-  union { short alignment; char bytes[70]; } render_state = {0};
+  struct babl_render_state render_state = {0};
 #define acStack_d0 render_state.bytes
 #define local_c1 (*((short *)(acStack_d0 + 15)))
 #define local_bf (*((short *)(acStack_d0 + 17)))
@@ -6674,7 +6664,7 @@ short param_5;
 #define local_bb (*((short *)(acStack_d0 + 21)))
 #define local_b9 (*((char *)(acStack_d0 + 23)))
   intptr_t local_b8;
-#define local_b4 (*((undefined4 *)(acStack_d0 + 28)))
+#define local_b4 (render_state.lines[0])
 #define local_9c (*((undefined1 *)(acStack_d0 + 52)))
 #define local_9b (*((short *)(acStack_d0 + 53)))
 #define local_99 (*((ushort *)(acStack_d0 + 55)))
@@ -7044,17 +7034,12 @@ LAB_00036ca4:
                   if (0 < local_9b) {
                     iVar9 = 0;
                     do {
-                      iVar13 = iVar9 * 4;
                       sVar6 = measure_text_width((&local_b4)[iVar9]);
                       iVar19 = ((int)local_bd - (int)sVar6) + (int)local_c1;
                       if (iVar19 < 0) {
                         iVar19 = iVar19 + 1;
                       }
-                      draw_text_string(CONCAT13(*(undefined1 *)((int)&local_b4 + iVar13 + 3),
-                                            CONCAT12(*(undefined1 *)((int)&local_b4 + iVar13 + 2),
-                                                     CONCAT11(*(undefined1 *)
-                                                               ((int)&local_b4 + iVar13 + 1),
-                                                              *(undefined1 *)(&local_b4 + iVar9)))),
+                      draw_text_string((&local_b4)[iVar9],
                                    (int)(short)(iVar19 >> 1),iVar10);
                       iVar10 = *(short *)(DAT_000879b0 + 6) + iVar10;
                       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
@@ -7063,6 +7048,9 @@ LAB_00036ca4:
                 }
                 iVar10 = local_4c;
                 if (-1 < local_8f) {
+                  /* Opcode 10 requests a fade; the PocketPC player only
+                     cleared this marker, leaving the transition invisible. */
+                  fade_in(0,0,g_uw_framebuffer);
                   local_8f = -2;
                   local_8d = -1;
                 }
@@ -7154,6 +7142,7 @@ LAB_00036ca4:
                 } while (DAT_00101a6c == local_97);
               }
               if (-1 < local_8d) {
+                fade_out(0,0,g_uw_framebuffer);
                 local_8d = -2;
                 local_8f = -1;
               }
