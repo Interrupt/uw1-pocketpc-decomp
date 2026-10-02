@@ -5,6 +5,6 @@
  * stack, auto-place/empty logic, and equipped-item slot encoding.
  * Pulls in uw.h itself so this header is self-contained for any
  * caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "uw.h"
+#include "../src/headers/uw.h"
 
 /* Run the real trap dispatcher with resource lookup and display stubbed. */
 char *DAT_00086df8, *DAT_0024cff4;

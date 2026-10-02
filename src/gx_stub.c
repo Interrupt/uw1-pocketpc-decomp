@@ -2,7 +2,7 @@
  * gets an actual window instead of a headless no-op. */
 #include "headers/gx_stub.h"
 #include "headers/ordinal_stubs.h"
-#include "../uw.h"
+#include "headers/uw.h"
 #include "headers/demomode.h"
 #include "headers/democapture.h"
 #include "headers/debug_ui.h"

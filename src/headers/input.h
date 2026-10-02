@@ -4,6 +4,6 @@
 /* Declarations for input.c: key bindings, movement commands, mouse
  * state, click/event waiting. Pulls in uw.h itself so this header is
  * self-contained for any caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

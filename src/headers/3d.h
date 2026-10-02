@@ -5,6 +5,6 @@
  * (vertex math, view matrix, camera transform/projection, near-plane
  * clipping, triangle rasterizer). Pulls in uw.h itself so this header
  * is self-contained for any caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

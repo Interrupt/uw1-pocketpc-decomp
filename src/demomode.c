@@ -132,7 +132,7 @@
  * poked at by hand. That ESC is swallowed; it does not also reach the
  * game. With no demo running, ESC behaves normally. */
 #include "headers/demomode.h"
-#include "../uw.h"
+#include "headers/uw.h"
 
 #include <SDL.h>
 #include <stdio.h>

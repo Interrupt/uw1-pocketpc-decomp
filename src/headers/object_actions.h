@@ -5,6 +5,6 @@
  * sprite tier/page resolution, and placement/combination checks.
  * Pulls in uw.h itself so this header is self-contained for any
  * caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

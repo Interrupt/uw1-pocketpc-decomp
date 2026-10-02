@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "uw.h"
+#include "../src/headers/uw.h"
 
 /* Test look/discovery through the original file-update code. Keep resource
    writes in memory so tests never change the shipped cutscene files. */

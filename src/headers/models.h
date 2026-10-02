@@ -6,6 +6,6 @@
  * (door, bridge, decal, sign) as real .E model geometry, and door
  * animation-frame emission. Pulls in uw.h itself so this header is
  * self-contained for any caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

@@ -4,6 +4,6 @@
 /* Declarations for bitmap.c: sprite blitting and the sprite-list
  * system. Pulls in uw.h itself so this header is self-contained for
  * any caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

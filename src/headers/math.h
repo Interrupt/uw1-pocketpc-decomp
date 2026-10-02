@@ -5,6 +5,6 @@
  * gated value stepping, heading-to-direction-vector projection).
  * Pulls in uw.h itself so this header is self-contained for any
  * caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "uw.h"
+#include "../src/headers/uw.h"
 #include "src/headers/inventory.h"
 #include "src/headers/ordinal_stubs.h"
 

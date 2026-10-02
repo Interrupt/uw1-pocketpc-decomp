@@ -52,7 +52,7 @@ def main():
                         help="source.c:function_name or source.c:@initialized_object")
     args = parser.parse_args()
     chunks = ['/* Generated from original game sources; do not edit. */\n'
-              '#include "uw.h"\n#include "src/headers/debug.h"\n#include "src/headers/debug_ui.h"\n#include "src/headers/file_io.h"\n#include <dlfcn.h>\n']
+              '#include "src/headers/uw.h"\n#include "src/headers/debug.h"\n#include "src/headers/debug_ui.h"\n#include "src/headers/file_io.h"\n#include <dlfcn.h>\n']
     for entry in args.functions:
         filename, name = entry.split(":", 1)
         source = (args.root / filename).read_text()

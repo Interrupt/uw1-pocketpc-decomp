@@ -4,6 +4,6 @@
 /* Declarations for doors.c: door open/close/toggle handlers and the
  * doors.GR frame-buffer allocator. Pulls in uw.h itself so this header
  * is self-contained for any caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

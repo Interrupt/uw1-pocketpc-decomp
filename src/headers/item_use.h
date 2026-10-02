@@ -4,6 +4,6 @@
 /* Declarations for item_use.c: weapon ready/unready, drop/pickup,
  * light sources, food, combine/stow. Pulls in uw.h itself so this
  * header is self-contained for any caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

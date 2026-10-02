@@ -6,6 +6,6 @@
  * "already validated" sentinel, and the registration-key dialog gate).
  * Pulls in uw.h itself so this header is self-contained for any
  * caller. */
-#include "../../uw.h"
+#include "uw.h"
 
 #endif

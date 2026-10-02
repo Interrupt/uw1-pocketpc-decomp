@@ -7,10 +7,10 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-#include "src/headers/ghidra_intrinsics.h"
-#include "src/headers/ordinal_stubs.h"
-#include "src/headers/gx_stub.h"
-#include "src/headers/file_io.h"
+#include "ghidra_intrinsics.h"
+#include "ordinal_stubs.h"
+#include "gx_stub.h"
+#include "file_io.h"
 
 typedef unsigned char   undefined;
 
@@ -4234,39 +4234,39 @@ extern undefined DAT_0023bf78_backing[8192];
  * to matching headers/*.h so those files (and anything else that only
  * needs one topic's functions) can include just what they need. Included
  * here too so anything that already includes uw.h keeps working
- * unchanged. Safe against the circular #include "../uw.h" each of these
+ * unchanged. Safe against the circular #include "uw.h" each of these
  * does themselves, since UW_H is already defined by this point. */
-#include "src/headers/graphics.h"
-#include "src/headers/babl.h"
-#include "src/headers/automap.h"
-#include "src/headers/inventory.h"
-#include "src/headers/combat.h"
-#include "src/headers/bitmap.h"
-#include "src/headers/3d.h"
-#include "src/headers/player.h"
-#include "src/headers/tmap.h"
-#include "src/headers/objects.h"
-#include "src/headers/hud.h"
-#include "src/headers/ai.h"
-#include "src/headers/containers.h"
-#include "src/headers/interact.h"
-#include "src/headers/resources.h"
-#include "src/headers/item_use.h"
-#include "src/headers/movement.h"
-#include "src/headers/visibility.h"
-#include "src/headers/saveload.h"
-#include "src/headers/text.h"
-#include "src/headers/collision.h"
-#include "src/headers/input.h"
-#include "src/headers/object_actions.h"
-#include "src/headers/weapon_swing.h"
-#include "src/headers/level.h"
-#include "src/headers/doors.h"
-#include "src/headers/winfile_wrappers.h"
-#include "src/headers/models.h"
-#include "src/headers/math.h"
-#include "src/headers/game.h"
-#include "src/headers/chargen.h"
+#include "graphics.h"
+#include "babl.h"
+#include "automap.h"
+#include "inventory.h"
+#include "combat.h"
+#include "bitmap.h"
+#include "3d.h"
+#include "player.h"
+#include "tmap.h"
+#include "objects.h"
+#include "hud.h"
+#include "ai.h"
+#include "containers.h"
+#include "interact.h"
+#include "resources.h"
+#include "item_use.h"
+#include "movement.h"
+#include "visibility.h"
+#include "saveload.h"
+#include "text.h"
+#include "collision.h"
+#include "input.h"
+#include "object_actions.h"
+#include "weapon_swing.h"
+#include "level.h"
+#include "doors.h"
+#include "winfile_wrappers.h"
+#include "models.h"
+#include "math.h"
+#include "game.h"
+#include "chargen.h"
 
 /* .E model-parser globals (g_model_known_ext_colors/g_model_parse_point_count/
    g_model_parse_part_count and ~190 bare-literal-address DAT_xxx/string

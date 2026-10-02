@@ -1,7 +1,7 @@
-#include "uw.h"
-#include "src/headers/debug.h"
-#include "src/headers/gx_stub.h"
-#include "src/headers/debug_ui.h"
+#include "headers/uw.h"
+#include "headers/debug.h"
+#include "headers/gx_stub.h"
+#include "headers/debug_ui.h"
 #include <dlfcn.h>
 #include <math.h>
 #include <stdarg.h>

@@ -1,4 +1,4 @@
-#include "../uw.h"
+#include "headers/uw.h"
 #include <signal.h>
 #include <execinfo.h>
 #include <stdlib.h>

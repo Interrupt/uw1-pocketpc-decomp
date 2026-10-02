@@ -11,12 +11,14 @@ set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 
-# uw.c/uw.h stay at the repo root until the code-cleanup pass finishes
-# splitting them apart (see struct-recovery-plan.md and the cleanup
-# goal); everything already split out lives under src/, with its
-# headers under src/headers/.
+# uw.c/uw.h now live under src/ and src/headers/ like everything split
+# out of them (see struct-recovery-plan.md and the cleanup goal). All
+# function bodies have moved to topic .c files; uw.c's own code is now
+# just the main-entry/setup tail, though most of its former global
+# DAT_xxx variable declarations still live there too -- grouping those
+# into matching src/*.c files is the remaining cleanup work.
 set(UW_SOURCES
-  uw.c
+  src/uw.c
   src/graphics.c
   src/game.c
   src/chargen.c
@@ -234,7 +236,7 @@ if(BUILD_TESTING)
     src/hud.c:flush_dirty_rect_to_display src/hud.c:dirty_rect_union
     src/hud.c:main_loop_hud_flush src/graphics.c:flush_dungeon_frame
     src/game.c:set_pending_update_flags
-    uw.c:@DAT_00085668_real_table
+    src/uw.c:@DAT_00085668_real_table
     src/gx_stub.c:@uw_present_state src/gx_stub.c:@g_present_state
     src/gx_stub.c:uw_begin_present_batch src/gx_stub.c:uw_end_present_batch
     src/gx_stub.c:uw_begin_modal_present src/gx_stub.c:uw_end_modal_present

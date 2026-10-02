@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "uw.h"
+#include "../src/headers/uw.h"
 #include "src/headers/file_io.h"
 
 /* Real script, LPF page loading, RLE decoding and viewer loop. Stub only the
