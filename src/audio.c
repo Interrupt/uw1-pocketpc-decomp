@@ -2050,7 +2050,7 @@ undefined1 * param_1;
 
 // was FUN_0004ca50 -- starts MOD-player playback (no-op if already
 // playing, per the +0x10554 "is playing" flag): opens the audio
-// output device (Ordinal_399, with FUN_0004ecd4 as its fill-buffer
+// output device (Ordinal_399, with mod_player_wave_out_callback as its fill-buffer
 // callback), zeroes the per-channel state array and several header
 // fields, queues the initial audio buffers (queue_mod_audio_buffer, called
 // twice for double-buffering) and, only once both queue attempts
@@ -2084,7 +2084,7 @@ char *param_1;
     local_2a = 1;
     local_1c = 0;
     local_20 = 1;
-    Ordinal_399((int *)(param_1 + 0x1051c),0xffffffff,&local_2c,FUN_0004ecd4,param_1,0x30000);
+    Ordinal_399((int *)(param_1 + 0x1051c),0xffffffff,&local_2c,mod_player_wave_out_callback,param_1,0x30000);
     iVar3 = 0;
     if (0 < *(int *)(param_1 + 0x1054c)) {
       piVar2 = (int *)(param_1 + 0x10524);
@@ -3093,6 +3093,46 @@ LAB_0004eb74:
       iVar8 = iVar8 + 0x40;
       local_30 = local_30 + 0x10;
     } while (iVar10 < *piVar2);
+  }
+  return;
+}
+
+
+// was FUN_0004ecd4 -- the waveOutProc-shaped callback passed to
+// Ordinal_399 (waveOutOpen) in start_mod_player_playback: on WOM_DONE
+// (param_2==0x3bd, a completed-buffer notification), frees the
+// just-finished buffer's resources and, if still playing, queues the
+// next one via queue_mod_audio_buffer -- the other half of the
+// double-buffering loop queue_mod_audio_buffer's own two initial
+// calls set up.
+void mod_player_wave_out_callback(param_1,param_2,param_3,param_4)
+undefined4 param_1;
+int param_2;
+undefined4 param_3;
+int param_4;
+
+{
+  int *piVar1;
+  int iVar2;
+  undefined4 uVar3;
+  int *piVar4;
+  
+  if (param_2 == 0x3bd) {
+    piVar1 = *(int **)(param_4 + 0xc);
+    iVar2 = *piVar1;
+    piVar4 = (int *)(iVar2 + 0x10554);
+    if (*piVar4 != 0) {
+      Ordinal_386(*(undefined4 *)(iVar2 + 0x1051c),param_4,0x20);
+    }
+    Ordinal_1094(piVar1[1]);
+    Ordinal_1094(piVar1);
+    if (*piVar4 != 0) {
+      uVar3 = queue_mod_audio_buffer(iVar2);
+      *(char *)piVar4 = (char)uVar3;
+      *(char *)(iVar2 + 0x10555) = (char)((uint)uVar3 >> 8);
+      *(char *)(iVar2 + 0x10556) = (char)((uint)uVar3 >> 0x10);
+      *(char *)(iVar2 + 0x10557) = (char)((uint)uVar3 >> 0x18);
+    }
   }
   return;
 }

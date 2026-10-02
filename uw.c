@@ -13306,37 +13306,6 @@ bool compute_drop_aim_from_cursor()
 
 
 
-void FUN_0004ecd4(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-int param_2;
-undefined4 param_3;
-int param_4;
-
-{
-  int *piVar1;
-  int iVar2;
-  undefined4 uVar3;
-  int *piVar4;
-  
-  if (param_2 == 0x3bd) {
-    piVar1 = *(int **)(param_4 + 0xc);
-    iVar2 = *piVar1;
-    piVar4 = (int *)(iVar2 + 0x10554);
-    if (*piVar4 != 0) {
-      Ordinal_386(*(undefined4 *)(iVar2 + 0x1051c),param_4,0x20);
-    }
-    Ordinal_1094(piVar1[1]);
-    Ordinal_1094(piVar1);
-    if (*piVar4 != 0) {
-      uVar3 = queue_mod_audio_buffer(iVar2);
-      *(char *)piVar4 = (char)uVar3;
-      *(char *)(iVar2 + 0x10555) = (char)((uint)uVar3 >> 8);
-      *(char *)(iVar2 + 0x10556) = (char)((uint)uVar3 >> 0x10);
-      *(char *)(iVar2 + 0x10557) = (char)((uint)uVar3 >> 0x18);
-    }
-  }
-  return;
-}
 
 
 
