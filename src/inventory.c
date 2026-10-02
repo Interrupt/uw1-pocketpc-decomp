@@ -335,13 +335,13 @@ short param_1;
        clobber that fresh redraw if the two overlap -- routine for a
        drop, since releasing ON the target slot is the point). Flush it
        here too, before any dispatch below can redraw anything --
-       FUN_00056fe8() only does the actual pixel restore, it does NOT
+       erase_cursor_icon() only does the actual pixel restore, it does NOT
        clear DAT_00204844 itself (every caller is responsible for that
        off its own return value, see its own comment); missing that
        clear left the flag set, so a LATER update_mouse_state cycle
        still saw "erase pending" and redundantly restored the same
        stale save a second time, clobbering the fresh redraw anyway. */
-    if (FUN_00056fe8() != 0) {
+    if (erase_cursor_icon() != 0) {
       DAT_00204844 = 0;
     }
     if ((g_active_hud_panel != '\0') && (sVar1 != 0x17)) {

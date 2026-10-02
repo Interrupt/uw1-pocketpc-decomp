@@ -1749,7 +1749,7 @@ char *DAT_00100670;
  char *DAT_00100728_backing[256];
 #define DAT_00100728 DAT_00100728_backing[0]
 /* HACK: these 5 were separate never-written `undefined4` scalars --
-   confirmed via a fresh Ghidra decompile of the real FUN_000286cc
+   confirmed via a fresh Ghidra decompile of the real enter_conversation_mode_screen
    (0x286cc) that every one of its 6 portrait/frame blit calls reads
    through ONE base pointer (PTR_DAT_000289cc) at consecutive 4-byte
    offsets 0xb8/0xbc/0xc0/0xc4/0xc8/0xcc -- i.e. a real 6-element
@@ -1763,7 +1763,7 @@ char *DAT_00100670;
    in the real backing array while these 5 stayed permanently zero.
    Reading a NULL DAT_0010072c as bitmap_blit_to_framebuffer's source
    pointer is exactly the Talk-mode crash in bug-critter-talk.txt
-   (interact_talk_npc -> change_game_mode -> FUN_000286cc -> crash
+   (interact_talk_npc -> change_game_mode -> enter_conversation_mode_screen -> crash
    inside bitmap_blit_to_framebuffer on the very first read of an
    unpopulated slot, uw.c ~19077). */
 #define DAT_0010072c DAT_00100728_backing[1]
@@ -2634,7 +2634,7 @@ void (*const DAT_00085668_real_table[48])(void) = {
   0, 0, 0, 0,
   0 /* Hack - Disabled: ambient sound cycling */, 0, 0, (void(*)(void))exit_automap_screen,
   /* mode 2 */
-  (void(*)(void))FUN_000286cc, 0, 0, 0,
+  (void(*)(void))enter_conversation_mode_screen, 0, 0, 0,
   0, 0, 0, 0,
   0, 0, 0, 0,
   0, 0, 0, (void(*)(void))exit_talk_mode,

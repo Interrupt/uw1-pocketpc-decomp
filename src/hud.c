@@ -5779,11 +5779,19 @@ undefined4 init_cursor_subsystem()
 
 
 
-int FUN_00056fe8()
+// was FUN_00056fe8 -- erases the dragged-item cursor icon if one is
+// currently drawn (DAT_00204844 != 0): restores the saved background
+// pixels under its last-drawn rect and flushes. Returns the PRIOR value
+// of DAT_00204844 but deliberately does NOT clear it itself -- every
+// caller is responsible for clearing DAT_00204844 off this return value
+// (see inventory.c's and item_use.c's own call-site comments for the
+// stale-icon-redraw race this convention exists to avoid). Named after
+// its own debug env var, UW_DEBUG_CURSORERASE.
+int erase_cursor_icon()
 
 {
   int iVar1;
-  
+
   iVar1 = 0;
   if (getenv("UW_DEBUG_CURSORERASE")) {
     fprintf(stderr, "[cursorerase] entry DAT_00204844=%d will_erase=%d depth=%d mouse=(%d,%d)\n",
@@ -5899,7 +5907,7 @@ undefined4 cursor_show_idle_tick()
 // (DAT_00204840, floor-clamped at 0) one level, confirmed by an
 // existing comment on clear_screen_and_restore_cursor describing this
 // exact role. When the depth reaches 0 (fully visible again) or a
-// force flag (DAT_000bbef4) is set, checks FUN_00056fe8 (not yet
+// force flag (DAT_000bbef4) is set, checks erase_cursor_icon (not yet
 // named) and, if it signals a redraw is needed, resets DAT_00204844
 // and forces the default draw color. Called from nearly every UI
 // subsystem in the codebase as the "pop" half of a cursor-hide/show
@@ -5914,7 +5922,7 @@ void decrement_cursor_hide_depth()
   iVar1 = (int)DAT_00204840;
   DAT_00204840 = (short)(iVar1 + -1);
   if ((((iVar1 + -1) * 0x10000 >> 0x10 == 0) || (DAT_000bbef4 != 0)) &&
-     (iVar1 = FUN_00056fe8(), iVar1 != 0)) {
+     (iVar1 = erase_cursor_icon(), iVar1 != 0)) {
     DAT_00204844 = 0;
     set_draw_color(1);
   }
@@ -6430,7 +6438,7 @@ undefined4 param_1;
      above it and lookup_grtile_by_id's own g_grtile_registry-indexed-by-id shape. */
   char *iVar1;
 
-  FUN_00056fe8();
+  erase_cursor_icon();
   resolve_sprite_id_to_frame(param_1);
   /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id
      only covers ids below DAT_00202738 (the "still-compressed .GR

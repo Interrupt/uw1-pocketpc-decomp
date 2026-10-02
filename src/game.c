@@ -2246,7 +2246,7 @@ void run_game_shutdown_sequence()
   release_panel_wipe_grtiles();
   shutdown_sound_effects();
   shutdown_music_module();
-  thunk_FUN_00078e28();
+  close_strings_pak_file_thunk();
   pcVar2 = &DAT_0023cca8;
     stack0xffdc3250_ptr = acStack_108;
   do {

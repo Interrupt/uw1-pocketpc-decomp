@@ -702,7 +702,7 @@ void update_mouse_state()
       sVar2 = sVar4;
       sVar3 = sVar5;
     }
-    iVar8 = FUN_00056fe8();
+    iVar8 = erase_cursor_icon();
     if (iVar8 != 0) {
       DAT_00204844 = 0;
     }
@@ -1243,9 +1243,9 @@ int param_4;
        if there was nothing to erase) matches that protocol and fixes the
        stamp without touching the continuous per-frame hide/show path
        that the earlier g_force_flush attempt regressed (see
-       FUN_00056fe8's own comment) -- this only runs once per actual
+       erase_cursor_icon's own comment) -- this only runs once per actual
        left-button release, not every frame. */
-    FUN_00056fe8();
+    erase_cursor_icon();
     if (getenv("UW_DEBUG_CURSORCLICK")) {
       fprintf(stderr, "[cursorclick] WM_LBUTTONUP before DAT_00204844=%d selected=%p mouse=(%d,%d)\n",
               (int)DAT_00204844, (void *)g_selected_object, (int)g_mouse_x, (int)g_mouse_y);

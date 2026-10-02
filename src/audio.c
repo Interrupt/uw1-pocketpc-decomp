@@ -18,7 +18,7 @@
 // or the track is already playing (param_1==DAT_0023c3a8). Stops any
 // currently-playing module via its COM-style interface (DAT_0023c3b8),
 // opens and loads the new one via the MOD-player ordinals
-// (Ordinal_1095/177/FUN_0004bc94), and -- if param_2!=0 -- starts
+// (Ordinal_1095/177/construct_and_load_mod_player), and -- if param_2!=0 -- starts
 // playback (start_mod_player_playback) and records the start time and this track's
 // own duration (DAT_00087414-indexed per-track table -- see
 // advance_menu_music_track's own comment for how it's used) for later
@@ -75,7 +75,7 @@ int param_2;
       }
       else {
         Ordinal_177(&local_124,acStack_120);
-        DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar3,local_124);
+        DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar3,local_124);
       }
     }
     DAT_0023c384 = 0;
@@ -551,7 +551,7 @@ int param_1;
       }
       else {
         Ordinal_177(&local_18,&DAT_0023c3d4);
-        DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar2,local_18);
+        DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar2,local_18);
       }
       start_mod_player_playback();
       DAT_0023c280 = read_realtime_clock_units();
@@ -971,7 +971,7 @@ short param_1;
       }
       else {
         Ordinal_177(local_228,&DAT_0023c3d4);
-        DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar3,local_228[0]);
+        DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar3,local_228[0]);
       }
       start_mod_player_playback();
       DAT_0023c330 = 0;
@@ -1637,7 +1637,24 @@ undefined4 param_3;
 
 
 
-undefined1 *FUN_0004bc94(param_1,param_2,param_3,param_4)
+// was FUN_0004bc94 -- constructs a MOD-player engine object in-place at
+// param_1 (its counterpart is the very next function, destroy_mod_player):
+// initializes its pattern/instrument/channel-state arrays, opens and
+// reads the MOD file named/handled by param_2 (Ordinal_167/Ordinal_2135),
+// and -- if the open succeeds -- parses the ProTracker header tag
+// ("M.K."/"6CHN"/"8CHN"/"FLT4"/"FLT8") to pick a channel count, then
+// walks the instrument-header table building each instrument's sample
+// length/repeat-offset/repeat-length fields (read_mod_word_length_field).
+// Returns param_1 itself (the now-constructed object), matching every
+// call site's `DAT_0023c3b8 = construct_and_load_mod_player(alloc_ptr, path_handle);`
+// idiom. param_3/param_4: declared but every one of this function's 3
+// call sites passes only 2 arguments, and the body only ever stores them
+// (never branches on them) into a 12-byte scratch block with param_2
+// that gets released via Ordinal_297 right before returning -- this
+// looks like Ghidra mislabeling local scratch stack slots as incoming
+// parameters (same shape as a real 2-parameter function), not a genuine
+// dropped-argument bug, so left alone rather than "fixed" on no evidence.
+undefined1 *construct_and_load_mod_player(param_1,param_2,param_3,param_4)
 undefined1 * param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -3433,7 +3450,7 @@ int param_2;
 // MOD file buffer (param_2+4) at the cursor position *param_3,
 // advances the cursor by 2, and returns the count doubled to a byte
 // count. Confirmed by its three call sites inside the MOD instrument-
-// header parser (still-unnamed FUN_0004bc94): classic ProTracker
+// header parser (still-unnamed construct_and_load_mod_player): classic ProTracker
 // instrument fields (sample length/repeat offset/repeat length) are
 // stored as big-endian word counts.
 int read_mod_word_length_field(param_1,param_2,param_3)
@@ -5000,7 +5017,7 @@ undefined1 * param_1;
 // byte-identical duplicate body of clear_ambient_sound_target (was
 // FUN_0007ec1c) at a different address -- same split-symbol/naming-
 // collision pattern documented elsewhere in this file (e.g.
-// close_strings_pak_file vs thunk_FUN_00078e28).
+// close_strings_pak_file vs close_strings_pak_file_thunk).
 // was thunk_FUN_0007ec1c -- a byte-identical duplicate of
 // clear_ambient_sound_target at a different address (see that
 // function's own comment). Collapsed to a real call to avoid the

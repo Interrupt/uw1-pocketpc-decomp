@@ -3,7 +3,7 @@
  * script-variable bridge (babl_register_builtin/babl_set_variable/
  * babl_get_variable), the NPC<->object-record sync functions
  * (sync_conv_vars_from_npc/to_npc), and conversation UI setup
- * (FUN_000286cc/start_npc_conversation). Split out of uw.c (the
+ * (enter_conversation_mode_screen/start_npc_conversation). Split out of uw.c (the
  * original monolithic decompile) once these functions' real roles were
  * confirmed -- see mysteries.md and the git history around the
  * "babl conversation-variable bridge" naming pass for the investigation
@@ -1578,7 +1578,15 @@ undefined4 build_babl_symbol_table()
 
 
 
-undefined4 FUN_0001a1c8()
+// was FUN_0001a1c8 -- the babl dialogue VM's main opcode dispatch loop:
+// reads the current conversation bytecode buffer (DAT_000bbf80) word by
+// word at instruction pointer DAT_000bbf74, dispatching each opcode to
+// its babl_op_* handler (arithmetic/comparison/stack ops, calls, string
+// printing, menu display via run_babl_menu_wait_loop, etc.) until opcode 0
+// ends the conversation. Confirmed as the interpreter entry point by
+// start_npc_conversation calling it to run a loaded CNV.ARK record, and by
+// repeated comments elsewhere in this file referring to it by name.
+undefined4 run_babl_bytecode_interpreter()
 
 {
   undefined2 uVar1;
@@ -1786,7 +1794,7 @@ LAB_0001a5a4:
 
 /* was FUN_0001ae28 -- binds a name (param_1) to a native function pointer
    (param_2) callable from conversation ("babl") scripts. Called ~52
-   times, all from conversation-setup functions like FUN_000286cc (see
+   times, all from conversation-setup functions like enter_conversation_mode_screen (see
    sync_conv_vars_from_npc's own comment below), registering intrinsics
    such as "do_judgement", "set_attitude", "take_from_npc_inv",
    "place_object" -- the native-code side of babl's script language. */
@@ -2162,7 +2170,14 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
 
 
-void FUN_000286cc()
+// was FUN_000286cc -- the "enter conversation" game-mode handler
+// (registered in change_game_mode's mode-dispatch table, uw.c). Draws the
+// conversation screen: background panel, portrait bitmap (generic or a
+// specific NPC head), the NPC's name text, switches the message-scroll
+// panel into conversation mode, and -- once the portrait/name are in
+// place -- calls start_npc_conversation (which loads the CNV.ARK record
+// and runs the babl bytecode interpreter, run_babl_bytecode_interpreter).
+void enter_conversation_mode_screen()
 
 {
   char cVar1;
@@ -2294,7 +2309,7 @@ void start_npc_conversation()
      unbounded chase (fixed 5 separate crash sites this way -- see
      babl_register_builtin/babl_op_say/babl_op_respond/babl_set_variable/babl_get_variable/
      init_babl_variable_defaults's own comments -- before finding a 6th at
-     FUN_0001a1c8's DAT_000bbf80 dereference). Whether the real 32-bit
+     run_babl_bytecode_interpreter's DAT_000bbf80 dereference). Whether the real 32-bit
      binary's equivalent register value is reliably negative here (real
      memory garbage that happens to differ from this port's freshly-
      zeroed scratch buffer) is unresolved and flagged as a follow-up,
@@ -2377,9 +2392,9 @@ void start_npc_conversation()
         }
       }
     }
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: about to call FUN_0001a1c8()\n");
-    FUN_0001a1c8();
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: FUN_0001a1c8() returned\n");
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: about to call run_babl_bytecode_interpreter()\n");
+    run_babl_bytecode_interpreter();
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: run_babl_bytecode_interpreter() returned\n");
     uVar3 = 500;
     iVar2 = sync_conv_vars_to_npc(DAT_00100674);
     if ((iVar2 != 0) || (DAT_001007b4 == '\0')) {
@@ -3056,7 +3071,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
 /* was sync_conv_vars_from_npc -- NOT a debug/cheat tool (an earlier pass through
    this file mislabeled it that way from its shape alone; tracing its
-   real caller corrects that). Called exactly once, from FUN_000286cc
+   real caller corrects that). Called exactly once, from enter_conversation_mode_screen
    (uw.c ~19025 -- loads the NPC's head portrait via "genhead",
    draws the conversation UI, then calls change_game_mode(1): this is
    real conversation-open setup, unconditional on every "talk to NPC",
@@ -3071,7 +3086,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
    play_hunger/play_mana/play_power/play_arms/play_level/play_sex/
    play_poison/play_drawn/play_name, plus dungeon_level/game_time/
    game_mins/game_days -- via babl_set_variable, immediately before the
-   conversation bytecode interpreter (FUN_0001a1c8) actually runs. This
+   conversation bytecode interpreter (run_babl_bytecode_interpreter) actually runs. This
    is the real object-record/console-variable binding the "npc_xhome"/
    "npc_yhome" evidence for uw_object_hdr_t's quality/owner fields (see
    struct-recovery-plan.md) came from. */
@@ -3208,8 +3223,8 @@ ushort * param_1;
 
 
 /* was sync_conv_vars_to_npc -- the write-back mirror of sync_conv_vars_from_npc,
-   called once from the same FUN_000286cc, right after the conversation
-   bytecode interpreter (FUN_0001a1c8) runs. Reads back whatever the
+   called once from the same enter_conversation_mode_screen, right after the conversation
+   bytecode interpreter (run_babl_bytecode_interpreter) runs. Reads back whatever the
    script itself set via babl_get_variable and applies it to the real object
    record: npc_xhome/npc_yhome/npc_goal/npc_gtarg/npc_talkedto/
    npc_attitude/npc_hunger(as a derived "is starving" flag, not a raw

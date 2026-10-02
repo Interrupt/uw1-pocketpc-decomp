@@ -676,12 +676,14 @@ undefined4 init_string_resource_cache()
 
 
 
-void thunk_FUN_00078e28()
+// was thunk_FUN_00078e28 -- byte-identical duplicate body of
+// close_strings_pak_file (was FUN_00078e28) at a different address --
+// same split-symbol/naming-collision pattern collapsed elsewhere in
+// this project. Collapsed to a real call to avoid the duplication.
+void close_strings_pak_file_thunk()
 
 {
-  Ordinal_553(DAT_0024bf98);
-  Ordinal_1018(DAT_0024cfb8);
-  Ordinal_1018(DAT_0024cfa8);
+  close_strings_pak_file();
   return;
 }
 
@@ -982,12 +984,12 @@ undefined4 open_strings_pak_file()
 
 
 // was FUN_00078e28 -- closes STRINGS.PAK and frees its index/data
-// buffers (DAT_0024cfb8/DAT_0024cfa8). Byte-identical body to the
-// already-extracted thunk_FUN_00078e28 (src/resources.c) -- same
+// buffers (DAT_0024cfb8/DAT_0024cfa8). Byte-identical body to
+// close_strings_pak_file_thunk (was close_strings_pak_file_thunk, above) -- same
 // split-symbol/naming-collision pattern as this project's other
-// "_dup"-style function pairs (this is the real function at this
-// address; the other is a separate thunk elsewhere that happens to
-// share the exact same compiled body).
+// thunk-duplicate pairs (this is the real function at this address;
+// the other is a separate thunk elsewhere that happens to share the
+// exact same compiled body, now collapsed to call this one).
 void close_strings_pak_file()
 
 {

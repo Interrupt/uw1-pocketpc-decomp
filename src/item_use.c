@@ -153,14 +153,14 @@ ushort * param_1;
          HERE -- before any redraw happens -- makes it a genuine no-op
          (nothing to restore yet) instead of a same-tick race against
          the fresh redraw, matching update_mouse_state's own
-         erase-before-anything-else protocol. FUN_00056fe8() only does
+         erase-before-anything-else protocol. erase_cursor_icon() only does
          the actual pixel restore, it does NOT clear DAT_00204844
          itself (every caller is responsible for that off its own
          return value, see its own comment); missing that clear left
          the flag set, so a LATER update_mouse_state cycle still saw
          "erase pending" and redundantly restored the same stale save a
          second time, clobbering the fresh redraw anyway. */
-      if (FUN_00056fe8() != 0) {
+      if (erase_cursor_icon() != 0) {
         DAT_00204844 = 0;
       }
       if ((g_active_hud_panel == '\0') || (iVar1 == 0x17)) {
