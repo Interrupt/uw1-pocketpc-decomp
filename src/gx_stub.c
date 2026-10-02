@@ -1665,3 +1665,71 @@ void *GXGetDefaultKeys(void *outBuffer) {
     kl->right.vk = VK_RIGHT;
     return outBuffer;
 }
+
+
+/* Side-effect-free PALS.DAT read: raw 6-bit bytes for one palette index,
+   scaled to 8-bit RGB into out_rgb (768 bytes). Deliberately does NOT
+   reuse load_pals_bank -- it always installs its result into g_palette_rgb565
+   too, which would visibly recolor the live game just from a debug dump
+   running. Returns 1 on success. */
+static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
+    unsigned char raw[768];
+    undefined4 handle = open_file_for_read("\\DATA\\pals.dat");
+    seek_file_handle(handle, pal_index * 0x300, 0);
+    short got = (short)read_file_handle(handle, raw, 0x300);
+    Ordinal_553(handle);
+    if (got != 0x300) return 0;
+    expand_pals_bytes(out_rgb, raw, 0);
+    return 1;
+}
+
+/* Debug-only accessor for gx_stub.c's GR-entry BMP dumper, keyed by the
+   .GR resource's base name (e.g. "chrbtns").
+
+   Default path: reconstruct an 8-bit RGB palette from g_palette_rgb565 --
+   the RGB565 lookup table the renderer itself actually indexes into for
+   every on-screen pixel -- rather than tracking any of the raw/scaled
+   staging buffers upstream of it. This matches on-screen appearance
+   exactly whenever a resource's own palette is already installed by the
+   time it's preloaded, which holds for most of these (dungeon resources
+   load once the world's palette is already live).
+
+   chrbtns.gr is a confirmed exception: it preloads at chargen.c:344,
+   before chargen's own palette (index 3, chargen.c:421's
+   load_pals_bank(3,pcVar_palbuf) call, into a scratch buffer that never
+   touches g_palette_rgb565 until that line runs) is installed -- so at
+   preload time g_palette_rgb565 still reflects whatever the main menu left
+   behind. No amount of reading g_palette_rgb565 at THIS moment can produce
+   the right answer, since the right palette genuinely isn't live yet;
+   load index 3 directly instead. opbtn.GR turned out not to need this
+   (its main-menu palette install already runs before OPBTN.GR loads),
+   but the same "preload races the palette install" class of bug could
+   apply to any future resource, so this is a small per-name table rather
+   than a single hardcoded chrbtns special case. */
+unsigned char *uw_get_default_palette(const char *gr_name) {
+    static const struct { const char *name; int pal_index; } overrides[] = {
+        {"chrbtns", 3},
+    };
+    static unsigned char rgb[768];
+
+    for (size_t i = 0; i < sizeof(overrides) / sizeof(overrides[0]); i++) {
+        if (strcmp(gr_name, overrides[i].name) == 0) {
+            if (uw_load_pals_dat_scaled(overrides[i].pal_index, rgb)) {
+                return rgb;
+            }
+            break; /* fall through to the live read if the load failed */
+        }
+    }
+
+    unsigned short *pal565 = (unsigned short *)g_palette_rgb565_backing;
+    for (int i = 0; i < 256; i++) {
+        unsigned short p = pal565[i];
+        unsigned char r5 = (p >> 11) & 0x1f;
+        unsigned char g6 = (p >> 5) & 0x3f;
+        unsigned char b5 = p & 0x1f;
+        rgb[i * 3 + 0] = (r5 << 3) | (r5 >> 2);
+        rgb[i * 3 + 1] = (g6 << 2) | (g6 >> 4);
+        rgb[i * 3 + 2] = (b5 << 3) | (b5 >> 2);
+    }
+    return rgb;
+}
