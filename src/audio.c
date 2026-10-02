@@ -528,7 +528,7 @@ LAB_00073108:
 // reloads the current music module if playback had stopped
 // (DAT_00087448==0) and lazily allocates the sample-set handle
 // (DAT_0023c3bc) on first use, then triggers sample id param_1+800
-// as a one-shot note into the module player (FUN_0004b66c/
+// as a one-shot note into the module player (load_and_resample_wave_sample/
 // FUN_0004f594/FUN_0004f6b0), all through the audio interface
 // DAT_0023c3b8.
 void trigger_sound_sample_note(param_1)
@@ -572,7 +572,7 @@ int param_1;
            into DAT_0023c3bc discarded the freshly-allocated handle
            and left this "allocate a sound channel" path permanently
            setting DAT_0023c3bc back to 0 -- every later read of it
-           (e.g. the FUN_0004b66c call just below, which takes it as
+           (e.g. the load_and_resample_wave_sample call just below, which takes it as
            a real handle) then saw no channel at all. Initialize the
            slot for its side effect and keep the real handle. */
         init_sound_channel_slot(iVar2);
@@ -580,7 +580,7 @@ int param_1;
       }
     }
     FUN_0004f748(DAT_0023c3b8,0);
-    cVar1 = FUN_0004b66c(DAT_0023c3bc,DAT_0023c540,param_1 + 800);
+    cVar1 = load_and_resample_wave_sample(DAT_0023c3bc,DAT_0023c540,param_1 + 800);
     if (cVar1 != '\0') {
       FUN_0004f594(DAT_0023c3b8,DAT_0023c3bc,0);
       FUN_0004f6b0(DAT_0023c3b8,0);
@@ -1362,4 +1362,136 @@ int param_1;
     Ordinal_1094();
   }
   return;
+}
+
+
+// was FUN_0004b66c -- loads a WAVE resource (param_2=module,
+// param_3=resource id) into the given sound-channel slot (param_1),
+// resampling it to the output rate DAT_00086368 if the resource's own
+// rate is a recognized standard one (0xac44=44100Hz -> 4:1 decimate,
+// 0x5622=22050Hz -> 2:1 decimate), otherwise copying the raw sample
+// data unchanged. Frees any previously-loaded sample in the slot
+// first, allocates fresh storage for the new one, and releases the
+// resource handle when done. Returns whether the resource was found
+// and loaded.
+undefined4 load_and_resample_wave_sample(param_1,param_2,param_3)
+int param_1;
+undefined4 param_2;
+undefined2 param_3;
+
+{
+  int iVar1;
+  undefined1 uVar2;
+  undefined1 uVar3;
+  undefined3 uVar4;
+  uint uVar5;
+  undefined8 uVar6;
+  int iVar7;
+  undefined4 uVar8;
+  int iVar9;
+  int iVar10;
+  bool bVar11;
+  undefined8 uVar12;
+  
+  iVar7 = Ordinal_532(param_2,param_3,u_WAVE_0008686c);
+  if ((iVar7 == 0) || (iVar7 = Ordinal_533(param_2), iVar7 == 0)) {
+    uVar8 = 0;
+  }
+  else {
+    uVar4 = *(undefined3 *)(iVar7 + 0x28);
+    uVar2 = *(undefined1 *)(iVar7 + 0x2b);
+    uVar5 = *(uint *)(iVar7 + 0x28);
+    Ordinal_1044(param_1,iVar7 + 0x14,0x12);
+    uVar3 = *(undefined1 *)(param_1 + 0x13);
+    if (DAT_00086368 == 0xac44) {
+      iVar1 = uVar5 * 4;
+      *(char *)(param_1 + 0x16) = (char)iVar1;
+      *(char *)(param_1 + 0x17) = (char)((uint)iVar1 >> 8);
+      *(char *)(param_1 + 0x18) = (char)(((uVar5 & 0x3fffffff) >> 6) >> 8);
+      *(char *)(param_1 + 0x19) = (char)(((uVar5 & 0x3fffffff) >> 0xe) >> 8);
+      if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
+                   CONCAT12(*(undefined1 *)(param_1 + 0x14),
+                            CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))) != 0) {
+        Ordinal_1094();
+      }
+      uVar8 = Ordinal_1095(iVar1);
+      *(char *)(param_1 + 0x12) = (char)uVar8;
+      *(char *)(param_1 + 0x13) = (char)((uint)uVar8 >> 8);
+      iVar9 = 0;
+      *(char *)(param_1 + 0x14) = (char)((uint)uVar8 >> 0x10);
+      *(char *)(param_1 + 0x15) = (char)((uint)uVar8 >> 0x18);
+      if (0 < iVar1) {
+        do {
+          iVar10 = iVar9;
+          if (iVar9 < 0) {
+            iVar10 = iVar9 + 3;
+          }
+          *(undefined1 *)
+           (CONCAT13(*(undefined1 *)(param_1 + 0x15),
+                     CONCAT12(*(undefined1 *)(param_1 + 0x14),*(undefined2 *)(param_1 + 0x12))) +
+           iVar9) = *(undefined1 *)(iVar7 + (iVar10 >> 2) + 0x2c);
+          iVar9 = iVar9 + 1;
+        } while (iVar9 < iVar1);
+      }
+    }
+    else if (DAT_00086368 == 0x5622) {
+      iVar1 = uVar5 * 2;
+      *(char *)(param_1 + 0x16) = (char)iVar1;
+      *(char *)(param_1 + 0x17) = (char)((uint)iVar1 >> 8);
+      *(char *)(param_1 + 0x18) = (char)(((uVar5 & 0x7fffffff) >> 7) >> 8);
+      *(char *)(param_1 + 0x19) = (char)(((uVar5 & 0x7fffffff) >> 0xf) >> 8);
+      if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
+                   CONCAT12(*(undefined1 *)(param_1 + 0x14),
+                            CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))) != 0) {
+        Ordinal_1094();
+      }
+      uVar8 = Ordinal_1095(iVar1);
+      *(char *)(param_1 + 0x12) = (char)uVar8;
+      *(char *)(param_1 + 0x13) = (char)((uint)uVar8 >> 8);
+      iVar9 = 0;
+      *(char *)(param_1 + 0x14) = (char)((uint)uVar8 >> 0x10);
+      *(char *)(param_1 + 0x15) = (char)((uint)uVar8 >> 0x18);
+      if (0 < iVar1) {
+        do {
+          iVar10 = iVar9;
+          if (iVar9 < 0) {
+            iVar10 = iVar9 + 1;
+          }
+          *(undefined1 *)
+           (CONCAT13(*(undefined1 *)(param_1 + 0x15),
+                     CONCAT12(*(undefined1 *)(param_1 + 0x14),*(undefined2 *)(param_1 + 0x12))) +
+           iVar9) = *(undefined1 *)(iVar7 + (iVar10 >> 1) + 0x2c);
+          iVar9 = iVar9 + 1;
+        } while (iVar9 < iVar1);
+      }
+    }
+    else {
+      *(char *)(param_1 + 0x16) = (char)uVar4;
+      *(char *)(param_1 + 0x17) = (char)((uint3)uVar4 >> 8);
+      *(char *)(param_1 + 0x18) = (char)((uint3)uVar4 >> 0x10);
+      *(undefined1 *)(param_1 + 0x19) = uVar2;
+      if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
+                   CONCAT12(*(undefined1 *)(param_1 + 0x14),
+                            CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))) != 0) {
+        Ordinal_1094();
+      }
+      uVar12 = Ordinal_1095(uVar5);
+      *(char *)(param_1 + 0x12) = (char)uVar12;
+      bVar11 = (int)uVar12 == 0;
+      uVar6 = uVar12;
+      if (bVar11) {
+        uVar6 = 0x8683000000000;
+      }
+      *(char *)(param_1 + 0x13) = (char)((ulonglong)uVar12 >> 8);
+      *(char *)(param_1 + 0x14) = (char)((ulonglong)uVar12 >> 0x10);
+      *(char *)(param_1 + 0x15) = (char)((ulonglong)uVar12 >> 0x18);
+      if (bVar11) {
+        Ordinal_858((int)uVar6,(int)((ulonglong)uVar6 >> 0x20));
+      }
+      Ordinal_1044(*(undefined4 *)(param_1 + 0x12),iVar7 + 0x2c,uVar5);
+    }
+    Ordinal_912(iVar7);
+    uVar8 = 1;
+  }
+  return uVar8;
 }

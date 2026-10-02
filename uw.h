@@ -2781,6 +2781,8 @@ extern undefined1 DAT_00086260_backing[1024];
 #define DAT_00086260 DAT_00086260_backing[0]
 extern undefined1 DAT_00086264_backing[1024];
 #define DAT_00086264 DAT_00086264_backing[0]
+extern int DAT_00086368;
+extern unsigned short u_WAVE_0008686c[];
 extern undefined1 DAT_00202988_backing[16];
 #define DAT_00202988 DAT_00202988_backing[0]
 extern char s_Not_a_spell_00085a80[];
@@ -3388,7 +3390,7 @@ ushort *spawn_object_near_player();
 undefined4 check_object_drop_height();
 undefined4 init_sound_channel_slot();
 void release_sound_channel_slot();
-undefined4 FUN_0004b66c();
+undefined4 load_and_resample_wave_sample();
 undefined4 FUN_0004b948();
 undefined1 *FUN_0004bc94();
 undefined4 FUN_0004c958();
