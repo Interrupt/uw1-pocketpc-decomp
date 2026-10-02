@@ -193,6 +193,14 @@ if(BUILD_TESTING)
     src/hud.c:hud_panel_wipe_transition_tick
     src/combat.c:resolve_melee_swing_hit)
   add_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
+  add_game_unit_test(scheduler
+    src/scheduler.c:scheduler_tick src/scheduler.c:scheduler_step_entry
+    src/scheduler.c:scheduler_finish_entry src/scheduler.c:scheduler_despawn_entry
+    src/scheduler.c:scheduler_add_entry src/scheduler.c:scheduler_remove_entry
+    src/objects.c:object_list_unlink
+    src/ai.c:npc_ai_tick src/ai.c:initiate_npc_death src/ai.c:drop_monster_loot)
+  target_compile_definitions(test_scheduler PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   target_compile_definitions(test_traps PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(inventory

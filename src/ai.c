@@ -733,7 +733,9 @@ LAB_00033830:
       resolve_unique_npc_special_behavior(DAT_0010190c,1);
       DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
       DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
-      iVar5 = tilemap_lookup();
+      /* ARM 0x3343c..0x33470 passes the dead NPC's tile x/y in r0/r1.
+         Dropping these arguments leaves its final frame in the old tile list. */
+      iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
       object_list_unlink(iVar5 + 2,DAT_0010190c);
       spawn_creature_death_loot(DAT_0010190c);
       drop_monster_loot(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
