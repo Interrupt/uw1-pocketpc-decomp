@@ -980,21 +980,21 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
 // rand_below(10) maxes at 9 while the threshold is always >=10, the
 // roll ALWAYS succeeds under normal conditions (unless the object is
 // itself gated by roll_object_destroy_chance's own nested container
-// check via free_linked_object_recursive/FUN_00052af4).
+// check via free_linked_object_recursive/walk_object_tree).
 undefined4 roll_object_destroy_chance(param_1,param_2)
 short param_1;
 char *param_2;  /* was `int` -- truncated the real object-record pointer
                    (dereferenced via casts, passed to resolve_object_link
-                   and FUN_00052bac), latent until those calls started
+                   and object_exceeds_size_threshold), latent until those calls started
                    actually using their arguments */
 
 {
   short sVar1;
   int iVar2;
   /* Was `undefined4 uVar3` -- truncated resolve_object_link's real
-     pointer return before forwarding it into FUN_00052af4 just below,
+     pointer return before forwarding it into walk_object_tree just below,
      same class as this whole never-before-exercised drop-into-world
-     path's other fixes. Confirmed live: FUN_00052af4 received a NULL/
+     path's other fixes. Confirmed live: walk_object_tree received a NULL/
      garbage param_1 and crashed the moment it dereferenced it. */
   char *pcVar3;
 
@@ -1004,11 +1004,11 @@ char *param_2;  /* was `int` -- truncated the real object-record pointer
       param_1 = param_1 + sVar1;
     }
     DAT_002046b0 = param_1;
-    iVar2 = FUN_00052bac(param_2);
+    iVar2 = object_exceeds_size_threshold(param_2);
     if (iVar2 == 0) {
       if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
         pcVar3 = (char *)resolve_object_link((ushort *)(param_2 + 6)); /* confirmed via ARM disassembly, 0x52ce8 */
-        iVar2 = FUN_00052af4(pcVar3,FUN_00052bac);
+        iVar2 = walk_object_tree(pcVar3,object_exceeds_size_threshold);
         if (iVar2 != 0) {
           return 0;
         }

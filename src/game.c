@@ -2178,7 +2178,7 @@ void run_game_startup_sequence()
   if (sVar2 < 0) {
     report_fatal_error_and_exit(2);
   }
-  sVar2 = FUN_00052674();
+  sVar2 = load_object_catalog_data();
   if (sVar2 != 0) {
     report_fatal_error_and_exit();
   }

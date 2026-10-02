@@ -4158,7 +4158,7 @@ undefined4 LAB_0007913c()
    (stride 4, families 2 and 3 -- family 3 adds 16 to the nibble index
    into the same table). All three are already real, non-orphaned
    globals loaded from objects.dat by the already-correct load_armor_variant_tables
-   (called via FUN_00052674's boot-time dispatch table, same loader
+   (called via load_object_catalog_data's boot-time dispatch table, same loader
    that reaches load_light_food_effect_tables) and already read
    elsewhere in this file (resolve_equipped_weapon_attack, uw.c ~17840). */
 void *class0_variant_effect_table_lookup()
@@ -4194,7 +4194,7 @@ void *class0_variant_effect_table_lookup()
    already read), splits it into family=(id&0x30)>>4 and nibble=(id&0xf),
    then returns a pointer into one of three already-recovered runtime
    tables (g_carry_weight_limit_table/g_light_radius_table/g_food_effect_table, populated from
-   objects.dat by load_light_food_effect_tables via FUN_00052674's boot-time loader --
+   objects.dat by load_light_food_effect_tables via load_object_catalog_data's boot-time loader --
    confirmed reachable, not orphaned) indexed by nibble at that family's
    stride (3/2/1 bytes). Family 2 (torches' actual family, id=0x9X ->
    (0x9X&0x30)>>4==1 -- so torches hit the *1*-stride table, not this
@@ -11782,7 +11782,7 @@ uint param_2;
          g_current_container_record (a real char* global) into a 32-bit
          int, then rebuilt a bogus "next" address out of raw bytes at
          iVar7+4..+7 instead of resolving the object's real next-link via
-         resolve_object_link, same idiom as FUN_00052af4's chain walk.
+         resolve_object_link, same idiom as walk_object_tree's chain walk.
          Confirmed live (UW_DEBUG_INV + demo_container_click_test.txt):
          this crashed on the first-ever exercise of the food-item "use"
          path (clicking Bread inside an open container). */
@@ -13713,205 +13713,6 @@ short param_5;
 
 
 
-undefined4 FUN_00052674()
-
-{
-  char stack0xffdc323c_buf [256];
-  char *stack0xffdc323c_ptr;
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  undefined4 uVar4;
-  int iVar5;
-  undefined *puVar6;
-  char *pcVar7;
-  byte local_144 [2];
-  undefined1 auStack_142 [6];
-  code *local_13c [8];
-  char acStack_11c [260];
-  
-  iVar5 = 0;
-  local_13c[3] = (code *)0x0;
-  local_13c[0] = load_armor_variant_tables;
-  local_13c[4] = (code *)0x0;
-  local_13c[1] = load_monster_combat_stats;
-  local_13c[5] = (code *)0x0;
-  local_13c[2] = load_light_food_effect_tables;
-  local_13c[6] = (code *)&load_class6_variant_effect_table;
-  local_13c[7] = (code *)&load_class7_variant_effect_table;
-  Ordinal_1047(acStack_11c,0,0x104);
-  pcVar7 = &DAT_0023cca8;
-    stack0xffdc323c_ptr = stack0xffdc323c_buf;
-  pcVar2 = pcVar7;
-    stack0xffdc323c_ptr = acStack_11c;
-  do {
-    cVar1 = *pcVar2;
-    *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_objects_dat_000868a8);
-  iVar3 = open_file_for_read(acStack_11c);
-  if (iVar3 == -1) {
-    uVar4 = 0x3005;
-  }
-  else {
-    read_file_handle(iVar3,auStack_142,2);
-    do {
-      if (local_13c[iVar5] != (code *)0x0) {
-        (*local_13c[iVar5])(iVar3);
-      }
-      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
-    } while (iVar5 < 8);
-    Ordinal_553(iVar3);
-    Ordinal_1047(acStack_11c,0,0x104);
-    do {
-      cVar1 = *pcVar7;
-      *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
-      pcVar7 = pcVar7 + 1;
-    } while (cVar1 != '\0');
-    Ordinal_1063(acStack_11c,s__DATA_comobj_dat_00086894);
-    iVar5 = open_file_for_read(acStack_11c);
-    if (iVar5 == -1) {
-      uVar4 = 0x3006;
-    }
-    else {
-      read_file_handle(iVar5,auStack_142,2);
-      puVar6 = &DAT_00202c90;
-      iVar3 = 0x200;
-      do {
-        read_file_handle(iVar5,puVar6,3);
-        read_file_handle(iVar5,puVar6 + 3,1);
-        read_file_handle(iVar5,puVar6 + 5,2);
-        read_file_handle(iVar5,puVar6 + 7,2);
-        read_file_handle(iVar5,puVar6 + 9,1);
-        read_file_handle(iVar5,local_144,1);
-        puVar6[10] = ((puVar6[10] ^ local_144[0]) & 3 ^ puVar6[10] ^ local_144[0]) & 3 ^
-                     local_144[0];
-        read_file_handle(iVar5,puVar6 + 0xb,1);
-        iVar3 = iVar3 + -1;
-        puVar6 = puVar6 + 0xd;
-      } while (iVar3 != 0);
-      Ordinal_553(iVar5);
-      uVar4 = 0;
-    }
-  }
-  return uVar4;
-}
-
-
-
-/* Was `undefined4` -- same 64-bit-pointer-truncated-through-a-32-bit-
-   return-type bug as get_equipped_item_at_slot's (see its own comment): this
-   function returns a POINTER into one of the runtime tables class2_variant_effect_table_lookup
-   and friends compute, and on a 64-bit build `undefined4` silently drops
-   the pointer's upper 32 bits, handing the caller a wild address. */
-void *get_scanned_object_class_effect_ptr()
-
-{
-  undefined1 *local_24 [4];
-  undefined1 *local_14;
-  undefined1 *local_10;
-  undefined1 *local_c;
-  undefined1 *local_8;
-  
-  local_24[0] = &class0_variant_effect_table_lookup;
-  local_24[1] = &class1_variant_effect_table_lookup;
-  local_24[2] = &class2_variant_effect_table_lookup;
-  local_24[3] = &LAB_0007913c;
-  local_14 = &LAB_00073b10;
-  local_10 = &LAB_0006b3d4;
-  local_c = &class6_variant_effect_table_lookup;
-  local_8 = &class7_variant_effect_table_lookup;
-  /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace
-     a return value through the indirect call and fabricated a "return 0"
-     placeholder. Real disassembly (0x52928-0x52938) shows no instruction
-     sets r0 before the epilogue -- whatever the dispatched per-class
-     handler leaves in r0 IS this function's real return value. Every
-     caller relies on that (e.g. refresh_player_equipment_effects's light-scan loop:
-     `iVar7 = get_scanned_object_class_effect_ptr(); bVar1 = *(byte*)(iVar7+1);` -- with the
-     hardcoded 0 this dereferenced address 1 and crashed the moment a
-     real light source was actually found by the scan). */
-  return (*(void *(*)())local_24[(short)((*g_scratch_object_ptr & 0x1c0) >> 6)])();
-}
-
-
-
-undefined4 FUN_00052af4(param_1,param_2)
-char *param_1;  /* was `int` -- truncated the real object-record pointer
-                   (dereferenced throughout this function via casts, and
-                   passed to resolve_object_link/itself), latent until
-                   those calls started actually using their arguments */
-codeval * param_2;
-
-{
-  int iVar1;
-  char *pcVar2;
-
-  /* Dropped argument (both call sites below): param_2 is a callback
-     (FUN_00052bac at every call site reached so far) that declares one
-     parameter -- the object/link being tested, i.e. this function's
-     own param_1 -- but was invoked bare, leaving FUN_00052bac's own
-     param_1 as leftover-register garbage. Same idiom as this whole
-     session's other dropped-argument fixes; confirmed live
-     (UW_DEBUG_INV + demo_dropback_test.txt) crashing in FUN_00052bac's
-     first dereference the moment this never-before-exercised
-     drop-into-world path actually ran. */
-  iVar1 = (*param_2)(param_1);
-  while( true ) {
-    if (iVar1 != 0) {
-      return 1;
-    }
-    if (((*(byte *)(param_1 + 1) & 0x80) == 0) && ((*(ushort *)(param_1 + 6) & 0xffc0) != 0)) {
-      /* Was `undefined4 uVar2` -- truncated resolve_object_link's real
-         pointer return before forwarding it into the recursive call
-         just below, same class as param_1 itself above. */
-      pcVar2 = (char *)resolve_object_link((ushort *)(param_1 + 6)); /* confirmed via ARM disassembly, 0x52b54 */
-      iVar1 = FUN_00052af4(pcVar2,param_2);
-      if (iVar1 != 0) {
-        return 1;
-      }
-    }
-    if ((*(ushort *)(param_1 + 4) & 0xffc0) == 0) break;
-    param_1 = (char *)resolve_object_link((ushort *)(param_1 + 4)); /* confirmed via ARM disassembly, 0x52b84 */
-    iVar1 = (*param_2)(param_1);
-  }
-  return 0;
-}
-
-
-
-undefined4 FUN_00052bac(param_1)
-ushort * param_1;
-
-{
-  ushort uVar1;
-  undefined4 uVar2;
-  short sVar3;
-  int iVar4;
-  
-  uVar1 = *param_1;
-  if ((uVar1 & 0x2000) == 0) {
-    if (((uVar1 & 0x8000) == 0) || ((param_1[3] & 0x8000) != 0)) {
-      sVar3 = 0;
-    }
-    else {
-      sVar3 = (param_1[3] >> 6) - 1;
-    }
-    iVar4 = (int)sVar3;
-    if (iVar4 < 0) {
-      iVar4 = iVar4 + 1;
-    }
-    uVar2 = 1;
-    if ((int)(((byte)(&DAT_00202c9a)[(uVar1 & 0x1ff) * 0xd] >> 2 & 0xf) + (iVar4 >> 1)) <=
-        (int)DAT_002046b0) {
-      uVar2 = 0;
-    }
-  }
-  else {
-    uVar2 = 1;
-  }
-  return uVar2;
-}
 
 
 
@@ -14020,7 +13821,7 @@ int param_3;
      (param_2, the object being placed) as leftover-register garbage.
      Confirmed live (UW_DEBUG_INV + demo_dropback_test.txt): dropping
      an item out of the backpack into the 3D view crashed several
-     frames deeper (FUN_00052af4/FUN_00052bac) dereferencing that
+     frames deeper (walk_object_tree/object_exceeds_size_threshold) dereferencing that
      garbage pointer -- this whole collision/placement path had never
      been exercised by any earlier fix or test this session. */
   if ((param_3 != 0) || (iVar2 = roll_object_destroy_chance(10,(char *)param_2), iVar2 != 0)) {

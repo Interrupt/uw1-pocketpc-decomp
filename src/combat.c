@@ -1726,7 +1726,7 @@ void load_combat_data_file()
 // was FUN_0002a2c8 -- reads a fixed 0xc00-byte block from file handle
 // param_1 into &DAT_001007d0 (the monster combat-stat table apply_melee_damage/
 // resolve_npc_melee_attack read armor/attack values from). Registered as
-// one of a small table of resource-loader callbacks (FUN_00052674,
+// one of a small table of resource-loader callbacks (load_object_catalog_data,
 // alongside load_armor_variant_tables) indexed by resource type.
 void load_monster_combat_stats(param_1)
 undefined4 param_1;

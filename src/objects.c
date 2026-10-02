@@ -1052,7 +1052,7 @@ LAB_00039638:
 
 
 // was FUN_0003ae00 -- object-tree-walk callback (via
-// FUN_00052af4/clear_temp_flags_on_all_objects): for a non-arena
+// walk_object_tree/clear_temp_flags_on_all_objects): for a non-arena
 // object (object_ptr_in_arena) whose class isn't a door (0x140) or
 // other special type (0x180), and whose object-type props don't flag
 // it with sub-category 2, clears bit 0x200 of its second word -- a
@@ -1082,7 +1082,7 @@ ushort * param_1;
 
 // was FUN_0003aea8 -- sweeps the entire 64x64 tile grid (DAT_002029cc)
 // and, for every tile with a non-empty object list, recursively walks
-// each object's tree (FUN_00052af4, not yet named) applying
+// each object's tree (walk_object_tree, not yet named) applying
 // clear_object_temp_flag_callback to every object found -- a global
 // "reset the temporary flag on everything in the world" pass.
 void clear_temp_flags_on_all_objects()
@@ -1100,7 +1100,7 @@ void clear_temp_flags_on_all_objects()
     do {
       if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
         uVar1 = resolve_object_link((ushort *)(iVar2 + 2));
-        FUN_00052af4(uVar1,clear_object_temp_flag_callback);
+        walk_object_tree(uVar1,clear_object_temp_flag_callback);
       }
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
       iVar2 = iVar2 + 4;
@@ -1189,6 +1189,235 @@ ushort * param_1;
   }
   else {
     uVar2 = (uint)(*(ushort *)(&DAT_00202c91 + iVar3) >> 4) * (uint)(param_1[3] >> 6);
+  }
+  return uVar2;
+}
+
+
+// was FUN_00052674 -- boot-time loader for the game's core object
+// definition data: opens "objects.dat" and dispatches to 8 per-class
+// variant/effect table loaders (load_armor_variant_tables,
+// load_monster_combat_stats, load_light_food_effect_tables,
+// load_class6_variant_effect_table, load_class7_variant_effect_table,
+// and others), then opens "comobj.dat" and reads 0x200 (512) 13-byte
+// records into DAT_00202c90 -- the object-type property table read
+// throughout collision/placement code (height, shape, size-class,
+// etc. nibbles).
+undefined4 load_object_catalog_data()
+
+{
+  char stack0xffdc323c_buf [256];
+  char *stack0xffdc323c_ptr;
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  undefined4 uVar4;
+  int iVar5;
+  undefined *puVar6;
+  char *pcVar7;
+  byte local_144 [2];
+  undefined1 auStack_142 [6];
+  code *local_13c [8];
+  char acStack_11c [260];
+  
+  iVar5 = 0;
+  local_13c[3] = (code *)0x0;
+  local_13c[0] = load_armor_variant_tables;
+  local_13c[4] = (code *)0x0;
+  local_13c[1] = load_monster_combat_stats;
+  local_13c[5] = (code *)0x0;
+  local_13c[2] = load_light_food_effect_tables;
+  local_13c[6] = (code *)&load_class6_variant_effect_table;
+  local_13c[7] = (code *)&load_class7_variant_effect_table;
+  Ordinal_1047(acStack_11c,0,0x104);
+  pcVar7 = &DAT_0023cca8;
+    stack0xffdc323c_ptr = stack0xffdc323c_buf;
+  pcVar2 = pcVar7;
+    stack0xffdc323c_ptr = acStack_11c;
+  do {
+    cVar1 = *pcVar2;
+    *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_11c,s__DATA_objects_dat_000868a8);
+  iVar3 = open_file_for_read(acStack_11c);
+  if (iVar3 == -1) {
+    uVar4 = 0x3005;
+  }
+  else {
+    read_file_handle(iVar3,auStack_142,2);
+    do {
+      if (local_13c[iVar5] != (code *)0x0) {
+        (*local_13c[iVar5])(iVar3);
+      }
+      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
+    } while (iVar5 < 8);
+    Ordinal_553(iVar3);
+    Ordinal_1047(acStack_11c,0,0x104);
+    do {
+      cVar1 = *pcVar7;
+      *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
+      pcVar7 = pcVar7 + 1;
+    } while (cVar1 != '\0');
+    Ordinal_1063(acStack_11c,s__DATA_comobj_dat_00086894);
+    iVar5 = open_file_for_read(acStack_11c);
+    if (iVar5 == -1) {
+      uVar4 = 0x3006;
+    }
+    else {
+      read_file_handle(iVar5,auStack_142,2);
+      puVar6 = &DAT_00202c90;
+      iVar3 = 0x200;
+      do {
+        read_file_handle(iVar5,puVar6,3);
+        read_file_handle(iVar5,puVar6 + 3,1);
+        read_file_handle(iVar5,puVar6 + 5,2);
+        read_file_handle(iVar5,puVar6 + 7,2);
+        read_file_handle(iVar5,puVar6 + 9,1);
+        read_file_handle(iVar5,local_144,1);
+        puVar6[10] = ((puVar6[10] ^ local_144[0]) & 3 ^ puVar6[10] ^ local_144[0]) & 3 ^
+                     local_144[0];
+        read_file_handle(iVar5,puVar6 + 0xb,1);
+        iVar3 = iVar3 + -1;
+        puVar6 = puVar6 + 0xd;
+      } while (iVar3 != 0);
+      Ordinal_553(iVar5);
+      uVar4 = 0;
+    }
+  }
+  return uVar4;
+}
+
+
+
+/* Was `undefined4` -- same 64-bit-pointer-truncated-through-a-32-bit-
+   return-type bug as get_equipped_item_at_slot's (see its own comment): this
+   function returns a POINTER into one of the runtime tables class2_variant_effect_table_lookup
+   and friends compute, and on a 64-bit build `undefined4` silently drops
+   the pointer's upper 32 bits, handing the caller a wild address. */
+void *get_scanned_object_class_effect_ptr()
+
+{
+  undefined1 *local_24 [4];
+  undefined1 *local_14;
+  undefined1 *local_10;
+  undefined1 *local_c;
+  undefined1 *local_8;
+  
+  local_24[0] = &class0_variant_effect_table_lookup;
+  local_24[1] = &class1_variant_effect_table_lookup;
+  local_24[2] = &class2_variant_effect_table_lookup;
+  local_24[3] = &LAB_0007913c;
+  local_14 = &LAB_00073b10;
+  local_10 = &LAB_0006b3d4;
+  local_c = &class6_variant_effect_table_lookup;
+  local_8 = &class7_variant_effect_table_lookup;
+  /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace
+     a return value through the indirect call and fabricated a "return 0"
+     placeholder. Real disassembly (0x52928-0x52938) shows no instruction
+     sets r0 before the epilogue -- whatever the dispatched per-class
+     handler leaves in r0 IS this function's real return value. Every
+     caller relies on that (e.g. refresh_player_equipment_effects's light-scan loop:
+     `iVar7 = get_scanned_object_class_effect_ptr(); bVar1 = *(byte*)(iVar7+1);` -- with the
+     hardcoded 0 this dereferenced address 1 and crashed the moment a
+     real light source was actually found by the scan). */
+  return (*(void *(*)())local_24[(short)((*g_scratch_object_ptr & 0x1c0) >> 6)])();
+}
+
+
+
+// was FUN_00052af4 -- generic recursive object-tree walker: calls
+// callback param_2 on param_1, then (unless param_1 is flagged
+// "no contents") recurses into its contents link (+6), then advances
+// to its next-in-chain link (+4) and repeats -- stopping early and
+// returning 1 the moment any callback invocation returns nonzero,
+// else 0 once the whole tree/chain is exhausted. Confirmed generic
+// by two independent callers with different callbacks:
+// object_exceeds_size_threshold (a "does anything in here exceed the
+// current size limit" search) and clear_object_temp_flag_callback
+// (a "reset a flag on everything" sweep that never early-exits).
+undefined4 walk_object_tree(param_1,param_2)
+char *param_1;  /* was `int` -- truncated the real object-record pointer
+                   (dereferenced throughout this function via casts, and
+                   passed to resolve_object_link/itself), latent until
+                   those calls started actually using their arguments */
+codeval * param_2;
+
+{
+  int iVar1;
+  char *pcVar2;
+
+  /* Dropped argument (both call sites below): param_2 is a callback
+     (object_exceeds_size_threshold at every call site reached so far) that declares one
+     parameter -- the object/link being tested, i.e. this function's
+     own param_1 -- but was invoked bare, leaving object_exceeds_size_threshold's own
+     param_1 as leftover-register garbage. Same idiom as this whole
+     session's other dropped-argument fixes; confirmed live
+     (UW_DEBUG_INV + demo_dropback_test.txt) crashing in object_exceeds_size_threshold's
+     first dereference the moment this never-before-exercised
+     drop-into-world path actually ran. */
+  iVar1 = (*param_2)(param_1);
+  while( true ) {
+    if (iVar1 != 0) {
+      return 1;
+    }
+    if (((*(byte *)(param_1 + 1) & 0x80) == 0) && ((*(ushort *)(param_1 + 6) & 0xffc0) != 0)) {
+      /* Was `undefined4 uVar2` -- truncated resolve_object_link's real
+         pointer return before forwarding it into the recursive call
+         just below, same class as param_1 itself above. */
+      pcVar2 = (char *)resolve_object_link((ushort *)(param_1 + 6)); /* confirmed via ARM disassembly, 0x52b54 */
+      iVar1 = walk_object_tree(pcVar2,param_2);
+      if (iVar1 != 0) {
+        return 1;
+      }
+    }
+    if ((*(ushort *)(param_1 + 4) & 0xffc0) == 0) break;
+    param_1 = (char *)resolve_object_link((ushort *)(param_1 + 4)); /* confirmed via ARM disassembly, 0x52b84 */
+    iVar1 = (*param_2)(param_1);
+  }
+  return 0;
+}
+
+
+
+// was FUN_00052bac -- checks whether object param_1's size/weight
+// class exceeds the current threshold in DAT_002046b0 (set by its
+// caller, e.g. roll_object_destroy_chance, just before use):
+// container-flagged objects (0x2000) always report "exceeds" (1);
+// otherwise combines the object-type's size-class nibble
+// (DAT_00202c9a[type*0xd]>>2&0xf) with a stack-quantity-derived term
+// and compares against the threshold. Used standalone and as a
+// walk_object_tree callback for a "does this or anything inside it
+// exceed the limit" recursive check.
+undefined4 object_exceeds_size_threshold(param_1)
+ushort * param_1;
+
+{
+  ushort uVar1;
+  undefined4 uVar2;
+  short sVar3;
+  int iVar4;
+  
+  uVar1 = *param_1;
+  if ((uVar1 & 0x2000) == 0) {
+    if (((uVar1 & 0x8000) == 0) || ((param_1[3] & 0x8000) != 0)) {
+      sVar3 = 0;
+    }
+    else {
+      sVar3 = (param_1[3] >> 6) - 1;
+    }
+    iVar4 = (int)sVar3;
+    if (iVar4 < 0) {
+      iVar4 = iVar4 + 1;
+    }
+    uVar2 = 1;
+    if ((int)(((byte)(&DAT_00202c9a)[(uVar1 & 0x1ff) * 0xd] >> 2 & 0xf) + (iVar4 >> 1)) <=
+        (int)DAT_002046b0) {
+      uVar2 = 0;
+    }
+  }
+  else {
+    uVar2 = 1;
   }
   return uVar2;
 }

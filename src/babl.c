@@ -497,7 +497,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
          ushort* whose `& 0xffc0` link-bits were just tested (or, for a
          loop's very first iteration, the enclosing function's own object-
          pointer parameter) -- confirmed individually via disassembly for
-         a representative sample of these sites (this one, FUN_00052af4,
+         a representative sample of these sites (this one, walk_object_tree,
          roll_object_destroy_chance, sum_container_weight, serialize_inventory_link_chain, roll_container_lockpick_check,
          purge_tagged_objects_from_chain, scheduler_add_entry, babl_builtin_take_from_npc_inv), and applied by the
          same pattern to the rest. */
