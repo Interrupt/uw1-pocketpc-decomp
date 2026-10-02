@@ -1007,7 +1007,7 @@ char param_2;
 
 // was FUN_000740b0 -- dispatch_special_action's case 5 ("spawn a
 // targeted spell-effect object") worker: param_2 (1-4) selects one of
-// four effect-object subtypes {7,5,4,6} and FUN_0004a588 spawns that
+// four effect-object subtypes {7,5,4,6} and spawn_object_near_actor spawns that
 // object near/at param_1's location (returning whether the spawn
 // succeeded). If param_1 is the player and the spawn failed, prints
 // a "no effect" scroll message (id 0xff) via print_scroll_message_by_id. Otherwise,
@@ -1027,7 +1027,7 @@ char param_2;
   auStack_d[2] = 5;
   auStack_d[3] = 4;
   auStack_d[4] = 6;
-  iVar1 = FUN_0004a588(param_1,auStack_d[param_2]);
+  iVar1 = spawn_object_near_actor(param_1,auStack_d[param_2]);
   if (param_1 == g_player_object) {
     if (iVar1 == 0) {
       print_scroll_message_by_id(0xff);
@@ -3451,4 +3451,41 @@ LAB_000497a0:
   print_scroll_message_by_id(0x104);
   print_scroll_message_by_id(iVar2 + 0x105);
   return 1;
+}
+
+
+// was FUN_0004a588 -- the general "spawn an object near a given
+// actor" helper: if the actor is the player, aims from the cursor
+// (compute_drop_aim_from_cursor); otherwise uses the actor's own
+// position, falling back to the current tile if the actor is outside
+// the live object arena. Used both for spell-effect object spawns
+// (apply_targeted_spell_effect) and ranged-attack spawns. Returns
+// whether the spawn succeeded.
+bool spawn_object_near_actor(param_1,param_2)
+uint param_1;
+short param_2;
+
+{
+  int iVar1;
+  
+  DAT_00202a38 = param_2 + 0x10;
+  DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[param_2 * 3];
+  DAT_00202a4c = (ushort)(*(byte *)(param_1 + 0x17) >> 2);
+  DAT_00202a50 = (ushort)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
+  DAT_00202a54 = 1;
+  DAT_00202a44 = param_1;
+  if (param_1 == g_player_object) {
+    compute_drop_aim_from_cursor();
+  }
+  else {
+    if (DAT_002046c4 <= param_1) {
+      DAT_00202a4c = (ushort)DAT_0023c3dc;
+      DAT_00202a50 = (ushort)DAT_0023c3d8;
+      DAT_00202a3c = 0;
+    }
+    DAT_00202a54 = (ushort)(DAT_002046c4 > param_1);
+    DAT_00202a40 = 0;
+  }
+  iVar1 = spawn_object_near_player();
+  return iVar1 != 0;
 }

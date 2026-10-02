@@ -13265,53 +13265,9 @@ bool compute_drop_aim_from_cursor()
 
 
 
-void FUN_0004a510(param_1,param_2,param_3)
-char *param_1;
-short param_2;
-undefined2 param_3;
-
-{
-  DAT_00202a38 = param_2 + 0x10;
-  DAT_00202a4c = (ushort)(*(byte *)(param_1 + 0x17) >> 2);
-  DAT_00202a50 = (undefined2)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
-  DAT_00202a54 = 1;
-  DAT_00202a40 = 0;
-  DAT_00202a44 = param_1;
-  DAT_00202a48 = param_3;
-  spawn_object_near_player();
-  return;
-}
 
 
 
-bool FUN_0004a588(param_1,param_2)
-uint param_1;
-short param_2;
-
-{
-  int iVar1;
-  
-  DAT_00202a38 = param_2 + 0x10;
-  DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[param_2 * 3];
-  DAT_00202a4c = (ushort)(*(byte *)(param_1 + 0x17) >> 2);
-  DAT_00202a50 = (ushort)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
-  DAT_00202a54 = 1;
-  DAT_00202a44 = param_1;
-  if (param_1 == g_player_object) {
-    compute_drop_aim_from_cursor();
-  }
-  else {
-    if (DAT_002046c4 <= param_1) {
-      DAT_00202a4c = (ushort)DAT_0023c3dc;
-      DAT_00202a50 = (ushort)DAT_0023c3d8;
-      DAT_00202a3c = 0;
-    }
-    DAT_00202a54 = (ushort)(DAT_002046c4 > param_1);
-    DAT_00202a40 = 0;
-  }
-  iVar1 = spawn_object_near_player();
-  return iVar1 != 0;
-}
 
 
 

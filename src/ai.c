@@ -755,7 +755,7 @@ LAB_000337fc:
       iVar5 = (short)uVar9 * 3;
       cVar4 = compute_vertical_aim_offset((&DAT_002027d1)[iVar5],1);
       DAT_00202a3c = (short)cVar4;
-      FUN_0004a510(DAT_0010190c,uVar9,(&DAT_002027d1)[iVar5]);
+      spawn_npc_thrown_weapon(DAT_0010190c,uVar9,(&DAT_002027d1)[iVar5]);
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
       uVar10 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
       *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar10;
@@ -3041,7 +3041,7 @@ LAB_000323ac:
 // param_1-scaled component when both param_1 and param_2 are nonzero.
 // Confirmed via its real call sites (src/ai.c) feeding a ranged/thrown
 // weapon launch's own pitch parameter (DAT_00202a3c) right before
-// FUN_0004a510.
+// spawn_npc_thrown_weapon.
 int compute_vertical_aim_offset(param_1,param_2)
 short param_1;
 int param_2;
@@ -4554,5 +4554,29 @@ void flush_pending_critter_resource_slots()
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 0x80);
   clear_ambient_sound_target();
+  return;
+}
+
+
+// was FUN_0004a510 -- NPC-side ranged/thrown weapon launch (the
+// counterpart to the player's fire_ranged_weapon): given the attacker
+// object (param_1), weapon type (param_2), and ammo quality (param_3),
+// sets up the throw/aim state directly from the attacker's position
+// fields and spawns the projectile. Called right after
+// compute_vertical_aim_offset stages the pitch.
+void spawn_npc_thrown_weapon(param_1,param_2,param_3)
+char *param_1;
+short param_2;
+undefined2 param_3;
+
+{
+  DAT_00202a38 = param_2 + 0x10;
+  DAT_00202a4c = (ushort)(*(byte *)(param_1 + 0x17) >> 2);
+  DAT_00202a50 = (undefined2)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
+  DAT_00202a54 = 1;
+  DAT_00202a40 = 0;
+  DAT_00202a44 = param_1;
+  DAT_00202a48 = param_3;
+  spawn_object_near_player();
   return;
 }
