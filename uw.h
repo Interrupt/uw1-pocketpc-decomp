@@ -2783,6 +2783,8 @@ extern undefined1 DAT_00086264_backing[1024];
 #define DAT_00086264 DAT_00086264_backing[0]
 extern int DAT_00086368;
 extern unsigned short u_WAVE_0008686c[];
+extern undefined4 DAT_00086370_backing[296];
+#define DAT_00086370 DAT_00086370_backing[0]
 extern undefined1 DAT_00202988_backing[16];
 #define DAT_00202988 DAT_00202988_backing[0]
 extern char s_Not_a_spell_00085a80[];
@@ -3398,7 +3400,7 @@ void reset_mod_player_state();
 undefined4 start_mod_player_playback();
 undefined4 stop_mod_player_playback();
 bool queue_mod_audio_buffer();
-void FUN_0004d79c();
+void process_mod_tracker_row();
 undefined4 FUN_0004e324();
 void FUN_0004e6e0();
 void FUN_0004ecd4();
