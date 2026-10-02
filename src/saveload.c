@@ -1502,14 +1502,14 @@ bool check_can_save_game()
 // (src/saveload.c's own comment on load_game_from_slot confirms this
 // "unconditional-allow" semantics): unlike check_can_save_game, never
 // refuses -- just releases any cursor-held object first (via
-// FUN_00057cac, not yet named) so loading never leaves a stale held
+// pop_cursor_icon, not yet named) so loading never leaves a stale held
 // item -- then always returns true.
 undefined4 check_can_load_game()
 
 {
   if (g_cursor_holding_state != 0) {
     g_cursor_holding_state = 0;
-    FUN_00057cac(0);
+    pop_cursor_icon(0);
   }
   return 1;
 }

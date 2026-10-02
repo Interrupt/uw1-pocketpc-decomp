@@ -248,7 +248,7 @@ undefined4 param_1;
     uVar2 = 3;
   }
   update_journey_onward_availability(param_1);
-  FUN_00057c5c(0x106c);
+  push_cursor_icon(0x106c);
   cursor_show_idle_tick();
   bVar11 = false;
   local_838 = 0;
@@ -500,7 +500,7 @@ undefined4 param_1;
     }
     Ordinal_1018(local_834);
   } while (!bVar11);
-  FUN_00057cac(3);
+  pop_cursor_icon(3);
   cursor_show_idle_tick();
   set_game_mode(1);
   set_pending_update_flags(0x7ffe);
@@ -2586,7 +2586,7 @@ void handle_game_view_click()
         }
       }
       if (g_selected_object != 0) {
-        FUN_00057cac(3);
+        pop_cursor_icon(3);
         g_selected_object = 0;
         g_cursor_holding_state = 0;
       }

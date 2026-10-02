@@ -27,7 +27,7 @@ void ready_weapon()
 
   if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 2) && ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0)) {
     if ((g_cursor_mode == 1) || ((g_cursor_mode == 3 || (g_cursor_mode == 4)))) {
-      FUN_00057cac(3);
+      pop_cursor_icon(3);
     }
     if (g_cursor_mode != 0) {
       /* Same dropped-argument bug as cursor_mode_button_click's sites. */
@@ -122,7 +122,7 @@ ushort * param_1;
   short local_10 [2];
   
   g_selected_object = param_1;
-  FUN_00057c5c(*param_1 & 0x1ff);
+  push_cursor_icon(*param_1 & 0x1ff);
   poll_keyboard_char_input(&local_14);
   if ((local_14 != 0) && (wait_for_click_release(1), g_selected_object != (ushort *)0x0)) {
     get_mouse_position(local_10,&local_12);
@@ -144,7 +144,7 @@ ushort * param_1;
          the drag icon's last shown position. The widget dispatch below
          (handle_backpack_slot_click -> place_held_item_in_empty_slot,
          or handle_object_drop_target) draws the placed item fresh into
-         its slot -- but then ITS OWN cleanup (FUN_00057cac(3) below)
+         its slot -- but then ITS OWN cleanup (pop_cursor_icon(3) below)
          erases that still-pending stale save, which restores the
          PRE-drop background over top of the item that was just
          correctly drawn, since a drop's target slot position commonly
@@ -178,7 +178,7 @@ ushort * param_1;
           handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
           if (g_selected_object == (ushort *)0x0) {
             g_cursor_holding_state = 0;
-            FUN_00057cac(3);
+            pop_cursor_icon(3);
           }
         }
         else {
@@ -1044,7 +1044,7 @@ undefined4 param_3;
 // already selected (g_selected_object == 0; otherwise a no-op
 // returning NULL). param_1 is an existing object to hold, or NULL to
 // spawn a fresh one of type param_2 first. Sets g_cursor_holding_
-// state to 1 and prompts via FUN_00057c5c (not yet named). Confirmed
+// state to 1 and prompts via push_cursor_icon (not yet named). Confirmed
 // real callers in src/audio.c, src/item_use.c, and src/player.c.
 short *begin_holding_object_on_cursor(param_1,param_2)
 short * param_1;
@@ -1060,7 +1060,7 @@ uint param_2;
     }
     g_cursor_holding_state = 1;
     g_selected_object = param_1;
-    FUN_00057c5c(param_2);
+    push_cursor_icon(param_2);
   }
   else {
     param_1 = (short *)0x0;
@@ -1089,7 +1089,7 @@ int param_2;
   undefined4 uVar2;
 
   if (param_2 != 0) {
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
     g_selected_object = 0;
     g_cursor_holding_state = 0;
     sVar1 = check_object_combination(g_player_object,param_1,
@@ -1128,7 +1128,7 @@ int param_2;
   int iVar1;
 
   if (param_2 != 0) {
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
     g_selected_object = 0;
     g_cursor_holding_state = 0;
     iVar1 = check_object_combination(g_player_object,param_1,*(ushort *)(DAT_00202098 + 6) & 0x3f);
@@ -1172,7 +1172,7 @@ int param_2;
 // was FUN_00079ff0 -- the general "use item on target" prompt setup:
 // builds and prints "<item's display name> -- use it on what?" via
 // build_object_display_name, then prompts the player to click a
-// target (FUN_00057c5c) and arms the deferred-target-click state
+// target (push_cursor_icon) and arms the deferred-target-click state
 // (g_selected_object, g_cursor_holding_state=2, DAT_00202098=the
 // item being used, DAT_002020b8=the completion callback param_2 --
 // the same pending-click callback slot dispatch_player_command's own
@@ -1206,7 +1206,7 @@ undefined4 param_2;
   }
   Ordinal_1063(acStack_34,s_on_what__000878e0);
   message_scroll_print_wrapped(acStack_34);
-  FUN_00057c5c(*param_1 & 0x1ff);
+  push_cursor_icon(*param_1 & 0x1ff);
   g_selected_object = param_1;
   g_cursor_holding_state = 2;
   DAT_00202098 = param_1;
@@ -1241,7 +1241,7 @@ ushort * param_1;
     *(char *)((char *)param_1 + 7) = (char)(uVar1 >> 8);
     finish_object_use(DAT_00202098,1,1);
   }
-  FUN_00057cac(3);
+  pop_cursor_icon(3);
   g_selected_object = 0;
   g_cursor_holding_state = 0;
   return;
@@ -1292,7 +1292,7 @@ undefined4 param_2;
   byte local_1e;
   undefined1 local_12;
   
-  FUN_00057cac(3);
+  pop_cursor_icon(3);
   g_selected_object = 0;
   g_cursor_holding_state = 0;
   if ((*param_1 & 0x1ff) == 0x165) {
@@ -1380,7 +1380,7 @@ int param_3;
 
 {
   if ((param_2 != 0) && (param_3 != 0)) {
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
     g_selected_object = 0;
     g_cursor_holding_state = 0;
     use_lockpick_on_object(param_1,*(undefined1 *)(DAT_00086df8 + 0x2f),1);
@@ -1508,7 +1508,7 @@ int param_2;
     print_scroll_message_by_id(0x84);
   }
   if (g_selected_object != 0) {
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
     g_selected_object = 0;
     g_cursor_holding_state = 0;
   }
@@ -1531,7 +1531,7 @@ ushort * param_1;
 undefined4 param_2;
 
 {
-  FUN_00057cac(3);
+  pop_cursor_icon(3);
   g_selected_object = 0;
   g_cursor_holding_state = 0;
   if (((*param_1 & 0x1ff) == 0x16e) && (((&DAT_0023add0)[(byte)param_1[3] & 0x3f] & 0xff) == 0xb)) {
@@ -1690,7 +1690,7 @@ int param_3;
   uint extraout_r1;
   uint uVar11;
 
-  FUN_00057cac(3);
+  pop_cursor_icon(3);
   g_selected_object = 0;
   g_cursor_holding_state = 0;
   if ((param_2 != 0) && (param_3 == 0)) {
@@ -1780,7 +1780,7 @@ int param_3;
     sVar3 = 0;
   }
   iVar1 = (int)sVar3;
-  FUN_00057cac(3);
+  pop_cursor_icon(3);
   g_selected_object = 0;
   g_cursor_holding_state = 0;
   if ((param_2 != 0) && (param_3 != 0)) {
@@ -2628,10 +2628,10 @@ undefined4 param_2;
       sVar1 = check_object_fits_in_slot(param_1,param_2);
       if (sVar1 == 0) {
         g_selected_object = param_1;
-        FUN_00057cac(3);
+        pop_cursor_icon(3);
         /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
            own identical fix comment. */
-        FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
+        push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
         param_1 = puVar5;
       }
       object_list_insert_head(puVar10,param_1);

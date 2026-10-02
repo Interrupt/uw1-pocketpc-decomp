@@ -554,7 +554,7 @@ void reset_weapon_swing_state()
   DAT_00084f10 = 0xffff;
   set_hud_status_value(3,0);
   g_cursor_holding_state = g_cursor_holding_state + -4;
-  FUN_00057cac(3);
+  pop_cursor_icon(3);
   set_hud_status_value(8,4);
   DAT_001005ec = 0;
   return;
@@ -593,7 +593,7 @@ void cancel_weapon_swing()
 {
   if ((DAT_001005ec != 0) && (DAT_00100618 == 0)) {
     g_cursor_holding_state = g_cursor_holding_state + -4;
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
   }
   update_weapon_ready_hud_icon();
   DAT_0010062c = 0;
@@ -689,7 +689,7 @@ LAB_00027754:
             set_hud_status_value(3,9);
             DAT_00100618 = 0;
             g_cursor_holding_state = g_cursor_holding_state + 4;
-            FUN_00057c5c(0x1075);
+            push_cursor_icon(0x1075);
             return;
           }
           if (!bVar2) {

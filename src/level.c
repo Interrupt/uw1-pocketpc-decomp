@@ -315,7 +315,7 @@ undefined4 param_2;
   if ((g_cursor_holding_state == 2) && (g_selected_object != 0)) {
     g_cursor_holding_state = 0;
     g_selected_object = 0;
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
   }
   save_or_restore_level_special_state(param_1,1);
   iVar2 = commit_level_to_save_slot(param_1);

@@ -27,7 +27,7 @@ void enter_automap_screen()
   DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,handle_automap_note_click);
   set_cursor_confine_rect(0,199,0x13f,0);
   decrement_cursor_hide_depth();
-  FUN_00057c5c(0x1078);
+  push_cursor_icon(0x1078);
   cursor_show_idle_tick();
   DAT_000b99c4 = 0;
   return;
@@ -45,7 +45,7 @@ void exit_automap_screen()
   
   decrement_cursor_hide_depth();
   unregister_key_binding((int)DAT_000b99c0);
-  FUN_00057cac(0);
+  pop_cursor_icon(0);
   save_automap_notes_to_archive((int)DAT_000ba9d0);
   if ((DAT_000ba9d0 != DAT_00201b68) &&
      (iVar1 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
@@ -717,14 +717,14 @@ LAB_000170bc:
       sVar2 = 0xfd;
       set_cursor_confine_rect(0,199,0x13f,0);
       decrement_cursor_hide_depth();
-      FUN_00057c5c(0x1079);
+      push_cursor_icon(0x1079);
       cursor_show_idle_tick();
       do {
         sVar3 = next_input_event();
       } while (sVar3 != 1);
       get_mouse_position(&local_5e,&local_60);
       set_cursor_confine_rect(0,199,0x13f,0);
-      FUN_00057cac(1);
+      pop_cursor_icon(1);
     }
   }
   else {
@@ -798,7 +798,7 @@ LAB_000170bc:
       if (DAT_000bbef0 != 100) {
         iVar7 = DAT_000bbef0 * 0x36;
         select_active_font(s_font4x5p_sys_0008431c);
-        FUN_00057c5c(0x107a);
+        push_cursor_icon(0x107a);
         iVar10 = -1;
         (&DAT_000baa0a)[iVar7] = (char)local_5e;
         (&DAT_000baa0b)[iVar7] = (char)((ushort)local_5e >> 8);
@@ -897,7 +897,7 @@ LAB_00017404:
   decrement_cursor_hide_depth();
   draw_automap_notes();
   warp_mouse_cursor(iVar8 + 0x16,local_60 + -7);
-  FUN_00057cac(2);
+  pop_cursor_icon(2);
   flush_dirty_rect_to_display(1);
   DAT_000bbef8 = 0;
   DAT_000bbef4 = 1;

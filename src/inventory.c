@@ -55,7 +55,7 @@ void handle_inventory_panel_normal_click()
         wait_for_click_release(1);
         return;
       }
-      FUN_00057cac(3);
+      pop_cursor_icon(3);
       g_cursor_holding_state = 0;
       g_selected_object = 0;
       return;
@@ -372,7 +372,7 @@ short param_1;
     }
   }
   if ((bVar11) && (g_selected_object == 0)) {
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
     g_cursor_holding_state = 0;
   }
   return;

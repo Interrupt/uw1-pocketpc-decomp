@@ -916,7 +916,7 @@ LAB_00073c90:
       g_cursor_holding_state = 3;
       DAT_00202094 = param_2 & 0xff;
       DAT_00202098 = g_player_object;
-      FUN_00057c5c(0x1075);
+      push_cursor_icon(0x1075);
     }
     else {
       apply_targeted_spell_effect(param_3,param_2);
@@ -2091,7 +2091,7 @@ undefined4 param_2;
 // the player's held item combines with param_1
 // (check_object_combination) and prints a success/fail scroll
 // message. All paths then reset the click-target UI state
-// (FUN_00057cac, g_cursor_holding_state=0, wait_for_click_release).
+// (pop_cursor_icon, g_cursor_holding_state=0, wait_for_click_release).
 void complete_pending_player_command_target(param_1)
 ushort * param_1;
 
@@ -2127,7 +2127,7 @@ ushort * param_1;
     }
     print_scroll_message_by_id(uVar3);
   }
-  FUN_00057cac(3);
+  pop_cursor_icon(3);
   g_cursor_holding_state = 0;
   wait_for_click_release(1);
   return;
@@ -2186,7 +2186,7 @@ LAB_0007588c:
     DAT_00202098 = g_player_object;
     DAT_002020b8 = complete_pending_player_command_target;
     DAT_00202094 = (int)param_3;
-    FUN_00057c5c(0x1076);
+    push_cursor_icon(0x1076);
     break;
   case 6:
     uVar4 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
@@ -2450,7 +2450,7 @@ void complete_cast_spell_on_target()
 {
   apply_targeted_spell_effect((int)DAT_00202098,(int)(char)DAT_00202094);
   g_cursor_holding_state = 0;
-  FUN_00057cac(3);
+  pop_cursor_icon(3);
   wait_for_click_release(1);
   return;
 }

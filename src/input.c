@@ -972,17 +972,17 @@ int param_4;
   iVar6 = (sVar3 - iVar6) * 0x10000 >> 0x10;
   iVar7 = Ordinal_2005(0xf,sVar4 * 5);
   iVar1 = (iVar7 + sVar2) * 0x10000 >> 0x10;
-  DAT_0023be6c = FUN_00057af0(param_1,param_2,iVar1,iVar6,0x106f);
+  DAT_0023be6c = register_cursor_hotspot(param_1,param_2,iVar1,iVar6,0x106f);
   iVar7 = ((sVar2 - iVar7) + (int)sVar4) * 0x10000 >> 0x10;
-  DAT_0023be68 = FUN_00057af0(iVar7,param_2,iVar10,iVar6,0x1070);
-  DAT_0023be70 = FUN_00057af0(iVar1,param_2,iVar7,iVar6,0x106e);
+  DAT_0023be68 = register_cursor_hotspot(iVar7,param_2,iVar10,iVar6,0x1070);
+  DAT_0023be70 = register_cursor_hotspot(iVar1,param_2,iVar7,iVar6,0x106e);
   iVar8 = Ordinal_2005(0xf,sVar5 * 6);
   iVar8 = (sVar3 - iVar8) * 0x10000 >> 0x10;
-  DAT_0023be7c = FUN_00057af0(param_1,iVar6,iVar1,iVar8,0x1071);
-  DAT_0023be84 = FUN_00057af0(iVar7,iVar6,iVar10,iVar8,0x1072);
-  DAT_0023be78 = FUN_00057af0(iVar1,iVar8,iVar7,iVar9,0x106d);
-  DAT_0023be60 = FUN_00057af0(param_1,iVar8,iVar1,iVar9,0x1073);
-  DAT_0023bd7c = FUN_00057af0(iVar7,iVar8,iVar10,iVar9,0x1074);
+  DAT_0023be7c = register_cursor_hotspot(param_1,iVar6,iVar1,iVar8,0x1071);
+  DAT_0023be84 = register_cursor_hotspot(iVar7,iVar6,iVar10,iVar8,0x1072);
+  DAT_0023be78 = register_cursor_hotspot(iVar1,iVar8,iVar7,iVar9,0x106d);
+  DAT_0023be60 = register_cursor_hotspot(param_1,iVar8,iVar1,iVar9,0x1073);
+  DAT_0023bd7c = register_cursor_hotspot(iVar7,iVar8,iVar10,iVar9,0x1074);
   return;
 }
 
@@ -996,14 +996,14 @@ void unregister_game_view_interact_zones()
 {
   unregister_key_binding((int)DAT_0023be8c);
   DAT_0023be8c = 0;
-  FUN_00057bb0((int)DAT_0023be6c);
-  FUN_00057bb0((int)DAT_0023be68);
-  FUN_00057bb0((int)DAT_0023be7c);
-  FUN_00057bb0((int)DAT_0023be84);
-  FUN_00057bb0((int)DAT_0023be70);
-  FUN_00057bb0((int)DAT_0023be78);
-  FUN_00057bb0((int)DAT_0023be60);
-  FUN_00057bb0((int)DAT_0023bd7c);
+  unregister_cursor_hotspot((int)DAT_0023be6c);
+  unregister_cursor_hotspot((int)DAT_0023be68);
+  unregister_cursor_hotspot((int)DAT_0023be7c);
+  unregister_cursor_hotspot((int)DAT_0023be84);
+  unregister_cursor_hotspot((int)DAT_0023be70);
+  unregister_cursor_hotspot((int)DAT_0023be78);
+  unregister_cursor_hotspot((int)DAT_0023be60);
+  unregister_cursor_hotspot((int)DAT_0023bd7c);
   return;
 }
 
@@ -1146,7 +1146,7 @@ LAB_00077d70:
    in this file). Every message type updates the tracked cursor position;
    WM_LBUTTONDOWN additionally hit-tests taps landing in the x:200-240
    strip (the chargen name-entry on-screen keyboard, see DAT_00087650's
-   comment) via FUN_00057a80 and re-dispatches the resulting button ID as
+   comment) via lookup_onscreen_keyboard_key_hit and re-dispatches the resulting button ID as
    a synthetic WM_CHAR (letters/digits) or WM_KEYDOWN (backspace/enter/
    space/0x14) through Ordinal_868 (PostMessage) -> handle_keyboard_message, the same
    path real keyboard input already uses. Taps outside that strip instead
@@ -1194,7 +1194,7 @@ int param_4;
       *DAT_000876c4 = 1;
     }
     if ((200 < x) && (x < 0xf0)) {
-      id = FUN_00057a80(*DAT_000876bc,x);
+      id = lookup_onscreen_keyboard_key_hit(*DAT_000876bc,x);
       fprintf(stderr, "[mousehit] on-screen-keyboard tap: x=%d storedY=%d -> id=%d ('%c')\n", x, *DAT_000876bc, id, (id >= 0x20 && id < 0x7f) ? id : '?');
       if ((id == 8) || (id == 0xd) || (id == 0x20) || (id == 0x14)) {
         Ordinal_868(DAT_0023c548,0x100,id,0);

@@ -2037,6 +2037,18 @@ extern char s_doors_00085a64[];
    see the same storage. */
 extern undefined1 DAT_00202a28_backing[256];
 #define g_food_effect_table DAT_00202a28_backing[0]
+extern undefined1 DAT_00087650_backing[40];
+#define DAT_00087650 DAT_00087650_backing[0]
+extern short DAT_00204854;
+extern undefined1 DAT_00204720_backing[65536];
+#define DAT_00204720 DAT_00204720_backing[0]
+extern undefined2 DAT_00204750;
+extern undefined2 DAT_002047e0;
+extern undefined2 DAT_00204808;
+extern undefined2 DAT_00086970;
+extern char DAT_00204858;
+extern undefined2 DAT_00204704;
+extern undefined2 DAT_00204714;
 extern undefined1 DAT_002029d8_backing[256];
 #define g_light_radius_table DAT_002029d8_backing[0]
 extern undefined4 g_weapon_overlay_enabled;
@@ -3616,13 +3628,13 @@ uint process_pending_keyboard_scan_code();
 uint poll_input_event();
 undefined4 next_input_event();
 undefined4 peek_input_event();
-int FUN_00057a80();
-int FUN_00057af0();
-void FUN_00057bb0();
-void FUN_00057c5c();
-void FUN_00057cac();
-undefined4 FUN_00057d1c();
-void FUN_00057dc0();
+int lookup_onscreen_keyboard_key_hit();
+int register_cursor_hotspot();
+void unregister_cursor_hotspot();
+void push_cursor_icon();
+void pop_cursor_icon();
+undefined4 is_position_within_rect();
+void set_cursor_sprite_id();
 void FUN_00057e54();
 void update_mouse_state();
 void FUN_00058438();

@@ -4435,21 +4435,19 @@ char DAT_0008794c_backing[128];
 char *DAT_0008794c = DAT_0008794c_backing;
 /* Real static lookup table (.data, read-only in practice) recovered
    byte-for-byte from UU.exe -- the stylus-tap hit grid for the chargen
-   name-entry on-screen keyboard. Indexed by FUN_00057a80 as
+   name-entry on-screen keyboard. Indexed by lookup_onscreen_keyboard_key_hit as
    [row + column*20], row = (touch-Y)>>4 (16px-tall rows spanning the full
    320px portrait screen height), column = (touch-X-200)/20 (two 20px-wide
    columns in the 200..240 strip). Column 0 = digits 0-9 then 'a'-'j';
    column 1 = 'k'-'z' then backspace(8)/enter(13)/space(32)/0x14. */
-static undefined1 DAT_00087650_backing[40] = {
+undefined1 DAT_00087650_backing[40] = {
   '0','1','2','3','4','5','6','7','8','9',
   'a','b','c','d','e','f','g','h','i','j',
   'k','l','m','n','o','p','q','r','s','t',
   'u','v','w','x','y','z',8,13,32,0x14
 };
-#define DAT_00087650 DAT_00087650_backing[0]
 short DAT_00204854;
-static undefined1 DAT_00204720_backing[65536];
-#define DAT_00204720 DAT_00204720_backing[0]
+undefined1 DAT_00204720_backing[65536];
 undefined2 DAT_00204750;
 undefined2 DAT_002047e0;
 undefined2 DAT_00204808;
@@ -11127,7 +11125,7 @@ short param_1;
           if (auto_place_in_container(g_selected_object, 0x13) != 0) {
             g_selected_object = (ushort *)0x0;
             g_cursor_holding_state = 0;
-            FUN_00057cac(3);
+            pop_cursor_icon(3);
           }
           refresh_player_equipment_effects();
           if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
@@ -11195,7 +11193,7 @@ short param_1;
   }
 LAB_00042a10:
   if ((bVar4) && (g_selected_object == 0)) {
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
     g_cursor_holding_state = 0;
   }
   return;
@@ -12153,7 +12151,7 @@ int param_2;
     }
     decrement_cursor_hide_depth();
     if (bVar3) {
-      FUN_00057cac(0);
+      pop_cursor_icon(0);
     }
     /* Was `*g_selected_object & 0x1ff` -- g_selected_object is declared
        `char *` (a single signed byte, used elsewhere in this file for
@@ -12171,7 +12169,7 @@ int param_2;
        wrong cursor icon or none at all when picked up. Same root
        cause at every other `*g_selected_object & 0x1ff` site in this
        file (see their own copies of this comment). */
-    FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
+    push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
     cursor_show_idle_tick();
     refresh_player_equipment_effects();
   }
@@ -12670,10 +12668,10 @@ uint param_2;
         }
         g_selected_object = puVar4;
         if (g_selected_object != (ushort *)0x0) {
-          FUN_00057cac(0);
+          pop_cursor_icon(0);
           /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
              own identical fix comment. */
-          FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
+          push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
         }
       }
       else {
@@ -12693,10 +12691,10 @@ uint param_2;
         discard_misplaced_object(0,param_1,1);
         g_cursor_holding_state = 1;
         g_selected_object = puVar7;
-        FUN_00057cac(3);
+        pop_cursor_icon(3);
         /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
            own identical fix comment. */
-        FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
+        push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
       }
       iVar8 = is_object_consumed_in_combination(puVar4,uVar6);
       if (iVar8 != 0) {
@@ -14039,214 +14037,6 @@ int poll_mouse_event()
 
 
 
-int FUN_00057a80(param_1,param_2)
-short param_1;
-short param_2;
-
-{
-  int iVar1;
-  short sVar2;
-  
-  iVar1 = (int)param_1;
-  if (iVar1 < 0) {
-    iVar1 = iVar1 + 0xf;
-  }
-  sVar2 = (short)(iVar1 >> 4);
-  iVar1 = Ordinal_2005(0x14,param_2 + -200);
-  if (0 < iVar1) {
-    sVar2 = (short)iVar1 * 0x14 + sVar2;
-  }
-  return (int)(char)(&DAT_00087650)[sVar2];
-}
-
-
-
-int FUN_00057af0(param_1,param_2,param_3,param_4,param_5)
-undefined2 param_1;
-undefined2 param_2;
-undefined2 param_3;
-undefined2 param_4;
-undefined2 param_5;
-
-{
-  int iVar1;
-  int iVar2;
-  
-  iVar2 = 0;
-  do {
-    if ((&DAT_002047b0)[iVar2] == 10000) break;
-    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-  } while (iVar2 < 0x14);
-  iVar1 = (int)(short)iVar2;
-  if (iVar1 == 0x14) {
-    iVar2 = -1;
-  }
-  else {
-    (&DAT_002047b0)[iVar1] = param_1;
-    (&DAT_00204808)[iVar1] = param_3;
-    (&DAT_002047e0)[iVar1] = param_4;
-    (&DAT_00204750)[iVar1] = param_2;
-    *(undefined2 *)(&DAT_00204720 + iVar1 * 2) = param_5;
-    if (DAT_00204854 <= iVar1) {
-      DAT_00204854 = (short)iVar2 + 1;
-    }
-    FUN_00057e54();
-  }
-  return iVar2;
-}
-
-
-
-void FUN_00057bb0(param_1)
-short param_1;
-
-{
-  int iVar1;
-  int iVar2;
-  int iVar3;
-  
-  iVar3 = (int)DAT_00204854;
-  iVar1 = (int)DAT_00204854;
-  iVar2 = (int)param_1;
-  if (iVar2 < iVar1) {
-    (&DAT_002047b0)[iVar2] = 10000;
-    if (*(short *)(&DAT_00204720 + iVar2 * 2) == DAT_00204788) {
-      DAT_00086970 = 10000;
-    }
-    if (iVar2 == iVar1 + -1) {
-      iVar3 = iVar3 + -2;
-      iVar1 = iVar3 * 0x10000 >> 0x10;
-      while ((-1 < iVar1 && ((&DAT_002047b0)[iVar1] == 10000))) {
-        iVar3 = (iVar1 + -1) * 0x10000 >> 0x10;
-        iVar1 = iVar3;
-      }
-      DAT_00204854 = (short)iVar3 + 1;
-    }
-    FUN_00057e54();
-  }
-  return;
-}
-
-
-
-void FUN_00057c5c(param_1)
-undefined4 param_1;
-
-{
-  int iVar1;
-  
-  if (DAT_00204858 != '\x03') {
-    decrement_cursor_hide_depth();
-    iVar1 = (int)DAT_00204858;
-    DAT_00204858 = DAT_00204858 + '\x01';
-    (&DAT_00204714)[iVar1] = DAT_00204704;
-    FUN_00057dc0(param_1);
-    cursor_show_idle_tick();
-  }
-  return;
-}
-
-
-
-void FUN_00057cac(param_1)
-ushort param_1;
-
-{
-  int iVar1;
-  
-  if ((param_1 & 1) != 0) {
-    decrement_cursor_hide_depth();
-  }
-  iVar1 = (int)DAT_00204858;
-  DAT_00204858 = (char)(iVar1 + -1);
-  if ((iVar1 + -1) * 0x1000000 >> 0x18 < 0) {
-    DAT_00204714 = 0x106c;
-    DAT_00204858 = '\0';
-  }
-  FUN_00057dc0((int)(short)(&DAT_00204714)[DAT_00204858]);
-  FUN_00057e54();
-  if ((param_1 & 2) != 0) {
-    cursor_show_idle_tick();
-  }
-  return;
-}
-
-
-
-undefined4 FUN_00057d1c(param_1,param_2,param_3,param_4)
-short param_1;
-short param_2;
-short param_3;
-short param_4;
-
-{
-  int iVar1;
-  
-  iVar1 = (int)(short)(DAT_002047a4 + 1 >> 1);
-  if ((iVar1 + param_2 <= (int)g_mouse_y) && ((int)g_mouse_y <= param_4 - iVar1)) {
-    iVar1 = (int)(short)(DAT_00204784 + 1 >> 1);
-    if ((param_1 - iVar1 <= (int)g_mouse_x) && ((int)g_mouse_x <= iVar1 + param_3)) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-
-
-// WARNING: Removing unreachable block (ram,0x00057df0)
-// WARNING: Removing unreachable block (ram,0x00057e24)
-
-void FUN_00057dc0(param_1)
-undefined4 param_1;
-
-{
-  /* lookup_grtile_by_id's argument is dropped by Ghidra at this call site;
-     forwarding param_1 matches the resolve_sprite_id_to_frame(param_1) call right
-     above it and lookup_grtile_by_id's own g_grtile_registry-indexed-by-id shape. */
-  char *iVar1;
-
-  FUN_00056fe8();
-  resolve_sprite_id_to_frame(param_1);
-  /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id
-     only covers ids below DAT_00202738 (the "still-compressed .GR
-     resource entry, needs decoding" range); ids at or above it are
-     already-resident raw sprites living directly in g_grtile_registry's own
-     table (see blit_object_sprite_by_frame's own identical branch,
-     which this function was missing). For those higher ids
-     lookup_grtile_by_id's own table lookup misses (a *different* resource's
-     entries live there) and falls back to its zeroed dummy glyph,
-     silently handing back width=height=0 here. First found while
-     chasing a user report of several items (a map, a bag, apple,
-     bread) showing the wrong cursor icon or none at all when picked
-     up -- the real cause of THAT turned out to be a separate bug
-     (g_selected_object's own sign-extension, see
-     swap_cursor_and_slot_item's fix comment) that was corrupting
-     these objects' ids into the >= DAT_00202738 range in the first
-     place; with that fixed these particular items no longer reach
-     this branch at all. Kept anyway since it's a real, independently
-     confirmed divergence from blit_object_sprite_by_frame's own
-     already-correct behavior, for whatever legitimately-high-id items
-     do reach here. */
-  iVar1 = (int)(short)param_1 < (int)(uint)DAT_00202738 ?
-          lookup_grtile_by_id(param_1) : (char *)g_grtile_registry[(int)(short)param_1];
-  if (iVar1 == (char *)0x0) {
-    /* Same "table slot never populated" fallback as
-       blit_object_sprite_by_frame's own identical guard. */
-    static char dummy_sprite[8];
-    iVar1 = dummy_sprite;
-  }
-  DAT_00204784 = (ushort)*(byte *)(iVar1 + 1);
-  DAT_002047a4 = (ushort)*(byte *)(iVar1 + 2);
-  DAT_00204704 = (undefined2)param_1;
-  DAT_0020471c = ((short)(ushort)*(byte *)(iVar1 + 1) >> 1) + -1;
-  DAT_00204748 = (short)(ushort)*(byte *)(iVar1 + 2) >> 1;
-  DAT_00204788 = DAT_00204704;
-  if (DAT_00204844 != 0) {
-    FUN_000584c0();
-  }
-  return;
-}
 
 
 
@@ -14272,7 +14062,7 @@ void FUN_00057e54()
           DAT_002047a8 = (&DAT_00204808)[iVar1];
           DAT_0020478c = (&DAT_00204750)[iVar1];
           DAT_002047ac = (&DAT_002047e0)[iVar1];
-          FUN_00057dc0((int)*(short *)(&DAT_00204720 + iVar1 * 2));
+          set_cursor_sprite_id((int)*(short *)(&DAT_00204720 + iVar1 * 2));
           break;
         }
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
@@ -14280,7 +14070,7 @@ void FUN_00057e54()
     }
     if ((DAT_00086970 != -1) && ((short)iVar2 == DAT_00204854)) {
       DAT_00086970 = -1;
-      FUN_00057dc0(0x106c);
+      set_cursor_sprite_id(0x106c);
     }
   }
   return;

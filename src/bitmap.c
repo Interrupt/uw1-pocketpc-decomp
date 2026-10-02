@@ -980,7 +980,7 @@ short param_1;
 
 {
   /* Glyph/font-resource-by-id lookup (g_grtile_registry is indexed by
-     param_1). Several callers (decode_tile_object_billboard_texture, FUN_00057dc0, etc.) call
+     param_1). Several callers (decode_tile_object_billboard_texture, set_cursor_sprite_id, etc.) call
      this with the argument dropped by Ghidra at their call site and then
      dereference the result unconditionally, so returning a real NULL for
      the param_1==0 case -- which is otherwise correct -- crashes them.

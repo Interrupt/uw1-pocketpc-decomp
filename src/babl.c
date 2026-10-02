@@ -120,7 +120,7 @@ void babl_builtin_do_decline()
    override object at DAT_00202948, if one is set), unlinks it from
    the NPC once found, then either hands it straight to the player
    (if check_object_carry_weight says it fits -- opens a brief item-
-   view popup via FUN_00057c5c) or, if it doesn't fit, stages it in
+   view popup via push_cursor_icon) or, if it doesn't fit, stages it in
    one of the 4 player-side barter-table slots (DAT_000bbfd0/bbfa8/
    bbf98/bbfc0, the same table sprite_list/init_barter_ui sets up)
    instead of dropping it. DAT_00202948/DAT_002020c4's own exact
@@ -194,7 +194,7 @@ intptr_t param_1;
           else {
             *piVar4 = (intptr_t)puVar9;
             decrement_cursor_hide_depth();
-            FUN_00057c5c(*puVar9 & 0x1ff);
+            push_cursor_icon(*puVar9 & 0x1ff);
             DAT_002020c4 = 1;
             cursor_show_idle_tick();
             debug_noop_checkpoint();
@@ -269,7 +269,7 @@ intptr_t param_1;
         else {
           *piVar3 = (intptr_t)puVar9;
           decrement_cursor_hide_depth();
-          FUN_00057c5c(*puVar9 & 0x1ff);
+          push_cursor_icon(*puVar9 & 0x1ff);
           DAT_002020c4 = 1;
           cursor_show_idle_tick();
           debug_noop_checkpoint();
@@ -4275,7 +4275,7 @@ int param_4;
   (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
 LAB_0001bec8:
   if ((bVar7) && (g_selected_object == 0)) {
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
     g_cursor_holding_state = 0;
   }
   return;
@@ -4438,12 +4438,12 @@ int param_3;
     }
     decrement_cursor_hide_depth();
     if (bVar3) {
-      FUN_00057cac(0);
+      pop_cursor_icon(0);
     }
     /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
        own identical fix comment (g_selected_object is `char *`, a
        single signed byte; the real 9-bit objid needs a `ushort` read). */
-    FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
+    push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
     cursor_show_idle_tick();
     debug_noop_checkpoint();
   }

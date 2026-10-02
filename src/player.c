@@ -2990,7 +2990,7 @@ void handle_starvation_penalty()
     else if (g_cursor_holding_state != 2) goto LAB_00072374;
     g_cursor_holding_state = 0;
     g_selected_object = 0;
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
   }
 LAB_00072374:
   uVar5 = Ordinal_1053();
@@ -3635,14 +3635,14 @@ void reset_player_for_resurrection()
   unready_weapon();
   DAT_000868d8 = 2;
   if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
-    FUN_00057cac(3);
+    pop_cursor_icon(3);
   }
   g_cursor_mode = 0;
   DAT_0024cfc8 = 0;
   DAT_002028d8 = 0;
   if (g_cursor_holding_state != 0) {
     if (g_cursor_holding_state < 4) {
-      FUN_00057cac(3);
+      pop_cursor_icon(3);
       g_selected_object = 0;
       g_cursor_holding_state = 0;
     }

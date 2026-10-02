@@ -433,7 +433,7 @@ short param_1;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar6;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar6 >> 8);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
-        FUN_00057cac(3);
+        pop_cursor_icon(3);
       }
       iVar7 = (iVar7 + 1) * 0x10000;
       iVar1 = iVar7 >> 0x10;
@@ -484,7 +484,7 @@ short param_1;
       }
       wait_for_click_release(1);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
-        FUN_00057c5c(0x1077);
+        push_cursor_icon(0x1077);
       }
     }
   }
@@ -532,7 +532,7 @@ short param_1;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar4;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar4 >> 8);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
-        FUN_00057cac(3);
+        pop_cursor_icon(3);
       }
       iVar5 = (iVar5 + 1) * 0x10000;
       iVar1 = iVar5 >> 0x10;
@@ -554,7 +554,7 @@ short param_1;
       }
       wait_for_click_release(1);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
-        FUN_00057c5c(0x1077);
+        push_cursor_icon(0x1077);
       }
     }
   }
@@ -3675,7 +3675,7 @@ void init_msg_scroll_panel()
 
 
 // was FUN_0007f094 -- checks whether the mouse cursor is currently
-// over the active message-scroll panel's rect (via FUN_00057d1c, not
+// over the active message-scroll panel's rect (via is_position_within_rect, not
 // yet named -- a point-in-rect hit test with a cursor-size margin,
 // confirmed by its own body testing g_mouse_x/g_mouse_y), storing the
 // hit/miss result in the shared DAT_00250708 flag other panel code
@@ -3683,7 +3683,7 @@ void init_msg_scroll_panel()
 void check_mouse_over_msg_scroll_panel()
 
 {
-  DAT_00250708 = FUN_00057d1c((int)DAT_00250704[2],(int)DAT_00250704[1],(int)DAT_00250704[3],
+  DAT_00250708 = is_position_within_rect((int)DAT_00250704[2],(int)DAT_00250704[1],(int)DAT_00250704[3],
                               (int)*DAT_00250704);
   return;
 }
@@ -5743,7 +5743,7 @@ undefined4 init_cursor_subsystem()
   DAT_0020483c = DAT_0020471c + 0x16;
   DAT_002047dc = DAT_0020471c + 0xdf;
   DAT_002047d8 = DAT_0020471c + 0x83;
-  FUN_00057dc0(0x106c);
+  set_cursor_sprite_id(0x106c);
   DAT_000889b8 = grtile_alloc_registered(0x28,0x28);
   if (DAT_000889b8 == 0) {
     uVar1 = 0xffffffff;
@@ -5855,7 +5855,7 @@ undefined4 cursor_show_idle_tick()
   /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, same as
      draw_idle_mouse_cursor's own deviation comment): 0x106c is the real,
      validly-loadable "default/no specific hotspot" cursor sprite (see
-     FUN_00057dc0), and the real binary deliberately suppresses drawing
+     set_cursor_sprite_id), and the real binary deliberately suppresses drawing
      THIS SPECIFIC sprite -- i.e. no persistent cursor over the plain
      3D viewport/background, only over registered UI hotspots that set
      their own distinct icon -- a touchscreen-native choice (no need to
@@ -5941,12 +5941,12 @@ undefined2 param_4;
 
 
 // was FUN_000571c0 -- tests whether the mouse is within the tracked
-// hotspot rect (via FUN_00057d1c's cursor-margin-aware hit test).
-// BUG FIX: was `FUN_00057d1c(...); return 0;` -- the call's result
+// hotspot rect (via is_position_within_rect's cursor-margin-aware hit test).
+// BUG FIX: was `is_position_within_rect(...); return 0;` -- the call's result
 // was computed and discarded, then a hardcoded 0 returned instead,
 // the same "Ghidra couldn't trace a return value through the call
 // and fabricated a placeholder" bug already fixed once this session
-// (get_scanned_object_class_effect_ptr). FUN_00057d1c's own return
+// (get_scanned_object_class_effect_ptr). is_position_within_rect's own return
 // type is `undefined4`, not void, and its body is a real 0/1 hit
 // test -- confirmed by its only other caller treating a nonzero
 // result as "fire the ranged weapon" (weapon_swing.c), a check that
@@ -5956,7 +5956,7 @@ undefined4 is_mouse_within_tracked_hotspot()
 {
   undefined4 uVar1;
 
-  uVar1 = FUN_00057d1c((int)DAT_0020479c,(int)DAT_002047a0,
+  uVar1 = is_position_within_rect((int)DAT_0020479c,(int)DAT_002047a0,
                ((int)DAT_00204798 + (int)DAT_0020479c) * 0x10000 >> 0x10,
                ((int)DAT_00204790 + (int)DAT_002047a0) * 0x10000 >> 0x10);
   return uVar1;
@@ -6209,4 +6209,248 @@ int param_1;
     }
   }
   return iVar4;
+}
+
+
+// was FUN_00057a80 -- looks up which on-screen-keyboard key was
+// touched at (param_1,param_2), confirmed by DAT_00087650's own
+// existing comment describing this exact [row+column*20] indexing
+// scheme (a real static hit-grid recovered byte-for-byte from UU.exe
+// for the chargen name-entry keyboard).
+int lookup_onscreen_keyboard_key_hit(param_1,param_2)
+short param_1;
+short param_2;
+
+{
+  int iVar1;
+  short sVar2;
+  
+  iVar1 = (int)param_1;
+  if (iVar1 < 0) {
+    iVar1 = iVar1 + 0xf;
+  }
+  sVar2 = (short)(iVar1 >> 4);
+  iVar1 = Ordinal_2005(0x14,param_2 + -200);
+  if (0 < iVar1) {
+    sVar2 = (short)iVar1 * 0x14 + sVar2;
+  }
+  return (int)(char)(&DAT_00087650)[sVar2];
+}
+
+
+
+// was FUN_00057af0 -- registers a cursor hotspot rectangle
+// (x1=param_1, y1=param_2, x2=param_3, y2=param_4, tag id=param_5)
+// into the 20-slot DAT_002047b0 parallel-array table, returning its
+// slot index or -1 if full. Confirmed by input.c registering exactly
+// 8 of these for the on-screen keyboard's directional/action regions.
+int register_cursor_hotspot(param_1,param_2,param_3,param_4,param_5)
+undefined2 param_1;
+undefined2 param_2;
+undefined2 param_3;
+undefined2 param_4;
+undefined2 param_5;
+
+{
+  int iVar1;
+  int iVar2;
+  
+  iVar2 = 0;
+  do {
+    if ((&DAT_002047b0)[iVar2] == 10000) break;
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 0x14);
+  iVar1 = (int)(short)iVar2;
+  if (iVar1 == 0x14) {
+    iVar2 = -1;
+  }
+  else {
+    (&DAT_002047b0)[iVar1] = param_1;
+    (&DAT_00204808)[iVar1] = param_3;
+    (&DAT_002047e0)[iVar1] = param_4;
+    (&DAT_00204750)[iVar1] = param_2;
+    *(undefined2 *)(&DAT_00204720 + iVar1 * 2) = param_5;
+    if (DAT_00204854 <= iVar1) {
+      DAT_00204854 = (short)iVar2 + 1;
+    }
+    FUN_00057e54();
+  }
+  return iVar2;
+}
+
+
+
+// was FUN_00057bb0 -- unregisters cursor hotspot slot param_1
+// (register_cursor_hotspot's counterpart), clearing its sentinel and
+// compacting the active-slot count if it was the last one.
+void unregister_cursor_hotspot(param_1)
+short param_1;
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  
+  iVar3 = (int)DAT_00204854;
+  iVar1 = (int)DAT_00204854;
+  iVar2 = (int)param_1;
+  if (iVar2 < iVar1) {
+    (&DAT_002047b0)[iVar2] = 10000;
+    if (*(short *)(&DAT_00204720 + iVar2 * 2) == DAT_00204788) {
+      DAT_00086970 = 10000;
+    }
+    if (iVar2 == iVar1 + -1) {
+      iVar3 = iVar3 + -2;
+      iVar1 = iVar3 * 0x10000 >> 0x10;
+      while ((-1 < iVar1 && ((&DAT_002047b0)[iVar1] == 10000))) {
+        iVar3 = (iVar1 + -1) * 0x10000 >> 0x10;
+        iVar1 = iVar3;
+      }
+      DAT_00204854 = (short)iVar3 + 1;
+    }
+    FUN_00057e54();
+  }
+  return;
+}
+
+
+
+// was FUN_00057c5c -- pushes cursor sprite param_1 onto a small
+// (max 3-deep) cursor-icon stack and makes it active, confirmed by
+// its ubiquitous use alongside pop_cursor_icon across nearly every
+// UI subsystem to show a context-specific cursor (e.g. a targeting
+// reticle) temporarily.
+void push_cursor_icon(param_1)
+undefined4 param_1;
+
+{
+  int iVar1;
+  
+  if (DAT_00204858 != '\x03') {
+    decrement_cursor_hide_depth();
+    iVar1 = (int)DAT_00204858;
+    DAT_00204858 = DAT_00204858 + '\x01';
+    (&DAT_00204714)[iVar1] = DAT_00204704;
+    set_cursor_sprite_id(param_1);
+    cursor_show_idle_tick();
+  }
+  return;
+}
+
+
+
+// was FUN_00057cac -- pops the cursor-icon stack (push_cursor_icon's
+// counterpart), restoring the previous sprite (or the default 0x106c
+// if the stack is empty). param_1's low bits optionally gate the
+// cursor-hide-depth pop/idle-tick pair around the restore.
+void pop_cursor_icon(param_1)
+ushort param_1;
+
+{
+  int iVar1;
+  
+  if ((param_1 & 1) != 0) {
+    decrement_cursor_hide_depth();
+  }
+  iVar1 = (int)DAT_00204858;
+  DAT_00204858 = (char)(iVar1 + -1);
+  if ((iVar1 + -1) * 0x1000000 >> 0x18 < 0) {
+    DAT_00204714 = 0x106c;
+    DAT_00204858 = '\0';
+  }
+  set_cursor_sprite_id((int)(short)(&DAT_00204714)[DAT_00204858]);
+  FUN_00057e54();
+  if ((param_1 & 2) != 0) {
+    cursor_show_idle_tick();
+  }
+  return;
+}
+
+
+
+// was FUN_00057d1c -- tests whether the mouse is within rect
+// (param_1,param_2)-(param_3,param_4), inset by half the cursor's
+// own dimensions on each axis (so the cursor's hotspot, not just its
+// top-left corner, must overlap). Confirmed as a generic hit test by
+// its two callers: is_mouse_within_tracked_hotspot (the tracked
+// hotspot rect) and a hud.c hover check against the active message-
+// scroll panel's rect.
+undefined4 is_position_within_rect(param_1,param_2,param_3,param_4)
+short param_1;
+short param_2;
+short param_3;
+short param_4;
+
+{
+  int iVar1;
+  
+  iVar1 = (int)(short)(DAT_002047a4 + 1 >> 1);
+  if ((iVar1 + param_2 <= (int)g_mouse_y) && ((int)g_mouse_y <= param_4 - iVar1)) {
+    iVar1 = (int)(short)(DAT_00204784 + 1 >> 1);
+    if ((param_1 - iVar1 <= (int)g_mouse_x) && ((int)g_mouse_x <= iVar1 + param_3)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+
+// WARNING: Removing unreachable block (ram,0x00057df0)
+// WARNING: Removing unreachable block (ram,0x00057e24)
+
+// was FUN_00057dc0 -- sets the active cursor sprite to resource id
+// param_1, resolving it to its sprite frame/dimensions (lookup_grtile_by_id
+// or a direct g_grtile_registry lookup for already-resident high ids).
+// Confirmed called by push_cursor_icon/pop_cursor_icon to actually
+// apply the cursor change.
+void set_cursor_sprite_id(param_1)
+undefined4 param_1;
+
+{
+  /* lookup_grtile_by_id's argument is dropped by Ghidra at this call site;
+     forwarding param_1 matches the resolve_sprite_id_to_frame(param_1) call right
+     above it and lookup_grtile_by_id's own g_grtile_registry-indexed-by-id shape. */
+  char *iVar1;
+
+  FUN_00056fe8();
+  resolve_sprite_id_to_frame(param_1);
+  /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id
+     only covers ids below DAT_00202738 (the "still-compressed .GR
+     resource entry, needs decoding" range); ids at or above it are
+     already-resident raw sprites living directly in g_grtile_registry's own
+     table (see blit_object_sprite_by_frame's own identical branch,
+     which this function was missing). For those higher ids
+     lookup_grtile_by_id's own table lookup misses (a *different* resource's
+     entries live there) and falls back to its zeroed dummy glyph,
+     silently handing back width=height=0 here. First found while
+     chasing a user report of several items (a map, a bag, apple,
+     bread) showing the wrong cursor icon or none at all when picked
+     up -- the real cause of THAT turned out to be a separate bug
+     (g_selected_object's own sign-extension, see
+     swap_cursor_and_slot_item's fix comment) that was corrupting
+     these objects' ids into the >= DAT_00202738 range in the first
+     place; with that fixed these particular items no longer reach
+     this branch at all. Kept anyway since it's a real, independently
+     confirmed divergence from blit_object_sprite_by_frame's own
+     already-correct behavior, for whatever legitimately-high-id items
+     do reach here. */
+  iVar1 = (int)(short)param_1 < (int)(uint)DAT_00202738 ?
+          lookup_grtile_by_id(param_1) : (char *)g_grtile_registry[(int)(short)param_1];
+  if (iVar1 == (char *)0x0) {
+    /* Same "table slot never populated" fallback as
+       blit_object_sprite_by_frame's own identical guard. */
+    static char dummy_sprite[8];
+    iVar1 = dummy_sprite;
+  }
+  DAT_00204784 = (ushort)*(byte *)(iVar1 + 1);
+  DAT_002047a4 = (ushort)*(byte *)(iVar1 + 2);
+  DAT_00204704 = (undefined2)param_1;
+  DAT_0020471c = ((short)(ushort)*(byte *)(iVar1 + 1) >> 1) + -1;
+  DAT_00204748 = (short)(ushort)*(byte *)(iVar1 + 2) >> 1;
+  DAT_00204788 = DAT_00204704;
+  if (DAT_00204844 != 0) {
+    FUN_000584c0();
+  }
+  return;
 }
