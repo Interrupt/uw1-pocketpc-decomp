@@ -3040,13 +3040,13 @@ LAB_0004eb28:
         *(char *)(iVar7 + 0x13) = (char)((uint)uVar5 >> 0x18);
         break;
       case 3:
-        FUN_0004ee60(param_1,iVar10);
+        apply_mod_tone_portamento(param_1,iVar10);
         break;
       case 4:
         FUN_0004f0ac(param_1,iVar10);
         break;
       case 5:
-        FUN_0004ee60(param_1,iVar10);
+        apply_mod_tone_portamento(param_1,iVar10);
         goto LAB_0004eb74;
       case 6:
         FUN_0004f0ac(param_1,iVar10);
@@ -3173,5 +3173,64 @@ int param_3;
   *(char *)(iVar2 + 0x15) = (char)((uint)iVar1 >> 8);
   *(char *)(iVar2 + 0x16) = (char)((uint)iVar1 >> 0x10);
   *(char *)(iVar2 + 0x17) = (char)((uint)iVar1 >> 0x18);
+  return;
+}
+
+
+// was FUN_0004ee60 -- applies the MOD tracker's "tone portamento"
+// effect to channel param_2: slides its current period (+0xc) toward
+// a target period (+0x1c) by one step (+0x20), clamping once the
+// target is reached, then recomputes the channel's playback frequency
+// from the updated period.
+void apply_mod_tone_portamento(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  int *piVar3;
+  int *piVar4;
+  int iVar5;
+  
+  piVar4 = (int *)(param_1 + 0x10524);
+  param_2 = param_2 * 0x40;
+  iVar1 = param_2 + *piVar4;
+  piVar3 = (int *)(iVar1 + 0xc);
+  if (*piVar3 < *(int *)(iVar1 + 0x1c)) {
+    iVar5 = *(int *)(iVar1 + 0x20) + CONCAT13(*(undefined1 *)(iVar1 + 0xf),*(undefined3 *)piVar3);
+    *(char *)piVar3 = (char)iVar5;
+    *(char *)(iVar1 + 0xd) = (char)((uint)iVar5 >> 8);
+    *(char *)(iVar1 + 0xe) = (char)((uint)iVar5 >> 0x10);
+    *(char *)(iVar1 + 0xf) = (char)((uint)iVar5 >> 0x18);
+    iVar5 = *piVar4;
+    iVar1 = *(int *)(param_2 + iVar5 + 0x1c);
+    if (*(int *)(param_2 + iVar5 + 0xc) <= iVar1) goto LAB_0004f030;
+  }
+  else {
+    if (*piVar3 <= *(int *)(iVar1 + 0x1c)) goto LAB_0004f030;
+    iVar5 = *(int *)(iVar1 + 0xc) - *(int *)(iVar1 + 0x20);
+    *(char *)(iVar1 + 0xc) = (char)iVar5;
+    *(char *)(iVar1 + 0xd) = (char)((uint)iVar5 >> 8);
+    *(char *)(iVar1 + 0xe) = (char)((uint)iVar5 >> 0x10);
+    *(char *)(iVar1 + 0xf) = (char)((uint)iVar5 >> 0x18);
+    iVar5 = *piVar4;
+    iVar1 = *(int *)(param_2 + iVar5 + 0x1c);
+    if (iVar1 <= *(int *)(param_2 + iVar5 + 0xc)) goto LAB_0004f030;
+  }
+  iVar5 = param_2 + iVar5;
+  *(char *)(iVar5 + 0xc) = (char)iVar1;
+  *(char *)(iVar5 + 0xd) = (char)((uint)iVar1 >> 8);
+  *(char *)(iVar5 + 0xe) = (char)((uint)iVar1 >> 0x10);
+  *(char *)(iVar5 + 0xf) = (char)((uint)iVar1 >> 0x18);
+LAB_0004f030:
+  iVar1 = *piVar4;
+  uVar2 = Ordinal_2032(*(undefined4 *)(param_2 + iVar1 + 0xc));
+  uVar2 = Ordinal_2047(0x4a5a7a65,uVar2);
+  param_2 = param_2 + iVar1;
+  *(char *)(param_2 + 0x10) = (char)uVar2;
+  *(char *)(param_2 + 0x11) = (char)((uint)uVar2 >> 8);
+  *(char *)(param_2 + 0x12) = (char)((uint)uVar2 >> 0x10);
+  *(char *)(param_2 + 0x13) = (char)((uint)uVar2 >> 0x18);
   return;
 }

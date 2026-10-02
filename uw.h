@@ -3405,7 +3405,7 @@ undefined4 mix_mod_channels_to_buffer();
 void apply_mod_tracker_tick_effects();
 void mod_player_wave_out_callback();
 void adjust_mod_channel_volume();
-void FUN_0004ee60();
+void apply_mod_tone_portamento();
 void FUN_0004f0ac();
 void FUN_0004f2f0();
 void FUN_0004f4ec();
