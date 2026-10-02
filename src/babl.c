@@ -2200,7 +2200,7 @@ void FUN_000286cc()
     DAT_00100678 = g_active_hud_panel;
     g_active_hud_panel = 0;
     DAT_00085c54 = 0;
-    FUN_00046414();
+    init_inventory_panel_hotspots();
     refresh_equipment_display_if_visible();
     DAT_00085c54 = 1;
     select_msg_scroll_mode_2();

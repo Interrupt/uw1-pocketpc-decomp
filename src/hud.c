@@ -297,7 +297,7 @@ void enter_dungeon_view_hud_init()
 
 {
   debug_print(s_init_gamedisp_goes_000858e8);
-  FUN_00046414();
+  init_inventory_panel_hotspots();
   init_msg_scroll_panel();
   resume_music_playback();
   register_stats_panel_click_regions();
@@ -4821,5 +4821,74 @@ void reload_paperdoll_body_sprite()
     *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 6);
+  return;
+}
+
+
+// was FUN_00046414 -- one-time inventory-panel setup (guarded by
+// DAT_002029a4), called from enter_dungeon_view_hud_init alongside
+// register_stats_panel_click_regions: reloads the paperdoll body
+// sprite, allocates a grtile per inventory hotspot region (paperdoll
+// slots, flask/compass icons) and captures the framebuffer into them
+// as the initial "undecorated" backdrop for dirty-rect restoration,
+// then registers the inventory panel's click region.
+void init_inventory_panel_hotspots()
+
+{
+  undefined4 uVar1;
+  undefined1 *puVar2;
+  int iVar3;
+  uint uVar4;
+  int iVar5;
+
+  if (DAT_002029a4 == 0) {
+    DAT_002029a4 = 1;
+    g_blit_transparent_mode = 1;
+    reload_paperdoll_body_sprite();
+    iVar5 = 6;
+    do {
+      uVar1 = grtile_alloc_registered((&g_inv_hotspot_dirty_w)[iVar5 * 0xe],
+                           (uint)(byte)(&g_inv_hotspot_dirty_h)[iVar5 * 0xe] << 1);
+      (&DAT_002028e8)[iVar5] = uVar1;
+      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
+    } while (iVar5 < 0x17);
+    DAT_002028e8 = grtile_alloc_registered(0x10,0x14);
+    DAT_002028ec = grtile_alloc_registered(0x54,0x52);
+    iVar5 = 6;
+    do {
+      /* iVar5==10/11 were hardcoded original-binary literal addresses
+         (0x85b5c/0x85b6a, plus the standalone DAT_00085b64/DAT_00085b72
+         symbols) instead of the same &g_inv_hotspot_click_x1/&g_inv_hotspot_draw_x +
+         iVar5*stride expression every other iteration already uses --
+         same "hardcoded address" bug class as probe_save_slots's -0x87020.
+         Confirmed identical by address arithmetic (0x85ad0 + 10*0xe =
+         0x85b5c, 0x85ad8 + 10*7 shorts = 0x85b64, etc.); rewritten to the
+         general form so these two icons resolve against our recompiled
+         symbols instead of the original binary's fixed layout. The
+         +5/-5 adjustments are the only real difference from the general
+         case and are kept as-is. */
+      if (iVar5 == 10) {
+        puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
+        iVar3 = (&g_inv_hotspot_draw_x)[iVar5 * 7] + 5;
+LAB_000464c8:
+        uVar4 = (byte)puVar2[0xc] - 5;
+      }
+      else {
+        if (iVar5 == 0xb) {
+          puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
+          iVar3 = (&g_inv_hotspot_draw_x)[iVar5 * 7];
+          goto LAB_000464c8;
+        }
+        puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
+        iVar3 = (int)(short)(&g_inv_hotspot_draw_x)[iVar5 * 7];
+        uVar4 = (uint)(byte)(&g_inv_hotspot_dirty_w)[iVar5 * 0xe];
+      }
+      capture_framebuffer_rect_to_grtile((&DAT_002028e8)[iVar5],iVar3,(int)*(short *)(puVar2 + 10),uVar4,puVar2[0xd]);
+      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
+    } while (iVar5 < 0x17);
+    capture_framebuffer_rect_to_grtile(DAT_002028ec,0xec,0x51,0x54,0x29);
+    capture_framebuffer_rect_to_grtile(DAT_002028e8,299,0x3b,0x10,10);
+    DAT_00202998 = register_click_region(0xf0,0x76,0x13b,0xb,0,5,inventory_panel_click_region);
+  }
   return;
 }

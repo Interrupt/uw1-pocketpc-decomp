@@ -3366,7 +3366,7 @@ char *g_open_container_list;
    DAT_0024bfa0/DAT_000891b0 etc.), and it happened to corrupt whatever
    real global the linker/compiler placed a few slots further along --
    confirmed via an lldb watchpoint that this exact write
-   (`(&DAT_002028e8)[iVar5] = uVar1` in FUN_00046414, a sibling of this
+   (`(&DAT_002028e8)[iVar5] = uVar1` in init_inventory_panel_hotspots, a sibling of this
    same bug one array over) was clobbering g_selected_object (a real, load-
    bearing `char *`), corrupting an equipped-item lookup and crashing
    refresh_player_equipment_effects on the very first in-game frame. Widened with a safety
@@ -3374,7 +3374,7 @@ char *g_open_container_list;
  undefined4 DAT_002028a0_backing[64];
 #define DAT_002028a0 DAT_002028a0_backing[0]
 /* Same bug: indexed as `(&DAT_002028e8)[i]` for i up to 0x16 (22) in
-   FUN_00046414/free_open_container_chain/etc. -- this is the specific array whose
+   init_inventory_panel_hotspots/free_open_container_chain/etc. -- this is the specific array whose
    overflow was landing on and corrupting g_selected_object (see above).
    Widened with a safety margin. */
  undefined4 DAT_002028e8_backing[64];
@@ -12076,66 +12076,6 @@ ushort param_5;
 
 
 
-void FUN_00046414()
-
-{
-  undefined4 uVar1;
-  undefined1 *puVar2;
-  int iVar3;
-  uint uVar4;
-  int iVar5;
-  
-  if (DAT_002029a4 == 0) {
-    DAT_002029a4 = 1;
-    g_blit_transparent_mode = 1;
-    reload_paperdoll_body_sprite();
-    iVar5 = 6;
-    do {
-      uVar1 = grtile_alloc_registered((&g_inv_hotspot_dirty_w)[iVar5 * 0xe],
-                           (uint)(byte)(&g_inv_hotspot_dirty_h)[iVar5 * 0xe] << 1);
-      (&DAT_002028e8)[iVar5] = uVar1;
-      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
-    } while (iVar5 < 0x17);
-    DAT_002028e8 = grtile_alloc_registered(0x10,0x14);
-    DAT_002028ec = grtile_alloc_registered(0x54,0x52);
-    iVar5 = 6;
-    do {
-      /* iVar5==10/11 were hardcoded original-binary literal addresses
-         (0x85b5c/0x85b6a, plus the standalone DAT_00085b64/DAT_00085b72
-         symbols) instead of the same &g_inv_hotspot_click_x1/&g_inv_hotspot_draw_x +
-         iVar5*stride expression every other iteration already uses --
-         same "hardcoded address" bug class as probe_save_slots's -0x87020.
-         Confirmed identical by address arithmetic (0x85ad0 + 10*0xe =
-         0x85b5c, 0x85ad8 + 10*7 shorts = 0x85b64, etc.); rewritten to the
-         general form so these two icons resolve against our recompiled
-         symbols instead of the original binary's fixed layout. The
-         +5/-5 adjustments are the only real difference from the general
-         case and are kept as-is. */
-      if (iVar5 == 10) {
-        puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
-        iVar3 = (&g_inv_hotspot_draw_x)[iVar5 * 7] + 5;
-LAB_000464c8:
-        uVar4 = (byte)puVar2[0xc] - 5;
-      }
-      else {
-        if (iVar5 == 0xb) {
-          puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
-          iVar3 = (&g_inv_hotspot_draw_x)[iVar5 * 7];
-          goto LAB_000464c8;
-        }
-        puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
-        iVar3 = (int)(short)(&g_inv_hotspot_draw_x)[iVar5 * 7];
-        uVar4 = (uint)(byte)(&g_inv_hotspot_dirty_w)[iVar5 * 0xe];
-      }
-      capture_framebuffer_rect_to_grtile((&DAT_002028e8)[iVar5],iVar3,(int)*(short *)(puVar2 + 10),uVar4,puVar2[0xd]);
-      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
-    } while (iVar5 < 0x17);
-    capture_framebuffer_rect_to_grtile(DAT_002028ec,0xec,0x51,0x54,0x29);
-    capture_framebuffer_rect_to_grtile(DAT_002028e8,299,0x3b,0x10,10);
-    DAT_00202998 = register_click_region(0xf0,0x76,0x13b,0xb,0,5,inventory_panel_click_region);
-  }
-  return;
-}
 
 
 
