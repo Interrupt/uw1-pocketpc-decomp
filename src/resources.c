@@ -2417,3 +2417,117 @@ undefined4 param_1;
   read_file_handle(param_1,&g_food_effect_table,0x10);
   return;
 }
+
+
+void *gr_resource_bump_alloc_entry(param_1)
+unsigned int param_1;
+
+{
+  /* Ghidra couldn't resolve this address into a proper function (an
+     indirect-jump/jumptable target it gave up on). Traced from its use in
+     load_gr_resource_entries: called as (*param_4)(itemByteSize) and the result is
+     used as the destination buffer for reading that item's data, then
+     passed on to the post-process callback -- i.e. an allocator. A no-op
+     stub returning 0 here made load_gr_resource_entries treat every real resource
+     load as a failure (the batch-AND check in load_startup_gr_resources), even though
+     the underlying file read succeeded. */
+  return Ordinal_1041(param_1);
+}
+/* load_gr_resource_entries's post-process callback: (decoded_buffer, byte_size,
+   entry_index). Ghidra lost the real body (indirect-jump target); the old
+   no-op stub read every .GR file but never REGISTERED the loaded buffers,
+   so lookup_grtile_by_id's g_grtile_registry[] pointer table stayed empty for every
+   resource loaded through here (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/
+   3DWIN/OBJECTS/TMFLAT/TMOBJ). Only register_grtile_entry (flasks/compass/...) was
+   a real registrar. Register the buffer the same way register_grtile_entry does:
+   at g_grtile_registry[base + entry_index]. */
+#define UW_DAT_0024E090_SLOTS (sizeof(g_grtile_registry) / sizeof(g_grtile_registry[0]))
+static void uw_register_gr_entry(unsigned base, void *buf, int idx)
+{
+  unsigned slot = base + (unsigned)idx;
+  if (slot < UW_DAT_0024E090_SLOTS) {
+    g_grtile_registry[slot] = buf;
+  }
+}
+undefined4 register_gr_group_entry(void *buf, unsigned size, int idx)
+{
+  /* Caller load_gr_resource_group loads at the running cursor DAT_00202744 and
+     advances it by the file's entry count afterwards. */
+  (void)size;
+  uw_register_gr_entry((unsigned)DAT_00202744, buf, idx);
+  return 1;
+}
+undefined4 register_objects_gr_entry(void *buf, unsigned size, int idx)
+{
+  /* Caller load_objects_gr (OBJECTS.GR) -- does not advance the cursor; the
+     next file resets DAT_00202744 to 0x1c0, so OBJECTS.GR occupies the
+     absolute [0, entry_count) range (frame N == object type N). */
+  (void)size;
+  uw_register_gr_entry(0, buf, idx);
+  return 1;
+}
+// was LAB_00041670
+undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx)
+{
+  /* Caller load_tmflat_gr (TMFLAT.GR) with a fixed id base stashed in
+     DAT_000859a8 (0x170). Real ARM (0x41670): registers each entry at
+     the running cursor DAT_00202744 and ADVANCES the cursor by one,
+     recording DAT_0024d090[(0x170+idx)*4] = frame as the object-id ->
+     frame remap. So TMFLAT occupies DAT_00202734..+0xf and TMOBJ
+     starts at DAT_00202734+0x10 -- the "+0x10" in emit_catalog_object's
+     per-instance frame formula. This used to register only at the id
+     alias and never advance the cursor, placing TMOBJ 16 frames early
+     so every "+DAT_00202734" / "+DAT_00202734+0x10" TMFLAT/TMOBJ frame
+     read landed on the wrong image (lever/pull-chain/sign/bridge).
+     The id alias (0x170+idx) is kept because this port resolves object
+     ids to frames as the identity (resolve_sprite_id_to_frame never
+     consults the remap). */
+  (void)size;
+  uw_register_gr_entry((unsigned)DAT_000859a8, buf, idx);
+  uw_register_gr_entry((unsigned)DAT_00202744, buf, 0);
+  DAT_00202744 = DAT_00202744 + 1;
+  return 1;
+}
+void *hud_icon_gr_bump_alloc_entry(param_1)
+unsigned int param_1;
+
+{
+  /* Allocator callback, same role as gr_resource_bump_alloc_entry -- see there. Used by
+     load_hud_icon_gr/reload_single_grtile_entry (flasks/compass/dragons/power/chains/
+     spells/scrledge and friends). */
+  return Ordinal_1041(param_1);
+}
+void *decode_gr_entry_bump_alloc_entry(param_1)
+unsigned int param_1;
+
+{
+  /* Allocator callback, same role as gr_resource_bump_alloc_entry -- see there. Used by
+     decode_gr_entry_to_buffer, which passes no post-process callback (param_5 == 0). */
+  return Ordinal_1041(param_1);
+}
+/* Not decompiled -- decode_gr_entry_to_buffer's post-process callback. Ghidra never
+   recovered a real one here (it hardcoded param_5=0, "no callback"),
+   but that leaves load_gr_resource_entries's freshly-decoded buffer
+   completely unreachable: it's malloc'd fresh by decode_gr_entry_bump_alloc_entry, never
+   registered anywhere (unlike every sibling load_gr_resource_entries
+   call site, which DOES pass a real post-process callback to register
+   its buffer into g_grtile_registry[] -- see register_gr_group_entry/register_objects_gr_entry/
+   register_tmflat_gr_entry), and then simply discarded once load_gr_resource_entries's
+   loop moves on. Confirmed live: begin_hud_panel_flip's decode calls reported
+   success while leaving their destination grtile buffer entirely
+   zeroed (0/9462 nonzero bytes), which is exactly what "decode
+   succeeds but the caller's buffer is never touched" looks like. Since
+   decode_gr_entry_to_buffer stashes its REAL destination in DAT_00202510 (see that
+   global's own comment) specifically to route around the missing
+   callback, the callback this decode always needed is simply "copy the
+   decoded bytes there" -- same leak-the-temporary-allocation posture
+   as Ordinal_1018's own documented precedent (freeing a possibly-
+   garbage pointer is worse than a short-lived leak). */
+unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx)
+{
+  (void)idx;
+  if (DAT_00202510 != 0) {
+    memcpy(DAT_00202510, buf, size);
+  }
+  return 1;
+}
