@@ -4627,7 +4627,7 @@ void print_not_a_spell_message()
 
 // was FUN_00044bd8 -- light-source icon click handler on the stats
 // panel: a normal click cycles the active light source
-// (FUN_00053ab0, not yet named) and refreshes equipment effects on a
+// (cycle_active_light_source, not yet named) and refreshes equipment effects on a
 // change; the DAT_00085a6c[3]&2 "look" modifier instead prints the
 // light source's name followed by a fuel-remaining description
 // (print_scroll_message_by_id, ranges by remaining-fuel byte
@@ -4645,7 +4645,7 @@ void handle_light_source_click()
     local_10 = (short)iVar2;
     if (iVar2 * 0x10000 >> 0x10 < (int)(*(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf)) {
       if ((DAT_00085a6c[3] & 2U) == 0) {
-        iVar2 = FUN_00053ab0(&local_10);
+        iVar2 = cycle_active_light_source(&local_10);
         if (iVar2 != 0) {
           refresh_player_equipment_effects();
         }

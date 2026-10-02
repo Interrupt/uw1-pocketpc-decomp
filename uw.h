@@ -1021,6 +1021,7 @@ extern undefined4 DAT_002020d8;
 extern undefined4 DAT_002020d4;
 extern int DAT_0023bc94;
 extern byte DAT_002046cc;
+extern byte DAT_002046d0;
 /* Globals defined in uw.c but also used by functions that now live in
    visibility.c (load_floor_texture_arenas) -- extern'd here so both
    translation units see the same storage. */
@@ -3523,8 +3524,8 @@ void active_mobile_list_remove();
 ushort *find_object_in_chain();
 undefined4 object_or_contents_has_type();
 int find_object_in_world();
-undefined4 FUN_00053ab0();
-void FUN_00053c74();
+undefined4 cycle_active_light_source();
+void update_player_tick_effects();
 undefined4 FUN_0005404c();
 void FUN_000541d0();
 undefined4 FUN_000542f8();
