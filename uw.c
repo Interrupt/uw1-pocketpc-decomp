@@ -1589,7 +1589,7 @@ ushort DAT_00100620;
 /* Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below,
    already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of
    a repeating 6-byte-stride per-candidate record in
-   collision_height_envelope/FUN_00051dd0's up-to-256-entry collision
+   collision_height_envelope/sort_collision_candidates's up-to-256-entry collision
    candidate list. Indexing past element 0 read/wrote whatever memory
    happened to follow this single byte in the link order -- confirmed via
    a real crash (a plain, non-debugger run walking toward a critter;
@@ -4128,10 +4128,8 @@ char DAT_00202c1c;
 #define DAT_00202c3b DAT_00202c3b_backing[0]
  undefined1 DAT_00202c3d_backing[8192];
 #define DAT_00202c3d DAT_00202c3d_backing[0]
-static undefined1 DAT_00202c3e_backing[8192];
-#define DAT_00202c3e DAT_00202c3e_backing[0]
-static undefined1 DAT_00202c3f_backing[8192];
-#define DAT_00202c3f DAT_00202c3f_backing[0]
+undefined1 DAT_00202c3e_backing[8192];
+undefined1 DAT_00202c3f_backing[8192];
 char s__DATA_comobj_dat_00086894[] = "\\DATA\\comobj.dat";
 char s__DATA_objects_dat_000868a8[] = "\\DATA\\objects.dat";
 undefined4 LAB_0007913c()
@@ -10087,7 +10085,7 @@ LAB_0003c940:
       local_3a = (undefined2)(iVar7 >> 5);
       local_38 = *(byte *)((char *)g_player_object + 2) & 0x7f;
       collision_height_envelope(0,0);
-      FUN_00051dd0();
+      sort_collision_candidates();
       iVar8 = (int)*(char *)(DAT_00202c6c + 0xb);
       iVar7 = (int)(short)*(char *)(DAT_00202c6c + 0xb);
       if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
@@ -13596,121 +13594,6 @@ switchD_000514e0_default:
 
 
 
-void FUN_00051cf8(param_1)
-uint param_1;
-
-{
-  undefined1 uVar1;
-  undefined1 uVar2;
-  undefined1 uVar3;
-  undefined1 uVar4;
-  undefined1 uVar5;
-  undefined1 uVar6;
-  int iVar7;
-  int iVar8;
-  
-  iVar7 = (param_1 & 0xff) * 6;
-  uVar1 = (&DAT_00202c38)[iVar7];
-  iVar8 = ((param_1 & 0xff) + 1) * 6;
-  uVar2 = (&DAT_00202c39)[iVar7];
-  uVar3 = (&DAT_00202c3a)[iVar7];
-  uVar4 = (&DAT_00202c3b)[iVar7];
-  uVar5 = (&DAT_00202c3c)[iVar7];
-  uVar6 = (&DAT_00202c3d)[iVar7];
-  (&DAT_00202c38)[iVar7] = (&DAT_00202c38)[iVar8];
-  (&DAT_00202c39)[iVar7] = (&DAT_00202c39)[iVar8];
-  (&DAT_00202c3a)[iVar7] = (&DAT_00202c3a)[iVar8];
-  (&DAT_00202c3b)[iVar7] = (&DAT_00202c3b)[iVar8];
-  (&DAT_00202c3c)[iVar7] = (&DAT_00202c3c)[iVar8];
-  (&DAT_00202c3d)[iVar7] = (&DAT_00202c3d)[iVar8];
-  (&DAT_00202c38)[iVar8] = uVar1;
-  (&DAT_00202c39)[iVar8] = uVar2;
-  (&DAT_00202c3a)[iVar8] = uVar3;
-  (&DAT_00202c3b)[iVar8] = uVar4;
-  (&DAT_00202c3c)[iVar8] = uVar5;
-  (&DAT_00202c3d)[iVar8] = uVar6;
-  return;
-}
-
-
-
-void FUN_00051dd0()
-
-{
-  char cVar1;
-  uint uVar2;
-  int iVar3;
-  int iVar4;
-  char *iVar5;
-  int iVar6;
-  int iVar7;
-  
-  iVar7 = 0;
-  cVar1 = *(char *)(DAT_00202c6c + 9);
-  uVar2 = (uint)*(byte *)(DAT_00202c6c + 0x14);
-  iVar5 = DAT_00202c6c;
-  if (uVar2 != 0) {
-    do {
-      for (iVar3 = uVar2 - 2; iVar3 = iVar3 * 0x1000000 >> 0x18, iVar7 <= iVar3; iVar3 = iVar3 + -1)
-      {
-        if ((byte)(&DAT_00202c3e)[iVar3 * 6] < (byte)(&DAT_00202c38)[iVar3 * 6]) {
-          /* Ghidra dropped the swap index argument: this is an insertion-
-             sort pass over up to 255 collision candidates, swapping the
-             pair at iVar3/iVar3+1 when out of order. Called with no
-             argument, FUN_00051cf8's param_1 read whatever garbage was
-             left in the argument register, swapping (and reading/
-             writing) an arbitrary 6-byte record pair instead of the
-             intended one -- the real data at iVar3 never actually got
-             sorted, so the loop's own termination condition kept
-             re-triggering: confirmed via `sample` showing 100% of a
-             hung process's time stuck in this exact function, walking
-             into an obstacle (e.g. standing next to a critter) near
-             tile (17,7). Also a wild write whenever the garbage index
-             landed outside the real ~255-entry table. */
-          FUN_00051cf8(iVar3);
-          iVar5 = DAT_00202c6c;
-        }
-      }
-      if (*(short *)(iVar5 + 4) < (short)(ushort)(byte)(&DAT_00202c38)[iVar7 * 6]) break;
-      uVar2 = (uint)*(byte *)(iVar5 + 0x14);
-      iVar7 = (iVar7 + 1) * 0x1000000 >> 0x18;
-    } while (iVar7 < (int)uVar2);
-  }
-  uVar2 = (uint)*(byte *)(iVar5 + 0x14);
-  iVar3 = (int)(char)iVar7;
-  iVar6 = iVar3;
-  if (iVar3 < (int)uVar2) {
-    do {
-      for (iVar4 = uVar2 - 2; iVar4 = iVar4 * 0x1000000 >> 0x18, iVar6 <= iVar4; iVar4 = iVar4 + -1)
-      {
-        if ((byte)(&DAT_00202c3f)[iVar4 * 6] < (byte)(&DAT_00202c39)[iVar4 * 6]) {
-          /* Same dropped-argument fix as the X-axis sort pass above --
-             this is the Y-axis pass, swap index is iVar4. */
-          FUN_00051cf8(iVar4);
-          iVar5 = DAT_00202c6c;
-        }
-      }
-      uVar2 = (uint)*(byte *)(iVar5 + 0x14);
-      iVar6 = (iVar6 + 1) * 0x1000000 >> 0x18;
-    } while (iVar6 < (int)uVar2);
-  }
-  *(char *)(iVar5 + 0x16) = (char)iVar7;
-  *(undefined1 *)(DAT_00202c6c + 0x15) = 0;
-  uVar2 = (uint)*(byte *)(DAT_00202c6c + 0x15);
-  iVar7 = uVar2 + iVar3;
-  if (iVar7 < (int)(uint)*(byte *)(DAT_00202c6c + 0x14)) {
-    do {
-      if ((int)((uint)*(byte *)(DAT_00202c6c + 9) + (int)*(short *)(DAT_00202c6c + 4) +
-               (int)(cVar1 == '\0')) <= (int)(uint)(byte)(&DAT_00202c39)[iVar7 * 6]) {
-        return;
-      }
-      *(char *)(DAT_00202c6c + 0x15) = (char)uVar2 + '\x01';
-      uVar2 = (uint)*(byte *)(DAT_00202c6c + 0x15);
-      iVar7 = uVar2 + iVar3;
-    } while (iVar7 < (int)(uint)*(byte *)(DAT_00202c6c + 0x14));
-  }
-  return;
-}
 
 
 
@@ -13798,7 +13681,7 @@ byte param_7;
        arena slot index, e.g. 1013) reinterpreted as a "how many collision
        candidates" count. Confirmed live (UW_DEBUG_DOOR, chasing "a door
        used a second time re-opens instead of closing"): with the bug, this
-       function walked FUN_00051dd0's candidate-sort loop believing there
+       function walked sort_collision_candidates's candidate-sort loop believing there
        were up to 255 real candidates (really just the slot index's own low
        byte), reading far out of bounds through DAT_00202c38/DAT_00202c39
        and returning an essentially arbitrary 0 or 1 that differed per
@@ -13846,7 +13729,7 @@ byte param_7;
       if (*(char *)(DAT_00202c6c + 0x14) != '\0') {
         iVar9 = -1;
         sVar7 = -1;
-        FUN_00051dd0();
+        sort_collision_candidates();
         if (*(char *)(DAT_00202c6c + 0x15) != '\0') {
           DAT_00202c6c = uVar2;
           return 0;
@@ -15511,7 +15394,7 @@ int param_4;
       iVar12 = 0;
     }
     collision_height_envelope(iVar12,1);
-    FUN_00051dd0();
+    sort_collision_candidates();
     DAT_00086998 = -1;
     if (((DAT_00202c6c[0x15] == '\0') && (iVar11 = (int)(char)DAT_00202c6c[0x16], 0 < iVar11)) &&
        (iVar11 <= (int)(uint)(byte)DAT_00202c6c[0x14])) {
@@ -17467,7 +17350,7 @@ LAB_0005a970:
   }
 LAB_0005ab5c:
   if ((DAT_00204870 != 0) && (bVar2)) {
-    FUN_00051dd0();
+    sort_collision_candidates();
     local_3c = local_3c & 0xfbff;
     if (DAT_002049dd != 0) {
       iVar6 = 0;

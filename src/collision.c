@@ -694,3 +694,132 @@ int param_5;
   }
   return;
 }
+
+
+// was FUN_00051cf8 -- swaps the 6-byte collision-candidate records at
+// index param_1 and param_1+1 across all six parallel arrays
+// (DAT_00202c38..3d). The swap step sort_collision_candidates' two
+// insertion-sort passes call.
+void swap_collision_candidates(param_1)
+uint param_1;
+
+{
+  undefined1 uVar1;
+  undefined1 uVar2;
+  undefined1 uVar3;
+  undefined1 uVar4;
+  undefined1 uVar5;
+  undefined1 uVar6;
+  int iVar7;
+  int iVar8;
+  
+  iVar7 = (param_1 & 0xff) * 6;
+  uVar1 = (&DAT_00202c38)[iVar7];
+  iVar8 = ((param_1 & 0xff) + 1) * 6;
+  uVar2 = (&DAT_00202c39)[iVar7];
+  uVar3 = (&DAT_00202c3a)[iVar7];
+  uVar4 = (&DAT_00202c3b)[iVar7];
+  uVar5 = (&DAT_00202c3c)[iVar7];
+  uVar6 = (&DAT_00202c3d)[iVar7];
+  (&DAT_00202c38)[iVar7] = (&DAT_00202c38)[iVar8];
+  (&DAT_00202c39)[iVar7] = (&DAT_00202c39)[iVar8];
+  (&DAT_00202c3a)[iVar7] = (&DAT_00202c3a)[iVar8];
+  (&DAT_00202c3b)[iVar7] = (&DAT_00202c3b)[iVar8];
+  (&DAT_00202c3c)[iVar7] = (&DAT_00202c3c)[iVar8];
+  (&DAT_00202c3d)[iVar7] = (&DAT_00202c3d)[iVar8];
+  (&DAT_00202c38)[iVar8] = uVar1;
+  (&DAT_00202c39)[iVar8] = uVar2;
+  (&DAT_00202c3a)[iVar8] = uVar3;
+  (&DAT_00202c3b)[iVar8] = uVar4;
+  (&DAT_00202c3c)[iVar8] = uVar5;
+  (&DAT_00202c3d)[iVar8] = uVar6;
+  return;
+}
+
+
+
+// was FUN_00051dd0 -- insertion-sorts collision_add_candidate_object's
+// candidate list (up to the count at DAT_00202c6c+0x14) by X position
+// then Y position, each pass swapping out-of-order pairs via
+// swap_collision_candidates, then scans forward from the sorted
+// position to find the first candidate whose Y extent still overlaps
+// the current search bounds, recording that index at
+// DAT_00202c6c+0x15 (consumed by callers as a found/not-found flag)
+// and the X-pass's split point at +0x16.
+void sort_collision_candidates()
+
+{
+  char cVar1;
+  uint uVar2;
+  int iVar3;
+  int iVar4;
+  char *iVar5;
+  int iVar6;
+  int iVar7;
+  
+  iVar7 = 0;
+  cVar1 = *(char *)(DAT_00202c6c + 9);
+  uVar2 = (uint)*(byte *)(DAT_00202c6c + 0x14);
+  iVar5 = DAT_00202c6c;
+  if (uVar2 != 0) {
+    do {
+      for (iVar3 = uVar2 - 2; iVar3 = iVar3 * 0x1000000 >> 0x18, iVar7 <= iVar3; iVar3 = iVar3 + -1)
+      {
+        if ((byte)(&DAT_00202c3e)[iVar3 * 6] < (byte)(&DAT_00202c38)[iVar3 * 6]) {
+          /* Ghidra dropped the swap index argument: this is an insertion-
+             sort pass over up to 255 collision candidates, swapping the
+             pair at iVar3/iVar3+1 when out of order. Called with no
+             argument, swap_collision_candidates's param_1 read whatever garbage was
+             left in the argument register, swapping (and reading/
+             writing) an arbitrary 6-byte record pair instead of the
+             intended one -- the real data at iVar3 never actually got
+             sorted, so the loop's own termination condition kept
+             re-triggering: confirmed via `sample` showing 100% of a
+             hung process's time stuck in this exact function, walking
+             into an obstacle (e.g. standing next to a critter) near
+             tile (17,7). Also a wild write whenever the garbage index
+             landed outside the real ~255-entry table. */
+          swap_collision_candidates(iVar3);
+          iVar5 = DAT_00202c6c;
+        }
+      }
+      if (*(short *)(iVar5 + 4) < (short)(ushort)(byte)(&DAT_00202c38)[iVar7 * 6]) break;
+      uVar2 = (uint)*(byte *)(iVar5 + 0x14);
+      iVar7 = (iVar7 + 1) * 0x1000000 >> 0x18;
+    } while (iVar7 < (int)uVar2);
+  }
+  uVar2 = (uint)*(byte *)(iVar5 + 0x14);
+  iVar3 = (int)(char)iVar7;
+  iVar6 = iVar3;
+  if (iVar3 < (int)uVar2) {
+    do {
+      for (iVar4 = uVar2 - 2; iVar4 = iVar4 * 0x1000000 >> 0x18, iVar6 <= iVar4; iVar4 = iVar4 + -1)
+      {
+        if ((byte)(&DAT_00202c3f)[iVar4 * 6] < (byte)(&DAT_00202c39)[iVar4 * 6]) {
+          /* Same dropped-argument fix as the X-axis sort pass above --
+             this is the Y-axis pass, swap index is iVar4. */
+          swap_collision_candidates(iVar4);
+          iVar5 = DAT_00202c6c;
+        }
+      }
+      uVar2 = (uint)*(byte *)(iVar5 + 0x14);
+      iVar6 = (iVar6 + 1) * 0x1000000 >> 0x18;
+    } while (iVar6 < (int)uVar2);
+  }
+  *(char *)(iVar5 + 0x16) = (char)iVar7;
+  *(undefined1 *)(DAT_00202c6c + 0x15) = 0;
+  uVar2 = (uint)*(byte *)(DAT_00202c6c + 0x15);
+  iVar7 = uVar2 + iVar3;
+  if (iVar7 < (int)(uint)*(byte *)(DAT_00202c6c + 0x14)) {
+    do {
+      if ((int)((uint)*(byte *)(DAT_00202c6c + 9) + (int)*(short *)(DAT_00202c6c + 4) +
+               (int)(cVar1 == '\0')) <= (int)(uint)(byte)(&DAT_00202c39)[iVar7 * 6]) {
+        return;
+      }
+      *(char *)(DAT_00202c6c + 0x15) = (char)uVar2 + '\x01';
+      uVar2 = (uint)*(byte *)(DAT_00202c6c + 0x15);
+      iVar7 = uVar2 + iVar3;
+    } while (iVar7 < (int)(uint)*(byte *)(DAT_00202c6c + 0x14));
+  }
+  return;
+}

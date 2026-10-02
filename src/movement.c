@@ -104,7 +104,7 @@ void reticle_object_pick()
   bool bVar7;
   
   DAT_00204878 = 1;
-  FUN_00051dd0();
+  sort_collision_candidates();
   DAT_00086998 = -1;
   _DAT_0008699f = 0x7f;
   if (*(short *)(DAT_00204874 + 10) < 1) {

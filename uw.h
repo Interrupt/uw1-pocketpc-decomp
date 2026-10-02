@@ -2079,6 +2079,10 @@ extern undefined1 DAT_00202c3c_backing[65536];
 #define DAT_00202c3c DAT_00202c3c_backing[0]
 extern undefined1 DAT_00202c3d_backing[8192];
 #define DAT_00202c3d DAT_00202c3d_backing[0]
+extern undefined1 DAT_00202c3e_backing[8192];
+#define DAT_00202c3e DAT_00202c3e_backing[0]
+extern undefined1 DAT_00202c3f_backing[8192];
+#define DAT_00202c3f DAT_00202c3f_backing[0]
 extern int DAT_00204870;
 extern char * DAT_00204874;
 extern undefined4 DAT_00204878;
@@ -3473,8 +3477,8 @@ void collision_build_height_field();
 void resolve_wall_slide_corner();
 void collision_add_candidate_object();
 void collision_height_envelope();
-void FUN_00051cf8();
-void FUN_00051dd0();
+void swap_collision_candidates();
+void sort_collision_candidates();
 undefined4 FUN_00051fa0();
 undefined4 place_object_in_world();
 undefined4 drop_object_near_target();

@@ -725,7 +725,7 @@ ushort * param_2;
             (int)(byte)DAT_00202c6c[8]);
   if (((local_2a | local_2c) & 0x300) == 0) {
     if ((byte)DAT_00202c6c[10] != 0) {
-      FUN_00051dd0();
+      sort_collision_candidates();
       if (*(byte *)((char *)DAT_00202c6c + 0x15) != 0) goto LAB_0004b4d4;
     }
     uVar2 = param_1[0xb];

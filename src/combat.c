@@ -925,7 +925,7 @@ undefined4 resolve_melee_swing_hit()
      this function has the IDENTICAL local name set (local_3c/3a/38/
      34/33/32) and was never converted. Every DAT_00202c6c[N] read
      throughout collision_height_envelope/collision_build_height_field/
-     FUN_00051dd0/spawn_blood_splat_object assumes one contiguous record, but as
+     sort_collision_candidates/spawn_blood_splat_object assumes one contiguous record, but as
      independent C locals this compiler is free to place them (and
      every OTHER local in this function, including iVar5) anywhere,
      with any padding. Confirmed live via UW_DEBUG_COMBAT tracing: a
@@ -993,7 +993,7 @@ undefined4 resolve_melee_swing_hit()
     }
   }
   else {
-    FUN_00051dd0();
+    sort_collision_candidates();
     if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: blocked path, creature_hit_flag=%d\n", (int)*(char *)((char *)DAT_00202c6c + 0x15));
     if (*(char *)((char *)DAT_00202c6c + 0x15) != '\0') {
       sVar3 = find_nearest_hit_target();
