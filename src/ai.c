@@ -3858,7 +3858,7 @@ LAB_00034db4:
       uVar9 = (int)(((byte)((byte)*puVar4 >> 4) + 0x10) * 8) >> 1;
     }
     uVar2 = encode_object_slot_index(param_1);
-    iVar6 = FUN_00051fa0(*param_1 & 0x1ff,uVar2,
+    iVar6 = check_object_placement_clearance(*param_1 & 0x1ff,uVar2,
                          (int)(((uint)local_2c + uVar10 * 8) * 0x10000) >> 0x10,
                          (int)(((uint)local_2b[0] + uVar8 * 8) * 0x10000) >> 0x10,(short)uVar9,
                          (byte)(&DAT_001007da)[iVar6] >> 7,8);
@@ -4092,7 +4092,7 @@ ushort * param_3;
         if (iVar11 != 0) {
           bVar3 = (&DAT_0023cf0a)[((int)(short)(ushort)bVar1 + (short)(ushort)bVar2 * 0x40) * 5];
           uVar6 = encode_object_slot_index(param_3);
-          iVar11 = FUN_00051fa0(*param_3 & 0x1ff,uVar6,
+          iVar11 = check_object_placement_clearance(*param_3 & 0x1ff,uVar6,
                                 (int)(((uint)local_28 + (short)(ushort)bVar2 * 8) * 0x10000) >> 0x10
                                 ,(int)(((uint)local_27[0] + (short)(ushort)bVar1 * 8) * 0x10000) >>
                                  0x10,(ushort)((uint)bVar3 << 3) & 0xff,

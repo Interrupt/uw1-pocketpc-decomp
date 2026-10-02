@@ -526,7 +526,7 @@ LAB_0001818c:
       uVar2 = *(ushort *)(puVar4 + 2);
       puVar4[2] = (byte)(uVar2 & 0xff80) | *pbVar9 >> 1 & 0x78;
       puVar4[3] = (char)((uVar2 & 0xff80) >> 8);
-      iVar8 = FUN_00051fa0(CONCAT11(puVar4[1],*puVar4) & 0x1ff,uVar3,(iVar8 << 0x13) >> 0x10,
+      iVar8 = check_object_placement_clearance(CONCAT11(puVar4[1],*puVar4) & 0x1ff,uVar3,(iVar8 << 0x13) >> 0x10,
                            (iVar1 << 0x13) >> 0x10,(ushort)(*pbVar9 >> 4) << 3,1,
                            ((&DAT_00202c91)[(CONCAT11(puVar4[1],*puVar4) & 0x1ff) * 0xd] & 7) + 4);
       if (iVar8 != 0) {

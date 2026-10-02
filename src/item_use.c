@@ -214,7 +214,7 @@ int param_2;
   int iVar8;
   char cVar9;
   /* iVar4 is reused earlier in this function as a plain int (return
-     codes from compute_drop_aim_from_cursor/FUN_00051fa0) -- real uses, left alone --
+     codes from compute_drop_aim_from_cursor/check_object_placement_clearance) -- real uses, left alone --
      but also held tilemap_lookup's real 64-bit pointer return,
      truncating it to 32 bits on this host. The NULL check added
      earlier (see below) only ever caught a truly-NULL result; a
@@ -287,10 +287,10 @@ int param_2;
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] after 1st project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
               (int)local_28, (int)local_26);
-    iVar4 = FUN_00051fa0(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
+    iVar4 = check_object_placement_clearance(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
                          (byte)g_player_object[1] & 0x7f,1,cVar9);
     if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[throw-heading] 1st FUN_00051fa0 iVar4=%d\n", iVar4);
+      fprintf(stderr, "[throw-heading] 1st check_object_placement_clearance iVar4=%d\n", iVar4);
     if (iVar4 == 0) {
       bVar3 = true;
     }
@@ -300,10 +300,10 @@ int param_2;
       if (getenv("UW_DEBUG_THROW"))
         fprintf(stderr, "[throw-heading] after 2nd(retry) project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
                 (int)local_28, (int)local_26);
-      iVar4 = FUN_00051fa0(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
+      iVar4 = check_object_placement_clearance(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
                            (byte)g_player_object[1] & 0x7f,1,cVar9);
       if (getenv("UW_DEBUG_THROW"))
-        fprintf(stderr, "[throw-heading] 2nd FUN_00051fa0 iVar4=%d\n", iVar4);
+        fprintf(stderr, "[throw-heading] 2nd check_object_placement_clearance iVar4=%d\n", iVar4);
       bVar3 = true;
       if (iVar4 != 0) {
         bVar3 = false;

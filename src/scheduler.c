@@ -162,7 +162,7 @@ undefined4 param_1;
         uVar8 = uVar8 - 0x18;
       }
       uVar6 = encode_object_slot_index(puVar4);
-      iVar7 = FUN_00051fa0(uVar5 + (uVar10 + 0x14) * 0x10,uVar6,
+      iVar7 = check_object_placement_clearance(uVar5 + (uVar10 + 0x14) * 0x10,uVar6,
                            (uint)(*(byte *)((char *)puVar4 + 3) >> 5) + (short)DAT_0010144c * 8,
                            ((*(byte *)((char *)puVar4 + 3) & 0x1c) >> 2) + (short)DAT_00101454 * 8,
                            uVar8,1,8);
@@ -696,13 +696,13 @@ int param_2;
     uVar9 = uVar9 - 0x18;
   }
   uVar3 = encode_object_slot_index(puVar2);
-  iVar4 = FUN_00051fa0((uVar7 & 0x30) + (uVar7 & 0xf) + 0x140,uVar3,
+  iVar4 = check_object_placement_clearance((uVar7 & 0x30) + (uVar7 & 0xf) + 0x140,uVar3,
                        (uint)(*(byte *)((char *)puVar2 + 3) >> 5) + (short)DAT_0010144c * 8,
                        ((*(byte *)((char *)puVar2 + 3) & 0x1c) >> 2) + (short)DAT_00101454 * 8,uVar9,1,
                        8);
   if (getenv("UW_DEBUG_DOOR")) {
     int _type_id = (uVar7 & 0x30) + (uVar7 & 0xf) + 0x140;
-    fprintf(stderr, "[door] scheduler_advance_effect: FUN_00051fa0 returned iVar4=%d (0=settle proceeds, nonzero=skip) obj0=0x%04x quality_full=0x%02x type_id=0x%03x local_33=%d word1=0x%04x param5(height)=%d tile=(%d,%d)\n",
+    fprintf(stderr, "[door] scheduler_advance_effect: check_object_placement_clearance returned iVar4=%d (0=settle proceeds, nonzero=skip) obj0=0x%04x quality_full=0x%02x type_id=0x%03x local_33=%d word1=0x%04x param5(height)=%d tile=(%d,%d)\n",
             iVar4, (unsigned)*puVar2, (unsigned)uVar7, _type_id,
             (int)(unsigned char)(&DAT_00202c90)[_type_id * 0xd], (unsigned)puVar2[1], (int)uVar9,
             (int)DAT_0010144c, (int)DAT_00101454);

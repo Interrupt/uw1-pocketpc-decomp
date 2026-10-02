@@ -785,7 +785,7 @@ LAB_00038100:
 // via a double-buffered BFS flood-fill (local_80/local_58, each a
 // 10-entry x/y coordinate-pair frontier list; local_a4/local_b0 swap
 // between them each wave) for a tile where object param_1 can be
-// placed (FUN_00051fa0). Expansion direction from each tile is gated
+// placed (check_object_placement_clearance). Expansion direction from each tile is gated
 // by its type (bVar8, 0-5: floor vs. diagonal-wall variants), each
 // branch mirroring the same 4-neighbor/diagonal-corner pattern seen
 // in resolve_tile_entry_offset, with per-tile visited bitmasks
@@ -903,7 +903,7 @@ int param_6;
       uVar13 = encode_object_slot_index(param_1);
       iVar12 = (int)(short)cVar21;
       iVar2 = (int)(short)cVar7;
-      iVar14 = FUN_00051fa0(*param_1 & 0x1ff,uVar13,((iVar2 << 0x13) >> 0x10) + 3,
+      iVar14 = check_object_placement_clearance(*param_1 & 0x1ff,uVar13,((iVar2 << 0x13) >> 0x10) + 3,
                             ((iVar12 << 0x13) >> 0x10) + 3,(*pbVar10 >> 4) * '\b' + cVar18,0,8);
       if (iVar14 != 0) {
         *param_4 = (short)cVar7;

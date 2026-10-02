@@ -1832,7 +1832,7 @@ char param_2;
     else {
       uVar10 = (uint)local_2c;
     }
-    iVar8 = FUN_00051fa0(uVar10,0,(int)(short)local_34,(int)(short)local_32,local_30,1,8);
+    iVar8 = check_object_placement_clearance(uVar10,0,(int)(short)local_34,(int)(short)local_32,local_30,1,8);
     if (iVar8 != 0) {
       pObj = (char *)spawn_new_object(uVar10,param_2 == '\x04');
       uVar2 = *(ushort *)(pObj + 2);

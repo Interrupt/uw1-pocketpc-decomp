@@ -823,3 +823,215 @@ void sort_collision_candidates()
   }
   return;
 }
+
+
+// was FUN_00051fa0 -- checks whether an object of catalog type
+// param_1 could occupy tile position (param_3,param_4) at candidate
+// height param_5 without being blocked by the current collision-
+// candidate list (built via collision_build_height_field/
+// collision_height_envelope/sort_collision_candidates). param_2 is a
+// caller-specific context value (an encoded arena slot index for the
+// door-swing caller, per the UW_DEBUG_DOOR comment below; 0/1/etc for
+// others); param_6 appears to force success when nonzero; param_7 is
+// forwarded to collision_build_height_field as its search-radius-like
+// argument. Confirmed used throughout the codebase for object
+// placement (place_object_in_world/spawn helpers), throw-aim
+// validation (item_use.c), door swing step clearance (scheduler.c),
+// and NPC movement (ai.c) -- a general "can this object type fit
+// here at this height" collision query. Exact return-value polarity
+// may read differently per call site (see e.g. scheduler.c's own
+// "0=settle proceeds, nonzero=skip" comment at its call) -- left
+// unclaimed here rather than asserted without call-site-by-call-site
+// verification.
+undefined4 check_object_placement_clearance(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+short param_1;
+short param_2;
+undefined2 param_3;
+undefined2 param_4;
+short param_5;
+int param_6;
+byte param_7;
+
+{
+  byte bVar1;
+  char *uVar2;
+  undefined4 uVar3;
+  ushort *puVar4;
+  uint uVar5;
+  int iVar6;
+  short sVar7;
+  uint uVar8;
+  /* Was 6 independent locals (local_3c/3a/38/34/33/32) with
+     DAT_00202c6c = &local_3c, and every DAT_00202c6c[N] access
+     throughout this file (collision_build_height_field,
+     collision_corner_flags, collision_height_envelope, etc.) assuming
+     they're one contiguous record at their Ghidra-stack-offset-implied
+     byte positions (0/2/4/8/9/0xa -- 0x3c-0x3a=2, 0x3a-0x38=2,
+     0x38-0x34=4, 0x34-0x33=1, 0x33-0x32=1). That layout only held in
+     the original 32-bit ARM binary's own stack frame; as independent
+     C locals here, this compiler is free to place them in any order
+     with any padding, so nearly every DAT_00202c6c[N] read was
+     whatever adjacent stack byte happened to land there instead of the
+     intended field -- confirmed via a direct struct dump: param_4 (Y,
+     expected at offset 2-3) printed 24, but DAT_00202c6c[2] read back
+     8, not 24. This is what fed collision_height_envelope's floor-
+     height selection (DAT_00202c30) garbage, causing a discrete
+     SHIFT+<dir> step to occasionally place the player's height at a
+     wildly wrong value (reported as "ends up at the ceiling"). Same
+     "split-symbol cluster" bug class fixed elsewhere this session for
+     globals (e.g. DAT_00204880_backing); here as a real backing array
+     since these are genuinely local to one call. Sized generously
+     (0x20) past the highest offset (0x13) any reader/writer touches. */
+  undefined1 local_pos_record[0x20];
+#define local_3c (*(undefined2 *)(local_pos_record + 0))
+#define local_3a (*(undefined2 *)(local_pos_record + 2))
+#define local_38 (*(short *)(local_pos_record + 4))
+#define local_34 (local_pos_record[8])
+#define local_33 (local_pos_record[9])
+#define local_32 (*(short *)(local_pos_record + 0xa))
+  int iVar9;
+
+  uVar2 = DAT_00202c6c;
+  Ordinal_1047(local_pos_record, 0, sizeof(local_pos_record));
+  DAT_00202c6c = local_pos_record;
+  local_33 = (&DAT_00202c90)[param_1 * 0xd];
+  local_34 = (&DAT_00202c91)[param_1 * 0xd] & 7;
+  local_38 = param_5;
+  if ((local_33 == 0x80) || ((int)((uint)local_33 + (int)param_5) < 0x80)) {
+    uVar8 = (uint)param_7;
+    local_3c = param_3;
+    local_3a = param_4;
+    local_32 = param_2;
+    if (getenv("UW_DEBUG_STEPHEIGHT"))
+      fprintf(stderr, "[fa0-params] p1=%d p2=%d p3=%d p4=%d p5=%u p6=%d p7=%u local33=%d local34=%d\n",
+              (int)param_1, (int)param_2, (int)(short)param_3, (int)(short)param_4,
+              (unsigned)param_5, (int)param_6, (unsigned)param_7, (int)local_33, (int)local_34);
+    collision_build_height_field(uVar8);
+    if (getenv("UW_DEBUG_STEPHEIGHT")) {
+      int _i;
+      fprintf(stderr, "[fa0-struct]");
+      for (_i = 0; _i < 0x14; _i++) fprintf(stderr, " [%x]=%d", _i, (int)(unsigned char)DAT_00202c6c[_i]);
+      fprintf(stderr, "\n");
+    }
+    /* HACK: every offset below this point (0xc, 0xe, 0x10, 0x14, 0x15, 0x16)
+       was wrong -- DAT_00202c6c is a real `byte *` (confirmed by its own
+       declaration and by collision_build_height_field's/collision_classify_corner_wall's own,
+       independently-verified-correct byte-offset arithmetic on the exact
+       same pointer, e.g. `DAT_00202c6c + 0xc`/`+ 0xe` for the flags word,
+       `+ 0x11` for the max-height sentinel). This block instead used a mix
+       of `DAT_00202c6c[N]` bare indices and decimal-vs-hex-confused offsets
+       (`+ 10` meaning decimal 10 = 0xa, not the intended 0x14) that don't
+       correspond to anything collision_build_height_field actually writes --
+       most read either stale zero bytes or, worse, `local_32` (offset 0xa,
+       holding this call's own `param_2` -- the door/object's own encoded
+       arena slot index, e.g. 1013) reinterpreted as a "how many collision
+       candidates" count. Confirmed live (UW_DEBUG_DOOR, chasing "a door
+       used a second time re-opens instead of closing"): with the bug, this
+       function walked sort_collision_candidates's candidate-sort loop believing there
+       were up to 255 real candidates (really just the slot index's own low
+       byte), reading far out of bounds through DAT_00202c38/DAT_00202c39
+       and returning an essentially arbitrary 0 or 1 that differed per
+       door/slot -- which scheduler_advance_effect (the only caller reachable
+       from a door's own close swing) uses to decide whether to prematurely
+       clear the swing's direction bit. Retyped every access in this block to
+       match the real disassembly's own literal byte offsets exactly (fresh
+       Ghidra decompile of check_object_placement_clearance @ 0x51fa0), so the real, always-empty
+       candidate count at offset 0x14 is what's actually checked -- doors now
+       correctly finish their close swing instead of re-opening. */
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[fa0-check] off0xc_0xe=0x%x off0x14=%d param_2(slot)=%d\n",
+              (unsigned)(*(ushort *)(DAT_00202c6c + 0xc) | *(ushort *)(DAT_00202c6c + 0xe)),
+              (int)(unsigned char)DAT_00202c6c[0x14], (int)param_2);
+    if (((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
+      bVar1 = *(byte *)(DAT_00202c6c + 0x11);
+      if ((int)(uVar8 + (int)*(short *)(DAT_00202c6c + 4)) < (int)(uint)bVar1) {
+        bVar1 = *(byte *)(DAT_00202c6c + 0x10);
+      }
+      if (getenv("UW_DEBUG_STEPHEIGHT"))
+        fprintf(stderr, "[stepheight] uVar8=%u c6c4=%d c6c10=%d c6c11=%d c6c0xc=%d -> DAT_00202c30=%d cur_z=%d\n",
+                uVar8, (int)*(short *)(DAT_00202c6c + 4), (int)*(byte *)(DAT_00202c6c + 0x10),
+                (int)*(byte *)(DAT_00202c6c + 0x11), (int)*(short *)(DAT_00202c6c + 0xc),
+                (int)bVar1, (int)DAT_00204884);
+      DAT_00202c30 = (ushort)bVar1;
+      uVar5 = (uint)*(byte *)(DAT_00202c6c + 8);
+      if ((uint)(int)(short)(ushort)*(byte *)(DAT_00202c6c + 8) < uVar8) {
+        uVar5 = uVar8;
+      }
+      if ((int)((uint)*(byte *)(DAT_00202c6c + 0x10) + (int)(short)uVar5) < (int)*(short *)(DAT_00202c6c + 4)
+         ) {
+        DAT_00202c68 = 0x10;
+      }
+      else {
+        DAT_00202c68 = (short)(1 << ((int)*(short *)(DAT_00202c6c + 0xc) & 3U));
+      }
+      if ((DAT_00202c68 == 0x10) || (uVar3 = 1, param_2 < 0x100)) {
+        uVar3 = 0;
+      }
+      collision_height_envelope(uVar3,1);
+      if (getenv("UW_DEBUG_DOOR"))
+        fprintf(stderr, "[fa0-check2] after collision_height_envelope: off0x14=%d off0x15=%d off0x16=%d uVar3(envelope_arg)=%d\n",
+                (int)(unsigned char)DAT_00202c6c[0x14], (int)(unsigned char)DAT_00202c6c[0x15],
+                (int)(unsigned char)DAT_00202c6c[0x16], (int)uVar3);
+      if (*(char *)(DAT_00202c6c + 0x14) != '\0') {
+        iVar9 = -1;
+        sVar7 = -1;
+        sort_collision_candidates();
+        if (*(char *)(DAT_00202c6c + 0x15) != '\0') {
+          DAT_00202c6c = uVar2;
+          return 0;
+        }
+        if ((*(char *)(DAT_00202c6c + 0x14) != '\0') &&
+           (iVar6 = 0, '\0' < *(char *)(DAT_00202c6c + 0x16))) {
+          do {
+            sVar7 = (short)iVar9;
+            if ((short)DAT_00202c30 < (short)(ushort)(byte)(&DAT_00202c38)[iVar6 * 6]) {
+              sVar7 = (short)iVar6;
+              iVar9 = iVar6;
+              DAT_00202c30 = (ushort)(byte)(&DAT_00202c38)[iVar6 * 6];
+            }
+            iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+          } while (iVar6 < *(char *)(DAT_00202c6c + 0x16));
+        }
+        if (-1 < sVar7) {
+          puVar4 = (ushort *)resolve_object_link(&DAT_00202c3a + sVar7 * 6);
+          /* Was an unguarded `*puVar4` -- resolve_object_link legitimately
+             returns NULL when the candidate slot (&DAT_00202c3a +
+             sVar7*6) has no object linked there at all, same class as
+             scheduler_add_entry's own already-fixed missing NULL guard
+             (swinging at empty air/a wall). Confirmed live: this
+             crashed 100% of the time emptying the starting-room sack's
+             contents via Use mode -- empty_container_into_world's
+             randomized scatter (find_object_placement) lands an item
+             on a tile whose best-height candidate slot (sVar7, chosen
+             just above) has no object registered, and this was the
+             first path to ever dereference that NULL. No object linked
+             here means there's nothing to check the "blocks passage"
+             flag on, so treat it as NOT blocking (skip the `return 0`)
+             rather than crash. */
+          if ((puVar4 != (ushort *)0x0) &&
+             (((&DAT_00202c93)[(*puVar4 & 0x1ff) * 0xd] & 2) == 0)) {
+            DAT_00202c6c = uVar2;
+            return 0;
+          }
+          DAT_00202c68 = 1;
+        }
+      }
+      if ((param_6 != 0) ||
+         (((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x800) == 0) ||
+         ((int)((int)*(short *)(DAT_00202c6c + 4) - uVar8) <= (int)(short)DAT_00202c30)) {
+        DAT_00202c6c = uVar2;
+        return 1;
+      }
+      DAT_00202c6c = uVar2;
+      return 0;
+    }
+  }
+  DAT_00202c6c = uVar2;
+  return 0;
+}
+#undef local_3c
+#undef local_3a
+#undef local_38
+#undef local_34
+#undef local_33
+#undef local_32

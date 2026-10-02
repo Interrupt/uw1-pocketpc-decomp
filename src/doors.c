@@ -157,7 +157,7 @@ byte * param_2;
 // tile 11 units ahead of the player's facing (DAT_00201c70) and, if
 // that tile is a door (tile_type==1) whose wall texture id falls into
 // one of four specific ranges (5-11/18-22/27-31/35-40), checks
-// FUN_00051fa0 for whether catalog object 0x1ca can be placed there,
+// check_object_placement_clearance for whether catalog object 0x1ca can be placed there,
 // then spawns one, encodes the door's texture-derived flags/facing
 // into it, schedules it with an unbounded duration
 // (scheduler_add_entry(...,0xffffffff,...)), and links it into the
@@ -195,7 +195,7 @@ undefined4 spawn_scheduled_door_texture_object()
         ((0x22 < sVar3 && (sVar3 < 0x29)))))) {
       uVar8 = (uVar1 >> 4 & 0xf) << 3;
       uVar9 = (undefined2)uVar8;
-      iVar6 = FUN_00051fa0(0x1ca,0,(int)(short)local_16,(int)(short)local_18,uVar9,0,0);
+      iVar6 = check_object_placement_clearance(0x1ca,0,(int)(short)local_16,(int)(short)local_18,uVar9,0,0);
       uVar10 = (undefined1)((ushort)uVar9 >> 8);
       if (iVar6 != 0) {
         puVar7 = (undefined1 *)spawn_new_object(0x1ca,0);
