@@ -13271,52 +13271,9 @@ bool compute_drop_aim_from_cursor()
 
 
 
-void FUN_0004ac98(param_1,param_2,param_3)
-int param_1;
-undefined2 param_2;
-undefined2 param_3;
-
-{
-  DAT_00202a38 = *(byte *)(param_1 + 6) & 0x3f | (*(byte *)(param_1 + 4) & 0x3f) << 5;
-  DAT_00202a48 = 0x14;
-  DAT_00202a40 = 2;
-  DAT_00202a3c = 2;
-  DAT_00202a54 = 0;
-  DAT_00202a44 = param_1;
-  DAT_00202a4c = param_2;
-  DAT_00202a50 = param_3;
-  spawn_object_near_player();
-  return;
-}
 
 
 
-undefined4 FUN_0004b600(param_1)
-int param_1;
-
-{
-  *(undefined1 *)(param_1 + 0x16) = 0;
-  *(undefined1 *)(param_1 + 0x17) = 0;
-  *(undefined1 *)(param_1 + 0x18) = 0;
-  *(undefined1 *)(param_1 + 0x19) = 0;
-  *(undefined1 *)(param_1 + 0x12) = 0;
-  *(undefined1 *)(param_1 + 0x13) = 0;
-  *(undefined1 *)(param_1 + 0x14) = 0;
-  *(undefined1 *)(param_1 + 0x15) = 0;
-  return 0;
-}
-
-
-
-void FUN_0004b644(param_1)
-int param_1;
-
-{
-  if (*(int *)(param_1 + 0x12) != 0) {
-    Ordinal_1094();
-  }
-  return;
-}
 
 
 
@@ -15400,7 +15357,7 @@ void FUN_0004f7f0()
   puVar1 = &DAT_00202a58;
   iVar2 = 0x10;
   do {
-    FUN_0004b600(puVar1);
+    init_sound_channel_slot(puVar1);
     iVar2 = iVar2 + -1;
     puVar1 = puVar1 + 0x1a;
   } while (iVar2 != 0);
@@ -15419,7 +15376,7 @@ void FUN_0004f828()
   puVar1 = &DAT_00202bf8;
   do {
     puVar1 = puVar1 + -0x1a;
-    FUN_0004b644(puVar1);
+    release_sound_channel_slot(puVar1);
     iVar2 = iVar2 + -1;
   } while (iVar2 != 0);
   return;

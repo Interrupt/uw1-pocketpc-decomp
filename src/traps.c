@@ -42,7 +42,7 @@
 //            message_scroll_print_wrapped -- a "text trap" (its own
 //            debug string literally says "Look,_it's_a_text_trap").
 // The remaining cases (0-5, 9, 0xa, 0xc, 0xf) call still-unnamed
-// helper functions (apply_poison_or_damage_trap_effect, teleport_object_to_level_tile, FUN_0004ac98,
+// helper functions (apply_poison_or_damage_trap_effect, teleport_object_to_level_tile, spawn_trap_hazard_object,
 // dispatch_quest_event_code, apply_area_terrain_effect, print_message_with_proximity_qualifier, FUN_000452dc) whose own
 // purpose isn't pinned down yet, so their exact trap semantics are
 // left undetermined here rather than guessed at. After the switch,
@@ -120,7 +120,7 @@ uint param_3;
                           (byte)param_1[1] & 0x7f);
     break;
   case 2:
-    FUN_0004ac98(param_1,param_2,param_3);
+    spawn_trap_hazard_object(param_1,param_2,param_3);
     break;
   case 3:
     iVar16 = dispatch_quest_event_code(param_1,param_2,param_3);
@@ -1676,4 +1676,30 @@ undefined2 * param_3;
     return 0xffffffff;
   }
   return uVar6;
+}
+
+
+// was FUN_0004ac98 -- dispatch_trap_type_effect's case-2 trap handler:
+// spawns a fixed object class (0x14) near the player, aimed from the
+// trap record's own quality bits (+4/+6) and positioned at param_2/
+// param_3 (the trap's tile coordinates), with a distinct spawn mode
+// (DAT_00202a40/DAT_00202a3c both set to 2, unlike the aimed-throw
+// mode other spawners use) -- reads as a trap that launches a
+// hazard object rather than directly damaging the player.
+void spawn_trap_hazard_object(param_1,param_2,param_3)
+int param_1;
+undefined2 param_2;
+undefined2 param_3;
+
+{
+  DAT_00202a38 = *(byte *)(param_1 + 6) & 0x3f | (*(byte *)(param_1 + 4) & 0x3f) << 5;
+  DAT_00202a48 = 0x14;
+  DAT_00202a40 = 2;
+  DAT_00202a3c = 2;
+  DAT_00202a54 = 0;
+  DAT_00202a44 = param_1;
+  DAT_00202a4c = param_2;
+  DAT_00202a50 = param_3;
+  spawn_object_near_player();
+  return;
 }

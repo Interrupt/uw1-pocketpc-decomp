@@ -563,7 +563,20 @@ int param_1;
         DAT_0023c3bc = 0;
       }
       else {
-        DAT_0023c3bc = FUN_0004b600();
+        /* BUG FIX: was `DAT_0023c3bc = init_sound_channel_slot();` --
+           a dropped argument (iVar2, the handle Ordinal_1095 just
+           allocated, is the only value in scope this could mean --
+           same idiom as every other dropped-argument fix this
+           session) AND a wrongly-captured return value:
+           init_sound_channel_slot always returns 0, so capturing it
+           into DAT_0023c3bc discarded the freshly-allocated handle
+           and left this "allocate a sound channel" path permanently
+           setting DAT_0023c3bc back to 0 -- every later read of it
+           (e.g. the FUN_0004b66c call just below, which takes it as
+           a real handle) then saw no channel at all. Initialize the
+           slot for its side effect and keep the real handle. */
+        init_sound_channel_slot(iVar2);
+        DAT_0023c3bc = iVar2;
       }
     }
     FUN_0004f748(DAT_0023c3b8,0);
@@ -973,7 +986,11 @@ short param_1;
         DAT_0023c3bc = 0;
       }
       else {
-        DAT_0023c3bc = FUN_0004b600();
+        /* Same dropped-argument-plus-discarded-handle bug as this
+           file's other FUN_0004b600 (now init_sound_channel_slot) call
+           site -- see its own comment. */
+        init_sound_channel_slot(iVar3);
+        DAT_0023c3bc = iVar3;
       }
     }
     pcVar4 = &DAT_00087520;
@@ -1308,4 +1325,41 @@ undefined4 acquire_sound_resource_slot()
 
 {
   return 0x28;
+}
+
+
+// was FUN_0004b600 -- initializes one 0x1a-byte sound-channel slot
+// (zeroing its +0x12..+0x19 playback-state fields): called in a loop
+// over all 0x10 slots at startup (uw.c's FUN_0004f7f0), and per-slot
+// right after Ordinal_1095(0x1a) allocates a fresh one in
+// src/audio.c. Always returns 0.
+undefined4 init_sound_channel_slot(param_1)
+int param_1;
+
+{
+  *(undefined1 *)(param_1 + 0x16) = 0;
+  *(undefined1 *)(param_1 + 0x17) = 0;
+  *(undefined1 *)(param_1 + 0x18) = 0;
+  *(undefined1 *)(param_1 + 0x19) = 0;
+  *(undefined1 *)(param_1 + 0x12) = 0;
+  *(undefined1 *)(param_1 + 0x13) = 0;
+  *(undefined1 *)(param_1 + 0x14) = 0;
+  *(undefined1 *)(param_1 + 0x15) = 0;
+  return 0;
+}
+
+
+
+// was FUN_0004b644 -- the shutdown counterpart to
+// init_sound_channel_slot: releases the slot's playback resource
+// (Ordinal_1094) if its +0x12 field is non-zero (a sample currently
+// loaded/playing).
+void release_sound_channel_slot(param_1)
+int param_1;
+
+{
+  if (*(int *)(param_1 + 0x12) != 0) {
+    Ordinal_1094();
+  }
+  return;
 }
