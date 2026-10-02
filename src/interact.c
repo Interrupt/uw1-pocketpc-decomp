@@ -58,15 +58,22 @@ void interact_default()
       if (((*g_interact_target & 0x8000) != 0) &&
          (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
         if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
-          fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling FUN_000470fc\n");
-        puVar3 = (ushort *)FUN_000470fc();
+          fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling prompt_split_object_stack\n");
+        /* BUG FIX: was `FUN_000470fc();` -- dropped its only argument.
+           g_interact_target (the object this whole "grab" handler is
+           operating on throughout this function) is the obvious
+           intended argument -- same dropped-argument idiom fixed
+           repeatedly elsewhere this session. Called with no argument,
+           prompt_split_object_stack read garbage for its own param_1
+           and dereferenced it. */
+        puVar3 = (ushort *)prompt_split_object_stack((undefined1 *)g_interact_target);
         if (puVar3 == (ushort *)0x0) {
           if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
-            fprintf(stderr, "[grab] FUN_000470fc returned NULL, bailing\n");
+            fprintf(stderr, "[grab] prompt_split_object_stack returned NULL, bailing\n");
           return;
         }
         if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
-          fprintf(stderr, "[grab] FUN_000470fc returned puVar3=%p (target=%p)\n", (void *)puVar3, (void *)g_interact_target);
+          fprintf(stderr, "[grab] prompt_split_object_stack returned puVar3=%p (target=%p)\n", (void *)puVar3, (void *)g_interact_target);
         if (puVar3 != g_interact_target) {
           object_list_insert_head(g_interact_target + 2,puVar3);
         }

@@ -366,10 +366,10 @@ undefined4 check_save_disk_space()
   Ordinal_1063(acStack_109 + 1,&DAT_000857a0);
   iVar3 = Ordinal_1068(acStack_109 + 1);
   acStack_109[iVar3] = '\0';
-  uVar4 = FUN_0002295c(acStack_109 + 1);
+  uVar4 = load_string_resource(acStack_109 + 1);
   Ordinal_160(uVar4,0);
   ensure_save_directory_exists(acStack_109 + 1);
-  uVar4 = FUN_0002295c(acStack_109 + 1);
+  uVar4 = load_string_resource(acStack_109 + 1);
   /* local_114 is never actually passed to Ordinal_184 (only auStack_110
      and &local_118 are) -- in the original 32-bit binary this local
      apparently sat immediately after auStack_110 on the stack and got

@@ -3029,7 +3029,7 @@ LAB_00072374:
     DAT_00085730 = 3;
     if (iVar6 != 0) {
       display_book_or_scroll_page(0x102);
-      thunk_FUN_0003c310(0xf1);
+      show_error_dialog_stub_thunk(0xf1);
       msg_scroll_panel_reset(1);
       return;
     }

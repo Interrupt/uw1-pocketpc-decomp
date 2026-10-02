@@ -4175,7 +4175,7 @@ int param_4;
       }
       iVar2 = get_object_record_by_slot_index((int)*(short *)(local_8 + (short)local_c * 2));
       if (((((*(byte *)(iVar2 + 1) & 0x80) != 0) && ((*(ushort *)(iVar2 + 6) & 0x8000) == 0)) &&
-          ((*(ushort *)(iVar2 + 6) & 0xffc0) != 0x40)) && (iVar6 = FUN_000470fc(iVar2), iVar6 == 0))
+          ((*(ushort *)(iVar2 + 6) & 0xffc0) != 0x40)) && (iVar6 = prompt_split_object_stack(iVar2), iVar6 == 0))
       {
         return;
       }
@@ -7111,7 +7111,7 @@ LAB_00037a94:
         }
         clear_screen_and_restore_cursor();
       }
-      thunk_FUN_0007ec1c();
+      clear_ambient_sound_target_thunk();
       iVar12 = local_5c;
       puVar11 = local_44;
       iVar10 = local_48;

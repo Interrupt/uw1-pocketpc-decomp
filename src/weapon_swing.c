@@ -517,7 +517,7 @@ short param_1;
   char acStack_3c [52];
   
   cVar1 = (&DAT_002027d2)[param_1 * 3];
-  iVar3 = FUN_000452dc(0,1,(int)cVar1,4,local_4c);
+  iVar3 = find_equipped_item_by_category(0,1,(int)cVar1,4,local_4c);
   if (iVar3 == 0) {
     local_44[0] = ((short)cVar1 + 0x10U ^ local_44[0]) & 0x1ff ^ local_44[0];
     message_scroll_print_wrapped(s_Sorry__you_have_no_00084f2c);
@@ -810,7 +810,7 @@ undefined4 param_3;
 
 // was FUN_000411b8 -- generic "flash and hold" weapon-overlay
 // transition: hides the cursor, disables the weapon overlay, redraws
-// ~13 blank frames with it hidden (the no-op thunk_FUN_0003c310 call
+// ~13 blank frames with it hidden (the no-op show_error_dialog_stub_thunk call
 // is dead weight -- same empty-body stub as show_error_dialog_stub),
 // redraws once more, then re-enables the overlay and shows the idle
 // cursor. Called with various (ignored, the function takes no
@@ -830,7 +830,7 @@ void weapon_overlay_flash_hold()
     weapon_overlay_and_full_redraw();
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 0xd);
-  thunk_FUN_0003c310(0xf1);
+  show_error_dialog_stub_thunk(0xf1);
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
   cursor_show_idle_tick();
@@ -874,7 +874,7 @@ void weapon_overlay_flash_restore()
 void weapon_overlay_flash_once()
 
 {
-  thunk_FUN_0003c310();
+  show_error_dialog_stub_thunk();
   decrement_cursor_hide_depth();
   g_weapon_overlay_enabled = 0;
   weapon_overlay_and_full_redraw();
@@ -888,7 +888,7 @@ void weapon_overlay_flash_once()
 // finds and consumes a matching ammo item (find_and_consume_ammo),
 // sets up the throw/aim state and spawns a projectile object near the
 // player, copies damage-type/quality/charge fields from the consumed
-// ammo's own template (FUN_00045a7c) onto the new projectile, frees
+// ammo's own template (extract_ammo_and_refresh) onto the new projectile, frees
 // the consumed ammo's object slot, and plays the bow/sling release
 // sound for weapon types 9/10.
 void fire_ranged_weapon(param_1)
@@ -925,7 +925,7 @@ short param_1;
       print_scroll_message_by_id(0xfe);
     }
     else {
-      puVar7 = (ushort *)FUN_00045a7c(0,1,(int)cVar3,uVar5);
+      puVar7 = (ushort *)extract_ammo_and_refresh(0,1,(int)cVar3,uVar5);
       uVar8 = (*puVar7 ^ *puVar6) & 0x7fff ^ (uint)*puVar7;
       *(char *)puVar6 = (char)uVar8;
       *(char *)((char *)puVar6 + 1) = (char)(uVar8 >> 8);

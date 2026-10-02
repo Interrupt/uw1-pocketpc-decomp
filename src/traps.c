@@ -43,7 +43,7 @@
 //            debug string literally says "Look,_it's_a_text_trap").
 // The remaining cases (0-5, 9, 0xa, 0xc, 0xf) call still-unnamed
 // helper functions (apply_poison_or_damage_trap_effect, teleport_object_to_level_tile, spawn_trap_hazard_object,
-// dispatch_quest_event_code, apply_area_terrain_effect, print_message_with_proximity_qualifier, FUN_000452dc) whose own
+// dispatch_quest_event_code, apply_area_terrain_effect, print_message_with_proximity_qualifier, find_equipped_item_by_category) whose own
 // purpose isn't pinned down yet, so their exact trap semantics are
 // left undetermined here rather than guessed at. After the switch,
 // if the record has a linked "next" object, it either recurses into
@@ -339,7 +339,7 @@ LAB_0007dce4:
     return 2;
   case 0xc:
     uVar4 = (byte)param_1[3] & 0x3f | ((byte)param_1[2] & 0x3f) << 5;
-    iVar11 = FUN_000452dc((short)uVar4 >> 6,(short)uVar4 >> 4 & 3,(byte)param_1[3] & 0xf,4,
+    iVar11 = find_equipped_item_by_category((short)uVar4 >> 6,(short)uVar4 >> 4 & 3,(byte)param_1[3] & 0xf,4,
                           auStack_38);
     if (iVar11 == 0) {
       return 2;

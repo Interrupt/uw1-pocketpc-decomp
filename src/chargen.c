@@ -431,7 +431,7 @@ int run_character_generator()
             if (iVar4 == 0) {
               chargen_ui_transition_hook(1);
             }
-            thunk_FUN_0007ec1c();
+            clear_ambient_sound_target_thunk();
             if (DAT_001005c4 != 0) {
               Ordinal_1018();
               DAT_001005c4 = 0;
@@ -447,7 +447,7 @@ int run_character_generator()
       }
     }
   }
-  thunk_FUN_0007ec1c();
+  clear_ambient_sound_target_thunk();
   if (DAT_001005c4 != 0) {
     Ordinal_1018();
     DAT_001005c4 = 0;

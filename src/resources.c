@@ -2097,3 +2097,30 @@ void *param_3;
      untouched. */
   return load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,&uw_copy_gr_entry_to_dest);
 }
+
+
+// was FUN_0002295c -- a Win32 LoadString-shaped resource-string
+// loader: loads string resource param_1 into a fixed static buffer
+// and returns its address. Confirmed as "LoadString-shaped" by an
+// existing comment on win_file_exists, one of its callers.
+undefined *load_string_resource(param_1)
+undefined4 param_1;
+
+{
+  Ordinal_196(0,2,param_1,0xffffffff,&DAT_000fb650,0xff);
+  return &DAT_000fb650;
+}
+
+
+
+// was FUN_00022998 -- structurally identical to load_string_resource
+// but via a different ordinal (Ordinal_197, two extra trailing
+// arguments) and a larger buffer (0x260 vs 0xff) -- likely a longer-
+// message variant of the same LoadString-shaped resource loader.
+undefined *load_string_resource_large(param_1)
+undefined4 param_1;
+
+{
+  Ordinal_197(0,0x260,param_1,0xffffffff,&DAT_000fb550,0xff,0,0);
+  return &DAT_000fb550;
+}

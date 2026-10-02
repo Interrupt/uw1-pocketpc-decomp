@@ -49,6 +49,46 @@
       Renamed to `draw_detail_level_panel`/`handle_detail_level_click`
       and corrected every comment/label referencing the old name.
 
+## Fixed this round (code-cleanup-first-pass, final unnamed-function sweep)
+- [x] Named and extracted the last 10 `FUN_xxx`/`thunk_FUN_xxx` functions
+      remaining in `uw.c` (a broader regex was needed to find them --
+      the usual search missed pointer-return-type and `thunk_`-prefixed
+      functions): `show_error_dialog_stub_thunk`, `load_string_resource`,
+      `load_string_resource_large`, `clear_ambient_sound_target_thunk`,
+      `find_equipped_item_by_category`, `resolve_clicked_inventory_item`,
+      `get_equipped_item_at_widget_slot`, `extract_clicked_backpack_item`,
+      `extract_ammo_and_refresh`, `prompt_split_object_stack`. `uw.c` now
+      contains zero unnamed functions (confirmed by exhaustive regex
+      sweep). Extracted into `src/game.c`, `src/resources.c`,
+      `src/audio.c`, and `src/item_use.c`; un-staticed
+      `DAT_000fb650_backing`/`DAT_000fb550_backing` and added the needed
+      `uw.h` externs for cross-TU use.
+- [x] Dropped-argument bug: `prompt_split_object_stack`'s only call site
+      (in `src/interact.c`'s `interact_default`) called it with zero
+      arguments despite it taking one parameter. Fixed by passing
+      `g_interact_target`, the object the enclosing "grab" handler
+      operates on throughout. 19/19 regression scripts clean (full
+      suite, since this is a real bug fix).
+- [x] Collapsed two more Ghidra thunk/duplicate-body functions into real
+      calls to their already-named siblings: `show_error_dialog_stub_thunk`
+      -> `show_error_dialog_stub`, `clear_ambient_sound_target_thunk` ->
+      `clear_ambient_sound_target`. Also collapsed a genuine (non-thunk)
+      duplicate pair, `FUN_000459d8`/`FUN_00045a7c`, by naming the real
+      implementation `extract_clicked_backpack_item` and making the
+      second a thin wrapper, `extract_ammo_and_refresh`.
+
+## Noted this round (code-cleanup-first-pass, final unnamed-function sweep) -- NOT fixed
+- `win_file_exists()` (winfile_wrappers.c) calls
+  `load_string_resource()` (was `FUN_0002295c`) with zero arguments
+  despite it taking one parameter (a string-resource ID). Flagged by
+  a prior session's own comment as "left unnamed/out of scope," and
+  still not fixed here: unlike this session's other confirmed
+  dropped-argument bugs, `win_file_exists` itself has no parameter of
+  its own to forward -- fixing this would require knowing which
+  specific resource ID it's supposed to check, which isn't inferrable
+  from context alone. Revisit if a concrete "checking the wrong/no
+  file" symptom is ever reported for this path.
+
 ## Noted this round (code-cleanup-first-pass, keyboard/cursor input cluster) -- NOT fixed
 - `wait_for_key_or_mouse_move` (was `FUN_000576d0`) takes one
   parameter (gates whether `dispatch_sticky_mode_handlers` runs

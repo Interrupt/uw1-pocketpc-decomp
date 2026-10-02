@@ -1874,9 +1874,9 @@ int param_3;
          "already holding the matching quest item" check was silently
          always false. */
       if ((g_selected_object == (ushort *)0x0) || ((*(ushort *)g_selected_object & 0x1ff) != 0x129)) {
-        puVar4 = (ushort *)FUN_000452dc(4,2,9,2,&local_22);
+        puVar4 = (ushort *)find_equipped_item_by_category(4,2,9,2,&local_22);
         if (puVar4 == (ushort *)0x0) {
-          puVar4 = (ushort *)FUN_000452dc(4,2,9,4,&local_22);
+          puVar4 = (ushort *)find_equipped_item_by_category(4,2,9,4,&local_22);
           if (puVar4 == (ushort *)0x0) {
             puVar4 = (ushort *)0x0;
           }
@@ -2380,7 +2380,7 @@ undefined4 check_offering_container_puzzle()
   local_2c[0] = 0;
   local_2c[1] = 0;
   local_2c[2] = 0;
-  puVar5 = (ushort *)FUN_000452dc(2,0,0xe,4,auStack_30);
+  puVar5 = (ushort *)find_equipped_item_by_category(2,0,0xe,4,auStack_30);
   if (puVar5 == (ushort *)0x0) {
     uVar6 = 0x96;
   }
@@ -2720,4 +2720,828 @@ ushort * param_2;
     }
   }
   return 0;
+}
+
+
+// was FUN_000452dc -- searches equipped items (g_equipped_items,
+// slots 0-0xa quickly, 0-0x12 if param_4 isn't 1) for the first one
+// matching category/subcategory/quality filters param_1/param_2/
+// param_3 (each <0 = any), returning its slot index via param_5; if
+// still unmatched and param_4 isn't 2 or 3, recurses into each
+// equipped item's own contents via find_object_in_link_chain.
+// Confirmed by callers across item_use.c/traps.c/weapon_swing.c/
+// game.c as a general "find an equipped (or carried) item matching
+// these criteria" query.
+ushort *find_equipped_item_by_category(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
+undefined2 * param_5;
+
+{
+  short sVar1;
+  ushort *puVar4;
+  int iVar5;
+  undefined2 uVar6;
+  int iVar7;
+  /* Was `undefined4 local_74 [2];` -- element [0] holds a real 64-bit
+     object pointer passed by address into find_object_in_link_chain (see that
+     function's own fix comment); [1] is unused padding from the
+     original 32-bit stack layout. */
+  char *local_74 [2];
+  int local_6c [19];
+  ushort uVar2;
+  ushort uVar3;
+  
+  iVar7 = 0;
+  do {
+    uVar6 = (undefined2)iVar7;
+    puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar7 * 2);
+    local_6c[iVar7] = (int)puVar4;
+    sVar1 = (short)param_1;
+    uVar2 = (ushort)param_2;
+    uVar3 = (ushort)param_3;
+    if ((((puVar4 != (ushort *)0x0) && ((sVar1 < 0 || ((*puVar4 >> 6 & 7) == (int)sVar1)))) &&
+        (((short)uVar2 < 0 || (((byte)((byte)*puVar4 >> 4) & 3) == uVar2)))) &&
+       (((short)uVar3 < 0 || (((byte)*puVar4 & 0xf) == uVar3)))) goto LAB_0004552c;
+    iVar5 = (iVar7 + 1) * 0x10000;
+    iVar7 = iVar5 >> 0x10;
+  } while (iVar7 < 0xb);
+  if (param_4 != 1) {
+    iVar5 = (int)(short)((uint)iVar5 >> 0x10);
+    while (uVar6 = (undefined2)iVar7, iVar5 < 0x13) {
+      puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar5 * 2);
+      local_6c[iVar5] = (int)puVar4;
+      if (((puVar4 != (ushort *)0x0) && ((sVar1 < 0 || ((*puVar4 >> 6 & 7) == (int)sVar1)))) &&
+         ((((short)uVar2 < 0 || (((byte)((byte)*puVar4 >> 4) & 3) == uVar2)) &&
+          (((short)uVar3 < 0 || (((byte)*puVar4 & 0xf) == uVar3)))))) goto LAB_0004552c;
+      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
+      iVar7 = iVar5;
+    }
+    if ((param_4 != 2) && (param_4 != 3)) {
+      iVar7 = 0;
+      do {
+        uVar6 = (undefined2)iVar7;
+        iVar5 = local_6c[iVar7];
+        if ((iVar5 != 0) && ((*(byte *)(iVar5 + 1) & 0x80) == 0)) {
+          local_74[0] = resolve_object_link(iVar5 + 6);
+          puVar4 = (ushort *)find_object_in_link_chain(param_1,param_2,param_3,local_74);
+          local_6c[iVar7] = (int)puVar4;
+          if (puVar4 != (ushort *)0x0) {
+LAB_0004552c:
+            *param_5 = uVar6;
+            return puVar4;
+          }
+        }
+        iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
+      } while (iVar7 < 0x13);
+    }
+  }
+  return (ushort *)0x0;
+}
+
+
+
+// was FUN_00045538 -- recursively walks an object's contents link chain
+// (descending into nested containers) looking for the first object
+// matching the category/subcategory/quality filters in param_1/param_2/
+// param_3 (each <0 means "any"); param_4 is an in/out cursor: on entry
+// it points at the current link to examine, on a match it's zeroed (or
+// updated to the next link) and the matched object pointer is returned.
+char *find_object_in_link_chain(param_1,param_2,param_3,param_4)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+/* Was `int * param_4;` -- the caller-supplied slot always holds a real
+   64-bit object-record pointer (see find_equipped_item_by_category's own local_74 and
+   extract_matching_object_from_slot's own local_28, both fixed alongside this one), but this
+   function only ever read/wrote its low 4 bytes through an `int *` view,
+   truncating the pointer on every pass. Confirmed live (regression suite,
+   demo_inventory_container_torch_use_test.txt): using a torch crashed
+   dereferencing a truncated object pointer at `uVar3 = (uint)*puVar1;`
+   (this function's own line, EXC_BAD_ACCESS at the low 32 bits of a real
+   object address). */
+char **param_4;
+
+{
+  ushort *puVar1;
+  char *iVar2;
+  uint uVar3;
+  char *local_1c;
+
+  if (*param_4 != 0) {
+    do {
+      if ((short)param_1 < 0) {
+LAB_00045594:
+        if (-1 < (short)param_2) {
+          puVar1 = (ushort *)*param_4;
+          uVar3 = (uint)*puVar1;
+          if ((*puVar1 >> 4 & 3) != (int)(short)param_2) goto LAB_000455f8;
+        }
+        if ((short)param_3 < 0) {
+LAB_00045668:
+          iVar2 = *param_4;
+          *param_4 = 0;
+          return iVar2;
+        }
+        puVar1 = (ushort *)*param_4;
+        uVar3 = (uint)*puVar1;
+        if ((uVar3 & 0xf) == (int)(short)param_3) goto LAB_00045668;
+      }
+      else {
+        puVar1 = (ushort *)*param_4;
+        uVar3 = (uint)*puVar1;
+        if ((*puVar1 >> 6 & 7) == (int)(short)param_1) goto LAB_00045594;
+      }
+LAB_000455f8:
+      if ((((uVar3 & 0x8000) == 0) && (local_1c = resolve_object_link(puVar1 + 3), local_1c != 0)) &&
+         (iVar2 = find_object_in_link_chain(param_1,param_2,param_3,&local_1c), iVar2 != 0)) {
+        if (local_1c == 0) {
+          return iVar2;
+        }
+        *param_4 = local_1c;
+        return iVar2;
+      }
+      iVar2 = resolve_object_link(*param_4 + 4);
+      *param_4 = iVar2;
+    } while (iVar2 != 0);
+  }
+  return 0;
+}
+
+
+
+// was FUN_00045678 -- resolves the inventory item under the current
+// click position: hit-tests the backpack widget grid, then either
+// directly resolves the equipped slot (param_1==2,
+// get_equipped_item_at_widget_slot) or extracts and refreshes
+// whatever's in that backpack slot (extract_clicked_backpack_item).
+// Confirmed used to set g_interact_target from a right-click/search
+// context (inventory.c).
+ushort *resolve_clicked_inventory_item(param_1)
+short param_1;
+
+{
+  int iVar1;
+  short sVar2;
+  /* Was `undefined4 uVar3;` -- truncated find_object_in_link_chain's/
+     get_equipped_item_at_widget_slot's real 64-bit object pointer to 32 bits. The
+     param_1!=2 branch (extract_clicked_backpack_item) still returns a narrower
+     `undefined4` itself (a separate, not-yet-fixed truncation one level
+     further down its own call chain via FUN_00045b20) -- cast here just
+     carries that existing truncation forward unchanged rather than
+     introducing a new one. */
+  ushort *uVar3;
+
+  sVar2 = hit_test_inventory_widget(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
+  iVar1 = (int)sVar2;
+  if ((iVar1 < 0) || (0x13 < iVar1)) {
+    uVar3 = 0;
+  }
+  else if (param_1 == 2) {
+    uVar3 = get_equipped_item_at_widget_slot((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
+  }
+  else {
+    uVar3 = (ushort *)extract_clicked_backpack_item(0xffffffff,0xffffffff,0xffffffff,(int)(char)(&g_backpack_widget_to_slot)[iVar1]);
+  }
+  return uVar3;
+}
+
+
+
+// was FUN_00045708 -- resolves the equipped-item link for slot
+// param_1. Confirmed used by resolve_clicked_inventory_item for the
+// "direct equipped-slot" click case.
+ushort *get_equipped_item_at_widget_slot(param_1)
+short param_1;
+
+{
+  /* Was `resolve_object_link(&g_equipped_items + param_1 * 2); return 0;` --
+     confirmed via real ARM disassembly (0x45708-0x45718: `mov r3,r0,lsl
+     #0x10; ldr r0,[...]; mov r3,r3,asr #0x10; add r0,r0,r3,lsl #0x1; b
+     0x53514` -- a genuine TAIL CALL straight into resolve_object_link,
+     0x53514) that this always returned resolve_object_link's own result,
+     not a hardcoded 0. Ghidra didn't model the tail call and decompiled
+     it as "call for side effect, then return 0" instead -- the caller
+     (resolve_clicked_inventory_item, in turn feeding g_interact_target in perform_object_search_check's
+     own right-click-in-inventory "ready item" handler) always saw a
+     NULL target as a result, silently no-op'ing every right-click. */
+  return (ushort *)resolve_object_link(&g_equipped_items + param_1 * 2);
+}
+
+
+
+// was FUN_00045720
+void deplete_object_count(param_1)
+undefined4 param_1;
+
+{
+  reduce_object_count(param_1,0xffffffff);
+  return;
+}
+
+
+
+// was FUN_00045728
+void decrement_object_count(param_1)
+/* Was `undefined4 param_1` -- a real object-record pointer (forwarded
+   straight to reduce_object_count, which dereferences it via
+   encode_object_slot_index/calculate_object_weight), truncated to 32 bits on this
+   host -- same class as many other fixes this session. */
+ushort *param_1;
+
+{
+  reduce_object_count(param_1,1);
+  return;
+}
+
+
+
+// was FUN_00045730
+undefined4 reduce_object_count(param_1,param_2)
+/* Was `undefined4 param_1` -- same truncated-object-pointer bug as
+   decrement_object_count's own fix just above it (its only caller here). */
+ushort *param_1;
+uint param_2;
+
+{
+  short sVar1;
+  ushort uVar2;
+  int iVar3;
+  undefined4 uVar4;
+  undefined1 *puVar5;
+  undefined1 *puVar6;
+  int iVar7;
+  int iVar8;
+  uint uVar9;
+  char *pObj;
+
+  /* Dropped argument: calculate_object_weight dereferences its own declared
+     param_1 immediately -- called bare here, same idiom as this whole
+     session's other fixes. Confirmed live (UW_DEBUG_INV +
+     demo_container_click_test.txt): clicking a food item (bread)
+     inside an open backpack container crashed here on first use of
+     this never-before-exercised "use item" dispatch path. */
+  iVar3 = calculate_object_weight(param_1);
+  uVar4 = encode_object_slot_index(param_1);
+  iVar7 = 0;
+  do {
+    if ((uint)(*(ushort *)(&g_equipped_items + iVar7 * 2) >> 6) == (int)(short)uVar4) break;
+    iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
+  } while (iVar7 < 0x1c);
+  iVar8 = (int)(short)iVar7;
+  sVar1 = (short)param_2;
+  if (iVar8 < 0x1c) {
+    extract_and_refresh_slot_item(0xffffffff,0xffffffff,0xffffffff,iVar7,sVar1);
+    if (iVar8 < 0x13) {
+      redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar8]);
+    }
+    else {
+      repopulate_container_grid_slots();
+      refresh_container_view();
+      /* Was `for (iVar7 = g_current_container_record; ...)` -- truncated
+         g_current_container_record (a real char* global) into a 32-bit
+         int, then rebuilt a bogus "next" address out of raw bytes at
+         iVar7+4..+7 instead of resolving the object's real next-link via
+         resolve_object_link, same idiom as walk_object_tree's chain walk.
+         Confirmed live (UW_DEBUG_INV + demo_container_click_test.txt):
+         this crashed on the first-ever exercise of the food-item "use"
+         path (clicking Bread inside an open container). */
+      for (pObj = g_current_container_record; pObj != NULL;
+          pObj = (*(ushort *)(pObj + 4) & 0xffc0) == 0 ? NULL :
+                 (char *)resolve_object_link((ushort *)(pObj + 4))) {
+        iVar8 = *(short *)(pObj + 10) - iVar3;
+        *(char *)(pObj + 10) = (char)iVar8;
+        *(char *)(pObj + 0xb) = (char)((uint)iVar8 >> 8);
+      }
+    }
+  }
+  else {
+    puVar5 = (undefined1 *)find_object_by_encoded_slot_in_chain((char *)g_player_object + 6,1,uVar4);
+    if (puVar5 == (undefined1 *)0x0) {
+      return 0;
+    }
+    if (((0 < sVar1) && ((puVar5[1] & 0x80) != 0)) && ((*(ushort *)(puVar5 + 6) & 0x8000) == 0)) {
+      uVar2 = *(ushort *)(puVar5 + 6) >> 6;
+      if ((1 < uVar2) && (sVar1 < (short)uVar2)) {
+        puVar6 = (undefined1 *)alloc_object_slot(0);
+        *puVar6 = *puVar5;
+        puVar6[1] = puVar5[1];
+        puVar6[2] = puVar5[2];
+        puVar6[3] = puVar5[3];
+        puVar6[4] = puVar5[4];
+        puVar6[5] = puVar5[5];
+        puVar6[6] = puVar5[6];
+        puVar6[7] = puVar5[7];
+        uVar9 = (param_2 & 0xffff) * 0x3ff + (uint)uVar2;
+        puVar6[6] = puVar6[6] & 0x3f ^ (char)uVar9 * '@';
+        puVar6[7] = (char)((uVar9 & 0x3ffffff) >> 2);
+        puVar5[6] = puVar5[6] & 0x3f | (byte)((param_2 & 0x3ff) << 6);
+        puVar5[7] = (char)((param_2 << 0x16) >> 0x18);
+        object_list_insert_head(puVar5 + 4,puVar6);
+      }
+    }
+    object_list_unlink(DAT_002046b4,puVar5);
+    g_player_carry_weight = g_player_carry_weight - (short)iVar3;
+    /* This else-branch (reached when the object isn't found among the
+       28 direct/open-container-borrowed slots at all, e.g. nested two
+       containers deep) unlinked the object but, unlike this function's
+       OWN sibling branch just above (the `iVar8<0x1c && iVar8>=0x13`
+       case), never refreshed the open-container widget grid
+       afterward. Added the same repopulate_container_grid_slots/refresh_container_view pair that
+       sibling already calls (refresh_container_view's own first line is
+       `redraw_inventory_widget_range(0xc,0x13)` -- exactly that grid)
+       for consistency -- not independently confirmed live (this
+       specific branch wasn't the one the torch-duplication repro
+       exercised; see extract_and_refresh_slot_item's own comment for
+       the actual confirmed root cause), but the same staleness risk
+       applies on general principle. */
+    repopulate_container_grid_slots();
+    refresh_container_view();
+    redraw_inventory_widget(0x13);
+    refresh_player_equipment_effects();
+  }
+  return 1;
+}
+
+
+
+// was FUN_000459d8 -- extracts and refreshes the item in slot
+// param_4 via extract_and_refresh_slot_item, then updates either the
+// container view or the inventory widget depending on what the
+// extracted slot held. Confirmed as its only caller
+// (resolve_clicked_inventory_item) always passes wildcard (-1,-1,-1)
+// filters -- "extract whatever's in the clicked backpack slot."
+ushort *extract_clicked_backpack_item(param_1,param_2,param_3,param_4)
+/* Was a bare K&R `()` reading an implicit `short in_r3;` for its 4th
+   arg, and forwarding to FUN_00045b20 via a bare `FUN_00045b20()` call
+   with no explicit arguments at all. On real ARM32 hardware, a
+   register-passing K&R call like this genuinely forwards whatever's
+   still sitting in r0-r3 (this function's own incoming args) straight
+   through -- but a C compiler targeting this 64-bit host has no such
+   guarantee for a literal `foo()` call: it passes exactly zero
+   arguments, full stop. Confirmed as the actual root cause of the
+   torch-duplication bug (not a mere stale-redraw issue as first
+   suspected): reduce_object_count's OWN call to FUN_00045b20 passed
+   real, explicit arguments correctly, but FUN_00045b20's undeclared
+   body had no way to name/forward them, so its own nested
+   extract_matching_object_from_slot() call ran with garbage/zeroed
+   arguments and silently did nothing -- the torch was never actually
+   unlinked from the sack's contents chain before use_light_source
+   moved a (correctly readied) copy of it into the shoulder slot. */
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
+
+{
+  ushort *uVar1;
+  ushort *puVar2;
+
+  uVar1 = extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,0);
+  puVar2 = (ushort *)resolve_object_link(&g_equipped_items + param_4 * 2);
+  if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
+     (g_current_container_record != 0)) {
+    repopulate_container_grid_slots();
+    refresh_container_view();
+    return uVar1;
+  }
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_4]);
+  return uVar1;
+}
+
+
+
+// was FUN_00045a7c -- byte-for-byte identical to
+// extract_clicked_backpack_item (see its own comment on the shared
+// bug); kept as a thin forwarding call to avoid the duplication.
+// Confirmed as weapon_swing.c's "extract this ammo slot and refresh"
+// helper, called with real (non-wildcard) filters.
+ushort *extract_ammo_and_refresh(param_1,param_2,param_3,param_4)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
+
+{
+  return extract_clicked_backpack_item(param_1,param_2,param_3,param_4);
+}
+
+
+
+// was FUN_00045b20 -- thin wrapper: extracts the object matching
+// param_1/param_2/param_3 (category/subcategory/quality, <0 = any)
+// from slot param_4 via extract_matching_object_from_slot, then
+// refreshes carry-weight/UI state via refresh_player_equipment_effects(). Was a bare K&R
+// `()` blindly relying on ARM32 register pass-through to forward its
+// own caller's args into extract_matching_object_from_slot() -- see
+// extract_clicked_backpack_item's own comment on why that's unsound on this 64-bit
+// host. This was THE actual root cause of the torch-duplication bug:
+// reduce_object_count's real, explicit call here (with a genuine
+// object-bearing slot index) silently forwarded nothing, so the torch
+// was never unlinked from its container before being placed anew.
+ushort *extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
+ushort param_5;
+
+{
+  ushort *uVar1;
+
+  uVar1 = extract_matching_object_from_slot(param_1,param_2,param_3,param_4,param_5);
+  refresh_player_equipment_effects();
+  return uVar1;
+}
+
+
+
+// was FUN_00045b48 -- finds the first object matching the category/
+// subcategory/quality filters (param_1/param_2/param_3, <0 = any) in
+// inventory slot param_4 (searched directly, or via
+// find_object_in_link_chain for nested containers); if it's a stackable
+// object and param_5 asks for fewer than the full stack, splits off a
+// new object for the remaining count via alloc_object_slot before
+// unlinking and returning the matched (now correctly-sized) object.
+ushort *extract_matching_object_from_slot(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
+ushort param_5;
+
+{
+  ushort uVar1;
+  short sVar2;
+  ushort *puVar3;
+  int iVar4;
+  char *iVar5;
+  uint uVar6;
+  ushort uVar7;
+  uint uVar8;
+  int iVar9;
+  byte *pbVar10;
+  byte *pbVar11;
+  char *local_28;
+  
+  iVar4 = (int)param_4;
+  pbVar11 = &g_equipped_items + iVar4 * 2;
+  pbVar10 = (byte *)0x0;
+  puVar3 = (ushort *)resolve_object_link(pbVar11);
+  if (puVar3 != (ushort *)0x0) {
+    if (iVar4 < 0x13) {
+      local_28 = g_player_object;
+    }
+    else {
+      /* Was `resolve_object_link(g_current_container_record + 8)` --
+         g_current_container_record is a small (12-byte) Ordinal_1041
+         heap allocation, nowhere near the object arena buffer
+         resolve_object_link's own bounds guard checks against (see its
+         own comment), so this call was ALWAYS silently rejected on this
+         64-bit host, returning NULL regardless of what offset+8/9 held
+         (confirmed live: local_28 read back NULL even after fixing
+         offset+8/9's own encoding to correctly carry the container's
+         identity -- see that write's own comment a few thousand lines
+         up). g_current_container_link is a normal global, already
+         proven arena-resolvable throughout this whole file, and
+         open_backpack_container keeps it in lockstep with the exact
+         same identity value this record's own offset+8/9 encodes for
+         the currently-displayed (innermost, if nested) open container
+         -- which is exactly what this branch (iVar4>=0x13, a widget
+         showing that container's own contents) needs. Confirmed live:
+         this was the reason object_list_unlink got called with a
+         bogus near-null "list" address, corrupting/dropping other
+         objects still in the sack's real contents chain whenever an
+         item was used out of an open container (matching a user report
+         of "closing and reopening a container loses other contents
+         seemingly randomly"). Other call sites of this same
+         `resolve_object_link(g_current_container_record+8)` pattern
+         likely share this bug too, but aren't exercised by this
+         specific repro -- not fixed here. */
+      local_28 = resolve_object_link(&g_current_container_link);
+    }
+    uVar6 = (uint)(short)param_1;
+    uVar7 = (ushort)param_2;
+    uVar1 = (ushort)param_3;
+    if ((((((int)uVar6 < 0) && ((short)uVar7 < 0)) && ((short)uVar1 < 0)) ||
+        (((((int)uVar6 < 0 || ((*puVar3 >> 6 & 7) == uVar6)) &&
+          (((short)uVar7 < 0 || (((byte)((byte)*puVar3 >> 4) & 3) == uVar7)))) &&
+         (((short)uVar1 < 0 || (((byte)*puVar3 & 0xf) == uVar1)))))) ||
+       (puVar3 = (ushort *)find_object_in_link_chain(param_1,param_2,param_3,&local_28), puVar3 != (ushort *)0x0)
+       ) {
+      if (((param_5 != 0) && ((*puVar3 & 0x8000) != 0)) && ((puVar3[3] & 0x8000) == 0)) {
+        uVar7 = puVar3[3] >> 6;
+        if ((1 < uVar7) && ((short)param_5 < (short)uVar7)) {
+          pbVar10 = (byte *)alloc_object_slot(0);
+          *pbVar10 = (byte)*puVar3;
+          pbVar10[1] = *(byte *)((char *)puVar3 + 1);
+          pbVar10[2] = (byte)puVar3[1];
+          pbVar10[3] = *(byte *)((char *)puVar3 + 3);
+          pbVar10[4] = (byte)puVar3[2];
+          pbVar10[5] = *(byte *)((char *)puVar3 + 5);
+          pbVar10[6] = (byte)puVar3[3];
+          pbVar10[7] = *(byte *)((char *)puVar3 + 7);
+          uVar6 = (uint)param_5;
+          uVar8 = uVar6 * 0x3ff + (uint)uVar7;
+          pbVar10[6] = pbVar10[6] & 0x3f ^ (char)uVar8 * '@';
+          pbVar10[7] = (byte)((uVar8 & 0x3ffffff) >> 2);
+          *(byte *)(puVar3 + 3) = (byte)puVar3[3] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
+          *(byte *)((char *)puVar3 + 7) = (byte)((uVar6 << 0x16) >> 0x18);
+          object_list_insert_head(puVar3 + 2,pbVar10);
+        }
+      }
+      if ((local_28 == g_player_object) || (0x13 < iVar4)) {
+        if (pbVar10 == (byte *)0x0) {
+          uVar7 = *pbVar11 & 0x3f;
+        }
+        else {
+          sVar2 = encode_object_slot_index(pbVar10);
+          uVar7 = *pbVar11 & 0x3f | sVar2 << 6;
+        }
+        *pbVar11 = (byte)uVar7;
+        (&DAT_00202951)[iVar4 * 2] = (char)(uVar7 >> 8);
+      }
+      object_list_unlink(local_28 + 6,puVar3);
+      iVar4 = calculate_object_weight(puVar3);
+      g_player_carry_weight = g_player_carry_weight - (short)iVar4;
+      if (g_current_container_record == 0) {
+        return puVar3;
+      }
+      sVar2 = encode_object_slot_index(local_28);
+      if ((uint)(*(ushort *)(g_current_container_record + 8) >> 6) != (int)sVar2) {
+        return puVar3;
+      }
+      sVar2 = encode_object_slot_index(puVar3);
+      iVar9 = 0x14;
+      do {
+        if ((uint)(*(ushort *)(&g_equipped_items + iVar9 * 2) >> 6) == (int)sVar2) {
+          if (pbVar10 == (byte *)0x0) {
+            uVar6 = 0;
+          }
+          else {
+            sVar2 = encode_object_slot_index(pbVar10);
+            uVar6 = (uint)sVar2;
+          }
+          iVar9 = (int)(short)iVar9;
+          (&g_equipped_items)[iVar9 * 2] =
+               (&g_equipped_items)[iVar9 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
+          iVar5 = g_current_container_record;
+          (&DAT_00202951)[iVar9 * 2] = (char)((uVar6 << 0x16) >> 0x18);
+          /* Legacy truncated "prev" walk -- same fix as
+             place_object_in_backpack_slot's sibling copy above (search
+             "still broken for genuine container nesting"). */
+          for (; iVar5 != 0; iVar5 = *(char **)(iVar5 + 0x14)) {
+            iVar9 = *(short *)(iVar5 + 10) - iVar4;
+            *(char *)(iVar5 + 10) = (char)iVar9;
+            *(char *)(iVar5 + 0xb) = (char)((uint)iVar9 >> 8);
+          }
+          return puVar3;
+        }
+        iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
+      } while (iVar9 < 0x1c);
+      return puVar3;
+    }
+  }
+  return (ushort *)0x0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Was copying "armor_f" into acStack_85c88, a 547936-byte buffer
+   Ghidra misattributed here (the same stack-frame-size-miscalculation
+   artifact already fixed in dispatch_object_action's acStack_85978
+   and check_object_fits_in_slot's acStack_84f64 -- see their own
+   comments) that's never read back afterward. The REAL destination,
+   acStack_28 (6 bytes) + local_22 (the dynamically-picked gender
+   letter, right after it), never actually got "armor_" copied into
+   it -- so reload_single_grtile_entry loaded a resource file named by 6 bytes of
+   uninitialized stack instead of "armor_f"/"armor_m", explaining why
+   an equipped item's paper-doll overlay renders as a solid block
+   (whatever placeholder/error frame a failed .GR load falls back to)
+   instead of the real worn-armor graphic. Fixed by building the real
+   name into one properly-sized, NUL-terminated local instead of
+   relying on two separate locals happening to land adjacently on the
+   stack (true in the original 32-bit ARM build, not guaranteed by a
+   modern compiler). */
+undefined4 load_armor_overlay_frame(param_1,param_2)
+int param_1;
+undefined4 param_2;
+
+{
+  char armor_name[8];
+  int i;
+
+  for (i = 0; i < 6; i++) {
+    armor_name[i] = s_armor_f_00085c60[i];
+  }
+  armor_name[6] = 0x6d;
+  if ((*(byte *)(DAT_00086df8 + 100) & 2) == 2) {
+    armor_name[6] = 0x66;
+  }
+  armor_name[7] = '\0';
+  reload_single_grtile_entry(param_1 + 0x2091,armor_name,param_2);
+  return 1;
+}
+
+
+
+void redraw_armor_overlay_widgets()
+
+{
+  byte *pbVar1;
+  uint uVar2;
+  uint uVar3;
+  int iVar4;
+
+  if (g_active_hud_panel == '\0') {
+    decrement_cursor_hide_depth();
+    if (DAT_00085c54 != 0) {
+      screen_backup_save();
+      set_draw_color(0x1a);
+      rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76);
+      screen_backup_restore_rect(0xf0,0xb,0x13b,0x76);
+    }
+    g_blit_transparent_mode = 1;
+    draw_sprite_by_id(0x2091,(int)g_inv_hotspot_draw_x,(int)g_inv_hotspot_draw_y,g_inv_hotspot_dirty_h,g_inv_hotspot_dirty_w);
+    iVar4 = 1;
+    g_blit_transparent_mode = 1;
+    do {
+      if ((*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar4] * 2) & 0xffc0) != 0) {
+        pbVar1 = (byte *)resolve_object_link((ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar4] * 2));
+        uVar3 = *pbVar1 & 0x1f;
+        if ((uint)(int)(short)uVar3 < 0xf) {
+          uVar2 = (pbVar1[4] & 0x30) >> 4;
+        }
+        else {
+          uVar2 = 3;
+        }
+        if (((int)(short)uVar3 + 1U != (int)*(char *)((char *)&DAT_00202988 + iVar4)) ||
+           ((short)uVar2 + 1 != (int)*(char *)((char *)&DAT_002028e0 + iVar4))) {
+          *(char *)((char *)&DAT_00202988 + iVar4) = (char)uVar3 + '\x01';
+          *(char *)((char *)&DAT_002028e0 + iVar4) = (char)uVar2 + '\x01';
+          load_armor_overlay_frame(iVar4,uVar2 * 0xf + uVar3);
+        }
+        draw_sprite_by_id(iVar4 + 0x2091,(int)(&g_inv_hotspot_draw_x)[iVar4 * 7],(int)(&g_inv_hotspot_draw_y)[iVar4 * 7],
+                     (&g_inv_hotspot_dirty_h)[iVar4 * 0xe],(&g_inv_hotspot_dirty_w)[iVar4 * 0xe]);
+      }
+      iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+    } while (iVar4 < 6);
+    g_blit_transparent_mode = 0;
+    capture_framebuffer_rect_to_grtile(DAT_00202914,(int)DAT_00085b72,(int)DAT_00085b74,DAT_00085b76 - 5,DAT_00085b77);
+    capture_framebuffer_rect_to_grtile(DAT_00202910,DAT_00085b64 + 5,(int)DAT_00085b66,DAT_00085b68 - 5,DAT_00085b69);
+    if (((DAT_00202962 & 0xffc0) != 0) || ((DAT_00202964 & 0xffc0) != 0)) {
+      redraw_inventory_widget_range(10,0xb);
+    }
+    if (DAT_00085c54 != 0) {
+      screen_backup_save();
+      set_draw_color(0x1a);
+      rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76);
+      screen_backup_restore_rect(0xf0,0xb,0x13b,0x76);
+    }
+    iVar4 = update_carry_weight_display(1);
+    if (iVar4 != 0) {
+      select_active_font(s_font5x6p_sys_0008430c);
+    }
+    cursor_show_idle_tick();
+  }
+  return;
+}
+
+
+
+void swap_cursor_and_slot_item(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  int iVar1;
+  uint uVar2;
+  bool bVar3;
+  short local_20;
+  
+  bVar3 = g_selected_object != (ushort *)0x0;
+  if (param_2 == 0) {
+    uVar2 = (uint)local_20;
+  }
+  else {
+    iVar1 = get_equipped_item_at_slot(param_1);
+    resolve_object_link(iVar1 + 4);
+    uVar2 = encode_object_slot_index();
+  }
+  g_selected_object = (ushort *)extract_matching_object_from_slot(0xffffffff,0xffffffff,0xffffffff,param_1,0);
+  if (g_selected_object != (ushort *)0x0) {
+    if (param_2 != 0) {
+      iVar1 = (int)(short)param_1;
+      if (getenv("UW_DEBUG_INV"))
+        fprintf(stderr, "[inv] swap_cursor_and_slot_item writing arr_idx=%d objid=0x%03x\n", iVar1, uVar2 & 0x1ff);
+      (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
+      (&DAT_00202951)[iVar1 * 2] = (char)((uVar2 << 0x16) >> 0x18);
+      refresh_player_equipment_effects();
+    }
+    decrement_cursor_hide_depth();
+    if (bVar3) {
+      pop_cursor_icon(0);
+    }
+    /* Was `*g_selected_object & 0x1ff` -- g_selected_object is declared
+       `char *` (a single signed byte, used elsewhere in this file for
+       genuine byte-level access), but an object's own id is a 9-bit
+       field spanning 2 bytes, needing a real `ushort` read. Reading
+       just the low byte and sign-extending it (as `char` does) set bit
+       8 spuriously whenever that byte's own top bit was set --
+       e.g. objid 0xb6 read as signed char -74, sign-extended to
+       0xffffffb6, then `&0x1ff` incorrectly produced 0x1b6 instead of
+       0xb6. Confirmed live (UW_DEBUG_CURSOR): every held-item cursor
+       icon with an id >= 0x80 in its low byte resolved to a
+       completely different (or, for ids that pushed the corrupted
+       value past this file's populated sprite range, entirely blank)
+       icon -- matching a user report of several items showing the
+       wrong cursor icon or none at all when picked up. Same root
+       cause at every other `*g_selected_object & 0x1ff` site in this
+       file (see their own copies of this comment). */
+    push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
+    cursor_show_idle_tick();
+    refresh_player_equipment_effects();
+  }
+  return;
+}
+
+
+
+// was FUN_000470fc -- prompts "Move how many?" (s_Move_how_many__00085c68)
+// for splitting a stacked object (param_1): splits off and returns a
+// new object with the entered quantity (via alloc_object_slot), or
+// returns param_1 itself if the whole stack was taken, or NULL on
+// cancel. Confirmed as the "STACK-SPLIT branch" of interact.c's grab
+// handling by its own debug comment there.
+undefined1 *prompt_split_object_stack(param_1)
+undefined1 * param_1;
+
+{
+  ushort uVar1;
+  short sVar2;
+  int iVar3;
+  undefined1 *puVar4;
+  uint uVar5;
+  undefined1 local_1c;
+  undefined1 local_1b;
+  undefined1 auStack_18 [4];
+  
+  puVar4 = (undefined1 *)0x0;
+  uVar1 = *(ushort *)(param_1 + 6) >> 6;
+  local_1c = 0x31;
+  local_1b = 0;
+  sVar2 = scroll_text_entry_prompt(s_Move_how_many__00085c68,&local_1c,auStack_18,0,3);
+  if ((sVar2 != 0x1b) && (sVar2 != 3)) {
+    if ((sVar2 == 0) || (3 < sVar2)) {
+      sVar2 = Ordinal_993(auStack_18);
+      uVar5 = (int)sVar2;
+      if ((int)(short)uVar1 < (int)sVar2) {
+        uVar5 = (uint)uVar1;
+      }
+    }
+    else {
+      uVar5 = 1;
+      if ((sVar2 != 1) && (sVar2 == 2)) {
+        uVar5 = (uint)uVar1;
+      }
+      echo_number_to_scroll(uVar5);
+    }
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
+    if (((int)(short)uVar5 != 0) &&
+       (puVar4 = param_1, (int)(short)uVar5 != (uint)(*(ushort *)(param_1 + 6) >> 6))) {
+      puVar4 = (undefined1 *)alloc_object_slot(0);
+      *puVar4 = *param_1;
+      puVar4[1] = param_1[1];
+      puVar4[2] = param_1[2];
+      puVar4[3] = param_1[3];
+      puVar4[4] = param_1[4];
+      puVar4[5] = param_1[5];
+      puVar4[6] = param_1[6];
+      puVar4[7] = param_1[7];
+      iVar3 = (*(ushort *)(puVar4 + 6) & 0xffc0) + uVar5 * -0x40;
+      puVar4[6] = (byte)iVar3 ^ (byte)*(ushort *)(puVar4 + 6) & 0x3f;
+      puVar4[7] = (char)((uint)iVar3 >> 8);
+      param_1[6] = param_1[6] & 0x3f | (byte)((uVar5 & 0x3ff) << 6);
+      param_1[7] = (char)((uVar5 << 0x16) >> 0x18);
+    }
+  }
+  wait_for_key_or_mouse_move(1);
+  return puVar4;
 }

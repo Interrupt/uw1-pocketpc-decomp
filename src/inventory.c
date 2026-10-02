@@ -49,7 +49,7 @@ void handle_inventory_panel_normal_click()
     }
     sVar1 = hit_test_inventory_widget(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
     if ((sVar1 != 0x15) && (sVar1 != 0x16)) {
-      g_interact_target = FUN_00045678(2);
+      g_interact_target = resolve_clicked_inventory_item(2);
       if (g_interact_target != 0) {
         (*DAT_002020b8)(g_interact_target,1,1);
         wait_for_click_release(1);
@@ -256,7 +256,7 @@ short param_1;
           }
         }
         else if ((puVar7[3] & 0xffc0) != 0x40) {
-          puVar10 = (ushort *)FUN_000470fc(puVar7);
+          puVar10 = (ushort *)prompt_split_object_stack(puVar7);
           if (puVar10 == (ushort *)0x0) {
             return;
           }
@@ -647,7 +647,7 @@ void perform_object_search_check()
 
   trigger_object_trap_or_use_action(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
   if (g_interact_target == (ushort *)0x0) {
-    g_interact_target = (ushort *)FUN_00045678(2);
+    g_interact_target = (ushort *)resolve_clicked_inventory_item(2);
     if (g_interact_target != (ushort *)0x0) goto LAB_0003f69c;
   }
   else {

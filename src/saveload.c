@@ -418,7 +418,7 @@ char param_1;
     pcVar6 = pcVar6 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_630,&DAT_000857a0);
-  uVar3 = FUN_0002295c(acStack_630);
+  uVar3 = load_string_resource(acStack_630);
   Ordinal_61(auStack_420,uVar3);
   /* Was `stack0xffdc2e30_ptr = stack0xffdc2e30_buf;` above -- a stack
      slot Ghidra split into two names (same bug class as the acStack_650
@@ -439,7 +439,7 @@ char param_1;
     pcVar5 = pcVar5 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_528,acStack_650);
-  uVar3 = FUN_0002295c(acStack_528);
+  uVar3 = load_string_resource(acStack_528);
   Ordinal_61(auStack_218,uVar3);
   print_scroll_message_by_id(0xa6);
   iVar4 = ensure_save_directory_exists(acStack_630);
@@ -577,9 +577,9 @@ char *param_2;
     uVar5 = Ordinal_1063(local_638,s__PLAYER_DAT_00087088);
     iVar4 = win_file_exists(uVar5,0);
     if (iVar4 == -1) {
-      FUN_0002295c(local_530);
+      load_string_resource(local_530);
       Ordinal_161();
-      uVar5 = FUN_0002295c(local_530);
+      uVar5 = load_string_resource(local_530);
       iVar4 = Ordinal_160(uVar5,0);
       if (iVar4 < 0) goto LAB_0006c540;
     }
@@ -613,9 +613,9 @@ char *param_2;
           iVar4 = commit_level_to_save_slot((int)DAT_00201b68);
           if (iVar4 != 0) {
             print_scroll_message_by_id(0xaa);
-            uVar5 = FUN_0002295c(local_530);
+            uVar5 = load_string_resource(local_530);
             Ordinal_61(auStack_428,uVar5);
-            uVar5 = FUN_0002295c(local_638);
+            uVar5 = load_string_resource(local_638);
             Ordinal_61(auStack_220,uVar5);
             /* Was copy_save_slot_files(local_638,local_530) -- i.e.
                (dest="\SAVE0", src="\SAVEn"), copying the CHOSEN SLOT
@@ -1287,7 +1287,7 @@ char * param_1;
   char cVar1;
   short sVar2;
   int iVar3;
-  char *uVar4;  /* was undefined4 -- truncated the real FUN_0002295c()
+  char *uVar4;  /* was undefined4 -- truncated the real load_string_resource()
                    pointer to 32 bits, which Ordinal_167 now actually
                    dereferences (used to be a harmless no-op stub) */
   int iVar5;
@@ -1309,7 +1309,7 @@ char * param_1;
   } while (cVar1 != '\0');
   iVar3 = Ordinal_1068(acStack_348);
   Ordinal_1063(acStack_348,&DAT_000870c8);
-  uVar4 = FUN_0002295c(acStack_348);
+  uVar4 = load_string_resource(acStack_348);
   iVar5 = Ordinal_167(uVar4,local_240);
   bVar10 = iVar5 == -1;
   while (!bVar10) {
@@ -1321,7 +1321,7 @@ char * param_1;
 LAB_0006c5f8:
   if (bVar9) {
     /* Was a `do { ... } while (sVar2 != 0)` loop rebuilding the path from
-       `FUN_00022998(auStack_218)` each pass -- auStack_218 is never
+       `load_string_resource_large(auStack_218)` each pass -- auStack_218 is never
        written anywhere in this function, so that read uninitialized
        stack memory as a string, and the loop's own exit condition
        (`Ordinal_181` against `iVar5`, a handle already exhausted by the

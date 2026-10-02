@@ -375,7 +375,7 @@ undefined4 param_1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_6e4,s__DATA_lev_ark_00085734);
-        uVar7 = FUN_0002295c(acStack_6e4);
+        uVar7 = load_string_resource(acStack_6e4);
         Ordinal_61(auStack_22c,uVar7);
         Ordinal_1047(acStack_5dc,0,0x104);
         pcVar5 = &DAT_0023cca8;
@@ -386,12 +386,12 @@ undefined4 param_1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_5dc,s__SAVE0_lev_ark_000842fc);
-        uVar7 = FUN_0002295c(acStack_5dc);
+        uVar7 = load_string_resource(acStack_5dc);
         Ordinal_61(auStack_434,uVar7);
         /* The original does CopyFileW(auStack_22c, auStack_434) here to
            seed the new game's world from the pristine template. That path
            relies on the coredll wide-string ordinals (Ordinal_196/61/164),
-           which are no-op stubs -- and the pointer FUN_0002295c returns
+           which are no-op stubs -- and the pointer load_string_resource returns
            gets truncated through this function's `undefined4` locals, so
            making them real would crash. Do the copy directly against the
            game paths instead: without it \SAVE0\lev.ark never exists and
@@ -1679,7 +1679,7 @@ undefined4 param_2;
     iVar3 = Ordinal_461(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008784c,0,0);
     if (iVar3 == 0) {
       Ordinal_463(local_7d4,u_InstlDir_00087838,0,&local_7c4);
-      pcVar4 = (char *)FUN_00022998(auStack_638);
+      pcVar4 = (char *)load_string_resource_large(auStack_638);
       do {
         cVar2 = *pcVar4;
         pcVar4 = pcVar4 + 1;
@@ -1702,7 +1702,7 @@ undefined4 param_2;
     iVar3 = Ordinal_461(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_000877a4,0,0);
     if (iVar3 == 0) {
       Ordinal_463(local_7d8,u_InstlDir_00087838,0,&local_7c8);
-      pcVar9 = (char *)FUN_00022998(auStack_430);
+      pcVar9 = (char *)load_string_resource_large(auStack_430);
       do {
         cVar2 = *pcVar9;
         pcVar9 = pcVar9 + 1;
@@ -1724,7 +1724,7 @@ undefined4 param_2;
     iVar3 = Ordinal_461(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008771c,0,0);
     if (iVar3 == 0) {
       Ordinal_463(local_7d0,u_InstlDir_00087838,0,local_7b8);
-      pcVar10 = (char *)FUN_00022998(auStack_228);
+      pcVar10 = (char *)load_string_resource_large(auStack_228);
       pcVar9 = &DAT_00241f08;
       do {
         cVar2 = *pcVar10;
@@ -2013,7 +2013,7 @@ short param_1;
 
 
 /* was FUN_00071ac4. Bound to key 0x89 in mode 0x1b (uw.c ~59573).
-   FUN_000452dc returns `ushort *`; its return was captured into a plain
+   find_equipped_item_by_category returns `ushort *`; its return was captured into a plain
    `int` in the original decompile, the same pointer-truncation bug
    class fixed ~30 other places in this file. */
 void debug_force_rest_action()
@@ -2021,7 +2021,7 @@ void debug_force_rest_action()
   ushort *puVar1;
   undefined1 auStack_10 [4];
 
-  puVar1 = FUN_000452dc(4,2,1,4,(undefined2 *)auStack_10);
+  puVar1 = find_equipped_item_by_category(4,2,1,4,(undefined2 *)auStack_10);
   handle_rest_action(puVar1 != (ushort *)0x0);
   return;
 }
@@ -2204,7 +2204,7 @@ void run_game_startup_sequence()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_62c,s__DATA_lev_ark_00085734);
-  uVar5 = FUN_0002295c(acStack_62c);
+  uVar5 = load_string_resource(acStack_62c);
   Ordinal_61(auStack_214,uVar5);
   Ordinal_1047(acStack_524,0,0x104);
   do {
@@ -2213,7 +2213,7 @@ void run_game_startup_sequence()
     pcVar6 = pcVar6 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_524,s__SAVE0_lev_ark_000842fc);
-  uVar5 = FUN_0002295c(acStack_524);
+  uVar5 = load_string_resource(acStack_524);
   Ordinal_61(auStack_41c,uVar5);
   Ordinal_164(auStack_214,auStack_41c,0);
   sVar2 = seed_conversation_globals_for_new_game();
@@ -2313,7 +2313,7 @@ void request_game_exit()
 
 
 // was FUN_0003c310 -- empty body (just returns), same no-op as its
-// split-symbol duplicate thunk_FUN_0003c310. Called from both fatal
+// split-symbol duplicate show_error_dialog_stub_thunk. Called from both fatal
 // and non-fatal error paths with and without an argument; plausibly a
 // disabled error/message-dialog display stub (Ordinal_1071, the real
 // message-box display referenced near report_fatal_error_and_exit below, is itself
@@ -2757,5 +2757,17 @@ ushort param_1;
 
 {
   DAT_00201c84 = DAT_00201c84 | param_1;
+  return;
+}
+
+
+// was thunk_FUN_0003c310 -- a Ghidra-generated "thunk" duplicate of
+// show_error_dialog_stub (identical empty body, a separate call site
+// decompiled as a second copy). Collapsed to a real call to avoid
+// the duplication.
+void show_error_dialog_stub_thunk()
+
+{
+  show_error_dialog_stub();
   return;
 }

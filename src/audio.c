@@ -1012,7 +1012,7 @@ short param_1;
       pcVar4 = pcVar4 + 1;
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_118,acStack_220);
-    uVar2 = FUN_0002295c(acStack_118);
+    uVar2 = load_string_resource(acStack_118);
     load_and_resample_wave_file(DAT_0023c3bc,DAT_0023c540,uVar2);
     arm_sfx_trigger_slot(DAT_0023c3b8,DAT_0023c3bc,0);
     start_sfx_trigger_slot(DAT_0023c3b8,0);
@@ -1184,9 +1184,9 @@ short param_1;
 // level/character-creation transitions (src/chargen.c,
 // src/resources.c, and several not-yet-extracted uw.c call sites) to
 // avoid an ambient sound referencing a now-stale emitter. Has a
-// byte-identical duplicate at a different address, thunk_FUN_0007ec1c
-// (elsewhere in this file), left un-merged like this project's other
-// documented split-symbol duplicates.
+// byte-identical duplicate at a different address,
+// clear_ambient_sound_target_thunk (uw.c), now collapsed to a real
+// call to this function.
 void clear_ambient_sound_target()
 
 {
@@ -4993,5 +4993,21 @@ undefined1 * param_1;
   *(undefined4 *)(param_1 + 0xc) = 0;
   *(undefined4 *)(param_1 + 8) = 0;
   param_1[3] = 0;
+  return;
+}
+
+
+// byte-identical duplicate body of clear_ambient_sound_target (was
+// FUN_0007ec1c) at a different address -- same split-symbol/naming-
+// collision pattern documented elsewhere in this file (e.g.
+// close_strings_pak_file vs thunk_FUN_00078e28).
+// was thunk_FUN_0007ec1c -- a byte-identical duplicate of
+// clear_ambient_sound_target at a different address (see that
+// function's own comment). Collapsed to a real call to avoid the
+// duplication.
+void clear_ambient_sound_target_thunk()
+
+{
+  clear_ambient_sound_target();
   return;
 }
