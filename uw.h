@@ -3391,7 +3391,7 @@ undefined4 check_object_drop_height();
 undefined4 init_sound_channel_slot();
 void release_sound_channel_slot();
 undefined4 load_and_resample_wave_sample();
-undefined4 FUN_0004b948();
+undefined4 load_and_resample_wave_file();
 undefined1 *FUN_0004bc94();
 undefined4 FUN_0004c958();
 void FUN_0004c97c();
