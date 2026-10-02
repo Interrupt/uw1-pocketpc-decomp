@@ -97,9 +97,9 @@ void *uw_alloc_grtile();
 
 /* Forward declaration needed because main_menu_loop (now in game.c) takes
    this LAB_ callback's address to pass to load_gr_resource_entries; its own
-   definition stays in uw.c (see LAB_000415b0/LAB_000416e8's matching
+   definition stays in uw.c (see gr_resource_bump_alloc_entry/hud_icon_gr_bump_alloc_entry's matching
    comment for what this callback family does). */
-void *LAB_0006a0ac();
+void *opbtn_gr_bump_alloc_entry();
 
 /* ---------------------------------------------------------------------
  * Object / tile record structs.
@@ -663,7 +663,7 @@ extern char *DAT_00086df8;
 extern char *DAT_000fb858;
 extern undefined1 DAT_000fb860_backing[256];
 #define DAT_000fb860 DAT_000fb860_backing[0]
-/* chrbtns.gr cumulative per-entry offset table (built by LAB_000255d0).
+/* chrbtns.gr cumulative per-entry offset table (built by chrbtns_offset_table_builder).
    DAT_000fb8c4 is an alias into it starting at element 17 -- the same
    relationship DAT_000fb884 (element 1) has, matching the 0xfb8c4 vs
    0xfb880 symbol addresses (0x44 = 17*4). Elements 17..26 are the
@@ -683,13 +683,13 @@ extern undefined1 DAT_000fb8f0_backing[1680];
 extern char *DAT_001005c4;
 extern char *DAT_001005c8;
 extern char *g_chargen_textfield_buf;
-/* LAB_000255b4/LAB_000255d0: orphaned callbacks Ghidra never recognized
+/* chrbtns_bump_alloc_entry/chrbtns_offset_table_builder: orphaned callbacks Ghidra never recognized
    as real functions (only reached indirectly, via addresses passed to
    load_gr_resource_entries) -- their definitions stay in uw.c (see their own comment
    there for the full recovery story), forward-declared here because
    run_character_generator (chargen.c) takes their addresses. */
-char *LAB_000255b4();
-undefined4 LAB_000255d0();
+char *chrbtns_bump_alloc_entry();
+undefined4 chrbtns_offset_table_builder();
 extern short DAT_001005c0;
 extern char s__DATA_CHARGEN_BYT_00084eac[];
 extern char s_FONTCHAR_SYS_00084ec0[];
@@ -825,9 +825,9 @@ extern undefined1 DAT_0023b676_backing[65536];
 #define DAT_0023b676 DAT_0023b676_backing[0]
 extern undefined1 DAT_0023ad58_backing[65536];
 #define DAT_0023ad58 DAT_0023ad58_backing[0]
-undefined4 LAB_0001a120();
-char * LAB_00028688();
-undefined4 LAB_000286a4();
+undefined4 babl_builtin_default_handler();
+char * converse_res_bump_alloc_entry();
+undefined4 converse_res_slot_store_callback();
 extern char s__DATA_cnv_ark_00084fc8[];
 extern char s__SAVE0_bglobals_dat_00084538[];
 extern char s__DATA_babglobs_dat_0008454c[];
@@ -2841,21 +2841,21 @@ void uw_debug_draw_inv_hotspot_positions(void);
 void uw_debug_dump_critter_sheet_once(void);
 void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_force_item_id_once(void);
-undefined4 LAB_000415d0(void *buf, unsigned size, int idx);
+undefined4 register_gr_group_entry(void *buf, unsigned size, int idx);
 /* Forward declarations needed because load_gr_resource_group,
    load_objects_gr, load_tmflat_gr, load_hud_icon_gr,
    reload_single_grtile_entry, and decode_gr_entry_to_buffer (now in
    src/resources.c) take these LAB_ callbacks' addresses and reference
    these globals; their own definitions stay in uw.c (see
-   LAB_000415b0/LAB_000416e8's matching comment above for what this
+   gr_resource_bump_alloc_entry/hud_icon_gr_bump_alloc_entry's matching comment above for what this
    callback family does). */
-void *LAB_000415b0();
-undefined4 LAB_00041610(void *buf, unsigned size, int idx);
+void *gr_resource_bump_alloc_entry();
+undefined4 register_objects_gr_entry(void *buf, unsigned size, int idx);
 extern undefined2 DAT_000859a8;
 undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx);
-void *LAB_000416e8();
+void *hud_icon_gr_bump_alloc_entry();
 extern void *DAT_00202510;
-void *LAB_000416f8();
+void *decode_gr_entry_bump_alloc_entry();
 unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx);
 extern ushort DAT_00202730;
 extern undefined2 DAT_0020272c;
@@ -3438,9 +3438,9 @@ void *class1_variant_effect_table_lookup();
 void *class2_variant_effect_table_lookup();
 void *class6_variant_effect_table_lookup();
 void *class7_variant_effect_table_lookup();
-undefined4 LAB_0007913c();
-undefined4 LAB_00073b10();
-undefined4 LAB_0006b3d4();
+undefined4 class3_variant_effect_stub();
+undefined4 class4_variant_effect_stub();
+undefined4 class5_variant_effect_stub();
 void input_bindings_init();
 void input_bindings_free();
 int register_click_region();

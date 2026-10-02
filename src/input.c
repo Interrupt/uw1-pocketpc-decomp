@@ -1134,7 +1134,7 @@ LAB_00077d70:
    entries (msg 0x100-0x107, keyboard only). Ghidra never resolved this
    address into a named function since it's only ever reached through that
    table, never a direct call -- same "orphaned callback" pattern as
-   LAB_000255b4/d0 and LAB_00028688/a4 above. Recovered by hand from the
+   chrbtns_bump_alloc_entry/d0 and converse_res_bump_alloc_entry/a4 above. Recovered by hand from the
    real ARM disassembly of UU.exe (function body 0x77dd0-0x77f18).
 
    param_2 = message code; param_4 = lParam, the tap/cursor position packed

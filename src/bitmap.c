@@ -1029,7 +1029,7 @@ int param_1;
     if (iVar1 < 0x1000) {
       /* DAT_0024d090 (an object-type -> OBJECTS.GR frame remap) is never
          populated in this decompile. OBJECTS.GR is now registered at
-         absolute frame indices (LAB_00041610), so the id IS the frame. */
+         absolute frame indices (register_objects_gr_entry), so the id IS the frame. */
       uVar2 = (uint)(ushort)param_1;
     }
     else {

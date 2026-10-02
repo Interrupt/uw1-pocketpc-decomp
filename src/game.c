@@ -302,15 +302,15 @@ undefined4 param_1;
             mirrored sibling call sites like decode_gr_entry_to_buffer's genuine
             "no postprocessing needed" case) -- but populate_menu_button_bitmap_entry is
             exactly the postprocess_cb this resource load needs: same
-            3-arg shape as chargen's LAB_000255d0 (see its comment near
+            3-arg shape as chargen's chrbtns_offset_table_builder (see its comment near
             DAT_000fb880), and it writes the per-button bitmap-pointer/
             width/height fields draw_menu_item_list reads out of DAT_0023bf6c's
             record table -- which is otherwise only ever zeroed
             (local_82c's memset above), never populated. Same orphaned-
-            callback bug class as LAB_000255d0 was, just already
+            callback bug class as chrbtns_offset_table_builder was, just already
             decompiled as a named function instead of staying raw
             undecompiled ARM. */
-         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,&populate_menu_button_bitmap_entry), iVar10 == 0)) {
+         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,0xffffffff,&opbtn_gr_bump_alloc_entry,&populate_menu_button_bitmap_entry), iVar10 == 0)) {
         report_fatal_error_and_exit(0x300d);
       }
       if (local_838 != 3) {

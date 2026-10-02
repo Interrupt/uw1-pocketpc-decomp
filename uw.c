@@ -509,7 +509,9 @@ short DAT_000bbf24;
    call sites compiling as-is. */
 intptr_t DAT_000bbf70;
 intptr_t DAT_000bbf00; // was `int` -- babl_alloc'd function-pointer-table base, same bug
-undefined4 LAB_0001a120()
+// was LAB_0001a120 -- default placeholder handler installed into every
+// slot of build_babl_symbol_table's builtin function-pointer table
+undefined4 babl_builtin_default_handler()
 
 {
   /* Ghidra couldn't resolve this address into a proper function
@@ -1378,7 +1380,7 @@ undefined1 DAT_000fb860_backing[256];
 /* DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. */
 /* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]`
    (4-byte stride) with idx up to a CONCAT11 of two record byte fields
-   (draw_chargen_field_value). Real populator recovered this session: LAB_000255d0
+   (draw_chargen_field_value). Real populator recovered this session: chrbtns_offset_table_builder
    (a callback Ghidra never resolved into a named function -- see its
    own comment near its definition) builds this as a cumulative per-
    entry byte-size table when the "chrbtns" resource loads.
@@ -1386,7 +1388,7 @@ undefined1 DAT_000fb860_backing[256];
    in uw.h (case 4's body-figure offset lookup). */
 undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb880 DAT_000fb880_backing[0]
-/* Another alias into the LAB_000255d0 offset table (like DAT_000fb884 at
+/* Another alias into the chrbtns_offset_table_builder offset table (like DAT_000fb884 at
    element 1 and DAT_000fb8c4 at element 17): 0xfb898 - 0xfb880 = 0x18 =
    element 6. That's the offset of chrbtns.gr entry 6 -- the 145x16
    parchment-with-border strip draw_chargen_field_value blits as the name-entry
@@ -1400,11 +1402,11 @@ char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
 char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
 /* DAT_000fb884's address (0xfb884) is exactly one 4-byte element past
    DAT_000fb880's (0xfb880) -- not a separate table at all, but an
-   alias into the SAME array LAB_000255d0 populates, just viewed
+   alias into the SAME array chrbtns_offset_table_builder populates, just viewed
    starting one element later (its own read site indexes it with
    identical 4-byte-stride byte-pointer arithmetic to DAT_000fb880's).
    Declaring it as an independent, separately-backed array (as an
-   earlier fix pass did, before LAB_000255d0's role was known) split
+   earlier fix pass did, before chrbtns_offset_table_builder's role was known) split
    it apart from the real data and left it permanently zero -- the
    root cause of chrbtns button/portrait graphics reading pixel data
    from the wrong offset (garbled/sheared "pitch is off" artifacts)
@@ -1413,18 +1415,18 @@ char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
 short DAT_001005c0;
 /* DAT_000fb8c4's address (0xfb8c4) is 0x44 bytes = 17 elements past
    DAT_000fb880's (0xfb880) -- like DAT_000fb884, not a separate table but
-   an alias into the SAME cumulative per-entry offset array LAB_000255d0
+   an alias into the SAME cumulative per-entry offset array chrbtns_offset_table_builder
    builds for chrbtns.gr, viewed starting at element 17. Elements 17..26
    are the offsets of chrbtns entries 17-26 (the ten full-body figures,
    five male + five female); character_generator_loop's case 4 reads
    `table[17 + sexbit*5 + portraitIdx]` to blit the chosen body. Declaring
    it as an independent zero array (as an earlier pass did, before
-   LAB_000255d0's role was known) split it from the real data and left it
+   chrbtns_offset_table_builder's role was known) split it from the real data and left it
    permanently zero -- so no body was ever drawn. Aliased onto the real
    array instead. See uw.h. */
 undefined1 DAT_000fb8f0_backing[1680];
 int DAT_00201c98;
-/* Ghidra's auto-analysis never recognized LAB_000255b4/LAB_000255d0 as
+/* Ghidra's auto-analysis never recognized chrbtns_bump_alloc_entry/chrbtns_offset_table_builder as
    real functions -- they're only reached indirectly (passed as callback
    pointers to load_gr_resource_entries at run_character_generator's call site below), so no
    `bl` ever pointed at them for the analyzer to follow, and they were
@@ -1442,7 +1444,7 @@ int DAT_00201c98;
    *r1 = r0 (advance cursor by param_1 bytes); return r2 (the position
    *before* advancing) -- a bump-pointer sub-allocator carving fixed-
    size chunks out of whatever buffer DAT_000fb858 currently points to. */
-char *LAB_000255b4(param_1)
+char *chrbtns_bump_alloc_entry(param_1)
 int param_1;
 {
   char *old = DAT_000fb858;
@@ -1460,7 +1462,7 @@ int param_1;
    a record's portrait/race selector). Returns 0 when param_2==0
    (signals "empty entry"/no more data to the load_gr_resource_entries driver),
    else 1. */
-undefined4 LAB_000255d0(param_1,param_2,param_3)
+undefined4 chrbtns_offset_table_builder(param_1,param_2,param_3)
 int param_1;
 int param_2;
 int param_3;
@@ -1487,7 +1489,7 @@ char s__DATA_skills_dat_00084ee4[] = "\\DATA\\skills.dat";
    constants here). Leaving this as an all-zero buffer made
    load_gr_resource_entries's `param_1[0] == '\0'` empty-name check always true, so
    it always took the "nothing to load" early-return path and never
-   invoked its per-item callbacks (LAB_000255b4/LAB_000255d0) at all --
+   invoked its per-item callbacks (chrbtns_bump_alloc_entry/chrbtns_offset_table_builder) at all --
    the real root cause of DAT_000fb880 staying empty despite those
    callbacks now being correctly implemented. */
 char s_chrbtns_00084ef8[] = "chrbtns";
@@ -1734,10 +1736,10 @@ char s__DATA_cnv_ark_00084fc8[] = "\\DATA\\cnv.ark";
 char *DAT_00100784;
 /* Was `undefined4`, truncating the real char* buffer pointer (DAT_00100784)
    assigned to it before every "heads"/"converse"/"genhead"/"charhead"
-   resource load -- it's the bump-allocator cursor LAB_00028688 advances
+   resource load -- it's the bump-allocator cursor converse_res_bump_alloc_entry advances
    (see that function's comment). */
 char *DAT_00100670;
-/* Was a lone `undefined4` scalar, but LAB_000286a4 writes real pointers
+/* Was a lone `undefined4` scalar, but converse_res_slot_store_callback writes real pointers
    into it as an array (`DAT_00100728[idx] = allocated_buffer + 5`, one
    entry per loaded head/portrait) -- same "array Ghidra saw as a single
    scalar" bug class as DAT_000fb880. Only index 0 is read directly by
@@ -1756,7 +1758,7 @@ char *DAT_00100670;
    comment above already got this one right) is just index 0. The
    other 5 were the same "array Ghidra split into separate globals"
    bug as DAT_00100728 itself warned about, except never actually
-   fixed for these -- LAB_000286a4 (the load_gr_resource_entries
+   fixed for these -- converse_res_slot_store_callback (the load_gr_resource_entries
    per-item callback, idx 0-5 for this 6-item "converse" resource
    load) only ever wrote DAT_00100728_backing[idx], so idx 1-5 landed
    in the real backing array while these 5 stayed permanently zero.
@@ -1790,11 +1792,11 @@ char *DAT_001007c0; // was `undefined4` -- assigned a real 64-bit pointer (DAT_0
 undefined1 DAT_0023bf0c;
 undefined2 g_cursor_mode;
 /* Recovered by disassembling the original UU.exe (same method as
-   LAB_000255b4/LAB_000255d0 -- see their comment): load_gr_resource_entries's
+   chrbtns_bump_alloc_entry/chrbtns_offset_table_builder -- see their comment): load_gr_resource_entries's
    allocator callback for the "heads"/"converse"/"genhead"/"charhead"
    resource loads. Bumps DAT_00100670 (the cursor into the DAT_00100784
    buffer) by param_1 bytes and returns the pre-advance position. */
-char *LAB_00028688(param_1)
+char *converse_res_bump_alloc_entry(param_1)
 int param_1;
 {
   char *old = DAT_00100670;
@@ -1808,7 +1810,7 @@ int param_1;
    param_3's low 16 bits sign-extended (the item index, matching
    load_gr_resource_entries's `(*param_5)(pvVar_buf,iVar4,iVar5)` call shape).
    Returns 0 when param_2 (item byte size) == 0, else 1. */
-undefined4 LAB_000286a4(param_1,param_2,param_3)
+undefined4 converse_res_slot_store_callback(param_1,param_2,param_3)
 char *param_1;
 int param_2;
 int param_3;
@@ -2615,7 +2617,7 @@ short DAT_00201c94;
    some other screen). It's link-time-initialized data in the original
    binary -- nothing in this decompile ever writes to it at runtime -- so
    unlike this file's usual "orphaned populator function" bugs (e.g.
-   LAB_000255d0), there's no call to recover: the table's real content
+   chrbtns_offset_table_builder), there's no call to recover: the table's real content
    was recovered by reading UU.exe's .data section directly via Ghidra
    (same method already used for this file's string-constant symbols; see
    e.g. s_chrbtns_00084ef8's comment), then matching each recovered
@@ -2628,7 +2630,7 @@ short DAT_00201c94;
    3 of the 48 slots point at functions this decompile never recovered:
    they're only ever reached indirectly through this table, so Ghidra's
    original auto-analysis had no direct call site to find them from (same
-   root cause as LAB_000255d0/populate_menu_button_bitmap_entry needing separate recovery).
+   root cause as chrbtns_offset_table_builder/populate_menu_button_bitmap_entry needing separate recovery).
    Disassembling them directly (Ghidra, headless) shows they're
    conversation-portrait-animation and ambient-sound-cycling handlers --
    not needed to get a player standing in a rendered dungeon, so left
@@ -3068,7 +3070,7 @@ char *DAT_0020274c;
  undefined DAT_00202518_backing[8192];
 #define DAT_00202518 DAT_00202518_backing[0]
 ushort DAT_00202744;
-void *LAB_000415b0(param_1)
+void *gr_resource_bump_alloc_entry(param_1)
 unsigned int param_1;
 
 {
@@ -3098,7 +3100,7 @@ static void uw_register_gr_entry(unsigned base, void *buf, int idx)
     g_grtile_registry[slot] = buf;
   }
 }
-undefined4 LAB_000415d0(void *buf, unsigned size, int idx)
+undefined4 register_gr_group_entry(void *buf, unsigned size, int idx)
 {
   /* Caller load_gr_resource_group loads at the running cursor DAT_00202744 and
      advances it by the file's entry count afterwards. */
@@ -3106,7 +3108,7 @@ undefined4 LAB_000415d0(void *buf, unsigned size, int idx)
   uw_register_gr_entry((unsigned)DAT_00202744, buf, idx);
   return 1;
 }
-undefined4 LAB_00041610(void *buf, unsigned size, int idx)
+undefined4 register_objects_gr_entry(void *buf, unsigned size, int idx)
 {
   /* Caller load_objects_gr (OBJECTS.GR) -- does not advance the cursor; the
      next file resets DAT_00202744 to 0x1c0, so OBJECTS.GR occupies the
@@ -3138,11 +3140,11 @@ undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx)
   DAT_00202744 = DAT_00202744 + 1;
   return 1;
 }
-void *LAB_000416e8(param_1)
+void *hud_icon_gr_bump_alloc_entry(param_1)
 unsigned int param_1;
 
 {
-  /* Allocator callback, same role as LAB_000415b0 -- see there. Used by
+  /* Allocator callback, same role as gr_resource_bump_alloc_entry -- see there. Used by
      load_hud_icon_gr/reload_single_grtile_entry (flasks/compass/dragons/power/chains/
      spells/scrledge and friends). */
   return Ordinal_1041(param_1);
@@ -3154,21 +3156,21 @@ unsigned int param_1;
    ever hands that buffer back through the post-process callback, so
    passing a pre-allocated destination needs this indirection). */
 void *DAT_00202510;
-void *LAB_000416f8(param_1)
+void *decode_gr_entry_bump_alloc_entry(param_1)
 unsigned int param_1;
 
 {
-  /* Allocator callback, same role as LAB_000415b0 -- see there. Used by
+  /* Allocator callback, same role as gr_resource_bump_alloc_entry -- see there. Used by
      decode_gr_entry_to_buffer, which passes no post-process callback (param_5 == 0). */
   return Ordinal_1041(param_1);
 }
 /* Not decompiled -- decode_gr_entry_to_buffer's post-process callback. Ghidra never
    recovered a real one here (it hardcoded param_5=0, "no callback"),
    but that leaves load_gr_resource_entries's freshly-decoded buffer
-   completely unreachable: it's malloc'd fresh by LAB_000416f8, never
+   completely unreachable: it's malloc'd fresh by decode_gr_entry_bump_alloc_entry, never
    registered anywhere (unlike every sibling load_gr_resource_entries
    call site, which DOES pass a real post-process callback to register
-   its buffer into g_grtile_registry[] -- see LAB_000415d0/LAB_00041610/
+   its buffer into g_grtile_registry[] -- see register_gr_group_entry/register_objects_gr_entry/
    register_tmflat_gr_entry), and then simply discarded once load_gr_resource_entries's
    loop moves on. Confirmed live: begin_hud_panel_flip's decode calls reported
    success while leaving their destination grtile buffer entirely
@@ -4143,7 +4145,7 @@ char DAT_00202c18;
 char DAT_00202c1c;
 char s__DATA_comobj_dat_00086894[] = "\\DATA\\comobj.dat";
 char s__DATA_objects_dat_000868a8[] = "\\DATA\\objects.dat";
-undefined4 LAB_0007913c()
+undefined4 class3_variant_effect_stub()
 
 {
   /* Confirmed via a direct Ghidra headless lookup by address
@@ -4152,7 +4154,7 @@ undefined4 LAB_0007913c()
      up" placeholder. Kept as-is; not a bug. */
   return 0;
 }
-undefined4 LAB_0006b3d4()
+undefined4 class5_variant_effect_stub()
 
 {
   /* Confirmed via a direct Ghidra headless lookup by address
@@ -4161,7 +4163,7 @@ undefined4 LAB_0006b3d4()
      up" placeholder. Kept as-is; not a bug. */
   return 0;
 }
-undefined4 LAB_00073b10()
+undefined4 class4_variant_effect_stub()
 
 {
   /* Confirmed via a direct Ghidra headless lookup by address
@@ -5228,12 +5230,12 @@ char s__DATA_opscr_byt_00086eec[] = "\\DATA\\opscr.byt";
    pointer arithmetic (`iVar9 + DAT_0023bf70`) -- truncating on this
    64-bit host. */
 char *DAT_0023bf70;
-void *LAB_0006a0ac(param_1)
+void *opbtn_gr_bump_alloc_entry(param_1)
 unsigned int param_1;
 
 {
-  /* Same allocator-callback role as LAB_000415b0/LAB_000416e8/
-     LAB_000416f8 (load_gr_resource_entries's param_4, "Ghidra couldn't resolve this
+  /* Same allocator-callback role as gr_resource_bump_alloc_entry/hud_icon_gr_bump_alloc_entry/
+     decode_gr_entry_bump_alloc_entry (load_gr_resource_entries's param_4, "Ghidra couldn't resolve this
      address" -- see their comments): a no-op stub returning 0 here
      failed the whole "opbtn" resource batch even though the underlying
      OPBTN.GR file loaded successfully, which was fatal

@@ -1292,9 +1292,9 @@ void *get_scanned_object_class_effect_ptr()
   local_24[0] = &class0_variant_effect_table_lookup;
   local_24[1] = &class1_variant_effect_table_lookup;
   local_24[2] = &class2_variant_effect_table_lookup;
-  local_24[3] = &LAB_0007913c;
-  local_14 = &LAB_00073b10;
-  local_10 = &LAB_0006b3d4;
+  local_24[3] = &class3_variant_effect_stub;
+  local_14 = &class4_variant_effect_stub;
+  local_10 = &class5_variant_effect_stub;
   local_c = &class6_variant_effect_table_lookup;
   local_8 = &class7_variant_effect_table_lookup;
   /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace

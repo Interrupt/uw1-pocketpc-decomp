@@ -18,7 +18,7 @@ unsigned int param_1;
      bare `return 0;`, on the (wrong) assumption that it's "used purely
      as a callback pointer elsewhere" -- it's actually passed as
      load_door_frames's (doors.GR) allocator callback, the exact same role
-     as LAB_000415b0/LAB_000416e8/LAB_000416f8 (see LAB_000415b0's own
+     as gr_resource_bump_alloc_entry/hud_icon_gr_bump_alloc_entry/decode_gr_entry_bump_alloc_entry (see gr_resource_bump_alloc_entry's own
      comment: a no-op allocator here makes load_gr_resource_entries treat every real
      resource load as a failure even though the file read itself
      succeeds) -- confirmed live via UW_DEBUG_DOOR: every one of doors.GR's

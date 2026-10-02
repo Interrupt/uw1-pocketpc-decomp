@@ -208,7 +208,7 @@ LAB_00025468:
         DAT_000fb858 = DAT_001005c4;
         /* iVar14 is chrbtns.gr's cumulative offset for the chosen body
            figure (entry 17 + sexbit*5 + portraitIdx) -- now that
-           DAT_000fb8c4 aliases the real LAB_000255d0 table (see uw.h),
+           DAT_000fb8c4 aliases the real chrbtns_offset_table_builder table (see uw.h),
            this is a genuine nonzero offset. Keep the <4 guard as a
            defensive floor against a still-empty table. */
         if (iVar14 < 4) {
@@ -342,7 +342,7 @@ int run_character_generator()
   iVar4 = DAT_001005c4;
   uVar10 = 2;
   DAT_000fb858 = DAT_001005c4;
-  iVar2 = load_gr_resource_entries(s_chrbtns_00084ef8,0,0xffffffff,&LAB_000255b4,&LAB_000255d0);
+  iVar2 = load_gr_resource_entries(s_chrbtns_00084ef8,0,0xffffffff,&chrbtns_bump_alloc_entry,&chrbtns_offset_table_builder);
   if (iVar2 != 0) {
     DAT_000fb858 = iVar4;
     Ordinal_1047(acStack_128,0,0x104);

@@ -1568,7 +1568,7 @@ undefined4 build_babl_symbol_table()
   if (0 < DAT_000bbf24) {
     iVar5 = 0;
     do {
-      *(undefined1 **)(DAT_000bbf00 + iVar5 * 8) = &LAB_0001a120;
+      *(undefined1 **)(DAT_000bbf00 + iVar5 * 8) = &babl_builtin_default_handler;
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < DAT_000bbf24);
   }
@@ -2197,7 +2197,7 @@ void enter_conversation_mode_screen()
   set_viewport_clip_rect(0,0,0x13f,199);
   DAT_00100670 = DAT_00100784;
   uVar6 = 2;
-  iVar3 = load_gr_resource_entries(s_converse_00084ff4,0,0xffffffff,&LAB_00028688,&LAB_000286a4);
+  iVar3 = load_gr_resource_entries(s_converse_00084ff4,0,0xffffffff,&converse_res_bump_alloc_entry,&converse_res_slot_store_callback);
   if (iVar3 != 0) {
     set_draw_color(0xf1);
     rect_fill_or_save_restore(0x2a,1,0xc2,0x2f);
@@ -2229,7 +2229,7 @@ void enter_conversation_mode_screen()
     DAT_00100670 = DAT_00100784;
     iVar3 = load_gr_resource_entries(s_heads_00084fec,
                          (*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * '\x05' +
-                         (*(byte *)(DAT_00086df8 + 100) >> 2 & 7),1,&LAB_00028688,&LAB_000286a4);
+                         (*(byte *)(DAT_00086df8 + 100) >> 2 & 7),1,&converse_res_bump_alloc_entry,&converse_res_slot_store_callback);
     if (iVar3 != 0) {
       g_blit_transparent_mode = 1;
       bitmap_blit_to_framebuffer(0xc5,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
@@ -2246,15 +2246,15 @@ void enter_conversation_mode_screen()
       DAT_00100670 = DAT_00100784;
       if (DAT_00100674[0x1a] == 0) {
         uVar6 = 2;
-        load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
+        load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&converse_res_bump_alloc_entry,&converse_res_slot_store_callback);
       }
       else {
         uVar6 = 2;
-        iVar3 = load_gr_resource_entries(s_charhead_00084fe0,DAT_00100674[0x1a] - 1,1,&LAB_00028688,
-                             &LAB_000286a4);
+        iVar3 = load_gr_resource_entries(s_charhead_00084fe0,DAT_00100674[0x1a] - 1,1,&converse_res_bump_alloc_entry,
+                             &converse_res_slot_store_callback);
         if (iVar3 == 0) {
           uVar6 = 2;
-          load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
+          load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&converse_res_bump_alloc_entry,&converse_res_slot_store_callback);
         }
       }
       g_blit_transparent_mode = 1;

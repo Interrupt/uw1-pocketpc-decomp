@@ -183,12 +183,12 @@ void load_door_frames()
        -- with no registrar, even a successful allocate+read never stores
        the decoded buffer into lookup_grtile_by_id's DAT_0024e090[] pointer
        table, so every door frame stayed permanently unresolved (0x0
-       width/height, drawing nothing). LAB_000415d0 (load_gr_resource_group/
+       width/height, drawing nothing). register_gr_group_entry (load_gr_resource_group/
        QUESTION-VIEWS-etc.'s own registrar) already does exactly what's
        needed here: register at the running cursor DAT_00202744, which
        this loop already manages by hand the same way load_gr_resource_group's
        caller does. */
-    uint _ok = load_gr_resource_entries(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&alloc_door_frame_buffer,&LAB_000415d0);
+    uint _ok = load_gr_resource_entries(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&alloc_door_frame_buffer,&register_gr_group_entry);
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] load_door_frames: loading doors[%d] slot=%d -> DAT_00202744=%d ok=%u\n",
               iVar3, (int)(&DAT_0023b840)[iVar3], (int)DAT_00202744, _ok);
@@ -1891,7 +1891,7 @@ void *param_2;
 
 // was FUN_00041708 -- load_gr_resource_entries's post-process callback
 // for the flasks/compass/etc. resource group (passed as its param_5 at
-// uw.c's "LAB_000416e8"-paired call site): allocates a fresh grtile
+// uw.c's "hud_icon_gr_bump_alloc_entry"-paired call site): allocates a fresh grtile
 // buffer sized from the entry's own width/height header bytes, copies
 // the decoded data in, and registers it at
 // g_grtile_registry[DAT_00202744 + entry_index]. Same registration
@@ -1961,7 +1961,7 @@ short param_3;
 
 // was FUN_00041910 -- the generic .GR resource-group loader: registers
 // every entry at the running absolute-frame cursor DAT_00202744 (via
-// LAB_000415d0 -> uw_register_gr_entry) then advances the cursor by
+// register_gr_group_entry -> uw_register_gr_entry) then advances the cursor by
 // the file's own entry count. Used for most of the startup preload
 // chain (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/3DWIN/TMOBJ and friends)
 // -- everything except OBJECTS.GR (load_objects_gr, which doesn't
@@ -1975,7 +1975,7 @@ char *param_1;
   undefined4 uVar1;
   short _dbg_before;
   _dbg_before = DAT_00202744;
-  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_000415d0);
+  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&gr_resource_bump_alloc_entry,&register_gr_group_entry);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
   if (getenv("UW_DEBUG_DUMP_GR")) {
     fprintf(stderr, "[dumpgr] load_gr_resource_group(\"%s\") frames [%d, %d) count=%d ok=%d\n",
@@ -1987,7 +1987,7 @@ char *param_1;
 
 
 // was FUN_00041960 -- loads OBJECTS.GR specifically: registers each
-// entry at absolute cursor 0 (LAB_00041610) rather than the running
+// entry at absolute cursor 0 (register_objects_gr_entry) rather than the running
 // DAT_00202744 cursor, and does NOT advance it -- OBJECTS.GR occupies
 // the absolute [0, entry_count) frame range (frame N == object type
 // N), with the running cursor reset to 0x1c0 by the next load in the
@@ -1996,7 +1996,7 @@ undefined4 load_objects_gr(param_1)
 char *param_1;
 
 {
-  return load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_00041610);
+  return load_gr_resource_entries(param_1,0,0xffffffff,&gr_resource_bump_alloc_entry,&register_objects_gr_entry);
 }
 
 
@@ -2009,7 +2009,7 @@ undefined4 param_3;
 
 {
   DAT_000859a8 = param_2;
-  return load_gr_resource_entries(param_1,0,param_3,&LAB_000415b0,&register_tmflat_gr_entry);
+  return load_gr_resource_entries(param_1,0,param_3,&gr_resource_bump_alloc_entry,&register_tmflat_gr_entry);
 }
 
 
@@ -2028,7 +2028,7 @@ char *param_1;
   undefined4 uVar1;
   short _dbg_before;
   _dbg_before = DAT_00202744;
-  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000416e8,register_grtile_entry);
+  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&hud_icon_gr_bump_alloc_entry,register_grtile_entry);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
   if (getenv("UW_DEBUG_DUMP_GR")) {
     fprintf(stderr, "[dumpgr] load_hud_icon_gr(\"%s\") frames [%d, %d) count=%d ok=%d\n",
@@ -2060,7 +2060,7 @@ undefined4 param_3;
 
   uVar1 = DAT_00202744;
   DAT_00202744 = DAT_00202738 + param_1 + -0x2000;
-  load_gr_resource_entries(param_2,param_3,1,&LAB_000416e8,reregister_grtile_entry);
+  load_gr_resource_entries(param_2,param_3,1,&hud_icon_gr_bump_alloc_entry,reregister_grtile_entry);
   DAT_00202744 = uVar1;
   return;
 }
@@ -2097,7 +2097,7 @@ void *param_3;
      existing) is never actually consulted, so this decode always
      reported success while leaving the caller's destination buffer
      untouched. */
-  return load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,&uw_copy_gr_entry_to_dest);
+  return load_gr_resource_entries(param_1,param_2,1,&decode_gr_entry_bump_alloc_entry,&uw_copy_gr_entry_to_dest);
 }
 
 
