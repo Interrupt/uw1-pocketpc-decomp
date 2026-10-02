@@ -118,7 +118,7 @@ void close_backpack_container()
       (&DAT_002028a0)[iVar1 + -0xc] = uVar2;
       iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
     } while (iVar1 < 0x14);
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (g_active_hud_panel == '\0')) {
       restore_captured_grtile_backdrop(DAT_002028ec);
       redraw_container_icon_slot();
@@ -281,7 +281,7 @@ void refresh_container_view()
   short sVar1;
   int iVar2;
   
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   redraw_inventory_widget_range(0xc,0x13);
   iVar2 = resolve_object_link(&g_current_container_link);
   iVar2 = iVar2 + 6;
@@ -449,7 +449,7 @@ short param_1;
     }
     else {
       if (g_open_container_list == (undefined4 *)0x0) {
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (g_active_hud_panel == '\0')) {
           draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
         }

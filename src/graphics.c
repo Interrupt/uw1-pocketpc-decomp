@@ -1604,13 +1604,13 @@ ushort * param_3;
 // was FUN_00040df0 -- called from several full-screen UI close paths
 // (automap, babl dialog, chargen, graphics, player rest) to tear down
 // the overlay: decrements the cursor hide/show nesting depth
-// (FUN_00057118, not yet named), clears the whole viewport to black,
+// (decrement_cursor_hide_depth, not yet named), clears the whole viewport to black,
 // and ticks the idle cursor back on. Reads as "clear the screen and
 // restore the cursor" after a full-screen view closes.
 void clear_screen_and_restore_cursor()
 
 {
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   set_viewport_clip_rect(0,0,0x13f,199);
   set_draw_color(0);
   fill_viewport_and_flush();

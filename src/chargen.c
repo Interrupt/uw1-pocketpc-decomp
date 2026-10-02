@@ -105,7 +105,7 @@ char *param_3;
     cursor_show_idle_tick();
     chargen_ui_transition_hook(0);
     DAT_000fb858 = DAT_001005c4;
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     set_draw_color(0x1a);
     // Fills the left-page stats/portrait area (x:17-142,y:0-199) with a solid backing color, on top of the parchment the reblit above just redrew. Runs *after* that reblit (confirmed via disassembly), so despite looking like an eraser this can't be "protecting" the area from it -- more likely just the stats card's background color. The stats themselves only get redrawn when the switch below happens to hit case 2 or 3, so they're only visible for one frame after finishing class/skill picks. This contradicts a real-device reference screenshot showing stats persisting through later screens (e.g. name entry) -- root cause not yet found; see the STILL OPEN notes.
     rect_fill_or_save_restore(0x11,0,0x8e,199);
@@ -154,7 +154,7 @@ LAB_00025468:
            rather than writing through reconstructed garbage. */
         *(byte *)(DAT_00086df8 + 100) =
              *(byte *)(DAT_00086df8 + 100) & 0xfd | (byte)((uVar9 & 1) << 1);
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         draw_text_string(uVar10,0x11,0x16);
         uVar15 = cursor_show_idle_tick();
         sVar8 = 1;
@@ -175,7 +175,7 @@ LAB_00025468:
           sVar8 = 3;
         }
         DAT_001005c0 = apply_confirmed_skill_picks(0,local_5c_buf + 4);
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         iVar12 = measure_text_width(uVar10);
         draw_text_string(uVar10,0x8f - iVar12,0x16);
         draw_chargen_attribute_summary();
@@ -191,7 +191,7 @@ LAB_00025468:
            fallback instead of reading through arbitrary heap garbage. */
         local_5c_buf[local_64[0] + 3] = 0;
         DAT_001005c0 = apply_confirmed_skill_picks((int)DAT_001005c0,local_5c_buf + 4);
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         restore_captured_grtile_backdrop(local_60);
         draw_selected_skills_list();
         cursor_show_idle_tick();
@@ -218,7 +218,7 @@ LAB_00025468:
           bVar2 = *(byte *)(iVar14 + param_1 + -4);
           bVar3 = *(byte *)(iVar14 + param_1 + -3);
         }
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         iVar12 = -(int)(short)(ushort)bVar3;
         iVar11 = iVar12 + 0x4c;
         iVar4 = -(int)(short)(ushort)bVar2;
@@ -245,7 +245,7 @@ LAB_00025468:
         break;
       case 6:
         pcVar5 = g_chargen_textfield_buf;
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         sVar8 = measure_text_width(pcVar5);
         iVar12 = -(int)sVar8 + 0x7e;
         if (iVar12 < 0) {
@@ -264,7 +264,7 @@ LAB_00025468:
         break;
       case 7:
         if (uVar1 != 0) {
-          FUN_00057118();
+          decrement_cursor_hide_depth();
           set_draw_color(0x1a);
           rect_fill_or_save_restore(0x11,0,0x8f,199);
           cursor_show_idle_tick();
@@ -282,7 +282,7 @@ LAB_00025468:
     }
     if (7 < sVar8) {
       uVar10 = get_message_string(0x300);
-      FUN_00057118();
+      decrement_cursor_hide_depth();
       chargen_ui_transition_hook(1);
       DAT_000fb858 = DAT_001005c8;
       screen_backup_restore();
@@ -421,7 +421,7 @@ int run_character_generator()
           uVar5 = read_buffer_from_file(acStack_128,iVar4,64000);
           uVar7 = load_pals_bank(3,pcVar_palbuf);
           if ((uVar5 & uVar7) != 0) {
-            FUN_00057118();
+            decrement_cursor_hide_depth();
             bitmap_blit_to_framebuffer(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
             iVar4 = character_generator_loop(DAT_000fb858,&DAT_000fb8f0,puVar8);
             select_active_font(s_FONT5X6P_SYS_00084e9c);
@@ -1182,7 +1182,7 @@ byte param_3;
         sVar4 = param_1[9];
         iVar6 = (int)local_28;
         iVar7 = *(int *)(&DAT_000fb884 + (iVar9 + param_1[6]) * 4);
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         chargen_ui_transition_hook(0);
         DAT_000fb858 = DAT_001005c4;
         g_blit_transparent_mode = 1;
@@ -1279,7 +1279,7 @@ uint param_2;
       flush_dirty_rect_to_display(1);
       g_force_flush = 0;
       if (((short)uVar13 != (short)param_2) && ((short)uVar13 != -1)) {
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         draw_chargen_field_options(param_1,uVar13 & 0xff,param_2 & 0xff);
         cursor_show_idle_tick();
         local_4 = uVar13 & 0xffff;
@@ -1587,7 +1587,7 @@ LAB_00024dd4:
             sVar5 = measure_text_width(local_2c);
             iVar11 = ((int)sVar3 - (int)sVar5) * 0x10000;
             iVar7 = iVar11 >> 0x10;
-            FUN_00057118();
+            decrement_cursor_hide_depth();
             bitmap_blit_to_framebuffer(iVar7,iVar9,DAT_000fb898 + DAT_000fb858,0x10,0x91,
                          (short)((uint)iVar11 >> 0x10) + -0xa4,0,1);
             cursor_show_idle_tick();
@@ -1596,7 +1596,7 @@ LAB_00024dd4:
       }
       else {
         local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),(char)sVar5);
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         draw_text_string(local_2c,iVar7,iVar9 + 3);
         cursor_show_idle_tick();
         iVar7 = measure_text_width(local_2c);

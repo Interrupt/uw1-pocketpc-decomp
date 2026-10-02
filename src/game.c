@@ -270,7 +270,7 @@ undefined4 param_1;
       Ordinal_1063(acStack_7ec,s__DATA_opscr_byt_00086eec);
       DEBUG(TRACE, "blitting %s", s__DATA_opscr_byt_00086eec);
       read_buffer_from_file(acStack_7ec,pvVar_buf10000,64000);
-      FUN_00057118();
+      decrement_cursor_hide_depth();
       // HACK: deviation from the real binary -- was load_pals_bank(2, temp_buf),
       /* confirmed via ARM disassembly of the original UU.exe
          (main_menu_loop == FUN_0006a3d8, calls load_pals_bank directly at
@@ -1233,7 +1233,7 @@ short param_4;
   char *pcVar_str;
 
   if (param_3 == '\0') {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     if (0 < param_1) {
       iVar4 = 0;
       do {
@@ -1253,7 +1253,7 @@ short param_4;
     }
   }
   else {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     iVar4 = 0;
     /* draw_text_string only honours *g_draw_color_index (the palette index this
        loop sets to 0xa2/0xaa to highlight the selected item) when
@@ -2239,7 +2239,7 @@ void run_game_shutdown_sequence()
   char *pcVar2;
   char acStack_108 [260];
 
-  thunk_FUN_00057118();
+  decrement_cursor_hide_depth_thunk();
   input_bindings_free();
   stop_ambient_sound_effect();
   free_level_tile_arena();

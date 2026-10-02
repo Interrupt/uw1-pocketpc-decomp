@@ -341,7 +341,7 @@ int param_1;
   iVar1 = (param_1 + -1) * 0x10000 >> 0x10;
   sVar2 = *(short *)(&DAT_000858a8 + iVar1 * 2);
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   g_blit_transparent_mode = 1;
   /* Confirmed via real ARM disassembly (0x3f99c: `mov r0,#0x2000;
      orr r0,r0,#0xb; sub r0,r0,r4,lsl #0x1`) that `(param_1-1)*-2 +
@@ -373,7 +373,7 @@ int param_1;
   iVar1 = (param_1 + -1) * 0x10000 >> 0x10;
   sVar2 = *(short *)(&DAT_000858a8 + iVar1 * 2);
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   g_blit_transparent_mode = 1;
   /* Confirmed via real ARM disassembly (0x3fa1c: `mov r0,#0x1000;
      orr r0,r0,#0x5; sub r0,r0,r4; mov r0,r0,lsl #0x1`) that
@@ -1688,7 +1688,7 @@ void redraw_active_hud_panel()
     debug_print(&DAT_00087298);
   }
   else {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
     (*(code *)(&g_hud_panel_handlers)[g_active_hud_panel])();
     set_draw_color(0x1a);
@@ -1824,7 +1824,7 @@ char *param_1;
     check_mouse_over_msg_scroll_panel(iVar2);
     iVar2 = extraout_r3;
     if (DAT_00250708 != 0) {
-      FUN_00057118();
+      decrement_cursor_hide_depth();
       iVar2 = extraout_r3_00;
     }
     if (DAT_00250718 != 0) {
@@ -2211,7 +2211,7 @@ int param_1;
   int iVar2;
 
   if ((param_1 != 0) && (check_mouse_over_msg_scroll_panel(), DAT_00250708 != 0)) {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
   }
   set_draw_color(0x2a);
   pStruct = (char *)DAT_00250704;
@@ -2636,7 +2636,7 @@ undefined2 param_5;
         fprintf(stderr, "[stats] begin_hud_panel_flip: DECODE FAILED, calling report_fatal_error_and_exit(0x300e)\n");
       report_fatal_error_and_exit(0x300e);
     }
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     /* Not decompiled -- capture the CURRENT (source/old panel's) live
        screen content into DAT_0023c200's offset-0 region (its
        0x2800 offset already holds the decoded chain graphic from
@@ -2749,7 +2749,7 @@ bool advance_hud_panel_flip()
   bVar2 = DAT_0023c208 + 1;
   if ((g_flip_grtile_cache_ready & 1) != 0) {
     DAT_0023c208 = bVar2;
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     uVar3 = resolve_flip_grtile_slot(DAT_0023c204);
     if (DAT_0023c208 == 1) {
       uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
@@ -3004,7 +3004,7 @@ bool advance_hud_panel_flip()
   if (DAT_0023c208 == '\x02') {
     DAT_0023c208 = bVar2;
     decode_gr_entry_to_buffer(s_panels_00087260,3,DAT_0023cca4);
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     set_draw_color(0xf1);
     rect_fill_or_save_restore(0xec,8,0x13f,0x7a);
     draw_sprite_by_id(0x20bc,0x110,4,1,1);
@@ -3017,7 +3017,7 @@ LAB_0006f008:
     if (DAT_0023c208 == '\x05') {
       DAT_0023c208 = bVar2;
       decode_gr_entry_to_buffer(s_panels_00087260,(int)DAT_0023c134,DAT_0023cca4);
-      FUN_00057118();
+      decrement_cursor_hide_depth();
       set_draw_color(0xf1);
       rect_fill_or_save_restore(0x114,5,0x117,0x7d);
       uVar1 = g_active_hud_panel;
@@ -3435,7 +3435,7 @@ void flush_sprite_list_compositor()
   
   bVar2 = false;
   if (DAT_0023c41c != 0) {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     puVar7 = DAT_0023c414 + -0x20;
     puVar6 = DAT_0023c40c;
     if (DAT_0023c40c < puVar7) {
@@ -3752,7 +3752,7 @@ void select_msg_scroll_mode_2()
 // text immediately beforehand (param_1=0, i.e. wait indefinitely) as
 // the "wait for the player to click through this page" step; after
 // the wait, re-checks the mouse-over-panel state and, if param_2's
-// bit matches, calls FUN_00057118 (not yet named).
+// bit matches, calls decrement_cursor_hide_depth (not yet named).
 void wait_for_click_to_continue(param_1,param_2)
 short param_1;
 uint param_2;
@@ -3777,7 +3777,7 @@ uint param_2;
   wait_for_click_release(1);
   check_mouse_over_msg_scroll_panel();
   if ((param_2 & DAT_00250708) != 0) {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
   }
   return;
 }
@@ -4011,7 +4011,7 @@ short param_5;
   sVar4 = measure_text_width(acStack_a1 + 1);
   iVar7 = ((int)sVar4 + (int)DAT_0025070c) * 0x10000 >> 0x10;
   iVar14 = (int)*(short *)(DAT_00250704 + 10);
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   wait_for_click_release(0);
   g_text_input_active = 1;
   uVar8 = next_input_event();
@@ -4257,7 +4257,7 @@ int * param_3;
     puVar2 = &s_Yes_000879a0;
   }
   message_scroll_print_wrapped(puVar2);
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   wait_for_click_release(0);
   while( true ) {
     uVar3 = next_input_event();
@@ -4479,7 +4479,7 @@ uint param_1;
   int iVar1;
   int iVar2;
 
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   iVar1 = ((int)(short)param_1 >> 2) * 0xf;
   iVar2 = (param_1 & 3) * 0x12;
   draw_sprite_by_id(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
@@ -4498,7 +4498,7 @@ void redraw_rune_bag_display()
 {
   uint uVar1;
 
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   uVar1 = 0;
   do {
     if ((*(byte *)(DAT_00086df8 + ((int)uVar1 >> 3) + 0x44) >> (7 - (uVar1 & 7) & 0xff) & 1) != 0) {
@@ -4989,7 +4989,7 @@ short param_1;
   
   DAT_000868d8 = 1;
   if (param_1 != 0) {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     enter_pause_menu_state(6);
     cursor_show_idle_tick();
     wait_for_click_release(0);
@@ -5126,7 +5126,7 @@ int param_2;
 void close_ui_panel_return_to_game()
 
 {
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   DAT_000868d8 = 0;
   DAT_000868dc = 7;
   reload_single_grtile_entry(0x20eb,s_optbtns_00086954,0);
@@ -5530,7 +5530,7 @@ short param_1;
     update_pause_submenu_highlight(4,0x39);
     cursor_show_idle_tick();
     request_game_exit(0);
-    FUN_00057118();
+    decrement_cursor_hide_depth();
   }
   close_ui_panel_return_to_game();
   return;
@@ -5563,7 +5563,7 @@ void dispatch_pause_menu_click(param_1)
 undefined4 param_1;
 
 {
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   if (getenv("UW_DEBUG_PAUSEMENU"))
     fprintf(stderr, "[pausemenu] dispatch_pause_menu_click: state=%d clicked_index=%d\n",
             (int)DAT_000868dc, (int)param_1);
@@ -5661,7 +5661,7 @@ LAB_00056ddc:
         if (g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2] == 0) {
           return;
         }
-        FUN_00057118();
+        decrement_cursor_hide_depth();
         update_pause_submenu_highlight(iVar3 + sVar1,(int)g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2]);
         cursor_show_idle_tick();
         return;
@@ -5876,3 +5876,45 @@ undefined4 cursor_show_idle_tick()
 }
 
 
+
+
+// was FUN_00057118 -- decrements the cursor hide/show nesting depth
+// (DAT_00204840, floor-clamped at 0) one level, confirmed by an
+// existing comment on clear_screen_and_restore_cursor describing this
+// exact role. When the depth reaches 0 (fully visible again) or a
+// force flag (DAT_000bbef4) is set, checks FUN_00056fe8 (not yet
+// named) and, if it signals a redraw is needed, resets DAT_00204844
+// and forces the default draw color. Called from nearly every UI
+// subsystem in the codebase as the "pop" half of a cursor-hide/show
+// nesting pair (cursor_show_idle_tick is the sibling "idle tick"
+// operation, though it has its own distinct ratcheting behavior
+// rather than a plain increment).
+void decrement_cursor_hide_depth()
+
+{
+  int iVar1;
+
+  iVar1 = (int)DAT_00204840;
+  DAT_00204840 = (short)(iVar1 + -1);
+  if ((((iVar1 + -1) * 0x10000 >> 0x10 == 0) || (DAT_000bbef4 != 0)) &&
+     (iVar1 = FUN_00056fe8(), iVar1 != 0)) {
+    DAT_00204844 = 0;
+    set_draw_color(1);
+  }
+  if (DAT_00204840 < 0) {
+    DAT_00204840 = DAT_00204840 + 1;
+  }
+  return;
+}
+
+
+// was thunk_FUN_00057118 -- a Ghidra-generated "thunk" duplicate of
+// decrement_cursor_hide_depth (identical body, a separate call site
+// in the original binary decompiled as a second copy rather than a
+// jump-thunk). Collapsed to a real call to avoid the duplication.
+void decrement_cursor_hide_depth_thunk()
+
+{
+  decrement_cursor_hide_depth();
+  return;
+}

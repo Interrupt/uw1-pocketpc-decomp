@@ -28,7 +28,7 @@ void enter_dungeon_view()
   char acStack_41c [264];
   undefined1 auStack_314 [768];
   
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   dirty_rect_union(0,200,0,0x140);
   unregister_game_view_interact_zones();
   FUN_0005b758(0x34,0x14,0xab,0x70);

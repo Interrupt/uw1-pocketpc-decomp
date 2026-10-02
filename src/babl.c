@@ -193,7 +193,7 @@ intptr_t param_1;
           }
           else {
             *piVar4 = (intptr_t)puVar9;
-            FUN_00057118();
+            decrement_cursor_hide_depth();
             FUN_00057c5c(*puVar9 & 0x1ff);
             DAT_002020c4 = 1;
             cursor_show_idle_tick();
@@ -268,7 +268,7 @@ intptr_t param_1;
         }
         else {
           *piVar3 = (intptr_t)puVar9;
-          FUN_00057118();
+          decrement_cursor_hide_depth();
           FUN_00057c5c(*puVar9 & 0x1ff);
           DAT_002020c4 = 1;
           cursor_show_idle_tick();
@@ -2178,7 +2178,7 @@ void FUN_000286cc()
   update_ingame_music_track();
   DAT_00100784 = Ordinal_1041(0x10000);
   Ordinal_1047(DAT_00100784,0,0x10000);
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   set_viewport_clip_rect(0,0,0x13f,199);
   DAT_00100670 = DAT_00100784;
   uVar6 = 2;
@@ -3987,7 +3987,7 @@ void end_barter_ui()
   undefined4 uVar1;
   int iVar2;
   
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   iVar2 = 0;
   do {
     if (0 < (short)(&DAT_000bbfd0)[iVar2]) {
@@ -4347,7 +4347,7 @@ short param_2;
   undefined1 *puVar10;
   undefined1 auStack_2c [8];
   
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   psVar2 = (short *)(int)param_1;
   g_blit_transparent_mode = 1;
   if (psVar2 == (short *)0x0) {
@@ -4436,7 +4436,7 @@ int param_3;
       sVar1 = encode_object_slot_index();
       *psVar2 = sVar1;
     }
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     if (bVar3) {
       FUN_00057cac(0);
     }
@@ -4575,7 +4575,7 @@ undefined ** param_2;
   if (puVar4[iVar2] != 1) {
     uVar3 = 0xf1;
   }
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   plot_pixel((int)*(short *)param_2,(int)*(short *)((char *)param_2 + 2),uVar3);
   plot_pixel(*(short *)param_2 + -1,(int)*(short *)((char *)param_2 + 2),uVar3);
   plot_pixel(*(short *)param_2 + 1,(int)*(short *)((char *)param_2 + 2),uVar3);
@@ -4623,7 +4623,7 @@ short param_1;
   undefined4 uVar1;
   int iVar2;
   
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   iVar2 = 0;
   do {
     if ((0 < (short)(&DAT_000bbfe8)[iVar2]) && ((param_1 == 0 || ((&DAT_000bbff0)[iVar2] == 0)))) {
@@ -4661,7 +4661,7 @@ void finalize_player_barter_items()
   short local_2c;
   int local_28;
   
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   local_2c = 0;
   local_28 = 0;
   do {
@@ -5035,7 +5035,7 @@ short param_1;
 
   pvItem = get_object_record_by_slot_index(param_1);
   add_item_to_npc_inventory(pvItem);
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   iVar1 = 0;
   do {
     if ((&DAT_000bbfd0)[iVar1] == param_1) {
@@ -7200,7 +7200,7 @@ uint param_1;
   }
   select_active_font(s_FONTBIG_SYS_00085454);
   DAT_0024cfac = (short)param_1 + 0xc00;
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   render_babl_dialog_window(param_1,uVar2,unaff_r6,unaff_r7,unaff_r8);
   select_active_font(s_font5x6p_sys_0008430c);
   if (DAT_00201c98 != 0) {

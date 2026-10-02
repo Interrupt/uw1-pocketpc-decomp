@@ -456,7 +456,7 @@ short param_2;
   ushort local_2c;
 
   bVar5 = false;
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   iVar1 = (int)(short)param_1;
   iVar2 = (int)param_2;
   g_blit_transparent_mode = 1;

@@ -26,7 +26,7 @@ void enter_automap_screen()
   draw_automap_screen((int)DAT_00201b68);
   DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,handle_automap_note_click);
   set_cursor_confine_rect(0,199,0x13f,0);
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   FUN_00057c5c(0x1078);
   cursor_show_idle_tick();
   DAT_000b99c4 = 0;
@@ -43,7 +43,7 @@ void exit_automap_screen()
   int iVar1;
   undefined1 auStack_1c [16];
   
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   unregister_key_binding((int)DAT_000b99c0);
   FUN_00057cac(0);
   save_automap_notes_to_archive((int)DAT_000ba9d0);
@@ -376,7 +376,7 @@ undefined4 param_1;
   char acStack_11c [260];
 
   uVar3 = Ordinal_1041(64000);
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   pcVar4 = &DAT_0023cca8;
     stack0xffdc323c_ptr = acStack_11c;
   do {
@@ -716,7 +716,7 @@ LAB_000170bc:
     else {
       sVar2 = 0xfd;
       set_cursor_confine_rect(0,199,0x13f,0);
-      FUN_00057118();
+      decrement_cursor_hide_depth();
       FUN_00057c5c(0x1079);
       cursor_show_idle_tick();
       do {
@@ -894,7 +894,7 @@ LAB_0001739c:
   }
   flush_dirty_rect_to_display(1);
 LAB_00017404:
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   draw_automap_notes();
   FUN_00057590(iVar8 + 0x16,local_60 + -7);
   FUN_00057cac(2);

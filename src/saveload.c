@@ -126,7 +126,7 @@ undefined4 journey_onward_load_slot_menu()
   char acStack_b8 [160];
   char local_92 [122];
   
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   Ordinal_1047(acStack_1c0,0,0x104);
   pcVar9 = &DAT_0023cca8;
     stack0xffdc3198_ptr = stack0xffdc3198_buf;
@@ -186,7 +186,7 @@ undefined4 journey_onward_load_slot_menu()
         iVar4 = (int)(uVar7 * 0x10000) >> 0x10;
       } while (sVar6 != sVar2);
     }
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     Ordinal_1047(acStack_1c0,0,0x104);
     do {
       cVar1 = *pcVar9;

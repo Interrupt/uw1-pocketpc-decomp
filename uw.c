@@ -10695,23 +10695,6 @@ short param_1;
 
 
 
-void thunk_FUN_00057118()
-
-{
-  int iVar1;
-  
-  iVar1 = (int)DAT_00204840;
-  DAT_00204840 = (short)(iVar1 + -1);
-  if ((((iVar1 + -1) * 0x10000 >> 0x10 == 0) || (DAT_000bbef4 != 0)) &&
-     (iVar1 = FUN_00056fe8(), iVar1 != 0)) {
-    DAT_00204844 = 0;
-    set_draw_color(1);
-  }
-  if (DAT_00204840 < 0) {
-    DAT_00204840 = DAT_00204840 + 1;
-  }
-  return;
-}
 
 
 
@@ -12084,7 +12067,7 @@ void redraw_armor_overlay_widgets()
   int iVar4;
 
   if (g_active_hud_panel == '\0') {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     if (DAT_00085c54 != 0) {
       screen_backup_save();
       set_draw_color(0x1a);
@@ -12168,7 +12151,7 @@ int param_2;
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar2 << 0x16) >> 0x18);
       refresh_player_equipment_effects();
     }
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     if (bVar3) {
       FUN_00057cac(0);
     }
@@ -13965,23 +13948,6 @@ uint param_3;
 
 
 
-void FUN_00057118()
-
-{
-  int iVar1;
-  
-  iVar1 = (int)DAT_00204840;
-  DAT_00204840 = (short)(iVar1 + -1);
-  if ((((iVar1 + -1) * 0x10000 >> 0x10 == 0) || (DAT_000bbef4 != 0)) &&
-     (iVar1 = FUN_00056fe8(), iVar1 != 0)) {
-    DAT_00204844 = 0;
-    set_draw_color(1);
-  }
-  if (DAT_00204840 < 0) {
-    DAT_00204840 = DAT_00204840 + 1;
-  }
-  return;
-}
 
 
 
@@ -14045,7 +14011,7 @@ void FUN_0005721c()
           iVar5 = (int)DAT_000842a4;
           iVar6 = (int)DAT_000842a8;
           set_viewport_clip_rect(0,0,0x13f,199);
-          FUN_00057118();
+          decrement_cursor_hide_depth();
           set_viewport_clip_rect(iVar4,iVar3,iVar5,iVar6);
         }
       }
@@ -14151,7 +14117,7 @@ undefined2 param_1;
 undefined2 param_2;
 
 {
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   FUN_00057e54();
   g_mouse_x = param_1;
   g_mouse_y = param_2;
@@ -14508,7 +14474,7 @@ undefined4 param_1;
   int iVar1;
   
   if (DAT_00204858 != '\x03') {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     iVar1 = (int)DAT_00204858;
     DAT_00204858 = DAT_00204858 + '\x01';
     (&DAT_00204714)[iVar1] = DAT_00204704;
@@ -14527,7 +14493,7 @@ ushort param_1;
   int iVar1;
   
   if ((param_1 & 1) != 0) {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
   }
   iVar1 = (int)DAT_00204858;
   DAT_00204858 = (char)(iVar1 + -1);

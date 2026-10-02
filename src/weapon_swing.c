@@ -486,7 +486,7 @@ bool load_weapon_combat_maneuver_data()
 // else; confirmed used two ways at its real call sites (uw.c): once
 // inside a 13-iteration animation loop (weapon_overlay_flash_hold) alongside
 // weapon_overlay_and_full_redraw, and once passed BY ADDRESS as a
-// callback argument to FUN_00057118 (the same helper
+// callback argument to decrement_cursor_hide_depth (the same helper
 // wait_for_click_to_continue calls). Matches the same "dead/stripped
 // debug hook" pattern already confirmed for debug_print_init,
 // debug_print, and debug_noop_checkpoint elsewhere in this file.
@@ -822,7 +822,7 @@ void weapon_overlay_flash_hold()
 {
   int iVar1;
 
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   g_weapon_overlay_enabled = 0;
   iVar1 = 0;
   do {
@@ -849,7 +849,7 @@ void weapon_overlay_flash_restore()
   undefined4 uVar1;
   int iVar2;
 
-  FUN_00057118(0xc,debug_noop_frame_hook,0xf1);
+  decrement_cursor_hide_depth(0xc,debug_noop_frame_hook,0xf1);
   uVar1 = Ordinal_1041(0x4bec);
   Ordinal_1044(uVar1,DAT_00248410,0x4bec);
   g_weapon_overlay_enabled = 0;
@@ -875,7 +875,7 @@ void weapon_overlay_flash_once()
 
 {
   thunk_FUN_0003c310();
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   g_weapon_overlay_enabled = 0;
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;

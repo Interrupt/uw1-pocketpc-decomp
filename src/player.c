@@ -1830,7 +1830,7 @@ void refresh_experience_display()
   if (g_active_hud_panel == '\x02') {
     *g_draw_color_index = 0xf1;
     *DAT_00084298 = 0xf1;
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     select_active_font(s_font5x6i_sys_00086e98);
     if (DAT_0024af8c != 0) {
       /* Ghidra dropped the arg here (relying on register carryover from
@@ -2905,7 +2905,7 @@ void handle_game_victory_sequence()
   DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
     DAT_000868d8 = 2;
     display_book_or_scroll_page(1);
-    FUN_00057118();
+    decrement_cursor_hide_depth();
     clear_screen_and_restore_cursor();
     Ordinal_1047(acStack_114,0,0x104);
     pcVar7 = &DAT_0023cca8;
@@ -3363,7 +3363,7 @@ void draw_stats_panel_content()
   }
   *g_draw_color_index = 0xf1;
   *DAT_00084298 = 0xf1;
-  FUN_00057118();
+  decrement_cursor_hide_depth();
   select_active_font(s_font5x6i_sys_00086e98);
   draw_stats_panel_header();
   bVar1 = 0;
@@ -3433,7 +3433,7 @@ void handle_stats_panel_skill_scroll_click()
     sVar2 = step_value_toward_limit(local_c,uVar1,1,(0x24 < *DAT_00085a6c) ? 1 : -1);
     if (sVar2 != 0) {
       DAT_0024af80 = (byte)local_c[0];
-      FUN_00057118();
+      decrement_cursor_hide_depth();
       uVar3 = 0;
       local_c[0] = 0;
       do {
@@ -3709,7 +3709,7 @@ short param_1;
   DAT_00201b64 = 0xffff;
   DAT_00201c98 = 0;
   if (param_1 == 1) {
-    FUN_00057118();
+    decrement_cursor_hide_depth();
   }
   reset_player_for_resurrection();
   Ordinal_1044(auStack_31c,&DAT_00088d98,0x300);
