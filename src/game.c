@@ -520,7 +520,7 @@ void close_panels_before_level_change()
 {
   close_backpack_container();
   free_player_inventory_chain((char *)g_player_object + 6);
-  FUN_000465c8();
+  reset_equipment_and_container_state();
   return;
 }
 

@@ -2756,6 +2756,7 @@ extern char s_destroyed__00085ab4[];
 extern char s_bodies_00085c58[];
 extern int DAT_002029a4;
 extern undefined2 DAT_00202998;
+extern undefined2 DAT_00085c50;
 extern undefined1 DAT_00202988_backing[16];
 #define DAT_00202988 DAT_00202988_backing[0]
 extern char s_Not_a_spell_00085a80[];
@@ -3307,7 +3308,7 @@ uint calculate_object_weight();
 bool check_object_carry_weight();
 void reload_paperdoll_body_sprite();
 void init_inventory_panel_hotspots();
-void FUN_000465c8();
+void reset_equipment_and_container_state();
 void handle_inventory_panel_click();
 void attach_picked_up_object_to_cursor();
 undefined4 load_armor_overlay_frame();

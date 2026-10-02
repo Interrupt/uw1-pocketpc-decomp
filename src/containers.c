@@ -1375,3 +1375,37 @@ short * param_1;
   }
   return uVar3;
 }
+
+
+// was FUN_000465c8 -- called from close_panels_before_level_change
+// (right after free_player_inventory_chain) and from load_level:
+// clears the equipped-items slot-index encoding and overlay-offset
+// array, the cached equipment-icon slots (same array
+// reload_paperdoll_body_sprite clears), the open-container list/record,
+// the current cursor selection, and a container-UI sentinel
+// (DAT_00085c50). Resets all equipment/container UI state for a level
+// transition.
+void reset_equipment_and_container_state()
+
+{
+  int iVar1;
+
+  iVar1 = 0;
+  do {
+    (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f;
+    (&DAT_00202951)[iVar1 * 2] = 0;
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 0x1c);
+  iVar1 = 1;
+  do {
+    *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 6);
+  g_open_container_list = 0;
+  g_current_container_record = 0;
+  DAT_002029a0 = 0;
+  DAT_0020299c = 0;
+  g_selected_object = 0;
+  DAT_00085c50 = 0xffff;
+  return;
+}

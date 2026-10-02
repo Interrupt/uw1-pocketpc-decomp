@@ -3399,7 +3399,7 @@ undefined4 DAT_002029a0;
 undefined4 DAT_0020299c;
 /* Ghidra left 0x202988 and 0x2028e0 as bare literal addresses (no symbol)
    -- small per-hand "currently drawn weapon / hand state" arrays indexed
-   0..5 by FUN_000465c8/reload_paperdoll_body_sprite (which zero them) and FUN_00046xxx
+   0..5 by reset_equipment_and_container_state/reload_paperdoll_body_sprite (which zero them) and FUN_00046xxx
    (which reads+rewrites them to gate a paperdoll redraw). On the 32-bit
    binary `idx + 0x202988` was real addressing; here it hits an unmapped
    low address and segfaults level init. Give them real backing storage
@@ -12079,30 +12079,6 @@ ushort param_5;
 
 
 
-void FUN_000465c8()
-
-{
-  int iVar1;
-  
-  iVar1 = 0;
-  do {
-    (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f;
-    (&DAT_00202951)[iVar1 * 2] = 0;
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar1 < 0x1c);
-  iVar1 = 1;
-  do {
-    *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar1 < 6);
-  g_open_container_list = 0;
-  g_current_container_record = 0;
-  DAT_002029a0 = 0;
-  DAT_0020299c = 0;
-  g_selected_object = 0;
-  DAT_00085c50 = 0xffff;
-  return;
-}
 
 
 
