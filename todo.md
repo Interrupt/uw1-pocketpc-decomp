@@ -35,15 +35,25 @@
       times this session (e.g. `init_sound_channel_slot` in pass 383).
       Fixed by passing `local_334` explicitly. 19/19 regression
       scripts clean.
-- Noted but NOT fixed (same shape, lower confidence pending a closer
-  look next pass): `FUN_00050768` calls `FUN_000506a8();` with zero
-  arguments despite `FUN_000506a8` taking one parameter -- structurally
-  identical to the bug above (a "scalar deleting destructor"-shaped
-  wrapper that should forward its own `param_1` to the inner
-  destructor). Single call site so far, consistent with the confirmed
-  bug's shape, but not yet cross-checked against the full container-
-  template cluster (`FUN_00050678`/`FUN_00050718`/`FUN_0005078c`/
-  `FUN_000507b8` and neighbors) before fixing.
+- [x] Confirmed AND found three more of the same shape while naming the
+      next batch of "scalar deleting destructor" wrappers for this
+      MOD container-template cluster: `destroy_mod_dynamic_array_and_maybe_free`
+      (was `FUN_00050430`, called `destroy_mod_dynamic_array();` with no
+      argument), `destroy_mod_pattern_array_and_maybe_free` (was
+      `FUN_00050454`, called `FUN_0004fef8();`/destroy_mod_pattern_array
+      with no argument), `destroy_mod_instrument_array_and_maybe_free`
+      (was `FUN_00050478`, called `FUN_00050148();`/destroy_mod_instrument_array
+      with no argument), and `destroy_mod_channel_state_array_and_maybe_free`
+      (was `FUN_0005049c`, called `FUN_00050370();`/destroy_mod_channel_state_array
+      with no argument). Four independent, structurally-identical
+      instances of the exact same bug -- each wrapper's own `param_1`
+      is obviously the intended argument, and each inner destructor is
+      called correctly everywhere else in this file. All four fixed by
+      passing `param_1` explicitly. 19/19 regression scripts clean.
+      (`FUN_00050768` -> `FUN_000506a8` from the earlier note is the
+      same cluster's fifth instance, still not yet fixed -- revisit
+      next pass alongside `FUN_00050678`/`FUN_00050718`/`FUN_0005078c`/
+      `FUN_000507b8`.)
 
 ## Fixed this round (code-cleanup-first-pass, babl.c extraction batch)
 - [x] `change_game_mode` / its sibling exit-mode dispatcher (~uw.c:27610/
