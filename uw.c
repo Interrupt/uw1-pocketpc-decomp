@@ -3114,15 +3114,6 @@ undefined2 DAT_00085a70;
 char *g_backpack_slot_table;
 #define g_equipped_items g_backpack_slot_table[0]
 #define DAT_00202951 g_backpack_slot_table[1]
-void uw_debug_dump_inventory_state(void) {
-  int occupied = 0;
-  if (g_backpack_slot_table) {
-    for (int i = 0; i < 28; i++)
-      if (*(unsigned short *)&g_backpack_slot_table[i*2] & 0xffc0) occupied++;
-  }
-  fprintf(stderr, "[demo] post-screenshot state: g_cursor_holding_state(holding)=%d occupied_slots=%d g_current_container_record=%p\n",
-          (int)g_cursor_holding_state, occupied, (void *)g_current_container_record);
-}
 /* Was a lone `undefined4` (4-byte) scalar holding a real heap pointer
    (an Ordinal_1041-allocated open-container tracking record, same class
    as g_current_container_record right above) -- every assignment to/from
