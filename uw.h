@@ -3340,7 +3340,7 @@ int hit_test_inventory_widget();
 void dispatch_object_action_dup();
 undefined4 append_object_property_tag();
 undefined4 append_object_special_name();
-void FUN_00048e8c();
+void read_object_text();
 void FUN_00049008();
 void FUN_000492bc();
 void FUN_000493cc();

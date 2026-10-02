@@ -7646,3 +7646,67 @@ void rle_op_mark_stream_done()
   DAT_00201b58 = 1;
   return;
 }
+
+
+// was FUN_00048e8c -- handles "read" on a sign/book/scroll object:
+// prints a fixed scroll message for sign class 0x13b; for an
+// illustrated book/scroll (quality bit 0x400) opens the picture page
+// via display_book_or_scroll_page; otherwise prints "You read the
+// <name>." followed by the plain-text page content
+// (get_message_string/message_scroll_print_wrapped), using a
+// different lookup range once the quality field crosses 0x3fc1.
+void read_object_text(param_1,param_2)
+ushort * param_1;
+short param_2;
+
+{
+  char *wptr_31881;
+  char cVar1;
+  ushort uVar2;
+  ushort uVar3;
+  short sVar4;
+  undefined *puVar5;
+  char *pcVar6;
+  int iVar7;
+  char acStack_85d54 [548072];
+  char acStack_6c [100];
+  
+  if (0 < param_2) {
+    uVar2 = *param_1;
+    if ((uVar2 & 0x1ff) == 0x13b) {
+      print_scroll_message_by_id(0x97);
+    }
+    else if (((uVar2 & 0x1000) == 0) || ((uVar2 & 0x1c0) == 0x140)) {
+      uVar3 = param_1[3];
+      if ((uVar2 & 0x400) == 0) {
+        if ((uVar3 & 0x7fc0) < 0x3fc1) {
+          pcVar6 = s_You_read_the_00085ce8;
+    wptr_31881 = acStack_85d54;
+          do {
+            cVar1 = *pcVar6;
+            *wptr_31881 = cVar1; wptr_31881 = wptr_31881 + 1;
+            pcVar6 = pcVar6 + 1;
+          } while (cVar1 != '\0');
+          iVar7 = Ordinal_1068(acStack_6c);
+          sVar4 = build_object_display_name(acStack_6c + iVar7,param_1,0,0);
+          if (sVar4 == 0) {
+            Ordinal_1063(acStack_6c,s_UNNAMED_00084f24);
+          }
+          Ordinal_1063(acStack_6c,&DAT_00085ce0);
+          message_scroll_print_wrapped(acStack_6c);
+          get_message_string(param_1[3] >> 6 | 0x600);
+          message_scroll_print_wrapped();
+          puVar5 = &s_scroll_newline_0008522c;
+        }
+        else {
+          puVar5 = (undefined *)get_message_string(uVar3 >> 6 | 0x600);
+        }
+        message_scroll_print_wrapped(puVar5);
+      }
+      else {
+        display_book_or_scroll_page((param_1[3] >> 6 & 0x1ff) + 0x100);
+      }
+    }
+  }
+  return;
+}
