@@ -3864,14 +3864,12 @@ char s_magical_00085ca8[] = "magical";
 char s_full_charge_00085cb8[] = "full_charge";
 undefined DAT_00085cc8;
 char s_with_00085cd0[] = "with";
-static undefined DAT_00085cd8_backing[8192];
-#define DAT_00085cd8 DAT_00085cd8_backing[0]
+undefined DAT_00085cd8_backing[8192];
 undefined4 DAT_0024cfcc;
 undefined1 DAT_00085ccc;
 undefined1 DAT_00085ccd;
 undefined1 DAT_00085cce;
-static undefined DAT_00085cb4_backing[8192];
-#define DAT_00085cb4 DAT_00085cb4_backing[0]
+undefined DAT_00085cb4_backing[8192];
 undefined DAT_00085ce0_backing[8192];
 #define DAT_00085ce0 DAT_00085ce0_backing[0]
 char s_You_read_the_00085ce8[] = "You_read_the";
@@ -12828,143 +12826,6 @@ uint param_2;
 
 
 
-undefined4 FUN_00048b6c(param_1,param_2,param_3)
-ushort *param_1;   /* was undefined4 -- object ptr into resolve_object_variant_or_special_link */
-short param_2;
-char *param_3;     /* was undefined4 -- caller's stack buffer for Ordinal_1063 */
-
-{
-  int iVar1;
-  bool bVar2;
-  short local_14;
-  undefined1 auStack_12 [2];
-  int local_10;
-  
-  iVar1 = resolve_object_variant_or_special_link(param_1,&local_14,auStack_12,&local_10);
-  if (iVar1 != 0) {
-    if (param_2 == 2) {
-      Ordinal_1063(param_3,s_magical_00085ca8);
-      return 1;
-    }
-    if (param_2 == 3) {
-      bVar2 = local_10 == 0;
-      if (bVar2) {
-        local_10 = (int)local_14;
-      }
-      if (bVar2 && local_10 == 9) {
-        Ordinal_1063(param_3,s_cursed_00085ca0);
-      }
-    }
-  }
-  return 0;
-}
-
-
-
-// WARNING: Type propagation algorithm not settling
-
-undefined4 FUN_00048bf0(param_1,param_2,param_3)
-byte * param_1;
-short param_2;
-char *param_3;   /* was int -- caller's stack buffer for Ordinal_1063/1044/1068 */
-
-{
-  int uw_ord2005_rem_113 = 0;
-  char cVar1;
-  int iVar2;
-  uint uVar3;
-  char *pcVar4;
-  int iVar5;
-  undefined4 uVar6;
-  int extraout_r1;
-  undefined2 *puVar7;
-  ushort uVar8;
-  bool bVar9;
-  short local_28;
-  undefined1 local_26 [2];
-  undefined1 local_24;
-  int local_20;
-  byte *local_1c;
-  
-  DAT_0024cfcc = 1;
-  local_1c = (byte *)resolve_object_variant_or_special_link(param_1,local_26,&local_28,&local_20);
-  DAT_0024cfcc = 0;
-  if ((local_1c == (byte *)0x0) || (param_2 != 3)) {
-LAB_00048e80:
-    uVar6 = 0;
-  }
-  else {
-    if (*(short *)local_26 == 0xc) {
-      *(short *)local_26 = 0x1c0;
-      if ((*param_1 & 0x30) < 0x11) {
-        iVar2 = (int)local_28;
-      }
-      else {
-        iVar2 = local_28 + 0x10;
-      }
-      uVar3 = iVar2 + 0x1c0;
-    }
-    else {
-      if (*(short *)local_26 == 0x9) goto LAB_00048e80;
-      if ((local_20 == 0) || (0 < *(short *)local_26)) {
-        uVar3 = (int)local_28 + *(short *)local_26 * 0x10;
-      }
-      else {
-        uVar3 = (int)local_28 + 0x100;
-      }
-    }
-    local_28 = (short)uVar3;
-    pcVar4 = (char *)get_message_string(uVar3 | 0xc00);
-    if ((pcVar4 == (char *)0x0) || (*pcVar4 == '\0')) {
-      pcVar4 = s_UNNAMED_00084f24;
-    }
-    Ordinal_1063(param_3,&DAT_00085cd8);
-    iVar2 = Ordinal_1068(pcVar4);
-    iVar5 = Ordinal_1068(param_3);
-    Ordinal_1044(param_3 + iVar5,pcVar4,iVar2 + 1);
-    if ((param_1[1] & 0x80) == 0) {
-      local_1c = param_1 + 6;
-      uVar8 = 0xffff;
-      iVar2 = FUN_000537d0(&local_1c,0,4,2,0);
-      bVar9 = iVar2 == 0;
-      if (!bVar9) {
-        bVar9 = (*(byte *)(iVar2 + 1) & 8) == 0;
-      }
-      if (!bVar9) {
-        uVar8 = *(byte *)(iVar2 + 4) & 0x3f;
-      }
-      iVar2 = (int)(short)uVar8;
-      if (-1 < iVar2) {
-        Ordinal_1063(param_3,s_with_00085cd0);
-        if (iVar2 < 1) {
-          puVar7 = (undefined2 *)&DAT_00085cc8;
-        }
-        else {
-          local_26[1] = DAT_00085ccd;
-          local_26[0] = DAT_00085ccc;
-          local_24 = DAT_00085cce;
-          uw_ord2005_rem_113 = ((int)(iVar2)) % (10);
-          local_26[1] = (char)((uint)((uw_ord2005_rem_113 + 0x30) * 0x1000000) >> 0x18);
-          if (iVar2 < 10) {
-            puVar7 = (undefined2 *)((char *)local_26 + 1);
-          }
-          else {
-            cVar1 = Ordinal_2005(10,iVar2);
-            local_26[0] = cVar1 + '0';
-            puVar7 = (undefined2 *)local_26;
-          }
-        }
-        Ordinal_1063(param_3,puVar7);
-        Ordinal_1063(param_3,s_full_charge_00085cb8);
-        if (iVar2 != 1) {
-          Ordinal_1063(param_3,&DAT_00085cb4);
-        }
-      }
-    }
-    uVar6 = 1;
-  }
-  return uVar6;
-}
 
 
 

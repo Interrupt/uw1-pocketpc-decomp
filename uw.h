@@ -2757,6 +2757,18 @@ extern char s_bodies_00085c58[];
 extern int DAT_002029a4;
 extern undefined2 DAT_00202998;
 extern undefined2 DAT_00085c50;
+extern char s_cursed_00085ca0[];
+extern char s_magical_00085ca8[];
+extern char s_full_charge_00085cb8[];
+extern undefined DAT_00085cc8;
+extern char s_with_00085cd0[];
+extern undefined DAT_00085cd8_backing[8192];
+#define DAT_00085cd8 DAT_00085cd8_backing[0]
+extern undefined1 DAT_00085ccc;
+extern undefined1 DAT_00085ccd;
+extern undefined1 DAT_00085cce;
+extern undefined DAT_00085cb4_backing[8192];
+#define DAT_00085cb4 DAT_00085cb4_backing[0]
 extern undefined1 DAT_00202988_backing[16];
 #define DAT_00202988 DAT_00202988_backing[0]
 extern char s_Not_a_spell_00085a80[];
@@ -3326,8 +3338,8 @@ void redraw_inventory_widget_range();
 bool update_carry_weight_display();
 int hit_test_inventory_widget();
 void dispatch_object_action_dup();
-undefined4 FUN_00048b6c();
-undefined4 FUN_00048bf0();
+undefined4 append_object_property_tag();
+undefined4 append_object_special_name();
 void FUN_00048e8c();
 void FUN_00049008();
 void FUN_000492bc();

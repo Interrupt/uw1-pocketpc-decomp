@@ -2946,7 +2946,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   }
   local_74[0] = '\0';
   local_84[0] = '\0';
-  iVar6 = FUN_00048b6c(iVar5,uVar3,local_84);
+  iVar6 = append_object_property_tag(iVar5,uVar3,local_84);
   cVar8 = '\0';
   if (iVar6 != 0) {
     cVar8 = local_84[0];
@@ -2983,7 +2983,7 @@ LAB_0002a154:
   }
   iVar6 = Ordinal_1068(local_74);
   build_object_display_name(local_74 + iVar6,iVar5,(int)sVar1,1 < uVar9);
-  FUN_00048bf0(iVar5,uVar3,local_74);
+  append_object_special_name(iVar5,uVar3,local_74);
   iVar5 = Ordinal_1068(local_74);
   iVar5 = babl_alloc(iVar5 + 1);
   pcVar7 = local_74;
