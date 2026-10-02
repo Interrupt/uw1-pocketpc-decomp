@@ -2433,6 +2433,7 @@ extern undefined4 DAT_002020d4;
 extern undefined2 DAT_0020288c;
 extern char * DAT_00202890;
 extern undefined2 DAT_00202898;
+extern undefined2 DAT_00202894;
 extern char * DAT_0020289c;
 extern short DAT_00204700;
 extern short DAT_00204708;
