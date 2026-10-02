@@ -2721,7 +2721,7 @@ LAB_0004df60:
         *(char *)(iVar17 + 0x17) = (char)((uint)iVar20 >> 0x18);
         uVar16 = 0;
 LAB_0004e058:
-        FUN_0004edf8(param_1,local_48,uVar16);
+        adjust_mod_channel_volume(param_1,local_48,uVar16);
         iVar20 = *piVar19 + iVar18;
         uVar15 = *(undefined4 *)(*piVar19 + iVar18 + 0x14);
         *(char *)(iVar20 + 0x18) = (char)uVar15;
@@ -3060,7 +3060,7 @@ LAB_0004eb28:
         break;
       case 10:
 LAB_0004eb74:
-        FUN_0004edf8(param_1,iVar10,iVar7 - uVar9);
+        adjust_mod_channel_volume(param_1,iVar10,iVar7 - uVar9);
         iVar7 = iVar8 + *(int *)(param_1 + 0x10524);
         uVar5 = *(undefined4 *)(iVar8 + *(int *)(param_1 + 0x10524) + 0x14);
         *(char *)(iVar7 + 0x18) = (char)uVar5;
@@ -3134,5 +3134,44 @@ int param_4;
       *(char *)(iVar2 + 0x10557) = (char)((uint)uVar3 >> 0x18);
     }
   }
+  return;
+}
+
+
+// was FUN_0004edf8 -- adjusts channel param_2's volume field by delta
+// param_3, clamped to the MOD volume range [0,0x40]. Called from
+// apply_mod_tracker_tick_effects for volume-slide-shaped effects.
+void adjust_mod_channel_volume(param_1,param_2,param_3)
+int param_1;
+int param_2;
+int param_3;
+
+{
+  int iVar1;
+  int iVar2;
+  bool bVar3;
+  bool bVar4;
+  bool bVar5;
+  
+  iVar2 = param_2 * 0x40 + *(int *)(param_1 + 0x10524);
+  iVar1 = *(int *)(param_2 * 0x40 + *(int *)(param_1 + 0x10524) + 0x14);
+  bVar5 = SCARRY4(iVar1,param_3);
+  iVar1 = iVar1 + param_3;
+  bVar3 = iVar1 < 0;
+  bVar4 = iVar1 == 0;
+  if (bVar3) {
+    iVar1 = 0;
+  }
+  else {
+    bVar5 = SBORROW4(iVar1,0x40);
+    bVar4 = iVar1 == 0x40;
+  }
+  if (!bVar4 && (bVar3 || iVar1 + -0x40 < 0) == bVar5) {
+    iVar1 = 0x40;
+  }
+  *(char *)(iVar2 + 0x14) = (char)iVar1;
+  *(char *)(iVar2 + 0x15) = (char)((uint)iVar1 >> 8);
+  *(char *)(iVar2 + 0x16) = (char)((uint)iVar1 >> 0x10);
+  *(char *)(iVar2 + 0x17) = (char)((uint)iVar1 >> 0x18);
   return;
 }

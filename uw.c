@@ -13309,40 +13309,6 @@ bool compute_drop_aim_from_cursor()
 
 
 
-void FUN_0004edf8(param_1,param_2,param_3)
-int param_1;
-int param_2;
-int param_3;
-
-{
-  int iVar1;
-  int iVar2;
-  bool bVar3;
-  bool bVar4;
-  bool bVar5;
-  
-  iVar2 = param_2 * 0x40 + *(int *)(param_1 + 0x10524);
-  iVar1 = *(int *)(param_2 * 0x40 + *(int *)(param_1 + 0x10524) + 0x14);
-  bVar5 = SCARRY4(iVar1,param_3);
-  iVar1 = iVar1 + param_3;
-  bVar3 = iVar1 < 0;
-  bVar4 = iVar1 == 0;
-  if (bVar3) {
-    iVar1 = 0;
-  }
-  else {
-    bVar5 = SBORROW4(iVar1,0x40);
-    bVar4 = iVar1 == 0x40;
-  }
-  if (!bVar4 && (bVar3 || iVar1 + -0x40 < 0) == bVar5) {
-    iVar1 = 0x40;
-  }
-  *(char *)(iVar2 + 0x14) = (char)iVar1;
-  *(char *)(iVar2 + 0x15) = (char)((uint)iVar1 >> 8);
-  *(char *)(iVar2 + 0x16) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(iVar2 + 0x17) = (char)((uint)iVar1 >> 0x18);
-  return;
-}
 
 
 
