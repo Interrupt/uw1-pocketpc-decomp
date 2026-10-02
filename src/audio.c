@@ -19,7 +19,7 @@
 // currently-playing module via its COM-style interface (DAT_0023c3b8),
 // opens and loads the new one via the MOD-player ordinals
 // (Ordinal_1095/177/FUN_0004bc94), and -- if param_2!=0 -- starts
-// playback (FUN_0004ca50) and records the start time and this track's
+// playback (start_mod_player_playback) and records the start time and this track's
 // own duration (DAT_00087414-indexed per-track table -- see
 // advance_menu_music_track's own comment for how it's used) for later
 // use.
@@ -63,7 +63,7 @@ int param_2;
       Ordinal_1063(acStack_120,s__SOUND__0008750c);
       Ordinal_1063(acStack_120,auStack_130);
       if (DAT_0023c3b8 != (undefined4 *)0x0) {
-        FUN_0004cfc8();
+        stop_mod_player_playback();
         if (DAT_0023c3b8 != (undefined4 *)0x0) {
           (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
         }
@@ -81,7 +81,7 @@ int param_2;
     DAT_0023c384 = 0;
     DAT_0023c3a8 = param_1;
     if (param_2 != 0) {
-      FUN_0004ca50(DAT_0023c3b8);
+      start_mod_player_playback(DAT_0023c3b8);
       DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
@@ -106,7 +106,7 @@ void resume_music_playback()
 {
   if ((DAT_00087454 != 0) && (DAT_00087448 != 0)) {
     if (DAT_0023c32c != -1) {
-      FUN_0004ca50(DAT_0023c3b8);
+      start_mod_player_playback(DAT_0023c3b8);
       DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
@@ -160,7 +160,7 @@ undefined4 is_sound_effects_enabled()
 
 // was FUN_00072b74 -- enables (param_1!=0: resumes playing
 // DAT_0023c384, the current/pending track) or disables (param_1==0:
-// stops playback via FUN_0004cfc8) background music.
+// stops playback via stop_mod_player_playback) background music.
 void set_music_enabled(param_1)
 int param_1;
 
@@ -182,7 +182,7 @@ int param_1;
     }
     if (((DAT_00087448 & uVar1) != 0) && (DAT_0023c32c != -1)) {
       DAT_00087448 = 0;
-      FUN_0004cfc8(DAT_0023c3b8);
+      stop_mod_player_playback(DAT_0023c3b8);
       DAT_00087448 = 0;
     }
   }
@@ -216,7 +216,7 @@ int param_1;
 
 
 // was FUN_00072c44 -- stops the current sound/music handle
-// (FUN_0004cfc8(DAT_0023c3b8)) if the audio subsystem is initialized
+// (stop_mod_player_playback(DAT_0023c3b8)) if the audio subsystem is initialized
 // and a "handle" check passes. That check itself looks like a Ghidra
 // decompilation artifact rather than real original logic: it reads
 // DAT_00087448 (elsewhere in this file a plain int on/off flag, e.g.
@@ -236,7 +236,7 @@ void stop_current_audio_handle()
     puVar1 = DAT_00087448;
   }
   if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
-    FUN_0004cfc8(DAT_0023c3b8);
+    stop_mod_player_playback(DAT_0023c3b8);
   }
   return;
 }
@@ -453,7 +453,7 @@ void stop_current_audio_handle_dup()
     puVar1 = DAT_00087448;
   }
   if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
-    FUN_0004cfc8(DAT_0023c3b8);
+    stop_mod_player_playback(DAT_0023c3b8);
   }
   return;
 }
@@ -541,7 +541,7 @@ int param_1;
   
   if (DAT_0023c3b8 != (undefined4 *)0x0) {
     if (DAT_00087448 == 0) {
-      FUN_0004cfc8(DAT_0023c3b8);
+      stop_mod_player_playback(DAT_0023c3b8);
       if (DAT_0023c3b8 != (undefined4 *)0x0) {
         (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
       }
@@ -553,7 +553,7 @@ int param_1;
         Ordinal_177(&local_18,&DAT_0023c3d4);
         DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar2,local_18);
       }
-      FUN_0004ca50();
+      start_mod_player_playback();
       DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
     }
@@ -733,7 +733,7 @@ void shutdown_music_module()
 {
   if (DAT_0023c3b8 != (undefined4 *)0x0) {
     FUN_0004f748(DAT_0023c3b8,0);
-    FUN_0004cfc8(DAT_0023c3b8);
+    stop_mod_player_playback(DAT_0023c3b8);
     if (DAT_0023c3b8 != (undefined4 *)0x0) {
       (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
     }
@@ -961,7 +961,7 @@ short param_1;
   }
   else {
     if (DAT_00087448 == 0) {
-      FUN_0004cfc8(DAT_0023c3b8);
+      stop_mod_player_playback(DAT_0023c3b8);
       if (DAT_0023c3b8 != (undefined4 *)0x0) {
         (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
       }
@@ -973,7 +973,7 @@ short param_1;
         Ordinal_177(local_228,&DAT_0023c3d4);
         DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar3,local_228[0]);
       }
-      FUN_0004ca50();
+      start_mod_player_playback();
       DAT_0023c330 = 0;
       DAT_00087448 = 1;
     }
@@ -1998,4 +1998,242 @@ LAB_0004c038:
 LAB_0004c940:
   Ordinal_297(&local_c);
   return param_1;
+}
+
+
+// was FUN_0004c958 -- destroys a MOD-player engine object: resets its
+// state (reset_mod_player_state), then frees the object itself
+// (Ordinal_1094) if param_2's low bit is set (the "also free the
+// container" flag, as opposed to just resetting an embedded/reused
+// instance).
+undefined4 destroy_mod_player(param_1,param_2)
+undefined4 param_1;
+uint param_2;
+
+{
+  reset_mod_player_state();
+  if ((param_2 & 1) != 0) {
+    Ordinal_1094(param_1);
+  }
+  return param_1;
+}
+
+
+
+// was FUN_0004c97c -- resets a MOD-player engine object's full
+// internal state (the large structure this whole cluster operates on,
+// 0x10554+ bytes: pattern/sample/channel data): clears its header
+// fields, stops playback first if currently playing
+// (stop_mod_player_playback), and resets each sub-component buffer.
+void reset_mod_player_state(param_1)
+undefined1 * param_1;
+
+{
+  *param_1 = 0;
+  param_1[1] = 0x30;
+  param_1[2] = 8;
+  param_1[3] = 0;
+  if (*(int *)(param_1 + 0x10554) != 0) {
+    stop_mod_player_playback(param_1);
+  }
+  FUN_0004fc64(param_1 + 0x1056c);
+  FUN_0004fc64(param_1 + 0x10558);
+  FUN_00050370(param_1 + 0x10520);
+  FUN_00050148(param_1 + 0x10508);
+  FUN_0004fef8(param_1 + 0x104f4);
+  FUN_0004fc64(param_1 + 0x104e0);
+  Ordinal_297(param_1 + 0x104d8);
+  return;
+}
+
+
+
+// was FUN_0004ca50 -- starts MOD-player playback (no-op if already
+// playing, per the +0x10554 "is playing" flag): opens the audio
+// output device (Ordinal_399, with FUN_0004ecd4 as its fill-buffer
+// callback), zeroes the per-channel state array and several header
+// fields, queues the initial audio buffers (FUN_0004d050, called
+// twice for double-buffering) and, only once both queue attempts
+// succeed, marks the engine as playing.
+undefined4 start_mod_player_playback(param_1)
+char *param_1;
+
+{
+  int iVar1;
+  int *piVar2;
+  int iVar3;
+  undefined4 uVar4;
+  undefined1 *puVar5;
+  int iVar6;
+  undefined2 local_2c;
+  undefined2 local_2a;
+  uint local_28;
+  uint local_24;
+  undefined2 local_20;
+  undefined2 local_1e;
+  undefined2 local_1c;
+  
+  if (*(int *)(param_1 + 0x10554) == 0) {
+    if (*(int *)(param_1 + 0x1051c) != 0) {
+      Ordinal_384();
+    }
+    local_1e = 8;
+    local_28 = DAT_00086368;
+    local_2c = 1;
+    local_24 = DAT_00086368 & 0x1fffffff;
+    local_2a = 1;
+    local_1c = 0;
+    local_20 = 1;
+    Ordinal_399((int *)(param_1 + 0x1051c),0xffffffff,&local_2c,FUN_0004ecd4,param_1,0x30000);
+    iVar3 = 0;
+    if (0 < *(int *)(param_1 + 0x1054c)) {
+      piVar2 = (int *)(param_1 + 0x10524);
+      iVar1 = 0;
+      do {
+        puVar5 = (undefined1 *)(*piVar2 + iVar1);
+        *puVar5 = 0;
+        puVar5[1] = 0;
+        puVar5[2] = 0;
+        puVar5[3] = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 4) = 0;
+        *(undefined1 *)(iVar6 + 5) = 0;
+        *(undefined1 *)(iVar6 + 6) = 0;
+        *(undefined1 *)(iVar6 + 7) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 8) = 0;
+        *(undefined1 *)(iVar6 + 9) = 0;
+        *(undefined1 *)(iVar6 + 10) = 0;
+        *(undefined1 *)(iVar6 + 0xb) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0xc) = 0;
+        *(undefined1 *)(iVar6 + 0xd) = 0;
+        *(undefined1 *)(iVar6 + 0xe) = 0;
+        *(undefined1 *)(iVar6 + 0xf) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x14) = 0;
+        *(undefined1 *)(iVar6 + 0x15) = 0;
+        *(undefined1 *)(iVar6 + 0x16) = 0;
+        *(undefined1 *)(iVar6 + 0x17) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x18) = 0;
+        *(undefined1 *)(iVar6 + 0x19) = 0;
+        *(undefined1 *)(iVar6 + 0x1a) = 0;
+        *(undefined1 *)(iVar6 + 0x1b) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x1c) = 0;
+        *(undefined1 *)(iVar6 + 0x1d) = 0;
+        *(undefined1 *)(iVar6 + 0x1e) = 0;
+        *(undefined1 *)(iVar6 + 0x1f) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x20) = 0;
+        *(undefined1 *)(iVar6 + 0x21) = 0;
+        *(undefined1 *)(iVar6 + 0x22) = 0;
+        *(undefined1 *)(iVar6 + 0x23) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x24) = 0;
+        iVar3 = iVar3 + 1;
+        *(undefined1 *)(iVar6 + 0x25) = 0;
+        *(undefined1 *)(iVar6 + 0x26) = 0;
+        *(undefined1 *)(iVar6 + 0x27) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x28) = 0;
+        *(undefined1 *)(iVar6 + 0x29) = 0;
+        *(undefined1 *)(iVar6 + 0x2a) = 0;
+        *(undefined1 *)(iVar6 + 0x2b) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x2c) = 0;
+        *(undefined1 *)(iVar6 + 0x2d) = 0;
+        *(undefined1 *)(iVar6 + 0x2e) = 0;
+        *(undefined1 *)(iVar6 + 0x2f) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x30) = 0;
+        *(undefined1 *)(iVar6 + 0x31) = 0;
+        *(undefined1 *)(iVar6 + 0x32) = 0;
+        *(undefined1 *)(iVar6 + 0x33) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x34) = 0;
+        *(undefined1 *)(iVar6 + 0x35) = 0;
+        *(undefined1 *)(iVar6 + 0x36) = 0;
+        *(undefined1 *)(iVar6 + 0x37) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x10) = 0;
+        *(undefined1 *)(iVar6 + 0x11) = 0;
+        *(undefined1 *)(iVar6 + 0x12) = 0;
+        *(undefined1 *)(iVar6 + 0x13) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x38) = 0;
+        *(undefined1 *)(iVar6 + 0x39) = 0;
+        *(undefined1 *)(iVar6 + 0x3a) = 0;
+        *(undefined1 *)(iVar6 + 0x3b) = 0;
+        iVar6 = *piVar2 + iVar1;
+        *(undefined1 *)(iVar6 + 0x3c) = 0;
+        iVar1 = iVar1 + 0x40;
+        *(undefined1 *)(iVar6 + 0x3d) = 0;
+        *(undefined1 *)(iVar6 + 0x3e) = 0;
+        *(undefined1 *)(iVar6 + 0x3f) = 0;
+      } while (iVar3 < *(int *)(param_1 + 0x1054c));
+    }
+    *(undefined1 *)(param_1 + 0x10534) = 6;
+    *(undefined1 *)(param_1 + 0x10535) = 0;
+    *(undefined1 *)(param_1 + 0x10536) = 0;
+    *(undefined1 *)(param_1 + 0x10537) = 0;
+    *(undefined1 *)(param_1 + 0x10544) = 0x7d;
+    *(undefined1 *)(param_1 + 0x10545) = 0;
+    *(undefined1 *)(param_1 + 0x10546) = 0;
+    *(undefined1 *)(param_1 + 0x10547) = 0;
+    *(undefined1 *)(param_1 + 0x10548) = 0;
+    *(undefined1 *)(param_1 + 0x10549) = 0;
+    *(undefined1 *)(param_1 + 0x1054a) = 0;
+    *(undefined1 *)(param_1 + 0x1054b) = 0;
+    *(undefined1 *)(param_1 + 0x10538) = 0;
+    *(undefined1 *)(param_1 + 0x10539) = 0;
+    *(undefined1 *)(param_1 + 0x1053a) = 0;
+    *(undefined1 *)(param_1 + 0x1053b) = 0;
+    *(undefined1 *)(param_1 + 0x1053c) = 0;
+    *(undefined1 *)(param_1 + 0x1053d) = 0;
+    *(undefined1 *)(param_1 + 0x1053e) = 0;
+    *(undefined1 *)(param_1 + 0x1053f) = 0;
+    if (*(char *)(param_1 + 0x10580) != '\0') {
+      uVar4 = *(undefined4 *)
+               (**(int **)(param_1 + 0x104e4) * 0x14 + *(int *)(param_1 + 0x104f8) + 4);
+      *(char *)(param_1 + 0x10550) = (char)uVar4;
+      *(char *)(param_1 + 0x10551) = (char)((uint)uVar4 >> 8);
+      *(char *)(param_1 + 0x10552) = (char)((uint)uVar4 >> 0x10);
+      *(char *)(param_1 + 0x10553) = (char)((uint)uVar4 >> 0x18);
+    }
+    *(undefined1 *)(param_1 + 0x10540) = 0;
+    *(undefined1 *)(param_1 + 0x10541) = 0;
+    *(undefined1 *)(param_1 + 0x10542) = 0;
+    *(undefined1 *)(param_1 + 0x10543) = 0;
+    iVar3 = FUN_0004d050(param_1);
+    if ((iVar3 == 0) || (iVar3 = FUN_0004d050(param_1), iVar3 == 0)) {
+      return 0;
+    }
+    *(undefined1 *)(param_1 + 0x10554) = 1;
+    *(undefined1 *)(param_1 + 0x10555) = 0;
+    *(undefined1 *)(param_1 + 0x10556) = 0;
+    *(undefined1 *)(param_1 + 0x10557) = 0;
+  }
+  return 1;
+}
+
+
+
+// was FUN_0004cfc8 -- stops MOD-player playback: the shutdown
+// counterpart to start_mod_player_playback, clearing the "is playing"
+// flag first thing.
+undefined4 stop_mod_player_playback(param_1)
+char *param_1;
+
+{
+  *(undefined1 *)(param_1 + 0x10554) = 0;
+  *(undefined1 *)(param_1 + 0x10555) = 0;
+  *(undefined1 *)(param_1 + 0x10556) = 0;
+  *(undefined1 *)(param_1 + 0x10557) = 0;
+  if (*(int *)(param_1 + 0x1051c) != 0) {
+    Ordinal_390();
+    Ordinal_384(*(int *)(param_1 + 0x1051c));
+  }
+  return 1;
 }
