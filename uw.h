@@ -2504,6 +2504,12 @@ extern char s_weapons_0008727c[];
    see the same storage. */
 extern undefined1 DAT_00088d98_backing[1536];
 #define DAT_00088d98 DAT_00088d98_backing[0]
+extern const unsigned short DAT_00085728_real_table[3];
+#define DAT_00085728 (*(undefined1 *)DAT_00085728_real_table)
+extern signed char DAT_00086884_backing[4];
+#define DAT_00086884 DAT_00086884_backing[0]
+extern unsigned char DAT_0008688c_backing[32];
+#define DAT_0008688c DAT_0008688c_backing[4]
 extern undefined4 DAT_002029d0;
 extern char * DAT_002046a0;
 extern char * DAT_002046ac;

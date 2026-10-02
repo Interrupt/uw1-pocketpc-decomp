@@ -2104,3 +2104,136 @@ undefined4 param_1;
   DAT_002048aa = 0;
   return;
 }
+
+
+// was FUN_00051320 -- classify the blocked-corner shape of the current
+// wall hit (from the DAT_00202bfb corner-flag table) and pick which of
+// the 8 candidate octant headings in DAT_000869a8 to deflect toward,
+// writing the choice into DAT_00202c6c[0x12]. Called from
+// sweep_slide_along_wall.
+void resolve_wall_slide_corner()
+
+{
+  int uw_ord2005_rem_115 = 0;
+  char cVar1;
+  byte bVar2;
+  int iVar3;
+  byte bVar4;
+  int extraout_r1;
+  short sVar5;
+  char *iVar6;
+  int iVar7;
+  uint uVar8;
+  int iVar9;
+  short local_28;
+  char local_25;
+  
+  iVar3 = 0;
+  sVar5 = 0;
+  local_28 = 0;
+  iVar7 = 0;
+  iVar6 = 0;
+  local_25 = '\0';
+  iVar9 = 0;
+  do {
+    if ((*(ushort *)(&DAT_00202bfb + iVar3 * 5) & 0xf8) == 0) {
+      iVar9 = ((int)(char)(&DAT_00086884)[iVar3] + (int)(char)iVar9) * 0x1000000 >> 0x18;
+      local_25 = (&DAT_00086884)[iVar3 - 1U & 3] + local_25;
+      local_28 = local_28 + 1;
+    }
+    if ((*(ushort *)(&DAT_00202bfb + iVar3 * 5) & 0x300) != 0) {
+      sVar5 = sVar5 + 1;
+      iVar6 = ((int)(char)(&DAT_00086884)[iVar3] + (int)(char)iVar6) * 0x1000000 >> 0x18;
+      iVar7 = ((int)(char)(&DAT_00086884)[iVar3 - 1U & 3] + (int)(char)iVar7) * 0x1000000 >> 0x18;
+    }
+    iVar3 = (iVar3 + 1) * 0x1000000 >> 0x18;
+  } while (iVar3 < 4);
+  iVar3 = (int)sVar5;
+  if (iVar3 == 0) {
+    *(undefined1 *)(DAT_00202c6c + 0x12) = 9;
+    iVar6 = DAT_00202c6c;
+    goto switchD_000514e0_default;
+  }
+  iVar6 = Ordinal_2005(iVar3,(int)(char)iVar6);
+  iVar7 = Ordinal_2005(iVar3,(int)(char)iVar7);
+  *(undefined *)(DAT_00202c6c + 0x12) = (&DAT_0008688c)[(int)(iVar6) * 3 + iVar7];
+  iVar6 = DAT_00202c6c;
+  if (iVar3 != 1) goto switchD_000514e0_default;
+  bVar2 = *(byte *)(DAT_00202c6c + 0x12);
+  uVar8 = (uint)bVar2;
+  uw_ord2005_rem_115 = ((int)(uVar8)) % (2);
+  if ((uw_ord2005_rem_115 == 0) || (DAT_00202c14 == 0)) goto switchD_000514e0_default;
+  switch((uint)(*(byte *)(iVar6 + 7) >> 5) - (1 - uVar8 & 0xff) & 7) {
+  case 0:
+    break;
+  case 1:
+    break;
+  case 2:
+    goto LAB_00051524;
+  case 3:
+LAB_00051524:
+    cVar1 = '\x01';
+LAB_000515d8:
+    *(byte *)(iVar6 + 0x12) = bVar2 + cVar1 & 7;
+    iVar6 = DAT_00202c6c;
+    goto switchD_000514e0_default;
+  case 4:
+    goto LAB_0005152c;
+  case 5:
+LAB_0005152c:
+    uVar8 = (int)(uVar8 - 1) >> 1 & 0xff;
+    *(byte *)(iVar6 + 0x12) = bVar2 - 1;
+    bVar2 = DAT_00202bf9;
+    bVar4 = DAT_00202bfa;
+    if (uVar8 != 0) {
+      if (uVar8 == 1) {
+        bVar4 = 8 - DAT_00202bff;
+        bVar2 = DAT_00202bfe;
+      }
+      else {
+        bVar2 = DAT_00202c04;
+        bVar4 = DAT_00202c03;
+        if (uVar8 != 2) {
+          if (uVar8 == 3) {
+            bVar2 = 8 - DAT_00202c08;
+            bVar4 = DAT_00202c09;
+          }
+          else {
+            bVar2 = (byte)local_28;
+            bVar4 = (byte)local_28;
+          }
+        }
+      }
+    }
+    if (bVar2 < bVar4) {
+      *(byte *)(DAT_00202c6c + 0x12) = *(char *)(DAT_00202c6c + 0x12) + 2U & 7;
+    }
+    iVar6 = DAT_00202c6c;
+    if (bVar2 == bVar4) {
+      *(char *)(DAT_00202c6c + 0x12) = *(char *)(DAT_00202c6c + 0x12) + '\x01';
+      iVar6 = DAT_00202c6c;
+    }
+    goto switchD_000514e0_default;
+  case 6:
+    goto LAB_000515d4;
+  case 7:
+LAB_000515d4:
+    cVar1 = -1;
+    goto LAB_000515d8;
+  default:
+    goto switchD_000514e0_default;
+  }
+  *(undefined1 *)(iVar6 + 0x12) = 9;
+  iVar6 = DAT_00202c6c;
+switchD_000514e0_default:
+  iVar7 = (int)local_28;
+  if (iVar7 == 1 || iVar7 == 2) {
+    iVar9 = Ordinal_2005(iVar7,(int)(char)iVar9);
+    iVar7 = Ordinal_2005(iVar7,(int)local_25);
+    *(undefined *)(iVar6 + 0x13) = (&DAT_0008688c)[iVar9 * -3 - iVar7];
+  }
+  else {
+    *(undefined1 *)(iVar6 + 0x13) = 9;
+  }
+  return;
+}

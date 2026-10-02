@@ -2406,3 +2406,14 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
   }
   return pbVar11;
 }
+
+
+void load_light_food_effect_tables(param_1)
+undefined4 param_1;
+
+{
+  read_file_handle(param_1,&g_carry_weight_limit_table,0x30);
+  read_file_handle(param_1,&g_light_radius_table,0x20);
+  read_file_handle(param_1,&g_food_effect_table,0x10);
+  return;
+}

@@ -1035,3 +1035,110 @@ byte param_7;
 #undef local_34
 #undef local_33
 #undef local_32
+
+
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+/* Recovered from UU.exe .data at 0x86878 (28 real bytes, then the
+   "\DATA\comobj.dat" string literal). collision_build_height_field's four
+   `*(char *)(bVarNN + 0x86878)` derefs are a bare hardcoded original-
+   32-bit address -- unmapped on this port, so a keyboard forward step
+   (the first thing that ever reached this animated-shade recompute for
+   a moving wall) faulted here. The index bytes bVar11..bVar14 stay
+   small in practice; pad to 256 with 0 so a wrapped byte reads a
+   defined 0 instead of the string bytes the original would have hit. */
+static const signed char DAT_00086878_arr[256] = {
+  -0x41,-0x40,-0x3f,-1, 0,1,0x3f,0x40, 0x41,0,0,0, 1,-1,-1,1,
+  5,4,3,6, 9,2,7,0, 1,0,0,0,
+};
+#define DAT_00086878_IDX(b) DAT_00086878_arr[(unsigned char)(b)]
+
+/* collision_build_height_field looks at a NEIGHBOR tile's shade value by
+   offsetting its own current tile pointer (into the tilemap, the first
+   0x4000 bytes of the level arena -- see uw-formats.txt) by a signed
+   per-direction step from DAT_00086878_arr. Near the map edge, that
+   neighbor can legitimately fall outside the tilemap entirely -- this
+   function already guards the analogous case for the CURRENT tile
+   (`if (_DAT_00202c34 == NULL) return;`, a few lines up) via
+   tilemap_lookup's own bounds check, but had no equivalent guard for
+   these neighbor derefs. Confirmed live via ASan: a heap-buffer-overflow
+   read 260 bytes before the arena's own start (ushort index -130, i.e.
+   DAT_00086878_arr[0]'s -0x41 real, recovered offset) on ordinary
+   forward movement near a map edge -- not a data-recovery gap in the
+   table (that index's value IS real, recovered data), just a genuinely
+   off-map neighbor with nothing stopping the read. Same "no object"-
+   style defensive treatment as resolve_object_link's own out-of-range
+   guard: skip the neighbor (leave its shade unresolved) instead of
+   reading unmapped/unrelated memory. */
+ushort collision_neighbor_shade_or_zero(ushort *base, byte idx) {
+  ptrdiff_t off = (ptrdiff_t)DAT_00086878_IDX(idx) * 2;
+  ushort *p = base + off;
+  if ((char *)p < DAT_002029cc || (char *)(p + 1) > DAT_002029cc + 0x4000) {
+    return 0;
+  }
+  return *p;
+}
+
+
+// was FUN_00050984 -- sample the floor height at one tile corner (type 0 solid -> 0x80)
+// PHYSICS: floor height source -- returns the standable height at corner param_1
+// of the current tile: 0x80 (= tile top, "no floor / solid") for a rock tile,
+// height*8 for flat floor, and interpolated values for slopes/diagonals.
+uint collision_sample_floor_height(param_1,param_2)
+uint param_1;
+undefined4 * param_2;
+
+{
+  byte bVar1;
+  short sVar2;
+  uint uVar3;
+  int iVar4;
+
+  iVar4 = (param_1 & 0xff) * 5;
+  sVar2 = *(short *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2);
+  *param_2 = 0;
+  // PHYSICS: floor height -- (corner height nibble) * 8; refined per shape below
+  uVar3 = (int)sVar2 >> 1 & 0x78;
+  switch(*(ushort *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2) & 0xf) {
+  case 0:
+    uVar3 = 0x80;
+    break;
+  case 1:
+    break;
+  case 2:
+    if ((byte)(&DAT_00202bf9)[iVar4] <= (byte)(&DAT_00202bfa)[iVar4]) {
+LAB_00050a64:
+      uVar3 = 0x80;
+    }
+    goto LAB_00050a68;
+  case 3:
+    if (6 < (uint)(byte)(&DAT_00202bf9)[iVar4] + (uint)(byte)(&DAT_00202bfa)[iVar4])
+    goto LAB_00050a64;
+    goto LAB_00050a68;
+  case 4:
+    if ((uint)(byte)(&DAT_00202bf9)[iVar4] + (uint)(byte)(&DAT_00202bfa)[iVar4] < 8)
+    goto LAB_00050a64;
+    goto LAB_00050a68;
+  case 5:
+    if ((byte)(&DAT_00202bfa)[iVar4] <= (byte)(&DAT_00202bf9)[iVar4]) goto LAB_00050a64;
+LAB_00050a68:
+    *param_2 = 1;
+    break;
+  case 6:
+    bVar1 = (&DAT_00202bfa)[iVar4];
+    goto LAB_00050a88;
+  case 7:
+    bVar1 = (&DAT_00202bfa)[iVar4];
+    goto LAB_00050a98;
+  case 8:
+    bVar1 = (&DAT_00202bf9)[iVar4];
+LAB_00050a88:
+    uVar3 = (bVar1 & 7) + uVar3;
+    break;
+  case 9:
+    bVar1 = (&DAT_00202bf9)[iVar4];
+LAB_00050a98:
+    uVar3 = (uVar3 - (bVar1 & 7)) + 7;
+  }
+  return uVar3;
+}

@@ -3923,7 +3923,7 @@ char s_named_00085d18[] = " named ";
    only to satisfy the >0-bytes-past-any-real-index habit the rest of this
    file uses for recovered fixed-size tables; only index 0-2 are ever
    read (mode is always 0-2, see DAT_00085668's comment). */
-static const unsigned short DAT_00085728_real_table[3] = { 0x3800, 0x1000, 0x0000 };
+const unsigned short DAT_00085728_real_table[3] = { 0x3800, 0x1000, 0x0000 };
 #define DAT_00085728 (*(undefined1 *)DAT_00085728_real_table)
 undefined4 DAT_002029d0;
 char *DAT_002046a4;
@@ -4130,7 +4130,7 @@ ushort *_DAT_00202c34;
    original memory layout exactly is safer than inventing a boundary. */
 signed char DAT_00086884_backing[4] = {1, -1, -1, 1};
 #define DAT_00086884 DAT_00086884_backing[0]
-static unsigned char DAT_0008688c_backing[32] = {
+unsigned char DAT_0008688c_backing[32] = {
   5, 4, 3, 6, 9, 2, 7, 0, 1, 0, 0, 0, 92, 68, 65, 84,
   65, 92, 99, 111, 109, 111, 98, 106, 46, 100, 97, 116, 0, 0, 0, 0
 };
@@ -5979,17 +5979,6 @@ char *DAT_00202098;
 undefined1 DAT_00087604_backing[65536];
 #define DAT_00087604 DAT_00087604_backing[0]
 undefined *PTR_FUN_00087614;
-/* was check_scheduled_object_location_callback. Stored into the DAT_00201c9c generic no-arg
-   callback slot (uw.c ~30449, `(*DAT_00201c9c)();`) rather than called
-   directly. `*DAT_00072284` was a literal-pool constant resolving to
-   the already-named player-stats struct pointer DAT_00086df8; reads a
-   nibble from it at offset 0x5e and hands it (plus a fixed msgid 0x126)
-   to the already-recovered check_scheduled_object_level_match. */
-void check_scheduled_object_location_callback()
-{
-  check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) & 0xf,0x126);
-  return;
-}
 undefined DAT_0008762c_backing[8192];
 #define DAT_0008762c DAT_0008762c_backing[0]
 // DAT_00087630 and DAT_00087634 are further fields (offsets +4 and
@@ -7348,55 +7337,8 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
 
 
 
-// was FUN_00049818 -- dispatches DAT_00201c84's currently-set "sticky
-// redraw/per-frame" bits through the DAT_00085668 per-mode handler table
-// (movement_pacing_handler is mode 0's bit 12, see DAT_00085728's own
-// comment), then re-arms whichever bits DAT_00085728[current mode] always
-// wants re-triggered -- this re-arm is what makes a mode's per-frame
-// handlers keep firing every call instead of running once and going
-// quiet. Called once per real game tick from app_main_loop's own while
-// loop (game.c), gated on DAT_00201c84 != 0 (see main_loop_hud_flush's
-// own call site) -- this is the actual per-tick movement dispatch, the
-// anchor point uw_advance_game_tick's deterministic clock now advances
-// in lockstep with (see its own comment in gx_stub.c).
-void dispatch_sticky_mode_handlers()
 
-{
-  short sVar1;
-  char cVar2;
-  uint uVar3;
-  ushort uVar4;
-  bool bVar5;
 
-  if (DAT_00201c84 != 0) {
-    uVar4 = 1;
-    uVar3 = 0;
-    sVar1 = DAT_00201b64;
-    do {
-      if ((DAT_00201c84 & uVar4) != 0) {
-        DAT_00201c84 = DAT_00201c84 & ~uVar4;
-        /* *8 (real pointer size), see DAT_00085668's comment; *0x10 stays
-           -- that's the 16-entries-per-mode count, not a byte stride. */
-        if (*(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 8) != (code *)0x0) {
-          (**(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 8))();
-          sVar1 = DAT_00201b64;
-        }
-      }
-      uVar4 = uVar4 << 1;
-      uVar3 = uVar3 + 1 & 0xffff;
-    } while (uVar3 < 0xf);
-    DAT_00201c84 = *(ushort *)(&DAT_00085728 + sVar1 * 2) | DAT_00201c84;
-    if (DAT_0023bf0c != '\0') {
-      cVar2 = DAT_0023bf0c + -1;
-      bVar5 = DAT_0023bf0c == '\x01';
-      DAT_0023bf0c = cVar2;
-      if (bVar5) {
-        reset_cursor_confine_rect();
-      }
-    }
-  }
-  return;
-}
 
 
 
@@ -7421,66 +7363,11 @@ void dispatch_sticky_mode_handlers()
 
 
 
-void load_light_food_effect_tables(param_1)
-undefined4 param_1;
 
-{
-  read_file_handle(param_1,&g_carry_weight_limit_table,0x30);
-  read_file_handle(param_1,&g_light_radius_table,0x20);
-  read_file_handle(param_1,&g_food_effect_table,0x10);
-  return;
-}
 
 
 
-// was FUN_0004a110 -- read the cursor position, derive an "arc"
-// height/angle pair from it into DAT_00202a40/DAT_00202a3c (consumed by
-// spawn_object_near_player when placing the new copy), and return
-// whether the cursor is far enough from the player's own screen
-// position to count as a deliberate throw rather than a same-spot drop.
-bool compute_drop_aim_from_cursor()
 
-{
-  int iVar1;
-  int iVar2;
-  short sVar3;
-  short sVar4;
-  short sVar5;
-  short local_10;
-  short local_e;
-  
-  get_mouse_position(&local_10,&local_e);
-  sVar3 = (short)(local_10 + -0x34);
-  iVar1 = (local_10 + -0x34) * 0x10000 >> 0x10;
-  if (0xac < iVar1) {
-    sVar3 = 0xac;
-  }
-  sVar5 = (short)(0x85 - local_e);
-  iVar2 = iVar1 + -0xac;
-  if (iVar1 < 0xad) {
-    iVar2 = iVar1;
-  }
-  if (iVar2 < 0) {
-    sVar3 = 0;
-  }
-  iVar1 = (0x85 - local_e) * 0x10000 >> 0x10;
-  if (0x71 < iVar1) {
-    sVar5 = 0x71;
-    iVar1 = iVar1 + -0x71;
-  }
-  if (iVar1 < 0) {
-    sVar5 = 0;
-  }
-  sVar3 = Ordinal_2005(0xd,(sVar3 + -0x56) * 5);
-  DAT_00202a40 = sVar3 + -1;
-  sVar3 = Ordinal_2005(6,sVar5 + -0x38);
-  sVar4 = Ordinal_2005(0x300,(int)DAT_0023beb4);
-  DAT_00202a3c = sVar3 + sVar4;
-  if (getenv("UW_DEBUG_THROW"))
-    fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",
-            (int)local_10, (int)local_e, (int)sVar5, (int)(0x24 < sVar5));
-  return 0x24 < sVar5;
-}
 
 
 
@@ -7553,297 +7440,23 @@ bool compute_drop_aim_from_cursor()
 
 
 
-// was FUN_00050984 -- sample the floor height at one tile corner (type 0 solid -> 0x80)
-// PHYSICS: floor height source -- returns the standable height at corner param_1
-// of the current tile: 0x80 (= tile top, "no floor / solid") for a rock tile,
-// height*8 for flat floor, and interpolated values for slopes/diagonals.
-uint collision_sample_floor_height(param_1,param_2)
-uint param_1;
-undefined4 * param_2;
 
-{
-  byte bVar1;
-  short sVar2;
-  uint uVar3;
-  int iVar4;
 
-  iVar4 = (param_1 & 0xff) * 5;
-  sVar2 = *(short *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2);
-  *param_2 = 0;
-  // PHYSICS: floor height -- (corner height nibble) * 8; refined per shape below
-  uVar3 = (int)sVar2 >> 1 & 0x78;
-  switch(*(ushort *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2) & 0xf) {
-  case 0:
-    uVar3 = 0x80;
-    break;
-  case 1:
-    break;
-  case 2:
-    if ((byte)(&DAT_00202bf9)[iVar4] <= (byte)(&DAT_00202bfa)[iVar4]) {
-LAB_00050a64:
-      uVar3 = 0x80;
-    }
-    goto LAB_00050a68;
-  case 3:
-    if (6 < (uint)(byte)(&DAT_00202bf9)[iVar4] + (uint)(byte)(&DAT_00202bfa)[iVar4])
-    goto LAB_00050a64;
-    goto LAB_00050a68;
-  case 4:
-    if ((uint)(byte)(&DAT_00202bf9)[iVar4] + (uint)(byte)(&DAT_00202bfa)[iVar4] < 8)
-    goto LAB_00050a64;
-    goto LAB_00050a68;
-  case 5:
-    if ((byte)(&DAT_00202bfa)[iVar4] <= (byte)(&DAT_00202bf9)[iVar4]) goto LAB_00050a64;
-LAB_00050a68:
-    *param_2 = 1;
-    break;
-  case 6:
-    bVar1 = (&DAT_00202bfa)[iVar4];
-    goto LAB_00050a88;
-  case 7:
-    bVar1 = (&DAT_00202bfa)[iVar4];
-    goto LAB_00050a98;
-  case 8:
-    bVar1 = (&DAT_00202bf9)[iVar4];
-LAB_00050a88:
-    uVar3 = (bVar1 & 7) + uVar3;
-    break;
-  case 9:
-    bVar1 = (&DAT_00202bf9)[iVar4];
-LAB_00050a98:
-    uVar3 = (uVar3 - (bVar1 & 7)) + 7;
-  }
-  return uVar3;
-}
 
 
 
 
 
 
-// WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-/* Recovered from UU.exe .data at 0x86878 (28 real bytes, then the
-   "\DATA\comobj.dat" string literal). collision_build_height_field's four
-   `*(char *)(bVarNN + 0x86878)` derefs are a bare hardcoded original-
-   32-bit address -- unmapped on this port, so a keyboard forward step
-   (the first thing that ever reached this animated-shade recompute for
-   a moving wall) faulted here. The index bytes bVar11..bVar14 stay
-   small in practice; pad to 256 with 0 so a wrapped byte reads a
-   defined 0 instead of the string bytes the original would have hit. */
-static const signed char DAT_00086878_arr[256] = {
-  -0x41,-0x40,-0x3f,-1, 0,1,0x3f,0x40, 0x41,0,0,0, 1,-1,-1,1,
-  5,4,3,6, 9,2,7,0, 1,0,0,0,
-};
-#define DAT_00086878_IDX(b) DAT_00086878_arr[(unsigned char)(b)]
 
-/* collision_build_height_field looks at a NEIGHBOR tile's shade value by
-   offsetting its own current tile pointer (into the tilemap, the first
-   0x4000 bytes of the level arena -- see uw-formats.txt) by a signed
-   per-direction step from DAT_00086878_arr. Near the map edge, that
-   neighbor can legitimately fall outside the tilemap entirely -- this
-   function already guards the analogous case for the CURRENT tile
-   (`if (_DAT_00202c34 == NULL) return;`, a few lines up) via
-   tilemap_lookup's own bounds check, but had no equivalent guard for
-   these neighbor derefs. Confirmed live via ASan: a heap-buffer-overflow
-   read 260 bytes before the arena's own start (ushort index -130, i.e.
-   DAT_00086878_arr[0]'s -0x41 real, recovered offset) on ordinary
-   forward movement near a map edge -- not a data-recovery gap in the
-   table (that index's value IS real, recovered data), just a genuinely
-   off-map neighbor with nothing stopping the read. Same "no object"-
-   style defensive treatment as resolve_object_link's own out-of-range
-   guard: skip the neighbor (leave its shade unresolved) instead of
-   reading unmapped/unrelated memory. */
-ushort collision_neighbor_shade_or_zero(ushort *base, byte idx) {
-  ptrdiff_t off = (ptrdiff_t)DAT_00086878_IDX(idx) * 2;
-  ushort *p = base + off;
-  if ((char *)p < DAT_002029cc || (char *)(p + 1) > DAT_002029cc + 0x4000) {
-    return 0;
-  }
-  return *p;
-}
 
 
 
-// was FUN_00051320 -- classify the blocked-corner shape of the current
-// wall hit (from the DAT_00202bfb corner-flag table) and pick which of
-// the 8 candidate octant headings in DAT_000869a8 to deflect toward,
-// writing the choice into DAT_00202c6c[0x12]. Called from
-// sweep_slide_along_wall.
-void resolve_wall_slide_corner()
 
-{
-  int uw_ord2005_rem_115 = 0;
-  char cVar1;
-  byte bVar2;
-  int iVar3;
-  byte bVar4;
-  int extraout_r1;
-  short sVar5;
-  char *iVar6;
-  int iVar7;
-  uint uVar8;
-  int iVar9;
-  short local_28;
-  char local_25;
-  
-  iVar3 = 0;
-  sVar5 = 0;
-  local_28 = 0;
-  iVar7 = 0;
-  iVar6 = 0;
-  local_25 = '\0';
-  iVar9 = 0;
-  do {
-    if ((*(ushort *)(&DAT_00202bfb + iVar3 * 5) & 0xf8) == 0) {
-      iVar9 = ((int)(char)(&DAT_00086884)[iVar3] + (int)(char)iVar9) * 0x1000000 >> 0x18;
-      local_25 = (&DAT_00086884)[iVar3 - 1U & 3] + local_25;
-      local_28 = local_28 + 1;
-    }
-    if ((*(ushort *)(&DAT_00202bfb + iVar3 * 5) & 0x300) != 0) {
-      sVar5 = sVar5 + 1;
-      iVar6 = ((int)(char)(&DAT_00086884)[iVar3] + (int)(char)iVar6) * 0x1000000 >> 0x18;
-      iVar7 = ((int)(char)(&DAT_00086884)[iVar3 - 1U & 3] + (int)(char)iVar7) * 0x1000000 >> 0x18;
-    }
-    iVar3 = (iVar3 + 1) * 0x1000000 >> 0x18;
-  } while (iVar3 < 4);
-  iVar3 = (int)sVar5;
-  if (iVar3 == 0) {
-    *(undefined1 *)(DAT_00202c6c + 0x12) = 9;
-    iVar6 = DAT_00202c6c;
-    goto switchD_000514e0_default;
-  }
-  iVar6 = Ordinal_2005(iVar3,(int)(char)iVar6);
-  iVar7 = Ordinal_2005(iVar3,(int)(char)iVar7);
-  *(undefined *)(DAT_00202c6c + 0x12) = (&DAT_0008688c)[(int)(iVar6) * 3 + iVar7];
-  iVar6 = DAT_00202c6c;
-  if (iVar3 != 1) goto switchD_000514e0_default;
-  bVar2 = *(byte *)(DAT_00202c6c + 0x12);
-  uVar8 = (uint)bVar2;
-  uw_ord2005_rem_115 = ((int)(uVar8)) % (2);
-  if ((uw_ord2005_rem_115 == 0) || (DAT_00202c14 == 0)) goto switchD_000514e0_default;
-  switch((uint)(*(byte *)(iVar6 + 7) >> 5) - (1 - uVar8 & 0xff) & 7) {
-  case 0:
-    break;
-  case 1:
-    break;
-  case 2:
-    goto LAB_00051524;
-  case 3:
-LAB_00051524:
-    cVar1 = '\x01';
-LAB_000515d8:
-    *(byte *)(iVar6 + 0x12) = bVar2 + cVar1 & 7;
-    iVar6 = DAT_00202c6c;
-    goto switchD_000514e0_default;
-  case 4:
-    goto LAB_0005152c;
-  case 5:
-LAB_0005152c:
-    uVar8 = (int)(uVar8 - 1) >> 1 & 0xff;
-    *(byte *)(iVar6 + 0x12) = bVar2 - 1;
-    bVar2 = DAT_00202bf9;
-    bVar4 = DAT_00202bfa;
-    if (uVar8 != 0) {
-      if (uVar8 == 1) {
-        bVar4 = 8 - DAT_00202bff;
-        bVar2 = DAT_00202bfe;
-      }
-      else {
-        bVar2 = DAT_00202c04;
-        bVar4 = DAT_00202c03;
-        if (uVar8 != 2) {
-          if (uVar8 == 3) {
-            bVar2 = 8 - DAT_00202c08;
-            bVar4 = DAT_00202c09;
-          }
-          else {
-            bVar2 = (byte)local_28;
-            bVar4 = (byte)local_28;
-          }
-        }
-      }
-    }
-    if (bVar2 < bVar4) {
-      *(byte *)(DAT_00202c6c + 0x12) = *(char *)(DAT_00202c6c + 0x12) + 2U & 7;
-    }
-    iVar6 = DAT_00202c6c;
-    if (bVar2 == bVar4) {
-      *(char *)(DAT_00202c6c + 0x12) = *(char *)(DAT_00202c6c + 0x12) + '\x01';
-      iVar6 = DAT_00202c6c;
-    }
-    goto switchD_000514e0_default;
-  case 6:
-    goto LAB_000515d4;
-  case 7:
-LAB_000515d4:
-    cVar1 = -1;
-    goto LAB_000515d8;
-  default:
-    goto switchD_000514e0_default;
-  }
-  *(undefined1 *)(iVar6 + 0x12) = 9;
-  iVar6 = DAT_00202c6c;
-switchD_000514e0_default:
-  iVar7 = (int)local_28;
-  if (iVar7 == 1 || iVar7 == 2) {
-    iVar9 = Ordinal_2005(iVar7,(int)(char)iVar9);
-    iVar7 = Ordinal_2005(iVar7,(int)local_25);
-    *(undefined *)(iVar6 + 0x13) = (&DAT_0008688c)[iVar9 * -3 - iVar7];
-  }
-  else {
-    *(undefined1 *)(iVar6 + 0x13) = 9;
-  }
-  return;
-}
 
 
 
-
-
-
-
-
-
-
-
-
-// was FUN_000522f0
-undefined4 place_object_in_world(param_1,param_2,param_3,param_4,param_5,param_6)
-/* param_4 was `int` -- a real object pointer (forwarded to
-   find_object_placement, which already declares its own param_1 as `ushort *`)
-   truncated to 32 bits on this host. Confirmed live: spawn_new_object now
-   actually returns a live pointer instead of always 0 (see its fix),
-   and this truncation crashed find_object_placement the first time this
-   never-before-exercised path ran with a real object. */
-uint param_1;
-uint param_2;
-undefined4 param_3;
-char *param_4;
-undefined2 param_5;
-int param_6;
-
-{
-  int iVar1;
-  uint uVar2;
-  
-  iVar1 = find_object_placement(param_4,param_1,param_2,param_3,param_5);
-  if (iVar1 == 0) {
-    if ((param_6 == 0) && (iVar1 = roll_object_destroy_chance(10,param_4), iVar1 != 0)) {
-      unlink_and_free_object(0,param_4);
-      return 0;
-    }
-    uVar2 = *(ushort *)(param_4 + 2) & 0x3ff;
-    *(char *)(param_4 + 2) = (char)uVar2;
-    *(byte *)(param_4 + 3) =
-         (byte)(uVar2 >> 8) | (byte)(((param_2 & 7 | (param_1 & 0x1fff) << 3) << 10) >> 8);
-    /* was folded into `int iVar1` (reused above for unrelated int
-       values) -- truncated tilemap_lookup's real `void *` return */
-    char *_tile1 = (char *)tilemap_lookup((int)(short)param_1 >> 3,(int)(short)param_2 >> 3);
-    object_list_insert_head(_tile1 + 2,param_4);
-  }
-  return 1;
-}
 
 
 

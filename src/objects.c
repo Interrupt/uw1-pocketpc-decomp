@@ -2228,3 +2228,41 @@ void *class2_variant_effect_table_lookup()
   }
   return &g_food_effect_table + nibble;
 }
+
+
+// was FUN_000522f0
+undefined4 place_object_in_world(param_1,param_2,param_3,param_4,param_5,param_6)
+/* param_4 was `int` -- a real object pointer (forwarded to
+   find_object_placement, which already declares its own param_1 as `ushort *`)
+   truncated to 32 bits on this host. Confirmed live: spawn_new_object now
+   actually returns a live pointer instead of always 0 (see its fix),
+   and this truncation crashed find_object_placement the first time this
+   never-before-exercised path ran with a real object. */
+uint param_1;
+uint param_2;
+undefined4 param_3;
+char *param_4;
+undefined2 param_5;
+int param_6;
+
+{
+  int iVar1;
+  uint uVar2;
+  
+  iVar1 = find_object_placement(param_4,param_1,param_2,param_3,param_5);
+  if (iVar1 == 0) {
+    if ((param_6 == 0) && (iVar1 = roll_object_destroy_chance(10,param_4), iVar1 != 0)) {
+      unlink_and_free_object(0,param_4);
+      return 0;
+    }
+    uVar2 = *(ushort *)(param_4 + 2) & 0x3ff;
+    *(char *)(param_4 + 2) = (char)uVar2;
+    *(byte *)(param_4 + 3) =
+         (byte)(uVar2 >> 8) | (byte)(((param_2 & 7 | (param_1 & 0x1fff) << 3) << 10) >> 8);
+    /* was folded into `int iVar1` (reused above for unrelated int
+       values) -- truncated tilemap_lookup's real `void *` return */
+    char *_tile1 = (char *)tilemap_lookup((int)(short)param_1 >> 3,(int)(short)param_2 >> 3);
+    object_list_insert_head(_tile1 + 2,param_4);
+  }
+  return 1;
+}

@@ -4385,3 +4385,53 @@ LAB_00042a10:
   }
   return;
 }
+
+
+// was FUN_0004a110 -- read the cursor position, derive an "arc"
+// height/angle pair from it into DAT_00202a40/DAT_00202a3c (consumed by
+// spawn_object_near_player when placing the new copy), and return
+// whether the cursor is far enough from the player's own screen
+// position to count as a deliberate throw rather than a same-spot drop.
+bool compute_drop_aim_from_cursor()
+
+{
+  int iVar1;
+  int iVar2;
+  short sVar3;
+  short sVar4;
+  short sVar5;
+  short local_10;
+  short local_e;
+  
+  get_mouse_position(&local_10,&local_e);
+  sVar3 = (short)(local_10 + -0x34);
+  iVar1 = (local_10 + -0x34) * 0x10000 >> 0x10;
+  if (0xac < iVar1) {
+    sVar3 = 0xac;
+  }
+  sVar5 = (short)(0x85 - local_e);
+  iVar2 = iVar1 + -0xac;
+  if (iVar1 < 0xad) {
+    iVar2 = iVar1;
+  }
+  if (iVar2 < 0) {
+    sVar3 = 0;
+  }
+  iVar1 = (0x85 - local_e) * 0x10000 >> 0x10;
+  if (0x71 < iVar1) {
+    sVar5 = 0x71;
+    iVar1 = iVar1 + -0x71;
+  }
+  if (iVar1 < 0) {
+    sVar5 = 0;
+  }
+  sVar3 = Ordinal_2005(0xd,(sVar3 + -0x56) * 5);
+  DAT_00202a40 = sVar3 + -1;
+  sVar3 = Ordinal_2005(6,sVar5 + -0x38);
+  sVar4 = Ordinal_2005(0x300,(int)DAT_0023beb4);
+  DAT_00202a3c = sVar3 + sVar4;
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",
+            (int)local_10, (int)local_e, (int)sVar5, (int)(0x24 < sVar5));
+  return 0x24 < sVar5;
+}

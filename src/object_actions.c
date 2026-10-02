@@ -3497,3 +3497,16 @@ short param_2;
   iVar1 = spawn_object_near_player();
   return iVar1 != 0;
 }
+
+
+/* was check_scheduled_object_location_callback. Stored into the DAT_00201c9c generic no-arg
+   callback slot (uw.c ~30449, `(*DAT_00201c9c)();`) rather than called
+   directly. `*DAT_00072284` was a literal-pool constant resolving to
+   the already-named player-stats struct pointer DAT_00086df8; reads a
+   nibble from it at offset 0x5e and hands it (plus a fixed msgid 0x126)
+   to the already-recovered check_scheduled_object_level_match. */
+void check_scheduled_object_location_callback()
+{
+  check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) & 0xf,0x126);
+  return;
+}

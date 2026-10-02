@@ -1851,3 +1851,54 @@ short param_2;
   }
   return;
 }
+
+
+// was FUN_00049818 -- dispatches DAT_00201c84's currently-set "sticky
+// redraw/per-frame" bits through the DAT_00085668 per-mode handler table
+// (movement_pacing_handler is mode 0's bit 12, see DAT_00085728's own
+// comment), then re-arms whichever bits DAT_00085728[current mode] always
+// wants re-triggered -- this re-arm is what makes a mode's per-frame
+// handlers keep firing every call instead of running once and going
+// quiet. Called once per real game tick from app_main_loop's own while
+// loop (game.c), gated on DAT_00201c84 != 0 (see main_loop_hud_flush's
+// own call site) -- this is the actual per-tick movement dispatch, the
+// anchor point uw_advance_game_tick's deterministic clock now advances
+// in lockstep with (see its own comment in gx_stub.c).
+void dispatch_sticky_mode_handlers()
+
+{
+  short sVar1;
+  char cVar2;
+  uint uVar3;
+  ushort uVar4;
+  bool bVar5;
+
+  if (DAT_00201c84 != 0) {
+    uVar4 = 1;
+    uVar3 = 0;
+    sVar1 = DAT_00201b64;
+    do {
+      if ((DAT_00201c84 & uVar4) != 0) {
+        DAT_00201c84 = DAT_00201c84 & ~uVar4;
+        /* *8 (real pointer size), see DAT_00085668's comment; *0x10 stays
+           -- that's the 16-entries-per-mode count, not a byte stride. */
+        if (*(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 8) != (code *)0x0) {
+          (**(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 8))();
+          sVar1 = DAT_00201b64;
+        }
+      }
+      uVar4 = uVar4 << 1;
+      uVar3 = uVar3 + 1 & 0xffff;
+    } while (uVar3 < 0xf);
+    DAT_00201c84 = *(ushort *)(&DAT_00085728 + sVar1 * 2) | DAT_00201c84;
+    if (DAT_0023bf0c != '\0') {
+      cVar2 = DAT_0023bf0c + -1;
+      bVar5 = DAT_0023bf0c == '\x01';
+      DAT_0023bf0c = cVar2;
+      if (bVar5) {
+        reset_cursor_confine_rect();
+      }
+    }
+  }
+  return;
+}
