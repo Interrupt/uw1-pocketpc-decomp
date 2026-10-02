@@ -6129,7 +6129,7 @@ undefined2 param_2;
 
 {
   decrement_cursor_hide_depth();
-  FUN_00057e54();
+  update_hotspot_cursor_icon();
   g_mouse_x = param_1;
   g_mouse_y = param_2;
   cursor_show_idle_tick();
@@ -6139,7 +6139,7 @@ undefined2 param_2;
 
 
 // was FUN_000575c4 -- polls for a pending keyboard character (via
-// FUN_00058738, not yet named), clearing DAT_00086968's "pending"
+// poll_mouse_button_flags, not yet named), clearing DAT_00086968's "pending"
 // sentinel back to -1 (0xffff) when none is available, and recording
 // the result in DAT_00204850. Confirmed as keyboard polling by an
 // existing debug comment at its automap.c call site ("key-poll:
@@ -6150,7 +6150,7 @@ short * param_1;
 {
   short sVar1;
 
-  sVar1 = FUN_00058738();
+  sVar1 = poll_mouse_button_flags();
   *param_1 = sVar1;
   if (sVar1 == 0) {
     DAT_00086968 = 0xffff;
@@ -6198,7 +6198,7 @@ int param_1;
     }
     poll_input_event(0);
     process_pending_keyboard_scan_code(1);
-    FUN_00058734();
+    noop_key_handler();
     update_mouse_state();
     get_mouse_position(&local_18,&local_14);
     uVar1 = (int)local_18 - (int)local_16 >> 0x1f;
@@ -6273,7 +6273,7 @@ undefined2 param_5;
     if (DAT_00204854 <= iVar1) {
       DAT_00204854 = (short)iVar2 + 1;
     }
-    FUN_00057e54();
+    update_hotspot_cursor_icon();
   }
   return iVar2;
 }
@@ -6308,7 +6308,7 @@ short param_1;
       }
       DAT_00204854 = (short)iVar3 + 1;
     }
-    FUN_00057e54();
+    update_hotspot_cursor_icon();
   }
   return;
 }
@@ -6359,7 +6359,7 @@ ushort param_1;
     DAT_00204858 = '\0';
   }
   set_cursor_sprite_id((int)(short)(&DAT_00204714)[DAT_00204858]);
-  FUN_00057e54();
+  update_hotspot_cursor_icon();
   if ((param_1 & 2) != 0) {
     cursor_show_idle_tick();
   }
@@ -6450,7 +6450,247 @@ undefined4 param_1;
   DAT_00204748 = (short)(ushort)*(byte *)(iVar1 + 2) >> 1;
   DAT_00204788 = DAT_00204704;
   if (DAT_00204844 != 0) {
-    FUN_000584c0();
+    save_cursor_background();
   }
   return;
+}
+
+
+// was FUN_00057e54 -- per-tick cursor-icon refresh for registered
+// hotspots: if the mouse has left the cached hotspot's cached bounds,
+// re-scans the 20-slot table (register_cursor_hotspot) for the one
+// now under the cursor, updates the cache, and applies its icon via
+// set_cursor_sprite_id, or resets to the default (0x106c) if none
+// match. Confirmed as "the registered-rect click hit-test" by an
+// existing ordinal_stubs.c comment.
+void update_hotspot_cursor_icon()
+
+{
+  int iVar1;
+  int iVar2;
+  
+  if ((DAT_00204858 < '\x01') &&
+     ((((DAT_00086970 == -1 || (g_mouse_x < DAT_00086970)) || (DAT_002047a8 < g_mouse_x)) ||
+      ((DAT_0020478c < g_mouse_y || (g_mouse_y < DAT_002047ac)))))) {
+    iVar2 = 0;
+    if (0 < DAT_00204854) {
+      iVar2 = 0;
+      do {
+        if ((((short)(&DAT_002047b0)[iVar2] <= g_mouse_x) &&
+            (g_mouse_x <= (short)(&DAT_00204808)[iVar2])) &&
+           ((g_mouse_y <= (short)(&DAT_00204750)[iVar2] &&
+            ((short)(&DAT_002047e0)[iVar2] <= g_mouse_y)))) {
+          iVar1 = (int)(short)iVar2;
+          DAT_00086970 = (&DAT_002047b0)[iVar1];
+          DAT_002047a8 = (&DAT_00204808)[iVar1];
+          DAT_0020478c = (&DAT_00204750)[iVar1];
+          DAT_002047ac = (&DAT_002047e0)[iVar1];
+          set_cursor_sprite_id((int)*(short *)(&DAT_00204720 + iVar1 * 2));
+          break;
+        }
+        iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+      } while (iVar2 < DAT_00204854);
+    }
+    if ((DAT_00086970 != -1) && ((short)iVar2 == DAT_00204854)) {
+      DAT_00086970 = -1;
+      set_cursor_sprite_id(0x106c);
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00058438 -- handles a mouse button state change: injects
+// param_1 as a temporary button-state override (DAT_0020485c) while
+// polling update_mouse_state, then records a "click pending" slot
+// (DAT_00086968 + its position DAT_0008696a/c, read back by
+// get_click_position) if one wasn't already pending. Confirmed
+// called directly by visibility.c on a button-release transition.
+void handle_mouse_button_message(param_1)
+short param_1;
+
+{
+  DAT_0020485c = (int)param_1;
+  update_mouse_state();
+  DAT_0020485c = 0;
+  if (DAT_0023c63c == 0) {
+    DAT_0008696e = 0;
+  }
+  else if (DAT_00086968 == -1) {
+    DAT_00086968 = DAT_0023c63c;
+    DAT_0008696a = g_mouse_x;
+    DAT_0008696c = g_mouse_y;
+  }
+  return;
+}
+
+
+
+// was FUN_000584c0 -- saves the screen area under the cursor (via
+// the color-0x14/0x15 save/restore convention rect_fill_or_save_restore
+// implements, confirmed by an existing graphics.c comment naming
+// this function as the one that sets DAT_00204848 for that purpose)
+// before draw_idle_mouse_cursor draws the cursor sprite over it.
+void save_cursor_background()
+
+{
+  if (getenv("UW_DEBUG_CURSORSHOW")) {
+    fprintf(stderr, "[cursorsave] entry DAT_00204844=%d sprite=%d mouse=(%d,%d) size=(%d,%d)\n",
+            (int)DAT_00204844, (int)DAT_00204788, (int)g_mouse_x, (int)g_mouse_y,
+            (int)DAT_00204784, (int)DAT_002047a4);
+  }
+  DAT_00204848 = 1;
+  set_draw_color(0x14);
+  rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
+               ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
+               ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
+  DAT_00204844 = 1;
+  return;
+}
+
+
+
+void draw_idle_mouse_cursor()
+
+{
+  int _dbg_show = getenv("UW_DEBUG_CURSORSHOW") != NULL;
+  if (_dbg_show) {
+    fprintf(stderr, "[cursorshow] entry selected=%p mode=%d holdstate=%d DAT_00204844=%d depth=%d mouse=(%d,%d)\n",
+            (void *)g_selected_object, (int)g_cursor_mode, (int)g_cursor_holding_state,
+            (int)DAT_00204844, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
+  }
+  if (g_selected_object == 0) {
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real
+       Pocket PC binary only shows this idle cursor sprite while
+       DAT_0023c63c (the left-button-currently-held flag, see
+       handle_mouse_message's own comment) is set, or DAT_000bbef4 overrides it
+       (draw_automap_screen/the note editor force it to 1) -- a
+       stylus/touchscreen design where there's no persistent hover
+       cursor, only a transient indicator while actively touching the
+       screen. On a real mouse-driven desktop port the cursor should
+       always be visible while hovering, not just while a button is
+       held, so this gate is skipped when UW_ALWAYS_SHOW_CURSOR=1 rather
+       than ported as-is (off by default -- see uw_always_show_cursor's
+       own comment on the frame-rate cost of drawing every idle frame).
+       Confirmed via live tracing (UW_DEBUG_CURSORSHOW) that this WAS
+       the reason plain mouse movement showed no cursor at all outside
+       automap (where DAT_000bbef4 happened to already force it) --
+       this is the second, deliberate half of that same investigation;
+       DAT_000868dc's own missing initializer (see its own fix comment
+       just below) was the other, genuine bug half. */
+    if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0) && !uw_always_show_cursor()) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (no button/mode)\n");
+      return;
+    }
+    if (DAT_000868dc != 7) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (DAT_000868dc=%d != 7)\n", (int)DAT_000868dc);
+      return;
+    }
+    if ((((ushort)DAT_00201b60 & 4) != 0) && (g_cursor_mode == 3)) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit4+mode3)\n");
+      return;
+    }
+    if ((((ushort)DAT_00201b60 & 2) != 0) && (DAT_0023c63c != 0)) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit2+button)\n");
+      return;
+    }
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (4th of this round, see the matching
+       comments above and in cursor_show_idle_tick/update_mouse_state's own tail):
+       the original confines the drawn cursor to a specific UI-mode rectangle
+       (DAT_00204838/DAT_0020483c/DAT_002047dc/DAT_002047d8, only enforced
+       when DAT_00201b60's bits 0,3,6,7 are set) rather than the full screen
+       -- built for a specific Pocket PC touchscreen panel's own valid-tap
+       area, not a general on-screen-bounds safety check: g_mouse_x/g_mouse_y
+       are already separately clamped to the real screen bounds elsewhere in
+       update_mouse_state (DAT_0020470c/DAT_00204830 and DAT_00204710/
+       DAT_00204834), so skipping this narrower confinement cannot draw the
+       cursor off-screen. Confirmed via live tracing (UW_DEBUG_CURSORSHOW)
+       that this rectangle also drifts from what reset_cursor_confine_rect last set it to
+       (e.g. (52,18)-(224,135) right after chargen, silently becoming
+       (52,18)-(109,109) by the first real mouse move with no traced call to
+       either bound-setter in between) -- a pre-existing, unrelated wild-write
+       bug elsewhere (init_cursor_subsystem's own `(&DAT_002047b0)[iVar2] = 10000` loop
+       treats a lone scalar as a 20-entry array, the same "lone scalar treated
+       as a real array" bug class fixed repeatedly elsewhere in this project)
+       corrupts this rectangle in a way that made the cursor disappear
+       entirely during plain dungeon-view mouse movement on a real desktop
+       mouse. Skipped only when UW_ALWAYS_SHOW_CURSOR=1, since a
+       Pocket-PC-panel-specific tap-area clamp isn't meaningful on a desktop
+       port anyway; left enforced by default rather than chasing the
+       separate corruption bug. */
+    if ((((ushort)DAT_00201b60 & 0xc9) != 0) && !uw_always_show_cursor()) {
+      if (g_mouse_x < DAT_00204838) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");
+        return;
+      }
+      if (g_mouse_y < DAT_0020483c) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds y<)\n");
+        return;
+      }
+      if (DAT_002047dc < g_mouse_x) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x>)\n");
+        return;
+      }
+      if (DAT_002047d8 < g_mouse_y) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds y>)\n");
+        return;
+      }
+    }
+    if (g_cursor_mode != 0) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] SKIP-SAVE path (mode!=0), drawing sprite=%d without a save\n", (int)DAT_00204788);
+      goto LAB_00058674;
+    }
+  }
+  if (_dbg_show) fprintf(stderr, "[cursorshow] normal path: saving then drawing sprite=%d\n", (int)DAT_00204788);
+  save_cursor_background();
+LAB_00058674:
+  g_blit_transparent_mode = 1;
+  g_force_flush = 1;
+  draw_sprite_by_id((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
+               ((int)g_mouse_y - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
+               DAT_00204784);
+  flush_dirty_rect_to_display(1);
+  g_blit_transparent_mode = 0;
+  g_force_flush = 0;
+  set_draw_color(0);
+  return;
+}
+
+
+
+// was FUN_00058734 -- confirmed genuinely empty. Registered in
+// game.c as the key-binding handler for a dozen specific key codes
+// (deliberately swallowing them -- consuming the keypress without
+// any action), and also called directly in a few input wait loops
+// alongside the other per-tick input pollers.
+void noop_key_handler()
+
+{
+  return;
+}
+
+
+
+// was FUN_00058738 -- reports the effective mouse button state as a
+// bitmask (bit0=left, bit1=right), confirmed by an existing input.c
+// comment ("reports the right button as bit 1 (value 2)"): uses the
+// real button flag (DAT_0023c63c) when set, otherwise falls back to
+// two keyboard d-pad-style flags (DAT_002506aa/ab) as touchscreen
+// button substitutes, gated on DAT_000876c4.
+uint poll_mouse_button_flags()
+
+{
+  uint uVar1;
+
+  uVar1 = 0;
+  if ((DAT_000876c4 != 0) && (uVar1 = (uint)DAT_0023c63c, DAT_0023c63c == 0)) {
+    if (DAT_002506aa != '\0') {
+      uVar1 = 1;
+    }
+    if (DAT_002506ab != '\0') {
+      uVar1 = uVar1 | 2;
+    }
+  }
+  return uVar1;
 }

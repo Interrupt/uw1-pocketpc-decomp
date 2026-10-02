@@ -507,7 +507,7 @@ int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigne
      * poll_mouse_event()/update_mouse_state() for mouse-only activity
      * (no keyboard event pending at the same moment), so g_mouse_x/
      * g_mouse_y never track the real cursor and the game's own
-     * registered-rect click hit-test (FUN_00057e54) never runs. Real
+     * registered-rect click hit-test (update_hotspot_cursor_icon) never runs. Real
      * WinCE PeekMessage would report a pending message for either input
      * type, so check both here to match. */
     return (DAT_0023c448 != 0) || uw_take_mouse_event_pending();

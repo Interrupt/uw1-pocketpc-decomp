@@ -572,10 +572,10 @@ int param_1;
       dispatch_sticky_mode_handlers();
     }
     process_pending_keyboard_scan_code(1);
-    FUN_00058734();
+    noop_key_handler();
     update_mouse_state();
   }
-  if ((DAT_0008696e == -1) && (sVar2 = FUN_00058738(), sVar2 != 0)) {
+  if ((DAT_0008696e == -1) && (sVar2 = poll_mouse_button_flags(), sVar2 != 0)) {
     DAT_0008696a = g_mouse_x;
     DAT_0008696c = g_mouse_y;
     DAT_00086968 = sVar2;
@@ -727,7 +727,7 @@ void update_mouse_state()
       DAT_00204708 = 0;
       DAT_00086974 = -1;
     }
-    FUN_00057e54();
+    update_hotspot_cursor_icon();
     /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
        cursor_show_idle_tick's own matching comment just above: skips the
        `DAT_00204788 != 0x106c` exclusion so the desktop cursor stays
@@ -1212,7 +1212,7 @@ int param_4;
       if ((g_cursor_mode != 0) || (g_cursor_holding_state != 0)) {
         DAT_00204844 = 2;
       }
-      // HACK: same dead-plumbing story as DAT_000876c4 above -- FUN_00058738
+      // HACK: same dead-plumbing story as DAT_000876c4 above -- poll_mouse_button_flags
       // (the source of chargen's touch-select event codes 1-3) only ever
       // returns nonzero via DAT_0023c63c or DAT_002506aa/ab, and all three
       // are confirmed via Ghidra xrefs to have zero writers anywhere in the
@@ -1260,7 +1260,7 @@ int param_4;
   }
   /* Right button (WM_RBUTTONDOWN/UP). The real binary's dispatch table
      routes these here too, but the hand-recovered body only did the left
-     button. FUN_00058738 reports the right button as bit 1 (value 2) of
+     button. poll_mouse_button_flags reports the right button as bit 1 (value 2) of
      the mouse state via DAT_002506ab -- which nothing else ever writes --
      and poll_input_bindings then feeds code 2 to the viewport click
      region, whose handler handle_game_view_click runs its interact branch on

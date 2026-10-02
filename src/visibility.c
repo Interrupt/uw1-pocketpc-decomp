@@ -1305,7 +1305,7 @@ void rebuild_dungeon_view()
      tile-scan radius" as the explanation for the still-black viewport;
      the real renderer is still being searched for. */
   run_visibility_flood();
-  FUN_00058438(0);
+  handle_mouse_button_message(0);
   uVar1 = DAT_00086b30;
   DAT_0023b804 = 0;
   sVar3 = g_current_view->view_shake_x;
