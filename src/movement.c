@@ -509,10 +509,10 @@ void sweep_writeback_position()
        (int)(((int)g_sweep_foot_pos[2] - (uint)DAT_002049d8 ^ uVar1) - uVar1) <=
        (int)(uint)*(byte *)((char *)DAT_00204874 + 0x25))) && (DAT_002049d2 == 1)) &&
      (*(char *)(DAT_00204874 + 5) == 0)) {
-    /* re-snap Z (bytes +4..+5) to the floor height. FUN_00050aa8 wants the
+    /* re-snap Z (bytes +4..+5) to the floor height. compute_floor_height_at_position wants the
        tile X and Y as halfwords; Ghidra rendered the args as X's two bytes
        and stored the result's low byte to +2 (Y-low) instead of +4. */
-    uVar2 = FUN_00050aa8(*(short *)(DAT_00204874 + 0),*(short *)(DAT_00204874 + 2));
+    uVar2 = compute_floor_height_at_position(*(short *)(DAT_00204874 + 0),*(short *)(DAT_00204874 + 2));
     if (getenv("UW_DEBUG_JUMP"))
       fprintf(stderr, "[writeback] *** RE-SNAP FIRED *** new_z=%d\n", (int)(short)uVar2);
     *(short *)(DAT_00204874 + 4) = (short)uVar2;

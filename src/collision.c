@@ -275,7 +275,7 @@ uint param_1;
     DAT_00202c14 = 1;
     iVar7 = 0;
     do {
-      iVar5 = FUN_00050b30(iVar7,param_1 & 0xff);
+      iVar5 = collision_classify_corner_wall(iVar7,param_1 & 0xff);
       if (iVar5 == 0) {
         iVar5 = iVar7 * 5;
         if (((&DAT_00202bfc)[iVar5] & 3) == 0) {
@@ -506,3 +506,88 @@ int param_2;
   return;
 }
 
+
+
+// was FUN_00050aa8 -- computes the floor height at a specific
+// sub-tile X/Y position (param_1/param_2, each 0..255 within the
+// tile), using the tile shape's wall-type nibble (DAT_00202c78) and
+// diagonal interpolation for shapes 6/7/8/9. Confirmed by its sole
+// call site (movement.c's Z re-snap-to-floor logic) wanting a precise
+// height at the player's exact sub-tile position, finer-grained than
+// collision_sample_floor_height's per-corner samples.
+int compute_floor_height_at_position(param_1,param_2)
+ushort param_1;
+ushort param_2;
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  int iVar3;
+
+  iVar3 = 0;
+  uVar2 = DAT_00202c78 & 0xf;
+  uVar1 = param_2 & 0xff;
+  if (uVar2 == 6) {
+LAB_00050b14:
+    iVar3 = (int)(short)uVar1;
+  }
+  else {
+    if (uVar2 != 7) {
+      uVar1 = param_1 & 0xff;
+      if (uVar2 == 8) goto LAB_00050b14;
+      if (uVar2 != 9) goto LAB_00050b18;
+    }
+    iVar3 = 0xff - (short)uVar1;
+  }
+LAB_00050b18:
+  return ((int)(short)DAT_00202c78 & 0xf0U) * 4 + (int)(short)(iVar3 >> 2);
+}
+
+
+
+// was FUN_00050b30 -- classifies one corner (param_1) of the
+// collision height-field during collision_build_height_field: samples
+// its floor height, derives a wall-type/offset code (0x200=no floor,
+// 0x100=step up needed, 0x800=step down, else a diagonal-wall texture
+// index via compute_floor_height_at_position's shape logic) into the
+// corner's 2-byte field at (&DAT_00202bfc)[corner], tracks the
+// running max floor height, and returns whether the corner is a
+// plain (non-diagonal) shape.
+bool collision_classify_corner_wall(param_1,param_2)
+uint param_1;
+uint param_2;
+
+{
+  char *iVar1;
+  byte bVar2;
+  uint uVar3;
+  undefined2 uVar4;
+  int iVar5;
+  int local_20;
+
+  bVar2 = collision_sample_floor_height(param_1,&local_20);
+  iVar1 = DAT_00202c6c;
+  uVar3 = (uint)bVar2;
+  if (uVar3 == 0x80) {
+    uVar4 = 0x200;
+  }
+  else if ((int)((param_2 & 0xff) + (int)*(short *)(DAT_00202c6c + 4)) < (int)uVar3) {
+    uVar4 = 0x100;
+  }
+  else if ((int)uVar3 < (int)((int)*(short *)(DAT_00202c6c + 4) - (param_2 & 0xff))) {
+    uVar4 = 0x800;
+  }
+  else {
+    uVar4 = (undefined2)
+            (8 << ((int)*(short *)(&DAT_00202c70 +
+                                  (uint)(byte)(&DAT_00202bf8)[(param_1 & 0xff) * 5] * 2) >> 8 & 3U))
+    ;
+  }
+  iVar5 = (param_1 & 0xff) * 5;
+  (&DAT_00202bfb)[iVar5] = (char)uVar4;
+  (&DAT_00202bfc)[iVar5] = (char)((ushort)uVar4 >> 8);
+  if (*(byte *)(iVar1 + 0x11) < uVar3) {
+    *(byte *)(iVar1 + 0x11) = bVar2;
+  }
+  return local_20 == 0;
+}
