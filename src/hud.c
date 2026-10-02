@@ -6197,7 +6197,7 @@ int param_1;
       dispatch_sticky_mode_handlers();
     }
     poll_input_event(0);
-    FUN_00057904(1);
+    process_pending_keyboard_scan_code(1);
     FUN_00058734();
     update_mouse_state();
     get_mouse_position(&local_18,&local_14);

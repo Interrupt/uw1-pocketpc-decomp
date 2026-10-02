@@ -571,7 +571,7 @@ int param_1;
     if (param_1 != 0) {
       dispatch_sticky_mode_handlers();
     }
-    FUN_00057904(1);
+    process_pending_keyboard_scan_code(1);
     FUN_00058734();
     update_mouse_state();
   }
@@ -1356,4 +1356,135 @@ byte param_1;
     DAT_00085890 = 0x60 - sVar4;
   }
   return;
+}
+
+
+// was FUN_000578fc -- always returns 0. Called from
+// process_pending_keyboard_scan_code whenever param_1 is set, which
+// is every real call site found (all pass literal 1) -- meaning that
+// function's entire scan-code translation path (Ordinal_1090/1091)
+// is currently unreachable given how it's called. Left unclaimed
+// rather than "fixed": unlike this session's confirmed discarded-
+// return-value bugs, there's no computation being discarded inside
+// this function's own body to point to -- it may simply be a stub
+// for a hardware-keyboard scan-code source the touchscreen port
+// never wired up, which would make this correct original behavior,
+// not a decompiler artifact.
+undefined4 get_alternate_keyboard_scan_code()
+
+{
+  return 0;
+}
+
+
+
+// was FUN_00057904 -- translates the pending keyboard event
+// (DAT_0023c448, or get_alternate_keyboard_scan_code's result when
+// param_1 is set) into an international-charset-mapped scan code via
+// Ordinal_1090/1091, or 0xffffffff if none is pending. See
+// get_alternate_keyboard_scan_code's own comment -- every real call
+// site passes param_1=1, which currently makes this translation path
+// unreachable.
+uint process_pending_keyboard_scan_code(param_1)
+int param_1;
+
+{
+  short sVar1;
+  uint uVar2;
+  int iVar3;
+  uint uVar4;
+  
+  uVar2 = (uint)DAT_0023c448;
+  if (param_1 != 0) {
+    uVar2 = get_alternate_keyboard_scan_code();
+  }
+  uVar4 = uVar2 & 0xff;
+  sVar1 = (short)uVar4;
+  if (sVar1 == 0) {
+    uVar4 = 0xffffffff;
+  }
+  else {
+    DAT_00204868 = read_realtime_clock_units(uVar2);
+    if ((uVar2 & 0x80) == 0) {
+      if ((*DAT_0008794c != '\0') && (iVar3 = Ordinal_1417(sVar1,0x103), iVar3 != 0)) {
+        if (DAT_0023c448 == 0x400) {
+          sVar1 = Ordinal_1090(sVar1);
+        }
+        else {
+          sVar1 = Ordinal_1091(sVar1);
+        }
+        uVar4 = (uint)sVar1;
+      }
+    }
+    else if ((DAT_0023c448 & 0x400) != 0) {
+      uVar4 = uVar4 | 0x400;
+    }
+    if (DAT_0023c448 == 0x200) {
+      uVar4 = uVar4 | 0x200;
+    }
+    if (DAT_0023c448 == 0x100) {
+      uVar4 = uVar4 | 0x100;
+    }
+    if (DAT_0023c448 == 0xd) {
+      uVar4 = uVar4 | 0xd;
+    }
+  }
+  return uVar4;
+}
+
+
+
+// was FUN_000579e4 -- pump input, then return the pending event code:
+// the keyboard code latched in DAT_0023c448 (set by handle_keyboard_message),
+// or a poll_mouse_event() code, or 0xffffffff if nothing is pending.
+// param_1 == 0 clears DAT_0023c448 first (consume); != 0 leaves it (peek),
+// which is what makes a held key repeat every frame.
+uint poll_input_event(param_1)
+int param_1;
+
+{
+  int iVar1;
+  uint uVar2;
+  undefined1 auStack_24 [28];
+  
+  if ((short)DAT_00201b60 == 4) {
+    DAT_0023c448 = 0;
+  }
+  if (param_1 == 0) {
+    DAT_0023c448 = 0;
+  }
+  iVar1 = Ordinal_864(auStack_24,0,0,0,1);
+  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_event: Ordinal_864=%d DAT_0023c448=0x%x\n", iVar1, (unsigned)DAT_0023c448);
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] poll_input_event(peek=%d): new_os_event(iVar1)=%d DAT_0023c448(before)=0x%x\n",
+            param_1, iVar1, (unsigned)DAT_0023c448);
+  if (getenv("UW_DEBUG_INPUTEVENT2")) fprintf(stderr, "[inputevent2] poll_input_event(%d): Ordinal_864=%d DAT_00201b60=%d DAT_002506ab=%d\n", param_1, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
+  if (iVar1 == 0) {
+    uVar2 = 0xffffffff;
+  }
+  else {
+    Ordinal_870(auStack_24);
+    Ordinal_859(auStack_24);
+    uVar2 = (uint)DAT_0023c448;
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[inputevent] DAT_0023c448=0x%x\n", (unsigned int)DAT_0023c448);
+    if (uVar2 == 0) {
+      uVar2 = poll_mouse_event();
+      if (getenv("UW_DEBUG_DOOR"))
+        fprintf(stderr, "[door] poll_input_event: fell through to poll_mouse_event() = %u\n", uVar2);
+    }
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] poll_input_event: resolved event code uVar2=%u (0x%x)\n", uVar2, uVar2);
+  }
+  return uVar2;
+}
+
+
+
+// was FUN_00057a78 -- poll_input_event(1): return the pending input event
+// code without consuming it (used by the per-frame keybinding poll).
+undefined4 peek_input_event()
+
+{
+  return poll_input_event(1);
 }
