@@ -57,7 +57,7 @@ int param_2;
     }
     goto LAB_00048b58;
   }
-  if (((short)param_2 == 3) && (iVar5 = FUN_000496b0(param_1,&DAT_00202c90 + iVar9), iVar5 != 0)) {
+  if (((short)param_2 == 3) && (iVar5 = identify_mushroom_type(param_1,&DAT_00202c90 + iVar9), iVar5 != 0)) {
     return;
   }
   /* This copied "You see " into acStack_85978 (a wildly oversized,
@@ -511,7 +511,7 @@ int param_2;
     }
     goto LAB_00048b58;
   }
-  if (((short)param_2 == 3) && (iVar5 = FUN_000496b0(param_1,&DAT_00202c90 + iVar9), iVar5 != 0)) {
+  if (((short)param_2 == 3) && (iVar5 = identify_mushroom_type(param_1,&DAT_00202c90 + iVar9), iVar5 != 0)) {
     return;
   }
   pcVar6 = s_You_see_000858fc;
@@ -3385,4 +3385,70 @@ short param_2;
     }
   }
   return;
+}
+
+
+// was FUN_000496b0 -- called from describe_picked_terrain with a tile
+// record (param_2): only acts on special-mushroom-bearing tiles
+// (trap-type field bits 0x1e == 0x14), mapping the picked object's id
+// to one of 9 known mushroom types and printing the matching "You
+// have found a <type> mushroom" scroll-message pair.
+undefined4 identify_mushroom_type(param_1,param_2)
+ushort * param_1;
+int param_2;
+
+{
+  ushort uVar1;
+  int iVar2;
+  short local_c;
+  
+  if ((*(byte *)(param_2 + 8) & 0x1e) != 0x14) {
+    return 0;
+  }
+  uVar1 = *param_1 & 0x1ff;
+  if (uVar1 < 0x98) {
+    if (uVar1 == 0x97) {
+      iVar2 = 2;
+      goto LAB_000497a0;
+    }
+    if (uVar1 == 10) {
+      iVar2 = 7;
+      goto LAB_000497a0;
+    }
+    if (uVar1 == 0x36) {
+      iVar2 = 8;
+      goto LAB_000497a0;
+    }
+    if (uVar1 == 0x37) {
+      iVar2 = 5;
+      goto LAB_000497a0;
+    }
+    if (uVar1 == 0x93) {
+      iVar2 = 1;
+      goto LAB_000497a0;
+    }
+  }
+  else {
+    if (uVar1 == 0xae) {
+      iVar2 = 6;
+      goto LAB_000497a0;
+    }
+    if (uVar1 == 0xbf) {
+      iVar2 = 3;
+      goto LAB_000497a0;
+    }
+    if (uVar1 == 0x11f) {
+      iVar2 = 4;
+      goto LAB_000497a0;
+    }
+    if (uVar1 == 0x136) {
+      iVar2 = 0;
+      goto LAB_000497a0;
+    }
+  }
+  iVar2 = (int)local_c;
+LAB_000497a0:
+  print_scroll_message_by_id(0x104);
+  print_scroll_message_by_id(iVar2 + 0x105);
+  return 1;
 }

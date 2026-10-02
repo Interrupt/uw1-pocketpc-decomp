@@ -12838,65 +12838,6 @@ uint param_2;
 
 
 
-undefined4 FUN_000496b0(param_1,param_2)
-ushort * param_1;
-int param_2;
-
-{
-  ushort uVar1;
-  int iVar2;
-  short local_c;
-  
-  if ((*(byte *)(param_2 + 8) & 0x1e) != 0x14) {
-    return 0;
-  }
-  uVar1 = *param_1 & 0x1ff;
-  if (uVar1 < 0x98) {
-    if (uVar1 == 0x97) {
-      iVar2 = 2;
-      goto LAB_000497a0;
-    }
-    if (uVar1 == 10) {
-      iVar2 = 7;
-      goto LAB_000497a0;
-    }
-    if (uVar1 == 0x36) {
-      iVar2 = 8;
-      goto LAB_000497a0;
-    }
-    if (uVar1 == 0x37) {
-      iVar2 = 5;
-      goto LAB_000497a0;
-    }
-    if (uVar1 == 0x93) {
-      iVar2 = 1;
-      goto LAB_000497a0;
-    }
-  }
-  else {
-    if (uVar1 == 0xae) {
-      iVar2 = 6;
-      goto LAB_000497a0;
-    }
-    if (uVar1 == 0xbf) {
-      iVar2 = 3;
-      goto LAB_000497a0;
-    }
-    if (uVar1 == 0x11f) {
-      iVar2 = 4;
-      goto LAB_000497a0;
-    }
-    if (uVar1 == 0x136) {
-      iVar2 = 0;
-      goto LAB_000497a0;
-    }
-  }
-  iVar2 = (int)local_c;
-LAB_000497a0:
-  print_scroll_message_by_id(0x104);
-  print_scroll_message_by_id(iVar2 + 0x105);
-  return 1;
-}
 
 
 

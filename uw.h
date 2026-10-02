@@ -3348,7 +3348,7 @@ void describe_object_owner();
 void print_object_flavor_text();
 void build_creature_look_text();
 void describe_special_object_property();
-undefined4 FUN_000496b0();
+undefined4 identify_mushroom_type();
 void main_loop_hud_flush();
 void dispatch_sticky_mode_handlers();
 void FUN_00049924();
