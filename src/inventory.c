@@ -682,3 +682,23 @@ LAB_0003f7cc:
   handle_inventory_panel_click(0xffffffff);
   return;
 }
+
+
+// was FUN_000400a0 -- toggles combat stance on/off; the weapon-hand
+// paperdoll slot's click handler (handle_object_drop_target) calls
+// this.
+void toggle_weapon_ready()
+
+{
+  if (getenv("UW_DEBUG_COMBAT"))
+    fprintf(stderr, "[weapon-ready] toggle_weapon_ready CALLED: flags5f=0x%x\n", (unsigned)*(byte *)(DAT_00086df8 + 0x5f));
+  if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
+    ready_weapon();
+  }
+  else {
+    unready_weapon();
+  }
+  if (getenv("UW_DEBUG_COMBAT"))
+    fprintf(stderr, "[weapon-ready] toggle_weapon_ready DONE: flags5f=0x%x g_cursor_mode=%d\n", (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)g_cursor_mode);
+  return;
+}

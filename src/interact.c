@@ -753,3 +753,309 @@ char *param_1;
   }
   return;
 }
+
+
+/* param_2 (the picked object, g_interact_target -- a real ushort*) and param_3
+   (DAT_002020b0 -- a tilemap byte address) were both declared `int`,
+   truncating the 64-bit pointers every caller passes; param_2 is then
+   dereferenced at `*(ushort *)(param_2 + 2)` and param_3 differenced
+   against the 64-bit tilemap base DAT_0023b814. Same pointer-truncation
+   class as the rest of this session. */
+// was FUN_0003e694
+undefined4 target_in_range(param_1,param_2,param_3)
+short param_1;
+char *param_2;
+char *param_3;
+
+{
+  short sVar1;
+  int iVar2;
+  int iVar3;
+  uint uVar4;
+  ushort uVar5;
+  ushort uVar6;
+  undefined4 uVar7;
+  uint uVar8;
+
+  sVar1 = (short)((int)(param_3 - (char *)DAT_0023b814) >> 2);
+  uVar8 = (int)sVar1 & 0x3f;
+  DAT_002020a0 = (undefined2)uVar8;
+  iVar3 = (int)sVar1 >> 6;
+  DAT_002020a4 = (undefined2)iVar3;
+  if (param_1 == 0) {
+    uVar7 = 1;
+  }
+  else {
+    uVar5 = *(ushort *)((char *)g_player_object + 2);
+    uVar6 = *(ushort *)(param_2 + 2);
+    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(*(ushort *)((char *)g_player_object + 0x16) >> 10) * -8) -
+             (uint)(uVar5 >> 0xd)) + uVar8 * 8) * 0x10000;
+    uVar8 = iVar2 >> 0x1f;
+    iVar3 = (((((uVar6 & 0x1c00) >> 10) + ((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) * -8) -
+             ((uVar5 & 0x1c00) >> 10)) + iVar3 * 8) * 0x10000;
+    uVar4 = iVar3 >> 0x1f;
+    iVar2 = (int)(((iVar2 >> 0x10 ^ uVar8) - uVar8) * 0x10000) >> 0x10;
+    iVar3 = (int)(((iVar3 >> 0x10 ^ uVar4) - uVar4) * 0x10000) >> 0x10;
+    if (((iVar2 * iVar2 + iVar3 * iVar3 <= (int)param_1) &&
+        (iVar3 = (int)(((uVar5 & 0x7f) - (uVar6 & 0x7f)) * 0x10000) >> 0x10,
+        iVar3 <= (DAT_0023bc94 + 1) * 0xc)) && ((-1 - DAT_0023bc94) * 0x18 <= iVar3)) {
+      return 1;
+    }
+    uVar7 = 0;
+  }
+  return uVar7;
+}
+
+
+
+// was FUN_0003e83c
+uint object_chain_max_barrier(param_1)
+char *param_1;   /* was int -- truncated the tile-record pointer target_line_of_sight passes */
+
+{
+  ushort *puVar1;
+  uint uVar2;
+
+  uVar2 = 0xffffffff;
+  puVar1 = (ushort *)(param_1 + 2);
+  while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
+    if ((*puVar1 & 0x1ff) == 0x164) {
+      if ((short)uVar2 < (short)(puVar1[1] & 0x7f)) {
+        uVar2 = (int)(short)puVar1[1] & 0x7f;
+      }
+    }
+    puVar1 = puVar1 + 2;
+  }
+  return uVar2;
+}
+
+
+
+// was FUN_0003e8b0
+undefined4 target_line_of_sight(param_1,param_2)
+short param_1;
+char *param_2;  /* was int -- truncated g_interact_target; deref'd at param_2+2 */
+
+{
+  bool bVar1;
+  ushort uVar2;
+  int iVar3;
+  short sVar4;
+  int iVar5;
+  byte *pbVar6;
+  short sVar7;
+  short sVar8;
+  uint uVar9;
+  uint uVar10;
+  short sVar11;
+  uint uVar12;
+  uint uVar13;
+  int iVar14;
+  
+  if (param_1 != 0) {
+    uVar2 = *(ushort *)((char *)g_player_object + 0x16) >> 10;
+    uVar9 = (uint)uVar2;
+    uVar10 = (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4;
+    /* tilemap_lookup returns a 64-bit tile-record pointer; `int iVar5`
+       truncated it and the very next line dereferenced the result. Use
+       the byte* local this function already has for the same call later. */
+    pbVar6 = (byte *)tilemap_lookup(uVar9,uVar10);
+    uVar13 = (uint)DAT_002020a4;
+    sVar4 = (&DAT_0023ae40)[pbVar6[1] >> 2 & 0xf];
+    uVar12 = (uint)DAT_002020a0;
+    iVar14 = (int)DAT_002020a0;
+    iVar5 = (int)(short)uVar2;
+    sVar7 = (short)uVar10;
+    if ((iVar14 != iVar5) || (DAT_002020a4 != sVar7)) {
+      if (iVar14 < iVar5) {
+        sVar11 = -1;
+      }
+      else {
+        sVar11 = 1;
+        if (iVar14 <= iVar5) {
+          sVar11 = 0;
+        }
+      }
+      if (DAT_002020a4 < sVar7) {
+        sVar8 = -1;
+      }
+      else {
+        sVar8 = 1;
+        if (DAT_002020a4 <= sVar7) {
+          sVar8 = 0;
+        }
+      }
+      iVar5 = ((DAT_0023bc94 + 1) * 0x10000 >> 0x10) << 0x13;
+      uVar2 = *(byte *)((char *)g_player_object + 2) & 0x7f;
+      if (iVar5 >> 0x10 < (int)(short)uVar2) {
+        sVar7 = uVar2 - (short)((uint)iVar5 >> 0x10);
+      }
+      else {
+        sVar7 = 0;
+      }
+      iVar5 = (int)(short)(*(byte *)(param_2 + 2) & 0x7f);
+      iVar3 = (int)sVar7;
+      if ((iVar3 <= iVar5) &&
+         (iVar5 <= iVar3 + ((((DAT_0023bc94 + 1) * 0x10000 >> 0x10) << 0x15) >> 0x10))) {
+        do {
+          uVar9 = uVar9 + (int)sVar11;
+          if (((sVar11 < 0) && ((int)(uVar9 * 0x10000) >> 0x10 < iVar14)) ||
+             ((0 < sVar11 && (iVar14 < (int)(uVar9 * 0x10000) >> 0x10)))) {
+            uVar9 = uVar12;
+          }
+          uVar10 = uVar10 + (int)sVar8;
+          if (((sVar8 < 0) && ((int)(uVar10 * 0x10000) >> 0x10 < (int)(short)uVar13)) ||
+             ((0 < sVar8 && ((int)(short)uVar13 < (int)(uVar10 * 0x10000) >> 0x10)))) {
+            uVar10 = uVar13;
+          }
+          pbVar6 = (byte *)tilemap_lookup(uVar9,uVar10);
+          sVar7 = object_chain_max_barrier((char *)pbVar6);  /* arg dropped by Ghidra -- it's the tile just looked up */
+          bVar1 = false;
+          iVar14 = (int)sVar7;
+          if ((((iVar14 < 0) || (iVar5 < iVar14)) || (bVar1 = iVar3 <= iVar14, !bVar1)) &&
+             (((int)(uint)(*pbVar6 >> 4) < iVar3 >> 3 && (param_1 == 0x90)))) {
+            return 1;
+          }
+          uVar12 = (uint)DAT_002020a0;
+          uVar13 = (uint)DAT_002020a4;
+          iVar14 = (int)DAT_002020a0;
+          if (((short)uVar9 == iVar14) && ((short)uVar10 == DAT_002020a4)) {
+            return 0;
+          }
+        } while ((((0x90 < param_1) || (bVar1)) ||
+                 ((ushort)(&DAT_0023ae40)[pbVar6[1] >> 2 & 0xf] == 0)) ||
+                ((uint)(ushort)(&DAT_0023ae40)[pbVar6[1] >> 2 & 0xf] == (int)sVar4));
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+
+// was FUN_0003ec00
+ushort *pick_object_under_cursor()
+
+{
+  byte bVar1;
+  int iVar2;
+  ushort *puVar3;
+  uint uVar4;
+  /* render_dungeon_view_frame() re-renders the HUD+3D view in "pick" mode so the
+     per-pixel object/texture id buffer DAT_0023cca0 this function reads
+     below is fresh for the current cursor position. It used to crash via
+     process_visible_tile_cell (the DAT_0023b4f4 split-symbol -- a short[]
+     pick table written inside a function pointer); with that fixed the
+     re-render is safe, so it runs by default. Set UW_DISABLE_PICK_RERENDER
+     to skip it (picks then read a stale buffer). */
+  { static int _rr = -1;
+    if (_rr < 0) _rr = (getenv("UW_DISABLE_PICK_RERENDER") == NULL);
+    if (_rr) render_dungeon_view_frame();
+  }
+  iVar2 = 0;
+  DAT_002020ac = 0;
+  /* Guard never present in the decompile: nothing bounds-checked
+     g_mouse_x/g_mouse_y against the 3D viewport's own registered rect
+     (DAT_0023be5c/DAT_0023bd80 x-range, DAT_0023be80-DAT_0023be88..
+     DAT_0023be80 y-range -- the same rect register_game_view_interact_zones registers for
+     handle_game_view_click and hit_test_inventory_widget already reuses for its own 0x17
+     special case) before indexing the pick stencil DAT_0023cca0. That
+     was harmless while every right-click interact stayed inside the
+     viewport, but a held drag whose release lands elsewhere (e.g. the
+     inventory panel) still routes through here -- see handle_game_view_click,
+     called every tick a mouse button is held regardless of the
+     cursor's current position -- and reads/interprets whatever stale
+     byte happens to sit at that (out-of-viewport) stencil offset as a
+     real object slot, corrupting interact_default's pick and crashing
+     deep in place_object_in_backpack_slot/check_object_fits_in_slot (found wiring up backpack-slot
+     drops). Treat anything outside the viewport as "no object". */
+  if ((g_mouse_x < DAT_0023be5c) || (DAT_0023be5c + DAT_0023bd80 <= g_mouse_x) ||
+      (g_mouse_y < (short)(DAT_0023be80 - DAT_0023be88)) || (DAT_0023be80 <= g_mouse_y)) {
+    return (ushort *)0x0;
+  }
+  bVar1 = *(byte *)(g_mouse_y * 0x140 + (int)g_mouse_x + DAT_0023cca0);
+  uVar4 = (uint)bVar1;
+  { const char *_f = getenv("UW_PICK_FORCE_SLOT");   /* debug: force the object branch */
+    if (_f && (uint)DAT_0023b830 > 1) { uVar4 = (uint)atoi(_f); if (uVar4 == 0 || uVar4 >= (uint)DAT_0023b830) uVar4 = 1; bVar1 = (byte)uVar4; } }
+  int _pick_diag = g_uw_debug_pick_diag || (getenv("UW_PICK_DIAG") != NULL);
+  if (_pick_diag)
+    fprintf(stderr, "[pick] mx=%d my=%d stencil=0x%02x nobj=%d\n",
+            (int)g_mouse_x, (int)g_mouse_y, uVar4, (int)DAT_0023b830);
+  if ((uVar4 == 0) || (DAT_0023b830 <= uVar4)) {
+    if ((0xbf < uVar4) && (uVar4 < 0xfb)) {
+      DAT_002020ac = bVar1 - 0xbf;
+    }
+  }
+  else {
+    iVar2 = (int)*(short *)(&DAT_0023b676 + uVar4 * 2);
+    DAT_002020b0 = (char *)(DAT_0023b814 +
+        *(short *)((intptr_t)g_pick_tile_off_backing + uVar4 * 2 + 2) * 4);
+  }
+  if ((short)iVar2 == 0) {
+    puVar3 = (ushort *)0x0;
+  }
+  else {
+    puVar3 = (ushort *)get_object_record_by_slot_index(iVar2);
+
+    if(puVar3) {
+      DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(*puVar3 & 0x1ff));
+      if (_pick_diag)
+        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x ptr=%p\n", uVar4, (unsigned)(*puVar3 & 0x1ff), (void *)puVar3);
+    }
+
+    DAT_002020a8 = DAT_002020b0 + 2;
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d off10=0x%x off13=0x%x off14=0x%x off15=0x%x off4000=%d\n",
+              (void *)puVar3, (unsigned)(*puVar3 & 0x1ff),
+              (int)((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20),
+              (int)object_ptr_in_arena((char *)puVar3),
+              (unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),
+              (unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),
+              (int)((*puVar3 & 0x4000) != 0));
+    if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
+       (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
+      DAT_002020ec = 1;
+      return puVar3;
+    }
+    DAT_002020ec = 0;
+  }
+  return puVar3;
+}
+
+
+
+// was FUN_0003ed6c
+void describe_picked_terrain(param_1,param_2)
+byte param_1;
+short param_2;
+
+{
+  int iVar1;
+  uint uVar2;
+  
+  if ((param_2 < 1) || (param_1 != 2)) {
+    print_scroll_message_by_id(param_1 + 0x98);
+  }
+  else {
+    iVar1 = (param_2 + -1) * 0x10000 >> 0x10;
+    if (iVar1 < 0x30) {
+      uVar2 = (uint)(short)(&DAT_0023ae58)[iVar1];
+    }
+    else if (iVar1 < 0x3a) {
+      uVar2 = 0x1fe - (int)*(short *)(&DAT_0023ad58 + iVar1 * 2);
+    }
+    else {
+      uVar2 = 0x1ff;
+    }
+    message_scroll_print_wrapped(s_You_see_000858fc);
+    get_message_string(uVar2 | 0x1400);
+    message_scroll_print_wrapped();
+    message_scroll_print_wrapped(&DAT_00084f20);
+    /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
+       fix -- back-to-back terrain Looks (e.g. the ceiling, wall signs)
+       otherwise all land on the same visible scroll line. */
+    message_scroll_print_wrapped("\n");
+  }
+  return;
+}

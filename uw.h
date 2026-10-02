@@ -820,6 +820,11 @@ extern undefined DAT_001007d4_backing[8192];
 extern short g_mouse_x;
 extern short g_mouse_y;
 extern ushort * g_player_object;
+extern short g_pick_tile_off_backing[0x200];
+extern undefined1 DAT_0023b676_backing[65536];
+#define DAT_0023b676 DAT_0023b676_backing[0]
+extern undefined1 DAT_0023ad58_backing[65536];
+#define DAT_0023ad58 DAT_0023ad58_backing[0]
 undefined4 LAB_0001a120();
 char * LAB_00028688();
 undefined4 LAB_000286a4();

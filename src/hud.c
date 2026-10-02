@@ -6717,3 +6717,26 @@ uint poll_mouse_button_flags()
   }
   return uVar1;
 }
+
+
+void toggle_stats_panel()
+
+{
+  undefined4 uVar1;
+
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] toggle_stats_panel (toggle stats panel) entry: g_active_hud_panel=%d\n", (int)g_active_hud_panel);
+  if (g_active_hud_panel == '\0') {
+    uVar1 = 2;
+  }
+  else {
+    if (g_active_hud_panel == '\x04') {
+      return;
+    }
+    uVar1 = 0;
+  }
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] toggle_stats_panel -> set_hud_status_value(6,%d)\n", (int)uVar1);
+  set_hud_status_value(6,uVar1);
+  return;
+}
