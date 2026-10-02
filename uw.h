@@ -3471,7 +3471,7 @@ bool collision_classify_corner_wall();
 bool collision_corner_flags();
 void collision_build_height_field();
 void resolve_wall_slide_corner();
-void FUN_00051658();
+void collision_add_candidate_object();
 void collision_height_envelope();
 void FUN_00051cf8();
 void FUN_00051dd0();

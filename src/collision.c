@@ -466,7 +466,7 @@ int param_2;
                  ((((DAT_002046c4 <= puVar7 || ((*puVar7 & 0x1c0) == 0x40)) ||
                    ((*(byte *)((char *)puVar7 + 0x15) & 0x80) == 0)) &&
                   ((param_2 == 0 || (((&DAT_00202c97)[iVar10] & 1) != 0)))))) {
-                FUN_00051658(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
+                collision_add_candidate_object(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
               }
             }
             /* was `iVar10 = resolve_object_link(...); puVar6 = (ushort
@@ -590,4 +590,107 @@ uint param_2;
     *(byte *)(iVar1 + 0x11) = bVar2;
   }
   return local_20 == 0;
+}
+
+
+// was FUN_00051658 -- appends object param_1 to the small (max 9)
+// collision candidate list at DAT_00202c38 if its bounding box (sized
+// from its per-object-type properties at DAT_00202c90[type*0xd],
+// positioned via tile-local params param_3/param_4) overlaps the
+// current search bounds (DAT_00202c20/24/28/2c). Confirmed by its
+// sole call site: collision_build_height_field's per-tile object-
+// chain walk, which filters tile objects before calling this to
+// gather ones that might affect collision/stepping. Each candidate
+// entry is 6 bytes (id, height, two flag bytes, tile x/y word) at
+// DAT_00202c38/39/3a/3b/3c+count*6, with the live count at
+// DAT_00202c6c+0x14.
+void collision_add_candidate_object(param_1,param_2,param_3,param_4,param_5)
+ushort * param_1;
+ushort param_2;
+char param_3;
+char param_4;
+int param_5;
+
+{
+  undefined1 uVar1;
+  ushort uVar2;
+  uint uVar3;
+  byte bVar4;
+  char cVar5;
+  undefined *puVar6;
+  int iVar7;
+  byte bVar8;
+  char cVar9;
+  char cVar10;
+  char cVar11;
+  char cVar12;
+  int iVar13;
+  char *pcVar14;
+  bool bVar15;
+  char local_40 [16];
+  uint local_8;
+  
+  local_8 = (uint)param_2;
+  bVar4 = *(byte *)(DAT_00202c6c + 0x14);
+  if (bVar4 < 9) {
+    uVar2 = *param_1;
+    puVar6 = &DAT_00202c90 + (uVar2 & 0x1ff) * 0xd;
+    iVar7 = 0xd;
+    pcVar14 = local_40;
+    do {
+      iVar13 = iVar7 + -1;
+      *pcVar14 = *puVar6;
+      bVar15 = 0 < iVar7;
+      puVar6 = puVar6 + 1;
+      iVar7 = iVar13;
+      pcVar14 = pcVar14 + 1;
+    } while (iVar13 != 0 && bVar15);
+    if ((local_40[1] & 7U) == 4) {
+      cVar10 = param_3 * '\b';
+      cVar9 = param_4 * '\b';
+      cVar11 = cVar10 + '\a';
+      cVar12 = cVar9 + '\a';
+    }
+    else {
+      cVar10 = (*(byte *)((char *)param_1 + 3) >> 5) + param_3 * '\b';
+      cVar9 = (*(byte *)((char *)param_1 + 3) >> 2 & 7) + param_4 * '\b';
+      bVar8 = local_40[1] & 7;
+      if ((((uVar2 & 0x1c0) == 0x40) && (bVar8 != 0)) && (param_5 != 0)) {
+        bVar8 = bVar8 - 1;
+      }
+      cVar11 = cVar10 + bVar8;
+      cVar10 = cVar10 - bVar8;
+      cVar12 = cVar9 + bVar8;
+      cVar9 = cVar9 - bVar8;
+    }
+    if (((DAT_00202c20 <= cVar11) && (cVar10 <= DAT_00202c28)) &&
+       ((DAT_00202c24 <= cVar12 && (cVar9 <= DAT_00202c2c)))) {
+      iVar7 = (uint)bVar4 * 6;
+      *(byte *)(DAT_00202c6c + 0x14) = bVar4 + 1;
+      bVar4 = (byte)param_1[1] & 0x7f;
+      (&DAT_00202c39)[iVar7] = bVar4;
+      bVar15 = local_40[0] == '\0';
+      cVar5 = bVar4 + local_40[0];
+      if (bVar15) {
+        local_40[0] = cVar5 + '\x01';
+      }
+      (&DAT_00202c38)[iVar7] = cVar5;
+      if (bVar15) {
+        (&DAT_00202c38)[iVar7] = local_40[0];
+      }
+      uVar3 = local_8 << 6 & 0xffff;
+      (&DAT_00202c3a)[iVar7] = (byte)(local_8 << 6) | 9;
+      uVar1 = (undefined1)(uVar3 >> 8);
+      (&DAT_00202c3b)[iVar7] = uVar1;
+      if (((cVar10 <= DAT_00202c18) && (DAT_00202c18 <= cVar11)) &&
+         ((cVar9 <= DAT_00202c1c && (DAT_00202c1c <= cVar12)))) {
+        (&DAT_00202c3a)[iVar7] = (byte)uVar3 | 0x19;
+        (&DAT_00202c3b)[iVar7] = uVar1;
+      }
+      iVar13 = param_4 * 0x40 + (int)param_3;
+      (&DAT_00202c3c)[iVar7] = (char)iVar13;
+      (&DAT_00202c3d)[iVar7] = (char)((uint)iVar13 >> 8);
+    }
+  }
+  return;
 }
