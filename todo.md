@@ -23,6 +23,38 @@
       139, settle_mobile_to_immobile), unaffected -- different subsystem,
       as expected. Still open.
 
+## Fixed this round (code-cleanup-first-pass, pause-menu cluster)
+- [x] `DAT_002047b0` (inside what's now `init_cursor_subsystem`, moved to
+      hud.c) was declared as a lone `undefined2` scalar but indexed
+      throughout as `(&DAT_002047b0)[i]` for up to 20 slots (the
+      `iVar2 < 0x14` loop bound) -- same "scalar declared but accessed
+      as array" bug class fixed several times this session. Widened
+      to a real, safely-sized `DAT_002047b0_backing[20]`. Three
+      sibling parallel arrays (`DAT_00204750`/`DAT_002047e0`/
+      `DAT_00204808`) have the identical bug but aren't yet required
+      cross-TU, so left unfixed for now -- revisit together.
+- [x] Documentation fix (not a code bug): the pause-menu dispatch
+      tables' own summary comment had entries 2/3's prose labels
+      swapped ("2 sound toggle" / "3 music toggle") even though that
+      same comment says entries 0-3 were only reconstructed by
+      inference (unlike 4/5, which were ground-truth-verified via a
+      headless memory dump of the original binary). Directly tracing
+      `draw_music_or_sound_toggle_panel`'s own `DAT_000868dc == 2`
+      branch (shows `is_music_playing` when true) and
+      `handle_music_toggle_click`'s body (calls `set_music_enabled`,
+      registered at index 2) confirms 2=music, 3=sound -- the actual
+      function pointers in the table were never wrong, only these two
+      prose labels. Corrected the comment to match.
+- Noted but NOT fixed (lower confidence, single call site):
+  `open_pause_menu_via_hotkey` calls
+  `handle_pause_menu_dpad_navigation()` with zero arguments despite
+  that function taking one parameter -- possibly the same dropped-
+  argument bug shape fixed several times this session, but
+  `DAT_000868dc` is already forced to 6 directly above regardless of
+  this call's effect, so the blast radius (if any) is unclear without
+  live reproduction. Revisit if a pause-menu-opened-via-hotkey bug is
+  ever reported.
+
 ## Fixed this round (code-cleanup-first-pass, audio.c MOD-loader container batch)
 - [x] `init_mod_pattern_array` (was `FUN_0004fd68`) was called with zero
       arguments (`FUN_0004fd68();`) despite taking one parameter --

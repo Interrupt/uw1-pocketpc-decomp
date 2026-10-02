@@ -719,12 +719,12 @@ void init_gameplay_session()
   register_key_binding(0x89,0,0x1b,&debug_force_rest_action);
   register_key_binding(0x88,2,0x1b,&print_debug_stat_message);
   register_key_binding(0x87,1,0x1b,handle_cast_spell_click);
-  register_key_binding(0x173,0x173,1,FUN_00056ebc);
-  register_key_binding(0x172,0x172,1,FUN_00056ebc);
-  register_key_binding(0x16d,0x16d,1,FUN_00056ebc);
-  register_key_binding(0x166,0x166,1,FUN_00056ebc);
-  register_key_binding(0x164,0x164,1,FUN_00056ebc);
-  register_key_binding(0x171,0x171,1,FUN_00056ebc);
+  register_key_binding(0x173,0x173,1,open_pause_menu_via_hotkey);
+  register_key_binding(0x172,0x172,1,open_pause_menu_via_hotkey);
+  register_key_binding(0x16d,0x16d,1,open_pause_menu_via_hotkey);
+  register_key_binding(0x166,0x166,1,open_pause_menu_via_hotkey);
+  register_key_binding(0x164,0x164,1,open_pause_menu_via_hotkey);
+  register_key_binding(0x171,0x171,1,open_pause_menu_via_hotkey);
   register_key_binding(0x80,5,1,cursor_mode_button_click);
   register_key_binding(0x81,4,1,cursor_mode_button_click);
   register_key_binding(0x82,3,1,cursor_mode_button_click);

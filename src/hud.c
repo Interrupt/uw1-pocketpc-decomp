@@ -421,7 +421,7 @@ short param_1;
         }
       }
       else {
-        FUN_00056d38((int)*DAT_00085a6c,(int)DAT_00085a6c[1]);
+        handle_pause_menu_region_click((int)*DAT_00085a6c,(int)DAT_00085a6c[1]);
       }
     }
     if (iVar7 == 5) {
@@ -520,7 +520,7 @@ short param_1;
         }
       }
       else {
-        FUN_00056d38((int)*DAT_00085a6c,(int)DAT_00085a6c[1]);
+        handle_pause_menu_region_click((int)*DAT_00085a6c,(int)DAT_00085a6c[1]);
       }
     }
     if (iVar5 == 5) {
@@ -4969,8 +4969,8 @@ void release_grtile_handle()
 // open (param_1 != 0) clears/redraws the panel and waits for click
 // release; then loops reading input events, dispatching clicks within
 // the button region to redraw_pause_submenu_icon's sibling
-// FUN_00056d38, Escape to close_ui_panel_return_to_game, and a
-// handful of other codes to FUN_00056d6c (not yet named) with a
+// handle_pause_menu_region_click, Escape to close_ui_panel_return_to_game, and a
+// handful of other codes to handle_pause_menu_dpad_navigation (not yet named) with a
 // result code (0/1/2), until DAT_002046f8 (set by
 // close_ui_panel_return_to_game) signals the panel closed. Confirmed
 // as the pause menu by hud.c's callers and the GXGetDefaultKeys
@@ -4990,7 +4990,7 @@ short param_1;
   DAT_000868d8 = 1;
   if (param_1 != 0) {
     FUN_00057118();
-    FUN_00056cc8(6);
+    enter_pause_menu_state(6);
     cursor_show_idle_tick();
     wait_for_click_release(0);
   }
@@ -5025,12 +5025,12 @@ LAB_00056638:
             iVar3 = (0x76 - iVar4) * 0x10000 >> 0x10;
             if ((-1 < iVar3) && (iVar3 < 0x6d)) {
               /* Was called with both args dropped (same missing-argument
-                 idiom as elsewhere in this file) -- FUN_00056d38 only
+                 idiom as elsewhere in this file) -- handle_pause_menu_region_click only
                  actually uses its 2nd (Y) argument, but the sibling call
                  site in cursor_mode_button_click passes (x,y) in this
                  order, so match it here with the just-computed
                  region-relative click position. */
-              FUN_00056d38(local_c, local_a);
+              handle_pause_menu_region_click(local_c, local_a);
             }
           }
         }
@@ -5056,7 +5056,7 @@ LAB_0005659c:
       }
       uVar2 = 0;
 LAB_000565a4:
-      FUN_00056d6c(uVar2);
+      handle_pause_menu_dpad_navigation(uVar2);
     }
 LAB_000565a8:
     if (DAT_002046f8 != 0) {
@@ -5143,3 +5143,736 @@ void close_ui_panel_return_to_game()
   cursor_show_idle_tick();
   return;
 }
+
+
+int DAT_002046fc;
+/* Were lone `undefined *` -- the real thing is a pair of function-pointer
+   dispatch tables for the in-game pause menu, indexed by menu "state"
+   (DAT_000868dc, 0..6): PTR_FUN_000868e0 is the no-arg "draw this state's
+   screen" table (enter_pause_menu_state calls table[state]()); PTR_FUN_00086900 is
+   the "handle a click/button-index within this state" table (dispatch_pause_menu_click
+   calls table[state](clicked_index)). Link-time-init data the decompile
+   never populated -> clicking the top-left panel's "menu" button (which
+   calls run_pause_menu_modal_loop -> enter_pause_menu_state(6), the top-level list) jumped
+   through a null pointer.
+
+   Entries 0-3 and 6 were correctly reconstructed by an earlier session
+   via call-shape analysis (cross-referencing handle_pause_menu_main_list_click's state-
+   transition targets against each candidate function's own logic).
+   Entries 4/5 (quit confirm vs. torch/detail brightness) were ALSO
+   guessed that same way and came out swapped -- confirmed live: clicking
+   the on-screen "DETAIL" button showed the quit-confirmation screen, and
+   clicking inside it actually exited the game; clicking "QUIT GAME"
+   showed the detail-brightness slider. Root-caused for real this time:
+   these two tables are genuine link-time data in the original binary
+   (not synthesized by Ghidra), readable directly at their own addresses
+   -- a Ghidra headless memory dump of 0x868e0 and 0x86900 in the
+   original .exe gives the real function pointers at every one of these
+   8 slots, no inference needed. Index 4's real target is 0x5693c
+   (draw_brightness_panel, brightness) and index 5's is 0x56838 (draw_quit_confirm_panel,
+   quit confirm) in the draw table -- the reverse of what was guessed --
+   and correspondingly 0x56a70 (handle_brightness_click, brightness click) / 0x56c88
+   (handle_quit_confirm_click, quit click) in the click table. Swapped both tables'
+   4/5 entries to match:
+     0  load-game slot list  (draw_save_load_slot_list draw, shared w/ save;
+                              handle_save_load_slot_click click, DAT_000868dc==1 gates
+                              the save-only "extra slot" bits)
+     1  save-game slot list  (same pair as 0)
+     2  music on/off toggle  (draw_music_or_sound_toggle_panel draw / handle_music_toggle_click click)
+     3  sound on/off toggle  (draw_music_or_sound_toggle_panel draw / handle_sound_toggle_click click)
+     4  torch brightness     (draw_brightness_panel draw / handle_brightness_click click)
+     5  quit-game confirm    (draw_quit_confirm_panel draw / handle_quit_confirm_click click)
+     6  top-level menu list  (draw_pause_menu_main_list draw / handle_pause_menu_main_list_click click)
+   Index 7 is never dispatched (DAT_000868dc==7 is close_ui_panel_return_to_game's
+   "menu closing" sentinel, checked directly rather than redrawn) but
+   both tables are sized 8 with a null-safe entry there for defense.
+   CORRECTED (this pass): entries 2/3's prose labels above were swapped
+   ("2 sound"/"3 music") even though the entries 0-3/6 note just above
+   says those four were only inferred by call-shape analysis, not
+   ground-truth-dump-verified like 4/5 -- directly tracing
+   draw_music_or_sound_toggle_panel's own `DAT_000868dc == 2` branch (shows
+   is_music_playing when true) and handle_music_toggle_click's own body
+   (calls set_music_enabled, registered at index 2) confirms 2=music,
+   3=sound as written now. The function POINTERS at each index were
+   never changed by this correction, only these prose labels. */
+extern void draw_pause_menu_main_list(void);
+extern void draw_save_load_slot_list(void);
+extern void draw_quit_confirm_panel(void);
+extern void draw_music_or_sound_toggle_panel(void);
+extern void draw_brightness_panel(void);
+extern void handle_save_load_slot_click(int);
+extern void handle_music_toggle_click(int);
+extern void handle_sound_toggle_click(int);
+extern void handle_quit_confirm_click(int);
+extern void handle_brightness_click(int);
+extern void handle_pause_menu_main_list_click(int);
+/* CORRECTED: a prior pass's inline comments here had states 2/3 swapped
+   -- confirmed by directly tracing draw_music_or_sound_toggle_panel's own
+   `DAT_000868dc == 2` branch (shows is_music_playing when true) and by
+   handle_music_toggle_click (registered at index 2) calling
+   set_music_enabled, vs. handle_sound_toggle_click (index 3) calling
+   set_sound_effects_enabled. */
+static void (*const PTR_FUN_000868e0_table[8])(void) = {
+  draw_save_load_slot_list,  /* 0: load slot list */
+  draw_save_load_slot_list,  /* 1: save slot list */
+  draw_music_or_sound_toggle_panel,  /* 2: music toggle   */
+  draw_music_or_sound_toggle_panel,  /* 3: sound toggle   */
+  draw_brightness_panel,  /* 4: brightness     */
+  draw_quit_confirm_panel,  /* 5: quit confirm   */
+  draw_pause_menu_main_list,  /* 6: top-level list */
+  0,
+};
+#define PTR_FUN_000868e0 (PTR_FUN_000868e0_table[0])
+static void (*const PTR_FUN_00086900_table[8])(int) = {
+  handle_save_load_slot_click,  /* 0: load slot list */
+  handle_save_load_slot_click,  /* 1: save slot list */
+  handle_music_toggle_click,  /* 2: music toggle   */
+  handle_sound_toggle_click,  /* 3: sound toggle   */
+  handle_brightness_click,  /* 4: brightness     */
+  handle_quit_confirm_click,  /* 5: quit confirm   */
+  handle_pause_menu_main_list_click,  /* 6: top-level list */
+  0,
+};
+#define PTR_FUN_00086900 (PTR_FUN_00086900_table[0])
+
+
+// was FUN_000567c0 -- draws the pause menu's top-level list (state 6
+// in PTR_FUN_000868e0_table): the main icon plus the first
+// highlighted list row.
+void draw_pause_menu_main_list()
+
+{
+  redraw_pause_menu_icon(1);
+  DAT_002046f0 = 0xffff;
+  update_pause_submenu_highlight(6,6);
+  return;
+}
+
+
+
+// was FUN_00056838 -- draws the "quit confirm" panel (state 5).
+void draw_quit_confirm_panel()
+
+{
+  redraw_pause_menu_icon(3);
+  DAT_002046f0 = 0xffff;
+  update_pause_submenu_highlight(3,0x3b);
+  return;
+}
+
+
+
+// was FUN_00056864 -- draws the shared music/sound toggle panel
+// (states 2 and 3): shows the music on/off label and state when
+// DAT_000868dc==2, else the sound-effects on/off label and state.
+// Confirmed by its registration at both table indices, and by the
+// matching click handlers (handle_music_toggle_click at index 2
+// calling set_music_enabled, handle_sound_toggle_click at index 3
+// calling set_sound_effects_enabled) -- this corrects a prior pass's
+// swapped index comments on the dispatch tables themselves.
+void draw_music_or_sound_toggle_panel()
+
+{
+  short sVar1;
+  int iVar2;
+  char cVar3;
+  undefined4 uVar4;
+  
+  redraw_pause_menu_icon(4);
+  DAT_002046f0 = 0xffff;
+  if (DAT_000868dc == 2) {
+    uVar4 = 0x33;
+    iVar2 = is_music_playing();
+    cVar3 = (iVar2 == 0) + '/';
+    iVar2 = is_music_playing();
+  }
+  else {
+    uVar4 = 0x34;
+    iVar2 = is_sound_effects_enabled();
+    cVar3 = (iVar2 == 0) + '1';
+    iVar2 = is_sound_effects_enabled();
+  }
+  iVar2 = (short)(ushort)(iVar2 != 0) + 3;
+  redraw_pause_submenu_icon(6,cVar3);
+  redraw_pause_submenu_icon(5,uVar4);
+  sVar1 = 2;
+  if (iVar2 * 0x10000 >> 0x10 != 3) {
+    sVar1 = 0;
+  }
+  update_pause_submenu_highlight(iVar2,sVar1 + 0x14);
+  return;
+}
+
+
+
+// was FUN_0005693c -- draws the brightness/gamma panel (state 4):
+// reads the current level from the high nibble of DAT_00086df8+0xb5
+// and draws the slider sprite at a position derived from it.
+void draw_brightness_panel()
+
+{
+  uint uVar1;
+
+  uVar1 = (uint)(*(byte *)(DAT_00086df8 + 0xb5) >> 4);
+  DAT_002046f0 = 0xffff;
+  redraw_pause_menu_icon(5);
+  reload_single_grtile_entry(0x20ed,s_optbtns_00086954,uVar1 + 0x35);
+  draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
+  update_pause_submenu_highlight(4 - uVar1,(uVar1 + 0x13) * 2);
+  return;
+}
+
+
+
+// was FUN_000569c0 -- click handler for the music-toggle panel
+// (state 2): toggles music on/off and redraws the panel.
+void handle_music_toggle_click(param_1)
+short param_1;
+
+{
+  undefined4 uVar1;
+
+  if (param_1 == 4) {
+    uVar1 = 1;
+  }
+  else {
+    if (param_1 != 3) goto LAB_000569ec;
+    uVar1 = 0;
+  }
+  set_music_enabled(uVar1);
+  draw_music_or_sound_toggle_panel();
+LAB_000569ec:
+  if (DAT_002046fc == 0) {
+    if (param_1 == 2) {
+      enter_pause_menu_state(6);
+    }
+  }
+  else {
+    close_ui_panel_return_to_game();
+  }
+  return;
+}
+
+
+
+// was FUN_00056a18 -- click handler for the sound-toggle panel
+// (state 3): toggles sound effects on/off and redraws the panel.
+void handle_sound_toggle_click(param_1)
+short param_1;
+
+{
+  undefined4 uVar1;
+
+  if (param_1 == 4) {
+    uVar1 = 1;
+  }
+  else {
+    if (param_1 != 3) goto LAB_00056a44;
+    uVar1 = 0;
+  }
+  set_sound_effects_enabled(uVar1);
+  draw_music_or_sound_toggle_panel();
+LAB_00056a44:
+  if (DAT_002046fc == 0) {
+    if (param_1 == 2) {
+      enter_pause_menu_state(6);
+    }
+  }
+  else {
+    close_ui_panel_return_to_game();
+  }
+  return;
+}
+
+
+
+// was FUN_00056a70 -- click handler for the brightness panel (state
+// 4): adjusts the gamma level in DAT_00086df8+0xb5's high nibble by
+// the clicked delta, forces a full redraw, and refreshes the slider.
+void handle_brightness_click(param_1)
+int param_1;
+
+{
+  short sVar1;
+  
+  sVar1 = (short)param_1;
+  if ((0 < sVar1) && (sVar1 < 5)) {
+    param_1 = -param_1;
+    *(byte *)(DAT_00086df8 + 0xb5) =
+         (byte)(((param_1 + 4) * 0x10000 >> 0x10 & 0xfU) << 4) |
+         *(byte *)(DAT_00086df8 + 0xb5) & 0xf;
+    FUN_0005d2b0();
+    full_dungeon_redraw();
+    weapon_overlay_and_full_redraw();
+    reload_single_grtile_entry(0x20ed,s_optbtns_00086954,param_1 + 0x39);
+    draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
+    update_pause_submenu_highlight(4 - (param_1 + 4),(param_1 + 0x17) * 2);
+  }
+  if (sVar1 == 0) {
+    if (DAT_002046fc == 0) {
+      enter_pause_menu_state(6);
+    }
+    else {
+      close_ui_panel_return_to_game();
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00056b48 -- click handler for the top-level list (state 6):
+// maps the clicked row to the target pause-menu state (0=save,
+// 1=load, 2-5 the toggle/brightness/quit panels) and enters it,
+// gating save/load entry on check_can_save_game/check_can_load_game.
+// Row 1 (Resume) closes the panel directly instead.
+void handle_pause_menu_main_list_click(param_1)
+short param_1;
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  
+  if (param_1 == 0) {
+    uVar2 = 5;
+  }
+  else {
+    if (param_1 == 1) {
+      close_ui_panel_return_to_game();
+      return;
+    }
+    if (param_1 == 2) {
+      uVar2 = 4;
+    }
+    else if (param_1 == 3) {
+      uVar2 = 3;
+    }
+    else if (param_1 == 4) {
+      uVar2 = 2;
+    }
+    else if (param_1 == 5) {
+      iVar1 = check_can_load_game();
+      if (iVar1 == 0) {
+        return;
+      }
+      uVar2 = 1;
+    }
+    else {
+      if (param_1 != 6) {
+        return;
+      }
+      iVar1 = check_can_save_game();
+      if (iVar1 == 0) {
+        return;
+      }
+      uVar2 = 0;
+    }
+  }
+  enter_pause_menu_state(uVar2);
+  return;
+}
+
+
+
+// was FUN_00056bdc -- click handler shared by the load (state 0) and
+// save (state 1) slot lists: highlights the clicked slot and
+// dispatches to handle_save_load_menu_action, closing the panel
+// afterward.
+void handle_save_load_slot_click(param_1)
+int param_1;
+
+{
+  short sVar1;
+  int iVar2;
+  
+  sVar1 = (short)param_1;
+  iVar2 = 4;
+  if ((0 < sVar1) && (sVar1 < 6)) {
+    update_pause_submenu_highlight(param_1,(0x14 - param_1) * 2);
+    msg_scroll_panel_reset(0);
+    if (sVar1 != 1) {
+      if (sVar1 != 2) {
+        if (sVar1 != 3) {
+          if (sVar1 != 4) {
+            if (sVar1 != 5) {
+              return;
+            }
+            iVar2 = 3;
+          }
+          iVar2 = iVar2 + -1;
+        }
+        iVar2 = iVar2 + -1;
+      }
+      handle_save_load_menu_action(DAT_000868dc == 1,iVar2);
+      if (DAT_000868dc == 1) {
+        g_cursor_mode = 0;
+        unready_weapon();
+      }
+    }
+    close_ui_panel_return_to_game();
+  }
+  return;
+}
+
+
+
+// was FUN_00056c88 -- click handler for the quit-confirm panel
+// (state 5): row 4 confirms (requests game exit), any other closes
+// the panel without action.
+void handle_quit_confirm_click(param_1)
+short param_1;
+
+{
+  if (param_1 != 3) {
+    if (param_1 != 4) {
+      return;
+    }
+    update_pause_submenu_highlight(4,0x39);
+    cursor_show_idle_tick();
+    request_game_exit(0);
+    FUN_00057118();
+  }
+  close_ui_panel_return_to_game();
+  return;
+}
+
+
+
+// was FUN_00056cc8 -- enters pause-menu state param_1: sets
+// DAT_000868dc and invokes that state's draw callback from
+// PTR_FUN_000868e0_table.
+void enter_pause_menu_state(param_1)
+short param_1;
+
+{
+  DAT_000868dc = param_1;
+  if (getenv("UW_DEBUG_PAUSEMENU"))
+    fprintf(stderr, "[pausemenu] enter_pause_menu_state: entering state=%d\n", (int)param_1);
+  if ((uint)param_1 < 8 && PTR_FUN_000868e0_table[param_1] != 0) {
+    PTR_FUN_000868e0_table[param_1]();
+  }
+  return;
+}
+
+
+
+// was FUN_00056cf8 -- dispatches a click (param_1, a row/item index)
+// to the current pause-menu state's click handler in
+// PTR_FUN_00086900_table.
+void dispatch_pause_menu_click(param_1)
+undefined4 param_1;
+
+{
+  FUN_00057118();
+  if (getenv("UW_DEBUG_PAUSEMENU"))
+    fprintf(stderr, "[pausemenu] dispatch_pause_menu_click: state=%d clicked_index=%d\n",
+            (int)DAT_000868dc, (int)param_1);
+  if ((uint)DAT_000868dc < 8 && PTR_FUN_00086900_table[DAT_000868dc] != 0) {
+    PTR_FUN_00086900_table[DAT_000868dc](param_1);
+  }
+  cursor_show_idle_tick();
+  wait_for_click_release(0);
+  return;
+}
+
+
+
+// was FUN_00056d38 -- converts a raw click Y offset (param_2) within
+// the pause-menu's button region into a row index (one of 16 rows,
+// param_2/15) and dispatches it via dispatch_pause_menu_click.
+void handle_pause_menu_region_click(param_1,param_2)
+undefined4 param_1;
+short param_2;
+
+{
+  short sVar1;
+
+  sVar1 = Ordinal_2005(0xf,(int)param_2);
+  dispatch_pause_menu_click((int)sVar1);
+  return;
+}
+
+
+
+/* Was raw pointer arithmetic `*(char *)(DAT_000868dc * 7 + iVar2 + 0x86920)`
+   -- 0x86920 is the ORIGINAL 32-bit binary's fixed load address for this
+   table (immediately following the PTR_FUN_000868e0/00086900 dispatch
+   tables, see their own comment -- same "orphaned link-time data" class),
+   used as a literal absolute pointer instead of a symbol. On this
+   recompile nothing is mapped there, so any state/highlight-index
+   combination whose real value is genuinely non-zero (i.e. that state
+   actually has a navigable widget in that D-pad-navigation slot) reads
+   through a wild pointer and crashes -- confirmed via lldb, EXC_BAD_ACCESS
+   at 0x86924. Never hit until the Enter-key WM_CHAR fix (see
+   [[save-load-name-entry-crash]]'s g_keychar_deferred) let VK_RETURN's
+   GXGetDefaultKeys() "start button" code (0x93) reach run_pause_menu_modal_loop's own
+   event loop cleanly for the first time -- that's what calls handle_pause_menu_dpad_navigation
+   with a real highlighted-item index. Real bytes recovered via a Ghidra
+   headless memory dump of the original binary at 0x86920 (8 rows x 7
+   columns, one row per menu state 0-7, one column per D-pad-navigable
+   list position 0-6): each nonzero byte is the widget-highlight value
+   update_pause_submenu_highlight's own 2nd argument expects for that slot (matches the
+   literal values each state's own draw function already passes it,
+   e.g. draw_pause_menu_main_list's `update_pause_submenu_highlight(6,6)`). */
+static const unsigned char g_menu_nav_highlight_table[8][7] = {
+  {  0,  24,  36,  34,  32,  30,   0 },
+  {  0,  24,  36,  34,  32,  30,   0 },
+  {  0,   0,  26,  22,  20,   0,   0 },
+  {  0,   0,  26,  22,  20,   0,   0 },
+  { 28,  44,  42,  40,  38,   0,   0 },
+  {  0,   0,   0,  59,  57,   0,   0 },
+  { 18,  16,  14,  12,  10,   8,   6 },
+  {  0,   0,   0, 111, 112, 116,  98 },
+};
+
+// was FUN_00056d6c -- D-pad/hotkey navigation for the pause menu:
+// param_1 0/2 move the row highlight up/down (consulting
+// g_menu_nav_highlight_table for the current state), 1/0x164 select
+// the current row, and the remaining magic codes (0x166/0x16d/0x171/
+// 0x172/0x173) are direct hotkeys for specific rows -- all funneled
+// into dispatch_pause_menu_click. NOTE: open_pause_menu_via_hotkey
+// calls this with no argument at all (a possible dropped-argument
+// bug of the same shape fixed elsewhere this session, but not
+// confirmed/fixed here -- see its own comment).
+void handle_pause_menu_dpad_navigation(param_1)
+short param_1;
+
+{
+  short sVar1;
+  int iVar2;
+  int iVar3;
+
+  if (param_1 < 0x167) {
+    if (param_1 == 0x166) {
+      iVar2 = 3;
+    }
+    else {
+      if (param_1 == 0) {
+        sVar1 = -1;
+LAB_00056ddc:
+        iVar3 = (int)DAT_002046f4;
+        iVar2 = (iVar3 + sVar1) * 0x10000 >> 0x10;
+        if (iVar2 < 0) {
+          return;
+        }
+        if (6 < iVar2) {
+          return;
+        }
+        if (g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2] == 0) {
+          return;
+        }
+        FUN_00057118();
+        update_pause_submenu_highlight(iVar3 + sVar1,(int)g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2]);
+        cursor_show_idle_tick();
+        return;
+      }
+      if (param_1 == 1) {
+        iVar2 = (int)DAT_002046f4;
+      }
+      else {
+        if (param_1 == 2) {
+          sVar1 = 1;
+          goto LAB_00056ddc;
+        }
+        if (param_1 != 0x164) {
+          return;
+        }
+        iVar2 = 2;
+      }
+    }
+  }
+  else if (param_1 == 0x16d) {
+    iVar2 = 4;
+  }
+  else if (param_1 == 0x171) {
+    iVar2 = 0;
+  }
+  else if (param_1 == 0x172) {
+    iVar2 = 5;
+  }
+  else {
+    if (param_1 != 0x173) {
+      return;
+    }
+    iVar2 = 6;
+  }
+  dispatch_pause_menu_click(iVar2);
+  return;
+}
+
+
+
+// was FUN_00056ebc -- opens the pause menu via a bound hotkey
+// (registered in game.c for several key codes): forces state 6 (top-
+// level list) and runs the modal loop. NOTE: the
+// `handle_pause_menu_dpad_navigation()` call just below passes no
+// argument despite that function taking one -- possibly the same
+// dropped-argument bug fixed several times elsewhere this session,
+// but not confirmed (single call site, and DAT_000868dc is already
+// forced to 6 directly above regardless of its effect) -- left
+// unfixed pending stronger evidence.
+void open_pause_menu_via_hotkey()
+
+{
+  if (g_cursor_holding_state == 0) {
+    DAT_002046fc = 1;
+    DAT_000868dc = 6;
+    handle_pause_menu_dpad_navigation();
+    run_pause_menu_modal_loop(DAT_000868dc == 6);
+    DAT_002046fc = 0;
+  }
+  else {
+    print_scroll_message_by_id(0xa0);
+  }
+  return;
+}
+
+
+
+undefined4 init_cursor_subsystem()
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  
+  DAT_00204710 = 0;
+  DAT_0020470c = 0;
+  DAT_00204830 = 0x13f;
+  DAT_00204834 = 199;
+  DAT_00204838 = DAT_0020471c + 0x35;
+  DAT_0020483c = DAT_0020471c + 0x16;
+  DAT_002047dc = DAT_0020471c + 0xdf;
+  DAT_002047d8 = DAT_0020471c + 0x83;
+  FUN_00057dc0(0x106c);
+  DAT_000889b8 = grtile_alloc_registered(0x28,0x28);
+  if (DAT_000889b8 == 0) {
+    uVar1 = 0xffffffff;
+  }
+  else {
+    iVar2 = 0;
+    DAT_000889bc = DAT_000889b8;
+    do {
+      (&DAT_002047b0)[iVar2] = 10000;
+      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    } while (iVar2 < 0x14);
+    uVar1 = 0;
+  }
+  return uVar1;
+}
+
+
+
+int FUN_00056fe8()
+
+{
+  int iVar1;
+  
+  iVar1 = 0;
+  if (getenv("UW_DEBUG_CURSORERASE")) {
+    fprintf(stderr, "[cursorerase] entry DAT_00204844=%d will_erase=%d depth=%d mouse=(%d,%d)\n",
+            (int)DAT_00204844, DAT_00204844 != 0, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
+  }
+  if (DAT_00204844 != 0) {
+    set_draw_color(0x15);
+    rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
+                 ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
+                 ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
+    /* REVERTED (was: force g_force_flush around this call, matching
+       draw_idle_mouse_cursor's own sibling wrapping) -- caused a visible flicker
+       regression: rect_fill_or_save_restore's own dirty_rect_union call
+       already records this erase's rect unconditionally, BEFORE any
+       gating, and the dirty rect only resets once per FRAME (not once
+       per hide/show pair, see flush_dirty_rect_to_display's own
+       comment) -- so the immediately-following paired show call
+       (draw_idle_mouse_cursor, called right after this from the same
+       hide-move-show cycle) already sweeps up this erase's rect into
+       its own forced flush. Forcing a flush HERE TOO just adds a
+       second, premature flush per cycle, visibly showing the
+       transient "erased, nothing redrawn yet" frame for one beat
+       before the very next flush corrects it -- a flicker on every
+       single cursor hide/show (i.e. constantly, since effectively
+       every draw op in this file wraps itself in this hide/show pair).
+       User confirmed this regression live.
+
+       STILL OPEN -- user report not yet actually fixed: dragging an
+       item onto a paperdoll spot with no slot leaves its icon
+       stamped there permanently, and clicking again stamps more.
+       Traced (via a temporary UW_DEBUG_CURSORERASE trace on this
+       function's own entry) to a real, reproducible sequence: during
+       an idle gap, an erase call here successfully clears
+       DAT_00204844 to 0 (correct so far), but the PAIRED redraw
+       (update_mouse_state's own `if (0 < DAT_00204840) draw_idle_mouse_cursor();`
+       right after its own call to this function) does not fire,
+       because DAT_00204840 (the show/hide nesting depth counter) is
+       <=0 at that exact moment -- so nothing gets marked to redraw,
+       and DAT_00204844 stays at 0 even though the game may still
+       consider the item "held" and expect the cursor icon to keep
+       following the mouse. Did NOT chase this further: WHY the depth
+       counter is <=0 at that specific point (some other hide() with
+       no matching show() yet pending?) is unknown, and a wrong guess
+       here risks a second regression the same way the force-flush
+       attempt above did. Ruled OUT as an explanation: handle_mouse_message's
+       WM_LBUTTONUP handler unconditionally zeroing DAT_00204844 (see
+       its own comment) -- adding an erase-before-clear there made no
+       observable difference in the same trace, and this project's own
+       inventory drag/drop convention uses the RIGHT mouse button
+       throughout anyway (gx_stub.c's uw_inject_mouse_rdown/rup), not
+       left, so that handler may not even be on the relevant path. */
+    flush_dirty_rect_to_display(1);
+    DAT_00204848 = 0;
+    iVar1 = DAT_00204844;
+  }
+  return iVar1;
+}
+
+
+
+/* Gates the 4 "always show the desktop mouse cursor" deviations below
+   (all originally gated shut on a real Pocket PC touchscreen, where a
+   persistent cursor sprite makes no sense). Defaults OFF: drawing the
+   cursor every idle frame forces a display flush every frame too (see
+   draw_idle_mouse_cursor's own LAB_00058674 tail), which measurably slowed the
+   game down when this was unconditionally on. Opt in with
+   UW_ALWAYS_SHOW_CURSOR=1 until that flush cost is addressed. */
+int uw_always_show_cursor(void)
+{
+  static int cached = -1;
+  if (cached < 0) {
+    cached = getenv("UW_ALWAYS_SHOW_CURSOR") != NULL;
+  }
+  return cached;
+}
+
+
+
+undefined4 cursor_show_idle_tick()
+
+{
+  int iVar1;
+  
+  iVar1 = (int)DAT_00204840;
+  DAT_00204840 = (short)(iVar1 + 1);
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, same as
+     draw_idle_mouse_cursor's own deviation comment): 0x106c is the real,
+     validly-loadable "default/no specific hotspot" cursor sprite (see
+     FUN_00057dc0), and the real binary deliberately suppresses drawing
+     THIS SPECIFIC sprite -- i.e. no persistent cursor over the plain
+     3D viewport/background, only over registered UI hotspots that set
+     their own distinct icon -- a touchscreen-native choice (no need to
+     draw your own finger/stylus a cursor). Skips the exclusion so the
+     desktop mouse cursor stays visible everywhere, including over the
+     main view, only when UW_ALWAYS_SHOW_CURSOR=1 (see
+     uw_always_show_cursor's own comment -- off by default, this forces
+     a display flush every idle frame). */
+  if ((iVar1 + 1) * 0x10000 >> 0x10 == 1) {
+    if ((DAT_00204788 != 0x106c) || uw_always_show_cursor()) {
+      draw_idle_mouse_cursor();
+    }
+  }
+  if (1 < DAT_00204840) {
+    DAT_00204840 = DAT_00204840 + -1;
+  }
+  return 0;
+}
+
+
