@@ -97,9 +97,21 @@ Run it with `ctest --test-dir build -R '^movement$' --output-on-failure`.
 
 `tests/test_inventory.c` exercises the real recursive object lookup and
 inventory widget lookup for a picked-up sack, its contents, nested containers,
-sibling links, absent objects, and quantity fields. Object links and widget
-slots are fixtures; no UI is needed.
+sibling links, absent objects, and quantity fields. It also loads the sack and
+key at level 1 tile (23,6) from `data/DATA/LEV.ARK` (required) and exercises
+the real object-description dispatcher and key helper, including mode gating
+and missing messages. The deferred-use regression arms the key prompt and
+clicks the real door at (22,5), checking callback identity, target forwarding,
+and cursor cleanup. Picking, range checks, and lock-action results are stubs.
+Object links, widget slots, and message output are
+fixtures; no UI is needed.
 Run it with `ctest --test-dir build -R '^inventory$' --output-on-failure`.
+
+`tests/test_traps.c` follows the real level-one orb at (58,13), near (57,13),
+to its linked text trap and checks that message `0x1201` reaches the scroll
+without pointer truncation. It also covers an absent message.
+`data/DATA/LEV.ARK` is required; message lookup and display are stubbed.
+Run it with `ctest --test-dir build -R '^traps$' --output-on-failure`.
 
 Game functions remain in their original files. For the larger modules,
 `tests/tools/extract_functions.py` generates test-only translation units in

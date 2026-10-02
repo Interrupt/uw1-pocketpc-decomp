@@ -1120,7 +1120,7 @@ int param_2;
 // 0x3f) as the combination parameter, reporting the result via
 // message id (result+2).
 void complete_use_item_on_player(param_1,param_2)
-undefined4 param_1;
+ushort *param_1;
 int param_2;
 
 {
@@ -1180,19 +1180,18 @@ int param_2;
 // complete_use_item_on_player above for two such callbacks).
 void prompt_use_item_on_target(param_1,param_2)
 ushort * param_1;
-undefined4 param_2;
+code *param_2;
 
 {
-  char *wptr_58645;
   char cVar1;
   short sVar2;
   char *pcVar3;
   int iVar4;
-  char acStack_87920 [555244];
   char acStack_34 [40];
   
   pcVar3 = &DAT_000878ec;
-    wptr_58645 = acStack_87920;
+  /* ARM 0x7a000..0x7a020 copies the prefix into the same 40-byte buffer. */
+  char *wptr_58645 = acStack_34;
   do {
     cVar1 = *pcVar3;
     *wptr_58645 = cVar1; wptr_58645 = wptr_58645 + 1;
@@ -1209,6 +1208,7 @@ undefined4 param_2;
   g_selected_object = param_1;
   g_cursor_holding_state = 2;
   DAT_00202098 = param_1;
+  /* ARM 0x79ffc/0x7a004/0x7a0a4 preserves and stores the callback pointer. */
   DAT_002020b8 = param_2;
   return;
 }

@@ -181,8 +181,18 @@ if(BUILD_TESTING)
     src/player.c:commit_player_move src/movement.c:sweep_init_position
     src/objects.c:resolve_object_link uw.c:FUN_0005aea0 uw.c:FUN_0005b010)
   target_sources(test_movement PRIVATE src/debug.c)
+  add_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
+  target_compile_definitions(test_traps PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(inventory
-    uw.c:FUN_00053644 uw.c:find_or_assign_object_widget)
+    uw.c:FUN_00053644 uw.c:find_or_assign_object_widget
+    uw.c:FUN_000495d0 uw.c:FUN_000493cc
+    src/item_use.c:arm_use_item_on_player_prompt
+    src/item_use.c:prompt_use_item_on_target
+    src/item_use.c:complete_use_item_on_player
+    src/game.c:handle_game_view_click)
+  target_compile_definitions(test_inventory PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   target_compile_definitions(test_movement PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   target_compile_options(test_movement PRIVATE

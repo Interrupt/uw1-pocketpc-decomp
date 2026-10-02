@@ -13377,24 +13377,27 @@ short param_2;
 
 
 
+/* Key description: ARM 0x493f4..0x493fc passes the returned string to the printer. */
 void FUN_000493cc(param_1,param_2)
-int param_1;
+ushort *param_1;
 short param_2;
 
 {
-  int iVar1;
+  char *iVar1;
   
   if ((param_2 != 0) &&
-     (iVar1 = get_message_string((*(byte *)(param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
-    message_scroll_print_wrapped();
+     (iVar1 = get_message_string((*((byte *)param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
+    message_scroll_print_wrapped(iVar1);
   }
   return;
 }
 
 
 
-void FUN_000495d0(param_1)
+/* Object description dispatch: ARM 0x495d0..0x496a8 forwards both r0 and r1. */
+void FUN_000495d0(param_1,param_2)
 ushort * param_1;
+short param_2;
 
 {
   ushort uVar1;
@@ -13407,16 +13410,16 @@ ushort * param_1;
   if (uVar2 == 3) {
     if (uVar3 == 0) {
       if ((0xc1 < (uVar1 & 0x1ff)) && ((uVar1 & 0x1ff) < 199)) {
-        FUN_000492bc();
+        FUN_000492bc(param_1,param_2);
       }
     }
   }
   else if (uVar2 == 4) {
     if (uVar3 == 3) {
-      FUN_00048e8c();
+      FUN_00048e8c(param_1,param_2);
     }
     else if (uVar3 == 0) {
-      FUN_000493cc();
+      FUN_000493cc(param_1,param_2);
     }
   }
   else if (((uVar2 == 5) && (uVar3 == 0)) && ((uVar1 & 0xf) < 8)) {
