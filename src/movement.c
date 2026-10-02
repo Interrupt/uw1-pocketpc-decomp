@@ -2508,3 +2508,19 @@ short param_1;
   }
   return uVar1;
 }
+
+
+// was LAB_0002bbe4 -- the "mobile object" collision-response callback
+// (slot 2, DAT_002049a8), used by mobile_object_tick for generic
+// mobile/projectile objects. Ghidra couldn't resolve this address from
+// its own indirect-jump/jumptable call site, but a direct Ghidra
+// headless lookup by address (0x2bbe4) DOES decompile it: `undefined4
+// FUN_0002bbe4(void) { return 0; }` -- confirmed via disassembly that
+// this genuinely IS a no-op in the real binary too (generic
+// mobile/projectile objects get no special collision response), not a
+// "Ghidra gave up" placeholder. Kept as-is; not a bug.
+undefined4 collision_response_mobile_object()
+
+{
+  return 0;
+}
