@@ -23,6 +23,28 @@
       139, settle_mobile_to_immobile), unaffected -- different subsystem,
       as expected. Still open.
 
+## Fixed this round (code-cleanup-first-pass, audio.c MOD-loader container batch)
+- [x] `init_mod_pattern_array` (was `FUN_0004fd68`) was called with zero
+      arguments (`FUN_0004fd68();`) despite taking one parameter --
+      the only call site, in the MOD module loader, had just assigned
+      the exact struct address this constructor should initialize to
+      `local_334` on the line above. Called with no argument, the
+      function read garbage for its own `param_1` and wrote its
+      construct pattern (tag bytes + zeroed array header) through it
+      -- a wild write. Same dropped-argument idiom confirmed several
+      times this session (e.g. `init_sound_channel_slot` in pass 383).
+      Fixed by passing `local_334` explicitly. 19/19 regression
+      scripts clean.
+- Noted but NOT fixed (same shape, lower confidence pending a closer
+  look next pass): `FUN_00050768` calls `FUN_000506a8();` with zero
+  arguments despite `FUN_000506a8` taking one parameter -- structurally
+  identical to the bug above (a "scalar deleting destructor"-shaped
+  wrapper that should forward its own `param_1` to the inner
+  destructor). Single call site so far, consistent with the confirmed
+  bug's shape, but not yet cross-checked against the full container-
+  template cluster (`FUN_00050678`/`FUN_00050718`/`FUN_0005078c`/
+  `FUN_000507b8` and neighbors) before fixing.
+
 ## Fixed this round (code-cleanup-first-pass, babl.c extraction batch)
 - [x] `change_game_mode` / its sibling exit-mode dispatcher (~uw.c:27610/
       27760) silently ran a disabled/-1 mode's table dispatch as if it

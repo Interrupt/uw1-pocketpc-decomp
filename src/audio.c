@@ -1694,7 +1694,14 @@ undefined4 param_4;
   Ordinal_181(param_1 + 0x104d8);
   init_mod_dynamic_array(param_1 + 0x104e0);
   local_334 = param_1 + 0x104f4;
-  FUN_0004fd68();
+  /* BUG FIX: was `init_mod_pattern_array();` -- a dropped argument. The
+     function takes exactly one parameter (the array header to
+     construct) and local_334, just assigned above to this exact
+     struct's address, is the only value in scope this could mean --
+     same idiom as every other dropped-argument fix this session.
+     Called with no argument, the original read garbage for param_1
+     and wrote the construct pattern through it -- a wild write. */
+  init_mod_pattern_array(local_334);
   FUN_0004ffb8(param_1 + 0x10508);
   FUN_00050208(param_1 + 0x10520);
   init_mod_dynamic_array(param_1 + 0x10558);
@@ -1883,7 +1890,7 @@ LAB_0004c038:
   } while (iVar11 < 0x200);
   iVar3 = iVar3 + 1;
   local_340 = local_340 + 5;
-  FUN_0004fda4(local_334,iVar3,0xffffffff);
+  resize_mod_pattern_array(local_334,iVar3,0xffffffff);
   if (0 < iVar3) {
     piVar13 = (int *)(param_1 + 0x104f8);
     iVar4 = 0;
@@ -2036,12 +2043,12 @@ undefined1 * param_1;
   if (*(int *)(param_1 + 0x10554) != 0) {
     stop_mod_player_playback(param_1);
   }
-  FUN_0004fc64(param_1 + 0x1056c);
-  FUN_0004fc64(param_1 + 0x10558);
+  destroy_mod_dynamic_array(param_1 + 0x1056c);
+  destroy_mod_dynamic_array(param_1 + 0x10558);
   FUN_00050370(param_1 + 0x10520);
   FUN_00050148(param_1 + 0x10508);
   FUN_0004fef8(param_1 + 0x104f4);
-  FUN_0004fc64(param_1 + 0x104e0);
+  destroy_mod_dynamic_array(param_1 + 0x104e0);
   Ordinal_297(param_1 + 0x104d8);
   return;
 }
@@ -2458,8 +2465,8 @@ int param_1;
     Ordinal_386(*puVar12,puVar5,0x20);
     Ordinal_1094(*(undefined4 *)(puVar4 + 4));
   }
-  FUN_0004fc64(auStack_94);
-  FUN_0004fc64(auStack_7c);
+  destroy_mod_dynamic_array(auStack_94);
+  destroy_mod_dynamic_array(auStack_7c);
   return iVar8 == 0;
 }
 
@@ -3904,6 +3911,203 @@ int param_3;
   }
   *(int *)(param_1 + 0xc) = param_2;
 LAB_0004fc58:
+  *(int *)(param_1 + 8) = param_2;
+  return;
+}
+
+
+// was FUN_0004fc64 -- destroys one dynamic-array instance: frees its
+// data buffer (if allocated) and resets it to the empty/closed tag
+// state. Called directly on the same three per-player struct fields
+// (+0x104e0/+0x10558/+0x1056c) that init_mod_dynamic_array constructs
+// and resize_mod_int_array grows -- the matching destructor for that
+// lifecycle.
+void destroy_mod_dynamic_array(param_1)
+undefined1 * param_1;
+
+{
+  *param_1 = 8;
+  param_1[1] = 0x30;
+  param_1[2] = 8;
+  param_1[3] = 0;
+  if (*(int *)(param_1 + 4) != 0) {
+    Ordinal_1094();
+  }
+  *param_1 = 0x20;
+  param_1[1] = 0x30;
+  param_1[2] = 8;
+  param_1[3] = 0;
+  return;
+}
+
+
+
+// was FUN_0004fcd4 -- resets a dynamic-array instance to its empty/
+// closed tag state (without touching/freeing its data buffer) and,
+// if param_2's low bit is set, frees the struct itself -- the MSVC-
+// style "scalar deleting destructor" shape seen throughout this
+// templated container cluster (cf. destroy_mod_dynamic_array, the
+// plain in-place destructor for the same struct type).
+undefined1 *reset_mod_dynamic_array_and_maybe_free(param_1,param_2)
+undefined1 * param_1;
+uint param_2;
+
+{
+  *param_1 = 0x20;
+  param_1[1] = 0x30;
+  param_1[2] = 8;
+  param_1[3] = 0;
+  if ((param_2 & 1) != 0) {
+    Ordinal_1094(param_1);
+  }
+  return param_1;
+}
+
+
+
+// was FUN_0004fd18 -- MFC CArchive-style serialize for a
+// resize_mod_int_array-managed array: param_2's +0x14 bit 0 matches
+// CArchive::IsLoading()'s flag convention. Loading reads a count
+// (Ordinal_2142) and resizes the array to it; storing writes the
+// element count then the raw int data (Ordinal_2135).
+void serialize_mod_int_array(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  undefined4 uVar1;
+  uint uVar2;
+  undefined4 unaff_lr;
+
+  if ((*(uint *)(param_2 + 0x14) & 1) == 0) {
+    Ordinal_2588(param_2,*(undefined4 *)(param_1 + 8));
+  }
+  else {
+    uVar1 = Ordinal_2142(param_2);
+    resize_mod_int_array(param_1,uVar1,0xffffffff);
+  }
+  uVar2 = *(uint *)(param_2 + 0x14) & 1;
+  if (uVar2 == 0) {
+    Ordinal_2582();
+  }
+  else {
+    Ordinal_2135(param_2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 2,uVar2,unaff_lr);
+  }
+  return;
+}
+
+
+
+// was FUN_0004fd68 -- constructs the top-level "array of patterns"
+// header in place (tag 0x38, zeroed count/capacity/growth-hint).
+// Confirmed by its sole call site (the MOD loader, which stores the
+// struct's address in local_334 and immediately after resizes it via
+// resize_mod_pattern_array and indexes its data pointer to grow each
+// individual pattern's own row array via resize_mod_pattern_row_array)
+// -- each element of this array is itself a nested dynamic-array
+// header for one pattern's rows.
+void init_mod_pattern_array(param_1)
+undefined1 * param_1;
+
+{
+  *param_1 = 0x38;
+  param_1[1] = 0x30;
+  *(undefined4 *)(param_1 + 4) = 0;
+  *(undefined4 *)(param_1 + 0x10) = 0;
+  param_1[2] = 8;
+  *(undefined4 *)(param_1 + 0xc) = 0;
+  *(undefined4 *)(param_1 + 8) = 0;
+  param_1[3] = 0;
+  return;
+}
+
+
+
+// was FUN_0004fda4 -- resizes the top-level "array of patterns":
+// each 20-byte element is itself a nested resize_mod_pattern_row_array-
+// style header for one pattern's rows, constructed/destroyed via
+// FUN_00050678/the still-unnamed per-element helpers one level down
+// (next pass). The matching constructor is init_mod_pattern_array.
+void resize_mod_pattern_array(param_1,param_2,param_3)
+int param_1;
+int param_2;
+int param_3;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  bool bVar5;
+  bool bVar6;
+
+  if (param_3 != -1) {
+    *(int *)(param_1 + 0x10) = param_3;
+  }
+  if (param_2 == 0) {
+    param_2 = 0;
+    if (*(int *)(param_1 + 4) != 0) {
+      FUN_00050678(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
+      Ordinal_1094(*(undefined4 *)(param_1 + 4));
+      *(undefined4 *)(param_1 + 4) = 0;
+    }
+  }
+  else {
+    iVar4 = *(int *)(param_1 + 4);
+    if (iVar4 != 0) {
+      if (*(int *)(param_1 + 0xc) < param_2) {
+        iVar4 = *(int *)(param_1 + 0x10);
+        if (*(int *)(param_1 + 0x10) == 0) {
+          iVar4 = *(int *)(param_1 + 8);
+          if (iVar4 < 0) {
+            iVar4 = iVar4 + 7;
+          }
+          iVar4 = iVar4 >> 3;
+          bVar6 = SBORROW4(iVar4,4);
+          iVar2 = iVar4 + -4;
+          bVar5 = iVar4 == 4;
+          if (iVar4 < 4) {
+            iVar4 = 4;
+            iVar3 = param_2;
+          }
+          else {
+            iVar3 = 0x400;
+            bVar6 = SBORROW4(iVar4,0x400);
+            iVar2 = iVar4 + -0x400;
+            bVar5 = iVar4 == 0x400;
+          }
+          if (!bVar5 && iVar2 < 0 == bVar6) {
+            iVar4 = iVar3;
+          }
+        }
+        iVar4 = *(int *)(param_1 + 0xc) + iVar4;
+        if (iVar4 <= param_2) {
+          iVar4 = param_2;
+        }
+        iVar2 = Ordinal_1095(iVar4 * 0x14);
+        Ordinal_1044(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x14);
+        FUN_000507b8(*(int *)(param_1 + 8) * 0x14 + iVar2,param_2 - *(int *)(param_1 + 8));
+        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        *(int *)(param_1 + 4) = iVar2;
+        *(int *)(param_1 + 0xc) = iVar4;
+      }
+      else {
+        iVar2 = *(int *)(param_1 + 8);
+        if (iVar2 < param_2) {
+          FUN_000507b8(iVar2 * 0x14 + iVar4,param_2 - iVar2);
+        }
+        else if (param_2 < iVar2) {
+          FUN_00050678(param_2 * 0x14 + iVar4,iVar2 - param_2);
+        }
+      }
+      goto LAB_0004fef0;
+    }
+    uVar1 = Ordinal_1095(param_2 * 0x14);
+    *(undefined4 *)(param_1 + 4) = uVar1;
+    FUN_000507b8(uVar1,param_2);
+  }
+  *(int *)(param_1 + 0xc) = param_2;
+LAB_0004fef0:
   *(int *)(param_1 + 8) = param_2;
   return;
 }
