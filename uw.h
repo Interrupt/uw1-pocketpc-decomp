@@ -673,7 +673,8 @@ extern undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb880 DAT_000fb880_backing[0]
 #define DAT_000fb884 (((undefined1 *)DAT_000fb880_backing)[4])
 #define DAT_000fb898 (((int *)DAT_000fb880_backing)[6])
-extern undefined DAT_000fb863;
+/* Fourth byte of each loaded class row is its attribute bonus pool. */
+#define DAT_000fb863 DAT_000fb860_backing[3]
 extern char s_key_to_continue_00084e60[];
 extern char s_then_press_the_Enter_00084e70[];
 extern char s_Enter_your_name_and_00084e88[];
@@ -1164,7 +1165,7 @@ extern undefined1 DAT_00202800_backing[65536];
 extern undefined DAT_00202878;
 extern unsigned char DAT_00084eff_backing[12];
 #define DAT_00084eff DAT_00084eff_backing[0]
-extern undefined4 DAT_002046b4;
+extern ushort *DAT_002046b4;
 extern char s_on_what__000878e0[];
 extern undefined1 DAT_000878ec_backing[32768];
 #define DAT_000878ec DAT_000878ec_backing[0]
@@ -1576,12 +1577,15 @@ extern short DAT_0010061c;
 extern short DAT_00100608;
 extern byte DAT_00100628;
 extern undefined4 DAT_001005d8;
-extern undefined DAT_001007d8;
+/* Monster effect flags at offset 8 of each loaded 0x30-byte record. */
+#define DAT_001007d8 DAT_001007d0_backing[8]
 extern byte DAT_001005fc;
-extern char DAT_00084f1c;
+extern char DAT_00084f18_backing[5];
+#define DAT_00084f18 DAT_00084f18_backing[0]
+#define DAT_00084f1c DAT_00084f18_backing[4]
 extern undefined DAT_001007e0;
 extern undefined DAT_001007e1;
-extern undefined DAT_001007f8;
+#define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
 extern char s__DATA_cmb_dat_00084f40[];
 extern undefined2 DAT_00100630_backing[32768];
 #define DAT_00100630 DAT_00100630_backing[0]
@@ -1835,13 +1839,27 @@ extern undefined1 DAT_0023c698_backing[32768];
 #define DAT_0023c698 DAT_0023c698_backing[0]
 extern undefined1 DAT_00101968_backing[8192]; // babl render-text scratch buffer (message-format/filename reuse)
 #define DAT_00101968 DAT_00101968_backing[0]
-extern undefined1 DAT_00085448_backing[32768]; // render_babl_dialog_window's own local text-scratch buffer, copied into its huge stack buffer
-extern undefined1 DAT_00085460_backing[32768]; // record_illustration_discovery_and_display's own local scratch buffer
+extern undefined1 DAT_00085448_backing[11]; // Original cutscene filename template, including its terminator
+extern undefined1 DAT_00085460_backing[11]; // Original discovery-script filename template
+extern char s__DATA_grave_dat_00085cf8[];
 #define DAT_00085460 DAT_00085460_backing[0]
 #define DAT_00085448 DAT_00085448_backing[0]
 extern ushort DAT_00101a6c;
-extern undefined4 DAT_00101a70;
-extern undefined *PTR_FUN_00085408;
+extern uintptr_t DAT_00101a70;
+extern codeval *const PTR_FUN_00085408[16];
+undefined4 FUN_000362e8();
+undefined4 FUN_00036300();
+undefined4 FUN_00036308();
+undefined4 FUN_00036344();
+undefined4 FUN_00036394();
+undefined4 FUN_000363f0();
+undefined4 FUN_00036404();
+undefined4 FUN_00036418();
+undefined4 FUN_000365bc();
+undefined4 FUN_000365fc();
+undefined4 FUN_0003663c();
+undefined4 FUN_00036698();
+
 extern HWND__ *DAT_0023c548;
 extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[];
 extern char s__Program_Files_ZIO_Interactive_U_00087804[];
@@ -2110,22 +2128,30 @@ extern unsigned char DAT_00084f0b_backing[5];
 extern char *DAT_002046b8;
 extern undefined2 DAT_00100600;
 extern ushort DAT_00100604;
+/* Six-byte collision candidates: top, bottom, packed link, tile offset.
+ * Ghidra split overlapping fields (and next-record sort views) into globals. */
 extern undefined1 DAT_00202c38_backing[8192];
 #define DAT_00202c38 DAT_00202c38_backing[0]
-extern undefined1 DAT_00202c39_backing[8192];
-#define DAT_00202c39 DAT_00202c39_backing[0]
-extern undefined1 DAT_00202c3a_backing[8192];
-#define DAT_00202c3a DAT_00202c3a_backing[0]
-extern undefined1 DAT_00202c3b_backing[8192];
-#define DAT_00202c3b DAT_00202c3b_backing[0]
-extern undefined1 DAT_00202c3c_backing[65536];
-#define DAT_00202c3c DAT_00202c3c_backing[0]
-extern undefined1 DAT_00202c3d_backing[8192];
-#define DAT_00202c3d DAT_00202c3d_backing[0]
-extern undefined1 DAT_00202c3e_backing[8192];
-#define DAT_00202c3e DAT_00202c3e_backing[0]
-extern undefined1 DAT_00202c3f_backing[8192];
-#define DAT_00202c3f DAT_00202c3f_backing[0]
+/* BUG FIX (unit-testing-framework merge): this branch's own history had
+   drifted into giving DAT_00202c39..3f each their OWN independent
+   backing array -- but every real use (uw.c's
+   `(&DAT_00202c38)[i*6]`/`(&DAT_00202c3a)[i*6]`/`&DAT_00202c3c + i*6`
+   address arithmetic) treats them as 8 adjacent byte-offsets WITHIN
+   ONE combined per-candidate record array, not 8 separate arrays --
+   confirmed by the unit-testing-framework branch independently finding
+   the same thing. Aliasing them back onto DAT_00202c38_backing (as
+   this branch's own DAT_00086998-family fields already do for a
+   similar multi-field record elsewhere in this file) is the correct
+   fix; the previous independent-array version let &DAT_00202c3a + i*6
+   arithmetic silently walk into unrelated heap memory instead of the
+   intended adjacent record. */
+#define DAT_00202c39 DAT_00202c38_backing[1]
+#define DAT_00202c3a DAT_00202c38_backing[2]
+#define DAT_00202c3b DAT_00202c38_backing[3]
+#define DAT_00202c3c DAT_00202c38_backing[4]
+#define DAT_00202c3d DAT_00202c38_backing[5]
+#define DAT_00202c3e DAT_00202c38_backing[6]
+#define DAT_00202c3f DAT_00202c38_backing[7]
 extern int DAT_00204870;
 extern char * DAT_00204874;
 extern undefined4 DAT_00204878;
@@ -2144,10 +2170,12 @@ extern short * g_sweep_velocity;
 #define DAT_0008699a  (DAT_00086998_backing[2])
 #define DAT_0008699b  (DAT_00086998_backing[3])
 #define DAT_0008699f  (DAT_00086998_backing[7])
+#define DAT_000869a0 (DAT_00086998_backing[8])
 #define DAT_000869a1  (DAT_00086998_backing[9])
 #define DAT_000869a2  (DAT_00086998_backing[10])
 #define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
 #define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
+#define DAT_002049cc (*(short *)(DAT_002049c8_backing + 0x04))
 #define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
 #define DAT_002049d0 (DAT_002049c8_backing[0x08])
 #define DAT_002049d1 (DAT_002049c8_backing[0x09])
@@ -2403,6 +2431,9 @@ extern undefined2 DAT_00204830;
 extern undefined2 DAT_00204834;
 extern short DAT_00204840;
 extern short DAT_00204850;
+extern int DAT_0020484c;
+extern undefined4 DAT_00204868;
+extern char DAT_002506aa;
 extern int DAT_0020485c;
 extern int DAT_00204864;
 extern short DAT_0023bf48;
@@ -2673,7 +2704,6 @@ extern int g_force_redraw_no_xp;
 extern undefined1 g_msg_scroll_panel_state_backing[65536];
 #define g_msg_scroll_panel_state g_msg_scroll_panel_state_backing[0]
 extern undefined4 g_scroll_control_codes_enabled;
-extern int g_suppress_frame_timed_flush;
 extern unsigned int g_uw_frame_clock_units;
 extern char PTR_DAT_00087198_arr[16];
 #define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
@@ -3069,13 +3099,13 @@ uint character_generator_touch_select();
 uint wait_for_chargen_field_input();
 void palette_cycle_range();
 undefined4 resolve_combat_hit_zone();
-int find_nearest_hit_target();
+int find_nearest_hit_target(short *param_1);
 void spawn_blood_splat_object();
 undefined4 resolve_melee_swing_hit();
 int resolve_weapon_hit_skill_check();
 void apply_melee_damage();
 undefined4 play_weapon_impact_sound();
-void compute_attack_relative_facing();
+void compute_attack_relative_facing(void);
 undefined4 process_melee_attack_swing();
 int find_and_consume_ammo();
 undefined4 resolve_equipped_weapon_attack();
@@ -3176,8 +3206,8 @@ undefined4 check_npc_morale_flee();
 int compute_pathfind_search_radius();
 void npc_set_goal();
 void npc_clear_special_goal();
-undefined4 initiate_npc_death();
-undefined4 handle_monster_death();
+undefined4 initiate_npc_death(char *param_1);
+undefined4 handle_monster_death(char *param_1);
 undefined4 apply_damage_to_object();
 undefined4 object_tick_is_due(); // was FUN_0003495c
 void tick_mobile_objects(); // was FUN_000349bc
@@ -3596,7 +3626,7 @@ void unlink_and_free_object();
 void *resolve_object_link();
 int encode_object_slot_index();
 void *get_object_record_by_slot_index();
-int find_object_by_encoded_slot_in_chain();
+ushort *find_object_by_encoded_slot_in_chain();
 undefined4 object_ptr_in_arena();
 void active_mobile_list_add();
 void active_mobile_list_remove();
@@ -3608,7 +3638,7 @@ void update_player_tick_effects();
 undefined4 decay_equipped_light_sources();
 void apply_drowning_hazard();
 undefined4 add_active_light_source();
-undefined4 apply_object_collision_scatter();
+undefined4 apply_object_collision_scatter(ushort *param_1, ushort *param_2);
 void apply_trap_type_damage_effect();
 undefined4 resolve_collision_candidate_interaction();
 void build_object_placement_snapshot(); // was FUN_00054a00
@@ -3694,8 +3724,8 @@ undefined4 sweep_step();
 uint collision_flags_to_locomotion_code();
 uint sweep_collision_flags();
 void sweep_apply_collision();
-undefined4 find_nearby_door_in_candidates();
-undefined4 get_first_nearby_candidate_object();
+void *find_nearby_door_in_candidates();
+void *get_first_nearby_candidate_object();
 undefined4 reset_texture_id_lists();
 bool load_level_texture_ids();
 undefined4 write_level_quest_flags_to_archive();
@@ -3998,9 +4028,9 @@ ushort *use_object_on_target();
 bool finish_object_use();
 short *begin_holding_object_on_cursor();
 void complete_use_reagent_on_player();
-void complete_use_item_on_player();
+void complete_use_item_on_player(ushort *param_1, int param_2);
 void arm_use_item_on_player_prompt();
-void prompt_use_item_on_target();
+void prompt_use_item_on_target(ushort *param_1, code *param_2);
 void complete_use_item_on_special_target();
 void arm_use_item_on_special_target_prompt();
 void complete_use_item_on_quest_target();

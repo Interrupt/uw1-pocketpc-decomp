@@ -6233,9 +6233,9 @@ int babl_builtin_ask()
 // the babl conversation-rendering loop, sorting subtitle/voice-timing
 // entries into playback order.
 void bubble_sort_indices_by_key_table(param_1,param_2,param_3)
-int param_1;
+intptr_t param_1;
 uint param_2;
-int param_3;
+intptr_t param_3;
 
 {
   byte bVar1;
@@ -6279,6 +6279,143 @@ int param_3;
   return;
 }
 
+
+/* Missing render opcodes recovered directly from the ARM functions at
+   their named addresses. The window script uses 11 (show at frame),
+   3 (wait for click), and 6 (finish); these table entries were absent. */
+undefined4 FUN_000362e8(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  *(short *)(param_2 + 0x35) = 0;
+  return 0;
+}
+
+undefined4 FUN_00036300(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  return 2;
+}
+
+undefined4 FUN_00036308(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  if (*(byte *)(param_2 + 0x45) & 1) {
+    *(byte *)(param_2 + 0x45) &= 0xfd;
+    *(ushort *)(param_2 + 0x39) = param_1[-2];
+    *(ushort *)(param_2 + 0x3b) = param_1[0];
+  }
+  return 1;
+}
+
+undefined4 FUN_00036344(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  if (*(byte *)(param_2 + 0x45) & 1) {
+    byte flags = *(byte *)(param_2 + 0x45) & 0xfd;
+    *(ushort *)(param_2 + 0x39) = param_1[-2];
+    if (flags & 0x20) flags |= 0x80;
+    *(byte *)(param_2 + 0x45) = flags;
+    *(ushort *)(param_2 + 0x3b) = param_1[(flags & 0x20) ? 1 : 0];
+  }
+  return 2;
+}
+
+undefined4 FUN_00036394(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  if (*(byte *)(param_2 + 0x45) & 1) {
+    byte flags = *(byte *)(param_2 + 0x45) & 0xfd;
+    *(byte *)(param_2 + 0x45) = flags;
+    *(ushort *)(param_2 + 0x37) = param_1[0];
+    if (!(flags & 0x20)) {
+      *(ushort *)(param_2 + 0x3b) = param_1[1];
+      *(ushort *)(param_2 + 0x39) = param_1[0] - 1;
+    }
+  }
+  return 2;
+}
+
+undefined4 FUN_000363f0(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  *(byte *)(param_2 + 0x45) &= 0xfb;
+  return 1;
+}
+
+undefined4 FUN_00036404(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  *(byte *)(param_2 + 0x45) &= 0xf3;
+  return 0;
+}
+
+undefined4 FUN_00036418(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  *(ushort *)(param_2 + 0x3d) = param_1[0];
+  *(ushort *)(param_2 + 0x37) = param_1[-2] + 1;
+  *(ushort *)(param_2 + 0x39) = 0;
+  *(byte *)(param_2 + 0x45) &= 0xfd;
+  return 1;
+}
+
+undefined4 FUN_000365bc(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  if (*(byte *)(param_2 + 0x17) == 0 && *(short *)(param_2 + 0x43) > -2)
+    *(short *)(param_2 + 0x43) = (short)param_1[0];
+  return 1;
+}
+
+undefined4 FUN_000365fc(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  if (*(byte *)(param_2 + 0x17) == 0 && *(short *)(param_2 + 0x41) > -2)
+    *(short *)(param_2 + 0x41) = (short)param_1[0];
+  return 1;
+}
+
+undefined4 FUN_0003663c(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  if (param_1[-2] != param_1[0] - 1) {
+    *(ushort *)(param_2 + 0x37) = param_1[0] - 1;
+    *(ushort *)(param_2 + 0x39) = 0;
+    *(ushort *)(param_2 + 0x3b) = 0;
+    *(byte *)(param_2 + 0x45) = (*(byte *)(param_2 + 0x45) & 0xfe) | 2;
+  }
+  return 1;
+}
+
+undefined4 FUN_00036698(param_1,param_2)
+ushort *param_1;
+intptr_t param_2;
+
+{
+  return 1;
+}
 
 // was FUN_000360f4 -- babl conversation-text render opcode handler
 // (see PTR_FUN_00085408's own comment): if the render state's flag
@@ -6406,7 +6543,7 @@ int param_2;
 // puzzle answer are plausible). Returns 2.
 undefined4 babl_render_op_show_code(param_1,param_2)
 ushort * param_1;
-int param_2;
+intptr_t param_2;
 
 {
   char cVar1;
@@ -6445,8 +6582,8 @@ int param_2;
 // voice-sample id (0xffff, "none") and the 0x20 flag before still
 // delegating to babl_render_op_wrap_message. Returns 3.
 undefined4 babl_render_op_say(param_1,param_2)
-int param_1;
-int param_2;
+intptr_t param_1;
+intptr_t param_2;
 
 {
   undefined2 uVar1;
@@ -6496,7 +6633,7 @@ undefined4 babl_render_op_play_sound()
 // and has finished (is_voice_sample_finished), clears the voice
 // fields back to "none".
 void babl_render_tick(param_1)
-int param_1;
+intptr_t param_1;
 
 {
   int iVar1;
@@ -6543,6 +6680,9 @@ short param_5;
 
 {
   char *wptr_21485;
+  /* WinCE obtained this directory from the registry. Its host stub leaves
+     it empty; resources live in CUTS under UW_DATA_DIR. */
+  const char *cutscene_directory = DAT_0023c698 ? (char *)&DAT_0023c698 : "\\CUTS";
   ushort *puVar1;
   ushort uVar2;
   bool bVar3;
@@ -6551,84 +6691,73 @@ short param_5;
   short sVar6;
   ushort uVar7;
   char *pcVar8;
-  int iVar9;
-  int iVar10;
+  intptr_t iVar9;
+  intptr_t iVar10;
   ushort *puVar11;
-  int iVar12;
+  intptr_t iVar12;
   int iVar13;
-  uint uVar14;
+  uintptr_t uVar14;
   undefined4 uVar15;
-  uint uVar16;
-  int *piVar17;
+  uintptr_t uVar16;
+  intptr_t *piVar17;
   uint uVar18;
   uint extraout_r3;
   int iVar19;
   short sVar20;
   ushort *puVar21;
   ushort *puVar22;
-  int *piVar23;
-  char acStackY_85518 [545832];
-  int in_stack_ffffff10;
+  intptr_t *piVar23;
+  intptr_t in_stack_ffffff10;
   undefined2 uVar24;
   byte local_d8;
-  /* acStack_d0 (only 4 bytes declared) is used as an Ordinal_1063
-     (strcat) *source* string built from single-char digit writes at
-     what Ghidra treated as separate locals (local_cc/local_cb/local_c8/
-     local_c7, each the next byte after acStack_d0's declared end) plus
-     no declared/visible null terminator -- so strcat read past the
-     declared 4-byte array looking for one, into whatever garbage
-     followed on the stack (confirmed via ASAN stack-buffer-overflow).
-     Same "Ghidra split a wider access into separate stack locals"
-     pattern as auStack_124 elsewhere in this file, but wider (5+ chars)
-     and missing its terminator entirely rather than just being
-     undersized. Widened directly and folded local_cc/local_cb/local_c8/
-     local_c7 into indexed writes into it (see their old declaration
-     sites below, now removed) with an explicit '\0' added at the end. */
-  char acStack_d0 [10];
-  short local_c1;
-  short local_bf;
-  short local_bd;
-  short local_bb;
-  char local_b9;
-  int local_b8;
-  undefined4 local_b4;
-  undefined1 local_9c;
-  short local_9b;
-  ushort local_99;
-  ushort local_97;
-  ushort local_95;
-  short local_93;
-  short local_91;
-  short local_8f;
-  short local_8d;
-  byte local_8b;
-  uint local_88;
+  /* ARM 0x36774 builds one state at sp+0x20. The callbacks access
+     fields through that pointer; keep the decompiled locals as aliases. */
+  union { short alignment; char bytes[70]; } render_state = {0};
+#define acStack_d0 render_state.bytes
+#define local_c1 (*((short *)(acStack_d0 + 15)))
+#define local_bf (*((short *)(acStack_d0 + 17)))
+#define local_bd (*((short *)(acStack_d0 + 19)))
+#define local_bb (*((short *)(acStack_d0 + 21)))
+#define local_b9 (*((char *)(acStack_d0 + 23)))
+  intptr_t local_b8;
+#define local_b4 (*((undefined4 *)(acStack_d0 + 28)))
+#define local_9c (*((undefined1 *)(acStack_d0 + 52)))
+#define local_9b (*((short *)(acStack_d0 + 53)))
+#define local_99 (*((ushort *)(acStack_d0 + 55)))
+#define local_97 (*((ushort *)(acStack_d0 + 57)))
+#define local_95 (*((ushort *)(acStack_d0 + 59)))
+#define local_93 (*((short *)(acStack_d0 + 61)))
+#define local_91 (*((short *)(acStack_d0 + 63)))
+#define local_8f (*((short *)(acStack_d0 + 65)))
+#define local_8d (*((short *)(acStack_d0 + 67)))
+#define local_8b (*((byte *)(acStack_d0 + 69)))
+  uintptr_t local_88;
   ushort *local_84;
-  int local_80;
+  intptr_t local_80;
   short local_7c;
-  int *local_78;
+  intptr_t *local_78;
   int local_74;
-  int local_70;
+  intptr_t local_70;
   ushort local_6c;
-  int local_68;
-  uint local_64;
+  intptr_t local_68;
+  uintptr_t local_64;
   int local_60;
   int local_5c;
   int local_58;
   int local_54;
   int local_50;
   int local_4c;
-  int local_48;
+  intptr_t local_48;
   ushort *local_44;
   int local_40;
   int local_3c;
   
-  local_78 = (int *)0x0;
+  local_78 = (intptr_t *)0x0;
   local_80 = 0;
   local_64 = 0;
   dirty_rect_union(0,200,0,0x140);
   pcVar8 = &DAT_00085448;
-    wptr_21485 = acStackY_85518;
+    wptr_21485 = acStack_d0;
   do {
     cVar5 = *pcVar8;
     *wptr_21485 = cVar5; wptr_21485 = wptr_21485 + 1;
@@ -6664,20 +6793,13 @@ LAB_00036858:
   iVar10 = Ordinal_1346(0x100,2);
   local_48 = iVar10;
   puVar11 = (ushort *)Ordinal_1346(0x400,2);
-  /* acStack_d0[0..2] are never written anywhere in this function (only
-     indices 3+ are, below) -- presumably a fixed prefix in the original
-     binary that Ghidra never recovered the content of (same class as
-     other unrecoverable-string cases in this file). Zeroed rather than
-     left as uninitialized stack garbage: since this is a strcat source,
-     a leading NUL just makes the append a no-op instead of pulling in
-     unpredictable bytes, which is the safe direction to be wrong in. */
-  Ordinal_1047(acStack_d0,0,sizeof(acStack_d0));
+  /* Original filename template was copied above (ARM 0x36770).
+     The resource-page digits are at offsets 8/9, after the .n suffix. */
   acStack_d0[3] = ((byte)(param_1 >> 6) & 7) + 0x30;
   acStack_d0[4] = ((byte)(param_1 >> 3) & 7) + 0x30;
   acStack_d0[5] = ((byte)param_1 & 7) + 0x30;
-  acStack_d0[6] = '0';
-  acStack_d0[7] = '0';
-  acStack_d0[8] = '\0';
+  acStack_d0[8] = '0';
+  acStack_d0[9] = '0';
   local_44 = puVar11;
   Ordinal_1047(&DAT_00101968,0,0x104);
   local_3c = -0x13ad30;
@@ -6685,13 +6807,13 @@ LAB_00036858:
      copy above; the -0x13ad30 baked delta is a wild pointer here. */
   {
     int _i = 0;
-    while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
-      (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+    while (_i < 0x103 && cutscene_directory[_i] != '\0') {
+      (&DAT_00101968)[_i] = cutscene_directory[_i]; _i++;
     }
     (&DAT_00101968)[_i] = '\0';
   }
   Ordinal_1063(&DAT_00101968,acStack_d0);
-  iVar12 = open_file_for_read(&DAT_00101968);
+  iVar12 = (int)open_file_for_read(&DAT_00101968);
   local_5c = iVar12;
   if (iVar12 == -1) {
     clear_ambient_sound_target();
@@ -6709,19 +6831,19 @@ LAB_00036858:
         fade_out(0,0,g_uw_framebuffer,200,in_stack_ffffff10,0,0,
                      local_b8,2,0);
       }
-      iVar10 = (int)acStack_d0[7];
-      acStack_d0[7] = (char)(iVar10 + 1);
+      iVar10 = (int)acStack_d0[9];
+      acStack_d0[9] = (char)(iVar10 + 1);
       if (0x37 < (iVar10 + 1) * 0x1000000 >> 0x18) {
-        acStack_d0[7] = '0';
-        acStack_d0[6] = acStack_d0[6] + '\x01';
+        acStack_d0[9] = '0';
+        acStack_d0[8] = acStack_d0[8] + '\x01';
       }
       Ordinal_1047(&DAT_00101968,0,0x104);
       /* strcpy(&DAT_00101968, &DAT_0023c698) -- baked -0x13ad30 delta is
          a wild pointer in the recompile; bounded indexed copy. */
       {
         int _i = 0;
-        while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
-          (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+        while (_i < 0x103 && cutscene_directory[_i] != '\0') {
+          (&DAT_00101968)[_i] = cutscene_directory[_i]; _i++;
         }
         (&DAT_00101968)[_i] = '\0';
       }
@@ -6731,20 +6853,21 @@ LAB_00036858:
       while (uVar2 == 0) {
         puVar21 = puVar11 + 2;
         if (puVar11[1] < 0x10) {
-          uVar14 = (*(codeval *)(&PTR_FUN_00085408)[puVar11[1]])(puVar21,acStack_d0);
+          uVar14 = PTR_FUN_00085408[puVar11[1]](puVar21,acStack_d0);
           puVar21 = puVar21 + (uVar14 & 0xffff);
         }
         puVar11 = puVar21;
         uVar2 = *puVar21;
       }
       local_84 = puVar21;
-      iVar10 = open_file_for_read(&DAT_00101968);
+      iVar10 = (int)open_file_for_read(&DAT_00101968);
       uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10);
       while ((local_74 = iVar10, iVar10 != -1 &&
              (uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10), (local_8b & 8) != 0))) {
         uVar15 = Ordinal_172(iVar10,0);
         if (local_80 != 0) {
-          Ordinal_1018();
+          /* Ordinal_1018(); */
+          Ordinal_1018(local_80);
         }
         iVar9 = Ordinal_1041(uVar15);
         local_80 = iVar9;
@@ -6768,19 +6891,19 @@ LAB_00036858:
         local_4c = local_54;
         bubble_sort_indices_by_key_table(uVar14 + 0x500,*(undefined2 *)(uVar14 + 6),local_70);
         local_93 = 0;
-        iVar10 = (int)acStack_d0[7];
-        acStack_d0[7] = (char)(iVar10 + 1);
+        iVar10 = (int)acStack_d0[9];
+        acStack_d0[9] = (char)(iVar10 + 1);
         if (0x37 < (iVar10 + 1) * 0x1000000 >> 0x18) {
-          acStack_d0[6] = acStack_d0[6] + '\x01';
-          acStack_d0[7] = '0';
+          acStack_d0[8] = acStack_d0[8] + '\x01';
+          acStack_d0[9] = '0';
         }
         Ordinal_1047(&DAT_00101968,0,0x104);
         /* strcpy(&DAT_00101968, &DAT_0023c698) -- local_3c is the baked
            -0x13ad30 delta, a wild pointer here; bounded indexed copy. */
         {
           int _i = 0;
-          while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
-            (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+          while (_i < 0x103 && cutscene_directory[_i] != '\0') {
+            (&DAT_00101968)[_i] = cutscene_directory[_i]; _i++;
           }
           (&DAT_00101968)[_i] = '\0';
         }
@@ -6794,13 +6917,14 @@ LAB_00036ca4:
         }
         local_60 = 0;
         DAT_00101a6c = 1;
-        if (local_78 != (int *)0x0) {
+        if (local_78 != (intptr_t *)0x0) {
           iVar10 = 0;
           piVar23 = local_78;
           if (*(short *)(uVar14 + 6) != 0) {
             do {
               if (*piVar23 != 0) {
-                Ordinal_1018();
+                /* Ordinal_1018(); */
+                Ordinal_1018(*piVar23);
               }
               iVar10 = iVar10 + 1;
               piVar23 = piVar23 + 1;
@@ -6808,7 +6932,7 @@ LAB_00036ca4:
           }
           Ordinal_1018(piVar17);
         }
-        piVar17 = (int *)Ordinal_1041((uint)*(ushort *)(uVar14 + 6) << 2);
+        piVar17 = (intptr_t *)Ordinal_1041((uint)*(ushort *)(uVar14 + 6) * sizeof(*piVar17));
         iVar10 = 0;
         local_78 = piVar17;
         if (*(short *)(uVar14 + 6) != 0) {
@@ -6831,7 +6955,7 @@ LAB_00036ca4:
           puVar11 = local_84 + 1;
           local_84 = puVar21;
           if (*puVar11 < 0x10) {
-            uVar16 = (*(codeval *)(&PTR_FUN_00085408)[*puVar11])(puVar21,acStack_d0);
+            uVar16 = PTR_FUN_00085408[*puVar11](puVar21,acStack_d0);
             local_84 = puVar21 + (uVar16 & 0xffff);
           }
         }
@@ -6839,7 +6963,7 @@ LAB_00036ca4:
         while ((iVar10 = local_50, local_50 < (int)(uint)*(ushort *)(uVar14 + 6) &&
                ((local_8b & 4) != 0))) {
           uVar16 = 0;
-          piVar17 = piVar17 + local_50;
+          piVar17 = local_78 + local_50;
           iVar9 = *piVar17 + 8;
           iVar12 = (uint)*(byte *)(local_50 + local_70) * 6 + uVar14 + 0x500;
           Ordinal_1044(local_48,iVar9,(uint)*(ushort *)(iVar12 + 2) << 1);
@@ -6943,13 +7067,13 @@ LAB_00036ca4:
                   puVar1 = local_84 + 1;
                   local_84 = puVar22;
                   if (*puVar1 < 0x10) {
-                    uVar14 = (*(codeval *)(&PTR_FUN_00085408)[*puVar1])(puVar22,acStack_d0);
+                    uVar14 = PTR_FUN_00085408[*puVar1](puVar22,acStack_d0);
                     local_84 = puVar22 + (uVar14 & 0xffff);
                     iVar9 = local_5c;
                   }
                 }
                 else {
-                  seek_file_handle(iVar9,((int)local_84 - (int)puVar21 >> 1) + -0x400,1);
+                  seek_file_handle(iVar9,(local_84 - puVar21) + -0x400,1);
                   read_file_handle(iVar9,puVar21,0x800);
                   local_84 = puVar21;
                   iVar9 = local_5c;
@@ -7012,7 +7136,7 @@ LAB_00036ca4:
               uVar2 = local_6c;
               if ((uint)local_d8 < (uint)*(ushort *)(local_88 + 6)) {
                 uVar18 = (uint)*(byte *)((uint)local_d8 + local_70);
-                in_stack_ffffff10 = (uint)local_6c + *piVar17;
+                in_stack_ffffff10 = (uintptr_t)local_6c + *piVar17;
                 uVar7 = read_voice_sample_page_chunk(local_80,uVar18,uVar18 * 6 + local_88 + 0x500,uVar14,
                                      in_stack_ffffff10);
                 uVar18 = (uint)uVar7;
@@ -7091,13 +7215,14 @@ LAB_00036ca4:
           iVar9 = local_80;
           piVar17 = local_78;
         }
-        if (piVar17 != (int *)0x0) {
+        if (piVar17 != (intptr_t *)0x0) {
           iVar10 = 0;
           piVar23 = piVar17;
           if (*(short *)(uVar14 + 6) != 0) {
             do {
               if (*piVar23 != 0) {
-                Ordinal_1018();
+                /* Ordinal_1018(); */
+                Ordinal_1018(*piVar23);
                 *piVar23 = 0;
               }
               iVar10 = iVar10 + 1;
@@ -7105,14 +7230,14 @@ LAB_00036ca4:
             } while (iVar10 < (int)(uint)*(ushort *)(uVar14 + 6));
           }
           Ordinal_1018(piVar17);
-          local_78 = (int *)0x0;
+          local_78 = (intptr_t *)0x0;
         }
         if (iVar9 != 0) {
           Ordinal_1018(iVar9);
           local_80 = 0;
         }
         Ordinal_553(local_74);
-        iVar10 = open_file_for_read(&DAT_00101968);
+        iVar10 = (int)open_file_for_read(&DAT_00101968);
         uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10);
       }
 LAB_00037a94:
@@ -7134,13 +7259,14 @@ LAB_00037a94:
     }
     voice_sample_cluster_stub_2();
     uVar14 = local_64;
-    if (local_78 != (int *)0x0) {
+    if (local_78 != (intptr_t *)0x0) {
       iVar12 = 0;
       piVar17 = local_78;
       if (*(short *)(local_64 + 6) != 0) {
         do {
           if (*piVar17 != 0) {
-            Ordinal_1018();
+            /* Ordinal_1018(); */
+            Ordinal_1018(*piVar17);
           }
           iVar12 = iVar12 + 1;
           piVar17 = piVar17 + 1;
@@ -7150,30 +7276,51 @@ LAB_00037a94:
       iVar12 = local_5c;
     }
     if (local_80 != 0) {
-      Ordinal_1018();
+      /* Ordinal_1018(); */
+      Ordinal_1018(local_80);
     }
   }
-  if (puVar11 != (ushort *)0x0) {
-    Ordinal_1018(puVar11);
+  if (local_44 != (ushort *)0x0) {
+    Ordinal_1018(local_44);
   }
-  if (iVar10 != 0) {
-    Ordinal_1018(iVar10);
+  if (local_48 != 0) {
+    Ordinal_1018(local_48);
   }
-  if (iVar9 != 0) {
-    Ordinal_1018(iVar9);
+  if (local_70 != 0) {
+    Ordinal_1018(local_70);
   }
   if (local_b8 != 0) {
-    Ordinal_1018();
+    /* Ordinal_1018(); */
+    Ordinal_1018(local_b8);
   }
   if (local_88 != 0) {
-    Ordinal_1018();
+    /* Ordinal_1018(); */
+    Ordinal_1018(local_88);
   }
   Ordinal_553(iVar12);
   return;
 LAB_00037a8c:
   Ordinal_553(local_74);
   goto LAB_00037a94;
+#undef acStack_d0
+#undef local_c1
+#undef local_bf
+#undef local_bd
+#undef local_bb
+#undef local_b9
+#undef local_b4
+#undef local_9c
+#undef local_9b
+#undef local_99
+#undef local_97
+#undef local_95
+#undef local_93
+#undef local_91
+#undef local_8f
+#undef local_8d
+#undef local_8b
 }
+
 
 
 // was FUN_00037c14 -- the general-purpose "display a numbered
@@ -7193,8 +7340,20 @@ uint param_1;
   undefined4 unaff_r6;
   undefined4 unaff_r7;
   undefined2 unaff_r8;
+  ushort saved_palette[256];
 
   uVar1 = param_1 & 0xffff;
+  /* The RGB565 lookup table is shared by the viewer and every HUD blit.
+     Preserve the gameplay colors while the LPF palette is installed. */
+  Ordinal_1044(saved_palette,&g_palette_rgb565,sizeof(saved_palette));
+  if (uVar1 >= 0x100) {
+    /* Consume the click that opened the picture before polling dismissal.
+       Tick no gameplay handlers while preparing the modal viewer. */
+    wait_for_click_release(0);
+  }
+  /* Object selection blocks ordinary game flushes. This viewer owns its
+     modal presentation loop, including when entered from a batched tick. */
+  uw_begin_modal_present();
   if (uVar1 < 0x100) {
     uVar2 = 0;
     unaff_r6 = 199;
@@ -7217,6 +7376,7 @@ uint param_1;
   DAT_0024cfac = (short)param_1 + 0xc00;
   decrement_cursor_hide_depth();
   render_babl_dialog_window(param_1,uVar2,unaff_r6,unaff_r7,unaff_r8);
+  Ordinal_1044(&g_palette_rgb565,saved_palette,sizeof(saved_palette));
   select_active_font(s_font5x6p_sys_0008430c);
   if (DAT_00201c98 != 0) {
     load_dungeon_texture_arenas();
@@ -7237,26 +7397,21 @@ uint param_1;
 LAB_00037d3c:
   cursor_show_idle_tick();
   g_text_use_palette_color = 0;
+  uw_end_modal_present();
   return;
 }
 
 
-// was FUN_00037d6c -- for illustration page param_1, opens (or
-// creates) a small per-illustration marker file (its name built from
+// was FUN_00037d6c -- for illustration page param_1, opens its
+// cutscene script (its name built from
 // param_1's octal digits via the same template as
 // babl_render_op_show_code), and only if every file operation
 // succeeds, shows the page via display_book_or_scroll_page. Confirmed
 // caller: trigger_terrain_discovery_illustration's "you've found
 // something" discovery moment (passing only param_1/param_2, the
 // current level).
-// Note: all 3 write_file_handle calls read from the same &uStack_c
-// address (param_2's stack slot) rather than advancing to
-// &uStack_8/&uStack_4 (param_3/param_4's slots) for the 2nd/3rd write
-// -- looks like a dropped pointer-advance, but NOT fixed here: both
-// known callers only ever pass param_1/param_2, leaving param_3/
-// param_4 as whatever garbage occupies those registers, so writing
-// them to the file would very plausibly be worse than the current
-// (redundant but well-defined) triple-write of param_2's value.
+// ARM 0x37e64/0x37e88/0x37ecc confirms all three writes use param_2's
+// stack slot. They intentionally update the script with the same value.
 void record_illustration_discovery_and_display(param_1,param_2,param_3,param_4)
 uint param_1;
 undefined4 param_2;
@@ -7276,17 +7431,16 @@ undefined4 param_4;
   int iVar7;
   int iVar8;
   int iVar9;
-  char acStack_855a4 [545888];
-  char acStack_144 [4];
-  char local_140;
-  char local_13f;
+  /* ARM copies the template to sp+0, then writes digits at sp+3/4/5.
+     Ghidra split this one filename into a huge array and small locals. */
+  char acStack_144 [12];
   char acStack_12c [260];
   undefined4 uStack_c;
   undefined4 uStack_8;
   undefined4 uStack_4;
   
   pcVar2 = &DAT_00085460;
-    wptr_22113 = acStack_855a4;
+    wptr_22113 = acStack_144;
   uStack_c = param_2;
   uStack_8 = param_3;
   uStack_4 = param_4;
@@ -7296,10 +7450,10 @@ undefined4 param_4;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   acStack_144[3] = ((byte)((param_1 & 0xffff) >> 6) & 7) + 0x30;
-  local_140 = ((byte)((param_1 & 0xffff) >> 3) & 7) + 0x30;
-  local_13f = ((byte)param_1 & 7) + 0x30;
+  acStack_144[4] = ((byte)((param_1 & 0xffff) >> 3) & 7) + 0x30;
+  acStack_144[5] = ((byte)param_1 & 7) + 0x30;
   Ordinal_1047(acStack_12c,0,0x104);
-  pcVar2 = &DAT_0023c698;
+  pcVar2 = DAT_0023c698 ? (char *)&DAT_0023c698 : "\\CUTS";
     stack0xffdc383c_ptr = acStack_12c;
   do {
     cVar1 = *pcVar2;
@@ -7307,7 +7461,9 @@ undefined4 param_4;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_12c,acStack_144);
-  iVar3 = open_existing_file_rw_alt(acStack_144);
+  /* Use the installation path just assembled above. The host file wrapper
+     resolves paths under UW_DATA_DIR; the bare name omits CUTS. */
+  iVar3 = open_existing_file_rw_alt(acStack_12c);
   iVar4 = seek_file_handle(iVar3,4,0);
   iVar5 = write_file_handle(iVar3,&uStack_c,2);
   iVar6 = write_file_handle(iVar3,&uStack_c,2);

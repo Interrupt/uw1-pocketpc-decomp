@@ -3320,15 +3320,23 @@ short param_2;
 // was FUN_000493cc -- prints a flavor-text scroll message keyed by
 // the object's own sub-quality field (offset+6 & 0x3f, message range
 // 100-163), if one exists for this object.
+// BUG FIX (unit-testing-framework merge): param_1 was `int`, but its
+// only real caller (describe_special_object_property) passes a real
+// `ushort *` object pointer, which got truncated to 32 bits storing
+// into this narrower parameter -- confirmed live (EXC_BAD_ACCESS in
+// test_inventory dereferencing the truncated pointer). Widened to
+// `ushort *`, with the +6 byte-offset access rewritten through a
+// char* cast to keep its original byte-granularity (a ushort* +6 would
+// instead mean +12 bytes).
 void print_object_flavor_text(param_1,param_2)
-int param_1;
+ushort * param_1;
 short param_2;
 
 {
   int iVar1;
-  
+
   if ((param_2 != 0) &&
-     (iVar1 = get_message_string((*(byte *)(param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
+     (iVar1 = get_message_string((*(byte *)((char *)param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
     message_scroll_print_wrapped();
   }
   return;

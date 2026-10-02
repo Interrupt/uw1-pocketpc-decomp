@@ -18,7 +18,9 @@ void scheduler_despawn_entry(param_1)
 short param_1;
 
 {
-  undefined4 uVar1;
+  /* ARM 0x809a4 keeps the resolved object pointer in r5 and forwards
+     it to both object_list_unlink and free_object_slot. */
+  void *uVar1;
   int iVar2;
   
   iVar2 = param_1 * 6;
@@ -264,9 +266,9 @@ undefined4 param_2;
 
 
 // was FUN_00080ed4: pushes a new entry onto the scheduler -- an
-// encoded object link (param_1), a class/anim-type selector (param_2)
-// that decides which scheduler_step_entry behavior applies, an
-// initial delay (param_3), and a tile position (param_4/param_5).
+// encoded object link (param_1), delay (param_2), initial animation
+// offset (param_3), and tile position (param_4/param_5). The object's
+// own subtype selects its animation behavior from OBJECTS.DAT.
 uint scheduler_add_entry(param_1,param_2,param_3,param_4,param_5)
 uint param_1;
 undefined4 param_2;
@@ -278,7 +280,6 @@ undefined1 param_5;
   char cVar1;
   uint uVar2;
   byte *pbVar3;
-  short extraout_r1;
   int iVar4;
   ushort uVar5;
   
@@ -311,8 +312,10 @@ undefined1 param_5;
         }
         else {
           uVar5 = *(ushort *)(pbVar3 + 6);
-          Ordinal_2005((&DAT_00250733)[iVar4],param_3);
-          uVar5 = (cVar1 + extraout_r1 ^ uVar5) & 0x3f ^ uVar5;
+          /* ARM 0x80f94..0x80fb4 uses idivmod's remainder in r1.
+             The decompiled extraout_r1 local was never initialized. */
+          /* Ordinal_2005((&DAT_00250733)[iVar4],param_3); */
+          uVar5 = (cVar1 + param_3 % (&DAT_00250733)[iVar4] ^ uVar5) & 0x3f ^ uVar5;
         }
         pbVar3[6] = (byte)uVar5;
         pbVar3[7] = (byte)(uVar5 >> 8);

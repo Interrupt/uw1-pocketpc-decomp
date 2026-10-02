@@ -592,13 +592,11 @@ undefined2 * param_3;
 
 
 // was FUN_0001294c -- render_dungeon_frame_timed's own per-frame screen
-// flush step (see g_suppress_frame_timed_flush above)
+// flush step; GX batches presentations during a gameplay tick.
 void flush_dungeon_frame()
 
 {
-  if (!g_suppress_frame_timed_flush) {
-    flush_dirty_rect_to_display(1);
-  }
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -794,20 +792,23 @@ short param_2;
     iVar21 = 0;
     do {
       uVar7 = Ordinal_2032(*param_1);
-      Ordinal_2026(uVar7,0x3fc00000);
-      iVar8 = Ordinal_2020();
+      uVar7 = Ordinal_2026(uVar7,0x3fc00000);
+      /* Ordinal_2020(); -- Ghidra dropped the preceding return value. */
+      iVar8 = Ordinal_2020(uVar7);
       if (0xff < iVar8) {
         iVar8 = 0xff;
       }
       uVar7 = Ordinal_2032(param_1[1]);
-      Ordinal_2026(uVar7,0x3fc00000);
-      iVar9 = Ordinal_2020();
+      uVar7 = Ordinal_2026(uVar7,0x3fc00000);
+      /* Ordinal_2020(); */
+      iVar9 = Ordinal_2020(uVar7);
       if (0xff < iVar9) {
         iVar9 = 0xff;
       }
       uVar7 = Ordinal_2032(param_1[2]);
-      Ordinal_2026(uVar7,0x3fc00000);
-      iVar10 = Ordinal_2020();
+      uVar7 = Ordinal_2026(uVar7,0x3fc00000);
+      /* Ordinal_2020(); */
+      iVar10 = Ordinal_2020(uVar7);
       if (0xff < iVar10) {
         iVar10 = 0xff;
       }
@@ -823,14 +824,17 @@ short param_2;
         do {
           uVar13 = Ordinal_2032(iVar8 + 0x14);
           uVar14 = Ordinal_2026(uVar13,uVar7);
-          Ordinal_2026(uVar14,0x3d430c31);
-          sVar4 = Ordinal_2018();
+          uVar14 = Ordinal_2026(uVar14,0x3d430c31);
+          /* Ordinal_2018(); */
+          sVar4 = Ordinal_2018(uVar14);
           uVar14 = Ordinal_2026(uVar13,uVar11);
-          Ordinal_2026(uVar14,0x3d430c31);
-          uVar5 = Ordinal_2018();
+          uVar14 = Ordinal_2026(uVar14,0x3d430c31);
+          /* Ordinal_2018(); */
+          uVar5 = Ordinal_2018(uVar14);
           uVar13 = Ordinal_2026(uVar13,uVar12);
-          Ordinal_2026(uVar13,0x3d430c31);
-          uVar6 = Ordinal_2018();
+          uVar13 = Ordinal_2026(uVar13,0x3d430c31);
+          /* Ordinal_2018(); */
+          uVar6 = Ordinal_2018(uVar13);
           *puVar20 = uVar6 | (uVar5 | sVar4 << 6) << 5;
           iVar8 = iVar8 + -1;
           puVar20 = puVar20 + 0x100;

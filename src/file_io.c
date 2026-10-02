@@ -8,6 +8,7 @@
 #include <strings.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <stdint.h>
 
 #define MAX_HANDLES 64
 static FILE *g_handles[MAX_HANDLES];
@@ -222,6 +223,20 @@ int uw_file_write(int handle, const void *buf, unsigned int size) {
         fprintf(stderr, "[fileio] write: handle %d requested=%u wrote=%d errno=%d(%s) ferror=%d feof=%d\n",
                 handle, size, n, errno, strerror(errno), ferror(f), feof(f));
     return n;
+}
+
+/* GetFileSize: query the open handle without changing its read position.
+   Flush buffered writes so the size matches the WinCE handle behavior. */
+unsigned int uw_file_size(int handle, unsigned int *high)
+{
+    FILE *f = lookup(handle);
+    struct stat st;
+    if (high) *high = 0;
+    if (!f || fflush(f) != 0 || fstat(fileno(f), &st) != 0 || st.st_size < 0)
+        return UINT32_MAX;
+    uint64_t size = (uint64_t)st.st_size;
+    if (high) *high = (unsigned int)(size >> 32);
+    return (unsigned int)(size & UINT32_MAX);
 }
 
 int uw_file_seek(int handle, int distance, int method) {

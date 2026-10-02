@@ -350,7 +350,10 @@ undefined4 check_save_disk_space()
   char cVar1;
   char *pcVar2;
   int iVar3;
-  undefined4 uVar4;
+  /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating
+     load_string_resource's real pointer -- same class as that
+     function's own fix. */
+  char *uVar4;
   uint local_118;
   int local_114;
   undefined1 auStack_110 [7];

@@ -19,6 +19,13 @@ int GXOpenDisplay(void *hwnd, unsigned int flags);
 int GXCloseDisplay(void);
 void *GXBeginDraw(void);
 int GXEndDraw(void);
+/* Batch a gameplay tick's draw requests into one display refresh. Modal
+   viewers present immediately while the surrounding tick is suspended. */
+void uw_begin_present_batch(void);
+void uw_end_present_batch(void);
+void uw_begin_modal_present(void);
+void uw_end_modal_present(void);
+
 int GXOpenInput(void);
 int GXCloseInput(void);
 void *GXGetDefaultKeys(void *outBuffer);

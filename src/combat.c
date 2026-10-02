@@ -737,6 +737,7 @@ short * param_1;
   ushort uVar3;
   ushort uVar4;
   int iVar5;
+  char *pcAttacker;
   ushort *puVar6;
   uint uVar7;
   uint uVar8;
@@ -754,13 +755,19 @@ short * param_1;
   local_34 = (short)cVar2;
   iVar9 = (int)(((int)cVar2 + (uint)*(byte *)((char *)param_1 + 0x15)) * 0x10000) >> 0x10;
   iVar10 = (int)(short)cVar2;
-  iVar5 = (short)DAT_00100610 * 0x1b + DAT_002046b8;
-  uVar3 = *(ushort *)(iVar5 + 0x16);
-  bVar1 = *(byte *)(iVar5 + 3);
+  /* ARM 0x25bdc..0x25bf4 retains the attacker record as a pointer. */
+  pcAttacker = (short)DAT_00100610 * 0x1b + DAT_002046b8;
+  uVar3 = *(ushort *)(pcAttacker + 0x16);
+  bVar1 = *(byte *)(pcAttacker + 3);
   if (iVar10 < iVar9) {
     do {
       uVar4 = *(ushort *)(&DAT_00202c3a + iVar10 * 6);
-      puVar6 = (ushort *)get_object_record_by_slot_index();
+      /* BUG FIX (unit-testing-framework): was called bare -- dropped
+         argument. ARM 0x25c84..0x25c8c passes the candidate link's slot
+         index, confirmed by the identical `uVar4 >> 6` value used right
+         below in this same loop. Same dropped-argument idiom fixed
+         repeatedly elsewhere in this project. */
+      puVar6 = (ushort *)get_object_record_by_slot_index(uVar4 >> 6);
       if ((((*puVar6 & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
          (((DAT_00100610 != 1 ||
            ((iVar5 = object_ptr_in_arena(puVar6), iVar5 == 0 ||
@@ -966,7 +973,9 @@ undefined4 resolve_melee_swing_hit()
     if (iVar5 < 0) {
       iVar5 = iVar5 + 0x1ff;
     }
-    sVar3 = sVar3 + (short)(iVar5 >> 9);
+    /* The original adds pitch. SDL look controls use negative pitch for up,
+       so invert its contribution to the world-space strike height here. */
+    sVar3 = sVar3 - (short)(iVar5 >> 9);
   }
   local_38 = sVar3;
   cVar2 = Ordinal_2005(6,(&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd]);
@@ -996,7 +1005,8 @@ undefined4 resolve_melee_swing_hit()
     sort_collision_candidates();
     if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: blocked path, creature_hit_flag=%d\n", (int)*(char *)((char *)DAT_00202c6c + 0x15));
     if (*(char *)((char *)DAT_00202c6c + 0x15) != '\0') {
-      sVar3 = find_nearest_hit_target();
+      /* ARM 0x263c0..0x263d0 passes the current collision record in r0. */
+      sVar3 = find_nearest_hit_target((short *)DAT_00202c6c);
       if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: find_nearest_hit_target returned %d\n", (int)sVar3);
       if (-1 < sVar3) {
         iVar5 = sVar3 * 6;
@@ -1117,7 +1127,7 @@ undefined1 param_1;
   ushort uVar4;
   ushort uVar5;
   ushort *puVar6;
-  undefined4 uVar7;
+  ushort *uVar7; /* ARM 0x26b58..0x26b80 forwards the attacker pointer in r1. */
   short extraout_r1;
   int extraout_r1_00;
   ushort uVar8;
@@ -1223,7 +1233,7 @@ undefined1 param_1;
           cVar10 = DAT_001005dc;
         }
         if (((&DAT_001007d8)[(uVar1 & 0x3f) * 0x30] & 0x18) != 0) {
-          spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,(short)*(char *)((short)uVar8 + 0x84f18),
+          spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,(short)(&DAT_00084f18)[(short)uVar8],
                        DAT_00100600,DAT_00100604);
           if (DAT_001005d8 == 0) {
             return;
@@ -1233,7 +1243,7 @@ undefined1 param_1;
           }
           uVar5 = Ordinal_1053();
           spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,
-                       (uVar5 & 1) * 5 + (short)*(char *)((short)DAT_00100624 + 0x84f18) + -2,
+                       (uVar5 & 1) * 5 + (short)(&DAT_00084f18)[(short)DAT_00100624] + -2,
                        DAT_00100600,DAT_00100604);
           return;
         }
@@ -1324,8 +1334,9 @@ void compute_attack_relative_facing()
 
 {
   int uw_ord2005_rem_9 = 0;
-  int iVar1;
-  int iVar2;
+  /* ARM 0x27038..0x27068 reads both returned object pointers directly. */
+  char *iVar1;
+  char *iVar2;
   uint extraout_r1;
   
   iVar1 = get_object_record_by_slot_index((int)DAT_00100620);
@@ -1353,8 +1364,11 @@ undefined4 process_melee_attack_swing()
   int iVar1;
   undefined4 uVar2;
   int iVar3;
-  undefined4 uVar4;
-  undefined4 uVar5;
+  /* ARM 0x27174..0x271a8 keeps attacker/target pointers for damage dispatch. */
+  ushort *uVar4;
+  ushort *uVar5;
+  ushort *puTarget;
+  ushort *puAttacker;
   
   iVar1 = resolve_melee_swing_hit();
   if (iVar1 == 0) {
@@ -1362,18 +1376,22 @@ undefined4 process_melee_attack_swing()
   }
   else {
     if ((DAT_00100610 != 1) && (iVar1 = (int)DAT_00100620, DAT_00100620 != 1)) {
-      get_object_record_by_slot_index();
-      iVar3 = object_ptr_in_arena();
+      /* BUG FIX (unit-testing-framework): both calls were bare -- dropped
+         arguments. ARM 0x27110..0x27114 forwards the resolved target
+         pointer; same dropped-argument idiom fixed repeatedly elsewhere
+         in this project. */
+      puTarget = get_object_record_by_slot_index((int)DAT_00100620);
+      iVar3 = object_ptr_in_arena(puTarget);
       iVar1 = 0;
       if (iVar3 != 0) {
-        iVar3 = get_object_record_by_slot_index((int)DAT_00100620);
-        iVar1 = get_object_record_by_slot_index((int)DAT_00100610);
-        if (((*(byte *)(iVar3 + 0x19) ^ *(byte *)(iVar1 + 0x19)) & 0x40) == 0) {
+        puTarget = get_object_record_by_slot_index((int)DAT_00100620);
+        puAttacker = get_object_record_by_slot_index((int)DAT_00100610);
+        if (((*(byte *)((char *)puTarget + 0x19) ^ *(byte *)((char *)puAttacker + 0x19)) & 0x40) == 0) {
           return 0;
         }
       }
     }
-    compute_attack_relative_facing(iVar1);
+    compute_attack_relative_facing();
     uVar2 = resolve_weapon_hit_skill_check((int)DAT_00100610,(int)DAT_00100620);
     if ((short)uVar2 == 0) {
       apply_melee_damage(4);
@@ -2220,7 +2238,7 @@ uint param_3;
 // destroy/transform handling.
 undefined4 apply_typed_damage_to_object(param_1,param_2,param_3,param_4,param_5,param_6)
 ushort * param_1;
-undefined4 param_2;
+ushort *param_2; /* damaging object, forwarded to apply_damage_to_object */
 undefined4 param_3;
 undefined2 param_4;
 undefined1 param_5;
@@ -2527,25 +2545,38 @@ char param_3;
 // field) and commits the new position via sync_object_tile_position.
 // Always returns 4. Confirmed as the fallback tail of
 // resolve_collision_candidate_interaction's door/usable-object checks.
+// BUG FIX (unit-testing-framework merge): this function's own stack
+// snapshot buffer had been split into separate named scalars
+// (local_3e/local_34/local_27/local_26) sitting "after" a shrunk
+// auStack_48[10] -- but build_object_placement_snapshot/
+// sync_object_tile_position both treat it as ONE opaque, contiguous
+// 0x2c-byte struct (per their own comments), and C makes no guarantee
+// locals are laid out contiguously or in declaration order. This was a
+// real stack buffer overflow (build_object_placement_snapshot writing
+// up to offset 0x2c into a 10-byte array) AND local_30 was read
+// (`if (local_30 != 0)`) without ever being assigned -- the assignment
+// from the snapshot (`local_30 = *(short *)(auStack_48 + 0x18)`) had
+// been dropped entirely in the split. Restored the single real-sized
+// buffer and the dropped read, indexing by the real ARM-confirmed
+// offsets instead.
 undefined4 apply_object_collision_scatter(param_1,param_2)
-undefined4 param_1;
-int param_2;
+ushort *param_1;
+ushort *param_2;
 
 {
   undefined2 uVar1;
   short sVar2;
   char *iVar3;
-  undefined1 auStack_48 [10];
-  undefined2 local_3e;
-  undefined2 local_34;
+  int iVar4;
+  /* The original ARM stack frame holds one contiguous 0x2c-byte snapshot. */
+  undefined1 auStack_48 [0x2c];
   short local_30;
-  undefined1 local_27;
-  undefined1 local_26;
-  
+
   if (param_2 != 0) {
     DAT_0010144c = (ushort)DAT_002046d8;
     DAT_00101454 = (ushort)DAT_002046dc;
     build_object_placement_snapshot(param_2,auStack_48);
+    local_30 = *(short *)(auStack_48 + 0x18);
     iVar3 = DAT_00204874;
     if (local_30 != 0) {
       sVar2 = Ordinal_2005((int)local_30,(int)*(short *)(DAT_00204874 + 0x18) << 6);
@@ -2553,16 +2584,16 @@ int param_2;
       if (0x80 < sVar2) {
         sVar2 = 0x80;
       }
-      local_27 = (undefined1)uVar1;
-      local_26 = (undefined1)((ushort)uVar1 >> 8);
-      local_34 = 0xeb;
+      auStack_48[0x21] = (undefined1)uVar1;
+      auStack_48[0x22] = (undefined1)((ushort)uVar1 >> 8);
+      *(undefined2 *)(auStack_48 + 0x14) = 0xeb;
       DAT_0010144c = (ushort)DAT_002046d8;
-      iVar3 = (int)*(short *)(iVar3 + 10) * (int)sVar2;
+      iVar4 = (int)*(short *)(iVar3 + 10) * (int)sVar2;
       DAT_00101454 = (ushort)DAT_002046dc;
-      if (iVar3 < 0) {
-        iVar3 = iVar3 + 0x3f;
+      if (iVar4 < 0) {
+        iVar4 = iVar4 + 0x3f;
       }
-      local_3e = (undefined2)((int)(iVar3) >> 6);
+      *(undefined2 *)(auStack_48 + 10) = (undefined2)(iVar4 >> 6);
       sync_object_tile_position(param_2,auStack_48);
     }
   }

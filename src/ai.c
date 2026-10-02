@@ -733,7 +733,9 @@ LAB_00033830:
       resolve_unique_npc_special_behavior(DAT_0010190c,1);
       DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
       DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
-      iVar5 = tilemap_lookup();
+      /* ARM 0x3343c..0x33470 passes the dead NPC's tile x/y in r0/r1.
+         Dropping these arguments leaves its final frame in the old tile list. */
+      iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
       object_list_unlink(iVar5 + 2,DAT_0010190c);
       spawn_creature_death_loot(DAT_0010190c);
       drop_monster_loot(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
@@ -3616,8 +3618,9 @@ int compute_pathfind_search_radius()
 // own eligibility check otherwise. On success, sets goal 0xc, clears
 // the animation-frame nibble, and zeroes HP (byte 8). Returns 1 if the
 // transition happened, 0 if blocked.
+/* ARM 0x345bc..0x3462c uses the full object pointer with byte offsets. */
 undefined4 initiate_npc_death(param_1)
-int param_1;
+char *param_1;
 
 {
   int iVar1;
@@ -3646,8 +3649,9 @@ int param_1;
 // refuses the transition; otherwise plays a positional death sound
 // (only for goal-category 1 NPCs) and returns 1. Callers use the
 // return value to gate award_monster_kill_experience().
+/* ARM 0x34638..0x34648 uses the full object pointer with byte offsets. */
 undefined4 handle_monster_death(param_1)
-int param_1;
+char *param_1;
 
 {
   int iVar1;

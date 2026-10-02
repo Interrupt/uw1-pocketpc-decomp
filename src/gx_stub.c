@@ -1442,7 +1442,55 @@ void *GXBeginDraw(void) {
     return g_framebuffer;
 }
 
+struct uw_present_state {
+    unsigned batch_depth, modal_depth;
+    int pending, saved_force_flush;
+};
+static struct uw_present_state g_present_state = {0};
+
+void uw_begin_present_batch(void)
+{
+    g_present_state.batch_depth++;
+}
+
+void uw_end_present_batch(void)
+{
+    if (g_present_state.batch_depth == 0) return;
+    if (--g_present_state.batch_depth == 0 && g_present_state.pending) {
+        g_present_state.pending = 0;
+        GXEndDraw();
+    }
+}
+
+void uw_begin_modal_present(void)
+{
+    if (g_present_state.modal_depth++ == 0) {
+        g_present_state.saved_force_flush = g_force_flush;
+        /* Selected objects and held clicks gate ordinary HUD flushes. */
+        g_force_flush = 1;
+    }
+}
+
+void uw_end_modal_present(void)
+{
+    if (g_present_state.modal_depth == 0) return;
+    if (--g_present_state.modal_depth == 0)
+        g_force_flush = g_present_state.saved_force_flush;
+}
+
+int uw_defer_present(void)
+{
+    if (g_present_state.batch_depth && !g_present_state.modal_depth) {
+        g_present_state.pending = 1;
+        return 1;
+    }
+    /* A modal presentation also consumes any earlier pending request. */
+    g_present_state.pending = 0;
+    return 0;
+}
+
 int GXEndDraw(void) {
+    if (uw_defer_present()) return 1;
     if (!g_tex) return 0;
     /* UW_DEBUG_ENDDRAW: log every real call to this function (i.e. every
        actual SDL_RenderPresent, the true screen-present) with its

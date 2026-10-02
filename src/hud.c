@@ -570,6 +570,7 @@ short param_1;
 void main_loop_hud_flush()
 
 {
+  uw_begin_present_batch();
   unsigned int _dbg_hf_t0 = 0;
   int _dbg_hf = getenv("UW_DEBUG_HUDSPLIT") != NULL;
   if (_dbg_hf) _dbg_hf_t0 = read_realtime_clock_units() * 4;
@@ -619,19 +620,11 @@ void main_loop_hud_flush()
          so the guard still applies. render_dungeon_frame_timed does its
          own dirty_rect_union internally (same rect this hack used to set
          by hand), so flush_dirty_rect_to_display(1) below still blits it --
-         g_suppress_frame_timed_flush (see flush_dungeon_frame's own comment)
-         stops render_dungeon_frame_timed from ALSO doing its own real
-         screen flush here, since that was a second real GXEndDraw() every
-         tick, each independently vsync-throttled, roughly doubling
-         real per-tick time (only visible with keyboard-held input, since
-         a mouse-button hold's DAT_0023c63c gate happened to already skip
-         one of the two). Skipped while an animation owns the view
-         (DAT_00201c90 != 0). Set UW_NO_FORCE_3D_REDRAW to restore the
-         motion-gated behaviour. */
+         GX batches these flushes with the final HUD flush. Skipped while
+         an animation owns the view (DAT_00201c90 != 0). Set
+         UW_NO_FORCE_3D_REDRAW to restore the motion-gated behaviour. */
       g_force_redraw_no_xp = 1;
-      g_suppress_frame_timed_flush = 1;
       render_dungeon_frame_timed();
-      g_suppress_frame_timed_flush = 0;
       /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
          buffer, then paint it over the viewport (see
          uw_debug_blit_pick_buffer). */
@@ -643,6 +636,8 @@ void main_loop_hud_flush()
     }
   }
   if (DAT_00201c84 != 0) {
+    /* The forced pass already serviced this redraw request. */
+    if (_did_force_redraw) DAT_00201c84 &= ~2;
     dispatch_sticky_mode_handlers();
   }
   /* HACK: drive the attack-swing state machine (tick_weapon_swing_state) every
@@ -723,6 +718,7 @@ void main_loop_hud_flush()
      the same palette range and timing, corrupting or double-animating
      it. Pulled until that original mechanism is found or ruled out for
      good; the equipped lit-torch HUD icon is back to not animating. */
+  uw_end_present_batch();
   return;
 }
 
@@ -2411,6 +2407,8 @@ void hud_panel_wipe_transition_tick()
 
 {
   int iVar1;
+  /* Original .data at 0x87200; ARM 0x6e27c..0x6e284 indexes halfwords. */
+  static const ushort wipe_frames[6] = {0x20a7,0x20a8,0x20a9,0x20a8,0x20a7,0};
 
   if ((uint)DAT_0023c12f == (uint)DAT_0023c11f) {
     DAT_0023c220 = 2;
@@ -2433,7 +2431,7 @@ LAB_0006e244:
   else {
     DAT_0023c220 = DAT_0023c220 + 1;
     sprite_list_set_frame_id((int)DAT_0023c21c,
-                 (uint)DAT_0023c12f * 3 + -3 + (uint)*(ushort *)(iVar1 * 2 + 0x87200));
+                 (uint)DAT_0023c12f * 3 + -3 + (uint)wipe_frames[iVar1]);
   }
   if (5 < DAT_0023c220) {
     DAT_0023c25c = 0;

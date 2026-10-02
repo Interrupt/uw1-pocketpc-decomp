@@ -12,6 +12,7 @@ int uw_file_open_read(const char *win_path);
 int uw_file_open_write(const char *win_path, int create_always);
 int uw_file_read(int handle, void *buf, unsigned int size);
 int uw_file_write(int handle, const void *buf, unsigned int size);
+unsigned int uw_file_size(int handle, unsigned int *high);
 int uw_file_seek(int handle, int distance, int method);
 int uw_file_close(int handle);
 

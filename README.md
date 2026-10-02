@@ -35,6 +35,106 @@ purpose — see "Architecture notes" below.
 For crash hunting, add `-fsanitize=address` (catches bad memory accesses
 precisely) — the two are not mutually exclusive with the flags above.
 
+## Unit tests
+
+The C unit tests use [Unity](https://github.com/ThrowTheSwitch/Unity),
+vendored under `third_party/unity`. Tests also require Python 3. Build and run them with:
+
+```sh
+./run-tests.sh
+```
+
+`tests/test_math.c` checks `step_value_toward_limit` in both directions,
+including exact limits and rejected steps. It compiles the real `src/math.c`
+with test stubs for unrelated game services; no game data or SDL window is
+needed. The existing CMake configuration still requires SDL2 to be installed.
+
+`tests/test_chargen.c` tests new-character defaults, starting rolls, class
+attributes and bonus caps, skill-tree traversal, and confirmed skill picks.
+It tests functions from `src/chargen.c` without UI code, with deterministic random
+values and stubs for game services (including skill training). Class attributes
+and bonus pools come from `data/DATA/SKILLS.DAT`; synthetic trees and cap cases
+remain for testing specific edge conditions. Run just this
+suite with `ctest --test-dir build -R '^chargen$' --output-on-failure`.
+
+`tests/test_new_game.c` creates a stub character, copies the real
+`data/DATA/LEV.ARK`, runs the real archive-entry reader and level loader,
+and enters gameplay through the real game-mode transition. It checks the
+character survives loading, the level data and free-list offsets are loaded,
+the spawn request is tile (32, 2), and input dispatch switches to gameplay.
+File I/O and copying use `src/file_io.c`; writes go to a temporary SAVE0,
+leaving the supplied data and saves unchanged. Archive lifecycle bookkeeping,
+save records, scheduler/texture/automap services, player placement, and UI
+remain stubbed. Cancellation and copy/load failures are also checked.
+Both chargen and new-game tests require the copied `data/DATA` files and fail
+if they are missing. Run new-game with
+`ctest --test-dir build -R '^new_game$' --output-on-failure`.
+
+`tests/test_teleport.c` queues a player teleport and ticks the real
+`dungeon_view_anim_tick` once to process it. It checks the old level is saved,
+the destination is loaded, held-item state is cleared, the player is placed,
+and the pending request is consumed.
+The successful teleport then runs a real `movement_tick` on the destination
+level and verifies the player remains alive with unchanged HP; NPC/physics
+services are stubbed. It also covers same-level teleports, blocked destinations,
+placement fallback, and save/load failures. Level I/O,
+placement search, and display services are stubbed. Run it with
+`ctest --test-dir build -R '^teleport$' --output-on-failure`.
+
+`tests/test_movement.c` checks wall stopping/sliding, short and excessive
+steps, collision-mask widths, closed/open doors, the original radius and packed
+position rules, copied collision-link lookup, shared sweep/collision coordinates,
+and jump rebounds followed by a natural descent to the floor. It compiles the
+real movement setup, horizontal/vertical integrators, player position/heading
+writeback, collision response, candidate builder/sorter, link resolver, object
+collision dispatch, contact snapshot construction, and floor/step classifiers
+from their existing files. Contact tests cover static doors and the snapshot's
+velocity, speed, heading, and capped mass ratio.
+Door properties come from `data/DATA/COMOBJ.DAT`, which is required. Map
+sampling, object-slot lookup, placement synchronization, surface landing, and
+horizontal rollback/restart remain fixture boundaries; no window is needed.
+Run it with `ctest --test-dir build -R '^movement$' --output-on-failure`.
+
+`tests/test_inventory.c` exercises the real recursive object lookup and
+inventory widget lookup for a picked-up sack, its contents, nested containers,
+sibling links, absent objects, and quantity fields. It also loads the sack and
+key at level 1 tile (23,6) from `data/DATA/LEV.ARK` (required) and exercises
+the real object-description dispatcher and key helper, including mode gating
+and missing messages. The deferred-use regression arms the key prompt and
+clicks the real door at (22,5), checking callback identity, target forwarding,
+and cursor cleanup. Picking, range checks, and lock-action results are stubs.
+Object links, widget slots, and message output are
+fixtures; no UI is needed.
+Run it with `ctest --test-dir build -R '^inventory$' --output-on-failure`.
+
+`tests/test_combat.c` exercises the real melee hit resolver, nearest-target
+selector, hit-zone and facing calculations, swing processing, melee damage
+calculation, HP updates, death-state transitions, scripted death exceptions,
+kill experience, and the combat-triggered HUD wipe redraw. It covers hitting a critter, missing,
+excluding the attacker, nearest-target selection, all 64 heading pairs,
+failed skill checks, critter faction checks, lethal hits, repeat hits on dead
+critters, and kills by other critters. Collision candidates,
+object lookup, position projection, skill/random rolls, effects, conversation
+UI, the final XP grant, other HUD tickers, and sprite output are fixtures; HP,
+death-state changes, HUD status requests, redraw dispatch, and wipe animation
+state are real. The wipe regression verifies its frame sequence and completion.
+Run it with `ctest --test-dir build -R '^combat$' --output-on-failure`.
+
+`tests/test_traps.c` follows the real level-one orb at (58,13), near (57,13),
+to its linked text trap and checks that message `0x1201` reaches the scroll
+without pointer truncation. It also covers an absent message.
+`data/DATA/LEV.ARK` is required; message lookup and display are stubbed.
+Run it with `ctest --test-dir build -R '^traps$' --output-on-failure`.
+
+Game functions remain in their original files. For the larger modules,
+`tests/tools/extract_functions.py` generates test-only translation units in
+the build directory from the exact selected function bodies. CMake regenerates
+them when the original sources change; tests provide the isolated globals and
+service stubs. No duplicate implementations are maintained in the repository.
+
+Add cases using `RUN_TEST` in the test runner. Set `-DBUILD_TESTING=OFF` to
+omit the test targets.
+
 ## Running
 
 The game needs its original data files. Extract them from the WinCE

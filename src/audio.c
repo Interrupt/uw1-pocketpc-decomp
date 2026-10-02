@@ -945,7 +945,13 @@ short param_1;
   char stack0xffdbdfe0_buf [256];
   char *stack0xffdbdfe0_ptr;
   char cVar1;
-  undefined4 uVar2;
+  /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating
+     load_string_resource's real pointer to 32 bits before forwarding it
+     to load_and_resample_wave_file as a path -- same pointer-truncation
+     class as load_string_resource's own fix. Also used as a plain 0/1
+     flag elsewhere in this function, which still works as a null/non-
+     null pointer. */
+  char *uVar2;
   int iVar3;
   char *pcVar4;
   char extraout_r1;
@@ -1223,10 +1229,10 @@ undefined4 reset_dialogue_speech_state()
 // read_voice_sample_page_chunk for the incremental/streaming variant
 // used during actual playback.
 undefined2 load_voice_sample_page(param_1,param_2,param_3,param_4)
-int param_1;
+intptr_t param_1;
 int param_2;
-int param_3;
-undefined4 param_4;
+intptr_t param_3;
+intptr_t param_4;
 
 {
   undefined2 uVar1;
@@ -1251,11 +1257,11 @@ undefined4 param_4;
 // exhausted. Used by the babl conversation-rendering loop to stream
 // sample audio in playback-sized pieces.
 uint read_voice_sample_page_chunk(param_1,param_2,param_3,param_4,param_5)
-int param_1;
+intptr_t param_1;
 ushort param_2;
-int param_3;
+intptr_t param_3;
 uint param_4;
-undefined4 param_5;
+intptr_t param_5;
 
 {
   uint uVar1;

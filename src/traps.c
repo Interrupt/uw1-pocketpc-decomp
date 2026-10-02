@@ -67,6 +67,7 @@ uint param_3;
   undefined1 *puVar9;
   undefined1 *puVar10;
   int iVar11;
+  char *pcMessage;
   /* HACK: case 8's own two find_object_in_chain results (real `ushort *`
      returns, see that function's own signature) were stored into
      iVar16/iVar11 -- both plain `int`, truncating a real 64-bit
@@ -447,10 +448,11 @@ LAB_0007d460:
   case 0xf:
     break;
   case 0x10:
-    iVar11 = get_message_string((byte)param_1[3] & 0x3f | ((byte)param_1[2] & 0x2f | 0x90) << 5);
+    /* ARM 0x7de30..0x7de48 keeps the returned message pointer in r5. */
+    pcMessage = get_message_string((byte)param_1[3] & 0x3f | ((byte)param_1[2] & 0x2f | 0x90) << 5);
     debug_print(s_Look__it_s_a_text_trap_00087918);
-    if (iVar11 != 0) {
-      message_scroll_print_wrapped(iVar11);
+    if (pcMessage != 0) {
+      message_scroll_print_wrapped(pcMessage);
     }
   }
   if ((param_1[3] & 0xffc0) != 0) {

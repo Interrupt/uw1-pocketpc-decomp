@@ -1375,7 +1375,7 @@ char *DAT_001005c4;
 /* Not `static` -- also used by chargen.c; see the extern declaration and
    DAT_000fb860 macro alias in uw.h. */
 undefined1 DAT_000fb860_backing[256];
-undefined DAT_000fb863;
+/* DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. */
 /* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]`
    (4-byte stride) with idx up to a CONCAT11 of two record byte fields
    (draw_chargen_field_value). Real populator recovered this session: LAB_000255d0
@@ -1575,10 +1575,6 @@ ushort DAT_00100610;
 char *DAT_002046b8;
 undefined2 DAT_00100600;
 ushort DAT_00100604;
- undefined1 DAT_00202c3a_backing[8192];
-#define DAT_00202c3a DAT_00202c3a_backing[0]
- undefined1 DAT_00202c3c_backing[65536];
-#define DAT_00202c3c DAT_00202c3c_backing[0]
 byte *DAT_00202c6c;
 short DAT_001005f4;
 short DAT_001005f8;
@@ -1590,15 +1586,15 @@ ushort DAT_00100620;
    already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of
    a repeating 6-byte-stride per-candidate record in
    collision_height_envelope/sort_collision_candidates's up-to-256-entry collision
-   candidate list. Indexing past element 0 read/wrote whatever memory
-   happened to follow this single byte in the link order -- confirmed via
-   a real crash (a plain, non-debugger run walking toward a critter;
-   the same bug reproduced fine under lldb/ASan since they lay out
-   globals differently, masking it there). */
+   candidate list (the ARM loads at +0/+1/+2/+3/+4/+5 and next-record
+   sort reads at +6/+7 confirm the 6-byte stride). Indexing past element
+   0 read/wrote whatever memory happened to follow this single byte in
+   the link order -- confirmed via a real crash (a plain, non-debugger
+   run walking toward a critter; the same bug reproduced fine under
+   lldb/ASan since they lay out globals differently, masking it there).
+   Keep the aliases in uw.h: independent arrays lose the link high byte. */
  undefined1 DAT_00202c38_backing[8192];
 #define DAT_00202c38 DAT_00202c38_backing[0]
- undefined1 DAT_00202c39_backing[8192];
-#define DAT_00202c39 DAT_00202c39_backing[0]
  undefined1 DAT_00202c90_backing[65536];
 #define DAT_00202c90 DAT_00202c90_backing[0]
 /* Were lone `undefined1` scalars, but every use (dozens of call sites
@@ -1632,9 +1628,12 @@ undefined1 DAT_0010060c;
 short DAT_00100608;
 byte DAT_00100628;
 undefined4 DAT_001005d8;
-undefined DAT_001007d8;
+#define DAT_001007d8 DAT_001007d0_backing[8]
 byte DAT_001005fc;
-char DAT_00084f1c;
+/* Original blood hit-zone heights at 0x84f18; the fifth entry is set at runtime. */
+char DAT_00084f18_backing[5] = {5, 3, 1, 7, 0};
+#define DAT_00084f18 DAT_00084f18_backing[0]
+#define DAT_00084f1c DAT_00084f18_backing[4]
 /* Was `int` despite being assigned real pointer values derived from
    DAT_002046b8 (see there) and itself assigned into g_player_object
    (`char *`) -- truncating on this 64-bit host, part of the same crash
@@ -1718,7 +1717,7 @@ unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
 #define DAT_00084f0b DAT_00084f0b_backing[0]
 undefined DAT_00250658;
 undefined DAT_001007e1;
-undefined DAT_001007f8;
+#define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
 char s__DATA_cmb_dat_00084f40[] = "\\DATA\\cmb.dat";
 undefined2 DAT_00100630_backing[32768];
 #define DAT_00100630 DAT_00100630_backing[0]
@@ -2214,19 +2213,38 @@ undefined1 DAT_00101968_backing[8192];
 undefined1 DAT_0023c698_backing[32768];
 #define DAT_0023c698 DAT_0023c698_backing[0]
 ushort DAT_00101a6c;
-undefined4 DAT_00101a70;
+/* Bitmap workspace supplied by cache_ambient_sound_handle; retain the full
+   allocation address on 64-bit hosts. */
+uintptr_t DAT_00101a70;
 /* Dispatch table of babl conversation-text render-time opcode handlers
    (distinct from the babl_builtin_* script-language builtins): a raw
    compiled dialogue-text stream can embed a byte < 0x10 that indexes
    this table, each entry a (script_arg_ptr, render_state_ptr) ->
    words-consumed handler, called from the conversation-rendering loop
-   at its three known call sites. Known entries: babl_render_op_wrap_message,
-   babl_render_op_say. */
-undefined *PTR_FUN_00085408;
-undefined1 DAT_00085448_backing[32768];
+   at its three known call sites. Restored all 16 entries from the original
+   ARM table at 0x85408, including window timing and dismissal opcodes. */
+codeval *const PTR_FUN_00085408[16] = {
+  babl_render_op_wrap_message,
+  FUN_000362e8,
+  FUN_00036300,
+  FUN_00036308,
+  FUN_00036394,
+  FUN_000363f0,
+  FUN_00036404,
+  FUN_00036418,
+  babl_render_op_show_code,
+  FUN_000365bc,
+  FUN_000365fc,
+  FUN_0003663c,
+  FUN_00036698,
+  babl_render_op_say,
+  FUN_00036344,
+  babl_render_op_play_sound
+};
+undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
 char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char *DAT_002506ec;
-undefined1 DAT_00085460_backing[32768];
+undefined1 DAT_00085460_backing[11] = "\\CSXXX.N00";
 /* Was `uint`, truncating the real pointer this holds (`DAT_002029cc +
    0x5b00`, assigned in reset_level_object_arena -- see there) on this 64-bit host.
    Most uses are pointer<->pointer comparisons or subtractions between
@@ -2624,7 +2642,9 @@ short DAT_00201c94;
    see each site's own comment). */
 void (*const DAT_00085668_real_table[48])(void) = {
   /* mode 0 (in-game/dungeon view) */
-  (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))dungeon_view_anim_tick,
+  /* Original bit 1 is the 0x3c190 thunk to render_dungeon_frame_timed
+     (0x5bbe0); picture dismissal requests this bit via FUN_00049924(2). */
+  (void(*)(void))enter_dungeon_view, (void(*)(void))render_dungeon_frame_timed, 0, (void(*)(void))dungeon_view_anim_tick,
   0, 0, 0, 0,
   0, (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))handle_game_victory_sequence, (void(*)(void))movement_pacing_handler,
   (void(*)(void))sync_player_stats_to_hud, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
@@ -3737,7 +3757,7 @@ undefined DAT_00087530_backing[210];
 #define DAT_00087530 DAT_00087530_backing[0]
 undefined DAT_00087533_backing[210];
 #define DAT_00087533 DAT_00087533_backing[0]
-undefined4 DAT_002046b4;
+ushort *DAT_002046b4;
 undefined DAT_00085a90;
 char s_were_00085a98[] = "were";
 undefined1 DAT_00085aa0_backing[32768];
@@ -4121,14 +4141,6 @@ char DAT_00202c24;
 char DAT_00202c2c;
 char DAT_00202c18;
 char DAT_00202c1c;
-/* Same lone-scalar-used-as-a-stride-6-array bug as DAT_00202c38 above,
-   for the remaining fields of the same collision-candidate record. */
- undefined1 DAT_00202c3b_backing[8192];
-#define DAT_00202c3b DAT_00202c3b_backing[0]
- undefined1 DAT_00202c3d_backing[8192];
-#define DAT_00202c3d DAT_00202c3d_backing[0]
-undefined1 DAT_00202c3e_backing[8192];
-undefined1 DAT_00202c3f_backing[8192];
 char s__DATA_comobj_dat_00086894[] = "\\DATA\\comobj.dat";
 char s__DATA_objects_dat_000868a8[] = "\\DATA\\objects.dat";
 undefined4 LAB_0007913c()
@@ -4275,7 +4287,6 @@ undefined1 DAT_002046e4;
    at the name-derived offsets so both views alias. */
  unsigned char DAT_002049c8_backing[64];
 #define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
-#define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
 /* Offset 4 -- the third field of the X(0)/Y(2)/?(4)/heading(6) layout, and
    never given a name because nothing in the decompile reads it by a plain
    global symbol; every access is through the indexed `DAT_00202c6c[4]`
@@ -4287,7 +4298,6 @@ undefined1 DAT_002046e4;
    height) matches that reading too. The X/Y sync fix in sweep_collision_
    flags (commit ed49786) stopped short of this one -- added here as its
    natural third line, mirroring the existing pattern exactly. */
-#define DAT_002049cc (*(short *)(DAT_002049c8_backing + 0x04))
 #define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
 #define DAT_002049d0 (DAT_002049c8_backing[0x08])
 #define DAT_002049d1 (DAT_002049c8_backing[0x09])
@@ -4319,7 +4329,6 @@ int DAT_002046ec;
 #define DAT_0008699a  (DAT_00086998_backing[2])
 #define DAT_0008699b  (DAT_00086998_backing[3])
 #define DAT_0008699f  (DAT_00086998_backing[7])
-#define DAT_000869a0  (DAT_00086998_backing[8])
 #define DAT_000869a1  (DAT_00086998_backing[9])
 #define DAT_000869a2  (DAT_00086998_backing[10])
 int DAT_002046f8;
@@ -4518,8 +4527,9 @@ short DAT_00086996;
 // (coarse X/Y/Z, tile-eighths / eighth-fine units) collision math operates
 // on each sub-step before sweep_writeback_position commits it back to the
 // real player position.
-short g_sweep_foot_pos_backing[128];
-short *g_sweep_foot_pos = g_sweep_foot_pos_backing;
+/* UU.exe .data at 0x8697c contains 0x2049c8: the swept XYZ and
+   collision working XYZ are the same three halfwords, including rollback. */
+short *g_sweep_foot_pos = (short *)DAT_002049c8_backing;
 short DAT_00086980;
 short DAT_00086982;
 short DAT_00086984;
@@ -4817,7 +4827,7 @@ short DAT_0023b810;
    that doesn't match any real function in this file) patches entries
    [1] and [3] (b3c / b44) at runtime between emit_flat_wall_texture_select
    and emit_floor_texture_select. */
- code *DAT_00086b38_fnptrs[6] = {
+code *DAT_00086b38_fnptrs[6] = {
   (code *)emit_flat_wall_texture_select, (code *)emit_floor_texture_select,
   (code *)emit_flat_floor_texture_select, (code *)emit_flat_wall_texture_select,
   (code *)emit_flat_diagonal_texture_select, (code *)emit_diagonal_wall_texture_select,
@@ -6751,18 +6761,7 @@ undefined *PTR_Ordinal_35_000841cc;
 
 
 
-/* g_suppress_frame_timed_flush: lets main_loop_hud_flush's per-tick forced
-   render_dungeon_frame_timed() call (see its own comment) skip THIS
-   function's real screen flush, since main_loop_hud_flush already does its
-   own explicit flush_dirty_rect_to_display(1) right after (once
-   poll_input_bindings and the HUD dispatch have also run). Without this,
-   every tick called GXEndDraw() twice -- once here, once from that trailing
-   flush -- and each is independently vsync-throttled (see GXEndDraw's own
-   comment: real GAPI hardware blocked every call until the next refresh),
-   roughly doubling real per-tick time. spin_view_full_rotation's own call site (a
-   rare one-shot 64-substep view-spin animation with no other per-substep
-   flush) leaves the flag clear and keeps flushing every substep as before. */
-int g_suppress_frame_timed_flush = 0;
+
 
 
 
@@ -6849,6 +6848,10 @@ uint read_realtime_clock_units()
 
 
 
+/* FUN_0002295c/FUN_00022998 were here on the unit-testing-framework side
+   of this merge -- already named and extracted to src/resources.c as
+   load_string_resource/load_string_resource_large on this branch (see
+   that file). */
 
 
 
@@ -7697,7 +7700,7 @@ undefined4 dungeon_view_anim_tick()
       weapon_overlay_flash_hold((int)g_visibility_max_ring_passes);
     }
     if (DAT_00201b68 != DAT_00201c7c) {
-      iVar1 = transition_to_level();
+      iVar1 = transition_to_level(DAT_00201b68, DAT_00201c7c);
       if (iVar1 == 0) {
         report_fatal_error_and_exit(0x300c);
       }
@@ -9281,7 +9284,7 @@ ushort *param_1;
   char cVar1;
   undefined4 uVar2;
   ushort *puVar3;
-  int iVar4;
+  ushort *iVar4;
   ushort *puVar5;
   int iVar6;
 
@@ -11184,36 +11187,9 @@ uint sweep_collision_flags()
   ushort local_3c;
   
   bVar2 = false;
-  bVar7 = (DAT_002048bc[2] & 0x80) == 0;
-  uVar1 = *DAT_002048bc;
+  bVar7 = (*(ushort *)(DAT_002048bc + 4) & 0x80) == 0;
+  uVar1 = *(ushort *)DAT_002048bc;
   DAT_00204870 = 0;
-  /* Sync the collision working block's X/Y (DAT_00202c6c[+0/+2], i.e.
-     DAT_002049c8/ca) to the sweep's live sub-tile position before the tile
-     lookups in collision_build_height_field / collision_height_envelope.  sweep_init_position copies the
-     heading/height fields into this block but never the position, and Ghidra
-     dropped whatever kept it current -- so DAT_002049c8/ca sat at (0,0) and
-     every collision test hit tile (0,0), letting the player walk straight
-     through solid walls and off the map.  g_sweep_foot_pos is the live position
-     in the same 1/8-tile units these readers expect (>>3 -> tile).
-
-     That original fix stopped at X/Y -- offset+4 (DAT_002049cc, see its own
-     comment at the struct declaration) is the position triplet's missing
-     third field, "the player's current sub-tile height." Left at 0 (its
-     static-init value, never written on this global instance), it made
-     collision_corner_flags's "(step_limit + current_Z) < sampled_floor_
-     height" walkable/auto-stick test compare every real floor height
-     against a Z of 0 -- always true, so the auto-stick branch (which sets
-     the "walkable" bit 4) could never be reached on any slope, forcing
-     every ramp tile through the block/fall-arm path instead of the
-     snap-resolver. Confirmed live via UW_DEBUG_RAMP's [ramp-corner-flags]
-     trace: off4=0 on every call throughout a ramp descent, while the real
-     sampled floor height tracked the slope correctly (~95, ~94, ~93...).
-     g_sweep_foot_pos[2] is footz itself (*(short*)((char*)g_sweep_foot_pos+4)),
-     already in the same raw units collision_corner_flags compares against --
-     no additional scaling needed, matching X/Y's own direct assignment. */
-  DAT_002049c8 = g_sweep_foot_pos[0];
-  DAT_002049ca = g_sweep_foot_pos[1];
-  DAT_002049cc = g_sweep_foot_pos[2];
   if (tilemap_lookup((short)((int)g_sweep_foot_pos[0] >> 3),(short)((int)g_sweep_foot_pos[1] >> 3)) ==
       (void *)0x0) {
     /* stepped outside the 64x64 map -- the border is always solid; report a
@@ -11234,7 +11210,8 @@ uint sweep_collision_flags()
   if (getenv("UW_DEBUG_RAMP"))
     fprintf(stderr, "[ramp-post-reticle] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   local_3c = DAT_002049d6 | DAT_002049d4;
-  bVar8 = (local_3c & DAT_002048bc[2]) == 0;
+  /* ARM 0x5a758..0x5a774 reads the geometry mask as a short at +4. */
+  bVar8 = (local_3c & *(ushort *)(DAT_002048bc + 4)) == 0;
   if ((DAT_002049dc != '\0') &&
      (iVar6 = (int)DAT_002049de, iVar6 < (int)((uint)DAT_002049dd + (int)DAT_002049de))) {
     do {
@@ -11420,9 +11397,10 @@ LAB_0005abe4:
 
 
 
-
-
-
+/* FUN_0005aea0/FUN_0005b010 were here on the unit-testing-framework
+   side of this merge -- already named and extracted to src/movement.c
+   as find_nearby_door_in_candidates/get_first_nearby_candidate_object
+   on this branch (identical bodies, see that file). */
 
 
 
@@ -12775,8 +12753,3 @@ undefined4 param_1;
   }
   return uVar2;
 }
-
-
-
-
-

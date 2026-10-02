@@ -627,7 +627,11 @@ uint param_1;
   undefined4 uVar5;
   uint uVar6;
   int extraout_r1;
-  char *iVar7;
+  /* Heading differences and velocity arithmetic must stay signed integers.
+   * Ghidra merged these with a later record-pointer role; pointer comparisons
+   * treated negative heading differences as large positive addresses. */
+  int iVar7;
+  char *movement_record;
   char *iVar8;
   bool bVar9;
   
@@ -688,10 +692,10 @@ uint param_1;
       iVar7 = (uint)*(ushort *)(iVar8 + 0x29) + (uVar6 & 0xffff);
       *(char *)(iVar8 + 0x29) = (char)iVar7;
       *(char *)(DAT_00204874 + 0x2a) = (char)((uint)iVar7 >> 8);
-      iVar7 = DAT_00204874;
+      movement_record = DAT_00204874;
       uVar4 = Ordinal_2005(0xf,(uint)*(byte *)(DAT_00204874 + 0x16) *
                                (int)*(short *)(DAT_00204874 + 0x14));
-      *(char *)(iVar7 + 0x14) = (char)uVar4;
+      *(char *)(movement_record + 0x14) = (char)uVar4;
       *(char *)(DAT_00204874 + 0x15) = (char)((ushort)uVar4 >> 8);
       iVar8 = DAT_00204874;
     }
@@ -1146,7 +1150,7 @@ void sweep_apply_collision()
   uVar1 = collision_flags_to_locomotion_code(local_14[0]);
   *(undefined1 *)(DAT_00204874 + 0x28) = uVar1;
   if ((local_14[0] & 0xc000) == 0) {
-    local_14[0] = local_14[0] & ~*DAT_002048bc;
+    local_14[0] = local_14[0] & ~*(ushort *)DAT_002048bc;
     if (local_14[0] == 0) {
       if (getenv("UW_DEBUG_JUMP"))
         fprintf(stderr, "[apply-collision] -> clean resolve (no flags after mask)\n");
@@ -1181,41 +1185,20 @@ void sweep_apply_collision()
       else if (DAT_002048bc == (char *)&DAT_002049a0) _cb = (codeval *)DAT_002049a8;
       else if (DAT_002048bc == (char *)&DAT_002049b0) _cb = (codeval *)DAT_002049b8;
       if (getenv("UW_DEBUG_JUMP"))
-        fprintf(stderr, "[apply-collision] cond1(local_14&bc[1]==0)=%d bc[1]=0x%x cb=%p\n",
-                (int)((local_14[0] & DAT_002048bc[1]) == 0), (unsigned)(unsigned char)DAT_002048bc[1],
+        fprintf(stderr, "[apply-collision] cond1(local_14&callback_mask==0)=%d callback_mask=0x%x cb=%p\n",
+                (int)((local_14[0] & *(ushort *)(DAT_002048bc + 2)) == 0), (unsigned)*(ushort *)(DAT_002048bc + 2),
                 (void *)_cb);
-      if (((local_14[0] & DAT_002048bc[1]) == 0) ||
+      if (((local_14[0] & *(ushort *)(DAT_002048bc + 2)) == 0) ||
          (_cb == (codeval *)0) || (iVar2 = (*_cb)(local_14), iVar2 == 0)) {
       // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
       // slide the move along it (sweep_slide_along_wall) instead of stopping dead.
-      /* Narrowed from the full 0x700 mask to 0x600 (0x200|0x400): 0x100
-         (the bit this drops) isn't only set by a real horizontal wall hit
-         -- sweep_collision_flags also ORs it in from the destination
-         tile's own baseline property flags (DAT_002049d6|DAT_002049d4)
-         and from an unrelated "iVar4 < DAT_002049d9" height check,
-         neither of which means "hit an angled face". 0x200/0x400 come
-         from the genuine "ceiling clearance" check a few lines up in
-         sweep_collision_flags (target floor + player height doesn't fit
-         under the tile top) -- a real geometric obstruction, unlike the
-         coincidental 0x100 baseline bit.
-         Confirmed live via UW_DEBUG_JUMP/JUMP2: a comfortably airborne,
-         purely vertical jump (foot_z=98, floor_z=96, no horizontal motion
-         at all) got local_14[0]=0x1100 (ONLY the 0x100 bit, never 0x200/
-         0x400) every tick from that baseline alone, which sweep_slide_
-         along_wall's `sweep_step(-1)` then reverted -- undoing that
-         entire tick's vertical integration and pinning the coarse foot Z
-         near the jump's initial peak for dozens of ticks.
-         Two narrower gates were tried and reverted first: g_fall_accel==0
-         (also goes nonzero for perfectly ordinary walking once a step/
-         fall gets armed a few lines below, letting a player walk straight
-         through a wall with zero resistance once gravity got armed -- see
-         [[water-wading-and-wall-slide-findings]]) and DAT_00086990==0
-         (turned out to be 0 in both the jump AND the broken wall-walk
-         repro alike, so it didn't discriminate at all -- reintroduced the
-         jump regression without fixing the wall one). Checking which
-         SPECIFIC bits are set, rather than gating on unrelated player
-         state, cleanly distinguishes the two live-tested cases above. */
-      bVar3 = (local_14[0] & 0x600) != 0;
+      /* The original mask includes raised faces (0x100), not just rock
+       * and object walls (0x600). A height flag is a horizontal obstruction
+       * only while the footprint floor is above the foot; airborne baseline
+       * flags must not roll back an otherwise unobstructed vertical jump. */
+      bVar3 = ((local_14[0] & 0x600) != 0) ||
+              (((local_14[0] & 0x100) != 0) &&
+               (g_sweep_foot_pos[2] < (short)DAT_002049d9));
       if (bVar3) {
         sweep_slide_along_wall((local_14[0] & 0x400) == 0);
       }
@@ -1763,7 +1746,7 @@ ushort * param_1;
 {
   ushort uVar1;
   undefined4 *puVar2;
-  int iVar3;
+  char *iVar3;
   undefined4 uVar4;
   uint uVar5;
   
@@ -1991,7 +1974,12 @@ LAB_0002caa4:
 // resolve_object_link) the moment one is found, else 0. Confirmed
 // used by movement.c alongside get_first_nearby_candidate_object in
 // NPC movement/pathfinding.
-undefined4 find_nearby_door_in_candidates(param_1,param_2)
+// BUG FIX (unit-testing-framework merge): was `undefined4` return (and
+// a matching `undefined4 uVar4`), truncating the real pointer to 32
+// bits on this 64-bit host -- same pointer-truncation class fixed
+// throughout this project. Caught live by test_movement's
+// test_door_contact_lookup_returns_full_pointer_and_tile.
+void *find_nearby_door_in_candidates(param_1,param_2)
 undefined1 * param_1;
 byte * param_2;
 
@@ -1999,7 +1987,7 @@ byte * param_2;
   ushort uVar1;
   ushort *puVar2;
   uint uVar3;
-  undefined4 uVar4;
+  void *uVar4;
   int iVar5;
   int iVar6;
   
@@ -2032,10 +2020,14 @@ byte * param_2;
 // was FUN_0005b010 -- returns the first entry of the nearby
 // collision-candidate list (DAT_002049de), or 0 if the list
 // (DAT_002049dd) is empty.
-undefined4 get_first_nearby_candidate_object()
+// BUG FIX (unit-testing-framework merge): same pointer-truncation class
+// as find_nearby_door_in_candidates's own fix just above -- was
+// `undefined4` return/local, truncating resolve_object_link's real
+// pointer to 32 bits on this 64-bit host.
+void *get_first_nearby_candidate_object()
 
 {
-  undefined4 uVar1;
+  void *uVar1;
 
   if (DAT_002049dd == '\0') {
     uVar1 = 0;

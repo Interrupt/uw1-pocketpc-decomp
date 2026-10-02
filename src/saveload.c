@@ -368,7 +368,10 @@ char param_1;
   char *stack0xffdc2e30_ptr;
   char cVar1;
   short sVar2;
-  undefined4 uVar3;
+  /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating
+     load_string_resource's real pointer -- same class as that
+     function's own fix. */
+  char *uVar3;
   int iVar4;
   char *pcVar5;
   char *pcVar6;
@@ -529,7 +532,10 @@ char *param_2;
   short sVar2;
   char *pcVar3;
   int iVar4;
-  undefined4 uVar5;
+  /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating
+     load_string_resource's (and Ordinal_1063's) real pointer -- same
+     class as load_string_resource's own fix. */
+  char *uVar5;
   char *pcVar6;
   uint uVar7;
   char *pcVar8;
@@ -575,7 +581,7 @@ char *param_2;
       iVar4 = iVar4 + 1;
     } while (*pcVar6 != '\0');
     uVar5 = Ordinal_1063(local_638,s__PLAYER_DAT_00087088);
-    iVar4 = win_file_exists(uVar5,0);
+    iVar4 = win_file_exists(local_638,0);
     if (iVar4 == -1) {
       load_string_resource(local_530);
       Ordinal_161();

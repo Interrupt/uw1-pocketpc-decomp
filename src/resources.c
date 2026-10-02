@@ -2105,8 +2105,17 @@ void *param_3;
 // loader: loads string resource param_1 into a fixed static buffer
 // and returns its address. Confirmed as "LoadString-shaped" by an
 // existing comment on win_file_exists, one of its callers.
+// BUG FIX (unit-testing-framework merge): param_1 was `undefined4`
+// (32-bit), but every real call site across this project (saveload.c,
+// registration.c, game.c, winfile_wrappers.c) passes a real stack/path
+// pointer, which got truncated to 32 bits storing into this narrower
+// parameter, then zero-extended back into Ordinal_196's `const char
+// *source` as a garbage pointer -- confirmed live (EXC_BAD_ACCESS in
+// Ordinal_196's strlen, called from check_save_disk_space, crashing
+// every single regression script at startup). Widened to a real
+// pointer type, matching this project's other pointer-truncation fixes.
 undefined *load_string_resource(param_1)
-undefined4 param_1;
+char * param_1;
 
 {
   Ordinal_196(0,2,param_1,0xffffffff,&DAT_000fb650,0xff);
@@ -2119,8 +2128,10 @@ undefined4 param_1;
 // but via a different ordinal (Ordinal_197, two extra trailing
 // arguments) and a larger buffer (0x260 vs 0xff) -- likely a longer-
 // message variant of the same LoadString-shaped resource loader.
+// BUG FIX (unit-testing-framework merge): same pointer-truncation class
+// as load_string_resource's own fix just above.
 undefined *load_string_resource_large(param_1)
-undefined4 param_1;
+char * param_1;
 
 {
   Ordinal_197(0,0x260,param_1,0xffffffff,&DAT_000fb550,0xff,0,0);

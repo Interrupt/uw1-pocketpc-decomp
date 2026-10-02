@@ -18,22 +18,31 @@
 
 // was FUN_000226e8 -- CreateFile(GENERIC_READ, OPEN_EXISTING) immediately
 // followed by CloseHandle: a "does this file exist" probe, not a real
-// open. The filename comes from load_string_resource (a LoadString-shaped
-// resource-string loader in src/resources.c, unrelated to the file-I/O
-// cluster below). NOTE: this call site passes load_string_resource() zero
-// arguments despite it taking one parameter (the resource id) -- same
-// dropped-argument shape fixed repeatedly elsewhere in this project, but
-// NOT fixed here: win_file_exists itself has no parameter of its own to
-// forward as the resource id, and there's only this one call site, so
-// there isn't enough evidence for what the intended id even is. See
-// todo.md.
-undefined4 win_file_exists()
+// open. MERGE NOTE (unit-testing-framework): this function itself had the
+// dropped argument -- confirmed by both of its real call sites
+// (src/saveload.c) always passing a path, despite this declaration taking
+// none. Fixed by adding the `path` parameter and forwarding it to
+// load_string_resource (was FUN_0002295c, see its own comment), which
+// needs an argument too (previously called bare here -- the two dropped-
+// argument bugs were masking each other). The unit-testing-framework
+// branch's independent fix called this same ordinal "prepares the
+// supplied path for the ordinal file API" rather than a LoadString-style
+// resource loader -- load_string_resource's real behavior may need
+// re-examining in light of this (its other ~15 call sites also pass
+// path-shaped stack buffers, not integer resource ids -- see todo.md).
+undefined4 win_file_exists(path)
+char *path;
 
 {
-  undefined4 uVar1;
+  /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating
+     load_string_resource's real pointer -- same class as that
+     function's own fix (currently harmless here since Ordinal_168 is
+     an unimplemented no-op stub that ignores this argument, but fixed
+     for correctness/consistency). */
+  char *uVar1;
   int iVar2;
 
-  uVar1 = load_string_resource();
+  uVar1 = load_string_resource(path);
   iVar2 = Ordinal_168(uVar1,0x80000000,1,0,3,0x80,0);
   if (iVar2 == -1) {
     uVar1 = 0xffffffff;
