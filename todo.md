@@ -23,6 +23,32 @@
       139, settle_mobile_to_immobile), unaffected -- different subsystem,
       as expected. Still open.
 
+## Fixed this round (code-cleanup-first-pass, texture-detail emit cluster)
+- [x] `emit_floor_texture_select`'s low-detail fallback called
+      `FUN_0005dd84();` (now `emit_flat_wall_texture_select`) with
+      zero arguments despite it taking 3 parameters that exactly
+      match `emit_floor_texture_select`'s own -- the same dropped-
+      argument idiom fixed repeatedly this session. Fixed by
+      forwarding `param_1,param_2,param_3`.
+- [x] `emit_diagonal_wall_texture_select`'s own low-detail fallback
+      had the identical bug: called `FUN_0005dff4();` (now
+      `emit_flat_diagonal_texture_select`) with zero arguments
+      instead of its 4 matching parameters. Fixed the same way.
+      19/19 regression scripts clean for both fixes (full suite,
+      since this touches core dungeon-rendering code).
+- [x] Documentation correction (not a code bug): `draw_brightness_panel`/
+      `handle_brightness_click` (pause-menu state 4) were misnamed
+      from an earlier pass's "brightness/gamma slider" guess.
+      `configure_texture_detail_functions` reads the exact same
+      `DAT_00086df8+0xb5` high nibble to choose between flat-shaded
+      and fully-textured floor rendering -- and
+      `handle_detail_level_click` (renamed) calls
+      `configure_texture_detail_functions` directly right after
+      adjusting that nibble, the clearest possible confirmation this
+      is a texture detail-level setting, not screen brightness.
+      Renamed to `draw_detail_level_panel`/`handle_detail_level_click`
+      and corrected every comment/label referencing the old name.
+
 ## Noted this round (code-cleanup-first-pass, keyboard/cursor input cluster) -- NOT fixed
 - `wait_for_key_or_mouse_move` (was `FUN_000576d0`) takes one
   parameter (gates whether `dispatch_sticky_mode_handlers` runs

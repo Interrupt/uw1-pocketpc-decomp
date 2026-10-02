@@ -561,7 +561,7 @@ int param_1;
   *(char *)(DAT_00086df8 + 0x61) = (char)uVar5;
   *(char *)(DAT_00086df8 + 0x62) = (char)(uVar5 >> 8);
   *(byte *)(DAT_00086df8 + 0xb5) = *(byte *)(DAT_00086df8 + 0xb5) & 0xf | 0x30;
-  FUN_0005d2b0();
+  configure_texture_detail_functions();
   *(undefined1 *)(DAT_00086df8 + 0x6d) = 8;
   *(undefined1 *)(DAT_00086df8 + 0x65) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x66) = 0;

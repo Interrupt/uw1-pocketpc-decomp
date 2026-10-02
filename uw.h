@@ -2685,8 +2685,11 @@ extern char s_panels_00087260[];
 #define DAT_000858a8 (*(undefined1 *)DAT_000858a8_real)
 #define DAT_000858b8 (*(undefined1 *)DAT_000858b8_real)
 #define DAT_00086b38 (DAT_00086b38_fnptrs[0])
+#define DAT_00086b3c (DAT_00086b38_fnptrs[1])
 #define DAT_00086b40 (DAT_00086b38_fnptrs[2])
+#define DAT_00086b44 (DAT_00086b38_fnptrs[3])
 #define DAT_00086b48 (DAT_00086b38_fnptrs[4])
+extern ushort DAT_0023b7f8;
 #define DAT_00086b50  DAT_00086b50_at(0x00)
 #define DAT_00086b52  DAT_00086b50_at(0x02)
 #define DAT_000870f2 (*(short *)(DAT_000870f0_backing + 2))
@@ -3611,10 +3614,10 @@ void draw_pause_menu_main_list();
 void draw_save_load_slot_list();
 void draw_quit_confirm_panel();
 void draw_music_or_sound_toggle_panel();
-void draw_brightness_panel();
+void draw_detail_level_panel();
 void handle_music_toggle_click();
 void handle_sound_toggle_click();
-void handle_brightness_click();
+void handle_detail_level_click();
 void handle_pause_menu_main_list_click();
 void handle_save_load_slot_click();
 void handle_quit_confirm_click();
@@ -3707,14 +3710,14 @@ void merge_adjacent_visibility_rays();
 void run_visibility_flood();
 void rebuild_dungeon_view();
 void dungeon_view_prepass_stub();
-void FUN_0005d2b0();
+void configure_texture_detail_functions();
 void emit_hud_draw_commands();
 void walk_visible_tiles();
-void FUN_0005dd84();
-void FUN_0005debc();
-void FUN_0005dff4();
+void emit_flat_wall_texture_select();
+void emit_flat_floor_texture_select();
+void emit_flat_diagonal_texture_select();
 void emit_floor_texture_select();
-void FUN_0005e3c0();
+void emit_diagonal_wall_texture_select();
 void process_visible_tile_cell();
 void emit_tile_objects();
 void emit_object_billboard();

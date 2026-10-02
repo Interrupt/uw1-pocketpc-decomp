@@ -5169,9 +5169,9 @@ int DAT_002046fc;
    -- a Ghidra headless memory dump of 0x868e0 and 0x86900 in the
    original .exe gives the real function pointers at every one of these
    8 slots, no inference needed. Index 4's real target is 0x5693c
-   (draw_brightness_panel, brightness) and index 5's is 0x56838 (draw_quit_confirm_panel,
+   (draw_detail_level_panel, detail level) and index 5's is 0x56838 (draw_quit_confirm_panel,
    quit confirm) in the draw table -- the reverse of what was guessed --
-   and correspondingly 0x56a70 (handle_brightness_click, brightness click) / 0x56c88
+   and correspondingly 0x56a70 (handle_detail_level_click, detail level click) / 0x56c88
    (handle_quit_confirm_click, quit click) in the click table. Swapped both tables'
    4/5 entries to match:
      0  load-game slot list  (draw_save_load_slot_list draw, shared w/ save;
@@ -5180,7 +5180,7 @@ int DAT_002046fc;
      1  save-game slot list  (same pair as 0)
      2  music on/off toggle  (draw_music_or_sound_toggle_panel draw / handle_music_toggle_click click)
      3  sound on/off toggle  (draw_music_or_sound_toggle_panel draw / handle_sound_toggle_click click)
-     4  torch brightness     (draw_brightness_panel draw / handle_brightness_click click)
+     4  texture detail level (draw_detail_level_panel draw / handle_detail_level_click click)
      5  quit-game confirm    (draw_quit_confirm_panel draw / handle_quit_confirm_click click)
      6  top-level menu list  (draw_pause_menu_main_list draw / handle_pause_menu_main_list_click click)
    Index 7 is never dispatched (DAT_000868dc==7 is close_ui_panel_return_to_game's
@@ -5194,17 +5194,23 @@ int DAT_002046fc;
    is_music_playing when true) and handle_music_toggle_click's own body
    (calls set_music_enabled, registered at index 2) confirms 2=music,
    3=sound as written now. The function POINTERS at each index were
-   never changed by this correction, only these prose labels. */
+   never changed by this correction, only these prose labels.
+   ALSO CORRECTED (this pass): entry 4 was previously named/labeled as
+   "brightness" -- draw_detail_level_panel/handle_detail_level_click's
+   own comments explain why this is actually a texture detail-level
+   setting (confirmed by configure_texture_detail_functions reading
+   the exact same DAT_00086df8+0xb5 nibble to choose flat vs. textured
+   floor rendering), not screen brightness/gamma. */
 extern void draw_pause_menu_main_list(void);
 extern void draw_save_load_slot_list(void);
 extern void draw_quit_confirm_panel(void);
 extern void draw_music_or_sound_toggle_panel(void);
-extern void draw_brightness_panel(void);
+extern void draw_detail_level_panel(void);
 extern void handle_save_load_slot_click(int);
 extern void handle_music_toggle_click(int);
 extern void handle_sound_toggle_click(int);
 extern void handle_quit_confirm_click(int);
-extern void handle_brightness_click(int);
+extern void handle_detail_level_click(int);
 extern void handle_pause_menu_main_list_click(int);
 /* CORRECTED: a prior pass's inline comments here had states 2/3 swapped
    -- confirmed by directly tracing draw_music_or_sound_toggle_panel's own
@@ -5217,7 +5223,7 @@ static void (*const PTR_FUN_000868e0_table[8])(void) = {
   draw_save_load_slot_list,  /* 1: save slot list */
   draw_music_or_sound_toggle_panel,  /* 2: music toggle   */
   draw_music_or_sound_toggle_panel,  /* 3: sound toggle   */
-  draw_brightness_panel,  /* 4: brightness     */
+  draw_detail_level_panel,  /* 4: texture detail level */
   draw_quit_confirm_panel,  /* 5: quit confirm   */
   draw_pause_menu_main_list,  /* 6: top-level list */
   0,
@@ -5228,7 +5234,7 @@ static void (*const PTR_FUN_00086900_table[8])(int) = {
   handle_save_load_slot_click,  /* 1: save slot list */
   handle_music_toggle_click,  /* 2: music toggle   */
   handle_sound_toggle_click,  /* 3: sound toggle   */
-  handle_brightness_click,  /* 4: brightness     */
+  handle_detail_level_click,  /* 4: texture detail level */
   handle_quit_confirm_click,  /* 5: quit confirm   */
   handle_pause_menu_main_list_click,  /* 6: top-level list */
   0,
@@ -5305,10 +5311,16 @@ void draw_music_or_sound_toggle_panel()
 
 
 
-// was FUN_0005693c -- draws the brightness/gamma panel (state 4):
-// reads the current level from the high nibble of DAT_00086df8+0xb5
-// and draws the slider sprite at a position derived from it.
-void draw_brightness_panel()
+// was FUN_0005693c -- draws the texture detail-level panel (state
+// 4): reads the current level from the high nibble of
+// DAT_00086df8+0xb5 and draws the slider sprite at a position
+// derived from it. CORRECTED (this pass, from an earlier "brightness/
+// gamma" guess): directly confirmed as a detail-level setting by
+// configure_texture_detail_functions, which reads the exact same
+// field/nibble to choose between a flat-shaded or fully-textured
+// floor emitter -- a classic performance "detail: low/high" option,
+// not screen brightness.
+void draw_detail_level_panel()
 
 {
   uint uVar1;
@@ -5386,10 +5398,15 @@ LAB_00056a44:
 
 
 
-// was FUN_00056a70 -- click handler for the brightness panel (state
-// 4): adjusts the gamma level in DAT_00086df8+0xb5's high nibble by
-// the clicked delta, forces a full redraw, and refreshes the slider.
-void handle_brightness_click(param_1)
+// was FUN_00056a70 -- click handler for the texture detail-level
+// panel (state 4): adjusts the detail level in DAT_00086df8+0xb5's
+// high nibble by the clicked delta, reconfigures the texture-emit
+// function pointers via configure_texture_detail_functions (called
+// directly right here -- the clearest possible confirmation this is
+// a detail setting, not brightness/gamma; see
+// draw_detail_level_panel's correction comment), forces a full
+// redraw, and refreshes the slider.
+void handle_detail_level_click(param_1)
 int param_1;
 
 {
@@ -5401,7 +5418,7 @@ int param_1;
     *(byte *)(DAT_00086df8 + 0xb5) =
          (byte)(((param_1 + 4) * 0x10000 >> 0x10 & 0xfU) << 4) |
          *(byte *)(DAT_00086df8 + 0xb5) & 0xf;
-    FUN_0005d2b0();
+    configure_texture_detail_functions();
     full_dungeon_redraw();
     weapon_overlay_and_full_redraw();
     reload_single_grtile_entry(0x20ed,s_optbtns_00086954,param_1 + 0x39);

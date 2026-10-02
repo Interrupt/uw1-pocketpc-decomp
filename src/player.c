@@ -872,7 +872,7 @@ undefined4 param_1;
   DAT_002048a8 = (undefined1)(*(ushort *)(DAT_00086df8 + 0xb6) >> 3);
   set_sound_effects_enabled(*(byte *)(DAT_00086df8 + 0xb5) & 3);
   set_music_enabled(*(byte *)(DAT_00086df8 + 0xb5) >> 2 & 3);
-  FUN_0005d2b0();
+  configure_texture_detail_functions();
   apply_movement_mode_profile(*(ushort *)(DAT_00086df8 + 0xb6) & 7);
   return;
 }

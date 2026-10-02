@@ -1514,7 +1514,7 @@ LAB_000647e4:
       }
       if (uVar10 == 0) {
         if (DAT_0023b818 < '\x01') {
-          FUN_0005e3c0(0,DAT_0023bc88,DAT_0023b91c >> 6 & 0xff,g_current_tile->wall_tex);
+          emit_diagonal_wall_texture_select(0,DAT_0023bc88,DAT_0023b91c >> 6 & 0xff,g_current_tile->wall_tex);
         }
         *DAT_00110fc0 = 2;
         DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -1566,7 +1566,7 @@ LAB_00064cdc:
           local_28 = (short)door_type;
           if (local_28 == 7) {
             if (DAT_0023b818 < '\x01') {
-              FUN_0005e3c0(0,DAT_0023bc88,DAT_0023b91c >> 6 & 0xff,
+              emit_diagonal_wall_texture_select(0,DAT_0023bc88,DAT_0023b91c >> 6 & 0xff,
                            g_current_tile->wall_tex);
             }
             *DAT_00110fc0 = 0xb2;

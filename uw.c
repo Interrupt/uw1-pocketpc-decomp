@@ -4812,12 +4812,15 @@ short DAT_0023b810;
    so `(*DAT_0023b4f4)(...)` was a call through NULL the instant the
    (now-working) visibility fill marked any tile visible. The six entries
    are contiguous in .data: b38,b3c / b40,b44 / b48,b4c -- one array, the
-   symbols index it at 0..4. NOT const: FUN_0005d664 patches entries [1]
-   and [3] (b3c / b44) at runtime between FUN_0005dd84 and emit_floor_texture_select. */
+   symbols index it at 0..4. NOT const: configure_texture_detail_functions
+   (CORRECTED this pass -- was mislabeled "FUN_0005d664", an address
+   that doesn't match any real function in this file) patches entries
+   [1] and [3] (b3c / b44) at runtime between emit_flat_wall_texture_select
+   and emit_floor_texture_select. */
  code *DAT_00086b38_fnptrs[6] = {
-  (code *)FUN_0005dd84, (code *)emit_floor_texture_select,
-  (code *)FUN_0005debc, (code *)FUN_0005dd84,
-  (code *)FUN_0005dff4, (code *)FUN_0005e3c0,
+  (code *)emit_flat_wall_texture_select, (code *)emit_floor_texture_select,
+  (code *)emit_flat_floor_texture_select, (code *)emit_flat_wall_texture_select,
+  (code *)emit_flat_diagonal_texture_select, (code *)emit_diagonal_wall_texture_select,
 };
 #define DAT_00086b38 (DAT_00086b38_fnptrs[0])
 #define DAT_00086b3c (DAT_00086b38_fnptrs[1])
@@ -14348,50 +14351,6 @@ LAB_0005abe4:
 
 
 
-void FUN_0005d2b0()
-
-{
-  uint uVar1;
-  int iVar2;
-  bool bVar3;
-  bool bVar4;
-  bool bVar5;
-  bool bVar6;
-  
-  bVar3 = false;
-  DAT_00086b2c = 0;
-  uVar1 = (uint)(short)(ushort)(*(byte *)(DAT_00086df8 + 0xb5) >> 4);
-  bVar4 = false;
-  if (uVar1 != 0) {
-    bVar6 = SBORROW4(uVar1,1);
-    iVar2 = uVar1 - 1;
-    bVar5 = uVar1 == 1;
-    bVar3 = 1 < uVar1;
-    if (1 < uVar1) {
-      bVar6 = SBORROW4(uVar1,2);
-      iVar2 = uVar1 - 2;
-      bVar5 = uVar1 == 2;
-    }
-    DAT_00086b2c = 1;
-    if (!bVar5 && iVar2 < 0 == bVar6) {
-      bVar4 = true;
-    }
-  }
-  if (bVar4) {
-    DAT_00086b44 = emit_floor_texture_select;
-  }
-  else {
-    DAT_00086b44 = FUN_0005dd84;
-  }
-  if (bVar3) {
-    DAT_00086b3c = emit_floor_texture_select;
-  }
-  else {
-    DAT_00086b3c = FUN_0005dd84;
-  }
-  DAT_00086b30 = 1;
-  return;
-}
 
 
 
@@ -14430,275 +14389,6 @@ byte automap_reveal_byte(byte *tile_rec)
 
 
 
-void FUN_0005dd84(param_1,param_2,param_3)
-byte * param_1;
-uint param_2;
-ushort param_3;
-
-{
-  byte *pbVar1;
-  
-  if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
-    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
-                                    DAT_0024fa2c);
-  }
-  else {
-    DAT_0023b7f8 = (param_3 & 0xff) + 0xf0;
-  }
-  *DAT_00110fc0 = 0x2e;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = DAT_0023b7f8;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x7e;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 4;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)*param_1 << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[1] << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[2] << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[3] << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  DAT_000da47c = DAT_0023b7f8;
-  return;
-}
-
-
-
-void FUN_0005debc(param_1,param_2,param_3)
-byte * param_1;
-uint param_2;
-uint param_3;
-
-{
-  byte *pbVar1;
-  
-  if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
-    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
-                                    DAT_0024fa2c);
-  }
-  else {
-    DAT_0023b7f8 = 0xfa;
-  }
-  *DAT_00110fc0 = 0x2e;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = DAT_0023b7f8;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x7e;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 4;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)*param_1 << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[1] << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[2] << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[3] << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  DAT_000da47c = DAT_0023b7f8;
-  return;
-}
-
-
-
-void FUN_0005dff4(param_1,param_2,param_3,param_4)
-byte * param_1;
-uint param_2;
-undefined4 param_3;
-ushort param_4;
-
-{
-  byte *pbVar1;
-  
-  if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)get_texture_page((param_4 & 0xff) + 0x3a);
-    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
-                                    DAT_0024fa2c);
-  }
-  else {
-    DAT_0023b7f8 = (param_4 & 0xff) + 0xc0;
-  }
-  *DAT_00110fc0 = 0x2e;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = DAT_0023b7f8;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x7e;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 4;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)*param_1 << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[1] << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[2] << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[3] << 3;
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  DAT_000da47c = DAT_0023b7f8;
-  return;
-}
-
-
-
-// was emit_floor_texture_select
-void emit_floor_texture_select(param_1,param_2,param_3)
-byte * param_1;
-uint param_2;
-short param_3;
-
-{
-  ushort uVar1;
-  
-  param_2 = param_2 & 0xff;
-  if (((int)param_2 < (int)DAT_00086b28) || (param_1 == (byte *)0x0)) {
-    if ((int)param_2 < (int)DAT_00086b24) {
-      DAT_0023b81c = 2;
-      if ((param_2 != 0) || (DAT_00087938 != 'd')) {
-        DAT_0023b81c = DAT_00086b30 + 2;
-      }
-      DAT_0023b4d8 = 0x400;
-      uVar1 = param_3 + 0x30;
-      DAT_0023b824 = 0x20;
-      DAT_0023b828 = 0x3ff;
-    }
-    else {
-      uVar1 = param_3 + 0x6a;
-      DAT_0023b81c = DAT_00086b30;
-      DAT_0023b4d8 = 0x100;
-      DAT_0023b828 = 0xff;
-      DAT_0023b824 = 0x10;
-    }
-    *DAT_00110fc0 = 0x3e;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = DAT_0023b81c;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = uVar1 & 0xff;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = DAT_0023b4d8;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 2;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = DAT_000b4620 + DAT_0023b81c * 8;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = DAT_0023b828;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    if (param_1 != (byte *)0x0) {
-      *DAT_00110fc0 = 0x36;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = DAT_0023b81c;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)*param_1 << 3;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)DAT_0023b4f0[3];
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)param_1[1] << 3;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)DAT_0023b4f0[2];
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)param_1[2] << 3;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)DAT_0023b4f0[1];
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)param_1[3] << 3;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)*DAT_0023b4f0;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-    }
-  }
-  else {
-    FUN_0005dd84();
-  }
-  return;
-}
-
-
-
-void FUN_0005e3c0(param_1,param_2,param_3,param_4)
-byte * param_1;
-uint param_2;
-uint param_3;
-ushort param_4;
-
-{
-  short *psVar1;
-  short sVar2;
-  int iVar3;
-  ushort uVar4;
-  bool bVar5;
-  
-  param_2 = param_2 & 0xff;
-  if (((int)param_2 < (int)DAT_00086b28) || (param_1 == (byte *)0x0)) {
-    if ((int)param_2 < (int)DAT_00086b24) {
-      DAT_0023b81c = 4;
-      if ((param_2 != 0) || (DAT_00087938 != 'd')) {
-        DAT_0023b81c = DAT_00086b30 + 4;
-      }
-      DAT_0023b4d8 = 0x1000;
-      DAT_0023b824 = 0x40;
-      sVar2 = (short)((param_3 & 0xff) << 10);
-    }
-    else {
-      psVar1 = (short *)0x0;
-      bVar5 = param_2 != 0;
-      DAT_0023b81c = 0;
-      if (bVar5) {
-        psVar1 = &DAT_00086b30;
-      }
-      DAT_0023b824 = 0x10;
-      if (bVar5) {
-        psVar1 = (short *)(int)*psVar1;
-      }
-      sVar2 = (short)((param_3 & 0xff) << 6);
-      param_4 = param_4 + 0x3a;
-      if (bVar5) {
-        DAT_0023b81c = (ushort)psVar1;
-      }
-      DAT_0023b4d8 = 0x100;
-    }
-    DAT_0023b828 = sVar2 - 1;
-    iVar3 = (int)DAT_0023b818;
-    DAT_0023b818 = (char)((uint)((iVar3 + 1) * 0x1000000) >> 0x18);
-    if (iVar3 < 1) {
-      *DAT_00110fc0 = 0x3e;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = DAT_0023b81c;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = param_4 & 0xff;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = DAT_0023b4d8;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-    }
-    *DAT_00110fc0 = 2;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = DAT_000b4620 + DAT_0023b81c * 8;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = DAT_0023b828;
-    DAT_00110fc0 = DAT_00110fc0 + 1;
-    if (param_1 != (byte *)0x0) {
-      uVar4 = 0xa2;
-      if (DAT_0023b4dc == 0) {
-        uVar4 = 0xa0;
-      }
-      *DAT_00110fc0 = uVar4;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = DAT_0023b81c;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)*param_1 + (ushort)param_1[1] * 0x100;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)param_1[2] + (ushort)param_1[3] * 0x100;
-      DAT_00110fc0 = DAT_00110fc0 + 1;
-    }
-  }
-  else {
-    FUN_0005dff4();
-  }
-  return;
-}
 
 
 
@@ -15708,7 +15398,7 @@ LAB_00061d34:
     return;
   }
   DAT_0023b818 = 0xe0;
-  FUN_0005e3c0(0,DAT_0023b4e0,4,(byte)param_1[3] & 0x3f);
+  emit_diagonal_wall_texture_select(0,DAT_0023b4e0,4,(byte)param_1[3] & 0x3f);
   *DAT_00110fc0 = 0xb2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = DAT_0023b81c;

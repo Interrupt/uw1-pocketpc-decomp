@@ -1667,3 +1667,366 @@ void render_dungeon_view_frame()
   set_viewport_clip_rect(0,0,0x13f,199);
   return;
 }
+
+
+// was FUN_0005dd84 -- flat-shaded (low-detail) texture-select emitter
+// for the "wall" surface slot (DAT_00086b38_fnptrs[0], and the
+// dynamic low-detail fallback for slots [1]/[3]): picks either a
+// texture-page byte or a hardcoded flat-shade fallback, then emits
+// the draw-command opcode sequence for it. The low-detail counterpart
+// to emit_floor_texture_select.
+void emit_flat_wall_texture_select(param_1,param_2,param_3)
+byte * param_1;
+uint param_2;
+ushort param_3;
+
+{
+  byte *pbVar1;
+
+  if (DAT_0023b830 == '\0') {
+    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
+    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
+                                    DAT_0024fa2c);
+  }
+  else {
+    DAT_0023b7f8 = (param_3 & 0xff) + 0xf0;
+  }
+  *DAT_00110fc0 = 0x2e;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = DAT_0023b7f8;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = 0x7e;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = 4;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)*param_1 << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)param_1[1] << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)param_1[2] << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)param_1[3] << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  DAT_000da47c = DAT_0023b7f8;
+  return;
+}
+
+
+
+// was FUN_0005debc -- flat-shaded (low-detail) texture-select
+// emitter for the "floor-or-ceiling" surface slot
+// (DAT_00086b38_fnptrs[2]), structurally identical to
+// emit_flat_wall_texture_select but with its own fallback shade
+// (0xfa) and no detailed/textured counterpart of its own.
+void emit_flat_floor_texture_select(param_1,param_2,param_3)
+byte * param_1;
+uint param_2;
+uint param_3;
+
+{
+  byte *pbVar1;
+
+  if (DAT_0023b830 == '\0') {
+    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
+    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
+                                    DAT_0024fa2c);
+  }
+  else {
+    DAT_0023b7f8 = 0xfa;
+  }
+  *DAT_00110fc0 = 0x2e;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = DAT_0023b7f8;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = 0x7e;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = 4;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)*param_1 << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)param_1[1] << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)param_1[2] << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)param_1[3] << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  DAT_000da47c = DAT_0023b7f8;
+  return;
+}
+
+
+
+// was FUN_0005dff4 -- flat-shaded (low-detail) texture-select
+// emitter for the "diagonal" surface slot (DAT_00086b38_fnptrs[4]),
+// using a different texture-page range (+0x3a) and fallback shade
+// (0xc0) from its wall/floor siblings. The low-detail counterpart to
+// emit_diagonal_wall_texture_select.
+void emit_flat_diagonal_texture_select(param_1,param_2,param_3,param_4)
+byte * param_1;
+uint param_2;
+undefined4 param_3;
+ushort param_4;
+
+{
+  byte *pbVar1;
+
+  if (DAT_0023b830 == '\0') {
+    pbVar1 = (byte *)get_texture_page((param_4 & 0xff) + 0x3a);
+    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
+                                    DAT_0024fa2c);
+  }
+  else {
+    DAT_0023b7f8 = (param_4 & 0xff) + 0xc0;
+  }
+  *DAT_00110fc0 = 0x2e;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = DAT_0023b7f8;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = 0x7e;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = 4;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)*param_1 << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)param_1[1] << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)param_1[2] << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  *DAT_00110fc0 = (ushort)param_1[3] << 3;
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  DAT_000da47c = DAT_0023b7f8;
+  return;
+}
+
+
+
+// was emit_floor_texture_select
+void emit_floor_texture_select(param_1,param_2,param_3)
+byte * param_1;
+uint param_2;
+short param_3;
+
+{
+  ushort uVar1;
+  
+  param_2 = param_2 & 0xff;
+  if (((int)param_2 < (int)DAT_00086b28) || (param_1 == (byte *)0x0)) {
+    if ((int)param_2 < (int)DAT_00086b24) {
+      DAT_0023b81c = 2;
+      if ((param_2 != 0) || (DAT_00087938 != 'd')) {
+        DAT_0023b81c = DAT_00086b30 + 2;
+      }
+      DAT_0023b4d8 = 0x400;
+      uVar1 = param_3 + 0x30;
+      DAT_0023b824 = 0x20;
+      DAT_0023b828 = 0x3ff;
+    }
+    else {
+      uVar1 = param_3 + 0x6a;
+      DAT_0023b81c = DAT_00086b30;
+      DAT_0023b4d8 = 0x100;
+      DAT_0023b828 = 0xff;
+      DAT_0023b824 = 0x10;
+    }
+    *DAT_00110fc0 = 0x3e;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    *DAT_00110fc0 = DAT_0023b81c;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    *DAT_00110fc0 = uVar1 & 0xff;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    *DAT_00110fc0 = DAT_0023b4d8;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    *DAT_00110fc0 = 2;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    *DAT_00110fc0 = DAT_000b4620 + DAT_0023b81c * 8;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    *DAT_00110fc0 = DAT_0023b828;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    if (param_1 != (byte *)0x0) {
+      *DAT_00110fc0 = 0x36;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = DAT_0023b81c;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)*param_1 << 3;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)DAT_0023b4f0[3];
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)param_1[1] << 3;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)DAT_0023b4f0[2];
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)param_1[2] << 3;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)DAT_0023b4f0[1];
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)param_1[3] << 3;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)*DAT_0023b4f0;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+    }
+  }
+  else {
+    /* BUG FIX: was `FUN_0005dd84();` -- dropped all 3 arguments. This
+       function's own params (param_1,param_2,param_3) exactly match
+       emit_flat_wall_texture_select's signature, and nothing between
+       entry and this branch repurposes them (param_2 was already
+       narrowed to its low byte for the distance check just above,
+       which is the correct value to forward) -- same dropped-argument
+       idiom fixed repeatedly elsewhere this session. */
+    emit_flat_wall_texture_select(param_1,param_2,param_3);
+  }
+  return;
+}
+
+
+
+// was FUN_0005e3c0 -- detailed (fully textured) texture-select
+// emitter for the "diagonal" surface slot (DAT_00086b38_fnptrs[5]),
+// the detailed counterpart to emit_flat_diagonal_texture_select.
+// Confirmed used for diagonal wall segments by models.c, which passes
+// the tile's own wall_tex field as its texture-id argument.
+void emit_diagonal_wall_texture_select(param_1,param_2,param_3,param_4)
+byte * param_1;
+uint param_2;
+uint param_3;
+ushort param_4;
+
+{
+  short *psVar1;
+  short sVar2;
+  int iVar3;
+  ushort uVar4;
+  bool bVar5;
+  
+  param_2 = param_2 & 0xff;
+  if (((int)param_2 < (int)DAT_00086b28) || (param_1 == (byte *)0x0)) {
+    if ((int)param_2 < (int)DAT_00086b24) {
+      DAT_0023b81c = 4;
+      if ((param_2 != 0) || (DAT_00087938 != 'd')) {
+        DAT_0023b81c = DAT_00086b30 + 4;
+      }
+      DAT_0023b4d8 = 0x1000;
+      DAT_0023b824 = 0x40;
+      sVar2 = (short)((param_3 & 0xff) << 10);
+    }
+    else {
+      psVar1 = (short *)0x0;
+      bVar5 = param_2 != 0;
+      DAT_0023b81c = 0;
+      if (bVar5) {
+        psVar1 = &DAT_00086b30;
+      }
+      DAT_0023b824 = 0x10;
+      if (bVar5) {
+        psVar1 = (short *)(int)*psVar1;
+      }
+      sVar2 = (short)((param_3 & 0xff) << 6);
+      param_4 = param_4 + 0x3a;
+      if (bVar5) {
+        DAT_0023b81c = (ushort)psVar1;
+      }
+      DAT_0023b4d8 = 0x100;
+    }
+    DAT_0023b828 = sVar2 - 1;
+    iVar3 = (int)DAT_0023b818;
+    DAT_0023b818 = (char)((uint)((iVar3 + 1) * 0x1000000) >> 0x18);
+    if (iVar3 < 1) {
+      *DAT_00110fc0 = 0x3e;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = DAT_0023b81c;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = param_4 & 0xff;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = DAT_0023b4d8;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+    }
+    *DAT_00110fc0 = 2;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    *DAT_00110fc0 = DAT_000b4620 + DAT_0023b81c * 8;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    *DAT_00110fc0 = DAT_0023b828;
+    DAT_00110fc0 = DAT_00110fc0 + 1;
+    if (param_1 != (byte *)0x0) {
+      uVar4 = 0xa2;
+      if (DAT_0023b4dc == 0) {
+        uVar4 = 0xa0;
+      }
+      *DAT_00110fc0 = uVar4;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = DAT_0023b81c;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)*param_1 + (ushort)param_1[1] * 0x100;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+      *DAT_00110fc0 = (ushort)param_1[2] + (ushort)param_1[3] * 0x100;
+      DAT_00110fc0 = DAT_00110fc0 + 1;
+    }
+  }
+  else {
+    /* BUG FIX: was `FUN_0005dff4();` -- dropped all 4 arguments, the
+       same bug fixed just above in emit_floor_texture_select's own
+       fallback. This function's own params exactly match
+       emit_flat_diagonal_texture_select's signature, and the outer
+       condition being false here means none of the branches that
+       repurpose param_4 have executed yet, so all 4 incoming values
+       are still intact to forward. */
+    emit_flat_diagonal_texture_select(param_1,param_2,param_3,param_4);
+  }
+  return;
+}
+
+
+// was FUN_0005d2b0 -- configures the dynamic entries (indices 1/3,
+// DAT_00086b3c/DAT_00086b44) of the tile-surface texture-emit
+// function-pointer table based on the texture detail-level setting
+// (DAT_00086df8+0xb5's high nibble, confirmed shared with
+// draw_detail_level_panel/handle_detail_level_click): higher detail
+// levels pick emit_floor_texture_select (full textured), lower pick
+// emit_flat_wall_texture_select (flat-shaded fallback). Also sets the
+// DAT_00086b2c pair-select index. NOTE: an existing comment on
+// DAT_00086b38_fnptrs attributes this patching to "FUN_0005d664",
+// which doesn't match this function's own address (0x5d2b0) -- a
+// stale/incorrect reference in that comment, corrected below.
+void configure_texture_detail_functions()
+
+{
+  uint uVar1;
+  int iVar2;
+  bool bVar3;
+  bool bVar4;
+  bool bVar5;
+  bool bVar6;
+
+  bVar3 = false;
+  DAT_00086b2c = 0;
+  uVar1 = (uint)(short)(ushort)(*(byte *)(DAT_00086df8 + 0xb5) >> 4);
+  bVar4 = false;
+  if (uVar1 != 0) {
+    bVar6 = SBORROW4(uVar1,1);
+    iVar2 = uVar1 - 1;
+    bVar5 = uVar1 == 1;
+    bVar3 = 1 < uVar1;
+    if (1 < uVar1) {
+      bVar6 = SBORROW4(uVar1,2);
+      iVar2 = uVar1 - 2;
+      bVar5 = uVar1 == 2;
+    }
+    DAT_00086b2c = 1;
+    if (!bVar5 && iVar2 < 0 == bVar6) {
+      bVar4 = true;
+    }
+  }
+  if (bVar4) {
+    DAT_00086b44 = emit_floor_texture_select;
+  }
+  else {
+    DAT_00086b44 = emit_flat_wall_texture_select;
+  }
+  if (bVar3) {
+    DAT_00086b3c = emit_floor_texture_select;
+  }
+  else {
+    DAT_00086b3c = emit_flat_wall_texture_select;
+  }
+  DAT_00086b30 = 1;
+  return;
+}
