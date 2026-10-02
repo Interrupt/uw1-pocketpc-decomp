@@ -6740,3 +6740,52 @@ void toggle_stats_panel()
   set_hud_status_value(6,uVar1);
   return;
 }
+
+
+void reset_cursor_confine_rect()
+
+{
+  DAT_0020483c = 0;
+  DAT_00204838 = 0;
+  DAT_00204710 = 0;
+  DAT_0020470c = 0;
+  DAT_002047dc = 0x13f;
+  DAT_00204830 = 0x13f;
+  DAT_002047d8 = 199;
+  DAT_00204834 = 199;
+  if (((ushort)DAT_00201b60 & 0xc9) != 0) {
+    DAT_00204838 = DAT_0020471c + 0x35;
+    DAT_002047dc = 0xdf - DAT_0020471c;
+    DAT_0020483c = DAT_00204748 + 0x12;
+    DAT_002047d8 = 0x87 - DAT_00204748;
+  }
+  if (getenv("UW_DEBUG_CURSORSHOW")) {
+    fprintf(stderr, "[cursorbounds] reset_cursor_confine_rect() DAT_00201b60=0x%x narrowed=%d rect=(%d,%d)-(%d,%d)\n",
+            (int)(ushort)DAT_00201b60, (((ushort)DAT_00201b60 & 0xc9) != 0),
+            (int)DAT_00204838, (int)DAT_0020483c, (int)DAT_002047dc, (int)DAT_002047d8);
+  }
+  return;
+}
+
+
+void set_cursor_confine_rect(param_1,param_2,param_3,param_4)
+short param_1;
+short param_2;
+short param_3;
+short param_4;
+
+{
+  if (getenv("UW_DEBUG_CURSORSHOW")) {
+    fprintf(stderr, "[cursorbounds] set_cursor_confine_rect(%d,%d,%d,%d)\n",
+            (int)param_1, (int)param_2, (int)param_3, (int)param_4);
+  }
+  DAT_00204838 = DAT_0020471c + param_1 + 1;
+  DAT_0020470c = DAT_00204838;
+  DAT_0020483c = DAT_00204748 + param_4 + 1;
+  DAT_00204710 = DAT_0020483c;
+  DAT_002047dc = (param_3 - DAT_0020471c) + -2;
+  DAT_002047d8 = (param_2 - DAT_00204748) + 2;
+  DAT_00204830 = DAT_002047dc;
+  DAT_00204834 = DAT_002047d8;
+  return;
+}

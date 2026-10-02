@@ -5730,3 +5730,147 @@ LAB_0002c8cc:
   }
   return 0;
 }
+
+
+// was FUN_00054a00. Fills param_2 (a per-class scratch buffer chosen by
+// npc_ai_tick/mobile_object_tick from DAT_00204920/002048c0/002048f0/
+// 00204950) with a placement/orientation snapshot derived from param_1's
+// current fields -- offsets, class flags, and (for arena-mobile objects)
+// speed/step data used by the following collision-sweep + tile-sync
+// calls.
+void build_object_placement_snapshot(param_1,param_2)
+ushort * param_1;
+byte * param_2;
+
+{
+  ushort uVar1;
+  undefined2 uVar2;
+  short sVar3;
+  uint uVar4;
+  int iVar5;
+  byte bVar6;
+  int iVar7;
+  bool bVar8;
+  
+  bVar8 = true;
+  iVar5 = (*param_1 & 0x1ff) * 0xd;
+  uVar2 = encode_object_slot_index(param_1);
+  param_2[0x23] = (byte)uVar2;
+  param_2[0x24] = (byte)((ushort)uVar2 >> 8);
+  uVar1 = *(ushort *)(&DAT_00202c91 + iVar5);
+  param_2[0x18] = (byte)(uVar1 >> 4);
+  param_2[0x19] = (byte)(uVar1 >> 0xc);
+  param_2[0x1a] = (byte)(&DAT_00202c97)[iVar5] >> 4 & 1;
+  param_2[0x1b] = 0;
+  param_2[0x1c] = 0;
+  param_2[0x1d] = 0;
+  param_2[0x16] = (byte)(*(ushort *)(&DAT_00202c97 + iVar5) >> 5) & 0xf;
+  bVar6 = (&DAT_00202c99)[iVar5];
+  param_2[0x20] = 0;
+  param_2[0x1f] = bVar6;
+  uVar1 = param_1[1];
+  param_2[0x27] = 0;
+  param_2[0x21] = 0;
+  param_2[0x22] = (byte)((((int)(short)uVar1 & 0xffffff80U) << 6) >> 8);
+  param_2[0x25] = (&DAT_00202c91)[iVar5] & 7;
+  param_2[0x26] = (&DAT_00202c90)[iVar5];
+  *param_2 = *(byte *)((char *)param_1 + 3) >> 5;
+  param_2[1] = 0;
+  param_2[2] = (byte)((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2);
+  param_2[3] = 0;
+  param_2[4] = (byte)param_1[1] & 0x7f;
+  param_2[5] = 0;
+  if (param_1 < DAT_002046c4) {
+    iVar7 = (int)*(short *)param_2 + ((param_1[0xb] & 0xfc00) >> 7);
+    *param_2 = (byte)iVar7;
+    param_2[1] = (byte)((uint)iVar7 >> 8);
+    iVar7 = (int)CONCAT11(param_2[3],param_2[2]) + ((param_1[0xb] & 0x3f0) >> 1);
+    param_2[2] = (byte)iVar7;
+    param_2[3] = (byte)((uint)iVar7 >> 8);
+    bVar6 = *(byte *)((char *)param_1 + 9);
+    param_2[0x21] = 0;
+    param_2[0x22] = bVar6;
+    param_2[0x28] = (byte)(1 << ((byte)((byte)param_1[5] >> 4) & 7));
+    iVar7 = ((byte)((byte)param_1[10] >> 3) - 0x10) * 0x40;
+    param_2[10] = (byte)iVar7;
+    param_2[0xb] = (byte)((uint)iVar7 >> 8);
+    iVar7 = (uint)(*(byte *)((char *)param_1 + 0x13) >> 7) * -4;
+    param_2[0x10] = (byte)iVar7;
+    param_2[0x11] = (byte)((uint)iVar7 >> 8);
+    param_2[0x1e] = (byte)param_1[4];
+    bVar8 = (*param_1 & 0x1c0) == 0x40;
+    if (!bVar8) {
+      uVar2 = *(undefined2 *)((char *)param_1 + 0xb);
+      *param_2 = (byte)uVar2;
+      param_2[1] = (byte)((ushort)uVar2 >> 8);
+      uVar2 = *(undefined2 *)((char *)param_1 + 0xd);
+      param_2[2] = (byte)uVar2;
+      param_2[3] = (byte)((ushort)uVar2 >> 8);
+      uVar2 = *(undefined2 *)((char *)param_1 + 0xf);
+      param_2[4] = (byte)uVar2;
+      param_2[5] = (byte)((ushort)uVar2 >> 8);
+    }
+    uVar4 = *(byte *)((char *)param_1 + 0x13) & 0x7f;
+    param_2[0x14] = (byte)uVar4;
+    param_2[0x15] = 0;
+    if (getenv("UW_DEBUG_NPC_SPEED"))
+      fprintf(stderr, "[npc-speed] obj=%p byte13&0x7f=%d class0x40=%d\n", (void *)param_1,
+              (int)uVar4, (int)((*param_1 & 0x1c0) == 0x40));
+    if ((((*param_1 & 0x1c0) == 0x40) ||
+        (*(short *)(param_2 + 0x10) != 0 || *(short *)(param_2 + 10) != 0)) ||
+       (((&DAT_00202c93)[iVar5] & 8) != 0)) {
+      param_2[0x14] = (byte)(uVar4 * 0x2f);
+      param_2[0x15] = (byte)(uVar4 * 0x2f >> 8);
+      if (getenv("UW_DEBUG_NPC_SPEED"))
+        fprintf(stderr, "[npc-speed] obj=%p -> final speed=%d\n", (void *)param_1, (int)(short)(uVar4 * 0x2f));
+      if ((*param_1 & 0x1c0) == 0x40) {
+        param_2[0x27] = 8;
+      }
+    }
+    else {
+      if ((*(int *)(param_2 + 0x1a) + 1) * 2 < (int)(short)uVar4) {
+        iVar5 = (*(byte *)((char *)param_1 + 0x13) & 0x7f) *
+                ((short)*(int *)(param_2 + 0x1a) * 4 + 0x29);
+        param_2[0x14] = (byte)iVar5;
+        bVar6 = (byte)((uint)iVar5 >> 8);
+      }
+      else {
+        param_2[0x14] = 0;
+        bVar6 = 0;
+      }
+      param_2[0x15] = bVar6;
+    }
+  }
+  else {
+    param_2[10] = 0;
+    param_2[0xb] = 0;
+    param_2[0x10] = 0;
+    param_2[0x11] = 0;
+    param_2[0x14] = 0;
+    param_2[0x15] = 0;
+    param_2[0x1e] = (byte)param_1[2] & 0x3f;
+    iVar5 = (int)CONCAT11(param_2[1],*param_2) + DAT_0010144c * 8;
+    *param_2 = (byte)iVar5;
+    param_2[1] = (byte)((uint)iVar5 >> 8);
+    iVar5 = (int)CONCAT11(param_2[3],param_2[2]) + DAT_00101454 * 8;
+    param_2[2] = (byte)iVar5;
+    param_2[3] = (byte)((uint)iVar5 >> 8);
+  }
+  if (bVar8) {
+    sVar3 = Ordinal_1053();
+    iVar5 = ((int)sVar3 & 0x1fU) + *(short *)param_2 * 0x20;
+    *param_2 = (byte)iVar5;
+    param_2[1] = (byte)((uint)iVar5 >> 8);
+    sVar3 = Ordinal_1053();
+    iVar5 = ((int)sVar3 & 0x1fU) + *(short *)(param_2 + 2) * 0x20;
+    param_2[2] = (byte)iVar5;
+    param_2[3] = (byte)((uint)iVar5 >> 8);
+    sVar3 = Ordinal_1053();
+    iVar5 = ((int)sVar3 & 7U) + *(short *)(param_2 + 4) * 8;
+    param_2[4] = (byte)iVar5;
+    param_2[5] = (byte)((uint)iVar5 >> 8);
+  }
+  param_2[0x29] = 0;
+  param_2[0x2a] = 0;
+  return;
+}

@@ -2266,3 +2266,219 @@ int param_6;
   }
   return 1;
 }
+
+
+// was FUN_0005578c -- finalize an object record's placement at tile
+// (param_2,param_3): recomputes its render/collision height from the
+// low 7 bits of its own offset 2-3 field (the same "height_field =
+// (raw&0x7f)<<3" formula emit_tile_objects and decode_tile_object_billboard_texture both use),
+// caching it into offsets 0xb-0x12 alongside the tile sub-position, and
+// sets a handful of per-object flag bytes (0x13/0x14/0x16-0x18). Called
+// by both spawn_object_near_player and reallocate_object_to_arena
+// whenever a fresh object copy needs a real position/height, not just a
+// carried-over one.
+void compute_object_placement_fields(param_1,param_2,param_3)
+undefined1 * param_1;
+uint param_2;
+uint param_3;
+
+{
+  char cVar1;
+  uint uVar2;
+  int iVar3;
+  byte bVar4;
+  int iVar5;
+  uint uVar6;
+  uint uVar7;
+  
+  uVar7 = (uint)*(ushort *)(param_1 + 2);
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-height] raw param_1[2..3](uVar7 src)=0x%x -> height_field=(uVar7&0x7f)<<3=%d\n",
+            (unsigned)uVar7, (int)((uVar7 & 0x7f) << 3));
+  param_1[9] = (byte)(*(ushort *)(param_1 + 2) >> 2) & 0xe0;
+  param_1[0x18] = param_1[0x18] & 0xe0;
+  param_1[0x14] = param_1[0x14] & 7 | 0x80;
+  uVar6 = (uint)CONCAT11(param_1[1],*param_1);
+  bVar4 = (((&DAT_00202c93)[(uVar6 & 0x1ff) * 0xd] & 8) == 0) << 7;
+  param_1[0x13] = bVar4 | param_1[0x13] & 0x7f;
+  uVar2 = param_3 & 0x3f | (param_2 & 0x3ff) << 6;
+  param_1[0x16] = param_1[0x16] & 0xf | (byte)(uVar2 << 4);
+  param_1[0x17] = (char)(uVar2 >> 4);
+  cVar1 = DAT_00101928;
+  param_1[0x13] = bVar4;
+  param_1[10] = (cVar1 + 1U ^ param_1[10]) & 0xf ^ param_1[10];
+  param_1[0x14] = 0x82;
+  *param_1 = (char)(uVar6 & 0xbfff);
+  param_1[1] = (char)((uVar6 & 0xbfff) >> 8);
+  param_1[8] = 0x3f;
+  param_1[10] = param_1[10] & 0x8f;
+  if ((uVar6 & 0x1c0) != 0x40) {
+    iVar5 = ((uVar7 & 0x1c00) >> 5) + param_3 * 0x100 + 0xf;
+    param_1[0xd] = (char)iVar5;
+    param_1[0xe] = (char)((uint)iVar5 >> 8);
+    iVar5 = (uVar7 & 0x7f) << 3;
+    param_1[0xf] = (char)iVar5;
+    iVar3 = ((uVar7 & 0xe000) >> 8) + (param_2 & 0xff) * 0x100 + 0xf;
+    param_1[0xb] = (char)iVar3;
+    param_1[0x10] = (char)((uint)iVar5 >> 8);
+    param_1[0x12] = 0;
+    param_1[0xc] = (char)((uint)iVar3 >> 8);
+  }
+  return;
+}
+
+
+// was FUN_00055610 -- the "spawn and replace" mechanism: allocate a
+// fresh low-region object slot (alloc_object_slot(1), same allocator
+// spawn_object_near_player uses -- the only region emit_tile_objects's
+// object_ptr_in_arena gate treats as renderable), copy param_1's key
+// fields into it, recompute its placement via
+// compute_object_placement_fields, then unlink param_1 from its tile's
+// object list, free its slot, and insert_head the new copy in its
+// place. Exists to move an object that was never allocated in the
+// renderable arena (e.g. a chargen-default inventory item dropped for
+// the first time) into it; without this an object can be correctly
+// linked into a tile's list yet still never actually render.
+ushort *reallocate_object_to_arena(param_1)
+ushort * param_1;
+
+{
+  char *iVar1;  /* was `int` -- truncated tilemap_lookup's real pointer */
+  ushort *puVar2;
+
+  iVar1 = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
+  if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80) {
+    ushort *pWalk;
+    int n = 0;
+    fprintf(stderr, "[replace] ENTER type=0x%x param_1=%p tile=(%d,%d) tilerec=%p\n",
+            (unsigned)(*param_1 & 0x1ff), (void *)param_1,
+            (int)DAT_0010144c, (int)DAT_00101454, (void *)iVar1);
+    fprintf(stderr, "[replace] pre-unlink list @ %p:", (void *)(iVar1 + 2));
+    pWalk = (ushort *)resolve_object_link(iVar1 + 2);
+    while (pWalk != NULL && n < 20) {
+      fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk, (unsigned)(*pWalk & 0x1ff),
+              pWalk == param_1 ? "<-TARGET" : "");
+      pWalk = (ushort *)resolve_object_link((ushort *)((char *)pWalk + 4));
+      n++;
+    }
+    fprintf(stderr, " (n=%d)\n", n);
+  }
+  puVar2 = (ushort *)alloc_object_slot(1);
+  if (puVar2 == (ushort *)0x0) {
+    puVar2 = (ushort *)0x0;
+  }
+  else {
+    *(char *)puVar2 = (char)*param_1;
+    *(undefined1 *)((char *)puVar2 + 1) = *(undefined1 *)((char *)param_1 + 1);
+    *(char *)(puVar2 + 1) = (char)param_1[1];
+    *(undefined1 *)((char *)puVar2 + 3) = *(undefined1 *)((char *)param_1 + 3);
+    *(char *)(puVar2 + 2) = (char)param_1[2];
+    *(undefined1 *)((char *)puVar2 + 5) = *(undefined1 *)((char *)param_1 + 5);
+    *(char *)(puVar2 + 3) = (char)param_1[3];
+    *(undefined1 *)((char *)puVar2 + 7) = *(undefined1 *)((char *)param_1 + 7);
+    compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
+    *(byte *)(puVar2 + 4) = (byte)param_1[2] & 0x3f;
+    if (((*param_1 & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(*param_1 & 0x1ff) * 0xd] & 3) != 2)) {
+      *(byte *)(puVar2 + 0xd) = (byte)(param_1[1] >> 7) & 7;
+    }
+    if ((*puVar2 & 0x1c0) == 0x1c0) {
+      scheduler_relink_entry(puVar2,param_1);
+    }
+    if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+      fprintf(stderr, "[replace] new copy puVar2=%p type=0x%x height(f/10)=%d in_arena=%d\n",
+              (void *)puVar2, (unsigned)(*puVar2 & 0x1ff),
+              (int)*(short *)((char *)puVar2 + 0xf), (int)object_ptr_in_arena((char *)puVar2));
+    object_list_unlink(iVar1 + 2,param_1);
+    free_object_slot(param_1);
+    object_list_insert_head(iVar1 + 2,puVar2);
+    if (getenv("UW_DEBUG_THROW") && (*puVar2 & 0x1ff) == 0x80) {
+      ushort *pWalk;
+      int n = 0;
+      int found = 0;
+      fprintf(stderr, "[replace] post-insert list @ %p:", (void *)(iVar1 + 2));
+      pWalk = (ushort *)resolve_object_link(iVar1 + 2);
+      while (pWalk != NULL && n < 20) {
+        if (pWalk == puVar2) found = 1;
+        fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk, (unsigned)(*pWalk & 0x1ff),
+                pWalk == puVar2 ? "<-NEWCOPY" : "");
+        pWalk = (ushort *)resolve_object_link((ushort *)((char *)pWalk + 4));
+        n++;
+      }
+      fprintf(stderr, " (n=%d found_new_copy=%d)\n", n, found);
+    }
+  }
+  return puVar2;
+}
+
+
+// was FUN_00052450
+undefined4 find_object_placement(param_1,param_2,param_3,param_4,param_5)
+ushort * param_1;
+uint param_2;
+uint param_3;
+undefined2 param_4;
+short param_5;
+
+{
+  ushort uVar1;
+  undefined4 uVar2;
+  byte bVar3;
+  uint uVar4;
+  int iVar5;
+  uint uVar6;
+  char *pTile;  /* was reuse of `iVar5` (int) -- truncated
+                   tilemap_lookup's real pointer; iVar5 itself stays int
+                   for its other, unrelated uses in this function */
+
+  bVar3 = 0;
+  while( true ) {
+    if ((bVar3 != 0) || (uVar4 = param_2, uVar6 = param_3, DAT_00202c84 == 0)) {
+      iVar5 = (int)(short)(param_5 * 2 + 1);
+      /* Was `Ordinal_2005(iVar5,uVar2); ... (int)extraout_r1 ...` (twice)
+         -- bare calls whose result was read back via Ghidra's
+         extraout_r1 idiom, always uninitialized garbage on this host
+         (there's no way to read a second register out of a normal C
+         call). Ordinal_2005 is COREDLL's div/mod ordinal
+         (divisor,dividend): the quotient is its real C return value,
+         but this caller wants the REMAINDER -- confirmed by
+         ordinal_stubs.c's own comment on Ordinal_2005 documenting
+         exactly this "extraout_r1 reads want the remainder" idiom.
+         Compute it directly instead of reading a nonexistent second
+         return value: this crashed 100% of the time using Use mode on
+         a container (find_object_placement is how try_combine_or_
+         stow_object scatters emptied contents onto the ground),
+         confirmed live, because uVar4/uVar6 below were built from
+         garbage stack memory, sending object placement to a wild
+         tile. */
+      uVar2 = Ordinal_1053();
+      uVar4 = (((int)uVar2 % iVar5) - (int)param_5) + param_2;
+      uVar2 = Ordinal_1053();
+      uVar6 = (((int)uVar2 % iVar5) - (int)param_5) + param_3;
+    }
+    uVar2 = encode_object_slot_index(param_1);
+    iVar5 = check_object_placement_clearance(*param_1 & 0x1ff,uVar2,uVar4,uVar6,param_4,1,0);
+    if (iVar5 != 0) break;
+    bVar3 = bVar3 + 1;
+    if (0x17 < bVar3) {
+      return 0;
+    }
+  }
+  pTile = (char *)tilemap_lookup((int)uVar4 >> 3,(int)uVar6 >> 3);
+  uVar1 = param_1[1];
+  bVar3 = (byte)(uVar1 & 0x3ff);
+  *(byte *)(param_1 + 1) = (bVar3 ^ (byte)param_4) & 0x7f ^ bVar3;
+  *(byte *)((char *)param_1 + 3) =
+       (byte)((uVar1 & 0x3ff) >> 8) | (byte)(((uVar6 & 7 | (uVar4 & 0x1fff) << 3) << 10) >> 8);
+  object_list_append_tail(pTile + 2,param_1);
+  iVar5 = object_ptr_in_arena(param_1);
+  if (iVar5 == 0) {
+    settle_dropped_object(param_1,(int)uVar4 >> 3,(int)uVar6 >> 3,1);
+  }
+  else {
+    uVar4 = ((int)(short)((ushort)uVar4 & 0x1f8) >> 3) << 6 |
+            (int)(((int)(short)uVar6 & 0x1f8U) << 0x10) >> 0x13;
+    *(byte *)(param_1 + 0xb) = (byte)param_1[0xb] & 0xf | (byte)(uVar4 << 4);
+    *(char *)((char *)param_1 + 0x17) = (char)(uVar4 >> 4);
+  }
+  return 1;
+}

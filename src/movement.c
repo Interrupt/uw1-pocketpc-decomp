@@ -2237,3 +2237,274 @@ switchD_000514e0_default:
   }
   return;
 }
+
+
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+// was FUN_0005a6bc -- compute blocked/step-up flags for the sweep's current sub-position
+uint sweep_collision_flags()
+
+{
+  ushort uVar1;
+  bool bVar2;
+  uint uVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  bool bVar7;
+  bool bVar8;
+  ushort local_3c;
+  
+  bVar2 = false;
+  bVar7 = (*(ushort *)(DAT_002048bc + 4) & 0x80) == 0;
+  uVar1 = *(ushort *)DAT_002048bc;
+  DAT_00204870 = 0;
+  if (tilemap_lookup((short)((int)g_sweep_foot_pos[0] >> 3),(short)((int)g_sweep_foot_pos[1] >> 3)) ==
+      (void *)0x0) {
+    /* stepped outside the 64x64 map -- the border is always solid; report a
+       hard block so sweep_apply_collision backs the move out. (Also stops
+       collision_build_height_field dereferencing a NULL tile pointer.) */
+    return 0xffff8000;
+  }
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-ptr-check] DAT_00202c6c=%p &DAT_002049c8=%p match=%d\n",
+            (void *)DAT_00202c6c, (void *)&DAT_002049c8, (int)(DAT_00202c6c == (byte *)&DAT_002049c8));
+  collision_build_height_field(*(undefined1 *)(DAT_00204874 + 0x27));
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-post-buildheight] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
+  collision_height_envelope(0,0);
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-post-envelope] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
+  reticle_object_pick(0);
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-post-reticle] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
+  local_3c = DAT_002049d6 | DAT_002049d4;
+  /* ARM 0x5a758..0x5a774 reads the geometry mask as a short at +4. */
+  bVar8 = (local_3c & *(ushort *)(DAT_002048bc + 4)) == 0;
+  if ((DAT_002049dc != '\0') &&
+     (iVar6 = (int)DAT_002049de, iVar6 < (int)((uint)DAT_002049dd + (int)DAT_002049de))) {
+    do {
+      uVar3 = resolve_collision_candidate_interaction(iVar6,(int)DAT_002049d2);
+      if ((uVar3 & 4) != 0) {
+        local_3c = local_3c | 0x400;
+      }
+      if ((uVar3 & 0x18) != 0) {
+        if ((uVar3 & 0x10) == 0) {
+          return (int)(short)local_3c | 0xffff8000;
+        }
+        return (int)(short)local_3c | 0x4000;
+      }
+      iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+    } while (iVar6 < (int)((uint)DAT_002049dd + (int)DAT_002049de));
+  }
+  // PHYSICS: floor collision -- compare the foot Z against the destination
+  // tile's floor height _DAT_0008699b to decide level / step-up / step-down / fall
+  iVar4 = (int)*(short *)((char *)g_sweep_foot_pos + 4);
+  iVar6 = (int)_DAT_0008699b;
+  iVar5 = (int)DAT_00086998;
+  if (getenv("UW_DEBUG_JUMP"))
+    fprintf(stderr, "[collision-flags] iVar4(footz)=%d iVar6(floorz)=%d iVar5(slot)=%d bVar7=%d bVar8=%d local_3c=0x%x DAT_00086990=%d DAT_00086996=%d\n",
+            iVar4, iVar6, iVar5, (int)bVar7, (int)bVar8, (unsigned)local_3c,
+            (int)DAT_00086990, (int)DAT_00086996);
+  if (iVar4 == iVar6) {
+    if (((iVar5 != -1) && (((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) == 2)) && (bVar7)) {
+      local_3c = local_3c & 0xfffb | 0x80;
+    }
+  }
+  else {
+    if ((iVar5 == -1) && (bVar8)) {
+      // PHYSICS: floor step -- if the height change is within the step limit
+      // (byte 0x27), OR the tile is a walkable auto-stick floor (DAT_002049d4 & 4)
+      // and no vertical motion is active, snap straight to it instead of falling.
+      //
+      // The `iVar4 - iVar6 <= step limit` guard on the auto-stick clause is
+      // added: without it, a walk off a real ledge onto a walkable floor far
+      // below still auto-sticks (foot Z snapped down in one tick). Restricting
+      // the auto-stick to drops within the step-down limit lets a bigger drop
+      // fall through to the "blocked" resolution below, where sweep_apply_collision
+      // arms a gravity fall (+0x10 = -4) and sweep_step_vertical plays it out over
+      // several ticks, ending in sweep_land_on_surface. An upward step
+      // (iVar4 - iVar6 < 0) always satisfies the guard, so auto-stick up a slope
+      // is unchanged.
+      uVar3 = iVar4 - iVar6 >> 0x1f;
+      if (getenv("UW_DEBUG_JUMP"))
+        fprintf(stderr, "[jump-collision] foot_z=%d floor_z=%d diff=%d step_limit=%d fallflag(0x10)=%d vvel(0xa)=%d\n",
+                iVar4, iVar6, iVar4 - iVar6, (int)(uint)*(byte *)(DAT_00204874 + 0x27),
+                (int)*(short *)(DAT_00204874 + 0x10), (int)*(short *)(DAT_00204874 + 0xa));
+      /* The "within step limit" clause below was unconditional -- unlike
+         the auto-stick clause right next to it, which correctly requires
+         g_vertical_velocity==0 (offset 0xa, "no vertical motion is
+         active" per the comment above) before snapping. A jump's whole
+         ascent (and the tail of its descent) passes through foot-Z
+         values within a few units of the floor's while g_fall_accel
+         (offset 0x10) is nonzero and g_vertical_velocity is large and
+         real -- confirmed live via UW_DEBUG_JUMP: foot_z=98 floor_z=96
+         diff=2 step_limit=8, comfortably "within limit", while
+         g_fall_accel=-4 and g_vertical_velocity=267, i.e. clearly
+         mid-jump, not standing on a small ledge. That silently snapped
+         the player straight back onto the floor a few ticks into every
+         jump, before it could climb high enough to look like it left
+         the ground. Add the same g_fall_accel==0 gate here: no real
+         gravity arc in progress (matches the comment's own claim that
+         ordinary small steps involve "no gravity" at all, so this
+         should never fire while a real jump/fall is live) means this is
+         genuinely just an ordinary walked step, safe to snap instantly. */
+      if ((*(short *)(DAT_00204874 + 0x10) == 0 &&
+           (int)((iVar4 - iVar6 ^ uVar3) - uVar3) <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)) ||
+         (((((*(short *)(DAT_00204874 + 10) == 0 && ((DAT_002049d6 & 0x800) == 0)) &&
+            ((DAT_002049d4 & 4) != 0)) &&
+           (iVar4 - iVar6 <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)))))) {
+LAB_0005a970:
+        if ((DAT_00204878 != 0) && ((uVar1 & 0x1000) == 0)) {
+          bVar2 = true;
+          if (CONCAT11(DAT_000869a0,DAT_0008699f) <= iVar6) {
+            local_3c = local_3c & 0xfeff;
+          }
+          // PHYSICS: ceiling clearance -- target floor + player height (byte 0x26)
+          // must fit under the ceiling clearance value; if not, treat as a wall
+          iVar6 = iVar6 + (uint)*(byte *)(DAT_00204874 + 0x26);
+          if (iVar6 < 0x80) {
+            if ((iVar5 != -1) || (iVar6 <= CONCAT11(DAT_000869a0,DAT_0008699f))) {
+              if ((((local_3c & 0x400) != 0) || (iVar5 == -1)) ||
+                 ((((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) != 0 && (bVar7)))) {
+                DAT_00204870 = 1;
+                // PHYSICS: floor collision -- step resolved: snap the foot Z onto
+                // this tile's floor in a single tick (no gravity for small steps)
+                *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
+                uVar3 = (int)((int)_DAT_0008699b - (uint)DAT_002049d8) >> 0x1f;
+                if ((int)(uint)*(byte *)(DAT_00204874 + 0x25) <
+                    (int)(((int)_DAT_0008699b - (uint)DAT_002049d8 ^ uVar3) - uVar3)) {
+                  local_3c = local_3c & 0xfffb;
+                }
+                else {
+                  local_3c = local_3c | 4;
+                }
+              }
+              else {
+                bVar2 = false;
+              }
+              goto LAB_0005ab5c;
+            }
+            local_3c = local_3c | 0x400;
+          }
+          else {
+            local_3c = local_3c | 0x200;
+          }
+          DAT_00204870 = 1;
+          goto LAB_0005abe4;
+        }
+      }
+    }
+    else if ((bVar7) &&
+            ((((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) == 2 &&
+             (uVar3 = (int)(iVar4 - (uint)(byte)(&DAT_00202c38)[iVar5 * 6]) >> 0x1f,
+             (int)((iVar4 - (uint)(byte)(&DAT_00202c38)[iVar5 * 6] ^ uVar3) - uVar3) <=
+             (int)(uint)*(byte *)(DAT_00204874 + 0x27))))) {
+      local_3c = local_3c | 0x80;
+      goto LAB_0005a970;
+    }
+    bVar2 = false;
+    if (iVar4 < (int)(uint)DAT_002049d9) {
+      local_3c = local_3c | 0x100;
+    }
+  }
+LAB_0005ab5c:
+  if ((DAT_00204870 != 0) && (bVar2)) {
+    sort_collision_candidates();
+    local_3c = local_3c & 0xfbff;
+    if (DAT_002049dd != 0) {
+      iVar6 = 0;
+      do {
+        uVar3 = resolve_collision_candidate_interaction(iVar6,(int)DAT_002049d2);
+        if ((uVar3 & 4) != 0) {
+          local_3c = local_3c | 0x400;
+        }
+        iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+      } while (iVar6 < (int)(uint)DAT_002049dd);
+    }
+  }
+LAB_0005abe4:
+  if ((((local_3c & 0x80) != 0) && (bVar7)) &&
+     ((((&DAT_00202c3a)[DAT_00086998 * 6] & 0x10) != 0 || ((DAT_002049d4 & 4) != 0)))) {
+    local_3c = local_3c & 0xf7ff;
+  }
+  uVar1 = local_3c;
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-pre-fallback] iVar4=%d iVar6=%d local_3c=0x%x DAT_002049d6=0x%x DAT_002049d4=0x%x DAT_002049d8=%d DAT_002049d9=%d bVar7=%d bVar8=%d DAT_00204878=%d vvel=%d fallaccel=%d\n",
+            iVar4, iVar6, (unsigned)local_3c, (unsigned)DAT_002049d6, (unsigned)DAT_002049d4,
+            (int)DAT_002049d8, (int)DAT_002049d9,
+            (int)bVar7, (int)bVar8, (int)DAT_00204878, (int)*(short *)(DAT_00204874 + 10),
+            (int)*(short *)(DAT_00204874 + 0x10));
+  // PHYSICS: no-feature fallback snap -- pull the foot down onto the flat floor
+  // when there is no slope/step feature. Also suppressed once a gravity fall is
+  // armed (+0x10) so the fall integrator owns the descent.
+  if ((((((DAT_002049d6 & 0x100) != 0) && (bVar8)) && (*(short *)(DAT_00204874 + 10) == 0)) &&
+      (*(short *)(DAT_00204874 + 0x10) == 0)) &&
+     ((int)(uint)DAT_002049d9 <=
+      (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)g_sweep_foot_pos + 4)))) {
+    *(ushort *)((char *)g_sweep_foot_pos + 4) = (ushort)DAT_002049d9;
+    uVar1 = local_3c & 0xfeff | 4;
+    if (*(ushort *)((char *)g_sweep_foot_pos + 4) != (ushort)DAT_002049d8) {
+      uVar1 = local_3c & 0xfefb;
+    }
+  }
+  local_3c = uVar1;
+  // PHYSICS: wall collision -- no floor/step bit resolved this move: mark it
+  // blocked (0x1000) so sweep_apply_collision stops the horizontal advance
+  if ((local_3c & 0xfc) == 0) {
+    local_3c = local_3c | 0x1000;
+  }
+  // PHYSICS: wall collision -- also blocked if the foot sits far enough above
+  // this tile's floor that it is a wall face, not a step
+  if (((local_3c & 0x80) == 0) &&
+     ((int)(uint)DAT_002049d9 <
+      (int)((int)*(short *)((char *)g_sweep_foot_pos + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
+    local_3c = local_3c | 0x1000;
+  }
+  return (int)(short)local_3c;
+}
+
+
+// small locomotion-state code (1/2/4/8/0x10/0x20) set_locomotion_state
+// reads from the movement block's +0x28 byte to pick walk/swim/fly/fall
+// animation and physics. Always called right after sweep_collision_flags()
+// with its return value (both call sites had this dropped by Ghidra --
+// fixed this session, see [[water-wading-and-wall-slide-findings]]).
+uint collision_flags_to_locomotion_code(param_1)
+short param_1;
+
+{
+  uint uVar1;
+  
+  uVar1 = (uint)param_1;
+  if ((uVar1 & 0x1000) == 0) {
+    if ((uVar1 & 4) == 0) {
+      if ((uVar1 & 0x88) == 0) {
+        if ((uVar1 & 0x10) == 0) {
+          if ((uVar1 & 0x20) == 0) {
+            uVar1 = 8;
+          }
+          else {
+            uVar1 = 4;
+          }
+        }
+        else {
+          uVar1 = 2;
+        }
+      }
+      else {
+        uVar1 = 1;
+      }
+    }
+    else if (((DAT_002049d2 == 1) && ((uVar1 & 3) == 1)) && ((uVar1 & 0x68) != 0)) {
+      uVar1 = 0x20;
+    }
+    else {
+      uVar1 = 1 << (uVar1 & 3) & 0xff;
+    }
+  }
+  else {
+    uVar1 = 0x10;
+  }
+  return uVar1;
+}

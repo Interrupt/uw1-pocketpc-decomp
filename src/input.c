@@ -1902,3 +1902,30 @@ void dispatch_sticky_mode_handlers()
   }
   return;
 }
+
+
+int poll_mouse_event()
+
+{
+  short sVar1;
+
+  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_mouse_event ENTRY\n");
+  update_mouse_state();
+  if (DAT_00086968 == -1) {
+    DAT_0020484c = 0;
+    sVar1 = poll_mouse_button_flags();
+  }
+  else {
+    sVar1 = poll_mouse_button_flags();
+    if (sVar1 == 0) {
+      DAT_0020484c = 1;
+      sVar1 = DAT_00086968;
+    }
+    DAT_00086968 = -1;
+  }
+  DAT_00204850 = sVar1;
+  if (sVar1 == 0) {
+    sVar1 = -1;
+  }
+  return (int)sVar1;
+}

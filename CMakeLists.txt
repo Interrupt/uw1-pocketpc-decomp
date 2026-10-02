@@ -172,14 +172,14 @@ if(BUILD_TESTING)
   add_game_unit_test(movement
     src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading
     src/movement.c:sweep_slide_along_wall src/movement.c:sweep_apply_collision
-    uw.c:collision_flags_to_locomotion_code uw.c:sweep_collision_flags
+    src/movement.c:collision_flags_to_locomotion_code src/movement.c:sweep_collision_flags
     src/collision.c:collision_corner_flags
     src/movement.c:reticle_object_pick src/movement.c:movement_sweep_setup
     src/movement.c:sweep_step_vertical src/movement.c:sweep_integrate_substep
     src/collision.c:collision_add_candidate_object
     src/collision.c:swap_collision_candidates src/collision.c:sort_collision_candidates
     src/combat.c:resolve_collision_candidate_interaction
-    src/combat.c:apply_object_collision_scatter uw.c:build_object_placement_snapshot
+    src/combat.c:apply_object_collision_scatter src/ai.c:build_object_placement_snapshot
     src/player.c:commit_player_move src/movement.c:sweep_init_position
     src/objects.c:resolve_object_link src/movement.c:find_nearby_door_in_candidates
     src/movement.c:get_first_nearby_candidate_object)
@@ -241,7 +241,7 @@ if(BUILD_TESTING)
     src/gx_stub.c:uw_defer_present
     src/ordinal_stubs.c:Ordinal_172
     src/input.c:wait_for_click_release src/input.c:next_input_event
-    src/input.c:peek_input_event src/input.c:poll_input_event uw.c:poll_mouse_event
+    src/input.c:peek_input_event src/input.c:poll_input_event src/input.c:poll_mouse_event
     src/hud.c:poll_mouse_button_flags src/input.c:process_pending_keyboard_scan_code
     src/input.c:get_alternate_keyboard_scan_code)
   target_sources(test_illustration_render PRIVATE src/debug.c src/file_io.c)
