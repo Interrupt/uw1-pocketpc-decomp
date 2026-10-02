@@ -819,7 +819,7 @@ short param_3;
 
 
 // was FUN_0007e778 -- periodic world-tick helper: scans every type-6
-// object within 7 tiles (FUN_000539b0, not yet named) and, for each
+// object within 7 tiles (find_object_in_world, not yet named) and, for each
 // whose class bits (0x1e at +1) are clear, resolves its linked
 // sub-object, sets a flag bit on it, and -- only when
 // is_out_of_player_range(param_1, tile) is true -- fires
@@ -844,7 +844,7 @@ undefined4 param_1;
 
   local_14 = 0;
   local_12 = 0;
-  iVar2 = FUN_000539b0(6,0,7,&local_14,&local_12);
+  iVar2 = find_object_in_world(6,0,7,&local_14,&local_12);
   while (iVar2 != 0) {
     if ((*(byte *)(iVar2 + 1) & 0x1e) == 0) {
       iVar3 = resolve_object_link(iVar2 + 6);
@@ -866,7 +866,7 @@ undefined4 param_1;
       }
     }
     local_14 = local_14 + 1;
-    iVar2 = FUN_000539b0(6,0,7,&local_14,&local_12);
+    iVar2 = find_object_in_world(6,0,7,&local_14,&local_12);
   }
   return;
 }
@@ -900,7 +900,7 @@ int param_1;
   
   local_1c = 0;
   local_1a = 0;
-  pbVar1 = (byte *)FUN_000539b0(5,0,0xffffffff,&local_1c,&local_1a);
+  pbVar1 = (byte *)find_object_in_world(5,0,0xffffffff,&local_1c,&local_1a);
   while (pbVar1 != (byte *)0x0) {
     /* was folded into `int iVar2` (reused below for unrelated int
        values) -- truncated tilemap_lookup's real `void *` return */
@@ -924,7 +924,7 @@ int param_1;
       }
     }
     local_1c = local_1c + 1;
-    pbVar1 = (byte *)FUN_000539b0(5,0,0xffffffff,&local_1c,&local_1a);
+    pbVar1 = (byte *)find_object_in_world(5,0,0xffffffff,&local_1c,&local_1a);
   }
   if ((param_1 == 0) && (DAT_000879ac != 0)) {
     iVar2 = 0;

@@ -82,7 +82,7 @@ void interact_default()
         print_scroll_message_by_id(0x5f);
         return;
       }
-      iVar1 = FUN_00053920(g_interact_target,0x126);
+      iVar1 = object_or_contents_has_type(g_interact_target,0x126);
       if (iVar1 != 0) {
         *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf0;
       }

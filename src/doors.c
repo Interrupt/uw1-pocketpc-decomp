@@ -234,7 +234,7 @@ undefined4 spawn_scheduled_door_texture_object()
 
 // was FUN_00072084 -- checks whether param_1 (a stored level number)
 // matches the current level (DAT_00201b68); if so, decodes param_2's
-// packed tile coordinates (FUN_000539b0) and shows a debug "At X Y"
+// packed tile coordinates (find_object_in_world) and shows a debug "At X Y"
 // message. Called by apply_special_object_use_effect with
 // DAT_00086df8+0x5e's upper nibble (the level spawn_scheduled_door_texture_object
 // stores there) and catalog id 0x1ca, so this gates that feature's
@@ -254,7 +254,7 @@ ushort param_2;
   local_6 = 0;
   bVar1 = param_1 == DAT_00201b68;
   if (bVar1) {
-    FUN_000539b0((int)(short)param_2 >> 6,(short)param_2 >> 4 & 3,param_2 & 0xf,&local_8,&local_6);
+    find_object_in_world((int)(short)param_2 >> 6,(short)param_2 >> 4 & 3,param_2 & 0xf,&local_8,&local_6);
     debug_print(s_At__d__d_00087360,(int)local_8,(int)local_6);
     DAT_00201c90 = local_8;
     DAT_00201c8c = local_6;

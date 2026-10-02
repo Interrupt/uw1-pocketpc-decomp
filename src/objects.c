@@ -1761,3 +1761,89 @@ short param_5;
   }
   return (ushort *)0x0;
 }
+
+
+// was FUN_00053920 -- returns whether object param_1 itself encodes
+// type param_2 (&0x1ff of its type word), or -- if it isn't flagged
+// "no contents" -- whether find_object_in_chain finds a match for
+// that type (decoded into class/subclass/quality) among its
+// contents. Confirmed called with the same literal type 0x126 at
+// both call sites (checking the selected/interact object for a
+// specific item type, directly or nested inside).
+undefined4 object_or_contents_has_type(param_1,param_2)
+ushort * param_1;
+ushort param_2;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  ushort *local_8;
+  
+  if ((*param_1 & 0x1ff) == (int)(short)param_2) {
+    uVar1 = 1;
+  }
+  else {
+    if ((*param_1 & 0x8000) == 0) {
+      local_8 = param_1 + 3;
+      iVar2 = find_object_in_chain(&local_8,1,(int)(short)param_2 >> 6,(short)param_2 >> 4 & 3,param_2 & 0xf
+                          );
+      if (iVar2 != 0) {
+        return 1;
+      }
+    }
+    uVar1 = 0;
+  }
+  return uVar1;
+}
+
+
+
+// was FUN_000539b0 -- the world-wide counterpart to find_object_in_chain:
+// scans the 64x64 tile grid (DAT_002029cc) tile by tile, calling
+// find_object_in_chain on each tile's object chain with class param_1/
+// subclass param_2/quality param_3, resuming from (and updating) the
+// saved tile-column/tile-row cursor at *param_4/*param_5 -- the same
+// "find next match" resumable-search pattern. Confirmed used by
+// doors.c (locating a door's matching key/trigger by packed tile
+// coordinates) and traps.c (scanning for trap-relevant objects).
+int find_object_in_world(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined4 param_2;
+undefined2 param_3;
+short * param_4;
+short * param_5;
+
+{
+  short sVar1;
+  int iVar2;
+  int iVar3;
+  ushort *local_24;
+  
+  if (0x3f < *param_4) {
+    *param_4 = 0;
+    *param_5 = *param_5 + 1;
+  }
+  iVar2 = (int)*param_5;
+  iVar3 = DAT_002029cc + ((int)*param_4 + iVar2 * 0x40) * 4;
+  do {
+    if (0x3f < iVar2) {
+      return 0;
+    }
+    if (*param_4 < 0x40) {
+      do {
+        local_24 = (ushort *)(iVar3 + 2);
+        if (((*local_24 & 0xffc0) != 0) &&
+           (iVar2 = find_object_in_chain(&local_24,1,param_1,param_2,param_3), iVar2 != 0)) {
+          return iVar2;
+        }
+        sVar1 = *param_4;
+        iVar3 = iVar3 + 4;
+        *param_4 = (short)(sVar1 + 1);
+      } while ((sVar1 + 1) * 0x10000 >> 0x10 < 0x40);
+    }
+    *param_4 = 0;
+    sVar1 = *param_5;
+    *param_5 = (short)(sVar1 + 1);
+    iVar2 = (sVar1 + 1) * 0x10000 >> 0x10;
+  } while( true );
+}
