@@ -4023,7 +4023,16 @@ undefined *PTR_Ordinal_2046_00084128;
    decompile -- widened to real, safely-sized backing storage (zero-
    initialized, not recovered) purely to make the access safe. */
 undefined4 DAT_00086370_backing[296];
-undefined DAT_00086810;
+/* DAT_00086810: declared as a scalar but indexed as
+   (&DAT_00086810)[pos] in apply_mod_vibrato_effect/apply_mod_tremolo_effect,
+   where pos is a per-channel counter that wraps at 0x20 (32) -- a
+   32-entry sine lookup table for the MOD tracker's vibrato/tremolo
+   effects. Same "scalar declared but accessed as array" bug class
+   fixed several times this session; widened to real, safely-sized
+   backing storage (zero-initialized, not recovered) purely to make
+   the access safe. */
+undefined1 DAT_00086810_backing[32];
+#define DAT_00086810 DAT_00086810_backing[0]
 static undefined1 DAT_00202a58_backing[65536];
 #define DAT_00202a58 DAT_00202a58_backing[0]
 /* collision_build_height_field's collision height-field: five 5-byte corner records at
@@ -13315,117 +13324,6 @@ bool compute_drop_aim_from_cursor()
 
 
 
-void FUN_0004f0ac(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  int iVar1;
-  undefined4 uVar2;
-  int iVar3;
-  int *piVar4;
-  uint uVar5;
-  int *piVar6;
-  int iVar7;
-  
-  piVar6 = (int *)(param_1 + 0x10524);
-  iVar7 = *piVar6;
-  param_2 = param_2 * 0x40;
-  iVar1 = param_2 + iVar7;
-  iVar3 = (int)((uint)(byte)(&DAT_00086810)[*(int *)(iVar1 + 0x38)] * *(int *)(iVar1 + 0x28)) >> 7;
-  if (*(int *)(iVar1 + 0x3c) == 0) {
-    uVar2 = Ordinal_2032(*(int *)(iVar1 + 0xc) + iVar3);
-    uVar2 = Ordinal_2047(0x4a5a7a65,uVar2);
-  }
-  else {
-    uVar2 = Ordinal_2032(*(int *)(iVar1 + 0xc) - iVar3);
-    uVar2 = Ordinal_2047(0x4a5a7a65,uVar2);
-  }
-  iVar7 = param_2 + iVar7;
-  *(char *)(iVar7 + 0x10) = (char)uVar2;
-  *(char *)(iVar7 + 0x11) = (char)((uint)uVar2 >> 8);
-  *(char *)(iVar7 + 0x12) = (char)((uint)uVar2 >> 0x10);
-  *(char *)(iVar7 + 0x13) = (char)((uint)uVar2 >> 0x18);
-  iVar3 = param_2 + *piVar6;
-  iVar1 = *(int *)(iVar3 + 0x24) + *(int *)(iVar3 + 0x38);
-  *(char *)(iVar3 + 0x38) = (char)iVar1;
-  *(char *)(iVar3 + 0x39) = (char)((uint)iVar1 >> 8);
-  *(char *)(iVar3 + 0x3a) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(iVar3 + 0x3b) = (char)((uint)iVar1 >> 0x18);
-  iVar3 = param_2 + *piVar6;
-  piVar4 = (int *)(iVar3 + 0x38);
-  if (0x1f < *piVar4) {
-    iVar1 = *piVar4 + -0x20;
-    *(char *)piVar4 = (char)iVar1;
-    *(char *)(iVar3 + 0x39) = (char)((uint)iVar1 >> 8);
-    *(char *)(iVar3 + 0x3a) = (char)((uint)iVar1 >> 0x10);
-    *(char *)(iVar3 + 0x3b) = (char)((uint)iVar1 >> 0x18);
-    uVar5 = ~*(uint *)(param_2 + *piVar6 + 0x3c);
-    param_2 = param_2 + *piVar6;
-    *(char *)(param_2 + 0x3c) = (char)uVar5;
-    *(char *)(param_2 + 0x3d) = (char)(uVar5 >> 8);
-    *(char *)(param_2 + 0x3e) = (char)(uVar5 >> 0x10);
-    *(char *)(param_2 + 0x3f) = (char)(uVar5 >> 0x18);
-  }
-  return;
-}
-
-
-
-void FUN_0004f2f0(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  int iVar1;
-  int iVar2;
-  int *piVar3;
-  int iVar4;
-  int *piVar5;
-  uint uVar6;
-  
-  piVar5 = (int *)(param_1 + 0x10524);
-  param_2 = param_2 * 0x40;
-  iVar1 = param_2 + *piVar5;
-  iVar2 = (int)((uint)(byte)(&DAT_00086810)[*(int *)(iVar1 + 0x38)] * *(int *)(iVar1 + 0x30)) >> 6;
-  iVar4 = *(int *)(iVar1 + 0x14);
-  if (*(int *)(iVar1 + 0x3c) == 0) {
-    if (0x40 < iVar4 + iVar2) {
-      iVar2 = 0x40 - iVar4;
-    }
-  }
-  else if (iVar4 - iVar2 < 0) {
-    iVar2 = iVar4;
-  }
-  iVar4 = iVar4 + iVar2;
-  iVar2 = param_2 + *piVar5;
-  *(char *)(iVar2 + 0x18) = (char)iVar4;
-  *(char *)(iVar2 + 0x19) = (char)((uint)iVar4 >> 8);
-  *(char *)(iVar2 + 0x1a) = (char)((uint)iVar4 >> 0x10);
-  *(char *)(iVar2 + 0x1b) = (char)((uint)iVar4 >> 0x18);
-  iVar2 = param_2 + *piVar5;
-  iVar4 = *(int *)(iVar2 + 0x2c) + *(int *)(iVar2 + 0x38);
-  *(char *)(iVar2 + 0x38) = (char)iVar4;
-  *(char *)(iVar2 + 0x39) = (char)((uint)iVar4 >> 8);
-  *(char *)(iVar2 + 0x3a) = (char)((uint)iVar4 >> 0x10);
-  *(char *)(iVar2 + 0x3b) = (char)((uint)iVar4 >> 0x18);
-  iVar2 = param_2 + *piVar5;
-  piVar3 = (int *)(iVar2 + 0x38);
-  if (0x1f < *piVar3) {
-    iVar4 = *piVar3 + -0x20;
-    *(char *)piVar3 = (char)iVar4;
-    *(char *)(iVar2 + 0x39) = (char)((uint)iVar4 >> 8);
-    *(char *)(iVar2 + 0x3a) = (char)((uint)iVar4 >> 0x10);
-    *(char *)(iVar2 + 0x3b) = (char)((uint)iVar4 >> 0x18);
-    uVar6 = ~*(uint *)(param_2 + *piVar5 + 0x3c);
-    param_2 = param_2 + *piVar5;
-    *(char *)(param_2 + 0x3c) = (char)uVar6;
-    *(char *)(param_2 + 0x3d) = (char)(uVar6 >> 8);
-    *(char *)(param_2 + 0x3e) = (char)(uVar6 >> 0x10);
-    *(char *)(param_2 + 0x3f) = (char)(uVar6 >> 0x18);
-  }
-  return;
-}
 
 
 

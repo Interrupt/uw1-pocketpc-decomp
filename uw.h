@@ -2785,6 +2785,8 @@ extern int DAT_00086368;
 extern unsigned short u_WAVE_0008686c[];
 extern undefined4 DAT_00086370_backing[296];
 #define DAT_00086370 DAT_00086370_backing[0]
+extern undefined1 DAT_00086810_backing[32];
+#define DAT_00086810 DAT_00086810_backing[0]
 extern undefined1 DAT_00202988_backing[16];
 #define DAT_00202988 DAT_00202988_backing[0]
 extern char s_Not_a_spell_00085a80[];
@@ -3406,8 +3408,8 @@ void apply_mod_tracker_tick_effects();
 void mod_player_wave_out_callback();
 void adjust_mod_channel_volume();
 void apply_mod_tone_portamento();
-void FUN_0004f0ac();
-void FUN_0004f2f0();
+void apply_mod_vibrato_effect();
+void apply_mod_tremolo_effect();
 void FUN_0004f4ec();
 int FUN_0004f560();
 bool FUN_0004f594();
