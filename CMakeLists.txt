@@ -112,6 +112,7 @@ set_target_properties(uw_asan PROPERTIES
 
 include(CTest)
 if(BUILD_TESTING)
+  add_custom_target(unit_tests)
   add_library(unity STATIC third_party/unity/src/unity.c)
   target_include_directories(unity PUBLIC third_party/unity/src)
 
@@ -120,6 +121,7 @@ if(BUILD_TESTING)
   target_compile_options(test_math PRIVATE -Wno-deprecated-non-prototype)
   target_link_libraries(test_math PRIVATE unity)
   add_test(NAME math COMMAND test_math)
+  add_dependencies(unit_tests test_math)
 
   # Generate isolated test units from the original function bodies. Game
   # functions stay in their existing files, and tests never keep code copies.
@@ -138,6 +140,7 @@ if(BUILD_TESTING)
       DEPENDS tests/tools/extract_functions.py ${dependencies}
       VERBATIM)
     add_executable(test_${name} tests/test_${name}.c "${test_source}")
+    add_dependencies(unit_tests test_${name})
     target_include_directories(test_${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_compile_options(test_${name} PRIVATE -Wno-deprecated-non-prototype
       -Wno-int-conversion -Wno-pointer-to-int-cast)
@@ -172,9 +175,14 @@ if(BUILD_TESTING)
     uw.c:collision_flags_to_locomotion_code uw.c:sweep_collision_flags
     src/collision.c:collision_corner_flags
     src/movement.c:reticle_object_pick src/movement.c:movement_sweep_setup
-    src/movement.c:sweep_step_vertical
+    src/movement.c:sweep_step_vertical src/movement.c:sweep_integrate_substep
     uw.c:FUN_00051658 uw.c:FUN_00051cf8 uw.c:FUN_00051dd0 uw.c:FUN_000546c4
-    uw.c:FUN_0005448c uw.c:build_object_placement_snapshot)
+    uw.c:FUN_0005448c uw.c:build_object_placement_snapshot
+    src/player.c:commit_player_move src/movement.c:sweep_init_position
+    src/objects.c:resolve_object_link uw.c:FUN_0005aea0 uw.c:FUN_0005b010)
+  target_sources(test_movement PRIVATE src/debug.c)
+  add_game_unit_test(inventory
+    uw.c:FUN_00053644 uw.c:find_or_assign_object_widget)
   target_compile_definitions(test_movement PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   target_compile_options(test_movement PRIVATE

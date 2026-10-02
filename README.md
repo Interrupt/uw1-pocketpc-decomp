@@ -41,9 +41,7 @@ The C unit tests use [Unity](https://github.com/ThrowTheSwitch/Unity),
 vendored under `third_party/unity`. Tests also require Python 3. Build and run them with:
 
 ```sh
-cmake -S . -B build
-cmake --build build --target test_math test_chargen test_new_game test_teleport test_movement
-ctest --test-dir build --output-on-failure
+./run-tests.sh
 ```
 
 `tests/test_math.c` checks `step_value_toward_limit` in both directions,
@@ -84,16 +82,24 @@ placement search, and display services are stubbed. Run it with
 `ctest --test-dir build -R '^teleport$' --output-on-failure`.
 
 `tests/test_movement.c` checks wall stopping/sliding, short and excessive
-steps, collision-mask widths, closed/open doors, and jump rebounds followed
-by a natural descent to the floor. It compiles the real movement setup,
-vertical integrator, collision response, candidate builder/sorter, object
+steps, collision-mask widths, closed/open doors, the original radius and packed
+position rules, copied collision-link lookup, shared sweep/collision coordinates,
+and jump rebounds followed by a natural descent to the floor. It compiles the
+real movement setup, horizontal/vertical integrators, player position/heading
+writeback, collision response, candidate builder/sorter, link resolver, object
 collision dispatch, contact snapshot construction, and floor/step classifiers
 from their existing files. Contact tests cover static doors and the snapshot's
 velocity, speed, heading, and capped mass ratio.
 Door properties come from `data/DATA/COMOBJ.DAT`, which is required. Map
-sampling, object lookup, placement synchronization, surface landing, and horizontal
-rollback/restart remain fixture boundaries; no window is needed.
+sampling, object-slot lookup, placement synchronization, surface landing, and
+horizontal rollback/restart remain fixture boundaries; no window is needed.
 Run it with `ctest --test-dir build -R '^movement$' --output-on-failure`.
+
+`tests/test_inventory.c` exercises the real recursive object lookup and
+inventory widget lookup for a picked-up sack, its contents, nested containers,
+sibling links, absent objects, and quantity fields. Object links and widget
+slots are fixtures; no UI is needed.
+Run it with `ctest --test-dir build -R '^inventory$' --output-on-failure`.
 
 Game functions remain in their original files. For the larger modules,
 `tests/tools/extract_functions.py` generates test-only translation units in

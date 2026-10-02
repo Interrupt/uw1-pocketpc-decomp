@@ -182,11 +182,12 @@ void commit_player_move()
   uVar4 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
   *(char *)((char *)g_player_object + 0xb) = (char)uVar4;
   *(byte *)((char *)g_player_object + 0xc) = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
-  if ((_DAT_002048a9 != 0) && (_DAT_002048a1 == DAT_00201c78)) {
+  /* ARM 0x3d668..0x3d694 compares two signed 16-bit headings. */
+  if ((_DAT_002048a9 != 0) && (_DAT_002048a1 == (short)DAT_00201c78)) {
     g_jump_ascent_timer = 0;
   }
   uVar5 = DAT_00201c70;
-  if (_DAT_002048a1 != DAT_00201c78) {
+  if (_DAT_002048a1 != (short)DAT_00201c78) {
     DAT_00201c78 = _DAT_002048a1;
     uVar3 = (int)_DAT_002048a1 + DAT_00202088 * -0x4000;
     if ((((DAT_00204897 & 0x80) != 0) &&

@@ -3,7 +3,8 @@
 
 /* Tile heights and wall contact are supplied at the map-sampling boundary.
  * Step limits, collision flags, response, and heading deflection are real. */
-static unsigned char movement[64];
+undefined1 DAT_00204880_backing[128];
+#define movement DAT_00204880_backing
 static char response_mask[16];
 char *DAT_00204874 = (char *)movement;
 char *DAT_002048bc = response_mask;
@@ -26,7 +27,7 @@ unsigned char DAT_000869a8_backing[16] = {
 static ushort wall_flags;
 static int reverted_steps, restarted_sweeps;
 static short x, y;
-static short foot_position[3];
+#define foot_position ((short *)DAT_002049c8_backing)
 short *g_sweep_foot_pos = foot_position;
 byte *DAT_00202c6c = DAT_002049c8_backing;
 unsigned char DAT_00086998_backing[16];
@@ -38,7 +39,22 @@ undefined4 DAT_00204878;
 static bool stair_fixture;
 static ushort envelope_flags;
 static byte destination_floor;
-static ushort player[16], door[16];
+static byte object_arena[0x8000];
+#define player ((ushort *)(object_arena + 0x4000 + 0x1b))
+#define door ((ushort *)(object_arena + 0x5b00 + (300 - 256) * 8))
+char *DAT_002046b8 = (char *)object_arena + 0x4000;
+ushort *g_player_object = player;
+short DAT_00201c70, DAT_00202080, DAT_00202088;
+undefined2 DAT_00201c78;
+undefined4 DAT_000858a0;
+char *DAT_002029cc, *DAT_00086df8;
+uint read_realtime_clock_units(void) { return 0; }
+void object_list_unlink(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void object_list_insert_head(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void set_locomotion_state(int state, int flags) { (void)state; (void)flags; }
+undefined4 roll_skill_check(void) { TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
+undefined4 apply_typed_damage_to_object(void) { TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
+undefined4 play_sound_effect_with_pan(void) { TEST_FAIL_MESSAGE("Unexpected landing sound"); return 0; }
 static int sampled_tiles;
 static bool door_fixture, setup_fixture;
 
@@ -109,9 +125,7 @@ void *FUN_000535fc(int slot)
     if (slot == 300) return door;
     return NULL;
 }
-void *resolve_object_link(ushort *link)
-{ return FUN_000535fc(*link >> 6); }
-char *DAT_002046c4 = (char *)door; /* static-object boundary */
+char *DAT_002046c4 = (char *)object_arena + 0x5b00;
 short DAT_0010144c, DAT_00101454;
 static int obstacle_syncs;
 static byte last_obstacle_snapshot[0x2c];
@@ -138,17 +152,12 @@ void angle_to_screen_delta(int heading, short *dx, short *dy)
     *dx = 0;
     *dy = 0;
 }
-void sweep_init_position(void) {}
+
 void sweep_land_on_surface(void)
 {
     surface_landings++;
     foot_position[2] = (short)_DAT_0008699b;
 }
-int sweep_integrate_substep(vertical, direction)
-short vertical;
-short direction;
-{ (void)vertical; (void)direction; return 0; }
-
 undefined4 sweep_step(int direction)
 {
     TEST_ASSERT_EQUAL_INT(-1, direction);
@@ -202,7 +211,7 @@ void setUp(void)
     reverted_steps = restarted_sweeps = 0;
     x = 101;
     y = 201;
-    memset(foot_position, 0, sizeof(foot_position));
+    memset(foot_position, 0, 3 * sizeof(short));
     foot_position[0] = 8;
     foot_position[1] = 16;
     memset(DAT_00086998_backing, 0, sizeof(DAT_00086998_backing));
@@ -212,12 +221,12 @@ void setUp(void)
     sampled_tiles = 0;
     envelope_flags = 0;
     door_fixture = setup_fixture = false;
+    DAT_00201c70 = DAT_00201c78 = DAT_00202080 = DAT_00202088 = 0;
     door_contacts = surface_landings = obstacle_syncs = 0;
     memset(last_obstacle_snapshot, 0, sizeof(last_obstacle_snapshot));
     DAT_00086984 = DAT_0008698a = DAT_0008698e = DAT_00086994 = 0;
     DAT_00086992 = 0;
-    memset(player, 0, sizeof(player));
-    memset(door, 0, sizeof(door));
+    memset(object_arena, 0, sizeof(object_arena));
     memset(DAT_00202c38_backing, 0, sizeof(DAT_00202c38_backing));
     memset(DAT_00202c90_backing, 0, sizeof(DAT_00202c90_backing));
     player[0] = 0x7f;
@@ -391,9 +400,10 @@ static void test_player_cannot_auto_step_onto_high_footprint_floor(void)
 static void test_closed_door_candidate_preserves_full_object_link(void)
 {
     door_fixture = true;
+    wall_flags = 4;
     destination_floor = 32;
     foot_position[2] = 32;
-    set_heading(0x4000);
+    set_heading((door[1] & 0x100) != 0 ? 0x4000 : 0);
     sweep_apply_collision();
     TEST_ASSERT_EQUAL_UINT16(300, *(ushort *)(&DAT_00202c3a) >> 6);
     TEST_ASSERT_GREATER_THAN_INT(0, door_contacts);
@@ -431,7 +441,7 @@ static void test_jump_wall_rebound_rebuilds_floor_at_restored_position(void)
     TEST_ASSERT_EQUAL_INT(1, reverted_steps);
     TEST_ASSERT_EQUAL_INT16(8, foot_position[0]);
     TEST_ASSERT_EQUAL_INT16(50, foot_position[2]);
-    TEST_ASSERT_EQUAL_INT16(16, DAT_002049c8); /* blocked-tile scratch */
+    TEST_ASSERT_EQUAL_INT16(8, DAT_002049c8); /* rollback updates collision XYZ too */
 
     write_short(0x12, 64);
     TEST_ASSERT_EQUAL_INT(1, movement_sweep_setup(0, 1));
@@ -456,7 +466,7 @@ static void test_jump_wall_rebound_rebuilds_floor_at_restored_position(void)
 
 static void test_closed_door_blocks_in_opposite_orientation(void)
 {
-    door[1] |= 0x80;
+    door[1] |= 0x100; /* heading 2: a quarter turn */
     test_closed_door_candidate_preserves_full_object_link();
 }
 
@@ -552,6 +562,152 @@ static void test_contact_without_obstacle_returns_blocking_flag(void)
     TEST_ASSERT_EQUAL_INT(0, obstacle_syncs);
 }
 
+static void test_door_bounds_use_original_radius_and_packed_position(void)
+{
+    /* FUN_00051658 / ARM 0x516e4..0x51790 uses a square radius. Heading
+       does not change it, and packed positions 3 and 4 remain distinct. */
+    for (int packed_position = 3; packed_position <= 4; packed_position++) {
+        for (int heading = 0; heading < 8; heading += 2) {
+            door[1] = (packed_position << 13) | (packed_position << 10) | (heading << 7);
+            for (int axis = 0; axis < 2; axis++) {
+                for (int position = -2; position <= 9; position++) {
+                    DAT_002049dc = 0;
+                    DAT_00202c18 = axis == 0 ? position : packed_position;
+                    DAT_00202c1c = axis == 1 ? position : packed_position;
+                    DAT_00202c20 = DAT_00202c18 - 1;
+                    DAT_00202c28 = DAT_00202c18 + 1;
+                    DAT_00202c24 = DAT_00202c1c - 1;
+                    DAT_00202c2c = DAT_00202c1c + 1;
+                    FUN_00051658(door, 300, 0, 0, 0);
+                    TEST_ASSERT_EQUAL_INT(position >= packed_position - 4 &&
+                                          position <= packed_position + 4, DAT_002049dc);
+                }
+            }
+        }
+    }
+}
+
+static void test_object_slide_uses_original_movement_axis(void)
+{
+    for (int heading = 0; heading < 4; heading += 2) {
+        for (int axis = 0; axis < 2; axis++) {
+            setUp();
+            door_fixture = true;
+            wall_flags = 4;
+            door[1] |= heading << 7;
+            DAT_0008698c = axis;
+            set_heading(0x2000);
+            sweep_apply_collision();
+            TEST_ASSERT_EQUAL_HEX16(axis == 0 ? 0 : 0x4000, read_short(0x21));
+            TEST_ASSERT_EQUAL_INT(1, reverted_steps);
+            TEST_ASSERT_EQUAL_INT(1, restarted_sweeps);
+        }
+    }
+}
+
+static void test_copied_collision_links_resolve_like_arena_links(void)
+{
+    /* These are real calls to FUN_00053514, not an unrestricted lookup stub. */
+    *(ushort *)(object_arena + 2) = (300 << 6) | 0x19;
+    TEST_ASSERT_EQUAL_PTR(door, resolve_object_link((ushort *)(object_arena + 2)));
+    for (int i = 0; i < 9; i++) {
+        ushort *link = (ushort *)(&DAT_00202c3a + i * 6);
+        *link = (300 << 6) | 0x39;
+        TEST_ASSERT_EQUAL_PTR(door, resolve_object_link(link));
+        *link = (1 << 6) | 0x19;
+        TEST_ASSERT_EQUAL_PTR(player, resolve_object_link(link));
+        *link = 0x19;
+        TEST_ASSERT_NULL(resolve_object_link(link));
+    }
+}
+
+static void test_door_contact_lookup_returns_full_pointer_and_tile(void)
+{
+    DAT_002049dc = DAT_002049dd = 1;
+    DAT_002049de = 0;
+    *(ushort *)(&DAT_00202c3a) = (300 << 6) | 0x39;
+    *(short *)(&DAT_00202c3c) = 0; /* door is in the current tile */
+    byte tile_x = 0, tile_y = 0;
+    TEST_ASSERT_EQUAL_PTR(door, (void *)(uintptr_t)FUN_0005aea0(&tile_x, &tile_y));
+    TEST_ASSERT_EQUAL_UINT8(1, tile_x);
+    TEST_ASSERT_EQUAL_UINT8(2, tile_y);
+    TEST_ASSERT_EQUAL_PTR(door, (void *)(uintptr_t)FUN_0005b010());
+    door[0] = 0x148;
+    TEST_ASSERT_NULL((void *)(uintptr_t)FUN_0005aea0(&tile_x, &tile_y));
+    DAT_002049dd = 0;
+    TEST_ASSERT_NULL((void *)(uintptr_t)FUN_0005b010());
+}
+
+static void test_sweep_initialization_and_rollback_share_collision_xyz(void)
+{
+    write_short(0, 12 * 32 + 7);
+    write_short(2, 20 * 32 + 9);
+    write_short(4, 80 * 8 + 3);
+    sweep_init_position();
+    TEST_ASSERT_EQUAL_PTR(DAT_00202c6c, g_sweep_foot_pos);
+    TEST_ASSERT_EQUAL_INT16(12, DAT_002049c8);
+    TEST_ASSERT_EQUAL_INT16(20, DAT_002049ca);
+    TEST_ASSERT_EQUAL_INT16(80, DAT_002049cc);
+    DAT_0008698c = 0;
+    DAT_0008698e = 1;
+    DAT_00086996 = 0;
+    DAT_00086990 = 3;
+    *(short *)(&DAT_00086986) = 0x2000;
+    *(short *)(&DAT_00086986 + 2) = 0;
+    sweep_integrate_substep(0, 1);
+    TEST_ASSERT_EQUAL_INT16(13, DAT_002049c8);
+    sweep_integrate_substep(0, -1);
+    TEST_ASSERT_EQUAL_INT16(12, DAT_002049c8);
+    TEST_ASSERT_EQUAL_INT16(20, DAT_002049ca);
+    TEST_ASSERT_EQUAL_INT16(80, DAT_002049cc);
+}
+
+static void test_real_substep_rollback_restores_fractional_position_on_both_axes(void)
+{
+    for (int axis = 0; axis < 2; axis++) {
+        for (int direction = -1; direction <= 1; direction += 2) {
+            foot_position[0] = 8;
+            foot_position[1] = 16;
+            DAT_00086980 = 0x1000;
+            DAT_00086982 = 0x1800;
+            DAT_0008698c = axis;
+            DAT_0008698e = 1 - axis;
+            DAT_00086996 = 0;
+            DAT_00086990 = 3;
+            *(short *)(&DAT_00086986 + axis * 2) = direction * 0x20;
+            *(short *)(&DAT_00086986 + (1 - axis) * 2) = direction * 0x1200;
+            TEST_ASSERT_EQUAL_INT(1, sweep_integrate_substep(0, 1));
+            const int fraction = (axis == 0 ? 0x1800 : 0x1000) + direction * 0x1200;
+            const int carry = fraction < 0 ? -1 : fraction >= 0x2000 ? 1 : 0;
+            TEST_ASSERT_EQUAL_INT16(8 + (axis == 0 ? direction : carry), foot_position[0]);
+            TEST_ASSERT_EQUAL_INT16(16 + (axis == 1 ? direction : carry), foot_position[1]);
+            TEST_ASSERT_EQUAL_HEX16(axis == 0 ? 0x1000 : fraction & 0x1fff, DAT_00086980);
+            TEST_ASSERT_EQUAL_HEX16(axis == 1 ? 0x1800 : fraction & 0x1fff, DAT_00086982);
+            TEST_ASSERT_EQUAL_INT(1, sweep_integrate_substep(0, -1));
+            TEST_ASSERT_EQUAL_INT16(8, foot_position[0]);
+            TEST_ASSERT_EQUAL_INT16(16, foot_position[1]);
+            TEST_ASSERT_EQUAL_HEX16(0x1000, DAT_00086980);
+            TEST_ASSERT_EQUAL_HEX16(0x1800, DAT_00086982);
+            TEST_ASSERT_EQUAL_INT(0, DAT_00086996);
+        }
+    }
+}
+
+static void test_unchanged_signed_travel_heading_does_not_turn_camera_again(void)
+{
+    for (int reverse = 0; reverse < 2; reverse++) {
+        ushort tangent = 0x4000 + reverse * 0x8000;
+        ushort yaw = 0x2400 + reverse * 0x8000;
+        DAT_00201c70 = (short)yaw;
+        DAT_00201c78 = tangent;
+        set_heading(tangent);
+        for (int tick = 0; tick < 10; tick++) {
+            commit_player_move();
+            TEST_ASSERT_EQUAL_HEX16(yaw, DAT_00201c70);
+        }
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -576,5 +732,12 @@ int main(void)
     RUN_TEST(test_contact_snapshot_updates_contiguous_velocity_speed_and_heading);
     RUN_TEST(test_contact_mass_ratio_caps_transferred_velocity);
     RUN_TEST(test_contact_without_obstacle_returns_blocking_flag);
+    RUN_TEST(test_door_bounds_use_original_radius_and_packed_position);
+    RUN_TEST(test_object_slide_uses_original_movement_axis);
+    RUN_TEST(test_copied_collision_links_resolve_like_arena_links);
+    RUN_TEST(test_door_contact_lookup_returns_full_pointer_and_tile);
+    RUN_TEST(test_sweep_initialization_and_rollback_share_collision_xyz);
+    RUN_TEST(test_real_substep_rollback_restores_fractional_position_on_both_axes);
+    RUN_TEST(test_unchanged_signed_travel_heading_does_not_turn_camera_again);
     return UNITY_END();
 }

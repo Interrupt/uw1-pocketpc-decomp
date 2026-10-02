@@ -629,7 +629,7 @@ int param_2;
     }
   }
   uVar1 = encode_object_slot_index(param_2);
-  iVar2 = FUN_00053644(param_1,1,uVar1);
+  iVar2 = (char *)FUN_00053644(param_1,1,uVar1);
   if (iVar2 != 0) {
     unlink_and_free_object(DAT_002046b4);
   }

@@ -1005,15 +1005,14 @@ undefined4 param_3;
   short sVar1;
   char *iVar2;  /* was `int` -- truncated tilemap_lookup's/discard_misplaced_object's
                    real `void *`/`ushort *` returns; only ever compared to
-                   0 (FUN_00053644's plain int return also lands here, but
-                   is likewise only ever compared to 0, so char* is safe) */
+                   0 */
   undefined4 uVar3;
   ushort local_14 [2];
 
   if (param_2 == 0) {
     iVar2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
     uVar3 = encode_object_slot_index(param_1);
-    iVar2 = (char *)(intptr_t)FUN_00053644(iVar2 + 2,1,uVar3);
+    iVar2 = (char *)FUN_00053644(iVar2 + 2,1,uVar3);
     if (iVar2 == 0) {
       sVar1 = encode_object_slot_index(param_1);
       local_14[0] = local_14[0] & 0x3f | sVar1 << 6;
@@ -1695,8 +1694,7 @@ int param_3;
   g_cursor_holding_state = 0;
   if ((param_2 != 0) && (param_3 == 0)) {
     uVar5 = encode_object_slot_index(param_1);
-    iVar6 = FUN_00053644((char *)g_player_object + 6,1,uVar5);
-    if (iVar6 == 0) {
+    if (FUN_00053644((char *)g_player_object + 6,1,uVar5) == 0) {
       uVar11 = (int)*param_1 & 0x1ff;
       if (((ushort)uVar11 < 0x153) || (0x156 < (ushort)uVar11)) {
         print_scroll_message_by_id(0x84);

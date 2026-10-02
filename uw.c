@@ -3726,7 +3726,7 @@ undefined DAT_00087530_backing[210];
 #define DAT_00087530 DAT_00087530_backing[0]
 undefined DAT_00087533_backing[210];
 #define DAT_00087533 DAT_00087533_backing[0]
-undefined4 DAT_002046b4;
+ushort *DAT_002046b4;
 undefined DAT_00085a90;
 char s_were_00085a98[] = "were";
 undefined1 DAT_00085aa0_backing[32768];
@@ -4541,8 +4541,9 @@ short DAT_00086996;
 // (coarse X/Y/Z, tile-eighths / eighth-fine units) collision math operates
 // on each sub-step before sweep_writeback_position commits it back to the
 // real player position.
-short g_sweep_foot_pos_backing[128];
-short *g_sweep_foot_pos = g_sweep_foot_pos_backing;
+/* UU.exe .data at 0x8697c contains 0x2049c8: the swept XYZ and
+   collision working XYZ are the same three halfwords, including rollback. */
+short *g_sweep_foot_pos = (short *)DAT_002049c8_backing;
 short DAT_00086980;
 short DAT_00086982;
 short DAT_00086984;
@@ -11444,7 +11445,7 @@ ushort *param_1;
   char cVar1;
   undefined4 uVar2;
   ushort *puVar3;
-  int iVar4;
+  ushort *iVar4;
   ushort *puVar5;
   int iVar6;
 
@@ -18774,7 +18775,9 @@ short param_1;
 
 
 
-int FUN_00053644(param_1,param_2,param_3)
+/* Search sibling and nested inventory links; DAT_002046b4 identifies the
+   containing chain's head link for subsequent unlinking. */
+ushort *FUN_00053644(param_1,param_2,param_3)
 ushort * param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -18782,8 +18785,8 @@ undefined4 param_3;
 {
   ushort *puVar1;
   short sVar2;
-  int iVar3;
-  int iVar4;
+  byte *iVar3;
+  ushort *iVar4;
   
   if ((*param_1 & 0xffc0) == 0) {
 LAB_00053720:
@@ -18793,7 +18796,7 @@ LAB_00053720:
   else {
     DAT_002046b4 = param_1;
     iVar3 = resolve_object_link(param_1);
-    while ((sVar2 = encode_object_slot_index(), iVar4 = iVar3, puVar1 = param_1, sVar2 != (short)param_3 &&
+    while ((sVar2 = encode_object_slot_index(iVar3), iVar4 = (ushort *)iVar3, puVar1 = param_1, sVar2 != (short)param_3 &&
            ((((*(byte *)(iVar3 + 1) & 0x80) != 0 || ((*(ushort *)(iVar3 + 6) & 0xffc0) == 0)) ||
             (iVar4 = FUN_00053644((ushort *)(iVar3 + 6),param_2,param_3), puVar1 = DAT_002046b4,
             iVar4 == 0))))) {
@@ -21663,33 +21666,6 @@ uint sweep_collision_flags()
   bVar7 = (*(ushort *)(DAT_002048bc + 4) & 0x80) == 0;
   uVar1 = *(ushort *)DAT_002048bc;
   DAT_00204870 = 0;
-  /* Sync the collision working block's X/Y (DAT_00202c6c[+0/+2], i.e.
-     DAT_002049c8/ca) to the sweep's live sub-tile position before the tile
-     lookups in collision_build_height_field / collision_height_envelope.  sweep_init_position copies the
-     heading/height fields into this block but never the position, and Ghidra
-     dropped whatever kept it current -- so DAT_002049c8/ca sat at (0,0) and
-     every collision test hit tile (0,0), letting the player walk straight
-     through solid walls and off the map.  g_sweep_foot_pos is the live position
-     in the same 1/8-tile units these readers expect (>>3 -> tile).
-
-     That original fix stopped at X/Y -- offset+4 (DAT_002049cc, see its own
-     comment at the struct declaration) is the position triplet's missing
-     third field, "the player's current sub-tile height." Left at 0 (its
-     static-init value, never written on this global instance), it made
-     collision_corner_flags's "(step_limit + current_Z) < sampled_floor_
-     height" walkable/auto-stick test compare every real floor height
-     against a Z of 0 -- always true, so the auto-stick branch (which sets
-     the "walkable" bit 4) could never be reached on any slope, forcing
-     every ramp tile through the block/fall-arm path instead of the
-     snap-resolver. Confirmed live via UW_DEBUG_RAMP's [ramp-corner-flags]
-     trace: off4=0 on every call throughout a ramp descent, while the real
-     sampled floor height tracked the slope correctly (~95, ~94, ~93...).
-     g_sweep_foot_pos[2] is footz itself (*(short*)((char*)g_sweep_foot_pos+4)),
-     already in the same raw units collision_corner_flags compares against --
-     no additional scaling needed, matching X/Y's own direct assignment. */
-  DAT_002049c8 = g_sweep_foot_pos[0];
-  DAT_002049ca = g_sweep_foot_pos[1];
-  DAT_002049cc = g_sweep_foot_pos[2];
   if (tilemap_lookup((short)((int)g_sweep_foot_pos[0] >> 3),(short)((int)g_sweep_foot_pos[1] >> 3)) ==
       (void *)0x0) {
     /* stepped outside the 64x64 map -- the border is always solid; report a
@@ -21897,7 +21873,8 @@ LAB_0005abe4:
 
 
 
-undefined4 FUN_0005aea0(param_1,param_2)
+/* The original returns an object record, not a 32-bit numeric result. */
+void *FUN_0005aea0(param_1,param_2)
 undefined1 * param_1;
 byte * param_2;
 
@@ -21905,7 +21882,7 @@ byte * param_2;
   ushort uVar1;
   ushort *puVar2;
   uint uVar3;
-  undefined4 uVar4;
+  void *uVar4;
   int iVar5;
   int iVar6;
   
@@ -21935,10 +21912,10 @@ byte * param_2;
 
 
 
-undefined4 FUN_0005b010()
+void *FUN_0005b010()
 
 {
-  undefined4 uVar1;
+  void *uVar1;
   
   if (DAT_002049dd == '\0') {
     uVar1 = 0;
@@ -23852,7 +23829,5 @@ undefined4 param_1;
   }
   return uVar2;
 }
-
-
 
 

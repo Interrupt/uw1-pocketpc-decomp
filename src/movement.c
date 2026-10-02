@@ -365,12 +365,6 @@ int param_2;
     DAT_00086994 = ((ushort)uVar6 ^ uVar4) - uVar4;
   }
   DAT_00086996 = 0;
-  /* A wall slide restores g_sweep_foot_pos before restarting the sweep.
-   * Rebuild from that position, not the blocked tile retained by the last
-   * collision query; otherwise a fall can select the wall top as its floor. */
-  DAT_002049c8 = g_sweep_foot_pos[0];
-  DAT_002049ca = g_sweep_foot_pos[1];
-  DAT_002049cc = g_sweep_foot_pos[2];
   // PHYSICS: build the destination tile's floor/ceiling height field for collision
   if (((DAT_002049d2 == 1) || (psVar11[2] != 0)) && (param_2 != 0)) {
     collision_build_height_field(*(undefined1 *)(iVar8 + 0x27));
@@ -1752,7 +1746,7 @@ ushort * param_1;
 {
   ushort uVar1;
   undefined4 *puVar2;
-  int iVar3;
+  char *iVar3;
   undefined4 uVar4;
   uint uVar5;
   

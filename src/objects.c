@@ -503,29 +503,9 @@ ushort * param_1;
 {
   ushort uVar1;
 
-  /* Defensive range check -- param_1 should always be either a
-     tile-array-relative link cell or an object-record-relative "next"
-     field, both within the level blob's fixed object-table span. Base
-     the check on DAT_002046b8 (computed ONCE at level load as
-     DAT_002029cc+0x4000, see reset_level_object_arena) rather than re-reading the
-     LIVE DAT_002029cc: there's an existing, previously-documented,
-     never-root-caused bug (see init_gameplay_session's own comment a few
-     thousand lines down) where some stray write elsewhere in this file
-     corrupts DAT_002029cc's storage well after level load -- confirmed
-     here too (the live DAT_002029cc no longer matched the base
-     DAT_002046b8/DAT_002046c4 were actually derived from), so
-     recomputing "expected range" from the live value validates against
-     the wrong base and passes through an address that's actually
-     unmapped/unrelated memory. DAT_002046b8/DAT_002046c4 are
-     independent globals, stored once and not observed corrupted the
-     same way. A caller that chains through resolve_object_link's own
-     result repeatedly (collision_height_envelope's neighbouring-tile
-     scan) can otherwise walk this into unrelated memory -- confirmed
-     via lldb: EXC_BAD_ACCESS reading *param_1 with a wild address,
-     reproduced by a mapped movement sequence (12x forward, turn, 3x
-     forward, turn, 5x forward). Treat an out-of-range param_1 as "no
-     object" instead of crashing, same defensive posture as this file's
-     other guards against a data-dependent wild pointer. */
+  /* The original FUN_00053514 also accepts copied link words in the
+     six-byte collision candidate array (see FUN_0005898c and FUN_0005aea0).
+     Keep the port's arena guard, but allow that original call contract. */
   if (param_1 != (ushort *)0x0) {
     char *_lo = DAT_002046b8 - 0x4000;
     /* (DAT_002046b8-0x4000) is this arena buffer's own base (aliased as
@@ -539,7 +519,12 @@ ushort * param_1;
        would need -- the new reservations sit well past that, in
        previously-unallocated space, not inside it. */
     char *_hi = (DAT_002046b8 - 0x4000) + 0x7c08 + 0x3a + 0x180;
-    if ((char *)param_1 < _lo || (char *)param_1 >= _hi) {
+    uintptr_t link_address = (uintptr_t)param_1;
+    uintptr_t candidates = (uintptr_t)DAT_00202c38_backing;
+    bool candidate_link = link_address >= candidates + 2 &&
+                          link_address < candidates + 9 * 6 &&
+                          (link_address - candidates - 2) % 6 == 0;
+    if (!candidate_link && ((char *)param_1 < _lo || (char *)param_1 >= _hi)) {
       /* Throttled: this guard also fires every idle tick before any level
          is loaded (DAT_002046b8/DAT_002046c4 aren't set up yet, so
          everything looks "out of range"), and logging it unthrottled was
