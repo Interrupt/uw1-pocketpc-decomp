@@ -2030,6 +2030,8 @@ extern char s_doors_00085a64[];
    see the same storage. */
 extern undefined1 DAT_00202a28_backing[256];
 #define g_food_effect_table DAT_00202a28_backing[0]
+extern undefined1 DAT_002029d8_backing[256];
+#define g_light_radius_table DAT_002029d8_backing[0]
 extern undefined4 g_weapon_overlay_enabled;
 extern char s_is_locked__000878fc[];
 extern char s_That_000878f4[];
@@ -3526,8 +3528,8 @@ undefined4 object_or_contents_has_type();
 int find_object_in_world();
 undefined4 cycle_active_light_source();
 void update_player_tick_effects();
-undefined4 FUN_0005404c();
-void FUN_000541d0();
+undefined4 decay_equipped_light_sources();
+void apply_drowning_hazard();
 undefined4 FUN_000542f8();
 undefined4 FUN_0005448c();
 void FUN_000545ac();

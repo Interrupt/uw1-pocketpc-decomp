@@ -658,7 +658,7 @@ LAB_000669a8:
          r8 is loaded from the literal pool with g_light_source_slots, then
          `ldrsbne r0,[r5,r8]` reads g_light_source_slots[iVar4] (the real
          light-source-eligible slots {5,6,7,8}) before calling
-         get_equipped_item_at_slot. The sibling light-fuel-burn loop in FUN_0005404c
+         get_equipped_item_at_slot. The sibling light-fuel-burn loop in decay_equipped_light_sources
          (uw.c ~45174) already uses this exact
          `get_equipped_item_at_slot((char)(&g_light_source_slots)[iVar9])` pattern for the
          identical 0x90-class/radius-nibble check, confirming this is
@@ -2668,7 +2668,7 @@ LAB_0007158c:
     uVar7 = *(ushort *)(DAT_00086df8 + 0x61) & 0xfff3;
     *(char *)(DAT_00086df8 + 0x61) = (char)uVar7;
     *(char *)(DAT_00086df8 + 0x62) = (char)(uVar7 >> 8);
-    FUN_0005404c(iVar8 * 0xb4,0);
+    decay_equipped_light_sources(iVar8 * 0xb4,0);
     if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
       uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) >> 2 & 0xf;
       apply_typed_damage_to_object(g_player_object,0,0,0,(char)((int)((uVar7 + 1) * uVar7) >> 1),0x10);
@@ -2700,7 +2700,7 @@ LAB_0007158c:
         *(char *)(DAT_00086df8 + 0xcf) = (char)((uint)iVar8 >> 8);
         *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar8 >> 0x10);
         *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar8 >> 0x18);
-        FUN_0005404c(iVar4 * 0xb4,0);
+        decay_equipped_light_sources(iVar4 * 0xb4,0);
         if ((*(byte *)(DAT_00086df8 + 0x39) < 0x41) || (iVar4 = 1, param_1 < 1)) {
           iVar4 = 0;
         }
@@ -3966,7 +3966,7 @@ short * param_1;
 // active light source (cycle_active_light_source) and refreshes
 // equipment effects on a change, processes a second pending-effect
 // mask at +0x61 bits 2-3, applies queued HP/hazard damage flagged in
-// DAT_002046cc, triggers FUN_000541d0 (not yet named) once liquid-
+// DAT_002046cc, triggers apply_drowning_hazard (not yet named) once liquid-
 // submersion depth (+0xb9) exceeds a threshold, and every 3rd call
 // (DAT_002046d0 % 3 == 0) applies typed damage for an active +0x5f
 // bits 2-5 condition and rolls a skill check.
@@ -4011,7 +4011,7 @@ void update_player_tick_effects()
     } while (iVar7 * 0x10000 >> 0x10 < (int)(*(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf));
     uVar6 = (uint)DAT_002046d0;
   }
-  iVar7 = FUN_0005404c(1,uVar6);
+  iVar7 = decay_equipped_light_sources(1,uVar6);
   puVar8 = (undefined1 *)(DAT_00086df8 + 0x62);
   if (iVar7 != 0) {
     iVar10 = 1;
@@ -4037,7 +4037,7 @@ void update_player_tick_effects()
     }
   }
   if (0x50 < *(byte *)(DAT_00086df8 + 0xb9)) {
-    FUN_000541d0();
+    apply_drowning_hazard();
   }
   iVar10 = DAT_00086df8;
   uw_ord2005_rem_116 = ((int)(DAT_002046d0)) % (3);
@@ -4087,6 +4087,113 @@ void update_player_tick_effects()
       adjust_player_hp(g_player_object,0xffffffff);
     }
     DAT_002046d0 = 0;
+  }
+  return;
+}
+
+
+// was FUN_0005404c -- burns fuel on the player's equipped light
+// sources (g_light_source_slots, 4 slots): for each equipped item
+// whose type falls in the light-source category and has a valid
+// radius (g_light_radius_table), rolls fuel consumption from elapsed
+// time param_2 (and a second roll when param_1 > 1), decrementing the
+// item's fuel field or, once exhausted, its charge count -- at zero
+// charges, redraws the slot, recomputes ambient lighting
+// (set_ambient_bias_without_light), and returns 1. Confirmed as "the
+// light-fuel-burn loop" by an existing comment in player.c.
+undefined4 decay_equipped_light_sources(param_1,param_2)
+short param_1;
+undefined1 param_2;
+
+{
+  char cVar1;
+  ushort uVar2;
+  ushort uVar3;
+  byte bVar4;
+  short sVar5;
+  ushort *puVar6;
+  int extraout_r1;
+  uint uVar7;
+  ushort uVar8;
+  int iVar9;
+  undefined4 uVar10;
+  
+  uVar10 = 0;
+  iVar9 = 0;
+  do {
+    puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar9]);
+    if (puVar6 != (ushort *)0x0) {
+      uVar2 = *puVar6;
+      if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
+          (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
+        Ordinal_2005(cVar1,param_2);
+        uVar8 = (ushort)(extraout_r1 == 0);
+        if (1 < param_1) {
+          sVar5 = Ordinal_2005(cVar1);
+          uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
+        }
+        if ((short)uVar8 != 0) {
+          uVar3 = puVar6[2];
+          if ((int)(short)uVar8 < (int)(uVar3 & 0x3f)) {
+            bVar4 = (byte)uVar3;
+            *(byte *)(puVar6 + 2) = (bVar4 - (char)uVar8 ^ bVar4) & 0x3f ^ bVar4;
+            *(byte *)((char *)puVar6 + 5) = (byte)(uVar3 >> 8);
+          }
+          else {
+            uVar7 = uVar3 & 0xffc0;
+            *(byte *)(puVar6 + 2) = (byte)uVar7;
+            *(byte *)((char *)puVar6 + 5) = (byte)(uVar7 >> 8);
+            bVar4 = (byte)uVar2;
+            *(byte *)puVar6 = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
+            *(byte *)((char *)puVar6 + 1) = (byte)(uVar2 >> 8);
+            redraw_backpack_slot_widget((int)(char)(&g_light_source_slots)[iVar9]);
+            uVar10 = 1;
+            set_ambient_bias_without_light(0);
+          }
+        }
+      }
+    }
+    iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
+  } while (iVar9 < 4);
+  return uVar10;
+}
+
+
+
+// was FUN_000541d0 -- drowning hazard tick, called once liquid-
+// submersion depth (DAT_00086df8+0xb9) exceeds a threshold: rolls a
+// skill check (+0x34, swimming-like stat) against a light-encumbrance-
+// derived difficulty, and on failure (while depth is still below
+// 0x8c/140) increases the depth further via roll_dice_sum -- i.e.
+// struggling/sinking deeper. Once depth exceeds 0x78/120, rolls again
+// and on failure flashes a damage overlay and applies typed damage to
+// the player -- i.e. drowning damage.
+void apply_drowning_hazard()
+
+{
+  undefined1 uVar1;
+  char cVar2;
+  char *iVar3;
+  
+  iVar3 = DAT_00086df8;
+  uVar1 = 0;
+  if (*(short *)(DAT_00086df8 + 0x4c) != 0) {
+    uVar1 = Ordinal_2005(*(short *)(DAT_00086df8 + 0x4c),(uint)*(ushort *)(DAT_00086df8 + 0x4a) << 5
+                        );
+  }
+  iVar3 = roll_skill_check(*(undefined1 *)(iVar3 + 0x34),uVar1);
+  if (((short)iVar3 < 1) && (*(byte *)(DAT_00086df8 + 0xb9) < 0x8c)) {
+    cVar2 = roll_dice_sum(3 - (int)(iVar3),4);
+    *(char *)(DAT_00086df8 + 0xb9) = *(char *)(DAT_00086df8 + 0xb9) + cVar2;
+  }
+  if (0x78 < *(byte *)(DAT_00086df8 + 0xb9)) {
+    iVar3 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x34),uVar1);
+    if ((-(int)iVar3 + 2) * 0x10000 >> 0x10 != 0) {
+      weapon_overlay_flash_once(0xc6);
+      set_pending_update_flags(2);
+      uVar1 = roll_dice_sum(2,-(int)iVar3 + 4);
+      apply_typed_damage_to_object(g_player_object,0,0,0,uVar1,0);
+    }
   }
   return;
 }

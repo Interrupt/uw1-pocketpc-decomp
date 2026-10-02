@@ -3806,7 +3806,7 @@ ushort DAT_00202962;
 ushort DAT_00202964;
 char s_Move_how_many__00085c68[] = "Move_how_many?";
 /* g_light_source_slots: light-source-eligible equip slots {5,6,7,8} (see
-   refresh_player_equipment_effects and FUN_0005404c's light-scan loops, and use_light_source's
+   refresh_player_equipment_effects and decay_equipped_light_sources's light-scan loops, and use_light_source's
    own comparison against find_or_assign_object_widget's result). Was a
    bare 1-byte scalar -- every existing `(&g_light_source_slots)[1..3]` read past
    the single declared byte into whatever the linker placed next, instead
@@ -3992,8 +3992,7 @@ const short DAT_00085f50_cosine[260] = {
    read them moved into src/math.c. */
 undefined1 DAT_00086260_backing[1024];
 undefined1 DAT_00086264_backing[1024];
-static undefined1 DAT_002029d8_backing[256];
-#define g_light_radius_table DAT_002029d8_backing[0]
+undefined1 DAT_002029d8_backing[256];
 // g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
 // object id's low nibble) effect/quality byte table, loaded at runtime
 // (read_file_handle) and read by use_food_item to decide a food item's
@@ -4186,7 +4185,7 @@ void *class0_variant_effect_table_lookup()
    function. get_scanned_object_class_effect_ptr takes its address and CALLS it (`local_24[2] =
    &DAT_0004a070; (*(code*)local_24[idx])();`) for any object whose class
    is 2 (id&0x1c0)>>6==2 -- exactly the 0x90-class light sources
-   refresh_player_equipment_effects's and FUN_0005404c's light-scan loops filter for. Taking
+   refresh_player_equipment_effects's and decay_equipped_light_sources's light-scan loops filter for. Taking
    the address of a data byte and jumping into it crashed the instant a
    real torch was found by the (now-fixed) scan loop. Real disassembly
    (0x4a070-0x4a108) shows this reads the scanned object's id (via
@@ -13728,94 +13727,6 @@ short param_5;
 
 
 
-undefined4 FUN_0005404c(param_1,param_2)
-short param_1;
-undefined1 param_2;
-
-{
-  char cVar1;
-  ushort uVar2;
-  ushort uVar3;
-  byte bVar4;
-  short sVar5;
-  ushort *puVar6;
-  int extraout_r1;
-  uint uVar7;
-  ushort uVar8;
-  int iVar9;
-  undefined4 uVar10;
-  
-  uVar10 = 0;
-  iVar9 = 0;
-  do {
-    puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar9]);
-    if (puVar6 != (ushort *)0x0) {
-      uVar2 = *puVar6;
-      if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
-          (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
-        Ordinal_2005(cVar1,param_2);
-        uVar8 = (ushort)(extraout_r1 == 0);
-        if (1 < param_1) {
-          sVar5 = Ordinal_2005(cVar1);
-          uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
-        }
-        if ((short)uVar8 != 0) {
-          uVar3 = puVar6[2];
-          if ((int)(short)uVar8 < (int)(uVar3 & 0x3f)) {
-            bVar4 = (byte)uVar3;
-            *(byte *)(puVar6 + 2) = (bVar4 - (char)uVar8 ^ bVar4) & 0x3f ^ bVar4;
-            *(byte *)((char *)puVar6 + 5) = (byte)(uVar3 >> 8);
-          }
-          else {
-            uVar7 = uVar3 & 0xffc0;
-            *(byte *)(puVar6 + 2) = (byte)uVar7;
-            *(byte *)((char *)puVar6 + 5) = (byte)(uVar7 >> 8);
-            bVar4 = (byte)uVar2;
-            *(byte *)puVar6 = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
-            *(byte *)((char *)puVar6 + 1) = (byte)(uVar2 >> 8);
-            redraw_backpack_slot_widget((int)(char)(&g_light_source_slots)[iVar9]);
-            uVar10 = 1;
-            set_ambient_bias_without_light(0);
-          }
-        }
-      }
-    }
-    iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
-  } while (iVar9 < 4);
-  return uVar10;
-}
-
-
-
-void FUN_000541d0()
-
-{
-  undefined1 uVar1;
-  char cVar2;
-  char *iVar3;
-  
-  iVar3 = DAT_00086df8;
-  uVar1 = 0;
-  if (*(short *)(DAT_00086df8 + 0x4c) != 0) {
-    uVar1 = Ordinal_2005(*(short *)(DAT_00086df8 + 0x4c),(uint)*(ushort *)(DAT_00086df8 + 0x4a) << 5
-                        );
-  }
-  iVar3 = roll_skill_check(*(undefined1 *)(iVar3 + 0x34),uVar1);
-  if (((short)iVar3 < 1) && (*(byte *)(DAT_00086df8 + 0xb9) < 0x8c)) {
-    cVar2 = roll_dice_sum(3 - (int)(iVar3),4);
-    *(char *)(DAT_00086df8 + 0xb9) = *(char *)(DAT_00086df8 + 0xb9) + cVar2;
-  }
-  if (0x78 < *(byte *)(DAT_00086df8 + 0xb9)) {
-    iVar3 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x34),uVar1);
-    if ((-(int)iVar3 + 2) * 0x10000 >> 0x10 != 0) {
-      weapon_overlay_flash_once(0xc6);
-      set_pending_update_flags(2);
-      uVar1 = roll_dice_sum(2,-(int)iVar3 + 4);
-      apply_typed_damage_to_object(g_player_object,0,0,0,uVar1,0);
-    }
-  }
-  return;
-}
 
 
 
