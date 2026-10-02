@@ -13182,58 +13182,6 @@ void dispatch_sticky_mode_handlers()
 
 
 
-int FUN_00049b04(param_1,param_2)
-undefined1 * param_1;
-int param_2;
-
-{
-  bool bVar1;
-  short sVar2;
-  short sVar3;
-  char *iVar4;
-  undefined2 *puVar5;
-  int iVar6;
-  undefined1 *puVar7;
-  undefined1 *puVar8;
-  undefined1 auStack_20 [16];
-  
-  if (param_1 == (undefined1 *)0x0) {
-    iVar4 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
-    if (iVar4 == 0) {
-      return 0;
-    }
-  }
-  else {
-    iVar4 = 0xf;
-    puVar7 = param_1;
-    puVar8 = auStack_20;
-    do {
-      iVar6 = iVar4 + -1;
-      *puVar8 = *puVar7;
-      bVar1 = 0 < iVar4;
-      iVar4 = iVar6;
-      puVar7 = puVar7 + 1;
-      puVar8 = puVar8 + 1;
-    } while (iVar6 != 0 && bVar1);
-  }
-  iVar4 = DAT_002029cc;
-  puVar5 = (undefined2 *)(DAT_002029cc + 0x7c06);
-  *(short *)(DAT_002029cc + 0x7c00) =
-       (short)((uint)((DAT_002046c8 - DAT_002046c0) * 0x10000) >> 0x10);
-  *(short *)(iVar4 + 0x7c02) = (short)(DAT_002046a8 - DAT_002046a4 >> 1);
-  *(short *)(iVar4 + 0x7c04) = (short)(DAT_0020469c - DAT_002046bc >> 1);
-  *puVar5 = 0x7577;
-  DAT_002029d0 = 0;
-  sVar2 = write_archive_entry(auStack_20,param_2 + -1,DAT_002029cc,0x7c08);
-  sVar3 = 0;
-  if (sVar2 != 0) {
-    sVar3 = scheduler_save(auStack_20,param_2);
-  }
-  if (param_1 == (undefined1 *)0x0) {
-    close_level_archive(auStack_20);
-  }
-  return (int)sVar3;
-}
 
 
 

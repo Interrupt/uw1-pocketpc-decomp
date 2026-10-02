@@ -3360,7 +3360,7 @@ void release_grtile_handle();
 undefined4 init_level_object_arena();
 void free_level_tile_arena();
 int load_level_object_table();
-int FUN_00049b04();
+int write_level_tilemap_to_archive();
 void heading_to_sine_cosine();
 uint pack_angle_byte();
 void angle_to_screen_delta();

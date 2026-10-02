@@ -787,10 +787,10 @@ int param_2;
 // misread as real data on the next scheduler_load.
 undefined4 scheduler_save(param_1,param_2)
 /* Was `undefined4` -- truncated the real 64-bit archive-handle-struct
-   pointer (FUN_00049b04's own `auStack_20`) write_archive_entry needs as its
+   pointer (write_level_tilemap_to_archive's own `auStack_20`) write_archive_entry needs as its
    own param_1. Same bug class as write_archive_entry's own param_3 fix right
    above this function -- confirmed via the same crash chain, one call
-   further down (FUN_00049b04 -> scheduler_save -> write_archive_entry, this
+   further down (write_level_tilemap_to_archive -> scheduler_save -> write_archive_entry, this
    function's own nested call, dereferencing the truncated handle
    pointer). */
 undefined4 *param_1;
@@ -812,7 +812,7 @@ int param_2;
      failure. Confirmed: without this, a real save's second archive
      write (this header-table update, right after the main level-data
      write) always reported failure even when the write underneath it
-     fully succeeded, so FUN_00049b04 -- and the whole save chain above
+     fully succeeded, so write_level_tilemap_to_archive -- and the whole save chain above
      it -- always unwound through its failure path ("Save Game Failed")
      no matter what. */
   return write_archive_entry(param_1,param_2 + 8,&DAT_00250778,0x180);

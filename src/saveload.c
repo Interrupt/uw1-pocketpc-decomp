@@ -836,7 +836,7 @@ bool write_archive_entry(param_1,param_2,param_3,param_4)
 undefined4 * param_1;
 uint param_2;
 /* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live
-   object arena) pointer FUN_00049b04 passes in as the source buffer for
+   object arena) pointer write_level_tilemap_to_archive passes in as the source buffer for
    the archive-entry write. Harmless while every actual write attempt
    through it failed anyway for other reasons (Ordinal_1407 stub,
    read-only archive handle -- both fixed, see open_level_archive's and
@@ -1161,9 +1161,9 @@ undefined4 param_1;
     fprintf(stderr, "[0006bcd4] open_level_archive=%d\n", iVar2);
   uVar3 = 0;
   if (iVar2 != 0) {
-    iVar2 = FUN_00049b04(auStack_20,param_1);
+    iVar2 = write_level_tilemap_to_archive(auStack_20,param_1);
     if (getenv("UW_DEBUG_INPUTEVENT"))
-      fprintf(stderr, "[0006bcd4] FUN_00049b04=%d\n", iVar2);
+      fprintf(stderr, "[0006bcd4] write_level_tilemap_to_archive=%d\n", iVar2);
     if (((iVar2 != 0) && (iVar2 = FUN_0005b298(auStack_20,param_1), iVar2 != 0)) &&
        (iVar2 = save_automap_reveal_to_archive(auStack_20,param_1), iVar2 != 0)) {
       iVar2 = close_level_archive(auStack_20);
@@ -1587,4 +1587,66 @@ LAB_00044730:
     object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   return uVar4;
+}
+
+
+// was FUN_00049b04 -- writes the level's tilemap/object arena
+// (g_level_tiles) and scheduler state into a level archive: given
+// param_1==NULL, opens its own fresh archive handle (for SAVE0, the
+// live session) and closes it when done; given a real param_1 (an
+// already-open archive handle, as commit_level_to_save_slot passes),
+// writes into that one instead. Builds the level header (room-bounds
+// fields +0x7c00/+0x7c02/+0x7c04 and the 0x7577 magic word) before
+// the main write_archive_entry/scheduler_save calls.
+int write_level_tilemap_to_archive(param_1,param_2)
+undefined1 * param_1;
+int param_2;
+
+{
+  bool bVar1;
+  short sVar2;
+  short sVar3;
+  char *iVar4;
+  undefined2 *puVar5;
+  int iVar6;
+  undefined1 *puVar7;
+  undefined1 *puVar8;
+  undefined1 auStack_20 [16];
+  
+  if (param_1 == (undefined1 *)0x0) {
+    iVar4 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
+    if (iVar4 == 0) {
+      return 0;
+    }
+  }
+  else {
+    iVar4 = 0xf;
+    puVar7 = param_1;
+    puVar8 = auStack_20;
+    do {
+      iVar6 = iVar4 + -1;
+      *puVar8 = *puVar7;
+      bVar1 = 0 < iVar4;
+      iVar4 = iVar6;
+      puVar7 = puVar7 + 1;
+      puVar8 = puVar8 + 1;
+    } while (iVar6 != 0 && bVar1);
+  }
+  iVar4 = DAT_002029cc;
+  puVar5 = (undefined2 *)(DAT_002029cc + 0x7c06);
+  *(short *)(DAT_002029cc + 0x7c00) =
+       (short)((uint)((DAT_002046c8 - DAT_002046c0) * 0x10000) >> 0x10);
+  *(short *)(iVar4 + 0x7c02) = (short)(DAT_002046a8 - DAT_002046a4 >> 1);
+  *(short *)(iVar4 + 0x7c04) = (short)(DAT_0020469c - DAT_002046bc >> 1);
+  *puVar5 = 0x7577;
+  DAT_002029d0 = 0;
+  sVar2 = write_archive_entry(auStack_20,param_2 + -1,DAT_002029cc,0x7c08);
+  sVar3 = 0;
+  if (sVar2 != 0) {
+    sVar3 = scheduler_save(auStack_20,param_2);
+  }
+  if (param_1 == (undefined1 *)0x0) {
+    close_level_archive(auStack_20);
+  }
+  return (int)sVar3;
 }
