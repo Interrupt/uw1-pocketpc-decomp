@@ -1025,6 +1025,8 @@ extern byte DAT_002046d0;
 extern byte DAT_002046d8;
 extern byte DAT_002046dc;
 extern int DAT_002046e8;
+extern int DAT_002046d4;
+extern int DAT_002046ec;
 extern undefined1 DAT_002046e0;
 extern undefined1 DAT_002046e4;
 /* Globals defined in uw.c but also used by functions that now live in
@@ -3545,7 +3547,7 @@ undefined4 sync_object_tile_position(); // was FUN_00054f6c
 ushort *reallocate_object_to_arena();
 void compute_object_placement_fields();
 ushort *settle_mobile_to_immobile(); // was FUN_0005596c
-void FUN_00055ef8();
+void randomize_settled_snapshot_position();
 ushort *settle_dropped_object();
 void FUN_000564f8();
 void FUN_00056640();

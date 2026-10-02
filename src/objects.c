@@ -1847,3 +1847,216 @@ short * param_5;
     iVar2 = (sVar1 + 1) * 0x10000 >> 0x10;
   } while( true );
 }
+
+
+// was FUN_00055ef8 -- finalizes the position fields of a just-
+// settled object's placement snapshot (param_1, the same snapshot
+// struct build_object_placement_snapshot fills): if DAT_002046d4 is
+// clear (settled cleanly), sets a random quarter-heading and a fixed
+// "parked" offset marker (0xfc/0xff) at +0x10/+0x11; if set (settled
+// on top of a blocking surface, per settle_dropped_object's own use
+// of this flag), instead randomizes the heading-ish field at +0x21
+// within a +/-0x2000 range and marks +0x14/+0x15 with a different
+// marker (0xbc/0). Called only after settle_dropped_object succeeds
+// and the object resolved to a static (non-arena) slot.
+void randomize_settled_snapshot_position(param_1)
+int param_1;
+
+{
+  char cVar1;
+  short sVar2;
+  int iVar3;
+  
+  if (DAT_002046d4 == 0) {
+    cVar1 = Ordinal_1053();
+    *(byte *)(param_1 + 0x14) = (cVar1 + 1U & 3) * '/';
+    *(undefined1 *)(param_1 + 0x15) = 0;
+    *(undefined1 *)(param_1 + 0x10) = 0xfc;
+    *(undefined1 *)(param_1 + 0x11) = 0xff;
+  }
+  else {
+    sVar2 = Ordinal_1053();
+    iVar3 = (((int)sVar2 & 0x3fffU) - 0x2000) + (int)*(short *)(param_1 + 0x21);
+    *(char *)(param_1 + 0x21) = (char)iVar3;
+    *(char *)(param_1 + 0x22) = (char)((uint)iVar3 >> 8);
+    *(undefined1 *)(param_1 + 0x14) = 0xbc;
+    *(undefined1 *)(param_1 + 0x15) = 0;
+  }
+  return;
+}
+
+
+
+// was FUN_00055f98 -- finalize a just-placed object's rest position at
+// (param_2,param_3): validate it can actually reach this floor height,
+// route genuinely-misplaced objects into discard_misplaced_object
+// (which destroys them, see its own comment), or reallocate a never-
+// before-placed object into the renderable arena via
+// reallocate_object_to_arena before returning it.
+ushort *settle_dropped_object(param_1,param_2,param_3,param_4)
+ushort * param_1;
+short param_2;
+short param_3;
+int param_4;
+
+{
+  int uw_ord2005_rem_119 = 0;
+  bool bVar1;
+  ushort uVar2;
+  undefined2 uVar3;
+  char cVar4;
+  byte bVar5;
+  undefined2 uVar6;
+  short *psVar7;
+  uint uVar8;
+  ushort *puVar9;
+  undefined4 uVar10;
+  char extraout_r1;
+  int iVar11;
+  int iVar12;
+  /* iVar12 is reused throughout this function as a plain int (bitfield
+     math, array indices) -- real uses, left alone -- but the one use at
+     LAB_000564d8 held tilemap_lookup's real 64-bit pointer return,
+     truncating it on this host (same class as drop_held_object_near_
+     player's own identical bug just above it in this file). New,
+     properly-typed local for just that one pointer use; every other
+     iVar12 use is separated from it by an early `return`, so this
+     doesn't touch any of them. */
+  char *pDropTile;
+  undefined1 local_4c [24];
+
+  DAT_002046d4 = 0;
+  DAT_002046ec = 0;
+  DAT_00202c6c = local_4c;
+  bVar1 = false;
+  uVar6 = encode_object_slot_index(param_1);
+  DAT_00202c6c[10] = (char)uVar6;
+  DAT_00202c6c[0xb] = (char)((ushort)uVar6 >> 8);
+  iVar12 = (*param_1 & 0x1ff) * 0xd;
+  bVar5 = (&DAT_00202c93)[iVar12];
+  if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+    fprintf(stderr, "[f98] ENTER param_1=%p type=0x%x tile=(%d,%d) flags-byte=0x%x\n",
+            (void *)param_1, (unsigned)(*param_1 & 0x1ff), (int)param_2, (int)param_3, (unsigned)bVar5);
+  do {
+    if ((bVar5 & 8) != 0) {
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] BAIL: flag8 set on class table, returning param_1 unchanged\n");
+      return param_1;
+    }
+    DAT_00202c6c[8] = (&DAT_00202c91)[iVar12] & 7;
+    DAT_00202c6c[9] = (&DAT_00202c90)[iVar12];
+    DAT_00202c6c[4] = (byte)param_1[1] & 0x7f;
+    DAT_00202c6c[5] = 0;
+    iVar12 = param_2 * 8 + (uint)(*(byte *)((char *)param_1 + 3) >> 5);
+    *DAT_00202c6c = (char)iVar12;
+    DAT_00202c6c[1] = (char)((uint)iVar12 >> 8);
+    iVar12 = param_3 * 8 + ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2);
+    DAT_00202c6c[2] = (char)iVar12;
+    DAT_00202c6c[3] = (char)((uint)iVar12 >> 8);
+    collision_build_height_field(DAT_00202c6c[8]);
+    if (((int)((uint)(byte)DAT_00202c6c[8] + (uint)(byte)DAT_00202c6c[0x10]) <
+         (int)*(short *)(DAT_00202c6c + 4)) || (iVar12 = 1, bVar1)) {
+      iVar12 = 0;
+    }
+    collision_height_envelope(iVar12,1);
+    sort_collision_candidates();
+    DAT_00086998 = -1;
+    if (((DAT_00202c6c[0x15] == '\0') && (iVar11 = (int)(char)DAT_00202c6c[0x16], 0 < iVar11)) &&
+       (iVar11 <= (int)(uint)(byte)DAT_00202c6c[0x14])) {
+      iVar11 = (iVar11 + -1) * 0x1000000 >> 0x18;
+      do {
+        DAT_00202c6c[0x16] = (char)iVar11;
+        cVar4 = DAT_00202c6c[0x16];
+        if ((cVar4 < 0) ||
+           ((ushort)(byte)(&DAT_00202c38)[cVar4 * 6] != *(ushort *)(DAT_00202c6c + 4))) break;
+        DAT_00086998 = cVar4;
+        psVar7 = (short *)resolve_object_link(&DAT_00202c3a + cVar4 * 6);
+        uVar8 = (int)*psVar7 & 0x1ff;
+        DAT_00086999 = (undefined1)uVar8;
+        DAT_0008699a = (undefined1)(uVar8 >> 8);
+        if (((&DAT_00202c93)[(short)uVar8 * 0xd] & 2) == 2) {
+          if (((&DAT_00202c3a)[DAT_00086998 * 6] & 0x10) != 0) {
+            DAT_002046ec = 1;
+            break;
+          }
+          DAT_002046d4 = 1;
+        }
+        iVar11 = (char)DAT_00202c6c[0x16] + -1;
+      } while( true );
+    }
+    uVar3 = DAT_00101454;
+    uVar6 = DAT_0010144c;
+    uVar2 = *(ushort *)(DAT_00202c6c + 0xc);
+    if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+      fprintf(stderr, "[f98] uVar2(local_4c+0xc)=0x%x local_4c+0xe=0x%x local_4c[0x15]=%d iVar12=%d\n",
+              (unsigned)uVar2, (unsigned)*(ushort *)(DAT_00202c6c + 0xe),
+              (int)DAT_00202c6c[0x15], iVar12);
+    if ((((*(ushort *)(DAT_00202c6c + 0xe) | uVar2) & 0x300) != 0) || (DAT_00202c6c[0x15] != '\0'))
+    {
+      cVar4 = '\x01';
+LAB_000564d0:
+      if (cVar4 == '\0') {
+        if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+          fprintf(stderr, "[f98] BAIL at LAB_000564d0 (cVar4==0), returning param_1 unchanged\n");
+        return param_1;
+      }
+LAB_000564d8:
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] -> discard_misplaced_object fallback path (not reallocate_object_to_arena replace)\n");
+      pDropTile = (char *)tilemap_lookup((int)param_2,(int)param_3);
+      puVar9 = (ushort *)discard_misplaced_object(pDropTile + 2,param_1,0);
+      return puVar9;
+    }
+    if ((uVar2 & 7) == 5) goto LAB_000564d8;
+    if ((uVar2 & 7) == 6) {
+      if (((&DAT_00202c97)[(*param_1 & 0x1ff) * 0xd] & 0xc) == 0xc) {
+        if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+          fprintf(stderr, "[f98] BAIL: (uVar2&7)==6 class-table gate, returning param_1 unchanged\n");
+        return param_1;
+      }
+      cVar4 = resolve_damage_type_resistance(param_1,1,8);
+      goto LAB_000564d0;
+    }
+    if ((uVar2 & 8) != 0) {
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] BAIL: (uVar2&8)!=0, returning param_1 unchanged\n");
+      return param_1;
+    }
+    if (DAT_002046ec != 0) {
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] BAIL: DAT_002046ec!=0, returning param_1 unchanged\n");
+      return param_1;
+    }
+    if (iVar12 == 0) {
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] -> reallocate_object_to_arena replace path, coords=(%d,%d)\n", (int)param_2, (int)param_3);
+      DAT_0010144c = param_2;
+      DAT_00101454 = param_3;
+      puVar9 = (ushort *)reallocate_object_to_arena(param_1);
+      DAT_0010144c = uVar6;
+      DAT_00101454 = uVar3;
+      if (DAT_002046d4 != 0) {
+        *(byte *)((char *)puVar9 + 0x13) = *(byte *)((char *)puVar9 + 0x13) & 0x83 | 3;
+        uVar10 = Ordinal_1053();
+        uw_ord2005_rem_119 = ((int)(uVar10)) % (9);
+        *(char *)((char *)puVar9 + 9) = *(char *)((char *)puVar9 + 9) + (uw_ord2005_rem_119 + '\f') * '\x10';
+      }
+      if (param_4 == 0) {
+        return puVar9;
+      }
+      bVar5 = Ordinal_1053();
+      *(byte *)((char *)puVar9 + 0x13) =
+           ((bVar5 & 3) + 1 ^ *(byte *)((char *)puVar9 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar9 + 0x13);
+      bVar5 = Ordinal_1053();
+      *(byte *)(puVar9 + 10) = (byte)puVar9[10] & 7 ^ ((bVar5 & 3) + 0xe) * '\b';
+      return puVar9;
+    }
+    DAT_00202c6c = local_4c;
+    bVar1 = true;
+    uVar6 = encode_object_slot_index(param_1);
+    DAT_00202c6c[10] = (char)uVar6;
+    DAT_00202c6c[0xb] = (char)((ushort)uVar6 >> 8);
+    iVar12 = (*param_1 & 0x1ff) * 0xd;
+    bVar5 = (&DAT_00202c93)[iVar12];
+  } while( true );
+}

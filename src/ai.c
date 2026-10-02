@@ -1157,7 +1157,7 @@ ushort * param_2;
         return 0;
       }
       if (DAT_002046c4 <= param_1) goto LAB_0005559c;
-      FUN_00055ef8(param_2);
+      randomize_settled_snapshot_position(param_2);
     }
   }
   if (param_1 < DAT_002046c4) {
