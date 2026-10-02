@@ -2068,18 +2068,17 @@ extern unsigned char DAT_00084f0b_backing[5];
 extern char *DAT_002046b8;
 extern undefined2 DAT_00100600;
 extern ushort DAT_00100604;
+/* Six-byte collision candidates: top, bottom, packed link, tile offset.
+ * Ghidra split overlapping fields (and next-record sort views) into globals. */
 extern undefined1 DAT_00202c38_backing[8192];
 #define DAT_00202c38 DAT_00202c38_backing[0]
-extern undefined1 DAT_00202c39_backing[8192];
-#define DAT_00202c39 DAT_00202c39_backing[0]
-extern undefined1 DAT_00202c3a_backing[8192];
-#define DAT_00202c3a DAT_00202c3a_backing[0]
-extern undefined1 DAT_00202c3b_backing[8192];
-#define DAT_00202c3b DAT_00202c3b_backing[0]
-extern undefined1 DAT_00202c3c_backing[65536];
-#define DAT_00202c3c DAT_00202c3c_backing[0]
-extern undefined1 DAT_00202c3d_backing[8192];
-#define DAT_00202c3d DAT_00202c3d_backing[0]
+#define DAT_00202c39 DAT_00202c38_backing[1]
+#define DAT_00202c3a DAT_00202c38_backing[2]
+#define DAT_00202c3b DAT_00202c38_backing[3]
+#define DAT_00202c3c DAT_00202c38_backing[4]
+#define DAT_00202c3d DAT_00202c38_backing[5]
+#define DAT_00202c3e DAT_00202c38_backing[6]
+#define DAT_00202c3f DAT_00202c38_backing[7]
 extern int DAT_00204870;
 extern char * DAT_00204874;
 extern undefined4 DAT_00204878;
@@ -3476,7 +3475,7 @@ void FUN_00053c74();
 undefined4 FUN_0005404c();
 void FUN_000541d0();
 undefined4 FUN_000542f8();
-undefined4 FUN_0005448c();
+undefined4 FUN_0005448c(ushort *param_1, ushort *param_2);
 void FUN_000545ac();
 undefined4 FUN_000546c4();
 void build_object_placement_snapshot(); // was FUN_00054a00

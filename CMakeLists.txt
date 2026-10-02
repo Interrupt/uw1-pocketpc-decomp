@@ -170,5 +170,13 @@ if(BUILD_TESTING)
     src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading
     src/movement.c:sweep_slide_along_wall src/movement.c:sweep_apply_collision
     uw.c:collision_flags_to_locomotion_code uw.c:sweep_collision_flags
-    src/collision.c:collision_corner_flags)
+    src/collision.c:collision_corner_flags
+    src/movement.c:reticle_object_pick src/movement.c:movement_sweep_setup
+    src/movement.c:sweep_step_vertical
+    uw.c:FUN_00051658 uw.c:FUN_00051cf8 uw.c:FUN_00051dd0 uw.c:FUN_000546c4
+    uw.c:FUN_0005448c uw.c:build_object_placement_snapshot)
+  target_compile_definitions(test_movement PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  target_compile_options(test_movement PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/movement_test_globals.h")
 endif()

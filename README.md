@@ -83,15 +83,16 @@ placement fallback, and save/load failures. Level I/O,
 placement search, and display services are stubbed. Run it with
 `ctest --test-dir build -R '^teleport$' --output-on-failure`.
 
-`tests/test_movement.c` checks a head-on wall hit stops the movement sweep,
-45-degree hits deflect left or right along the wall, a hard block clears all
-velocity, and open floor leaves movement unchanged. It compiles the real
-wall-collision response and heading-deflection code from `src/movement.c`.
-Stair cases use the real `collision_corner_flags` and `sweep_collision_flags`
-from `src/collision.c` and `uw.c`: rises of 4 and 8 succeed with a step limit of 8;
-rises of 9 and 32 are blocked without raising the player's feet. Tile heights,
-the height envelope, and sub-step rollback/restart are fixtures, so no original
-map data is needed.
+`tests/test_movement.c` checks wall stopping/sliding, short and excessive
+steps, collision-mask widths, closed/open doors, and jump rebounds followed
+by a natural descent to the floor. It compiles the real movement setup,
+vertical integrator, collision response, candidate builder/sorter, object
+collision dispatch, contact snapshot construction, and floor/step classifiers
+from their existing files. Contact tests cover static doors and the snapshot's
+velocity, speed, heading, and capped mass ratio.
+Door properties come from `data/DATA/COMOBJ.DAT`, which is required. Map
+sampling, object lookup, placement synchronization, surface landing, and horizontal
+rollback/restart remain fixture boundaries; no window is needed.
 Run it with `ctest --test-dir build -R '^movement$' --output-on-failure`.
 
 Game functions remain in their original files. For the larger modules,

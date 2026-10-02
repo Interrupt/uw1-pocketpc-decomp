@@ -1575,10 +1575,6 @@ ushort DAT_00100610;
 char *DAT_002046b8;
 undefined2 DAT_00100600;
 ushort DAT_00100604;
- undefined1 DAT_00202c3a_backing[8192];
-#define DAT_00202c3a DAT_00202c3a_backing[0]
- undefined1 DAT_00202c3c_backing[65536];
-#define DAT_00202c3c DAT_00202c3c_backing[0]
 byte *DAT_00202c6c;
 short DAT_001005f4;
 short DAT_001005f8;
@@ -1586,19 +1582,11 @@ short DAT_0023beb4;
 char DAT_001005dc;
 undefined2 DAT_00100624;
 ushort DAT_00100620;
-/* Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below,
-   already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of
-   a repeating 6-byte-stride per-candidate record in
-   collision_height_envelope/FUN_00051dd0's up-to-256-entry collision
-   candidate list. Indexing past element 0 read/wrote whatever memory
-   happened to follow this single byte in the link order -- confirmed via
-   a real crash (a plain, non-debugger run walking toward a critter;
-   the same bug reproduced fine under lldb/ASan since they lay out
-   globals differently, masking it there). */
+/* Collision candidates are one six-byte record array, as the ARM loads
+ * at +0/+1/+2/+3/+4/+5 and next-record sort reads at +6/+7 require.
+ * Keep the aliases in uw.h: independent arrays lose the link high byte. */
  undefined1 DAT_00202c38_backing[8192];
 #define DAT_00202c38 DAT_00202c38_backing[0]
- undefined1 DAT_00202c39_backing[8192];
-#define DAT_00202c39 DAT_00202c39_backing[0]
  undefined1 DAT_00202c90_backing[65536];
 #define DAT_00202c90 DAT_00202c90_backing[0]
 /* Were lone `undefined1` scalars, but every use (dozens of call sites
@@ -4098,16 +4086,6 @@ char DAT_00202c24;
 char DAT_00202c2c;
 char DAT_00202c18;
 char DAT_00202c1c;
-/* Same lone-scalar-used-as-a-stride-6-array bug as DAT_00202c38 above,
-   for the remaining fields of the same collision-candidate record. */
- undefined1 DAT_00202c3b_backing[8192];
-#define DAT_00202c3b DAT_00202c3b_backing[0]
- undefined1 DAT_00202c3d_backing[8192];
-#define DAT_00202c3d DAT_00202c3d_backing[0]
-static undefined1 DAT_00202c3e_backing[8192];
-#define DAT_00202c3e DAT_00202c3e_backing[0]
-static undefined1 DAT_00202c3f_backing[8192];
-#define DAT_00202c3f DAT_00202c3f_backing[0]
 char s__DATA_comobj_dat_00086894[] = "\\DATA\\comobj.dat";
 char s__DATA_objects_dat_000868a8[] = "\\DATA\\objects.dat";
 undefined4 LAB_0007913c()
@@ -19322,24 +19300,23 @@ char param_3;
 
 
 undefined4 FUN_0005448c(param_1,param_2)
-undefined4 param_1;
-int param_2;
+ushort *param_1;
+ushort *param_2;
 
 {
   undefined2 uVar1;
   short sVar2;
   char *iVar3;
-  undefined1 auStack_48 [10];
-  undefined2 local_3e;
-  undefined2 local_34;
+  int iVar4;
+  /* The original ARM stack frame holds one contiguous 0x2c-byte snapshot. */
+  undefined1 auStack_48 [0x2c];
   short local_30;
-  undefined1 local_27;
-  undefined1 local_26;
   
   if (param_2 != 0) {
     DAT_0010144c = (ushort)DAT_002046d8;
     DAT_00101454 = (ushort)DAT_002046dc;
     build_object_placement_snapshot(param_2,auStack_48);
+    local_30 = *(short *)(auStack_48 + 0x18);
     iVar3 = DAT_00204874;
     if (local_30 != 0) {
       sVar2 = Ordinal_2005((int)local_30,(int)*(short *)(DAT_00204874 + 0x18) << 6);
@@ -19347,16 +19324,16 @@ int param_2;
       if (0x80 < sVar2) {
         sVar2 = 0x80;
       }
-      local_27 = (undefined1)uVar1;
-      local_26 = (undefined1)((ushort)uVar1 >> 8);
-      local_34 = 0xeb;
+      auStack_48[0x21] = (undefined1)uVar1;
+      auStack_48[0x22] = (undefined1)((ushort)uVar1 >> 8);
+      *(undefined2 *)(auStack_48 + 0x14) = 0xeb;
       DAT_0010144c = (ushort)DAT_002046d8;
-      iVar3 = (int)*(short *)(iVar3 + 10) * (int)sVar2;
+      iVar4 = (int)*(short *)(iVar3 + 10) * (int)sVar2;
       DAT_00101454 = (ushort)DAT_002046dc;
-      if (iVar3 < 0) {
-        iVar3 = iVar3 + 0x3f;
+      if (iVar4 < 0) {
+        iVar4 = iVar4 + 0x3f;
       }
-      local_3e = (undefined2)((int)(iVar3) >> 6);
+      *(undefined2 *)(auStack_48 + 10) = (undefined2)(iVar4 >> 6);
       sync_object_tile_position(param_2,auStack_48);
     }
   }
@@ -21683,8 +21660,8 @@ uint sweep_collision_flags()
   ushort local_3c;
   
   bVar2 = false;
-  bVar7 = (DAT_002048bc[2] & 0x80) == 0;
-  uVar1 = *DAT_002048bc;
+  bVar7 = (*(ushort *)(DAT_002048bc + 4) & 0x80) == 0;
+  uVar1 = *(ushort *)DAT_002048bc;
   DAT_00204870 = 0;
   /* Sync the collision working block's X/Y (DAT_00202c6c[+0/+2], i.e.
      DAT_002049c8/ca) to the sweep's live sub-tile position before the tile
@@ -21733,7 +21710,8 @@ uint sweep_collision_flags()
   if (getenv("UW_DEBUG_RAMP"))
     fprintf(stderr, "[ramp-post-reticle] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   local_3c = DAT_002049d6 | DAT_002049d4;
-  bVar8 = (local_3c & DAT_002048bc[2]) == 0;
+  /* ARM 0x5a758..0x5a774 reads the geometry mask as a short at +4. */
+  bVar8 = (local_3c & *(ushort *)(DAT_002048bc + 4)) == 0;
   if ((DAT_002049dc != '\0') &&
      (iVar6 = (int)DAT_002049de, iVar6 < (int)((uint)DAT_002049dd + (int)DAT_002049de))) {
     do {
@@ -23874,7 +23852,6 @@ undefined4 param_1;
   }
   return uVar2;
 }
-
 
 
 
