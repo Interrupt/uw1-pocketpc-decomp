@@ -3402,7 +3402,7 @@ undefined4 stop_mod_player_playback();
 bool queue_mod_audio_buffer();
 void process_mod_tracker_row();
 undefined4 mix_mod_channels_to_buffer();
-void FUN_0004e6e0();
+void apply_mod_tracker_tick_effects();
 void FUN_0004ecd4();
 void FUN_0004edf8();
 void FUN_0004ee60();
