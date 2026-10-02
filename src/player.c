@@ -2653,7 +2653,7 @@ LAB_0007158c:
       print_scroll_message_by_id(0x10);
     }
     tick_ambient_doors_and_scheduler(0);
-    FUN_00052d68(1,0x14);
+    despawn_objects_outside_radius(1,0x14);
     uVar5 = Ordinal_1053();
     uw_ord2005_rem_145 = ((int)(uVar5)) % (5);
     iVar8 = uw_ord2005_rem_145 + 2;

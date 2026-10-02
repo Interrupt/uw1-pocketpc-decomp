@@ -1226,7 +1226,7 @@ undefined1 param_5;
   
   cVar1 = resolve_damage_type_resistance(param_3,1,0x80);
   if (cVar1 == '\0') {
-    uVar2 = FUN_000535fc(param_5);
+    uVar2 = get_object_record_by_slot_index(param_5);
     apply_typed_damage_to_object(param_3,uVar2,param_1,param_2,0xff,3);
   }
   return cVar1 == '\0';
@@ -1261,7 +1261,7 @@ undefined1 param_5;
   spawn_scheduled_effect_object(param_3,7,4,0,7,uVar4,(short)param_2);
   uVar5 = (undefined1)((ushort)uVar4 >> 8);
   uVar1 = roll_dice_sum(5,4);
-  uVar2 = FUN_000535fc(param_5);
+  uVar2 = get_object_record_by_slot_index(param_5);
   apply_typed_damage_to_object(param_3,uVar2,param_1,param_2,CONCAT11(uVar3,uVar1),CONCAT11(uVar5,0x13));
   return 1;
 }
@@ -1619,13 +1619,13 @@ undefined4 param_3;
 codeval * param_4;
 
 {
-  intptr_t iVar1; // was `int` -- FUN_000535fc returns a real 64-bit object pointer, truncated on this host (this loop was never exercised until babl_builtin_set_attitude's own recovery)
+  intptr_t iVar1; // was `int` -- get_object_record_by_slot_index returns a real 64-bit object pointer, truncated on this host (this loop was never exercised until babl_builtin_set_attitude's own recovery)
   undefined1 *puVar2;
 
   puVar2 = DAT_002046c0;
   if (DAT_002046c0 < DAT_002046c8) {
     do {
-      iVar1 = (intptr_t)FUN_000535fc(*puVar2);
+      iVar1 = (intptr_t)get_object_record_by_slot_index(*puVar2);
       if (*(byte *)(iVar1 + 0x1a) == param_1) {
         iVar1 = (*param_4)(iVar1,param_3);
         if (iVar1 != 0) {
@@ -2273,7 +2273,7 @@ undefined1 param_4;
       do {
         iVar3 = (char *)resolve_object_link(iVar2 + 4);
         uVar1 = roll_dice_sum((&DAT_0008762c)[bVar5],(&DAT_00087630)[bVar5]);
-        uVar4 = FUN_000535fc(param_4);
+        uVar4 = get_object_record_by_slot_index(param_4);
         apply_typed_damage_to_object(iVar2,uVar4,param_1,(int)param_2,uVar1,(&DAT_00087634)[bVar5]);
         iVar2 = iVar3;
       } while (iVar3 != 0);

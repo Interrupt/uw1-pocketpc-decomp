@@ -544,10 +544,10 @@ undefined4 npc_ai_tick()
   byte bVar3;
   char cVar4;
   /* Was `int`, truncating the real 64-bit pointers this variable holds
-     (FUN_000535fc(1) and tilemap_lookup() both return real pointers, and
+     (get_object_record_by_slot_index(1) and tilemap_lookup() both return real pointers, and
      the two dereferences below and the object_list_unlink(iVar5+2,...)
      call both need the full address) -- same class of bug as
-     FUN_000535fc's own header comment describes, confirmed live via
+     get_object_record_by_slot_index's own header comment describes, confirmed live via
      lldb: iVar5 held 0x1181181b instead of the real 0x111812e1b-range
      pointer, an exact 32-bit truncation (upper word dropped), crashing
      npc_ai_tick's very first wild dereference. iVar5 is also reused
@@ -573,7 +573,7 @@ undefined4 npc_ai_tick()
   DAT_00101404 = &DAT_001007d0 + ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
   DAT_001013f8 = (byte)(DAT_0010190c[0xb] >> 4) & 0x3f;
-  iVar5 = FUN_000535fc(1);
+  iVar5 = get_object_record_by_slot_index(1);
   puVar11 = DAT_0010190c;
   if (((100 < ((((int)(char)DAT_00101918 - (int)DAT_00101938) * 0x10000 >> 0x10) *
                (((int)(char)DAT_00101918 - (int)DAT_00101938) * 0x10000 >> 0x10) +
@@ -2314,13 +2314,13 @@ undefined1 * param_1;
 void reset_npc_path_cache()
 
 {
-  /* Was `int`, truncating FUN_000535fc's real pointer return. */
+  /* Was `int`, truncating get_object_record_by_slot_index's real pointer return. */
   char *iVar1;
   int iVar2;
 
   iVar2 = 2;
   do {
-    iVar1 = FUN_000535fc(iVar2);
+    iVar1 = get_object_record_by_slot_index(iVar2);
     *(byte *)(iVar1 + 0x15) = *(byte *)(iVar1 + 0x15) & 0x7f;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 0x100);
@@ -3252,7 +3252,7 @@ LAB_000339fc:
         }
       }
       cVar4 = *(char *)((char *)DAT_0010190c + 0x12);
-      /* Added a NULL guard on FUN_000535fc's result: it legitimately
+      /* Added a NULL guard on get_object_record_by_slot_index's result: it legitimately
          returns NULL for an out-of-range slot index (its own established
          behavior/contract), and this code unconditionally dereferenced
          it. Confirmed live crashing (EXC_BAD_ACCESS at 0x19) the first
@@ -3263,7 +3263,7 @@ LAB_000339fc:
       if ((cVar4 != '\0') &&
          (((cVar4 == '\x01' && ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0)) ||
           (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0 ||
-           (iVar7 = FUN_000535fc(cVar4), (iVar7 != 0) && (*(byte *)(iVar7 + 0x19) & 0x40) != 0)))))) {
+           (iVar7 = get_object_record_by_slot_index(cVar4), (iVar7 != 0) && (*(byte *)(iVar7 + 0x19) & 0x40) != 0)))))) {
         if ((uint)*(byte *)((char *)DAT_0010190c + 0x12) != (*(ushort *)((char *)DAT_0010190c + 0xb) >> 4 & 0xff)) {
           uVar11 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f |
                    (uint)*(byte *)((char *)DAT_0010190c + 0x12) << 4;
@@ -3514,7 +3514,7 @@ undefined4 refresh_npc_target_delta()
   uint uVar4;
   int iVar5;
   
-  DAT_00101400 = FUN_000535fc((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xff0) >> 4);
+  DAT_00101400 = get_object_record_by_slot_index((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xff0) >> 4);
   if ((DAT_00101400 == 0) || (*(char *)(DAT_00101400 + 8) == '\0')) {
     uVar1 = 0;
   }

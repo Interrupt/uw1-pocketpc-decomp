@@ -2115,7 +2115,7 @@ undefined4 DAT_00101728;
 /* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
    npc_ai_tick/setup_npc_ai_tick_state store here (&DAT_002048c0/002048f0/00204950,
    one of a 3-way "which per-class scratch buffer" choice) -- same class
-   of bug as npc_ai_tick's own iVar5 fix and FUN_000535fc's header
+   of bug as npc_ai_tick's own iVar5 fix and get_object_record_by_slot_index's header
    comment. Confirmed live via lldb: DAT_0010172c read 0xb6c724 instead
    of the real 0x100b6c724 (upper word dropped), so the very next
    build_object_placement_snapshot(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
@@ -10105,7 +10105,7 @@ LAB_0003c940:
              iVar7 walk arbitrarily far past the real candidate range,
              feeding wild indices into resolve_object_link on later
              iterations -- confirmed via the very "negative slot"/"exceeds
-             0x3ff" FUN_000535fc warnings logged just before this crash.
+             0x3ff" get_object_record_by_slot_index warnings logged just before this crash.
              Also add the missing NULL guard resolve_object_link's other
              call sites already needed: an out-of-range link now returns
              NULL, and this dereferenced it unconditionally (confirmed via
@@ -10502,7 +10502,7 @@ ushort *pick_object_under_cursor()
     puVar3 = (ushort *)0x0;
   }
   else {
-    puVar3 = (ushort *)FUN_000535fc(iVar2);
+    puVar3 = (ushort *)get_object_record_by_slot_index(iVar2);
 
     if(puVar3) {
       DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(*puVar3 & 0x1ff));
@@ -13716,179 +13716,6 @@ short param_5;
 
 
 
-undefined4 FUN_00052d24(param_1,param_2)
-undefined4 param_1;
-ushort * param_2;
-
-{
-  undefined4 uVar1;
-  
-  if ((*param_2 & 0xffc0) != 0) {
-    uVar1 = resolve_object_link(param_2);
-    roll_object_destroy_chance(param_1,uVar1);
-  }
-  return 0;
-}
-
-
-
-void FUN_00052d68(param_1,param_2)
-undefined4 param_1;
-short param_2;
-
-{
-  uint uVar1;
-  ushort uVar2;
-  ushort uVar3;
-  int iVar4;
-  undefined4 uVar5;
-  uint uVar6;
-  int iVar7;
-  int iVar8;
-  char *iVar9;
-  int iVar10;
-  ushort local_3c [2];
-  int local_38;
-  int local_34;
-  int local_30;
-  
-  iVar10 = 0;
-  iVar7 = 0;
-  uVar2 = *(ushort *)((char *)g_player_object + 0x16);
-  local_38 = (int)(short)(uVar2 >> 10);
-  local_30 = 10 - (short)param_1;
-  iVar9 = DAT_002029cc;
-  do {
-    uVar6 = (short)((uVar2 & 0x3f0) >> 4) - iVar7;
-    uVar1 = (int)uVar6 >> 0x1f;
-    local_34 = (int)(short)(((uVar6 ^ uVar1) - uVar1) * 0x10000 >> 0x10);
-    iVar8 = 0;
-    do {
-      uVar1 = local_38 - iVar8 >> 0x1f;
-      if (local_30 < (int)(local_34 + ((local_38 - iVar8 ^ uVar1) - uVar1))) {
-        for (local_3c[0] = *(ushort *)(iVar9 + 2); (local_3c[0] & 0xffc0) != 0;
-            local_3c[0] = local_3c[0] & 0x3f | uVar3 & 0xffc0) {
-          iVar4 = resolve_object_link(local_3c);
-          uVar3 = *(ushort *)(iVar4 + 4);
-          iVar4 = FUN_00052d24(param_1,local_3c);
-          if (iVar4 != 0) {
-            uVar5 = FUN_000535fc(local_3c[0] >> 6);
-            unlink_and_free_object((ushort *)(iVar9 + 2),uVar5);
-            iVar10 = iVar10 + 1;
-            if ((int)param_2 <= iVar10 * 0x10000 >> 0x10) {
-              return;
-            }
-          }
-        }
-      }
-      iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
-      iVar9 = iVar9 + 4;
-    } while (iVar8 < 0x40);
-    iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
-  } while (iVar7 < 0x40);
-  return;
-}
-
-
-
-// was FUN_00053334 -- despite the name this settled on, it's a DESTROY
-// path, not a placement one: when param_3==0 it rolls
-// roll_object_destroy_chance(10, param_2), which (see that function's
-// own comment) returns true with ~100% probability under normal
-// conditions, then unconditionally unlinks and frees param_2 via
-// unlink_and_free_object. Reached by settle_dropped_object whenever an
-// object lands somewhere it can't actually rest (floor too high/low,
-// blocked corner, etc.) -- confirmed via disassembly this "destroy the
-// misplaced object" behavior is genuine original-game logic, not a
-// translation bug.
-ushort *discard_misplaced_object(param_1,param_2,param_3)
-/* Was `int param_1` -- a real object-record pointer (drop_held_object_
-   near_player passes pDropTile+2, a resolve_object_link-style address)
-   truncated to 32 bits on this 64-bit host, same class as several
-   other fixes this session. */
-char *param_1;
-ushort * param_2;
-int param_3;
-
-{
-  ushort uVar1;
-  int iVar2;
-  ushort local_10 [2];
-
-  /* Dropped argument: roll_object_destroy_chance's declared signature takes
-     (short, char*) and dereferences its second parameter -- but it was
-     called here with only the literal 10, leaving the real argument
-     (param_2, the object being placed) as leftover-register garbage.
-     Confirmed live (UW_DEBUG_INV + demo_dropback_test.txt): dropping
-     an item out of the backpack into the 3D view crashed several
-     frames deeper (walk_object_tree/object_exceeds_size_threshold) dereferencing that
-     garbage pointer -- this whole collision/placement path had never
-     been exercised by any earlier fix or test this session. */
-  if ((param_3 != 0) || (iVar2 = roll_object_destroy_chance(10,(char *)param_2), iVar2 != 0)) {
-    uVar1 = encode_object_slot_index(param_2);
-    local_10[0] = local_10[0] & 0x3f | uVar1 << 6;
-    if ((*param_2 & 0x1c0) == 0x1c0) {
-      scheduler_remove_entry(uVar1 & 0x3ff);
-    }
-    if (param_1 == 0) {
-      free_linked_object_recursive(local_10);
-    }
-    else {
-      unlink_and_free_object(param_1,param_2);
-    }
-    param_2 = (ushort *)0x0;
-  }
-  return param_2;
-}
-
-
-
-/* The fundamental "object slot index -> record pointer" accessor (70 call
-   sites): slots 0-0xff are 0x1b-byte records in the DAT_002046b8 table,
-   slots >=0x100 are 8-byte records in the DAT_002046c4 table. Was `int`,
-   truncating the real pointer arithmetic below on this 64-bit host --
-   many callers already store the result through a pointer-typed local
-   (e.g. `puVar4 = (undefined1 *)FUN_000535fc()`), so they got a
-   truncated pointer back regardless of their own care. Confirmed as a
-   crash source in reset_npc_path_cache (level-load object-table reset). */
-void *FUN_000535fc(param_1)
-short param_1;
-
-{
-  intptr_t iVar1;
-
-  iVar1 = (int)param_1;
-  if (iVar1 == 0) {
-    iVar1 = 0;
-  }
-  else if (iVar1 < 0) {
-    /* No caller has ever legitimately passed a negative slot -- a real
-       UW1 level has exactly 1024 object slots (0-0x3ff), 256 static +
-       768 mobile -- but nothing bounded the input, and a corrupted/
-       garbage caller-side read (e.g. collision_height_envelope reading
-       *(short*)(DAT_00202c6c+10) as this slot) can hand one in.
-       Confirmed via lldb: this exact case crashed dereferencing the
-       resulting wild pointer, reproduced by the same mapped movement
-       sequence as resolve_object_link's own bounds fix (12x forward,
-       turn, 3x forward, turn, 5x forward). */
-    DEBUG(ERR, "[FUN_000535fc] negative slot %d, returning NULL\n", (int)param_1);
-    iVar1 = 0;
-  }
-  else if (iVar1 < 0x100) {
-    iVar1 = iVar1 * 0x1b + (intptr_t)DAT_002046b8;
-  }
-  else if (iVar1 < 0x400) {
-    iVar1 = (intptr_t)DAT_002046c4 + (iVar1 + -0x100) * 8;
-  }
-  else {
-    /* >= 1024: past the real 768-slot mobile-object table
-       (DAT_002046c4..+0x1800) -- same corrupted/out-of-range slot class
-       as the negative case above. */
-    DEBUG(ERR, "[FUN_000535fc] slot %d exceeds 0x3ff, returning NULL\n", (int)param_1);
-    iVar1 = 0;
-  }
-  return (void *)iVar1;
-}
 
 
 
@@ -14532,8 +14359,8 @@ undefined4 param_2;
   }
   DAT_002046e0 = (byte)(DAT_002049c8 >> 3);
   DAT_002046e4 = (byte)(DAT_002049ca >> 3);
-  puVar4 = (ushort *)FUN_000535fc(param_2);
-  /* HACK: FUN_000535fc legitimately returns NULL for an out-of-range/
+  puVar4 = (ushort *)get_object_record_by_slot_index(param_2);
+  /* HACK: get_object_record_by_slot_index legitimately returns NULL for an out-of-range/
      empty slot (its own established contract, guarded at many other
      call sites this session) and this immediately dereferenced it
      unconditionally. Newly reachable via npc_ai_tick's placement-sweep
@@ -14555,8 +14382,8 @@ undefined4 param_2;
     puVar5 = puVar11;
   }
   else {
-    puVar5 = (ushort *)FUN_000535fc(puVar11[iVar1 * 3 + 1] >> 6);
-    /* HACK: same unguarded FUN_000535fc NULL-return case as the
+    puVar5 = (ushort *)get_object_record_by_slot_index(puVar11[iVar1 * 3 + 1] >> 6);
+    /* HACK: same unguarded get_object_record_by_slot_index NULL-return case as the
        puVar4 fix just above -- puVar5 is dereferenced (`*puVar5`)
        a few lines down with no check. Same early-out. */
     if (puVar5 == (ushort *)0x0) {

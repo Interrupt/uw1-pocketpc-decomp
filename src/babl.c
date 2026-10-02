@@ -480,7 +480,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   byte *pbVar9;
   
   uVar3 = babl_read_var_word((int)*(short *)(param_1 + -6));
-  puVar4 = (undefined1 *)FUN_000535fc();
+  puVar4 = (undefined1 *)get_object_record_by_slot_index();
   uVar5 = babl_read_var_word((int)*(short *)(param_1 + -4));
   uVar6 = babl_read_var_word((int)*(short *)(param_1 + -2));
   puVar7 = (ushort *)(DAT_00100674 + 6);
@@ -574,7 +574,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   undefined4 uVar1;
 
   babl_read_var_word((int)*(short *)(param_1 + -2));
-  uVar1 = FUN_000535fc();
+  uVar1 = get_object_record_by_slot_index();
   object_list_append_tail(DAT_00100674 + 6,uVar1);
   return;
 }
@@ -726,7 +726,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   psVar9 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -4));
   puVar10 = (ushort *)babl_var_word_addr((int)*(short *)(param_1 + -2));
   babl_read_var_word((int)*(short *)(param_1 + -0x12));
-  puVar11 = (ushort *)FUN_000535fc();
+  puVar11 = (ushort *)get_object_record_by_slot_index();
   sVar3 = babl_read_var_word((int)*(short *)(param_1 + -0x10));
   if (sVar3 == 0) {
     if (((*psVar4 != -1) && ((*puVar11 & 0x1c0) != 0x140)) &&
@@ -820,7 +820,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   psVar3 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -4));
   puVar4 = (ushort *)babl_var_word_addr((int)*(short *)(param_1 + -2));
   babl_read_var_word((int)*(short *)(param_1 + -10));
-  iVar5 = FUN_000535fc();
+  iVar5 = get_object_record_by_slot_index();
   sVar1 = babl_read_var_word((int)*(short *)(param_1 + -8));
   if (sVar1 == 0) {
     if (*puVar2 != 0xffff) {
@@ -2720,7 +2720,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     iVar5 = 0;
     do {
       if (local_4c[iVar5] == sVar1) {
-        iVar3 = FUN_000535fc((int)local_3c[iVar5]);
+        iVar3 = get_object_record_by_slot_index((int)local_3c[iVar5]);
         local_2c[(short)iVar4] = local_3c[iVar5];
         if (((*(byte *)(iVar3 + 1) & 0x80) == 0) || ((*(ushort *)(iVar3 + 6) & 0x8000) != 0)) {
           iVar6 = iVar6 + 1;
@@ -2845,7 +2845,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
   uVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  iVar2 = FUN_000535fc(uVar1);
+  iVar2 = get_object_record_by_slot_index(uVar1);
   if (-1 < (short)uVar3) {
     if ((*(byte *)(iVar2 + 1) & 0x80) != 0) {
       if ((*(byte *)(iVar2 + 7) & 0x80) == 0) goto LAB_00029efc;
@@ -2937,7 +2937,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   sVar1 = babl_read_var_word((int)*(short *)(param_1 + -6));
   uVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
   uVar4 = compute_barter_item_value(1,uVar2,(int)DAT_000bbfbc);
-  iVar5 = FUN_000535fc(uVar2);
+  iVar5 = get_object_record_by_slot_index(uVar2);
   if (((*(byte *)(iVar5 + 1) & 0x80) == 0) || ((*(ushort *)(iVar5 + 6) & 0x8000) != 0)) {
     uVar9 = 1;
   }
@@ -3007,7 +3007,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar2;
 
   babl_read_var_word((int)*(short *)(param_1 + -2));
-  iVar2 = FUN_000535fc();
+  iVar2 = get_object_record_by_slot_index();
   if (((*(byte *)(iVar2 + 1) & 0x80) == 0) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {
     uVar1 = 1;
   }
@@ -3026,7 +3026,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar1;
 
   babl_read_var_word((int)*(short *)(param_1 + -2));
-  iVar1 = FUN_000535fc();
+  iVar1 = get_object_record_by_slot_index();
   return *(byte *)(iVar1 + 4) & 0x3f;
 }
 
@@ -3042,7 +3042,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar4;
   
   babl_read_var_word((int)*(short *)(param_1 + -4));
-  iVar4 = FUN_000535fc();
+  iVar4 = get_object_record_by_slot_index();
   bVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
   uVar1 = *(undefined2 *)(iVar4 + 4);
   bVar2 = (byte)uVar1;
@@ -3864,9 +3864,9 @@ void babl_builtin_setup_to_barter()
       psVar10 = &DAT_000bbfe8 + (short)iVar12;
       if (*psVar10 != 0) {
         if (puVar14 == (ushort *)0x0) {
-          puVar14 = (ushort *)FUN_000535fc((int)*psVar10);
+          puVar14 = (ushort *)get_object_record_by_slot_index((int)*psVar10);
         }
-        uVar9 = FUN_000535fc((int)*psVar10);
+        uVar9 = get_object_record_by_slot_index((int)*psVar10);
         object_list_insert_head(DAT_00100674 + 6,uVar9);
       }
       sVar5 = encode_object_slot_index(puVar6);
@@ -3991,12 +3991,12 @@ void end_barter_ui()
   iVar2 = 0;
   do {
     if (0 < (short)(&DAT_000bbfd0)[iVar2]) {
-      uVar1 = FUN_000535fc();
+      uVar1 = get_object_record_by_slot_index();
       drop_object_near_target(g_player_object,uVar1,5,0);
       restore_captured_grtile_backdrop((&DAT_000bc028)[iVar2]);
     }
     if (0 < (short)(&DAT_000bbfe8)[iVar2]) {
-      uVar1 = FUN_000535fc();
+      uVar1 = get_object_record_by_slot_index();
       drop_object_near_target(DAT_00100674,uVar1,5,0);
       restore_captured_grtile_backdrop((&DAT_000bc010)[iVar2]);
     }
@@ -4173,7 +4173,7 @@ int param_4;
       if (((short)local_10 == 0) && (DAT_000bc008 == '\0')) {
         return;
       }
-      iVar2 = FUN_000535fc((int)*(short *)(local_8 + (short)local_c * 2));
+      iVar2 = get_object_record_by_slot_index((int)*(short *)(local_8 + (short)local_c * 2));
       if (((((*(byte *)(iVar2 + 1) & 0x80) != 0) && ((*(ushort *)(iVar2 + 6) & 0x8000) == 0)) &&
           ((*(ushort *)(iVar2 + 6) & 0xffc0) != 0x40)) && (iVar6 = FUN_000470fc(iVar2), iVar6 == 0))
       {
@@ -4240,7 +4240,7 @@ int param_4;
     if (g_selected_object == 0) {
       if ((*(ushort *)(DAT_00085a6c + 6) & 1) == 0) {
         iVar6 = 1;
-        uVar5 = FUN_000535fc((int)*(short *)(local_8 + (short)local_c * 2));
+        uVar5 = get_object_record_by_slot_index((int)*(short *)(local_8 + (short)local_c * 2));
         if ((short)local_10 == 0) {
           sVar1 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x29),0x14);
           if (0 < sVar1) {
@@ -4363,7 +4363,7 @@ short param_2;
     psVar6 = psVar2;
   }
   else {
-    psVar6 = (short *)FUN_000535fc();
+    psVar6 = (short *)get_object_record_by_slot_index();
     uVar9 = (int)*psVar6 & 0x1ff;
   }
   puVar10 = &DAT_000845d8;
@@ -4428,7 +4428,7 @@ int param_3;
   
   psVar2 = (short *)(param_2 + param_1 * 2);
   bVar3 = g_selected_object != (ushort *)0x0;
-  g_selected_object = (ushort *)FUN_000535fc((int)*psVar2);
+  g_selected_object = (ushort *)get_object_record_by_slot_index((int)*psVar2);
   *psVar2 = 0;
   if (g_selected_object != (ushort *)0x0) {
     if (param_3 != 0) {
@@ -4508,7 +4508,7 @@ int param_4;
   
   psVar7 = (short *)(param_4 + (short)param_3 * 2);
   uVar8 = 0;
-  puVar5 = (ushort *)FUN_000535fc((int)*psVar7);
+  puVar5 = (ushort *)get_object_record_by_slot_index((int)*psVar7);
   uVar1 = *puVar5;
   if ((uVar1 & 0x1c0) == 0x80 && (uVar1 & 0x30) == 0) {
     return 0;
@@ -4627,7 +4627,7 @@ short param_1;
   iVar2 = 0;
   do {
     if ((0 < (short)(&DAT_000bbfe8)[iVar2]) && ((param_1 == 0 || ((&DAT_000bbff0)[iVar2] == 0)))) {
-      uVar1 = FUN_000535fc();
+      uVar1 = get_object_record_by_slot_index();
       object_list_insert_head(DAT_00100674 + 6,uVar1);
       restore_captured_grtile_backdrop((&DAT_000bc010)[iVar2]);
       (&DAT_000bbff0)[iVar2] = 0;
@@ -4674,7 +4674,7 @@ void finalize_player_barter_items()
          value that belongs here; see check_npc_item_preference's own
          comment. */
       if (((&DAT_000bbf98)[local_28] != 0) && (sVar1 = check_npc_item_preference(*psVar5), sVar1 != -1)) {
-        puVar2 = (ushort *)FUN_000535fc((int)*psVar5);
+        puVar2 = (ushort *)get_object_record_by_slot_index((int)*psVar5);
         puVar3 = (ushort *)resolve_object_link(DAT_00100674 + 6);
         if ((*puVar2 & 0x1ff) == 0xa1) {
           for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)resolve_object_link(puVar3 + 2)) {
@@ -4878,7 +4878,7 @@ undefined4 param_3;
   uint uVar7;
   int iVar8;
   
-  puVar4 = (ushort *)FUN_000535fc(param_2);
+  puVar4 = (ushort *)get_object_record_by_slot_index(param_2);
   if (param_1 == 0) {
     uVar7 = (uint)*puVar4;
     sVar6 = *(short *)(&DAT_00202c95 + (uVar7 & 0x1ff) * 0xd);
@@ -4958,7 +4958,7 @@ int param_2;
   iVar2 = 0;
   do {
     if ((&DAT_000bbf98)[iVar2] != 0) {
-      puVar1 = (ushort *)FUN_000535fc((int)(short)(&DAT_000bbfd0)[iVar2]);
+      puVar1 = (ushort *)get_object_record_by_slot_index((int)(short)(&DAT_000bbfd0)[iVar2]);
       iVar3 = (int)(short)iVar3;
       *(undefined2 *)(param_2 + iVar3 * 2) = (&DAT_000bbfd0)[iVar2];
       *(ushort *)(param_1 + iVar3 * 2) = *puVar1 & 0x1ff;
@@ -5016,11 +5016,11 @@ ushort * param_1;
 // add_item_to_npc_inventory, then clears every player barter slot
 // whose item-value equals param_1 and redraws it.
 //
-// BUG FIX: the original decompile called both FUN_000535fc() and
+// BUG FIX: the original decompile called both get_object_record_by_slot_index() and
 // add_item_to_npc_inventory() with zero visible arguments, relying on
 // leftover register state the way the real ARM binary does (same
 // dropped-argument bug class documented throughout this project) --
-// but FUN_000535fc(short) resolves exactly the kind of item-value/slot
+// but get_object_record_by_slot_index(short) resolves exactly the kind of item-value/slot
 // index param_1 already is, and its return value (previously
 // discarded entirely, not even captured into a local) is exactly what
 // add_item_to_npc_inventory needs. Pass param_1 explicitly and capture
@@ -5033,7 +5033,7 @@ short param_1;
   int iVar1;
   void *pvItem;
 
-  pvItem = FUN_000535fc(param_1);
+  pvItem = get_object_record_by_slot_index(param_1);
   add_item_to_npc_inventory(pvItem);
   FUN_00057118();
   iVar1 = 0;
@@ -5093,7 +5093,7 @@ short param_1;
 // gold-stacking merge path).
 //
 // BUG FIX: was called with zero visible arguments (both here, calling
-// FUN_000535fc(), and at its own call site in
+// get_object_record_by_slot_index(), and at its own call site in
 // finalize_player_barter_items), relying on leftover register state --
 // the real slot-value argument (this function's own param_1) flows
 // through fine at its OTHER call site (compute_barter_item_value,
@@ -5110,7 +5110,7 @@ short param_1;
   int iVar5;
   int iVar6;
 
-  puVar2 = (ushort *)FUN_000535fc(param_1);
+  puVar2 = (ushort *)get_object_record_by_slot_index(param_1);
   if (*(short *)(&DAT_00202c95 + (*puVar2 & 0x1ff) * 0xd) == 0) {
 LAB_0001dbcc:
     uVar3 = 0xffffffff;

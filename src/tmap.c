@@ -1367,7 +1367,7 @@ LAB_0005e7e0:
   }
   /* emit_tile_features renders this tile's animated features and the objects
      sitting on it (doors, switches, bridges, item billboards). It used to
-     walk a bogus object count and deref a NULL slot from FUN_000535fc
+     walk a bogus object count and deref a NULL slot from get_object_record_by_slot_index
      because of dropped-arg bugs in it and its callees; those are fixed, so
      it now runs by default. Set UW_DISABLE_TILE_FEATURES to skip it (the
      wall / floor / diagonal geometry for the tile is already emitted above
@@ -1632,13 +1632,13 @@ ushort * param_1;
   int iVar1;
   uint uVar2;
   short sVar3;
-  char *puVar4;  /* was `undefined4 uVar4` -- truncated FUN_000535fc's
+  char *puVar4;  /* was `undefined4 uVar4` -- truncated get_object_record_by_slot_index's
                     real pointer before forwarding it into
                     resolve_billboard_corner_offset, which dereferences it (offset+2/+3).
                     Confirmed live: the automap full-level sweep
                     (demo_automap.txt) crashed here on tile (23,8), the
                     first tile whose feature-object slot value made
-                    FUN_000535fc actually resolve to a real, non-null
+                    get_object_record_by_slot_index actually resolve to a real, non-null
                     pointer. */
   ushort *puVar5;
   ushort *puVar6;
@@ -1671,14 +1671,14 @@ ushort * param_1;
       uVar9 = *(ushort *)(&DAT_0023b940 + (iVar15 * 9 + (int)(short)iVar7) * 2);
       (&DAT_0023b848)[iVar1] = uVar9 & 0x3ff;
       /* Ghidra dropped the object-slot arg -- with it defaulting to 0,
-         FUN_000535fc returned NULL and resolve_billboard_corner_offset below dereferenced it,
+         get_object_record_by_slot_index returned NULL and resolve_billboard_corner_offset below dereferenced it,
          which is why the whole tile-features/object pass was disabled.
-         Pass the slot id just stored, like the other FUN_000535fc call
+         Pass the slot id just stored, like the other get_object_record_by_slot_index call
          sites in this function. */
-      puVar4 = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[iVar1]);
+      puVar4 = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[iVar1]);
       iVar15 = iVar1 * 4;
       pcVar14 = &DAT_0023bb98 + iVar15;
-      /* FUN_000535fc legitimately returns NULL for a slot value that
+      /* get_object_record_by_slot_index legitimately returns NULL for a slot value that
          isn't a currently-populated object (unlike the dropped-arg bug
          fixed just above, this is a real "nothing here" case, not a
          truncation/garbage-argument one) -- resolve_billboard_corner_offset dereferences
@@ -1758,8 +1758,8 @@ ushort * param_1;
         iVar15 = 0;
         do {
           cVar8 = (&DAT_0023b8c8)[iVar15];
-          puVar5 = (ushort *)FUN_000535fc((int)(short)(&DAT_0023b848)[cVar8]);
-          /* Same "FUN_000535fc can legitimately return NULL for an
+          puVar5 = (ushort *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[cVar8]);
+          /* Same "get_object_record_by_slot_index can legitimately return NULL for an
              empty slot" case as the fix above -- this loop dereferences
              puVar5 immediately below (and passes it to
              emit_tile_objects), so skip this index instead of crashing. */

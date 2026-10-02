@@ -841,7 +841,7 @@ short param_1;
     }
   }
   else if (param_1 < 0x100) {
-    iVar1 = FUN_000535fc();
+    iVar1 = get_object_record_by_slot_index();
     DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);
     DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
     DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;

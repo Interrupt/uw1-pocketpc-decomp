@@ -123,8 +123,8 @@ void reticle_object_pick()
       if (DAT_002049dc != 0) {
         do {
           iVar6 = iVar4 * 6;
-          puVar2 = (ushort *)FUN_000535fc(*(ushort *)(&DAT_00202c3a + iVar6) >> 6);
-          /* FUN_000535fc returns NULL for an empty slot (id bits clear).
+          puVar2 = (ushort *)get_object_record_by_slot_index(*(ushort *)(&DAT_00202c3a + iVar6) >> 6);
+          /* get_object_record_by_slot_index returns NULL for an empty slot (id bits clear).
              Ghidra dropped the guard; with forward movement now working this
              loop runs (via sweep_collision_flags) and hit the NULL deref. */
           if (puVar2 != (ushort *)0x0 && ((&DAT_00202c97)[(*puVar2 & 0x1ff) * 0xd] & 1) != 0) {
@@ -233,7 +233,7 @@ LAB_00058db4:
     psVar3 = (short *)resolve_object_link(&DAT_00202c3a + DAT_00086998 * 6);
     /* resolve_object_link returns NULL when the picked slot carries no object
        link (id bits 6..15 clear).  The slot-selection loop above only tests a
-       tile flag via FUN_000535fc(id >> 6), so a slot with id < 0x40 passes the
+       tile flag via get_object_record_by_slot_index(id >> 6), so a slot with id < 0x40 passes the
        filter yet resolves to NULL here.  The ARM original guarded this deref;
        the Ghidra decompile dropped the check, so a turn tick whose reticle pick
        lands on such a slot segfaults in this per-frame path
@@ -816,7 +816,7 @@ void sweep_land_on_surface()
   int iVar12;
   int iVar13;
   
-  puVar7 = (ushort *)FUN_000535fc((int)DAT_002049d2);
+  puVar7 = (ushort *)get_object_record_by_slot_index((int)DAT_002049d2);
   uVar2 = *(ushort *)(&DAT_00202c91 + (*puVar7 & 0x1ff) * 0xd);
   iVar12 = (int)_DAT_000869a1;
   if (iVar12 < 5) {
@@ -923,7 +923,7 @@ void sweep_land_on_surface()
   *(undefined1 *)((char *)DAT_00204874 + 0x11) = 0;
   if (DAT_00086998 == -1) {
     if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)g_sweep_foot_pos + 4)) {
-      puVar7 = (ushort *)FUN_000535fc((int)*(short *)((char *)DAT_00204874 + 0x23));
+      puVar7 = (ushort *)get_object_record_by_slot_index((int)*(short *)((char *)DAT_00204874 + 0x23));
       if ((*puVar7 & 0x1c0) != 0x40) goto LAB_0005a238;
       if ((DAT_002049d6 & 0x10) == 0) {
         if ((DAT_002049d6 & 0x20) == 0) goto LAB_0005a2d0;
@@ -939,9 +939,9 @@ void sweep_land_on_surface()
     *(undefined1 *)(DAT_00204874 + 0x14) = uVar3;
   }
   else {
-    psVar9 = (short *)FUN_000535fc(*(ushort *)(&DAT_00202c3a + DAT_00086998 * 6) >> 6);
+    psVar9 = (short *)get_object_record_by_slot_index(*(ushort *)(&DAT_00202c3a + DAT_00086998 * 6) >> 6);
     if ((((&DAT_00202c93)[((int)*psVar9 & 0x1ffU) * 0xd] & 2) != 0) ||
-       (puVar7 = (ushort *)FUN_000535fc((int)*(short *)((char *)DAT_00204874 + 0x23)),
+       (puVar7 = (ushort *)get_object_record_by_slot_index((int)*(short *)((char *)DAT_00204874 + 0x23)),
        (*puVar7 & 0x1c0) == 0x40)) {
 LAB_0005a2d0:
       *(undefined1 *)(DAT_00204874 + 0x14) = 1;

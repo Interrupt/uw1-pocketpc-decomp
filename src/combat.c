@@ -760,7 +760,7 @@ short * param_1;
   if (iVar10 < iVar9) {
     do {
       uVar4 = *(ushort *)(&DAT_00202c3a + iVar10 * 6);
-      puVar6 = (ushort *)FUN_000535fc();
+      puVar6 = (ushort *)get_object_record_by_slot_index();
       if ((((*puVar6 & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
          (((DAT_00100610 != 1 ||
            ((iVar5 = object_ptr_in_arena(puVar6), iVar5 == 0 ||
@@ -1043,7 +1043,7 @@ undefined4 param_2;
   uint uVar7;
   ushort uVar8;
   
-  puVar2 = (ushort *)FUN_000535fc(param_2);
+  puVar2 = (ushort *)get_object_record_by_slot_index(param_2);
   uVar6 = (uint)*puVar2;
   if ((uVar6 & 0x1c0) == 0x40) {
     uVar7 = uVar6 & 0x3f;
@@ -1060,7 +1060,7 @@ undefined4 param_2;
     DAT_001005d8 = 0;
     if ((short)iVar3 != 2) {
       if ((((short)iVar3 == -1) && (param_1 == 1)) &&
-         (pbVar5 = (byte *)FUN_000535fc((int)DAT_00100620),
+         (pbVar5 = (byte *)get_object_record_by_slot_index((int)DAT_00100620),
          ((&DAT_001007da)[(*pbVar5 & 0x3f) * 0x30] & 1) == 0)) {
         bVar1 = *(byte *)(DAT_00086df8 + 100);
         uVar4 = roll_dice_sum(2,3);
@@ -1132,7 +1132,7 @@ undefined1 param_1;
   
   uVar13 = (undefined1)((ushort)in_stack_ffffffc0 >> 8);
   uVar12 = (undefined1)((ushort)in_stack_ffffffbc >> 8);
-  puVar6 = (ushort *)FUN_000535fc((int)DAT_00100620);
+  puVar6 = (ushort *)get_object_record_by_slot_index((int)DAT_00100620);
   uVar5 = *puVar6;
   sVar3 = DAT_0010061c;
   if (DAT_0010061c < 2) {
@@ -1190,7 +1190,7 @@ undefined1 param_1;
   if ((sVar2 == 1) && (*(char *)(DAT_00086df8 + 0xb4) != '\0')) {
     sVar3 = sVar3 >> 1;
   }
-  uVar7 = FUN_000535fc((int)DAT_00100610);
+  uVar7 = get_object_record_by_slot_index((int)DAT_00100610);
   iVar11 = apply_typed_damage_to_object(puVar6,uVar7,(int)DAT_00100600,(int)DAT_00100604,
                         CONCAT11(uVar12,(char)sVar3),CONCAT11(uVar13,param_1));
   sVar2 = DAT_00100610;
@@ -1277,11 +1277,11 @@ short param_1;
   byte bVar7;
   
   if (param_1 == 0) {
-    uVar4 = FUN_000535fc((int)(short)DAT_00100610);
+    uVar4 = get_object_record_by_slot_index((int)(short)DAT_00100610);
     uVar5 = 10;
     goto LAB_0002701c;
   }
-  puVar6 = (ushort *)FUN_000535fc((int)(short)DAT_00100610);
+  puVar6 = (ushort *)get_object_record_by_slot_index((int)(short)DAT_00100610);
   DAT_00100610 = *puVar6 & 0x1ff;
   uVar1 = (uint)(short)DAT_00100610;
   if ((uVar1 == 1) || (0xff < uVar1)) {
@@ -1308,7 +1308,7 @@ LAB_00026fe8:
   if ((bVar7 != 1) || (uVar5 = 7, bVar2 != 1)) {
     uVar5 = 8;
   }
-  uVar4 = FUN_000535fc((int)DAT_00100620);
+  uVar4 = get_object_record_by_slot_index((int)DAT_00100620);
 LAB_0002701c:
   play_sound_effect_at_object(uVar5,uVar4,0);
   return 0;
@@ -1328,8 +1328,8 @@ void compute_attack_relative_facing()
   int iVar2;
   uint extraout_r1;
   
-  iVar1 = FUN_000535fc((int)DAT_00100620);
-  iVar2 = FUN_000535fc((int)DAT_00100610);
+  iVar1 = get_object_record_by_slot_index((int)DAT_00100620);
+  iVar2 = get_object_record_by_slot_index((int)DAT_00100610);
   uw_ord2005_rem_9 = ((int)(((*(ushort *)(iVar1 + 2) >> 7 & 7) - (*(ushort *)(iVar2 + 2) >> 7 & 7)) + 0xc)) % (8);
   DAT_00100628 = (char)uw_ord2005_rem_9;
   if (4 < (uw_ord2005_rem_9 & 0xff)) {
@@ -1362,12 +1362,12 @@ undefined4 process_melee_attack_swing()
   }
   else {
     if ((DAT_00100610 != 1) && (iVar1 = (int)DAT_00100620, DAT_00100620 != 1)) {
-      FUN_000535fc();
+      get_object_record_by_slot_index();
       iVar3 = object_ptr_in_arena();
       iVar1 = 0;
       if (iVar3 != 0) {
-        iVar3 = FUN_000535fc((int)DAT_00100620);
-        iVar1 = FUN_000535fc((int)DAT_00100610);
+        iVar3 = get_object_record_by_slot_index((int)DAT_00100620);
+        iVar1 = get_object_record_by_slot_index((int)DAT_00100610);
         if (((*(byte *)(iVar3 + 0x19) ^ *(byte *)(iVar1 + 0x19)) & 0x40) == 0) {
           return 0;
         }
@@ -1379,8 +1379,8 @@ undefined4 process_melee_attack_swing()
       apply_melee_damage(4);
       return 1;
     }
-    uVar4 = FUN_000535fc((int)DAT_00100610);
-    uVar5 = FUN_000535fc((int)DAT_00100620);
+    uVar4 = get_object_record_by_slot_index((int)DAT_00100610);
+    uVar5 = get_object_record_by_slot_index((int)DAT_00100620);
     apply_typed_damage_to_object(uVar5,uVar4,(int)DAT_00100600,(int)DAT_00100604,0,4);
   }
   uVar2 = play_weapon_impact_sound(uVar2);
@@ -1885,7 +1885,7 @@ uint param_1;
 uint param_2;
 
 {
-  /* Was `int`, truncating the real 64-bit pointer FUN_000535fc(1)
+  /* Was `int`, truncating the real 64-bit pointer get_object_record_by_slot_index(1)
      returns -- same class of bug fixed repeatedly elsewhere this
      session. Confirmed live crashing on the very first dereference (the
      first time this newly-reachable NPC AI path called it). Reused for
@@ -1902,7 +1902,7 @@ uint param_2;
   uint uVar4;
   uint uVar5;
   
-  iVar1 = FUN_000535fc(1);
+  iVar1 = get_object_record_by_slot_index(1);
   uVar3 = ((*(ushort *)(iVar1 + 0x16) >> 7 & 0x1f8) + (uint)(*(byte *)(iVar1 + 3) >> 5)) -
           (uint)DAT_00101910;
   uVar5 = ((*(ushort *)(iVar1 + 0x16) >> 1 & 0x1f8) + ((*(byte *)(iVar1 + 3) & 0x1c) >> 2)) -

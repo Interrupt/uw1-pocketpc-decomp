@@ -193,7 +193,7 @@ uint param_3;
       if (local_30 != 0) {
         if ((((*puVar8 & 0x8000) == 0) && ((puVar8[3] & 0xffc0) != 0)) &&
            (puVar9 = (undefined1 *)alloc_object_slot(0), puVar9 != (undefined1 *)0x0)) {
-          puVar10 = (undefined1 *)FUN_000535fc(puVar8[3] >> 6);
+          puVar10 = (undefined1 *)get_object_record_by_slot_index(puVar8[3] >> 6);
           *puVar9 = *puVar10;
           puVar9[1] = puVar10[1];
           puVar9[2] = puVar10[2];
@@ -1090,7 +1090,7 @@ LAB_0003987c:
 // (adjusting their poison-level nibble at DAT_00086df8+0x5f, gated on
 // resolve_damage_type_resistance's poison check), positive instead
 // applies typed damage via apply_typed_damage_to_object (hardcoding
-// its damage-type bitmask to 4) to the object FUN_000535fc resolves
+// its damage-type bitmask to 4) to the object get_object_record_by_slot_index resolves
 // (not yet named -- likely "get trap's current target"). Returns 0x10
 // on a successful damage application, else 2.
 // Note: both known callers pass 2 more arguments than this signature
@@ -1113,7 +1113,7 @@ uint param_2;
   uint uVar5;
   
   sVar4 = (short)param_2;
-  iVar2 = FUN_000535fc();
+  iVar2 = get_object_record_by_slot_index();
   iVar3 = (int)sVar4;
   if (iVar3 < 0) {
     if (iVar2 == g_player_object) {
@@ -1355,7 +1355,7 @@ undefined1 param_1;
 // applies a scaled terrain-height effect via
 // apply_area_terrain_effect at tile (param_3,param_4) when the
 // computed value is small enough; otherwise resolves a linked object
-// (FUN_000535fc, not yet named) and toggles one of its low 7 bits.
+// (get_object_record_by_slot_index, not yet named) and toggles one of its low 7 bits.
 // Exact quest semantics not pinned down.
 void apply_quest_event_numeric_effect(param_1,param_2,param_3,param_4)
 int param_1;
@@ -1376,7 +1376,7 @@ undefined4 param_4;
     }
   }
   else {
-    iVar3 = FUN_000535fc((*(ushort *)(param_2 + 6) & 0x7fc0) >> 6);
+    iVar3 = get_object_record_by_slot_index((*(ushort *)(param_2 + 6) & 0x7fc0) >> 6);
     uVar1 = *(undefined2 *)(iVar3 + 2);
     bVar2 = (byte)uVar1;
     *(byte *)(iVar3 + 2) = (bVar2 ^ (byte)iVar4) & 0x7f ^ bVar2;

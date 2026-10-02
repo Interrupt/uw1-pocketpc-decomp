@@ -404,7 +404,7 @@ short param_6;
       iVar1 = (int)(short)iVar5;
       if (iVar1 != param_3) {
         if (param_6 == 0) {
-          char *_o = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[iVar1]);
+          char *_o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[iVar1]);
           uVar2 = *(byte *)(_o + 2) & 0x7f;   /* was `int iVar3` -- truncated the object pointer */
         }
         else {
@@ -439,7 +439,7 @@ undefined4 param_3;
   char *_o;
   byte bVar2;
 
-  _o = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[(short)param_1]);  /* was `int iVar1` */
+  _o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[(short)param_1]);  /* was `int iVar1` */
   bVar2 = *(byte *)(_o + 2) & 0x7f;
   sprite_partition_step((*(byte *)((char *)g_player_object + 2) & 0x7f) < bVar2,param_2,param_1,param_3,bVar2,0);
   return;
@@ -458,12 +458,12 @@ undefined4 param_3;
   char cVar2;
   undefined2 uVar3;
   short sVar4;
-  char *_o;   /* was `int iVar5` -- truncated the FUN_000535fc object pointer */
+  char *_o;   /* was `int iVar5` -- truncated the get_object_record_by_slot_index object pointer */
   undefined4 uVar6;
   short sVar7;
   undefined2 uVar8;
 
-  _o = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[(short)param_1]);
+  _o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[(short)param_1]);
   iVar1 = (short)param_1 * 4;
   if (((*(ushort *)(_o + 2) >> 7) + DAT_0023b4a0 * -2 & 3) == 0) {
     uVar3 = 2;

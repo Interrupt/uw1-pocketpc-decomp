@@ -360,11 +360,11 @@ int param_2;
     return;
   }
   if (*(short *)(DAT_00202c6c + 10) != 0) {
-    /* Ghidra dropped FUN_000535fc's argument -- it's the object-slot id
+    /* Ghidra dropped get_object_record_by_slot_index's argument -- it's the object-slot id
        this branch just tested non-zero (classic `if ((id=..)!=0) rec=f(id)`);
        without it f() ran on a leftover register and handed back a wild
        pointer that passed the != 0 guard and crashed on deref. */
-    puVar6 = (ushort *)FUN_000535fc((int)*(short *)(DAT_00202c6c + 10));
+    puVar6 = (ushort *)get_object_record_by_slot_index((int)*(short *)(DAT_00202c6c + 10));
     if (puVar6 != (ushort *)0x0 && (*puVar6 & 0x1c0) == 0x40) {
       local_3c = 1;
     }

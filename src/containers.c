@@ -25,7 +25,7 @@ char *param_1;
   ushort uVar1;
   ushort *puVar2;
 
-  puVar2 = (ushort *)FUN_000535fc(*(ushort *)(param_1 + 8) >> 6);
+  puVar2 = (ushort *)get_object_record_by_slot_index(*(ushort *)(param_1 + 8) >> 6);
   uVar1 = *puVar2;
   if (((uVar1 & 0xf) < 0xc) && ((uVar1 & 1) != 0)) {
     *(byte *)puVar2 = ((char)(uVar1 & 0xf) - 1U ^ (byte)uVar1) & 0xf ^ (byte)uVar1;
