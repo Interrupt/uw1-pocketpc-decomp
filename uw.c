@@ -3927,7 +3927,7 @@ char *DAT_0020469c;
    (+2 bytes). Was &table + 4 (== &table[2]) -- an off-by-one-entry that
    skipped every other sample and gave the wrong direction for any heading
    whose coarse index was odd, so a turned player kept walking the old way. */
-static const short DAT_00085d48_sine[260] = {
+const short DAT_00085d48_sine[260] = {
   0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
   9512, 10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
   18205, 18868, 19520, 20160, 20788, 21403, 22006, 22595, 23170, 23732, 24279, 24812,
@@ -3951,7 +3951,7 @@ static const short DAT_00085d48_sine[260] = {
   -12540, -11793, -11039, -10279, -9512, -8740, -7962, -7180, -6393, -5602, -4808, -4011,
   -3212, -2411, -1608, -804, 0, 0, 0, 0,
 };
-static const short DAT_00085f50_cosine[260] = {
+const short DAT_00085f50_cosine[260] = {
   32767, 32758, 32729, 32679, 32610, 32522, 32413, 32286, 32138, 31972, 31786, 31581,
   31357, 31114, 30853, 30572, 30274, 29957, 29622, 29269, 28899, 28511, 28106, 27684,
   27246, 26791, 26320, 25833, 25330, 24812, 24279, 23732, 23170, 22595, 22006, 21403,
@@ -3975,12 +3975,23 @@ static const short DAT_00085f50_cosine[260] = {
   30274, 30572, 30853, 31114, 31357, 31581, 31786, 31972, 32138, 32286, 32413, 32522,
   32610, 32679, 32729, 32758, 32767, 0, 0, 0,
 };
-#define DAT_00085d48 (*(const undefined1 *)(const void *)DAT_00085d48_sine)
-#define DAT_00085d4c (*(const undefined1 *)((const char *)(const void *)DAT_00085d48_sine + 2))
-#define DAT_00085f50 (*(const undefined1 *)(const void *)DAT_00085f50_cosine)
-#define DAT_00085f54 (*(const undefined1 *)((const char *)(const void *)DAT_00085f50_cosine + 2))
-undefined DAT_00086260;
-undefined DAT_00086264;
+/* Were bare 1-byte scalars, but lookup_arctan_primary_range/
+   lookup_arctan_reciprocal_range index them as `*(ushort *)(&DAT_00086260
+   + iVar1)` with iVar1 up to (0xff * 4) == 0x3fc -- the same
+   scalar-declared-but-accessed-as-array bug class fixed many times
+   this session (e.g. the glyph-width-table cluster). Likely a second
+   lookup table analogous to the sine/cosine ones just above (same
+   "DAT_X / DAT_X+4 is the next sample" shape), but unlike those this
+   data isn't flagged as recovered from UU.exe anywhere in this
+   decompile -- widened to real, safely-sized backing storage (zero-
+   initialized, not recovered) purely to make the access safe; the
+   real table contents, if this lookup is currently silently broken
+   the same way the sine/cosine tables were before their own fix, are
+   not recovered here. Macro defines for all of these (and the
+   sine/cosine tables above) now live in uw.h, since the functions that
+   read them moved into src/math.c. */
+undefined1 DAT_00086260_backing[1024];
+undefined1 DAT_00086264_backing[1024];
 static undefined1 DAT_002029d8_backing[256];
 #define g_light_radius_table DAT_002029d8_backing[0]
 // g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
@@ -13185,143 +13196,6 @@ void dispatch_sticky_mode_handlers()
 
 
 
-// was FUN_00049c64 -- look up DAT_00085d48_sine/DAT_00085f50_cosine by
-// the angle byte packed via pack_angle_byte, writing sin(angle) into
-// *param_2 and cos(angle) into *param_3.
-void heading_to_sine_cosine(param_1,param_2,param_3)
-uint param_1;
-undefined2 * param_2;
-undefined2 * param_3;
-
-{
-  ushort uVar1;
-
-  uVar1 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
-  *param_2 = *(undefined2 *)(&DAT_00085d48 + (short)(uVar1 & 0xff) * 2);
-  *param_3 = *(undefined2 *)(&DAT_00085f50 + (short)(uVar1 & 0xff) * 2);
-  return;
-}
-
-
-
-// was FUN_00049cc0 -- pack param_1's low byte and param_2's low byte
-// into one 16-bit value, param_2's byte going into the high or low half
-// depending on param_3. Small shared helper used by
-// heading_to_sine_cosine and angle_to_screen_delta.
-uint pack_angle_byte(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-int param_3;
-
-{
-  uint uVar1;
-  
-  if (param_3 == 0) {
-    uVar1 = param_1 & 0xff00 | param_2 & 0xff;
-  }
-  else {
-    uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
-  }
-  return uVar1;
-}
-
-
-
-// was FUN_00049ce8
-void angle_to_screen_delta(param_1,param_2,param_3)
-uint param_1;
-undefined1 * param_2;
-undefined1 * param_3;
-
-{
-  int iVar1;
-  int iVar2;
-  int iVar3;
-  ushort uVar4;
-  
-  uVar4 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
-  iVar1 = (short)(uVar4 & 0xff) * 2;
-  iVar3 = (int)(short)((ushort)param_1 & 0xff);
-  iVar1 = ((int)*(short *)(&DAT_00085d48 + iVar1) +
-          ((((int)*(short *)(&DAT_00085d4c + iVar1) - (int)*(short *)(&DAT_00085d48 + iVar1)) *
-            0x10000 >> 0x10) * iVar3 >> 8)) * 0x10000;
-  *param_2 = (char)((uint)iVar1 >> 0x10);
-  iVar2 = (short)(uVar4 & 0xff) * 2;
-  param_2[1] = (char)((uint)iVar1 >> 0x18);
-  iVar1 = ((int)*(short *)(&DAT_00085f50 + iVar2) +
-          ((((int)*(short *)(&DAT_00085f54 + iVar2) - (int)*(short *)(&DAT_00085f50 + iVar2)) *
-            0x10000 >> 0x10) * iVar3 >> 8)) * 0x10000;
-  *param_3 = (char)((uint)iVar1 >> 0x10);
-  param_3[1] = (char)((uint)iVar1 >> 0x18);
-  return;
-}
-
-
-
-int FUN_00049db8(param_1)
-uint param_1;
-
-{
-  int iVar1;
-  ushort uVar2;
-  uint uVar3;
-  uint uVar4;
-  
-  uVar3 = (param_1 & 0xffff) >> 8;
-  uVar3 = (param_1 & 0xff ^ uVar3) - uVar3;
-  uVar4 = pack_angle_byte(0,(uVar3 & 0xffff) >> 8,0);
-  iVar1 = (uVar4 & 0xff) * 4;
-  uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
-  uVar4 = (uVar3 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
-  uVar3 = (int)uVar4 >> 0x10;
-  uVar4 = pack_angle_byte(uVar4 & 0xffff,(uVar4 & 0xffff) >> 8,0);
-  return ((uVar4 & 0xff | uVar3 << 8) + (uint)uVar2 ^ uVar3) - uVar3;
-}
-
-
-
-int FUN_00049eb8(param_1)
-uint param_1;
-
-{
-  int iVar1;
-  ushort uVar2;
-  uint uVar3;
-  uint uVar4;
-  
-  uVar4 = (param_1 & 0xffff) >> 8;
-  uVar4 = (param_1 & 0xff ^ uVar4) - uVar4;
-  uVar3 = pack_angle_byte(param_1,(uVar4 & 0xffff) >> 8,0);
-  iVar1 = (uVar3 & 0xff) * 4;
-  uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
-  uVar3 = (uVar4 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
-  uVar4 = (int)uVar3 >> 0x10;
-  uVar3 = pack_angle_byte(uVar3 & 0xffff,(uVar3 & 0xffff) >> 8,0);
-  return ((uVar3 & 0xff | uVar4 << 8) + (uint)uVar2 ^ uVar4) - uVar4;
-}
-
-
-
-int FUN_00049fb4(param_1,param_2)
-ushort param_1;
-undefined4 param_2;
-
-{
-  int iVar1;
-  uint uVar2;
-  
-  if (((short)param_1 < 0x5a83) && (-0x5a83 < (short)param_1)) {
-    iVar1 = FUN_00049db8();
-    if ((short)iVar1 < 0) {
-      iVar1 = 0x8000 - iVar1;
-    }
-  }
-  else {
-    uVar2 = FUN_00049eb8(param_2);
-    iVar1 = (uVar2 ^ param_1 >> 8) - (uint)(param_1 >> 8);
-  }
-  return iVar1;
-}
 
 
 

@@ -1061,7 +1061,7 @@ void spin_view_full_rotation()
   iVar1 = uVar5 << 6;
   sVar3 = Ordinal_2005(iVar1,iVar6 * 0x8000);
   sVar4 = Ordinal_2005(iVar1,iVar7 * 0x8000);
-  DAT_0023bea4 = FUN_00049fb4((int)sVar4,(int)sVar3);
+  DAT_0023bea4 = compute_angle_from_slope((int)sVar4,(int)sVar3);
   DAT_0023bf08 = 0;
   do {
     render_dungeon_frame_timed();

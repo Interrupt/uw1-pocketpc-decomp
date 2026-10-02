@@ -178,3 +178,155 @@ int param_1;
   }
   return iVar2;
 }
+
+
+// was FUN_00049c64 -- look up DAT_00085d48_sine/DAT_00085f50_cosine by
+// the angle byte packed via pack_angle_byte, writing sin(angle) into
+// *param_2 and cos(angle) into *param_3.
+void heading_to_sine_cosine(param_1,param_2,param_3)
+uint param_1;
+undefined2 * param_2;
+undefined2 * param_3;
+
+{
+  ushort uVar1;
+
+  uVar1 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
+  *param_2 = *(undefined2 *)(&DAT_00085d48 + (short)(uVar1 & 0xff) * 2);
+  *param_3 = *(undefined2 *)(&DAT_00085f50 + (short)(uVar1 & 0xff) * 2);
+  return;
+}
+
+
+
+// was FUN_00049cc0 -- pack param_1's low byte and param_2's low byte
+// into one 16-bit value, param_2's byte going into the high or low half
+// depending on param_3. Small shared helper used by
+// heading_to_sine_cosine and angle_to_screen_delta.
+uint pack_angle_byte(param_1,param_2,param_3)
+uint param_1;
+uint param_2;
+int param_3;
+
+{
+  uint uVar1;
+  
+  if (param_3 == 0) {
+    uVar1 = param_1 & 0xff00 | param_2 & 0xff;
+  }
+  else {
+    uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
+  }
+  return uVar1;
+}
+
+
+
+// was FUN_00049ce8
+void angle_to_screen_delta(param_1,param_2,param_3)
+uint param_1;
+undefined1 * param_2;
+undefined1 * param_3;
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  ushort uVar4;
+  
+  uVar4 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
+  iVar1 = (short)(uVar4 & 0xff) * 2;
+  iVar3 = (int)(short)((ushort)param_1 & 0xff);
+  iVar1 = ((int)*(short *)(&DAT_00085d48 + iVar1) +
+          ((((int)*(short *)(&DAT_00085d4c + iVar1) - (int)*(short *)(&DAT_00085d48 + iVar1)) *
+            0x10000 >> 0x10) * iVar3 >> 8)) * 0x10000;
+  *param_2 = (char)((uint)iVar1 >> 0x10);
+  iVar2 = (short)(uVar4 & 0xff) * 2;
+  param_2[1] = (char)((uint)iVar1 >> 0x18);
+  iVar1 = ((int)*(short *)(&DAT_00085f50 + iVar2) +
+          ((((int)*(short *)(&DAT_00085f54 + iVar2) - (int)*(short *)(&DAT_00085f50 + iVar2)) *
+            0x10000 >> 0x10) * iVar3 >> 8)) * 0x10000;
+  *param_3 = (char)((uint)iVar1 >> 0x10);
+  param_3[1] = (char)((uint)iVar1 >> 0x18);
+  return;
+}
+
+
+
+// was FUN_00049db8 -- compute_angle_from_slope's "primary range"
+// sub-helper (|ratio| < ~1.0): interpolates a fixed-point arctangent
+// lookup table (&DAT_00086260/DAT_00086264) by the ratio's packed
+// angle-byte index, restoring the input's original sign at the end.
+int lookup_arctan_primary_range(param_1)
+uint param_1;
+
+{
+  int iVar1;
+  ushort uVar2;
+  uint uVar3;
+  uint uVar4;
+
+  uVar3 = (param_1 & 0xffff) >> 8;
+  uVar3 = (param_1 & 0xff ^ uVar3) - uVar3;
+  uVar4 = pack_angle_byte(0,(uVar3 & 0xffff) >> 8,0);
+  iVar1 = (uVar4 & 0xff) * 4;
+  uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
+  uVar4 = (uVar3 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
+  uVar3 = (int)uVar4 >> 0x10;
+  uVar4 = pack_angle_byte(uVar4 & 0xffff,(uVar4 & 0xffff) >> 8,0);
+  return ((uVar4 & 0xff | uVar3 << 8) + (uint)uVar2 ^ uVar3) - uVar3;
+}
+
+
+
+// was FUN_00049eb8 -- compute_angle_from_slope's "reciprocal range"
+// sub-helper (|ratio| >= ~1.0): same arctangent table lookup as
+// lookup_arctan_primary_range, used for the classic atan2
+// reduce-to-45-degrees technique (90 degrees minus atan(1/ratio)).
+int lookup_arctan_reciprocal_range(param_1)
+uint param_1;
+
+{
+  int iVar1;
+  ushort uVar2;
+  uint uVar3;
+  uint uVar4;
+
+  uVar4 = (param_1 & 0xffff) >> 8;
+  uVar4 = (param_1 & 0xff ^ uVar4) - uVar4;
+  uVar3 = pack_angle_byte(param_1,(uVar4 & 0xffff) >> 8,0);
+  iVar1 = (uVar3 & 0xff) * 4;
+  uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
+  uVar3 = (uVar4 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
+  uVar4 = (int)uVar3 >> 0x10;
+  uVar3 = pack_angle_byte(uVar3 & 0xffff,(uVar3 & 0xffff) >> 8,0);
+  return ((uVar3 & 0xff | uVar4 << 8) + (uint)uVar2 ^ uVar4) - uVar4;
+}
+
+
+
+// was FUN_00049fb4 -- per src/combat.c's own comment, an atan2-shaped
+// helper fed slope ratios: dispatches to lookup_arctan_primary_range
+// for ratios within +-0x5a83 (~1.0 in this fixed-point scale),
+// otherwise lookup_arctan_reciprocal_range, applying the appropriate
+// sign/range correction to produce a full heading angle.
+int compute_angle_from_slope(param_1,param_2)
+ushort param_1;
+undefined4 param_2;
+
+{
+  int iVar1;
+  uint uVar2;
+
+  if (((short)param_1 < 0x5a83) && (-0x5a83 < (short)param_1)) {
+    iVar1 = lookup_arctan_primary_range();
+    if ((short)iVar1 < 0) {
+      iVar1 = 0x8000 - iVar1;
+    }
+  }
+  else {
+    uVar2 = lookup_arctan_reciprocal_range(param_2);
+    iVar1 = (uVar2 ^ param_1 >> 8) - (uint)(param_1 >> 8);
+  }
+  return iVar1;
+}

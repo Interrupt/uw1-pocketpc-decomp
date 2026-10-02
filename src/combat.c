@@ -2002,7 +2002,7 @@ int param_1;
 
 // was FUN_0003276c -- checks/adjusts an NPC's fine-grained facing
 // toward a target delta (param_1,param_2): computes the precise angle
-// via slope ratios fed through FUN_00049fb4 (an atan2-shaped helper,
+// via slope ratios fed through compute_angle_from_slope (an atan2-shaped helper,
 // not yet named), and if the NPC's current fine facing (byte 2's own
 // angle XORed with a jitter field at byte 0x18) is already within a
 // band of the target angle, returns 1 (aligned); otherwise nudges the
@@ -2052,7 +2052,7 @@ char param_2;
       sVar2 = Ordinal_2005(uVar3,uVar6 << 0xf);
       iVar5 = (int)sVar2;
     }
-    uVar3 = FUN_00049fb4(iVar7,iVar5);
+    uVar3 = compute_angle_from_slope(iVar7,iVar5);
     uw_ord2005_rem_90 = ((int)(0x140 - ((uVar3 & 0xffff) >> 8))) % (0x100);
     uVar3 = uw_ord2005_rem_90 & 0xff;
     uVar6 = uVar3 - uVar4 & 0xff;

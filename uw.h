@@ -2771,6 +2771,16 @@ extern undefined DAT_00085cb4_backing[8192];
 #define DAT_00085cb4 DAT_00085cb4_backing[0]
 extern char s__DATA_grave_dat_00085cf8[];
 extern char s_an_adventurer__00085d08[];
+extern const short DAT_00085d48_sine[260];
+#define DAT_00085d48 (*(const undefined1 *)(const void *)DAT_00085d48_sine)
+#define DAT_00085d4c (*(const undefined1 *)((const char *)(const void *)DAT_00085d48_sine + 2))
+extern const short DAT_00085f50_cosine[260];
+#define DAT_00085f50 (*(const undefined1 *)(const void *)DAT_00085f50_cosine)
+#define DAT_00085f54 (*(const undefined1 *)((const char *)(const void *)DAT_00085f50_cosine + 2))
+extern undefined1 DAT_00086260_backing[1024];
+#define DAT_00086260 DAT_00086260_backing[0]
+extern undefined1 DAT_00086264_backing[1024];
+#define DAT_00086264 DAT_00086264_backing[0]
 extern undefined1 DAT_00202988_backing[16];
 #define DAT_00202988 DAT_00202988_backing[0]
 extern char s_Not_a_spell_00085a80[];
@@ -3364,9 +3374,9 @@ int write_level_tilemap_to_archive();
 void heading_to_sine_cosine();
 uint pack_angle_byte();
 void angle_to_screen_delta();
-int FUN_00049db8();
-int FUN_00049eb8();
-int FUN_00049fb4();
+int lookup_arctan_primary_range();
+int lookup_arctan_reciprocal_range();
+int compute_angle_from_slope();
 void load_light_food_effect_tables();
 bool compute_drop_aim_from_cursor();
 void FUN_0004a210();
