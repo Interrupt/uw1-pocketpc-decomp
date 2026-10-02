@@ -2323,7 +2323,7 @@ void reset_hud_panel_animation_state()
 // thunk relationship). Releases the 3 grtile handles
 // (DAT_0023c200/202/204, see that array's own declaration comment)
 // backing the HUD panel-switch wipe transition, clearing each that's
-// still set via the currently-no-op FUN_0004995c.
+// still set via the currently-no-op release_grtile_handle.
 void release_panel_wipe_grtiles()
 
 {
@@ -2332,7 +2332,7 @@ void release_panel_wipe_grtiles()
   iVar1 = 0;
   do {
     if ((&DAT_0023c200)[iVar1] != 0) {
-      FUN_0004995c();
+      release_grtile_handle();
       (&DAT_0023c200)[iVar1] = 0;
     }
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
@@ -2697,7 +2697,7 @@ void release_hud_panel_flip_grtiles()
   iVar1 = 0;
   do {
     if ((&DAT_0023c200)[iVar1] != 0) {
-      FUN_0004995c();
+      release_grtile_handle();
       (&DAT_0023c200)[iVar1] = 0;
     }
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
@@ -4951,4 +4951,15 @@ int param_1;
     draw_text_string(auStack_24,0x131 - (short)(iVar4 >> 1),0x3c);
   }
   return bVar5;
+}
+
+
+// was FUN_0004995c -- per release_panel_wipe_grtiles's own comment,
+// releases a grtile handle; this decompile's body is an empty no-op
+// (lost-body case, not confirmed to genuinely do nothing in the real
+// binary).
+void release_grtile_handle()
+
+{
+  return;
 }

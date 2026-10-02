@@ -873,7 +873,7 @@ LAB_00034a98:
       pbVar2 = pbVar2 + 1;
     } while (pbVar2 < DAT_002046c8);
     if (DAT_0010190c != (ushort *)0x0) {
-      FUN_00049924(2);
+      set_pending_update_flags(2);
     }
   }
   DAT_00101948 = DAT_00101928;
@@ -1280,7 +1280,7 @@ ushort * param_1;
       *(char *)(DAT_00086df8 + 0x6d) = *(char *)(DAT_00086df8 + 0x6d) + -1;
       if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
         print_scroll_message_by_id(0x116);
-        FUN_00049924(0x400);
+        set_pending_update_flags(0x400);
       }
       else {
         uVar11 = *param_1 & 0xffc2 | 0x1c2;

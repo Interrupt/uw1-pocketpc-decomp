@@ -109,7 +109,20 @@ short param_3;
                       *pcVar9, _fmt, _fmt, (int)g_font_row_stride, (int)_r, (int)sVar1,
                       (int)auStack_40[0], (int)auStack_40[1], (int)auStack_40[2], (int)auStack_40[3]);
           }
-          Ordinal_1044(pcVar8,auStack_40,(int)sVar1);
+          /* BUG FIX: sVar1 (the glyph's pixel width, from the width
+             table above) was used unclamped as this copy's byte count,
+             but unpack_glyph_bitmap only ever fills 8 or 16 bytes of
+             auStack_40 (its two handled cases, param_3==8/0x10) --
+             any other _fmt (e.g. a wider font's row_stride producing
+             _fmt==0x40) hits neither branch, leaves auStack_40
+             untouched, and still returns success. Confirmed live via
+             ASan: automap notes (a different, wider font than normal
+             dialog text) hit exactly this with sVar1==0x40 against a
+             16-byte buffer, reading far past it. Clamp to the buffer's
+             real capacity so a width/stride this code doesn't know how
+             to unpack can't read uninitialized/out-of-bounds stack
+             memory; narrower glyphs (the common case) are unaffected. */
+          Ordinal_1044(pcVar8,auStack_40,(int)sVar1 > (int)sizeof(auStack_40) ? (int)sizeof(auStack_40) : (int)sVar1);
           iVar7 = iVar7 + -1;
           pcVar8 = pcVar8 + sVar1;
           pcVar9 = pcVar9 + 1;

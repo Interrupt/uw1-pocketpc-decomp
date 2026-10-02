@@ -1570,7 +1570,7 @@ LAB_0006fff4:
               (int)param_1, (int)DAT_0025063c, (int)DAT_0025064c, (int)DAT_002506dc,
               (int)g_visibility_max_ring_passes, (int)DAT_00086b28, (int)DAT_00086b24);
     build_visibility_light_grid((int)g_visibility_max_ring_passes);
-    FUN_00049924(2);
+    set_pending_update_flags(2);
   }
   return;
 }

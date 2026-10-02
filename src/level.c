@@ -60,7 +60,7 @@ void enter_dungeon_view()
     report_fatal_error_and_exit(0x300b);
   }
   enter_dungeon_view_hud_init();
-  FUN_00049924(0x7dfe);
+  set_pending_update_flags(0x7dfe);
   refresh_player_equipment_effects();
   full_dungeon_redraw();
   weapon_overlay_and_full_redraw();
@@ -506,7 +506,7 @@ short param_4;
       DAT_00201c90 = (undefined2)param_2;
       DAT_00201c8c = (undefined2)param_3;
       DAT_00201c7c = param_4;
-      FUN_00049924(0x20);
+      set_pending_update_flags(0x20);
     }
     uVar3 = 0x10;
   }
@@ -528,7 +528,20 @@ void reset_level_arena_and_invalidate()
 
 {
   reset_level_object_arena();
-  FUN_00049924(2);
+  set_pending_update_flags(2);
   DAT_00202080 = 0xffff;
+  return;
+}
+
+
+// was FUN_000499a4 -- frees g_level_tiles (DAT_002029cc) if currently
+// allocated, without clearing the pointer itself (callers are
+// expected to overwrite it right after, e.g. on loading a new level).
+void free_level_tile_arena()
+
+{
+  if (DAT_002029cc != 0) {
+    Ordinal_1018();
+  }
   return;
 }

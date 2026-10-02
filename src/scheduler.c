@@ -451,7 +451,7 @@ int param_1;
     iVar4 = param_1;
   }
   if (DAT_0023b804 != 0) {
-    FUN_00049924(2);
+    set_pending_update_flags(2);
   }
   if (g_scheduler_count != 0) {
     iVar3 = 0;

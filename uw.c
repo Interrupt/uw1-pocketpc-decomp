@@ -9833,7 +9833,7 @@ int param_1;
     (**(code **)(&DAT_00085668 + DAT_00201b64 * 0x80))();
   }
   if ((short)param_1 != 1) {
-    FUN_00049924(0x7ffe);
+    set_pending_update_flags(0x7ffe);
   }
   return;
 }
@@ -9851,7 +9851,7 @@ int param_1;
 // via find_placement_via_tile_flood_fill) and redraw the dungeon view around it. Does nothing
 // unless an animation is queued (0 < DAT_00201c90). DAT_00085730 bit 0
 // gates the mid-animation full_dungeon_redraw, bit 1 the on-completion
-// redraw + FUN_00049924(0x7ffe).
+// redraw + set_pending_update_flags(0x7ffe).
 undefined4 dungeon_view_anim_tick()
 
 {
@@ -9891,7 +9891,7 @@ undefined4 dungeon_view_anim_tick()
     }
     DAT_00201c90 = 0;
     if ((DAT_00085730 & 2) != 0) {
-      FUN_00049924(0x7ffe);
+      set_pending_update_flags(0x7ffe);
     }
   }
   return 1;
@@ -13167,48 +13167,18 @@ void dispatch_sticky_mode_handlers()
 
 
 
-void FUN_00049924(param_1)
-ushort param_1;
-
-{
-  DAT_00201c84 = DAT_00201c84 | param_1;
-  return;
-}
 
 
 
-undefined4 FUN_00049940()
-
-{
-  return 0x28;
-}
 
 
 
-void FUN_00049948()
-
-{
-  return;
-}
 
 
 
-void FUN_0004995c()
-
-{
-  return;
-}
 
 
 
-void FUN_000499a4()
-
-{
-  if (DAT_002029cc != 0) {
-    Ordinal_1018();
-  }
-  return;
-}
 
 
 
@@ -18434,7 +18404,7 @@ void FUN_00053c74()
   }
   if (iVar10 != 0) {
     refresh_player_equipment_effects();
-    FUN_00049924(2);
+    set_pending_update_flags(2);
   }
   if (DAT_002046cc != 0) {
     if ((DAT_002046cc & 1) != 0) {
@@ -18582,7 +18552,7 @@ void FUN_000541d0()
     iVar3 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x34),uVar1);
     if ((-(int)iVar3 + 2) * 0x10000 >> 0x10 != 0) {
       weapon_overlay_flash_once(0xc6);
-      FUN_00049924(2);
+      set_pending_update_flags(2);
       uVar1 = roll_dice_sum(2,-(int)iVar3 + 4);
       apply_typed_damage_to_object(g_player_object,0,0,0,uVar1,0);
     }

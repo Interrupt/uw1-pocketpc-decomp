@@ -332,7 +332,7 @@ void advance_action_animation_frame()
 {
   byte bVar1;
   int iVar2;
-  FUN_00049924(2);
+  set_pending_update_flags(2);
   if (6 < DAT_0023c120) {
     DAT_0023c120 = 6;
   }

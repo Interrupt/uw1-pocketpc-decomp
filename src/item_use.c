@@ -1022,7 +1022,7 @@ undefined4 param_3;
     }
     else {
       iVar2 = (char *)discard_misplaced_object(DAT_002046b4,param_1,param_3);
-      FUN_00049924(2);
+      set_pending_update_flags(2);
     }
   }
   else {
@@ -1554,7 +1554,7 @@ undefined4 param_2;
 // 3-state player counter (DAT_00086df8+0x61, wrapping) and triggers
 // an effect via display_book_or_scroll_page, then rewrites the
 // item's own low byte to 0xd5 and clears one bit of its high byte
-// before flushing a redraw (FUN_00049924 or redraw_container_icon_slot depending
+// before flushing a redraw (set_pending_update_flags or redraw_container_icon_slot depending
 // on param_3); 0x11b uses a food item directly. Confirmed real
 // caller: use_object_on_target's class-1/family-1 branch
 // (src/item_use.c).
@@ -1602,7 +1602,7 @@ int param_3;
     *(undefined1 *)param_2 = 0xd5;
     *(byte *)((char *)param_2 + 1) = (byte)(uVar3 >> 8) & 0xfe;
     if (param_3 == 0) {
-      FUN_00049924(2);
+      set_pending_update_flags(2);
     }
     else {
       redraw_container_icon_slot();
@@ -1742,7 +1742,7 @@ int param_3;
           iVar6 = iVar6 + -1;
         }
         discard_misplaced_object(iVar7 + 2,param_1,1);
-        FUN_00049924(2);
+        set_pending_update_flags(2);
       }
     }
   }
@@ -2156,7 +2156,7 @@ ushort * param_2;
     }
     *(char *)param_2 = (char)uVar5;
     *(char *)((char *)param_2 + 1) = (char)(uVar5 >> 8);
-    FUN_00049924(2);
+    set_pending_update_flags(2);
   }
   return;
 }
@@ -2573,7 +2573,7 @@ int param_3;
       print_scroll_message_by_id(0x53);
     }
     refresh_player_equipment_effects();
-    FUN_00049924(0x200);
+    set_pending_update_flags(0x200);
   }
   return;
 }

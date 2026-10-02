@@ -919,7 +919,7 @@ undefined4 param_1;
        bob applied once it's done. */
     DAT_0023bea8 = 0;
     DAT_0023be98 = 0;
-    FUN_00049924(10);
+    set_pending_update_flags(10);
   }
   do {
     iVar2 = read_realtime_clock_units();

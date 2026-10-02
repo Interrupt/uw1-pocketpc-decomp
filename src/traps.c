@@ -335,7 +335,7 @@ LAB_0007dce4:
     local_34 = local_34 + 2;
     uVar6 = resolve_object_link(param_1 + 3);
     unlink_and_free_object(local_34,uVar6);
-    FUN_00049924(2);
+    set_pending_update_flags(2);
     return 2;
   case 0xc:
     uVar4 = (byte)param_1[3] & 0x3f | ((byte)param_1[2] & 0x3f) << 5;
@@ -512,7 +512,7 @@ int param_1;
 // object via for_each_object_of_type(reset_object_ui_state_callback);
 // codes 0x3b-0x3e are gated on DAT_0024cff4 == g_player_object (the
 // current trap-trigger context being the player); code 0x3f sets a
-// quest-ish byte (DAT_0023c27c) and calls FUN_00049924(0x400). Reads
+// quest-ish byte (DAT_0023c27c) and calls set_pending_update_flags(0x400). Reads
 // as a "quest/cutscene event code" dispatcher, but most individual
 // codes' real meaning is left undetermined here rather than guessed
 // at.
@@ -564,7 +564,7 @@ undefined4 param_3;
     }
     else if (uVar1 == 0x3f) {
       DAT_0023c27c = (*(byte *)(param_1 + 6) & 0x3f) + 1;
-      FUN_00049924(0x400);
+      set_pending_update_flags(0x400);
     }
   }
   return 2;
@@ -1079,7 +1079,7 @@ LAB_0003987c:
       local_44 = (short)(iVar12 + 1);
     } while ((iVar12 + 1) * 0x10000 >> 0x10 <= iVar1);
   }
-  FUN_00049924(6);
+  set_pending_update_flags(6);
   return 2;
 }
 

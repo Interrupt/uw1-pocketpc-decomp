@@ -490,7 +490,7 @@ char * param_1;
         Ordinal_1018();
         g_save_record_buffer = 0;
       }
-      FUN_00049924(0x200);
+      set_pending_update_flags(0x200);
     }
   }
   return bVar3;
@@ -1325,7 +1325,7 @@ void trigger_view_transition()
   cVar3 = '\x01';
   DAT_0023bea8 = 1;
   bVar8 = 1;
-  FUN_00049924(2);
+  set_pending_update_flags(2);
   DAT_0023be9e = 0;
   DAT_0023be9c = 0;
   DAT_0023be9a = 0;
@@ -1373,7 +1373,7 @@ void trigger_view_transition()
       DAT_0023bf14 = DAT_0023bf14 + -1;
       if (bVar10) {
         *(byte *)(DAT_00086df8 + 0xb8) = *(byte *)(DAT_00086df8 + 0xb8) ^ 0x40;
-        FUN_00049924(2);
+        set_pending_update_flags(2);
       }
       iVar7 = DAT_00086df8;
       cVar3 = Ordinal_2005(10,DAT_0023bf14);
@@ -1386,7 +1386,7 @@ void trigger_view_transition()
       DAT_0023bf10 = DAT_0023bf10 - 1;
       if (bVar10) {
         *(byte *)(iVar7 + 0xb8) = *(byte *)(iVar7 + 0xb8) ^ 0x20;
-        FUN_00049924(2);
+        set_pending_update_flags(2);
       }
       bVar8 = DAT_0023bf10 >> 3;
       if (3 < bVar8) {

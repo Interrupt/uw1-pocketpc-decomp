@@ -1058,7 +1058,7 @@ void voice_sample_cluster_stub_2()
 // was FUN_0007ea44 -- probabilistically starts an ambient looping
 // sound effect: rolls a ~1-in-8-ish chance (Ordinal_1053 % 8), and if
 // it lands, tries to acquire an ambient-sound-class resource
-// (FUN_00049940(0x1e), not yet named -- reads as "get a free slot/
+// (acquire_sound_resource_slot(0x1e), not yet named -- reads as "get a free slot/
 // count for class 0x1e"). On failure to get any (result 0), reports a
 // fatal error (report_categorized_fatal_error(0x2001), not yet named -- confirmed
 // elsewhere in this file as an Ordinal_1041-allocation-failure
@@ -1086,7 +1086,7 @@ void start_ambient_sound_effect()
   uw_ord2005_rem_169 = ((int)(uVar3)) % (8);
   iVar1 = (uw_ord2005_rem_169 + 0x1b) * 0x20000 >> 0x10;
   if (0 < iVar1) {
-    iVar4 = FUN_00049940(0x1e);
+    iVar4 = acquire_sound_resource_slot(0x1e);
     DAT_002506f0 = (short)iVar4;
     iVar2 = (int)DAT_002506f0;
     if (iVar2 == 0) {
@@ -1094,8 +1094,8 @@ void start_ambient_sound_effect()
     }
     else {
       if ((iVar2 < iVar1) && (0x23 < iVar2)) {
-        FUN_00049948();
-        iVar4 = FUN_00049940(0x1e,iVar4 + -6);
+        release_sound_resource_slot();
+        iVar4 = acquire_sound_resource_slot(0x1e,iVar4 + -6);
         DAT_002506f0 = (short)iVar4;
         if (DAT_002506f0 < 0x1e) {
           report_categorized_fatal_error(0x2002);
@@ -1116,7 +1116,7 @@ void start_ambient_sound_effect()
 
 // was FUN_0007eb34 -- the shutdown counterpart to
 // start_ambient_sound_effect: releases the acquired resource
-// (FUN_00049948, not yet named) when one is held (DAT_002506f0 > 0),
+// (release_sound_resource_slot, not yet named) when one is held (DAT_002506f0 > 0),
 // and stops the looping sound (Ordinal_1018) when one is playing
 // (DAT_002506ec != 0), clearing that handle afterward. Its only
 // confirmed caller runs during game shutdown, paired with
@@ -1125,7 +1125,7 @@ void stop_ambient_sound_effect()
 
 {
   if (0 < DAT_002506f0) {
-    FUN_00049948();
+    release_sound_resource_slot();
   }
   if (DAT_002506ec != 0) {
     Ordinal_1018();
@@ -1281,4 +1281,31 @@ void cache_ambient_sound_handle()
 {
   DAT_00101a70 = DAT_002506ec;
   return;
+}
+
+
+// was FUN_00049948 -- per stop_ambient_sound_effect/start_ambient_sound_effect's
+// own comments, releases a previously acquired sound-resource slot
+// (the counterpart to acquire_sound_resource_slot); this decompile's
+// body is an empty no-op, same lost-body situation as its acquire
+// counterpart.
+void release_sound_resource_slot()
+
+{
+  return;
+}
+
+
+// was FUN_00049940 -- per start_ambient_sound_effect's own comment,
+// reads as "get a free slot/count for class 0x1e" (its only known
+// caller passes 0x1e, and in the retry path a second argument too),
+// but this function's own declaration takes NO parameters and its
+// body always returns the fixed value 0x28 -- the real
+// parameter-taking implementation appears to be one of this
+// decompile's lost-body cases (same class as the LAB_ stub
+// functions), not recovered here. Ported as-is rather than guessed.
+undefined4 acquire_sound_resource_slot()
+
+{
+  return 0x28;
 }

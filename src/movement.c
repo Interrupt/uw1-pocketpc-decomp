@@ -1659,7 +1659,7 @@ undefined4 param_1;
   apply_heading_turn(param_1);
   movement_collision_sweep(&DAT_00204880,&DAT_002048b0);
   commit_player_move();
-  FUN_00049924(10);
+  set_pending_update_flags(10);
   sVar4 = g_movement_mode;
   bVar1 = DAT_0023bf18;
   if ((DAT_002048a8 & 0x10) == 0) {

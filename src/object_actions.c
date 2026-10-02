@@ -2215,7 +2215,7 @@ LAB_0007588c:
       DAT_00201c9c = &check_scheduled_object_location_callback;
       teleport_object_to_level_tile(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
       set_player_tile_position(0,0,0);
-      FUN_00049924(0x7ffe);
+      set_pending_update_flags(0x7ffe);
     }
     break;
   case 0xb:

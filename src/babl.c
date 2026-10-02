@@ -7218,7 +7218,7 @@ uint param_1;
   else {
     uVar2 = 2;
   }
-  FUN_00049924(uVar2);
+  set_pending_update_flags(uVar2);
 LAB_00037d3c:
   cursor_show_idle_tick();
   g_text_use_palette_color = 0;

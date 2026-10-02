@@ -462,7 +462,7 @@ undefined4 param_1;
         iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
-      FUN_00049924(0x7ffe);
+      set_pending_update_flags(0x7ffe);
     }
     else if (local_838 == 3) {
       sVar3 = journey_onward_load_slot_menu();
@@ -503,7 +503,7 @@ undefined4 param_1;
   FUN_00057cac(3);
   cursor_show_idle_tick();
   set_game_mode(1);
-  FUN_00049924(0x7ffe);
+  set_pending_update_flags(0x7ffe);
   DAT_000868d8 = 0;
   return;
 }
@@ -813,7 +813,7 @@ void print_help_message()
 // param_1<2 resets to the player's own live position (param_1==1 also
 // applies the eye-height offset), param_1 in [2,0xff) instead resolves
 // an object by slot index and copies its position/heading. Forces a
-// camera resync (FUN_00049924) when no object is currently the view
+// camera resync (set_pending_update_flags) when no object is currently the view
 // subject.
 void set_custom_view_target(param_1)
 short param_1;
@@ -848,7 +848,7 @@ short param_1;
     DAT_0023bf00 = (*(ushort *)(iVar1 + 2) & 0xff80) << 6;
   }
   if (DAT_0023b82c == 0) {
-    FUN_00049924(2);
+    set_pending_update_flags(2);
   }
   return;
 }
@@ -900,7 +900,7 @@ void move_custom_view_target()
     DAT_0023be92 = 0x3d80;
   }
   if (DAT_0023b82c == 0) {
-    FUN_00049924(2);
+    set_pending_update_flags(2);
   }
   return;
 }
@@ -955,7 +955,7 @@ short param_1;
       }
       if (DAT_002046b8 - 0x1b <= DAT_0023b82c) {
         DAT_0023b82c = DAT_002046b8 - 0x36;
-        FUN_00049924(2);
+        set_pending_update_flags(2);
       }
     }
     if (DAT_0023b82c < DAT_002046b8) {
@@ -963,7 +963,7 @@ short param_1;
     }
     DAT_0023b82c = DAT_002046b8 - 0x1b;
   }
-  FUN_00049924(2);
+  set_pending_update_flags(2);
   return;
 }
 
@@ -2031,7 +2031,7 @@ void debug_force_rest_action()
    0x11 with args -1/0/1 respectively (uw.c ~59567-59569,
    register_key_binding). Nudges a heading field by a fixed step,
    clamped to +-0x1000 (1/256-degree units), marking the view dirty
-   (FUN_00049924(2)) whenever it actually changed. DAT_000680f4/DAT_000680f8
+   (set_pending_update_flags(2)) whenever it actually changed. DAT_000680f4/DAT_000680f8
    were literal-pool constants resolving to DAT_0023beb4 and
    DAT_0023bf00 respectively; the original's `DAT_000680f8 + 2` was raw
    pointer arithmetic across two separately-declared globals that are
@@ -2054,7 +2054,7 @@ undefined4 param_1;
     puVar2 = (short *)&DAT_0023bf02;
   }
   if ((short)param_1 == 0) {
-    FUN_00049924(2);
+    set_pending_update_flags(2);
     *puVar2 = 0;
   }
   else {
@@ -2063,7 +2063,7 @@ undefined4 param_1;
       sVar1 = -0x1000;
     }
     if (step_value_toward_limit(puVar2,sVar1,0x400,(short)param_1) != 0) {
-      FUN_00049924(2);
+      set_pending_update_flags(2);
     }
   }
   return;
@@ -2242,7 +2242,7 @@ void run_game_shutdown_sequence()
   thunk_FUN_00057118();
   input_bindings_free();
   stop_ambient_sound_effect();
-  FUN_000499a4();
+  free_level_tile_arena();
   release_panel_wipe_grtiles();
   shutdown_sound_effects();
   shutdown_music_module();
@@ -2744,4 +2744,18 @@ undefined4 load_startup_gr_resources()
     }
   }
   return uVar4;
+}
+
+
+// was FUN_00049924 -- ORs param_1's bits into the pending-update flag
+// word DAT_00201c84, consumed elsewhere to decide what needs
+// redrawing/reprocessing this tick. Callers pass everything from a
+// single bit (2, 0x400, 10) up to near-all-bits requests
+// (0x7dfe/0x7ffe) for a full redraw.
+void set_pending_update_flags(param_1)
+ushort param_1;
+
+{
+  DAT_00201c84 = DAT_00201c84 | param_1;
+  return;
 }

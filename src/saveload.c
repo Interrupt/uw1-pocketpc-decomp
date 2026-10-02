@@ -1218,10 +1218,10 @@ undefined4 param_2;
       iVar2 = 5;
       /* load_game_from_slot's own success branch just below (the mirror
          Load path) calls load_weapon_combat_maneuver_data/sync_player_stats_to_hud/
-         redraw_hud_panels/apply_movement_mode_profile(0xffffffff)/FUN_00049924(0x7ffe)
+         redraw_hud_panels/apply_movement_mode_profile(0xffffffff)/set_pending_update_flags(0x7ffe)
          after a successful load; this Save branch called none of them.
          Most of those are Load-specific (resyncing HUD/stats after
-         reloading a possibly-different character), but FUN_00049924
+         reloading a possibly-different character), but set_pending_update_flags
          (ORs param_1 into DAT_00201c84, the dirty-bit register
          main_loop_hud_flush's per-tick force-3D-redraw hack and
          dispatch_sticky_mode_handlers both gate on) is a general
@@ -1234,8 +1234,8 @@ undefined4 param_2;
          saving, but the game is still running") and reproduced with a
          screenshot immediately after a scripted save: viewport solid
          black, HUD chrome and "Save Game Succeeded." both drawing fine
-         around it. Fixed by calling FUN_00049924(0x7ffe) here too. */
-      FUN_00049924(0x7ffe);
+         around it. Fixed by calling set_pending_update_flags(0x7ffe) here too. */
+      set_pending_update_flags(0x7ffe);
     }
   }
   else if (false) {
@@ -1266,7 +1266,7 @@ undefined4 param_2;
       redraw_hud_panels();
       apply_movement_mode_profile(0xffffffff);
       DAT_000858a0 = 1;
-      FUN_00049924(0x7ffe);
+      set_pending_update_flags(0x7ffe);
     }
   }
   print_scroll_message_by_id(iVar2 + 0xa0);

@@ -1274,7 +1274,7 @@ int param_2;
     Ordinal_1063(acStack_5c,s_is_empty__0008790c);
     message_scroll_print_wrapped(acStack_5c);
   }
-  FUN_00049924(2);
+  set_pending_update_flags(2);
   return;
 }
 

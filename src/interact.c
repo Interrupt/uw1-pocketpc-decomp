@@ -741,7 +741,7 @@ char *param_1;
   if (DAT_002020ec != 0) {
     trigger_object_trap_or_use_action(g_player_object,param_1,2,(int)DAT_002020a0,DAT_002020a4);
     object_list_unlink(DAT_002020a8,param_1);
-    FUN_00049924(2);
+    set_pending_update_flags(2);
     DAT_002020ec = 0;
   }
   return;
