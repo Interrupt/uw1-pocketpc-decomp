@@ -156,7 +156,7 @@ if(BUILD_TESTING)
   add_game_unit_test(new_game
     src/game.c:prepare_new_game src/game.c:begin_gameplay
     src/level.c:load_level_object_table src/level.c:load_level
-    uw.c:set_game_mode
+    src/game.c:set_game_mode
     src/ordinal_stubs.c:Ordinal_61 src/ordinal_stubs.c:Ordinal_164
     src/ordinal_stubs.c:Ordinal_196 src/ordinal_stubs.c:Ordinal_1047
     src/ordinal_stubs.c:Ordinal_1063
@@ -168,7 +168,7 @@ if(BUILD_TESTING)
   target_sources(test_new_game PRIVATE src/file_io.c src/debug.c)
   add_game_unit_test(teleport
     src/level.c:transition_to_level src/level.c:teleport_object_to_level_tile
-    uw.c:dungeon_view_anim_tick src/movement.c:movement_tick)
+    src/player.c:dungeon_view_anim_tick src/movement.c:movement_tick)
   add_game_unit_test(movement
     src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading
     src/movement.c:sweep_slide_along_wall src/movement.c:sweep_apply_collision
@@ -258,7 +258,7 @@ if(BUILD_TESTING)
   target_compile_definitions(test_traps PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(inventory
-    src/objects.c:find_object_by_encoded_slot_in_chain uw.c:find_or_assign_object_widget
+    src/objects.c:find_object_by_encoded_slot_in_chain src/item_use.c:find_or_assign_object_widget
     src/object_actions.c:describe_special_object_property src/object_actions.c:print_object_flavor_text
     src/item_use.c:arm_use_item_on_player_prompt
     src/item_use.c:prompt_use_item_on_target

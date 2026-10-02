@@ -15,15 +15,19 @@ const short DAT_00085d48_sine[260];
 const short DAT_00085f50_cosine[260];
 undefined1 DAT_00086260_backing[1024];
 undefined1 DAT_00086264_backing[1024];
-uint read_realtime_clock_units()
+/* read_realtime_clock_units/rand_below are now real, self-contained
+ * functions in math.c (linked whole) -- stub their own Ordinal_*
+ * dependencies instead, since this test binary doesn't link
+ * ordinal_stubs.c. */
+long Ordinal_535()
 {
-    TEST_FAIL_MESSAGE("Unexpected read_realtime_clock_units call");
+    TEST_FAIL_MESSAGE("Unexpected Ordinal_535 call");
     return 0;
 }
 
-undefined4 rand_below()
+long Ordinal_1053()
 {
-    TEST_FAIL_MESSAGE("Unexpected rand_below call");
+    TEST_FAIL_MESSAGE("Unexpected Ordinal_1053 call");
     return 0;
 }
 

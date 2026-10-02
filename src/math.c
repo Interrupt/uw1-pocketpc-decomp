@@ -330,3 +330,40 @@ undefined4 param_2;
   }
   return iVar1;
 }
+
+
+/* Bounded random: rand() % param_1. The original takes the modulo from
+   Ordinal_2005's (idivmod's) r1 remainder leftover -- Ghidra lost that
+   into an uninitialised `extraout_r1`, so it always returned garbage
+   (and with Ordinal_1053 stubbed to 0, effectively always 0). Compute
+   the modulo directly. */
+// was FUN_00022910
+undefined4 rand_below(param_1)
+int param_1;
+
+{
+  if (param_1 == 0) {
+    return 0;
+  }
+  return (undefined4)((uint)Ordinal_1053() % (uint)param_1);
+}
+
+
+
+// was FUN_0002294c -- GetTickCount-shaped: Ordinal_535() (SDL_GetTicks(),
+// real elapsed ms since startup) scaled down to 4ms-per-unit. Used
+// throughout this file (fades, double-click/hold timing, the attack-swing
+// state machine, movement_pacing_handler's pre-uw_frame_clock_ms reads,
+// ...) as the generic "what time is it" source; some callers (e.g.
+// move_key_directional_step's own tail) busy-spin on it in a tight loop
+// with no event pump in between, so it must keep returning genuine
+// real-time -- see uw_frame_clock_ms's own comment for why movement's
+// deterministic clock is a separate function, not a change here.
+uint read_realtime_clock_units()
+
+{
+  uint uVar1;
+
+  uVar1 = Ordinal_535();
+  return uVar1 >> 2;
+}
