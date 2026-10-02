@@ -47,12 +47,46 @@ int encode_object_slot_index(ushort *object)
 }
 void refresh_experience_display(void) {}
 void set_pending_music_track(uint track) { music_track = track; }
-uint read_realtime_clock_units(void) { return 123; }
+static uint clock_units;
+uint read_realtime_clock_units(void) { return clock_units; }
 void grant_experience_points(int amount) { experience += amount; experience_awards++; }
 void attempt_talk_interaction(char *object)
 { TEST_ASSERT_EQUAL_PTR(mobile_objects + 2 * 27, object); talks++; }
 void cancel_weapon_swing(void) {}
 void trigger_quest_milestone_cleanup_event(void) { TEST_FAIL_MESSAGE("Unexpected quest cleanup"); }
+
+/* Drive the real combat HUD request and wipe ticker; other panels are stubs. */
+undefined1 DAT_0023c118_arr[9], DAT_0023c128_arr[9];
+unsigned char DAT_0023c11c_arr[2], DAT_0023c12c_arr[2];
+ushort DAT_0023c1d8, DAT_0023c1dc, DAT_0023c1e0;
+byte DAT_0023c150, DAT_0023c12a, DAT_0023c25c;
+undefined1 DAT_0023c11a;
+undefined1 g_active_hud_panel;
+undefined1 DAT_0023c11b;
+char DAT_000870d8, DAT_000870dc;
+short DAT_0023c21c;
+undefined2 DAT_0023c220;
+undefined1 DAT_0023c1f0_backing[65536], DAT_0023c1f8_backing[65536];
+static int hud_flushes, wipe_frames;
+static uint frames[32];
+static void other_panel_tick(int index)
+{ DAT_0023c1d8 &= ~(1 << index); }
+void (*const g_hud_panel_handlers_table[13])(void) = {
+    0, 0, 0, 0,
+    (void (*)(void))other_panel_tick, (void (*)(void))other_panel_tick,
+    (void (*)(void))other_panel_tick, (void (*)(void))other_panel_tick,
+    (void (*)(void))other_panel_tick, (void (*)(void))other_panel_tick,
+    (void (*)(void))other_panel_tick, hud_panel_wipe_transition_tick,
+    (void (*)(void))other_panel_tick
+};
+void flush_sprite_list_compositor(void) { hud_flushes++; }
+undefined4 sprite_list_set_frame_id(int slot, uint frame)
+{
+    TEST_ASSERT_EQUAL_INT(7, slot);
+    TEST_ASSERT_LESS_THAN_INT(32, wipe_frames);
+    frames[wipe_frames++] = frame;
+    return 0;
+}
 
 int resolve_weapon_hit_skill_check(int attacker, int target)
 {
@@ -66,7 +100,7 @@ undefined4 play_sound_effect_with_pan(void) { return 0; }
 undefined4 play_positional_sound_effect(int sound, int x, int y, int volume)
 { (void)x; (void)y; (void)volume; if (sound == 6) death_sounds++; return 0; }
 void set_movement_animation_timer(void) { TEST_FAIL_MESSAGE("Unexpected player hit animation"); }
-void set_hud_status_value(void) { return; }
+
 undefined4 spawn_scheduled_effect_object(ushort *target, int type, int mode, int intensity,
                                         int height, int x, int y)
 {
@@ -141,6 +175,17 @@ void setUp(void)
     skill_result = skill_checks = effects = impact_sounds = 0;
     experience = experience_awards = talks = death_sounds = 0;
     music_track = 0;
+    clock_units = 0;
+    hud_flushes = wipe_frames = 0;
+    memset(DAT_0023c118_arr, 0, sizeof(DAT_0023c118_arr));
+    memset(DAT_0023c128_arr, 0, sizeof(DAT_0023c128_arr));
+    memset(DAT_0023c11c_arr, 0, sizeof(DAT_0023c11c_arr));
+    memset(DAT_0023c12c_arr, 0, sizeof(DAT_0023c12c_arr));
+    memset(DAT_0023c1f0_backing, 0, sizeof(DAT_0023c1f0_backing));
+    memset(DAT_0023c1f8_backing, 0, sizeof(DAT_0023c1f8_backing));
+    DAT_0023c1d8 = DAT_0023c1dc = DAT_0023c1e0 = 0;
+    DAT_0023c150 = DAT_0023c220 = DAT_0023c25c = 0;
+    DAT_0023c21c = 7;
     g_player_object = object_at(1);
     DAT_0023be74 = (char *)object_at(1);
     DAT_00101404 = (char *)DAT_001007d4_backing;
@@ -301,6 +346,34 @@ static void test_critter_kill_does_not_award_player_experience(void)
     TEST_ASSERT_EQUAL_INT(0, experience_awards);
 }
 
+static void test_successful_critter_hit_redraws_hud_wipe(void)
+{
+    candidate(0, 2, 0);
+    TEST_ASSERT_EQUAL_UINT(1, process_melee_attack_swing());
+    TEST_ASSERT_EQUAL_UINT8(96, (byte)object_at(2)[4]);
+    TEST_ASSERT_BITS_HIGH(0x80, DAT_0023c1d8);
+    TEST_ASSERT_EQUAL_UINT8(3, DAT_0023c11f);
+    clock_units = 0x40;
+    hud_panel_redraw_dispatch();
+    TEST_ASSERT_EQUAL_INT(1, wipe_frames);
+    TEST_ASSERT_EQUAL_HEX16(0x20ad, frames[0]);
+    TEST_ASSERT_EQUAL_INT(1, hud_flushes);
+}
+static void test_combat_hud_wipe_finishes_and_clears_dirty_bit(void)
+{
+    set_hud_status_value(7, 3);
+    for (unsigned tick = 1; tick <= 22; tick++) {
+        clock_units = tick * 0x40;
+        hud_panel_redraw_dispatch();
+    }
+    TEST_ASSERT_EQUAL_INT(7, wipe_frames);
+    const uint expected[] = {0x20ad, 0x20ae, 0x20af, 0x20ae, 0x20ad, 6, 0x20a6};
+    for (unsigned i = 0; i < 7; i++) TEST_ASSERT_EQUAL_HEX16(expected[i], frames[i]);
+    TEST_ASSERT_BITS_LOW(0x80, DAT_0023c1d8);
+    TEST_ASSERT_EQUAL_UINT8(0, DAT_0023c12f);
+    TEST_ASSERT_EQUAL_UINT16(0, DAT_0023c220);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -318,5 +391,7 @@ int main(void)
     RUN_TEST(test_already_dead_critter_does_not_award_experience_again);
     RUN_TEST(test_scripted_critter_can_refuse_death);
     RUN_TEST(test_critter_kill_does_not_award_player_experience);
+    RUN_TEST(test_successful_critter_hit_redraws_hud_wipe);
+    RUN_TEST(test_combat_hud_wipe_finishes_and_clears_dirty_bit);
     return UNITY_END();
 }

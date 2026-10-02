@@ -110,12 +110,14 @@ Run it with `ctest --test-dir build -R '^inventory$' --output-on-failure`.
 `tests/test_combat.c` exercises the real melee hit resolver, nearest-target
 selector, hit-zone and facing calculations, swing processing, melee damage
 calculation, HP updates, death-state transitions, scripted death exceptions,
-and kill experience. It covers hitting a critter, missing,
+kill experience, and the combat-triggered HUD wipe redraw. It covers hitting a critter, missing,
 excluding the attacker, nearest-target selection, all 64 heading pairs,
 failed skill checks, critter faction checks, lethal hits, repeat hits on dead
 critters, and kills by other critters. Collision candidates,
 object lookup, position projection, skill/random rolls, effects, conversation
-UI, and the final XP grant are fixtures; HP and death-state changes are real.
+UI, the final XP grant, other HUD tickers, and sprite output are fixtures; HP,
+death-state changes, HUD status requests, redraw dispatch, and wipe animation
+state are real. The wipe regression verifies its frame sequence and completion.
 Run it with `ctest --test-dir build -R '^combat$' --output-on-failure`.
 
 `tests/test_traps.c` follows the real level-one orb at (58,13), near (57,13),

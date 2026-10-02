@@ -2411,6 +2411,8 @@ void hud_panel_wipe_transition_tick()
 
 {
   int iVar1;
+  /* Original .data at 0x87200; ARM 0x6e27c..0x6e284 indexes halfwords. */
+  static const ushort wipe_frames[6] = {0x20a7,0x20a8,0x20a9,0x20a8,0x20a7,0};
 
   if ((uint)DAT_0023c12f == (uint)DAT_0023c11f) {
     DAT_0023c220 = 2;
@@ -2433,7 +2435,7 @@ LAB_0006e244:
   else {
     DAT_0023c220 = DAT_0023c220 + 1;
     sprite_list_set_frame_id((int)DAT_0023c21c,
-                 (uint)DAT_0023c12f * 3 + -3 + (uint)*(ushort *)(iVar1 * 2 + 0x87200));
+                 (uint)DAT_0023c12f * 3 + -3 + (uint)wipe_frames[iVar1]);
   }
   if (5 < DAT_0023c220) {
     DAT_0023c25c = 0;

@@ -189,6 +189,8 @@ if(BUILD_TESTING)
     src/combat.c:apply_damage_to_object src/combat.c:award_monster_kill_experience
     src/ai.c:handle_monster_death src/ai.c:initiate_npc_death
     src/ai.c:resolve_unique_npc_special_behavior
+    src/hud.c:set_hud_status_value src/hud.c:hud_panel_redraw_dispatch
+    src/hud.c:hud_panel_wipe_transition_tick
     src/combat.c:resolve_melee_swing_hit)
   add_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
   target_compile_definitions(test_traps PRIVATE
