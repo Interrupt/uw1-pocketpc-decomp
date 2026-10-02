@@ -636,7 +636,7 @@ short param_1;
   char *pRecord;
 
   if (((short)DAT_00084f10 < 1) || ((&DAT_00250658)[(short)DAT_00084f10] == '\0')) {
-    uVar3 = FUN_000575c4(local_20);
+    uVar3 = poll_keyboard_char_input(local_20);
     bVar2 = false;
     if ((uVar3 & 2) == 0) goto LAB_00027754;
   }

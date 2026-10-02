@@ -6091,3 +6091,122 @@ undefined2 * param_2;
   *param_2 = uVar1;
   return;
 }
+
+
+// was FUN_00057570 -- clears the pending-keyboard-char sentinel
+// (DAT_00086968) back to "none pending" (-1).
+void reset_keyboard_char_input()
+
+{
+  if (DAT_00086968 != -1) {
+    DAT_00086968 = -1;
+  }
+  return;
+}
+
+
+
+// was FUN_0005758c -- confirmed genuinely empty (no body beyond
+// `return;`). Always called immediately after reset_keyboard_char_input
+// (player.c, end of a level-up sequence) -- possibly a vestigial
+// hook point or focus-reset stub the original build never filled in.
+// Named for its call-site pairing rather than any observed behavior.
+void noop_post_input_reset_hook()
+
+{
+  return;
+}
+
+
+
+// was FUN_00057590 -- warps the mouse cursor to (param_1,param_2)
+// directly, bracketed by a cursor-hide-depth pop/idle-tick pair.
+// Confirmed used by automap.c to snap the cursor onto a map-note
+// marker during note text entry.
+void warp_mouse_cursor(param_1,param_2)
+undefined2 param_1;
+undefined2 param_2;
+
+{
+  decrement_cursor_hide_depth();
+  FUN_00057e54();
+  g_mouse_x = param_1;
+  g_mouse_y = param_2;
+  cursor_show_idle_tick();
+  return;
+}
+
+
+
+// was FUN_000575c4 -- polls for a pending keyboard character (via
+// FUN_00058738, not yet named), clearing DAT_00086968's "pending"
+// sentinel back to -1 (0xffff) when none is available, and recording
+// the result in DAT_00204850. Confirmed as keyboard polling by an
+// existing debug comment at its automap.c call site ("key-poll:
+// poll_keyboard_char_input returned").
+int poll_keyboard_char_input(param_1)
+short * param_1;
+
+{
+  short sVar1;
+
+  sVar1 = FUN_00058738();
+  *param_1 = sVar1;
+  if (sVar1 == 0) {
+    DAT_00086968 = 0xffff;
+  }
+  DAT_00204850 = *param_1;
+  return (int)*param_1;
+}
+
+
+
+// was FUN_000576d0 -- a "press any key or move the mouse" modal wait:
+// loops flushing the display and polling input/mouse state
+// (optionally ticking sticky-mode handlers when param_1 is set) until
+// poll_keyboard_char_input reports a key or the mouse has moved more
+// than ~6 pixels (Manhattan distance) from its starting position.
+// NOTE: interact.c's call site passes no argument at all despite this
+// function taking one parameter, while every other call site passes
+// literal 1 -- possibly the same dropped-argument idiom fixed several
+// times this session, but not confirmed/fixed here (lower-stakes
+// effect than previously confirmed cases: param_1 only gates an
+// optional tick during the wait, not a crash-causing path) -- see
+// todo.md.
+int wait_for_key_or_mouse_move(param_1)
+int param_1;
+
+{
+  uint uVar1;
+  uint uVar2;
+  short sVar3;
+  int iVar4;
+  short local_18;
+  short local_16;
+  short local_14;
+  short local_12;
+  undefined1 auStack_10 [4];
+  
+  iVar4 = 0;
+  get_mouse_position(&local_16,&local_12);
+  while( true ) {
+    sVar3 = poll_keyboard_char_input(auStack_10);
+    if ((sVar3 == 0) || (iVar4 != 0)) break;
+    flush_dirty_rect_to_display(1);
+    if (param_1 != 0) {
+      dispatch_sticky_mode_handlers();
+    }
+    poll_input_event(0);
+    FUN_00057904(1);
+    FUN_00058734();
+    update_mouse_state();
+    get_mouse_position(&local_18,&local_14);
+    uVar1 = (int)local_18 - (int)local_16 >> 0x1f;
+    uVar2 = (int)local_14 - (int)local_12 >> 0x1f;
+    if (6 < (int)((((int)local_14 - (int)local_12 ^ uVar2) - uVar2) +
+                 (((int)local_18 - (int)local_16 ^ uVar1) - uVar1))) {
+      iVar4 = 1;
+    }
+  }
+  return iVar4;
+}

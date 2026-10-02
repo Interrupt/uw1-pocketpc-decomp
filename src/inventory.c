@@ -237,7 +237,7 @@ short param_1;
         wait_for_click_release(1);
         return;
       }
-      if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = FUN_000576d0(1), iVar6 != 0)) {
+      if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = wait_for_key_or_mouse_move(1), iVar6 != 0)) {
         puVar7 = (ushort *)resolve_object_link(&g_equipped_items + iVar9 * 2);
         uVar3 = *puVar7;
         if (((uVar3 & 0x8000) == 0) || ((puVar7[3] & 0x8000) != 0)) {

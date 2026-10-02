@@ -4168,7 +4168,7 @@ int param_4;
     if (*(short *)(param_3 + (short)param_2 * 2) == 0) {
       return;
     }
-    iVar2 = FUN_000576d0(1);
+    iVar2 = wait_for_key_or_mouse_move(1);
     if (iVar2 != 0) {
       if (((short)local_10 == 0) && (DAT_000bc008 == '\0')) {
         return;

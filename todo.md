@@ -23,6 +23,21 @@
       139, settle_mobile_to_immobile), unaffected -- different subsystem,
       as expected. Still open.
 
+## Noted this round (code-cleanup-first-pass, keyboard/cursor input cluster) -- NOT fixed
+- `wait_for_key_or_mouse_move` (was `FUN_000576d0`) takes one
+  parameter (gates whether `dispatch_sticky_mode_handlers` runs
+  during the wait); `interact.c`'s call site passes zero arguments
+  while the other three call sites (`uw.c`, `babl.c`, `inventory.c`)
+  all pass literal `1`. Possibly the same dropped-argument idiom
+  fixed several times this session, but weaker evidence than those
+  confirmed cases: only one oddball site (not several agreeing), and
+  the parameter's effect is a UI-responsiveness choice (whether to
+  tick sticky-mode handlers while waiting) rather than something that
+  provably crashes or silently no-ops without it. Left unfixed --
+  revisit if a concrete symptom (e.g. interact.c's wait path feeling
+  unresponsive, or a sticky-mode handler firing/not-firing
+  unexpectedly during it) is ever reported.
+
 ## Fixed this round (code-cleanup-first-pass, mouse hotspot-tracking cluster)
 - [x] `is_mouse_within_tracked_hotspot` (was `FUN_000571c0`) computed
       and discarded a real hit-test result from `FUN_00057d1c` (own

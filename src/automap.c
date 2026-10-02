@@ -806,7 +806,7 @@ LAB_000170bc:
         (&DAT_000baa0d)[iVar7] = (char)((uint)(local_60 + -4) >> 8);
         local_58[0] = '\0';
         iVar8 = *(short *)(&DAT_000baa0a + iVar7) + -1;
-        FUN_00057590(*(short *)(&DAT_000baa0a + iVar7) + 9,local_60 + -0x12);
+        warp_mouse_cursor(*(short *)(&DAT_000baa0a + iVar7) + 9,local_60 + -0x12);
 LAB_000171bc:
         sVar2 = poll_input_event(0);
         if (sVar2 < 0) goto LAB_000171a4;
@@ -823,8 +823,8 @@ LAB_0001764c:
   wait_for_click_release(1);
   return;
 LAB_000171a4:
-  sVar2 = FUN_000575c4(&local_5a);
-  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-poll: FUN_000575c4 returned %d local_5a=%d\n", (int)sVar2, (int)local_5a);
+  sVar2 = poll_keyboard_char_input(&local_5a);
+  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-poll: poll_keyboard_char_input returned %d local_5a=%d\n", (int)sVar2, (int)local_5a);
   if (0 < sVar2) {
 LAB_000171d0:
     if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-loop: sVar2=%d local_58=\"%s\"\n", (int)sVar2, local_58);
@@ -872,7 +872,7 @@ LAB_000171d0:
     local_58[(short)iVar10 + 1] = '\0';
     iVar4 = measure_text_width(local_58);
     iVar8 = *(short *)(&DAT_000baa0a + iVar7) + iVar4 + -1;
-    FUN_00057590(*(short *)(&DAT_000baa0a + iVar7) + iVar4 + 9,local_60 + -0x12);
+    warp_mouse_cursor(*(short *)(&DAT_000baa0a + iVar7) + iVar4 + 9,local_60 + -0x12);
     draw_text_string(local_58,(int)*(short *)(&DAT_000baa0a + iVar7),
                  (int)*(short *)(&DAT_000baa0c + iVar7));
     flush_dirty_rect_to_display(1);
@@ -896,7 +896,7 @@ LAB_0001739c:
 LAB_00017404:
   decrement_cursor_hide_depth();
   draw_automap_notes();
-  FUN_00057590(iVar8 + 0x16,local_60 + -7);
+  warp_mouse_cursor(iVar8 + 0x16,local_60 + -7);
   FUN_00057cac(2);
   flush_dirty_rect_to_display(1);
   DAT_000bbef8 = 0;

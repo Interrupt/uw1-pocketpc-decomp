@@ -2862,7 +2862,7 @@ short DAT_0023bd80;
      1  interact_attack    (0x3f368) attack (swing toward the cursor)
      2  interact_look      (0x3f14c) look / examine ("You see ..." via
                           dispatch_object_action; also a use/get fallback
-                          when FUN_000576d0() says so)
+                          when wait_for_key_or_mouse_move() says so)
      3  interact_default   (0x3ee90) get / pick up an object (its own
                           body does check_object_carry_weight +
                           attach_picked_up_object_to_cursor); falls back
@@ -12232,7 +12232,7 @@ undefined1 * param_1;
       param_1[7] = (char)((uVar5 << 0x16) >> 0x18);
     }
   }
-  FUN_000576d0(1);
+  wait_for_key_or_mouse_move(1);
   return puVar4;
 }
 
@@ -13954,94 +13954,6 @@ uint param_3;
 
 
 
-void FUN_00057570()
-
-{
-  if (DAT_00086968 != -1) {
-    DAT_00086968 = -1;
-  }
-  return;
-}
-
-
-
-void FUN_0005758c()
-
-{
-  return;
-}
-
-
-
-void FUN_00057590(param_1,param_2)
-undefined2 param_1;
-undefined2 param_2;
-
-{
-  decrement_cursor_hide_depth();
-  FUN_00057e54();
-  g_mouse_x = param_1;
-  g_mouse_y = param_2;
-  cursor_show_idle_tick();
-  return;
-}
-
-
-
-int FUN_000575c4(param_1)
-short * param_1;
-
-{
-  short sVar1;
-  
-  sVar1 = FUN_00058738();
-  *param_1 = sVar1;
-  if (sVar1 == 0) {
-    DAT_00086968 = 0xffff;
-  }
-  DAT_00204850 = *param_1;
-  return (int)*param_1;
-}
-
-
-
-int FUN_000576d0(param_1)
-int param_1;
-
-{
-  uint uVar1;
-  uint uVar2;
-  short sVar3;
-  int iVar4;
-  short local_18;
-  short local_16;
-  short local_14;
-  short local_12;
-  undefined1 auStack_10 [4];
-  
-  iVar4 = 0;
-  get_mouse_position(&local_16,&local_12);
-  while( true ) {
-    sVar3 = FUN_000575c4(auStack_10);
-    if ((sVar3 == 0) || (iVar4 != 0)) break;
-    flush_dirty_rect_to_display(1);
-    if (param_1 != 0) {
-      dispatch_sticky_mode_handlers();
-    }
-    poll_input_event(0);
-    FUN_00057904(1);
-    FUN_00058734();
-    update_mouse_state();
-    get_mouse_position(&local_18,&local_14);
-    uVar1 = (int)local_18 - (int)local_16 >> 0x1f;
-    uVar2 = (int)local_14 - (int)local_12 >> 0x1f;
-    if (6 < (int)((((int)local_14 - (int)local_12 ^ uVar2) - uVar2) +
-                 (((int)local_18 - (int)local_16 ^ uVar1) - uVar1))) {
-      iVar4 = 1;
-    }
-  }
-  return iVar4;
-}
 
 
 

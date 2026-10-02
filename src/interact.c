@@ -158,7 +158,7 @@ void interact_look()
     wait_for_click_release(1);
   }
   else {
-    iVar2 = FUN_000576d0();
+    iVar2 = wait_for_key_or_mouse_move();
     if (iVar2 != 0) {
       interact_default();
     }

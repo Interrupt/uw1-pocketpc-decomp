@@ -763,7 +763,7 @@ short param_1;
   
   if (param_1 < 0) {
     DAT_0023bf50 = 0;
-    FUN_000575c4(local_28);
+    poll_keyboard_char_input(local_28);
     psVar2 = DAT_00085a6c;
     if ((local_28[0] != 1) &&
        (((local_28[0] & 1) == 0 || ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0)))) {
@@ -924,7 +924,7 @@ undefined4 param_1;
   do {
     iVar2 = read_realtime_clock_units();
   } while ((uint)(iVar2 - iVar1) < 0x18);
-  FUN_00057570();
+  reset_keyboard_char_input();
   return;
 }
 

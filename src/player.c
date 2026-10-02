@@ -2371,8 +2371,8 @@ LAB_00070c78:
 LAB_00070b58:
   refresh_player_equipment_effects();
   busy_wait_ms(0x20);
-  FUN_00057570();
-  FUN_0005758c();
+  reset_keyboard_char_input();
+  noop_post_input_reset_hook();
   return;
 }
 
