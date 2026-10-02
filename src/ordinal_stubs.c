@@ -213,9 +213,11 @@ long Ordinal_171()
     return 0;
 }
 
-long Ordinal_172()
+/* GetFileSize(handle, optional high-word pointer). The picture viewer uses
+   this to allocate and read each LPF resource; returning zero skips it. */
+long Ordinal_172(int handle, unsigned int *high)
 {
-    return 0;
+    return uw_file_size(handle, high);
 }
 
 long Ordinal_173()

@@ -196,6 +196,53 @@ if(BUILD_TESTING)
   target_compile_definitions(test_combat PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
+  add_game_unit_test(illustrations
+    uw.c:FUN_00049008
+    src/interact.c:trigger_terrain_discovery_illustration
+    src/interact.c:trigger_inscription_illustration
+    src/babl.c:record_illustration_discovery_and_display)
+  target_compile_definitions(test_illustrations PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  target_sources(test_illustrations PRIVATE src/debug.c)
+  add_game_unit_test(illustration_render
+    src/babl.c:render_babl_dialog_window src/babl.c:display_book_or_scroll_page
+    src/babl.c:bubble_sort_indices_by_key_table src/babl.c:babl_render_tick
+    src/babl.c:FUN_000362e8 src/babl.c:FUN_00036300
+    src/babl.c:FUN_00036308 src/babl.c:FUN_00036394
+    src/babl.c:FUN_000363f0 src/babl.c:FUN_00036404
+    src/babl.c:FUN_00036418 src/babl.c:FUN_000365bc
+    src/babl.c:FUN_000365fc src/babl.c:FUN_0003663c
+    src/babl.c:FUN_00036698 src/babl.c:FUN_00036344
+    src/babl.c:babl_render_op_show_code
+    src/babl.c:decompress_rle_stream src/babl.c:pack_byte_into_word
+    src/babl.c:read_rle_op_code src/babl.c:rle_op_handle_short_run
+    src/babl.c:rle_op_copy_pairs_even src/babl.c:rle_op_copy_pairs_odd
+    src/babl.c:rle_op_fill_doubled_byte_even src/babl.c:rle_op_fill_doubled_byte_odd
+    src/babl.c:rle_op_finalize_length src/babl.c:rle_op_mark_stream_done
+    src/audio.c:load_voice_sample_page src/audio.c:read_voice_sample_page_chunk
+    src/ordinal_stubs.c:ordfloat_bits_to_float
+    src/ordinal_stubs.c:ordfloat_float_to_bits
+    src/ordinal_stubs.c:Ordinal_2032 src/ordinal_stubs.c:Ordinal_2026
+    src/ordinal_stubs.c:Ordinal_2020 src/ordinal_stubs.c:Ordinal_2018
+    src/graphics.c:expand_pals_bytes
+    src/graphics.c:convert_palette_bgrx_to_rgb
+    src/graphics.c:build_rgb565_palette
+    src/graphics.c:bitmap_blit_to_framebuffer
+    src/hud.c:flush_dirty_rect_to_display src/hud.c:dirty_rect_union
+    src/hud.c:main_loop_hud_flush src/graphics.c:flush_dungeon_frame
+    uw.c:FUN_00049924
+    uw.c:@DAT_00085668_real_table
+    src/gx_stub.c:@uw_present_state src/gx_stub.c:@g_present_state
+    src/gx_stub.c:uw_begin_present_batch src/gx_stub.c:uw_end_present_batch
+    src/gx_stub.c:uw_begin_modal_present src/gx_stub.c:uw_end_modal_present
+    src/gx_stub.c:uw_defer_present
+    src/ordinal_stubs.c:Ordinal_172
+    src/input.c:wait_for_click_release src/input.c:next_input_event
+    uw.c:peek_input_event uw.c:poll_input_event uw.c:poll_mouse_event
+    uw.c:FUN_00058738 uw.c:FUN_00057904 uw.c:FUN_000578fc)
+  target_sources(test_illustration_render PRIVATE src/debug.c src/file_io.c)
+  target_compile_definitions(test_illustration_render PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(scheduler
     src/scheduler.c:scheduler_tick src/scheduler.c:scheduler_step_entry
     src/scheduler.c:scheduler_finish_entry src/scheduler.c:scheduler_despawn_entry

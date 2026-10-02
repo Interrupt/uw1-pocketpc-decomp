@@ -2205,19 +2205,38 @@ undefined1 DAT_00101968_backing[8192];
 undefined1 DAT_0023c698_backing[32768];
 #define DAT_0023c698 DAT_0023c698_backing[0]
 ushort DAT_00101a6c;
-undefined4 DAT_00101a70;
+/* Bitmap workspace supplied by cache_ambient_sound_handle; retain the full
+   allocation address on 64-bit hosts. */
+uintptr_t DAT_00101a70;
 /* Dispatch table of babl conversation-text render-time opcode handlers
    (distinct from the babl_builtin_* script-language builtins): a raw
    compiled dialogue-text stream can embed a byte < 0x10 that indexes
    this table, each entry a (script_arg_ptr, render_state_ptr) ->
    words-consumed handler, called from the conversation-rendering loop
-   at its three known call sites. Known entries: babl_render_op_wrap_message,
-   babl_render_op_say. */
-undefined *PTR_FUN_00085408;
-undefined1 DAT_00085448_backing[32768];
+   at its three known call sites. Restored all 16 entries from the original
+   ARM table at 0x85408, including window timing and dismissal opcodes. */
+codeval *const PTR_FUN_00085408[16] = {
+  babl_render_op_wrap_message,
+  FUN_000362e8,
+  FUN_00036300,
+  FUN_00036308,
+  FUN_00036394,
+  FUN_000363f0,
+  FUN_00036404,
+  FUN_00036418,
+  babl_render_op_show_code,
+  FUN_000365bc,
+  FUN_000365fc,
+  FUN_0003663c,
+  FUN_00036698,
+  babl_render_op_say,
+  FUN_00036344,
+  babl_render_op_play_sound
+};
+undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
 char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char *DAT_002506ec;
-undefined1 DAT_00085460_backing[32768];
+undefined1 DAT_00085460_backing[11] = "\\CSXXX.N00";
 /* Was `uint`, truncating the real pointer this holds (`DAT_002029cc +
    0x5b00`, assigned in reset_level_object_arena -- see there) on this 64-bit host.
    Most uses are pointer<->pointer comparisons or subtractions between
@@ -2615,7 +2634,9 @@ short DAT_00201c94;
    see each site's own comment). */
 void (*const DAT_00085668_real_table[48])(void) = {
   /* mode 0 (in-game/dungeon view) */
-  (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))dungeon_view_anim_tick,
+  /* Original bit 1 is the 0x3c190 thunk to render_dungeon_frame_timed
+     (0x5bbe0); picture dismissal requests this bit via FUN_00049924(2). */
+  (void(*)(void))enter_dungeon_view, (void(*)(void))render_dungeon_frame_timed, 0, (void(*)(void))dungeon_view_anim_tick,
   0, 0, 0, 0,
   0, (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))handle_game_victory_sequence, (void(*)(void))movement_pacing_handler,
   (void(*)(void))sync_player_stats_to_hud, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
@@ -6779,18 +6800,7 @@ undefined *PTR_Ordinal_35_000841cc;
 
 
 
-/* g_suppress_frame_timed_flush: lets main_loop_hud_flush's per-tick forced
-   render_dungeon_frame_timed() call (see its own comment) skip THIS
-   function's real screen flush, since main_loop_hud_flush already does its
-   own explicit flush_dirty_rect_to_display(1) right after (once
-   poll_input_bindings and the HUD dispatch have also run). Without this,
-   every tick called GXEndDraw() twice -- once here, once from that trailing
-   flush -- and each is independently vsync-throttled (see GXEndDraw's own
-   comment: real GAPI hardware blocked every call until the next refresh),
-   roughly doubling real per-tick time. spin_view_full_rotation's own call site (a
-   rare one-shot 64-substep view-spin animation with no other per-substep
-   flush) leaves the flag clear and keeps flushing every substep as before. */
-int g_suppress_frame_timed_flush = 0;
+
 
 
 
@@ -23835,5 +23845,3 @@ undefined4 param_1;
   }
   return uVar2;
 }
-
-

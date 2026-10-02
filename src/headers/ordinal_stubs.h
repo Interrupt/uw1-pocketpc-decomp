@@ -25,7 +25,7 @@ long Ordinal_167();
 long Ordinal_168();
 long Ordinal_170();
 long Ordinal_171();
-long Ordinal_172();
+long Ordinal_172(int handle, unsigned int *high);
 long Ordinal_173();
 long Ordinal_177();
 long Ordinal_181();

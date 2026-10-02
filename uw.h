@@ -1814,13 +1814,27 @@ extern undefined1 DAT_0023c698_backing[32768];
 #define DAT_0023c698 DAT_0023c698_backing[0]
 extern undefined1 DAT_00101968_backing[8192]; // babl render-text scratch buffer (message-format/filename reuse)
 #define DAT_00101968 DAT_00101968_backing[0]
-extern undefined1 DAT_00085448_backing[32768]; // render_babl_dialog_window's own local text-scratch buffer, copied into its huge stack buffer
-extern undefined1 DAT_00085460_backing[32768]; // record_illustration_discovery_and_display's own local scratch buffer
+extern undefined1 DAT_00085448_backing[11]; // Original cutscene filename template, including its terminator
+extern undefined1 DAT_00085460_backing[11]; // Original discovery-script filename template
+extern char s__DATA_grave_dat_00085cf8[];
 #define DAT_00085460 DAT_00085460_backing[0]
 #define DAT_00085448 DAT_00085448_backing[0]
 extern ushort DAT_00101a6c;
-extern undefined4 DAT_00101a70;
-extern undefined *PTR_FUN_00085408;
+extern uintptr_t DAT_00101a70;
+extern codeval *const PTR_FUN_00085408[16];
+undefined4 FUN_000362e8();
+undefined4 FUN_00036300();
+undefined4 FUN_00036308();
+undefined4 FUN_00036344();
+undefined4 FUN_00036394();
+undefined4 FUN_000363f0();
+undefined4 FUN_00036404();
+undefined4 FUN_00036418();
+undefined4 FUN_000365bc();
+undefined4 FUN_000365fc();
+undefined4 FUN_0003663c();
+undefined4 FUN_00036698();
+
 extern HWND__ *DAT_0023c548;
 extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[];
 extern char s__Program_Files_ZIO_Interactive_U_00087804[];
@@ -2337,6 +2351,9 @@ extern undefined2 DAT_00204830;
 extern undefined2 DAT_00204834;
 extern short DAT_00204840;
 extern short DAT_00204850;
+extern int DAT_0020484c;
+extern undefined4 DAT_00204868;
+extern char DAT_002506aa;
 extern int DAT_0020485c;
 extern int DAT_00204864;
 extern short DAT_0023bf48;
@@ -2607,7 +2624,6 @@ extern int g_force_redraw_no_xp;
 extern undefined1 g_msg_scroll_panel_state_backing[65536];
 #define g_msg_scroll_panel_state g_msg_scroll_panel_state_backing[0]
 extern undefined4 g_scroll_control_codes_enabled;
-extern int g_suppress_frame_timed_flush;
 extern unsigned int g_uw_frame_clock_units;
 extern char PTR_DAT_00087198_arr[16];
 #define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]

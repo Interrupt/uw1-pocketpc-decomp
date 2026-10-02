@@ -1206,10 +1206,10 @@ undefined4 reset_dialogue_speech_state()
 // read_voice_sample_page_chunk for the incremental/streaming variant
 // used during actual playback.
 undefined2 load_voice_sample_page(param_1,param_2,param_3,param_4)
-int param_1;
+intptr_t param_1;
 int param_2;
-int param_3;
-undefined4 param_4;
+intptr_t param_3;
+intptr_t param_4;
 
 {
   undefined2 uVar1;
@@ -1234,11 +1234,11 @@ undefined4 param_4;
 // exhausted. Used by the babl conversation-rendering loop to stream
 // sample audio in playback-sized pieces.
 uint read_voice_sample_page_chunk(param_1,param_2,param_3,param_4,param_5)
-int param_1;
+intptr_t param_1;
 ushort param_2;
-int param_3;
+intptr_t param_3;
 uint param_4;
-undefined4 param_5;
+intptr_t param_5;
 
 {
   uint uVar1;
