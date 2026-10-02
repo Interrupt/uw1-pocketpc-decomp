@@ -894,7 +894,7 @@ int param_3;
             (unsigned)uVar2, (int)uVar3, (int)uVar1, (void *)param_2);
   if ((uVar2 >> 6 & 7) == 0) {
     if (((uVar1 == 1) && (param_3 == 0)) && (param_1 != 0)) {
-      FUN_000545ac(param_2,param_1);
+      apply_trap_type_damage_effect(param_2,param_1);
     }
   }
   else if (uVar3 == 2) {

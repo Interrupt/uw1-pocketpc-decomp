@@ -1022,6 +1022,11 @@ extern undefined4 DAT_002020d4;
 extern int DAT_0023bc94;
 extern byte DAT_002046cc;
 extern byte DAT_002046d0;
+extern byte DAT_002046d8;
+extern byte DAT_002046dc;
+extern int DAT_002046e8;
+extern undefined1 DAT_002046e0;
+extern undefined1 DAT_002046e4;
 /* Globals defined in uw.c but also used by functions that now live in
    visibility.c (load_floor_texture_arenas) -- extern'd here so both
    translation units see the same storage. */
@@ -2109,6 +2114,7 @@ extern short * g_sweep_velocity;
 #define DAT_000869a1  (DAT_00086998_backing[9])
 #define DAT_000869a2  (DAT_00086998_backing[10])
 #define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
+#define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
 #define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
 #define DAT_002049d0 (DAT_002049c8_backing[0x08])
 #define DAT_002049d1 (DAT_002049c8_backing[0x09])
@@ -3530,10 +3536,10 @@ undefined4 cycle_active_light_source();
 void update_player_tick_effects();
 undefined4 decay_equipped_light_sources();
 void apply_drowning_hazard();
-undefined4 FUN_000542f8();
-undefined4 FUN_0005448c();
-void FUN_000545ac();
-undefined4 FUN_000546c4();
+undefined4 add_active_light_source();
+undefined4 apply_object_collision_scatter();
+void apply_trap_type_damage_effect();
+undefined4 resolve_collision_candidate_interaction();
 void build_object_placement_snapshot(); // was FUN_00054a00
 undefined4 sync_object_tile_position(); // was FUN_00054f6c
 ushort *reallocate_object_to_arena();

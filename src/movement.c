@@ -868,7 +868,7 @@ void sweep_land_on_surface()
   uVar11 = Ordinal_2005(0x32,(short)(uVar2 >> 4) + -600);
   uVar8 = Ordinal_2005(10,((int)sVar4 ^ uVar8) - uVar8);
   play_positional_sound_effect(0xf,(int)*psVar9 >> 5,(int)psVar9[1] >> 5,(uVar11 & 0xff) + (uVar8 & 0xff) + -0x28);
-  uVar8 = FUN_000546c4((int)DAT_00086998,(int)DAT_002049d2);
+  uVar8 = resolve_collision_candidate_interaction((int)DAT_00086998,(int)DAT_002049d2);
   psVar9 = DAT_00204874;
   if ((uVar8 & 0x18) != 0) {
     if ((uVar8 & 0x10) != 0) {

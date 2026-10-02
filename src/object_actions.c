@@ -857,7 +857,7 @@ undefined4 param_3;
 // the object's own position). Gates on tile_is_no_magic for most
 // action types (magic-disallowed tiles suppress the action), then
 // dispatches per type: teleport/message/sign display (0-3, via
-// FUN_000542f8), a "hold param_4 as cursor item" variant (4), pick-up
+// add_active_light_source), a "hold param_4 as cursor item" variant (4), pick-up
 // (5), several object-modifying handlers (6-10), a scheduled-drop
 // variant (0xb), a no-op (0xc), player status-effect toggles (0xd),
 // and a generic dialog-box trigger plus scheduler tick (0xe). Full
@@ -901,7 +901,7 @@ int param_4;
   case 3:
 LAB_00073c90:
     if ((param_3 != g_player_object) ||
-       (iVar2 = FUN_000542f8(param_1,param_2 & 0x3f,param_2 & 0xc0), iVar2 == 0)) {
+       (iVar2 = add_active_light_source(param_1,param_2 & 0x3f,param_2 & 0xc0), iVar2 == 0)) {
       return 0;
     }
     break;
@@ -2149,7 +2149,7 @@ ushort * param_1;
 // gated on a player nibble field and, if set, arms a scheduled
 // location-check callback and resets the player's tile position
 // (a "recall"/"teleport home" effect); cases 0/8/0xb funnel into a
-// shared FUN_000542f8 call with a different mode constant; case 0xc
+// shared add_active_light_source call with a different mode constant; case 0xc
 // does a broad player-state reset (clears carry weight, refreshes
 // equipment effects, redraws the HUD) -- likely a "resurrect" or
 // "reset character" command.
@@ -2194,7 +2194,7 @@ LAB_0007588c:
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar4 >> 8);
     break;
   case 7:
-    FUN_000542f8(0xb,1,param_2);
+    add_active_light_source(0xb,1,param_2);
     set_custom_view_target(0);
     set_view_subject_by_command(0xffffffff);
     break;
@@ -2221,7 +2221,7 @@ LAB_0007588c:
   case 0xb:
     uVar3 = 0;
 LAB_00075a0c:
-    FUN_000542f8(0xb,uVar3,param_2);
+    add_active_light_source(0xb,uVar3,param_2);
     break;
   case 0xc:
     free_player_inventory_chain((char *)g_player_object + 6);

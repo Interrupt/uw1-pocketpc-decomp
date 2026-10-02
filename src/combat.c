@@ -920,7 +920,7 @@ undefined4 resolve_melee_swing_hit()
   ushort *puVar6;
   uint uVar7;
   /* Same "6 independent locals treated as one contiguous record via
-     DAT_00202c6c" bug already fixed in FUN_000546c4's own sibling
+     DAT_00202c6c" bug already fixed in resolve_collision_candidate_interaction's own sibling
      collision-envelope caller (see its own comment, uw.c ~46514) --
      this function has the IDENTICAL local name set (local_3c/3a/38/
      34/33/32) and was never converted. Every DAT_00202c6c[N] read
@@ -2448,5 +2448,291 @@ int param_5;
   Ordinal_1063(acStack_4d + 1,pcVar9);
   message_scroll_print_wrapped(acStack_4d + 1);
   redraw_backpack_slot_widget(param_1);
+  return uVar7;
+}
+
+
+// was FUN_000542f8 -- grants the player a new active light source:
+// fails (returns 0) if the active-light count (DAT_00086df8+0x5f
+// bits 6-9) is already at its cap; otherwise stages a new slot with
+// type param_1 and radius param_2, rolls its starting fuel from
+// quality tier param_3 (0=torch 2d3, 1=fixed 1, '@'=lantern 2d8+6,
+// -0x80=brightest 3d20+24), increments the active count, and
+// refreshes equipment effects. Confirmed by dispatch_special_action's
+// SPECIAL action types 0-3, reached only for the player object --
+// a tile trigger that lights the player a torch/lantern.
+undefined4 add_active_light_source(param_1,param_2,param_3)
+uint param_1;
+uint param_2;
+char param_3;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  uint uVar3;
+  undefined1 *puVar4;
+  uint uVar5;
+  byte local_14;
+  
+  if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) == 0xc0) {
+    uVar1 = 0;
+  }
+  else {
+    uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf;
+    iVar2 = (uint)*(byte *)(DAT_00086df8 + uVar5 * 2 + 0x3f) * 0x100 + (param_2 & 0xff) * 0x10 +
+            (param_1 & 0xff);
+    puVar4 = (undefined1 *)(DAT_00086df8 + (uVar5 + 0x1f) * 2);
+    *puVar4 = (char)iVar2;
+    puVar4[1] = (char)((uint)iVar2 >> 8);
+    if (param_3 == '\0') {
+      uVar5 = roll_dice_sum(2,3);
+      uVar5 = uVar5 & 0xff;
+    }
+    else if (param_3 == '\x01') {
+      uVar5 = 1;
+    }
+    else if (param_3 == '@') {
+      uVar5 = roll_dice_sum(2,8);
+      uVar5 = (uVar5 & 0xff) + 6;
+    }
+    else if (param_3 == -0x80) {
+      uVar5 = roll_dice_sum(3,0x14);
+      uVar5 = (uVar5 & 0xff) + 0x18;
+    }
+    else {
+      uVar5 = (uint)local_14;
+    }
+    uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf;
+    iVar2 = (uint)*(byte *)(DAT_00086df8 + uVar3 * 2 + 0x3e) + (uVar5 & 0xff) * 0x100;
+    puVar4 = (undefined1 *)(DAT_00086df8 + (uVar3 + 0x1f) * 2);
+    *puVar4 = (char)iVar2;
+    puVar4[1] = (char)((uint)iVar2 >> 8);
+    uVar5 = (uint)*(ushort *)(DAT_00086df8 + 0x5f);
+    uVar5 = ((uVar5 & 0xffc0) + 0x40 ^ uVar5) & 0x3c0 ^ uVar5;
+    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
+    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
+    refresh_player_equipment_effects();
+    uVar1 = 1;
+  }
+  return uVar1;
+}
+
+
+
+// was FUN_0005448c -- default collision outcome for object param_2
+// when nothing else handles it (param_1, the object that struck it,
+// is unused): takes a position snapshot, and if the snapshot's
+// velocity-like field is nonzero, computes a randomized bounce/
+// scatter offset (Ordinal_2005 roll scaled by the object's own speed
+// field) and commits the new position via sync_object_tile_position.
+// Always returns 4. Confirmed as the fallback tail of
+// resolve_collision_candidate_interaction's door/usable-object checks.
+undefined4 apply_object_collision_scatter(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  undefined2 uVar1;
+  short sVar2;
+  char *iVar3;
+  undefined1 auStack_48 [10];
+  undefined2 local_3e;
+  undefined2 local_34;
+  short local_30;
+  undefined1 local_27;
+  undefined1 local_26;
+  
+  if (param_2 != 0) {
+    DAT_0010144c = (ushort)DAT_002046d8;
+    DAT_00101454 = (ushort)DAT_002046dc;
+    build_object_placement_snapshot(param_2,auStack_48);
+    iVar3 = DAT_00204874;
+    if (local_30 != 0) {
+      sVar2 = Ordinal_2005((int)local_30,(int)*(short *)(DAT_00204874 + 0x18) << 6);
+      uVar1 = *(undefined2 *)(iVar3 + 0x21);
+      if (0x80 < sVar2) {
+        sVar2 = 0x80;
+      }
+      local_27 = (undefined1)uVar1;
+      local_26 = (undefined1)((ushort)uVar1 >> 8);
+      local_34 = 0xeb;
+      DAT_0010144c = (ushort)DAT_002046d8;
+      iVar3 = (int)*(short *)(iVar3 + 10) * (int)sVar2;
+      DAT_00101454 = (ushort)DAT_002046dc;
+      if (iVar3 < 0) {
+        iVar3 = iVar3 + 0x3f;
+      }
+      local_3e = (undefined2)((int)(iVar3) >> 6);
+      sync_object_tile_position(param_2,auStack_48);
+    }
+  }
+  return 4;
+}
+
+
+
+// WARNING: Removing unreachable block (ram,0x00054668)
+
+// was FUN_000545ac -- looks up a base damage/flag pair for object
+// param_1's subtype (DAT_002027d0/DAT_002027d2, 3 bytes/entry), and
+// when a specific condition holds (param_1[0x12]==1 and that
+// subtype's flag byte == -0x40) adjusts the damage via a skill check
+// (+0x27) before applying it to param_1 through apply_direct_object_hit.
+// Confirmed called from use_object_on_target for class-0/family-1
+// targets -- a "use this object on a trap/trigger" damage effect.
+void apply_trap_type_damage_effect(param_1,param_2)
+byte * param_1;
+undefined4 param_2;
+
+{
+  byte bVar1;
+  undefined1 uVar2;
+  short sVar4;
+  int iVar5;
+  uint uVar6;
+  ushort uVar7;
+  undefined1 uVar3;
+  
+  iVar5 = (*param_1 & 0xf) * 3;
+  bVar1 = (&DAT_002027d0)[iVar5];
+  uVar7 = (ushort)bVar1;
+  if ((param_1[0x12] == 1) && ((&DAT_002027d2)[iVar5] == -0x40)) {
+    uVar6 = (*(byte *)(DAT_00086df8 + 0x27) + 0x18) * 8;
+    sVar4 = roll_skill_check((uint)*(byte *)(DAT_00086df8 + 0x27),10);
+    if (sVar4 == -1) {
+      uVar6 = uVar6 - 0x80;
+    }
+    else if (sVar4 == 2) {
+      uVar6 = uVar6 + 0xc0;
+    }
+    uVar7 = (ushort)((uVar6 & 0xffff) * (uint)bVar1 >> 8);
+  }
+  uVar2 = DAT_002046d8;
+  uVar3 = DAT_002046dc;
+  if (DAT_002046e8 == 0) {
+    uVar2 = DAT_002046e0;
+    uVar3 = DAT_002046e4;
+  }
+  apply_direct_object_hit(param_1[0x12],param_1,param_2,uVar2,uVar3,uVar7,-(&DAT_002027d2)[iVar5]);
+  return;
+}
+
+
+
+// was FUN_000546c4 -- resolves a collision between moving object
+// param_2 (a slot index) and collision-candidate param_1 (an index
+// into DAT_00202c38, or -1 for "the player directly"): marks the
+// candidate as processed, resolves both the candidate and param_2's
+// own records, and dispatches to resolve_skill_gated_unlock_or_use
+// for doors or use_object_on_target for usable objects on either
+// side, falling back to apply_object_collision_scatter when neither
+// applies. Confirmed called from both movement.c's player-movement
+// collision path and (twice) a weapon/trap collision path in uw.c.
+undefined4 resolve_collision_candidate_interaction(param_1,param_2)
+short param_1;
+undefined4 param_2;
+
+{
+  int iVar1;
+  ushort uVar2;
+  ushort uVar3;
+  ushort *puVar4;
+  ushort *puVar5;
+  undefined4 uVar7;
+  ushort uVar8;
+  byte bVar9;
+  int iVar10;
+  ushort *puVar11;
+  uint uVar6;
+  
+  puVar11 = (ushort *)&DAT_00202c38;
+  iVar1 = (int)param_1;
+  if (iVar1 != -1) {
+    iVar10 = iVar1 * 6;
+    uVar2 = *(ushort *)(&DAT_00202c3a + iVar10);
+    if ((uVar2 & 0x20) != 0) {
+      return 2;
+    }
+    (&DAT_00202c3a)[iVar10] = (byte)uVar2 | 0x20;
+    (&DAT_00202c3b)[iVar10] = (char)(uVar2 >> 8);
+  }
+  DAT_002046e0 = (byte)(DAT_002049c8 >> 3);
+  DAT_002046e4 = (byte)(DAT_002049ca >> 3);
+  puVar4 = (ushort *)get_object_record_by_slot_index(param_2);
+  /* HACK: get_object_record_by_slot_index legitimately returns NULL for an out-of-range/
+     empty slot (its own established contract, guarded at many other
+     call sites this session) and this immediately dereferenced it
+     unconditionally. Newly reachable via npc_ai_tick's placement-sweep
+     -> movement_collision_sweep -> sweep_collision_flags chain now that
+     this session's NPC-AI-cluster byte-scaling fixes let more objects
+     take that path for the first time; confirmed live crashing
+     (EXC_BAD_ACCESS at `uVar2 = *puVar4`) in several regression demos.
+     Match this function's own "nothing to do" early-out (return 2). */
+  if (puVar4 == (ushort *)0x0) {
+    return 2;
+  }
+  uVar2 = *puVar4;
+  if (iVar1 == -1) {
+    puVar11 = (ushort *)0x0;
+  }
+  if (iVar1 == -1) {
+    uVar8 = 0xffff;
+    bVar9 = 1;
+    puVar5 = puVar11;
+  }
+  else {
+    puVar5 = (ushort *)get_object_record_by_slot_index(puVar11[iVar1 * 3 + 1] >> 6);
+    /* HACK: same unguarded get_object_record_by_slot_index NULL-return case as the
+       puVar4 fix just above -- puVar5 is dereferenced (`*puVar5`)
+       a few lines down with no check. Same early-out. */
+    if (puVar5 == (ushort *)0x0) {
+      return 2;
+    }
+    uVar6 = (uint)DAT_002046e0 + (int)(short)puVar11[iVar1 * 3 + 2] & 0x3f;
+    uVar3 = (ushort)uVar6;
+    DAT_002046d8 = (byte)uVar6;
+    iVar10 = (int)(short)puVar11[iVar1 * 3 + 2] -
+             ((int)((uVar6 - (int)(short)(ushort)DAT_002046e0) * 0x10000) >> 0x10);
+    if (iVar10 < 0) {
+      iVar10 = iVar10 + 0x3f;
+    }
+    DAT_002046dc = (char)(iVar10 >> 6) + DAT_002046e4 & 0x3f;
+    uVar8 = *puVar5 & 0x1ff;
+    bVar9 = (&DAT_00202c97)[(short)uVar8 * 0xd] & 1;
+    if ((0xff < (short)param_2) || (0x3fff < (puVar11[iVar1 * 3 + 1] & 0xffc0))) goto LAB_000548b8;
+    if (((uVar2 & 0x1c0) != 0x40) && ((*(byte *)((char *)puVar4 + 0x15) & 0x80) != 0)) {
+      return 2;
+    }
+    *(byte *)((char *)puVar4 + 0x15) = *(byte *)((char *)puVar4 + 0x15) | 0x80;
+  }
+  uVar3 = (ushort)DAT_002046d8;
+LAB_000548b8:
+  if ((short)uVar8 != -1) {
+    if (((&DAT_00202c97)[(short)uVar8 * 0xd] & 2) == 0) {
+      if ((uVar8 & 0xffc0) == 0x180) {
+        uVar7 = resolve_skill_gated_unlock_or_use(puVar4,0,puVar5,0);
+        return uVar7;
+      }
+    }
+    else {
+      DAT_002020a4 = (ushort)DAT_002046dc;
+      DAT_002046e8 = 0;
+      DAT_002020a0 = uVar3;
+      use_object_on_target(puVar4,puVar5,0);
+    }
+  }
+  if (bVar9 == 0) {
+    return 2;
+  }
+  if (((&DAT_00202c97)[(short)(uVar2 & 0x1ff) * 0xd] & 2) != 0) {
+    DAT_002020a0 = (ushort)DAT_002046e0;
+    DAT_002020a4 = (ushort)DAT_002046e4;
+    DAT_002046e8 = 1;
+    use_object_on_target(puVar5,puVar4,0);
+    if ((short)DAT_002020a0 < 0) {
+      return 0x10;
+    }
+  }
+  uVar7 = apply_object_collision_scatter(puVar4,puVar5);
   return uVar7;
 }
