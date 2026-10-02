@@ -1757,3 +1757,1042 @@ void load_3d_object_models()
   Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);
   return;
 }
+
+
+// was FUN_00020a74 -- parses one DATA3D/*.E text-format 3D model script
+// (param_1 = file path, param_2 = ~16KB per-model output buffer) into
+// point positions and per-part (per-face) vertex-index lists. Called 29
+// times from load_3d_object_models at startup, once per model file. Point count
+// lives at output offset 0, part count at offset 4, points at
+// `8 + i*0xc` (3 back-to-back floats), parts at `0xc14 + p*0x60` (a
+// vertex count then that many vertex-index ints from offset +4) -- see
+// emit_catalog_object's own use of this layout. Despite computing a real
+// per-face normal (vec3_sub + vec3_cross, see vec3_cross's comment) and
+// resolving per-face color (EXTENDED_COLORS against g_model_known_ext_
+// colors), neither survives into this output buffer -- confirmed by
+// tracing the whole function, including the real ARM disassembly at the
+// normal's call site, not just this decompile. Only point positions and
+// vertex-index lists persist. Full writeup: object-rendering-findings.txt
+// UPDATE (7)/(8).
+/* Every .E model file in data/DATA3D/ is CRLF-terminated (confirmed via
+   `xxd` on ROCKBIG.E: the PARTS block's last entry ends "...8);\r\n}\r\n").
+   This parser's own end-of-PARTS-block check (s___c_1____00084954,
+   "%*c%1[}]" -- skip exactly one character, then test for '}') was
+   written assuming the ORIGINAL DOS/CE C runtime's text-mode fopen()
+   would already have collapsed that \r\n to a single \n, leaving %*c's
+   one-character skip landing exactly on '}'. POSIX fopen() never does
+   that translation regardless of mode string, so on this port the raw
+   \r survives, %*c skips it, and %1[}] then fails to match the '\n'
+   that follows -- the parser concludes there's ANOTHER part still to
+   read and parses one phantom extra PARTS entry off of "}\r\n\nNODES
+   {\r\n..." garbage (a degenerate 1-vertex "face" that reliably fails
+   to rasterize at runtime, confirmed live via UW_DEBUG_FACE51: every
+   .E model tested gets its real face count plus exactly one broken
+   trailing entry). Root-caused, not guessed: bisected with UW_DEBUG_
+   NEARCLIP_RANGE that the failing record's own point count is 1 before
+   near-clip ever touches it, then UW_DEBUG_EPARSE showed the parser
+   itself emitting a 53rd part (vertcount=1) for ROCKBIG.E's 52-entry
+   PARTS block. Fixed at the real root: strip \r from the file's own
+   byte stream before scanning, replicating the text-mode translation
+   the recovered scanf patterns were always written to expect, rather
+   than reworking every parser call site individually. */
+static void *uw_e_model_strip_cr(void *raw_fh) {
+  FILE *f = (FILE *)raw_fh;
+  long sz;
+  char *buf;
+  size_t n, r, w;
+  FILE *clean;
+  if (!f) return NULL;
+  if (fseek(f, 0, SEEK_END) != 0) return f;
+  sz = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  if (sz <= 0) return f;
+  buf = (char *)malloc((size_t)sz + 1);
+  if (!buf) return f;
+  n = fread(buf, 1, (size_t)sz, f);
+  fclose(f);
+  for (r = 0, w = 0; r < n; r++) {
+    if (buf[r] != '\r') buf[w++] = buf[r];
+  }
+  buf[w] = 0;
+  /* fmemopen keeps a reference to buf, not a copy -- intentionally never
+     freed (one small per-model leak at load time, ~29 models total,
+     same tolerance this codebase already extends to other load-time
+     scratch allocations). */
+  clean = fmemopen(buf, w, "r");
+  return clean ? clean : f;
+}
+
+void parse_e_model_file(param_1,param_2,flip_winding)
+char *param_1;
+undefined1 * param_2;
+int flip_winding; /* HACK: not part of the original recovered signature --
+                      see its own use site (the "HACK: flip_winding"
+                      comment, right before the PARTS block's per-face
+                      vertex-reversal) for the full rationale. */
+
+{
+  char stack0xffdc3228_buf [256];
+  char *stack0xffdc3228_ptr;
+  undefined1 uVar1;
+  char *pcVar2;
+  int iVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  undefined4 uVar7;
+  undefined4 *puVar8;
+  int *piVar9;
+  int iVar10;
+  undefined4 *puVar11;
+  int *piVar12;
+  undefined4 extraout_r3;
+  undefined1 *puVar13;
+  undefined1 *puVar14;
+  undefined4 extraout_r3_00;
+  char *pcVar15;
+  undefined *puVar16;
+  int *piVar17;
+  char cVar18;
+  int iVar19;
+  int *piVar20;
+  undefined4 *****pppppuVar21;
+  char local_260 [4];
+  /* local_25c/pvVar_fh hold the real fopen() handle from Ordinal_1113,
+     used across the whole function's Ordinal_1114 (fscanf) calls -- were
+     declared int, truncating the pointer on this 64-bit host. iVar3 is
+     reused throughout this function for unrelated numeric work
+     interleaved with "restore the file handle" (iVar3 = local_25c;)
+     idioms right before each Ordinal_1114 call, so it couldn't just be
+     retyped in place -- pvVar_fh takes over only those restore/use
+     sites. */
+  void *local_25c;
+  void *pvVar_fh;
+  undefined *local_258;
+  int local_254;
+  undefined4 local_250;
+  undefined1 auStack_24c [4];
+  undefined4 local_248;
+  undefined4 ***pppuStack_244;
+  undefined4 ****local_240;
+  int local_23c;
+  undefined4 local_238;
+  undefined4 local_234;
+  undefined4 local_230;
+  undefined4 local_22c;
+  int local_228;
+  int local_224;
+  int local_220;
+  undefined1 local_21c [4];
+  undefined4 local_218;
+  undefined4 ***local_214;
+  int local_210;
+  int local_20c;
+  int local_208;
+  int local_204;
+  undefined4 local_200;
+  int local_1fc;
+  undefined4 ****local_1f8;
+  int local_1f4;
+  undefined4 local_1f0;
+  undefined1 auStack_1ec [4];
+  int local_1e8;
+  int local_1e4;
+  int local_1e0;
+  undefined4 ***local_1dc;
+  undefined4 local_1d8;
+  undefined4 ***local_1d4;
+  undefined4 local_1d0;
+  int local_1cc;
+  undefined1 auStack_1c8 [104];
+  undefined1 auStack_160 [16];
+  undefined1 auStack_150 [16];
+  undefined1 auStack_140 [16];
+  char acStack_130 [260];
+
+  local_258 = &DAT_000da480;
+  Ordinal_1047(acStack_130,0,0x104);
+  pcVar2 = &DAT_0023cca8;
+    stack0xffdc3228_ptr = acStack_130;
+  do {
+    cVar18 = *pcVar2;
+    *stack0xffdc3228_ptr = cVar18; stack0xffdc3228_ptr = stack0xffdc3228_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar18 != '\0');
+  Ordinal_1063(acStack_130,param_1);
+  pvVar_fh = Ordinal_1113(acStack_130,&DAT_00084a24);
+  pvVar_fh = uw_e_model_strip_cr(pvVar_fh);
+  local_25c = pvVar_fh;
+  /* This whole function's 11 fatal-error checks (Ordinal_1102 message +
+     terminate_process, killing the entire process) originally treated any
+     malformed/unparseable ".E" model script as unrecoverable. That's far
+     too strict for a recompile whose parser for this text format is
+     itself reconstructed best-effort (see DAT_000849a8/DAT_000849ac/
+     DAT_000849c8's declaration comments -- several of this parser's own
+     format strings and keywords were unrecoverable and had to be
+     inferred from a real file's content), so a wrong guess anywhere in
+     this parser previously took the whole game down instead of just
+     this one model. Redirected to the function's own cleanup label
+     (fclose + bookkeeping) instead, so a bad/partially-understood model
+     is skipped rather than fatal. */
+  if (pvVar_fh == 0) {
+    goto LAB_0002263c;
+  }
+  param_2[0xc08] = 0;
+  param_2[0xc09] = 0;
+  param_2[0xc0a] = 0;
+  param_2[0xc0b] = 0;
+  param_2[0xc0c] = 0;
+  param_2[0xc0d] = 0;
+  param_2[0xc0e] = 0;
+  param_2[0xc0f] = 0;
+  param_2[0xc10] = 0;
+  param_2[0xc11] = 0;
+  param_2[0xc12] = 0;
+  param_2[0xc13] = 0;
+  Ordinal_1114(pvVar_fh,s__100s_00084a1c,auStack_1c8);
+  iVar4 = Ordinal_1065(auStack_1c8,s_BEGIN_00084a14);
+  if (iVar4 != 0) {
+    Ordinal_1102(s_Input_file_error__BEGIN_statemen_000849e8);
+    goto LAB_0002263c;
+  }
+  pppppuVar21 = (undefined4 *****)&pppuStack_244;
+  pcVar15 = &DAT_000d98c8;
+  Ordinal_1114(pvVar_fh,s__1s__a_z__1s_000849d8,auStack_24c,&DAT_000d98c8,pppppuVar21);
+  pcVar2 = pcVar15;
+  if (DAT_000db45c == (undefined1 *)0x0) {
+    do {
+      cVar18 = *pcVar15;
+      pcVar15 = pcVar15 + 1;
+      if (cVar18 != ' ') {
+        *pcVar2 = cVar18;
+        pcVar2 = pcVar2 + 1;
+      }
+    } while (cVar18 != '\0');
+    DAT_000db45c = &DAT_000d98c8;
+  }
+  piVar20 = (int *)&DAT_000c9dd8;
+  while( true ) {
+    pvVar_fh = local_25c;
+    iVar4 = Ordinal_1114(local_25c,s__100s_1s_000849cc,auStack_1c8,local_260,pppppuVar21);
+    if (((iVar4 == -1) && (iVar5 = Ordinal_1070(auStack_1c8,&DAT_000849c8,3), iVar5 == 0)) ||
+       ((iVar4 != 0 && (iVar5 = Ordinal_1065(auStack_1c8,&DAT_000849c8), iVar5 == 0))))
+    goto LAB_0002263c;
+    if (iVar4 == -1) break;
+    if ((iVar4 != 2) || (local_260[0] != '{')) {
+      Ordinal_1102(s_error___s__c_000849b8,auStack_1c8,(int)local_260[0]);
+    }
+    iVar4 = Ordinal_1065(auStack_1c8,s_VERSION_000849b0);
+    if (iVar4 == 0) {
+      Ordinal_1114(pvVar_fh,&DAT_000849ac,&DAT_000db454);
+      pcVar2 = &DAT_000849a8;
+LAB_00022604:
+      iVar4 = Ordinal_1114(pvVar_fh,pcVar2,local_260);
+    }
+    else {
+      iVar4 = Ordinal_1065(auStack_1c8,s_NAMES_000849a0);
+      if (iVar4 == 0) {
+        puVar16 = &DAT_000da480;
+        do {
+          pppppuVar21 = (undefined4 *****)&pppuStack_244;
+          local_1cc = Ordinal_1114(pvVar_fh,s__1s______1s_00084994,auStack_24c,puVar16,pppppuVar21);
+          uVar7 = 0;
+          if (local_1cc != 0) {
+            iVar4 = Ordinal_1068(puVar16);
+            puVar16 = puVar16 + iVar4 + 1;
+            uVar7 = extraout_r3;
+          }
+          iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260,uVar7,pppppuVar21);
+          DAT_000db458 = DAT_000db458 + 1;
+        } while (local_260[0] == ';');
+      }
+      else {
+        iVar4 = Ordinal_1065(auStack_1c8,s_POINTS_0008498c);
+        if (iVar4 == 0) {
+          iVar5 = -10000;
+          iVar3 = 10000;
+          g_model_parse_point_count = 0;
+          iVar4 = iVar3;
+          iVar10 = iVar5;
+          while( true ) {
+            pppppuVar21 = (undefined4 *****)&local_214;
+            iVar6 = Ordinal_1114(local_25c,s__d__d__d__00084980,&local_204,&local_224,pppppuVar21);
+            iVar19 = g_model_parse_point_count;
+            if (iVar6 != 3) break;
+            iVar6 = g_model_parse_point_count * 0x2c;
+            (&DAT_000d2ab0)[iVar6] = (char)local_204;
+            if (local_204 < iVar4) {
+              iVar4 = local_204;
+            }
+            (&DAT_000d2ab1)[iVar6] = (char)((uint)local_204 >> 8);
+            if (iVar10 < local_204) {
+              iVar10 = local_204;
+            }
+            (&DAT_000d2ab2)[iVar6] = (char)((uint)local_204 >> 0x10);
+            if (local_224 < iVar3) {
+              iVar3 = local_224;
+            }
+            (&DAT_000d2ab3)[iVar6] = (char)((uint)local_204 >> 0x18);
+            (&DAT_000d2ab4)[iVar6] = (char)local_224;
+            if (iVar5 < local_224) {
+              iVar5 = local_224;
+            }
+            (&DAT_000d2ab5)[iVar6] = (char)((uint)local_224 >> 8);
+            (&DAT_000d2ab6)[iVar6] = (char)((uint)local_224 >> 0x10);
+            (&DAT_000d2ab7)[iVar6] = (char)((uint)local_224 >> 0x18);
+            (&DAT_000d2ab8)[iVar6] = (char)local_214;
+            (&DAT_000d2ab9)[iVar6] = (char)((uint)local_214 >> 8);
+            (&DAT_000d2aba)[iVar6] = (char)((uint)local_214 >> 0x10);
+            (&DAT_000d2abb)[iVar6] = (char)((uint)local_214 >> 0x18);
+            (&DAT_000d2ac8)[iVar6] = 8;
+            (&DAT_000d2ac9)[iVar6] = 0;
+            (&DAT_000d2aca)[iVar6] = 0;
+            (&DAT_000d2acb)[iVar6] = 0;
+            (&DAT_000d2abc)[iVar6] = 0;
+            (&DAT_000d2abd)[iVar6] = 0;
+            (&DAT_000d2abe)[iVar6] = 0;
+            (&DAT_000d2abf)[iVar6] = 0;
+            (&DAT_000d2ad0)[iVar6] = 0;
+            (&DAT_000d2ad1)[iVar6] = 0;
+            (&DAT_000d2ad2)[iVar6] = 0;
+            (&DAT_000d2ad3)[iVar6] = 0;
+            (&DAT_000d2ac0)[iVar6] = 0;
+            (&DAT_000d2ac1)[iVar6] = 0;
+            (&DAT_000d2ac2)[iVar6] = 0;
+            (&DAT_000d2ac3)[iVar6] = 0;
+            /* Was `Ordinal_2032()` with the argument dropped -- the two
+               sibling conversions right below it (Y=local_224, Z=local_214)
+               both pass their value explicitly; this one, the X coordinate,
+               did not. Confirmed via a raw memory dump of the parsed
+               ROCKSMAL.E buffer: every point's first float came out as a
+               constant 3.0 (Ordinal_2032((float)x)'s bit pattern for x=3,
+               whatever this build's calling convention happened to leave in
+               the argument register) while Y/Z matched the source file
+               exactly. Same "dropped argument, register-leftover idiom
+               doesn't survive a literal recompile" bug class as everywhere
+               else in this file. */
+            uVar7 = Ordinal_2032(local_204);
+            param_2[iVar19 * 0xc + 8] = (char)uVar7;
+            param_2[iVar19 * 0xc + 9] = (char)((uint)uVar7 >> 8);
+            param_2[iVar19 * 0xc + 10] = (char)((uint)uVar7 >> 0x10);
+            param_2[iVar19 * 0xc + 0xb] = (char)((uint)uVar7 >> 0x18);
+            uVar7 = Ordinal_2032(local_224);
+            puVar13 = param_2 + (g_model_parse_point_count + 1) * 0xc;
+            *puVar13 = (char)uVar7;
+            puVar13[1] = (char)((uint)uVar7 >> 8);
+            puVar13[2] = (char)((uint)uVar7 >> 0x10);
+            puVar13[3] = (char)((uint)uVar7 >> 0x18);
+            uVar7 = Ordinal_2032(local_214);
+            iVar19 = g_model_parse_point_count;
+            param_2[g_model_parse_point_count * 0xc + 0x10] = (char)uVar7;
+            param_2[iVar19 * 0xc + 0x11] = (char)((uint)uVar7 >> 8);
+            param_2[iVar19 * 0xc + 0x12] = (char)((uint)uVar7 >> 0x10);
+            param_2[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
+            g_model_parse_point_count = g_model_parse_point_count + 1;
+            if (600 < g_model_parse_point_count) {
+              Ordinal_1102(s_Too_many_points___d__00084968);
+              goto LAB_0002263c;
+            }
+          }
+          DAT_000db4fc = g_model_parse_point_count;
+          param_2[1] = (char)((uint)g_model_parse_point_count >> 8);
+          *param_2 = (char)iVar19;
+          param_2[2] = (char)((uint)iVar19 >> 0x10);
+          param_2[3] = (char)((uint)iVar19 >> 0x18);
+          uVar7 = Ordinal_2032(iVar4);
+          param_2[0x3c1c] = (char)uVar7;
+          param_2[0x3c1d] = (char)((uint)uVar7 >> 8);
+          param_2[0x3c1e] = (char)((uint)uVar7 >> 0x10);
+          param_2[0x3c1f] = (char)((uint)uVar7 >> 0x18);
+          uVar7 = Ordinal_2032(iVar10 - iVar4);
+          param_2[0x3c20] = (char)uVar7;
+          param_2[0x3c21] = (char)((uint)uVar7 >> 8);
+          param_2[0x3c22] = (char)((uint)uVar7 >> 0x10);
+          param_2[0x3c23] = (char)((uint)uVar7 >> 0x18);
+          uVar7 = Ordinal_2032(iVar3);
+          param_2[0x3c24] = (char)uVar7;
+          param_2[0x3c25] = (char)((uint)uVar7 >> 8);
+          param_2[0x3c26] = (char)((uint)uVar7 >> 0x10);
+          param_2[0x3c27] = (char)((uint)uVar7 >> 0x18);
+          uVar7 = Ordinal_2032(iVar5 - iVar3);
+          pcVar2 = &DAT_000849a8;
+          param_2[0x3c28] = (char)uVar7;
+          param_2[0x3c29] = (char)((uint)uVar7 >> 8);
+          param_2[0x3c2a] = (char)((uint)uVar7 >> 0x10);
+          param_2[0x3c2b] = (char)((uint)uVar7 >> 0x18);
+          pvVar_fh = local_25c;
+          goto LAB_00022604;
+        }
+        iVar4 = Ordinal_1065(auStack_1c8,s_PARTS_00084960);
+        if (iVar4 == 0) {
+          DAT_000c8b00 = &DAT_000c4c38;
+          g_model_parse_part_count = 0;
+          do {
+            iVar5 = Ordinal_1114(pvVar_fh,s___c_1____00084954,local_260);
+            iVar4 = 1;
+            if (iVar5 != 1) {
+              puVar13 = local_21c;
+              pppppuVar21 = (undefined4 *****)&local_1dc;
+              Ordinal_1114(pvVar_fh,s__d__1s__d__x__00084944,&local_23c,&local_254,pppppuVar21,puVar13)
+              ;
+              iVar4 = g_model_parse_part_count;
+              iVar5 = g_model_parse_part_count * 0x67;
+              (&DAT_000c9e2f)[iVar5] = (char)local_1dc;
+              (&DAT_000c9e30)[iVar5] = (char)((uint)local_1dc >> 8);
+              (&DAT_000c9e31)[iVar5] = (char)((uint)local_1dc >> 0x10);
+              (&DAT_000c9e32)[iVar5] = (char)((uint)local_1dc >> 0x18);
+              (&DAT_000c9e28)[iVar5] = (undefined1)local_254;
+              (&DAT_000c9e0e)[iVar5] = (char)iVar4;
+              (&DAT_000c9e0f)[iVar5] = (char)((uint)iVar4 >> 8);
+              (&DAT_000c9e10)[iVar5] = (char)((uint)iVar4 >> 0x10);
+              (&DAT_000c9e11)[iVar5] = (char)((uint)iVar4 >> 0x18);
+              (&DAT_000c9e37)[iVar5] = 0xff;
+              (&DAT_000c9e38)[iVar5] = 0xff;
+              (&DAT_000c9e39)[iVar5] = 0xff;
+              (&DAT_000c9e3a)[iVar5] = 0xff;
+              (&DAT_000c9e33)[iVar5] = 0xff;
+              (&DAT_000c9e34)[iVar5] = 0xff;
+              (&DAT_000c9e35)[iVar5] = 0xff;
+              (&DAT_000c9e36)[iVar5] = 0xff;
+              param_2[iVar4 * 0x60 + 0xc6c] = 1;
+              param_2[iVar4 * 0x60 + 0xc6d] = 0;
+              param_2[iVar4 * 0x60 + 0xc6e] = 0;
+              param_2[iVar4 * 0x60 + 0xc6f] = 0;
+              puVar14 = param_2 + (g_model_parse_part_count + 0x21) * 0x60;
+              *puVar14 = 0xe0;
+              puVar14[1] = 0;
+              puVar14[2] = 0;
+              puVar14[3] = 0;
+              iVar4 = g_model_parse_part_count;
+              iVar5 = g_model_parse_part_count * 0x67;
+              if (local_23c == 4) {
+                (&DAT_000c9e2b)[iVar5] = local_21c[0];
+                (&DAT_000c9e2c)[iVar5] = local_21c[1];
+                (&DAT_000c9e2d)[iVar5] = local_21c[2];
+                (&DAT_000c9e2e)[iVar5] = local_21c[3];
+                (&DAT_000c9de0)[iVar5] = 0xff;
+                (&DAT_000c9de1)[iVar5] = 0xff;
+                (&DAT_000c9de2)[iVar5] = 0xff;
+                (&DAT_000c9de3)[iVar5] = 0xff;
+                Ordinal_1102(s_got_bitmap__d___d_00084930);
+                iVar4 = g_model_parse_part_count;
+              }
+              else {
+                (&DAT_000c9e29)[iVar5] = local_21c[1];
+                (&DAT_000c9de0)[iVar5] = local_21c[0];
+                (&DAT_000c9de1)[iVar5] = 0;
+                (&DAT_000c9de2)[iVar5] = 0;
+                (&DAT_000c9de3)[iVar5] = 0;
+              }
+              iVar5 = local_23c;
+              puVar16 = local_258;
+              iVar10 = iVar4 * 0x67;
+              if ((&DAT_000c9e26)[iVar10] == '\0') {
+                uVar1 = 0xff;
+                if (local_254 != 0x58) {
+                  uVar1 = 0;
+                }
+                (&DAT_000c9e26)[iVar10] = uVar1;
+              }
+              if (iVar4 < DAT_000db458) {
+                (&DAT_000c9e22)[iVar10] = (char)local_258;
+                (&DAT_000c9e23)[iVar10] = (char)((uint)local_258 >> 8);
+                (&DAT_000c9e24)[iVar10] = (char)((uint)local_258 >> 0x10);
+                (&DAT_000c9e25)[iVar10] = (char)((uint)local_258 >> 0x18);
+                iVar4 = Ordinal_1068(local_258);
+                puVar16 = puVar16 + iVar4 + 1;
+                local_258 = puVar16;
+              }
+              else {
+                (&DAT_000c9e22)[iVar10] = 0;
+                (&DAT_000c9e23)[iVar10] = 0;
+                (&DAT_000c9e24)[iVar10] = 0;
+                puVar16 = (undefined *)0x0;
+                (&DAT_000c9e25)[iVar10] = 0;
+              }
+              piVar17 = DAT_000c8b00;
+              if (iVar5 == 0) {
+LAB_000218b8:
+                piVar12 = DAT_000c8b00 + 1;
+                (&DAT_000c9dd8)[iVar10] = (char)piVar12;
+                (&DAT_000c9dd9)[iVar10] = (char)((uint)piVar12 >> 8);
+                iVar5 = 0;
+                DAT_000c8b00 = piVar12;
+                (&DAT_000c9dda)[iVar10] = (char)((uint)piVar12 >> 0x10);
+                (&DAT_000c9ddb)[iVar10] = (char)((uint)piVar12 >> 0x18);
+                iVar4 = Ordinal_1114(local_25c,&DAT_000849a8,local_260,(uint)piVar12 >> 0x18,
+                                     pppppuVar21,puVar13);
+                iVar3 = 0;
+                do {
+                  iVar19 = iVar3;
+                  Ordinal_1114(local_25c,s__d_1s_000848c8,&local_210,local_260);
+                  iVar3 = iVar19 + 1;
+                  *DAT_000c8b00 = local_210;
+                  DAT_000c8b00 = DAT_000c8b00 + 1;
+                  iVar10 = g_model_parse_part_count * 0x18 + iVar5;
+                  iVar5 = iVar5 + 1;
+                  puVar13 = param_2 + (iVar10 + 0x306) * 4;
+                  *puVar13 = (char)local_210;
+                  puVar13[1] = (char)((uint)local_210 >> 8);
+                  puVar13[2] = (char)((uint)local_210 >> 0x10);
+                  puVar13[3] = (char)((uint)local_210 >> 0x18);
+                  iVar10 = g_model_parse_part_count;
+                } while (local_260[0] == ',');
+                param_2[g_model_parse_part_count * 0x60 + 0xc14] = (char)iVar5;
+                param_2[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
+                param_2[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
+                param_2[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
+                /* HACK: flip_winding (new parameter, not part of the
+                   original recovered signature) -- caller-supplied,
+                   per-model opt-in to reverse every face's just-read
+                   vertex list. Added because several models' faces render
+                   backward: raster_triangle has a real, working backface
+                   cull (confirmed this session via its left/right edge-
+                   assignment gate in raster_textured_span -- not a bug, a
+                   legitimate cheap cull the original engine relies on),
+                   so a backward-wound face silently disappears depending
+                   on which side of it the camera ends up on. A real
+                   per-face fix would need each face's own normal compared
+                   against the mesh's shape (tried, reverted per explicit
+                   instruction: too complicated for what's just a handful
+                   of known-bad models, and unreliable besides -- see
+                   object-rendering-findings.txt milestone 13, where that
+                   approach's own centroid heuristic gave the wrong answer
+                   for the boulder) -- a flat "flip everything in this
+                   file" flag, opted into only for the specific models
+                   confirmed backward BY EYE (not the offline heuristic --
+                   see milestone 13/14), is simpler and does the same job
+                   for these models specifically (see the call sites in
+                   the .E load list for which ones pass 1). */
+                if (flip_winding && 1 < iVar3) {
+                  int _flip_lo = 0, _flip_hi = iVar3 - 1;
+                  while (_flip_lo < _flip_hi) {
+                    int *_flip_pa = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_lo + 0x306) * 4);
+                    int *_flip_pb = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_hi + 0x306) * 4);
+                    int _flip_tmp = *_flip_pa;
+                    *_flip_pa = *_flip_pb;
+                    *_flip_pb = _flip_tmp;
+                    _flip_lo++; _flip_hi--;
+                  }
+                }
+                if (getenv("UW_DEBUG_EPARSE"))
+                  fprintf(stderr, "[eparse] %s part=%d vertcount=%d\n", param_1, g_model_parse_part_count, iVar5);
+                iVar5 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc18);
+                iVar10 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc20);
+                vec3_sub(param_2 + iVar5 * 0xc + 8,
+                             param_2 + *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc1c) * 0xc + 8,
+                             auStack_150);
+                vec3_sub(param_2 + iVar5 * 0xc + 8,param_2 + iVar10 * 0xc + 8,auStack_160);
+                vec3_cross(auStack_160,auStack_150,auStack_140);
+                if ((local_23c == 4) && (iVar3 != 4)) {
+                  Ordinal_1102(s_Error__polygon__d__bitmap_must_h_00084898,g_model_parse_part_count);
+                }
+                if (iVar3 < 3) {
+                  Ordinal_1102(s_Error__Part__d_is_a_polygon_with_00084868,g_model_parse_part_count,iVar3);
+                }
+                iVar5 = g_model_parse_part_count * 0x67;
+                (&DAT_000c9ddc)[iVar5] = (char)iVar3;
+                (&DAT_000c9ddd)[iVar5] = (char)((uint)iVar3 >> 8);
+                (&DAT_000c9dde)[iVar5] = (char)((uint)iVar3 >> 0x10);
+                (&DAT_000c9ddf)[iVar5] = (char)((uint)iVar3 >> 0x18);
+                *piVar17 = iVar3;
+                if (local_254 == 0x46) {
+                  iVar5 = iVar3;
+                  if (iVar3 < 0) {
+                    iVar5 = iVar19 + 2;
+                  }
+                  iVar5 = iVar5 >> 1;
+                  if (iVar5 != 0) {
+                    puVar11 = (undefined4 *)
+                              (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + iVar5 * 4);
+                    puVar8 = (undefined4 *)
+                             (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + (iVar3 - iVar5) * 4);
+                    do {
+                      iVar5 = iVar5 + -1;
+                      uVar7 = puVar11[-1];
+                      puVar11 = puVar11 + -1;
+                      *puVar11 = *puVar8;
+                      *puVar8 = uVar7;
+                      puVar8 = puVar8 + 1;
+                    } while (iVar5 != 0);
+                  }
+                }
+                g_model_parse_part_count = g_model_parse_part_count + 1;
+                if (0x15e < g_model_parse_part_count) {
+                  Ordinal_1102(s_Too_many_polys_000848f8);
+                  goto LAB_0002263c;
+                }
+                if (&DAT_000c8a90 < DAT_000c8b00) {
+                  Ordinal_1102(s_Out_of_vertex_list_space_00084908);
+                  goto LAB_0002263c;
+                }
+                Ordinal_1114(local_25c,&DAT_000849a8,local_260);
+                pvVar_fh = local_25c;
+              }
+              else if (iVar5 == 1) {
+                iVar4 = Ordinal_1114(pvVar_fh,s__d__d_000848d0,&local_1e0,&local_20c,pppppuVar21,
+                                     puVar13);
+                piVar17 = DAT_000c8b00;
+                iVar5 = g_model_parse_part_count * 0x67;
+                (&DAT_000c9ddc)[iVar5] = 2;
+                (&DAT_000c9ddd)[iVar5] = 0;
+                (&DAT_000c9dde)[iVar5] = 0;
+                (&DAT_000c9ddf)[iVar5] = 0;
+                *piVar17 = 2;
+                iVar5 = g_model_parse_part_count * 0x67;
+                piVar17 = DAT_000c8b00 + 1;
+                DAT_000c8b00 = piVar17;
+                (&DAT_000c9dd8)[iVar5] = (char)piVar17;
+                (&DAT_000c9dd9)[iVar5] = (char)((uint)piVar17 >> 8);
+                (&DAT_000c9dda)[iVar5] = (char)((uint)piVar17 >> 0x10);
+                (&DAT_000c9ddb)[iVar5] = (char)((uint)piVar17 >> 0x18);
+                *piVar17 = local_1e0;
+                DAT_000c8b00 = DAT_000c8b00 + 1;
+                iVar5 = local_20c;
+LAB_00021838:
+                *DAT_000c8b00 = iVar5;
+                DAT_000c8b00 = DAT_000c8b00 + 1;
+                if (&DAT_000c8a90 < DAT_000c8b00) {
+                  Ordinal_1102(s_Out_of_vertex_list_space_00084908);
+                  goto LAB_0002263c;
+                }
+                g_model_parse_part_count = g_model_parse_part_count + 1;
+                if (0x15e < g_model_parse_part_count) {
+                  Ordinal_1102(s_Too_many_polys_000848f8);
+                  goto LAB_0002263c;
+                }
+                Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260);
+              }
+              else {
+                if (1 < iVar5) {
+                  if (iVar5 < 4) {
+                    if (iVar5 == 2) {
+                      (&DAT_000c9e3b)[iVar10] = 0;
+                      (&DAT_000c9e3c)[iVar10] = 0;
+                      (&DAT_000c9e3d)[iVar10] = 0;
+                      puVar14 = (undefined1 *)0x0;
+                      (&DAT_000c9e3e)[iVar10] = 0;
+                    }
+                    else {
+                      Ordinal_1114(pvVar_fh,&DAT_000848f4,&local_218,puVar16,pppppuVar21,puVar13);
+                      Ordinal_1102(s_got_sphere__d_000848e4,local_218);
+                      iVar4 = g_model_parse_part_count * 0x67;
+                      puVar14 = &DAT_000c9dd8 + iVar4;
+                      (&DAT_000c9e3b)[iVar4] = (char)local_218;
+                      (&DAT_000c9e3c)[iVar4] = (char)((uint)local_218 >> 8);
+                      (&DAT_000c9e3d)[iVar4] = (char)((uint)local_218 >> 0x10);
+                      (&DAT_000c9e3e)[iVar4] = (char)((uint)local_218 >> 0x18);
+                    }
+                    iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849ac,&local_1f4,puVar14,pppppuVar21,puVar13)
+                    ;
+                    piVar17 = DAT_000c8b00;
+                    iVar5 = g_model_parse_part_count * 0x67;
+                    (&DAT_000c9ddc)[iVar5] = 1;
+                    (&DAT_000c9ddd)[iVar5] = 0;
+                    (&DAT_000c9dde)[iVar5] = 0;
+                    (&DAT_000c9ddf)[iVar5] = 0;
+                    *piVar17 = 1;
+                    iVar5 = g_model_parse_part_count * 0x67;
+                    DAT_000c8b00 = DAT_000c8b00 + 1;
+                    (&DAT_000c9dd8)[iVar5] = (char)DAT_000c8b00;
+                    (&DAT_000c9dd9)[iVar5] = (char)((uint)DAT_000c8b00 >> 8);
+                    (&DAT_000c9dda)[iVar5] = (char)((uint)DAT_000c8b00 >> 0x10);
+                    (&DAT_000c9ddb)[iVar5] = (char)((uint)DAT_000c8b00 >> 0x18);
+                    iVar5 = local_1f4;
+                    goto LAB_00021838;
+                  }
+                  if (iVar5 == 4) goto LAB_000218b8;
+                  if (iVar5 == 5) {
+                    piVar12 = &local_220;
+                    pppppuVar21 = (undefined4 *****)&local_1d4;
+                    iVar4 = Ordinal_1114(pvVar_fh,s__d__d__d__d_00084924,&local_1fc,&local_228,
+                                         pppppuVar21,piVar12);
+                    piVar17 = DAT_000c8b00;
+                    if (DAT_00084660 < local_228) {
+                      DAT_00084660 = local_228;
+                    }
+                    iVar3 = -local_228;
+                    if (iVar3 < DAT_0008465c) {
+                      DAT_0008465c = iVar3;
+                    }
+                    if (DAT_00084670 < local_228) {
+                      DAT_00084670 = local_228;
+                    }
+                    if (iVar3 < DAT_0008466c) {
+                      DAT_0008466c = iVar3;
+                    }
+                    if (DAT_00084660 < local_220) {
+                      DAT_00084660 = local_220;
+                    }
+                    iVar3 = -local_220;
+                    if (iVar3 < DAT_0008465c) {
+                      DAT_0008465c = iVar3;
+                    }
+                    if (DAT_00084670 < local_220) {
+                      DAT_00084670 = local_220;
+                    }
+                    if (iVar3 < DAT_0008466c) {
+                      DAT_0008466c = iVar3;
+                    }
+                    iVar3 = g_model_parse_part_count * 0x67;
+                    (&DAT_000c9ddc)[iVar3] = 2;
+                    (&DAT_000c9ddd)[iVar3] = 0;
+                    (&DAT_000c9dde)[iVar3] = 0;
+                    (&DAT_000c9ddf)[iVar3] = 0;
+                    *piVar17 = 2;
+                    iVar3 = g_model_parse_part_count * 0x67;
+                    piVar17 = DAT_000c8b00 + 1;
+                    DAT_000c8b00 = piVar17;
+                    (&DAT_000c9dd8)[iVar3] = (char)piVar17;
+                    (&DAT_000c9dd9)[iVar3] = (char)((uint)piVar17 >> 8);
+                    (&DAT_000c9dda)[iVar3] = (char)((uint)piVar17 >> 0x10);
+                    (&DAT_000c9ddb)[iVar3] = (char)((uint)piVar17 >> 0x18);
+                    *piVar17 = local_1fc;
+                    DAT_000c8b00 = DAT_000c8b00 + 1;
+                    *DAT_000c8b00 = (int)local_1d4;
+                    iVar3 = g_model_parse_part_count;
+                    piVar17 = DAT_000c8b00 + 1;
+                    iVar5 = g_model_parse_part_count * 0x67;
+                    DAT_000c8b00 = piVar17;
+                    (&DAT_000c9e33)[iVar5] = (char)local_228;
+                    (&DAT_000c9e34)[iVar5] = (char)((uint)local_228 >> 8);
+                    (&DAT_000c9e35)[iVar5] = (char)((uint)local_228 >> 0x10);
+                    (&DAT_000c9e36)[iVar5] = (char)((uint)local_228 >> 0x18);
+                    (&DAT_000c9e37)[iVar5] = (char)local_220;
+                    (&DAT_000c9e38)[iVar5] = (char)((uint)local_220 >> 8);
+                    (&DAT_000c9e39)[iVar5] = (char)((uint)local_220 >> 0x10);
+                    (&DAT_000c9e3a)[iVar5] = (char)((uint)local_220 >> 0x18);
+                    if (&DAT_000c8a90 < piVar17) {
+                      Ordinal_1102(s_Out_of_vertex_list_space_00084908);
+                      goto LAB_0002263c;
+                      iVar3 = g_model_parse_part_count;
+                    }
+                    g_model_parse_part_count = iVar3 + 1;
+                    uVar7 = 0x15e;
+                    if (0x15e < g_model_parse_part_count) {
+                      Ordinal_1102(s_Too_many_polys_000848f8);
+                      goto LAB_0002263c;
+                      uVar7 = extraout_r3_00;
+                    }
+                    Ordinal_1114(local_25c,&DAT_000849a8,local_260,uVar7,pppppuVar21,piVar12);
+                    pvVar_fh = local_25c;
+                    goto LAB_00021bec;
+                  }
+                }
+                iVar4 = Ordinal_1114(pvVar_fh,s_________c_000848d8,local_260,puVar16,pppppuVar21,
+                                     puVar13);
+              }
+            }
+LAB_00021bec:
+            iVar5 = g_model_parse_part_count;
+          } while (local_260[0] == ';');
+          iVar10 = 0;
+          param_2[5] = (char)((uint)g_model_parse_part_count >> 8);
+          param_2[4] = (char)iVar5;
+          param_2[6] = (char)((uint)iVar5 >> 0x10);
+          param_2[7] = (char)((uint)iVar5 >> 0x18);
+          iVar3 = g_model_parse_part_count;
+          iVar5 = g_model_parse_part_count;
+          piVar17 = piVar20;
+          if (0 < g_model_parse_part_count) {
+            do {
+              if (((((char)piVar17[0x14] == 'A') && (DAT_000db480 == 0)) && (DAT_000db470 == 0)) &&
+                 (iVar19 = piVar17[1], 2 < iVar19)) {
+                Ordinal_1102(s_making_backside_of__d_____d_00084848,iVar10,iVar5);
+                iVar6 = g_model_parse_part_count * 0x67;
+                iVar5 = piVar17[2];
+                (&DAT_000c9de0)[iVar6] = (char)iVar5;
+                (&DAT_000c9de1)[iVar6] = (char)((uint)iVar5 >> 8);
+                (&DAT_000c9de2)[iVar6] = (char)((uint)iVar5 >> 0x10);
+                (&DAT_000c9de3)[iVar6] = (char)((uint)iVar5 >> 0x18);
+                (&DAT_000c9ddc)[iVar6] = (char)iVar19;
+                (&DAT_000c9ddd)[iVar6] = (char)((uint)iVar19 >> 8);
+                (&DAT_000c9dde)[iVar6] = (char)((uint)iVar19 >> 0x10);
+                (&DAT_000c9ddf)[iVar6] = (char)((uint)iVar19 >> 0x18);
+                uVar7 = *(undefined4 *)((char *)piVar17 + 0x4a);
+                (&DAT_000c9e22)[iVar6] = (char)uVar7;
+                (&DAT_000c9e23)[iVar6] = (char)((uint)uVar7 >> 8);
+                (&DAT_000c9e24)[iVar6] = (char)((uint)uVar7 >> 0x10);
+                (&DAT_000c9e25)[iVar6] = (char)((uint)uVar7 >> 0x18);
+                uVar7 = *(undefined4 *)((char *)piVar17 + 0x36);
+                (&DAT_000c9e0e)[iVar6] = (char)uVar7;
+                (&DAT_000c9e0f)[iVar6] = (char)((uint)uVar7 >> 8);
+                (&DAT_000c9e10)[iVar6] = (char)((uint)uVar7 >> 0x10);
+                (&DAT_000c9e11)[iVar6] = (char)((uint)uVar7 >> 0x18);
+                (&DAT_000c9e28)[iVar6] = (char)piVar17[0x14];
+                (&DAT_000c9e26)[iVar6] = 0;
+                iVar5 = *piVar17;
+                *DAT_000c8b00 = iVar19;
+                iVar6 = g_model_parse_part_count;
+                piVar12 = (int *)(iVar5 + iVar19 * 4);
+                piVar9 = DAT_000c8b00 + 1;
+                iVar5 = g_model_parse_part_count * 0x67;
+                DAT_000c8b00 = piVar9;
+                (&DAT_000c9dd8)[iVar5] = (char)piVar9;
+                (&DAT_000c9dd9)[iVar5] = (char)((uint)piVar9 >> 8);
+                (&DAT_000c9dda)[iVar5] = (char)((uint)piVar9 >> 0x10);
+                (&DAT_000c9ddb)[iVar5] = (char)((uint)piVar9 >> 0x18);
+                for (; iVar19 != 0; iVar19 = iVar19 + -1) {
+                  piVar12 = piVar12 + -1;
+                  *piVar9 = *piVar12;
+                  piVar9 = DAT_000c8b00 + 1;
+                  DAT_000c8b00 = piVar9;
+                  iVar6 = g_model_parse_part_count;
+                }
+                g_model_parse_part_count = iVar6 + 1;
+                iVar5 = g_model_parse_part_count;
+                if (0x15e < g_model_parse_part_count) {
+                  Ordinal_1102(s_Too_many_polys_000848f8);
+                  goto LAB_0002263c;
+                  iVar5 = g_model_parse_part_count;
+                }
+              }
+              iVar10 = iVar10 + 1;
+              piVar17 = (int *)((char *)piVar17 + 0x67);
+            } while (iVar10 < iVar3);
+          }
+        }
+        else if (DAT_000db480 == 0) {
+LAB_0002226c:
+          iVar4 = Ordinal_1065(auStack_1c8,s_INTERSECTIONS_000847bc);
+          if (iVar4 == 0) {
+            do {
+              iVar4 = Ordinal_1114(pvVar_fh,s__d_1s_000848c8,&local_1d0,local_260);
+              if (iVar4 == 2) {
+                *(undefined4 *)(&DAT_000c8b08 + DAT_000db4d0 * 4) = local_1d0;
+                DAT_000db4d0 = DAT_000db4d0 + 1;
+              }
+            } while (local_260[0] == ',');
+          }
+          else {
+            iVar4 = Ordinal_1065(auStack_1c8,s_EXTENDED_COLORS_000847ac);
+            if (iVar4 == 0) {
+              iVar5 = 0;
+              piVar17 = piVar20;
+              do {
+                iVar4 = Ordinal_1114(pvVar_fh,s__lx_1s_000847a4,&local_208,local_260);
+                if (DAT_000db494 != 0) {
+                  piVar12 = &g_model_known_ext_colors;
+                  iVar10 = 0;
+                  do {
+                    if (local_208 == *piVar12) {
+                      *(char *)(piVar17 + 2) = (char)iVar10;
+                      *(char *)((char *)piVar17 + 9) = (char)((uint)iVar10 >> 8);
+                      *(char *)((char *)piVar17 + 10) = (char)((uint)iVar10 >> 0x10);
+                      *(char *)((char *)piVar17 + 0xb) = (char)((uint)iVar10 >> 0x18);
+                      break;
+                    }
+                    iVar10 = iVar10 + 1;
+                    piVar12 = piVar12 + 1;
+                  } while (iVar10 < 0x20);
+                  if (iVar10 == 0x20) {
+                    Ordinal_1102(s_Error__extended_color_for_part___00084768,iVar5);
+                    goto LAB_0002263c;
+                  }
+                  iVar5 = iVar5 + 1;
+                  piVar17 = (int *)((char *)piVar17 + 0x67);
+                }
+              } while (local_260[0] == ',');
+            }
+            else {
+              iVar4 = Ordinal_1065(auStack_1c8,s_ANIMATE_00084760);
+              if (iVar4 != 0) {
+                pcVar2 = s________c_0008471c;
+                goto LAB_00022604;
+              }
+              piVar17 = &DAT_000d95d8;
+              do {
+                puVar13 = auStack_1ec;
+                pppppuVar21 = &local_1f8;
+                iVar5 = 0;
+                iVar4 = Ordinal_1114(pvVar_fh,s__d__1s__d__d__1s_0008474c,&local_200,local_260,
+                                     pppppuVar21,&local_1f0,puVar13);
+                iVar3 = DAT_000db4e0;
+                if ((iVar4 != 1) || (iVar4 = 1, local_260[0] != '}')) {
+                  iVar4 = DAT_000db4e0 * 0x15;
+                  (&DAT_000d977c)[iVar4] = local_260[0];
+                  (&DAT_000d9768)[iVar4] = (char)local_200;
+                  (&DAT_000d9769)[iVar4] = (char)((uint)local_200 >> 8);
+                  (&DAT_000d976a)[iVar4] = (char)((uint)local_200 >> 0x10);
+                  (&DAT_000d976b)[iVar4] = (char)((uint)local_200 >> 0x18);
+                  (&DAT_000d9774)[iVar4] = (char)local_1f8;
+                  (&DAT_000d9775)[iVar4] = (char)((uint)local_1f8 >> 8);
+                  (&DAT_000d9776)[iVar4] = (char)((uint)local_1f8 >> 0x10);
+                  (&DAT_000d9777)[iVar4] = (char)((uint)local_1f8 >> 0x18);
+                  (&DAT_000d9778)[iVar4] = (char)local_1f0;
+                  (&DAT_000d9779)[iVar4] = (char)((uint)local_1f0 >> 8);
+                  (&DAT_000d977a)[iVar4] = (char)((uint)local_1f0 >> 0x10);
+                  (&DAT_000d977b)[iVar4] = (char)((uint)local_1f0 >> 0x18);
+                  pppppuVar21 = (undefined4 *****)local_1f8;
+                  uVar7 = local_1f0;
+                  Ordinal_1102(s_anim__d___d__c__d__d___00084734,iVar3,local_200,local_260,local_1f8
+                               ,local_1f0);
+                  pvVar_fh = local_25c;
+                  iVar4 = DAT_000db4e0 * 0x15;
+                  (&DAT_000d9770)[iVar4] = (char)piVar17;
+                  (&DAT_000d9771)[iVar4] = (char)((uint)piVar17 >> 8);
+                  (&DAT_000d9772)[iVar4] = (char)((uint)piVar17 >> 0x10);
+                  (&DAT_000d9773)[iVar4] = (char)((uint)piVar17 >> 0x18);
+                  do {
+                    Ordinal_1114(pvVar_fh,s__d_1s_000848c8,&local_1e8,local_260,pppppuVar21,uVar7,
+                                 puVar13);
+                    iVar5 = iVar5 + 1;
+                    iVar10 = DAT_000db4e0 + 1;
+                    *piVar17 = local_1e8;
+                    iVar4 = local_1e8 * 0x2c;
+                    piVar17 = piVar17 + 1;
+                    (&DAT_000d2ad0)[iVar4] = (char)iVar10;
+                    (&DAT_000d2ad1)[iVar4] = (char)((uint)iVar10 >> 8);
+                    (&DAT_000d2ad2)[iVar4] = (char)((uint)iVar10 >> 0x10);
+                    (&DAT_000d2ad3)[iVar4] = (char)((uint)iVar10 >> 0x18);
+                    Ordinal_1102(&DAT_00084730);
+                  } while (local_260[0] == ',');
+                  iVar4 = DAT_000db4e0 * 0x15;
+                  (&DAT_000d976c)[iVar4] = (char)iVar5;
+                  (&DAT_000d976d)[iVar4] = (char)((uint)iVar5 >> 8);
+                  (&DAT_000d976e)[iVar4] = (char)((uint)iVar5 >> 0x10);
+                  (&DAT_000d976f)[iVar4] = (char)((uint)iVar5 >> 0x18);
+                  Ordinal_1102(s___d__00084728,iVar5);
+                  DAT_000db4e0 = DAT_000db4e0 + 1;
+                  iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260);
+                  if (iVar4 != 1) break;
+                }
+                pvVar_fh = local_25c;
+              } while (local_260[0] == ';');
+            }
+          }
+        }
+        else {
+          iVar4 = Ordinal_1065(auStack_1c8,s_CLUSTERS_0008483c);
+          if (iVar4 == 0) {
+            puVar8 = (undefined4 *)&DAT_000c8ca0;
+            do {
+              cVar18 = '\0';
+              iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260);
+              puVar16 = local_258;
+              if ((iVar4 != 1) || (iVar4 = 1, local_260[0] != '}')) {
+                iVar4 = DAT_000db4d4 * 4;
+                if (DAT_000db4d4 + g_model_parse_part_count < DAT_000db458) {
+                  *(undefined **)(&DAT_000da868 + iVar4) = local_258;
+                  iVar5 = Ordinal_1068(local_258);
+                  local_258 = puVar16 + iVar5 + 1;
+                }
+                else {
+                  *(undefined4 *)(&DAT_000da868 + iVar4) = 0;
+                }
+                *(undefined4 **)(&DAT_000dab90 + iVar4) = puVar8;
+                puVar8 = puVar8 + 1;
+                do {
+                  Ordinal_1114(pvVar_fh,s__d_1s_000848c8,&local_1d8,local_260);
+                  cVar18 = cVar18 + '\x01';
+                  *puVar8 = local_1d8;
+                  puVar8 = puVar8 + 1;
+                } while (local_260[0] == ',');
+                **(char **)(&DAT_000dab90 + DAT_000db4d4 * 4) = cVar18;
+                DAT_000db4d4 = DAT_000db4d4 + 1;
+                iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260);
+                if (iVar4 != 1) break;
+              }
+            } while (local_260[0] == ';');
+          }
+          else {
+            iVar4 = Ordinal_1065(auStack_1c8,s_NODES_00084834);
+            if ((iVar4 != 0) &&
+               (iVar4 = Ordinal_1065(auStack_1c8,s_SUPER_NODES_00084828), iVar4 != 0))
+            goto LAB_0002226c;
+            iVar4 = Ordinal_1065(auStack_1c8,s_SUPER_NODES_00084828);
+            iVar5 = -1;
+            if (iVar4 != 0) {
+              iVar5 = 0;
+            }
+            do {
+              iVar4 = Ordinal_1114(pvVar_fh,&DAT_00084820,&local_1e4);
+              iVar10 = DAT_000db4d8;
+              if (local_260[0] != '}') {
+                (&DAT_000c9540)[DAT_000db4d8 * 0x16] = (char)local_1e4;
+                if (local_1e4 == 0x4c) {
+                  Ordinal_1102(s_leaf_00084818);
+                  iVar4 = Ordinal_1114(pvVar_fh,s__d_1s_000848c8,&local_22c,local_260);
+                  Ordinal_1102(&DAT_00084814,local_22c);
+                  iVar10 = DAT_000db4d8 * 0x16;
+                  (&DAT_000c9542)[iVar10] = (char)local_22c;
+                  (&DAT_000c9543)[iVar10] = (char)((uint)local_22c >> 8);
+                  (&DAT_000c9544)[iVar10] = (char)((uint)local_22c >> 0x10);
+                  (&DAT_000c9545)[iVar10] = (char)((uint)local_22c >> 0x18);
+                  iVar10 = DAT_000db4d8;
+                }
+                else if (local_1e4 == 0x42) {
+                  Ordinal_1102(s_branch_0008480c);
+                  if (iVar5 == 0) {
+                    iVar4 = Ordinal_1114(pvVar_fh,s__1s__d__d__d_1s_000847e4,&local_234,&local_250,
+                                         &local_238,&local_230,local_260);
+                    local_240 = (undefined4 *****)0xffffffff;
+                    local_248 = 0xffffffff;
+                  }
+                  else {
+                    iVar4 = Ordinal_1114(pvVar_fh,s__1s__d__d__d__d__d_1s_000847f4,&local_234,
+                                         &local_250,&local_248,&local_240,&local_238,&local_230,
+                                         local_260);
+                  }
+                  pppppuVar21 = (undefined4 *****)local_240;
+                  Ordinal_1102(s__c__d__d__d__d__d___c__000847cc,local_234,local_250,local_248,
+                               local_240,local_238,local_230,(int)local_260[0]);
+                  iVar10 = DAT_000db4d8 * 0x16;
+                  (&DAT_000c9541)[iVar10] = (undefined1)local_234;
+                  (&DAT_000c9542)[iVar10] = (char)local_250;
+                  (&DAT_000c9543)[iVar10] = (char)((uint)local_250 >> 8);
+                  (&DAT_000c9544)[iVar10] = (char)((uint)local_250 >> 0x10);
+                  (&DAT_000c9545)[iVar10] = (char)((uint)local_250 >> 0x18);
+                  (&DAT_000c954e)[iVar10] = (char)local_248;
+                  (&DAT_000c954f)[iVar10] = (char)((uint)local_248 >> 8);
+                  (&DAT_000c9550)[iVar10] = (char)((uint)local_248 >> 0x10);
+                  (&DAT_000c9551)[iVar10] = (char)((uint)local_248 >> 0x18);
+                  (&DAT_000c9552)[iVar10] = (char)local_240;
+                  (&DAT_000c9553)[iVar10] = (char)((uint)local_240 >> 8);
+                  (&DAT_000c9554)[iVar10] = (char)((uint)local_240 >> 0x10);
+                  (&DAT_000c9555)[iVar10] = (char)((uint)local_240 >> 0x18);
+                  (&DAT_000c9546)[iVar10] = (char)local_238;
+                  (&DAT_000c9547)[iVar10] = (char)((uint)local_238 >> 8);
+                  (&DAT_000c9548)[iVar10] = (char)((uint)local_238 >> 0x10);
+                  (&DAT_000c9549)[iVar10] = (char)((uint)local_238 >> 0x18);
+                  (&DAT_000c954a)[iVar10] = (char)local_230;
+                  (&DAT_000c954b)[iVar10] = (char)((uint)local_230 >> 8);
+                  (&DAT_000c954c)[iVar10] = (char)((uint)local_230 >> 0x10);
+                  (&DAT_000c954d)[iVar10] = (char)((uint)local_230 >> 0x18);
+                  iVar10 = DAT_000db4d8;
+                }
+                DAT_000db4d8 = iVar10 + 1;
+              }
+            } while (local_260[0] == ';');
+          }
+        }
+      }
+    }
+    if ((iVar4 == 0) || (local_260[0] != '}')) {
+      goto LAB_0002263c;
+    }
+  }
+  Ordinal_1102(s_unexpected_EOF___no_END_statemen_000846f8);
+LAB_0002263c:
+  /* Ordinal_1118 is fclose-shaped, closing the handle Ordinal_1113 (fopen)
+     opened at the top of this function -- was called with iVar3 (reused
+     throughout this function for unrelated numeric work, and not
+     reliably holding the handle by this point even before the
+     local_25c/pvVar_fh pointer-width fix), should be the real handle. */
+  Ordinal_1118(local_25c);
+  iVar3 = g_model_parse_part_count;
+  if ((DAT_000db494 != 0) && (iVar4 = 0, 0 < g_model_parse_part_count)) {
+    do {
+      if (*(int *)((char *)piVar20 + 0x36) != iVar4) {
+        uVar7 = *(undefined4 *)(&DAT_000c9de0 + *(int *)((char *)piVar20 + 0x36) * 0x67);
+        *(char *)(piVar20 + 2) = (char)uVar7;
+        *(char *)((char *)piVar20 + 9) = (char)((uint)uVar7 >> 8);
+        *(char *)((char *)piVar20 + 10) = (char)((uint)uVar7 >> 0x10);
+        *(char *)((char *)piVar20 + 0xb) = (char)((uint)uVar7 >> 0x18);
+      }
+      iVar4 = iVar4 + 1;
+      piVar20 = (int *)((char *)piVar20 + 0x67);
+    } while (iVar4 < iVar3);
+  }
+  return;
+}

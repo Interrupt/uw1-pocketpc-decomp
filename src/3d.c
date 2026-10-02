@@ -2030,3 +2030,381 @@ void configure_texture_detail_functions()
   DAT_00086b30 = 1;
   return;
 }
+
+
+// was FUN_0001e848 -- identity-init then compose up to 3 axis rotation matrices from angle-table indices (DAT_000d9ed8 sin / DAT_000d9930 cos); used by an object/effect transform, not the tile pipeline
+void build_euler_rotation_matrix(param_1,param_2,param_3,param_4)
+int * param_1;
+int param_2;
+int param_3;
+int param_4;
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  undefined4 *puVar4;
+  undefined4 uVar5;
+  undefined4 uVar6;
+  undefined4 *puVar7;
+  uint extraout_r3;
+  uint extraout_r3_00;
+  uint extraout_r3_01;
+  uint extraout_r3_02;
+  uint uVar8;
+  int *piVar9;
+  undefined4 uVar10;
+  uint uVar11;
+  undefined4 uVar12;
+  int iVar13;
+  uint uVar14;
+  /* This whole local block was a run of individually-named scalars
+     (local_164, local_160, ... auStack_124[5], local_a4[2], ...) instead
+     of the real 4x4 (16-`undefined4`/64-byte) matrix buffers
+     set_identity_matrix4x4/multiply_matrix4x4/copy_matrix4x4 actually read and write --
+     same "split-symbol matrix" bug class as copy_matrix4x4's own pointer-
+     truncation fix (see its comment), just on the caller's stack instead
+     of a global. Every one of those calls overflowed by 20-60+ bytes
+     into whatever locals or padding happened to follow, corrupting the
+     stack canary -- latent for as long as build_euler_rotation_matrix's
+     only real caller (emit_catalog_object's animation-rotation path)
+     never had real per-object-type property data reaching it with a
+     nonzero angle; became a guaranteed `__stack_chk_fail` abort the
+     moment the DAT_00202c9X object-property fix above let that happen
+     (confirmed via ASAN + a stack-canary abort in exactly this
+     function). Restructured into four real 16-element matrix buffers
+     (one per set_identity_matrix4x4 call site: the unconditional one, then one per
+     param_2/3/4 branch), with each formerly-named scalar mapped to its
+     real row-major slot -- confirmed against set_identity_matrix4x4's own identity
+     writes (indices 0/5/10/15, the standard 4x4 diagonal): the named
+     locals for each cluster line up exactly on a 4-wide row stride
+     (e.g. local_164/154/144 are 0x10 apart = row 0/1/2 of column 0),
+     landing the two clusters' surviving diagonal writes (auStack_124's
+     local_fc, local_a4's local_7c) on index 10 as expected. param_2's
+     and param_4's branches are dead in every real call (the only call
+     site always passes 0 for both) so their exact rotation math wasn't
+     re-derived beyond making them memory-safe. */
+  undefined4 local_164_arr [16];
+  undefined4 auStack_124 [16];
+  undefined4 local_e4_arr [16];
+  undefined4 local_a4 [16];
+  undefined4 auStack_64 [16];
+#define local_164 local_164_arr[0]
+#define local_160 local_164_arr[1]
+#define local_15c local_164_arr[2]
+#define local_154 local_164_arr[4]
+#define local_150 local_164_arr[5]
+#define local_14c local_164_arr[6]
+#define local_144 local_164_arr[8]
+#define local_140 local_164_arr[9]
+#define local_13c local_164_arr[10]
+#define local_110 auStack_124[5]
+#define local_10c auStack_124[6]
+#define local_100 auStack_124[9]
+#define local_fc auStack_124[10]
+#define local_e4 local_e4_arr[0]
+#define local_e0 local_e4_arr[1]
+#define local_d4 local_e4_arr[4]
+#define local_d0 local_e4_arr[5]
+#define local_9c local_a4[2]
+#define local_84 local_a4[8]
+#define local_7c local_a4[10]
+
+  uVar11 = 0;
+  uVar14 = 0;
+  if (((param_2 == 0) && (param_3 == 0)) && (param_4 == 0)) {
+    return;
+  }
+  set_identity_matrix4x4(local_164_arr);
+  uVar8 = extraout_r3;
+  if (param_2 != 0) {
+    set_identity_matrix4x4(auStack_124);
+    uVar10 = (&DAT_000d9ed8)[param_2];
+    local_10c = (&DAT_000d9930)[param_2];
+    local_110 = uVar10;
+    local_100 = Ordinal_2023();
+    uVar8 = extraout_r3_00;
+    local_fc = uVar10;
+  }
+  if (param_3 != 0) {
+    set_identity_matrix4x4(local_a4);
+    uVar10 = (&DAT_000d9ed8)[param_3];
+    uVar12 = (&DAT_000d9930)[param_3];
+    uVar11 = uVar14;
+    local_a4[0] = uVar10;
+    local_9c = Ordinal_2023(uVar12);
+    uVar8 = extraout_r3_01;
+    uVar14 = uVar11;
+    local_84 = uVar12;
+    local_7c = uVar10;
+  }
+  if (param_4 != 0) {
+    set_identity_matrix4x4(local_e4_arr);
+    uVar10 = (&DAT_000d9ed8)[param_4];
+    local_e0 = (&DAT_000d9930)[param_4];
+    local_e4 = uVar10;
+    local_d4 = Ordinal_2023();
+    uVar8 = extraout_r3_02;
+    local_d0 = uVar10;
+  }
+  if (param_2 != 0) {
+    uVar11 = 4;
+    uVar14 = 4;
+    uVar8 = uVar11;
+  }
+  if (param_3 != 0) {
+    uVar11 = uVar11 | 2;
+    uVar8 = uVar11;
+    uVar14 = uVar11;
+  }
+  if (param_4 != 0) {
+    uVar11 = uVar11 | 1;
+    uVar8 = uVar11;
+    uVar14 = uVar11;
+  }
+  if (uVar11 == 1) {
+    puVar4 = &local_e4;
+  }
+  else {
+    if (uVar11 != 2) {
+      if (uVar11 == 3) {
+        puVar4 = local_a4;
+LAB_0001e9c4:
+        puVar7 = &local_e4;
+      }
+      else {
+        if (uVar11 == 4) {
+          puVar4 = auStack_124;
+          goto LAB_0001ea10;
+        }
+        if (uVar11 == 5) {
+          puVar7 = &local_e4;
+        }
+        else {
+          if (uVar11 != 6) {
+            if (uVar11 != 7) goto LAB_0001ea18;
+            multiply_matrix4x4(auStack_124,local_a4,auStack_64,uVar8,uVar14);
+            puVar4 = auStack_64;
+            goto LAB_0001e9c4;
+          }
+          puVar7 = local_a4;
+        }
+        puVar4 = auStack_124;
+      }
+      multiply_matrix4x4(puVar4,puVar7,&local_164);
+      goto LAB_0001ea18;
+    }
+    puVar4 = local_a4;
+  }
+LAB_0001ea10:
+  copy_matrix4x4(puVar4,&local_164);
+LAB_0001ea18:
+  iVar13 = 0;
+  piVar9 = param_1;
+  if (0 < *param_1) {
+    do {
+      iVar1 = piVar9[4];
+      iVar2 = piVar9[3];
+      iVar3 = piVar9[2];
+      uVar10 = Ordinal_2026(iVar3,local_160);
+      uVar12 = Ordinal_2026(iVar2,local_150);
+      uVar10 = Ordinal_2051(uVar10,uVar12);
+      uVar12 = Ordinal_2026(iVar1,local_140);
+      uVar10 = Ordinal_2051(uVar10,uVar12);
+      uVar12 = Ordinal_2026(iVar3,local_15c);
+      uVar5 = Ordinal_2026(iVar2,local_14c);
+      uVar12 = Ordinal_2051(uVar12,uVar5);
+      uVar5 = Ordinal_2026(iVar1,local_13c);
+      uVar12 = Ordinal_2051(uVar12,uVar5);
+      uVar5 = Ordinal_2026(iVar3,local_164);
+      uVar6 = Ordinal_2026(iVar2,local_154);
+      uVar5 = Ordinal_2051(uVar5,uVar6);
+      uVar6 = Ordinal_2026(iVar1,local_144);
+      uVar5 = Ordinal_2051(uVar5,uVar6);
+      *(char *)(piVar9 + 2) = (char)uVar5;
+      iVar13 = iVar13 + 1;
+      *(char *)(piVar9 + 3) = (char)uVar10;
+      *(char *)(piVar9 + 4) = (char)uVar12;
+      *(char *)((char *)piVar9 + 9) = (char)((uint)uVar5 >> 8);
+      *(char *)((char *)piVar9 + 10) = (char)((uint)uVar5 >> 0x10);
+      *(char *)((char *)piVar9 + 0xb) = (char)((uint)uVar5 >> 0x18);
+      *(char *)((char *)piVar9 + 0xd) = (char)((uint)uVar10 >> 8);
+      *(char *)((char *)piVar9 + 0xe) = (char)((uint)uVar10 >> 0x10);
+      *(char *)((char *)piVar9 + 0xf) = (char)((uint)uVar10 >> 0x18);
+      *(char *)((char *)piVar9 + 0x11) = (char)((uint)uVar12 >> 8);
+      *(char *)((char *)piVar9 + 0x12) = (char)((uint)uVar12 >> 0x10);
+      *(char *)((char *)piVar9 + 0x13) = (char)((uint)uVar12 >> 0x18);
+      piVar9 = piVar9 + 3;
+    } while (iVar13 < *param_1);
+  }
+#undef local_164
+#undef local_160
+#undef local_15c
+#undef local_154
+#undef local_150
+#undef local_14c
+#undef local_144
+#undef local_140
+#undef local_13c
+#undef local_110
+#undef local_10c
+#undef local_100
+#undef local_fc
+#undef local_e4
+#undef local_e0
+#undef local_d4
+#undef local_d0
+#undef local_9c
+#undef local_84
+#undef local_7c
+  return;
+}
+
+
+
+// was FUN_0001ecb0 -- apply a matrix built by build_euler_rotation_matrix to a point/vertex list
+void transform_points_by_matrix(param_1,param_2)
+int * param_1;
+int * param_2;
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  int *piVar3;
+  int *piVar4;
+  int *piVar5;
+  int *piVar6;
+  int *piVar7;
+  int iVar8;
+  int iVar9;
+  int *piVar10;
+  int *piVar11;
+  int local_30;
+  int local_2c;
+  
+  iVar9 = 0;
+  iVar1 = *param_1;
+  local_30 = param_1[1];
+  iVar8 = iVar1;
+  if (0 < *param_2) {
+    piVar4 = param_1 + iVar1 * 3;
+    piVar3 = param_2;
+    do {
+      uVar2 = Ordinal_2051(piVar3[2],param_2[0x302]);
+      *(char *)(piVar4 + 2) = (char)uVar2;
+      *(char *)((char *)piVar4 + 9) = (char)((uint)uVar2 >> 8);
+      *(char *)((char *)piVar4 + 10) = (char)((uint)uVar2 >> 0x10);
+      *(char *)((char *)piVar4 + 0xb) = (char)((uint)uVar2 >> 0x18);
+      uVar2 = Ordinal_2051(piVar3[3],param_2[0x303]);
+      *(char *)(piVar4 + 3) = (char)uVar2;
+      *(char *)((char *)piVar4 + 0xd) = (char)((uint)uVar2 >> 8);
+      *(char *)((char *)piVar4 + 0xe) = (char)((uint)uVar2 >> 0x10);
+      *(char *)((char *)piVar4 + 0xf) = (char)((uint)uVar2 >> 0x18);
+      uVar2 = Ordinal_2051(piVar3[4],param_2[0x304]);
+      *(char *)(piVar4 + 4) = (char)uVar2;
+      *(char *)((char *)piVar4 + 0x11) = (char)((uint)uVar2 >> 8);
+      *(char *)((char *)piVar4 + 0x12) = (char)((uint)uVar2 >> 0x10);
+      *(char *)((char *)piVar4 + 0x13) = (char)((uint)uVar2 >> 0x18);
+      iVar9 = iVar9 + 1;
+      iVar8 = iVar8 + 1;
+      piVar4 = piVar4 + 3;
+      piVar3 = piVar3 + 3;
+    } while (iVar9 < *param_2);
+  }
+  *(char *)param_1 = (char)iVar8;
+  *(char *)((char *)param_1 + 1) = (char)((uint)iVar8 >> 8);
+  local_2c = 0;
+  *(char *)((char *)param_1 + 2) = (char)((uint)iVar8 >> 0x10);
+  *(char *)((char *)param_1 + 3) = (char)((uint)iVar8 >> 0x18);
+  if (0 < param_2[1]) {
+    piVar4 = param_1 + local_30 * 0x18;
+    piVar3 = param_2;
+    do {
+      iVar8 = piVar3[0x318];
+      *(char *)(piVar4 + 0x1218) = (char)iVar8;
+      *(char *)((char *)piVar4 + 0x4861) = (char)((uint)iVar8 >> 8);
+      *(char *)((char *)piVar4 + 0x4862) = (char)((uint)iVar8 >> 0x10);
+      *(char *)((char *)piVar4 + 0x4863) = (char)((uint)iVar8 >> 0x18);
+      iVar8 = piVar3[0x319];
+      *(char *)(piVar4 + 0x1219) = (char)iVar8;
+      *(char *)((char *)piVar4 + 0x4865) = (char)((uint)iVar8 >> 8);
+      *(char *)((char *)piVar4 + 0x4866) = (char)((uint)iVar8 >> 0x10);
+      *(char *)((char *)piVar4 + 0x4867) = (char)((uint)iVar8 >> 0x18);
+      iVar8 = piVar3[0x31a];
+      *(char *)(piVar4 + 0x121a) = (char)iVar8;
+      *(char *)((char *)piVar4 + 0x4869) = (char)((uint)iVar8 >> 8);
+      *(char *)((char *)piVar4 + 0x486a) = (char)((uint)iVar8 >> 0x10);
+      *(char *)((char *)piVar4 + 0x486b) = (char)((uint)iVar8 >> 0x18);
+      iVar8 = piVar3[0x31b];
+      *(char *)(piVar4 + 0x121b) = (char)iVar8;
+      *(char *)((char *)piVar4 + 0x486d) = (char)((uint)iVar8 >> 8);
+      *(char *)((char *)piVar4 + 0x486e) = (char)((uint)iVar8 >> 0x10);
+      *(char *)((char *)piVar4 + 0x486f) = (char)((uint)iVar8 >> 0x18);
+      iVar8 = piVar3[0x31c];
+      *(char *)(piVar4 + 0x121c) = (char)iVar8;
+      *(char *)((char *)piVar4 + 0x4871) = (char)((uint)iVar8 >> 8);
+      *(char *)((char *)piVar4 + 0x4872) = (char)((uint)iVar8 >> 0x10);
+      *(char *)((char *)piVar4 + 0x4873) = (char)((uint)iVar8 >> 0x18);
+      iVar8 = piVar3[0x30b];
+      *(char *)(piVar4 + 0x120b) = (char)iVar8;
+      *(char *)((char *)piVar4 + 0x482d) = (char)((uint)iVar8 >> 8);
+      *(char *)((char *)piVar4 + 0x482e) = (char)((uint)iVar8 >> 0x10);
+      *(char *)((char *)piVar4 + 0x482f) = (char)((uint)iVar8 >> 0x18);
+      iVar8 = piVar3[0x30c];
+      *(char *)(piVar4 + 0x120c) = (char)iVar8;
+      *(char *)((char *)piVar4 + 0x4831) = (char)((uint)iVar8 >> 8);
+      *(char *)((char *)piVar4 + 0x4832) = (char)((uint)iVar8 >> 0x10);
+      *(char *)((char *)piVar4 + 0x4833) = (char)((uint)iVar8 >> 0x18);
+      iVar8 = piVar3[0x30d];
+      *(char *)(piVar4 + 0x120d) = (char)iVar8;
+      *(char *)((char *)piVar4 + 0x4835) = (char)((uint)iVar8 >> 8);
+      *(char *)((char *)piVar4 + 0x4836) = (char)((uint)iVar8 >> 0x10);
+      *(char *)((char *)piVar4 + 0x4837) = (char)((uint)iVar8 >> 0x18);
+      iVar8 = piVar3[0x305];
+      *(char *)(piVar4 + 0x1205) = (char)iVar8;
+      *(char *)((char *)piVar4 + 0x4815) = (char)((uint)iVar8 >> 8);
+      *(char *)((char *)piVar4 + 0x4816) = (char)((uint)iVar8 >> 0x10);
+      *(char *)((char *)piVar4 + 0x4817) = (char)((uint)iVar8 >> 0x18);
+      iVar8 = piVar3[0x305];
+      if (0 < iVar8) {
+        piVar5 = piVar4 + 0x1206;
+        piVar6 = piVar3;
+        piVar7 = piVar3;
+        piVar11 = piVar4;
+        do {
+          piVar10 = piVar7 + 0x306;
+          iVar8 = iVar8 + -1;
+          piVar7 = piVar7 + 1;
+          iVar9 = *piVar10 + iVar1;
+          *(char *)piVar5 = (char)iVar9;
+          *(char *)((char *)piVar5 + 1) = (char)((uint)iVar9 >> 8);
+          *(char *)((char *)piVar5 + 2) = (char)((uint)iVar9 >> 0x10);
+          *(char *)((char *)piVar5 + 3) = (char)((uint)iVar9 >> 0x18);
+          piVar5 = piVar5 + 1;
+          iVar9 = piVar6[0x30e];
+          *(char *)(piVar11 + 0x120e) = (char)iVar9;
+          *(char *)((char *)piVar11 + 0x4839) = (char)((uint)iVar9 >> 8);
+          *(char *)((char *)piVar11 + 0x483a) = (char)((uint)iVar9 >> 0x10);
+          *(char *)((char *)piVar11 + 0x483b) = (char)((uint)iVar9 >> 0x18);
+          piVar10 = piVar6 + 0x30f;
+          piVar6 = piVar6 + 2;
+          iVar9 = *piVar10;
+          *(char *)(piVar11 + 0x120f) = (char)iVar9;
+          *(char *)((char *)piVar11 + 0x483d) = (char)((uint)iVar9 >> 8);
+          *(char *)((char *)piVar11 + 0x483e) = (char)((uint)iVar9 >> 0x10);
+          *(char *)((char *)piVar11 + 0x483f) = (char)((uint)iVar9 >> 0x18);
+          piVar11 = piVar11 + 2;
+        } while (iVar8 != 0);
+      }
+      local_2c = local_2c + 1;
+      local_30 = local_30 + 1;
+      piVar4 = piVar4 + 0x18;
+      piVar3 = piVar3 + 0x18;
+    } while (local_2c < param_2[1]);
+  }
+  *(char *)(param_1 + 1) = (char)local_30;
+  *(char *)((char *)param_1 + 5) = (char)((uint)local_30 >> 8);
+  *(char *)((char *)param_1 + 6) = (char)((uint)local_30 >> 0x10);
+  *(char *)((char *)param_1 + 7) = (char)((uint)local_30 >> 0x18);
+  return;
+}
