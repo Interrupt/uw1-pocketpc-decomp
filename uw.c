@@ -2652,37 +2652,6 @@ undefined1 *DAT_002048b8;
 undefined2 DAT_002048b2;
 undefined2 DAT_0023be98;
 undefined4 DAT_000858a0;
-// was FUN_0003d8e4. Stored into DAT_002048b8 (a movement-state callback
-// slot) right alongside the rest of the jump/fall fields' reset in
-// set_player_tile_position and the game-init player setup -- always with
-// param_1 = the player object. Recovered via Ghidra headless: gates on
-// the object's 0x1000 flag bit, g_vertical_velocity being exactly 0 (not
-// still rising/falling) and g_jump_ascent_timer being under a
-// DAT_00202078-derived threshold, then clears the two landing-adjacent
-// fields at struct offsets 6/8 (DAT_00204886/DAT_00204888) and reports
-// success -- i.e. a "has the player settled after a jump/fall" check.
-// DAT_0003d948/DAT_0003d944 were literal-pool constants (addresses of
-// DAT_00204880's struct base and DAT_00202078 respectively), same
-// pattern as DAT_0001842c -- resolved to the existing named fields
-// rather than left as fresh globals. No call site through DAT_002048b8
-// itself was found in this decompile (likely reached only via a
-// jumptable Ghidra never resolved into a caller), so this is ported for
-// fidelity but not independently exercised.
-undefined4 check_and_reset_landing_state(param_1)
-ushort *param_1;
-{
-  undefined4 uVar2;
-  if ((((*param_1 & 0x1000) == 0) || (g_vertical_velocity != 0)) ||
-     (DAT_00202078 * 3 <= g_jump_ascent_timer * 10)) {
-    uVar2 = 0;
-  }
-  else {
-    DAT_00204888 = 0;
-    DAT_00204886 = 0;
-    uVar2 = 1;
-  }
-  return uVar2;
-}
 /* Recovered from UU.exe .data at 0x85d20: tile-floor-height -> world Z
    table, `height_nibble * 64` for nibbles 0..13 (then 0,0,1024).
    `*(short *)(&DAT_00085d20 + nibble*2)`. Was all-zero, so the player's
