@@ -1488,3 +1488,232 @@ undefined4 peek_input_event()
 {
   return poll_input_event(1);
 }
+
+
+// was FUN_0003c4dc -- set the player's swim/wade sub-pose byte
+// (DAT_00086df8+0xb9) from the collision-state mask's "in liquid, how deep"
+// bit (0x2): shallow (0x10) vs deep/wading (0x60, also force-leaving
+// combat stance via unready_weapon -- can't hold a weapon ready while
+// swimming). Returns true for the deep case. Only ever called from
+// set_locomotion_state's swim branch.
+bool apply_swim_wade_pose(param_1)
+ushort param_1;
+
+{
+  bool bVar1;
+
+  bVar1 = (param_1 & 2) == 0;
+  if (bVar1) {
+    *(undefined1 *)(DAT_00086df8 + 0xb9) = 0x10;
+  }
+  else {
+    *(undefined1 *)(DAT_00086df8 + 0xb9) = 0x60;
+    unready_weapon();
+  }
+  return !bVar1;
+}
+
+
+
+
+
+
+// was FUN_0003c7f4 -- translate a W/S/X/A/D direction arg (-2..2) into
+// movement-engine target state (heading-relative goal position/heading).
+undefined4 begin_directional_move(param_1)
+short param_1;
+
+{
+  undefined2 uVar1;
+  byte bVar2;
+  uint uVar3;
+  char *uVar4;
+  int extraout_r1;
+  uint uVar5;
+  ushort uVar6;
+  int iVar7;
+  int iVar8;
+  int iVar9;
+  uint uVar10;
+  undefined8 uVar11;
+  ushort local_44;
+  ushort local_42;
+  uint local_40;
+  undefined2 local_3c;
+  undefined2 local_3a;
+  ushort local_38;
+  byte local_34;
+  undefined1 local_33;
+  undefined2 local_32;
+  
+  if (getenv("UW_DEBUG_STEPHEIGHT"))
+    fprintf(stderr, "[bdm-entry] param_1=%d g_fall_accel=%d g_jump_ascent_timer=%d DAT_00085890=%d z=%d guard=%d\n",
+            (int)param_1, (int)g_fall_accel, (int)g_jump_ascent_timer, (int)DAT_00085890, (int)DAT_00204884,
+            (g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890));
+  if ((g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890)) {
+    uVar10 = 0;
+    if (param_1 == -2) {
+      uVar4 = 0x40;
+      iVar7 = (short)DAT_00201c70 + 0x8000;
+LAB_0003c940:
+      if (iVar7 < 0) {
+        iVar7 = iVar7 + 0xff;
+      }
+      local_44 = DAT_00204880;
+      local_40 = (uint)((DAT_0020208c & 0x14) != 0);
+      uVar5 = local_40;
+      local_42 = DAT_00204882;
+      project_position_by_heading((int)(short)((uint)iVar7 >> 8),uVar4,&local_44,&local_42);
+      iVar7 = (int)(short)local_44;
+      iVar8 = (int)(short)local_42;
+      if (iVar8 < 0) {
+        iVar8 = iVar8 + 0x1f;
+      }
+      if (iVar7 < 0) {
+        iVar7 = iVar7 + 0x1f;
+      }
+      iVar7 = check_object_placement_clearance(0x7f,1,(int)(short)(iVar7 >> 5),(int)(short)(iVar8 >> 5),
+                           *(byte *)((char *)g_player_object + 2) & 0x7f,uVar5 | uVar10,8);
+      if ((iVar7 == 0) ||
+         ((((uVar10 == 0 && (uVar3 = (uint)DAT_00202c68, uVar3 != 1)) && (uVar3 != DAT_00202084)) &&
+          ((uVar3 != 0x10 || (uVar5 == 0)))))) goto LAB_0003cdf8;
+      DAT_00204880 = local_44;
+      DAT_00204882 = local_42;
+      iVar9 = ((int)(short)local_42 >> 8) * 0x40 + (((int)(short)local_44 << 0x10) >> 0x18);
+      iVar8 = (int)DAT_00202080;
+      iVar7 = iVar9 * 0x10000 >> 0x10;
+      if (iVar7 != iVar8) {
+        if (iVar8 != -1) {
+          object_list_unlink(DAT_002029cc + iVar8 * 4 + 2,g_player_object);
+        }
+        DAT_00202080 = (short)iVar9;
+        object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
+        uVar6 = DAT_00204880 & 0x3f00;
+        uVar5 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
+        *(char *)((char *)g_player_object + 0x16) = (char)uVar5;
+        *(byte *)((char *)g_player_object + 0x17) =
+             (byte)(uVar5 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 8) << 10) >> 8);
+        uVar5 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f |
+                ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
+        *(char *)((char *)g_player_object + 0x16) = (char)uVar5;
+        *(char *)((char *)g_player_object + 0x17) = (char)(uVar5 >> 8);
+        uVar5 = local_40;
+      }
+      uVar6 = DAT_00204880 & 0xe0;
+      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
+      *(char *)((char *)g_player_object + 2) = (char)uVar3;
+      *(byte *)((char *)g_player_object + 3) =
+           (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 0xd) >> 8);
+      uVar6 = DAT_00204882 & 0xe0;
+      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xe3ff;
+      *(char *)((char *)g_player_object + 2) = (char)uVar3;
+      *(byte *)((char *)g_player_object + 3) =
+           (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 10) >> 8);
+      if (getenv("UW_DEBUG_STEPHEIGHT"))
+        fprintf(stderr, "[stepsnap] uVar10=%u uVar5=%u cur_z=%d DAT_00202c30=%d snap=%d\n",
+                uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,
+                (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)));
+      if (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)) {
+        uVar1 = *(undefined2 *)((char *)g_player_object + 2);
+        bVar2 = (byte)uVar1;
+        *(byte *)((char *)g_player_object + 2) = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
+        *(char *)((char *)g_player_object + 3) = (char)((ushort)uVar1 >> 8);
+        DAT_00204884 = DAT_00202c30 << 3;
+      }
+      else if (g_fall_accel == 0 && uVar5 == 0) {
+        g_fall_accel = -4;
+      }
+      set_locomotion_state((int)DAT_00202c68,0);
+      uVar10 = read_realtime_clock_units();
+      uVar5 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
+      *(char *)((char *)g_player_object + 0xb) = (char)uVar5;
+      *(byte *)((char *)g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
+      uVar4 = DAT_00202c6c;
+      DAT_00202c6c = &local_3c;
+      local_32 = 1;
+      local_33 = DAT_00203303;
+      local_34 = (byte)DAT_00203304 & 7;
+      iVar7 = (int)(short)local_44;
+      if (iVar7 < 0) {
+        iVar7 = iVar7 + 0x1f;
+      }
+      local_3c = (undefined2)(iVar7 >> 5);
+      iVar7 = (int)(short)local_42;
+      if (iVar7 < 0) {
+        iVar7 = iVar7 + 0x1f;
+      }
+      local_3a = (undefined2)(iVar7 >> 5);
+      local_38 = *(byte *)((char *)g_player_object + 2) & 0x7f;
+      collision_height_envelope(0,0);
+      sort_collision_candidates();
+      iVar8 = (int)*(char *)(DAT_00202c6c + 0xb);
+      iVar7 = (int)(short)*(char *)(DAT_00202c6c + 0xb);
+      if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
+        do {
+          uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6,iVar8);
+          /* Was `iVar8 = (int)((ulonglong)uVar11 >> 0x20);` -- a leftover
+             from the original 32-bit ARM ABI, where resolve_object_link's
+             caller apparently re-read some other value out of r1 right
+             after the call (Ghidra folded it into a fake 64-bit return
+             value, r0:r1). On this 64-bit recompile resolve_object_link
+             returns a real, single 64-bit pointer with no second value
+             riding along in its "upper half" -- (ulonglong)uVar11 >> 0x20
+             was just the pointer's own high address bits, reinterpreted
+             as iVar8 and clobbering this loop's own bound (iVar8 is the
+             loop's own upper limit, from DAT_00202c6c+0xb/0x15) with
+             garbage every single iteration after the first. That let
+             iVar7 walk arbitrarily far past the real candidate range,
+             feeding wild indices into resolve_object_link on later
+             iterations -- confirmed via the very "negative slot"/"exceeds
+             0x3ff" get_object_record_by_slot_index warnings logged just before this crash.
+             Also add the missing NULL guard resolve_object_link's other
+             call sites already needed: an out-of-range link now returns
+             NULL, and this dereferenced it unconditionally (confirmed via
+             lldb, EXC_BAD_ACCESS at address 0). */
+          if (uVar11 == 0) break;
+          if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
+            resolve_skill_gated_unlock_or_use(g_player_object,0,(ushort *)uVar11,0);
+            iVar8 = extraout_r1;
+          }
+          iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
+        } while (iVar7 < (int)((uint)*(byte *)((char *)DAT_00202c6c + 0x15) +
+                              (int)*(char *)(DAT_00202c6c + 0xb)));
+      }
+    }
+    else {
+      if (param_1 == 0) {
+LAB_0003c920:
+        uVar4 = 0x80;
+        iVar7 = (int)(short)DAT_00201c70;
+        goto LAB_0003c940;
+      }
+      if (param_1 == 2) {
+        uVar10 = 1;
+        goto LAB_0003c920;
+      }
+      if ((DAT_00201c70 & 0x1fff) == 0) {
+        DAT_00201c70 = DAT_00201c70 + param_1 * 0x2000;
+      }
+      else {
+        DAT_00201c70 = (DAT_00201c70 & 0xe000) + (ushort)(0 < param_1) * 0x2000;
+      }
+      uVar10 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
+      *(char *)((char *)g_player_object + 2) = (char)uVar10;
+      *(char *)((char *)g_player_object + 3) = (char)(uVar10 >> 8);
+      *(byte *)((char *)g_player_object + 0x18) =
+           ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
+           *(byte *)((char *)g_player_object + 0x18);
+      uVar4 = DAT_00202c6c;
+    }
+    DAT_00202c6c = (undefined2 *)uVar4;
+    uVar4 = 1;
+  }
+  else {
+LAB_0003cdf8:
+    uVar4 = 0;
+  }
+  if (getenv("UW_DEBUG_STEPHEIGHT"))
+    fprintf(stderr, "[bdm-exit] moved=%d z=%d g_fall_accel=%d bea8=%d be98=%d\n",
+            (int)uVar4, (int)DAT_00204884, (int)g_fall_accel, (int)DAT_0023bea8, (int)DAT_0023be98);
+  return uVar4;
+}

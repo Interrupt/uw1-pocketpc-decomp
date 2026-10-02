@@ -4198,3 +4198,55 @@ void apply_drowning_hazard()
   }
   return;
 }
+
+
+// was FUN_0003c194 -- mode-0 dirty-bit-3 handler: advance the in-progress
+// step/turn view animation one tick (interpolate the player tile position
+// via find_placement_via_tile_flood_fill) and redraw the dungeon view around it. Does nothing
+// unless an animation is queued (0 < DAT_00201c90). DAT_00085730 bit 0
+// gates the mid-animation full_dungeon_redraw, bit 1 the on-completion
+// redraw + set_pending_update_flags(0x7ffe).
+undefined4 dungeon_view_anim_tick()
+
+{
+  int iVar1;
+  short local_20;
+  short local_1e;
+  
+  if (0 < DAT_00201c90) {
+    if ((DAT_00085730 & 1) != 0) {
+      full_dungeon_redraw();
+      weapon_overlay_flash_hold((int)g_visibility_max_ring_passes);
+    }
+    if (DAT_00201b68 != DAT_00201c7c) {
+      iVar1 = transition_to_level(DAT_00201b68, DAT_00201c7c);
+      if (iVar1 == 0) {
+        report_fatal_error_and_exit(0x300c);
+      }
+      DAT_00201b68 = DAT_00201c7c;
+    }
+    if (DAT_00201c9c != (code *)0x0) {
+      (*DAT_00201c9c)();
+    }
+    iVar1 = find_placement_via_tile_flood_fill(g_player_object,(int)DAT_00201c90,(int)DAT_00201c8c,&local_20,&local_1e,0);
+    if ((iVar1 == 0) &&
+       (iVar1 = find_placement_via_tile_flood_fill(g_player_object,(int)DAT_00201c90,(int)DAT_00201c8c,&local_20,&local_1e,1)
+       , iVar1 == 0)) {
+      DAT_00201c90 = 0;
+      *(undefined1 *)((char *)g_player_object + 8) = 0;
+      return 0;
+    }
+    DAT_00201c90 = local_20;
+    DAT_00201c8c = local_1e;
+    set_player_tile_position((int)local_20,(int)local_1e,1);
+    if ((DAT_00085730 & 2) != 0) {
+      full_dungeon_redraw();
+      weapon_overlay_flash_restore((int)g_visibility_max_ring_passes);
+    }
+    DAT_00201c90 = 0;
+    if ((DAT_00085730 & 2) != 0) {
+      set_pending_update_flags(0x7ffe);
+    }
+  }
+  return 1;
+}

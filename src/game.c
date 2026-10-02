@@ -2764,3 +2764,93 @@ void begin_gameplay(void)
     set_pending_update_flags(0x7ffe);
     DAT_000868d8 = 0;
 }
+
+
+// was FUN_0003bc40
+void set_game_mode(param_1)
+undefined4 param_1;
+
+{
+  *(char *)(DAT_00085a6c + 8) = (char)param_1;
+  *(char *)(DAT_00085a6c + 9) = (char)((uint)param_1 >> 8);
+  /* The real game mode lives at BYTE offset 8 of the DAT_00085a6c struct
+     (== DAT_00085a6c[4] with its `short *` typing) -- that is what the
+     0x3bc40 disasm writes (`strb [buf,#8]` / `[buf,#9]`) and what the
+     keybinding dispatcher dispatch_key_binding reads (`ldrb [state,#8]`). Ghidra
+     typed DAT_00085a6c as `short *`, so the two `*(char *)(DAT_00085a6c +
+     8/9)` writes just above actually land at byte 16/18, and every
+     `*(short *)(DAT_00085a6c + 8) == N` mode check elsewhere reads byte
+     16 too -- self-consistent, so mode transitions still "work", but
+     dispatch_key_binding's byte-8 read then always saw 0, so NO keybinding's
+     mode mask ever matched and every table-dispatched key (the W/S/X/A/D
+     movement keys, ...) was dead. Mirror the mode to byte 8 as well so
+     the dispatcher sees it, without disturbing the byte-16 readers. */
+  DAT_00085a6c[4] = (short)param_1;
+  DAT_00201b60 = (short)param_1;
+  if ((short)DAT_00201b60 != 1) {
+    if ((short)DAT_00201b60 == 2) {
+      DAT_00201b64 = 1;
+      goto LAB_0003bcb0;
+    }
+    if ((short)DAT_00201b60 == 4) {
+      DAT_00201b64 = 2;
+      goto LAB_0003bcb0;
+    }
+  }
+  DAT_00201b64 = 0;
+LAB_0003bcb0:
+  reset_cursor_confine_rect();
+  return;
+}
+
+
+
+// was FUN_0003bcb8
+void change_game_mode(param_1)
+int param_1;
+
+{
+  code *pcVar1;
+  bool bVar2;
+  
+  pcVar1 = (code *)(int)DAT_00201b64;
+  /* Was `pcVar1 != (code *)0xffffffff` -- a 32-bit-pointer-sentinel idiom
+     that's broken on this 64-bit host even after fixing DAT_00201b64's
+     own signedness above: `pcVar1` sign-extends from a negative `int` to
+     a full 64-bit all-ones pointer, but the literal `(code*)0xffffffff`
+     zero-extends from an *unsigned* 32-bit constant to a 64-bit pointer
+     with only its low 32 bits set -- the two never compare equal, so
+     this guard was always true and let a disabled/-1 mode dispatch
+     through a wild table index anyway. Compare the real source value
+     instead of a fabricated pointer sentinel. */
+  bVar2 = DAT_00201b64 != -1;
+  if (bVar2) {
+    /* 0x80 = 16 entries/mode * 8 bytes/entry (real pointer size) -- was
+       0x40 (*4-byte entries), see DAT_00085668's comment. */
+    pcVar1 = *(code **)(&DAT_000856a4 + (int)pcVar1 * 0x80);
+  }
+  if (bVar2 && pcVar1 != (code *)0x0) {
+    (*pcVar1)();
+  }
+  if ((short)param_1 < 0) {
+    param_1 = (int)DAT_00201c94;
+  }
+  else {
+    DAT_00201c94 = (short)DAT_00201b60;
+  }
+  set_game_mode(param_1);
+  /* 0x80, see DAT_00085668's comment. Guarded the same way the dispatch
+     a few lines up is (DAT_00201b64 == -1 is the documented "no mode"
+     sentinel, uw.c ~27530/27774) -- unguarded, this indexed a wild
+     negative offset off the front of DAT_00085668_real_table whenever
+     this ran with dispatch still disabled (confirmed live: an ASan
+     global-buffer-overflow here in demo_automap_note_test.txt, right
+     after fixing the sibling site above's zero-extension bug). */
+  if ((DAT_00201b64 != -1) && (*(code **)(&DAT_00085668 + DAT_00201b64 * 0x80) != (code *)0x0)) {
+    (**(code **)(&DAT_00085668 + DAT_00201b64 * 0x80))();
+  }
+  if ((short)param_1 != 1) {
+    set_pending_update_flags(0x7ffe);
+  }
+  return;
+}

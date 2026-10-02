@@ -2757,6 +2757,9 @@ extern ushort DAT_0023b7f8;
 #define DAT_002048a7 DAT_00204880_backing[0x27]
 #define DAT_002048a8 DAT_00204880_backing[0x28]
 #define DAT_002048a9 DAT_00204880_backing[0x29]
+#define DAT_00204892 (*(short *)&DAT_00204880_backing[0x12])
+#define DAT_002048a2 DAT_00204880_backing[0x22]
+#define DAT_002048aa DAT_00204880_backing[0x2a]
 #define g_fall_accel (*(short *)&DAT_00204880_backing[0x10])
 #define g_jump_ascent_timer (*(short *)&DAT_00204880_backing[0x14])
 #define g_vertical_velocity (*(short *)&DAT_00204880_backing[0xa]) // was DAT_0020488a
