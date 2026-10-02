@@ -2675,3 +2675,49 @@ short param_1;
   redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_1]);
   return;
 }
+
+
+// was FUN_00047b38 -- checks whether two objects can be merged into
+// one stack: same class, both stackable (or both non-stacked), not in
+// an excluded category (0xc0 bits), and -- for the "cheap goods"
+// class range 0x10-0x12 -- matching quality-family nibbles. Checked
+// before objects_are_combinable in handle_backpack_slot_interact; a
+// true result merges quantities instead of combining into a new item.
+undefined4 objects_can_stack(param_1,param_2)
+ushort * param_1;
+ushort * param_2;
+
+{
+  byte bVar1;
+  byte bVar2;
+  ushort uVar3;
+  ushort uVar4;
+  ushort uVar5;
+  uint uVar6;
+  
+  uVar3 = *param_1;
+  if ((((((*param_2 ^ uVar3) & 0x1ff) == 0) &&
+       (((uVar3 & 0x8000) != 0 || ((param_1[3] & 0xffc0) == 0)))) &&
+      (((*param_2 & 0x8000) != 0 || ((param_2[3] & 0xffc0) == 0)))) &&
+     ((uVar4 = param_1[3], (uVar4 & 0x8000) == 0 && (uVar5 = param_2[3], (uVar5 & 0x8000) == 0)))) {
+    uVar6 = uVar3 & 0x1ff;
+    if (((((&DAT_00202c93)[uVar6 * 0xd] & 0xc0) != 0x40) &&
+        (((&DAT_00202c93)[uVar6 * 0xd] & 0xc0) != 0xc0)) &&
+       ((((uVar3 & 0x1f0) != 0x100 || (((uVar5 ^ uVar4) & 0x3f) == 0)) &&
+        ((ushort)((uVar5 >> 6) + (uVar4 >> 6)) < 999)))) {
+      if ((uVar6 < 0x10) || (0x12 < uVar6)) {
+        bVar1 = (byte)param_1[2] & 0x3f;
+        bVar2 = (byte)param_2[2] & 0x3f;
+        if (((bVar1 ^ bVar2) & 0xf0) != 0) {
+          return 0;
+        }
+        if (((((byte)param_1[2] & 0x3f) == 0) || (((byte)param_2[2] & 0x3f) == 0)) &&
+           (bVar1 != bVar2)) {
+          return 0;
+        }
+      }
+      return 1;
+    }
+  }
+  return 0;
+}

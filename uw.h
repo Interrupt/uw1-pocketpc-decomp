@@ -3319,7 +3319,7 @@ undefined1 *FUN_000470fc();
 uint check_object_fits_in_slot();
 void handle_backpack_slot_click();
 undefined4 place_held_item_in_empty_slot();
-undefined4 FUN_00047b38();
+undefined4 objects_can_stack();
 undefined4 handle_backpack_slot_interact();
 void FUN_00048110();
 void redraw_inventory_widget_range();

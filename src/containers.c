@@ -960,7 +960,7 @@ LAB_0004386c:
       }
       puVar6 = puVar4 + 3;
       while (puVar6 = (ushort *)resolve_object_link(puVar6), puVar6 != (ushort *)0x0) {
-        iVar10 = FUN_00047b38(param_1,puVar6);
+        iVar10 = objects_can_stack(param_1,puVar6);
         if (iVar10 != 0) {
           uVar2 = *puVar6;
           if ((uVar2 & 0x8000) == 0) {
