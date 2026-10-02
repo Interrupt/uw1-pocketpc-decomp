@@ -4100,7 +4100,7 @@ void handle_barter_player_slot_drop()
   short local_8;
   short local_6;
   
-  FUN_00057504(&local_6,&local_8);
+  get_mouse_position(&local_6,&local_8);
   uVar1 = hit_test_barter_player_slot((int)local_6,(int)local_8);
   if (-1 < (short)uVar1) {
     handle_barter_slot_click(1,uVar1,&DAT_000bbfd0,&DAT_000bbf98);
@@ -4229,7 +4229,7 @@ int param_4;
         return;
       }
       wait_for_click_release(1);
-      FUN_00057504(&local_36,&local_38);
+      get_mouse_position(&local_36,&local_38);
       sVar1 = resolve_barter_slot_at_point((int)local_36,(int)local_38,&local_10,&local_c,&local_8,&local_4);
       if (sVar1 == 0) {
         g_cursor_holding_state = 1;

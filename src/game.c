@@ -1307,7 +1307,7 @@ short param_4;
 // was poll_menu_pointer_selection -- pointer/touch-driven hit-test loop for a menu
 // item list (param_3=='\0': bitmap buttons; param_3!=0: text items,
 // e.g. the save-slot list): while pointer events remain queued, polls
-// the current pointer position (FUN_00057504) and tests it against
+// the current pointer position (get_mouse_position) and tests it against
 // each item's hit rect (bitmap mode: the packed 0x10-stride rect
 // record; text mode: the item's measured text extent), redrawing via
 // draw_menu_item_list whenever the hovered item changes. Also drives
@@ -1353,7 +1353,7 @@ char param_3;
       bVar2 = bVar3;
       do {
         animate_title_palette_cycle();
-        FUN_00057504(&local_30,&local_2e);
+        get_mouse_position(&local_30,&local_2e);
         iVar8 = 0;
         if (0 < iVar1) {
           do {
@@ -1388,7 +1388,7 @@ char param_3;
       iVar1 = (int)sVar5;
       do {
         animate_title_palette_cycle();
-        FUN_00057504(&local_30,&local_2e);
+        get_mouse_position(&local_30,&local_2e);
         iVar8 = 0;
         if (0 < iVar1) {
           iVar8 = 0;

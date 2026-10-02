@@ -125,7 +125,7 @@ ushort * param_1;
   FUN_00057c5c(*param_1 & 0x1ff);
   FUN_000575c4(&local_14);
   if ((local_14 != 0) && (wait_for_click_release(1), g_selected_object != (ushort *)0x0)) {
-    FUN_00057504(local_10,&local_12);
+    get_mouse_position(local_10,&local_12);
     sVar2 = hit_test_inventory_widget((int)local_10[0],(int)local_12);
     if (getenv("UW_DEBUG_INV"))
       fprintf(stderr, "[inv] attach_picked_up_object_to_cursor click test: gx=%d gy=%d -> widget_id=%d\n",

@@ -13156,7 +13156,7 @@ bool compute_drop_aim_from_cursor()
   short local_10;
   short local_e;
   
-  FUN_00057504(&local_10,&local_e);
+  get_mouse_position(&local_10,&local_e);
   sVar3 = (short)(local_10 + -0x34);
   iVar1 = (local_10 + -0x34) * 0x10000 >> 0x10;
   if (0xac < iVar1) {
@@ -13951,145 +13951,6 @@ uint param_3;
 
 
 
-void FUN_00057188(param_1,param_2,param_3,param_4)
-undefined2 param_1;
-undefined2 param_2;
-undefined2 param_3;
-undefined2 param_4;
-
-{
-  DAT_0020479c = param_1;
-  DAT_002047a0 = param_2;
-  DAT_00204798 = param_3;
-  DAT_00204790 = param_4;
-  return;
-}
-
-
-
-undefined4 FUN_000571c0()
-
-{
-  FUN_00057d1c((int)DAT_0020479c,(int)DAT_002047a0,
-               ((int)DAT_00204798 + (int)DAT_0020479c) * 0x10000 >> 0x10,
-               ((int)DAT_00204790 + (int)DAT_002047a0) * 0x10000 >> 0x10);
-  return 0;
-}
-
-
-
-void FUN_0005721c()
-
-{
-  int iVar1;
-  short sVar2;
-  int iVar3;
-  int iVar4;
-  int iVar5;
-  int iVar6;
-  int iVar7;
-  
-  iVar3 = (int)DAT_0020479c;
-  iVar4 = (((int)g_mouse_x - (int)DAT_00204784) + (int)DAT_0020471c) * 0x10000 >> 0x10;
-  if ((iVar4 <= iVar3 + DAT_00204798) &&
-     (iVar5 = (((int)g_mouse_x - (int)DAT_0020471c) + (int)DAT_00204784) * 0x10000 >> 0x10,
-     iVar3 <= iVar5)) {
-    iVar6 = (((int)g_mouse_y - (int)DAT_002047a4) + (int)DAT_00204748) * 0x10000 >> 0x10;
-    iVar7 = (int)DAT_002047a0;
-    if ((iVar6 <= iVar7 + DAT_00204790) &&
-       (iVar1 = (((int)g_mouse_y - (int)DAT_00204748) + (int)DAT_002047a4) * 0x10000 >> 0x10,
-       iVar7 <= iVar1)) {
-      if ((((iVar3 < iVar4) && (iVar5 < iVar3 + DAT_00204798)) && (iVar7 < iVar6)) &&
-         (iVar1 < iVar7 + DAT_00204790)) {
-        DAT_00204794 = 2;
-      }
-      else {
-        DAT_00204794 = 1;
-        if (*(short *)(DAT_00085a6c + 8) != 1) {
-          iVar4 = (int)DAT_000a85c4;
-          iVar3 = (int)DAT_000a85c8;
-          iVar5 = (int)DAT_000842a4;
-          iVar6 = (int)DAT_000842a8;
-          set_viewport_clip_rect(0,0,0x13f,199);
-          decrement_cursor_hide_depth();
-          set_viewport_clip_rect(iVar4,iVar3,iVar5,iVar6);
-        }
-      }
-      if ((DAT_00204840 == 1) && (g_selected_object == 0)) {
-        draw_idle_mouse_cursor();
-        return;
-      }
-      if (DAT_00204840 < 2) {
-        if (-1 < DAT_00204840) {
-          return;
-        }
-        sVar2 = 1;
-      }
-      else {
-        sVar2 = -1;
-      }
-      DAT_00204840 = DAT_00204840 + sVar2;
-      return;
-    }
-  }
-  DAT_00204794 = 0;
-  return;
-}
-
-
-
-void FUN_00057460()
-
-{
-  int iVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  
-  if ((DAT_00204794 == 1) && (*(short *)(DAT_00085a6c + 8) != 1)) {
-    iVar1 = (int)DAT_000a85c4;
-    iVar2 = (int)DAT_000a85c8;
-    iVar3 = (int)DAT_000842a4;
-    iVar4 = (int)DAT_000842a8;
-    set_viewport_clip_rect(0,0,0x13f,199);
-    cursor_show_idle_tick();
-    set_viewport_clip_rect(iVar1,iVar2,iVar3,iVar4);
-  }
-  return;
-}
-
-
-
-void FUN_00057504(param_1,param_2)
-undefined2 * param_1;
-undefined2 * param_2;
-
-{
-  *param_1 = g_mouse_x;
-  *param_2 = g_mouse_y;
-  return;
-}
-
-
-
-void FUN_00057528(param_1,param_2)
-undefined2 * param_1;
-undefined2 * param_2;
-
-{
-  undefined2 uVar1;
-  
-  if (DAT_0020484c == 0) {
-    *param_1 = g_mouse_x;
-    uVar1 = g_mouse_y;
-  }
-  else {
-    *param_1 = DAT_0008696a;
-    uVar1 = DAT_0008696c;
-  }
-  *param_2 = uVar1;
-  return;
-}
 
 
 
@@ -14159,7 +14020,7 @@ int param_1;
   undefined1 auStack_10 [4];
   
   iVar4 = 0;
-  FUN_00057504(&local_16,&local_12);
+  get_mouse_position(&local_16,&local_12);
   while( true ) {
     sVar3 = FUN_000575c4(auStack_10);
     if ((sVar3 == 0) || (iVar4 != 0)) break;
@@ -14171,7 +14032,7 @@ int param_1;
     FUN_00057904(1);
     FUN_00058734();
     update_mouse_state();
-    FUN_00057504(&local_18,&local_14);
+    get_mouse_position(&local_18,&local_14);
     uVar1 = (int)local_18 - (int)local_16 >> 0x1f;
     uVar2 = (int)local_14 - (int)local_12 >> 0x1f;
     if (6 < (int)((((int)local_14 - (int)local_12 ^ uVar2) - uVar2) +
@@ -15319,7 +15180,7 @@ int param_4;
      compute_view_y_bound's own comment on why this fix has no
      observable behavioral effect). */
   compute_view_y_bound(param_1,param_2,param_3);
-  FUN_00057188(param_1,param_2,param_3,param_4);
+  set_tracked_hotspot_rect(param_1,param_2,param_3,param_4);
   register_game_view_interact_zones(param_1,param_2 + param_4 + -1,param_3,param_4);
   if ((*(ushort *)(DAT_00085a6c + 8) & 8) == 0) {
     if ((*(ushort *)(DAT_00085a6c + 8) & 1) == 0) {

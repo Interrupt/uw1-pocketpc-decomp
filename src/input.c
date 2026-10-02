@@ -481,7 +481,7 @@ undefined1 * param_1;
   if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_bindings: peek_input_event=%d\n", (int)(short)uVar1);
   if (-1 < (short)uVar1) {
     if ((short)uVar1 < 4) {
-      FUN_00057528(&local_28,&local_26);
+      get_click_position(&local_28,&local_26);
       param_1[6] = (char)uVar1;
       param_1[7] = (char)((uint)uVar1 >> 8);
       /* The mouse-button-state field of the DAT_00085a6c struct is at
@@ -494,7 +494,7 @@ undefined1 * param_1;
          handle_game_view_click but never walked. Write byte 12 as well. */
       param_1[12] = (char)uVar1;
       param_1[13] = (char)((uint)uVar1 >> 8);
-      FUN_00057528(&local_28,&local_26);
+      get_click_position(&local_28,&local_26);
       param_1[4] = 1;
       param_1[5] = 0;
       iVar4 = DAT_00202898 + -1;

@@ -5012,7 +5012,7 @@ LAB_00056638:
       }
       if (0 < sVar1) {
         if (sVar1 < 4) {
-          FUN_00057504(&local_c,&local_a);
+          get_mouse_position(&local_c,&local_a);
           iVar3 = (int)local_c;
           iVar4 = (int)local_a;
           local_c = (short)(iVar3 + -4);
@@ -5916,5 +5916,178 @@ void decrement_cursor_hide_depth_thunk()
 
 {
   decrement_cursor_hide_depth();
+  return;
+}
+
+
+// was FUN_00057188 -- records the currently-tracked UI hotspot's
+// rectangle (x,y,width,height) into DAT_0020479c/DAT_002047a0/
+// DAT_00204798/DAT_00204790, read by is_mouse_within_tracked_hotspot
+// and track_hotspot_hover_state.
+void set_tracked_hotspot_rect(param_1,param_2,param_3,param_4)
+undefined2 param_1;
+undefined2 param_2;
+undefined2 param_3;
+undefined2 param_4;
+
+{
+  DAT_0020479c = param_1;
+  DAT_002047a0 = param_2;
+  DAT_00204798 = param_3;
+  DAT_00204790 = param_4;
+  return;
+}
+
+
+
+// was FUN_000571c0 -- tests whether the mouse is within the tracked
+// hotspot rect (via FUN_00057d1c's cursor-margin-aware hit test).
+// BUG FIX: was `FUN_00057d1c(...); return 0;` -- the call's result
+// was computed and discarded, then a hardcoded 0 returned instead,
+// the same "Ghidra couldn't trace a return value through the call
+// and fabricated a placeholder" bug already fixed once this session
+// (get_scanned_object_class_effect_ptr). FUN_00057d1c's own return
+// type is `undefined4`, not void, and its body is a real 0/1 hit
+// test -- confirmed by its only other caller treating a nonzero
+// result as "fire the ranged weapon" (weapon_swing.c), a check that
+// could never have fired with the old hardcoded 0.
+undefined4 is_mouse_within_tracked_hotspot()
+
+{
+  undefined4 uVar1;
+
+  uVar1 = FUN_00057d1c((int)DAT_0020479c,(int)DAT_002047a0,
+               ((int)DAT_00204798 + (int)DAT_0020479c) * 0x10000 >> 0x10,
+               ((int)DAT_00204790 + (int)DAT_002047a0) * 0x10000 >> 0x10);
+  return uVar1;
+}
+
+
+
+// was FUN_0005721c -- per-frame hover tracker for the tracked UI
+// hotspot: tests the mouse against the rect's outer bounds and its
+// (slightly inset) inner bounds to classify the hover state into
+// DAT_00204794 (0=outside, 1=on the border, 2=inside the interior),
+// redrawing the border highlight on a state change and nudging the
+// cursor hide/show depth (DAT_00204840) accordingly.
+void track_hotspot_hover_state()
+
+{
+  int iVar1;
+  short sVar2;
+  int iVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  
+  iVar3 = (int)DAT_0020479c;
+  iVar4 = (((int)g_mouse_x - (int)DAT_00204784) + (int)DAT_0020471c) * 0x10000 >> 0x10;
+  if ((iVar4 <= iVar3 + DAT_00204798) &&
+     (iVar5 = (((int)g_mouse_x - (int)DAT_0020471c) + (int)DAT_00204784) * 0x10000 >> 0x10,
+     iVar3 <= iVar5)) {
+    iVar6 = (((int)g_mouse_y - (int)DAT_002047a4) + (int)DAT_00204748) * 0x10000 >> 0x10;
+    iVar7 = (int)DAT_002047a0;
+    if ((iVar6 <= iVar7 + DAT_00204790) &&
+       (iVar1 = (((int)g_mouse_y - (int)DAT_00204748) + (int)DAT_002047a4) * 0x10000 >> 0x10,
+       iVar7 <= iVar1)) {
+      if ((((iVar3 < iVar4) && (iVar5 < iVar3 + DAT_00204798)) && (iVar7 < iVar6)) &&
+         (iVar1 < iVar7 + DAT_00204790)) {
+        DAT_00204794 = 2;
+      }
+      else {
+        DAT_00204794 = 1;
+        if (*(short *)(DAT_00085a6c + 8) != 1) {
+          iVar4 = (int)DAT_000a85c4;
+          iVar3 = (int)DAT_000a85c8;
+          iVar5 = (int)DAT_000842a4;
+          iVar6 = (int)DAT_000842a8;
+          set_viewport_clip_rect(0,0,0x13f,199);
+          decrement_cursor_hide_depth();
+          set_viewport_clip_rect(iVar4,iVar3,iVar5,iVar6);
+        }
+      }
+      if ((DAT_00204840 == 1) && (g_selected_object == 0)) {
+        draw_idle_mouse_cursor();
+        return;
+      }
+      if (DAT_00204840 < 2) {
+        if (-1 < DAT_00204840) {
+          return;
+        }
+        sVar2 = 1;
+      }
+      else {
+        sVar2 = -1;
+      }
+      DAT_00204840 = DAT_00204840 + sVar2;
+      return;
+    }
+  }
+  DAT_00204794 = 0;
+  return;
+}
+
+
+
+// was FUN_00057460 -- after a frame flush, if the hover state
+// (DAT_00204794) is "on the border" and not in a specific display
+// mode, forces an idle cursor tick (cursor_show_idle_tick) within a
+// full-viewport clip rect to refresh the border highlight.
+void redraw_hotspot_border_cursor()
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  
+  if ((DAT_00204794 == 1) && (*(short *)(DAT_00085a6c + 8) != 1)) {
+    iVar1 = (int)DAT_000a85c4;
+    iVar2 = (int)DAT_000a85c8;
+    iVar3 = (int)DAT_000842a4;
+    iVar4 = (int)DAT_000842a8;
+    set_viewport_clip_rect(0,0,0x13f,199);
+    cursor_show_idle_tick();
+    set_viewport_clip_rect(iVar1,iVar2,iVar3,iVar4);
+  }
+  return;
+}
+
+
+
+// was FUN_00057504 -- returns the current raw mouse position.
+void get_mouse_position(param_1,param_2)
+undefined2 * param_1;
+undefined2 * param_2;
+
+{
+  *param_1 = g_mouse_x;
+  *param_2 = g_mouse_y;
+  return;
+}
+
+
+
+// was FUN_00057528 -- returns the effective position for a click:
+// the real mouse position, unless DAT_0020484c (a demo/scripted-
+// input override flag) is set, in which case a fixed recorded
+// position (DAT_0008696a/DAT_0008696c) is used instead.
+void get_click_position(param_1,param_2)
+undefined2 * param_1;
+undefined2 * param_2;
+
+{
+  undefined2 uVar1;
+
+  if (DAT_0020484c == 0) {
+    *param_1 = g_mouse_x;
+    uVar1 = g_mouse_y;
+  }
+  else {
+    *param_1 = DAT_0008696a;
+    uVar1 = DAT_0008696c;
+  }
+  *param_2 = uVar1;
   return;
 }

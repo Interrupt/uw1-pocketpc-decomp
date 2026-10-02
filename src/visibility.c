@@ -386,9 +386,9 @@ void render_dungeon_frame_timed()
   if (g_dungeon_view_active != 0) {
     weapon_swing_draw_tick();
   }
-  FUN_0005721c();
+  track_hotspot_hover_state();
   flush_dungeon_frame();
-  FUN_00057460();
+  redraw_hotspot_border_cursor();
   set_viewport_clip_rect(0,0,0x13f,199);
   iVar6 = read_realtime_clock_units();
   iVar7 = (iVar6 - iVar5) + iVar4 + iVar8;

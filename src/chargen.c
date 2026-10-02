@@ -1285,7 +1285,7 @@ uint param_2;
         local_4 = uVar13 & 0xffff;
       }
       // Click/touch detection: reads the current pointer position, then the math below maps it to a list-item index.
-      FUN_00057504(&local_40,&local_3e);
+      get_mouse_position(&local_40,&local_3e);
       sVar4 = local_40;
       sVar7 = param_1[8];
       iVar11 = (int)local_3e;

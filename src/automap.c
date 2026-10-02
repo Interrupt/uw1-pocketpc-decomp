@@ -722,7 +722,7 @@ LAB_000170bc:
       do {
         sVar3 = next_input_event();
       } while (sVar3 != 1);
-      FUN_00057504(&local_5e,&local_60);
+      get_mouse_position(&local_5e,&local_60);
       set_cursor_confine_rect(0,199,0x13f,0);
       FUN_00057cac(1);
     }

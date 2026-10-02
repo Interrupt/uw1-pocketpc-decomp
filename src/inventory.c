@@ -306,7 +306,7 @@ short param_1;
       }
     }
     wait_for_click_release(1);
-    FUN_00057504(&local_2e,&local_30);
+    get_mouse_position(&local_2e,&local_30);
     uVar5 = hit_test_inventory_widget((int)local_2e,(int)local_30);
   }
   wait_for_click_release(1);

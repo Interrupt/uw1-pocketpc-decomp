@@ -23,6 +23,23 @@
       139, settle_mobile_to_immobile), unaffected -- different subsystem,
       as expected. Still open.
 
+## Fixed this round (code-cleanup-first-pass, mouse hotspot-tracking cluster)
+- [x] `is_mouse_within_tracked_hotspot` (was `FUN_000571c0`) computed
+      and discarded a real hit-test result from `FUN_00057d1c` (own
+      return type `undefined4`, body a genuine 0/1 test), then
+      returned a hardcoded 0 -- the exact same "Ghidra couldn't trace
+      a return value through the call and fabricated a placeholder"
+      bug already fixed once this session
+      (`get_scanned_object_class_effect_ptr`). Confirmed real by this
+      function's only other caller (weapon_swing.c): `if (iVar5 != 0)
+      fire_ranged_weapon(...)` could never have fired with the old
+      hardcoded 0, since every call site always saw 0 regardless of
+      the actual mouse/hotspot overlap. Fixed by capturing and
+      returning the real result. 19/19 regression scripts clean (no
+      demo script currently exercises this exact ranged-weapon path,
+      so this needs live/manual verification to confirm the gameplay
+      symptom is resolved, but the fix itself is mechanically certain).
+
 ## Fixed this round (code-cleanup-first-pass, pause-menu cluster)
 - [x] `DAT_002047b0` (inside what's now `init_cursor_subsystem`, moved to
       hud.c) was declared as a lone `undefined2` scalar but indexed

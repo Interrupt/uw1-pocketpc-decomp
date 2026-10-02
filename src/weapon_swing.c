@@ -630,7 +630,7 @@ short param_1;
      carries (see its own fix) needs to stay a real 64-bit pointer
      across this function's two dereference sites below (~17130 and
      ~17180). iVar5 itself keeps its OTHER, disjoint int uses further
-     down (FUN_000571c0's result, and the whole "start a new swing"
+     down (is_mouse_within_tracked_hotspot's result, and the whole "start a new swing"
      else-if branch) -- those never run in the same call as these
      dereferences, so they're left as plain int. */
   char *pRecord;
@@ -676,7 +676,7 @@ LAB_00027754:
           }
           if (DAT_001005ec != 0) {
             if ((!bVar2) && (-1 < DAT_00100618)) {
-              iVar5 = FUN_000571c0();
+              iVar5 = is_mouse_within_tracked_hotspot();
               if (iVar5 != 0) {
                 fire_ranged_weapon(*DAT_001005e0 & 0xf);
               }
