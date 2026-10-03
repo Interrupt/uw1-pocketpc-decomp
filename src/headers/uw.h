@@ -1143,7 +1143,8 @@ extern short DAT_00101454;
 extern short DAT_00202a38;
 extern short DAT_00202a3c;
 extern short DAT_00202a40;
-extern char * DAT_00202a44;
+/* FUN_0004ad10 reads word 1 (position) and word 12 (heading). */
+extern ushort * DAT_00202a44;
 extern ushort DAT_00202a48;
 extern ushort DAT_00202a4c;
 extern undefined2 DAT_00202a50;
@@ -1460,8 +1461,7 @@ extern ushort DAT_00202508;
 #define DAT_00202c9b DAT_00202c90_backing[0xb]
 extern undefined1 DAT_0023ce70_backing[8192];
 #define DAT_0023ce70 DAT_0023ce70_backing[0]
-extern undefined1 DAT_0023ce71_backing[256];
-#define DAT_0023ce71 DAT_0023ce71_backing[0]
+#define DAT_0023ce71 DAT_0023ce70_backing[1]
 extern ushort g_player_max_carry_weight;
 extern char s_You_see_000858fc[];
 /* Globals defined in uw.c but also used by functions that now live in

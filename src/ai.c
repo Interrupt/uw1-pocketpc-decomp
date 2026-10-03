@@ -154,7 +154,11 @@ static undefined1 DAT_0024ac18_backing[256];
    the words together: "You see an mellow outcastnamedBragit" instead of
    "You see a mellow outcast named Bragit". */
 static char s_named_00085d18[] = " named ";
-static undefined DAT_000868c0_backing[256];
+/* Original binary 0x868c0..0x868d7 maps locomotion bit values to
+   the compact mobile-record state (indexed by snapshot byte 0x28). */
+static undefined DAT_000868c0_backing[24] = {
+  0,0,1,0,2,0,0,0,3,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0
+};
 #define DAT_000868c0 DAT_000868c0_backing[0]
 /* was `int` -- truncated pointer to a 64-bit address on assignment in
    spawn_creature_death_loot (&DAT_001007d0 + index*0x30), causing spawn_creature_treasure_drop to

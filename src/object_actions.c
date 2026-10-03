@@ -27,8 +27,6 @@ ushort DAT_002022f8;
 static ushort DAT_00202300;
 static ushort DAT_00202304;
 int DAT_002022fc;
-undefined1 DAT_0023ce71_backing[256];
-#define DAT_0023ce71 DAT_0023ce71_backing[0]
 // was DAT_0023bcf4, offset +0x4c of the "large fixed-offset record"
 // based at DAT_0023bca8 (see that array's own declaration comment a few
 // hundred lines up -- a "device/config-ish struct, not yet fully
