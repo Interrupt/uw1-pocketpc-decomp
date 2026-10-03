@@ -1005,8 +1005,6 @@ extern char s__DATA_mono_dat_000872b8[];
 extern char s__DATA_light_dat_000872c8[];
 extern char s_and_00087310[];
 extern char DAT_0023c27c;
-extern undefined DAT_001c2000_backing[8192];
-#define DAT_001c2000 DAT_001c2000_backing[0]
 extern undefined2 DAT_00086b30;
 extern char DAT_00087938;
 #define DAT_000a85d0 DAT_000a85d0_backing[0]

@@ -149,17 +149,6 @@ short DAT_00202088;
    0x3ac (940), 0xeb (235), 0xbc (188) respectively. Macro defines now
    live in uw.h alongside DAT_00086e68, since apply_movement_mode_profile
    (their only reader) moved into src/input.c. */
-/* Read-only, never written anywhere in this decompile -- a real
-   initialized constant byte from UU.exe's .data section (same
-   category as DAT_000842f0/DAT_000842c0's own recovered-constant
-   comments elsewhere this project), not a runtime variable. Its real
-   value hasn't been recovered yet, so this still reads as 0 -- which,
-   now that its two readers (hud.c's print_character_description_scroll
-   and this file's render_endgame_character_stats) go through a real
-   orduint_divmod call instead of a dead stub, means their "percentile"
-   ends up 0/divisor-guarded rather than wrong-but-nonzero. Flagged for
-   whoever next has the real UU.exe bytes handy. */
-undefined DAT_001c2000_backing[8192];
 static byte DAT_001013a4;
 static uint DAT_002020e4;
 static byte DAT_002020e8;
@@ -2768,7 +2757,12 @@ void render_endgame_character_stats()
     iVar12 = iVar12 + 1;
   }
   draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
-  sVar6 = orduint_divmod(DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
+  /* First argument is NOT the address of a global despite how this
+     first decompiled (`&DAT_001c2000`) -- see
+     print_character_description_scroll's identical call in hud.c for
+     the real-disassembly explanation (ARM's split-immediate idiom for
+     the plain literal 0x1c2000, misread as a data reference). */
+  sVar6 = orduint_divmod(0x1c2000,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
   sVar6 = ordint_divmod(0xc,(int)sVar6).quot;
   pcVar8 = (char *)get_message_string(0x2bd);
   pcVar11 = local_58;
