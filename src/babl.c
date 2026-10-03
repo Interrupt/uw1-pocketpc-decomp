@@ -147,7 +147,17 @@ static undefined DAT_001007dd_backing[256];
 #define DAT_001007dd DAT_001007dd_backing[0]
 static undefined DAT_001007de_backing[8192];
 #define DAT_001007de DAT_001007de_backing[0]
-static undefined *PTR_DAT_000845c8;
+/* Was a lone scalar pointer slot -- its only use is `&PTR_DAT_000845c8 +
+   iVar2*4` (a 4-byte-stride coordinate table, same convention as the
+   sibling DAT_000845b8/DAT_000845d8/DAT_000845e8 tables right around
+   it in the original .data layout), so draw_hotspot_crosshair_marker's
+   worn-slot branch (param_1 != 0, up to 4 slots per init_barter_ui's
+   own loop) walked straight off the end of this single 8-byte slot on
+   this 64-bit host -- confirmed live via an ASan global-buffer-overflow
+   reached through ordinary Talk-mode/barter interaction. Given the same
+   256-byte safety margin as those sibling tables. */
+static undefined1 PTR_DAT_000845c8_backing[256];
+#define PTR_DAT_000845c8 PTR_DAT_000845c8_backing[0]
 static undefined1 DAT_000845e8_backing[65536];
 #define DAT_000845e8 DAT_000845e8_backing[0]
 static undefined2 DAT_000bbfc8_backing[8192];
@@ -4944,12 +4954,12 @@ undefined ** param_2;
   undefined4 *puVar4;
   
   sVar1 = (short)param_2;
-  if (param_1 != 0) {
-    param_2 = &PTR_DAT_000845c8;
-  }
   iVar2 = (int)sVar1;
   if (param_1 != 0) {
-    param_2 = param_2 + iVar2;
+    /* Was `param_2 + iVar2` on the `undefined **` field -- pointer
+       arithmetic on an 8-byte stride, doubling (and past index 1,
+       overrunning) the intended 4-byte-stride table below. */
+    param_2 = (undefined **)(&PTR_DAT_000845c8 + iVar2 * 4);
     puVar4 = &DAT_000bbf98;
   }
   else {

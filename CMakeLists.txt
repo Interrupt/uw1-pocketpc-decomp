@@ -210,6 +210,9 @@ if(BUILD_TESTING)
   add_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
   target_compile_options(test_traps PRIVATE
     -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/traps_test_globals.h")
+  add_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
+  target_compile_options(test_hotspot_marker PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/hotspot_marker_test_globals.h")
   add_game_unit_test(illustrations
     src/object_actions.c:look_at_inscribed_object
     src/interact.c:trigger_terrain_discovery_illustration
