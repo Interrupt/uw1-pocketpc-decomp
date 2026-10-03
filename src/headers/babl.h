@@ -200,5 +200,7 @@ void rle_op_finalize_length();
 void rle_op_mark_stream_done();
 void read_object_text();
 undefined4 debug_noop_checkpoint();
+void draw_hotspot_crosshair_marker(); // was FUN_0001c420
+int babl_menu(); // was LAB_0002912c, a no-op stub -- see its own comment next to babl_fmenu
 
 #endif

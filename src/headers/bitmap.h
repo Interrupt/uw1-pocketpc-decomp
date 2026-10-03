@@ -6,6 +6,8 @@
  * any caller. */
 #include "uw.h"
 
+#define DAT_00087638 0x8000u
+
 /* Globals defined in uw.c but also used by functions that now live in
    bitmap.c (sprite blitting / sprite-list system) -- extern'd here so
    both translation units see the same storage. */

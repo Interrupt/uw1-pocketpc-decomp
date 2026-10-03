@@ -521,152 +521,10 @@ struct IMAGE_RESOURCE_DIRECTORY {
 };
 
 
-#define DAT_00087638 0x8000u
-#define DAT_0008763c 0x4000u
-#define DAT_00087640 0x2000u
-#define DAT_00087644 0x1000u
-#define DAT_00087648 0x0800u
-#define DAT_0023c418 ((ushort)~0x4000u)
-#define DAT_0023c408 ((ushort)~0x2000u)
-#define DAT_0023c3f0 ((ushort)~0x1000u)
-/* Globals defined in uw.c but also used by functions that now live in
-   3d.c (the 3D transform/rasterization pipeline) -- extern'd here so
-   both translation units see the same storage. */
-#define UW_MAX_VIS_TILES 2048
-#define DAT_00086b84  DAT_00086b50_at(0x34)
-#define DAT_00086b88  DAT_00086b50_at(0x38)
-#define DAT_00086bb0  DAT_00086b50_at(0x60)
-#define DAT_00086bb1  DAT_00086b50_at(0x61)
-#define DAT_00086bb2  DAT_00086b50_at(0x62)
-#define DAT_00086bb3  DAT_00086b50_at(0x63)
-#define DAT_00086bb4  DAT_00086b50_at(0x64)
-#define DAT_00086bb5  DAT_00086b50_at(0x65)
-#define DAT_00086bc8  DAT_00086b50_at(0x78)
-#define DAT_00086bc9  DAT_00086b50_at(0x79)
-#define DAT_00086bca  DAT_00086b50_at(0x7a)
-#define DAT_00086bcb  DAT_00086b50_at(0x7b)
-#define DAT_00086bcc  DAT_00086b50_at(0x7c)
-#define DAT_00086bcd  DAT_00086b50_at(0x7d)
-#define DAT_000a85d8 UW_A85B(0x8)
-#define DAT_000a85d9 UW_A85B(0x9)
-#define DAT_000a85da UW_A85B(0xa)
-#define DAT_000a85db UW_A85B(0xb)
-#define DAT_000a85dc UW_A85B(0xc)
-#define DAT_000a85dd UW_A85B(0xd)
-#define DAT_000a85de UW_A85B(0xe)
-#define DAT_000a85df UW_A85B(0xf)
-#define DAT_000a85e0 UW_A85B(0x10)
-#define DAT_000a85e1 UW_A85B(0x11)
-#define DAT_000a85e2 UW_A85B(0x12)
-#define DAT_000a85e3 UW_A85B(0x13)
-#define DAT_000acde4 UW_A85B(0x4814)
-#define DAT_000acde5 UW_A85B(0x4815)
-#define DAT_000acde6 UW_A85B(0x4816)
-#define DAT_000acde7 UW_A85B(0x4817)
-#define DAT_000acde8 UW_A85B(0x4818)
-#define DAT_000acde9 UW_A85B(0x4819)
-#define DAT_000acdea UW_A85B(0x481a)
-#define DAT_000acdeb UW_A85B(0x481b)
-#define DAT_000acdec UW_A85B(0x481c)
-#define DAT_000acded UW_A85B(0x481d)
-#define DAT_000acdee UW_A85B(0x481e)
-#define DAT_000acdef UW_A85B(0x481f)
-#define DAT_000acdf0 UW_A85B(0x4820)
-#define DAT_000acdf1 UW_A85B(0x4821)
-#define DAT_000acdf2 UW_A85B(0x4822)
-#define DAT_000acdf3 UW_A85B(0x4823)
-#define DAT_000acdf4 UW_A85B(0x4824)
-#define DAT_000acdf5 UW_A85B(0x4825)
-#define DAT_000acdf6 UW_A85B(0x4826)
-#define DAT_000acdf7 UW_A85B(0x4827)
-#define DAT_000acdfc UW_A85B(0x482c)
-#define DAT_000acdfd UW_A85B(0x482d)
-#define DAT_000acdfe UW_A85B(0x482e)
-#define DAT_000acdff UW_A85B(0x482f)
-#define DAT_000ace00 UW_A85B(0x4830)
-#define DAT_000ace01 UW_A85B(0x4831)
-#define DAT_000ace02 UW_A85B(0x4832)
-#define DAT_000ace03 UW_A85B(0x4833)
-#define DAT_000ace04 UW_A85B(0x4834)
-#define DAT_000ace05 UW_A85B(0x4835)
-#define DAT_000ace06 UW_A85B(0x4836)
-#define DAT_000ace07 UW_A85B(0x4837)
-#define DAT_000ace08 UW_A85B(0x4838)
-#define DAT_000ace09 UW_A85B(0x4839)
-#define DAT_000ace0a UW_A85B(0x483a)
-#define DAT_000ace0b UW_A85B(0x483b)
-#define DAT_000ace0c UW_A85B(0x483c)
-#define DAT_000ace0d UW_A85B(0x483d)
-#define DAT_000ace0e UW_A85B(0x483e)
-#define DAT_000ace0f UW_A85B(0x483f)
-#define DAT_000ace10 UW_A85B(0x4840)
-#define DAT_000ace11 UW_A85B(0x4841)
-#define DAT_000ace12 UW_A85B(0x4842)
-#define DAT_000ace13 UW_A85B(0x4843)
-#define DAT_000ace14 UW_A85B(0x4844)
-#define DAT_000ace15 UW_A85B(0x4845)
-#define DAT_000ace16 UW_A85B(0x4846)
-#define DAT_000ace17 UW_A85B(0x4847)
-#define DAT_000ace18 UW_A85B(0x4848)
-#define DAT_000ace19 UW_A85B(0x4849)
-#define DAT_000ace1a UW_A85B(0x484a)
-#define DAT_000ace1b UW_A85B(0x484b)
-#define DAT_000ace1c UW_A85B(0x484c)
-#define DAT_000ace1d UW_A85B(0x484d)
-#define DAT_000ace1e UW_A85B(0x484e)
-#define DAT_000ace1f UW_A85B(0x484f)
-#define DAT_000ace20 UW_A85B(0x4850)
-#define DAT_000ace21 UW_A85B(0x4851)
-#define DAT_000ace22 UW_A85B(0x4852)
-#define DAT_000ace23 UW_A85B(0x4853)
-#define DAT_000ace24 UW_A85B(0x4854)
-#define DAT_000ace25 UW_A85B(0x4855)
-#define DAT_000ace26 UW_A85B(0x4856)
-#define DAT_000ace27 UW_A85B(0x4857)
-#define DAT_000ace30 UW_A85B(0x4860)
-#define DAT_000ace31 UW_A85B(0x4861)
-#define DAT_000ace32 UW_A85B(0x4862)
-#define DAT_000ace33 UW_A85B(0x4863)
-
-/* Globals defined in uw.c but also used by functions that now live in
-   input.c (key bindings, movement commands, mouse) -- extern'd here
-   so both translation units see the same storage. */
-#define DAT_00086e68 15
-#define DAT_0008589c 0x3ac
-#define DAT_00085898 0xeb
-#define DAT_00085894 0xbc
-/* Globals defined in uw.c but also used by functions that now live in
-   weapon_swing.c (weapon swing animation) -- extern'd here so both
-   translation units see the same storage. */
-#define UW_WEAPON_SWING_FRAME_COUNT 28
-#define DAT_00086b50  DAT_00086b50_at(0x00)
-#define DAT_00086b52  DAT_00086b50_at(0x02)
-
-
-void draw_hotspot_crosshair_marker(); // was FUN_0001c420
-int babl_menu(); // was LAB_0002912c, a no-op stub -- see its own comment next to babl_fmenu
-int mobile_object_tick(); // was FUN_0002b47c
-int build_collision_height_field_for_object(); // was FUN_0002b7a0
-undefined4 apply_placement_collision_sweep(); // was FUN_0002bd70
-undefined4 npc_ai_tick(); // was FUN_00032d38
-undefined4 object_tick_is_due(); // was FUN_0003495c
-void tick_mobile_objects(); // was FUN_000349bc
-void build_object_placement_snapshot(); // was FUN_00054a00
-undefined4 sync_object_tile_position(); // was FUN_00054f6c
-ushort *settle_mobile_to_immobile(); // was FUN_0005596c
 void emit_object_billboard();
 
 
 #define ordint_divmod_exref ((void*)&ordint_divmod)
-
-/* Globals defined in uw.c but also used by functions that now live in
-   game.c (animate_title_palette_cycle's 14ms throttle timestamp). */
-
-/* Globals defined in uw.c but also used by functions that now live in
-   saveload.c (ensure_save_directory_exists's "\*.*" scan wildcard). */
-
-/* Globals defined in uw.c but also used by functions that now live in
-   registration.c. */
 
 /* Declarations for the functions and owned globals that used to live
  * directly in this file but were split out into their own topic .c
@@ -676,6 +534,7 @@ void emit_object_billboard();
  * already includes uw.h keeps working unchanged. Safe against the
  * circular #include "uw.h" each of these does themselves, since UW_H
  * is already defined by this point. */
+#include "helpers.h"
 #include "graphics.h"
 #include "babl.h"
 #include "automap.h"

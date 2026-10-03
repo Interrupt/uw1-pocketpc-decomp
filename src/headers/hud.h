@@ -7,6 +7,11 @@
  * any caller. */
 #include "uw.h"
 
+#define DAT_00087644 0x1000u
+#define DAT_0023c418 ((ushort)~0x4000u)
+#define DAT_0023c408 ((ushort)~0x2000u)
+#define DAT_0023c3f0 ((ushort)~0x1000u)
+
 extern int DAT_00250718;
 extern undefined1 g_active_hud_panel;
 extern undefined2 g_cursor_mode;

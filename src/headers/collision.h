@@ -23,5 +23,7 @@ void collision_height_envelope();
 void swap_collision_candidates();
 void sort_collision_candidates();
 undefined4 check_object_placement_clearance();
+int build_collision_height_field_for_object(); // was FUN_0002b7a0
+undefined4 apply_placement_collision_sweep(); // was FUN_0002bd70
 
 #endif

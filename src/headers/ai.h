@@ -125,5 +125,12 @@ void spawn_creature_equipment_drop();
 void spawn_creature_misc_item_drop();
 void spawn_creature_death_loot();
 undefined4 activate_area_hazard_object();
+int mobile_object_tick(); // was FUN_0002b47c
+undefined4 npc_ai_tick(); // was FUN_00032d38
+undefined4 object_tick_is_due(); // was FUN_0003495c
+void tick_mobile_objects(); // was FUN_000349bc
+void build_object_placement_snapshot(); // was FUN_00054a00
+undefined4 sync_object_tile_position(); // was FUN_00054f6c
+ushort *settle_mobile_to_immobile(); // was FUN_0005596c
 
 #endif

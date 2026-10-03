@@ -6,6 +6,8 @@
  * so this header is self-contained for any caller. */
 #include "uw.h"
 
+#define UW_WEAPON_SWING_FRAME_COUNT 28
+
 extern undefined1 DAT_000870e0;
 extern short DAT_000870e4;
 

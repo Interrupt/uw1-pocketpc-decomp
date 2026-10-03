@@ -6,6 +6,9 @@
  * self-contained for any caller. */
 #include "uw.h"
 
+#define DAT_00085898 0xeb
+#define DAT_00085894 0xbc
+
 extern short g_mouse_x;
 extern short g_mouse_y;
 extern undefined2 DAT_0023be8c;
