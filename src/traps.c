@@ -1072,8 +1072,18 @@ LAB_0003987c:
                 uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
                 if (((int)uVar14 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
                   if (puVar8 == g_player_object) {
+                    /* Was `uVar10 = extraout_r1;` -- set_locomotion_state is
+                       void (stops/locks the player's movement when a trap
+                       hits them), so there's no real second return value
+                       to read here; this was pure garbage. uVar10 is this
+                       loop's own resolve_object_link "carry" value (see
+                       its two uses above), threaded into the call at the
+                       top of this for loop's next iteration -- same
+                       crash-prone pattern already fixed elsewhere in this
+                       codebase when it gets corrupted. Leave it untouched
+                       instead, matching this loop's own established
+                       convention. */
                     set_locomotion_state(0x10);
-                    uVar10 = extraout_r1;
                   }
                 }
                 else {

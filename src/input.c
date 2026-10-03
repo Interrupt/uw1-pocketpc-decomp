@@ -1803,8 +1803,17 @@ LAB_0003c940:
              lldb, EXC_BAD_ACCESS at address 0). */
           if (uVar11 == 0) break;
           if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
+            /* Was followed by `iVar8 = extraout_r1;` -- same bug as the
+               sibling fix just above in this function (resolve_object_link's
+               own high-bits carry), but via a different, unrelated
+               callee: resolve_skill_gated_unlock_or_use returns a single
+               uint with no second value riding along, so that read was
+               pure garbage. iVar8 is this loop's own resolve_object_link
+               "carry" argument (used at the top of this do-loop's next
+               iteration) -- clobbering it there risked exactly the same
+               wild-index crash the sibling fix's comment describes.
+               Left it untouched instead. */
             resolve_skill_gated_unlock_or_use(g_player_object,0,(ushort *)uVar11,0);
-            iVar8 = extraout_r1;
           }
           iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
         } while (iVar7 < (int)((uint)*(byte *)((char *)DAT_00202c6c + 0x15) +
