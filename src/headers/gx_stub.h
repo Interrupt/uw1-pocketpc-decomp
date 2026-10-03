@@ -156,12 +156,6 @@ void uw_debug_dump_revealmap(const unsigned char *reveal_data);
    DAT_0023c448. */
 int uw_take_mouse_event_pending(void);
 
-/* Advance one real game tick's worth of deterministic clock/recorder
-   state. Call exactly once per iteration of the real game loop
-   (game.c's app_main_loop, right alongside its own PeekMessageW call) --
-   NOT from inside uw_pump_events(), which can fire more than once per
-   true tick. See its own comment in gx_stub.c. */
-void uw_advance_game_tick(void);
 
 /* For scripted/unattended testing: warps the real cursor to (window_x,
    window_y) (SDL window points) and pushes genuine SDL_MOUSEBUTTONDOWN/UP

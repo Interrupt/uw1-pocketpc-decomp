@@ -386,13 +386,6 @@ undefined4 param_4;
           DAT_0023c648 = read_realtime_clock_units();
           DAT_0023c448 = 0;
         }
-        /* One real game tick -- see uw_advance_game_tick's own comment
-           for why this must be called from exactly here (this loop, once
-           per iteration) rather than from inside uw_pump_events() itself,
-           which PeekMessageW below triggers but which can also be
-           reached from other polling loops within a single iteration of
-           this one. */
-        uw_advance_game_tick();
         {
           static unsigned int _dbg_t0 = 0, _dbg_t1 = 0;
           int _dbg = getenv("UW_DEBUG_ITERSPLIT") != NULL;
@@ -2389,6 +2382,9 @@ void run_game_startup_sequence()
   } while (cVar1 != '\0');
   ce_strcat(acStack_62c,s__DATA_COPYRIGHT_BYT_0008576c);
   blit_fullscreen_bitmap_file(2,acStack_62c,1);
+  /* Intentional deviation: the original gave the final copyright splash
+     no dwell. Keep it visible for 1.5 seconds, like the preceding splashes. */
+  Sleep(0x5dc);
   sVar2 = init_cursor_subsystem();
   if (sVar2 < 0) {
     report_fatal_error_and_exit(2);
@@ -3002,6 +2998,7 @@ bool prepare_new_game(void)
     char *source;
     char *destination;
 
+    g_new_game_entry_pause_pending = false;
     if (!character_generator_start()) return false;
 
     ce_memset(save_directory, 0, 0x104);
@@ -3044,6 +3041,8 @@ bool prepare_new_game(void)
     set_player_tile_position(0x20, 2, 1);
     debug_print_player_position("chargen-spawn");
     save_or_restore_level_special_state(1, 0);
+    /* Port-only timing: the next dungeon entry pauses after its fade-out. */
+    g_new_game_entry_pause_pending = true;
     return true;
 }
 

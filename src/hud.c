@@ -6590,18 +6590,15 @@ int erase_cursor_icon()
 
 
 
-/* Gates the 4 "always show the desktop mouse cursor" deviations below
-   (all originally gated shut on a real Pocket PC touchscreen, where a
-   persistent cursor sprite makes no sense). Defaults OFF: drawing the
-   cursor every idle frame forces a display flush every frame too (see
-   draw_idle_mouse_cursor's own LAB_00058674 tail), which measurably slowed the
-   game down when this was unconditionally on. Opt in with
-   UW_ALWAYS_SHOW_CURSOR=1 until that flush cost is addressed. */
+/* Desktop deviation: opt in to a persistent cursor with
+   UW_ALWAYS_SHOW_CURSOR=1. Keep the original touchscreen visibility
+   gates by default while the desktop cursor still has known bugs. */
 int uw_always_show_cursor(void)
 {
   static int cached = -1;
   if (cached < 0) {
-    cached = getenv("UW_ALWAYS_SHOW_CURSOR") != NULL;
+    const char *setting = getenv("UW_ALWAYS_SHOW_CURSOR");
+    cached = setting != NULL && strcmp(setting, "1") == 0;
   }
   return cached;
 }
@@ -7274,14 +7271,22 @@ void handle_mouse_button_message(param_1)
 short param_1;
 
 {
+  short sVar1;
+
   DAT_0020485c = (int)param_1;
   update_mouse_state();
   DAT_0020485c = 0;
-  if (DAT_0023c63c == 0) {
+  /* Desktop input adaptation: the original checks the touch-held flag
+     DAT_0023c63c here. SDL right-button pickup instead uses DAT_002506ab;
+     checking only touch marks the drag released on a dungeon redraw.
+     Use the existing combined button reader for both the release check
+     and the cached button code, preserving the original wait protocol. */
+  sVar1 = poll_mouse_button_flags();
+  if (sVar1 == 0) {
     DAT_0008696e = 0;
   }
   else if (DAT_00086968 == -1) {
-    DAT_00086968 = DAT_0023c63c;
+    DAT_00086968 = sVar1;
     DAT_0008696a = g_mouse_x;
     DAT_0008696c = g_mouse_y;
   }

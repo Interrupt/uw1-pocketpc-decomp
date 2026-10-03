@@ -33,6 +33,8 @@ static char *DAT_002046ac;
 static char *DAT_002046a0;
 char *DAT_0024cff4;
 
+bool g_new_game_entry_pause_pending = false;
+
 
 
 
@@ -59,6 +61,13 @@ void enter_dungeon_view()
   configure_dungeon_viewport(0x34,0x14,0xab,0x70);
   ce_memmove(auStack_314,&DAT_00088d98,0x300);
   fade_out(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
+  if (g_new_game_entry_pause_pending) {
+    g_new_game_entry_pause_pending = false;
+    /* Intentional deviation: hold the black screen for 0.5 seconds after
+       character creation before drawing/fading in the dungeon. Ordinary
+       level loads and returns from other views do not get this pause. */
+    Sleep(500);
+  }
   load_pals_bank(0,auStack_314);
   /* load_pals_bank loads PALS.DAT bank 0 (the 3D dungeon-view palette --
      cf. set_palette_bank(0) at the game-mode switch) into the local

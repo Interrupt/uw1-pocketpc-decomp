@@ -2005,11 +2005,9 @@ short param_2;
 // comment), then re-arms whichever bits DAT_00085728[current mode] always
 // wants re-triggered -- this re-arm is what makes a mode's per-frame
 // handlers keep firing every call instead of running once and going
-// quiet. Called once per real game tick from app_main_loop's own while
-// loop (game.c), gated on DAT_00201c84 != 0 (see main_loop_hud_flush's
-// own call site) -- this is the actual per-tick movement dispatch, the
-// anchor point uw_advance_game_tick's deterministic clock now advances
-// in lockstep with (see its own comment in gx_stub.c).
+// quiet. Called from the outer game loop and the original input waits.
+// GX input polling services the shared movement clock in both contexts;
+// repeated dispatches within the same clock interval have zero delta.
 void dispatch_sticky_mode_handlers()
 
 {

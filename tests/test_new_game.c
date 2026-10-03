@@ -32,6 +32,7 @@ static int character_calls, saves, seeds, opens, closes;
 static int restores, textures, automaps, cache_resets, attacker_resets;
 static int spawn_calls, special_state_calls, cursor_resets;
 static bool archive_open;
+bool g_new_game_entry_pause_pending;
 
 undefined4 character_generator_start(void)
 {
