@@ -2351,7 +2351,7 @@ void active_mobile_list_add();
 void active_mobile_list_remove();
 ushort *find_object_in_chain();
 undefined4 object_or_contents_has_type();
-int find_object_in_world();
+ushort *find_object_in_world();
 undefined4 cycle_active_light_source();
 void update_player_tick_effects();
 undefined4 decay_equipped_light_sources();

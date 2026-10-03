@@ -866,7 +866,14 @@ undefined4 param_1;
 
 {
   undefined2 uVar1;
-  int iVar2;
+  /* find_object_in_world/resolve_object_link now return real pointers
+     (ushort-pointer / void-pointer) -- was `int iVar2`/`iVar3`,
+     truncating them on this 64-bit host exactly like the sibling fix
+     in objects.c's find_object_in_world/find_object_in_chain. iVar3
+     keeps its later plain-int role (is_out_of_player_range's return)
+     once pbVar5 takes over its pointer-holding span. */
+  ushort *pObj;
+  char *pbVar5;
   int iVar3;
   int iVar4;
   short local_14;
@@ -874,29 +881,29 @@ undefined4 param_1;
 
   local_14 = 0;
   local_12 = 0;
-  iVar2 = find_object_in_world(6,0,7,&local_14,&local_12);
-  while (iVar2 != 0) {
-    if ((*(byte *)(iVar2 + 1) & 0x1e) == 0) {
-      iVar3 = resolve_object_link(iVar2 + 6);
+  pObj = find_object_in_world(6,0,7,&local_14,&local_12);
+  while (pObj != 0) {
+    if ((*(byte *)((char *)pObj + 1) & 0x1e) == 0) {
+      pbVar5 = resolve_object_link((char *)pObj + 6);
       /* HACK: was a bare `object_ptr_in_arena();` -- dropped argument,
          the same class of bug fixed repeatedly elsewhere in this
          file. object_ptr_in_arena takes exactly one argument at every
-         other call site in this codebase, and iVar3 (just set from
+         other call site in this codebase, and pbVar5 (just set from
          resolve_object_link on the line above) is obviously the
          intended one here. */
-      iVar4 = object_ptr_in_arena(iVar3);
+      iVar4 = object_ptr_in_arena(pbVar5);
       if (iVar4 != 0) {
-        uVar1 = *(undefined2 *)(iVar3 + 0xd);
-        *(char *)(iVar3 + 0xd) = (char)uVar1;
-        *(byte *)(iVar3 + 0xe) = (byte)((ushort)uVar1 >> 8) | 1;
+        uVar1 = *(undefined2 *)(pbVar5 + 0xd);
+        *(char *)(pbVar5 + 0xd) = (char)uVar1;
+        *(byte *)(pbVar5 + 0xe) = (byte)((ushort)uVar1 >> 8) | 1;
         iVar3 = is_out_of_player_range(param_1,(int)local_14,(int)local_12);
         if (iVar3 != 0) {
-          dispatch_trap_type_effect(iVar2,(int)local_14,(int)local_12);
+          dispatch_trap_type_effect(pObj,(int)local_14,(int)local_12);
         }
       }
     }
     local_14 = local_14 + 1;
-    iVar2 = find_object_in_world(6,0,7,&local_14,&local_12);
+    pObj = find_object_in_world(6,0,7,&local_14,&local_12);
   }
   return;
 }

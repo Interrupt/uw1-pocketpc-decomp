@@ -167,15 +167,9 @@ static undefined DAT_000868c0_backing[24] = {
    identical pattern, is correctly `char *`. */
 // was DAT_0024cfc4
 static char *g_despawn_creature_record;
-// Was a lone `undefined1` scalar, but its only use (spawn_creature_
-// treasure_drop, src/ai.c) is `(&DAT_002034b5)[cVar4 * 0xd]` -- a
-// 13-byte-stride record table indexed by a derived level/tier value,
-// same "lone byte indexed as an array" bug class fixed throughout
-// this project. Widened generously, matching this file's other such
-// tables, since indexing past element 0 previously just read
-// whatever adjacent BSS happened to follow it.
-static undefined1 DAT_002034b5_backing[8192];
-#define DAT_002034b5 DAT_002034b5_backing[0]
+/* Treasure values are fields of the loaded COMOBJ table (type 0xa0,
+   offset 5), not an independent, never-loaded array. */
+#define DAT_002034b5 DAT_00202c90_backing[0x825] /* item 0xa0 value, loaded COMOBJ table */
 
 
 
