@@ -7,6 +7,29 @@
  * is self-contained for any caller. */
 #include "uw.h"
 
+extern void * g_tile_texptr_emit[UW_MAX_VIS_TILES];
+extern void * g_tile_texptr_out[UW_MAX_VIS_TILES];
+extern char DAT_000842b0;
+extern undefined4 DAT_000b5638_backing[160];
+
+#define DAT_000d9930 (DAT_000d9930_arr[0])
+#define DAT_000d9ed8 (DAT_000d9ed8_arr[0])
+
+#define DAT_000b5638 DAT_000b5638_backing[0]
+extern void * DAT_000c4838_backing[4096];
+#define DAT_000c4838 DAT_000c4838_backing[0]
+extern int DAT_000c8c98;
+extern undefined2 DAT_000da47c;
+extern undefined4 DAT_000db438;
+extern undefined4 DAT_000db43c;
+extern undefined4 DAT_000db440;
+extern int DAT_000db448;
+extern int DAT_000db44c;
+extern char DAT_0023b830;
+extern undefined4 DAT_000d9930_arr[512];
+extern undefined4 DAT_000d9ed8_arr[512];
+
+
 void set_viewport_clip_rect();
 void multiply_matrix4x4();
 void set_identity_matrix4x4();

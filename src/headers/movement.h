@@ -6,6 +6,103 @@
  * uw.h itself so this header is self-contained for any caller. */
 #include "uw.h"
 
+extern int g_npc_tick_enabled;
+extern char DAT_00086e84;
+extern char *DAT_0008794c;
+extern undefined2 DAT_002048c0_backing[32768];
+
+#define DAT_00086998  (*(signed char *)(DAT_00086998_backing + 0))
+#define DAT_00086999  (DAT_00086998_backing[1])
+#define DAT_0008699a  (DAT_00086998_backing[2])
+#define DAT_0008699b  (DAT_00086998_backing[3])
+#define DAT_0008699f  (DAT_00086998_backing[7])
+#define DAT_000869a0 (DAT_00086998_backing[8])
+#define DAT_000869a1  (DAT_00086998_backing[9])
+#define DAT_000869a2  (DAT_00086998_backing[10])
+#define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
+#define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
+#define DAT_002049cc (*(short *)(DAT_002049c8_backing + 0x04))
+#define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
+#define DAT_002049d0 (DAT_002049c8_backing[0x08])
+#define DAT_002049d1 (DAT_002049c8_backing[0x09])
+#define DAT_002049d2 (*(undefined2 *)(DAT_002049c8_backing + 0x0a))
+#define DAT_002049d4 (*(ushort *)(DAT_002049c8_backing + 0x0c))
+#define DAT_002049d6 (*(ushort *)(DAT_002049c8_backing + 0x0e))
+#define DAT_002049d8 (DAT_002049c8_backing[0x10])
+#define DAT_002049d9 (DAT_002049c8_backing[0x11])
+#define DAT_002049da (DAT_002049c8_backing[0x12])
+#define DAT_002049dc (DAT_002049c8_backing[0x14])
+#define DAT_002049dd (DAT_002049c8_backing[0x15])
+#define DAT_002049de (DAT_002049c8_backing[0x16])
+#define _DAT_00202bfb (*(unsigned short*)(DAT_00202bf8_backing + 0x03))
+#define _DAT_00202c00 (*(unsigned short*)(DAT_00202bf8_backing + 0x08))
+#define _DAT_00202c05 (*(unsigned short*)(DAT_00202bf8_backing + 0x0d))
+
+#define DAT_002048c0 DAT_002048c0_backing[0]
+extern undefined1 DAT_00204980_backing[65536];
+#define DAT_00204980 DAT_00204980_backing[0]
+extern undefined2 DAT_00204990_backing[32768];
+#define DAT_00204990 DAT_00204990_backing[0]
+extern undefined2 DAT_002049a0_backing[8192];
+#define DAT_002049a0 DAT_002049a0_backing[0]
+extern undefined2 DAT_002049b0_backing[32768];
+#define DAT_002049b0 DAT_002049b0_backing[0]
+extern undefined1 DAT_00101424;
+extern undefined1 DAT_00101428_backing[8192];
+#define DAT_00101428 DAT_00101428_backing[0]
+/* Globals defined in uw.c but also used by functions that now live in
+   movement.c (the movement collision sweep) -- extern'd here so both
+   translation units see the same storage. */
+extern unsigned char DAT_002049c8_backing[64];
+extern unsigned char DAT_00086998_backing[16];
+extern short DAT_00086990;
+extern char * DAT_00204874;
+extern char * DAT_002048bc;
+/* Globals defined in uw.c but also used by functions that now live in
+   collision.c (collision geometry) -- extern'd here so both
+   translation units see the same storage. */
+extern undefined1 DAT_00202bf8_backing[32768];
+#define DAT_00202bf8 DAT_00202bf8_backing[0]
+#define DAT_00202bf9  (DAT_00202bf8_backing[0x01])
+#define DAT_00202bfa  (DAT_00202bf8_backing[0x02])
+#define DAT_00202bfb  (DAT_00202bf8_backing[0x03])
+#define DAT_00202bfc  (DAT_00202bf8_backing[0x04])
+#define DAT_00202bfd  (DAT_00202bf8_backing[0x05])
+#define DAT_00202bfe  (DAT_00202bf8_backing[0x06])
+#define DAT_00202bff  (DAT_00202bf8_backing[0x07])
+#define DAT_00202c02  (DAT_00202bf8_backing[0x0a])
+#define DAT_00202c03  (DAT_00202bf8_backing[0x0b])
+#define DAT_00202c04  (DAT_00202bf8_backing[0x0c])
+#define DAT_00202c07  (DAT_00202bf8_backing[0x0f])
+#define DAT_00202c08  (DAT_00202bf8_backing[0x10])
+#define DAT_00202c09  (DAT_00202bf8_backing[0x11])
+#define DAT_00202c0a  (*(unsigned short *)(DAT_00202bf8_backing + 0x12))
+#define DAT_00202c0c  (DAT_00202bf8_backing[0x14])
+#define DAT_00202c0d  (DAT_00202bf8_backing[0x15])
+#define DAT_00202c0e  (DAT_00202bf8_backing[0x16])
+#define DAT_00202c14  (*(unsigned int *)(DAT_00202bf8_backing + 0x1c))
+extern int DAT_000879ac;
+extern short DAT_0023bf48;
+extern short DAT_0023bf4c;
+extern undefined4 DAT_0023bf54;
+extern byte DAT_0023bf58;
+extern short g_movement_mode;
+extern unsigned int g_uw_frame_clock_units;
+
+
+/* --- auto-generated overlap/exref aliases --- */
+/* _DAT_00085bf0 dropped from here: superseded by the real, hand-traced
+   definition near the inventory.c extern block above (this
+   auto-generated one referenced a bare DAT_00085bf0 that was never a
+   real declared symbol -- the actual storage is g_inventory_hotspot_
+   table[288], see there). Conflicting with it broke the build the
+   moment inventory.c actually needed this symbol. */
+#define _DAT_00086999 (*(unsigned short*)&DAT_00086999)
+#define _DAT_0008699b (*(unsigned short*)&DAT_0008699b)
+#define _DAT_0008699f (*(unsigned short*)&DAT_0008699f)
+#define _DAT_000869a1 (*(unsigned short*)&DAT_000869a1)
+#define _DAT_00204980 (*(uint*)&DAT_00204980)
+
 undefined4 collision_response_mobile_object();
 unsigned int uw_frame_clock_ms();
 undefined4 check_and_reset_landing_state();

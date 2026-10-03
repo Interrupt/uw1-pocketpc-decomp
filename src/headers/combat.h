@@ -5,6 +5,38 @@
  * uw.h itself so this header is self-contained for any caller. */
 #include "uw.h"
 
+extern undefined DAT_00202878;
+extern unsigned char DAT_00084eff_backing[12];
+#define DAT_00084eff DAT_00084eff_backing[0]
+/* Globals defined in uw.c but also used by functions that now live in
+   combat.c (NPC melee combat AI) -- extern'd here so both translation
+   units see the same storage. */
+extern byte DAT_001013f8;
+extern char * DAT_00101400;
+extern char * DAT_00101404;
+extern char DAT_00101408;
+extern byte DAT_0010140c;
+extern char DAT_00101410;
+extern undefined1 DAT_00101420;
+extern int DAT_00101430;
+extern char DAT_0010143c;
+extern short DAT_00101444; /* signed fine-coordinate delta; ARM reads 16 bits */
+extern short DAT_00101448; /* signed fine-coordinate delta; ARM reads 16 bits */
+extern undefined4 DAT_00101734_backing[256];
+#define DAT_00101734 DAT_00101734_backing[0]
+extern char DAT_0010173c;
+extern ushort DAT_00101900;
+extern ushort * DAT_0010190c;
+extern byte DAT_00101918;
+extern undefined4 DAT_00101924;
+extern byte DAT_001005fc;
+extern undefined2 DAT_00100630_backing[32768];
+#define DAT_00100630 DAT_00100630_backing[0]
+extern ushort DAT_00100610;
+extern char *DAT_001005e4;
+extern char *DAT_001005e0;
+
+
 undefined4 resolve_combat_hit_zone();
 int find_nearest_hit_target(short *param_1);
 void spawn_blood_splat_object();

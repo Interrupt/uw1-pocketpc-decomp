@@ -6,6 +6,19 @@
  * header is self-contained for any caller. */
 #include "uw.h"
 
+extern undefined DAT_00085ce0_backing[8192];
+#define DAT_00085ce0 DAT_00085ce0_backing[0]
+extern char s_You_read_the_00085ce8[];
+/* Globals defined in uw.c but also used by functions that now live in
+   item_use.c (item use) -- extern'd here so both translation units
+   see the same storage. */
+extern undefined1 DAT_00202a28_backing[256];
+#define g_food_effect_table DAT_00202a28_backing[0]
+extern undefined4 g_weapon_overlay_enabled;
+extern char s_UNNAMED_00084f24[];
+extern char *DAT_00202098;
+
+
 int objects_are_combinable();
 undefined4 spawn_combined_object();
 bool is_object_consumed_in_combination();

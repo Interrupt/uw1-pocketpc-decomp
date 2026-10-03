@@ -6,6 +6,13 @@
  * self-contained for any caller. */
 #include "uw.h"
 
+extern char *DAT_00110fc8;
+/* Globals defined in uw.c but also used by functions that now live in
+   text.c (text/font rendering) -- extern'd here so both translation
+   units see the same storage. */
+extern undefined2 g_text_flat_color;
+
+
 void draw_text_string();
 int measure_text_width();
 undefined4 unpack_glyph_bitmap();

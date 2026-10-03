@@ -7,6 +7,25 @@
  * caller. */
 #include "uw.h"
 
+/* Globals defined in uw.c but also used by functions that now live in
+   object_actions.c (object action dispatch, critter sprite tier/page,
+   placement/combination checks) -- extern'd here so both translation
+   units see the same storage. */
+extern ushort DAT_002022f8;
+extern int DAT_002022fc;
+extern ushort DAT_00202508;
+extern undefined1 DAT_0023ce70_backing[8192];
+#define DAT_0023ce70 DAT_0023ce70_backing[0]
+#define DAT_0023ce71 DAT_0023ce70_backing[1]
+extern ushort g_player_max_carry_weight;
+extern char s_You_see_000858fc[];
+extern undefined1 DAT_0023c3dc;
+extern undefined1 DAT_0023c3d8;
+extern undefined1 DAT_00087604_backing[65536];
+#define DAT_00087604 DAT_00087604_backing[0]
+extern undefined *PTR_FUN_00087614;
+
+
 undefined4 decode_critter_sprite_page();
 undefined4 resolve_critter_sprite_tier();
 undefined4 init_monster_spawn_defaults();

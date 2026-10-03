@@ -6,6 +6,21 @@
  * itself so this header is self-contained for any caller. */
 #include "uw.h"
 
+/* Globals defined in uw.c but also used by functions that now live in
+   resources.c (.GR bitmap loading, flip-grtile slots, door frames) --
+   extern'd here so both translation units see the same storage. */
+extern ushort DAT_00202744;
+extern undefined1 DAT_0023b840_backing[8192];
+
+#define DAT_0023b841 DAT_0023b840_backing[1]
+
+#define DAT_0023b840 DAT_0023b840_backing[0]
+extern undefined1 DAT_00202750_backing[256];
+#define DAT_00202750 DAT_00202750_backing[0]
+extern void * g_grtile_real_ptrs[320];
+extern char s__DATA__00085970[];
+
+
 /* Forward declaration needed because register_grtile_entry (much earlier in uw.c)
    calls this before its own definition later in the file -- see its
    definition, right after grtile_alloc_registered, for why it exists. */

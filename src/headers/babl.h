@@ -5,6 +5,31 @@
  * Pulls in uw.h itself so this header is self-contained for any caller. */
 #include "uw.h"
 
+extern char s_FONTBIG_SYS_00085454[];
+/* Globals defined in uw.c but also used by functions that now live in
+   babl.c (the conversation/dialogue scripting VM) -- extern'd here so
+   both translation units see the same storage. */
+extern char DAT_00085240_backing[8192];
+#define DAT_00085240 DAT_00085240_backing[0]
+extern char DAT_00085244_backing[32768];
+#define DAT_00085244 DAT_00085244_backing[0]
+extern char DAT_00085248_backing[32768];
+#define DAT_00085248 DAT_00085248_backing[0]
+extern undefined4 DAT_00085c54;
+extern ushort * DAT_00100674;
+extern undefined2 DAT_0024cfac;
+extern undefined1 DAT_0023c698_backing[32768];
+#define DAT_0023c698 DAT_0023c698_backing[0]
+extern uintptr_t DAT_00101a70;
+extern undefined2 DAT_00101960; // talking-portrait mouth-frame cycle count, reset by reset_dialogue_speech_state
+/* Voice-sample page size cache used by load_voice_sample_page and
+   read_voice_sample_page_chunk. DAT_000853f8 was mis-declared as a
+   1-byte `undefined` in the original decompile despite holding a
+   computed size masked with & 0xffff elsewhere -- widened to ushort,
+   matching its siblings, to stop the silent truncation. */
+extern ushort DAT_000853fc;
+
+
 /* Keep the ARM byte fields at their original offsets. Subtitle pointers
    need separate native-width slots on a 64-bit host; expanding their old
    four-byte slots would overwrite the adjacent color/count/voice fields. */

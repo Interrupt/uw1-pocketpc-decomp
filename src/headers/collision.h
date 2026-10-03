@@ -6,6 +6,12 @@
  * uw.h itself so this header is self-contained for any caller. */
 #include "uw.h"
 
+extern short DAT_00202c68;
+extern short DAT_00202c30;
+extern undefined DAT_00204920_backing[8192];
+#define DAT_00204920 DAT_00204920_backing[0]
+
+
 ushort collision_neighbor_shade_or_zero(ushort *base, byte idx);
 uint collision_sample_floor_height();
 int compute_floor_height_at_position();

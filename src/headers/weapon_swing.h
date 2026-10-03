@@ -6,6 +6,10 @@
  * so this header is self-contained for any caller. */
 #include "uw.h"
 
+extern undefined1 DAT_000870e0;
+extern short DAT_000870e4;
+
+
 void debug_noop_frame_hook();
 undefined4 weapon_swing_frame_loaded(void *buf, unsigned size, int idx);
 void *weapon_swing_frame_alloc();

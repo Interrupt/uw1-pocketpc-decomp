@@ -6,6 +6,21 @@
  * for any caller. */
 #include "uw.h"
 
+/* Globals defined in uw.c but also used by functions that now live in
+   automap.c (the automap screen) -- extern'd here so both translation
+   units see the same storage. */
+extern undefined1 DAT_000878d0_backing[256];
+#define DAT_000878d0 DAT_000878d0_backing[0]
+extern undefined1 DAT_000b99d0_backing[8192];
+#define DAT_000b99d0 DAT_000b99d0_backing[0]
+extern undefined4 DAT_000bbef4;
+extern char * DAT_002029cc;
+/* decompress_rle_stream's shared codec state -- see uw.c's own
+   comment at the declarations for what each field tracks. */
+extern char s_fontbig_sys_0008432c[];
+extern char s_font4x5p_sys_0008431c[];
+
+
 void enter_automap_screen();
 undefined4 save_automap_reveal_to_archive();
 undefined4 load_automap_reveal_from_archive();

@@ -7,6 +7,43 @@
  * this header is self-contained for any caller. */
 #include "uw.h"
 
+/* Globals defined in uw.c but also used by functions that now live in
+   graphics.c (bitmap_blit_to_framebuffer, rect_fill_or_save_restore,
+   set_draw_color) -- extern'd here so both translation units see the same
+   storage. */
+extern void *g_uw_framebuffer;
+/* 256-entry palette -> RGB565 lookup table (rebuilt by build_rgb565_palette on
+   every palette load). Real binary size is 256 shorts at 0x0024ad60;
+   over-allocated here as a safety margin. Indexed as
+   `(&g_palette_rgb565)[palette_index]`. g_transparent_screen_color
+   (uw.c) aliases entry 26. */
+extern undefined2 g_palette_rgb565_backing[32768];
+
+/* Globals defined in uw.c but also used by functions that now live in
+   graphics.c (screen_backup_save/restore/restore_rect) -- extern'd here so
+   both translation units see the same storage. */
+#define g_transparent_screen_color (*(short *)&g_palette_rgb565_backing[26])
+
+#define g_palette_rgb565 g_palette_rgb565_backing[0]
+extern undefined2 DAT_000a85c0;
+extern undefined2 DAT_000a85c4;
+extern undefined2 DAT_000a85c8;
+extern undefined2 DAT_000842a4;
+extern undefined2 DAT_000842a8;
+extern int DAT_00204848;
+extern int g_blit_transparent_mode;
+/* Globals defined in uw.c but also used by functions that now live in
+   graphics.c (expand_pals_bytes, build_rgb565_palette,
+   palette_cycle_range) -- extern'd here so both translation units see
+   the same storage. */
+extern int DAT_0024af70;
+extern undefined2 DAT_00242010_backing[32768];
+#define DAT_00242010 DAT_00242010_backing[0]
+extern undefined2 DAT_00248418_backing[20 * 256];
+#define DAT_00248418 DAT_00248418_backing[0]
+extern void * DAT_0023c430;
+
+
 void set_draw_color();
 void rect_fill_or_save_restore();
 void bitmap_blit_to_framebuffer();

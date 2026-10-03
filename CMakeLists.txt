@@ -13,9 +13,10 @@ pkg_check_modules(SDL2 REQUIRED sdl2)
 
 # uw.c no longer exists: every function and global variable it held has
 # been split out into matching src/*.c files (see struct-recovery-plan.md
-# and the cleanup goal). uw.h remains as the shared header for globals
-# used across more than one of those files; function declarations live
-# in the matching src/headers/*.h for the .c file that implements them.
+# and the cleanup goal). Function declarations and the extern globals
+# they own both live in the matching src/headers/*.h for the .c file
+# that defines them; uw.h remains only for shared types/macros and the
+# handful of globals with no single owning file.
 set(UW_SOURCES
   src/graphics.c
   src/game.c

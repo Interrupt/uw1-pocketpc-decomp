@@ -7,6 +7,55 @@
  * any caller. */
 #include "uw.h"
 
+extern int DAT_00250718;
+extern undefined1 g_active_hud_panel;
+extern undefined2 g_cursor_mode;
+extern int g_text_input_active;
+extern char DAT_0023c3e0;
+/* Globals defined in uw.c but also used by functions that now live in
+   hud.c (the HUD and message scroll panel) -- extern'd here so both
+   translation units see the same storage. */
+extern code * DAT_00086b38_fnptrs[6];
+extern undefined1 DAT_0023c118_arr[9];
+extern undefined1 DAT_0023cdb0_backing[32768];
+
+#define DAT_0023c118 DAT_0023c118_arr[0]
+#define DAT_00086b38 (DAT_00086b38_fnptrs[0])
+#define DAT_00086b3c (DAT_00086b38_fnptrs[1])
+#define DAT_00086b40 (DAT_00086b38_fnptrs[2])
+#define DAT_00086b44 (DAT_00086b38_fnptrs[3])
+#define DAT_00086b48 (DAT_00086b38_fnptrs[4])
+#define DAT_0023c11f DAT_0023c118_arr[7]
+#define DAT_0023c120 DAT_0023c118_arr[8]
+#define DAT_0023cdb8 (*(int *)(DAT_0023cdb0_backing + 8))
+#define DAT_0023cdbc (*(int *)(DAT_0023cdb0_backing + 0xc))
+#define DAT_0023cdc0 (*(int *)(DAT_0023cdb0_backing + 0x10))
+#define g_hud_panel_handlers (g_hud_panel_handlers_table[0])
+#define g_hud_panel_ticker_handlers (g_hud_panel_handlers_table[4])
+#define g_target_hud_panel DAT_0023c118_arr[6]
+
+#define DAT_0023cdb0 DAT_0023cdb0_backing[0]
+extern void (*const g_hud_panel_handlers_table[13])(void);
+extern short g_player_carry_weight;
+extern short DAT_00084f10;
+extern char DAT_000870d8;
+extern char DAT_000870dc;
+extern undefined DAT_00087530_backing[212];
+#define DAT_00087530 DAT_00087530_backing[0]
+#define DAT_00087533 DAT_00087530_backing[3]
+extern undefined1 DAT_0023c130;
+extern ushort DAT_0023c1dc;
+extern byte g_flip_grtile_cache_ready;
+extern undefined * DAT_00250704;
+extern undefined4 g_scroll_control_codes_enabled;
+extern char s_bodies_00085c58[];
+extern undefined2 DAT_00085c50;
+extern undefined1 DAT_00202988_backing[16];
+#define DAT_00202988 DAT_00202988_backing[0]
+extern short DAT_00085b64;
+extern undefined2 DAT_00085b72;
+
+
 void dirty_rect_union();
 void dirty_rect_set();
 void uw_debug_blit_pick_buffer(void);

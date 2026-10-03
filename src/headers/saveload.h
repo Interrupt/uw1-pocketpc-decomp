@@ -6,6 +6,15 @@
  * self-contained for any caller. */
 #include "uw.h"
 
+extern char s__SAVE0_lev_ark_000842fc[];
+extern char * g_save_record_buffer;
+/* Globals defined in uw.c but also used by functions that now live in
+   saveload.c (save/load) -- extern'd here so both translation units
+   see the same storage. */
+extern undefined2 DAT_000868dc;
+extern short DAT_002046f0;
+
+
 bool open_level_archive();
 byte close_level_archive();
 bool write_archive_entry();

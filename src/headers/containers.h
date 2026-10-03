@@ -7,6 +7,14 @@
  * caller. */
 #include "uw.h"
 
+extern char * g_open_container_list;
+/* Globals defined in uw.c but also used by functions that now live in
+   containers.c (the open-container/backpack view stack) -- extern'd
+   here so both translation units see the same storage. */
+extern undefined1 DAT_00085c88_backing[32768];
+#define DAT_00085c88 DAT_00085c88_backing[0]
+
+
 void scroll_container_grid_up(void);
 void scroll_container_grid_down(void);
 undefined4 discard_container_contents();

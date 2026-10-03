@@ -6,6 +6,18 @@
  * is self-contained for any caller. */
 #include "uw.h"
 
+extern ushort DAT_001007c4;
+extern char s__DATA_cnv_ark_00084fc8[];
+extern ushort *DAT_0024cff0;
+/* Globals defined in uw.c but also used by functions that now live in
+   interact.c (object interaction dispatch) -- extern'd here so both
+   translation units see the same storage. */
+extern short DAT_000858c4;
+extern char * DAT_002020b0;
+extern short DAT_002020ac;
+extern void (*const PTR_FUN_000858c8_table[5])(void);
+
+
 void attempt_talk_interaction();
 undefined4 target_in_range();
 uint object_chain_max_barrier();
