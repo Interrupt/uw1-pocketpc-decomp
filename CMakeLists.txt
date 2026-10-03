@@ -277,6 +277,28 @@ if(BUILD_TESTING)
     src/item_use.c:prompt_use_item_on_target
     src/item_use.c:complete_use_item_on_player
     src/game.c:handle_game_view_click)
+  set(gx_pacing_functions
+    src/gx_stub.c:@uw_frame_pacing
+    src/gx_stub.c:@g_display_pacing src/gx_stub.c:@g_game_pacing
+    src/gx_stub.c:uw_set_present_refresh_rate
+    src/gx_stub.c:uw_reset_frame_pacing src/gx_stub.c:uw_claim_frame
+    src/gx_stub.c:uw_present_frame_due src/gx_stub.c:uw_service_pending_present
+    src/gx_stub.c:uw_service_game_clock)
+  add_game_unit_test(gx_pacing ${gx_pacing_functions})
+  add_game_unit_test(look_pacing
+    src/gx_stub.c:poll_dungeon_movement_keys
+    ${gx_pacing_functions})
+  # Include the extracted poller in the fixture so its static linkage is retained.
+  set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/tests/look_pacing_functions.c"
+    PROPERTIES HEADER_FILE_ONLY TRUE)
+  target_include_directories(test_look_pacing PRIVATE ${SDL2_INCLUDE_DIRS}
+    "${CMAKE_CURRENT_BINARY_DIR}/tests")
+  add_game_unit_test(inventory_drag
+    src/item_use.c:attach_picked_up_object_to_cursor
+    src/input.c:wait_for_click_release
+    src/movement.c:movement_pacing_handler
+    uw.c:FUN_000575c4 uw.c:FUN_00058738 uw.c:FUN_00058438
+    ${gx_pacing_functions})
   target_compile_definitions(test_inventory PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   target_compile_definitions(test_movement PRIVATE

@@ -19,6 +19,8 @@ static int testing_fade, intro_fade_test, palette_installs, presents;
 static unsigned long long fade_brightness[256];
 static unsigned fade_samples;
 static uint fade_clock_ms, fade_present_ms;
+bool g_new_game_entry_pause_pending;
+static unsigned entry_pauses, entry_pause_sample;
 static uint fade_present_times[256];
 static ushort fade_pixels[256];
 static int testing_entry_tick, first_dungeon_draw_sample;
@@ -65,6 +67,10 @@ long Ordinal_553(int handle)
 long Ordinal_2005(int divisor, int dividend) { return dividend / divisor; }
 long Ordinal_496(unsigned int ms)
 {
+    if (testing_fade && ms == 500) {
+        entry_pauses++;
+        entry_pause_sample = fade_samples;
+    }
     if (testing_fade) fade_clock_ms += ms;
     return 0;
 }
@@ -109,6 +115,7 @@ undefined2 DAT_00201b60;
 int DAT_0020484c;
 undefined4 DAT_00204868;
 char DAT_002506aa, DAT_002506ab;
+undefined2 g_cursor_holding_state;
 static short mouse_driver;
 short *DAT_000876c4 = &mouse_driver;
 static char keyboard_case;
@@ -306,6 +313,8 @@ void setUp(void)
     fade_samples = 0;
     fade_clock_ms = 0;
     fade_present_ms = 16;
+    g_new_game_entry_pause_pending = false;
+    entry_pauses = entry_pause_sample = 0;
     testing_entry_tick = 0;
     first_dungeon_draw_sample = -1;
     testing_menu = menu_polls = menu_dismissal_sent = menu_visible_before_close = 0;
@@ -510,7 +519,7 @@ undefined4 character_generator_loop(void)
 {
     character_screen_inputs++;
     TEST_ASSERT_EQUAL_UINT(9, fade_samples);
-    TEST_ASSERT_GREATER_OR_EQUAL_UINT(256, fade_clock_ms);
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT(320, fade_clock_ms);
     TEST_ASSERT_GREATER_THAN_UINT(0, fade_brightness[8]);
     for (unsigned step = 1; step < 8; step++)
         TEST_ASSERT_TRUE(fade_brightness[step] > fade_brightness[step - 1]);
@@ -704,7 +713,7 @@ static void test_intro_first_face_fades_in_before_full_brightness(void)
     TEST_ASSERT_EQUAL_INT(0, palette_installs);
     TEST_ASSERT_EQUAL_INT(alloc_count, frees);
 }
-static void test_fades_hold_each_brightness_step_for_32ms(void)
+static void test_fades_hold_each_brightness_step_for_40ms(void)
 {
     testing_fade = 1;
     g_force_flush = 1;
@@ -712,17 +721,17 @@ static void test_fades_hold_each_brightness_step_for_32ms(void)
     fade_in(0, 0, framebuffer);
     TEST_ASSERT_EQUAL_UINT(9, fade_samples);
     for (unsigned i = 1; i < 8; i++)
-        TEST_ASSERT_GREATER_OR_EQUAL_UINT(32, fade_present_times[i] - fade_present_times[i - 1]);
-    TEST_ASSERT_GREATER_OR_EQUAL_UINT(256, fade_clock_ms);
-    TEST_ASSERT_LESS_THAN_UINT(300, fade_clock_ms);
+        TEST_ASSERT_GREATER_OR_EQUAL_UINT(40, fade_present_times[i] - fade_present_times[i - 1]);
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT(320, fade_clock_ms);
+    TEST_ASSERT_LESS_THAN_UINT(370, fade_clock_ms);
 
     fade_samples = fade_clock_ms = 0;
     fade_out(0, 0, framebuffer);
     TEST_ASSERT_EQUAL_UINT(8, fade_samples);
     for (unsigned i = 1; i < 8; i++)
-        TEST_ASSERT_GREATER_OR_EQUAL_UINT(32, fade_present_times[i] - fade_present_times[i - 1]);
-    TEST_ASSERT_GREATER_OR_EQUAL_UINT(256, fade_clock_ms);
-    TEST_ASSERT_LESS_THAN_UINT(300, fade_clock_ms);
+        TEST_ASSERT_GREATER_OR_EQUAL_UINT(40, fade_present_times[i] - fade_present_times[i - 1]);
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT(320, fade_clock_ms);
+    TEST_ASSERT_LESS_THAN_UINT(370, fade_clock_ms);
 }
 static void test_character_creator_fades_in_real_background_before_input(void)
 {
@@ -753,6 +762,28 @@ static void test_new_game_dungeon_transition_presents_fade_out_and_fade_in(void)
     for (unsigned step = 9; step < 16; step++)
         TEST_ASSERT_TRUE(fade_brightness[step] > fade_brightness[step - 1]);
     TEST_ASSERT_EQUAL_INT(0, g_force_flush);
+    TEST_ASSERT_EQUAL_UINT(0, entry_pauses);
+}
+static void test_character_creation_entry_holds_black_for_half_second_once(void)
+{
+    testing_fade = 1;
+    g_selected_object = NULL;
+    DAT_0023c63c = 0;
+    g_new_game_entry_pause_pending = true;
+    memset(DAT_0023cca8_backing, 0, sizeof DAT_0023cca8_backing);
+    for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
+    uw_begin_present_batch();
+    enter_dungeon_view();
+    uw_end_present_batch();
+    TEST_ASSERT_EQUAL_UINT(1, entry_pauses);
+    TEST_ASSERT_EQUAL_UINT(8, entry_pause_sample);
+    TEST_ASSERT_EQUAL_HEX16(0, fade_pixels[7]);
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT(500, fade_present_times[8] - fade_present_times[7]);
+    TEST_ASSERT_FALSE(g_new_game_entry_pause_pending);
+    uw_begin_present_batch();
+    enter_dungeon_view();
+    uw_end_present_batch();
+    TEST_ASSERT_EQUAL_UINT(1, entry_pauses);
 }
 static void test_slow_presentations_count_toward_fade_step_duration(void)
 {
@@ -841,6 +872,7 @@ static void test_nested_input_suspension_restores_batching_and_flush_gate(void)
     TEST_ASSERT_EQUAL_UINT(3, presents);
     TEST_ASSERT_EQUAL_INT(7, g_force_flush);
 }
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -863,9 +895,10 @@ int main(void)
     RUN_TEST(test_fades_present_each_step_inside_gameplay_batch_with_held_click);
     RUN_TEST(test_fade_out_presents_progressive_brightness_to_black);
     RUN_TEST(test_intro_first_face_fades_in_before_full_brightness);
-    RUN_TEST(test_fades_hold_each_brightness_step_for_32ms);
+    RUN_TEST(test_fades_hold_each_brightness_step_for_40ms);
     RUN_TEST(test_character_creator_fades_in_real_background_before_input);
     RUN_TEST(test_new_game_dungeon_transition_presents_fade_out_and_fade_in);
+    RUN_TEST(test_character_creation_entry_holds_black_for_half_second_once);
     RUN_TEST(test_slow_presentations_count_toward_fade_step_duration);
     RUN_TEST(test_entry_tick_fades_character_screen_before_drawing_dungeon);
     RUN_TEST(test_options_menu_presents_while_waiting_inside_gameplay_batch);

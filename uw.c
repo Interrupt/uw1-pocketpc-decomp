@@ -5239,48 +5239,15 @@ undefined4 DAT_0023bf50;
 char DAT_00087944_backing[128];
 char *DAT_00087944 = DAT_00087944_backing;
 short DAT_0024af6c;
-/* Deterministic, fixed-step substitute for the real wall-clock
-   (read_realtime_clock_units(), itself Ordinal_535()>>2 -- SDL_GetTicks() scaled to
-   4ms-per-unit) that movement_pacing_handler() (this file, ~line 56186)
-   used to read directly for ALL of its internal timing, including the
-   uVar6 delta that directly scales how far the player moves/turns each
-   tick. Real elapsed time made movement distance sensitive to actual
-   frame-delivery jitter -- fine for one live session, but meant a
-   recorded input sequence (democapture.c) with tick-for-tick-identical
-   keys held for tick-for-tick-identical durations still couldn't
-   reproduce the exact same on-screen distance on replay, since the two
-   sessions' real per-tick timing was never bit-for-bit identical (user-
-   reported: "movement via input still seems to slightly overshoot...
-   if input was 1:1"). Advanced once per real game tick by gx_stub.c's
-   uw_pump_events() (see its own comment) by a fixed amount matching
-   1000/60 ms in this same 4ms-per-unit scale, computed drift-free from
-   the running tick count (not accumulated per-call, which would drift)
-   -- movement becomes a pure function of TICK COUNT, exactly what the
-   recorder already captures losslessly, eliminating this class of
-   replay drift entirely instead of trying to reproduce real timing
-   jitter. Deliberately unconditional (not just during record/playback)
-   since the game is already vsync-locked to ~60Hz (gx_stub.c's own
-   frame-budget cap), so this doesn't change how normal play feels.
-
-   Deliberately NOT folded into read_realtime_clock_units() itself, even though that
-   is literally the "what time is it" function movement_pacing_handler
-   used to call and would have been the more obvious single place to
-   fix -- read_realtime_clock_units() has ~65 other call sites across this file, and
-   at least one (move_key_directional_step's own tail, ~line 56177:
-   `do { iVar2 = read_realtime_clock_units(); } while ((uint)(iVar2-iVar1) < 0x18);`)
-   busy-spins on it in a tight loop with NO event pump in between
-   iterations, deliberately throttling a discrete step's real-world
-   pacing. This clock only advances once per real uw_pump_events() call
-   -- a caller spinning on it outside that cadence, like that loop, would
-   see a frozen value and hang forever. Exposed instead via its own
-   accessor, uw_frame_clock_ms() below, so a caller has to deliberately
-   opt in rather than being silently affected by a global redefinition. */
+/* Port clock for movement_pacing_handler, in the original 4ms units.
+   GX input polling samples elapsed time at 60Hz, including inside the
+   original blocking input waits. Repeated polls in the same interval
+   do not advance it; missed intervals follow elapsed time rather than
+   the number of loop iterations or display flushes. Other clock users
+   keep read_realtime_clock_units(), since some busy waits do not poll
+   input at all. */
 unsigned int g_uw_frame_clock_units;
-/* Accessor for g_uw_frame_clock_units -- see its own comment. Use this,
-   not the raw global, from any new gameplay-tick-paced timing code (the
-   same shape as movement_pacing_handler's own use) that wants
-   deterministic, tick-count-driven pacing instead of read_realtime_clock_units()'s
-   real wall-clock time. */
+/* Return the most recent GX clock sample for this movement dispatch. */
 unsigned int uw_frame_clock_ms() {
   return g_uw_frame_clock_units;
 }
@@ -13787,11 +13754,9 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
 // comment), then re-arms whichever bits DAT_00085728[current mode] always
 // wants re-triggered -- this re-arm is what makes a mode's per-frame
 // handlers keep firing every call instead of running once and going
-// quiet. Called once per real game tick from app_main_loop's own while
-// loop (game.c), gated on DAT_00201c84 != 0 (see main_loop_hud_flush's
-// own call site) -- this is the actual per-tick movement dispatch, the
-// anchor point uw_advance_game_tick's deterministic clock now advances
-// in lockstep with (see its own comment in gx_stub.c).
+// quiet. Called from the outer game loop and the original input waits.
+// GX input polling services the shared movement clock in both contexts;
+// repeated dispatches within the same clock interval have zero delta.
 void dispatch_sticky_mode_handlers()
 
 {
@@ -20700,18 +20665,15 @@ int FUN_00056fe8()
 
 
 
-/* Gates the 4 "always show the desktop mouse cursor" deviations below
-   (all originally gated shut on a real Pocket PC touchscreen, where a
-   persistent cursor sprite makes no sense). Defaults OFF: drawing the
-   cursor every idle frame forces a display flush every frame too (see
-   draw_idle_mouse_cursor's own LAB_00058674 tail), which measurably slowed the
-   game down when this was unconditionally on. Opt in with
-   UW_ALWAYS_SHOW_CURSOR=1 until that flush cost is addressed. */
+/* Desktop deviation: opt in to a persistent cursor with
+   UW_ALWAYS_SHOW_CURSOR=1. Keep the original touchscreen visibility
+   gates by default while the desktop cursor still has known bugs. */
 int uw_always_show_cursor(void)
 {
   static int cached = -1;
   if (cached < 0) {
-    cached = getenv("UW_ALWAYS_SHOW_CURSOR") != NULL;
+    const char *setting = getenv("UW_ALWAYS_SHOW_CURSOR");
+    cached = setting != NULL && strcmp(setting, "1") == 0;
   }
   return cached;
 }
@@ -21449,14 +21411,22 @@ void FUN_00058438(param_1)
 short param_1;
 
 {
+  short sVar1;
+
   DAT_0020485c = (int)param_1;
   update_mouse_state();
   DAT_0020485c = 0;
-  if (DAT_0023c63c == 0) {
+  /* Desktop input adaptation: the original checks the touch-held flag
+     DAT_0023c63c here. SDL right-button pickup instead uses DAT_002506ab;
+     checking only touch marks the drag released on a dungeon redraw.
+     Use the existing combined button reader for both the release check
+     and the cached button code, preserving the original wait protocol. */
+  sVar1 = FUN_00058738();
+  if (sVar1 == 0) {
     DAT_0008696e = 0;
   }
   else if (DAT_00086968 == -1) {
-    DAT_00086968 = DAT_0023c63c;
+    DAT_00086968 = sVar1;
     DAT_0008696a = g_mouse_x;
     DAT_0008696c = g_mouse_y;
   }

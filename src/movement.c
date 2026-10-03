@@ -1421,10 +1421,9 @@ void movement_pacing_handler()
   undefined8 uVar7;
   uint uVar_now;
 
-  /* Was 4 separate read_realtime_clock_units() (real wall-clock) reads in this
-     function -- replaced with uw_frame_clock_ms(), a fixed-step
-     substitute in the same 4ms-per-unit scale (see its own and
-     g_uw_frame_clock_units's comments). All 4 original reads are really
+  /* The original reads read_realtime_clock_units() four times. The port
+     uses the latest GX elapsed-time sample in the same 4ms-per-unit
+     scale (see g_uw_frame_clock_units). All four original reads are
      asking "what time is it right now", each then diffed against the
      SAME DAT_0023bf54 reference -- captured once into uVar_now here so
      they keep agreeing with each other exactly as they did when each

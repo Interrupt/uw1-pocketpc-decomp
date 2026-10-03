@@ -24,6 +24,7 @@ char s__DATA_lev_ark_00085734[] = "\\DATA\\lev.ark";
 char s__SAVE0_lev_ark_000842fc[] = "\\SAVE0\\lev.ark";
 
 static bool accept_character, archive_ok;
+bool g_new_game_entry_pause_pending;
 static char workspace[] = "/tmp/uw-new-game-XXXXXX";
 static char data_link[512], save_path[512], archive_path[512];
 undefined DAT_000b78b8_backing[8192];
@@ -234,6 +235,7 @@ void tearDown(void)
 static void test_stub_character_loads_level_one_and_enters_gameplay(void)
 {
     TEST_ASSERT_TRUE(prepare_new_game());
+    TEST_ASSERT_TRUE(g_new_game_entry_pause_pending);
     begin_gameplay();
 
     TEST_ASSERT_EQUAL_STRING("Test Avatar", character);
@@ -265,7 +267,9 @@ static void test_stub_character_loads_level_one_and_enters_gameplay(void)
 static void test_cancelled_character_does_not_load_or_start_game(void)
 {
     accept_character = false;
+    g_new_game_entry_pause_pending = true;
     TEST_ASSERT_FALSE(prepare_new_game());
+    TEST_ASSERT_FALSE(g_new_game_entry_pause_pending);
     TEST_ASSERT_EQUAL_INT(0, saves);
     TEST_ASSERT_EQUAL_INT(0, opens);
     TEST_ASSERT_EQUAL_INT(0, spawn_calls);

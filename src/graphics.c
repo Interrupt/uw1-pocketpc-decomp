@@ -494,8 +494,8 @@ ushort *param_3;
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
-  /* Match fade_active_palette_to_black's eight clock units (32 ms) per
-     step. GX's 60 Hz presentations alone advance this fade twice as fast. */
+  /* Intentional deviation: hold each step for 40 ms instead of the
+     original timed palette fade's 32 ms, making the transition slower. */
   uint fade_step_start = (uint)Ordinal_535();
   uint fade_step_elapsed;
   do {
@@ -519,8 +519,8 @@ ushort *param_3;
       puVar6 = puVar6 + 1;
     } while (iVar7 != 0);
     flush_dirty_rect_to_display(1);
-    while ((fade_step_elapsed = (uint)Ordinal_535() - fade_step_start) < 32)
-      Ordinal_496(32 - fade_step_elapsed);
+    while ((fade_step_elapsed = (uint)Ordinal_535() - fade_step_start) < 40)
+      Ordinal_496(40 - fade_step_elapsed);
     fade_step_start = (uint)Ordinal_535();
     iVar9 = iVar9 + 1;
   } while (iVar9 < 9);
@@ -573,7 +573,8 @@ undefined2 * param_3;
   iVar10 = 64000;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
-  /* Match the original timed palette fade's 32 ms step interval. */
+  /* Intentional deviation: use 40 ms per step, like fade_in, rather
+     than the original timed palette fade's 32 ms interval. */
   uint fade_step_start = (uint)Ordinal_535();
   uint fade_step_elapsed;
   do {
@@ -599,8 +600,8 @@ undefined2 * param_3;
       *puVar8 = uVar3 | (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * iVar6 >> 0x12);
     } while (iVar9 != 0);
     flush_dirty_rect_to_display(1);
-    while ((fade_step_elapsed = (uint)Ordinal_535() - fade_step_start) < 32)
-      Ordinal_496(32 - fade_step_elapsed);
+    while ((fade_step_elapsed = (uint)Ordinal_535() - fade_step_start) < 40)
+      Ordinal_496(40 - fade_step_elapsed);
     fade_step_start = (uint)Ordinal_535();
     iVar11 = iVar11 + -1;
   } while (0 < iVar11);
@@ -609,8 +610,8 @@ undefined2 * param_3;
     param_3 = param_3 + 1;
   }
   flush_dirty_rect_to_display(1);
-  while ((fade_step_elapsed = (uint)Ordinal_535() - fade_step_start) < 32)
-    Ordinal_496(32 - fade_step_elapsed);
+  while ((fade_step_elapsed = (uint)Ordinal_535() - fade_step_start) < 40)
+    Ordinal_496(40 - fade_step_elapsed);
   DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
   debug_framebuffer_dump("fade_out");
   Ordinal_1018(puVar4);
@@ -1669,7 +1670,7 @@ undefined4 param_2;
 
 
 // was FUN_00040f64 -- fades the active palette down to black over
-// param_2 steps (frame-paced via read_realtime_clock_units, at least 8
+// param_2 steps (frame-paced via read_realtime_clock_units, at least 10
 // clock units apart), re-applying the dimmed palette via
 // apply_palette_buffer each step; param_2==0 instead snaps straight to
 // black. Only known caller (src/player.c:3716, after
@@ -1723,9 +1724,11 @@ short param_2;
           *(undefined1 *)(iVar8 + iVar2) = uVar3;
           iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
         } while (iVar8 < 0x300);
+        /* Intentional deviation: 10 clock units (40 ms) instead of 8
+           (32 ms), matching the slower framebuffer fades above. */
         do {
           iVar8 = read_realtime_clock_units();
-        } while ((uint)(iVar8 - iVar4) < 8);
+        } while ((uint)(iVar8 - iVar4) < 10);
         apply_palette_buffer(iVar2,0);
         iVar4 = read_realtime_clock_units();
         iVar5 = iVar5 + 1;

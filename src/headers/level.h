@@ -6,4 +6,7 @@
  * itself so this header is self-contained for any caller. */
 #include "../../uw.h"
 
+/* Port-only timing flag consumed by the first entry after character creation. */
+extern bool g_new_game_entry_pause_pending;
+
 #endif
