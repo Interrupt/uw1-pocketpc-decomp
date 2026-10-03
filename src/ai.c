@@ -66,15 +66,7 @@ static undefined DAT_0023cf0b_backing[256];
 #define DAT_0023cf0b DAT_0023cf0b_backing[0]
 static undefined DAT_0023cf0c_backing[256];
 #define DAT_0023cf0c DAT_0023cf0c_backing[0]
-static undefined1 DAT_00101739_backing[256];
-#define DAT_00101739 DAT_00101739_backing[0]
-static undefined1 DAT_0010173a_backing[256];
-#define DAT_0010173a DAT_0010173a_backing[0]
 static byte DAT_00101742;
-static undefined DAT_00101732_backing[8192];
-#define DAT_00101732 DAT_00101732_backing[0]
-static undefined DAT_00101733_backing[256];
-#define DAT_00101733 DAT_00101733_backing[0]
 static undefined4 DAT_00101728_backing[256];
 #define DAT_00101728 DAT_00101728_backing[0]
 /* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
@@ -86,15 +78,12 @@ static undefined4 DAT_00101728_backing[256];
    build_object_placement_snapshot(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
    first time an NPC's per-tick AI (npc_ai_tick) got this far -- which
    never happened before this session's other fixes let that code run
-   at all. Note: a separate, unrelated function (the tile_pair_los_blocked
-   ring-buffer scan a few thousand lines below) also reads raw bytes at
-   `&DAT_0010172c + small offset` as part of an already-fragile,
-   not-yet-fixed split-symbol-cluster spanning several adjacent globals
-   (see DAT_00101732's own backing-array fix and
-   [[split-symbol-clusters-to-structs]]) -- that usage's correctness
-   already depended on undefined/compiler-chosen adjacent-global layout
-   before this change and is no more or less well-defined after
-   widening this one field from 4 to 8 bytes. */
+   at all. Note: the tile_pair_los_blocked call sites a few thousand
+   lines below used to read raw bytes at `&DAT_0010172c + small offset`
+   as part of a split-symbol cluster spanning several separately-named
+   globals that are really one real waypoint array (DAT_00101740,
+   stride 7) -- now fixed to index that array directly instead of
+   relying on undefined/compiler-chosen adjacent-global layout. */
 void *DAT_0010172c;
 static undefined DAT_00101749;
 static ushort DAT_000853b8;
@@ -1411,12 +1400,9 @@ LAB_0005559c:
 // it into the tile list in param_1's place. Unconditionally frees
 // param_1 via discard_misplaced_object regardless of outcome -- callers
 // must always propagate the return value (including NULL on decay),
-// never keep using their own stale param_1 pointer. Already used by this
-// branch's own drop_held_object_near_player/spawn_object_near_player fix
-// (an explicit synchronous call, since this port resolves a toss
-// instantly with no per-tick flight simulation); now also reached
-// organically via sync_object_tile_position as part of ordinary mobile-
-// object ticking.
+// never keep using their own stale param_1 pointer. Called by
+// sync_object_tile_position when ordinary mobile-object physics reaches
+// rest, and by settle_misplaced_mobile_object during the transition pass.
 ushort *settle_mobile_to_immobile(param_1)
 ushort * param_1;
 
@@ -2017,8 +2003,8 @@ ushort param_3;
 // creature_find_path_to_tile's BFS parent-pointer scratch arrays
 // (&DAT_0023cf08-family), walking backward from the found tile
 // (param_1 ring count, param_2/param_3 its coordinates) and filling the
-// step arrays (DAT_00101739-746) the NPC's own movement code then
-// walks forward through.
+// step fields (DAT_00101740 offsets -7/-6, plus DAT_00101743-746) the
+// NPC's own movement code then walks forward through.
 void reconstruct_path_from_bfs(param_1,param_2,param_3)
 byte param_1;
 undefined1 param_2;
@@ -2038,8 +2024,8 @@ undefined1 param_3;
   for (uVar2 = (uint)(byte)(param_1 + 1); uVar2 != 0; uVar2 = uVar2 + 0xff & 0xff) {
     iVar1 = uVar2 * 7;
     iVar3 = ((uint)(byte)(&DAT_00101741)[iVar1] + (uint)(byte)(&DAT_00101740)[iVar1] * 0x40) * 5;
-    (&DAT_00101739)[iVar1] = (&DAT_0023cf08)[iVar3];
-    (&DAT_0010173a)[iVar1] = (&DAT_0023cf09)[iVar3];
+    (&DAT_00101740)[iVar1 - 7] = (&DAT_0023cf08)[iVar3];
+    (&DAT_00101740)[iVar1 - 6] = (&DAT_0023cf09)[iVar3];
     (&DAT_00101743)[iVar1] = (&DAT_0023cf0b)[iVar3] & 1;
     *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1) = 0;
     *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1 + 1) = 0;
@@ -2180,11 +2166,13 @@ LAB_0002d340:
     uVar8 = (uint)local_33;
     iVar5 = record_line_walk_step(uVar8,uVar10);
   }
+  /* ARM 0x2d47c..0x2d4d4 addresses the waypoint array at count*7,
+     then subtracts field offsets. These are not adjacent AI globals. */
   iVar5 = (uint)DAT_0010142c * 7;
-  sVar3 = tile_pair_los_blocked((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
-                       (&DAT_0010173a)[iVar5],0,0,*(undefined2 *)(DAT_00101438 + 4),
-                       *(undefined2 *)(DAT_00101438 + 6),*(undefined1 *)((intptr_t)&DAT_00101734 + iVar5)
-                       ,(intptr_t)&DAT_00101734 + iVar5,auStack_30);
+  sVar3 = tile_pair_los_blocked((&DAT_00101740)[iVar5 - 14],(&DAT_00101740)[iVar5 - 13],(&DAT_00101740)[iVar5 - 7],
+                       (&DAT_00101740)[iVar5 - 6],0,0,*(undefined2 *)(DAT_00101438 + 4),
+                       *(undefined2 *)(DAT_00101438 + 6),(&DAT_00101740)[iVar5 - 12]
+                       ,(byte *)&DAT_00101740 + iVar5 - 12,auStack_30);
   return (int)sVar3;
 }
 
@@ -2450,13 +2438,16 @@ undefined1 param_2;
                            DAT_00101742,&DAT_00101749,auStack_14);
     }
     else {
+      /* ARM 0x2dac4..0x2db24 uses DAT_00101740 + count*7 with
+         offsets -21..-6. Indexing past standalone DAT_0010172c/34
+         instead corrupts the collision-profile pointer and AI state. */
       iVar2 = uVar1 * 7;
-      iVar2 = tile_pair_los_blocked(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
-                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2),(&DAT_00101732)[iVar2],
-                           (&DAT_00101733)[iVar2],(&DAT_00101739)[iVar2],(&DAT_0010173a)[iVar2],
+      iVar2 = tile_pair_los_blocked((&DAT_00101740)[iVar2 - 21],
+                           (&DAT_00101740)[iVar2 - 20],(&DAT_00101740)[iVar2 - 14],
+                           (&DAT_00101740)[iVar2 - 13],(&DAT_00101740)[iVar2 - 7],(&DAT_00101740)[iVar2 - 6],
                            *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
-                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2 + 1),
-                           (intptr_t)&DAT_00101734 + iVar2,auStack_14);
+                           (&DAT_00101740)[iVar2 - 19],
+                           (byte *)&DAT_00101740 + iVar2 - 12,auStack_14);
     }
     if ((iVar2 != 0) && (DAT_00101440 == 0)) {
       return 1;
@@ -4273,8 +4264,8 @@ ushort * param_3;
             uVar9 = (uint)DAT_0010142c;
           } while (uVar12 < uVar9);
         }
-        bVar1 = (&DAT_00101733)[uVar9 * 7];
-        bVar2 = (&DAT_00101732)[uVar9 * 7];
+        bVar1 = (&DAT_00101740)[uVar9 * 7 - 13];
+        bVar2 = (&DAT_00101740)[uVar9 * 7 - 14];
         puVar7 = (ushort *)tilemap_lookup((uint)bVar2,(uint)bVar1);
         iVar11 = resolve_tile_entry_offset(*puVar7 & 0xf,&local_28,local_27);
         if (iVar11 != 0) {
