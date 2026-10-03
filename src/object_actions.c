@@ -366,26 +366,10 @@ short param_5;
       if (getenv("UW_DEBUG_CRITTER"))
         fprintf(stderr, "[critter] decode_critter_sprite_page: w=%d h=%d comp_type(pbVar11[4])=%d\n",
                 (int)(short)DAT_00202508, (int)(short)DAT_002022f8, (int)pbVar11[4]);
-      /* pbVar11 here has already been re-pointed via pbVar8[iVar5+iVar9]
-         (a tier-byte-derived offset, no bounds check against pbVar8's
-         real extent) -- for a tier-byte well outside the small range
-         this offset scheme was confirmed correct for (0-7, see
-         resolve_critter_sprite_tier's own tier-search table), that reads
-         wild/unrelated bytes from elsewhere in the page and
-         misinterprets them as a glyph header (observed: a real NPC's
-         direction 129 producing a 241x16 header, an impossible sprite
-         size, with pbVar11[4] landing on an unsupported
-         unpack_glyph_bitmap format too). Every other creature sprite
-         actually seen this session is under 64px in both dimensions;
-         skip decoding rather than allocate/decode from a header that
-         clearly isn't real glyph data. This is a stopgap, not a fix for
-         the underlying tier-byte interpretation -- the real page-format
-         semantics for tier-bytes outside 0-7 are still unknown. */
-      if ((unsigned short)DAT_00202508 > 64 || (unsigned short)DAT_002022f8 > 64) {
-        DEBUG(ERR, "[critter] decode_critter_sprite_page: implausible header w=%d h=%d for type=%d tier=%d dir=%d, skipping\n",
-              (int)(short)DAT_00202508, (int)(short)DAT_002022f8, param_1, param_2, (int)param_3);
-        return 0;
-      }
+      /* The original decoder accepts the page's full byte-sized dimensions.
+         Goblin combat frames legitimately exceed 64 pixels (e.g. direction
+         3, frame 3 is 68x44). Rejecting those after updating the dimensions
+         left the previous texture paired with the new size, garbling it. */
       uVar7 = decompress_gr_bitmap(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
       if (getenv("UW_DEBUG_CRITTER") && uVar7) {
         fprintf(stderr, "[critter] decode_critter_sprite_page: decoded row bytes[0..15]:");
@@ -749,10 +733,12 @@ ushort * param_2;
   DAT_00202c6c = local_backing;
   uVar2 = *param_1;
   uVar3 = encode_object_slot_index(param_1);
-  *(byte *)(DAT_00202c6c + 5) = (byte)uVar3;
+  /* ARM 0x4b2d0/0x4b310: slot at byte 10, radius at byte 8.
+     DAT_00202c6c is a byte pointer; Ghidra's word indices need scaling. */
+  *(byte *)(DAT_00202c6c + 10) = (byte)uVar3;
   *(byte *)((char *)DAT_00202c6c + 0xb) = (byte)((ushort)uVar3 >> 8);
   iVar5 = (short)(uVar2 & 0x1ff) * 0xd;
-  *(byte *)(DAT_00202c6c + 4) = (&DAT_00202c91)[iVar5] & 7;
+  *(byte *)(DAT_00202c6c + 8) = (&DAT_00202c91)[iVar5] & 7;
   *(undefined *)((char *)DAT_00202c6c + 9) = (&DAT_00202c90)[iVar5];
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] ENTER param_1=%p param_1[0xb]=0x%x param_1+3byte=0x%x\n",
@@ -808,16 +794,18 @@ ushort * param_2;
             (int)*(short *)((char *)DAT_00202c6c + 4), (int)(byte)DAT_00202c6c[0x10],
             (int)(byte)DAT_00202c6c[8]);
   if (((local_2a | local_2c) & 0x300) == 0) {
-    if ((byte)DAT_00202c6c[10] != 0) {
+    if ((byte)DAT_00202c6c[20] != 0) {
       sort_collision_candidates();
       if (*(byte *)((char *)DAT_00202c6c + 0x15) != 0) goto LAB_0004b4d4;
     }
     uVar2 = param_1[0xb];
     uVar6 = uVar2 & 0x3ff;
-    uVar7 = ((int)(short)(*DAT_00202c6c & 0x1f8) >> 3) << 10;
+    /* ARM 0x4b4e4..0x4b5d0 reads full X/Y words at bytes 0/2;
+       byte reads discarded X's high bits and used X's high byte as Y. */
+    uVar7 = ((int)(short)(*(ushort *)DAT_00202c6c & 0x1f8) >> 3) << 10;
     *(char *)(param_1 + 0xb) = (char)uVar6;
     *(byte *)((char *)param_1 + 0x17) = (byte)(uVar6 >> 8) | (byte)(uVar7 >> 8);
-    uVar7 = uVar2 & 0xf | uVar7 | ((int)(short)(DAT_00202c6c[1] & 0x1f8) >> 3) << 4;
+    uVar7 = uVar2 & 0xf | uVar7 | ((int)(short)(*(ushort *)(DAT_00202c6c + 2) & 0x1f8) >> 3) << 4;
     *(char *)(param_1 + 0xb) = (char)uVar7;
     *(char *)((char *)param_1 + 0x17) = (char)(uVar7 >> 8);
     uVar7 = (uint)CONCAT11(*(undefined1 *)((char *)param_1 + 3),(char)param_1[1]);
@@ -825,7 +813,7 @@ ushort * param_2;
     bVar1 = (byte)((((byte)*DAT_00202c6c & 7) << 0xd) >> 8);
     *(char *)(param_1 + 1) = (char)uVar6;
     *(byte *)((char *)param_1 + 3) = (byte)(uVar6 >> 8) | bVar1;
-    uVar2 = DAT_00202c6c[1];
+    uVar2 = *(ushort *)(DAT_00202c6c + 2);
     uVar7 = uVar7 & 0x3ff;
     *(char *)(param_1 + 1) = (char)uVar7;
     uVar4 = 1;
