@@ -1481,7 +1481,6 @@ void load_shading_level_config(param_1)
 char param_1;
 
 {
-  char stack0xffdc323c_buf [256];
   char *stack0xffdc323c_ptr;
   char cVar1;
   char *pcVar2;
@@ -1511,11 +1510,11 @@ char param_1;
     return;
   }
   pcVar4 = &DAT_0023cca8;
-    stack0xffdc323c_ptr = acStack_11c;
+  stack0xffdc323c_ptr = acStack_11c;
   if (DAT_000872a0 == '\x05') {
     Ordinal_1047(acStack_11c,0,0x104);
     pcVar2 = pcVar4;
-    stack0xffdc323c_ptr = stack0xffdc323c_buf;
+    stack0xffdc323c_ptr = acStack_11c;
     do {
       cVar1 = *pcVar2;
       *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
@@ -1527,7 +1526,7 @@ char param_1;
     if (param_1 != '\x05') goto LAB_0006fff4;
     Ordinal_1047(acStack_11c,0,0x104);
     pcVar2 = pcVar4;
-    stack0xffdc323c_ptr = stack0xffdc323c_buf;
+    stack0xffdc323c_ptr = acStack_11c;
     do {
       cVar1 = *pcVar2;
       *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
@@ -1544,6 +1543,8 @@ char param_1;
 LAB_0006fff4:
   DAT_000872a0 = param_1;
   Ordinal_1047(acStack_11c,0,0x104);
+  /* Reset the walker after any LIGHT.DAT/MONO.DAT path construction. */
+  stack0xffdc323c_ptr = acStack_11c;
   do {
     cVar1 = *pcVar4;
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;

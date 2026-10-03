@@ -139,12 +139,12 @@ void setUp(void)
     spawned = placed = palette_used = roll_count = roll_index = 0;
 }
 void tearDown(void) {}
-static void test_level1_gray_goblin_uses_its_associated_palette(void)
+static void test_level1_goblin_uses_its_associated_palette(void)
 {
     TEST_ASSERT_EQUAL_INT(1, resolve_critter_sprite_tier(goblin[0] & 0x3f, 28, 0, 0));
     TEST_ASSERT_EQUAL_UINT(2, palette_used);
 }
-static void test_gray_goblin_loot_is_limited_to_its_actual_template(void)
+static void test_level1_goblin_loot_is_limited_to_its_actual_template(void)
 {
     for (int seed = 0; seed < 256; seed++) {
         memcpy(goblin, original_goblin, sizeof original_goblin);
@@ -175,7 +175,7 @@ static void test_equipment_drop_quality_uses_the_level_roll_remainder(void)
     TEST_ASSERT_EQUAL_UINT(7, drops[0][2] & 0x3f);
     TEST_ASSERT_EQUAL_UINT(6, drops[1][2] & 0x3f);
 }
-static void test_gray_goblin_ranged_attack_spawns_a_sling_stone(void)
+static void test_level1_goblin_ranged_attack_spawns_a_sling_stone(void)
 {
     byte *stats = DAT_001007d0_backing + 13 * 0x30;
     unsigned ammo = (stats[0x20] & 0x1e) >> 1;
@@ -192,9 +192,9 @@ static void test_gray_goblin_ranged_attack_spawns_a_sling_stone(void)
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_level1_gray_goblin_uses_its_associated_palette);
-    RUN_TEST(test_gray_goblin_loot_is_limited_to_its_actual_template);
+    RUN_TEST(test_level1_goblin_uses_its_associated_palette);
+    RUN_TEST(test_level1_goblin_loot_is_limited_to_its_actual_template);
     RUN_TEST(test_equipment_drop_quality_uses_the_level_roll_remainder);
-    RUN_TEST(test_gray_goblin_ranged_attack_spawns_a_sling_stone);
+    RUN_TEST(test_level1_goblin_ranged_attack_spawns_a_sling_stone);
     return UNITY_END();
 }

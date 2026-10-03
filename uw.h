@@ -558,7 +558,6 @@ extern int g_blit_transparent_mode;
 #define g_transparent_screen_color (*(short *)&g_palette_rgb565_backing[26])
 extern undefined2 DAT_000891b0_backing[76800];
 #define DAT_000891b0 DAT_000891b0_backing[0]
-extern int g_ambient_bias_reduction;
 /* Globals defined in uw.c but also used by functions that now live in
    graphics.c (expand_pals_bytes, build_rgb565_palette,
    palette_cycle_range) -- extern'd here so both translation units see
@@ -1449,6 +1448,7 @@ extern char s_val_00084560[];
 extern void * g_tile_texptr_emit[UW_MAX_VIS_TILES];
 extern void * g_tile_texptr_out[UW_MAX_VIS_TILES];
 extern char DAT_000842b0;
+extern int g_ambient_bias_reduction;
 extern undefined4 DAT_00084608;
 extern undefined4 DAT_000b5638_backing[160];
 #define DAT_000b5638 DAT_000b5638_backing[0]
@@ -2518,12 +2518,10 @@ extern undefined1 DAT_000873e0_backing[65536];
 extern undefined4 DAT_00087458;
 extern undefined1 DAT_00087520_backing[32768];
 #define DAT_00087520 DAT_00087520_backing[0]
-extern undefined1 DAT_00087531_backing[210];
-#define DAT_00087531 DAT_00087531_backing[0]
-extern undefined DAT_00087530_backing[210];
+extern undefined DAT_00087530_backing[212];
 #define DAT_00087530 DAT_00087530_backing[0]
-extern undefined DAT_00087533_backing[210];
-#define DAT_00087533 DAT_00087533_backing[0]
+#define DAT_00087531 DAT_00087530_backing[1]
+#define DAT_00087533 DAT_00087530_backing[3]
 extern undefined1 DAT_00241f08_backing[32768];
 #define DAT_00241f08 DAT_00241f08_backing[0]
 extern undefined DAT_0023b4dc;

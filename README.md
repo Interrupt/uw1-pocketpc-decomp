@@ -161,6 +161,16 @@ A copy of the extracted game data also lives at `data/` in this repo for
 local convenience (`UW_DATA_DIR=$(pwd)/data ./build/uw`) — it's
 gitignored, not checked in, since it's copyrighted game data.
 
+Dungeon lighting defaults to ARM RGB shading. As a project deviation, each
+light strength level subtracts 16 from the unlit starting bias of +8.
+Use `UW_LIGHT_MODE=dos ./run.sh` for palette shading based on the equipped
+light's `SHADES.DAT` configuration and `LIGHT.DAT` mappings. Use
+`UW_LIGHT_MODE=arm ./run.sh` to select the default explicitly; unrecognized
+values also use ARM lighting. The former `UW_LIGHT_BIAS` override is removed.
+For optional ARM brightness calibration, use `UW_AMBIENT_BIAS_REDUCTION`:
+negative integers brighten the view and positive integers darken it. The
+adjustment defaults to `64` when unset. Set it to `0` to disable calibration. DOS palette shading does not use this adjustment.
+
 File loads are logged to stderr (`[fileio] open-read: ...`), including
 failures, which is the fastest way to tell what's missing or misnamed.
 

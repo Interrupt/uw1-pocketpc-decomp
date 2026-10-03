@@ -317,6 +317,41 @@ if(BUILD_TESTING)
   target_compile_options(test_throw PRIVATE -include math.h)
   target_compile_definitions(test_throw PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  add_game_unit_test(throw_cursor
+    src/item_use.c:drop_held_object_near_player src/objects.c:spawn_object_near_player
+    uw.c:compute_drop_aim_from_cursor uw.c:FUN_00057504
+    uw.c:compute_object_placement_fields
+    src/object_actions.c:check_object_drop_height src/math.c:project_position_by_heading
+    src/objects.c:object_list_insert_head)
+  target_sources(test_throw_cursor PRIVATE src/debug.c)
+  target_compile_options(test_throw_cursor PRIVATE -include math.h)
+  target_compile_definitions(test_throw_cursor PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  add_game_unit_test(lighting
+    src/item_use.c:use_light_source src/player.c:refresh_player_equipment_effects
+    src/visibility.c:load_shading_level_config src/visibility.c:build_visibility_light_grid
+    src/math.c:integer_sqrt src/3d.c:raster_textured_span
+    src/graphics.c:build_shade_lut src/graphics.c:get_ambient_bias_reduction
+    src/graphics.c:set_ambient_bias_with_light
+    src/graphics.c:set_ambient_bias_without_light
+    src/ordinal_stubs.c:ordfloat_bits_to_float src/ordinal_stubs.c:ordfloat_float_to_bits
+    src/ordinal_stubs.c:Ordinal_2032 src/ordinal_stubs.c:Ordinal_2026
+    src/ordinal_stubs.c:Ordinal_2020)
+  target_sources(test_lighting PRIVATE src/file_io.c src/debug.c)
+  target_compile_definitions(test_lighting PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  add_game_unit_test(spells
+    uw.c:@DAT_00087530_backing
+    src/hud.c:handle_cast_spell_click src/hud.c:cast_spell_from_rune_combo
+    src/hud.c:report_spell_cast_failure src/hud.c:print_not_a_spell_message)
+  add_game_unit_test(critter_palette
+    src/object_actions.c:resolve_critter_sprite_tier
+    src/object_actions.c:decode_critter_sprite_page
+    src/resources.c:decompress_gr_bitmap src/resources.c:merge_byte_into_word
+    src/resources.c:select_gr_bitmap_remap_table src/resources.c:decode_gr_rle_stream
+    src/bitmap.c:blit_sprite_row_remapped)
+  target_compile_definitions(test_critter_palette PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(creatures
     src/object_actions.c:resolve_critter_sprite_tier
     src/ai.c:spawn_creature_death_loot src/ai.c:spawn_creature_treasure_drop

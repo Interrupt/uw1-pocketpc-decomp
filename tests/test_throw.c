@@ -271,22 +271,22 @@ static void hard_player_landing(void)
     movement[0x28]=0x10;
     movement_collision_sweep(movement,(char *)DAT_002049a0_backing);
 }
-static void test_player_no_bounce_is_disabled_by_default_and_by_zero(void)
+static void test_player_no_bounce_is_disabled_by_zero(void)
 {
-    hard_player_landing();
-    TEST_ASSERT_GREATER_THAN_INT(0,g_vertical_velocity);
     setenv("UW_PLAYER_NO_BOUNCE","0",1);
     hard_player_landing();
     TEST_ASSERT_GREATER_THAN_INT(0,g_vertical_velocity);
 }
 static void test_player_no_bounce_stops_the_player_on_first_landing(void)
 {
-    setenv("UW_PLAYER_NO_BOUNCE","1",1);
-    hard_player_landing();
-    TEST_ASSERT_EQUAL_INT(0,DAT_00204884);
-    TEST_ASSERT_EQUAL_INT(0,g_vertical_velocity);
-    TEST_ASSERT_EQUAL_INT(0,g_fall_accel);
-    TEST_ASSERT_EQUAL_UINT(0,DAT_002048a8&0x10);
+    for (int mode = 0; mode < 2; mode++) {
+        if (mode) setenv("UW_PLAYER_NO_BOUNCE","1",1);
+        hard_player_landing();
+        TEST_ASSERT_EQUAL_INT(0,DAT_00204884);
+        TEST_ASSERT_EQUAL_INT(0,g_vertical_velocity);
+        TEST_ASSERT_EQUAL_INT(0,g_fall_accel);
+        TEST_ASSERT_EQUAL_UINT(0,DAT_002048a8&0x10);
+    }
 }
 static void test_player_no_bounce_preserves_thrown_item_wall_bounces(void)
 {
@@ -350,7 +350,7 @@ int main(void)
     RUN_TEST(test_thrown_item_falls_and_settles_only_after_landing);
     RUN_TEST(test_thrown_item_bounces_off_a_wall_and_keeps_falling);
     RUN_TEST(test_player_lands_and_can_walk_without_rearming_gravity);
-    RUN_TEST(test_player_no_bounce_is_disabled_by_default_and_by_zero);
+    RUN_TEST(test_player_no_bounce_is_disabled_by_zero);
     RUN_TEST(test_player_no_bounce_stops_the_player_on_first_landing);
     RUN_TEST(test_player_no_bounce_preserves_thrown_item_wall_bounces);
     RUN_TEST(test_falling_selects_the_highest_bridge_below_the_player);

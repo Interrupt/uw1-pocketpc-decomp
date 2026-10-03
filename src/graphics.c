@@ -666,8 +666,9 @@ void build_shade_lut()
   do {
     uVar1 = Ordinal_2032(iVar2 + 0xa0);
     uVar1 = Ordinal_2026(uVar1,0x3bcccccd);
-    Ordinal_2026(uVar1,0x45800000);
-    uVar1 = Ordinal_2020();
+    /* Preserve the ARM r0 result chain explicitly in native C. */
+    uVar1 = Ordinal_2026(uVar1,0x45800000);
+    uVar1 = Ordinal_2020(uVar1);
     iVar4 = iVar4 + -1;
     *puVar3 = uVar1;
     iVar2 = iVar2 + -1;
@@ -680,24 +681,14 @@ void build_shade_lut()
 static int get_ambient_bias_reduction()
 {
   int reduction = g_ambient_bias_reduction;
-  const char *_p = getenv("UW_AMBIENT_BIAS_REDUCTION");
-  if (_p) reduction = atoi(_p);
+  const char *value = getenv("UW_AMBIENT_BIAS_REDUCTION");
+  if (value) reduction = atoi(value);
   return reduction;
 }
 
-
-
-// was FUN_00014324 -- sets DAT_000842b0, the 3D-view ambient bias
-// raster_textured_span adds to every texel's distance-shade LUT index
-// (uw.c's own "checked wall/floor texture rasterizer" comment on that
-// function has the full formula). MORE NEGATIVE here means BRIGHTER
-// (it pulls the effective distance-shade index down toward the "close/
-// bright" end of the LUT regardless of a texel's real depth). Called
-// with param_1=0 (giving -0x20) from the "a light source IS currently
-// equipped and lit" branch of the function that recomputes derived
-// player state whenever equipped items change (uw.c ~55910-55926,
-// where the sibling `8 - param_1` call handles the "no light source"
-// case) -- this is the brightening half of that pair, not the dim one.
+// was FUN_00014324. ARM lighting bias: -32 when a light is active.
+// HACK: optional project calibration is added to the original formula;
+// default 64; an override of zero preserves ARM lighting. Negative values brighten it.
 void set_ambient_bias_with_light(param_1)
 char param_1;
 

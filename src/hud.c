@@ -4696,7 +4696,7 @@ short param_1;
   int iVar1;
 
   if (g_cursor_holding_state == 0) {
-    if (((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) || (param_1 != 0)) {
+    if (((*(ushort *)((byte *)DAT_00085a6c + 6) & 2) == 0) || (param_1 != 0)) {
       DAT_002028d0 = 1;
       if (*(uint *)(DAT_00086df8 + 0xce) < (uint)DAT_002028d4 + DAT_002028d8) {
         play_sound_effect_with_pan(0x15,0x40,0);
@@ -4715,7 +4715,8 @@ short param_1;
           print_not_a_spell_message();
         }
         else {
-          cast_spell_from_rune_combo();
+          /* ARM 0x44e6c passes the matched table index in r0. */
+          cast_spell_from_rune_combo(iVar1);
         }
       }
     }
