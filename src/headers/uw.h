@@ -1372,8 +1372,7 @@ extern undefined2 * DAT_0023aed0;
 extern undefined2 DAT_0023aed4;
 extern undefined2 DAT_0023b020;
 extern undefined4 DAT_0023b804;
-extern undefined1 DAT_0023b841_backing[256];
-#define DAT_0023b841 DAT_0023b841_backing[0]
+#define DAT_0023b841 DAT_0023b840_backing[1]
 extern short DAT_0025063c;
 extern short DAT_0025064c;
 extern short DAT_002506dc;

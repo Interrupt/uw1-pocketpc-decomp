@@ -73,14 +73,27 @@ static short DAT_000bbef0;
 char s_font4x5p_sys_0008431c[] = "font4x5p.sys";
 static undefined1 DAT_000ba9d8_backing[32768];
 #define DAT_000ba9d8 DAT_000ba9d8_backing[0]
-static undefined1 DAT_000baa0a_backing[256];
+/* DAT_000baa0a/b (and the parallel DAT_000baa0c/d pair below) are a
+   note label's X (resp. Y) screen position, written as separate low/high
+   bytes at the same index (`(&DAT_000baa0a)[i] = low; (&DAT_000baa0b)[i]
+   = high;`) and read back as one packed short via `*(short
+   *)(&DAT_000baa0a + i)` -- which only works if DAT_000baa0b's storage
+   sits exactly 1 byte after DAT_000baa0a's, for every i. An earlier
+   widening pass (code-cleanup-pass-2, chasing an out-of-bounds risk on
+   each name independently) gave the two their own separate padded
+   arrays and broke that adjacency: the short-read started pulling its
+   high byte from DAT_000baa0a's own unused padding instead of
+   DAT_000baa0b's real storage, so every note's X coordinate silently
+   came back wrong (same failure class as DAT_00086980/82/84's fix
+   above in movement.c). One real backing buffer per pair instead, with
+   the second name aliased at a fixed +1 byte offset so the low/high
+   split and the combined short-read are provably the same storage. */
+static undefined1 DAT_000baa0a_backing[258];
 #define DAT_000baa0a DAT_000baa0a_backing[0]
-static undefined1 DAT_000baa0b_backing[256];
-#define DAT_000baa0b DAT_000baa0b_backing[0]
-static undefined1 DAT_000baa0c_backing[256];
+#define DAT_000baa0b DAT_000baa0a_backing[1]
+static undefined1 DAT_000baa0c_backing[258];
 #define DAT_000baa0c DAT_000baa0c_backing[0]
-static undefined1 DAT_000baa0d_backing[256];
-#define DAT_000baa0d DAT_000baa0d_backing[0]
+#define DAT_000baa0d DAT_000baa0c_backing[1]
 static undefined2 DAT_000b99c8;
 char s_fontbig_sys_0008432c[] = "fontbig.sys";
 static char s__DATA_blnkmap_byt_00084338[] = "\\DATA\\blnkmap.byt";

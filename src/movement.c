@@ -199,10 +199,23 @@ static short DAT_00086996;
 /* UU.exe .data at 0x8697c contains 0x2049c8: the swept XYZ and
    collision working XYZ are the same three halfwords, including rollback. */
 static short *g_sweep_foot_pos = (short *)DAT_002049c8_backing;
-static short DAT_00086980_backing[256];
-#define DAT_00086980 DAT_00086980_backing[0]
-static short DAT_00086982;
-static short DAT_00086984;
+/* X/Y/Z fine sweep position, indexed as a real 3-element array throughout
+   this file (`(&DAT_00086980)[axis]` for axis 0/1/2) -- see this block's
+   own comment above. Was three separately-declared scalars that happened
+   to sit contiguously in uw.c's original declaration order, which this
+   file's indexed accesses silently relied on for X/Y (axis 1, i.e.
+   DAT_00086982) and Z (axis 2, DAT_00086984). An earlier widening pass
+   (code-cleanup-pass-2, chasing a different out-of-bounds risk on
+   DAT_00086980 alone) gave DAT_00086980 its own padded backing array and
+   broke that adjacency: `(&DAT_00086980)[1]` started landing in
+   DAT_00086980's own unused padding instead of reaching DAT_00086982's
+   real storage, silently dropping every Y/Z sweep-position update. Real
+   3-element array instead, so the by-name writes and the indexed
+   `(&DAT_00086980)[axis]` writes are provably the same storage. */
+static short DAT_00086980_arr[3];
+#define DAT_00086980 DAT_00086980_arr[0]
+#define DAT_00086982 DAT_00086980_arr[1]
+#define DAT_00086984 DAT_00086980_arr[2]
 static undefined4 DAT_00204878;
 static undefined DAT_00202c32_backing[256];
 #define DAT_00202c32 DAT_00202c32_backing[0]

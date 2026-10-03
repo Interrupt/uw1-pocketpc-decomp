@@ -72,8 +72,15 @@ undefined2 DAT_0023adb0;
 static undefined1 DAT_0024f090_backing[64];
 #define DAT_0024f090 DAT_0024f090_backing[0]
 static char s_bad_tmap_ids_size_000869b7[] = "bad_tmap_ids_size";
-undefined1 DAT_0023b841_backing[256];
-#define DAT_0023b841 DAT_0023b841_backing[0]
+/* High byte of DAT_0023b840's packed short (write pattern: `(&DAT_0023b840)[i]
+   = low; (&DAT_0023b841)[i] = high;`, read back combined via CONCAT11 and
+   via `*(short*)(&DAT_0023b840 + offset)` in saveload.c/resources.c) --
+   needs to sit exactly 1 byte after DAT_0023b840's own real storage
+   (DAT_0023b840_backing, resources.c), not its own independent array.
+   An earlier widening pass (code-cleanup-pass-2) gave it one anyway,
+   silently breaking that combined-read (same failure class as
+   DAT_00086980/82/84's fix in movement.c). */
+#define DAT_0023b841 DAT_0023b840_backing[1]
 /* Was a lone `undefined` scalar. It is the base of the texture / shade /
    colour-light table arena: load_dungeon_texture_arenas sets
    DAT_0023ae38 = &DAT_002049e0 and loads several .tr/.dat files into
