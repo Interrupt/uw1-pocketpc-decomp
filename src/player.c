@@ -149,6 +149,16 @@ short DAT_00202088;
    0x3ac (940), 0xeb (235), 0xbc (188) respectively. Macro defines now
    live in uw.h alongside DAT_00086e68, since apply_movement_mode_profile
    (their only reader) moved into src/input.c. */
+/* Read-only, never written anywhere in this decompile -- a real
+   initialized constant byte from UU.exe's .data section (same
+   category as DAT_000842f0/DAT_000842c0's own recovered-constant
+   comments elsewhere this project), not a runtime variable. Its real
+   value hasn't been recovered yet, so this still reads as 0 -- which,
+   now that its two readers (hud.c's print_character_description_scroll
+   and this file's render_endgame_character_stats) go through a real
+   orduint_divmod call instead of a dead stub, means their "percentile"
+   ends up 0/divisor-guarded rather than wrong-but-nonzero. Flagged for
+   whoever next has the real UU.exe bytes handy. */
 undefined DAT_001c2000_backing[8192];
 static byte DAT_001013a4;
 static uint DAT_002020e4;
@@ -2032,7 +2042,7 @@ int param_2;
 
 // was FUN_00069bd0 -- add param_1 experience points to the character
 // (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level
-// when the ordfloat_double_mul(500) threshold is crossed.
+// when the orduint_divmod(500) threshold is crossed.
 void grant_experience_points(param_1)
 short param_1;
 
@@ -2068,7 +2078,7 @@ short param_1;
       }
       param_1 = (short)(iVar7 >> 1) + 1;
     }
-    sVar4 = ordfloat_double_mul(3000,*(uint *)(DAT_00086df8 + 0x4e) + (int)param_1);
+    sVar4 = orduint_divmod(3000,*(uint *)(DAT_00086df8 + 0x4e) + (int)param_1).quot;
     if ((short)(ushort)*(byte *)(iVar8 + 0x53) < sVar4) {
       *(byte *)(iVar8 + 0x52) = ((char)sVar4 - *(byte *)(iVar8 + 0x53)) + *(char *)(iVar8 + 0x52);
       *(char *)(DAT_00086df8 + 0x53) = (char)sVar4;
@@ -2083,7 +2093,7 @@ short param_1;
     iVar8 = DAT_00086df8;
     iVar7 = 0;
     uVar3 = *(uint *)(DAT_00086df8 + 0x4e);
-    sVar4 = ordfloat_double_mul(500);
+    sVar4 = orduint_divmod(500).quot;
     uVar5 = (uint)*(byte *)(iVar8 + 0x3d);
     bVar1 = (&DAT_00086e87)[uVar5];
     uVar6 = uVar5;
@@ -2758,7 +2768,7 @@ void render_endgame_character_stats()
     iVar12 = iVar12 + 1;
   }
   draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
-  sVar6 = ordfloat_double_mul(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
+  sVar6 = orduint_divmod(DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
   sVar6 = ordint_divmod(0xc,(int)sVar6).quot;
   pcVar8 = (char *)get_message_string(0x2bd);
   pcVar11 = local_58;
@@ -2801,7 +2811,7 @@ void render_endgame_character_stats()
       else {
         if (iVar12 != 4) {
           if (iVar12 == 5) {
-            uVar10 = ordfloat_double_mul(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
+            uVar10 = orduint_divmod(10,*(undefined4 *)(DAT_00086df8 + 0x4e)).quot;
             _ltoa(uVar10,local_58,10);
           }
           goto LAB_00071110;
@@ -3569,7 +3579,7 @@ void draw_mana_stat_display()
 
 
 // was FUN_000781a0 -- draws the player's total experience points
-// (DAT_00086df8+0x4e, a 4-byte value) formatted via ordfloat_double_mul/
+// (DAT_00086df8+0x4e, a 4-byte value) formatted via orduint_divmod/
 // _ltoa at y=0x40. Same caller pair as draw_hp_stat_display
 // above.
 void draw_experience_points_display()
@@ -3579,7 +3589,7 @@ void draw_experience_points_display()
   int iVar2;
   undefined1 auStack_18 [12];
   
-  uVar1 = ordfloat_double_mul(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
+  uVar1 = orduint_divmod(10,*(undefined4 *)(DAT_00086df8 + 0x4e)).quot;
   _ltoa(uVar1,auStack_18,10);
   iVar2 = measure_text_width(auStack_18);
   draw_text_string(auStack_18,0x138 - iVar2,0x40);

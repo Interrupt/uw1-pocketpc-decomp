@@ -1112,7 +1112,7 @@ int param_1;
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   if (iVar2 != 0) {
     uVar1 = read_archive_entry(auStack_20,param_1 + 0x23,&DAT_000ba9d8);
-    DAT_000b99c8 = ordfloat_double_mul(0x36,uVar1);
+    DAT_000b99c8 = orduint_divmod(0x36,uVar1).quot;
     DAT_000bbef0 = DAT_000b99c8;
     draw_automap_notes();
     close_level_archive(auStack_20);

@@ -189,8 +189,7 @@ undefined4 check_registration_key_saved()
   }
   else {
     uVar2 = Random();
-    ordfloat_double_mul(10000,uVar2);
-    local_1c = extraout_r1 + 1;
+    local_1c = orduint_divmod(10000,uVar2).rem + 1;
     RegSetValueExW(local_18,u_BuildNo_00086f5c,0,local_10,&local_1c,local_14);
   }
   RegCloseKey(local_18);

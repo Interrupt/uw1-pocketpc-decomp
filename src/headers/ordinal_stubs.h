@@ -116,7 +116,7 @@ long _strlwr();
 long _strupr();
 long _isctype();
 divmod_result ordint_divmod();
-long ordfloat_double_mul();
+divmod_result orduint_divmod();
 long ordfloat_sub();
 long ordfloat_double_binop();
 long ordfloat_int_to_float();

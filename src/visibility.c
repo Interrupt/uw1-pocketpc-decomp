@@ -605,7 +605,7 @@ void render_dungeon_frame_timed()
     sVar2 = 0;
   }
   else {
-    sVar2 = ordfloat_double_mul(iVar7,0xa00);
+    sVar2 = orduint_divmod(iVar7,0xa00).quot;
   }
   sVar1 = DAT_0023b4c8;
   iVar7 = (int)(short)DAT_0023b4c8;

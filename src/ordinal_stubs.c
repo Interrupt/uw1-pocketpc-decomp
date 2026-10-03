@@ -1018,9 +1018,35 @@ int dividend;
     return result;
 }
 
-long ordfloat_double_mul()
+/* Unsigned sibling of ordint_divmod (Ordinal_2005) -- this is Ordinal_2008,
+ * misidentified in an earlier pass as "ordfloat_double_mul" (float
+ * multiply) from thin, as it turns out nonexistent, audio.c-adjacent
+ * evidence. Every real call site (babl.c's game-time/day/minute
+ * breakdown, player.c's XP display/level-threshold scaling, automap.c's
+ * archive-byte-count -> note-count conversion, visibility.c's frame-
+ * rate calc, registration.c's random-bounded build number -- which
+ * explicitly reads the remainder back via the same extraout_r1 idiom
+ * ordint_divmod's own comment documents) is unmistakably
+ * (divisor, dividend) -> dividend/divisor, exactly ordint_divmod's own
+ * shape, just unsigned -- matching AAPCS32's separate
+ * __aeabi_uidivmod/__aeabi_idivmod helper pair. Shares ordint_divmod's
+ * divmod_result return for the same reason (see that function's own
+ * comment): a real second return value can't be read back any other
+ * way than naming it off a struct. A prior no-op stub (`return 0`)
+ * silently zeroed every one of these too. */
+divmod_result orduint_divmod(divisor, dividend)
+unsigned int divisor;
+unsigned int dividend;
 {
-    return 0;
+    divmod_result result;
+    if (divisor == 0) {
+        result.quot = 0;
+        result.rem = 0;
+        return result;
+    }
+    result.quot = (int)(dividend / divisor);
+    result.rem = (int)(dividend % divisor);
+    return result;
 }
 
 static float ordfloat_bits_to_float(unsigned int bits);

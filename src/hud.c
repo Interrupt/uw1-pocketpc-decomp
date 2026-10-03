@@ -5014,9 +5014,11 @@ LAB_00080918:
 // at (0x7a,0x97,0x98,0x88)). Prints a multi-part descriptive "scroll"
 // paragraph about the player built from stat bytes at DAT_00086df8+0x39
 // (scaled via ordint_divmod into a 0-5 clamped adjective index) and
-// +0x3a, plus a percentile derived from ordfloat_double_mul against table
-// DAT_001c2000 and field +0xce -- reads as the character sheet's
-// descriptive personality/background text.
+// +0x3a, plus a percentile derived from orduint_divmod (DAT_001c2000's
+// own byte value divided into field +0xce, not a table lookup --
+// DAT_001c2000 is a lone scalar, same "stale `&`-of-a-widened-array"
+// artifact as this session's other such fixes) -- reads as the
+// character sheet's descriptive personality/background text.
 void print_character_description_scroll()
 
 {
@@ -5037,7 +5039,7 @@ void print_character_description_scroll()
   print_scroll_message_by_id(0x76 - iVar3);
   message_scroll_print_wrapped(&DAT_00084f20);
   print_scroll_message_concat(0x41,DAT_00201b68 + 0x19a,0x42);
-  sVar1 = ordfloat_double_mul(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
+  sVar1 = orduint_divmod(DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
   sVar2 = ordint_divmod(0xc,(int)sVar1).quot;
   uw_ord2005_rem_111 = ((int)((int)sVar1)) % (0xc);
   if (sVar2 < 0x65) {
