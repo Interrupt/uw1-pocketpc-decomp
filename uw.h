@@ -1128,10 +1128,8 @@ extern undefined1 DAT_0024af98_backing[4096];
 extern undefined2 DAT_0024cfbc_backing[8192];
 #define DAT_0024cfbc DAT_0024cfbc_backing[0]
 extern char *g_despawn_creature_record;
-extern undefined1 DAT_002034b5_backing[8192];
-#define DAT_002034b5 DAT_002034b5_backing[0]
-extern undefined DAT_002027d2_backing[8192];
-#define DAT_002027d2 DAT_002027d2_backing[0]
+#define DAT_002034b5 DAT_00202c90_backing[0x825] /* item 0xa0 value, loaded COMOBJ table */
+#define DAT_002027d2 DAT_002027d0_backing[2] /* third byte of each loaded weapon record */
 extern ushort DAT_00202d54;
 extern undefined1 DAT_002027d0_backing[256];
 #define DAT_002027d0 DAT_002027d0_backing[0]
@@ -1899,8 +1897,7 @@ extern undefined4 DAT_00101944;
 extern undefined4 DAT_00101950; // "rest interrupted by monster" flag, set by spawn_rest_interrupt_monster_callback
 extern undefined4 DAT_00101954; // "alerted hostile found" flag, set by detect_unsafe_rest_object_callback
 extern char DAT_00101948;
-extern undefined DAT_002027d1_backing[8192];
-#define DAT_002027d1 DAT_002027d1_backing[0]
+#define DAT_002027d1 DAT_002027d0_backing[1] /* projectile speed in each loaded weapon record */
 extern short DAT_002046b0;
 extern byte * DAT_002046c0;
 extern byte * DAT_002046c8;
@@ -2375,7 +2372,7 @@ extern ushort DAT_00202508;
 #define DAT_00202c9b DAT_00202c90_backing[0xb]
 extern undefined1 DAT_0023ce70_backing[8192];
 #define DAT_0023ce70 DAT_0023ce70_backing[0]
-extern undefined1 DAT_0023ce71;
+#define DAT_0023ce71 DAT_0023ce70_backing[1]
 extern ushort g_player_max_carry_weight;
 extern char s_belonging_to_00085c90[];
 extern char s_You_see_000858fc[];

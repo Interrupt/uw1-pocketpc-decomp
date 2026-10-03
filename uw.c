@@ -1624,8 +1624,7 @@ undefined DAT_001007e0;
 #define DAT_00084f20 DAT_00084f20_backing[0]
 char s_UNNAMED_00084f24[] = "UNNAMED";
 char s_Sorry__you_have_no_00084f2c[] = "Sorry,_you_have_no";
-undefined DAT_002027d2_backing[8192];
-#define DAT_002027d2 DAT_002027d2_backing[0]
+#define DAT_002027d2 DAT_002027d0_backing[2] /* third byte of each loaded weapon record */
 ushort DAT_00202d54;
 undefined1 DAT_002027d0_backing[256];
 #define DAT_002027d0 DAT_002027d0_backing[0]
@@ -2150,8 +2149,7 @@ byte DAT_00101434;
 undefined4 DAT_00101944;
 short DAT_00202a3c;
 undefined DAT_000853d8;
- undefined DAT_002027d1_backing[8192];
-#define DAT_002027d1 DAT_002027d1_backing[0]
+#define DAT_002027d1 DAT_002027d0_backing[1] /* projectile speed in each loaded weapon record */
 short DAT_00101938;
 short DAT_0010193c;
 byte DAT_0010192c;
@@ -2990,7 +2988,7 @@ int DAT_0023b83c;
    startup zero-fill touch it. */
 void *DAT_0023c7a0_arr[0x140];
 #define DAT_0023c7a0 DAT_0023c7a0_arr[0]
-undefined1 DAT_0023ce71;
+#define DAT_0023ce71 DAT_0023ce70_backing[1]
 /* struct-recovery-plan.md's "DAT_0024e090 pointer table" candidate:
    a large table of glyph/resource-pointer slots indexed by font/char/
    frame id (see lookup_grtile_by_id and its populators uw_register_gr_entry/
@@ -6299,15 +6297,9 @@ undefined2 DAT_0024cfbc_backing[8192];
    identical pattern, is correctly `char *`. */
 // was DAT_0024cfc4
 char *g_despawn_creature_record;
-// Was a lone `undefined1` scalar, but its only use (spawn_creature_
-// treasure_drop, src/ai.c) is `(&DAT_002034b5)[cVar4 * 0xd]` -- a
-// 13-byte-stride record table indexed by a derived level/tier value,
-// same "lone byte indexed as an array" bug class fixed throughout
-// this project. Widened generously, matching this file's other such
-// tables, since indexing past element 0 previously just read
-// whatever adjacent BSS happened to follow it.
-undefined1 DAT_002034b5_backing[8192];
-#define DAT_002034b5 DAT_002034b5_backing[0]
+/* Treasure values are fields of the loaded COMOBJ table (type 0xa0,
+   offset 5), not an independent, never-loaded array. */
+#define DAT_002034b5 DAT_00202c90_backing[0x825] /* item 0xa0 value, loaded COMOBJ table */
 char s_on_what__000878e0[] = "on_what?";
 undefined1 DAT_000878ec_backing[32768];
 #define DAT_000878ec DAT_000878ec_backing[0]

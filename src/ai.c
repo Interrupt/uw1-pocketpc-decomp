@@ -1456,7 +1456,9 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
   if (uw_ord2005_rem_159 < (int)(uint)(bVar3 >> 4)) {
     uVar7 = Ordinal_1053();
     sVar6 = DAT_00201b68;
-    Ordinal_2005(DAT_00201b68 * -3 + 0x28,uVar7);
+    /* ARM 0x793c4..0x793dc uses idivmod's r1 remainder to choose
+       the treasure tier; an uninitialized C local is not that register. */
+    extraout_r1 = (char)(uVar7 % (DAT_00201b68 * -3 + 0x28));
     iVar8 = ((char)sVar6 + -0xb) * 3 + (int)extraout_r1;
     cVar4 = (char)iVar8;
     if (iVar8 * 0x1000000 >> 0x18 < 0) {
@@ -1483,7 +1485,7 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
     iVar1 = (int)cVar5;
     if (iVar8 < iVar1) {
       uVar7 = Ordinal_1053();
-      Ordinal_2005(iVar1,uVar7);
+      extraout_r1_01 = uVar7 % iVar1;
       if (iVar8 <= extraout_r1_01) {
         return;
       }
@@ -1577,7 +1579,8 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
       if (uw_ord2005_rem_161 == 0) {
         uVar5 = Ordinal_1053();
         sVar3 = DAT_00201b68;
-        Ordinal_2005((int)DAT_00201b68 << 2,uVar5);
+        /* Original idivmod remainder in r1 (ARM 0x79670..0x7967c). */
+        extraout_r1 = (char)(uVar5 % ((int)DAT_00201b68 << 2));
         bVar6 = extraout_r1 + (char)sVar3 * '\x04';
       }
       else {
@@ -1647,7 +1650,8 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
       if (uw_ord2005_rem_165 == 0) {
         uVar5 = Ordinal_1053();
         sVar4 = DAT_00201b68;
-        Ordinal_2005((int)DAT_00201b68 << 2,uVar5);
+        /* Original idivmod remainder in r1 (ARM 0x7983c..0x79848). */
+        extraout_r1 = (char)(uVar5 % ((int)DAT_00201b68 << 2));
         bVar7 = extraout_r1 + (char)sVar4 * '\x04';
       }
       else {

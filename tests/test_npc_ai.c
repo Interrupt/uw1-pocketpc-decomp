@@ -14,7 +14,7 @@ undefined2 DAT_002048c0_backing[32768];
 undefined1 DAT_002048f0_backing[65536], DAT_00204950_backing[65536];
 undefined1 DAT_00204980_backing[65536];
 undefined2 DAT_00204990_backing[32768], DAT_002049b0_backing[32768];
-undefined DAT_002027d1_backing[8192];
+undefined1 DAT_002027d0_backing[256];
 undefined DAT_000853d8;
 char *DAT_00101400, *DAT_00101404, *DAT_00101438;
 void *DAT_0010172c;

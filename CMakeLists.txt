@@ -286,6 +286,18 @@ if(BUILD_TESTING)
     src/combat.c:load_monster_combat_stats)
   target_compile_definitions(test_npc_ai PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  add_game_unit_test(creatures
+    src/object_actions.c:resolve_critter_sprite_tier
+    src/ai.c:spawn_creature_death_loot src/ai.c:spawn_creature_treasure_drop
+    src/ai.c:spawn_creature_special_item_drop src/ai.c:spawn_creature_equipment_drop
+    src/ai.c:spawn_creature_misc_item_drop src/ai.c:drop_monster_loot
+    src/ai.c:drop_creature_inventory_on_death
+    src/containers.c:empty_container_into_world
+    src/objects.c:spawn_new_object src/objects.c:object_list_insert_head
+    uw.c:FUN_0004a510 src/objects.c:spawn_object_near_player
+    uw.c:compute_object_placement_fields src/ai.c:settle_mobile_to_immobile)
+  target_compile_definitions(test_creatures PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   target_compile_definitions(test_traps PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(inventory
