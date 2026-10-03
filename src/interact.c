@@ -8,6 +8,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+ushort DAT_001007c4;
+char s__DATA_cnv_ark_00084fc8[] = "\\DATA\\cnv.ark";
+/* Tilemap byte addresses (DAT_0023b814 + tile*4), not ints -- Ghidra
+   typed them `int` and truncated the 64-bit pointer. Set in pick_object_under_cursor
+   from the object-pick result, consumed by target_in_range / object_list_unlink. */
+char *DAT_002020b0;
+static char *DAT_002020a8;
+static undefined4 DAT_002020ec;
+short DAT_002020ac;
+static undefined1 DAT_0023ad58_backing[65536];
+#define DAT_0023ad58 DAT_0023ad58_backing[0]
+short DAT_000858c4;
+static int DAT_002020e0;
+void (*const PTR_FUN_000858c8_table[5])(void) = {
+  interact_use,        /* 0: use (mode 1, bottommost icon) */
+  interact_attack,      /* 1: attack (mode 2) */
+  interact_look,        /* 2: look / examine (mode 3) */
+  interact_default,     /* 3: get (mode 4) */
+  interact_talk_npc,    /* 4: talk (mode 5, topmost icon) */
+};
+static char s_Unable_to_defuse_trap__0008736c[] = "Unable_to_defuse_trap.";
+static char s_Your_bumbling_attempts_have_set_o_00087384[] = "Your_bumbling_attempts_have_set_o";
+static char s_was_successfully_dearmed__000873b0[] = "was_successfully_dearmed.";
+static char s_on_the_000873cc[] = "on_the";
+/* HACK: was `undefined4` -- truncated a real 64-bit object pointer.
+   Same bug class as DAT_0024cff4 right above (already a real pointer
+   type) and countless other fixes throughout this file: apply_trap_or_link_effect
+   stores its own real `ushort *` param_2 here, and it's read back as a
+   pointer both directly (resolve_skill_gated_unlock_or_use's own param_2 at both call sites
+   below) and via dereference (`*(byte*)(DAT_0024cff0+1)` further
+   down). Confirmed live (bug-pull-chain-crash.txt, a saved repro):
+   using a pull chain crashed with EXC_BAD_ACCESS at a wild address
+   (0x4c029128, an obviously-truncated 32-bit value) dereferenced in
+   dispatch_trap_type_effect -- traced back through apply_trap_or_link_effect's own matching
+   param_3 truncation (fixed at its own declaration, see that
+   function's comment) to this global being the same bug one hop
+   earlier in the same call chain. */
+ushort *DAT_0024cff0;
+static short DAT_0024cfd0;
+static short DAT_0024cfd8;
+
 
 
 
@@ -225,8 +266,8 @@ void interact_attack()
   DEBUG(INFO, "Interact attack");
 
   psVar1 = DAT_00085a6c;
-  sVar2 = Ordinal_2005(DAT_0023be88 + 2,DAT_00085a6c[1] * 3);
-  sVar3 = Ordinal_2005(DAT_0023bd80 + 2,*psVar1 * 3);
+  sVar2 = ordint_divmod(DAT_0023be88 + 2,DAT_00085a6c[1] * 3).quot;
+  sVar3 = ordint_divmod(DAT_0023bd80 + 2,*psVar1 * 3).quot;
   iVar4 = sVar2 * 3 + (int)sVar3;
   if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[attack-dir] click=(%d,%d) view=(%d,%d) row=%d col=%d grid=%d -> attack_type=%d\n",
       (int)*psVar1, (int)DAT_00085a6c[1], (int)DAT_0023bd80, (int)DAT_0023be88, (int)sVar2, (int)sVar3, iVar4, iVar4+1);
@@ -698,7 +739,7 @@ LAB_000285e4:
       uVar6 = ((byte)*param_1 & 0x3f) + 0x100;
     }
     DAT_001007c4 = uVar6;
-    Ordinal_1047(acStack_114,0,0x104);
+    ce_memset(acStack_114,0,0x104);
     pcVar4 = &DAT_0023cca8;
     stack0xffdc3244_ptr = acStack_114;
     do {
@@ -706,7 +747,7 @@ LAB_000285e4:
       *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_114,s__DATA_cnv_ark_00084fc8);
+    ce_strcat(acStack_114,s__DATA_cnv_ark_00084fc8);
     sVar2 = probe_archive_entry_exists(acStack_114,uVar6);
     if (0 < sVar2) {
       change_game_mode(4);

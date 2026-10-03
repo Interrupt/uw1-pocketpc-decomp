@@ -9,6 +9,336 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+ undefined4 DAT_000a85d0_backing[16384];
+/* Set (0-359) by emit_tile_objects's class-2 TMOBJ/sign branch right
+   before jumping into the shared class-0 mesh-quad code, to make a
+   wall-mounted decal extend along the WALL's own fixed facing angle
+   instead of the camera's (DAT_000db44c, "yaw... from the player
+   object" per its own comment a few thousand lines down) -- see the
+   quad-build code's own comment for why. -1 = no override (normal
+   camera-facing item billboard, the class-0 default). Self-clearing:
+   read and reset back to -1 the moment it's consumed, since
+   DAT_000db44c is a real per-FRAME camera value shared by every object
+   processed after this one -- an override left set would face every
+   later billboard this frame the wrong way. */
+static int g_billboard_angle_override_deg = -1;
+/* UW_MODEL_TUNER=1's "hide_walls" toggle (debug panel, dbgui_field_toggle)
+   -- lets wall/floor tile geometry be filtered out of the render so a
+   single object's own faces (a decal, a boulder) can be inspected via
+   UW_DEBUG_RASTER/the dump_3d_frame face-dump tool without unrelated
+   wall polygons cluttering the trace (several of them coincidentally
+   share texture ids with the object being investigated, confirmed
+   while chasing the TMAP-decal backface report -- filtering by texture
+   id alone doesn't isolate one object's own draws). Checked at the two
+   "commit this wall quad" sites in process_visible_tile_cell (each already
+   writes the quad's geometry/texptr into the current arena slot, THEN
+   advances DAT_0023b83c/DAT_0023b838 to make it visible to the renderer)
+   -- when set, the advance is skipped, so the wall's just-written data is
+   silently overwritten by whatever gets emitted into that same slot next
+   (the next wall, or the tile's own floor/object via emit_tile_features)
+   instead of ever reaching render_visible_tile_list. Floor and objects are
+   untouched -- only process_visible_tile_cell's own wall-quad commits
+   check this flag. */
+int g_uw_hide_walls = 0;
+/* Recovered from UU.exe .data at 0x8462c: the 3D viewport clip rect
+   {x0=0x34, y0=0x13, w=0xe0, h=0x84} == {52, 19, 224, 132}, matching
+   render_dungeon_view's `rect_fill(0x34,0x13,0xe0,0x83)`. render_visible_tile_
+   list copies these into a local passed to raster_triangle as param_8;
+   raster_triangle only calls the span rasterizer raster_textured_span inside
+   `while (param_8[0] != 0 && ...)`. All zero -> that loop never ran ->
+   no pixel ever drawn even with the geometry projecting into view. */
+static undefined4 DAT_0008462c = 0x34;
+static undefined4 DAT_00084634 = 0xe0;
+static undefined4 DAT_00084630 = 0x13;
+static undefined4 DAT_00084638 = 0x84;
+/* Recovered from UU.exe .data at 0x84610: the perspective/screen scale,
+   integer 100. render_visible_tile_list does ordfloat_int_to_float2(DAT_00084610)
+   (int->float) -> 100.0, then multiplies each vertex's 1/z * eye-space
+   coord by it to get the screen offset from the viewport centre. Was
+   silently zero -> that offset was always 0, so every tile triangle
+   projected to the single centre point (x=140, y=80). */
+static undefined4 DAT_00084610 = 100u;
+ undefined2 DAT_0023add0_backing[8192];
+ undefined2 DAT_0023ae40_backing[8192];
+/* Was a lone `undefined4` (zero-initialized), but confirmed via a raw
+   Ghidra memory read of the real UU.exe's .data section that this
+   address's real static initial value is 1, not 0 -- same "silently-
+   zero global instead of its real nonzero .data bytes" bug class fixed
+   repeatedly this session. process_visible_tile_cell gates its main
+   (bit-0x80-SET) automap-reveal write on this flag being nonzero;
+   with it wrongly defaulting to 0, a genuinely fresh character (never
+   having gone through load_game_from_slot or the death/return-to-menu
+   path, the only two real writers-of-1 -- confirmed via a Ghidra xref
+   dump, no third caller exists) got NO automap reveal at all through
+   that path for its entire first dungeon visit. This had been masked
+   until now by process_visible_tile_cell's bit-0x80-CLEAR fallback
+   revealing everything unconditionally (the over-reveal bug fixed
+   just above in this same function) -- confirmed live via a recorded
+   repro (bug-fresh-map.txt): with only the over-reveal fix applied,
+   a fresh character's automap came back completely blank instead of
+   correctly showing the small area actually explored. */
+undefined4 DAT_00086b20 = 1;
+byte * DAT_0023b814;
+/* SPLIT SYMBOL. In the 32-bit original, DAT_0023b4f4 was the head of a
+   memory region: bytes 0..3 a function pointer (a tile-geometry emitter,
+   selected in walk_visible_tiles / emit_hud_draw_commands, called at
+   process_visible_tile_cell), and from byte 4 on a short[] of per-pick-
+   slot tile offsets, indexed `slot*2 + 2` (slot 1 -> byte 4) by the
+   object-pick ID assignment (emit_tile_objects) and read back by pick_object_under_cursor.
+   On a 64-bit host the pointer is 8 bytes, so those short writes landed
+   *inside* the pointer and corrupted it -> wild call in
+   process_visible_tile_cell the moment pick IDs were being assigned
+   (i.e. as soon as the pick re-render ran). Give the offset table its own
+   backing store; keep the exact `v*2 + 2` index math at both use sites. */
+code *DAT_0023b4f4;
+short g_pick_tile_off_backing[0x200];
+undefined1 DAT_0023b676_backing[65536];
+int DAT_0023b83c;
+/* Were int / undefined4, truncating the real &DAT_002049e0-relative
+   pointers this loader (FUN_00042174 area) computes into them:
+     ae38 = &DAT_002049e0
+     ae34 = ae38 + DAT_0023adb0*0x1000   (10 x 0x400 shade tables at +0x30..)
+     ae3c = ae34 + DAT_0023aeb8*0x400
+     ae30 = ae3c + n*0x100               (10 x 0x100 colour-light tables at +0x6a..)
+   get_texture_page returns *one* of these + index*stride; its callers cast
+   the result to (byte*) and dereference it -> wild pointer + crash the
+   moment the (now-live) 3D geometry path calls it. */
+char *DAT_0023ae38;
+char *DAT_0023ae3c;
+undefined2 DAT_00202734;
+byte DAT_0023b4a0;
+char *DAT_0023aecc;
+short DAT_0025063c;
+short DAT_002506dc;
+short DAT_0025064c;
+/* Recovered from UU.exe .data at 0x86a00 (0x60 bytes). Was FOUR separate
+   silently-zero 64KB Ghidra backing arrays (DAT_00086a00/a02/a18/a20),
+   which also broke the relative addressing the code relies on -- e.g.
+   `*(short *)(&DAT_00086a00 + dir*6)` and `*(short *)(&DAT_00086a02 +
+   dir*6)` are meant to read the same table two bytes apart. Unified into
+   one region with the real bytes; the four symbols are offsets into it.
+
+     +0x00  per-facing tile-record stride pairs, indexed [dir*6] (via
+            &DAT_00086a00) and [dir*6] (via &DAT_00086a02, = +0x02):
+              dir 0..3  a00 = {+1, -64, -1, +64}
+                        a02 = {+64, +1, -64, -1}
+            i.e. the 90-degree rotation basis (tile index = x + y*64) that
+            walk_visible_tiles's automap reveal walk and the 3D tile-neighbour
+            sampling (FUN_0005bd9c &c, uw.c ~44695-44982) step tiles by.
+            All zero before this -> the reveal walk never advanced
+            (teleport+REVEAL only marked the player's own tile) and the
+            view geometry kept sampling one tile.
+     +0x18  four facing angles {0x0000, 0x4000, 0x8000, 0xc000}, [dir*2].
+     +0x20  four 10-entry tile-shape rotation remaps, one row (stride
+            0x10) per facing: identity, then the diagonal/slope types
+            (2-9) permuted for each 90-degree view rotation.
+     +0x60  DAT_00086a60: the tile-shape -> visibility-edge-flags table
+            compute_visibility_ray_offset indexes as [shape*7 + sVar9] (shape
+            0..9, sVar9 0..~8; 80 bytes). This was a lone silently-zero
+            `undefined` scalar, so compute_visibility_ray_offset's bVar6 came
+            out 0 for every cell -> it wrote 0 (never the 0x80 "visible"
+            bit) into the g_visibility_ring_buffer output grid -> process_reaction_
+            queue marked NO tile visible -> empty 3D tile list (black
+            viewport) and only the un-gated automap reveal worked. */
+ const undefined1 DAT_00086a00_region[0xb0] = {
+  0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff,
+  0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x00,0x00,0x00,0x40,0x00,0x80,0x00,0xc0,
+  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07, 0x08,0x09,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x01,0x04,0x02,0x05,0x03,0x09,0x08, 0x06,0x07,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x01,0x05,0x04,0x03,0x02,0x07,0x06, 0x09,0x08,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x01,0x03,0x05,0x02,0x04,0x08,0x09, 0x07,0x06,0x00,0x00,0x00,0x00,0x00,0x00,
+  /* +0x60  DAT_00086a60 */
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xb8, 0x98,0xb0,0x98,0xb0,0x98,0xb0,0xe4,0xc4,
+  0xe4,0xc4,0xe0,0xc4,0xe4,0xcd,0xcd,0xc5, 0xc9,0xc5,0xcd,0xc5,0xd6,0xd2,0x00,0xd6,
+  0x00,0xd6,0x00,0xd7,0x00,0xd3,0x00,0xd7, 0x00,0xd7,0xbc,0x9c,0xb4,0x9c,0xb4,0x9c,
+  0xb4,0xbd,0x9d,0xb5,0x9d,0xb5,0x9d,0xb5, 0xbe,0x9e,0xb6,0x9e,0xb6,0x9e,0xb6,0xbf,
+  0x9f,0xb7,0x9f,0xb7,0x9f,0xb7,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+};
+short DAT_0023b810;
+undefined4 DAT_0023b804;
+undefined2 DAT_00086b30;
+code *DAT_0023b80c;
+code *DAT_0023b4d4;
+ushort DAT_00189580;
+/* Recovered from UU.exe .data: 0x86b50 .. 0x86bef (0xa0 bytes). A dense
+   cluster of small per-view-orientation / per-tile-shape byte tables
+   that process_visible_tile_cell reads while building a tile's vertex
+   set for the 3D view. Ghidra had scattered it across ~15 lone
+   `undefined`/`undefined1` scalars (DAT_00086b50, b52, b84, b88,
+   bb0..bb5, bc8..bcd) PLUS a dozen bare-literal `iVar + 0x86bXX`
+   dereferences -- all reading zero / wild. Unified into one region with
+   the real bytes; the scalars and literals now index into it.
+     +0x00 (b50) view-basis shorts, [facing*4] (walk_visible_tiles)
+     +0x10 (b60) 4x4 per-facing something
+     +0x20 (b70) vertex/height offset base, indexed via b84/b88 + n*4
+     +0x40 (b90) 6x5 per-(facing,slot) offsets
+     +0x60 (bb0) 6-entry group used by the billboard-vertex ordfloat_int_to_float2 calls
+     +0x78 (bc8) 6-entry group for the diagonal-tile path
+     +0x90 (be0) 3x4 cull-plane normal components (be0/be1/be2) */
+ const undefined1 DAT_00086b50_region[0xa0] = {
+  0x01,0x00,0x40,0x00,0xc0,0xff,0x01,0x00, 0xff,0xff,0xc0,0xff,0x40,0x00,0xff,0xff,
+  0x00,0x01,0x03,0x02,0x02,0x00,0x01,0x03, 0x03,0x02,0x00,0x01,0x01,0x03,0x02,0x00,
+  0x00,0x00,0x01,0x01,0x01,0x01,0x00,0x00, 0x00,0x01,0x00,0x01,0x01,0x00,0x01,0x00,
+  0x00,0x00,0x00,0x00,0x02,0x00,0x01,0x00, 0x00,0x01,0x03,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x01,0x00,0x00,0x01,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x01,
+  0x01,0x00,0x01,0x00,0x00,0x01,0x01,0x01, 0x00,0x01,0x01,0x01,0x00,0x00,0x00,0x00,
+  0x01,0x01,0x03,0x01,0x00,0x01,0x00,0x01, 0x02,0x01,0x01,0x03,0x00,0x00,0x00,0x00,
+  0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x01,0x01,0x01,0xff,0x00,0x01,
+  0x01,0x00,0xff,0xff,0x01,0x00,0x00,0x01, 0x01,0x01,0x01,0x01,0x00,0x00,0xff,0x01,
+  0x00,0x04,0xff,0x00,0x04,0x01,0xff,0x04, 0x00,0x01,0x04,0x00,0x00,0x00,0x00,0x00,
+};
+static const undefined1 DAT_00086c00_arr[8] = { 0x00,0x01,0x02,0x00,0x00,0x00,0x00,0x00 };
+#define DAT_00086c00 (*(const undefined1 *)DAT_00086c00_arr)
+undefined2 DAT_0023bc8c;
+undefined2 DAT_0023b8c0;
+byte *DAT_0023b4ec;
+/* Was a lone `undefined` scalar; walk_visible_tiles/process_visible_tile_cell index it as
+   `(&DAT_00086bf0)[tile_type_nibble]`. Real bytes recovered from
+   UU.exe's .data at 0x86bf0 (confirmed 3 ways: reference search,
+   literal-pool value, disassembly of the `ldrb r2,[r2,r0]` read):
+   0a 0b 0c 0d 0e 0f 0b 0b 0b 0b 0a 0b 0c 0d 0e 0f.
+
+   NOTE: this table is now essentially unused. It turned out NOT to be
+   the real automap reveal-byte source -- the two ring-walk write sites
+   (walk_visible_tiles / process_visible_tile_cell) were changed to compute the reveal byte
+   the way process_visible_tile_cell's bit-0x80-SET branch always did:
+     `DAT_0023ae40[floor-texture index] low byte  |  tile shape nibble`
+   where DAT_0023ae40 is the per-level floor-texture property table
+   (loaded from the .ark). Water floors read 0x10 there -> reveal-byte
+   bit 4 set -> blue fill; every other floor reads 0 -> grey "explored"
+   shading. That's what makes ONLY water render blue (an all-`0x10|type`
+   reconstruction of THIS table made every floor blue, which was wrong).
+
+   Kept here as the raw recovered bytes; it's only hit now via a
+   `local_84 == 0` fallback in dead (bit-0x80-SET) code. */
+ const unsigned char DAT_00086bf0_real_table[16] = {
+  0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0b, 0x0b,
+  0x0b, 0x0b, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+};
+undefined1 DAT_0023b818;
+char *DAT_0023b4f0;
+static char *DAT_0023b808;  /* was `undefined4` (4 bytes) -- would truncate the
+                        real `void *` tilemap_lookup returns; currently a
+                        write-only global (no reader elsewhere in this
+                        file), so not a live bug, but fixed for safety */
+undefined4 DAT_0023b838;
+short DAT_0023b4e8;
+short DAT_0023b4e4;
+undefined1 *DAT_0023b820;
+ushort DAT_0023b828;
+undefined2 DAT_0023b824;
+char DAT_00087938;
+short DAT_00086b24;
+ushort DAT_0023b81c;
+ushort DAT_0023b4d8;
+static undefined2 DAT_0023b4d0;
+byte DAT_0023b4e0;
+char DAT_0023b834;
+/* DAT_00086b84/b88/bb0..bb5/bc8..bcd/c00 -> DAT_00086b50_region /
+   DAT_00086c00_arr, #define'd above. */
+static short DAT_0023b8c4;
+ushort DAT_0023b904;
+ushort DAT_0023b920;
+ushort DAT_0023b91c;
+byte DAT_0023bc88;
+/* .data 0x86c80: real TMOBJ sign-variant -> frame-index table, 32
+   ushort entries, recovered directly from UU.exe (same contiguous
+   dump as DAT_00086c08 above -- see its own comment). CORRECTED: an
+   earlier investigation this project concluded this table's content
+   was "genuinely lost -- not present anywhere in this binary or its
+   data files" and hand-picked a single fallback frame (668, TMOBJ.GR's
+   own "message/plaque" entry 25) for every sign variant instead. That
+   conclusion was wrong the same way g_inventory_hotspot_table's own
+   "doesn't map cleanly" conclusion was wrong -- nobody had actually
+   dumped these bytes. Real values (index -> raw table value; -1/0xffff
+   marks "no sign here", matching the existing `< 0 -> return` bail-out
+   this table's own reader already had): 0->3, 1->8, 2->8, 3->7, 4->7,
+   5->6, 6->5, 7->11, 8->24, 9->9, 10->23, 11->27, 12->28, 13->25,
+   14->26, 15->4, 16->10, 17->16, 18->17, 19->-1, 20->2, 21->19,
+   22->18, 23-31->-1. All non-sentinel values fall inside 0-28 -- see
+   the fix at this table's own reader (search "DAT_00202734") for why
+   these are relative offsets into TMOBJ's own frame range, not
+   standalone absolute frame numbers, and the addition that was
+   missing to use them correctly. */
+static unsigned short DAT_00086c80_backing[32] = {
+  3,8,8,7,7,6,5,11,24,9,23,27,28,25,26,4,
+  10,16,17,0xffff,2,19,18,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
+};
+#define DAT_00086c80 (*(unsigned char *)&DAT_00086c80_backing[0])
+/* .data 0x86cc0: real 32-step -> 8-octant angle-quantization table,
+   recovered in the same dump as DAT_00086c08/DAT_00086c80 above.
+   CORRECTED: was hand-reconstructed as a uniform "4 consecutive steps
+   per octant" identity quantization after an earlier investigation
+   concluded (same wrong "lost" framing as the other two tables here)
+   that the real content was unrecoverable. The real table is NOT a
+   uniform quantization -- bucket sizes are 3,3,5,3,5,3,5,3 (octants
+   0-7), not 4 each. */
+static const unsigned char DAT_00086cc0_arr[32] = {
+  0,0,0,1,1,1,2,2, 2,2,2,3,3,3,4,4,
+  4,4,4,5,5,5,6,6, 6,6,6,7,7,7,0,0,
+};
+#define DAT_00086cc0 (DAT_00086cc0_arr[0])
+static undefined2 DAT_0023b908_backing[8192];
+#define DAT_0023b908 DAT_0023b908_backing[0]
+static undefined2 DAT_0023b928_backing[8192];
+#define DAT_0023b928 DAT_0023b928_backing[0]
+char DAT_0023bb94;
+static undefined DAT_0023b90a_backing[8192];
+#define DAT_0023b90a DAT_0023b90a_backing[0]
+static undefined1 DAT_0023b940_backing[65536];
+#define DAT_0023b940 DAT_0023b940_backing[0]
+/* Object/feature-draw sort scratch (emit_tile_features and helpers sort_feature_pairs_by_depth/
+   ec8/508c/5128/65210/652e8, ~uw.c:49340-49766). Ghidra split each of
+   these into a lone scalar, but the code indexes them as arrays:
+   - DAT_0023b848[i]            u16, object slot ids,  i in 0..8
+   - DAT_0023b8c8[i]/[i+1]      bytes, adjacent-swap sort order (b8c9 == b8c8[1])
+   - DAT_0023bb98[i*4 + 0/1/2]  bytes, per-object billboard X/Y/Z offsets
+                                (bb99 == bb98[1], bb9a == bb98[2]), i in 0..0x3b
+   Recompiled as separate scalars the indexed writes and reads land on
+   different memory (NULL slot deref crash). Back them with real arrays;
+   all uses are confined to that function span, no external refs. */
+ undefined2 DAT_0023b848_backing[64];
+ undefined1 DAT_0023b8c8_backing[128];
+ undefined1 DAT_0023bb98_backing[512];
+/* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view-
+   facing corner-index remap for a rotating quad: resolve_billboard_corner_offset reads
+   `(&DAT_00086d68)[idx*2]` (low byte) and `(&DAT_00086d69)[idx*2]` (high
+   byte) with idx = (corner>>5) + facing*8. Were lone zero scalars. */
+static const undefined1 DAT_00086d68_region[64] = {
+  0x00,0x00,0x01,0x00,0x02,0x00,0x03,0x00, 0x04,0x00,0x05,0x00,0x06,0x00,0x07,0x00,
+  0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x03, 0x00,0x04,0x00,0x05,0x00,0x06,0x00,0x07,
+  0x07,0x00,0x06,0x00,0x05,0x00,0x04,0x00, 0x03,0x00,0x02,0x00,0x01,0x00,0x00,0x00,
+  0x00,0x07,0x00,0x06,0x00,0x05,0x00,0x04, 0x00,0x03,0x00,0x02,0x00,0x01,0x00,0x00,
+};
+#define DAT_00086d68 (*(const undefined1 *)DAT_00086d68_region)
+#define DAT_00086d69 (*(const undefined1 *)(DAT_00086d68_region + 1))
+/* Was a lone `undefined` (1-byte) scalar -- but emit_tile_features
+   indexes it as a per-tile array of 18-byte (0x12) "feature count +
+   up to 8 feature ids" records (`&DAT_0023b92e + DAT_0023b4e4*0x12`,
+   DAT_0023b4e4 ranging up to 0x20), same "split symbol" bug class as
+   its two siblings DAT_0023b928/DAT_0023b940 a few lines above, which
+   already got real backing arrays in an earlier round -- this one was
+   simply missed. Confirmed live via an lldb watchpoint: emit_tile_features's
+   own record-count overflow guard (`if (8 < *puVar6) skip`) still lets
+   a write at index 9 through when count reaches 8, one past this
+   record's real 9-ushort span (0x12 bytes = 9 ushorts, valid indices
+   0-8) -- with the real original binary's per-tile stride this only
+   ever spills into the START of the NEXT tile's own record, harmless,
+   but with this variable's own 1-byte declaration EVERY record after
+   the first was already out of bounds, so this single-byte overflow
+   became a wild write landing squarely on grtile_alloc_registered's
+   own DAT_0023c3fc (an unrelated, ordinarily 5440-byte-safe pointer
+   table used by capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop),
+   observed corrupting it one ushort at a time across repeated calls
+   until it held the exact non-pointer bit pattern (0x10f010f010f010f0)
+   that then crashed restore_captured_grtile_backdrop's own linear scan of that table --
+   the intermittent (ASLR-dependent, since it depends on this build's
+   own relative global layout) HUD-compositor crash long tracked as a
+   separate, pre-existing, unsolved issue. Widened to match its
+   siblings' oversized-safety convention. */
+static undefined1 g_tile_feature_records_b92e_backing[65536];
+#define DAT_0023b92e g_tile_feature_records_b92e_backing[0]
+
 
 
 
@@ -87,52 +417,52 @@ void render_visible_tile_list()
       iVar1 = piVar14[1];
       iVar2 = piVar14[2];
       iVar17 = piVar14[3];
-      local_54 = Ordinal_2032(piVar14[0x10]);
-      local_50 = Ordinal_2032(piVar14[0x11]);
+      local_54 = ordfloat_int_to_float2(piVar14[0x10]);
+      local_50 = ordfloat_int_to_float2(piVar14[0x11]);
       iVar16 = 1;
       DEBUG(TRACE, "[tmap-diag] record %d: *piVar14 (point count) = %d", local_94, *piVar14);
       if (1 < *piVar14 + -1) {
-        uVar6 = Ordinal_2047(0x3f800000,iVar17);
-        uVar7 = Ordinal_2026(iVar17,0x3a2ec33e);
+        uVar6 = ordfloat_div(0x3f800000,iVar17);
+        uVar7 = ordfloat_mul(iVar17,0x3a2ec33e);
         iVar17 = 0xc;
         do {
           uVar11 = *(undefined4 *)((char *)piVar14 + iVar17 + 4);
           uVar12 = *(undefined4 *)((char *)piVar14 + iVar17 + 8);
           uVar3 = *(undefined4 *)((char *)piVar14 + iVar17 + 0xc);
-          local_40 = Ordinal_2032(piVar14[iVar16 * 2 + 0x10]);
-          local_3c = Ordinal_2032(piVar14[iVar16 * 2 + 0x11]);
+          local_40 = ordfloat_int_to_float2(piVar14[iVar16 * 2 + 0x10]);
+          local_3c = ordfloat_int_to_float2(piVar14[iVar16 * 2 + 0x11]);
           uVar13 = *(undefined4 *)((char *)piVar14 + iVar17 + 0x10);
           uVar4 = *(undefined4 *)((char *)piVar14 + iVar17 + 0x14);
           uVar5 = *(undefined4 *)((char *)piVar14 + iVar17 + 0x18);
-          local_2c = Ordinal_2032(piVar14[iVar16 * 2 + 0x12]);
-          local_28 = Ordinal_2032(piVar14[iVar16 * 2 + 0x13]);
-          uVar8 = Ordinal_2032(DAT_00084610);
-          uVar9 = Ordinal_2026(uVar6,uVar8);
-          uVar9 = Ordinal_2026(uVar9,iVar1);
-          local_60 = Ordinal_2051(uVar9,0x430c0000);
-          uVar9 = Ordinal_2026(uVar6,uVar8);
-          uVar9 = Ordinal_2026(uVar9,iVar2);
-          uVar9 = Ordinal_2026(uVar9,0x3f666666);
-          local_5c = Ordinal_2015(0x42a00000,uVar9);
+          local_2c = ordfloat_int_to_float2(piVar14[iVar16 * 2 + 0x12]);
+          local_28 = ordfloat_int_to_float2(piVar14[iVar16 * 2 + 0x13]);
+          uVar8 = ordfloat_int_to_float2(DAT_00084610);
+          uVar9 = ordfloat_mul(uVar6,uVar8);
+          uVar9 = ordfloat_mul(uVar9,iVar1);
+          local_60 = ordfloat_add(uVar9,0x430c0000);
+          uVar9 = ordfloat_mul(uVar6,uVar8);
+          uVar9 = ordfloat_mul(uVar9,iVar2);
+          uVar9 = ordfloat_mul(uVar9,0x3f666666);
+          local_5c = ordfloat_sub(0x42a00000,uVar9);
           local_58 = uVar7;
-          uVar9 = Ordinal_2047(0x3f800000,uVar3);
-          uVar10 = Ordinal_2026(uVar9,uVar8);
-          uVar11 = Ordinal_2026(uVar10,uVar11);
-          local_4c = Ordinal_2051(uVar11,0x430c0000);
-          uVar11 = Ordinal_2026(uVar9,uVar8);
-          uVar11 = Ordinal_2026(uVar11,uVar12);
-          uVar11 = Ordinal_2026(uVar11,0x3f666666);
-          local_48 = Ordinal_2015(0x42a00000,uVar11);
-          local_44 = Ordinal_2026(uVar3,0x3a2ec33e);
-          uVar11 = Ordinal_2047(0x3f800000,uVar5);
-          uVar12 = Ordinal_2026(uVar11,uVar8);
-          uVar13 = Ordinal_2026(uVar12,uVar13);
-          local_38 = Ordinal_2051(uVar13,0x430c0000);
-          uVar11 = Ordinal_2026(uVar11,uVar8);
-          uVar11 = Ordinal_2026(uVar11,uVar4);
-          uVar11 = Ordinal_2026(uVar11,0x3f666666);
-          local_34 = Ordinal_2015(0x42a00000,uVar11);
-          local_30 = Ordinal_2026(uVar5,0x3a2ec33e);
+          uVar9 = ordfloat_div(0x3f800000,uVar3);
+          uVar10 = ordfloat_mul(uVar9,uVar8);
+          uVar11 = ordfloat_mul(uVar10,uVar11);
+          local_4c = ordfloat_add(uVar11,0x430c0000);
+          uVar11 = ordfloat_mul(uVar9,uVar8);
+          uVar11 = ordfloat_mul(uVar11,uVar12);
+          uVar11 = ordfloat_mul(uVar11,0x3f666666);
+          local_48 = ordfloat_sub(0x42a00000,uVar11);
+          local_44 = ordfloat_mul(uVar3,0x3a2ec33e);
+          uVar11 = ordfloat_div(0x3f800000,uVar5);
+          uVar12 = ordfloat_mul(uVar11,uVar8);
+          uVar13 = ordfloat_mul(uVar12,uVar13);
+          local_38 = ordfloat_add(uVar13,0x430c0000);
+          uVar11 = ordfloat_mul(uVar11,uVar8);
+          uVar11 = ordfloat_mul(uVar11,uVar4);
+          uVar11 = ordfloat_mul(uVar11,0x3f666666);
+          local_34 = ordfloat_sub(0x42a00000,uVar11);
+          local_30 = ordfloat_mul(uVar5,0x3a2ec33e);
           DAT_000da47c = (undefined2)piVar14[0x1d];
           DEBUG(TRACE, "[tmap-diag] raster_triangle call: tex=0x%x x=%.0f y=%.0f w(0x1c)=%d stride(0x1b)=%d",
                 piVar14[0x1e], ((float*)local_60_arr)[0], ((float*)local_60_arr)[1], piVar14[0x1c], piVar14[0x1b]);
@@ -531,7 +861,7 @@ LAB_0005e7e0:
     cVar2 = (char)(sVar31 >> 0xf);
     (&DAT_000ace32)[iVar30] = cVar2;
     (&DAT_000ace33)[iVar30] = cVar2;
-    uVar17 = Ordinal_2032(iVar18 << 8);
+    uVar17 = ordfloat_int_to_float2(iVar18 << 8);
     iVar16 = DAT_0023b838;
     iVar34 = DAT_0023b838 * 0xc;
     iVar19 = (int)DAT_0023b4e8;
@@ -542,7 +872,7 @@ LAB_0005e7e0:
     (&DAT_000a85da)[iVar34] = uVar3;
     uVar4 = (undefined1)((uint)uVar17 >> 0x18);
     (&DAT_000a85db)[iVar34] = uVar4;
-    uVar20 = Ordinal_2032((iVar19 + 1) * 0x100);
+    uVar20 = ordfloat_int_to_float2((iVar19 + 1) * 0x100);
     (&DAT_000a85e0)[iVar34] = (char)uVar20;
     uVar5 = (undefined1)((uint)uVar20 >> 8);
     (&DAT_000a85e1)[iVar34] = uVar5;
@@ -550,7 +880,7 @@ LAB_0005e7e0:
     (&DAT_000a85e2)[iVar34] = uVar6;
     uVar7 = (undefined1)((uint)uVar20 >> 0x18);
     (&DAT_000a85e3)[iVar34] = uVar7;
-    uVar21 = Ordinal_2032((uVar1 + *(byte *)(UW_B50_LIT(0x86b72) + iVar33)) * 0x40);
+    uVar21 = ordfloat_int_to_float2((uVar1 + *(byte *)(UW_B50_LIT(0x86b72) + iVar33)) * 0x40);
     (&DAT_000a85dc)[iVar34] = (char)uVar21;
     (&DAT_000a85dd)[iVar34] = (char)((uint)uVar21 >> 8);
     (&DAT_000a85de)[iVar34] = (char)((uint)uVar21 >> 0x10);
@@ -574,7 +904,7 @@ LAB_0005e7e0:
     (&DAT_000a85d9)[iVar34] = uVar24;
     (&DAT_000a85da)[iVar34] = uVar3;
     (&DAT_000a85db)[iVar34] = uVar4;
-    uVar17 = Ordinal_2032(iVar19 << 8);
+    uVar17 = ordfloat_int_to_float2(iVar19 << 8);
     (&DAT_000a85e0)[iVar34] = (char)uVar17;
     uVar24 = (undefined1)((uint)uVar17 >> 8);
     (&DAT_000a85e1)[iVar34] = uVar24;
@@ -582,7 +912,7 @@ LAB_0005e7e0:
     (&DAT_000a85e2)[iVar34] = uVar3;
     uVar4 = (undefined1)((uint)uVar17 >> 0x18);
     (&DAT_000a85e3)[iVar34] = uVar4;
-    uVar21 = Ordinal_2032((uVar1 + *pbVar35) * 0x40);
+    uVar21 = ordfloat_int_to_float2((uVar1 + *pbVar35) * 0x40);
     (&DAT_000a85dc)[iVar34] = (char)uVar21;
     (&DAT_000a85dd)[iVar34] = (char)((uint)uVar21 >> 8);
     (&DAT_000a85de)[iVar34] = (char)((uint)uVar21 >> 0x10);
@@ -606,7 +936,7 @@ LAB_0005e7e0:
     (&DAT_000ace16)[iVar30] = uVar10;
     uVar11 = (undefined1)((uint)iVar19 >> 0x18);
     (&DAT_000ace17)[iVar30] = uVar11;
-    uVar21 = Ordinal_2032((iVar18 + 1) * 0x100);
+    uVar21 = ordfloat_int_to_float2((iVar18 + 1) * 0x100);
     iVar18 = iVar34 * 0xc;
     (&DAT_000a85d8)[iVar18] = (char)uVar21;
     uVar12 = (undefined1)((uint)uVar21 >> 8);
@@ -619,7 +949,7 @@ LAB_0005e7e0:
     (&DAT_000a85e1)[iVar18] = uVar24;
     (&DAT_000a85e2)[iVar18] = uVar3;
     (&DAT_000a85e3)[iVar18] = uVar4;
-    uVar17 = Ordinal_2032((uVar1 + *(byte *)(UW_B50_LIT(0x86b71) + iVar33)) * 0x40);
+    uVar17 = ordfloat_int_to_float2((uVar1 + *(byte *)(UW_B50_LIT(0x86b71) + iVar33)) * 0x40);
     (&DAT_000a85dc)[iVar18] = (char)uVar17;
     (&DAT_000a85dd)[iVar18] = (char)((uint)uVar17 >> 8);
     (&DAT_000a85de)[iVar18] = (char)((uint)uVar17 >> 0x10);
@@ -647,7 +977,7 @@ LAB_0005e7e0:
     (&DAT_000a85e1)[iVar18] = uVar5;
     (&DAT_000a85e2)[iVar18] = uVar6;
     (&DAT_000a85e3)[iVar18] = uVar7;
-    uVar17 = Ordinal_2032((uVar1 + *(byte *)(UW_B50_LIT(0x86b73) + iVar33)) * 0x40);
+    uVar17 = ordfloat_int_to_float2((uVar1 + *(byte *)(UW_B50_LIT(0x86b73) + iVar33)) * 0x40);
     (&DAT_000a85dc)[iVar18] = (char)uVar17;
     (&DAT_000a85dd)[iVar18] = (char)((uint)uVar17 >> 8);
     DAT_000a85d0 = iVar16 + 4;
@@ -719,7 +1049,7 @@ LAB_0005e7e0:
     cVar2 = (char)(sVar31 >> 0xf);
     (&DAT_000ace32)[iVar19] = cVar2;
     (&DAT_000ace33)[iVar19] = cVar2;
-    uVar17 = Ordinal_2032(iVar16 << 8);
+    uVar17 = ordfloat_int_to_float2(iVar16 << 8);
     iVar18 = DAT_0023b838 * 0xc;
     (&DAT_000a85d8)[iVar18] = (char)uVar17;
     iVar32 = (int)DAT_0023b4e8;
@@ -729,7 +1059,7 @@ LAB_0005e7e0:
     (&DAT_000a85da)[iVar18] = uVar3;
     uVar4 = (undefined1)((uint)uVar17 >> 0x18);
     (&DAT_000a85db)[iVar18] = uVar4;
-    uVar20 = Ordinal_2032(iVar32 << 8);
+    uVar20 = ordfloat_int_to_float2(iVar32 << 8);
     (&DAT_000a85e0)[iVar18] = (char)uVar20;
     uVar5 = (undefined1)((uint)uVar20 >> 8);
     (&DAT_000a85e1)[iVar18] = uVar5;
@@ -760,7 +1090,7 @@ LAB_0005e7e0:
     (&DAT_000a85d9)[iVar30] = uVar24;
     (&DAT_000a85da)[iVar30] = uVar3;
     (&DAT_000a85db)[iVar30] = uVar4;
-    uVar17 = Ordinal_2032((iVar32 + 1) * 0x100);
+    uVar17 = ordfloat_int_to_float2((iVar32 + 1) * 0x100);
     (&DAT_000a85e0)[iVar30] = (char)uVar17;
     uVar24 = (undefined1)((uint)uVar17 >> 8);
     (&DAT_000a85e1)[iVar30] = uVar24;
@@ -790,7 +1120,7 @@ LAB_0005e7e0:
     uVar11 = (undefined1)((uint)iVar32 >> 0x18);
     (&DAT_000ace17)[iVar19] = uVar11;
     iVar18 = iVar33 + 2;
-    uVar21 = Ordinal_2032((iVar16 + 1) * 0x100);
+    uVar21 = ordfloat_int_to_float2((iVar16 + 1) * 0x100);
     iVar16 = iVar18 * 0xc;
     (&DAT_000a85d8)[iVar16] = (char)uVar21;
     uVar12 = (undefined1)((uint)uVar21 >> 8);
@@ -959,7 +1289,7 @@ LAB_0005e7e0:
       (&DAT_000ace32)[iVar18] = cVar2;
       (&DAT_000ace33)[iVar18] = cVar2;
       local_34 = iVar18;
-      local_44 = Ordinal_2032((iVar19 + (uint)(byte)(&DAT_00086bb0)[iVar33]) * 0x100);
+      local_44 = ordfloat_int_to_float2((iVar19 + (uint)(byte)(&DAT_00086bb0)[iVar33]) * 0x100);
       iVar16 = DAT_0023b838;
       iVar34 = DAT_0023b838 * 0xc;
       (&DAT_000a85d8)[iVar34] = (char)local_44;
@@ -967,7 +1297,7 @@ LAB_0005e7e0:
       iVar30 = (int)DAT_0023b4e8;
       (&DAT_000a85da)[iVar34] = (char)((uint)local_44 >> 0x10);
       (&DAT_000a85db)[iVar34] = (char)((uint)local_44 >> 0x18);
-      local_40 = Ordinal_2032((iVar30 + (uint)(byte)(&DAT_00086bb1)[iVar33]) * 0x100);
+      local_40 = ordfloat_int_to_float2((iVar30 + (uint)(byte)(&DAT_00086bb1)[iVar33]) * 0x100);
       (&DAT_000a85e0)[iVar34] = (char)local_40;
       (&DAT_000a85e1)[iVar34] = (char)((uint)local_40 >> 8);
       (&DAT_000a85e2)[iVar34] = (char)((uint)local_40 >> 0x10);
@@ -977,7 +1307,7 @@ LAB_0005e7e0:
       if (local_81 == 0x10 || uVar28 < 0x400) {
         uVar22 = uVar28;
       }
-      uVar17 = Ordinal_2032(uVar22);
+      uVar17 = ordfloat_int_to_float2(uVar22);
       (&DAT_000a85dc)[iVar34] = (char)uVar17;
       (&DAT_000a85dd)[iVar34] = (char)((uint)uVar17 >> 8);
       iVar38 = (int)DAT_0023b824;
@@ -991,11 +1321,11 @@ LAB_0005e7e0:
       (&DAT_000ace09)[iVar18] = 0;
       (&DAT_000ace0a)[iVar18] = 0;
       (&DAT_000ace0b)[iVar18] = 0;
-      uVar17 = Ordinal_2032(iVar38 + -1);
-      uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar34));
-      uVar20 = Ordinal_2026(uVar20,0x3b800000);
-      Ordinal_2026(uVar20,uVar17);
-      uVar20 = Ordinal_2020();
+      uVar17 = ordfloat_int_to_float2(iVar38 + -1);
+      uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar34));
+      uVar20 = ordfloat_mul(uVar20,0x3b800000);
+      ordfloat_mul(uVar20,uVar17);
+      uVar20 = ordfloat_uint_to_float();
       (&DAT_000ace0c)[iVar18] = (char)uVar20;
       iVar36 = iVar16 + 1;
       DAT_0023b838 = iVar36;
@@ -1011,7 +1341,7 @@ LAB_0005e7e0:
       (&DAT_000a85e1)[iVar34] = (char)((uint)local_40 >> 8);
       (&DAT_000a85e2)[iVar34] = (char)((uint)local_40 >> 0x10);
       (&DAT_000a85e3)[iVar34] = (char)((uint)local_40 >> 0x18);
-      uVar20 = Ordinal_2032((uVar1 + pbVar35[(byte)(&DAT_00086bb2)[iVar33]]) * 0x40);
+      uVar20 = ordfloat_int_to_float2((uVar1 + pbVar35[(byte)(&DAT_00086bb2)[iVar33]]) * 0x40);
       (&DAT_000a85dc)[iVar34] = (char)uVar20;
       (&DAT_000a85dd)[iVar34] = (char)((uint)uVar20 >> 8);
       (&DAT_000a85de)[iVar34] = (char)((uint)uVar20 >> 0x10);
@@ -1024,28 +1354,28 @@ LAB_0005e7e0:
       (&DAT_000ace11)[iVar18] = 0;
       (&DAT_000ace12)[iVar18] = 0;
       (&DAT_000ace13)[iVar18] = 0;
-      uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar34));
-      uVar20 = Ordinal_2026(uVar20,0x3b800000);
-      Ordinal_2026(uVar20,uVar17);
-      uVar20 = Ordinal_2020();
+      uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar34));
+      uVar20 = ordfloat_mul(uVar20,0x3b800000);
+      ordfloat_mul(uVar20,uVar17);
+      uVar20 = ordfloat_uint_to_float();
       (&DAT_000ace14)[iVar18] = (char)uVar20;
       iVar34 = iVar16 + 2;
       DAT_0023b838 = iVar34;
       (&DAT_000ace15)[iVar18] = (char)((uint)uVar20 >> 8);
       (&DAT_000ace16)[iVar18] = (char)((uint)uVar20 >> 0x10);
       (&DAT_000ace17)[iVar18] = (char)((uint)uVar20 >> 0x18);
-      local_3c = Ordinal_2032((iVar19 + (uint)(byte)(&DAT_00086bb3)[iVar33]) * 0x100);
+      local_3c = ordfloat_int_to_float2((iVar19 + (uint)(byte)(&DAT_00086bb3)[iVar33]) * 0x100);
       iVar19 = iVar34 * 0xc;
       (&DAT_000a85d8)[iVar19] = (char)local_3c;
       (&DAT_000a85d9)[iVar19] = (char)((uint)local_3c >> 8);
       (&DAT_000a85da)[iVar19] = (char)((uint)local_3c >> 0x10);
       (&DAT_000a85db)[iVar19] = (char)((uint)local_3c >> 0x18);
-      local_38 = Ordinal_2032((iVar30 + (uint)(byte)(&DAT_00086bb4)[iVar33]) * 0x100);
+      local_38 = ordfloat_int_to_float2((iVar30 + (uint)(byte)(&DAT_00086bb4)[iVar33]) * 0x100);
       (&DAT_000a85e0)[iVar19] = (char)local_38;
       (&DAT_000a85e1)[iVar19] = (char)((uint)local_38 >> 8);
       (&DAT_000a85e2)[iVar19] = (char)((uint)local_38 >> 0x10);
       (&DAT_000a85e3)[iVar19] = (char)((uint)local_38 >> 0x18);
-      uVar20 = Ordinal_2032((uVar1 + pbVar35[(byte)(&DAT_00086bb5)[iVar33]]) * 0x40);
+      uVar20 = ordfloat_int_to_float2((uVar1 + pbVar35[(byte)(&DAT_00086bb5)[iVar33]]) * 0x40);
       (&DAT_000a85dc)[iVar19] = (char)uVar20;
       (&DAT_000a85dd)[iVar19] = (char)((uint)uVar20 >> 8);
       (&DAT_000a85de)[iVar19] = (char)((uint)uVar20 >> 0x10);
@@ -1062,10 +1392,10 @@ LAB_0005e7e0:
       (&DAT_000ace1a)[iVar18] = uVar3;
       uVar4 = (undefined1)((uint)iVar33 >> 0x18);
       (&DAT_000ace1b)[iVar18] = uVar4;
-      uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar19));
-      uVar20 = Ordinal_2026(uVar20,0x3b800000);
-      Ordinal_2026(uVar20,uVar17);
-      uVar20 = Ordinal_2020();
+      uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar19));
+      uVar20 = ordfloat_mul(uVar20,0x3b800000);
+      ordfloat_mul(uVar20,uVar17);
+      uVar20 = ordfloat_uint_to_float();
       (&DAT_000ace1c)[iVar18] = (char)uVar20;
       iVar30 = iVar16 + 3;
       (&DAT_000ace1d)[iVar18] = (char)((uint)uVar20 >> 8);
@@ -1084,7 +1414,7 @@ LAB_0005e7e0:
       if (local_80 != 0x10 && 0x3ff < uVar28) {
         uVar28 = 0x400;
       }
-      uVar20 = Ordinal_2032(uVar28);
+      uVar20 = ordfloat_int_to_float2(uVar28);
       (&DAT_000a85dc)[iVar19] = (char)uVar20;
       (&DAT_000a85dd)[iVar19] = (char)((uint)uVar20 >> 8);
       (&DAT_000a85de)[iVar19] = (char)((uint)uVar20 >> 0x10);
@@ -1097,10 +1427,10 @@ LAB_0005e7e0:
       (&DAT_000ace21)[iVar18] = uVar24;
       (&DAT_000ace22)[iVar18] = uVar3;
       (&DAT_000ace23)[iVar18] = uVar4;
-      uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar19));
-      uVar20 = Ordinal_2026(uVar20,0x3b800000);
-      Ordinal_2026(uVar20,uVar17);
-      uVar17 = Ordinal_2020();
+      uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar19));
+      uVar20 = ordfloat_mul(uVar20,0x3b800000);
+      ordfloat_mul(uVar20,uVar17);
+      uVar17 = ordfloat_uint_to_float();
       (&DAT_000ace24)[iVar18] = (char)uVar17;
       (&DAT_000ace25)[iVar18] = (char)((uint)uVar17 >> 8);
       (&DAT_000ace26)[iVar18] = (char)((uint)uVar17 >> 0x10);
@@ -1207,13 +1537,13 @@ LAB_0005e7e0:
       (&DAT_000ace32)[iVar34] = cVar2;
       (&DAT_000ace33)[iVar34] = cVar2;
       iVar32 = DAT_0023b838 * 0xc;
-      uVar17 = Ordinal_2032((iVar38 + *pcVar37) * 0x100);
+      uVar17 = ordfloat_int_to_float2((iVar38 + *pcVar37) * 0x100);
       (&DAT_000a85d8)[iVar32] = (char)uVar17;
       (&DAT_000a85d9)[iVar32] = (char)((uint)uVar17 >> 8);
       iVar18 = (int)DAT_0023b4e8;
       (&DAT_000a85da)[iVar32] = (char)((uint)uVar17 >> 0x10);
       (&DAT_000a85db)[iVar32] = (char)((uint)uVar17 >> 0x18);
-      uVar17 = Ordinal_2032((iVar18 + (char)(&DAT_00086bc9)[iVar33]) * 0x100);
+      uVar17 = ordfloat_int_to_float2((iVar18 + (char)(&DAT_00086bc9)[iVar33]) * 0x100);
       (&DAT_000a85e0)[iVar32] = (char)uVar17;
       (&DAT_000a85e1)[iVar32] = (char)((uint)uVar17 >> 8);
       (&DAT_000a85e2)[iVar32] = (char)((uint)uVar17 >> 0x10);
@@ -1232,19 +1562,19 @@ LAB_0005e7e0:
       (&DAT_000ace0a)[iVar34] = 0;
       (&DAT_000ace0b)[iVar34] = 0;
       iVar19 = DAT_0023b824 + -1;
-      /* Ghidra dropped the argument: this is Ordinal_2032(iVar19), the
+      /* Ghidra dropped the argument: this is ordfloat_int_to_float2(iVar19), the
          int->float of (texture_size - 1) used as the V-texcoord scale for
          all four corners of this tile-emit branch -- exactly as the sibling
-         branch does at the `Ordinal_2032(iVar38 + -1)` site above. Left
+         branch does at the `ordfloat_int_to_float2(iVar38 + -1)` site above. Left
          no-arg, uVar17 took a stale register (the 512.0f / 1024.0f literal
          bit pattern from the projection scratch), so every V texcoord this
          branch emitted came out as ~1.14e9 -> the back-wall dither and
          part of the ceiling breakup in the 3D view. */
-      uVar17 = Ordinal_2032(iVar19);
-      uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar32));
-      uVar20 = Ordinal_2026(uVar20,0x3b800000);
-      Ordinal_2026(uVar20,uVar17);
-      uVar20 = Ordinal_2020();
+      uVar17 = ordfloat_int_to_float2(iVar19);
+      uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar32));
+      uVar20 = ordfloat_mul(uVar20,0x3b800000);
+      ordfloat_mul(uVar20,uVar17);
+      uVar20 = ordfloat_uint_to_float();
       (&DAT_000ace0c)[iVar34] = (char)uVar20;
       (&DAT_000ace0d)[iVar34] = (char)((uint)uVar20 >> 8);
       iVar32 = iVar16 + 1;
@@ -1252,17 +1582,17 @@ LAB_0005e7e0:
       (&DAT_000ace0e)[iVar34] = (char)((uint)uVar20 >> 0x10);
       (&DAT_000ace0f)[iVar34] = (char)((uint)uVar20 >> 0x18);
       iVar30 = iVar32 * 0xc;
-      uVar20 = Ordinal_2032((iVar38 + *pcVar37) * 0x100);
+      uVar20 = ordfloat_int_to_float2((iVar38 + *pcVar37) * 0x100);
       (&DAT_000a85d8)[iVar30] = (char)uVar20;
       (&DAT_000a85d9)[iVar30] = (char)((uint)uVar20 >> 8);
       (&DAT_000a85da)[iVar30] = (char)((uint)uVar20 >> 0x10);
       (&DAT_000a85db)[iVar30] = (char)((uint)uVar20 >> 0x18);
-      uVar20 = Ordinal_2032((iVar18 + (char)(&DAT_00086bc9)[iVar33]) * 0x100);
+      uVar20 = ordfloat_int_to_float2((iVar18 + (char)(&DAT_00086bc9)[iVar33]) * 0x100);
       (&DAT_000a85e0)[iVar30] = (char)uVar20;
       (&DAT_000a85e1)[iVar30] = (char)((uint)uVar20 >> 8);
       (&DAT_000a85e2)[iVar30] = (char)((uint)uVar20 >> 0x10);
       (&DAT_000a85e3)[iVar30] = (char)((uint)uVar20 >> 0x18);
-      local_30 = Ordinal_2032(uVar1 << 6);
+      local_30 = ordfloat_int_to_float2(uVar1 << 6);
       (&DAT_000a85dc)[iVar30] = (char)local_30;
       (&DAT_000a85dd)[iVar30] = (char)(local_30 >> 8);
       (&DAT_000a85de)[iVar30] = (char)(local_30 >> 0x10);
@@ -1275,10 +1605,10 @@ LAB_0005e7e0:
       (&DAT_000ace11)[iVar34] = 0;
       (&DAT_000ace12)[iVar34] = 0;
       (&DAT_000ace13)[iVar34] = 0;
-      uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar30));
-      uVar20 = Ordinal_2026(uVar20,0x3b800000);
-      Ordinal_2026(uVar20,uVar17);
-      uVar20 = Ordinal_2020();
+      uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar30));
+      uVar20 = ordfloat_mul(uVar20,0x3b800000);
+      ordfloat_mul(uVar20,uVar17);
+      uVar20 = ordfloat_uint_to_float();
       (&DAT_000ace14)[iVar34] = (char)uVar20;
       (&DAT_000ace15)[iVar34] = (char)((uint)uVar20 >> 8);
       iVar32 = iVar16 + 2;
@@ -1286,12 +1616,12 @@ LAB_0005e7e0:
       (&DAT_000ace16)[iVar34] = (char)((uint)uVar20 >> 0x10);
       (&DAT_000ace17)[iVar34] = (char)((uint)uVar20 >> 0x18);
       iVar30 = iVar32 * 0xc;
-      uVar20 = Ordinal_2032((iVar38 + (char)(&DAT_00086bca)[iVar33]) * 0x100);
+      uVar20 = ordfloat_int_to_float2((iVar38 + (char)(&DAT_00086bca)[iVar33]) * 0x100);
       (&DAT_000a85d8)[iVar30] = (char)uVar20;
       (&DAT_000a85d9)[iVar30] = (char)((uint)uVar20 >> 8);
       (&DAT_000a85da)[iVar30] = (char)((uint)uVar20 >> 0x10);
       (&DAT_000a85db)[iVar30] = (char)((uint)uVar20 >> 0x18);
-      uVar20 = Ordinal_2032((iVar18 + (char)(&DAT_00086bcb)[iVar33]) * 0x100);
+      uVar20 = ordfloat_int_to_float2((iVar18 + (char)(&DAT_00086bcb)[iVar33]) * 0x100);
       (&DAT_000a85e0)[iVar30] = (char)uVar20;
       (&DAT_000a85e1)[iVar30] = (char)((uint)uVar20 >> 8);
       (&DAT_000a85e2)[iVar30] = (char)((uint)uVar20 >> 0x10);
@@ -1311,10 +1641,10 @@ LAB_0005e7e0:
       (&DAT_000ace1a)[iVar34] = uVar3;
       uVar4 = (undefined1)((uint)iVar19 >> 0x18);
       (&DAT_000ace1b)[iVar34] = uVar4;
-      uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar30));
-      uVar20 = Ordinal_2026(uVar20,0x3b800000);
-      Ordinal_2026(uVar20,uVar17);
-      uVar20 = Ordinal_2020();
+      uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar30));
+      uVar20 = ordfloat_mul(uVar20,0x3b800000);
+      ordfloat_mul(uVar20,uVar17);
+      uVar20 = ordfloat_uint_to_float();
       (&DAT_000ace1c)[iVar34] = (char)uVar20;
       (&DAT_000ace1d)[iVar34] = (char)((uint)uVar20 >> 8);
       iVar32 = iVar16 + 3;
@@ -1322,12 +1652,12 @@ LAB_0005e7e0:
       (&DAT_000ace1e)[iVar34] = (char)((uint)uVar20 >> 0x10);
       iVar30 = iVar32 * 0xc;
       (&DAT_000ace1f)[iVar34] = (char)((uint)uVar20 >> 0x18);
-      uVar20 = Ordinal_2032((iVar38 + (char)(&DAT_00086bca)[iVar33]) * 0x100);
+      uVar20 = ordfloat_int_to_float2((iVar38 + (char)(&DAT_00086bca)[iVar33]) * 0x100);
       (&DAT_000a85d8)[iVar30] = (char)uVar20;
       (&DAT_000a85d9)[iVar30] = (char)((uint)uVar20 >> 8);
       (&DAT_000a85da)[iVar30] = (char)((uint)uVar20 >> 0x10);
       (&DAT_000a85db)[iVar30] = (char)((uint)uVar20 >> 0x18);
-      uVar20 = Ordinal_2032((iVar18 + (char)(&DAT_00086bcb)[iVar33]) * 0x100);
+      uVar20 = ordfloat_int_to_float2((iVar18 + (char)(&DAT_00086bcb)[iVar33]) * 0x100);
       (&DAT_000a85e0)[iVar30] = (char)uVar20;
       (&DAT_000a85e1)[iVar30] = (char)((uint)uVar20 >> 8);
       (&DAT_000a85e2)[iVar30] = (char)((uint)uVar20 >> 0x10);
@@ -1344,10 +1674,10 @@ LAB_0005e7e0:
       (&DAT_000ace21)[iVar34] = uVar24;
       (&DAT_000ace22)[iVar34] = uVar3;
       (&DAT_000ace23)[iVar34] = uVar4;
-      uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar30));
-      uVar20 = Ordinal_2026(uVar20,0x3b800000);
-      Ordinal_2026(uVar20,uVar17);
-      uVar17 = Ordinal_2020();
+      uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar30));
+      uVar20 = ordfloat_mul(uVar20,0x3b800000);
+      ordfloat_mul(uVar20,uVar17);
+      uVar17 = ordfloat_uint_to_float();
       (&DAT_000ace24)[iVar34] = (char)uVar17;
       (&DAT_000ace25)[iVar34] = (char)((uint)uVar17 >> 8);
       DAT_000a85d0 = iVar16 + 4;
@@ -1405,7 +1735,7 @@ short param_2;
   char *iVar1;
 
   /* DAT_002029cc is set once, early (init_level_object_arena/
-     reset_level_object_arena, a real malloc'd pointer via Ordinal_1041),
+     reset_level_object_arena, a real malloc'd pointer via ce_malloc),
      but has been separately observed (init_gameplay_session's own comment) to no
      longer hold that pointer by later points in a session -- some other
      write elsewhere in this file lands on its storage, a real,
@@ -1451,7 +1781,7 @@ char param_1;
   uint uVar2;
 
   if (param_1 == -10) {
-    Ordinal_1047(&DAT_0023b940,0,0x252);
+    ce_memset(&DAT_0023b940,0,0x252);
   }
   else {
     if (param_1 == '\0') {
@@ -1465,13 +1795,13 @@ char param_1;
         uVar1 = 8 - uVar2;
         DAT_0023b908 = (ushort)uVar1;
       }
-      Ordinal_1044(&DAT_0023b928 + uVar2 + 1,&DAT_0023b90a,(uVar1 & 0xffff) << 1);
+      ce_memmove(&DAT_0023b928 + uVar2 + 1,&DAT_0023b90a,(uVar1 & 0xffff) << 1);
       DAT_0023b928 = DAT_0023b928 + (short)uVar1;
       DAT_0023bb94 = param_1;
       return;
     }
     if (param_1 == '\x01') {
-      Ordinal_1044(&DAT_0023b908,&DAT_0023b928,0x12);
+      ce_memmove(&DAT_0023b908,&DAT_0023b928,0x12);
       DAT_0023b928 = 0;
       DAT_0023bb94 = param_1;
       return;
@@ -1481,8 +1811,8 @@ char param_1;
       return;
     }
   }
-  Ordinal_1047(&DAT_0023b908,0,0x12);
-  Ordinal_1047(&DAT_0023b928,0,0x12);
+  ce_memset(&DAT_0023b908,0,0x12);
+  ce_memset(&DAT_0023b928,0,0x12);
   DAT_0023bb94 = param_1;
   return;
 }
@@ -1718,7 +2048,7 @@ ushort * param_1;
     /* Ghidra dropped the size argument; the zero-branch above writes the
        same destination as a plain `undefined2`, so this is a 2-byte
        copy. */
-    Ordinal_1044(&DAT_0023b940 + DAT_0023b4e4 * 0x12,&DAT_0023b928,2);
+    ce_memmove(&DAT_0023b940 + DAT_0023b4e4 * 0x12,&DAT_0023b928,2);
   }
   DAT_0023b928 = 0;
   puVar5 = (ushort *)resolve_object_link(param_1);
@@ -2437,12 +2767,12 @@ LAB_emit_mesh_sprite_quad:
         fprintf(stderr, "[decalangle] overridden=%d angle_idx=%d cam_yaw=%d\n",
                 _overridden, _angle_idx, (int)DAT_000db44c);
       uVar30 = (&DAT_000d9ed8)[_angle_idx];
-      uVar18 = Ordinal_2023((&DAT_000d9930)[_angle_idx]);
+      uVar18 = ordfloat_negate((&DAT_000d9930)[_angle_idx]);
     }
     iVar32 = (int)DAT_00202508;
-    uVar19 = Ordinal_2032(iVar32 * -6);
-    uVar19 = Ordinal_2026(uVar19,0x3f000000);
-    uVar20 = Ordinal_2023();
+    uVar19 = ordfloat_int_to_float2(iVar32 * -6);
+    uVar19 = ordfloat_mul(uVar19,0x3f000000);
+    uVar20 = ordfloat_negate();
     uVar16 = DAT_000da47c;
     iVar28 = DAT_0023b83c * 0x60;
     (&DAT_000ace30)[iVar28] = (char)DAT_000da47c;
@@ -2451,10 +2781,10 @@ LAB_emit_mesh_sprite_quad:
     cVar2 = (char)((short)uVar16 >> 0xf);
     (&DAT_000ace32)[iVar28] = cVar2;
     (&DAT_000ace33)[iVar28] = cVar2;
-    uVar21 = Ordinal_2032(iVar17);
-    uVar22 = Ordinal_2026(uVar19,uVar30);
-    uVar22 = Ordinal_2051(uVar22,uVar21);
-    uVar22 = Ordinal_2051(uVar22,0);
+    uVar21 = ordfloat_int_to_float2(iVar17);
+    uVar22 = ordfloat_mul(uVar19,uVar30);
+    uVar22 = ordfloat_add(uVar22,uVar21);
+    uVar22 = ordfloat_add(uVar22,0);
     iVar17 = DAT_0023b838;
     iVar31 = DAT_0023b838 * 0xc;
     iVar23 = (int)(short)DAT_0023b920;
@@ -2465,10 +2795,10 @@ LAB_emit_mesh_sprite_quad:
     (&DAT_000a85da)[iVar31] = uVar4;
     uVar5 = (undefined1)((uint)uVar22 >> 0x18);
     (&DAT_000a85db)[iVar31] = uVar5;
-    uVar24 = Ordinal_2032(iVar23);
-    uVar19 = Ordinal_2026(uVar19,uVar18);
-    uVar19 = Ordinal_2051(uVar19,uVar24);
-    uVar19 = Ordinal_2051(uVar19,0);
+    uVar24 = ordfloat_int_to_float2(iVar23);
+    uVar19 = ordfloat_mul(uVar19,uVar18);
+    uVar19 = ordfloat_add(uVar19,uVar24);
+    uVar19 = ordfloat_add(uVar19,0);
     (&DAT_000a85e0)[iVar31] = (char)uVar19;
     uVar6 = (undefined1)((uint)uVar19 >> 8);
     (&DAT_000a85e1)[iVar31] = uVar6;
@@ -2478,7 +2808,7 @@ LAB_emit_mesh_sprite_quad:
     iVar23 = (int)(short)DAT_0023b91c;
     uVar8 = (undefined1)((uint)uVar19 >> 0x18);
     (&DAT_000a85e3)[iVar31] = uVar8;
-    uVar25 = Ordinal_2032(iVar33 * 6 + iVar23);
+    uVar25 = ordfloat_int_to_float2(iVar33 * 6 + iVar23);
     (&DAT_000a85dc)[iVar31] = (char)uVar25;
     (&DAT_000a85dd)[iVar31] = (char)((uint)uVar25 >> 8);
     (&DAT_000a85de)[iVar31] = (char)((uint)uVar25 >> 0x10);
@@ -2505,7 +2835,7 @@ LAB_emit_mesh_sprite_quad:
     (&DAT_000a85e1)[iVar31] = uVar6;
     (&DAT_000a85e2)[iVar31] = uVar7;
     (&DAT_000a85e3)[iVar31] = uVar8;
-    uVar19 = Ordinal_2032(iVar23);
+    uVar19 = ordfloat_int_to_float2(iVar23);
     (&DAT_000a85dc)[iVar31] = (char)uVar19;
     uVar3 = (undefined1)((uint)uVar19 >> 8);
     (&DAT_000a85dd)[iVar31] = uVar3;
@@ -2527,9 +2857,9 @@ LAB_emit_mesh_sprite_quad:
     (&DAT_000ace15)[iVar28] = (char)((uint)iVar23 >> 8);
     (&DAT_000ace16)[iVar28] = (char)((uint)iVar23 >> 0x10);
     (&DAT_000ace17)[iVar28] = (char)((uint)iVar23 >> 0x18);
-    uVar22 = Ordinal_2026(uVar20,uVar30);
-    uVar21 = Ordinal_2051(uVar22,uVar21);
-    uVar21 = Ordinal_2051(uVar21,0);
+    uVar22 = ordfloat_mul(uVar20,uVar30);
+    uVar21 = ordfloat_add(uVar22,uVar21);
+    uVar21 = ordfloat_add(uVar21,0);
     iVar23 = iVar34 * 0xc;
     (&DAT_000a85d8)[iVar23] = (char)uVar21;
     uVar6 = (undefined1)((uint)uVar21 >> 8);
@@ -2538,9 +2868,9 @@ LAB_emit_mesh_sprite_quad:
     (&DAT_000a85da)[iVar23] = uVar7;
     uVar8 = (undefined1)((uint)uVar21 >> 0x18);
     (&DAT_000a85db)[iVar23] = uVar8;
-    uVar18 = Ordinal_2026(uVar20,uVar18);
-    uVar18 = Ordinal_2051(uVar18,uVar24);
-    uVar18 = Ordinal_2051(uVar18,0);
+    uVar18 = ordfloat_mul(uVar20,uVar18);
+    uVar18 = ordfloat_add(uVar18,uVar24);
+    uVar18 = ordfloat_add(uVar18,0);
     (&DAT_000a85e0)[iVar23] = (char)uVar18;
     uVar9 = (undefined1)((uint)uVar18 >> 8);
     (&DAT_000a85e1)[iVar23] = uVar9;
@@ -2718,11 +3048,11 @@ LAB_00061d34:
       resolve_critter_sprite_tier(uVar27 & 0x3f,uVar29,_frame_arg,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     }
     uVar30 = (&DAT_000d9ed8)[DAT_000db44c];
-    uVar18 = Ordinal_2023((&DAT_000d9930)[DAT_000db44c]);
+    uVar18 = ordfloat_negate((&DAT_000d9930)[DAT_000db44c]);
     iVar32 = (int)DAT_00202508;
-    uVar19 = Ordinal_2032(iVar32 * -4);
-    uVar19 = Ordinal_2026(uVar19,0x3f000000);
-    uVar20 = Ordinal_2023();
+    uVar19 = ordfloat_int_to_float2(iVar32 * -4);
+    uVar19 = ordfloat_mul(uVar19,0x3f000000);
+    uVar20 = ordfloat_negate();
     uVar16 = DAT_000da47c;
     iVar28 = DAT_0023b83c * 0x60;
     iVar17 = (int)(short)DAT_0023b904;
@@ -2731,10 +3061,10 @@ LAB_00061d34:
     cVar2 = (char)((short)uVar16 >> 0xf);
     (&DAT_000ace32)[iVar28] = cVar2;
     (&DAT_000ace33)[iVar28] = cVar2;
-    uVar21 = Ordinal_2032(iVar17);
-    uVar22 = Ordinal_2026(uVar19,uVar30);
-    uVar22 = Ordinal_2051(uVar22,uVar21);
-    uVar22 = Ordinal_2051(uVar22,0);
+    uVar21 = ordfloat_int_to_float2(iVar17);
+    uVar22 = ordfloat_mul(uVar19,uVar30);
+    uVar22 = ordfloat_add(uVar22,uVar21);
+    uVar22 = ordfloat_add(uVar22,0);
     iVar17 = DAT_0023b838;
     iVar31 = DAT_0023b838 * 0xc;
     iVar23 = (int)(short)DAT_0023b920;
@@ -2745,10 +3075,10 @@ LAB_00061d34:
     (&DAT_000a85da)[iVar31] = uVar4;
     uVar5 = (undefined1)((uint)uVar22 >> 0x18);
     (&DAT_000a85db)[iVar31] = uVar5;
-    uVar24 = Ordinal_2032(iVar23);
-    uVar19 = Ordinal_2026(uVar19,uVar18);
-    uVar19 = Ordinal_2051(uVar19,uVar24);
-    uVar19 = Ordinal_2051(uVar19,0);
+    uVar24 = ordfloat_int_to_float2(iVar23);
+    uVar19 = ordfloat_mul(uVar19,uVar18);
+    uVar19 = ordfloat_add(uVar19,uVar24);
+    uVar19 = ordfloat_add(uVar19,0);
     (&DAT_000a85e0)[iVar31] = (char)uVar19;
     uVar6 = (undefined1)((uint)uVar19 >> 8);
     (&DAT_000a85e1)[iVar31] = uVar6;
@@ -2758,7 +3088,7 @@ LAB_00061d34:
     iVar23 = (int)(short)DAT_0023b91c;
     uVar8 = (undefined1)((uint)uVar19 >> 0x18);
     (&DAT_000a85e3)[iVar31] = uVar8;
-    uVar25 = Ordinal_2032(iVar23 + iVar33 * 4);
+    uVar25 = ordfloat_int_to_float2(iVar23 + iVar33 * 4);
     (&DAT_000a85dc)[iVar31] = (char)uVar25;
     (&DAT_000a85dd)[iVar31] = (char)((uint)uVar25 >> 8);
     (&DAT_000a85de)[iVar31] = (char)((uint)uVar25 >> 0x10);
@@ -2785,7 +3115,7 @@ LAB_00061d34:
     (&DAT_000a85e1)[iVar31] = uVar6;
     (&DAT_000a85e2)[iVar31] = uVar7;
     (&DAT_000a85e3)[iVar31] = uVar8;
-    uVar19 = Ordinal_2032(iVar23);
+    uVar19 = ordfloat_int_to_float2(iVar23);
     (&DAT_000a85dc)[iVar31] = (char)uVar19;
     iVar23 = iVar33 + -1;
     uVar3 = (undefined1)((uint)uVar19 >> 8);
@@ -2807,9 +3137,9 @@ LAB_00061d34:
     (&DAT_000ace15)[iVar28] = (char)((uint)iVar23 >> 8);
     (&DAT_000ace16)[iVar28] = (char)((uint)iVar23 >> 0x10);
     (&DAT_000ace17)[iVar28] = (char)((uint)iVar23 >> 0x18);
-    uVar22 = Ordinal_2026(uVar20,uVar30);
-    uVar21 = Ordinal_2051(uVar22,uVar21);
-    uVar21 = Ordinal_2051(uVar21,0);
+    uVar22 = ordfloat_mul(uVar20,uVar30);
+    uVar21 = ordfloat_add(uVar22,uVar21);
+    uVar21 = ordfloat_add(uVar21,0);
     iVar34 = iVar35 * 0xc;
     (&DAT_000a85d8)[iVar34] = (char)uVar21;
     uVar6 = (undefined1)((uint)uVar21 >> 8);
@@ -2818,9 +3148,9 @@ LAB_00061d34:
     (&DAT_000a85da)[iVar34] = uVar7;
     uVar8 = (undefined1)((uint)uVar21 >> 0x18);
     (&DAT_000a85db)[iVar34] = uVar8;
-    uVar18 = Ordinal_2026(uVar20,uVar18);
-    uVar18 = Ordinal_2051(uVar18,uVar24);
-    uVar18 = Ordinal_2051(uVar18,0);
+    uVar18 = ordfloat_mul(uVar20,uVar18);
+    uVar18 = ordfloat_add(uVar18,uVar24);
+    uVar18 = ordfloat_add(uVar18,0);
     (&DAT_000a85e0)[iVar34] = (char)uVar18;
     iVar31 = iVar32 + -1;
     iVar23 = iVar33 + -1;

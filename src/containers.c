@@ -9,6 +9,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define _DAT_00202978 (*(uint*)&DAT_00202978)
+/* Was a lone `undefined4` (4-byte) scalar holding a real heap pointer
+   (an ce_malloc-allocated open-container tracking record, same class
+   as g_current_container_record right above) -- every assignment to/from
+   it (open_backpack_container, close_backpack_container) truncated the
+   real 64-bit pointer to 32 bits. That alone was silent as long as only
+   ONE container was ever open simultaneously (the only case exercised
+   before this session's container fixes), since nothing ever needed to
+   walk to a SECOND record through it. Widened to a real pointer; see
+   also the g_current_container_record-chain "next"/"prev" link widening
+   in open_backpack_container/leave_nested_container_level/
+   free_open_container_chain below for the deeper version of this same
+   bug, found and fixed alongside it. */
+char *g_open_container_list;
+/* Was a lone `undefined4` scalar, but indexed as `(&DAT_002028a0)[i]` for
+   i up to 7 (free_open_container_chain's icon save/restore swap) -- classic
+   "undersized global used as an array" bug (same class as
+   DAT_0024bfa0/DAT_000891b0 etc.), and it happened to corrupt whatever
+   real global the linker/compiler placed a few slots further along --
+   confirmed via an lldb watchpoint that this exact write
+   (`(&DAT_002028e8)[iVar5] = uVar1` in init_inventory_panel_hotspots, a sibling of this
+   same bug one array over) was clobbering g_selected_object (a real, load-
+   bearing `char *`), corrupting an equipped-item lookup and crashing
+   refresh_player_equipment_effects on the very first in-game frame. Widened with a safety
+   margin. */
+static undefined4 DAT_002028a0_backing[64];
+#define DAT_002028a0 DAT_002028a0_backing[0]
+static undefined DAT_00202978_backing[8192];
+#define DAT_00202978 DAT_00202978_backing[0]
+static ushort DAT_00202986;
+static undefined2 DAT_00202980;
+ undefined1 DAT_00085c88_backing[32768];
+static char s_is_empty__0008790c[] = "is_empty.";
+
 
 
 
@@ -72,13 +106,13 @@ void free_open_container_chain()
          dereferencing the leftover-register garbage this left in
          param_1's place. */
       release_container_reference((char *)g_current_container_record);
-      Ordinal_1018(g_current_container_record);
+      LocalFree(g_current_container_record);
       g_current_container_record = _prev;
       _prev = *(char **)(g_current_container_record + 0x14);
     }
     g_open_container_list = 0;
     release_container_reference((char *)g_current_container_record);
-    Ordinal_1018(g_current_container_record);
+    LocalFree(g_current_container_record);
     g_current_container_record = 0;
   }
   return;
@@ -229,7 +263,7 @@ void leave_nested_container_level()
          current g_current_container_record before it's overwritten below. */
       release_container_reference((char *)g_current_container_record);
       /* Was `g_current_container_record = *(undefined1 **)(g_current_container_record + 4);
-         Ordinal_1018();` -- walked the same truncated legacy "prev" field
+         LocalFree();` -- walked the same truncated legacy "prev" field
          (wild pointer the moment a real second record existed to walk
          to), then freed with NO argument at all (dropped, same idiom as
          the sibling fix above) instead of the OLD record this is meant
@@ -237,7 +271,7 @@ void leave_nested_container_level()
          then free the right one. */
       _old = g_current_container_record;
       g_current_container_record = *(char **)(g_current_container_record + 0x14);
-      Ordinal_1018(_old);
+      LocalFree(_old);
       *g_current_container_record = 0;
       g_current_container_record[1] = 0;
       g_current_container_record[2] = 0;
@@ -595,7 +629,7 @@ short param_1;
          updating to read these instead; every plain "is there a
          next/prev at all" NULL check and every +8..+11 field access
          keeps working unchanged. */
-      puVar9 = (undefined4 *)Ordinal_1041(0x1c);
+      puVar9 = (undefined4 *)ce_malloc(0x1c);
       if (puVar9 != (undefined4 *)0x0) {
         if (g_open_container_list == (undefined4 *)0x0) {
           g_open_container_list = (char *)puVar9;
@@ -1269,9 +1303,9 @@ int param_2;
       *wptr_60040 = cVar1; wptr_60040 = wptr_60040 + 1;
       pcVar3 = pcVar3 + 1;
     } while (cVar1 != '\0');
-    iVar2 = Ordinal_1068(acStack_5c);
+    iVar2 = ce_strlen(acStack_5c);
     build_object_display_name(acStack_5c + iVar2,param_1,0,0);
-    Ordinal_1063(acStack_5c,s_is_empty__0008790c);
+    ce_strcat(acStack_5c,s_is_empty__0008790c);
     message_scroll_print_wrapped(acStack_5c);
   }
   set_pending_update_flags(2);

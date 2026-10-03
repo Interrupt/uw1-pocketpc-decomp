@@ -8,6 +8,68 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define _DAT_002035cf (*(uint*)&DAT_002035cf)
+char s_UNNAMED_00084f24[] = "UNNAMED";
+static char s_objsbecombinable_returns__d_00084f50[] = "objsbecombinable_returns_%d";
+static char s_combination__d_is__d_and__d__00084f70[] = "combination_%d_is_%d_and_%d.";
+static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking_if_%d_and_%d_are_combin";
+static undefined1 DAT_00100634_backing[65536];
+#define DAT_00100634 DAT_00100634_backing[0]
+static undefined2 DAT_00100632_backing[256];
+#define DAT_00100632 DAT_00100632_backing[0]
+/* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes)
+   via the _DAT_002035cf macro below -- widened to its own real backing
+   storage so that wider access can't spill into whatever global happens
+   to follow (it used to rely on uw.c's own incidental layout). */
+static undefined DAT_002035cf_backing[8];
+#define DAT_002035cf DAT_002035cf_backing[0]
+// was DAT_0008725c -- gates weapon_swing_draw_tick's blit; temporarily
+// cleared during full-screen wipe/dissolve transitions (level loads,
+// screen fades) so the weapon overlay doesn't glitch mid-transition,
+// then restored once the transition finishes.
+undefined4 g_weapon_overlay_enabled;
+static undefined1 DAT_002028e0_backing[16];
+#define DAT_002028e0 DAT_002028e0_backing[0]
+static char s_armor_f_00085c60[] = "armor_f";
+static undefined1 DAT_00085b77;
+static byte DAT_00085b76;
+static short DAT_00085b74;
+static undefined4 DAT_00202914;
+static undefined1 DAT_00085b69;
+static byte DAT_00085b68;
+static short DAT_00085b66;
+static undefined4 DAT_00202910;
+static ushort DAT_00202962;
+static ushort DAT_00202964;
+static char s_Move_how_many__00085c68[] = "Move_how_many?";
+static char s_is_too_full__00085c78[] = "is_too_full.";
+static undefined DAT_002029f9_backing[256];
+#define DAT_002029f9 DAT_002029f9_backing[0]
+undefined DAT_00085ce0_backing[8192];
+char s_You_read_the_00085ce8[] = "You_read_the";
+// g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
+// object id's low nibble) effect/quality byte table, loaded at runtime
+// (read_file_handle) and read by use_food_item to decide a food item's
+// flavor text and whether it's harmful.
+ undefined1 DAT_00202a28_backing[256];
+/* Was `uint` (4 bytes), truncating the real object pointer stored here
+   (confirmed by its own assignments -- `DAT_00202098 = g_player_object;`/
+   `= param_1;` where param_1 is a real `ushort *` object pointer right
+   next to a parallel `g_selected_object = param_1;` -- and its readers,
+   e.g. `finish_object_use(DAT_00202098,...)`/`*(ushort*)(DAT_00202098+6)`,
+   all treating it as a pointer). Same truncated-pointer-global bug class
+   as everywhere else in this project (g_player_object itself, etc.) --
+   on this 64-bit host the upper 32 bits of any stored pointer were
+   silently dropped, corrupting DAT_00202098 for every later reader.
+   The "held item currently being used" global driving the item-use
+   dispatch chain (finish_object_use and friends). */
+char *DAT_00202098;
+static char s_on_what__000878e0[] = "on_what?";
+static undefined1 DAT_000878ec_backing[32768];
+#define DAT_000878ec DAT_000878ec_backing[0]
+static char s_That_000878f4[] = "That";
+static char s_is_locked__000878fc[] = "is_locked.";
+
 
 
 
@@ -356,53 +418,9 @@ int param_2;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
       set_ambient_bias_without_light(0);
     }
-    {
-      ushort *pPostSettle = settle_dropped_object(param_1,iVar7 >> 3,iVar8 >> 3,1);
-      /* HACK, not disassembly-derived at this call site (though the
-         function it calls is real and unmodified): settle_dropped_
-         object's own reallocate_object_to_arena path (disassembly-
-         confirmed faithful) places a dropped/thrown object into the
-         MOBILE object arena via alloc_object_slot(1) -- see
-         https://wiki.ultimacodex.com/wiki/Ultima_Underworld_internal_formats,
-         which documents separate mobile/immobile object lists. A real
-         mobile object is expected to later transition into the
-         IMMOBILE list (alloc_object_slot(0)) once it stops moving --
-         settle_mobile_to_immobile does exactly that (decay/destroy roll, then
-         alloc_object_slot(0) + field copy + relink), but its only
-         known callers (settle_misplaced_mobile_object, itself only reached via
-         advance_mobile_objects) fire solely on a dungeon-level transition, not
-         during ordinary same-level play -- there is no per-tick,
-         delta-time-driven object physics loop anywhere in this
-         codebase that would otherwise call it. Since this port
-         resolves a toss instantly (no real per-tick flight
-         simulation), call settle_mobile_to_immobile here -- immediately after the
-         object becomes mobile -- to synchronously complete the
-         mobile->immobile transition a real flight would eventually
-         trigger on its own. Confirmed live: without this, a thrown/
-         dropped object renders fine but is permanently stuck in the
-         mobile arena, which pick_object_under_cursor's Get-mode
-         shortcut (interact_default's only path to attach_picked_up_
-         object_to_cursor) requires NOT being in -- "You cannot pick
-         that up" forever. With this call, the object correctly shows
-         up as immobile and Get-mode pickup succeeds normally
-         (bug-throw-item.txt). On by default; set
-         UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
-         forever, un-pickable) behavior. */
-      if (pPostSettle != NULL && !getenv("UW_DISABLE_SETTLE_IMMOBILE")) {
-        ushort *pImmobile;
-        undefined2 uVarSavedTileX = DAT_0010144c;
-        undefined2 uVarSavedTileY = DAT_00101454;
-        DAT_0010144c = (ushort)(iVar7 >> 3);
-        DAT_00101454 = (ushort)(iVar8 >> 3);
-        pImmobile = settle_mobile_to_immobile(pPostSettle);
-        DAT_0010144c = uVarSavedTileX;
-        DAT_00101454 = uVarSavedTileY;
-        if (getenv("UW_DEBUG_THROW"))
-          fprintf(stderr, "[settle-immobile] settle_mobile_to_immobile(%p) -> %p in_arena=%d\n",
-                  (void *)pPostSettle, (void *)pImmobile,
-                  pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
-      }
-    }
+    /* Preserve the original placement path; moving objects settle during
+       mobile_object_tick, rather than being grounded synchronously here. */
+    settle_dropped_object(param_1,iVar7 >> 3,iVar8 >> 3,1);
   }
   return 1;
 }
@@ -549,14 +567,14 @@ int param_3;
   undefined2 uVar14;
   /* Was 76 bytes with a separate 555248-byte `acStackY_87970` "prefix"
      buffer that a copy loop wrote "That " into -- but the very next
-     lines (Ordinal_1068/build_object_display_name) read and append to acStack_7c,
+     lines (ce_strlen/build_object_display_name) read and append to acStack_7c,
      which never got that prefix, so it started from stale/uninitialized
      stack content. Same split-buffer decompile artifact already fixed
      in build_creature_look_text's acStack_7c (see its comment): the
      giant acStackY_* array is a phantom Ghidra stack-frame-miscalc, and
      the real buffer is acStack_7c. Confirmed live: eating the bread
      inside an open container printed a message built from garbage
-     stack bytes and, via Ordinal_1068 returning a wild "current length"
+     stack bytes and, via ce_strlen returning a wild "current length"
      into that garbage, build_object_display_name wrote the object's name out of
      bounds of the 76-byte buffer -- corrupting the stack badly enough
      to zero the player's HP field, immediately killing the character
@@ -711,7 +729,7 @@ LAB_0007af3c:
           handle_rest_action(0xfffffffe);
           if (*(char *)((char *)g_player_object + 8) == '\0') goto LAB_0007b254;
           print_scroll_message_by_id(0xf3);
-          uVar8 = Ordinal_2005(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
+          uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f).quot;
           uVar8 = (uVar8 & 0xff) + 10;
         }
         else {
@@ -722,7 +740,7 @@ LAB_0007af3c:
             }
             goto LAB_0007b254;
           }
-          uVar8 = Ordinal_2005(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
+          uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f).quot;
           uVar8 = uVar8 & 0xff;
         }
         set_movement_animation_timer(0x40,uVar8);
@@ -741,11 +759,11 @@ LAB_0007b2e0:
     }
     if ((short)iVar11 == 0) {
       acStack_7c[0] = '\0';
-      Ordinal_1063(acStack_7c, s_That_000878f4);
-      iVar11 = Ordinal_1068(acStack_7c);
+      ce_strcat(acStack_7c, s_That_000878f4);
+      iVar11 = ce_strlen(acStack_7c);
       sVar4 = build_object_display_name(acStack_7c + iVar11,param_2,0,0);
       if (sVar4 == 0) {
-        Ordinal_1063(acStack_7c,s_UNNAMED_00084f24);
+        ce_strcat(acStack_7c,s_UNNAMED_00084f24);
       }
       iVar11 = rand_below(0x14);
       iVar11 = ((byte)param_2[2] & 0x3f) + iVar11;
@@ -1198,12 +1216,12 @@ code *param_2;
     *wptr_58645 = cVar1; wptr_58645 = wptr_58645 + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  iVar4 = Ordinal_1068(acStack_34);
+  iVar4 = ce_strlen(acStack_34);
   sVar2 = build_object_display_name(acStack_34 + iVar4,param_1,0,0);
   if (sVar2 == 0) {
-    Ordinal_1063(acStack_34,s_UNNAMED_00084f24);
+    ce_strcat(acStack_34,s_UNNAMED_00084f24);
   }
-  Ordinal_1063(acStack_34,s_on_what__000878e0);
+  ce_strcat(acStack_34,s_on_what__000878e0);
   message_scroll_print_wrapped(acStack_34);
   push_cursor_icon(*param_1 & 0x1ff);
   g_selected_object = param_1;
@@ -1455,7 +1473,7 @@ short param_2;
 {
   char cVar1;
   
-  cVar1 = Ordinal_2005((int)param_2,*(undefined1 *)(param_1 + 8));
+  cVar1 = ordint_divmod((int)param_2,*(undefined1 *)(param_1 + 8)).quot;
   *(char *)(param_1 + 8) = cVar1 + '\x01';
   *(undefined1 *)(param_1 + 0xd) = *(undefined1 *)(param_1 + 0xd);
   *(byte *)(param_1 + 0xe) = *(byte *)(param_1 + 0xe) | 2;
@@ -1587,7 +1605,7 @@ int param_3;
     }
   }
   else if (uVar3 == 0x115) {
-    uVar2 = Ordinal_1053();
+    uVar2 = ce_rand();
     uw_ord2005_rem_167 = ((int)(uVar2)) % (3);
     iVar4 = (int)uw_ord2005_rem_167;
     uVar3 = *(ushort *)(DAT_00086df8 + 0x61);
@@ -1730,7 +1748,7 @@ int param_3;
           if ((short)uVar9 == 0x10) {
             *(undefined1 *)puVar8 = uVar1;
             *(byte *)((char *)puVar8 + 1) = bVar2 | 0x80;
-            uVar5 = Ordinal_1053();
+            uVar5 = ce_rand();
             uw_ord2005_rem_168 = ((int)(uVar5)) % (6);
             uVar9 = (uw_ord2005_rem_168 & 0xffff) + 3;
             *(byte *)(puVar8 + 3) = (byte)puVar8[3] & 0x3f ^ (char)uVar9 * '@';
@@ -2021,7 +2039,7 @@ int param_2;
      comment) and in build_creature_look_text: the "You read the "
      prefix was copied into a phantom, oversized acStackY_85d64 buffer
      that nothing else ever reads, leaving the real acStack_7c (read by
-     Ordinal_1068 just below) uninitialized. Fixed the same way: seed
+     ce_strlen just below) uninitialized. Fixed the same way: seed
      acStack_7c directly, widened for safety. */
   char acStack_7c [256];
   
@@ -2036,13 +2054,13 @@ int param_2;
       if ((uVar2 & 0x400) == 0) {
         if ((param_1[3] & 0x7fc0) < 0x4000) {
           acStack_7c[0] = '\0';
-          Ordinal_1063(acStack_7c, s_You_read_the_00085ce8);
-          iVar5 = Ordinal_1068(acStack_7c);
+          ce_strcat(acStack_7c, s_You_read_the_00085ce8);
+          iVar5 = ce_strlen(acStack_7c);
           sVar3 = build_object_display_name(acStack_7c + iVar5,param_1,0,0);
           if (sVar3 == 0) {
-            Ordinal_1063(acStack_7c,s_UNNAMED_00084f24);
+            ce_strcat(acStack_7c,s_UNNAMED_00084f24);
           }
-          Ordinal_1063(acStack_7c,&DAT_00085ce0);
+          ce_strcat(acStack_7c,&DAT_00085ce0);
           message_scroll_print_wrapped(acStack_7c);
           /* Was `get_message_string(id); message_scroll_print_wrapped();`
              -- the SAME dropped-argument idiom fixed throughout this
@@ -2460,7 +2478,7 @@ undefined4 try_climb_wall()
     uVar3 = 0x65;
   }
   else {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_103 = ((int)(uVar3)) % (5);
     if (uw_ord2005_rem_103 == 0) {
       if ((uint)(_DAT_002035cf >> 4) + (uint)*(ushort *)(DAT_00086df8 + 0x4a) <
@@ -2514,7 +2532,7 @@ int param_3;
       iVar2 = 0;
     }
     else if (iVar2 < 0x1f) {
-      sVar1 = Ordinal_2005(10);
+      sVar1 = ordint_divmod(10).quot;
       iVar2 = sVar1 + 1;
     }
     else {
@@ -3196,7 +3214,7 @@ ushort param_5;
     }
     else {
       /* Was `resolve_object_link(g_current_container_record + 8)` --
-         g_current_container_record is a small (12-byte) Ordinal_1041
+         g_current_container_record is a small (12-byte) ce_malloc
          heap allocation, nowhere near the object arena buffer
          resolve_object_link's own bounds guard checks against (see its
          own comment), so this call was ALWAYS silently rejected on this
@@ -3510,7 +3528,7 @@ undefined1 * param_1;
   sVar2 = scroll_text_entry_prompt(s_Move_how_many__00085c68,&local_1c,auStack_18,0,3);
   if ((sVar2 != 0x1b) && (sVar2 != 3)) {
     if ((sVar2 == 0) || (3 < sVar2)) {
-      sVar2 = Ordinal_993(auStack_18);
+      sVar2 = ce_atoi(auStack_18);
       uVar5 = (int)sVar2;
       if ((int)(short)uVar1 < (int)sVar2) {
         uVar5 = (uint)uVar1;
@@ -4425,10 +4443,10 @@ bool compute_drop_aim_from_cursor()
   if (iVar1 < 0) {
     sVar5 = 0;
   }
-  sVar3 = Ordinal_2005(0xd,(sVar3 + -0x56) * 5);
+  sVar3 = ordint_divmod(0xd,(sVar3 + -0x56) * 5).quot;
   DAT_00202a40 = sVar3 + -1;
-  sVar3 = Ordinal_2005(6,sVar5 + -0x38);
-  sVar4 = Ordinal_2005(0x300,(int)DAT_0023beb4);
+  sVar3 = ordint_divmod(6,sVar5 + -0x38).quot;
+  sVar4 = ordint_divmod(0x300,(int)DAT_0023beb4).quot;
   DAT_00202a3c = sVar3 + sVar4;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",

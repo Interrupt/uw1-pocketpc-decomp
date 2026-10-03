@@ -23,6 +23,9 @@ int GXEndDraw(void);
    viewers present immediately while the surrounding tick is suspended. */
 void uw_begin_present_batch(void);
 void uw_end_present_batch(void);
+/* Input handlers may block and run their own redraw/input loops. */
+void uw_suspend_present_batch(void);
+void uw_resume_present_batch(void);
 void uw_begin_modal_present(void);
 void uw_end_modal_present(void);
 
@@ -148,17 +151,11 @@ void uw_debug_dump_revealmap(const unsigned char *reveal_data);
 
 /* Returns 1 and clears the flag if a mouse event (move/click) was
    processed since the last call, 0 otherwise. One-shot "was there a
-   pending mouse message" signal for Ordinal_864 (PeekMessage) -- see its
+   pending mouse message" signal for PeekMessageW (PeekMessage) -- see its
    comment in ordinal_stubs.c for why this is needed alongside
    DAT_0023c448. */
 int uw_take_mouse_event_pending(void);
 
-/* Advance one real game tick's worth of deterministic clock/recorder
-   state. Call exactly once per iteration of the real game loop
-   (game.c's app_main_loop, right alongside its own Ordinal_864 call) --
-   NOT from inside uw_pump_events(), which can fire more than once per
-   true tick. See its own comment in gx_stub.c. */
-void uw_advance_game_tick(void);
 
 /* For scripted/unattended testing: warps the real cursor to (window_x,
    window_y) (SDL window points) and pushes genuine SDL_MOUSEBUTTONDOWN/UP

@@ -9,6 +9,60 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// was DAT_0024ae20. Flat RGB565 ink color draw_text_string uses when
+// g_text_use_palette_color is 0 -- never written anywhere, silently 0
+// (black). Fine as the default on message-scroll's light parchment
+// background; menu screens with a dark backdrop need the palette-
+// indexed path instead (force g_text_use_palette_color there).
+undefined2 g_text_flat_color;
+static undefined2 DAT_000890b0_backing[32768];
+#define DAT_000890b0 DAT_000890b0_backing[0]
+// was DAT_0008909c. Line height (pixels) of the currently-active font,
+// read from its header by load_font_metrics; 0 would make
+// draw_text_string allocate/draw nothing.
+static ushort g_font_line_height;
+// was DAT_0008894c. Per-glyph row stride (bytes) of the currently-active
+// font, also from load_font_metrics; selects unpack_glyph_bitmap's 8- vs
+// 16-bit-per-row decode.
+static short g_font_row_stride;
+static short DAT_000a85b8;
+/* Was `int`, truncating the real char* pointer (DAT_000890a4) assigned
+   into it -- used as a glyph-bitmap-data base address in byte-pointer
+   arithmetic passed to unpack_glyph_bitmap. */
+static char *g_font_glyph_data_base;
+static undefined2 DAT_000a85b0;
+static char s_0123456789ABCDEF_00084a28[] = "0123456789ABCDEF";
+static undefined1 DAT_00189588;
+/* Was a single `undefined2`/`undefined1` scalar, but
+   init_glyph_width_table (the only function anywhere in this
+   decompile that touches any of these 4 globals) indexes each one via
+   `(&DAT_xxx)[i]` up to the extents below -- an out-of-bounds
+   scalar-as-array access, same class of bug as DAT_001007ee earlier
+   this session. Widened to real arrays; sizes match the highest index
+   each is ever written to in that function (DAT_00110bc0's stride-0x10
+   writes imply a wider structure this decompile doesn't otherwise use,
+   sized here to its observed 32x16 shape). */
+static undefined2 DAT_00110a78[0xa0];
+static undefined2 DAT_00110bc0[0x200];
+static undefined1 DAT_00110fd0[0x20];
+static undefined1 DAT_00201b18[0x20];
+static undefined2 DAT_00189572;
+static undefined2 DAT_00189574;
+char * DAT_00110fc8 = 0;
+static undefined1 DAT_00110fc4;
+static undefined4 DAT_00110bb8;
+/* Was `undefined4` (4 bytes) despite init_draw_command_cursor using it to reset
+   DAT_00110fc0 (`char *`) -- truncating on this 64-bit host, and
+   overwriting the DAT_00110fc0_scratch fallback (see DAT_00110fc0's own
+   comment) with a truncated garbage/NULL pointer right before
+   init_dungeon_rendering dereferences it. Retyped to a real pointer, defaulted to
+   the same scratch buffer for the same "no real initializer found,
+   avoid crashing" reason. */
+static char *DAT_00110fcc = DAT_00110fc0_scratch;
+static undefined2 DAT_00201b38;
+static undefined2 DAT_00201b10;
+static undefined4 DAT_0020250c;
+
 
 
 
@@ -51,7 +105,7 @@ short param_3;
   char *local_48;
   undefined1 auStack_40 [16];
 
-  /* Was `Ordinal_1068()` -- called with no argument, relying on
+  /* Was `ce_strlen()` -- called with no argument, relying on
      whatever was left in the first-argument register from earlier code
      (the "dropped argument" idiom used throughout this file). That
      register no longer reliably holds param_1 by this point under this
@@ -64,13 +118,13 @@ short param_3;
      inner loop below (which runs iVar2 times) walks exactly that many
      characters of param_1. Pass it explicitly instead of relying on
      register leftovers. */
-  iVar2 = Ordinal_1068(param_1);
+  iVar2 = ce_strlen(param_1);
   uVar3 = measure_text_width(param_1);
   uVar10 = (uint)g_font_line_height;
   if (getenv("UW_DIAG_TEXT"))
     fprintf(stderr, "[diag11060] measured_width=%u line_height(g_font_line_height)=%u alloc=%u\n",
             uVar3, uVar10, (uVar3 & 0xffff) * uVar10);
-  pcVar4 = (char *)Ordinal_1041((uVar3 & 0xffff) * uVar10);
+  pcVar4 = (char *)ce_malloc((uVar3 & 0xffff) * uVar10);
   iVar11 = 0;
   pcVar8 = pcVar4;
   if (uVar10 != 0) {
@@ -122,7 +176,7 @@ short param_3;
              real capacity so a width/stride this code doesn't know how
              to unpack can't read uninitialized/out-of-bounds stack
              memory; narrower glyphs (the common case) are unaffected. */
-          Ordinal_1044(pcVar8,auStack_40,(int)sVar1 > (int)sizeof(auStack_40) ? (int)sizeof(auStack_40) : (int)sVar1);
+          ce_memmove(pcVar8,auStack_40,(int)sVar1 > (int)sizeof(auStack_40) ? (int)sizeof(auStack_40) : (int)sVar1);
           iVar7 = iVar7 + -1;
           pcVar8 = pcVar8 + sVar1;
           pcVar9 = pcVar9 + 1;
@@ -163,7 +217,7 @@ short param_3;
     } while (iVar2 < iVar7);
   }
   if (pcVar4 != (char *)0x0) {
-    Ordinal_1018(pcVar4);
+    LocalFree(pcVar4);
   }
   debug_framebuffer_dump("draw_text_string");
   return;
@@ -180,12 +234,12 @@ char * param_1;
   uint uVar2;
   short sVar3;
 
-  /* Was `Ordinal_1068()` with no argument, relying on register leftovers
+  /* Was `ce_strlen()` with no argument, relying on register leftovers
      to still hold param_1 (see draw_text_string's matching fix/comment a
      few lines above -- same root bug, this is the more foundational of
      the two call sites since measure_text_width is the general string pixel-
      width measurement used throughout the file). */
-  uVar2 = Ordinal_1068(param_1);
+  uVar2 = ce_strlen(param_1);
   sVar3 = 0;
   for (uVar2 = uVar2 & 0xffff; uVar2 != 0; uVar2 = uVar2 - 1) {
     cVar1 = *param_1;
@@ -299,8 +353,8 @@ char *param_1;
     *stack0xffdc3248_ptr = cVar1; stack0xffdc3248_ptr = stack0xffdc3248_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_110,s__DATA__00085970);
-  Ordinal_1063(acStack_110,param_1);
+  ce_strcat(acStack_110,s__DATA__00085970);
+  ce_strcat(acStack_110,param_1);
   iVar3 = open_file_for_read(acStack_110);
   if (iVar3 != -1) {
     DAT_0020250c = 1;
@@ -321,7 +375,7 @@ char *param_1;
        that whole capacity; fread naturally stops at EOF for smaller
        files. */
     read_file_handle(iVar3,DAT_000890a4,0x1080);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
     load_font_metrics();
   }
   return iVar3 != -1;
@@ -415,13 +469,14 @@ undefined1 param_4;
         iVar3 = iVar3 + -1;
         pcVar2 = pcVar2 + -1;
         /* Original idiom read the divide helper's remainder back via
-           the extraout_r1 register-leftover trick (see Ordinal_2005's
-           comment) -- computed directly here instead, since C gives us
-           no portable way to recover "whatever was left in r1" and the
-           uninitialized read was corrupting this index (confirmed
-           SIGSEGV). */
-        *pcVar2 = s_0123456789ABCDEF_00084a28[param_1 % param_3];
-        param_1 = Ordinal_2005(param_3,param_1);
+           the extraout_r1 register-leftover trick (see ordint_divmod's
+           comment) -- one real call now, both halves named off its
+           divmod_result instead of a second call plus a separate "%"
+           for the half that used to be lost (the uninitialized read
+           was corrupting this index, confirmed SIGSEGV). */
+        divmod_result dmr478 = ordint_divmod(param_3,param_1);
+        *pcVar2 = s_0123456789ABCDEF_00084a28[dmr478.rem];
+        param_1 = dmr478.quot;
       } while (0 < param_1);
     }
     iVar4 = iVar3;
@@ -465,7 +520,7 @@ void init_glyph_width_table()
      are real pointers (`char *`) but are never assigned anywhere in this
      decompile -- whatever originally set them up (almost certainly
      another dropped/unrecovered call site, the same class of bug as the
-     "argument dropped entirely" cases documented on Ordinal_1041/1063)
+     "argument dropped entirely" cases documented on ce_malloc/1063)
      couldn't be traced. Confirmed via a temporary diagnostic print that
      this was NOT reading a proper zero: as a plain tentative definition
      (`char * DAT_00110fc8;`, no initializer) it read back an

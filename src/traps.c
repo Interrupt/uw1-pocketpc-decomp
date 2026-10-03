@@ -7,6 +7,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* was a raw `iVar4 + 0x85638` absolute-address literal inside
+   trigger_quest_milestone_cleanup_event (no declared global at all --
+   Ghidra never recovered this one), read as a 9-entry object-type-id
+   table. Its address falls in the same static-data run as the two
+   named globals immediately around it here (s__DATA3D_DFRAME_E_00085620
+   ends ~0x85632; this string starts at 0x85644), so it's genuinely
+   static data, not a wild pointer -- but since the real byte values
+   were never recovered, a zero-initialized fallback (matching this
+   file's established "safe stand-in, not recovered data" pattern,
+   e.g. DAT_00110fc0's own scratch buffer) replaces what would
+   otherwise be an absolute-address dereference into unmapped memory
+   on this 64-bit host. */
+static undefined1 DAT_00085638[10]; /* indices 1-9 are the ones actually read (index 0 unused) */
+static char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in_your_face!";
+/* Both were single `undefined` scalars, but resolve_lock_difficulty_rating
+   (the only function anywhere in this decompile that touches either)
+   indexes each one via `(&DAT_xxx)[i]` up to the extents below -- the
+   same out-of-bounds scalar-as-array bug class as DAT_001007ee and
+   the glyph-table globals fixed earlier this session. Widened to real
+   arrays, sized to the highest index each is ever read at. */
+static undefined DAT_002026d1[253];
+static undefined DAT_00202807[121];
+static char s_Look__it_s_a_text_trap_00087918[] = "Look,_it's_a_text_trap";
+static undefined4 DAT_0024cff8;
+static undefined4 DAT_0024cfd4;
+static undefined DAT_0007e644_backing[8192];
+#define DAT_0007e644 DAT_0007e644_backing[0]
+
 
 
 // was FUN_0007d0b0 -- the tile trap/link "type" effect dispatcher
@@ -838,7 +866,14 @@ undefined4 param_1;
 
 {
   undefined2 uVar1;
-  int iVar2;
+  /* find_object_in_world/resolve_object_link now return real pointers
+     (ushort-pointer / void-pointer) -- was `int iVar2`/`iVar3`,
+     truncating them on this 64-bit host exactly like the sibling fix
+     in objects.c's find_object_in_world/find_object_in_chain. iVar3
+     keeps its later plain-int role (is_out_of_player_range's return)
+     once pbVar5 takes over its pointer-holding span. */
+  ushort *pObj;
+  char *pbVar5;
   int iVar3;
   int iVar4;
   short local_14;
@@ -846,29 +881,29 @@ undefined4 param_1;
 
   local_14 = 0;
   local_12 = 0;
-  iVar2 = find_object_in_world(6,0,7,&local_14,&local_12);
-  while (iVar2 != 0) {
-    if ((*(byte *)(iVar2 + 1) & 0x1e) == 0) {
-      iVar3 = resolve_object_link(iVar2 + 6);
+  pObj = find_object_in_world(6,0,7,&local_14,&local_12);
+  while (pObj != 0) {
+    if ((*(byte *)((char *)pObj + 1) & 0x1e) == 0) {
+      pbVar5 = resolve_object_link((char *)pObj + 6);
       /* HACK: was a bare `object_ptr_in_arena();` -- dropped argument,
          the same class of bug fixed repeatedly elsewhere in this
          file. object_ptr_in_arena takes exactly one argument at every
-         other call site in this codebase, and iVar3 (just set from
+         other call site in this codebase, and pbVar5 (just set from
          resolve_object_link on the line above) is obviously the
          intended one here. */
-      iVar4 = object_ptr_in_arena(iVar3);
+      iVar4 = object_ptr_in_arena(pbVar5);
       if (iVar4 != 0) {
-        uVar1 = *(undefined2 *)(iVar3 + 0xd);
-        *(char *)(iVar3 + 0xd) = (char)uVar1;
-        *(byte *)(iVar3 + 0xe) = (byte)((ushort)uVar1 >> 8) | 1;
+        uVar1 = *(undefined2 *)(pbVar5 + 0xd);
+        *(char *)(pbVar5 + 0xd) = (char)uVar1;
+        *(byte *)(pbVar5 + 0xe) = (byte)((ushort)uVar1 >> 8) | 1;
         iVar3 = is_out_of_player_range(param_1,(int)local_14,(int)local_12);
         if (iVar3 != 0) {
-          dispatch_trap_type_effect(iVar2,(int)local_14,(int)local_12);
+          dispatch_trap_type_effect(pObj,(int)local_14,(int)local_12);
         }
       }
     }
     local_14 = local_14 + 1;
-    iVar2 = find_object_in_world(6,0,7,&local_14,&local_12);
+    pObj = find_object_in_world(6,0,7,&local_14,&local_12);
   }
   return;
 }
@@ -1044,8 +1079,18 @@ LAB_0003987c:
                 uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
                 if (((int)uVar14 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
                   if (puVar8 == g_player_object) {
+                    /* Was `uVar10 = extraout_r1;` -- set_locomotion_state is
+                       void (stops/locks the player's movement when a trap
+                       hits them), so there's no real second return value
+                       to read here; this was pure garbage. uVar10 is this
+                       loop's own resolve_object_link "carry" value (see
+                       its two uses above), threaded into the call at the
+                       top of this for loop's next iteration -- same
+                       crash-prone pattern already fixed elsewhere in this
+                       codebase when it gets corrupted. Leave it untouched
+                       instead, matching this loop's own established
+                       convention. */
                     set_locomotion_state(0x10);
-                    uVar10 = extraout_r1;
                   }
                 }
                 else {
@@ -1634,11 +1679,11 @@ undefined2 * param_3;
   *param_3 = uVar7;
   sVar3 = roll_skill_check(param_2,iVar5);
   if (sVar3 == -1) {
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     if ((int)((*(byte *)(param_1 + 4) & 0x3f) + (int)(short)param_2) < (int)(uVar6 & 0x3f)) {
       return 0xfffffffe;
     }
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     local_20 = -4 - (uVar4 & 7);
   }
   else {
@@ -1646,7 +1691,7 @@ undefined2 * param_3;
       return 1;
     }
     if (sVar3 == 1) {
-      sVar3 = Ordinal_2005(5,(int)(short)param_2);
+      sVar3 = ordint_divmod(5,(int)(short)param_2).quot;
       local_20 = sVar3 + 3;
     }
     else if (sVar3 == 2) {

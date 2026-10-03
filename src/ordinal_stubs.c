@@ -15,42 +15,42 @@ void uw_pump_events(void);
 unsigned int handle_keyboard_message(void *param_1, unsigned int param_2, unsigned int param_3);
 int uw_take_mouse_event_pending(void);
 
-long Ordinal_4()
+long EnterCriticalSection()
 {
     return 0;
 }
 
-long Ordinal_25()
+long GetSystemTime()
 {
     return 0;
 }
 
-long Ordinal_33()
+long LocalAlloc()
 {
     return 0;
 }
 
-long Ordinal_34()
+long LocalReAlloc()
 {
     return 0;
 }
 
-long Ordinal_35()
+long LocalSize()
 {
     return 0;
 }
 
-long Ordinal_38()
+long RemoteLocalReAlloc()
 {
     return 0;
 }
 
-long Ordinal_47()
+long HeapReAlloc()
 {
     return 0;
 }
 
-long Ordinal_58()
+long ce_wcscat()
 {
     return 0;
 }
@@ -60,7 +60,7 @@ long Ordinal_58()
  * used to fill source/destination buffers for the new-game archive copy.
  * This native port keeps converted paths as ANSI strings, matching the
  * CreateDirectory/FindFirstFile adapters, so copy the bytes here. */
-long Ordinal_61(destination, source)
+long ce_wcscpy(destination, source)
 char *destination;
 const char *source;
 {
@@ -69,12 +69,12 @@ const char *source;
     return (long)(uintptr_t)destination;
 }
 
-long Ordinal_63()
+long ce_wcslen()
 {
     return 0;
 }
 
-long Ordinal_80()
+long Random()
 {
     return 0;
 }
@@ -82,7 +82,7 @@ long Ordinal_80()
 /* SystemParametersInfo-shaped call (action=0x102=SPI_GETOEMINFO at its
  * only call site). The caller uses the returned OEM string to decide
  * whether to run the "real" GAPI display-properties init path
- * (GXOpenInput + GXGetDisplayProperties, gated on Ordinal_230 matching
+ * (GXOpenInput + GXGetDisplayProperties, gated on _wcsicmp matching
  * against a specific hardware name, "HP,Jornada_540") or skip it
  * entirely. Skipping it left DAT_0023cdc0 (cBPP) permanently 0, so the
  * present/blit gate `DAT_0023cdc0 == 0x10` never passed and the screen
@@ -95,7 +95,7 @@ static const unsigned short g_oem_info_str[] = {
     'H','P',',','J','o','r','n','a','d','a','_','5','4','0',0
 };
 
-long Ordinal_89(action, cb, buf, fWinIni)
+long SystemParametersInfoW(action, cb, buf, fWinIni)
 unsigned int action;
 unsigned int cb;
 void *buf;
@@ -108,22 +108,22 @@ unsigned int fWinIni;
     return 1;
 }
 
-long Ordinal_95()
+long RegisterClassW()
 {
     return 0;
 }
 
-long Ordinal_97()
+long CopyRect()
 {
     return 0;
 }
 
-long Ordinal_160()
+long CreateDirectoryW()
 {
     return 0;
 }
 
-long Ordinal_161()
+long RemoveDirectoryW()
 {
     return 0;
 }
@@ -132,7 +132,7 @@ long Ordinal_161()
  * Used to seed SAVE0\lev.ark from DATA\lev.ark for a new game, and by
  * older save-slot copy paths. The native conversion adapters retain ANSI
  * paths; uw_file_copy resolves them against UW_DATA_DIR and copies bytes. */
-long Ordinal_164(source, destination, fail_if_exists)
+long CopyFileW(source, destination, fail_if_exists)
 const char *source;
 const char *destination;
 int fail_if_exists;
@@ -165,7 +165,7 @@ static int looks_like_real_pointer(const void *p)
  * dropped entirely) treats "the directory is there" as success whether
  * or not it already existed, so uw_ensure_directory's EEXIST-tolerant
  * mkdir matches the intent better than a strict CreateDirectory would. */
-long Ordinal_165(void *path_ptr)
+long create_directory_path(void *path_ptr)
 {
     if (!looks_like_real_pointer(path_ptr)) return 0;
     return uw_ensure_directory((const char *)path_ptr) ? 1 : 0;
@@ -177,12 +177,12 @@ long Ordinal_165(void *path_ptr)
  * to test FILE_ATTRIBUTE_DIRECTORY (0x10) -- none read the filename
  * fields a real WIN32_FIND_DATA also carries, so implemented against
  * stat() rather than a full opendir/readdir enumeration. Treats its
- * first argument as a plain path string (this port's Ordinal_196/197
+ * first argument as a plain path string (this port's MultiByteToWideChar/197
  * "wide" conversions are ANSI passthroughs -- see their comments) and
  * strips a trailing wildcard component (e.g. "\*.*", appended by
  * ensure_save_directory_exists before calling this) since stat() doesn't understand
  * wildcards. */
-long Ordinal_167(void *path_ptr, unsigned int *out_attrs)
+long FindFirstFileW(void *path_ptr, unsigned int *out_attrs)
 {
     const char *win_path = (const char *)path_ptr;
     if (!win_path || !looks_like_real_pointer(path_ptr)) return -1;
@@ -198,44 +198,44 @@ long Ordinal_167(void *path_ptr, unsigned int *out_attrs)
     return 1;
 }
 
-long Ordinal_168()
+long CreateFileW()
 {
     return 0;
 }
 
-long Ordinal_170()
+long ReadFile()
 {
     return 0;
 }
 
-long Ordinal_171()
+long WriteFile()
 {
     return 0;
 }
 
 /* GetFileSize(handle, optional high-word pointer). The picture viewer uses
    this to allocate and read each LPF resource; returning zero skips it. */
-long Ordinal_172(int handle, unsigned int *high)
+long GetFileSize(int handle, unsigned int *high)
 {
     return uw_file_size(handle, high);
 }
 
-long Ordinal_173()
+long SetFilePointer()
 {
     return 0;
 }
 
-long Ordinal_177()
+long SetFileTime()
 {
     return 0;
 }
 
-long Ordinal_181()
+long FindNextFileW()
 {
     return 0;
 }
 
-int Ordinal_184(void *path, unsigned int flags, void *out_struct, unsigned int *out_free_lo)
+int GetDiskFreeSpaceExW(void *path, unsigned int flags, void *out_struct, unsigned int *out_free_lo)
 {
     (void)path; (void)flags; (void)out_struct;
     if (out_free_lo) *out_free_lo = 0x7fffffff;
@@ -249,7 +249,7 @@ int Ordinal_184(void *path, unsigned int flags, void *out_struct, unsigned int *
  * the copied byte count (including NUL when source_count is -1), or zero
  * when the destination is too small. This is a path adapter, not a general
  * implementation of Windows code-page conversion. */
-long Ordinal_196(code_page, flags, source, source_count, destination, capacity)
+long MultiByteToWideChar(code_page, flags, source, source_count, destination, capacity)
 unsigned int code_page;
 unsigned int flags;
 const char *source;
@@ -268,26 +268,26 @@ int capacity;
     return (long)count;
 }
 
-long Ordinal_197()
+long WideCharToMultiByte()
 {
     return 0;
 }
 
-long Ordinal_212()
+long GetUserDefaultLangID()
 {
     return 0;
 }
 
-long Ordinal_218()
+long FoldStringW()
 {
     return 0;
 }
 
-/* UTF-16 string-equality check; the only call site compares Ordinal_89's
- * SPI_GETOEMINFO string against a fixed device name (see Ordinal_89's
+/* UTF-16 string-equality check; the only call site compares SystemParametersInfoW's
+ * SPI_GETOEMINFO string against a fixed device name (see SystemParametersInfoW's
  * comment). wcscmp isn't used here because macOS wchar_t is 4 bytes,
  * not the 2-byte UTF-16 units this game's strings use. */
-long Ordinal_230(a, b)
+long _wcsicmp(a, b)
 unsigned short *a;
 unsigned short *b;
 {
@@ -295,118 +295,118 @@ unsigned short *b;
     return *a == *b;
 }
 
-long Ordinal_242()
+long CloseAllFileHandles()
 {
     return 0;
 }
 
-void *Ordinal_246(void *a, void *b, void *c, unsigned int d)
+void *CreateWindowExW(void *a, void *b, void *c, unsigned int d)
 {
     (void)a; (void)b; (void)c; (void)d;
-    fprintf(stderr, "[ordinal] Ordinal_246: CreateWindow-shaped call, returning a fake non-null HWND (real window comes from GXOpenDisplay)\n");
+    fprintf(stderr, "[ordinal] CreateWindowExW: CreateWindow-shaped call, returning a fake non-null HWND (real window comes from GXOpenDisplay)\n");
     return (void *)1; /* fake non-null HWND */
 }
 
-long Ordinal_264()
+long DefWindowProcW()
 {
     return 0;
 }
 
-long Ordinal_266()
+long ShowWindow()
 {
     return 0;
 }
 
-long Ordinal_267()
+long UpdateWindow()
 {
     return 0;
 }
 
-int Ordinal_286(void *a, void *b)
+int FindWindowW(void *a, void *b)
 {
     (void)a; (void)b;
-    fprintf(stderr, "[ordinal] Ordinal_286: single-instance check, reporting no existing instance\n");
+    fprintf(stderr, "[ordinal] FindWindowW: single-instance check, reporting no existing instance\n");
     return 0; /* no existing instance / success */
 }
 
-long Ordinal_297()
+long BatteryDrvrGetLevels()
 {
     return 0;
 }
 
-long Ordinal_321()
+long CeReadRecordProps()
 {
     return 0;
 }
 
-long Ordinal_384()
+long waveOutClose()
 {
     return 0;
 }
 
-long Ordinal_385()
+long waveOutPrepareHeader()
 {
     return 0;
 }
 
-long Ordinal_386()
+long waveOutUnprepareHeader()
 {
     return 0;
 }
 
-long Ordinal_387()
+long waveOutWrite()
 {
     return 0;
 }
 
-long Ordinal_390()
+long waveOutReset()
 {
     return 0;
 }
 
-long Ordinal_399()
+long waveOutOpen()
 {
     return 0;
 }
 
-long Ordinal_455()
+long RegCloseKey()
 {
     return 0;
 }
 
-long Ordinal_456()
+long RegCreateKeyExW()
 {
     return 0;
 }
 
-int Ordinal_461(unsigned int hkey, void *subkey, unsigned int reserved, void *result)
+int RegOpenKeyExW(unsigned int hkey, void *subkey, unsigned int reserved, void *result)
 {
     (void)hkey; (void)subkey; (void)reserved; (void)result;
-    fprintf(stderr, "[ordinal] Ordinal_461: RegOpenKeyEx-shaped call, reporting success so the game takes its safe bounded-copy path instead of a hardcoded-offset fallback that segfaults when recompiled\n");
+    fprintf(stderr, "[ordinal] RegOpenKeyExW: RegOpenKeyEx-shaped call, reporting success so the game takes its safe bounded-copy path instead of a hardcoded-offset fallback that segfaults when recompiled\n");
     return 0;
 }
 
-long Ordinal_463()
+long RegQueryValueExW()
 {
     return 0;
 }
 
-long Ordinal_464()
+long RegSetValueExW()
 {
     return 0;
 }
 
 /* Sleep-shaped: real elapsed-ms delay. Was a hardcoded no-op, so every
- * `Ordinal_496(ms)` call across the game -- e.g. the splash-screen
+ * `Sleep(ms)` call across the game -- e.g. the splash-screen
  * sequence's 1.5s dwell between each image (run_game_startup_sequence) and
  * app_main_loop's own startup 2000ms pause -- did nothing at all.
  * Confirmed as the real cause of splash images blitting past instantly
  * ("flashes") instead of actually being shown for a moment: this stub,
- * not a missing fade, same root-cause class as Ordinal_535 (GetTickCount)
+ * not a missing fade, same root-cause class as GetTickCount (GetTickCount)
  * being a hardcoded 0 earlier this session. */
-long Ordinal_496(unsigned int ms)
+long Sleep(unsigned int ms)
 {
-    DEBUG(TRACE, "[sleep] Ordinal_496 requested ms=%u", ms);
+    DEBUG(TRACE, "[sleep] Sleep requested ms=%u", ms);
     /* UW_FAST_SLEEP: debug-only switch to skip the real delay below (splash
      * dwells, app_main_loop's startup pause, etc. otherwise add up to real
      * wall-clock seconds every run) so automated/demo-driven test runs reach
@@ -445,30 +445,30 @@ long Ordinal_496(unsigned int ms)
     return 0;
 }
 
-long Ordinal_516()
+long GetLastError()
 {
     return 0;
 }
 
-long Ordinal_532()
+long FindResourceW()
 {
     return 0;
 }
 
-long Ordinal_533()
+long LoadResource()
 {
     return 0;
 }
 
 /* GetTickCount-shaped: real elapsed milliseconds since startup. Was a
  * hardcoded 0, meaning every read_realtime_clock_units() (this file's
- * Ordinal_535() >> 2, uw.c) call across the whole game always read "0
+ * GetTickCount() >> 2, uw.c) call across the whole game always read "0
  * elapsed" -- silently
  * breaking every timing check built on it, not just the one that
  * exposed it (fade_in's fade-in-from-black transition measured
  * 0ms end to end with this stubbed out, confirming the fade logic
  * itself was intact and only the time source was missing). */
-long Ordinal_535()
+long GetTickCount()
 {
     return (long)SDL_GetTicks();
 }
@@ -482,43 +482,43 @@ long Ordinal_535()
  * subsequent file open in the whole game failed (including files
  * completely unrelated to the credits screen, like OPSCR.BYT/PALS.DAT
  * when returning to the options menu), triggering a fatal error exit. */
-long Ordinal_553(handle)
+long CloseHandle(handle)
 int handle;
 {
     return uw_file_close(handle);
 }
 
-long Ordinal_687()
+long GetDlgItemTextW()
 {
     return 0;
 }
 
-long Ordinal_690()
+long DialogBoxIndirectParamW()
 {
     return 0;
 }
 
-long Ordinal_691()
+long EndDialog()
 {
     return 0;
 }
 
-long Ordinal_702()
+long SetForegroundWindow()
 {
     return 0;
 }
 
-long Ordinal_719()
+long ce_sprintf()
 {
     return 0;
 }
 
-long Ordinal_858()
+long MessageBoxW()
 {
     return 0;
 }
 
-long Ordinal_859()
+long DispatchMessageW()
 {
     return 0;
 }
@@ -528,7 +528,7 @@ long Ordinal_859()
  * events (not through a faked MSG struct). */
 extern unsigned short DAT_0023c448;
 
-int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigned int wMsgFilterMax, unsigned int wRemoveMsg)
+int PeekMessageW(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigned int wMsgFilterMax, unsigned int wRemoveMsg)
 {
     (void)msg; (void)hwndFilter; (void)wMsgFilterMin; (void)wMsgFilterMax; (void)wRemoveMsg;
     uw_pump_events();
@@ -560,7 +560,7 @@ int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigne
     return (DAT_0023c448 != 0) || uw_take_mouse_event_pending();
 }
 
-long Ordinal_866()
+long PostQuitMessage()
 {
     return 0;
 }
@@ -569,46 +569,46 @@ long Ordinal_866()
  * via Ghidra headless disassembly -- this is the exact call the recovered
  * mouse handler (handle_mouse_message in uw.c) makes to re-dispatch a stylus tap
  * on the chargen on-screen keyboard as a synthetic WM_CHAR/WM_KEYDOWN.
- * This port never builds a real Win32 MSG queue (see Ordinal_864's
+ * This port never builds a real Win32 MSG queue (see PeekMessageW's
  * comment -- handle_keyboard_message is driven directly from DAT_0023c448), so
  * dispatch synchronously into the same handler real keyboard input
  * already reaches instead of queuing. */
-int Ordinal_868(void *hwnd, unsigned int msg, unsigned int wparam, int lparam)
+int PostMessageW(void *hwnd, unsigned int msg, unsigned int wparam, int lparam)
 {
     return (int)handle_keyboard_message(hwnd, msg, wparam);
 }
 
-long Ordinal_870()
+long TranslateMessage()
 {
     return 0;
 }
 
-long Ordinal_885()
+long GetSystemMetrics()
 {
     return 0;
 }
 
-long Ordinal_912()
+long DeleteObject()
 {
     return 0;
 }
 
-long Ordinal_919()
+long GetStockObject()
 {
     return 0;
 }
 
-long Ordinal_993()
+long ce_atoi()
 {
     return 0;
 }
 
 /* cos(x): x is a double bit-pattern arriving in the return/first-arg
-   register (chained from Ordinal_2021 in build_trig_tables, which builds the
+   register (chained from ordfloat_float_to_double in build_trig_tables, which builds the
    renderer's per-degree cos table DAT_000d9ed8). Was a return-0 stub,
    which left the whole view matrix zero -> every 3D vertex projected to
    a single point. */
-long Ordinal_1004(x)
+long ordfloat_cos(x)
 unsigned long long x;
 {
     double d;
@@ -618,7 +618,7 @@ unsigned long long x;
     return (long)x;
 }
 
-void Ordinal_1018(ptr)
+void LocalFree(ptr)
 void *ptr;
 {
     /* deliberately a leak, not free(ptr): several call sites
@@ -629,22 +629,22 @@ void *ptr;
     (void)ptr;
 }
 
-long Ordinal_1025()
+long _itoa()
 {
     return 0;
 }
 
-long Ordinal_1033()
+long ordfloat_log()
 {
     return 0;
 }
 
-long Ordinal_1039()
+long _ltoa()
 {
     return 0;
 }
 
-void *Ordinal_1041(size)
+void *ce_malloc(size)
 unsigned int size;
 {
     /* Was plain malloc -- real WinCE code allocating a small tracking
@@ -664,7 +664,7 @@ unsigned int size;
     return calloc(1, size);
 }
 
-void *Ordinal_1044(dest, src, n)
+void *ce_memmove(dest, src, n)
 void *dest;
 void *src;
 unsigned int n;
@@ -677,7 +677,7 @@ unsigned int n;
 /* memset: fills n bytes at ptr with val, returning ptr. Used throughout
  * startup to clear records and buffers; the old new-game menu also used
  * (path_buffer, 0, 0x104) before assembling file paths. Null ptr is ignored. */
-void *Ordinal_1047(void *ptr, int val, unsigned int n)
+void *ce_memset(void *ptr, int val, unsigned int n)
 {
     if (ptr) memset(ptr, val, n);
     return ptr;
@@ -688,12 +688,12 @@ void *Ordinal_1047(void *ptr, int val, unsigned int n)
    automap water/lava fill collapsed from its intended 2-/3-tone dither
    to a flat single color. Real rand(); deterministic (no srand) so
    scripted runs stay reproducible. */
-long Ordinal_1053()
+long ce_rand()
 {
     return rand();
 }
 
-void *Ordinal_1054(void *ptr, unsigned int size)
+void *ce_realloc(void *ptr, unsigned int size)
 {
     if (size == 0) return ptr;
     return realloc(ptr, size);
@@ -701,7 +701,7 @@ void *Ordinal_1054(void *ptr, unsigned int size)
 
 /* sin(x): x is a double bit-pattern split across the first two arg
    registers (build_trig_tables passes it as two ints). Builds DAT_000d9930. */
-long Ordinal_1058(lo, hi)
+long ordfloat_sin(lo, hi)
 unsigned int lo;
 unsigned int hi;
 {
@@ -713,7 +713,7 @@ unsigned int hi;
     return (long)b;
 }
 
-long Ordinal_1061()
+long ce_srand()
 {
     return 0;
 }
@@ -722,7 +722,7 @@ long Ordinal_1061()
  * dest. Used to assemble game/save paths from an install-directory prefix
  * and suffixes such as \DATA\lev.ark and \SAVE0. Does not check capacity;
  * both arguments must be valid strings. Null arguments skip the append. */
-char *Ordinal_1063(dest, src)
+char *ce_strcat(dest, src)
 char *dest;
 char *src;
 {
@@ -730,26 +730,26 @@ char *src;
     return dest;
 }
 
-char *Ordinal_1064(const char *s, int c)
+char *ce_strchr(const char *s, int c)
 {
     if (s == 0) return 0;
     return strchr(s, c);
 }
 
-int Ordinal_1065(const char *a, const char *b)
+int ce_strcmp(const char *a, const char *b)
 {
     if (a == 0 || b == 0) return -1;
     return strcmp(a, b);
 }
 
-unsigned int Ordinal_1068(s)
+unsigned int ce_strlen(s)
 const char *s;
 {
     if (s == 0) return 0;
     return (unsigned int)strlen(s);
 }
 
-int Ordinal_1070(const char *a, const char *b, unsigned int n)
+int ce_strncmp(const char *a, const char *b, unsigned int n)
 {
     if (a == 0 || b == 0) return -1;
     return strncmp(a, b, n);
@@ -766,7 +766,7 @@ int Ordinal_1070(const char *a, const char *b, unsigned int n)
  * garbage -- confirmed as the cause of the player name never
  * displaying on the stats panel (draw_stats_panel_header draws whatever garbage
  * was left in its local buffer instead of the real name). */
-long Ordinal_1071(dest, src, n)
+long ce_strncpy(dest, src, n)
 char *dest;
 const char *src;
 unsigned int n;
@@ -780,15 +780,15 @@ unsigned int n;
     return (long)dest;
 }
 
-long Ordinal_1072()
+long ce_strstr()
 {
     return 0;
 }
 
 /* Windows CE keyboard-translation ordinal (likely a VK-code-to-character
- * case transform, given its sibling Ordinal_1091 and their shared call
+ * case transform, given its sibling ce_toupper and their shared call
  * site at uw.c ~50479: `if (DAT_0023c448 == 0x400) sVar1 =
- * Ordinal_1090(sVar1); else sVar1 = Ordinal_1091();` -- a caps/shift-state
+ * ce_tolower(sVar1); else sVar1 = ce_toupper();` -- a caps/shift-state
  * branch feeding the translated key code onward). Was a no-op stub
  * returning 0 even though its own call site already passes a real
  * argument -- every character typed down this specific path (whichever
@@ -798,19 +798,19 @@ long Ordinal_1072()
  * input unchanged is strictly better than always returning 0/NUL, and
  * is correct for the common case where the raw key code is already the
  * intended printable character. */
-long Ordinal_1090(param_1)
+long ce_tolower(param_1)
 long param_1;
 {
     return param_1;
 }
 
-/* Sibling of Ordinal_1090 just above -- same fix, same reasoning. This
+/* Sibling of ce_tolower just above -- same fix, same reasoning. This
  * one's OWN call site (uw.c ~10375, the automap note-text-entry loop)
  * was ALSO calling it bare (no argument), the classic "dropped
  * register-forwarding arg" idiom this whole project hits repeatedly:
  * real ARM code relies on the immediately-preceding computation
  * leaving the intended character code in r0, which this compiler does
- * not reproduce for a literal `Ordinal_1091()` call. Confirmed live via
+ * not reproduce for a literal `ce_toupper()` call. Confirmed live via
  * UW_DEBUG_AUTOMAP_NOTE tracing: typing "TEST" while placing an automap
  * note correctly decoded each keystroke (sVar2 read back 84/69/83/84 =
  * 'T'/'E'/'S'/'T') but the note's own text buffer stayed empty the
@@ -819,25 +819,25 @@ long param_1;
  * work in the automap" (every character typed was silently replaced
  * with NUL, so the buffer's first byte was always the string
  * terminator). Fixed the call site to pass the real key code (uw.c's
- * own `sVar2`) explicitly, same as Ordinal_1090's own call site
+ * own `sVar2`) explicitly, same as ce_tolower's own call site
  * already does. */
-long Ordinal_1091(param_1)
+long ce_toupper(param_1)
 long param_1;
 {
     return param_1;
 }
 
-long Ordinal_1094()
+long cpp_operator_delete()
 {
     return 0;
 }
 
-long Ordinal_1095()
+long cpp_operator_new()
 {
     return 0;
 }
 
-void Ordinal_1102(const char *fmt, ...)
+void NKDbgPrintfW(const char *fmt, ...)
 {
     if (fmt == 0) return;
     va_list ap;
@@ -848,12 +848,12 @@ void Ordinal_1102(const char *fmt, ...)
     fprintf(stderr, "\n");
 }
 
-void *Ordinal_1113(void *path, void *mode)
+void *ce_fopen(void *path, void *mode)
 {
     return uw_file_fopen((const char *)path, (const char *)mode);
 }
 
-int Ordinal_1114(void *f, const char *fmt, ...)
+int ce_fscanf(void *f, const char *fmt, ...)
 {
     if (f == 0 || fmt == 0) return -1;
     va_list ap;
@@ -863,17 +863,17 @@ int Ordinal_1114(void *f, const char *fmt, ...)
     return r;
 }
 
-int Ordinal_1118(void *f)
+int ce_fclose(void *f)
 {
     if (f == 0) return 0;
     return fclose((FILE *)f);
 }
 
-/* Zeroing allocator, called as Ordinal_1346(elem_size, count) at every
+/* Zeroing allocator, called as ce_calloc(elem_size, count) at every
    site (e.g. the .tr texture loader's offset table, load_texture_arena). Was a
    no-op stub that returned NULL -> report_fatal_error_and_exit(0x1008) fatal the moment
    the texture files actually started loading. */
-void *Ordinal_1346(elem_size, count)
+void *ce_calloc(elem_size, count)
 unsigned int elem_size;
 unsigned int count;
 {
@@ -884,7 +884,7 @@ unsigned int count;
 
 /* MSVCRT `strrchr(str, c)` -- find the LAST occurrence of character `c`
    in `str`, or NULL if absent. Was an unconditional `return 0;` stub
-   (same dead-stub class as Ordinal_1071/Ordinal_1416 before they were
+   (same dead-stub class as ce_strncpy/_strupr before they were
    fixed) -- most callers (message_scroll_print_wrapped's word-wrap)
    already defensively fall back on a NULL result, masking the stub
    there. open_level_archive's use has no such fallback: it calls this
@@ -898,7 +898,7 @@ unsigned int count;
    real save attempt: a stale, permanently-empty data/_arc.tmp sat there
    untouched while \SAVE0\lev.ark's content never changed no matter what
    the player did. */
-long Ordinal_1407(str, c)
+long ce_strrchr(str, c)
 char *str;
 int c;
 {
@@ -912,13 +912,13 @@ int c;
     return (long)last;
 }
 
-long Ordinal_1415()
+long _strlwr()
 {
     return 0;
 }
 
 /* MSVCRT `_strupr(str)` -- uppercase a string in place, return the same
- * pointer. Sits right before Ordinal_1417 (`_isctype`), matching
+ * pointer. Sits right before _isctype (`_isctype`), matching
  * MSVCRT's own clustering of case/character-type functions. Confirmed
  * by its one already-argument-correct call site (FUN_0007002c's
  * "chant the mantra" puzzle: uppercases the player's typed word and a
@@ -933,7 +933,7 @@ long Ordinal_1415()
  * no-op stub returning 0, so every string passed through it vanished
  * (drawn as a NULL pointer) -- confirmed as the cause of the player's
  * title and every skill name never displaying on the stats panel. */
-long Ordinal_1416(str)
+long _strupr(str)
 char *str;
 {
     char *p;
@@ -949,7 +949,7 @@ char *str;
  * its mask (_UPPER=1, _LOWER=2, _DIGIT=4, _SPACE=8, _PUNCT=0x10,
  * _CONTROL=0x20, _BLANK=0x40, _HEX=0x80, _ALPHA=0x103) and checks the
  * result against 0, e.g. wait_for_chargen_field_input's name-entry field tests
- * `Ordinal_1417(ch, 0x157)` (_ALPHA|_DIGIT|_PUNCT|_BLANK, i.e. "any
+ * `_isctype(ch, 0x157)` (_ALPHA|_DIGIT|_PUNCT|_BLANK, i.e. "any
  * typeable name character") to decide whether to append a typed
  * character to the name buffer. A prior no-op stub (`return 0`) made
  * that test always fail, so no character was ever considered valid --
@@ -958,7 +958,7 @@ char *str;
  * condition could never be satisfied, hanging the whole name-entry
  * screen (confirmed as the cause of character creation getting stuck
  * indefinitely at "Enter your name"). */
-long Ordinal_1417(c, mask)
+long _isctype(c, mask)
 int c;
 int mask;
 {
@@ -979,30 +979,74 @@ int mask;
 /* ARM has no hardware integer divide, so the original WinCE/ARM compiler
  * routed every `/` and `%` in the whole game through this shared runtime
  * division helper -- it's called ~250 places across uw.c. Per AAPCS32's
- * div/mod helper convention, it returns the quotient in r0 (the normal
- * C return value here) while the remainder comes back in r1; Ghidra
- * surfaces reads of that second value as the `extraout_r1` idiom at call
- * sites that want the remainder instead of (or in addition to) the
- * quotient. A prior no-op stub (`return 0`) silently zeroed every
- * division result in the game and left `extraout_r1` reads pointing at
- * genuinely uninitialized memory -- confirmed as the cause of a SIGSEGV
- * in itoa_radix indexing a hex-digit table with garbage. K&R-declared
- * (matching the project's established Ordinal_1068-style pattern) so
- * call sites that only pass one argument -- relying on the original
- * ABI's register-content-reuse from a preceding computation -- still
- * compile and get *a* value for the unfilled parameter, exactly like
- * the rest of this codebase's "dropped argument" idiom. */
-long Ordinal_2005(divisor, dividend)
+ * div/mod helper convention, it returns the quotient in r0 while the
+ * remainder comes back in r1; Ghidra surfaced reads of that second
+ * value as the `extraout_r1` idiom at call sites that wanted the
+ * remainder instead of (or in addition to) the quotient. A prior no-op
+ * stub (`return 0`) silently zeroed every division result in the game
+ * and left `extraout_r1` reads pointing at genuinely uninitialized
+ * memory -- confirmed as the cause of a SIGSEGV in itoa_radix indexing
+ * a hex-digit table with garbage, and (once the quotient itself was
+ * fixed) a whole further class of call sites still silently reading
+ * garbage for the remainder half alone, fixed one at a time over the
+ * course of this session.
+ *
+ * Returns both halves as a real struct instead of just the quotient --
+ * there's no portable way for a normal C function to also hand back a
+ * second value through "whatever happened to be in r1", so every call
+ * site that wants the remainder (or both) now gets it by name off this
+ * struct instead of reading a second return value that was never
+ * really there. K&R-declared (matching the project's established
+ * ce_strlen-style pattern) so call sites that only pass one argument --
+ * relying on the original ABI's register-content-reuse from a
+ * preceding computation -- still compile and get *a* value for the
+ * unfilled parameter, exactly like the rest of this codebase's
+ * "dropped argument" idiom; that idiom is about the arguments, not
+ * this return type, so it's unaffected by the switch to a struct. */
+divmod_result ordint_divmod(divisor, dividend)
 int divisor;
 int dividend;
 {
-    if (divisor == 0) return 0;
-    return dividend / divisor;
+    divmod_result result;
+    if (divisor == 0) {
+        result.quot = 0;
+        result.rem = 0;
+        return result;
+    }
+    result.quot = dividend / divisor;
+    result.rem = dividend % divisor;
+    return result;
 }
 
-long Ordinal_2008()
+/* Unsigned sibling of ordint_divmod (Ordinal_2005) -- this is Ordinal_2008,
+ * misidentified in an earlier pass as "ordfloat_double_mul" (float
+ * multiply) from thin, as it turns out nonexistent, audio.c-adjacent
+ * evidence. Every real call site (babl.c's game-time/day/minute
+ * breakdown, player.c's XP display/level-threshold scaling, automap.c's
+ * archive-byte-count -> note-count conversion, visibility.c's frame-
+ * rate calc, registration.c's random-bounded build number -- which
+ * explicitly reads the remainder back via the same extraout_r1 idiom
+ * ordint_divmod's own comment documents) is unmistakably
+ * (divisor, dividend) -> dividend/divisor, exactly ordint_divmod's own
+ * shape, just unsigned -- matching AAPCS32's separate
+ * __aeabi_uidivmod/__aeabi_idivmod helper pair. Shares ordint_divmod's
+ * divmod_result return for the same reason (see that function's own
+ * comment): a real second return value can't be read back any other
+ * way than naming it off a struct. A prior no-op stub (`return 0`)
+ * silently zeroed every one of these too. */
+divmod_result orduint_divmod(divisor, dividend)
+unsigned int divisor;
+unsigned int dividend;
 {
-    return 0;
+    divmod_result result;
+    if (divisor == 0) {
+        result.quot = 0;
+        result.rem = 0;
+        return result;
+    }
+    result.quot = (int)(dividend / divisor);
+    result.rem = (int)(dividend % divisor);
+    return result;
 }
 
 static float ordfloat_bits_to_float(unsigned int bits);
@@ -1011,22 +1055,22 @@ static unsigned int ordfloat_float_to_bits(float f);
 /* Softfloat single-precision SUBTRACT: a - b (IEEE-754 bit patterns in,
    bit pattern out). Was a no-op stub, which zeroed every subtraction in
    the 3D vertex-clip / projection math (near_clip_visible_tiles &c). Sibling of the
-   already-real Ordinal_2026 (multiply) / Ordinal_2032 (int->float). */
-long Ordinal_2015(a, b)
+   already-real ordfloat_mul (multiply) / ordfloat_int_to_float2 (int->float). */
+long ordfloat_sub(a, b)
 unsigned int a;
 unsigned int b;
 {
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) - ordfloat_bits_to_float(b));
 }
 
-long Ordinal_2016()
+long ordfloat_double_binop()
 {
     return 0;
 }
 
 /* ARM/WinCE softfloat helper ABI: floats travel as raw IEEE-754 bit
  * patterns through plain integer registers/params (no hardware FPU on
- * the original target). Ordinal_2032/2026/2020/2018 are the int<->float
+ * the original target). ordfloat_int_to_float2/2026/2020/2018 are the int<->float
  * conversion and multiply primitives used throughout the game's palette
  * gamma correction and (likely) 3D math; they were previously no-op
  * stubs, which silently zeroed every value that passed through them
@@ -1048,20 +1092,20 @@ static unsigned int ordfloat_float_to_bits(float f)
 
 /* Called with NO explicit argument at every use site in uw.c -- Ghidra
  * dropped the parameter because it's just the return-register value
- * chained straight from the preceding Ordinal_2026/2032 call (the same
+ * chained straight from the preceding ordfloat_mul/2032 call (the same
  * "K&R drops a register-reused argument" pattern already fixed
- * elsewhere in this codebase, e.g. Ordinal_1068's strlen argument).
+ * elsewhere in this codebase, e.g. ce_strlen's strlen argument).
  * Declaring one K&R parameter here lets the calling convention pick it
  * up from the register the prior call's return value is still sitting
  * in. No call site distinguishes its rounding behavior from
- * Ordinal_2020's, so implemented identically until proven otherwise. */
-long Ordinal_2018(x)
+ * ordfloat_uint_to_float's, so implemented identically until proven otherwise. */
+long ordfloat_int_to_float(x)
 unsigned int x;
 {
     return (long)ordfloat_bits_to_float(x);
 }
 
-long Ordinal_2020(x)
+long ordfloat_uint_to_float(x)
 unsigned int x;
 {
     return (long)ordfloat_bits_to_float(x);
@@ -1070,7 +1114,7 @@ unsigned int x;
 /* Softfloat float -> double: single-precision bit pattern in the
    first-arg register (chained), returns the double bit pattern. Was a
    return-0 stub -- part of build_trig_tables's sin/cos table build. */
-long Ordinal_2021(x)
+long ordfloat_float_to_double(x)
 unsigned long long x;
 {
     unsigned int fbits = (unsigned int)x;
@@ -1088,7 +1132,7 @@ unsigned long long x;
    blocks; it also appears in the sprite/billboard transform. Was a
    return-0 stub -> the view matrix had zero rotation and zero
    translation, so every transformed vertex collapsed to the origin. */
-long Ordinal_2023(x)
+long ordfloat_negate(x)
 unsigned int x;
 {
     float f;
@@ -1098,7 +1142,7 @@ unsigned int x;
     return (long)x;
 }
 
-long Ordinal_2026(a, b)
+long ordfloat_mul(a, b)
 unsigned int a;
 unsigned int b;
 {
@@ -1108,7 +1152,7 @@ unsigned int b;
 /* Softfloat double MULTIPLY: a * b, each passed as a lo/hi int pair.
    build_trig_tables multiplies (double)degrees by the constant
    0x3f91df45a50de271 == PI/180. Was a return-0 stub. */
-long Ordinal_2027(alo, ahi, blo, bhi)
+long ordfloat_double_mul2(alo, ahi, blo, bhi)
 unsigned int alo;
 unsigned int ahi;
 unsigned int blo;
@@ -1129,7 +1173,7 @@ unsigned int bhi;
    viewport-cull tests in raster_triangle (all verts left of x0 -> cull uses
    2028; all verts right of x1 -> cull uses 2036). Earlier no-op stub made
    every triangle survive culling with degenerate edges. */
-long Ordinal_2028(a, b)
+long ordfloat_lt(a, b)
 unsigned int a;
 unsigned int b;
 {
@@ -1137,26 +1181,26 @@ unsigned int b;
 }
 
 /* Softfloat single-precision COMPARE: returns 1 when a <= b, else 0. */
-long Ordinal_2030(a, b)
+long ordfloat_le(a, b)
 unsigned int a;
 unsigned int b;
 {
     return ordfloat_bits_to_float(a) <= ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
-long Ordinal_2032(x)
+long ordfloat_int_to_float2(x)
 int x;
 {
     return (long)ordfloat_float_to_bits((float)x);
 }
 
-long Ordinal_2033()
+long ordfloat_double_from_int()
 {
     return 0;
 }
 
 /* Softfloat single-precision COMPARE: returns 1 when a >  b, else 0. */
-long Ordinal_2036(a, b)
+long ordfloat_gt(a, b)
 unsigned int a;
 unsigned int b;
 {
@@ -1165,10 +1209,10 @@ unsigned int b;
 
 /* Softfloat single-precision COMPARE for the 3D near-plane clip test:
    returns 1 when a >= b, else 0. Call sites read it as
-   `if (Ordinal_2038(vertex_z, near_plane) == 0) { ...clip... }`. Was a
+   `if (ordfloat_ge(vertex_z, near_plane) == 0) { ...clip... }`. Was a
    no-op stub (always "clip"), so every vertex was treated as behind the
    near plane -> no visible geometry survived. */
-long Ordinal_2038(a, b)
+long ordfloat_ge(a, b)
 unsigned int a;
 unsigned int b;
 {
@@ -1178,7 +1222,7 @@ unsigned int b;
 /* Softfloat double -> float: double bit pattern in the first-arg
    register (chained), returns the single-precision bit pattern. Was a
    return-0 stub -- the final step feeding DAT_000d9ed8 / DAT_000d9930. */
-long Ordinal_2044(x)
+long ordfloat_double_to_float(x)
 unsigned long long x;
 {
     double d;
@@ -1190,7 +1234,7 @@ unsigned long long x;
     return (long)r;
 }
 
-long Ordinal_2046()
+long ordfloat_double_result()
 {
     return 0;
 }
@@ -1198,7 +1242,7 @@ long Ordinal_2046()
 /* Softfloat single-precision DIVIDE: a / b. Used for the near-plane
    clip interpolation factor ((near - z0) / (z1 - z0)) in near_clip_visible_tiles.
    Was a no-op stub. */
-long Ordinal_2047(a, b)
+long ordfloat_div(a, b)
 unsigned int a;
 unsigned int b;
 {
@@ -1207,7 +1251,7 @@ unsigned int b;
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) / fb);
 }
 
-long Ordinal_2048()
+long ordfloat_double_binop2()
 {
     return 0;
 }
@@ -1216,49 +1260,49 @@ long Ordinal_2048()
    matrix-multiply / vertex-transform math (project_verts_through_view_matrix, translate_verts_to_camera_space,
    near_clip_visible_tiles). Was a no-op stub -> every transformed vertex came out
    0 -> nothing to draw. */
-long Ordinal_2051(a, b)
+long ordfloat_add(a, b)
 unsigned int a;
 unsigned int b;
 {
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) + ordfloat_bits_to_float(b));
 }
 
-long Ordinal_2053()
+long ordfloat_double_op3()
 {
     return 0;
 }
 
-long Ordinal_2063()
+long ordaudio_op_2063()
 {
     return 0;
 }
 
-long Ordinal_2135()
+long ordaudio_op_2135()
 {
     return 0;
 }
 
-long Ordinal_2142()
+long ordaudio_op_2142()
 {
     return 0;
 }
 
-long Ordinal_2304()
+long ordaudio_op_2304()
 {
     return 0;
 }
 
-long Ordinal_2413()
+long ordaudio_op_2413()
 {
     return 0;
 }
 
-long Ordinal_2582()
+long ordaudio_op_2582()
 {
     return 0;
 }
 
-long Ordinal_2588()
+long ordaudio_op_2588()
 {
     return 0;
 }

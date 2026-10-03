@@ -13,6 +13,377 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00101968 DAT_00101968_backing[0]
+#define DAT_00085460 DAT_00085460_backing[0]
+#define DAT_00085448 DAT_00085448_backing[0]
+ushort *DAT_00100674;
+static uint *DAT_000bbf04;
+static char s__SAVE0_bglobals_dat_00084538[] = "\\SAVE0\\bglobals.dat";
+static char s__DATA_babglobs_dat_0008454c[] = "\\DATA\\babglobs.dat";
+static undefined1 DAT_000bbf30;
+static undefined4 DAT_000bbf20;
+static char *DAT_000bbf18;
+static short DAT_000bbf7c;
+/* Was `int` -- a real 64-bit heap pointer (babl_alloc, i.e. malloc)
+   truncated through a 32-bit int, same bug class as DAT_000bbf70/
+   DAT_000bbf00 below (see their own comment) -- widened to intptr_t so
+   the existing integer arithmetic throughout build_babl_symbol_table/init_babl_variable_defaults/
+   etc. keeps compiling unchanged (intptr_t participates in ordinary
+   integer arithmetic; a real pointer type would need every site
+   recast). */
+static intptr_t DAT_000bbf14;
+static short DAT_000bbf84;
+static intptr_t DAT_000bbf0c; // was `int`, same DAT_000bbf14-derived-pointer truncation
+static undefined2 DAT_000bbf88;
+/* Was zero-initialized 8192-byte placeholders -- same "zero-init
+   global missing real .data content" class as this file's many other
+   string recoveries (e.g. s_sex_000851f8's own comment). Confirmed
+   real content via a Ghidra headless memory dump at 0x84560/6c/74:
+   "val" (registered with babl_builtin_val), "find" (babl_builtin_find), "copy"
+   (babl_builtin_copy) -- 3 more babl builtin names alongside "length". */
+static char s_val_00084560[] = "val";
+static char s_length_00084564[] = "length";
+static char s_find_0008456c[] = "find";
+static char s_copy_00084574[] = "copy";
+static char s_append_0008457c[] = "append";
+static char s_contains_00084584[] = "contains";
+static char s_plural_00084590[] = "plural";
+static char s_random_00084598[] = "random";
+static char s_compare_000845a0[] = "compare";
+static int DAT_000bbf10;
+static char *DAT_000bbf80;
+static undefined2 DAT_000bbf8c;
+undefined2 DAT_0024cfac;
+static short DAT_000bbf24;
+/* Was `int` -- build_babl_symbol_table assigns it a real 64-bit heap pointer
+   (`DAT_000bbf70 = babl_alloc((iVar11+1)*0x20)`) and every reader
+   throughout this whole babl-symbol-table cluster (babl_register_builtin/
+   babl_op_say/babl_op_respond/babl_set_variable/babl_get_variable/init_babl_variable_defaults/
+   build_babl_symbol_table itself) does plain `int`-width pointer arithmetic on
+   it. Truncating this on a 64-bit host is the crash one step past the
+   read_archive_entry dropped-argument fix (uw.c ~10984's comment):
+   with that fixed, Bragit's conversation record genuinely loads for
+   the first time this whole session, and THIS truncation is what
+   build_babl_symbol_table immediately crashes on building its symbol table
+   (`*pcVar9 = cVar4` wild write, confirmed live via lldb -- this
+   whole cluster was apparently never exercised by any prior fix or
+   test, since no conversation had ever successfully loaded before).
+   Widened to intptr_t rather than a real pointer type for the same
+   reason as DAT_000bbf14 above -- keeps the existing int-arithmetic
+   call sites compiling as-is. */
+static intptr_t DAT_000bbf70;
+static intptr_t DAT_000bbf00; // was `int` -- babl_alloc'd function-pointer-table base, same bug
+static short DAT_000bbf78;
+static short DAT_000bbf2c;
+static short DAT_000bbf74;
+static short DAT_000bbf1c;
+static short DAT_000bbf08;
+/* Was a zero-initialized 8192-byte backing array -- same "real
+   nonzero .data content missing from this port's build" bug class as
+   several earlier-session fixes (message-scroll control codes,
+   save-slot list text, etc). Confirmed via the real ARM binary
+   (/Users/ccuddigan/Projects/UW1/uw-arm/UU.exe, address 0x845a8): the
+   real bytes are the NUL-terminated string "say", immediately
+   followed in memory by s_respond_000845ac's own "respond" (which
+   this port's decompile already got right as a separate symbol at
+   +4). Every one of DAT_000845a8's 3 use sites treats it purely as a
+   read-only C string (babl_op_say's own symbol-name lookup, and its
+   own babl_register_builtin call) -- there is no numeric/indexed use
+   that would need the backing-array treatment, unlike this file's
+   other DAT_..._backing arrays. Was empty, so babl_op_say could never
+   match Bragit's real "say" symbol and register_builtin's own
+   registration for it silently no-opped too -- this is why the NPC's
+   own spoken lines never printed even after babl_menu started working
+   (only the player's own numbered response list did, via a totally
+   separate mechanism). */
+static char DAT_000845a8[] = "say";
+static char s_respond_000845ac[] = "respond";
+static undefined2 DAT_000bbfe8_backing[256];
+#define DAT_000bbfe8 DAT_000bbfe8_backing[0]
+static undefined2 DAT_000bbfd8;
+static undefined2 DAT_000bbfdc;
+static undefined1 DAT_000bc008;
+static short DAT_000bc024;
+static short DAT_000bc004;
+static undefined2 DAT_000bbfbc;
+static undefined2 DAT_000bbfe0;
+static undefined2 DAT_000bbfb8;
+static char *DAT_000bc020;
+static char *DAT_000bc000;
+static undefined1 DAT_000845b8_backing[256];
+#define DAT_000845b8 DAT_000845b8_backing[0]
+static undefined1 DAT_000845ba_backing[256];
+#define DAT_000845ba DAT_000845ba_backing[0]
+static undefined1 DAT_000845d8_backing[256];
+#define DAT_000845d8 DAT_000845d8_backing[0]
+static undefined1 DAT_000845da_backing[256];
+#define DAT_000845da DAT_000845da_backing[0]
+static undefined4 DAT_000bbf98_backing[256];
+#define DAT_000bbf98 DAT_000bbf98_backing[0]
+static undefined2 DAT_000bbfa8_backing[8192];
+#define DAT_000bbfa8 DAT_000bbfa8_backing[0]
+static undefined2 DAT_000bbfc0_backing[8192];
+#define DAT_000bbfc0 DAT_000bbfc0_backing[0]
+static undefined2 DAT_000bbfd0_backing[256];
+#define DAT_000bbfd0 DAT_000bbfd0_backing[0]
+/* New this round -- referenced only via literal-pool constants inside
+   babl_builtin_take_from_npc/take_id_from_npc (both still-unrecovered
+   stubs at the time this was added). Ghidra never named either: a
+   real-object scratch pointer read/written by both functions (checked
+   for "is a specific target object already selected" before falling
+   back to the current NPC, DAT_00100674) and what looks like a
+   related small mode/count flag read alongside it. Left undescribed
+   beyond that -- neither is exercised by any known conversation
+   script yet, so their exact semantics haven't been confirmed live. */
+static intptr_t DAT_00202948; // was `int` in the raw decompile -- holds a real object pointer, same truncation bug class as every other pointer-holding global in this cluster
+static short DAT_002020c4;
+static undefined4 DAT_000bbff0_backing[256];
+#define DAT_000bbff0 DAT_000bbff0_backing[0]
+static undefined4 DAT_000bc010_backing[256];
+#define DAT_000bc010 DAT_000bc010_backing[0]
+static undefined4 DAT_000bc028_backing[256];
+#define DAT_000bc028 DAT_000bc028_backing[0]
+static undefined DAT_001007dd_backing[256];
+#define DAT_001007dd DAT_001007dd_backing[0]
+static undefined DAT_001007de_backing[8192];
+#define DAT_001007de DAT_001007de_backing[0]
+static undefined *PTR_DAT_000845c8;
+static undefined1 DAT_000845e8_backing[65536];
+#define DAT_000845e8 DAT_000845e8_backing[0]
+static undefined2 DAT_000bbfc8_backing[8192];
+#define DAT_000bbfc8 DAT_000bbfc8_backing[0]
+static undefined2 DAT_000bbfb0_backing[8192];
+#define DAT_000bbfb0 DAT_000bbfb0_backing[0]
+static char s_npc_attitude_000845f8[] = "npc_attitude";
+static char *DAT_00100784;
+/* Was `undefined4`, truncating the real char* buffer pointer (DAT_00100784)
+   assigned to it before every "heads"/"converse"/"genhead"/"charhead"
+   resource load -- it's the bump-allocator cursor converse_res_bump_alloc_entry advances
+   (see that function's comment). */
+static char *DAT_00100670;
+/* Was a lone `undefined4` scalar, but converse_res_slot_store_callback writes real pointers
+   into it as an array (`DAT_00100728[idx] = allocated_buffer + 5`, one
+   entry per loaded head/portrait) -- same "array Ghidra saw as a single
+   scalar" bug class as DAT_000fb880. Only index 0 is read directly by
+   this file's existing call sites (single-item head loads all pass a
+   count of 1), but the array still needs real backing storage so
+   multi-item loads (the full "heads" resource) don't write out of
+   bounds past a 4-byte scalar. */
+static char *DAT_00100728_backing[256];
+#define DAT_00100728 DAT_00100728_backing[0]
+#define DAT_0010072c DAT_00100728_backing[1]
+#define DAT_00100730 DAT_00100728_backing[2]
+#define DAT_00100734 DAT_00100728_backing[3]
+#define DAT_00100738 DAT_00100728_backing[4]
+#define DAT_0010073c DAT_00100728_backing[5]
+static undefined1 DAT_00100678;
+undefined4 DAT_00085c54;
+static char *DAT_001007c0; // was `undefined4` -- assigned a real 64-bit pointer (DAT_00100784, uw.c ~19277) and used as a real string buffer by babl_builtin_respond/echo_selected_conversation_choice/etc.; truncated on 64-bit, crashing the first time any of those functions actually ran (selecting a babl_menu response)
+static char s_genhead_00084fd8[] = "genhead";
+static char s_charhead_00084fe0[] = "charhead";
+static char s_heads_00084fec[] = "heads";
+static char s_converse_00084ff4[] = "converse";
+static short DAT_001006d0;
+static char s_take_id_from_npc_0008519c[] = "take_id_from_npc";
+static char s_take_from_npc_000851b0[] = "take_from_npc";
+static char s_find_inv_000851c0[] = "find_inv";
+static char s_give_to_npc_000851cc[] = "give_to_npc";
+static char s_show_inv_000851d8[] = "show_inv";
+static char s_print_000851e4[] = "print";
+static char s_babl_ask_000851ec[] = "babl_ask";
+/* Was a zero-initialized 8192-byte placeholder -- same "zero-init
+   global missing real .data content" class as this file's many other
+   string recoveries. Confirmed real content via a Ghidra headless
+   memory dump at 0x851f8: "sex" (the babl builtin name registered a
+   few lines below at start_npc_conversation, alongside its own
+   still-a-no-op-stub implementation -- see LAB_0001840c's comment). */
+static char s_sex_000851f8[] = "sex";
+static char s_set_quest_000851fc[] = "set_quest";
+static char s_get_quest_00085208[] = "get_quest";
+static char s_babl_fmenu_00085214[] = "babl_fmenu";
+static char s_babl_menu_00085220[] = "babl_menu";
+/* Was `undefined4`, truncating the real char* buffer babl_alloc
+   returns (assigned at its only writer) -- dereferenced directly a
+   few lines after its only other read. */
+static char *DAT_001007b8;
+static char DAT_001007b4;
+static char s_give_ptr_npc_00085000[] = "give_ptr_npc";
+static char s_find_barter_total_00085010[] = "find_barter_total";
+static char s_find_barter_00085024[] = "find_barter";
+static char s_x_obj_pos_00085030[] = "x_obj_pos";
+static char s_x_obj_stuff_0008503c[] = "x_obj_stuff";
+static char s_x_traps_00085048[] = "x_traps";
+static char s_x_skills_00085050[] = "x_skills";
+static char s_remove_talker_0008505c[] = "remove_talker";
+static char s_place_object_0008506c[] = "place_object";
+static char s_add_to_npc_inv_0008507c[] = "add_to_npc_inv";
+static char s_take_from_npc_inv_0008508c[] = "take_from_npc_inv";
+static char s_set_race_attitude_000850a0[] = "set_race_attitude";
+static char s_set_attitude_000850b4[] = "set_attitude";
+static char s_gronk_door_000850c4[] = "gronk_door";
+static char s_count_inv_000850d0[] = "count_inv";
+static char s_set_inv_quality_000850dc[] = "set_inv_quality";
+static char s_check_inv_quality_000850ec[] = "check_inv_quality";
+static char s_do_inv_delete_00085100[] = "do_inv_delete";
+static char s_do_inv_create_00085110[] = "do_inv_create";
+static char s_set_likes_dislikes_00085120[] = "set_likes_dislikes";
+static char s_pause_00085134[] = "pause";
+static char s_setup_to_barter_0008513c[] = "setup_to_barter";
+static char s_end_barter_0008514c[] = "end_barter";
+static char s_do_judgement_00085158[] = "do_judgement";
+static char s_do_decline_00085168[] = "do_decline";
+static char s_do_demand_00085174[] = "do_demand";
+static char s_do_offer_00085180[] = "do_offer";
+static char s_identify_inv_0008518c[] = "identify_inv";
+static short DAT_0010078c;
+static short DAT_00100794;
+static undefined1 DAT_00100680_backing[65536];
+#define DAT_00100680 DAT_00100680_backing[0]
+static undefined2 DAT_00100790;
+static short DAT_00100788;
+static undefined1 DAT_001006d8_backing[65536];
+#define DAT_001006d8 DAT_001006d8_backing[0]
+/* Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/select_babl_menu_response
+   all index it as a real array -- `(&DAT_00100770)[idx]` for idx up to
+   9 (a fixed "10 visible scroll lines" loop bound) and up to whatever
+   message_scroll_print_wrapped's own wrapped-line-count returns, which
+   can exceed 10 for long menu text. Confirmed live via lldb: this
+   silently corrupted whatever real global the compiler happened to
+   place next to a single 2-byte scalar (DAT_00100794, the menu's own
+   item count, got stomped from a real small count to -1/0xffff right
+   after the `(&DAT_00100770)[iVar12]=0xffff` init loop), which then
+   made babl_menu's own `if (1 < DAT_00100794)` print-loop check fail
+   even though real menu items had just been resolved -- this is why
+   Bragit's dialogue never appeared despite babl_menu itself running
+   correctly. Same "array Ghidra/this port declared as a bare scalar"
+   bug class as DAT_00100728 and this array's own sibling DAT_001007a0
+   (already fixed with a real backing array). Sized to match. */
+static short DAT_00100770_backing[32768];
+#define DAT_00100770 DAT_00100770_backing[0]
+static undefined1 DAT_001007a0_backing[65536];
+#define DAT_001007a0 DAT_001007a0_backing[0]
+/* DAT_00085230/34/38/3c are 4 tiny (<=3-char) control-code constants,
+   packed 4 bytes apart in the original binary -- confirmed via a real
+   Ghidra memory dump at 0x85230 rather than guessed: "\P\0" (0x5c 0x50
+   0x00), "\0\n" (0x5c 0x30 0x0a 0x00), "\1\0" (0x5c 0x31 0x00) and
+   "\2\0" (0x5c 0x32 0x00) respectively -- "\0"/"\1"/"\2" are all the
+   SAME "reset to default draw color" code (see msg_scroll_draw_wrapped_span's
+   own '0'/'1' handling), "\P" is the pause/wait code, and DAT_00085234
+   uniquely also carries a trailing real newline byte. Same "zero-
+   initialized global missing real .data content" bug class as the
+   scroll's \6-header/color-code fixes elsewhere in this file: all 4
+   were plain zero-filled backing arrays (silently printing nothing),
+   confirmed live as the cause of a real, visible bug -- echo_selected_conversation_choice/
+   babl_builtin_print (echoing the player's selected conversation choice
+   before the NPC's reply) append DAT_00085234 as a trailing separator,
+   expecting it to insert a newline after the echoed choice; with it
+   empty, the echoed text ran straight into the NPC's next line with
+   no break at all (e.g. "...the Abyss.Exploring, eh?..."). */
+static undefined1 DAT_00085230_backing[32768] = { 0x5c,0x50,0x00 };
+#define DAT_00085230 DAT_00085230_backing[0]
+static undefined DAT_00085234_backing[8192] = { 0x5c,0x30,0x0a,0x00 };
+#define DAT_00085234 DAT_00085234_backing[0]
+static undefined1 DAT_0008523c_backing[32768] = { 0x5c,0x32,0x00 };
+#define DAT_0008523c DAT_0008523c_backing[0]
+static short DAT_001007bc;
+/* DAT_00085240/44/48 are the look-text word-separator/article
+   constants (" ", "a ", "an ") used by dispatch_object_action/dispatch_object_action_dup
+   and build_creature_look_text to glue "a"/"an" + adjective + noun [+ "named" +
+   proper name] together -- none had a writer anywhere in this decompile
+   (same "orphaned data" class as DAT_00086cc0 etc.), so every look-text
+   sentence silently ran its words together with no article at all, e.g.
+   "You see mellowoutcastnamedBragit" instead of "You see a mellow
+   outcast named Bragit" (found investigating a creature-look crash).
+   The real recovered string is lost like several others this session,
+   but the correct content is unambiguous from every call site's usage
+   -- give them real values instead of leaving them silently empty. */
+ char DAT_00085240_backing[8192] = " ";
+/* Selected when the following word starts with a vowel (see the callers'
+   own vowel checks) -- so this one is "an ", not "a ". */
+ char DAT_00085244_backing[32768] = "an ";
+ char DAT_00085248_backing[32768] = "a ";
+static char s_npc_talkedto_00085340[] = "npc_talkedto";
+static char s_npc_gtarg_00085350[] = "npc_gtarg";
+static char s_npc_goal_0008535c[] = "npc_goal";
+static char s_npc_power_00085368[] = "npc_power";
+static char s_npc_arms_00085374[] = "npc_arms";
+static char s_npc_hp_00085380[] = "npc_hp";
+static char s_npc_health_00085388[] = "npc_health";
+static char s_npc_hunger_00085394[] = "npc_hunger";
+static char s_npc_whoami_000853a0[] = "npc_whoami";
+static undefined DAT_001007e3_backing[256];
+#define DAT_001007e3 DAT_001007e3_backing[0]
+static undefined DAT_001007fd_backing[256];
+#define DAT_001007fd DAT_001007fd_backing[0]
+static char s_play_name_0008524c[] = "play_name";
+static char s_play_drawn_00085258[] = "play_drawn";
+static char s_play_poison_00085264[] = "play_poison";
+static char s_play_sex_00085270[] = "play_sex";
+static char s_new_player_exp_0008527c[] = "new_player_exp";
+static char s_game_days_0008528c[] = "game_days";
+static char s_game_mins_00085298[] = "game_mins";
+static char s_game_time_000852a4[] = "game_time";
+static char s_dungeon_level_000852b0[] = "dungeon_level";
+static char s_play_level_000852c0[] = "play_level";
+static char s_play_mana_000852cc[] = "play_mana";
+static char s_play_power_000852d8[] = "play_power";
+static char s_play_arms_000852e4[] = "play_arms";
+static char s_play_hp_000852f0[] = "play_hp";
+static char s_play_health_000852f8[] = "play_health";
+static char s_play_hunger_00085304[] = "play_hunger";
+static char s_npc_name_00085310[] = "npc_name";
+static char s_npc_yhome_0008531c[] = "npc_yhome";
+static char s_npc_xhome_00085328[] = "npc_xhome";
+static char s_npc_level_00085334[] = "npc_level";
+undefined2 DAT_00101960;
+ushort DAT_000853fc;
+static undefined1 DAT_00101968_backing[8192];
+undefined1 DAT_0023c698_backing[32768];
+static ushort DAT_00101a6c;
+/* Bitmap workspace supplied by cache_ambient_sound_handle; retain the full
+   allocation address on 64-bit hosts. */
+uintptr_t DAT_00101a70;
+/* Dispatch table of babl conversation-text render-time opcode handlers
+   (distinct from the babl_builtin_* script-language builtins): a raw
+   compiled dialogue-text stream can embed a byte < 0x10 that indexes
+   this table, each entry a (script_arg_ptr, render_state_ptr) ->
+   words-consumed handler, called from the conversation-rendering loop
+   at its three known call sites. Restored all 16 entries from the original
+   ARM table at 0x85408, including window timing and dismissal opcodes. */
+static codeval *const PTR_FUN_00085408[16] = {
+  babl_render_op_wrap_message,
+  FUN_000362e8,
+  FUN_00036300,
+  FUN_00036308,
+  FUN_00036394,
+  FUN_000363f0,
+  FUN_00036404,
+  FUN_00036418,
+  babl_render_op_show_code,
+  FUN_000365bc,
+  FUN_000365fc,
+  FUN_0003663c,
+  FUN_00036698,
+  babl_render_op_say,
+  FUN_00036344,
+  babl_render_op_play_sound
+};
+static undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
+char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
+static undefined1 DAT_00085460_backing[11] = "\\CSXXX.N00";
+/* decompress_rle_stream's own shared codec state (output/input
+   cursors, byte counts, and the current/pending op-code value),
+   threaded through its several sibling op-code handler functions
+   (read_rle_op_code and others still unnamed below it). */
+static undefined1 *DAT_00201b40; // output cursor
+static int DAT_00201b54; // input bytes consumed so far
+static int DAT_00201b4c; // output bytes written so far
+static int DAT_00201b58; // "done" flag
+static ushort DAT_00201b48; // current run/length value
+static undefined1 *DAT_00201b50; // input cursor
+static short DAT_00201b44; // current fill-byte/length accumulator
+static int DAT_00201b3c; // current op code
+
 
 
 /* Was a no-op stub -- the real function was never decompiled, so
@@ -43,7 +414,7 @@ uint param_2;
    asked for a string's length, same bug class as babl_menu before its
    own recovery. Recovered from the real ARM binary (Ghidra headless);
    it dropped 2 register-forwarding args in the same shape as every
-   other sibling in this cluster (get_message_string/Ordinal_1068 called
+   other sibling in this cluster (get_message_string/ce_strlen called
    with no args in the raw decompile, relying on the value already
    sitting in r0 from the previous call -- chained explicitly here). */
 // was FUN_00019a60
@@ -55,7 +426,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
   iVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar2 = (char *)get_message_string((int)iVar1);
-  return Ordinal_1068(pcVar2);
+  return ce_strlen(pcVar2);
 }
 
 /* Was a no-op stub here ("Ghidra couldn't resolve this address...
@@ -976,7 +1347,7 @@ short param_2;
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__SAVE0_bglobals_dat_00084538);
+  ce_strcat(acStack_11c,s__SAVE0_bglobals_dat_00084538);
   iVar4 = open_file_for_read(acStack_11c);
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, want %d shorts\n", acStack_11c, iVar4, (int)DAT_001007c4, (int)param_2);
   if (iVar4 != -1) {
@@ -1004,7 +1375,7 @@ short param_2;
         seek_file_handle(iVar4,(int)local_122 << 1,1);
       }
     } while (!bVar2);
-    Ordinal_553(iVar4);
+    CloseHandle(iVar4);
   }
   #undef local_124
   #undef local_122
@@ -1069,9 +1440,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     pcVar7[(int)(acStack_218 + -(int)pcVar4)] = cVar1;
     pcVar7 = pcVar7 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1415(acStack_118);
-  Ordinal_1415(acStack_218);
-  sVar2 = Ordinal_1065(acStack_118,acStack_218);
+  _strlwr(acStack_118);
+  _strlwr(acStack_218);
+  sVar2 = ce_strcmp(acStack_118,acStack_218);
   if (pcVar5 != pcVar6) {
     babl_free(pcVar6);
   }
@@ -1108,7 +1479,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 {
   /* uVar1/iVar2/uVar3/uVar4/iVar5/iVar7 were `undefined4`/`int` (4 bytes)
      but hold real string pointers from get_message_string/babl_expand_string_refs/
-     Ordinal_1072 (iVar5 doubly so -- reused below as `iVar5 = iVar2`
+     ce_strstr (iVar5 doubly so -- reused below as `iVar5 = iVar2`
      then in pointer arithmetic `iVar5 = iVar5 + iVar7`) -- truncated a
      real 64-bit pointer on assignment even with each call's own
      argument now fixed. Widened to intptr_t; see DAT_000bbf70's own
@@ -1129,21 +1500,21 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   iVar5 = babl_read_var_word((int)*(short *)(param_1 + -4));
   uVar3 = (intptr_t)get_message_string((int)iVar5);
   uVar4 = (intptr_t)babl_expand_string_refs((char *)uVar3);
-  Ordinal_1415(uVar3);
-  Ordinal_1415(uVar1);
+  _strlwr(uVar3);
+  _strlwr(uVar1);
   iVar5 = iVar2;
   do {
-    iVar7 = Ordinal_1072(iVar5,uVar4);
+    iVar7 = ce_strstr(iVar5,uVar4);
     if (iVar7 == 0) {
       return 0;
     }
-    iVar5 = Ordinal_1068(uVar4);
+    iVar5 = ce_strlen(uVar4);
     if ((iVar7 != 0) &&
-       (((iVar7 == iVar2 || (iVar6 = Ordinal_1417((int)*(char *)(iVar7 + -1),8), iVar6 != 0)) ||
-        (iVar6 = Ordinal_1417((int)*(char *)(iVar7 + -1),0x10), iVar6 != 0)))) {
+       (((iVar7 == iVar2 || (iVar6 = _isctype((int)*(char *)(iVar7 + -1),8), iVar6 != 0)) ||
+        (iVar6 = _isctype((int)*(char *)(iVar7 + -1),0x10), iVar6 != 0)))) {
       iVar6 = (int)*(char *)(iVar5 + iVar7);
-      if (((iVar6 == 0) || (iVar6 = Ordinal_1417(iVar6,8), iVar6 != 0)) ||
-         (iVar6 = Ordinal_1417((int)*(char *)(iVar5 + iVar7),0x10), iVar6 != 0)) {
+      if (((iVar6 == 0) || (iVar6 = _isctype(iVar6,8), iVar6 != 0)) ||
+         (iVar6 = _isctype((int)*(char *)(iVar5 + iVar7),0x10), iVar6 != 0)) {
         return 1;
       }
     }
@@ -1166,16 +1537,16 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar7;
   
   /* Was 4 dropped register-forwarding args (2x get_message_string, 2x
-     Ordinal_1068) -- same class as babl_builtin_compare's own comment
-     (uw.c ~10977). Chained explicitly: the first Ordinal_1068() forwards
+     ce_strlen) -- same class as babl_builtin_compare's own comment
+     (uw.c ~10977). Chained explicitly: the first ce_strlen() forwards
      pcVar3 (the string just resolved right above it), matching the
-     very next line's own explicit `Ordinal_1068(pcVar2)` call. */
+     very next line's own explicit `ce_strlen(pcVar2)` call. */
   iVar6 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar2 = (char *)get_message_string(iVar6);
   iVar6 = babl_read_var_word((int)*(short *)(param_1 + -4));
   pcVar3 = (char *)get_message_string(iVar6);
-  uVar4 = Ordinal_1068(pcVar3);
-  uVar5 = Ordinal_1068(pcVar2);
+  uVar4 = ce_strlen(pcVar3);
+  uVar5 = ce_strlen(pcVar2);
   iVar6 = babl_alloc((int)(((uVar4 & 0xffff) + (uVar5 & 0xffff) + 1) * 0x10000) >> 0x10);
   iVar7 = iVar6 - (int)pcVar3;
   do {
@@ -1208,7 +1579,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
      babl_builtin_compare's own comment (uw.c ~10977). */
   iVar4 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar2 = (char *)get_message_string(iVar4);
-  iVar3 = Ordinal_1068(pcVar2);
+  iVar3 = ce_strlen(pcVar2);
   iVar3 = babl_alloc(iVar3 + 1);
   iVar4 = iVar3 - (int)pcVar2;
   do {
@@ -1262,7 +1633,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
      babl_builtin_compare's own comment (uw.c ~10977). */
   iVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar3 = (char *)get_message_string(iVar2);
-  sVar1 = Ordinal_993(pcVar3);
+  sVar1 = ce_atoi(pcVar3);
   return (int)sVar1;
 }
 
@@ -1295,7 +1666,7 @@ char * param_1;
      bug-critter-talk.txt (a real conversation with an "@SS1"-style
      template substitution, confirmed live via lldb: param_1 was
      Bragit's actual greeting text). Retyped to `char *` and given a
-     real return: the substituted buffer (pcVar7) when Ordinal_1064
+     real return: the substituted buffer (pcVar7) when ce_strchr
      found a '@' to expand, else param_1 unchanged -- the same
      "same pointer back = nothing to free" contract already assumed at
      every call site. */
@@ -1303,9 +1674,9 @@ char * param_1;
 
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] expand_string_refs(\"%s\")\n", param_1 ? param_1 : "(null)");
   pcVar_result = param_1;
-  iVar6 = Ordinal_1064(param_1,0x40);
+  iVar6 = ce_strchr(param_1,0x40);
   if (iVar6 != 0) {
-    iVar6 = Ordinal_1068(param_1);
+    iVar6 = ce_strlen(param_1);
     pcVar7 = (char *)babl_alloc((iVar6 + 0x40) * 2);
     cVar1 = *param_1;
     pcVar11 = pcVar7;
@@ -1327,10 +1698,10 @@ char * param_1;
           pcVar9 = local_38[0] + 3;
         }
         local_38[0] = pcVar9;
-        Ordinal_1071(local_30,pcVar9,0x13);
-        sVar3 = Ordinal_993(local_30);
+        ce_strncpy(local_30,pcVar9,0x13);
+        sVar3 = ce_atoi(local_30);
         while ((*local_38[0] != 0 &&
-               ((iVar6 = Ordinal_1417((int)*local_38[0],4), iVar6 != 0 || (*local_38[0] == '-')))))
+               ((iVar6 = _isctype((int)*local_38[0],4), iVar6 != 0 || (*local_38[0] == '-')))))
         {
           local_38[0] = local_38[0] + 1;
         }
@@ -1362,7 +1733,7 @@ LAB_00019bc8:
              Ghidra swapped which pointer is the array base and which
              is the index, AND truncated the pointer difference to 32
              bits. The real intent (confirmed by the
-             `pcVar11 = pcVar7 + Ordinal_1068(pcVar7)` recompute right
+             `pcVar11 = pcVar7 + ce_strlen(pcVar7)` recompute right
              after this whole if/else -- a strlen-based cursor resync
              that only makes sense if this loop just appended into
              pcVar7) is to APPEND the formatted number into the output
@@ -1432,7 +1803,7 @@ LAB_00019bc8:
             }
           }
         }
-        iVar6 = Ordinal_1068(pcVar7);
+        iVar6 = ce_strlen(pcVar7);
         pcVar11 = pcVar7 + iVar6;
       }
       else {
@@ -1444,7 +1815,7 @@ LAB_00019cc0:
       cVar1 = *local_38[0];
     }
     *pcVar11 = '\0';
-    iVar6 = Ordinal_1068(pcVar7);
+    iVar6 = ce_strlen(pcVar7);
     babl_resize(pcVar7,iVar6 + 1);
     pcVar_result = pcVar7;
   }
@@ -1502,7 +1873,7 @@ undefined4 build_babl_symbol_table()
       pcVar8 = DAT_000bbf18 + 2;
       iVar7 = (int)(short)((short)*DAT_000bbf18 + DAT_000bbf18[1] * 0x100);
       DAT_000bbf18 = pcVar8;
-      Ordinal_1044(local_64,pcVar8,iVar7);
+      ce_memmove(local_64,pcVar8,iVar7);
       pcVar8 = pcVar8 + iVar7;
       local_64[iVar7] = '\0';
       iVar7 = ((int)*pcVar8 + pcVar8[1] * 0x100) * 0x10000;
@@ -1838,7 +2209,7 @@ intptr_t param_2; // was `undefined4` -- every real caller passes a code address
     cVar2 = *param_1;
     pcVar4 = DAT_000bbf70;
     do {
-      if ((cVar2 == *pcVar4) && (iVar3 = Ordinal_1065(param_1,pcVar4), iVar3 == 0)) {
+      if ((cVar2 == *pcVar4) && (iVar3 = ce_strcmp(param_1,pcVar4), iVar3 == 0)) {
         if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] register_builtin: \"%s\" -> table idx %d\n", param_1, (int)*(short *)(pcVar4 + 0x1a));
         *(intptr_t *)(DAT_000bbf00 + *(short *)(pcVar4 + 0x1a) * 8) = param_2; // was `undefined4 ... * 4` -- DAT_000bbf00's own comment (uw.c ~11468)
         return;
@@ -1878,14 +2249,14 @@ short param_3;
     fprintf(stderr, "[babl] babl_set_variable(\"npc_talkedto\", %d)\n", (int)*(short *)param_2);
   }
   sVar6 = 0;
-  iVar2 = Ordinal_1068(param_1); // was a dropped arg -- param_1 itself, matching this same function's own explicit `Ordinal_1068(param_1)` call a few lines below
+  iVar2 = ce_strlen(param_1); // was a dropped arg -- param_1 itself, matching this same function's own explicit `ce_strlen(param_1)` call a few lines below
   if (iVar2 != 0) {
     uVar5 = 0;
     do {
-      uVar1 = Ordinal_1090((int)*(char *)(uVar5 + param_1));
+      uVar1 = ce_tolower((int)*(char *)(uVar5 + param_1));
       local_34[uVar5] = uVar1;
       sVar6 = (short)((uVar5 + 1) * 0x10000 >> 0x10);
-      uVar3 = Ordinal_1068(param_1);
+      uVar3 = ce_strlen(param_1);
       uVar5 = (uint)sVar6;
     } while (uVar5 < uVar3);
   }
@@ -1900,7 +2271,7 @@ short param_3;
     if (iVar2 == 0 || *(short *)(iVar2 + 0x18) == 0) {
       return;
     }
-    iVar4 = Ordinal_1065(param_1,iVar2);
+    iVar4 = ce_strcmp(param_1,iVar2);
     if (iVar4 == 0) break;
     iVar2 = iVar2 + 0x20;
   }
@@ -1946,7 +2317,7 @@ short param_3;
     if (iVar2 == 0 || *(short *)(iVar2 + 0x18) == 0) {
       return;
     }
-    iVar1 = Ordinal_1065(param_1,iVar2);
+    iVar1 = ce_strcmp(param_1,iVar2);
     if (iVar1 == 0) break;
     iVar2 = iVar2 + 0x20;
   }
@@ -2010,7 +2381,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
         sVar2 = 100;
       }
       else {
-        sVar2 = Ordinal_2005(iVar8,(sVar2 - iVar8) * 100);
+        sVar2 = ordint_divmod(iVar8,(sVar2 - iVar8) * 100).quot;
       }
       iVar9 = (int)DAT_000bc024;
       iVar8 = (int)sVar2;
@@ -2098,13 +2469,13 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     iVar11 = 1;
   }
   else {
-    sVar5 = Ordinal_2005(*(char *)(DAT_0023be74 + 4),
+    sVar5 = ordint_divmod(*(char *)(DAT_0023be74 + 4),
                          ((uint)*(byte *)((char *)g_player_object + 8) - (uint)*(byte *)(DAT_00086df8 + 0x36))
-                         * 2);
+                         * 2).quot;
     iVar11 = sVar5 + 2;
   }
   bVar2 = *(byte *)(iVar12 + 0x5f);
-  sVar5 = Ordinal_2005(6,*(undefined1 *)(iVar12 + 0x30));
+  sVar5 = ordint_divmod(6,*(undefined1 *)(iVar12 + 0x30)).quot;
   bVar3 = *(byte *)(iVar12 + 0x3d);
   sVar6 = sum_barter_offer_value(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc8,DAT_000bbfbc);
   uVar8 = (uint)(byte)(&g_monster_max_stats_table)[(*DAT_00100674 & 0x3f) * 0x30];
@@ -2112,7 +2483,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     iVar12 = 1;
   }
   else {
-    sVar7 = Ordinal_2005(uVar8,(DAT_00100674[8] - uVar8) * 2);
+    sVar7 = ordint_divmod(uVar8,(DAT_00100674[8] - uVar8) * 2).quot;
     iVar12 = sVar7 + 2;
   }
   babl_get_variable(s_npc_attitude_000845f8,&local_2c,1);
@@ -2126,7 +2497,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   else {
     iVar10 = -1;
   }
-  sVar6 = Ordinal_2005(10,(int)sVar6);
+  sVar6 = ordint_divmod(10,(int)sVar6).quot;
   if (((int)((((byte)(&DAT_001007dd)[(bVar1 & 0x3f) * 0x30] & 0xf) + (int)sVar6 + iVar10 + (int)iVar12) *
             0x10000) >> 0x10 <
        (int)((((bVar2 & 2) >> 1) + (int)sVar5 + (uint)bVar3 + iVar11) * 0x10000) >> 0x10) ||
@@ -2191,8 +2562,8 @@ void enter_conversation_mode_screen()
   flush_sprite_list_compositor();
   set_pending_music_track(0xd);
   update_ingame_music_track();
-  DAT_00100784 = Ordinal_1041(0x10000);
-  Ordinal_1047(DAT_00100784,0,0x10000);
+  DAT_00100784 = ce_malloc(0x10000);
+  ce_memset(DAT_00100784,0,0x10000);
   decrement_cursor_hide_depth();
   set_viewport_clip_rect(0,0,0x13f,199);
   DAT_00100670 = DAT_00100784;
@@ -2471,7 +2842,7 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
   undefined4 uVar6;
   /* uVar7/iVar8/iVar9 were `undefined4`/`int` (4 bytes) but hold real
      string pointers from get_message_string/babl_expand_string_refs/
-     Ordinal_1068 -- and DAT_001006d8/DAT_00100680 (the per-item raw-
+     ce_strlen -- and DAT_001006d8/DAT_00100680 (the per-item raw-
      string / expanded-string caches, both raw byte-array backings
      manually indexed) were stored/read with a `* 4` stride sized for
      32-bit pointers, same bug class as DAT_000bbf00's own fix earlier
@@ -2518,7 +2889,7 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
     iVar9 = (int)DAT_00100794;
     *(intptr_t *)(&DAT_00100680 + iVar9 * 8) = iVar8;
     if (iVar8 == *(intptr_t *)(&DAT_001006d8 + iVar9 * 8)) {
-      iVar9 = Ordinal_1068(*(intptr_t *)(&DAT_001006d8 + iVar9 * 8));
+      iVar9 = ce_strlen(*(intptr_t *)(&DAT_001006d8 + iVar9 * 8));
       pcVar10 = (char *)babl_alloc(iVar9 + 1);
       iVar9 = (int)DAT_00100794;
       *(char **)(&DAT_00100680 + iVar9 * 8) = pcVar10;
@@ -2561,7 +2932,7 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
         pcVar11 = pcVar11 + 1;
       } while (cVar1 != '\0');
       if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu item %d text: \"%s\"\n", iVar12, local_c4);
-      Ordinal_1063(local_c4,&s_scroll_newline_0008522c);
+      ce_strcat(local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(local_c4);
       debug_noop_checkpoint();
       for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
@@ -2968,9 +3339,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   }
   if (((cVar8 == '\0') || (sVar1 == 0)) || (uVar9 != 1)) {
     if (uVar9 < 2) goto LAB_0002a154;
-    uVar2 = Ordinal_1025(uVar9,auStack_8c,10);
-    Ordinal_1063(local_74,uVar2);
-    Ordinal_1063(local_74,&DAT_00085240);
+    uVar2 = _itoa(uVar9,auStack_8c,10);
+    ce_strcat(local_74,uVar2);
+    ce_strcat(local_74,&DAT_00085240);
   }
   else if (((cVar8 == 'a') || (cVar8 == 'e')) ||
           ((cVar8 == 'i' || ((cVar8 == 'o' || (cVar8 == 'u')))))) {
@@ -2994,12 +3365,12 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   sVar1 = 0;
 LAB_0002a154:
   if (local_84[0] != '\0') {
-    Ordinal_1063(local_74,local_84);
+    ce_strcat(local_74,local_84);
   }
-  iVar6 = Ordinal_1068(local_74);
+  iVar6 = ce_strlen(local_74);
   build_object_display_name(local_74 + iVar6,iVar5,(int)sVar1,1 < uVar9);
   append_object_special_name(iVar5,uVar3,local_74);
-  iVar5 = Ordinal_1068(local_74);
+  iVar5 = ce_strlen(local_74);
   iVar5 = babl_alloc(iVar5 + 1);
   pcVar7 = local_74;
   do {
@@ -3114,7 +3485,7 @@ ushort * param_1;
     local_20[0] = 0x80;
   }
   else {
-    local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[iVar3],(uint)(byte)param_1[4] << 8);
+    local_20[0] = ordint_divmod((&g_monster_max_stats_table)[iVar3],(uint)(byte)param_1[4] << 8).quot;
   }
   babl_set_variable(s_npc_health_00085388,local_20,1);
   local_20[0] = (ushort)(byte)param_1[4];
@@ -3183,7 +3554,7 @@ ushort * param_1;
        sync_player_stats_to_hud's death-sequence branch, which then hit
        a separate missing-NULL-guard crash in handle_player_death_and_menu_transition (fixed
        there to match change_game_mode's own existing guard). */
-    local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)*(byte *)((char *)g_player_object + 8) << 8);
+    local_20[0] = ordint_divmod((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)*(byte *)((char *)g_player_object + 8) << 8).quot;
   }
   babl_set_variable(s_play_health_000852f8,local_20,1);
   local_20[0] = (ushort)*(byte *)((char *)g_player_object + 8);
@@ -3199,13 +3570,12 @@ ushort * param_1;
   babl_set_variable(s_play_level_000852c0,local_20,1);
   local_20[0] = DAT_00201b68;
   babl_set_variable(s_dungeon_level_000852b0,local_20,1);
-  local_20[0] = Ordinal_2008(0x3bc4,*(undefined4 *)(DAT_00086df8 + 0xce));
+  local_20[0] = orduint_divmod(0x3bc4,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
   babl_set_variable(s_game_time_000852a4,local_20,1);
-  uVar2 = Ordinal_2008(0x3bc4,*(undefined4 *)(DAT_00086df8 + 0xce));
-  Ordinal_2008(0x5a0,uVar2);
-  local_20[0] = extraout_r1;
+  uVar2 = orduint_divmod(0x3bc4,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
+  local_20[0] = orduint_divmod(0x5a0,uVar2).rem;
   babl_set_variable(s_game_mins_00085298,local_20,1);
-  local_20[0] = Ordinal_2008(0x1502e80,*(undefined4 *)(DAT_00086df8 + 0xce));
+  local_20[0] = orduint_divmod(0x1502e80,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
   babl_set_variable(s_game_days_0008528c,local_20,1);
   local_20[0] = 0;
   babl_set_variable(s_new_player_exp_0008527c,local_20,1);
@@ -3457,7 +3827,7 @@ void save_npc_conversation_variables()
     *stack0xffdc3240_ptr = cVar1; stack0xffdc3240_ptr = stack0xffdc3240_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_118,s__SAVE0_bglobals_dat_00084538);
+  ce_strcat(acStack_118,s__SAVE0_bglobals_dat_00084538);
   iVar5 = open_existing_file_rw_alt(acStack_118);
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
           acStack_118, iVar5, (int)DAT_001007c4, (int)sVar2, (void*)uVar3,
@@ -3481,7 +3851,7 @@ void save_npc_conversation_variables()
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
     write_file_handle(iVar5,uVar3,(int)local_11e << 1);
 LAB_00019460:
-    Ordinal_553(iVar5);
+    CloseHandle(iVar5);
   }
   #undef local_120
   #undef local_11e
@@ -3548,7 +3918,7 @@ undefined4 seed_conversation_globals_for_new_game()
 #define local_122 auStack_124[1]
   char acStack_11c [260];
   
-  Ordinal_1047(acStack_11c,0,0x104);
+  ce_memset(acStack_11c,0,0x104);
   pcVar8 = &DAT_0023cca8;
     stack0xffdc323c_ptr = stack0xffdc323c_buf;
   pcVar3 = pcVar8;
@@ -3558,22 +3928,22 @@ undefined4 seed_conversation_globals_for_new_game()
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_babglobs_dat_0008454c);
+  ce_strcat(acStack_11c,s__DATA_babglobs_dat_0008454c);
   iVar4 = open_file_for_read(acStack_11c);
   if (iVar4 == -1) {
     uVar5 = 0x3007;
   }
   else {
-    Ordinal_1047(acStack_11c,0,0x104);
+    ce_memset(acStack_11c,0,0x104);
     do {
       cVar1 = *pcVar8;
       *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
       pcVar8 = pcVar8 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_11c,s__SAVE0_bglobals_dat_00084538);
+    ce_strcat(acStack_11c,s__SAVE0_bglobals_dat_00084538);
     iVar6 = open_existing_file_rw(acStack_11c);
     if (iVar6 != -1) {
-      Ordinal_1047(DAT_00248410,0,0x1000);
+      ce_memset(DAT_00248410,0,0x1000);
       do {
         bVar2 = true;
         iVar7 = read_file_handle(iVar4,auStack_124,4);
@@ -3584,8 +3954,8 @@ undefined4 seed_conversation_globals_for_new_game()
               );
       bVar2 = false;
 LAB_00019240:
-      Ordinal_553(iVar4);
-      Ordinal_553(iVar6);
+      CloseHandle(iVar4);
+      CloseHandle(iVar6);
       if (bVar2) {
         return 0;
       }
@@ -3668,11 +4038,11 @@ int * param_1;
     *param_1 = (int)(pcVar5 + 2);
   }
   if (cVar7 == 'I') {
-    Ordinal_1071(auStack_24,*param_1,0x13);
-    sVar2 = Ordinal_993(auStack_24);
+    ce_strncpy(auStack_24,*param_1,0x13);
+    sVar2 = ce_atoi(auStack_24);
     cVar7 = *(char *)*param_1;
     while ((cVar7 != '\0' &&
-           ((iVar6 = Ordinal_1417((int)*(char *)*param_1,4), iVar6 != 0 ||
+           ((iVar6 = _isctype((int)*(char *)*param_1,4), iVar6 != 0 ||
             (*(char *)*param_1 == '-'))))) {
       iVar6 = *param_1;
       *param_1 = iVar6 + 1;
@@ -3867,7 +4237,7 @@ void babl_builtin_setup_to_barter()
     puVar7 = (ushort *)resolve_object_link(puVar6 + 2);
     if ((((*puVar6 & 0x30) == 0) && (!bVar2)) ||
        ((*(short *)(&DAT_00202c95 + (*puVar6 & 0x1ff) * 0xd) == 0 ||
-        ((bVar3 && (uVar8 = Ordinal_1053(), (uVar8 & 7) < 5)))))) {
+        ((bVar3 && (uVar8 = ce_rand(), (uVar8 & 7) < 5)))))) {
       uVar4 = *puVar6;
       puVar6 = puVar7;
       if ((uVar4 & 0x30) == 0) {
@@ -3959,7 +4329,7 @@ void init_barter_ui()
   } while (iVar7 < 4);
   DAT_000bc008 = 0;
   uVar3 = encode_object_slot_index(DAT_00100674);
-  Ordinal_1061(uVar3);
+  ce_srand(uVar3);
   DAT_000bc024 = randomize_value_pct(((&DAT_001007de)[iVar6] & 0xf) * '\x06',0xffffffe7,0x19);
   DAT_000bc004 = randomize_value_pct(*(ushort *)(&DAT_001007dd + iVar6) >> 0xc,0xffffffec,100);
   DAT_000bbfbc = randomize_value_pct((0xf - (uint)((byte)(&DAT_001007dd)[iVar6] >> 4)) * 6,0xffffffe7,0x32)
@@ -3970,7 +4340,7 @@ void init_barter_ui()
   bVar2 = *(byte *)(DAT_00086df8 + 0x30);
   DAT_000bc024 = DAT_000bc024 + (ushort)bVar2 * -2;
   DAT_000bc004 = DAT_000bc004 + ((short)(ushort)bVar2 >> 1);
-  sVar4 = Ordinal_2005(6,(ushort)bVar2);
+  sVar4 = ordint_divmod(6,(ushort)bVar2).quot;
   DAT_000bbfe0 = (undefined2)(iVar7 - sVar4);
   iVar7 = (iVar7 - sVar4) * 0x10000 >> 0x10;
   uVar3 = DAT_000bbfe0;
@@ -4407,10 +4777,10 @@ short param_2;
       select_active_font(s_font4x5p_sys_0008431c);
       *g_draw_color_index = 0x60;
       if (psVar2 == (short *)0x0) {
-        uVar7 = Ordinal_1025(uVar8,auStack_2c,10);
+        uVar7 = _itoa(uVar8,auStack_2c,10);
       }
       else {
-        uVar7 = Ordinal_1025(uVar8,auStack_2c,10);
+        uVar7 = _itoa(uVar8,auStack_2c,10);
         puVar10 = &DAT_000845b8;
       }
       draw_text_string(uVar7,*(short *)(puVar10 + iVar1) + 3,*(short *)((int)(puVar10 + iVar1) + 2) + 1)
@@ -4751,7 +5121,7 @@ void babl_builtin_do_judgement()
   char local_60 [80];
   
   uVar9 = (uint)*(byte *)(DAT_00086df8 + 0x33);
-  sVar2 = Ordinal_2005(0x1e,uVar9 * 0x2d);
+  sVar2 = ordint_divmod(0x1e,uVar9 * 0x2d).quot;
   sVar3 = sum_barter_offer_value(0,&DAT_000bbfd0,&DAT_000bbf98,&DAT_000bbfa8,0x32 - sVar2);
   sVar2 = sum_barter_offer_value(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc0,0x32 - sVar2);
   iVar6 = (int)sVar2;
@@ -4759,7 +5129,7 @@ void babl_builtin_do_judgement()
     sVar2 = 100;
   }
   else {
-    sVar2 = Ordinal_2005(iVar6,(sVar3 - iVar6) * 100);
+    sVar2 = ordint_divmod(iVar6,(sVar3 - iVar6) * 100).quot;
   }
   if (uVar9 < 6) {
     iVar6 = 0;
@@ -4824,9 +5194,9 @@ void babl_builtin_do_judgement()
     pcVar7 = pcVar7 + 1;
   } while (cVar1 != '\0');
   uVar5 = get_message_string(0xe02);
-  Ordinal_1063(local_60,uVar5);
+  ce_strcat(local_60,uVar5);
   uVar5 = get_message_string(iVar8 + 8U | 0xe00);
-  Ordinal_1063(local_60,uVar5);
+  ce_strcat(local_60,uVar5);
   echo_selected_conversation_choice(local_60);
   return;
 }
@@ -4928,7 +5298,7 @@ undefined4 param_3;
       }
     }
   }
-  Ordinal_1061((int)(short)param_2);
+  ce_srand((int)(short)param_2);
   uVar5 = randomize_value_pct(iVar8,(short)param_3 * -0x10000 >> 0x10,param_3);
   compute_dimension_volume();
   return uVar5;
@@ -4948,7 +5318,7 @@ short param_3;
   int iVar1;
   
   iVar1 = rand_below((int)param_3 - (int)param_2);
-  iVar1 = Ordinal_2005(100,(iVar1 + param_2) * (int)param_1);
+  iVar1 = ordint_divmod(100,(iVar1 + param_2) * (int)param_1).quot;
   return (iVar1 + param_1) * 0x10000 >> 0x10;
 }
 
@@ -5188,7 +5558,7 @@ undefined4 debug_noop_checkpoint()
 
 
 // was FUN_0001a1a4 -- the babl VM's own "load bytecode into the run buffer"
-// step: an `Ordinal_1044` (memcpy-shaped) copy of the parsed script's
+// step: an `ce_memmove` (memcpy-shaped) copy of the parsed script's
 // bytecode (DAT_000bbf18, word count DAT_000bbf10) into the VM's live
 // opcode buffer (DAT_000bbf80), run once by start_npc_conversation right
 // after build_babl_symbol_table() succeeds, before any opcode dispatch.
@@ -5203,7 +5573,7 @@ void babl_vm_load_script(param_1)
 int param_1;
 
 {
-  Ordinal_1044(DAT_000bbf80,DAT_000bbf18,(uint)(ushort)DAT_000bbf10 << 1);
+  ce_memmove(DAT_000bbf80,DAT_000bbf18,(uint)(ushort)DAT_000bbf10 << 1);
   return;
 }
 
@@ -5276,7 +5646,7 @@ void babl_op_sub()
 
 // was FUN_0001a6e4 -- babl VM opcode 4 (DIVIDE): pops the top two stack
 // slots (a=dividend=second-from-top, b=divisor=top), pushes a/b via
-// Ordinal_2005 (ARM soft-division, quotient in the primary return); pushes
+// ordint_divmod (ARM soft-division, quotient in the primary return); pushes
 // 0xffff as a divide-by-zero sentinel instead of dividing when b==0.
 void babl_op_div()
 
@@ -5295,7 +5665,7 @@ void babl_op_div()
     uVar2 = 0xffff;
   }
   else {
-    uVar2 = Ordinal_2005(iVar4,(int)psVar3[-1]);
+    uVar2 = ordint_divmod(iVar4,(int)psVar3[-1]).quot;
   }
   iVar4 = (iVar5 + -1) * 0x10000;
   DAT_000bbf78 = (short)((uint)iVar4 >> 0x10);
@@ -5306,19 +5676,18 @@ void babl_op_div()
 
 
 // was FUN_0001a74c -- babl VM opcode 5 (MODULO): identical setup to
-// babl_op_div's own DIVIDE, but reads `extraout_r1` (the ARM soft-division
-// routine's remainder register) instead of Ordinal_2005's own quotient
-// return -- same divide-by-zero 0xffff sentinel as DIVIDE.
+// babl_op_div's own DIVIDE, but wants the remainder (the ARM soft-division
+// routine's r1) instead of ordint_divmod's own quotient return -- same
+// divide-by-zero 0xffff sentinel as DIVIDE.
 void babl_op_mod()
 
 {
   int iVar1;
-  undefined2 extraout_r1;
   undefined2 uVar2;
   short *psVar3;
   int iVar4;
   int iVar5;
-  
+
   iVar1 = DAT_000bbf0c;
   iVar5 = (int)DAT_000bbf78;
   psVar3 = (short *)(DAT_000bbf0c + iVar5 * 2);
@@ -5327,8 +5696,13 @@ void babl_op_mod()
     uVar2 = 0xffff;
   }
   else {
-    Ordinal_2005(iVar4,(int)psVar3[-1]);
-    uVar2 = extraout_r1;
+    /* Dropped-remainder bug (same class as this session's other
+       ordint_divmod/extraout_r1 fixes), but live here: this is the babl
+       VM's own MODULO bytecode opcode, so every in-game script/
+       conversation use of "%" silently got uninitialized garbage
+       instead of a real result. Gets it by name off ordint_divmod's
+       own divmod_result now. */
+    uVar2 = ordint_divmod(iVar4,(int)psVar3[-1]).rem;
   }
   iVar4 = (iVar5 + -1) * 0x10000;
   DAT_000bbf78 = (short)((uint)iVar4 >> 0x10);
@@ -5601,7 +5975,7 @@ void babl_op_call_builtin()
 
 // was FUN_0001aba0 -- babl VM opcode 0x25 (STRING_EQUAL): pops two
 // message-id operands, resolves each through get_message_string +
-// babl_expand_string_refs, compares the expanded text with Ordinal_1065
+// babl_expand_string_refs, compares the expanded text with ce_strcmp
 // (strcmp-shaped), and pushes 1 if equal else 0.
 void babl_op_string_eq()
 
@@ -5625,7 +5999,7 @@ void babl_op_string_eq()
   iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
   iVar4 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2 + -2));
   iVar5 = (intptr_t)babl_expand_string_refs((char *)iVar4);
-  sVar1 = Ordinal_1065((char*)iVar5,(char*)iVar3);
+  sVar1 = ce_strcmp((char*)iVar5,(char*)iVar3);
   if (iVar5 != iVar4) {
     babl_free(iVar5);
   }
@@ -5661,7 +6035,7 @@ void babl_op_say()
      babl_builtin_compare's own comment (uw.c ~10977); this is the crash in
      bug-critter-talk.txt one step past the DAT_000bbf70-width fix
      below (babl_expand_string_refs read whatever garbage register instead of the
-     just-resolved string, then dereferenced it inside Ordinal_1064). */
+     just-resolved string, then dereferenced it inside ce_strchr). */
   iVar1 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
@@ -5679,7 +6053,7 @@ LAB_0001ace8:
       }
       return;
     }
-    iVar3 = Ordinal_1065(DAT_000845a8,iVar4);
+    iVar3 = ce_strcmp(DAT_000845a8,iVar4);
     if (iVar3 == 0) {
       if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
       (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))(iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
@@ -5723,7 +6097,7 @@ LAB_0001ad98:
       }
       return;
     }
-    iVar3 = Ordinal_1065(s_respond_000845ac,iVar4);
+    iVar3 = ce_strcmp(s_respond_000845ac,iVar4);
     if (iVar3 == 0) {
       if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
       (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))(iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
@@ -5744,7 +6118,7 @@ void exit_talk_mode()
 
 {
   if (DAT_00100784 != 0) {
-    Ordinal_1018();
+    LocalFree();
     DAT_00100784 = 0;
   }
   if (DAT_001006d0 != 0) {
@@ -5800,7 +6174,7 @@ void run_babl_menu_wait_loop()
             *pcVar5 = cVar1;
             pcVar5 = pcVar5 + 1;
           } while (cVar1 != '\0');
-          Ordinal_1063(local_bc,&s_scroll_newline_0008522c);
+          ce_strcat(local_bc,&s_scroll_newline_0008522c);
           message_scroll_print_wrapped(local_bc);
           iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
         } while (iVar4 < DAT_00100794);
@@ -5864,7 +6238,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
       iVar9 = (int)DAT_00100794;
       *(intptr_t *)(&DAT_00100680 + iVar9 * 8) = iVar8;
       if (iVar8 == *(intptr_t *)(&DAT_001006d8 + iVar9 * 8)) {
-        iVar9 = Ordinal_1068(*(intptr_t *)(&DAT_001006d8 + iVar9 * 8));
+        iVar9 = ce_strlen(*(intptr_t *)(&DAT_001006d8 + iVar9 * 8));
         pcVar10 = (char *)babl_alloc(iVar9 + 1);
         iVar9 = (int)DAT_00100794;
         *(char **)(&DAT_00100680 + iVar9 * 8) = pcVar10;
@@ -5907,7 +6281,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
         *pcVar11 = cVar1;
         pcVar11 = pcVar11 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(local_c4,&s_scroll_newline_0008522c);
+      ce_strcat(local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(local_c4);
       debug_noop_checkpoint();
       for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
@@ -5950,8 +6324,8 @@ short param_1;
 
   if (DAT_00100790 != 0) {
     if (param_1 == 0) {
-      sVar2 = Ordinal_2005((int)*(short *)(DAT_000879b0 + 6),
-                           0xa9 - ((200 - *(short *)(DAT_00085a6c + 2)) * 0x10000 >> 0x10));
+      sVar2 = ordint_divmod((int)*(short *)(DAT_000879b0 + 6),
+                           0xa9 - ((200 - *(short *)(DAT_00085a6c + 2)) * 0x10000 >> 0x10)).quot;
       param_1 = (&DAT_00100770)[sVar2];
     }
     iVar1 = (int)param_1;
@@ -6005,8 +6379,8 @@ char *param_1; // was `undefined4` -- babl_op_say passes a real (possibly babl_a
     *pcVar3 = cVar1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(DAT_001007c0,param_1);
-  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
+  ce_strcat(DAT_001007c0,param_1);
+  ce_strcat(DAT_001007c0,&s_scroll_newline_0008522c);
   select_msg_scroll_mode_conversation();
   /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, confirmed via an
      exhaustive real-binary reference search that this PocketPC port's
@@ -6064,7 +6438,7 @@ char * param_1;
     *pcVar2 = cVar1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
+  ce_strcat(DAT_001007c0,&s_scroll_newline_0008522c);
   select_msg_scroll_mode_2();
   message_scroll_print_wrapped(DAT_001007c0);
   debug_noop_checkpoint();
@@ -6088,8 +6462,8 @@ char *param_1; // was `undefined4` -- select_babl_menu_response passes a real (p
   char *pcVar3;
 
   *DAT_001007c0 = '\0';
-  Ordinal_1063(DAT_001007c0,param_1);
-  Ordinal_1063(DAT_001007c0,&DAT_00085234);
+  ce_strcat(DAT_001007c0,param_1);
+  ce_strcat(DAT_001007c0,&DAT_00085234);
   select_msg_scroll_mode_conversation();
   /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
      babl_builtin_say's own comment on this same pattern. The PC original
@@ -6170,8 +6544,8 @@ int param_1;
     *pcVar5 = cVar1;
     pcVar5 = pcVar5 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(DAT_001007c0,iVar3);
-  Ordinal_1063(DAT_001007c0,&DAT_00085234);
+  ce_strcat(DAT_001007c0,iVar3);
+  ce_strcat(DAT_001007c0,&DAT_00085234);
   select_msg_scroll_mode_conversation();
   message_scroll_print_wrapped(DAT_001007c0);
   select_msg_scroll_mode_normal();
@@ -6423,36 +6797,36 @@ intptr_t param_2;
 // by param_1's own 16-bit id field, splits it on newlines into up to
 // 6 paragraphs, then word-wraps each paragraph at the 0x140-pixel
 // (320px) viewport width via measure_text_width, storing up to 6
-// resulting line-start pointers into the render state's line table
-// (param_2+0x1c..). Returns 2 (opcode word-count consumed by its
-// caller's script-stream cursor).
+// resulting line-start pointers into the render state's native line table.
+// Returns 2 (opcode word-count consumed by the script-stream cursor).
 undefined4 babl_render_op_wrap_message(param_1,param_2)
 undefined1 * param_1;
-int param_2;
+intptr_t param_2;
 
 {
   undefined1 uVar1;
   short sVar2;
-  int iVar3;
+  intptr_t iVar3;
   undefined1 *puVar4;
-  int iVar5;
-  int *piVar6;
-  int *piVar7;
-  undefined1 *puVar8;
+  intptr_t iVar5;
+  intptr_t *piVar6;
+  intptr_t *piVar7;
+  char **puVar8;
   int iVar9;
   undefined1 *puVar10;
   int iVar11;
   int iVar12;
   int local_4c;
-  int local_44 [6];
-  
+  /* Six paragraph starts plus the next-newline scratch and sentinel. */
+  intptr_t local_44 [8] = {0};
+
   if ((*(byte *)(param_2 + 0x45) & 1) != 0) {
     *(undefined1 *)(param_2 + 0x34) = *param_1;
-    local_44[0] = get_message_string((int)*(short *)(param_1 + 2));
+    local_44[0] = (intptr_t)get_message_string((int)*(short *)(param_1 + 2));
     iVar12 = 0;
     iVar11 = 0;
     iVar9 = 0;
-    local_44[1] = Ordinal_1064(local_44[0],10);
+    local_44[1] = (intptr_t)ce_strchr(local_44[0],10);
     if (local_44[1] != 0) {
       piVar6 = local_44;
       do {
@@ -6461,8 +6835,8 @@ int param_2;
         iVar9 = iVar9 + 1;
         puVar4 = (undefined1 *)*piVar7 + 1;
         *(undefined1 *)*piVar7 = 0;
-        *piVar7 = (int)puVar4;
-        iVar3 = Ordinal_1064(puVar4,10);
+        *piVar7 = (intptr_t)puVar4;
+        iVar3 = (intptr_t)ce_strchr(puVar4,10);
         piVar6[2] = iVar3;
         piVar6 = piVar7;
       } while (iVar3 != 0);
@@ -6474,9 +6848,9 @@ int param_2;
       if ((puVar4 == (undefined1 *)0x0) || (5 < iVar11)) break;
       iVar9 = 0;
       if (puVar4 != (undefined1 *)0x0) {
-        puVar8 = (undefined1 *)(param_2 + (iVar11 + 7) * 4);
+        puVar8 = ((struct babl_render_state *)param_2)->lines + iVar11;
         do {
-          iVar3 = Ordinal_1064(puVar4,0x20);
+          iVar3 = (intptr_t)ce_strchr(puVar4,0x20);
           if (iVar3 == 0) {
             sVar2 = measure_text_width(puVar4);
             iVar3 = (int)sVar2;
@@ -6485,11 +6859,8 @@ int param_2;
               iVar5 = *piVar6;
               iVar11 = iVar11 + 1;
               iVar12 = iVar12 + 1;
-              *puVar8 = (char)iVar5;
-              puVar8[1] = (char)((uint)iVar5 >> 8);
-              puVar8[2] = (char)((uint)iVar5 >> 0x10);
-              puVar8[3] = (char)((uint)iVar5 >> 0x18);
-              puVar8 = puVar8 + 4;
+              *puVar8 = (char *)iVar5;
+              puVar8 = puVar8 + 1;
             }
           }
           else {
@@ -6505,14 +6876,11 @@ int param_2;
             puVar4[-1] = 0;
             iVar11 = iVar11 + 1;
             iVar3 = *piVar6;
-            *piVar6 = (int)puVar4;
+            *piVar6 = (intptr_t)puVar4;
             iVar12 = iVar12 + 1;
-            *puVar8 = (char)iVar3;
+            *puVar8 = (char *)iVar3;
             iVar9 = 0;
-            puVar8[1] = (char)((uint)iVar3 >> 8);
-            puVar8[2] = (char)((uint)iVar3 >> 0x10);
-            puVar8[3] = (char)((uint)iVar3 >> 0x18);
-            puVar8 = puVar8 + 4;
+            puVar8 = puVar8 + 1;
             puVar10 = puVar4;
           }
           puVar4 = puVar10;
@@ -6536,37 +6904,36 @@ int param_2;
 // (see PTR_FUN_00085408's own comment): unpacks 5 octal digits (0-7,
 // three 3-bit fields from param_1's first word, two more from its
 // second) into a "DDD-DD"-shaped scratch message buffer at fixed
-// positions, copies a template string (DAT_0023c698) into
-// DAT_00101968, then formats it with that buffer via Ordinal_1063.
-// Confirmed name uncertain -- no direct evidence of what game feature
-// displays a 5-digit octal code this way (a lock combination or
-// puzzle answer are plausible). Returns 2.
+// positions, selects the next cutscene LPF section. The two words
+// encode its CSxxx.nxx name in octal; rebuilds DAT_00101968 with the
+// cutscene directory for the viewer's next open. Returns 2 consumed
+// words. Introduction uses this to chain its scenes.
 undefined4 babl_render_op_show_code(param_1,param_2)
 ushort * param_1;
 intptr_t param_2;
 
 {
-  char cVar1;
-  char *pcVar2;
+  /* Match the viewer's initial-load fallback when the registry is empty. */
+  const char *pcVar2 = DAT_0023c698 ? (char *)&DAT_0023c698 : "\\CUTS";
 
   *(byte *)(param_2 + 3) = ((byte)(*param_1 >> 6) & 7) + 0x30;
   *(byte *)(param_2 + 4) = ((byte)(*param_1 >> 3) & 7) + 0x30;
   *(byte *)(param_2 + 5) = ((byte)*param_1 & 7) + 0x30;
   *(byte *)(param_2 + 8) = ((byte)(param_1[1] >> 3) & 7) + 0x30;
   *(byte *)(param_2 + 9) = ((byte)param_1[1] & 7) + 0x30;
-  Ordinal_1047(&DAT_00101968,0,0x104);
+  ce_memset(&DAT_00101968,0,0x104);
   /* strcpy(&DAT_00101968, &DAT_0023c698). Ghidra baked the delta between
      the two globals as -0x13ad30, which only resolves in the original
      0x00xx_xxxx address space -- in the recompile pcVar2[-0x13ad30] is a
      wild pointer (ASan: global-buffer-overflow). Bounded indexed copy. */
   {
     int _i = 0;
-    while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
-      (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+    while (_i < 0x103 && pcVar2[_i] != '\0') {
+      (&DAT_00101968)[_i] = pcVar2[_i]; _i++;
     }
     (&DAT_00101968)[_i] = '\0';
   }
-  Ordinal_1063(&DAT_00101968,param_2);
+  ce_strcat(&DAT_00101968,param_2);
   return 2;
 }
 
@@ -6712,7 +7079,7 @@ short param_5;
   byte local_d8;
   /* ARM 0x36774 builds one state at sp+0x20. The callbacks access
      fields through that pointer; keep the decompiled locals as aliases. */
-  union { short alignment; char bytes[70]; } render_state = {0};
+  struct babl_render_state render_state = {0};
 #define acStack_d0 render_state.bytes
 #define local_c1 (*((short *)(acStack_d0 + 15)))
 #define local_bf (*((short *)(acStack_d0 + 17)))
@@ -6720,7 +7087,7 @@ short param_5;
 #define local_bb (*((short *)(acStack_d0 + 21)))
 #define local_b9 (*((char *)(acStack_d0 + 23)))
   intptr_t local_b8;
-#define local_b4 (*((undefined4 *)(acStack_d0 + 28)))
+#define local_b4 (render_state.lines[0])
 #define local_9c (*((undefined1 *)(acStack_d0 + 52)))
 #define local_9b (*((short *)(acStack_d0 + 53)))
 #define local_99 (*((ushort *)(acStack_d0 + 55)))
@@ -6786,13 +7153,13 @@ LAB_00036858:
   local_bd = param_4;
   bVar4 = get_audio_subsystem_flag();
   local_8b = local_8b & 0xdf | (bVar4 & 1) << 5;
-  local_88 = Ordinal_1041(0xb00);
-  local_b8 = Ordinal_1041(0x300);
-  iVar9 = Ordinal_1041(0x100);
+  local_88 = ce_malloc(0xb00);
+  local_b8 = ce_malloc(0x300);
+  iVar9 = ce_malloc(0x100);
   local_70 = iVar9;
-  iVar10 = Ordinal_1346(0x100,2);
+  iVar10 = ce_calloc(0x100,2);
   local_48 = iVar10;
-  puVar11 = (ushort *)Ordinal_1346(0x400,2);
+  puVar11 = (ushort *)ce_calloc(0x400,2);
   /* Original filename template was copied above (ARM 0x36770).
      The resource-page digits are at offsets 8/9, after the .n suffix. */
   acStack_d0[3] = ((byte)(param_1 >> 6) & 7) + 0x30;
@@ -6801,7 +7168,7 @@ LAB_00036858:
   acStack_d0[8] = '0';
   acStack_d0[9] = '0';
   local_44 = puVar11;
-  Ordinal_1047(&DAT_00101968,0,0x104);
+  ce_memset(&DAT_00101968,0,0x104);
   local_3c = -0x13ad30;
   /* strcpy(&DAT_00101968, &DAT_0023c698) -- see the note at the sibling
      copy above; the -0x13ad30 baked delta is a wild pointer here. */
@@ -6812,7 +7179,7 @@ LAB_00036858:
     }
     (&DAT_00101968)[_i] = '\0';
   }
-  Ordinal_1063(&DAT_00101968,acStack_d0);
+  ce_strcat(&DAT_00101968,acStack_d0);
   iVar12 = (int)open_file_for_read(&DAT_00101968);
   local_5c = iVar12;
   if (iVar12 == -1) {
@@ -6825,7 +7192,7 @@ LAB_00036858:
       local_8f = -1;
       local_8d = -2;
       local_84 = puVar11;
-      Ordinal_1044(local_b8,&DAT_00088d98,0x300);
+      ce_memmove(local_b8,&DAT_00088d98,0x300);
       if (local_b9 == '\0') {
         in_stack_ffffff10 = CONCAT22((short)((uint)in_stack_ffffff10 >> 0x10),0x140);
         fade_out(0,0,g_uw_framebuffer,200,in_stack_ffffff10,0,0,
@@ -6837,7 +7204,7 @@ LAB_00036858:
         acStack_d0[9] = '0';
         acStack_d0[8] = acStack_d0[8] + '\x01';
       }
-      Ordinal_1047(&DAT_00101968,0,0x104);
+      ce_memset(&DAT_00101968,0,0x104);
       /* strcpy(&DAT_00101968, &DAT_0023c698) -- baked -0x13ad30 delta is
          a wild pointer in the recompile; bounded indexed copy. */
       {
@@ -6847,7 +7214,7 @@ LAB_00036858:
         }
         (&DAT_00101968)[_i] = '\0';
       }
-      Ordinal_1063(&DAT_00101968,acStack_d0);
+      ce_strcat(&DAT_00101968,acStack_d0);
       uVar2 = *puVar11;
       puVar21 = local_84;
       while (uVar2 == 0) {
@@ -6864,18 +7231,18 @@ LAB_00036858:
       uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10);
       while ((local_74 = iVar10, iVar10 != -1 &&
              (uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10), (local_8b & 8) != 0))) {
-        uVar15 = Ordinal_172(iVar10,0);
+        uVar15 = GetFileSize(iVar10,0);
         if (local_80 != 0) {
-          /* Ordinal_1018(); */
-          Ordinal_1018(local_80);
+          /* LocalFree(); */
+          LocalFree(local_80);
         }
-        iVar9 = Ordinal_1041(uVar15);
+        iVar9 = ce_malloc(uVar15);
         local_80 = iVar9;
-        Ordinal_1047(iVar9,0,uVar15);
+        ce_memset(iVar9,0,uVar15);
         read_file_handle(iVar10,iVar9,uVar15);
         uVar14 = local_88;
         DAT_000853fc = 0xffff;
-        Ordinal_1044(local_88,iVar9,0xb00);
+        ce_memmove(local_88,iVar9,0xb00);
         iVar10 = 0x10;
         uVar16 = uVar14;
         do {
@@ -6897,7 +7264,7 @@ LAB_00036858:
           acStack_d0[8] = acStack_d0[8] + '\x01';
           acStack_d0[9] = '0';
         }
-        Ordinal_1047(&DAT_00101968,0,0x104);
+        ce_memset(&DAT_00101968,0,0x104);
         /* strcpy(&DAT_00101968, &DAT_0023c698) -- local_3c is the baked
            -0x13ad30 delta, a wild pointer here; bounded indexed copy. */
         {
@@ -6907,7 +7274,7 @@ LAB_00036858:
           }
           (&DAT_00101968)[_i] = '\0';
         }
-        Ordinal_1063(&DAT_00101968,acStack_d0);
+        ce_strcat(&DAT_00101968,acStack_d0);
         local_9b = 0;
 LAB_00036ca4:
         piVar17 = local_78;
@@ -6923,16 +7290,16 @@ LAB_00036ca4:
           if (*(short *)(uVar14 + 6) != 0) {
             do {
               if (*piVar23 != 0) {
-                /* Ordinal_1018(); */
-                Ordinal_1018(*piVar23);
+                /* LocalFree(); */
+                LocalFree(*piVar23);
               }
               iVar10 = iVar10 + 1;
               piVar23 = piVar23 + 1;
             } while (iVar10 < (int)(uint)*(ushort *)(uVar14 + 6));
           }
-          Ordinal_1018(piVar17);
+          LocalFree(piVar17);
         }
-        piVar17 = (intptr_t *)Ordinal_1041((uint)*(ushort *)(uVar14 + 6) * sizeof(*piVar17));
+        piVar17 = (intptr_t *)ce_malloc((uint)*(ushort *)(uVar14 + 6) * sizeof(*piVar17));
         iVar10 = 0;
         local_78 = piVar17;
         if (*(short *)(uVar14 + 6) != 0) {
@@ -6941,7 +7308,7 @@ LAB_00036ca4:
               piVar17[5] = 0;
             }
             else {
-              iVar12 = Ordinal_1346(0x10000,1);
+              iVar12 = ce_calloc(0x10000,1);
               piVar17[iVar10] = iVar12;
               load_voice_sample_page(iVar9,(uint)*(byte *)(iVar10 + local_70),
                            (uint)*(byte *)(iVar10 + local_70) * 6 + uVar14 + 0x500,iVar12);
@@ -6966,7 +7333,7 @@ LAB_00036ca4:
           piVar17 = local_78 + local_50;
           iVar9 = *piVar17 + 8;
           iVar12 = (uint)*(byte *)(local_50 + local_70) * 6 + uVar14 + 0x500;
-          Ordinal_1044(local_48,iVar9,(uint)*(ushort *)(iVar12 + 2) << 1);
+          ce_memmove(local_48,iVar9,(uint)*(ushort *)(iVar12 + 2) << 1);
           bVar3 = true;
           local_68 = iVar9 + (uint)*(ushort *)(iVar12 + 2) * 2;
           if ((iVar10 != *(ushort *)(uVar14 + 6) - 1) ||
@@ -6992,7 +7359,7 @@ LAB_00036ca4:
               if ((uVar18 != 0) && (uVar18 != uVar14)) {
                 pcVar8 = (char *)(uVar14 + local_68);
                 if (*pcVar8 == '\0') {
-                  Ordinal_1044(DAT_00101a70,pcVar8 + 2,64000);
+                  ce_memmove(DAT_00101a70,pcVar8 + 2,64000);
                 }
                 else if (*pcVar8 == '\x01') {
                   decompress_rle_stream(DAT_00101a70,pcVar8 + 2);
@@ -7042,7 +7409,7 @@ LAB_00036ca4:
                   if ((sVar20 == 0x1b) && ((local_8b & 0x10) != 0)) goto LAB_00037a8c;
                   iVar9 = read_realtime_clock_units();
                   local_4c = iVar9;
-                  uVar18 = Ordinal_2005(*(undefined2 *)(local_88 + 0x44),300);
+                  uVar18 = ordint_divmod(*(undefined2 *)(local_88 + 0x44),300).quot;
                   uVar14 = iVar9 - iVar10;
                 } while (uVar14 < uVar18);
                 if ((DAT_00101a6c < local_99) && ((local_8b & 2) != 0)) {
@@ -7057,7 +7424,7 @@ LAB_00036ca4:
                   }
                 }
               }
-              Ordinal_496(10);
+              Sleep(10);
               puVar21 = local_44;
               iVar9 = local_5c;
               while (((local_5c = iVar9, (local_8b & 4) != 0 && (*local_84 == DAT_00101a6c)) &&
@@ -7079,7 +7446,7 @@ LAB_00036ca4:
                   iVar9 = local_5c;
                 }
               }
-              Ordinal_496(10);
+              Sleep(10);
               if ((local_8b & 1) != 0) {
                 if (0 < local_9b) {
                   *g_draw_color_index = local_9c;
@@ -7090,17 +7457,12 @@ LAB_00036ca4:
                   if (0 < local_9b) {
                     iVar9 = 0;
                     do {
-                      iVar13 = iVar9 * 4;
                       sVar6 = measure_text_width((&local_b4)[iVar9]);
                       iVar19 = ((int)local_bd - (int)sVar6) + (int)local_c1;
                       if (iVar19 < 0) {
                         iVar19 = iVar19 + 1;
                       }
-                      draw_text_string(CONCAT13(*(undefined1 *)((int)&local_b4 + iVar13 + 3),
-                                            CONCAT12(*(undefined1 *)((int)&local_b4 + iVar13 + 2),
-                                                     CONCAT11(*(undefined1 *)
-                                                               ((int)&local_b4 + iVar13 + 1),
-                                                              *(undefined1 *)(&local_b4 + iVar9)))),
+                      draw_text_string((&local_b4)[iVar9],
                                    (int)(short)(iVar19 >> 1),iVar10);
                       iVar10 = *(short *)(DAT_000879b0 + 6) + iVar10;
                       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
@@ -7109,6 +7471,9 @@ LAB_00036ca4:
                 }
                 iVar10 = local_4c;
                 if (-1 < local_8f) {
+                  /* Opcode 10 requests a fade; the PocketPC player only
+                     cleared this marker, leaving the transition invisible. */
+                  fade_in(0,0,g_uw_framebuffer);
                   local_8f = -2;
                   local_8d = -1;
                 }
@@ -7200,6 +7565,7 @@ LAB_00036ca4:
                 } while (DAT_00101a6c == local_97);
               }
               if (-1 < local_8d) {
+                fade_out(0,0,g_uw_framebuffer);
                 local_8d = -2;
                 local_8f = -1;
               }
@@ -7221,22 +7587,22 @@ LAB_00036ca4:
           if (*(short *)(uVar14 + 6) != 0) {
             do {
               if (*piVar23 != 0) {
-                /* Ordinal_1018(); */
-                Ordinal_1018(*piVar23);
+                /* LocalFree(); */
+                LocalFree(*piVar23);
                 *piVar23 = 0;
               }
               iVar10 = iVar10 + 1;
               piVar23 = piVar23 + 1;
             } while (iVar10 < (int)(uint)*(ushort *)(uVar14 + 6));
           }
-          Ordinal_1018(piVar17);
+          LocalFree(piVar17);
           local_78 = (intptr_t *)0x0;
         }
         if (iVar9 != 0) {
-          Ordinal_1018(iVar9);
+          LocalFree(iVar9);
           local_80 = 0;
         }
-        Ordinal_553(local_74);
+        CloseHandle(local_74);
         iVar10 = (int)open_file_for_read(&DAT_00101968);
         uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10);
       }
@@ -7265,42 +7631,42 @@ LAB_00037a94:
       if (*(short *)(local_64 + 6) != 0) {
         do {
           if (*piVar17 != 0) {
-            /* Ordinal_1018(); */
-            Ordinal_1018(*piVar17);
+            /* LocalFree(); */
+            LocalFree(*piVar17);
           }
           iVar12 = iVar12 + 1;
           piVar17 = piVar17 + 1;
         } while (iVar12 < (int)(uint)*(ushort *)(uVar14 + 6));
       }
-      Ordinal_1018(local_78);
+      LocalFree(local_78);
       iVar12 = local_5c;
     }
     if (local_80 != 0) {
-      /* Ordinal_1018(); */
-      Ordinal_1018(local_80);
+      /* LocalFree(); */
+      LocalFree(local_80);
     }
   }
   if (local_44 != (ushort *)0x0) {
-    Ordinal_1018(local_44);
+    LocalFree(local_44);
   }
   if (local_48 != 0) {
-    Ordinal_1018(local_48);
+    LocalFree(local_48);
   }
   if (local_70 != 0) {
-    Ordinal_1018(local_70);
+    LocalFree(local_70);
   }
   if (local_b8 != 0) {
-    /* Ordinal_1018(); */
-    Ordinal_1018(local_b8);
+    /* LocalFree(); */
+    LocalFree(local_b8);
   }
   if (local_88 != 0) {
-    /* Ordinal_1018(); */
-    Ordinal_1018(local_88);
+    /* LocalFree(); */
+    LocalFree(local_88);
   }
-  Ordinal_553(iVar12);
+  CloseHandle(iVar12);
   return;
 LAB_00037a8c:
-  Ordinal_553(local_74);
+  CloseHandle(local_74);
   goto LAB_00037a94;
 #undef acStack_d0
 #undef local_c1
@@ -7345,7 +7711,7 @@ uint param_1;
   uVar1 = param_1 & 0xffff;
   /* The RGB565 lookup table is shared by the viewer and every HUD blit.
      Preserve the gameplay colors while the LPF palette is installed. */
-  Ordinal_1044(saved_palette,&g_palette_rgb565,sizeof(saved_palette));
+  ce_memmove(saved_palette,&g_palette_rgb565,sizeof(saved_palette));
   if (uVar1 >= 0x100) {
     /* Consume the click that opened the picture before polling dismissal.
        Tick no gameplay handlers while preparing the modal viewer. */
@@ -7376,7 +7742,7 @@ uint param_1;
   DAT_0024cfac = (short)param_1 + 0xc00;
   decrement_cursor_hide_depth();
   render_babl_dialog_window(param_1,uVar2,unaff_r6,unaff_r7,unaff_r8);
-  Ordinal_1044(&g_palette_rgb565,saved_palette,sizeof(saved_palette));
+  ce_memmove(&g_palette_rgb565,saved_palette,sizeof(saved_palette));
   select_active_font(s_font5x6p_sys_0008430c);
   if (DAT_00201c98 != 0) {
     load_dungeon_texture_arenas();
@@ -7452,7 +7818,7 @@ undefined4 param_4;
   acStack_144[3] = ((byte)((param_1 & 0xffff) >> 6) & 7) + 0x30;
   acStack_144[4] = ((byte)((param_1 & 0xffff) >> 3) & 7) + 0x30;
   acStack_144[5] = ((byte)param_1 & 7) + 0x30;
-  Ordinal_1047(acStack_12c,0,0x104);
+  ce_memset(acStack_12c,0,0x104);
   pcVar2 = DAT_0023c698 ? (char *)&DAT_0023c698 : "\\CUTS";
     stack0xffdc383c_ptr = acStack_12c;
   do {
@@ -7460,7 +7826,7 @@ undefined4 param_4;
     *stack0xffdc383c_ptr = cVar1; stack0xffdc383c_ptr = stack0xffdc383c_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_12c,acStack_144);
+  ce_strcat(acStack_12c,acStack_144);
   /* Use the installation path just assembled above. The host file wrapper
      resolves paths under UW_DATA_DIR; the bare name omits CUTS. */
   iVar3 = open_existing_file_rw_alt(acStack_12c);
@@ -7469,7 +7835,7 @@ undefined4 param_4;
   iVar6 = write_file_handle(iVar3,&uStack_c,2);
   iVar7 = seek_file_handle(iVar3,4,1);
   iVar8 = write_file_handle(iVar3,&uStack_c,2);
-  iVar9 = Ordinal_553(iVar3);
+  iVar9 = CloseHandle(iVar3);
   if ((((((iVar3 != -1 && iVar4 != -1) && iVar5 == 2) && iVar6 == 2) && iVar7 != -1) && iVar8 == 2)
       && iVar9 != 0) {
     display_book_or_scroll_page(param_1);
@@ -7486,7 +7852,7 @@ undefined4 param_4;
 // shared low/high-byte accumulators); code 0x3e9 is a shorter
 // run/skip variant (terminating the stream via rle_op_handle_short_run when its
 // computed length hits zero); code 0x3ea is a raw byte-for-byte copy
-// (Ordinal_1044) of a given length. Loops until the "done" flag
+// (ce_memmove) of a given length. Loops until the "done" flag
 // (DAT_00201b58) is set. Confirmed caller: render_babl_dialog_window
 // uses it to decompress illustrated-book/scroll picture data into the
 // DAT_00101a70 bitmap buffer before display.
@@ -7548,7 +7914,7 @@ undefined1 * param_2;
       }
     }
     else if (DAT_00201b3c == 0x3ea) {
-      Ordinal_1044(DAT_00201b40,DAT_00201b50,DAT_00201b48);
+      ce_memmove(DAT_00201b40,DAT_00201b50,DAT_00201b48);
       uVar2 = (uint)DAT_00201b48;
       DAT_00201b40 = DAT_00201b40 + uVar2;
       DAT_00201b50 = DAT_00201b50 + uVar2;
@@ -7858,12 +8224,12 @@ short param_2;
             *wptr_31881 = cVar1; wptr_31881 = wptr_31881 + 1;
             pcVar6 = pcVar6 + 1;
           } while (cVar1 != '\0');
-          iVar7 = Ordinal_1068(acStack_6c);
+          iVar7 = ce_strlen(acStack_6c);
           sVar4 = build_object_display_name(acStack_6c + iVar7,param_1,0,0);
           if (sVar4 == 0) {
-            Ordinal_1063(acStack_6c,s_UNNAMED_00084f24);
+            ce_strcat(acStack_6c,s_UNNAMED_00084f24);
           }
-          Ordinal_1063(acStack_6c,&DAT_00085ce0);
+          ce_strcat(acStack_6c,&DAT_00085ce0);
           message_scroll_print_wrapped(acStack_6c);
           get_message_string(param_1[3] >> 6 | 0x600);
           message_scroll_print_wrapped();

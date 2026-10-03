@@ -7,9 +7,84 @@
  * uw.c (the original monolithic decompile) once these functions' real
  * roles were confirmed. */
 #include "headers/graphics.h"
+#include "headers/gx_stub.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+/* Ghidra modeled a single 32-bit pointer, stored straddling the byte
+   ranges of two separately-declared globals (_DAT_0023c5ac's upper 16
+   bits + DAT_0023c5b0's lower 16 bits -- see the CONCAT22 write site in
+   app_main_loop and every read site's "_DAT_0023c5ac >> 0x10 |
+   DAT_0023c5b0 << 0x10" reconstruction), because that's how the packed
+   bytes landed in the original 32-bit binary's fixed memory layout.
+   Neither underlying global has any other independent use in this
+   decompile, so replace the whole packed-halves dance with one real
+   pointer: it was truncating the buffer's address to its low 32 bits on
+   this 64-bit host and segfaulting the first time ce_memmove actually
+   did real memmove work. */
+void *g_uw_framebuffer;
+/* Not `static` -- referenced from graphics.c (bitmap_blit_to_framebuffer,
+   rect_fill_or_save_restore) as well as here; the extern declaration and
+   g_palette_rgb565 macro alias both live in uw.h now so both files see the
+   same thing. */
+undefined2 g_palette_rgb565_backing[32768];
+/* Was a lone `undefined2` scalar, but used as a full-screen shadow/
+   backup buffer the same size as g_uw_framebuffer (screen_backup_save saves
+   aside every non-transparent pixel across the whole 320x200 framebuffer
+   into it; screen_backup_restore/screen_backup_restore_rect restore from it
+   later) -- classic
+   "undersized global used as a large table" bug. Widened to match
+   g_uw_framebuffer's exact size (0x25800 bytes = 76800 shorts). */
+static undefined2 DAT_000891b0_backing[76800];
+#define DAT_000891b0 DAT_000891b0_backing[0]
+undefined2 DAT_000a85c0;
+undefined2 DAT_000a85c4;
+undefined2 DAT_000a85c8;
+undefined2 DAT_000842a4;
+undefined2 DAT_000842a8;
+int DAT_00204848;
+// was DAT_00088960 -- global toggle every sprite/bitmap-blit primitive in
+// this file (bitmap_blit_to_framebuffer in graphics.c, and this file's
+// own sibling blit routines, e.g. ~uw.c:5244/5591/62096) reads instead of
+// taking a real "transparent mode" parameter: 0 draws every source pixel
+// opaquely through the palette (so a transparent-keyed pixel, byte value
+// 0, paints as palette index 0 -- typically black), nonzero skips
+// byte==0 pixels for real transparency. Callers that want a transparent
+// blit set this to 1 immediately before the call and reset it to 0
+// right after (draw_sprite_by_id, mode_icon_highlight_on/mode_icon_highlight_off, etc). Named
+// after root-causing the inventory-panel "black box" bug: redraw_hud_panels's
+// panels.GR background blit had a trailing literal `1` argument that
+// clearly intended transparency but never actually set this global,
+// so it silently ran opaque -- see that fix's own comment for the full
+// story (uw.c, redraw_hud_panels, search "DAT_00088960" in git history/
+// memory.md for the writeup predating this rename).
+int g_blit_transparent_mode;
+int DAT_0024af70;
+void *DAT_0023c430;
+static undefined1 DAT_00084a40_backing[32768];
+#define DAT_00084a40 DAT_00084a40_backing[0]
+undefined2 DAT_00242010_backing[32768];
+/* Was a lone `undefined2` scalar, but build_rgb565_palette uses it as the base of a
+   20-level x 256-entry faded-palette table (`(ushort*)(&DAT_00248418 +
+   iVar21) + level*0x100`, iVar21 stepping by 2 per palette entry, 20 levels
+   stepped by 0x100 ushorts/level) -- a real ~10KB out-of-bounds write on
+   every single palette install. Root-caused via an lldb watchpoint on
+   DAT_0024cfc0 (a totally unrelated string-page counter ~26KB away) that
+   showed this exact write clobbering it into a huge garbage value, which
+   then produced a wild out-of-bounds array read/UAF-style crash much later
+   in get_message_string's string lookup. Same lone-scalar-used-as-array pattern
+   fixed repeatedly this session (DAT_002028e8, g_visibility_ray_table, etc). */
+undefined2 DAT_00248418_backing[20 * 256];
+static undefined4 DAT_0023c638;
+static undefined1 DAT_001005cc;
+static undefined1 DAT_001005cd;
+static undefined1 DAT_001005ce;
+static undefined DAT_00088640_backing[8192];
+#define DAT_00088640 DAT_00088640_backing[0]
+// HACK: RGB lighting calibration, default 64 when no override is set.
+// UW_AMBIENT_BIAS_REDUCTION=0 retains the ARM formulas.
+static int g_ambient_bias_reduction = 64;
 
 /* Scratch buffer for rect_fill_or_save_restore's save/restore modes --
  * only ever used within this function, so it stays local to this file
@@ -483,17 +558,27 @@ ushort *param_3;
      due to a calling-convention mismatch; param_1/param_2 are what
      apply_palette_buffer actually needs here. */
 
-  puVar3 = (ushort *)Ordinal_1041(0x1f400);
-  apply_palette_buffer(param_1,param_2);
-  Ordinal_1044(puVar3,param_3,0x1f400);
+  /* A fade must present every step even inside a batched gameplay tick
+     or while the click that started the transition is still held. */
+  uw_begin_modal_present();
+  dirty_rect_union(0,200,0,0x140);
+  puVar3 = (ushort *)ce_malloc(0x1f400);
+  /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
+  if (param_1 != 0) apply_palette_buffer(param_1,param_2);
+  ce_memmove(puVar3,param_3,0x1f400);
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
+  /* Intentional deviation: hold each step for 40 ms instead of the
+     original timed palette fade's 32 ms, making the transition slower. */
+  uint fade_step_start = (uint)GetTickCount();
+  uint fade_step_elapsed;
   do {
-    uVar4 = Ordinal_2032(iVar9);
-    uVar4 = Ordinal_2026(uVar4,0x3e000000);
-    Ordinal_2026(uVar4,0x45800000);
-    iVar5 = Ordinal_2020();
+    uVar4 = ordfloat_int_to_float2(iVar9);
+    uVar4 = ordfloat_mul(uVar4,0x3e000000);
+    uVar4 = ordfloat_mul(uVar4,0x45800000);
+    /* Ghidra omitted the soft-float result passed to the conversion. */
+    iVar5 = ordfloat_uint_to_float(uVar4);
     iVar8 = (intptr_t)param_3 - (intptr_t)puVar3;
     iVar7 = 64000;
     puVar6 = puVar3;
@@ -509,6 +594,9 @@ ushort *param_3;
       puVar6 = puVar6 + 1;
     } while (iVar7 != 0);
     flush_dirty_rect_to_display(1);
+    while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 40)
+      Sleep(40 - fade_step_elapsed);
+    fade_step_start = (uint)GetTickCount();
     iVar9 = iVar9 + 1;
   } while (iVar9 < 9);
   iVar9 = 64000;
@@ -519,9 +607,10 @@ ushort *param_3;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", read_realtime_clock_units() - diag_t0);
+  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
   debug_framebuffer_dump("fade_in");
-  Ordinal_1018(puVar3);
+  LocalFree(puVar3);
+  uw_end_modal_present();
   return;
 }
 
@@ -548,18 +637,27 @@ undefined2 * param_3;
   /* Same phantom in_stack_/unused-param_1,2 artifact as fade_in
      right above -- see its comment. */
 
-  puVar4 = (ushort *)Ordinal_1041(0x1f400);
-  apply_palette_buffer(param_1,param_2);
-  Ordinal_1044(puVar4,param_3,0x1f400);
+  /* Use the same presentation scope as fade_in. */
+  uw_begin_modal_present();
+  dirty_rect_union(0,200,0,0x140);
+  puVar4 = (ushort *)ce_malloc(0x1f400);
+  /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
+  if (param_1 != 0) apply_palette_buffer(param_1,param_2);
+  ce_memmove(puVar4,param_3,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
+  /* Intentional deviation: use 40 ms per step, like fade_in, rather
+     than the original timed palette fade's 32 ms interval. */
+  uint fade_step_start = (uint)GetTickCount();
+  uint fade_step_elapsed;
   do {
-    uVar5 = Ordinal_2032(iVar11);
-    uVar5 = Ordinal_2026(uVar5,0x3e000000);
-    Ordinal_2026(uVar5,0x45800000);
-    iVar6 = Ordinal_2020();
+    uVar5 = ordfloat_int_to_float2(iVar11);
+    uVar5 = ordfloat_mul(uVar5,0x3e000000);
+    uVar5 = ordfloat_mul(uVar5,0x45800000);
+    /* Ghidra omitted the soft-float result passed to the conversion. */
+    iVar6 = ordfloat_uint_to_float(uVar5);
     iVar9 = 64000;
     puVar7 = puVar4;
     do {
@@ -577,6 +675,9 @@ undefined2 * param_3;
       *puVar8 = uVar3 | (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * iVar6 >> 0x12);
     } while (iVar9 != 0);
     flush_dirty_rect_to_display(1);
+    while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 40)
+      Sleep(40 - fade_step_elapsed);
+    fade_step_start = (uint)GetTickCount();
     iVar11 = iVar11 + -1;
   } while (0 < iVar11);
   while (iVar10 = iVar10 + -1, -1 < iVar10) {
@@ -584,9 +685,12 @@ undefined2 * param_3;
     param_3 = param_3 + 1;
   }
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", read_realtime_clock_units() - diag_t0);
+  while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 40)
+    Sleep(40 - fade_step_elapsed);
+  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
   debug_framebuffer_dump("fade_out");
-  Ordinal_1018(puVar4);
+  LocalFree(puVar4);
+  uw_end_modal_present();
   return;
 }
 
@@ -635,10 +739,11 @@ void build_shade_lut()
   iVar2 = 0;
   iVar4 = 0xa0;
   do {
-    uVar1 = Ordinal_2032(iVar2 + 0xa0);
-    uVar1 = Ordinal_2026(uVar1,0x3bcccccd);
-    Ordinal_2026(uVar1,0x45800000);
-    uVar1 = Ordinal_2020();
+    uVar1 = ordfloat_int_to_float2(iVar2 + 0xa0);
+    uVar1 = ordfloat_mul(uVar1,0x3bcccccd);
+    /* Preserve the ARM r0 result chain explicitly in native C. */
+    uVar1 = ordfloat_mul(uVar1,0x45800000);
+    uVar1 = ordfloat_uint_to_float(uVar1);
     iVar4 = iVar4 + -1;
     *puVar3 = uVar1;
     iVar2 = iVar2 + -1;
@@ -651,24 +756,16 @@ void build_shade_lut()
 static int get_ambient_bias_reduction()
 {
   int reduction = g_ambient_bias_reduction;
-  const char *_p = getenv("UW_AMBIENT_BIAS_REDUCTION");
-  if (_p) reduction = atoi(_p);
+  const char *value = getenv("UW_AMBIENT_BIAS_REDUCTION");
+  if (value) reduction = atoi(value);
   return reduction;
 }
 
 
 
-// was FUN_00014324 -- sets DAT_000842b0, the 3D-view ambient bias
-// raster_textured_span adds to every texel's distance-shade LUT index
-// (uw.c's own "checked wall/floor texture rasterizer" comment on that
-// function has the full formula). MORE NEGATIVE here means BRIGHTER
-// (it pulls the effective distance-shade index down toward the "close/
-// bright" end of the LUT regardless of a texel's real depth). Called
-// with param_1=0 (giving -0x20) from the "a light source IS currently
-// equipped and lit" branch of the function that recomputes derived
-// player state whenever equipped items change (uw.c ~55910-55926,
-// where the sibling `8 - param_1` call handles the "no light source"
-// case) -- this is the brightening half of that pair, not the dim one.
+// was FUN_00014324. ARM lighting bias: -32 when a light is active.
+// HACK: optional project calibration is added to the original formula;
+// default 64; an override of zero preserves ARM lighting. Negative values brighten it.
 void set_ambient_bias_with_light(param_1)
 char param_1;
 
@@ -791,24 +888,24 @@ short param_2;
   else {
     iVar21 = 0;
     do {
-      uVar7 = Ordinal_2032(*param_1);
-      uVar7 = Ordinal_2026(uVar7,0x3fc00000);
-      /* Ordinal_2020(); -- Ghidra dropped the preceding return value. */
-      iVar8 = Ordinal_2020(uVar7);
+      uVar7 = ordfloat_int_to_float2(*param_1);
+      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      /* ordfloat_uint_to_float(); -- Ghidra dropped the preceding return value. */
+      iVar8 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar8) {
         iVar8 = 0xff;
       }
-      uVar7 = Ordinal_2032(param_1[1]);
-      uVar7 = Ordinal_2026(uVar7,0x3fc00000);
-      /* Ordinal_2020(); */
-      iVar9 = Ordinal_2020(uVar7);
+      uVar7 = ordfloat_int_to_float2(param_1[1]);
+      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      /* ordfloat_uint_to_float(); */
+      iVar9 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar9) {
         iVar9 = 0xff;
       }
-      uVar7 = Ordinal_2032(param_1[2]);
-      uVar7 = Ordinal_2026(uVar7,0x3fc00000);
-      /* Ordinal_2020(); */
-      iVar10 = Ordinal_2020(uVar7);
+      uVar7 = ordfloat_int_to_float2(param_1[2]);
+      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      /* ordfloat_uint_to_float(); */
+      iVar10 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar10) {
         iVar10 = 0xff;
       }
@@ -816,25 +913,25 @@ short param_2;
       *(ushort *)((intptr_t)&g_palette_rgb565 + iVar21) =
            (ushort)(iVar10 >> 3) | (ushort)((iVar9 >> 2 | (iVar8 >> 3) << 6) << 5);
       if (param_2 == 0) {
-        uVar7 = Ordinal_2032(iVar8 >> 3);
-        uVar11 = Ordinal_2032(iVar9 >> 2);
-        uVar12 = Ordinal_2032(iVar10 >> 3);
+        uVar7 = ordfloat_int_to_float2(iVar8 >> 3);
+        uVar11 = ordfloat_int_to_float2(iVar9 >> 2);
+        uVar12 = ordfloat_int_to_float2(iVar10 >> 3);
         iVar8 = 0;
         puVar20 = (ushort *)((intptr_t)&DAT_00248418 + iVar21);
         do {
-          uVar13 = Ordinal_2032(iVar8 + 0x14);
-          uVar14 = Ordinal_2026(uVar13,uVar7);
-          uVar14 = Ordinal_2026(uVar14,0x3d430c31);
-          /* Ordinal_2018(); */
-          sVar4 = Ordinal_2018(uVar14);
-          uVar14 = Ordinal_2026(uVar13,uVar11);
-          uVar14 = Ordinal_2026(uVar14,0x3d430c31);
-          /* Ordinal_2018(); */
-          uVar5 = Ordinal_2018(uVar14);
-          uVar13 = Ordinal_2026(uVar13,uVar12);
-          uVar13 = Ordinal_2026(uVar13,0x3d430c31);
-          /* Ordinal_2018(); */
-          uVar6 = Ordinal_2018(uVar13);
+          uVar13 = ordfloat_int_to_float2(iVar8 + 0x14);
+          uVar14 = ordfloat_mul(uVar13,uVar7);
+          uVar14 = ordfloat_mul(uVar14,0x3d430c31);
+          /* ordfloat_int_to_float(); */
+          sVar4 = ordfloat_int_to_float(uVar14);
+          uVar14 = ordfloat_mul(uVar13,uVar11);
+          uVar14 = ordfloat_mul(uVar14,0x3d430c31);
+          /* ordfloat_int_to_float(); */
+          uVar5 = ordfloat_int_to_float(uVar14);
+          uVar13 = ordfloat_mul(uVar13,uVar12);
+          uVar13 = ordfloat_mul(uVar13,0x3d430c31);
+          /* ordfloat_int_to_float(); */
+          uVar6 = ordfloat_int_to_float(uVar13);
           *puVar20 = uVar6 | (uVar5 | sVar4 << 6) << 5;
           iVar8 = iVar8 + -1;
           puVar20 = puVar20 + 0x100;
@@ -928,7 +1025,7 @@ int param_3;
        instead of real pointer arithmetic against the actual (relocated)
        global -- same bug class as probe_save_slots's `-0x87020` fix and
        run_character_generator's pcVar3 fix elsewhere this session.
-       Never exercised until Ordinal_535 (GetTickCount) stopped being a
+       Never exercised until GetTickCount (GetTickCount) stopped being a
        hardcoded 0 (see its comment): this branch (param_3!=0) is only
        reached from animate_title_palette_cycle's periodic timer, which always saw
        "0ms elapsed" and never fired before that fix. Confirmed via
@@ -974,7 +1071,7 @@ char *param_2;
 int param_3;
 
 {
-  /* iVar1 was `int`, truncating the Ordinal_1041 (malloc) heap pointer
+  /* iVar1 was `int`, truncating the ce_malloc (malloc) heap pointer
      it holds -- it's used both as the fread-destination buffer and as
      the source pointer handed to bitmap_blit_to_framebuffer (which now takes a real
      char*). */
@@ -982,7 +1079,7 @@ int param_3;
   int iVar2;
   undefined4 uVar3;
 
-  iVar1 = Ordinal_1041(64000);
+  iVar1 = ce_malloc(64000);
   if (iVar1 == 0) {
     uVar3 = 0;
   }
@@ -1001,7 +1098,7 @@ int param_3;
         flush_dirty_rect_to_display(1);
       }
     }
-    Ordinal_1018(iVar1);
+    LocalFree(iVar1);
     uVar3 = 1;
   }
   return uVar3;
@@ -1421,7 +1518,7 @@ undefined4 param_3;
 
 // was FUN_000232b0 -- ends the active GAPI/GX draw session
 // (GXEndDraw, guarded by DAT_0023c430 tracking whether one is open) and
-// releases DAT_0023c638 (an offscreen/back-buffer pointer -- Ordinal_1018
+// releases DAT_0023c638 (an offscreen/back-buffer pointer -- LocalFree
 // is a deliberate no-op/leak stub, see its own comment). Called by
 // shutdown_game_resources right before the rest of that function tears
 // down the display and input devices.
@@ -1431,7 +1528,7 @@ void end_gx_draw_session()
   if (DAT_0023c430 != 0) {
     GXEndDraw();
   }
-  Ordinal_1018(DAT_0023c638);
+  LocalFree(DAT_0023c638);
   return;
 }
 
@@ -1480,7 +1577,7 @@ undefined1 * param_2;
    out as the mechanism for ordinary water/lava/wall-torch shimmer
    during play, if the original game has one at all. Iterates a
    16-slot table of 8-byte records (last-update clock, a rate value
-   Ordinal_2005'd against 0x38e, then a start/end palette-index byte
+   ordint_divmod'd against 0x38e, then a start/end palette-index byte
    pair) -- genuinely reusable for animating multiple independent
    palette ranges, but nothing in its enclosing function
    (render_babl_dialog_window) was found writing real per-object data into that
@@ -1504,7 +1601,7 @@ ushort * param_1;
     }
     if (param_1[1] != 0) {
       uVar2 = read_realtime_clock_units();
-      iVar3 = Ordinal_2005(param_1[1],0x38e);
+      iVar3 = ordint_divmod(param_1[1],0x38e).quot;
       if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*param_1)) {
         uVar2 = (1 - (uint)(byte)param_1[3]) + (uint)*(byte *)((char *)param_1 + 7);
         palette_cycle_range((uint)(byte)param_1[3],uVar2,0);
@@ -1522,7 +1619,7 @@ ushort * param_1;
 
 
 // was FUN_0003af28 -- loads an embedded BMP resource (param_1/param_2:
-// Ordinal_532/FindResource-style module+name lookup) and decodes it
+// FindResourceW/FindResource-style module+name lookup) and decodes it
 // into an RGB565 buffer (param_3): reads the 0x28-byte BITMAPINFOHEADER
 // and 0x400-byte (256-entry RGBQUAD) palette, builds an RGB565 LUT
 // from that palette, then reads the bottom-up DIB row data (flipping
@@ -1550,10 +1647,10 @@ ushort * param_3;
   ushort local_62c [256];
   byte local_42c [1024];
   
-  iVar1 = Ordinal_532(param_1,param_2,2);
-  if ((iVar1 != 0) && (iVar1 = Ordinal_533(param_1), iVar1 != 0)) {
-    Ordinal_1044(auStack_654,iVar1,0x28);
-    Ordinal_1044(local_42c,iVar1 + 0x28,0x400);
+  iVar1 = FindResourceW(param_1,param_2,2);
+  if ((iVar1 != 0) && (iVar1 = LoadResource(param_1), iVar1 != 0)) {
+    ce_memmove(auStack_654,iVar1,0x28);
+    ce_memmove(local_42c,iVar1 + 0x28,0x400);
     puVar3 = local_62c;
     pbVar2 = local_42c;
     iVar4 = 0x100;
@@ -1563,14 +1660,14 @@ ushort * param_3;
       pbVar2 = pbVar2 + 4;
       puVar3 = puVar3 + 1;
     } while (iVar4 != 0);
-    pbVar2 = (byte *)Ordinal_1095(local_64c * local_650);
+    pbVar2 = (byte *)cpp_operator_new(local_64c * local_650);
     if (pbVar2 != (byte *)0x0) {
       if (0 < local_64c) {
         pbVar6 = pbVar2 + (local_64c + -1) * local_650;
         iVar4 = iVar1;
         iVar7 = local_64c;
         do {
-          Ordinal_1044(pbVar6,iVar4 + 0x428,local_650);
+          ce_memmove(pbVar6,iVar4 + 0x428,local_650);
           iVar7 = iVar7 + -1;
           iVar4 = iVar4 + local_650;
           pbVar6 = pbVar6 + -local_650;
@@ -1595,11 +1692,11 @@ ushort * param_3;
           } while (local_64c != 0);
         }
       }
-      Ordinal_912(iVar1);
-      Ordinal_1094(pbVar2);
+      DeleteObject(iVar1);
+      cpp_operator_delete(pbVar2);
       return 1;
     }
-    Ordinal_912(iVar1);
+    DeleteObject(iVar1);
   }
   return 0;
 }
@@ -1633,7 +1730,7 @@ undefined4 param_1;
 undefined4 param_2;
 
 {
-  Ordinal_1044(&DAT_00088d98,param_1,0x300);
+  ce_memmove(&DAT_00088d98,param_1,0x300);
   reinstall_active_palette(0x100,0,param_2);
   return;
 }
@@ -1641,7 +1738,7 @@ undefined4 param_2;
 
 
 // was FUN_00040f64 -- fades the active palette down to black over
-// param_2 steps (frame-paced via read_realtime_clock_units, at least 8
+// param_2 steps (frame-paced via read_realtime_clock_units, at least 10
 // clock units apart), re-applying the dimmed palette via
 // apply_palette_buffer each step; param_2==0 instead snaps straight to
 // black. Only known caller (src/player.c:3716, after
@@ -1691,13 +1788,15 @@ short param_2;
           psVar6 = (short *)(iVar9 + iVar8 * 2);
           sVar7 = *psVar6 - (ushort)*(byte *)(iVar8 + param_1);
           *psVar6 = sVar7;
-          uVar3 = Ordinal_2005(iVar1,sVar7);
+          uVar3 = ordint_divmod(iVar1,sVar7).quot;
           *(undefined1 *)(iVar8 + iVar2) = uVar3;
           iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
         } while (iVar8 < 0x300);
+        /* Intentional deviation: 10 clock units (40 ms) instead of 8
+           (32 ms), matching the slower framebuffer fades above. */
         do {
           iVar8 = read_realtime_clock_units();
-        } while ((uint)(iVar8 - iVar4) < 8);
+        } while ((uint)(iVar8 - iVar4) < 10);
         apply_palette_buffer(iVar2,0);
         iVar4 = read_realtime_clock_units();
         iVar5 = iVar5 + 1;

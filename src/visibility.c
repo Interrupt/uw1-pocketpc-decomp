@@ -9,6 +9,209 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define _DAT_0023aee1 (*(uint*)&DAT_0023aee1)
+#define _DAT_0023aee3 (*(uint*)&DAT_0023aee3)
+#define _DAT_0023af02 (*(uint*)&DAT_0023af02)
+// was DAT_0023bca0 -- per-level view-distance default, loaded from
+// SHADES.DAT's per-record field 3 by load_shading_level_config (see its own
+// comment) and, since this session, consumed by
+// extend_visibility_ray_row as the automap-reveal flood's real
+// max-ring-passes limit (was a flat hardcoded 16). Also still passed
+// (dropped-argument bug, unrelated, not fixed here) to
+// weapon_overlay_flash_hold/weapon_overlay_flash_restore, and to the otherwise-dead
+// build_visibility_light_grid.
+short g_visibility_max_ring_passes;
+ undefined2 DAT_0023ae58_backing[8192];
+/* Both real 0x80-element pointer-cache arrays (per free_frame_geometry_buffers's
+   own comment -- "DAT_0023c7a0[0x140], DAT_002020f8[0x80]" -- and
+   shutdown_game_resources's matching 0x80-iteration cleanup loop for DAT_00202308),
+   same "lone undefined4 scalar indexed as an array" bug as DAT_0023c7a0
+   right above (already fixed): each slot holds a real malloc'd buffer
+   pointer (decode_critter_sprite_page/emit_catalog_object's per-page glyph decode),
+   so a 4-byte-stride int[] truncates/corrupts every other slot's pointer
+   on this 64-bit host. Sized generously past the documented 0x80 like
+   this file's other such tables. */
+void *DAT_002020f8_arr[256];
+char *DAT_0023ae34;
+char *DAT_0023ae30;
+/* Parallel array to DAT_0024f090 (0x3a/58 entries) -- see that array's
+   own comment. */
+static undefined1 DAT_0024f0ca_backing[64];
+#define DAT_0024f0ca DAT_0024f0ca_backing[0]
+undefined2 DAT_0023adb0;
+ undefined2 DAT_0023aeb8_backing[8192];
+/* Was a lone `undefined2` scalar, but it is the per-level floor/ceiling
+   texture-id list -- reset_texture_id_lists / load_level_texture_ids write (&DAT_0023adb8)[0..9]
+   and load_texture_arena reads them to pick which F32.TR / W16.TR entries to load
+   into the 10-slot arena. As a scalar only slot 0 was coherent; slots 1..9
+   aliased whatever globals the linker placed next, so load_texture_arena hit a
+   garbage/negative id after ~2 entries and DAT_0023aeb8 (the loaded count)
+   came out 2. get_texture_page(0x39) (the ceiling = arena slot 9) then read
+   far past the 2-texture arena into the W16/colour-light memory -> wrong
+   ceiling texture. Sibling lists DAT_0023ae58 / DAT_0023add0 / DAT_0023b840
+   already have backing arrays; this one was missed. */
+ undefined2 DAT_0023adb8_backing[8192];
+/* Really a 58 (0x3a)-entry byte array, paired with the parallel
+   DAT_0024f0ca array right below -- reset_texture_id_lists's own loop
+   proves the bound (`for (iVar3 = ...; iVar3 < 0x3a; ...)` zeroing both
+   `(&DAT_0024f090)[iVar3]` and `(&DAT_0024f0ca)[iVar3]`). Was a lone
+   scalar relying on DAT_0024f0ca happening to sit exactly 0x3a bytes
+   later in memory (an earlier loop in the same function reached it via
+   `puVar4[0x3a]` off a `&DAT_0024f090 + iVar3` base) -- that adjacency
+   was never guaranteed and broke once this cleanup pass's global
+   reorganization moved other variables in between. Given real backing
+   storage here and the offset hack rewritten to address DAT_0024f0ca by
+   name instead (see reset_texture_id_lists). */
+static undefined1 DAT_0024f090_backing[64];
+#define DAT_0024f090 DAT_0024f090_backing[0]
+static char s_bad_tmap_ids_size_000869b7[] = "bad_tmap_ids_size";
+/* High byte of DAT_0023b840's packed short (write pattern: `(&DAT_0023b840)[i]
+   = low; (&DAT_0023b841)[i] = high;`, read back combined via CONCAT11 and
+   via `*(short*)(&DAT_0023b840 + offset)` in saveload.c/resources.c) --
+   needs to sit exactly 1 byte after DAT_0023b840's own real storage
+   (DAT_0023b840_backing, resources.c), not its own independent array.
+   An earlier widening pass (code-cleanup-pass-2) gave it one anyway,
+   silently breaking that combined-read (same failure class as
+   DAT_00086980/82/84's fix in movement.c). */
+#define DAT_0023b841 DAT_0023b840_backing[1]
+/* Was a lone `undefined` scalar. It is the base of the texture / shade /
+   colour-light table arena: load_dungeon_texture_arenas sets
+   DAT_0023ae38 = &DAT_002049e0 and loads several .tr/.dat files into
+   it, then get_texture_page hands out `&DAT_002049e0 + page*stride`
+   pointers. Needs real backing storage (1 MB is comfortably more
+   than UW1's texture set). */
+undefined1 DAT_002049e0_backing[0x100000];
+static char s__DATA_terrain_dat_000869ec[] = "\\DATA\\terrain.dat";
+// was DAT_0023b01c -- set by the 3D-viewport setup function
+// (configure_dungeon_viewport) whenever the real in-game dungeon-view mode (game
+// mode bit 0, not a menu/conversation overlay) is active; gates
+// weapon_overlay_and_full_redraw's weapon-overlay draw.
+undefined4 g_dungeon_view_active;
+undefined2 DAT_0023b020;
+undefined2 DAT_0023aed4;
+undefined2 *DAT_0023aed0;
+static short DAT_0023b4cc;
+static char s_R__lu_P__lu_S__lu_F__d__d_00086b04[] = "R:%lu_P:%lu_S:%lu_F:%d.%d";
+static undefined1 DAT_0023b4a8_backing[65536];
+#define DAT_0023b4a8 DAT_0023b4a8_backing[0]
+static int DAT_0023aec8;
+static ushort DAT_0023b4c8;
+static undefined1 DAT_0023b028;
+static undefined *DAT_0023b02c;
+/* Lookup/gradient table in build_visibility_light_grid, indexed up to
+   (16*0x21+32)*2=1120 -- confirmed overflowing into the unrelated
+   DAT_00248410 via an lldb watchpoint (same symptom, second distinct
+   overflow source found reaching that same global). Widened. */
+static undefined1 DAT_0023b039_backing[4096];
+#define DAT_0023b039 DAT_0023b039_backing[0]
+static undefined1 g_visibility_ring_done;
+/* g_visibility_ray_table-family: ~20 separately-declared globals that are really
+   one 16-entry x 0x15(21)-byte per-ray record array for the dungeon's
+   geometric beam-trace visibility flood (NOT a creature-reaction/sound-cue
+   queue -- that was this subsystem's original, later-disproven name; see
+   extend_visibility_ray_row's and run_visibility_flood's own comments)
+   (seed_visibility_queue/advance_visibility_ray/merge_adjacent_visibility_rays/run_visibility_flood index it via
+   `&g_visibility_ray_table + entry*0x15`). As lone scalars, out-of-bounds record
+   writes/reads walked off into whatever memory happened to follow in
+   declaration order -- confirmed: g_visibility_ring_done (declared right after,
+   and genuinely 0x150=336=16*21 bytes past g_visibility_ray_table in the real
+   address map) was getting corrupted by exactly this, which is why the
+   queue never looked empty. This subsystem also computes g_visibility_ring_depth,
+   which turns out to double as the tile-visibility scan radius consumed
+   by walk_visible_tiles's dungeon-geometry walk -- NOT optional creature/object
+   bookkeeping as first assessed (see run_visibility_flood's since-removed
+   `// Hack - Disabled`); skipping it left the 3D viewport permanently
+   empty. Real backing array + aliases at each element's correct offset,
+   generous margin past the 16*21=336-byte minimum. */
+static undefined1 g_visibility_ray_table_backing[1024];
+#define g_visibility_ray_table g_visibility_ray_table_backing[0]
+/* Real-pointer side table for this record array's "back pointer" field
+   (offsets 9/0xa-0xb/0xc), which the original 32-bit binary packed as raw
+   bytes -- see advance_visibility_ray's comment on why that can't be reassembled
+   into a real 64-bit pointer on this port. Only entry 0 (the player's own
+   visibility-ray slot, the only one seed_visibility_queue ever populates in a
+   monster-free dungeon) is written; other entries stay NULL, matching
+   the "unpopulated" state advance_visibility_ray's own `(*param_1 & 0x80) == uVar1`
+   guard already treats as "nothing to look up" for a zeroed record. */
+static char *g_visibility_ray_realptr[24];
+/* Second real-pointer side table, for this record's OTHER packed pointer
+   field (offsets 0xd and its byte-mirrored copy at 0x11-0x14 -- see
+   seed_visibility_queue's DAT_0023aeed/aeee/aef0 writes). Unlike the offset-9
+   field, this one is always the SAME fixed original-binary address
+   (0x0023b058, confirmed identical for entry 0's 3-field pack and
+   entry 1's combined `_DAT_0023af02` write) -- a hardcoded literal
+   pointer into the shared g_visibility_ring_buffer output-list buffer (0x0023b058 -
+   0x0023b038 = 0x20), same "hardcoded original 32-bit address instead of
+   a symbolic reference" bug class fixed elsewhere all session, just
+   packed byte-by-byte instead of written as one literal. Populated once
+   below (not per-entry -- every entry that sets this field wants the
+   same target), read via the same per-entry lookup as the offset-9
+   table for consistency with how the field is indexed. */
+static char *g_visibility_ray_realptr2[24];
+#define DAT_0023aee1 g_visibility_ray_table_backing[1]
+#define DAT_0023aee3 g_visibility_ray_table_backing[3]
+#define DAT_0023aee5 g_visibility_ray_table_backing[5]
+#define DAT_0023aee6 g_visibility_ray_table_backing[6]
+#define DAT_0023aee7 g_visibility_ray_table_backing[7]
+#define DAT_0023aee8 g_visibility_ray_table_backing[8]
+#define DAT_0023aee9 g_visibility_ray_table_backing[9]
+#define DAT_0023aeea (*(undefined2 *)&g_visibility_ray_table_backing[0xa])
+#define DAT_0023aeec g_visibility_ray_table_backing[0xc]
+#define DAT_0023aeed g_visibility_ray_table_backing[0xd]
+#define DAT_0023aeee (*(undefined2 *)&g_visibility_ray_table_backing[0xe])
+#define DAT_0023aef0 g_visibility_ray_table_backing[0x10]
+#define DAT_0023aef1 g_visibility_ray_table_backing[0x11]
+#define DAT_0023aef5 g_visibility_ray_table_backing[0x15]
+#define DAT_0023aef6 (*(undefined2 *)&g_visibility_ray_table_backing[0x16])
+#define DAT_0023aef8 (*(undefined2 *)&g_visibility_ray_table_backing[0x18])
+#define DAT_0023aefa g_visibility_ray_table_backing[0x1a]
+#define DAT_0023aefb g_visibility_ray_table_backing[0x1b]
+#define DAT_0023aefc g_visibility_ray_table_backing[0x1c]
+#define DAT_0023aefd g_visibility_ray_table_backing[0x1d]
+#define DAT_0023aefe (*(undefined2 *)&g_visibility_ray_table_backing[0x1e])
+#define DAT_0023af00 (*(undefined2 *)&g_visibility_ray_table_backing[0x20])
+#define DAT_0023af02 g_visibility_ray_table_backing[0x22]
+/* {0x10, 0x00}: compute_visibility_ray_offset reads (&DAT_00086af0)[bool].
+   Was a silently-zero undefined4. */
+static const undefined1 DAT_00086af0_arr[4] = { 0x10, 0x00, 0x00, 0x00 };
+#define DAT_00086af0 (*(undefined1 *)DAT_00086af0_arr)
+/* Recovered from UU.exe .data at 0x86af8 (12 bytes = 6 int16). Was two
+   separate silently-zero 64KB Ghidra arrays (DAT_00086af8, DAT_00086b00)
+   plus a bare literal `0x86afc` deref in advance_visibility_ray. These
+   are the per-view-orientation constants that function's visibility
+   flood-fill uses to decide whether a neighbour tile occludes the view;
+   with them all zero the fill's expansion tests (uw.c ~44965, ~44978,
+   ~45001) never fire, so run_visibility_flood drains after ~2 entries
+   and marks NO tile visible -> process_visible_tile_cell only ever takes its
+   un-gated automap-reveal path and never emits 3D tile geometry (black
+   viewport). Indexed [orient] with orient in {0,1}:
+     +0x00  DAT_00086af8 = {2, 4}    wall-edge bitmask (AND'd with DAT_000878d0[shape])
+     +0x04  DAT_00086afc = {2, 3}    expected shape id for the "aligned" case
+     +0x08  DAT_00086b00 = {-1, 1}   neighbour step sign */
+static const undefined1 DAT_00086af8_region[12] = {
+  0x02,0x00, 0x04,0x00, 0x02,0x00, 0x03,0x00, 0xff,0xff, 0x01,0x00,
+};
+#define DAT_00086af8 (*(undefined1 *)(DAT_00086af8_region + 0))
+#define DAT_00086afc (*(undefined1 *)(DAT_00086af8_region + 4))
+#define DAT_00086b00 (*(undefined1 *)(DAT_00086af8_region + 8))
+short g_visibility_ring_depth;
+undefined1 g_visibility_ring_buffer_backing[32768];
+static undefined DAT_00086b34;
+undefined2 DAT_00189578;
+undefined DAT_0023b4dc;
+short DAT_00086b2c;
+undefined2 DAT_00189582;
+short DAT_00086b28;
+ushort DAT_0023adc0;
+static char s__DATA_f16_tr_00086dd8[] = "\\DATA\\f16.tr";
+static char s__DATA_f32_tr_00086de8[] = "\\DATA\\f32.tr";
+static char s__DATA_shades_dat_000872a4[] = "\\DATA\\shades.dat";
+char s__DATA_light_dat_000872c8[] = "\\DATA\\light.dat";
+static char s__DATA_xfer_dat_000872d8[] = "\\DATA\\xfer.dat";
+static char s_cLightTabs_allocation_error_____000872e8[] = "cLightTabs_allocation_error_...";
+static undefined1 DAT_0024fa38_backing[3072];
+#define DAT_0024fa38 DAT_0024fa38_backing[0]
+
 /* Only entries 0 and 1 (the player's own visibility-ray slot, always populated
    by seed_visibility_queue) are ever given a real pointer -- a monster-free
    dungeon has nothing to populate the other 14 with. But this queue's
@@ -49,9 +252,7 @@ undefined4 reset_texture_id_lists()
   int iVar1;
   int iVar2;
   int iVar3;
-  undefined1 *extraout_r1;
-  undefined1 *puVar4;
-  
+
   iVar3 = 0;
   do {
     (&DAT_0023ae58)[iVar3] = (short)iVar3;
@@ -72,17 +273,18 @@ undefined4 reset_texture_id_lists()
   DAT_0023adb0 = 0x30;
   DAT_0023aeb8 = 10;
   load_dungeon_texture_arenas();
+  /* Was `puVar4 = &DAT_0024f090 + iVar3; *puVar4 = 0; puVar4[0x3a] = 0;`
+     -- the `[0x3a]` reached for DAT_0024f0ca by relying on it sitting
+     exactly 0x3a bytes after DAT_0024f090 in memory (see both arrays'
+     own comment). Addressed by name directly instead, now that each has
+     its own real backing storage. */
   iVar3 = 0;
-  puVar4 = extraout_r1;
   do {
     iVar1 = (iVar3 + 1) * 0x10000;
-    if (iVar3 < 0xc) {
-      puVar4 = &DAT_0024f090 + iVar3;
-    }
     iVar2 = iVar1 >> 0x10;
     if (iVar3 < 0xc) {
-      *puVar4 = 0;
-      puVar4[0x3a] = 0;
+      (&DAT_0024f090)[iVar3] = 0;
+      (&DAT_0024f0ca)[iVar3] = 0;
     }
     iVar3 = iVar2;
   } while (iVar2 < 0x30);
@@ -173,7 +375,7 @@ char *param_4;
 
 {
   int iVar1;
-  char *iVar2; /* was int -- Ordinal_1346() offset-table allocation */
+  char *iVar2; /* was int -- ce_calloc() offset-table allocation */
   int iVar3;
   int iVar4;
   int iVar5;
@@ -183,7 +385,7 @@ char *param_4;
   iVar1 = open_file_for_read(param_1);
   if (iVar1 == -1) {
     /* param_1 is built from "\DATA\" (s__DATA__00085970) with no filename
-       ever appended -- Ghidra dropped whatever Ordinal_1063 call(s) would
+       ever appended -- Ghidra dropped whatever ce_strcat call(s) would
        have added the actual texture-LUT filename (same unrecoverable-
        string-reference class as the .GR extension fix in open_gr_resource_file,
        but here the reference vanished entirely rather than resolving to
@@ -202,7 +404,7 @@ char *param_4;
   read_file_handle(iVar1,local_24,1);
   iVar5 = (uint)local_24[0] * (uint)local_24[0];
   read_file_handle(iVar1,&local_22,2);
-  iVar2 = Ordinal_1346(4,(int)local_22);
+  iVar2 = ce_calloc(4,(int)local_22);
   if (iVar2 == 0) {
     report_fatal_error_and_exit(0x1008);
     iVar3 = (int)local_22;
@@ -233,8 +435,8 @@ char *param_4;
     }
   }
   *param_3 = (short)iVar3;
-  Ordinal_1018(iVar2);
-  Ordinal_553(iVar1);
+  LocalFree(iVar2);
+  CloseHandle(iVar1);
   return;
 }
 
@@ -266,7 +468,7 @@ char *param_2;
     *stack0xffdc3238_ptr = cVar1; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_120,s__DATA_terrain_dat_000869ec);
+  ce_strcat(acStack_120,s__DATA_terrain_dat_000869ec);
   iVar3 = open_file_for_read(acStack_120);
   if (iVar3 != 0) {
     iVar4 = 0;
@@ -281,7 +483,7 @@ char *param_2;
       read_file_handle(iVar3,&DAT_0023ae40 + iVar4,2);
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 10);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
   }
   return;
 }
@@ -299,7 +501,7 @@ void draw_command_list_rewind()
 
 
 
-// was FUN_0005b8ac -- per-frame teardown: free the scratch geometry / clip-vertex lists (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via Ordinal_1018
+// was FUN_0005b8ac -- per-frame teardown: free the scratch geometry / clip-vertex lists (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via LocalFree
 void free_frame_geometry_buffers()
 
 {
@@ -314,14 +516,14 @@ void free_frame_geometry_buffers()
   {
     int _i;
     for (_i = 0; _i < 0x140; _i++) {
-      if (DAT_0023c7a0_arr[_i] != 0) { Ordinal_1018(); DAT_0023c7a0_arr[_i] = 0; }
+      if (DAT_0023c7a0_arr[_i] != 0) { LocalFree(); DAT_0023c7a0_arr[_i] = 0; }
     }
   }
   piVar1 = &DAT_002020f8;
   iVar2 = 0x80;
   do {
     if (*piVar1 != 0) {
-      Ordinal_1018();
+      LocalFree();
       *piVar1 = 0;
     }
     iVar2 = iVar2 + -1;
@@ -396,17 +598,17 @@ void render_dungeon_frame_timed()
     sVar2 = 0;
   }
   else {
-    sVar2 = Ordinal_2008(iVar7,0xa00);
+    sVar2 = orduint_divmod(iVar7,0xa00).quot;
   }
   sVar1 = DAT_0023b4c8;
   iVar7 = (int)(short)DAT_0023b4c8;
   sVar9 = DAT_0023b4cc - *(short *)(&DAT_0023b4a8 + iVar7 * 2);
-  sVar3 = Ordinal_2005(10,(int)sVar2);
+  sVar3 = ordint_divmod(10,(int)sVar2).quot;
   *(short *)(&DAT_0023b4a8 + iVar7 * 2) = sVar3;
   DAT_0023b4cc = sVar9 + sVar3;
   DAT_0023b4c8 = sVar1 + 1U & 0xf;
   uw_ord2005_rem_122 = ((int)((int)sVar2)) % (10);
-  Ordinal_719(auStack_60,s_R__lu_P__lu_S__lu_F__d__d_00086b04,iVar4,iVar8,iVar6 - iVar5,(int)sVar3,
+  ce_sprintf(auStack_60,s_R__lu_P__lu_S__lu_F__d__d_00086b04,iVar4,iVar8,iVar6 - iVar5,(int)sVar3,
               (int)uw_ord2005_rem_122);
   return;
 }
@@ -428,7 +630,14 @@ undefined4 build_frame_draw_list()
   DAT_0023aecc = tilemap_lookup(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
   bVar3 = (byte)((short)(g_current_view->view_facing >> 0xd) + 1 >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
-  Ordinal_2005(2);
+  /* Dropped-remainder bug, same class fixed elsewhere this session.
+     Dropped-dividend too (originally a single-arg call): the real ARM
+     code's second register still held bVar3 here, so reconstructed as
+     bVar3 % 2 (quadrant parity, now via ordint_divmod's own
+     divmod_result) -- but DAT_0023b028 has no reader anywhere else in
+     this decompile, so this is a dead store either way and the
+     reconstruction is unverified against any observable behavior. */
+  extraout_r1 = (char)ordint_divmod(2,bVar3).rem;
   DAT_0023b028 = extraout_r1;
   DAT_0023b4a0 = bVar3;
   sync_camera_from_player();
@@ -858,7 +1067,7 @@ byte * param_2;
                   (uint)*(byte *)(param_1 + 6);
           iVar5 = iVar8 * 0x10000;
           uVar1 = iVar5 >> 0x1f;
-          sVar4 = Ordinal_2005(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1);
+          sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1).quot;
           iVar5 = (iVar8 - sVar4) + -2;
           *(char *)(param_1 + 1) = (char)iVar5;
           *(char *)(param_1 + 2) = (char)((uint)iVar5 >> 8);
@@ -884,7 +1093,7 @@ byte * param_2;
                       (uint)*(byte *)(param_2 + 6);
               iVar5 = iVar8 * 0x10000;
               uVar1 = iVar5 >> 0x1f;
-              sVar4 = Ordinal_2005(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1);
+              sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1).quot;
               iVar5 = iVar8 + sVar4 + 2;
               *(char *)(param_2 + 1) = (char)iVar5;
               *(char *)(param_2 + 2) = (char)((uint)iVar5 >> 8);
@@ -974,28 +1183,28 @@ LAB_0005cf04:
              *(ushort *)(&DAT_00086af8 + iVar3 * 2)) &&
            ((int)cVar9 == (int)*(short *)((char *)&DAT_00086afc + iVar3 * 2))) {
           /* Was reading the division helper's remainder back via the
-             extraout_r1 register-leftover trick (see Ordinal_2005's
-             comment) -- computed directly instead, same fix as
-             itoa_radix's identical pattern. The quotient this call
-             also produced was never used (its return value was
-             discarded here too), so the call itself is gone. */
-          cVar12 = (char)((iVar3 + 1) % 2);
+             extraout_r1 register-leftover trick (see ordint_divmod's
+             comment) -- gets it by name off ordint_divmod's own
+             divmod_result now, same fix as itoa_radix's identical
+             pattern. The quotient this call also produces isn't
+             used here. */
+          cVar12 = (char)ordint_divmod(2,iVar3 + 1).rem;
         }
         param_1[6] = -cVar12;
         goto LAB_0005ce50;
       }
       psVar10 = (short *)(&DAT_00086b00 + iVar3 * 2);
       sVar6 = *psVar10;
-      /* Was `Ordinal_2005(2,iVar3+1);` followed by two extraout_r1_00
+      /* Was `ordint_divmod(2,iVar3+1);` followed by two extraout_r1_00
          reads of its division remainder -- same register-leftover
-         pattern as above, computed directly instead. */
-      iVar12 = (iVar3 + 1) % 2;
+         pattern as above, gets it by name off divmod_result now. */
+      iVar12 = ordint_divmod(2,iVar3 + 1).rem;
       if ((*(ushort *)(&DAT_00086af8 + iVar12 * 2) &
           (ushort)(byte)(&DAT_000878d0)
                         [(byte)(&DAT_00086a20)
                                [(pbVar8[(int)*(short *)(&DAT_00086a00 + iVar11 * 6) * (int)sVar6 * 4
                                        ] & 0xf) + iVar2]]) != 0) goto LAB_0005cf04;
-      /* Was `cVar9 = Ordinal_2005(...); param_1[8] = cVar9 + param_1[8];`
+      /* Was `cVar9 = ordint_divmod(...); param_1[8] = cVar9 + param_1[8];`
          -- param_1[8] is a 0-255 accumulated light-attenuation counter
          (saturates the ring-walk's expansion once it hits 0xff -- see
          the `param_1[8] = 0xff` "hit a wall" sets above and the
@@ -1019,8 +1228,8 @@ LAB_0005cf04:
          Compute and accumulate in a wide int and clamp to the byte's
          real 0-255 range instead of truncating through a signed 8-bit
          type. */
-      local_atten_step = (int)Ordinal_2005((int)*(short *)(param_1 + 1) * (int)sVar6,
-                                            (short)local_32 * local_30);
+      local_atten_step = (int)ordint_divmod((int)*(short *)(param_1 + 1) * (int)sVar6,
+                                            (short)local_32 * local_30).quot;
       local_atten_step = local_atten_step + (int)(byte)param_1[8];
       if (local_atten_step < 0) {
         local_atten_step = 0;
@@ -1062,8 +1271,8 @@ LAB_0005cf04:
              (int)((0x100 - (uint)param_1[8]) * (int)*(short *)(param_1 + 1) * (int)*psVar10)));
   }
   sVar6 = *(short *)(&DAT_00086b00 + iVar3 * 2);
-  cVar12 = Ordinal_2005((int)*(short *)(param_1 + 3),
-                        (0xff - (uint)param_1[8]) * (int)*(short *)(param_1 + 1) * (int)sVar6);
+  cVar12 = ordint_divmod((int)*(short *)(param_1 + 3),
+                        (0xff - (uint)param_1[8]) * (int)*(short *)(param_1 + 1) * (int)sVar6).quot;
   param_1[6] = cVar12 * (char)sVar6 + param_1[6];
   param_1[8] = 0xff;
 LAB_0005ce50:
@@ -1392,15 +1601,23 @@ void rebuild_dungeon_view()
   walk_visible_tiles();
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
       (DAT_00201b68 != 9)) &&
-     (sVar3 = Ordinal_2005(10,(int)DAT_0023b810 * (int)DAT_00201b68), sVar3 != 0)) {
-    /* Disabled: grant_experience_points() here is called with a dropped
-       argument (Ghidra lost it) AND from a nonsensical spot -- a dungeon
-       -view rebuild -- so it granted a garbage XP amount on essentially
-       every redraw (spam of "You have attained experience level"). No
-       view rebuild should touch XP; the g_force_redraw_no_xp guard used
-       to only cover the forced-redraw hack, but the game's own
-       movement-driven redraw hit it too. */
-    (void)sVar3;
+     (sVar3 = ordint_divmod(10,(int)DAT_0023b810 * (int)DAT_00201b68).quot, sVar3 != 0)) {
+    /* Was disabled: Ghidra dropped this call's argument entirely, so it
+       ran with garbage and crashed (walked into the level-up message
+       path with a nonsensical XP amount). Real ARM disassembly at this
+       call site (0x5d6e4, `blne 0x69bd0`) shows r0 is simply left
+       untouched from the division just above -- the argument is sVar3
+       itself, the exact quotient already computed on this same line.
+       This is UW1's passive exploration-XP trickle: DAT_0023b810 (reset
+       to 0 above, accumulated by walk_visible_tiles) counts only tiles
+       whose automap-reveal byte flips from unrevealed to revealed this
+       call -- that flag is sticky and never un-sets, so no amount of
+       extra rebuild_dungeon_view calls (this port's forced-3D-redraw
+       hack included) can double-count the same tile or over-grant XP;
+       each newly-explored tile is counted toward this exactly once,
+       whichever call happens to be the one that reveals it. No
+       frequency guard needed -- the real binary has none either. */
+    grant_experience_points(sVar3);
   }
   if (DAT_00201b68 == 9) {
     DAT_00086b30 = uVar1;
@@ -1440,7 +1657,7 @@ byte param_1;
   if (param_1 != 0xff) {
     DAT_0023adc0 = (ushort)param_1;
   }
-  Ordinal_1047(acStack_114,0,0x104);
+  ce_memset(acStack_114,0,0x104);
   pcVar3 = &DAT_0023cca8;
     stack0xffdc3244_ptr = stack0xffdc3244_buf;
   pcVar2 = pcVar3;
@@ -1450,15 +1667,15 @@ byte param_1;
     *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_114,s__DATA_f32_tr_00086de8);
+  ce_strcat(acStack_114,s__DATA_f32_tr_00086de8);
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
-  Ordinal_1047(acStack_114,0,0x104);
+  ce_memset(acStack_114,0,0x104);
   do {
     cVar1 = *pcVar3;
     *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_114,s__DATA_f16_tr_00086dd8);
+  ce_strcat(acStack_114,s__DATA_f16_tr_00086dd8);
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
   return;
 }
@@ -1481,7 +1698,6 @@ void load_shading_level_config(param_1)
 char param_1;
 
 {
-  char stack0xffdc323c_buf [256];
   char *stack0xffdc323c_ptr;
   char cVar1;
   char *pcVar2;
@@ -1511,11 +1727,11 @@ char param_1;
     return;
   }
   pcVar4 = &DAT_0023cca8;
-    stack0xffdc323c_ptr = acStack_11c;
+  stack0xffdc323c_ptr = acStack_11c;
   if (DAT_000872a0 == '\x05') {
-    Ordinal_1047(acStack_11c,0,0x104);
+    ce_memset(acStack_11c,0,0x104);
     pcVar2 = pcVar4;
-    stack0xffdc323c_ptr = stack0xffdc323c_buf;
+    stack0xffdc323c_ptr = acStack_11c;
     do {
       cVar1 = *pcVar2;
       *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
@@ -1525,9 +1741,9 @@ char param_1;
   }
   else {
     if (param_1 != '\x05') goto LAB_0006fff4;
-    Ordinal_1047(acStack_11c,0,0x104);
+    ce_memset(acStack_11c,0,0x104);
     pcVar2 = pcVar4;
-    stack0xffdc323c_ptr = stack0xffdc323c_buf;
+    stack0xffdc323c_ptr = acStack_11c;
     do {
       cVar1 = *pcVar2;
       *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
@@ -1535,21 +1751,23 @@ char param_1;
     } while (cVar1 != '\0');
     pcVar2 = s__DATA_mono_dat_000872b8;
   }
-  Ordinal_1063(acStack_11c,pcVar2);
+  ce_strcat(acStack_11c,pcVar2);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
     read_file_handle(iVar3,DAT_0024fa2c,0x1000);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
   }
 LAB_0006fff4:
   DAT_000872a0 = param_1;
-  Ordinal_1047(acStack_11c,0,0x104);
+  ce_memset(acStack_11c,0,0x104);
+  /* Reset the walker after any LIGHT.DAT/MONO.DAT path construction. */
+  stack0xffdc323c_ptr = acStack_11c;
   do {
     cVar1 = *pcVar4;
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_shades_dat_000872a4);
+  ce_strcat(acStack_11c,s__DATA_shades_dat_000872a4);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
     seek_file_handle(iVar3,param_1 * 0xc0000 >> 0x10,0);
@@ -1563,7 +1781,7 @@ LAB_0006fff4:
     g_visibility_max_ring_passes = local_126;
     DAT_00086b28 = local_124;
     DAT_00086b24 = local_122;
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
     if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
       fprintf(stderr, "[load_shading_level_config] loaded SHADES.DAT record %d: DAT_0025063c=%d DAT_0025064c=%d"
               " DAT_002506dc=%d g_visibility_max_ring_passes=%d DAT_00086b28=%d DAT_00086b24=%d\n",
@@ -1598,12 +1816,12 @@ void load_light_tables()
   char *pcVar4;
   char acStack_11c [260];
   
-  DAT_0024fa2c = Ordinal_1041(0x1000);
+  DAT_0024fa2c = ce_malloc(0x1000);
   if (getenv("UW_DEBUG_BAG_TRACE")) fprintf(stderr, "[bag-trace] DAT_0024fa2c allocated at %p\n", (void *)DAT_0024fa2c);
   if (DAT_0024fa2c == 0) {
     report_fatal_error_message_and_exit(s_cLightTabs_allocation_error_____000872e8);
   }
-  Ordinal_1047(acStack_11c,0,0x104);
+  ce_memset(acStack_11c,0,0x104);
   pcVar4 = &DAT_0023cca8;
     stack0xffdc323c_ptr = stack0xffdc323c_buf;
   pcVar2 = pcVar4;
@@ -1613,23 +1831,23 @@ void load_light_tables()
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_light_dat_000872c8);
+  ce_strcat(acStack_11c,s__DATA_light_dat_000872c8);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
     read_file_handle(iVar3,DAT_0024fa2c,0x1000);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
   }
-  Ordinal_1047(acStack_11c,0,0x104);
+  ce_memset(acStack_11c,0,0x104);
   do {
     cVar1 = *pcVar4;
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_xfer_dat_000872d8);
+  ce_strcat(acStack_11c,s__DATA_xfer_dat_000872d8);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
     read_file_handle(iVar3,&DAT_0024fa38,0x600);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
   }
   return;
 }

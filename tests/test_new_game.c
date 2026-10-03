@@ -32,6 +32,7 @@ static int character_calls, saves, seeds, opens, closes;
 static int restores, textures, automaps, cache_resets, attacker_resets;
 static int spawn_calls, special_state_calls, cursor_resets;
 static bool archive_open;
+bool g_new_game_entry_pause_pending;
 
 undefined4 character_generator_start(void)
 {
@@ -65,7 +66,7 @@ bool write_player_save_record(const char *path)
 undefined *load_string_resource(char *path)
 {
     static char converted[520];
-    Ordinal_196(0, 2, path, -1, converted, 255);
+    MultiByteToWideChar(0, 2, path, -1, converted, 255);
     return (undefined *)converted;
 }
 undefined4 seed_conversation_globals_for_new_game(void)

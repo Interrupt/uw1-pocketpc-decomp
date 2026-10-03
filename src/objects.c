@@ -8,6 +8,80 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+undefined4 DAT_00202c84;
+undefined2 DAT_002020a0;
+undefined2 DAT_002020a4;
+byte *DAT_00202c6c;
+/* Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below,
+   already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of
+   a repeating 6-byte-stride per-candidate record in
+   collision_height_envelope/sort_collision_candidates's up-to-256-entry collision
+   candidate list (the ARM loads at +0/+1/+2/+3/+4/+5 and next-record
+   sort reads at +6/+7 confirm the 6-byte stride). Indexing past element
+   0 read/wrote whatever memory happened to follow this single byte in
+   the link order -- confirmed via a real crash (a plain, non-debugger
+   run walking toward a critter; the same bug reproduced fine under
+   lldb/ASan since they lay out globals differently, masking it there).
+   Keep the aliases in uw.h: independent arrays lose the link high byte. */
+ undefined1 DAT_00202c38_backing[8192];
+ undefined1 DAT_00202c90_backing[65536];
+/* Was `int` despite being assigned real pointer values derived from
+   DAT_002046b8 (see there) and itself assigned into g_player_object
+   (`char *`) -- truncating on this 64-bit host, part of the same crash
+   chain (reset_player_object_record's ce_memset call reading g_player_object). */
+char *DAT_0023b82c;
+undefined1 DAT_002027d0_backing[256];
+ undefined1 DAT_00202800_backing[65536];
+byte *g_scratch_object_ptr;
+short DAT_00101454;
+short DAT_0010144c;
+short DAT_00202a3c;
+byte *DAT_002046c0;
+byte *DAT_002046c8;
+/* Was a plain tentative definition (no initializer), so a truly fresh
+   process starts it at C's default zero instead of the real "no
+   container open" resting state. Every genuine reset in this file
+   (FUN_0003bcd8, probe_save_slots's caller, journey_onward_load_slot_menu's
+   own setup) explicitly sets this to 0xffff/-1, and every reader treats
+   it as signed (`-1 < DAT_00202080` gates load_player_save_record's
+   object_list_unlink call below) -- 0 reads as "container slot 0 is
+   open", spuriously unlinking g_player_object from a wild address
+   computed off a container that was never really open. Confirmed live:
+   SIGBUS in object_list_unlink on the very first "new game" of a
+   process that never had an earlier save to leave this at a sane value
+   (this codebase's regression scripts had been silently relying on
+   stale state left over from a prior interactive session to avoid ever
+   hitting this fresh-process path). */
+short DAT_00202080 = -1;
+ushort *DAT_002046b4;
+undefined1 DAT_002029f8_backing[256];
+char *DAT_002046a4;
+char *DAT_002046a8;
+char * DAT_002046bc;
+char *DAT_0020469c;
+undefined1 DAT_002029d8_backing[256];
+short DAT_00202a40;
+ushort DAT_00202a48;
+short DAT_00202a38;
+ushort DAT_00202a4c;
+/* FUN_0004ad10 reads word 1 (position) and word 12 (heading). */
+ushort *DAT_00202a44;
+undefined2 DAT_00202a50;
+undefined2 DAT_00202a54;
+static char s__DATA_comobj_dat_00086894[] = "\\DATA\\comobj.dat";
+static char s__DATA_objects_dat_000868a8[] = "\\DATA\\objects.dat";
+short DAT_002046b0;
+static int DAT_002046d4;
+static int DAT_002046ec;
+/* Was a lone `undefined` scalar, but the real class6 variant-effect
+   lookup (uw.c ~46760, class6_variant_effect_table_lookup) indexes it
+   as `&DAT_0024cfe0 + nibble` for nibble 0..0xf, and its boot-time
+   loader (load_class6_variant_effect_table) reads exactly 0x10 bytes
+   into it -- same lone-scalar-treated-as-array bug class fixed
+   repeatedly elsewhere in this file. */
+undefined1 DAT_0024cfe0_backing[8192];
+undefined1 DAT_00250730_backing[65536];
+
 
 
 
@@ -38,28 +112,6 @@ LAB_0004b06c:
     puVar6 = (ushort *)0x0;
   }
   else {
-    if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[throw-height] seeding puVar6[1] from garbage=0x%x with template DAT_00202a44[1]=0x%x\n",
-              (unsigned)puVar6[1], (unsigned)DAT_00202a44[1]);
-    /* EXPERIMENTAL, not yet disassembly-verified: puVar6[1] (byte offset
-       2-3) starts as whatever alloc_object_slot's free-list handed back
-       (real leftover data from that slot's previous occupant -- alloc_
-       object_slot itself never clears it, and every later read-modify-
-       write of this field in this function, confirmed faithful to the
-       real disassembly, deliberately preserves bits 0-6 of it rather
-       than resetting them). Those exact bits are what the height field
-       (param_1[0xf]/[0x10] inside compute_object_placement_fields, and again at the
-       `iVar8=((byte)puVar6[1]&0x7f)<<3` line below) is computed from --
-       so a freshly-recycled slot gives the spawned item a height derived
-       from uninitialized memory. Seeding from the template object's
-       (DAT_00202a44, the player in this call path) own same field before
-       any of this function's bit-blending runs is the most defensible
-       guess at what the original game relied on already being true of a
-       reused slot, but has NOT been confirmed against real disassembly
-       the way this session's other fixes were -- flagged for a follow-up
-       pass rather than shipped as a confirmed fix. */
-    *(char *)(puVar6 + 1) = (char)DAT_00202a44[1];
-    *(char *)((char *)puVar6 + 3) = (char)(DAT_00202a44[1] >> 8);
     *(byte *)(puVar6 + 2) = (byte)puVar6[2] & 0x3f;
     *(undefined1 *)((char *)puVar6 + 5) = 0;
     uVar7 = CONCAT11(*(undefined1 *)((char *)puVar6 + 1),(char)*puVar6) | 0x8000;
@@ -103,7 +155,7 @@ LAB_0004b06c:
     *(byte *)(puVar6 + 1) = bVar1;
     *(byte *)((char *)puVar6 + 3) = bVar2;
     if ((byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] != 0) {
-      cVar4 = Ordinal_2005(6,(uint)(byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] * 5);
+      cVar4 = ordint_divmod(6,(uint)(byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] * 5).quot;
       bVar3 = (cVar4 + (char)DAT_00202a3c * '\x02' + (bVar1 & 0x7f) ^ bVar1) & 0x7f ^ bVar1;
       *(byte *)(puVar6 + 1) = bVar3;
       *(byte *)((char *)puVar6 + 3) = bVar2;
@@ -135,7 +187,7 @@ LAB_0004b06c:
       iVar8 = ((byte)puVar6[1] & 0x7f) << 3;
       *(char *)((char *)puVar6 + 0xf) = (char)iVar8;
       *(char *)(puVar6 + 8) = (char)((uint)iVar8 >> 8);
-      if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(), 0xff < sVar5)) {
+      if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(DAT_00202a44), 0xff < sVar5)) {
         sVar5 = 0;
       }
       *(char *)(puVar6 + 9) = (char)sVar5;
@@ -167,39 +219,13 @@ LAB_0004b06c:
        user's bug-throw-item.txt once its trailing WAIT gave the object-
        drop tick enough time to run. */
     pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
-    DEBUG(INFO, "[drop] object id=0x%03x landed at tile=(%d,%d)\n",
+    DEBUG(INFO, "[throw] object id=0x%03x spawned at tile=(%d,%d)\n",
           (unsigned)(*puVar6 & 0x1ff), puVar6[0xb] >> 10, (puVar6[0xb] & 0x3f0) >> 4);
     object_list_insert_head(pbTile + 2,puVar6);
     play_sound_effect_at_object(10,puVar6,0);
-    /* HACK, not disassembly-derived at this call site -- same fix as
-       drop_held_object_near_player's trajectory branch, see that
-       comment for the full explanation. This function (like that one)
-       places its result via alloc_object_slot(1), the MOBILE object
-       arena; complete the mobile->immobile settle transition
-       synchronously here too, since nothing else will. On by default;
-       set UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
-       forever, un-pickable) behavior. settle_mobile_to_immobile unconditionally
-       frees its input object (via its own discard_misplaced_object(
-       ...,1) call) regardless of whether the immobile copy succeeds,
-       so puVar6 must always be reassigned to its return value here --
-       including NULL, on the (class-gated, rare) chance it rolled the
-       object's own decay/destroy check -- never left pointing at the
-       now-freed original. */
-    if (!getenv("UW_DISABLE_SETTLE_IMMOBILE")) {
-      ushort *pImmobile;
-      undefined2 uVarSavedTileX = DAT_0010144c;
-      undefined2 uVarSavedTileY = DAT_00101454;
-      DAT_0010144c = (ushort)(puVar6[0xb] >> 10);
-      DAT_00101454 = (ushort)((puVar6[0xb] & 0x3f0) >> 4);
-      pImmobile = settle_mobile_to_immobile(puVar6);
-      DAT_0010144c = uVarSavedTileX;
-      DAT_00101454 = uVarSavedTileY;
-      if (getenv("UW_DEBUG_THROW"))
-        fprintf(stderr, "[settle-immobile] settle_mobile_to_immobile(%p) -> %p in_arena=%d\n",
-                (void *)puVar6, (void *)pImmobile,
-                pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
-      puVar6 = pImmobile;
-    }
+    /* The original FUN_0004ad10 returns the mobile object here.
+       mobile_object_tick integrates its flight and sync_object_tile_position
+       converts it to an immobile item only once its velocity reaches zero. */
   }
   return puVar6;
 }
@@ -285,7 +311,7 @@ char *param_1;
   if (param_1 < DAT_002046c4) {
     psVar2 = (short *)(DAT_002046a8 + 2);
     DAT_002046a8 = (char *)psVar2;
-    sVar1 = Ordinal_2005(0x1b,param_1 - DAT_002046b8);
+    sVar1 = ordint_divmod(0x1b,param_1 - DAT_002046b8).quot;
     *psVar2 = sVar1;
     if (param_1 == DAT_0023b82c) {
       enter_free_camera_mode((int)*(short *)DAT_002046a8);
@@ -320,7 +346,7 @@ char *param_2;
   *(byte *)(param_2 + 4) = (*(byte *)(param_2 + 4) ^ bVar2) & 0x3f ^ bVar2;
   *(char *)(param_2 + 5) = (char)((ushort)uVar1 >> 8);
   if (param_2 < DAT_002046c4) {
-    sVar3 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
+    sVar3 = ordint_divmod(0x1b,param_2 - DAT_002046b8).quot;
     uVar4 = *param_1 & 0x3f | sVar3 << 6;
   }
   else {
@@ -355,7 +381,7 @@ char *param_2;
   *(byte *)(param_2 + 4) = *(byte *)(param_2 + 4) & 0x3f;
   *(undefined1 *)(param_2 + 5) = 0;
   if (param_2 < DAT_002046c4) {
-    sVar1 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
+    sVar1 = ordint_divmod(0x1b,param_2 - DAT_002046b8).quot;
     uVar3 = *param_1 & 0x3f | sVar1 << 6;
   }
   else {
@@ -564,7 +590,7 @@ char *param_1;
     iVar2 = 0;
   }
   else if (param_1 < DAT_002046c4) {
-    sVar1 = Ordinal_2005(0x1b,param_1 - DAT_002046b8);
+    sVar1 = ordint_divmod(0x1b,param_1 - DAT_002046b8).quot;
     iVar2 = (int)sVar1;
   }
   else {
@@ -731,7 +757,7 @@ LAB_00038100:
           uVar6 = 0xffffffff;
         }
         else {
-          uVar5 = Ordinal_1053();
+          uVar5 = ce_rand();
           if ((uVar5 & 3) == 0) {
             uVar4 = roll_dice_sum(6,10);
             spawn_scheduled_effect_object(param_1,8,uVar4,0,0,sVar2,param_5);
@@ -813,22 +839,23 @@ int param_6;
   uint local_a8;
   undefined1 *local_a4;
   uint local_a0;
-  ushort uStack_9a;
-  ushort auStack_98 [12];
-  /* local_80 is the start of a >=0x14-byte struct (Ghidra only tracked
-     the first two bytes as named locals); widened to fit the real memset
-     below instead of overflowing a 1-byte stack slot. local_7f is now a
-     separate, unaliased byte purely to avoid rewriting its few use sites.
-     NOT text formatting (a prior pass's guess, now corrected): local_80/
-     local_58 are the two BFS frontier buffers, each holding up to 10
-     (x,y) tile-coordinate byte pairs -- see this function's own comment. */
-  undefined1 local_80 [0x14];
-  undefined1 local_7f;
+  /* Ghidra split the visited columns at adjacent stack offsets 0x2a/
+     0x2c. Keep the preceding column in the same array: expressions that
+     used &uStack_9a index one column before auStack_98. Initialize the
+     whole bitmap, since the original nine-byte memset left high columns
+     indeterminate on this host. */
+  ushort visited_storage [13] = {0};
+  ushort *auStack_98 = visited_storage + 1;
+  /* ARM 0x38e4c/0x38e5c stores X/Y at sp+0x44/sp+0x45, the first
+     coordinate pair in one buffer. Both frontiers span 0x28 bytes on
+     the original stack and hold up to 0x14 pairs. A separate local_7f
+     made the search read Y=0; a 0x14-byte buffer overflowed after swaps. */
+  undefined1 local_80 [40];
   undefined1 local_58 [40];
-  
-  Ordinal_1047(local_80,0,0x14);
-  Ordinal_1047(local_58,0,0x14);
-  Ordinal_1047(auStack_98,0,9);
+
+  ce_memset(local_80,0,0x14);
+  ce_memset(local_58,0,0x14);
+  ce_memset(auStack_98,0,9);
   iVar9 = param_2 + -4;
   if (iVar9 < 1) {
     iVar9 = 1;
@@ -858,7 +885,7 @@ int param_6;
   local_a4 = local_80;
   local_b0 = local_58;
   local_80[0] = (char)param_2;
-  local_7f = (char)param_3;
+  local_80[1] = (char)param_3;
   iVar9 = (int)cVar21;
   iVar1 = (int)cVar7;
   auStack_98[param_2 - iVar9] =
@@ -930,11 +957,11 @@ LAB_00039620:
             uVar16 = 1 << (uVar19 & 0xff);
             iVar14 = iVar2 - iVar9;
             puVar11 = auStack_98 + iVar14;
-            if ((((uVar16 & (int)(short)(&uStack_9a)[iVar14]) == 0) && (uVar20 < 0x14)) &&
+            if ((((uVar16 & (int)(short)(auStack_98 - 1)[iVar14]) == 0) && (uVar20 < 0x14)) &&
                ((iVar9 <= iVar2 + -1 &&
                 (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))))) {
               cVar18 = -1;
-              (&uStack_9a)[iVar14] = (&uStack_9a)[iVar14] | (ushort)uVar16;
+              (auStack_98 - 1)[iVar14] = (auStack_98 - 1)[iVar14] | (ushort)uVar16;
               goto LAB_00039590;
             }
             goto LAB_000395ac;
@@ -970,11 +997,11 @@ LAB_00039408:
             uVar16 = 1 << (uVar19 & 0xff);
             iVar14 = iVar2 - iVar9;
             puVar11 = auStack_98 + iVar14;
-            if ((((uVar16 & (int)(short)(&uStack_9a)[iVar14]) == 0) && (uVar20 < 0x14)) &&
+            if ((((uVar16 & (int)(short)(auStack_98 - 1)[iVar14]) == 0) && (uVar20 < 0x14)) &&
                ((iVar9 <= iVar2 + -1 &&
                 (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))))) {
               cVar18 = -1;
-              (&uStack_9a)[iVar14] = (&uStack_9a)[iVar14] | (ushort)uVar16;
+              (auStack_98 - 1)[iVar14] = (auStack_98 - 1)[iVar14] | (ushort)uVar16;
               goto LAB_000393ec;
             }
             goto LAB_00039408;
@@ -983,13 +1010,13 @@ LAB_00039408:
           uVar16 = 1 << (uVar19 & 0xff);
           iVar14 = iVar2 - iVar9;
           puVar11 = auStack_98 + iVar14;
-          uVar17 = (&uStack_9a)[iVar14];
+          uVar17 = (auStack_98 - 1)[iVar14];
           if (((((uVar16 & (int)(short)uVar17) == 0) && (uVar20 < 0x14)) && (iVar9 <= iVar2 + -1))
              && (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))) {
             local_b0[uVar20 * 2] = cVar7 + -1;
             (local_b0 + uVar20 * 2)[1] = cVar21;
             uVar20 = uVar20 + 1 & 0xff;
-            (&uStack_9a)[iVar14] = uVar17 | (ushort)uVar16;
+            (auStack_98 - 1)[iVar14] = uVar17 | (ushort)uVar16;
           }
           uVar3 = 1 << (uVar19 - 1 & 0xff);
           uVar17 = *puVar11;
@@ -1214,7 +1241,7 @@ undefined4 load_object_catalog_data()
   local_13c[2] = load_light_food_effect_tables;
   local_13c[6] = (code *)&load_class6_variant_effect_table;
   local_13c[7] = (code *)&load_class7_variant_effect_table;
-  Ordinal_1047(acStack_11c,0,0x104);
+  ce_memset(acStack_11c,0,0x104);
   pcVar7 = &DAT_0023cca8;
     stack0xffdc323c_ptr = stack0xffdc323c_buf;
   pcVar2 = pcVar7;
@@ -1224,7 +1251,7 @@ undefined4 load_object_catalog_data()
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_objects_dat_000868a8);
+  ce_strcat(acStack_11c,s__DATA_objects_dat_000868a8);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 == -1) {
     uVar4 = 0x3005;
@@ -1237,14 +1264,14 @@ undefined4 load_object_catalog_data()
       }
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 8);
-    Ordinal_553(iVar3);
-    Ordinal_1047(acStack_11c,0,0x104);
+    CloseHandle(iVar3);
+    ce_memset(acStack_11c,0,0x104);
     do {
       cVar1 = *pcVar7;
       *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
       pcVar7 = pcVar7 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_11c,s__DATA_comobj_dat_00086894);
+    ce_strcat(acStack_11c,s__DATA_comobj_dat_00086894);
     iVar5 = open_file_for_read(acStack_11c);
     if (iVar5 == -1) {
       uVar4 = 0x3006;
@@ -1266,7 +1293,7 @@ undefined4 load_object_catalog_data()
         iVar3 = iVar3 + -1;
         puVar6 = puVar6 + 0xd;
       } while (iVar3 != 0);
-      Ordinal_553(iVar5);
+      CloseHandle(iVar5);
       uVar4 = 0;
     }
   }
@@ -1803,7 +1830,7 @@ ushort param_2;
 // "find next match" resumable-search pattern. Confirmed used by
 // doors.c (locating a door's matching key/trigger by packed tile
 // coordinates) and traps.c (scanning for trap-relevant objects).
-int find_object_in_world(param_1,param_2,param_3,param_4,param_5)
+ushort *find_object_in_world(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
 undefined2 param_3;
@@ -1813,9 +1840,13 @@ short * param_5;
 {
   short sVar1;
   int iVar2;
-  int iVar3;
+  /* Ghidra used 32-bit integers for the tile cursor and object return.
+     Preserve both pointers on the 64-bit host, including resurrection's
+     check_scheduled_object_level_match call after a player death. */
+  char *iVar3;
+  ushort *puVar6;
   ushort *local_24;
-  
+
   if (0x3f < *param_4) {
     *param_4 = 0;
     *param_5 = *param_5 + 1;
@@ -1830,8 +1861,8 @@ short * param_5;
       do {
         local_24 = (ushort *)(iVar3 + 2);
         if (((*local_24 & 0xffc0) != 0) &&
-           (iVar2 = find_object_in_chain(&local_24,1,param_1,param_2,param_3), iVar2 != 0)) {
-          return iVar2;
+           (puVar6 = find_object_in_chain(&local_24,1,param_1,param_2,param_3), puVar6 != 0)) {
+          return puVar6;
         }
         sVar1 = *param_4;
         iVar3 = iVar3 + 4;
@@ -1865,14 +1896,14 @@ int param_1;
   int iVar3;
   
   if (DAT_002046d4 == 0) {
-    cVar1 = Ordinal_1053();
+    cVar1 = ce_rand();
     *(byte *)(param_1 + 0x14) = (cVar1 + 1U & 3) * '/';
     *(undefined1 *)(param_1 + 0x15) = 0;
     *(undefined1 *)(param_1 + 0x10) = 0xfc;
     *(undefined1 *)(param_1 + 0x11) = 0xff;
   }
   else {
-    sVar2 = Ordinal_1053();
+    sVar2 = ce_rand();
     iVar3 = (((int)sVar2 & 0x3fffU) - 0x2000) + (int)*(short *)(param_1 + 0x21);
     *(char *)(param_1 + 0x21) = (char)iVar3;
     *(char *)(param_1 + 0x22) = (char)((uint)iVar3 >> 8);
@@ -2034,17 +2065,17 @@ LAB_000564d8:
       DAT_00101454 = uVar3;
       if (DAT_002046d4 != 0) {
         *(byte *)((char *)puVar9 + 0x13) = *(byte *)((char *)puVar9 + 0x13) & 0x83 | 3;
-        uVar10 = Ordinal_1053();
+        uVar10 = ce_rand();
         uw_ord2005_rem_119 = ((int)(uVar10)) % (9);
         *(char *)((char *)puVar9 + 9) = *(char *)((char *)puVar9 + 9) + (uw_ord2005_rem_119 + '\f') * '\x10';
       }
       if (param_4 == 0) {
         return puVar9;
       }
-      bVar5 = Ordinal_1053();
+      bVar5 = ce_rand();
       *(byte *)((char *)puVar9 + 0x13) =
            ((bVar5 & 3) + 1 ^ *(byte *)((char *)puVar9 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar9 + 0x13);
-      bVar5 = Ordinal_1053();
+      bVar5 = ce_rand();
       *(byte *)(puVar9 + 10) = (byte)puVar9[10] & 7 ^ ((bVar5 & 3) + 0xe) * '\b';
       return puVar9;
     }
@@ -2434,26 +2465,23 @@ short param_5;
   while( true ) {
     if ((bVar3 != 0) || (uVar4 = param_2, uVar6 = param_3, DAT_00202c84 == 0)) {
       iVar5 = (int)(short)(param_5 * 2 + 1);
-      /* Was `Ordinal_2005(iVar5,uVar2); ... (int)extraout_r1 ...` (twice)
+      /* Was `ordint_divmod(iVar5,uVar2); ... (int)extraout_r1 ...` (twice)
          -- bare calls whose result was read back via Ghidra's
          extraout_r1 idiom, always uninitialized garbage on this host
          (there's no way to read a second register out of a normal C
-         call). Ordinal_2005 is COREDLL's div/mod ordinal
+         call). ordint_divmod is COREDLL's div/mod ordinal
          (divisor,dividend): the quotient is its real C return value,
-         but this caller wants the REMAINDER -- confirmed by
-         ordinal_stubs.c's own comment on Ordinal_2005 documenting
-         exactly this "extraout_r1 reads want the remainder" idiom.
-         Compute it directly instead of reading a nonexistent second
-         return value: this crashed 100% of the time using Use mode on
-         a container (find_object_placement is how try_combine_or_
-         stow_object scatters emptied contents onto the ground),
-         confirmed live, because uVar4/uVar6 below were built from
-         garbage stack memory, sending object placement to a wild
-         tile. */
-      uVar2 = Ordinal_1053();
-      uVar4 = (((int)uVar2 % iVar5) - (int)param_5) + param_2;
-      uVar2 = Ordinal_1053();
-      uVar6 = (((int)uVar2 % iVar5) - (int)param_5) + param_3;
+         but this caller wants the REMAINDER, now named off its own
+         divmod_result instead of a nonexistent second return value:
+         this crashed 100% of the time using Use mode on a container
+         (find_object_placement is how try_combine_or_stow_object
+         scatters emptied contents onto the ground), confirmed live,
+         because uVar4/uVar6 below were built from garbage stack
+         memory, sending object placement to a wild tile. */
+      uVar2 = ce_rand();
+      uVar4 = (ordint_divmod(iVar5,(int)uVar2).rem - (int)param_5) + param_2;
+      uVar2 = ce_rand();
+      uVar6 = (ordint_divmod(iVar5,(int)uVar2).rem - (int)param_5) + param_3;
     }
     uVar2 = encode_object_slot_index(param_1);
     iVar5 = check_object_placement_clearance(*param_1 & 0x1ff,uVar2,uVar4,uVar6,param_4,1,0);

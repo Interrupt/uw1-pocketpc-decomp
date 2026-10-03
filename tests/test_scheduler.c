@@ -11,6 +11,8 @@ undefined1 g_scheduler_count;
 undefined4 DAT_0023b804;
 int DAT_002508fc;
 short DAT_0010144c, DAT_00101454;
+undefined1 DAT_002048f0_backing[65536];
+undefined1 DAT_00204950_backing[65536];
 static char queue[64 * 6];
 static ushort objects[3][16];
 static char tiles[3][8];
@@ -26,14 +28,18 @@ undefined2 DAT_002048c0_backing[32768];
 undefined1 DAT_002048f0_backing[65536], DAT_00204950_backing[65536];
 undefined1 DAT_00204980_backing[65536];
 undefined2 DAT_00204990_backing[32768], DAT_002049b0_backing[32768];
-undefined DAT_002027d1_backing[8192], DAT_000853d8;
+undefined1 DAT_002027d0_backing[256];
+undefined DAT_000853d8;
 ushort DAT_000853b8, DAT_00101414, DAT_0010141c, DAT_00101910;
 short DAT_00101938, DAT_0010193c, DAT_00202a3c;
 byte DAT_00101918, DAT_001013f8, DAT_0010140c, DAT_00101458;
 byte DAT_001018fc, DAT_00101434, DAT_00101730;
 char DAT_0010143c, DAT_0010173c;
 undefined1 DAT_00101738;
-undefined4 DAT_00101924, DAT_00101734, DAT_0010191c, DAT_001013fc;
+undefined4 DAT_00101924, DAT_0010191c, DAT_001013fc;
+/* DAT_00101734 is now a macro (uw.h) aliasing element 0 of a real
+   256-entry backing array -- see that header's own comment. */
+undefined4 DAT_00101734_backing[256];
 undefined4 DAT_00101560, DAT_00101914, DAT_00101944;
 int DAT_00101430;
 
@@ -56,8 +62,8 @@ void free_object_slot(void *object)
     freed[slot]++;
 }
 void set_pending_update_flags(int flags) { (void)flags; }
-long Ordinal_2005(int divisor, int dividend) { return dividend / divisor; }
-long Ordinal_1053(void) { return 15; }
+divmod_result ordint_divmod(int divisor, int dividend) { divmod_result r = {dividend / divisor, dividend % divisor}; return r; }
+long ce_rand(void) { return 15; }
 int encode_object_slot_index(void *object)
 {
     if (object == objects[1]) return 1;

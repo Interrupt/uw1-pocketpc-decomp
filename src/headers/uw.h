@@ -234,7 +234,7 @@ typedef struct __attribute__((packed)) {
  * evidence (a direct, already-written comment naming the bit/byte's
  * real meaning) that is_container/has_look_description had. */
 typedef struct __attribute__((packed)) {
-    unsigned char _unk00;        /* offset 0x00: a numeric stat (fed into Ordinal_2005/roll-style calls in several places) -- not yet confirmed */
+    unsigned char _unk00;        /* offset 0x00: a numeric stat (fed into ordint_divmod/roll-style calls in several places) -- not yet confirmed */
     unsigned char _unk01_02[2];  /* offsets 0x01-0x02: packed sub-fields -- a low 3 bits (&7) value read separately from a >>4 value spanning into offset 2, neither named yet */
     unsigned char _unk03;        /* offset 0x03: flag byte -- bits 2/3/8(0x8) individually checked at different call sites, none named yet */
     unsigned char _unk04;        /* offset 0x04: unconfirmed */
@@ -556,36 +556,20 @@ extern int g_blit_transparent_mode;
    graphics.c (screen_backup_save/restore/restore_rect) -- extern'd here so
    both translation units see the same storage. */
 #define g_transparent_screen_color (*(short *)&g_palette_rgb565_backing[26])
-extern undefined2 DAT_000891b0_backing[76800];
-#define DAT_000891b0 DAT_000891b0_backing[0]
-extern int g_ambient_bias_reduction;
 /* Globals defined in uw.c but also used by functions that now live in
    graphics.c (expand_pals_bytes, build_rgb565_palette,
    palette_cycle_range) -- extern'd here so both translation units see
    the same storage. */
 extern int DAT_0024af70;
-extern undefined1 DAT_00084a40_backing[32768];
-#define DAT_00084a40 DAT_00084a40_backing[0]
 extern undefined2 DAT_00242010_backing[32768];
 #define DAT_00242010 DAT_00242010_backing[0]
 extern undefined2 DAT_00248418_backing[20 * 256];
 #define DAT_00248418 DAT_00248418_backing[0]
-extern undefined1 DAT_001005cc;
-extern undefined1 DAT_001005cd;
-extern undefined1 DAT_001005ce;
 /* Globals defined in uw.c but also used by functions that now live in
    automap.c (pick_closer_note_label, handle_automap_note_click,
    draw_automap_notes, save_automap_notes_to_archive,
    load_automap_notes_from_archive, switch_automap_level_display) --
    extern'd here so both translation units see the same storage. */
-extern short DAT_000bbef0;
-extern undefined2 DAT_000b99c8;
-extern undefined1 DAT_000ba9d8_backing[32768];
-#define DAT_000ba9d8 DAT_000ba9d8_backing[0]
-extern undefined1 DAT_000baa0a;
-extern undefined1 DAT_000baa0b;
-extern undefined1 DAT_000baa0c;
-extern undefined1 DAT_000baa0d;
 /* Globals defined in uw.c but also used by functions that now live in
    game.c (app_main_loop, main_menu_loop) -- extern'd here so both
    translation units see the same storage. */
@@ -599,18 +583,10 @@ extern short *DAT_000876c0;
 extern int DAT_000876c8;
 extern char *DAT_000879b0;
 extern char *DAT_000890a4;
-extern undefined2 DAT_00201b6c;
 extern int DAT_00201c98;
-extern char *DAT_0023bf6c;
-extern char *DAT_0023bf70;
 extern char *g_weapon_swing_current_frame;
-extern char *g_weapon_swing_startup_scratch_buffer;
 extern ushort DAT_0023c448;
-extern char *DAT_0023c44c;
 extern undefined4 DAT_0023c540;
-extern undefined2 DAT_0023c59e;
-extern undefined2 DAT_0023c5a0;
-extern int DAT_0023c5b0;
 extern undefined4 DAT_0023c648;
 extern void *DAT_0023c7a0_arr[0x140];
 #define DAT_0023c7a0 DAT_0023c7a0_arr[0]
@@ -618,51 +594,24 @@ extern char *DAT_0023cca0;
 extern char *DAT_0023cca4;
 extern undefined1 DAT_0023cca8_backing[32768];
 #define DAT_0023cca8 DAT_0023cca8_backing[0]
-extern char *DAT_0023cef0;
 extern char *DAT_00248410;
-extern char *DAT_0024ad58;
 extern int DAT_0024af60;
 extern short DAT_0024af6c;
 extern int g_text_use_palette_color;
 extern byte *DAT_0024af78;
 extern byte *DAT_0024af7c;
-extern char s_0123456789ABCDEF_00084a28[];
-extern char s__DATA_CREDIT1_BYT_00086ed0[];
-extern char s__DATA_CREDIT2_BYT_00086ebc[];
-extern char s__DATA_CREDIT3_BYT_00086ea8[];
-extern char s__DATA_lev_ark_00085734[];
-extern char s__DATA_pres1_byt_00085790[];
-extern char s__DATA_pres2_byt_00085780[];
-extern char s__DATA_COPYRIGHT_BYT_0008576c[];
-extern char s_Not_enough_disk_space_for_save_g_00085744[];
-extern char s__DATA_opscr_byt_00086eec[];
 extern char s__SAVE0_lev_ark_000842fc[];
 extern char s_FONT5X6P_SYS_00084e9c[];
 extern char s_FONTBIG_SYS_00085454[];
-extern char s_opbtn_00086ee4[];
-extern unsigned short u_Ultima_Under_World_00087690[];
-extern unsigned short u_UltimaUW_00087678[];
 /* Globals defined in uw.c but also used by functions that now live in
    saveload.c (open_level_archive, close_level_archive,
    write_archive_entry, read_archive_entry) -- extern'd here so both
    translation units see the same storage. */
-extern char s__arc_tmp_000842b4[];
-extern undefined DAT_000b78b8_backing[8192];
-#define DAT_000b78b8 DAT_000b78b8_backing[0]
-extern undefined1 DAT_000b98b8_backing[32768];
-#define DAT_000b98b8 DAT_000b98b8_backing[0]
-extern undefined1 DAT_000b98b9_backing[32768];
-#define DAT_000b98b9 DAT_000b98b9_backing[0]
-extern undefined1 DAT_000b58b8_backing[16384];
-#define DAT_000b58b8 DAT_000b58b8_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    chargen.c (character_generator_start, run_character_generator,
    character_generator_loop) -- extern'd here so both translation units
    see the same storage. */
 extern char *DAT_00086df8;
-extern char *DAT_000fb858;
-extern undefined1 DAT_000fb860_backing[256];
-#define DAT_000fb860 DAT_000fb860_backing[0]
 /* chrbtns.gr cumulative per-entry offset table (built by chrbtns_offset_table_builder).
    DAT_000fb8c4 is an alias into it starting at element 17 -- the same
    relationship DAT_000fb884 (element 1) has, matching the 0xfb8c4 vs
@@ -674,13 +623,6 @@ extern undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb884 (((undefined1 *)DAT_000fb880_backing)[4])
 #define DAT_000fb898 (((int *)DAT_000fb880_backing)[6])
 /* Fourth byte of each loaded class row is its attribute bonus pool. */
-#define DAT_000fb863 DAT_000fb860_backing[3]
-extern char s_key_to_continue_00084e60[];
-extern char s_then_press_the_Enter_00084e70[];
-extern char s_Enter_your_name_and_00084e88[];
-extern undefined1 DAT_000fb8f0_backing[1680];
-#define DAT_000fb8f0 DAT_000fb8f0_backing[0]
-extern char *DAT_001005c4;
 extern char *DAT_001005c8;
 extern char *g_chargen_textfield_buf;
 /* chrbtns_bump_alloc_entry/chrbtns_offset_table_builder: orphaned callbacks Ghidra never recognized
@@ -690,16 +632,9 @@ extern char *g_chargen_textfield_buf;
    run_character_generator (chargen.c) takes their addresses. */
 char *chrbtns_bump_alloc_entry();
 undefined4 chrbtns_offset_table_builder();
-extern short DAT_001005c0;
-extern char s__DATA_CHARGEN_BYT_00084eac[];
-extern char s_FONTCHAR_SYS_00084ec0[];
-extern char s__DATA_chrgen_dat_00084ed0[];
-extern char s__DATA_skills_dat_00084ee4[];
-extern char s_chrbtns_00084ef8[];
 /* Globals defined in uw.c but also used by functions that now live in
    babl.c (the conversation/dialogue scripting VM) -- extern'd here so
    both translation units see the same storage. */
-extern char DAT_000845a8[];
 extern char DAT_00085240_backing[8192];
 #define DAT_00085240 DAT_00085240_backing[0]
 extern char DAT_00085244_backing[32768];
@@ -707,90 +642,14 @@ extern char DAT_00085244_backing[32768];
 extern char DAT_00085248_backing[32768];
 #define DAT_00085248 DAT_00085248_backing[0]
 extern undefined4 DAT_00085c54;
-extern intptr_t DAT_000bbf00;
-extern intptr_t DAT_000bbf0c;
-extern int DAT_000bbf10;
-extern intptr_t DAT_000bbf14;
-extern char * DAT_000bbf18;
-extern short DAT_000bbf1c;
-extern short DAT_000bbf24;
-extern short DAT_000bbf2c;
-extern short DAT_000bbf08;
-extern intptr_t DAT_000bbf70;
-extern short DAT_000bbf74;
-extern short DAT_000bbf78;
-extern short DAT_000bbf7c;
-extern char * DAT_000bbf80;
-extern short DAT_000bbf84;
-extern undefined2 DAT_000bbf8c;
-extern undefined4 DAT_000bbf98;
-extern undefined2 DAT_000bbfa8_backing[8192];
-#define DAT_000bbfa8 DAT_000bbfa8_backing[0]
-extern undefined2 DAT_000bbfb0_backing[8192];
-#define DAT_000bbfb0 DAT_000bbfb0_backing[0]
-extern undefined2 DAT_000bbfb8;
-extern undefined2 DAT_000bbfbc;
-extern undefined2 DAT_000bbfc0_backing[8192];
-#define DAT_000bbfc0 DAT_000bbfc0_backing[0]
-extern undefined2 DAT_000bbfc8_backing[8192];
-#define DAT_000bbfc8 DAT_000bbfc8_backing[0]
-extern undefined2 DAT_000bbfd0;
-extern undefined2 DAT_000bbfe8;
-extern undefined4 DAT_000bbff0;
-extern char * DAT_000bc000;
-extern short DAT_000bc004;
-extern undefined1 DAT_000bc008;
-extern char * DAT_000bc020;
-extern short DAT_000bc024;
-extern char * DAT_00100670;
 extern ushort * DAT_00100674;
-extern undefined1 DAT_00100678;
-extern undefined1 DAT_00100680_backing[65536];
-#define DAT_00100680 DAT_00100680_backing[0]
-extern undefined1 DAT_001006d8_backing[65536];
-#define DAT_001006d8 DAT_001006d8_backing[0]
-extern char * DAT_00100728_backing[256];
-#define DAT_00100728 DAT_00100728_backing[0]
-#define DAT_0010072c DAT_00100728_backing[1]
-#define DAT_00100730 DAT_00100728_backing[2]
-#define DAT_00100734 DAT_00100728_backing[3]
-#define DAT_00100738 DAT_00100728_backing[4]
-#define DAT_0010073c DAT_00100728_backing[5]
-extern short DAT_00100770_backing[32768];
-#define DAT_00100770 DAT_00100770_backing[0]
-extern char * DAT_00100784;
-extern short DAT_001006d0;
-extern short DAT_00100788;
-extern short DAT_0010078c;
-extern undefined2 DAT_00100790;
-extern short DAT_00100794;
-extern undefined1 DAT_001007a0_backing[65536];
-#define DAT_001007a0 DAT_001007a0_backing[0]
-extern char DAT_001007b4;
-extern char * DAT_001007b8;
-extern char * DAT_001007c0;
-extern undefined1 DAT_00085230_backing[32768];
-#define DAT_00085230 DAT_00085230_backing[0]
-extern undefined DAT_00085234_backing[8192];
-#define DAT_00085234 DAT_00085234_backing[0]
-extern undefined1 DAT_0008523c_backing[32768];
-#define DAT_0008523c DAT_0008523c_backing[0]
-extern short DAT_001007bc;
-extern undefined *DAT_001007c8;
 extern ushort DAT_001007c4;
-extern undefined DAT_001007d5_backing[8192];
-#define DAT_001007d5 DAT_001007d5_backing[0]
-extern undefined DAT_001007d9_backing[8192];
-#define DAT_001007d9 DAT_001007d9_backing[0]
-extern undefined DAT_001007dd;
-extern undefined DAT_001007e3;
-extern undefined DAT_001007fd;
+#define DAT_001007d5 DAT_001007d0_backing[0x5]
+#define DAT_001007d9 DAT_001007d0_backing[0x9]
 extern short DAT_00201b68;
 extern short DAT_00201c74;
 extern undefined2 DAT_002020a0;
 extern undefined2 DAT_002020a4;
-extern short DAT_002020c4;
-extern intptr_t DAT_00202948;
 extern undefined4 DAT_00202c84;
 extern undefined1 DAT_00202c90_backing[65536];
 #define DAT_00202c90 DAT_00202c90_backing[0]
@@ -811,192 +670,50 @@ extern undefined2 DAT_0024cfac;
 extern int DAT_00250718;
 extern undefined1 g_active_hud_panel;
 extern undefined2 g_cursor_mode;
-extern undefined DAT_001007d4_backing[8192];
-#define g_monster_max_stats_table DAT_001007d4_backing[0]
-#define DAT_001007da DAT_001007d4_backing[6]
-#define DAT_001007e2 DAT_001007d4_backing[0xe]
-#define DAT_001007ed DAT_001007d4_backing[0x19]
-#define DAT_001007ee DAT_001007d4_backing[0x1a] // per-class perception-range byte (>>4), read by alert_npc_to_noise_callback
+/* OBJECTS.DAT monster records are loaded at DAT_001007d0, stride 0x30.
+   These original addresses are fields of that same table: max HP (+4),
+   flags (+0xa), defense (+0x12), perception (+0x1d). Separate backing
+   arrays left these fields zero even after load_monster_combat_stats. */
+#define g_monster_max_stats_table DAT_001007d0_backing[0x4]
+#define DAT_001007da DAT_001007d0_backing[0xa]
+#define DAT_001007e2 DAT_001007d0_backing[0x12]
+#define DAT_001007ed DAT_001007d0_backing[0x1d]
+#define DAT_001007ee DAT_001007d0_backing[0x1e] // per-class perception-range byte (>>4), read by alert_npc_to_noise_callback
 extern short g_mouse_x;
 extern short g_mouse_y;
 extern ushort * g_player_object;
 extern short g_pick_tile_off_backing[0x200];
 extern undefined1 DAT_0023b676_backing[65536];
 #define DAT_0023b676 DAT_0023b676_backing[0]
-extern undefined1 DAT_0023ad58_backing[65536];
-#define DAT_0023ad58 DAT_0023ad58_backing[0]
 undefined4 babl_builtin_default_handler();
 char * converse_res_bump_alloc_entry();
 undefined4 converse_res_slot_store_callback();
 extern char s__DATA_cnv_ark_00084fc8[];
-extern char s__SAVE0_bglobals_dat_00084538[];
-extern char s__DATA_babglobs_dat_0008454c[];
-extern uint *DAT_000bbf04;
 /* Globals defined in uw.c but also used by functions that now live in
    babl.c (init_barter_ui) -- extern'd here so both translation units
    see the same storage. */
-extern undefined4 DAT_000bc028;
-extern undefined4 DAT_000bc010;
-extern undefined1 DAT_000845b8;
-extern undefined1 DAT_000845ba;
-extern undefined1 DAT_000845d8;
-extern undefined1 DAT_000845da;
-extern undefined2 DAT_000bbfd8;
-extern undefined2 DAT_000bbfdc;
-extern undefined DAT_001007de_backing[8192];
-#define DAT_001007de DAT_001007de_backing[0]
-extern undefined2 DAT_000bbfe0;
-extern undefined *PTR_DAT_000845c8;
-extern undefined1 DAT_000845e8_backing[65536];
-#define DAT_000845e8 DAT_000845e8_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    models.c (tick_anim_record, emit_catalog_object,
    emit_anim_object_frames) -- extern'd here so both translation units
    see the same storage. */
-extern unsigned char DAT_00086c08_backing[0x78];
-#define DAT_00086c08 DAT_00086c08_backing[0]
-#define DAT_00086c09 DAT_00086c08_backing[1]
-#define DAT_00086c0a DAT_00086c08_backing[2]
-#define DAT_00086c0b DAT_00086c08_backing[3]
-extern undefined4 DAT_00086ce0;
-extern undefined4 DAT_00086ce4;
-extern undefined4 DAT_00086ce8;
-extern undefined4 DAT_00086cec;
-extern undefined4 DAT_00086cf0;
-extern undefined4 DAT_00086cf4;
-extern undefined4 DAT_00086cf8;
-extern undefined4 DAT_00086cfc;
-extern undefined1 DAT_00086d60_backing[65536];
-#define DAT_00086d60 DAT_00086d60_backing[0]
 extern short DAT_000b4620;
 extern char *DAT_00110fc0;
+/* Shared scratch fallback buffer DAT_00110fc0/DAT_00110fcc point into;
+   also read directly by demomode.c's debug accessors. */
 extern char DAT_00110fc0_scratch[65536];
-extern undefined DAT_00110ff0_backing[985856];
-#define DAT_00110ff0 DAT_00110ff0_backing[0]
-extern undefined DAT_00110ffc;
-extern undefined1 DAT_00189590_backing[985856];
-#define DAT_00189590 DAT_00189590_backing[0]
-extern undefined DAT_0018959c;
-extern undefined DAT_0018959d;
-extern undefined DAT_0018959e;
-extern undefined DAT_0018959f;
 /* The 29 catalog 3D model buffers load_3d_object_models fills via
    parse_e_model_file, indexed by g_anim_model_slot -- see that array's
    own comment for the slot-order table. */
-extern undefined DAT_00114c1c_backing[16384];
-#define DAT_00114c1c DAT_00114c1c_backing[0]
-extern undefined DAT_00118848_backing[16384];
-#define DAT_00118848 DAT_00118848_backing[0]
-extern undefined DAT_0011c474_backing[16384];
-#define DAT_0011c474 DAT_0011c474_backing[0]
-extern undefined DAT_001200a0_backing[16384];
-#define DAT_001200a0 DAT_001200a0_backing[0]
 extern undefined DAT_00123ccc_backing[16384];
 #define DAT_00123ccc DAT_00123ccc_backing[0]
-extern undefined DAT_001278f8_backing[16384];
-#define DAT_001278f8 DAT_001278f8_backing[0]
-extern undefined DAT_0012b524_backing[16384];
-#define DAT_0012b524 DAT_0012b524_backing[0]
-extern undefined DAT_0012f150_backing[16384];
-#define DAT_0012f150 DAT_0012f150_backing[0]
-extern undefined DAT_00132d7c_backing[16384];
-#define DAT_00132d7c DAT_00132d7c_backing[0]
-extern undefined DAT_001369a8_backing[16384];
-#define DAT_001369a8 DAT_001369a8_backing[0]
-extern undefined DAT_0013a5d4_backing[16384];
-#define DAT_0013a5d4 DAT_0013a5d4_backing[0]
-extern undefined DAT_0013e200_backing[16384];
-#define DAT_0013e200 DAT_0013e200_backing[0]
-extern undefined DAT_00141e2c_backing[16384];
-#define DAT_00141e2c DAT_00141e2c_backing[0]
-extern undefined DAT_00145a58_backing[16384];
-#define DAT_00145a58 DAT_00145a58_backing[0]
-extern undefined DAT_00149684_backing[16384];
-#define DAT_00149684 DAT_00149684_backing[0]
-extern undefined DAT_0014d2b0_backing[16384];
-#define DAT_0014d2b0 DAT_0014d2b0_backing[0]
-extern undefined DAT_00150edc_backing[16384];
-#define DAT_00150edc DAT_00150edc_backing[0]
-extern undefined DAT_00154b08_backing[16384];
-#define DAT_00154b08 DAT_00154b08_backing[0]
-extern undefined DAT_00158734_backing[16384];
-#define DAT_00158734 DAT_00158734_backing[0]
-extern undefined DAT_0015c360_backing[16384];
-#define DAT_0015c360 DAT_0015c360_backing[0]
-extern undefined DAT_0015ff8c_backing[16384];
-#define DAT_0015ff8c DAT_0015ff8c_backing[0]
-extern undefined DAT_00163bb8_backing[16384];
-#define DAT_00163bb8 DAT_00163bb8_backing[0]
-extern undefined DAT_001677e4_backing[16384];
-#define DAT_001677e4 DAT_001677e4_backing[0]
-extern undefined DAT_0016b410_backing[16384];
-#define DAT_0016b410 DAT_0016b410_backing[0]
-extern undefined DAT_0016f03c_backing[16384];
-#define DAT_0016f03c DAT_0016f03c_backing[0]
-extern undefined DAT_00172c68_backing[16384];
-#define DAT_00172c68 DAT_00172c68_backing[0]
-extern undefined DAT_00176894_backing[16384];
-#define DAT_00176894 DAT_00176894_backing[0]
-extern undefined DAT_0017a4c0_backing[16384];
-#define DAT_0017a4c0 DAT_0017a4c0_backing[0]
-extern undefined DAT_0017e0ec_backing[16384];
-#define DAT_0017e0ec DAT_0017e0ec_backing[0]
-extern char s__DATA3D_40LOTUS_E_000855e8[];
-extern char s__DATA3D_ARROW_E_0008559c[];
-extern char s__DATA3D_BARRCLOS_E_00085498[];
-extern char s__DATA3D_BEAM_E_0008558c[];
-extern char s__DATA3D_BED2_E_00085474[];
-extern char s__DATA3D_BENCH_E_000855fc[];
-extern char s__DATA3D_CHAIRSIM_E_00085484[];
-extern char s__DATA3D_CHEST_E_000854c0[];
-extern char s__DATA3D_DFRAME_E_00085620[];
-extern char s__DATA3D_DOOR_E_00085540[];
-extern char s__DATA3D_FBRIDGE_E_0008560c[];
-extern char s_The_book_explodes_in_your_face__00085644[];
-extern char s__DATA3D_GATE_E_000854e4[];
-extern char s__DATA3D_GRAVE_E_0008551c[];
-extern char s__DATA3D_NEWPILL_E_00085578[];
-extern char s__DATA3D_NEWPORT_E_00085550[];
-extern char s__DATA3D_NITESTAN_E_000854ac[];
-extern char s__DATA3D_ROCKBIG_E_000855ac[];
-extern char s__DATA3D_ROCKMED_E_000855c0[];
-extern char s__DATA3D_ROCKSMAL_E_000855d4[];
-extern char s__DATA3D_SHRINE_E_00085564[];
-extern char s__DATA3D_TABLF3_E_000854d0[];
-extern char s__DATA3D_TMAP16X16_E_0008552c[];
-extern char s__DATA3D_TMAP32X32_E_00085508[];
-extern char s__DATA3D_TMAP64X64_E_000854f4[];
 void parse_e_model_file();
 
-extern void * const g_anim_model_slot[30];
-extern unsigned char g_anim_model_scratch[30][16384];
-extern undefined2 DAT_00189570;
-extern undefined2 DAT_00189572;
-extern undefined2 DAT_00189574;
-extern undefined1 DAT_00189588;
-extern undefined1 DAT_00110fc4;
-extern undefined4 DAT_00110bb8;
-extern char *DAT_00110fcc;
-extern undefined2 DAT_00201b38;
-extern undefined2 DAT_00201b10;
+extern undefined2 DAT_00189570_backing[256];
+#define DAT_00189570 DAT_00189570_backing[0]
 extern char *DAT_00110fc8;
-extern undefined2 DAT_00110a78[0xa0];
-extern undefined2 DAT_00110bc0[0x200];
-extern undefined1 DAT_00110fd0[0x20];
-extern undefined1 DAT_00201b18[0x20];
-extern short DAT_00189576;
 extern undefined2 DAT_00189578;
 extern ushort DAT_0018957a;
-extern unsigned short DAT_00086c80_backing[32];
-#define DAT_00086c80 (*(unsigned char *)&DAT_00086c80_backing[0])
-extern const unsigned char DAT_00086cc0_arr[32];
-#define DAT_00086cc0 (DAT_00086cc0_arr[0])
-extern int g_billboard_angle_override_deg;
-extern short DAT_0018957c;
-extern short DAT_0018957e;
 extern ushort DAT_00189580;
-extern short DAT_00189584;
-extern undefined2 DAT_00189586;
 extern undefined2 DAT_00202734;
 extern undefined4 DAT_0023b804;
 extern ushort DAT_0023b81c;
@@ -1004,171 +721,52 @@ extern ushort DAT_0023b904;
 extern ushort DAT_0023b91c;
 extern ushort DAT_0023b920;
 extern byte DAT_0023bc88;
-extern double g_tune_edge_offset;
-extern int g_tune_last_catalog;
-extern double g_tune_leaf_hinge_offset;
-extern double g_tune_rotation_offset;
-extern double g_tune_wide_center;
 extern int g_uw_debug_pick_diag;
-extern const undefined1 DAT_00086d68_region[64];
-#define DAT_00086d68 (*(const undefined1 *)DAT_00086d68_region)
-#define DAT_00086d69 (*(const undefined1 *)(DAT_00086d68_region + 1))
-extern undefined1 g_tile_feature_records_b92e_backing[65536];
-#define DAT_0023b92e g_tile_feature_records_b92e_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    player.c (reset_player_derived_state) -- extern'd here so both
    translation units see the same storage. */
-extern undefined1 DAT_0020330c;
-extern char DAT_00086db0;
-extern char DAT_00086db1;
-extern undefined1 DAT_0010060c;
-extern undefined1 DAT_0010060d;
-extern undefined1 DAT_0010060e;
-extern undefined1 DAT_0010060f;
-extern undefined4 DAT_0023bc9c;
-extern undefined4 DAT_0023bc98;
+extern undefined1 DAT_0010060c_backing[256];
+#define DAT_0010060c DAT_0010060c_backing[0]
 extern undefined4 DAT_002020d0;
-extern undefined4 DAT_002020dc;
 extern undefined4 DAT_002020d8;
 extern undefined4 DAT_002020d4;
 extern int DAT_0023bc94;
-extern byte DAT_002046cc;
-extern byte DAT_002046d0;
-extern byte DAT_002046d8;
-extern byte DAT_002046dc;
-extern int DAT_002046e8;
-extern int DAT_002046d4;
-extern int DAT_002046ec;
-extern undefined1 DAT_002046e0;
-extern undefined1 DAT_002046e4;
 /* Globals defined in uw.c but also used by functions that now live in
    visibility.c (load_floor_texture_arenas) -- extern'd here so both
    translation units see the same storage. */
 extern ushort DAT_0023adc0;
-extern char s__DATA_f16_tr_00086dd8[];
-extern char s__DATA_f32_tr_00086de8[];
 extern char *DAT_0023ae34;
 extern char *DAT_0023ae30;
-extern char DAT_00086db4;
-extern int DAT_00086db8;
-extern undefined DAT_00086dc8_backing[16];
-#define DAT_00086dc8 DAT_00086dc8_backing[0]
-extern undefined g_object_weight_table_backing[2048];
-#define g_object_weight_table g_object_weight_table_backing[0]
 extern undefined2 DAT_0023beb8;
 extern undefined2 DAT_0023be8c;
 extern char *DAT_0023ae38;
 extern char *DAT_0023ae3c;
-extern undefined2 DAT_0023aed8;
-extern undefined2 DAT_0023b49c;
-extern undefined2 DAT_00250650;
-extern const char DAT_000869cc_str[];
-#define DAT_000869cc (DAT_000869cc_str[0])
-extern const char DAT_000869d4_str[];
-#define DAT_000869d4 (DAT_000869d4_str[0])
-extern const char DAT_000869dc_str[];
-#define DAT_000869dc (DAT_000869dc_str[0])
-extern const char DAT_000869e4_str[];
-#define DAT_000869e4 (DAT_000869e4_str[0])
 extern undefined1 DAT_002049e0_backing[0x100000];
 #define DAT_002049e0 DAT_002049e0_backing[0]
 extern int g_npc_tick_enabled;
-extern undefined DAT_00028bfc_backing[8192];
-#define DAT_00028bfc DAT_00028bfc_backing[0]
 void debug_adjust_view_heading();
 void debug_force_rest_action();
 undefined4 print_debug_stat_message();
-extern undefined2 DAT_0023be6c;
-extern undefined2 DAT_0023be68;
-extern undefined2 DAT_0023be70;
-extern undefined2 DAT_0023be7c;
-extern undefined2 DAT_0023be84;
-extern undefined2 DAT_0023be78;
-extern undefined2 DAT_0023be60;
-extern undefined2 DAT_0023bd7c;
-extern char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[];
-extern byte DAT_0023bd84;
-extern undefined1 DAT_00086e05;
-extern undefined1 DAT_00086e06;
-extern undefined DAT_00086e00_backing[8192];
-#define DAT_00086e00 DAT_00086e00_backing[0]
 extern short DAT_0023be90;
 extern short DAT_0023be92;
 extern short DAT_0023be94;
 extern short DAT_0023bf00;
 extern undefined2 DAT_0023bf02;
-extern int DAT_000db500;
 extern undefined2 DAT_0023bf04;
 extern byte DAT_0023beb0;
 extern byte DAT_0023beac;
 extern undefined2 DAT_0023bea0;
 extern short DAT_0023bea4;
 extern short DAT_0023bf08;
-extern undefined DAT_00086e38;
-extern undefined DAT_00086e48;
-extern undefined DAT_00086e58;
 extern char DAT_00086e84;
-extern char *DAT_00087944;
-extern char *DAT_00087948;
 extern char *DAT_0008794c;
-extern char *DAT_00087950;
 extern undefined2 DAT_0023be9a;
 extern undefined2 DAT_0023be9c;
 extern undefined2 DAT_0023be9e;
-extern byte DAT_0023bf10;
-extern char DAT_0023bf14;
 extern char DAT_0023bf18;
-extern short DAT_0023bf30;
-extern short DAT_0023bf34;
-extern short DAT_0023bf38;
-extern short DAT_0023bf3c;
-extern short DAT_0023bf40;
-extern uint DAT_0023bf5c;
-extern char DAT_0023bf60;
-extern int DAT_0023bf64;
 #define DAT_002048a5 DAT_00204880_backing[0x25]
 #define DAT_002048a6 DAT_00204880_backing[0x26]
-extern char *g_menu_button_bitmaps[16];
-extern undefined DAT_00086e87_backing[64];
-#define DAT_00086e87 DAT_00086e87_backing[0]
-extern char s_font5x6i_sys_00086e98[];
-extern int DAT_0024af8c;
-extern byte DAT_0024af80;
-extern undefined4 DAT_0024af88;
-extern undefined1 DAT_0024bfa0_backing[1052672];
-#define DAT_0024bfa0 DAT_0024bfa0_backing[0]
-extern undefined1 DAT_0024bfa1_backing[1052672];
-#define DAT_0024bfa1 DAT_0024bfa1_backing[0]
-extern undefined1 DAT_0024bfa2_backing[1052672];
-#define DAT_0024bfa2 DAT_0024bfa2_backing[0]
-extern undefined1 DAT_0024bfa3_backing[1052672];
-#define DAT_0024bfa3 DAT_0024bfa3_backing[0]
-extern undefined1 DAT_0024bfa4_backing[1052672];
-#define DAT_0024bfa4 DAT_0024bfa4_backing[0]
-extern undefined1 DAT_0024bfa5_backing[1052672];
-#define DAT_0024bfa5 DAT_0024bfa5_backing[0]
-extern undefined1 DAT_0024c7a2_backing[1052672];
-#define DAT_0024c7a2 DAT_0024c7a2_backing[0]
-extern undefined1 DAT_0024c7a3_backing[1052672];
-#define DAT_0024c7a3 DAT_0024c7a3_backing[0]
-extern undefined4 DAT_0024bf98;
-extern unsigned short *DAT_0024cfb8;
-extern char *DAT_0024cfa8;
-extern char *g_bfa2_real_ptrs[263168];
-extern short DAT_0024cfc0;
-extern char s_strings_pak_000878c0[];
-extern short DAT_0024cfb4;
-extern undefined2 DAT_000878bc;
-extern undefined1 DAT_0024af98_backing[4096];
-#define DAT_0024af98 DAT_0024af98_backing[0]
-extern undefined2 DAT_0024cfbc_backing[8192];
-#define DAT_0024cfbc DAT_0024cfbc_backing[0]
-extern char *g_despawn_creature_record;
-extern undefined1 DAT_002034b5_backing[8192];
-#define DAT_002034b5 DAT_002034b5_backing[0]
-extern undefined DAT_002027d2_backing[8192];
-#define DAT_002027d2 DAT_002027d2_backing[0]
-extern ushort DAT_00202d54;
+#define DAT_002027d2 DAT_002027d0_backing[2] /* third byte of each loaded weapon record */
 extern undefined1 DAT_002027d0_backing[256];
 #define DAT_002027d0 DAT_002027d0_backing[0]
 extern undefined1 DAT_00202800_backing[65536];
@@ -1177,181 +775,39 @@ extern undefined DAT_00202878;
 extern unsigned char DAT_00084eff_backing[12];
 #define DAT_00084eff DAT_00084eff_backing[0]
 extern ushort *DAT_002046b4;
-extern char s_on_what__000878e0[];
-extern undefined1 DAT_000878ec_backing[32768];
-#define DAT_000878ec DAT_000878ec_backing[0]
 extern undefined DAT_00085ce0_backing[8192];
 #define DAT_00085ce0 DAT_00085ce0_backing[0]
 extern char s_You_read_the_00085ce8[];
 extern undefined4 DAT_0024cfc8;
-extern undefined4 DAT_0024cfcc;
 extern undefined1 DAT_0024cfe0_backing[8192];
 #define DAT_0024cfe0 DAT_0024cfe0_backing[0]
 extern char *DAT_0024cff4;
 extern ushort *DAT_0024cff0;
-extern char s_Look__it_s_a_text_trap_00087918[];
-extern short DAT_0024cfd0;
-extern short DAT_0024cfd8;
-extern undefined4 DAT_0024cff8;
-extern undefined4 DAT_0024cfd4;
-extern undefined DAT_0007e644_backing[8192];
-#define DAT_0007e644 DAT_0007e644_backing[0]
-extern undefined DAT_00088640_backing[8192];
-#define DAT_00088640 DAT_00088640_backing[0]
-extern short DAT_002506f0;
-extern char *DAT_002506ec;
-extern undefined2 DAT_0024d00c;
 extern ushort DAT_0024fa18;
-extern undefined1 DAT_0024d008;
-extern undefined1 DAT_0024fa10;
-extern undefined1 DAT_0024d010;
 extern char DAT_0024d000;
-extern undefined1 DAT_0024f90c;
 extern char DAT_0024fa28;
-extern undefined2 DAT_0024fa14;
-extern undefined2 DAT_002029c8;
-extern char s_very_near_00087954[];
-extern undefined1 g_msg_scroll_panel_state_conv_backing[65536];
-#define g_msg_scroll_panel_state_conv g_msg_scroll_panel_state_conv_backing[0]
-extern short DAT_00250728;
-extern short DAT_0025070c;
-extern char s_No_0008799c[];
-extern char s_Yes_000879a0[];
-extern undefined s_dash_000879a4_backing[8192];
-#define s_dash_000879a4 s_dash_000879a4_backing[0]
-extern undefined s_scroll_prompt_arrow_000879a8_backing[8192];
-#define s_scroll_prompt_arrow_000879a8 s_scroll_prompt_arrow_000879a8_backing[0]
 extern int g_text_input_active;
-extern byte *DAT_000b4624;
-extern byte *DAT_000b462c;
-extern byte *DAT_000b4618;
 extern undefined1 DAT_00250730_backing[65536];
 #define DAT_00250730 DAT_00250730_backing[0]
 #define DAT_00250732 DAT_00250730_backing[2]
 #define DAT_00250733 DAT_00250730_backing[3]
-extern int DAT_002508fc;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
-extern undefined2 DAT_0023b908_backing[8192];
-#define DAT_0023b908 DAT_0023b908_backing[0]
-extern undefined2 DAT_0023b928_backing[8192];
-#define DAT_0023b928 DAT_0023b928_backing[0]
-extern undefined DAT_0023b90a_backing[8192];
-#define DAT_0023b90a DAT_0023b90a_backing[0]
-extern undefined1 DAT_0023b940_backing[65536];
-#define DAT_0023b940 DAT_0023b940_backing[0]
-extern char s_add_to_npc_inv_0008507c[];
-extern char s_babl_ask_000851ec[];
-extern char s_babl_fmenu_00085214[];
-extern char s_babl_menu_00085220[];
-extern char s_charhead_00084fe0[];
-extern char s_check_inv_quality_000850ec[];
-extern char s_converse_00084ff4[];
-extern char s_count_inv_000850d0[];
-extern char s_do_decline_00085168[];
-extern char s_do_demand_00085174[];
-extern char s_do_inv_create_00085110[];
-extern char s_do_inv_delete_00085100[];
-extern char s_do_judgement_00085158[];
-extern char s_do_offer_00085180[];
-extern char s_dungeon_level_000852b0[];
-extern char s_end_barter_0008514c[];
-extern char s_find_barter_00085024[];
-extern char s_find_barter_total_00085010[];
-extern char s_find_inv_000851c0[];
 extern char s_font5x6p_sys_0008430c[];
-extern char s_game_days_0008528c[];
-extern char s_game_mins_00085298[];
-extern char s_game_time_000852a4[];
-extern char s_genhead_00084fd8[];
-extern char s_get_quest_00085208[];
-extern char s_give_ptr_npc_00085000[];
-extern char s_give_to_npc_000851cc[];
-extern char s_gronk_door_000850c4[];
-extern char s_heads_00084fec[];
-extern char s_identify_inv_0008518c[];
-extern char s_new_player_exp_0008527c[];
-extern char s_npc_arms_00085374[];
-extern char s_npc_attitude_000845f8[];
-extern char s_npc_goal_0008535c[];
-extern char s_npc_gtarg_00085350[];
-extern char s_npc_health_00085388[];
-extern char s_npc_hp_00085380[];
-extern char s_npc_hunger_00085394[];
-extern char s_npc_level_00085334[];
-extern char s_npc_name_00085310[];
-extern char s_npc_power_00085368[];
-extern char s_npc_talkedto_00085340[];
-extern char s_npc_whoami_000853a0[];
-extern char s_npc_xhome_00085328[];
-extern char s_npc_yhome_0008531c[];
-extern char s_pause_00085134[];
-extern char s_place_object_0008506c[];
-extern char s_play_arms_000852e4[];
-extern char s_play_drawn_00085258[];
-extern char s_play_health_000852f8[];
-extern char s_play_hp_000852f0[];
-extern char s_play_hunger_00085304[];
-extern char s_play_level_000852c0[];
-extern char s_play_mana_000852cc[];
-extern char s_play_name_0008524c[];
-extern char s_play_poison_00085264[];
-extern char s_play_power_000852d8[];
-extern char s_play_sex_00085270[];
-extern char s_print_000851e4[];
-extern char s_remove_talker_0008505c[];
-extern char s_respond_000845ac[];
 extern undefined s_scroll_newline_0008522c_backing[8192];
 #define s_scroll_newline_0008522c s_scroll_newline_0008522c_backing[0]
-extern char s_set_attitude_000850b4[];
-extern char s_set_inv_quality_000850dc[];
-extern char s_set_likes_dislikes_00085120[];
-extern char s_set_quest_000851fc[];
-extern char s_set_race_attitude_000850a0[];
-extern char s_setup_to_barter_0008513c[];
-extern char s_sex_000851f8[];
-extern char s_show_inv_000851d8[];
-extern char s_take_from_npc_000851b0[];
-extern char s_take_from_npc_inv_0008508c[];
-extern char s_take_id_from_npc_0008519c[];
-extern char s_x_obj_pos_00085030[];
-extern char s_x_obj_stuff_0008503c[];
-extern char s_x_skills_00085050[];
-extern char s_x_traps_00085048[];
 /* Globals defined in uw.c but also used by functions that now live in
    automap.c (the automap screen) -- extern'd here so both translation
    units see the same storage. */
-extern const unsigned char DAT_000842c0_real_table[64];
-#define DAT_000842c0 (*(undefined1 *)DAT_000842c0_real_table)
-extern const unsigned char DAT_000842f0_real_table[4];
-#define DAT_000842f0 (*(undefined1 *)DAT_000842f0_real_table)
-extern const signed char DAT_000842f4_real_table[4];
-#define DAT_000842f4 (*(undefined1 *)DAT_000842f4_real_table)
-extern const signed char DAT_000842f8_real_table[4];
-#define DAT_000842f8 (*(undefined1 *)DAT_000842f8_real_table)
 extern undefined1 DAT_000878d0_backing[256];
 #define DAT_000878d0 DAT_000878d0_backing[0]
-extern undefined2 DAT_000b99c0;
-extern undefined4 DAT_000b99c4;
 extern undefined1 DAT_000b99d0_backing[8192];
 #define DAT_000b99d0 DAT_000b99d0_backing[0]
-extern short DAT_000ba9d0;
-extern char DAT_000ba9d4;
 extern undefined4 DAT_000bbef4;
-extern int DAT_000bbefc;
 extern char * DAT_002029cc;
 /* decompress_rle_stream's shared codec state -- see uw.c's own
    comment at the declarations for what each field tracks. */
-extern undefined1 *DAT_00201b40;
-extern int DAT_00201b54;
-extern int DAT_00201b4c;
-extern int DAT_00201b58;
-extern ushort DAT_00201b48;
-extern undefined1 *DAT_00201b50;
-extern short DAT_00201b44;
-extern int DAT_00201b3c;
-extern char s__DATA_blnkmap_byt_00084338[];
 extern char s_fontbig_sys_0008432c[];
 /* Globals defined in uw.c but also used by functions that now live in
    inventory.c (the inventory panel) -- extern'd here so both
@@ -1413,9 +869,10 @@ extern char DAT_00101410;
 extern undefined1 DAT_00101420;
 extern int DAT_00101430;
 extern char DAT_0010143c;
-extern undefined DAT_00101444;
-extern undefined DAT_00101448;
-extern undefined4 DAT_00101734;
+extern short DAT_00101444; /* signed fine-coordinate delta; ARM reads 16 bits */
+extern short DAT_00101448; /* signed fine-coordinate delta; ARM reads 16 bits */
+extern undefined4 DAT_00101734_backing[256];
+#define DAT_00101734 DAT_00101734_backing[0]
 extern char DAT_0010173c;
 extern ushort DAT_00101900;
 extern ushort * DAT_0010190c;
@@ -1433,8 +890,6 @@ extern undefined1 DAT_00086e6c_backing[64];
 #define DAT_00087640 0x2000u
 #define DAT_00087644 0x1000u
 #define DAT_00087648 0x0800u
-extern ushort *DAT_0023c414;
-extern char *DAT_0023c410;
 #define DAT_0023c418 ((ushort)~0x4000u)
 #define DAT_0023c408 ((ushort)~0x2000u)
 #define DAT_0023c3f0 ((ushort)~0x1000u)
@@ -1453,7 +908,6 @@ extern undefined1 DAT_0023b8c8_backing[128];
 #define DAT_0023b8c8 DAT_0023b8c8_backing[0]
 #define DAT_0023b8c9 DAT_0023b8c8_backing[1]
 extern undefined2 DAT_0023b8c0;
-extern short DAT_0023b8c4;
 extern char DAT_0023bb94;
 extern undefined1 DAT_0023bb98_backing[512];
 #define DAT_0023bb98 DAT_0023bb98_backing[0]
@@ -1463,23 +917,9 @@ extern char DAT_0023c3e0;
 extern char * DAT_0023c3e4;
 extern char * DAT_0023c3e8;
 extern char * DAT_0023c3ec;
-extern short DAT_0023c3f4;
-extern ushort DAT_0023c400;
 extern char * DAT_0023c40c;
 extern undefined2 DAT_0023c41c;
 extern void *g_grtile_registry[65536];
-extern undefined4 DAT_000bbf20;
-extern undefined1 DAT_000bbf30;
-extern undefined2 DAT_000bbf88;
-extern char s_append_0008457c[];
-extern char s_compare_000845a0[];
-extern char s_contains_00084584[];
-extern char s_copy_00084574[];
-extern char s_find_0008456c[];
-extern char s_length_00084564[];
-extern char s_plural_00084590[];
-extern char s_random_00084598[];
-extern char s_val_00084560[];
 /* Globals defined in uw.c but also used by functions that now live in
    3d.c (the 3D transform/rasterization pipeline) -- extern'd here so
    both translation units see the same storage. */
@@ -1487,15 +927,10 @@ extern char s_val_00084560[];
 extern void * g_tile_texptr_emit[UW_MAX_VIS_TILES];
 extern void * g_tile_texptr_out[UW_MAX_VIS_TILES];
 extern char DAT_000842b0;
-extern undefined4 DAT_00084608;
 extern undefined4 DAT_000b5638_backing[160];
 #define DAT_000b5638 DAT_000b5638_backing[0]
-extern undefined DAT_000bc038_backing[32768];
-#define DAT_000bc038 DAT_000bc038_backing[0]
 extern void * DAT_000c4838_backing[4096];
 #define DAT_000c4838 DAT_000c4838_backing[0]
-extern undefined4 DAT_000c8ac0_mtx[16];
-#define DAT_000c8ac0 DAT_000c8ac0_mtx[0]
 extern int DAT_000c8c98;
 extern undefined2 DAT_000da47c;
 extern undefined4 DAT_000db438;
@@ -1503,61 +938,9 @@ extern undefined4 DAT_000db43c;
 extern undefined4 DAT_000db440;
 extern int DAT_000db448;
 extern int DAT_000db44c;
-extern int DAT_000db450;
 extern char DAT_0023b830;
 extern undefined4 DAT_000d9930_arr[512];
 extern undefined4 DAT_000d9ed8_arr[512];
-#define DAT_000bc039 DAT_000bc038_backing[1]
-#define DAT_000bc03a DAT_000bc038_backing[2]
-#define DAT_000bc03b DAT_000bc038_backing[3]
-#define DAT_000bc044 DAT_000bc038_backing[0xc]
-#define DAT_000bc07c DAT_000bc038_backing[0x44]
-#define DAT_000bc07d DAT_000bc038_backing[0x45]
-#define DAT_000bc07e DAT_000bc038_backing[0x46]
-#define DAT_000bc07f DAT_000bc038_backing[0x47]
-#define DAT_000bc0a0 DAT_000bc038_backing[0x68]
-#define DAT_000bc0a1 DAT_000bc038_backing[0x69]
-#define DAT_000bc0a2 DAT_000bc038_backing[0x6a]
-#define DAT_000bc0a3 DAT_000bc038_backing[0x6b]
-#define DAT_000bc0a4 DAT_000bc038_backing[0x6c]
-#define DAT_000bc0a5 DAT_000bc038_backing[0x6d]
-#define DAT_000bc0a6 DAT_000bc038_backing[0x6e]
-#define DAT_000bc0a7 DAT_000bc038_backing[0x6f]
-#define DAT_000bc0a8 DAT_000bc038_backing[0x70]
-#define DAT_000bc0a9 DAT_000bc038_backing[0x71]
-#define DAT_000bc0aa DAT_000bc038_backing[0x72]
-#define DAT_000bc0ab DAT_000bc038_backing[0x73]
-#define DAT_000bc0ac DAT_000bc038_backing[0x74]
-#define DAT_000bc0ad DAT_000bc038_backing[0x75]
-#define DAT_000bc0ae DAT_000bc038_backing[0x76]
-#define DAT_000bc0af DAT_000bc038_backing[0x77]
-#define DAT_000bc0b0 DAT_000bc038_backing[0x78]
-#define DAT_000bc0b1 DAT_000bc038_backing[0x79]
-#define DAT_000bc0b2 DAT_000bc038_backing[0x7a]
-#define DAT_000bc0b3 DAT_000bc038_backing[0x7b]
-#define DAT_000bc0b4 DAT_000bc038_backing[0x7c]
-#define DAT_000bc0b5 DAT_000bc038_backing[0x7d]
-#define DAT_000bc0b6 DAT_000bc038_backing[0x7e]
-#define DAT_000bc0b7 DAT_000bc038_backing[0x7f]
-#define DAT_000bc0b8 DAT_000bc038_backing[0x80]
-#define DAT_000bc0b9 DAT_000bc038_backing[0x81]
-#define DAT_000bc0ba DAT_000bc038_backing[0x82]
-#define DAT_000bc0bb DAT_000bc038_backing[0x83]
-#define DAT_000bc0bc DAT_000bc038_backing[0x84]
-#define DAT_000bc0bd DAT_000bc038_backing[0x85]
-#define DAT_000bc0be DAT_000bc038_backing[0x86]
-#define DAT_000bc0bf DAT_000bc038_backing[0x87]
-#define DAT_000c8ac4 DAT_000c8ac0_mtx[1]
-#define DAT_000c8ac8 DAT_000c8ac0_mtx[2]
-#define DAT_000c8ad0 DAT_000c8ac0_mtx[4]
-#define DAT_000c8ad4 DAT_000c8ac0_mtx[5]
-#define DAT_000c8ad8 DAT_000c8ac0_mtx[6]
-#define DAT_000c8ae0 DAT_000c8ac0_mtx[8]
-#define DAT_000c8ae4 DAT_000c8ac0_mtx[9]
-#define DAT_000c8ae8 DAT_000c8ac0_mtx[10]
-#define DAT_000c8af0 DAT_000c8ac0_mtx[12]
-#define DAT_000c8af4 DAT_000c8ac0_mtx[13]
-#define DAT_000c8af8 DAT_000c8ac0_mtx[14]
 #define DAT_000d9930 (DAT_000d9930_arr[0])
 #define DAT_000d9ed8 (DAT_000d9ed8_arr[0])
 /* Globals defined in uw.c but also used by functions that now live in
@@ -1566,48 +949,22 @@ extern undefined4 DAT_000d9ed8_arr[512];
 extern undefined4 DAT_000858a0;
 extern undefined1 DAT_00085d20_backing[65536];
 #define DAT_00085d20 DAT_00085d20_backing[0]
-extern undefined1 DAT_00086da8;
-extern byte DAT_001013a4;
 extern short DAT_00201c70;
-extern undefined1 DAT_00085638[10]; // zero-initialized fallback for an unrecovered 9-entry object-type table; see uw.c's own comment at its declaration
-extern undefined DAT_002026d1[253];
-extern undefined DAT_00202807[121];
 extern undefined2 DAT_00201c78;
 extern short DAT_00202080;
 extern short DAT_00202088;
 extern undefined4 DAT_002020d8;
-extern uint DAT_002020e4;
-extern byte DAT_002020e8;
 extern byte * DAT_00202c6c;
 extern short DAT_00202c68;
 extern short DAT_00202c30;
-extern short DAT_001005f4;
-extern short DAT_001005f8;
-extern char DAT_001005dc;
 extern short DAT_0010061c;
 extern short DAT_00100608;
-extern byte DAT_00100628;
-extern undefined4 DAT_001005d8;
 /* Monster effect flags at offset 8 of each loaded 0x30-byte record. */
 #define DAT_001007d8 DAT_001007d0_backing[8]
 extern byte DAT_001005fc;
-extern char DAT_00084f18_backing[5];
-#define DAT_00084f18 DAT_00084f18_backing[0]
-#define DAT_00084f1c DAT_00084f18_backing[4]
-extern undefined DAT_001007e0;
-extern undefined DAT_001007e1;
 #define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
-extern char s__DATA_cmb_dat_00084f40[];
 extern undefined2 DAT_00100630_backing[32768];
 #define DAT_00100630 DAT_00100630_backing[0]
-extern char s_objsbecombinable_returns__d_00084f50[];
-extern char s_combination__d_is__d_and__d__00084f70[];
-extern char s_checking_if__d_and__d_are_combin_00084f90[];
-extern undefined1 DAT_00100634_backing[65536];
-#define DAT_00100634 DAT_00100634_backing[0]
-extern undefined2 DAT_00100632;
-extern undefined2 DAT_00100624;
-extern ushort DAT_00100620;
 extern undefined1 DAT_00203303;
 extern undefined2 DAT_00203304;
 extern undefined2 DAT_002048b0_backing[8192];
@@ -1615,7 +972,6 @@ extern undefined2 DAT_002048b0_backing[8192];
 extern undefined2 DAT_002048b2;
 extern undefined1 * DAT_002048b8;
 extern char * DAT_0023b82c;
-extern undefined4 DAT_0023bc98;
 extern undefined1 DAT_0023bca8_backing[8192];
 #define DAT_0023bca8 DAT_0023bca8_backing[0]
 extern undefined2 DAT_0023be98;
@@ -1639,46 +995,21 @@ extern const undefined1 DAT_00086a00_region[0xb0];
 extern const undefined1 DAT_00086b50_region[0xa0];
 #define DAT_00086b50_at(off)  (*(const undefined1 *)(DAT_00086b50_region + (off)))
 #define UW_B50_LIT(addr)  ((intptr_t)(const char *)DAT_00086b50_region + ((intptr_t)(addr) - 0x86b50))
-extern const undefined1 DAT_00086c00_arr[8];
 extern const unsigned char DAT_00086bf0_real_table[16];
-extern undefined4 DAT_00084610;
-extern undefined4 DAT_0008462c;
-extern undefined4 DAT_00084630;
-extern undefined4 DAT_00084634;
-extern undefined4 DAT_00084638;
 extern undefined4 DAT_00086b20;
 extern short DAT_00086b24;
 extern short DAT_00086b28;
 extern char DAT_000872a0;
 extern char *DAT_0024fa2c;
-extern char s__DATA_shades_dat_000872a4[];
 extern char s__DATA_mono_dat_000872b8[];
 extern char s__DATA_light_dat_000872c8[];
-extern char s__DATA_xfer_dat_000872d8[];
-extern char s_cLightTabs_allocation_error_____000872e8[];
-extern undefined1 DAT_0008730c_backing[8192];
-#define DAT_0008730c DAT_0008730c_backing[0]
-extern undefined1 DAT_0008730d;
-extern undefined DAT_00087308_arr[3];
-#define DAT_00087308 DAT_00087308_arr[0]
 extern char s_and_00087310[];
-extern undefined DAT_00087318;
-extern char s_Chant_the_mantra__0008731c[];
-extern char s_fontchar_sys_00087330[];
-extern byte DAT_00085730;
-extern char s__DATA_win1_byt_00087350[];
 extern char DAT_0023c27c;
-extern char s__DATA_win2_byt_00087340[];
-extern undefined DAT_001c2000_backing[8192];
-#define DAT_001c2000 DAT_001c2000_backing[0]
-extern undefined1 DAT_0024fa38_backing[3072];
-#define DAT_0024fa38 DAT_0024fa38_backing[0]
 extern undefined2 DAT_00086b30;
 extern char DAT_00087938;
 #define DAT_000a85d0 DAT_000a85d0_backing[0]
 extern char * DAT_00110fc0;
 extern char * DAT_0023aecc;
-extern undefined2 DAT_0023b4d0;
 extern code * DAT_0023b4d4;
 extern ushort DAT_0023b4d8;
 extern byte DAT_0023b4e0;
@@ -1687,7 +1018,6 @@ extern short DAT_0023b4e8;
 extern byte * DAT_0023b4ec;
 extern char * DAT_0023b4f0;
 extern code * DAT_0023b4f4;
-extern char * DAT_0023b808;
 extern code * DAT_0023b80c;
 extern short DAT_0023b810;
 extern byte * DAT_0023b814;
@@ -1721,7 +1051,6 @@ extern short g_visibility_ring_depth;
 #define DAT_00086bcc  DAT_00086b50_at(0x7c)
 #define DAT_00086bcd  DAT_00086b50_at(0x7d)
 #define DAT_00086bf0 (*(undefined1 *)DAT_00086bf0_real_table)
-#define DAT_00086c00 (*(const undefined1 *)DAT_00086c00_arr)
 #define DAT_000a85d4 (*(int *)((char *)DAT_000a85d0_backing + 0x4))
 #define DAT_000a85d8 UW_A85B(0x8)
 #define DAT_000a85d9 UW_A85B(0x9)
@@ -1813,7 +1142,8 @@ extern short DAT_00101454;
 extern short DAT_00202a38;
 extern short DAT_00202a3c;
 extern short DAT_00202a40;
-extern char * DAT_00202a44;
+/* FUN_0004ad10 reads word 1 (position) and word 12 (heading). */
+extern ushort * DAT_00202a44;
 extern ushort DAT_00202a48;
 extern ushort DAT_00202a4c;
 extern undefined2 DAT_00202a50;
@@ -1825,16 +1155,8 @@ extern char * DAT_002046bc;
 /* Globals defined in uw.c but also used by functions that now live in
    hud.c (the HUD and message scroll panel) -- extern'd here so both
    translation units see the same storage. */
-extern const unsigned short DAT_000858a8_real[8];
-extern const unsigned short DAT_000858b8_real[8];
 extern code * DAT_00086b38_fnptrs[6];
-extern undefined1 DAT_000870f0_backing[32];
-extern undefined1 DAT_00087112_backing[32];
-extern const unsigned short DAT_000871b8_arr[14];
-extern undefined1 DAT_0023c11c_arr[2];
 extern undefined1 DAT_0023c118_arr[9];
-extern undefined1 DAT_0023c12c_arr[2];
-extern char DAT_0023c240_vitals[16];
 extern undefined1 DAT_0023cdb0_backing[32768];
 #define DAT_0023cdb0 DAT_0023cdb0_backing[0]
 extern undefined1 DAT_0023ce10_backing[65536];
@@ -1848,16 +1170,7 @@ extern undefined1 DAT_0023ce10_backing[65536];
 #define DAT_0023ce64 (*(ushort *)(DAT_0023ce10_backing + 0x54))
 extern undefined1 DAT_0023c698_backing[32768];
 #define DAT_0023c698 DAT_0023c698_backing[0]
-extern undefined1 DAT_00101968_backing[8192]; // babl render-text scratch buffer (message-format/filename reuse)
-#define DAT_00101968 DAT_00101968_backing[0]
-extern undefined1 DAT_00085448_backing[11]; // Original cutscene filename template, including its terminator
-extern undefined1 DAT_00085460_backing[11]; // Original discovery-script filename template
-extern char s__DATA_grave_dat_00085cf8[];
-#define DAT_00085460 DAT_00085460_backing[0]
-#define DAT_00085448 DAT_00085448_backing[0]
-extern ushort DAT_00101a6c;
 extern uintptr_t DAT_00101a70;
-extern codeval *const PTR_FUN_00085408[16];
 undefined4 FUN_000362e8();
 undefined4 FUN_00036300();
 undefined4 FUN_00036308();
@@ -1872,84 +1185,35 @@ undefined4 FUN_0003663c();
 undefined4 FUN_00036698();
 
 extern HWND__ *DAT_0023c548;
-extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[];
-extern char s__Program_Files_ZIO_Interactive_U_00087804[];
-extern unsigned short u_InstlDir_00087838[];
-extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008784c[];
-extern unsigned short u_HP_Jornada_540_000876cc[];
-extern char s__Program_Files_ZIO_Interactive_U_000876ec[];
-extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008771c[];
-extern char s__Program_Files_ZIO_Interactive_U_00087774[];
-extern undefined1 DAT_000830b0_backing[65536];
-#define DAT_000830b0 DAT_000830b0_backing[0]
-#define UNK_000830b4 DAT_000830b0_backing[4]
-extern undefined1 DAT_0023c128_arr[9];
 extern void (*const g_hud_panel_handlers_table[13])(void);
 /* Globals defined in uw.c but also used by functions that now live in
    ai.c (NPC AI) -- extern'd here so both translation units see the
    same storage. */
 extern undefined DAT_00084f20_backing[8192];
 #define DAT_00084f20 DAT_00084f20_backing[0]
-extern undefined1 DAT_000853b0;
-extern undefined1 DAT_000853b1;
-extern ushort DAT_000853b8;
-extern undefined DAT_000853d8;
-extern undefined DAT_000868c0;
 extern undefined1 DAT_001007d0_backing[6144];
 #define DAT_001007d0 DAT_001007d0_backing[0]
 extern undefined4 DAT_001013fc;
 extern ushort DAT_00101414;
 extern ushort DAT_0010141c;
-extern undefined1 DAT_0010142c;
-extern byte DAT_00101434;
 extern char * DAT_00101438;
-extern undefined4 DAT_00101440;
-extern byte DAT_00101450;
-extern byte DAT_00101458;
-extern undefined1 DAT_00101460;
-extern undefined1 DAT_001014e0;
-extern undefined1 DAT_001014e1;
 extern undefined4 DAT_00101560;
-extern undefined DAT_00101568_backing[8192];
-#define DAT_00101568 DAT_00101568_backing[0]
-extern undefined DAT_00101569;
 extern void * DAT_0010172c;
-extern byte DAT_00101730;
-extern undefined1 DAT_00101738;
-extern char DAT_00101740_backing[8192];
-#define DAT_00101740 DAT_00101740_backing[0]
-extern char DAT_00101741;
-extern undefined1 DAT_00101743;
-extern undefined2 DAT_00101744;
-extern undefined1 DAT_00101746;
-extern undefined1 DAT_00101747;
-extern undefined1 DAT_00101748;
-extern byte DAT_001018fc;
 extern char * DAT_00101904;
 extern ushort DAT_00101910;
-extern undefined4 DAT_00101914;
 extern undefined4 DAT_0010191c;
-extern undefined4 DAT_00101920;
 extern char DAT_00101928;
 extern short DAT_00101938;
 extern short DAT_0010193c;
 extern undefined4 DAT_00101944;
-extern undefined4 DAT_00101950; // "rest interrupted by monster" flag, set by spawn_rest_interrupt_monster_callback
-extern undefined4 DAT_00101954; // "alerted hostile found" flag, set by detect_unsafe_rest_object_callback
-extern char DAT_00101948;
-extern undefined DAT_002027d1_backing[8192];
-#define DAT_002027d1 DAT_002027d1_backing[0]
+#define DAT_002027d1 DAT_002027d0_backing[1] /* projectile speed in each loaded weapon record */
 extern short DAT_002046b0;
 extern byte * DAT_002046c0;
 extern byte * DAT_002046c8;
 extern undefined2 DAT_002048c0_backing[32768];
 #define DAT_002048c0 DAT_002048c0_backing[0]
-extern undefined1 DAT_002048f0_backing[65536];
-#define DAT_002048f0 DAT_002048f0_backing[0]
 extern undefined DAT_00204920_backing[8192];
 #define DAT_00204920 DAT_00204920_backing[0]
-extern undefined1 DAT_00204950_backing[65536];
-#define DAT_00204950 DAT_00204950_backing[0]
 extern undefined1 DAT_00204980_backing[65536];
 #define DAT_00204980 DAT_00204980_backing[0]
 extern undefined2 DAT_00204990_backing[32768];
@@ -1962,54 +1226,6 @@ undefined4 collision_response_mobile_object();
 extern undefined1 DAT_00101424;
 extern undefined1 DAT_00101428_backing[8192];
 #define DAT_00101428 DAT_00101428_backing[0]
-extern undefined DAT_002048c2;
-extern undefined2 DAT_002048c6;
-extern undefined2 DAT_002048c8;
-extern undefined2 DAT_002048cc;
-extern undefined2 DAT_002048ce;
-extern short DAT_002048d0;
-extern undefined1 DAT_002048d7;
-extern undefined2 DAT_002048fa;
-extern undefined2 DAT_002048fc;
-extern undefined2 DAT_002048fe;
-extern undefined1 DAT_00204907;
-extern undefined2 DAT_0020492c;
-extern undefined2 DAT_0020492e;
-extern undefined1 DAT_00204937;
-extern undefined2 DAT_00204956;
-extern undefined2 DAT_00204958;
-extern undefined2 DAT_0020495c;
-extern undefined2 DAT_0020495e;
-extern undefined1 DAT_00204967;
-extern undefined DAT_00204982;
-extern undefined2 DAT_00204984;
-extern undefined DAT_00204986;
-extern undefined DAT_00204992;
-extern undefined2 DAT_00204994;
-extern undefined2 DAT_00204996;
-extern undefined2 DAT_002049a2;
-extern undefined2 DAT_002049a4;
-extern undefined2 DAT_002049a6;
-extern undefined2 DAT_002049b2;
-extern undefined2 DAT_002049b4;
-extern undefined2 DAT_002049b6;
-extern undefined1 DAT_0023cf08_backing[40960];
-#define DAT_0023cf08 DAT_0023cf08_backing[0]
-extern undefined DAT_0023cf09;
-extern undefined DAT_0023cf0a;
-extern undefined DAT_0023cf0b;
-extern undefined DAT_0023cf0c;
-extern undefined1 DAT_00101739;
-extern undefined1 DAT_0010173a;
-extern byte DAT_00101742;
-extern undefined DAT_00101732_backing[8192];
-#define DAT_00101732 DAT_00101732_backing[0]
-extern undefined DAT_00101733;
-extern undefined4 DAT_00101728;
-extern undefined DAT_00101749;
-extern undefined DAT_000853c4;
-extern undefined DAT_000853cc;
-extern undefined1 DAT_0010174a;
 extern undefined2 DAT_00101418;
 extern undefined2 DAT_00101908;
 /* "Last attacker" record, confirmed via check_npc_morale_flee's own use
@@ -2024,35 +1240,21 @@ extern undefined1 DAT_00101934; // last attacker's heading
 extern char DAT_0010194c; // last attacker's object slot index
 extern char DAT_000853d0; // last attacker's class id
 extern int DAT_00101940; // game-clock timestamp the attack was recorded at
-extern byte DAT_0010195c; // current noise type/volume, set by emit_noise_alert
 extern undefined2 DAT_00101960; // talking-portrait mouth-frame cycle count, reset by reset_dialogue_speech_state
 /* Voice-sample page size cache used by load_voice_sample_page and
    read_voice_sample_page_chunk. DAT_000853f8 was mis-declared as a
    1-byte `undefined` in the original decompile despite holding a
    computed size masked with & 0xffff elsewhere -- widened to ushort,
    matching its siblings, to stop the silent truncation. */
-extern ushort DAT_000853f8;
 extern ushort DAT_000853fc;
-extern ushort DAT_00085400;
-extern ushort *DAT_00101958; // current noise source object, set by emit_noise_alert
-extern char s_named_00085d18[];
 /* Globals defined in uw.c but also used by functions that now live in
    containers.c (the open-container/backpack view stack) -- extern'd
    here so both translation units see the same storage. */
 extern undefined1 DAT_00085c88_backing[32768];
 #define DAT_00085c88 DAT_00085c88_backing[0]
-extern char s_is_too_full__00085c78[];
 extern undefined1 DAT_002029f8_backing[256];
 #define g_carry_weight_limit_table DAT_002029f8_backing[0]
-extern undefined DAT_002029f9;
-extern undefined4 DAT_002028a0_backing[64];
-#define DAT_002028a0 DAT_002028a0_backing[0]
-extern undefined DAT_00202978_backing[8192];
-#define DAT_00202978 DAT_00202978_backing[0]
-extern undefined2 DAT_00202980;
-extern ushort DAT_00202986;
 extern short g_player_carry_weight;
-extern char s_is_empty__0008790c[];
 #define DAT_002028ec DAT_002028e8_backing[1]
 #define DAT_00202951 g_backpack_slot_table[1]
 #define g_backpack_widget_to_slot_plus1 g_backpack_widget_to_slot_backing[1]
@@ -2062,34 +1264,16 @@ extern char s_is_empty__0008790c[];
    translation units see the same storage. */
 extern short DAT_000858c4;
 extern char * DAT_002020b0;
-extern int DAT_002020e0;
-extern undefined4 DAT_002020ec;
 /* Globals defined in uw.c but also used by functions that now live in
    resources.c (.GR bitmap loading, flip-grtile slots, door frames) --
    extern'd here so both translation units see the same storage. */
-extern undefined4 DAT_00202514;
-extern undefined DAT_00202518_backing[8192];
-#define DAT_00202518 DAT_00202518_backing[0]
-extern undefined4 DAT_00202728;
 extern ushort DAT_00202744;
-extern undefined2 DAT_00202748;
-extern char * DAT_0020274c;
 extern undefined1 DAT_0023b840_backing[8192];
 #define DAT_0023b840 DAT_0023b840_backing[0]
 extern undefined1 DAT_00202750_backing[256];
 #define DAT_00202750 DAT_00202750_backing[0]
-extern char s__DATA_pals_dat_00085978[];
-extern char DAT_00085920_backing[20];
-#define DAT_00085920 DAT_00085920_backing[0]
-#define DAT_00085928 DAT_00085920_backing[8]
-#define DAT_00085929 DAT_00085920_backing[9]
-#define DAT_00085930 DAT_00085920_backing[0x10]
-#define DAT_00085931 DAT_00085920_backing[0x11]
-extern char * DAT_0023c3fc;
-extern undefined4 * DAT_0023c404;
 extern void * g_grtile_real_ptrs[320];
 extern char s__DATA__00085970[];
-extern char s_doors_00085a64[];
 /* Globals defined in uw.c but also used by functions that now live in
    item_use.c (item use) -- extern'd here so both translation units
    see the same storage. */
@@ -2097,62 +1281,22 @@ extern undefined1 DAT_00202a28_backing[256];
 #define g_food_effect_table DAT_00202a28_backing[0]
 extern undefined1 DAT_00087650_backing[40];
 #define DAT_00087650 DAT_00087650_backing[0]
-extern short DAT_00204854;
-extern undefined1 DAT_00204720_backing[65536];
-#define DAT_00204720 DAT_00204720_backing[0]
-extern undefined2 DAT_00204750;
-extern undefined2 DAT_002047e0;
-extern undefined2 DAT_00204808;
-extern undefined2 DAT_00086970;
-extern char DAT_00204858;
-extern undefined2 DAT_00204704;
-extern undefined2 DAT_00204714;
-extern short DAT_002047a8;
-extern short DAT_0020478c;
-extern short DAT_002047ac;
 extern char DAT_002506aa;
 extern undefined1 DAT_002029d8_backing[256];
 #define g_light_radius_table DAT_002029d8_backing[0]
 extern undefined4 g_weapon_overlay_enabled;
-extern char s_is_locked__000878fc[];
-extern char s_That_000878f4[];
 extern char s_UNNAMED_00084f24[];
-extern char s_Sorry__you_have_no_00084f2c[];
 /* Globals defined in uw.c but also used by functions that now live in
    movement.c (the movement collision sweep) -- extern'd here so both
    translation units see the same storage. */
 extern unsigned char DAT_002049c8_backing[64];
 extern unsigned char DAT_00086998_backing[16];
-extern undefined1 DAT_00086986_backing[65536];
-#define DAT_00086986 DAT_00086986_backing[0]
-extern short DAT_00086980;
-extern short DAT_00086982;
-extern short DAT_00086984;
-extern short DAT_0008698a;
-extern ushort DAT_0008698c;
-extern short DAT_0008698e;
 extern short DAT_00086990;
-extern ushort DAT_00086992;
-extern short DAT_00086994;
-extern short DAT_00086996;
-extern unsigned char DAT_000869a8_backing[16];
-#define DAT_000869a8 DAT_000869a8_backing[0]
-extern undefined DAT_00202c32;
 extern ushort DAT_00100610;
 extern short DAT_0010062c;
-extern undefined4 DAT_001005ec;
-extern short DAT_00100618;
 extern char *DAT_001005e4;
-extern char DAT_001005e0_backing[128];
 extern char *DAT_001005e0;
-extern short DAT_001005e8;
-extern undefined DAT_001005f0;
-extern byte DAT_00100614;
-extern unsigned char DAT_00084f0b_backing[5];
-#define DAT_00084f0b DAT_00084f0b_backing[0]
 extern char *DAT_002046b8;
-extern undefined2 DAT_00100600;
-extern ushort DAT_00100604;
 /* Six-byte collision candidates: top, bottom, packed link, tile offset.
  * Ghidra split overlapping fields (and next-record sort views) into globals. */
 extern undefined1 DAT_00202c38_backing[8192];
@@ -2177,19 +1321,8 @@ extern undefined1 DAT_00202c38_backing[8192];
 #define DAT_00202c3d DAT_00202c38_backing[5]
 #define DAT_00202c3e DAT_00202c38_backing[6]
 #define DAT_00202c3f DAT_00202c38_backing[7]
-extern int DAT_00204870;
 extern char * DAT_00204874;
-extern undefined4 DAT_00204878;
 extern char * DAT_002048bc;
-extern undefined * DAT_00204988;
-extern undefined * DAT_00204998;
-extern undefined1 * DAT_002049a8;
-extern undefined * DAT_002049b8;
-extern char DAT_002049bc;
-extern undefined1 DAT_002049c0;
-extern short * g_sweep_foot_pos;
-extern short * g_sweep_velocity;
-#define DAT_00086987 DAT_00086986_backing[1]
 #define DAT_00086998  (*(signed char *)(DAT_00086998_backing + 0))
 #define DAT_00086999  (DAT_00086998_backing[1])
 #define DAT_0008699a  (DAT_00086998_backing[2])
@@ -2216,11 +1349,7 @@ extern short * g_sweep_velocity;
 /* Globals defined in uw.c but also used by functions that now live in
    visibility.c (dungeon-view visibility/draw-list build) -- extern'd
    here so both translation units see the same storage. */
-extern undefined1 g_visibility_ray_table_backing[1024];
-extern const undefined1 DAT_00086af0_arr[4];
-extern const undefined1 DAT_00086af8_region[12];
 extern short DAT_00086b2c;
-extern undefined DAT_00086b34;
 extern void * DAT_002020f8_arr[256];
 #define DAT_002020f8 DAT_002020f8_arr[0]
 extern void * DAT_00202308_arr[256];
@@ -2237,133 +1366,33 @@ extern undefined2 DAT_0023ae58_backing[8192];
 #define DAT_0023ae58 DAT_0023ae58_backing[0]
 extern undefined2 DAT_0023aeb8_backing[8192];
 #define DAT_0023aeb8 DAT_0023aeb8_backing[0]
-extern int DAT_0023aec8;
 extern undefined2 * DAT_0023aed0;
 extern undefined2 DAT_0023aed4;
 extern undefined2 DAT_0023b020;
-extern undefined1 DAT_0023b028;
-extern undefined * DAT_0023b02c;
-extern undefined1 DAT_0023b039_backing[4096];
-#define DAT_0023b039 DAT_0023b039_backing[0]
-extern undefined1 DAT_0023b4a8_backing[65536];
-#define DAT_0023b4a8 DAT_0023b4a8_backing[0]
-extern ushort DAT_0023b4c8;
-extern short DAT_0023b4cc;
 extern undefined4 DAT_0023b804;
-extern undefined1 DAT_0023b841;
-extern undefined1 DAT_0024f090;
-extern undefined1 DAT_0024f0ca;
+#define DAT_0023b841 DAT_0023b840_backing[1]
 extern short DAT_0025063c;
 extern short DAT_0025064c;
 extern short DAT_002506dc;
 extern undefined4 g_dungeon_view_active;
 extern short g_visibility_max_ring_passes;
-extern char * g_visibility_ray_realptr[24];
-extern char * g_visibility_ray_realptr2[24];
-#define g_visibility_ray_table g_visibility_ray_table_backing[0]
-extern undefined1 g_visibility_ring_done;
-extern char s__DATA_terrain_dat_000869ec[];
-extern char s_bad_tmap_ids_size_000869b7[];
-extern char s_R__lu_P__lu_S__lu_F__d__d_00086b04[];
 #define DAT_00086a18 (*(undefined1 *)(DAT_00086a00_region + 0x18))
 #define DAT_00086a60 (*(undefined1 *)(DAT_00086a00_region + 0x60))
-#define DAT_00086af0 (*(undefined1 *)DAT_00086af0_arr)
-#define DAT_00086af8 (*(undefined1 *)(DAT_00086af8_region + 0))
-#define DAT_00086afc (*(undefined1 *)(DAT_00086af8_region + 4))
-#define DAT_00086b00 (*(undefined1 *)(DAT_00086af8_region + 8))
-#define DAT_0023aee1 g_visibility_ray_table_backing[1]
-#define DAT_0023aee3 g_visibility_ray_table_backing[3]
-#define DAT_0023aee5 g_visibility_ray_table_backing[5]
-#define DAT_0023aee6 g_visibility_ray_table_backing[6]
-#define DAT_0023aee7 g_visibility_ray_table_backing[7]
-#define DAT_0023aee8 g_visibility_ray_table_backing[8]
-#define DAT_0023aee9 g_visibility_ray_table_backing[9]
-#define DAT_0023aeea (*(undefined2 *)&g_visibility_ray_table_backing[0xa])
-#define DAT_0023aeec g_visibility_ray_table_backing[0xc]
-#define DAT_0023aeed g_visibility_ray_table_backing[0xd]
-#define DAT_0023aeee (*(undefined2 *)&g_visibility_ray_table_backing[0xe])
-#define DAT_0023aef0 g_visibility_ray_table_backing[0x10]
-#define DAT_0023aef5 g_visibility_ray_table_backing[0x15]
-#define DAT_0023aef6 (*(undefined2 *)&g_visibility_ray_table_backing[0x16])
-#define DAT_0023aef8 (*(undefined2 *)&g_visibility_ray_table_backing[0x18])
-#define DAT_0023aefa g_visibility_ray_table_backing[0x1a]
-#define DAT_0023aefb g_visibility_ray_table_backing[0x1b]
-#define DAT_0023aefc g_visibility_ray_table_backing[0x1c]
-#define DAT_0023aefd g_visibility_ray_table_backing[0x1d]
-#define DAT_0023aefe (*(undefined2 *)&g_visibility_ray_table_backing[0x1e])
-#define DAT_0023af00 (*(undefined2 *)&g_visibility_ray_table_backing[0x20])
-#define DAT_0023af02 g_visibility_ray_table_backing[0x22]
 /* Globals defined in uw.c but also used by functions that now live in
    saveload.c (save/load) -- extern'd here so both translation units
    see the same storage. */
 extern undefined2 DAT_000868dc;
-extern undefined DAT_00087030_backing[8192];
-#define DAT_00087030 DAT_00087030_backing[0]
-extern undefined DAT_00087084_backing[8192];
-#define DAT_00087084 DAT_00087084_backing[0]
 extern short DAT_002046f0;
-extern short DAT_002046f4;
-extern int DAT_002046f8;
-extern char s_optbtns_00086954[];
-extern short DAT_0020471c;
-extern short DAT_00204838;
-extern short DAT_0020483c;
-extern short DAT_002047dc;
-extern short DAT_002047d8;
-extern int DAT_000889b8;
-extern int DAT_000889bc;
-extern undefined2 DAT_002047b0_backing[20];
-#define DAT_002047b0 DAT_002047b0_backing[0]
-extern short DAT_002047a4;
-extern short DAT_00204748;
-extern short DAT_00204784;
-extern undefined2 DAT_0020479c;
-extern undefined2 DAT_002047a0;
-extern undefined2 DAT_00204798;
-extern undefined2 DAT_00204790;
-extern undefined2 DAT_00204794;
 extern int DAT_0020484c;
-extern undefined4 DAT_00204868;
-extern char s__6_Save_Game_Descriptions_0008703c[];
-extern char s__DATA_OPSCR_BYT_00086efc[];
-extern char s__not_used_yet__00087020[];
-extern char s__PLAYER_DAT_00087088[];
-extern char s__SAVE0_desc_00087078[];
-extern char s_I__00087074[];
-extern char s_II__0008706c[];
-extern char s_III__00087064[];
-extern char s_IV__0008705c[];
-extern char s_Please_enter_a_Save_Game_file_an_00087094[];
-extern undefined s_scroll_color_reset_00087038_backing[8192];
-#define s_scroll_color_reset_00087038 s_scroll_color_reset_00087038_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    text.c (text/font rendering) -- extern'd here so both translation
    units see the same storage. */
-extern undefined2 DAT_000890b0_backing[32768];
-#define DAT_000890b0 DAT_000890b0_backing[0]
-extern undefined2 DAT_000a85b0;
-extern short DAT_000a85b8;
-extern undefined4 DAT_0020250c;
-extern char * g_font_glyph_data_base;
-extern ushort g_font_line_height;
-extern short g_font_row_stride;
 extern undefined2 g_text_flat_color;
 /* Globals defined in uw.c but also used by functions that now live in
    collision.c (collision geometry) -- extern'd here so both
    translation units see the same storage. */
-extern undefined1 DAT_00202a58_backing[65536];
-#define DAT_00202a58 DAT_00202a58_backing[0]
 extern undefined1 DAT_00202bf8_backing[32768];
 #define DAT_00202bf8 DAT_00202bf8_backing[0]
-extern undefined1 DAT_00202c70_backing[65536];
-#define DAT_00202c70 DAT_00202c70_backing[0]
-extern ushort * _DAT_00202c34;
-extern char DAT_00202c18;
-extern char DAT_00202c1c;
-extern char DAT_00202c20;
-extern char DAT_00202c24;
-extern char DAT_00202c28;
-extern char DAT_00202c2c;
 #define DAT_00202bf9  (DAT_00202bf8_backing[0x01])
 #define DAT_00202bfa  (DAT_00202bf8_backing[0x02])
 #define DAT_00202bfb  (DAT_00202bf8_backing[0x03])
@@ -2382,7 +1411,6 @@ extern char DAT_00202c2c;
 #define DAT_00202c0d  (DAT_00202bf8_backing[0x15])
 #define DAT_00202c0e  (DAT_00202bf8_backing[0x16])
 #define DAT_00202c14  (*(unsigned int *)(DAT_00202bf8_backing + 0x1c))
-#define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
 /* Globals defined in uw.c but also used by functions that now live in
    input.c (key bindings, movement commands, mouse) -- extern'd here
    so both translation units see the same storage. */
@@ -2391,85 +1419,36 @@ extern char DAT_00202c2c;
 #define DAT_00085898 0xeb
 #define DAT_00085894 0xbc
 extern short DAT_00085890;
-extern short DAT_00202074;
-extern char s_out_of_000858dc[];
-extern undefined2 DAT_0020209c;
-extern undefined2 DAT_002020b4;
-extern undefined2 DAT_00202090;
-extern undefined2 DAT_002020c8;
-extern undefined2 DAT_002020bc;
-extern char *DAT_002020a8;
 extern short DAT_002020ac;
 extern void (*const PTR_FUN_000858c8_table[5])(void);
-extern char DAT_00085910;
-extern char DAT_00085911;
-extern char DAT_00085918;
-extern char DAT_00085919;
-extern char s__CRIT_assoc_anm_00085934[];
-extern int DAT_00202720_backing[128];
-extern int *DAT_00202720;
-extern undefined1 DAT_00202724_backing[8192];
-#define DAT_00202724 DAT_00202724_backing[0]
-extern undefined DAT_00085908_backing[8192];
-#define DAT_00085908 DAT_00085908_backing[0]
 extern undefined1 DAT_0023c460_backing[32768];
 #define DAT_0023c460 DAT_0023c460_backing[0]
-extern undefined1 DAT_0023c4c0_backing[256];
-#define DAT_0023c4c0 DAT_0023c4c0_backing[0]
-extern undefined1 DAT_0023c5b8_backing[256];
-#define DAT_0023c5b8 DAT_0023c5b8_backing[0]
-extern undefined1 DAT_0024ac18_backing[256];
-#define DAT_0024ac18 DAT_0024ac18_backing[0]
-extern void (*g_keybind_handler[512])(int);
-extern int g_keybind_handler_n;
-extern void (*g_click_region_handler[128])(int);
-extern int g_click_region_handler_n;
-extern undefined2 DAT_00085a70;
 extern short DAT_00086968;
 extern undefined2 DAT_0008696a;
 extern undefined2 DAT_0008696c;
 extern short DAT_0008696e;
-extern short DAT_00086974;
-extern undefined DAT_00086e70;
 extern short * DAT_000876c4;
 extern int DAT_000879ac;
 extern undefined4 DAT_000bbef8;
 extern short DAT_00202078;
-extern short DAT_0020207a;
-extern short DAT_0020207c;
-extern ushort DAT_00202084;
 extern byte DAT_0020208c;
 extern undefined4 DAT_002020d4;
-extern undefined2 DAT_0020288c;
-extern char * DAT_00202890;
-extern undefined2 DAT_00202898;
-extern undefined2 DAT_00202894;
-extern char * DAT_0020289c;
-extern short DAT_00204700;
-extern short DAT_00204708;
 extern undefined2 DAT_0020470c;
 extern undefined2 DAT_00204710;
-extern short DAT_00204778;
-extern short DAT_0020477c;
-extern short DAT_00204780;
 extern short DAT_00204788;
 extern undefined2 DAT_00204830;
 extern undefined2 DAT_00204834;
 extern short DAT_00204840;
 extern short DAT_00204850;
 extern int DAT_0020484c;
-extern undefined4 DAT_00204868;
 extern char DAT_002506aa;
 extern int DAT_0020485c;
-extern int DAT_00204864;
 extern short DAT_0023bf48;
 extern short DAT_0023bf4c;
-extern undefined4 DAT_0023bf50;
 extern undefined4 DAT_0023bf54;
 extern byte DAT_0023bf58;
-extern undefined DAT_00250658;
-extern int g_click_region_handler_n;
-extern int g_keybind_handler_n;
+extern undefined DAT_00250658_backing[256];
+#define DAT_00250658 DAT_00250658_backing[0]
 extern short g_movement_mode;
 /* Globals defined in uw.c but also used by functions that now live in
    object_actions.c (object action dispatch, critter sprite tier/page,
@@ -2477,48 +1456,25 @@ extern short g_movement_mode;
    units see the same storage. */
 extern ushort DAT_002022f8;
 extern int DAT_002022fc;
-extern ushort DAT_00202300;
-extern ushort DAT_00202304;
 extern ushort DAT_00202508;
 #define DAT_00202c9b DAT_00202c90_backing[0xb]
 extern undefined1 DAT_0023ce70_backing[8192];
 #define DAT_0023ce70 DAT_0023ce70_backing[0]
-extern undefined1 DAT_0023ce71;
+#define DAT_0023ce71 DAT_0023ce70_backing[1]
 extern ushort g_player_max_carry_weight;
-extern char s_belonging_to_00085c90[];
 extern char s_You_see_000858fc[];
 /* Globals defined in uw.c but also used by functions that now live in
    weapon_swing.c (weapon swing animation) -- extern'd here so both
    translation units see the same storage. */
 #define UW_WEAPON_SWING_FRAME_COUNT 28
-extern void * g_weapon_swing_raw_frames[UW_WEAPON_SWING_FRAME_COUNT];
 extern undefined1 DAT_000870e0;
 extern short DAT_000870e4;
-extern undefined2 DAT_000870e8;
-extern short DAT_0023c1ec;
-extern undefined1 g_weapon_swing_frame_y_offset_backing[256];
-#define g_weapon_swing_frame_y_offset g_weapon_swing_frame_y_offset_backing[0]
-extern undefined1 g_weapon_swing_frame_x_offset_backing[256];
-#define g_weapon_swing_frame_x_offset g_weapon_swing_frame_x_offset_backing[0]
-extern char s__DATA_weapons_dat_00087268[];
-extern char s__DATA_weapons_cm_00087284[];
-extern undefined1 DAT_00202700_backing[256];
-#define DAT_00202700 DAT_00202700_backing[0]
-extern char s_weapons_0008727c[];
 /* Globals defined in uw.c but also used by functions that now live in
    level.c (level loading) -- extern'd here so both translation units
    see the same storage. */
 extern undefined1 DAT_00088d98_backing[1536];
 #define DAT_00088d98 DAT_00088d98_backing[0]
-extern const unsigned short DAT_00085728_real_table[3];
-#define DAT_00085728 (*(undefined1 *)DAT_00085728_real_table)
-extern signed char DAT_00086884_backing[4];
-#define DAT_00086884 DAT_00086884_backing[0]
-extern unsigned char DAT_0008688c_backing[32];
-#define DAT_0008688c DAT_0008688c_backing[4]
 extern undefined4 DAT_002029d0;
-extern char * DAT_002046a0;
-extern char * DAT_002046ac;
 extern undefined1 g_scheduler_count;
 extern char *g_scheduler_table;
 #define DAT_00250778 g_scheduler_table[0]
@@ -2527,17 +1483,6 @@ extern char *g_scheduler_table;
 #define DAT_0025077b g_scheduler_table[3]
 #define DAT_0025077c g_scheduler_table[4]
 #define DAT_0025077d g_scheduler_table[5]
-extern char s__DATA_main_byt_000857a8[];
-extern char s_Error_code_XXXX___000857c8[];
-extern char s_Out_of_Low_Memory___000857dc[];
-extern char s_Out_of_EMS_Memory___000857f0[];
-extern char s_Could_not_read_data___00085804[];
-extern char s_Could_not_write_data___0008581c[];
-extern char s_Resource_problem_or_internal_err_00085834[];
-extern char s_Underworld_can_no_longer_run__Er_0008585c[];
-extern undefined DAT_00201b70_backing[8192];
-#define DAT_00201b70 DAT_00201b70_backing[0]
-extern char s_You_died_000857b8[];
 extern void (*const DAT_00085668_real_table[48])(void);
 #define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)
 #define DAT_00085668 DAT_00085668_backing[0]
@@ -2545,35 +1490,6 @@ extern void (*const DAT_00085668_real_table[48])(void);
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
-extern undefined1 DAT_000870ec_backing[4];
-#define DAT_000870ec DAT_000870ec_backing[0]
-#define DAT_000870f0 DAT_000870f0_backing[0]
-extern short DAT_00087130_arr[16];
-#define DAT_00087130 DAT_00087130_arr[0]
-extern short DAT_00087150_arr[16];
-#define DAT_00087150 DAT_00087150_arr[0]
-extern short DAT_00087170_arr[2];
-#define DAT_00087170 DAT_00087170_arr[0]
-extern short DAT_00087174_arr[2];
-#define DAT_00087174 DAT_00087174_arr[0]
-extern char DAT_00087178_arr[16];
-#define DAT_00087178 DAT_00087178_arr[0]
-extern char DAT_00087188_arr[16];
-#define DAT_00087188 DAT_00087188_arr[0]
-extern short DAT_000871b4_arr[4];
-#define DAT_000871b4 DAT_000871b4_arr[0]
-extern unsigned short DAT_000871d4_arr[2];
-#define DAT_000871d4 DAT_000871d4_arr[0]
-extern unsigned short DAT_000871d8_arr[2];
-#define DAT_000871d8 DAT_000871d8_arr[0]
-extern short DAT_00087254_arr[2];
-#define DAT_00087254 DAT_00087254_arr[0]
-extern undefined DAT_00087298_backing[8192];
-#define DAT_00087298 DAT_00087298_backing[0]
-extern int DAT_00088950;
-extern int DAT_00088954;
-extern int DAT_00088958;
-extern int DAT_0008895c;
 extern undefined2 DAT_00189578;
 extern ushort DAT_00189580;
 extern undefined2 DAT_00189582;
@@ -2584,192 +1500,43 @@ extern undefined2 DAT_00201c90;
 extern undefined2 DAT_00201c8c;
 extern short DAT_00201c7c;
 extern code *DAT_00201c9c;
-extern char s_At__d__d_00087360[];
-extern char s_Unable_to_defuse_trap__0008736c[];
-extern char s_Your_bumbling_attempts_have_set_o_00087384[];
-extern char s_was_successfully_dearmed__000873b0[];
-extern char s_on_the_000873cc[];
-extern undefined1 DAT_00087414_backing[65536];
-#define DAT_00087414 DAT_00087414_backing[0]
-extern char s__SOUND__0008750c[];
-extern char s_uw00_mod_00087514[];
-extern int DAT_00087448;
-extern int DAT_00087454;
-extern byte DAT_0023c3a8;
-extern undefined4 *DAT_0023c3b8;
-extern undefined1 DAT_0023c384;
-extern undefined4 DAT_0023c280;
-extern undefined4 DAT_0023c330;
-extern short DAT_0023c32c;
 extern undefined1 DAT_0023c3dc;
 extern undefined1 DAT_0023c3d8;
-extern uint DAT_00202094;
 extern char *DAT_00202098;
 extern undefined1 DAT_00087604_backing[65536];
 #define DAT_00087604 DAT_00087604_backing[0]
 extern undefined *PTR_FUN_00087614;
-extern undefined DAT_0008762c_backing[8192];
-#define DAT_0008762c DAT_0008762c_backing[0]
-#define DAT_00087630 DAT_0008762c_backing[4]
-#define DAT_00087634 DAT_0008762c_backing[8]
-extern int DAT_00087450;
-extern undefined4 DAT_0008744c;
-extern undefined DAT_0023c2b0_backing[8192];
-#define DAT_0023c2b0 DAT_0023c2b0_backing[0]
-extern undefined DAT_0023c2b1_backing[8192];
-#define DAT_0023c2b1 DAT_0023c2b1_backing[0]
-extern undefined DAT_0023c2b2_backing[8192];
-#define DAT_0023c2b2 DAT_0023c2b2_backing[0]
-extern undefined DAT_0023c2b3_backing[8192];
-#define DAT_0023c2b3 DAT_0023c2b3_backing[0]
-extern byte g_sound_channel_state[4];
-extern ushort g_sound_channel_group[4];
-extern byte DAT_0023c39c;
-extern undefined DAT_0023c3d4_backing[8192];
-#define DAT_0023c3d4 DAT_0023c3d4_backing[0]
-extern int DAT_0023c3bc;
-extern int DAT_0023c378;
-extern undefined1 DAT_000873e0_backing[65536];
-#define DAT_000873e0 DAT_000873e0_backing[0]
-extern undefined4 DAT_00087458;
-extern undefined1 DAT_00087520_backing[32768];
-#define DAT_00087520 DAT_00087520_backing[0]
-extern undefined1 DAT_00087531_backing[210];
-#define DAT_00087531 DAT_00087531_backing[0]
-extern undefined DAT_00087530_backing[210];
+extern undefined DAT_00087530_backing[212];
 #define DAT_00087530 DAT_00087530_backing[0]
-extern undefined DAT_00087533_backing[210];
-#define DAT_00087533 DAT_00087533_backing[0]
+#define DAT_00087533 DAT_00087530_backing[3]
 extern undefined1 DAT_00241f08_backing[32768];
 #define DAT_00241f08 DAT_00241f08_backing[0]
 extern undefined DAT_0023b4dc;
 extern undefined2 DAT_0023b8c0;
 extern undefined2 DAT_0023bc8c;
 #define DAT_0023c118 DAT_0023c118_arr[0]
-extern byte DAT_0023c11a;
-extern undefined1 DAT_0023c11b;
-#define DAT_0023c11c DAT_0023c11c_arr[0]
-extern undefined DAT_0023c124;
-#define DAT_0023c128 DAT_0023c128_arr[0]
-extern byte DAT_0023c12a;
-#define DAT_0023c12c DAT_0023c12c_arr[0]
 extern undefined1 DAT_0023c130;
-extern byte DAT_0023c150;
-extern ushort DAT_0023c1d8;
 extern ushort DAT_0023c1dc;
-extern ushort DAT_0023c1e0;
-extern undefined2 DAT_0023c1e4_arr[2];
-#define DAT_0023c1e4 DAT_0023c1e4_arr[0]
-#define DAT_0023c1e6 DAT_0023c1e4_arr[1]
-extern short DAT_0023c1e8_arr[2];
-#define DAT_0023c1e8 DAT_0023c1e8_arr[0]
-#define DAT_0023c1ea DAT_0023c1e8_arr[1]
-extern undefined1 DAT_0023c1f0_backing[65536];
-#define DAT_0023c1f0 DAT_0023c1f0_backing[0]
-extern undefined1 DAT_0023c1f8_backing[65536];
-#define DAT_0023c1f8 DAT_0023c1f8_backing[0]
-extern int DAT_0023c20c;
-extern short DAT_0023c21c;
-extern undefined2 DAT_0023c220;
-extern short DAT_0023c224_arr[2];
-#define DAT_0023c224 DAT_0023c224_arr[0]
-extern short DAT_0023c228;
-extern short DAT_0023c22c;
-extern short DAT_0023c230_arr[2];
-#define DAT_0023c230 DAT_0023c230_arr[0]
-extern short DAT_0023c234_arr[2];
-#define DAT_0023c234 DAT_0023c234_arr[0]
-extern short DAT_0023c238_arr[2];
-#define DAT_0023c238 DAT_0023c238_arr[0]
-extern int DAT_0023c23c;
-#define DAT_0023c240 DAT_0023c240_vitals[0]
-extern short DAT_0023c250;
-extern short DAT_0023c254;
-extern short DAT_00087258;
-extern short DAT_0023c258;
-extern int DAT_0023c260;
-extern undefined2 DAT_0023c140;
-extern int DAT_0023c278;
-extern undefined2 DAT_0023c148;
-extern undefined2 DAT_0023c14c;
-extern undefined2 DAT_0023c144;
 extern byte g_flip_grtile_cache_ready;
-extern short DAT_0023c134;
-extern byte DAT_0023c208;
-extern short DAT_0023c138;
-extern short DAT_0023c13c;
-extern short DAT_0023c110;
-extern unsigned short u_dgijjjigd_G__000871e0[16];
-extern byte DAT_0023c25c;
-extern short DAT_0023c268_arr[3];
-#define DAT_0023c268 DAT_0023c268_arr[0]
-extern short DAT_0023c270_arr[3];
-#define DAT_0023c270 DAT_0023c270_arr[0]
-extern const undefined2 DAT_00087210_arr[3];
-#define DAT_00087210 DAT_00087210_arr[0]
-extern const undefined2 DAT_00087218_arr[3];
-#define DAT_00087218 DAT_00087218_arr[0]
-extern undefined4 DAT_0023c200_arr[3];
-#define DAT_0023c200 DAT_0023c200_arr[0]
-#define DAT_0023c202 DAT_0023c200_arr[1]
-#define DAT_0023c204 DAT_0023c200_arr[2]
 extern void * DAT_0023c430;
-extern undefined4 DAT_0023c638;
-extern undefined DAT_00084e40_backing[8192];
-#define DAT_00084e40 DAT_00084e40_backing[0]
-extern undefined DAT_00084e48_backing[8192];
-#define DAT_00084e48 DAT_00084e48_backing[0]
-extern undefined DAT_00084e50_backing[8192];
-#define DAT_00084e50 DAT_00084e50_backing[0]
-extern undefined DAT_00084e58_backing[8192];
-#define DAT_00084e58 DAT_00084e58_backing[0]
 extern short DAT_0023c63c;
 extern undefined * DAT_00250704;
-extern undefined4 DAT_00250708;
-extern short DAT_00250710;
-extern undefined2 DAT_00250714;
-extern undefined4 DAT_0025071c;
-extern undefined4 DAT_00250720;
-extern short DAT_00250724;
 extern int g_force_flush;
-extern int g_force_redraw_no_xp;
-extern undefined1 g_msg_scroll_panel_state_backing[65536];
-#define g_msg_scroll_panel_state g_msg_scroll_panel_state_backing[0]
 extern undefined4 g_scroll_control_codes_enabled;
 extern unsigned int g_uw_frame_clock_units;
 unsigned int uw_frame_clock_ms();
-extern char PTR_DAT_00087198_arr[16];
-#define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
-extern char PTR_DAT_000871a8_arr[16];
-#define PTR_DAT_000871a8 PTR_DAT_000871a8_arr[0]
-extern char s__MORE__00087994[];
-extern char s_init_gamedisp_goes_000858e8[];
-extern char s_panels_00087260[];
-#define DAT_000858a8 (*(undefined1 *)DAT_000858a8_real)
-#define DAT_000858b8 (*(undefined1 *)DAT_000858b8_real)
 #define DAT_00086b38 (DAT_00086b38_fnptrs[0])
 #define DAT_00086b3c (DAT_00086b38_fnptrs[1])
 #define DAT_00086b40 (DAT_00086b38_fnptrs[2])
 #define DAT_00086b44 (DAT_00086b38_fnptrs[3])
 #define DAT_00086b48 (DAT_00086b38_fnptrs[4])
-extern ushort DAT_0023b7f8;
 #define DAT_00086b50  DAT_00086b50_at(0x00)
 #define DAT_00086b52  DAT_00086b50_at(0x02)
-#define DAT_000870f2 (*(short *)(DAT_000870f0_backing + 2))
-#define DAT_00087114 (*(short *)(DAT_00087112_backing + 2))
-#define DAT_000871b8 (*(undefined1 *)DAT_000871b8_arr)
-#define DAT_0023c11d DAT_0023c11c_arr[1]
 #define DAT_0023c11f DAT_0023c118_arr[7]
 #define DAT_0023c120 DAT_0023c118_arr[8]
-#define DAT_0023c12d DAT_0023c12c_arr[1]
-#define DAT_0023c244 DAT_0023c240_vitals[4]
-#define DAT_0023c248 DAT_0023c240_vitals[8]
-#define DAT_0023c24c DAT_0023c240_vitals[12]
 #define DAT_0023cdb8 (*(int *)(DAT_0023cdb0_backing + 8))
 #define DAT_0023cdbc (*(int *)(DAT_0023cdb0_backing + 0xc))
 #define DAT_0023cdc0 (*(int *)(DAT_0023cdb0_backing + 0x10))
-#define g_committed_hud_panel DAT_0023c128_arr[6]
-#define DAT_0023c12f DAT_0023c128_arr[7]
 #define g_hud_panel_handlers (g_hud_panel_handlers_table[0])
 #define g_hud_panel_ticker_handlers (g_hud_panel_handlers_table[4])
 #define g_target_hud_panel DAT_0023c118_arr[6]
@@ -2853,102 +1620,18 @@ undefined4 register_gr_group_entry(void *buf, unsigned size, int idx);
    callback family does). */
 void *gr_resource_bump_alloc_entry();
 undefined4 register_objects_gr_entry(void *buf, unsigned size, int idx);
-extern undefined2 DAT_000859a8;
 undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx);
 void *hud_icon_gr_bump_alloc_entry();
-extern void *DAT_00202510;
 void *decode_gr_entry_bump_alloc_entry();
 unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx);
 extern ushort DAT_00202730;
-extern undefined2 DAT_0020272c;
-extern undefined2 DAT_0024fa1c;
-extern char DAT_00085988;
-extern char s_optb_000859ac[];
-extern char s_scrledge_000859b4[];
-extern char s_spells_000859c0[];
-extern char s_chains_000859c8[];
-extern char s_eyes_000859d0[];
-extern char s_power_000859d8[];
-extern char s_inv_000859e0[];
-extern char s_dragons_000859e4[];
-extern char s_compass_000859ec[];
-extern char s_flasks_000859f4[];
 extern char s_lfti_000859fc[];
-extern char s_tmobj_00085a04[];
-extern char s_tmflat_00085a0c[];
-extern char s_3dwin_00085a14[];
-extern char s_cursors_00085a1c[];
-extern char s_buttons_00085a24[];
-extern char s_animo_00085a2c[];
-extern char s_objects_00085a34[];
-extern char s_views_00085a3c[];
-extern char s_question_00085a44[];
-extern char s__DATA_allpals_dat_00085a50[];
-extern int DAT_002028d0;
-extern byte DAT_002028d4;
-extern undefined DAT_00085a90;
-extern char s_were_00085a98[];
-extern undefined1 DAT_00085aa0_backing[32768];
-#define DAT_00085aa0 DAT_00085aa0_backing[0]
-extern char s_damaged__00085aa8[];
-extern char s_destroyed__00085ab4[];
 extern char s_bodies_00085c58[];
-extern int DAT_002029a4;
-extern undefined2 DAT_00202998;
 extern undefined2 DAT_00085c50;
-extern char s_cursed_00085ca0[];
-extern char s_magical_00085ca8[];
-extern char s_full_charge_00085cb8[];
-extern undefined DAT_00085cc8;
-extern char s_with_00085cd0[];
-extern undefined DAT_00085cd8_backing[8192];
-#define DAT_00085cd8 DAT_00085cd8_backing[0]
-extern undefined1 DAT_00085ccc;
-extern undefined1 DAT_00085ccd;
-extern undefined1 DAT_00085cce;
-extern undefined DAT_00085cb4_backing[8192];
-#define DAT_00085cb4 DAT_00085cb4_backing[0]
-extern char s__DATA_grave_dat_00085cf8[];
-extern char s_an_adventurer__00085d08[];
-extern const short DAT_00085d48_sine[260];
-#define DAT_00085d48 (*(const undefined1 *)(const void *)DAT_00085d48_sine)
-#define DAT_00085d4c (*(const undefined1 *)((const char *)(const void *)DAT_00085d48_sine + 2))
-extern const short DAT_00085f50_cosine[260];
-#define DAT_00085f50 (*(const undefined1 *)(const void *)DAT_00085f50_cosine)
-#define DAT_00085f54 (*(const undefined1 *)((const char *)(const void *)DAT_00085f50_cosine + 2))
-extern undefined1 DAT_00086260_backing[1024];
-#define DAT_00086260 DAT_00086260_backing[0]
-extern undefined1 DAT_00086264_backing[1024];
-#define DAT_00086264 DAT_00086264_backing[0]
-extern int DAT_00086368;
-extern unsigned short u_WAVE_0008686c[];
-extern undefined4 DAT_00086370_backing[296];
-#define DAT_00086370 DAT_00086370_backing[0]
-extern undefined1 DAT_00086810_backing[32];
-#define DAT_00086810 DAT_00086810_backing[0]
 extern undefined1 DAT_00202988_backing[16];
 #define DAT_00202988 DAT_00202988_backing[0]
-extern undefined1 DAT_002028e0_backing[16];
-#define DAT_002028e0 DAT_002028e0_backing[0]
-extern char s_armor_f_00085c60[];
-extern char s_Move_how_many__00085c68[];
 extern short DAT_00085b64;
 extern undefined2 DAT_00085b72;
-extern undefined1 DAT_00085b77;
-extern byte DAT_00085b76;
-extern short DAT_00085b74;
-extern undefined4 DAT_00202914;
-extern undefined1 DAT_00085b69;
-extern byte DAT_00085b68;
-extern short DAT_00085b66;
-extern undefined4 DAT_00202910;
-extern ushort DAT_00202962;
-extern ushort DAT_00202964;
-extern undefined DAT_000fb650_backing[8192];
-#define DAT_000fb650 DAT_000fb650_backing[0]
-extern undefined DAT_000fb550_backing[8192];
-#define DAT_000fb550 DAT_000fb550_backing[0]
-extern char s_Not_a_spell_00085a80[];
 void *alloc_door_frame_buffer();
 void close_door_object();
 void open_door_object();
@@ -3433,8 +2116,6 @@ void load_door_frames();
 void load_armor_variant_tables();
 void load_class6_variant_effect_table();
 void load_class7_variant_effect_table();
-extern char s__DATA_objects_dat_000868a8[];
-extern char s__DATA_comobj_dat_00086894[];
 void *class0_variant_effect_table_lookup();
 void *class1_variant_effect_table_lookup();
 void *class2_variant_effect_table_lookup();
@@ -3668,7 +2349,7 @@ void active_mobile_list_add();
 void active_mobile_list_remove();
 ushort *find_object_in_chain();
 undefined4 object_or_contents_has_type();
-int find_object_in_world();
+ushort *find_object_in_world();
 undefined4 cycle_active_light_source();
 void update_player_tick_effects();
 undefined4 decay_equipped_light_sources();
@@ -4183,12 +2864,9 @@ undefined4 register_default_atexit_handler();
 #define _DAT_0008699b (*(unsigned short*)&DAT_0008699b)
 #define _DAT_0008699f (*(unsigned short*)&DAT_0008699f)
 #define _DAT_000869a1 (*(unsigned short*)&DAT_000869a1)
-#define _DAT_00202978 (*(uint*)&DAT_00202978)
 #define _DAT_00202bfb (*(unsigned short*)(DAT_00202bf8_backing + 0x03))
 #define _DAT_00202c00 (*(unsigned short*)(DAT_00202bf8_backing + 0x08))
 #define _DAT_00202c05 (*(unsigned short*)(DAT_00202bf8_backing + 0x0d))
-extern undefined DAT_002035cf;
-#define _DAT_002035cf (*(uint*)&DAT_002035cf)
 /* The travel-direction stash the movement sweep compares against
    DAT_00201c78: apply_heading_turn writes it as two bytes (DAT_002048a1
    low, DAT_002048a2 high) of that 16-bit angle, so read it back as a
@@ -4199,35 +2877,18 @@ extern undefined DAT_002035cf;
    +/-0x400 (the "tiny rotation on strafe release"). */
 #define _DAT_002048a1 (*(short*)&DAT_002048a1)
 #define _DAT_002048a9 (*(uint*)&DAT_002048a9)
-#define _DAT_002048c2 (*(uint*)&DAT_002048c2)
 #define _DAT_00204980 (*(uint*)&DAT_00204980)
-#define _DAT_00204982 (*(uint*)&DAT_00204982)
-#define _DAT_00204986 (*(uint*)&DAT_00204986)
-#define _DAT_00204992 (*(uint*)&DAT_00204992)
-#define _DAT_0023aee1 (*(uint*)&DAT_0023aee1)
-#define _DAT_0023aee3 (*(uint*)&DAT_0023aee3)
-#define _DAT_0023af02 (*(uint*)&DAT_0023af02)
-#define _DAT_0023c5ac (*(uint*)&DAT_0023c5ac)
 #define _DAT_0023ce10 (*(uint*)&DAT_0023ce10)
-#define Ordinal_2005_exref ((void*)&Ordinal_2005)
+#define ordint_divmod_exref ((void*)&ordint_divmod)
 
 /* Globals defined in uw.c but also used by functions that now live in
    game.c (animate_title_palette_cycle's 14ms throttle timestamp). */
-extern ushort DAT_0023bf74;
 
 /* Globals defined in uw.c but also used by functions that now live in
    saveload.c (ensure_save_directory_exists's "\*.*" scan wildcard). */
-extern undefined DAT_000870c8_backing[8192];
-#define DAT_000870c8 DAT_000870c8_backing[0]
 
 /* Globals defined in uw.c but also used by functions that now live in
    registration.c. */
-extern int DAT_00086f0c;
-extern unsigned short u_BuildNo_00086f5c[];
-extern unsigned short u_Software_ZIO_Interactive_Ultima_U_00086f6c[];
-extern int DAT_0023c108;
-extern undefined DAT_0023bf78_backing[8192];
-#define DAT_0023bf78 DAT_0023bf78_backing[0]
 
 /* Declarations for the functions that used to live directly in this file
  * but were split out into their own topic .c files this session -- moved
@@ -4272,329 +2933,5 @@ extern undefined DAT_0023bf78_backing[8192];
    g_model_parse_part_count and ~190 bare-literal-address DAT_xxx/string
    constants) -- un-staticed and declared here so parse_e_model_file and
    uw_e_model_strip_cr can be extracted into src/models.c. */
-extern int DAT_0008465c;
-extern int DAT_00084660;
-extern int DAT_0008466c;
-extern int DAT_00084670;
-extern undefined DAT_00084730_backing[8192];
-#define DAT_00084730 DAT_00084730_backing[0]
-extern undefined DAT_00084814_backing[8192];
-#define DAT_00084814 DAT_00084814_backing[0]
-extern undefined DAT_00084820_backing[8192];
-#define DAT_00084820 DAT_00084820_backing[0]
-extern undefined DAT_000848f4_backing[8192];
-#define DAT_000848f4 DAT_000848f4_backing[0]
-extern char DAT_000849a8_backing[8192];
-#define DAT_000849a8 DAT_000849a8_backing[0]
-extern char DAT_000849ac_backing[8192];
-#define DAT_000849ac DAT_000849ac_backing[0]
-extern char DAT_000849c8_backing[8192];
-#define DAT_000849c8 DAT_000849c8_backing[0]
-extern undefined DAT_00084a24_backing[8192];
-#define DAT_00084a24 DAT_00084a24_backing[0]
-extern char DAT_000c4c38_backing[0x3e58];
-#define DAT_000c4c38 (*(undefined4 *)DAT_000c4c38_backing)
-#define DAT_000c8a90 (*(undefined1 *)(DAT_000c4c38_backing + 0x3e58))
-extern int * DAT_000c8b00;
-extern undefined1 DAT_000c8b08_backing[65536];
-#define DAT_000c8b08 DAT_000c8b08_backing[0]
-extern undefined1 DAT_000c8ca0_backing[65536];
-#define DAT_000c8ca0 DAT_000c8ca0_backing[0]
-extern undefined1 DAT_000c9540_backing[65536];
-#define DAT_000c9540 DAT_000c9540_backing[0]
-extern undefined1 DAT_000c9541_backing[65536];
-#define DAT_000c9541 DAT_000c9541_backing[0]
-extern undefined1 DAT_000c9542_backing[65536];
-#define DAT_000c9542 DAT_000c9542_backing[0]
-extern undefined1 DAT_000c9543_backing[65536];
-#define DAT_000c9543 DAT_000c9543_backing[0]
-extern undefined1 DAT_000c9544_backing[65536];
-#define DAT_000c9544 DAT_000c9544_backing[0]
-extern undefined1 DAT_000c9545_backing[65536];
-#define DAT_000c9545 DAT_000c9545_backing[0]
-extern undefined1 DAT_000c9546_backing[65536];
-#define DAT_000c9546 DAT_000c9546_backing[0]
-extern undefined1 DAT_000c9547_backing[65536];
-#define DAT_000c9547 DAT_000c9547_backing[0]
-extern undefined1 DAT_000c9548_backing[65536];
-#define DAT_000c9548 DAT_000c9548_backing[0]
-extern undefined1 DAT_000c9549_backing[65536];
-#define DAT_000c9549 DAT_000c9549_backing[0]
-extern undefined1 DAT_000c954a_backing[65536];
-#define DAT_000c954a DAT_000c954a_backing[0]
-extern undefined1 DAT_000c954b_backing[65536];
-#define DAT_000c954b DAT_000c954b_backing[0]
-extern undefined1 DAT_000c954c_backing[65536];
-#define DAT_000c954c DAT_000c954c_backing[0]
-extern undefined1 DAT_000c954d_backing[65536];
-#define DAT_000c954d DAT_000c954d_backing[0]
-extern undefined1 DAT_000c954e_backing[65536];
-#define DAT_000c954e DAT_000c954e_backing[0]
-extern undefined1 DAT_000c954f_backing[65536];
-#define DAT_000c954f DAT_000c954f_backing[0]
-extern undefined1 DAT_000c9550_backing[65536];
-#define DAT_000c9550 DAT_000c9550_backing[0]
-extern undefined1 DAT_000c9551_backing[65536];
-#define DAT_000c9551 DAT_000c9551_backing[0]
-extern undefined1 DAT_000c9552_backing[65536];
-#define DAT_000c9552 DAT_000c9552_backing[0]
-extern undefined1 DAT_000c9553_backing[65536];
-#define DAT_000c9553 DAT_000c9553_backing[0]
-extern undefined1 DAT_000c9554_backing[65536];
-#define DAT_000c9554 DAT_000c9554_backing[0]
-extern undefined1 DAT_000c9555_backing[65536];
-#define DAT_000c9555 DAT_000c9555_backing[0]
-extern undefined1 DAT_000c9dd8_backing[65536];
-#define DAT_000c9dd8 DAT_000c9dd8_backing[0]
-extern undefined1 DAT_000c9dd9_backing[65536];
-#define DAT_000c9dd9 DAT_000c9dd9_backing[0]
-extern undefined1 DAT_000c9dda_backing[65536];
-#define DAT_000c9dda DAT_000c9dda_backing[0]
-extern undefined1 DAT_000c9ddb_backing[65536];
-#define DAT_000c9ddb DAT_000c9ddb_backing[0]
-extern undefined1 DAT_000c9ddc_backing[65536];
-#define DAT_000c9ddc DAT_000c9ddc_backing[0]
-extern undefined1 DAT_000c9ddd_backing[65536];
-#define DAT_000c9ddd DAT_000c9ddd_backing[0]
-extern undefined1 DAT_000c9dde_backing[65536];
-#define DAT_000c9dde DAT_000c9dde_backing[0]
-extern undefined1 DAT_000c9ddf_backing[65536];
-#define DAT_000c9ddf DAT_000c9ddf_backing[0]
-extern undefined1 DAT_000c9de0_backing[65536];
-#define DAT_000c9de0 DAT_000c9de0_backing[0]
-extern undefined1 DAT_000c9de1_backing[65536];
-#define DAT_000c9de1 DAT_000c9de1_backing[0]
-extern undefined1 DAT_000c9de2_backing[65536];
-#define DAT_000c9de2 DAT_000c9de2_backing[0]
-extern undefined1 DAT_000c9de3_backing[65536];
-#define DAT_000c9de3 DAT_000c9de3_backing[0]
-extern undefined1 DAT_000c9e0e_backing[65536];
-#define DAT_000c9e0e DAT_000c9e0e_backing[0]
-extern undefined1 DAT_000c9e0f_backing[65536];
-#define DAT_000c9e0f DAT_000c9e0f_backing[0]
-extern undefined1 DAT_000c9e10_backing[65536];
-#define DAT_000c9e10 DAT_000c9e10_backing[0]
-extern undefined1 DAT_000c9e11_backing[65536];
-#define DAT_000c9e11 DAT_000c9e11_backing[0]
-extern undefined1 DAT_000c9e22_backing[65536];
-#define DAT_000c9e22 DAT_000c9e22_backing[0]
-extern undefined1 DAT_000c9e23_backing[65536];
-#define DAT_000c9e23 DAT_000c9e23_backing[0]
-extern undefined1 DAT_000c9e24_backing[65536];
-#define DAT_000c9e24 DAT_000c9e24_backing[0]
-extern undefined1 DAT_000c9e25_backing[65536];
-#define DAT_000c9e25 DAT_000c9e25_backing[0]
-extern undefined1 DAT_000c9e26_backing[65536];
-#define DAT_000c9e26 DAT_000c9e26_backing[0]
-extern undefined1 DAT_000c9e28_backing[65536];
-#define DAT_000c9e28 DAT_000c9e28_backing[0]
-extern undefined1 DAT_000c9e29_backing[65536];
-#define DAT_000c9e29 DAT_000c9e29_backing[0]
-extern undefined1 DAT_000c9e2b_backing[65536];
-#define DAT_000c9e2b DAT_000c9e2b_backing[0]
-extern undefined1 DAT_000c9e2c_backing[65536];
-#define DAT_000c9e2c DAT_000c9e2c_backing[0]
-extern undefined1 DAT_000c9e2d_backing[65536];
-#define DAT_000c9e2d DAT_000c9e2d_backing[0]
-extern undefined1 DAT_000c9e2e_backing[65536];
-#define DAT_000c9e2e DAT_000c9e2e_backing[0]
-extern undefined1 DAT_000c9e2f_backing[65536];
-#define DAT_000c9e2f DAT_000c9e2f_backing[0]
-extern undefined1 DAT_000c9e30_backing[65536];
-#define DAT_000c9e30 DAT_000c9e30_backing[0]
-extern undefined1 DAT_000c9e31_backing[65536];
-#define DAT_000c9e31 DAT_000c9e31_backing[0]
-extern undefined1 DAT_000c9e32_backing[65536];
-#define DAT_000c9e32 DAT_000c9e32_backing[0]
-extern undefined1 DAT_000c9e33_backing[65536];
-#define DAT_000c9e33 DAT_000c9e33_backing[0]
-extern undefined1 DAT_000c9e34_backing[65536];
-#define DAT_000c9e34 DAT_000c9e34_backing[0]
-extern undefined1 DAT_000c9e35_backing[65536];
-#define DAT_000c9e35 DAT_000c9e35_backing[0]
-extern undefined1 DAT_000c9e36_backing[65536];
-#define DAT_000c9e36 DAT_000c9e36_backing[0]
-extern undefined1 DAT_000c9e37_backing[65536];
-#define DAT_000c9e37 DAT_000c9e37_backing[0]
-extern undefined1 DAT_000c9e38_backing[65536];
-#define DAT_000c9e38 DAT_000c9e38_backing[0]
-extern undefined1 DAT_000c9e39_backing[65536];
-#define DAT_000c9e39 DAT_000c9e39_backing[0]
-extern undefined1 DAT_000c9e3a_backing[65536];
-#define DAT_000c9e3a DAT_000c9e3a_backing[0]
-extern undefined1 DAT_000c9e3b_backing[65536];
-#define DAT_000c9e3b DAT_000c9e3b_backing[0]
-extern undefined1 DAT_000c9e3c_backing[65536];
-#define DAT_000c9e3c DAT_000c9e3c_backing[0]
-extern undefined1 DAT_000c9e3d_backing[65536];
-#define DAT_000c9e3d DAT_000c9e3d_backing[0]
-extern undefined1 DAT_000c9e3e_backing[65536];
-#define DAT_000c9e3e DAT_000c9e3e_backing[0]
-extern undefined1 DAT_000d2ab0_backing[32768];
-#define DAT_000d2ab0 DAT_000d2ab0_backing[0]
-extern undefined1 DAT_000d2ab1_backing[32768];
-#define DAT_000d2ab1 DAT_000d2ab1_backing[0]
-extern undefined1 DAT_000d2ab2_backing[32768];
-#define DAT_000d2ab2 DAT_000d2ab2_backing[0]
-extern undefined1 DAT_000d2ab3_backing[32768];
-#define DAT_000d2ab3 DAT_000d2ab3_backing[0]
-extern undefined1 DAT_000d2ab4_backing[32768];
-#define DAT_000d2ab4 DAT_000d2ab4_backing[0]
-extern undefined1 DAT_000d2ab5_backing[32768];
-#define DAT_000d2ab5 DAT_000d2ab5_backing[0]
-extern undefined1 DAT_000d2ab6_backing[32768];
-#define DAT_000d2ab6 DAT_000d2ab6_backing[0]
-extern undefined1 DAT_000d2ab7_backing[32768];
-#define DAT_000d2ab7 DAT_000d2ab7_backing[0]
-extern undefined1 DAT_000d2ab8_backing[32768];
-#define DAT_000d2ab8 DAT_000d2ab8_backing[0]
-extern undefined1 DAT_000d2ab9_backing[32768];
-#define DAT_000d2ab9 DAT_000d2ab9_backing[0]
-extern undefined1 DAT_000d2aba_backing[32768];
-#define DAT_000d2aba DAT_000d2aba_backing[0]
-extern undefined1 DAT_000d2abb_backing[32768];
-#define DAT_000d2abb DAT_000d2abb_backing[0]
-extern undefined1 DAT_000d2abc_backing[32768];
-#define DAT_000d2abc DAT_000d2abc_backing[0]
-extern undefined1 DAT_000d2abd_backing[32768];
-#define DAT_000d2abd DAT_000d2abd_backing[0]
-extern undefined1 DAT_000d2abe_backing[32768];
-#define DAT_000d2abe DAT_000d2abe_backing[0]
-extern undefined1 DAT_000d2abf_backing[32768];
-#define DAT_000d2abf DAT_000d2abf_backing[0]
-extern undefined1 DAT_000d2ac0_backing[32768];
-#define DAT_000d2ac0 DAT_000d2ac0_backing[0]
-extern undefined1 DAT_000d2ac1_backing[32768];
-#define DAT_000d2ac1 DAT_000d2ac1_backing[0]
-extern undefined1 DAT_000d2ac2_backing[32768];
-#define DAT_000d2ac2 DAT_000d2ac2_backing[0]
-extern undefined1 DAT_000d2ac3_backing[32768];
-#define DAT_000d2ac3 DAT_000d2ac3_backing[0]
-extern undefined1 DAT_000d2ac8_backing[32768];
-#define DAT_000d2ac8 DAT_000d2ac8_backing[0]
-extern undefined1 DAT_000d2ac9_backing[32768];
-#define DAT_000d2ac9 DAT_000d2ac9_backing[0]
-extern undefined1 DAT_000d2aca_backing[32768];
-#define DAT_000d2aca DAT_000d2aca_backing[0]
-extern undefined1 DAT_000d2acb_backing[32768];
-#define DAT_000d2acb DAT_000d2acb_backing[0]
-extern undefined1 DAT_000d2ad0_backing[32768];
-#define DAT_000d2ad0 DAT_000d2ad0_backing[0]
-extern undefined1 DAT_000d2ad1_backing[32768];
-#define DAT_000d2ad1 DAT_000d2ad1_backing[0]
-extern undefined1 DAT_000d2ad2_backing[32768];
-#define DAT_000d2ad2 DAT_000d2ad2_backing[0]
-extern undefined1 DAT_000d2ad3_backing[32768];
-#define DAT_000d2ad3 DAT_000d2ad3_backing[0]
-extern undefined4 DAT_000d95d8;
-extern undefined1 DAT_000d9768_backing[65536];
-#define DAT_000d9768 DAT_000d9768_backing[0]
-extern undefined1 DAT_000d9769_backing[65536];
-#define DAT_000d9769 DAT_000d9769_backing[0]
-extern undefined1 DAT_000d976a_backing[65536];
-#define DAT_000d976a DAT_000d976a_backing[0]
-extern undefined1 DAT_000d976b_backing[65536];
-#define DAT_000d976b DAT_000d976b_backing[0]
-extern undefined1 DAT_000d976c_backing[65536];
-#define DAT_000d976c DAT_000d976c_backing[0]
-extern undefined1 DAT_000d976d_backing[65536];
-#define DAT_000d976d DAT_000d976d_backing[0]
-extern undefined1 DAT_000d976e_backing[65536];
-#define DAT_000d976e DAT_000d976e_backing[0]
-extern undefined1 DAT_000d976f_backing[65536];
-#define DAT_000d976f DAT_000d976f_backing[0]
-extern undefined1 DAT_000d9770_backing[65536];
-#define DAT_000d9770 DAT_000d9770_backing[0]
-extern undefined1 DAT_000d9771_backing[65536];
-#define DAT_000d9771 DAT_000d9771_backing[0]
-extern undefined1 DAT_000d9772_backing[65536];
-#define DAT_000d9772 DAT_000d9772_backing[0]
-extern undefined1 DAT_000d9773_backing[65536];
-#define DAT_000d9773 DAT_000d9773_backing[0]
-extern undefined1 DAT_000d9774_backing[65536];
-#define DAT_000d9774 DAT_000d9774_backing[0]
-extern undefined1 DAT_000d9775_backing[65536];
-#define DAT_000d9775 DAT_000d9775_backing[0]
-extern undefined1 DAT_000d9776_backing[65536];
-#define DAT_000d9776 DAT_000d9776_backing[0]
-extern undefined1 DAT_000d9777_backing[65536];
-#define DAT_000d9777 DAT_000d9777_backing[0]
-extern undefined1 DAT_000d9778_backing[65536];
-#define DAT_000d9778 DAT_000d9778_backing[0]
-extern undefined1 DAT_000d9779_backing[65536];
-#define DAT_000d9779 DAT_000d9779_backing[0]
-extern undefined1 DAT_000d977a_backing[65536];
-#define DAT_000d977a DAT_000d977a_backing[0]
-extern undefined1 DAT_000d977b_backing[65536];
-#define DAT_000d977b DAT_000d977b_backing[0]
-extern undefined1 DAT_000d977c_backing[65536];
-#define DAT_000d977c DAT_000d977c_backing[0]
-extern undefined1 DAT_000d98c8_backing[32768];
-#define DAT_000d98c8 DAT_000d98c8_backing[0]
-extern undefined1 DAT_000da480_backing[65536];
-#define DAT_000da480 DAT_000da480_backing[0]
-extern undefined1 DAT_000da868_backing[65536];
-#define DAT_000da868 DAT_000da868_backing[0]
-extern undefined1 DAT_000dab90_backing[65536];
-#define DAT_000dab90 DAT_000dab90_backing[0]
-extern undefined DAT_000db454_backing[8192];
-#define DAT_000db454 DAT_000db454_backing[0]
-extern int DAT_000db458;
-extern undefined1 * DAT_000db45c;
-extern int DAT_000db470;
-extern int DAT_000db480;
-extern int DAT_000db494;
-extern int DAT_000db4d0;
-extern int DAT_000db4d4;
-extern int DAT_000db4d8;
-extern int DAT_000db4e0;
-extern int DAT_000db4fc;
-extern undefined4 g_model_known_ext_colors;
-extern int g_model_parse_part_count;
-extern int g_model_parse_point_count;
-extern char s_________c_000848d8[];
-extern char s________c_0008471c[];
-extern char s___c_1____00084954[];
-extern char s___d__00084728[];
-extern char s__100s_00084a1c[];
-extern char s__100s_1s_000849cc[];
-extern char s__1s______1s_00084994[];
-extern char s__1s__a_z__1s_000849d8[];
-extern char s__1s__d__d__d__d__d_1s_000847f4[];
-extern char s__1s__d__d__d_1s_000847e4[];
-extern char s__c__d__d__d__d__d___c__000847cc[];
-extern char s__d__1s__d__d__1s_0008474c[];
-extern char s__d__1s__d__x__00084944[];
-extern char s__d__d__d__00084980[];
-extern char s__d__d__d__d_00084924[];
-extern char s__d__d_000848d0[];
-extern char s__d_1s_000848c8[];
-extern char s__lx_1s_000847a4[];
-extern char s_anim__d___d__c__d__d___00084734[];
-extern char s_ANIMATE_00084760[];
-extern char s_BEGIN_00084a14[];
-extern char s_branch_0008480c[];
-extern char s_CLUSTERS_0008483c[];
-extern char s_error___s__c_000849b8[];
-extern char s_Error__extended_color_for_part___00084768[];
-extern char s_Error__Part__d_is_a_polygon_with_00084868[];
-extern char s_Error__polygon__d__bitmap_must_h_00084898[];
-extern char s_EXTENDED_COLORS_000847ac[];
-extern char s_got_bitmap__d___d_00084930[];
-extern char s_got_sphere__d_000848e4[];
-extern char s_Input_file_error__BEGIN_statemen_000849e8[];
-extern char s_INTERSECTIONS_000847bc[];
-extern char s_leaf_00084818[];
-extern char s_making_backside_of__d_____d_00084848[];
-extern char s_NAMES_000849a0[];
-extern char s_NODES_00084834[];
-extern char s_Out_of_vertex_list_space_00084908[];
-extern char s_PARTS_00084960[];
-extern char s_POINTS_0008498c[];
-extern char s_SUPER_NODES_00084828[];
-extern char s_Too_many_points___d__00084968[];
-extern char s_Too_many_polys_000848f8[];
-extern char s_unexpected_EOF___no_END_statemen_000846f8[];
-extern char s_VERSION_000849b0[];
 
 #endif /* UW_H */

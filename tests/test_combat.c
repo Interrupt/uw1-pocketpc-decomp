@@ -65,6 +65,9 @@ undefined1 DAT_0023c118_arr[9], DAT_0023c128_arr[9];
 unsigned char DAT_0023c11c_arr[2], DAT_0023c12c_arr[2];
 ushort DAT_0023c1d8, DAT_0023c1dc, DAT_0023c1e0;
 byte DAT_0023c150, DAT_0023c12a, DAT_0023c25c;
+int DAT_00088954, DAT_0008895c, DAT_00088950, DAT_00088958;
+undefined1 DAT_0023c11c_arr[2], DAT_0023c12c_arr[2];
+undefined1 DAT_0023c1f0_backing[65536], DAT_0023c1f8_backing[65536];
 undefined1 DAT_0023c11a;
 undefined1 g_active_hud_panel;
 undefined1 DAT_0023c11b;
@@ -122,10 +125,10 @@ bool apply_object_durability_damage(void) { TEST_FAIL_MESSAGE("Unexpected non-cr
 undefined4 apply_object_destruction_effect(void) { TEST_FAIL_MESSAGE("Unexpected non-critter destruction"); return 0; }
 
 
-void *Ordinal_1047(void *dest, int value, unsigned int count)
+void *ce_memset(void *dest, int value, unsigned int count)
 { return memset(dest, value, count); }
-long Ordinal_1053(void) { return 1; }
-long Ordinal_2005(int divisor, int dividend) { return dividend / divisor; }
+long ce_rand(void) { return 1; }
+divmod_result ordint_divmod(int divisor, int dividend) { divmod_result r = {dividend / divisor, dividend % divisor}; return r; }
 void project_position_by_heading(int heading, int distance, short *x, short *y)
 { (void)heading; (void)distance; (void)x; (void)y; }
 void collision_height_envelope(int mode, int collision)

@@ -36,19 +36,19 @@ char *path;
 {
   /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating
      load_string_resource's real pointer -- same class as that
-     function's own fix (currently harmless here since Ordinal_168 is
+     function's own fix (currently harmless here since CreateFileW is
      an unimplemented no-op stub that ignores this argument, but fixed
      for correctness/consistency). */
   char *uVar1;
   int iVar2;
 
   uVar1 = load_string_resource(path);
-  iVar2 = Ordinal_168(uVar1,0x80000000,1,0,3,0x80,0);
+  iVar2 = CreateFileW(uVar1,0x80000000,1,0,3,0x80,0);
   if (iVar2 == -1) {
     uVar1 = 0xffffffff;
   }
   else {
-    Ordinal_553(iVar2);
+    CloseHandle(iVar2);
     uVar1 = 0;
   }
   return uVar1;
@@ -58,10 +58,10 @@ char *path;
 
 /* --- Real file I/O -------------------------------------------------
  * These 7 functions are CreateFile/ReadFile/WriteFile/SetFilePointer/
- * CloseHandle-shaped wrappers around coredll ordinals (Ordinal_168 =
- * CreateFile, Ordinal_170 = ReadFile, Ordinal_171 = WriteFile,
- * Ordinal_173 = SetFilePointer, Ordinal_165 = CloseHandle -- identified
- * from their argument shapes, e.g. Ordinal_168(path, 0xC0000000,
+ * CloseHandle-shaped wrappers around coredll ordinals (CreateFileW =
+ * CreateFile, ReadFile = ReadFile, WriteFile = WriteFile,
+ * SetFilePointer = SetFilePointer, create_directory_path = CloseHandle -- identified
+ * from their argument shapes, e.g. CreateFileW(path, 0xC0000000,
  * 1, 0, disposition, 0x80, 0) matches CreateFile's
  * (name, access, share, secattrs, disposition, flags, template)).
  * Several of these wrappers also had their own arguments dropped by
@@ -104,7 +104,7 @@ char *param_1;
 
 /* Was `uw_file_open_read(param_1)` (read-only, "rb") -- confirmed WRONG
    via Ghidra headless: the real ARM body (0x22810) calls
-   `Ordinal_168(fname, 0xc0000000, 1, 0, 3, 0x80, 0)` --
+   `CreateFileW(fname, 0xc0000000, 1, 0, 3, 0x80, 0)` --
    GENERIC_READ|GENERIC_WRITE (0xc0000000), OPEN_EXISTING (disposition
    3) -- a read-write handle, not read-only. Every one of this port's 3
    real callers already relies on that: save_npc_conversation_variables (this file's

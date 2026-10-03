@@ -7,6 +7,98 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static int DAT_000bbefc;
+static undefined2 DAT_000b99c0;
+static undefined4 DAT_000b99c4;
+ undefined1 DAT_000b99d0_backing[8192];
+static short DAT_000ba9d0;
+undefined4 DAT_000bbef4;
+/* Was a lone `undefined` scalar; draw_automap_tiles indexes it as
+   `(&DAT_000842f0)[shape - 2]` (shape 2-5, the diagonal tile types)
+   to pick the base wall-edge direction for a diagonal cell. Real 4
+   bytes from UU.exe .data at 0x842f0. Its two neighbours DAT_000842f4
+   / DAT_000842f8 (per-direction dx / dy deltas, signed) had the same
+   lone-scalar bug and are fixed just below. */
+static const unsigned char DAT_000842f0_real_table[4] = { 0x01, 0x02, 0x00, 0x03 };
+#define DAT_000842f0 (*(undefined1 *)DAT_000842f0_real_table)
+/* Was a lone 1-byte scalar, but indexed throughout this file as a
+   tile-type-flags lookup table (nibble-masked indices in most call sites,
+   but some -- e.g. advance_visibility_ray -- index it with an unmasked byte value
+   read from another table). The prior fix widened it to 256 bytes but
+   never filled it -- so it read all-zero, and in particular
+   draw_automap_tiles' `DAT_000878d0[shape] & 1` was always false,
+   forcing every tile (diagonals included) down the 4-way wall-edge
+   path instead of the 2-way diagonal path -- walls didn't follow the
+   diagonal floor shape. Real 16 bytes from UU.exe .data at 0x878d0
+   (bit 0 = "is a diagonal, use the 2-way edge path"; bits 1-4 =
+   per-direction wall-present flags used by LOS/pathfinding elsewhere;
+   0x20 on the slope types). Entry 16 onward is a string literal, so
+   there are exactly 16 real entries; kept oversized for the unmasked-
+   index call sites. */
+ undefined1 DAT_000878d0_backing[256] = {
+  0x1e, 0x00, 0x13, 0x15, 0x0b, 0x0d, 0x20, 0x20,
+  0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1e,
+};
+/* Was a lone `undefined1` scalar, but draw_automap_cell indexes it as a real
+   5x3x3 (45-entry) shape-pattern table:
+   `(&DAT_000842c0)[((shape-1)*3+row)*3+col]`, shape=1-5, comparing each
+   entry against 1 or 2 to decide whether to darken a corner pixel when
+   drawing an automap wall/floor cell. Unlike DAT_00086bf0/DAT_00085668/
+   etc earlier this session, this one is NOT silently zero -- a Ghidra
+   reference search confirms real, varied 0/1/2 data already sitting at
+   this address in UU.exe's .data (nothing writes it, it's genuinely
+   read-only). The bug here is purely the lone-scalar-instead-of-a-real-
+   array declaration: any index past byte 0 was reading whatever the
+   compiler placed adjacent in memory on this port, not this real table.
+   Real bytes recovered directly from UU.exe (45 real entries; sized
+   larger for a safety margin past the last byte any index reaches). */
+static const unsigned char DAT_000842c0_real_table[64] = {
+  1, 1, 1, 1, 1, 1, 1, 1, 1,
+  2, 1, 1, 0, 2, 1, 0, 0, 2,
+  1, 1, 2, 1, 2, 0, 2, 0, 0,
+  0, 0, 2, 0, 2, 1, 2, 1, 1,
+  2, 0, 0, 1, 2, 0, 1, 1, 2,
+};
+#define DAT_000842c0 (*(undefined1 *)DAT_000842c0_real_table)
+static char DAT_000ba9d4;
+/* Lone-scalar-used-as-4-entry-array, same as DAT_000842f0 above.
+   draw_automap_door_edge indexes `(&DAT_000842f4)[dir]` / same for f8
+   as signed-char dx / dy deltas per direction. Real bytes from UU.exe
+   .data at 0x842f4 / 0x842f8. */
+static const signed char DAT_000842f4_real_table[4] = { -1, 0, -1, 1 };
+#define DAT_000842f4 (*(undefined1 *)DAT_000842f4_real_table)
+static const signed char DAT_000842f8_real_table[4] = { 0, -1, -1, -1 };
+#define DAT_000842f8 (*(undefined1 *)DAT_000842f8_real_table)
+static short DAT_000bbef0;
+char s_font4x5p_sys_0008431c[] = "font4x5p.sys";
+static undefined1 DAT_000ba9d8_backing[32768];
+#define DAT_000ba9d8 DAT_000ba9d8_backing[0]
+/* DAT_000baa0a/b (and the parallel DAT_000baa0c/d pair below) are a
+   note label's X (resp. Y) screen position, written as separate low/high
+   bytes at the same index (`(&DAT_000baa0a)[i] = low; (&DAT_000baa0b)[i]
+   = high;`) and read back as one packed short via `*(short
+   *)(&DAT_000baa0a + i)` -- which only works if DAT_000baa0b's storage
+   sits exactly 1 byte after DAT_000baa0a's, for every i. An earlier
+   widening pass (code-cleanup-pass-2, chasing an out-of-bounds risk on
+   each name independently) gave the two their own separate padded
+   arrays and broke that adjacency: the short-read started pulling its
+   high byte from DAT_000baa0a's own unused padding instead of
+   DAT_000baa0b's real storage, so every note's X coordinate silently
+   came back wrong (same failure class as DAT_00086980/82/84's fix
+   above in movement.c). One real backing buffer per pair instead, with
+   the second name aliased at a fixed +1 byte offset so the low/high
+   split and the combined short-read are provably the same storage. */
+static undefined1 DAT_000baa0a_backing[258];
+#define DAT_000baa0a DAT_000baa0a_backing[0]
+#define DAT_000baa0b DAT_000baa0a_backing[1]
+static undefined1 DAT_000baa0c_backing[258];
+#define DAT_000baa0c DAT_000baa0c_backing[0]
+#define DAT_000baa0d DAT_000baa0c_backing[1]
+static undefined2 DAT_000b99c8;
+char s_fontbig_sys_0008432c[] = "fontbig.sys";
+static char s__DATA_blnkmap_byt_00084338[] = "\\DATA\\blnkmap.byt";
+char *DAT_002029cc;
+
 
 
 
@@ -84,7 +176,7 @@ void draw_automap_tiles()
       uVar5 = (uint)(short)uVar4;
       if ((uVar5 != 0) && (uVar5 < 10)) {
         draw_automap_cell(uVar4,iVar6,local_3c);
-        Ordinal_1047(local_34,0,0x10);
+        ce_memset(local_34,0,0x10);
         if (((&DAT_000878d0)[uVar5] & 1) == 0) {
           iVar2 = 0;
           do {
@@ -246,14 +338,14 @@ int param_3;
           if (bVar1 == 1) {
             /* Water fill: (rand % 2) + 0xb1 -> a 2-tone dither between
                palette 0xb1/0xb2, not a flat 0xb1. The original reads
-               the modulo from Ordinal_2005's r1 (remainder) leftover;
+               the modulo from ordint_divmod's r1 (remainder) leftover;
                Ghidra lost that into an uninitialised `extraout_r1`, so
-               compute `& 1` on the rand directly. */
-            iVar5 = ((int)Ordinal_1053() & 1) + 0xb1;
+               get it by name off ordint_divmod's own divmod_result. */
+            iVar5 = ordint_divmod(2,(int)ce_rand()).rem + 0xb1;
           }
           else {
             if (bVar1 != 2) goto LAB_00016b00;
-            iVar5 = ((int)Ordinal_1053() & 1) + 0xb5;
+            iVar5 = ((int)ce_rand() & 1) + 0xb5;
           }
           plot_pixel(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar8) + 200,iVar5);
@@ -354,13 +446,13 @@ int param_4;
 
 
 // was FUN_00017908
-/* uVar3 was `undefined4` (4 bytes), truncating Ordinal_1041's real
+/* uVar3 was `undefined4` (4 bytes), truncating ce_malloc's real
    64-bit malloc'd pointer on this host -- same pointer-truncation
    pattern fixed repeatedly this session. Confirmed via lldb: this is
    why the automap screen loaded blnkmap.byt's file handle successfully
    but read_buffer_from_file (the actual read-into-buffer call) still failed --
    it was reading 64000 real bytes into a wild, truncated destination
-   address instead of the buffer Ordinal_1041 actually allocated. */
+   address instead of the buffer ce_malloc actually allocated. */
 void draw_automap_screen(param_1)
 undefined4 param_1;
 
@@ -375,7 +467,7 @@ undefined4 param_1;
   undefined1 auStack_124 [8];
   char acStack_11c [260];
 
-  uVar3 = Ordinal_1041(64000);
+  uVar3 = ce_malloc(64000);
   decrement_cursor_hide_depth();
   pcVar4 = &DAT_0023cca8;
     stack0xffdc323c_ptr = acStack_11c;
@@ -384,7 +476,7 @@ undefined4 param_1;
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_blnkmap_byt_00084338);
+  ce_strcat(acStack_11c,s__DATA_blnkmap_byt_00084338);
   iVar5 = read_buffer_from_file(acStack_11c,uVar3,64000);
   if (iVar5 == 0) {
     cursor_show_idle_tick();
@@ -421,7 +513,7 @@ undefined4 param_1;
   }
   DAT_000bbef4 = 1;
   cursor_show_idle_tick();
-  Ordinal_1018(uVar3);
+  LocalFree(uVar3);
   return;
 }
 
@@ -592,7 +684,7 @@ int param_2;
 void clear_automap_reveal_buffer()
 
 {
-  Ordinal_1047(&DAT_000b99d0,0,0x1000);
+  ce_memset(&DAT_000b99d0,0,0x1000);
   return;
 }
 
@@ -850,7 +942,7 @@ LAB_000171d0:
       }
     }
     else {
-      local_5c[0] = Ordinal_1091(sVar2);
+      local_5c[0] = ce_toupper(sVar2);
       sVar2 = measure_text_width(local_58);
       sVar3 = measure_text_width(local_5c);
       if ((((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10) + (int)*(short *)(&DAT_000baa0a + iVar7) <
@@ -981,7 +1073,7 @@ int param_1;
         iVar4 = 0;
         do {
           if (*(short *)(&DAT_000baa0a + iVar4 * 0x36) < 0) {
-            Ordinal_1044(&DAT_000ba9d8 + iVar4 * 0x36,&DAT_000ba9d8 + (iVar4 + 1) * 0x36,
+            ce_memmove(&DAT_000ba9d8 + iVar4 * 0x36,&DAT_000ba9d8 + (iVar4 + 1) * 0x36,
                          iVar4 * -0x36 + 0x1518);
             iVar3 = (iVar2 + -1) * 0x10000 >> 0x10;
           }
@@ -1020,7 +1112,7 @@ int param_1;
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   if (iVar2 != 0) {
     uVar1 = read_archive_entry(auStack_20,param_1 + 0x23,&DAT_000ba9d8);
-    DAT_000b99c8 = Ordinal_2008(0x36,uVar1);
+    DAT_000b99c8 = orduint_divmod(0x36,uVar1).quot;
     DAT_000bbef0 = DAT_000b99c8;
     draw_automap_notes();
     close_level_archive(auStack_20);

@@ -9,6 +9,122 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+undefined4 DAT_000bbef8;
+int g_force_flush;
+short DAT_0023c63c;
+undefined DAT_00250658_backing[256];
+#define DAT_00250658 DAT_00250658_backing[0]
+short DAT_00201c84;
+static ushort DAT_00202084;
+short DAT_00085890;
+static short DAT_0020207a;
+static short DAT_0020207c;
+static short DAT_00202074;
+short g_mouse_y;
+short g_mouse_x;
+short DAT_00204840;
+static char *DAT_00202890;
+static char *DAT_0020289c;
+/* Real-pointer side table for the keybinding records' handler field. Each
+   DAT_0020289c record packs its handler as 4 raw bytes (offset 8-0xb) --
+   fine on the original 32-bit target, a truncated / uncallable pointer on
+   this 64-bit host. register_key_binding writes the real 64-bit handler here
+   keyed by record position (== registration order, and also 0xffff minus
+   the record's own id byte); dispatch_key_binding calls it from here; unregister_key_binding
+   keeps it in sync when it compacts the table. Nothing ever matched a
+   keybinding before (the mode gate was reading the wrong byte -- see
+   set_game_mode), so the truncated call had simply never been reached. */
+static void (*g_keybind_handler[512])(int);
+static int g_keybind_handler_n;
+/* Same 64-bit-truncation problem for the mouse-click-region table
+   (register_click_region stored param_7 -- the handler -- in a 4-byte
+   field of an 0x12-byte record, and poll_input_bindings called through
+   that truncated pointer -> EXC_BAD_ACCESS the first time a click landed
+   in a registered region, e.g. the 3D viewport's walk region). Keep the
+   real 64-bit handler here, keyed by record position, exactly like
+   g_keybind_handler; unregister_key_binding keeps it in sync. */
+static void (*g_click_region_handler[128])(int);
+static int g_click_region_handler_n;
+static undefined2 DAT_00202898;
+static undefined2 DAT_0020288c;
+static undefined2 DAT_00202894;
+static undefined2 DAT_00085a70;
+/* Per-mode "sticky redraw bits" mask read by dispatch_sticky_mode_handlers right after it
+   finishes dispatching DAT_00201c84's currently-set bits through
+   DAT_00085668: `DAT_00201c84 = DAT_00085728[mode] | DAT_00201c84;` re-arms
+   whichever bits this mode always wants re-triggered next idle tick, which
+   is how a mode's per-frame handlers (as opposed to one-shot event
+   handlers) keep firing forever instead of running once and going quiet.
+   Same "link-time-initialized data, nothing in this decompile ever writes
+   it" situation as DAT_00085668 (see its own comment) -- left zero-filled,
+   NO mode's dispatch bits were ever re-armed after the first pass, so
+   every DAT_00085668 handler (this file's HUD-panel/button-state/sound-
+   timer updates, mode 0's bits 11-13) ran exactly once at mode-entry and
+   then silently stopped, no matter how many frames/inputs followed.
+   Recovered the same way: read UU.exe's real .data bytes at 0x85728
+   directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
+   movement_pacing_handler/sync_player_stats_to_hud/hud_panel_redraw_dispatch; mode 1 = 0x1000 = bit 12 =
+   exit_automap_screen; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
+   mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
+   bytes immediately after are the next struct over (a `\DATA\lev.ark`
+   string literal), so this backing array is oversized like its siblings
+   only to satisfy the >0-bytes-past-any-real-index habit the rest of this
+   file uses for recovered fixed-size tables; only index 0-2 are ever
+   read (mode is always 0-2, see DAT_00085668's comment). */
+static const unsigned short DAT_00085728_real_table[3] = { 0x3800, 0x1000, 0x0000 };
+#define DAT_00085728 (*(undefined1 *)DAT_00085728_real_table)
+undefined2 DAT_00204710;
+undefined2 DAT_0020470c;
+undefined2 DAT_00204830;
+undefined2 DAT_00204834;
+short DAT_00204788;
+int DAT_0020484c;
+undefined2 DAT_0008696a;
+undefined2 DAT_0008696c;
+short DAT_00086968;
+short DAT_00204850;
+short DAT_0008696e;
+static undefined4 DAT_00204868;
+/* Real static lookup table (.data, read-only in practice) recovered
+   byte-for-byte from UU.exe -- the stylus-tap hit grid for the chargen
+   name-entry on-screen keyboard. Indexed by lookup_onscreen_keyboard_key_hit as
+   [row + column*20], row = (touch-Y)>>4 (16px-tall rows spanning the full
+   320px portrait screen height), column = (touch-X-200)/20 (two 20px-wide
+   columns in the 200..240 strip). Column 0 = digits 0-9 then 'a'-'j';
+   column 1 = 'k'-'z' then backspace(8)/enter(13)/space(32)/0x14. */
+undefined1 DAT_00087650_backing[40] = {
+  '0','1','2','3','4','5','6','7','8','9',
+  'a','b','c','d','e','f','g','h','i','j',
+  'k','l','m','n','o','p','q','r','s','t',
+  'u','v','w','x','y','z',8,13,32,0x14
+};
+static short DAT_000876c4_backing[128];
+short *DAT_000876c4 = DAT_000876c4_backing;
+static short DAT_00086974;
+static short DAT_00204708;
+static short DAT_00204700;
+static int DAT_00204864;
+static short DAT_0020477c;
+static short DAT_00204778;
+static short DAT_00204780;
+int DAT_0020485c;
+char DAT_002506aa;
+char DAT_002506ab;
+undefined2 DAT_0023be8c;
+static undefined2 DAT_0023be6c;
+static undefined2 DAT_0023be68;
+static undefined2 DAT_0023be70;
+static undefined2 DAT_0023be7c;
+static undefined2 DAT_0023be84;
+static undefined2 DAT_0023be78;
+static undefined2 DAT_0023be60;
+static undefined2 DAT_0023bd7c;
+static undefined DAT_00086e70_backing[256];
+#define DAT_00086e70 DAT_00086e70_backing[0]
+static undefined4 DAT_0023bf50;
+undefined1 DAT_0023ce10_backing[65536];
+HWND__ *DAT_0023c548;
+
 
 
 
@@ -111,7 +227,7 @@ int param_2;
         g_vertical_velocity = 0;
       }
       else {
-        g_vertical_velocity = Ordinal_2005(5,uVar1 << 2);
+        g_vertical_velocity = ordint_divmod(5,uVar1 << 2).quot;
       }
     }
   }
@@ -277,9 +393,9 @@ void *param_4;   /* was undefined4 -- the handler function pointer; 32-bit
 
   iVar2 = (int)DAT_0020288c;
   DAT_0020288c = (short)(iVar2 + 1);
-  /* See register_click_region's identical fix -- Ordinal_1054 (realloc-shaped)
+  /* See register_click_region's identical fix -- ce_realloc (realloc-shaped)
      returns a real pointer, iVar2 was truncating it. */
-  pvVar4 = Ordinal_1054(DAT_0020289c,((iVar2 + 1) * 0x10000 >> 0x10) * 0xc);
+  pvVar4 = ce_realloc(DAT_0020289c,((iVar2 + 1) * 0x10000 >> 0x10) * 0xc);
   if (pvVar4 == 0) {
     report_fatal_error_and_exit(0x1006);
   }
@@ -372,7 +488,7 @@ short param_1;
     sVar6 = DAT_0020288c;
     if (DAT_0020288c < 2) goto LAB_00042510;
     DAT_0020288c = (short)((uint)((DAT_0020288c + -1) * 0x10000) >> 0x10);
-    DAT_0020289c = (short *)Ordinal_1054(DAT_0020289c,DAT_0020288c * 0xc);
+    DAT_0020289c = (short *)ce_realloc(DAT_0020289c,DAT_0020288c * 0xc);
     if (DAT_0020289c != (short *)0x0) {
       return;
     }
@@ -439,7 +555,7 @@ LAB_00042510:
       return;
     }
     DAT_00202898 = (short)((uint)((DAT_00202898 + -1) * 0x10000) >> 0x10);
-    DAT_00202890 = (short *)Ordinal_1054(DAT_00202890,DAT_00202898 * 0x12);
+    DAT_00202890 = (short *)ce_realloc(DAT_00202890,DAT_00202898 * 0x12);
     if (DAT_00202890 != (short *)0x0) {
       return;
     }
@@ -785,24 +901,24 @@ short param_1;
     DAT_0023bf48 = 0;
     sVar1 = DAT_00085a6c[1];
     iVar5 = (int)DAT_0023be88;
-    iVar3 = Ordinal_2005(5,iVar5);
+    iVar3 = ordint_divmod(5,iVar5).quot;
     if (sVar1 < iVar3) {
-      iVar3 = Ordinal_2005((int)DAT_0023bd80,*psVar2 * 3);
+      iVar3 = ordint_divmod((int)DAT_0023bd80,*psVar2 * 3).quot;
       g_movement_mode = (ushort)(byte)(&DAT_00086e70)[iVar3];
       return;
     }
     iVar4 = (int)DAT_0023bd80;
-    iVar3 = Ordinal_2005(3,iVar4);
+    iVar3 = ordint_divmod(3,iVar4).quot;
     if (*psVar2 < iVar3) {
-      DAT_0023bf4c = Ordinal_2005(iVar4,(*psVar2 - iVar3) * 0x180);
+      DAT_0023bf4c = ordint_divmod(iVar4,(*psVar2 - iVar3) * 0x180).quot;
     }
-    iVar3 = Ordinal_2005(3,iVar4 << 1);
+    iVar3 = ordint_divmod(3,iVar4 << 1).quot;
     if (iVar3 < *psVar2) {
-      DAT_0023bf4c = Ordinal_2005(iVar4,(*psVar2 - iVar3) * 0x180);
+      DAT_0023bf4c = ordint_divmod(iVar4,(*psVar2 - iVar3) * 0x180).quot;
     }
-    iVar3 = Ordinal_2005(5,iVar5 << 1);
+    iVar3 = ordint_divmod(5,iVar5 << 1).quot;
     if (iVar3 < psVar2[1]) {
-      DAT_0023bf48 = Ordinal_2005(iVar5,(psVar2[1] - iVar3) * 0xc0);
+      DAT_0023bf48 = ordint_divmod(iVar5,(psVar2[1] - iVar3) * 0xc0).quot;
     }
   }
   else {
@@ -849,11 +965,11 @@ short param_1;
    g_movement_mode 8 ("move + face 180"), a different system entirely,
    not mode 1's forward/turn blend. */
 void uw_set_analog_move_turn(int fwd_held, int turn_dir) {
-  DAT_0023bf48 = fwd_held ? Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10)) : 0;
+  DAT_0023bf48 = fwd_held ? ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10)).quot : 0;
   if (turn_dir < 0) {
-    DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10));
+    DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10)).quot;
   } else if (turn_dir > 0) {
-    DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10));
+    DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10)).quot;
   } else {
     DAT_0023bf4c = 0;
   }
@@ -968,15 +1084,15 @@ int param_4;
   DAT_0023be80 = sVar3;
   DAT_0023be88 = sVar5;
   DAT_0023be8c = register_click_region(param_1,param_2,iVar10,iVar9,0,0x1b,handle_game_view_click);
-  iVar6 = Ordinal_2005(0xf,sVar5 * 3);
+  iVar6 = ordint_divmod(0xf,sVar5 * 3).quot;
   iVar6 = (sVar3 - iVar6) * 0x10000 >> 0x10;
-  iVar7 = Ordinal_2005(0xf,sVar4 * 5);
+  iVar7 = ordint_divmod(0xf,sVar4 * 5).quot;
   iVar1 = (iVar7 + sVar2) * 0x10000 >> 0x10;
   DAT_0023be6c = register_cursor_hotspot(param_1,param_2,iVar1,iVar6,0x106f);
   iVar7 = ((sVar2 - iVar7) + (int)sVar4) * 0x10000 >> 0x10;
   DAT_0023be68 = register_cursor_hotspot(iVar7,param_2,iVar10,iVar6,0x1070);
   DAT_0023be70 = register_cursor_hotspot(iVar1,param_2,iVar7,iVar6,0x106e);
-  iVar8 = Ordinal_2005(0xf,sVar5 * 6);
+  iVar8 = ordint_divmod(0xf,sVar5 * 6).quot;
   iVar8 = (sVar3 - iVar8) * 0x10000 >> 0x10;
   DAT_0023be7c = register_cursor_hotspot(param_1,iVar6,iVar1,iVar8,0x1071);
   DAT_0023be84 = register_cursor_hotspot(iVar7,iVar6,iVar10,iVar8,0x1072);
@@ -1148,7 +1264,7 @@ LAB_00077d70:
    strip (the chargen name-entry on-screen keyboard, see DAT_00087650's
    comment) via lookup_onscreen_keyboard_key_hit and re-dispatches the resulting button ID as
    a synthetic WM_CHAR (letters/digits) or WM_KEYDOWN (backspace/enter/
-   space/0x14) through Ordinal_868 (PostMessage) -> handle_keyboard_message, the same
+   space/0x14) through PostMessageW (PostMessage) -> handle_keyboard_message, the same
    path real keyboard input already uses. Taps outside that strip instead
    set DAT_00204844, a general click-pending flag consumed elsewhere
    (main game world / inventory click handling, not chargen). */
@@ -1197,10 +1313,10 @@ int param_4;
       id = lookup_onscreen_keyboard_key_hit(*DAT_000876bc,x);
       fprintf(stderr, "[mousehit] on-screen-keyboard tap: x=%d storedY=%d -> id=%d ('%c')\n", x, *DAT_000876bc, id, (id >= 0x20 && id < 0x7f) ? id : '?');
       if ((id == 8) || (id == 0xd) || (id == 0x20) || (id == 0x14)) {
-        Ordinal_868(DAT_0023c548,0x100,id,0);
+        PostMessageW(DAT_0023c548,0x100,id,0);
       }
       else {
-        Ordinal_868(DAT_0023c548,0x102,id,0);
+        PostMessageW(DAT_0023c548,0x102,id,0);
       }
     }
     else {
@@ -1338,11 +1454,11 @@ byte param_1;
     *(char *)((char *)DAT_00086df8 + 0xb7) = (char)((ushort)uVar3 >> 8);
   }
   uVar5 = (uint)local_1c[(char)param_1];
-  DAT_00202078 = Ordinal_2005(10,(int)DAT_0008589c * uVar5);
-  DAT_0020207a = Ordinal_2005(10,(int)DAT_00085898 * uVar5);
-  DAT_0020207c = Ordinal_2005(10,(int)DAT_00085894 * uVar5);
+  DAT_00202078 = ordint_divmod(10,(int)DAT_0008589c * uVar5).quot;
+  DAT_0020207a = ordint_divmod(10,(int)DAT_00085898 * uVar5).quot;
+  DAT_0020207c = ordint_divmod(10,(int)DAT_00085894 * uVar5).quot;
   if ((char)param_1 < 4) {
-    DAT_00202074 = Ordinal_2005(10,(int)DAT_00086e68 * uVar5);
+    DAT_00202074 = ordint_divmod(10,(int)DAT_00086e68 * uVar5).quot;
   }
   else {
     DAT_00202074 = DAT_00086e68;
@@ -1352,7 +1468,7 @@ byte param_1;
     DAT_00085890 = 0x60;
   }
   else {
-    sVar4 = Ordinal_2005(uVar5 << 1,(uint)*(ushort *)((char *)piVar6 + 0x4a) * 0x60);
+    sVar4 = ordint_divmod(uVar5 << 1,(uint)*(ushort *)((char *)piVar6 + 0x4a) * 0x60).quot;
     DAT_00085890 = 0x60 - sVar4;
   }
   return;
@@ -1362,7 +1478,7 @@ byte param_1;
 // was FUN_000578fc -- always returns 0. Called from
 // process_pending_keyboard_scan_code whenever param_1 is set, which
 // is every real call site found (all pass literal 1) -- meaning that
-// function's entire scan-code translation path (Ordinal_1090/1091)
+// function's entire scan-code translation path (ce_tolower/1091)
 // is currently unreachable given how it's called. Left unclaimed
 // rather than "fixed": unlike this session's confirmed discarded-
 // return-value bugs, there's no computation being discarded inside
@@ -1381,7 +1497,7 @@ undefined4 get_alternate_keyboard_scan_code()
 // was FUN_00057904 -- translates the pending keyboard event
 // (DAT_0023c448, or get_alternate_keyboard_scan_code's result when
 // param_1 is set) into an international-charset-mapped scan code via
-// Ordinal_1090/1091, or 0xffffffff if none is pending. See
+// ce_tolower/1091, or 0xffffffff if none is pending. See
 // get_alternate_keyboard_scan_code's own comment -- every real call
 // site passes param_1=1, which currently makes this translation path
 // unreachable.
@@ -1406,12 +1522,12 @@ int param_1;
   else {
     DAT_00204868 = read_realtime_clock_units(uVar2);
     if ((uVar2 & 0x80) == 0) {
-      if ((*DAT_0008794c != '\0') && (iVar3 = Ordinal_1417(sVar1,0x103), iVar3 != 0)) {
+      if ((*DAT_0008794c != '\0') && (iVar3 = _isctype(sVar1,0x103), iVar3 != 0)) {
         if (DAT_0023c448 == 0x400) {
-          sVar1 = Ordinal_1090(sVar1);
+          sVar1 = ce_tolower(sVar1);
         }
         else {
-          sVar1 = Ordinal_1091(sVar1);
+          sVar1 = ce_toupper(sVar1);
         }
         uVar4 = (uint)sVar1;
       }
@@ -1453,18 +1569,18 @@ int param_1;
   if (param_1 == 0) {
     DAT_0023c448 = 0;
   }
-  iVar1 = Ordinal_864(auStack_24,0,0,0,1);
-  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_event: Ordinal_864=%d DAT_0023c448=0x%x\n", iVar1, (unsigned)DAT_0023c448);
+  iVar1 = PeekMessageW(auStack_24,0,0,0,1);
+  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_event: PeekMessageW=%d DAT_0023c448=0x%x\n", iVar1, (unsigned)DAT_0023c448);
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] poll_input_event(peek=%d): new_os_event(iVar1)=%d DAT_0023c448(before)=0x%x\n",
             param_1, iVar1, (unsigned)DAT_0023c448);
-  if (getenv("UW_DEBUG_INPUTEVENT2")) fprintf(stderr, "[inputevent2] poll_input_event(%d): Ordinal_864=%d DAT_00201b60=%d DAT_002506ab=%d\n", param_1, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
+  if (getenv("UW_DEBUG_INPUTEVENT2")) fprintf(stderr, "[inputevent2] poll_input_event(%d): PeekMessageW=%d DAT_00201b60=%d DAT_002506ab=%d\n", param_1, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
   if (iVar1 == 0) {
     uVar2 = 0xffffffff;
   }
   else {
-    Ordinal_870(auStack_24);
-    Ordinal_859(auStack_24);
+    TranslateMessage(auStack_24);
+    DispatchMessageW(auStack_24);
     uVar2 = (uint)DAT_0023c448;
     if (getenv("UW_DEBUG_INPUTEVENT"))
       fprintf(stderr, "[inputevent] DAT_0023c448=0x%x\n", (unsigned int)DAT_0023c448);
@@ -1539,12 +1655,27 @@ short param_1;
   ushort local_44;
   ushort local_42;
   uint local_40;
-  undefined2 local_3c;
-  undefined2 local_3a;
-  ushort local_38;
-  byte local_34;
-  undefined1 local_33;
-  undefined2 local_32;
+  /* DAT_00202c6c points at this scratch record for the
+     collision_height_envelope/sort_collision_candidates/
+     collision_add_candidate_object call sequence below. It's a real
+     24-byte struct everywhere else it's used (see collision.c's own
+     "local_24"/"a local 24-byte struct" comments) --
+     collision_add_candidate_object writes its candidate-count/list
+     fields as far as offset 0x15 (21) into it. This call site only ever
+     named the first 10 bytes of it (as separate local_3c/3a/38/34/33/32
+     scalars), so those writes landed past this function's own stack
+     frame into whatever happened to follow -- harmless by luck until
+     this cleanup pass's global reorganization shifted what that was.
+     Real, correctly-sized storage instead, with the original scalar
+     names kept as offsets into it so the rest of this function reads
+     unchanged. */
+  char local_24[24];
+#define local_3c (*(undefined2 *)(local_24 + 0))
+#define local_3a (*(undefined2 *)(local_24 + 2))
+#define local_38 (*(ushort *)(local_24 + 4))
+#define local_34 (*(byte *)(local_24 + 6))
+#define local_33 (*(undefined1 *)(local_24 + 7))
+#define local_32 (*(undefined2 *)(local_24 + 8))
   
   if (getenv("UW_DEBUG_STEPHEIGHT"))
     fprintf(stderr, "[bdm-entry] param_1=%d g_fall_accel=%d g_jump_ascent_timer=%d DAT_00085890=%d z=%d guard=%d\n",
@@ -1672,8 +1803,17 @@ LAB_0003c940:
              lldb, EXC_BAD_ACCESS at address 0). */
           if (uVar11 == 0) break;
           if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
+            /* Was followed by `iVar8 = extraout_r1;` -- same bug as the
+               sibling fix just above in this function (resolve_object_link's
+               own high-bits carry), but via a different, unrelated
+               callee: resolve_skill_gated_unlock_or_use returns a single
+               uint with no second value riding along, so that read was
+               pure garbage. iVar8 is this loop's own resolve_object_link
+               "carry" argument (used at the top of this do-loop's next
+               iteration) -- clobbering it there risked exactly the same
+               wild-index crash the sibling fix's comment describes.
+               Left it untouched instead. */
             resolve_skill_gated_unlock_or_use(g_player_object,0,(ushort *)uVar11,0);
-            iVar8 = extraout_r1;
           }
           iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
         } while (iVar7 < (int)((uint)*(byte *)((char *)DAT_00202c6c + 0x15) +
@@ -1717,14 +1857,20 @@ LAB_0003cdf8:
             (int)uVar4, (int)DAT_00204884, (int)g_fall_accel, (int)DAT_0023bea8, (int)DAT_0023be98);
   return uVar4;
 }
+#undef local_3c
+#undef local_3a
+#undef local_38
+#undef local_34
+#undef local_33
+#undef local_32
 
 
 // was FUN_00041f34 -- allocate/reset the keybinding + click-region tables.
 void input_bindings_init()
 
 {
-  DAT_00202890 = Ordinal_1041(0x12);
-  DAT_0020289c = Ordinal_1041(0xc);
+  DAT_00202890 = ce_malloc(0x12);
+  DAT_0020289c = ce_malloc(0xc);
   if ((DAT_00202890 == 0) || (DAT_0020289c == 0)) {
     report_categorized_fatal_error(0x1003);
   }
@@ -1746,8 +1892,8 @@ void input_bindings_free()
 
 {
   if (DAT_00085a70 != -0x29a) {
-    Ordinal_1018(DAT_00202890);
-    Ordinal_1018(DAT_0020289c);
+    LocalFree(DAT_00202890);
+    LocalFree(DAT_0020289c);
     DAT_00085a70 = -0x29a;
   }
   return;
@@ -1778,13 +1924,13 @@ void *param_7;   /* was undefined4 -- handler fn pointer; see g_click_region_han
     g_click_region_handler[iVar2] = (void (*)(int))param_7;
     if (iVar2 + 1 > g_click_region_handler_n) g_click_region_handler_n = iVar2 + 1;
   }
-  /* Ordinal_1054 is realloc-shaped and now returns a real pointer;
+  /* ce_realloc is realloc-shaped and now returns a real pointer;
      iVar2 was reused here for that result even though it's declared
      int, truncating it (and iVar3, derived from it, and DAT_00202890,
      assigned from it) on this 64-bit host. Split into a dedicated
      pointer variable rather than retyping iVar2 (used as a plain int
      counter just above). */
-  pvVar4 = Ordinal_1054(DAT_00202890,((iVar2 + 1) * 0x10000 >> 0x10) * 0x12);
+  pvVar4 = ce_realloc(DAT_00202890,((iVar2 + 1) * 0x10000 >> 0x10) * 0x12);
   if (pvVar4 == 0) {
     report_fatal_error_and_exit(0x1005);
   }
@@ -1859,11 +2005,9 @@ short param_2;
 // comment), then re-arms whichever bits DAT_00085728[current mode] always
 // wants re-triggered -- this re-arm is what makes a mode's per-frame
 // handlers keep firing every call instead of running once and going
-// quiet. Called once per real game tick from app_main_loop's own while
-// loop (game.c), gated on DAT_00201c84 != 0 (see main_loop_hud_flush's
-// own call site) -- this is the actual per-tick movement dispatch, the
-// anchor point uw_advance_game_tick's deterministic clock now advances
-// in lockstep with (see its own comment in gx_stub.c).
+// quiet. Called from the outer game loop and the original input waits.
+// GX input polling services the shared movement clock in both contexts;
+// repeated dispatches within the same clock interval have zero delta.
 void dispatch_sticky_mode_handlers()
 
 {

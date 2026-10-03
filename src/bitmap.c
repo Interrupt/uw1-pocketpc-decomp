@@ -11,6 +11,72 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+byte *DAT_000b4628;
+byte *DAT_000b461c;
+/* Was `int` / `undefined4` -- both hold real pointers (DAT_000b4614 +
+   an offset; a color-remap table row) that got truncated to 32 bits on
+   this 64-bit host, so the sprite-blit color-remap read
+   (`*(byte *)(DAT_000b4610 + bVar1)` in blit_sprite_row_remapped) dereferenced a
+   wild address. Surfaced by drawing the automap player marker with the
+   player at certain positions (draw_sprite_by_id(0x103f,...) ->
+   decompress_gr_bitmap -> blit_sprite_row_remapped). Retyped to real pointers. */
+byte *DAT_000b4610;
+/* Was `undefined4`, silently 0 -- a link-time-initialized pointer
+   constant this decompile never writes (holds 0xb45f0 in UU.exe, i.e.
+   the address of a 0x20-byte sprite-row scratch buffer). Confirmed via
+   Ghidra: 3 refs, all reads, in blit_sprite_row_remapped/decompress_gr_bitmap, plus the
+   `.data` word at 0x842ac literally being 0xb45f0. As NULL it made
+   `ce_memset(DAT_000842ac, 10, 0x20)` memset through address 0 and
+   the blit write past it. Backed by a real (over-sized) buffer. */
+ undefined1 DAT_000842ac_backing[4096];
+char *DAT_000b4614;
+byte *DAT_000b5630;
+/* struct-recovery-plan.md's "DAT_0024e090 pointer table" candidate:
+   a large table of glyph/resource-pointer slots indexed by font/char/
+   frame id (see lookup_grtile_by_id and its populators uw_register_gr_entry/
+   register_grtile_entry/reregister_grtile_entry, read back by lookup_grtile_by_id/
+   blit_object_sprite_by_frame/sprite_list_flush_blit_raw). Was a raw byte buffer
+   (DAT_0024e090_backing[524288]) with every access site manually
+   computing `&DAT_0024e090 + slot*8` and casting to a pointer type --
+   correct on the original 32-bit binary where a pointer IS 4 bytes
+   (the buffer was doubled from a 4-byte stride to fix that truncation
+   earlier this session), but the byte-buffer-plus-manual-stride shape
+   was never the real type. Retyped as what it actually is: a flat
+   array of pointers, same pattern already used for DAT_0023c7a0_arr
+   just above. */
+void *g_grtile_registry[65536];
+ushort DAT_00202738;
+ushort DAT_00202730;
+/* Was `static undefined DAT_000859fc_backing[8192]` -- real bytes
+   spell "lfti\0", matching LFTI.GR. See s_optb_000859ac's comment.
+   This is the one loaded right after TMOBJ.GR -- the resource the
+   mode-icon highlight (mode_icon_highlight_on/mode_icon_highlight_off) actually indexes
+   into. */
+char s_lfti_000859fc[] = "lfti";
+/* DAT_00086a18 and DAT_00086a20 are now offsets into DAT_00086a00_region
+   (real bytes recovered from UU.exe) -- see its definition further down. */
+// Was a lone `int` scalar but used throughout the renderer as a pointer to a
+// ~0x2e-byte "current view" record (screen-space player x/y/z/facing, written
+// by update_current_view_from_subject from DAT_00204880/82/84 + DAT_00201c70, then read all over
+// the tile/sprite projection code). Never populated with a real address in
+// this decompile, so give it real backing storage like the other
+// lone-scalar-used-as-array globals found this session (DAT_000fb880-family).
+ undefined1 DAT_00086e6c_backing[64];
+char *DAT_0023c3e8;
+/* Was `int`, truncating the real pointer assigned to it
+   (`DAT_0023c3e8 + 0x500`, a genuine 64-bit heap pointer on this host) --
+   every comparison against it (`DAT_0023c3ec <= someRealPointer`) then
+   always came out true regardless of the real slot table's size, so
+   sprite_list_alloc_entry (the HUD button-slot allocator) always believed the table
+   was full and returned -1 on its very first call, crashing the first
+   caller that tried to use that "slot". */
+char *DAT_0023c3ec;
+char *DAT_0023c40c;
+char *DAT_0023c3e4;
+undefined2 DAT_0023c41c;
+static ushort DAT_0023c400;
+static short DAT_0023c3f4;
+
 
 
 
@@ -613,7 +679,7 @@ LAB_00076038:
 // record, matching sprite_list_set_rect/set_position's own `param_1 <
 // 0x40` bound), stores param_1 as the slot's resource/frame id, zeroes
 // its remaining fields, and returns the new slot's index via
-// Ordinal_2005(0x14,...) (byte offset / 0x14-byte record stride ==
+// ordint_divmod(0x14,...) (byte offset / 0x14-byte record stride ==
 // slot index). Returns -1 if the pool is full. Compare
 // sprite_list_alloc_raw_entry (was sprite_list_alloc_raw_entry) which does the same
 // but also attaches a freshly allocated raw pixel buffer instead of
@@ -659,7 +725,7 @@ undefined4 param_1;
   *(undefined1 *)((char *)puVar4 + 0x13) = 0;
   *(undefined1 *)(puVar4 + 5) = 0;
   *(undefined1 *)((char *)puVar4 + 0xb) = 0;
-  sVar3 = Ordinal_2005(0x14,(int)puVar4 - (int)DAT_0023c3e8);
+  sVar3 = ordint_divmod(0x14,(int)puVar4 - (int)DAT_0023c3e8).quot;
   return (int)sVar3;
 }
 
@@ -717,7 +783,7 @@ int param_3;
   *(char *)((char *)puVar5 + 0x13) = (char)((uint)iVar3 >> 0x18);
   *(undefined1 *)(puVar5 + 5) = 0;
   *(undefined1 *)((char *)puVar5 + 0xb) = 0;
-  sVar2 = Ordinal_2005(0x14,(int)puVar5 - (int)DAT_0023c3e8);
+  sVar2 = ordint_divmod(0x14,(int)puVar5 - (int)DAT_0023c3e8).quot;
   return (int)sVar2;
 }
 
@@ -951,12 +1017,12 @@ uint param_2;
   }
   iVar5 = (int)(short)(ushort)bVar2 * (int)(short)(ushort)bVar1;
   /* decode this object's sprite into a fresh per-record buffer (keep the
-     full 64-bit pointer -- Ordinal_1041's result was truncated through the
+     full 64-bit pointer -- ce_malloc's result was truncated through the
      `undefined4` DAT_0023c7a0). */
-  buf = Ordinal_1041(iVar5);
+  buf = ce_malloc(iVar5);
   (&DAT_0023c7a0)[DAT_0023b83c] = buf;
-  Ordinal_1047(buf,0,iVar5);
-  Ordinal_1044(buf,pcVar3,iVar5);
+  ce_memset(buf,0,iVar5);
+  ce_memmove(buf,pcVar3,iVar5);
   DAT_002022fc = (int)(intptr_t)buf;
   DAT_00202508 = (ushort)bVar1;
   DAT_002022f8 = (ushort)bVar2;

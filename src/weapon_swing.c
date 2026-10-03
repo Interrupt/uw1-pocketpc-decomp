@@ -8,6 +8,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static char s_Sorry__you_have_no_00084f2c[] = "Sorry,_you_have_no";
+static undefined4 DAT_001005ec;
+static short DAT_00100618;
+short DAT_000870e4;
+static short DAT_001005e8;
+static undefined DAT_001005f0;
+static byte DAT_00100614;
+/* Was a lone `undefined` scalar, same bug as DAT_00084eff just above --
+   tick_weapon_swing_state indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 =
+   attack-type/3 (0-3), selecting which of a small set of swing
+   animations (`DAT_00084f10`) to play. Recovered via Ghidra headless
+   (0x84f0b, 5 bytes -- DAT_00084f10, the next real symbol, starts
+   exactly 5 bytes later): 00 34 27 19 00. */
+static unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
+#define DAT_00084f0b DAT_00084f0b_backing[0]
+undefined1 DAT_000870e0;
+static void *g_weapon_swing_raw_frames[UW_WEAPON_SWING_FRAME_COUNT];
+static char s__DATA_weapons_dat_00087268[] = "\\DATA\\weapons.dat";
+static char s_weapons_0008727c[] = "weapons";
+// was DAT_0023c198/DAT_0023c1b8 (.data 0x87198/0x871b8) -- per-frame
+// Y/X screen-offset tables (one signed byte per frame, 28 frames) for
+// the weapon-swing sprite set, read straight from weapons.dat by
+// load_weapon_swing_sprites and consumed by weapon_swing_draw_tick to
+// position each frame relative to the 3D viewport.
+static undefined1 g_weapon_swing_frame_y_offset_backing[256];
+#define g_weapon_swing_frame_y_offset g_weapon_swing_frame_y_offset_backing[0]
+static undefined1 g_weapon_swing_frame_x_offset_backing[256];
+#define g_weapon_swing_frame_x_offset g_weapon_swing_frame_x_offset_backing[0]
+static short DAT_0023c1ec;
+static undefined2 DAT_000870e8;
+static int DAT_0023c260;
+static char s__DATA_weapons_cm_00087284[] = "\\DATA\\weapons.cm";
+static undefined1 DAT_00202700_backing[256];
+#define DAT_00202700 DAT_00202700_backing[0]
+
 
 
 // was LAB_0006e324 -- load_weapon_swing_sprites's (weapons.GR loader)
@@ -52,7 +87,7 @@ void *weapon_swing_frame_alloc(param_1)
 unsigned int param_1;
 
 {
-  return Ordinal_1041(param_1);
+  return ce_malloc(param_1);
 }
 
 
@@ -126,7 +161,7 @@ byte load_weapon_swing_sprites()
         *stack0xffdc3240_ptr = cVar1; stack0xffdc3240_ptr = stack0xffdc3240_ptr + 1;
         pcVar5 = pcVar5 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(acStack_118,s__DATA_weapons_dat_00087268);
+      ce_strcat(acStack_118,s__DATA_weapons_dat_00087268);
       iVar6 = open_file_for_read(acStack_118);
       bVar2 = bVar2 & iVar6 != -1;
       if (iVar6 != -1) {
@@ -143,7 +178,7 @@ byte load_weapon_swing_sprites()
         bVar3 = iSeekResult != -1;
         iVar8 = read_file_handle(iVar6,&g_weapon_swing_frame_x_offset,0x1c);
         iVar7 = read_file_handle(iVar6,&g_weapon_swing_frame_y_offset,0x1c);
-        bVar4 = Ordinal_553(iVar6);
+        bVar4 = CloseHandle(iVar6);
         bVar2 = iVar7 == 0x1c & bVar4 & bVar2 & bVar3 & iVar8 == 0x1c;
       }
     }
@@ -188,7 +223,7 @@ void weapon_swing_draw_tick()
       sVar1 = 0;
     }
     else {
-      sVar1 = Ordinal_2005(799,(int)g_jump_ascent_timer << 1);
+      sVar1 = ordint_divmod(799,(int)g_jump_ascent_timer << 1).quot;
       sVar1 = sVar1 + 1;
     }
     randomize_weapon_jump_shake((int)sVar1);
@@ -259,7 +294,7 @@ void weapon_overlay_and_full_redraw()
 // was FUN_0006e554 -- sets DAT_0023c1ec (the weapon-swing sprite's
 // horizontal jitter offset, applied in src/weapon_swing.c's blit) from
 // param_1's shake intensity: 0 clears it, 1 picks a small random value
-// (-4..4, via Ordinal_1053 mod 5), 2 a larger one (-9..9, mod 10).
+// (-4..4, via ce_rand mod 5), 2 a larger one (-9..9, mod 10).
 // Its one caller derives param_1 from g_jump_ascent_timer, so this is
 // the weapon-bob jitter while the player is airborne from a jump.
 void randomize_weapon_jump_shake(param_1)
@@ -279,12 +314,12 @@ short param_1;
   }
   else if (param_1 == 1) {
     if (DAT_0023c1ec < 1) {
-      iVar2 = Ordinal_1053();
+      iVar2 = ce_rand();
       uw_ord2005_rem_134 = ((int)(-iVar2)) % (5);
       DAT_0023c1ec = uw_ord2005_rem_134;
     }
     else {
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       uw_ord2005_rem_135 = ((int)(uVar1)) % (5);
       DAT_0023c1ec = uw_ord2005_rem_135;
     }
@@ -294,16 +329,16 @@ short param_1;
       return;
     }
     if (DAT_0023c1ec < 1) {
-      iVar2 = Ordinal_1053();
+      iVar2 = ce_rand();
       uw_ord2005_rem_136 = ((int)(-iVar2)) % (10);
       DAT_0023c1ec = uw_ord2005_rem_136;
     }
     else {
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       uw_ord2005_rem_137 = ((int)(uVar1)) % (10);
       DAT_0023c1ec = uw_ord2005_rem_137;
     }
-    Ordinal_1053();
+    ce_rand();
   }
   DAT_000870e8 = 1;
   return;
@@ -463,7 +498,7 @@ bool load_weapon_combat_maneuver_data()
     *stack0xffdc3248_ptr = cVar1; stack0xffdc3248_ptr = stack0xffdc3248_ptr + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_110,s__DATA_weapons_cm_00087284);
+  ce_strcat(acStack_110,s__DATA_weapons_cm_00087284);
   iVar4 = open_file_for_read(acStack_110);
   if (iVar4 == 0) {
     bVar7 = false;
@@ -476,7 +511,7 @@ bool load_weapon_combat_maneuver_data()
     iVar5 = seek_file_handle(iVar4,uVar2,0);
     iVar6 = read_file_handle(iVar4,&DAT_00202700,0x10);
     bVar7 = iVar5 == 0 && iVar6 == 0x10;
-    Ordinal_553(iVar4);
+    CloseHandle(iVar4);
   }
   return bVar7;
 }
@@ -663,9 +698,9 @@ LAB_00027754:
               return;
             }
             set_hud_status_value(3,0);
-            local_20[0] = Ordinal_2005(100,((int)(((uint)*(byte *)(pRecord + 5) -
+            local_20[0] = ordint_divmod(100,((int)(((uint)*(byte *)(pRecord + 5) -
                                                   (uint)*(byte *)(pRecord + 3)) * 0x10000) >> 0x10) *
-                                           (uint)DAT_00100614);
+                                           (uint)DAT_00100614).quot;
             DAT_00100614 = *(char *)(pRecord + 3) + (char)local_20[0];
             *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) | 0xf;
             DAT_001005fc = DAT_00100614;
@@ -717,7 +752,7 @@ LAB_00027754:
             if (100 < DAT_00100614) {
               DAT_00100614 = 100;
             }
-            sVar4 = Ordinal_2005(0xc,DAT_00100614);
+            sVar4 = ordint_divmod(0xc,DAT_00100614).quot;
             set_hud_status_value(3,sVar4 + 1);
             iVar6 = (int)DAT_001005e8;
             DAT_001005e8 = (short)(iVar6 + -0x10);
@@ -742,7 +777,7 @@ LAB_00027754:
       DAT_001005ec = (uint)(sVar4 == 0);
       bVar1 = (&DAT_00084eff)[iVar5];
       DAT_0010062c = (short)(-1 - (uint)bVar1);
-      iVar5 = Ordinal_2005(3,iVar5);
+      iVar5 = ordint_divmod(3,iVar5).quot;
       DAT_00084f10 = (ushort)(byte)(&DAT_00084f0b)[iVar5];
       set_hud_status_value(8,-1 - (-1 - (uint)bVar1));
       set_hud_status_value(3,1);
@@ -850,13 +885,13 @@ void weapon_overlay_flash_restore()
   int iVar2;
 
   decrement_cursor_hide_depth(0xc,debug_noop_frame_hook,0xf1);
-  uVar1 = Ordinal_1041(0x4bec);
-  Ordinal_1044(uVar1,DAT_00248410,0x4bec);
+  uVar1 = ce_malloc(0x4bec);
+  ce_memmove(uVar1,DAT_00248410,0x4bec);
   g_weapon_overlay_enabled = 0;
   weapon_overlay_and_full_redraw();
   for (iVar2 = 0xc; 0 < iVar2; iVar2 = (iVar2 + -1) * 0x10000 >> 0x10) {
     weapon_overlay_and_full_redraw();
-    Ordinal_1044(DAT_00248410,uVar1,0x4bec);
+    ce_memmove(DAT_00248410,uVar1,0x4bec);
   }
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;

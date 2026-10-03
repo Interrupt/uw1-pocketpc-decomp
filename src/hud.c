@@ -11,6 +11,767 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00204720 DAT_00204720_backing[0]
+static int DAT_00088954;
+static int DAT_0008895c;
+static int DAT_00088950;
+static int DAT_00088958;
+short DAT_00084f10;
+undefined1 g_active_hud_panel;
+/* Not part of the original binary -- a port-side addition. scroll_text_entry_prompt
+   (the generic scroll-area text-entry field used by save-name entry,
+   "Move how many", "Chant the mantra", etc.) is opened as an overlay on
+   top of the dungeon view without ever calling set_game_mode, so
+   DAT_00201b60/DAT_00201b64 (the top-level game-mode pair) never change
+   while it's up -- gx_stub.c's in_dungeon_freelook() has no way to tell
+   the difference between "really in the 3D view" and "a text field is
+   capturing keystrokes over it", so it kept routing A/D/C/W/S/X/Z/1/2/3
+   to the movement poller instead of letting them type. Set true for the
+   duration of scroll_text_entry_prompt's input loop; gx_stub.c checks it (as an
+   extern) alongside DAT_00201b64. */
+int g_text_input_active;
+undefined2 g_cursor_mode;
+int DAT_00250718;
+static char s_out_of_000858dc[] = "out_of";
+static undefined2 DAT_0020209c;
+static undefined2 DAT_002020b4;
+static undefined2 DAT_00202090;
+static undefined2 DAT_002020c8;
+static undefined2 DAT_002020bc;
+static char s_init_gamedisp_goes_000858e8[] = "init_gamedisp_goes";
+/* Real, compile-time-baked data recovered directly from UU.exe (same
+   technique/precedent as DAT_00085668 -- see memory.md's "HOW WE GOT THE
+   DISPATCH TABLES POPULATED"), not something a runtime populator ever
+   writes. Confirmed via Ghidra: 0x858a8 holds 8 real int16 X coordinates
+   {8,8,6,6,7,8,0,0}, immediately followed at 0x858b8 by 8 real int16 Y
+   coordinates {100,81,66,48,28,11,144,0}, immediately followed at 0x858c8
+   by PTR_FUN_000858c8 (the very next declared symbol in this file) --
+   a clean, unambiguous 8-short/8-short layout with no gap. These are the
+   6 in-game HUD cursor-mode icon buttons' (Look/Use/Talk/etc, drawn by
+   mode_icon_highlight_on/mode_icon_highlight_off via draw_sprite_by_id) screen positions;
+   only indices 0-5 are ever read (cursor_mode_button_click bounds-checks
+   at 5), the remaining 2 slots are unused padding in the original data.
+   Declaring these as plain zero-filled arrays (as a prior session had
+   them) meant every highlight/unhighlight icon drew at (0,0) instead of
+   its real button position -- part of the "door image on mode-icon
+   click" bug (see cursor_mode_button_click's own comment for the other
+   half, a dropped mode_icon_highlight_off argument). */
+static const unsigned short DAT_000858a8_real[8] = {8,8,6,6,7,8,0,0};
+#define DAT_000858a8 (*(undefined1 *)DAT_000858a8_real)
+static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
+#define DAT_000858b8 (*(undefined1 *)DAT_000858b8_real)
+/* Ghidra left 0x202988 and 0x2028e0 as bare literal addresses (no symbol)
+   -- small per-hand "currently drawn weapon / hand state" arrays indexed
+   0..5 by reset_equipment_and_container_state/reload_paperdoll_body_sprite (which zero them) and FUN_00046xxx
+   (which reads+rewrites them to gate a paperdoll redraw). On the 32-bit
+   binary `idx + 0x202988` was real addressing; here it hits an unmapped
+   low address and segfaults level init. Give them real backing storage
+   and address them as `&DAT_00202988 + idx`. */
+undefined1 DAT_00202988_backing[16];
+short g_player_carry_weight;
+static int DAT_002028d0;
+static char s_Not_a_spell_00085a80[] = "Not_a_spell";
+static byte DAT_002028d4;
+/* Original UU.exe .data at 0x87530: 53 four-byte special-action records.
+   The first 48 match readied spells; byte 0 >> 3 is the action type,
+   bytes 1-2 pack three 5-bit rune indices (24 means an empty slot),
+   and byte 3 is the action parameter. These fields share one table. */
+undefined DAT_00087530_backing[212] = {
+  0x00, 0x78, 0x21, 0x83,
+  0x10, 0x12, 0x05, 0x02,
+  0x29, 0x38, 0x39, 0x01,
+  0x40, 0x97, 0x21, 0x01,
+  0x18, 0xf8, 0x48, 0x02,
+  0x08, 0xf8, 0x51, 0x01,
+  0x18, 0x58, 0x02, 0x01,
+  0x08, 0x6f, 0x44, 0x02,
+  0x20, 0x2c, 0x20, 0x02,
+  0x58, 0x98, 0x59, 0x01,
+  0x38, 0x58, 0x40, 0x01,
+  0x40, 0x38, 0x21, 0x03,
+  0x58, 0x6f, 0x46, 0x00,
+  0x18, 0x4b, 0x06, 0x03,
+  0x00, 0x78, 0x41, 0x85,
+  0x29, 0xd8, 0x38, 0x02,
+  0x5a, 0x38, 0x49, 0x02,
+  0x10, 0x58, 0x22, 0x43,
+  0x08, 0xf8, 0x5d, 0x44,
+  0x20, 0x98, 0x21, 0x04,
+  0x08, 0xf8, 0x1d, 0x03,
+  0x38, 0x98, 0x35, 0x04,
+  0x18, 0xb8, 0x48, 0x46,
+  0x5a, 0x38, 0x01, 0x03,
+  0x29, 0xb8, 0x3c, 0x03,
+  0x38, 0x4c, 0x00, 0x02,
+  0x5a, 0xd7, 0x3a, 0x04,
+  0x18, 0x4f, 0x1a, 0x05,
+  0x5a, 0xf8, 0x12, 0x05,
+  0x58, 0xb8, 0x01, 0x06,
+  0x20, 0x0c, 0x55, 0x0f,
+  0x30, 0xc6, 0x55, 0x42,
+  0x58, 0x2f, 0x56, 0x0a,
+  0x38, 0x8f, 0x00, 0x05,
+  0x00, 0x0b, 0x55, 0x86,
+  0x5a, 0xf7, 0x39, 0x08,
+  0x08, 0xef, 0x54, 0x05,
+  0x38, 0x91, 0x21, 0x03,
+  0x40, 0x98, 0x29, 0x04,
+  0x18, 0x4b, 0x56, 0x44,
+  0x30, 0x16, 0x54, 0x03,
+  0x30, 0x10, 0x38, 0x81,
+  0x10, 0xb2, 0x22, 0x45,
+  0x58, 0xf7, 0x55, 0x09,
+  0x58, 0xf6, 0x39, 0x07,
+  0x30, 0xf8, 0x14, 0x44,
+  0x58, 0x78, 0x02, 0x0b,
+  0x58, 0x42, 0x55, 0x0c,
+  0x30, 0x18, 0x63, 0x05,
+  0x28, 0x18, 0x63, 0x04,
+  0x58, 0x18, 0x63, 0x0d,
+  0x50, 0x18, 0x63, 0x03,
+  0x50, 0x18, 0x63, 0x09,
+};
+#define DAT_00087531 DAT_00087530_backing[1]
+char DAT_0023c3e0;
+char s_bodies_00085c58[] = "bodies";
+static int DAT_002029a4;
+short DAT_00085b64;
+undefined2 DAT_00085b72;
+static undefined2 DAT_00202998;
+undefined2 DAT_00085c50;
+static int DAT_002046f8;
+static char s_optbtns_00086954[] = "optbtns";
+static short DAT_002046f4;
+/* Real .data value confirmed via a Ghidra memory dump of the original
+   binary at 0x87990: 0x00000001, not the C zero-default this plain
+   declaration gave it. This flag gates msg_scroll_draw_wrapped_span's leading-backslash
+   control-code parser (`if (g_scroll_control_codes_enabled != 0 && *param_1=='\\')`);
+   draw_save_load_slot_list's save-slot-list header print happens before that
+   function's own explicit reset (confirmed both in the C source and via
+   disassembly -- not a decompile-dropped-statement bug, the real binary
+   really does read whatever this flag was last left at), so on this
+   port's very first save/load screen it inherited the wrong (zero)
+   default and printed its leading "\6" color code literally instead of
+   interpreting it. */
+// was DAT_00087990
+undefined4 g_scroll_control_codes_enabled = 1;
+static short DAT_0020471c;
+static short DAT_00204838;
+static short DAT_0020483c;
+static short DAT_002047dc;
+static short DAT_002047d8;
+static int DAT_000889b8;
+static int DAT_000889bc;
+/* DAT_002047b0: declared as a scalar but indexed as (&DAT_002047b0)[i]
+   throughout (register_click_region-style helpers, up to 20 slots
+   per the `iVar2 < 0x14` loop bound) -- same "scalar declared but
+   accessed as array" bug class fixed several times this session.
+   Widened to real, safely-sized backing storage (zero-initialized,
+   not recovered) purely to make the access safe. */
+static undefined2 DAT_002047b0_backing[20];
+#define DAT_002047b0 DAT_002047b0_backing[0]
+static short DAT_002047a4;
+static short DAT_00204748;
+static short DAT_00204784;
+static undefined2 DAT_0020479c;
+static undefined2 DAT_002047a0;
+static undefined2 DAT_00204798;
+static undefined2 DAT_00204790;
+static undefined2 DAT_00204794;
+static short DAT_00204854;
+static undefined1 DAT_00204720_backing[65536];
+static undefined2 DAT_00204750_backing[256];
+#define DAT_00204750 DAT_00204750_backing[0]
+static undefined2 DAT_002047e0_backing[256];
+#define DAT_002047e0 DAT_002047e0_backing[0]
+static undefined2 DAT_00204808_backing[256];
+#define DAT_00204808 DAT_00204808_backing[0]
+static undefined2 DAT_00086970;
+static char DAT_00204858;
+static undefined2 DAT_00204704;
+static undefined2 DAT_00204714_backing[256];
+#define DAT_00204714 DAT_00204714_backing[0]
+static short DAT_002047a8;
+static short DAT_0020478c;
+static short DAT_002047ac;
+/* Recovered from UU.exe .data at 0x86b38: three pairs of function
+   pointers, selected by an index (0 or 1, from DAT_00086b2c) in
+   walk_visible_tiles, loaded into DAT_0023b4f4 / DAT_0023b80c / DAT_0023b4d4,
+   and called by process_visible_tile_cell to emit a visible tile's 3D geometry
+   slice (wall / floor-or-ceiling / diagonal). Were silently-zero scalars,
+   so `(*DAT_0023b4f4)(...)` was a call through NULL the instant the
+   (now-working) visibility fill marked any tile visible. The six entries
+   are contiguous in .data: b38,b3c / b40,b44 / b48,b4c -- one array, the
+   symbols index it at 0..4. NOT const: configure_texture_detail_functions
+   (CORRECTED this pass -- was mislabeled "FUN_0005d664", an address
+   that doesn't match any real function in this file) patches entries
+   [1] and [3] (b3c / b44) at runtime between emit_flat_wall_texture_select
+   and emit_floor_texture_select. */
+code *DAT_00086b38_fnptrs[6] = {
+  (code *)emit_flat_wall_texture_select, (code *)emit_floor_texture_select,
+  (code *)emit_flat_floor_texture_select, (code *)emit_flat_wall_texture_select,
+  (code *)emit_flat_diagonal_texture_select, (code *)emit_diagonal_wall_texture_select,
+};
+/* Was `static undefined1 DAT_000870ec_backing[65536]` (an oversized,
+   never-populated byte buffer) -- real per-flask X position for
+   `hud_vitals_bar_tick` (the health/mana FLASK bar update function),
+   [0]=health [1]=mana. Read via byte-scaled pointer arithmetic at
+   every call site (`&DAT_000870ec + iVar1` where iVar1 is already a
+   pre-scaled byte offset of 0 or 2, or `&DAT_000870ec + iVar1*2` in
+   hud_vitals_threshold_shake where iVar1 is a plain 0/1 element index) -- kept
+   byte-typed here rather than a natural short array, matching every
+   existing call site instead of needing them all rewritten.
+   Recovered via direct memory dump (Ghidra headless, `mem.getShort`):
+   real values 248 (health) / 284 (mana), byte-encoded little-endian
+   below. */
+static undefined1 DAT_000870ec_backing[4] = { 248,0, 28,1 };  /* 248, 284 */
+#define DAT_000870ec DAT_000870ec_backing[0]
+#define DAT_000870f2 (*(short *)(DAT_000870f0_backing + 2))
+/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
+   DAT_0023c224/DAT_0023c230 etc. (see DAT_0023c224's comment for the
+   full writeup). DAT_0023c118/DAT_0023c128 are `hud_vitals_bar_tick`'s
+   (the real health/mana FLASK bar update function) own current/target
+   fill-level counters per flask (index 0=health, 1=mana), used
+   throughout as `(&DAT_0023c118)[uVar2]`/`(&DAT_0023c128)[uVar2]`.
+   With these as lone scalars, index [1] on each aliased the next
+   global in this build's layout -- DAT_0023c118[1] read/wrote
+   DAT_0023c128[0]'s own byte, and DAT_0023c128[1] read/wrote
+   DAT_0023c224's first byte -- so the mana flask's fill-level
+   tracking was corrupting the health flask's, and the compass-icon
+   cluster besides. Fixed the same way, real 2-element arrays.
+
+   FOLLOW-UP (this session, chasing the chain-hotspot/stats-panel
+   revival): that first fix under-sized both arrays. set_hud_status_value
+   and reset_hud_panel_animation_state's own reset loop (`while (iVar1 < 9)`) both index
+   `(&DAT_0023c118)[i]`/`(&DAT_0023c128)[i]` up to i=8, and disassembly
+   of the real chain-hotspot handler chain (0x6cfb0-0x6cfdc) confirms
+   g_target_hud_panel's real address is exactly DAT_0023c118+6 -- so widened
+   to real 9-element arrays and folded g_target_hud_panel/DAT_0023c11f/
+   DAT_0023c120 (indices 6/7/8 of the first array) and g_committed_hud_panel/
+   DAT_0023c12f (indices 6/7 of the second) in as aliases instead of
+   the separate globals they were each declared as, which -- exactly
+   like the original bug here -- put them at unrelated addresses the
+   `(&DAT_0023c118)[6]`-style writes elsewhere in this file could never
+   actually reach. That was why toggling the stats panel (index 6)
+   silently did nothing: set_hud_status_value(6, target) wrote 6 bytes
+   past a 2-byte array into unrelated memory instead of the real
+   g_target_hud_panel the panel-transition ticker (tick_hud_panel_transition) reads. */
+ undefined1 DAT_0023c118_arr[9];
+static undefined1 DAT_0023c128_arr[9];
+#define DAT_0023c128 DAT_0023c128_arr[0]
+#define g_committed_hud_panel DAT_0023c128_arr[6]
+#define DAT_0023c12f DAT_0023c128_arr[7]
+/* Was a lone `undefined2 DAT_0023c224;` -- but used as a real 2-element
+   array throughout (`(&DAT_0023c224)[iVar1]`/`[uVar2]` for index 0 AND
+   1, including the creation loop in redraw_hud_panels that assigns
+   BOTH elements). Same "split symbol" bug class as this project's
+   other reconstructed tables (see e.g. DAT_00087130's own history) --
+   index [1] read/wrote whatever global happened to sit 2 bytes past
+   this one in OUR build's memory layout, which is not guaranteed (or
+   even likely) to match the original binary's fixed layout. Confirmed
+   live via a sprite-position trace: with the lone-scalar declaration,
+   `(&DAT_0023c224)[1]` resolved to slot 8 -- the COMPASS BACKGROUND
+   sprite's own real slot handle (DAT_0023c228, created a few
+   statements later) -- so any code exercising the second status-icon
+   slot (uVar2==1 in the two functions above) stomped the compass
+   background's position to whatever it happened to pass for its own
+   icon (typically (0,0), before DAT_000870ec/DAT_000870f2 -- the real
+   FLASK X/Y tables -- were themselves recovered, see their own
+   comments above). This was the real cause of the compass background
+   staying stuck at
+   (0,0) despite being created with the correct position. Real fix:
+   make this a genuine 2-element array. */
+static short DAT_0023c224_arr[2];
+#define DAT_0023c224 DAT_0023c224_arr[0]
+static byte DAT_0023c11a;
+static short DAT_0023c228;
+static short DAT_0023c22c;
+/* Was `FIXME[hud-compass-layout]: .data 0x87130 -- ... Ghidra never
+   recovered the .data contents so every entry reads 0 and the needle
+   is stuck at x=0 (part of the black block in the HUD top-left)`.
+   Same class of gap as the 4 "unrecoverable" resource-name strings
+   (see s_lfti_000859fc's comment) -- Ghidra just never created a
+   labeled cross-reference to this .data, but the real bytes are
+   perfectly intact in the binary. Recovered via direct memory dump
+   (Ghidra headless, `mem.getShort`): 16 real values tracing a clean
+   small ellipse (112-160), confirming this is genuine per-heading
+   compass-needle X data, not padding. Combined with DAT_00087150
+   below, the ellipse is centered around (136,142) in native
+   (320x200-ish) coordinates -- right at the bottom edge of the 3D
+   viewport (registered at native (52,20)-(223,132), see
+   configure_dungeon_viewport's caller), exactly where the "pedestal" decoration
+   sits in a real reference screenshot of the shipping game. Verified
+   live: with these real values, the needle no longer appears at the
+   top-left corner (the previous x=0/y=0 bug); it now subtly cycles
+   position on the pedestal as the player turns, matching the
+   reference. */
+static short DAT_00087130_arr[16] = {
+  136, 128, 120, 116, 112, 112, 116, 124, 136, 144, 156, 160, 160, 156, 152, 144,
+};
+#define DAT_00087130 DAT_00087130_arr[0]
+/* Was `FIXME[hud-compass-layout]: .data 0x87150 -- ...`. See
+   DAT_00087130's comment -- real Y data recovered the same way,
+   16 values tracing the same ellipse (132-153). */
+static short DAT_00087150_arr[16] = {
+  132, 134, 135, 138, 142, 146, 148, 151, 153, 151, 148, 146, 142, 138, 135, 134,
+};
+#define DAT_00087150 DAT_00087150_arr[0]
+/* Was two lone `short` scalars -- same split-symbol bug as
+   DAT_0023c11c/DAT_0023c230 etc. elsewhere in this file.
+   `hud_dragon_reaction_tick` indexes `&DAT_0023c1e8 + iVar6`
+   (iVar6=0/1, left/right dragon's HEAD-animation sprite-list slot
+   handle -- a separate, dynamically-allocated overlay sprite driving
+   the head's reaction animation, distinct from DAT_0023c230's own
+   static head sub-sprite) and `reset_hud_panel_animation_state` resets both elements
+   individually (`clear_sprite_list_slot_flag((int)DAT_0023c1e8);
+   clear_sprite_list_slot_flag((int)DAT_0023c1ea);`) -- confirming these are really
+   one 2-element array (0x23c1e8/0x23c1ea are exactly 2 bytes apart in
+   the original binary), not two independent globals. As separate C
+   symbols on this host, `(&DAT_0023c1e8)[1]` read/wrote whatever the
+   compiler placed next instead of the real right-dragon head-
+   animation slot -- confirmed live: this produced a garbage slot
+   handle for the right dragon's head-animation sprite, which happened
+   to land on/repurpose an unrelated already-allocated slot (an
+   inventory item's, e.g. a red key), drawing that item's sprite
+   instead of the dragon's own head animation. */
+static short DAT_0023c1e8_arr[2];
+#define DAT_0023c1e8 DAT_0023c1e8_arr[0]
+#define DAT_0023c1ea DAT_0023c1e8_arr[1]
+/* Same split-symbol bug, same fix: `hud_dragon_reaction_tick` indexes
+   `&DAT_0023c1e4 + iVar6` (the animation-phase state byte per dragon
+   side) and `reset_hud_panel_animation_state` resets both elements individually
+   (`DAT_0023c1e6 = 0; ... DAT_0023c1e4 = 0;`) -- 0x23c1e4/0x23c1e6 are
+   exactly 2 bytes apart in the original binary, confirming this is
+   really one 2-element array too. */
+static undefined2 DAT_0023c1e4_arr[2];
+#define DAT_0023c1e4 DAT_0023c1e4_arr[0]
+#define DAT_0023c1e6 DAT_0023c1e4_arr[1]
+static undefined2 DAT_0023c220;
+static ushort DAT_0023c1d8;
+undefined1 DAT_0023c130;
+static int DAT_0023c23c;
+static short DAT_0023c21c;
+/* The three tables below all position the two dragons.gr decorations
+   that frame the compass -- index 0 = left dragon, index 1 = right
+   dragon -- built once in redraw_hud_panels (54155-54198). Each
+   dragon is drawn as three sprite-list sub-sprites (head, body,
+   wing/tail), created at fixed Y with X taken from these tables. Was
+   `FIXME[hud-dragon-layout]: Ghidra never recovered the .data so
+   every X reads 0 and both dragons pile up at the screen's left edge
+   as a black rectangle` -- same class of gap as the compass-needle
+   tables right above (see DAT_00087130's comment) and the 4
+   "unrecoverable" resource-name strings (s_lfti_000859fc's comment):
+   Ghidra just never labeled a cross-reference to this .data. Real
+   values recovered via direct memory dump (Ghidra headless,
+   `mem.getShort`). (The color-0-key transparency issue this comment
+   used to also mention, in the sprite-list compositor flush_sprite_list_compositor,
+   is a separate, still-open bug -- unrelated to position.) */
+
+/* .data 0x87170 -- X of the dragon HEAD sub-sprite, [0]=left
+   [1]=right. Sprite made by sprite_list_alloc_raw_entry(2,0xd,10) into
+   DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
+   0xd x 10 (redraw_hud_panels:54161); animation frame set from DAT_000871d4
+   (54190). */
+static short DAT_00087170_arr[2] = { 36, 228};
+#define DAT_00087170 DAT_00087170_arr[0]
+/* .data 0x87174 -- X of the dragon BODY sub-sprite, [0]=left
+   [1]=right. Sprite made by sprite_list_alloc_raw_entry(2,0x25,0x17) into
+   DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
+   0x25 x 0x17 (redraw_hud_panels:54166); frame from DAT_000871d8 (54191). */
+static short DAT_00087174_arr[2] = { 36, 204};
+#define DAT_00087174 DAT_00087174_arr[0]
+/* .data 0x871b4 -- X of the dragon WING/TAIL sub-sprite, [0]=left
+   [1]=right. Sprite made by sprite_list_alloc_entry(0) into DAT_0023c238[side],
+   placed at ((&DAT_000871b4)[side], 0x42), size 0xc x 0x1c
+   (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
+   0x208d (right) at 54196, NOT from a table. */
+static short DAT_000871b4_arr[4] = { 40, 224};
+#define DAT_000871b4 DAT_000871b4_arr[0]
+/* Was `FIXME[hud-dragon-frames]: .data 0x871d4 -- ... reads 0 now`.
+   Same class of gap as the position tables above -- recovered via
+   direct memory dump. Real values 0x206d (left) / 0x207f (right); the
+   +0x12 left/right delta matches the wing/tail sub-sprite's own
+   literal 0x207b/0x208d pair exactly, confirming this is the real
+   dragons.GR left/right frame convention, not a guess. Read as
+   `(&DAT_000871d4)[side]` and passed to sprite_list_set_frame_id as the frame arg
+   for DAT_0023c230[side] (redraw_hud_panels:54190). */
+static unsigned short DAT_000871d4_arr[2] = { 0x206d, 0x207f };
+#define DAT_000871d4 DAT_000871d4_arr[0]
+/* Was `FIXME[hud-dragon-frames]: .data 0x871d8 -- ... reads 0 now`.
+   Real values 0x206e (left) / 0x2080 (right), same +0x12 delta.
+   Frame arg to sprite_list_set_frame_id for DAT_0023c234[side] (redraw_hud_panels
+   :54191, also FUN_0006dbe4:54753). */
+static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
+#define DAT_000871d8 DAT_000871d8_arr[0]
+/* HUD-panel/tab dispatch table (13 entries), read as
+   `(&g_hud_panel_handlers)[index]` at 4 call sites (g_active_hud_panel/DAT_0023c134
+   select the index -- which panel/tab is active). Same class of bug as
+   DAT_00085668 above: link-time-initialized data in the original binary
+   that nothing in this decompile ever writes, declared here as a single
+   never-populated pointer instead of the real array -- so every one of
+   those 4 calls jumped through NULL/garbage. Recovered the same way
+   (Ghidra, reading UU.exe's .data directly and matching addresses
+   against this file's own FUN_ names); index 3 is genuinely NULL in the
+   original data, not a recovery gap. Since this was already declared as
+   a bare pointer rather than a byte array, no caller-side index-math
+   needs to change -- `(&g_hud_panel_handlers)[i]` already scales by the
+   (now-real, 8-byte-on-this-host) pointer size. */
+void (*const g_hud_panel_handlers_table[13])(void) = {
+  (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))redraw_rune_bag_display, (void(*)(void))draw_stats_panel_content, 0,
+  (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))update_hud_status_icon_frame,
+  (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))tick_hud_panel_transition, (void(*)(void))hud_panel_wipe_transition_tick,
+  (void(*)(void))advance_action_animation_frame,
+};
+static char s_panels_00087260[] = "panels";
+/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
+   DAT_0023c224/DAT_0023c230 etc. above: both are used throughout as
+   real 2-element byte arrays (`(&DAT_0023c11c)[iVar6]`/
+   `(&DAT_0023c12c)[iVar6]` for index 0 AND 1, including redraw_hud_
+   panels's own creation loop). Fixed the same way. */
+static undefined1 DAT_0023c11c_arr[2];
+#define DAT_0023c11c DAT_0023c11c_arr[0]
+static undefined1 DAT_0023c12c_arr[2];
+#define DAT_0023c12c DAT_0023c12c_arr[0]
+/* Was 3 lone `undefined2` scalars (DAT_0023c230/234/238) -- same
+   "split symbol" bug as DAT_0023c224 (see its own comment for the
+   full writeup): each is used throughout as a real 2-element array
+   (`(&DAT_0023c23X)[iVar3]`/`[iVar6]` for index 0 AND 1, including
+   redraw_hud_panels's own creation loop, which assigns both elements
+   for all three in sequence). The real per-side addresses in the
+   original binary are exactly 4 bytes apart (0x230/0x234/0x238),
+   confirming each one really is a 2-element short array back to back,
+   not 3 independent scalars -- so as lone scalars in this build, index
+   [1] on each reads/writes whatever the compiler happened to place
+   next, with no guarantee of matching the original layout (exactly
+   the aliasing that stomped the compass background sprite via
+   DAT_0023c224). Same "left dragon head/body/wing pile-up" report
+   this affects -- fixed the same way, real 2-element arrays. */
+static short DAT_0023c230_arr[2];
+#define DAT_0023c230 DAT_0023c230_arr[0]
+static short DAT_0023c234_arr[2];
+#define DAT_0023c234 DAT_0023c234_arr[0]
+static short DAT_0023c238_arr[2];
+#define DAT_0023c238 DAT_0023c238_arr[0]
+/* Was 3 separate `undefined2` scalars (DAT_0023c200/202/204) -- same
+   split-symbol bug as DAT_0023c118/DAT_0023c128 just above (see that
+   comment's full writeup, found chasing the same chain-hotspot/
+   stats-panel revival): begin_hud_panel_flip/advance_hud_panel_flip both index
+   `(&DAT_0023c200)[i]` for i=0,1,2 (3 grtile handles backing the
+   panel-switch wipe transition), but as 3 independent globals they
+   don't land in contiguous memory on this recompile, so the loop that
+   allocates/checks all 3 only ever really touched DAT_0023c200 --
+   DAT_0023c202/DAT_0023c204 (read directly by name elsewhere in this
+   same function) stayed 0/uninitialized, so resolve_flip_grtile_slot(DAT_0023c202)
+   returned a garbage grtile handle and crashed
+   bitmap_blit_to_framebuffer the first time this code path ever ran.
+   Also widened the element type from `undefined2` to `undefined4`:
+   grtile_alloc_registered's return value (now that alloc_flip_grtile_slot
+   actually calls it instead of stubbing out) is a real 4-byte opaque
+   registry key -- 2 bytes isn't enough to round-trip it back through
+   resolve_flip_grtile_slot's registry-key comparison. Not a concern
+   while both allocator/resolver were stubs (every stored value was 0
+   either way), but a real requirement now that they aren't. */
+static undefined4 DAT_0023c200_arr[3];
+#define DAT_0023c200 DAT_0023c200_arr[0]
+#define DAT_0023c202 DAT_0023c200_arr[1]
+#define DAT_0023c204 DAT_0023c200_arr[2]
+char DAT_000870dc;
+char DAT_000870d8;
+ushort DAT_0023c1dc;
+#define DAT_0023c11d DAT_0023c11c_arr[1]
+#define DAT_0023c12d DAT_0023c12c_arr[1]
+static ushort DAT_0023c1e0;
+static undefined1 DAT_0023c11b;
+static byte DAT_0023c12a;
+static byte DAT_0023c150;
+static undefined1 DAT_0023c1f0_backing[65536];
+#define DAT_0023c1f0 DAT_0023c1f0_backing[0]
+static undefined1 DAT_0023c1f8_backing[65536];
+#define DAT_0023c1f8 DAT_0023c1f8_backing[0]
+/* Was `undefined2 DAT_00087254;` -- split-symbol bug: real ARM code
+   (confirmed via disassembly of FUN_0006d4a4/hud_vitals_bar_tick)
+   computes `&DAT_00087254 + uVar2*2` for the mana slot, so this is a
+   genuine 2-element short array (0=health, 1=mana shimmer/wraparound
+   state), not a lone scalar. Also not zero-init bss like it looked --
+   raw memory dump (Ghidra headless) showed real .data here: 0x2019
+   (health) / 0x2032 (mana), i.e. each side starts equal to its OWN
+   `local_2c` shimmer-reset constant (a "settled" starting state). */
+static short DAT_00087254_arr[2] = { 0x2019, 0x2032 };
+#define DAT_00087254 DAT_00087254_arr[0]
+/* Was `static undefined1 DAT_000870f0_backing[65536]` (oversized,
+   never populated) -- real per-step Y offset for the FLASK fill-level
+   animation sprite in `hud_vitals_bar_tick`/`hud_vitals_threshold_shake` (the
+   health/mana flask bar update), read via explicit byte-scaled
+   pointer arithmetic (`&DAT_000870f0 + N*2`) at every call site, so
+   kept byte-typed here rather than converting to a natural short
+   array (would need editing 5 call sites for no behavioural gain).
+   Recovered via direct memory dump (Ghidra headless, `mem.getShort`):
+   14 real entries forming a smooth descending curve (liquid Y rises
+   as fill increases), byte-encoded little-endian below (all values
+   fit in one byte, high byte always 0):
+     [0]=156 [1]=152 [2]=150 [3]=148 [4]=146 [5]=144 [6]=142 [7]=141
+     [8]=140 [9]=139 [10]=137 [11]=135 [12]=133 [13]=131 [14..]=0
+   `DAT_000870f2` (see its own comment) is simply this same array's
+   real index [1]. */
+static undefined1 DAT_000870f0_backing[32] = {
+  156,0, 152,0, 150,0, 148,0, 146,0, 144,0, 142,0, 141,0,
+  140,0, 139,0, 137,0, 135,0, 133,0, 131,0, 0,0, 0,0,
+};
+#define DAT_000870f0 DAT_000870f0_backing[0]
+/* Was `static undefined1 DAT_00087112_backing[65536]` (oversized,
+   never populated) -- real per-step HEIGHT for the same flask
+   fill-level animation sprite (paired with DAT_000870f0's Y), read
+   the same byte-scaled way (`&DAT_00087112 + N*2`). Recovered the
+   same way: 13 real entries, a small rise-then-fall curve (the fill
+   bubble growing then settling), byte-encoded little-endian:
+     [0]=4 [1]=5 [2]=6 [3]=7 [4]=7 [5]=7 [6]=7 [7]=6
+     [8]=5 [9]=4 [10]=4 [11]=4 [12]=4 [13..]=0 */
+static undefined1 DAT_00087112_backing[32] = {
+  4,0, 5,0, 6,0, 7,0, 7,0, 7,0, 7,0, 6,0,
+  5,0, 4,0, 4,0, 4,0, 4,0, 0,0, 0,0, 0,0,
+};
+#define DAT_00087112 DAT_00087112_backing[0]
+#define DAT_00087114 (*(short *)(DAT_00087112_backing + 2))
+/* .bss 0x23c240..0x23c24f: four short[2] rows of sprite handles for the
+   HUD flask/vitals animation (hud_vitals_bar_tick / hud_dragon_reaction_tick), indexed
+   `&row + param*2` with param in {0,1}. Ghidra split the region into four
+   lone 1-byte `undefined` scalars, so the param==1 (`+2`) access ran off
+   the end of a 1-byte global and read/wrote a neighbouring variable --
+   the resulting garbage handle crashed sprite_list_set_lifetime (`param_1 * 0x14 +
+   base` with a huge negative param_1). Back it with real contiguous
+   storage; the `&sym + iVar1` byte indexing is unchanged. */
+static char DAT_0023c240_vitals[16];
+#define DAT_0023c240 DAT_0023c240_vitals[0]
+#define DAT_0023c244 DAT_0023c240_vitals[4]
+#define DAT_0023c248 DAT_0023c240_vitals[8]
+#define DAT_0023c24c DAT_0023c240_vitals[12]
+static short DAT_0023c250;
+/* .data 0x87178..0x871b7: four rows (x / y / w / h) of the dragon
+   HEAD-animation overlay sprite's placement table (a separate,
+   dynamically-allocated sprite driving the head's reaction animation
+   -- see DAT_0023c1e8's own comment), read as `*(short *)(&row +
+   iVar6*6)` at three call sites in hud_dragon_reaction_tick and
+   handed to sprite_list_set_rect. Ghidra split it into two lone
+   `undefined` scalars plus two `undefined *` pointer slots -- and
+   `&PTR_DAT_00087198` was then cast through `(int)`, truncating the
+   64-bit address (wild `*(short *)` read -> crash the first time the
+   head animation played). Back each row with real storage and keep
+   the byte-offset indexing.
+
+   Was left as all-zero ("worst case the [overlay] sprite draws at
+   0,0 with 0 size") because at the time nothing could reach this code
+   at all -- set_hud_status_value's dragon-reaction branch wrote its
+   request to the wrong global (see DAT_0023c11c's own comment), so
+   hud_dragon_reaction_tick's "has a reaction been requested" gate
+   never fired. Now that that's fixed, this table is genuinely read
+   every time the animation plays -- confirmed live: with it still
+   zeroed, the head-animation overlay drew a large blank/garbage rect
+   at native (0,0), the exact top-left corner the compass pedestal
+   occupies, visually stomping the compass needle every time (reported
+   as "scrolling the messages resets the compass animation"). Recovered
+   the real values the same way as everything else in this cluster
+   (Ghidra headless, `mem.getShort`): indices 0-2 are the left
+   dragon's 3 head-animation sub-rects, indices 3-5 the right dragon's;
+   indices 6-7 of each row are genuinely unused by this table (H's
+   happen to read back 40/224 -- that's DAT_000871b4's OWN data, the
+   very next real table, not padding belonging here) so are left 0. */
+static char DAT_00087178_arr[16] = {40,0, 48,0, 36,0, 204,0, 204,0, 200,0, 0,0, 0,0};  /* X: L 40/48/36, R 204/204/200 */
+static char DAT_00087188_arr[16] = {156,0, 146,0, 146,0, 156,0, 146,0, 146,0, 0,0, 0,0};  /* Y: L 156/146/146, R 156/146/146 */
+static char PTR_DAT_00087198_arr[16] = {33,0, 24,0, 37,0, 34,0, 24,0, 38,0, 0,0, 0,0};  /* W: L 33/24/37, R 34/24/38 */
+static char PTR_DAT_000871a8_arr[16] = {14,0, 16,0, 23,0, 14,0, 16,0, 23,0, 0,0, 0,0};  /* H: L 14/16/23, R 14/16/23 */
+#define DAT_00087178 DAT_00087178_arr[0]
+#define DAT_00087188 DAT_00087188_arr[0]
+#define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
+#define PTR_DAT_000871a8 PTR_DAT_000871a8_arr[0]
+/* Was a 64KB never-populated scratch buffer -- same "oversized
+   placeholder" pattern as most of this file's other unrecovered .data
+   gaps, just missed in the earlier pass that fixed the sibling
+   DAT_00087178/DAT_00087188/PTR_DAT_00087198/PTR_DAT_000871a8 rect
+   table right above (they're read/write neighbors in
+   hud_dragon_reaction_tick, but this one's own comment never got
+   written, so it stayed zero-filled while the others got fixed).
+   `hud_dragon_reaction_tick` reads this as `*(short *)(&DAT_000871b8 +
+   (iVar6*7+iVar5)*2)` -- iVar6=0/1 left/right dragon, iVar5=DAT_0023c250
+   cycling 0-6 -- to pick the dragon TAIL sub-sprite's (DAT_0023c238)
+   frame id for each step of its whip/lash animation. With this at 0
+   the id resolved through resolve_sprite_id_to_frame's `id<0x1000`
+   branch as an absolute OBJECTS.GR frame instead of the intended
+   LFTI.GR-relative id, drawing whatever object happens to sit at that
+   low absolute frame index (confirmed live: a red-key-shaped
+   inventory item sprite, reported by the user, instead of the dragon
+   tail). Recovered the real values the same way as the rect table
+   (Ghidra headless, mem.getShort at 0x871b8): 7 frames per side, left
+   dragon ramping 0x207b->0x207e and back, right dragon 0x208d->0x2090
+   and back -- matches the ramp-up/ramp-down shape DAT_0023c250's own
+   0-6 cycling implies. */
+static const unsigned short DAT_000871b8_arr[14] = {
+  0x207b, 0x207c, 0x207d, 0x207e, 0x207d, 0x207c, 0x207b,
+  0x208d, 0x208e, 0x208f, 0x2090, 0x208f, 0x208e, 0x208d,
+};
+#define DAT_000871b8 (*(undefined1 *)DAT_000871b8_arr)
+static undefined DAT_0023c124_backing[256];
+#define DAT_0023c124 DAT_0023c124_backing[0]
+static short DAT_0023c254;
+static short DAT_00087258;
+static short DAT_0023c258;
+static int DAT_0023c20c;
+static byte DAT_0023c25c;
+/* Was 2 lone `undefined2` scalars (DAT_0023c268/DAT_0023c270) -- same
+   split-symbol bug as DAT_0023c118/DAT_0023c200 elsewhere in this
+   file (see DAT_0023c118's own comment for the full writeup): both
+   are indexed as real 3-element short arrays by their respective
+   owners (update_ready_rune_slot_icons/update_light_source_color_icons, the mode-icon-highlight sprite
+   setup for the left/right dragon decorations), each written via a
+   `(&DAT_0023c26X)[i] = ...` one-time-init loop. As bare scalars, the
+   out-of-bounds writes for i=1,2 landed on whatever the compiler
+   placed next on THIS host -- empirically, DAT_0023c278 (see its own
+   comment), corrupting it from 0 to 13 (a leftover sprite-handle
+   value) the very first time redraw_hud_panels ever ran, which in
+   turn permanently defeated begin_hud_panel_flip's own `DAT_0023c278==0`
+   one-time-setup guard for the entire rest of the program -- found
+   while chasing why the chain-hotspot/stats-panel flip's grtile setup
+   never ran even after alloc_flip_grtile_slot/resolve_flip_grtile_slot
+   were implemented for real. */
+static short DAT_0023c268_arr[3];
+#define DAT_0023c268 DAT_0023c268_arr[0]
+static short DAT_0023c270_arr[3];
+#define DAT_0023c270 DAT_0023c270_arr[0]
+/* DAT_00087210/DAT_00087218: real per-index position lookup tables --
+   recovered directly from the real ARM binary's .data (raw uint16 reads
+   at 0x87210/0x87218, not a function to decompile). DAT_00087210 (used
+   by update_ready_rune_slot_icons to X-position the 3 "ready to cast" rune-slot icons)
+   is 176,191,206 -- evenly spaced by 15, confirming it's real per-slot
+   data, not a scalar with garbage padding. Previously only index 0 had
+   a nonzero (but still not verified-real) value; indices 1/2 read as
+   0, landing both later slots' rune icons at the left screen edge --
+   confirmed live: "left-clicking a rune draws it at the wrong X
+   position in the spell-slot area" for any rune beyond the first
+   selected. DAT_00087218 (used by update_light_source_color_icons, gated on
+   `*(short*)(DAT_00085a6c+8)==1` -- a different, rarer UI state) is
+   86,69,52, decreasing by 17; recovered the same way even though no
+   live report has hit it yet. */
+static const undefined2 DAT_00087210_arr[3] = {176, 191, 206};
+#define DAT_00087210 DAT_00087210_arr[0]
+static const undefined2 DAT_00087218_arr[3] = {86, 69, 52};
+#define DAT_00087218 DAT_00087218_arr[0]
+static undefined2 DAT_0023c140;
+static int DAT_0023c278;
+static undefined2 DAT_0023c148;
+static undefined2 DAT_0023c14c;
+static undefined2 DAT_0023c144;
+byte g_flip_grtile_cache_ready;
+static short DAT_0023c134;
+static undefined DAT_00087298_backing[8192];
+#define DAT_00087298 DAT_00087298_backing[0]
+static byte DAT_0023c208;
+static short DAT_0023c138;
+static short DAT_0023c13c;
+static short DAT_0023c110;
+/* Was `u"dgijjjigd\\G&"` -- Ghidra misidentified this as a UTF-16
+   string because its low bytes happen to be printable ASCII. It's
+   really a 16-entry numeric squash-percentage curve for the chain
+   flip animation's stage-by-stage width (symmetric: 100 down to 0 at
+   the midpoint, back up to 92), used by squash_hud_panel_flip_rows as
+   `table[stage]` and `table[stage+8]`. The string literal stopped at
+   the first embedded NUL (index 12), silently truncating the real
+   16-element array to 13 -- so `table[stage+8]` read out of bounds
+   for stage 5/6/7 (indices 13/14/15), feeding garbage into
+   DAT_0023c13c's stride computation and wild-writing past the grtile
+   buffer in copy_hud_panel_flip_column's pixel-copy loop (this is what was
+   corrupting the heap). Recovered via a direct memory dump of the
+   real binary at 0x000871e0. */
+static unsigned short u_dgijjjigd_G__000871e0[16] = {
+  100,103,105,106,106,106,105,103,100,92,71,38,0,38,71,92
+};
+/* Same "was `int`, truncating a real pointer" bug as DAT_0023c3ec right
+   above -- assigned `DAT_0023c40c + 0x100` (a real 64-bit pointer) and
+   then compared against/derived into real `ushort *` locals throughout
+   flush_sprite_list_compositor and friends. */
+static ushort *DAT_0023c414;
+/* Same truncation bug as DAT_0023c414/DAT_0023c3ec above, though this one
+   is never read back anywhere in this decompile -- fixed for consistency
+   regardless. Its assignment (init_sprite_list_buffers) computes it from
+   DAT_0023c40c + 0x100, the same expression as DAT_0023c414, rather than
+   from DAT_0023c3e4 (the buffer it's presumably meant to bound) -- looks
+   like a genuine bug already present in the original, not a decompile
+   artifact; left as-is since it's dead either way. */
+static char *DAT_0023c410;
+ undefined1 DAT_0023cdb0_backing[32768];
+undefined *DAT_00250704;
+static undefined2 DAT_00250714;
+// was DAT_00087960
+static undefined1 g_msg_scroll_panel_state_backing[65536];
+#define g_msg_scroll_panel_state g_msg_scroll_panel_state_backing[0]
+static undefined4 DAT_00250708;
+static undefined4 DAT_0025071c;
+/* Was a lone `undefined` (1-byte) scalar, but used throughout this
+   file as the BASE POINTER of a whole message-scroll-panel-state
+   struct (DAT_00250704 = &g_msg_scroll_panel_state_conv, then read/written at offsets
+   up to at least 0x17 -- same "split symbol" bug class as
+   g_msg_scroll_panel_state's own sibling struct a few lines above, which already
+   got the same fix). Confirmed live via lldb: entering NPC conversation
+   mode (select_msg_scroll_mode_conversation, DAT_00250714==1) points DAT_00250704 at this
+   1-byte variable, so every field read past its own single byte --
+   including the panel's own width (+6) and cursor-x (+8) -- silently
+   reads whatever unrelated byte happens to sit next to it in this
+   build's layout (observed: width=0, cursor-x=24576, both garbage).
+   With width 0, every string "doesn't fit", so message_scroll_print_
+   wrapped's -> msg_scroll_draw_wrapped_span -> msg_scroll_wrap_split_line
+   word-wrap chain always takes the "no space found" fallback, which
+   destructively NULs out its own working copy of the text while
+   hunting for a split point that can never satisfy a 0-wide line,
+   ultimately drawing nothing real -- this is why Bragit's dialogue
+   never appeared in the scroll panel. Widened to match g_msg_scroll_panel_state's
+   own oversized-safety convention, AND seeded with the real 28-byte
+   (0x1c) struct dumped straight from the original binary at 0x87978
+   (Ghidra headless, mem.getBytes) -- unlike g_msg_scroll_panel_state,
+   which gets its real geometry written at runtime by msg_scroll_panel_init,
+   nothing in this file ever calls that for the conversation-mode
+   struct, so its ONLY source of real values is this original .data
+   (confirmed real: struct ends exactly at 0x87994, the very next
+   symbol, s__MORE__00087994). Kept byte-typed rather than converted to
+   a real C struct, matching the health/mana flask fix's own precedent
+   (see compass-hud-position-fix's memory) -- every call site already
+   does its own byte-offset pointer arithmetic against this base. */
+// was DAT_00087978
+static undefined1 g_msg_scroll_panel_state_conv_backing[65536] = {
+  0x34,0x00,0x84,0x00,0x38,0x00,0xdb,0x00,0x3b,0x00,0x36,0x00,0x3b,0x00,0x36,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x2e,0x00,0x01,0x00,0x00,0x00,
+};
+#define g_msg_scroll_panel_state_conv g_msg_scroll_panel_state_conv_backing[0]
+static short DAT_00250724;
+static short DAT_00250728;
+static short DAT_00250710;
+static char s__MORE__00087994[] = "[MORE]";
+static undefined4 DAT_00250720;
+static short DAT_0025070c;
+/* Was a bare 1-byte `undefined` scalar -- FUN_0008090c's yes/no dialog
+   takes its address and passes it to message_scroll_print_wrapped, so it
+   needs to be a real string. Real bytes confirmed via a Ghidra memory
+   dump of the original binary at 0x8799c: "No". Same bug class as the
+   save-slot label fix earlier this session (Ghidra typed it as a scalar
+   instead of generating a garbled placeholder string). */
+// was DAT_0008799c
+static char s_No_0008799c[] = "No";
+/* Same fix as s_No_0008799c above: real bytes at 0x879a0 are "Yes". */
+// was DAT_000879a0
+static char s_Yes_000879a0[] = "Yes";
+/* Reused-global-holding-a-real-string pattern (see the s_scroll_newline_0008522c
+   comment far above): scroll_text_entry_prompt's ESC-cancel path prints
+   `&s_dash_000879a4` with no write beforehand. Real bytes at 0x879a4: "-". */
+// was DAT_000879a4
+static undefined s_dash_000879a4_backing[8192] = "-";
+#define s_dash_000879a4 s_dash_000879a4_backing[0]
+/* Same pattern: scroll_text_entry_prompt defaults its prompt-before-the-input-field
+   text to `&s_scroll_prompt_arrow_000879a8` whenever the caller passes a NULL label (the
+   save-name-entry call site does exactly this) -- real bytes at 0x879a8
+   are ">" , the leading caret shown before the text cursor. Left zero
+   (empty string) by this backing array's C default, so that prompt
+   character was silently missing. */
+// was DAT_000879a8
+static undefined s_scroll_prompt_arrow_000879a8_backing[8192] = ">";
+#define s_scroll_prompt_arrow_000879a8 s_scroll_prompt_arrow_000879a8_backing[0]
+
 
 
 
@@ -412,7 +1173,7 @@ short param_1;
     iVar7 = (int)param_1;
     if (iVar7 == -1) {
       if (DAT_000868d8 == 0) {
-        sVar5 = Ordinal_2005(0x12,DAT_00085a6c[1] + 2);
+        sVar5 = ordint_divmod(0x12,DAT_00085a6c[1] + 2).quot;
         iVar7 = (int)sVar5;
         if (getenv("UW_DEBUG_MODEBTN"))
           fprintf(stderr, "[modebtn] resolved iVar7=%d\n", iVar7);
@@ -513,7 +1274,7 @@ short param_1;
     iVar5 = (int)param_1;
     if (iVar5 == -1) {
       if (DAT_000868d8 == 0) {
-        sVar3 = Ordinal_2005(0x12,DAT_00085a6c[1] + 2);
+        sVar3 = ordint_divmod(0x12,DAT_00085a6c[1] + 2).quot;
         iVar5 = (int)sVar3;
         if (5 < iVar5) {
           return;
@@ -593,7 +1354,11 @@ void main_loop_hud_flush()
         _last_c90 = (int)DAT_00201c90;
       }
     }
-    if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0) {
+    /* Bit 0's enter_dungeon_view handler must fade the outgoing screen
+       before drawing the dungeon. Do not overwrite it with this added
+       per-tick redraw before the original transition handler runs. */
+    if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0 &&
+        (DAT_00201c84 & 1) == 0) {
       _did_force_redraw = 1;
       /* Rebuild AND re-rasterise the 3D dungeon view every main-loop
          iteration. An earlier version called only render_dungeon_view()
@@ -613,17 +1378,21 @@ void main_loop_hud_flush()
          -- never actually appeared on screen during ordinary play: its
          only call site turned out to be render_dungeon_frame_timed,
          which nothing in the normal per-tick path was calling.
-         g_force_redraw_no_xp suppresses full_dungeon_redraw's/
-         rebuild_dungeon_view's one unwanted side effect (a per-redraw XP
-         trickle that also happens to crash on a dropped arg) --
-         render_dungeon_frame_timed reaches the same rebuild_dungeon_view,
-         so the guard still applies. render_dungeon_frame_timed does its
-         own dirty_rect_union internally (same rect this hack used to set
-         by hand), so flush_dirty_rect_to_display(1) below still blits it --
-         GX batches these flushes with the final HUD flush. Skipped while
-         an animation owns the view (DAT_00201c90 != 0). Set
-         UW_NO_FORCE_3D_REDRAW to restore the motion-gated behaviour. */
-      g_force_redraw_no_xp = 1;
+         render_dungeon_frame_timed reaches rebuild_dungeon_view, which
+         has its own passive exploration-XP trickle (grant_experience_points,
+         restored once its dropped real argument was recovered from ARM
+         disassembly -- see that function's own comment); no special
+         handling needed for it here, since it only grants XP for tiles
+         whose automap-reveal flag is flipping from unrevealed to
+         revealed for the first time ever (sticky, never un-set), so
+         calling this hack more often than the original cadence can't
+         double-grant for the same exploration. render_dungeon_frame_timed
+         does its own dirty_rect_union internally (same rect this hack
+         used to set by hand), so flush_dirty_rect_to_display(1) below
+         still blits it -- GX batches these flushes with the final HUD
+         flush. Skipped while an animation owns the view (DAT_00201c90
+         != 0). Set UW_NO_FORCE_3D_REDRAW to restore the motion-gated
+         behaviour. */
       render_dungeon_frame_timed();
       /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
          buffer, then paint it over the viewport (see
@@ -632,7 +1401,6 @@ void main_loop_hud_flush()
         if (_pv < 0) _pv = (getenv("UW_DEBUG_PICK_VIEW") != NULL);
         if (_pv) { render_dungeon_view_frame(); uw_debug_blit_pick_buffer(); }
       }
-      g_force_redraw_no_xp = 0;
     }
   }
   if (DAT_00201c84 != 0) {
@@ -666,7 +1434,11 @@ void main_loop_hud_flush()
   }
   { unsigned int _t1 = 0, _t2 = 0;
     if (_dbg_hf) _t1 = read_realtime_clock_units() * 4;
+    /* Input callbacks can run blocking prompt/menu loops. Keep their
+       presentations immediate rather than annotating every such loop. */
+    uw_suspend_present_batch();
     poll_input_bindings(DAT_00085a6c);
+    uw_resume_present_batch();
     if (_dbg_hf) {
       _t2 = read_realtime_clock_units() * 4;
       fprintf(stderr, "[hudsplit] pre_pib_ms=%u pib_ms=%u\n", _t1 - _dbg_hf_t0, _t2 - _t1);
@@ -951,7 +1723,7 @@ void redraw_hud_panels()
 // was FUN_0006cff4 -- generic "set HUD status slot param_1 to
 // param_2" dispatcher: negative param_1 writes a raw byte value
 // directly, 0/1 compute a health/mana fill tier (0-12) from the
-// player object via Ordinal_2005 (see hud_vitals_bar_tick), and other
+// player object via ordint_divmod (see hud_vitals_bar_tick), and other
 // small param_1 values (2,3,4,6,7,8 -- seen at this session's various
 // call sites) drive other HUD indicators (compass heading, action-
 // animation frame, poison flash, etc.) each with their own encoding.
@@ -986,7 +1758,7 @@ LAB_0006d09c:
       (&DAT_0023c118)[iVar1] = 0;
     }
     else {
-      uVar4 = Ordinal_2005(cVar2,(short)param_2 * 0xc);
+      uVar4 = ordint_divmod(cVar2,(short)param_2 * 0xc).quot;
       (&DAT_0023c118)[iVar1] = uVar4;
     }
     if (0xb < (byte)(&DAT_0023c118)[iVar1]) {
@@ -1045,7 +1817,7 @@ LAB_0006d09c:
   if (DAT_0023c12c == 0) {
 joined_r0x0006d150:
     if (uVar5 == 0) {
-      bVar3 = Ordinal_1053();
+      bVar3 = ce_rand();
       param_1 = (bVar3 & 1) + param_1;
     }
   }
@@ -1131,7 +1903,7 @@ void hud_panel_redraw_dispatch()
     bVar8 = true;
   }
   if (((bVar6 ^ bVar2) & 0xc0) != 0) {
-    sVar3 = Ordinal_1053();
+    sVar3 = ce_rand();
     if (sVar3 < 0x666) {
       uVar5 = (int)sVar3 & 1;
       if (*(int *)(&DAT_0023c1f0 + uVar5 * 4) == 0) {
@@ -1139,7 +1911,7 @@ void hud_panel_redraw_dispatch()
         DAT_0023c1d8 = DAT_0023c1d8 | (ushort)(1 << uVar5);
       }
     }
-    sVar3 = Ordinal_1053();
+    sVar3 = ce_rand();
     if (sVar3 < 0x666) {
       uVar5 = (int)sVar3 & 1;
       if (*(int *)(&DAT_0023c1f8 + uVar5 * 4) == 0) {
@@ -1790,7 +2562,7 @@ char *param_1;
      "adjacent stack locals are really one buffer" pattern fixed
      elsewhere this session. They ARE meant to be contiguous: when the
      word-wrap loop below finds no space within a 49-byte chunk,
-     Ordinal_1407 returns NULL and the fallback `puVar4 = local_23`
+     ce_strrchr returns NULL and the fallback `puVar4 = local_23`
      is meant to NUL-terminate right at auStack_54's own end (offset 49)
      -- not a separate, unrelated 3-byte buffer the C compiler is free to
      place anywhere. Without the merge, that terminator write misses
@@ -1834,12 +2606,12 @@ char *param_1;
     DAT_0025071c = 0;
     *g_draw_color_index = *(undefined1 *)(DAT_00250704 + 0x16);
     *DAT_00084298 = 0x2a;
-    uVar3 = Ordinal_1068(param_1);
+    uVar3 = ce_strlen(param_1);
     for (uVar3 = uVar3 & 0xffff; 0x31 < (uVar3 & 0xffff);
         uVar3 = ((short)uVar3 - iVar2) * 0x10000 >> 0x10) {
-      Ordinal_1044(auStack_54,param_1,0x31);
+      ce_memmove(auStack_54,param_1,0x31);
       local_23[0] = 0;
-      puVar4 = (undefined1 *)Ordinal_1407(auStack_54,0x20);
+      puVar4 = (undefined1 *)ce_strrchr(auStack_54,0x20);
       if (puVar4 == (undefined1 *)0x0) {
         puVar4 = local_23;
       }
@@ -1850,7 +2622,7 @@ char *param_1;
       *puVar4 = uVar1;
       param_1 = iVar2 + param_1;
     }
-    Ordinal_1044(auStack_54,param_1,(short)uVar3 + 1);
+    ce_memmove(auStack_54,param_1,(short)uVar3 + 1);
     msg_scroll_split_escape_segments(auStack_54,0);
     DAT_00250720 = read_realtime_clock_units();
     if (DAT_00250708 != 0) {
@@ -1986,7 +2758,7 @@ LAB_0007fa30:
   if (((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
       || (32 < s_wrap_recursion_depth))
   {
-    uVar4 = Ordinal_1068(param_1);
+    uVar4 = ce_strlen(param_1);
     /* Guard against param_1 being an empty string: (uVar4 & 0xffff) - 1
        underflows to 0xffff (index -1), reading/writing one byte before
        the string -- a stack-buffer-underflow confirmed live via
@@ -2041,10 +2813,10 @@ undefined4 param_2;
      table smashing ~10KB of adjacent memory on every palette install,
      since fixed) had already been eliminated, so this is a genuine
      separate edge case, not just a symptom of that corruption. */
-  if (Ordinal_1068(param_1) == 0) {
+  if (ce_strlen(param_1) == 0) {
     return;
   }
-  pcVar3 = (char *)Ordinal_1407(param_1,0x20);
+  pcVar3 = (char *)ce_strrchr(param_1,0x20);
   if (pcVar3 != (char *)0x0) {
     cVar6 = ' ';
     do {
@@ -2052,12 +2824,12 @@ undefined4 param_2;
       sVar2 = measure_text_width(param_1);
       if ((int)*(short *)(DAT_00250704 + 8) + (int)sVar2 < (int)*(short *)(DAT_00250704 + 6))
       goto LAB_0007fc2c;
-      pcVar4 = (char *)Ordinal_1407(param_1,0x20);
+      pcVar4 = (char *)ce_strrchr(param_1,0x20);
       *pcVar3 = ' ';
       pcVar3 = pcVar4;
     } while (pcVar4 != (char *)0x0);
   }
-  iVar5 = Ordinal_1068(param_1);
+  iVar5 = ce_strlen(param_1);
   cVar6 = param_1[iVar5 + -1];
   pcVar3 = param_1 + iVar5 + -2;
   do {
@@ -3107,16 +3879,16 @@ short param_3;
   iVar8 = (int)param_3;
   iVar11 = (int)DAT_0023c144;
   wVar2 = u_dgijjjigd_G__000871e0[iVar8 + 8];
-  sVar3 = Ordinal_2005(100,iVar11 * wVar2);
+  sVar3 = ordint_divmod(100,iVar11 * wVar2).quot;
   sVar1 = DAT_0023c140;
   iVar9 = (int)sVar3;
   iVar10 = (int)DAT_0023c140;
   DAT_0023c13c = sVar3;
-  sVar4 = Ordinal_2005(100,u_dgijjjigd_G__000871e0[iVar8] * iVar10);
-  sVar5 = Ordinal_2005((int)wVar2,100);
+  sVar4 = ordint_divmod(100,u_dgijjjigd_G__000871e0[iVar8] * iVar10).quot;
+  sVar5 = ordint_divmod((int)wVar2,100).quot;
   if (sVar5 == 1) {
     sVar3 = (short)(sVar6 - iVar9);
-    sVar6 = Ordinal_2005(((sVar6 - iVar9) * 0x10000 >> 0x10) + 1,iVar11);
+    sVar6 = ordint_divmod(((sVar6 - iVar9) * 0x10000 >> 0x10) + 1,iVar11).quot;
     sVar6 = sVar6 + -1;
   }
   else {
@@ -3266,7 +4038,7 @@ undefined1 * param_2;
     sVar2 = 0;
   }
   else if (iVar3 < 1) {
-    sVar2 = Ordinal_2005(iVar3 + -1,(int)DAT_0023c140);
+    sVar2 = ordint_divmod(iVar3 + -1,(int)DAT_0023c140).quot;
     iVar6 = 0;
     if (iVar3 < 0) {
       iVar4 = (sVar2 + 1) * 0x10000 >> 0x10;
@@ -3289,12 +4061,12 @@ undefined1 * param_2;
     sVar2 = (DAT_0023c138 - sVar7 * (short)(sVar2 + 1)) + -1;
   }
   else {
-    /* Was `Ordinal_2005(iVar3 + 1)` -- missing its dividend argument.
+    /* Was `ordint_divmod(iVar3 + 1)` -- missing its dividend argument.
        The sibling branch above (iVar3 < 1) makes the exact same call
-       shape fully: `Ordinal_2005(iVar3 + -1,(int)DAT_0023c140)`
+       shape fully: `ordint_divmod(iVar3 + -1,(int)DAT_0023c140).quot`
        (divisor=iVar3+/-1, dividend=DAT_0023c140), so by direct
        symmetry this one is missing `(int)DAT_0023c140` too. Unlike
-       Ordinal_2005's own K&R "leftover register" idiom (safe on the
+       ordint_divmod's own K&R "leftover register" idiom (safe on the
        original ARM ABI, where an unfilled argument register
        predictably still held the caller's last computed value), a
        dropped argument here is NOT safe on this x86-64 recompile --
@@ -3303,7 +4075,7 @@ undefined1 * param_2;
        inner trip count, so garbage here produced an unbounded copy
        loop and a wild param_1/param_2 write -- the intermittent,
        ASLR-flaky crash/heap-corruption in this function. */
-    sVar1 = Ordinal_2005(iVar3 + 1,(int)DAT_0023c140);
+    sVar1 = ordint_divmod(iVar3 + 1,(int)DAT_0023c140).quot;
     iVar6 = 0;
     if (0 < iVar3) {
       do {
@@ -3356,19 +4128,19 @@ undefined1 * param_2;
 undefined4 init_sprite_list_buffers()
 
 {
-  DAT_0023c3e8 = Ordinal_1041(0x514);
+  DAT_0023c3e8 = ce_malloc(0x514);
   if (DAT_0023c3e8 != 0) {
-    Ordinal_1047(DAT_0023c3e8,0,0x514);
+    ce_memset(DAT_0023c3e8,0,0x514);
     DAT_0023c3ec = DAT_0023c3e8 + 0x500;
   }
-  DAT_0023c40c = Ordinal_1041(0x102);
+  DAT_0023c40c = ce_malloc(0x102);
   if (DAT_0023c40c != 0) {
-    Ordinal_1047(DAT_0023c40c,0,0x102);
+    ce_memset(DAT_0023c40c,0,0x102);
     DAT_0023c414 = DAT_0023c40c + 0x100;
   }
-  DAT_0023c3e4 = Ordinal_1041(0x102);
+  DAT_0023c3e4 = ce_malloc(0x102);
   if (DAT_0023c3e4 != 0) {
-    Ordinal_1047(DAT_0023c3e4,0,0x102);
+    ce_memset(DAT_0023c3e4,0,0x102);
     DAT_0023c410 = DAT_0023c40c + 0x100;
   }
   return 0;
@@ -3832,7 +4604,7 @@ undefined4 param_2;
   undefined1 *puVar1;
   undefined4 uVar2;
   
-  while (puVar1 = (undefined1 *)Ordinal_1064(param_1 + 1,0x5c), puVar1 != (undefined1 *)0x0) {
+  while (puVar1 = (undefined1 *)ce_strchr(param_1 + 1,0x5c), puVar1 != (undefined1 *)0x0) {
     *puVar1 = 0;
     if ((puVar1[2] != '\0') || (uVar2 = param_2, puVar1[1] == 'm')) {
       uVar2 = 1;
@@ -3857,12 +4629,12 @@ undefined4 param_2;
 
 {
   char cVar1;
-  char *iVar2;   /* was `int` -- Ordinal_1064 (strchr) returns a real
+  char *iVar2;   /* was `int` -- ce_strchr (strchr) returns a real
                     64-bit pointer; truncating it made `*(char *)(iVar2+1)`
                     a wild deref, e.g. crashing "You see nothing." on a
                     right-click. */
 
-  while ((iVar2 = Ordinal_1064(param_1,10), iVar2 != 0 &&
+  while ((iVar2 = ce_strchr(param_1,10), iVar2 != 0 &&
          (cVar1 = iVar2[1], cVar1 != '\0'))) {
     iVar2[1] = 0;
     msg_scroll_draw_wrapped_span(param_1,1);
@@ -3946,7 +4718,7 @@ int param_1;
 undefined4 scroll_text_entry_prompt(param_1,param_2,param_3,param_4,param_5)
 undefined * param_1;
 char * param_2;
-int param_3;
+intptr_t param_3;
 int param_4;
 short param_5;
 
@@ -3996,10 +4768,11 @@ short param_5;
     pcVar6 = param_2;
     do {
       cVar1 = *pcVar6;
-      pcVar6[(int)(acStack_a1 + (1 - (int)param_2))] = cVar1;
+      /* Preserve Ghidra's relative-copy idiom without truncating pointers. */
+      pcVar6[(intptr_t)(acStack_a1 + 1) - (intptr_t)param_2] = cVar1;
       pcVar6 = pcVar6 + 1;
     } while (cVar1 != '\0');
-    iVar7 = Ordinal_1068(param_2);
+    iVar7 = ce_strlen(param_2);
     uVar13 = iVar7 * -0x10000 >> 0x10;
   }
   sVar5 = (short)uVar13;
@@ -4021,14 +4794,14 @@ short param_5;
       if (1999 < local_a8) {
         set_draw_color(0x2a);
         rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
-        uVar13 = Ordinal_1068(acStack_a1 + 1);
+        uVar13 = ce_strlen(acStack_a1 + 1);
         if ((uint)(int)sVar5 < uVar13) {
           draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
       }
       cursor_show_idle_tick();
       if ((short)uVar8 == 0x1b) {
-        param_3 = param_3 - (int)param_2;
+        param_3 = param_3 - (intptr_t)param_2;
         do {
           cVar1 = *param_2;
           param_2[param_3] = cVar1;
@@ -4048,7 +4821,7 @@ short param_5;
         do {
           pcVar6 = pcVar6 + 1;
           cVar1 = *pcVar6;
-          pcVar6[param_3 - (int)(acStack_a1 + 1)] = cVar1;
+          pcVar6[param_3 - (intptr_t)(acStack_a1 + 1)] = cVar1;
         } while (cVar1 != '\0');
         *(char *)(DAT_00250704 + 8) = (char)iVar7;
         *(char *)(DAT_00250704 + 9) = (char)((uint)iVar7 >> 8);
@@ -4072,7 +4845,7 @@ short param_5;
         set_draw_color(0x2a);
         local_a8 = 0;
         rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
-        uVar9 = Ordinal_1068(acStack_a1 + 1);
+        uVar9 = ce_strlen(acStack_a1 + 1);
         if (uVar11 < uVar9) {
           draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
@@ -4107,12 +4880,12 @@ LAB_0008042c:
         if ((int)uVar11 < 0) {
           uVar13 = (int)(uVar11 * -0x10000) >> 0x10;
         }
-        uVar9 = Ordinal_1068(acStack_a1 + 1);
+        uVar9 = ce_strlen(acStack_a1 + 1);
         uVar11 = (uint)(short)uVar13;
-        if ((uVar11 < uVar9) && (uVar9 = Ordinal_1068(acStack_a1 + 1), uVar11 < uVar9)) {
+        if ((uVar11 < uVar9) && (uVar9 = ce_strlen(acStack_a1 + 1), uVar11 < uVar9)) {
           do {
             acStack_a1[uVar11 + 1] = acStack_a1[uVar11 + 2];
-            uVar9 = Ordinal_1068(acStack_a1 + 1);
+            uVar9 = ce_strlen(acStack_a1 + 1);
             uVar11 = (uint)(short)((uVar11 + 1) * 0x10000 >> 0x10);
           } while (uVar11 < uVar9);
         }
@@ -4130,11 +4903,11 @@ LAB_0008042c:
         }
         uVar11 = (uint)(short)uVar13;
         if ((int)uVar11 < 1) goto LAB_0008062c;
-        uVar9 = Ordinal_1068(acStack_a1 + 1);
+        uVar9 = ce_strlen(acStack_a1 + 1);
         if (uVar11 <= uVar9) {
           do {
             acStack_a1[uVar11] = acStack_a1[uVar11 + 1];
-            uVar9 = Ordinal_1068(acStack_a1 + 1);
+            uVar9 = ce_strlen(acStack_a1 + 1);
             uVar11 = (uint)(short)((uVar11 + 1) * 0x10000 >> 0x10);
           } while (uVar11 <= uVar9);
         }
@@ -4157,7 +4930,7 @@ LAB_000805f0:
         if ((int)uVar11 < 0) {
           uVar13 = (int)(uVar11 * -0x10000) >> 0x10;
         }
-        uVar11 = Ordinal_1068(acStack_a1 + 1);
+        uVar11 = ce_strlen(acStack_a1 + 1);
         sVar5 = (short)uVar13;
         if ((uint)(int)sVar5 < uVar11) {
 LAB_000805bc:
@@ -4167,7 +4940,7 @@ LAB_000805bc:
       }
       else if (iVar12 == 0x165) {
 LAB_0008061c:
-        uVar13 = Ordinal_1068(acStack_a1 + 1);
+        uVar13 = ce_strlen(acStack_a1 + 1);
         uVar13 = uVar13 & 0xffff;
       }
       else {
@@ -4184,11 +4957,11 @@ LAB_000804d0:
             acStack_a1[1] = 0;
             uVar13 = 0;
           }
-          if (((((iVar12 != -1) && (iVar10 = Ordinal_1417(iVar12,0x157), iVar10 != 0)) &&
+          if (((((iVar12 != -1) && (iVar10 = _isctype(iVar12,0x157), iVar10 != 0)) &&
                (sVar5 = measure_text_width(acStack_a1 + 1), sVar5 < (short)(sVar3 + -0x14 + sVar2))) &&
-              (uVar11 = Ordinal_1068(acStack_a1 + 1), uVar11 < (uint)(int)param_5)) &&
-             ((param_4 != 0 || (iVar12 = Ordinal_1417(iVar12,4), iVar12 != 0)))) {
-            sVar5 = Ordinal_1068(acStack_a1 + 1);
+              (uVar11 = ce_strlen(acStack_a1 + 1), uVar11 < (uint)(int)param_5)) &&
+             ((param_4 != 0 || (iVar12 = _isctype(iVar12,4), iVar12 != 0)))) {
+            sVar5 = ce_strlen(acStack_a1 + 1);
             iVar12 = (int)sVar5;
             acStack_a1[iVar12 + 2] = '\0';
             sVar5 = (short)uVar13;
@@ -4298,10 +5071,19 @@ LAB_00080918:
 // click region (registered below in register_stats_panel_click_regions
 // at (0x7a,0x97,0x98,0x88)). Prints a multi-part descriptive "scroll"
 // paragraph about the player built from stat bytes at DAT_00086df8+0x39
-// (scaled via Ordinal_2005 into a 0-5 clamped adjective index) and
-// +0x3a, plus a percentile derived from Ordinal_2008 against table
-// DAT_001c2000 and field +0xce -- reads as the character sheet's
-// descriptive personality/background text.
+// (scaled via ordint_divmod into a 0-5 clamped adjective index) and
+// +0x3a, plus a percentile derived from orduint_divmod(0x1c2000, field
+// +0xce) -- that first argument is NOT the address of a global despite
+// how it first decompiled (`&DAT_001c2000`): real ARM disassembly at
+// this call site (and render_endgame_character_stats' identical one)
+// shows `mov r0,#0x1c0000` / `orr r0,r0,#0x2000`, ARM's standard two-
+// instruction idiom for building a 32-bit immediate that doesn't fit
+// one rotated-immediate encoding. Ghidra mistook the resulting literal
+// 0x1c2000 for "the address of whatever's mapped there" purely because
+// it falls inside .data; confirmed via getReferencesTo -- both of this
+// constant's only two "references" are PARAM-only (used as a value),
+// never a READ or WRITE, so nothing ever treats it as real storage.
+// Plain divisor constant, not a global.
 void print_character_description_scroll()
 
 {
@@ -4312,9 +5094,9 @@ void print_character_description_scroll()
   short extraout_r1;
   
   message_scroll_print_wrapped(&s_scroll_newline_0008522c);
-  sVar1 = Ordinal_2005(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
+  sVar1 = ordint_divmod(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39)).quot;
   print_scroll_message_concat(0x40,sVar1 + 0x68,0x67);
-  sVar1 = Ordinal_2005(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
+  sVar1 = ordint_divmod(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a)).quot;
   iVar3 = (int)sVar1;
   if (5 < iVar3) {
     iVar3 = 5;
@@ -4322,8 +5104,8 @@ void print_character_description_scroll()
   print_scroll_message_by_id(0x76 - iVar3);
   message_scroll_print_wrapped(&DAT_00084f20);
   print_scroll_message_concat(0x41,DAT_00201b68 + 0x19a,0x42);
-  sVar1 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
-  sVar2 = Ordinal_2005(0xc,(int)sVar1);
+  sVar1 = orduint_divmod(0x1c2000,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
+  sVar2 = ordint_divmod(0xc,(int)sVar1).quot;
   uw_ord2005_rem_111 = ((int)((int)sVar1)) % (0xc);
   if (sVar2 < 0x65) {
     print_scroll_message_concat(0x43,sVar2 + 0x19b,0x44);
@@ -4373,7 +5155,7 @@ void show_flask_value_tooltip()
         itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
         itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
         if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
-          sVar2 = Ordinal_2005(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
+          sVar2 = ordint_divmod(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1).quot;
           print_scroll_message_concat(0x5b,sVar2 + 0x54,0x5c);
         }
       }
@@ -4381,10 +5163,10 @@ void show_flask_value_tooltip()
         itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_94,10);
         itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_a4,10);
       }
-      Ordinal_1063(local_84,auStack_94);
-      Ordinal_1063(local_84,s_out_of_000858dc);
-      Ordinal_1063(local_84,auStack_a4);
-      Ordinal_1063(local_84,&s_scroll_newline_0008522c);
+      ce_strcat(local_84,auStack_94);
+      ce_strcat(local_84,s_out_of_000858dc);
+      ce_strcat(local_84,auStack_a4);
+      ce_strcat(local_84,&s_scroll_newline_0008522c);
       message_scroll_print_wrapped(local_84);
       wait_for_click_release(1);
     }
@@ -4571,8 +5353,8 @@ void handle_rune_bag_click()
       reset_ready_rune_slots();
     }
     else {
-      sVar4 = Ordinal_2005(0xf,DAT_00085a6c[1] + -0x12);
-      sVar5 = Ordinal_2005(0x12,*psVar3 + -3);
+      sVar4 = ordint_divmod(0xf,DAT_00085a6c[1] + -0x12).quot;
+      sVar5 = ordint_divmod(0x12,*psVar3 + -3).quot;
       iVar6 = (5 - sVar4) * 4 + (int)sVar5;
       if ((*(byte *)(DAT_00086df8 + (iVar6 * 0x10000 >> 0x13) + 0x44) >>
            (7 - (iVar6 * 0x10000 >> 0x10 & 7U) & 0xff) & 1) != 0) {
@@ -4687,7 +5469,7 @@ short param_1;
   int iVar1;
 
   if (g_cursor_holding_state == 0) {
-    if (((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) || (param_1 != 0)) {
+    if (((*(ushort *)((byte *)DAT_00085a6c + 6) & 2) == 0) || (param_1 != 0)) {
       DAT_002028d0 = 1;
       if (*(uint *)(DAT_00086df8 + 0xce) < (uint)DAT_002028d4 + DAT_002028d8) {
         play_sound_effect_with_pan(0x15,0x40,0);
@@ -4706,7 +5488,8 @@ short param_1;
           print_not_a_spell_message();
         }
         else {
-          cast_spell_from_rune_combo();
+          /* ARM 0x44e6c passes the matched table index in r0. */
+          cast_spell_from_rune_combo(iVar1);
         }
       }
     }
@@ -4753,7 +5536,7 @@ uint param_1;
   byte bVar6;
   byte bVar7;
   
-  cVar2 = Ordinal_2005(6,param_1 & 0xff);
+  cVar2 = ordint_divmod(6,param_1 & 0xff).quot;
   bVar6 = cVar2 + 1;
   iVar5 = (param_1 & 0xff) * 4;
   bVar7 = (byte)(&DAT_00087530)[iVar5] >> 3;
@@ -4939,7 +5722,7 @@ int param_1;
     DAT_00085c50 = (short)((uint)iVar4 >> 0x10);
     bVar5 = param_1 != 0;
     *g_draw_color_index = 0xe0;
-    uVar3 = Ordinal_2005(10,iVar1);
+    uVar3 = ordint_divmod(10,iVar1).quot;
     itoa_radix(uVar3,auStack_24,10);
     sVar2 = measure_text_width(auStack_24);
     iVar4 = (int)sVar2;
@@ -4984,7 +5767,10 @@ short param_1;
   bool bVar5;
   short local_c;
   short local_a;
-  
+
+  /* This loop waits inside an input handler; show its redraws immediately
+     instead of deferring them until the surrounding gameplay tick ends. */
+  uw_begin_modal_present();
   DAT_000868d8 = 1;
   if (param_1 != 0) {
     decrement_cursor_hide_depth();
@@ -5058,6 +5844,7 @@ LAB_000565a4:
     }
 LAB_000565a8:
     if (DAT_002046f8 != 0) {
+      uw_end_modal_present();
       return;
     }
   } while( true );
@@ -5602,7 +6389,7 @@ short param_2;
 {
   short sVar1;
 
-  sVar1 = Ordinal_2005(0xf,(int)param_2);
+  sVar1 = ordint_divmod(0xf,(int)param_2).quot;
   dispatch_pause_menu_click((int)sVar1);
   return;
 }
@@ -5850,18 +6637,15 @@ int erase_cursor_icon()
 
 
 
-/* Gates the 4 "always show the desktop mouse cursor" deviations below
-   (all originally gated shut on a real Pocket PC touchscreen, where a
-   persistent cursor sprite makes no sense). Defaults OFF: drawing the
-   cursor every idle frame forces a display flush every frame too (see
-   draw_idle_mouse_cursor's own LAB_00058674 tail), which measurably slowed the
-   game down when this was unconditionally on. Opt in with
-   UW_ALWAYS_SHOW_CURSOR=1 until that flush cost is addressed. */
+/* Desktop deviation: opt in to a persistent cursor with
+   UW_ALWAYS_SHOW_CURSOR=1. Keep the original touchscreen visibility
+   gates by default while the desktop cursor still has known bugs. */
 int uw_always_show_cursor(void)
 {
   static int cached = -1;
   if (cached < 0) {
-    cached = getenv("UW_ALWAYS_SHOW_CURSOR") != NULL;
+    const char *setting = getenv("UW_ALWAYS_SHOW_CURSOR");
+    cached = setting != NULL && strcmp(setting, "1") == 0;
   }
   return cached;
 }
@@ -6253,7 +7037,7 @@ short param_2;
     iVar1 = iVar1 + 0xf;
   }
   sVar2 = (short)(iVar1 >> 4);
-  iVar1 = Ordinal_2005(0x14,param_2 + -200);
+  iVar1 = ordint_divmod(0x14,param_2 + -200).quot;
   if (0 < iVar1) {
     sVar2 = (short)iVar1 * 0x14 + sVar2;
   }
@@ -6534,14 +7318,22 @@ void handle_mouse_button_message(param_1)
 short param_1;
 
 {
+  short sVar1;
+
   DAT_0020485c = (int)param_1;
   update_mouse_state();
   DAT_0020485c = 0;
-  if (DAT_0023c63c == 0) {
+  /* Desktop input adaptation: the original checks the touch-held flag
+     DAT_0023c63c here. SDL right-button pickup instead uses DAT_002506ab;
+     checking only touch marks the drag released on a dungeon redraw.
+     Use the existing combined button reader for both the release check
+     and the cached button code, preserving the original wait protocol. */
+  sVar1 = poll_mouse_button_flags();
+  if (sVar1 == 0) {
     DAT_0008696e = 0;
   }
   else if (DAT_00086968 == -1) {
-    DAT_00086968 = DAT_0023c63c;
+    DAT_00086968 = sVar1;
     DAT_0008696a = g_mouse_x;
     DAT_0008696c = g_mouse_y;
   }

@@ -9,6 +9,167 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00085908 DAT_00085908_backing[0]
+#define DAT_0023c4c0 DAT_0023c4c0_backing[0]
+#define DAT_0023c5b8 DAT_0023c5b8_backing[0]
+#define DAT_0024ac18 DAT_0024ac18_backing[0]
+short DAT_0010061c;
+short DAT_00100608;
+ undefined1 DAT_001007d0_backing[6144];
+ undefined DAT_00084f20_backing[8192];
+ushort DAT_00101414;
+char *DAT_00101904;
+undefined4 DAT_00101560;
+undefined4 DAT_001013fc;
+undefined4 DAT_0010191c;
+static undefined4 DAT_00101440;
+static byte DAT_00101450;
+static byte DAT_00101730;
+static undefined DAT_000853c4_backing[256];
+#define DAT_000853c4 DAT_000853c4_backing[0]
+static undefined DAT_000853cc_backing[256];
+#define DAT_000853cc DAT_000853cc_backing[0]
+char *DAT_00101438;
+static undefined1 DAT_0010142c;
+/* NPC waypoints are contiguous 7-byte records at the original 0x101740.
+   Alias the adjacent field symbols into this array so recording later
+   waypoints cannot overwrite unrelated globals or 64-bit AI pointers. */
+static char DAT_00101740_backing[8192];
+#define DAT_00101740 DAT_00101740_backing[0]
+#define DAT_00101741 DAT_00101740_backing[1]
+#define DAT_00101743 DAT_00101740_backing[3]
+#define DAT_00101744 (*(undefined2 *)&DAT_00101740_backing[4])
+#define DAT_00101746 DAT_00101740_backing[6]
+#define DAT_00101747 DAT_00101740_backing[7]
+#define DAT_00101748 DAT_00101740_backing[8]
+static undefined1 DAT_000853b0_backing[256];
+#define DAT_000853b0 DAT_000853b0_backing[0]
+static undefined1 DAT_000853b1_backing[256];
+#define DAT_000853b1 DAT_000853b1_backing[0]
+static undefined1 DAT_00101460;
+static undefined1 DAT_001014e0_backing[256];
+#define DAT_001014e0 DAT_001014e0_backing[0]
+static undefined1 DAT_001014e1_backing[256];
+#define DAT_001014e1 DAT_001014e1_backing[0]
+static undefined1 DAT_0023cf08_backing[40960];
+#define DAT_0023cf08 DAT_0023cf08_backing[0]
+static undefined DAT_0023cf09_backing[256];
+#define DAT_0023cf09 DAT_0023cf09_backing[0]
+static undefined DAT_0023cf0a_backing[256];
+#define DAT_0023cf0a DAT_0023cf0a_backing[0]
+static undefined DAT_0023cf0b_backing[256];
+#define DAT_0023cf0b DAT_0023cf0b_backing[0]
+static undefined DAT_0023cf0c_backing[256];
+#define DAT_0023cf0c DAT_0023cf0c_backing[0]
+#define DAT_00101742 DAT_00101740_backing[2]
+static undefined4 DAT_00101728_backing[256];
+#define DAT_00101728 DAT_00101728_backing[0]
+/* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
+   npc_ai_tick/setup_npc_ai_tick_state store here (&DAT_002048c0/002048f0/00204950,
+   one of a 3-way "which per-class scratch buffer" choice) -- same class
+   of bug as npc_ai_tick's own iVar5 fix and get_object_record_by_slot_index's header
+   comment. Confirmed live via lldb: DAT_0010172c read 0xb6c724 instead
+   of the real 0x100b6c724 (upper word dropped), so the very next
+   build_object_placement_snapshot(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
+   first time an NPC's per-tick AI (npc_ai_tick) got this far -- which
+   never happened before this session's other fixes let that code run
+   at all. Note: the tile_pair_los_blocked call sites a few thousand
+   lines below used to read raw bytes at `&DAT_0010172c + small offset`
+   as part of a split-symbol cluster spanning several separately-named
+   globals that are really one real waypoint array (DAT_00101740,
+   stride 7) -- now fixed to index that array directly instead of
+   relying on undefined/compiler-chosen adjacent-global layout. */
+void *DAT_0010172c;
+#define DAT_00101749 DAT_00101740_backing[9]
+static ushort DAT_000853b8;
+#define DAT_0010174a DAT_00101740_backing[10]
+ushort DAT_0010141c;
+ushort DAT_00101910;
+static undefined4 DAT_00101920;
+static undefined4 DAT_00101914;
+static undefined DAT_00101568_backing[8192];
+#define DAT_00101568 DAT_00101568_backing[0]
+static undefined DAT_00101569_backing[256];
+#define DAT_00101569 DAT_00101569_backing[0]
+undefined2 DAT_00101418;
+undefined2 DAT_00101908;
+static undefined1 DAT_00101738;
+static byte DAT_00101458;
+static byte DAT_001018fc;
+static byte DAT_00101434;
+/* Was a bare 1-byte `undefined` -- same split-symbol class as
+   DAT_00204980/990/9b0's own backing-array fixes just above: build_object_placement_snapshot
+   (called with this as its param_2 "object state" out-buffer, via
+   DAT_0010172c) writes fields up to offset 0x28 into it, a massive
+   out-of-bounds write past a 1-byte scalar. Confirmed live crashing
+   (EXC_BAD_ACCESS writing param_2[0x23]) the first time an NPC actually
+   got far enough through its per-tick AI (npc_ai_tick) to reach this
+   call -- which never happened before g_npc_tick_enabled/npc_ai_tick's other
+   fixes let that code run at all. Oversized generously like its
+   siblings rather than tightly to 0x29 bytes, in case another
+   not-yet-exercised caller writes further into the same real struct. */
+static undefined1 DAT_002048f0_backing[65536];
+#define DAT_002048f0 DAT_002048f0_backing[0]
+static undefined1 DAT_00204950_backing[65536];
+#define DAT_00204950 DAT_00204950_backing[0]
+undefined4 DAT_00101944;
+static undefined DAT_000853d8_backing[256];
+#define DAT_000853d8 DAT_000853d8_backing[0]
+short DAT_00101938;
+short DAT_0010193c;
+byte DAT_0010192c;
+byte DAT_00101930;
+undefined1 DAT_00101934;
+char DAT_0010194c;
+char DAT_000853d0;
+int DAT_00101940;
+char DAT_00101928;
+static char DAT_00101948;
+static undefined4 DAT_00101950;
+static byte DAT_0010195c;
+static ushort *DAT_00101958;
+ushort DAT_0024fa18;
+static char DAT_00085910;
+static char DAT_00085911;
+static char DAT_00085918;
+static char DAT_00085919;
+static undefined DAT_00085908_backing[8192];
+static char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
+undefined1 DAT_0023c460_backing[32768];
+/* DAT_0023c4c0/DAT_0023c5b8/DAT_0024ac18 (a resource-slot status table,
+   load_critter_association_tables) were lone-byte scalars indexed up to 0x80 (128) --
+   confirmed overflowing into the unrelated DAT_00248410 (a malloc'd
+   buffer pointer) via an lldb watchpoint, corrupting it and causing a
+   later crash in seed_conversation_globals_for_new_game far away from this actual bad write.
+   Widened with the usual backing-buffer pattern. Macro defines for all
+   four backing arrays now live in uw.h, since load_critter_association_tables
+   (their only reader) moved into src/ai.c. */
+static undefined1 DAT_0023c4c0_backing[256];
+static undefined1 DAT_0023c5b8_backing[256];
+static undefined1 DAT_0024ac18_backing[256];
+/* Was "named" with no surrounding spaces -- build_creature_look_text (creature look
+   text) appends it directly between the description and the proper name
+   with no separator of its own, so a named creature's look text ran
+   the words together: "You see an mellow outcastnamedBragit" instead of
+   "You see a mellow outcast named Bragit". */
+static char s_named_00085d18[] = " named ";
+/* Original binary 0x868c0..0x868d7 maps locomotion bit values to
+   the compact mobile-record state (indexed by snapshot byte 0x28). */
+static undefined DAT_000868c0_backing[24] = {
+  0,0,1,0,2,0,0,0,3,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0
+};
+#define DAT_000868c0 DAT_000868c0_backing[0]
+/* was `int` -- truncated pointer to a 64-bit address on assignment in
+   spawn_creature_death_loot (&DAT_001007d0 + index*0x30), causing spawn_creature_treasure_drop to
+   dereference a garbage address (crash in demo_critter_orbit_cardinal.txt,
+   EXC_BAD_ACCESS at uw.c:70173). Sibling DAT_00101404, assigned via the
+   identical pattern, is correctly `char *`. */
+// was DAT_0024cfc4
+static char *g_despawn_creature_record;
+/* Treasure values are fields of the loaded COMOBJ table (type 0xa0,
+   offset 5), not an independent, never-loaded array. */
+#define DAT_002034b5 DAT_00202c90_backing[0x825] /* item 0xa0 value, loaded COMOBJ table */
+
 
 
 
@@ -18,7 +179,7 @@
 // objects (thrown/dropped items, debris, ...) -- tick_mobile_objects'
 // sibling dispatch to npc_ai_tick for class-0x40 (NPC) objects. Advances
 // the object's position (sync_object_tile_position) and its own tick-phase field
-// directly (no Ordinal_2005 dependency, unlike npc_ai_tick's own
+// directly (no ordint_divmod dependency, unlike npc_ai_tick's own
 // now-fixed phase-advance code).
 int mobile_object_tick()
 
@@ -113,7 +274,7 @@ undefined1 param_7;
   local_54 = &DAT_001014e0;
   local_4c = &DAT_00101460;
   local_5b = 0;
-  Ordinal_1047(&DAT_0023cf08,0,0x5000);
+  ce_memset(&DAT_0023cf08,0,0x5000);
   cVar1 = (char)param_1;
   uVar11 = (uint)cVar1;
   local_48 = (uint)param_4;
@@ -409,7 +570,7 @@ LAB_0002e6fc:
       }
       else {
         *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
-        uVar7 = Ordinal_1053();
+        uVar7 = ce_rand();
         uw_ord2005_rem_17 = ((int)(uVar7)) % (4);
         if ((uw_ord2005_rem_17 != 0) && ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0)) {
           npc_arrival_interaction(DAT_00101904);
@@ -479,7 +640,7 @@ LAB_0002ed50:
     goto LAB_0002ed50;
   }
   if (((bVar9 & 0x20) == 0) && ((bVar9 & 0x40) != 0)) {
-    uVar7 = Ordinal_1053();
+    uVar7 = ce_rand();
     uw_ord2005_rem_19 = ((int)(uVar7)) % (8);
     if (uw_ord2005_rem_19 != 0) goto LAB_0002ee74;
     bVar9 = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
@@ -585,11 +746,11 @@ undefined4 npc_ai_tick()
          100 < (iVar5 * iVar5 + iVar6 * iVar6) * 0x10000 >> 0x10)) &&
      ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 3)) {
     bVar3 = (byte)DAT_0010190c[5];
-    /* Was `Ordinal_2005(0x10,(bVar3&0xf)+8); bVar8 = extraout_r1;` -- the
+    /* Was `ordint_divmod(0x10,(bVar3&0xf)+8); bVar8 = extraout_r1;` -- the
        classic "call idivmod, then read its remainder back through the
        extraout_r1 register-leftover fiction" pattern already fixed
        elsewhere this session (itoa_radix, draw_chargen_field_options's sVar_rem):
-       this port's Ordinal_2005 (ordinal_stubs.c) only returns the
+       this port's ordint_divmod (ordinal_stubs.c) only returns the
        quotient through its real C return value and never touches
        anything a recompiled build's own extraout_r1 local could
        legitimately read, so every read of it here was uninitialized/
@@ -784,23 +945,23 @@ LAB_000337fc:
     }
     uVar9 = (uint)*(ushort *)((char *)DAT_0010190c + 0xb);
     if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
-    uVar7 = Ordinal_1053();
+    uVar7 = ce_rand();
     puVar11 = DAT_0010190c;
     bVar3 = *(byte *)((char *)DAT_0010190c + 0x15);
     uVar1 = (&DAT_000853d8)[(uint)(byte)((byte)DAT_0010190c[8] >> 4) * 2];
-    /* Was `Ordinal_2005(9,uVar7,*(byte*)(DAT_0010190c+0xf),Ordinal_2005_exref,
+    /* Was `ordint_divmod(9,uVar7,*(byte*)(DAT_0010190c+0xf),ordint_divmod_exref,
        DAT_00101404[0xf]); resolve_npc_melee_attack(puVar11,(int)extraout_r1_01,uVar1,
        (bVar3&0x3f)-1);` -- badly garbled. Real disassembly (0x335b8-0x33628)
        shows this is genuinely TWO separate things the decompiler folded
-       together: a plain `Ordinal_2005(9,uVar7)` (same fabricated-remainder
+       together: a plain `ordint_divmod(9,uVar7).quot` (same fabricated-remainder
        bug fixed throughout this session -- computed the remainder
        directly), and resolve_npc_melee_attack's own 5th argument (it takes 5 params,
        confirmed at its definition; this call was silently dropping the
        last one) -- DAT_00101404[0xf], stashed on the stack by the real
-       ARM code before the Ordinal_2005 call and read back after it, which
-       the decompiler instead spliced into Ordinal_2005's own argument
+       ARM code before the ordint_divmod call and read back after it, which
+       the decompiler instead spliced into ordint_divmod's own argument
        list as three bogus extra params (including the nonsensical
-       Ordinal_2005_exref placeholder). Confirmed live: this whole branch
+       ordint_divmod_exref placeholder). Confirmed live: this whole branch
        (an NPC's "pick a new wander/patrol target" state) is exactly what
        the QA-reported "NPC teleports away on its first tick" bug was
        tracing back to -- resolve_npc_melee_attack computes DAT_00100608/DAT_0010061c
@@ -820,8 +981,8 @@ LAB_000337fc:
 LAB_00033834:
   puVar11 = DAT_0010190c;
   bVar3 = (byte)DAT_0010190c[5];
-  /* Was `Ordinal_2005(...); bVar8 = extraout_r1_00;` -- same fabricated-
-     remainder bug as the other Ordinal_2005 call above in this function,
+  /* Was `ordint_divmod(...); bVar8 = extraout_r1_00;` -- same fabricated-
+     remainder bug as the other ordint_divmod call above in this function,
      see that comment. Compute the remainder directly instead. */
   bVar8 = (((byte)DAT_0010190c[10] & 7) + (bVar3 & 0xf)) % 0x10;
 LAB_00033860:
@@ -888,7 +1049,7 @@ LAB_00034a98:
 void build_creature_look_text(param_1,param_2)
 ushort * param_1;
 char *param_2;   /* was undefined4 -- the caller's stack description buffer
-                    (acStack_7c); Ordinal_1063/message_scroll_print_wrapped
+                    (acStack_7c); ce_strcat/message_scroll_print_wrapped
                     write through it, so truncating it crashed a right-click
                     "look" at a creature (the "vitality is N out of N" path). */
 
@@ -903,7 +1064,7 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
   /* format_object_display_name's real return type is `undefined1 *` -- was captured
      into `uVar7` (undefined4/int), which also does double duty as a
      plain 0/1 flag a few lines down. On this 64-bit host that truncated
-     the real pointer to 32 bits before handing it to Ordinal_1063
+     the real pointer to 32 bits before handing it to ce_strcat
      (strcat), so appending a creature's description/name here crashed
      inside the fortified strcat on a wild source pointer -- reproduced
      via a real right-click "look" at a named creature (repro needed
@@ -939,36 +1100,36 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
       else {
         puVar8 = &DAT_00085248;
       }
-      Ordinal_1063(param_2,puVar8);
-      Ordinal_1063(param_2,pcVar4);
-      Ordinal_1063(param_2,&DAT_00085240);
+      ce_strcat(param_2,puVar8);
+      ce_strcat(param_2,pcVar4);
+      ce_strcat(param_2,&DAT_00085240);
     }
-    if ((pcVar5 == (char *)0x0) || (iVar6 = Ordinal_1417((int)*pcVar5,1), iVar6 != 0)) {
+    if ((pcVar5 == (char *)0x0) || (iVar6 = _isctype((int)*pcVar5,1), iVar6 != 0)) {
       pcVar_desc = (char *)format_object_display_name(pcVar3,pcVar4 == (char *)0x0,0);
       if (pcVar_desc != (char *)0x0) {
-        Ordinal_1063(param_2,pcVar_desc);
+        ce_strcat(param_2,pcVar_desc);
       }
     }
   }
   if (pcVar5 != (char *)0x0) {
     uVar7 = 1;
     if (pcVar3 != (char *)0x0) {
-      iVar6 = Ordinal_1417((int)*pcVar5,1);
+      iVar6 = _isctype((int)*pcVar5,1);
       if (iVar6 != 0) {
-        Ordinal_1063(param_2,s_named_00085d18);
+        ce_strcat(param_2,s_named_00085d18);
       }
       uVar7 = 0;
     }
     pcVar_desc = (char *)format_object_display_name(pcVar5,uVar7,0);
     if (pcVar_desc != (char *)0x0) {
-      Ordinal_1063(param_2,pcVar_desc);
+      ce_strcat(param_2,pcVar_desc);
     }
   }
-  Ordinal_1063(param_2,&DAT_00084f20);
+  ce_strcat(param_2,&DAT_00084f20);
   /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
      fix -- back-to-back Looks at a creature otherwise all land on the
      same visible scroll line. */
-  Ordinal_1063(param_2,"\n");
+  ce_strcat(param_2,"\n");
   message_scroll_print_wrapped(param_2);
   return;
 }
@@ -1120,8 +1281,8 @@ ushort * param_2;
   uVar1 = *(ushort *)((char *)param_2 + 0x29);
   if (0x100 < uVar1) {
     if ((*param_1 & 0x1c0) != 0x40) {
-      uVar2 = Ordinal_2005(0x32,(short)(*(ushort *)(&DAT_00202c91 + (*param_1 & 0x1ff) * 0xd) >> 4)
-                                + -600);
+      uVar2 = ordint_divmod(0x32,(short)(*(ushort *)(&DAT_00202c91 + (*param_1 & 0x1ff) * 0xd) >> 4)
+                                + -600).quot;
       play_sound_effect_at_object(0xf,param_1,uVar2);
     }
     apply_typed_damage_to_object(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
@@ -1135,7 +1296,7 @@ ushort * param_2;
     *(char *)((char *)param_1 + 5) = (char)((uVar1 & 0xffc0) >> 8);
   }
   if ((param_2[0x14] & 4) != 0) {
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     uw_ord2005_rem_118 = ((int)(uVar6)) % (5);
     if (uw_ord2005_rem_118 == 0) {
       apply_typed_damage_to_object(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,1,8);
@@ -1194,7 +1355,7 @@ ushort * param_2;
       sVar4 = 0x1f;
     }
     *(byte *)(param_1 + 10) = (byte)((int)sVar4 << 3) | (byte)param_1[10] & 7;
-    bVar3 = Ordinal_2005(0x2f,(int)(short)param_2[10]);
+    bVar3 = ordint_divmod(0x2f,(int)(short)param_2[10]).quot;
     *(byte *)((char *)param_1 + 0x13) = (bVar3 ^ bVar9) & 0x7f ^ bVar9;
     *(byte *)(param_1 + 5) =
          (byte)param_1[5] & 0x8f | ((&DAT_000868c0)[(byte)param_2[0x14]] & 7) << 4;
@@ -1230,12 +1391,9 @@ LAB_0005559c:
 // it into the tile list in param_1's place. Unconditionally frees
 // param_1 via discard_misplaced_object regardless of outcome -- callers
 // must always propagate the return value (including NULL on decay),
-// never keep using their own stale param_1 pointer. Already used by this
-// branch's own drop_held_object_near_player/spawn_object_near_player fix
-// (an explicit synchronous call, since this port resolves a toss
-// instantly with no per-tick flight simulation); now also reached
-// organically via sync_object_tile_position as part of ordinary mobile-
-// object ticking.
+// never keep using their own stale param_1 pointer. Called by
+// sync_object_tile_position when ordinary mobile-object physics reaches
+// rest, and by settle_misplaced_mobile_object during the transition pass.
 ushort *settle_mobile_to_immobile(param_1)
 ushort * param_1;
 
@@ -1291,26 +1449,29 @@ ushort * param_1;
         if (*(byte *)(DAT_00086df8 + 0x6d) < 9) {
           iVar8 = 8;
           do {
-            bVar4 = Ordinal_1053();
+            bVar4 = ce_rand();
             uVar1 = param_1[1];
             bVar5 = (byte)uVar1;
             *(byte *)(param_1 + 1) = ((bVar4 & 7) + bVar5 + 4 ^ bVar5) & 0x7f ^ bVar5;
             *(byte *)((char *)param_1 + 3) = (byte)(uVar1 >> 8);
-            uVar6 = Ordinal_1053();
-            uVar7 = Ordinal_1053();
-            /* Was `Ordinal_2005(3,uVar6); ... extraout_r1_00` / same for
+            uVar6 = ce_rand();
+            uVar7 = ce_rand();
+            /* Was `ordint_divmod(3,uVar6); ... extraout_r1_00` / same for
                uVar7/extraout_r1 -- the same fabricated-remainder bug
                fixed several times elsewhere this session (this port's
-               Ordinal_2005 never populates extraout_r1). Computed each
-               remainder directly instead; this was feeding a random
-               scatter offset into spawn_effect_debris_burst (spawn debris around the
+               old `long`-returning ordint_divmod never populated
+               extraout_r1). Now gets the remainder by name off
+               ordint_divmod's own divmod_result instead of reading a
+               second return value that was never really there; this
+               was feeding a random scatter offset into
+               spawn_effect_debris_burst (spawn debris around the
                object), so previously ran with a garbage/undefined delta
                every time this rare "teleport gate" branch was taken --
                intermittently crashing (confirmed live, ~1-in-5 runs of
                demo_critter_orbit_cardinal.txt). */
-            extraout_r1_00 = (short)(uVar6 % 3);
+            extraout_r1_00 = (short)ordint_divmod(3,uVar6).rem;
             iVar10 = (int)DAT_00101454;
-            extraout_r1 = (short)(uVar7 % 3);
+            extraout_r1 = (short)ordint_divmod(3,uVar7).rem;
             spawn_effect_debris_burst(param_1,(int)DAT_0010144c + (int)extraout_r1_00 + -1,
                          iVar10 + extraout_r1 + -1);
             iVar8 = (iVar8 + -1) * 0x10000 >> 0x10;
@@ -1320,7 +1481,7 @@ ushort * param_1;
     }
   }
   if (((bVar13 != 0) && (bVar13 < 9)) &&
-     ((bVar5 = Ordinal_1053(), (bVar5 & 7) < bVar13 &&
+     ((bVar5 = ce_rand(), (bVar5 & 7) < bVar13 &&
       (iVar8 = roll_object_destroy_chance(10,param_1), iVar8 != 0)))) {
     bVar3 = false;
   }
@@ -1424,7 +1585,7 @@ byte * param_1;
 // record's own drop-rate byte, offset +0x26, high nibble) to spawn a
 // treasure item on a dying/despawning creature: on a hit, derives an
 // item-type tier from the current dungeon level (DAT_00201b68) via a
-// lookup table (DAT_002034b5), rolls a quantity (Ordinal_2005/
+// lookup table (DAT_002034b5), rolls a quantity (ordint_divmod/
 // roll_dice_sum), and if positive spawns a new object (type
 // tier+0xa0) with that quantity encoded into its quality field,
 // linking it into param_1's object chain. No callers found by grep
@@ -1451,12 +1612,12 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
                   spawn_new_object's real pointer */
 
   bVar3 = *(byte *)(g_despawn_creature_record + 0x26);
-  uVar7 = Ordinal_1053();
+  uVar7 = ce_rand();
   uw_ord2005_rem_159 = ((int)(uVar7)) % (0x10);
   if (uw_ord2005_rem_159 < (int)(uint)(bVar3 >> 4)) {
-    uVar7 = Ordinal_1053();
+    uVar7 = ce_rand();
     sVar6 = DAT_00201b68;
-    Ordinal_2005(DAT_00201b68 * -3 + 0x28,uVar7);
+    extraout_r1 = (char)ordint_divmod(DAT_00201b68 * -3 + 0x28,uVar7).rem;
     iVar8 = ((char)sVar6 + -0xb) * 3 + (int)extraout_r1;
     cVar4 = (char)iVar8;
     if (iVar8 * 0x1000000 >> 0x18 < 0) {
@@ -1482,15 +1643,15 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
     iVar8 = (bVar3 & 0xf) * 4;
     iVar1 = (int)cVar5;
     if (iVar8 < iVar1) {
-      uVar7 = Ordinal_1053();
-      Ordinal_2005(iVar1,uVar7);
+      uVar7 = ce_rand();
+      extraout_r1_01 = ordint_divmod(iVar1,uVar7).rem;
       if (iVar8 <= extraout_r1_01) {
         return;
       }
       cVar5 = '\x01';
     }
     else {
-      cVar5 = Ordinal_2005(iVar1,iVar8);
+      cVar5 = ordint_divmod(iVar1,iVar8).quot;
       sVar6 = roll_dice_sum(4,((int)cVar5 << 0x19) >> 0x18);
       cVar5 = (char)(sVar6 >> 2);
     }
@@ -1528,7 +1689,7 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
                   spawn_new_object's real pointer */
 
   bVar1 = *(byte *)(g_despawn_creature_record + 0x27);
-  uVar2 = Ordinal_1053();
+  uVar2 = ce_rand();
   uw_ord2005_rem_160 = ((int)(uVar2)) % (0x10);
   if (uw_ord2005_rem_160 < (int)(bVar1 & 0xf)) {
     pObj = (char *)spawn_new_object((bVar1 >> 4) + 0xb0,0);
@@ -1572,16 +1733,16 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
     bVar6 = *(byte *)(uVar8 + g_despawn_creature_record + 0x20);
     if ((bVar6 & 1) != 0) {
       pbVar4 = (byte *)spawn_new_object((bVar6 >> 1 & 0xf) + (bVar6 >> 5 & 3) * '\x10',0);
-      uVar5 = Ordinal_1053();
+      uVar5 = ce_rand();
       uw_ord2005_rem_161 = ((int)(uVar5)) % (2);
       if (uw_ord2005_rem_161 == 0) {
-        uVar5 = Ordinal_1053();
+        uVar5 = ce_rand();
         sVar3 = DAT_00201b68;
-        Ordinal_2005((int)DAT_00201b68 << 2,uVar5);
+        extraout_r1 = (char)ordint_divmod((int)DAT_00201b68 << 2,uVar5).rem;
         bVar6 = extraout_r1 + (char)sVar3 * '\x04';
       }
       else {
-        uVar5 = Ordinal_1053();
+        uVar5 = ce_rand();
         uw_ord2005_rem_162 = ((int)(uVar5)) % (0x40);
         bVar6 = uw_ord2005_rem_162;
       }
@@ -1591,7 +1752,7 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
       pbVar4[5] = (byte)((ushort)uVar1 >> 8);
       if ((*pbVar4 & 0x30) == 0x10) {
         if ((&DAT_002027d2)[(*pbVar4 & 0xf) * 3] == -0x40) {
-          uVar5 = Ordinal_1053();
+          uVar5 = ce_rand();
           uw_ord2005_rem_163 = ((int)(uVar5)) % (8);
           uVar7 = (uw_ord2005_rem_163 & 0xffff) + 4;
           pbVar4[6] = pbVar4[6] & 0x3f ^ (char)uVar7 * '@';
@@ -1637,21 +1798,21 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
 
   uVar8 = 0;
   do {
-    uVar5 = Ordinal_1053();
+    uVar5 = ce_rand();
     uVar1 = *(ushort *)(g_despawn_creature_record + uVar8 * 2 + 0x22);
     uw_ord2005_rem_164 = ((int)(uVar5)) % (0x10);
     if (uw_ord2005_rem_164 < (int)(uVar1 & 0xf)) {
       iVar6 = (char *)spawn_new_object(uVar1 >> 4,0);
-      uVar5 = Ordinal_1053();
+      uVar5 = ce_rand();
       uw_ord2005_rem_165 = ((int)(uVar5)) % (2);
       if (uw_ord2005_rem_165 == 0) {
-        uVar5 = Ordinal_1053();
+        uVar5 = ce_rand();
         sVar4 = DAT_00201b68;
-        Ordinal_2005((int)DAT_00201b68 << 2,uVar5);
+        extraout_r1 = (char)ordint_divmod((int)DAT_00201b68 << 2,uVar5).rem;
         bVar7 = extraout_r1 + (char)sVar4 * '\x04';
       }
       else {
-        uVar5 = Ordinal_1053();
+        uVar5 = ce_rand();
         uw_ord2005_rem_166 = ((int)(uVar5)) % (0x40);
         bVar7 = uw_ord2005_rem_166;
       }
@@ -1814,7 +1975,7 @@ ushort param_3;
     settle_dropped_object(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
   }
   if ((param_3 & 0xff) != 0) {
-    uVar7 = Ordinal_1053();
+    uVar7 = ce_rand();
     uw_ord2005_rem_12 = ((int)(uVar7)) % (0x10);
     if ((uw_ord2005_rem_12 < 7) &&
        (pDropObj = (char *)spawn_new_object((short)(param_3 & 0xff) + 0xc0,0), pDropObj != NULL)) {
@@ -1833,8 +1994,8 @@ ushort param_3;
 // creature_find_path_to_tile's BFS parent-pointer scratch arrays
 // (&DAT_0023cf08-family), walking backward from the found tile
 // (param_1 ring count, param_2/param_3 its coordinates) and filling the
-// step arrays (DAT_00101739-746) the NPC's own movement code then
-// walks forward through.
+// step fields (DAT_00101740 offsets -7/-6, plus DAT_00101743-746) the
+// NPC's own movement code then walks forward through.
 void reconstruct_path_from_bfs(param_1,param_2,param_3)
 byte param_1;
 undefined1 param_2;
@@ -1854,8 +2015,8 @@ undefined1 param_3;
   for (uVar2 = (uint)(byte)(param_1 + 1); uVar2 != 0; uVar2 = uVar2 + 0xff & 0xff) {
     iVar1 = uVar2 * 7;
     iVar3 = ((uint)(byte)(&DAT_00101741)[iVar1] + (uint)(byte)(&DAT_00101740)[iVar1] * 0x40) * 5;
-    (&DAT_00101739)[iVar1] = (&DAT_0023cf08)[iVar3];
-    (&DAT_0010173a)[iVar1] = (&DAT_0023cf09)[iVar3];
+    (&DAT_00101740)[iVar1 - 7] = (&DAT_0023cf08)[iVar3];
+    (&DAT_00101740)[iVar1 - 6] = (&DAT_0023cf09)[iVar3];
     (&DAT_00101743)[iVar1] = (&DAT_0023cf0b)[iVar3] & 1;
     *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1) = 0;
     *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1 + 1) = 0;
@@ -1935,18 +2096,18 @@ short param_4;
     if (iVar1 < -iVar5) {
       pbVar9 = &local_33;
       pbVar11 = &local_34;
-      cVar2 = Ordinal_2005(iVar1,iVar5 << 7);
+      cVar2 = ordint_divmod(iVar1,iVar5 << 7).quot;
       goto LAB_0002d330;
     }
     pbVar9 = &local_34;
     pbVar11 = &local_33;
-    cVar2 = Ordinal_2005(iVar5,iVar1 << 7);
+    cVar2 = ordint_divmod(iVar5,iVar1 << 7).quot;
   }
   else {
     if (iVar1 < -iVar5) {
       pbVar9 = &local_34;
       pbVar11 = &local_33;
-      cVar2 = Ordinal_2005(iVar5,iVar1 << 7);
+      cVar2 = ordint_divmod(iVar5,iVar1 << 7).quot;
       iVar5 = iVar1;
 LAB_0002d330:
       local_32 = -1;
@@ -1958,7 +2119,7 @@ LAB_0002d330:
     }
     pbVar9 = &local_33;
     pbVar11 = &local_34;
-    cVar2 = Ordinal_2005(iVar1,iVar5 << 7);
+    cVar2 = ordint_divmod(iVar1,iVar5 << 7).quot;
     iVar1 = iVar5;
   }
   cVar6 = '\x01';
@@ -1996,11 +2157,13 @@ LAB_0002d340:
     uVar8 = (uint)local_33;
     iVar5 = record_line_walk_step(uVar8,uVar10);
   }
+  /* ARM 0x2d47c..0x2d4d4 addresses the waypoint array at count*7,
+     then subtracts field offsets. These are not adjacent AI globals. */
   iVar5 = (uint)DAT_0010142c * 7;
-  sVar3 = tile_pair_los_blocked((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
-                       (&DAT_0010173a)[iVar5],0,0,*(undefined2 *)(DAT_00101438 + 4),
-                       *(undefined2 *)(DAT_00101438 + 6),*(undefined1 *)((intptr_t)&DAT_00101734 + iVar5)
-                       ,(intptr_t)&DAT_00101734 + iVar5,auStack_30);
+  sVar3 = tile_pair_los_blocked((&DAT_00101740)[iVar5 - 14],(&DAT_00101740)[iVar5 - 13],(&DAT_00101740)[iVar5 - 7],
+                       (&DAT_00101740)[iVar5 - 6],0,0,*(undefined2 *)(DAT_00101438 + 4),
+                       *(undefined2 *)(DAT_00101438 + 6),(&DAT_00101740)[iVar5 - 12]
+                       ,(byte *)&DAT_00101740 + iVar5 - 12,auStack_30);
   return (int)sVar3;
 }
 
@@ -2011,7 +2174,7 @@ LAB_0002d340:
 // try_direct_line_walk but operating on precise coordinates (>>3 for
 // tile conversion) rather than whole tiles. Used by NPC combat AI to
 // decide whether a spell/ranged attack has a clear line to its target.
-// Contains 2 confirmed dropped-argument fixes (Ordinal_2005 calls
+// Contains 2 confirmed dropped-argument fixes (ordint_divmod calls
 // reconstructed from their own sibling branches, see their own
 // comments).
 undefined4 check_fine_line_of_sight(param_1,param_2,param_3,param_4,param_5,param_6)
@@ -2091,19 +2254,19 @@ short param_6;
       }
       if (local_3a == '\x01') {
         /* Was a dropped register-forwarding argument -- was
-           `Ordinal_2005();` with no args. Reconstructed as this exact
+           `ordint_divmod().quot;` with no args. Reconstructed as this exact
            branch's own sibling call (the `else` just below,
-           `Ordinal_2005(iVar3,iVar2 << 7)`) wrapped in the negation
+           `ordint_divmod(iVar3,iVar2 << 7).quot`) wrapped in the negation
            this code already applies afterward (`uVar5 = -iVar7`) --
            mathematically the same sign-flip trick the other two
            if/else pairs in this function apply via a `* -0x80`
            operand instead of a post-call negation. */
-        iVar7 = Ordinal_2005(iVar3,iVar2 << 7);
+        iVar7 = ordint_divmod(iVar3,iVar2 << 7).quot;
         uVar5 = -iVar7;
         uVar9 = uVar9 & 7;
         goto LAB_0002d808;
       }
-      uVar5 = Ordinal_2005(iVar3,iVar2 << 7);
+      uVar5 = ordint_divmod(iVar3,iVar2 << 7).quot;
       uVar9 = uVar9 & 7;
 LAB_0002d824:
       uVar5 = uVar5 & 0xff;
@@ -2120,11 +2283,11 @@ LAB_0002d824:
         local_3a = -1;
       }
       if (local_3a != '\x01') {
-        uVar5 = Ordinal_2005(iVar2,iVar3 * -0x80);
+        uVar5 = ordint_divmod(iVar2,iVar3 * -0x80).quot;
         uVar10 = 7 - (uVar10 & 7);
         goto LAB_0002d6c0;
       }
-      uVar5 = Ordinal_2005(iVar2,iVar3 << 7);
+      uVar5 = ordint_divmod(iVar2,iVar3 << 7).quot;
       uVar10 = 7 - (uVar10 & 7);
 LAB_0002d768:
       uVar5 = uVar5 & 0xff;
@@ -2146,16 +2309,16 @@ LAB_0002d768:
         local_3a = '\x01';
       }
       if (local_3a != '\x01') {
-        uVar5 = Ordinal_2005(iVar2,iVar3 << 7);
+        uVar5 = ordint_divmod(iVar2,iVar3 << 7).quot;
         uVar10 = uVar10 & 7;
         goto LAB_0002d768;
       }
       /* Was a dropped register-forwarding argument -- same class as
          this function's own earlier fix (uw.c ~8942): reconstructed
          as this branch's own sibling call above
-         (`Ordinal_2005(iVar2,iVar3 << 7)`) wrapped in the negation
+         (`ordint_divmod(iVar2,iVar3 << 7).quot`) wrapped in the negation
          this code already applies afterward. */
-      iVar7 = Ordinal_2005(iVar2,iVar3 << 7);
+      iVar7 = ordint_divmod(iVar2,iVar3 << 7).quot;
       uVar5 = -iVar7;
       uVar10 = uVar10 & 7;
 LAB_0002d6c0:
@@ -2172,11 +2335,11 @@ LAB_0002d6c0:
       }
       local_2c = &local_3b;
       if (local_3a == '\x01') {
-        uVar5 = Ordinal_2005(iVar3,iVar2 << 7);
+        uVar5 = ordint_divmod(iVar3,iVar2 << 7).quot;
         uVar9 = 7 - (uVar9 & 7);
         goto LAB_0002d824;
       }
-      uVar5 = Ordinal_2005(iVar3,iVar2 * -0x80);
+      uVar5 = ordint_divmod(iVar3,iVar2 * -0x80).quot;
       uVar9 = 7 - (uVar9 & 7);
 LAB_0002d808:
       uVar5 = uVar5 & 0xff;
@@ -2216,7 +2379,7 @@ LAB_0002d808:
       return 0;
     }
     if (local_38 != '\0') {
-      iVar7 = Ordinal_2005(local_38,(int)local_32 * (uint)local_35);
+      iVar7 = ordint_divmod(local_38,(int)local_32 * (uint)local_35).quot;
       param_3 = local_28 + iVar7 & 0xff;
     }
     uVar12 = (ushort)local_3c;
@@ -2266,13 +2429,16 @@ undefined1 param_2;
                            DAT_00101742,&DAT_00101749,auStack_14);
     }
     else {
+      /* ARM 0x2dac4..0x2db24 uses DAT_00101740 + count*7 with
+         offsets -21..-6. Indexing past standalone DAT_0010172c/34
+         instead corrupts the collision-profile pointer and AI state. */
       iVar2 = uVar1 * 7;
-      iVar2 = tile_pair_los_blocked(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
-                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2),(&DAT_00101732)[iVar2],
-                           (&DAT_00101733)[iVar2],(&DAT_00101739)[iVar2],(&DAT_0010173a)[iVar2],
+      iVar2 = tile_pair_los_blocked((&DAT_00101740)[iVar2 - 21],
+                           (&DAT_00101740)[iVar2 - 20],(&DAT_00101740)[iVar2 - 14],
+                           (&DAT_00101740)[iVar2 - 13],(&DAT_00101740)[iVar2 - 7],(&DAT_00101740)[iVar2 - 6],
                            *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
-                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2 + 1),
-                           (intptr_t)&DAT_00101734 + iVar2,auStack_14);
+                           (&DAT_00101740)[iVar2 - 19],
+                           (byte *)&DAT_00101740 + iVar2 - 12,auStack_14);
     }
     if ((iVar2 != 0) && (DAT_00101440 == 0)) {
       return 1;
@@ -2750,7 +2916,7 @@ undefined1 param_2;
     }
     if (((DAT_0010191c == 0) || (0x77 < uVar5)) && ((int)(uVar3 - 8) <= (int)uVar5)) {
       if ((uVar5 < 0x79) && (uVar5 <= uVar3 + 8)) {
-        uVar4 = Ordinal_1053();
+        uVar4 = ce_rand();
         uw_ord2005_rem_20 = ((int)(uVar4)) % (3);
         cVar1 = uw_ord2005_rem_20 + '\x0f';
       }
@@ -2776,7 +2942,7 @@ undefined1 param_2;
 // 1-in-4 chance to instead damage it via apply_typed_damage_to_object (the shared
 // damage/hit-visual primitive, not yet named) with a random roll
 // bounded by the stat template's own byte at +0x14. Contains a
-// confirmed fabricated-remainder Ordinal_2005/extraout_r1 fix (see its
+// confirmed fabricated-remainder ordint_divmod/extraout_r1 fix (see its
 // own comment).
 void npc_arrival_interaction(param_1)
 ushort * param_1;
@@ -2797,7 +2963,7 @@ ushort * param_1;
     }
     if (((*param_1 & 0x1f0) == 0x140) && ((*param_1 & 0xf) < 8)) {
       if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
-        uVar1 = Ordinal_1053();
+        uVar1 = ce_rand();
         uw_ord2005_rem_21 = ((int)(uVar1)) % (2);
         if (uw_ord2005_rem_21 != 0) {
           check_object_combination(DAT_0010190c,param_1,
@@ -2805,15 +2971,15 @@ ushort * param_1;
           return;
         }
       }
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       uw_ord2005_rem_22 = ((int)(uVar1)) % (4);
       if (uw_ord2005_rem_22 == 0) {
-        uVar1 = Ordinal_1053();
+        uVar1 = ce_rand();
         uVar2 = 4;
-        /* Was `Ordinal_2005(...); apply_typed_damage_to_object(...,extraout_r1,...)` --
+        /* Was `ordint_divmod(...); apply_typed_damage_to_object(...,extraout_r1,...)` --
            same fabricated-remainder bug fixed throughout this session
-           (this port's Ordinal_2005 never populates extraout_r1).
-           Ordinal_2005(divisor,dividend) here divides the random roll
+           (this port's ordint_divmod never populates extraout_r1).
+           ordint_divmod(divisor,dividend).quot here divides the random roll
            (uVar1) by the stat-template byte at +0x14 (a max-damage-
            shaped value); compute that remainder -- a bounded random
            damage roll in [0,byte_val) -- directly instead. */
@@ -2859,7 +3025,7 @@ undefined4 param_4;
   uStack_4 = param_4;
   if (((param_1 & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f)) ||
      ((param_2 & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0xfc0) >> 6)) {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_57 = ((int)(uVar3)) % (8);
     if (uw_ord2005_rem_57 == 0) {
       cVar2 = detect_npc_wander_proximity(&local_10,&local_c);
@@ -2873,7 +3039,7 @@ LAB_00030984:
           return;
         }
         if (cVar2 != '\x02') goto LAB_000309a0;
-        uVar3 = Ordinal_1053();
+        uVar3 = ce_rand();
         uw_ord2005_rem_58 = ((int)(uVar3)) % (2);
         if (uw_ord2005_rem_58 == 0) {
           *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfe;
@@ -2935,7 +3101,7 @@ void npc_react_to_nearby_player()
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
       *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       uw_ord2005_rem_82 = ((int)(uVar3)) % (2);
       if (uw_ord2005_rem_82 != 0) {
         uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
@@ -3069,7 +3235,7 @@ int param_2;
     iVar5 = iVar5 << 0x18;
   }
   else {
-    sVar4 = Ordinal_2005((int)(short)uVar3,iVar6 << 2);
+    sVar4 = ordint_divmod((int)(short)uVar3,iVar6 << 2).quot;
     iVar5 = (int)sVar4;
     if (0xf < iVar5) {
       iVar5 = 0xf;
@@ -3081,7 +3247,7 @@ int param_2;
       iVar5 = iVar5 << 0x18;
     }
     else {
-      iVar6 = Ordinal_2005((int)param_1,(uint)uVar3 * 3);
+      iVar6 = ordint_divmod((int)param_1,(uint)uVar3 * 3).quot;
       iVar5 = (iVar6 + (short)iVar5) * 0x1000000;
     }
   }
@@ -3160,7 +3326,7 @@ ushort * param_1;
 // gradually orients the NPC's facing toward the last-seen player
 // direction. Already had 2 confirmed real bugs fixed by an earlier
 // pass (an inverted branch condition and several fabricated-remainder
-// Ordinal_2005 reads) -- see their own comments.
+// ordint_divmod reads) -- see their own comments.
 void npc_ai_default_tick()
 
 {
@@ -3259,7 +3425,7 @@ LAB_000339fc:
          behavior/contract), and this code unconditionally dereferenced
          it. Confirmed live crashing (EXC_BAD_ACCESS at 0x19) the first
          time this branch was reached with a real (previously always-0,
-         now-fixed) random cVar4 value from this session's Ordinal_2005
+         now-fixed) random cVar4 value from this session's ordint_divmod
          sweep -- a pre-existing bug in this never-before-exercised
          function, not something the sweep itself introduced. */
       if ((cVar4 != '\0') &&
@@ -3368,15 +3534,15 @@ LAB_00033e9c:
     break;
   case 0xb:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     iVar7 = DAT_0010190c;
     bVar10 = *(byte *)((char *)DAT_0010190c + 0x13);
     uw_ord2005_rem_93 = ((int)(uVar6)) % (2);
     *(byte *)(iVar7 + 0x13) = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     uw_ord2005_rem_94 = ((int)(uVar6)) % (0x100);
     *(undefined1 *)((char *)DAT_0010190c + 9) = uw_ord2005_rem_94;
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     uw_ord2005_rem_95 = ((int)(uVar6)) % (3);
     *(byte *)((char *)DAT_0010190c + 0x14) =
          *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_95 + '\x0f') * '\b';
@@ -3411,19 +3577,19 @@ LAB_00033e9c:
   uVar11 = uVar2 >> 2 & 0xff;
   uVar11 = (uVar11 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^ uVar11;
   uVar12 = (uint)DAT_001018fc;
-  /* Was `Ordinal_2005(0x100,(uVar11-uVar12)+0x100,*(undefined1*)(DAT_0010190c+2),
-     Ordinal_2005_exref,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_r8,unaff_r9,
+  /* Was `ordint_divmod(0x100,(uVar11-uVar12)+0x100,*(undefined1*)(DAT_0010190c+2),
+     ordint_divmod_exref,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_r8,unaff_r9,
      unaff_lr);` -- badly garbled. Real disassembly (0x3256c-0x32768, this
      function's actual body per Ghidra -- npc_ai_default_tick's own "0x33880"
      entry point is just one jump-table case landing in a shared tail
      block starting here) confirms this is genuinely a plain 2-argument
-     `Ordinal_2005(0x100,(uVar11-uVar12)+0x100)` call; the extra
+     `ordint_divmod(0x100,(uVar11-uVar12)+0x100).quot` call; the extra
      "arguments" are a decompiler artifact with no real source (the
      unaff_rN/unaff_lr names mean "whatever these callee-saved registers
      happened to hold since function entry", never actually read by the
-     real code here). All 5 Ordinal_2005 calls in this function also
+     real code here). All 5 ordint_divmod calls in this function also
      have the by-now-familiar fabricated-remainder bug (this port's
-     Ordinal_2005 never populates extraout_r1); computed each directly
+     ordint_divmod never populates extraout_r1); computed each directly
      instead (divisor is always the constant 0x100, so `% 0x100` == the
      `& 0xff` already applied everywhere the remainder is consumed).
      Confirmed live: this function is npc_ai_tick's `case 0xb`/default
@@ -3455,7 +3621,7 @@ LAB_00033e9c:
      real disassembly (`cmp r0,#0x0; beq 0x326a4`, where r0 is
      DAT_00101430 and 0x326a4 is the simple "just copy DAT_00101458"
      branch this decompile currently has as the ELSE): the real branch
-     runs this whole Ordinal_2005-laden "randomly step the facing toward
+     runs this whole ordint_divmod-laden "randomly step the facing toward
      the last-known player direction" block when DAT_00101430 is
      NONZERO, and takes the simple path when it's zero -- exactly
      backwards from what was here. DAT_00101430 defaults to 0 at the top
@@ -3574,9 +3740,9 @@ LAB_000342b0:
   else {
     if ((param_4 & 0xff) <= param_1 >> 1) {
       if (param_1 == 0) goto LAB_000342b0;
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       uw_ord2005_rem_97 = ((int)(uVar1)) % (4);
-      iVar2 = Ordinal_2005(param_1,param_2 << 4);
+      iVar2 = ordint_divmod(param_1,param_2 << 4).quot;
       if ((int)(0xf - (param_3 & 0xff)) < (int)(uw_ord2005_rem_97 + iVar2 & 0xffffU)) {
         return 0;
       }
@@ -3604,7 +3770,7 @@ int compute_pathfind_search_radius()
   if (((((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) && (*(char *)(DAT_00101404 + 4) != '\0')) &&
       ((*(byte *)((char *)DAT_0010190c + 1) & 0x20) == 0)) &&
      ((DAT_00201b68 != 6 || (*(char *)((char *)DAT_0010190c + 0x1a) != '\x16')))) {
-    uVar2 = Ordinal_2005(*(char *)(DAT_00101404 + 4),(uint)*(byte *)((char *)DAT_0010190c + 8) << 2);
+    uVar2 = ordint_divmod(*(char *)(DAT_00101404 + 4),(uint)*(byte *)((char *)DAT_0010190c + 8) << 2).quot;
     return (uVar2 & 0xff) + (*(byte *)(iVar1 + 0x1c) >> 2 & 3);
   }
   return 0;
@@ -3712,10 +3878,10 @@ void randomize_active_npc_flags()
   if (DAT_002046c0 < DAT_002046c8) {
     do {
       iVar3 = (uint)*pbVar2 * 0x1b + DAT_002046b8;
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       uw_ord2005_rem_98 = ((int)(uVar1)) % (2);
       *(byte *)(iVar3 + 0x19) = (byte)((uw_ord2005_rem_98 & 1) << 7) | *(byte *)(iVar3 + 0x19) & 0x7f;
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       uw_ord2005_rem_99 = ((int)(uVar1)) % (4);
       if (uw_ord2005_rem_99 != 1) {
         *(byte *)(iVar3 + 0x19) = *(byte *)(iVar3 + 0x19) & 0xbf;
@@ -3827,7 +3993,7 @@ char *param_2; // was `int` -- truncated advance_mobile_objects's real stack-buf
     return;
   }
   *(byte *)((char *)param_1 + 0x19) = *(byte *)((char *)param_1 + 0x19) & 0xc;
-  uVar2 = Ordinal_1053();
+  uVar2 = ce_rand();
   uw_ord2005_rem_100 = ((int)(uVar2)) % (8);
   uVar8 = param_1[1] & 0xfc7f | (uw_ord2005_rem_100 & 7) << 7;
   *(byte *)(param_1 + 1) = (byte)uVar8;
@@ -3948,7 +4114,7 @@ void advance_mobile_objects()
   char acStack_58 [64];
   int iVar4;
 
-  Ordinal_1047(acStack_58,0,0x40);
+  ce_memset(acStack_58,0,0x40);
   pbVar7 = DAT_002046c0;
   if (DAT_002046c0 < DAT_002046c8) {
     do {
@@ -4039,7 +4205,7 @@ ushort * param_3;
   uVar16 = (undefined1)((ushort)in_stack_ffffffcc >> 8);
   sVar5 = encode_object_slot_index(param_3);
   if ((sVar5 != 1) && ((param_3[7] & 0xc0) == 0)) {
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     uw_ord2005_rem_101 = ((int)(uVar6)) % (2);
     if (uw_ord2005_rem_101 != 0) {
       setup_npc_ai_tick_state(param_3);
@@ -4089,8 +4255,8 @@ ushort * param_3;
             uVar9 = (uint)DAT_0010142c;
           } while (uVar12 < uVar9);
         }
-        bVar1 = (&DAT_00101733)[uVar9 * 7];
-        bVar2 = (&DAT_00101732)[uVar9 * 7];
+        bVar1 = (&DAT_00101740)[uVar9 * 7 - 13];
+        bVar2 = (&DAT_00101740)[uVar9 * 7 - 14];
         puVar7 = (ushort *)tilemap_lookup((uint)bVar2,(uint)bVar1);
         iVar11 = resolve_tile_entry_offset(*puVar7 & 0xf,&local_28,local_27);
         if (iVar11 != 0) {
@@ -4263,7 +4429,7 @@ ushort * param_3;
       *(byte *)(param_3 + 7) = (byte)(uVar6 >> 8) | (byte)(((uVar8 & 3) << 0xe) >> 8);
       build_object_display_name(auStack_74,param_3,1,0);
       uVar4 = get_message_string(uVar8 + 0xe1 | 0x200);
-      Ordinal_1063(auStack_74,uVar4);
+      ce_strcat(auStack_74,uVar4);
       message_scroll_print_wrapped(auStack_74);
       return 1;
     }
@@ -4460,7 +4626,7 @@ int param_1;
     /* Was pointed at the placeholder stack0xffdc3230 scalar (from an
        earlier undeclared-identifier pass) instead of the real 260-byte
        path buffer acStack_128 that both copy loops below (and the
-       Ordinal_1063/open_file_for_read calls right after) actually operate on. */
+       ce_strcat/open_file_for_read calls right after) actually operate on. */
     local_12c = (undefined1 *)acStack_128;
     pcVar4 = &DAT_0023cca8;
     wptr_26821 = local_12c;
@@ -4469,7 +4635,7 @@ int param_1;
       *wptr_26821 = cVar2; wptr_26821 = wptr_26821 + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar2 != '\0');
-    Ordinal_1063(acStack_128,s__CRIT_assoc_anm_00085934);
+    ce_strcat(acStack_128,s__CRIT_assoc_anm_00085934);
     iVar8 = open_file_for_read(acStack_128);
     if (iVar8 == -1) {
       iVar8 = 0;
@@ -4488,12 +4654,12 @@ int param_1;
       iVar5 = 0;
       do {
         iVar5 = (int)(short)iVar5;
-        cVar2 = Ordinal_2005(10,iVar5);
+        cVar2 = ordint_divmod(10,iVar5).quot;
         DAT_00085918 = cVar2 + '0';
         uw_ord2005_rem_112 = ((int)(iVar5)) % (10);
         DAT_00085919 = uw_ord2005_rem_112 + '0';
         uVar9 = 0xa0;
-        Ordinal_1047(acStack_128,0,0x104);
+        ce_memset(acStack_128,0,0x104);
         pcVar4 = &DAT_0023cca8;
     wptr_26852 = local_12c;
         do {
@@ -4501,7 +4667,7 @@ int param_1;
           *wptr_26852 = cVar2; wptr_26852 = wptr_26852 + 1;
           pcVar4 = pcVar4 + 1;
         } while (cVar2 != '\0');
-        Ordinal_1063(acStack_128,&DAT_00085908);
+        ce_strcat(acStack_128,&DAT_00085908);
         puVar6 = (undefined1 *)open_file_for_read(acStack_128);
         iVar7 = extraout_r2;
         if (puVar6 != (undefined1 *)0xffffffff) {
@@ -4510,7 +4676,7 @@ int param_1;
           if (iVar7 == 2) {
             uVar9 = (ushort)local_12f + (ushort)local_130;
           }
-          puVar6 = (undefined1 *)Ordinal_553(puVar6);
+          puVar6 = (undefined1 *)CloseHandle(puVar6);
           iVar7 = extraout_r2_00;
         }
         if (iVar5 < 3) {
@@ -4525,7 +4691,7 @@ int param_1;
       } while ((uVar9 < 0xa0) && ((short)((uint)iVar1 >> 0x10) < 4));
       iVar10 = iVar10 + 1;
     } while (iVar10 * 0x10000 >> 0x10 < 0x20);
-    Ordinal_553(iVar8);
+    CloseHandle(iVar8);
   }
   return 1;
 }
@@ -4668,7 +4834,7 @@ void npc_idle_behavior_tick()
     return;
   }
   if ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_23 = ((int)(uVar3)) % (2);
     if (uw_ord2005_rem_23 != 0) {
       npc_notice_and_idle_tick();
@@ -4678,19 +4844,19 @@ void npc_idle_behavior_tick()
   if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
     if (DAT_0010140c < 0xf) {
       if (DAT_0010140c < (byte)((*pbVar2 >> 4) + 2)) {
-        uVar3 = Ordinal_1053();
+        uVar3 = ce_rand();
         iVar9 = DAT_0010190c;
         bVar5 = *(byte *)((char *)DAT_0010190c + 0x14);
         uw_ord2005_rem_24 = ((int)(uVar3)) % (3);
         *(byte *)(iVar9 + 0x14) = ~bVar5 & 7 ^ (char)((uw_ord2005_rem_24 & 0xff) << 3) + 0x87U;
         goto LAB_0002f314;
       }
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       uw_ord2005_rem_25 = ((int)(uVar3)) % (5);
       cVar4 = uw_ord2005_rem_25;
     }
     else {
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       uw_ord2005_rem_26 = ((int)(uVar3)) % (3);
       cVar4 = uw_ord2005_rem_26;
     }
@@ -4718,7 +4884,7 @@ LAB_0002f314:
      0x2c's animation actually is). Cast every offset to a byte pointer
      throughout this function so none of them are scaled. */
   if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x20) {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_27 = ((int)(uVar3)) % (0x10);
     if (((uw_ord2005_rem_27 & 0xff) < (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) &&
        ((*(byte *)((char *)DAT_0010190c + 0xc) & 0xf0) == 0x30)) {
@@ -4728,7 +4894,7 @@ LAB_0002f384:
     }
   }
   else {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_28 = ((int)(uVar3)) % (0x10);
     if (((uw_ord2005_rem_28 & 0xff) <= (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) ||
        ((*(byte *)((char *)DAT_0010190c + 0xc) & 0xf0) != 0x30)) goto LAB_0002f384;
@@ -4738,7 +4904,7 @@ LAB_0002f390:
   }
   if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x2c) {
     if ((DAT_00101924 != 0) && (DAT_00101430 == 0)) {
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       uw_ord2005_rem_29 = ((int)(uVar3)) % (2);
       iVar9 = DAT_0010190c;
       uw_ord2005_rem_30 = ((int)((uint)*(byte *)((char *)DAT_0010190c + 9) + uw_ord2005_rem_29 * 0x80 + 0xc0)) % (0x100);
@@ -4752,11 +4918,11 @@ LAB_0002f390:
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
       return;
     }
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     bVar5 = *(byte *)(DAT_00101404 + 0x1f);
     uw_ord2005_rem_31 = ((int)(uVar3)) % (0x40);
     if ((uw_ord2005_rem_31 & 0xff) < (bVar5 & 0xf) + 8) {
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       iVar9 = DAT_0010190c;
       bVar5 = *(byte *)((char *)DAT_0010190c + 9);
       uw_ord2005_rem_32 = ((int)(uVar3)) % (0x40);
@@ -4781,10 +4947,10 @@ LAB_0002f6cc:
     *(byte *)((char *)DAT_0010190c + 0x18) = bVar6 & 0x1f ^ bVar5;
   }
   else {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_34 = ((int)(uVar3)) % (0x80);
     if ((uw_ord2005_rem_34 & 0xff) < (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) {
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       iVar9 = DAT_0010190c;
       bVar5 = *(byte *)((char *)DAT_0010190c + 9);
       uw_ord2005_rem_35 = ((int)(uVar3)) % (0x40);
@@ -4803,7 +4969,7 @@ LAB_0002f6cc:
     *(byte *)((char *)DAT_0010190c + 0x15) = bVar5 | 0x40;
     *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_37 = ((int)(uVar3)) % (2);
     iVar9 = DAT_0010190c;
     if (uw_ord2005_rem_37 == 0) goto LAB_0002f810;
@@ -4945,7 +5111,7 @@ LAB_0002fe88:
       return;
     }
     if ((*(byte *)((char *)DAT_0010190c + 0x19) & 2) != 0) {
-      uVar4 = Ordinal_1053();
+      uVar4 = ce_rand();
       bVar1 = *(byte *)(DAT_00101404 + 0x1f);
       uw_ord2005_rem_41 = ((int)(uVar4)) % (0x10);
       if ((int)(uint)(bVar1 >> 4) < uw_ord2005_rem_41) {
@@ -4955,7 +5121,7 @@ LAB_0002fe88:
         check_npc_target_alignment(0);
       }
     }
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     bVar1 = *(byte *)(DAT_00101404 + 0x1f);
     uw_ord2005_rem_42 = ((int)(uVar4)) % (0x10);
     if (uw_ord2005_rem_42 < (int)(uint)(bVar1 >> 4)) {
@@ -4967,7 +5133,7 @@ LAB_0002fe88:
       }
       if ((cVar3 != '\x01') && (cVar3 == '\x02')) {
         *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 2;
-        uVar4 = Ordinal_1053();
+        uVar4 = ce_rand();
         uw_ord2005_rem_43 = ((int)(uVar4)) % (2);
         if (uw_ord2005_rem_43 == 0) {
           npc_walk_toward_tile(local_17[0],local_18,DAT_00101420);
@@ -5001,7 +5167,7 @@ LAB_0002fe88:
   *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
   *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
   *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
-  uVar4 = Ordinal_1053();
+  uVar4 = ce_rand();
   uw_ord2005_rem_44 = ((int)(uVar4)) % (2);
   iVar2 = DAT_0010190c;
   if (uw_ord2005_rem_44 != 0) {
@@ -5067,7 +5233,7 @@ void npc_wander_return_home_exact_tick()
       *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       uw_ord2005_rem_84 = ((int)(uVar3)) % (2);
       iVar2 = DAT_0010190c;
       if (uw_ord2005_rem_84 != 0) {
@@ -5857,15 +6023,15 @@ byte * param_2;
     param_2[3] = (byte)((uint)iVar5 >> 8);
   }
   if (bVar8) {
-    sVar3 = Ordinal_1053();
+    sVar3 = ce_rand();
     iVar5 = ((int)sVar3 & 0x1fU) + *(short *)param_2 * 0x20;
     *param_2 = (byte)iVar5;
     param_2[1] = (byte)((uint)iVar5 >> 8);
-    sVar3 = Ordinal_1053();
+    sVar3 = ce_rand();
     iVar5 = ((int)sVar3 & 0x1fU) + *(short *)(param_2 + 2) * 0x20;
     param_2[2] = (byte)iVar5;
     param_2[3] = (byte)((uint)iVar5 >> 8);
-    sVar3 = Ordinal_1053();
+    sVar3 = ce_rand();
     iVar5 = ((int)sVar3 & 7U) + *(short *)(param_2 + 4) * 8;
     param_2[4] = (byte)iVar5;
     param_2[5] = (byte)((uint)iVar5 >> 8);

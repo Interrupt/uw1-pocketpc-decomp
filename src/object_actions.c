@@ -9,6 +9,90 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00085cd8 DAT_00085cd8_backing[0]
+#define DAT_00085cb4 DAT_00085cb4_backing[0]
+static undefined *DAT_001007c8;
+undefined1 DAT_0023c3dc;
+undefined1 DAT_0023c3d8;
+/* Ghidra recovered this as "You_see" (underscores, no trailing space);
+   it's the "You see " prefix the look/identify code prepends to an
+   object/terrain name, so the real bytes are "You see " with a trailing
+   space (see describe_picked_terrain: message_scroll_print_wrapped(this) then the
+   name then "."). */
+char s_You_see_000858fc[] = "You see ";
+static char s_belonging_to_00085c90[] = "belonging to ";
+ undefined1 DAT_0023ce70_backing[8192];
+ushort DAT_00202508;
+ushort DAT_002022f8;
+static ushort DAT_00202300;
+static ushort DAT_00202304;
+int DAT_002022fc;
+// was DAT_0023bcf4, offset +0x4c of the "large fixed-offset record"
+// based at DAT_0023bca8 (see that array's own declaration comment a few
+// hundred lines up -- a "device/config-ish struct, not yet fully
+// identified" that a prior session already had to widen to a real 8192-
+// byte backing array after catching an unrelated overflow into it).
+// g_player_carry_weight (was DAT_0023bcf2, "+0x4a", the sibling field 2
+// bytes before this one) is that struct's actively-maintained "current
+// carried weight" running total.
+//
+// Two things worth ruling out before assuming a hardcoded default is
+// the right call, both checked directly rather than assumed:
+// - NOT part of the player.dat save/load blob: that save path (uw.c
+//   ~32660) serializes the player's OBJECT graph (walking
+//   resolve_object_link), not this stats struct -- no overlap, so this
+//   isn't a save/load wiring gap.
+// - NOT a split-symbol/should-be-one-array bug either, despite living
+//   inside that same not-fully-identified struct: a whole-binary
+//   instruction-pattern scan (every "str/strh/strb ..., [reg, #0x4c]"
+//   in the binary, not just literal-address xrefs, specifically to also
+//   catch a write reached via the DAT_00086df8 struct-pointer indirection
+//   the way init_new_character_record's already-documented overflow into this same
+//   struct was) found zero halfword writes to +0x4c anywhere, by any
+//   addressing pattern. Every real writer of the sibling +0x4a field
+//   also resolves through a literal constant address, not the pointer
+//   indirection, matching how this file already represents both fields
+//   as flat globals -- so unifying them into an explicit array wouldn't
+//   change reachability here the way it has for other DAT_0023bca8-
+//   adjacent fields elsewhere in this file.
+// - Confirmed via a real Ghidra reference search against UU.exe (not
+//   just this decompile): every access to +0x4c anywhere in the shipped
+//   binary is a READ (check_object_carry_weight's "can I pick this up" check, and
+//   update_carry_weight_display, apparently a HUD burden/encumbrance display) -- there
+//   is no write to it ANYWHERE, so it stays at its zero BSS default for
+//   the life of the process. Net effect: every pickup attempt failed
+//   with "too heavy" regardless of the item (confirmed live: a 30-unit
+//   sack, well within any plausible real capacity, was rejected).
+//
+// Whatever real formula (almost certainly Strength-derived) originally
+// populated this is not recoverable from this binary -- it's a genuinely
+// dead computation in the shipped game, not a decompile gap. Seeding a
+// generous, clearly-provisional default here so carrying items functions
+// at all rather than being permanently broken -- revisit if the real
+// per-character formula (or its expected value range) ever turns up.
+ushort g_player_max_carry_weight = 200;
+static char s_cursed_00085ca0[] = "cursed";
+static char s_magical_00085ca8[] = "magical";
+static char s_full_charge_00085cb8[] = "full_charge";
+static undefined DAT_00085cc8;
+static char s_with_00085cd0[] = "with";
+static undefined DAT_00085cd8_backing[8192];
+static undefined4 DAT_0024cfcc;
+static undefined1 DAT_00085ccc;
+static undefined1 DAT_00085ccd;
+static undefined1 DAT_00085cce;
+static undefined DAT_00085cb4_backing[8192];
+static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
+static char s_an_adventurer__00085d08[] = "an_adventurer.";
+static uint DAT_00202094;
+undefined1 DAT_00087604_backing[65536];
+undefined *PTR_FUN_00087614;
+static undefined DAT_0008762c_backing[8192];
+#define DAT_0008762c DAT_0008762c_backing[0]
+#define DAT_00087630 DAT_0008762c_backing[4]
+#define DAT_00087634 DAT_0008762c_backing[8]
+static char s_very_near_00087954[] = "very_near";
+
 
 
 
@@ -38,7 +122,7 @@ int param_2;
   /* Was 80 bytes -- build_creature_look_text's creature-look text ("You see " +
      article + description + " named " + proper name + suffix + "\n")
      can run well past that for a creature with a real name, overflowing
-     acStack_7c and taking the fortified strcat (Ordinal_1063) down with
+     acStack_7c and taking the fortified strcat (ce_strcat) down with
      a SIGSEGV. Reproduced via a right-click "look" at a creature (real
      UW_PICK_FORCE_SLOT-driven repro, not previously exercised since no
      creature in the earlier-tested area had a real name to overflow
@@ -68,13 +152,13 @@ int param_2;
      acStack_7c instead, which never got this prefix. Confirmed by the
      user: "Look" on an ordinary item (e.g. the sack) printed just "a
      sack" instead of "You see a sack." acStack_7c was also never
-     NUL-terminated before its first strcat (Ordinal_1063) below, so
+     NUL-terminated before its first strcat (ce_strcat) below, so
      leftover content from a PREVIOUS look call's stack frame could
      survive and get concatenated onto -- "Multiple Looks will also
      print them together like 'a sackasack'". Fix both: clear acStack_7c
      and seed it with the real "You see " prefix here instead. */
   acStack_7c[0] = '\0';
-  Ordinal_1063(acStack_7c, s_You_see_000858fc);
+  ce_strcat(acStack_7c, s_You_see_000858fc);
   acStack_ac[0] = '\0';
   iVar5 = append_object_property_tag(param_1,param_2,acStack_ac);
   cVar10 = '\0';
@@ -100,8 +184,8 @@ int param_2;
   if (pcVar6 != (char *)0x0) {
     cVar2 = *pcVar6;
     if (cVar2 != '\0') {
-      iVar5 = Ordinal_1068(pcVar6);
-      Ordinal_1044(acStack_9c,pcVar6,iVar5 + 1);
+      iVar5 = ce_strlen(pcVar6);
+      ce_memmove(acStack_9c,pcVar6,iVar5 + 1);
       cVar10 = cVar2;
     }
     param_2 = (int)(short)param_2;
@@ -122,40 +206,40 @@ int param_2;
   else {
     uVar11 = 1;
     cVar10 = 'x';
-    uVar7 = Ordinal_1025(uVar3 >> 6,auStack_b4,10);
-    Ordinal_1063(acStack_7c,uVar7);
+    uVar7 = _itoa(uVar3 >> 6,auStack_b4,10);
+    ce_strcat(acStack_7c,uVar7);
     puVar8 = &DAT_00085240;
 LAB_000489fc:
-    Ordinal_1063(acStack_7c,puVar8);
+    ce_strcat(acStack_7c,puVar8);
   }
   if (acStack_9c[0] != '\0') {
-    Ordinal_1063(acStack_7c,acStack_9c);
-    Ordinal_1063(acStack_7c,&DAT_00085240);
+    ce_strcat(acStack_7c,acStack_9c);
+    ce_strcat(acStack_7c,&DAT_00085240);
   }
   if (acStack_ac[0] != '\0') {
-    Ordinal_1063(acStack_7c,acStack_ac);
+    ce_strcat(acStack_7c,acStack_ac);
   }
-  iVar9 = Ordinal_1068(acStack_7c);
+  iVar9 = ce_strlen(acStack_7c);
   build_object_display_name(acStack_7c + iVar9,param_1,cVar10 == '\0',uVar11);
   append_object_special_name(param_1,param_2,acStack_7c);
   if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
-    Ordinal_1063(acStack_7c,s_belonging_to_00085c90);
+    ce_strcat(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's
-       char* to it truncated the pointer -> Ordinal_1063 (strcat) walked a wild
+       char* to it truncated the pointer -> ce_strcat (strcat) walked a wild
        address, crashing a right-click "look" at any owned container (the
        spawn-room sack). Use the char* local. */
     pcVar6 = get_message_string((bVar1 & 0x1f) + 0x172 | 0x200);
-    Ordinal_1063(acStack_7c,pcVar6);
+    ce_strcat(acStack_7c,pcVar6);
   }
-  Ordinal_1063(acStack_7c,&DAT_00084f20);
+  ce_strcat(acStack_7c,&DAT_00084f20);
   /* No trailing newline was ever appended, so back-to-back Looks (the
      scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
      embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
      line: confirmed live, 3 Looks at the sack rendered as one run-on
      "You see a sackYou see a sackYou see a sack" instead of 3 separate
      lines. */
-  Ordinal_1063(acStack_7c,"\n");
+  ce_strcat(acStack_7c,"\n");
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   describe_special_object_property(param_1,param_2);
@@ -189,7 +273,7 @@ short param_5;
   byte *pbVar11;
   void **piVar12;
   /* iVar5 above is a real int (file handle) for open_file_for_read's return,
-     reused later in this same function as if it held Ordinal_1041's
+     reused later in this same function as if it held ce_malloc's
      `void *` return (the decoded glyph buffer) -- same "reused scalar"
      bug already fixed in look_at_inscribed_object this session. Separate real
      pointer local for that use. */
@@ -218,7 +302,7 @@ short param_5;
        nothing in the previously-tested level area used it -- so an
        out-of-bounds `param_3` relative to the page's own base char code
        (`*pbVar11`) was never hardened against. `pbVar11` is a real
-       0x7fff-byte Ordinal_1041 allocation; -3 keeps every access below
+       0x7fff-byte ce_malloc allocation; -3 keeps every access below
        reading pbVar11[iVar9] and pbVar11[iVar9+1] in bounds. Skip
        drawing this glyph rather than reading wildly out of the buffer. */
     DEBUG(ERR, "[glyphpage] index %d out of range for page base %d (param_3=%d), skipping\n",
@@ -282,39 +366,23 @@ short param_5;
       if (getenv("UW_DEBUG_CRITTER"))
         fprintf(stderr, "[critter] decode_critter_sprite_page: w=%d h=%d comp_type(pbVar11[4])=%d\n",
                 (int)(short)DAT_00202508, (int)(short)DAT_002022f8, (int)pbVar11[4]);
-      /* pbVar11 here has already been re-pointed via pbVar8[iVar5+iVar9]
-         (a tier-byte-derived offset, no bounds check against pbVar8's
-         real extent) -- for a tier-byte well outside the small range
-         this offset scheme was confirmed correct for (0-7, see
-         resolve_critter_sprite_tier's own tier-search table), that reads
-         wild/unrelated bytes from elsewhere in the page and
-         misinterprets them as a glyph header (observed: a real NPC's
-         direction 129 producing a 241x16 header, an impossible sprite
-         size, with pbVar11[4] landing on an unsupported
-         unpack_glyph_bitmap format too). Every other creature sprite
-         actually seen this session is under 64px in both dimensions;
-         skip decoding rather than allocate/decode from a header that
-         clearly isn't real glyph data. This is a stopgap, not a fix for
-         the underlying tier-byte interpretation -- the real page-format
-         semantics for tier-bytes outside 0-7 are still unknown. */
-      if ((unsigned short)DAT_00202508 > 64 || (unsigned short)DAT_002022f8 > 64) {
-        DEBUG(ERR, "[critter] decode_critter_sprite_page: implausible header w=%d h=%d for type=%d tier=%d dir=%d, skipping\n",
-              (int)(short)DAT_00202508, (int)(short)DAT_002022f8, param_1, param_2, (int)param_3);
-        return 0;
-      }
+      /* The original decoder accepts the page's full byte-sized dimensions.
+         Goblin combat frames legitimately exceed 64 pixels (e.g. direction
+         3, frame 3 is 68x44). Rejecting those after updating the dimensions
+         left the previous texture paired with the new size, garbling it. */
       uVar7 = decompress_gr_bitmap(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
       if (getenv("UW_DEBUG_CRITTER") && uVar7) {
         fprintf(stderr, "[critter] decode_critter_sprite_page: decoded row bytes[0..15]:");
         for (int _i = 0; _i < 16; _i++) fprintf(stderr, " %02x", (unsigned char)uVar7[_i]);
         fprintf(stderr, "\n");
       }
-      pvVar_glyphbuf = Ordinal_1041((int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
+      pvVar_glyphbuf = ce_malloc((int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
       iVar10 = (int)(short)DAT_002022f8;
       iVar9 = (int)(short)DAT_00202508;
       piVar12 = &DAT_002020f8 + iVar1;
       *piVar12 = pvVar_glyphbuf;
-      Ordinal_1047(pvVar_glyphbuf,0,iVar10 * iVar9);
-      Ordinal_1044(*piVar12,uVar7,(int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
+      ce_memset(pvVar_glyphbuf,0,iVar10 * iVar9);
+      ce_memmove(*piVar12,uVar7,(int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
       uw_debug_dump_critter_sprite(param_1,param_2,(int)param_3,(int)param_5,
                                     (unsigned char *)*piVar12,
                                     (int)(short)DAT_00202508,(int)(short)DAT_002022f8);
@@ -546,8 +614,8 @@ int param_2;
   if (pcVar6 != (char *)0x0) {
     cVar2 = *pcVar6;
     if (cVar2 != '\0') {
-      iVar5 = Ordinal_1068(pcVar6);
-      Ordinal_1044(local_9c,pcVar6,iVar5 + 1);
+      iVar5 = ce_strlen(pcVar6);
+      ce_memmove(local_9c,pcVar6,iVar5 + 1);
       cVar10 = cVar2;
     }
     param_2 = (int)(short)param_2;
@@ -568,40 +636,40 @@ int param_2;
   else {
     uVar11 = 1;
     cVar10 = 'x';
-    uVar7 = Ordinal_1025(uVar3 >> 6,auStack_b4,10);
-    Ordinal_1063(acStack_7c,uVar7);
+    uVar7 = _itoa(uVar3 >> 6,auStack_b4,10);
+    ce_strcat(acStack_7c,uVar7);
     puVar8 = &DAT_00085240;
 LAB_000489fc:
-    Ordinal_1063(acStack_7c,puVar8);
+    ce_strcat(acStack_7c,puVar8);
   }
   if (local_9c[0] != '\0') {
-    Ordinal_1063(acStack_7c,local_9c);
-    Ordinal_1063(acStack_7c,&DAT_00085240);
+    ce_strcat(acStack_7c,local_9c);
+    ce_strcat(acStack_7c,&DAT_00085240);
   }
   if (local_ac[0] != '\0') {
-    Ordinal_1063(acStack_7c,local_ac);
+    ce_strcat(acStack_7c,local_ac);
   }
-  iVar9 = Ordinal_1068(acStack_7c);
+  iVar9 = ce_strlen(acStack_7c);
   build_object_display_name(acStack_7c + iVar9,param_1,cVar10 == '\0',uVar11);
   append_object_special_name(param_1,param_2,acStack_7c);
   if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
-    Ordinal_1063(acStack_7c,s_belonging_to_00085c90);
+    ce_strcat(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's
-       char* to it truncated the pointer -> Ordinal_1063 (strcat) walked a wild
+       char* to it truncated the pointer -> ce_strcat (strcat) walked a wild
        address, crashing a right-click "look" at any owned container (the
        spawn-room sack). Use the char* local. */
     pcVar6 = get_message_string((bVar1 & 0x1f) + 0x172 | 0x200);
-    Ordinal_1063(acStack_7c,pcVar6);
+    ce_strcat(acStack_7c,pcVar6);
   }
-  Ordinal_1063(acStack_7c,&DAT_00084f20);
+  ce_strcat(acStack_7c,&DAT_00084f20);
   /* No trailing newline was ever appended, so back-to-back Looks (the
      scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
      embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
      line: confirmed live, 3 Looks at the sack rendered as one run-on
      "You see a sackYou see a sackYou see a sack" instead of 3 separate
      lines. */
-  Ordinal_1063(acStack_7c,"\n");
+  ce_strcat(acStack_7c,"\n");
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   describe_special_object_property(param_1,param_2);
@@ -665,10 +733,12 @@ ushort * param_2;
   DAT_00202c6c = local_backing;
   uVar2 = *param_1;
   uVar3 = encode_object_slot_index(param_1);
-  *(byte *)(DAT_00202c6c + 5) = (byte)uVar3;
+  /* ARM 0x4b2d0/0x4b310: slot at byte 10, radius at byte 8.
+     DAT_00202c6c is a byte pointer; Ghidra's word indices need scaling. */
+  *(byte *)(DAT_00202c6c + 10) = (byte)uVar3;
   *(byte *)((char *)DAT_00202c6c + 0xb) = (byte)((ushort)uVar3 >> 8);
   iVar5 = (short)(uVar2 & 0x1ff) * 0xd;
-  *(byte *)(DAT_00202c6c + 4) = (&DAT_00202c91)[iVar5] & 7;
+  *(byte *)(DAT_00202c6c + 8) = (&DAT_00202c91)[iVar5] & 7;
   *(undefined *)((char *)DAT_00202c6c + 9) = (&DAT_00202c90)[iVar5];
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] ENTER param_1=%p param_1[0xb]=0x%x param_1+3byte=0x%x\n",
@@ -724,16 +794,18 @@ ushort * param_2;
             (int)*(short *)((char *)DAT_00202c6c + 4), (int)(byte)DAT_00202c6c[0x10],
             (int)(byte)DAT_00202c6c[8]);
   if (((local_2a | local_2c) & 0x300) == 0) {
-    if ((byte)DAT_00202c6c[10] != 0) {
+    if ((byte)DAT_00202c6c[20] != 0) {
       sort_collision_candidates();
       if (*(byte *)((char *)DAT_00202c6c + 0x15) != 0) goto LAB_0004b4d4;
     }
     uVar2 = param_1[0xb];
     uVar6 = uVar2 & 0x3ff;
-    uVar7 = ((int)(short)(*DAT_00202c6c & 0x1f8) >> 3) << 10;
+    /* ARM 0x4b4e4..0x4b5d0 reads full X/Y words at bytes 0/2;
+       byte reads discarded X's high bits and used X's high byte as Y. */
+    uVar7 = ((int)(short)(*(ushort *)DAT_00202c6c & 0x1f8) >> 3) << 10;
     *(char *)(param_1 + 0xb) = (char)uVar6;
     *(byte *)((char *)param_1 + 0x17) = (byte)(uVar6 >> 8) | (byte)(uVar7 >> 8);
-    uVar7 = uVar2 & 0xf | uVar7 | ((int)(short)(DAT_00202c6c[1] & 0x1f8) >> 3) << 4;
+    uVar7 = uVar2 & 0xf | uVar7 | ((int)(short)(*(ushort *)(DAT_00202c6c + 2) & 0x1f8) >> 3) << 4;
     *(char *)(param_1 + 0xb) = (char)uVar7;
     *(char *)((char *)param_1 + 0x17) = (char)(uVar7 >> 8);
     uVar7 = (uint)CONCAT11(*(undefined1 *)((char *)param_1 + 3),(char)param_1[1]);
@@ -741,7 +813,7 @@ ushort * param_2;
     bVar1 = (byte)((((byte)*DAT_00202c6c & 7) << 0xd) >> 8);
     *(char *)(param_1 + 1) = (char)uVar6;
     *(byte *)((char *)param_1 + 3) = (byte)(uVar6 >> 8) | bVar1;
-    uVar2 = DAT_00202c6c[1];
+    uVar2 = *(ushort *)(DAT_00202c6c + 2);
     uVar7 = uVar7 & 0x3ff;
     *(char *)(param_1 + 1) = (char)uVar7;
     uVar4 = 1;
@@ -1066,8 +1138,8 @@ byte * param_2;
   bVar6 = (*param_2 >> 4) * '\b';
   uVar1 = (int)((uint)(*param_2 >> 4) << 0x13) >> 0x10;
   if (uVar1 < 0x80) {
-    uVar5 = Ordinal_1053();
-    Ordinal_2005(0x80 - uVar1,uVar5);
+    uVar5 = ce_rand();
+    extraout_r1 = (char)ordint_divmod(0x80 - uVar1,uVar5).rem;
     bVar6 = bVar6 + extraout_r1;
   }
   uVar2 = *(undefined2 *)(iVar4 + 2);
@@ -1140,7 +1212,7 @@ undefined1 param_5;
 
   uVar2 = (char *)spawn_and_prime_spell_effect_object(0x1c5,param_4);
   damage_all_objects_at_tile(param_1,param_2,2,param_5);
-  uVar3 = Ordinal_1053();
+  uVar3 = ce_rand();
   uVar4 = encode_object_slot_index(uVar2);
   uVar5 = (undefined1)param_2;
   uw_ord2005_rem_153 = ((int)(uVar3)) % (4);
@@ -1489,8 +1561,8 @@ char param_8;
                                                 * 4);
                     if (param_4 == '@') {
                       if ((*pbVar14 & 0xf) != 0) {
-                        uVar5 = Ordinal_1053();
-                        Ordinal_2005(iVar8 * iVar1 + 3,uVar5);
+                        uVar5 = ce_rand();
+                        extraout_r1 = ordint_divmod(iVar8 * iVar1 + 3,uVar5).rem;
                         if (((extraout_r1 < param_1) &&
                             (iVar10 = (*param_3)((int)local_60,iVar12,0,pbVar14,param_2),
                             iVar10 != 0)) &&
@@ -1716,7 +1788,7 @@ uint param_2;
 // picks a random valid, non-hostile-flagged monster from
 // g_monster_max_stats_table and does a full spawn+setup (race/
 // attitude sync for an NPC-cast summon, player-owned flag for a
-// player-cast one) -- this is the branch whose Ordinal_2005-remainder
+// player-cast one) -- this is the branch whose ordint_divmod-remainder
 // bug was already found and fixed in an earlier session pass (see the
 // comment on uVar6/uVar10 below, which was a genuine 100%-CPU
 // infinite-loop bug, not just a wrong-value one); any other param_2
@@ -1756,7 +1828,7 @@ char param_2;
   byte *local_28;
   
   uVar11 = 0x115;
-  uVar4 = Ordinal_1053();
+  uVar4 = ce_rand();
   uVar2 = *(ushort *)(param_1 + 2);
   bVar1 = *(byte *)(param_1 + 0x18);
   uw_ord2005_rem_154 = ((int)(uVar4)) % (0x1b);
@@ -1784,7 +1856,7 @@ char param_2;
     local_30 = (ushort)(*pbVar5 >> 4) << 3;
     local_28 = pbVar5;
     if (param_2 == '\x01') {
-      uVar4 = Ordinal_1053();
+      uVar4 = ce_rand();
       uw_ord2005_rem_156 = ((int)(uVar4)) % (7);
       uVar10 = (uw_ord2005_rem_156 & 0xffff) + 0xb0;
     }
@@ -1799,9 +1871,9 @@ char param_2;
       if (uVar6 < 2) {
         uVar6 = 2;
       }
-      /* Was `Ordinal_2005(uVar6,uVar4); uVar10 = (extraout_r1_01 & 0xffff) + ...`
+      /* Was `ordint_divmod(uVar6,uVar4); uVar10 = (extraout_r1_01 & 0xffff) + ...`
          -- the same fabricated-remainder bug fixed throughout this
-         session (this port's Ordinal_2005 never populates extraout_r1),
+         session (this port's ordint_divmod never populates extraout_r1),
          but this one was skipped by the earlier file-wide mechanical
          sweep because uVar6 (the divisor) is a variable, not a compile-
          time literal. Unlike every other instance of this bug found so
@@ -1809,7 +1881,7 @@ char param_2;
          than a wrong-value/misbehavior bug: extraout_r1_01 never
          changes, so uVar10/iVar8 are identical on every iteration of
          both do-while loops below regardless of the fresh
-         Ordinal_1053() reroll each time round -- if that one fixed
+         ce_rand() reroll each time round -- if that one fixed
          (wrong) candidate ever fails either loop's retry condition,
          nothing about the computation can ever change to let it pass,
          and the loop spins at 100% CPU forever. This is reached from
@@ -1819,11 +1891,12 @@ char param_2;
          likely the real cause of the reported "game hangs in a 100%
          busy loop" QA report, since it only triggers when something
          actually casts this specific spell, not on every tick.
-         Computed the remainder directly instead. */
+         Gets the remainder by name off ordint_divmod's own
+         divmod_result now instead of a bypassing direct "%". */
       do {
         do {
-          uVar4 = Ordinal_1053();
-          uVar10 = ((uint)(uintptr_t)uVar4 % uVar6 & 0xffff) + uVar6 + 0x40;
+          uVar4 = ce_rand();
+          uVar10 = ((uint)ordint_divmod(uVar6,(int)(uintptr_t)uVar4).rem & 0xffff) + uVar6 + 0x40;
           iVar8 = (uVar10 & 0xfe3f) * 0x30;
         } while ((&g_monster_max_stats_table)[iVar8] == '\0');
       } while ((((((&DAT_001007da)[iVar8] & 2) != 0) || ((uVar10 & 0xffff) == 0x7b)) ||
@@ -1930,7 +2003,7 @@ int param_2;
   short extraout_r1_00;
   uint uVar6;
 
-  uVar3 = Ordinal_1053();
+  uVar3 = ce_rand();
   uw_ord2005_rem_157 = ((int)(uVar3)) % (3);
   iVar4 = (char *)spawn_new_object(uw_ord2005_rem_157 + 0x154,0);
   uVar6 = *(ushort *)(iVar4 + 2) & 0xffee;
@@ -1938,15 +2011,15 @@ int param_2;
   *(char *)(iVar4 + 3) = (char)(uVar6 >> 8);
   iVar5 = place_object_in_world(param_1 * 8 + 3,param_2 * 8 + 3,0x6e,iVar4,0,0);
   if ((iVar5 != 0) && (iVar5 = object_ptr_in_arena(iVar4), iVar5 != 0)) {
-    bVar1 = Ordinal_1053();
+    bVar1 = ce_rand();
     *(byte *)(iVar4 + 0x13) =
          ((bVar1 & 3) + 2 ^ *(byte *)(iVar4 + 0x13)) & 0x7f ^ *(byte *)(iVar4 + 0x13);
-    uVar2 = Ordinal_1053();
+    uVar2 = ce_rand();
     *(undefined1 *)(iVar4 + 9) = uVar2;
-    bVar1 = Ordinal_1053();
+    bVar1 = ce_rand();
     *(byte *)(iVar4 + 10) =
          ((bVar1 & 3) + DAT_00101928 ^ *(byte *)(iVar4 + 10)) & 0xf ^ *(byte *)(iVar4 + 10);
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     bVar1 = *(byte *)(iVar4 + 0x14);
     uw_ord2005_rem_158 = ((int)(uVar3)) % (3);
     *(byte *)(iVar4 + 0x14) = (uw_ord2005_rem_158 + 1U ^ bVar1) & 7 ^ bVar1;
@@ -2011,7 +2084,7 @@ undefined4 param_2;
   uint uVar13;
   byte local_2c [8];
   
-  Ordinal_1047(local_2c,0,8);
+  ce_memset(local_2c,0,8);
   uVar2 = *(ushort *)((char *)g_player_object + 0x16);
   for (pbVar10 = DAT_002046c0; pbVar10 < DAT_002046c8; pbVar10 = pbVar10 + 1) {
     puVar5 = (ushort *)((uint)*pbVar10 * 0x1b + DAT_002046b8);
@@ -2060,7 +2133,7 @@ undefined4 param_2;
       uVar9 = uVar9 + 1 & 0xff;
       uVar11 = uVar6;
     } while (uVar9 < 8);
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     uVar6 = uVar6 & 7;
     bVar7 = 0;
     do {
@@ -2351,21 +2424,21 @@ int param_3;
   undefined1 *puVar1;
   int iVar2;
   
-  puVar1 = (undefined1 *)Ordinal_1064(param_1,0x26);
+  puVar1 = (undefined1 *)ce_strchr(param_1,0x26);
   if (param_3 == 0) {
     if (puVar1 != (undefined1 *)0x0) {
       *puVar1 = 0;
     }
   }
   else if (puVar1 == (undefined1 *)0x0) {
-    iVar2 = Ordinal_1068(param_1);
+    iVar2 = ce_strlen(param_1);
     param_1[iVar2] = 0x73;
     (param_1 + iVar2)[1] = 0;
   }
   else {
     param_1 = puVar1 + 1;
   }
-  puVar1 = (undefined1 *)Ordinal_1064(param_1,0x5f);
+  puVar1 = (undefined1 *)ce_strchr(param_1,0x5f);
   if (puVar1 != (undefined1 *)0x0) {
     if (param_2 == 0) {
       param_1 = puVar1 + 1;
@@ -2410,7 +2483,7 @@ uint param_3;
   char cVar1;
   char *pcVar2;
   char *uVar3;   /* was undefined4 -- get_message_string returns char*; truncating
-                    it fed Ordinal_1063 (strcat) a wild src pointer */
+                    it fed ce_strcat (strcat) a wild src pointer */
   char *pcVar4;
   char local_10c [256];
   
@@ -2424,11 +2497,11 @@ uint param_3;
   } while (cVar1 != '\0');
   if (-1 < (short)param_2) {
     uVar3 = get_message_string(param_2 | 0x200);
-    Ordinal_1063(local_10c,uVar3);
+    ce_strcat(local_10c,uVar3);
   }
   if (-1 < (short)param_3) {
     uVar3 = get_message_string(param_3 | 0x200);
-    Ordinal_1063(local_10c,uVar3);
+    ce_strcat(local_10c,uVar3);
   }
   message_scroll_print_wrapped(local_10c);
   return;
@@ -2791,7 +2864,7 @@ undefined4 param_3;
   undefined1 uVar12;
   undefined1 uVar13;
   
-  uVar6 = Ordinal_1053();
+  uVar6 = ce_rand();
   uw_ord2005_rem_170 = ((int)(uVar6)) % (3);
   iVar7 = uw_ord2005_rem_170 + 2;
   sVar1 = (short)iVar7;
@@ -2805,7 +2878,7 @@ undefined4 param_3;
     *(undefined1 *)((char *)puVar8 + 5) = param_1[5];
     *(undefined1 *)(puVar8 + 3) = param_1[6];
     *(undefined1 *)((char *)puVar8 + 7) = param_1[7];
-    uVar9 = Ordinal_1053();
+    uVar9 = ce_rand();
     uVar10 = (uint)*puVar8;
     uVar10 = ((uVar9 & 1) + uVar10 + 1 ^ uVar10) & 0x1ff ^ uVar10;
     *(char *)puVar8 = (char)uVar10;
@@ -2813,7 +2886,7 @@ undefined4 param_3;
     bVar3 = *(byte *)((char *)puVar8 + 3) >> 5;
     do {
       do {
-        uVar6 = Ordinal_1053();
+        uVar6 = ce_rand();
         uw_ord2005_rem_171 = ((int)(uVar6)) % (5);
         iVar7 = ((int)(((int)uw_ord2005_rem_171 - 2U) * 0x10000) >> 0x10) + (int)(short)(ushort)bVar3;
       } while (iVar7 < 0);
@@ -2825,7 +2898,7 @@ undefined4 param_3;
     uVar9 = (uVar9 & 0x1c00) >> 10;
     do {
       do {
-        uVar6 = Ordinal_1053();
+        uVar6 = ce_rand();
         uw_ord2005_rem_172 = ((int)(uVar6)) % (5);
         iVar7 = ((int)(((int)uw_ord2005_rem_172 - 2U) * 0x10000) >> 0x10) + (int)(short)uVar9;
       } while (iVar7 < 0);
@@ -2835,7 +2908,7 @@ undefined4 param_3;
     *(byte *)((char *)puVar8 + 3) =
          (bVar3 ^ (byte)(((((int)uw_ord2005_rem_172 - 2U & 0xffff) + uVar9 & 0xffff) << 10) >> 8)) &
          0x1c ^ bVar3;
-    bVar4 = Ordinal_1053();
+    bVar4 = ce_rand();
     uVar2 = puVar8[1];
     bVar3 = (byte)uVar2;
     *(byte *)(puVar8 + 1) = (((bVar4 & 0xf) + bVar3) - 8 ^ bVar3) & 0x7f ^ bVar3;
@@ -2847,9 +2920,9 @@ undefined4 param_3;
       char *_tile7 = (char *)tilemap_lookup(param_2,param_3);
       object_list_insert_head(_tile7 + 2,puVar8);
     }
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     uw_ord2005_rem_173 = ((int)(uVar6)) % (3);
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     uVar11 = encode_object_slot_index(puVar8);
     uVar12 = (undefined1)param_3;
     uVar13 = (undefined1)uw_ord2005_rem_173;
@@ -2908,7 +2981,7 @@ undefined4 init_monster_spawn_defaults()
   g_scratch_object_ptr[6] = (byte)(uVar1 & 0xffc0) ^ 0x20;
   g_scratch_object_ptr[7] = (byte)((uVar1 & 0xffc0) >> 8);
   DAT_001007c8 = &DAT_001007d0 + (*g_scratch_object_ptr & 0x3f) * 0x30;
-  uVar2 = Ordinal_1053();
+  uVar2 = ce_rand();
   uw_ord2005_rem_11 = ((int)(uVar2)) % (0x18);
   iVar3 = (uw_ord2005_rem_11 + 0x10) * (uint)(byte)DAT_001007c8[4];
   if (iVar3 < 0) {
@@ -3000,7 +3073,7 @@ undefined4 init_monster_spawn_defaults()
 undefined4 append_object_property_tag(param_1,param_2,param_3)
 ushort *param_1;   /* was undefined4 -- object ptr into resolve_object_variant_or_special_link */
 short param_2;
-char *param_3;     /* was undefined4 -- caller's stack buffer for Ordinal_1063 */
+char *param_3;     /* was undefined4 -- caller's stack buffer for ce_strcat */
 
 {
   int iVar1;
@@ -3012,7 +3085,7 @@ char *param_3;     /* was undefined4 -- caller's stack buffer for Ordinal_1063 *
   iVar1 = resolve_object_variant_or_special_link(param_1,&local_14,auStack_12,&local_10);
   if (iVar1 != 0) {
     if (param_2 == 2) {
-      Ordinal_1063(param_3,s_magical_00085ca8);
+      ce_strcat(param_3,s_magical_00085ca8);
       return 1;
     }
     if (param_2 == 3) {
@@ -3021,7 +3094,7 @@ char *param_3;     /* was undefined4 -- caller's stack buffer for Ordinal_1063 *
         local_10 = (int)local_14;
       }
       if (bVar2 && local_10 == 9) {
-        Ordinal_1063(param_3,s_cursed_00085ca0);
+        ce_strcat(param_3,s_cursed_00085ca0);
       }
     }
   }
@@ -3043,7 +3116,7 @@ char *param_3;     /* was undefined4 -- caller's stack buffer for Ordinal_1063 *
 undefined4 append_object_special_name(param_1,param_2,param_3)
 byte * param_1;
 short param_2;
-char *param_3;   /* was int -- caller's stack buffer for Ordinal_1063/1044/1068 */
+char *param_3;   /* was int -- caller's stack buffer for ce_strcat/1044/1068 */
 
 {
   int uw_ord2005_rem_113 = 0;
@@ -3095,10 +3168,10 @@ LAB_00048e80:
     if ((pcVar4 == (char *)0x0) || (*pcVar4 == '\0')) {
       pcVar4 = s_UNNAMED_00084f24;
     }
-    Ordinal_1063(param_3,&DAT_00085cd8);
-    iVar2 = Ordinal_1068(pcVar4);
-    iVar5 = Ordinal_1068(param_3);
-    Ordinal_1044(param_3 + iVar5,pcVar4,iVar2 + 1);
+    ce_strcat(param_3,&DAT_00085cd8);
+    iVar2 = ce_strlen(pcVar4);
+    iVar5 = ce_strlen(param_3);
+    ce_memmove(param_3 + iVar5,pcVar4,iVar2 + 1);
     if ((param_1[1] & 0x80) == 0) {
       local_1c = param_1 + 6;
       uVar8 = 0xffff;
@@ -3112,7 +3185,7 @@ LAB_00048e80:
       }
       iVar2 = (int)(short)uVar8;
       if (-1 < iVar2) {
-        Ordinal_1063(param_3,s_with_00085cd0);
+        ce_strcat(param_3,s_with_00085cd0);
         if (iVar2 < 1) {
           puVar7 = (undefined2 *)&DAT_00085cc8;
         }
@@ -3126,15 +3199,15 @@ LAB_00048e80:
             puVar7 = (undefined2 *)((char *)local_26 + 1);
           }
           else {
-            cVar1 = Ordinal_2005(10,iVar2);
+            cVar1 = ordint_divmod(10,iVar2).quot;
             local_26[0] = cVar1 + '0';
             puVar7 = (undefined2 *)local_26;
           }
         }
-        Ordinal_1063(param_3,puVar7);
-        Ordinal_1063(param_3,s_full_charge_00085cb8);
+        ce_strcat(param_3,puVar7);
+        ce_strcat(param_3,s_full_charge_00085cb8);
         if (iVar2 != 1) {
-          Ordinal_1063(param_3,&DAT_00085cb4);
+          ce_strcat(param_3,&DAT_00085cb4);
         }
       }
     }
@@ -3171,7 +3244,7 @@ short param_2;
   char local_128 [8];
   char acStack_120 [260];
   /* iVar5 above is a real int (file handle) for the uVar8==5/grave.dat
-     branch's open_file_for_read/Ordinal_553 calls -- but is reused later in the
+     branch's open_file_for_read/CloseHandle calls -- but is reused later in the
      shared tail (untouched by that branch, e.g. the sign/TMOBJ uVar8==6
      case) to hold get_message_string's real `char *` return, truncating it on
      this 64-bit host. Confirmed via lldb: right-clicking a rendered sign
@@ -3225,7 +3298,7 @@ short param_2;
       uVar9 = (CONCAT11(*(undefined1 *)((char *)param_1 + 7),(byte)param_1[3]) & 0x7fc0) >> 6;
     }
     if (uVar8 == 5) {
-      Ordinal_1047(acStack_120,0,0x104);
+      ce_memset(acStack_120,0,0x104);
       pcVar4 = &DAT_0023cca8;
     stack0xffdc3238_ptr = acStack_120;
       do {
@@ -3233,11 +3306,11 @@ short param_2;
         *stack0xffdc3238_ptr = cVar1; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
         pcVar4 = pcVar4 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(acStack_120,s__DATA_grave_dat_00085cf8);
+      ce_strcat(acStack_120,s__DATA_grave_dat_00085cf8);
       iVar5 = open_file_for_read(acStack_120);
       iVar6 = seek_file_handle(iVar5,(short)uVar9,0);
       iVar7 = read_file_handle(iVar5,local_128,1);
-      bVar3 = Ordinal_553(iVar5);
+      bVar3 = CloseHandle(iVar5);
       if ((iVar7 == 1 & bVar3 & (iVar5 != -1 && iVar6 != -1)) == 0) {
         return;
       }

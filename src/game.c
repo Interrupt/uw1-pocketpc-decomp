@@ -8,6 +8,298 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00201b70 DAT_00201b70_backing[0]
+// was DAT_0024af74. Nonzero: draw_text_string colors glyph pixels via
+// the palette index *g_draw_color_index; zero (the default -- nothing
+// else in this decompile ever sets it) uses the flat g_text_flat_color
+// instead. A reentrancy/mode flag set only around one unrelated dialog-
+// box drawing routine (display_book_or_scroll_page), so callers elsewhere that want
+// palette-indexed text (e.g. draw_menu_item_list's highlighted save-slot
+// labels) must force it themselves for the duration of the draw.
+int g_text_use_palette_color;
+static int DAT_0023c5b0;
+// was DAT_0008429c_backing/DAT_0008429c. Current draw-color palette
+// index, written before nearly every text/UI draw call across the file
+// and read back by draw_text_string (when g_text_use_palette_color is
+// set) and various fill/blit routines.
+static byte g_draw_color_index_backing[128];
+byte *g_draw_color_index = g_draw_color_index_backing;
+/* DAT_000879b0/DAT_000890a4 (the active font's 12-byte header and its
+   glyph-bitmap data, both filled in by select_active_font's file reads)
+   were plain uninitialized pointers -- no allocation anywhere in this
+   file, and confirmed via Ghidra xref search that the real ARM binary's
+   own source slots (0x40dd8/0x40ddc) are READ-ONLY across the whole
+   binary too, never written by any real code -- so these were never
+   runtime-malloc'd pointers at all; they're link-time-constant
+   addresses of fixed static buffers that Ghidra's static analysis
+   couldn't recover (same class as several other "silently zero"
+   globals already fixed this session). Confirmed live: DAT_000890a4
+   was NULL, and unpack_glyph_bitmap's pointer arithmetic off NULL
+   landed in essentially-random process memory that happened to overlap
+   a heap block libSystem/Foundation legitimately allocated-then-freed
+   during app startup -- an ASan-caught heap-buffer-overflow (uw.c:7007)
+   on the first automap-note text draw of any session, not a "sometimes"
+   bug: font rendering was silently using this same wild pointer on
+   every single draw all along, just usually landing in mapped-but-
+   irrelevant memory instead of a freed block that trips ASan. Given
+   real backing storage instead, sized to what select_active_font's own
+   reads need (12-byte header; 0x1080 bytes of glyph data -- see that
+   function's own comment on why 0x1080). */
+static static char DAT_000879b0_backing[12];
+char *DAT_000879b0 = DAT_000879b0_backing;
+static static char DAT_000890a4_backing[0x1080];
+char *DAT_000890a4 = DAT_000890a4_backing;
+byte *DAT_0024af78;
+byte *DAT_0024af7c;
+char *DAT_0023cca0;
+/* Not `static` -- also used by game.c (app_main_loop, main_menu_loop);
+   see the extern declaration and DAT_0023cca8 macro alias in uw.h. */
+undefined1 DAT_0023cca8_backing[32768];
+static undefined1 DAT_00084298_backing[128];
+undefined1 *DAT_00084298 = DAT_00084298_backing;
+/* Was `undefined4` despite being assigned a real malloc'd pointer
+   (`DAT_00248410 = DAT_0023c44c;`, itself `ce_malloc(0x4cce)`'s
+   result) -- truncating on this 64-bit host and feeding a garbage
+   pointer to ce_memset/ce_memmove. Same fix applied to its two
+   sibling aliases, DAT_0023cca4 and DAT_0024ad58, assigned from the
+   same source right next to this one. */
+char *DAT_00248410;
+int DAT_00201c98;
+static char s__DATA_pres1_byt_00085790[] = "\\DATA\\pres1.byt";
+undefined4 DAT_0023c540;
+static char s__DATA_lev_ark_00085734[] = "\\DATA\\lev.ark";
+static char s_Not_enough_disk_space_for_save_g_00085744[] = "Not_enough_disk_space_for_save_g";
+static char s__DATA_COPYRIGHT_BYT_0008576c[] = "\\DATA\\COPYRIGHT.BYT";
+static char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
+/* Not `static` -- also used by game.c (app_main_loop, main_menu_loop);
+   see the extern declaration and DAT_000857a0 macro alias in uw.h.
+   Was zero-initialized -- an "unrecoverable string constant" Ghidra never
+   populated (same class of bug as the CHRBTNS/opbtn resource-name fixes),
+   but unlike those it has NO writer anywhere in uw.c or game.c either, so
+   it's a real compile-time constant, not a runtime-built buffer. Every
+   reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
+   bglobals.dat, desc) alongside already-recovered sibling constants that
+   spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
+   and probe_save_slots/load_game_from_slot both search the built path for a literal
+   '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
+   supplies one. Recovered as "\SAVE0"; kept the oversized backing array
+   since nothing else relies on its exact size. */
+undefined1 DAT_000857a0_backing[32768] = "\\SAVE0";
+static undefined2 DAT_00201b6c;
+/* Per-(redraw-mode, dirty-bit) handler dispatch table read by
+   dispatch_sticky_mode_handlers/enter_dungeon_view/handle_player_death_and_menu_transition/change_game_mode (DAT_00201b64 = the
+   mode: 0 is the normal in-game/dungeon view, seen so far; 1 and 2 are
+   some other screen). It's link-time-initialized data in the original
+   binary -- nothing in this decompile ever writes to it at runtime -- so
+   unlike this file's usual "orphaned populator function" bugs (e.g.
+   chrbtns_offset_table_builder), there's no call to recover: the table's real content
+   was recovered by reading UU.exe's .data section directly via Ghidra
+   (same method already used for this file's string-constant symbols; see
+   e.g. s_chrbtns_00084ef8's comment), then matching each recovered
+   32-bit ARM address against this file's own FUN_ names by address.
+   Left as a bare zero-filled placeholder, every handler read came back
+   NULL, so the per-frame redraw dispatch (dispatch_sticky_mode_handlers) never called
+   anything -- the game reached the dungeon and ran forever, but no HUD
+   panel, 3D view, or tmap tile ever drew.
+
+   3 of the 48 slots point at functions this decompile never recovered:
+   they're only ever reached indirectly through this table, so Ghidra's
+   original auto-analysis had no direct call site to find them from (same
+   root cause as chrbtns_offset_table_builder/populate_menu_button_bitmap_entry needing separate recovery).
+   Disassembling them directly (Ghidra, headless) shows they're
+   conversation-portrait-animation and ambient-sound-cycling handlers --
+   not needed to get a player standing in a rendered dungeon, so left
+   NULL (safely skipped by this table's own "if handler != NULL" guard)
+   rather than ported. // Hack - Disabled
+
+   Real entries are function-pointer-sized (8 bytes on this 64-bit host)
+   -- wider than the original 4-byte ARM pointers the table's own index
+   math was written for, so every read site's byte-stride constant is
+   doubled (0x40 -> 0x80 per 16-entry mode row, 4 -> 8 per single entry;
+   see each site's own comment). */
+void (*const DAT_00085668_real_table[48])(void) = {
+  /* mode 0 (in-game/dungeon view) */
+  /* Original bit 1 is the 0x3c190 thunk to render_dungeon_frame_timed
+     (0x5bbe0); picture dismissal requests this bit via FUN_00049924(2). */
+  (void(*)(void))enter_dungeon_view, (void(*)(void))render_dungeon_frame_timed, 0, (void(*)(void))dungeon_view_anim_tick,
+  0, 0, 0, 0,
+  0, (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))handle_game_victory_sequence, (void(*)(void))movement_pacing_handler,
+  (void(*)(void))sync_player_stats_to_hud, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
+  /* mode 1 */
+  0, (void(*)(void))enter_automap_screen, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0 /* Hack - Disabled: ambient sound cycling */, 0, 0, (void(*)(void))exit_automap_screen,
+  /* mode 2 */
+  (void(*)(void))enter_conversation_mode_screen, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, (void(*)(void))exit_talk_mode,
+};
+undefined2 DAT_000868d8;
+static char s_Error_code_XXXX___000857c8[] = "Error_code_XXXX_$";
+static char s_Out_of_Low_Memory___000857dc[] = "Out_of_Low_Memory.$";
+static char s_Out_of_EMS_Memory___000857f0[] = "Out_of_EMS_Memory.$";
+static char s_Could_not_read_data___00085804[] = "Could_not_read_data.$";
+static char s_Could_not_write_data___0008581c[] = "Could_not_write_data.$";
+static char s_Resource_problem_or_internal_err_00085834[] = "Resource_problem_or_internal_err";
+static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld_can_no_longer_run._Er";
+static undefined DAT_00201b70_backing[8192];
+void *DAT_00202308_arr[256];
+/* Per-geometry-record decoded-sprite pixel buffers, one malloc per visible
+   object, freed each frame by free_frame_geometry_buffers. Ghidra typed it
+   `undefined4` (4 bytes), truncating the 64-bit ce_malloc pointer -- the
+   memcpy into it (ce_memmove) would fault. Widened to a real pointer
+   array; only decode_tile_object_billboard_texture, free_frame_geometry_buffers and app_main_loop's
+   startup zero-fill touch it. */
+void *DAT_0023c7a0_arr[0x140];
+static undefined2 DAT_0020272c;
+static undefined2 DAT_0024fa1c;
+static char DAT_00085988;
+char DAT_0024d000;
+char DAT_0024fa28;
+/* Was `static undefined DAT_000859ac_backing[8192]` -- Ghidra never
+   recognized this as a string reference (no cross-reference to label
+   it), but the raw bytes at this address in the real binary spell out
+   "optb\0" plainly -- confirmed via direct memory dump (Ghidra
+   headless, `mem.getBytes`), matching OPTB.GR in data/DATA/. This and
+   its 3 siblings below were the "Unrecoverable string tables" this
+   file's own comments referenced; all 4 turned out to be perfectly
+   readable, just never labeled. Recovering them fixes the frame-
+   counter corruption bug documented at load_gr_resource_entries's own
+   "nothing to load" branch (each of these 4 was previously read as an
+   empty string, silently re-adding the previous resource's frame
+   count instead of contributing OPTB.GR's/etc.'s own real frames). */
+static char s_optb_000859ac[] = "optb";
+static char s_scrledge_000859b4[] = "scrledge";
+static char s_spells_000859c0[] = "spells";
+static char s_chains_000859c8[] = "chains";
+/* Was `static undefined DAT_000859d0_backing[8192]` -- real bytes
+   spell "eyes\0", matching EYES.GR. See s_optb_000859ac's comment. */
+static char s_eyes_000859d0[] = "eyes";
+static char s_power_000859d8[] = "power";
+/* Was `static undefined DAT_000859e0_backing[8192]` -- real bytes
+   spell "inv\0", matching INV.GR. See s_optb_000859ac's comment. */
+static char s_inv_000859e0[] = "inv";
+static char s_dragons_000859e4[] = "dragons";
+static char s_compass_000859ec[] = "compass";
+static char s_flasks_000859f4[] = "flasks";
+static char s_tmobj_00085a04[] = "tmobj";
+static char s_tmflat_00085a0c[] = "tmflat";
+static char s_3dwin_00085a14[] = "3dwin";
+static char s_cursors_00085a1c[] = "cursors";
+static char s_buttons_00085a24[] = "buttons";
+static char s_animo_00085a2c[] = "animo";
+static char s_objects_00085a34[] = "objects";
+static char s_views_00085a3c[] = "views";
+static char s_question_00085a44[] = "question";
+static char s__DATA_allpals_dat_00085a50[] = "\\DATA\\allpals.dat";
+ushort DAT_0023c448;
+static ushort DAT_000876bc_backing[128];
+ushort *DAT_000876bc = DAT_000876bc_backing;
+static short DAT_000876c0_backing[128];
+short *DAT_000876c0 = DAT_000876c0_backing;
+static undefined DAT_00028bfc_backing[8192];
+#define DAT_00028bfc DAT_00028bfc_backing[0]
+static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev_%d_@_%2.2u.%1.1u_%2.2u.%1.1u";
+static byte DAT_0023bd84;
+static undefined1 DAT_00086e05;
+static undefined1 DAT_00086e06;
+static undefined DAT_00086e00_backing[8192];
+#define DAT_00086e00 DAT_00086e00_backing[0]
+static int DAT_000db500;
+short DAT_0024af6c;
+/* Was `int` despite holding a real stack address (main_menu_loop:
+   `DAT_0023bf6c = &local_82c;`) used in pointer arithmetic throughout
+   this file -- truncating on this 64-bit host. */
+static char *DAT_0023bf6c;
+static ushort DAT_0023bf74;
+/* populate_menu_button_bitmap_entry (main menu button record populator) used to split each
+   loaded button bitmap's real pointer into 4 bytes and pack it directly
+   into DAT_0023bf6c's record array -- fine for a 32-bit pointer on the
+   original binary, but silently truncates a real 64-bit pointer here
+   (confirmed via ASAN: draw_menu_item_list dereferencing the reassembled
+   low-32-bits-only value, SEGV). Same "route the real pointer through a
+   dedicated global instead of packing it into an undersized field"
+   pattern as g_chargen_textfield_buf. Index formula (shared by
+   populate_menu_button_bitmap_entry/draw_menu_item_list) is (selected?1:0) + button_index*4 -- a
+   stride of 4 per button, not 2, so up to 4 buttons needs slots through
+   index 13 (1 + 3*4); sized generously to 16. */
+static char *g_menu_button_bitmaps[16];
+static char s__DATA_CREDIT3_BYT_00086ea8[] = "\\DATA\\CREDIT3.BYT";
+static char s__DATA_CREDIT2_BYT_00086ebc[] = "\\DATA\\CREDIT2.BYT";
+static char s__DATA_CREDIT1_BYT_00086ed0[] = "\\DATA\\CREDIT1.BYT";
+static char s_opbtn_00086ee4[] = "opbtn";
+static char s__DATA_opscr_byt_00086eec[] = "\\DATA\\opscr.byt";
+/* Was `int` despite holding a real malloc'd pointer (main_menu_loop:
+   `DAT_0023bf70 = iVar4;` where iVar4 = ce_malloc(0x10000)), used in
+   pointer arithmetic (`iVar9 + DAT_0023bf70`) -- truncating on this
+   64-bit host. */
+static char *DAT_0023bf70;
+/* Same fix as DAT_00248410 above -- see its comment. */
+char *DAT_0023cca4;
+// was DAT_0023c210 -- the current frame's raw .GR entry pointer (see
+// g_weapon_swing_raw_frames), set by weapon_swing_draw_tick right
+// before decoding it -- was computed as `DAT_0023c214 +
+// (short)(&DAT_0023c158)[frame]`. `DAT_0023c158` was declared as a
+// lone 2-byte scalar despite being indexed up to 27 -- the same
+// "Ghidra couldn't recover this table's real .data contents" shape as
+// g_inventory_hotspot_table/DAT_00085668/etc. elsewhere in this file
+// -- so that part of the expression read garbage for every frame but
+// the first. `DAT_0023c214` (see its own declaration, just below) is
+// real, but the intended packing scheme it and the lost offset table
+// together addressed isn't recoverable, so this now points directly
+// at g_weapon_swing_raw_frames[frame] instead -- one real per-frame
+// allocation apiece rather than packed offsets into one shared
+// buffer, matching how the file's other raw-GR-entry consumer
+// (blit_object_sprite_by_frame) already reads a frame's real
+// width/height straight from its own header bytes (entry[1]/entry[2])
+// regardless of storage scheme.
+char *g_weapon_swing_current_frame;
+/* was DAT_0023c214, `int`-typed in both its own uw.h extern
+   declaration and here -- app_main_loop (game.c) assigns it a real
+   64000-byte ce_malloc allocation (the same one it hands
+   g_weapon_swing_current_frame right beside it, before per-frame use
+   overwrites that one), truncating the pointer on this 64-bit host
+   exactly like every other pointer-in-a-narrow-global bug in this
+   project. Fixed the type; the buffer itself is otherwise unused now
+   that g_weapon_swing_current_frame is resolved via
+   g_weapon_swing_raw_frames instead (see that comment) -- kept only
+   because app_main_loop still allocates and assigns it. */
+static char *g_weapon_swing_startup_scratch_buffer;
+undefined1 DAT_00241f08_backing[32768];
+static undefined2 DAT_0023c59e;
+static undefined2 DAT_0023c5a0;
+static char *DAT_0023c44c;
+static char *DAT_0023cef0;
+/* Same fix as DAT_00248410 above -- see its comment. */
+static char *DAT_0024ad58;
+int DAT_000876c8;
+int DAT_0024af60;
+undefined4 DAT_0023c648;
+static unsigned short u_UltimaUW_00087678[] = u"UltimaUW";
+static unsigned short u_Ultima_Under_World_00087690[] = u"Ultima_Under_World";
+static unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[] = u"Software\\Apps\\ZIO_Interactive_Ul";
+static char s__Program_Files_ZIO_Interactive_U_00087804[] = "\\Program_Files\\ZIO_Interactive\\U";
+static unsigned short u_InstlDir_00087838[] = u"InstlDir";
+static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008784c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
+static unsigned short u_HP_Jornada_540_000876cc[] = u"HP,Jornada_540";
+static char s__Program_Files_ZIO_Interactive_U_000876ec[] = "\\Program_Files\\ZIO_Interactive\\U";
+static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008771c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
+static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program_Files\\ZIO_Interactive\\U";
+// DAT_000830b0 and UNK_000830b4 are the same {int msg_id; void
+// *handler;} 8-byte-stride table (dispatch_window_message walks
+// msg_id entries from &DAT_000830b0 via an `int*`, and reads the
+// matching handler from UNK_000830b4 + index*8 -- exactly
+// DAT_000830b0's own address + 4, i.e. the SAME struct's second
+// field), not two independent globals. Both were declared as a lone
+// byte / a separately-backed array, so the `int*` walk read past
+// DAT_000830b0's 1-byte allocation into unrelated memory. Aliased
+// into one shared backing array at their real relative offsets.
+static undefined1 DAT_000830b0_backing[65536];
+#define DAT_000830b0 DAT_000830b0_backing[0]
+#define UNK_000830b4 DAT_000830b0_backing[4]
+
 
 
 // WinMain's real body: single-instance mutex check, window class/window creation, framebuffer + subsystem init, shows the main menu once, then runs the PeekMessage/Translate/Dispatch message pump until quit.
@@ -26,7 +318,7 @@ undefined4 param_4;
   int local_3c;
   undefined4 local_38;
 
-  uVar1 = Ordinal_286(u_UltimaUW_00087678,u_Ultima_Under_World_00087690);
+  uVar1 = FindWindowW(u_UltimaUW_00087678,u_Ultima_Under_World_00087690);
   if (uVar1 == 0) {
     DAT_0023c59e = 0;
     DAT_0023c5a0 = 0;
@@ -34,42 +326,42 @@ undefined4 param_4;
     spawn_message_dispatch_thread(param_1,u_UltimaUW_00087678);
     iVar2 = create_main_window_and_init_display(param_1,param_4);
     if (iVar2 != 0) {
-      uVar3 = Ordinal_1041(0x25800);
+      uVar3 = ce_malloc(0x25800);
       /* was a CONCAT22 pair split across _DAT_0023c5ac/DAT_0023c5b0 --
          see g_uw_framebuffer's declaration comment. */
       g_uw_framebuffer = uVar3;
-      uVar3 = Ordinal_1041(0x25800);
+      uVar3 = ce_malloc(0x25800);
       load_bmp_resource_to_rgb565(param_1,0xca,uVar3);
       dirty_rect_union(0,0xf0,0,0x140);
-      Ordinal_1044(g_uw_framebuffer,uVar3,0x25800);
+      ce_memmove(g_uw_framebuffer,uVar3,0x25800);
       flush_dirty_rect_to_display_240();
-      Ordinal_496(2000);
-      Ordinal_1018(uVar3);
+      Sleep(2000);
+      LocalFree(uVar3);
       build_rgb565_palette(0,0xffffffff);
       build_shade_lut();
-      DAT_0023c44c = Ordinal_1041(0x4cce);
-      DAT_0023cca0 = Ordinal_1041(64000);
-      DAT_0023cef0 = Ordinal_1041(0x7fff);
-      Ordinal_1047(DAT_0023c44c,0,0x4cce);
+      DAT_0023c44c = ce_malloc(0x4cce);
+      DAT_0023cca0 = ce_malloc(64000);
+      DAT_0023cef0 = ce_malloc(0x7fff);
+      ce_memset(DAT_0023c44c,0,0x4cce);
       /* DAT_0023c7a0 is now a real void*[] (widened from Ghidra's
          `undefined4`); zero it as one so the whole 8-byte slots clear. */
       for (iVar2 = 0; iVar2 < 0x140; iVar2++) {
         DAT_0023c7a0_arr[iVar2] = 0;
       }
       (void)puVar4;
-      Ordinal_1047(DAT_0023cca0,0,64000);
-      Ordinal_1047(DAT_0023cef0,0,0x7fff);
+      ce_memset(DAT_0023cca0,0,64000);
+      ce_memset(DAT_0023cef0,0,0x7fff);
       DAT_0023cca4 = DAT_0023c44c;
       DAT_0024ad58 = DAT_0023c44c;
       DAT_00248410 = DAT_0023c44c;
-      DAT_0024af78 = Ordinal_1041(0x1800);
-      Ordinal_1047(DAT_0024af78,0,0x1800);
-      DAT_0024af7c = Ordinal_1041(0x1800);
-      Ordinal_1047(DAT_0024af7c,0,0x1800);
-      DAT_000879b0 = Ordinal_1041(0xc);
-      DAT_000890a4 = Ordinal_1041(0x1080);
-      g_weapon_swing_current_frame = Ordinal_1041(64000);
-      Ordinal_1047(g_weapon_swing_current_frame,0,64000);
+      DAT_0024af78 = ce_malloc(0x1800);
+      ce_memset(DAT_0024af78,0,0x1800);
+      DAT_0024af7c = ce_malloc(0x1800);
+      ce_memset(DAT_0024af7c,0,0x1800);
+      DAT_000879b0 = ce_malloc(0xc);
+      DAT_000890a4 = ce_malloc(0x1080);
+      g_weapon_swing_current_frame = ce_malloc(64000);
+      ce_memset(g_weapon_swing_current_frame,0,64000);
       g_weapon_swing_startup_scratch_buffer = g_weapon_swing_current_frame;
       *DAT_000876bc = 0;
       *DAT_000876c0 = 0;
@@ -94,22 +386,15 @@ undefined4 param_4;
           DAT_0023c648 = read_realtime_clock_units();
           DAT_0023c448 = 0;
         }
-        /* One real game tick -- see uw_advance_game_tick's own comment
-           for why this must be called from exactly here (this loop, once
-           per iteration) rather than from inside uw_pump_events() itself,
-           which Ordinal_864 below triggers but which can also be
-           reached from other polling loops within a single iteration of
-           this one. */
-        uw_advance_game_tick();
         {
           static unsigned int _dbg_t0 = 0, _dbg_t1 = 0;
           int _dbg = getenv("UW_DEBUG_ITERSPLIT") != NULL;
           if (_dbg) _dbg_t0 = read_realtime_clock_units() * 4;
-          iVar2 = Ordinal_864(auStack_40,0,0,0,1);
+          iVar2 = PeekMessageW(auStack_40,0,0,0,1);
           if (iVar2 != 0) {
             if (local_3c == 0x12) break;
-            Ordinal_870(auStack_40);
-            Ordinal_859(auStack_40);
+            TranslateMessage(auStack_40);
+            DispatchMessageW(auStack_40);
           }
           if (_dbg) _dbg_t1 = read_realtime_clock_units() * 4;
           main_loop_hud_flush();
@@ -125,7 +410,7 @@ undefined4 param_4;
     }
   }
   else {
-    Ordinal_702(uVar1 | 1);
+    SetForegroundWindow(uVar1 | 1);
   }
   return 0;
 }
@@ -143,8 +428,8 @@ undefined4 param_1;
      `pcVar5[(int)&placeholder] = cVar1;` -- the classic "broken index
      copy loop" Ghidra artifact documented in the README, missed by the
      earlier systematic fix_stack_copy_loops.py/refix_stack_copy_loops.py
-     passes. Each loop is immediately followed by Ordinal_1047(REALBUF,
-     0,0x104) + Ordinal_1063(REALBUF,...) using the buffer this copy was
+     passes. Each loop is immediately followed by ce_memset(REALBUF,
+     0,0x104) + ce_strcat(REALBUF,...) using the buffer this copy was
      actually meant to fill -- redirected via a real incrementing destination
      pointer instead. */
   char *pcVar_dst;
@@ -164,13 +449,13 @@ undefined4 param_1;
   bool bVar11;
   short local_83c [2];
   int local_838;
-  /* Was `int`, holds the same Ordinal_1041(0x10000) pointer as
-     DAT_0023bf70 (see its comment), passed to Ordinal_1018 (free) --
+  /* Was `int`, holds the same ce_malloc(0x10000) pointer as
+     DAT_0023bf70 (see its comment), passed to LocalFree (free) --
      truncating on this 64-bit host. */
   void *local_834;
   /* iVar4 is reused throughout this function for unrelated numeric work
      (timers, loop indices, etc.) after its brief life holding that same
-     Ordinal_1041(0x10000) pointer -- pvVar_buf10000 takes over only that
+     ce_malloc(0x10000) pointer -- pvVar_buf10000 takes over only that
      pointer-holding span instead of retyping iVar4 itself, same pattern
      as other dual-purpose-variable fixes elsewhere in this file. */
   void *pvVar_buf10000;
@@ -207,7 +492,7 @@ undefined4 param_1;
      back as a multi-record table. Every one of the offset writes below
      must happen after this, not before -- see local_82c's declaration
      comment for why they used to be separate, unmerged locals. */
-  Ordinal_1047(local_82c,0,sizeof(local_82c));
+  ce_memset(local_82c,0,sizeof(local_82c));
   /* Record 0 (button 0): bitmap-ptr slots (offsets 0/4) are now unused
      -- see g_menu_button_bitmaps -- X/Y at 8/0xa, W/H placeholders
      (overwritten by populate_menu_button_bitmap_entry once the real bitmap loads) at
@@ -251,10 +536,10 @@ undefined4 param_1;
     iVar4 = local_838;
     advance_menu_music_track();
     if ((iVar4 < 4) && (-1 < iVar4)) {
-      pvVar_buf10000 = Ordinal_1041(0x10000);
+      pvVar_buf10000 = ce_malloc(0x10000);
       DAT_0023bf70 = pvVar_buf10000;
       local_834 = pvVar_buf10000;
-      Ordinal_1047(acStack_7ec,0,0x104);
+      ce_memset(acStack_7ec,0,0x104);
       pcVar5 = &DAT_0023cca8;
       pcVar_dst = acStack_7ec;
       do {
@@ -262,7 +547,7 @@ undefined4 param_1;
         *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
         pcVar5 = pcVar5 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(acStack_7ec,s__DATA_opscr_byt_00086eec);
+      ce_strcat(acStack_7ec,s__DATA_opscr_byt_00086eec);
       DEBUG(TRACE, "blitting %s", s__DATA_opscr_byt_00086eec);
       read_buffer_from_file(acStack_7ec,pvVar_buf10000,64000);
       decrement_cursor_hide_depth();
@@ -343,7 +628,7 @@ undefined4 param_1;
     else if (local_838 == 2) {
       iVar4 = read_realtime_clock_units();
       do {
-        Ordinal_1047(acStack_7ec,0,0x104);
+        ce_memset(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
         pcVar_dst = acStack_7ec;
         do {
@@ -351,14 +636,14 @@ undefined4 param_1;
           *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
-        Ordinal_1063(acStack_7ec,s__DATA_CREDIT1_BYT_00086ed0);
+        ce_strcat(acStack_7ec,s__DATA_CREDIT1_BYT_00086ed0);
         blit_fullscreen_bitmap_file(2,acStack_7ec,1);
         iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       iVar4 = read_realtime_clock_units();
       do {
-        Ordinal_1047(acStack_7ec,0,0x104);
+        ce_memset(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
         pcVar_dst = acStack_7ec;
         do {
@@ -366,14 +651,14 @@ undefined4 param_1;
           *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
-        Ordinal_1063(acStack_7ec,s__DATA_CREDIT2_BYT_00086ebc);
+        ce_strcat(acStack_7ec,s__DATA_CREDIT2_BYT_00086ebc);
         blit_fullscreen_bitmap_file(2,acStack_7ec,1);
         iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       iVar4 = read_realtime_clock_units();
       do {
-        Ordinal_1047(acStack_7ec,0,0x104);
+        ce_memset(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
         pcVar_dst = acStack_7ec;
         do {
@@ -381,7 +666,7 @@ undefined4 param_1;
           *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
-        Ordinal_1063(acStack_7ec,s__DATA_CREDIT3_BYT_00086ea8);
+        ce_strcat(acStack_7ec,s__DATA_CREDIT3_BYT_00086ea8);
         blit_fullscreen_bitmap_file(2,acStack_7ec,1);
         iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
@@ -393,7 +678,7 @@ undefined4 param_1;
       bVar11 = sVar3 == 1;
       if (sVar3 == -1) {
         uVar7 = get_message_string(0x2a9);
-        Ordinal_1047(acStack_7ec,0,0x104);
+        ce_memset(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
         pcVar_dst = acStack_7ec;
         do {
@@ -401,7 +686,7 @@ undefined4 param_1;
           *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
-        Ordinal_1063(acStack_7ec,s__DATA_opscr_byt_00086eec);
+        ce_strcat(acStack_7ec,s__DATA_opscr_byt_00086eec);
         blit_fullscreen_bitmap_file(0xffffffff,acStack_7ec,1);
         select_active_font(s_FONTBIG_SYS_00085454);
         *g_draw_color_index = 0xa2;
@@ -422,7 +707,7 @@ undefined4 param_1;
         unready_weapon();
       }
     }
-    Ordinal_1018(local_834);
+    LocalFree(local_834);
   } while (!bVar11);
   begin_gameplay();
   return;
@@ -456,7 +741,7 @@ void reset_player_object_record()
 {
   ushort uVar1;
 
-  Ordinal_1047(g_player_object,0,0x1b);
+  ce_memset(g_player_object,0,0x1b);
   *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
   *(undefined1 *)((char *)g_player_object + 7) = 0;
   *(undefined1 *)((char *)g_player_object + 0xd) = 0xfd;
@@ -507,7 +792,7 @@ void init_gameplay_session()
   int iVar1;
 
   /* DAT_002029cc is set once, early (init_level_object_arena/reset_level_object_arena: a real
-     malloc'd pointer via Ordinal_1041), and DAT_002046b8/DAT_002046c4
+     malloc'd pointer via ce_malloc), and DAT_002046b8/DAT_002046c4
      are derived from it and never touched again. By the time this
      function runs, though, DAT_002029cc has been observed (via a
      temporary diagnostic print) to no longer hold that pointer -- some
@@ -518,7 +803,7 @@ void init_gameplay_session()
      down (not caught by ASAN as an out-of-bounds write, so it's likely
      a plausible-looking but wrong destination computed elsewhere rather
      than a classic overflow). Rather than dereference a pointer derived
-     from corrupted state (confirmed crashing in Ordinal_1047 by way of
+     from corrupted state (confirmed crashing in ce_memset by way of
      reset_player_object_record), bail out defensively if it doesn't look like a
      plausible heap pointer. */
   if ((uintptr_t)DAT_002029cc < 0x10000) {
@@ -698,7 +983,7 @@ void print_player_position_debug()
   if (iVar1 < 0) {
     iVar1 = iVar1 + 0xff;
   }
-  Ordinal_719(auStack_2c,s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08,(int)DAT_00201b68,
+  ce_sprintf(auStack_2c,s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08,(int)DAT_00201b68,
               (int)DAT_00204880 >> 8,(int)DAT_00204880 >> 5 & 7,((int)DAT_00204882 << 0x10) >> 0x18,
               ((int)DAT_00204882 << 0x10) >> 0x15 & 7,((int)DAT_00204884 << 0x10) >> 0x13,
               iVar1 >> 8 & 0xffff);
@@ -798,8 +1083,8 @@ void move_custom_view_target()
   char cStack_11;
   
   psVar1 = DAT_00085a6c;
-  sVar2 = Ordinal_2005((int)DAT_0023be88,DAT_00085a6c[1] * 3);
-  uVar3 = Ordinal_2005((int)DAT_0023bd80,*psVar1 * 3);
+  sVar2 = ordint_divmod((int)DAT_0023be88,DAT_00085a6c[1] * 3).quot;
+  uVar3 = ordint_divmod((int)DAT_0023bd80,*psVar1 * 3).quot;
   iVar4 = (uint)DAT_0023bf00 + ((uVar3 & 0xffff) + 0x3f) * 0x400;
   DAT_0023bf00 = (ushort)iVar4;
   if (sVar2 != 1) {
@@ -979,8 +1264,8 @@ void spin_view_full_rotation()
   uVar5 = (uVar5 & 0xffff) >> 6;
   DAT_0023bea0 = (undefined2)uVar5;
   iVar1 = uVar5 << 6;
-  sVar3 = Ordinal_2005(iVar1,iVar6 * 0x8000);
-  sVar4 = Ordinal_2005(iVar1,iVar7 * 0x8000);
+  sVar3 = ordint_divmod(iVar1,iVar6 * 0x8000).quot;
+  sVar4 = ordint_divmod(iVar1,iVar7 * 0x8000).quot;
   DAT_0023bea4 = compute_angle_from_slope((int)sVar4,(int)sVar3);
   DAT_0023bf08 = 0;
   do {
@@ -1201,7 +1486,7 @@ short param_4;
                   iVar4, (int)param_1, (void *)pcVar_str, pcVar_str ? pcVar_str : "(null)");
         while (sVar1 = measure_text_width(pcVar_str), 0x13e < sVar1) {
           pcVar_str = *ppcVar5;
-          iVar2 = Ordinal_1068(pcVar_str);
+          iVar2 = ce_strlen(pcVar_str);
           pcVar_str[iVar2 - 1] = 0;
           pcVar_str = *ppcVar5;
         }
@@ -1507,8 +1792,8 @@ LAB_0006b144:
 // creation-flags constant; local_30=dispatch_window_message, the thread's start
 // routine -- a window-message-id dispatch table lookup, not yet
 // named; local_24=param_1, the app instance handle, as the thread
-// arg; local_18=Ordinal_919(0), likely the calling thread's id;
-// local_10=param_2) and passes it to Ordinal_95 (likely CreateThread).
+// arg; local_18=GetStockObject(0), likely the calling thread's id;
+// local_10=param_2) and passes it to RegisterClassW (likely CreateThread).
 // This WinCE-era windowing/threading plumbing is very likely inert on
 // this SDL-based host port, but kept faithful to the original flow.
 void spawn_message_dispatch_thread(param_1,param_2)
@@ -1534,16 +1819,16 @@ undefined4 param_2;
   local_20 = 0;
   local_1c = 0;
   local_24 = param_1;
-  local_18 = Ordinal_919(0);
+  local_18 = GetStockObject(0);
   local_14 = 0;
   local_10 = param_2;
-  Ordinal_95(&local_34);
+  RegisterClassW(&local_34);
   return;
 }
 
 
 
-// was FUN_00077408 -- creates the main app window (Ordinal_246, a
+// was FUN_00077408 -- creates the main app window (CreateWindowExW, a
 // CreateWindowEx-style call) and, if that and the registration check
 // (is_product_registered) both succeed, reads 3 install-directory
 // registry values (falling back to hardcoded "Program Files\ZIO
@@ -1584,21 +1869,21 @@ undefined4 param_2;
   undefined1 auStack_430 [520];
   undefined1 auStack_228 [520];
   
-  Ordinal_885(1);
-  Ordinal_885(0);
+  GetSystemMetrics(1);
+  GetSystemMetrics(0);
   DAT_0023c548 = (HWND__ *)
-                 Ordinal_246(0,u_UltimaUW_00087678,u_Ultima_Under_World_00087690,0x10000000);
+                 CreateWindowExW(0,u_UltimaUW_00087678,u_Ultima_Under_World_00087690,0x10000000);
   if ((DAT_0023c548 != (HWND__ *)0x0) && (iVar3 = is_product_registered(DAT_0023c548,param_1), iVar3 != 0)) {
     pcVar9 = &DAT_0023cca8;
-    Ordinal_1047(&DAT_0023cca8,0,0x104);
+    ce_memset(&DAT_0023cca8,0,0x104);
     pcVar10 = &DAT_0023c698;
-    Ordinal_1047(&DAT_0023c698,0,0x104);
+    ce_memset(&DAT_0023c698,0,0x104);
     local_7c4 = 1;
     local_7c0 = 0x208;
-    Ordinal_1047(auStack_638,0,0x208);
-    iVar3 = Ordinal_461(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008784c,0,0);
+    ce_memset(auStack_638,0,0x208);
+    iVar3 = RegOpenKeyExW(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008784c,0,0);
     if (iVar3 == 0) {
-      Ordinal_463(local_7d4,u_InstlDir_00087838,0,&local_7c4);
+      RegQueryValueExW(local_7d4,u_InstlDir_00087838,0,&local_7c4);
       pcVar4 = (char *)load_string_resource_large(auStack_638);
       do {
         cVar2 = *pcVar4;
@@ -1606,7 +1891,7 @@ undefined4 param_2;
         *pcVar9 = cVar2;
         pcVar9 = pcVar9 + 1;
       } while (cVar2 != '\0');
-      Ordinal_455(local_7d4);
+      RegCloseKey(local_7d4);
     }
     else {
       pcVar9 = s__Program_Files_ZIO_Interactive_U_00087804;
@@ -1618,10 +1903,10 @@ undefined4 param_2;
     }
     local_7c8 = 1;
     local_7bc = 0x208;
-    Ordinal_1047(auStack_430,0,0x208);
-    iVar3 = Ordinal_461(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_000877a4,0,0);
+    ce_memset(auStack_430,0,0x208);
+    iVar3 = RegOpenKeyExW(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_000877a4,0,0);
     if (iVar3 == 0) {
-      Ordinal_463(local_7d8,u_InstlDir_00087838,0,&local_7c8);
+      RegQueryValueExW(local_7d8,u_InstlDir_00087838,0,&local_7c8);
       pcVar9 = (char *)load_string_resource_large(auStack_430);
       do {
         cVar2 = *pcVar9;
@@ -1629,7 +1914,7 @@ undefined4 param_2;
         *pcVar10 = cVar2;
         pcVar10 = pcVar10 + 1;
       } while (cVar2 != '\0');
-      Ordinal_455(local_7d8);
+      RegCloseKey(local_7d8);
     }
     else {
       pcVar10 = s__Program_Files_ZIO_Interactive_U_00087774;
@@ -1640,10 +1925,10 @@ undefined4 param_2;
       } while (cVar2 != '\0');
     }
     local_7b8[0] = 1;
-    Ordinal_1047(auStack_228,0,0x208);
-    iVar3 = Ordinal_461(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008771c,0,0);
+    ce_memset(auStack_228,0,0x208);
+    iVar3 = RegOpenKeyExW(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008771c,0,0);
     if (iVar3 == 0) {
-      Ordinal_463(local_7d0,u_InstlDir_00087838,0,local_7b8);
+      RegQueryValueExW(local_7d0,u_InstlDir_00087838,0,local_7b8);
       pcVar10 = (char *)load_string_resource_large(auStack_228);
       pcVar9 = &DAT_00241f08;
       do {
@@ -1652,7 +1937,7 @@ undefined4 param_2;
         *pcVar9 = cVar2;
         pcVar9 = pcVar9 + 1;
       } while (cVar2 != '\0');
-      Ordinal_455(local_7d0);
+      RegCloseKey(local_7d0);
     }
     else {
       pcVar10 = s__Program_Files_ZIO_Interactive_U_000876ec;
@@ -1662,12 +1947,12 @@ undefined4 param_2;
         pcVar10 = pcVar10 + 1;
       } while (cVar2 != '\0');
     }
-    Ordinal_266(DAT_0023c548,param_2);
-    Ordinal_267(DAT_0023c548);
+    ShowWindow(DAT_0023c548,param_2);
+    UpdateWindow(DAT_0023c548);
     iVar3 = GXOpenDisplay(DAT_0023c548,1);
     if (iVar3 != 0) {
-      Ordinal_89(0x102,0x100,auStack_738,0);
-      iVar3 = Ordinal_230(auStack_738,u_HP_Jornada_540_000876cc);
+      SystemParametersInfoW(0x102,0x100,auStack_738,0);
+      iVar3 = _wcsicmp(auStack_738,u_HP_Jornada_540_000876cc);
       if (iVar3 != 0) {
         GXOpenInput();
         puVar5 = (undefined1 *)GXGetDisplayProperties();
@@ -1759,7 +2044,7 @@ undefined4 param_1;
 // was FUN_00077878 -- looks up window message id param_2 in a
 // {msg_id, handler_ptr} table (DAT_000830b0/UNK_000830b4, 0x13
 // entries, 8-byte stride) and calls the matched handler with no
-// forwarded args, or falls back to Ordinal_264 (likely DefWindowProc)
+// forwarded args, or falls back to DefWindowProcW (likely DefWindowProc)
 // if no entry matches. This is the thread start routine
 // spawn_message_dispatch_thread sets up -- WinCE window-procedure
 // plumbing, very likely inert on this SDL-based host port.
@@ -1781,7 +2066,7 @@ int param_2;
     uVar1 = uVar1 + 1;
     piVar2 = piVar2 + 2;
   } while (uVar1 < 0x13);
-  Ordinal_264();
+  DefWindowProcW();
   return;
 }
 
@@ -1791,9 +2076,9 @@ int param_2;
 
 // was FUN_00077a38 -- shutdown/cleanup routine: calls end_gx_draw_session,
 // frees several conditionally-allocated resources
-// (Ordinal_1018, likely LocalFree/free) and a 0x80-entry pointer
+// (LocalFree, likely LocalFree/free) and a 0x80-entry pointer
 // array (&DAT_00202308), then tears down the GAPI display/input
-// (GXCloseDisplay/GXCloseInput) and calls Ordinal_866(0) (likely
+// (GXCloseDisplay/GXCloseInput) and calls PostQuitMessage(0) (likely
 // PostQuitMessage/ExitThread). No callers found by grep -- probably
 // reached only through dispatch_window_message's message-id table
 // (e.g. a WM_DESTROY-style handler), which is itself unpopulated at
@@ -1807,37 +2092,37 @@ undefined4 shutdown_game_resources()
 
   end_gx_draw_session();
   if (DAT_0023c44c != 0) {
-    Ordinal_1018();
+    LocalFree();
   }
   if (DAT_0023cca0 != 0) {
-    Ordinal_1018();
+    LocalFree();
   }
   if (DAT_000890a4 != 0) {
-    Ordinal_1018();
+    LocalFree();
   }
   if (DAT_000879b0 != 0) {
-    Ordinal_1018();
+    LocalFree();
   }
   if (DAT_0024af78 != 0) {
-    Ordinal_1018();
+    LocalFree();
   }
   if (DAT_0024af7c != 0) {
-    Ordinal_1018();
+    LocalFree();
   }
   piVar2 = &DAT_00202308;
   iVar1 = 0x80;
   do {
     if (*piVar2 != 0) {
-      Ordinal_1018();
+      LocalFree();
     }
     iVar1 = iVar1 + -1;
     piVar2 = piVar2 + 1;
   } while (iVar1 != 0);
-  Ordinal_1018(&DAT_00202308);
+  LocalFree(&DAT_00202308);
   run_game_shutdown_sequence(0);
   GXCloseDisplay();
   GXCloseInput();
-  Ordinal_866(0);
+  PostQuitMessage(0);
   return 0;
 }
 
@@ -1990,11 +2275,11 @@ undefined4 param_1;
 }
 
 
-// was FUN_000228d4 -- reads a 10-byte structure via Ordinal_25 into a
+// was FUN_000228d4 -- reads a 10-byte structure via GetSystemTime into a
 // stack buffer, then multiplies 3 of its ushort fields together (each
 // +1, converting a 0-based max-index into a count) and passes the
-// product to Ordinal_1061. Currently a functional no-op: both Ordinal_25
-// and Ordinal_1061 are unimplemented (return-0/write-nothing) stubs in
+// product to ce_srand. Currently a functional no-op: both GetSystemTime
+// and ce_srand are unimplemented (return-0/write-nothing) stubs in
 // src/ordinal_stubs.c, so local_a/local_8/local_6 are read uninitialized
 // and the computed product is discarded by its own stub callee. The
 // real WinCE API these ordinals correspond to, and therefore this
@@ -2009,8 +2294,8 @@ void compute_dimension_volume()
   ushort local_8;
   ushort local_6;
 
-  Ordinal_25(auStack_14);
-  Ordinal_1061((local_6 + 1) * (local_8 + 1) * (local_a + 1));
+  GetSystemTime(auStack_14);
+  ce_srand((local_6 + 1) * (local_8 + 1) * (local_a + 1));
   return;
 }
 
@@ -2057,7 +2342,7 @@ void run_game_startup_sequence()
     report_fatal_error_and_exit(0x3003);
   }
   DAT_0024af70 = 1;
-  Ordinal_1047(acStack_62c,0,0x104);
+  ce_memset(acStack_62c,0,0x104);
   pcVar6 = &DAT_0023cca8;
     stack0xffdc2e34_ptr = stack0xffdc2e34_buf;
   pcVar4 = pcVar6;
@@ -2067,12 +2352,12 @@ void run_game_startup_sequence()
     *stack0xffdc2d2c_ptr = cVar1; stack0xffdc2d2c_ptr = stack0xffdc2d2c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_62c,s__DATA_pres1_byt_00085790);
+  ce_strcat(acStack_62c,s__DATA_pres1_byt_00085790);
   blit_fullscreen_bitmap_file(5,acStack_62c,1);
-  Ordinal_496(0x5dc);
+  Sleep(0x5dc);
   play_music_track(1,1);
   init_grtile_registry();
-  Ordinal_1047(acStack_62c,0,0x104);
+  ce_memset(acStack_62c,0,0x104);
   pcVar4 = pcVar6;
     stack0xffdc2d2c_ptr = acStack_62c;
   do {
@@ -2080,14 +2365,14 @@ void run_game_startup_sequence()
     *stack0xffdc2d2c_ptr = cVar1; stack0xffdc2d2c_ptr = stack0xffdc2d2c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_62c,s__DATA_pres2_byt_00085780);
+  ce_strcat(acStack_62c,s__DATA_pres2_byt_00085780);
   blit_fullscreen_bitmap_file(6,acStack_62c,1);
-  Ordinal_496(0x5dc);
+  Sleep(0x5dc);
   sVar2 = load_startup_gr_resources();
   if (sVar2 != 0) {
     report_fatal_error_and_exit();
   }
-  Ordinal_1047(acStack_62c,0,0x104);
+  ce_memset(acStack_62c,0,0x104);
   pcVar4 = pcVar6;
     stack0xffdc2d2c_ptr = acStack_62c;
   do {
@@ -2095,8 +2380,11 @@ void run_game_startup_sequence()
     *stack0xffdc2d2c_ptr = cVar1; stack0xffdc2d2c_ptr = stack0xffdc2d2c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_62c,s__DATA_COPYRIGHT_BYT_0008576c);
+  ce_strcat(acStack_62c,s__DATA_COPYRIGHT_BYT_0008576c);
   blit_fullscreen_bitmap_file(2,acStack_62c,1);
+  /* Intentional deviation: the original gave the final copyright splash
+     no dwell. Keep it visible for 1.5 seconds, like the preceding splashes. */
+  Sleep(0x5dc);
   sVar2 = init_cursor_subsystem();
   if (sVar2 < 0) {
     report_fatal_error_and_exit(2);
@@ -2118,7 +2406,7 @@ void run_game_startup_sequence()
   if (iVar3 == 0) {
     report_fatal_error_message_and_exit(s_Not_enough_disk_space_for_save_g_00085744);
   }
-  Ordinal_1047(acStack_62c,0,0x104);
+  ce_memset(acStack_62c,0,0x104);
   pcVar4 = pcVar6;
     stack0xffdc2d2c_ptr = acStack_62c;
   do {
@@ -2126,19 +2414,19 @@ void run_game_startup_sequence()
     *stack0xffdc2d2c_ptr = cVar1; stack0xffdc2d2c_ptr = stack0xffdc2d2c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_62c,s__DATA_lev_ark_00085734);
+  ce_strcat(acStack_62c,s__DATA_lev_ark_00085734);
   uVar5 = load_string_resource(acStack_62c);
-  Ordinal_61(auStack_214,uVar5);
-  Ordinal_1047(acStack_524,0,0x104);
+  ce_wcscpy(auStack_214,uVar5);
+  ce_memset(acStack_524,0,0x104);
   do {
     cVar1 = *pcVar6;
     *stack0xffdc2e34_ptr = cVar1; stack0xffdc2e34_ptr = stack0xffdc2e34_ptr + 1;
     pcVar6 = pcVar6 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_524,s__SAVE0_lev_ark_000842fc);
+  ce_strcat(acStack_524,s__SAVE0_lev_ark_000842fc);
   uVar5 = load_string_resource(acStack_524);
-  Ordinal_61(auStack_41c,uVar5);
-  Ordinal_164(auStack_214,auStack_41c,0);
+  ce_wcscpy(auStack_41c,uVar5);
+  CopyFileW(auStack_214,auStack_41c,0);
   sVar2 = seed_conversation_globals_for_new_game();
   if (sVar2 != 0) {
     report_fatal_error_and_exit();
@@ -2177,7 +2465,7 @@ void run_game_shutdown_sequence()
     *stack0xffdc3250_ptr = cVar1; stack0xffdc3250_ptr = stack0xffdc3250_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_108,&DAT_000857a0);
+  ce_strcat(acStack_108,&DAT_000857a0);
   ensure_save_directory_exists(acStack_108);
   return;
 }
@@ -2238,7 +2526,7 @@ void request_game_exit()
 // was FUN_0003c310 -- empty body (just returns), same no-op as its
 // split-symbol duplicate show_error_dialog_stub_thunk. Called from both fatal
 // and non-fatal error paths with and without an argument; plausibly a
-// disabled error/message-dialog display stub (Ordinal_1071, the real
+// disabled error/message-dialog display stub (ce_strncpy, the real
 // message-box display referenced near report_fatal_error_and_exit below, is itself
 // unimplemented in this port) -- not confirmed via disassembly.
 void show_error_dialog_stub()
@@ -2252,7 +2540,7 @@ void show_error_dialog_stub()
 // was FUN_0003c318 -- logs a categorized error message: the error
 // code's top nibble selects one of 5 category strings (Low Memory,
 // EMS Memory, read-data, write-data, resource/internal), logged via
-// Ordinal_1102, then builds an "Error code XXXX" string (not actually
+// NKDbgPrintfW, then builds an "Error code XXXX" string (not actually
 // filled in with the real code digits here). Used by
 // report_categorized_fatal_error as a precursor to terminating.
 void log_categorized_error_message(param_1)
@@ -2282,7 +2570,7 @@ short param_1;
   else {
     pcVar3 = s_Resource_problem_or_internal_err_00085834;
   }
-  Ordinal_1102(pcVar3);
+  NKDbgPrintfW(pcVar3);
   pcVar3 = s_Error_code_XXXX___000857c8;
     wptr_24610 = acStack_857f4;
   do {
@@ -2317,14 +2605,14 @@ short param_1;
 // was FUN_0003c3c8 -- the general-purpose "fatal error" handler used
 // throughout this decompile: formats an "Underworld can no longer
 // run, Error XNNN" code string from param_1 (category letter + 3
-// octal digits), shows it via Ordinal_1071 (unimplemented in this
+// octal digits), shows it via ce_strncpy (unimplemented in this
 // port, see the fprintf below), runs run_game_shutdown_sequence, and
 // terminates the process.
 void report_fatal_error_and_exit(param_1)
 ushort param_1;
 
 {
-  /* Ordinal_1071 (the real message-box display for this error) isn't
+  /* ce_strncpy (the real message-box display for this error) isn't
      implemented, so this is currently the only visibility into which
      fatal error actually fired -- kept as a permanent log line, not a
      one-off diagnostic. */
@@ -2352,8 +2640,8 @@ ushort param_1;
   local_29 = ((byte)((short)param_1 >> 6) & 7) + 0x30;
   local_28 = ((byte)((short)param_1 >> 3) & 7) + 0x30;
   local_27 = ((byte)param_1 & 7) + 0x30;
-  uVar2 = Ordinal_1068(acStack_54);
-  Ordinal_1071(&DAT_00201b70,acStack_54,uVar2);
+  uVar2 = ce_strlen(acStack_54);
+  ce_strncpy(&DAT_00201b70,acStack_54,uVar2);
   run_game_shutdown_sequence(0);
   terminate_process(0xffffffe8);
   return;
@@ -2362,7 +2650,7 @@ ushort param_1;
 
 // was FUN_0003c4a8 -- text-message sibling of
 // report_fatal_error_and_exit: shows a direct message string (rather
-// than a numeric error code) via Ordinal_1071, then runs the same
+// than a numeric error code) via ce_strncpy, then runs the same
 // shutdown-and-terminate sequence.
 void report_fatal_error_message_and_exit(param_1)
 char *param_1;
@@ -2370,13 +2658,13 @@ char *param_1;
 {
   undefined4 uVar1;
 
-  /* See report_fatal_error_and_exit's identical fprintf -- Ordinal_1071 (the real
+  /* See report_fatal_error_and_exit's identical fprintf -- ce_strncpy (the real
      message-box display) isn't implemented, so this is the only
      visibility into which fatal message actually fired. param_1 here is
      the message text directly, not a numeric code. */
   fprintf(stderr, "[fatal] report_fatal_error_message_and_exit: %s\n", param_1 ? param_1 : "(null)");
-  uVar1 = Ordinal_1068(param_1); // was a dropped arg -- param_1 itself, same class as babl_builtin_compare's own comment (uw.c ~10977)
-  Ordinal_1071(&DAT_00201b70,param_1,uVar1);
+  uVar1 = ce_strlen(param_1); // was a dropped arg -- param_1 itself, same class as babl_builtin_compare's own comment (uw.c ~10977)
+  ce_strncpy(&DAT_00201b70,param_1,uVar1);
   run_game_shutdown_sequence(0);
   terminate_process(0xffffffe8);
   return;
@@ -2600,7 +2888,7 @@ undefined4 load_startup_gr_resources()
   uint uVar24;
   char acStack_128 [260];
   
-  Ordinal_1047(acStack_128,0,0x104);
+  ce_memset(acStack_128,0,0x104);
   pcVar2 = &DAT_0023cca8;
     stack0xffdc3230_ptr = acStack_128;
   do {
@@ -2608,14 +2896,14 @@ undefined4 load_startup_gr_resources()
     *stack0xffdc3230_ptr = cVar1; stack0xffdc3230_ptr = stack0xffdc3230_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_128,s__DATA_allpals_dat_00085a50);
+  ce_strcat(acStack_128,s__DATA_allpals_dat_00085a50);
   iVar3 = open_file_for_read(acStack_128);
   if (iVar3 == -1) {
     uVar4 = 0x3008;
   }
   else {
     read_file_handle(iVar3,&DAT_00202520,0x200);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
     uVar5 = load_gr_resource_group(s_question_00085a44);
     uVar6 = load_gr_resource_group(s_views_00085a3c);
     DAT_0020272c = DAT_00202744;
@@ -2710,38 +2998,39 @@ bool prepare_new_game(void)
     char *source;
     char *destination;
 
+    g_new_game_entry_pause_pending = false;
     if (!character_generator_start()) return false;
 
-    Ordinal_1047(save_directory, 0, 0x104);
+    ce_memset(save_directory, 0, 0x104);
     source = (char *)&DAT_0023cca8;
     destination = save_directory;
     do {
         *destination++ = *source;
     } while (*source++ != '\0');
-    Ordinal_1063(save_directory, (char *)&DAT_000857a0);
+    ce_strcat(save_directory, (char *)&DAT_000857a0);
     ensure_save_directory_exists(save_directory);
     write_player_save_record(save_directory);
 
-    Ordinal_1047(save_directory, 0, 0x104);
+    ce_memset(save_directory, 0, 0x104);
     source = (char *)&DAT_0023cca8;
     destination = save_directory;
     do {
         *destination++ = *source;
     } while (*source++ != '\0');
-    Ordinal_1063(save_directory, s__DATA_lev_ark_00085734);
+    ce_strcat(save_directory, s__DATA_lev_ark_00085734);
     converted_path = (char *)load_string_resource(save_directory);
-    Ordinal_61(source_copy_path, converted_path);
+    ce_wcscpy(source_copy_path, converted_path);
 
-    Ordinal_1047(destination_path, 0, 0x104);
+    ce_memset(destination_path, 0, 0x104);
     source = (char *)&DAT_0023cca8;
     destination = destination_path;
     do {
         *destination++ = *source;
     } while (*source++ != '\0');
-    Ordinal_1063(destination_path, s__SAVE0_lev_ark_000842fc);
+    ce_strcat(destination_path, s__SAVE0_lev_ark_000842fc);
     converted_path = (char *)load_string_resource(destination_path);
-    Ordinal_61(destination_copy_path, converted_path);
-    if (!Ordinal_164(source_copy_path, destination_copy_path, 0)) return false;
+    ce_wcscpy(destination_copy_path, converted_path);
+    if (!CopyFileW(source_copy_path, destination_copy_path, 0)) return false;
 
     if (seed_conversation_globals_for_new_game() != 0) {
         report_fatal_error_and_exit();
@@ -2752,6 +3041,8 @@ bool prepare_new_game(void)
     set_player_tile_position(0x20, 2, 1);
     debug_print_player_position("chargen-spawn");
     save_or_restore_level_special_state(1, 0);
+    /* Port-only timing: the next dungeon entry pauses after its fade-out. */
+    g_new_game_entry_pause_pending = true;
     return true;
 }
 
@@ -2866,5 +3157,5 @@ unsigned int param_1;
      failed the whole "opbtn" resource batch even though the underlying
      OPBTN.GR file loaded successfully, which was fatal
      (report_fatal_error_and_exit(0x300d)) at this specific call site. */
-  return Ordinal_1041(param_1);
+  return ce_malloc(param_1);
 }

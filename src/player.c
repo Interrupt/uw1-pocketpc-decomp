@@ -8,6 +8,281 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+char *DAT_0024fa2c;
+char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
+/* Was `char *` -- but every `g_player_object[N]` bracket-index use
+   throughout this file (position/facing/type fields) matches the SAME
+   ushort-array-index convention every other object-record pointer in
+   this codebase uses (e.g. `param_1[N]` for a `ushort *param_1`), not a
+   byte-array one: g_player_object[0xc] as ushort-index 0xc = byte
+   offset 0x18, matching the real ARM disassembly's `ldrb r0,[r0,#0x18]`
+   facing-byte read; g_player_object[0xb] = byte offset 0x16, matching
+   set_player_tile_position's own tile-position writes; bare
+   `*g_player_object & 0x1ff` (the object type/class field) needs 9
+   bits, which no single byte read can supply. With the old `char *`
+   type every one of those bracket-index reads was silently reading the
+   wrong byte (index N instead of byte offset 2*N) -- confirmed live:
+   drop_held_object_near_player's g_player_object[0xb] read (meant to
+   recover the player's own tile Y position for a "throw distance"
+   projection) read whatever unrelated byte sits at offset 0xb instead
+   of the real position at offset 0x16, producing a wildly wrong throw
+   start point. Retyped to `ushort *` to match; every *pointer-
+   arithmetic* use elsewhere in this file (`g_player_object + N`,
+   expecting a literal byte offset N, then cast down to byte/char for a
+   sub-field read) has been updated alongside this to explicitly cast to
+   `(char *)` first, preserving their existing (correct) byte-offset
+   arithmetic now that the base type's own implicit scaling would
+   otherwise double it. */
+ushort *g_player_object;
+char *DAT_0023be74;
+short DAT_0023beb4;
+undefined1 DAT_0010060c_backing[256];
+#define DAT_0010060c DAT_0010060c_backing[0]
+short DAT_00201c74;
+undefined1 DAT_0023bf0c;
+/* Reused scratch global (see the DAT_000a85d0 comment above for the
+   general pattern) -- most call sites treat it as a writable sprintf-
+   style destination buffer via ce_strcat, but several others
+   (draw_save_load_slot_list's save-slot list among them) pass `&s_scroll_newline_0008522c`
+   straight to message_scroll_print_wrapped with no write beforehand,
+   relying on it holding its real static initial content. A Ghidra
+   memory dump of the original binary at 0x8522c confirmed that content
+   is the two bytes `0a 00` -- the string "\n" -- not zero. Printing an
+   empty string (this array's old all-zero C default) instead of a real
+   "\n" silently skipped the pending-newline flag msg_scroll_draw_wrapped_span sets from
+   a string's trailing '\n' (see its own comment), which is why the
+   save-slot list rendered every entry run together on one line with no
+   breaks. Seeded to match. */
+// was DAT_0008522c
+ undefined s_scroll_newline_0008522c_backing[8192] = "\n";
+static undefined4 DAT_00101954;
+/* DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/
+   a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2`
+   scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step,
+   sweep_apply_collision, sweep_writeback_position -- reached by `DAT_00204874 = &DAT_00204880`
+   then dereferenced relative to that) treat this as one struct with real
+   fields up to offset 0x2a (42 bytes) -- confirmed crashing
+   (EXC_BAD_ACCESS) dereferencing that far out on a real run. Widened to
+   a real backing buffer for that crash, but originally only 80/82/84
+   were pointed at it -- every other field was left as its own
+   independent global, so `apply_heading_turn`/`apply_movement_tick` and
+   friends, which write these fields BY NAME (e.g. `g_jump_ascent_timer = ...`
+   for heading), were updating completely different memory than what
+   movement_collision_sweep's collision/movement engine reads via
+   `*(short *)(DAT_00204874 + 0x14)` pointer arithmetic (real address
+   0x204894) -- confirmed via lldb: g_jump_ascent_timer demonstrably changed on
+   turn input, while `*(short*)(DAT_00204874+0x14)` read 0 on every
+   single check all session. This -- not a dropped call anywhere -- is
+   why position/heading never visibly changed despite the movement-
+   command-decode and turn-application fixes earlier this session: the
+   update landed in memory the movement/collision code never looks at.
+   Same lone-scalars-instead-of-a-real-record pattern fixed repeatedly
+   this session, just spread across two declaration sites and not
+   caught the first time because the earlier fix only needed to solve
+   the immediate crash. Rebuilt as a real byte-addressed backing buffer
+   (byte, not short, since several fields are single bytes at odd
+   offsets) with every field aliased at its real offset, generous
+   margin past the furthest (0x2a) seen. */
+ undefined1 DAT_00204880_backing[128];
+short DAT_00201c70;
+undefined2 DAT_00201b60;
+/* Was `undefined2` (unsigned) -- change_game_mode/FUN_0003bd48 (see their
+   own "0x80, see DAT_00085668's comment" sites) cast this to `int` and
+   compare against the 32-bit sentinel `0xffffffff` to detect "dispatch
+   disabled" (set via `DAT_00201b64 = 0xffff;`, uw.c ~27530/27774). An
+   unsigned 16-bit 0xffff zero-extends to 0x0000ffff on that cast, never
+   matching 0xffffffff -- the guard silently never fired, and the "no
+   dispatch" state fell through into `&DAT_000856a4 + 0xffff * 0x80`, a
+   wild out-of-bounds read (confirmed live: an ASan global-buffer-overflow
+   in change_game_mode, reached via demomode_pump, in
+   demo_automap_note_test.txt). Signed so the same cast sign-extends
+   0xffff to -1, matching the comparison's actual intent. */
+short DAT_00201b64;
+short DAT_00201c94;
+undefined4 DAT_0024cfc8;
+undefined4 DAT_002028d8;
+undefined2 DAT_00201c78;
+static char s_You_died_000857b8[] = "You_died";
+static byte DAT_00085730;
+code *DAT_00201c9c;
+byte DAT_0020208c;
+undefined2 DAT_00203304;
+undefined1 DAT_00203303;
+short DAT_00202078;
+ undefined2 DAT_002048b0_backing[8192];
+undefined1 *DAT_002048b8;
+undefined2 DAT_002048b2;
+undefined2 DAT_0023be98;
+undefined4 DAT_000858a0;
+/* Recovered from UU.exe .data at 0x85d20: tile-floor-height -> world Z
+   table, `height_nibble * 64` for nibbles 0..13 (then 0,0,1024).
+   `*(short *)(&DAT_00085d20 + nibble*2)`. Was all-zero, so the player's
+   world Z (DAT_00204884, set from this table at uw.c ~26936) stayed 0
+   -> the 3D camera sat at floor level + a 164-unit eye offset while the
+   tile geometry's Y is `height*64` (~768 for a mid-level floor), so
+   every floor projected far above the viewport. Also used by
+   process_visible_tile_cell's height cull. */
+ undefined1 DAT_00085d20_backing[65536] = {
+  0x00,0x00, 0x40,0x00, 0x80,0x00, 0xc0,0x00, 0x00,0x01, 0x40,0x01,
+  0x80,0x01, 0xc0,0x01, 0x00,0x02, 0x40,0x02, 0x80,0x02, 0xc0,0x02,
+  0x00,0x03, 0x40,0x03, 0x00,0x00, 0x00,0x00, 0x00,0x04, 0x00,0x00,
+};
+short DAT_00202088;
+/* DAT_0008589c/85898/85894 are link-time-initialized read-only data,
+   same situation as DAT_00086e68 right above's fix (nothing in this
+   decompile writes any of the three, and an exhaustive whole-binary
+   Ghidra reference search confirms the real UU.exe agrees -- their
+   only references, all in apply_movement_mode_profile, are reads). Sibling constants
+   to DAT_00086e68 in the exact same per-facing-direction table
+   (apply_movement_mode_profile multiplies each by the same `uVar5` direction-lookup
+   value right next to where it uses DAT_00086e68), so almost
+   certainly hit the same bug for the same reason. Recovered the real
+   values by reading UU.exe's .data bytes directly via Ghidra:
+   0x3ac (940), 0xeb (235), 0xbc (188) respectively. Macro defines now
+   live in uw.h alongside DAT_00086e68, since apply_movement_mode_profile
+   (their only reader) moved into src/input.c. */
+static byte DAT_001013a4;
+static uint DAT_002020e4;
+static byte DAT_002020e8;
+int DAT_0023bc94;
+// was DAT_002028c0
+undefined1 *g_save_equip_table_ptr;
+// was DAT_002028c4
+undefined1 *g_save_record_base_ptr;
+/* Was missing its leading backslash -- both call sites append this
+   straight onto a directory path built with no trailing separator (e.g.
+   load_player_save_record builds "<root>\SAVE0" then appends this), so the file name
+   ran into the directory name with nothing between them
+   ("...\SAVE0player.dat"). A leading "\\" here is harmless even for a
+   caller whose own prefix already ends in one (resolve_path collapses
+   repeated separators). */
+char s_player_dat_00085a74[] = "\\player.dat";
+/* g_light_source_slots: light-source-eligible equip slots {5,6,7,8} (see
+   refresh_player_equipment_effects and decay_equipped_light_sources's light-scan loops, and use_light_source's
+   own comparison against find_or_assign_object_widget's result). Was a
+   bare 1-byte scalar -- every existing `(&g_light_source_slots)[1..3]` read past
+   the single declared byte into whatever the linker placed next, instead
+   of the real dumped table. Dumped directly from the real binary at
+   0x85ac8: `5 6 7 8 0 0 0 0 0 0 0xc8 0 0 0 0xc8 0`. */
+ unsigned char DAT_00085ac8_backing[16] =
+    {5,6,7,8,0,0,0,0,0,0,0xc8,0,0,0,0xc8,0};
+static byte DAT_002046d0;
+static byte DAT_002046cc;
+static undefined1 DAT_0020330c;
+static char DAT_00086db0;
+static char DAT_00086db1;
+static undefined1 DAT_0010060d;
+static undefined1 DAT_0010060e;
+static undefined1 DAT_0010060f;
+static undefined4 DAT_0023bc9c;
+static undefined4 DAT_0023bc98;
+undefined4 DAT_002020d0;
+static undefined4 DAT_002020dc;
+undefined4 DAT_002020d8;
+undefined4 DAT_002020d4;
+static char DAT_00086db4;
+static int DAT_00086db8_backing[256];
+#define DAT_00086db8 DAT_00086db8_backing[0]
+static undefined1 DAT_00086da8_backing[256];
+#define DAT_00086da8 DAT_00086da8_backing[0]
+/* Was a lone `undefined` scalar, but compute_light_source_colors
+   indexes it as a 16-entry (0-0xf) light-type -> base-color-index
+   table (`(&DAT_00086dc8)[light_type & 0xf]`). Widened to match. */
+static undefined DAT_00086dc8_backing[16];
+#define DAT_00086dc8 DAT_00086dc8_backing[0]
+/* Was a lone `undefined` scalar, but compute_object_weight indexes it
+   as a 512-entry (9-bit item-id, 0-0x1ff), 4-byte-stride table
+   (`(&g_object_weight_table)[item_id * 4]`, only byte 0 of each entry
+   read). Widened to match. */
+static undefined g_object_weight_table_backing[2048];
+#define g_object_weight_table g_object_weight_table_backing[0]
+undefined2 DAT_0023beb8;
+/* Base of a large fixed-offset record (reset_player_object_record: `DAT_00086df8 =
+   &DAT_0023bca8;`, then init_new_character_record and others write through
+   DAT_00086df8 at offsets up to at least 0xd1/209 -- a device/config-ish
+   struct, not yet fully identified). Declared as a lone `undefined`
+   scalar, byte 0 of that struct -- an lldb watchpoint on the unrelated
+   DAT_0023be74 (which happens to sit right after this in memory) caught
+   this overflowing into it one byte per loop iteration in init_new_character_record,
+   corrupting it and causing a later SEGV. Widened generously since the
+   struct's exact real size isn't confirmed. */
+ undefined1 DAT_0023bca8_backing[8192];
+short DAT_0023be90;
+short DAT_0023be92;
+short DAT_0023be94;
+short DAT_0023bf00;
+undefined2 DAT_0023bf02;
+undefined2 DAT_0023bf04;
+byte DAT_0023beb0;
+byte DAT_0023beac;
+undefined2 DAT_0023bea0;
+short DAT_0023bea4;
+short DAT_0023bf08;
+undefined4 DAT_0023bea8;
+char DAT_0023bf18;
+undefined2 DAT_0023be9e;
+undefined2 DAT_0023be9c;
+undefined2 DAT_0023be9a;
+static char DAT_0023bf14;
+static byte DAT_0023bf10;
+static undefined DAT_00086e58_backing[256];
+#define DAT_00086e58 DAT_00086e58_backing[0]
+static short DAT_0023bf30;
+static short DAT_0023bf34;
+static short DAT_0023bf38;
+static short DAT_0023bf3c;
+static short DAT_0023bf40;
+/* Was a lone `undefined` scalar, but grant_experience_points indexes
+   it as a per-character-level XP-threshold table
+   (`(&DAT_00086e87)[level]`), with the loop's own upper bound (0x10 =
+   16) confirming at least 17 entries (0-16) are live; the very first
+   access (by the raw current-level byte, before any bounds check) has
+   no visible cap of its own, so widened with a safety margin rather
+   than the bare minimum. */
+static undefined DAT_00086e87_backing[64];
+#define DAT_00086e87 DAT_00086e87_backing[0]
+static int DAT_0024af8c;
+static char s_font5x6i_sys_00086e98[] = "font5x6i.sys";
+char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
+/* "currently-loaded shading level" for load_shading_level_config's `if (DAT_000872a0
+   == param_1) return;` early-out. Ghidra dropped its initialiser (same
+   silently-zero link-time-init class as DAT_00086e68 &c); left at 0 the
+   first dungeon entry -- load_shading_level_config(0) -- matched and returned without
+   ever reading SHADES.DAT, so the texture-LOD threshold DAT_00086b24
+   stayed 0 and every visible tile drew with the 16x16 low-detail
+   texture. Sentinel = no level loaded yet. */
+char DAT_000872a0 = -1;
+static undefined1 DAT_0008730c_backing[8192];
+#define DAT_0008730c DAT_0008730c_backing[0]
+static undefined1 DAT_0008730d;
+/* Was a lone scalar, but roll_skill_use_improvement indexes it
+   `(&DAT_00087308)[tier]` for tier 0..2 (classify_skill_training_tier's
+   full range) as a per-tier probability threshold for
+   ordint_divmod(uVar2, random).quot. Widened to the real 3-entry array this
+   needs -- as a lone scalar, indices 1/2 read into whatever the
+   compiler placed next (s_and_00087310's string data on this host),
+   an arbitrary/wrong probability for tiers 1 and 2. Real per-tier
+   values weren't recovered (Ghidra never surfaced this as initialized
+   data), so left zero-initialized rather than guessed -- still an
+   improvement over reading unrelated string bytes as a probability. */
+static undefined DAT_00087308_arr[3];
+#define DAT_00087308 DAT_00087308_arr[0]
+char s_and_00087310[] = "and";
+/* Used as a NUL-terminated string (&DAT_00087318) by
+   print_skill_improvement_list, joining middle entries of its skill-
+   name list (likely ", " between the original real data). Ghidra never
+   surfaced this as initialized string data, so it currently prints as
+   an empty separator -- not guessed at, same as this project's other
+   unrecovered-rodata symbols (e.g. DAT_00086f0c). */
+static undefined DAT_00087318;
+static char s_Chant_the_mantra__0008731c[] = "Chant_the_mantra:";
+static char s_fontchar_sys_00087330[] = "fontchar.sys";
+static char s__DATA_win1_byt_00087350[] = "\\DATA\\win1.byt";
+char DAT_0023c27c;
+static char s__DATA_win2_byt_00087340[] = "\\DATA\\win2.byt";
+static byte DAT_0024af80;
+static undefined4 DAT_0024af88;
+
 
 
 
@@ -218,7 +493,7 @@ void commit_player_move()
       sVar1 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x32),((int)(short)uVar3 << 0x11) >> 0x10)
       ;
       if (0 < sVar1) {
-        sVar1 = Ordinal_2005(0x1e,(0x1e - (uint)*(byte *)(DAT_00086df8 + 0x32)) * (int)(short)uVar3)
+        sVar1 = ordint_divmod(0x1e,(0x1e - (uint)*(byte *)(DAT_00086df8 + 0x32)) * (int)(short)uVar3).quot
         ;
         uVar3 = (uint)sVar1;
       }
@@ -343,7 +618,7 @@ void sync_player_stats_to_hud()
       update_player_tick_effects();
     }
   }
-  if ((DAT_00201b68 == 9) && (uVar3 = Ordinal_1053(), (uVar3 & 0x1f) == 0)) {
+  if ((DAT_00201b68 == 9) && (uVar3 = ce_rand(), (uVar3 & 0x1f) == 0)) {
     apply_level9_random_hazard_tick();
   }
   return;
@@ -430,7 +705,7 @@ char * param_1;
   char acStack_114 [260];
   
   bVar3 = true;
-  g_save_record_buffer = Ordinal_1041(0x4000);
+  g_save_record_buffer = ce_malloc(0x4000);
   if (g_save_record_buffer == 0) {
     bVar3 = false;
   }
@@ -463,7 +738,7 @@ char * param_1;
        just past the last documented field before the equipment-slot-
        index table, which this project's own g_save_equip_table_ptr
        logic already serializes separately -- not duplicated here). */
-    Ordinal_1044(g_save_record_buffer + 0x5b + g_save_record_count * 8,&DAT_0023bca8,220);
+    ce_memmove(g_save_record_buffer + 0x5b + g_save_record_count * 8,&DAT_0023bca8,220);
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] SAVE appending quest_bits=0x%x at buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
     if (param_1 != (char *)0x0) {
       iVar2 = -(int)param_1;
@@ -472,7 +747,7 @@ char * param_1;
         param_1[(int)(acStack_114 + iVar2)] = cVar1;
         param_1 = param_1 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(acStack_114,s_player_dat_00085a74);
+      ce_strcat(acStack_114,s_player_dat_00085a74);
       iVar2 = open_existing_file_rw(acStack_114);
       bVar3 = iVar2 != -1;
       if (bVar3) {
@@ -485,10 +760,10 @@ char * param_1;
         write_player_status_block(iVar2);
         write_file_handle(iVar2,&g_save_record_count,2);
         write_file_handle(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
-        Ordinal_553(iVar2);
+        CloseHandle(iVar2);
       }
       if (g_save_record_buffer != 0) {
-        Ordinal_1018();
+        LocalFree();
         g_save_record_buffer = 0;
       }
       set_pending_update_flags(0x200);
@@ -552,7 +827,7 @@ undefined1 * param_1;
      (build_player_save_record is only ever called from
      write_player_save_record, which always fills this same trailing
      block first -- never garbage). */
-  Ordinal_1044(&DAT_0023bca8,param_1 + 0x5b + g_save_record_count * 8,220);
+  ce_memmove(&DAT_0023bca8,param_1 + 0x5b + g_save_record_count * 8,220);
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] LOAD restored quest_bits=0x%x from buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
   return;
 }
@@ -678,14 +953,9 @@ LAB_000669a8:
       iVar7 = get_scanned_object_class_effect_ptr();
       bVar1 = iVar7[1];
       if (bVar10 < bVar1) {
-        /* Also a bare call (no argument) -- but whatever DAT_000842b0
-           value this leaves is unconditionally overwritten a few lines
-           below by this same function's own definitive
-           set_ambient_bias_with_light(0)/set_ambient_bias_without_light(0) decision (made
-           from the aggregated bVar9/bVar10 this loop is computing), so
-           it's provably inert either way, not fixed alongside the real
-           bug in that later call. */
-        set_ambient_bias_with_light();
+        /* ARM 0x66a54 sets r0 = 0 before the call at 0x66a5c;
+           Ghidra omitted the reused-register argument. */
+        set_ambient_bias_with_light(0);
         iVar5 = iVar4;
         bVar9 = bVar1;
         bVar10 = bVar1;
@@ -735,22 +1005,18 @@ LAB_000669a8:
   } while (iVar4 < 0xb);
   apply_equipment_effect_penalties(local_30);
   if (DAT_002020d8 == 0) {
-    /* *(char*)(DAT_00086df8+99) is the player's current light radius
-       (upper nibble; 0 = no equipped light source at all, maintained by
-       this same function's own scan of equip slots above + a separate
-       updater at uw.c ~55510). ==0 (no light) -> set_ambient_bias_without_light(0), the
-       mild "8 - param_1" dimming bias; else (a light source IS lit) ->
-       set_ambient_bias_with_light below, the much stronger "-0x20 -
-       param_1" brightening bias (more negative = brighter -- see that
-       function's own comment for the full sign-convention explanation). */
-    if (*(char *)(DAT_00086df8 + 99) == '\0') {
-      set_ambient_bias_without_light(0);
+    /* HACK: DOS mode selects the strongest equipped/spell light's
+       SHADES.DAT record. ARM mode uses the RGB shading bias. */
+    const char *light_mode = getenv("UW_LIGHT_MODE");
+    if (light_mode && strcmp(light_mode, "dos") == 0) {
+      load_shading_level_config(*(byte *)(DAT_00086df8 + 99) >> 4);
     }
     else {
-      /* Was a bare call -- ran on leftover register garbage instead of
-         a real argument. The sibling call just above explicitly passes
-         0 to set_ambient_bias_without_light; mirror that here too. */
-      set_ambient_bias_with_light(0);
+      /* HACK: the ARM build only distinguished lit from unlit here.
+         Restore per-strength brightness: start at the unlit bias (+8),
+         subtract 16 for every light level, and retain the calibration
+         adjustment. The low nibble identifies the source, not strength. */
+      set_ambient_bias_without_light((*(byte *)(DAT_00086df8 + 99) >> 4) * 16);
     }
   }
   else {
@@ -779,7 +1045,7 @@ char param_2;
       sVar2 = (ushort)*(byte *)((char *)g_player_object + 8) - (short)param_2;
     }
     else {
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       sVar2 = (ushort)*(byte *)((char *)g_player_object + 8) +
               ((short)(((uVar1 & 3) + (short)param_2) * (ushort)*(byte *)(DAT_0023be74 + 4)) >> 4) +
               1;
@@ -895,9 +1161,9 @@ void reset_player_derived_state()
 
   iVar1 = DAT_00086df8;
   DAT_0020330c = 0;
-  cVar2 = Ordinal_2005(3,*(undefined1 *)(DAT_00086df8 + 0x2e));
+  cVar2 = ordint_divmod(3,*(undefined1 *)(DAT_00086df8 + 0x2e)).quot;
   DAT_00086db0 = '\r' - cVar2;
-  cVar2 = Ordinal_2005(5,*(undefined1 *)(iVar1 + 0x2e));
+  cVar2 = ordint_divmod(5,*(undefined1 *)(iVar1 + 0x2e)).quot;
   DAT_00086db1 = '\x0f' - cVar2;
   DAT_0020208c = 0;
   DAT_0010060c = 0;
@@ -953,7 +1219,7 @@ int param_1;
   }
   else if (DAT_00086db4 < '\0') {
     if (DAT_00086db8 == 0) {
-      uVar2 = Ordinal_1053();
+      uVar2 = ce_rand();
       uw_ord2005_rem_125 = ((int)(uVar2)) % (3);
       DAT_00086db4 = uw_ord2005_rem_125;
     }
@@ -962,7 +1228,7 @@ int param_1;
       DAT_00086db8 = 0;
     }
     if (DAT_00086db4 == '\x01') {
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       set_palette_bank(uVar1 & 7);
     }
     else if (DAT_00086db4 == '\x02') {
@@ -1334,14 +1600,14 @@ void trigger_view_transition()
      (sVar9 = -(ushort)*(byte *)(DAT_00086df8 + 0xb9), DAT_0023be98 = sVar9,
      0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
     iVar7 = (int)g_jump_ascent_timer;
-    cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)(iVar7) << 2);
+    cVar2 = ordint_divmod((int)DAT_00202078 >> 1,(int)(iVar7) << 2).quot;
     cVar3 = (char)(cVar2 + -3);
     if ((cVar2 + -3) * 0x1000000 >> 0x18 < 1) {
       cVar3 = '\x01';
     }
     bVar8 = DAT_0023bf18 >> 4;
     if (iVar7 == 0) {
-      uVar4 = Ordinal_1053();
+      uVar4 = ce_rand();
       DAT_0023be9e = (uVar4 & 0x1ff) - 0x100;
       sVar9 = DAT_0023be98;
     }
@@ -1350,13 +1616,13 @@ void trigger_view_transition()
     }
     DAT_0023be98 = sVar9 + (short)(char)(&DAT_00086e58)[(int)(char)bVar8 + 2U & 0xf] * (short)cVar3
                            * 2;
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     DAT_0023be9a = ((uVar4 & 0x7f) - 0x40) * (short)cVar3;
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     DAT_0023be9c = ((uVar4 & 0x7f) - 0x40) * (short)cVar3;
   }
   if (((*(byte *)(DAT_00086df8 + 0xb8) & 2) != 0) && (DAT_0023bc98 == 0)) {
-    uVar5 = Ordinal_1053();
+    uVar5 = ce_rand();
     uw_ord2005_rem_126 = ((int)(uVar5)) % (5);
     if (uw_ord2005_rem_126 == 0) {
       apply_typed_damage_to_object(g_player_object,0,0,0,1,8);
@@ -1377,7 +1643,7 @@ void trigger_view_transition()
         set_pending_update_flags(2);
       }
       iVar7 = DAT_00086df8;
-      cVar3 = Ordinal_2005(10,DAT_0023bf14);
+      cVar3 = ordint_divmod(10,DAT_0023bf14).quot;
       if ('\b' < cVar3) {
         cVar3 = '\b';
       }
@@ -1395,11 +1661,11 @@ void trigger_view_transition()
       }
     }
     cVar3 = bVar8 + cVar3;
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     DAT_0023be9a = ((uVar4 & 0xff) - 0x80) * (short)cVar3 + DAT_0023be9a;
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     DAT_0023be9c = ((uVar4 & 0x7f) - 0x40) * (short)cVar3 + DAT_0023be9c;
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     DAT_0023be9e = ((uVar4 & 0x1ff) - 0x100) * (short)cVar3 + DAT_0023be9e;
   }
   return;
@@ -1598,9 +1864,9 @@ void sync_camera_from_player()
       }
     }
   }
-  DAT_000db438 = Ordinal_2032((int)DAT_0023bf30 + (int)(short)uVar3 + 0x1000);
-  DAT_000db43c = Ordinal_2032((int)*(short *)(iVar4 + 0xe) + (int)DAT_0023bf34);
-  DAT_000db440 = Ordinal_2032((int)DAT_0023bf38 + (int)(short)uVar7);
+  DAT_000db438 = ordfloat_int_to_float2((int)DAT_0023bf30 + (int)(short)uVar3 + 0x1000);
+  DAT_000db43c = ordfloat_int_to_float2((int)*(short *)(iVar4 + 0xe) + (int)DAT_0023bf34);
+  DAT_000db440 = ordfloat_int_to_float2((int)DAT_0023bf38 + (int)(short)uVar7);
   iVar6 = (int)DAT_0023beb4;
   if (iVar6 == 0) {
     DAT_000db448 = 0;
@@ -1642,11 +1908,11 @@ void sync_camera_from_player()
        the divide ran on a leftover register -> yaw came out 0/360 ->
        identity view rotation -> every tile projected behind the near
        plane. */
-    iVar4 = Ordinal_2005(0xb4, (int)sVar8);
+    iVar4 = ordint_divmod(0xb4, (int)sVar8).quot;
     DAT_000db44c = iVar4 + DAT_0023bf40 + 0x168;
   }
   else {
-    iVar4 = Ordinal_2005(0xb4, (int)sVar8);
+    iVar4 = ordint_divmod(0xb4, (int)sVar8).quot;
     DAT_000db44c = iVar4 + DAT_0023bf40;
   }
   /* Always-on (no env var) position/heading debug print, for correlating
@@ -1723,7 +1989,7 @@ int param_2;
   undefined4 uVar2;
   short extraout_r1;
   
-  uVar2 = Ordinal_1053();
+  uVar2 = ce_rand();
   uw_ord2005_rem_127 = ((int)(uVar2)) % (0x1f);
   iVar1 = ((uw_ord2005_rem_127 - param_2) + param_1) * 0x10000 >> 0x10;
   if (iVar1 < 0x1d) {
@@ -1748,7 +2014,7 @@ int param_2;
 
 // was FUN_00069bd0 -- add param_1 experience points to the character
 // (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level
-// when the Ordinal_2008(500) threshold is crossed.
+// when the orduint_divmod(500) threshold is crossed.
 void grant_experience_points(param_1)
 short param_1;
 
@@ -1784,7 +2050,7 @@ short param_1;
       }
       param_1 = (short)(iVar7 >> 1) + 1;
     }
-    sVar4 = Ordinal_2008(3000,*(uint *)(DAT_00086df8 + 0x4e) + (int)param_1);
+    sVar4 = orduint_divmod(3000,*(uint *)(DAT_00086df8 + 0x4e) + (int)param_1).quot;
     if ((short)(ushort)*(byte *)(iVar8 + 0x53) < sVar4) {
       *(byte *)(iVar8 + 0x52) = ((char)sVar4 - *(byte *)(iVar8 + 0x53)) + *(char *)(iVar8 + 0x52);
       *(char *)(DAT_00086df8 + 0x53) = (char)sVar4;
@@ -1799,7 +2065,7 @@ short param_1;
     iVar8 = DAT_00086df8;
     iVar7 = 0;
     uVar3 = *(uint *)(DAT_00086df8 + 0x4e);
-    sVar4 = Ordinal_2008(500);
+    sVar4 = orduint_divmod(500).quot;
     uVar5 = (uint)*(byte *)(iVar8 + 0x3d);
     bVar1 = (&DAT_00086e87)[uVar5];
     uVar6 = uVar5;
@@ -1885,11 +2151,11 @@ int param_1;
     else {
       pcVar3 = s__DATA_light_dat_000872c8;
     }
-    Ordinal_1063(acStack_10c,pcVar3);
+    ce_strcat(acStack_10c,pcVar3);
     iVar2 = open_file_for_read(acStack_10c);
     if (iVar2 != -1) {
       read_file_handle(iVar2,DAT_0024fa2c,0x1000);
-      Ordinal_553(iVar2);
+      CloseHandle(iVar2);
     }
   }
   else {
@@ -1927,7 +2193,7 @@ int param_1;
   char *iVar3;
   
   iVar3 = DAT_0023be74;
-  cVar2 = Ordinal_2005(5,(uint)*(byte *)(DAT_00086df8 + 0x3d) * (uint)*(byte *)(DAT_0023be74 + 5));
+  cVar2 = ordint_divmod(5,(uint)*(byte *)(DAT_00086df8 + 0x3d) * (uint)*(byte *)(DAT_0023be74 + 5)).quot;
   *(char *)(iVar3 + 4) = cVar2 + '\x1e';
   uVar1 = (undefined1)
           ((int)((*(byte *)(DAT_00086df8 + 0x28) + 1) * (uint)*(byte *)(DAT_0023be74 + 7)) >> 3);
@@ -1966,7 +2232,7 @@ char param_1;
     DAT_0008730c = ' ';
   }
   else {
-    cVar2 = Ordinal_2005(10);
+    cVar2 = ordint_divmod(10).quot;
     DAT_0008730c = cVar2 + '0';
   }
   uw_ord2005_rem_138 = ((int)(*(undefined1 *)(iVar1 + 0x3d))) % (10);
@@ -2057,7 +2323,7 @@ short param_1;
   uVar2 = *(undefined1 *)(DAT_0023be74 + sVar4 + 5);
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
   pcVar_df8 = DAT_00086df8 + iVar1;
-  cVar3 = Ordinal_2005(uVar6,uVar2);
+  cVar3 = ordint_divmod(uVar6,uVar2).quot;
   *(char *)(pcVar_df8 + 0x21) = cVar3 + *(char *)(pcVar_df8 + 0x21);
   iVar5 = (int)sVar7;
   cVar3 = rand_below(iVar5);
@@ -2089,7 +2355,7 @@ short param_1;
 // (classify_skill_training_tier + DAT_0023be74[tier+5]) or has hit 0x1d
 // (29); otherwise increments the progress byte by 1 (plus a second +1
 // for tier!=0 skills still under half that base value, plus a further
-// Ordinal_2005-randomized chance +1), capping the final result at 30
+// ordint_divmod-randomized chance +1), capping the final result at 30
 // (0x1e), and returns true. param_1==8 (a specific skill index) also
 // refreshes a per-level cached value at DAT_00086df8+0xc2 for the
 // current level.
@@ -2126,10 +2392,10 @@ char param_1;
       }
     }
     if (*(byte *)(iVar1 + DAT_00086df8 + 0x21) < uVar6) {
-      uVar5 = Ordinal_1053();
+      uVar5 = ce_rand();
       iVar7 = iVar1 + DAT_00086df8;
       bVar3 = *(byte *)(iVar7 + 0x21);
-      Ordinal_2005(uVar2,uVar5);
+      extraout_r1 = ordint_divmod(uVar2,uVar5).rem;
       if (extraout_r1 < (int)(uVar6 - bVar3)) {
         *(byte *)(iVar7 + 0x21) = bVar3 + 1;
       }
@@ -2228,7 +2494,7 @@ LAB_00070874:
 // was FUN_000708bc -- the "Chant the mantra" feature: prompts for a
 // typed mantra word (scroll_text_entry_prompt), matches it against the
 // known-mantra string table (string ids 0x33..0x4c via get_message_string,
-// compared with Ordinal_1065) and dispatches on which one matched:
+// compared with ce_strcmp) and dispatches on which one matched:
 // - ids 0x33..0x46 (iVar6<0x14): single-skill mantras, spending one
 //   "mantra use" (DAT_00086df8+0x52) for two roll_skill_use_improvement
 //   attempts on the mantra's associated skill.
@@ -2264,9 +2530,9 @@ void handle_mantra_chant()
   message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   iVar10 = 0x33;
   do {
-    uVar4 = Ordinal_1416(local_58);
+    uVar4 = _strupr(local_58);
     uVar5 = get_message_string((int)(char)iVar10 | 0x400);
-    iVar6 = Ordinal_1065(uVar5,uVar4);
+    iVar6 = ce_strcmp(uVar5,uVar4);
     if (iVar6 == 0) break;
     iVar10 = iVar10 + 1;
   } while (iVar10 * 0x1000000 >> 0x18 < 0x4d);
@@ -2350,7 +2616,7 @@ LAB_00070c78:
     while ((iVar6 != 0 &&
            (cVar1 = (char)iVar10, iVar10 = (cVar1 + -1) * 0x1000000 >> 0x18, cVar1 != 0))) {
       if ((sVar13 == 7) &&
-         ((*(byte *)(DAT_00086df8 + 0x28) < 8 && (uVar8 = Ordinal_1053(), (uVar8 & 2) != 0)))) {
+         ((*(byte *)(DAT_00086df8 + 0x28) < 8 && (uVar8 = ce_rand(), (uVar8 & 2) != 0)))) {
         iVar7 = 7;
       }
       else {
@@ -2404,7 +2670,7 @@ void render_endgame_character_stats()
      this 64-bit host -- same bug class as the other get_message_string
      truncation fixes this session (e.g. character_generator_loop's uVar10). Used
      consistently as a string pointer everywhere else in this function
-     (draw_text_string's first arg, Ordinal_1063's second arg), so retyping
+     (draw_text_string's first arg, ce_strcat's second arg), so retyping
      is a straightforward drop-in fix. */
   char *uVar7;
   char *pcVar8;
@@ -2445,10 +2711,10 @@ void render_endgame_character_stats()
     *pcVar11 = cVar3;
     pcVar11 = pcVar11 + 1;
   } while (cVar3 != '\0');
-  sVar6 = Ordinal_1068(local_58);
+  sVar6 = ce_strlen(local_58);
   iVar12 = DAT_00086df8;
   if (9 < *(byte *)(DAT_00086df8 + 0x3d)) {
-    cVar3 = Ordinal_2005(10);
+    cVar3 = ordint_divmod(10).quot;
     local_58[sVar6] = cVar3 + '0';
     sVar6 = (short)((uint)((sVar6 + 1) * 0x10000) >> 0x10);
   }
@@ -2458,7 +2724,7 @@ void render_endgame_character_stats()
   local_58[iVar13] = ' ';
   local_58[(iVar13 + 1) * 0x10000 >> 0x10] = '\0';
   uVar7 = get_message_string((*(byte *)(iVar12 + 100) >> 5) + 0x17 | 0x400);
-  Ordinal_1063(local_58,uVar7);
+  ce_strcat(local_58,uVar7);
   iVar13 = *(short *)(DAT_000879b0 + 6) + 0x14;
   sVar6 = measure_text_width(local_58);
   iVar12 = (int)sVar6;
@@ -2474,8 +2740,13 @@ void render_endgame_character_stats()
     iVar12 = iVar12 + 1;
   }
   draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
-  sVar6 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
-  sVar6 = Ordinal_2005(0xc,(int)sVar6);
+  /* First argument is NOT the address of a global despite how this
+     first decompiled (`&DAT_001c2000`) -- see
+     print_character_description_scroll's identical call in hud.c for
+     the real-disassembly explanation (ARM's split-immediate idiom for
+     the plain literal 0x1c2000, misread as a data reference). */
+  sVar6 = orduint_divmod(0x1c2000,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
+  sVar6 = ordint_divmod(0xc,(int)sVar6).quot;
   pcVar8 = (char *)get_message_string(0x2bd);
   pcVar11 = local_58;
   do {
@@ -2484,10 +2755,10 @@ void render_endgame_character_stats()
     *pcVar11 = cVar3;
     pcVar11 = pcVar11 + 1;
   } while (cVar3 != '\0');
-  uVar7 = Ordinal_1025((int)sVar6,auStack_68,10);
-  Ordinal_1063(local_58,uVar7);
+  uVar7 = _itoa((int)sVar6,auStack_68,10);
+  ce_strcat(local_58,uVar7);
   uVar7 = get_message_string(0x2be);
-  Ordinal_1063(local_58,uVar7);
+  ce_strcat(local_58,uVar7);
   sVar6 = measure_text_width(local_58);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
@@ -2499,7 +2770,7 @@ void render_endgame_character_stats()
   iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
   do {
     iVar14 = DAT_000879b0;
-    iVar9 = Ordinal_2005(3,iVar12);
+    iVar9 = ordint_divmod(3,iVar12).quot;
     sVar6 = 0xbe;
     if (iVar9 == 0) {
       sVar6 = 0x50;
@@ -2517,8 +2788,8 @@ void render_endgame_character_stats()
       else {
         if (iVar12 != 4) {
           if (iVar12 == 5) {
-            uVar10 = Ordinal_2008(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
-            Ordinal_1039(uVar10,local_58,10);
+            uVar10 = orduint_divmod(10,*(undefined4 *)(DAT_00086df8 + 0x4e)).quot;
+            _ltoa(uVar10,local_58,10);
           }
           goto LAB_00071110;
         }
@@ -2540,7 +2811,7 @@ LAB_00071110:
         uVar7 = get_message_string((int)iVar12 + 0x1fU | 0x400);
         bVar5 = bVar1;
         if (9 < bVar1) {
-          bVar5 = Ordinal_2005(10,bVar1);
+          bVar5 = ordint_divmod(10,bVar1).quot;
         }
         local_58[0] = bVar5 + 0x30;
         if (bVar1 < 10) {
@@ -2597,7 +2868,7 @@ void apply_rest_status_effects()
   refresh_player_equipment_effects();
   settle_movement_to_rest();
   if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) != 0) && ((DAT_0020208c & 0x16) == 0)) {
-    uVar1 = Ordinal_1053();
+    uVar1 = ce_rand();
     uVar2 = 0x10;
     uw_ord2005_rem_144 = ((int)(uVar1)) % (6);
     apply_typed_damage_to_object(g_player_object,0,0,0,uw_ord2005_rem_144 * '\n' + '\f',uVar2);
@@ -2655,7 +2926,7 @@ LAB_0007158c:
     }
     tick_ambient_doors_and_scheduler(0);
     despawn_objects_outside_radius(1,0x14);
-    uVar5 = Ordinal_1053();
+    uVar5 = ce_rand();
     uw_ord2005_rem_145 = ((int)(uVar5)) % (5);
     iVar8 = uw_ord2005_rem_145 + 2;
     iVar4 = (iVar8 * 0x10000 >> 0x10) * 0xe1000 + *(int *)(DAT_00086df8 + 0xce);
@@ -2688,11 +2959,11 @@ LAB_0007158c:
       if (iVar4 == 0) {
         advance_mobile_objects();
         process_nearby_background_traps(0);
-        uVar5 = Ordinal_1053();
+        uVar5 = ce_rand();
         uw_ord2005_rem_146 = ((int)(uVar5)) % (4);
         iVar4 = (uw_ord2005_rem_146 - iVar8) + 7;
         if (*(byte *)((char *)g_player_object + 8) < 10) {
-          uVar5 = Ordinal_1053();
+          uVar5 = ce_rand();
           uw_ord2005_rem_147 = ((int)(uVar5)) % (2);
           iVar4 = iVar4 + uw_ord2005_rem_147 + 1;
         }
@@ -2721,7 +2992,7 @@ LAB_0007158c:
           adjust_level7_hazard_value(g_player_object,0xfffffffa);
           adjust_level7_hazard_value(g_player_object,((char)sVar3 + 1) * (int)(char)iVar4 + (int)(char)sVar3 + -1);
         }
-        sVar3 = Ordinal_1053();
+        sVar3 = ce_rand();
         adjust_player_hunger(-0x18 - ((int)sVar3 & 0x1fU));
         uVar6 = *(ushort *)(DAT_00086df8 + 0x61);
         if ((uVar6 & 0x3f0) < 0x200) {
@@ -2749,7 +3020,7 @@ LAB_0007158c:
           *(byte *)(DAT_00086df8 + 0x3a) = *(byte *)(DAT_00086df8 + 0x3a) - 0x20;
         }
         print_scroll_message_by_id(0x15);
-        sVar3 = Ordinal_1053();
+        sVar3 = ce_rand();
         adjust_player_hunger(-0xc - ((int)sVar3 & 0xfU));
         uVar6 = *(ushort *)(DAT_00086df8 + 0x61);
         if ((uVar6 & 0x3f0) < 0x100) {
@@ -2908,7 +3179,7 @@ void handle_game_victory_sequence()
     display_book_or_scroll_page(1);
     decrement_cursor_hide_depth();
     clear_screen_and_restore_cursor();
-    Ordinal_1047(acStack_114,0,0x104);
+    ce_memset(acStack_114,0,0x104);
     pcVar7 = &DAT_0023cca8;
     stack0xffdc3244_ptr = stack0xffdc3244_buf;
     pcVar4 = pcVar7;
@@ -2918,17 +3189,17 @@ void handle_game_victory_sequence()
       *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_114,s__DATA_win1_byt_00087350);
+    ce_strcat(acStack_114,s__DATA_win1_byt_00087350);
     blit_fullscreen_bitmap_file(7,acStack_114,1);
-    Ordinal_496(3000);
+    Sleep(3000);
     dirty_rect_union(0,200,0,0x140);
-    Ordinal_1047(acStack_114,0,0x104);
+    ce_memset(acStack_114,0,0x104);
     do {
       cVar1 = *pcVar7;
       *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
       pcVar7 = pcVar7 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_114,s__DATA_win2_byt_00087340);
+    ce_strcat(acStack_114,s__DATA_win2_byt_00087340);
     blit_fullscreen_bitmap_file(0xffffffff,acStack_114,1);
     dirty_rect_union(0,200,0,0x140);
     render_endgame_character_stats();
@@ -2994,7 +3265,7 @@ void handle_starvation_penalty()
     pop_cursor_icon(3);
   }
 LAB_00072374:
-  uVar5 = Ordinal_1053();
+  uVar5 = ce_rand();
   uw_ord2005_rem_148 = ((int)(uVar5)) % (5);
   /* Was `iVar6 = spawn_new_object(...)` (plain int) -- spawn_new_object now
      really returns a fresh object pointer (see its fix) instead of
@@ -3062,7 +3333,7 @@ char param_2;
       param_2 = *(char *)(DAT_00086df8 + 0x37) - param_2;
     }
     else {
-      sVar1 = Ordinal_1053();
+      sVar1 = ce_rand();
       param_2 = (char)((int)((((int)sVar1 & 3U) + (int)param_2) *
                              (uint)*(byte *)(DAT_00086df8 + 0x38) * 0x10000) >> 0x14) +
                 *(char *)(DAT_00086df8 + 0x37) + '\x01';
@@ -3155,7 +3426,7 @@ char param_2;
 
 // was FUN_00077f30 -- draws the stats panel's name/title/level
 // header. Called from draw_stats_panel_content. Draws the player's
-// name (uppercased via Ordinal_1416, the real _strupr), then their
+// name (uppercased via _strupr, the real _strupr), then their
 // title (a gender+race-derived message lookup), then their level
 // number (0-3 capped, offset 0x3d) right-aligned. Already referenced
 // by this name in existing comments in src/ordinal_stubs.c and
@@ -3167,11 +3438,11 @@ void draw_stats_panel_header()
 {
   char cVar1;
   short sVar2;
-  /* Was `undefined4` -- truncated Ordinal_1416's real 64-bit string
+  /* Was `undefined4` -- truncated _strupr's real 64-bit string
      pointer return (see that ordinal's own comment: it's `_strupr`,
      genuinely implemented now instead of a stub) to 32 bits on this
      host before handing it to draw_text_string. Harmless while
-     Ordinal_1416 was a stub always returning 0; a real
+     _strupr was a stub always returning 0; a real
      pointer-truncation crash now that it isn't. Same class as
      everywhere else this session. */
   char *uVar3;
@@ -3179,16 +3450,16 @@ void draw_stats_panel_header()
   undefined1 auStack_28 [30];
   undefined1 local_a;
 
-  Ordinal_1071(auStack_28,DAT_00086df8,0xf);
+  ce_strncpy(auStack_28,DAT_00086df8,0xf);
   local_a = 0;
-  Ordinal_1416(auStack_28);
+  _strupr(auStack_28);
   sVar2 = measure_text_width(auStack_28);
   iVar4 = -(int)sVar2 + 0x48;
   if (iVar4 < 0) {
     iVar4 = -(int)sVar2 + 0x49;
   }
   draw_text_string(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
-  /* Was `get_message_string(id); uVar3 = Ordinal_1416();` -- Ordinal_1416
+  /* Was `get_message_string(id); uVar3 = _strupr();` -- _strupr
      (real body: `_strupr`, see its own comment) needs an explicit
      string argument, but was called with none, relying on the K&R
      leftover-register idiom (this project's established "dropped
@@ -3196,7 +3467,7 @@ void draw_stats_panel_header()
      string pointer. That register doesn't reliably carry through on
      this recompile, so uVar3 came back NULL/garbage and the player's
      title was never drawn. Thread the string through explicitly. */
-  uVar3 = Ordinal_1416(get_message_string((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
+  uVar3 = _strupr(get_message_string((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
   draw_text_string(uVar3,0xf2,0x16);
   itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
   cVar1 = *(byte *)(DAT_00086df8 + 0x3d) - 1;
@@ -3251,7 +3522,7 @@ void draw_hp_stat_display()
   undefined1 auStack_c [8];
   
   itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_c,10);
-  sVar1 = Ordinal_1068(auStack_c);
+  sVar1 = ce_strlen(auStack_c);
   auStack_c[sVar1] = 0x2f;
   itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
   iVar2 = measure_text_width(auStack_c);
@@ -3273,7 +3544,7 @@ void draw_mana_stat_display()
   undefined1 auStack_10 [8];
   
   itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_10,10);
-  sVar1 = Ordinal_1068(auStack_10);
+  sVar1 = ce_strlen(auStack_10);
   auStack_10[sVar1] = 0x2f;
   itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_10 + ((sVar1 + 1) * 0x10000 >> 0x10),10)
   ;
@@ -3285,8 +3556,8 @@ void draw_mana_stat_display()
 
 
 // was FUN_000781a0 -- draws the player's total experience points
-// (DAT_00086df8+0x4e, a 4-byte value) formatted via Ordinal_2008/
-// Ordinal_1039 at y=0x40. Same caller pair as draw_hp_stat_display
+// (DAT_00086df8+0x4e, a 4-byte value) formatted via orduint_divmod/
+// _ltoa at y=0x40. Same caller pair as draw_hp_stat_display
 // above.
 void draw_experience_points_display()
 
@@ -3295,8 +3566,8 @@ void draw_experience_points_display()
   int iVar2;
   undefined1 auStack_18 [12];
   
-  uVar1 = Ordinal_2008(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
-  Ordinal_1039(uVar1,auStack_18,10);
+  uVar1 = orduint_divmod(10,*(undefined4 *)(DAT_00086df8 + 0x4e)).quot;
+  _ltoa(uVar1,auStack_18,10);
   iVar2 = measure_text_width(auStack_18);
   draw_text_string(auStack_18,0x138 - iVar2,0x40);
   return;
@@ -3316,7 +3587,7 @@ void draw_stats_panel_skill_row(param_1)
 uint param_1;
 
 {
-  /* Was `undefined4` -- same Ordinal_1416 pointer-truncation class as
+  /* Was `undefined4` -- same _strupr pointer-truncation class as
      draw_stats_panel_header's player-title draw. */
   char *uVar1;
   int iVar2;
@@ -3328,12 +3599,12 @@ uint param_1;
   itoa_radix(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
   blit_grtile_to_framebuffer(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
                0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
-  /* Was `get_message_string(id); uVar1 = Ordinal_1416();` -- same dropped-
+  /* Was `get_message_string(id); uVar1 = _strupr();` -- same dropped-
      argument bug as draw_stats_panel_header's player-title draw above; thread
      the looked-up skill-name string through explicitly instead of
      relying on leftover-register reuse. This is why no skill names
      (Sword/Swimming/Mace/etc.) ever displayed. */
-  uVar1 = Ordinal_1416(get_message_string((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400));
+  uVar1 = _strupr(get_message_string((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400));
   iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
   draw_text_string(uVar1,0xf2,iVar4);
   iVar2 = measure_text_width(auStack_18);
@@ -3681,7 +3952,7 @@ short param_1;
     hud_vitals_threshold_shake(0);
     message_scroll_print_wrapped(s_You_died_000857b8);
     display_book_or_scroll_page(0x103);
-    Ordinal_496(2000);
+    Sleep(2000);
   }
   do {
     sVar1 = next_input_event();
@@ -3713,7 +3984,7 @@ short param_1;
     decrement_cursor_hide_depth();
   }
   reset_player_for_resurrection();
-  Ordinal_1044(auStack_31c,&DAT_00088d98,0x300);
+  ce_memmove(auStack_31c,&DAT_00088d98,0x300);
   fade_active_palette_to_black(auStack_31c,2);
   main_menu_loop(0);
   DAT_00201c98 = 1;
@@ -3754,38 +4025,38 @@ void apply_level9_random_hazard_tick()
   uVar1 = (uint)(short)(ushort)bVar6;
   if (uVar1 < 0x65) {
     if (uVar1 < 0x33) {
-      if ((uVar1 < 0x15) || (uVar4 = Ordinal_1053(), (uVar4 & 3) != 0)) {
-        if ((1 < uVar1) && (uVar4 = Ordinal_1053(), (uVar4 & 7) == 0)) {
+      if ((uVar1 < 0x15) || (uVar4 = ce_rand(), (uVar4 & 3) != 0)) {
+        if ((1 < uVar1) && (uVar4 = ce_rand(), (uVar4 & 7) == 0)) {
           bVar6 = (byte)((uVar1 - 1) * 0x10000 >> 0x10);
         }
         goto LAB_0003c780;
       }
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       uw_ord2005_rem_106 = ((int)(uVar3)) % (3);
       cVar5 = uw_ord2005_rem_106;
     }
     else {
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       uw_ord2005_rem_107 = ((int)(uVar3)) % (4);
       cVar5 = uw_ord2005_rem_107;
     }
   }
   else {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_108 = ((int)(uVar3)) % (6);
     cVar5 = uw_ord2005_rem_108;
   }
   bVar6 = bVar6 - cVar5;
 LAB_0003c780:
   *(byte *)((char *)g_player_object + 8) = bVar6;
-  uVar3 = Ordinal_1053();
+  uVar3 = ce_rand();
   uw_ord2005_rem_109 = ((int)(uVar3)) % (0xc);
   if (uw_ord2005_rem_109 != 0) {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_110 = ((int)(uVar3)) % (0x1e);
     set_movement_animation_timer(0x40,(uw_ord2005_rem_110 & 0xff) + 0xf);
   }
-  uVar2 = Ordinal_1053();
+  uVar2 = ce_rand();
   set_hud_status_value(2,uVar2 & 0xf);
   return;
 }
@@ -4058,7 +4329,7 @@ void update_player_tick_effects()
   }
   uw_ord2005_rem_117 = ((int)(DAT_002046d0)) % (0x18);
   if (uw_ord2005_rem_117 == 0) {
-    sVar5 = Ordinal_1053();
+    sVar5 = ce_rand();
     adjust_player_hunger(-3 - ((int)sVar5 & 3U));
     uVar6 = (uint)*(ushort *)(DAT_00086df8 + 0x61);
     if ((*(ushort *)(DAT_00086df8 + 0x61) & 0x3f0) != 0) {
@@ -4066,7 +4337,7 @@ void update_player_tick_effects()
       *(char *)(DAT_00086df8 + 0x61) = (char)uVar6;
       *(char *)(DAT_00086df8 + 0x62) = (char)(uVar6 >> 8);
     }
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     if ((uVar6 & 3) == 0) {
       process_nearby_background_traps(1);
     }
@@ -4127,10 +4398,16 @@ undefined1 param_2;
       uVar2 = *puVar6;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
           (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
-        Ordinal_2005(cVar1,param_2);
+        /* Was two separate ordint_divmod calls on the same (cVar1,
+           param_2) pair -- one bare (wanting the remainder via a
+           never-populated extraout_r1), one capturing the quotient
+           via a dropped-dividend second call. One real call now,
+           both halves named off its divmod_result. */
+        divmod_result dmr4414 = ordint_divmod(cVar1,param_2);
+        extraout_r1 = dmr4414.rem;
         uVar8 = (ushort)(extraout_r1 == 0);
         if (1 < param_1) {
-          sVar5 = Ordinal_2005(cVar1);
+          sVar5 = dmr4414.quot;
           uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
         }
         if ((short)uVar8 != 0) {
@@ -4179,8 +4456,8 @@ void apply_drowning_hazard()
   iVar3 = DAT_00086df8;
   uVar1 = 0;
   if (*(short *)(DAT_00086df8 + 0x4c) != 0) {
-    uVar1 = Ordinal_2005(*(short *)(DAT_00086df8 + 0x4c),(uint)*(ushort *)(DAT_00086df8 + 0x4a) << 5
-                        );
+    uVar1 = ordint_divmod(*(short *)(DAT_00086df8 + 0x4c),(uint)*(ushort *)(DAT_00086df8 + 0x4a) << 5
+                        ).quot;
   }
   iVar3 = roll_skill_check(*(undefined1 *)(iVar3 + 0x34),uVar1);
   if (((short)iVar3 < 1) && (*(byte *)(DAT_00086df8 + 0xb9) < 0x8c)) {

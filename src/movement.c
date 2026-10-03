@@ -8,6 +8,290 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define _DAT_002048c2 (*(uint*)&DAT_002048c2)
+#define _DAT_00204982 (*(uint*)&DAT_00204982)
+#define _DAT_00204986 (*(uint*)&DAT_00204986)
+#define _DAT_00204992 (*(uint*)&DAT_00204992)
+ undefined2 DAT_002049a0_backing[8192];
+static undefined2 DAT_002048cc;
+static undefined2 DAT_002048ce;
+static undefined1 DAT_002048d7;
+static undefined2 DAT_002048fc;
+static undefined2 DAT_002048fe;
+static undefined1 DAT_00204907;
+static undefined2 DAT_0020492c;
+static undefined2 DAT_0020492e;
+static undefined1 DAT_00204937;
+static undefined2 DAT_0020495c;
+static undefined2 DAT_0020495e;
+static undefined1 DAT_00204967;
+/* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes)
+   via the _DAT_00204982 macro below -- widened to its own real backing
+   storage so that wider access can't spill into whatever global happens
+   to follow (it used to rely on uw.c's own incidental layout). */
+static undefined DAT_00204982_backing[8];
+#define DAT_00204982 DAT_00204982_backing[0]
+static undefined2 DAT_00204984;
+/* Same wider-access-than-declared-size issue as DAT_00204982 above (see
+   its comment), via the _DAT_00204986 macro below. */
+static undefined DAT_00204986_backing[8];
+#define DAT_00204986 DAT_00204986_backing[0]
+ undefined1 DAT_00204980_backing[65536];
+static undefined *DAT_00204988;
+/* Same wider-access-than-declared-size issue as DAT_00204982 above (see
+   its comment), via the _DAT_00204992 macro below. */
+static undefined DAT_00204992_backing[8];
+#define DAT_00204992 DAT_00204992_backing[0]
+static undefined2 DAT_00204994;
+static undefined2 DAT_00204996;
+ undefined2 DAT_00204990_backing[32768];
+static undefined *DAT_00204998;
+static undefined2 DAT_002049a2;
+static undefined2 DAT_002049a4;
+static undefined2 DAT_002049a6;
+static undefined1 *DAT_002049a8;
+static undefined2 DAT_002049b2;
+static undefined2 DAT_002049b4;
+static undefined2 DAT_002049b6;
+ undefined2 DAT_002049b0_backing[32768];
+static undefined *DAT_002049b8;
+static short DAT_002048d0;
+/* Same wider-access-than-declared-size issue as DAT_00204982 above (see
+   its comment), via the _DAT_002048c2 macro below. */
+static undefined DAT_002048c2_backing[8];
+#define DAT_002048c2 DAT_002048c2_backing[0]
+/* Was a bare `undefined2` -- same split-symbol class as DAT_002048f0/
+   DAT_00204950 below (see their own comment): build_object_placement_snapshot writes up to
+   offset 0x28 into whichever of these three globals DAT_0010172c
+   currently points at, a massive out-of-bounds write past a 2-byte
+   scalar. Oversized generously like its siblings. */
+ undefined2 DAT_002048c0_backing[32768];
+static undefined2 DAT_002048c8;
+static undefined2 DAT_002048c6;
+undefined1 DAT_00101424;
+undefined1 DAT_00101428_backing[8192];
+static undefined2 DAT_002048fa;
+static undefined2 DAT_00204958;
+static undefined2 DAT_00204956;
+// was DAT_0023bf1c. Requested movement mode consumed by
+// resolve_move_vector -- see its header comment for the full mode list
+// (0 stop, 1 analog move/turn, 6/7 jump, 8 move+face-180, 9/10
+// sidestep, 0xc/0xd fly up/down).
+short g_movement_mode;
+short DAT_0023bf4c;
+short DAT_0023bf48;
+/* collision_build_height_field's collision height-field: five 5-byte corner records at
+   0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the
+   fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads
+   them by index off DAT_00202bf8. Only DAT_00202bf8 had a backing array;
+   the rest were lone Ghidra scalars, so the named writes and indexed reads
+   hit different memory and every corner sampled as height 8 -- solid-rock
+   tiles reported the same floor height as open floor, so collision never
+   stopped the player at a wall. Alias every field into the one backing
+   buffer. Per-corner layout: [0]=shape/index, [1..2]=diag corner offsets,
+   [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05). */
+ undefined1 DAT_00202bf8_backing[32768];
+/* Wall-slide corner-classification tables, used by resolve_wall_slide_corner (called
+   from sweep_slide_along_wall when a wall hit has a specific blocked-
+   corner shape) to pick which of the 8 candidate headings in
+   DAT_000869a8 to deflect toward. Both were declared as single-byte
+   scalars -- an "orphaned data table" class bug, same as DAT_000869a8
+   just fixed above -- so any index past 0 read undefined, unrelated
+   adjacent globals in this port's own memory layout (not the real
+   binary's), producing effectively-random results for any corner
+   configuration except the very first. This is the deeper reason wall
+   sliding sometimes turned the player back INTO the wall: even once
+   DAT_000869a8 held real headings, resolve_wall_slide_corner was often picking the
+   WRONG index into it.
+
+   Real data recovered via Ghidra headless dump (matching these globals'
+   own name-encoded addresses, 0x86884 and 0x8688c): DAT_00086884 is a
+   real 4-entry SIGNED array {1,-1,-1,1} (per-corner +/-1 deltas, read as
+   `(&DAT_00086884)[iVar3]` for iVar3 0-3 in resolve_wall_slide_corner's loop).
+   DAT_0008688c sits 4 bytes into a real lookup table that starts at
+   0x86888 (confirmed: the function's own literal pool for the "r8" table
+   base is 0x86888, and 0x86888+4 = 0x8688c exactly) -- both of
+   resolve_wall_slide_corner's own lookups already index relative to DAT_0008688c
+   correctly (`(&DAT_0008688c)[iVar6*3+iVar7]` and
+   `(&DAT_0008688c)[iVar9*-3-iVar7]`, the latter reaching back to offset
+   -4, i.e. the table's real start at 0x86888); only the DECLARATION was
+   wrong, not the indexing arithmetic. Backed with the real bytes from
+   0x86884 through 0x868893 (32 bytes from the table's real start,
+   comfortably covering every offset either lookup can produce); bytes
+   past offset +7 from DAT_0008688c decode as the ASCII string
+   "\DATA\comobj.dat" -- real, unrelated adjacent data in the original
+   binary, kept verbatim rather than guessed at, since matching the
+   original memory layout exactly is safer than inventing a boundary. */
+static signed char DAT_00086884_backing[4] = {1, -1, -1, 1};
+#define DAT_00086884 DAT_00086884_backing[0]
+static unsigned char DAT_0008688c_backing[32] = {
+  5, 4, 3, 6, 9, 2, 7, 0, 1, 0, 0, 0, 92, 68, 65, 84,
+  65, 92, 99, 111, 109, 111, 98, 106, 46, 100, 97, 116, 0, 0, 0, 0
+};
+#define DAT_0008688c DAT_0008688c_backing[4]
+char *DAT_00204874;
+/* The movement/collision-sweep working block. Ghidra split this one ~24-byte
+   struct into 14 separate globals (DAT_002049c8 .. DAT_002049de), but
+   collision_build_height_field / collision_height_envelope write its fields through `DAT_00202c6c[offset]`
+   (DAT_00202c6c = &DAT_002049c8) while sweep_init_position / sweep_collision_
+   flags read/write them by name -- so the indexed writes and the named reads
+   landed on unrelated memory and collision flags never reflected the tile
+   under the player (walked straight through walls). Back them with one buffer
+   at the name-derived offsets so both views alias. */
+ unsigned char DAT_002049c8_backing[64];
+/* The reticle/collision "picked tile" record at 0x86998..0x869a2. Ghidra
+   split it into scattered byte scalars (DAT_00086998/99/9a/9b/9f/a0/a1/a2)
+   plus overlapping 16-bit "_DAT_" views (_DAT_00086999 = the x/y pair,
+   _DAT_0008699b = target floor height, _DAT_0008699f = ceiling clearance).
+   Recompiled as separate globals the wide writes and narrow reads landed on
+   different memory: reticle_object_pick's `_DAT_0008699f = 0x7f` never
+   reached DAT_0008699f/DAT_000869a0, so sweep_collision_flags read the
+   ceiling clearance as 0 and decided the player never fits -> "walk forward"
+   stalled after 1/8 tile on every open tile. Back them with one buffer so
+   the byte and word views alias. */
+ unsigned char DAT_00086998_backing[16];
+static char DAT_0008794c_backing[128];
+char *DAT_0008794c = DAT_0008794c_backing;
+char *DAT_002048bc;
+// was DAT_00086978. The three 16-bit velocity components of the movement block
+/* (&DAT_00204886/88/8a). Ghidra typed this `char *`, so movement_sweep_setup's
+   `g_sweep_velocity[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
+   shorts at offsets 2,4 -- and every copy (`psVar11 = g_sweep_velocity`) is
+   already `short *`, confirming the intent. The byte misread made `[2]`
+   (meant: the Z/vertical velocity g_vertical_velocity, 0 for level movement) return
+   the low byte of the forward velocity DAT_00204888, so plain forward
+   movement took the "vertical movement" path (collision_build_height_field / collision_height_envelope)
+   which corrupts DAT_00204880 -- one forward step overflowed the player X to
+   the map edge and wedged them there.
+   g_sweep_velocity[2] is *(short*)(DAT_00204874+0xa) -- the exact same
+   memory as g_vertical_velocity (see its #define, uw.c:2025), just reached
+   through this pointer instead; movement_sweep_setup's own accumulation
+   `g_sweep_velocity[2] += speed*g_fall_accel` is the ordinary velocity +=
+   accel*dt integration step, not a separate quantity (confirmed while
+   investigating the jump-arc bug, see
+   [[jump-physics-fix-and-open-integrator-issue]]). */
+static short *g_sweep_velocity;
+static undefined1 DAT_002049c0;
+/* "Already slid this tick" cooldown, decremented once per ordinary substep
+   in sweep_step (`DAT_002049bc = DAT_002049bc + -1;`) and read back in
+   sweep_slide_along_wall's own first line to skip re-deflecting mid-slide.
+   Verified via disassembly (0x59b84/0x5a5c0) both sites use `ldrsb` --
+   SIGNED byte reads -- so 0 decrementing to -1 reads back as -1, and the
+   guard (`if (0 < DAT_002049bc)`) correctly stays false. Declared here as
+   `undefined1` (unsigned char), it was reset to 0 every tick
+   (movement_collision_sweep) then immediately decremented on the very
+   first ordinary substep before any wall was ever hit, underflowing to
+   255 (unsigned) instead of -1 (signed) -- permanently latching the
+   "already slid" guard true, so sweep_slide_along_wall took its early
+   revert-and-end path on every single call and sweep_deflect_heading
+   never ran at all. Symptom: running straight into a wall stopped the
+   player dead with zero deflection/turning, forever, instead of sliding
+   along it -- confirmed live via a new UW_DEBUG_WALL trace showing
+   DAT_002049bc=255 on every one of 4523 calls during an 80+-tick
+   straight-on wall hold. */
+static char DAT_002049bc;
+short DAT_00086990;
+static short DAT_00086996;
+// was DAT_0008697c_backing/DAT_0008697c -- the swept working foot position
+// (coarse X/Y/Z, tile-eighths / eighth-fine units) collision math operates
+// on each sub-step before sweep_writeback_position commits it back to the
+// real player position.
+/* UU.exe .data at 0x8697c contains 0x2049c8: the swept XYZ and
+   collision working XYZ are the same three halfwords, including rollback. */
+static short *g_sweep_foot_pos = (short *)DAT_002049c8_backing;
+/* X/Y/Z fine sweep position, indexed as a real 3-element array throughout
+   this file (`(&DAT_00086980)[axis]` for axis 0/1/2) -- see this block's
+   own comment above. Was three separately-declared scalars that happened
+   to sit contiguously in uw.c's original declaration order, which this
+   file's indexed accesses silently relied on for X/Y (axis 1, i.e.
+   DAT_00086982) and Z (axis 2, DAT_00086984). An earlier widening pass
+   (code-cleanup-pass-2, chasing a different out-of-bounds risk on
+   DAT_00086980 alone) gave DAT_00086980 its own padded backing array and
+   broke that adjacency: `(&DAT_00086980)[1]` started landing in
+   DAT_00086980's own unused padding instead of reaching DAT_00086982's
+   real storage, silently dropping every Y/Z sweep-position update. Real
+   3-element array instead, so the by-name writes and the indexed
+   `(&DAT_00086980)[axis]` writes are provably the same storage. */
+static short DAT_00086980_arr[3];
+#define DAT_00086980 DAT_00086980_arr[0]
+#define DAT_00086982 DAT_00086980_arr[1]
+#define DAT_00086984 DAT_00086980_arr[2]
+static undefined4 DAT_00204878;
+static undefined DAT_00202c32_backing[256];
+#define DAT_00202c32 DAT_00202c32_backing[0]
+static ushort DAT_0008698c;
+static short DAT_0008698e;
+static ushort DAT_00086992;
+static short DAT_00086994;
+static short DAT_0008698a;
+static undefined1 DAT_00086986_backing[65536];
+#define DAT_00086986 DAT_00086986_backing[0]
+#define DAT_00086987 DAT_00086986_backing[1]
+/* Wall-slide deflection candidate-heading table (was a zero-initialized
+   65536-byte placeholder with no writer anywhere in the decompile -- an
+   "orphaned data table" of the same class as the TMOBJ/inventory-hotspot
+   tables fixed elsewhere in this project). sweep_slide_along_wall reads
+   `*(short*)(&DAT_000869a8 + index*2)` to pick which heading to deflect
+   the move toward; with the real table missing, every read always came
+   back 0, so every wall hit -- head-on or glancing -- tried to deflect
+   toward the SAME fixed heading regardless of which way the wall
+   actually faced. That deflection only succeeds when it happens to be
+   close enough to the real wall's face (confirmed via a live
+   UW_DEBUG_WALL trace: candidate_heading=0 on 100% of calls, and
+   sweep_deflect_heading itself only returned nonzero -- i.e. actually
+   redirected the move -- 3 times out of 2258 during a real diagonal
+   wall hold), matching the reported symptom exactly: sliding sometimes
+   turns the player further INTO the wall instead of along it, "working"
+   only by coincidence when heading 0 happens to roughly line up with
+   the actual wall.
+
+   Recovered the real 8-entry table from the original binary at 0x869a8
+   (Ghidra headless dump, matching this global's own name/address) --
+   confirmed via disassembly of sweep_slide_along_wall (0x59b7c) that the
+   pointer literal at 0x59c20 resolves to exactly this address. The 8
+   real values are `-8192*i` (i.e. -45 degrees * i, wrapped to a signed
+   16-bit heading) for i=0..7 -- the 8 compass octants relative to the
+   hit. Confirmed the table is EXACTLY these 8 entries and no more: bytes
+   immediately following decode as ASCII (an unrelated string literal),
+   not further table data. */
+static unsigned char DAT_000869a8_backing[16] = {
+  0x00, 0x00, /*     0 */  0x00, 0xE0, /* -8192 */  0x00, 0xC0, /* -16384 */
+  0x00, 0xA0, /* -24576 */ 0x00, 0x80, /* -32768 */ 0x00, 0x60, /*  24576 */
+  0x00, 0x40, /* 16384 */  0x00, 0x20  /*  8192 */
+};
+#define DAT_000869a8 DAT_000869a8_backing[0]
+static int DAT_00204870;
+static char DAT_00087944_backing[128];
+static char *DAT_00087944 = DAT_00087944_backing;
+/* Port clock for movement_pacing_handler, in the original 4ms units.
+   GX input polling samples elapsed time at 60Hz, including inside the
+   original blocking input waits. Repeated polls in the same interval
+   do not advance it; missed intervals follow elapsed time rather than
+   the number of loop iterations or display flushes. Other clock users
+   keep read_realtime_clock_units(), since some busy waits do not poll
+   input at all. */
+unsigned int g_uw_frame_clock_units;
+static char DAT_00087950_backing[128];
+static char *DAT_00087950 = DAT_00087950_backing;
+static char DAT_00087948_backing[128];
+static char *DAT_00087948 = DAT_00087948_backing;
+undefined4 DAT_0023bf54;
+byte DAT_0023bf58;
+int DAT_000879ac;
+// was DAT_00086dfc. movement_tick's enable gate for tick_mobile_objects
+// (the real per-tick NPC AI + mobile-object dispatcher) -- declared but
+// never assigned anywhere in this decompile, a permanently-false gate;
+// see init_gameplay_session's own comment for the fix.
+int g_npc_tick_enabled;
+char DAT_00086e84;
+static int DAT_0023bf64;
+static char DAT_0023bf60;
+static uint DAT_0023bf5c;
+static undefined DAT_00086e38_backing[256];
+#define DAT_00086e38 DAT_00086e38_backing[0]
+static undefined DAT_00086e48_backing[256];
+#define DAT_00086e48 DAT_00086e48_backing[0]
+
 
 
 
@@ -166,7 +450,11 @@ void reticle_object_pick()
         iVar6 = iVar4 - uVar5;
         bVar1 = DAT_002049de;
         if (iVar4 <= (int)uVar5) {
-          bVar1 = (&DAT_00202c32)[iVar4 * 6];
+          /* ARM 0x58d78..0x58d84 reads collision_table + count*6 - 6:
+             the highest surface below the foot. Ghidra named the base-6
+             address DAT_00202c32, but its separate C scalar is not part
+             of the table, so indexing it could skip bridges entirely. */
+          bVar1 = (&DAT_00202c38)[(iVar4 - 1) * 6];
           bVar7 = SBORROW4((int)(short)(ushort)DAT_002049d9,(uint)bVar1);
           iVar6 = (int)(short)(ushort)DAT_002049d9 - (uint)bVar1;
         }
@@ -322,7 +610,7 @@ int param_2;
     uVar5 = 0xe0;
   }
   /* DAT_0008698e is the OTHER movement axis (DAT_0008698c is the dominant one,
-     0=X or 1=Y). Ghidra dropped the `Ordinal_2005(2, iVar10+1)` whose result
+     0=X or 1=Y). Ghidra dropped the `ordint_divmod(2, iVar10+1).quot` whose result
      it wanted and read `extraout_r1` (the division remainder register
      leftover), which is 0 for iVar10 in {0,1} -- so the secondary axis was
      always X and turning never changed the direction of travel. Compute it
@@ -349,8 +637,8 @@ int param_2;
     if (iVar7 < 0) {
       iVar7 = iVar7 + 0xff;
     }
-    uVar5 = Ordinal_2005((int)g_sweep_velocity[(short)DAT_0008698c],
-                         (iVar7 >> 8) * (int)g_sweep_velocity[iVar10]);
+    uVar5 = ordint_divmod((int)g_sweep_velocity[(short)DAT_0008698c],
+                         (iVar7 >> 8) * (int)g_sweep_velocity[iVar10]).quot;
     iVar10 = iVar10 * 2;
     (&DAT_00086986)[iVar10] = 0;
     (&DAT_00086987)[iVar10] = uVar5;
@@ -360,7 +648,7 @@ int param_2;
     iVar10 = (iVar10 >> 0x10 ^ uVar1) - uVar1;
     DAT_00086992 = (ushort)((uint)(iVar10 * 0x10000) >> 0x10) & 0x1fff;
     DAT_00086990 = (undefined2)(iVar10 >> 0xd);
-    uVar6 = Ordinal_2005((int)g_sweep_velocity[(short)DAT_0008698c],0x2000);
+    uVar6 = ordint_divmod((int)g_sweep_velocity[(short)DAT_0008698c],0x2000).quot;
     uVar4 = (ushort)((int)uVar6 >> 0x1f);
     DAT_00086994 = ((ushort)uVar6 ^ uVar4) - uVar4;
   }
@@ -410,8 +698,8 @@ int param_2;
     if (iVar8 < 0) {
       iVar8 = iVar8 + 0x7ff;
     }
-    iVar10 = Ordinal_2005(((int)(iVar8) >> 0xb) * (int)g_sweep_velocity[(short)DAT_0008698c],
-                          (iVar10 >> 0xd) * (int)g_sweep_velocity[2] * 0x100);
+    iVar10 = ordint_divmod(((int)(iVar8) >> 0xb) * (int)g_sweep_velocity[(short)DAT_0008698c],
+                          (iVar10 >> 0xd) * (int)g_sweep_velocity[2] * 0x100).quot;
     if ((iVar10 < 0x8000) && (-0x8001 < iVar10)) {
       uVar9 = (undefined2)iVar10;
       goto LAB_000592f8;
@@ -658,7 +946,8 @@ uint param_1;
       iVar7 = (uVar6 ^ uVar1) - uVar1;
       if ((iVar7 < 0x3001) || (0x4fff < iVar7)) {
         bVar2 = *(byte *)(DAT_00204874 + 0x16);
-        sVar3 = Ordinal_2005(0xf);
+        /* ARM 0x59a54..0x59a9c keeps the signed angle delta in r1. */
+        sVar3 = ordint_divmod(0xf,sVar3).quot;
         sVar3 = (ushort)bVar2 * sVar3;
       }
       sVar3 = (short)param_1 + sVar3;
@@ -674,7 +963,7 @@ uint param_1;
       sVar3 = (short)param_1;
       if ((int)DAT_002049ce == (param_1 & 0xffff)) {
         bVar9 = (param_1 & 0x4000) != 0;
-        uVar5 = Ordinal_1053();
+        uVar5 = ce_rand();
         uw_ord2005_rem_120 = ((int)(uVar5)) % (2);
         if (uw_ord2005_rem_120 != 0) {
           bVar9 = !bVar9;
@@ -687,14 +976,14 @@ uint param_1;
     }
     DAT_002049ce = sVar3;
     if ((*(byte *)(iVar8 + 0x17) & 0x80) == 0) {
-      uVar6 = Ordinal_2005(0xf,(0xf - (uint)*(byte *)(iVar8 + 0x16)) * (int)*(short *)(iVar8 + 0x14)
-                          );
+      uVar6 = ordint_divmod(0xf,(0xf - (uint)*(byte *)(iVar8 + 0x16)) * (int)*(short *)(iVar8 + 0x14)
+                          ).quot;
       iVar7 = (uint)*(ushort *)(iVar8 + 0x29) + (uVar6 & 0xffff);
       *(char *)(iVar8 + 0x29) = (char)iVar7;
       *(char *)(DAT_00204874 + 0x2a) = (char)((uint)iVar7 >> 8);
       movement_record = DAT_00204874;
-      uVar4 = Ordinal_2005(0xf,(uint)*(byte *)(DAT_00204874 + 0x16) *
-                               (int)*(short *)(DAT_00204874 + 0x14));
+      uVar4 = ordint_divmod(0xf,(uint)*(byte *)(DAT_00204874 + 0x16) *
+                               (int)*(short *)(DAT_00204874 + 0x14)).quot;
       *(char *)(movement_record + 0x14) = (char)uVar4;
       *(char *)(DAT_00204874 + 0x15) = (char)((ushort)uVar4 >> 8);
       iVar8 = DAT_00204874;
@@ -786,7 +1075,7 @@ void sweep_apply_knockback()
   iVar2 = *(short *)(DAT_00204874 + 0x21) + -0x3000;
   *(char *)(DAT_00204874 + 0x21) = (char)iVar2;
   *(char *)(DAT_00204874 + 0x22) = (char)((uint)iVar2 >> 8);
-  uVar1 = Ordinal_1053();
+  uVar1 = ce_rand();
   uw_ord2005_rem_121 = ((int)(uVar1)) % (0x6000);
   iVar2 = (int)*(short *)(DAT_00204874 + 0x21) + (int)uw_ord2005_rem_121;
   *(char *)(DAT_00204874 + 0x21) = (char)iVar2;
@@ -820,6 +1109,8 @@ void sweep_land_on_surface()
   int iVar12;
   int iVar13;
   
+  /* The decompile uses a short-pointer view of the movement record.
+     Keep word indexing and raw byte offsets distinct (ARM 0x59d20..0x5a33c). */
   puVar7 = (ushort *)get_object_record_by_slot_index((int)DAT_002049d2);
   uVar2 = *(ushort *)(&DAT_00202c91 + (*puVar7 & 0x1ff) * 0xd);
   iVar12 = (int)_DAT_000869a1;
@@ -832,48 +1123,49 @@ void sweep_land_on_surface()
     if (iVar12 < 0) {
       iVar12 = iVar12 + 3;
     }
-    sVar4 = Ordinal_2005(iVar12 >> 2,
+    sVar4 = ordint_divmod(iVar12 >> 2,
                          (((int)(((uVar11 ^ uVar8) - uVar8) * 0x10000) >> 0x10) * (int)DAT_00086994
-                          * 0x10000 >> 0x10) << 4);
-    sVar4 = DAT_00204874[9] - sVar4;
+                          * 0x10000 >> 0x10) << 4).quot;
+    sVar4 = ((short *)DAT_00204874)[9] - sVar4;
   }
-  *(char *)(DAT_00204874 + 9) = (char)sVar4;
+  *(char *)(DAT_00204874 + 0x12) = (char)sVar4;
   *(char *)((char *)DAT_00204874 + 0x13) = (char)((ushort)sVar4 >> 8);
   // PHYSICS: floor/ceiling collision -- snap the foot exactly onto the surface
   // and zero the vertical sub-unit accumulator so gravity restarts from rest
   *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
-  psVar9 = DAT_00204874;
+  psVar9 = (short *)DAT_00204874;
   DAT_00086984 = 0;
-  /* PHYSICS: fall ended -- clear the accumulated downward velocity (+0xa) and the
-     gravity-accel field (+0x10), and drop the airborne locomotion state byte
-     (+0x28 == DAT_002048a8) back to "walking" (8). Without the last step
-     set_locomotion_state (called every tick from commit_player_move) sees the stale
-     airborne state and re-arms +0x10 = -4, so the fall integrator re-enters and
-     "lands" every tick forever, freezing the player on the floor. Only when we
-     were moving downward, so a jump's own apex handling is left untouched. */
-  if (*(short *)(DAT_00204874 + 10) < 0) {
-    *(short *)(DAT_00204874 + 10) = 0;
-    *(short *)(DAT_00204874 + 0x10) = 0;
-    if (*(byte *)(DAT_00204874 + 0x28) == 0x10) {
-      *(undefined1 *)(DAT_00204874 + 0x28) = 8;
+  // HACK: The player-only landing workaround is enabled by default;
+  // UW_PLAYER_NO_BOUNCE=0 disables it. It is absent from the original ARM code.
+  // Clear downward velocity, gravity, and airborne state before restitution
+  // so the player stops on landing. Mobile items retain their normal bounce.
+  {
+    const char *player_no_bounce = getenv("UW_PLAYER_NO_BOUNCE");
+    if ((puVar7 == g_player_object) && (*(short *)(DAT_00204874 + 10) < 0) &&
+        ((player_no_bounce == NULL) || (atoi(player_no_bounce) != 0))) {
+      *(short *)(DAT_00204874 + 10) = 0;
+      *(short *)(DAT_00204874 + 0x10) = 0;
+      if (*(byte *)(DAT_00204874 + 0x28) == 0x10) {
+        *(undefined1 *)(DAT_00204874 + 0x28) = 8;
+      }
     }
   }
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
       ((int)*(short *)((char *)g_sweep_foot_pos + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
-     (DAT_00204874[5] < 0)) {
+     (((short *)DAT_00204874)[5] < 0)) {
     sweep_kill_velocity();
-    *(undefined1 *)(DAT_00204874 + 0x14) = 2;
-    uVar3 = Ordinal_2005(0x32,(short)(uVar2 >> 4) + -600);
-    play_positional_sound_effect(5,(int)*DAT_00204874 >> 5,(int)DAT_00204874[1] >> 5,uVar3);
+    *(undefined1 *)(DAT_00204874 + 0x28) = 2;
+    uVar3 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600).quot;
+    play_positional_sound_effect(5,(int)*(short *)DAT_00204874 >> 5,(int)((short *)DAT_00204874)[1] >> 5,uVar3);
     return;
   }
-  sVar4 = DAT_00204874[5];
+  sVar4 = ((short *)DAT_00204874)[5];
   uVar8 = (int)sVar4 >> 0x1f;
-  uVar11 = Ordinal_2005(0x32,(short)(uVar2 >> 4) + -600);
-  uVar8 = Ordinal_2005(10,((int)sVar4 ^ uVar8) - uVar8);
+  uVar11 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600).quot;
+  uVar8 = ordint_divmod(10,((int)sVar4 ^ uVar8) - uVar8).quot;
   play_positional_sound_effect(0xf,(int)*psVar9 >> 5,(int)psVar9[1] >> 5,(uVar11 & 0xff) + (uVar8 & 0xff) + -0x28);
   uVar8 = resolve_collision_candidate_interaction((int)DAT_00086998,(int)DAT_002049d2);
-  psVar9 = DAT_00204874;
+  psVar9 = (short *)DAT_00204874;
   if ((uVar8 & 0x18) != 0) {
     if ((uVar8 & 0x10) != 0) {
       sweep_kill_velocity();
@@ -896,34 +1188,36 @@ void sweep_land_on_surface()
     }
     goto LAB_0005a33c;
   }
-  sVar4 = DAT_00204874[5];
-  uVar5 = Ordinal_2005(0xfffffff1);
+  sVar4 = ((short *)DAT_00204874)[5];
+  /* ARM 0x5a018..0x5a044: divide the signed vertical velocity
+     by -15, then multiply by the restitution byte at offset 0x16. */
+  uVar5 = ordint_divmod(-15,sVar4).quot;
   *(char *)(psVar9 + 5) = (char)uVar5;
   *(char *)((char *)DAT_00204874 + 0xb) = (char)((ushort)uVar5 >> 8);
-  uVar11 = (0xf - (uint)*(byte *)(DAT_00204874 + 0xb)) * (int)DAT_00204874[5];
+  uVar11 = (0xf - (uint)*(byte *)(DAT_00204874 + 0x16)) * (int)((short *)DAT_00204874)[5];
   uVar8 = (int)uVar11 >> 0x1f;
   iVar12 = (uVar11 ^ uVar8) - uVar8;
   *(char *)((char *)DAT_00204874 + 0x29) = (char)((uint)(iVar12 * 0x10000) >> 0x10);
-  *(char *)(DAT_00204874 + 0x15) = (char)((uint)iVar12 >> 8);
-  sVar10 = DAT_00204874[5];
-  pbVar1 = (byte *)(DAT_00204874 + 0xb);
-  *(char *)(DAT_00204874 + 5) = (char)((uint)*pbVar1 * (int)sVar10);
+  *(char *)(DAT_00204874 + 0x2a) = (char)((uint)iVar12 >> 8);
+  sVar10 = ((short *)DAT_00204874)[5];
+  pbVar1 = (byte *)(DAT_00204874 + 0x16);
+  *(char *)(DAT_00204874 + 10) = (char)((uint)*pbVar1 * (int)sVar10);
   *(char *)((char *)DAT_00204874 + 0xb) = (char)((uint)*pbVar1 * (int)sVar10 >> 8);
-  psVar9 = DAT_00204874;
-  if (*(byte *)(DAT_00204874 + 0xb) == 0) {
+  psVar9 = (short *)DAT_00204874;
+  if (*(byte *)(DAT_00204874 + 0x16) == 0) {
     sVar10 = 0;
   }
   else {
-    sVar10 = DAT_00204874[10];
-    sVar6 = Ordinal_2005(0x1e,(0xf - (uint)*(byte *)(DAT_00204874 + 0xb)) * (int)sVar10);
+    sVar10 = ((short *)DAT_00204874)[10];
+    sVar6 = ordint_divmod(0x1e,(0xf - (uint)*(byte *)(DAT_00204874 + 0x16)) * (int)sVar10).quot;
     sVar10 = sVar10 - sVar6;
   }
   *(char *)(psVar9 + 10) = (char)sVar10;
   *(char *)((char *)DAT_00204874 + 0x15) = (char)((ushort)sVar10 >> 8);
-  if ((0 < sVar4) || (0x8c < DAT_00204874[5])) goto LAB_0005a33c;
-  *(undefined1 *)(DAT_00204874 + 5) = 0;
+  if ((0 < sVar4) || (0x8c < ((short *)DAT_00204874)[5])) goto LAB_0005a33c;
+  *(undefined1 *)(DAT_00204874 + 10) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0xb) = 0;
-  *(undefined1 *)(DAT_00204874 + 8) = 0;
+  *(undefined1 *)(DAT_00204874 + 0x10) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0x11) = 0;
   if (DAT_00086998 == -1) {
     if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)g_sweep_foot_pos + 4)) {
@@ -940,7 +1234,7 @@ void sweep_land_on_surface()
     else {
       uVar3 = (undefined1)(1 << ((int)(short)DAT_002049d4 & 3U));
     }
-    *(undefined1 *)(DAT_00204874 + 0x14) = uVar3;
+    *(undefined1 *)(DAT_00204874 + 0x28) = uVar3;
   }
   else {
     psVar9 = (short *)get_object_record_by_slot_index(*(ushort *)(&DAT_00202c3a + DAT_00086998 * 6) >> 6);
@@ -948,7 +1242,7 @@ void sweep_land_on_surface()
        (puVar7 = (ushort *)get_object_record_by_slot_index((int)*(short *)((char *)DAT_00204874 + 0x23)),
        (*puVar7 & 0x1c0) == 0x40)) {
 LAB_0005a2d0:
-      *(undefined1 *)(DAT_00204874 + 0x14) = 1;
+      *(undefined1 *)(DAT_00204874 + 0x28) = 1;
       goto LAB_0005a33c;
     }
 LAB_0005a238:
@@ -1317,7 +1611,7 @@ void decode_movement_command()
     if (DAT_0023c448 < 0x20) {
       if (DAT_0023c448 == 0x1f) {
 LAB_000687cc:
-        DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10));
+        DAT_0023bf48 = ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10)).quot;
         g_movement_mode = 1;
         return;
       }
@@ -1330,14 +1624,14 @@ LAB_000687cc:
             return;
           }
 LAB_000686a8:
-          DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10));
+          DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10)).quot;
           g_movement_mode = 1;
           return;
         }
         goto LAB_000687fc;
       }
 LAB_00068844:
-      DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x700000 >> 0x10));
+      DAT_0023bf48 = ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x700000 >> 0x10)).quot;
       g_movement_mode = 1;
       return;
     }
@@ -1401,7 +1695,7 @@ LAB_000687fc:
       return;
     }
   }
-  DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10));
+  DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10)).quot;
   g_movement_mode = 1;
   return;
 }
@@ -1421,10 +1715,9 @@ void movement_pacing_handler()
   undefined8 uVar7;
   uint uVar_now;
 
-  /* Was 4 separate read_realtime_clock_units() (real wall-clock) reads in this
-     function -- replaced with uw_frame_clock_ms(), a fixed-step
-     substitute in the same 4ms-per-unit scale (see its own and
-     g_uw_frame_clock_units's comments). All 4 original reads are really
+  /* The original reads read_realtime_clock_units() four times. The port
+     uses the latest GX elapsed-time sample in the same 4ms-per-unit
+     scale (see g_uw_frame_clock_units). All four original reads are
      asking "what time is it right now", each then diffed against the
      SAME DAT_0023bf54 reference -- captured once into uVar_now here so
      they keep agreeing with each other exactly as they did when each
@@ -1555,7 +1848,7 @@ int param_3;
             }
             play_sound_effect_with_pan(uVar6,uVar4,((int)g_jump_ascent_timer >> 5 & 0xffU) - 0x10);
             DAT_0023bf60 = DAT_0023bf60 == '\0';
-            sVar1 = Ordinal_2005(((int)g_jump_ascent_timer >> 2) + 1,6000);
+            sVar1 = ordint_divmod(((int)g_jump_ascent_timer >> 2) + 1,6000).quot;
             uVar5 = sVar1 + 0x40;
             if (200 < uVar5) {
               uVar5 = 200;
@@ -1647,7 +1940,7 @@ undefined4 param_1;
   bVar1 = DAT_0023bf18;
   if ((DAT_002048a8 & 0x10) == 0) {
     if (((int)DAT_00202078 >> 2 < (int)g_jump_ascent_timer) && (g_movement_mode == 1)) {
-      cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)g_jump_ascent_timer << 2);
+      cVar2 = ordint_divmod((int)DAT_00202078 >> 1,(int)g_jump_ascent_timer << 2).quot;
       cVar3 = (char)(cVar2 + -1);
       DAT_0023bea8 = 1;
       if ((cVar2 + -1) * 0x1000000 >> 0x18 < 2) {
@@ -2154,8 +2447,8 @@ void resolve_wall_slide_corner()
     iVar6 = DAT_00202c6c;
     goto switchD_000514e0_default;
   }
-  iVar6 = Ordinal_2005(iVar3,(int)(char)iVar6);
-  iVar7 = Ordinal_2005(iVar3,(int)(char)iVar7);
+  iVar6 = ordint_divmod(iVar3,(int)(char)iVar6).quot;
+  iVar7 = ordint_divmod(iVar3,(int)(char)iVar7).quot;
   *(undefined *)(DAT_00202c6c + 0x12) = (&DAT_0008688c)[(int)(iVar6) * 3 + iVar7];
   iVar6 = DAT_00202c6c;
   if (iVar3 != 1) goto switchD_000514e0_default;
@@ -2228,8 +2521,8 @@ LAB_000515d4:
 switchD_000514e0_default:
   iVar7 = (int)local_28;
   if (iVar7 == 1 || iVar7 == 2) {
-    iVar9 = Ordinal_2005(iVar7,(int)(char)iVar9);
-    iVar7 = Ordinal_2005(iVar7,(int)local_25);
+    iVar9 = ordint_divmod(iVar7,(int)(char)iVar9).quot;
+    iVar7 = ordint_divmod(iVar7,(int)local_25).quot;
     *(undefined *)(iVar6 + 0x13) = (&DAT_0008688c)[iVar9 * -3 - iVar7];
   }
   else {
@@ -2559,11 +2852,7 @@ ushort *param_1;
 }
 
 
-/* Accessor for g_uw_frame_clock_units -- see its own comment. Use this,
-   not the raw global, from any new gameplay-tick-paced timing code (the
-   same shape as movement_pacing_handler's own use) that wants
-   deterministic, tick-count-driven pacing instead of read_realtime_clock_units()'s
-   real wall-clock time. */
+/* Return the most recent GX clock sample for this movement dispatch. */
 unsigned int uw_frame_clock_ms() {
   return g_uw_frame_clock_units;
 }

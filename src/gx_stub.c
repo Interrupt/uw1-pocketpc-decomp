@@ -112,7 +112,7 @@ extern unsigned short DAT_0023c448;   /* latched pending input code */
 extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears DAT_0023c448 */
 extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move rate scale) */
 extern short DAT_0023beb4;            /* view pitch (1/256 deg); sync_camera_from_player -> DAT_000db448 */
-extern unsigned int g_uw_frame_clock_units; /* fixed-step wall-clock substitute for movement_pacing_handler -- see its own comment in uw.c */
+extern unsigned int g_uw_frame_clock_units; /* GX elapsed-time sample for movement; see movement.c */
 
 /* OR'd into the real SDL_GetKeyboardState() so scripted tests (SDLHOLD /
    uw_inject_key_down/up) can drive the same movement path -- SDL_PushEvent
@@ -130,7 +130,7 @@ static int g_running = 1;
  * finishes with each one before uw_pump_events even returns, so there's
  * no lingering "pending" state the way DAT_0023c448 stays set for
  * keyboard input. Real WinCE PeekMessage would report ANY pending
- * message type, not just keyboard, so Ordinal_864 needs a way to know
+ * message type, not just keyboard, so PeekMessageW needs a way to know
  * "a mouse message was just processed" too -- this one-shot flag is
  * that signal, consumed via uw_take_mouse_event_pending(). */
 static int g_mouse_event_pending = 0;
@@ -185,7 +185,7 @@ static int g_keychar_deferred = 0;
  * above: a *real* held click (any actual wall-clock gap between press
  * and release, which is every real click) means several poll calls
  * happen while the button is down but nothing NEW has arrived from SDL.
- * Ordinal_864/poll_input_event treat "no new message this call" as "no
+ * PeekMessageW/poll_input_event treat "no new message this call" as "no
  * message at all" and return early without ever reading DAT_0023c448 or
  * calling poll_mouse_event() -- so DAT_0023c63c (still 1, genuinely
  * held) never even gets checked, and character_generator_touch_select's
@@ -254,7 +254,8 @@ static int in_dungeon_freelook(void) {
    movement decoder while in the 3D dungeon view. plain WASD -> free
    rotation / forward-back; 1/2/3 -> look up / centre / down; released ->
    stop. SHIFT+WASD and all of this in menus fall through untouched. */
-static void poll_dungeon_movement_keys(void) {
+static void poll_dungeon_movement_keys(int game_frame_due)
+{
     static int active = 0;
 
     if (!in_dungeon_freelook()) {     /* menu, or SHIFT held */
@@ -278,13 +279,15 @@ static void poll_dungeon_movement_keys(void) {
 
     /* View pitch: keys 1 / 2 / 3. DAT_0023beb4 is a signed 1/256-degree
        pitch the camera build reads; negative looks up. It is never
-       auto-recentred, so ramp it while held and snap on 2. */
+       auto-recentred, so ramp it while held and snap on 2. Port timing:
+       ramp only when the shared game clock advances, rather than once
+       per input poll. Release and movement-key state still poll normally. */
     if (lookCtr) {
         DAT_0023beb4 = 0;
-    } else if (lookUp && !lookDn) {
+    } else if (game_frame_due && lookUp && !lookDn) {
         int p = (int)DAT_0023beb4 - 0x120;
         DAT_0023beb4 = (short)(p < -0x1800 ? -0x1800 : p);
-    } else if (lookDn && !lookUp) {
+    } else if (game_frame_due && lookDn && !lookUp) {
         int p = (int)DAT_0023beb4 + 0x120;
         DAT_0023beb4 = (short)(p > 0x1800 ? 0x1800 : p);
     }
@@ -352,45 +355,98 @@ static void poll_dungeon_movement_keys(void) {
     }
 }
 
-/* Called ONCE per real game tick from app_main_loop's own while loop
-   (game.c) -- the SAME loop that calls main_loop_hud_flush(), which is
-   what actually dispatches movement_pacing_handler() (uw.c) via the
-   sticky-bits table. Deliberately just the clock, NOT democapture_tick()/
-   demomode_pump() (those stay in uw_pump_events() below -- see its own
-   comment for why they can't move here). uw_pump_events() is also
-   reachable from Ordinal_864/poll_input_event, "the real keyboard-
-   polling function used by every menu/input-wait loop in the game" (see
-   its own comment in ordinal_stubs.c) -- confirmed live
-   (UW_DEBUG_MOVEPACE) that during plain WASD holding it was firing
-   roughly TWICE per real movement_pacing_handler() call, so advancing
-   g_uw_frame_clock_units there made every turn/walk update jump by two
-   ticks' worth at once instead of one -- user-reported: "does not seem
-   to update the actual player yaw every tick like mouse movement does."
-   Moving just the clock here, to the exact call site that also drives
-   movement, fixes that at the root instead of trying to guess/compensate
-   for however many times uw_pump_events() happens to fire per
-   iteration. This does mean a recorded/replayed WAIT tick (counted at
-   uw_pump_events()'s own, finer rate) no longer corresponds 1:1 to one
-   unit of this clock -- harmless for determinism (both recording and
-   replay see the identical relationship, since it's the same code
-   either way) and doesn't need to be exact for movement fidelity, only
-   consistent, which it is. */
-void uw_advance_game_tick(void) {
-    /* Advance g_uw_frame_clock_units (see its own comment in uw.c) by
-       exactly one fixed tick's worth, in the SAME 4ms-per-unit scale
-       read_realtime_clock_units()/Ordinal_535()>>2 uses -- computed fresh from the
-       running tick count each call (not accumulated with a per-call
-       remainder) so integer truncation never drifts the total over a
-       long session: 60 ticks always total exactly 250 units (1000ms),
-       whichever ticks happen to round up. */
-    static unsigned int tick_count = 0;
-    tick_count++;
-    g_uw_frame_clock_units = (unsigned int)((unsigned long long)tick_count * 250 / 60);
-    if (getenv("UW_DEBUG_TICKRATIO")) {
-        extern unsigned int g_uw_pump_events_calls; /* defined below */
-        fprintf(stderr, "[tickratio] game_tick=%u pump_calls_this_tick=%u\n", tick_count, g_uw_pump_events_calls);
-        g_uw_pump_events_calls = 0;
+struct uw_frame_pacing {
+    uint64_t origin_us, next_us, frame_number, grace_us;
+    int initialized, pending;
+};
+static struct uw_frame_pacing g_display_pacing = {0};
+static struct uw_frame_pacing g_game_pacing = {0};
+
+void uw_set_present_refresh_rate(unsigned refresh_hz)
+{
+    /* Port timing: admit early flushes within one eighth of the monitor's refresh
+       interval. Fast displays get a shorter tolerance; an unknown rate
+       uses 60Hz. The game/display deadlines themselves remain at 60Hz. */
+    if (refresh_hz == 0) refresh_hz = 60;
+    g_display_pacing.grace_us = 1000000 / ((uint64_t)refresh_hz * 8);
+}
+
+void uw_reset_frame_pacing(void)
+{
+    memset(&g_display_pacing, 0, sizeof g_display_pacing);
+    memset(&g_game_pacing, 0, sizeof g_game_pacing);
+    g_uw_frame_clock_units = 0;
+    uw_set_present_refresh_rate(60);
+}
+
+/* Port timing: retain a 60Hz game cadence independently of monitor vsync.
+   Absolute microsecond deadlines avoid the drift of repeated 16ms delays.
+   Multiple cursor/HUD flushes in one interval never buy another frame. */
+int uw_claim_frame(struct uw_frame_pacing *pacing, uint64_t now_us)
+{
+    if (!pacing->initialized) {
+        pacing->origin_us = now_us;
+        pacing->initialized = 1;
+    } else if (now_us < pacing->next_us) {
+        return 0;
     }
+    pacing->frame_number = ((now_us - pacing->origin_us + 1) * 60) / 1000000 + 1;
+    pacing->next_us = pacing->origin_us + pacing->frame_number * 1000000 / 60;
+    return 1;
+}
+
+int uw_present_frame_due(uint64_t now_us)
+{
+    /* Let SDL handle vsync for flushes inside the grace window, without
+       sleeping first. Claim the upcoming slot so another flush cannot
+       present it again. Earlier requests stay pending and return. */
+    if (g_display_pacing.initialized && now_us < g_display_pacing.next_us &&
+        g_display_pacing.next_us - now_us <= g_display_pacing.grace_us) {
+        now_us = g_display_pacing.next_us;
+    }
+    if (!uw_claim_frame(&g_display_pacing, now_us)) {
+        g_display_pacing.pending = 1;
+        return 0;
+    }
+    g_display_pacing.pending = 0;
+    return 1;
+}
+
+void uw_service_pending_present(uint64_t now_us)
+{
+    /* A last flush may be followed only by a blocking input wait.
+       Keep it pending and show the latest hardware buffer on a later
+       event poll even if the game issues no further drawing command. */
+    if (g_display_pacing.pending && now_us >= g_display_pacing.next_us)
+        GXEndDraw();
+}
+
+int uw_service_game_clock(uint64_t now_us)
+{
+    /* The original release waits already dispatch normal game handlers.
+       Service their clock just like the outer loop, without special item
+       or mouse-button checks. Modal views retain ownership of drawing. */
+    if (DAT_00201b64 != 0 || DAT_00201c90 != 0) return 0;
+    if (!uw_claim_frame(&g_game_pacing, now_us)) return 0;
+    g_uw_frame_clock_units = (unsigned int)(g_game_pacing.frame_number * 250 / 60);
+    DAT_00201c84 |= 2;
+    return 1;
+}
+
+uint64_t uw_gx_time_us(void)
+{
+    return (uint64_t)((double)SDL_GetPerformanceCounter() * 1000000.0 /
+                      (double)SDL_GetPerformanceFrequency());
+}
+
+void uw_update_present_refresh_rate(void)
+{
+    SDL_DisplayMode mode;
+    int display = SDL_GetWindowDisplayIndex(g_win);
+    unsigned rate = 0;
+    if (display >= 0 && SDL_GetCurrentDisplayMode(display, &mode) == 0 &&
+        mode.refresh_rate > 0) rate = (unsigned)mode.refresh_rate;
+    uw_set_present_refresh_rate(rate);
 }
 
 unsigned int g_uw_pump_events_calls = 0;
@@ -398,10 +454,12 @@ unsigned int g_uw_pump_events_calls = 0;
 void uw_pump_events(void) {
     SDL_Event ev;
     if (!g_win) return;
+    uint64_t now_us = uw_gx_time_us();
+    int game_frame_due = uw_service_game_clock(now_us);
+    uw_service_pending_present(now_us);
     g_uw_pump_events_calls++;
     /* democapture_tick()/demomode_pump() MUST stay universally reachable
-       from here (unlike g_uw_frame_clock_units's own advance -- see
-       uw_advance_game_tick's comment): uw_pump_events() is the one call
+       from here: uw_pump_events() is the one call
        site reachable from EVERY context in the game (chargen, menus,
        dungeon movement, ...), not just app_main_loop's own while loop
        (which doesn't even start running until after chargen/menus are
@@ -418,7 +476,7 @@ void uw_pump_events(void) {
        while the debug UI owns input, matching how the port on
        e-model-texturing had to fix the same leak. */
     if (!dbgui_visible()) {
-        poll_dungeon_movement_keys();
+        poll_dungeon_movement_keys(game_frame_due);
     }
 
     if (g_mouseup_deferred) {
@@ -681,7 +739,7 @@ void uw_pump_events(void) {
                        g_mouse_event_pending every pump: handle_mouse_message's
                        WM_RBUTTONDOWN only latches DAT_002506ab, and the
                        one-shot g_mouse_event_pending it sets here can be
-                       consumed+cleared by an unrelated Ordinal_864 caller
+                       consumed+cleared by an unrelated PeekMessageW caller
                        (a redraw/flush) before main_loop_hud_flush's
                        poll_input_bindings ever peeks -- then, with no
                        further SDL event until release, the interact never
@@ -717,6 +775,12 @@ void uw_pump_events(void) {
                 return;
             }
             case SDL_WINDOWEVENT:
+                if (ev.window.event == SDL_WINDOWEVENT_MOVED ||
+#if SDL_VERSION_ATLEAST(2, 0, 18)
+                    ev.window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED ||
+#endif
+                    ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+                    uw_update_present_refresh_rate();
                 if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
                     handle_keyboard_message(0, 7, 0);
                 else if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
@@ -736,6 +800,7 @@ void uw_pump_events(void) {
 int GXOpenDisplay(void *hwnd, unsigned int flags) {
     (void)hwnd;
     (void)flags;
+    uw_reset_frame_pacing();
     fprintf(stderr, "[gx] GXOpenDisplay: opening %dx%d SDL window (game's GAPI display init)\n",
             GX_W, GX_H);
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -749,6 +814,7 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
         fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
         return 0;
     }
+    uw_update_present_refresh_rate();
     {
         int wx = 0, wy = 0, ww = 0, wh = 0;
         SDL_GetWindowPosition(g_win, &wx, &wy);
@@ -1443,7 +1509,7 @@ void *GXBeginDraw(void) {
 }
 
 struct uw_present_state {
-    unsigned batch_depth, modal_depth;
+    unsigned batch_depth, modal_depth, suspend_depth;
     int pending, saved_force_flush;
 };
 static struct uw_present_state g_present_state = {0};
@@ -1460,6 +1526,16 @@ void uw_end_present_batch(void)
         g_present_state.pending = 0;
         GXEndDraw();
     }
+}
+
+void uw_suspend_present_batch(void)
+{
+    g_present_state.suspend_depth++;
+}
+
+void uw_resume_present_batch(void)
+{
+    if (g_present_state.suspend_depth) g_present_state.suspend_depth--;
 }
 
 void uw_begin_modal_present(void)
@@ -1480,11 +1556,12 @@ void uw_end_modal_present(void)
 
 int uw_defer_present(void)
 {
-    if (g_present_state.batch_depth && !g_present_state.modal_depth) {
+    if (g_present_state.batch_depth && !g_present_state.modal_depth &&
+        !g_present_state.suspend_depth) {
         g_present_state.pending = 1;
         return 1;
     }
-    /* A modal presentation also consumes any earlier pending request. */
+    /* An immediate presentation consumes any earlier pending request. */
     g_present_state.pending = 0;
     return 0;
 }
@@ -1492,14 +1569,11 @@ int uw_defer_present(void)
 int GXEndDraw(void) {
     if (uw_defer_present()) return 1;
     if (!g_tex) return 0;
+    if (!uw_present_frame_due(uw_gx_time_us())) return 1;
     /* UW_DEBUG_ENDDRAW: log every real call to this function (i.e. every
        actual SDL_RenderPresent, the true screen-present) with its
-       immediate caller's symbol, so a genuinely redundant second
-       GXEndDraw() per real game tick -- each one throttled independently
-       by the vsync-pacing SDL_Delay below -- can be spotted directly
-       instead of bisected by hand. See demo-recording-infrastructure
-       memory's "keyboard input runs at ~half framerate" entry for why
-       this was added. */
+       immediate caller's symbol. Early flushes return above without
+       presenting or waiting on another vsync. */
     if (getenv("UW_DEBUG_ENDDRAW")) {
         void *caller = __builtin_return_address(0);
         Dl_info info;
@@ -1570,30 +1644,6 @@ int GXEndDraw(void) {
             }
         }
     }
-
-    /* Real GAPI hardware's GXEndDraw blocked until the next display
-     * refresh -- that's what gave the whole game its effective 60Hz
-     * tick rate (every polling/redraw loop in the game funnels through
-     * here via flush_dirty_rect_to_display), with no explicit frame-rate code of its
-     * own anywhere in the decompile. SDL_RENDERER_PRESENTVSYNC alone
-     * doesn't reliably reproduce that on this host -- desktop GPU
-     * drivers can queue/batch several presents before actually blocking
-     * on a vsync (confirmed: fade_in's fade-in, which calls
-     * GXEndDraw 8 times in a tight loop, measured only ~19ms total
-     * instead of something near 8 * 16.67ms). Explicitly cap how often
-     * a call here can complete, so every present -- not just whichever
-     * ones the driver happens to actually block on -- gets real ~60Hz
-     * pacing. */
-    static Uint32 last_frame_ticks = 0;
-    const Uint32 frame_budget_ms = 1000 / 60;
-    Uint32 now = SDL_GetTicks();
-    if (last_frame_ticks != 0) {
-        Uint32 elapsed = now - last_frame_ticks;
-        if (elapsed < frame_budget_ms) {
-            SDL_Delay(frame_budget_ms - elapsed);
-        }
-    }
-    last_frame_ticks = SDL_GetTicks();
 
     return 1;
 }
@@ -1677,7 +1727,7 @@ static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
     undefined4 handle = open_file_for_read("\\DATA\\pals.dat");
     seek_file_handle(handle, pal_index * 0x300, 0);
     short got = (short)read_file_handle(handle, raw, 0x300);
-    Ordinal_553(handle);
+    CloseHandle(handle);
     if (got != 0x300) return 0;
     expand_pals_bytes(out_rgb, raw, 0);
     return 1;

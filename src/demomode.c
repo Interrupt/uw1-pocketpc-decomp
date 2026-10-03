@@ -140,6 +140,19 @@
 #include <string.h>
 #include <strings.h>
 
+/* DAT_00110fc0 is a byte-cursor written through directly by other
+   functions too (e.g. init_dungeon_rendering: `*DAT_00110fc0 = 0;
+   DAT_00110fc0 = DAT_00110fc0 + 1;`), not just by init_glyph_width_table (which
+   would normally seed it from DAT_00110fc8 -- see that function's
+   comment on why it skips instead). Left NULL by default (same
+   tentative-definition zero-init issue as DAT_00110fc8/DAT_00110fcc),
+   it segfaulted on the very first such write. Given a real scratch
+   buffer here instead of NULL so those direct writes land somewhere
+   safe; this is a fallback, not a recovered value, so whatever
+   downstream code reads this data back may not see the real original
+   content. */
+char DAT_00110fc0_scratch[65536];
+
 #define VK_UP 0x26
 #define VK_DOWN 0x28
 #define VK_LEFT 0x25
@@ -923,7 +936,7 @@ void demomode_pump(void) {
         /* SDLCLICK <window_x> <window_y> -- pushes genuine SDL mouse
          * events at the given point (via uw_inject_mouse_click), so
          * unlike CLICK above this exercises the actual uw_pump_events()
-         * path end to end, including g_mouse_event_pending/Ordinal_864.
+         * path end to end, including g_mouse_event_pending/PeekMessageW.
          * Does not touch the real OS cursor -- see uw_inject_mouse_down's
          * comment. */
         int wx = 0, wy = 0;
