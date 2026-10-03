@@ -813,17 +813,18 @@ int param_6;
   uint local_a8;
   undefined1 *local_a4;
   uint local_a0;
-  ushort uStack_9a;
-  ushort auStack_98 [12];
-  /* local_80 is the start of a >=0x14-byte struct (Ghidra only tracked
-     the first two bytes as named locals); widened to fit the real memset
-     below instead of overflowing a 1-byte stack slot. local_7f is now a
-     separate, unaliased byte purely to avoid rewriting its few use sites.
-     NOT text formatting (a prior pass's guess, now corrected): local_80/
-     local_58 are the two BFS frontier buffers, each holding up to 10
-     (x,y) tile-coordinate byte pairs -- see this function's own comment. */
-  undefined1 local_80 [0x14];
-  undefined1 local_7f;
+  /* Ghidra split the visited columns at adjacent stack offsets 0x2a/
+     0x2c. Keep the preceding column in the same array: expressions that
+     used &uStack_9a index one column before auStack_98. Initialize the
+     whole bitmap, since the original nine-byte memset left high columns
+     indeterminate on this host. */
+  ushort visited_storage [13] = {0};
+  ushort *auStack_98 = visited_storage + 1;
+  /* ARM 0x38e4c/0x38e5c stores X/Y at sp+0x44/sp+0x45, the first
+     coordinate pair in one buffer. Both frontiers span 0x28 bytes on
+     the original stack and hold up to 0x14 pairs. A separate local_7f
+     made the search read Y=0; a 0x14-byte buffer overflowed after swaps. */
+  undefined1 local_80 [40];
   undefined1 local_58 [40];
   
   Ordinal_1047(local_80,0,0x14);
@@ -858,7 +859,7 @@ int param_6;
   local_a4 = local_80;
   local_b0 = local_58;
   local_80[0] = (char)param_2;
-  local_7f = (char)param_3;
+  local_80[1] = (char)param_3;
   iVar9 = (int)cVar21;
   iVar1 = (int)cVar7;
   auStack_98[param_2 - iVar9] =
@@ -930,11 +931,11 @@ LAB_00039620:
             uVar16 = 1 << (uVar19 & 0xff);
             iVar14 = iVar2 - iVar9;
             puVar11 = auStack_98 + iVar14;
-            if ((((uVar16 & (int)(short)(&uStack_9a)[iVar14]) == 0) && (uVar20 < 0x14)) &&
+            if ((((uVar16 & (int)(short)(auStack_98 - 1)[iVar14]) == 0) && (uVar20 < 0x14)) &&
                ((iVar9 <= iVar2 + -1 &&
                 (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))))) {
               cVar18 = -1;
-              (&uStack_9a)[iVar14] = (&uStack_9a)[iVar14] | (ushort)uVar16;
+              (auStack_98 - 1)[iVar14] = (auStack_98 - 1)[iVar14] | (ushort)uVar16;
               goto LAB_00039590;
             }
             goto LAB_000395ac;
@@ -970,11 +971,11 @@ LAB_00039408:
             uVar16 = 1 << (uVar19 & 0xff);
             iVar14 = iVar2 - iVar9;
             puVar11 = auStack_98 + iVar14;
-            if ((((uVar16 & (int)(short)(&uStack_9a)[iVar14]) == 0) && (uVar20 < 0x14)) &&
+            if ((((uVar16 & (int)(short)(auStack_98 - 1)[iVar14]) == 0) && (uVar20 < 0x14)) &&
                ((iVar9 <= iVar2 + -1 &&
                 (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))))) {
               cVar18 = -1;
-              (&uStack_9a)[iVar14] = (&uStack_9a)[iVar14] | (ushort)uVar16;
+              (auStack_98 - 1)[iVar14] = (auStack_98 - 1)[iVar14] | (ushort)uVar16;
               goto LAB_000393ec;
             }
             goto LAB_00039408;
@@ -983,13 +984,13 @@ LAB_00039408:
           uVar16 = 1 << (uVar19 & 0xff);
           iVar14 = iVar2 - iVar9;
           puVar11 = auStack_98 + iVar14;
-          uVar17 = (&uStack_9a)[iVar14];
+          uVar17 = (auStack_98 - 1)[iVar14];
           if (((((uVar16 & (int)(short)uVar17) == 0) && (uVar20 < 0x14)) && (iVar9 <= iVar2 + -1))
              && (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))) {
             local_b0[uVar20 * 2] = cVar7 + -1;
             (local_b0 + uVar20 * 2)[1] = cVar21;
             uVar20 = uVar20 + 1 & 0xff;
-            (&uStack_9a)[iVar14] = uVar17 | (ushort)uVar16;
+            (auStack_98 - 1)[iVar14] = uVar17 | (ushort)uVar16;
           }
           uVar3 = 1 << (uVar19 - 1 & 0xff);
           uVar17 = *puVar11;

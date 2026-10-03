@@ -169,6 +169,11 @@ if(BUILD_TESTING)
   add_game_unit_test(teleport
     src/level.c:transition_to_level src/level.c:teleport_object_to_level_tile
     uw.c:dungeon_view_anim_tick src/movement.c:movement_tick)
+  add_game_unit_test(stair_transition
+    src/level.c:transition_to_level src/level.c:teleport_object_to_level_tile
+    uw.c:dungeon_view_anim_tick src/objects.c:find_placement_via_tile_flood_fill
+    src/player.c:sync_player_stats_to_hud
+    src/doors.c:check_scheduled_object_level_match uw.c:FUN_000539b0)
   add_game_unit_test(movement
     src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading
     src/movement.c:sweep_slide_along_wall src/movement.c:sweep_apply_collision

@@ -3491,7 +3491,7 @@ void active_mobile_list_add();
 void active_mobile_list_remove();
 ushort *FUN_000537d0();
 undefined4 FUN_00053920();
-int FUN_000539b0();
+ushort *FUN_000539b0();
 undefined4 FUN_00053ab0();
 void FUN_00053c74();
 undefined4 FUN_0005404c();

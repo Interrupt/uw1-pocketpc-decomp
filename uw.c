@@ -18919,7 +18919,7 @@ ushort param_2;
 
 
 
-int FUN_000539b0(param_1,param_2,param_3,param_4,param_5)
+ushort *FUN_000539b0(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
 undefined2 param_3;
@@ -18929,7 +18929,11 @@ short * param_5;
 {
   short sVar1;
   int iVar2;
-  int iVar3;
+  /* Ghidra used 32-bit integers for the tile cursor and object return.
+     Preserve both pointers on the 64-bit host, including resurrection's
+     check_scheduled_object_level_match call after a player death. */
+  char *iVar3;
+  ushort *puVar6;
   ushort *local_24;
   
   if (0x3f < *param_4) {
@@ -18946,8 +18950,8 @@ short * param_5;
       do {
         local_24 = (ushort *)(iVar3 + 2);
         if (((*local_24 & 0xffc0) != 0) &&
-           (iVar2 = FUN_000537d0(&local_24,1,param_1,param_2,param_3), iVar2 != 0)) {
-          return iVar2;
+           (puVar6 = FUN_000537d0(&local_24,1,param_1,param_2,param_3), puVar6 != 0)) {
+          return puVar6;
         }
         sVar1 = *param_4;
         iVar3 = iVar3 + 4;
