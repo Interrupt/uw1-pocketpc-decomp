@@ -1506,10 +1506,9 @@ extern char *DAT_00202098;
 extern undefined1 DAT_00087604_backing[65536];
 #define DAT_00087604 DAT_00087604_backing[0]
 extern undefined *PTR_FUN_00087614;
-extern undefined DAT_00087530_backing[210];
+extern undefined DAT_00087530_backing[212];
 #define DAT_00087530 DAT_00087530_backing[0]
-extern undefined DAT_00087533_backing[210];
-#define DAT_00087533 DAT_00087533_backing[0]
+#define DAT_00087533 DAT_00087530_backing[3]
 extern undefined1 DAT_00241f08_backing[32768];
 #define DAT_00241f08 DAT_00241f08_backing[0]
 extern undefined DAT_0023b4dc;
