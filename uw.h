@@ -779,10 +779,8 @@ extern undefined1 DAT_0008523c_backing[32768];
 extern short DAT_001007bc;
 extern undefined *DAT_001007c8;
 extern ushort DAT_001007c4;
-extern undefined DAT_001007d5_backing[8192];
-#define DAT_001007d5 DAT_001007d5_backing[0]
-extern undefined DAT_001007d9_backing[8192];
-#define DAT_001007d9 DAT_001007d9_backing[0]
+#define DAT_001007d5 DAT_001007d0_backing[0x5]
+#define DAT_001007d9 DAT_001007d0_backing[0x9]
 extern undefined DAT_001007dd;
 extern undefined DAT_001007e3;
 extern undefined DAT_001007fd;
@@ -812,12 +810,11 @@ extern undefined2 DAT_0024cfac;
 extern int DAT_00250718;
 extern undefined1 g_active_hud_panel;
 extern undefined2 g_cursor_mode;
-extern undefined DAT_001007d4_backing[8192];
-#define g_monster_max_stats_table DAT_001007d4_backing[0]
-#define DAT_001007da DAT_001007d4_backing[6]
-#define DAT_001007e2 DAT_001007d4_backing[0xe]
-#define DAT_001007ed DAT_001007d4_backing[0x19]
-#define DAT_001007ee DAT_001007d4_backing[0x1a] // per-class perception-range byte (>>4), read by alert_npc_to_noise_callback
+#define g_monster_max_stats_table DAT_001007d0_backing[0x4]
+#define DAT_001007da DAT_001007d0_backing[0xa]
+#define DAT_001007e2 DAT_001007d0_backing[0x12]
+#define DAT_001007ed DAT_001007d0_backing[0x1d]
+#define DAT_001007ee DAT_001007d0_backing[0x1e]
 extern short g_mouse_x;
 extern short g_mouse_y;
 extern ushort * g_player_object;
@@ -1380,8 +1377,8 @@ extern char DAT_00101410;
 extern undefined1 DAT_00101420;
 extern int DAT_00101430;
 extern char DAT_0010143c;
-extern undefined DAT_00101444;
-extern undefined DAT_00101448;
+extern short DAT_00101444; /* signed fine-coordinate delta; ARM reads 16 bits */
+extern short DAT_00101448; /* signed fine-coordinate delta; ARM reads 16 bits */
 extern undefined4 DAT_00101734;
 extern char DAT_0010173c;
 extern ushort DAT_00101900;
@@ -1560,7 +1557,7 @@ extern char DAT_00084f18_backing[5];
 #define DAT_00084f18 DAT_00084f18_backing[0]
 #define DAT_00084f1c DAT_00084f18_backing[4]
 extern undefined DAT_001007e0;
-extern undefined DAT_001007e1;
+#define DAT_001007e1 DAT_001007d0_backing[0x11]
 #define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
 extern char s__DATA_cmb_dat_00084f40[];
 extern undefined2 DAT_00100630_backing[32768];
@@ -1883,12 +1880,12 @@ extern byte DAT_00101730;
 extern undefined1 DAT_00101738;
 extern char DAT_00101740_backing[8192];
 #define DAT_00101740 DAT_00101740_backing[0]
-extern char DAT_00101741;
-extern undefined1 DAT_00101743;
-extern undefined2 DAT_00101744;
-extern undefined1 DAT_00101746;
-extern undefined1 DAT_00101747;
-extern undefined1 DAT_00101748;
+#define DAT_00101741 DAT_00101740_backing[1]
+#define DAT_00101743 DAT_00101740_backing[3]
+#define DAT_00101744 (*(undefined2 *)&DAT_00101740_backing[4])
+#define DAT_00101746 DAT_00101740_backing[6]
+#define DAT_00101747 DAT_00101740_backing[7]
+#define DAT_00101748 DAT_00101740_backing[8]
 extern byte DAT_001018fc;
 extern char * DAT_00101904;
 extern ushort DAT_00101910;
@@ -1966,14 +1963,14 @@ extern undefined DAT_0023cf0b;
 extern undefined DAT_0023cf0c;
 extern undefined1 DAT_00101739;
 extern undefined1 DAT_0010173a;
-extern byte DAT_00101742;
+#define DAT_00101742 DAT_00101740_backing[2]
 extern undefined DAT_00101732_backing[8192];
 #define DAT_00101732 DAT_00101732_backing[0]
 extern undefined DAT_00101733;
 extern undefined4 DAT_00101728;
-extern undefined DAT_00101749;
+#define DAT_00101749 DAT_00101740_backing[9]
 extern undefined DAT_000853c4;
-extern undefined1 DAT_0010174a;
+#define DAT_0010174a DAT_00101740_backing[10]
 extern undefined2 DAT_00101418;
 extern undefined2 DAT_00101908;
 /* "Last attacker" record, confirmed via check_npc_morale_flee's own use

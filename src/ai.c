@@ -1854,8 +1854,8 @@ undefined1 param_3;
   for (uVar2 = (uint)(byte)(param_1 + 1); uVar2 != 0; uVar2 = uVar2 + 0xff & 0xff) {
     iVar1 = uVar2 * 7;
     iVar3 = ((uint)(byte)(&DAT_00101741)[iVar1] + (uint)(byte)(&DAT_00101740)[iVar1] * 0x40) * 5;
-    (&DAT_00101739)[iVar1] = (&DAT_0023cf08)[iVar3];
-    (&DAT_0010173a)[iVar1] = (&DAT_0023cf09)[iVar3];
+    (&DAT_00101740)[iVar1 - 7] = (&DAT_0023cf08)[iVar3];
+    (&DAT_00101740)[iVar1 - 6] = (&DAT_0023cf09)[iVar3];
     (&DAT_00101743)[iVar1] = (&DAT_0023cf0b)[iVar3] & 1;
     *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1) = 0;
     *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1 + 1) = 0;
@@ -1996,11 +1996,13 @@ LAB_0002d340:
     uVar8 = (uint)local_33;
     iVar5 = record_line_walk_step(uVar8,uVar10);
   }
+  /* ARM 0x2d47c..0x2d4d4 addresses the waypoint array at count*7,
+     then subtracts field offsets. These are not adjacent AI globals. */
   iVar5 = (uint)DAT_0010142c * 7;
-  sVar3 = tile_pair_los_blocked((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
-                       (&DAT_0010173a)[iVar5],0,0,*(undefined2 *)(DAT_00101438 + 4),
-                       *(undefined2 *)(DAT_00101438 + 6),*(undefined1 *)((intptr_t)&DAT_00101734 + iVar5)
-                       ,(intptr_t)&DAT_00101734 + iVar5,auStack_30);
+  sVar3 = tile_pair_los_blocked((&DAT_00101740)[iVar5 - 14],(&DAT_00101740)[iVar5 - 13],(&DAT_00101740)[iVar5 - 7],
+                       (&DAT_00101740)[iVar5 - 6],0,0,*(undefined2 *)(DAT_00101438 + 4),
+                       *(undefined2 *)(DAT_00101438 + 6),(&DAT_00101740)[iVar5 - 12]
+                       ,(byte *)&DAT_00101740 + iVar5 - 12,auStack_30);
   return (int)sVar3;
 }
 
@@ -2266,13 +2268,16 @@ undefined1 param_2;
                            DAT_00101742,&DAT_00101749,auStack_14);
     }
     else {
+      /* ARM 0x2dac4..0x2db24 uses DAT_00101740 + count*7 with
+         offsets -21..-6. Indexing past standalone DAT_0010172c/34
+         instead corrupts the collision-profile pointer and AI state. */
       iVar2 = uVar1 * 7;
-      iVar2 = tile_pair_los_blocked(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
-                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2),(&DAT_00101732)[iVar2],
-                           (&DAT_00101733)[iVar2],(&DAT_00101739)[iVar2],(&DAT_0010173a)[iVar2],
+      iVar2 = tile_pair_los_blocked((&DAT_00101740)[iVar2 - 21],
+                           (&DAT_00101740)[iVar2 - 20],(&DAT_00101740)[iVar2 - 14],
+                           (&DAT_00101740)[iVar2 - 13],(&DAT_00101740)[iVar2 - 7],(&DAT_00101740)[iVar2 - 6],
                            *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
-                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2 + 1),
-                           (intptr_t)&DAT_00101734 + iVar2,auStack_14);
+                           (&DAT_00101740)[iVar2 - 19],
+                           (byte *)&DAT_00101740 + iVar2 - 12,auStack_14);
     }
     if ((iVar2 != 0) && (DAT_00101440 == 0)) {
       return 1;
@@ -4089,8 +4094,8 @@ ushort * param_3;
             uVar9 = (uint)DAT_0010142c;
           } while (uVar12 < uVar9);
         }
-        bVar1 = (&DAT_00101733)[uVar9 * 7];
-        bVar2 = (&DAT_00101732)[uVar9 * 7];
+        bVar1 = (&DAT_00101740)[uVar9 * 7 - 13];
+        bVar2 = (&DAT_00101740)[uVar9 * 7 - 14];
         puVar7 = (ushort *)tilemap_lookup((uint)bVar2,(uint)bVar1);
         iVar11 = resolve_tile_entry_offset(*puVar7 & 0xf,&local_28,local_27);
         if (iVar11 != 0) {

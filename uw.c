@@ -435,8 +435,7 @@ char s__DATA_blnkmap_byt_00084338[] = "\\DATA\\blnkmap.byt";
    otherwise double it. */
 ushort *g_player_object;
 ushort *DAT_00100674;
- undefined DAT_001007d9_backing[8192];
-#define DAT_001007d9 DAT_001007d9_backing[0]
+#define DAT_001007d9 DAT_001007d0_backing[0x9]
 char *DAT_00086df8;
 undefined4 DAT_00202c84;
 undefined2 DAT_002020a0;
@@ -597,27 +596,14 @@ undefined1 DAT_000845e8_backing[65536];
 #define DAT_000bbfb0 DAT_000bbfb0_backing[0]
 char *DAT_0023be74;
 char s_npc_attitude_000845f8[] = "npc_attitude";
-// g_monster_max_stats_table was DAT_001007d4: a per-monster-class stat
-// table (indexed by the low 6 bits of a monster object's own type id,
-// 0x30-byte stride per class); byte 0 of each entry is that class's
-// max HP, used to clamp regen (restore_stat_capped). NOT valid for the
-// player object -- the player's type id (0x7f) happens to index this
-// table's unused last slot, which is zeroed; see restore_stat_capped's
-// own fix for why callers must special-case the player instead.
- undefined DAT_001007d4_backing[8192];
-#define g_monster_max_stats_table DAT_001007d4_backing[0]
-// DAT_001007da and DAT_001007e2 are further fields (offsets +6 and
-// +0xe) within this same 0x30-byte-stride per-monster-class table,
-// not standalone globals -- both were declared as lone bytes and
-// then indexed with the table's own `[class * 0x30]` stride
-// elsewhere in the file (a "flags" byte at +6, checked for bits
-// 0x80/0x40/2/1 by various callers, and a "resist/save" byte at
-// +0xe used by roll_skill_check). Aliased into the same backing
-// array so that indexed access reads the real adjacent bytes instead
-// of walking off the end of a 1-byte global.
-#define DAT_001007da DAT_001007d4_backing[6]
-#define DAT_001007e2 DAT_001007d4_backing[0xe]
-#define DAT_001007ed DAT_001007d4_backing[0x19]
+/* OBJECTS.DAT monster records are loaded at DAT_001007d0, stride 0x30.
+   These original addresses are fields of that same table: max HP (+4),
+   flags (+0xa), defense (+0x12), perception (+0x1d). Separate backing
+   arrays left these fields zero even after load_monster_combat_stats. */
+#define g_monster_max_stats_table DAT_001007d0_backing[0x4]
+#define DAT_001007da DAT_001007d0_backing[0xa]
+#define DAT_001007e2 DAT_001007d0_backing[0x12]
+#define DAT_001007ed DAT_001007d0_backing[0x1d]
 /* Widened from 32768: load_3d_object_models does
    `Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
    memmove, confirmed by ASAN global-buffer-overflow), matching
@@ -1666,8 +1652,7 @@ unsigned char DAT_00084eff_backing[12] = {
   0x00,0x02,0x02,0x02,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00
 };
 #define DAT_00084eff DAT_00084eff_backing[0]
- undefined DAT_001007d5_backing[8192];
-#define DAT_001007d5 DAT_001007d5_backing[0]
+#define DAT_001007d5 DAT_001007d0_backing[0x5]
 /* Was `undefined2` (unsigned short) -- every real use in tick_weapon_swing_state/
    reset_weapon_swing_state/update_weapon_ready_hud_icon/cancel_weapon_swing (the attack-swing state
    machine) treats this as a signed negative countdown (assigned
@@ -1708,7 +1693,7 @@ byte DAT_00100614;
 unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
 #define DAT_00084f0b DAT_00084f0b_backing[0]
 undefined DAT_00250658;
-undefined DAT_001007e1;
+#define DAT_001007e1 DAT_001007d0_backing[0x11]
 #define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
 char s__DATA_cmb_dat_00084f40[] = "\\DATA\\cmb.dat";
 undefined2 DAT_00100630_backing[32768];
@@ -2077,14 +2062,17 @@ undefined DAT_000853c4;
 undefined DAT_000853cc;
 char *DAT_00101438;
 undefined1 DAT_0010142c;
+/* NPC waypoints are contiguous 7-byte records at the original 0x101740.
+   Alias the adjacent field symbols into this array so recording later
+   waypoints cannot overwrite unrelated globals or 64-bit AI pointers. */
  char DAT_00101740_backing[8192];
 #define DAT_00101740 DAT_00101740_backing[0]
-char DAT_00101741;
-undefined1 DAT_00101743;
-undefined2 DAT_00101744;
-undefined1 DAT_00101746;
-undefined1 DAT_00101747;
-undefined1 DAT_00101748;
+#define DAT_00101741 DAT_00101740_backing[1]
+#define DAT_00101743 DAT_00101740_backing[3]
+#define DAT_00101744 (*(undefined2 *)&DAT_00101740_backing[4])
+#define DAT_00101746 DAT_00101740_backing[6]
+#define DAT_00101747 DAT_00101740_backing[7]
+#define DAT_00101748 DAT_00101740_backing[8]
 undefined1 DAT_000853b0;
 undefined1 DAT_000853b1;
 undefined1 DAT_00101460;
@@ -2098,7 +2086,7 @@ undefined DAT_0023cf0b;
 undefined DAT_0023cf0c;
 undefined1 DAT_00101739;
 undefined1 DAT_0010173a;
-byte DAT_00101742;
+#define DAT_00101742 DAT_00101740_backing[2]
 undefined DAT_00101732_backing[8192];
 #define DAT_00101732 DAT_00101732_backing[0]
 undefined DAT_00101733;
@@ -2112,19 +2100,12 @@ undefined4 DAT_00101728;
    build_object_placement_snapshot(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
    first time an NPC's per-tick AI (npc_ai_tick) got this far -- which
    never happened before this session's other fixes let that code run
-   at all. Note: a separate, unrelated function (the tile_pair_los_blocked
-   ring-buffer scan a few thousand lines below) also reads raw bytes at
-   `&DAT_0010172c + small offset` as part of an already-fragile,
-   not-yet-fixed split-symbol-cluster spanning several adjacent globals
-   (see DAT_00101732's own backing-array fix and
-   [[split-symbol-clusters-to-structs]]) -- that usage's correctness
-   already depended on undefined/compiler-chosen adjacent-global layout
-   before this change and is no more or less well-defined after
-   widening this one field from 4 to 8 bytes. */
+   at all. Path walking's old indexed accesses through this symbol now
+   use explicit offsets into DAT_00101740's waypoint array instead. */
 void *DAT_0010172c;
-undefined DAT_00101749;
+#define DAT_00101749 DAT_00101740_backing[9]
 ushort DAT_000853b8;
-undefined1 DAT_0010174a;
+#define DAT_0010174a DAT_00101740_backing[10]
 ushort DAT_0010141c;
 ushort DAT_00101910;
 byte DAT_001013f8;
@@ -2136,12 +2117,12 @@ undefined4 DAT_00101914;
 #define DAT_00101568 DAT_00101568_backing[0]
 undefined DAT_00101569;
 byte DAT_0010140c;
-undefined DAT_00101444;
+short DAT_00101444; /* signed fine-coordinate delta; ARM reads 16 bits */
 char DAT_00101408;
 char DAT_00101410;
 undefined1 DAT_00101420;
 ushort DAT_00101900;
-undefined DAT_00101448;
+short DAT_00101448; /* signed fine-coordinate delta; ARM reads 16 bits */
 char DAT_0010143c;
 char DAT_0010173c;
 char *DAT_00101400;

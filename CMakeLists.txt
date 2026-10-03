@@ -273,6 +273,19 @@ if(BUILD_TESTING)
     src/ai.c:npc_ai_tick src/ai.c:initiate_npc_death src/ai.c:drop_monster_loot)
   target_compile_definitions(test_scheduler PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  add_game_unit_test(npc_ai
+    src/ai.c:npc_ai_tick src/ai.c:npc_ai_default_tick
+    src/ai.c:refresh_npc_target_delta src/ai.c:detect_npc_wander_proximity
+    src/ai.c:compute_movement_heading src/ai.c:npc_wander_reposition
+    src/ai.c:npc_walk_toward_tile src/ai.c:try_direct_line_walk
+    src/ai.c:record_line_walk_step src/ai.c:pop_pending_path_cache_slot
+    src/ai.c:compute_pathfind_search_radius
+    uw.c:npc_notice_and_idle_tick uw.c:npc_set_goal uw.c:npc_set_walk_target
+    src/combat.c:npc_combat_engage_close_tick src/combat.c:npc_combat_engage_wide_tick
+    src/combat.c:npc_combat_set_stance
+    src/combat.c:load_monster_combat_stats)
+  target_compile_definitions(test_npc_ai PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   target_compile_definitions(test_traps PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(inventory
