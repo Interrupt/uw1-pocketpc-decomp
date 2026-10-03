@@ -1135,14 +1135,14 @@ void sweep_land_on_surface()
   *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
   psVar9 = (short *)DAT_00204874;
   DAT_00086984 = 0;
-  // HACK: UW_PLAYER_NO_BOUNCE=1 restores the player-only landing workaround,
-  // which is absent from the original ARM code and disabled by default.
+  // HACK: The player-only landing workaround is enabled by default;
+  // UW_PLAYER_NO_BOUNCE=0 disables it. It is absent from the original ARM code.
   // Clear downward velocity, gravity, and airborne state before restitution
   // so the player stops on landing. Mobile items retain their normal bounce.
   {
     const char *player_no_bounce = getenv("UW_PLAYER_NO_BOUNCE");
     if ((puVar7 == g_player_object) && (*(short *)(DAT_00204874 + 10) < 0) &&
-        (player_no_bounce != NULL) && (atoi(player_no_bounce) != 0)) {
+        ((player_no_bounce == NULL) || (atoi(player_no_bounce) != 0))) {
       *(short *)(DAT_00204874 + 10) = 0;
       *(short *)(DAT_00204874 + 0x10) = 0;
       if (*(byte *)(DAT_00204874 + 0x28) == 0x10) {
