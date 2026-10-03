@@ -198,4 +198,6 @@ int uw_inject_key_down(int sdl_keycode);
 int uw_inject_key_up(int sdl_keycode);
 void uw_clear_synth_scancode(int sdl_keycode);
 
+unsigned char *uw_get_default_palette(const char *gr_name);
+
 #endif

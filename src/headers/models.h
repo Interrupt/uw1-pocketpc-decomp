@@ -8,4 +8,12 @@
  * self-contained for any caller. */
 #include "uw.h"
 
+void parse_e_model_file();
+void *tick_anim_record();
+void apply_model_position_offset();
+void scale_model_part_offsets();
+void load_3d_object_models();
+void emit_catalog_object();
+void emit_anim_object_frames();
+
 #endif
