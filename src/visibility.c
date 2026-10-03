@@ -12,13 +12,6 @@
 #define _DAT_0023aee1 (*(uint*)&DAT_0023aee1)
 #define _DAT_0023aee3 (*(uint*)&DAT_0023aee3)
 #define _DAT_0023af02 (*(uint*)&DAT_0023af02)
-/* Set by the force-3D-redraw hack in main_loop_hud_flush around its
-   per-frame full_dungeon_redraw() call: tells rebuild_dungeon_view to skip
-   its passive experience-point trickle (grant_experience_points), which otherwise
-   fires once per redraw and -- called with a dropped arg (garbage XP
-   amount) -- walks into the level-up message path and crashes. A cosmetic
-   forced repaint must not touch game state anyway. */
-int g_force_redraw_no_xp;
 // was DAT_0023bca0 -- per-level view-distance default, loaded from
 // SHADES.DAT's per-record field 3 by load_shading_level_config (see its own
 // comment) and, since this session, consumed by
@@ -1609,14 +1602,22 @@ void rebuild_dungeon_view()
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
       (DAT_00201b68 != 9)) &&
      (sVar3 = ordint_divmod(10,(int)DAT_0023b810 * (int)DAT_00201b68).quot, sVar3 != 0)) {
-    /* Disabled: grant_experience_points() here is called with a dropped
-       argument (Ghidra lost it) AND from a nonsensical spot -- a dungeon
-       -view rebuild -- so it granted a garbage XP amount on essentially
-       every redraw (spam of "You have attained experience level"). No
-       view rebuild should touch XP; the g_force_redraw_no_xp guard used
-       to only cover the forced-redraw hack, but the game's own
-       movement-driven redraw hit it too. */
-    (void)sVar3;
+    /* Was disabled: Ghidra dropped this call's argument entirely, so it
+       ran with garbage and crashed (walked into the level-up message
+       path with a nonsensical XP amount). Real ARM disassembly at this
+       call site (0x5d6e4, `blne 0x69bd0`) shows r0 is simply left
+       untouched from the division just above -- the argument is sVar3
+       itself, the exact quotient already computed on this same line.
+       This is UW1's passive exploration-XP trickle: DAT_0023b810 (reset
+       to 0 above, accumulated by walk_visible_tiles) counts only tiles
+       whose automap-reveal byte flips from unrevealed to revealed this
+       call -- that flag is sticky and never un-sets, so no amount of
+       extra rebuild_dungeon_view calls (this port's forced-3D-redraw
+       hack included) can double-count the same tile or over-grant XP;
+       each newly-explored tile is counted toward this exactly once,
+       whichever call happens to be the one that reveals it. No
+       frequency guard needed -- the real binary has none either. */
+    grant_experience_points(sVar3);
   }
   if (DAT_00201b68 == 9) {
     DAT_00086b30 = uVar1;

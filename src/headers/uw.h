@@ -1524,7 +1524,6 @@ extern void * DAT_0023c430;
 extern short DAT_0023c63c;
 extern undefined * DAT_00250704;
 extern int g_force_flush;
-extern int g_force_redraw_no_xp;
 extern undefined4 g_scroll_control_codes_enabled;
 extern unsigned int g_uw_frame_clock_units;
 unsigned int uw_frame_clock_ms();

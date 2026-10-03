@@ -1328,17 +1328,21 @@ void main_loop_hud_flush()
          -- never actually appeared on screen during ordinary play: its
          only call site turned out to be render_dungeon_frame_timed,
          which nothing in the normal per-tick path was calling.
-         g_force_redraw_no_xp suppresses full_dungeon_redraw's/
-         rebuild_dungeon_view's one unwanted side effect (a per-redraw XP
-         trickle that also happens to crash on a dropped arg) --
-         render_dungeon_frame_timed reaches the same rebuild_dungeon_view,
-         so the guard still applies. render_dungeon_frame_timed does its
-         own dirty_rect_union internally (same rect this hack used to set
-         by hand), so flush_dirty_rect_to_display(1) below still blits it --
-         GX batches these flushes with the final HUD flush. Skipped while
-         an animation owns the view (DAT_00201c90 != 0). Set
-         UW_NO_FORCE_3D_REDRAW to restore the motion-gated behaviour. */
-      g_force_redraw_no_xp = 1;
+         render_dungeon_frame_timed reaches rebuild_dungeon_view, which
+         has its own passive exploration-XP trickle (grant_experience_points,
+         restored once its dropped real argument was recovered from ARM
+         disassembly -- see that function's own comment); no special
+         handling needed for it here, since it only grants XP for tiles
+         whose automap-reveal flag is flipping from unrevealed to
+         revealed for the first time ever (sticky, never un-set), so
+         calling this hack more often than the original cadence can't
+         double-grant for the same exploration. render_dungeon_frame_timed
+         does its own dirty_rect_union internally (same rect this hack
+         used to set by hand), so flush_dirty_rect_to_display(1) below
+         still blits it -- GX batches these flushes with the final HUD
+         flush. Skipped while an animation owns the view (DAT_00201c90
+         != 0). Set UW_NO_FORCE_3D_REDRAW to restore the motion-gated
+         behaviour. */
       render_dungeon_frame_timed();
       /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
          buffer, then paint it over the viewport (see
@@ -1347,7 +1351,6 @@ void main_loop_hud_flush()
         if (_pv < 0) _pv = (getenv("UW_DEBUG_PICK_VIEW") != NULL);
         if (_pv) { render_dungeon_view_frame(); uw_debug_blit_pick_buffer(); }
       }
-      g_force_redraw_no_xp = 0;
     }
   }
   if (DAT_00201c84 != 0) {
