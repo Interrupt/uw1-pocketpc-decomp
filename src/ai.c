@@ -32,20 +32,17 @@ static undefined DAT_000853cc_backing[256];
 #define DAT_000853cc DAT_000853cc_backing[0]
 char *DAT_00101438;
 static undefined1 DAT_0010142c;
+/* NPC waypoints are contiguous 7-byte records at the original 0x101740.
+   Alias the adjacent field symbols into this array so recording later
+   waypoints cannot overwrite unrelated globals or 64-bit AI pointers. */
 static char DAT_00101740_backing[8192];
 #define DAT_00101740 DAT_00101740_backing[0]
-static char DAT_00101741_backing[256];
-#define DAT_00101741 DAT_00101741_backing[0]
-static undefined1 DAT_00101743_backing[256];
-#define DAT_00101743 DAT_00101743_backing[0]
-static undefined2 DAT_00101744_backing[256];
-#define DAT_00101744 DAT_00101744_backing[0]
-static undefined1 DAT_00101746_backing[256];
-#define DAT_00101746 DAT_00101746_backing[0]
-static undefined1 DAT_00101747_backing[256];
-#define DAT_00101747 DAT_00101747_backing[0]
-static undefined1 DAT_00101748_backing[256];
-#define DAT_00101748 DAT_00101748_backing[0]
+#define DAT_00101741 DAT_00101740_backing[1]
+#define DAT_00101743 DAT_00101740_backing[3]
+#define DAT_00101744 (*(undefined2 *)&DAT_00101740_backing[4])
+#define DAT_00101746 DAT_00101740_backing[6]
+#define DAT_00101747 DAT_00101740_backing[7]
+#define DAT_00101748 DAT_00101740_backing[8]
 static undefined1 DAT_000853b0_backing[256];
 #define DAT_000853b0 DAT_000853b0_backing[0]
 static undefined1 DAT_000853b1_backing[256];
@@ -65,7 +62,7 @@ static undefined DAT_0023cf0b_backing[256];
 #define DAT_0023cf0b DAT_0023cf0b_backing[0]
 static undefined DAT_0023cf0c_backing[256];
 #define DAT_0023cf0c DAT_0023cf0c_backing[0]
-static byte DAT_00101742;
+#define DAT_00101742 DAT_00101740_backing[2]
 static undefined4 DAT_00101728_backing[256];
 #define DAT_00101728 DAT_00101728_backing[0]
 /* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
@@ -84,10 +81,9 @@ static undefined4 DAT_00101728_backing[256];
    stride 7) -- now fixed to index that array directly instead of
    relying on undefined/compiler-chosen adjacent-global layout. */
 void *DAT_0010172c;
-static undefined DAT_00101749;
+#define DAT_00101749 DAT_00101740_backing[9]
 static ushort DAT_000853b8;
-static undefined1 DAT_0010174a_backing[256];
-#define DAT_0010174a DAT_0010174a_backing[0]
+#define DAT_0010174a DAT_00101740_backing[10]
 ushort DAT_0010141c;
 ushort DAT_00101910;
 static undefined4 DAT_00101920;
@@ -120,7 +116,6 @@ static undefined1 DAT_00204950_backing[65536];
 undefined4 DAT_00101944;
 static undefined DAT_000853d8_backing[256];
 #define DAT_000853d8 DAT_000853d8_backing[0]
- undefined DAT_002027d1_backing[8192];
 short DAT_00101938;
 short DAT_0010193c;
 byte DAT_0010192c;

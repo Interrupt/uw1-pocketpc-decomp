@@ -70,12 +70,12 @@ byte DAT_001013f8;
 byte DAT_00101918;
 int DAT_00101430;
 byte DAT_0010140c;
-undefined DAT_00101444;
+short DAT_00101444; /* signed fine-coordinate delta; ARM reads 16 bits */
 char DAT_00101408;
 char DAT_00101410;
 undefined1 DAT_00101420;
 ushort DAT_00101900;
-undefined DAT_00101448;
+short DAT_00101448; /* signed fine-coordinate delta; ARM reads 16 bits */
 char DAT_0010143c;
 char DAT_0010173c;
 char *DAT_00101400;

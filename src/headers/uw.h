@@ -870,8 +870,8 @@ extern char DAT_00101410;
 extern undefined1 DAT_00101420;
 extern int DAT_00101430;
 extern char DAT_0010143c;
-extern undefined DAT_00101444;
-extern undefined DAT_00101448;
+extern short DAT_00101444; /* signed fine-coordinate delta; ARM reads 16 bits */
+extern short DAT_00101448; /* signed fine-coordinate delta; ARM reads 16 bits */
 extern undefined4 DAT_00101734_backing[256];
 #define DAT_00101734 DAT_00101734_backing[0]
 extern char DAT_0010173c;
@@ -1206,8 +1206,7 @@ extern char DAT_00101928;
 extern short DAT_00101938;
 extern short DAT_0010193c;
 extern undefined4 DAT_00101944;
-extern undefined DAT_002027d1_backing[8192];
-#define DAT_002027d1 DAT_002027d1_backing[0]
+#define DAT_002027d1 DAT_002027d0_backing[1] /* projectile speed in each loaded weapon record */
 extern short DAT_002046b0;
 extern byte * DAT_002046c0;
 extern byte * DAT_002046c8;
