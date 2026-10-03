@@ -360,10 +360,11 @@ undefined1 param_5;
         }
         else {
           uVar5 = *(ushort *)(pbVar3 + 6);
-          /* ARM 0x80f94..0x80fb4 uses idivmod's remainder in r1.
-             The decompiled extraout_r1 local was never initialized. */
-          /* ordint_divmod((&DAT_00250733)[iVar4],param_3); */
-          uVar5 = (cVar1 + param_3 % (&DAT_00250733)[iVar4] ^ uVar5) & 0x3f ^ uVar5;
+          /* ARM 0x80f94..0x80fb4 uses idivmod's remainder in r1; the
+             decompiled extraout_r1 local was never initialized. Gets
+             it by name off ordint_divmod's own divmod_result now
+             (divisor confirmed nonzero by the enclosing if/else). */
+          uVar5 = (cVar1 + ordint_divmod((&DAT_00250733)[iVar4],param_3).rem ^ uVar5) & 0x3f ^ uVar5;
         }
         pbVar3[6] = (byte)uVar5;
         pbVar3[7] = (byte)(uVar5 >> 8);
@@ -441,13 +442,12 @@ LAB_00081254:
         if (uVar8 == 2) {
           uVar6 = ce_rand();
           uVar8 = puVar4[3];
-          ordint_divmod((&DAT_00250733)[iVar1],uVar6);
           /* Dropped-remainder bug, same class as scheduler_finish_entry's
-             own fix above in this file -- computed directly. Guarded
-             against a zero divisor the same way ordint_divmod itself
-             does (DAT_00250733[iVar1] isn't provably nonzero here). */
-          extraout_r1 = ((&DAT_00250733)[iVar1] == 0) ? 0 :
-                        (short)((int)uVar6 % (int)(&DAT_00250733)[iVar1]);
+             own fix above in this file -- gets it by name off
+             ordint_divmod's own divmod_result now (which guards the
+             zero-divisor case itself, so no separate guard needed
+             here). */
+          extraout_r1 = (short)ordint_divmod((&DAT_00250733)[iVar1],uVar6).rem;
           uVar8 = ((char)(&DAT_00250732)[iVar1] + extraout_r1 ^ uVar8) & 0x3f ^ uVar8;
           goto LAB_00081254;
         }

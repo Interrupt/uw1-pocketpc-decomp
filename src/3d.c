@@ -862,7 +862,7 @@ byte param_10;
     puVar13 = (undefined1 *)(iVar6 + iVar12);
     puVar10 = (ushort *)(local_4 + iVar6 * 2);
     do {
-      iVar6 = ordint_divmod(local_38,0x1000000);
+      iVar6 = ordint_divmod(local_38,0x1000000).quot;
       iVar12 = (local_34 >> 6) * iVar6 >> 0x12;
       bVar1 = param_10;
       if ((param_8 != 0) && (-1 < iVar12)) {

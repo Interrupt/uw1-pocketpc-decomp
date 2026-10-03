@@ -979,25 +979,43 @@ int mask;
 /* ARM has no hardware integer divide, so the original WinCE/ARM compiler
  * routed every `/` and `%` in the whole game through this shared runtime
  * division helper -- it's called ~250 places across uw.c. Per AAPCS32's
- * div/mod helper convention, it returns the quotient in r0 (the normal
- * C return value here) while the remainder comes back in r1; Ghidra
- * surfaces reads of that second value as the `extraout_r1` idiom at call
- * sites that want the remainder instead of (or in addition to) the
- * quotient. A prior no-op stub (`return 0`) silently zeroed every
- * division result in the game and left `extraout_r1` reads pointing at
- * genuinely uninitialized memory -- confirmed as the cause of a SIGSEGV
- * in itoa_radix indexing a hex-digit table with garbage. K&R-declared
- * (matching the project's established ce_strlen-style pattern) so
- * call sites that only pass one argument -- relying on the original
- * ABI's register-content-reuse from a preceding computation -- still
- * compile and get *a* value for the unfilled parameter, exactly like
- * the rest of this codebase's "dropped argument" idiom. */
-long ordint_divmod(divisor, dividend)
+ * div/mod helper convention, it returns the quotient in r0 while the
+ * remainder comes back in r1; Ghidra surfaced reads of that second
+ * value as the `extraout_r1` idiom at call sites that wanted the
+ * remainder instead of (or in addition to) the quotient. A prior no-op
+ * stub (`return 0`) silently zeroed every division result in the game
+ * and left `extraout_r1` reads pointing at genuinely uninitialized
+ * memory -- confirmed as the cause of a SIGSEGV in itoa_radix indexing
+ * a hex-digit table with garbage, and (once the quotient itself was
+ * fixed) a whole further class of call sites still silently reading
+ * garbage for the remainder half alone, fixed one at a time over the
+ * course of this session.
+ *
+ * Returns both halves as a real struct instead of just the quotient --
+ * there's no portable way for a normal C function to also hand back a
+ * second value through "whatever happened to be in r1", so every call
+ * site that wants the remainder (or both) now gets it by name off this
+ * struct instead of reading a second return value that was never
+ * really there. K&R-declared (matching the project's established
+ * ce_strlen-style pattern) so call sites that only pass one argument --
+ * relying on the original ABI's register-content-reuse from a
+ * preceding computation -- still compile and get *a* value for the
+ * unfilled parameter, exactly like the rest of this codebase's
+ * "dropped argument" idiom; that idiom is about the arguments, not
+ * this return type, so it's unaffected by the switch to a struct. */
+divmod_result ordint_divmod(divisor, dividend)
 int divisor;
 int dividend;
 {
-    if (divisor == 0) return 0;
-    return dividend / divisor;
+    divmod_result result;
+    if (divisor == 0) {
+        result.quot = 0;
+        result.rem = 0;
+        return result;
+    }
+    result.quot = dividend / divisor;
+    result.rem = dividend % divisor;
+    return result;
 }
 
 long ordfloat_double_mul()

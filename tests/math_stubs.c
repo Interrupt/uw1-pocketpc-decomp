@@ -31,8 +31,9 @@ long ce_rand()
     return 0;
 }
 
-long ordint_divmod()
+divmod_result ordint_divmod()
 {
     TEST_FAIL_MESSAGE("Unexpected ordint_divmod call");
-    return 0;
+    divmod_result result = {0, 0};
+    return result;
 }

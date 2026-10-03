@@ -1127,7 +1127,7 @@ short param_1;
     iVar7 = (int)param_1;
     if (iVar7 == -1) {
       if (DAT_000868d8 == 0) {
-        sVar5 = ordint_divmod(0x12,DAT_00085a6c[1] + 2);
+        sVar5 = ordint_divmod(0x12,DAT_00085a6c[1] + 2).quot;
         iVar7 = (int)sVar5;
         if (getenv("UW_DEBUG_MODEBTN"))
           fprintf(stderr, "[modebtn] resolved iVar7=%d\n", iVar7);
@@ -1228,7 +1228,7 @@ short param_1;
     iVar5 = (int)param_1;
     if (iVar5 == -1) {
       if (DAT_000868d8 == 0) {
-        sVar3 = ordint_divmod(0x12,DAT_00085a6c[1] + 2);
+        sVar3 = ordint_divmod(0x12,DAT_00085a6c[1] + 2).quot;
         iVar5 = (int)sVar3;
         if (5 < iVar5) {
           return;
@@ -1701,7 +1701,7 @@ LAB_0006d09c:
       (&DAT_0023c118)[iVar1] = 0;
     }
     else {
-      uVar4 = ordint_divmod(cVar2,(short)param_2 * 0xc);
+      uVar4 = ordint_divmod(cVar2,(short)param_2 * 0xc).quot;
       (&DAT_0023c118)[iVar1] = uVar4;
     }
     if (0xb < (byte)(&DAT_0023c118)[iVar1]) {
@@ -3822,16 +3822,16 @@ short param_3;
   iVar8 = (int)param_3;
   iVar11 = (int)DAT_0023c144;
   wVar2 = u_dgijjjigd_G__000871e0[iVar8 + 8];
-  sVar3 = ordint_divmod(100,iVar11 * wVar2);
+  sVar3 = ordint_divmod(100,iVar11 * wVar2).quot;
   sVar1 = DAT_0023c140;
   iVar9 = (int)sVar3;
   iVar10 = (int)DAT_0023c140;
   DAT_0023c13c = sVar3;
-  sVar4 = ordint_divmod(100,u_dgijjjigd_G__000871e0[iVar8] * iVar10);
-  sVar5 = ordint_divmod((int)wVar2,100);
+  sVar4 = ordint_divmod(100,u_dgijjjigd_G__000871e0[iVar8] * iVar10).quot;
+  sVar5 = ordint_divmod((int)wVar2,100).quot;
   if (sVar5 == 1) {
     sVar3 = (short)(sVar6 - iVar9);
-    sVar6 = ordint_divmod(((sVar6 - iVar9) * 0x10000 >> 0x10) + 1,iVar11);
+    sVar6 = ordint_divmod(((sVar6 - iVar9) * 0x10000 >> 0x10) + 1,iVar11).quot;
     sVar6 = sVar6 + -1;
   }
   else {
@@ -3981,7 +3981,7 @@ undefined1 * param_2;
     sVar2 = 0;
   }
   else if (iVar3 < 1) {
-    sVar2 = ordint_divmod(iVar3 + -1,(int)DAT_0023c140);
+    sVar2 = ordint_divmod(iVar3 + -1,(int)DAT_0023c140).quot;
     iVar6 = 0;
     if (iVar3 < 0) {
       iVar4 = (sVar2 + 1) * 0x10000 >> 0x10;
@@ -4006,7 +4006,7 @@ undefined1 * param_2;
   else {
     /* Was `ordint_divmod(iVar3 + 1)` -- missing its dividend argument.
        The sibling branch above (iVar3 < 1) makes the exact same call
-       shape fully: `ordint_divmod(iVar3 + -1,(int)DAT_0023c140)`
+       shape fully: `ordint_divmod(iVar3 + -1,(int)DAT_0023c140).quot`
        (divisor=iVar3+/-1, dividend=DAT_0023c140), so by direct
        symmetry this one is missing `(int)DAT_0023c140` too. Unlike
        ordint_divmod's own K&R "leftover register" idiom (safe on the
@@ -4018,7 +4018,7 @@ undefined1 * param_2;
        inner trip count, so garbage here produced an unbounded copy
        loop and a wild param_1/param_2 write -- the intermittent,
        ASLR-flaky crash/heap-corruption in this function. */
-    sVar1 = ordint_divmod(iVar3 + 1,(int)DAT_0023c140);
+    sVar1 = ordint_divmod(iVar3 + 1,(int)DAT_0023c140).quot;
     iVar6 = 0;
     if (0 < iVar3) {
       do {
@@ -5027,9 +5027,9 @@ void print_character_description_scroll()
   short extraout_r1;
   
   message_scroll_print_wrapped(&s_scroll_newline_0008522c);
-  sVar1 = ordint_divmod(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
+  sVar1 = ordint_divmod(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39)).quot;
   print_scroll_message_concat(0x40,sVar1 + 0x68,0x67);
-  sVar1 = ordint_divmod(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
+  sVar1 = ordint_divmod(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a)).quot;
   iVar3 = (int)sVar1;
   if (5 < iVar3) {
     iVar3 = 5;
@@ -5038,7 +5038,7 @@ void print_character_description_scroll()
   message_scroll_print_wrapped(&DAT_00084f20);
   print_scroll_message_concat(0x41,DAT_00201b68 + 0x19a,0x42);
   sVar1 = ordfloat_double_mul(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
-  sVar2 = ordint_divmod(0xc,(int)sVar1);
+  sVar2 = ordint_divmod(0xc,(int)sVar1).quot;
   uw_ord2005_rem_111 = ((int)((int)sVar1)) % (0xc);
   if (sVar2 < 0x65) {
     print_scroll_message_concat(0x43,sVar2 + 0x19b,0x44);
@@ -5088,7 +5088,7 @@ void show_flask_value_tooltip()
         itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
         itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
         if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
-          sVar2 = ordint_divmod(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
+          sVar2 = ordint_divmod(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1).quot;
           print_scroll_message_concat(0x5b,sVar2 + 0x54,0x5c);
         }
       }
@@ -5286,8 +5286,8 @@ void handle_rune_bag_click()
       reset_ready_rune_slots();
     }
     else {
-      sVar4 = ordint_divmod(0xf,DAT_00085a6c[1] + -0x12);
-      sVar5 = ordint_divmod(0x12,*psVar3 + -3);
+      sVar4 = ordint_divmod(0xf,DAT_00085a6c[1] + -0x12).quot;
+      sVar5 = ordint_divmod(0x12,*psVar3 + -3).quot;
       iVar6 = (5 - sVar4) * 4 + (int)sVar5;
       if ((*(byte *)(DAT_00086df8 + (iVar6 * 0x10000 >> 0x13) + 0x44) >>
            (7 - (iVar6 * 0x10000 >> 0x10 & 7U) & 0xff) & 1) != 0) {
@@ -5468,7 +5468,7 @@ uint param_1;
   byte bVar6;
   byte bVar7;
   
-  cVar2 = ordint_divmod(6,param_1 & 0xff);
+  cVar2 = ordint_divmod(6,param_1 & 0xff).quot;
   bVar6 = cVar2 + 1;
   iVar5 = (param_1 & 0xff) * 4;
   bVar7 = (byte)(&DAT_00087530)[iVar5] >> 3;
@@ -5654,7 +5654,7 @@ int param_1;
     DAT_00085c50 = (short)((uint)iVar4 >> 0x10);
     bVar5 = param_1 != 0;
     *g_draw_color_index = 0xe0;
-    uVar3 = ordint_divmod(10,iVar1);
+    uVar3 = ordint_divmod(10,iVar1).quot;
     itoa_radix(uVar3,auStack_24,10);
     sVar2 = measure_text_width(auStack_24);
     iVar4 = (int)sVar2;
@@ -6317,7 +6317,7 @@ short param_2;
 {
   short sVar1;
 
-  sVar1 = ordint_divmod(0xf,(int)param_2);
+  sVar1 = ordint_divmod(0xf,(int)param_2).quot;
   dispatch_pause_menu_click((int)sVar1);
   return;
 }
@@ -6968,7 +6968,7 @@ short param_2;
     iVar1 = iVar1 + 0xf;
   }
   sVar2 = (short)(iVar1 >> 4);
-  iVar1 = ordint_divmod(0x14,param_2 + -200);
+  iVar1 = ordint_divmod(0x14,param_2 + -200).quot;
   if (0 < iVar1) {
     sVar2 = (short)iVar1 * 0x14 + sVar2;
   }

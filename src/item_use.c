@@ -773,7 +773,7 @@ LAB_0007af3c:
           handle_rest_action(0xfffffffe);
           if (*(char *)((char *)g_player_object + 8) == '\0') goto LAB_0007b254;
           print_scroll_message_by_id(0xf3);
-          uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
+          uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f).quot;
           uVar8 = (uVar8 & 0xff) + 10;
         }
         else {
@@ -784,7 +784,7 @@ LAB_0007af3c:
             }
             goto LAB_0007b254;
           }
-          uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
+          uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f).quot;
           uVar8 = uVar8 & 0xff;
         }
         set_movement_animation_timer(0x40,uVar8);
@@ -1517,7 +1517,7 @@ short param_2;
 {
   char cVar1;
   
-  cVar1 = ordint_divmod((int)param_2,*(undefined1 *)(param_1 + 8));
+  cVar1 = ordint_divmod((int)param_2,*(undefined1 *)(param_1 + 8)).quot;
   *(char *)(param_1 + 8) = cVar1 + '\x01';
   *(undefined1 *)(param_1 + 0xd) = *(undefined1 *)(param_1 + 0xd);
   *(byte *)(param_1 + 0xe) = *(byte *)(param_1 + 0xe) | 2;
@@ -2576,7 +2576,7 @@ int param_3;
       iVar2 = 0;
     }
     else if (iVar2 < 0x1f) {
-      sVar1 = ordint_divmod(10);
+      sVar1 = ordint_divmod(10).quot;
       iVar2 = sVar1 + 1;
     }
     else {
@@ -4487,10 +4487,10 @@ bool compute_drop_aim_from_cursor()
   if (iVar1 < 0) {
     sVar5 = 0;
   }
-  sVar3 = ordint_divmod(0xd,(sVar3 + -0x56) * 5);
+  sVar3 = ordint_divmod(0xd,(sVar3 + -0x56) * 5).quot;
   DAT_00202a40 = sVar3 + -1;
-  sVar3 = ordint_divmod(6,sVar5 + -0x38);
-  sVar4 = ordint_divmod(0x300,(int)DAT_0023beb4);
+  sVar3 = ordint_divmod(6,sVar5 + -0x38).quot;
+  sVar4 = ordint_divmod(0x300,(int)DAT_0023beb4).quot;
   DAT_00202a3c = sVar3 + sVar4;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",

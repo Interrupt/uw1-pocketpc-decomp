@@ -227,7 +227,7 @@ int param_2;
         g_vertical_velocity = 0;
       }
       else {
-        g_vertical_velocity = ordint_divmod(5,uVar1 << 2);
+        g_vertical_velocity = ordint_divmod(5,uVar1 << 2).quot;
       }
     }
   }
@@ -901,24 +901,24 @@ short param_1;
     DAT_0023bf48 = 0;
     sVar1 = DAT_00085a6c[1];
     iVar5 = (int)DAT_0023be88;
-    iVar3 = ordint_divmod(5,iVar5);
+    iVar3 = ordint_divmod(5,iVar5).quot;
     if (sVar1 < iVar3) {
-      iVar3 = ordint_divmod((int)DAT_0023bd80,*psVar2 * 3);
+      iVar3 = ordint_divmod((int)DAT_0023bd80,*psVar2 * 3).quot;
       g_movement_mode = (ushort)(byte)(&DAT_00086e70)[iVar3];
       return;
     }
     iVar4 = (int)DAT_0023bd80;
-    iVar3 = ordint_divmod(3,iVar4);
+    iVar3 = ordint_divmod(3,iVar4).quot;
     if (*psVar2 < iVar3) {
-      DAT_0023bf4c = ordint_divmod(iVar4,(*psVar2 - iVar3) * 0x180);
+      DAT_0023bf4c = ordint_divmod(iVar4,(*psVar2 - iVar3) * 0x180).quot;
     }
-    iVar3 = ordint_divmod(3,iVar4 << 1);
+    iVar3 = ordint_divmod(3,iVar4 << 1).quot;
     if (iVar3 < *psVar2) {
-      DAT_0023bf4c = ordint_divmod(iVar4,(*psVar2 - iVar3) * 0x180);
+      DAT_0023bf4c = ordint_divmod(iVar4,(*psVar2 - iVar3) * 0x180).quot;
     }
-    iVar3 = ordint_divmod(5,iVar5 << 1);
+    iVar3 = ordint_divmod(5,iVar5 << 1).quot;
     if (iVar3 < psVar2[1]) {
-      DAT_0023bf48 = ordint_divmod(iVar5,(psVar2[1] - iVar3) * 0xc0);
+      DAT_0023bf48 = ordint_divmod(iVar5,(psVar2[1] - iVar3) * 0xc0).quot;
     }
   }
   else {
@@ -965,11 +965,11 @@ short param_1;
    g_movement_mode 8 ("move + face 180"), a different system entirely,
    not mode 1's forward/turn blend. */
 void uw_set_analog_move_turn(int fwd_held, int turn_dir) {
-  DAT_0023bf48 = fwd_held ? ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10)) : 0;
+  DAT_0023bf48 = fwd_held ? ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10)).quot : 0;
   if (turn_dir < 0) {
-    DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10));
+    DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10)).quot;
   } else if (turn_dir > 0) {
-    DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10));
+    DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10)).quot;
   } else {
     DAT_0023bf4c = 0;
   }
@@ -1084,15 +1084,15 @@ int param_4;
   DAT_0023be80 = sVar3;
   DAT_0023be88 = sVar5;
   DAT_0023be8c = register_click_region(param_1,param_2,iVar10,iVar9,0,0x1b,handle_game_view_click);
-  iVar6 = ordint_divmod(0xf,sVar5 * 3);
+  iVar6 = ordint_divmod(0xf,sVar5 * 3).quot;
   iVar6 = (sVar3 - iVar6) * 0x10000 >> 0x10;
-  iVar7 = ordint_divmod(0xf,sVar4 * 5);
+  iVar7 = ordint_divmod(0xf,sVar4 * 5).quot;
   iVar1 = (iVar7 + sVar2) * 0x10000 >> 0x10;
   DAT_0023be6c = register_cursor_hotspot(param_1,param_2,iVar1,iVar6,0x106f);
   iVar7 = ((sVar2 - iVar7) + (int)sVar4) * 0x10000 >> 0x10;
   DAT_0023be68 = register_cursor_hotspot(iVar7,param_2,iVar10,iVar6,0x1070);
   DAT_0023be70 = register_cursor_hotspot(iVar1,param_2,iVar7,iVar6,0x106e);
-  iVar8 = ordint_divmod(0xf,sVar5 * 6);
+  iVar8 = ordint_divmod(0xf,sVar5 * 6).quot;
   iVar8 = (sVar3 - iVar8) * 0x10000 >> 0x10;
   DAT_0023be7c = register_cursor_hotspot(param_1,iVar6,iVar1,iVar8,0x1071);
   DAT_0023be84 = register_cursor_hotspot(iVar7,iVar6,iVar10,iVar8,0x1072);
@@ -1454,11 +1454,11 @@ byte param_1;
     *(char *)((char *)DAT_00086df8 + 0xb7) = (char)((ushort)uVar3 >> 8);
   }
   uVar5 = (uint)local_1c[(char)param_1];
-  DAT_00202078 = ordint_divmod(10,(int)DAT_0008589c * uVar5);
-  DAT_0020207a = ordint_divmod(10,(int)DAT_00085898 * uVar5);
-  DAT_0020207c = ordint_divmod(10,(int)DAT_00085894 * uVar5);
+  DAT_00202078 = ordint_divmod(10,(int)DAT_0008589c * uVar5).quot;
+  DAT_0020207a = ordint_divmod(10,(int)DAT_00085898 * uVar5).quot;
+  DAT_0020207c = ordint_divmod(10,(int)DAT_00085894 * uVar5).quot;
   if ((char)param_1 < 4) {
-    DAT_00202074 = ordint_divmod(10,(int)DAT_00086e68 * uVar5);
+    DAT_00202074 = ordint_divmod(10,(int)DAT_00086e68 * uVar5).quot;
   }
   else {
     DAT_00202074 = DAT_00086e68;
@@ -1468,7 +1468,7 @@ byte param_1;
     DAT_00085890 = 0x60;
   }
   else {
-    sVar4 = ordint_divmod(uVar5 << 1,(uint)*(ushort *)((char *)piVar6 + 0x4a) * 0x60);
+    sVar4 = ordint_divmod(uVar5 << 1,(uint)*(ushort *)((char *)piVar6 + 0x4a) * 0x60).quot;
     DAT_00085890 = 0x60 - sVar4;
   }
   return;

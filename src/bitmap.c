@@ -725,7 +725,7 @@ undefined4 param_1;
   *(undefined1 *)((char *)puVar4 + 0x13) = 0;
   *(undefined1 *)(puVar4 + 5) = 0;
   *(undefined1 *)((char *)puVar4 + 0xb) = 0;
-  sVar3 = ordint_divmod(0x14,(int)puVar4 - (int)DAT_0023c3e8);
+  sVar3 = ordint_divmod(0x14,(int)puVar4 - (int)DAT_0023c3e8).quot;
   return (int)sVar3;
 }
 
@@ -783,7 +783,7 @@ int param_3;
   *(char *)((char *)puVar5 + 0x13) = (char)((uint)iVar3 >> 0x18);
   *(undefined1 *)(puVar5 + 5) = 0;
   *(undefined1 *)((char *)puVar5 + 0xb) = 0;
-  sVar2 = ordint_divmod(0x14,(int)puVar5 - (int)DAT_0023c3e8);
+  sVar2 = ordint_divmod(0x14,(int)puVar5 - (int)DAT_0023c3e8).quot;
   return (int)sVar2;
 }
 

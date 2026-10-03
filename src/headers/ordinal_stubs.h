@@ -1,6 +1,14 @@
 #ifndef ORDINAL_STUBS_H
 #define ORDINAL_STUBS_H
 
+/* ordint_divmod's return: both halves of one ARM soft-division, named
+ * instead of relying on a second, nonexistent "return value" read back
+ * from a leftover register (see ordint_divmod's own comment). */
+typedef struct {
+    int quot;
+    int rem;
+} divmod_result;
+
 void uw_pump_events(void);
 
 long EnterCriticalSection();
@@ -107,7 +115,7 @@ long ce_strrchr();
 long _strlwr();
 long _strupr();
 long _isctype();
-long ordint_divmod();
+divmod_result ordint_divmod();
 long ordfloat_double_mul();
 long ordfloat_sub();
 long ordfloat_double_binop();

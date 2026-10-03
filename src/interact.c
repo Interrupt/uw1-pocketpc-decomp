@@ -266,8 +266,8 @@ void interact_attack()
   DEBUG(INFO, "Interact attack");
 
   psVar1 = DAT_00085a6c;
-  sVar2 = ordint_divmod(DAT_0023be88 + 2,DAT_00085a6c[1] * 3);
-  sVar3 = ordint_divmod(DAT_0023bd80 + 2,*psVar1 * 3);
+  sVar2 = ordint_divmod(DAT_0023be88 + 2,DAT_00085a6c[1] * 3).quot;
+  sVar3 = ordint_divmod(DAT_0023bd80 + 2,*psVar1 * 3).quot;
   iVar4 = sVar2 * 3 + (int)sVar3;
   if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[attack-dir] click=(%d,%d) view=(%d,%d) row=%d col=%d grid=%d -> attack_type=%d\n",
       (int)*psVar1, (int)DAT_00085a6c[1], (int)DAT_0023bd80, (int)DAT_0023be88, (int)sVar2, (int)sVar3, iVar4, iVar4+1);

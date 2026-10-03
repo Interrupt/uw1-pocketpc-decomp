@@ -176,7 +176,7 @@ LAB_0004b06c:
     *(byte *)(puVar6 + 1) = bVar1;
     *(byte *)((char *)puVar6 + 3) = bVar2;
     if ((byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] != 0) {
-      cVar4 = ordint_divmod(6,(uint)(byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] * 5);
+      cVar4 = ordint_divmod(6,(uint)(byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] * 5).quot;
       bVar3 = (cVar4 + (char)DAT_00202a3c * '\x02' + (bVar1 & 0x7f) ^ bVar1) & 0x7f ^ bVar1;
       *(byte *)(puVar6 + 1) = bVar3;
       *(byte *)((char *)puVar6 + 3) = bVar2;
@@ -358,7 +358,7 @@ char *param_1;
   if (param_1 < DAT_002046c4) {
     psVar2 = (short *)(DAT_002046a8 + 2);
     DAT_002046a8 = (char *)psVar2;
-    sVar1 = ordint_divmod(0x1b,param_1 - DAT_002046b8);
+    sVar1 = ordint_divmod(0x1b,param_1 - DAT_002046b8).quot;
     *psVar2 = sVar1;
     if (param_1 == DAT_0023b82c) {
       enter_free_camera_mode((int)*(short *)DAT_002046a8);
@@ -393,7 +393,7 @@ char *param_2;
   *(byte *)(param_2 + 4) = (*(byte *)(param_2 + 4) ^ bVar2) & 0x3f ^ bVar2;
   *(char *)(param_2 + 5) = (char)((ushort)uVar1 >> 8);
   if (param_2 < DAT_002046c4) {
-    sVar3 = ordint_divmod(0x1b,param_2 - DAT_002046b8);
+    sVar3 = ordint_divmod(0x1b,param_2 - DAT_002046b8).quot;
     uVar4 = *param_1 & 0x3f | sVar3 << 6;
   }
   else {
@@ -428,7 +428,7 @@ char *param_2;
   *(byte *)(param_2 + 4) = *(byte *)(param_2 + 4) & 0x3f;
   *(undefined1 *)(param_2 + 5) = 0;
   if (param_2 < DAT_002046c4) {
-    sVar1 = ordint_divmod(0x1b,param_2 - DAT_002046b8);
+    sVar1 = ordint_divmod(0x1b,param_2 - DAT_002046b8).quot;
     uVar3 = *param_1 & 0x3f | sVar1 << 6;
   }
   else {
@@ -637,7 +637,7 @@ char *param_1;
     iVar2 = 0;
   }
   else if (param_1 < DAT_002046c4) {
-    sVar1 = ordint_divmod(0x1b,param_1 - DAT_002046b8);
+    sVar1 = ordint_divmod(0x1b,param_1 - DAT_002046b8).quot;
     iVar2 = (int)sVar1;
   }
   else {
@@ -2513,20 +2513,17 @@ short param_5;
          (there's no way to read a second register out of a normal C
          call). ordint_divmod is COREDLL's div/mod ordinal
          (divisor,dividend): the quotient is its real C return value,
-         but this caller wants the REMAINDER -- confirmed by
-         ordinal_stubs.c's own comment on ordint_divmod documenting
-         exactly this "extraout_r1 reads want the remainder" idiom.
-         Compute it directly instead of reading a nonexistent second
-         return value: this crashed 100% of the time using Use mode on
-         a container (find_object_placement is how try_combine_or_
-         stow_object scatters emptied contents onto the ground),
-         confirmed live, because uVar4/uVar6 below were built from
-         garbage stack memory, sending object placement to a wild
-         tile. */
+         but this caller wants the REMAINDER, now named off its own
+         divmod_result instead of a nonexistent second return value:
+         this crashed 100% of the time using Use mode on a container
+         (find_object_placement is how try_combine_or_stow_object
+         scatters emptied contents onto the ground), confirmed live,
+         because uVar4/uVar6 below were built from garbage stack
+         memory, sending object placement to a wild tile. */
       uVar2 = ce_rand();
-      uVar4 = (((int)uVar2 % iVar5) - (int)param_5) + param_2;
+      uVar4 = (ordint_divmod(iVar5,(int)uVar2).rem - (int)param_5) + param_2;
       uVar2 = ce_rand();
-      uVar6 = (((int)uVar2 % iVar5) - (int)param_5) + param_3;
+      uVar6 = (ordint_divmod(iVar5,(int)uVar2).rem - (int)param_5) + param_3;
     }
     uVar2 = encode_object_slot_index(param_1);
     iVar5 = check_object_placement_clearance(*param_1 & 0x1ff,uVar2,uVar4,uVar6,param_4,1,0);

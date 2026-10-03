@@ -610,7 +610,7 @@ void render_dungeon_frame_timed()
   sVar1 = DAT_0023b4c8;
   iVar7 = (int)(short)DAT_0023b4c8;
   sVar9 = DAT_0023b4cc - *(short *)(&DAT_0023b4a8 + iVar7 * 2);
-  sVar3 = ordint_divmod(10,(int)sVar2);
+  sVar3 = ordint_divmod(10,(int)sVar2).quot;
   *(short *)(&DAT_0023b4a8 + iVar7 * 2) = sVar3;
   DAT_0023b4cc = sVar9 + sVar3;
   DAT_0023b4c8 = sVar1 + 1U & 0xf;
@@ -638,12 +638,13 @@ undefined4 build_frame_draw_list()
   bVar3 = (byte)((short)(g_current_view->view_facing >> 0xd) + 1 >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
   /* Dropped-remainder bug, same class fixed elsewhere this session.
-     Dropped-dividend too (single-arg call): the real ARM code's second
-     register still held bVar3 here, so reconstructed as bVar3 % 2
-     (quadrant parity) -- but DAT_0023b028 has no reader anywhere else
-     in this decompile, so this is a dead store either way and the
+     Dropped-dividend too (originally a single-arg call): the real ARM
+     code's second register still held bVar3 here, so reconstructed as
+     bVar3 % 2 (quadrant parity, now via ordint_divmod's own
+     divmod_result) -- but DAT_0023b028 has no reader anywhere else in
+     this decompile, so this is a dead store either way and the
      reconstruction is unverified against any observable behavior. */
-  extraout_r1 = (char)((int)bVar3 % 2);
+  extraout_r1 = (char)ordint_divmod(2,bVar3).rem;
   DAT_0023b028 = extraout_r1;
   DAT_0023b4a0 = bVar3;
   sync_camera_from_player();
@@ -1073,7 +1074,7 @@ byte * param_2;
                   (uint)*(byte *)(param_1 + 6);
           iVar5 = iVar8 * 0x10000;
           uVar1 = iVar5 >> 0x1f;
-          sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1);
+          sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1).quot;
           iVar5 = (iVar8 - sVar4) + -2;
           *(char *)(param_1 + 1) = (char)iVar5;
           *(char *)(param_1 + 2) = (char)((uint)iVar5 >> 8);
@@ -1099,7 +1100,7 @@ byte * param_2;
                       (uint)*(byte *)(param_2 + 6);
               iVar5 = iVar8 * 0x10000;
               uVar1 = iVar5 >> 0x1f;
-              sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1);
+              sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1).quot;
               iVar5 = iVar8 + sVar4 + 2;
               *(char *)(param_2 + 1) = (char)iVar5;
               *(char *)(param_2 + 2) = (char)((uint)iVar5 >> 8);
@@ -1190,11 +1191,11 @@ LAB_0005cf04:
            ((int)cVar9 == (int)*(short *)((char *)&DAT_00086afc + iVar3 * 2))) {
           /* Was reading the division helper's remainder back via the
              extraout_r1 register-leftover trick (see ordint_divmod's
-             comment) -- computed directly instead, same fix as
-             itoa_radix's identical pattern. The quotient this call
-             also produced was never used (its return value was
-             discarded here too), so the call itself is gone. */
-          cVar12 = (char)((iVar3 + 1) % 2);
+             comment) -- gets it by name off ordint_divmod's own
+             divmod_result now, same fix as itoa_radix's identical
+             pattern. The quotient this call also produces isn't
+             used here. */
+          cVar12 = (char)ordint_divmod(2,iVar3 + 1).rem;
         }
         param_1[6] = -cVar12;
         goto LAB_0005ce50;
@@ -1203,8 +1204,8 @@ LAB_0005cf04:
       sVar6 = *psVar10;
       /* Was `ordint_divmod(2,iVar3+1);` followed by two extraout_r1_00
          reads of its division remainder -- same register-leftover
-         pattern as above, computed directly instead. */
-      iVar12 = (iVar3 + 1) % 2;
+         pattern as above, gets it by name off divmod_result now. */
+      iVar12 = ordint_divmod(2,iVar3 + 1).rem;
       if ((*(ushort *)(&DAT_00086af8 + iVar12 * 2) &
           (ushort)(byte)(&DAT_000878d0)
                         [(byte)(&DAT_00086a20)
@@ -1235,7 +1236,7 @@ LAB_0005cf04:
          real 0-255 range instead of truncating through a signed 8-bit
          type. */
       local_atten_step = (int)ordint_divmod((int)*(short *)(param_1 + 1) * (int)sVar6,
-                                            (short)local_32 * local_30);
+                                            (short)local_32 * local_30).quot;
       local_atten_step = local_atten_step + (int)(byte)param_1[8];
       if (local_atten_step < 0) {
         local_atten_step = 0;
@@ -1278,7 +1279,7 @@ LAB_0005cf04:
   }
   sVar6 = *(short *)(&DAT_00086b00 + iVar3 * 2);
   cVar12 = ordint_divmod((int)*(short *)(param_1 + 3),
-                        (0xff - (uint)param_1[8]) * (int)*(short *)(param_1 + 1) * (int)sVar6);
+                        (0xff - (uint)param_1[8]) * (int)*(short *)(param_1 + 1) * (int)sVar6).quot;
   param_1[6] = cVar12 * (char)sVar6 + param_1[6];
   param_1[8] = 0xff;
 LAB_0005ce50:
@@ -1607,7 +1608,7 @@ void rebuild_dungeon_view()
   walk_visible_tiles();
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
       (DAT_00201b68 != 9)) &&
-     (sVar3 = ordint_divmod(10,(int)DAT_0023b810 * (int)DAT_00201b68), sVar3 != 0)) {
+     (sVar3 = ordint_divmod(10,(int)DAT_0023b810 * (int)DAT_00201b68).quot, sVar3 != 0)) {
     /* Disabled: grant_experience_points() here is called with a dropped
        argument (Ghidra lost it) AND from a nonsensical spot -- a dungeon
        -view rebuild -- so it granted a garbage XP amount on essentially

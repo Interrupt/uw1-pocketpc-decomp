@@ -450,10 +450,7 @@ short param_1;
   }
   if ((short)iVar3 < 0) {
     uVar1 = ce_rand();
-    ordint_divmod((param_1 + 1) * 4,uVar1);
-    /* Dropped-remainder bug, same class fixed elsewhere this session --
-       computed directly. */
-    extraout_r1_00 = (int)uVar1 % ((param_1 + 1) * 4);
+    extraout_r1_00 = ordint_divmod((param_1 + 1) * 4,uVar1).rem;
     if (extraout_r1_00 == 0) {
       uVar1 = ce_rand();
       uw_ord2005_rem_143 = ((int)(uVar1)) % (6);

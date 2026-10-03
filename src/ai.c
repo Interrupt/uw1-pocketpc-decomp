@@ -973,7 +973,7 @@ LAB_000337fc:
        DAT_00101404[0xf]); resolve_npc_melee_attack(puVar11,(int)extraout_r1_01,uVar1,
        (bVar3&0x3f)-1);` -- badly garbled. Real disassembly (0x335b8-0x33628)
        shows this is genuinely TWO separate things the decompiler folded
-       together: a plain `ordint_divmod(9,uVar7)` (same fabricated-remainder
+       together: a plain `ordint_divmod(9,uVar7).quot` (same fabricated-remainder
        bug fixed throughout this session -- computed the remainder
        directly), and resolve_npc_melee_attack's own 5th argument (it takes 5 params,
        confirmed at its definition; this call was silently dropping the
@@ -1302,7 +1302,7 @@ ushort * param_2;
   if (0x100 < uVar1) {
     if ((*param_1 & 0x1c0) != 0x40) {
       uVar2 = ordint_divmod(0x32,(short)(*(ushort *)(&DAT_00202c91 + (*param_1 & 0x1ff) * 0xd) >> 4)
-                                + -600);
+                                + -600).quot;
       play_sound_effect_at_object(0xf,param_1,uVar2);
     }
     apply_typed_damage_to_object(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
@@ -1375,7 +1375,7 @@ ushort * param_2;
       sVar4 = 0x1f;
     }
     *(byte *)(param_1 + 10) = (byte)((int)sVar4 << 3) | (byte)param_1[10] & 7;
-    bVar3 = ordint_divmod(0x2f,(int)(short)param_2[10]);
+    bVar3 = ordint_divmod(0x2f,(int)(short)param_2[10]).quot;
     *(byte *)((char *)param_1 + 0x13) = (bVar3 ^ bVar9) & 0x7f ^ bVar9;
     *(byte *)(param_1 + 5) =
          (byte)param_1[5] & 0x8f | ((&DAT_000868c0)[(byte)param_2[0x14]] & 7) << 4;
@@ -1482,16 +1482,19 @@ ushort * param_1;
             /* Was `ordint_divmod(3,uVar6); ... extraout_r1_00` / same for
                uVar7/extraout_r1 -- the same fabricated-remainder bug
                fixed several times elsewhere this session (this port's
-               ordint_divmod never populates extraout_r1). Computed each
-               remainder directly instead; this was feeding a random
-               scatter offset into spawn_effect_debris_burst (spawn debris around the
+               old `long`-returning ordint_divmod never populated
+               extraout_r1). Now gets the remainder by name off
+               ordint_divmod's own divmod_result instead of reading a
+               second return value that was never really there; this
+               was feeding a random scatter offset into
+               spawn_effect_debris_burst (spawn debris around the
                object), so previously ran with a garbage/undefined delta
                every time this rare "teleport gate" branch was taken --
                intermittently crashing (confirmed live, ~1-in-5 runs of
                demo_critter_orbit_cardinal.txt). */
-            extraout_r1_00 = (short)(uVar6 % 3);
+            extraout_r1_00 = (short)ordint_divmod(3,uVar6).rem;
             iVar10 = (int)DAT_00101454;
-            extraout_r1 = (short)(uVar7 % 3);
+            extraout_r1 = (short)ordint_divmod(3,uVar7).rem;
             spawn_effect_debris_burst(param_1,(int)DAT_0010144c + (int)extraout_r1_00 + -1,
                          iVar10 + extraout_r1 + -1);
             iVar8 = (iVar8 + -1) * 0x10000 >> 0x10;
@@ -1637,10 +1640,7 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
   if (uw_ord2005_rem_159 < (int)(uint)(bVar3 >> 4)) {
     uVar7 = ce_rand();
     sVar6 = DAT_00201b68;
-    ordint_divmod(DAT_00201b68 * -3 + 0x28,uVar7);
-    /* Dropped-remainder bug (same class as this session's other
-       ordint_divmod/extraout_r1 fixes) -- computed directly. */
-    extraout_r1 = (char)((int)uVar7 % (DAT_00201b68 * -3 + 0x28));
+    extraout_r1 = (char)ordint_divmod(DAT_00201b68 * -3 + 0x28,uVar7).rem;
     iVar8 = ((char)sVar6 + -0xb) * 3 + (int)extraout_r1;
     cVar4 = (char)iVar8;
     if (iVar8 * 0x1000000 >> 0x18 < 0) {
@@ -1667,16 +1667,14 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
     iVar1 = (int)cVar5;
     if (iVar8 < iVar1) {
       uVar7 = ce_rand();
-      ordint_divmod(iVar1,uVar7);
-      /* Dropped-remainder bug, same class as above -- computed directly. */
-      extraout_r1_01 = (int)uVar7 % iVar1;
+      extraout_r1_01 = ordint_divmod(iVar1,uVar7).rem;
       if (iVar8 <= extraout_r1_01) {
         return;
       }
       cVar5 = '\x01';
     }
     else {
-      cVar5 = ordint_divmod(iVar1,iVar8);
+      cVar5 = ordint_divmod(iVar1,iVar8).quot;
       sVar6 = roll_dice_sum(4,((int)cVar5 << 0x19) >> 0x18);
       cVar5 = (char)(sVar6 >> 2);
     }
@@ -1763,9 +1761,7 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
       if (uw_ord2005_rem_161 == 0) {
         uVar5 = ce_rand();
         sVar3 = DAT_00201b68;
-        ordint_divmod((int)DAT_00201b68 << 2,uVar5);
-        /* Dropped-remainder bug, same class as above -- computed directly. */
-        extraout_r1 = (char)((int)uVar5 % ((int)DAT_00201b68 << 2));
+        extraout_r1 = (char)ordint_divmod((int)DAT_00201b68 << 2,uVar5).rem;
         bVar6 = extraout_r1 + (char)sVar3 * '\x04';
       }
       else {
@@ -1835,9 +1831,7 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
       if (uw_ord2005_rem_165 == 0) {
         uVar5 = ce_rand();
         sVar4 = DAT_00201b68;
-        ordint_divmod((int)DAT_00201b68 << 2,uVar5);
-        /* Dropped-remainder bug, same class as above -- computed directly. */
-        extraout_r1 = (char)((int)uVar5 % ((int)DAT_00201b68 << 2));
+        extraout_r1 = (char)ordint_divmod((int)DAT_00201b68 << 2,uVar5).rem;
         bVar7 = extraout_r1 + (char)sVar4 * '\x04';
       }
       else {
@@ -2125,18 +2119,18 @@ short param_4;
     if (iVar1 < -iVar5) {
       pbVar9 = &local_33;
       pbVar11 = &local_34;
-      cVar2 = ordint_divmod(iVar1,iVar5 << 7);
+      cVar2 = ordint_divmod(iVar1,iVar5 << 7).quot;
       goto LAB_0002d330;
     }
     pbVar9 = &local_34;
     pbVar11 = &local_33;
-    cVar2 = ordint_divmod(iVar5,iVar1 << 7);
+    cVar2 = ordint_divmod(iVar5,iVar1 << 7).quot;
   }
   else {
     if (iVar1 < -iVar5) {
       pbVar9 = &local_34;
       pbVar11 = &local_33;
-      cVar2 = ordint_divmod(iVar5,iVar1 << 7);
+      cVar2 = ordint_divmod(iVar5,iVar1 << 7).quot;
       iVar5 = iVar1;
 LAB_0002d330:
       local_32 = -1;
@@ -2148,7 +2142,7 @@ LAB_0002d330:
     }
     pbVar9 = &local_33;
     pbVar11 = &local_34;
-    cVar2 = ordint_divmod(iVar1,iVar5 << 7);
+    cVar2 = ordint_divmod(iVar1,iVar5 << 7).quot;
     iVar1 = iVar5;
   }
   cVar6 = '\x01';
@@ -2281,19 +2275,19 @@ short param_6;
       }
       if (local_3a == '\x01') {
         /* Was a dropped register-forwarding argument -- was
-           `ordint_divmod();` with no args. Reconstructed as this exact
+           `ordint_divmod().quot;` with no args. Reconstructed as this exact
            branch's own sibling call (the `else` just below,
-           `ordint_divmod(iVar3,iVar2 << 7)`) wrapped in the negation
+           `ordint_divmod(iVar3,iVar2 << 7).quot`) wrapped in the negation
            this code already applies afterward (`uVar5 = -iVar7`) --
            mathematically the same sign-flip trick the other two
            if/else pairs in this function apply via a `* -0x80`
            operand instead of a post-call negation. */
-        iVar7 = ordint_divmod(iVar3,iVar2 << 7);
+        iVar7 = ordint_divmod(iVar3,iVar2 << 7).quot;
         uVar5 = -iVar7;
         uVar9 = uVar9 & 7;
         goto LAB_0002d808;
       }
-      uVar5 = ordint_divmod(iVar3,iVar2 << 7);
+      uVar5 = ordint_divmod(iVar3,iVar2 << 7).quot;
       uVar9 = uVar9 & 7;
 LAB_0002d824:
       uVar5 = uVar5 & 0xff;
@@ -2310,11 +2304,11 @@ LAB_0002d824:
         local_3a = -1;
       }
       if (local_3a != '\x01') {
-        uVar5 = ordint_divmod(iVar2,iVar3 * -0x80);
+        uVar5 = ordint_divmod(iVar2,iVar3 * -0x80).quot;
         uVar10 = 7 - (uVar10 & 7);
         goto LAB_0002d6c0;
       }
-      uVar5 = ordint_divmod(iVar2,iVar3 << 7);
+      uVar5 = ordint_divmod(iVar2,iVar3 << 7).quot;
       uVar10 = 7 - (uVar10 & 7);
 LAB_0002d768:
       uVar5 = uVar5 & 0xff;
@@ -2336,16 +2330,16 @@ LAB_0002d768:
         local_3a = '\x01';
       }
       if (local_3a != '\x01') {
-        uVar5 = ordint_divmod(iVar2,iVar3 << 7);
+        uVar5 = ordint_divmod(iVar2,iVar3 << 7).quot;
         uVar10 = uVar10 & 7;
         goto LAB_0002d768;
       }
       /* Was a dropped register-forwarding argument -- same class as
          this function's own earlier fix (uw.c ~8942): reconstructed
          as this branch's own sibling call above
-         (`ordint_divmod(iVar2,iVar3 << 7)`) wrapped in the negation
+         (`ordint_divmod(iVar2,iVar3 << 7).quot`) wrapped in the negation
          this code already applies afterward. */
-      iVar7 = ordint_divmod(iVar2,iVar3 << 7);
+      iVar7 = ordint_divmod(iVar2,iVar3 << 7).quot;
       uVar5 = -iVar7;
       uVar10 = uVar10 & 7;
 LAB_0002d6c0:
@@ -2362,11 +2356,11 @@ LAB_0002d6c0:
       }
       local_2c = &local_3b;
       if (local_3a == '\x01') {
-        uVar5 = ordint_divmod(iVar3,iVar2 << 7);
+        uVar5 = ordint_divmod(iVar3,iVar2 << 7).quot;
         uVar9 = 7 - (uVar9 & 7);
         goto LAB_0002d824;
       }
-      uVar5 = ordint_divmod(iVar3,iVar2 * -0x80);
+      uVar5 = ordint_divmod(iVar3,iVar2 * -0x80).quot;
       uVar9 = 7 - (uVar9 & 7);
 LAB_0002d808:
       uVar5 = uVar5 & 0xff;
@@ -2406,7 +2400,7 @@ LAB_0002d808:
       return 0;
     }
     if (local_38 != '\0') {
-      iVar7 = ordint_divmod(local_38,(int)local_32 * (uint)local_35);
+      iVar7 = ordint_divmod(local_38,(int)local_32 * (uint)local_35).quot;
       param_3 = local_28 + iVar7 & 0xff;
     }
     uVar12 = (ushort)local_3c;
@@ -3003,7 +2997,7 @@ ushort * param_1;
         /* Was `ordint_divmod(...); apply_typed_damage_to_object(...,extraout_r1,...)` --
            same fabricated-remainder bug fixed throughout this session
            (this port's ordint_divmod never populates extraout_r1).
-           ordint_divmod(divisor,dividend) here divides the random roll
+           ordint_divmod(divisor,dividend).quot here divides the random roll
            (uVar1) by the stat-template byte at +0x14 (a max-damage-
            shaped value); compute that remainder -- a bounded random
            damage roll in [0,byte_val) -- directly instead. */
@@ -3259,7 +3253,7 @@ int param_2;
     iVar5 = iVar5 << 0x18;
   }
   else {
-    sVar4 = ordint_divmod((int)(short)uVar3,iVar6 << 2);
+    sVar4 = ordint_divmod((int)(short)uVar3,iVar6 << 2).quot;
     iVar5 = (int)sVar4;
     if (0xf < iVar5) {
       iVar5 = 0xf;
@@ -3271,7 +3265,7 @@ int param_2;
       iVar5 = iVar5 << 0x18;
     }
     else {
-      iVar6 = ordint_divmod((int)param_1,(uint)uVar3 * 3);
+      iVar6 = ordint_divmod((int)param_1,(uint)uVar3 * 3).quot;
       iVar5 = (iVar6 + (short)iVar5) * 0x1000000;
     }
   }
@@ -3607,7 +3601,7 @@ LAB_00033e9c:
      function's actual body per Ghidra -- npc_ai_default_tick's own "0x33880"
      entry point is just one jump-table case landing in a shared tail
      block starting here) confirms this is genuinely a plain 2-argument
-     `ordint_divmod(0x100,(uVar11-uVar12)+0x100)` call; the extra
+     `ordint_divmod(0x100,(uVar11-uVar12)+0x100).quot` call; the extra
      "arguments" are a decompiler artifact with no real source (the
      unaff_rN/unaff_lr names mean "whatever these callee-saved registers
      happened to hold since function entry", never actually read by the
@@ -3766,7 +3760,7 @@ LAB_000342b0:
       if (param_1 == 0) goto LAB_000342b0;
       uVar1 = ce_rand();
       uw_ord2005_rem_97 = ((int)(uVar1)) % (4);
-      iVar2 = ordint_divmod(param_1,param_2 << 4);
+      iVar2 = ordint_divmod(param_1,param_2 << 4).quot;
       if ((int)(0xf - (param_3 & 0xff)) < (int)(uw_ord2005_rem_97 + iVar2 & 0xffffU)) {
         return 0;
       }
@@ -3794,7 +3788,7 @@ int compute_pathfind_search_radius()
   if (((((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) && (*(char *)(DAT_00101404 + 4) != '\0')) &&
       ((*(byte *)((char *)DAT_0010190c + 1) & 0x20) == 0)) &&
      ((DAT_00201b68 != 6 || (*(char *)((char *)DAT_0010190c + 0x1a) != '\x16')))) {
-    uVar2 = ordint_divmod(*(char *)(DAT_00101404 + 4),(uint)*(byte *)((char *)DAT_0010190c + 8) << 2);
+    uVar2 = ordint_divmod(*(char *)(DAT_00101404 + 4),(uint)*(byte *)((char *)DAT_0010190c + 8) << 2).quot;
     return (uVar2 & 0xff) + (*(byte *)(iVar1 + 0x1c) >> 2 & 3);
   }
   return 0;
@@ -4678,7 +4672,7 @@ int param_1;
       iVar5 = 0;
       do {
         iVar5 = (int)(short)iVar5;
-        cVar2 = ordint_divmod(10,iVar5);
+        cVar2 = ordint_divmod(10,iVar5).quot;
         DAT_00085918 = cVar2 + '0';
         uw_ord2005_rem_112 = ((int)(iVar5)) % (10);
         DAT_00085919 = uw_ord2005_rem_112 + '0';

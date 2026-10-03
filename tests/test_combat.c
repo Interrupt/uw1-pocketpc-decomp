@@ -128,7 +128,7 @@ undefined4 apply_object_destruction_effect(void) { TEST_FAIL_MESSAGE("Unexpected
 void *ce_memset(void *dest, int value, unsigned int count)
 { return memset(dest, value, count); }
 long ce_rand(void) { return 1; }
-long ordint_divmod(int divisor, int dividend) { return dividend / divisor; }
+divmod_result ordint_divmod(int divisor, int dividend) { divmod_result r = {dividend / divisor, dividend % divisor}; return r; }
 void project_position_by_heading(int heading, int distance, short *x, short *y)
 { (void)heading; (void)distance; (void)x; (void)y; }
 void collision_height_envelope(int mode, int collision)

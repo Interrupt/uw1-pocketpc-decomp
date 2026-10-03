@@ -261,7 +261,7 @@ int param_1;
   if (1 < param_1) {
     do {
       iVar2 = iVar1;
-      iVar1 = ordint_divmod(iVar2,param_1);
+      iVar1 = ordint_divmod(iVar2,param_1).quot;
       iVar1 = iVar2 + iVar1 >> 1;
     } while (iVar1 < iVar2);
   }

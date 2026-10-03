@@ -1674,7 +1674,7 @@ undefined2 * param_3;
       return 1;
     }
     if (sVar3 == 1) {
-      sVar3 = ordint_divmod(5,(int)(short)param_2);
+      sVar3 = ordint_divmod(5,(int)(short)param_2).quot;
       local_20 = sVar3 + 3;
     }
     else if (sVar3 == 2) {

@@ -1090,8 +1090,8 @@ void move_custom_view_target()
   char cStack_11;
   
   psVar1 = DAT_00085a6c;
-  sVar2 = ordint_divmod((int)DAT_0023be88,DAT_00085a6c[1] * 3);
-  uVar3 = ordint_divmod((int)DAT_0023bd80,*psVar1 * 3);
+  sVar2 = ordint_divmod((int)DAT_0023be88,DAT_00085a6c[1] * 3).quot;
+  uVar3 = ordint_divmod((int)DAT_0023bd80,*psVar1 * 3).quot;
   iVar4 = (uint)DAT_0023bf00 + ((uVar3 & 0xffff) + 0x3f) * 0x400;
   DAT_0023bf00 = (ushort)iVar4;
   if (sVar2 != 1) {
@@ -1271,8 +1271,8 @@ void spin_view_full_rotation()
   uVar5 = (uVar5 & 0xffff) >> 6;
   DAT_0023bea0 = (undefined2)uVar5;
   iVar1 = uVar5 << 6;
-  sVar3 = ordint_divmod(iVar1,iVar6 * 0x8000);
-  sVar4 = ordint_divmod(iVar1,iVar7 * 0x8000);
+  sVar3 = ordint_divmod(iVar1,iVar6 * 0x8000).quot;
+  sVar4 = ordint_divmod(iVar1,iVar7 * 0x8000).quot;
   DAT_0023bea4 = compute_angle_from_slope((int)sVar4,(int)sVar3);
   DAT_0023bf08 = 0;
   do {

@@ -2381,7 +2381,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
         sVar2 = 100;
       }
       else {
-        sVar2 = ordint_divmod(iVar8,(sVar2 - iVar8) * 100);
+        sVar2 = ordint_divmod(iVar8,(sVar2 - iVar8) * 100).quot;
       }
       iVar9 = (int)DAT_000bc024;
       iVar8 = (int)sVar2;
@@ -2471,11 +2471,11 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   else {
     sVar5 = ordint_divmod(*(char *)(DAT_0023be74 + 4),
                          ((uint)*(byte *)((char *)g_player_object + 8) - (uint)*(byte *)(DAT_00086df8 + 0x36))
-                         * 2);
+                         * 2).quot;
     iVar11 = sVar5 + 2;
   }
   bVar2 = *(byte *)(iVar12 + 0x5f);
-  sVar5 = ordint_divmod(6,*(undefined1 *)(iVar12 + 0x30));
+  sVar5 = ordint_divmod(6,*(undefined1 *)(iVar12 + 0x30)).quot;
   bVar3 = *(byte *)(iVar12 + 0x3d);
   sVar6 = sum_barter_offer_value(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc8,DAT_000bbfbc);
   uVar8 = (uint)(byte)(&g_monster_max_stats_table)[(*DAT_00100674 & 0x3f) * 0x30];
@@ -2483,7 +2483,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     iVar12 = 1;
   }
   else {
-    sVar7 = ordint_divmod(uVar8,(DAT_00100674[8] - uVar8) * 2);
+    sVar7 = ordint_divmod(uVar8,(DAT_00100674[8] - uVar8) * 2).quot;
     iVar12 = sVar7 + 2;
   }
   babl_get_variable(s_npc_attitude_000845f8,&local_2c,1);
@@ -2497,7 +2497,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   else {
     iVar10 = -1;
   }
-  sVar6 = ordint_divmod(10,(int)sVar6);
+  sVar6 = ordint_divmod(10,(int)sVar6).quot;
   if (((int)((((byte)(&DAT_001007dd)[(bVar1 & 0x3f) * 0x30] & 0xf) + (int)sVar6 + iVar10 + (int)iVar12) *
             0x10000) >> 0x10 <
        (int)((((bVar2 & 2) >> 1) + (int)sVar5 + (uint)bVar3 + iVar11) * 0x10000) >> 0x10) ||
@@ -3485,7 +3485,7 @@ ushort * param_1;
     local_20[0] = 0x80;
   }
   else {
-    local_20[0] = ordint_divmod((&g_monster_max_stats_table)[iVar3],(uint)(byte)param_1[4] << 8);
+    local_20[0] = ordint_divmod((&g_monster_max_stats_table)[iVar3],(uint)(byte)param_1[4] << 8).quot;
   }
   babl_set_variable(s_npc_health_00085388,local_20,1);
   local_20[0] = (ushort)(byte)param_1[4];
@@ -3554,7 +3554,7 @@ ushort * param_1;
        sync_player_stats_to_hud's death-sequence branch, which then hit
        a separate missing-NULL-guard crash in handle_player_death_and_menu_transition (fixed
        there to match change_game_mode's own existing guard). */
-    local_20[0] = ordint_divmod((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)*(byte *)((char *)g_player_object + 8) << 8);
+    local_20[0] = ordint_divmod((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)*(byte *)((char *)g_player_object + 8) << 8).quot;
   }
   babl_set_variable(s_play_health_000852f8,local_20,1);
   local_20[0] = (ushort)*(byte *)((char *)g_player_object + 8);
@@ -4341,7 +4341,7 @@ void init_barter_ui()
   bVar2 = *(byte *)(DAT_00086df8 + 0x30);
   DAT_000bc024 = DAT_000bc024 + (ushort)bVar2 * -2;
   DAT_000bc004 = DAT_000bc004 + ((short)(ushort)bVar2 >> 1);
-  sVar4 = ordint_divmod(6,(ushort)bVar2);
+  sVar4 = ordint_divmod(6,(ushort)bVar2).quot;
   DAT_000bbfe0 = (undefined2)(iVar7 - sVar4);
   iVar7 = (iVar7 - sVar4) * 0x10000 >> 0x10;
   uVar3 = DAT_000bbfe0;
@@ -5122,7 +5122,7 @@ void babl_builtin_do_judgement()
   char local_60 [80];
   
   uVar9 = (uint)*(byte *)(DAT_00086df8 + 0x33);
-  sVar2 = ordint_divmod(0x1e,uVar9 * 0x2d);
+  sVar2 = ordint_divmod(0x1e,uVar9 * 0x2d).quot;
   sVar3 = sum_barter_offer_value(0,&DAT_000bbfd0,&DAT_000bbf98,&DAT_000bbfa8,0x32 - sVar2);
   sVar2 = sum_barter_offer_value(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc0,0x32 - sVar2);
   iVar6 = (int)sVar2;
@@ -5130,7 +5130,7 @@ void babl_builtin_do_judgement()
     sVar2 = 100;
   }
   else {
-    sVar2 = ordint_divmod(iVar6,(sVar3 - iVar6) * 100);
+    sVar2 = ordint_divmod(iVar6,(sVar3 - iVar6) * 100).quot;
   }
   if (uVar9 < 6) {
     iVar6 = 0;
@@ -5319,7 +5319,7 @@ short param_3;
   int iVar1;
   
   iVar1 = rand_below((int)param_3 - (int)param_2);
-  iVar1 = ordint_divmod(100,(iVar1 + param_2) * (int)param_1);
+  iVar1 = ordint_divmod(100,(iVar1 + param_2) * (int)param_1).quot;
   return (iVar1 + param_1) * 0x10000 >> 0x10;
 }
 
@@ -5666,7 +5666,7 @@ void babl_op_div()
     uVar2 = 0xffff;
   }
   else {
-    uVar2 = ordint_divmod(iVar4,(int)psVar3[-1]);
+    uVar2 = ordint_divmod(iVar4,(int)psVar3[-1]).quot;
   }
   iVar4 = (iVar5 + -1) * 0x10000;
   DAT_000bbf78 = (short)((uint)iVar4 >> 0x10);
@@ -5701,9 +5701,9 @@ void babl_op_mod()
        ordint_divmod/extraout_r1 fixes), but live here: this is the babl
        VM's own MODULO bytecode opcode, so every in-game script/
        conversation use of "%" silently got uninitialized garbage
-       instead of a real result. Computed directly instead. */
-    ordint_divmod(iVar4,(int)psVar3[-1]);
-    uVar2 = (int)psVar3[-1] % iVar4;
+       instead of a real result. Gets it by name off ordint_divmod's
+       own divmod_result now. */
+    uVar2 = ordint_divmod(iVar4,(int)psVar3[-1]).rem;
   }
   iVar4 = (iVar5 + -1) * 0x10000;
   DAT_000bbf78 = (short)((uint)iVar4 >> 0x10);
@@ -6326,7 +6326,7 @@ short param_1;
   if (DAT_00100790 != 0) {
     if (param_1 == 0) {
       sVar2 = ordint_divmod((int)*(short *)(DAT_000879b0 + 6),
-                           0xa9 - ((200 - *(short *)(DAT_00085a6c + 2)) * 0x10000 >> 0x10));
+                           0xa9 - ((200 - *(short *)(DAT_00085a6c + 2)) * 0x10000 >> 0x10)).quot;
       param_1 = (&DAT_00100770)[sVar2];
     }
     iVar1 = (int)param_1;
@@ -7417,7 +7417,7 @@ LAB_00036ca4:
                   if ((sVar20 == 0x1b) && ((local_8b & 0x10) != 0)) goto LAB_00037a8c;
                   iVar9 = read_realtime_clock_units();
                   local_4c = iVar9;
-                  uVar18 = ordint_divmod(*(undefined2 *)(local_88 + 0x44),300);
+                  uVar18 = ordint_divmod(*(undefined2 *)(local_88 + 0x44),300).quot;
                   uVar14 = iVar9 - iVar10;
                 } while (uVar14 < uVar18);
                 if ((DAT_00101a6c < local_99) && ((local_8b & 2) != 0)) {

@@ -340,8 +340,8 @@ int param_3;
                palette 0xb1/0xb2, not a flat 0xb1. The original reads
                the modulo from ordint_divmod's r1 (remainder) leftover;
                Ghidra lost that into an uninitialised `extraout_r1`, so
-               compute `& 1` on the rand directly. */
-            iVar5 = ((int)ce_rand() & 1) + 0xb1;
+               get it by name off ordint_divmod's own divmod_result. */
+            iVar5 = ordint_divmod(2,(int)ce_rand()).rem + 0xb1;
           }
           else {
             if (bVar1 != 2) goto LAB_00016b00;

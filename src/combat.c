@@ -153,12 +153,12 @@ void npc_combat_approach_tick()
     cVar3 = DAT_00101918;
     iVar8 = (int)DAT_00101408;
     iVar5 = ordint_divmod((int)sVar4,
-                         (((int)DAT_00101918 - (int)(short)DAT_00101408) * 0x10000 >> 0x10) << 2);
+                         (((int)DAT_00101918 - (int)(short)DAT_00101408) * 0x10000 >> 0x10) << 2).quot;
     cVar2 = DAT_001013f8;
     iVar5 = ((int)iVar5 + (int)iVar8) * 0x1000000;
     iVar9 = (int)DAT_00101410;
     iVar8 = ordint_divmod((int)sVar4,
-                         (((int)DAT_001013f8 - (int)(short)DAT_00101410) * 0x10000 >> 0x10) << 2);
+                         (((int)DAT_001013f8 - (int)(short)DAT_00101410) * 0x10000 >> 0x10) << 2).quot;
     iVar8 = (iVar8 + iVar9) * 0x1000000;
     {
       /* was folded into `int iVar9` (reused above as an unrelated int) --
@@ -346,7 +346,7 @@ LAB_00030534:
     *(char *)(DAT_0010190c + 9) = (char)(uw_ord2005_rem_50 << 5);
     iVar6 = DAT_0010190c;
     bVar8 = *(byte *)(DAT_0010190c + 0x13);
-    bVar3 = ordint_divmod(3,(uint)*(byte *)(DAT_00101404 + 0xb) << 1);
+    bVar3 = ordint_divmod(3,(uint)*(byte *)(DAT_00101404 + 0xb) << 1).quot;
     *(byte *)(iVar6 + 0x13) = (bVar3 ^ bVar8) & 0x7f ^ bVar8;
   }
   else {
@@ -1050,8 +1050,8 @@ undefined4 resolve_melee_swing_hit()
   iVar5 = (int)DAT_00100610;
   puVar6 = (ushort *)(iVar5 * 0x1b + DAT_002046b8);
   bVar1 = (&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd];
-  iVar4 = ordint_divmod(3,(int)DAT_001005f8);
-  sVar3 = ordint_divmod(3,(uint)bVar1 * iVar4);
+  iVar4 = ordint_divmod(3,(int)DAT_001005f8).quot;
+  sVar3 = ordint_divmod(3,(uint)bVar1 * iVar4).quot;
   sVar3 = ((byte)puVar6[1] & 0x7f) + sVar3;
   if (iVar5 == 1) {
     iVar5 = (int)DAT_0023beb4;
@@ -1063,7 +1063,7 @@ undefined4 resolve_melee_swing_hit()
     sVar3 = sVar3 - (short)(iVar5 >> 9);
   }
   local_38 = sVar3;
-  cVar2 = ordint_divmod(6,(&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd]);
+  cVar2 = ordint_divmod(6,(&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd]).quot;
   DAT_001005dc = cVar2 + (char)sVar3;
   local_3c = (short)((puVar6[0xb] & 0xfc00) >> 7) + (ushort)(*(byte *)((char *)puVar6 + 3) >> 5);
   local_3a = (short)((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
@@ -1233,7 +1233,7 @@ undefined1 param_1;
   if (DAT_0010061c < 2) {
     sVar3 = 2;
   }
-  sVar2 = ordint_divmod(6,(int)sVar3);
+  sVar2 = ordint_divmod(6,(int)sVar3).quot;
   uw_ord2005_rem_7 = ((int)((int)sVar3)) % (6);
   DAT_0010061c = 0;
   if (sVar2 != 0) {
@@ -1265,7 +1265,7 @@ undefined1 param_1;
       uVar4 = (ushort)(byte)(&DAT_001007d0)[iVar11];
     }
     if ((sVar2 != 1) && ((puVar6[7] & 4) != 0)) {
-      uVar4 = ordint_divmod(3,(short)uVar4 * 5);
+      uVar4 = ordint_divmod(3,(short)uVar4 * 5).quot;
     }
     if ((int)(uVar9 * 0x10000) >> 0x10 < (int)(short)uVar4) {
       sVar3 = 0;
@@ -1296,7 +1296,7 @@ undefined1 param_1;
       DAT_00100624 = 4;
     }
     uVar8 = DAT_00100624;
-    sVar3 = ordint_divmod(0x1b,DAT_0023b82c - DAT_002046b8);
+    sVar3 = ordint_divmod(0x1b,DAT_0023b82c - DAT_002046b8).quot;
     if (DAT_00100620 == sVar3) {
       set_movement_animation_timer(0x20,(uint)(byte)local_38 * 5);
     }
@@ -1307,7 +1307,7 @@ undefined1 param_1;
             iVar11 = 0;
           }
           else {
-            sVar3 = ordint_divmod((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30],(uint)(byte)puVar6[4] * 3);
+            sVar3 = ordint_divmod((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30],(uint)(byte)puVar6[4] * 3).quot;
             iVar11 = (int)sVar3;
           }
           if (2 < (short)iVar11) {
@@ -1597,18 +1597,18 @@ short param_3;
   sVar5 = (ushort)*(byte *)((short)uVar3 + DAT_00086df8 + 0x21) +
           (ushort)(*(byte *)(DAT_00086df8 + 0x21) >> 1);
   DAT_00100608 = sVar5;
-  sVar4 = ordint_divmod(7,*(undefined1 *)(DAT_00086df8 + 0x1f));
+  sVar4 = ordint_divmod(7,*(undefined1 *)(DAT_00086df8 + 0x1f)).quot;
   DAT_00100608 = sVar5 + sVar4;
   if (*(char *)(iVar2 + 0xb4) != '\0') {
     DAT_00100608 = DAT_00100608 + 7;
   }
   if ((short)uVar3 == 2) {
-    sVar4 = ordint_divmod(6);
-    sVar5 = ordint_divmod(5,(uint)*(byte *)(iVar2 + 0x23) << 1);
+    sVar4 = ordint_divmod(6).quot;
+    sVar5 = ordint_divmod(5,(uint)*(byte *)(iVar2 + 0x23) << 1).quot;
     DAT_0010061c = sVar4 + sVar5 + 4;
   }
   else {
-    sVar4 = ordint_divmod(9,(&DAT_001007d5)[(*g_player_object & 0x3f) * 0x30]);
+    sVar4 = ordint_divmod(9,(&DAT_001007d5)[(*g_player_object & 0x3f) * 0x30]).quot;
     DAT_0010061c = (ushort)*(byte *)(param_1 + (uint)(byte)(&DAT_00084eff)[param_3]) + sVar4;
   }
   DAT_00100610 = 1;
@@ -1716,7 +1716,7 @@ short param_5;
   DAT_0010061c = (ushort)bVar1;
   DAT_001005f8 = param_2;
   DAT_001005fc = param_3;
-  sVar3 = ordint_divmod(5,(&DAT_001007d5)[(*param_1 & 0x3f) * 0x30]);
+  sVar3 = ordint_divmod(5,(&DAT_001007d5)[(*param_1 & 0x3f) * 0x30]).quot;
   DAT_0010061c = (ushort)bVar1 + sVar3;
   DAT_00100608 = (short)(char)(&DAT_001007d0)[iVar5 + 0x13] +
                  (short)((int)(char)(&DAT_001007e1)[iVar6] >> 1);
@@ -2146,13 +2146,13 @@ char param_2;
     else {
       iVar7 = -0x8000;
       if (-uVar3 != uVar1) {
-        sVar2 = ordint_divmod(uVar3,uVar1 << 0xf);
+        sVar2 = ordint_divmod(uVar3,uVar1 << 0xf).quot;
         iVar7 = (int)sVar2;
       }
     }
     iVar5 = 0x7fff;
     if ((uVar6 != uVar3) && (iVar5 = -0x8000, -uVar3 != uVar6)) {
-      sVar2 = ordint_divmod(uVar3,uVar6 << 0xf);
+      sVar2 = ordint_divmod(uVar3,uVar6 << 0xf).quot;
       iVar5 = (int)sVar2;
     }
     uVar3 = compute_angle_from_slope(iVar7,iVar5);
@@ -2251,7 +2251,7 @@ ushort * param_3;
     }
   }
   if (uVar2 == 1) {
-    sVar1 = ordint_divmod((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)(byte)param_1[4] << 6);
+    sVar1 = ordint_divmod((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)(byte)param_1[4] << 6).quot;
     uVar4 = 5;
   }
   else {
@@ -2261,7 +2261,7 @@ ushort * param_3;
     if (uVar2 == 0) {
       return 0;
     }
-    sVar1 = ordint_divmod(*(byte *)(DAT_0023be74 + 4) + 1,(uint)(byte)g_player_object[4] << 6);
+    sVar1 = ordint_divmod(*(byte *)(DAT_0023be74 + 4) + 1,(uint)(byte)g_player_object[4] << 6).quot;
     uVar4 = 7;
   }
   if (0xf < sVar1) {
@@ -2664,7 +2664,7 @@ ushort *param_2;
     local_30 = *(short *)(auStack_48 + 0x18);
     iVar3 = DAT_00204874;
     if (local_30 != 0) {
-      sVar2 = ordint_divmod((int)local_30,(int)*(short *)(DAT_00204874 + 0x18) << 6);
+      sVar2 = ordint_divmod((int)local_30,(int)*(short *)(DAT_00204874 + 0x18) << 6).quot;
       uVar1 = *(undefined2 *)(iVar3 + 0x21);
       if (0x80 < sVar2) {
         sVar2 = 0x80;

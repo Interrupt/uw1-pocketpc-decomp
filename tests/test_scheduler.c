@@ -61,7 +61,7 @@ void free_object_slot(void *object)
     freed[slot]++;
 }
 void set_pending_update_flags(int flags) { (void)flags; }
-long ordint_divmod(int divisor, int dividend) { return dividend / divisor; }
+divmod_result ordint_divmod(int divisor, int dividend) { divmod_result r = {dividend / divisor, dividend % divisor}; return r; }
 long ce_rand(void) { return 15; }
 int encode_object_slot_index(void *object)
 {

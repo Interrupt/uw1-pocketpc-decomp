@@ -187,10 +187,11 @@ long ce_rand(void)
         TEST_FAIL_MESSAGE("Wall response unexpectedly used random deflection");
     return 0;
 }
-long ordint_divmod(int divisor, int dividend)
+divmod_result ordint_divmod(int divisor, int dividend)
 {
     TEST_ASSERT_NOT_EQUAL(0, divisor);
-    return dividend / divisor;
+    divmod_result result = {dividend / divisor, dividend % divisor};
+    return result;
 }
 
 void setUp(void)

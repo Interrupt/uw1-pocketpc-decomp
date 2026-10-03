@@ -1055,9 +1055,9 @@ short frame_or_texid;
         bVar8 = (bVar5 >> 5) + 1;
         if ((*(byte *)(obj + 1) >> 1 & 0xf) < bVar8) {
           DAT_0023b834 = 2;
-          ordint_divmod(bVar8,*(byte *)(obj + 1) >> 1 & 0xf);
-          /* real ARM idivmod leaves the remainder in r1 (Ghidra's extraout_r1) */
-          extraout_r1 = (short)((*(byte *)(obj + 1) >> 1 & 0xf) % bVar8);
+          /* real ARM idivmod leaves the remainder in r1 (Ghidra's extraout_r1);
+             gets it by name off ordint_divmod's own divmod_result now. */
+          extraout_r1 = (short)ordint_divmod(bVar8,*(byte *)(obj + 1) >> 1 & 0xf).rem;
           uVar21 = (uint)DAT_00202734;
           *puVar25 = 2;
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1 + uVar21 + 0x10;
@@ -1098,8 +1098,7 @@ short frame_or_texid;
       else {
         cVar9 = (bVar5 >> 5) + 1;
         if (cVar9 != '\0') {
-          ordint_divmod(cVar9,*(byte *)(obj + 1) >> 1 & 0xf);
-          extraout_r1_00 = (short)((*(byte *)(obj + 1) >> 1 & 0xf) % (unsigned char)cVar9);
+          extraout_r1_00 = (short)ordint_divmod(cVar9,*(byte *)(obj + 1) >> 1 & 0xf).rem;
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1_00 + (uint)DAT_00202734 + 0x10;
           if (getenv("UW_DEBUG_DOOR"))
             fprintf(stderr, "[billboard] extra-frame: bVar5=0x%02x cVar9=%d extraout_r1_00=%d DAT_00202734=%d -> iVar29=%d\n",

@@ -1056,15 +1056,15 @@ short * param_1;
     uVar12 = (uint)bVar2;
     sVar5 = param_1[5];
     local_2c = (ushort)bVar1;
-    sVar4 = ordint_divmod(0xc4 - iVar10,(int)sVar5 * ((short)(ushort)bVar1 + 4) + -4);
+    sVar4 = ordint_divmod(0xc4 - iVar10,(int)sVar5 * ((short)(ushort)bVar1 + 4) + -4).quot;
     iVar10 = sVar4 + 1;
     *(char *)(param_1 + 8) = (char)iVar10;
     *(char *)((char *)param_1 + 0x11) = (char)((uint)iVar10 >> 8);
     iVar10 = iVar10 * 0x10000 >> 0x10;
-    sVar5 = ordint_divmod(iVar10,iVar10 + sVar5 + -1);
+    sVar5 = ordint_divmod(iVar10,iVar10 + sVar5 + -1).quot;
     *(char *)(param_1 + 7) = (char)sVar5;
     *(char *)((char *)param_1 + 0xf) = (char)((ushort)sVar5 >> 8);
-    uVar6 = ordint_divmod(iVar10 + 1,0xa0 - (short)(ushort)bVar2 * iVar10);
+    uVar6 = ordint_divmod(iVar10 + 1,0xa0 - (short)(ushort)bVar2 * iVar10).quot;
     *(char *)(param_1 + 9) = (char)uVar6;
     *(char *)((char *)param_1 + 0x13) = (char)((ushort)uVar6 >> 8);
     iVar10 = -(((int)(sVar7 != 0) + (int)sVar5) * ((short)(ushort)bVar1 + 4));
@@ -1114,8 +1114,7 @@ short * param_1;
       local_28 = 0;
       do {
         iVar3 = DAT_000fb858;
-        ordint_divmod((int)param_1[8],local_28);
-        iVar_rem = (param_1[8] == 0) ? 0 : (int)local_28 % (int)param_1[8];
+        iVar_rem = ordint_divmod((int)param_1[8],local_28).rem;
         iVar9 = iVar_rem;
         if (iVar_rem == 0) {
           iVar9 = (int)(short)local_2c;
@@ -1244,7 +1243,7 @@ byte param_3;
       uVar8 = (uint)local_2c[iVar9];
       if ((int)uVar8 < (int)param_1[5]) {
         sVar4 = param_1[8];
-        sVar3 = ordint_divmod((int)sVar4,uVar8);
+        sVar3 = ordint_divmod((int)sVar4,uVar8).quot;
         sVar_rem = (sVar4 == 0) ? 0 : (short)((int)uVar8 % (int)sVar4);
         iVar5 = (int)local_2a;
         sVar4 = param_1[9];
@@ -1358,8 +1357,8 @@ uint param_2;
       sVar7 = param_1[8];
       iVar11 = (int)local_3e;
       iVar12 = (int)local_40;
-      sVar5 = ordint_divmod(local_34,iVar11 - iVar9);
-      sVar6 = ordint_divmod(local_38,iVar12 - iVar1);
+      sVar5 = ordint_divmod(local_34,iVar11 - iVar9).quot;
+      sVar6 = ordint_divmod(local_38,iVar12 - iVar1).quot;
       uVar13 = (int)sVar5 * (int)sVar7 + (int)sVar6;
       iVar8 = (int)(uVar13 * 0x10000) >> 0x10;
       if ((((iVar8 < 0) || (param_1[5] <= iVar8)) || (iVar11 < iVar9)) || (iVar12 < iVar1)) {
@@ -1367,15 +1366,18 @@ LAB_000247f8:
         uVar13 = 0xffffffff;
       }
       else {
-        ordint_divmod((int)sVar7,iVar8);
-        /* Dropped-remainder bug, same class fixed elsewhere this session
-           (this port's ordint_divmod never populates extraout_r1) --
-           computed directly. */
-        extraout_r1 = iVar8 % (int)sVar7;
+        /* X uses this division's remainder, Y uses its quotient -- one
+           real ARM idivmod call in the original, split by Ghidra into
+           two separate ordint_divmod calls (one for each half) with
+           the remainder-wanting one reading an extraout_r1 that was
+           never populated. One real call now, both halves named off
+           its divmod_result. */
+        divmod_result dmr1118 = ordint_divmod((int)sVar7,iVar8);
+        extraout_r1 = dmr1118.rem;
         iVar12 = ((iVar1 * -0x10000 >> 0x10) - (extraout_r1 * local_38 * 0x10000 >> 0x10)) +
                  (int)sVar4;
         local_40 = (short)iVar12;
-        iVar8 = ordint_divmod((int)sVar7,iVar8);
+        iVar8 = dmr1118.quot;
         iVar8 = ((iVar11 * -0x10000 >> 0x10) - (iVar8 * local_34 * 0x10000 >> 0x10)) +
                 (int)(short)((uint)iVar10 >> 0x10);
         local_3e = (short)iVar8;
@@ -1621,15 +1623,15 @@ LAB_00024dd4:
       }
       DAT_000fb858 = DAT_001005c4;
       sVar3 = param_1[5];
-      sVar2 = ordint_divmod(0xc4 - iVar9,sVar3 * iVar11 + -4);
+      sVar2 = ordint_divmod(0xc4 - iVar9,sVar3 * iVar11 + -4).quot;
       iVar9 = sVar2 + 1;
       *(char *)(param_1 + 8) = (char)iVar9;
       *(char *)((char *)param_1 + 0x11) = (char)((uint)iVar9 >> 8);
       iVar9 = iVar9 * 0x10000 >> 0x10;
-      sVar3 = ordint_divmod(iVar9,iVar9 + sVar3 + -1);
+      sVar3 = ordint_divmod(iVar9,iVar9 + sVar3 + -1).quot;
       *(char *)(param_1 + 7) = (char)sVar3;
       *(char *)((char *)param_1 + 0xf) = (char)((ushort)sVar3 >> 8);
-      uVar4 = ordint_divmod(iVar9 + 1,0xa0 - (short)(ushort)bVar1 * iVar9);
+      uVar4 = ordint_divmod(iVar9 + 1,0xa0 - (short)(ushort)bVar1 * iVar9).quot;
       *(char *)(param_1 + 9) = (char)uVar4;
       *(char *)((char *)param_1 + 0x13) = (char)((ushort)uVar4 >> 8);
       iVar9 = -(((int)(sVar5 != 0) + (int)sVar3) * iVar11);

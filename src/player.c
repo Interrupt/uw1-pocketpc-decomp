@@ -267,7 +267,7 @@ static undefined1 DAT_0008730d;
 /* Was a lone scalar, but roll_skill_use_improvement indexes it
    `(&DAT_00087308)[tier]` for tier 0..2 (classify_skill_training_tier's
    full range) as a per-tier probability threshold for
-   ordint_divmod(uVar2, random). Widened to the real 3-entry array this
+   ordint_divmod(uVar2, random).quot. Widened to the real 3-entry array this
    needs -- as a lone scalar, indices 1/2 read into whatever the
    compiler placed next (s_and_00087310's string data on this host),
    an arbitrary/wrong probability for tiers 1 and 2. Real per-tier
@@ -502,7 +502,7 @@ void commit_player_move()
       sVar1 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x32),((int)(short)uVar3 << 0x11) >> 0x10)
       ;
       if (0 < sVar1) {
-        sVar1 = ordint_divmod(0x1e,(0x1e - (uint)*(byte *)(DAT_00086df8 + 0x32)) * (int)(short)uVar3)
+        sVar1 = ordint_divmod(0x1e,(0x1e - (uint)*(byte *)(DAT_00086df8 + 0x32)) * (int)(short)uVar3).quot
         ;
         uVar3 = (uint)sVar1;
       }
@@ -1179,9 +1179,9 @@ void reset_player_derived_state()
 
   iVar1 = DAT_00086df8;
   DAT_0020330c = 0;
-  cVar2 = ordint_divmod(3,*(undefined1 *)(DAT_00086df8 + 0x2e));
+  cVar2 = ordint_divmod(3,*(undefined1 *)(DAT_00086df8 + 0x2e)).quot;
   DAT_00086db0 = '\r' - cVar2;
-  cVar2 = ordint_divmod(5,*(undefined1 *)(iVar1 + 0x2e));
+  cVar2 = ordint_divmod(5,*(undefined1 *)(iVar1 + 0x2e)).quot;
   DAT_00086db1 = '\x0f' - cVar2;
   DAT_0020208c = 0;
   DAT_0010060c = 0;
@@ -1618,7 +1618,7 @@ void trigger_view_transition()
      (sVar9 = -(ushort)*(byte *)(DAT_00086df8 + 0xb9), DAT_0023be98 = sVar9,
      0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
     iVar7 = (int)g_jump_ascent_timer;
-    cVar2 = ordint_divmod((int)DAT_00202078 >> 1,(int)(iVar7) << 2);
+    cVar2 = ordint_divmod((int)DAT_00202078 >> 1,(int)(iVar7) << 2).quot;
     cVar3 = (char)(cVar2 + -3);
     if ((cVar2 + -3) * 0x1000000 >> 0x18 < 1) {
       cVar3 = '\x01';
@@ -1661,7 +1661,7 @@ void trigger_view_transition()
         set_pending_update_flags(2);
       }
       iVar7 = DAT_00086df8;
-      cVar3 = ordint_divmod(10,DAT_0023bf14);
+      cVar3 = ordint_divmod(10,DAT_0023bf14).quot;
       if ('\b' < cVar3) {
         cVar3 = '\b';
       }
@@ -1926,11 +1926,11 @@ void sync_camera_from_player()
        the divide ran on a leftover register -> yaw came out 0/360 ->
        identity view rotation -> every tile projected behind the near
        plane. */
-    iVar4 = ordint_divmod(0xb4, (int)sVar8);
+    iVar4 = ordint_divmod(0xb4, (int)sVar8).quot;
     DAT_000db44c = iVar4 + DAT_0023bf40 + 0x168;
   }
   else {
-    iVar4 = ordint_divmod(0xb4, (int)sVar8);
+    iVar4 = ordint_divmod(0xb4, (int)sVar8).quot;
     DAT_000db44c = iVar4 + DAT_0023bf40;
   }
   /* Always-on (no env var) position/heading debug print, for correlating
@@ -2211,7 +2211,7 @@ int param_1;
   char *iVar3;
   
   iVar3 = DAT_0023be74;
-  cVar2 = ordint_divmod(5,(uint)*(byte *)(DAT_00086df8 + 0x3d) * (uint)*(byte *)(DAT_0023be74 + 5));
+  cVar2 = ordint_divmod(5,(uint)*(byte *)(DAT_00086df8 + 0x3d) * (uint)*(byte *)(DAT_0023be74 + 5)).quot;
   *(char *)(iVar3 + 4) = cVar2 + '\x1e';
   uVar1 = (undefined1)
           ((int)((*(byte *)(DAT_00086df8 + 0x28) + 1) * (uint)*(byte *)(DAT_0023be74 + 7)) >> 3);
@@ -2250,7 +2250,7 @@ char param_1;
     DAT_0008730c = ' ';
   }
   else {
-    cVar2 = ordint_divmod(10);
+    cVar2 = ordint_divmod(10).quot;
     DAT_0008730c = cVar2 + '0';
   }
   uw_ord2005_rem_138 = ((int)(*(undefined1 *)(iVar1 + 0x3d))) % (10);
@@ -2341,7 +2341,7 @@ short param_1;
   uVar2 = *(undefined1 *)(DAT_0023be74 + sVar4 + 5);
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
   pcVar_df8 = DAT_00086df8 + iVar1;
-  cVar3 = ordint_divmod(uVar6,uVar2);
+  cVar3 = ordint_divmod(uVar6,uVar2).quot;
   *(char *)(pcVar_df8 + 0x21) = cVar3 + *(char *)(pcVar_df8 + 0x21);
   iVar5 = (int)sVar7;
   cVar3 = rand_below(iVar5);
@@ -2413,12 +2413,7 @@ char param_1;
       uVar5 = ce_rand();
       iVar7 = iVar1 + DAT_00086df8;
       bVar3 = *(byte *)(iVar7 + 0x21);
-      ordint_divmod(uVar2,uVar5);
-      /* Dropped-remainder bug, same class fixed elsewhere this session --
-         computed directly. Guarded the same way ordint_divmod itself
-         guards divisor==0 (uVar2 is a data-table byte, not provably
-         nonzero here). */
-      extraout_r1 = (uVar2 == 0) ? 0 : ((int)uVar5 % (int)uVar2);
+      extraout_r1 = ordint_divmod(uVar2,uVar5).rem;
       if (extraout_r1 < (int)(uVar6 - bVar3)) {
         *(byte *)(iVar7 + 0x21) = bVar3 + 1;
       }
@@ -2737,7 +2732,7 @@ void render_endgame_character_stats()
   sVar6 = ce_strlen(local_58);
   iVar12 = DAT_00086df8;
   if (9 < *(byte *)(DAT_00086df8 + 0x3d)) {
-    cVar3 = ordint_divmod(10);
+    cVar3 = ordint_divmod(10).quot;
     local_58[sVar6] = cVar3 + '0';
     sVar6 = (short)((uint)((sVar6 + 1) * 0x10000) >> 0x10);
   }
@@ -2764,7 +2759,7 @@ void render_endgame_character_stats()
   }
   draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   sVar6 = ordfloat_double_mul(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
-  sVar6 = ordint_divmod(0xc,(int)sVar6);
+  sVar6 = ordint_divmod(0xc,(int)sVar6).quot;
   pcVar8 = (char *)get_message_string(0x2bd);
   pcVar11 = local_58;
   do {
@@ -2788,7 +2783,7 @@ void render_endgame_character_stats()
   iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
   do {
     iVar14 = DAT_000879b0;
-    iVar9 = ordint_divmod(3,iVar12);
+    iVar9 = ordint_divmod(3,iVar12).quot;
     sVar6 = 0xbe;
     if (iVar9 == 0) {
       sVar6 = 0x50;
@@ -2829,7 +2824,7 @@ LAB_00071110:
         uVar7 = get_message_string((int)iVar12 + 0x1fU | 0x400);
         bVar5 = bVar1;
         if (9 < bVar1) {
-          bVar5 = ordint_divmod(10,bVar1);
+          bVar5 = ordint_divmod(10,bVar1).quot;
         }
         local_58[0] = bVar5 + 0x30;
         if (bVar1 < 10) {
@@ -4416,16 +4411,16 @@ undefined1 param_2;
       uVar2 = *puVar6;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
           (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
-        ordint_divmod(cVar1,param_2);
-        /* Dropped-remainder bug, same class fixed elsewhere this session --
-           computed directly (cVar1 confirmed nonzero just above). The
-           second ordint_divmod(cVar1) call below re-divides the same
-           (cVar1, param_2) pair for its quotient, so this remainder is
-           still valid there too. */
-        extraout_r1 = (int)param_2 % (int)cVar1;
+        /* Was two separate ordint_divmod calls on the same (cVar1,
+           param_2) pair -- one bare (wanting the remainder via a
+           never-populated extraout_r1), one capturing the quotient
+           via a dropped-dividend second call. One real call now,
+           both halves named off its divmod_result. */
+        divmod_result dmr4414 = ordint_divmod(cVar1,param_2);
+        extraout_r1 = dmr4414.rem;
         uVar8 = (ushort)(extraout_r1 == 0);
         if (1 < param_1) {
-          sVar5 = ordint_divmod(cVar1);
+          sVar5 = dmr4414.quot;
           uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
         }
         if ((short)uVar8 != 0) {
@@ -4475,7 +4470,7 @@ void apply_drowning_hazard()
   uVar1 = 0;
   if (*(short *)(DAT_00086df8 + 0x4c) != 0) {
     uVar1 = ordint_divmod(*(short *)(DAT_00086df8 + 0x4c),(uint)*(ushort *)(DAT_00086df8 + 0x4a) << 5
-                        );
+                        ).quot;
   }
   iVar3 = roll_skill_check(*(undefined1 *)(iVar3 + 0x34),uVar1);
   if (((short)iVar3 < 1) && (*(byte *)(DAT_00086df8 + 0xb9) < 0x8c)) {

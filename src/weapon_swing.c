@@ -223,7 +223,7 @@ void weapon_swing_draw_tick()
       sVar1 = 0;
     }
     else {
-      sVar1 = ordint_divmod(799,(int)g_jump_ascent_timer << 1);
+      sVar1 = ordint_divmod(799,(int)g_jump_ascent_timer << 1).quot;
       sVar1 = sVar1 + 1;
     }
     randomize_weapon_jump_shake((int)sVar1);
@@ -700,7 +700,7 @@ LAB_00027754:
             set_hud_status_value(3,0);
             local_20[0] = ordint_divmod(100,((int)(((uint)*(byte *)(pRecord + 5) -
                                                   (uint)*(byte *)(pRecord + 3)) * 0x10000) >> 0x10) *
-                                           (uint)DAT_00100614);
+                                           (uint)DAT_00100614).quot;
             DAT_00100614 = *(char *)(pRecord + 3) + (char)local_20[0];
             *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) | 0xf;
             DAT_001005fc = DAT_00100614;
@@ -752,7 +752,7 @@ LAB_00027754:
             if (100 < DAT_00100614) {
               DAT_00100614 = 100;
             }
-            sVar4 = ordint_divmod(0xc,DAT_00100614);
+            sVar4 = ordint_divmod(0xc,DAT_00100614).quot;
             set_hud_status_value(3,sVar4 + 1);
             iVar6 = (int)DAT_001005e8;
             DAT_001005e8 = (short)(iVar6 + -0x10);
@@ -777,7 +777,7 @@ LAB_00027754:
       DAT_001005ec = (uint)(sVar4 == 0);
       bVar1 = (&DAT_00084eff)[iVar5];
       DAT_0010062c = (short)(-1 - (uint)bVar1);
-      iVar5 = ordint_divmod(3,iVar5);
+      iVar5 = ordint_divmod(3,iVar5).quot;
       DAT_00084f10 = (ushort)(byte)(&DAT_00084f0b)[iVar5];
       set_hud_status_value(8,-1 - (-1 - (uint)bVar1));
       set_hud_status_value(3,1);

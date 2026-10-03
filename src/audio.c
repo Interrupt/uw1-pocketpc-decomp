@@ -397,7 +397,7 @@ LAB_00072f24:
         sVar1 = 0x80;
       }
       else {
-        sVar1 = ordint_divmod(uVar3,uVar8 * 0x80);
+        sVar1 = ordint_divmod(uVar3,uVar8 * 0x80).quot;
       }
       if (uVar9 == uVar3) {
         sVar2 = 0x7f;
@@ -406,7 +406,7 @@ LAB_00072f24:
         sVar2 = 0x80;
       }
       else {
-        sVar2 = ordint_divmod(uVar3,uVar9 * 0x80);
+        sVar2 = ordint_divmod(uVar3,uVar9 * 0x80).quot;
       }
       heading_to_sine_cosine(((0x40 - (*(byte *)((char *)g_player_object + 0x18) & 0x1f)) * 4 -
                    ((int)*(short *)((char *)g_player_object + 2) & 0x380U)) * 0x40,&local_28,&local_26);
@@ -430,7 +430,7 @@ LAB_00072f24:
       }
       if (0x30 < uVar3) goto LAB_00072f24;
       if (7 < uVar3) {
-        iVar5 = ordint_divmod(0x28,(0x30 - uVar3) * (int)(short)((uint)iVar5 >> 0x10));
+        iVar5 = ordint_divmod(0x28,(0x30 - uVar3) * (int)(short)((uint)iVar5 >> 0x10)).quot;
         iVar5 = iVar5 << 0x10;
       }
     }
@@ -1101,7 +1101,7 @@ short param_1;
       *wptr_54752 = cVar1; wptr_54752 = wptr_54752 + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar1 != '\0');
-    local_21c = ordint_divmod(10,(int)param_1);
+    local_21c = ordint_divmod(10,(int)param_1).quot;
     local_21c = local_21c + '0';
     uw_ord2005_rem_152 = ((int)((int)param_1)) % (10);
     pcVar4 = &DAT_00241f08;
@@ -2401,9 +2401,9 @@ int param_1;
   int local_78;
   int local_64 [16];
   
-  uVar3 = ordint_divmod(5,*(int *)(param_1 + 0x10544) << 1);
+  uVar3 = ordint_divmod(5,*(int *)(param_1 + 0x10544) << 1).quot;
   iVar2 = DAT_00086368;
-  uVar3 = ordint_divmod(uVar3,DAT_00086368);
+  uVar3 = ordint_divmod(uVar3,DAT_00086368).quot;
   iVar8 = iVar2 >> 3;
   init_mod_dynamic_array(auStack_7c);
   init_mod_dynamic_array(auStack_94);
@@ -3016,7 +3016,7 @@ int param_4;
         while (iVar12 != 0) {
           if (iVar9 < 0x801) {
             if (iVar13 < iVar1) {
-              iVar12 = ordint_divmod(iVar7,(iVar1 - iVar13) + -1);
+              iVar12 = ordint_divmod(iVar7,(iVar1 - iVar13) + -1).quot;
               iVar10 = iVar12 + 1;
               if (param_4 < iVar12 + 1) {
                 iVar10 = param_4;
@@ -3031,7 +3031,7 @@ int param_4;
             if (iVar9 <= iVar13) {
               iVar13 = iVar13 + (uint)uVar2 * -0x400;
             }
-            iVar8 = ordint_divmod(iVar7,(iVar9 - iVar13) + -1);
+            iVar8 = ordint_divmod(iVar7,(iVar9 - iVar13) + -1).quot;
             iVar10 = iVar8 + 1;
             if (iVar12 < iVar8 + 1) {
               iVar10 = iVar12;

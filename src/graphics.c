@@ -1581,7 +1581,7 @@ ushort * param_1;
     }
     if (param_1[1] != 0) {
       uVar2 = read_realtime_clock_units();
-      iVar3 = ordint_divmod(param_1[1],0x38e);
+      iVar3 = ordint_divmod(param_1[1],0x38e).quot;
       if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*param_1)) {
         uVar2 = (1 - (uint)(byte)param_1[3]) + (uint)*(byte *)((char *)param_1 + 7);
         palette_cycle_range((uint)(byte)param_1[3],uVar2,0);
@@ -1768,7 +1768,7 @@ short param_2;
           psVar6 = (short *)(iVar9 + iVar8 * 2);
           sVar7 = *psVar6 - (ushort)*(byte *)(iVar8 + param_1);
           *psVar6 = sVar7;
-          uVar3 = ordint_divmod(iVar1,sVar7);
+          uVar3 = ordint_divmod(iVar1,sVar7).quot;
           *(undefined1 *)(iVar8 + iVar2) = uVar3;
           iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
         } while (iVar8 < 0x300);

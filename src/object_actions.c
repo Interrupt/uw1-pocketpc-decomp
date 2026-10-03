@@ -1153,10 +1153,7 @@ byte * param_2;
   uVar1 = (int)((uint)(*param_2 >> 4) << 0x13) >> 0x10;
   if (uVar1 < 0x80) {
     uVar5 = ce_rand();
-    ordint_divmod(0x80 - uVar1,uVar5);
-    /* Dropped-remainder bug, same class fixed elsewhere this session --
-       computed directly. */
-    extraout_r1 = (char)((int)uVar5 % (0x80 - (int)uVar1));
+    extraout_r1 = (char)ordint_divmod(0x80 - uVar1,uVar5).rem;
     bVar6 = bVar6 + extraout_r1;
   }
   uVar2 = *(undefined2 *)(iVar4 + 2);
@@ -1579,10 +1576,7 @@ char param_8;
                     if (param_4 == '@') {
                       if ((*pbVar14 & 0xf) != 0) {
                         uVar5 = ce_rand();
-                        ordint_divmod(iVar8 * iVar1 + 3,uVar5);
-                        /* Dropped-remainder bug, same class fixed elsewhere
-                           this session -- computed directly. */
-                        extraout_r1 = (int)uVar5 % (iVar8 * iVar1 + 3);
+                        extraout_r1 = ordint_divmod(iVar8 * iVar1 + 3,uVar5).rem;
                         if (((extraout_r1 < param_1) &&
                             (iVar10 = (*param_3)((int)local_60,iVar12,0,pbVar14,param_2),
                             iVar10 != 0)) &&
@@ -1911,11 +1905,12 @@ char param_2;
          likely the real cause of the reported "game hangs in a 100%
          busy loop" QA report, since it only triggers when something
          actually casts this specific spell, not on every tick.
-         Computed the remainder directly instead. */
+         Gets the remainder by name off ordint_divmod's own
+         divmod_result now instead of a bypassing direct "%". */
       do {
         do {
           uVar4 = ce_rand();
-          uVar10 = ((uint)(uintptr_t)uVar4 % uVar6 & 0xffff) + uVar6 + 0x40;
+          uVar10 = ((uint)ordint_divmod(uVar6,(int)(uintptr_t)uVar4).rem & 0xffff) + uVar6 + 0x40;
           iVar8 = (uVar10 & 0xfe3f) * 0x30;
         } while ((&g_monster_max_stats_table)[iVar8] == '\0');
       } while ((((((&DAT_001007da)[iVar8] & 2) != 0) || ((uVar10 & 0xffff) == 0x7b)) ||
@@ -3218,7 +3213,7 @@ LAB_00048e80:
             puVar7 = (undefined2 *)((char *)local_26 + 1);
           }
           else {
-            cVar1 = ordint_divmod(10,iVar2);
+            cVar1 = ordint_divmod(10,iVar2).quot;
             local_26[0] = cVar1 + '0';
             puVar7 = (undefined2 *)local_26;
           }

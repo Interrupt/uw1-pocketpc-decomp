@@ -50,7 +50,7 @@ long CloseHandle(int handle)
     for (int i = 0; i < 4; i++) if (file_handles[i] == handle) file_handles[i] = 0;
     return uw_file_close(handle);
 }
-long ordint_divmod(int divisor, int dividend) { return dividend / divisor; }
+divmod_result ordint_divmod(int divisor, int dividend) { divmod_result r = {dividend / divisor, dividend % divisor}; return r; }
 long Sleep(void) { return 0; }
 undefined4 open_file_for_read(const char *path)
 {

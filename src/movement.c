@@ -635,7 +635,7 @@ int param_2;
     uVar5 = 0xe0;
   }
   /* DAT_0008698e is the OTHER movement axis (DAT_0008698c is the dominant one,
-     0=X or 1=Y). Ghidra dropped the `ordint_divmod(2, iVar10+1)` whose result
+     0=X or 1=Y). Ghidra dropped the `ordint_divmod(2, iVar10+1).quot` whose result
      it wanted and read `extraout_r1` (the division remainder register
      leftover), which is 0 for iVar10 in {0,1} -- so the secondary axis was
      always X and turning never changed the direction of travel. Compute it
@@ -663,7 +663,7 @@ int param_2;
       iVar7 = iVar7 + 0xff;
     }
     uVar5 = ordint_divmod((int)g_sweep_velocity[(short)DAT_0008698c],
-                         (iVar7 >> 8) * (int)g_sweep_velocity[iVar10]);
+                         (iVar7 >> 8) * (int)g_sweep_velocity[iVar10]).quot;
     iVar10 = iVar10 * 2;
     (&DAT_00086986)[iVar10] = 0;
     (&DAT_00086987)[iVar10] = uVar5;
@@ -673,7 +673,7 @@ int param_2;
     iVar10 = (iVar10 >> 0x10 ^ uVar1) - uVar1;
     DAT_00086992 = (ushort)((uint)(iVar10 * 0x10000) >> 0x10) & 0x1fff;
     DAT_00086990 = (undefined2)(iVar10 >> 0xd);
-    uVar6 = ordint_divmod((int)g_sweep_velocity[(short)DAT_0008698c],0x2000);
+    uVar6 = ordint_divmod((int)g_sweep_velocity[(short)DAT_0008698c],0x2000).quot;
     uVar4 = (ushort)((int)uVar6 >> 0x1f);
     DAT_00086994 = ((ushort)uVar6 ^ uVar4) - uVar4;
   }
@@ -724,7 +724,7 @@ int param_2;
       iVar8 = iVar8 + 0x7ff;
     }
     iVar10 = ordint_divmod(((int)(iVar8) >> 0xb) * (int)g_sweep_velocity[(short)DAT_0008698c],
-                          (iVar10 >> 0xd) * (int)g_sweep_velocity[2] * 0x100);
+                          (iVar10 >> 0xd) * (int)g_sweep_velocity[2] * 0x100).quot;
     if ((iVar10 < 0x8000) && (-0x8001 < iVar10)) {
       uVar9 = (undefined2)iVar10;
       goto LAB_000592f8;
@@ -971,7 +971,7 @@ uint param_1;
       iVar7 = (uVar6 ^ uVar1) - uVar1;
       if ((iVar7 < 0x3001) || (0x4fff < iVar7)) {
         bVar2 = *(byte *)(DAT_00204874 + 0x16);
-        sVar3 = ordint_divmod(0xf);
+        sVar3 = ordint_divmod(0xf).quot;
         sVar3 = (ushort)bVar2 * sVar3;
       }
       sVar3 = (short)param_1 + sVar3;
@@ -1001,13 +1001,13 @@ uint param_1;
     DAT_002049ce = sVar3;
     if ((*(byte *)(iVar8 + 0x17) & 0x80) == 0) {
       uVar6 = ordint_divmod(0xf,(0xf - (uint)*(byte *)(iVar8 + 0x16)) * (int)*(short *)(iVar8 + 0x14)
-                          );
+                          ).quot;
       iVar7 = (uint)*(ushort *)(iVar8 + 0x29) + (uVar6 & 0xffff);
       *(char *)(iVar8 + 0x29) = (char)iVar7;
       *(char *)(DAT_00204874 + 0x2a) = (char)((uint)iVar7 >> 8);
       movement_record = DAT_00204874;
       uVar4 = ordint_divmod(0xf,(uint)*(byte *)(DAT_00204874 + 0x16) *
-                               (int)*(short *)(DAT_00204874 + 0x14));
+                               (int)*(short *)(DAT_00204874 + 0x14)).quot;
       *(char *)(movement_record + 0x14) = (char)uVar4;
       *(char *)(DAT_00204874 + 0x15) = (char)((ushort)uVar4 >> 8);
       iVar8 = DAT_00204874;
@@ -1147,7 +1147,7 @@ void sweep_land_on_surface()
     }
     sVar4 = ordint_divmod(iVar12 >> 2,
                          (((int)(((uVar11 ^ uVar8) - uVar8) * 0x10000) >> 0x10) * (int)DAT_00086994
-                          * 0x10000 >> 0x10) << 4);
+                          * 0x10000 >> 0x10) << 4).quot;
     sVar4 = DAT_00204874[9] - sVar4;
   }
   *(char *)(DAT_00204874 + 9) = (char)sVar4;
@@ -1176,14 +1176,14 @@ void sweep_land_on_surface()
      (DAT_00204874[5] < 0)) {
     sweep_kill_velocity();
     *(undefined1 *)(DAT_00204874 + 0x14) = 2;
-    uVar3 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600);
+    uVar3 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600).quot;
     play_positional_sound_effect(5,(int)*DAT_00204874 >> 5,(int)DAT_00204874[1] >> 5,uVar3);
     return;
   }
   sVar4 = DAT_00204874[5];
   uVar8 = (int)sVar4 >> 0x1f;
-  uVar11 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600);
-  uVar8 = ordint_divmod(10,((int)sVar4 ^ uVar8) - uVar8);
+  uVar11 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600).quot;
+  uVar8 = ordint_divmod(10,((int)sVar4 ^ uVar8) - uVar8).quot;
   play_positional_sound_effect(0xf,(int)*psVar9 >> 5,(int)psVar9[1] >> 5,(uVar11 & 0xff) + (uVar8 & 0xff) + -0x28);
   uVar8 = resolve_collision_candidate_interaction((int)DAT_00086998,(int)DAT_002049d2);
   psVar9 = DAT_00204874;
@@ -1210,7 +1210,7 @@ void sweep_land_on_surface()
     goto LAB_0005a33c;
   }
   sVar4 = DAT_00204874[5];
-  uVar5 = ordint_divmod(0xfffffff1);
+  uVar5 = ordint_divmod(0xfffffff1).quot;
   *(char *)(psVar9 + 5) = (char)uVar5;
   *(char *)((char *)DAT_00204874 + 0xb) = (char)((ushort)uVar5 >> 8);
   uVar11 = (0xf - (uint)*(byte *)(DAT_00204874 + 0xb)) * (int)DAT_00204874[5];
@@ -1228,7 +1228,7 @@ void sweep_land_on_surface()
   }
   else {
     sVar10 = DAT_00204874[10];
-    sVar6 = ordint_divmod(0x1e,(0xf - (uint)*(byte *)(DAT_00204874 + 0xb)) * (int)sVar10);
+    sVar6 = ordint_divmod(0x1e,(0xf - (uint)*(byte *)(DAT_00204874 + 0xb)) * (int)sVar10).quot;
     sVar10 = sVar10 - sVar6;
   }
   *(char *)(psVar9 + 10) = (char)sVar10;
@@ -1630,7 +1630,7 @@ void decode_movement_command()
     if (DAT_0023c448 < 0x20) {
       if (DAT_0023c448 == 0x1f) {
 LAB_000687cc:
-        DAT_0023bf48 = ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10));
+        DAT_0023bf48 = ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10)).quot;
         g_movement_mode = 1;
         return;
       }
@@ -1643,14 +1643,14 @@ LAB_000687cc:
             return;
           }
 LAB_000686a8:
-          DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10));
+          DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10)).quot;
           g_movement_mode = 1;
           return;
         }
         goto LAB_000687fc;
       }
 LAB_00068844:
-      DAT_0023bf48 = ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x700000 >> 0x10));
+      DAT_0023bf48 = ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x700000 >> 0x10)).quot;
       g_movement_mode = 1;
       return;
     }
@@ -1714,7 +1714,7 @@ LAB_000687fc:
       return;
     }
   }
-  DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10));
+  DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10)).quot;
   g_movement_mode = 1;
   return;
 }
@@ -1868,7 +1868,7 @@ int param_3;
             }
             play_sound_effect_with_pan(uVar6,uVar4,((int)g_jump_ascent_timer >> 5 & 0xffU) - 0x10);
             DAT_0023bf60 = DAT_0023bf60 == '\0';
-            sVar1 = ordint_divmod(((int)g_jump_ascent_timer >> 2) + 1,6000);
+            sVar1 = ordint_divmod(((int)g_jump_ascent_timer >> 2) + 1,6000).quot;
             uVar5 = sVar1 + 0x40;
             if (200 < uVar5) {
               uVar5 = 200;
@@ -1960,7 +1960,7 @@ undefined4 param_1;
   bVar1 = DAT_0023bf18;
   if ((DAT_002048a8 & 0x10) == 0) {
     if (((int)DAT_00202078 >> 2 < (int)g_jump_ascent_timer) && (g_movement_mode == 1)) {
-      cVar2 = ordint_divmod((int)DAT_00202078 >> 1,(int)g_jump_ascent_timer << 2);
+      cVar2 = ordint_divmod((int)DAT_00202078 >> 1,(int)g_jump_ascent_timer << 2).quot;
       cVar3 = (char)(cVar2 + -1);
       DAT_0023bea8 = 1;
       if ((cVar2 + -1) * 0x1000000 >> 0x18 < 2) {
@@ -2467,8 +2467,8 @@ void resolve_wall_slide_corner()
     iVar6 = DAT_00202c6c;
     goto switchD_000514e0_default;
   }
-  iVar6 = ordint_divmod(iVar3,(int)(char)iVar6);
-  iVar7 = ordint_divmod(iVar3,(int)(char)iVar7);
+  iVar6 = ordint_divmod(iVar3,(int)(char)iVar6).quot;
+  iVar7 = ordint_divmod(iVar3,(int)(char)iVar7).quot;
   *(undefined *)(DAT_00202c6c + 0x12) = (&DAT_0008688c)[(int)(iVar6) * 3 + iVar7];
   iVar6 = DAT_00202c6c;
   if (iVar3 != 1) goto switchD_000514e0_default;
@@ -2541,8 +2541,8 @@ LAB_000515d4:
 switchD_000514e0_default:
   iVar7 = (int)local_28;
   if (iVar7 == 1 || iVar7 == 2) {
-    iVar9 = ordint_divmod(iVar7,(int)(char)iVar9);
-    iVar7 = ordint_divmod(iVar7,(int)local_25);
+    iVar9 = ordint_divmod(iVar7,(int)(char)iVar9).quot;
+    iVar7 = ordint_divmod(iVar7,(int)local_25).quot;
     *(undefined *)(iVar6 + 0x13) = (&DAT_0008688c)[iVar9 * -3 - iVar7];
   }
   else {

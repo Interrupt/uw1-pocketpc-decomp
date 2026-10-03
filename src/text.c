@@ -470,12 +470,13 @@ undefined1 param_4;
         pcVar2 = pcVar2 + -1;
         /* Original idiom read the divide helper's remainder back via
            the extraout_r1 register-leftover trick (see ordint_divmod's
-           comment) -- computed directly here instead, since C gives us
-           no portable way to recover "whatever was left in r1" and the
-           uninitialized read was corrupting this index (confirmed
-           SIGSEGV). */
-        *pcVar2 = s_0123456789ABCDEF_00084a28[param_1 % param_3];
-        param_1 = ordint_divmod(param_3,param_1);
+           comment) -- one real call now, both halves named off its
+           divmod_result instead of a second call plus a separate "%"
+           for the half that used to be lost (the uninitialized read
+           was corrupting this index, confirmed SIGSEGV). */
+        divmod_result dmr478 = ordint_divmod(param_3,param_1);
+        *pcVar2 = s_0123456789ABCDEF_00084a28[dmr478.rem];
+        param_1 = dmr478.quot;
       } while (0 < param_1);
     }
     iVar4 = iVar3;
