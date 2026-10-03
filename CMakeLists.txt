@@ -213,6 +213,24 @@ if(BUILD_TESTING)
   add_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
   target_compile_options(test_hotspot_marker PRIVATE
     -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/hotspot_marker_test_globals.h")
+  add_game_unit_test(visibility_walk
+    src/visibility.c:@DAT_00086af0_arr
+    src/visibility.c:@DAT_00086af8_region
+    src/math.c:@DAT_00085d48_sine
+    src/math.c:@DAT_00085f50_cosine
+    src/visibility.c:seed_visibility_queue
+    src/visibility.c:run_visibility_flood
+    src/visibility.c:merge_adjacent_visibility_rays
+    src/visibility.c:extend_visibility_ray_row
+    src/visibility.c:advance_visibility_ray
+    src/visibility.c:compute_visibility_ray_offset
+    src/visibility.c:visibility_ray_step_forward
+    src/visibility.c:visibility_ray_step_backward
+    src/tmap.c:tilemap_lookup
+    src/math.c:angle_to_screen_delta
+    src/math.c:pack_angle_byte)
+  target_compile_options(test_visibility_walk PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/visibility_walk_test_globals.h")
   add_game_unit_test(illustrations
     src/object_actions.c:look_at_inscribed_object
     src/interact.c:trigger_terrain_discovery_illustration
