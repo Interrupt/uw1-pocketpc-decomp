@@ -18,7 +18,6 @@ short DAT_0010061c;
 short DAT_00100608;
  undefined1 DAT_001007d0_backing[6144];
  undefined DAT_00084f20_backing[8192];
-undefined DAT_002027d2_backing[8192];
 ushort DAT_00101414;
 char *DAT_00101904;
 undefined4 DAT_00101560;

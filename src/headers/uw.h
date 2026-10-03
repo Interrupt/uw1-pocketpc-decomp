@@ -644,8 +644,7 @@ extern char DAT_00085248_backing[32768];
 extern undefined4 DAT_00085c54;
 extern ushort * DAT_00100674;
 extern ushort DAT_001007c4;
-extern undefined DAT_001007d5_backing[8192];
-#define DAT_001007d5 DAT_001007d5_backing[0]
+#define DAT_001007d5 DAT_001007d0_backing[0x5]
 extern undefined DAT_001007d9_backing[8192];
 #define DAT_001007d9 DAT_001007d9_backing[0]
 extern short DAT_00201b68;
@@ -768,8 +767,7 @@ extern undefined2 DAT_0023be9e;
 extern char DAT_0023bf18;
 #define DAT_002048a5 DAT_00204880_backing[0x25]
 #define DAT_002048a6 DAT_00204880_backing[0x26]
-extern undefined DAT_002027d2_backing[8192];
-#define DAT_002027d2 DAT_002027d2_backing[0]
+#define DAT_002027d2 DAT_002027d0_backing[2] /* third byte of each loaded weapon record */
 extern undefined1 DAT_002027d0_backing[256];
 #define DAT_002027d0 DAT_002027d0_backing[0]
 extern undefined1 DAT_00202800_backing[65536];

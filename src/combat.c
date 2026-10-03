@@ -46,7 +46,6 @@ undefined DAT_00202878;
 unsigned char DAT_00084eff_backing[12] = {
   0x00,0x02,0x02,0x02,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00
 };
- undefined DAT_001007d5_backing[8192];
 /* Was `undefined4` -- resolve_equipped_weapon_attack writes a real static-global address
    through this (via its own `int *param_1`, truncating with an
    explicit `(int)`/`(intptr_t)` cast at all 3 of its assignments), and
@@ -59,8 +58,7 @@ unsigned char DAT_00084eff_backing[12] = {
 char *DAT_001005e4;
 static char DAT_001005e0_backing[128];
 char *DAT_001005e0 = DAT_001005e0_backing;
-static undefined DAT_001007e1_backing[256];
-#define DAT_001007e1 DAT_001007e1_backing[0]
+#define DAT_001007e1 DAT_001007d0_backing[0x11]
 static char s__DATA_cmb_dat_00084f40[] = "\\DATA\\cmb.dat";
 undefined2 DAT_00100630_backing[32768];
 ushort *DAT_0010190c;
