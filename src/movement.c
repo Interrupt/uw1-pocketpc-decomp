@@ -263,42 +263,13 @@ static unsigned char DAT_000869a8_backing[16] = {
 static int DAT_00204870;
 static char DAT_00087944_backing[128];
 static char *DAT_00087944 = DAT_00087944_backing;
-/* Deterministic, fixed-step substitute for the real wall-clock
-   (read_realtime_clock_units(), itself GetTickCount()>>2 -- SDL_GetTicks() scaled to
-   4ms-per-unit) that movement_pacing_handler() (this file, ~line 56186)
-   used to read directly for ALL of its internal timing, including the
-   uVar6 delta that directly scales how far the player moves/turns each
-   tick. Real elapsed time made movement distance sensitive to actual
-   frame-delivery jitter -- fine for one live session, but meant a
-   recorded input sequence (democapture.c) with tick-for-tick-identical
-   keys held for tick-for-tick-identical durations still couldn't
-   reproduce the exact same on-screen distance on replay, since the two
-   sessions' real per-tick timing was never bit-for-bit identical (user-
-   reported: "movement via input still seems to slightly overshoot...
-   if input was 1:1"). Advanced once per real game tick by gx_stub.c's
-   uw_pump_events() (see its own comment) by a fixed amount matching
-   1000/60 ms in this same 4ms-per-unit scale, computed drift-free from
-   the running tick count (not accumulated per-call, which would drift)
-   -- movement becomes a pure function of TICK COUNT, exactly what the
-   recorder already captures losslessly, eliminating this class of
-   replay drift entirely instead of trying to reproduce real timing
-   jitter. Deliberately unconditional (not just during record/playback)
-   since the game is already vsync-locked to ~60Hz (gx_stub.c's own
-   frame-budget cap), so this doesn't change how normal play feels.
-
-   Deliberately NOT folded into read_realtime_clock_units() itself, even though that
-   is literally the "what time is it" function movement_pacing_handler
-   used to call and would have been the more obvious single place to
-   fix -- read_realtime_clock_units() has ~65 other call sites across this file, and
-   at least one (move_key_directional_step's own tail, ~line 56177:
-   `do { iVar2 = read_realtime_clock_units(); } while ((uint)(iVar2-iVar1) < 0x18);`)
-   busy-spins on it in a tight loop with NO event pump in between
-   iterations, deliberately throttling a discrete step's real-world
-   pacing. This clock only advances once per real uw_pump_events() call
-   -- a caller spinning on it outside that cadence, like that loop, would
-   see a frozen value and hang forever. Exposed instead via its own
-   accessor, uw_frame_clock_ms() below, so a caller has to deliberately
-   opt in rather than being silently affected by a global redefinition. */
+/* Port clock for movement_pacing_handler, in the original 4ms units.
+   GX input polling samples elapsed time at 60Hz, including inside the
+   original blocking input waits. Repeated polls in the same interval
+   do not advance it; missed intervals follow elapsed time rather than
+   the number of loop iterations or display flushes. Other clock users
+   keep read_realtime_clock_units(), since some busy waits do not poll
+   input at all. */
 unsigned int g_uw_frame_clock_units;
 static char DAT_00087950_backing[128];
 static char *DAT_00087950 = DAT_00087950_backing;
@@ -479,7 +450,11 @@ void reticle_object_pick()
         iVar6 = iVar4 - uVar5;
         bVar1 = DAT_002049de;
         if (iVar4 <= (int)uVar5) {
-          bVar1 = (&DAT_00202c32)[iVar4 * 6];
+          /* ARM 0x58d78..0x58d84 reads collision_table + count*6 - 6:
+             the highest surface below the foot. Ghidra named the base-6
+             address DAT_00202c32, but its separate C scalar is not part
+             of the table, so indexing it could skip bridges entirely. */
+          bVar1 = (&DAT_00202c38)[(iVar4 - 1) * 6];
           bVar7 = SBORROW4((int)(short)(ushort)DAT_002049d9,(uint)bVar1);
           iVar6 = (int)(short)(ushort)DAT_002049d9 - (uint)bVar1;
         }
@@ -971,7 +946,8 @@ uint param_1;
       iVar7 = (uVar6 ^ uVar1) - uVar1;
       if ((iVar7 < 0x3001) || (0x4fff < iVar7)) {
         bVar2 = *(byte *)(DAT_00204874 + 0x16);
-        sVar3 = ordint_divmod(0xf).quot;
+        /* ARM 0x59a54..0x59a9c keeps the signed angle delta in r1. */
+        sVar3 = ordint_divmod(0xf,sVar3).quot;
         sVar3 = (ushort)bVar2 * sVar3;
       }
       sVar3 = (short)param_1 + sVar3;
@@ -1133,6 +1109,8 @@ void sweep_land_on_surface()
   int iVar12;
   int iVar13;
   
+  /* The decompile uses a short-pointer view of the movement record.
+     Keep word indexing and raw byte offsets distinct (ARM 0x59d20..0x5a33c). */
   puVar7 = (ushort *)get_object_record_by_slot_index((int)DAT_002049d2);
   uVar2 = *(ushort *)(&DAT_00202c91 + (*puVar7 & 0x1ff) * 0xd);
   iVar12 = (int)_DAT_000869a1;
@@ -1148,45 +1126,46 @@ void sweep_land_on_surface()
     sVar4 = ordint_divmod(iVar12 >> 2,
                          (((int)(((uVar11 ^ uVar8) - uVar8) * 0x10000) >> 0x10) * (int)DAT_00086994
                           * 0x10000 >> 0x10) << 4).quot;
-    sVar4 = DAT_00204874[9] - sVar4;
+    sVar4 = ((short *)DAT_00204874)[9] - sVar4;
   }
-  *(char *)(DAT_00204874 + 9) = (char)sVar4;
+  *(char *)(DAT_00204874 + 0x12) = (char)sVar4;
   *(char *)((char *)DAT_00204874 + 0x13) = (char)((ushort)sVar4 >> 8);
   // PHYSICS: floor/ceiling collision -- snap the foot exactly onto the surface
   // and zero the vertical sub-unit accumulator so gravity restarts from rest
   *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
-  psVar9 = DAT_00204874;
+  psVar9 = (short *)DAT_00204874;
   DAT_00086984 = 0;
-  /* PHYSICS: fall ended -- clear the accumulated downward velocity (+0xa) and the
-     gravity-accel field (+0x10), and drop the airborne locomotion state byte
-     (+0x28 == DAT_002048a8) back to "walking" (8). Without the last step
-     set_locomotion_state (called every tick from commit_player_move) sees the stale
-     airborne state and re-arms +0x10 = -4, so the fall integrator re-enters and
-     "lands" every tick forever, freezing the player on the floor. Only when we
-     were moving downward, so a jump's own apex handling is left untouched. */
-  if (*(short *)(DAT_00204874 + 10) < 0) {
-    *(short *)(DAT_00204874 + 10) = 0;
-    *(short *)(DAT_00204874 + 0x10) = 0;
-    if (*(byte *)(DAT_00204874 + 0x28) == 0x10) {
-      *(undefined1 *)(DAT_00204874 + 0x28) = 8;
+  // HACK: UW_PLAYER_NO_BOUNCE=1 restores the player-only landing workaround,
+  // which is absent from the original ARM code and disabled by default.
+  // Clear downward velocity, gravity, and airborne state before restitution
+  // so the player stops on landing. Mobile items retain their normal bounce.
+  {
+    const char *player_no_bounce = getenv("UW_PLAYER_NO_BOUNCE");
+    if ((puVar7 == g_player_object) && (*(short *)(DAT_00204874 + 10) < 0) &&
+        (player_no_bounce != NULL) && (atoi(player_no_bounce) != 0)) {
+      *(short *)(DAT_00204874 + 10) = 0;
+      *(short *)(DAT_00204874 + 0x10) = 0;
+      if (*(byte *)(DAT_00204874 + 0x28) == 0x10) {
+        *(undefined1 *)(DAT_00204874 + 0x28) = 8;
+      }
     }
   }
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
       ((int)*(short *)((char *)g_sweep_foot_pos + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
-     (DAT_00204874[5] < 0)) {
+     (((short *)DAT_00204874)[5] < 0)) {
     sweep_kill_velocity();
-    *(undefined1 *)(DAT_00204874 + 0x14) = 2;
+    *(undefined1 *)(DAT_00204874 + 0x28) = 2;
     uVar3 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600).quot;
-    play_positional_sound_effect(5,(int)*DAT_00204874 >> 5,(int)DAT_00204874[1] >> 5,uVar3);
+    play_positional_sound_effect(5,(int)*(short *)DAT_00204874 >> 5,(int)((short *)DAT_00204874)[1] >> 5,uVar3);
     return;
   }
-  sVar4 = DAT_00204874[5];
+  sVar4 = ((short *)DAT_00204874)[5];
   uVar8 = (int)sVar4 >> 0x1f;
   uVar11 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600).quot;
   uVar8 = ordint_divmod(10,((int)sVar4 ^ uVar8) - uVar8).quot;
   play_positional_sound_effect(0xf,(int)*psVar9 >> 5,(int)psVar9[1] >> 5,(uVar11 & 0xff) + (uVar8 & 0xff) + -0x28);
   uVar8 = resolve_collision_candidate_interaction((int)DAT_00086998,(int)DAT_002049d2);
-  psVar9 = DAT_00204874;
+  psVar9 = (short *)DAT_00204874;
   if ((uVar8 & 0x18) != 0) {
     if ((uVar8 & 0x10) != 0) {
       sweep_kill_velocity();
@@ -1209,34 +1188,36 @@ void sweep_land_on_surface()
     }
     goto LAB_0005a33c;
   }
-  sVar4 = DAT_00204874[5];
-  uVar5 = ordint_divmod(0xfffffff1).quot;
+  sVar4 = ((short *)DAT_00204874)[5];
+  /* ARM 0x5a018..0x5a044: divide the signed vertical velocity
+     by -15, then multiply by the restitution byte at offset 0x16. */
+  uVar5 = ordint_divmod(-15,sVar4).quot;
   *(char *)(psVar9 + 5) = (char)uVar5;
   *(char *)((char *)DAT_00204874 + 0xb) = (char)((ushort)uVar5 >> 8);
-  uVar11 = (0xf - (uint)*(byte *)(DAT_00204874 + 0xb)) * (int)DAT_00204874[5];
+  uVar11 = (0xf - (uint)*(byte *)(DAT_00204874 + 0x16)) * (int)((short *)DAT_00204874)[5];
   uVar8 = (int)uVar11 >> 0x1f;
   iVar12 = (uVar11 ^ uVar8) - uVar8;
   *(char *)((char *)DAT_00204874 + 0x29) = (char)((uint)(iVar12 * 0x10000) >> 0x10);
-  *(char *)(DAT_00204874 + 0x15) = (char)((uint)iVar12 >> 8);
-  sVar10 = DAT_00204874[5];
-  pbVar1 = (byte *)(DAT_00204874 + 0xb);
-  *(char *)(DAT_00204874 + 5) = (char)((uint)*pbVar1 * (int)sVar10);
+  *(char *)(DAT_00204874 + 0x2a) = (char)((uint)iVar12 >> 8);
+  sVar10 = ((short *)DAT_00204874)[5];
+  pbVar1 = (byte *)(DAT_00204874 + 0x16);
+  *(char *)(DAT_00204874 + 10) = (char)((uint)*pbVar1 * (int)sVar10);
   *(char *)((char *)DAT_00204874 + 0xb) = (char)((uint)*pbVar1 * (int)sVar10 >> 8);
-  psVar9 = DAT_00204874;
-  if (*(byte *)(DAT_00204874 + 0xb) == 0) {
+  psVar9 = (short *)DAT_00204874;
+  if (*(byte *)(DAT_00204874 + 0x16) == 0) {
     sVar10 = 0;
   }
   else {
-    sVar10 = DAT_00204874[10];
-    sVar6 = ordint_divmod(0x1e,(0xf - (uint)*(byte *)(DAT_00204874 + 0xb)) * (int)sVar10).quot;
+    sVar10 = ((short *)DAT_00204874)[10];
+    sVar6 = ordint_divmod(0x1e,(0xf - (uint)*(byte *)(DAT_00204874 + 0x16)) * (int)sVar10).quot;
     sVar10 = sVar10 - sVar6;
   }
   *(char *)(psVar9 + 10) = (char)sVar10;
   *(char *)((char *)DAT_00204874 + 0x15) = (char)((ushort)sVar10 >> 8);
-  if ((0 < sVar4) || (0x8c < DAT_00204874[5])) goto LAB_0005a33c;
-  *(undefined1 *)(DAT_00204874 + 5) = 0;
+  if ((0 < sVar4) || (0x8c < ((short *)DAT_00204874)[5])) goto LAB_0005a33c;
+  *(undefined1 *)(DAT_00204874 + 10) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0xb) = 0;
-  *(undefined1 *)(DAT_00204874 + 8) = 0;
+  *(undefined1 *)(DAT_00204874 + 0x10) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0x11) = 0;
   if (DAT_00086998 == -1) {
     if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)g_sweep_foot_pos + 4)) {
@@ -1253,7 +1234,7 @@ void sweep_land_on_surface()
     else {
       uVar3 = (undefined1)(1 << ((int)(short)DAT_002049d4 & 3U));
     }
-    *(undefined1 *)(DAT_00204874 + 0x14) = uVar3;
+    *(undefined1 *)(DAT_00204874 + 0x28) = uVar3;
   }
   else {
     psVar9 = (short *)get_object_record_by_slot_index(*(ushort *)(&DAT_00202c3a + DAT_00086998 * 6) >> 6);
@@ -1261,7 +1242,7 @@ void sweep_land_on_surface()
        (puVar7 = (ushort *)get_object_record_by_slot_index((int)*(short *)((char *)DAT_00204874 + 0x23)),
        (*puVar7 & 0x1c0) == 0x40)) {
 LAB_0005a2d0:
-      *(undefined1 *)(DAT_00204874 + 0x14) = 1;
+      *(undefined1 *)(DAT_00204874 + 0x28) = 1;
       goto LAB_0005a33c;
     }
 LAB_0005a238:
@@ -1734,10 +1715,9 @@ void movement_pacing_handler()
   undefined8 uVar7;
   uint uVar_now;
 
-  /* Was 4 separate read_realtime_clock_units() (real wall-clock) reads in this
-     function -- replaced with uw_frame_clock_ms(), a fixed-step
-     substitute in the same 4ms-per-unit scale (see its own and
-     g_uw_frame_clock_units's comments). All 4 original reads are really
+  /* The original reads read_realtime_clock_units() four times. The port
+     uses the latest GX elapsed-time sample in the same 4ms-per-unit
+     scale (see g_uw_frame_clock_units). All four original reads are
      asking "what time is it right now", each then diffed against the
      SAME DAT_0023bf54 reference -- captured once into uVar_now here so
      they keep agreeing with each other exactly as they did when each
@@ -2872,11 +2852,7 @@ ushort *param_1;
 }
 
 
-/* Accessor for g_uw_frame_clock_units -- see its own comment. Use this,
-   not the raw global, from any new gameplay-tick-paced timing code (the
-   same shape as movement_pacing_handler's own use) that wants
-   deterministic, tick-count-driven pacing instead of read_realtime_clock_units()'s
-   real wall-clock time. */
+/* Return the most recent GX clock sample for this movement dispatch. */
 unsigned int uw_frame_clock_ms() {
   return g_uw_frame_clock_units;
 }
