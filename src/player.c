@@ -35,14 +35,6 @@ char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
    otherwise double it. */
 ushort *g_player_object;
 char *DAT_0023be74;
-// g_monster_max_stats_table was DAT_001007d4: a per-monster-class stat
-// table (indexed by the low 6 bits of a monster object's own type id,
-// 0x30-byte stride per class); byte 0 of each entry is that class's
-// max HP, used to clamp regen (restore_stat_capped). NOT valid for the
-// player object -- the player's type id (0x7f) happens to index this
-// table's unused last slot, which is zeroed; see restore_stat_capped's
-// own fix for why callers must special-case the player instead.
- undefined DAT_001007d4_backing[8192];
 short DAT_0023beb4;
 undefined1 DAT_0010060c_backing[256];
 #define DAT_0010060c DAT_0010060c_backing[0]

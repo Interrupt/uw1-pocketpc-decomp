@@ -111,28 +111,6 @@ LAB_0004b06c:
     puVar6 = (ushort *)0x0;
   }
   else {
-    if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[throw-height] seeding puVar6[1] from garbage=0x%x with template DAT_00202a44[1]=0x%x\n",
-              (unsigned)puVar6[1], (unsigned)DAT_00202a44[1]);
-    /* EXPERIMENTAL, not yet disassembly-verified: puVar6[1] (byte offset
-       2-3) starts as whatever alloc_object_slot's free-list handed back
-       (real leftover data from that slot's previous occupant -- alloc_
-       object_slot itself never clears it, and every later read-modify-
-       write of this field in this function, confirmed faithful to the
-       real disassembly, deliberately preserves bits 0-6 of it rather
-       than resetting them). Those exact bits are what the height field
-       (param_1[0xf]/[0x10] inside compute_object_placement_fields, and again at the
-       `iVar8=((byte)puVar6[1]&0x7f)<<3` line below) is computed from --
-       so a freshly-recycled slot gives the spawned item a height derived
-       from uninitialized memory. Seeding from the template object's
-       (DAT_00202a44, the player in this call path) own same field before
-       any of this function's bit-blending runs is the most defensible
-       guess at what the original game relied on already being true of a
-       reused slot, but has NOT been confirmed against real disassembly
-       the way this session's other fixes were -- flagged for a follow-up
-       pass rather than shipped as a confirmed fix. */
-    *(char *)(puVar6 + 1) = (char)DAT_00202a44[1];
-    *(char *)((char *)puVar6 + 3) = (char)(DAT_00202a44[1] >> 8);
     *(byte *)(puVar6 + 2) = (byte)puVar6[2] & 0x3f;
     *(undefined1 *)((char *)puVar6 + 5) = 0;
     uVar7 = CONCAT11(*(undefined1 *)((char *)puVar6 + 1),(char)*puVar6) | 0x8000;
@@ -208,7 +186,7 @@ LAB_0004b06c:
       iVar8 = ((byte)puVar6[1] & 0x7f) << 3;
       *(char *)((char *)puVar6 + 0xf) = (char)iVar8;
       *(char *)(puVar6 + 8) = (char)((uint)iVar8 >> 8);
-      if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(), 0xff < sVar5)) {
+      if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(DAT_00202a44), 0xff < sVar5)) {
         sVar5 = 0;
       }
       *(char *)(puVar6 + 9) = (char)sVar5;
@@ -240,39 +218,13 @@ LAB_0004b06c:
        user's bug-throw-item.txt once its trailing WAIT gave the object-
        drop tick enough time to run. */
     pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
-    DEBUG(INFO, "[drop] object id=0x%03x landed at tile=(%d,%d)\n",
+    DEBUG(INFO, "[throw] object id=0x%03x spawned at tile=(%d,%d)\n",
           (unsigned)(*puVar6 & 0x1ff), puVar6[0xb] >> 10, (puVar6[0xb] & 0x3f0) >> 4);
     object_list_insert_head(pbTile + 2,puVar6);
     play_sound_effect_at_object(10,puVar6,0);
-    /* HACK, not disassembly-derived at this call site -- same fix as
-       drop_held_object_near_player's trajectory branch, see that
-       comment for the full explanation. This function (like that one)
-       places its result via alloc_object_slot(1), the MOBILE object
-       arena; complete the mobile->immobile settle transition
-       synchronously here too, since nothing else will. On by default;
-       set UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
-       forever, un-pickable) behavior. settle_mobile_to_immobile unconditionally
-       frees its input object (via its own discard_misplaced_object(
-       ...,1) call) regardless of whether the immobile copy succeeds,
-       so puVar6 must always be reassigned to its return value here --
-       including NULL, on the (class-gated, rare) chance it rolled the
-       object's own decay/destroy check -- never left pointing at the
-       now-freed original. */
-    if (!getenv("UW_DISABLE_SETTLE_IMMOBILE")) {
-      ushort *pImmobile;
-      undefined2 uVarSavedTileX = DAT_0010144c;
-      undefined2 uVarSavedTileY = DAT_00101454;
-      DAT_0010144c = (ushort)(puVar6[0xb] >> 10);
-      DAT_00101454 = (ushort)((puVar6[0xb] & 0x3f0) >> 4);
-      pImmobile = settle_mobile_to_immobile(puVar6);
-      DAT_0010144c = uVarSavedTileX;
-      DAT_00101454 = uVarSavedTileY;
-      if (getenv("UW_DEBUG_THROW"))
-        fprintf(stderr, "[settle-immobile] settle_mobile_to_immobile(%p) -> %p in_arena=%d\n",
-                (void *)puVar6, (void *)pImmobile,
-                pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
-      puVar6 = pImmobile;
-    }
+    /* The original FUN_0004ad10 returns the mobile object here.
+       mobile_object_tick integrates its flight and sync_object_tile_position
+       converts it to an immobile item only once its velocity reaches zero. */
   }
   return puVar6;
 }
@@ -886,19 +838,20 @@ int param_6;
   uint local_a8;
   undefined1 *local_a4;
   uint local_a0;
-  ushort uStack_9a;
-  ushort auStack_98 [12];
-  /* local_80 is the start of a >=0x14-byte struct (Ghidra only tracked
-     the first two bytes as named locals); widened to fit the real memset
-     below instead of overflowing a 1-byte stack slot. local_7f is now a
-     separate, unaliased byte purely to avoid rewriting its few use sites.
-     NOT text formatting (a prior pass's guess, now corrected): local_80/
-     local_58 are the two BFS frontier buffers, each holding up to 10
-     (x,y) tile-coordinate byte pairs -- see this function's own comment. */
-  undefined1 local_80 [0x14];
-  undefined1 local_7f;
+  /* Ghidra split the visited columns at adjacent stack offsets 0x2a/
+     0x2c. Keep the preceding column in the same array: expressions that
+     used &uStack_9a index one column before auStack_98. Initialize the
+     whole bitmap, since the original nine-byte memset left high columns
+     indeterminate on this host. */
+  ushort visited_storage [13] = {0};
+  ushort *auStack_98 = visited_storage + 1;
+  /* ARM 0x38e4c/0x38e5c stores X/Y at sp+0x44/sp+0x45, the first
+     coordinate pair in one buffer. Both frontiers span 0x28 bytes on
+     the original stack and hold up to 0x14 pairs. A separate local_7f
+     made the search read Y=0; a 0x14-byte buffer overflowed after swaps. */
+  undefined1 local_80 [40];
   undefined1 local_58 [40];
-  
+
   ce_memset(local_80,0,0x14);
   ce_memset(local_58,0,0x14);
   ce_memset(auStack_98,0,9);
@@ -931,7 +884,7 @@ int param_6;
   local_a4 = local_80;
   local_b0 = local_58;
   local_80[0] = (char)param_2;
-  local_7f = (char)param_3;
+  local_80[1] = (char)param_3;
   iVar9 = (int)cVar21;
   iVar1 = (int)cVar7;
   auStack_98[param_2 - iVar9] =
@@ -1003,11 +956,11 @@ LAB_00039620:
             uVar16 = 1 << (uVar19 & 0xff);
             iVar14 = iVar2 - iVar9;
             puVar11 = auStack_98 + iVar14;
-            if ((((uVar16 & (int)(short)(&uStack_9a)[iVar14]) == 0) && (uVar20 < 0x14)) &&
+            if ((((uVar16 & (int)(short)(auStack_98 - 1)[iVar14]) == 0) && (uVar20 < 0x14)) &&
                ((iVar9 <= iVar2 + -1 &&
                 (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))))) {
               cVar18 = -1;
-              (&uStack_9a)[iVar14] = (&uStack_9a)[iVar14] | (ushort)uVar16;
+              (auStack_98 - 1)[iVar14] = (auStack_98 - 1)[iVar14] | (ushort)uVar16;
               goto LAB_00039590;
             }
             goto LAB_000395ac;
@@ -1043,11 +996,11 @@ LAB_00039408:
             uVar16 = 1 << (uVar19 & 0xff);
             iVar14 = iVar2 - iVar9;
             puVar11 = auStack_98 + iVar14;
-            if ((((uVar16 & (int)(short)(&uStack_9a)[iVar14]) == 0) && (uVar20 < 0x14)) &&
+            if ((((uVar16 & (int)(short)(auStack_98 - 1)[iVar14]) == 0) && (uVar20 < 0x14)) &&
                ((iVar9 <= iVar2 + -1 &&
                 (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))))) {
               cVar18 = -1;
-              (&uStack_9a)[iVar14] = (&uStack_9a)[iVar14] | (ushort)uVar16;
+              (auStack_98 - 1)[iVar14] = (auStack_98 - 1)[iVar14] | (ushort)uVar16;
               goto LAB_000393ec;
             }
             goto LAB_00039408;
@@ -1056,13 +1009,13 @@ LAB_00039408:
           uVar16 = 1 << (uVar19 & 0xff);
           iVar14 = iVar2 - iVar9;
           puVar11 = auStack_98 + iVar14;
-          uVar17 = (&uStack_9a)[iVar14];
+          uVar17 = (auStack_98 - 1)[iVar14];
           if (((((uVar16 & (int)(short)uVar17) == 0) && (uVar20 < 0x14)) && (iVar9 <= iVar2 + -1))
              && (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))) {
             local_b0[uVar20 * 2] = cVar7 + -1;
             (local_b0 + uVar20 * 2)[1] = cVar21;
             uVar20 = uVar20 + 1 & 0xff;
-            (&uStack_9a)[iVar14] = uVar17 | (ushort)uVar16;
+            (auStack_98 - 1)[iVar14] = uVar17 | (ushort)uVar16;
           }
           uVar3 = 1 << (uVar19 - 1 & 0xff);
           uVar17 = *puVar11;

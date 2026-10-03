@@ -672,12 +672,15 @@ extern undefined2 DAT_0024cfac;
 extern int DAT_00250718;
 extern undefined1 g_active_hud_panel;
 extern undefined2 g_cursor_mode;
-extern undefined DAT_001007d4_backing[8192];
-#define g_monster_max_stats_table DAT_001007d4_backing[0]
-#define DAT_001007da DAT_001007d4_backing[6]
-#define DAT_001007e2 DAT_001007d4_backing[0xe]
-#define DAT_001007ed DAT_001007d4_backing[0x19]
-#define DAT_001007ee DAT_001007d4_backing[0x1a] // per-class perception-range byte (>>4), read by alert_npc_to_noise_callback
+/* OBJECTS.DAT monster records are loaded at DAT_001007d0, stride 0x30.
+   These original addresses are fields of that same table: max HP (+4),
+   flags (+0xa), defense (+0x12), perception (+0x1d). Separate backing
+   arrays left these fields zero even after load_monster_combat_stats. */
+#define g_monster_max_stats_table DAT_001007d0_backing[0x4]
+#define DAT_001007da DAT_001007d0_backing[0xa]
+#define DAT_001007e2 DAT_001007d0_backing[0x12]
+#define DAT_001007ed DAT_001007d0_backing[0x1d]
+#define DAT_001007ee DAT_001007d0_backing[0x1e] // per-class perception-range byte (>>4), read by alert_npc_to_noise_callback
 extern short g_mouse_x;
 extern short g_mouse_y;
 extern ushort * g_player_object;
