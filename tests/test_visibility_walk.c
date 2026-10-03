@@ -83,6 +83,13 @@ static void set_tile(int x, int y, int tile_type)
     rec[0] = (unsigned char)tile_type;
 }
 
+static void set_room(int x0, int y0, int x1, int y1)
+{
+    for (int y = y0; y <= y1; y++) {
+        for (int x = x0; x <= x1; x++) set_tile(x, y, 1); /* open floor */
+    }
+}
+
 /* Ring-buffer cell for ring depth `depth` (0 = player's own row, growing
    away from the player -- for facing 0, player Y + depth) and lateral
    offset `side` (-16..16, 0 = straight ahead -- for facing 0, player X +
@@ -94,6 +101,19 @@ static void set_tile(int x, int y, int tile_type)
 static unsigned char ring_cell(int depth, int side)
 {
     return g_visibility_ring_buffer_backing[depth * 0x42 + (side + 16) * 2];
+}
+
+/* run_flood fills the whole ring buffer with this sentinel before the
+   flood runs. A row past g_visibility_ring_depth is never visited by
+   the flood at all (run_visibility_flood/merge_adjacent_visibility_rays
+   only ever write into rows 0..g_visibility_ring_depth), so a cell
+   still holding this exact byte proves the walk never reached it --
+   stronger than just "not visible" (0), which a reached-but-occluded
+   cell can also legitimately be. */
+#define RING_CELL_SENTINEL 0xaa
+static int ring_cell_untouched(int depth, int side)
+{
+    return ring_cell(depth, side) == RING_CELL_SENTINEL;
 }
 
 static void run_flood(int player_x, int player_y, int facing)
@@ -146,12 +166,33 @@ static void test_wall_blocks_tiles_behind_it(void)
        setup: the flood's own ring_depth stops at 3, one row short of
        the wall, every time). */
     for (int x = 10; x <= 54; x++) set_tile(x, 36, 0);
+    /* Open, walkable rooms on the far side of the wall -- one straight
+       ahead, one off to the side -- so this test also proves the flood
+       doesn't walk INTO reachable-looking space just because it's open,
+       not merely that it stops at some default depth. Both are already
+       open floor by setUp's default fill; set_room just makes that
+       intent explicit at this test's own coordinates. */
+    set_room(28, 38, 36, 42);  /* straight ahead, depth 6-10 */
+    set_room(16, 38, 22, 44);  /* off to the side, depth 6-12 */
     run_flood(32, 32, 0);
 
     TEST_ASSERT_EQUAL_INT_MESSAGE(3, g_visibility_ring_depth,
         "the flood should stop one row short of a full wall, not walk through it");
     TEST_ASSERT_NOT_EQUAL_MESSAGE(0, ring_cell(3, 0),
         "the open tile just short of the wall should still be visible");
+
+    for (int y = 38; y <= 42; y++) {
+        for (int x = 28; x <= 36; x++) {
+            TEST_ASSERT_TRUE_MESSAGE(ring_cell_untouched(y - 32, x - 32),
+                "the open room straight ahead, beyond the wall, should never be walked");
+        }
+    }
+    for (int y = 38; y <= 44; y++) {
+        for (int x = 16; x <= 22; x++) {
+            TEST_ASSERT_TRUE_MESSAGE(ring_cell_untouched(y - 32, x - 32),
+                "the open room to the side, beyond the wall, should never be walked");
+        }
+    }
 }
 
 static void test_flood_does_not_exceed_the_level_max_ring_passes(void)
