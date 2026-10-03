@@ -13,6 +13,377 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00101968 DAT_00101968_backing[0]
+#define DAT_00085460 DAT_00085460_backing[0]
+#define DAT_00085448 DAT_00085448_backing[0]
+ushort *DAT_00100674;
+static uint *DAT_000bbf04;
+static char s__SAVE0_bglobals_dat_00084538[] = "\\SAVE0\\bglobals.dat";
+static char s__DATA_babglobs_dat_0008454c[] = "\\DATA\\babglobs.dat";
+static undefined1 DAT_000bbf30;
+static undefined4 DAT_000bbf20;
+static char *DAT_000bbf18;
+static short DAT_000bbf7c;
+/* Was `int` -- a real 64-bit heap pointer (babl_alloc, i.e. malloc)
+   truncated through a 32-bit int, same bug class as DAT_000bbf70/
+   DAT_000bbf00 below (see their own comment) -- widened to intptr_t so
+   the existing integer arithmetic throughout build_babl_symbol_table/init_babl_variable_defaults/
+   etc. keeps compiling unchanged (intptr_t participates in ordinary
+   integer arithmetic; a real pointer type would need every site
+   recast). */
+static intptr_t DAT_000bbf14;
+static short DAT_000bbf84;
+static intptr_t DAT_000bbf0c; // was `int`, same DAT_000bbf14-derived-pointer truncation
+static undefined2 DAT_000bbf88;
+/* Was zero-initialized 8192-byte placeholders -- same "zero-init
+   global missing real .data content" class as this file's many other
+   string recoveries (e.g. s_sex_000851f8's own comment). Confirmed
+   real content via a Ghidra headless memory dump at 0x84560/6c/74:
+   "val" (registered with babl_builtin_val), "find" (babl_builtin_find), "copy"
+   (babl_builtin_copy) -- 3 more babl builtin names alongside "length". */
+static char s_val_00084560[] = "val";
+static char s_length_00084564[] = "length";
+static char s_find_0008456c[] = "find";
+static char s_copy_00084574[] = "copy";
+static char s_append_0008457c[] = "append";
+static char s_contains_00084584[] = "contains";
+static char s_plural_00084590[] = "plural";
+static char s_random_00084598[] = "random";
+static char s_compare_000845a0[] = "compare";
+static int DAT_000bbf10;
+static char *DAT_000bbf80;
+static undefined2 DAT_000bbf8c;
+undefined2 DAT_0024cfac;
+static short DAT_000bbf24;
+/* Was `int` -- build_babl_symbol_table assigns it a real 64-bit heap pointer
+   (`DAT_000bbf70 = babl_alloc((iVar11+1)*0x20)`) and every reader
+   throughout this whole babl-symbol-table cluster (babl_register_builtin/
+   babl_op_say/babl_op_respond/babl_set_variable/babl_get_variable/init_babl_variable_defaults/
+   build_babl_symbol_table itself) does plain `int`-width pointer arithmetic on
+   it. Truncating this on a 64-bit host is the crash one step past the
+   read_archive_entry dropped-argument fix (uw.c ~10984's comment):
+   with that fixed, Bragit's conversation record genuinely loads for
+   the first time this whole session, and THIS truncation is what
+   build_babl_symbol_table immediately crashes on building its symbol table
+   (`*pcVar9 = cVar4` wild write, confirmed live via lldb -- this
+   whole cluster was apparently never exercised by any prior fix or
+   test, since no conversation had ever successfully loaded before).
+   Widened to intptr_t rather than a real pointer type for the same
+   reason as DAT_000bbf14 above -- keeps the existing int-arithmetic
+   call sites compiling as-is. */
+static intptr_t DAT_000bbf70;
+static intptr_t DAT_000bbf00; // was `int` -- babl_alloc'd function-pointer-table base, same bug
+static short DAT_000bbf78;
+static short DAT_000bbf2c;
+static short DAT_000bbf74;
+static short DAT_000bbf1c;
+static short DAT_000bbf08;
+/* Was a zero-initialized 8192-byte backing array -- same "real
+   nonzero .data content missing from this port's build" bug class as
+   several earlier-session fixes (message-scroll control codes,
+   save-slot list text, etc). Confirmed via the real ARM binary
+   (/Users/ccuddigan/Projects/UW1/uw-arm/UU.exe, address 0x845a8): the
+   real bytes are the NUL-terminated string "say", immediately
+   followed in memory by s_respond_000845ac's own "respond" (which
+   this port's decompile already got right as a separate symbol at
+   +4). Every one of DAT_000845a8's 3 use sites treats it purely as a
+   read-only C string (babl_op_say's own symbol-name lookup, and its
+   own babl_register_builtin call) -- there is no numeric/indexed use
+   that would need the backing-array treatment, unlike this file's
+   other DAT_..._backing arrays. Was empty, so babl_op_say could never
+   match Bragit's real "say" symbol and register_builtin's own
+   registration for it silently no-opped too -- this is why the NPC's
+   own spoken lines never printed even after babl_menu started working
+   (only the player's own numbered response list did, via a totally
+   separate mechanism). */
+static char DAT_000845a8[] = "say";
+static char s_respond_000845ac[] = "respond";
+static undefined2 DAT_000bbfe8_backing[256];
+#define DAT_000bbfe8 DAT_000bbfe8_backing[0]
+static undefined2 DAT_000bbfd8;
+static undefined2 DAT_000bbfdc;
+static undefined1 DAT_000bc008;
+static short DAT_000bc024;
+static short DAT_000bc004;
+static undefined2 DAT_000bbfbc;
+static undefined2 DAT_000bbfe0;
+static undefined2 DAT_000bbfb8;
+static char *DAT_000bc020;
+static char *DAT_000bc000;
+static undefined1 DAT_000845b8_backing[256];
+#define DAT_000845b8 DAT_000845b8_backing[0]
+static undefined1 DAT_000845ba_backing[256];
+#define DAT_000845ba DAT_000845ba_backing[0]
+static undefined1 DAT_000845d8_backing[256];
+#define DAT_000845d8 DAT_000845d8_backing[0]
+static undefined1 DAT_000845da_backing[256];
+#define DAT_000845da DAT_000845da_backing[0]
+static undefined4 DAT_000bbf98_backing[256];
+#define DAT_000bbf98 DAT_000bbf98_backing[0]
+static undefined2 DAT_000bbfa8_backing[8192];
+#define DAT_000bbfa8 DAT_000bbfa8_backing[0]
+static undefined2 DAT_000bbfc0_backing[8192];
+#define DAT_000bbfc0 DAT_000bbfc0_backing[0]
+static undefined2 DAT_000bbfd0_backing[256];
+#define DAT_000bbfd0 DAT_000bbfd0_backing[0]
+/* New this round -- referenced only via literal-pool constants inside
+   babl_builtin_take_from_npc/take_id_from_npc (both still-unrecovered
+   stubs at the time this was added). Ghidra never named either: a
+   real-object scratch pointer read/written by both functions (checked
+   for "is a specific target object already selected" before falling
+   back to the current NPC, DAT_00100674) and what looks like a
+   related small mode/count flag read alongside it. Left undescribed
+   beyond that -- neither is exercised by any known conversation
+   script yet, so their exact semantics haven't been confirmed live. */
+static intptr_t DAT_00202948; // was `int` in the raw decompile -- holds a real object pointer, same truncation bug class as every other pointer-holding global in this cluster
+static short DAT_002020c4;
+static undefined4 DAT_000bbff0_backing[256];
+#define DAT_000bbff0 DAT_000bbff0_backing[0]
+static undefined4 DAT_000bc010_backing[256];
+#define DAT_000bc010 DAT_000bc010_backing[0]
+static undefined4 DAT_000bc028_backing[256];
+#define DAT_000bc028 DAT_000bc028_backing[0]
+static undefined DAT_001007dd_backing[256];
+#define DAT_001007dd DAT_001007dd_backing[0]
+static undefined DAT_001007de_backing[8192];
+#define DAT_001007de DAT_001007de_backing[0]
+static undefined *PTR_DAT_000845c8;
+static undefined1 DAT_000845e8_backing[65536];
+#define DAT_000845e8 DAT_000845e8_backing[0]
+static undefined2 DAT_000bbfc8_backing[8192];
+#define DAT_000bbfc8 DAT_000bbfc8_backing[0]
+static undefined2 DAT_000bbfb0_backing[8192];
+#define DAT_000bbfb0 DAT_000bbfb0_backing[0]
+static char s_npc_attitude_000845f8[] = "npc_attitude";
+static char *DAT_00100784;
+/* Was `undefined4`, truncating the real char* buffer pointer (DAT_00100784)
+   assigned to it before every "heads"/"converse"/"genhead"/"charhead"
+   resource load -- it's the bump-allocator cursor converse_res_bump_alloc_entry advances
+   (see that function's comment). */
+static char *DAT_00100670;
+/* Was a lone `undefined4` scalar, but converse_res_slot_store_callback writes real pointers
+   into it as an array (`DAT_00100728[idx] = allocated_buffer + 5`, one
+   entry per loaded head/portrait) -- same "array Ghidra saw as a single
+   scalar" bug class as DAT_000fb880. Only index 0 is read directly by
+   this file's existing call sites (single-item head loads all pass a
+   count of 1), but the array still needs real backing storage so
+   multi-item loads (the full "heads" resource) don't write out of
+   bounds past a 4-byte scalar. */
+static char *DAT_00100728_backing[256];
+#define DAT_00100728 DAT_00100728_backing[0]
+#define DAT_0010072c DAT_00100728_backing[1]
+#define DAT_00100730 DAT_00100728_backing[2]
+#define DAT_00100734 DAT_00100728_backing[3]
+#define DAT_00100738 DAT_00100728_backing[4]
+#define DAT_0010073c DAT_00100728_backing[5]
+static undefined1 DAT_00100678;
+undefined4 DAT_00085c54;
+static char *DAT_001007c0; // was `undefined4` -- assigned a real 64-bit pointer (DAT_00100784, uw.c ~19277) and used as a real string buffer by babl_builtin_respond/echo_selected_conversation_choice/etc.; truncated on 64-bit, crashing the first time any of those functions actually ran (selecting a babl_menu response)
+static char s_genhead_00084fd8[] = "genhead";
+static char s_charhead_00084fe0[] = "charhead";
+static char s_heads_00084fec[] = "heads";
+static char s_converse_00084ff4[] = "converse";
+static short DAT_001006d0;
+static char s_take_id_from_npc_0008519c[] = "take_id_from_npc";
+static char s_take_from_npc_000851b0[] = "take_from_npc";
+static char s_find_inv_000851c0[] = "find_inv";
+static char s_give_to_npc_000851cc[] = "give_to_npc";
+static char s_show_inv_000851d8[] = "show_inv";
+static char s_print_000851e4[] = "print";
+static char s_babl_ask_000851ec[] = "babl_ask";
+/* Was a zero-initialized 8192-byte placeholder -- same "zero-init
+   global missing real .data content" class as this file's many other
+   string recoveries. Confirmed real content via a Ghidra headless
+   memory dump at 0x851f8: "sex" (the babl builtin name registered a
+   few lines below at start_npc_conversation, alongside its own
+   still-a-no-op-stub implementation -- see LAB_0001840c's comment). */
+static char s_sex_000851f8[] = "sex";
+static char s_set_quest_000851fc[] = "set_quest";
+static char s_get_quest_00085208[] = "get_quest";
+static char s_babl_fmenu_00085214[] = "babl_fmenu";
+static char s_babl_menu_00085220[] = "babl_menu";
+/* Was `undefined4`, truncating the real char* buffer babl_alloc
+   returns (assigned at its only writer) -- dereferenced directly a
+   few lines after its only other read. */
+static char *DAT_001007b8;
+static char DAT_001007b4;
+static char s_give_ptr_npc_00085000[] = "give_ptr_npc";
+static char s_find_barter_total_00085010[] = "find_barter_total";
+static char s_find_barter_00085024[] = "find_barter";
+static char s_x_obj_pos_00085030[] = "x_obj_pos";
+static char s_x_obj_stuff_0008503c[] = "x_obj_stuff";
+static char s_x_traps_00085048[] = "x_traps";
+static char s_x_skills_00085050[] = "x_skills";
+static char s_remove_talker_0008505c[] = "remove_talker";
+static char s_place_object_0008506c[] = "place_object";
+static char s_add_to_npc_inv_0008507c[] = "add_to_npc_inv";
+static char s_take_from_npc_inv_0008508c[] = "take_from_npc_inv";
+static char s_set_race_attitude_000850a0[] = "set_race_attitude";
+static char s_set_attitude_000850b4[] = "set_attitude";
+static char s_gronk_door_000850c4[] = "gronk_door";
+static char s_count_inv_000850d0[] = "count_inv";
+static char s_set_inv_quality_000850dc[] = "set_inv_quality";
+static char s_check_inv_quality_000850ec[] = "check_inv_quality";
+static char s_do_inv_delete_00085100[] = "do_inv_delete";
+static char s_do_inv_create_00085110[] = "do_inv_create";
+static char s_set_likes_dislikes_00085120[] = "set_likes_dislikes";
+static char s_pause_00085134[] = "pause";
+static char s_setup_to_barter_0008513c[] = "setup_to_barter";
+static char s_end_barter_0008514c[] = "end_barter";
+static char s_do_judgement_00085158[] = "do_judgement";
+static char s_do_decline_00085168[] = "do_decline";
+static char s_do_demand_00085174[] = "do_demand";
+static char s_do_offer_00085180[] = "do_offer";
+static char s_identify_inv_0008518c[] = "identify_inv";
+static short DAT_0010078c;
+static short DAT_00100794;
+static undefined1 DAT_00100680_backing[65536];
+#define DAT_00100680 DAT_00100680_backing[0]
+static undefined2 DAT_00100790;
+static short DAT_00100788;
+static undefined1 DAT_001006d8_backing[65536];
+#define DAT_001006d8 DAT_001006d8_backing[0]
+/* Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/select_babl_menu_response
+   all index it as a real array -- `(&DAT_00100770)[idx]` for idx up to
+   9 (a fixed "10 visible scroll lines" loop bound) and up to whatever
+   message_scroll_print_wrapped's own wrapped-line-count returns, which
+   can exceed 10 for long menu text. Confirmed live via lldb: this
+   silently corrupted whatever real global the compiler happened to
+   place next to a single 2-byte scalar (DAT_00100794, the menu's own
+   item count, got stomped from a real small count to -1/0xffff right
+   after the `(&DAT_00100770)[iVar12]=0xffff` init loop), which then
+   made babl_menu's own `if (1 < DAT_00100794)` print-loop check fail
+   even though real menu items had just been resolved -- this is why
+   Bragit's dialogue never appeared despite babl_menu itself running
+   correctly. Same "array Ghidra/this port declared as a bare scalar"
+   bug class as DAT_00100728 and this array's own sibling DAT_001007a0
+   (already fixed with a real backing array). Sized to match. */
+static short DAT_00100770_backing[32768];
+#define DAT_00100770 DAT_00100770_backing[0]
+static undefined1 DAT_001007a0_backing[65536];
+#define DAT_001007a0 DAT_001007a0_backing[0]
+/* DAT_00085230/34/38/3c are 4 tiny (<=3-char) control-code constants,
+   packed 4 bytes apart in the original binary -- confirmed via a real
+   Ghidra memory dump at 0x85230 rather than guessed: "\P\0" (0x5c 0x50
+   0x00), "\0\n" (0x5c 0x30 0x0a 0x00), "\1\0" (0x5c 0x31 0x00) and
+   "\2\0" (0x5c 0x32 0x00) respectively -- "\0"/"\1"/"\2" are all the
+   SAME "reset to default draw color" code (see msg_scroll_draw_wrapped_span's
+   own '0'/'1' handling), "\P" is the pause/wait code, and DAT_00085234
+   uniquely also carries a trailing real newline byte. Same "zero-
+   initialized global missing real .data content" bug class as the
+   scroll's \6-header/color-code fixes elsewhere in this file: all 4
+   were plain zero-filled backing arrays (silently printing nothing),
+   confirmed live as the cause of a real, visible bug -- echo_selected_conversation_choice/
+   babl_builtin_print (echoing the player's selected conversation choice
+   before the NPC's reply) append DAT_00085234 as a trailing separator,
+   expecting it to insert a newline after the echoed choice; with it
+   empty, the echoed text ran straight into the NPC's next line with
+   no break at all (e.g. "...the Abyss.Exploring, eh?..."). */
+static undefined1 DAT_00085230_backing[32768] = { 0x5c,0x50,0x00 };
+#define DAT_00085230 DAT_00085230_backing[0]
+static undefined DAT_00085234_backing[8192] = { 0x5c,0x30,0x0a,0x00 };
+#define DAT_00085234 DAT_00085234_backing[0]
+static undefined1 DAT_0008523c_backing[32768] = { 0x5c,0x32,0x00 };
+#define DAT_0008523c DAT_0008523c_backing[0]
+static short DAT_001007bc;
+/* DAT_00085240/44/48 are the look-text word-separator/article
+   constants (" ", "a ", "an ") used by dispatch_object_action/dispatch_object_action_dup
+   and build_creature_look_text to glue "a"/"an" + adjective + noun [+ "named" +
+   proper name] together -- none had a writer anywhere in this decompile
+   (same "orphaned data" class as DAT_00086cc0 etc.), so every look-text
+   sentence silently ran its words together with no article at all, e.g.
+   "You see mellowoutcastnamedBragit" instead of "You see a mellow
+   outcast named Bragit" (found investigating a creature-look crash).
+   The real recovered string is lost like several others this session,
+   but the correct content is unambiguous from every call site's usage
+   -- give them real values instead of leaving them silently empty. */
+ char DAT_00085240_backing[8192] = " ";
+/* Selected when the following word starts with a vowel (see the callers'
+   own vowel checks) -- so this one is "an ", not "a ". */
+ char DAT_00085244_backing[32768] = "an ";
+ char DAT_00085248_backing[32768] = "a ";
+static char s_npc_talkedto_00085340[] = "npc_talkedto";
+static char s_npc_gtarg_00085350[] = "npc_gtarg";
+static char s_npc_goal_0008535c[] = "npc_goal";
+static char s_npc_power_00085368[] = "npc_power";
+static char s_npc_arms_00085374[] = "npc_arms";
+static char s_npc_hp_00085380[] = "npc_hp";
+static char s_npc_health_00085388[] = "npc_health";
+static char s_npc_hunger_00085394[] = "npc_hunger";
+static char s_npc_whoami_000853a0[] = "npc_whoami";
+static undefined DAT_001007e3_backing[256];
+#define DAT_001007e3 DAT_001007e3_backing[0]
+static undefined DAT_001007fd_backing[256];
+#define DAT_001007fd DAT_001007fd_backing[0]
+static char s_play_name_0008524c[] = "play_name";
+static char s_play_drawn_00085258[] = "play_drawn";
+static char s_play_poison_00085264[] = "play_poison";
+static char s_play_sex_00085270[] = "play_sex";
+static char s_new_player_exp_0008527c[] = "new_player_exp";
+static char s_game_days_0008528c[] = "game_days";
+static char s_game_mins_00085298[] = "game_mins";
+static char s_game_time_000852a4[] = "game_time";
+static char s_dungeon_level_000852b0[] = "dungeon_level";
+static char s_play_level_000852c0[] = "play_level";
+static char s_play_mana_000852cc[] = "play_mana";
+static char s_play_power_000852d8[] = "play_power";
+static char s_play_arms_000852e4[] = "play_arms";
+static char s_play_hp_000852f0[] = "play_hp";
+static char s_play_health_000852f8[] = "play_health";
+static char s_play_hunger_00085304[] = "play_hunger";
+static char s_npc_name_00085310[] = "npc_name";
+static char s_npc_yhome_0008531c[] = "npc_yhome";
+static char s_npc_xhome_00085328[] = "npc_xhome";
+static char s_npc_level_00085334[] = "npc_level";
+undefined2 DAT_00101960;
+ushort DAT_000853fc;
+static undefined1 DAT_00101968_backing[8192];
+undefined1 DAT_0023c698_backing[32768];
+static ushort DAT_00101a6c;
+/* Bitmap workspace supplied by cache_ambient_sound_handle; retain the full
+   allocation address on 64-bit hosts. */
+uintptr_t DAT_00101a70;
+/* Dispatch table of babl conversation-text render-time opcode handlers
+   (distinct from the babl_builtin_* script-language builtins): a raw
+   compiled dialogue-text stream can embed a byte < 0x10 that indexes
+   this table, each entry a (script_arg_ptr, render_state_ptr) ->
+   words-consumed handler, called from the conversation-rendering loop
+   at its three known call sites. Restored all 16 entries from the original
+   ARM table at 0x85408, including window timing and dismissal opcodes. */
+static codeval *const PTR_FUN_00085408[16] = {
+  babl_render_op_wrap_message,
+  FUN_000362e8,
+  FUN_00036300,
+  FUN_00036308,
+  FUN_00036394,
+  FUN_000363f0,
+  FUN_00036404,
+  FUN_00036418,
+  babl_render_op_show_code,
+  FUN_000365bc,
+  FUN_000365fc,
+  FUN_0003663c,
+  FUN_00036698,
+  babl_render_op_say,
+  FUN_00036344,
+  babl_render_op_play_sound
+};
+static undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
+char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
+static undefined1 DAT_00085460_backing[11] = "\\CSXXX.N00";
+/* decompress_rle_stream's own shared codec state (output/input
+   cursors, byte counts, and the current/pending op-code value),
+   threaded through its several sibling op-code handler functions
+   (read_rle_op_code and others still unnamed below it). */
+static undefined1 *DAT_00201b40; // output cursor
+static int DAT_00201b54; // input bytes consumed so far
+static int DAT_00201b4c; // output bytes written so far
+static int DAT_00201b58; // "done" flag
+static ushort DAT_00201b48; // current run/length value
+static undefined1 *DAT_00201b50; // input cursor
+static short DAT_00201b44; // current fill-byte/length accumulator
+static int DAT_00201b3c; // current op code
+
 
 
 /* Was a no-op stub -- the real function was never decompiled, so

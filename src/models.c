@@ -11,6 +11,738 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Widened from 32768: load_3d_object_models does
+   `Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
+   memmove, confirmed by ASAN global-buffer-overflow), matching
+   DAT_00189590's own size (985856, an earlier widening pass already
+   caught the destination but missed this source). */
+static undefined DAT_00110ff0_backing[985856];
+#define DAT_00110ff0 DAT_00110ff0_backing[0]
+static undefined DAT_00110ffc_backing[256];
+#define DAT_00110ffc DAT_00110ffc_backing[0]
+static undefined1 DAT_00189590_backing[985856];
+#define DAT_00189590 DAT_00189590_backing[0]
+static undefined DAT_0018959c_backing[256];
+#define DAT_0018959c DAT_0018959c_backing[0]
+static undefined DAT_0018959d_backing[256];
+#define DAT_0018959d DAT_0018959d_backing[0]
+static undefined DAT_0018959e_backing[256];
+#define DAT_0018959e DAT_0018959e_backing[0]
+static undefined DAT_0018959f_backing[256];
+#define DAT_0018959f DAT_0018959f_backing[0]
+/* Live-tunable door-frame anchor constants (UW_MODEL_TUNER=1) -- see the
+   wall-plane fix in emit_catalog_object's own catalog_u==1 block. Three
+   real regressions already came from guessing these numbers, rebuilding,
+   and only then finding out live whether a guess was right; this lets
+   the door panel show tunable rows so a value can be nudged and watched
+   change on screen the same frame, with no rebuild. g_tune_wide_center
+   is the wide/along-the-wall axis's offset from the tile's own origin;
+   g_tune_edge_offset is the wall-perpendicular axis's offset from
+   whichever tile edge it's nearest. Live QA confirmed both at 128.0 --
+   i.e. the "wall has real thickness, the perpendicular axis sits at
+   edge+16" theory (tried and initially reported as an improvement) was
+   itself wrong; the real answer is simpler, exact tile center on BOTH
+   axes, no wall-thickness concept needed. At edge_offset==128 the near/
+   far edge-side branch in the fix below collapses to the same value
+   either way (128 or 256-128), so this is equivalent to just always
+   centering -- kept as two separately-tunable fields anyway in case a
+   future model (not a full-tile-wide one like DFRAME.E) genuinely needs
+   something else. */
+static double g_tune_wide_center = 128.0;
+static double g_tune_edge_offset = 128.0;
+/* QA report: "rotation origin is in the middle of the leaf and not the
+   hinge, so rotation looks off." The leaf (catalog_u==0xe/0xf, DOOR.E)
+   currently shares DFRAME's own anchor exactly (DAT_0023b904/920, set
+   once by the catalog_u==1 block above and simply left in place for
+   the leaf's own later, separate call to reuse) -- correct for a
+   symmetric, full-tile-wide, non-rotating object like the frame, but
+   DOOR.E's own local mesh (POINTS span local X 0-128, not symmetric
+   around 0) rotates around whatever world point its local origin
+   lands on, so sharing the frame's centered anchor puts that pivot
+   roughly mid-leaf instead of at the hinge edge. Not yet live-tuned to
+   a confirmed-correct value (unlike wide_center/edge_offset above,
+   which WERE) -- starts at 0.0 (no change from current behavior) and
+   is meant to be nudged live via the object tuner panel (backtick)
+   while watching a real door swing, the same successful process
+   wide_center/edge_offset themselves were dialed in with, rather than
+   guessed and hardcoded blind. Applied along the model's own "wide"
+   axis (the same one wide_center offsets) in the leaf-specific rebake
+   a few hundred lines below. */
+static double g_tune_leaf_hinge_offset = 0.0;
+/* General object-tuner state (UW_MODEL_TUNER=1) -- was door-only (the
+   panel only populated inside catalog_u==1, and only showed the two
+   door-anchor fields above); generalized so ANY catalog this session's
+   native mesh path draws (boulder, bridge, door, ...) gets a live panel
+   whenever it's on screen, per direct request: "convert the door debug
+   tool to a general object debug tool so we can try giving the object
+   a rotation offset and view it from all angles." g_tune_rotation_offset
+   is added directly to the model's own real final rotation angle
+   (sVar13, degrees) right before build_euler_rotation_matrix runs, so
+   walking around a normally-facing object and nudging this field is
+   equivalent to spinning the OBJECT rather than the camera -- useful
+   for exactly the kind of "does this face-order bug only show from
+   certain angles" question that motivated adding it. g_tune_last_catalog
+   resets the offset to 0 whenever the catalog on screen changes, so a
+   leftover rotation from tuning one object (e.g. a boulder) doesn't
+   silently carry over and confuse the next one (e.g. a door) -- same
+   "reseed on id change" shape the original e-model-texturing tuner used
+   for its own per-model fields. */
+static double g_tune_rotation_offset = 0.0;
+static int g_tune_last_catalog = -1;
+/* Debug-panel toggle (dbgui_field_toggle) for pick_object_under_cursor's
+   own UW_PICK_DIAG trace -- lets the pick stencil/object-resolution trace
+   be flipped on live from the object tuner panel instead of needing a
+   relaunch with the env var set. Read alongside getenv("UW_PICK_DIAG") at
+   each pick call, not cached, so toggling it mid-session takes effect on
+   the very next click. */
+int g_uw_debug_pick_diag = 0;
+static undefined1 *DAT_000db45c;
+static int DAT_000db458;
+// was DAT_000d91d0 -- running point count while parse_e_model_file reads
+// a .E model's POINTS block (bounded at 600, see the "Too many points"
+// error); indexes both the point-scratch arrays and the final per-model
+// output buffer's points array.
+static int g_model_parse_point_count;
+static int DAT_000db4fc;
+static int *DAT_000c8b00;
+// was DAT_000db430 -- running part (face) count while parse_e_model_file
+// reads a .E model's PARTS block (bounded at 0x15e=350, see the "Too many
+// polys" error); indexes both the part-scratch arrays and the final
+// per-model output buffer's parts array.
+static int g_model_parse_part_count;
+static int DAT_00084660;
+static int DAT_0008465c;
+static int DAT_00084670;
+static int DAT_0008466c;
+// DAT_000db480/DAT_000db470: gate the PARTS block's 'A' (auto-backside)
+// handling and an INTERSECTIONS-vs-other-block branch, but neither is
+// ever WRITTEN anywhere in this decompile -- always BSS-zero here, which
+// makes the 'A' backside-generation code (see vec3_cross's caller,
+// parse_e_model_file's "making backside of %d %d" branch) and the
+// INTERSECTIONS default path unconditionally taken as if these flags are
+// always off. Not renamed: unclear whether that's really how the
+// original binary behaves (a hidden writer elsewhere, not yet checked
+// via Ghidra the way DAT_00085668 and friends were) or a genuine
+// decompile gap, so a confident name isn't warranted yet.
+static int DAT_000db480;
+static int DAT_000db470;
+static int DAT_000db4d4;
+static int DAT_000db4d8;
+static int DAT_000db4d0;
+// DAT_000db494: gates whether parse_e_model_file resolves each PARTS
+// entry's EXTENDED_COLORS index against g_model_known_ext_colors (and the
+// function's own final scratch-to-scratch color-inheritance pass). Same
+// "never written anywhere in this decompile" situation as DAT_000db480/
+// DAT_000db470 just above -- always reads BSS-zero here, so this whole
+// resolution path is presently dead code for every model regardless of
+// whether the file actually has an EXTENDED_COLORS block. Not renamed
+// for the same reason.
+static int DAT_000db494;
+static int DAT_000db4e0;
+// was DAT_00084678 -- a fixed table of up to 32 known 24-bit RGB values
+// (0x00RRGGBB-shaped ints) that parse_e_model_file's EXTENDED_COLORS
+// handling linearly searches to turn each entry's literal RGB (e.g.
+// "545454" in ROCKSMAL.E) into a small index, stored per-part -- a
+// palette-index lookup, not a raw-color passthrough. Gated dead by
+// DAT_000db494 above, so this table is currently never actually
+// consulted despite being real, meaningful data.
+static undefined4 g_model_known_ext_colors;
+static char s_unexpected_EOF___no_END_statemen_000846f8[] = "unexpected_EOF_-_no_END_statemen";
+static char s________c_0008471c[] = "%*[^}]%c";
+static char s___d__00084728[] = "(%d)";
+static undefined DAT_00084730_backing[8192];
+#define DAT_00084730 DAT_00084730_backing[0]
+static char s_anim__d___d__c__d__d___00084734[] = "anim_%d_(%d,%c,%d,%d):";
+static char s__d__1s__d__d__1s_0008474c[] = "%d,%1s,%d,%d,%1s";
+static char s_ANIMATE_00084760[] = "ANIMATE";
+static char s_Error__extended_color_for_part___00084768[] = "Error:_extended_color_for_part_%";
+/* Was "%lx%1s" -- correct as recovered from the original 32-bit binary,
+   where 'long' and 'int' are both 4 bytes, matching the destination
+   (parse_e_model_file's `int local_208;`). On this 64-bit host 'long' is 8
+   bytes, so vfscanf wrote a full 8-byte value through Ordinal_1114 into
+   that 4-byte stack slot -- a real stack-buffer-overflow (confirmed via
+   ASAN), not a truncation-in-the-other-direction case like most of this
+   file's other pointer/int-width bugs. Fixed by dropping the 'l' length
+   modifier to match the 32-bit-correct destination width instead of
+   widening the destination, since every other use of this value in
+   parse_e_model_file treats it as a plain 4-byte int. */
+static char s__lx_1s_000847a4[] = "%x%1s";
+static char s_EXTENDED_COLORS_000847ac[] = "EXTENDED_COLORS";
+static char s_INTERSECTIONS_000847bc[] = "INTERSECTIONS";
+static char s__c__d__d__d__d__d___c__000847cc[] = "%c,%d,%d,%d,%d,%d_(%c)";
+static char s__1s__d__d__d_1s_000847e4[] = "%1s,%d,%d,%d%1s";
+static char s__1s__d__d__d__d__d_1s_000847f4[] = "%1s,%d,%d,%d,%d,%d%1s";
+static char s_branch_0008480c[] = "branch";
+static undefined DAT_00084814_backing[8192];
+#define DAT_00084814 DAT_00084814_backing[0]
+static char s_leaf_00084818[] = "leaf";
+static undefined DAT_00084820_backing[8192];
+#define DAT_00084820 DAT_00084820_backing[0]
+static char s_SUPER_NODES_00084828[] = "SUPER_NODES";
+static char s_NODES_00084834[] = "NODES";
+static char s_CLUSTERS_0008483c[] = "CLUSTERS";
+static char s_making_backside_of__d_____d_00084848[] = "making_backside_of_%d_->_%d";
+static char s_Error__Part__d_is_a_polygon_with_00084868[] = "Error:_Part_%d_is_a_polygon_with";
+static char s_Error__polygon__d__bitmap_must_h_00084898[] = "Error:_polygon_%d:_bitmap_must_h";
+static char s__d_1s_000848c8[] = "%d%1s";
+static char s__d__d_000848d0[] = "%d,%d";
+static char s_________c_000848d8[] = "%*[^;}]%c";
+static char s_got_sphere__d_000848e4[] = "got_sphere_%d";
+static undefined DAT_000848f4_backing[8192];
+#define DAT_000848f4 DAT_000848f4_backing[0]
+static char s_Too_many_polys_000848f8[] = "Too_many_polys";
+static char s_Out_of_vertex_list_space_00084908[] = "Out_of_vertex_list_space";
+static char s__d__d__d__d_00084924[] = "%d,%d,%d,%d";
+static char s_got_bitmap__d___d_00084930[] = "got_bitmap_%d:_%d";
+static char s__d__1s__d__x__00084944[] = "%d,%1s,%d,%x,";
+static char s___c_1____00084954[] = "%*c%1[}]";
+static char s_PARTS_00084960[] = "PARTS";
+static char s_Too_many_points___d__00084968[] = "Too_many_points_(%d)";
+static char s__d__d__d__00084980[] = "%d,%d,%d;";
+static char s_POINTS_0008498c[] = "POINTS";
+static char s__1s______1s_00084994[] = "%1s%[^\"]%1s";
+static char s_NAMES_000849a0[] = "NAMES";
+/* Unrecoverable scanf-format string constants (Ghidra never recovered
+   their content). Best-effort guesses from call shape, not confirmed
+   against real file content the way DAT_000849c8 ("END") was:
+   DAT_000849a8 is used identically to the confirmed "%1s"/"%100s%1s"
+   format strings right next to it in this same parser (single-char
+   token read into a 4-byte buffer, local_260) at most call sites, so
+   "%1s". DAT_000849ac is read right after matching the "VERSION" token,
+   with a real file's content being "VERSION {0}" (DATA3D/DFRAME.E) --
+   guessed as " {%d}" to parse the braced integer. Some call sites pass
+   more destination pointers than either guessed format has specifiers
+   for (this file's argument-count-per-call-site is already established
+   as unreliable throughout the decompile); harmless since vfscanf simply
+   won't consume args past what the format string actually specifies. */
+static char DAT_000849a8_backing[8192] = "%1s";
+#define DAT_000849a8 DAT_000849a8_backing[0]
+static char DAT_000849ac_backing[8192] = "%d";
+#define DAT_000849ac DAT_000849ac_backing[0]
+static char s_VERSION_000849b0[] = "VERSION";
+static char s_error___s__c_000849b8[] = "error:_%s,%c";
+/* Unrecoverable string constant (Ghidra never recovered its content) --
+   confirmed "END" by inspecting a real .E model file (DATA3D/DFRAME.E):
+   the game's text script parser (parse_e_model_file) brackets every model with
+   a BEGIN...END pair (see s_BEGIN_00084a14/s_Input_file_error...), and
+   this is the only unresolved string used as the closing-token
+   comparison (Ordinal_1065(token,&DAT_000849c8) / Ordinal_1070 with
+   length 3 for a truncated-token EOF check) right where a real file's
+   content literally ends with the line "END". Leaving it empty meant
+   "END" never matched, so every model's parse fell through to the
+   unexpected-EOF/malformed-file exit path instead of completing.
+   Kept as a backing-array + #define alias (not a plain char[]) because
+   call sites take its address with '&DAT_000849c8', which only stays a
+   plain char* (not a pointer-to-array) when DAT_000849c8 is itself a
+   scalar macro'd to the array's first element, matching every other
+   widened-global in this file. */
+static char DAT_000849c8_backing[8192] = "END";
+#define DAT_000849c8 DAT_000849c8_backing[0]
+static char s__100s_1s_000849cc[] = "%100s%1s";
+static char s__1s__a_z__1s_000849d8[] = "%1s%[a-z]%1s";
+static char s_Input_file_error__BEGIN_statemen_000849e8[] = "Input_file_error:_BEGIN_statemen";
+static char s_BEGIN_00084a14[] = "BEGIN";
+static char s__100s_00084a1c[] = "%100s";
+static undefined DAT_00084a24_backing[8192];
+#define DAT_00084a24 DAT_00084a24_backing[0]
+/* DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's ".E"
+   model parser: `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor
+   there and walks it forward one 4-byte slot at a time while parsing
+   PARTS) was declared as a lone undefined4 scalar -- Ghidra only saw the
+   first slot. Its real extent is bounded by DAT_000c8a90, which the
+   parser compares the write cursor against ("Out of vertex list space"
+   if exceeded) -- but DAT_000c8a90 was ALSO just a lone undefined byte,
+   whose only meaning was "whatever address the original 32-bit linker
+   happened to place 0x3e58 bytes after DAT_000c4c38" (whatever unrelated
+   global that turned out to be). On this 64-bit recompile the two
+   globals land wherever the linker wants, nowhere near 0x3e58 bytes
+   apart, so the very first vertex written already tripped the
+   "&DAT_000c8a90 < DAT_000c8b00" bounds check. Fixed by giving
+   DAT_000c4c38 a real backing buffer sized to that same 0x3e58 byte
+   span (preserving the original capacity/behavior) and defining
+   DAT_000c8a90 as the address exactly one-past-its-end, restoring the
+   original relationship. */
+static char DAT_000c4c38_backing[0x3e58];
+#define DAT_000c4c38 (*(undefined4 *)DAT_000c4c38_backing)
+#define DAT_000c8a90 (*(undefined1 *)(DAT_000c4c38_backing + 0x3e58))
+static undefined1 DAT_000c8b08_backing[65536];
+#define DAT_000c8b08 DAT_000c8b08_backing[0]
+/* Base of a growing per-cluster-connection undefined4 array in
+   parse_e_model_file's CLUSTERS block (`puVar8 = &DAT_000c8ca0; ... *puVar8 =
+   local_1d8; puVar8 = puVar8 + 1;`) -- same undersized-scalar bug as
+   DAT_000da868/DAT_000dab90 right above, for the same block. */
+static undefined1 DAT_000c8ca0_backing[65536];
+#define DAT_000c8ca0 DAT_000c8ca0_backing[0]
+/* DAT_000c9540..DAT_000c9555 (22 fields): another per-record byte-field
+   cluster in parse_e_model_file's ".E" model parser (NODES block), same
+   undersized-scalar bug as DAT_000d2ab0/DAT_000c9dd8/DAT_000c8ca0/
+   DAT_000da868/DAT_000dab90 above -- found via a systematic scan of
+   every `(&DAT_x)[idx]` pattern in this function after the POINTS/PARTS/
+   CLUSTERS instances turned out not to be the only ones (a real model
+   file's parse was still corrupting an unrelated global afterward).
+   Widened the same way. */
+static undefined1 DAT_000c9540_backing[65536];
+#define DAT_000c9540 DAT_000c9540_backing[0]
+static undefined1 DAT_000c9541_backing[65536];
+#define DAT_000c9541 DAT_000c9541_backing[0]
+static undefined1 DAT_000c9542_backing[65536];
+#define DAT_000c9542 DAT_000c9542_backing[0]
+static undefined1 DAT_000c9543_backing[65536];
+#define DAT_000c9543 DAT_000c9543_backing[0]
+static undefined1 DAT_000c9544_backing[65536];
+#define DAT_000c9544 DAT_000c9544_backing[0]
+static undefined1 DAT_000c9545_backing[65536];
+#define DAT_000c9545 DAT_000c9545_backing[0]
+static undefined1 DAT_000c9546_backing[65536];
+#define DAT_000c9546 DAT_000c9546_backing[0]
+static undefined1 DAT_000c9547_backing[65536];
+#define DAT_000c9547 DAT_000c9547_backing[0]
+static undefined1 DAT_000c9548_backing[65536];
+#define DAT_000c9548 DAT_000c9548_backing[0]
+static undefined1 DAT_000c9549_backing[65536];
+#define DAT_000c9549 DAT_000c9549_backing[0]
+static undefined1 DAT_000c954a_backing[65536];
+#define DAT_000c954a DAT_000c954a_backing[0]
+static undefined1 DAT_000c954b_backing[65536];
+#define DAT_000c954b DAT_000c954b_backing[0]
+static undefined1 DAT_000c954c_backing[65536];
+#define DAT_000c954c DAT_000c954c_backing[0]
+static undefined1 DAT_000c954d_backing[65536];
+#define DAT_000c954d DAT_000c954d_backing[0]
+static undefined1 DAT_000c954e_backing[65536];
+#define DAT_000c954e DAT_000c954e_backing[0]
+static undefined1 DAT_000c954f_backing[65536];
+#define DAT_000c954f DAT_000c954f_backing[0]
+static undefined1 DAT_000c9550_backing[65536];
+#define DAT_000c9550 DAT_000c9550_backing[0]
+static undefined1 DAT_000c9551_backing[65536];
+#define DAT_000c9551 DAT_000c9551_backing[0]
+static undefined1 DAT_000c9552_backing[65536];
+#define DAT_000c9552 DAT_000c9552_backing[0]
+static undefined1 DAT_000c9553_backing[65536];
+#define DAT_000c9553 DAT_000c9553_backing[0]
+static undefined1 DAT_000c9554_backing[65536];
+#define DAT_000c9554 DAT_000c9554_backing[0]
+static undefined1 DAT_000c9555_backing[65536];
+#define DAT_000c9555 DAT_000c9555_backing[0]
+/* DAT_000c9dd8 through DAT_000c9de3 (12 globals) are byte fields of a
+   0x67(103)-byte-stride per-PART record in parse_e_model_file's ".E" model
+   parser (`iVar5 = g_model_parse_part_count * 0x67; (&DAT_000c9ddc)[iVar5] = ...`),
+   bounded by `if (0x15e < g_model_parse_part_count)` (350 parts) -- same undersized-
+   scalar-instead-of-real-table bug as the DAT_000d2ab0-family POINTS
+   record right above, just for PARTS. Widened the same way. */
+static undefined1 DAT_000c9dd8_backing[65536];
+#define DAT_000c9dd8 DAT_000c9dd8_backing[0]
+static undefined1 DAT_000c9dd9_backing[65536];
+#define DAT_000c9dd9 DAT_000c9dd9_backing[0]
+static undefined1 DAT_000c9dda_backing[65536];
+#define DAT_000c9dda DAT_000c9dda_backing[0]
+static undefined1 DAT_000c9ddb_backing[65536];
+#define DAT_000c9ddb DAT_000c9ddb_backing[0]
+static undefined1 DAT_000c9ddc_backing[65536];
+#define DAT_000c9ddc DAT_000c9ddc_backing[0]
+static undefined1 DAT_000c9ddd_backing[65536];
+#define DAT_000c9ddd DAT_000c9ddd_backing[0]
+static undefined1 DAT_000c9dde_backing[65536];
+#define DAT_000c9dde DAT_000c9dde_backing[0]
+static undefined1 DAT_000c9ddf_backing[65536];
+#define DAT_000c9ddf DAT_000c9ddf_backing[0]
+static undefined1 DAT_000c9de0_backing[65536];
+#define DAT_000c9de0 DAT_000c9de0_backing[0]
+static undefined1 DAT_000c9de1_backing[65536];
+#define DAT_000c9de1 DAT_000c9de1_backing[0]
+static undefined1 DAT_000c9de2_backing[65536];
+#define DAT_000c9de2 DAT_000c9de2_backing[0]
+static undefined1 DAT_000c9de3_backing[65536];
+#define DAT_000c9de3 DAT_000c9de3_backing[0]
+/* DAT_000c9e0e..DAT_000c9e3e (30 fields): same bug, same parser, same
+   systematic-scan discovery as DAT_000c9540 above. */
+static undefined1 DAT_000c9e0e_backing[65536];
+#define DAT_000c9e0e DAT_000c9e0e_backing[0]
+static undefined1 DAT_000c9e0f_backing[65536];
+#define DAT_000c9e0f DAT_000c9e0f_backing[0]
+static undefined1 DAT_000c9e10_backing[65536];
+#define DAT_000c9e10 DAT_000c9e10_backing[0]
+static undefined1 DAT_000c9e11_backing[65536];
+#define DAT_000c9e11 DAT_000c9e11_backing[0]
+static undefined1 DAT_000c9e22_backing[65536];
+#define DAT_000c9e22 DAT_000c9e22_backing[0]
+static undefined1 DAT_000c9e23_backing[65536];
+#define DAT_000c9e23 DAT_000c9e23_backing[0]
+static undefined1 DAT_000c9e24_backing[65536];
+#define DAT_000c9e24 DAT_000c9e24_backing[0]
+static undefined1 DAT_000c9e25_backing[65536];
+#define DAT_000c9e25 DAT_000c9e25_backing[0]
+static undefined1 DAT_000c9e26_backing[65536];
+#define DAT_000c9e26 DAT_000c9e26_backing[0]
+static undefined1 DAT_000c9e28_backing[65536];
+#define DAT_000c9e28 DAT_000c9e28_backing[0]
+static undefined1 DAT_000c9e29_backing[65536];
+#define DAT_000c9e29 DAT_000c9e29_backing[0]
+static undefined1 DAT_000c9e2b_backing[65536];
+#define DAT_000c9e2b DAT_000c9e2b_backing[0]
+static undefined1 DAT_000c9e2c_backing[65536];
+#define DAT_000c9e2c DAT_000c9e2c_backing[0]
+static undefined1 DAT_000c9e2d_backing[65536];
+#define DAT_000c9e2d DAT_000c9e2d_backing[0]
+static undefined1 DAT_000c9e2e_backing[65536];
+#define DAT_000c9e2e DAT_000c9e2e_backing[0]
+static undefined1 DAT_000c9e2f_backing[65536];
+#define DAT_000c9e2f DAT_000c9e2f_backing[0]
+static undefined1 DAT_000c9e30_backing[65536];
+#define DAT_000c9e30 DAT_000c9e30_backing[0]
+static undefined1 DAT_000c9e31_backing[65536];
+#define DAT_000c9e31 DAT_000c9e31_backing[0]
+static undefined1 DAT_000c9e32_backing[65536];
+#define DAT_000c9e32 DAT_000c9e32_backing[0]
+static undefined1 DAT_000c9e33_backing[65536];
+#define DAT_000c9e33 DAT_000c9e33_backing[0]
+static undefined1 DAT_000c9e34_backing[65536];
+#define DAT_000c9e34 DAT_000c9e34_backing[0]
+static undefined1 DAT_000c9e35_backing[65536];
+#define DAT_000c9e35 DAT_000c9e35_backing[0]
+static undefined1 DAT_000c9e36_backing[65536];
+#define DAT_000c9e36 DAT_000c9e36_backing[0]
+static undefined1 DAT_000c9e37_backing[65536];
+#define DAT_000c9e37 DAT_000c9e37_backing[0]
+static undefined1 DAT_000c9e38_backing[65536];
+#define DAT_000c9e38 DAT_000c9e38_backing[0]
+static undefined1 DAT_000c9e39_backing[65536];
+#define DAT_000c9e39 DAT_000c9e39_backing[0]
+static undefined1 DAT_000c9e3a_backing[65536];
+#define DAT_000c9e3a DAT_000c9e3a_backing[0]
+static undefined1 DAT_000c9e3b_backing[65536];
+#define DAT_000c9e3b DAT_000c9e3b_backing[0]
+static undefined1 DAT_000c9e3c_backing[65536];
+#define DAT_000c9e3c DAT_000c9e3c_backing[0]
+static undefined1 DAT_000c9e3d_backing[65536];
+#define DAT_000c9e3d DAT_000c9e3d_backing[0]
+static undefined1 DAT_000c9e3e_backing[65536];
+#define DAT_000c9e3e DAT_000c9e3e_backing[0]
+/* DAT_000d2ab0 through DAT_000d2ad3 (28 globals) are individual byte
+   fields of a 0x2c(44)-byte-stride per-POINT record in parse_e_model_file's
+   ".E" model parser (`iVar6 = g_model_parse_point_count * 0x2c; (&DAT_000d2ab0)[iVar6]
+   = ...;`, bounded by `if (600 < g_model_parse_point_count)`) -- up to 600 points *
+   44 bytes = 26400 bytes needed per field, but each was declared as a
+   lone `undefined1` scalar. A watchpoint confirmed this overflow
+   corrupting an unrelated global (DAT_002029cc, ~26KB+ away) during a
+   real model file's parse, which crashed much later and far from the
+   actual bad write -- the same "detected at a distance" pattern as the
+   STRINGS.PAK heap corruption. Widened with the usual backing-buffer
+   pattern. */
+static undefined1 DAT_000d2ab0_backing[32768];
+#define DAT_000d2ab0 DAT_000d2ab0_backing[0]
+static undefined1 DAT_000d2ab1_backing[32768];
+#define DAT_000d2ab1 DAT_000d2ab1_backing[0]
+static undefined1 DAT_000d2ab2_backing[32768];
+#define DAT_000d2ab2 DAT_000d2ab2_backing[0]
+static undefined1 DAT_000d2ab3_backing[32768];
+#define DAT_000d2ab3 DAT_000d2ab3_backing[0]
+static undefined1 DAT_000d2ab4_backing[32768];
+#define DAT_000d2ab4 DAT_000d2ab4_backing[0]
+static undefined1 DAT_000d2ab5_backing[32768];
+#define DAT_000d2ab5 DAT_000d2ab5_backing[0]
+static undefined1 DAT_000d2ab6_backing[32768];
+#define DAT_000d2ab6 DAT_000d2ab6_backing[0]
+static undefined1 DAT_000d2ab7_backing[32768];
+#define DAT_000d2ab7 DAT_000d2ab7_backing[0]
+static undefined1 DAT_000d2ab8_backing[32768];
+#define DAT_000d2ab8 DAT_000d2ab8_backing[0]
+static undefined1 DAT_000d2ab9_backing[32768];
+#define DAT_000d2ab9 DAT_000d2ab9_backing[0]
+static undefined1 DAT_000d2aba_backing[32768];
+#define DAT_000d2aba DAT_000d2aba_backing[0]
+static undefined1 DAT_000d2abb_backing[32768];
+#define DAT_000d2abb DAT_000d2abb_backing[0]
+static undefined1 DAT_000d2abc_backing[32768];
+#define DAT_000d2abc DAT_000d2abc_backing[0]
+static undefined1 DAT_000d2abd_backing[32768];
+#define DAT_000d2abd DAT_000d2abd_backing[0]
+static undefined1 DAT_000d2abe_backing[32768];
+#define DAT_000d2abe DAT_000d2abe_backing[0]
+static undefined1 DAT_000d2abf_backing[32768];
+#define DAT_000d2abf DAT_000d2abf_backing[0]
+static undefined1 DAT_000d2ac0_backing[32768];
+#define DAT_000d2ac0 DAT_000d2ac0_backing[0]
+static undefined1 DAT_000d2ac1_backing[32768];
+#define DAT_000d2ac1 DAT_000d2ac1_backing[0]
+static undefined1 DAT_000d2ac2_backing[32768];
+#define DAT_000d2ac2 DAT_000d2ac2_backing[0]
+static undefined1 DAT_000d2ac3_backing[32768];
+#define DAT_000d2ac3 DAT_000d2ac3_backing[0]
+static undefined1 DAT_000d2ac8_backing[32768];
+#define DAT_000d2ac8 DAT_000d2ac8_backing[0]
+static undefined1 DAT_000d2ac9_backing[32768];
+#define DAT_000d2ac9 DAT_000d2ac9_backing[0]
+static undefined1 DAT_000d2aca_backing[32768];
+#define DAT_000d2aca DAT_000d2aca_backing[0]
+static undefined1 DAT_000d2acb_backing[32768];
+#define DAT_000d2acb DAT_000d2acb_backing[0]
+static undefined1 DAT_000d2ad0_backing[32768];
+#define DAT_000d2ad0 DAT_000d2ad0_backing[0]
+static undefined1 DAT_000d2ad1_backing[32768];
+#define DAT_000d2ad1 DAT_000d2ad1_backing[0]
+static undefined1 DAT_000d2ad2_backing[32768];
+#define DAT_000d2ad2 DAT_000d2ad2_backing[0]
+static undefined1 DAT_000d2ad3_backing[32768];
+#define DAT_000d2ad3 DAT_000d2ad3_backing[0]
+static undefined4 DAT_000d95d8;
+/* DAT_000d9768..DAT_000d977c (21 fields): same bug, same parser, same
+   systematic-scan discovery as the two clusters above. */
+static undefined1 DAT_000d9768_backing[65536];
+#define DAT_000d9768 DAT_000d9768_backing[0]
+static undefined1 DAT_000d9769_backing[65536];
+#define DAT_000d9769 DAT_000d9769_backing[0]
+static undefined1 DAT_000d976a_backing[65536];
+#define DAT_000d976a DAT_000d976a_backing[0]
+static undefined1 DAT_000d976b_backing[65536];
+#define DAT_000d976b DAT_000d976b_backing[0]
+static undefined1 DAT_000d976c_backing[65536];
+#define DAT_000d976c DAT_000d976c_backing[0]
+static undefined1 DAT_000d976d_backing[65536];
+#define DAT_000d976d DAT_000d976d_backing[0]
+static undefined1 DAT_000d976e_backing[65536];
+#define DAT_000d976e DAT_000d976e_backing[0]
+static undefined1 DAT_000d976f_backing[65536];
+#define DAT_000d976f DAT_000d976f_backing[0]
+static undefined1 DAT_000d9770_backing[65536];
+#define DAT_000d9770 DAT_000d9770_backing[0]
+static undefined1 DAT_000d9771_backing[65536];
+#define DAT_000d9771 DAT_000d9771_backing[0]
+static undefined1 DAT_000d9772_backing[65536];
+#define DAT_000d9772 DAT_000d9772_backing[0]
+static undefined1 DAT_000d9773_backing[65536];
+#define DAT_000d9773 DAT_000d9773_backing[0]
+static undefined1 DAT_000d9774_backing[65536];
+#define DAT_000d9774 DAT_000d9774_backing[0]
+static undefined1 DAT_000d9775_backing[65536];
+#define DAT_000d9775 DAT_000d9775_backing[0]
+static undefined1 DAT_000d9776_backing[65536];
+#define DAT_000d9776 DAT_000d9776_backing[0]
+static undefined1 DAT_000d9777_backing[65536];
+#define DAT_000d9777 DAT_000d9777_backing[0]
+static undefined1 DAT_000d9778_backing[65536];
+#define DAT_000d9778 DAT_000d9778_backing[0]
+static undefined1 DAT_000d9779_backing[65536];
+#define DAT_000d9779 DAT_000d9779_backing[0]
+static undefined1 DAT_000d977a_backing[65536];
+#define DAT_000d977a DAT_000d977a_backing[0]
+static undefined1 DAT_000d977b_backing[65536];
+#define DAT_000d977b DAT_000d977b_backing[0]
+static undefined1 DAT_000d977c_backing[65536];
+#define DAT_000d977c DAT_000d977c_backing[0]
+static undefined1 DAT_000d98c8_backing[32768];
+#define DAT_000d98c8 DAT_000d98c8_backing[0]
+static undefined1 DAT_000da480_backing[65536];
+#define DAT_000da480 DAT_000da480_backing[0]
+/* Per-CLUSTER pointer/index slot in the same ".E" model parser
+   (parse_e_model_file's CLUSTERS block) as DAT_000dab90 right below, same
+   "declared as a lone scalar, actually a large indexed table" bug --
+   `*(undefined **)(&DAT_000da868 + iVar4) = local_258;` where iVar4
+   grows per cluster. Widened the same way, matching DAT_000dab90's
+   size. */
+static undefined1 DAT_000da868_backing[65536];
+#define DAT_000da868 DAT_000da868_backing[0]
+static undefined1 DAT_000dab90_backing[65536];
+#define DAT_000dab90 DAT_000dab90_backing[0]
+static undefined DAT_000db454_backing[8192];
+#define DAT_000db454 DAT_000db454_backing[0]
+static char s__DATA3D_BED2_E_00085474[] = "\\DATA3D\\BED2.E";
+static char s__DATA3D_CHAIRSIM_E_00085484[] = "\\DATA3D\\CHAIRSIM.E";
+static char s__DATA3D_BARRCLOS_E_00085498[] = "\\DATA3D\\BARRCLOS.E";
+static char s__DATA3D_NITESTAN_E_000854ac[] = "\\DATA3D\\NITESTAN.E";
+static char s__DATA3D_CHEST_E_000854c0[] = "\\DATA3D\\CHEST.E";
+static char s__DATA3D_TABLF3_E_000854d0[] = "\\DATA3D\\TABLF3.E";
+static char s__DATA3D_GATE_E_000854e4[] = "\\DATA3D\\GATE.E";
+static char s__DATA3D_TMAP64X64_E_000854f4[] = "\\DATA3D\\TMAP64X64.E";
+static char s__DATA3D_TMAP32X32_E_00085508[] = "\\DATA3D\\TMAP32X32.E";
+static char s__DATA3D_GRAVE_E_0008551c[] = "\\DATA3D\\GRAVE.E";
+static char s__DATA3D_TMAP16X16_E_0008552c[] = "\\DATA3D\\TMAP16X16.E";
+static char s__DATA3D_DOOR_E_00085540[] = "\\DATA3D\\DOOR.E";
+static char s__DATA3D_NEWPORT_E_00085550[] = "\\DATA3D\\NEWPORT.E";
+static char s__DATA3D_SHRINE_E_00085564[] = "\\DATA3D\\SHRINE.E";
+static char s__DATA3D_NEWPILL_E_00085578[] = "\\DATA3D\\NEWPILL.E";
+static char s__DATA3D_BEAM_E_0008558c[] = "\\DATA3D\\BEAM.E";
+static char s__DATA3D_ARROW_E_0008559c[] = "\\DATA3D\\ARROW.E";
+static char s__DATA3D_ROCKBIG_E_000855ac[] = "\\DATA3D\\ROCKBIG.E";
+static char s__DATA3D_ROCKMED_E_000855c0[] = "\\DATA3D\\ROCKMED.E";
+static char s__DATA3D_ROCKSMAL_E_000855d4[] = "\\DATA3D\\ROCKSMAL.E";
+static char s__DATA3D_40LOTUS_E_000855e8[] = "\\DATA3D\\40LOTUS.E";
+static char s__DATA3D_BENCH_E_000855fc[] = "\\DATA3D\\BENCH.E";
+static char s__DATA3D_FBRIDGE_E_0008560c[] = "\\DATA3D\\FBRIDGE.E";
+static char s__DATA3D_DFRAME_E_00085620[] = "\\DATA3D\\DFRAME.E";
+static undefined DAT_00114c1c_backing[16384];
+#define DAT_00114c1c DAT_00114c1c_backing[0]
+static undefined DAT_00118848_backing[16384];
+#define DAT_00118848 DAT_00118848_backing[0]
+static undefined DAT_0011c474_backing[16384];
+#define DAT_0011c474 DAT_0011c474_backing[0]
+static undefined DAT_001200a0_backing[16384];
+#define DAT_001200a0 DAT_001200a0_backing[0]
+undefined DAT_00123ccc_backing[16384];
+static undefined DAT_001278f8_backing[16384];
+#define DAT_001278f8 DAT_001278f8_backing[0]
+static undefined DAT_0012b524_backing[16384];
+#define DAT_0012b524 DAT_0012b524_backing[0]
+static undefined DAT_0012f150_backing[16384];
+#define DAT_0012f150 DAT_0012f150_backing[0]
+static undefined DAT_00132d7c_backing[16384];
+#define DAT_00132d7c DAT_00132d7c_backing[0]
+static undefined DAT_001369a8_backing[16384];
+#define DAT_001369a8 DAT_001369a8_backing[0]
+static undefined DAT_0013a5d4_backing[16384];
+#define DAT_0013a5d4 DAT_0013a5d4_backing[0]
+static undefined DAT_0013e200_backing[16384];
+#define DAT_0013e200 DAT_0013e200_backing[0]
+static undefined DAT_00141e2c_backing[16384];
+#define DAT_00141e2c DAT_00141e2c_backing[0]
+static undefined DAT_00145a58_backing[16384];
+#define DAT_00145a58 DAT_00145a58_backing[0]
+static undefined DAT_00149684_backing[16384];
+#define DAT_00149684 DAT_00149684_backing[0]
+static undefined DAT_0014d2b0_backing[16384];
+#define DAT_0014d2b0 DAT_0014d2b0_backing[0]
+static undefined DAT_00150edc_backing[16384];
+#define DAT_00150edc DAT_00150edc_backing[0]
+static undefined DAT_00154b08_backing[16384];
+#define DAT_00154b08 DAT_00154b08_backing[0]
+static undefined DAT_00158734_backing[16384];
+#define DAT_00158734 DAT_00158734_backing[0]
+static undefined DAT_0015c360_backing[16384];
+#define DAT_0015c360 DAT_0015c360_backing[0]
+static undefined DAT_0015ff8c_backing[16384];
+#define DAT_0015ff8c DAT_0015ff8c_backing[0]
+static undefined DAT_00163bb8_backing[16384];
+#define DAT_00163bb8 DAT_00163bb8_backing[0]
+static undefined DAT_001677e4_backing[16384];
+#define DAT_001677e4 DAT_001677e4_backing[0]
+static undefined DAT_0016b410_backing[16384];
+#define DAT_0016b410 DAT_0016b410_backing[0]
+static undefined DAT_0016f03c_backing[16384];
+#define DAT_0016f03c DAT_0016f03c_backing[0]
+static undefined DAT_00172c68_backing[16384];
+#define DAT_00172c68 DAT_00172c68_backing[0]
+static undefined DAT_00176894_backing[16384];
+#define DAT_00176894 DAT_00176894_backing[0]
+static undefined DAT_0017a4c0_backing[16384];
+#define DAT_0017a4c0 DAT_0017a4c0_backing[0]
+static undefined DAT_0017e0ec_backing[16384];
+#define DAT_0017e0ec DAT_0017e0ec_backing[0]
+/* g_anim_model_slot: real fix for tick_anim_record's own address-walk bug
+   (see that function's own comment). In the ORIGINAL binary, `DAT_00110ff0`
+   and these 29 model buffers are one contiguous array -- load_3d_object_models's own
+   29 parse_e_model_file calls fill slots 1..29 in exactly this order, and
+   tick_anim_record/emit_catalog_object read a model's data back by walking
+   `base + slot*0x3c2c`. This port declares every DAT_XXXXXXXX as its OWN
+   separately-allocated C global (confirmed: DAT_00114c1c_backing and
+   DAT_00110ff0_backing are unrelated arrays, not adjacent slices of one
+   buffer) -- so that walk lands in DAT_00110ff0's own unrelated, always-
+   zero memory instead of a real model, and the whole real-mesh path in
+   emit_catalog_object was silently dead. Slot 0 is deliberately NULL (no
+   parse_e_model_file call ever targets it -- see load_3d_object_models's own call
+   list, which starts at slot 1). Order matches that call list exactly. */
+static void * const g_anim_model_slot[30] = {
+  0,                 /* 0: unused */
+  &DAT_00114c1c,     /* 1: DFRAME.E */
+  &DAT_00118848,     /* 2: FBRIDGE.E */
+  &DAT_0011c474,     /* 3: BENCH.E */
+  &DAT_001200a0,     /* 4: 40LOTUS.E */
+  &DAT_00123ccc,     /* 5: ROCKSMAL.E */
+  &DAT_001278f8,     /* 6: ROCKMED.E */
+  &DAT_0012b524,     /* 7: ROCKBIG.E */
+  &DAT_0012f150,     /* 8: ARROW.E */
+  &DAT_00132d7c,     /* 9: BEAM.E */
+  &DAT_001369a8,     /* 10: NEWPILL.E */
+  &DAT_0013a5d4,     /* 11: SHRINE.E */
+  &DAT_0013e200,     /* 12: NEWPORT.E (1st load) */
+  &DAT_00141e2c,     /* 13: NEWPORT.E (2nd load) */
+  &DAT_00145a58,     /* 14: DOOR.E (1st load) */
+  &DAT_00149684,     /* 15: DOOR.E (2nd load) */
+  &DAT_0014d2b0,     /* 16: TMAP16X16.E (1st load) */
+  &DAT_00150edc,     /* 17: TMAP16X16.E (2nd load) */
+  &DAT_00154b08,     /* 18: TMAP16X16.E (3rd load) */
+  &DAT_00158734,     /* 19: GRAVE.E */
+  &DAT_0015c360,     /* 20: TMAP16X16.E (4th load) */
+  &DAT_0015ff8c,     /* 21: TMAP32X32.E */
+  &DAT_00163bb8,     /* 22: TMAP64X64.E */
+  &DAT_001677e4,     /* 23: GATE.E */
+  &DAT_0016b410,     /* 24: TABLF3.E */
+  &DAT_0016f03c,     /* 25: CHEST.E */
+  &DAT_00172c68,     /* 26: NITESTAN.E */
+  &DAT_00176894,     /* 27: BARRCLOS.E */
+  &DAT_0017a4c0,     /* 28: CHAIRSIM.E */
+  &DAT_0017e0ec,     /* 29: BED2.E */
+};
+/* Per-slot working copy for tick_anim_record's real fix -- a fresh
+   16384-byte memcpy of the real model buffer, refreshed every call rather
+   than reusing the original's incremental per-point "tick" (whose exact
+   purpose isn't needed just to get real geometry flowing, and a full fresh
+   copy is simpler and can't drift stale). Kept SEPARATE from the real
+   g_anim_model_slot buffers (not aliased directly onto them) so
+   emit_catalog_object's own writes into a face record's scratch tail
+   can never corrupt the same buffer a future real-3D-model consumer might
+   also read. */
+static unsigned char g_anim_model_scratch[30][16384];
+undefined2 DAT_00189570_backing[256];
+#define DAT_00189570 DAT_00189570_backing[0]
+char *DAT_00110fc0 = DAT_00110fc0_scratch;
+ undefined1 DAT_00202520_backing[1024];
+short DAT_000b4620;
+static short DAT_00189584;
+static undefined2 DAT_00189586;
+ushort DAT_0018957a;
+/* .data 0x86c08: real billboard-catalog table, 30 records of 4 bytes
+   each (byte0=flags/sub-frame-count, bytes1-3=up to 3 more per-entry
+   values -- see emit_catalog_object's own use of it), recovered
+   directly from UU.exe. Was 4 lone `undefined` scalars Ghidra never
+   gave real backing to -- same "split/orphaned data table" class as
+   g_inventory_hotspot_table before its own recovery (see
+   [[inventory-hotspot-table-recovery]]) -- every reader indexes past
+   byte 3 via pointer arithmetic (`(&DAT_00086c08)[catalog_idx*4]`
+   etc.), so a plain 4-byte declaration silently truncated every
+   catalog entry past the first to out-of-bounds reads. Cross-validated:
+   this table's real end (0x86c08+0x78=0x86c80) lines up exactly with
+   DAT_00086c80's own real start below, and this whole region was dumped
+   in one contiguous pull starting from the already-known-good
+   DAT_00086b50_region/DAT_00086c00_arr immediately before it (both
+   matched their existing recovered values exactly, confirming the
+   address mapping). */
+static unsigned char DAT_00086c08_backing[0x78] = {
+  0x01,0xec,0x00,0x00, 0x21,0xeb,0x00,0x00, 0x11,0xec,0x00,0x3e, 0x01,0xe4,0x00,0x00,
+  0x02,0xb6,0xb0,0x00, 0x02,0x64,0x6c,0x00, 0x02,0x64,0x6c,0x00, 0x02,0x64,0x6c,0x00,
+  0x42,0xe8,0xb8,0x00, 0x01,0xe4,0x00,0x00, 0x19,0xe4,0x00,0x60, 0x03,0xa3,0xa4,0xa6,
+  0x01,0x68,0x00,0x00, 0x01,0x68,0x00,0x00, 0x11,0xec,0x00,0x00, 0x21,0xec,0x00,0x00,
+  0x51,0xb0,0x00,0xe4, 0x51,0xb0,0x00,0xec, 0x11,0xb0,0x00,0xf4, 0x11,0x6a,0x00,0x3c,
+  0x51,0xb0,0x00,0x00, 0x11,0xb0,0x00,0x00, 0x21,0xb0,0x00,0x00, 0x83,0x00,0x02,0x04,
+  0x02,0xe4,0x68,0x00, 0x02,0xe6,0x68,0x00, 0x01,0xe4,0x00,0x00, 0x02,0xe4,0x6a,0x00,
+  0x03,0xe6,0x6a,0x71, 0x03,0xe2,0x62,0xc4,
+};
+#define DAT_00086c08 DAT_00086c08_backing[0]
+#define DAT_00086c09 DAT_00086c08_backing[1]
+#define DAT_00086c0a DAT_00086c08_backing[2]
+#define DAT_00086c0b DAT_00086c08_backing[3]
+static undefined4 DAT_00086ce0_backing[4096];
+#define DAT_00086ce0 DAT_00086ce0_backing[0]
+static undefined4 DAT_00086ce4_backing[4096];
+#define DAT_00086ce4 DAT_00086ce4_backing[0]
+static undefined4 DAT_00086ce8_backing[4096];
+#define DAT_00086ce8 DAT_00086ce8_backing[0]
+static undefined4 DAT_00086cec_backing[4096];
+#define DAT_00086cec DAT_00086cec_backing[0]
+static undefined4 DAT_00086cf0_backing[4096];
+#define DAT_00086cf0 DAT_00086cf0_backing[0]
+static undefined4 DAT_00086cf4_backing[4096];
+#define DAT_00086cf4 DAT_00086cf4_backing[0]
+static undefined4 DAT_00086cf8_backing[4096];
+#define DAT_00086cf8 DAT_00086cf8_backing[0]
+static undefined4 DAT_00086cfc_backing[4096];
+#define DAT_00086cfc DAT_00086cfc_backing[0]
+static undefined1 DAT_00086d60_backing[65536];
+#define DAT_00086d60 DAT_00086d60_backing[0]
+static short DAT_0018957e;
+static short DAT_0018957c;
+static short DAT_00189576;
+
 
 
 

@@ -9,6 +9,122 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+undefined4 DAT_000bbef8;
+int g_force_flush;
+short DAT_0023c63c;
+undefined DAT_00250658_backing[256];
+#define DAT_00250658 DAT_00250658_backing[0]
+short DAT_00201c84;
+static ushort DAT_00202084;
+short DAT_00085890;
+static short DAT_0020207a;
+static short DAT_0020207c;
+static short DAT_00202074;
+short g_mouse_y;
+short g_mouse_x;
+short DAT_00204840;
+static char *DAT_00202890;
+static char *DAT_0020289c;
+/* Real-pointer side table for the keybinding records' handler field. Each
+   DAT_0020289c record packs its handler as 4 raw bytes (offset 8-0xb) --
+   fine on the original 32-bit target, a truncated / uncallable pointer on
+   this 64-bit host. register_key_binding writes the real 64-bit handler here
+   keyed by record position (== registration order, and also 0xffff minus
+   the record's own id byte); dispatch_key_binding calls it from here; unregister_key_binding
+   keeps it in sync when it compacts the table. Nothing ever matched a
+   keybinding before (the mode gate was reading the wrong byte -- see
+   set_game_mode), so the truncated call had simply never been reached. */
+static void (*g_keybind_handler[512])(int);
+static int g_keybind_handler_n;
+/* Same 64-bit-truncation problem for the mouse-click-region table
+   (register_click_region stored param_7 -- the handler -- in a 4-byte
+   field of an 0x12-byte record, and poll_input_bindings called through
+   that truncated pointer -> EXC_BAD_ACCESS the first time a click landed
+   in a registered region, e.g. the 3D viewport's walk region). Keep the
+   real 64-bit handler here, keyed by record position, exactly like
+   g_keybind_handler; unregister_key_binding keeps it in sync. */
+static void (*g_click_region_handler[128])(int);
+static int g_click_region_handler_n;
+static undefined2 DAT_00202898;
+static undefined2 DAT_0020288c;
+static undefined2 DAT_00202894;
+static undefined2 DAT_00085a70;
+/* Per-mode "sticky redraw bits" mask read by dispatch_sticky_mode_handlers right after it
+   finishes dispatching DAT_00201c84's currently-set bits through
+   DAT_00085668: `DAT_00201c84 = DAT_00085728[mode] | DAT_00201c84;` re-arms
+   whichever bits this mode always wants re-triggered next idle tick, which
+   is how a mode's per-frame handlers (as opposed to one-shot event
+   handlers) keep firing forever instead of running once and going quiet.
+   Same "link-time-initialized data, nothing in this decompile ever writes
+   it" situation as DAT_00085668 (see its own comment) -- left zero-filled,
+   NO mode's dispatch bits were ever re-armed after the first pass, so
+   every DAT_00085668 handler (this file's HUD-panel/button-state/sound-
+   timer updates, mode 0's bits 11-13) ran exactly once at mode-entry and
+   then silently stopped, no matter how many frames/inputs followed.
+   Recovered the same way: read UU.exe's real .data bytes at 0x85728
+   directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
+   movement_pacing_handler/sync_player_stats_to_hud/hud_panel_redraw_dispatch; mode 1 = 0x1000 = bit 12 =
+   exit_automap_screen; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
+   mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
+   bytes immediately after are the next struct over (a `\DATA\lev.ark`
+   string literal), so this backing array is oversized like its siblings
+   only to satisfy the >0-bytes-past-any-real-index habit the rest of this
+   file uses for recovered fixed-size tables; only index 0-2 are ever
+   read (mode is always 0-2, see DAT_00085668's comment). */
+static const unsigned short DAT_00085728_real_table[3] = { 0x3800, 0x1000, 0x0000 };
+#define DAT_00085728 (*(undefined1 *)DAT_00085728_real_table)
+undefined2 DAT_00204710;
+undefined2 DAT_0020470c;
+undefined2 DAT_00204830;
+undefined2 DAT_00204834;
+short DAT_00204788;
+int DAT_0020484c;
+undefined2 DAT_0008696a;
+undefined2 DAT_0008696c;
+short DAT_00086968;
+short DAT_00204850;
+short DAT_0008696e;
+static undefined4 DAT_00204868;
+/* Real static lookup table (.data, read-only in practice) recovered
+   byte-for-byte from UU.exe -- the stylus-tap hit grid for the chargen
+   name-entry on-screen keyboard. Indexed by lookup_onscreen_keyboard_key_hit as
+   [row + column*20], row = (touch-Y)>>4 (16px-tall rows spanning the full
+   320px portrait screen height), column = (touch-X-200)/20 (two 20px-wide
+   columns in the 200..240 strip). Column 0 = digits 0-9 then 'a'-'j';
+   column 1 = 'k'-'z' then backspace(8)/enter(13)/space(32)/0x14. */
+undefined1 DAT_00087650_backing[40] = {
+  '0','1','2','3','4','5','6','7','8','9',
+  'a','b','c','d','e','f','g','h','i','j',
+  'k','l','m','n','o','p','q','r','s','t',
+  'u','v','w','x','y','z',8,13,32,0x14
+};
+static short DAT_000876c4_backing[128];
+short *DAT_000876c4 = DAT_000876c4_backing;
+static short DAT_00086974;
+static short DAT_00204708;
+static short DAT_00204700;
+static int DAT_00204864;
+static short DAT_0020477c;
+static short DAT_00204778;
+static short DAT_00204780;
+int DAT_0020485c;
+char DAT_002506aa;
+char DAT_002506ab;
+undefined2 DAT_0023be8c;
+static undefined2 DAT_0023be6c;
+static undefined2 DAT_0023be68;
+static undefined2 DAT_0023be70;
+static undefined2 DAT_0023be7c;
+static undefined2 DAT_0023be84;
+static undefined2 DAT_0023be78;
+static undefined2 DAT_0023be60;
+static undefined2 DAT_0023bd7c;
+static undefined DAT_00086e70_backing[256];
+#define DAT_00086e70 DAT_00086e70_backing[0]
+static undefined4 DAT_0023bf50;
+undefined1 DAT_0023ce10_backing[65536];
+HWND__ *DAT_0023c548;
+
 
 
 
@@ -1539,12 +1655,27 @@ short param_1;
   ushort local_44;
   ushort local_42;
   uint local_40;
-  undefined2 local_3c;
-  undefined2 local_3a;
-  ushort local_38;
-  byte local_34;
-  undefined1 local_33;
-  undefined2 local_32;
+  /* DAT_00202c6c points at this scratch record for the
+     collision_height_envelope/sort_collision_candidates/
+     collision_add_candidate_object call sequence below. It's a real
+     24-byte struct everywhere else it's used (see collision.c's own
+     "local_24"/"a local 24-byte struct" comments) --
+     collision_add_candidate_object writes its candidate-count/list
+     fields as far as offset 0x15 (21) into it. This call site only ever
+     named the first 10 bytes of it (as separate local_3c/3a/38/34/33/32
+     scalars), so those writes landed past this function's own stack
+     frame into whatever happened to follow -- harmless by luck until
+     this cleanup pass's global reorganization shifted what that was.
+     Real, correctly-sized storage instead, with the original scalar
+     names kept as offsets into it so the rest of this function reads
+     unchanged. */
+  char local_24[24];
+#define local_3c (*(undefined2 *)(local_24 + 0))
+#define local_3a (*(undefined2 *)(local_24 + 2))
+#define local_38 (*(ushort *)(local_24 + 4))
+#define local_34 (*(byte *)(local_24 + 6))
+#define local_33 (*(undefined1 *)(local_24 + 7))
+#define local_32 (*(undefined2 *)(local_24 + 8))
   
   if (getenv("UW_DEBUG_STEPHEIGHT"))
     fprintf(stderr, "[bdm-entry] param_1=%d g_fall_accel=%d g_jump_ascent_timer=%d DAT_00085890=%d z=%d guard=%d\n",
@@ -1717,6 +1848,12 @@ LAB_0003cdf8:
             (int)uVar4, (int)DAT_00204884, (int)g_fall_accel, (int)DAT_0023bea8, (int)DAT_0023be98);
   return uVar4;
 }
+#undef local_3c
+#undef local_3a
+#undef local_38
+#undef local_34
+#undef local_33
+#undef local_32
 
 
 // was FUN_00041f34 -- allocate/reset the keybinding + click-region tables.

@@ -7,6 +7,85 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static int DAT_000bbefc;
+static undefined2 DAT_000b99c0;
+static undefined4 DAT_000b99c4;
+ undefined1 DAT_000b99d0_backing[8192];
+static short DAT_000ba9d0;
+undefined4 DAT_000bbef4;
+/* Was a lone `undefined` scalar; draw_automap_tiles indexes it as
+   `(&DAT_000842f0)[shape - 2]` (shape 2-5, the diagonal tile types)
+   to pick the base wall-edge direction for a diagonal cell. Real 4
+   bytes from UU.exe .data at 0x842f0. Its two neighbours DAT_000842f4
+   / DAT_000842f8 (per-direction dx / dy deltas, signed) had the same
+   lone-scalar bug and are fixed just below. */
+static const unsigned char DAT_000842f0_real_table[4] = { 0x01, 0x02, 0x00, 0x03 };
+#define DAT_000842f0 (*(undefined1 *)DAT_000842f0_real_table)
+/* Was a lone 1-byte scalar, but indexed throughout this file as a
+   tile-type-flags lookup table (nibble-masked indices in most call sites,
+   but some -- e.g. advance_visibility_ray -- index it with an unmasked byte value
+   read from another table). The prior fix widened it to 256 bytes but
+   never filled it -- so it read all-zero, and in particular
+   draw_automap_tiles' `DAT_000878d0[shape] & 1` was always false,
+   forcing every tile (diagonals included) down the 4-way wall-edge
+   path instead of the 2-way diagonal path -- walls didn't follow the
+   diagonal floor shape. Real 16 bytes from UU.exe .data at 0x878d0
+   (bit 0 = "is a diagonal, use the 2-way edge path"; bits 1-4 =
+   per-direction wall-present flags used by LOS/pathfinding elsewhere;
+   0x20 on the slope types). Entry 16 onward is a string literal, so
+   there are exactly 16 real entries; kept oversized for the unmasked-
+   index call sites. */
+ undefined1 DAT_000878d0_backing[256] = {
+  0x1e, 0x00, 0x13, 0x15, 0x0b, 0x0d, 0x20, 0x20,
+  0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1e,
+};
+/* Was a lone `undefined1` scalar, but draw_automap_cell indexes it as a real
+   5x3x3 (45-entry) shape-pattern table:
+   `(&DAT_000842c0)[((shape-1)*3+row)*3+col]`, shape=1-5, comparing each
+   entry against 1 or 2 to decide whether to darken a corner pixel when
+   drawing an automap wall/floor cell. Unlike DAT_00086bf0/DAT_00085668/
+   etc earlier this session, this one is NOT silently zero -- a Ghidra
+   reference search confirms real, varied 0/1/2 data already sitting at
+   this address in UU.exe's .data (nothing writes it, it's genuinely
+   read-only). The bug here is purely the lone-scalar-instead-of-a-real-
+   array declaration: any index past byte 0 was reading whatever the
+   compiler placed adjacent in memory on this port, not this real table.
+   Real bytes recovered directly from UU.exe (45 real entries; sized
+   larger for a safety margin past the last byte any index reaches). */
+static const unsigned char DAT_000842c0_real_table[64] = {
+  1, 1, 1, 1, 1, 1, 1, 1, 1,
+  2, 1, 1, 0, 2, 1, 0, 0, 2,
+  1, 1, 2, 1, 2, 0, 2, 0, 0,
+  0, 0, 2, 0, 2, 1, 2, 1, 1,
+  2, 0, 0, 1, 2, 0, 1, 1, 2,
+};
+#define DAT_000842c0 (*(undefined1 *)DAT_000842c0_real_table)
+static char DAT_000ba9d4;
+/* Lone-scalar-used-as-4-entry-array, same as DAT_000842f0 above.
+   draw_automap_door_edge indexes `(&DAT_000842f4)[dir]` / same for f8
+   as signed-char dx / dy deltas per direction. Real bytes from UU.exe
+   .data at 0x842f4 / 0x842f8. */
+static const signed char DAT_000842f4_real_table[4] = { -1, 0, -1, 1 };
+#define DAT_000842f4 (*(undefined1 *)DAT_000842f4_real_table)
+static const signed char DAT_000842f8_real_table[4] = { 0, -1, -1, -1 };
+#define DAT_000842f8 (*(undefined1 *)DAT_000842f8_real_table)
+static short DAT_000bbef0;
+char s_font4x5p_sys_0008431c[] = "font4x5p.sys";
+static undefined1 DAT_000ba9d8_backing[32768];
+#define DAT_000ba9d8 DAT_000ba9d8_backing[0]
+static undefined1 DAT_000baa0a_backing[256];
+#define DAT_000baa0a DAT_000baa0a_backing[0]
+static undefined1 DAT_000baa0b_backing[256];
+#define DAT_000baa0b DAT_000baa0b_backing[0]
+static undefined1 DAT_000baa0c_backing[256];
+#define DAT_000baa0c DAT_000baa0c_backing[0]
+static undefined1 DAT_000baa0d_backing[256];
+#define DAT_000baa0d DAT_000baa0d_backing[0]
+static undefined2 DAT_000b99c8;
+char s_fontbig_sys_0008432c[] = "fontbig.sys";
+static char s__DATA_blnkmap_byt_00084338[] = "\\DATA\\blnkmap.byt";
+char *DAT_002029cc;
+
 
 
 

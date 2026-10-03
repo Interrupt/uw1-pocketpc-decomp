@@ -8,6 +8,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+short DAT_00201b68;
+char *g_selected_object;
+undefined1 DAT_00088d98_backing[1536];
+short DAT_00201c7c;
+undefined2 DAT_00201c90;
+undefined2 DAT_00201c8c;
+/* DAT_00085668_backing/DAT_00085668/DAT_000856a4 macros now live in
+   uw.h (DAT_000856a4 aliases into the same table at entry 15, byte
+   offset 15*8 -- Ghidra's own decompile of the real UU.exe shows this
+   used as `&DAT_000856a4 + mode*0x80`, i.e. "entry 15 of whichever
+   mode", the same table dispatch_sticky_mode_handlers reads -- not a
+   separate byte the way it was declared before, which left it
+   permanently 0/NULL too). */
+static char s__DATA_main_byt_000857a8[] = "\\DATA\\main.byt";
+undefined4 DAT_002029d0;
+/* Both were `int` -- real 64-bit pointers (DAT_002046a8/DAT_0020469c,
+   both `char *`) stored through a 32-bit global truncate them on this
+   host. DAT_002046a0 feeds DAT_002046c0/DAT_002046c8's own bases
+   (used by active_mobile_list_add's message-buffer write), confirmed live as
+   the next crash in the spawn_new_object "spawn object" chain once the
+   earlier truncations in that same chain were fixed. */
+static char *DAT_002046ac;
+static char *DAT_002046a0;
+char *DAT_0024cff4;
+
 
 
 

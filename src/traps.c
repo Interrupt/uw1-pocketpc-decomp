@@ -7,6 +7,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* was a raw `iVar4 + 0x85638` absolute-address literal inside
+   trigger_quest_milestone_cleanup_event (no declared global at all --
+   Ghidra never recovered this one), read as a 9-entry object-type-id
+   table. Its address falls in the same static-data run as the two
+   named globals immediately around it here (s__DATA3D_DFRAME_E_00085620
+   ends ~0x85632; this string starts at 0x85644), so it's genuinely
+   static data, not a wild pointer -- but since the real byte values
+   were never recovered, a zero-initialized fallback (matching this
+   file's established "safe stand-in, not recovered data" pattern,
+   e.g. DAT_00110fc0's own scratch buffer) replaces what would
+   otherwise be an absolute-address dereference into unmapped memory
+   on this 64-bit host. */
+static undefined1 DAT_00085638[10]; /* indices 1-9 are the ones actually read (index 0 unused) */
+static char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in_your_face!";
+/* Both were single `undefined` scalars, but resolve_lock_difficulty_rating
+   (the only function anywhere in this decompile that touches either)
+   indexes each one via `(&DAT_xxx)[i]` up to the extents below -- the
+   same out-of-bounds scalar-as-array bug class as DAT_001007ee and
+   the glyph-table globals fixed earlier this session. Widened to real
+   arrays, sized to the highest index each is ever read at. */
+static undefined DAT_002026d1[253];
+static undefined DAT_00202807[121];
+static char s_Look__it_s_a_text_trap_00087918[] = "Look,_it's_a_text_trap";
+static undefined4 DAT_0024cff8;
+static undefined4 DAT_0024cfd4;
+static undefined DAT_0007e644_backing[8192];
+#define DAT_0007e644 DAT_0007e644_backing[0]
+
 
 
 // was FUN_0007d0b0 -- the tile trap/link "type" effect dispatcher

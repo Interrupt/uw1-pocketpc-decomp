@@ -9,6 +9,187 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00085908 DAT_00085908_backing[0]
+#define DAT_0023c4c0 DAT_0023c4c0_backing[0]
+#define DAT_0023c5b8 DAT_0023c5b8_backing[0]
+#define DAT_0024ac18 DAT_0024ac18_backing[0]
+ undefined DAT_001007d9_backing[8192];
+short DAT_0010061c;
+short DAT_00100608;
+ undefined1 DAT_001007d0_backing[6144];
+ undefined DAT_00084f20_backing[8192];
+undefined DAT_002027d2_backing[8192];
+ushort DAT_00101414;
+char *DAT_00101904;
+undefined4 DAT_00101560;
+undefined4 DAT_001013fc;
+undefined4 DAT_0010191c;
+static undefined4 DAT_00101440;
+static byte DAT_00101450;
+static byte DAT_00101730;
+static undefined DAT_000853c4_backing[256];
+#define DAT_000853c4 DAT_000853c4_backing[0]
+static undefined DAT_000853cc_backing[256];
+#define DAT_000853cc DAT_000853cc_backing[0]
+char *DAT_00101438;
+static undefined1 DAT_0010142c;
+static char DAT_00101740_backing[8192];
+#define DAT_00101740 DAT_00101740_backing[0]
+static char DAT_00101741_backing[256];
+#define DAT_00101741 DAT_00101741_backing[0]
+static undefined1 DAT_00101743_backing[256];
+#define DAT_00101743 DAT_00101743_backing[0]
+static undefined2 DAT_00101744_backing[256];
+#define DAT_00101744 DAT_00101744_backing[0]
+static undefined1 DAT_00101746_backing[256];
+#define DAT_00101746 DAT_00101746_backing[0]
+static undefined1 DAT_00101747_backing[256];
+#define DAT_00101747 DAT_00101747_backing[0]
+static undefined1 DAT_00101748_backing[256];
+#define DAT_00101748 DAT_00101748_backing[0]
+static undefined1 DAT_000853b0_backing[256];
+#define DAT_000853b0 DAT_000853b0_backing[0]
+static undefined1 DAT_000853b1_backing[256];
+#define DAT_000853b1 DAT_000853b1_backing[0]
+static undefined1 DAT_00101460;
+static undefined1 DAT_001014e0_backing[256];
+#define DAT_001014e0 DAT_001014e0_backing[0]
+static undefined1 DAT_001014e1_backing[256];
+#define DAT_001014e1 DAT_001014e1_backing[0]
+static undefined1 DAT_0023cf08_backing[40960];
+#define DAT_0023cf08 DAT_0023cf08_backing[0]
+static undefined DAT_0023cf09_backing[256];
+#define DAT_0023cf09 DAT_0023cf09_backing[0]
+static undefined DAT_0023cf0a_backing[256];
+#define DAT_0023cf0a DAT_0023cf0a_backing[0]
+static undefined DAT_0023cf0b_backing[256];
+#define DAT_0023cf0b DAT_0023cf0b_backing[0]
+static undefined DAT_0023cf0c_backing[256];
+#define DAT_0023cf0c DAT_0023cf0c_backing[0]
+static undefined1 DAT_00101739_backing[256];
+#define DAT_00101739 DAT_00101739_backing[0]
+static undefined1 DAT_0010173a_backing[256];
+#define DAT_0010173a DAT_0010173a_backing[0]
+static byte DAT_00101742;
+static undefined DAT_00101732_backing[8192];
+#define DAT_00101732 DAT_00101732_backing[0]
+static undefined DAT_00101733_backing[256];
+#define DAT_00101733 DAT_00101733_backing[0]
+static undefined4 DAT_00101728_backing[256];
+#define DAT_00101728 DAT_00101728_backing[0]
+/* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
+   npc_ai_tick/setup_npc_ai_tick_state store here (&DAT_002048c0/002048f0/00204950,
+   one of a 3-way "which per-class scratch buffer" choice) -- same class
+   of bug as npc_ai_tick's own iVar5 fix and get_object_record_by_slot_index's header
+   comment. Confirmed live via lldb: DAT_0010172c read 0xb6c724 instead
+   of the real 0x100b6c724 (upper word dropped), so the very next
+   build_object_placement_snapshot(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
+   first time an NPC's per-tick AI (npc_ai_tick) got this far -- which
+   never happened before this session's other fixes let that code run
+   at all. Note: a separate, unrelated function (the tile_pair_los_blocked
+   ring-buffer scan a few thousand lines below) also reads raw bytes at
+   `&DAT_0010172c + small offset` as part of an already-fragile,
+   not-yet-fixed split-symbol-cluster spanning several adjacent globals
+   (see DAT_00101732's own backing-array fix and
+   [[split-symbol-clusters-to-structs]]) -- that usage's correctness
+   already depended on undefined/compiler-chosen adjacent-global layout
+   before this change and is no more or less well-defined after
+   widening this one field from 4 to 8 bytes. */
+void *DAT_0010172c;
+static undefined DAT_00101749;
+static ushort DAT_000853b8;
+static undefined1 DAT_0010174a_backing[256];
+#define DAT_0010174a DAT_0010174a_backing[0]
+ushort DAT_0010141c;
+ushort DAT_00101910;
+static undefined4 DAT_00101920;
+static undefined4 DAT_00101914;
+static undefined DAT_00101568_backing[8192];
+#define DAT_00101568 DAT_00101568_backing[0]
+static undefined DAT_00101569_backing[256];
+#define DAT_00101569 DAT_00101569_backing[0]
+undefined2 DAT_00101418;
+undefined2 DAT_00101908;
+static undefined1 DAT_00101738;
+static byte DAT_00101458;
+static byte DAT_001018fc;
+static byte DAT_00101434;
+/* Was a bare 1-byte `undefined` -- same split-symbol class as
+   DAT_00204980/990/9b0's own backing-array fixes just above: build_object_placement_snapshot
+   (called with this as its param_2 "object state" out-buffer, via
+   DAT_0010172c) writes fields up to offset 0x28 into it, a massive
+   out-of-bounds write past a 1-byte scalar. Confirmed live crashing
+   (EXC_BAD_ACCESS writing param_2[0x23]) the first time an NPC actually
+   got far enough through its per-tick AI (npc_ai_tick) to reach this
+   call -- which never happened before g_npc_tick_enabled/npc_ai_tick's other
+   fixes let that code run at all. Oversized generously like its
+   siblings rather than tightly to 0x29 bytes, in case another
+   not-yet-exercised caller writes further into the same real struct. */
+static undefined1 DAT_002048f0_backing[65536];
+#define DAT_002048f0 DAT_002048f0_backing[0]
+static undefined1 DAT_00204950_backing[65536];
+#define DAT_00204950 DAT_00204950_backing[0]
+undefined4 DAT_00101944;
+static undefined DAT_000853d8_backing[256];
+#define DAT_000853d8 DAT_000853d8_backing[0]
+ undefined DAT_002027d1_backing[8192];
+short DAT_00101938;
+short DAT_0010193c;
+byte DAT_0010192c;
+byte DAT_00101930;
+undefined1 DAT_00101934;
+char DAT_0010194c;
+char DAT_000853d0;
+int DAT_00101940;
+char DAT_00101928;
+static char DAT_00101948;
+static undefined4 DAT_00101950;
+static byte DAT_0010195c;
+static ushort *DAT_00101958;
+ushort DAT_0024fa18;
+static char DAT_00085910;
+static char DAT_00085911;
+static char DAT_00085918;
+static char DAT_00085919;
+static undefined DAT_00085908_backing[8192];
+static char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
+undefined1 DAT_0023c460_backing[32768];
+/* DAT_0023c4c0/DAT_0023c5b8/DAT_0024ac18 (a resource-slot status table,
+   load_critter_association_tables) were lone-byte scalars indexed up to 0x80 (128) --
+   confirmed overflowing into the unrelated DAT_00248410 (a malloc'd
+   buffer pointer) via an lldb watchpoint, corrupting it and causing a
+   later crash in seed_conversation_globals_for_new_game far away from this actual bad write.
+   Widened with the usual backing-buffer pattern. Macro defines for all
+   four backing arrays now live in uw.h, since load_critter_association_tables
+   (their only reader) moved into src/ai.c. */
+static undefined1 DAT_0023c4c0_backing[256];
+static undefined1 DAT_0023c5b8_backing[256];
+static undefined1 DAT_0024ac18_backing[256];
+/* Was "named" with no surrounding spaces -- build_creature_look_text (creature look
+   text) appends it directly between the description and the proper name
+   with no separator of its own, so a named creature's look text ran
+   the words together: "You see an mellow outcastnamedBragit" instead of
+   "You see a mellow outcast named Bragit". */
+static char s_named_00085d18[] = " named ";
+static undefined DAT_000868c0_backing[256];
+#define DAT_000868c0 DAT_000868c0_backing[0]
+/* was `int` -- truncated pointer to a 64-bit address on assignment in
+   spawn_creature_death_loot (&DAT_001007d0 + index*0x30), causing spawn_creature_treasure_drop to
+   dereference a garbage address (crash in demo_critter_orbit_cardinal.txt,
+   EXC_BAD_ACCESS at uw.c:70173). Sibling DAT_00101404, assigned via the
+   identical pattern, is correctly `char *`. */
+// was DAT_0024cfc4
+static char *g_despawn_creature_record;
+// Was a lone `undefined1` scalar, but its only use (spawn_creature_
+// treasure_drop, src/ai.c) is `(&DAT_002034b5)[cVar4 * 0xd]` -- a
+// 13-byte-stride record table indexed by a derived level/tier value,
+// same "lone byte indexed as an array" bug class fixed throughout
+// this project. Widened generously, matching this file's other such
+// tables, since indexing past element 0 previously just read
+// whatever adjacent BSS happened to follow it.
+static undefined1 DAT_002034b5_backing[8192];
+#define DAT_002034b5 DAT_002034b5_backing[0]
+
 
 
 

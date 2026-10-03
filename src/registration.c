@@ -13,6 +13,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Read as a pointer (codewheel_letter_at_index/codewheel_index_of_letter both
+   dereference it as `short *`), same truncated-pointer-in-an-int bug
+   class as this project's other DAT_xxx symbols, but never assigned
+   anywhere in the whole decompile -- whatever real 0x24(36)-entry
+   character table (a-la "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ") it once
+   pointed at wasn't recovered by Ghidra as initialized data. Left as-is
+   (not guessed/fabricated) since the only caller chain that reads it
+   (validate_codewheel_word) has zero callers itself in this build --
+   entirely dead under check_registration_key_dialog's bypass. */
+static int DAT_00086f0c;
+static unsigned short u_BuildNo_00086f5c[] = u"BuildNo";
+static unsigned short u_Software_ZIO_Interactive_Ultima_U_00086f6c[] = u"Software\\ZIO_Interactive_Ultima_U";
+static int DAT_0023c108;
+static undefined DAT_0023bf78_backing[8192];
+#define DAT_0023bf78 DAT_0023bf78_backing[0]
+
 
 
 

@@ -7,6 +7,54 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Was `undefined2` (unsigned short) -- every real use in tick_weapon_swing_state/
+   reset_weapon_swing_state/update_weapon_ready_hud_icon/cancel_weapon_swing (the attack-swing state
+   machine) treats this as a signed negative countdown (assigned
+   literal bit patterns like 0xfff6/-10, 0xfffb/-5, and compared with
+   `< 0`, `< -4`, `< -9`, `< -10`). With an unsigned type, a stored
+   0xffff (-1) reads back as +65535, so `DAT_0010062c < 1` (the guard
+   that gates this function's entire body) is permanently false and
+   the whole state machine can never advance past its "armed, wind-up
+   under way" state -- confirmed live: a real attack starts (weapon
+   raises, a real non-null swing record resolves) but then freezes at
+   DAT_000870e4==3 forever, no matter how long the button is held or
+   how long real time elapses afterward. */
+short DAT_0010062c;
+// was DAT_00250770: live entry count in g_scheduler_table (max 0x40) --
+// see g_scheduler_table's own comment for the whole system this
+// belongs to, named to match System Shock's own term for it.
+undefined1 g_scheduler_count;
+/* was g_queue_link_table, and every scheduler_* function below was a
+   bare FUN_XXXXXXXX -- renamed to "scheduler", System Shock's own term
+   for this shared timed-effects system (door swing, blood splats,
+   combat highlights, ...), since this decompile never recovered a real
+   name for it. See each scheduler_* function's own "was FUN_..."
+   comment for which raw address it used to be.
+
+   HACK: same "separately-allocated global that resolve_object_link's
+   arena-bounds check rejects" class as g_equipped_items/g_backpack_slot_table
+   -- see that global's own comment for the fully-worked precedent this
+   fix follows. DAT_00250778 is the scheduler's own 64-entry (6
+   bytes/entry = 0x180 total, confirmed by this exact size showing up
+   in its save/load code, scheduler_load/scheduler_save) link table --
+   scheduler_add_entry/scheduler_despawn_entry/scheduler_tick/scheduler_step_entry/
+   scheduler_finish_entry/scheduler_advance_effect all pass `&DAT_00250778 + offset` straight
+   into resolve_object_link, the same call shape as any other object
+   "next" link field. A plain standalone static array was never inside
+   the level object arena's malloc'd buffer the way it evidently was in
+   the original's flat, fixed-address memory map, so every one of those
+   resolves came back NULL -- confirmed live (UW_DEBUG_DOOR) chasing a
+   door-open bug: a door's own queued open-animation entry could never
+   resolve back to the door object once scheduler_tick's per-tick walk
+   actually reached it. Given real backing storage inside the same
+   arena buffer instead, right after g_backpack_slot_table's existing
+   tail reservation -- see reset_level_object_arena's own comment for
+   where it's pointed, init_level_object_arena's for the matching
+   allocation-size widening, and resolve_object_link's for the matching
+   bounds widening. */
+char *g_scheduler_table;
+static int DAT_002508fc;
+
 
 
 // was FUN_0008097c: removes a scheduler entry's own world object (tile

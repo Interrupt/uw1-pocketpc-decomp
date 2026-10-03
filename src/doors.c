@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static char s_At__d__d_00087360[] = "At_%d_%d";
+
 // was LAB_000415b4
 void *alloc_door_frame_buffer(param_1)
 unsigned int param_1;

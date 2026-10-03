@@ -8,6 +8,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+ undefined DAT_00204920_backing[8192];
+short DAT_00202c68;
+short DAT_00202c30;
+static undefined1 DAT_00202c70_backing[65536];
+#define DAT_00202c70 DAT_00202c70_backing[0]
+#define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
+static ushort *_DAT_00202c34;
+static char DAT_00202c20;
+static char DAT_00202c28;
+static char DAT_00202c24;
+static char DAT_00202c2c;
+static char DAT_00202c18;
+static char DAT_00202c1c;
+
 
 
 

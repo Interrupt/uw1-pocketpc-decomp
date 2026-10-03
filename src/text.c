@@ -9,6 +9,60 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// was DAT_0024ae20. Flat RGB565 ink color draw_text_string uses when
+// g_text_use_palette_color is 0 -- never written anywhere, silently 0
+// (black). Fine as the default on message-scroll's light parchment
+// background; menu screens with a dark backdrop need the palette-
+// indexed path instead (force g_text_use_palette_color there).
+undefined2 g_text_flat_color;
+static undefined2 DAT_000890b0_backing[32768];
+#define DAT_000890b0 DAT_000890b0_backing[0]
+// was DAT_0008909c. Line height (pixels) of the currently-active font,
+// read from its header by load_font_metrics; 0 would make
+// draw_text_string allocate/draw nothing.
+static ushort g_font_line_height;
+// was DAT_0008894c. Per-glyph row stride (bytes) of the currently-active
+// font, also from load_font_metrics; selects unpack_glyph_bitmap's 8- vs
+// 16-bit-per-row decode.
+static short g_font_row_stride;
+static short DAT_000a85b8;
+/* Was `int`, truncating the real char* pointer (DAT_000890a4) assigned
+   into it -- used as a glyph-bitmap-data base address in byte-pointer
+   arithmetic passed to unpack_glyph_bitmap. */
+static char *g_font_glyph_data_base;
+static undefined2 DAT_000a85b0;
+static char s_0123456789ABCDEF_00084a28[] = "0123456789ABCDEF";
+static undefined1 DAT_00189588;
+/* Was a single `undefined2`/`undefined1` scalar, but
+   init_glyph_width_table (the only function anywhere in this
+   decompile that touches any of these 4 globals) indexes each one via
+   `(&DAT_xxx)[i]` up to the extents below -- an out-of-bounds
+   scalar-as-array access, same class of bug as DAT_001007ee earlier
+   this session. Widened to real arrays; sizes match the highest index
+   each is ever written to in that function (DAT_00110bc0's stride-0x10
+   writes imply a wider structure this decompile doesn't otherwise use,
+   sized here to its observed 32x16 shape). */
+static undefined2 DAT_00110a78[0xa0];
+static undefined2 DAT_00110bc0[0x200];
+static undefined1 DAT_00110fd0[0x20];
+static undefined1 DAT_00201b18[0x20];
+static undefined2 DAT_00189572;
+static undefined2 DAT_00189574;
+char * DAT_00110fc8 = 0;
+static undefined1 DAT_00110fc4;
+static undefined4 DAT_00110bb8;
+/* Was `undefined4` (4 bytes) despite init_draw_command_cursor using it to reset
+   DAT_00110fc0 (`char *`) -- truncating on this 64-bit host, and
+   overwriting the DAT_00110fc0_scratch fallback (see DAT_00110fc0's own
+   comment) with a truncated garbage/NULL pointer right before
+   init_dungeon_rendering dereferences it. Retyped to a real pointer, defaulted to
+   the same scratch buffer for the same "no real initializer found,
+   avoid crashing" reason. */
+static char *DAT_00110fcc = DAT_00110fc0_scratch;
+static undefined2 DAT_00201b38;
+static undefined2 DAT_00201b10;
+static undefined4 DAT_0020250c;
+
 
 
 

@@ -11,6 +11,83 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Ghidra modeled a single 32-bit pointer, stored straddling the byte
+   ranges of two separately-declared globals (_DAT_0023c5ac's upper 16
+   bits + DAT_0023c5b0's lower 16 bits -- see the CONCAT22 write site in
+   app_main_loop and every read site's "_DAT_0023c5ac >> 0x10 |
+   DAT_0023c5b0 << 0x10" reconstruction), because that's how the packed
+   bytes landed in the original 32-bit binary's fixed memory layout.
+   Neither underlying global has any other independent use in this
+   decompile, so replace the whole packed-halves dance with one real
+   pointer: it was truncating the buffer's address to its low 32 bits on
+   this 64-bit host and segfaulting the first time Ordinal_1044 actually
+   did real memmove work. */
+void *g_uw_framebuffer;
+/* Not `static` -- referenced from graphics.c (bitmap_blit_to_framebuffer,
+   rect_fill_or_save_restore) as well as here; the extern declaration and
+   g_palette_rgb565 macro alias both live in uw.h now so both files see the
+   same thing. */
+undefined2 g_palette_rgb565_backing[32768];
+/* Was a lone `undefined2` scalar, but used as a full-screen shadow/
+   backup buffer the same size as g_uw_framebuffer (screen_backup_save saves
+   aside every non-transparent pixel across the whole 320x200 framebuffer
+   into it; screen_backup_restore/screen_backup_restore_rect restore from it
+   later) -- classic
+   "undersized global used as a large table" bug. Widened to match
+   g_uw_framebuffer's exact size (0x25800 bytes = 76800 shorts). */
+static undefined2 DAT_000891b0_backing[76800];
+#define DAT_000891b0 DAT_000891b0_backing[0]
+undefined2 DAT_000a85c0;
+undefined2 DAT_000a85c4;
+undefined2 DAT_000a85c8;
+undefined2 DAT_000842a4;
+undefined2 DAT_000842a8;
+int DAT_00204848;
+// was DAT_00088960 -- global toggle every sprite/bitmap-blit primitive in
+// this file (bitmap_blit_to_framebuffer in graphics.c, and this file's
+// own sibling blit routines, e.g. ~uw.c:5244/5591/62096) reads instead of
+// taking a real "transparent mode" parameter: 0 draws every source pixel
+// opaquely through the palette (so a transparent-keyed pixel, byte value
+// 0, paints as palette index 0 -- typically black), nonzero skips
+// byte==0 pixels for real transparency. Callers that want a transparent
+// blit set this to 1 immediately before the call and reset it to 0
+// right after (draw_sprite_by_id, mode_icon_highlight_on/mode_icon_highlight_off, etc). Named
+// after root-causing the inventory-panel "black box" bug: redraw_hud_panels's
+// panels.GR background blit had a trailing literal `1` argument that
+// clearly intended transparency but never actually set this global,
+// so it silently ran opaque -- see that fix's own comment for the full
+// story (uw.c, redraw_hud_panels, search "DAT_00088960" in git history/
+// memory.md for the writeup predating this rename).
+int g_blit_transparent_mode;
+int DAT_0024af70;
+void *DAT_0023c430;
+static undefined1 DAT_00084a40_backing[32768];
+#define DAT_00084a40 DAT_00084a40_backing[0]
+undefined2 DAT_00242010_backing[32768];
+/* Was a lone `undefined2` scalar, but build_rgb565_palette uses it as the base of a
+   20-level x 256-entry faded-palette table (`(ushort*)(&DAT_00248418 +
+   iVar21) + level*0x100`, iVar21 stepping by 2 per palette entry, 20 levels
+   stepped by 0x100 ushorts/level) -- a real ~10KB out-of-bounds write on
+   every single palette install. Root-caused via an lldb watchpoint on
+   DAT_0024cfc0 (a totally unrelated string-page counter ~26KB away) that
+   showed this exact write clobbering it into a huge garbage value, which
+   then produced a wild out-of-bounds array read/UAF-style crash much later
+   in get_message_string's string lookup. Same lone-scalar-used-as-array pattern
+   fixed repeatedly this session (DAT_002028e8, g_visibility_ray_table, etc). */
+undefined2 DAT_00248418_backing[20 * 256];
+static undefined4 DAT_0023c638;
+static undefined1 DAT_001005cc;
+static undefined1 DAT_001005cd;
+static undefined1 DAT_001005ce;
+static undefined DAT_00088640_backing[8192];
+#define DAT_00088640 DAT_00088640_backing[0]
+// Tunable: extra units ADDED to DAT_000842b0's computed value (more
+// negative there is brighter, so this darkens the view) in BOTH
+// set_ambient_bias_with_light and set_ambient_bias_without_light
+// below. Override via UW_AMBIENT_BIAS_REDUCTION while calibrating;
+// default 32.
+static int g_ambient_bias_reduction = 32;
+
 /* Scratch buffer for rect_fill_or_save_restore's save/restore modes --
  * only ever used within this function, so it stays local to this file
  * (unlike g_palette_rgb565_backing, which uw.c also needs and is extern'd in

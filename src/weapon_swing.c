@@ -8,6 +8,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static char s_Sorry__you_have_no_00084f2c[] = "Sorry,_you_have_no";
+static undefined4 DAT_001005ec;
+static short DAT_00100618;
+short DAT_000870e4;
+static short DAT_001005e8;
+static undefined DAT_001005f0;
+static byte DAT_00100614;
+/* Was a lone `undefined` scalar, same bug as DAT_00084eff just above --
+   tick_weapon_swing_state indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 =
+   attack-type/3 (0-3), selecting which of a small set of swing
+   animations (`DAT_00084f10`) to play. Recovered via Ghidra headless
+   (0x84f0b, 5 bytes -- DAT_00084f10, the next real symbol, starts
+   exactly 5 bytes later): 00 34 27 19 00. */
+static unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
+#define DAT_00084f0b DAT_00084f0b_backing[0]
+undefined1 DAT_000870e0;
+static void *g_weapon_swing_raw_frames[UW_WEAPON_SWING_FRAME_COUNT];
+static char s__DATA_weapons_dat_00087268[] = "\\DATA\\weapons.dat";
+static char s_weapons_0008727c[] = "weapons";
+// was DAT_0023c198/DAT_0023c1b8 (.data 0x87198/0x871b8) -- per-frame
+// Y/X screen-offset tables (one signed byte per frame, 28 frames) for
+// the weapon-swing sprite set, read straight from weapons.dat by
+// load_weapon_swing_sprites and consumed by weapon_swing_draw_tick to
+// position each frame relative to the 3D viewport.
+static undefined1 g_weapon_swing_frame_y_offset_backing[256];
+#define g_weapon_swing_frame_y_offset g_weapon_swing_frame_y_offset_backing[0]
+static undefined1 g_weapon_swing_frame_x_offset_backing[256];
+#define g_weapon_swing_frame_x_offset g_weapon_swing_frame_x_offset_backing[0]
+static short DAT_0023c1ec;
+static undefined2 DAT_000870e8;
+static int DAT_0023c260;
+static char s__DATA_weapons_cm_00087284[] = "\\DATA\\weapons.cm";
+static undefined1 DAT_00202700_backing[256];
+#define DAT_00202700 DAT_00202700_backing[0]
+
 
 
 // was LAB_0006e324 -- load_weapon_swing_sprites's (weapons.GR loader)

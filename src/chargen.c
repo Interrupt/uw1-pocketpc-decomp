@@ -6,6 +6,74 @@
 #include "headers/chargen.h"
 #include "headers/debug.h"
 
+#define DAT_000fb860 DAT_000fb860_backing[0]
+#define DAT_000fb863 DAT_000fb860_backing[3]
+#define DAT_000fb8f0 DAT_000fb8f0_backing[0]
+char *DAT_00086df8;
+static undefined DAT_00084e40_backing[8192];
+#define DAT_00084e40 DAT_00084e40_backing[0]
+static undefined DAT_00084e48_backing[8192];
+#define DAT_00084e48 DAT_00084e48_backing[0]
+static undefined DAT_00084e50_backing[8192];
+#define DAT_00084e50 DAT_00084e50_backing[0]
+static undefined DAT_00084e58_backing[8192];
+#define DAT_00084e58 DAT_00084e58_backing[0]
+char *DAT_001005c8;
+/* Was `undefined4` (4 bytes), but assigned real char* pointers
+   (DAT_001005c4/DAT_001005c8) throughout the character-generation/
+   font-drawing subsystem and passed directly as bitmap_blit_to_framebuffer's char*
+   source-bitmap param -- truncated every one of those pointers on this
+   64-bit host. */
+static char *DAT_000fb858;
+static char *DAT_001005c4;
+/* Not `static` -- also used by chargen.c; see the extern declaration and
+   DAT_000fb860 macro alias in uw.h. */
+static undefined1 DAT_000fb860_backing[256];
+/* DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. */
+/* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]`
+   (4-byte stride) with idx up to a CONCAT11 of two record byte fields
+   (draw_chargen_field_value). Real populator recovered this session: chrbtns_offset_table_builder
+   (a callback Ghidra never resolved into a named function -- see its
+   own comment near its definition) builds this as a cumulative per-
+   entry byte-size table when the "chrbtns" resource loads.
+   Not `static` -- chargen.c reaches it through the DAT_000fb8c4 alias
+   in uw.h (case 4's body-figure offset lookup). */
+undefined4 DAT_000fb880_backing[4096];
+static char s_key_to_continue_00084e60[] = "key_to_continue";
+static char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
+static char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
+static short DAT_001005c0;
+/* DAT_000fb8c4's address (0xfb8c4) is 0x44 bytes = 17 elements past
+   DAT_000fb880's (0xfb880) -- like DAT_000fb884, not a separate table but
+   an alias into the SAME cumulative per-entry offset array chrbtns_offset_table_builder
+   builds for chrbtns.gr, viewed starting at element 17. Elements 17..26
+   are the offsets of chrbtns entries 17-26 (the ten full-body figures,
+   five male + five female); character_generator_loop's case 4 reads
+   `table[17 + sexbit*5 + portraitIdx]` to blit the chosen body. Declaring
+   it as an independent zero array (as an earlier pass did, before
+   chrbtns_offset_table_builder's role was known) split it from the real data and left it
+   permanently zero -- so no body was ever drawn. Aliased onto the real
+   array instead. See uw.h. */
+static undefined1 DAT_000fb8f0_backing[1680];
+char s_FONT5X6P_SYS_00084e9c[] = "FONT5X6P.SYS";
+static char s__DATA_CHARGEN_BYT_00084eac[] = "\\DATA\\CHARGEN.BYT";
+static char s_FONTCHAR_SYS_00084ec0[] = "FONTCHAR.SYS";
+static char s__DATA_chrgen_dat_00084ed0[] = "\\DATA\\chrgen.dat";
+static char s__DATA_skills_dat_00084ee4[] = "\\DATA\\skills.dat";
+/* Was a zero-initialized array standing in for an unrecovered string
+   constant (Ghidra had no content at this address, just a dangling
+   reference -- see load_gr_resource_entries's comment). Recovered by dumping the
+   real bytes at this address directly from the original UU.exe via
+   Ghidra's headless analyzer: the string "chrbtns" (character-gen
+   button/portrait graphics, matching its neighboring resource-name
+   constants here). Leaving this as an all-zero buffer made
+   load_gr_resource_entries's `param_1[0] == '\0'` empty-name check always true, so
+   it always took the "nothing to load" early-return path and never
+   invoked its per-item callbacks (chrbtns_bump_alloc_entry/chrbtns_offset_table_builder) at all --
+   the real root cause of DAT_000fb880 staying empty despite those
+   callbacks now being correctly implemented. */
+static char s_chrbtns_00084ef8[] = "chrbtns";
+
 
 
 // The main character-generation state machine: steps through portrait/gender/skills/stats/name/confirm, one screen per state.

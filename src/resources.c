@@ -8,6 +8,136 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00202724 DAT_00202724_backing[0]
+static byte *DAT_000b4624;
+static byte *DAT_000b462c;
+static byte *DAT_000b4618;
+static undefined DAT_000fb650_backing[8192];
+#define DAT_000fb650 DAT_000fb650_backing[0]
+static undefined DAT_000fb550_backing[8192];
+#define DAT_000fb550 DAT_000fb550_backing[0]
+/* Real string, recovered via Ghidra disassembly of decode_critter_sprite_page
+   (the caching "\CRIT\CR<pp>PAGE.N<nn>" per-page critter-animation
+   resource loader): the decompile showed DAT_00085928/29/30/31 as four
+   unrelated lone chars, and its own two-arg Ordinal_1063 (strcat) call
+   right after them dropped BOTH arguments (same class of bug as
+   resolve_object_link's ~30 call sites fixed earlier this session).
+   The real ARM passes `Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920)`
+   -- concatenating this template (its "00"/"00" digit pairs already
+   patched with the real page numbers by the writes at +8/+9 and
+   +0x10/+0x11) onto the copied install-dir path -- then opens THAT
+   buffer, not the never-populated `acStack_120` the decompile shows. */
+static char DAT_00085920_backing[20] = "\\CRIT\\CR00PAGE.N00";
+#define DAT_00085920 DAT_00085920_backing[0]
+#define DAT_00085928 DAT_00085920_backing[8]
+#define DAT_00085929 DAT_00085920_backing[9]
+#define DAT_00085930 DAT_00085920_backing[0x10]
+#define DAT_00085931 DAT_00085920_backing[0x11]
+char s__DATA__00085970[] = "\\DATA\\";
+static char s__DATA_pals_dat_00085978[] = "\\DATA\\pals.dat";
+static undefined4 DAT_00202514;
+static int DAT_00202720_backing[128];
+static int *DAT_00202720 = DAT_00202720_backing;
+static undefined1 DAT_00202724_backing[8192];
+static undefined4 DAT_00202728;
+static char *DAT_0020274c;
+static undefined DAT_00202518_backing[8192];
+#define DAT_00202518 DAT_00202518_backing[0]
+ushort DAT_00202744;
+static undefined2 DAT_000859a8;
+/* Was `undefined4` -- truncated the real 64-bit destination pointer
+   decode_gr_entry_to_buffer assigns here (see that function's own comment on why
+   this global exists at all: load_gr_resource_entries always decodes
+   into its OWN malloc'd buffer via the allocator callback and only
+   ever hands that buffer back through the post-process callback, so
+   passing a pre-allocated destination needs this indirection). */
+static void *DAT_00202510;
+static undefined2 DAT_00202748;
+static char s_doors_00085a64[] = "doors";
+ undefined1 DAT_0023b840_backing[8192];
+undefined1 DAT_00202750_backing[256];
+static char *DAT_0023c3fc;
+static undefined4 *DAT_0023c404;
+/* DAT_0024bfa0-family (6 arrays) were already widened once (from a
+   pre-this-session pass) to 8200 bytes, but register_interned_string indexes with a
+   0x804(2052)-byte stride and DAT_0024cfc0 (the record count) grows
+   unboundedly as new entries are registered at runtime -- 8200 bytes
+   only covers ~4 records, and ASAN caught real startup traffic already
+   exceeding that. Widened further to a generous 64-record margin. */
+static undefined1 DAT_0024bfa0_backing[1052672];
+#define DAT_0024bfa0 DAT_0024bfa0_backing[0]
+static undefined1 DAT_0024bfa1_backing[1052672];
+#define DAT_0024bfa1 DAT_0024bfa1_backing[0]
+static undefined1 DAT_0024bfa2_backing[1052672];
+#define DAT_0024bfa2 DAT_0024bfa2_backing[0]
+static undefined1 DAT_0024bfa3_backing[1052672];
+#define DAT_0024bfa3 DAT_0024bfa3_backing[0]
+static undefined1 DAT_0024bfa4_backing[1052672];
+#define DAT_0024bfa4 DAT_0024bfa4_backing[0]
+static undefined1 DAT_0024bfa5_backing[1052672];
+#define DAT_0024bfa5 DAT_0024bfa5_backing[0]
+/* The record-registration function (near FUN_00078820, "the string-
+   interning cache") splits a real char* pointer byte-by-byte across
+   these FOUR SEPARATE byte-plane arrays at the SAME index (byte0 in
+   bfa2[i], byte1 in bfa3[i], byte2 in bfa4[i], byte3 in bfa5[i]) --
+   capturing only the pointer's low 32 bits even before this port's
+   64-bit truncation concerns. A side table of real pointers, indexed
+   the same way (record*0x201+slot, i.e. the byte-plane index /4) is
+   used instead wherever the real pointer is needed. Sized to match
+   DAT_0024bfa2_backing's total addressable slot count (1052672/4). */
+static char *g_bfa2_real_ptrs[263168];
+/* Was undersized at 8200 bytes (~4 records) while their DAT_0024bfa0-
+   family siblings (same 0x804-byte-stride, same DAT_0024cfc0 record
+   count, same growing-table indexing -- see that comment above) were
+   already widened to 1052672 bytes. Both are indexed identically
+   (`sVar5 * 0x804`, sVar5 up to DAT_0024cfc0-1) by the exact same
+   string-resource-cache registration path (get_message_string), so once
+   more than ~4 pages register at runtime -- already observed for the
+   sibling arrays -- this pair silently read/wrote out of bounds.
+   Widened to match. */
+static undefined1 DAT_0024c7a2_backing[1052672];
+#define DAT_0024c7a2 DAT_0024c7a2_backing[0]
+static undefined1 DAT_0024c7a3_backing[1052672];
+#define DAT_0024c7a3 DAT_0024c7a3_backing[0]
+static undefined4 DAT_0024bf98;
+/* Declared char* despite always being allocated/read/cast as a single
+   2-byte count (see open_strings_pak_file: `(short *)Ordinal_1041(2)`, a 2-byte
+   read into it, then `*DAT_0024cfb8` used as the item count). That
+   mismatch meant every *DAT_0024cfb8 dereference only ever read the
+   *first byte* of the real 2-byte count as a signed char -- for
+   STRINGS.PAK's real (large, >127) count this came out negative, and
+   `(int)*DAT_0024cfb8 << 2` produced a huge garbage byte count
+   (0xFFFFFB94 observed) passed straight to fread() as `unsigned int
+   size`, overflowing the undersized buffer Ordinal_1041 allocated for
+   the same corrupted (and clamped-to-4096-by-the-allocator's-own-sanity-
+   check) size. This was corrupting the heap on nearly every run --
+   almost certainly the root cause of the "free_list_checksum_botch"-style
+   intermittent SIGABRT documented in the README, since a heap overflow's
+   corruption is only detected whenever some later, unrelated free()
+   happens to stumble on the mangled metadata. */
+static unsigned short *DAT_0024cfb8;
+static char *DAT_0024cfa8;
+static short DAT_0024cfc0;
+static char s_strings_pak_000878c0[] = "strings.pak";
+static short DAT_0024cfb4;
+static undefined2 DAT_000878bc;
+/* decode_strings_pak_entry's decoded-string ring buffer: DAT_0024cfb4 cycles
+   through offsets 0, 0x200, 0x400, ... wrapping back to 0 once it
+   would reach 0x1000 (4096), and each slot can hold up to a 0x200-byte
+   decoded string. Declared as a single scalar byte, this let every
+   decode past the very first 512-byte slot write far out of bounds --
+   confirmed via an lldb watchpoint that this overflow is what corrupts
+   DAT_0024bf98 (the compressed-string file handle, coincidentally laid
+   out 0x1000 bytes after this one in our translation) into garbage
+   partway through the very first character-generation screen, which is
+   the root cause of the "most chargen text doesn't render" bug: once
+   DAT_0024bf98 is corrupted, every subsequent compressed-string decode
+   for the rest of the process fails. */
+static undefined1 DAT_0024af98_backing[4096];
+#define DAT_0024af98 DAT_0024af98_backing[0]
+static undefined2 DAT_0024cfbc_backing[8192];
+#define DAT_0024cfbc DAT_0024cfbc_backing[0]
+
 
 
 

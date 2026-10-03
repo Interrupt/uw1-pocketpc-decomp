@@ -8,6 +8,79 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+undefined4 DAT_00202c84;
+undefined2 DAT_002020a0;
+undefined2 DAT_002020a4;
+byte *DAT_00202c6c;
+/* Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below,
+   already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of
+   a repeating 6-byte-stride per-candidate record in
+   collision_height_envelope/sort_collision_candidates's up-to-256-entry collision
+   candidate list (the ARM loads at +0/+1/+2/+3/+4/+5 and next-record
+   sort reads at +6/+7 confirm the 6-byte stride). Indexing past element
+   0 read/wrote whatever memory happened to follow this single byte in
+   the link order -- confirmed via a real crash (a plain, non-debugger
+   run walking toward a critter; the same bug reproduced fine under
+   lldb/ASan since they lay out globals differently, masking it there).
+   Keep the aliases in uw.h: independent arrays lose the link high byte. */
+ undefined1 DAT_00202c38_backing[8192];
+ undefined1 DAT_00202c90_backing[65536];
+/* Was `int` despite being assigned real pointer values derived from
+   DAT_002046b8 (see there) and itself assigned into g_player_object
+   (`char *`) -- truncating on this 64-bit host, part of the same crash
+   chain (reset_player_object_record's Ordinal_1047 call reading g_player_object). */
+char *DAT_0023b82c;
+undefined1 DAT_002027d0_backing[256];
+ undefined1 DAT_00202800_backing[65536];
+byte *g_scratch_object_ptr;
+short DAT_00101454;
+short DAT_0010144c;
+short DAT_00202a3c;
+byte *DAT_002046c0;
+byte *DAT_002046c8;
+/* Was a plain tentative definition (no initializer), so a truly fresh
+   process starts it at C's default zero instead of the real "no
+   container open" resting state. Every genuine reset in this file
+   (FUN_0003bcd8, probe_save_slots's caller, journey_onward_load_slot_menu's
+   own setup) explicitly sets this to 0xffff/-1, and every reader treats
+   it as signed (`-1 < DAT_00202080` gates load_player_save_record's
+   object_list_unlink call below) -- 0 reads as "container slot 0 is
+   open", spuriously unlinking g_player_object from a wild address
+   computed off a container that was never really open. Confirmed live:
+   SIGBUS in object_list_unlink on the very first "new game" of a
+   process that never had an earlier save to leave this at a sane value
+   (this codebase's regression scripts had been silently relying on
+   stale state left over from a prior interactive session to avoid ever
+   hitting this fresh-process path). */
+short DAT_00202080 = -1;
+ushort *DAT_002046b4;
+undefined1 DAT_002029f8_backing[256];
+char *DAT_002046a4;
+char *DAT_002046a8;
+char * DAT_002046bc;
+char *DAT_0020469c;
+undefined1 DAT_002029d8_backing[256];
+short DAT_00202a40;
+ushort DAT_00202a48;
+short DAT_00202a38;
+ushort DAT_00202a4c;
+char *DAT_00202a44;
+undefined2 DAT_00202a50;
+undefined2 DAT_00202a54;
+static char s__DATA_comobj_dat_00086894[] = "\\DATA\\comobj.dat";
+static char s__DATA_objects_dat_000868a8[] = "\\DATA\\objects.dat";
+short DAT_002046b0;
+static int DAT_002046d4;
+static int DAT_002046ec;
+/* Was a lone `undefined` scalar, but the real class6 variant-effect
+   lookup (uw.c ~46760, class6_variant_effect_table_lookup) indexes it
+   as `&DAT_0024cfe0 + nibble` for nibble 0..0xf, and its boot-time
+   loader (load_class6_variant_effect_table) reads exactly 0x10 bytes
+   into it -- same lone-scalar-treated-as-array bug class fixed
+   repeatedly elsewhere in this file. */
+undefined1 DAT_0024cfe0_backing[8192];
+undefined1 DAT_00250730_backing[65536];
+
 
 
 

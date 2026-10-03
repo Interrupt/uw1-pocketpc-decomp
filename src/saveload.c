@@ -10,6 +10,116 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static char s__arc_tmp_000842b4[] = "_arc.tmp";
+/* Not `static` -- also used by saveload.c (open_level_archive,
+   close_level_archive, write_archive_entry, read_archive_entry); see the
+   extern declarations and macro aliases in uw.h. */
+static undefined DAT_000b78b8_backing[8192];
+#define DAT_000b78b8 DAT_000b78b8_backing[0]
+static undefined1 DAT_000b98b8_backing[32768];
+#define DAT_000b98b8 DAT_000b98b8_backing[0]
+static undefined1 DAT_000b98b9_backing[32768];
+#define DAT_000b98b9 DAT_000b98b9_backing[0]
+static undefined1 DAT_000b58b8_backing[16384];
+#define DAT_000b58b8 DAT_000b58b8_backing[0]
+char s__SAVE0_lev_ark_000842fc[] = "\\SAVE0\\lev.ark";
+// was DAT_002028c8
+char *g_save_record_buffer;
+short DAT_002046f0;
+/* Was zero-initialized (C default, no initializer) -- confirmed via
+   Ghidra headless memory dump (0x868dc) that the real binary's own
+   .data has this at 7, not 0. This is the pause-menu-panel state index
+   (0-6 = a panel is open, 7 = closed/back in normal gameplay -- see
+   close_ui_panel_return_to_game's own comment above, uw.c ~4400), and
+   draw_idle_mouse_cursor (the idle mouse-cursor-sprite show function, reached
+   whenever nothing is held: g_selected_object==0) refuses to draw the
+   cursor at all unless this equals 7. Starting at the C default of 0
+   instead of the real 7 meant the idle cursor -- automap browsing
+   being the clearest case, since you're never holding an item there,
+   but really anywhere the player hasn't yet opened and closed the
+   Escape menu at least once this session -- never rendered via this
+   path from the moment the game starts, matching the reported "automap
+   cursor doesn't reliably show/flickers" (a session that happens to
+   have already cycled the pause menu once masks this; a fresh session
+   or the very first minutes of play would not). */
+undefined2 DAT_000868dc = 7;
+/* Was a bare 1-byte `undefined` scalar -- draw_save_load_slot_list takes its address
+   and passes it straight to message_scroll_print_wrapped as the save-
+   slot IV label, so it needs to be a real string, not a scalar. Real
+   bytes confirmed via a Ghidra memory dump of the original binary at
+   0x8705c: "IV- " (with a trailing space, matching the sibling I-/II-/
+   III- labels below). Same class of bug as the other unrecovered-string
+   fixes this session, just previously missed because Ghidra had typed
+   this one as a scalar instead of generating a garbled placeholder
+   string for it. */
+// was DAT_0008705c
+static char s_IV__0008705c[] = "IV- ";
+/* Was `"III-"` -- missing its trailing space, confirmed via the same
+   memory dump (0x87064: "III- ", not "III-"). */
+static char s_III__00087064[] = "III- ";
+/* Same fix as s_IV__0008705c above: real bytes at 0x8706c are "II- ". */
+// was DAT_0008706c
+static char s_II__0008706c[] = "II- ";
+/* Same fix as s_IV__0008705c above: real bytes at 0x87074 are "I- ". */
+// was DAT_00087074
+static char s_I__00087074[] = "I- ";
+/* Same reused-global-holding-a-real-string pattern as s_scroll_newline_0008522c
+   above: a Ghidra memory dump of the original binary at 0x87038 shows
+   the real bytes are `5c 30 00` -- the string "\0" (a literal
+   backslash+'0' control code, not an escape byte), not the all-zero
+   default this backing array's C declaration gave it. */
+// was DAT_00087038
+static undefined s_scroll_color_reset_00087038_backing[8192] = "\\0";
+#define s_scroll_color_reset_00087038 s_scroll_color_reset_00087038_backing[0]
+/* Was `"\\6_Save_Game_Descriptions"` -- underscores standing in for
+   whitespace, matching Ghidra's own auto-generated symbol name for this
+   string rather than its real recovered bytes (same garbled-placeholder
+   class as s__not_used_yet__00087020 and the save-name prompt string
+   fixed earlier this session). Real bytes confirmed via a Ghidra memory
+   dump of the original binary at 0x8703c
+   (`5c 36 20 20 20 20 53 61 76 65 20 47 61 6d 65 20 44 65 73 63 72 69
+   70 74 69 6f 6e 73 00`): a literal backslash and '6' (not an escape
+   sequence -- there's no raw 0x06 byte here, just the two printable
+   characters), then four real spaces, then "Save Game Descriptions". */
+static char s__6_Save_Game_Descriptions_0008703c[] = "\\6    Save Game Descriptions";
+static char s__DATA_OPSCR_BYT_00086efc[] = "\\DATA\\OPSCR.BYT";
+/* Was `"<not_used_yet>"` -- underscores standing in for the real spaces
+   (same garbled-placeholder class as the save-descriptions header
+   string above and the save-name prompt fixed earlier this session).
+   Real bytes confirmed via a Ghidra memory dump of the original binary
+   at 0x87020 (`3c 6e 6f 74 20 75 73 65 64 20 79 65 74 3e 00`): the
+   angle brackets were genuinely part of the string, just with real
+   spaces instead of underscores between the words, and no trailing
+   newline. */
+static char s__not_used_yet__00087020[] = "<not used yet>";
+/* Was zero-initialized -- see DAT_000857a0's comment above. probe_save_slots
+   appends this to DAT_000857a0 ("\SAVE0") to build each save-slot probe
+   path, then substitutes the '0' with '1'..'4'; the already-recovered
+   s__SAVE0_desc_00087078 == "\SAVE0\desc" spells out exactly what that
+   concatenation should produce, confirming this suffix is "\desc". */
+static undefined DAT_00087030_backing[8192] = "\\desc";
+#define DAT_00087030 DAT_00087030_backing[0]
+static char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
+/* Was `"Please_enter_a_Save_Game_file_an"` -- a garbled placeholder that
+   just echoed this string's own auto-generated symbol name (underscores
+   for spaces, truncated at Ghidra's naming-length cap) instead of the
+   real recovered text; this is why the pause-menu's save/load name
+   prompt never showed anything in the message scroll. Real bytes
+   confirmed via Ghidra headless dump of 0x87094 in the original binary
+   (`20 20 50 6c ... 45 6e 74 65 72 0a 00`): two leading spaces, no
+   trailing period, a trailing newline before the NUL. */
+static char s_Please_enter_a_Save_Game_file_an_00087094[] = "  Please enter a Save Game file and press Enter\n";
+static char s__SAVE0_desc_00087078[] = "\\SAVE0\\desc";
+static undefined DAT_00087084_backing[8192];
+#define DAT_00087084 DAT_00087084_backing[0]
+/* Was zero-initialized -- see DAT_000857a0's comment above. ensure_save_directory_exists
+   appends this to a directory path before scanning it with the
+   Ordinal_167/181 FindFirstFile/FindNextFile-shaped ordinals, matching
+   the universal Win32 "\*.*" wildcard idiom for "list everything in this
+   directory". */
+static undefined DAT_000870c8_backing[8192] = "\\*.*";
+#define DAT_000870c8 DAT_000870c8_backing[0]
+
 
 
 

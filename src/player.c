@@ -8,6 +8,290 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+char *DAT_0024fa2c;
+char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
+/* Was `char *` -- but every `g_player_object[N]` bracket-index use
+   throughout this file (position/facing/type fields) matches the SAME
+   ushort-array-index convention every other object-record pointer in
+   this codebase uses (e.g. `param_1[N]` for a `ushort *param_1`), not a
+   byte-array one: g_player_object[0xc] as ushort-index 0xc = byte
+   offset 0x18, matching the real ARM disassembly's `ldrb r0,[r0,#0x18]`
+   facing-byte read; g_player_object[0xb] = byte offset 0x16, matching
+   set_player_tile_position's own tile-position writes; bare
+   `*g_player_object & 0x1ff` (the object type/class field) needs 9
+   bits, which no single byte read can supply. With the old `char *`
+   type every one of those bracket-index reads was silently reading the
+   wrong byte (index N instead of byte offset 2*N) -- confirmed live:
+   drop_held_object_near_player's g_player_object[0xb] read (meant to
+   recover the player's own tile Y position for a "throw distance"
+   projection) read whatever unrelated byte sits at offset 0xb instead
+   of the real position at offset 0x16, producing a wildly wrong throw
+   start point. Retyped to `ushort *` to match; every *pointer-
+   arithmetic* use elsewhere in this file (`g_player_object + N`,
+   expecting a literal byte offset N, then cast down to byte/char for a
+   sub-field read) has been updated alongside this to explicitly cast to
+   `(char *)` first, preserving their existing (correct) byte-offset
+   arithmetic now that the base type's own implicit scaling would
+   otherwise double it. */
+ushort *g_player_object;
+char *DAT_0023be74;
+// g_monster_max_stats_table was DAT_001007d4: a per-monster-class stat
+// table (indexed by the low 6 bits of a monster object's own type id,
+// 0x30-byte stride per class); byte 0 of each entry is that class's
+// max HP, used to clamp regen (restore_stat_capped). NOT valid for the
+// player object -- the player's type id (0x7f) happens to index this
+// table's unused last slot, which is zeroed; see restore_stat_capped's
+// own fix for why callers must special-case the player instead.
+ undefined DAT_001007d4_backing[8192];
+short DAT_0023beb4;
+undefined1 DAT_0010060c_backing[256];
+#define DAT_0010060c DAT_0010060c_backing[0]
+short DAT_00201c74;
+undefined1 DAT_0023bf0c;
+/* Reused scratch global (see the DAT_000a85d0 comment above for the
+   general pattern) -- most call sites treat it as a writable sprintf-
+   style destination buffer via Ordinal_1063, but several others
+   (draw_save_load_slot_list's save-slot list among them) pass `&s_scroll_newline_0008522c`
+   straight to message_scroll_print_wrapped with no write beforehand,
+   relying on it holding its real static initial content. A Ghidra
+   memory dump of the original binary at 0x8522c confirmed that content
+   is the two bytes `0a 00` -- the string "\n" -- not zero. Printing an
+   empty string (this array's old all-zero C default) instead of a real
+   "\n" silently skipped the pending-newline flag msg_scroll_draw_wrapped_span sets from
+   a string's trailing '\n' (see its own comment), which is why the
+   save-slot list rendered every entry run together on one line with no
+   breaks. Seeded to match. */
+// was DAT_0008522c
+ undefined s_scroll_newline_0008522c_backing[8192] = "\n";
+static undefined4 DAT_00101954;
+/* DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/
+   a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2`
+   scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step,
+   sweep_apply_collision, sweep_writeback_position -- reached by `DAT_00204874 = &DAT_00204880`
+   then dereferenced relative to that) treat this as one struct with real
+   fields up to offset 0x2a (42 bytes) -- confirmed crashing
+   (EXC_BAD_ACCESS) dereferencing that far out on a real run. Widened to
+   a real backing buffer for that crash, but originally only 80/82/84
+   were pointed at it -- every other field was left as its own
+   independent global, so `apply_heading_turn`/`apply_movement_tick` and
+   friends, which write these fields BY NAME (e.g. `g_jump_ascent_timer = ...`
+   for heading), were updating completely different memory than what
+   movement_collision_sweep's collision/movement engine reads via
+   `*(short *)(DAT_00204874 + 0x14)` pointer arithmetic (real address
+   0x204894) -- confirmed via lldb: g_jump_ascent_timer demonstrably changed on
+   turn input, while `*(short*)(DAT_00204874+0x14)` read 0 on every
+   single check all session. This -- not a dropped call anywhere -- is
+   why position/heading never visibly changed despite the movement-
+   command-decode and turn-application fixes earlier this session: the
+   update landed in memory the movement/collision code never looks at.
+   Same lone-scalars-instead-of-a-real-record pattern fixed repeatedly
+   this session, just spread across two declaration sites and not
+   caught the first time because the earlier fix only needed to solve
+   the immediate crash. Rebuilt as a real byte-addressed backing buffer
+   (byte, not short, since several fields are single bytes at odd
+   offsets) with every field aliased at its real offset, generous
+   margin past the furthest (0x2a) seen. */
+ undefined1 DAT_00204880_backing[128];
+short DAT_00201c70;
+undefined2 DAT_00201b60;
+/* Was `undefined2` (unsigned) -- change_game_mode/FUN_0003bd48 (see their
+   own "0x80, see DAT_00085668's comment" sites) cast this to `int` and
+   compare against the 32-bit sentinel `0xffffffff` to detect "dispatch
+   disabled" (set via `DAT_00201b64 = 0xffff;`, uw.c ~27530/27774). An
+   unsigned 16-bit 0xffff zero-extends to 0x0000ffff on that cast, never
+   matching 0xffffffff -- the guard silently never fired, and the "no
+   dispatch" state fell through into `&DAT_000856a4 + 0xffff * 0x80`, a
+   wild out-of-bounds read (confirmed live: an ASan global-buffer-overflow
+   in change_game_mode, reached via demomode_pump, in
+   demo_automap_note_test.txt). Signed so the same cast sign-extends
+   0xffff to -1, matching the comparison's actual intent. */
+short DAT_00201b64;
+short DAT_00201c94;
+undefined4 DAT_0024cfc8;
+undefined4 DAT_002028d8;
+undefined2 DAT_00201c78;
+static char s_You_died_000857b8[] = "You_died";
+static byte DAT_00085730;
+code *DAT_00201c9c;
+byte DAT_0020208c;
+undefined2 DAT_00203304;
+undefined1 DAT_00203303;
+short DAT_00202078;
+ undefined2 DAT_002048b0_backing[8192];
+undefined1 *DAT_002048b8;
+undefined2 DAT_002048b2;
+undefined2 DAT_0023be98;
+undefined4 DAT_000858a0;
+/* Recovered from UU.exe .data at 0x85d20: tile-floor-height -> world Z
+   table, `height_nibble * 64` for nibbles 0..13 (then 0,0,1024).
+   `*(short *)(&DAT_00085d20 + nibble*2)`. Was all-zero, so the player's
+   world Z (DAT_00204884, set from this table at uw.c ~26936) stayed 0
+   -> the 3D camera sat at floor level + a 164-unit eye offset while the
+   tile geometry's Y is `height*64` (~768 for a mid-level floor), so
+   every floor projected far above the viewport. Also used by
+   process_visible_tile_cell's height cull. */
+ undefined1 DAT_00085d20_backing[65536] = {
+  0x00,0x00, 0x40,0x00, 0x80,0x00, 0xc0,0x00, 0x00,0x01, 0x40,0x01,
+  0x80,0x01, 0xc0,0x01, 0x00,0x02, 0x40,0x02, 0x80,0x02, 0xc0,0x02,
+  0x00,0x03, 0x40,0x03, 0x00,0x00, 0x00,0x00, 0x00,0x04, 0x00,0x00,
+};
+short DAT_00202088;
+/* DAT_0008589c/85898/85894 are link-time-initialized read-only data,
+   same situation as DAT_00086e68 right above's fix (nothing in this
+   decompile writes any of the three, and an exhaustive whole-binary
+   Ghidra reference search confirms the real UU.exe agrees -- their
+   only references, all in apply_movement_mode_profile, are reads). Sibling constants
+   to DAT_00086e68 in the exact same per-facing-direction table
+   (apply_movement_mode_profile multiplies each by the same `uVar5` direction-lookup
+   value right next to where it uses DAT_00086e68), so almost
+   certainly hit the same bug for the same reason. Recovered the real
+   values by reading UU.exe's .data bytes directly via Ghidra:
+   0x3ac (940), 0xeb (235), 0xbc (188) respectively. Macro defines now
+   live in uw.h alongside DAT_00086e68, since apply_movement_mode_profile
+   (their only reader) moved into src/input.c. */
+undefined DAT_001c2000_backing[8192];
+static byte DAT_001013a4;
+static uint DAT_002020e4;
+static byte DAT_002020e8;
+int DAT_0023bc94;
+// was DAT_002028c0
+undefined1 *g_save_equip_table_ptr;
+// was DAT_002028c4
+undefined1 *g_save_record_base_ptr;
+/* Was missing its leading backslash -- both call sites append this
+   straight onto a directory path built with no trailing separator (e.g.
+   load_player_save_record builds "<root>\SAVE0" then appends this), so the file name
+   ran into the directory name with nothing between them
+   ("...\SAVE0player.dat"). A leading "\\" here is harmless even for a
+   caller whose own prefix already ends in one (resolve_path collapses
+   repeated separators). */
+char s_player_dat_00085a74[] = "\\player.dat";
+/* g_light_source_slots: light-source-eligible equip slots {5,6,7,8} (see
+   refresh_player_equipment_effects and decay_equipped_light_sources's light-scan loops, and use_light_source's
+   own comparison against find_or_assign_object_widget's result). Was a
+   bare 1-byte scalar -- every existing `(&g_light_source_slots)[1..3]` read past
+   the single declared byte into whatever the linker placed next, instead
+   of the real dumped table. Dumped directly from the real binary at
+   0x85ac8: `5 6 7 8 0 0 0 0 0 0 0xc8 0 0 0 0xc8 0`. */
+ unsigned char DAT_00085ac8_backing[16] =
+    {5,6,7,8,0,0,0,0,0,0,0xc8,0,0,0,0xc8,0};
+static byte DAT_002046d0;
+static byte DAT_002046cc;
+static undefined1 DAT_0020330c;
+static char DAT_00086db0;
+static char DAT_00086db1;
+static undefined1 DAT_0010060d;
+static undefined1 DAT_0010060e;
+static undefined1 DAT_0010060f;
+static undefined4 DAT_0023bc9c;
+static undefined4 DAT_0023bc98;
+undefined4 DAT_002020d0;
+static undefined4 DAT_002020dc;
+undefined4 DAT_002020d8;
+undefined4 DAT_002020d4;
+static char DAT_00086db4;
+static int DAT_00086db8_backing[256];
+#define DAT_00086db8 DAT_00086db8_backing[0]
+static undefined1 DAT_00086da8_backing[256];
+#define DAT_00086da8 DAT_00086da8_backing[0]
+/* Was a lone `undefined` scalar, but compute_light_source_colors
+   indexes it as a 16-entry (0-0xf) light-type -> base-color-index
+   table (`(&DAT_00086dc8)[light_type & 0xf]`). Widened to match. */
+static undefined DAT_00086dc8_backing[16];
+#define DAT_00086dc8 DAT_00086dc8_backing[0]
+/* Was a lone `undefined` scalar, but compute_object_weight indexes it
+   as a 512-entry (9-bit item-id, 0-0x1ff), 4-byte-stride table
+   (`(&g_object_weight_table)[item_id * 4]`, only byte 0 of each entry
+   read). Widened to match. */
+static undefined g_object_weight_table_backing[2048];
+#define g_object_weight_table g_object_weight_table_backing[0]
+undefined2 DAT_0023beb8;
+/* Base of a large fixed-offset record (reset_player_object_record: `DAT_00086df8 =
+   &DAT_0023bca8;`, then init_new_character_record and others write through
+   DAT_00086df8 at offsets up to at least 0xd1/209 -- a device/config-ish
+   struct, not yet fully identified). Declared as a lone `undefined`
+   scalar, byte 0 of that struct -- an lldb watchpoint on the unrelated
+   DAT_0023be74 (which happens to sit right after this in memory) caught
+   this overflowing into it one byte per loop iteration in init_new_character_record,
+   corrupting it and causing a later SEGV. Widened generously since the
+   struct's exact real size isn't confirmed. */
+ undefined1 DAT_0023bca8_backing[8192];
+short DAT_0023be90;
+short DAT_0023be92;
+short DAT_0023be94;
+short DAT_0023bf00;
+undefined2 DAT_0023bf02;
+undefined2 DAT_0023bf04;
+byte DAT_0023beb0;
+byte DAT_0023beac;
+undefined2 DAT_0023bea0;
+short DAT_0023bea4;
+short DAT_0023bf08;
+undefined4 DAT_0023bea8;
+char DAT_0023bf18;
+undefined2 DAT_0023be9e;
+undefined2 DAT_0023be9c;
+undefined2 DAT_0023be9a;
+static char DAT_0023bf14;
+static byte DAT_0023bf10;
+static undefined DAT_00086e58_backing[256];
+#define DAT_00086e58 DAT_00086e58_backing[0]
+static short DAT_0023bf30;
+static short DAT_0023bf34;
+static short DAT_0023bf38;
+static short DAT_0023bf3c;
+static short DAT_0023bf40;
+/* Was a lone `undefined` scalar, but grant_experience_points indexes
+   it as a per-character-level XP-threshold table
+   (`(&DAT_00086e87)[level]`), with the loop's own upper bound (0x10 =
+   16) confirming at least 17 entries (0-16) are live; the very first
+   access (by the raw current-level byte, before any bounds check) has
+   no visible cap of its own, so widened with a safety margin rather
+   than the bare minimum. */
+static undefined DAT_00086e87_backing[64];
+#define DAT_00086e87 DAT_00086e87_backing[0]
+static int DAT_0024af8c;
+static char s_font5x6i_sys_00086e98[] = "font5x6i.sys";
+char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
+/* "currently-loaded shading level" for load_shading_level_config's `if (DAT_000872a0
+   == param_1) return;` early-out. Ghidra dropped its initialiser (same
+   silently-zero link-time-init class as DAT_00086e68 &c); left at 0 the
+   first dungeon entry -- load_shading_level_config(0) -- matched and returned without
+   ever reading SHADES.DAT, so the texture-LOD threshold DAT_00086b24
+   stayed 0 and every visible tile drew with the 16x16 low-detail
+   texture. Sentinel = no level loaded yet. */
+char DAT_000872a0 = -1;
+static undefined1 DAT_0008730c_backing[8192];
+#define DAT_0008730c DAT_0008730c_backing[0]
+static undefined1 DAT_0008730d;
+/* Was a lone scalar, but roll_skill_use_improvement indexes it
+   `(&DAT_00087308)[tier]` for tier 0..2 (classify_skill_training_tier's
+   full range) as a per-tier probability threshold for
+   Ordinal_2005(uVar2, random). Widened to the real 3-entry array this
+   needs -- as a lone scalar, indices 1/2 read into whatever the
+   compiler placed next (s_and_00087310's string data on this host),
+   an arbitrary/wrong probability for tiers 1 and 2. Real per-tier
+   values weren't recovered (Ghidra never surfaced this as initialized
+   data), so left zero-initialized rather than guessed -- still an
+   improvement over reading unrelated string bytes as a probability. */
+static undefined DAT_00087308_arr[3];
+#define DAT_00087308 DAT_00087308_arr[0]
+char s_and_00087310[] = "and";
+/* Used as a NUL-terminated string (&DAT_00087318) by
+   print_skill_improvement_list, joining middle entries of its skill-
+   name list (likely ", " between the original real data). Ghidra never
+   surfaced this as initialized string data, so it currently prints as
+   an empty separator -- not guessed at, same as this project's other
+   unrecovered-rodata symbols (e.g. DAT_00086f0c). */
+static undefined DAT_00087318;
+static char s_Chant_the_mantra__0008731c[] = "Chant_the_mantra:";
+static char s_fontchar_sys_00087330[] = "fontchar.sys";
+static char s__DATA_win1_byt_00087350[] = "\\DATA\\win1.byt";
+char DAT_0023c27c;
+static char s__DATA_win2_byt_00087340[] = "\\DATA\\win2.byt";
+static byte DAT_0024af80;
+static undefined4 DAT_0024af88;
+
 
 
 

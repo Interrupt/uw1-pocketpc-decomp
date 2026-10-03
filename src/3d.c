@@ -10,6 +10,147 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_000869cc (DAT_000869cc_str[0])
+#define DAT_000869d4 (DAT_000869d4_str[0])
+#define DAT_000869dc (DAT_000869dc_str[0])
+#define DAT_000869e4 (DAT_000869e4_str[0])
+ void *g_tile_texptr_emit[UW_MAX_VIS_TILES];
+ void *g_tile_texptr_out[UW_MAX_VIS_TILES];
+/* Ghidra only saw pointer-walking writes (build_shade_lut) and an indexed
+   read (sVar7 clamped to 0x9f, i.e. 160 entries -- see its use below), so
+   it declared this as a lone scalar instead of the real 160-entry
+   distance/lighting falloff table. That undersizing let build_shade_lut's
+   fill loop silently scribble past it into whatever the compiler placed
+   next in .bss (confirmed via `nm`: DAT_000bbef8 landed 28 bytes later,
+   exactly iteration 7 of the loop) -- invisible to ASan because a
+   non-static tentative definition like `undefined4 DAT_000b5638;` gets
+   common linkage, and Clang's ASan cannot redzone-instrument common
+   symbols. */
+ undefined4 DAT_000b5638_backing[160];
+char DAT_000842b0;
+char DAT_0023b830;
+undefined2 DAT_000da47c;
+/* build_trig_tables builds these as 361-entry (0..360 degrees) sin / cos
+   tables (float bit patterns); every reader indexes
+   `(&DAT_000d99xx)[angle]`. Were lone `undefined4` scalars, so
+   build_trig_tables's `[0..360]` writes smashed ~1.4 KB of adjacent
+   globals. In UU.exe they are contiguous .bss (0xd9930 sin, 0xd9ed8
+   cos). */
+ undefined4 DAT_000d9930_arr[512];
+ undefined4 DAT_000d9ed8_arr[512];
+undefined4 DAT_000db438;
+undefined4 DAT_000db43c;
+undefined4 DAT_000db440;
+int DAT_000db448;
+int DAT_000db44c;
+static int DAT_000db450;
+/* DAT_000c8ac0-family: 12 separately-declared globals that are really the
+   12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
+   view/camera matrix -- build_view_matrix writes the whole matrix in one shot
+   via `multiply_matrix4x4(...,...,&DAT_000c8ac0)`, a matrix-multiply that treats
+   its output as one contiguous 64-byte buffer starting at DAT_000c8ac0
+   (including the 4 never-individually-named "column 3" slots at
+   +0xc/+0x1c/+0x2c/+0x3c, always 0/0/0/1 for this kind of matrix). As
+   separate globals our compiler doesn't guarantee they're adjacent, so
+   that write would land wherever the linker happened to place each one --
+   same lone-scalar/stray-symbol-declared-instead-of-a-real-array pattern
+   fixed repeatedly this session, just spread across a dozen names instead
+   of one. Real backing array + aliases at each element's correct offset. */
+static undefined4 DAT_000c8ac0_mtx[16];
+#define DAT_000c8ac0 DAT_000c8ac0_mtx[0]
+#define DAT_000c8ac4 DAT_000c8ac0_mtx[1]
+#define DAT_000c8ac8 DAT_000c8ac0_mtx[2]
+#define DAT_000c8ad0 DAT_000c8ac0_mtx[4]
+#define DAT_000c8ad4 DAT_000c8ac0_mtx[5]
+#define DAT_000c8ad8 DAT_000c8ac0_mtx[6]
+#define DAT_000c8ae0 DAT_000c8ac0_mtx[8]
+#define DAT_000c8ae4 DAT_000c8ac0_mtx[9]
+#define DAT_000c8ae8 DAT_000c8ac0_mtx[10]
+#define DAT_000c8af0 DAT_000c8ac0_mtx[12]
+#define DAT_000c8af4 DAT_000c8ac0_mtx[13]
+#define DAT_000c8af8 DAT_000c8ac0_mtx[14]
+int DAT_000c8c98;
+/* Recovered from UU.exe .data at 0x84608: the near-clip distance,
+   float 5.0 (bit pattern 0x40a00000). render_visible_tile_list /
+   near_clip_visible_tiles pass it straight to the softfloat compare/subtract
+   ordinals as a float bit pattern. Was silently zero -> the near-plane
+   clip and the 1/(z-near) perspective divide both degenerated. */
+static undefined4 DAT_00084608 = 0x40a00000u;
+/* DAT_000bc038-family: ~40 separately-declared 1-byte globals that are
+   really one 0x88(136)-byte-stride per-tile record array (its sibling
+   DAT_000bc044 -- a few bytes further into the same original record --
+   was already fixed as a real backing array by a prior session; these
+   were missed). render_visible_tile_list's tile-visibility pass indexes them all with
+   the same `local_7c*0x88 [+ byte offset]` scheme (confirmed: the byte
+   offsets below, relative to DAT_000bc038, span exactly 0..0x87, one full
+   record). As lone scalars this walks off into whatever memory happens to
+   follow them, corrupting adjacent globals -- confirmed crashing
+   (EXC_BAD_ACCESS) a few calls further down this same file. Same
+   lone-scalar-used-as-array pattern fixed repeatedly this session; given
+   DAT_000bc044's real size the same generous record count. */
+static undefined DAT_000bc038_backing[32768];
+#define DAT_000bc038 DAT_000bc038_backing[0]
+#define DAT_000bc039 DAT_000bc038_backing[1]
+#define DAT_000bc03a DAT_000bc038_backing[2]
+#define DAT_000bc03b DAT_000bc038_backing[3]
+#define DAT_000bc044 DAT_000bc038_backing[0xc]
+#define DAT_000bc07c DAT_000bc038_backing[0x44]
+#define DAT_000bc07d DAT_000bc038_backing[0x45]
+#define DAT_000bc07e DAT_000bc038_backing[0x46]
+#define DAT_000bc07f DAT_000bc038_backing[0x47]
+#define DAT_000bc0a0 DAT_000bc038_backing[0x68]
+#define DAT_000bc0a1 DAT_000bc038_backing[0x69]
+#define DAT_000bc0a2 DAT_000bc038_backing[0x6a]
+#define DAT_000bc0a3 DAT_000bc038_backing[0x6b]
+#define DAT_000bc0a4 DAT_000bc038_backing[0x6c]
+#define DAT_000bc0a5 DAT_000bc038_backing[0x6d]
+#define DAT_000bc0a6 DAT_000bc038_backing[0x6e]
+#define DAT_000bc0a7 DAT_000bc038_backing[0x6f]
+#define DAT_000bc0a8 DAT_000bc038_backing[0x70]
+#define DAT_000bc0a9 DAT_000bc038_backing[0x71]
+#define DAT_000bc0aa DAT_000bc038_backing[0x72]
+#define DAT_000bc0ab DAT_000bc038_backing[0x73]
+#define DAT_000bc0ac DAT_000bc038_backing[0x74]
+#define DAT_000bc0ad DAT_000bc038_backing[0x75]
+#define DAT_000bc0ae DAT_000bc038_backing[0x76]
+#define DAT_000bc0af DAT_000bc038_backing[0x77]
+#define DAT_000bc0b0 DAT_000bc038_backing[0x78]
+#define DAT_000bc0b1 DAT_000bc038_backing[0x79]
+#define DAT_000bc0b2 DAT_000bc038_backing[0x7a]
+#define DAT_000bc0b3 DAT_000bc038_backing[0x7b]
+#define DAT_000bc0b4 DAT_000bc038_backing[0x7c]
+#define DAT_000bc0b5 DAT_000bc038_backing[0x7d]
+#define DAT_000bc0b6 DAT_000bc038_backing[0x7e]
+#define DAT_000bc0b7 DAT_000bc038_backing[0x7f]
+#define DAT_000bc0b8 DAT_000bc038_backing[0x80]
+#define DAT_000bc0b9 DAT_000bc038_backing[0x81]
+#define DAT_000bc0ba DAT_000bc038_backing[0x82]
+#define DAT_000bc0bb DAT_000bc038_backing[0x83]
+#define DAT_000bc0bc DAT_000bc038_backing[0x84]
+#define DAT_000bc0bd DAT_000bc038_backing[0x85]
+#define DAT_000bc0be DAT_000bc038_backing[0x86]
+#define DAT_000bc0bf DAT_000bc038_backing[0x87]
+/* DAT_000c4838-family: same story, but holding real 8-byte pointers (one
+   per visible-tile record, written by near_clip_visible_tiles and read back by
+   render_visible_tile_list) rather than bytes -- was a lone `undefined4` (4 bytes),
+   which would silently truncate every pointer stored into it on this
+   64-bit port even before the out-of-bounds-array problem. Real backing
+   array of genuine pointer-sized slots, same generous record count as its
+   sibling arrays above. */
+ void *DAT_000c4838_backing[4096];
+/* Recovered from UU.exe .data: the four texture-file basenames
+   load_dungeon_texture_arenas appends to "\DATA\" and loads into the arena. Were
+   silently-zero 32KB arrays, so every path was just the bare "\DATA\"
+   directory -> load_texture_arena failed -> DAT_002049e0 stayed all zero. */
+static const char DAT_000869cc_str[] = "f16.tr";
+static const char DAT_000869d4_str[] = "w16.tr";
+static const char DAT_000869dc_str[] = "f32.tr";
+static const char DAT_000869e4_str[] = "w64.tr";
+static undefined2 DAT_0023aed8;
+static undefined2 DAT_00250650;
+static undefined2 DAT_0023b49c;
+static ushort DAT_0023b7f8;
+
 
 
 

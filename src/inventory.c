@@ -8,6 +8,407 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static short DAT_00085a6c_backing[128];
+short *DAT_00085a6c = DAT_00085a6c_backing;
+undefined2 g_cursor_holding_state;
+/* Base address of a 0x1b(27)-byte-stride record table (every use is
+   `offset * 0x1b + DAT_002046b8`, cast to a pointer type) -- was `int`
+   despite being assigned a real malloc'd address plus an offset
+   (reset_level_object_arena: `DAT_002046b8 = DAT_002029cc + 0x4000;`), truncating it
+   on this 64-bit host and feeding a garbage near-zero base pointer to
+   every reader, including a real crash (Ordinal_1047/memset on the
+   resulting ~0x1b address) in reset_player_object_record. */
+char *DAT_002046b8;
+char *g_current_container_record;
+/* Was `uint`, truncating the real pointer this holds (`DAT_002029cc +
+   0x5b00`, assigned in reset_level_object_arena -- see there) on this 64-bit host.
+   Most uses are pointer<->pointer comparisons or subtractions between
+   two pointers sharing the same upper 32 bits, which happen to come out
+   right either way -- but resolve_object_link's high-array branch and
+   alloc_object_slot's high-array allocation branch both return
+   `DAT_002046c4 + offset` as a real pointer, and did so through the
+   truncated 32-bit value (same bug class as alloc_object_slot's own
+   int-returning-a-pointer bug below). Retyped to match its sibling
+   DAT_002046b8 (already a real pointer). */
+char *DAT_002046c4;
+ushort *g_interact_target;
+short DAT_0023be88;
+short DAT_0023bd80;
+code *DAT_002020b8;
+undefined4 DAT_00204844;
+/* .data 0x85c38: widget-id -> g_equipped_items slot-array-index lookup (read
+   as `(&g_backpack_widget_to_slot)[widget_id]` for widget ids 0-0x16, i.e. one byte
+   per record of the g_inv_hotspot_click_x1 hotspot table). Widget ids
+   0-5 were previously left at 0 ("still-unimplemented torso/legs/feet/
+   head armor slots, out of scope") since this table's real .data bytes
+   looked unrecoverable at the time -- they're not: dumped directly from
+   the shipped binary at 0x85c38 (same `mem.getBytes` technique as this
+   project's other recovered constant tables) and they ARE real,
+   non-zero data: widget 0->slot 1, 1->slot 3, 2->slot 0, 3->slot 1
+   (shares slot 1 with widget 0), 4->slot 2, 5->slot 4. Widget ids
+   6..19 already matched this real data exactly (N -> N-1: slots
+   5..18) -- only the low end was wrong.
+
+   User report: "lighting a torch does not seem to impact the visible
+   pixels at all." This fix restores real, binary-verified data (widget
+   0->slot1, 1->slot3, 2->slot0, 3->slot1, 4->slot2, 5->slot4), which is
+   correct and worth keeping on its own, but it does NOT fix that bug --
+   confirmed by rebuilding with this fix applied and re-testing live: a
+   lit torch still auto-equips into widget 6 (slot 5), same as before,
+   because widgets 0-5's own click hotspots in g_inventory_hotspot_table
+   are still all zero/unimplemented ("worn armour overlay", see that
+   table's own comment) -- nothing can actually reach these slots
+   through play yet regardless of this table's data being right. The
+   real bug is one level up: refresh_player_equipment_effects's ambient-light rescan only
+   ever checks g_equipped_items slots 0-3 (plus the mouse cursor as a stand-
+   in for a notional 5th slot) -- confirmed via a fresh Ghidra decompile
+   of the pristine binary that this 0-4 range is exactly what the real
+   compiled code does, not a decompilation artifact. A torch equipped
+   the only way currently reachable in-game (auto-equip into the
+   generic backpack list, landing in widget 6 / slot 5) is structurally
+   outside that range and can never be found by the rescan, which is
+   why the correct -32 ambient bias set by use_light_source always gets
+   immediately stomped back to +8. g_light_source_slots ({5,6,7,8}, "already-
+   equipped valid WIDGET ids for a light source" -- confirmed by
+   use_light_source's own comparison against find_or_assign_object_widget's
+   return value, a widget id, not a slot index) suggests widget 5 (slot
+   4, inside the scanned range) is the real intended primary torch
+   position -- but reaching it requires the still-missing armor-slot
+   hotspots to be built out first; that's a real feature gap, not a
+   one-line fix. See [[torch-ambient-light-scan-range-mismatch]] for the
+   full investigation.
+
+   CORRECTED (found re-verifying with a wide re-dump at the user's
+   request, chasing the widget-20/21/22 investigation below): index 20
+   was transcribed wrong here -- it's real data too (0x13 = 19), not
+   part of the "no mapping" tail. Only indices 21-22 are genuinely 0
+   (past any real widget). Widget 20 -> slot 19 is exactly the "open
+   container indicator" slot -- see g_inventory_hotspot_table's own
+   comment and DAT_00085c4c below for the full mechanism this feeds. */
+ unsigned char g_backpack_widget_to_slot_backing[0x17] = {
+  1,3,0,1,2,4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19, 0,0,
+};
+/* g_equipped_items (28 2-byte "backpack/equipment slot" object-link
+   records -- see g_backpack_widget_to_slot's own comment) was a bare scalar Ghidra
+   never gave real backing to. A plain standalone static array is NOT
+   enough, though: every reader/writer passes `&g_equipped_items + idx*2`
+   straight to resolve_object_link (or gets it back from
+   encode_object_slot_index's matching encode step), and resolve_object_link
+   refuses to decode through any address outside the level's own
+   object-arena buffer (the [DAT_002046b8-0x4000, DAT_002046c4+0x1800)
+   range it guards against wild pointers -- see its own comment). A
+   separate global will never fall inside that malloc'd range, so
+   every resolve came back NULL -- confirmed live: a freshly-placed
+   backpack item's own slot read back a null object and segfaulted the
+   very next slot redraw (redraw_inventory_widget_range). In the original 32-bit binary
+   this table's fixed low address plausibly sat inside the same static
+   region the "dynamic" arena pointers were themselves offset from;
+   here that arena is a real runtime allocation (init_level_object_arena's
+   `Ordinal_1041(0x7c08)`), so this table now lives inside that SAME
+   buffer instead -- g_backpack_slot_table is pointed at its unused
+   tail (offset 0x7b00, 28*2=56 bytes, well inside the buffer's real
+   0x7c08 size) by reset_level_object_arena at level load, and
+   resolve_object_link's own valid-range upper bound is widened by the
+   same 0x38 bytes so this new tail is actually accepted (see both of
+   their own comments). */
+char *g_backpack_slot_table;
+/* Same bug: indexed as `(&DAT_002028e8)[i]` for i up to 0x16 (22) in
+   init_inventory_panel_hotspots/free_open_container_chain/etc. -- this is the specific array whose
+   overflow was landing on and corrupting g_selected_object (see above).
+   Widened with a safety margin. */
+ undefined4 DAT_002028e8_backing[64];
+undefined4 DAT_002029a0;
+undefined4 DAT_0020299c;
+/* .data 0x85ad0: the HUD hotspot / layout table -- 0x17 records of 0xe
+   bytes: [+0..+7] short click-rect x1,y1,x2,y2 (read by hit_test_inventory_widget);
+   [+8/+0xa] short draw x,y; [+0xc/+0xd] byte dirty w,h. Ghidra split it
+   into lone scalars (g_inv_hotspot_click_x1/d2/d4/d6/d8/da/dd + an 8KB backing for
+   dc) and never recovered its .data contents, so every field read 0 and
+   the inventory paperdoll body drew at (0,0) instead of the right-hand
+   panel. UU.exe's .data doesn't map cleanly to Ghidra's addresses here
+   (confirmed: file offset lands on 3D-model-parser strings), so the
+   record positions can't be lifted from the binary. Back it with a real
+   array and seed record 0 (the body) from the panel rect the redraw path
+   clears -- rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76) for its DRAW
+   position/size (needed as-is: redraw_inventory_widget draws the paperdoll body
+   sprite from these exact fields). Its CLICK rect's bottom edge is
+   narrowed to y2=0x50 (80) instead of the full 0x76 (118), so it only
+   covers the paperdoll area above the backpack grid -- otherwise, since
+   hit_test_inventory_widget returns the FIRST matching record and record 0's rect is
+   a superset of every grid cell below it, every backpack-grid click
+   would keep resolving to record 0 (widget id 0, a no-op sentinel
+   throughout this file) instead of ever reaching records 6-19. Its
+   CLICK rect's x-range is ALSO narrowed (to a central 0x108-0x122
+   torso strip, down from the full 0xf0-0x13b body width) for the exact
+   same reason, now that records 6-11 (below) cover the flanking
+   shoulder/hand/finger columns the un-narrowed rect used to swallow --
+   record 0 itself is still a no-op if clicked, so shrinking its
+   reachable area has no other effect. Records 2..5 (worn torso/legs/
+   feet/head armour overlays) stay zero for now -- armour only draws
+   when equipped, out of scope for this pass.
+
+   Records 6..11 (the worn weapon-hand/shoulder/finger paperdoll slots)
+   are populated too, reconstructed the same not-lifted-from-original-
+   data way as records 1/12-19 below: two mirrored columns flanking the
+   body sprite (screen-left = the character's own right side, since the
+   paperdoll faces the viewer), shoulder above hand above finger/ring,
+   sized to roughly match the body art without overlapping the head
+   (above) or the backpack grid (below, y<0x50). Widget assignment
+   within each column follows handle_object_drop_target's own confirmed
+   selector (`9 - lefthand_bit`, i.e. widget 9 is the active weapon hand
+   when NOT left-handed): widget 9 = right hand (default-active),
+   widget 8 = left hand, and shoulders/fingers grouped into the same
+   column as their matching hand (7/11 with 9's column, 6/10 with 8's).
+   This positioning is a first-pass reconstruction (no on-screen
+   equipped-item sprite existed to measure against, unlike the
+   backpack-grid icons) -- revisit if a live playtest shows it's off.
+
+   Records 12..19 (the 8-cell backpack grid, 4 cols x 2 rows) are now
+   populated too, needed to make Grab-mode drops and backpack clicks
+   actually land on a specific slot instead of always falling through to
+   record 0's whole-panel body rect (see handle_inventory_panel_click/hit_test_inventory_widget).
+   Like record 0, the real per-cell .data can't be recovered from the
+   binary, so these are reconstructed from the rendered panel's own
+   on-screen grid (screenshot pixel-measured, panel-local = screen/2,
+   matching record 0's own scale), not lifted from original data: an
+   even 4x2 grid spanning the same x:0xf0-0x13c / y:0x50-0x76 area
+   visible below the paperdoll. Draw x,y is each cell's top-left +1px
+   inset; dirty w,h is 0x14x0x14 (20x20), safely covering the real 16x16
+   icon sprite (confirmed via UW_DEBUG_INV) with margin -- draw_sprite_
+   by_id's w/h args only feed its dirty_rect_union call, gating what
+   region gets flushed to the display each frame; the actual blit
+   always uses the sprite's own real .GR-header size regardless. A
+   live playtest (unlike this project's screenshot-based testing, which
+   forces a full-screen flush every capture and so can't catch this)
+   showed incomplete redraws with the original tighter 0x11 (17x17).
+
+   Widget ids 12..19 (not 6..13, an earlier arbitrary choice corrected
+   here) were chosen to match hard evidence from close_backpack_container (the
+   close-container function): it resets `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]`
+   (11..18) to identity, and g_backpack_widget_to_slot_plus1's address is exactly one byte
+   past g_backpack_widget_to_slot's -- the same split-symbol relationship as
+   DAT_00202951/g_equipped_items -- so that write really lands at
+   g_backpack_widget_to_slot_backing[12..19], resetting widgets 12-19's slot mapping
+   back to 11-18 (widget N -> slot N-1) after a container closes. That
+   in turn implies the *normal* (no container open) mapping is also
+   N -> N-1, not identity -- see g_backpack_widget_to_slot's own updated comment. */
+/* .data 0x85ad0: recovered directly from the shipped binary
+   (mem.getBytes, same technique as g_backpack_widget_to_slot/
+   g_backpack_slot_to_widget) -- the earlier claim on this table (kept
+   in git history) that "UU.exe's .data doesn't map cleanly... file
+   offset lands on 3D-model-parser strings" was simply WRONG: this
+   exact address dumps 322 bytes of clean, sane, non-degenerate click/
+   draw rects for every one of the 23 records, immediately followed by
+   g_backpack_slot_to_widget's own real data at 0x85c18 (confirmed
+   byte-identical) -- the whole block from 0x85ad0 through 0x85c4f is
+   one contiguous run of real inventory-UI tables. All 23 records below
+   are now the genuine recovered values, replacing this project's
+   earlier from-scratch reconstruction (screenshot-measured grid,
+   playtest-guessed paperdoll positions) entirely.
+
+   Record 0 really is a degenerate x1=x2/y1=y2-style sentinel in the
+   original binary too (0,200,0,200 -- zero click area) -- the old
+   reconstruction's guess to give it a real body-panel rect was wrong;
+   hit_test_inventory_widget's own "record 0 = no-op sentinel" behavior
+   was right even before this fix, just for the wrong reason.
+
+   Records 1-5 (previously left zero as "still-unimplemented armor
+   slots, out of scope") all have real, valid click rects -- reading
+   top to bottom by y-range: rec2 (y9-25, topmost) = head; rec6/7
+   (y13-30, flanking) = shoulders; rec3 (y26-43) = torso/chest; rec8/9
+   (y35-54, flanking) = hands; rec4 (y44-56) = legs; rec10/11 (y53-70,
+   flanking) = finger/ring slots; rec20 (y65-82, NEW, see below) = an
+   unidentified left-column slot; rec1 (y56-72) and rec5 (y72-81) sit
+   between legs and the backpack grid (y82+) -- likely feet/boots and a
+   belt or similar, not fully identified yet.
+
+   IMPORTANT: record 1's real rect is NOT the "open container" icon --
+   that UI affordance was this project's own addition, invented before
+   widget 20's real click rect and g_backpack_widget_to_slot[20]'s real
+   data (0x13/19, not 0) were recovered. Widget 20 IS the real
+   mechanism (see DAT_00085c4c's own comment) -- the hack has been
+   removed entirely now that it's wired up.
+
+   Records 21-22 are ALSO real, non-degenerate rects -- confirmed via
+   handle_object_drop_target's own `iVar2==0x15`/`0x16` dispatch
+   (scroll_container_grid_up/scroll_container_grid_down) to be the container-grid scroll up/down
+   buttons, gated on DAT_0020299c/DAT_002029a0 ("can scroll up/down").
+   Their much smaller dirty w/h (8x10, vs every other record's 16x16 or
+   20x20) matches real small button art rather than an item slot. */
+ unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
+  /* rec 0 (real, degenerate sentinel): click 0,c8,0,c8 ; draw 104,c ; dirty 24,45 */
+  0x00,0x00, 0xc8,0x00, 0x00,0x00, 0xc8,0x00,  0x04,0x01, 0x0c,0x00,  0x24,0x45,
+  /* rec 1 (real armor-slot rect, LEGS -- confirmed live via
+     check_object_fits_in_slot/class2_variant_effect_table_lookup
+     dropping id 0x23 "leather leggings" here successfully; the earlier
+     "likely feet/boots" guess in this comment was wrong -- corrected
+     after verifying with a real item. The "open container" icon that
+     used to be hacked in here has been removed entirely now that
+     widget 20 is the real mechanism): click 10d,38,11d,48 ; draw
+     10c,19 ; dirty 13,32 */
+  0x0d,0x01, 0x38,0x00, 0x1d,0x01, 0x48,0x00,  0x0c,0x01, 0x19,0x00,  0x13,0x32,
+  /* rec 2 (head -- confirmed live, id 0x2c "a leather cap"): click
+     10d,9,11e,19 ; draw b,b ; dirty 14,14 */
+  0x0d,0x01, 0x09,0x00, 0x1e,0x01, 0x19,0x00,  0x0b,0x01, 0x0b,0x00,  0x14,0x14,
+  /* rec 3 (torso/chest -- confirmed live, id 0x20 "a leather vest"):
+     click 107,1a,123,2b ; draw 106,18 ; dirty 21,2c */
+  0x07,0x01, 0x1a,0x00, 0x23,0x01, 0x2b,0x00,  0x06,0x01, 0x18,0x00,  0x21,0x2c,
+  /* rec 4 (HANDS, not legs -- confirmed live, id 0x26 "leather
+     gloves"; the "legs" label was an earlier unconfirmed guess,
+     corrected after verifying with a real item): click 107,2c,123,38 ;
+     draw 105,2b ; dirty 21,c */
+  0x07,0x01, 0x2c,0x00, 0x23,0x01, 0x38,0x00,  0x05,0x01, 0x2b,0x00,  0x21,0x0c,
+  /* rec 5 (real armor-slot rect, FEET, not a belt -- confirmed live,
+     id 0x29 "leather boots"; the "likely a belt" guess in this
+     comment was wrong -- corrected after verifying with a real item):
+     click 107,48,123,51 ; draw 10a,43 ; dirty 15,d */
+  0x07,0x01, 0x48,0x00, 0x23,0x01, 0x51,0x00,  0x0a,0x01, 0x43,0x00,  0x15,0x0d,
+
+  /* rec 6 (left shoulder): click f4,d,105,1e ; draw f5,e ; dirty 10,10 */
+  0xf4,0x00, 0x0d,0x00, 0x05,0x01, 0x1e,0x00,  0xf5,0x00, 0x0e,0x00,  0x10,0x10,
+  /* rec 7 (right shoulder): click 125,d,136,1e ; draw 126,e ; dirty 10,10 */
+  0x25,0x01, 0x0d,0x00, 0x36,0x01, 0x1e,0x00,  0x26,0x01, 0x0e,0x00,  0x10,0x10,
+  /* rec 8 (left hand): click f1,23,102,36 ; draw f2,24 ; dirty 10,10 */
+  0xf1,0x00, 0x23,0x00, 0x02,0x01, 0x36,0x00,  0xf2,0x00, 0x24,0x00,  0x10,0x10,
+  /* rec 9 (right hand -- the default/active weapon hand per
+     handle_object_drop_target's `9 - lefthand_bit` check): click
+     127,23,138,36 ; draw 128,24 ; dirty 10,10 */
+  0x27,0x01, 0x23,0x00, 0x38,0x01, 0x36,0x00,  0x28,0x01, 0x24,0x00,  0x10,0x10,
+  /* rec 10 (left finger/ring slot): click f1,35,10c,40 ; draw ff,34 ; dirty 10,10 */
+  0xf1,0x00, 0x35,0x00, 0x0c,0x01, 0x40,0x00,  0xff,0x00, 0x34,0x00,  0x10,0x10,
+  /* rec 11 (right finger/ring slot): click 11e,35,138,46 ; draw 11d,34 ; dirty 10,10 */
+  0x1e,0x01, 0x35,0x00, 0x38,0x01, 0x46,0x00,  0x1d,0x01, 0x34,0x00,  0x10,0x10,
+
+  /* rec 12 (row1,col1): click f0,52,101,63 ; draw f1,53 ; dirty 10,10 */
+  0xf0,0x00, 0x52,0x00, 0x01,0x01, 0x63,0x00,  0xf1,0x00, 0x53,0x00,  0x10,0x10,
+  /* rec 13 (row1,col2): click 103,52,114,63 ; draw 104,53 ; dirty 10,10 */
+  0x03,0x01, 0x52,0x00, 0x14,0x01, 0x63,0x00,  0x04,0x01, 0x53,0x00,  0x10,0x10,
+  /* rec 14 (row1,col3): click 116,52,127,63 ; draw 117,53 ; dirty 10,10 */
+  0x16,0x01, 0x52,0x00, 0x27,0x01, 0x63,0x00,  0x17,0x01, 0x53,0x00,  0x10,0x10,
+  /* rec 15 (row1,col4): click 129,52,13a,63 ; draw 12a,53 ; dirty 10,10 */
+  0x29,0x01, 0x52,0x00, 0x3a,0x01, 0x63,0x00,  0x2a,0x01, 0x53,0x00,  0x10,0x10,
+  /* rec 16 (row2,col1): click f0,64,101,75 ; draw f1,65 ; dirty 10,10 */
+  0xf0,0x00, 0x64,0x00, 0x01,0x01, 0x75,0x00,  0xf1,0x00, 0x65,0x00,  0x10,0x10,
+  /* rec 17 (row2,col2): click 103,64,114,75 ; draw 104,65 ; dirty 10,10 */
+  0x03,0x01, 0x64,0x00, 0x14,0x01, 0x75,0x00,  0x04,0x01, 0x65,0x00,  0x10,0x10,
+  /* rec 18 (row2,col3): click 116,64,127,75 ; draw 116,65 ; dirty 10,10 */
+  0x16,0x01, 0x64,0x00, 0x27,0x01, 0x75,0x00,  0x16,0x01, 0x65,0x00,  0x10,0x10,
+  /* rec 19 (row2,col4): click 129,64,13a,75 ; draw 12a,65 ; dirty 10,10 */
+  0x29,0x01, 0x64,0x00, 0x3a,0x01, 0x75,0x00,  0x2a,0x01, 0x65,0x00,  0x10,0x10,
+
+  /* rec 20 (real, previously-unknown left-column slot -- see table
+     comment above): click f0,41,101,52 ; draw f1,41 ; dirty 10,10 */
+  0xf0,0x00, 0x41,0x00, 0x01,0x01, 0x52,0x00,  0xf1,0x00, 0x41,0x00,  0x10,0x10,
+  /* rec 21 (real, small right-side button -- see table comment above):
+     click 127,47,130,50 ; draw 128,47 ; dirty 8,a */
+  0x27,0x01, 0x47,0x00, 0x30,0x01, 0x50,0x00,  0x28,0x01, 0x47,0x00,  0x08,0x0a,
+  /* rec 22 (real, small right-side button -- see table comment above):
+     click 131,47,13a,50 ; draw 132,47 ; dirty 8,a */
+  0x31,0x01, 0x47,0x00, 0x3a,0x01, 0x50,0x00,  0x32,0x01, 0x47,0x00,  0x08,0x0a,
+};
+/* .data 0x85c18: array-slot-index -> widget-id lookup, the inverse of
+   g_backpack_widget_to_slot (see its own comment) -- read as `(&g_backpack_slot_to_widget)[slot]`
+   to find which widget/grid-cell to redraw after a slot's contents
+   change (redraw_inventory_widget/redraw_inventory_widget_range callers throughout this file).
+   Same lone-scalar split-array pattern as g_backpack_widget_to_slot, same
+   unrecoverable-real-data story. Backed here with the literal inverse
+   of g_backpack_widget_to_slot's N -> N-1 mapping: slots 11..18 (the backpack
+   region behind the 8 grid widgets 12..19) map back to widgets 12..19,
+   so a drop into slot N correctly redraws grid cell N+1 instead of
+   resolving to widget id 0 (a "not a spell" message code, observed
+   live: without this, placing an item successfully updated the data
+   but the grid stayed visually empty and printed an unrelated
+   spell-error message on refresh).
+
+   Slots 5..10 (the worn-hand/shoulder/finger paperdoll slots, widgets
+   6..11) map back to widgets 6..11 the same N -> N-1 way -- user QA
+   report: "dragging and dropping into a paper doll slot does not show
+   the item." Confirmed live (UW_DEBUG_INV + a direct SDLRDOWN/SDLRUP
+   drag onto widget 9's own click rect): place_held_item_in_empty_slot
+   correctly writes the object into slot 8 and its own
+   `redraw_inventory_widget(g_backpack_slot_to_widget[8])` call DOES
+   fire, but with this array's slot 5..10 entries still at their prior
+   (dead) 0 value, that resolved to widget id 0 -- the deliberate
+   torso no-op sentinel (see g_inventory_hotspot_table's own comment)
+   -- so nothing ever got redrawn even though the placement itself
+   succeeded (confirmed via the demo harness's own post-drop state
+   dump: holding=0, occupied_slots=1, yet the paperdoll circles stayed
+   empty in a SCREENSHOT). g_backpack_widget_to_slot's own comment
+   already documents this exact N -> N-1 rule being extended to
+   widgets 6..11/slots 5..10 when that feature was added -- this
+   reverse array was simply never updated to match at the time. Other
+   indices stay 0, matching prior (dead) behavior. Note
+   open_backpack_container treats any mapped widget id >= 0xb (11) as
+   "handled by a wider grid redraw elsewhere, nothing to do here" --
+   with these now-correct values (12-19) that guard always takes the
+   "elsewhere" branch for backpack-grid slots, which is why
+   entering/leaving a container needs its own explicit whole-grid
+   redraw call (see open_backpack_container/close_backpack_container's own
+   comments) rather than relying on this single-widget path. The new
+   6..11 entries are below that >= 0xb threshold, so they take the
+   single-widget redraw path as intended, not the "elsewhere" one. */
+/* CORRECTED with a full re-dump of this table's real .data (0x85c18,
+   28 bytes, one mem.getBytes call covering the whole 0x1c-entry range
+   at once): the previous version of this array below -- {2,3,4,1,5,
+   6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0, 12,13,14,15,16,17,
+   18,19} -- had TWO real bugs, both caught re-verifying this table at
+   the user's request ("also see if we can recover the table used for
+   the widget to slot mapping the same way" after the hotspot-table
+   recovery above):
+
+   1) It was simply WRONG at indices 19-22: guessed as 0,0,0,0 ("no
+      mapping"), but the real data is 20,12,13,14 -- slot 19 maps to
+      widget 20 (not "nothing"), and slots 20-22 continue the same
+      "N -> widgets 12-19" nested-container-grid pattern as slots
+      23-27, not a gap. (Widget 20 is real -- see
+      g_inventory_hotspot_table's own comment on its 3 newly-recovered
+      records; this is its first identified purpose: it displays
+      backpack slot 19's own content, a 9th "extra" slot alongside the
+      main 8-cell grid, not one of the paperdoll/armor positions.)
+
+   2) The array literal itself had 31 values for a 28-element (0x1c)
+      array -- `clang -fsyntax-only` reports `warning: excess elements
+      in array initializer` on it, but build.sh's own build step pipes
+      through `grep -iE "error:"` (to keep routine output quiet), which
+      silently swallows every non-"error:" warning including this one,
+      so it printed "built" and looked clean. Clang drops the excess
+      elements off the END of the list, not the intended slots 28-30
+      (which don't exist in a 28-entry array anyway) -- it silently
+      corrupted indices 25-27 instead, which is what a straight
+      concatenation without recomputing the real bound produces. Real,
+      compiled-in values before this fix: index 25=17->actually 14,
+      26=18->actually 15, 27=19->actually 16 (each 3 widgets low).
+      Lesson: build.sh's error-only filter hides genuine compiler
+      warnings like this one -- worth an occasional unfiltered
+      `-fsyntax-only` pass when touching array literals.
+
+   History this replaces: slots 20-27 (an OPEN container's own 8
+   content slots, populated by open_backpack_container's own N -> N+8
+   widget remap at uw.c ~33712, "Remap widgets 12-19 -> slots 20-27")
+   were entirely missing before an earlier session extended this array
+   from 0x17 (23) to 0x1c (28) entries to fix a real crash ("placing a
+   container in another container and trying to open the nested one" --
+   indexing past this array's old end fed a garbage widget id into
+   redraw_inventory_widget). That extension is correct in shape (28
+   entries, N -> N-8 slots 20-27 -> widgets 12-19); the bug was in its
+   exact values, fixed here with the genuine recovered data instead of
+   a guess. */
+ unsigned char g_backpack_slot_to_widget_backing[0x1c] = {
+  2,3,4,1,5, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19,20,
+  12,13,14,15,16,17,18,19,
+};
+// was DAT_002028cc
+ undefined2 g_save_record_count_backing[8192];
+/* DAT_00202938: widget 20's own saved-background grtile handle (the
+   "open container indicator" -- see g_inventory_hotspot_table's own
+   comment and DAT_00085c4c below), same role as (&DAT_002028a0)[i] for
+   widgets 12-19 -- allocated once in open_backpack_container, see its
+   own comment there. Runtime scratch state, not a .data resource, so
+   it stays its own plain global rather than an alias. */
+undefined4 DAT_00202938;
+short DAT_0023be5c;
+short DAT_0023be80;
+
 
 
 

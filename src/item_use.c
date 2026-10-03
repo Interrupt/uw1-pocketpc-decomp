@@ -8,6 +8,68 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define _DAT_002035cf (*(uint*)&DAT_002035cf)
+char s_UNNAMED_00084f24[] = "UNNAMED";
+static char s_objsbecombinable_returns__d_00084f50[] = "objsbecombinable_returns_%d";
+static char s_combination__d_is__d_and__d__00084f70[] = "combination_%d_is_%d_and_%d.";
+static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking_if_%d_and_%d_are_combin";
+static undefined1 DAT_00100634_backing[65536];
+#define DAT_00100634 DAT_00100634_backing[0]
+static undefined2 DAT_00100632_backing[256];
+#define DAT_00100632 DAT_00100632_backing[0]
+/* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes)
+   via the _DAT_002035cf macro below -- widened to its own real backing
+   storage so that wider access can't spill into whatever global happens
+   to follow (it used to rely on uw.c's own incidental layout). */
+static undefined DAT_002035cf_backing[8];
+#define DAT_002035cf DAT_002035cf_backing[0]
+// was DAT_0008725c -- gates weapon_swing_draw_tick's blit; temporarily
+// cleared during full-screen wipe/dissolve transitions (level loads,
+// screen fades) so the weapon overlay doesn't glitch mid-transition,
+// then restored once the transition finishes.
+undefined4 g_weapon_overlay_enabled;
+static undefined1 DAT_002028e0_backing[16];
+#define DAT_002028e0 DAT_002028e0_backing[0]
+static char s_armor_f_00085c60[] = "armor_f";
+static undefined1 DAT_00085b77;
+static byte DAT_00085b76;
+static short DAT_00085b74;
+static undefined4 DAT_00202914;
+static undefined1 DAT_00085b69;
+static byte DAT_00085b68;
+static short DAT_00085b66;
+static undefined4 DAT_00202910;
+static ushort DAT_00202962;
+static ushort DAT_00202964;
+static char s_Move_how_many__00085c68[] = "Move_how_many?";
+static char s_is_too_full__00085c78[] = "is_too_full.";
+static undefined DAT_002029f9_backing[256];
+#define DAT_002029f9 DAT_002029f9_backing[0]
+undefined DAT_00085ce0_backing[8192];
+char s_You_read_the_00085ce8[] = "You_read_the";
+// g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
+// object id's low nibble) effect/quality byte table, loaded at runtime
+// (read_file_handle) and read by use_food_item to decide a food item's
+// flavor text and whether it's harmful.
+ undefined1 DAT_00202a28_backing[256];
+/* Was `uint` (4 bytes), truncating the real object pointer stored here
+   (confirmed by its own assignments -- `DAT_00202098 = g_player_object;`/
+   `= param_1;` where param_1 is a real `ushort *` object pointer right
+   next to a parallel `g_selected_object = param_1;` -- and its readers,
+   e.g. `finish_object_use(DAT_00202098,...)`/`*(ushort*)(DAT_00202098+6)`,
+   all treating it as a pointer). Same truncated-pointer-global bug class
+   as everywhere else in this project (g_player_object itself, etc.) --
+   on this 64-bit host the upper 32 bits of any stored pointer were
+   silently dropped, corrupting DAT_00202098 for every later reader.
+   The "held item currently being used" global driving the item-use
+   dispatch chain (finish_object_use and friends). */
+char *DAT_00202098;
+static char s_on_what__000878e0[] = "on_what?";
+static undefined1 DAT_000878ec_backing[32768];
+#define DAT_000878ec DAT_000878ec_backing[0]
+static char s_That_000878f4[] = "That";
+static char s_is_locked__000878fc[] = "is_locked.";
+
 
 
 

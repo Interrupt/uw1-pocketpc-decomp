@@ -8,6 +8,298 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00201b70 DAT_00201b70_backing[0]
+// was DAT_0024af74. Nonzero: draw_text_string colors glyph pixels via
+// the palette index *g_draw_color_index; zero (the default -- nothing
+// else in this decompile ever sets it) uses the flat g_text_flat_color
+// instead. A reentrancy/mode flag set only around one unrelated dialog-
+// box drawing routine (display_book_or_scroll_page), so callers elsewhere that want
+// palette-indexed text (e.g. draw_menu_item_list's highlighted save-slot
+// labels) must force it themselves for the duration of the draw.
+int g_text_use_palette_color;
+static int DAT_0023c5b0;
+// was DAT_0008429c_backing/DAT_0008429c. Current draw-color palette
+// index, written before nearly every text/UI draw call across the file
+// and read back by draw_text_string (when g_text_use_palette_color is
+// set) and various fill/blit routines.
+static byte g_draw_color_index_backing[128];
+byte *g_draw_color_index = g_draw_color_index_backing;
+/* DAT_000879b0/DAT_000890a4 (the active font's 12-byte header and its
+   glyph-bitmap data, both filled in by select_active_font's file reads)
+   were plain uninitialized pointers -- no allocation anywhere in this
+   file, and confirmed via Ghidra xref search that the real ARM binary's
+   own source slots (0x40dd8/0x40ddc) are READ-ONLY across the whole
+   binary too, never written by any real code -- so these were never
+   runtime-malloc'd pointers at all; they're link-time-constant
+   addresses of fixed static buffers that Ghidra's static analysis
+   couldn't recover (same class as several other "silently zero"
+   globals already fixed this session). Confirmed live: DAT_000890a4
+   was NULL, and unpack_glyph_bitmap's pointer arithmetic off NULL
+   landed in essentially-random process memory that happened to overlap
+   a heap block libSystem/Foundation legitimately allocated-then-freed
+   during app startup -- an ASan-caught heap-buffer-overflow (uw.c:7007)
+   on the first automap-note text draw of any session, not a "sometimes"
+   bug: font rendering was silently using this same wild pointer on
+   every single draw all along, just usually landing in mapped-but-
+   irrelevant memory instead of a freed block that trips ASan. Given
+   real backing storage instead, sized to what select_active_font's own
+   reads need (12-byte header; 0x1080 bytes of glyph data -- see that
+   function's own comment on why 0x1080). */
+static static char DAT_000879b0_backing[12];
+char *DAT_000879b0 = DAT_000879b0_backing;
+static static char DAT_000890a4_backing[0x1080];
+char *DAT_000890a4 = DAT_000890a4_backing;
+byte *DAT_0024af78;
+byte *DAT_0024af7c;
+char *DAT_0023cca0;
+/* Not `static` -- also used by game.c (app_main_loop, main_menu_loop);
+   see the extern declaration and DAT_0023cca8 macro alias in uw.h. */
+undefined1 DAT_0023cca8_backing[32768];
+static undefined1 DAT_00084298_backing[128];
+undefined1 *DAT_00084298 = DAT_00084298_backing;
+/* Was `undefined4` despite being assigned a real malloc'd pointer
+   (`DAT_00248410 = DAT_0023c44c;`, itself `Ordinal_1041(0x4cce)`'s
+   result) -- truncating on this 64-bit host and feeding a garbage
+   pointer to Ordinal_1047/Ordinal_1044. Same fix applied to its two
+   sibling aliases, DAT_0023cca4 and DAT_0024ad58, assigned from the
+   same source right next to this one. */
+char *DAT_00248410;
+int DAT_00201c98;
+static char s__DATA_pres1_byt_00085790[] = "\\DATA\\pres1.byt";
+undefined4 DAT_0023c540;
+static char s__DATA_lev_ark_00085734[] = "\\DATA\\lev.ark";
+static char s_Not_enough_disk_space_for_save_g_00085744[] = "Not_enough_disk_space_for_save_g";
+static char s__DATA_COPYRIGHT_BYT_0008576c[] = "\\DATA\\COPYRIGHT.BYT";
+static char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
+/* Not `static` -- also used by game.c (app_main_loop, main_menu_loop);
+   see the extern declaration and DAT_000857a0 macro alias in uw.h.
+   Was zero-initialized -- an "unrecoverable string constant" Ghidra never
+   populated (same class of bug as the CHRBTNS/opbtn resource-name fixes),
+   but unlike those it has NO writer anywhere in uw.c or game.c either, so
+   it's a real compile-time constant, not a runtime-built buffer. Every
+   reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
+   bglobals.dat, desc) alongside already-recovered sibling constants that
+   spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
+   and probe_save_slots/load_game_from_slot both search the built path for a literal
+   '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
+   supplies one. Recovered as "\SAVE0"; kept the oversized backing array
+   since nothing else relies on its exact size. */
+undefined1 DAT_000857a0_backing[32768] = "\\SAVE0";
+static undefined2 DAT_00201b6c;
+/* Per-(redraw-mode, dirty-bit) handler dispatch table read by
+   dispatch_sticky_mode_handlers/enter_dungeon_view/handle_player_death_and_menu_transition/change_game_mode (DAT_00201b64 = the
+   mode: 0 is the normal in-game/dungeon view, seen so far; 1 and 2 are
+   some other screen). It's link-time-initialized data in the original
+   binary -- nothing in this decompile ever writes to it at runtime -- so
+   unlike this file's usual "orphaned populator function" bugs (e.g.
+   chrbtns_offset_table_builder), there's no call to recover: the table's real content
+   was recovered by reading UU.exe's .data section directly via Ghidra
+   (same method already used for this file's string-constant symbols; see
+   e.g. s_chrbtns_00084ef8's comment), then matching each recovered
+   32-bit ARM address against this file's own FUN_ names by address.
+   Left as a bare zero-filled placeholder, every handler read came back
+   NULL, so the per-frame redraw dispatch (dispatch_sticky_mode_handlers) never called
+   anything -- the game reached the dungeon and ran forever, but no HUD
+   panel, 3D view, or tmap tile ever drew.
+
+   3 of the 48 slots point at functions this decompile never recovered:
+   they're only ever reached indirectly through this table, so Ghidra's
+   original auto-analysis had no direct call site to find them from (same
+   root cause as chrbtns_offset_table_builder/populate_menu_button_bitmap_entry needing separate recovery).
+   Disassembling them directly (Ghidra, headless) shows they're
+   conversation-portrait-animation and ambient-sound-cycling handlers --
+   not needed to get a player standing in a rendered dungeon, so left
+   NULL (safely skipped by this table's own "if handler != NULL" guard)
+   rather than ported. // Hack - Disabled
+
+   Real entries are function-pointer-sized (8 bytes on this 64-bit host)
+   -- wider than the original 4-byte ARM pointers the table's own index
+   math was written for, so every read site's byte-stride constant is
+   doubled (0x40 -> 0x80 per 16-entry mode row, 4 -> 8 per single entry;
+   see each site's own comment). */
+void (*const DAT_00085668_real_table[48])(void) = {
+  /* mode 0 (in-game/dungeon view) */
+  /* Original bit 1 is the 0x3c190 thunk to render_dungeon_frame_timed
+     (0x5bbe0); picture dismissal requests this bit via FUN_00049924(2). */
+  (void(*)(void))enter_dungeon_view, (void(*)(void))render_dungeon_frame_timed, 0, (void(*)(void))dungeon_view_anim_tick,
+  0, 0, 0, 0,
+  0, (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))handle_game_victory_sequence, (void(*)(void))movement_pacing_handler,
+  (void(*)(void))sync_player_stats_to_hud, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
+  /* mode 1 */
+  0, (void(*)(void))enter_automap_screen, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0 /* Hack - Disabled: ambient sound cycling */, 0, 0, (void(*)(void))exit_automap_screen,
+  /* mode 2 */
+  (void(*)(void))enter_conversation_mode_screen, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, (void(*)(void))exit_talk_mode,
+};
+undefined2 DAT_000868d8;
+static char s_Error_code_XXXX___000857c8[] = "Error_code_XXXX_$";
+static char s_Out_of_Low_Memory___000857dc[] = "Out_of_Low_Memory.$";
+static char s_Out_of_EMS_Memory___000857f0[] = "Out_of_EMS_Memory.$";
+static char s_Could_not_read_data___00085804[] = "Could_not_read_data.$";
+static char s_Could_not_write_data___0008581c[] = "Could_not_write_data.$";
+static char s_Resource_problem_or_internal_err_00085834[] = "Resource_problem_or_internal_err";
+static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld_can_no_longer_run._Er";
+static undefined DAT_00201b70_backing[8192];
+void *DAT_00202308_arr[256];
+/* Per-geometry-record decoded-sprite pixel buffers, one malloc per visible
+   object, freed each frame by free_frame_geometry_buffers. Ghidra typed it
+   `undefined4` (4 bytes), truncating the 64-bit Ordinal_1041 pointer -- the
+   memcpy into it (Ordinal_1044) would fault. Widened to a real pointer
+   array; only decode_tile_object_billboard_texture, free_frame_geometry_buffers and app_main_loop's
+   startup zero-fill touch it. */
+void *DAT_0023c7a0_arr[0x140];
+static undefined2 DAT_0020272c;
+static undefined2 DAT_0024fa1c;
+static char DAT_00085988;
+char DAT_0024d000;
+char DAT_0024fa28;
+/* Was `static undefined DAT_000859ac_backing[8192]` -- Ghidra never
+   recognized this as a string reference (no cross-reference to label
+   it), but the raw bytes at this address in the real binary spell out
+   "optb\0" plainly -- confirmed via direct memory dump (Ghidra
+   headless, `mem.getBytes`), matching OPTB.GR in data/DATA/. This and
+   its 3 siblings below were the "Unrecoverable string tables" this
+   file's own comments referenced; all 4 turned out to be perfectly
+   readable, just never labeled. Recovering them fixes the frame-
+   counter corruption bug documented at load_gr_resource_entries's own
+   "nothing to load" branch (each of these 4 was previously read as an
+   empty string, silently re-adding the previous resource's frame
+   count instead of contributing OPTB.GR's/etc.'s own real frames). */
+static char s_optb_000859ac[] = "optb";
+static char s_scrledge_000859b4[] = "scrledge";
+static char s_spells_000859c0[] = "spells";
+static char s_chains_000859c8[] = "chains";
+/* Was `static undefined DAT_000859d0_backing[8192]` -- real bytes
+   spell "eyes\0", matching EYES.GR. See s_optb_000859ac's comment. */
+static char s_eyes_000859d0[] = "eyes";
+static char s_power_000859d8[] = "power";
+/* Was `static undefined DAT_000859e0_backing[8192]` -- real bytes
+   spell "inv\0", matching INV.GR. See s_optb_000859ac's comment. */
+static char s_inv_000859e0[] = "inv";
+static char s_dragons_000859e4[] = "dragons";
+static char s_compass_000859ec[] = "compass";
+static char s_flasks_000859f4[] = "flasks";
+static char s_tmobj_00085a04[] = "tmobj";
+static char s_tmflat_00085a0c[] = "tmflat";
+static char s_3dwin_00085a14[] = "3dwin";
+static char s_cursors_00085a1c[] = "cursors";
+static char s_buttons_00085a24[] = "buttons";
+static char s_animo_00085a2c[] = "animo";
+static char s_objects_00085a34[] = "objects";
+static char s_views_00085a3c[] = "views";
+static char s_question_00085a44[] = "question";
+static char s__DATA_allpals_dat_00085a50[] = "\\DATA\\allpals.dat";
+ushort DAT_0023c448;
+static ushort DAT_000876bc_backing[128];
+ushort *DAT_000876bc = DAT_000876bc_backing;
+static short DAT_000876c0_backing[128];
+short *DAT_000876c0 = DAT_000876c0_backing;
+static undefined DAT_00028bfc_backing[8192];
+#define DAT_00028bfc DAT_00028bfc_backing[0]
+static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev_%d_@_%2.2u.%1.1u_%2.2u.%1.1u";
+static byte DAT_0023bd84;
+static undefined1 DAT_00086e05;
+static undefined1 DAT_00086e06;
+static undefined DAT_00086e00_backing[8192];
+#define DAT_00086e00 DAT_00086e00_backing[0]
+static int DAT_000db500;
+short DAT_0024af6c;
+/* Was `int` despite holding a real stack address (main_menu_loop:
+   `DAT_0023bf6c = &local_82c;`) used in pointer arithmetic throughout
+   this file -- truncating on this 64-bit host. */
+static char *DAT_0023bf6c;
+static ushort DAT_0023bf74;
+/* populate_menu_button_bitmap_entry (main menu button record populator) used to split each
+   loaded button bitmap's real pointer into 4 bytes and pack it directly
+   into DAT_0023bf6c's record array -- fine for a 32-bit pointer on the
+   original binary, but silently truncates a real 64-bit pointer here
+   (confirmed via ASAN: draw_menu_item_list dereferencing the reassembled
+   low-32-bits-only value, SEGV). Same "route the real pointer through a
+   dedicated global instead of packing it into an undersized field"
+   pattern as g_chargen_textfield_buf. Index formula (shared by
+   populate_menu_button_bitmap_entry/draw_menu_item_list) is (selected?1:0) + button_index*4 -- a
+   stride of 4 per button, not 2, so up to 4 buttons needs slots through
+   index 13 (1 + 3*4); sized generously to 16. */
+static char *g_menu_button_bitmaps[16];
+static char s__DATA_CREDIT3_BYT_00086ea8[] = "\\DATA\\CREDIT3.BYT";
+static char s__DATA_CREDIT2_BYT_00086ebc[] = "\\DATA\\CREDIT2.BYT";
+static char s__DATA_CREDIT1_BYT_00086ed0[] = "\\DATA\\CREDIT1.BYT";
+static char s_opbtn_00086ee4[] = "opbtn";
+static char s__DATA_opscr_byt_00086eec[] = "\\DATA\\opscr.byt";
+/* Was `int` despite holding a real malloc'd pointer (main_menu_loop:
+   `DAT_0023bf70 = iVar4;` where iVar4 = Ordinal_1041(0x10000)), used in
+   pointer arithmetic (`iVar9 + DAT_0023bf70`) -- truncating on this
+   64-bit host. */
+static char *DAT_0023bf70;
+/* Same fix as DAT_00248410 above -- see its comment. */
+char *DAT_0023cca4;
+// was DAT_0023c210 -- the current frame's raw .GR entry pointer (see
+// g_weapon_swing_raw_frames), set by weapon_swing_draw_tick right
+// before decoding it -- was computed as `DAT_0023c214 +
+// (short)(&DAT_0023c158)[frame]`. `DAT_0023c158` was declared as a
+// lone 2-byte scalar despite being indexed up to 27 -- the same
+// "Ghidra couldn't recover this table's real .data contents" shape as
+// g_inventory_hotspot_table/DAT_00085668/etc. elsewhere in this file
+// -- so that part of the expression read garbage for every frame but
+// the first. `DAT_0023c214` (see its own declaration, just below) is
+// real, but the intended packing scheme it and the lost offset table
+// together addressed isn't recoverable, so this now points directly
+// at g_weapon_swing_raw_frames[frame] instead -- one real per-frame
+// allocation apiece rather than packed offsets into one shared
+// buffer, matching how the file's other raw-GR-entry consumer
+// (blit_object_sprite_by_frame) already reads a frame's real
+// width/height straight from its own header bytes (entry[1]/entry[2])
+// regardless of storage scheme.
+char *g_weapon_swing_current_frame;
+/* was DAT_0023c214, `int`-typed in both its own uw.h extern
+   declaration and here -- app_main_loop (game.c) assigns it a real
+   64000-byte Ordinal_1041 allocation (the same one it hands
+   g_weapon_swing_current_frame right beside it, before per-frame use
+   overwrites that one), truncating the pointer on this 64-bit host
+   exactly like every other pointer-in-a-narrow-global bug in this
+   project. Fixed the type; the buffer itself is otherwise unused now
+   that g_weapon_swing_current_frame is resolved via
+   g_weapon_swing_raw_frames instead (see that comment) -- kept only
+   because app_main_loop still allocates and assigns it. */
+static char *g_weapon_swing_startup_scratch_buffer;
+undefined1 DAT_00241f08_backing[32768];
+static undefined2 DAT_0023c59e;
+static undefined2 DAT_0023c5a0;
+static char *DAT_0023c44c;
+static char *DAT_0023cef0;
+/* Same fix as DAT_00248410 above -- see its comment. */
+static char *DAT_0024ad58;
+int DAT_000876c8;
+int DAT_0024af60;
+undefined4 DAT_0023c648;
+static unsigned short u_UltimaUW_00087678[] = u"UltimaUW";
+static unsigned short u_Ultima_Under_World_00087690[] = u"Ultima_Under_World";
+static unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[] = u"Software\\Apps\\ZIO_Interactive_Ul";
+static char s__Program_Files_ZIO_Interactive_U_00087804[] = "\\Program_Files\\ZIO_Interactive\\U";
+static unsigned short u_InstlDir_00087838[] = u"InstlDir";
+static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008784c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
+static unsigned short u_HP_Jornada_540_000876cc[] = u"HP,Jornada_540";
+static char s__Program_Files_ZIO_Interactive_U_000876ec[] = "\\Program_Files\\ZIO_Interactive\\U";
+static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008771c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
+static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program_Files\\ZIO_Interactive\\U";
+// DAT_000830b0 and UNK_000830b4 are the same {int msg_id; void
+// *handler;} 8-byte-stride table (dispatch_window_message walks
+// msg_id entries from &DAT_000830b0 via an `int*`, and reads the
+// matching handler from UNK_000830b4 + index*8 -- exactly
+// DAT_000830b0's own address + 4, i.e. the SAME struct's second
+// field), not two independent globals. Both were declared as a lone
+// byte / a separately-backed array, so the `int*` walk read past
+// DAT_000830b0's 1-byte allocation into unrelated memory. Aliased
+// into one shared backing array at their real relative offsets.
+static undefined1 DAT_000830b0_backing[65536];
+#define DAT_000830b0 DAT_000830b0_backing[0]
+#define UNK_000830b4 DAT_000830b0_backing[4]
+
 
 
 // WinMain's real body: single-instance mutex check, window class/window creation, framebuffer + subsystem init, shows the main menu once, then runs the PeekMessage/Translate/Dispatch message pump until quit.

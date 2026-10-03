@@ -9,6 +9,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define _DAT_00202978 (*(uint*)&DAT_00202978)
+/* Was a lone `undefined4` (4-byte) scalar holding a real heap pointer
+   (an Ordinal_1041-allocated open-container tracking record, same class
+   as g_current_container_record right above) -- every assignment to/from
+   it (open_backpack_container, close_backpack_container) truncated the
+   real 64-bit pointer to 32 bits. That alone was silent as long as only
+   ONE container was ever open simultaneously (the only case exercised
+   before this session's container fixes), since nothing ever needed to
+   walk to a SECOND record through it. Widened to a real pointer; see
+   also the g_current_container_record-chain "next"/"prev" link widening
+   in open_backpack_container/leave_nested_container_level/
+   free_open_container_chain below for the deeper version of this same
+   bug, found and fixed alongside it. */
+char *g_open_container_list;
+/* Was a lone `undefined4` scalar, but indexed as `(&DAT_002028a0)[i]` for
+   i up to 7 (free_open_container_chain's icon save/restore swap) -- classic
+   "undersized global used as an array" bug (same class as
+   DAT_0024bfa0/DAT_000891b0 etc.), and it happened to corrupt whatever
+   real global the linker/compiler placed a few slots further along --
+   confirmed via an lldb watchpoint that this exact write
+   (`(&DAT_002028e8)[iVar5] = uVar1` in init_inventory_panel_hotspots, a sibling of this
+   same bug one array over) was clobbering g_selected_object (a real, load-
+   bearing `char *`), corrupting an equipped-item lookup and crashing
+   refresh_player_equipment_effects on the very first in-game frame. Widened with a safety
+   margin. */
+static undefined4 DAT_002028a0_backing[64];
+#define DAT_002028a0 DAT_002028a0_backing[0]
+static undefined DAT_00202978_backing[8192];
+#define DAT_00202978 DAT_00202978_backing[0]
+static ushort DAT_00202986;
+static undefined2 DAT_00202980;
+ undefined1 DAT_00085c88_backing[32768];
+static char s_is_empty__0008790c[] = "is_empty.";
+
 
 
 

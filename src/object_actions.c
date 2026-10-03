@@ -9,6 +9,92 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00085cd8 DAT_00085cd8_backing[0]
+#define DAT_00085cb4 DAT_00085cb4_backing[0]
+static undefined *DAT_001007c8;
+undefined1 DAT_0023c3dc;
+undefined1 DAT_0023c3d8;
+/* Ghidra recovered this as "You_see" (underscores, no trailing space);
+   it's the "You see " prefix the look/identify code prepends to an
+   object/terrain name, so the real bytes are "You see " with a trailing
+   space (see describe_picked_terrain: message_scroll_print_wrapped(this) then the
+   name then "."). */
+char s_You_see_000858fc[] = "You see ";
+static char s_belonging_to_00085c90[] = "belonging to ";
+ undefined1 DAT_0023ce70_backing[8192];
+ushort DAT_00202508;
+ushort DAT_002022f8;
+static ushort DAT_00202300;
+static ushort DAT_00202304;
+int DAT_002022fc;
+undefined1 DAT_0023ce71_backing[256];
+#define DAT_0023ce71 DAT_0023ce71_backing[0]
+// was DAT_0023bcf4, offset +0x4c of the "large fixed-offset record"
+// based at DAT_0023bca8 (see that array's own declaration comment a few
+// hundred lines up -- a "device/config-ish struct, not yet fully
+// identified" that a prior session already had to widen to a real 8192-
+// byte backing array after catching an unrelated overflow into it).
+// g_player_carry_weight (was DAT_0023bcf2, "+0x4a", the sibling field 2
+// bytes before this one) is that struct's actively-maintained "current
+// carried weight" running total.
+//
+// Two things worth ruling out before assuming a hardcoded default is
+// the right call, both checked directly rather than assumed:
+// - NOT part of the player.dat save/load blob: that save path (uw.c
+//   ~32660) serializes the player's OBJECT graph (walking
+//   resolve_object_link), not this stats struct -- no overlap, so this
+//   isn't a save/load wiring gap.
+// - NOT a split-symbol/should-be-one-array bug either, despite living
+//   inside that same not-fully-identified struct: a whole-binary
+//   instruction-pattern scan (every "str/strh/strb ..., [reg, #0x4c]"
+//   in the binary, not just literal-address xrefs, specifically to also
+//   catch a write reached via the DAT_00086df8 struct-pointer indirection
+//   the way init_new_character_record's already-documented overflow into this same
+//   struct was) found zero halfword writes to +0x4c anywhere, by any
+//   addressing pattern. Every real writer of the sibling +0x4a field
+//   also resolves through a literal constant address, not the pointer
+//   indirection, matching how this file already represents both fields
+//   as flat globals -- so unifying them into an explicit array wouldn't
+//   change reachability here the way it has for other DAT_0023bca8-
+//   adjacent fields elsewhere in this file.
+// - Confirmed via a real Ghidra reference search against UU.exe (not
+//   just this decompile): every access to +0x4c anywhere in the shipped
+//   binary is a READ (check_object_carry_weight's "can I pick this up" check, and
+//   update_carry_weight_display, apparently a HUD burden/encumbrance display) -- there
+//   is no write to it ANYWHERE, so it stays at its zero BSS default for
+//   the life of the process. Net effect: every pickup attempt failed
+//   with "too heavy" regardless of the item (confirmed live: a 30-unit
+//   sack, well within any plausible real capacity, was rejected).
+//
+// Whatever real formula (almost certainly Strength-derived) originally
+// populated this is not recoverable from this binary -- it's a genuinely
+// dead computation in the shipped game, not a decompile gap. Seeding a
+// generous, clearly-provisional default here so carrying items functions
+// at all rather than being permanently broken -- revisit if the real
+// per-character formula (or its expected value range) ever turns up.
+ushort g_player_max_carry_weight = 200;
+static char s_cursed_00085ca0[] = "cursed";
+static char s_magical_00085ca8[] = "magical";
+static char s_full_charge_00085cb8[] = "full_charge";
+static undefined DAT_00085cc8;
+static char s_with_00085cd0[] = "with";
+static undefined DAT_00085cd8_backing[8192];
+static undefined4 DAT_0024cfcc;
+static undefined1 DAT_00085ccc;
+static undefined1 DAT_00085ccd;
+static undefined1 DAT_00085cce;
+static undefined DAT_00085cb4_backing[8192];
+static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
+static char s_an_adventurer__00085d08[] = "an_adventurer.";
+static uint DAT_00202094;
+undefined1 DAT_00087604_backing[65536];
+undefined *PTR_FUN_00087614;
+static undefined DAT_0008762c_backing[8192];
+#define DAT_0008762c DAT_0008762c_backing[0]
+#define DAT_00087630 DAT_0008762c_backing[4]
+#define DAT_00087634 DAT_0008762c_backing[8]
+static char s_very_near_00087954[] = "very_near";
+
 
 
 

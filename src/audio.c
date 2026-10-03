@@ -8,6 +8,101 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00202a58 DAT_00202a58_backing[0]
+#define DAT_00086370 DAT_00086370_backing[0]
+static undefined1 DAT_0024d008;
+static undefined1 DAT_0024fa10;
+static undefined1 DAT_0024f90c;
+/* was `undefined` (1 byte) -- load_voice_sample_page computes
+   `(*(ushort*)(param_3+2)+4)*2 + (uint)*(ushort*)(param_3+4)` into
+   this global then reads it back masked with & 0xffff and returns it
+   as undefined2, so a 1-byte declaration silently truncated any
+   sample-page size over 255 bytes before it was ever read back.
+   Widened to match its sibling size-cache globals DAT_000853fc/
+   DAT_00085400 (both ushort). */
+static ushort DAT_000853f8;
+static ushort DAT_00085400;
+static char *DAT_002506ec;
+static int DAT_00086368;
+static unsigned short u_WAVE_0008686c[] = u"WAVE";
+/* Was a bare scalar, but process_mod_tracker_row indexes it as
+   `(&DAT_00086370)[iVar14]` with iVar14 clamped to [0,0x127] -- the
+   same scalar-declared-but-accessed-as-array bug class fixed many
+   times this session (e.g. DAT_00086260/DAT_00086264 above). Likely a
+   period/frequency lookup table for the MOD-tracker engine, but this
+   data isn't flagged as recovered from UU.exe anywhere in this
+   decompile -- widened to real, safely-sized backing storage (zero-
+   initialized, not recovered) purely to make the access safe. */
+static undefined4 DAT_00086370_backing[296];
+/* DAT_00086810: declared as a scalar but indexed as
+   (&DAT_00086810)[pos] in apply_mod_vibrato_effect/apply_mod_tremolo_effect,
+   where pos is a per-channel counter that wraps at 0x20 (32) -- a
+   32-entry sine lookup table for the MOD tracker's vibrato/tremolo
+   effects. Same "scalar declared but accessed as array" bug class
+   fixed several times this session; widened to real, safely-sized
+   backing storage (zero-initialized, not recovered) purely to make
+   the access safe. */
+static undefined1 DAT_00086810_backing[32];
+#define DAT_00086810 DAT_00086810_backing[0]
+static undefined1 DAT_00202a58_backing[65536];
+static undefined1 DAT_00087414_backing[65536];
+#define DAT_00087414 DAT_00087414_backing[0]
+static char s__SOUND__0008750c[] = "\\SOUND\\";
+static char s_uw00_mod_00087514[] = "uw00.mod";
+static int DAT_00087454;
+static int DAT_00087448;
+static byte DAT_0023c3a8;
+static undefined4 *DAT_0023c3b8;
+static undefined1 DAT_0023c384;
+static undefined4 DAT_0023c280;
+static undefined4 DAT_0023c330;
+static short DAT_0023c32c;
+static int DAT_00087450;
+static undefined4 DAT_0008744c;
+static undefined DAT_0023c2b0_backing[8192];
+#define DAT_0023c2b0 DAT_0023c2b0_backing[0]
+/* Same per-sound-effect-id table shape as DAT_0023c2b0 just above (all
+   four indexed by play_positional_sound_effect's own `id*5`-stride
+   iVar10) -- were lone scalars, so every id past 0 read into whatever
+   the compiler placed next, corrupting the volume/pan parameters
+   play_positional_sound_effect derives for any sound but the first.
+   Widened to match DAT_0023c2b0_backing's own generous sizing (max
+   real index is 0xff*5+4=1279, given the 8-bit id field). */
+static undefined DAT_0023c2b1_backing[8192];
+#define DAT_0023c2b1 DAT_0023c2b1_backing[0]
+static undefined DAT_0023c2b2_backing[8192];
+#define DAT_0023c2b2 DAT_0023c2b2_backing[0]
+static undefined DAT_0023c2b3_backing[8192];
+#define DAT_0023c2b3 DAT_0023c2b3_backing[0]
+static byte DAT_0023c39c;
+/* allocate_and_play_sound_channel indexed these two by raw hardcoded
+   original-binary literal addresses (0x23c338/0x23c350) rather than
+   real declared globals -- same "hardcoded address" bug class as
+   probe_save_slots's -0x87020 and the g_inv_hotspot fix elsewhere in
+   this file. No symbol was ever recovered at either address (nothing
+   else in the whole decompile references them), so on this 64-bit
+   recompile those writes landed on literal address 0x23c338/0x23c350
+   in the process's own address space -- unmapped, so a guaranteed
+   SIGSEGV the first time a sound effect played. Declared as the real
+   4-entry (one per sound channel) per-channel state/group arrays this
+   indexing implies and rewritten to index them properly. */
+static byte g_sound_channel_state[4];
+static ushort g_sound_channel_group[4];
+static undefined DAT_0023c3d4_backing[8192];
+#define DAT_0023c3d4 DAT_0023c3d4_backing[0]
+static int DAT_0023c3bc;
+static int DAT_0023c378;
+static undefined1 DAT_000873e0_backing[65536];
+#define DAT_000873e0 DAT_000873e0_backing[0]
+static undefined4 DAT_00087458;
+static undefined1 DAT_00087520_backing[32768];
+#define DAT_00087520 DAT_00087520_backing[0]
+static short DAT_002506f0;
+static undefined2 DAT_002029c8;
+static undefined2 DAT_0024fa14;
+static undefined2 DAT_0024d00c;
+static undefined1 DAT_0024d010;
+
 
 
 

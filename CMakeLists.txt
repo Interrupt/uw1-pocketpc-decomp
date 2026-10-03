@@ -11,14 +11,11 @@ set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 
-# uw.c/uw.h now live under src/ and src/headers/ like everything split
-# out of them (see struct-recovery-plan.md and the cleanup goal). All
-# function bodies have moved to topic .c files; uw.c's own code is now
-# just the main-entry/setup tail, though most of its former global
-# DAT_xxx variable declarations still live there too -- grouping those
-# into matching src/*.c files is the remaining cleanup work.
+# uw.c no longer exists: every function and global variable it held has
+# been split out into matching src/*.c files (see struct-recovery-plan.md
+# and the cleanup goal). uw.h remains as the shared header for globals
+# used across more than one of those files.
 set(UW_SOURCES
-  src/uw.c
   src/graphics.c
   src/game.c
   src/chargen.c
@@ -167,6 +164,10 @@ if(BUILD_TESTING)
     target_compile_definitions(test_${name} PRIVATE
       UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   endforeach()
+  target_compile_options(test_chargen PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/chargen_test_globals.h")
+  target_compile_options(test_new_game PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/new_game_test_globals.h")
   target_sources(test_new_game PRIVATE src/file_io.c src/debug.c)
   add_game_unit_test(teleport
     src/level.c:transition_to_level src/level.c:teleport_object_to_level_tile
@@ -186,6 +187,8 @@ if(BUILD_TESTING)
     src/objects.c:resolve_object_link src/movement.c:find_nearby_door_in_candidates
     src/movement.c:get_first_nearby_candidate_object)
   target_sources(test_movement PRIVATE src/debug.c)
+  target_compile_options(test_teleport PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/teleport_test_globals.h")
   add_game_unit_test(combat
     src/combat.c:find_nearest_hit_target src/combat.c:resolve_combat_hit_zone
     src/combat.c:compute_attack_relative_facing
@@ -200,7 +203,11 @@ if(BUILD_TESTING)
     src/combat.c:load_monster_combat_stats)
   target_compile_definitions(test_combat PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  target_compile_options(test_combat PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/combat_test_globals.h")
   add_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
+  target_compile_options(test_traps PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/traps_test_globals.h")
   add_game_unit_test(illustrations
     src/object_actions.c:look_at_inscribed_object
     src/interact.c:trigger_terrain_discovery_illustration
@@ -209,6 +216,8 @@ if(BUILD_TESTING)
   target_compile_definitions(test_illustrations PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   target_sources(test_illustrations PRIVATE src/debug.c)
+  target_compile_options(test_illustrations PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/illustrations_test_globals.h")
   add_game_unit_test(illustration_render
     src/babl.c:render_babl_dialog_window src/babl.c:display_book_or_scroll_page
     src/babl.c:bubble_sort_indices_by_key_table src/babl.c:babl_render_tick
@@ -236,7 +245,7 @@ if(BUILD_TESTING)
     src/hud.c:flush_dirty_rect_to_display src/hud.c:dirty_rect_union
     src/hud.c:main_loop_hud_flush src/graphics.c:flush_dungeon_frame
     src/game.c:set_pending_update_flags
-    src/uw.c:@DAT_00085668_real_table
+    src/game.c:@DAT_00085668_real_table
     src/gx_stub.c:@uw_present_state src/gx_stub.c:@g_present_state
     src/gx_stub.c:uw_begin_present_batch src/gx_stub.c:uw_end_present_batch
     src/gx_stub.c:uw_begin_modal_present src/gx_stub.c:uw_end_modal_present
@@ -249,6 +258,8 @@ if(BUILD_TESTING)
   target_sources(test_illustration_render PRIVATE src/debug.c src/file_io.c)
   target_compile_definitions(test_illustration_render PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  target_compile_options(test_illustration_render PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/illustration_render_test_globals.h")
   add_game_unit_test(scheduler
     src/scheduler.c:scheduler_tick src/scheduler.c:scheduler_step_entry
     src/scheduler.c:scheduler_finish_entry src/scheduler.c:scheduler_despawn_entry
@@ -257,6 +268,8 @@ if(BUILD_TESTING)
     src/ai.c:npc_ai_tick src/ai.c:initiate_npc_death src/ai.c:drop_monster_loot)
   target_compile_definitions(test_scheduler PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  target_compile_options(test_scheduler PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/scheduler_test_globals.h")
   target_compile_definitions(test_traps PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(inventory
@@ -268,6 +281,8 @@ if(BUILD_TESTING)
     src/game.c:handle_game_view_click)
   target_compile_definitions(test_inventory PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  target_compile_options(test_inventory PRIVATE
+    -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/inventory_test_globals.h")
   target_compile_definitions(test_movement PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   target_compile_options(test_movement PRIVATE

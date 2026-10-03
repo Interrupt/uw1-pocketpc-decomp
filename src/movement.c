@@ -8,6 +8,306 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define _DAT_002048c2 (*(uint*)&DAT_002048c2)
+#define _DAT_00204982 (*(uint*)&DAT_00204982)
+#define _DAT_00204986 (*(uint*)&DAT_00204986)
+#define _DAT_00204992 (*(uint*)&DAT_00204992)
+ undefined2 DAT_002049a0_backing[8192];
+static undefined2 DAT_002048cc;
+static undefined2 DAT_002048ce;
+static undefined1 DAT_002048d7;
+static undefined2 DAT_002048fc;
+static undefined2 DAT_002048fe;
+static undefined1 DAT_00204907;
+static undefined2 DAT_0020492c;
+static undefined2 DAT_0020492e;
+static undefined1 DAT_00204937;
+static undefined2 DAT_0020495c;
+static undefined2 DAT_0020495e;
+static undefined1 DAT_00204967;
+/* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes)
+   via the _DAT_00204982 macro below -- widened to its own real backing
+   storage so that wider access can't spill into whatever global happens
+   to follow (it used to rely on uw.c's own incidental layout). */
+static undefined DAT_00204982_backing[8];
+#define DAT_00204982 DAT_00204982_backing[0]
+static undefined2 DAT_00204984;
+/* Same wider-access-than-declared-size issue as DAT_00204982 above (see
+   its comment), via the _DAT_00204986 macro below. */
+static undefined DAT_00204986_backing[8];
+#define DAT_00204986 DAT_00204986_backing[0]
+ undefined1 DAT_00204980_backing[65536];
+static undefined *DAT_00204988;
+/* Same wider-access-than-declared-size issue as DAT_00204982 above (see
+   its comment), via the _DAT_00204992 macro below. */
+static undefined DAT_00204992_backing[8];
+#define DAT_00204992 DAT_00204992_backing[0]
+static undefined2 DAT_00204994;
+static undefined2 DAT_00204996;
+ undefined2 DAT_00204990_backing[32768];
+static undefined *DAT_00204998;
+static undefined2 DAT_002049a2;
+static undefined2 DAT_002049a4;
+static undefined2 DAT_002049a6;
+static undefined1 *DAT_002049a8;
+static undefined2 DAT_002049b2;
+static undefined2 DAT_002049b4;
+static undefined2 DAT_002049b6;
+ undefined2 DAT_002049b0_backing[32768];
+static undefined *DAT_002049b8;
+static short DAT_002048d0;
+/* Same wider-access-than-declared-size issue as DAT_00204982 above (see
+   its comment), via the _DAT_002048c2 macro below. */
+static undefined DAT_002048c2_backing[8];
+#define DAT_002048c2 DAT_002048c2_backing[0]
+/* Was a bare `undefined2` -- same split-symbol class as DAT_002048f0/
+   DAT_00204950 below (see their own comment): build_object_placement_snapshot writes up to
+   offset 0x28 into whichever of these three globals DAT_0010172c
+   currently points at, a massive out-of-bounds write past a 2-byte
+   scalar. Oversized generously like its siblings. */
+ undefined2 DAT_002048c0_backing[32768];
+static undefined2 DAT_002048c8;
+static undefined2 DAT_002048c6;
+undefined1 DAT_00101424;
+undefined1 DAT_00101428_backing[8192];
+static undefined2 DAT_002048fa;
+static undefined2 DAT_00204958;
+static undefined2 DAT_00204956;
+// was DAT_0023bf1c. Requested movement mode consumed by
+// resolve_move_vector -- see its header comment for the full mode list
+// (0 stop, 1 analog move/turn, 6/7 jump, 8 move+face-180, 9/10
+// sidestep, 0xc/0xd fly up/down).
+short g_movement_mode;
+short DAT_0023bf4c;
+short DAT_0023bf48;
+/* collision_build_height_field's collision height-field: five 5-byte corner records at
+   0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the
+   fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads
+   them by index off DAT_00202bf8. Only DAT_00202bf8 had a backing array;
+   the rest were lone Ghidra scalars, so the named writes and indexed reads
+   hit different memory and every corner sampled as height 8 -- solid-rock
+   tiles reported the same floor height as open floor, so collision never
+   stopped the player at a wall. Alias every field into the one backing
+   buffer. Per-corner layout: [0]=shape/index, [1..2]=diag corner offsets,
+   [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05). */
+ undefined1 DAT_00202bf8_backing[32768];
+/* Wall-slide corner-classification tables, used by resolve_wall_slide_corner (called
+   from sweep_slide_along_wall when a wall hit has a specific blocked-
+   corner shape) to pick which of the 8 candidate headings in
+   DAT_000869a8 to deflect toward. Both were declared as single-byte
+   scalars -- an "orphaned data table" class bug, same as DAT_000869a8
+   just fixed above -- so any index past 0 read undefined, unrelated
+   adjacent globals in this port's own memory layout (not the real
+   binary's), producing effectively-random results for any corner
+   configuration except the very first. This is the deeper reason wall
+   sliding sometimes turned the player back INTO the wall: even once
+   DAT_000869a8 held real headings, resolve_wall_slide_corner was often picking the
+   WRONG index into it.
+
+   Real data recovered via Ghidra headless dump (matching these globals'
+   own name-encoded addresses, 0x86884 and 0x8688c): DAT_00086884 is a
+   real 4-entry SIGNED array {1,-1,-1,1} (per-corner +/-1 deltas, read as
+   `(&DAT_00086884)[iVar3]` for iVar3 0-3 in resolve_wall_slide_corner's loop).
+   DAT_0008688c sits 4 bytes into a real lookup table that starts at
+   0x86888 (confirmed: the function's own literal pool for the "r8" table
+   base is 0x86888, and 0x86888+4 = 0x8688c exactly) -- both of
+   resolve_wall_slide_corner's own lookups already index relative to DAT_0008688c
+   correctly (`(&DAT_0008688c)[iVar6*3+iVar7]` and
+   `(&DAT_0008688c)[iVar9*-3-iVar7]`, the latter reaching back to offset
+   -4, i.e. the table's real start at 0x86888); only the DECLARATION was
+   wrong, not the indexing arithmetic. Backed with the real bytes from
+   0x86884 through 0x868893 (32 bytes from the table's real start,
+   comfortably covering every offset either lookup can produce); bytes
+   past offset +7 from DAT_0008688c decode as the ASCII string
+   "\DATA\comobj.dat" -- real, unrelated adjacent data in the original
+   binary, kept verbatim rather than guessed at, since matching the
+   original memory layout exactly is safer than inventing a boundary. */
+static signed char DAT_00086884_backing[4] = {1, -1, -1, 1};
+#define DAT_00086884 DAT_00086884_backing[0]
+static unsigned char DAT_0008688c_backing[32] = {
+  5, 4, 3, 6, 9, 2, 7, 0, 1, 0, 0, 0, 92, 68, 65, 84,
+  65, 92, 99, 111, 109, 111, 98, 106, 46, 100, 97, 116, 0, 0, 0, 0
+};
+#define DAT_0008688c DAT_0008688c_backing[4]
+char *DAT_00204874;
+/* The movement/collision-sweep working block. Ghidra split this one ~24-byte
+   struct into 14 separate globals (DAT_002049c8 .. DAT_002049de), but
+   collision_build_height_field / collision_height_envelope write its fields through `DAT_00202c6c[offset]`
+   (DAT_00202c6c = &DAT_002049c8) while sweep_init_position / sweep_collision_
+   flags read/write them by name -- so the indexed writes and the named reads
+   landed on unrelated memory and collision flags never reflected the tile
+   under the player (walked straight through walls). Back them with one buffer
+   at the name-derived offsets so both views alias. */
+ unsigned char DAT_002049c8_backing[64];
+/* The reticle/collision "picked tile" record at 0x86998..0x869a2. Ghidra
+   split it into scattered byte scalars (DAT_00086998/99/9a/9b/9f/a0/a1/a2)
+   plus overlapping 16-bit "_DAT_" views (_DAT_00086999 = the x/y pair,
+   _DAT_0008699b = target floor height, _DAT_0008699f = ceiling clearance).
+   Recompiled as separate globals the wide writes and narrow reads landed on
+   different memory: reticle_object_pick's `_DAT_0008699f = 0x7f` never
+   reached DAT_0008699f/DAT_000869a0, so sweep_collision_flags read the
+   ceiling clearance as 0 and decided the player never fits -> "walk forward"
+   stalled after 1/8 tile on every open tile. Back them with one buffer so
+   the byte and word views alias. */
+ unsigned char DAT_00086998_backing[16];
+static char DAT_0008794c_backing[128];
+char *DAT_0008794c = DAT_0008794c_backing;
+char *DAT_002048bc;
+// was DAT_00086978. The three 16-bit velocity components of the movement block
+/* (&DAT_00204886/88/8a). Ghidra typed this `char *`, so movement_sweep_setup's
+   `g_sweep_velocity[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
+   shorts at offsets 2,4 -- and every copy (`psVar11 = g_sweep_velocity`) is
+   already `short *`, confirming the intent. The byte misread made `[2]`
+   (meant: the Z/vertical velocity g_vertical_velocity, 0 for level movement) return
+   the low byte of the forward velocity DAT_00204888, so plain forward
+   movement took the "vertical movement" path (collision_build_height_field / collision_height_envelope)
+   which corrupts DAT_00204880 -- one forward step overflowed the player X to
+   the map edge and wedged them there.
+   g_sweep_velocity[2] is *(short*)(DAT_00204874+0xa) -- the exact same
+   memory as g_vertical_velocity (see its #define, uw.c:2025), just reached
+   through this pointer instead; movement_sweep_setup's own accumulation
+   `g_sweep_velocity[2] += speed*g_fall_accel` is the ordinary velocity +=
+   accel*dt integration step, not a separate quantity (confirmed while
+   investigating the jump-arc bug, see
+   [[jump-physics-fix-and-open-integrator-issue]]). */
+static short *g_sweep_velocity;
+static undefined1 DAT_002049c0;
+/* "Already slid this tick" cooldown, decremented once per ordinary substep
+   in sweep_step (`DAT_002049bc = DAT_002049bc + -1;`) and read back in
+   sweep_slide_along_wall's own first line to skip re-deflecting mid-slide.
+   Verified via disassembly (0x59b84/0x5a5c0) both sites use `ldrsb` --
+   SIGNED byte reads -- so 0 decrementing to -1 reads back as -1, and the
+   guard (`if (0 < DAT_002049bc)`) correctly stays false. Declared here as
+   `undefined1` (unsigned char), it was reset to 0 every tick
+   (movement_collision_sweep) then immediately decremented on the very
+   first ordinary substep before any wall was ever hit, underflowing to
+   255 (unsigned) instead of -1 (signed) -- permanently latching the
+   "already slid" guard true, so sweep_slide_along_wall took its early
+   revert-and-end path on every single call and sweep_deflect_heading
+   never ran at all. Symptom: running straight into a wall stopped the
+   player dead with zero deflection/turning, forever, instead of sliding
+   along it -- confirmed live via a new UW_DEBUG_WALL trace showing
+   DAT_002049bc=255 on every one of 4523 calls during an 80+-tick
+   straight-on wall hold. */
+static char DAT_002049bc;
+short DAT_00086990;
+static short DAT_00086996;
+// was DAT_0008697c_backing/DAT_0008697c -- the swept working foot position
+// (coarse X/Y/Z, tile-eighths / eighth-fine units) collision math operates
+// on each sub-step before sweep_writeback_position commits it back to the
+// real player position.
+/* UU.exe .data at 0x8697c contains 0x2049c8: the swept XYZ and
+   collision working XYZ are the same three halfwords, including rollback. */
+static short *g_sweep_foot_pos = (short *)DAT_002049c8_backing;
+static short DAT_00086980_backing[256];
+#define DAT_00086980 DAT_00086980_backing[0]
+static short DAT_00086982;
+static short DAT_00086984;
+static undefined4 DAT_00204878;
+static undefined DAT_00202c32_backing[256];
+#define DAT_00202c32 DAT_00202c32_backing[0]
+static ushort DAT_0008698c;
+static short DAT_0008698e;
+static ushort DAT_00086992;
+static short DAT_00086994;
+static short DAT_0008698a;
+static undefined1 DAT_00086986_backing[65536];
+#define DAT_00086986 DAT_00086986_backing[0]
+#define DAT_00086987 DAT_00086986_backing[1]
+/* Wall-slide deflection candidate-heading table (was a zero-initialized
+   65536-byte placeholder with no writer anywhere in the decompile -- an
+   "orphaned data table" of the same class as the TMOBJ/inventory-hotspot
+   tables fixed elsewhere in this project). sweep_slide_along_wall reads
+   `*(short*)(&DAT_000869a8 + index*2)` to pick which heading to deflect
+   the move toward; with the real table missing, every read always came
+   back 0, so every wall hit -- head-on or glancing -- tried to deflect
+   toward the SAME fixed heading regardless of which way the wall
+   actually faced. That deflection only succeeds when it happens to be
+   close enough to the real wall's face (confirmed via a live
+   UW_DEBUG_WALL trace: candidate_heading=0 on 100% of calls, and
+   sweep_deflect_heading itself only returned nonzero -- i.e. actually
+   redirected the move -- 3 times out of 2258 during a real diagonal
+   wall hold), matching the reported symptom exactly: sliding sometimes
+   turns the player further INTO the wall instead of along it, "working"
+   only by coincidence when heading 0 happens to roughly line up with
+   the actual wall.
+
+   Recovered the real 8-entry table from the original binary at 0x869a8
+   (Ghidra headless dump, matching this global's own name/address) --
+   confirmed via disassembly of sweep_slide_along_wall (0x59b7c) that the
+   pointer literal at 0x59c20 resolves to exactly this address. The 8
+   real values are `-8192*i` (i.e. -45 degrees * i, wrapped to a signed
+   16-bit heading) for i=0..7 -- the 8 compass octants relative to the
+   hit. Confirmed the table is EXACTLY these 8 entries and no more: bytes
+   immediately following decode as ASCII (an unrelated string literal),
+   not further table data. */
+static unsigned char DAT_000869a8_backing[16] = {
+  0x00, 0x00, /*     0 */  0x00, 0xE0, /* -8192 */  0x00, 0xC0, /* -16384 */
+  0x00, 0xA0, /* -24576 */ 0x00, 0x80, /* -32768 */ 0x00, 0x60, /*  24576 */
+  0x00, 0x40, /* 16384 */  0x00, 0x20  /*  8192 */
+};
+#define DAT_000869a8 DAT_000869a8_backing[0]
+static int DAT_00204870;
+static char DAT_00087944_backing[128];
+static char *DAT_00087944 = DAT_00087944_backing;
+/* Deterministic, fixed-step substitute for the real wall-clock
+   (read_realtime_clock_units(), itself Ordinal_535()>>2 -- SDL_GetTicks() scaled to
+   4ms-per-unit) that movement_pacing_handler() (this file, ~line 56186)
+   used to read directly for ALL of its internal timing, including the
+   uVar6 delta that directly scales how far the player moves/turns each
+   tick. Real elapsed time made movement distance sensitive to actual
+   frame-delivery jitter -- fine for one live session, but meant a
+   recorded input sequence (democapture.c) with tick-for-tick-identical
+   keys held for tick-for-tick-identical durations still couldn't
+   reproduce the exact same on-screen distance on replay, since the two
+   sessions' real per-tick timing was never bit-for-bit identical (user-
+   reported: "movement via input still seems to slightly overshoot...
+   if input was 1:1"). Advanced once per real game tick by gx_stub.c's
+   uw_pump_events() (see its own comment) by a fixed amount matching
+   1000/60 ms in this same 4ms-per-unit scale, computed drift-free from
+   the running tick count (not accumulated per-call, which would drift)
+   -- movement becomes a pure function of TICK COUNT, exactly what the
+   recorder already captures losslessly, eliminating this class of
+   replay drift entirely instead of trying to reproduce real timing
+   jitter. Deliberately unconditional (not just during record/playback)
+   since the game is already vsync-locked to ~60Hz (gx_stub.c's own
+   frame-budget cap), so this doesn't change how normal play feels.
+
+   Deliberately NOT folded into read_realtime_clock_units() itself, even though that
+   is literally the "what time is it" function movement_pacing_handler
+   used to call and would have been the more obvious single place to
+   fix -- read_realtime_clock_units() has ~65 other call sites across this file, and
+   at least one (move_key_directional_step's own tail, ~line 56177:
+   `do { iVar2 = read_realtime_clock_units(); } while ((uint)(iVar2-iVar1) < 0x18);`)
+   busy-spins on it in a tight loop with NO event pump in between
+   iterations, deliberately throttling a discrete step's real-world
+   pacing. This clock only advances once per real uw_pump_events() call
+   -- a caller spinning on it outside that cadence, like that loop, would
+   see a frozen value and hang forever. Exposed instead via its own
+   accessor, uw_frame_clock_ms() below, so a caller has to deliberately
+   opt in rather than being silently affected by a global redefinition. */
+unsigned int g_uw_frame_clock_units;
+static char DAT_00087950_backing[128];
+static char *DAT_00087950 = DAT_00087950_backing;
+static char DAT_00087948_backing[128];
+static char *DAT_00087948 = DAT_00087948_backing;
+undefined4 DAT_0023bf54;
+byte DAT_0023bf58;
+int DAT_000879ac;
+// was DAT_00086dfc. movement_tick's enable gate for tick_mobile_objects
+// (the real per-tick NPC AI + mobile-object dispatcher) -- declared but
+// never assigned anywhere in this decompile, a permanently-false gate;
+// see init_gameplay_session's own comment for the fix.
+int g_npc_tick_enabled;
+char DAT_00086e84;
+static int DAT_0023bf64;
+static char DAT_0023bf60;
+static uint DAT_0023bf5c;
+static undefined DAT_00086e38_backing[256];
+#define DAT_00086e38 DAT_00086e38_backing[0]
+static undefined DAT_00086e48_backing[256];
+#define DAT_00086e48 DAT_00086e48_backing[0]
+
 
 
 

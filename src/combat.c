@@ -7,6 +7,91 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00085aa0 DAT_00085aa0_backing[0]
+ushort DAT_00100610;
+static undefined2 DAT_00100600;
+static ushort DAT_00100604;
+static short DAT_001005f4;
+static short DAT_001005f8;
+static char DAT_001005dc;
+static undefined2 DAT_00100624;
+static ushort DAT_00100620;
+static byte DAT_00100628;
+static undefined4 DAT_001005d8;
+byte DAT_001005fc;
+/* Original blood hit-zone heights at 0x84f18; the fifth entry is set at runtime. */
+static char DAT_00084f18_backing[5] = {5, 3, 1, 7, 0};
+#define DAT_00084f18 DAT_00084f18_backing[0]
+#define DAT_00084f1c DAT_00084f18_backing[4]
+static undefined DAT_001007e0_backing[256];
+#define DAT_001007e0 DAT_001007e0_backing[0]
+static ushort DAT_00202d54;
+undefined DAT_00202878;
+/* Was a lone `undefined` scalar (1 byte), but tick_weapon_swing_state indexes it
+   as `(&DAT_00084eff)[iVar5]` with iVar5 = the swing's own attack-type
+   value (3-9, from interact_attack's screen-position-to-3x3-grid
+   mapping -- this is the real "attack from top/left/right/bottom
+   throws a different attack" mechanic the user reported as broken),
+   and compute_player_weapon_attack_stats separately indexes it by the same attack-type value
+   for a damage bonus lookup. A single byte can't hold 10 real,
+   distinct per-direction values -- recovered the real content via
+   Ghidra headless memory dump (0x84eff, 12 bytes -- Ghidra's own next
+   symbol, DAT_00084f0b, starts exactly 12 bytes later, matching this
+   project's usual "one lone scalar per real small table" pattern):
+   00 02 02 02 00 00 00 01 01 01 00 00. Confirmed genuinely
+   direction-sensitive data (not all-zero/all-same): indices 2-9 read
+   00,02,02,02,00,00,00,01 -- real variation across the attack-type
+   range, not the flat/garbage result a bare 1-byte read would produce
+   once indexed past its own storage. */
+unsigned char DAT_00084eff_backing[12] = {
+  0x00,0x02,0x02,0x02,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00
+};
+ undefined DAT_001007d5_backing[8192];
+/* Was `undefined4` -- resolve_equipped_weapon_attack writes a real static-global address
+   through this (via its own `int *param_1`, truncating with an
+   explicit `(int)`/`(intptr_t)` cast at all 3 of its assignments), and
+   tick_weapon_swing_state reads it back and dereferences it as a pointer
+   (`*(byte*)(iVar5+3)` etc.) once the attack-swing state machine
+   reaches its "resolve impact" phase (DAT_000870e4==3). Confirmed live:
+   right-clicking to start an attack in Combat mode crashes a few ticks
+   later, once the swing reaches that phase, dereferencing the
+   truncated pointer. */
+char *DAT_001005e4;
+static char DAT_001005e0_backing[128];
+char *DAT_001005e0 = DAT_001005e0_backing;
+static undefined DAT_001007e1_backing[256];
+#define DAT_001007e1 DAT_001007e1_backing[0]
+static char s__DATA_cmb_dat_00084f40[] = "\\DATA\\cmb.dat";
+undefined2 DAT_00100630_backing[32768];
+ushort *DAT_0010190c;
+undefined4 DAT_00101924;
+undefined4 DAT_00101734_backing[256];
+#define DAT_00101734 DAT_00101734_backing[0]
+char *DAT_00101404;
+byte DAT_001013f8;
+byte DAT_00101918;
+int DAT_00101430;
+byte DAT_0010140c;
+undefined DAT_00101444;
+char DAT_00101408;
+char DAT_00101410;
+undefined1 DAT_00101420;
+ushort DAT_00101900;
+undefined DAT_00101448;
+char DAT_0010143c;
+char DAT_0010173c;
+char *DAT_00101400;
+static undefined DAT_00085a90;
+static char s_were_00085a98[] = "were";
+static undefined1 DAT_00085aa0_backing[32768];
+static char s_damaged__00085aa8[] = "damaged.";
+static char s_destroyed__00085ab4[] = "destroyed.";
+static byte DAT_002046d8;
+static byte DAT_002046dc;
+static int DAT_002046e8;
+static undefined1 DAT_002046e0;
+static undefined1 DAT_002046e4;
+
 
 
 

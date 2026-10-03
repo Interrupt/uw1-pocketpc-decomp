@@ -8,6 +8,95 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DAT_00085d48 (*(const undefined1 *)(const void *)DAT_00085d48_sine)
+#define DAT_00085d4c (*(const undefined1 *)((const char *)(const void *)DAT_00085d48_sine + 2))
+#define DAT_00085f50 (*(const undefined1 *)(const void *)DAT_00085f50_cosine)
+#define DAT_00085f54 (*(const undefined1 *)((const char *)(const void *)DAT_00085f50_cosine + 2))
+#define DAT_00086260 DAT_00086260_backing[0]
+#define DAT_00086264 DAT_00086264_backing[0]
+/* Recovered from UU.exe .data: the renderer's sine (0x85d48) and cosine
+   (0x85f50) tables, 256 int16 entries each, amplitude 32767 --
+   sine[i] = round(32767 * sin(i*PI/128)); cosine[i] = sine[(i+64)&255].
+   Both were silently-zero 64KB Ghidra backing arrays, so angle_to_screen_delta
+   (angle -> screen delta) returned {0,0} for every angle. That zeroed
+   the entry-0 direction vector seed_visibility_queue seeds the visibility
+   flood-fill with, so advance_visibility_ray did no expansion,
+   run_visibility_flood marked no tile visible, and the 3D tile list
+   came out empty (black viewport). It also broke every other bit of
+   angle math in the projection code. Four trailing pad shorts each
+   (angle_to_screen_delta interpolates to table[idx+1], so idx can reach 256).
+   DAT_00085d4c / DAT_00085f54 are &table + 2 == &table[1], the "next" sample:
+   the angle's high byte is the coarse index 0..255 (single-step, period 256)
+   and the low byte the 0..255 lerp fraction, so the next sample is +1 entry
+   (+2 bytes). Was &table + 4 (== &table[2]) -- an off-by-one-entry that
+   skipped every other sample and gave the wrong direction for any heading
+   whose coarse index was odd, so a turned player kept walking the old way. */
+static const short DAT_00085d48_sine[260] = {
+  0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
+  9512, 10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
+  18205, 18868, 19520, 20160, 20788, 21403, 22006, 22595, 23170, 23732, 24279, 24812,
+  25330, 25833, 26320, 26791, 27246, 27684, 28106, 28511, 28899, 29269, 29622, 29957,
+  30274, 30572, 30853, 31114, 31357, 31581, 31786, 31972, 32138, 32286, 32413, 32522,
+  32610, 32679, 32729, 32758, 32767, 32758, 32729, 32679, 32610, 32522, 32413, 32286,
+  32138, 31972, 31786, 31581, 31357, 31114, 30853, 30572, 30274, 29957, 29622, 29269,
+  28899, 28511, 28106, 27684, 27246, 26791, 26320, 25833, 25330, 24812, 24279, 23732,
+  23170, 22595, 22006, 21403, 20788, 20160, 19520, 18868, 18205, 17531, 16846, 16151,
+  15447, 14733, 14010, 13279, 12540, 11793, 11039, 10279, 9512, 8740, 7962, 7180,
+  6393, 5602, 4808, 4011, 3212, 2411, 1608, 804, 0, -804, -1608, -2411,
+  -3212, -4011, -4808, -5602, -6393, -7180, -7962, -8740, -9512, -10279, -11039, -11793,
+  -12540, -13279, -14010, -14733, -15447, -16151, -16846, -17531, -18205, -18868, -19520, -20160,
+  -20788, -21403, -22006, -22595, -23170, -23732, -24279, -24812, -25330, -25833, -26320, -26791,
+  -27246, -27684, -28106, -28511, -28899, -29269, -29622, -29957, -30274, -30572, -30853, -31114,
+  -31357, -31581, -31786, -31972, -32138, -32286, -32413, -32522, -32610, -32679, -32729, -32758,
+  -32767, -32758, -32729, -32679, -32610, -32522, -32413, -32286, -32138, -31972, -31786, -31581,
+  -31357, -31114, -30853, -30572, -30274, -29957, -29622, -29269, -28899, -28511, -28106, -27684,
+  -27246, -26791, -26320, -25833, -25330, -24812, -24279, -23732, -23170, -22595, -22006, -21403,
+  -20788, -20160, -19520, -18868, -18205, -17531, -16846, -16151, -15447, -14733, -14010, -13279,
+  -12540, -11793, -11039, -10279, -9512, -8740, -7962, -7180, -6393, -5602, -4808, -4011,
+  -3212, -2411, -1608, -804, 0, 0, 0, 0,
+};
+static const short DAT_00085f50_cosine[260] = {
+  32767, 32758, 32729, 32679, 32610, 32522, 32413, 32286, 32138, 31972, 31786, 31581,
+  31357, 31114, 30853, 30572, 30274, 29957, 29622, 29269, 28899, 28511, 28106, 27684,
+  27246, 26791, 26320, 25833, 25330, 24812, 24279, 23732, 23170, 22595, 22006, 21403,
+  20788, 20160, 19520, 18868, 18205, 17531, 16846, 16151, 15447, 14733, 14010, 13279,
+  12540, 11793, 11039, 10279, 9512, 8740, 7962, 7180, 6393, 5602, 4808, 4011,
+  3212, 2411, 1608, 804, 0, -804, -1608, -2411, -3212, -4011, -4808, -5602,
+  -6393, -7180, -7962, -8740, -9512, -10279, -11039, -11793, -12540, -13279, -14010, -14733,
+  -15447, -16151, -16846, -17531, -18205, -18868, -19520, -20160, -20788, -21403, -22006, -22595,
+  -23170, -23732, -24279, -24812, -25330, -25833, -26320, -26791, -27246, -27684, -28106, -28511,
+  -28899, -29269, -29622, -29957, -30274, -30572, -30853, -31114, -31357, -31581, -31786, -31972,
+  -32138, -32286, -32413, -32522, -32610, -32679, -32729, -32758, -32767, -32758, -32729, -32679,
+  -32610, -32522, -32413, -32286, -32138, -31972, -31786, -31581, -31357, -31114, -30853, -30572,
+  -30274, -29957, -29622, -29269, -28899, -28511, -28106, -27684, -27246, -26791, -26320, -25833,
+  -25330, -24812, -24279, -23732, -23170, -22595, -22006, -21403, -20788, -20160, -19520, -18868,
+  -18205, -17531, -16846, -16151, -15447, -14733, -14010, -13279, -12540, -11793, -11039, -10279,
+  -9512, -8740, -7962, -7180, -6393, -5602, -4808, -4011, -3212, -2411, -1608, -804,
+  0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
+  9512, 10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
+  18205, 18868, 19520, 20160, 20788, 21403, 22006, 22595, 23170, 23732, 24279, 24812,
+  25330, 25833, 26320, 26791, 27246, 27684, 28106, 28511, 28899, 29269, 29622, 29957,
+  30274, 30572, 30853, 31114, 31357, 31581, 31786, 31972, 32138, 32286, 32413, 32522,
+  32610, 32679, 32729, 32758, 32767, 0, 0, 0,
+};
+/* Were bare 1-byte scalars, but lookup_arctan_primary_range/
+   lookup_arctan_reciprocal_range index them as `*(ushort *)(&DAT_00086260
+   + iVar1)` with iVar1 up to (0xff * 4) == 0x3fc -- the same
+   scalar-declared-but-accessed-as-array bug class fixed many times
+   this session (e.g. the glyph-width-table cluster). Likely a second
+   lookup table analogous to the sine/cosine ones just above (same
+   "DAT_X / DAT_X+4 is the next sample" shape), but unlike those this
+   data isn't flagged as recovered from UU.exe anywhere in this
+   decompile -- widened to real, safely-sized backing storage (zero-
+   initialized, not recovered) purely to make the access safe; the
+   real table contents, if this lookup is currently silently broken
+   the same way the sine/cosine tables were before their own fix, are
+   not recovered here. Macro defines for all of these (and the
+   sine/cosine tables above) now live in uw.h, since the functions that
+   read them moved into src/math.c. */
+static undefined1 DAT_00086260_backing[1024];
+static undefined1 DAT_00086264_backing[1024];
+
 
 
 
