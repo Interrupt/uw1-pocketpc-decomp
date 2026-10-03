@@ -27,7 +27,8 @@
    common linkage, and Clang's ASan cannot redzone-instrument common
    symbols. */
  undefined4 DAT_000b5638_backing[160];
-char DAT_000842b0;
+/* Initial byte at 0x842b0 in the original Pocket PC executable. */
+char DAT_000842b0 = 8;
 char DAT_0023b830;
 undefined2 DAT_000da47c;
 /* build_trig_tables builds these as 361-entry (0..360 degrees) sin / cos
@@ -805,8 +806,12 @@ byte param_10;
   int iVar14;
   int local_38;
   int local_34;
+  /* HACK: optional DOS-style surface shading; unset/unknown modes retain
+     the original ARM RGB falloff below. Resolve once per span, not texel. */
+  const char *light_mode = getenv("UW_LIGHT_MODE");
+  bool dos_light_mode = light_mode && strcmp(light_mode, "dos") == 0;
   intptr_t local_4; /* fb row pointer */
-  
+
   iVar12 = (intptr_t)DAT_0023cca0;
   uVar2 = *(uint *)(param_4 + 0x28);
   uVar8 = uVar2 & 0x3fff;
@@ -872,19 +877,35 @@ byte param_10;
         bVar1 = *(byte *)(iVar12 + param_8);
       }
       if (bVar1 != 0) {
-        iVar12 = ((iVar6 >> 4) + (int)DAT_000842b0) * 0x10000 >> 0x10;
-        if (iVar12 < 0) {
-          iVar12 = 0;
+        if (dos_light_mode) {
+          /* HACK: palette shading uses SHADES.DAT's selected light strength.
+             tmap supplies w = world_depth/1500. Edge setup scales 1/w by
+             16384, the span shifts it by 2, and 2^24 / that gives w*4096.
+             Convert to the world_depth/32 units used by object shading. */
+          iVar12 = (int)DAT_002506dc +
+                   ((int)DAT_0025063c * (int)((int64_t)iVar6 * 1500 >> 17) >> 6);
+          if (iVar12 < 0) iVar12 = 0;
+          iVar12 += DAT_0025064c;
+          if (iVar12 < 0) iVar12 = 0;
+          if (iVar12 > 14) iVar12 = 14;
+          bVar1 = ((byte *)DAT_0024fa2c)[iVar12 * 256 + bVar1];
+          *puVar10 = (ushort)(&g_palette_rgb565)[bVar1];
         }
-        sVar7 = (short)iVar12;
-        uVar2 = (uint)(ushort)(&g_palette_rgb565)[bVar1];
-        if (0x9f < sVar7) {
-          sVar7 = 0x9f;
+        else {
+          iVar12 = ((iVar6 >> 4) + (int)DAT_000842b0) * 0x10000 >> 0x10;
+          if (iVar12 < 0) {
+            iVar12 = 0;
+          }
+          sVar7 = (short)iVar12;
+          uVar2 = (uint)(ushort)(&g_palette_rgb565)[bVar1];
+          if (0x9f < sVar7) {
+            sVar7 = 0x9f;
+          }
+          iVar12 = (&DAT_000b5638)[sVar7];
+          *puVar10 = (ushort)(((((int)((uVar2 & 0xf800) << 1) >> 6) * (int)(iVar12) >> 0x12) << 6 |
+                              ((int)((uVar2 & 0x7e0) << 7) >> 6) * (int)(iVar12) >> 0x12) << 5) |
+                     (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * (int)(iVar12) >> 0x12);
         }
-        iVar12 = (&DAT_000b5638)[sVar7];
-        *puVar10 = (ushort)(((((int)((uVar2 & 0xf800) << 1) >> 6) * (int)(iVar12) >> 0x12) << 6 |
-                            ((int)((uVar2 & 0x7e0) << 7) >> 6) * (int)(iVar12) >> 0x12) << 5) |
-                   (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * (int)(iVar12) >> 0x12);
         if (DAT_0023b830 != '\0') {
           *puVar13 = (char)DAT_000da47c;
         }

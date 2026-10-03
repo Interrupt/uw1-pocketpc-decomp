@@ -953,14 +953,9 @@ LAB_000669a8:
       iVar7 = get_scanned_object_class_effect_ptr();
       bVar1 = iVar7[1];
       if (bVar10 < bVar1) {
-        /* Also a bare call (no argument) -- but whatever DAT_000842b0
-           value this leaves is unconditionally overwritten a few lines
-           below by this same function's own definitive
-           set_ambient_bias_with_light(0)/set_ambient_bias_without_light(0) decision (made
-           from the aggregated bVar9/bVar10 this loop is computing), so
-           it's provably inert either way, not fixed alongside the real
-           bug in that later call. */
-        set_ambient_bias_with_light();
+        /* ARM 0x66a54 sets r0 = 0 before the call at 0x66a5c;
+           Ghidra omitted the reused-register argument. */
+        set_ambient_bias_with_light(0);
         iVar5 = iVar4;
         bVar9 = bVar1;
         bVar10 = bVar1;
@@ -1010,22 +1005,18 @@ LAB_000669a8:
   } while (iVar4 < 0xb);
   apply_equipment_effect_penalties(local_30);
   if (DAT_002020d8 == 0) {
-    /* *(char*)(DAT_00086df8+99) is the player's current light radius
-       (upper nibble; 0 = no equipped light source at all, maintained by
-       this same function's own scan of equip slots above + a separate
-       updater at uw.c ~55510). ==0 (no light) -> set_ambient_bias_without_light(0), the
-       mild "8 - param_1" dimming bias; else (a light source IS lit) ->
-       set_ambient_bias_with_light below, the much stronger "-0x20 -
-       param_1" brightening bias (more negative = brighter -- see that
-       function's own comment for the full sign-convention explanation). */
-    if (*(char *)(DAT_00086df8 + 99) == '\0') {
-      set_ambient_bias_without_light(0);
+    /* HACK: DOS mode selects the strongest equipped/spell light's
+       SHADES.DAT record. ARM mode uses the RGB shading bias. */
+    const char *light_mode = getenv("UW_LIGHT_MODE");
+    if (light_mode && strcmp(light_mode, "dos") == 0) {
+      load_shading_level_config(*(byte *)(DAT_00086df8 + 99) >> 4);
     }
     else {
-      /* Was a bare call -- ran on leftover register garbage instead of
-         a real argument. The sibling call just above explicitly passes
-         0 to set_ambient_bias_without_light; mirror that here too. */
-      set_ambient_bias_with_light(0);
+      /* HACK: the ARM build only distinguished lit from unlit here.
+         Restore per-strength brightness: start at the unlit bias (+8),
+         subtract 16 for every light level, and retain the calibration
+         adjustment. The low nibble identifies the source, not strength. */
+      set_ambient_bias_without_light((*(byte *)(DAT_00086df8 + 99) >> 4) * 16);
     }
   }
   else {
