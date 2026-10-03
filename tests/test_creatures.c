@@ -16,7 +16,8 @@ undefined1 DAT_002027d0_backing[256];
 short DAT_00201b68, DAT_0010144c, DAT_00101454;
 undefined2 DAT_002020a0, DAT_002020a4;
 ushort *g_player_object;
-char *DAT_00202a44, *DAT_00086df8;
+ushort *DAT_00202a44;
+char *DAT_00086df8;
 short DAT_00202a38, DAT_00202a3c, DAT_00202a40;
 ushort DAT_00202a48, DAT_00202a4c, DAT_00202a50, DAT_00202a54;
 char DAT_00101928;
@@ -182,10 +183,9 @@ static void test_gray_goblin_ranged_attack_spawns_a_sling_stone(void)
     projectile = (ushort *)(DAT_002046b8 + 255 * 27);
     memset(projectile, 0, 27);
     FUN_0004a510(goblin, ammo, (&DAT_002027d1)[ammo * 3]);
-    TEST_ASSERT_EQUAL_UINT(1, spawned);
+    TEST_ASSERT_EQUAL_UINT(0, spawned); /* projectiles stay mobile until landing */
     ushort *tile = (ushort *)((byte *)arena + (28 * 64 + 36) * 4);
-    TEST_ASSERT_EQUAL_PTR(drops[0], resolve_object_link(tile + 1));
-    TEST_ASSERT_EQUAL_UINT16(0x10, drops[0][0] & 0x1ff);
+    TEST_ASSERT_EQUAL_PTR(projectile, resolve_object_link(tile + 1));
     TEST_ASSERT_EQUAL_UINT(DAT_002027d0_backing[1], projectile[0x13 / 2] >> 8 & 0x7f);
     TEST_ASSERT_EQUAL_UINT16(0x10, projectile[0] & 0x1ff);
 }

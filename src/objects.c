@@ -38,28 +38,6 @@ LAB_0004b06c:
     puVar6 = (ushort *)0x0;
   }
   else {
-    if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[throw-height] seeding puVar6[1] from garbage=0x%x with template DAT_00202a44[1]=0x%x\n",
-              (unsigned)puVar6[1], (unsigned)DAT_00202a44[1]);
-    /* EXPERIMENTAL, not yet disassembly-verified: puVar6[1] (byte offset
-       2-3) starts as whatever alloc_object_slot's free-list handed back
-       (real leftover data from that slot's previous occupant -- alloc_
-       object_slot itself never clears it, and every later read-modify-
-       write of this field in this function, confirmed faithful to the
-       real disassembly, deliberately preserves bits 0-6 of it rather
-       than resetting them). Those exact bits are what the height field
-       (param_1[0xf]/[0x10] inside compute_object_placement_fields, and again at the
-       `iVar8=((byte)puVar6[1]&0x7f)<<3` line below) is computed from --
-       so a freshly-recycled slot gives the spawned item a height derived
-       from uninitialized memory. Seeding from the template object's
-       (DAT_00202a44, the player in this call path) own same field before
-       any of this function's bit-blending runs is the most defensible
-       guess at what the original game relied on already being true of a
-       reused slot, but has NOT been confirmed against real disassembly
-       the way this session's other fixes were -- flagged for a follow-up
-       pass rather than shipped as a confirmed fix. */
-    *(char *)(puVar6 + 1) = (char)DAT_00202a44[1];
-    *(char *)((char *)puVar6 + 3) = (char)(DAT_00202a44[1] >> 8);
     *(byte *)(puVar6 + 2) = (byte)puVar6[2] & 0x3f;
     *(undefined1 *)((char *)puVar6 + 5) = 0;
     uVar7 = CONCAT11(*(undefined1 *)((char *)puVar6 + 1),(char)*puVar6) | 0x8000;
@@ -135,7 +113,7 @@ LAB_0004b06c:
       iVar8 = ((byte)puVar6[1] & 0x7f) << 3;
       *(char *)((char *)puVar6 + 0xf) = (char)iVar8;
       *(char *)(puVar6 + 8) = (char)((uint)iVar8 >> 8);
-      if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(), 0xff < sVar5)) {
+      if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(DAT_00202a44), 0xff < sVar5)) {
         sVar5 = 0;
       }
       *(char *)(puVar6 + 9) = (char)sVar5;
@@ -167,39 +145,13 @@ LAB_0004b06c:
        user's bug-throw-item.txt once its trailing WAIT gave the object-
        drop tick enough time to run. */
     pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
-    DEBUG(INFO, "[drop] object id=0x%03x landed at tile=(%d,%d)\n",
+    DEBUG(INFO, "[throw] object id=0x%03x spawned at tile=(%d,%d)\n",
           (unsigned)(*puVar6 & 0x1ff), puVar6[0xb] >> 10, (puVar6[0xb] & 0x3f0) >> 4);
     object_list_insert_head(pbTile + 2,puVar6);
     play_sound_effect_at_object(10,puVar6,0);
-    /* HACK, not disassembly-derived at this call site -- same fix as
-       drop_held_object_near_player's trajectory branch, see that
-       comment for the full explanation. This function (like that one)
-       places its result via alloc_object_slot(1), the MOBILE object
-       arena; complete the mobile->immobile settle transition
-       synchronously here too, since nothing else will. On by default;
-       set UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
-       forever, un-pickable) behavior. settle_mobile_to_immobile unconditionally
-       frees its input object (via its own discard_misplaced_object(
-       ...,1) call) regardless of whether the immobile copy succeeds,
-       so puVar6 must always be reassigned to its return value here --
-       including NULL, on the (class-gated, rare) chance it rolled the
-       object's own decay/destroy check -- never left pointing at the
-       now-freed original. */
-    if (!getenv("UW_DISABLE_SETTLE_IMMOBILE")) {
-      ushort *pImmobile;
-      undefined2 uVarSavedTileX = DAT_0010144c;
-      undefined2 uVarSavedTileY = DAT_00101454;
-      DAT_0010144c = (ushort)(puVar6[0xb] >> 10);
-      DAT_00101454 = (ushort)((puVar6[0xb] & 0x3f0) >> 4);
-      pImmobile = settle_mobile_to_immobile(puVar6);
-      DAT_0010144c = uVarSavedTileX;
-      DAT_00101454 = uVarSavedTileY;
-      if (getenv("UW_DEBUG_THROW"))
-        fprintf(stderr, "[settle-immobile] settle_mobile_to_immobile(%p) -> %p in_arena=%d\n",
-                (void *)puVar6, (void *)pImmobile,
-                pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
-      puVar6 = pImmobile;
-    }
+    /* The original FUN_0004ad10 returns the mobile object here.
+       mobile_object_tick integrates its flight and sync_object_tile_position
+       converts it to an immobile item only once its velocity reaches zero. */
   }
   return puVar6;
 }

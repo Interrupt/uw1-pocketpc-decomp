@@ -356,53 +356,9 @@ int param_2;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
       set_ambient_bias_without_light(0);
     }
-    {
-      ushort *pPostSettle = settle_dropped_object(param_1,iVar7 >> 3,iVar8 >> 3,1);
-      /* HACK, not disassembly-derived at this call site (though the
-         function it calls is real and unmodified): settle_dropped_
-         object's own reallocate_object_to_arena path (disassembly-
-         confirmed faithful) places a dropped/thrown object into the
-         MOBILE object arena via alloc_object_slot(1) -- see
-         https://wiki.ultimacodex.com/wiki/Ultima_Underworld_internal_formats,
-         which documents separate mobile/immobile object lists. A real
-         mobile object is expected to later transition into the
-         IMMOBILE list (alloc_object_slot(0)) once it stops moving --
-         settle_mobile_to_immobile does exactly that (decay/destroy roll, then
-         alloc_object_slot(0) + field copy + relink), but its only
-         known callers (settle_misplaced_mobile_object, itself only reached via
-         advance_mobile_objects) fire solely on a dungeon-level transition, not
-         during ordinary same-level play -- there is no per-tick,
-         delta-time-driven object physics loop anywhere in this
-         codebase that would otherwise call it. Since this port
-         resolves a toss instantly (no real per-tick flight
-         simulation), call settle_mobile_to_immobile here -- immediately after the
-         object becomes mobile -- to synchronously complete the
-         mobile->immobile transition a real flight would eventually
-         trigger on its own. Confirmed live: without this, a thrown/
-         dropped object renders fine but is permanently stuck in the
-         mobile arena, which pick_object_under_cursor's Get-mode
-         shortcut (interact_default's only path to attach_picked_up_
-         object_to_cursor) requires NOT being in -- "You cannot pick
-         that up" forever. With this call, the object correctly shows
-         up as immobile and Get-mode pickup succeeds normally
-         (bug-throw-item.txt). On by default; set
-         UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
-         forever, un-pickable) behavior. */
-      if (pPostSettle != NULL && !getenv("UW_DISABLE_SETTLE_IMMOBILE")) {
-        ushort *pImmobile;
-        undefined2 uVarSavedTileX = DAT_0010144c;
-        undefined2 uVarSavedTileY = DAT_00101454;
-        DAT_0010144c = (ushort)(iVar7 >> 3);
-        DAT_00101454 = (ushort)(iVar8 >> 3);
-        pImmobile = settle_mobile_to_immobile(pPostSettle);
-        DAT_0010144c = uVarSavedTileX;
-        DAT_00101454 = uVarSavedTileY;
-        if (getenv("UW_DEBUG_THROW"))
-          fprintf(stderr, "[settle-immobile] settle_mobile_to_immobile(%p) -> %p in_arena=%d\n",
-                  (void *)pPostSettle, (void *)pImmobile,
-                  pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
-      }
-    }
+    /* Preserve the original placement path; moving objects settle during
+       mobile_object_tick, rather than being grounded synchronously here. */
+    settle_dropped_object(param_1,iVar7 >> 3,iVar8 >> 3,1);
   }
   return 1;
 }

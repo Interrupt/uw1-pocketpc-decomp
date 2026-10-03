@@ -166,7 +166,11 @@ void reticle_object_pick()
         iVar6 = iVar4 - uVar5;
         bVar1 = DAT_002049de;
         if (iVar4 <= (int)uVar5) {
-          bVar1 = (&DAT_00202c32)[iVar4 * 6];
+          /* ARM 0x58d78..0x58d84 reads collision_table + count*6 - 6:
+             the highest surface below the foot. Ghidra named the base-6
+             address DAT_00202c32, but its separate C scalar is not part
+             of the table, so indexing it could skip bridges entirely. */
+          bVar1 = (&DAT_00202c38)[(iVar4 - 1) * 6];
           bVar7 = SBORROW4((int)(short)(ushort)DAT_002049d9,(uint)bVar1);
           iVar6 = (int)(short)(ushort)DAT_002049d9 - (uint)bVar1;
         }
@@ -658,7 +662,8 @@ uint param_1;
       iVar7 = (uVar6 ^ uVar1) - uVar1;
       if ((iVar7 < 0x3001) || (0x4fff < iVar7)) {
         bVar2 = *(byte *)(DAT_00204874 + 0x16);
-        sVar3 = Ordinal_2005(0xf);
+        /* ARM 0x59a54..0x59a9c keeps the signed angle delta in r1. */
+        sVar3 = Ordinal_2005(0xf,sVar3);
         sVar3 = (ushort)bVar2 * sVar3;
       }
       sVar3 = (short)param_1 + sVar3;
@@ -820,6 +825,8 @@ void sweep_land_on_surface()
   int iVar12;
   int iVar13;
   
+  /* The decompile uses a short-pointer view of the movement record.
+     Keep word indexing and raw byte offsets distinct (ARM 0x59d20..0x5a33c). */
   puVar7 = (ushort *)FUN_000535fc((int)DAT_002049d2);
   uVar2 = *(ushort *)(&DAT_00202c91 + (*puVar7 & 0x1ff) * 0xd);
   iVar12 = (int)_DAT_000869a1;
@@ -835,23 +842,22 @@ void sweep_land_on_surface()
     sVar4 = Ordinal_2005(iVar12 >> 2,
                          (((int)(((uVar11 ^ uVar8) - uVar8) * 0x10000) >> 0x10) * (int)DAT_00086994
                           * 0x10000 >> 0x10) << 4);
-    sVar4 = DAT_00204874[9] - sVar4;
+    sVar4 = ((short *)DAT_00204874)[9] - sVar4;
   }
-  *(char *)(DAT_00204874 + 9) = (char)sVar4;
+  *(char *)(DAT_00204874 + 0x12) = (char)sVar4;
   *(char *)((char *)DAT_00204874 + 0x13) = (char)((ushort)sVar4 >> 8);
   // PHYSICS: floor/ceiling collision -- snap the foot exactly onto the surface
   // and zero the vertical sub-unit accumulator so gravity restarts from rest
   *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
-  psVar9 = DAT_00204874;
+  psVar9 = (short *)DAT_00204874;
   DAT_00086984 = 0;
-  /* PHYSICS: fall ended -- clear the accumulated downward velocity (+0xa) and the
-     gravity-accel field (+0x10), and drop the airborne locomotion state byte
-     (+0x28 == DAT_002048a8) back to "walking" (8). Without the last step
-     set_locomotion_state (called every tick from commit_player_move) sees the stale
-     airborne state and re-arms +0x10 = -4, so the fall integrator re-enters and
-     "lands" every tick forever, freezing the player on the floor. Only when we
-     were moving downward, so a jump's own apex handling is left untouched. */
-  if (*(short *)(DAT_00204874 + 10) < 0) {
+  // HACK: UW_PLAYER_NO_BOUNCE=1 restores the player-only landing workaround,
+  // which is absent from the original ARM code and disabled by default.
+  // Clear downward velocity, gravity, and airborne state before restitution
+  // so the player stops on landing. Mobile items retain their normal bounce.
+  const char *player_no_bounce = getenv("UW_PLAYER_NO_BOUNCE");
+  if ((puVar7 == g_player_object) && (*(short *)(DAT_00204874 + 10) < 0) &&
+      (player_no_bounce != NULL) && (atoi(player_no_bounce) != 0)) {
     *(short *)(DAT_00204874 + 10) = 0;
     *(short *)(DAT_00204874 + 0x10) = 0;
     if (*(byte *)(DAT_00204874 + 0x28) == 0x10) {
@@ -860,20 +866,20 @@ void sweep_land_on_surface()
   }
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
       ((int)*(short *)((char *)g_sweep_foot_pos + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
-     (DAT_00204874[5] < 0)) {
+     (((short *)DAT_00204874)[5] < 0)) {
     sweep_kill_velocity();
-    *(undefined1 *)(DAT_00204874 + 0x14) = 2;
+    *(undefined1 *)(DAT_00204874 + 0x28) = 2;
     uVar3 = Ordinal_2005(0x32,(short)(uVar2 >> 4) + -600);
-    play_positional_sound_effect(5,(int)*DAT_00204874 >> 5,(int)DAT_00204874[1] >> 5,uVar3);
+    play_positional_sound_effect(5,(int)*(short *)DAT_00204874 >> 5,(int)((short *)DAT_00204874)[1] >> 5,uVar3);
     return;
   }
-  sVar4 = DAT_00204874[5];
+  sVar4 = ((short *)DAT_00204874)[5];
   uVar8 = (int)sVar4 >> 0x1f;
   uVar11 = Ordinal_2005(0x32,(short)(uVar2 >> 4) + -600);
   uVar8 = Ordinal_2005(10,((int)sVar4 ^ uVar8) - uVar8);
   play_positional_sound_effect(0xf,(int)*psVar9 >> 5,(int)psVar9[1] >> 5,(uVar11 & 0xff) + (uVar8 & 0xff) + -0x28);
   uVar8 = FUN_000546c4((int)DAT_00086998,(int)DAT_002049d2);
-  psVar9 = DAT_00204874;
+  psVar9 = (short *)DAT_00204874;
   if ((uVar8 & 0x18) != 0) {
     if ((uVar8 & 0x10) != 0) {
       sweep_kill_velocity();
@@ -896,34 +902,36 @@ void sweep_land_on_surface()
     }
     goto LAB_0005a33c;
   }
-  sVar4 = DAT_00204874[5];
-  uVar5 = Ordinal_2005(0xfffffff1);
+  sVar4 = ((short *)DAT_00204874)[5];
+  /* ARM 0x5a018..0x5a044: divide the signed vertical velocity
+     by -15, then multiply by the restitution byte at offset 0x16. */
+  uVar5 = Ordinal_2005(-15,sVar4);
   *(char *)(psVar9 + 5) = (char)uVar5;
   *(char *)((char *)DAT_00204874 + 0xb) = (char)((ushort)uVar5 >> 8);
-  uVar11 = (0xf - (uint)*(byte *)(DAT_00204874 + 0xb)) * (int)DAT_00204874[5];
+  uVar11 = (0xf - (uint)*(byte *)(DAT_00204874 + 0x16)) * (int)((short *)DAT_00204874)[5];
   uVar8 = (int)uVar11 >> 0x1f;
   iVar12 = (uVar11 ^ uVar8) - uVar8;
   *(char *)((char *)DAT_00204874 + 0x29) = (char)((uint)(iVar12 * 0x10000) >> 0x10);
-  *(char *)(DAT_00204874 + 0x15) = (char)((uint)iVar12 >> 8);
-  sVar10 = DAT_00204874[5];
-  pbVar1 = (byte *)(DAT_00204874 + 0xb);
-  *(char *)(DAT_00204874 + 5) = (char)((uint)*pbVar1 * (int)sVar10);
+  *(char *)(DAT_00204874 + 0x2a) = (char)((uint)iVar12 >> 8);
+  sVar10 = ((short *)DAT_00204874)[5];
+  pbVar1 = (byte *)(DAT_00204874 + 0x16);
+  *(char *)(DAT_00204874 + 10) = (char)((uint)*pbVar1 * (int)sVar10);
   *(char *)((char *)DAT_00204874 + 0xb) = (char)((uint)*pbVar1 * (int)sVar10 >> 8);
-  psVar9 = DAT_00204874;
-  if (*(byte *)(DAT_00204874 + 0xb) == 0) {
+  psVar9 = (short *)DAT_00204874;
+  if (*(byte *)(DAT_00204874 + 0x16) == 0) {
     sVar10 = 0;
   }
   else {
-    sVar10 = DAT_00204874[10];
-    sVar6 = Ordinal_2005(0x1e,(0xf - (uint)*(byte *)(DAT_00204874 + 0xb)) * (int)sVar10);
+    sVar10 = ((short *)DAT_00204874)[10];
+    sVar6 = Ordinal_2005(0x1e,(0xf - (uint)*(byte *)(DAT_00204874 + 0x16)) * (int)sVar10);
     sVar10 = sVar10 - sVar6;
   }
   *(char *)(psVar9 + 10) = (char)sVar10;
   *(char *)((char *)DAT_00204874 + 0x15) = (char)((ushort)sVar10 >> 8);
-  if ((0 < sVar4) || (0x8c < DAT_00204874[5])) goto LAB_0005a33c;
-  *(undefined1 *)(DAT_00204874 + 5) = 0;
+  if ((0 < sVar4) || (0x8c < ((short *)DAT_00204874)[5])) goto LAB_0005a33c;
+  *(undefined1 *)(DAT_00204874 + 10) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0xb) = 0;
-  *(undefined1 *)(DAT_00204874 + 8) = 0;
+  *(undefined1 *)(DAT_00204874 + 0x10) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0x11) = 0;
   if (DAT_00086998 == -1) {
     if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)g_sweep_foot_pos + 4)) {
@@ -940,7 +948,7 @@ void sweep_land_on_surface()
     else {
       uVar3 = (undefined1)(1 << ((int)(short)DAT_002049d4 & 3U));
     }
-    *(undefined1 *)(DAT_00204874 + 0x14) = uVar3;
+    *(undefined1 *)(DAT_00204874 + 0x28) = uVar3;
   }
   else {
     psVar9 = (short *)FUN_000535fc(*(ushort *)(&DAT_00202c3a + DAT_00086998 * 6) >> 6);
@@ -948,7 +956,7 @@ void sweep_land_on_surface()
        (puVar7 = (ushort *)FUN_000535fc((int)*(short *)((char *)DAT_00204874 + 0x23)),
        (*puVar7 & 0x1c0) == 0x40)) {
 LAB_0005a2d0:
-      *(undefined1 *)(DAT_00204874 + 0x14) = 1;
+      *(undefined1 *)(DAT_00204874 + 0x28) = 1;
       goto LAB_0005a33c;
     }
 LAB_0005a238:

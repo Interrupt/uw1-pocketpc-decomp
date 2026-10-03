@@ -286,6 +286,37 @@ if(BUILD_TESTING)
     src/combat.c:load_monster_combat_stats)
   target_compile_definitions(test_npc_ai PRIVATE
     UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  add_game_unit_test(throw
+    src/item_use.c:drop_held_object_near_player src/objects.c:spawn_object_near_player
+    uw.c:compute_drop_aim_from_cursor uw.c:compute_object_placement_fields
+    uw.c:build_object_placement_snapshot src/collision.c:apply_placement_collision_sweep
+    src/ai.c:mobile_object_tick src/ai.c:sync_object_tile_position
+    src/input.c:set_locomotion_state src/input.c:apply_movement_mode_profile
+    src/ai.c:settle_mobile_to_immobile
+    uw.c:sweep_collision_flags uw.c:collision_flags_to_locomotion_code
+    uw.c:collision_response_mobile_object uw.c:FUN_00051dd0 uw.c:FUN_00051cf8
+    uw.c:@DAT_000868c0_backing
+    src/objects.c:object_list_insert_head src/objects.c:object_list_unlink
+    src/movement.c:movement_collision_sweep
+    src/movement.c:movement_sweep_setup
+    src/movement.c:sweep_init_position
+    src/movement.c:reticle_object_pick
+    src/movement.c:sweep_restart_remaining
+    src/movement.c:sweep_kill_velocity
+    src/movement.c:sweep_writeback_position
+    src/movement.c:sweep_integrate_substep
+    src/movement.c:sweep_deflect_heading
+    src/movement.c:sweep_slide_along_wall
+    src/movement.c:sweep_apply_knockback
+    src/movement.c:sweep_land_on_surface
+    src/movement.c:sweep_step_vertical
+    src/movement.c:sweep_step
+    src/movement.c:sweep_apply_collision
+  )
+  target_sources(test_throw PRIVATE src/debug.c)
+  target_compile_options(test_throw PRIVATE -include math.h)
+  target_compile_definitions(test_throw PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(creatures
     src/object_actions.c:resolve_critter_sprite_tier
     src/ai.c:spawn_creature_death_loot src/ai.c:spawn_creature_treasure_drop

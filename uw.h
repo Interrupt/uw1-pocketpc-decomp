@@ -1773,7 +1773,7 @@ extern short DAT_00101454;
 extern short DAT_00202a38;
 extern short DAT_00202a3c;
 extern short DAT_00202a40;
-extern char * DAT_00202a44;
+extern ushort * DAT_00202a44;
 extern ushort DAT_00202a48;
 extern ushort DAT_00202a4c;
 extern undefined2 DAT_00202a50;
@@ -1854,7 +1854,8 @@ extern undefined1 DAT_000853b0;
 extern undefined1 DAT_000853b1;
 extern ushort DAT_000853b8;
 extern undefined DAT_000853d8;
-extern undefined DAT_000868c0;
+extern undefined DAT_000868c0_backing[24];
+#define DAT_000868c0 DAT_000868c0_backing[0]
 extern undefined1 DAT_001007d0_backing[6144];
 #define DAT_001007d0 DAT_001007d0_backing[0]
 extern undefined4 DAT_001013fc;

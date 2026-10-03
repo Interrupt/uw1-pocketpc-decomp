@@ -3987,7 +3987,8 @@ short DAT_00202a40;
 ushort DAT_00202a48;
 short DAT_00202a38;
 ushort DAT_00202a4c;
-char *DAT_00202a44;
+/* FUN_0004ad10 reads word 1 (position) and word 12 (heading). */
+ushort *DAT_00202a44;
 undefined2 DAT_00202a50;
 undefined2 DAT_00202a54;
 int DAT_00086368;
@@ -4258,7 +4259,12 @@ undefined1 DAT_002046e4;
 #define DAT_002049dc (DAT_002049c8_backing[0x14])
 #define DAT_002049dd (DAT_002049c8_backing[0x15])
 #define DAT_002049de (DAT_002049c8_backing[0x16])
-undefined DAT_000868c0;
+/* Original binary 0x868c0..0x868d7 maps locomotion bit values to
+   the compact mobile-record state (indexed by snapshot byte 0x28). */
+undefined DAT_000868c0_backing[24] = {
+  0,0,1,0,2,0,0,0,3,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0
+};
+#define DAT_000868c0 DAT_000868c0_backing[0]
 int DAT_002046d4;
 int DAT_002046ec;
 /* The reticle/collision "picked tile" record at 0x86998..0x869a2. Ghidra

@@ -1230,12 +1230,9 @@ LAB_0005559c:
 // it into the tile list in param_1's place. Unconditionally frees
 // param_1 via discard_misplaced_object regardless of outcome -- callers
 // must always propagate the return value (including NULL on decay),
-// never keep using their own stale param_1 pointer. Already used by this
-// branch's own drop_held_object_near_player/spawn_object_near_player fix
-// (an explicit synchronous call, since this port resolves a toss
-// instantly with no per-tick flight simulation); now also reached
-// organically via sync_object_tile_position as part of ordinary mobile-
-// object ticking.
+// never keep using their own stale param_1 pointer. Called by
+// sync_object_tile_position when ordinary mobile-object physics reaches
+// rest, and by settle_misplaced_mobile_object during the transition pass.
 ushort *settle_mobile_to_immobile(param_1)
 ushort * param_1;
 
