@@ -23,6 +23,9 @@ int GXEndDraw(void);
    viewers present immediately while the surrounding tick is suspended. */
 void uw_begin_present_batch(void);
 void uw_end_present_batch(void);
+/* Input handlers may block and run their own redraw/input loops. */
+void uw_suspend_present_batch(void);
+void uw_resume_present_batch(void);
 void uw_begin_modal_present(void);
 void uw_end_modal_present(void);
 

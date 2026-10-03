@@ -7,6 +7,7 @@
  * uw.c (the original monolithic decompile) once these functions' real
  * roles were confirmed. */
 #include "headers/graphics.h"
+#include "headers/gx_stub.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -560,17 +561,27 @@ ushort *param_3;
      due to a calling-convention mismatch; param_1/param_2 are what
      apply_palette_buffer actually needs here. */
 
+  /* A fade must present every step even inside a batched gameplay tick
+     or while the click that started the transition is still held. */
+  uw_begin_modal_present();
+  dirty_rect_union(0,200,0,0x140);
   puVar3 = (ushort *)ce_malloc(0x1f400);
-  apply_palette_buffer(param_1,param_2);
+  /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
+  if (param_1 != 0) apply_palette_buffer(param_1,param_2);
   ce_memmove(puVar3,param_3,0x1f400);
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
+  /* Match fade_active_palette_to_black's eight clock units (32 ms) per
+     step. GX's 60 Hz presentations alone advance this fade twice as fast. */
+  uint fade_step_start = (uint)GetTickCount();
+  uint fade_step_elapsed;
   do {
     uVar4 = ordfloat_int_to_float2(iVar9);
     uVar4 = ordfloat_mul(uVar4,0x3e000000);
-    ordfloat_mul(uVar4,0x45800000);
-    iVar5 = ordfloat_uint_to_float();
+    uVar4 = ordfloat_mul(uVar4,0x45800000);
+    /* Ghidra omitted the soft-float result passed to the conversion. */
+    iVar5 = ordfloat_uint_to_float(uVar4);
     iVar8 = (intptr_t)param_3 - (intptr_t)puVar3;
     iVar7 = 64000;
     puVar6 = puVar3;
@@ -586,6 +597,9 @@ ushort *param_3;
       puVar6 = puVar6 + 1;
     } while (iVar7 != 0);
     flush_dirty_rect_to_display(1);
+    while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 32)
+      Sleep(32 - fade_step_elapsed);
+    fade_step_start = (uint)GetTickCount();
     iVar9 = iVar9 + 1;
   } while (iVar9 < 9);
   iVar9 = 64000;
@@ -596,9 +610,10 @@ ushort *param_3;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", read_realtime_clock_units() - diag_t0);
+  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
   debug_framebuffer_dump("fade_in");
   LocalFree(puVar3);
+  uw_end_modal_present();
   return;
 }
 
@@ -625,18 +640,26 @@ undefined2 * param_3;
   /* Same phantom in_stack_/unused-param_1,2 artifact as fade_in
      right above -- see its comment. */
 
+  /* Use the same presentation scope as fade_in. */
+  uw_begin_modal_present();
+  dirty_rect_union(0,200,0,0x140);
   puVar4 = (ushort *)ce_malloc(0x1f400);
-  apply_palette_buffer(param_1,param_2);
+  /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
+  if (param_1 != 0) apply_palette_buffer(param_1,param_2);
   ce_memmove(puVar4,param_3,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
+  /* Match the original timed palette fade's 32 ms step interval. */
+  uint fade_step_start = (uint)GetTickCount();
+  uint fade_step_elapsed;
   do {
     uVar5 = ordfloat_int_to_float2(iVar11);
     uVar5 = ordfloat_mul(uVar5,0x3e000000);
-    ordfloat_mul(uVar5,0x45800000);
-    iVar6 = ordfloat_uint_to_float();
+    uVar5 = ordfloat_mul(uVar5,0x45800000);
+    /* Ghidra omitted the soft-float result passed to the conversion. */
+    iVar6 = ordfloat_uint_to_float(uVar5);
     iVar9 = 64000;
     puVar7 = puVar4;
     do {
@@ -654,6 +677,9 @@ undefined2 * param_3;
       *puVar8 = uVar3 | (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * iVar6 >> 0x12);
     } while (iVar9 != 0);
     flush_dirty_rect_to_display(1);
+    while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 32)
+      Sleep(32 - fade_step_elapsed);
+    fade_step_start = (uint)GetTickCount();
     iVar11 = iVar11 + -1;
   } while (0 < iVar11);
   while (iVar10 = iVar10 + -1, -1 < iVar10) {
@@ -661,9 +687,12 @@ undefined2 * param_3;
     param_3 = param_3 + 1;
   }
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", read_realtime_clock_units() - diag_t0);
+  while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 32)
+    Sleep(32 - fade_step_elapsed);
+  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
   debug_framebuffer_dump("fade_out");
   LocalFree(puVar4);
+  uw_end_modal_present();
   return;
 }
 

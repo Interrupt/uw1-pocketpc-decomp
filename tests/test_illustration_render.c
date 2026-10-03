@@ -37,6 +37,7 @@ void *ce_malloc(unsigned int count)
 void *ce_calloc(unsigned int count, unsigned int size) { return ce_malloc(count * size); }
 void *ce_memset(void *p, int value, unsigned int count) { return memset(p, value, count); }
 void *ce_memmove(void *p, const void *source, unsigned int count) { return memcpy(p, source, count); }
+void apply_palette_buffer(void *palette, void *unused) { (void)palette; (void)unused; }
 char *ce_strcat(char *p, const char *source) { return strcat(p, source); }
 void LocalFree(void *p)
 {
@@ -51,7 +52,13 @@ long CloseHandle(int handle)
     return uw_file_close(handle);
 }
 divmod_result ordint_divmod(int divisor, int dividend) { divmod_result r = {dividend / divisor, dividend % divisor}; return r; }
-long Sleep(void) { return 0; }
+/* fade_in/fade_out's own 32ms-per-step pacing loop checks GetTickCount()
+   against a start sample and re-sleeps until 32ms elapse -- advance a
+   fake clock by the requested amount so that loop actually terminates
+   instead of spinning forever against an always-0 tick count. */
+static uint fake_tick_ms;
+long GetTickCount(void) { return fake_tick_ms; }
+long Sleep(unsigned int ms) { fake_tick_ms += ms; return 0; }
 undefined4 open_file_for_read(const char *path)
 {
     TEST_ASSERT_LESS_THAN_INT(4, opens);
@@ -135,7 +142,6 @@ short *DAT_00085a6c;
 char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
 void debug_framebuffer_dump(const char *tag) { (void)tag; }
-void fade_out(void) {}
 void tick_book_illustration_palette_cycles(void) {}
 void clear_ambient_sound_target(void) {}
 void voice_sample_cluster_stub_1(void) {}

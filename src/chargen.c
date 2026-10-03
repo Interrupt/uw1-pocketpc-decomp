@@ -491,6 +491,9 @@ int run_character_generator()
           if ((uVar5 & uVar7) != 0) {
             decrement_cursor_hide_depth();
             bitmap_blit_to_framebuffer(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
+            /* The PocketPC path drew this screen at full brightness.
+               Fade in its loaded background before accepting choices. */
+            fade_in(0,0,g_uw_framebuffer);
             iVar4 = character_generator_loop(DAT_000fb858,&DAT_000fb8f0,puVar8);
             select_active_font(s_FONT5X6P_SYS_00084e9c);
             if (DAT_00201c98 != 0) {
@@ -501,13 +504,15 @@ int run_character_generator()
             }
             clear_ambient_sound_target_thunk();
             if (DAT_001005c4 != 0) {
-              LocalFree();
+              /* LocalFree(); -- Ghidra omitted the allocation pointer. */
+              LocalFree(DAT_001005c4);
               DAT_001005c4 = 0;
             }
             if (DAT_001005c8 == 0) {
               return iVar4;
             }
-            LocalFree();
+            /* LocalFree(); */
+            LocalFree(DAT_001005c8);
             DAT_001005c8 = 0;
             return iVar4;
           }
@@ -517,11 +522,13 @@ int run_character_generator()
   }
   clear_ambient_sound_target_thunk();
   if (DAT_001005c4 != 0) {
-    LocalFree();
+    /* LocalFree(); */
+    LocalFree(DAT_001005c4);
     DAT_001005c4 = 0;
   }
   if (DAT_001005c8 != 0) {
-    LocalFree();
+    /* LocalFree(); */
+    LocalFree(DAT_001005c8);
     DAT_001005c8 = 0;
   }
   if (DAT_00201c98 != 0) {

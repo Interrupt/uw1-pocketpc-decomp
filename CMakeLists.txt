@@ -242,6 +242,7 @@ if(BUILD_TESTING)
     src/graphics.c:convert_palette_bgrx_to_rgb
     src/graphics.c:build_rgb565_palette
     src/graphics.c:bitmap_blit_to_framebuffer
+    src/graphics.c:fade_in src/graphics.c:fade_out
     src/hud.c:flush_dirty_rect_to_display src/hud.c:dirty_rect_union
     src/hud.c:main_loop_hud_flush src/graphics.c:flush_dungeon_frame
     src/game.c:set_pending_update_flags
@@ -249,6 +250,7 @@ if(BUILD_TESTING)
     src/gx_stub.c:@uw_present_state src/gx_stub.c:@g_present_state
     src/gx_stub.c:uw_begin_present_batch src/gx_stub.c:uw_end_present_batch
     src/gx_stub.c:uw_begin_modal_present src/gx_stub.c:uw_end_modal_present
+    src/gx_stub.c:uw_suspend_present_batch src/gx_stub.c:uw_resume_present_batch
     src/gx_stub.c:uw_defer_present
     src/ordinal_stubs.c:GetFileSize
     src/input.c:wait_for_click_release src/input.c:next_input_event
