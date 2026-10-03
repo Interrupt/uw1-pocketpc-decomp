@@ -442,6 +442,12 @@ LAB_00081254:
           uVar6 = ce_rand();
           uVar8 = puVar4[3];
           ordint_divmod((&DAT_00250733)[iVar1],uVar6);
+          /* Dropped-remainder bug, same class as scheduler_finish_entry's
+             own fix above in this file -- computed directly. Guarded
+             against a zero divisor the same way ordint_divmod itself
+             does (DAT_00250733[iVar1] isn't provably nonzero here). */
+          extraout_r1 = ((&DAT_00250733)[iVar1] == 0) ? 0 :
+                        (short)((int)uVar6 % (int)(&DAT_00250733)[iVar1]);
           uVar8 = ((char)(&DAT_00250732)[iVar1] + extraout_r1 ^ uVar8) & 0x3f ^ uVar8;
           goto LAB_00081254;
         }

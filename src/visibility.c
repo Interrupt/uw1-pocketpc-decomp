@@ -637,7 +637,13 @@ undefined4 build_frame_draw_list()
   DAT_0023aecc = tilemap_lookup(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
   bVar3 = (byte)((short)(g_current_view->view_facing >> 0xd) + 1 >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
-  ordint_divmod(2);
+  /* Dropped-remainder bug, same class fixed elsewhere this session.
+     Dropped-dividend too (single-arg call): the real ARM code's second
+     register still held bVar3 here, so reconstructed as bVar3 % 2
+     (quadrant parity) -- but DAT_0023b028 has no reader anywhere else
+     in this decompile, so this is a dead store either way and the
+     reconstruction is unverified against any observable behavior. */
+  extraout_r1 = (char)((int)bVar3 % 2);
   DAT_0023b028 = extraout_r1;
   DAT_0023b4a0 = bVar3;
   sync_camera_from_player();

@@ -1638,6 +1638,9 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
     uVar7 = ce_rand();
     sVar6 = DAT_00201b68;
     ordint_divmod(DAT_00201b68 * -3 + 0x28,uVar7);
+    /* Dropped-remainder bug (same class as this session's other
+       ordint_divmod/extraout_r1 fixes) -- computed directly. */
+    extraout_r1 = (char)((int)uVar7 % (DAT_00201b68 * -3 + 0x28));
     iVar8 = ((char)sVar6 + -0xb) * 3 + (int)extraout_r1;
     cVar4 = (char)iVar8;
     if (iVar8 * 0x1000000 >> 0x18 < 0) {
@@ -1665,6 +1668,8 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
     if (iVar8 < iVar1) {
       uVar7 = ce_rand();
       ordint_divmod(iVar1,uVar7);
+      /* Dropped-remainder bug, same class as above -- computed directly. */
+      extraout_r1_01 = (int)uVar7 % iVar1;
       if (iVar8 <= extraout_r1_01) {
         return;
       }
@@ -1759,6 +1764,8 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
         uVar5 = ce_rand();
         sVar3 = DAT_00201b68;
         ordint_divmod((int)DAT_00201b68 << 2,uVar5);
+        /* Dropped-remainder bug, same class as above -- computed directly. */
+        extraout_r1 = (char)((int)uVar5 % ((int)DAT_00201b68 << 2));
         bVar6 = extraout_r1 + (char)sVar3 * '\x04';
       }
       else {
@@ -1829,6 +1836,8 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
         uVar5 = ce_rand();
         sVar4 = DAT_00201b68;
         ordint_divmod((int)DAT_00201b68 << 2,uVar5);
+        /* Dropped-remainder bug, same class as above -- computed directly. */
+        extraout_r1 = (char)((int)uVar5 % ((int)DAT_00201b68 << 2));
         bVar7 = extraout_r1 + (char)sVar4 * '\x04';
       }
       else {

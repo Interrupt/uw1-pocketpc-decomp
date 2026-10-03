@@ -5677,19 +5677,18 @@ void babl_op_div()
 
 
 // was FUN_0001a74c -- babl VM opcode 5 (MODULO): identical setup to
-// babl_op_div's own DIVIDE, but reads `extraout_r1` (the ARM soft-division
-// routine's remainder register) instead of ordint_divmod's own quotient
-// return -- same divide-by-zero 0xffff sentinel as DIVIDE.
+// babl_op_div's own DIVIDE, but wants the remainder (the ARM soft-division
+// routine's r1) instead of ordint_divmod's own quotient return -- same
+// divide-by-zero 0xffff sentinel as DIVIDE.
 void babl_op_mod()
 
 {
   int iVar1;
-  undefined2 extraout_r1;
   undefined2 uVar2;
   short *psVar3;
   int iVar4;
   int iVar5;
-  
+
   iVar1 = DAT_000bbf0c;
   iVar5 = (int)DAT_000bbf78;
   psVar3 = (short *)(DAT_000bbf0c + iVar5 * 2);
@@ -5698,8 +5697,13 @@ void babl_op_mod()
     uVar2 = 0xffff;
   }
   else {
+    /* Dropped-remainder bug (same class as this session's other
+       ordint_divmod/extraout_r1 fixes), but live here: this is the babl
+       VM's own MODULO bytecode opcode, so every in-game script/
+       conversation use of "%" silently got uninitialized garbage
+       instead of a real result. Computed directly instead. */
     ordint_divmod(iVar4,(int)psVar3[-1]);
-    uVar2 = extraout_r1;
+    uVar2 = (int)psVar3[-1] % iVar4;
   }
   iVar4 = (iVar5 + -1) * 0x10000;
   DAT_000bbf78 = (short)((uint)iVar4 >> 0x10);

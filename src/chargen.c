@@ -1368,6 +1368,10 @@ LAB_000247f8:
       }
       else {
         ordint_divmod((int)sVar7,iVar8);
+        /* Dropped-remainder bug, same class fixed elsewhere this session
+           (this port's ordint_divmod never populates extraout_r1) --
+           computed directly. */
+        extraout_r1 = iVar8 % (int)sVar7;
         iVar12 = ((iVar1 * -0x10000 >> 0x10) - (extraout_r1 * local_38 * 0x10000 >> 0x10)) +
                  (int)sVar4;
         local_40 = (short)iVar12;

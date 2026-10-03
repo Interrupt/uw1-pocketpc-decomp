@@ -1154,6 +1154,9 @@ byte * param_2;
   if (uVar1 < 0x80) {
     uVar5 = ce_rand();
     ordint_divmod(0x80 - uVar1,uVar5);
+    /* Dropped-remainder bug, same class fixed elsewhere this session --
+       computed directly. */
+    extraout_r1 = (char)((int)uVar5 % (0x80 - (int)uVar1));
     bVar6 = bVar6 + extraout_r1;
   }
   uVar2 = *(undefined2 *)(iVar4 + 2);
@@ -1577,6 +1580,9 @@ char param_8;
                       if ((*pbVar14 & 0xf) != 0) {
                         uVar5 = ce_rand();
                         ordint_divmod(iVar8 * iVar1 + 3,uVar5);
+                        /* Dropped-remainder bug, same class fixed elsewhere
+                           this session -- computed directly. */
+                        extraout_r1 = (int)uVar5 % (iVar8 * iVar1 + 3);
                         if (((extraout_r1 < param_1) &&
                             (iVar10 = (*param_3)((int)local_60,iVar12,0,pbVar14,param_2),
                             iVar10 != 0)) &&

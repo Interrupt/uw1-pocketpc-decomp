@@ -2414,6 +2414,11 @@ char param_1;
       iVar7 = iVar1 + DAT_00086df8;
       bVar3 = *(byte *)(iVar7 + 0x21);
       ordint_divmod(uVar2,uVar5);
+      /* Dropped-remainder bug, same class fixed elsewhere this session --
+         computed directly. Guarded the same way ordint_divmod itself
+         guards divisor==0 (uVar2 is a data-table byte, not provably
+         nonzero here). */
+      extraout_r1 = (uVar2 == 0) ? 0 : ((int)uVar5 % (int)uVar2);
       if (extraout_r1 < (int)(uVar6 - bVar3)) {
         *(byte *)(iVar7 + 0x21) = bVar3 + 1;
       }
@@ -4412,6 +4417,12 @@ undefined1 param_2;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
           (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
         ordint_divmod(cVar1,param_2);
+        /* Dropped-remainder bug, same class fixed elsewhere this session --
+           computed directly (cVar1 confirmed nonzero just above). The
+           second ordint_divmod(cVar1) call below re-divides the same
+           (cVar1, param_2) pair for its quotient, so this remainder is
+           still valid there too. */
+        extraout_r1 = (int)param_2 % (int)cVar1;
         uVar8 = (ushort)(extraout_r1 == 0);
         if (1 < param_1) {
           sVar5 = ordint_divmod(cVar1);
