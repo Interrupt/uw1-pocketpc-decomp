@@ -13,7 +13,6 @@
 #define DAT_0023c4c0 DAT_0023c4c0_backing[0]
 #define DAT_0023c5b8 DAT_0023c5b8_backing[0]
 #define DAT_0024ac18 DAT_0024ac18_backing[0]
- undefined DAT_001007d9_backing[8192];
 short DAT_0010061c;
 short DAT_00100608;
  undefined1 DAT_001007d0_backing[6144];

@@ -645,8 +645,7 @@ extern undefined4 DAT_00085c54;
 extern ushort * DAT_00100674;
 extern ushort DAT_001007c4;
 #define DAT_001007d5 DAT_001007d0_backing[0x5]
-extern undefined DAT_001007d9_backing[8192];
-#define DAT_001007d9 DAT_001007d9_backing[0]
+#define DAT_001007d9 DAT_001007d0_backing[0x9]
 extern short DAT_00201b68;
 extern short DAT_00201c74;
 extern undefined2 DAT_002020a0;
