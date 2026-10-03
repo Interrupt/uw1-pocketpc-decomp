@@ -1,5 +1,226 @@
 # Known issues
 
+## Open
+- [ ] `demo_automap.txt` (explicitly excluded from the default regression
+      list already, see run-regressions.sh's own comment) crashes deep in
+      NPC tick logic: `settle_mobile_to_immobile` -> stack overflow-looking
+      recursion (same symbol appears twice in the ASan backtrace, though
+      no literal self-call was found in a quick read -- may be a stripped
+      static helper attributed to the wrong nearest symbol, needs lldb to
+      confirm), reached via sync_object_tile_position -> mobile_object_tick
+      during the code-cleanup-first-pass branch's file-reorg work. Also
+      preceded by a `resolve_object_link` out-of-range warning
+      (param_1=0x2, clearly a wild/garbage pointer) from `object_list_unlink`
+      just before the crash -- possibly the same root cause. NOT caused by
+      any logic change (the file-reorg batch that surfaced it moved files
+      and fixed #include paths only) -- but a same-script run on a clean
+      pre-reorg worktree did NOT crash, so this is a latent bug whose
+      manifestation is sensitive to memory layout/link order, only now
+      exposed by the reorg reordering object files. Wasn't investigated
+      further this round -- lower priority than the reorg work in
+      progress. UPDATE: re-tested after the babl.c extraction batch's own
+      change_game_mode fixes below -- still crashes the same way (exit
+      139, settle_mobile_to_immobile), unaffected -- different subsystem,
+      as expected. Still open.
+
+## Fixed this round (code-cleanup-first-pass, texture-detail emit cluster)
+- [x] `emit_floor_texture_select`'s low-detail fallback called
+      `FUN_0005dd84();` (now `emit_flat_wall_texture_select`) with
+      zero arguments despite it taking 3 parameters that exactly
+      match `emit_floor_texture_select`'s own -- the same dropped-
+      argument idiom fixed repeatedly this session. Fixed by
+      forwarding `param_1,param_2,param_3`.
+- [x] `emit_diagonal_wall_texture_select`'s own low-detail fallback
+      had the identical bug: called `FUN_0005dff4();` (now
+      `emit_flat_diagonal_texture_select`) with zero arguments
+      instead of its 4 matching parameters. Fixed the same way.
+      19/19 regression scripts clean for both fixes (full suite,
+      since this touches core dungeon-rendering code).
+- [x] Documentation correction (not a code bug): `draw_brightness_panel`/
+      `handle_brightness_click` (pause-menu state 4) were misnamed
+      from an earlier pass's "brightness/gamma slider" guess.
+      `configure_texture_detail_functions` reads the exact same
+      `DAT_00086df8+0xb5` high nibble to choose between flat-shaded
+      and fully-textured floor rendering -- and
+      `handle_detail_level_click` (renamed) calls
+      `configure_texture_detail_functions` directly right after
+      adjusting that nibble, the clearest possible confirmation this
+      is a texture detail-level setting, not screen brightness.
+      Renamed to `draw_detail_level_panel`/`handle_detail_level_click`
+      and corrected every comment/label referencing the old name.
+
+## Fixed this round (code-cleanup-first-pass, final unnamed-function sweep)
+- [x] Named and extracted the last 10 `FUN_xxx`/`thunk_FUN_xxx` functions
+      remaining in `uw.c` (a broader regex was needed to find them --
+      the usual search missed pointer-return-type and `thunk_`-prefixed
+      functions): `show_error_dialog_stub_thunk`, `load_string_resource`,
+      `load_string_resource_large`, `clear_ambient_sound_target_thunk`,
+      `find_equipped_item_by_category`, `resolve_clicked_inventory_item`,
+      `get_equipped_item_at_widget_slot`, `extract_clicked_backpack_item`,
+      `extract_ammo_and_refresh`, `prompt_split_object_stack`. `uw.c` now
+      contains zero unnamed functions (confirmed by exhaustive regex
+      sweep). Extracted into `src/game.c`, `src/resources.c`,
+      `src/audio.c`, and `src/item_use.c`; un-staticed
+      `DAT_000fb650_backing`/`DAT_000fb550_backing` and added the needed
+      `uw.h` externs for cross-TU use.
+- [x] Dropped-argument bug: `prompt_split_object_stack`'s only call site
+      (in `src/interact.c`'s `interact_default`) called it with zero
+      arguments despite it taking one parameter. Fixed by passing
+      `g_interact_target`, the object the enclosing "grab" handler
+      operates on throughout. 19/19 regression scripts clean (full
+      suite, since this is a real bug fix).
+- [x] Collapsed two more Ghidra thunk/duplicate-body functions into real
+      calls to their already-named siblings: `show_error_dialog_stub_thunk`
+      -> `show_error_dialog_stub`, `clear_ambient_sound_target_thunk` ->
+      `clear_ambient_sound_target`. Also collapsed a genuine (non-thunk)
+      duplicate pair, `FUN_000459d8`/`FUN_00045a7c`, by naming the real
+      implementation `extract_clicked_backpack_item` and making the
+      second a thin wrapper, `extract_ammo_and_refresh`.
+
+## Noted this round (code-cleanup-first-pass, final unnamed-function sweep) -- NOT fixed
+- `win_file_exists()` (winfile_wrappers.c) calls
+  `load_string_resource()` (was `FUN_0002295c`) with zero arguments
+  despite it taking one parameter (a string-resource ID). Flagged by
+  a prior session's own comment as "left unnamed/out of scope," and
+  still not fixed here: unlike this session's other confirmed
+  dropped-argument bugs, `win_file_exists` itself has no parameter of
+  its own to forward -- fixing this would require knowing which
+  specific resource ID it's supposed to check, which isn't inferrable
+  from context alone. Revisit if a concrete "checking the wrong/no
+  file" symptom is ever reported for this path.
+
+## Noted this round (code-cleanup-first-pass, keyboard/cursor input cluster) -- NOT fixed
+- `wait_for_key_or_mouse_move` (was `FUN_000576d0`) takes one
+  parameter (gates whether `dispatch_sticky_mode_handlers` runs
+  during the wait); `interact.c`'s call site passes zero arguments
+  while the other three call sites (`uw.c`, `babl.c`, `inventory.c`)
+  all pass literal `1`. Possibly the same dropped-argument idiom
+  fixed several times this session, but weaker evidence than those
+  confirmed cases: only one oddball site (not several agreeing), and
+  the parameter's effect is a UI-responsiveness choice (whether to
+  tick sticky-mode handlers while waiting) rather than something that
+  provably crashes or silently no-ops without it. Left unfixed --
+  revisit if a concrete symptom (e.g. interact.c's wait path feeling
+  unresponsive, or a sticky-mode handler firing/not-firing
+  unexpectedly during it) is ever reported.
+
+## Fixed this round (code-cleanup-first-pass, mouse hotspot-tracking cluster)
+- [x] `is_mouse_within_tracked_hotspot` (was `FUN_000571c0`) computed
+      and discarded a real hit-test result from `FUN_00057d1c` (own
+      return type `undefined4`, body a genuine 0/1 test), then
+      returned a hardcoded 0 -- the exact same "Ghidra couldn't trace
+      a return value through the call and fabricated a placeholder"
+      bug already fixed once this session
+      (`get_scanned_object_class_effect_ptr`). Confirmed real by this
+      function's only other caller (weapon_swing.c): `if (iVar5 != 0)
+      fire_ranged_weapon(...)` could never have fired with the old
+      hardcoded 0, since every call site always saw 0 regardless of
+      the actual mouse/hotspot overlap. Fixed by capturing and
+      returning the real result. 19/19 regression scripts clean (no
+      demo script currently exercises this exact ranged-weapon path,
+      so this needs live/manual verification to confirm the gameplay
+      symptom is resolved, but the fix itself is mechanically certain).
+
+## Fixed this round (code-cleanup-first-pass, pause-menu cluster)
+- [x] `DAT_002047b0` (inside what's now `init_cursor_subsystem`, moved to
+      hud.c) was declared as a lone `undefined2` scalar but indexed
+      throughout as `(&DAT_002047b0)[i]` for up to 20 slots (the
+      `iVar2 < 0x14` loop bound) -- same "scalar declared but accessed
+      as array" bug class fixed several times this session. Widened
+      to a real, safely-sized `DAT_002047b0_backing[20]`. Three
+      sibling parallel arrays (`DAT_00204750`/`DAT_002047e0`/
+      `DAT_00204808`) have the identical bug but aren't yet required
+      cross-TU, so left unfixed for now -- revisit together.
+- [x] Documentation fix (not a code bug): the pause-menu dispatch
+      tables' own summary comment had entries 2/3's prose labels
+      swapped ("2 sound toggle" / "3 music toggle") even though that
+      same comment says entries 0-3 were only reconstructed by
+      inference (unlike 4/5, which were ground-truth-verified via a
+      headless memory dump of the original binary). Directly tracing
+      `draw_music_or_sound_toggle_panel`'s own `DAT_000868dc == 2`
+      branch (shows `is_music_playing` when true) and
+      `handle_music_toggle_click`'s body (calls `set_music_enabled`,
+      registered at index 2) confirms 2=music, 3=sound -- the actual
+      function pointers in the table were never wrong, only these two
+      prose labels. Corrected the comment to match.
+- Noted but NOT fixed (lower confidence, single call site):
+  `open_pause_menu_via_hotkey` calls
+  `handle_pause_menu_dpad_navigation()` with zero arguments despite
+  that function taking one parameter -- possibly the same dropped-
+  argument bug shape fixed several times this session, but
+  `DAT_000868dc` is already forced to 6 directly above regardless of
+  this call's effect, so the blast radius (if any) is unclear without
+  live reproduction. Revisit if a pause-menu-opened-via-hotkey bug is
+  ever reported.
+
+## Fixed this round (code-cleanup-first-pass, audio.c MOD-loader container batch)
+- [x] `init_mod_pattern_array` (was `FUN_0004fd68`) was called with zero
+      arguments (`FUN_0004fd68();`) despite taking one parameter --
+      the only call site, in the MOD module loader, had just assigned
+      the exact struct address this constructor should initialize to
+      `local_334` on the line above. Called with no argument, the
+      function read garbage for its own `param_1` and wrote its
+      construct pattern (tag bytes + zeroed array header) through it
+      -- a wild write. Same dropped-argument idiom confirmed several
+      times this session (e.g. `init_sound_channel_slot` in pass 383).
+      Fixed by passing `local_334` explicitly. 19/19 regression
+      scripts clean.
+- [x] Confirmed AND found three more of the same shape while naming the
+      next batch of "scalar deleting destructor" wrappers for this
+      MOD container-template cluster: `destroy_mod_dynamic_array_and_maybe_free`
+      (was `FUN_00050430`, called `destroy_mod_dynamic_array();` with no
+      argument), `destroy_mod_pattern_array_and_maybe_free` (was
+      `FUN_00050454`, called `FUN_0004fef8();`/destroy_mod_pattern_array
+      with no argument), `destroy_mod_instrument_array_and_maybe_free`
+      (was `FUN_00050478`, called `FUN_00050148();`/destroy_mod_instrument_array
+      with no argument), and `destroy_mod_channel_state_array_and_maybe_free`
+      (was `FUN_0005049c`, called `FUN_00050370();`/destroy_mod_channel_state_array
+      with no argument). Four independent, structurally-identical
+      instances of the exact same bug -- each wrapper's own `param_1`
+      is obviously the intended argument, and each inner destructor is
+      called correctly everywhere else in this file. All four fixed by
+      passing `param_1` explicitly. 19/19 regression scripts clean.
+- [x] Closed out the fifth and sixth instances of the same "scalar
+      deleting destructor" dropped-argument bug while finishing the
+      rest of this container-template cluster:
+      `destroy_mod_row_array_elem_and_maybe_free` (was `FUN_000505bc`,
+      called `FUN_000504fc();`/destroy_mod_row_array_elem with no
+      argument) and `destroy_mod_pattern_array_elem_and_maybe_free`
+      (was `FUN_00050768`, called `FUN_000506a8();`/
+      destroy_mod_pattern_array_elem with no argument -- this is the
+      exact instance flagged after pass 386). Six total confirmed
+      instances of this one bug shape across the whole cluster, all
+      fixed the same way (pass `param_1` explicitly). 19/19 regression
+      scripts clean. Cross-checked the remaining 19 newly-named
+      functions in this batch via check-for-dropped-args-and-params --
+      no further instances found; every other call site's argument
+      count matches its declaration.
+
+## Fixed this round (code-cleanup-first-pass, babl.c extraction batch)
+- [x] `change_game_mode` / its sibling exit-mode dispatcher (~uw.c:27610/
+      27760) silently ran a disabled/-1 mode's table dispatch as if it
+      were a real one, indexing `DAT_00085668_real_table` (384 bytes)
+      with a wild offset -- an ASan global-buffer-overflow, live-crashing
+      `demo_automap_note_test.txt` the first time this session's babl.c
+      extraction shifted link order enough to land the wild read in a
+      poisoned redzone (same "pre-existing bug newly exposed by
+      reordering" class as the entry above). Two stacked bugs, both real:
+      (1) `DAT_00201b64` (the "current mode" sentinel, `undefined2` i.e.
+      unsigned) zero-extended its `0xffff`-means-"disabled" sentinel to
+      `0x0000ffff` on cast to `int` instead of sign-extending to -1;
+      retyped to `short`. (2) Even fixed, the guard comparing the
+      resulting pointer against a fabricated `(code*)0xffffffff` sentinel
+      was ITSELF broken on this 64-bit host: the negative pointer
+      sign-extends to a 64-bit all-ones value, but the *unsigned* literal
+      `0xffffffff` zero-extends to only the low 32 bits set -- they can
+      never compare equal, so the guard was always true. Fixed both call
+      sites to compare the real source short against -1 directly instead
+      of fabricating a pointer sentinel. A second, previously-unguarded
+      call site to the same table (change_game_mode's own exit-mode
+      dispatch) got the same guard added -- it had no check at all
+      before, matching a real "NULL indirect call" crash already
+      documented in its own comment for a different input.
+
 ## Fixed this round
 - [x] Spacebar didn't add a space in name entry — SDL delivered the matching
       keydown (VK_SPACE, a mapped game button) and SDL_TEXTINPUT event in the

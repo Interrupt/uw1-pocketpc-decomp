@@ -1,0 +1,1735 @@
+/* GAPI (Windows CE "GX*" Game API) stub, backed by real SDL2 so the game
+ * gets an actual window instead of a headless no-op. */
+#include "headers/gx_stub.h"
+#include "headers/ordinal_stubs.h"
+#include "headers/uw.h"
+#include "headers/demomode.h"
+#include "headers/democapture.h"
+#include "headers/debug_ui.h"
+
+#include <SDL.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <dlfcn.h> /* UW_DEBUG_ENDDRAW's dladdr() caller lookup, see GXEndDraw */
+
+#define GX_W 320
+#define GX_H 240
+
+/* The game's own screen-flush routines (flush_dirty_rect_to_display/flush_dirty_rect_to_display_240 in
+ * uw.c) always blit by transposing rows<->columns from the software
+ * framebuffer into whatever GXBeginDraw() returns, using the pitch
+ * values from GXGetDisplayProperties() -- i.e. the code unconditionally
+ * performs a 90-degree rotation from its internal 320x240 landscape
+ * buffer into the "hardware" framebuffer. That only makes sense if the
+ * real target device's framebuffer is natively portrait-oriented
+ * (matches the original HP Jornada/Pocket PC-class hardware this port
+ * targets); reporting landscape pitch/dimensions here made the blit's
+ * row/column math write far outside the buffer (global-buffer-overflow
+ * on `g_framebuffer`). Emulate that portrait "hardware" framebuffer
+ * faithfully, then rotate it back to landscape ourselves when
+ * presenting to the (landscape, GX_W x GX_H) SDL window/texture. */
+#define HW_W 240
+#define HW_H 320
+
+/* Real Microsoft GXDisplayProperties layout (6 x 4-byte fields = 0x18). */
+typedef struct {
+    unsigned int cxWidth;
+    int cyHeight;
+    int cbxPitch;
+    int cbyPitch;
+    int cBPP;
+    unsigned int ffFormat;
+} GxDisplayProps;
+
+#define KF_DIRECT565 0x10u
+
+/* Real Microsoft GXKeyList layout: 8x (short vk + POINT pt), 12 bytes each
+ * after alignment padding = 0x60. Only the vk fields are meaningful here.
+ * Field ORDER matters -- uw.c's handle_keyboard_message compares incoming
+ * VK codes against this struct's fields by raw byte offset (DAT_0023ce10
+ * + 0xc/0x18/0x24/0x30/0x3c/0x48/0x54), not by name, so it has to match
+ * the real GAPI struct's actual member order: up, down, left, right, a,
+ * b, c, start -- NOT a/b/c/start/up/down/left/right as this struct had
+ * it before. That wrong order put VK_UP/VK_DOWN at the byte offsets
+ * handle_keyboard_message reads as the "a"/"b" button codes (which it maps to
+ * ENTER/ESC respectively -- a real A/B-button-confirms/cancels menu
+ * convention that makes sense; "pressing Up fires Enter" does not) --
+ * confirmed live and reported by QA: Up landed as Enter, Down landed as
+ * Escape in every keyboard-driven menu. */
+typedef struct {
+    short vk;
+    short pad;
+    int ptx, pty;
+} GxKeyEntry;
+
+typedef struct {
+    GxKeyEntry up, down, left, right, a, b, c, start;
+} GxKeyList;
+
+#define VK_UP 0x26
+#define VK_DOWN 0x28
+#define VK_LEFT 0x25
+#define VK_RIGHT 0x27
+#define VK_RETURN 0x0D
+#define VK_SPACE 0x20
+#define VK_CONTROL 0x11
+#define VK_ESCAPE 0x1B
+/* Win32 VK codes for letter keys are just their uppercase ASCII value,
+   same as the game's own register_key_binding(0x4a, 6, 0x1b,
+   move_command_dispatch) jump binding (see poll_input_bindings init)
+   already expects -- that binding just never had a real key reach it,
+   since translate_vk had no case producing 0x4a. */
+#define VK_J 0x4A
+/* WinCE app-launch button virtual-key. Real GAPI hands the game codes
+ * like this for the hardware A/B/C/Start buttons -- never ASCII keys --
+ * so mapping "button A" to one keeps the spacebar free to type a literal
+ * space in the name-entry field. */
+#define VK_APP1 0xC1
+
+/* UW_SYNTH_MOUSE/UW_SYNTH_KEY are declared in gx_stub.h (shared with
+   democapture.c, which needs to tell a real event from a demo's own
+   injected one to avoid recording playback back into a new file). */
+
+/* Dungeon-view (3D) player movement is polled from the physical keyboard
+   state every pump (poll_dungeon_movement_keys), DOS-style, rather than
+   driven off discrete key events. UW binds W/S/X/A/D to a *stepped*
+   45-degree turn / one-tile move (uw.c move_key_directional_step); the
+   GAPI hardware buttons instead feed the *analog* movement decoder
+   (move_command_dispatch -> decode_movement_command) via the latched
+   input code DAT_0023c448 -- 0x8d forward, 0x8f turn-left, 0x91
+   turn-right -- scaled by the held-repeat accelerator DAT_0024af6c. We
+   route plain WASD into that analog path for smooth free rotation and
+   motion; SHIFT+WASD is left alone so it still reaches the game's stepped
+   move handler at the key-repeat cadence, matching the DOS controls.
+   Keys 1 / 2 / 3 pitch the view up / centre / down (DAT_0023beb4; the
+   game's own handler for these, LAB_000680d0, is a lost jump-table stub). */
+extern short DAT_00201b64;   /* game mode; 0 == in-game 3D dungeon view */
+extern int g_text_input_active;       /* scroll_text_entry_prompt's (was FUN_0007ffa8) text-entry loop is running (save-name field, "Move how many", "Chant the mantra", etc); see its own comment in uw.c */
+extern unsigned short DAT_0023c448;   /* latched pending input code */
+extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears DAT_0023c448 */
+extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move rate scale) */
+extern short DAT_0023beb4;            /* view pitch (1/256 deg); sync_camera_from_player -> DAT_000db448 */
+extern unsigned int g_uw_frame_clock_units; /* fixed-step wall-clock substitute for movement_pacing_handler -- see its own comment in uw.c */
+
+/* OR'd into the real SDL_GetKeyboardState() so scripted tests (SDLHOLD /
+   uw_inject_key_down/up) can drive the same movement path -- SDL_PushEvent
+   does not update SDL's own keyboard-state array. Indexed by SDL scancode. */
+static unsigned char g_synth_scancode_held[SDL_NUM_SCANCODES];
+
+static SDL_Window *g_win;
+static SDL_Renderer *g_ren;
+static SDL_Texture *g_tex;
+static unsigned short g_framebuffer[HW_W * HW_H]; /* RGB565, portrait "hardware" buffer */
+static unsigned short g_display_buf[GX_W * GX_H]; /* RGB565, rotated landscape buffer for display */
+static int g_running = 1;
+/* Mouse events (unlike keyboard ones) get handled synchronously and
+ * completely inline in uw_pump_events -- handle_mouse_message processes and
+ * finishes with each one before uw_pump_events even returns, so there's
+ * no lingering "pending" state the way DAT_0023c448 stays set for
+ * keyboard input. Real WinCE PeekMessage would report ANY pending
+ * message type, not just keyboard, so Ordinal_864 needs a way to know
+ * "a mouse message was just processed" too -- this one-shot flag is
+ * that signal, consumed via uw_take_mouse_event_pending(). */
+static int g_mouse_event_pending = 0;
+
+/* A button-up dispatched on the very next poll after its matching
+ * button-down leaves character_generator_touch_select's position-
+ * validation loop (uw.c's character_generator_touch_select, called via
+ * wait_for_chargen_field_input) with zero chances to ever run: its first internal poll
+ * (a *second* call, right after the outer poll that consumed the
+ * button-down) immediately dequeues the already-queued button-up,
+ * resetting DAT_0023c63c before the loop body -- which does the actual
+ * hit-test against button bounds -- executes even once. With no
+ * validated hit, it falls through to its "return the selection
+ * unchanged" default, which the caller unconditionally treats as
+ * "confirmed" -- so ANY click, on or off a button, advanced the field
+ * (confirmed via screenshot diffing: identical result whether or not
+ * the click landed on a button). Holding the button-up back for exactly
+ * one extra uw_pump_events() call keeps DAT_0023c63c==1 visible to that
+ * loop's first iteration, so it runs the real position check before the
+ * (now-deferred) release finally clears it. */
+static int g_mouseup_deferred = 0;
+static int g_mouseup_deferred_lparam = 0;
+
+/* Pending WM_CHAR byte for Enter/Backspace (0 = none), dispatched one full
+ * poll cycle after the matching WM_KEYDOWN -- same "one message per real
+ * poll" deferral as g_mouseup_deferred above. handle_keyboard_message's
+ * single-slot DAT_0023c448 latch ORs every message it receives into
+ * whatever is already there, so sending WM_KEYDOWN(VK_RETURN) and
+ * WM_CHAR(0x0D) back-to-back in the same call (as this code used to)
+ * risks corrupting both if VK_RETURN also matches one of
+ * GXGetDefaultKeys()'s struct fields (see GxKeyList's own comment on the
+ * struct's real field order -- with it wrong, VK_RETURN previously
+ * matched the "start" field at the wrong offset and latched
+ * DAT_0023c448=0x93 before the WM_CHAR arrived and ORed in 0xd on top,
+ * leaving 0x9f -- neither a clean "Start button" event nor a clean
+ * Enter/0xd, so pressing Enter in any text-entry field (confirmed: the
+ * save/load name prompt) silently did nothing). With the struct order
+ * now fixed, "start" is a different field the game's own
+ * handle_keyboard_message treats as a no-op, so this specific collision
+ * can no longer happen -- kept anyway since it still matches how real
+ * Windows CE delivers WM_KEYDOWN and WM_CHAR as genuinely separate,
+ * sequentially-polled messages, which SDL's synthesized WM_CHAR
+ * companion for Enter/Backspace (SDL itself never generates a real
+ * SDL_TEXTINPUT for either) needs the same deferral real SDL_TEXTINPUT
+ * already gets from the "return after one event" discipline a few lines
+ * below. */
+static int g_keychar_deferred = 0;
+
+/* True from a dispatched button-down until the (possibly still-deferred)
+ * matching button-up actually dispatches. See its use at the bottom of
+ * uw_pump_events for why this is needed even with g_mouseup_deferred
+ * above: a *real* held click (any actual wall-clock gap between press
+ * and release, which is every real click) means several poll calls
+ * happen while the button is down but nothing NEW has arrived from SDL.
+ * Ordinal_864/poll_input_event treat "no new message this call" as "no
+ * message at all" and return early without ever reading DAT_0023c448 or
+ * calling poll_mouse_event() -- so DAT_0023c63c (still 1, genuinely
+ * held) never even gets checked, and character_generator_touch_select's
+ * position-check loop (gated on seeing a positive code from that same
+ * poll chain) never runs even once. Confirmed via diagnostics: a click
+ * with a real hold duration confirmed the current selection on the very
+ * first poll after button-down, before release ever happened. Keeping
+ * g_mouse_event_pending true for every poll while the button is
+ * physically down (not just the instant a new SDL event arrives) fixes
+ * this by making poll_mouse_event() get consulted continuously, the
+ * same way a real WinCE input driver would keep reporting a held
+ * touch. */
+static int g_mouse_button_held = 0;
+
+static int translate_vk(SDL_Keycode sym) {
+    switch (sym) {
+        case SDLK_UP: return VK_UP;
+        case SDLK_DOWN: return VK_DOWN;
+        case SDLK_LEFT: return VK_LEFT;
+        case SDLK_RIGHT: return VK_RIGHT;
+        case SDLK_RETURN: return VK_RETURN;
+        /* SDLK_SPACE is deliberately NOT mapped here: the spacebar must
+         * reach the game only as a WM_CHAR (0x20) via SDL_TEXTINPUT so it
+         * types a literal space in the name-entry field. Sending a
+         * WM_KEYDOWN for it too made handle_keyboard_message match it against the
+         * "button A" key (see GXGetDefaultKeys) and emit event 0x91,
+         * which that field handles as delete -- so every space deleted
+         * the character before it. */
+        case SDLK_LCTRL:
+        case SDLK_RCTRL: return VK_CONTROL;
+        case SDLK_ESCAPE: return VK_ESCAPE;
+        /* Jump. Real UW controls bind this to J; the game's own
+           register_key_binding(0x4a, ...) table entry already expects it
+           (see VK_J above) -- it just never had a live key mapped to it
+           in this port. */
+        case SDLK_j: return VK_J;
+        default: return 0;
+    }
+}
+
+/* True while the game is showing the interactive 3D dungeon view and the
+   WASD/1-3 poller should own those keys. SHIFT+WASD is excluded so it
+   still drives the game's stepped (tile-based, key-repeat) move handler,
+   as in the DOS controls. */
+static int in_dungeon_freelook(void) {
+    if (DAT_00201b64 != 0) return 0;
+    /* A text-entry field (save-name, "Move how many", "Chant the mantra",
+     * ...) is a scroll-area overlay drawn on top of the dungeon view
+     * without ever changing the top-level game mode, so DAT_00201b64
+     * alone can't tell them apart -- without this check A/D/C/W/S/X/Z/
+     * 1/2/3 kept reaching the movement poller instead of typing. */
+    if (g_text_input_active) return 0;
+    /* SDL_GetModState() only reflects modifier keys that came through the
+     * real OS input backend -- a demo-injected SDLK_LSHIFT (uw_inject_key_down,
+     * which SDL_PushEvent()s the event rather than feeding it through SDL's
+     * own keyboard backend) never sets it, the same reason plain letter keys
+     * need g_synth_scancode_held below. Check that too so a scripted
+     * "SDLHOLD SHIFT+D" reproduces a real held-shift stepped turn. */
+    int shift_held = (SDL_GetModState() & KMOD_SHIFT) != 0 ||
+                      g_synth_scancode_held[SDL_SCANCODE_LSHIFT] ||
+                      g_synth_scancode_held[SDL_SCANCODE_RSHIFT];
+    return !shift_held;
+}
+
+/* DOS-style: poll the physical keyboard each pump and drive the analog
+   movement decoder while in the 3D dungeon view. plain WASD -> free
+   rotation / forward-back; 1/2/3 -> look up / centre / down; released ->
+   stop. SHIFT+WASD and all of this in menus fall through untouched. */
+static void poll_dungeon_movement_keys(void) {
+    static int active = 0;
+
+    if (!in_dungeon_freelook()) {     /* menu, or SHIFT held */
+        if (active) { DAT_000876c8 = 1; active = 0; }
+        return;
+    }
+
+    const Uint8 *ks = SDL_GetKeyboardState(NULL);
+    #define UW_HELD(sc) (ks[(sc)] || g_synth_scancode_held[(sc)])
+    int left    = UW_HELD(SDL_SCANCODE_A);
+    int right   = UW_HELD(SDL_SCANCODE_D);
+    int run     = UW_HELD(SDL_SCANCODE_W);   /* W = run forward  */
+    int walk    = UW_HELD(SDL_SCANCODE_S);   /* S = walk forward (slower) */
+    int back    = UW_HELD(SDL_SCANCODE_X);
+    int strafeL = UW_HELD(SDL_SCANCODE_Z);
+    int strafeR = UW_HELD(SDL_SCANCODE_C);
+    int lookUp  = UW_HELD(SDL_SCANCODE_1);
+    int lookCtr = UW_HELD(SDL_SCANCODE_2);
+    int lookDn  = UW_HELD(SDL_SCANCODE_3);
+    #undef UW_HELD
+
+    /* View pitch: keys 1 / 2 / 3. DAT_0023beb4 is a signed 1/256-degree
+       pitch the camera build reads; negative looks up. It is never
+       auto-recentred, so ramp it while held and snap on 2. */
+    if (lookCtr) {
+        DAT_0023beb4 = 0;
+    } else if (lookUp && !lookDn) {
+        int p = (int)DAT_0023beb4 - 0x120;
+        DAT_0023beb4 = (short)(p < -0x1800 ? -0x1800 : p);
+    } else if (lookDn && !lookUp) {
+        int p = (int)DAT_0023beb4 + 0x120;
+        DAT_0023beb4 = (short)(p > 0x1800 ? 0x1800 : p);
+    }
+
+    /* One latched code for turn-alone/forward-alone/back/strafe -- matches
+       decode_movement_command's own single-code dispatch. A forward key
+       (W/S) held together with a turn key (A/D) is handled separately
+       below via uw_set_analog_move_turn(), which sets DAT_0023bf48/4c
+       directly: decode_movement_command can only ever set one of them
+       per call (see its own comment), even though resolve_move_vector's
+       mode-1 case has always applied both together. */
+    int code = 0, walk_slow = 0;
+    int turning = 0;   /* -1 left, +1 right, 0 none */
+    if (left && !right)         { code = 0x8f; turning = -1; }  /* turn left  */
+    else if (right && !left)    { code = 0x91; turning = 1; }   /* turn right */
+    int forward = run || walk;
+    if (!turning) {
+        if (run)               code = 0x8d;                     /* W: run  -- let the accelerator ramp */
+        else if (walk)         { code = 0x8d; walk_slow = 1; }   /* S: walk -- pin accelerator below the step clamp */
+        else if (back)          code = 0x93;   /* backward / turn-around */
+        else if (strafeL && !strafeR) code = 0x2c; /* sidestep left  (DOS ",") */
+        else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
+    } else if (walk) {
+        walk_slow = 1;   /* turning + S: still pin the accelerator for a slow diagonal */
+    }
+
+    if (code || (turning && forward)) {
+        /* Re-arm accel on press edge only -- the actual ramp-while-held
+           lives in game.c's app_main_loop (the real WinMain message-pump
+           loop), which already doubles/quadruples DAT_0024af6c every
+           iteration while DAT_000876c8==0 (key still down) -- confirmed:
+           decode_movement_command's own "NOTE: DAT_0024af6c ramps to
+           ~0x140" comment was accurate all along, just describing THAT
+           loop, which this file's earlier investigation missed by only
+           grepping uw.c/gx_stub.c for writers, not game.c. This function
+           already sets DAT_000876c8 correctly (0 below while held, 1 on
+           release), so that loop's existing ramp applies to WASD-driven
+           turning/running automatically with no separate logic needed
+           here -- an earlier attempt added a second, differently-shaped
+           (linear, not exponential) ramp in THIS function on top of it;
+           reverted as redundant/wrong once the real mechanism was found. */
+        if (!active) { DAT_0024af6c = 0x14; active = 1; }
+        if (walk_slow) {
+            /* keep S's forward rate below decode_movement_command's per-tick
+               step clamp so it is a genuine slow walk, not a clamped run. */
+            static int _wa = -1;
+            if (_wa < 0) { const char *e = getenv("UW_WALK_ACCEL"); _wa = e ? atoi(e) : 0x30; }
+            DAT_0024af6c = (short)_wa;
+        }
+        DAT_000876c8 = 0;
+        if (turning && forward) {
+            /* Diagonal: set both rates directly and skip the single-code
+               dispatch entirely -- movement_tick only calls
+               decode_movement_command() while g_movement_mode == 0, so
+               setting it to 1 here (inside uw_set_analog_move_turn)
+               pre-empts that for this tick. */
+            DAT_0023c448 = 0;
+            uw_set_analog_move_turn(1, turning);
+        } else {
+            DAT_0023c448 = (unsigned short)code;
+        }
+    } else if (active) {
+        DAT_000876c8 = 1;   /* release: main loop clears DAT_0023c448 -> stop */
+        active = 0;
+    }
+}
+
+/* Called ONCE per real game tick from app_main_loop's own while loop
+   (game.c) -- the SAME loop that calls main_loop_hud_flush(), which is
+   what actually dispatches movement_pacing_handler() (uw.c) via the
+   sticky-bits table. Deliberately just the clock, NOT democapture_tick()/
+   demomode_pump() (those stay in uw_pump_events() below -- see its own
+   comment for why they can't move here). uw_pump_events() is also
+   reachable from Ordinal_864/poll_input_event, "the real keyboard-
+   polling function used by every menu/input-wait loop in the game" (see
+   its own comment in ordinal_stubs.c) -- confirmed live
+   (UW_DEBUG_MOVEPACE) that during plain WASD holding it was firing
+   roughly TWICE per real movement_pacing_handler() call, so advancing
+   g_uw_frame_clock_units there made every turn/walk update jump by two
+   ticks' worth at once instead of one -- user-reported: "does not seem
+   to update the actual player yaw every tick like mouse movement does."
+   Moving just the clock here, to the exact call site that also drives
+   movement, fixes that at the root instead of trying to guess/compensate
+   for however many times uw_pump_events() happens to fire per
+   iteration. This does mean a recorded/replayed WAIT tick (counted at
+   uw_pump_events()'s own, finer rate) no longer corresponds 1:1 to one
+   unit of this clock -- harmless for determinism (both recording and
+   replay see the identical relationship, since it's the same code
+   either way) and doesn't need to be exact for movement fidelity, only
+   consistent, which it is. */
+void uw_advance_game_tick(void) {
+    /* Advance g_uw_frame_clock_units (see its own comment in uw.c) by
+       exactly one fixed tick's worth, in the SAME 4ms-per-unit scale
+       read_realtime_clock_units()/Ordinal_535()>>2 uses -- computed fresh from the
+       running tick count each call (not accumulated with a per-call
+       remainder) so integer truncation never drifts the total over a
+       long session: 60 ticks always total exactly 250 units (1000ms),
+       whichever ticks happen to round up. */
+    static unsigned int tick_count = 0;
+    tick_count++;
+    g_uw_frame_clock_units = (unsigned int)((unsigned long long)tick_count * 250 / 60);
+    if (getenv("UW_DEBUG_TICKRATIO")) {
+        extern unsigned int g_uw_pump_events_calls; /* defined below */
+        fprintf(stderr, "[tickratio] game_tick=%u pump_calls_this_tick=%u\n", tick_count, g_uw_pump_events_calls);
+        g_uw_pump_events_calls = 0;
+    }
+}
+
+unsigned int g_uw_pump_events_calls = 0;
+
+void uw_pump_events(void) {
+    SDL_Event ev;
+    if (!g_win) return;
+    g_uw_pump_events_calls++;
+    /* democapture_tick()/demomode_pump() MUST stay universally reachable
+       from here (unlike g_uw_frame_clock_units's own advance -- see
+       uw_advance_game_tick's comment): uw_pump_events() is the one call
+       site reachable from EVERY context in the game (chargen, menus,
+       dungeon movement, ...), not just app_main_loop's own while loop
+       (which doesn't even start running until after chargen/menus are
+       done) -- confirmed live: moving these here too broke demo
+       playback completely (chargen never advanced past the first
+       screen, since demomode_pump() was no longer being called at all
+       during it). */
+    democapture_tick();
+    demomode_pump();
+    /* poll_dungeon_movement_keys() reads physical keyboard state
+       directly (not the SDL event queue), so swallowing key EVENTS
+       below (the dbgui_visible() checks in the SDL_KEYDOWN/TEXTINPUT
+       cases) doesn't stop it on its own -- skip the call entirely
+       while the debug UI owns input, matching how the port on
+       e-model-texturing had to fix the same leak. */
+    if (!dbgui_visible()) {
+        poll_dungeon_movement_keys();
+    }
+
+    if (g_mouseup_deferred) {
+        /* See g_mouseup_deferred's comment. Dispatch the button-up we
+         * held back last call now, one full poll cycle after the
+         * matching button-down. */
+        g_mouseup_deferred = 0;
+        g_mouse_button_held = 0;
+        g_mouse_event_pending = 1;
+        handle_mouse_message(0, 0x202u, 0, g_mouseup_deferred_lparam);
+        return;
+    }
+
+    if (g_keychar_deferred) {
+        /* See g_keychar_deferred's comment. */
+        int c = g_keychar_deferred;
+        g_keychar_deferred = 0;
+        handle_keyboard_message(0, 0x102u, (unsigned int)c);
+        return;
+    }
+
+    while (SDL_PollEvent(&ev)) {
+        /* Records KEYBOARD events only, before any of the game's own
+           filtering/early-returns below, so what gets written matches
+           exactly what a human at the keyboard actually did (democapture
+           does its own synthetic-event check and is a no-op if recording
+           is off). Mouse events are recorded separately, further down,
+           once win_x/win_y have been computed correctly -- see
+           democapture_record_mouse's own call site comment. */
+        democapture_record_event(&ev);
+        switch (ev.type) {
+            case SDL_QUIT:
+                g_running = 0;
+                democapture_shutdown();
+                SDL_DestroyTexture(g_tex);
+                SDL_DestroyRenderer(g_ren);
+                SDL_DestroyWindow(g_win);
+                SDL_Quit();
+                exit(0);
+                break;
+            case SDL_KEYDOWN:
+            case SDL_KEYUP: {
+                /* Debug UI toggle: backtick always works, shown or
+                 * hidden, so the panel can be brought back even while
+                 * it currently owns no input. Swallowed either way --
+                 * no game function is bound to backtick to preserve. */
+                if (ev.type == SDL_KEYDOWN && !ev.key.repeat && ev.key.keysym.sym == SDLK_BACKQUOTE) {
+                    dbgui_toggle();
+                    return;
+                }
+                /* While the debug UI is visible, it owns ALL keyboard
+                 * input -- a debug/dev tool, not meant to be driven
+                 * simultaneously with normal gameplay input. Route and
+                 * swallow rather than also forwarding to the game. */
+                if (dbgui_visible()) {
+                    if (ev.type == SDL_KEYDOWN && !ev.key.repeat) {
+                        dbgui_feed_key((int)ev.key.keysym.sym);
+                    }
+                    return;
+                }
+                /* Physical ESC aborts a running demo file (and is then
+                 * swallowed -- it does NOT also reach the game). Only a
+                 * real keypress does this: uw_inject_key_* stamps
+                 * UW_SYNTH_KEY into keysym.unused, so a demo's own
+                 * "SDLHOLD ESCAPE" won't self-cancel. With no demo
+                 * playing, ESC falls through to the game as normal. */
+                if (ev.type == SDL_KEYDOWN && !ev.key.repeat &&
+                    ev.key.keysym.sym == SDLK_ESCAPE &&
+                    ev.key.keysym.unused != UW_SYNTH_KEY &&
+                    demomode_active()) {
+                    demomode_abort("physical ESC key");
+                    return;
+                }
+                /* In the 3D view (no SHIFT) the WASD / ZXC / 1-3 keys are
+                 * handled by poll_dungeon_movement_keys() from the physical
+                 * key state, not as discrete events -- swallow their key
+                 * events (and their SDL_TEXTINPUT, below) so they neither
+                 * type nor hit the game's stepped move / look handlers.
+                 * With SHIFT held, or in menus, they fall through. */
+                if (in_dungeon_freelook()) {
+                    SDL_Keycode msym = ev.key.keysym.sym;
+                    if (msym == SDLK_a || msym == SDLK_d || msym == SDLK_w ||
+                        msym == SDLK_s || msym == SDLK_x || msym == SDLK_z ||
+                        msym == SDLK_c || msym == SDLK_1 || msym == SDLK_2 ||
+                        msym == SDLK_3) {
+                        return;
+                    }
+                }
+                /* SDL auto-repeats a held key as a stream of SDL_KEYDOWN
+                 * events; the game's menu/chargen "wait for one keypress"
+                 * loops (e.g. wait_for_chargen_field_input) treat every keydown as a
+                 * fresh confirm/select, so a held Enter blasts through
+                 * many unrelated screens in a fraction of a second
+                 * (confirmed via a state-trace: 3 full character-
+                 * generation cycles logged almost instantly). Drop
+                 * repeats so each physical press yields exactly one
+                 * keydown, matching how a deliberate tap actually
+                 * behaves. */
+                if (ev.type == SDL_KEYDOWN && ev.key.repeat) {
+                    break;
+                }
+                int vk = translate_vk(ev.key.keysym.sym);
+                if (vk != 0) {
+                    unsigned int msg = (ev.type == SDL_KEYDOWN) ? 0x100u : 0x101u;
+                    handle_keyboard_message(0, msg, (unsigned int)vk);
+                }
+                /* Backspace/Enter don't come through SDL_TEXTINPUT (that
+                 * event only fires for printable characters), but the
+                 * game's WM_CHAR handler (handle_keyboard_message, message 0x102)
+                 * treats any raw byte value the same way regardless of
+                 * how it arrived, so synthesize it -- deferred to the next
+                 * uw_pump_events() call (see g_keychar_deferred's comment)
+                 * so it doesn't land in DAT_0023c448 in the same poll as
+                 * this keydown's own WM_KEYDOWN message. */
+                if (ev.type == SDL_KEYDOWN) {
+                    if (ev.key.keysym.sym == SDLK_BACKSPACE) {
+                        g_keychar_deferred = 0x08;
+                    } else if (ev.key.keysym.sym == SDLK_RETURN) {
+                        g_keychar_deferred = 0x0D;
+                    }
+                }
+                /* Real Windows delivers WM_KEYDOWN and WM_CHAR as
+                 * separate messages, polled one at a time -- the game's
+                 * input loop (poll_input_event et al) clears its single
+                 * pending-input slot (DAT_0023c448) and re-reads it
+                 * fresh on every poll. SDL instead reports a keydown and
+                 * its matching SDL_TEXTINPUT in the same batch; draining
+                 * both in one uw_pump_events() call let Space's mapped
+                 * button code (VK_SPACE -> 0x4a, a direct assignment)
+                 * get bitwise-ORed with its char code (0x20) in the same
+                 * slot before the game ever polled in between, producing
+                 * neither a clean space char nor a clean button press
+                 * (confirmed: Space did nothing in the name field).
+                 * Stop draining after any key event so its SDL_TEXTINPUT
+                 * counterpart (if any) is left in SDL's own queue for
+                 * the *next* pump call instead, landing on its own
+                 * freshly-cleared poll. */
+                return;
+            }
+            case SDL_TEXTINPUT: {
+                if (dbgui_visible()) {
+                    dbgui_feed_text(ev.text.text);
+                    return;
+                }
+                /* Real typed characters (respects keyboard layout/shift
+                 * state) -- forwarded as WM_CHAR (0x102), matching
+                 * handle_keyboard_message's real-text-input path. Only ever one
+                 * pending-input slot is read per poll (see the keydown
+                 * case above), so stop after this event too. */
+                for (const char *p = ev.text.text; *p; p++) {
+                    unsigned char c = (unsigned char)*p;
+                    /* In 3D free-look the WASD/ZXC/1-3 keys are polled by
+                       poll_dungeon_movement_keys(), not typed. (SHIFT+WASD
+                       makes in_dungeon_freelook() false, so uppercase
+                       WASD still reaches the stepped move handler.) */
+                    if (in_dungeon_freelook() &&
+                        (c=='a'||c=='d'||c=='w'||c=='s'||c=='x'||c=='z'||c=='c'||
+                         c=='1'||c=='2'||c=='3')) {
+                        continue;
+                    }
+                    if (c < 0x80) {
+                        handle_keyboard_message(0, 0x102u, (unsigned int)c);
+                    }
+                }
+                return;
+            }
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONUP:
+            case SDL_MOUSEMOTION: {
+                /* The real device's stylus reports taps in the portrait
+                 * "hardware" framebuffer's own 240x320 coordinate space
+                 * (see the HW_W/HW_H comment up top), packed as a real
+                 * Windows lParam (y<<16)|x -- handle_mouse_message (recovered from
+                 * the original binary's mouse message-dispatch table,
+                 * separate from handle_keyboard_message's keyboard-only table) does
+                 * its own portrait Y flip internally, so just convert SDL's
+                 * landscape window coordinates into the same un-rotated
+                 * portrait space GXEndDraw's blit reads from:
+                 * portrait_x = landscape_y, portrait_y = (HW_H-1) -
+                 * landscape_x (inverse of GXEndDraw's rotation -- note
+                 * HW_H, the portrait *height*, here: landscape_x ranges
+                 * over the full 0..319 GX_W span, which is what portrait_y
+                 * must cover too). Go through SDL_RenderWindowToLogical
+                 * rather than a fixed /2 scale since the window is
+                 * resizable.
+                 *
+                 * ev.button.x/y (and ev.motion.x/y) come back at half the
+                 * scale SDL_GetWindowSize/SDL_GetRendererOutputSize agree
+                 * on, on at least one real HiDPI Mac setup tested (SDL2
+                 * 2.32.4) -- confirmed by comparing against
+                 * SDL_GetGlobalMouseState() - SDL_GetWindowPosition(),
+                 * which does NOT show the same halving. Use that instead
+                 * of the raw event fields. */
+                int win_x, win_y;
+                if (ev.button.which == UW_SYNTH_MOUSE) {
+                    /* injected click (uw_inject_mouse_*): these never warp
+                       the real OS cursor (see uw_inject_mouse_down's
+                       comment), and SDL_GetGlobalMouseState() doesn't
+                       reflect a synthetic position anyway (and doesn't
+                       work at all under the dummy video driver), so take
+                       the event's own window-point coords directly --
+                       that's the actual, and only, source of truth for
+                       where an injected click lands. */
+                    win_x = (ev.type == SDL_MOUSEMOTION) ? ev.motion.x : ev.button.x;
+                    win_y = (ev.type == SDL_MOUSEMOTION) ? ev.motion.y : ev.button.y;
+                } else {
+                    int gx = 0, gy = 0, wx = 0, wy = 0;
+                    SDL_GetGlobalMouseState(&gx, &gy);
+                    SDL_GetWindowPosition(g_win, &wx, &wy);
+                    win_x = gx - wx;
+                    win_y = gy - wy;
+                }
+                /* Record with the corrected win_x/win_y above, not the
+                   raw event fields -- see this block's own comment on why
+                   ev.motion.x/y and ev.button.x/y can't be trusted
+                   directly (HiDPI half-scale). Recording the raw fields
+                   instead produced a demo file whose SDLMOVE/SDLDOWN/etc
+                   lines warped the cursor to half the real recorded
+                   distance, replaying every drag/move short of where it
+                   actually went -- user-reported live. */
+                democapture_record_mouse(ev.type, ev.button.button, ev.button.which, win_x, win_y);
+                float lx, ly;
+                SDL_RenderWindowToLogical(g_ren, win_x, win_y, &lx, &ly);
+                int landscape_x = (int)lx, landscape_y = (int)ly;
+                if (dbgui_visible()) {
+                    if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
+                        dbgui_feed_mouse_down(landscape_x, landscape_y);
+                    }
+                    return;
+                }
+                int portrait_x = landscape_y;
+                int portrait_y = (HW_H - 1) - landscape_x;
+                int lparam = (portrait_y << 16) | (portrait_x & 0xffff);
+                int is_right = (ev.type != SDL_MOUSEMOTION &&
+                                ev.button.button == SDL_BUTTON_RIGHT);
+                unsigned int msg =
+                      (ev.type == SDL_MOUSEMOTION)     ? 0x200u
+                    : is_right
+                        ? ((ev.type == SDL_MOUSEBUTTONDOWN) ? 0x204u : 0x205u)   /* WM_RBUTTON* */
+                        : ((ev.type == SDL_MOUSEBUTTONDOWN) ? 0x201u : 0x202u);  /* WM_LBUTTON* */
+                if (ev.type == SDL_MOUSEBUTTONDOWN) {
+                    fprintf(stderr, "[mouse] %s click win=(%d,%d) landscape=(%d,%d) portrait=(%d,%d) %s\n",
+                            is_right ? "right" : "left",
+                            win_x, win_y, landscape_x, landscape_y, portrait_x, portrait_y,
+                            (portrait_x > 200 && portrait_x < 0xf0) ? "IN on-screen-keyboard strip" : "outside keyboard strip");
+                }
+                if (ev.type != SDL_MOUSEMOTION &&
+                    ev.button.button != SDL_BUTTON_LEFT &&
+                    ev.button.button != SDL_BUTTON_RIGHT) {
+                    break;
+                }
+                if (is_right) {
+                    /* Right-click = interact (handle_game_view_click's right-button
+                       branch). Dispatch down and up straight through --
+                       none of the left button's click-hold-to-walk
+                       deferral machinery applies.
+
+                       But keep g_mouse_button_held set for the whole hold
+                       so the tail of uw_pump_events re-arms
+                       g_mouse_event_pending every pump: handle_mouse_message's
+                       WM_RBUTTONDOWN only latches DAT_002506ab, and the
+                       one-shot g_mouse_event_pending it sets here can be
+                       consumed+cleared by an unrelated Ordinal_864 caller
+                       (a redraw/flush) before main_loop_hud_flush's
+                       poll_input_bindings ever peeks -- then, with no
+                       further SDL event until release, the interact never
+                       fires (the "right-click only registers if I also
+                       move the mouse" symptom: motion events were what
+                       kept re-signalling). */
+                    if (ev.type == SDL_MOUSEBUTTONDOWN)
+                        g_mouse_button_held = 1;
+                    else
+                        g_mouse_button_held = 0;
+                    g_mouse_event_pending = 1;
+                    handle_mouse_message(0, msg, 0, lparam);
+                    return;
+                }
+                if (ev.type == SDL_MOUSEBUTTONUP) {
+                    /* Hold this back one poll cycle -- see
+                     * g_mouseup_deferred's comment. Still report a
+                     * pending message this call (without touching
+                     * DAT_0023c63c yet) so callers that only consult
+                     * poll_mouse_event() after seeing "a message
+                     * arrived" get a chance to read the still-held-down
+                     * state first. */
+                    g_mouseup_deferred = 1;
+                    g_mouseup_deferred_lparam = lparam;
+                    g_mouse_event_pending = 1;
+                    return;
+                }
+                if (ev.type == SDL_MOUSEBUTTONDOWN) {
+                    g_mouse_button_held = 1;
+                }
+                g_mouse_event_pending = 1;
+                handle_mouse_message(0, msg, 0, lparam);
+                return;
+            }
+            case SDL_WINDOWEVENT:
+                if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+                    handle_keyboard_message(0, 7, 0);
+                else if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+                    handle_keyboard_message(0, 8, 0);
+                break;
+        }
+    }
+
+    /* No new SDL event this call -- see g_mouse_button_held's comment
+     * for why we still need to signal "a message is pending" here
+     * whenever the button remains physically held. */
+    if (g_mouse_button_held) {
+        g_mouse_event_pending = 1;
+    }
+}
+
+int GXOpenDisplay(void *hwnd, unsigned int flags) {
+    (void)hwnd;
+    (void)flags;
+    fprintf(stderr, "[gx] GXOpenDisplay: opening %dx%d SDL window (game's GAPI display init)\n",
+            GX_W, GX_H);
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
+        return 0;
+    }
+    g_win = SDL_CreateWindow("Ultima Underworld", SDL_WINDOWPOS_CENTERED,
+                              SDL_WINDOWPOS_CENTERED, GX_W * 2, GX_H * 2,
+                              SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    if (!g_win) {
+        fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
+        return 0;
+    }
+    {
+        int wx = 0, wy = 0, ww = 0, wh = 0;
+        SDL_GetWindowPosition(g_win, &wx, &wy);
+        SDL_GetWindowSize(g_win, &ww, &wh);
+        int numDisplays = SDL_GetNumVideoDisplays();
+        fprintf(stderr, "[gx] window created at pos=(%d,%d) size=(%d,%d), %d display(s)\n", wx, wy, ww, wh, numDisplays);
+        for (int i = 0; i < numDisplays; i++) {
+            SDL_Rect bounds;
+            float ddpi = 0, hdpi = 0, vdpi = 0;
+            SDL_GetDisplayBounds(i, &bounds);
+            SDL_GetDisplayDPI(i, &ddpi, &hdpi, &vdpi);
+            fprintf(stderr, "[gx] display %d: bounds=(%d,%d,%d,%d) dpi=(%.1f,%.1f,%.1f)\n",
+                    i, bounds.x, bounds.y, bounds.w, bounds.h, ddpi, hdpi, vdpi);
+        }
+    }
+    SDL_StartTextInput();
+    /* VSYNC matters beyond just avoiding tearing here: several original
+     * routines (e.g. fade_in's fade-in-from-black transition) pace
+     * themselves purely by how long each GXEndDraw-equivalent present
+     * call naturally takes, with no explicit delay of their own -- real
+     * WinCE hardware's slow per-pixel math and real hardware blit made
+     * that implicitly visible (confirmed: fade_in's 8-step fade
+     * plus final restore pass completed in 0ms without this, i.e.
+     * instantly/imperceptibly, on modern hardware). Real display refresh
+     * pacing via vsync restores roughly the intended per-step timing
+     * without adding an artificial sleep/delay this decompile never had. */
+    g_ren = SDL_CreateRenderer(g_win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!g_ren) g_ren = SDL_CreateRenderer(g_win, -1, SDL_RENDERER_PRESENTVSYNC);
+    if (!g_ren) g_ren = SDL_CreateRenderer(g_win, -1, 0);
+    {
+        SDL_RendererInfo info;
+        SDL_GetRendererInfo(g_ren, &info);
+        fprintf(stderr, "[gx] renderer=%s vsync=%s\n", info.name,
+                (info.flags & SDL_RENDERER_PRESENTVSYNC) ? "yes" : "no");
+    }
+    SDL_RenderSetLogicalSize(g_ren, GX_W, GX_H);
+    g_tex = SDL_CreateTexture(g_ren, SDL_PIXELFORMAT_RGB565,
+                               SDL_TEXTUREACCESS_STREAMING, GX_W, GX_H);
+    memset(g_framebuffer, 0, sizeof(g_framebuffer));
+    demomode_init();
+    democapture_init();
+    return 1;
+}
+
+int uw_take_mouse_event_pending(void) {
+    int had = g_mouse_event_pending;
+    g_mouse_event_pending = 0;
+    return had;
+}
+
+int uw_inject_mouse_down(int window_x, int window_y) {
+    /* For scripted/unattended testing: pushes a genuine SDL_MOUSEBUTTONDOWN
+     * event at the given point (window points, not logical/portrait
+     * coordinates), so this exercises the exact same code path a real
+     * click does -- unlike demomode's CLICK command, which calls
+     * handle_mouse_message directly and bypasses uw_pump_events (and therefore
+     * g_mouse_event_pending) entirely. Deliberately does NOT warp the
+     * real OS cursor: gx_stub.c's own mouse handling reads the click
+     * position from the event's own x/y fields for any event tagged
+     * UW_SYNTH_MOUSE (see that check's comment), not from
+     * SDL_GetGlobalMouseState(), so setting that internal/event cursor
+     * position is enough -- a real SDL_WarpMouseInWindow would move the
+     * host's actual mouse pointer, which stomps on whatever the user (or
+     * another test running concurrently in its own window) is doing with
+     * the real cursor at the time. Split from the button-up half (see
+     * uw_inject_mouse_up) so tests can insert a real multi-poll gap
+     * between them, matching how an actual held click behaves -- a
+     * same-instant down+up pair hides bugs that only show up once
+     * genuine wall-clock time (and therefore multiple uw_pump_events()
+     * calls with nothing new queued in between) separates the two. */
+    if (!g_win) return 0;
+    SDL_Event down = {0};
+    down.type = SDL_MOUSEBUTTONDOWN;
+    down.button.button = SDL_BUTTON_LEFT;
+    down.button.which = UW_SYNTH_MOUSE;
+    down.button.x = window_x;
+    down.button.y = window_y;
+    SDL_PushEvent(&down);
+    return 1;
+}
+
+int uw_inject_mouse_up(int window_x, int window_y) {
+    /* See uw_inject_mouse_down's comment. */
+    if (!g_win) return 0;
+    SDL_Event up = {0};
+    up.type = SDL_MOUSEBUTTONUP;
+    up.button.button = SDL_BUTTON_LEFT;
+    up.button.which = UW_SYNTH_MOUSE;
+    up.button.x = window_x;
+    up.button.y = window_y;
+    SDL_PushEvent(&up);
+    return 1;
+}
+
+int uw_inject_mouse_click(int window_x, int window_y) {
+    /* Instantaneous down+up, both already queued before the game ever
+     * polls -- see uw_inject_mouse_down's comment for why that's not
+     * fully representative of a real click's timing. */
+    if (!uw_inject_mouse_down(window_x, window_y)) return 0;
+    return uw_inject_mouse_up(window_x, window_y);
+}
+
+int uw_inject_mouse_rclick(int window_x, int window_y) {
+    /* Right-button down+up (interact). See uw_inject_mouse_down. */
+    if (!g_win) return 0;
+    for (int up = 0; up < 2; up++) {
+        SDL_Event e = {0};
+        e.type = up ? SDL_MOUSEBUTTONUP : SDL_MOUSEBUTTONDOWN;
+        e.button.button = SDL_BUTTON_RIGHT;
+        e.button.which = UW_SYNTH_MOUSE;
+        e.button.x = window_x;
+        e.button.y = window_y;
+        SDL_PushEvent(&e);
+    }
+    return 1;
+}
+
+int uw_inject_mouse_rdown(int window_x, int window_y) {
+    /* Right-button half of uw_inject_mouse_rdown/rup, split the same way
+       uw_inject_mouse_down/up split the left-button click, for testing a
+       real held right-button drag (grab an object, hold, move, release
+       elsewhere) instead of an instantaneous click. */
+    if (!g_win) return 0;
+    SDL_Event down = {0};
+    down.type = SDL_MOUSEBUTTONDOWN;
+    down.button.button = SDL_BUTTON_RIGHT;
+    down.button.which = UW_SYNTH_MOUSE;
+    down.button.x = window_x;
+    down.button.y = window_y;
+    SDL_PushEvent(&down);
+    return 1;
+}
+
+int uw_inject_mouse_rup(int window_x, int window_y) {
+    if (!g_win) return 0;
+    SDL_Event up = {0};
+    up.type = SDL_MOUSEBUTTONUP;
+    up.button.button = SDL_BUTTON_RIGHT;
+    up.button.which = UW_SYNTH_MOUSE;
+    up.button.x = window_x;
+    up.button.y = window_y;
+    SDL_PushEvent(&up);
+    return 1;
+}
+
+int uw_inject_mouse_motion(int window_x, int window_y) {
+    if (!g_win) return 0;
+    SDL_Event motion = {0};
+    motion.type = SDL_MOUSEMOTION;
+    motion.motion.which = UW_SYNTH_MOUSE;
+    motion.motion.x = window_x;
+    motion.motion.y = window_y;
+    SDL_PushEvent(&motion);
+    return 1;
+}
+
+int uw_inject_key_down(int sdl_keycode) {
+    /* For scripted testing of the keyboard path: push a genuine
+     * SDL_KEYDOWN (repeat=0) and, for a printable key, the matching
+     * SDL_TEXTINPUT -- exactly what a real key press produces -- so
+     * uw_pump_events()'s full key handling runs (unlike demomode's HOLD,
+     * which calls handle_keyboard_message directly). Pair with
+     * uw_inject_key_up after a real multi-poll gap. Also marks the key
+     * held in g_synth_scancode_held, since SDL_PushEvent does not update
+     * SDL_GetKeyboardState() (which poll_dungeon_movement_keys reads). */
+    if (!g_win) return 0;
+    SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    if (sc > 0 && sc < SDL_NUM_SCANCODES) g_synth_scancode_held[sc] = 1;
+    SDL_Event kd = {0};
+    kd.type = SDL_KEYDOWN;
+    kd.key.state = SDL_PRESSED;
+    kd.key.repeat = 0;
+    kd.key.keysym.sym = (SDL_Keycode)sdl_keycode;
+    kd.key.keysym.scancode = sc;
+    kd.key.keysym.unused = UW_SYNTH_KEY;
+    SDL_PushEvent(&kd);
+    if (sdl_keycode >= 32 && sdl_keycode < 127) {
+        SDL_Event ti = {0};
+        ti.type = SDL_TEXTINPUT;
+        ti.text.text[0] = (char)sdl_keycode;
+        ti.text.text[1] = '\0';
+        SDL_PushEvent(&ti);
+    }
+    return 1;
+}
+
+int uw_inject_key_up(int sdl_keycode) {
+    /* See uw_inject_key_down. */
+    if (!g_win) return 0;
+    SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    if (sc > 0 && sc < SDL_NUM_SCANCODES) g_synth_scancode_held[sc] = 0;
+    SDL_Event ku = {0};
+    ku.type = SDL_KEYUP;
+    ku.key.state = SDL_RELEASED;
+    ku.key.repeat = 0;
+    ku.key.keysym.sym = (SDL_Keycode)sdl_keycode;
+    ku.key.keysym.scancode = sc;
+    ku.key.keysym.unused = UW_SYNTH_KEY;
+    SDL_PushEvent(&ku);
+    return 1;
+}
+
+void uw_clear_synth_scancode(int sdl_keycode) {
+    /* Clear a synthetic "held" scancode without pushing a real KEYUP event
+     * -- for demomode_abort(), which deliberately skips uw_inject_key_up on
+     * an aborted SDLHOLD (see its own comment: the synthetic keyup would
+     * just re-enter this same event path). Without this, aborting mid-hold
+     * leaves g_synth_scancode_held[sc] stuck set (most visibly, a SHIFT
+     * held via a "SDLHOLD SHIFT+<key>" combo would permanently disable
+     * in_dungeon_freelook() for the rest of the run). */
+    if (!g_win) return;
+    SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    if (sc > 0 && sc < SDL_NUM_SCANCODES) g_synth_scancode_held[sc] = 0;
+}
+
+int uw_save_screenshot(const char *path) {
+    if (!g_ren) return 0;
+    int w = 0, h = 0;
+    SDL_GetRendererOutputSize(g_ren, &w, &h);
+    /* RGB24 (no alpha) rather than ARGB8888 -- some BMP readers (macOS's
+       `sips` among them) choke on 32bpp BMPs with an alpha channel. */
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, w, h, 24, SDL_PIXELFORMAT_RGB24);
+    if (!surf) {
+        fprintf(stderr, "[gx] screenshot: SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return 0;
+    }
+    if (SDL_RenderReadPixels(g_ren, NULL, SDL_PIXELFORMAT_RGB24, surf->pixels, surf->pitch) != 0) {
+        fprintf(stderr, "[gx] screenshot: SDL_RenderReadPixels failed: %s\n", SDL_GetError());
+        SDL_FreeSurface(surf);
+        return 0;
+    }
+    int ok = SDL_SaveBMP(surf, path) == 0;
+    if (!ok) {
+        fprintf(stderr, "[gx] screenshot: SDL_SaveBMP failed: %s\n", SDL_GetError());
+    } else {
+        fprintf(stderr, "[gx] screenshot saved to %s (%dx%d)\n", path, w, h);
+    }
+    SDL_FreeSurface(surf);
+    return ok;
+}
+
+/* Saves a rectangular region of a raw RGB565 buffer (e.g. a slice of
+ * g_uw_framebuffer) to a standalone 24bpp BMP file -- same technique
+ * as uw_save_screenshot above (build an SDL surface, SDL_SaveBMP it),
+ * just reading from an arbitrary RGB565 source buffer instead of the
+ * SDL renderer's own presented output. `stride_pixels` is the source
+ * buffer's own row width in pixels (not necessarily equal to `w`, if
+ * dumping a sub-rectangle out of a larger buffer like the game's own
+ * 320-wide framebuffer). */
+int uw_save_rgb565_region_bmp(const char *path, const unsigned short *pixels,
+                               int w, int h, int stride_pixels) {
+    if (!pixels || w <= 0 || h <= 0) return 0;
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, w, h, 24, SDL_PIXELFORMAT_RGB24);
+    if (!surf) {
+        fprintf(stderr, "[gx] sprite-dump: SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return 0;
+    }
+    for (int y = 0; y < h; y++) {
+        unsigned char *row = (unsigned char *)surf->pixels + y * surf->pitch;
+        const unsigned short *src = pixels + (size_t)y * stride_pixels;
+        for (int x = 0; x < w; x++) {
+            unsigned short px = src[x];
+            unsigned r = (px >> 11) & 0x1f;
+            unsigned g = (px >> 5) & 0x3f;
+            unsigned b = px & 0x1f;
+            row[x * 3 + 0] = (unsigned char)(r * 255 / 31);
+            row[x * 3 + 1] = (unsigned char)(g * 255 / 63);
+            row[x * 3 + 2] = (unsigned char)(b * 255 / 31);
+        }
+    }
+    int ok = SDL_SaveBMP(surf, path) == 0;
+    if (!ok) {
+        fprintf(stderr, "[gx] sprite-dump: SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    } else {
+        fprintf(stderr, "[gx] sprite-dump saved to %s (%dx%d)\n", path, w, h);
+    }
+    SDL_FreeSurface(surf);
+    return ok;
+}
+
+static void debug_mkdir_p(const char *path) {
+    char buf[300];
+    size_t len = strlen(path);
+    if (len >= sizeof(buf)) return;
+    strcpy(buf, path);
+    for (char *p = buf + 1; *p; p++) {
+        if (*p == '/') {
+            *p = '\0';
+            mkdir(buf, 0755);
+            *p = '/';
+        }
+    }
+    mkdir(buf, 0755);
+}
+
+/* Public wrapper so uw.c's own debug tools (e.g. the sprite-by-frame
+ * dumper) can ensure their output directory exists without duplicating
+ * this logic. */
+void uw_debug_mkdir_p(const char *path) {
+    debug_mkdir_p(path);
+}
+
+void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
+                             const unsigned char *entry_data, int entry_size) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DUMP_GR");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+
+    /* See the header comment: byte0=format, byte1=width, byte2=height,
+       bytes3-4 unknown, then width*height raw palette-index pixels.
+       Confirmed via bitmap_blit_to_framebuffer's real param semantics
+       (its param_4/height arg is clipped against 200, param_5/width arg
+       against 0x140=320) traced back through draw_menu_item_list's blit call
+       and populate_menu_button_bitmap_entry's header-byte-to-record-field assignment -- a
+       width<->height swap here previously produced transposed BMPs for
+       every non-square entry. */
+    if (entry_size < 5) return;
+    int width = entry_data[1];
+    int height = entry_data[2];
+    int payload_len = entry_size - 5;
+    if (width == 0 || height == 0 || width * height > payload_len) {
+        fprintf(stderr, "[gr-dump] %s entry %d: header dims %dx%d don't fit a %d-byte payload -- skipped\n",
+                gr_name, entry_index, width, height, payload_len);
+        return;
+    }
+
+    char dir[280];
+    snprintf(dir, sizeof(dir), "debug/gr/%s", gr_name);
+    debug_mkdir_p(dir);
+
+    char path[320];
+    snprintf(path, sizeof(path), "%s/%03d.bmp", dir, entry_index);
+
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, width, height, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!surf) {
+        fprintf(stderr, "[gr-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    unsigned char *pal = uw_get_default_palette(gr_name);
+    SDL_Color colors[256];
+    for (int i = 0; i < 256; i++) {
+        colors[i].r = pal[i * 3 + 0];
+        colors[i].g = pal[i * 3 + 1];
+        colors[i].b = pal[i * 3 + 2];
+        colors[i].a = 255;
+    }
+    SDL_SetPaletteColors(surf->format->palette, colors, 0, 256);
+
+    const unsigned char *src = entry_data + 5;
+    for (int y = 0; y < height; y++) {
+        memcpy((unsigned char *)surf->pixels + y * surf->pitch, src + y * width, width);
+    }
+
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[gr-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    }
+    SDL_FreeSurface(surf);
+}
+
+void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
+                                   const unsigned char *pixels, int width, int height) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DUMP_CRIT");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+    if (width <= 0 || height <= 0 || !pixels) return;
+
+    /* decode_critter_sprite_page re-decodes the same (type,tier,direction,
+       frame) combo every single frame it's on screen -- dedupe by key so
+       a normal play session doesn't rewrite the same file thousands of
+       times. */
+    static int seen_keys[4096];
+    static int seen_count = 0;
+    int key = ((type & 0xff) << 24) ^ ((tier & 0xff) << 16) ^ ((direction & 0xff) << 8) ^ (frame & 0xff);
+    if (!getenv("UW_DEBUG_DUMP_CRIT_ALL")) {
+        for (int i = 0; i < seen_count; i++) {
+            if (seen_keys[i] == key) return;
+        }
+        if (seen_count < (int)(sizeof(seen_keys) / sizeof(seen_keys[0]))) {
+            seen_keys[seen_count++] = key;
+        }
+    }
+
+    char dir[280];
+    snprintf(dir, sizeof(dir), "debug/crit/type%02d/tier%d", type, tier);
+    debug_mkdir_p(dir);
+
+    char path[320];
+    snprintf(path, sizeof(path), "%s/dir%d_frame%d.bmp", dir, direction, frame);
+
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, width, height, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!surf) {
+        fprintf(stderr, "[crit-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    unsigned char *pal = uw_get_default_palette("crit");
+    if (getenv("UW_DEBUG_DUMP_CRIT_PAL")) {
+        int idxs[] = {0,1,131,133,148,152,154,156,158,169,171,187,229,233};
+        fprintf(stderr, "[crit-dump] palette sample:");
+        for (size_t i = 0; i < sizeof(idxs)/sizeof(idxs[0]); i++) {
+            int k = idxs[i];
+            fprintf(stderr, " [%d]=(%d,%d,%d)", k, pal[k*3], pal[k*3+1], pal[k*3+2]);
+        }
+        fprintf(stderr, "\n");
+    }
+    SDL_Color colors[256];
+    for (int i = 0; i < 256; i++) {
+        colors[i].r = pal[i * 3 + 0];
+        colors[i].g = pal[i * 3 + 1];
+        colors[i].b = pal[i * 3 + 2];
+        colors[i].a = 255;
+    }
+    SDL_SetPaletteColors(surf->format->palette, colors, 0, 256);
+
+    for (int y = 0; y < height; y++) {
+        memcpy((unsigned char *)surf->pixels + y * surf->pitch, pixels + y * width, width);
+    }
+
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[crit-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    } else {
+        fprintf(stderr, "[crit-dump] wrote %s (%dx%d)\n", path, width, height);
+    }
+    SDL_FreeSurface(surf);
+}
+
+void uw_debug_dump_tmap(int level, const unsigned char *tile_data) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DUMP_TMAP");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+
+    /* One directory per run (same convention as debug_framebuffer_dump's
+       drawdumps/<ts>/), created lazily. */
+    static char run_dir[300];
+    static int run_dir_ready = 0;
+    if (!run_dir_ready) {
+        time_t now = time(NULL);
+        struct tm tm_now;
+        localtime_r(&now, &tm_now);
+        char ts[32];
+        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
+        snprintf(run_dir, sizeof(run_dir), "debug/tmap/%s", ts);
+        debug_mkdir_p(run_dir);
+        run_dir_ready = 1;
+    }
+
+    static unsigned int counter = 0;
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%03u_level%02d.bmp", run_dir, counter++, level);
+
+    /* 64x64, one pixel per tile: index = x + y*64 (see set_player_tile_position's
+       `param_1 + param_2*0x40` tile-index arithmetic in uw.c -- x is the
+       fast-varying/column axis, y the row). 4 bytes per tile; only byte 0's
+       low nibble (the tile-type field) matters here -- 0 is the classic UW
+       "solid rock, no floor" type, 1-9 are open floor and its diagonal/
+       slope variants (all "not solid" for this dump's purposes). */
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, 64, 64, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!surf) {
+        fprintf(stderr, "[tmap-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+    SDL_Color colors[256] = {0};
+    colors[0].r = colors[0].g = colors[0].b = 0;   /* solid -> black */
+    colors[1].r = colors[1].g = colors[1].b = 255; /* everything else -> white */
+    SDL_SetPaletteColors(surf->format->palette, colors, 0, 2);
+
+    unsigned char *pixels = (unsigned char *)surf->pixels;
+    for (int y = 0; y < 64; y++) {
+        unsigned char *row = pixels + y * surf->pitch;
+        for (int x = 0; x < 64; x++) {
+            int tile_type = tile_data[(x + y * 64) * 4] & 0xf;
+            row[x] = (tile_type == 0) ? 0 : 1;
+        }
+    }
+
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[tmap-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    } else {
+        fprintf(stderr, "[tmap-dump] wrote %s\n", path);
+    }
+    SDL_FreeSurface(surf);
+}
+
+void uw_debug_dump_revealmap(const unsigned char *reveal_data) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DUMP_REVEALMAP");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+
+    static char run_dir[300];
+    static int run_dir_ready = 0;
+    if (!run_dir_ready) {
+        time_t now = time(NULL);
+        struct tm tm_now;
+        localtime_r(&now, &tm_now);
+        char ts[32];
+        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
+        snprintf(run_dir, sizeof(run_dir), "debug/revealmap/%s", ts);
+        debug_mkdir_p(run_dir);
+        run_dir_ready = 1;
+    }
+
+    static unsigned int counter = 0;
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%03u.bmp", run_dir, counter++);
+
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, 64, 64, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!surf) {
+        fprintf(stderr, "[revealmap-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+    SDL_Color colors[256] = {0};
+    colors[0].r = colors[0].g = colors[0].b = 0;   /* unrevealed -> black */
+    colors[1].r = colors[1].g = colors[1].b = 255; /* revealed -> white */
+    SDL_SetPaletteColors(surf->format->palette, colors, 0, 2);
+
+    unsigned char *pixels = (unsigned char *)surf->pixels;
+    for (int y = 0; y < 64; y++) {
+        unsigned char *row = pixels + y * surf->pitch;
+        for (int x = 0; x < 64; x++) {
+            row[x] = (reveal_data[x + y * 64] != 0) ? 1 : 0;
+        }
+    }
+
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[revealmap-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    } else {
+        fprintf(stderr, "[revealmap-dump] wrote %s\n", path);
+    }
+    SDL_FreeSurface(surf);
+}
+
+/* Shared by debug_framebuffer_dump and uw_debug_dump_3d_face below --
+   both just want "snapshot g_uw_framebuffer to this path as a BMP",
+   differing only in when they're gated/named. */
+static void debug_save_framebuffer_bmp(const char *path, const char *log_tag) {
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, GX_W, GX_H, 16, SDL_PIXELFORMAT_RGB565);
+    if (!surf) {
+        fprintf(stderr, "[%s] SDL_CreateRGBSurfaceWithFormat failed: %s\n", log_tag, SDL_GetError());
+        return;
+    }
+    memcpy(surf->pixels, g_uw_framebuffer, (size_t)GX_W * GX_H * 2);
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[%s] SDL_SaveBMP failed for %s: %s\n", log_tag, path, SDL_GetError());
+    }
+    SDL_FreeSurface(surf);
+}
+
+void debug_framebuffer_dump(const char *tag) {
+    static int enabled = -1;
+    static unsigned int every = 1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DRAW");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+        /* UW_DEBUG_DRAW_EVERY=N: only actually write every Nth dump
+           (still counting all of them, so filenames stay a stable
+           stride). Lets a huge sequence -- e.g. a full-level automap
+           fill, ~30k pixel ops -- be sampled down to a manageable
+           number of BMPs. Unset / <=1 means dump every call. */
+        const char *ev = getenv("UW_DEBUG_DRAW_EVERY");
+        if (ev && ev[0]) {
+            long n = strtol(ev, NULL, 10);
+            if (n > 1) every = (unsigned int)n;
+        }
+    }
+    if (!enabled) return;
+
+    static unsigned int call_no = 0;
+    if ((call_no++ % every) != 0) return;
+
+    /* One directory per run, named for when the run started; every dump
+       this process makes lands under it. Created lazily so a run that
+       never draws doesn't leave an empty folder behind. */
+    static char run_dir[300];
+    static int run_dir_ready = 0;
+    if (!run_dir_ready) {
+        time_t now = time(NULL);
+        struct tm tm_now;
+        localtime_r(&now, &tm_now);
+        char ts[32];
+        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
+        snprintf(run_dir, sizeof(run_dir), "debug/drawdumps/%s", ts);
+        debug_mkdir_p(run_dir);
+        run_dir_ready = 1;
+    }
+
+    static unsigned int counter = 0;
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", run_dir, counter++, tag ? tag : "draw");
+
+    /* g_uw_framebuffer is the game's internal 320x240 RGB565 software
+       framebuffer that every graphics.c draw primitive writes into (see
+       its declaration comment in uw.c) -- already landscape-oriented, no
+       rotation needed (unlike g_framebuffer/g_display_buf below, which are
+       the portrait "hardware" buffer this gets flushed to later). */
+    debug_save_framebuffer_bmp(path, "draw-dump");
+}
+
+/* Debug tool: armed by the "dump_3d_frame" button in the UW_MODEL_TUNER
+   debug panel (dbgui_field_button, see debug_ui.c) via
+   uw_debug_request_3d_frame_dump() -- captures every individual 3D face
+   raster_triangle call for exactly the next render_visible_tile_list()
+   pass (uw.c, right after each raster_triangle call), then disarms
+   itself (uw_debug_3d_frame_dump_finish(), called once at the end of
+   that same pass). Unlike UW_DEBUG_DRAW (every 2D primitive, for a
+   whole run, env-var gated), this is a one-shot triggered live from the
+   debug UI: point the camera at whatever object/angle is being
+   investigated, press the button, get that one frame's complete 3D
+   paint-order sequence under debug/facedumps/<ts>_<n>/, one BMP per
+   face. Each press gets its own fresh, separately-numbered folder
+   (rather than one folder per process with the counter running across
+   every press) -- comparing two captures side by side, or telling where
+   one press's sequence ends and the next begins, doesn't require
+   cross-referencing the stderr log first. */
+static int g_dump_3d_frame_active = 0;
+/* -1 = never armed yet this process; otherwise the number of faces the
+   MOST RECENTLY COMPLETED capture actually wrote -- surfaced on the
+   debug panel's button row (see uw.c's tuner block) so pressing it has
+   a visible result even though the capture itself is silent (just BMPs
+   landing on disk, nothing drawn on screen). Without this, a press
+   looks identical whether it wrote 90 files or zero. */
+static int g_dump_3d_frame_last_count = -1;
+static unsigned int g_dump_3d_frame_counter = 0;
+static char g_dump_3d_frame_run_dir[300];
+
+void uw_debug_request_3d_frame_dump(void) {
+    static unsigned int capture_index = 0;
+    time_t now = time(NULL);
+    struct tm tm_now;
+    localtime_r(&now, &tm_now);
+    char ts[32];
+    strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
+    snprintf(g_dump_3d_frame_run_dir, sizeof(g_dump_3d_frame_run_dir),
+             "debug/facedumps/%s_%03u", ts, capture_index++);
+    debug_mkdir_p(g_dump_3d_frame_run_dir);
+    g_dump_3d_frame_counter = 0;
+    g_dump_3d_frame_active = 1;
+    fprintf(stderr, "[face-dump] requested -- capturing every 3D face draw for the next render pass into %s\n",
+            g_dump_3d_frame_run_dir);
+}
+
+void uw_debug_dump_3d_face(const char *tag) {
+    if (!g_dump_3d_frame_active) return;
+
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", g_dump_3d_frame_run_dir, g_dump_3d_frame_counter++, tag ? tag : "face");
+    debug_save_framebuffer_bmp(path, "face-dump");
+}
+
+int uw_debug_3d_frame_dump_finish(void) {
+    if (!g_dump_3d_frame_active) return -1;
+    g_dump_3d_frame_last_count = (int)g_dump_3d_frame_counter;
+    fprintf(stderr, "[face-dump] frame capture complete -- %d faces written to %s\n",
+            g_dump_3d_frame_last_count, g_dump_3d_frame_run_dir);
+    g_dump_3d_frame_active = 0;
+    return g_dump_3d_frame_last_count;
+}
+
+const char *uw_debug_3d_frame_dump_last_dir(void) {
+    return g_dump_3d_frame_run_dir;
+}
+
+int GXCloseDisplay(void) {
+    fprintf(stderr, "[gx] GXCloseDisplay\n");
+    if (g_tex) { SDL_DestroyTexture(g_tex); g_tex = NULL; }
+    if (g_ren) { SDL_DestroyRenderer(g_ren); g_ren = NULL; }
+    if (g_win) { SDL_DestroyWindow(g_win); g_win = NULL; }
+    return 1;
+}
+
+void *GXBeginDraw(void) {
+    static int logged = 0;
+    if (!logged) {
+        fprintf(stderr, "[gx] GXBeginDraw: game locking framebuffer for the first time "
+                        "(further calls not logged, this runs every frame)\n");
+        logged = 1;
+    }
+    if (!g_running) { democapture_shutdown(); exit(0); }
+    return g_framebuffer;
+}
+
+struct uw_present_state {
+    unsigned batch_depth, modal_depth;
+    int pending, saved_force_flush;
+};
+static struct uw_present_state g_present_state = {0};
+
+void uw_begin_present_batch(void)
+{
+    g_present_state.batch_depth++;
+}
+
+void uw_end_present_batch(void)
+{
+    if (g_present_state.batch_depth == 0) return;
+    if (--g_present_state.batch_depth == 0 && g_present_state.pending) {
+        g_present_state.pending = 0;
+        GXEndDraw();
+    }
+}
+
+void uw_begin_modal_present(void)
+{
+    if (g_present_state.modal_depth++ == 0) {
+        g_present_state.saved_force_flush = g_force_flush;
+        /* Selected objects and held clicks gate ordinary HUD flushes. */
+        g_force_flush = 1;
+    }
+}
+
+void uw_end_modal_present(void)
+{
+    if (g_present_state.modal_depth == 0) return;
+    if (--g_present_state.modal_depth == 0)
+        g_force_flush = g_present_state.saved_force_flush;
+}
+
+int uw_defer_present(void)
+{
+    if (g_present_state.batch_depth && !g_present_state.modal_depth) {
+        g_present_state.pending = 1;
+        return 1;
+    }
+    /* A modal presentation also consumes any earlier pending request. */
+    g_present_state.pending = 0;
+    return 0;
+}
+
+int GXEndDraw(void) {
+    if (uw_defer_present()) return 1;
+    if (!g_tex) return 0;
+    /* UW_DEBUG_ENDDRAW: log every real call to this function (i.e. every
+       actual SDL_RenderPresent, the true screen-present) with its
+       immediate caller's symbol, so a genuinely redundant second
+       GXEndDraw() per real game tick -- each one throttled independently
+       by the vsync-pacing SDL_Delay below -- can be spotted directly
+       instead of bisected by hand. See demo-recording-infrastructure
+       memory's "keyboard input runs at ~half framerate" entry for why
+       this was added. */
+    if (getenv("UW_DEBUG_ENDDRAW")) {
+        void *caller = __builtin_return_address(0);
+        Dl_info info;
+        const char *name = (dladdr(caller, &info) && info.dli_sname) ? info.dli_sname : "?";
+        static unsigned int call_count = 0;
+        call_count++;
+        fprintf(stderr, "[enddraw] call=%u tick=%u caller=%s(%p)\n", call_count, g_uw_frame_clock_units, name, caller);
+    }
+    /* Un-rotate the portrait "hardware" framebuffer back to a natural
+     * landscape image for display -- see the HW_W/HW_H comment above.
+     * landscape(x,y) = portrait((HW_W-1-x), y), i.e. the inverse of the
+     * clockwise rotation the game's own blit performs. */
+    for (int y = 0; y < GX_H; y++) {
+        for (int x = 0; x < GX_W; x++) {
+            g_display_buf[y * GX_W + x] = g_framebuffer[(HW_H - 1 - x) * HW_W + y];
+        }
+    }
+    SDL_UpdateTexture(g_tex, NULL, g_display_buf, GX_W * sizeof(unsigned short));
+    SDL_RenderClear(g_ren);
+    SDL_RenderCopy(g_ren, g_tex, NULL, NULL);
+    SDL_RenderPresent(g_ren);
+
+    /* UW_DEBUG_TIMELAPSE=<ms>: save a numbered frame every <ms> of
+       wall-clock time (min 1, "1" or empty -> 250ms) into
+       debug/timelapse/<run-timestamp>/. Pairs with UW_DEMO_DELAY_MS to
+       pace a scripted demo into an even timelapse -- assemble the BMPs
+       into a GIF afterwards. Captures g_uw_framebuffer directly (the
+       game's live 320xGX_H RGB565 software buffer that every draw writes
+       into) rather than the SDL renderer's last present -- the 3D
+       viewport only reaches the renderer on a dirty-rect flush, so a
+       renderer read goes stale between redraws (e.g. while turning). */
+    {
+        static int tl_ms = -1;
+        static Uint32 tl_next = 0;
+        static char tl_dir[300];
+        static unsigned tl_n = 0;
+        if (tl_ms < 0) {
+            const char *e = getenv("UW_DEBUG_TIMELAPSE");
+            if (e && e[0] && strcmp(e, "0") != 0) {
+                long v = strtol(e, NULL, 10);
+                tl_ms = (v > 1) ? (int)v : 250;
+                time_t now = time(NULL);
+                struct tm tm_now;
+                localtime_r(&now, &tm_now);
+                char ts[32];
+                strftime(ts, sizeof ts, "%Y%m%d_%H%M%S", &tm_now);
+                snprintf(tl_dir, sizeof tl_dir, "debug/timelapse/%s", ts);
+                debug_mkdir_p(tl_dir);
+                tl_next = SDL_GetTicks();
+                fprintf(stderr, "[timelapse] every %dms -> %s/\n", tl_ms, tl_dir);
+            } else {
+                tl_ms = 0;
+            }
+        }
+        if (tl_ms > 0) {
+            Uint32 now = SDL_GetTicks();
+            if (now >= tl_next && g_uw_framebuffer) {
+                char p[360];
+                snprintf(p, sizeof p, "%s/%05u.bmp", tl_dir, tl_n++);
+                SDL_Surface *tls = SDL_CreateRGBSurfaceWithFormat(
+                    0, GX_W, GX_H, 16, SDL_PIXELFORMAT_RGB565);
+                if (tls) {
+                    memcpy(tls->pixels, g_uw_framebuffer, (size_t)GX_W * GX_H * 2);
+                    SDL_SaveBMP(tls, p);
+                    SDL_FreeSurface(tls);
+                }
+                tl_next = now + (Uint32)tl_ms;
+            }
+        }
+    }
+
+    /* Real GAPI hardware's GXEndDraw blocked until the next display
+     * refresh -- that's what gave the whole game its effective 60Hz
+     * tick rate (every polling/redraw loop in the game funnels through
+     * here via flush_dirty_rect_to_display), with no explicit frame-rate code of its
+     * own anywhere in the decompile. SDL_RENDERER_PRESENTVSYNC alone
+     * doesn't reliably reproduce that on this host -- desktop GPU
+     * drivers can queue/batch several presents before actually blocking
+     * on a vsync (confirmed: fade_in's fade-in, which calls
+     * GXEndDraw 8 times in a tight loop, measured only ~19ms total
+     * instead of something near 8 * 16.67ms). Explicitly cap how often
+     * a call here can complete, so every present -- not just whichever
+     * ones the driver happens to actually block on -- gets real ~60Hz
+     * pacing. */
+    static Uint32 last_frame_ticks = 0;
+    const Uint32 frame_budget_ms = 1000 / 60;
+    Uint32 now = SDL_GetTicks();
+    if (last_frame_ticks != 0) {
+        Uint32 elapsed = now - last_frame_ticks;
+        if (elapsed < frame_budget_ms) {
+            SDL_Delay(frame_budget_ms - elapsed);
+        }
+    }
+    last_frame_ticks = SDL_GetTicks();
+
+    return 1;
+}
+
+int GXOpenInput(void) { fprintf(stderr, "[gx] GXOpenInput\n"); return 1; }
+int GXCloseInput(void) { fprintf(stderr, "[gx] GXCloseInput\n"); return 1; }
+int GXSuspend(void) { fprintf(stderr, "[gx] GXSuspend (window lost focus)\n"); return 1; }
+int GXResume(void) { fprintf(stderr, "[gx] GXResume (window gained focus)\n"); return 1; }
+
+void *GXGetDisplayProperties(void) {
+    fprintf(stderr, "[gx] GXGetDisplayProperties: reporting %dx%d 16bpp RGB565 (portrait "
+                    "hardware framebuffer; presented rotated to a %dx%d landscape window)\n",
+            HW_W, HW_H, GX_W, GX_H);
+    static GxDisplayProps props;
+    props.cxWidth = HW_W;
+    props.cyHeight = HW_H;
+    props.cbxPitch = 2;
+    props.cbyPitch = HW_W * 2;
+    props.cBPP = 16;
+    props.ffFormat = KF_DIRECT565;
+    return &props;
+}
+
+void *GXGetDefaultKeys(void *outBuffer) {
+    fprintf(stderr, "[gx] GXGetDefaultKeys: mapping arrows/esc to the game's "
+                    "D-pad and B button (A/C/Start left unbound -- see below)\n");
+    GxKeyList *kl = (GxKeyList *)outBuffer;
+    if (!kl) return outBuffer;
+    memset(kl, 0, sizeof(*kl));
+    /* Button A was VK_SPACE, which collided with typing a space in the
+     * name-entry field (with the struct's real field order -- see
+     * GxKeyList's own comment -- handle_keyboard_message turns a button-A
+     * keydown into event 0xd = Enter, not a delete like an earlier,
+     * wrong-struct-order version of this comment claimed). Leave A on a
+     * WinCE app-button VK nothing else uses, since real Enter already
+     * reaches the game through its own separate WM_CHAR-deferral path
+     * (see uw_pump_events's g_keychar_deferred) regardless of this
+     * struct -- binding a second key to the "a" slot would be redundant,
+     * not a fix for anything. Desktop "activate" is the mouse click, so
+     * leaving A without a real keyboard binding costs nothing here.
+     *
+     * Button B is the one real key that has no other path into the game:
+     * handle_keyboard_message only ever produces the Escape event code
+     * (0x1b) when the incoming vk matches this exact struct field, and
+     * Escape doesn't get Enter/Backspace's WM_CHAR-deferral treatment.
+     * With the struct's fields in the WRONG order (as this file had it
+     * before), VK_UP/VK_DOWN landed on the byte offsets the game reads
+     * as the A/B button codes instead -- Up fired Enter, Down fired
+     * Escape, confirmed and reported by QA. Real fix was the struct
+     * reorder (see GxKeyList's own comment); Escape still needs an
+     * explicit binding here now that the offsets are correct. */
+    kl->a.vk = VK_APP1;
+    kl->b.vk = VK_ESCAPE;
+    kl->c.vk = VK_CONTROL;
+    kl->start.vk = VK_RETURN;
+    /* Swapped from the "obvious" kl->up.vk=VK_UP/kl->down.vk=VK_DOWN --
+     * confirmed by QA after the struct-order fix above that Up/Down felt
+     * backwards in the menu (the collision with Enter/Esc was gone, but
+     * the surviving direction was flipped). This mapping is entirely
+     * this port's own invention (GXGetDefaultKeys stands in for what
+     * would have been a real hardware D-pad driver call, so there's no
+     * "real" answer to verify against, unlike the struct layout above)
+     * -- swap which physical arrow key feeds which struct slot rather
+     * than touch menu_button_list_navigate's own index arithmetic, which
+     * is real recovered game logic. */
+    kl->up.vk = VK_DOWN;
+    kl->down.vk = VK_UP;
+    kl->left.vk = VK_LEFT;
+    kl->right.vk = VK_RIGHT;
+    return outBuffer;
+}
+
+
+/* Side-effect-free PALS.DAT read: raw 6-bit bytes for one palette index,
+   scaled to 8-bit RGB into out_rgb (768 bytes). Deliberately does NOT
+   reuse load_pals_bank -- it always installs its result into g_palette_rgb565
+   too, which would visibly recolor the live game just from a debug dump
+   running. Returns 1 on success. */
+static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
+    unsigned char raw[768];
+    undefined4 handle = open_file_for_read("\\DATA\\pals.dat");
+    seek_file_handle(handle, pal_index * 0x300, 0);
+    short got = (short)read_file_handle(handle, raw, 0x300);
+    Ordinal_553(handle);
+    if (got != 0x300) return 0;
+    expand_pals_bytes(out_rgb, raw, 0);
+    return 1;
+}
+
+/* Debug-only accessor for gx_stub.c's GR-entry BMP dumper, keyed by the
+   .GR resource's base name (e.g. "chrbtns").
+
+   Default path: reconstruct an 8-bit RGB palette from g_palette_rgb565 --
+   the RGB565 lookup table the renderer itself actually indexes into for
+   every on-screen pixel -- rather than tracking any of the raw/scaled
+   staging buffers upstream of it. This matches on-screen appearance
+   exactly whenever a resource's own palette is already installed by the
+   time it's preloaded, which holds for most of these (dungeon resources
+   load once the world's palette is already live).
+
+   chrbtns.gr is a confirmed exception: it preloads at chargen.c:344,
+   before chargen's own palette (index 3, chargen.c:421's
+   load_pals_bank(3,pcVar_palbuf) call, into a scratch buffer that never
+   touches g_palette_rgb565 until that line runs) is installed -- so at
+   preload time g_palette_rgb565 still reflects whatever the main menu left
+   behind. No amount of reading g_palette_rgb565 at THIS moment can produce
+   the right answer, since the right palette genuinely isn't live yet;
+   load index 3 directly instead. opbtn.GR turned out not to need this
+   (its main-menu palette install already runs before OPBTN.GR loads),
+   but the same "preload races the palette install" class of bug could
+   apply to any future resource, so this is a small per-name table rather
+   than a single hardcoded chrbtns special case. */
+unsigned char *uw_get_default_palette(const char *gr_name) {
+    static const struct { const char *name; int pal_index; } overrides[] = {
+        {"chrbtns", 3},
+    };
+    static unsigned char rgb[768];
+
+    for (size_t i = 0; i < sizeof(overrides) / sizeof(overrides[0]); i++) {
+        if (strcmp(gr_name, overrides[i].name) == 0) {
+            if (uw_load_pals_dat_scaled(overrides[i].pal_index, rgb)) {
+                return rgb;
+            }
+            break; /* fall through to the live read if the load failed */
+        }
+    }
+
+    unsigned short *pal565 = (unsigned short *)g_palette_rgb565_backing;
+    for (int i = 0; i < 256; i++) {
+        unsigned short p = pal565[i];
+        unsigned char r5 = (p >> 11) & 0x1f;
+        unsigned char g6 = (p >> 5) & 0x3f;
+        unsigned char b5 = p & 0x1f;
+        rgb[i * 3 + 0] = (r5 << 3) | (r5 >> 2);
+        rgb[i * 3 + 1] = (g6 << 2) | (g6 >> 4);
+        rgb[i * 3 + 2] = (b5 << 3) | (b5 >> 2);
+    }
+    return rgb;
+}

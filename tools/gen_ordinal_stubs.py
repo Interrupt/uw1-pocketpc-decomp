@@ -15,6 +15,10 @@ with open(f"{ROOT}/tools/all_ordinals.txt") as f:
     all_nums = [l.strip() for l in f if l.strip()]
 
 SPECIAL = {
+    "61": dict(retpart="long ", krname='Ordinal_61(destination, source)\nchar *destination;\nconst char *source;', body='    if (!destination || !source) return 0;\n    strcpy(destination, source);\n    return (long)(uintptr_t)destination;'),
+    "164": dict(retpart="long ", krname='Ordinal_164(source, destination, fail_if_exists)\nconst char *source;\nconst char *destination;\nint fail_if_exists;', body='    if (!source || !destination) return 0;\n    if (fail_if_exists) {\n        int handle = uw_file_open_read(destination);\n        if (handle >= 0) {\n            uw_file_close(handle);\n            return 0;\n        }\n    }\n    return uw_file_copy(source, destination);'),
+    "196": dict(retpart="long ", krname='Ordinal_196(code_page, flags, source, source_count, destination, capacity)\nunsigned int code_page;\nunsigned int flags;\nconst char *source;\nint source_count;\nchar *destination;\nint capacity;', body='    size_t count;\n    (void)code_page;\n    (void)flags;\n    if (!source || source_count == 0 || source_count < -1) return 0;\n    count = source_count == -1 ? strlen(source) + 1 : (size_t)source_count;\n    if (!destination && capacity == 0) return (long)count;\n    if (!destination || capacity < 0 || count > (size_t)capacity) return 0;\n    memmove(destination, source, count);\n    return (long)count;'),
+
     # 1041 and 1018 have call sites where Ghidra dropped the argument
     # entirely (the recompiled call literally passes nothing), so a strict
     # prototype can't be used -- fall back to K&R (unspecified args) and
@@ -250,6 +254,20 @@ SPECIAL = {
 }
 
 
+ORDINAL_COMMENTS = {
+    "61": '/* Wide-string copy-shaped call (identity inferred from call sites).\n * Receives (destination, source) after FUN_0002295c converts a game path;\n * used to fill source/destination buffers for the new-game archive copy.\n * This native port keeps converted paths as ANSI strings, matching the\n * CreateDirectory/FindFirstFile adapters, so copy the bytes here. */',
+    "164": '/* CopyFileW-shaped call (source path, destination path, fail-if-exists).\n * Used to seed SAVE0\\lev.ark from DATA\\lev.ark for a new game, and by\n * older save-slot copy paths. The native conversion adapters retain ANSI\n * paths; uw_file_copy resolves them against UW_DATA_DIR and copies bytes. */',
+    "196": '/* MultiByteToWideChar-shaped call (API identity inferred from arguments).\n * FUN_0002295c passes (0, 2, ANSI path, -1, output buffer, 0xff) to prepare\n * a path for WinCE file APIs. This native port retains ANSI bytes because\n * its file API adapters accept narrow paths, rather than UTF-16. Returns\n * the copied byte count (including NUL when source_count is -1), or zero\n * when the destination is too small. This is a path adapter, not a general\n * implementation of Windows code-page conversion. */',
+    "1047": """/* memset: fills n bytes at ptr with val, returning ptr. Used throughout
+ * startup to clear records and buffers; the old new-game menu also used
+ * (path_buffer, 0, 0x104) before assembling file paths. Null ptr is ignored. */""",
+    "1063": """/* strcat: appends src to the NUL-terminated string in dest and returns
+ * dest. Used to assemble game/save paths from an install-directory prefix
+ * and suffixes such as \\DATA\\lev.ark and \\SAVE0. Does not check capacity;
+ * both arguments must be valid strings. Null arguments skip the append. */""",
+}
+
+
 def main():
     header = ["#ifndef ORDINAL_STUBS_H", "#define ORDINAL_STUBS_H", "", "void uw_pump_events(void);", ""]
     source = ['#include "ordinal_stubs.h"', '#include "file_io.h"', '#include <stdio.h>',
@@ -257,6 +275,8 @@ def main():
                "", "void uw_pump_events(void);", ""]
 
     for n in all_nums:
+        if n in ORDINAL_COMMENTS:
+            source.append(ORDINAL_COMMENTS[n])
         if n in SPECIAL:
             spec = SPECIAL[n]
             body = spec["body"]
