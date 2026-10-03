@@ -237,7 +237,8 @@ void npc_combat_engage_close_tick()
      ((uVar5 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
       (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar5) - uVar5) < 4 ||
       ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0)))) {
-    npc_combat_set_stance();
+    /* ARM 0x301f4 passes the fine-coordinate squared distance in r0. */
+    npc_combat_set_stance(uVar4);
   }
   else if ((*(byte *)(DAT_00101404 + 0x2d) & 0xfe) == 0) {
     if ((*(byte *)(DAT_00101404 + 0x20) >> 1 & 0xf0) != 0x10) goto LAB_000302bc;
@@ -249,7 +250,7 @@ void npc_combat_engage_close_tick()
     iVar6 = try_npc_special_ability_ranged();
   }
   if (iVar6 != 0) {
-    bVar3 = *(byte *)(DAT_0010190c + 0x15) & 0x3f;
+    bVar3 = *(byte *)((char *)DAT_0010190c + 0x15) & 0x3f;
     if (bVar3 == 5) {
       return;
     }
@@ -259,20 +260,20 @@ void npc_combat_engage_close_tick()
     if (bVar3 == 1) {
       return;
     }
-    *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc0;
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
-    iVar6 = DAT_0010190c;
-    uVar4 = *(ushort *)(DAT_0010190c + 0xb);
+    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
+    iVar6 = (char *)DAT_0010190c;
+    uVar4 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_46 = ((int)((uVar4 >> 0xc) + 1)) % (4);
     uVar5 = uVar4 & 0xfff;
     *(char *)(iVar6 + 0xb) = (char)uVar5;
-    *(byte *)(DAT_0010190c + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uw_ord2005_rem_46 & 0xf) << 0xc) >> 8);
-    *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
+    *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uw_ord2005_rem_46 & 0xf) << 0xc) >> 8);
+    *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
     return;
   }
 LAB_000302bc:
-  if ((((uVar4 < 0x101) || ((*(byte *)(DAT_0010190c + 0xd) & 0xf) != 4)) ||
-      ((*(byte *)(DAT_0010190c + 0x19) & 0x20) != 0)) ||
+  if ((((uVar4 < 0x101) || ((*(byte *)((char *)DAT_0010190c + 0xd) & 0xf) != 4)) ||
+      ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x20) != 0)) ||
      (uVar4 = (ushort)(*(byte *)(DAT_00101404 + 0x1c) >> 4),
      (ushort)((short)cVar2 * (short)cVar2 + (short)cVar1 * (short)cVar1) <=
      (ushort)(uVar4 * uVar4 * 4))) {
@@ -282,8 +283,8 @@ LAB_000302bc:
     npc_wander_reposition(DAT_00101408,DAT_00101410,local_28);
   }
   else {
-    *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) & 0xfe;
-    *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) & 0xfd;
+    *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfe;
+    *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfd;
     npc_set_goal(4,0);
   }
   return;
@@ -293,7 +294,7 @@ LAB_000302bc:
 
 // was FUN_00030364 -- the shared attack/stance action called by every
 // combat-engage goal handler once in range: sets combat-ready frame
-// bits (byte 0x13/9/0x15) based on param_1, a distance/angle metric
+// bits (byte 0x13/9/0x15) based on param_1, squared fine-coordinate distance
 undefined4 npc_combat_set_stance(param_1)
 ushort param_1;
 
@@ -319,40 +320,42 @@ ushort param_1;
   byte bVar8;
   uint uVar9;
   
+  /* ARM ldrb/strb offsets are bytes, including the unaligned goal word.
+     DAT_0010190c is ushort *, so cast before applying those offsets. */
   uVar4 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
   uVar9 = uVar4 & 0xff;
-  uVar4 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar4 & 7) << 7;
-  *(char *)(DAT_0010190c + 2) = (char)uVar4;
-  *(char *)(DAT_0010190c + 3) = (char)(uVar4 >> 8);
-  *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
+  uVar4 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar4 & 7) << 7;
+  *(char *)((char *)DAT_0010190c + 2) = (char)uVar4;
+  *(char *)((char *)DAT_0010190c + 3) = (char)(uVar4 >> 8);
+  *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
   uVar1 = (undefined1)(uVar9 << 5);
-  *(undefined1 *)(DAT_0010190c + 9) = uVar1;
-  *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xbf;
+  *(undefined1 *)((char *)DAT_0010190c + 9) = uVar1;
+  *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xbf;
   if (param_1 < 0x31) {
     uVar5 = ce_rand();
     uw_ord2005_rem_47 = ((int)(uVar5)) % (4);
     if (uw_ord2005_rem_47 != 0) {
-      *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 199 | 7;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 199 | 7;
       uw_ord2005_rem_48 = ((int)(uVar9 + 4)) % (8);
-      *(char *)(DAT_0010190c + 9) = (char)(uw_ord2005_rem_48 << 5);
+      *(char *)((char *)DAT_0010190c + 9) = (char)(uw_ord2005_rem_48 << 5);
 LAB_00030534:
-      bVar8 = *(byte *)(DAT_0010190c + 0x13) & 0x82 | 2;
+      bVar8 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x82 | 2;
       goto LAB_000305e4;
     }
     uVar5 = ce_rand();
-    *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc0;
+    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
     uw_ord2005_rem_49 = ((int)(uVar5)) % (2);
     uw_ord2005_rem_50 = ((int)(uVar9 + uw_ord2005_rem_49 * 4 + 6)) % (8);
-    *(char *)(DAT_0010190c + 9) = (char)(uw_ord2005_rem_50 << 5);
-    iVar6 = DAT_0010190c;
-    bVar8 = *(byte *)(DAT_0010190c + 0x13);
+    *(char *)((char *)DAT_0010190c + 9) = (char)(uw_ord2005_rem_50 << 5);
+    iVar6 = (char *)DAT_0010190c;
+    bVar8 = *(byte *)((char *)DAT_0010190c + 0x13);
     bVar3 = ordint_divmod(3,(uint)*(byte *)(DAT_00101404 + 0xb) << 1).quot;
     *(byte *)(iVar6 + 0x13) = (bVar3 ^ bVar8) & 0x7f ^ bVar8;
   }
   else {
     if (0x51 < param_1) {
-      *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xec | 0x2c;
-      *(undefined1 *)(DAT_0010190c + 9) = uVar1;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xec | 0x2c;
+      *(undefined1 *)((char *)DAT_0010190c + 9) = uVar1;
       goto LAB_00030534;
     }
     uVar5 = ce_rand();
@@ -360,36 +363,36 @@ LAB_00030534:
     uw_ord2005_rem_51 = ((int)(uVar5)) % (0x40);
     if (uw_ord2005_rem_51 < (int)(uint)bVar8) {
       uVar5 = ce_rand();
-      *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc0;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
       uw_ord2005_rem_52 = ((int)(uVar5)) % (8);
-      *(char *)(DAT_0010190c + 9) = (char)(uw_ord2005_rem_52 << 5);
-      bVar8 = *(byte *)(DAT_0010190c + 0x13) & 0x81 | 1;
+      *(char *)((char *)DAT_0010190c + 9) = (char)(uw_ord2005_rem_52 << 5);
+      bVar8 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x81 | 1;
     }
     else {
-      *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc0;
-      *(undefined1 *)(DAT_0010190c + 9) = uVar1;
-      bVar8 = *(byte *)(DAT_0010190c + 0x13) & 0x80;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
+      *(undefined1 *)((char *)DAT_0010190c + 9) = uVar1;
+      bVar8 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
     }
 LAB_000305e4:
-    *(byte *)(DAT_0010190c + 0x13) = bVar8;
+    *(byte *)((char *)DAT_0010190c + 0x13) = bVar8;
   }
   if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
-    iVar6 = (int)((((*(byte *)(DAT_00101400 + 2) & 0x7f) - (*(byte *)(DAT_0010190c + 2) & 0x7f)) +
+    iVar6 = (int)((((*(byte *)(DAT_00101400 + 2) & 0x7f) - (*(byte *)((char *)DAT_0010190c + 2) & 0x7f)) +
                   0xe) * 0x1000000) >> 0x18;
     if (iVar6 < 2) {
       if (iVar6 < -1) {
-        bVar8 = *(byte *)(DAT_0010190c + 0x14) & 7 | 0x70;
+        bVar8 = *(byte *)((char *)DAT_0010190c + 0x14) & 7 | 0x70;
       }
       else {
         uVar5 = ce_rand();
         uw_ord2005_rem_53 = ((int)(uVar5)) % (3);
-        bVar8 = *(byte *)(DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_53 + '\x0f') * '\b';
+        bVar8 = *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_53 + '\x0f') * '\b';
       }
     }
     else {
-      bVar8 = *(byte *)(DAT_0010190c + 0x14) & 7 | 0x90;
+      bVar8 = *(byte *)((char *)DAT_0010190c + 0x14) & 7 | 0x90;
     }
-    *(byte *)(DAT_0010190c + 0x14) = bVar8;
+    *(byte *)((char *)DAT_0010190c + 0x14) = bVar8;
   }
   if (param_1 < 0x65) {
     uVar5 = ce_rand();
@@ -406,30 +409,30 @@ LAB_000305e4:
           iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
         } while ((int)(uint)*(byte *)(iVar7 * 3 + DAT_00101404 + 0x15) <= (int)(iVar6) * 0x10000 >> 0x10);
       }
-      *(byte *)(DAT_0010190c + 0x15) =
-           ((char)iVar7 + 1U ^ *(byte *)(DAT_0010190c + 0x15)) & 0x3f ^
-           *(byte *)(DAT_0010190c + 0x15);
-      *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
-      uVar4 = *(ushort *)(DAT_0010190c + 0xb) & 0xfff;
-      *(char *)(DAT_0010190c + 0xb) = (char)uVar4;
+      *(byte *)((char *)DAT_0010190c + 0x15) =
+           ((char)iVar7 + 1U ^ *(byte *)((char *)DAT_0010190c + 0x15)) & 0x3f ^
+           *(byte *)((char *)DAT_0010190c + 0x15);
+      *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
+      uVar4 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
+      *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar4;
       goto LAB_00030860;
     }
-    uVar4 = (uint)*(ushort *)(DAT_0010190c + 0xf);
+    uVar4 = (uint)*(ushort *)((char *)DAT_0010190c + 0xf);
     if ((uVar4 & 0xf000) < 0xf000) {
-      *(char *)(DAT_0010190c + 0xf) = (char)(uVar4 & 0xfff);
-      *(byte *)(DAT_0010190c + 0x10) =
+      *(char *)((char *)DAT_0010190c + 0xf) = (char)(uVar4 & 0xfff);
+      *(byte *)((char *)DAT_0010190c + 0x10) =
            (byte)((uVar4 & 0xf000) + 0x1000 >> 8) ^ (byte)((uVar4 & 0xfff) >> 8);
     }
   }
-  *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
-  iVar6 = DAT_0010190c;
-  uVar2 = *(ushort *)(DAT_0010190c + 0xb);
+  *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
+  iVar6 = (char *)DAT_0010190c;
+  uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
   uw_ord2005_rem_56 = ((int)((uVar2 >> 0xc) + 1)) % (4);
   uVar9 = uVar2 & 0xfff;
   uVar4 = uVar9 | (uw_ord2005_rem_56 & 0xf) << 0xc;
   *(char *)(iVar6 + 0xb) = (char)uVar9;
 LAB_00030860:
-  *(char *)(DAT_0010190c + 0xc) = (char)(uVar4 >> 8);
+  *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar4 >> 8);
   return 1;
 }
 
@@ -444,31 +447,34 @@ void npc_combat_engage_wide_tick()
 {
   int uw_ord2005_rem_63 = 0;
   ushort uVar1;
+  ushort distance_squared;
   char *iVar2;
   uint uVar3;
   uint extraout_r1;
   
   if (DAT_00101734 != 0) {
-    if (((ushort)(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448) < 0x90) ||
+    distance_squared = DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448;
+    if ((distance_squared < 0x90) ||
        ((DAT_00101408 == DAT_00101918 && (DAT_001013f8 == DAT_00101410)))) {
-      npc_combat_set_stance();
+      /* ARM 0x3120c retains the squared distance in r0 from 0x31034. */
+      npc_combat_set_stance(distance_squared);
     }
     else if (DAT_00101900 < 5) {
       uVar3 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
-      *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
-      *(char *)(DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
-      uVar3 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
-      *(char *)(DAT_0010190c + 2) = (char)uVar3;
-      *(char *)(DAT_0010190c + 3) = (char)(uVar3 >> 8);
-      *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
-      *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
-      *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc0;
-      iVar2 = DAT_0010190c;
-      uVar1 = *(ushort *)(DAT_0010190c + 0xb);
+      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
+      *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
+      uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
+      *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
+      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
+      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
+      *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
+      iVar2 = (char *)DAT_0010190c;
+      uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
       uw_ord2005_rem_63 = ((int)((uVar1 >> 0xc) + 1)) % (4);
       uVar3 = uVar1 & 0xfff;
       *(char *)(iVar2 + 0xb) = (char)uVar3;
-      *(byte *)(DAT_0010190c + 0xc) = (byte)(uVar3 >> 8) | (byte)(((uw_ord2005_rem_63 & 0xf) << 0xc) >> 8)
+      *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar3 >> 8) | (byte)(((uw_ord2005_rem_63 & 0xf) << 0xc) >> 8)
       ;
     }
     else {
