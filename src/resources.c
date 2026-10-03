@@ -19,10 +19,10 @@ static undefined DAT_000fb550_backing[8192];
 /* Real string, recovered via Ghidra disassembly of decode_critter_sprite_page
    (the caching "\CRIT\CR<pp>PAGE.N<nn>" per-page critter-animation
    resource loader): the decompile showed DAT_00085928/29/30/31 as four
-   unrelated lone chars, and its own two-arg Ordinal_1063 (strcat) call
+   unrelated lone chars, and its own two-arg ce_strcat (strcat) call
    right after them dropped BOTH arguments (same class of bug as
    resolve_object_link's ~30 call sites fixed earlier this session).
-   The real ARM passes `Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920)`
+   The real ARM passes `ce_strcat(stack0xffdc3238_buf, &DAT_00085920)`
    -- concatenating this template (its "00"/"00" digit pairs already
    patched with the real page numbers by the writes at +8/+9 and
    +0x10/+0x11) onto the copied install-dir path -- then opens THAT
@@ -101,14 +101,14 @@ static undefined1 DAT_0024c7a3_backing[1052672];
 #define DAT_0024c7a3 DAT_0024c7a3_backing[0]
 static undefined4 DAT_0024bf98;
 /* Declared char* despite always being allocated/read/cast as a single
-   2-byte count (see open_strings_pak_file: `(short *)Ordinal_1041(2)`, a 2-byte
+   2-byte count (see open_strings_pak_file: `(short *)ce_malloc(2)`, a 2-byte
    read into it, then `*DAT_0024cfb8` used as the item count). That
    mismatch meant every *DAT_0024cfb8 dereference only ever read the
    *first byte* of the real 2-byte count as a signed char -- for
    STRINGS.PAK's real (large, >127) count this came out negative, and
    `(int)*DAT_0024cfb8 << 2` produced a huge garbage byte count
    (0xFFFFFB94 observed) passed straight to fread() as `unsigned int
-   size`, overflowing the undersized buffer Ordinal_1041 allocated for
+   size`, overflowing the undersized buffer ce_malloc allocated for
    the same corrupted (and clamped-to-4096-by-the-allocator's-own-sanity-
    check) size. This was corrupting the heap on nearly every run --
    almost certainly the root cause of the "free_list_checksum_botch"-style
@@ -210,8 +210,8 @@ char param_2;
       *stack0xffdc3244_ptr = cVar2; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar2 != '\0');
-    Ordinal_1063(local_114,s__DATA__00085970);
-    Ordinal_1063(local_114,param_1);
+    ce_strcat(local_114,s__DATA__00085970);
+    ce_strcat(local_114,param_1);
     /* Originally `uVar1 * 4 + 0x85990`: an index into a table of string
        pointers living at a fixed address in the original binary's data
        segment. Ghidra never surfaced that table's actual contents (no
@@ -224,7 +224,7 @@ char param_2;
          OBJECTS.GR, DOORS.GR etc. (confirmed present in the real install),
          not the "P/I/B.SYS" style-suffix guessed earlier -- ".GR" is the
          real extension for all of these regardless of uVar1. */
-      Ordinal_1063(local_114, ".GR");
+      ce_strcat(local_114, ".GR");
     }
   }
   DAT_00202514 = open_file_for_read(local_114);
@@ -238,15 +238,15 @@ char param_2;
          ((uVar1 != 2 || (iVar3 = read_file_handle(DAT_00202514,&DAT_00202518,1), iVar3 == 1)))) &&
         (iVar3 = read_file_handle(DAT_00202514,&DAT_00202728,2), iVar3 == 2)) &&
        (((uVar1 != 3 || (iVar3 = load_gr_format3_extra_table(), iVar3 != 0)) &&
-        (DAT_0020274c = Ordinal_1041(((ushort)DAT_00202728 + 1) * 4), DAT_0020274c != 0)))) {
+        (DAT_0020274c = ce_malloc(((ushort)DAT_00202728 + 1) * 4), DAT_0020274c != 0)))) {
       iVar3 = read_file_handle(DAT_00202514,DAT_0020274c,((ushort)DAT_00202728 + 1) * 4);
       if (iVar3 == ((ushort)DAT_00202728 + 1) * 4) {
         return 1;
       }
-      Ordinal_1018(DAT_0020274c);
+      LocalFree(DAT_0020274c);
       DAT_0020274c = 0;
     }
-    Ordinal_553(DAT_00202514);
+    CloseHandle(DAT_00202514);
   }
   return 0;
 }
@@ -439,7 +439,7 @@ uint param_2;
     puVar2 = (undefined4 *)((char *)puVar2 + 0x11);
   }
   iVar3 = (param_1 & 0xffff) * (param_2 & 0xffff);
-  uVar1 = Ordinal_1041(iVar3);
+  uVar1 = ce_malloc(iVar3);
   /* capture_framebuffer_rect_to_grtile (one of the "11 other callers" mentioned above) turns
      out to ALSO need the real pointer -- it renders glyph pixels
      directly into this buffer, not just compare-by-key -- so track the
@@ -452,7 +452,7 @@ uint param_2;
   *(char *)((char *)puVar2 + 1) = (char)((uintptr_t)uVar1 >> 8);
   *(char *)((char *)puVar2 + 2) = (char)((uintptr_t)uVar1 >> 0x10);
   *(char *)((char *)puVar2 + 3) = (char)((uintptr_t)uVar1 >> 0x18);
-  Ordinal_1047(uVar1,0,iVar3);
+  ce_memset(uVar1,0,iVar3);
   *(char *)((char *)puVar2 + 0xe) = (char)(param_1 >> 8);
   *(char *)(puVar2 + 4) = (char)(param_2 >> 8);
   *(char *)((char *)puVar2 + 5) = (char)((uint)iVar3 >> 8);
@@ -479,9 +479,9 @@ uint param_2;
   unsigned int size;
   void *p;
   size = (param_1 & 0xffff) * (param_2 & 0xffff);
-  p = Ordinal_1041(size);
+  p = ce_malloc(size);
   if (p != 0) {
-    Ordinal_1047(p,0,size);
+    ce_memset(p,0,size);
   }
   return p;
 }
@@ -642,9 +642,9 @@ short param_5;
 void init_grtile_registry()
 
 {
-  DAT_0023c3fc = Ordinal_1041(0x1540);
+  DAT_0023c3fc = ce_malloc(0x1540);
   if (DAT_0023c3fc != 0) {
-    Ordinal_1047(DAT_0023c3fc,0,0x1540);
+    ce_memset(DAT_0023c3fc,0,0x1540);
     DAT_0023c404 = DAT_0023c3fc + 0x11;
   }
   return;
@@ -864,7 +864,7 @@ ushort param_1;
     /* Was `decode_strings_pak_entry(uVar1)` -- called with only one explicit
        argument, relying on a register-leftover idiom for the second
        (the "dropped argument" pattern used throughout this file, e.g.
-       Ordinal_1068/draw_text_string earlier this session) to still hold
+       ce_strlen/draw_text_string earlier this session) to still hold
        the string's sub-index within this page. That register doesn't
        reliably survive here either (confirmed: string lookups that
        should succeed -- e.g. chargen field labels -- came back as
@@ -1074,7 +1074,7 @@ undefined4 open_strings_pak_file()
   /* Ghidra couldn't correlate this copy loop's destination with a real
      stack slot (see fix_stack_copy_loops.py); it's actually copying
      DAT_0023cca8 (the install dir, set up earlier) directly into
-     acStack_118, which the two Ordinal_1063 (strcat-shaped) calls right
+     acStack_118, which the two ce_strcat (strcat-shaped) calls right
      below then append "\DATA\" and "strings.pak" onto to build the full
      path. */
   char *stack0xffdc3240_ptr;
@@ -1090,19 +1090,19 @@ undefined4 open_strings_pak_file()
     *stack0xffdc3240_ptr = cVar1; stack0xffdc3240_ptr = stack0xffdc3240_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_118,s__DATA__00085970);
-  Ordinal_1063(acStack_118,s_strings_pak_000878c0);
+  ce_strcat(acStack_118,s__DATA__00085970);
+  ce_strcat(acStack_118,s_strings_pak_000878c0);
   iVar3 = open_file_for_read(acStack_118);
   if (iVar3 != -1) {
-    DAT_0024cfb8 = (short *)Ordinal_1041(2);
+    DAT_0024cfb8 = (short *)ce_malloc(2);
     read_file_handle(iVar3,DAT_0024cfb8,2);
-    DAT_0024cfa8 = Ordinal_1041((int)*DAT_0024cfb8 << 2);
+    DAT_0024cfa8 = ce_malloc((int)*DAT_0024cfb8 << 2);
     if (DAT_0024cfa8 == 0) {
-      Ordinal_553(iVar3);
+      CloseHandle(iVar3);
       return 0x1001;
     }
     read_file_handle(iVar3,DAT_0024cfa8,(int)*DAT_0024cfb8 << 2);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
     DAT_0024bf98 = open_file_for_read(acStack_118);
     if (DAT_0024bf98 != -1) {
       return 0;
@@ -1123,9 +1123,9 @@ undefined4 open_strings_pak_file()
 void close_strings_pak_file()
 
 {
-  Ordinal_553(DAT_0024bf98);
-  Ordinal_1018(DAT_0024cfb8);
-  Ordinal_1018(DAT_0024cfa8);
+  CloseHandle(DAT_0024bf98);
+  LocalFree(DAT_0024cfb8);
+  LocalFree(DAT_0024cfa8);
   return;
 }
 
@@ -1314,7 +1314,7 @@ int param_3;
   else {
     iVar2 = read_file_handle(iVar1,param_2,param_3);
     bVar3 = iVar2 == param_3;
-    Ordinal_553(iVar1);
+    CloseHandle(iVar1);
   }
   return bVar3;
 }
@@ -1517,7 +1517,7 @@ char param_3;
   
   pbVar5 = DAT_0024af7c;
   pbVar4 = DAT_0024af78;
-  Ordinal_1047(DAT_000842ac,10,0x20);
+  ce_memset(DAT_000842ac,10,0x20);
   DAT_000b4614 = DAT_0024fa2c;
   bVar2 = param_1[1];
   DAT_000b4618 = param_1;
@@ -1941,7 +1941,7 @@ undefined4 load_gr_format3_extra_table()
       seek_file_handle(DAT_00202514,(uint)DAT_00202724 << 5,1);
     }
     else {
-      iVar1 = Ordinal_1041((uint)DAT_00202724 << 5);
+      iVar1 = ce_malloc((uint)DAT_00202724 << 5);
       *DAT_00202720 = iVar1;
       iVar1 = read_file_handle(DAT_00202514,*DAT_00202720,(uint)DAT_00202724 << 5);
       if (iVar1 != (uint)DAT_00202724 * 0x20) goto LAB_000412d8;
@@ -1963,9 +1963,9 @@ LAB_000412d8:
 void close_gr_resource_file()
 
 {
-  Ordinal_553(DAT_00202514);
+  CloseHandle(DAT_00202514);
   if (DAT_0020274c != 0) {
-    Ordinal_1018();
+    LocalFree();
   }
   return;
 }
@@ -2042,7 +2042,7 @@ short param_3;
      a flat pointer array -- see its declaration comment. */
   pvVar1 = uw_alloc_grtile(*(undefined1 *)((char *)param_1 + 1),*(byte *)((char *)param_1 + 2) + 1);
   if (pvVar1 != 0) {
-    Ordinal_1044(pvVar1,param_1,(uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
+    ce_memmove(pvVar1,param_1,(uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
     g_grtile_registry[(uint)DAT_00202744 + (int)param_3] = pvVar1;
   }
   return pvVar1 != 0;
@@ -2082,7 +2082,7 @@ short param_3;
   if (pvVar1 == 0) {
     return 0;
   }
-  Ordinal_1044(pvVar1,param_1,
+  ce_memmove(pvVar1,param_1,
                (uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
   g_grtile_registry[(uint)DAT_00202744 + (int)param_3] = pvVar1;
   return 1;
@@ -2239,23 +2239,23 @@ void *param_3;
 // (32-bit), but every real call site across this project (saveload.c,
 // registration.c, game.c, winfile_wrappers.c) passes a real stack/path
 // pointer, which got truncated to 32 bits storing into this narrower
-// parameter, then zero-extended back into Ordinal_196's `const char
+// parameter, then zero-extended back into MultiByteToWideChar's `const char
 // *source` as a garbage pointer -- confirmed live (EXC_BAD_ACCESS in
-// Ordinal_196's strlen, called from check_save_disk_space, crashing
+// MultiByteToWideChar's strlen, called from check_save_disk_space, crashing
 // every single regression script at startup). Widened to a real
 // pointer type, matching this project's other pointer-truncation fixes.
 undefined *load_string_resource(param_1)
 char * param_1;
 
 {
-  Ordinal_196(0,2,param_1,0xffffffff,&DAT_000fb650,0xff);
+  MultiByteToWideChar(0,2,param_1,0xffffffff,&DAT_000fb650,0xff);
   return &DAT_000fb650;
 }
 
 
 
 // was FUN_00022998 -- structurally identical to load_string_resource
-// but via a different ordinal (Ordinal_197, two extra trailing
+// but via a different ordinal (WideCharToMultiByte, two extra trailing
 // arguments) and a larger buffer (0x260 vs 0xff) -- likely a longer-
 // message variant of the same LoadString-shaped resource loader.
 // BUG FIX (unit-testing-framework merge): same pointer-truncation class
@@ -2264,7 +2264,7 @@ undefined *load_string_resource_large(param_1)
 char * param_1;
 
 {
-  Ordinal_197(0,0x260,param_1,0xffffffff,&DAT_000fb550,0xff,0,0);
+  WideCharToMultiByte(0,0x260,param_1,0xffffffff,&DAT_000fb550,0xff,0,0);
   return &DAT_000fb550;
 }
 
@@ -2430,11 +2430,11 @@ void *param_2;
     *stack0xffdc2f38_ptr = cVar1; stack0xffdc2f38_ptr = stack0xffdc2f38_ptr + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_420,s__DATA_pals_dat_00085978);
+  ce_strcat(acStack_420,s__DATA_pals_dat_00085978);
   uVar4 = open_file_for_read(acStack_420);
   seek_file_handle(uVar4,(short)param_1 * 0x300,0);
   sVar2 = read_file_handle(uVar4,param_2,0x300);
-  Ordinal_553(uVar4);
+  CloseHandle(uVar4);
   if (sVar2 == 0x300) {
     expand_pals_bytes(auStack_318,param_2,0);
     build_rgb565_palette(auStack_318,param_1);
@@ -2478,7 +2478,7 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
   byte *pbVar11;
 
   /* Tracks (page,tier) slots already confirmed to have no file, separate
-     from DAT_00202308 (0=never tried, else=a real Ordinal_1041 pointer
+     from DAT_00202308 (0=never tried, else=a real ce_malloc pointer
      that shutdown_game_resources unconditionally frees at shutdown -- stuffing a
      sentinel in there instead would make that loop free garbage).
      Needed because resolve_critter_sprite_tier now probes every tier
@@ -2505,7 +2505,7 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
       *stack0xffdc3238_ptr = cVar2; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar2 != '\0');
-    Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920);
+    ce_strcat(stack0xffdc3238_buf, &DAT_00085920);
     iVar5 = open_file_for_read(stack0xffdc3238_buf);
     if (getenv("UW_DEBUG_CRITTER"))
       fprintf(stderr, "[critter] load_critter_page_cached: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
@@ -2516,10 +2516,10 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
       if ((unsigned)iVar1 < sizeof(known_missing)) known_missing[iVar1] = 1;
       return (byte *)0;
     }
-    pbVar11 = (byte *)Ordinal_1041(0x7fff);
+    pbVar11 = (byte *)ce_malloc(0x7fff);
     (&DAT_00202308)[iVar1] = pbVar11;
     read_file_handle(iVar5,pbVar11,0x7fff);
-    Ordinal_553(iVar5);
+    CloseHandle(iVar5);
   }
   if (getenv("UW_DEBUG_CRITTER_TABLESPAN")) {
     static int seen[256 * 4];
@@ -2561,7 +2561,7 @@ unsigned int param_1;
      stub returning 0 here made load_gr_resource_entries treat every real resource
      load as a failure (the batch-AND check in load_startup_gr_resources), even though
      the underlying file read succeeded. */
-  return Ordinal_1041(param_1);
+  return ce_malloc(param_1);
 }
 /* load_gr_resource_entries's post-process callback: (decoded_buffer, byte_size,
    entry_index). Ghidra lost the real body (indirect-jump target); the old
@@ -2625,7 +2625,7 @@ unsigned int param_1;
   /* Allocator callback, same role as gr_resource_bump_alloc_entry -- see there. Used by
      load_hud_icon_gr/reload_single_grtile_entry (flasks/compass/dragons/power/chains/
      spells/scrledge and friends). */
-  return Ordinal_1041(param_1);
+  return ce_malloc(param_1);
 }
 void *decode_gr_entry_bump_alloc_entry(param_1)
 unsigned int param_1;
@@ -2633,7 +2633,7 @@ unsigned int param_1;
 {
   /* Allocator callback, same role as gr_resource_bump_alloc_entry -- see there. Used by
      decode_gr_entry_to_buffer, which passes no post-process callback (param_5 == 0). */
-  return Ordinal_1041(param_1);
+  return ce_malloc(param_1);
 }
 /* Not decompiled -- decode_gr_entry_to_buffer's post-process callback. Ghidra never
    recovered a real one here (it hardcoded param_5=0, "no callback"),
@@ -2651,7 +2651,7 @@ unsigned int param_1;
    global's own comment) specifically to route around the missing
    callback, the callback this decode always needed is simply "copy the
    decoded bytes there" -- same leak-the-temporary-allocation posture
-   as Ordinal_1018's own documented precedent (freeing a possibly-
+   as LocalFree's own documented precedent (freeing a possibly-
    garbage pointer is worse than a short-lived leak). */
 unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx)
 {

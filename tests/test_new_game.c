@@ -65,7 +65,7 @@ bool write_player_save_record(const char *path)
 undefined *load_string_resource(char *path)
 {
     static char converted[520];
-    Ordinal_196(0, 2, path, -1, converted, 255);
+    MultiByteToWideChar(0, 2, path, -1, converted, 255);
     return (undefined *)converted;
 }
 undefined4 seed_conversation_globals_for_new_game(void)

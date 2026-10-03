@@ -61,8 +61,8 @@ void free_object_slot(void *object)
     freed[slot]++;
 }
 void set_pending_update_flags(int flags) { (void)flags; }
-long Ordinal_2005(int divisor, int dividend) { return dividend / divisor; }
-long Ordinal_1053(void) { return 15; }
+long ordint_divmod(int divisor, int dividend) { return dividend / divisor; }
+long ce_rand(void) { return 15; }
 int encode_object_slot_index(void *object)
 {
     if (object == objects[1]) return 1;

@@ -15,13 +15,13 @@ static int random_values[64], random_count, random_index;
 static int dice_calls, hazard_calls, equipment_calls, reset_calls;
 static int trained[6], trained_count;
 
-long Ordinal_1053(void)
+long ce_rand(void)
 {
     TEST_ASSERT_LESS_THAN_INT(random_count, random_index);
     return random_values[random_index++];
 }
 
-void *Ordinal_1047(void *ptr, int value, unsigned int count)
+void *ce_memset(void *ptr, int value, unsigned int count)
 {
     return memset(ptr, value, count);
 }

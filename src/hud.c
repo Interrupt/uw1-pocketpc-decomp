@@ -1127,7 +1127,7 @@ short param_1;
     iVar7 = (int)param_1;
     if (iVar7 == -1) {
       if (DAT_000868d8 == 0) {
-        sVar5 = Ordinal_2005(0x12,DAT_00085a6c[1] + 2);
+        sVar5 = ordint_divmod(0x12,DAT_00085a6c[1] + 2);
         iVar7 = (int)sVar5;
         if (getenv("UW_DEBUG_MODEBTN"))
           fprintf(stderr, "[modebtn] resolved iVar7=%d\n", iVar7);
@@ -1228,7 +1228,7 @@ short param_1;
     iVar5 = (int)param_1;
     if (iVar5 == -1) {
       if (DAT_000868d8 == 0) {
-        sVar3 = Ordinal_2005(0x12,DAT_00085a6c[1] + 2);
+        sVar3 = ordint_divmod(0x12,DAT_00085a6c[1] + 2);
         iVar5 = (int)sVar3;
         if (5 < iVar5) {
           return;
@@ -1666,7 +1666,7 @@ void redraw_hud_panels()
 // was FUN_0006cff4 -- generic "set HUD status slot param_1 to
 // param_2" dispatcher: negative param_1 writes a raw byte value
 // directly, 0/1 compute a health/mana fill tier (0-12) from the
-// player object via Ordinal_2005 (see hud_vitals_bar_tick), and other
+// player object via ordint_divmod (see hud_vitals_bar_tick), and other
 // small param_1 values (2,3,4,6,7,8 -- seen at this session's various
 // call sites) drive other HUD indicators (compass heading, action-
 // animation frame, poison flash, etc.) each with their own encoding.
@@ -1701,7 +1701,7 @@ LAB_0006d09c:
       (&DAT_0023c118)[iVar1] = 0;
     }
     else {
-      uVar4 = Ordinal_2005(cVar2,(short)param_2 * 0xc);
+      uVar4 = ordint_divmod(cVar2,(short)param_2 * 0xc);
       (&DAT_0023c118)[iVar1] = uVar4;
     }
     if (0xb < (byte)(&DAT_0023c118)[iVar1]) {
@@ -1760,7 +1760,7 @@ LAB_0006d09c:
   if (DAT_0023c12c == 0) {
 joined_r0x0006d150:
     if (uVar5 == 0) {
-      bVar3 = Ordinal_1053();
+      bVar3 = ce_rand();
       param_1 = (bVar3 & 1) + param_1;
     }
   }
@@ -1846,7 +1846,7 @@ void hud_panel_redraw_dispatch()
     bVar8 = true;
   }
   if (((bVar6 ^ bVar2) & 0xc0) != 0) {
-    sVar3 = Ordinal_1053();
+    sVar3 = ce_rand();
     if (sVar3 < 0x666) {
       uVar5 = (int)sVar3 & 1;
       if (*(int *)(&DAT_0023c1f0 + uVar5 * 4) == 0) {
@@ -1854,7 +1854,7 @@ void hud_panel_redraw_dispatch()
         DAT_0023c1d8 = DAT_0023c1d8 | (ushort)(1 << uVar5);
       }
     }
-    sVar3 = Ordinal_1053();
+    sVar3 = ce_rand();
     if (sVar3 < 0x666) {
       uVar5 = (int)sVar3 & 1;
       if (*(int *)(&DAT_0023c1f8 + uVar5 * 4) == 0) {
@@ -2505,7 +2505,7 @@ char *param_1;
      "adjacent stack locals are really one buffer" pattern fixed
      elsewhere this session. They ARE meant to be contiguous: when the
      word-wrap loop below finds no space within a 49-byte chunk,
-     Ordinal_1407 returns NULL and the fallback `puVar4 = local_23`
+     ce_strrchr returns NULL and the fallback `puVar4 = local_23`
      is meant to NUL-terminate right at auStack_54's own end (offset 49)
      -- not a separate, unrelated 3-byte buffer the C compiler is free to
      place anywhere. Without the merge, that terminator write misses
@@ -2549,12 +2549,12 @@ char *param_1;
     DAT_0025071c = 0;
     *g_draw_color_index = *(undefined1 *)(DAT_00250704 + 0x16);
     *DAT_00084298 = 0x2a;
-    uVar3 = Ordinal_1068(param_1);
+    uVar3 = ce_strlen(param_1);
     for (uVar3 = uVar3 & 0xffff; 0x31 < (uVar3 & 0xffff);
         uVar3 = ((short)uVar3 - iVar2) * 0x10000 >> 0x10) {
-      Ordinal_1044(auStack_54,param_1,0x31);
+      ce_memmove(auStack_54,param_1,0x31);
       local_23[0] = 0;
-      puVar4 = (undefined1 *)Ordinal_1407(auStack_54,0x20);
+      puVar4 = (undefined1 *)ce_strrchr(auStack_54,0x20);
       if (puVar4 == (undefined1 *)0x0) {
         puVar4 = local_23;
       }
@@ -2565,7 +2565,7 @@ char *param_1;
       *puVar4 = uVar1;
       param_1 = iVar2 + param_1;
     }
-    Ordinal_1044(auStack_54,param_1,(short)uVar3 + 1);
+    ce_memmove(auStack_54,param_1,(short)uVar3 + 1);
     msg_scroll_split_escape_segments(auStack_54,0);
     DAT_00250720 = read_realtime_clock_units();
     if (DAT_00250708 != 0) {
@@ -2701,7 +2701,7 @@ LAB_0007fa30:
   if (((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
       || (32 < s_wrap_recursion_depth))
   {
-    uVar4 = Ordinal_1068(param_1);
+    uVar4 = ce_strlen(param_1);
     /* Guard against param_1 being an empty string: (uVar4 & 0xffff) - 1
        underflows to 0xffff (index -1), reading/writing one byte before
        the string -- a stack-buffer-underflow confirmed live via
@@ -2756,10 +2756,10 @@ undefined4 param_2;
      table smashing ~10KB of adjacent memory on every palette install,
      since fixed) had already been eliminated, so this is a genuine
      separate edge case, not just a symptom of that corruption. */
-  if (Ordinal_1068(param_1) == 0) {
+  if (ce_strlen(param_1) == 0) {
     return;
   }
-  pcVar3 = (char *)Ordinal_1407(param_1,0x20);
+  pcVar3 = (char *)ce_strrchr(param_1,0x20);
   if (pcVar3 != (char *)0x0) {
     cVar6 = ' ';
     do {
@@ -2767,12 +2767,12 @@ undefined4 param_2;
       sVar2 = measure_text_width(param_1);
       if ((int)*(short *)(DAT_00250704 + 8) + (int)sVar2 < (int)*(short *)(DAT_00250704 + 6))
       goto LAB_0007fc2c;
-      pcVar4 = (char *)Ordinal_1407(param_1,0x20);
+      pcVar4 = (char *)ce_strrchr(param_1,0x20);
       *pcVar3 = ' ';
       pcVar3 = pcVar4;
     } while (pcVar4 != (char *)0x0);
   }
-  iVar5 = Ordinal_1068(param_1);
+  iVar5 = ce_strlen(param_1);
   cVar6 = param_1[iVar5 + -1];
   pcVar3 = param_1 + iVar5 + -2;
   do {
@@ -3822,16 +3822,16 @@ short param_3;
   iVar8 = (int)param_3;
   iVar11 = (int)DAT_0023c144;
   wVar2 = u_dgijjjigd_G__000871e0[iVar8 + 8];
-  sVar3 = Ordinal_2005(100,iVar11 * wVar2);
+  sVar3 = ordint_divmod(100,iVar11 * wVar2);
   sVar1 = DAT_0023c140;
   iVar9 = (int)sVar3;
   iVar10 = (int)DAT_0023c140;
   DAT_0023c13c = sVar3;
-  sVar4 = Ordinal_2005(100,u_dgijjjigd_G__000871e0[iVar8] * iVar10);
-  sVar5 = Ordinal_2005((int)wVar2,100);
+  sVar4 = ordint_divmod(100,u_dgijjjigd_G__000871e0[iVar8] * iVar10);
+  sVar5 = ordint_divmod((int)wVar2,100);
   if (sVar5 == 1) {
     sVar3 = (short)(sVar6 - iVar9);
-    sVar6 = Ordinal_2005(((sVar6 - iVar9) * 0x10000 >> 0x10) + 1,iVar11);
+    sVar6 = ordint_divmod(((sVar6 - iVar9) * 0x10000 >> 0x10) + 1,iVar11);
     sVar6 = sVar6 + -1;
   }
   else {
@@ -3981,7 +3981,7 @@ undefined1 * param_2;
     sVar2 = 0;
   }
   else if (iVar3 < 1) {
-    sVar2 = Ordinal_2005(iVar3 + -1,(int)DAT_0023c140);
+    sVar2 = ordint_divmod(iVar3 + -1,(int)DAT_0023c140);
     iVar6 = 0;
     if (iVar3 < 0) {
       iVar4 = (sVar2 + 1) * 0x10000 >> 0x10;
@@ -4004,12 +4004,12 @@ undefined1 * param_2;
     sVar2 = (DAT_0023c138 - sVar7 * (short)(sVar2 + 1)) + -1;
   }
   else {
-    /* Was `Ordinal_2005(iVar3 + 1)` -- missing its dividend argument.
+    /* Was `ordint_divmod(iVar3 + 1)` -- missing its dividend argument.
        The sibling branch above (iVar3 < 1) makes the exact same call
-       shape fully: `Ordinal_2005(iVar3 + -1,(int)DAT_0023c140)`
+       shape fully: `ordint_divmod(iVar3 + -1,(int)DAT_0023c140)`
        (divisor=iVar3+/-1, dividend=DAT_0023c140), so by direct
        symmetry this one is missing `(int)DAT_0023c140` too. Unlike
-       Ordinal_2005's own K&R "leftover register" idiom (safe on the
+       ordint_divmod's own K&R "leftover register" idiom (safe on the
        original ARM ABI, where an unfilled argument register
        predictably still held the caller's last computed value), a
        dropped argument here is NOT safe on this x86-64 recompile --
@@ -4018,7 +4018,7 @@ undefined1 * param_2;
        inner trip count, so garbage here produced an unbounded copy
        loop and a wild param_1/param_2 write -- the intermittent,
        ASLR-flaky crash/heap-corruption in this function. */
-    sVar1 = Ordinal_2005(iVar3 + 1,(int)DAT_0023c140);
+    sVar1 = ordint_divmod(iVar3 + 1,(int)DAT_0023c140);
     iVar6 = 0;
     if (0 < iVar3) {
       do {
@@ -4071,19 +4071,19 @@ undefined1 * param_2;
 undefined4 init_sprite_list_buffers()
 
 {
-  DAT_0023c3e8 = Ordinal_1041(0x514);
+  DAT_0023c3e8 = ce_malloc(0x514);
   if (DAT_0023c3e8 != 0) {
-    Ordinal_1047(DAT_0023c3e8,0,0x514);
+    ce_memset(DAT_0023c3e8,0,0x514);
     DAT_0023c3ec = DAT_0023c3e8 + 0x500;
   }
-  DAT_0023c40c = Ordinal_1041(0x102);
+  DAT_0023c40c = ce_malloc(0x102);
   if (DAT_0023c40c != 0) {
-    Ordinal_1047(DAT_0023c40c,0,0x102);
+    ce_memset(DAT_0023c40c,0,0x102);
     DAT_0023c414 = DAT_0023c40c + 0x100;
   }
-  DAT_0023c3e4 = Ordinal_1041(0x102);
+  DAT_0023c3e4 = ce_malloc(0x102);
   if (DAT_0023c3e4 != 0) {
-    Ordinal_1047(DAT_0023c3e4,0,0x102);
+    ce_memset(DAT_0023c3e4,0,0x102);
     DAT_0023c410 = DAT_0023c40c + 0x100;
   }
   return 0;
@@ -4547,7 +4547,7 @@ undefined4 param_2;
   undefined1 *puVar1;
   undefined4 uVar2;
   
-  while (puVar1 = (undefined1 *)Ordinal_1064(param_1 + 1,0x5c), puVar1 != (undefined1 *)0x0) {
+  while (puVar1 = (undefined1 *)ce_strchr(param_1 + 1,0x5c), puVar1 != (undefined1 *)0x0) {
     *puVar1 = 0;
     if ((puVar1[2] != '\0') || (uVar2 = param_2, puVar1[1] == 'm')) {
       uVar2 = 1;
@@ -4572,12 +4572,12 @@ undefined4 param_2;
 
 {
   char cVar1;
-  char *iVar2;   /* was `int` -- Ordinal_1064 (strchr) returns a real
+  char *iVar2;   /* was `int` -- ce_strchr (strchr) returns a real
                     64-bit pointer; truncating it made `*(char *)(iVar2+1)`
                     a wild deref, e.g. crashing "You see nothing." on a
                     right-click. */
 
-  while ((iVar2 = Ordinal_1064(param_1,10), iVar2 != 0 &&
+  while ((iVar2 = ce_strchr(param_1,10), iVar2 != 0 &&
          (cVar1 = iVar2[1], cVar1 != '\0'))) {
     iVar2[1] = 0;
     msg_scroll_draw_wrapped_span(param_1,1);
@@ -4714,7 +4714,7 @@ short param_5;
       pcVar6[(int)(acStack_a1 + (1 - (int)param_2))] = cVar1;
       pcVar6 = pcVar6 + 1;
     } while (cVar1 != '\0');
-    iVar7 = Ordinal_1068(param_2);
+    iVar7 = ce_strlen(param_2);
     uVar13 = iVar7 * -0x10000 >> 0x10;
   }
   sVar5 = (short)uVar13;
@@ -4736,7 +4736,7 @@ short param_5;
       if (1999 < local_a8) {
         set_draw_color(0x2a);
         rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
-        uVar13 = Ordinal_1068(acStack_a1 + 1);
+        uVar13 = ce_strlen(acStack_a1 + 1);
         if ((uint)(int)sVar5 < uVar13) {
           draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
@@ -4787,7 +4787,7 @@ short param_5;
         set_draw_color(0x2a);
         local_a8 = 0;
         rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
-        uVar9 = Ordinal_1068(acStack_a1 + 1);
+        uVar9 = ce_strlen(acStack_a1 + 1);
         if (uVar11 < uVar9) {
           draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
@@ -4822,12 +4822,12 @@ LAB_0008042c:
         if ((int)uVar11 < 0) {
           uVar13 = (int)(uVar11 * -0x10000) >> 0x10;
         }
-        uVar9 = Ordinal_1068(acStack_a1 + 1);
+        uVar9 = ce_strlen(acStack_a1 + 1);
         uVar11 = (uint)(short)uVar13;
-        if ((uVar11 < uVar9) && (uVar9 = Ordinal_1068(acStack_a1 + 1), uVar11 < uVar9)) {
+        if ((uVar11 < uVar9) && (uVar9 = ce_strlen(acStack_a1 + 1), uVar11 < uVar9)) {
           do {
             acStack_a1[uVar11 + 1] = acStack_a1[uVar11 + 2];
-            uVar9 = Ordinal_1068(acStack_a1 + 1);
+            uVar9 = ce_strlen(acStack_a1 + 1);
             uVar11 = (uint)(short)((uVar11 + 1) * 0x10000 >> 0x10);
           } while (uVar11 < uVar9);
         }
@@ -4845,11 +4845,11 @@ LAB_0008042c:
         }
         uVar11 = (uint)(short)uVar13;
         if ((int)uVar11 < 1) goto LAB_0008062c;
-        uVar9 = Ordinal_1068(acStack_a1 + 1);
+        uVar9 = ce_strlen(acStack_a1 + 1);
         if (uVar11 <= uVar9) {
           do {
             acStack_a1[uVar11] = acStack_a1[uVar11 + 1];
-            uVar9 = Ordinal_1068(acStack_a1 + 1);
+            uVar9 = ce_strlen(acStack_a1 + 1);
             uVar11 = (uint)(short)((uVar11 + 1) * 0x10000 >> 0x10);
           } while (uVar11 <= uVar9);
         }
@@ -4872,7 +4872,7 @@ LAB_000805f0:
         if ((int)uVar11 < 0) {
           uVar13 = (int)(uVar11 * -0x10000) >> 0x10;
         }
-        uVar11 = Ordinal_1068(acStack_a1 + 1);
+        uVar11 = ce_strlen(acStack_a1 + 1);
         sVar5 = (short)uVar13;
         if ((uint)(int)sVar5 < uVar11) {
 LAB_000805bc:
@@ -4882,7 +4882,7 @@ LAB_000805bc:
       }
       else if (iVar12 == 0x165) {
 LAB_0008061c:
-        uVar13 = Ordinal_1068(acStack_a1 + 1);
+        uVar13 = ce_strlen(acStack_a1 + 1);
         uVar13 = uVar13 & 0xffff;
       }
       else {
@@ -4899,11 +4899,11 @@ LAB_000804d0:
             acStack_a1[1] = 0;
             uVar13 = 0;
           }
-          if (((((iVar12 != -1) && (iVar10 = Ordinal_1417(iVar12,0x157), iVar10 != 0)) &&
+          if (((((iVar12 != -1) && (iVar10 = _isctype(iVar12,0x157), iVar10 != 0)) &&
                (sVar5 = measure_text_width(acStack_a1 + 1), sVar5 < (short)(sVar3 + -0x14 + sVar2))) &&
-              (uVar11 = Ordinal_1068(acStack_a1 + 1), uVar11 < (uint)(int)param_5)) &&
-             ((param_4 != 0 || (iVar12 = Ordinal_1417(iVar12,4), iVar12 != 0)))) {
-            sVar5 = Ordinal_1068(acStack_a1 + 1);
+              (uVar11 = ce_strlen(acStack_a1 + 1), uVar11 < (uint)(int)param_5)) &&
+             ((param_4 != 0 || (iVar12 = _isctype(iVar12,4), iVar12 != 0)))) {
+            sVar5 = ce_strlen(acStack_a1 + 1);
             iVar12 = (int)sVar5;
             acStack_a1[iVar12 + 2] = '\0';
             sVar5 = (short)uVar13;
@@ -5013,8 +5013,8 @@ LAB_00080918:
 // click region (registered below in register_stats_panel_click_regions
 // at (0x7a,0x97,0x98,0x88)). Prints a multi-part descriptive "scroll"
 // paragraph about the player built from stat bytes at DAT_00086df8+0x39
-// (scaled via Ordinal_2005 into a 0-5 clamped adjective index) and
-// +0x3a, plus a percentile derived from Ordinal_2008 against table
+// (scaled via ordint_divmod into a 0-5 clamped adjective index) and
+// +0x3a, plus a percentile derived from ordfloat_double_mul against table
 // DAT_001c2000 and field +0xce -- reads as the character sheet's
 // descriptive personality/background text.
 void print_character_description_scroll()
@@ -5027,9 +5027,9 @@ void print_character_description_scroll()
   short extraout_r1;
   
   message_scroll_print_wrapped(&s_scroll_newline_0008522c);
-  sVar1 = Ordinal_2005(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
+  sVar1 = ordint_divmod(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
   print_scroll_message_concat(0x40,sVar1 + 0x68,0x67);
-  sVar1 = Ordinal_2005(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
+  sVar1 = ordint_divmod(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
   iVar3 = (int)sVar1;
   if (5 < iVar3) {
     iVar3 = 5;
@@ -5037,8 +5037,8 @@ void print_character_description_scroll()
   print_scroll_message_by_id(0x76 - iVar3);
   message_scroll_print_wrapped(&DAT_00084f20);
   print_scroll_message_concat(0x41,DAT_00201b68 + 0x19a,0x42);
-  sVar1 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
-  sVar2 = Ordinal_2005(0xc,(int)sVar1);
+  sVar1 = ordfloat_double_mul(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
+  sVar2 = ordint_divmod(0xc,(int)sVar1);
   uw_ord2005_rem_111 = ((int)((int)sVar1)) % (0xc);
   if (sVar2 < 0x65) {
     print_scroll_message_concat(0x43,sVar2 + 0x19b,0x44);
@@ -5088,7 +5088,7 @@ void show_flask_value_tooltip()
         itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
         itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
         if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
-          sVar2 = Ordinal_2005(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
+          sVar2 = ordint_divmod(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
           print_scroll_message_concat(0x5b,sVar2 + 0x54,0x5c);
         }
       }
@@ -5096,10 +5096,10 @@ void show_flask_value_tooltip()
         itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_94,10);
         itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_a4,10);
       }
-      Ordinal_1063(local_84,auStack_94);
-      Ordinal_1063(local_84,s_out_of_000858dc);
-      Ordinal_1063(local_84,auStack_a4);
-      Ordinal_1063(local_84,&s_scroll_newline_0008522c);
+      ce_strcat(local_84,auStack_94);
+      ce_strcat(local_84,s_out_of_000858dc);
+      ce_strcat(local_84,auStack_a4);
+      ce_strcat(local_84,&s_scroll_newline_0008522c);
       message_scroll_print_wrapped(local_84);
       wait_for_click_release(1);
     }
@@ -5286,8 +5286,8 @@ void handle_rune_bag_click()
       reset_ready_rune_slots();
     }
     else {
-      sVar4 = Ordinal_2005(0xf,DAT_00085a6c[1] + -0x12);
-      sVar5 = Ordinal_2005(0x12,*psVar3 + -3);
+      sVar4 = ordint_divmod(0xf,DAT_00085a6c[1] + -0x12);
+      sVar5 = ordint_divmod(0x12,*psVar3 + -3);
       iVar6 = (5 - sVar4) * 4 + (int)sVar5;
       if ((*(byte *)(DAT_00086df8 + (iVar6 * 0x10000 >> 0x13) + 0x44) >>
            (7 - (iVar6 * 0x10000 >> 0x10 & 7U) & 0xff) & 1) != 0) {
@@ -5468,7 +5468,7 @@ uint param_1;
   byte bVar6;
   byte bVar7;
   
-  cVar2 = Ordinal_2005(6,param_1 & 0xff);
+  cVar2 = ordint_divmod(6,param_1 & 0xff);
   bVar6 = cVar2 + 1;
   iVar5 = (param_1 & 0xff) * 4;
   bVar7 = (byte)(&DAT_00087530)[iVar5] >> 3;
@@ -5654,7 +5654,7 @@ int param_1;
     DAT_00085c50 = (short)((uint)iVar4 >> 0x10);
     bVar5 = param_1 != 0;
     *g_draw_color_index = 0xe0;
-    uVar3 = Ordinal_2005(10,iVar1);
+    uVar3 = ordint_divmod(10,iVar1);
     itoa_radix(uVar3,auStack_24,10);
     sVar2 = measure_text_width(auStack_24);
     iVar4 = (int)sVar2;
@@ -6317,7 +6317,7 @@ short param_2;
 {
   short sVar1;
 
-  sVar1 = Ordinal_2005(0xf,(int)param_2);
+  sVar1 = ordint_divmod(0xf,(int)param_2);
   dispatch_pause_menu_click((int)sVar1);
   return;
 }
@@ -6968,7 +6968,7 @@ short param_2;
     iVar1 = iVar1 + 0xf;
   }
   sVar2 = (short)(iVar1 >> 4);
-  iVar1 = Ordinal_2005(0x14,param_2 + -200);
+  iVar1 = ordint_divmod(0x14,param_2 + -200);
   if (0 < iVar1) {
     sVar2 = (short)iVar1 * 0x14 + sVar2;
   }

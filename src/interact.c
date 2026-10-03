@@ -266,8 +266,8 @@ void interact_attack()
   DEBUG(INFO, "Interact attack");
 
   psVar1 = DAT_00085a6c;
-  sVar2 = Ordinal_2005(DAT_0023be88 + 2,DAT_00085a6c[1] * 3);
-  sVar3 = Ordinal_2005(DAT_0023bd80 + 2,*psVar1 * 3);
+  sVar2 = ordint_divmod(DAT_0023be88 + 2,DAT_00085a6c[1] * 3);
+  sVar3 = ordint_divmod(DAT_0023bd80 + 2,*psVar1 * 3);
   iVar4 = sVar2 * 3 + (int)sVar3;
   if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[attack-dir] click=(%d,%d) view=(%d,%d) row=%d col=%d grid=%d -> attack_type=%d\n",
       (int)*psVar1, (int)DAT_00085a6c[1], (int)DAT_0023bd80, (int)DAT_0023be88, (int)sVar2, (int)sVar3, iVar4, iVar4+1);
@@ -739,7 +739,7 @@ LAB_000285e4:
       uVar6 = ((byte)*param_1 & 0x3f) + 0x100;
     }
     DAT_001007c4 = uVar6;
-    Ordinal_1047(acStack_114,0,0x104);
+    ce_memset(acStack_114,0,0x104);
     pcVar4 = &DAT_0023cca8;
     stack0xffdc3244_ptr = acStack_114;
     do {
@@ -747,7 +747,7 @@ LAB_000285e4:
       *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_114,s__DATA_cnv_ark_00084fc8);
+    ce_strcat(acStack_114,s__DATA_cnv_ark_00084fc8);
     sVar2 = probe_archive_entry_exists(acStack_114,uVar6);
     if (0 < sVar2) {
       change_game_mode(4);

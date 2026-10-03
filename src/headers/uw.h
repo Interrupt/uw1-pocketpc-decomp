@@ -234,7 +234,7 @@ typedef struct __attribute__((packed)) {
  * evidence (a direct, already-written comment naming the bit/byte's
  * real meaning) that is_container/has_look_description had. */
 typedef struct __attribute__((packed)) {
-    unsigned char _unk00;        /* offset 0x00: a numeric stat (fed into Ordinal_2005/roll-style calls in several places) -- not yet confirmed */
+    unsigned char _unk00;        /* offset 0x00: a numeric stat (fed into ordint_divmod/roll-style calls in several places) -- not yet confirmed */
     unsigned char _unk01_02[2];  /* offsets 0x01-0x02: packed sub-fields -- a low 3 bits (&7) value read separately from a >>4 value spanning into offset 2, neither named yet */
     unsigned char _unk03;        /* offset 0x03: flag byte -- bits 2/3/8(0x8) individually checked at different call sites, none named yet */
     unsigned char _unk04;        /* offset 0x04: unconfirmed */
@@ -2884,7 +2884,7 @@ undefined4 register_default_atexit_handler();
 #define _DAT_002048a9 (*(uint*)&DAT_002048a9)
 #define _DAT_00204980 (*(uint*)&DAT_00204980)
 #define _DAT_0023ce10 (*(uint*)&DAT_0023ce10)
-#define Ordinal_2005_exref ((void*)&Ordinal_2005)
+#define ordint_divmod_exref ((void*)&ordint_divmod)
 
 /* Globals defined in uw.c but also used by functions that now live in
    game.c (animate_title_palette_cycle's 14ms throttle timestamp). */

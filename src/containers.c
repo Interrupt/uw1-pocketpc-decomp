@@ -11,7 +11,7 @@
 
 #define _DAT_00202978 (*(uint*)&DAT_00202978)
 /* Was a lone `undefined4` (4-byte) scalar holding a real heap pointer
-   (an Ordinal_1041-allocated open-container tracking record, same class
+   (an ce_malloc-allocated open-container tracking record, same class
    as g_current_container_record right above) -- every assignment to/from
    it (open_backpack_container, close_backpack_container) truncated the
    real 64-bit pointer to 32 bits. That alone was silent as long as only
@@ -106,13 +106,13 @@ void free_open_container_chain()
          dereferencing the leftover-register garbage this left in
          param_1's place. */
       release_container_reference((char *)g_current_container_record);
-      Ordinal_1018(g_current_container_record);
+      LocalFree(g_current_container_record);
       g_current_container_record = _prev;
       _prev = *(char **)(g_current_container_record + 0x14);
     }
     g_open_container_list = 0;
     release_container_reference((char *)g_current_container_record);
-    Ordinal_1018(g_current_container_record);
+    LocalFree(g_current_container_record);
     g_current_container_record = 0;
   }
   return;
@@ -263,7 +263,7 @@ void leave_nested_container_level()
          current g_current_container_record before it's overwritten below. */
       release_container_reference((char *)g_current_container_record);
       /* Was `g_current_container_record = *(undefined1 **)(g_current_container_record + 4);
-         Ordinal_1018();` -- walked the same truncated legacy "prev" field
+         LocalFree();` -- walked the same truncated legacy "prev" field
          (wild pointer the moment a real second record existed to walk
          to), then freed with NO argument at all (dropped, same idiom as
          the sibling fix above) instead of the OLD record this is meant
@@ -271,7 +271,7 @@ void leave_nested_container_level()
          then free the right one. */
       _old = g_current_container_record;
       g_current_container_record = *(char **)(g_current_container_record + 0x14);
-      Ordinal_1018(_old);
+      LocalFree(_old);
       *g_current_container_record = 0;
       g_current_container_record[1] = 0;
       g_current_container_record[2] = 0;
@@ -629,7 +629,7 @@ short param_1;
          updating to read these instead; every plain "is there a
          next/prev at all" NULL check and every +8..+11 field access
          keeps working unchanged. */
-      puVar9 = (undefined4 *)Ordinal_1041(0x1c);
+      puVar9 = (undefined4 *)ce_malloc(0x1c);
       if (puVar9 != (undefined4 *)0x0) {
         if (g_open_container_list == (undefined4 *)0x0) {
           g_open_container_list = (char *)puVar9;
@@ -1303,9 +1303,9 @@ int param_2;
       *wptr_60040 = cVar1; wptr_60040 = wptr_60040 + 1;
       pcVar3 = pcVar3 + 1;
     } while (cVar1 != '\0');
-    iVar2 = Ordinal_1068(acStack_5c);
+    iVar2 = ce_strlen(acStack_5c);
     build_object_display_name(acStack_5c + iVar2,param_1,0,0);
-    Ordinal_1063(acStack_5c,s_is_empty__0008790c);
+    ce_strcat(acStack_5c,s_is_empty__0008790c);
     message_scroll_print_wrapped(acStack_5c);
   }
   set_pending_update_flags(2);

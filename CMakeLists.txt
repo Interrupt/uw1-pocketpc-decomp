@@ -156,9 +156,9 @@ if(BUILD_TESTING)
     src/game.c:prepare_new_game src/game.c:begin_gameplay
     src/level.c:load_level_object_table src/level.c:load_level
     src/game.c:set_game_mode
-    src/ordinal_stubs.c:Ordinal_61 src/ordinal_stubs.c:Ordinal_164
-    src/ordinal_stubs.c:Ordinal_196 src/ordinal_stubs.c:Ordinal_1047
-    src/ordinal_stubs.c:Ordinal_1063
+    src/ordinal_stubs.c:ce_wcscpy src/ordinal_stubs.c:CopyFileW
+    src/ordinal_stubs.c:MultiByteToWideChar src/ordinal_stubs.c:ce_memset
+    src/ordinal_stubs.c:ce_strcat
     src/saveload.c:read_archive_entry)
   foreach(name chargen new_game)
     target_compile_definitions(test_${name} PRIVATE
@@ -236,8 +236,8 @@ if(BUILD_TESTING)
     src/audio.c:load_voice_sample_page src/audio.c:read_voice_sample_page_chunk
     src/ordinal_stubs.c:ordfloat_bits_to_float
     src/ordinal_stubs.c:ordfloat_float_to_bits
-    src/ordinal_stubs.c:Ordinal_2032 src/ordinal_stubs.c:Ordinal_2026
-    src/ordinal_stubs.c:Ordinal_2020 src/ordinal_stubs.c:Ordinal_2018
+    src/ordinal_stubs.c:ordfloat_int_to_float2 src/ordinal_stubs.c:ordfloat_mul
+    src/ordinal_stubs.c:ordfloat_uint_to_float src/ordinal_stubs.c:ordfloat_int_to_float
     src/graphics.c:expand_pals_bytes
     src/graphics.c:convert_palette_bgrx_to_rgb
     src/graphics.c:build_rgb565_palette
@@ -250,7 +250,7 @@ if(BUILD_TESTING)
     src/gx_stub.c:uw_begin_present_batch src/gx_stub.c:uw_end_present_batch
     src/gx_stub.c:uw_begin_modal_present src/gx_stub.c:uw_end_modal_present
     src/gx_stub.c:uw_defer_present
-    src/ordinal_stubs.c:Ordinal_172
+    src/ordinal_stubs.c:GetFileSize
     src/input.c:wait_for_click_release src/input.c:next_input_event
     src/input.c:peek_input_event src/input.c:poll_input_event src/input.c:poll_mouse_event
     src/hud.c:poll_mouse_button_flags src/input.c:process_pending_keyboard_scan_code

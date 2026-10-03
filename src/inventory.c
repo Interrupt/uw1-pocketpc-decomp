@@ -16,7 +16,7 @@ undefined2 g_cursor_holding_state;
    despite being assigned a real malloc'd address plus an offset
    (reset_level_object_arena: `DAT_002046b8 = DAT_002029cc + 0x4000;`), truncating it
    on this 64-bit host and feeding a garbage near-zero base pointer to
-   every reader, including a real crash (Ordinal_1047/memset on the
+   every reader, including a real crash (ce_memset/memset on the
    resulting ~0x1b address) in reset_player_object_record. */
 char *DAT_002046b8;
 char *g_current_container_record;
@@ -104,7 +104,7 @@ undefined4 DAT_00204844;
    this table's fixed low address plausibly sat inside the same static
    region the "dynamic" arena pointers were themselves offset from;
    here that arena is a real runtime allocation (init_level_object_arena's
-   `Ordinal_1041(0x7c08)`), so this table now lives inside that SAME
+   `ce_malloc(0x7c08)`), so this table now lives inside that SAME
    buffer instead -- g_backpack_slot_table is pointed at its unused
    tail (offset 0x7b00, 28*2=56 bytes, well inside the buffer's real
    0x7c08 size) by reset_level_object_arena at level load, and
@@ -940,7 +940,7 @@ joined_r0x00048308:
         *g_draw_color_index = 0x60;
         for (; iVar1 <= iVar2; iVar1 = (iVar1 + 1) * 0x10000 >> 0x10) {
           if (1 < (short)auStack_54[iVar1]) {
-            uVar8 = Ordinal_1025((int)(short)auStack_54[iVar1],auStack_60,10);
+            uVar8 = _itoa((int)(short)auStack_54[iVar1],auStack_60,10);
             draw_text_string(uVar8,(short)(&g_inv_hotspot_draw_x)[iVar1 * 7] + 3,
                          (short)(&g_inv_hotspot_draw_y)[iVar1 * 7] + 1);
           }

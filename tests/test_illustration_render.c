@@ -26,7 +26,7 @@ codeval *const PTR_FUN_00085408[16] = {
 undefined4 babl_render_op_wrap_message(void) { TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
 undefined4 babl_render_op_say(void) { TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
 undefined4 babl_render_op_play_sound(void) { return 0; }
-void *Ordinal_1041(unsigned int count)
+void *ce_malloc(unsigned int count)
 {
     TEST_ASSERT_LESS_THAN_INT(64, alloc_count);
     void *p = calloc(1, count);
@@ -34,24 +34,24 @@ void *Ordinal_1041(unsigned int count)
     allocations[alloc_count++] = p;
     return p;
 }
-void *Ordinal_1346(unsigned int count, unsigned int size) { return Ordinal_1041(count * size); }
-void *Ordinal_1047(void *p, int value, unsigned int count) { return memset(p, value, count); }
-void *Ordinal_1044(void *p, const void *source, unsigned int count) { return memcpy(p, source, count); }
-char *Ordinal_1063(char *p, const char *source) { return strcat(p, source); }
-void Ordinal_1018(void *p)
+void *ce_calloc(unsigned int count, unsigned int size) { return ce_malloc(count * size); }
+void *ce_memset(void *p, int value, unsigned int count) { return memset(p, value, count); }
+void *ce_memmove(void *p, const void *source, unsigned int count) { return memcpy(p, source, count); }
+char *ce_strcat(char *p, const char *source) { return strcat(p, source); }
+void LocalFree(void *p)
 {
     for (int i = 0; i < alloc_count; i++) if (allocations[i] == p) {
         free(p); allocations[i] = NULL; frees++; return;
     }
     TEST_FAIL_MESSAGE("Free must receive the complete allocated pointer");
 }
-long Ordinal_553(int handle)
+long CloseHandle(int handle)
 {
     for (int i = 0; i < 4; i++) if (file_handles[i] == handle) file_handles[i] = 0;
     return uw_file_close(handle);
 }
-long Ordinal_2005(int divisor, int dividend) { return dividend / divisor; }
-long Ordinal_496(void) { return 0; }
+long ordint_divmod(int divisor, int dividend) { return dividend / divisor; }
+long Sleep(void) { return 0; }
 undefined4 open_file_for_read(const char *path)
 {
     TEST_ASSERT_LESS_THAN_INT(4, opens);
@@ -87,12 +87,12 @@ short *DAT_000876c4 = &mouse_driver;
 static char keyboard_case;
 char *DAT_0008794c = &keyboard_case;
 static int opening_hold_polls, idle_polls, dismissal_sent;
-long Ordinal_870(void) { return 0; }
-long Ordinal_859(void) { return 0; }
-long Ordinal_1417(void) { return 0; }
-long Ordinal_1090(int key) { return key; }
-long Ordinal_1091(int key) { return key; }
-int Ordinal_864(void *msg, void *hwnd, unsigned int low,
+long TranslateMessage(void) { return 0; }
+long DispatchMessageW(void) { return 0; }
+long _isctype(void) { return 0; }
+long ce_tolower(int key) { return key; }
+long ce_toupper(int key) { return key; }
+int PeekMessageW(void *msg, void *hwnd, unsigned int low,
                 unsigned int high, unsigned int remove)
 {
     (void)msg; (void)hwnd; (void)low; (void)high; (void)remove;
@@ -289,14 +289,14 @@ static void test_picture_file_size_preserves_read_position(void)
     file_handles[0] = handle;
     TEST_ASSERT_EQUAL_INT(7, uw_file_seek(handle, 7, 0));
     unsigned int high = 99;
-    long size = Ordinal_172(handle, &high);
+    long size = GetFileSize(handle, &high);
     TEST_ASSERT_GREATER_THAN_INT(0xb00, size);
     TEST_ASSERT_EQUAL_UINT(0, high);
     TEST_ASSERT_EQUAL_INT(7, uw_file_seek(handle, 0, 1));
-    TEST_ASSERT_EQUAL_INT(size, Ordinal_172(handle, NULL));
-    TEST_ASSERT_EQUAL_UINT(0xffffffffu, Ordinal_172(-1, NULL));
-    Ordinal_553(handle);
-    TEST_ASSERT_EQUAL_UINT(0xffffffffu, Ordinal_172(handle, NULL));
+    TEST_ASSERT_EQUAL_INT(size, GetFileSize(handle, NULL));
+    TEST_ASSERT_EQUAL_UINT(0xffffffffu, GetFileSize(-1, NULL));
+    CloseHandle(handle);
+    TEST_ASSERT_EQUAL_UINT(0xffffffffu, GetFileSize(handle, NULL));
 }
 static void test_opening_right_click_release_does_not_dismiss_picture(void)
 {

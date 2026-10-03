@@ -16,23 +16,23 @@ const short DAT_00085f50_cosine[260];
 undefined1 DAT_00086260_backing[1024];
 undefined1 DAT_00086264_backing[1024];
 /* read_realtime_clock_units/rand_below are now real, self-contained
- * functions in math.c (linked whole) -- stub their own Ordinal_*
+ * functions in math.c (linked whole) -- stub their own ordinal-import
  * dependencies instead, since this test binary doesn't link
  * ordinal_stubs.c. */
-long Ordinal_535()
+long GetTickCount()
 {
-    TEST_FAIL_MESSAGE("Unexpected Ordinal_535 call");
+    TEST_FAIL_MESSAGE("Unexpected GetTickCount call");
     return 0;
 }
 
-long Ordinal_1053()
+long ce_rand()
 {
-    TEST_FAIL_MESSAGE("Unexpected Ordinal_1053 call");
+    TEST_FAIL_MESSAGE("Unexpected ce_rand call");
     return 0;
 }
 
-long Ordinal_2005()
+long ordint_divmod()
 {
-    TEST_FAIL_MESSAGE("Unexpected Ordinal_2005 call");
+    TEST_FAIL_MESSAGE("Unexpected ordint_divmod call");
     return 0;
 }

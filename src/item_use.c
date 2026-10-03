@@ -611,14 +611,14 @@ int param_3;
   undefined2 uVar14;
   /* Was 76 bytes with a separate 555248-byte `acStackY_87970` "prefix"
      buffer that a copy loop wrote "That " into -- but the very next
-     lines (Ordinal_1068/build_object_display_name) read and append to acStack_7c,
+     lines (ce_strlen/build_object_display_name) read and append to acStack_7c,
      which never got that prefix, so it started from stale/uninitialized
      stack content. Same split-buffer decompile artifact already fixed
      in build_creature_look_text's acStack_7c (see its comment): the
      giant acStackY_* array is a phantom Ghidra stack-frame-miscalc, and
      the real buffer is acStack_7c. Confirmed live: eating the bread
      inside an open container printed a message built from garbage
-     stack bytes and, via Ordinal_1068 returning a wild "current length"
+     stack bytes and, via ce_strlen returning a wild "current length"
      into that garbage, build_object_display_name wrote the object's name out of
      bounds of the 76-byte buffer -- corrupting the stack badly enough
      to zero the player's HP field, immediately killing the character
@@ -773,7 +773,7 @@ LAB_0007af3c:
           handle_rest_action(0xfffffffe);
           if (*(char *)((char *)g_player_object + 8) == '\0') goto LAB_0007b254;
           print_scroll_message_by_id(0xf3);
-          uVar8 = Ordinal_2005(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
+          uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
           uVar8 = (uVar8 & 0xff) + 10;
         }
         else {
@@ -784,7 +784,7 @@ LAB_0007af3c:
             }
             goto LAB_0007b254;
           }
-          uVar8 = Ordinal_2005(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
+          uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
           uVar8 = uVar8 & 0xff;
         }
         set_movement_animation_timer(0x40,uVar8);
@@ -803,11 +803,11 @@ LAB_0007b2e0:
     }
     if ((short)iVar11 == 0) {
       acStack_7c[0] = '\0';
-      Ordinal_1063(acStack_7c, s_That_000878f4);
-      iVar11 = Ordinal_1068(acStack_7c);
+      ce_strcat(acStack_7c, s_That_000878f4);
+      iVar11 = ce_strlen(acStack_7c);
       sVar4 = build_object_display_name(acStack_7c + iVar11,param_2,0,0);
       if (sVar4 == 0) {
-        Ordinal_1063(acStack_7c,s_UNNAMED_00084f24);
+        ce_strcat(acStack_7c,s_UNNAMED_00084f24);
       }
       iVar11 = rand_below(0x14);
       iVar11 = ((byte)param_2[2] & 0x3f) + iVar11;
@@ -1260,12 +1260,12 @@ code *param_2;
     *wptr_58645 = cVar1; wptr_58645 = wptr_58645 + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  iVar4 = Ordinal_1068(acStack_34);
+  iVar4 = ce_strlen(acStack_34);
   sVar2 = build_object_display_name(acStack_34 + iVar4,param_1,0,0);
   if (sVar2 == 0) {
-    Ordinal_1063(acStack_34,s_UNNAMED_00084f24);
+    ce_strcat(acStack_34,s_UNNAMED_00084f24);
   }
-  Ordinal_1063(acStack_34,s_on_what__000878e0);
+  ce_strcat(acStack_34,s_on_what__000878e0);
   message_scroll_print_wrapped(acStack_34);
   push_cursor_icon(*param_1 & 0x1ff);
   g_selected_object = param_1;
@@ -1517,7 +1517,7 @@ short param_2;
 {
   char cVar1;
   
-  cVar1 = Ordinal_2005((int)param_2,*(undefined1 *)(param_1 + 8));
+  cVar1 = ordint_divmod((int)param_2,*(undefined1 *)(param_1 + 8));
   *(char *)(param_1 + 8) = cVar1 + '\x01';
   *(undefined1 *)(param_1 + 0xd) = *(undefined1 *)(param_1 + 0xd);
   *(byte *)(param_1 + 0xe) = *(byte *)(param_1 + 0xe) | 2;
@@ -1649,7 +1649,7 @@ int param_3;
     }
   }
   else if (uVar3 == 0x115) {
-    uVar2 = Ordinal_1053();
+    uVar2 = ce_rand();
     uw_ord2005_rem_167 = ((int)(uVar2)) % (3);
     iVar4 = (int)uw_ord2005_rem_167;
     uVar3 = *(ushort *)(DAT_00086df8 + 0x61);
@@ -1792,7 +1792,7 @@ int param_3;
           if ((short)uVar9 == 0x10) {
             *(undefined1 *)puVar8 = uVar1;
             *(byte *)((char *)puVar8 + 1) = bVar2 | 0x80;
-            uVar5 = Ordinal_1053();
+            uVar5 = ce_rand();
             uw_ord2005_rem_168 = ((int)(uVar5)) % (6);
             uVar9 = (uw_ord2005_rem_168 & 0xffff) + 3;
             *(byte *)(puVar8 + 3) = (byte)puVar8[3] & 0x3f ^ (char)uVar9 * '@';
@@ -2083,7 +2083,7 @@ int param_2;
      comment) and in build_creature_look_text: the "You read the "
      prefix was copied into a phantom, oversized acStackY_85d64 buffer
      that nothing else ever reads, leaving the real acStack_7c (read by
-     Ordinal_1068 just below) uninitialized. Fixed the same way: seed
+     ce_strlen just below) uninitialized. Fixed the same way: seed
      acStack_7c directly, widened for safety. */
   char acStack_7c [256];
   
@@ -2098,13 +2098,13 @@ int param_2;
       if ((uVar2 & 0x400) == 0) {
         if ((param_1[3] & 0x7fc0) < 0x4000) {
           acStack_7c[0] = '\0';
-          Ordinal_1063(acStack_7c, s_You_read_the_00085ce8);
-          iVar5 = Ordinal_1068(acStack_7c);
+          ce_strcat(acStack_7c, s_You_read_the_00085ce8);
+          iVar5 = ce_strlen(acStack_7c);
           sVar3 = build_object_display_name(acStack_7c + iVar5,param_1,0,0);
           if (sVar3 == 0) {
-            Ordinal_1063(acStack_7c,s_UNNAMED_00084f24);
+            ce_strcat(acStack_7c,s_UNNAMED_00084f24);
           }
-          Ordinal_1063(acStack_7c,&DAT_00085ce0);
+          ce_strcat(acStack_7c,&DAT_00085ce0);
           message_scroll_print_wrapped(acStack_7c);
           /* Was `get_message_string(id); message_scroll_print_wrapped();`
              -- the SAME dropped-argument idiom fixed throughout this
@@ -2522,7 +2522,7 @@ undefined4 try_climb_wall()
     uVar3 = 0x65;
   }
   else {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uw_ord2005_rem_103 = ((int)(uVar3)) % (5);
     if (uw_ord2005_rem_103 == 0) {
       if ((uint)(_DAT_002035cf >> 4) + (uint)*(ushort *)(DAT_00086df8 + 0x4a) <
@@ -2576,7 +2576,7 @@ int param_3;
       iVar2 = 0;
     }
     else if (iVar2 < 0x1f) {
-      sVar1 = Ordinal_2005(10);
+      sVar1 = ordint_divmod(10);
       iVar2 = sVar1 + 1;
     }
     else {
@@ -3258,7 +3258,7 @@ ushort param_5;
     }
     else {
       /* Was `resolve_object_link(g_current_container_record + 8)` --
-         g_current_container_record is a small (12-byte) Ordinal_1041
+         g_current_container_record is a small (12-byte) ce_malloc
          heap allocation, nowhere near the object arena buffer
          resolve_object_link's own bounds guard checks against (see its
          own comment), so this call was ALWAYS silently rejected on this
@@ -3572,7 +3572,7 @@ undefined1 * param_1;
   sVar2 = scroll_text_entry_prompt(s_Move_how_many__00085c68,&local_1c,auStack_18,0,3);
   if ((sVar2 != 0x1b) && (sVar2 != 3)) {
     if ((sVar2 == 0) || (3 < sVar2)) {
-      sVar2 = Ordinal_993(auStack_18);
+      sVar2 = ce_atoi(auStack_18);
       uVar5 = (int)sVar2;
       if ((int)(short)uVar1 < (int)sVar2) {
         uVar5 = (uint)uVar1;
@@ -4487,10 +4487,10 @@ bool compute_drop_aim_from_cursor()
   if (iVar1 < 0) {
     sVar5 = 0;
   }
-  sVar3 = Ordinal_2005(0xd,(sVar3 + -0x56) * 5);
+  sVar3 = ordint_divmod(0xd,(sVar3 + -0x56) * 5);
   DAT_00202a40 = sVar3 + -1;
-  sVar3 = Ordinal_2005(6,sVar5 + -0x38);
-  sVar4 = Ordinal_2005(0x300,(int)DAT_0023beb4);
+  sVar3 = ordint_divmod(6,sVar5 + -0x38);
+  sVar4 = ordint_divmod(0x300,(int)DAT_0023beb4);
   DAT_00202a3c = sVar3 + sVar4;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",

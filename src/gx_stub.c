@@ -130,7 +130,7 @@ static int g_running = 1;
  * finishes with each one before uw_pump_events even returns, so there's
  * no lingering "pending" state the way DAT_0023c448 stays set for
  * keyboard input. Real WinCE PeekMessage would report ANY pending
- * message type, not just keyboard, so Ordinal_864 needs a way to know
+ * message type, not just keyboard, so PeekMessageW needs a way to know
  * "a mouse message was just processed" too -- this one-shot flag is
  * that signal, consumed via uw_take_mouse_event_pending(). */
 static int g_mouse_event_pending = 0;
@@ -185,7 +185,7 @@ static int g_keychar_deferred = 0;
  * above: a *real* held click (any actual wall-clock gap between press
  * and release, which is every real click) means several poll calls
  * happen while the button is down but nothing NEW has arrived from SDL.
- * Ordinal_864/poll_input_event treat "no new message this call" as "no
+ * PeekMessageW/poll_input_event treat "no new message this call" as "no
  * message at all" and return early without ever reading DAT_0023c448 or
  * calling poll_mouse_event() -- so DAT_0023c63c (still 1, genuinely
  * held) never even gets checked, and character_generator_touch_select's
@@ -358,7 +358,7 @@ static void poll_dungeon_movement_keys(void) {
    sticky-bits table. Deliberately just the clock, NOT democapture_tick()/
    demomode_pump() (those stay in uw_pump_events() below -- see its own
    comment for why they can't move here). uw_pump_events() is also
-   reachable from Ordinal_864/poll_input_event, "the real keyboard-
+   reachable from PeekMessageW/poll_input_event, "the real keyboard-
    polling function used by every menu/input-wait loop in the game" (see
    its own comment in ordinal_stubs.c) -- confirmed live
    (UW_DEBUG_MOVEPACE) that during plain WASD holding it was firing
@@ -378,7 +378,7 @@ static void poll_dungeon_movement_keys(void) {
 void uw_advance_game_tick(void) {
     /* Advance g_uw_frame_clock_units (see its own comment in uw.c) by
        exactly one fixed tick's worth, in the SAME 4ms-per-unit scale
-       read_realtime_clock_units()/Ordinal_535()>>2 uses -- computed fresh from the
+       read_realtime_clock_units()/GetTickCount()>>2 uses -- computed fresh from the
        running tick count each call (not accumulated with a per-call
        remainder) so integer truncation never drifts the total over a
        long session: 60 ticks always total exactly 250 units (1000ms),
@@ -681,7 +681,7 @@ void uw_pump_events(void) {
                        g_mouse_event_pending every pump: handle_mouse_message's
                        WM_RBUTTONDOWN only latches DAT_002506ab, and the
                        one-shot g_mouse_event_pending it sets here can be
-                       consumed+cleared by an unrelated Ordinal_864 caller
+                       consumed+cleared by an unrelated PeekMessageW caller
                        (a redraw/flush) before main_loop_hud_flush's
                        poll_input_bindings ever peeks -- then, with no
                        further SDL event until release, the interact never
@@ -1677,7 +1677,7 @@ static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
     undefined4 handle = open_file_for_read("\\DATA\\pals.dat");
     seek_file_handle(handle, pal_index * 0x300, 0);
     short got = (short)read_file_handle(handle, raw, 0x300);
-    Ordinal_553(handle);
+    CloseHandle(handle);
     if (got != 0x300) return 0;
     expand_pals_bytes(out_rgb, raw, 0);
     return 1;

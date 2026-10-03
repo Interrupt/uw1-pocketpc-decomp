@@ -25,9 +25,9 @@ undefined1 *format_object_display_name(void) { TEST_FAIL_MESSAGE("Unexpected ins
 int message_scroll_print_wrapped(void) { TEST_FAIL_MESSAGE("Unexpected inscription printing"); return 0; }
 undefined4 open_file_for_read(void) { TEST_FAIL_MESSAGE("Unexpected grave file"); return -1; }
 undefined4 read_file_handle(void) { TEST_FAIL_MESSAGE("Unexpected grave file read"); return 0; }
-void *Ordinal_1047(void *dest, int value, unsigned int count)
+void *ce_memset(void *dest, int value, unsigned int count)
 { return memset(dest, value, count); }
-char *Ordinal_1063(char *dest, const char *source) { return strcat(dest, source); }
+char *ce_strcat(char *dest, const char *source) { return strcat(dest, source); }
 undefined4 open_existing_file_rw_alt(const char *path)
 {
     opens++;
@@ -57,7 +57,7 @@ undefined4 write_file_handle(int handle, const void *source, int count)
     writes++;
     return count;
 }
-long Ordinal_553(int handle) { if (handle != 1) return 0; closes++; return 1; }
+long CloseHandle(int handle) { if (handle != 1) return 0; closes++; return 1; }
 void display_book_or_scroll_page(uint page) { displays++; displayed_page = page; }
 
 static ushort *window_object(void)

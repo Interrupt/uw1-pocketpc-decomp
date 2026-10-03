@@ -247,7 +247,7 @@ int uw_file_seek(int handle, int distance, int method) {
     return (int)ftell(f);
 }
 
-/* CloseHandle-shaped (Ordinal_553): callers that check the return value
+/* CloseHandle-shaped (CloseHandle): callers that check the return value
  * (uw.c:7717, 25111, 36182, 58401 as of this writing) all treat it as
  * "nonzero = success", matching uw_file_copy's own documented Win32
  * convention just below -- was returning 0 on success/-1 on failure

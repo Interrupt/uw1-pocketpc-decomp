@@ -105,7 +105,7 @@ short param_3;
   char *local_48;
   undefined1 auStack_40 [16];
 
-  /* Was `Ordinal_1068()` -- called with no argument, relying on
+  /* Was `ce_strlen()` -- called with no argument, relying on
      whatever was left in the first-argument register from earlier code
      (the "dropped argument" idiom used throughout this file). That
      register no longer reliably holds param_1 by this point under this
@@ -118,13 +118,13 @@ short param_3;
      inner loop below (which runs iVar2 times) walks exactly that many
      characters of param_1. Pass it explicitly instead of relying on
      register leftovers. */
-  iVar2 = Ordinal_1068(param_1);
+  iVar2 = ce_strlen(param_1);
   uVar3 = measure_text_width(param_1);
   uVar10 = (uint)g_font_line_height;
   if (getenv("UW_DIAG_TEXT"))
     fprintf(stderr, "[diag11060] measured_width=%u line_height(g_font_line_height)=%u alloc=%u\n",
             uVar3, uVar10, (uVar3 & 0xffff) * uVar10);
-  pcVar4 = (char *)Ordinal_1041((uVar3 & 0xffff) * uVar10);
+  pcVar4 = (char *)ce_malloc((uVar3 & 0xffff) * uVar10);
   iVar11 = 0;
   pcVar8 = pcVar4;
   if (uVar10 != 0) {
@@ -176,7 +176,7 @@ short param_3;
              real capacity so a width/stride this code doesn't know how
              to unpack can't read uninitialized/out-of-bounds stack
              memory; narrower glyphs (the common case) are unaffected. */
-          Ordinal_1044(pcVar8,auStack_40,(int)sVar1 > (int)sizeof(auStack_40) ? (int)sizeof(auStack_40) : (int)sVar1);
+          ce_memmove(pcVar8,auStack_40,(int)sVar1 > (int)sizeof(auStack_40) ? (int)sizeof(auStack_40) : (int)sVar1);
           iVar7 = iVar7 + -1;
           pcVar8 = pcVar8 + sVar1;
           pcVar9 = pcVar9 + 1;
@@ -217,7 +217,7 @@ short param_3;
     } while (iVar2 < iVar7);
   }
   if (pcVar4 != (char *)0x0) {
-    Ordinal_1018(pcVar4);
+    LocalFree(pcVar4);
   }
   debug_framebuffer_dump("draw_text_string");
   return;
@@ -234,12 +234,12 @@ char * param_1;
   uint uVar2;
   short sVar3;
 
-  /* Was `Ordinal_1068()` with no argument, relying on register leftovers
+  /* Was `ce_strlen()` with no argument, relying on register leftovers
      to still hold param_1 (see draw_text_string's matching fix/comment a
      few lines above -- same root bug, this is the more foundational of
      the two call sites since measure_text_width is the general string pixel-
      width measurement used throughout the file). */
-  uVar2 = Ordinal_1068(param_1);
+  uVar2 = ce_strlen(param_1);
   sVar3 = 0;
   for (uVar2 = uVar2 & 0xffff; uVar2 != 0; uVar2 = uVar2 - 1) {
     cVar1 = *param_1;
@@ -353,8 +353,8 @@ char *param_1;
     *stack0xffdc3248_ptr = cVar1; stack0xffdc3248_ptr = stack0xffdc3248_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_110,s__DATA__00085970);
-  Ordinal_1063(acStack_110,param_1);
+  ce_strcat(acStack_110,s__DATA__00085970);
+  ce_strcat(acStack_110,param_1);
   iVar3 = open_file_for_read(acStack_110);
   if (iVar3 != -1) {
     DAT_0020250c = 1;
@@ -375,7 +375,7 @@ char *param_1;
        that whole capacity; fread naturally stops at EOF for smaller
        files. */
     read_file_handle(iVar3,DAT_000890a4,0x1080);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
     load_font_metrics();
   }
   return iVar3 != -1;
@@ -469,13 +469,13 @@ undefined1 param_4;
         iVar3 = iVar3 + -1;
         pcVar2 = pcVar2 + -1;
         /* Original idiom read the divide helper's remainder back via
-           the extraout_r1 register-leftover trick (see Ordinal_2005's
+           the extraout_r1 register-leftover trick (see ordint_divmod's
            comment) -- computed directly here instead, since C gives us
            no portable way to recover "whatever was left in r1" and the
            uninitialized read was corrupting this index (confirmed
            SIGSEGV). */
         *pcVar2 = s_0123456789ABCDEF_00084a28[param_1 % param_3];
-        param_1 = Ordinal_2005(param_3,param_1);
+        param_1 = ordint_divmod(param_3,param_1);
       } while (0 < param_1);
     }
     iVar4 = iVar3;
@@ -519,7 +519,7 @@ void init_glyph_width_table()
      are real pointers (`char *`) but are never assigned anywhere in this
      decompile -- whatever originally set them up (almost certainly
      another dropped/unrecovered call site, the same class of bug as the
-     "argument dropped entirely" cases documented on Ordinal_1041/1063)
+     "argument dropped entirely" cases documented on ce_malloc/1063)
      couldn't be traced. Confirmed via a temporary diagnostic print that
      this was NOT reading a proper zero: as a plain tentative definition
      (`char * DAT_00110fc8;`, no initializer) it read back an

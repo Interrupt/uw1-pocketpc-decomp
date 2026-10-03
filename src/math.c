@@ -244,7 +244,7 @@ short param_2;
 
 
 // was FUN_00013774 -- integer square root via Newton's method (bit-
-// shift initial guess, refine with Ordinal_2005 division until the
+// shift initial guess, refine with ordint_divmod division until the
 // estimate stops decreasing). Confirmed by src/audio.c's own comment
 // as "a sqrt-shaped distance function"; every confirmed caller passes
 // a sum-of-squares (dx*dx + dy*dy, the canonical "distance squared"
@@ -261,7 +261,7 @@ int param_1;
   if (1 < param_1) {
     do {
       iVar2 = iVar1;
-      iVar1 = Ordinal_2005(iVar2,param_1);
+      iVar1 = ordint_divmod(iVar2,param_1);
       iVar1 = iVar2 + iVar1 >> 1;
     } while (iVar1 < iVar2);
   }
@@ -422,9 +422,9 @@ undefined4 param_2;
 
 
 /* Bounded random: rand() % param_1. The original takes the modulo from
-   Ordinal_2005's (idivmod's) r1 remainder leftover -- Ghidra lost that
+   ordint_divmod's (idivmod's) r1 remainder leftover -- Ghidra lost that
    into an uninitialised `extraout_r1`, so it always returned garbage
-   (and with Ordinal_1053 stubbed to 0, effectively always 0). Compute
+   (and with ce_rand stubbed to 0, effectively always 0). Compute
    the modulo directly. */
 // was FUN_00022910
 undefined4 rand_below(param_1)
@@ -434,12 +434,12 @@ int param_1;
   if (param_1 == 0) {
     return 0;
   }
-  return (undefined4)((uint)Ordinal_1053() % (uint)param_1);
+  return (undefined4)((uint)ce_rand() % (uint)param_1);
 }
 
 
 
-// was FUN_0002294c -- GetTickCount-shaped: Ordinal_535() (SDL_GetTicks(),
+// was FUN_0002294c -- GetTickCount-shaped: GetTickCount() (SDL_GetTicks(),
 // real elapsed ms since startup) scaled down to 4ms-per-unit. Used
 // throughout this file (fades, double-click/hold timing, the attack-swing
 // state machine, movement_pacing_handler's pre-uw_frame_clock_ms reads,
@@ -453,6 +453,6 @@ uint read_realtime_clock_units()
 {
   uint uVar1;
 
-  uVar1 = Ordinal_535();
+  uVar1 = GetTickCount();
   return uVar1 >> 2;
 }

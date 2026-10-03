@@ -45,7 +45,7 @@ void trigger_view_transition(void)
 }
 void stop_movement_sound_handle(void) {}
 uint read_realtime_clock_units(void) { return 0; }
-long Ordinal_2005(void)
+long ordint_divmod(void)
 {
     TEST_FAIL_MESSAGE("Stationary tick unexpectedly needed jump timing");
     return 0;

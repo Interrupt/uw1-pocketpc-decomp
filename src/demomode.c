@@ -936,7 +936,7 @@ void demomode_pump(void) {
         /* SDLCLICK <window_x> <window_y> -- pushes genuine SDL mouse
          * events at the given point (via uw_inject_mouse_click), so
          * unlike CLICK above this exercises the actual uw_pump_events()
-         * path end to end, including g_mouse_event_pending/Ordinal_864.
+         * path end to end, including g_mouse_event_pending/PeekMessageW.
          * Does not touch the real OS cursor -- see uw_inject_mouse_down's
          * comment. */
         int wx = 0, wy = 0;

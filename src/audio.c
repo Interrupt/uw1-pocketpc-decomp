@@ -113,7 +113,7 @@ static undefined1 DAT_0024d010;
 // or the track is already playing (param_1==DAT_0023c3a8). Stops any
 // currently-playing module via its COM-style interface (DAT_0023c3b8),
 // opens and loads the new one via the MOD-player ordinals
-// (Ordinal_1095/177/construct_and_load_mod_player), and -- if param_2!=0 -- starts
+// (cpp_operator_new/177/construct_and_load_mod_player), and -- if param_2!=0 -- starts
 // playback (start_mod_player_playback) and records the start time and this track's
 // own duration (DAT_00087414-indexed per-track table -- see
 // advance_menu_music_track's own comment for how it's used) for later
@@ -139,7 +139,7 @@ int param_2;
   undefined4 local_124;
   char acStack_120 [260];
 
-  Ordinal_1044(auStack_130,s_uw00_mod_00087514,9);
+  ce_memmove(auStack_130,s_uw00_mod_00087514,9);
   local_127 = 0;
   if ((DAT_00087454 == 0) || (DAT_00087448 == 0)) {
     uVar4 = 0;
@@ -155,8 +155,8 @@ int param_2;
         *stack0xffdc3238_ptr = cVar1; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
         pcVar2 = pcVar2 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(acStack_120,s__SOUND__0008750c);
-      Ordinal_1063(acStack_120,auStack_130);
+      ce_strcat(acStack_120,s__SOUND__0008750c);
+      ce_strcat(acStack_120,auStack_130);
       if (DAT_0023c3b8 != (undefined4 *)0x0) {
         stop_mod_player_playback();
         if (DAT_0023c3b8 != (undefined4 *)0x0) {
@@ -164,12 +164,12 @@ int param_2;
         }
         DAT_0023c3b8 = (undefined4 *)0x0;
       }
-      iVar3 = Ordinal_1095(0x10581);
+      iVar3 = cpp_operator_new(0x10581);
       if (iVar3 == 0) {
         DAT_0023c3b8 = (undefined4 *)0x0;
       }
       else {
-        Ordinal_177(&local_124,acStack_120);
+        SetFileTime(&local_124,acStack_120);
         DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar3,local_124);
       }
     }
@@ -397,7 +397,7 @@ LAB_00072f24:
         sVar1 = 0x80;
       }
       else {
-        sVar1 = Ordinal_2005(uVar3,uVar8 * 0x80);
+        sVar1 = ordint_divmod(uVar3,uVar8 * 0x80);
       }
       if (uVar9 == uVar3) {
         sVar2 = 0x7f;
@@ -406,7 +406,7 @@ LAB_00072f24:
         sVar2 = 0x80;
       }
       else {
-        sVar2 = Ordinal_2005(uVar3,uVar9 * 0x80);
+        sVar2 = ordint_divmod(uVar3,uVar9 * 0x80);
       }
       heading_to_sine_cosine(((0x40 - (*(byte *)((char *)g_player_object + 0x18) & 0x1f)) * 4 -
                    ((int)*(short *)((char *)g_player_object + 2) & 0x380U)) * 0x40,&local_28,&local_26);
@@ -430,7 +430,7 @@ LAB_00072f24:
       }
       if (0x30 < uVar3) goto LAB_00072f24;
       if (7 < uVar3) {
-        iVar5 = Ordinal_2005(0x28,(0x30 - uVar3) * (int)(short)((uint)iVar5 >> 0x10));
+        iVar5 = ordint_divmod(0x28,(0x30 - uVar3) * (int)(short)((uint)iVar5 >> 0x10));
         iVar5 = iVar5 << 0x10;
       }
     }
@@ -640,12 +640,12 @@ int param_1;
       if (DAT_0023c3b8 != (undefined4 *)0x0) {
         (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
       }
-      iVar2 = Ordinal_1095(0x10581);
+      iVar2 = cpp_operator_new(0x10581);
       if (iVar2 == 0) {
         DAT_0023c3b8 = (undefined4 *)0x0;
       }
       else {
-        Ordinal_177(&local_18,&DAT_0023c3d4);
+        SetFileTime(&local_18,&DAT_0023c3d4);
         DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar2,local_18);
       }
       start_mod_player_playback();
@@ -653,13 +653,13 @@ int param_1;
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
     }
     if (DAT_0023c3bc == 0) {
-      iVar2 = Ordinal_1095(0x1a);
+      iVar2 = cpp_operator_new(0x1a);
       if (iVar2 == 0) {
         DAT_0023c3bc = 0;
       }
       else {
         /* BUG FIX: was `DAT_0023c3bc = init_sound_channel_slot();` --
-           a dropped argument (iVar2, the handle Ordinal_1095 just
+           a dropped argument (iVar2, the handle cpp_operator_new just
            allocated, is the only value in scope this could mean --
            same idiom as every other dropped-argument fix this
            session) AND a wrongly-captured return value:
@@ -720,7 +720,7 @@ short param_1;
   
   builtin_strncpy(local_3c,"<>@ACEGHJL",10);
   iVar6 = -1;
-  Ordinal_1047(local_2c,0,0x10);
+  ce_memset(local_2c,0,0x10);
   uVar7 = 0;
   print_scroll_message_by_id(0xfa);
   while( true ) {
@@ -864,7 +864,7 @@ void pick_random_pending_music_track()
   undefined4 uVar1;
   char extraout_r1;
 
-  uVar1 = Ordinal_1053();
+  uVar1 = ce_rand();
   uw_ord2005_rem_149 = ((int)(uVar1)) % (3);
   DAT_0023c384 = uw_ord2005_rem_149 + '\x02';
   return;
@@ -928,7 +928,7 @@ void update_ingame_music_track()
     }
     else {
       if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
-        uVar3 = Ordinal_1053();
+        uVar3 = ce_rand();
         uw_ord2005_rem_150 = ((int)(uVar3)) % (3);
         uVar2 = (uw_ord2005_rem_150 & 0xff) + 2;
       }
@@ -944,7 +944,7 @@ void update_ingame_music_track()
         uVar2 = (uint)DAT_0023c3a8;
         if ((((*(int *)(&DAT_000873e0 + uVar2 * 4) == 0) || ((1 < uVar2 && (uVar2 < 5)))) &&
             ((short)DAT_00201b60 == 1)) || (uVar2 = (uint)DAT_0023c384, uVar2 == 0)) {
-          uVar3 = Ordinal_1053();
+          uVar3 = ce_rand();
           uw_ord2005_rem_151 = ((int)(uVar3)) % (3);
           uVar2 = (uw_ord2005_rem_151 & 0xff) + 2;
           DAT_0023c384 = (byte)uVar2;
@@ -1066,12 +1066,12 @@ short param_1;
       if (DAT_0023c3b8 != (undefined4 *)0x0) {
         (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
       }
-      iVar3 = Ordinal_1095(0x10581);
+      iVar3 = cpp_operator_new(0x10581);
       if (iVar3 == 0) {
         DAT_0023c3b8 = (undefined4 *)0x0;
       }
       else {
-        Ordinal_177(local_228,&DAT_0023c3d4);
+        SetFileTime(local_228,&DAT_0023c3d4);
         DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar3,local_228[0]);
       }
       start_mod_player_playback();
@@ -1082,7 +1082,7 @@ short param_1;
       cVar1 = is_sfx_trigger_slot_active(DAT_0023c3b8,0);
     } while (cVar1 != '\0');
     if (DAT_0023c3bc == 0) {
-      iVar3 = Ordinal_1095(0x1a);
+      iVar3 = cpp_operator_new(0x1a);
       if (iVar3 == 0) {
         DAT_0023c3bc = 0;
       }
@@ -1101,7 +1101,7 @@ short param_1;
       *wptr_54752 = cVar1; wptr_54752 = wptr_54752 + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar1 != '\0');
-    local_21c = Ordinal_2005(10,(int)param_1);
+    local_21c = ordint_divmod(10,(int)param_1);
     local_21c = local_21c + '0';
     uw_ord2005_rem_152 = ((int)((int)param_1)) % (10);
     pcVar4 = &DAT_00241f08;
@@ -1112,7 +1112,7 @@ short param_1;
       *stack0xffdbdfe0_ptr = cVar1; stack0xffdbdfe0_ptr = stack0xffdbdfe0_ptr + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_118,acStack_220);
+    ce_strcat(acStack_118,acStack_220);
     uVar2 = load_string_resource(acStack_118);
     load_and_resample_wave_file(DAT_0023c3bc,DAT_0023c540,uVar2);
     arm_sfx_trigger_slot(DAT_0023c3b8,DAT_0023c3bc,0);
@@ -1174,19 +1174,19 @@ void voice_sample_cluster_stub_2()
 
 
 // was FUN_0007ea44 -- probabilistically starts an ambient looping
-// sound effect: rolls a ~1-in-8-ish chance (Ordinal_1053 % 8), and if
+// sound effect: rolls a ~1-in-8-ish chance (ce_rand % 8), and if
 // it lands, tries to acquire an ambient-sound-class resource
 // (acquire_sound_resource_slot(0x1e), not yet named -- reads as "get a free slot/
 // count for class 0x1e"). On failure to get any (result 0), reports a
 // fatal error (report_categorized_fatal_error(0x2001), not yet named -- confirmed
-// elsewhere in this file as an Ordinal_1041-allocation-failure
+// elsewhere in this file as an ce_malloc-allocation-failure
 // handler, e.g. init_level_object_arena's report_categorized_fatal_error(0x1002));
 // otherwise, if the acquired value is below the roll threshold and
 // above 0x23, releases it and retries with an adjusted count,
 // falling back to another fatal-error report if that retry still
 // comes up short. On success, calls init_ambient_sound_timing to set
 // up the effect's timing state. Regardless of the roll outcome,
-// always allocates a small (0x10010-flagged) buffer via Ordinal_1041,
+// always allocates a small (0x10010-flagged) buffer via ce_malloc,
 // reporting a third fatal-error code (0x1007) if that allocation
 // fails too -- this second half's exact purpose (distinct from the
 // ambient-sound roll above it) isn't confirmed.
@@ -1200,7 +1200,7 @@ void start_ambient_sound_effect()
   int iVar4;
   short extraout_r1;
   
-  uVar3 = Ordinal_1053();
+  uVar3 = ce_rand();
   uw_ord2005_rem_169 = ((int)(uVar3)) % (8);
   iVar1 = (uw_ord2005_rem_169 + 0x1b) * 0x20000 >> 0x10;
   if (0 < iVar1) {
@@ -1223,7 +1223,7 @@ void start_ambient_sound_effect()
       init_ambient_sound_timing(iVar4);
     }
   }
-  DAT_002506ec = Ordinal_1041(0x10010);
+  DAT_002506ec = ce_malloc(0x10010);
   if (DAT_002506ec == 0) {
     report_categorized_fatal_error(0x1007);
   }
@@ -1235,7 +1235,7 @@ void start_ambient_sound_effect()
 // was FUN_0007eb34 -- the shutdown counterpart to
 // start_ambient_sound_effect: releases the acquired resource
 // (release_sound_resource_slot, not yet named) when one is held (DAT_002506f0 > 0),
-// and stops the looping sound (Ordinal_1018) when one is playing
+// and stops the looping sound (LocalFree) when one is playing
 // (DAT_002506ec != 0), clearing that handle afterward. Its only
 // confirmed caller runs during game shutdown, paired with
 // start_ambient_sound_effect(2)'s own call during game init.
@@ -1246,7 +1246,7 @@ void stop_ambient_sound_effect()
     release_sound_resource_slot();
   }
   if (DAT_002506ec != 0) {
-    Ordinal_1018();
+    LocalFree();
     DAT_002506ec = 0;
   }
   return;
@@ -1319,7 +1319,7 @@ undefined4 reset_dialogue_speech_state()
 // was FUN_00035ec4 -- fully loads one voice-sample page (param_2,
 // indexing into the resource at param_1) into the caller's buffer
 // (param_4, a freshly-allocated 0x10000-byte block at its only known
-// call site) in a single Ordinal_1044 read, sized from the page's own
+// call site) in a single ce_memmove read, sized from the page's own
 // header fields at param_3. See the sibling
 // read_voice_sample_page_chunk for the incremental/streaming variant
 // used during actual playback.
@@ -1337,7 +1337,7 @@ intptr_t param_4;
      function read_voice_sample_page_chunk computes the equivalent size the same way and
      passes it explicitly (& 0xffff), so reuse the value just computed
      into DAT_000853f8 above. */
-  Ordinal_1044(param_4,param_1 + param_2 * 0x10000 + 0xb00,DAT_000853f8 & 0xffff);
+  ce_memmove(param_4,param_1 + param_2 * 0x10000 + 0xb00,DAT_000853f8 & 0xffff);
   uVar1 = (undefined2)DAT_000853f8;
   return uVar1;
 }
@@ -1381,7 +1381,7 @@ LAB_00035fd4:
       DAT_00085400 = (short)uVar1 - (short)param_4;
       uVar1 = param_4;
     }
-    Ordinal_1044(param_5,param_1 + (uint)param_2 * 0x10000 + 0xb00,uVar1 & 0xffff);
+    ce_memmove(param_5,param_1 + (uint)param_2 * 0x10000 + 0xb00,uVar1 & 0xffff);
   }
   return uVar1;
 }
@@ -1432,7 +1432,7 @@ undefined4 acquire_sound_resource_slot()
 // was FUN_0004b600 -- initializes one 0x1a-byte sound-channel slot
 // (zeroing its +0x12..+0x19 playback-state fields): called in a loop
 // over all 0x10 slots at startup (uw.c's init_all_sound_channel_slots), and per-slot
-// right after Ordinal_1095(0x1a) allocates a fresh one in
+// right after cpp_operator_new(0x1a) allocates a fresh one in
 // src/audio.c. Always returns 0.
 undefined4 init_sound_channel_slot(param_1)
 int param_1;
@@ -1453,14 +1453,14 @@ int param_1;
 
 // was FUN_0004b644 -- the shutdown counterpart to
 // init_sound_channel_slot: releases the slot's playback resource
-// (Ordinal_1094) if its +0x12 field is non-zero (a sample currently
+// (cpp_operator_delete) if its +0x12 field is non-zero (a sample currently
 // loaded/playing).
 void release_sound_channel_slot(param_1)
 int param_1;
 
 {
   if (*(int *)(param_1 + 0x12) != 0) {
-    Ordinal_1094();
+    cpp_operator_delete();
   }
   return;
 }
@@ -1494,15 +1494,15 @@ undefined2 param_3;
   bool bVar11;
   undefined8 uVar12;
   
-  iVar7 = Ordinal_532(param_2,param_3,u_WAVE_0008686c);
-  if ((iVar7 == 0) || (iVar7 = Ordinal_533(param_2), iVar7 == 0)) {
+  iVar7 = FindResourceW(param_2,param_3,u_WAVE_0008686c);
+  if ((iVar7 == 0) || (iVar7 = LoadResource(param_2), iVar7 == 0)) {
     uVar8 = 0;
   }
   else {
     uVar4 = *(undefined3 *)(iVar7 + 0x28);
     uVar2 = *(undefined1 *)(iVar7 + 0x2b);
     uVar5 = *(uint *)(iVar7 + 0x28);
-    Ordinal_1044(param_1,iVar7 + 0x14,0x12);
+    ce_memmove(param_1,iVar7 + 0x14,0x12);
     uVar3 = *(undefined1 *)(param_1 + 0x13);
     if (DAT_00086368 == 0xac44) {
       iVar1 = uVar5 * 4;
@@ -1513,9 +1513,9 @@ undefined2 param_3;
       if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                    CONCAT12(*(undefined1 *)(param_1 + 0x14),
                             CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-        Ordinal_1094();
+        cpp_operator_delete();
       }
-      uVar8 = Ordinal_1095(iVar1);
+      uVar8 = cpp_operator_new(iVar1);
       *(char *)(param_1 + 0x12) = (char)uVar8;
       *(char *)(param_1 + 0x13) = (char)((uint)uVar8 >> 8);
       iVar9 = 0;
@@ -1544,9 +1544,9 @@ undefined2 param_3;
       if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                    CONCAT12(*(undefined1 *)(param_1 + 0x14),
                             CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-        Ordinal_1094();
+        cpp_operator_delete();
       }
-      uVar8 = Ordinal_1095(iVar1);
+      uVar8 = cpp_operator_new(iVar1);
       *(char *)(param_1 + 0x12) = (char)uVar8;
       *(char *)(param_1 + 0x13) = (char)((uint)uVar8 >> 8);
       iVar9 = 0;
@@ -1574,9 +1574,9 @@ undefined2 param_3;
       if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                    CONCAT12(*(undefined1 *)(param_1 + 0x14),
                             CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-        Ordinal_1094();
+        cpp_operator_delete();
       }
-      uVar12 = Ordinal_1095(uVar5);
+      uVar12 = cpp_operator_new(uVar5);
       *(char *)(param_1 + 0x12) = (char)uVar12;
       bVar11 = (int)uVar12 == 0;
       uVar6 = uVar12;
@@ -1587,11 +1587,11 @@ undefined2 param_3;
       *(char *)(param_1 + 0x14) = (char)((ulonglong)uVar12 >> 0x10);
       *(char *)(param_1 + 0x15) = (char)((ulonglong)uVar12 >> 0x18);
       if (bVar11) {
-        Ordinal_858((int)uVar6,(int)((ulonglong)uVar6 >> 0x20));
+        MessageBoxW((int)uVar6,(int)((ulonglong)uVar6 >> 0x20));
       }
-      Ordinal_1044(*(undefined4 *)(param_1 + 0x12),iVar7 + 0x2c,uVar5);
+      ce_memmove(*(undefined4 *)(param_1 + 0x12),iVar7 + 0x2c,uVar5);
     }
-    Ordinal_912(iVar7);
+    DeleteObject(iVar7);
     uVar8 = 1;
   }
   return uVar8;
@@ -1624,11 +1624,11 @@ undefined4 param_3;
   undefined8 uVar13;
   int local_20;
   
-  iVar6 = Ordinal_168(param_3,0x80000000,1,0,3,0x80,0);
+  iVar6 = CreateFileW(param_3,0x80000000,1,0,3,0x80,0);
   if (iVar6 != -1) {
-    iVar7 = Ordinal_172(iVar6,0);
-    if ((iVar7 != -1) && (iVar8 = Ordinal_1041(iVar7), iVar8 != 0)) {
-      iVar9 = Ordinal_170(iVar6,iVar8,iVar7,&local_20,0);
+    iVar7 = GetFileSize(iVar6,0);
+    if ((iVar7 != -1) && (iVar8 = ce_malloc(iVar7), iVar8 != 0)) {
+      iVar9 = ReadFile(iVar6,iVar8,iVar7,&local_20,0);
       if ((iVar9 == 0) || (local_20 != iVar7)) {
         uVar10 = 0;
       }
@@ -1636,7 +1636,7 @@ undefined4 param_3;
         uVar3 = *(undefined3 *)(iVar8 + 0x28);
         uVar1 = *(undefined1 *)(iVar8 + 0x2b);
         uVar4 = *(uint *)(iVar8 + 0x28);
-        Ordinal_1044(param_1,iVar8 + 0x14,0x12);
+        ce_memmove(param_1,iVar8 + 0x14,0x12);
         uVar2 = *(undefined1 *)(param_1 + 0x13);
         if (DAT_00086368 == 0xac44) {
           iVar7 = uVar4 * 4;
@@ -1647,9 +1647,9 @@ undefined4 param_3;
           if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                        CONCAT12(*(undefined1 *)(param_1 + 0x14),
                                 CONCAT11(uVar2,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-            Ordinal_1094();
+            cpp_operator_delete();
           }
-          uVar10 = Ordinal_1095(iVar7);
+          uVar10 = cpp_operator_new(iVar7);
           *(char *)(param_1 + 0x12) = (char)uVar10;
           *(char *)(param_1 + 0x13) = (char)((uint)uVar10 >> 8);
           iVar9 = 0;
@@ -1678,9 +1678,9 @@ undefined4 param_3;
           if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                        CONCAT12(*(undefined1 *)(param_1 + 0x14),
                                 CONCAT11(uVar2,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-            Ordinal_1094();
+            cpp_operator_delete();
           }
-          uVar10 = Ordinal_1095(iVar7);
+          uVar10 = cpp_operator_new(iVar7);
           *(char *)(param_1 + 0x12) = (char)uVar10;
           *(char *)(param_1 + 0x13) = (char)((uint)uVar10 >> 8);
           iVar9 = 0;
@@ -1708,9 +1708,9 @@ undefined4 param_3;
           if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                        CONCAT12(*(undefined1 *)(param_1 + 0x14),
                                 CONCAT11(uVar2,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-            Ordinal_1094();
+            cpp_operator_delete();
           }
-          uVar13 = Ordinal_1095(uVar4);
+          uVar13 = cpp_operator_new(uVar4);
           *(char *)(param_1 + 0x12) = (char)uVar13;
           bVar12 = (int)uVar13 == 0;
           uVar5 = uVar13;
@@ -1721,17 +1721,17 @@ undefined4 param_3;
           *(char *)(param_1 + 0x14) = (char)((ulonglong)uVar13 >> 0x10);
           *(char *)(param_1 + 0x15) = (char)((ulonglong)uVar13 >> 0x18);
           if (bVar12) {
-            Ordinal_858((int)uVar5,(int)((ulonglong)uVar5 >> 0x20));
+            MessageBoxW((int)uVar5,(int)((ulonglong)uVar5 >> 0x20));
           }
-          Ordinal_1044(*(undefined4 *)(param_1 + 0x12),iVar8 + 0x2c,uVar4);
+          ce_memmove(*(undefined4 *)(param_1 + 0x12),iVar8 + 0x2c,uVar4);
         }
         uVar10 = 1;
       }
-      Ordinal_553(iVar6);
-      Ordinal_1018(iVar8);
+      CloseHandle(iVar6);
+      LocalFree(iVar8);
       return uVar10;
     }
-    Ordinal_553(iVar6);
+    CloseHandle(iVar6);
   }
   return 0;
 }
@@ -1741,7 +1741,7 @@ undefined4 param_3;
 // was FUN_0004bc94 -- constructs a MOD-player engine object in-place at
 // param_1 (its counterpart is the very next function, destroy_mod_player):
 // initializes its pattern/instrument/channel-state arrays, opens and
-// reads the MOD file named/handled by param_2 (Ordinal_167/Ordinal_2135),
+// reads the MOD file named/handled by param_2 (FindFirstFileW/ordaudio_op_2135),
 // and -- if the open succeeds -- parses the ProTracker header tag
 // ("M.K."/"6CHN"/"8CHN"/"FLT4"/"FLT8") to pick a channel count, then
 // walks the instrument-header table building each instrument's sample
@@ -1751,7 +1751,7 @@ undefined4 param_3;
 // idiom. param_3/param_4: declared but every one of this function's 3
 // call sites passes only 2 arguments, and the body only ever stores them
 // (never branches on them) into a 12-byte scratch block with param_2
-// that gets released via Ordinal_297 right before returning -- this
+// that gets released via BatteryDrvrGetLevels right before returning -- this
 // looks like Ghidra mislabeling local scratch stack slots as incoming
 // parameters (same shape as a real 2-parameter function), not a genuine
 // dropped-argument bug, so left alone rather than "fixed" on no evidence.
@@ -1809,7 +1809,7 @@ undefined4 param_4;
   local_c = param_2;
   uStack_8 = param_3;
   uStack_4 = param_4;
-  Ordinal_181(param_1 + 0x104d8);
+  FindNextFileW(param_1 + 0x104d8);
   init_mod_dynamic_array(param_1 + 0x104e0);
   local_334 = param_1 + 0x104f4;
   /* BUG FIX: was `init_mod_pattern_array();` -- a dropped argument. The
@@ -1828,7 +1828,7 @@ undefined4 param_4;
   param_1[1] = 0x30;
   param_1[2] = 8;
   param_1[3] = 0;
-  iVar3 = Ordinal_167(local_c,auStack_268);
+  iVar3 = FindFirstFileW(local_c,auStack_268);
   if (iVar3 == -1) {
     param_1[0x10580] = 0;
     build_mod_volume_sample_table(param_1,0x40);
@@ -1843,21 +1843,21 @@ undefined4 param_4;
   param_1[0x1051d] = 0;
   param_1[0x1051e] = 0;
   param_1[0x1051f] = 0;
-  Ordinal_1047(param_1 + 0x10404,0,0xd0);
+  ce_memset(param_1 + 0x10404,0,0xd0);
   param_1[0x104d4] = 0;
   param_1[0x104d5] = 0;
   param_1[0x104d6] = 0;
   param_1[0x104d7] = 0;
-  Ordinal_47(auStack_330);
-  Ordinal_97(auStack_300);
-  Ordinal_2063(auStack_300,local_c,0x8000,0);
-  Ordinal_38(auStack_2b0,auStack_300,1,0x1000,0);
-  Ordinal_2413(auStack_330,0,0xffffffff);
+  HeapReAlloc(auStack_330);
+  CopyRect(auStack_300);
+  ordaudio_op_2063(auStack_300,local_c,0x8000,0);
+  RemoteLocalReAlloc(auStack_2b0,auStack_300,1,0x1000,0);
+  ordaudio_op_2413(auStack_330,0,0xffffffff);
   do {
     iVar3 = local_328;
-    Ordinal_2413(auStack_330,local_328 + 0x4000,0xffffffff);
-    iVar4 = Ordinal_2135(auStack_2b0,local_32c + iVar3,0x4000);
-    Ordinal_2413(auStack_330,iVar4 + iVar3,0xffffffff);
+    ordaudio_op_2413(auStack_330,local_328 + 0x4000,0xffffffff);
+    iVar4 = ordaudio_op_2135(auStack_2b0,local_32c + iVar3,0x4000);
+    ordaudio_op_2413(auStack_330,iVar4 + iVar3,0xffffffff);
   } while (iVar4 == 0x4000);
   local_340 = 0;
   local_338 = 0x20;
@@ -1907,11 +1907,11 @@ LAB_0004c004:
   }
 LAB_0004c038:
   resize_mod_channel_state_array(param_1 + 0x10520,*piVar15,0xffffffff);
-  Ordinal_1044(auStack_2e0,local_32c + local_340,0x14);
+  ce_memmove(auStack_2e0,local_32c + local_340,0x14);
   local_2cc = 0;
-  uVar5 = Ordinal_177(&local_33c,auStack_2e0);
-  Ordinal_321(param_1 + 0x104d8,uVar5);
-  Ordinal_297(&local_33c);
+  uVar5 = SetFileTime(&local_33c,auStack_2e0);
+  CeReadRecordProps(param_1 + 0x104d8,uVar5);
+  BatteryDrvrGetLevels(&local_33c);
   iVar3 = local_338;
   local_340 = local_340 + 0x14;
   resize_mod_instrument_array(param_1 + 0x10508,local_338,0xffffffff);
@@ -1920,11 +1920,11 @@ LAB_0004c038:
     iVar3 = 0x30;
     iVar4 = local_338 + -1;
     do {
-      Ordinal_1044(auStack_2c8,local_32c + local_340,0x16);
+      ce_memmove(auStack_2c8,local_32c + local_340,0x16);
       local_2b2 = 0;
-      uVar5 = Ordinal_177(&local_33c,auStack_2c8);
-      Ordinal_321(*piVar13 + iVar3,uVar5);
-      Ordinal_297(&local_33c);
+      uVar5 = SetFileTime(&local_33c,auStack_2c8);
+      CeReadRecordProps(*piVar13 + iVar3,uVar5);
+      BatteryDrvrGetLevels(&local_33c);
       local_340 = local_340 + 0x16;
       uVar5 = read_mod_word_length_field(param_1,auStack_330,&local_340);
       iVar10 = *piVar13 + iVar3;
@@ -2039,18 +2039,18 @@ LAB_0004c038:
               *(undefined1 *)(iVar11 + 7) = 0xff;
             }
             else {
-              uVar18 = Ordinal_1033(0,0x408ac000);
+              uVar18 = ordfloat_log(0,0x408ac000);
               local_2ec = (undefined4)((ulonglong)uVar18 >> 0x20);
-              Ordinal_2033(uVar14);
-              uVar19 = Ordinal_1033();
+              ordfloat_double_from_int(uVar14);
+              uVar19 = ordfloat_log();
               local_2e4 = (undefined4)((ulonglong)uVar19 >> 0x20);
-              uVar20 = Ordinal_1033(0x69f83f23,0x3ff01dae);
+              uVar20 = ordfloat_log(0x69f83f23,0x3ff01dae);
               local_318 = uVar20;
-              uVar18 = Ordinal_2016((int)uVar18,local_2ec,(int)uVar19,local_2e4);
-              uVar18 = Ordinal_2048((int)uVar18,(int)((ulonglong)uVar18 >> 0x20),
+              uVar18 = ordfloat_double_binop((int)uVar18,local_2ec,(int)uVar19,local_2e4);
+              uVar18 = ordfloat_double_binop2((int)uVar18,(int)((ulonglong)uVar18 >> 0x20),
                                     (undefined4)local_318,0 /* best-effort: high dword of a 64-bit codec value Ghidra split across overlapping locals */);
-              Ordinal_2053((int)uVar18,(int)((ulonglong)uVar18 >> 0x20),0,0x40200000);
-              uVar5 = Ordinal_2046();
+              ordfloat_double_op3((int)uVar18,(int)((ulonglong)uVar18 >> 0x20),0,0x40200000);
+              uVar5 = ordfloat_double_result();
               bVar16 = (byte)local_308;
               iVar11 = *(int *)(*(int *)(iVar4 + *piVar13 + 4) + iVar3 + 4) + iVar10;
               *(char *)(iVar11 + 4) = (char)uVar5;
@@ -2089,18 +2089,18 @@ LAB_0004c038:
     iVar3 = 0x30;
     iVar4 = local_338 + -1;
     do {
-      Ordinal_2413(iVar3 + *piVar15 + 0x1c,*(undefined4 *)(iVar3 + *piVar15 + 4),0xffffffff);
+      ordaudio_op_2413(iVar3 + *piVar15 + 0x1c,*(undefined4 *)(iVar3 + *piVar15 + 4),0xffffffff);
       if (*(int *)(iVar3 + *piVar15 + 4) != 0) {
         /* Ghidra dropped the size argument here; the length field it just
            tested (*(iVar3 + *piVar15 + 4)) is the natural candidate --
            it's the field used as the "anything to copy" gate. */
-        Ordinal_1044(*(undefined4 *)(iVar3 + *piVar15 + 0x20),local_32c + local_340,
+        ce_memmove(*(undefined4 *)(iVar3 + *piVar15 + 0x20),local_32c + local_340,
                      *(int *)(iVar3 + *piVar15 + 4));
       }
       iVar10 = iVar3 + *piVar15;
       local_340 = *(int *)(iVar10 + 4) + local_340;
       if (0 < *(int *)(iVar10 + 4)) {
-        Ordinal_2304(iVar10 + 0x1c,*(undefined4 *)(iVar10 + 0x24),
+        ordaudio_op_2304(iVar10 + 0x1c,*(undefined4 *)(iVar10 + 0x24),
                      *(undefined1 *)(*(int *)(iVar10 + 0x20) + *(int *)(iVar10 + 4) + -1));
         iVar10 = iVar3 + *piVar15;
         if (2 < *(int *)(iVar10 + 0x14)) {
@@ -2117,18 +2117,18 @@ LAB_0004c038:
   param_1[0x10555] = 0;
   param_1[0x10556] = 0;
   param_1[0x10557] = 0;
-  Ordinal_212(auStack_2b0);
-  Ordinal_242(auStack_300);
-  Ordinal_218(auStack_330);
+  GetUserDefaultLangID(auStack_2b0);
+  CloseAllFileHandles(auStack_300);
+  FoldStringW(auStack_330);
 LAB_0004c940:
-  Ordinal_297(&local_c);
+  BatteryDrvrGetLevels(&local_c);
   return param_1;
 }
 
 
 // was FUN_0004c958 -- destroys a MOD-player engine object: resets its
 // state (reset_mod_player_state), then frees the object itself
-// (Ordinal_1094) if param_2's low bit is set (the "also free the
+// (cpp_operator_delete) if param_2's low bit is set (the "also free the
 // container" flag, as opposed to just resetting an embedded/reused
 // instance).
 undefined4 destroy_mod_player(param_1,param_2)
@@ -2138,7 +2138,7 @@ uint param_2;
 {
   reset_mod_player_state();
   if ((param_2 & 1) != 0) {
-    Ordinal_1094(param_1);
+    cpp_operator_delete(param_1);
   }
   return param_1;
 }
@@ -2167,7 +2167,7 @@ undefined1 * param_1;
   destroy_mod_instrument_array(param_1 + 0x10508);
   destroy_mod_pattern_array(param_1 + 0x104f4);
   destroy_mod_dynamic_array(param_1 + 0x104e0);
-  Ordinal_297(param_1 + 0x104d8);
+  BatteryDrvrGetLevels(param_1 + 0x104d8);
   return;
 }
 
@@ -2175,7 +2175,7 @@ undefined1 * param_1;
 
 // was FUN_0004ca50 -- starts MOD-player playback (no-op if already
 // playing, per the +0x10554 "is playing" flag): opens the audio
-// output device (Ordinal_399, with mod_player_wave_out_callback as its fill-buffer
+// output device (waveOutOpen, with mod_player_wave_out_callback as its fill-buffer
 // callback), zeroes the per-channel state array and several header
 // fields, queues the initial audio buffers (queue_mod_audio_buffer, called
 // twice for double-buffering) and, only once both queue attempts
@@ -2200,7 +2200,7 @@ char *param_1;
   
   if (*(int *)(param_1 + 0x10554) == 0) {
     if (*(int *)(param_1 + 0x1051c) != 0) {
-      Ordinal_384();
+      waveOutClose();
     }
     local_1e = 8;
     local_28 = DAT_00086368;
@@ -2209,7 +2209,7 @@ char *param_1;
     local_2a = 1;
     local_1c = 0;
     local_20 = 1;
-    Ordinal_399((int *)(param_1 + 0x1051c),0xffffffff,&local_2c,mod_player_wave_out_callback,param_1,0x30000);
+    waveOutOpen((int *)(param_1 + 0x1051c),0xffffffff,&local_2c,mod_player_wave_out_callback,param_1,0x30000);
     iVar3 = 0;
     if (0 < *(int *)(param_1 + 0x1054c)) {
       piVar2 = (int *)(param_1 + 0x10524);
@@ -2357,8 +2357,8 @@ char *param_1;
   *(undefined1 *)(param_1 + 0x10556) = 0;
   *(undefined1 *)(param_1 + 0x10557) = 0;
   if (*(int *)(param_1 + 0x1051c) != 0) {
-    Ordinal_390();
-    Ordinal_384(*(int *)(param_1 + 0x1051c));
+    waveOutReset();
+    waveOutClose(*(int *)(param_1 + 0x1051c));
   }
   return 1;
 }
@@ -2401,20 +2401,20 @@ int param_1;
   int local_78;
   int local_64 [16];
   
-  uVar3 = Ordinal_2005(5,*(int *)(param_1 + 0x10544) << 1);
+  uVar3 = ordint_divmod(5,*(int *)(param_1 + 0x10544) << 1);
   iVar2 = DAT_00086368;
-  uVar3 = Ordinal_2005(uVar3,DAT_00086368);
+  uVar3 = ordint_divmod(uVar3,DAT_00086368);
   iVar8 = iVar2 >> 3;
   init_mod_dynamic_array(auStack_7c);
   init_mod_dynamic_array(auStack_94);
   resize_mod_int_array(auStack_7c,iVar8,0xffffffff);
   resize_mod_int_array(auStack_94,iVar8,0xffffffff);
-  puVar4 = (undefined1 *)Ordinal_1095(8);
+  puVar4 = (undefined1 *)cpp_operator_new(8);
   *puVar4 = (char)param_1;
   puVar4[1] = (char)((uint)param_1 >> 8);
   puVar4[2] = (char)((uint)param_1 >> 0x10);
   puVar4[3] = (char)((uint)param_1 >> 0x18);
-  puVar5 = (undefined1 *)Ordinal_1095(iVar8 + 0x20);
+  puVar5 = (undefined1 *)cpp_operator_new(iVar8 + 0x20);
   local_a0 = 0;
   puVar4[4] = (char)puVar5;
   puVar4[5] = (char)((uint)puVar5 >> 8);
@@ -2577,11 +2577,11 @@ int param_1;
   puVar5[0xe] = (char)((uint)puVar4 >> 0x10);
   puVar5[0xf] = (char)((uint)puVar4 >> 0x18);
   puVar12 = (undefined4 *)(param_1 + 0x1051c);
-  Ordinal_385(*puVar12,puVar5,0x20);
-  iVar8 = Ordinal_387(*puVar12,puVar5,0x20);
+  waveOutPrepareHeader(*puVar12,puVar5,0x20);
+  iVar8 = waveOutWrite(*puVar12,puVar5,0x20);
   if (iVar8 != 0) {
-    Ordinal_386(*puVar12,puVar5,0x20);
-    Ordinal_1094(*(undefined4 *)(puVar4 + 4));
+    waveOutUnprepareHeader(*puVar12,puVar5,0x20);
+    cpp_operator_delete(*(undefined4 *)(puVar4 + 4));
   }
   destroy_mod_dynamic_array(auStack_94);
   destroy_mod_dynamic_array(auStack_7c);
@@ -2924,8 +2924,8 @@ LAB_0004e184:
 LAB_0004e21c:
       iVar20 = iVar18 + *piVar19;
       if (0 < *(int *)(iVar20 + 0xc)) {
-        uVar15 = Ordinal_2032();
-        uVar15 = Ordinal_2047(0x4a5a7a65,uVar15);
+        uVar15 = ordfloat_int_to_float2();
+        uVar15 = ordfloat_div(0x4a5a7a65,uVar15);
         *(char *)(iVar20 + 0x10) = (char)uVar15;
         *(char *)(iVar20 + 0x11) = (char)((uint)uVar15 >> 8);
         *(char *)(iVar20 + 0x12) = (char)((uint)uVar15 >> 0x10);
@@ -3006,17 +3006,17 @@ int param_4;
         uVar2 = *(uint3 *)(iVar9 + 0x14);
         iVar9 = (uint)*(uint3 *)(iVar9 + 0x18) * 0x400;
         iVar13 = piVar11[1];
-        uVar5 = Ordinal_2026(piVar11[4],0x44800000);
-        uVar6 = Ordinal_2032(DAT_00086368);
-        Ordinal_2047(uVar5,uVar6);
-        iVar7 = Ordinal_2020();
+        uVar5 = ordfloat_mul(piVar11[4],0x44800000);
+        uVar6 = ordfloat_int_to_float2(DAT_00086368);
+        ordfloat_div(uVar5,uVar6);
+        iVar7 = ordfloat_uint_to_float();
         uVar3 = *(uint3 *)(piVar11 + 6);
         iVar14 = 0;
         iVar12 = param_4;
         while (iVar12 != 0) {
           if (iVar9 < 0x801) {
             if (iVar13 < iVar1) {
-              iVar12 = Ordinal_2005(iVar7,(iVar1 - iVar13) + -1);
+              iVar12 = ordint_divmod(iVar7,(iVar1 - iVar13) + -1);
               iVar10 = iVar12 + 1;
               if (param_4 < iVar12 + 1) {
                 iVar10 = param_4;
@@ -3031,7 +3031,7 @@ int param_4;
             if (iVar9 <= iVar13) {
               iVar13 = iVar13 + (uint)uVar2 * -0x400;
             }
-            iVar8 = Ordinal_2005(iVar7,(iVar9 - iVar13) + -1);
+            iVar8 = ordint_divmod(iVar7,(iVar9 - iVar13) + -1);
             iVar10 = iVar8 + 1;
             if (iVar12 < iVar8 + 1) {
               iVar10 = iVar12;
@@ -3122,8 +3122,8 @@ int param_1;
             piVar4 = (int *)(&DAT_00086370)[iVar7];
           }
 LAB_0004e964:
-          uVar5 = Ordinal_2032(piVar4);
-          uVar5 = Ordinal_2047(0x4a5a7a65,uVar5);
+          uVar5 = ordfloat_int_to_float2(piVar4);
+          uVar5 = ordfloat_div(0x4a5a7a65,uVar5);
           iVar7 = *(int *)(param_1 + 0x10524);
           goto LAB_0004eb28;
         }
@@ -3144,8 +3144,8 @@ LAB_0004e964:
           *(undefined1 *)(iVar7 + 0xf) = 0;
         }
         iVar7 = *piVar6;
-        uVar5 = Ordinal_2032(*(undefined4 *)(iVar8 + iVar7 + 0xc));
-        uVar5 = Ordinal_2047(0x4a5a7a65,uVar5);
+        uVar5 = ordfloat_int_to_float2(*(undefined4 *)(iVar8 + iVar7 + 0xc));
+        uVar5 = ordfloat_div(0x4a5a7a65,uVar5);
         goto LAB_0004eb28;
       case 2:
         iVar7 = iVar8 + *(int *)(param_1 + 0x10524);
@@ -3155,8 +3155,8 @@ LAB_0004e964:
         *(char *)(iVar7 + 0xe) = (char)((uint)iVar3 >> 0x10);
         *(char *)(iVar7 + 0xf) = (char)((uint)iVar3 >> 0x18);
         iVar7 = *(int *)(param_1 + 0x10524);
-        uVar5 = Ordinal_2032(*(undefined4 *)(iVar8 + iVar7 + 0xc));
-        uVar5 = Ordinal_2047(0x4a5a7a65,uVar5);
+        uVar5 = ordfloat_int_to_float2(*(undefined4 *)(iVar8 + iVar7 + 0xc));
+        uVar5 = ordfloat_div(0x4a5a7a65,uVar5);
 LAB_0004eb28:
         iVar7 = iVar8 + iVar7;
         *(char *)(iVar7 + 0x10) = (char)uVar5;
@@ -3224,7 +3224,7 @@ LAB_0004eb74:
 
 
 // was FUN_0004ecd4 -- the waveOutProc-shaped callback passed to
-// Ordinal_399 (waveOutOpen) in start_mod_player_playback: on WOM_DONE
+// waveOutOpen (waveOutOpen) in start_mod_player_playback: on WOM_DONE
 // (param_2==0x3bd, a completed-buffer notification), frees the
 // just-finished buffer's resources and, if still playing, queues the
 // next one via queue_mod_audio_buffer -- the other half of the
@@ -3247,10 +3247,10 @@ int param_4;
     iVar2 = *piVar1;
     piVar4 = (int *)(iVar2 + 0x10554);
     if (*piVar4 != 0) {
-      Ordinal_386(*(undefined4 *)(iVar2 + 0x1051c),param_4,0x20);
+      waveOutUnprepareHeader(*(undefined4 *)(iVar2 + 0x1051c),param_4,0x20);
     }
-    Ordinal_1094(piVar1[1]);
-    Ordinal_1094(piVar1);
+    cpp_operator_delete(piVar1[1]);
+    cpp_operator_delete(piVar1);
     if (*piVar4 != 0) {
       uVar3 = queue_mod_audio_buffer(iVar2);
       *(char *)piVar4 = (char)uVar3;
@@ -3350,8 +3350,8 @@ int param_2;
   *(char *)(iVar5 + 0xf) = (char)((uint)iVar1 >> 0x18);
 LAB_0004f030:
   iVar1 = *piVar4;
-  uVar2 = Ordinal_2032(*(undefined4 *)(param_2 + iVar1 + 0xc));
-  uVar2 = Ordinal_2047(0x4a5a7a65,uVar2);
+  uVar2 = ordfloat_int_to_float2(*(undefined4 *)(param_2 + iVar1 + 0xc));
+  uVar2 = ordfloat_div(0x4a5a7a65,uVar2);
   param_2 = param_2 + iVar1;
   *(char *)(param_2 + 0x10) = (char)uVar2;
   *(char *)(param_2 + 0x11) = (char)((uint)uVar2 >> 8);
@@ -3387,12 +3387,12 @@ int param_2;
   iVar1 = param_2 + iVar7;
   iVar3 = (int)((uint)(byte)(&DAT_00086810)[*(int *)(iVar1 + 0x38)] * *(int *)(iVar1 + 0x28)) >> 7;
   if (*(int *)(iVar1 + 0x3c) == 0) {
-    uVar2 = Ordinal_2032(*(int *)(iVar1 + 0xc) + iVar3);
-    uVar2 = Ordinal_2047(0x4a5a7a65,uVar2);
+    uVar2 = ordfloat_int_to_float2(*(int *)(iVar1 + 0xc) + iVar3);
+    uVar2 = ordfloat_div(0x4a5a7a65,uVar2);
   }
   else {
-    uVar2 = Ordinal_2032(*(int *)(iVar1 + 0xc) - iVar3);
-    uVar2 = Ordinal_2047(0x4a5a7a65,uVar2);
+    uVar2 = ordfloat_int_to_float2(*(int *)(iVar1 + 0xc) - iVar3);
+    uVar2 = ordfloat_div(0x4a5a7a65,uVar2);
   }
   iVar7 = param_2 + iVar7;
   *(char *)(iVar7 + 0x10) = (char)uVar2;
@@ -3739,8 +3739,8 @@ void release_all_sound_channel_slots()
 
 
 // was FUN_0004f874 -- generic growable-array resize for 16-byte,
-// zero-initializable elements (grows via Ordinal_1095/realloc-style
-// copy, zero-fills new slots via construct_mod_event_array_range's Ordinal_1047 memset).
+// zero-initializable elements (grows via cpp_operator_new/realloc-style
+// copy, zero-fills new slots via construct_mod_event_array_range's ce_memset memset).
 // Confirmed used only by the MOD pattern loader (both call sites are
 // building per-row note-event storage: note/sample/period/effect,
 // each field 4 bytes = 16 bytes/event) -- a sibling of the 20-byte
@@ -3766,7 +3766,7 @@ int param_3;
   if (param_2 == 0) {
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
-      Ordinal_1094();
+      cpp_operator_delete();
       *(undefined4 *)(param_1 + 4) = 0;
     }
   }
@@ -3801,10 +3801,10 @@ int param_3;
         if (iVar2 <= param_2) {
           iVar2 = param_2;
         }
-        iVar3 = Ordinal_1095(iVar2 << 4);
-        Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 4);
+        iVar3 = cpp_operator_new(iVar2 << 4);
+        ce_memmove(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 4);
         construct_mod_event_array_range(iVar3 + *(int *)(param_1 + 8) * 0x10,param_2 - *(int *)(param_1 + 8));
-        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        cpp_operator_delete(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar3;
         *(int *)(param_1 + 0xc) = iVar2;
       }
@@ -3816,7 +3816,7 @@ int param_3;
       }
       goto LAB_0004f994;
     }
-    uVar1 = Ordinal_1095(param_2 << 4);
+    uVar1 = cpp_operator_new(param_2 << 4);
     *(undefined4 *)(param_1 + 4) = uVar1;
     construct_mod_event_array_range(uVar1,param_2);
   }
@@ -3856,7 +3856,7 @@ int param_3;
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
       destroy_mod_row_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
-      Ordinal_1094(*(undefined4 *)(param_1 + 4));
+      cpp_operator_delete(*(undefined4 *)(param_1 + 4));
       *(undefined4 *)(param_1 + 4) = 0;
     }
   }
@@ -3892,10 +3892,10 @@ int param_3;
         if (iVar4 <= param_2) {
           iVar4 = param_2;
         }
-        iVar2 = Ordinal_1095(iVar4 * 0x14);
-        Ordinal_1044(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x14);
+        iVar2 = cpp_operator_new(iVar4 * 0x14);
+        ce_memmove(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x14);
         construct_mod_row_array_range(*(int *)(param_1 + 8) * 0x14 + iVar2,param_2 - *(int *)(param_1 + 8));
-        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        cpp_operator_delete(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar2;
         *(int *)(param_1 + 0xc) = iVar4;
       }
@@ -3910,7 +3910,7 @@ int param_3;
       }
       goto LAB_0004faec;
     }
-    uVar1 = Ordinal_1095(param_2 * 0x14);
+    uVar1 = cpp_operator_new(param_2 * 0x14);
     *(undefined4 *)(param_1 + 4) = uVar1;
     construct_mod_row_array_range(uVar1,param_2);
   }
@@ -3973,7 +3973,7 @@ int param_3;
   if (param_2 == 0) {
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
-      Ordinal_1094();
+      cpp_operator_delete();
       *(undefined4 *)(param_1 + 4) = 0;
     }
   }
@@ -4008,10 +4008,10 @@ int param_3;
         if (iVar2 <= param_2) {
           iVar2 = param_2;
         }
-        iVar3 = Ordinal_1095(iVar2 << 2);
-        Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 2);
+        iVar3 = cpp_operator_new(iVar2 << 2);
+        ce_memmove(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 2);
         construct_mod_int_array_range(iVar3 + *(int *)(param_1 + 8) * 4,param_2 - *(int *)(param_1 + 8));
-        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        cpp_operator_delete(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar3;
         *(int *)(param_1 + 0xc) = iVar2;
       }
@@ -4023,7 +4023,7 @@ int param_3;
       }
       goto LAB_0004fc58;
     }
-    uVar1 = Ordinal_1095(param_2 << 2);
+    uVar1 = cpp_operator_new(param_2 << 2);
     *(undefined4 *)(param_1 + 4) = uVar1;
     construct_mod_int_array_range(uVar1,param_2);
   }
@@ -4049,7 +4049,7 @@ undefined1 * param_1;
   param_1[2] = 8;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
-    Ordinal_1094();
+    cpp_operator_delete();
   }
   *param_1 = 0x20;
   param_1[1] = 0x30;
@@ -4076,7 +4076,7 @@ uint param_2;
   param_1[2] = 8;
   param_1[3] = 0;
   if ((param_2 & 1) != 0) {
-    Ordinal_1094(param_1);
+    cpp_operator_delete(param_1);
   }
   return param_1;
 }
@@ -4086,8 +4086,8 @@ uint param_2;
 // was FUN_0004fd18 -- MFC CArchive-style serialize for a
 // resize_mod_int_array-managed array: param_2's +0x14 bit 0 matches
 // CArchive::IsLoading()'s flag convention. Loading reads a count
-// (Ordinal_2142) and resizes the array to it; storing writes the
-// element count then the raw int data (Ordinal_2135).
+// (ordaudio_op_2142) and resizes the array to it; storing writes the
+// element count then the raw int data (ordaudio_op_2135).
 void serialize_mod_int_array(param_1,param_2)
 int param_1;
 int param_2;
@@ -4098,18 +4098,18 @@ int param_2;
   undefined4 unaff_lr;
 
   if ((*(uint *)(param_2 + 0x14) & 1) == 0) {
-    Ordinal_2588(param_2,*(undefined4 *)(param_1 + 8));
+    ordaudio_op_2588(param_2,*(undefined4 *)(param_1 + 8));
   }
   else {
-    uVar1 = Ordinal_2142(param_2);
+    uVar1 = ordaudio_op_2142(param_2);
     resize_mod_int_array(param_1,uVar1,0xffffffff);
   }
   uVar2 = *(uint *)(param_2 + 0x14) & 1;
   if (uVar2 == 0) {
-    Ordinal_2582();
+    ordaudio_op_2582();
   }
   else {
-    Ordinal_2135(param_2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 2,uVar2,unaff_lr);
+    ordaudio_op_2135(param_2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 2,uVar2,unaff_lr);
   }
   return;
 }
@@ -4166,7 +4166,7 @@ int param_3;
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
       destroy_mod_pattern_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
-      Ordinal_1094(*(undefined4 *)(param_1 + 4));
+      cpp_operator_delete(*(undefined4 *)(param_1 + 4));
       *(undefined4 *)(param_1 + 4) = 0;
     }
   }
@@ -4202,10 +4202,10 @@ int param_3;
         if (iVar4 <= param_2) {
           iVar4 = param_2;
         }
-        iVar2 = Ordinal_1095(iVar4 * 0x14);
-        Ordinal_1044(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x14);
+        iVar2 = cpp_operator_new(iVar4 * 0x14);
+        ce_memmove(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x14);
         construct_mod_pattern_array_range(*(int *)(param_1 + 8) * 0x14 + iVar2,param_2 - *(int *)(param_1 + 8));
-        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        cpp_operator_delete(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar2;
         *(int *)(param_1 + 0xc) = iVar4;
       }
@@ -4220,7 +4220,7 @@ int param_3;
       }
       goto LAB_0004fef0;
     }
-    uVar1 = Ordinal_1095(param_2 * 0x14);
+    uVar1 = cpp_operator_new(param_2 * 0x14);
     *(undefined4 *)(param_1 + 4) = uVar1;
     construct_mod_pattern_array_range(uVar1,param_2);
   }
@@ -4246,7 +4246,7 @@ undefined1 * param_1;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
     destroy_mod_pattern_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
-    Ordinal_1094(*(undefined4 *)(param_1 + 4));
+    cpp_operator_delete(*(undefined4 *)(param_1 + 4));
   }
   *param_1 = 0x20;
   param_1[1] = 0x30;
@@ -4270,10 +4270,10 @@ int param_2;
   undefined4 uVar1;
 
   if ((*(uint *)(param_2 + 0x14) & 1) == 0) {
-    Ordinal_2588(param_2,*(undefined4 *)(param_1 + 8));
+    ordaudio_op_2588(param_2,*(undefined4 *)(param_1 + 8));
   }
   else {
-    uVar1 = Ordinal_2142(param_2);
+    uVar1 = ordaudio_op_2142(param_2);
     resize_mod_pattern_array(param_1,uVar1,0xffffffff);
   }
   write_mod_pattern_array(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
@@ -4329,7 +4329,7 @@ int param_3;
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
       destroy_mod_instrument_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
-      Ordinal_1094(*(undefined4 *)(param_1 + 4));
+      cpp_operator_delete(*(undefined4 *)(param_1 + 4));
       *(undefined4 *)(param_1 + 4) = 0;
     }
   }
@@ -4365,10 +4365,10 @@ int param_3;
         if (iVar4 <= param_2) {
           iVar4 = param_2;
         }
-        iVar2 = Ordinal_1095(iVar4 * 0x30);
-        Ordinal_1044(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x30);
+        iVar2 = cpp_operator_new(iVar4 * 0x30);
+        ce_memmove(iVar2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) * 0x30);
         construct_mod_instrument_array_range(*(int *)(param_1 + 8) * 0x30 + iVar2,param_2 - *(int *)(param_1 + 8));
-        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        cpp_operator_delete(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar2;
         *(int *)(param_1 + 0xc) = iVar4;
       }
@@ -4383,7 +4383,7 @@ int param_3;
       }
       goto LAB_00050140;
     }
-    uVar1 = Ordinal_1095(param_2 * 0x30);
+    uVar1 = cpp_operator_new(param_2 * 0x30);
     *(undefined4 *)(param_1 + 4) = uVar1;
     construct_mod_instrument_array_range(uVar1,param_2);
   }
@@ -4409,7 +4409,7 @@ undefined1 * param_1;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
     destroy_mod_instrument_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
-    Ordinal_1094(*(undefined4 *)(param_1 + 4));
+    cpp_operator_delete(*(undefined4 *)(param_1 + 4));
   }
   *param_1 = 0x20;
   param_1[1] = 0x30;
@@ -4432,10 +4432,10 @@ int param_2;
   undefined4 uVar1;
 
   if ((*(uint *)(param_2 + 0x14) & 1) == 0) {
-    Ordinal_2588(param_2,*(undefined4 *)(param_1 + 8));
+    ordaudio_op_2588(param_2,*(undefined4 *)(param_1 + 8));
   }
   else {
-    uVar1 = Ordinal_2142(param_2);
+    uVar1 = ordaudio_op_2142(param_2);
     resize_mod_instrument_array(param_1,uVar1,0xffffffff);
   }
   write_mod_instrument_array(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
@@ -4491,7 +4491,7 @@ int param_3;
   if (param_2 == 0) {
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
-      Ordinal_1094();
+      cpp_operator_delete();
       *(undefined4 *)(param_1 + 4) = 0;
     }
   }
@@ -4526,10 +4526,10 @@ int param_3;
         if (iVar2 <= param_2) {
           iVar2 = param_2;
         }
-        iVar3 = Ordinal_1095(iVar2 << 6);
-        Ordinal_1044(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 6);
+        iVar3 = cpp_operator_new(iVar2 << 6);
+        ce_memmove(iVar3,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 6);
         construct_mod_channel_state_array_range(iVar3 + *(int *)(param_1 + 8) * 0x40,param_2 - *(int *)(param_1 + 8));
-        Ordinal_1094(*(undefined4 *)(param_1 + 4));
+        cpp_operator_delete(*(undefined4 *)(param_1 + 4));
         *(int *)(param_1 + 4) = iVar3;
         *(int *)(param_1 + 0xc) = iVar2;
       }
@@ -4541,7 +4541,7 @@ int param_3;
       }
       goto LAB_00050364;
     }
-    uVar1 = Ordinal_1095(param_2 << 6);
+    uVar1 = cpp_operator_new(param_2 << 6);
     *(undefined4 *)(param_1 + 4) = uVar1;
     construct_mod_channel_state_array_range(uVar1,param_2);
   }
@@ -4566,7 +4566,7 @@ undefined1 * param_1;
   param_1[2] = 8;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
-    Ordinal_1094();
+    cpp_operator_delete();
   }
   *param_1 = 0x20;
   param_1[1] = 0x30;
@@ -4580,7 +4580,7 @@ undefined1 * param_1;
 // was FUN_000503e0 -- MFC CArchive-style serialize for the MOD
 // channel runtime-state array (loading resizes via
 // resize_mod_channel_state_array, storing writes the raw 64-byte
-// elements directly via Ordinal_2135).
+// elements directly via ordaudio_op_2135).
 void serialize_mod_channel_state_array(param_1,param_2)
 int param_1;
 int param_2;
@@ -4591,18 +4591,18 @@ int param_2;
   undefined4 unaff_lr;
 
   if ((*(uint *)(param_2 + 0x14) & 1) == 0) {
-    Ordinal_2588(param_2,*(undefined4 *)(param_1 + 8));
+    ordaudio_op_2588(param_2,*(undefined4 *)(param_1 + 8));
   }
   else {
-    uVar1 = Ordinal_2142(param_2);
+    uVar1 = ordaudio_op_2142(param_2);
     resize_mod_channel_state_array(param_1,uVar1,0xffffffff);
   }
   uVar2 = *(uint *)(param_2 + 0x14) & 1;
   if (uVar2 == 0) {
-    Ordinal_2582();
+    ordaudio_op_2582();
   }
   else {
-    Ordinal_2135(param_2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 6,uVar2,unaff_lr);
+    ordaudio_op_2135(param_2,*(undefined4 *)(param_1 + 4),*(int *)(param_1 + 8) << 6,uVar2,unaff_lr);
   }
   return;
 }
@@ -4629,7 +4629,7 @@ uint param_2;
 {
   destroy_mod_dynamic_array(param_1);
   if ((param_2 & 1) != 0) {
-    Ordinal_1094(param_1);
+    cpp_operator_delete(param_1);
   }
   return param_1;
 }
@@ -4647,7 +4647,7 @@ uint param_2;
 {
   destroy_mod_pattern_array(param_1);
   if ((param_2 & 1) != 0) {
-    Ordinal_1094(param_1);
+    cpp_operator_delete(param_1);
   }
   return param_1;
 }
@@ -4666,7 +4666,7 @@ uint param_2;
 {
   destroy_mod_instrument_array(param_1);
   if ((param_2 & 1) != 0) {
-    Ordinal_1094(param_1);
+    cpp_operator_delete(param_1);
   }
   return param_1;
 }
@@ -4685,7 +4685,7 @@ uint param_2;
 {
   destroy_mod_channel_state_array(param_1);
   if ((param_2 & 1) != 0) {
-    Ordinal_1094(param_1);
+    cpp_operator_delete(param_1);
   }
   return param_1;
 }
@@ -4693,13 +4693,13 @@ uint param_2;
 
 // was FUN_000504c0 -- zero-fills param_2 16-byte "event" elements in
 // one memset. The construct-range callback resize_mod_event_row_array
-// passes to Ordinal_1044/its grow path.
+// passes to ce_memmove/its grow path.
 void construct_mod_event_array_range(param_1,param_2)
 undefined4 param_1;
 int param_2;
 
 {
-  Ordinal_1047(param_1,0,param_2 << 4);
+  ce_memset(param_1,0,param_2 << 4);
   return;
 }
 
@@ -4737,7 +4737,7 @@ undefined1 * param_1;
   param_1[2] = 8;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
-    Ordinal_1094();
+    cpp_operator_delete();
   }
   *param_1 = 0x20;
   param_1[1] = 0x30;
@@ -4759,10 +4759,10 @@ int param_2;
   undefined4 uVar1;
 
   if ((*(uint *)(param_2 + 0x14) & 1) == 0) {
-    Ordinal_2588(param_2,*(undefined4 *)(param_1 + 8));
+    ordaudio_op_2588(param_2,*(undefined4 *)(param_1 + 8));
   }
   else {
-    uVar1 = Ordinal_2142(param_2);
+    uVar1 = ordaudio_op_2142(param_2);
     resize_mod_event_row_array(param_1,uVar1,0xffffffff);
   }
   write_mod_event_array(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
@@ -4785,7 +4785,7 @@ uint param_2;
 {
   destroy_mod_row_array_elem(param_1);
   if ((param_2 & 1) != 0) {
-    Ordinal_1094(param_1);
+    cpp_operator_delete(param_1);
   }
   return param_1;
 }
@@ -4794,7 +4794,7 @@ uint param_2;
 
 // was FUN_000505e0 -- MFC CArchive write helper for the event-array
 // (16-byte elements): writes param_3 elements of param_2 via
-// Ordinal_2135 if storing, else asserts/no-ops (Ordinal_2582) --
+// ordaudio_op_2135 if storing, else asserts/no-ops (ordaudio_op_2582) --
 // mirrors write_mod_pattern_row_array/write_mod_pattern_array/
 // write_mod_instrument_array for their own element sizes.
 void write_mod_event_array(param_1,param_2,param_3)
@@ -4804,10 +4804,10 @@ int param_3;
 
 {
   if ((*(uint *)(param_1 + 0x14) & 1) == 0) {
-    Ordinal_2582();
+    ordaudio_op_2582();
   }
   else {
-    Ordinal_2135(param_1,param_2,param_3 << 4);
+    ordaudio_op_2135(param_1,param_2,param_3 << 4);
   }
   return;
 }
@@ -4822,7 +4822,7 @@ int param_1;
 int param_2;
 
 {
-  Ordinal_1047(param_1,0,param_2 * 0x14);
+  ce_memset(param_1,0,param_2 * 0x14);
   for (; param_2 != 0; param_2 = param_2 + -1) {
     if (param_1 != 0) {
       construct_mod_row_array_elem(param_1);
@@ -4842,7 +4842,7 @@ undefined4 param_1;
 int param_2;
 
 {
-  Ordinal_1047(param_1,0,param_2 << 2);
+  ce_memset(param_1,0,param_2 << 2);
   return;
 }
 
@@ -4882,7 +4882,7 @@ undefined1 * param_1;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
     destroy_mod_row_array_range(*(int *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
-    Ordinal_1094(*(undefined4 *)(param_1 + 4));
+    cpp_operator_delete(*(undefined4 *)(param_1 + 4));
   }
   *param_1 = 0x20;
   param_1[1] = 0x30;
@@ -4905,10 +4905,10 @@ int param_2;
   undefined4 uVar1;
 
   if ((*(uint *)(param_2 + 0x14) & 1) == 0) {
-    Ordinal_2588(param_2,*(undefined4 *)(param_1 + 8));
+    ordaudio_op_2588(param_2,*(undefined4 *)(param_1 + 8));
   }
   else {
-    uVar1 = Ordinal_2142(param_2);
+    uVar1 = ordaudio_op_2142(param_2);
     resize_mod_pattern_row_array(param_1,uVar1,0xffffffff);
   }
   write_mod_pattern_row_array(param_2,*(undefined4 *)(param_1 + 4),*(undefined4 *)(param_1 + 8));
@@ -4932,7 +4932,7 @@ uint param_2;
 {
   destroy_mod_pattern_array_elem(param_1);
   if ((param_2 & 1) != 0) {
-    Ordinal_1094(param_1);
+    cpp_operator_delete(param_1);
   }
   return param_1;
 }
@@ -4948,10 +4948,10 @@ int param_3;
 
 {
   if ((*(uint *)(param_1 + 0x14) & 1) == 0) {
-    Ordinal_2582();
+    ordaudio_op_2582();
   }
   else {
-    Ordinal_2135(param_1,param_2,param_3 * 0x14);
+    ordaudio_op_2135(param_1,param_2,param_3 * 0x14);
   }
   return;
 }
@@ -4966,7 +4966,7 @@ int param_1;
 int param_2;
 
 {
-  Ordinal_1047(param_1,0,param_2 * 0x14);
+  ce_memset(param_1,0,param_2 * 0x14);
   for (; param_2 != 0; param_2 = param_2 + -1) {
     if (param_1 != 0) {
       construct_mod_pattern_array_elem(param_1);
@@ -4987,10 +4987,10 @@ int param_3;
 
 {
   if ((*(uint *)(param_1 + 0x14) & 1) == 0) {
-    Ordinal_2582();
+    ordaudio_op_2582();
   }
   else {
-    Ordinal_2135(param_1,param_2,param_3 * 0x14);
+    ordaudio_op_2135(param_1,param_2,param_3 * 0x14);
   }
   return;
 }
@@ -4999,8 +4999,8 @@ int param_3;
 
 // was FUN_00050828 -- destroys param_2 48-byte instrument elements:
 // releases an embedded object (likely a CString sample name, given
-// Ordinal_297's use alongside name-reading code in the MOD loader)
-// per element via Ordinal_218/Ordinal_297. The destroy-range callback
+// BatteryDrvrGetLevels's use alongside name-reading code in the MOD loader)
+// per element via FoldStringW/BatteryDrvrGetLevels. The destroy-range callback
 // resize_mod_instrument_array/destroy_mod_instrument_array use.
 void destroy_mod_instrument_array_range(param_1,param_2)
 int param_1;
@@ -5008,8 +5008,8 @@ int param_2;
 
 {
   for (; param_2 != 0; param_2 = param_2 + -1) {
-    Ordinal_218(param_1 + 0x1c);
-    Ordinal_297(param_1);
+    FoldStringW(param_1 + 0x1c);
+    BatteryDrvrGetLevels(param_1);
     param_1 = param_1 + 0x30;
   }
   return;
@@ -5018,20 +5018,20 @@ int param_2;
 
 
 // was FUN_00050860 -- zero-fills param_2 48-byte instrument elements
-// then default-constructs each one's embedded object (Ordinal_181/
-// Ordinal_47, the construct counterpart to destroy_mod_instrument_array_range's
-// Ordinal_297/Ordinal_218). The construct-range callback
+// then default-constructs each one's embedded object (FindNextFileW/
+// HeapReAlloc, the construct counterpart to destroy_mod_instrument_array_range's
+// BatteryDrvrGetLevels/FoldStringW). The construct-range callback
 // resize_mod_instrument_array uses on grow.
 void construct_mod_instrument_array_range(param_1,param_2)
 int param_1;
 int param_2;
 
 {
-  Ordinal_1047(param_1,0,param_2 * 0x30);
+  ce_memset(param_1,0,param_2 * 0x30);
   for (; param_2 != 0; param_2 = param_2 + -1) {
     if (param_1 != 0) {
-      Ordinal_181(param_1);
-      Ordinal_47(param_1 + 0x1c);
+      FindNextFileW(param_1);
+      HeapReAlloc(param_1 + 0x1c);
     }
     param_1 = param_1 + 0x30;
   }
@@ -5049,10 +5049,10 @@ int param_3;
 
 {
   if ((*(uint *)(param_1 + 0x14) & 1) == 0) {
-    Ordinal_2582();
+    ordaudio_op_2582();
   }
   else {
-    Ordinal_2135(param_1,param_2,param_3 * 0x30);
+    ordaudio_op_2135(param_1,param_2,param_3 * 0x30);
   }
   return;
 }
@@ -5069,7 +5069,7 @@ undefined4 param_1;
 int param_2;
 
 {
-  Ordinal_1047(param_1,0,param_2 << 6);
+  ce_memset(param_1,0,param_2 << 6);
   return;
 }
 

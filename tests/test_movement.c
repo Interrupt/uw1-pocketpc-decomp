@@ -180,14 +180,14 @@ void resolve_wall_slide_corner(void)
 {
     DAT_002049da = 9; /* flat raised face uses the movement-axis tangent */
 }
-long Ordinal_1053(void)
+long ce_rand(void)
 {
     /* Static placement snapshots jitter their sub-tile coordinates. */
     if (door_contacts == 0)
         TEST_FAIL_MESSAGE("Wall response unexpectedly used random deflection");
     return 0;
 }
-long Ordinal_2005(int divisor, int dividend)
+long ordint_divmod(int divisor, int dividend)
 {
     TEST_ASSERT_NOT_EQUAL(0, divisor);
     return dividend / divisor;

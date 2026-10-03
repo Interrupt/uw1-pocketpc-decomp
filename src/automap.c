@@ -176,7 +176,7 @@ void draw_automap_tiles()
       uVar5 = (uint)(short)uVar4;
       if ((uVar5 != 0) && (uVar5 < 10)) {
         draw_automap_cell(uVar4,iVar6,local_3c);
-        Ordinal_1047(local_34,0,0x10);
+        ce_memset(local_34,0,0x10);
         if (((&DAT_000878d0)[uVar5] & 1) == 0) {
           iVar2 = 0;
           do {
@@ -338,14 +338,14 @@ int param_3;
           if (bVar1 == 1) {
             /* Water fill: (rand % 2) + 0xb1 -> a 2-tone dither between
                palette 0xb1/0xb2, not a flat 0xb1. The original reads
-               the modulo from Ordinal_2005's r1 (remainder) leftover;
+               the modulo from ordint_divmod's r1 (remainder) leftover;
                Ghidra lost that into an uninitialised `extraout_r1`, so
                compute `& 1` on the rand directly. */
-            iVar5 = ((int)Ordinal_1053() & 1) + 0xb1;
+            iVar5 = ((int)ce_rand() & 1) + 0xb1;
           }
           else {
             if (bVar1 != 2) goto LAB_00016b00;
-            iVar5 = ((int)Ordinal_1053() & 1) + 0xb5;
+            iVar5 = ((int)ce_rand() & 1) + 0xb5;
           }
           plot_pixel(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar8) + 200,iVar5);
@@ -446,13 +446,13 @@ int param_4;
 
 
 // was FUN_00017908
-/* uVar3 was `undefined4` (4 bytes), truncating Ordinal_1041's real
+/* uVar3 was `undefined4` (4 bytes), truncating ce_malloc's real
    64-bit malloc'd pointer on this host -- same pointer-truncation
    pattern fixed repeatedly this session. Confirmed via lldb: this is
    why the automap screen loaded blnkmap.byt's file handle successfully
    but read_buffer_from_file (the actual read-into-buffer call) still failed --
    it was reading 64000 real bytes into a wild, truncated destination
-   address instead of the buffer Ordinal_1041 actually allocated. */
+   address instead of the buffer ce_malloc actually allocated. */
 void draw_automap_screen(param_1)
 undefined4 param_1;
 
@@ -467,7 +467,7 @@ undefined4 param_1;
   undefined1 auStack_124 [8];
   char acStack_11c [260];
 
-  uVar3 = Ordinal_1041(64000);
+  uVar3 = ce_malloc(64000);
   decrement_cursor_hide_depth();
   pcVar4 = &DAT_0023cca8;
     stack0xffdc323c_ptr = acStack_11c;
@@ -476,7 +476,7 @@ undefined4 param_1;
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_blnkmap_byt_00084338);
+  ce_strcat(acStack_11c,s__DATA_blnkmap_byt_00084338);
   iVar5 = read_buffer_from_file(acStack_11c,uVar3,64000);
   if (iVar5 == 0) {
     cursor_show_idle_tick();
@@ -513,7 +513,7 @@ undefined4 param_1;
   }
   DAT_000bbef4 = 1;
   cursor_show_idle_tick();
-  Ordinal_1018(uVar3);
+  LocalFree(uVar3);
   return;
 }
 
@@ -684,7 +684,7 @@ int param_2;
 void clear_automap_reveal_buffer()
 
 {
-  Ordinal_1047(&DAT_000b99d0,0,0x1000);
+  ce_memset(&DAT_000b99d0,0,0x1000);
   return;
 }
 
@@ -942,7 +942,7 @@ LAB_000171d0:
       }
     }
     else {
-      local_5c[0] = Ordinal_1091(sVar2);
+      local_5c[0] = ce_toupper(sVar2);
       sVar2 = measure_text_width(local_58);
       sVar3 = measure_text_width(local_5c);
       if ((((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10) + (int)*(short *)(&DAT_000baa0a + iVar7) <
@@ -1073,7 +1073,7 @@ int param_1;
         iVar4 = 0;
         do {
           if (*(short *)(&DAT_000baa0a + iVar4 * 0x36) < 0) {
-            Ordinal_1044(&DAT_000ba9d8 + iVar4 * 0x36,&DAT_000ba9d8 + (iVar4 + 1) * 0x36,
+            ce_memmove(&DAT_000ba9d8 + iVar4 * 0x36,&DAT_000ba9d8 + (iVar4 + 1) * 0x36,
                          iVar4 * -0x36 + 0x1518);
             iVar3 = (iVar2 + -1) * 0x10000 >> 0x10;
           }
@@ -1112,7 +1112,7 @@ int param_1;
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   if (iVar2 != 0) {
     uVar1 = read_archive_entry(auStack_20,param_1 + 0x23,&DAT_000ba9d8);
-    DAT_000b99c8 = Ordinal_2008(0x36,uVar1);
+    DAT_000b99c8 = ordfloat_double_mul(0x36,uVar1);
     DAT_000bbef0 = DAT_000b99c8;
     draw_automap_notes();
     close_level_archive(auStack_20);

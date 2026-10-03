@@ -187,17 +187,17 @@ undefined1 * param_3;
 {
   undefined4 uVar1;
   
-  uVar1 = Ordinal_2015(*param_2,*param_1);
+  uVar1 = ordfloat_sub(*param_2,*param_1);
   *param_3 = (char)uVar1;
   param_3[1] = (char)((uint)uVar1 >> 8);
   param_3[2] = (char)((uint)uVar1 >> 0x10);
   param_3[3] = (char)((uint)uVar1 >> 0x18);
-  uVar1 = Ordinal_2015(param_2[1],param_1[1]);
+  uVar1 = ordfloat_sub(param_2[1],param_1[1]);
   param_3[4] = (char)uVar1;
   param_3[5] = (char)((uint)uVar1 >> 8);
   param_3[6] = (char)((uint)uVar1 >> 0x10);
   param_3[7] = (char)((uint)uVar1 >> 0x18);
-  uVar1 = Ordinal_2015(param_2[2],param_1[2]);
+  uVar1 = ordfloat_sub(param_2[2],param_1[2]);
   param_3[8] = (char)uVar1;
   param_3[9] = (char)((uint)uVar1 >> 8);
   param_3[10] = (char)((uint)uVar1 >> 0x10);
@@ -233,24 +233,24 @@ undefined1 * param_3;
   undefined4 uVar1;
   undefined4 uVar2;
   
-  uVar1 = Ordinal_2026(param_1[1],param_2[2]);
-  uVar2 = Ordinal_2026(param_1[2],param_2[1]);
-  uVar1 = Ordinal_2015(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_1[1],param_2[2]);
+  uVar2 = ordfloat_mul(param_1[2],param_2[1]);
+  uVar1 = ordfloat_sub(uVar1,uVar2);
   *param_3 = (char)uVar1;
   param_3[1] = (char)((uint)uVar1 >> 8);
   param_3[2] = (char)((uint)uVar1 >> 0x10);
   param_3[3] = (char)((uint)uVar1 >> 0x18);
-  uVar1 = Ordinal_2026(param_2[2],*param_1);
-  uVar2 = Ordinal_2026(param_1[2],*param_2);
-  Ordinal_2015(uVar1,uVar2);
-  uVar1 = Ordinal_2023();
+  uVar1 = ordfloat_mul(param_2[2],*param_1);
+  uVar2 = ordfloat_mul(param_1[2],*param_2);
+  ordfloat_sub(uVar1,uVar2);
+  uVar1 = ordfloat_negate();
   param_3[4] = (char)uVar1;
   param_3[5] = (char)((uint)uVar1 >> 8);
   param_3[6] = (char)((uint)uVar1 >> 0x10);
   param_3[7] = (char)((uint)uVar1 >> 0x18);
-  uVar1 = Ordinal_2026(param_2[1],*param_1);
-  uVar2 = Ordinal_2026(param_1[1],*param_2);
-  uVar1 = Ordinal_2015(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_2[1],*param_1);
+  uVar2 = ordfloat_mul(param_1[1],*param_2);
+  uVar1 = ordfloat_sub(uVar1,uVar2);
   param_3[8] = (char)uVar1;
   param_3[9] = (char)((uint)uVar1 >> 8);
   param_3[10] = (char)((uint)uVar1 >> 0x10);
@@ -328,40 +328,40 @@ int * param_8;
   uVar8 = param_3[6];
   uVar10 = param_3[0xb];
   uVar6 = param_3[1];
-  uVar1 = Ordinal_2032(*param_8);
+  uVar1 = ordfloat_int_to_float2(*param_8);
   uVar4 = *param_3;
-  iVar2 = Ordinal_2028(uVar4,uVar1);
-  if (((iVar2 != 0) && (iVar2 = Ordinal_2028(param_3[5],uVar1), iVar2 != 0)) &&
-     (iVar2 = Ordinal_2038(param_3[10],uVar1), iVar2 == 0)) {
+  iVar2 = ordfloat_lt(uVar4,uVar1);
+  if (((iVar2 != 0) && (iVar2 = ordfloat_lt(param_3[5],uVar1), iVar2 != 0)) &&
+     (iVar2 = ordfloat_ge(param_3[10],uVar1), iVar2 == 0)) {
     if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts left of clip-left\n");
     return;
   }
-  uVar1 = Ordinal_2032(param_8[2]);
-  iVar2 = Ordinal_2036(uVar4,uVar1);
-  if (((iVar2 != 0) && (iVar2 = Ordinal_2036(param_3[5],uVar1), iVar2 != 0)) &&
-     (iVar2 = Ordinal_2030(param_3[10],uVar1), iVar2 == 0)) {
+  uVar1 = ordfloat_int_to_float2(param_8[2]);
+  iVar2 = ordfloat_gt(uVar4,uVar1);
+  if (((iVar2 != 0) && (iVar2 = ordfloat_gt(param_3[5],uVar1), iVar2 != 0)) &&
+     (iVar2 = ordfloat_le(param_3[10],uVar1), iVar2 == 0)) {
     if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts right of clip-right\n");
     return;
   }
-  uVar1 = Ordinal_2032(param_8[1]);
-  iVar2 = Ordinal_2028(uVar6,uVar1);
-  if (((iVar2 != 0) && (iVar2 = Ordinal_2028(uVar8,uVar1), iVar2 != 0)) &&
-     (iVar2 = Ordinal_2038(uVar10,uVar1), iVar2 == 0)) {
+  uVar1 = ordfloat_int_to_float2(param_8[1]);
+  iVar2 = ordfloat_lt(uVar6,uVar1);
+  if (((iVar2 != 0) && (iVar2 = ordfloat_lt(uVar8,uVar1), iVar2 != 0)) &&
+     (iVar2 = ordfloat_ge(uVar10,uVar1), iVar2 == 0)) {
     if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts above clip-top\n");
     return;
   }
-  uVar1 = Ordinal_2032(param_8[3]);
-  iVar2 = Ordinal_2036(uVar6,uVar1);
-  if (((iVar2 != 0) && (iVar2 = Ordinal_2036(uVar8,uVar1), iVar2 != 0)) &&
-     (iVar2 = Ordinal_2030(uVar10,uVar1), iVar2 == 0)) {
+  uVar1 = ordfloat_int_to_float2(param_8[3]);
+  iVar2 = ordfloat_gt(uVar6,uVar1);
+  if (((iVar2 != 0) && (iVar2 = ordfloat_gt(uVar8,uVar1), iVar2 != 0)) &&
+     (iVar2 = ordfloat_le(uVar10,uVar1), iVar2 == 0)) {
     if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts below clip-bottom\n");
     return;
   }
   if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] passed bbox reject, entering scanline setup\n");
   int _uw_span_calls = 0;
-  iVar2 = Ordinal_2028(uVar6,uVar8);
+  iVar2 = ordfloat_lt(uVar6,uVar8);
   if (iVar2 == 0) {
-    iVar2 = Ordinal_2028(uVar10,uVar8);
+    iVar2 = ordfloat_lt(uVar10,uVar8);
     if (iVar2 != 0) {
       uVar11 = 2;
       uVar1 = 1;
@@ -371,7 +371,7 @@ int * param_8;
       goto LAB_00014684;
     }
     uVar11 = 1;
-    iVar2 = Ordinal_2028(uVar6,uVar10);
+    iVar2 = ordfloat_lt(uVar6,uVar10);
     if (iVar2 == 0) {
       uVar4 = 0;
       uVar9 = 3;
@@ -381,7 +381,7 @@ int * param_8;
     uVar7 = 3;
   }
   else {
-    iVar2 = Ordinal_2028(uVar10,uVar6);
+    iVar2 = ordfloat_lt(uVar10,uVar6);
     if (iVar2 != 0) {
       uVar11 = 2;
       uVar1 = 0;
@@ -391,7 +391,7 @@ int * param_8;
       goto LAB_00014684;
     }
     uVar11 = 0;
-    iVar2 = Ordinal_2028(uVar8,uVar10);
+    iVar2 = ordfloat_lt(uVar8,uVar10);
     if (iVar2 == 0) {
       uVar4 = 1;
       uVar9 = 1;
@@ -526,94 +526,94 @@ undefined4 * param_2;
   
   uVar5 = param_1[0xb];
   uVar4 = param_1[10];
-  uVar1 = Ordinal_2015(param_1[1],uVar5);
-  uVar2 = Ordinal_2015(param_1[5],uVar4);
-  uVar1 = Ordinal_2026(uVar1,uVar2);
-  uVar2 = Ordinal_2015(param_1[6],uVar5);
-  uVar4 = Ordinal_2015(*param_1,uVar4);
-  uVar2 = Ordinal_2026(uVar2,uVar4);
-  uVar1 = Ordinal_2015(uVar1,uVar2);
-  uVar1 = Ordinal_2047(0x3f800000,uVar1);
-  uVar2 = Ordinal_2023();
+  uVar1 = ordfloat_sub(param_1[1],uVar5);
+  uVar2 = ordfloat_sub(param_1[5],uVar4);
+  uVar1 = ordfloat_mul(uVar1,uVar2);
+  uVar2 = ordfloat_sub(param_1[6],uVar5);
+  uVar4 = ordfloat_sub(*param_1,uVar4);
+  uVar2 = ordfloat_mul(uVar2,uVar4);
+  uVar1 = ordfloat_sub(uVar1,uVar2);
+  uVar1 = ordfloat_div(0x3f800000,uVar1);
+  uVar2 = ordfloat_negate();
   puVar6 = param_2 + 6;
   iVar8 = 3;
   puVar7 = param_1;
   do {
-    uVar4 = Ordinal_2047(0x3f800000,puVar7[2]);
+    uVar4 = ordfloat_div(0x3f800000,puVar7[2]);
     puVar6[-6] = uVar4;
-    uVar5 = Ordinal_2026(puVar7[3],uVar4);
+    uVar5 = ordfloat_mul(puVar7[3],uVar4);
     puVar6[-3] = uVar5;
-    uVar4 = Ordinal_2026(puVar7[4],uVar4);
+    uVar4 = ordfloat_mul(puVar7[4],uVar4);
     iVar8 = iVar8 + -1;
     *puVar6 = uVar4;
     puVar6 = puVar6 + 1;
     puVar7 = puVar7 + 5;
   } while (iVar8 != 0);
   uVar5 = param_2[2];
-  uVar4 = Ordinal_2015(param_2[1],uVar5);
+  uVar4 = ordfloat_sub(param_2[1],uVar5);
   uVar9 = param_1[0xb];
-  uVar5 = Ordinal_2015(*param_2,uVar5);
-  uVar3 = Ordinal_2015(param_1[1],uVar9);
-  uVar3 = Ordinal_2026(uVar3,uVar4);
-  uVar9 = Ordinal_2015(param_1[6],uVar9);
-  uVar9 = Ordinal_2026(uVar9,uVar5);
-  uVar3 = Ordinal_2015(uVar3,uVar9);
-  uVar3 = Ordinal_2026(uVar3,uVar1);
+  uVar5 = ordfloat_sub(*param_2,uVar5);
+  uVar3 = ordfloat_sub(param_1[1],uVar9);
+  uVar3 = ordfloat_mul(uVar3,uVar4);
+  uVar9 = ordfloat_sub(param_1[6],uVar9);
+  uVar9 = ordfloat_mul(uVar9,uVar5);
+  uVar3 = ordfloat_sub(uVar3,uVar9);
+  uVar3 = ordfloat_mul(uVar3,uVar1);
   param_2[9] = uVar3;
   uVar9 = param_1[10];
-  uVar3 = Ordinal_2015(*param_1,uVar9);
-  uVar4 = Ordinal_2026(uVar3,uVar4);
-  uVar3 = Ordinal_2015(param_1[5],uVar9);
-  uVar5 = Ordinal_2026(uVar3,uVar5);
-  uVar4 = Ordinal_2015(uVar4,uVar5);
-  uVar4 = Ordinal_2026(uVar4,uVar2);
+  uVar3 = ordfloat_sub(*param_1,uVar9);
+  uVar4 = ordfloat_mul(uVar3,uVar4);
+  uVar3 = ordfloat_sub(param_1[5],uVar9);
+  uVar5 = ordfloat_mul(uVar3,uVar5);
+  uVar4 = ordfloat_sub(uVar4,uVar5);
+  uVar4 = ordfloat_mul(uVar4,uVar2);
   uVar5 = param_2[5];
   param_2[10] = uVar4;
-  uVar4 = Ordinal_2015(param_2[4],uVar5);
+  uVar4 = ordfloat_sub(param_2[4],uVar5);
   uVar9 = param_1[0xb];
-  uVar5 = Ordinal_2015(param_2[3],uVar5);
-  uVar3 = Ordinal_2015(param_1[1],uVar9);
-  uVar3 = Ordinal_2026(uVar3,uVar4);
-  uVar9 = Ordinal_2015(param_1[6],uVar9);
-  uVar9 = Ordinal_2026(uVar9,uVar5);
-  uVar3 = Ordinal_2015(uVar3,uVar9);
-  uVar3 = Ordinal_2026(uVar3,uVar1);
+  uVar5 = ordfloat_sub(param_2[3],uVar5);
+  uVar3 = ordfloat_sub(param_1[1],uVar9);
+  uVar3 = ordfloat_mul(uVar3,uVar4);
+  uVar9 = ordfloat_sub(param_1[6],uVar9);
+  uVar9 = ordfloat_mul(uVar9,uVar5);
+  uVar3 = ordfloat_sub(uVar3,uVar9);
+  uVar3 = ordfloat_mul(uVar3,uVar1);
   param_2[0xb] = uVar3;
   uVar9 = param_1[10];
-  uVar3 = Ordinal_2015(*param_1,uVar9);
-  uVar4 = Ordinal_2026(uVar3,uVar4);
-  uVar3 = Ordinal_2015(param_1[5],uVar9);
-  uVar5 = Ordinal_2026(uVar3,uVar5);
-  uVar4 = Ordinal_2015(uVar4,uVar5);
-  uVar4 = Ordinal_2026(uVar4,uVar2);
+  uVar3 = ordfloat_sub(*param_1,uVar9);
+  uVar4 = ordfloat_mul(uVar3,uVar4);
+  uVar3 = ordfloat_sub(param_1[5],uVar9);
+  uVar5 = ordfloat_mul(uVar3,uVar5);
+  uVar4 = ordfloat_sub(uVar4,uVar5);
+  uVar4 = ordfloat_mul(uVar4,uVar2);
   uVar5 = param_2[8];
   param_2[0xc] = uVar4;
-  uVar4 = Ordinal_2015(param_2[7],uVar5);
+  uVar4 = ordfloat_sub(param_2[7],uVar5);
   uVar9 = param_1[0xb];
-  uVar5 = Ordinal_2015(param_2[6],uVar5);
-  uVar3 = Ordinal_2015(param_1[1],uVar9);
-  uVar3 = Ordinal_2026(uVar3,uVar4);
-  uVar9 = Ordinal_2015(param_1[6],uVar9);
-  uVar9 = Ordinal_2026(uVar9,uVar5);
-  uVar3 = Ordinal_2015(uVar3,uVar9);
-  uVar1 = Ordinal_2026(uVar3,uVar1);
+  uVar5 = ordfloat_sub(param_2[6],uVar5);
+  uVar3 = ordfloat_sub(param_1[1],uVar9);
+  uVar3 = ordfloat_mul(uVar3,uVar4);
+  uVar9 = ordfloat_sub(param_1[6],uVar9);
+  uVar9 = ordfloat_mul(uVar9,uVar5);
+  uVar3 = ordfloat_sub(uVar3,uVar9);
+  uVar1 = ordfloat_mul(uVar3,uVar1);
   param_2[0xd] = uVar1;
   uVar3 = param_1[10];
-  uVar1 = Ordinal_2015(*param_1,uVar3);
-  uVar1 = Ordinal_2026(uVar1,uVar4);
-  uVar4 = Ordinal_2015(param_1[5],uVar3);
-  uVar4 = Ordinal_2026(uVar4,uVar5);
-  uVar1 = Ordinal_2015(uVar1,uVar4);
-  uVar1 = Ordinal_2026(uVar1,uVar2);
+  uVar1 = ordfloat_sub(*param_1,uVar3);
+  uVar1 = ordfloat_mul(uVar1,uVar4);
+  uVar4 = ordfloat_sub(param_1[5],uVar3);
+  uVar4 = ordfloat_mul(uVar4,uVar5);
+  uVar1 = ordfloat_sub(uVar1,uVar4);
+  uVar1 = ordfloat_mul(uVar1,uVar2);
   param_2[0xe] = uVar1;
-  Ordinal_2026(param_2[9],0x45800000);
-  uVar1 = Ordinal_2020();
+  ordfloat_mul(param_2[9],0x45800000);
+  uVar1 = ordfloat_uint_to_float();
   param_2[0xf] = uVar1;
-  Ordinal_2026(param_2[0xb],0x45800000);
-  uVar1 = Ordinal_2020();
+  ordfloat_mul(param_2[0xb],0x45800000);
+  uVar1 = ordfloat_uint_to_float();
   param_2[0x10] = uVar1;
-  Ordinal_2026(param_2[0xd],0x45800000);
-  uVar1 = Ordinal_2020();
+  ordfloat_mul(param_2[0xd],0x45800000);
+  uVar1 = ordfloat_uint_to_float();
   param_2[0x11] = uVar1;
   return;
 }
@@ -646,8 +646,8 @@ undefined4 * param_6;
   int local_34;
   
   puVar11 = (undefined4 *)(param_3 * 0x14 + param_2);
-  Ordinal_2026(puVar11[1],0x45800000);
-  uVar2 = Ordinal_2020();
+  ordfloat_mul(puVar11[1],0x45800000);
+  uVar2 = ordfloat_uint_to_float();
   if ((uVar2 & 0xfff) != 0) {
     uVar2 = (uVar2 - (uVar2 & 0xfff)) + 0x1000;
   }
@@ -658,8 +658,8 @@ undefined4 * param_6;
     local_34 = param_5 - iVar1;
   }
   puVar10 = (undefined4 *)(param_4 * 0x14 + param_2);
-  Ordinal_2026(puVar10[1],0x45800000);
-  uVar2 = Ordinal_2020();
+  ordfloat_mul(puVar10[1],0x45800000);
+  uVar2 = ordfloat_uint_to_float();
   if ((uVar2 & 0xfff) != 0) {
     uVar2 = (uVar2 - (uVar2 & 0xfff)) + 0x1000;
   }
@@ -673,71 +673,71 @@ undefined4 * param_6;
     param_6[3] = iVar7;
   }
   uVar8 = puVar11[1];
-  uVar4 = Ordinal_2032(iVar1);
-  uVar4 = Ordinal_2015(uVar4,uVar8);
-  uVar8 = Ordinal_2015(puVar10[1],uVar8);
+  uVar4 = ordfloat_int_to_float2(iVar1);
+  uVar4 = ordfloat_sub(uVar4,uVar8);
+  uVar8 = ordfloat_sub(puVar10[1],uVar8);
   uVar9 = *puVar11;
-  uVar5 = Ordinal_2015(*puVar10,uVar9);
-  uVar6 = Ordinal_2032(local_34);
-  uVar4 = Ordinal_2051(uVar6,uVar4);
-  uVar8 = Ordinal_2047(0x3f800000,uVar8);
-  uVar6 = Ordinal_2026(uVar4,uVar5);
-  uVar6 = Ordinal_2026(uVar6,uVar8);
-  uVar6 = Ordinal_2051(uVar6,uVar9);
+  uVar5 = ordfloat_sub(*puVar10,uVar9);
+  uVar6 = ordfloat_int_to_float2(local_34);
+  uVar4 = ordfloat_add(uVar6,uVar4);
+  uVar8 = ordfloat_div(0x3f800000,uVar8);
+  uVar6 = ordfloat_mul(uVar4,uVar5);
+  uVar6 = ordfloat_mul(uVar6,uVar8);
+  uVar6 = ordfloat_add(uVar6,uVar9);
   *param_6 = uVar6;
-  uVar8 = Ordinal_2026(uVar8,uVar5);
+  uVar8 = ordfloat_mul(uVar8,uVar5);
   param_6[1] = uVar8;
   uVar12 = *param_6;
-  uVar5 = Ordinal_2015(uVar12,*puVar11);
+  uVar5 = ordfloat_sub(uVar12,*puVar11);
   param_6[2] = iVar1 + local_34;
-  uVar6 = Ordinal_2026(*(undefined4 *)(param_1 + 0x28),uVar4);
-  uVar9 = Ordinal_2026(*(undefined4 *)(param_1 + 0x24),uVar5);
-  uVar6 = Ordinal_2051(uVar6,uVar9);
+  uVar6 = ordfloat_mul(*(undefined4 *)(param_1 + 0x28),uVar4);
+  uVar9 = ordfloat_mul(*(undefined4 *)(param_1 + 0x24),uVar5);
+  uVar6 = ordfloat_add(uVar6,uVar9);
   puVar11 = (undefined4 *)(param_1 + param_3 * 4);
-  uVar6 = Ordinal_2051(uVar6,*puVar11);
+  uVar6 = ordfloat_add(uVar6,*puVar11);
   param_6[4] = uVar6;
-  uVar6 = Ordinal_2026(*(undefined4 *)(param_1 + 0x24),uVar8);
-  uVar6 = Ordinal_2051(uVar6,*(undefined4 *)(param_1 + 0x28));
+  uVar6 = ordfloat_mul(*(undefined4 *)(param_1 + 0x24),uVar8);
+  uVar6 = ordfloat_add(uVar6,*(undefined4 *)(param_1 + 0x28));
   param_6[5] = uVar6;
-  uVar6 = Ordinal_2026(*(undefined4 *)(param_1 + 0x30),uVar4);
-  uVar9 = Ordinal_2026(*(undefined4 *)(param_1 + 0x2c),uVar5);
-  uVar6 = Ordinal_2051(uVar6,uVar9);
-  uVar6 = Ordinal_2051(uVar6,puVar11[3]);
+  uVar6 = ordfloat_mul(*(undefined4 *)(param_1 + 0x30),uVar4);
+  uVar9 = ordfloat_mul(*(undefined4 *)(param_1 + 0x2c),uVar5);
+  uVar6 = ordfloat_add(uVar6,uVar9);
+  uVar6 = ordfloat_add(uVar6,puVar11[3]);
   param_6[6] = uVar6;
-  uVar6 = Ordinal_2026(*(undefined4 *)(param_1 + 0x2c),uVar8);
-  uVar6 = Ordinal_2051(uVar6,*(undefined4 *)(param_1 + 0x30));
+  uVar6 = ordfloat_mul(*(undefined4 *)(param_1 + 0x2c),uVar8);
+  uVar6 = ordfloat_add(uVar6,*(undefined4 *)(param_1 + 0x30));
   param_6[7] = uVar6;
-  uVar4 = Ordinal_2026(*(undefined4 *)(param_1 + 0x38),uVar4);
-  uVar5 = Ordinal_2026(*(undefined4 *)(param_1 + 0x34),uVar5);
-  uVar4 = Ordinal_2051(uVar4,uVar5);
-  uVar4 = Ordinal_2051(uVar4,puVar11[6]);
+  uVar4 = ordfloat_mul(*(undefined4 *)(param_1 + 0x38),uVar4);
+  uVar5 = ordfloat_mul(*(undefined4 *)(param_1 + 0x34),uVar5);
+  uVar4 = ordfloat_add(uVar4,uVar5);
+  uVar4 = ordfloat_add(uVar4,puVar11[6]);
   param_6[8] = uVar4;
-  uVar4 = Ordinal_2026(*(undefined4 *)(param_1 + 0x34),uVar8);
-  uVar4 = Ordinal_2051(uVar4,*(undefined4 *)(param_1 + 0x38));
+  uVar4 = ordfloat_mul(*(undefined4 *)(param_1 + 0x34),uVar8);
+  uVar4 = ordfloat_add(uVar4,*(undefined4 *)(param_1 + 0x38));
   param_6[9] = uVar4;
-  Ordinal_2026(uVar12,0x46800000);
-  uVar4 = Ordinal_2020();
+  ordfloat_mul(uVar12,0x46800000);
+  uVar4 = ordfloat_uint_to_float();
   param_6[10] = uVar4;
-  Ordinal_2026(param_6[4],0x46800000);
-  uVar4 = Ordinal_2020();
+  ordfloat_mul(param_6[4],0x46800000);
+  uVar4 = ordfloat_uint_to_float();
   param_6[0xc] = uVar4;
-  Ordinal_2026(param_6[6],0x46800000);
-  uVar4 = Ordinal_2020();
+  ordfloat_mul(param_6[6],0x46800000);
+  uVar4 = ordfloat_uint_to_float();
   param_6[0xe] = uVar4;
-  Ordinal_2026(param_6[8],0x46800000);
-  uVar4 = Ordinal_2020();
+  ordfloat_mul(param_6[8],0x46800000);
+  uVar4 = ordfloat_uint_to_float();
   param_6[0x10] = uVar4;
-  Ordinal_2026(uVar8,0x46800000);
-  uVar4 = Ordinal_2020();
+  ordfloat_mul(uVar8,0x46800000);
+  uVar4 = ordfloat_uint_to_float();
   param_6[0xb] = uVar4;
-  Ordinal_2026(param_6[5],0x46800000);
-  uVar4 = Ordinal_2020();
+  ordfloat_mul(param_6[5],0x46800000);
+  uVar4 = ordfloat_uint_to_float();
   param_6[0xd] = uVar4;
-  Ordinal_2026(param_6[7],0x46800000);
-  uVar4 = Ordinal_2020();
+  ordfloat_mul(param_6[7],0x46800000);
+  uVar4 = ordfloat_uint_to_float();
   param_6[0xf] = uVar4;
-  Ordinal_2026(param_6[9],0x46800000);
-  uVar4 = Ordinal_2020();
+  ordfloat_mul(param_6[9],0x46800000);
+  uVar4 = ordfloat_uint_to_float();
   param_6[0x11] = uVar4;
   return;
 }
@@ -840,18 +840,18 @@ byte param_10;
   }
   local_4 = param_2;
   if (iVar9 != 0) {
-    uVar4 = Ordinal_2032(iVar9);
-    uVar5 = Ordinal_2026(*(undefined4 *)(param_3 + 0x24),uVar4);
-    Ordinal_2026(uVar5,0xc5800000);
-    iVar3 = Ordinal_2020();
+    uVar4 = ordfloat_int_to_float2(iVar9);
+    uVar5 = ordfloat_mul(*(undefined4 *)(param_3 + 0x24),uVar4);
+    ordfloat_mul(uVar5,0xc5800000);
+    iVar3 = ordfloat_uint_to_float();
     local_38 = local_38 - iVar3;
-    uVar5 = Ordinal_2026(*(undefined4 *)(param_3 + 0x2c),uVar4);
-    Ordinal_2026(uVar5,0xc5800000);
-    iVar3 = Ordinal_2020();
+    uVar5 = ordfloat_mul(*(undefined4 *)(param_3 + 0x2c),uVar4);
+    ordfloat_mul(uVar5,0xc5800000);
+    iVar3 = ordfloat_uint_to_float();
     iVar14 = iVar14 - iVar3;
-    uVar4 = Ordinal_2026(*(undefined4 *)(param_3 + 0x34),uVar4);
-    Ordinal_2026(uVar4,0xc5800000);
-    iVar3 = Ordinal_2020();
+    uVar4 = ordfloat_mul(*(undefined4 *)(param_3 + 0x34),uVar4);
+    ordfloat_mul(uVar4,0xc5800000);
+    iVar3 = ordfloat_uint_to_float();
     iVar12 = iVar12 + iVar9;
     iVar11 = iVar11 - iVar9;
     local_34 = local_34 - iVar3;
@@ -862,7 +862,7 @@ byte param_10;
     puVar13 = (undefined1 *)(iVar6 + iVar12);
     puVar10 = (ushort *)(local_4 + iVar6 * 2);
     do {
-      iVar6 = Ordinal_2005(local_38,0x1000000);
+      iVar6 = ordint_divmod(local_38,0x1000000);
       iVar12 = (local_34 >> 6) * iVar6 >> 0x12;
       bVar1 = param_10;
       if ((param_8 != 0) && (-1 < iVar12)) {
@@ -950,29 +950,29 @@ void build_view_matrix()
   set_identity_matrix4x4(auStack_158);
   set_identity_matrix4x4(local_118);
   set_identity_matrix4x4(local_198_mtx);
-  ((undefined4 *)auStack_d8)[12] = Ordinal_2023(DAT_000db438);
-  ((undefined4 *)auStack_d8)[13] = Ordinal_2023(DAT_000db43c);
-  ((undefined4 *)auStack_d8)[14] = Ordinal_2023(DAT_000db440);
+  ((undefined4 *)auStack_d8)[12] = ordfloat_negate(DAT_000db438);
+  ((undefined4 *)auStack_d8)[13] = ordfloat_negate(DAT_000db43c);
+  ((undefined4 *)auStack_d8)[14] = ordfloat_negate(DAT_000db440);
   uVar1 = (&DAT_000d9ed8)[DAT_000db448];
   uVar3 = (&DAT_000d9930)[DAT_000db448];
   ((undefined4 *)auStack_158)[5] = uVar1;
-  ((undefined4 *)auStack_158)[6] = Ordinal_2023(uVar3);
-  Ordinal_2023(uVar3);
-  ((undefined4 *)auStack_158)[9] = Ordinal_2023();
+  ((undefined4 *)auStack_158)[6] = ordfloat_negate(uVar3);
+  ordfloat_negate(uVar3);
+  ((undefined4 *)auStack_158)[9] = ordfloat_negate();
   uVar2 = (&DAT_000d9ed8)[DAT_000db44c];
   uVar3 = (&DAT_000d9930)[DAT_000db44c];
   ((undefined4 *)auStack_158)[10] = uVar1;
   local_118[0] = uVar2;
-  Ordinal_2023(uVar3);
-  local_118[2] = Ordinal_2023();
-  local_118[8] = Ordinal_2023(uVar3);
+  ordfloat_negate(uVar3);
+  local_118[2] = ordfloat_negate();
+  local_118[8] = ordfloat_negate(uVar3);
   uVar1 = (&DAT_000d9ed8)[DAT_000db450];
   uVar3 = (&DAT_000d9930)[DAT_000db450];
   local_198_mtx[0] = uVar1;
   local_118[10] = uVar2;
-  local_198_mtx[1] = Ordinal_2023(uVar3);
-  Ordinal_2023(uVar3);
-  local_198_mtx[4] = Ordinal_2023();
+  local_198_mtx[1] = ordfloat_negate(uVar3);
+  ordfloat_negate(uVar3);
+  local_198_mtx[4] = ordfloat_negate();
   local_198_mtx[5] = uVar1;
   multiply_matrix4x4(auStack_d8,local_118,auStack_98);
   multiply_matrix4x4(auStack_98,auStack_158,auStack_58);
@@ -982,7 +982,7 @@ void build_view_matrix()
 
 
 
-// was FUN_0001dfe8 -- per visible-tile vertex: subtract the camera position (Ordinal_2051) to get camera-relative coords; also clears the per-tile visible flags
+// was FUN_0001dfe8 -- per visible-tile vertex: subtract the camera position (ordfloat_add) to get camera-relative coords; also clears the per-tile visible flags
 void translate_verts_to_camera_space(param_1)
 int * param_1;
 
@@ -995,17 +995,17 @@ int * param_1;
   if (0 < *param_1) {
     piVar2 = param_1;
     do {
-      uVar1 = Ordinal_2051(piVar2[2],param_1[0x1202]);
+      uVar1 = ordfloat_add(piVar2[2],param_1[0x1202]);
       *(char *)(piVar2 + 0x602) = (char)uVar1;
       *(char *)((char *)piVar2 + 0x1809) = (char)((uint)uVar1 >> 8);
       *(char *)((char *)piVar2 + 0x180a) = (char)((uint)uVar1 >> 0x10);
       *(char *)((char *)piVar2 + 0x180b) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = Ordinal_2051(piVar2[3],param_1[0x1203]);
+      uVar1 = ordfloat_add(piVar2[3],param_1[0x1203]);
       *(char *)(piVar2 + 0x603) = (char)uVar1;
       *(char *)((char *)piVar2 + 0x180d) = (char)((uint)uVar1 >> 8);
       *(char *)((char *)piVar2 + 0x180e) = (char)((uint)uVar1 >> 0x10);
       *(char *)((char *)piVar2 + 0x180f) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = Ordinal_2051(piVar2[4],param_1[0x1204]);
+      uVar1 = ordfloat_add(piVar2[4],param_1[0x1204]);
       *(char *)(piVar2 + 0x604) = (char)uVar1;
       *(char *)((char *)piVar2 + 0x1811) = (char)((uint)uVar1 >> 8);
       *(char *)((char *)piVar2 + 0x1812) = (char)((uint)uVar1 >> 0x10);
@@ -1037,7 +1037,7 @@ int * param_1;
 
 
 
-// was FUN_0001e274 -- per vertex: multiply-accumulate the camera-relative coord through the 4x4 view matrix DAT_000c8ac0 (Ordinal_2026 mul, Ordinal_2051 add) -> projected x,y,z,w
+// was FUN_0001e274 -- per vertex: multiply-accumulate the camera-relative coord through the 4x4 view matrix DAT_000c8ac0 (ordfloat_mul mul, ordfloat_add add) -> projected x,y,z,w
 void project_verts_through_view_matrix(param_1)
 int * param_1;
 
@@ -1057,32 +1057,32 @@ int * param_1;
       iVar1 = piVar6[0x604];
       iVar2 = piVar6[0x603];
       iVar3 = piVar6[0x602];
-      uVar4 = Ordinal_2026(iVar3,DAT_000c8ac0);
-      uVar5 = Ordinal_2026(iVar2,DAT_000c8ad0);
-      uVar4 = Ordinal_2051(uVar4,uVar5);
-      uVar5 = Ordinal_2026(iVar1,DAT_000c8ae0);
-      uVar4 = Ordinal_2051(uVar4,uVar5);
-      uVar4 = Ordinal_2051(uVar4,DAT_000c8af0);
+      uVar4 = ordfloat_mul(iVar3,DAT_000c8ac0);
+      uVar5 = ordfloat_mul(iVar2,DAT_000c8ad0);
+      uVar4 = ordfloat_add(uVar4,uVar5);
+      uVar5 = ordfloat_mul(iVar1,DAT_000c8ae0);
+      uVar4 = ordfloat_add(uVar4,uVar5);
+      uVar4 = ordfloat_add(uVar4,DAT_000c8af0);
       *(char *)(piVar6 + 0xc02) = (char)uVar4;
       *(char *)((char *)piVar6 + 0x3009) = (char)((uint)uVar4 >> 8);
       *(char *)((char *)piVar6 + 0x300a) = (char)((uint)uVar4 >> 0x10);
       *(char *)((char *)piVar6 + 0x300b) = (char)((uint)uVar4 >> 0x18);
-      uVar4 = Ordinal_2026(iVar3,DAT_000c8ac4);
-      uVar5 = Ordinal_2026(iVar2,DAT_000c8ad4);
-      uVar4 = Ordinal_2051(uVar4,uVar5);
-      uVar5 = Ordinal_2026(iVar1,DAT_000c8ae4);
-      uVar4 = Ordinal_2051(uVar4,uVar5);
-      uVar4 = Ordinal_2051(uVar4,DAT_000c8af4);
+      uVar4 = ordfloat_mul(iVar3,DAT_000c8ac4);
+      uVar5 = ordfloat_mul(iVar2,DAT_000c8ad4);
+      uVar4 = ordfloat_add(uVar4,uVar5);
+      uVar5 = ordfloat_mul(iVar1,DAT_000c8ae4);
+      uVar4 = ordfloat_add(uVar4,uVar5);
+      uVar4 = ordfloat_add(uVar4,DAT_000c8af4);
       *(char *)(piVar6 + 0xc03) = (char)uVar4;
       *(char *)((char *)piVar6 + 0x300d) = (char)((uint)uVar4 >> 8);
       *(char *)((char *)piVar6 + 0x300e) = (char)((uint)uVar4 >> 0x10);
       *(char *)((char *)piVar6 + 0x300f) = (char)((uint)uVar4 >> 0x18);
-      uVar4 = Ordinal_2026(iVar3,DAT_000c8ac8);
-      uVar5 = Ordinal_2026(iVar2,DAT_000c8ad8);
-      uVar4 = Ordinal_2051(uVar4,uVar5);
-      uVar5 = Ordinal_2026(iVar1,DAT_000c8ae8);
-      uVar4 = Ordinal_2051(uVar4,uVar5);
-      uVar4 = Ordinal_2051(uVar4,DAT_000c8af8);
+      uVar4 = ordfloat_mul(iVar3,DAT_000c8ac8);
+      uVar5 = ordfloat_mul(iVar2,DAT_000c8ad8);
+      uVar4 = ordfloat_add(uVar4,uVar5);
+      uVar5 = ordfloat_mul(iVar1,DAT_000c8ae8);
+      uVar4 = ordfloat_add(uVar4,uVar5);
+      uVar4 = ordfloat_add(uVar4,DAT_000c8af8);
       *(char *)(piVar6 + 0xc04) = (char)uVar4;
       iVar7 = iVar7 + 1;
       *(char *)((char *)piVar6 + 0x3011) = (char)((uint)uVar4 >> 8);
@@ -1207,7 +1207,7 @@ int param_2;
               iVar7 = *(int *)(local_50 + 0x4818);
               iVar5 = *(int *)(local_4c + local_64 * 4 + param_1 + 0x4818) * 0xc + param_1;
               uVar10 = *(undefined4 *)(iVar5 + 0x3010);
-              iVar6 = Ordinal_2038(uVar10,DAT_00084608);
+              iVar6 = ordfloat_ge(uVar10,DAT_00084608);
               iVar7 = iVar7 * 0xc + param_1;
               puVar8 = (undefined4 *)(iVar7 + 0x3010);
               uVar11 = *puVar8;
@@ -1221,23 +1221,23 @@ int param_2;
                           *(float *)&uVar10, *(float *)&uVar11, *(float *)&DAT_00084608, iVar6);
               }
               if (iVar6 == 0) {
-                iVar6 = Ordinal_2038(uVar11,DAT_00084608);
+                iVar6 = ordfloat_ge(uVar11,DAT_00084608);
                 if (iVar6 != 0) {
-                  uVar9 = Ordinal_2015(DAT_00084608,uVar10);
-                  uVar10 = Ordinal_2015(uVar11,uVar10);
-                  uVar11 = Ordinal_2047(uVar9,uVar10);
+                  uVar9 = ordfloat_sub(DAT_00084608,uVar10);
+                  uVar10 = ordfloat_sub(uVar11,uVar10);
+                  uVar11 = ordfloat_div(uVar9,uVar10);
                   uVar10 = *(undefined4 *)(iVar5 + 0x3008);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x3008),uVar10);
-                  uVar9 = Ordinal_2026(uVar9,uVar11);
-                  uVar10 = Ordinal_2051(uVar9,uVar10);
+                  uVar9 = ordfloat_sub(*(undefined4 *)(iVar7 + 0x3008),uVar10);
+                  uVar9 = ordfloat_mul(uVar9,uVar11);
+                  uVar10 = ordfloat_add(uVar9,uVar10);
                   puVar15[4] = (char)uVar10;
                   puVar15[5] = (char)((uint)uVar10 >> 8);
                   puVar15[6] = (char)((uint)uVar10 >> 0x10);
                   puVar15[7] = (char)((uint)uVar10 >> 0x18);
                   uVar10 = *(undefined4 *)(iVar5 + 0x300c);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
-                  uVar9 = Ordinal_2026(uVar9,uVar11);
-                  uVar10 = Ordinal_2051(uVar9,uVar10);
+                  uVar9 = ordfloat_sub(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
+                  uVar9 = ordfloat_mul(uVar9,uVar11);
+                  uVar10 = ordfloat_add(uVar9,uVar10);
                   puVar15[8] = (char)uVar10;
                   puVar15[9] = (char)((uint)uVar10 >> 8);
                   puVar15[10] = (char)((uint)uVar10 >> 0x10);
@@ -1251,22 +1251,22 @@ int param_2;
                   iVar12 = param_1 + (local_74 + local_64) * 8;
                   iVar5 = *(int *)(iVar12 + 0x4838);
                   iVar13 = local_7c * 0x11;
-                  uVar10 = Ordinal_2032(*(int *)(iVar6 + 0x4838) - iVar5);
-                  uVar10 = Ordinal_2026(uVar10,uVar11);
-                  uVar9 = Ordinal_2032(iVar5);
-                  Ordinal_2051(uVar10,uVar9);
-                  uVar10 = Ordinal_2020();
+                  uVar10 = ordfloat_int_to_float2(*(int *)(iVar6 + 0x4838) - iVar5);
+                  uVar10 = ordfloat_mul(uVar10,uVar11);
+                  uVar9 = ordfloat_int_to_float2(iVar5);
+                  ordfloat_add(uVar10,uVar9);
+                  uVar10 = ordfloat_uint_to_float();
                   iVar5 = (iVar13 + 8 + iVar18) * 8;
                   (&DAT_000bc038)[iVar5] = (char)uVar10;
                   (&DAT_000bc039)[iVar5] = (char)((uint)uVar10 >> 8);
                   (&DAT_000bc03a)[iVar5] = (char)((uint)uVar10 >> 0x10);
                   (&DAT_000bc03b)[iVar5] = (char)((uint)uVar10 >> 0x18);
                   iVar5 = *(int *)(iVar12 + 0x483c);
-                  uVar10 = Ordinal_2032(*(int *)(iVar6 + 0x483c) - iVar5);
-                  uVar10 = Ordinal_2026(uVar10,uVar11);
-                  uVar11 = Ordinal_2032(iVar5);
-                  Ordinal_2051(uVar10,uVar11);
-                  uVar10 = Ordinal_2020();
+                  uVar10 = ordfloat_int_to_float2(*(int *)(iVar6 + 0x483c) - iVar5);
+                  uVar10 = ordfloat_mul(uVar10,uVar11);
+                  uVar11 = ordfloat_int_to_float2(iVar5);
+                  ordfloat_add(uVar10,uVar11);
+                  uVar10 = ordfloat_uint_to_float();
                   iVar5 = (iVar13 + iVar18) * 8;
                   (&DAT_000bc07c)[iVar5] = (char)uVar10;
                   (&DAT_000bc07d)[iVar5] = (char)((uint)uVar10 >> 8);
@@ -1310,23 +1310,23 @@ int param_2;
                 }
               }
               else {
-                iVar6 = Ordinal_2038(uVar11,DAT_00084608); /* dropped args: is vert1 in front of the near plane? */
+                iVar6 = ordfloat_ge(uVar11,DAT_00084608); /* dropped args: is vert1 in front of the near plane? */
                 if (iVar6 == 0) {
-                  uVar9 = Ordinal_2015(DAT_00084608,uVar10);
-                  uVar10 = Ordinal_2015(uVar11,uVar10);
-                  uVar11 = Ordinal_2047(uVar9,uVar10);
+                  uVar9 = ordfloat_sub(DAT_00084608,uVar10);
+                  uVar10 = ordfloat_sub(uVar11,uVar10);
+                  uVar11 = ordfloat_div(uVar9,uVar10);
                   uVar10 = *(undefined4 *)(iVar5 + 0x3008);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x3008),uVar10); /* dropped 2nd arg (vert0 ref coord) */
-                  uVar9 = Ordinal_2026(uVar9,uVar11);
-                  uVar10 = Ordinal_2051(uVar9,uVar10);
+                  uVar9 = ordfloat_sub(*(undefined4 *)(iVar7 + 0x3008),uVar10); /* dropped 2nd arg (vert0 ref coord) */
+                  uVar9 = ordfloat_mul(uVar9,uVar11);
+                  uVar10 = ordfloat_add(uVar9,uVar10);
                   puVar15[4] = (char)uVar10;
                   puVar15[5] = (char)((uint)uVar10 >> 8);
                   puVar15[6] = (char)((uint)uVar10 >> 0x10);
                   puVar15[7] = (char)((uint)uVar10 >> 0x18);
                   uVar10 = *(undefined4 *)(iVar5 + 0x300c);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
-                  uVar9 = Ordinal_2026(uVar9,uVar11);
-                  uVar10 = Ordinal_2051(uVar9,uVar10);
+                  uVar9 = ordfloat_sub(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
+                  uVar9 = ordfloat_mul(uVar9,uVar11);
+                  uVar10 = ordfloat_add(uVar9,uVar10);
                   puVar15[8] = (char)uVar10;
                   puVar15[9] = (char)((uint)uVar10 >> 8);
                   puVar15[10] = (char)((uint)uVar10 >> 0x10);
@@ -1339,22 +1339,22 @@ int param_2;
                   iVar6 = param_1 + (local_74 + local_78) * 8;
                   iVar5 = param_1 + (local_74 + local_64) * 8;
                   iVar7 = *(int *)(iVar5 + 0x4838);
-                  uVar10 = Ordinal_2032(*(int *)(iVar6 + 0x4838) - iVar7);
-                  uVar10 = Ordinal_2026(uVar10,uVar11);
-                  uVar9 = Ordinal_2032(iVar7);
-                  Ordinal_2051(uVar10,uVar9);
-                  uVar10 = Ordinal_2020();
+                  uVar10 = ordfloat_int_to_float2(*(int *)(iVar6 + 0x4838) - iVar7);
+                  uVar10 = ordfloat_mul(uVar10,uVar11);
+                  uVar9 = ordfloat_int_to_float2(iVar7);
+                  ordfloat_add(uVar10,uVar9);
+                  uVar10 = ordfloat_uint_to_float();
                   iVar7 = (local_7c * 0x11 + iVar18 + 8) * 8;
                   (&DAT_000bc038)[iVar7] = (char)uVar10;
                   (&DAT_000bc039)[iVar7] = (char)((uint)uVar10 >> 8);
                   (&DAT_000bc03a)[iVar7] = (char)((uint)uVar10 >> 0x10);
                   (&DAT_000bc03b)[iVar7] = (char)((uint)uVar10 >> 0x18);
                   iVar7 = *(int *)(iVar5 + 0x483c);
-                  uVar10 = Ordinal_2032(*(int *)(iVar6 + 0x483c) - iVar7);
-                  uVar10 = Ordinal_2026(uVar10,uVar11);
-                  uVar11 = Ordinal_2032(iVar7);
-                  Ordinal_2051(uVar10,uVar11);
-                  uVar10 = Ordinal_2020();
+                  uVar10 = ordfloat_int_to_float2(*(int *)(iVar6 + 0x483c) - iVar7);
+                  uVar10 = ordfloat_mul(uVar10,uVar11);
+                  uVar11 = ordfloat_int_to_float2(iVar7);
+                  ordfloat_add(uVar10,uVar11);
+                  uVar10 = ordfloat_uint_to_float();
                 }
                 else {
                   uVar10 = *(undefined4 *)(iVar7 + 0x3008);
@@ -1441,7 +1441,7 @@ LAB_0002029c:
 // src/3d.c's own build_view_matrix-adjacent comment) as a 4x4
 // (really 4x3-affine, homogeneous) matrix multiply: param_1/param_2
 // are 16-float (64-byte) input matrices, param_3 the 16-float output.
-// Uses Ordinal_2026 (float multiply) and Ordinal_2051 (float add) for
+// Uses ordfloat_mul (float multiply) and ordfloat_add (float add) for
 // the 12 real rotation/translation elements; the 4 "column 3" slots
 // are hardcoded to the standard affine bottom row (0,0,0,1) rather
 // than actually computed.
@@ -1454,83 +1454,83 @@ undefined4 * param_3;
   undefined4 uVar1;
   undefined4 uVar2;
   
-  uVar1 = Ordinal_2026(param_2[8],param_1[2]);
-  uVar2 = Ordinal_2026(param_1[1],param_2[4]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(*param_1,*param_2);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_2[8],param_1[2]);
+  uVar2 = ordfloat_mul(param_1[1],param_2[4]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(*param_1,*param_2);
+  uVar1 = ordfloat_add(uVar1,uVar2);
   *param_3 = uVar1;
-  uVar1 = Ordinal_2026(param_2[9],param_1[2]);
-  uVar2 = Ordinal_2026(param_1[1],param_2[5]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_2[1],*param_1);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_2[9],param_1[2]);
+  uVar2 = ordfloat_mul(param_1[1],param_2[5]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_2[1],*param_1);
+  uVar1 = ordfloat_add(uVar1,uVar2);
   param_3[1] = uVar1;
-  uVar1 = Ordinal_2026(param_2[10],param_1[2]);
-  uVar2 = Ordinal_2026(param_2[6],param_1[1]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_2[2],*param_1);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_2[10],param_1[2]);
+  uVar2 = ordfloat_mul(param_2[6],param_1[1]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_2[2],*param_1);
+  uVar1 = ordfloat_add(uVar1,uVar2);
   param_3[2] = uVar1;
   param_3[3] = 0;
-  uVar1 = Ordinal_2026(param_1[6],param_2[8]);
-  uVar2 = Ordinal_2026(param_1[5],param_2[4]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[4],*param_2);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_1[6],param_2[8]);
+  uVar2 = ordfloat_mul(param_1[5],param_2[4]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_1[4],*param_2);
+  uVar1 = ordfloat_add(uVar1,uVar2);
   param_3[4] = uVar1;
-  uVar1 = Ordinal_2026(param_1[6],param_2[9]);
-  uVar2 = Ordinal_2026(param_1[5],param_2[5]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[4],param_2[1]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_1[6],param_2[9]);
+  uVar2 = ordfloat_mul(param_1[5],param_2[5]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_1[4],param_2[1]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
   param_3[5] = uVar1;
-  uVar1 = Ordinal_2026(param_1[6],param_2[10]);
-  uVar2 = Ordinal_2026(param_1[5],param_2[6]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[4],param_2[2]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_1[6],param_2[10]);
+  uVar2 = ordfloat_mul(param_1[5],param_2[6]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_1[4],param_2[2]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
   param_3[6] = uVar1;
   param_3[7] = 0;
-  uVar1 = Ordinal_2026(param_1[10],param_2[8]);
-  uVar2 = Ordinal_2026(param_1[9],param_2[4]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[8],*param_2);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_1[10],param_2[8]);
+  uVar2 = ordfloat_mul(param_1[9],param_2[4]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_1[8],*param_2);
+  uVar1 = ordfloat_add(uVar1,uVar2);
   param_3[8] = uVar1;
-  uVar1 = Ordinal_2026(param_1[10],param_2[9]);
-  uVar2 = Ordinal_2026(param_1[9],param_2[5]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[8],param_2[1]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_1[10],param_2[9]);
+  uVar2 = ordfloat_mul(param_1[9],param_2[5]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_1[8],param_2[1]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
   param_3[9] = uVar1;
-  uVar1 = Ordinal_2026(param_1[10],param_2[10]);
-  uVar2 = Ordinal_2026(param_1[9],param_2[6]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[8],param_2[2]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = ordfloat_mul(param_1[10],param_2[10]);
+  uVar2 = ordfloat_mul(param_1[9],param_2[6]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_1[8],param_2[2]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
   param_3[10] = uVar1;
   param_3[0xb] = 0;
-  uVar1 = Ordinal_2026(param_1[0xe],param_2[8]);
-  uVar2 = Ordinal_2026(param_1[0xd],param_2[4]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[0xc],*param_2);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar1 = Ordinal_2051(uVar1,param_2[0xc]);
+  uVar1 = ordfloat_mul(param_1[0xe],param_2[8]);
+  uVar2 = ordfloat_mul(param_1[0xd],param_2[4]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_1[0xc],*param_2);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar1 = ordfloat_add(uVar1,param_2[0xc]);
   param_3[0xc] = uVar1;
-  uVar1 = Ordinal_2026(param_1[0xe],param_2[9]);
-  uVar2 = Ordinal_2026(param_1[0xd],param_2[5]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[0xc],param_2[1]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar1 = Ordinal_2051(uVar1,param_2[0xd]);
+  uVar1 = ordfloat_mul(param_1[0xe],param_2[9]);
+  uVar2 = ordfloat_mul(param_1[0xd],param_2[5]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_1[0xc],param_2[1]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar1 = ordfloat_add(uVar1,param_2[0xd]);
   param_3[0xd] = uVar1;
-  uVar1 = Ordinal_2026(param_1[0xe],param_2[10]);
-  uVar2 = Ordinal_2026(param_1[0xd],param_2[6]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[0xc],param_2[2]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar1 = Ordinal_2051(uVar1,param_2[0xe]);
+  uVar1 = ordfloat_mul(param_1[0xe],param_2[10]);
+  uVar2 = ordfloat_mul(param_1[0xd],param_2[6]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar2 = ordfloat_mul(param_1[0xc],param_2[2]);
+  uVar1 = ordfloat_add(uVar1,uVar2);
+  uVar1 = ordfloat_add(uVar1,param_2[0xe]);
   param_3[0xe] = uVar1;
   param_3[0xf] = 0x3f800000;
   return;
@@ -1545,7 +1545,7 @@ void set_identity_matrix4x4(param_1)
 undefined4 * param_1;
 
 {
-  Ordinal_1047(param_1,0,0x40);
+  ce_memset(param_1,0,0x40);
   param_1[0xf] = 0x3f800000;
   param_1[10] = 0x3f800000;
   param_1[5] = 0x3f800000;
@@ -1580,9 +1580,9 @@ undefined4 * param_2;
 
 // was FUN_0001dd2c -- builds the renderer's 361-entry (0..360 degrees)
 // per-degree sin/cos tables: for each angle, converts degrees to radians
-// (multiplying by the pi/180 constant folded into the Ordinal_2027 call),
-// then calls cos (Ordinal_1004) into DAT_000d9ed8[angle] and sin
-// (Ordinal_1058) into DAT_000d9930[angle] -- see both ordinals' own
+// (multiplying by the pi/180 constant folded into the ordfloat_double_mul2 call),
+// then calls cos (ordfloat_cos) into DAT_000d9ed8[angle] and sin
+// (ordfloat_sin) into DAT_000d9930[angle] -- see both ordinals' own
 // comments in src/ordinal_stubs.c. Every 3D rotation/view-matrix call
 // site in src/3d.c and src/player.c reads through these two tables
 // instead of calling sin/cos directly.
@@ -1595,16 +1595,16 @@ void build_trig_tables()
   
   iVar2 = 0;
   do {
-    Ordinal_2032(iVar2);
-    uVar3 = Ordinal_2021();
-    Ordinal_2027((int)uVar3,(int)((ulonglong)uVar3 >> 0x20),0xa50de271,0x3f91df45);
-    Ordinal_2044();
-    uVar3 = Ordinal_2021();
-    Ordinal_1004();
-    uVar1 = Ordinal_2044();
+    ordfloat_int_to_float2(iVar2);
+    uVar3 = ordfloat_float_to_double();
+    ordfloat_double_mul2((int)uVar3,(int)((ulonglong)uVar3 >> 0x20),0xa50de271,0x3f91df45);
+    ordfloat_double_to_float();
+    uVar3 = ordfloat_float_to_double();
+    ordfloat_cos();
+    uVar1 = ordfloat_double_to_float();
     (&DAT_000d9ed8)[iVar2] = uVar1;
-    Ordinal_1058((int)uVar3,(int)((ulonglong)uVar3 >> 0x20));
-    uVar1 = Ordinal_2044();
+    ordfloat_sin((int)uVar3,(int)((ulonglong)uVar3 >> 0x20));
+    uVar1 = ordfloat_double_to_float();
     (&DAT_000d9930)[iVar2] = uVar1;
     iVar2 = iVar2 + 1;
   } while (iVar2 < 0x169);
@@ -1644,7 +1644,7 @@ void load_dungeon_texture_arenas()
      Fixed by pointing all four `+ iVar3` writes at acStack_114. */
 
   DAT_0023ae38 = &DAT_002049e0;
-  Ordinal_1047(acStack_114,0,0x104);
+  ce_memset(acStack_114,0,0x104);
   pcVar2 = &DAT_0023cca8;
     stack0xffdc3244_ptr = acStack_114;
   do {
@@ -1652,8 +1652,8 @@ void load_dungeon_texture_arenas()
     *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_114,s__DATA__00085970);
-  iVar3 = Ordinal_1068(acStack_114);
+  ce_strcat(acStack_114,s__DATA__00085970);
+  iVar3 = ce_strlen(acStack_114);
   pcVar2 = &DAT_000869e4;
     wptr_42257 = (acStack_114 + iVar3);
   do {
@@ -2263,7 +2263,7 @@ int param_4;
     uVar10 = (&DAT_000d9ed8)[param_2];
     local_10c = (&DAT_000d9930)[param_2];
     local_110 = uVar10;
-    local_100 = Ordinal_2023();
+    local_100 = ordfloat_negate();
     uVar8 = extraout_r3_00;
     local_fc = uVar10;
   }
@@ -2273,7 +2273,7 @@ int param_4;
     uVar12 = (&DAT_000d9930)[param_3];
     uVar11 = uVar14;
     local_a4[0] = uVar10;
-    local_9c = Ordinal_2023(uVar12);
+    local_9c = ordfloat_negate(uVar12);
     uVar8 = extraout_r3_01;
     uVar14 = uVar11;
     local_84 = uVar12;
@@ -2284,7 +2284,7 @@ int param_4;
     uVar10 = (&DAT_000d9ed8)[param_4];
     local_e0 = (&DAT_000d9930)[param_4];
     local_e4 = uVar10;
-    local_d4 = Ordinal_2023();
+    local_d4 = ordfloat_negate();
     uVar8 = extraout_r3_02;
     local_d0 = uVar10;
   }
@@ -2347,21 +2347,21 @@ LAB_0001ea18:
       iVar1 = piVar9[4];
       iVar2 = piVar9[3];
       iVar3 = piVar9[2];
-      uVar10 = Ordinal_2026(iVar3,local_160);
-      uVar12 = Ordinal_2026(iVar2,local_150);
-      uVar10 = Ordinal_2051(uVar10,uVar12);
-      uVar12 = Ordinal_2026(iVar1,local_140);
-      uVar10 = Ordinal_2051(uVar10,uVar12);
-      uVar12 = Ordinal_2026(iVar3,local_15c);
-      uVar5 = Ordinal_2026(iVar2,local_14c);
-      uVar12 = Ordinal_2051(uVar12,uVar5);
-      uVar5 = Ordinal_2026(iVar1,local_13c);
-      uVar12 = Ordinal_2051(uVar12,uVar5);
-      uVar5 = Ordinal_2026(iVar3,local_164);
-      uVar6 = Ordinal_2026(iVar2,local_154);
-      uVar5 = Ordinal_2051(uVar5,uVar6);
-      uVar6 = Ordinal_2026(iVar1,local_144);
-      uVar5 = Ordinal_2051(uVar5,uVar6);
+      uVar10 = ordfloat_mul(iVar3,local_160);
+      uVar12 = ordfloat_mul(iVar2,local_150);
+      uVar10 = ordfloat_add(uVar10,uVar12);
+      uVar12 = ordfloat_mul(iVar1,local_140);
+      uVar10 = ordfloat_add(uVar10,uVar12);
+      uVar12 = ordfloat_mul(iVar3,local_15c);
+      uVar5 = ordfloat_mul(iVar2,local_14c);
+      uVar12 = ordfloat_add(uVar12,uVar5);
+      uVar5 = ordfloat_mul(iVar1,local_13c);
+      uVar12 = ordfloat_add(uVar12,uVar5);
+      uVar5 = ordfloat_mul(iVar3,local_164);
+      uVar6 = ordfloat_mul(iVar2,local_154);
+      uVar5 = ordfloat_add(uVar5,uVar6);
+      uVar6 = ordfloat_mul(iVar1,local_144);
+      uVar5 = ordfloat_add(uVar5,uVar6);
       *(char *)(piVar9 + 2) = (char)uVar5;
       iVar13 = iVar13 + 1;
       *(char *)(piVar9 + 3) = (char)uVar10;
@@ -2431,17 +2431,17 @@ int * param_2;
     piVar4 = param_1 + iVar1 * 3;
     piVar3 = param_2;
     do {
-      uVar2 = Ordinal_2051(piVar3[2],param_2[0x302]);
+      uVar2 = ordfloat_add(piVar3[2],param_2[0x302]);
       *(char *)(piVar4 + 2) = (char)uVar2;
       *(char *)((char *)piVar4 + 9) = (char)((uint)uVar2 >> 8);
       *(char *)((char *)piVar4 + 10) = (char)((uint)uVar2 >> 0x10);
       *(char *)((char *)piVar4 + 0xb) = (char)((uint)uVar2 >> 0x18);
-      uVar2 = Ordinal_2051(piVar3[3],param_2[0x303]);
+      uVar2 = ordfloat_add(piVar3[3],param_2[0x303]);
       *(char *)(piVar4 + 3) = (char)uVar2;
       *(char *)((char *)piVar4 + 0xd) = (char)((uint)uVar2 >> 8);
       *(char *)((char *)piVar4 + 0xe) = (char)((uint)uVar2 >> 0x10);
       *(char *)((char *)piVar4 + 0xf) = (char)((uint)uVar2 >> 0x18);
-      uVar2 = Ordinal_2051(piVar3[4],param_2[0x304]);
+      uVar2 = ordfloat_add(piVar3[4],param_2[0x304]);
       *(char *)(piVar4 + 4) = (char)uVar2;
       *(char *)((char *)piVar4 + 0x11) = (char)((uint)uVar2 >> 8);
       *(char *)((char *)piVar4 + 0x12) = (char)((uint)uVar2 >> 0x10);

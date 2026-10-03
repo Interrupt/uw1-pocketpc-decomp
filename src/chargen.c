@@ -323,7 +323,7 @@ LAB_00025468:
         cursor_show_idle_tick();
         uVar10 = extraout_r1_00;
         if (*pcVar5 != '\0') {
-          Ordinal_1071(DAT_00086df8,pcVar5,0x1d);
+          ce_strncpy(DAT_00086df8,pcVar5,0x1d);
           uVar10 = extraout_r1_01;
         }
         uVar15 = CONCAT44(uVar10,DAT_00086df8);
@@ -405,15 +405,15 @@ int run_character_generator()
   char acStack_128 [260];
   
   reset_dialogue_speech_state();
-  DAT_001005c4 = Ordinal_1041(0x10000);
-  DAT_001005c8 = Ordinal_1041(0x10000);
+  DAT_001005c4 = ce_malloc(0x10000);
+  DAT_001005c8 = ce_malloc(0x10000);
   iVar4 = DAT_001005c4;
   uVar10 = 2;
   DAT_000fb858 = DAT_001005c4;
   iVar2 = load_gr_resource_entries(s_chrbtns_00084ef8,0,0xffffffff,&chrbtns_bump_alloc_entry,&chrbtns_offset_table_builder);
   if (iVar2 != 0) {
     DAT_000fb858 = iVar4;
-    Ordinal_1047(acStack_128,0,0x104);
+    ce_memset(acStack_128,0,0x104);
     pcVar9 = &DAT_0023cca8;
     stack0xffdc3230_ptr = stack0xffdc3230_buf;
     pcVar3 = pcVar9;
@@ -423,14 +423,14 @@ int run_character_generator()
       *stack0xffdc3230_ptr = cVar1; stack0xffdc3230_ptr = stack0xffdc3230_ptr + 1;
       pcVar3 = pcVar3 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_128,s__DATA_skills_dat_00084ee4);
+    ce_strcat(acStack_128,s__DATA_skills_dat_00084ee4);
     iVar4 = open_file_for_read(acStack_128);
     if (iVar4 != -1) {
       uVar5 = read_file_handle(iVar4,&DAT_000fb8f0,0x348);
-      Ordinal_1044(&DAT_000fb860,&DAT_000fb8f0,0x20);
-      Ordinal_553(iVar4);
+      ce_memmove(&DAT_000fb860,&DAT_000fb8f0,0x20);
+      CloseHandle(iVar4);
       if ((0x27 < uVar5) && (uVar5 != 0)) {
-        Ordinal_1047(acStack_128,0,0x104);
+        ce_memset(acStack_128,0,0x104);
         pcVar3 = pcVar9;
     stack0xffdc3230_ptr = acStack_128;
         do {
@@ -438,12 +438,12 @@ int run_character_generator()
           *stack0xffdc3230_ptr = cVar1; stack0xffdc3230_ptr = stack0xffdc3230_ptr + 1;
           pcVar3 = pcVar3 + 1;
         } while (cVar1 != '\0');
-        Ordinal_1063(acStack_128,s__DATA_chrgen_dat_00084ed0);
+        ce_strcat(acStack_128,s__DATA_chrgen_dat_00084ed0);
         iVar4 = open_file_for_read(acStack_128);
         if (iVar4 != -1) {
           puVar8 = &DAT_000fb8f0 + uVar5;
           read_file_handle(iVar4,puVar8,10000);
-          Ordinal_553(iVar4);
+          CloseHandle(iVar4);
           /* Was `(char *)(uVar5 + 0xfb990)` -- a literal original-binary
              address (0xfb990 = &DAT_000fb990's address there) added to
              an int, instead of real pointer arithmetic against the
@@ -479,13 +479,13 @@ int run_character_generator()
           chargen_ui_transition_hook(1);
           iVar4 = DAT_001005c8;
           pcVar_palbuf = DAT_001005c8 + 64000;
-          Ordinal_1047(acStack_128,0,0x104);
+          ce_memset(acStack_128,0,0x104);
           do {
             cVar1 = *pcVar9;
             *stack0xffdc3230_ptr = cVar1; stack0xffdc3230_ptr = stack0xffdc3230_ptr + 1;
             pcVar9 = pcVar9 + 1;
           } while (cVar1 != '\0');
-          Ordinal_1063(acStack_128,s__DATA_CHARGEN_BYT_00084eac);
+          ce_strcat(acStack_128,s__DATA_CHARGEN_BYT_00084eac);
           uVar5 = read_buffer_from_file(acStack_128,iVar4,64000);
           uVar7 = load_pals_bank(3,pcVar_palbuf);
           if ((uVar5 & uVar7) != 0) {
@@ -501,13 +501,13 @@ int run_character_generator()
             }
             clear_ambient_sound_target_thunk();
             if (DAT_001005c4 != 0) {
-              Ordinal_1018();
+              LocalFree();
               DAT_001005c4 = 0;
             }
             if (DAT_001005c8 == 0) {
               return iVar4;
             }
-            Ordinal_1018();
+            LocalFree();
             DAT_001005c8 = 0;
             return iVar4;
           }
@@ -517,11 +517,11 @@ int run_character_generator()
   }
   clear_ambient_sound_target_thunk();
   if (DAT_001005c4 != 0) {
-    Ordinal_1018();
+    LocalFree();
     DAT_001005c4 = 0;
   }
   if (DAT_001005c8 != 0) {
-    Ordinal_1018();
+    LocalFree();
     DAT_001005c8 = 0;
   }
   if (DAT_00201c98 != 0) {
@@ -659,15 +659,15 @@ int param_1;
   *(undefined1 *)(DAT_00086df8 + 0x44) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x45) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x46) = 0;
-  Ordinal_1047(DAT_00086df8 + 0x70,0,0x40);
-  Ordinal_1047(DAT_00086df8 + 0xc2,0,8);
+  ce_memset(DAT_00086df8 + 0x70,0,0x40);
+  ce_memset(DAT_00086df8 + 0xc2,0,8);
   *(undefined1 *)(DAT_00086df8 + 0x8a) = 0x35;
   *(undefined1 *)(DAT_00086df8 + 0x39) = 0xc0;
-  uVar4 = Ordinal_1053();
+  uVar4 = ce_rand();
   uw_ord2005_rem_0 = ((int)(uVar4)) % (5);
   *(byte *)(DAT_00086df8 + 100) =
        (byte)((uw_ord2005_rem_0 & 7) << 2) | *(byte *)(DAT_00086df8 + 100) & 0xe3;
-  bVar1 = Ordinal_1053();
+  bVar1 = ce_rand();
   iVar6 = 0;
   *(byte *)(DAT_00086df8 + 100) = *(byte *)(DAT_00086df8 + 100) & 0xfd | (bVar1 & 1) << 1;
   do {
@@ -695,7 +695,7 @@ int param_1;
   recompute_level7_hazard_from_character_level(1);
   *(undefined1 *)(DAT_00086df8 + 0x4a) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x4b) = 0;
-  uVar4 = Ordinal_1053();
+  uVar4 = ce_rand();
   uw_ord2005_rem_1 = ((int)(uVar4)) % (6);
   *(char *)((char *)g_player_object + 8) = (-6 - uw_ord2005_rem_1) + *(char *)(DAT_0023be74 + 4);
   DAT_00201b68 = 1;
@@ -930,12 +930,12 @@ void reroll_attributes_for_class_race()
   } while (iVar2 < 0x14);
   for (uVar7 = (uint)(byte)(&DAT_000fb863)[(uint)(*(byte *)(DAT_00086df8 + 100) >> 5) * 4];
       0 < (int)uVar7; uVar7 = uVar7 - uVar3) {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     uVar3 = (uVar3 & 3) + 1;
     if ((int)uVar7 < (int)uVar3) {
       uVar3 = uVar7;
     }
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     uw_ord2005_rem_2 = ((int)(uVar4)) % (3);
     bVar1 = *(byte *)(DAT_0023be74 + uw_ord2005_rem_2 + 5);
     if (0x1e < (int)(bVar1 + uVar3)) {
@@ -1005,7 +1005,7 @@ short * param_1;
      pointer since DAT_000fb858 is a real 64-bit pointer. Dedicated
      variable for the pointer role only. */
   char *pcVar_off;
-  /* Was `extraout_r1` -- the classic "call Ordinal_2005, discard its
+  /* Was `extraout_r1` -- the classic "call ordint_divmod, discard its
      return, read the remainder via a register-leftover" idiom (same
      class as draw_chargen_field_options's sVar_rem fix earlier this session), but
      here that register was never even assigned in our C translation
@@ -1056,15 +1056,15 @@ short * param_1;
     uVar12 = (uint)bVar2;
     sVar5 = param_1[5];
     local_2c = (ushort)bVar1;
-    sVar4 = Ordinal_2005(0xc4 - iVar10,(int)sVar5 * ((short)(ushort)bVar1 + 4) + -4);
+    sVar4 = ordint_divmod(0xc4 - iVar10,(int)sVar5 * ((short)(ushort)bVar1 + 4) + -4);
     iVar10 = sVar4 + 1;
     *(char *)(param_1 + 8) = (char)iVar10;
     *(char *)((char *)param_1 + 0x11) = (char)((uint)iVar10 >> 8);
     iVar10 = iVar10 * 0x10000 >> 0x10;
-    sVar5 = Ordinal_2005(iVar10,iVar10 + sVar5 + -1);
+    sVar5 = ordint_divmod(iVar10,iVar10 + sVar5 + -1);
     *(char *)(param_1 + 7) = (char)sVar5;
     *(char *)((char *)param_1 + 0xf) = (char)((ushort)sVar5 >> 8);
-    uVar6 = Ordinal_2005(iVar10 + 1,0xa0 - (short)(ushort)bVar2 * iVar10);
+    uVar6 = ordint_divmod(iVar10 + 1,0xa0 - (short)(ushort)bVar2 * iVar10);
     *(char *)(param_1 + 9) = (char)uVar6;
     *(char *)((char *)param_1 + 0x13) = (char)((ushort)uVar6 >> 8);
     iVar10 = -(((int)(sVar7 != 0) + (int)sVar5) * ((short)(ushort)bVar1 + 4));
@@ -1114,7 +1114,7 @@ short * param_1;
       local_28 = 0;
       do {
         iVar3 = DAT_000fb858;
-        Ordinal_2005((int)param_1[8],local_28);
+        ordint_divmod((int)param_1[8],local_28);
         iVar_rem = (param_1[8] == 0) ? 0 : (int)local_28 % (int)param_1[8];
         iVar9 = iVar_rem;
         if (iVar_rem == 0) {
@@ -1188,7 +1188,7 @@ byte param_3;
   byte bVar1;
   byte bVar2;
   short sVar3;
-  /* Was `short extraout_r1` -- the classic "call Ordinal_2005 once for
+  /* Was `short extraout_r1` -- the classic "call ordint_divmod once for
      the quotient, call it again with identical args purely to grab the
      remainder via the register-leftover idiom" pattern already fixed
      elsewhere this session (see itoa_radix), except here the second
@@ -1244,7 +1244,7 @@ byte param_3;
       uVar8 = (uint)local_2c[iVar9];
       if ((int)uVar8 < (int)param_1[5]) {
         sVar4 = param_1[8];
-        sVar3 = Ordinal_2005((int)sVar4,uVar8);
+        sVar3 = ordint_divmod((int)sVar4,uVar8);
         sVar_rem = (sVar4 == 0) ? 0 : (short)((int)uVar8 % (int)sVar4);
         iVar5 = (int)local_2a;
         sVar4 = param_1[9];
@@ -1358,8 +1358,8 @@ uint param_2;
       sVar7 = param_1[8];
       iVar11 = (int)local_3e;
       iVar12 = (int)local_40;
-      sVar5 = Ordinal_2005(local_34,iVar11 - iVar9);
-      sVar6 = Ordinal_2005(local_38,iVar12 - iVar1);
+      sVar5 = ordint_divmod(local_34,iVar11 - iVar9);
+      sVar6 = ordint_divmod(local_38,iVar12 - iVar1);
       uVar13 = (int)sVar5 * (int)sVar7 + (int)sVar6;
       iVar8 = (int)(uVar13 * 0x10000) >> 0x10;
       if ((((iVar8 < 0) || (param_1[5] <= iVar8)) || (iVar11 < iVar9)) || (iVar12 < iVar1)) {
@@ -1367,11 +1367,11 @@ LAB_000247f8:
         uVar13 = 0xffffffff;
       }
       else {
-        Ordinal_2005((int)sVar7,iVar8);
+        ordint_divmod((int)sVar7,iVar8);
         iVar12 = ((iVar1 * -0x10000 >> 0x10) - (extraout_r1 * local_38 * 0x10000 >> 0x10)) +
                  (int)sVar4;
         local_40 = (short)iVar12;
-        iVar8 = Ordinal_2005((int)sVar7,iVar8);
+        iVar8 = ordint_divmod((int)sVar7,iVar8);
         iVar8 = ((iVar11 * -0x10000 >> 0x10) - (iVar8 * local_34 * 0x10000 >> 0x10)) +
                 (int)(short)((uint)iVar10 >> 0x10);
         local_3e = (short)iVar8;
@@ -1408,9 +1408,9 @@ undefined4 param_2;
      discarded here, with the very next line calling measure_text_width() with
      no argument -- relying on register leftovers to still hold that
      same return value (the "dropped argument" idiom, same root bug as
-     draw_text_string/measure_text_width's own Ordinal_1068() fixes above). That
+     draw_text_string/measure_text_width's own ce_strlen() fixes above). That
      register doesn't reliably survive here either (confirmed: with it
-     broken, the name-entry field's Ordinal_1417 gate always fell
+     broken, the name-entry field's _isctype gate always fell
      through to the "buffer full" branch regardless of the typed key,
      since iVar7's garbage value made every character comparison see an
      always-too-large field). Capture and pass it explicitly. */
@@ -1617,15 +1617,15 @@ LAB_00024dd4:
       }
       DAT_000fb858 = DAT_001005c4;
       sVar3 = param_1[5];
-      sVar2 = Ordinal_2005(0xc4 - iVar9,sVar3 * iVar11 + -4);
+      sVar2 = ordint_divmod(0xc4 - iVar9,sVar3 * iVar11 + -4);
       iVar9 = sVar2 + 1;
       *(char *)(param_1 + 8) = (char)iVar9;
       *(char *)((char *)param_1 + 0x11) = (char)((uint)iVar9 >> 8);
       iVar9 = iVar9 * 0x10000 >> 0x10;
-      sVar3 = Ordinal_2005(iVar9,iVar9 + sVar3 + -1);
+      sVar3 = ordint_divmod(iVar9,iVar9 + sVar3 + -1);
       *(char *)(param_1 + 7) = (char)sVar3;
       *(char *)((char *)param_1 + 0xf) = (char)((ushort)sVar3 >> 8);
-      uVar4 = Ordinal_2005(iVar9 + 1,0xa0 - (short)(ushort)bVar1 * iVar9);
+      uVar4 = ordint_divmod(iVar9 + 1,0xa0 - (short)(ushort)bVar1 * iVar9);
       *(char *)(param_1 + 9) = (char)uVar4;
       *(char *)((char *)param_1 + 0x13) = (char)((ushort)uVar4 >> 8);
       iVar9 = -(((int)(sVar5 != 0) + (int)sVar3) * iVar11);
@@ -1642,7 +1642,7 @@ LAB_00024dd4:
       if (((iVar11 == 0xd) && (local_28 == 0)) || (iVar11 == 0x1b)) break;
       flush_dirty_rect_to_display(1);
       sVar3 = (short)iVar7;
-      if (((iVar11 == -1) || (iVar8 = Ordinal_1417(iVar11,0x157), iVar8 == 0)) ||
+      if (((iVar11 == -1) || (iVar8 = _isctype(iVar11,0x157), iVar8 == 0)) ||
          ((0x12d < sVar3 || (0x1c < (int)uVar13)))) {
         if ((iVar11 == 8) || (iVar11 == 0x91)) {
           if ((int)uVar13 < 1) {

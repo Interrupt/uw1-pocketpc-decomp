@@ -362,7 +362,7 @@ undefined1 param_5;
           uVar5 = *(ushort *)(pbVar3 + 6);
           /* ARM 0x80f94..0x80fb4 uses idivmod's remainder in r1.
              The decompiled extraout_r1 local was never initialized. */
-          /* Ordinal_2005((&DAT_00250733)[iVar4],param_3); */
+          /* ordint_divmod((&DAT_00250733)[iVar4],param_3); */
           uVar5 = (cVar1 + param_3 % (&DAT_00250733)[iVar4] ^ uVar5) & 0x3f ^ uVar5;
         }
         pbVar3[6] = (byte)uVar5;
@@ -439,9 +439,9 @@ LAB_00081254:
       }
       else {
         if (uVar8 == 2) {
-          uVar6 = Ordinal_1053();
+          uVar6 = ce_rand();
           uVar8 = puVar4[3];
-          Ordinal_2005((&DAT_00250733)[iVar1],uVar6);
+          ordint_divmod((&DAT_00250733)[iVar1],uVar6);
           uVar8 = ((char)(&DAT_00250732)[iVar1] + extraout_r1 ^ uVar8) & 0x3f ^ uVar8;
           goto LAB_00081254;
         }

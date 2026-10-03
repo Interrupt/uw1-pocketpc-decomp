@@ -382,7 +382,7 @@ char *param_4;
 
 {
   int iVar1;
-  char *iVar2; /* was int -- Ordinal_1346() offset-table allocation */
+  char *iVar2; /* was int -- ce_calloc() offset-table allocation */
   int iVar3;
   int iVar4;
   int iVar5;
@@ -392,7 +392,7 @@ char *param_4;
   iVar1 = open_file_for_read(param_1);
   if (iVar1 == -1) {
     /* param_1 is built from "\DATA\" (s__DATA__00085970) with no filename
-       ever appended -- Ghidra dropped whatever Ordinal_1063 call(s) would
+       ever appended -- Ghidra dropped whatever ce_strcat call(s) would
        have added the actual texture-LUT filename (same unrecoverable-
        string-reference class as the .GR extension fix in open_gr_resource_file,
        but here the reference vanished entirely rather than resolving to
@@ -411,7 +411,7 @@ char *param_4;
   read_file_handle(iVar1,local_24,1);
   iVar5 = (uint)local_24[0] * (uint)local_24[0];
   read_file_handle(iVar1,&local_22,2);
-  iVar2 = Ordinal_1346(4,(int)local_22);
+  iVar2 = ce_calloc(4,(int)local_22);
   if (iVar2 == 0) {
     report_fatal_error_and_exit(0x1008);
     iVar3 = (int)local_22;
@@ -442,8 +442,8 @@ char *param_4;
     }
   }
   *param_3 = (short)iVar3;
-  Ordinal_1018(iVar2);
-  Ordinal_553(iVar1);
+  LocalFree(iVar2);
+  CloseHandle(iVar1);
   return;
 }
 
@@ -475,7 +475,7 @@ char *param_2;
     *stack0xffdc3238_ptr = cVar1; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_120,s__DATA_terrain_dat_000869ec);
+  ce_strcat(acStack_120,s__DATA_terrain_dat_000869ec);
   iVar3 = open_file_for_read(acStack_120);
   if (iVar3 != 0) {
     iVar4 = 0;
@@ -490,7 +490,7 @@ char *param_2;
       read_file_handle(iVar3,&DAT_0023ae40 + iVar4,2);
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 10);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
   }
   return;
 }
@@ -508,7 +508,7 @@ void draw_command_list_rewind()
 
 
 
-// was FUN_0005b8ac -- per-frame teardown: free the scratch geometry / clip-vertex lists (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via Ordinal_1018
+// was FUN_0005b8ac -- per-frame teardown: free the scratch geometry / clip-vertex lists (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via LocalFree
 void free_frame_geometry_buffers()
 
 {
@@ -523,14 +523,14 @@ void free_frame_geometry_buffers()
   {
     int _i;
     for (_i = 0; _i < 0x140; _i++) {
-      if (DAT_0023c7a0_arr[_i] != 0) { Ordinal_1018(); DAT_0023c7a0_arr[_i] = 0; }
+      if (DAT_0023c7a0_arr[_i] != 0) { LocalFree(); DAT_0023c7a0_arr[_i] = 0; }
     }
   }
   piVar1 = &DAT_002020f8;
   iVar2 = 0x80;
   do {
     if (*piVar1 != 0) {
-      Ordinal_1018();
+      LocalFree();
       *piVar1 = 0;
     }
     iVar2 = iVar2 + -1;
@@ -605,17 +605,17 @@ void render_dungeon_frame_timed()
     sVar2 = 0;
   }
   else {
-    sVar2 = Ordinal_2008(iVar7,0xa00);
+    sVar2 = ordfloat_double_mul(iVar7,0xa00);
   }
   sVar1 = DAT_0023b4c8;
   iVar7 = (int)(short)DAT_0023b4c8;
   sVar9 = DAT_0023b4cc - *(short *)(&DAT_0023b4a8 + iVar7 * 2);
-  sVar3 = Ordinal_2005(10,(int)sVar2);
+  sVar3 = ordint_divmod(10,(int)sVar2);
   *(short *)(&DAT_0023b4a8 + iVar7 * 2) = sVar3;
   DAT_0023b4cc = sVar9 + sVar3;
   DAT_0023b4c8 = sVar1 + 1U & 0xf;
   uw_ord2005_rem_122 = ((int)((int)sVar2)) % (10);
-  Ordinal_719(auStack_60,s_R__lu_P__lu_S__lu_F__d__d_00086b04,iVar4,iVar8,iVar6 - iVar5,(int)sVar3,
+  ce_sprintf(auStack_60,s_R__lu_P__lu_S__lu_F__d__d_00086b04,iVar4,iVar8,iVar6 - iVar5,(int)sVar3,
               (int)uw_ord2005_rem_122);
   return;
 }
@@ -637,7 +637,7 @@ undefined4 build_frame_draw_list()
   DAT_0023aecc = tilemap_lookup(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
   bVar3 = (byte)((short)(g_current_view->view_facing >> 0xd) + 1 >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
-  Ordinal_2005(2);
+  ordint_divmod(2);
   DAT_0023b028 = extraout_r1;
   DAT_0023b4a0 = bVar3;
   sync_camera_from_player();
@@ -1067,7 +1067,7 @@ byte * param_2;
                   (uint)*(byte *)(param_1 + 6);
           iVar5 = iVar8 * 0x10000;
           uVar1 = iVar5 >> 0x1f;
-          sVar4 = Ordinal_2005(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1);
+          sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1);
           iVar5 = (iVar8 - sVar4) + -2;
           *(char *)(param_1 + 1) = (char)iVar5;
           *(char *)(param_1 + 2) = (char)((uint)iVar5 >> 8);
@@ -1093,7 +1093,7 @@ byte * param_2;
                       (uint)*(byte *)(param_2 + 6);
               iVar5 = iVar8 * 0x10000;
               uVar1 = iVar5 >> 0x1f;
-              sVar4 = Ordinal_2005(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1);
+              sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1);
               iVar5 = iVar8 + sVar4 + 2;
               *(char *)(param_2 + 1) = (char)iVar5;
               *(char *)(param_2 + 2) = (char)((uint)iVar5 >> 8);
@@ -1183,7 +1183,7 @@ LAB_0005cf04:
              *(ushort *)(&DAT_00086af8 + iVar3 * 2)) &&
            ((int)cVar9 == (int)*(short *)((char *)&DAT_00086afc + iVar3 * 2))) {
           /* Was reading the division helper's remainder back via the
-             extraout_r1 register-leftover trick (see Ordinal_2005's
+             extraout_r1 register-leftover trick (see ordint_divmod's
              comment) -- computed directly instead, same fix as
              itoa_radix's identical pattern. The quotient this call
              also produced was never used (its return value was
@@ -1195,7 +1195,7 @@ LAB_0005cf04:
       }
       psVar10 = (short *)(&DAT_00086b00 + iVar3 * 2);
       sVar6 = *psVar10;
-      /* Was `Ordinal_2005(2,iVar3+1);` followed by two extraout_r1_00
+      /* Was `ordint_divmod(2,iVar3+1);` followed by two extraout_r1_00
          reads of its division remainder -- same register-leftover
          pattern as above, computed directly instead. */
       iVar12 = (iVar3 + 1) % 2;
@@ -1204,7 +1204,7 @@ LAB_0005cf04:
                         [(byte)(&DAT_00086a20)
                                [(pbVar8[(int)*(short *)(&DAT_00086a00 + iVar11 * 6) * (int)sVar6 * 4
                                        ] & 0xf) + iVar2]]) != 0) goto LAB_0005cf04;
-      /* Was `cVar9 = Ordinal_2005(...); param_1[8] = cVar9 + param_1[8];`
+      /* Was `cVar9 = ordint_divmod(...); param_1[8] = cVar9 + param_1[8];`
          -- param_1[8] is a 0-255 accumulated light-attenuation counter
          (saturates the ring-walk's expansion once it hits 0xff -- see
          the `param_1[8] = 0xff` "hit a wall" sets above and the
@@ -1228,7 +1228,7 @@ LAB_0005cf04:
          Compute and accumulate in a wide int and clamp to the byte's
          real 0-255 range instead of truncating through a signed 8-bit
          type. */
-      local_atten_step = (int)Ordinal_2005((int)*(short *)(param_1 + 1) * (int)sVar6,
+      local_atten_step = (int)ordint_divmod((int)*(short *)(param_1 + 1) * (int)sVar6,
                                             (short)local_32 * local_30);
       local_atten_step = local_atten_step + (int)(byte)param_1[8];
       if (local_atten_step < 0) {
@@ -1271,7 +1271,7 @@ LAB_0005cf04:
              (int)((0x100 - (uint)param_1[8]) * (int)*(short *)(param_1 + 1) * (int)*psVar10)));
   }
   sVar6 = *(short *)(&DAT_00086b00 + iVar3 * 2);
-  cVar12 = Ordinal_2005((int)*(short *)(param_1 + 3),
+  cVar12 = ordint_divmod((int)*(short *)(param_1 + 3),
                         (0xff - (uint)param_1[8]) * (int)*(short *)(param_1 + 1) * (int)sVar6);
   param_1[6] = cVar12 * (char)sVar6 + param_1[6];
   param_1[8] = 0xff;
@@ -1601,7 +1601,7 @@ void rebuild_dungeon_view()
   walk_visible_tiles();
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
       (DAT_00201b68 != 9)) &&
-     (sVar3 = Ordinal_2005(10,(int)DAT_0023b810 * (int)DAT_00201b68), sVar3 != 0)) {
+     (sVar3 = ordint_divmod(10,(int)DAT_0023b810 * (int)DAT_00201b68), sVar3 != 0)) {
     /* Disabled: grant_experience_points() here is called with a dropped
        argument (Ghidra lost it) AND from a nonsensical spot -- a dungeon
        -view rebuild -- so it granted a garbage XP amount on essentially
@@ -1649,7 +1649,7 @@ byte param_1;
   if (param_1 != 0xff) {
     DAT_0023adc0 = (ushort)param_1;
   }
-  Ordinal_1047(acStack_114,0,0x104);
+  ce_memset(acStack_114,0,0x104);
   pcVar3 = &DAT_0023cca8;
     stack0xffdc3244_ptr = stack0xffdc3244_buf;
   pcVar2 = pcVar3;
@@ -1659,15 +1659,15 @@ byte param_1;
     *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_114,s__DATA_f32_tr_00086de8);
+  ce_strcat(acStack_114,s__DATA_f32_tr_00086de8);
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
-  Ordinal_1047(acStack_114,0,0x104);
+  ce_memset(acStack_114,0,0x104);
   do {
     cVar1 = *pcVar3;
     *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_114,s__DATA_f16_tr_00086dd8);
+  ce_strcat(acStack_114,s__DATA_f16_tr_00086dd8);
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
   return;
 }
@@ -1722,7 +1722,7 @@ char param_1;
   pcVar4 = &DAT_0023cca8;
     stack0xffdc323c_ptr = acStack_11c;
   if (DAT_000872a0 == '\x05') {
-    Ordinal_1047(acStack_11c,0,0x104);
+    ce_memset(acStack_11c,0,0x104);
     pcVar2 = pcVar4;
     stack0xffdc323c_ptr = stack0xffdc323c_buf;
     do {
@@ -1734,7 +1734,7 @@ char param_1;
   }
   else {
     if (param_1 != '\x05') goto LAB_0006fff4;
-    Ordinal_1047(acStack_11c,0,0x104);
+    ce_memset(acStack_11c,0,0x104);
     pcVar2 = pcVar4;
     stack0xffdc323c_ptr = stack0xffdc323c_buf;
     do {
@@ -1744,21 +1744,21 @@ char param_1;
     } while (cVar1 != '\0');
     pcVar2 = s__DATA_mono_dat_000872b8;
   }
-  Ordinal_1063(acStack_11c,pcVar2);
+  ce_strcat(acStack_11c,pcVar2);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
     read_file_handle(iVar3,DAT_0024fa2c,0x1000);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
   }
 LAB_0006fff4:
   DAT_000872a0 = param_1;
-  Ordinal_1047(acStack_11c,0,0x104);
+  ce_memset(acStack_11c,0,0x104);
   do {
     cVar1 = *pcVar4;
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_shades_dat_000872a4);
+  ce_strcat(acStack_11c,s__DATA_shades_dat_000872a4);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
     seek_file_handle(iVar3,param_1 * 0xc0000 >> 0x10,0);
@@ -1772,7 +1772,7 @@ LAB_0006fff4:
     g_visibility_max_ring_passes = local_126;
     DAT_00086b28 = local_124;
     DAT_00086b24 = local_122;
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
     if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
       fprintf(stderr, "[load_shading_level_config] loaded SHADES.DAT record %d: DAT_0025063c=%d DAT_0025064c=%d"
               " DAT_002506dc=%d g_visibility_max_ring_passes=%d DAT_00086b28=%d DAT_00086b24=%d\n",
@@ -1807,12 +1807,12 @@ void load_light_tables()
   char *pcVar4;
   char acStack_11c [260];
   
-  DAT_0024fa2c = Ordinal_1041(0x1000);
+  DAT_0024fa2c = ce_malloc(0x1000);
   if (getenv("UW_DEBUG_BAG_TRACE")) fprintf(stderr, "[bag-trace] DAT_0024fa2c allocated at %p\n", (void *)DAT_0024fa2c);
   if (DAT_0024fa2c == 0) {
     report_fatal_error_message_and_exit(s_cLightTabs_allocation_error_____000872e8);
   }
-  Ordinal_1047(acStack_11c,0,0x104);
+  ce_memset(acStack_11c,0,0x104);
   pcVar4 = &DAT_0023cca8;
     stack0xffdc323c_ptr = stack0xffdc323c_buf;
   pcVar2 = pcVar4;
@@ -1822,23 +1822,23 @@ void load_light_tables()
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_light_dat_000872c8);
+  ce_strcat(acStack_11c,s__DATA_light_dat_000872c8);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
     read_file_handle(iVar3,DAT_0024fa2c,0x1000);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
   }
-  Ordinal_1047(acStack_11c,0,0x104);
+  ce_memset(acStack_11c,0,0x104);
   do {
     cVar1 = *pcVar4;
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_xfer_dat_000872d8);
+  ce_strcat(acStack_11c,s__DATA_xfer_dat_000872d8);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
     read_file_handle(iVar3,&DAT_0024fa38,0x600);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
   }
   return;
 }

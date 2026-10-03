@@ -20,7 +20,7 @@
    Neither underlying global has any other independent use in this
    decompile, so replace the whole packed-halves dance with one real
    pointer: it was truncating the buffer's address to its low 32 bits on
-   this 64-bit host and segfaulting the first time Ordinal_1044 actually
+   this 64-bit host and segfaulting the first time ce_memmove actually
    did real memmove work. */
 void *g_uw_framebuffer;
 /* Not `static` -- referenced from graphics.c (bitmap_blit_to_framebuffer,
@@ -560,17 +560,17 @@ ushort *param_3;
      due to a calling-convention mismatch; param_1/param_2 are what
      apply_palette_buffer actually needs here. */
 
-  puVar3 = (ushort *)Ordinal_1041(0x1f400);
+  puVar3 = (ushort *)ce_malloc(0x1f400);
   apply_palette_buffer(param_1,param_2);
-  Ordinal_1044(puVar3,param_3,0x1f400);
+  ce_memmove(puVar3,param_3,0x1f400);
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
   do {
-    uVar4 = Ordinal_2032(iVar9);
-    uVar4 = Ordinal_2026(uVar4,0x3e000000);
-    Ordinal_2026(uVar4,0x45800000);
-    iVar5 = Ordinal_2020();
+    uVar4 = ordfloat_int_to_float2(iVar9);
+    uVar4 = ordfloat_mul(uVar4,0x3e000000);
+    ordfloat_mul(uVar4,0x45800000);
+    iVar5 = ordfloat_uint_to_float();
     iVar8 = (intptr_t)param_3 - (intptr_t)puVar3;
     iVar7 = 64000;
     puVar6 = puVar3;
@@ -598,7 +598,7 @@ ushort *param_3;
   flush_dirty_rect_to_display(1);
   DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", read_realtime_clock_units() - diag_t0);
   debug_framebuffer_dump("fade_in");
-  Ordinal_1018(puVar3);
+  LocalFree(puVar3);
   return;
 }
 
@@ -625,18 +625,18 @@ undefined2 * param_3;
   /* Same phantom in_stack_/unused-param_1,2 artifact as fade_in
      right above -- see its comment. */
 
-  puVar4 = (ushort *)Ordinal_1041(0x1f400);
+  puVar4 = (ushort *)ce_malloc(0x1f400);
   apply_palette_buffer(param_1,param_2);
-  Ordinal_1044(puVar4,param_3,0x1f400);
+  ce_memmove(puVar4,param_3,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
   do {
-    uVar5 = Ordinal_2032(iVar11);
-    uVar5 = Ordinal_2026(uVar5,0x3e000000);
-    Ordinal_2026(uVar5,0x45800000);
-    iVar6 = Ordinal_2020();
+    uVar5 = ordfloat_int_to_float2(iVar11);
+    uVar5 = ordfloat_mul(uVar5,0x3e000000);
+    ordfloat_mul(uVar5,0x45800000);
+    iVar6 = ordfloat_uint_to_float();
     iVar9 = 64000;
     puVar7 = puVar4;
     do {
@@ -663,7 +663,7 @@ undefined2 * param_3;
   flush_dirty_rect_to_display(1);
   DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", read_realtime_clock_units() - diag_t0);
   debug_framebuffer_dump("fade_out");
-  Ordinal_1018(puVar4);
+  LocalFree(puVar4);
   return;
 }
 
@@ -712,10 +712,10 @@ void build_shade_lut()
   iVar2 = 0;
   iVar4 = 0xa0;
   do {
-    uVar1 = Ordinal_2032(iVar2 + 0xa0);
-    uVar1 = Ordinal_2026(uVar1,0x3bcccccd);
-    Ordinal_2026(uVar1,0x45800000);
-    uVar1 = Ordinal_2020();
+    uVar1 = ordfloat_int_to_float2(iVar2 + 0xa0);
+    uVar1 = ordfloat_mul(uVar1,0x3bcccccd);
+    ordfloat_mul(uVar1,0x45800000);
+    uVar1 = ordfloat_uint_to_float();
     iVar4 = iVar4 + -1;
     *puVar3 = uVar1;
     iVar2 = iVar2 + -1;
@@ -868,24 +868,24 @@ short param_2;
   else {
     iVar21 = 0;
     do {
-      uVar7 = Ordinal_2032(*param_1);
-      uVar7 = Ordinal_2026(uVar7,0x3fc00000);
-      /* Ordinal_2020(); -- Ghidra dropped the preceding return value. */
-      iVar8 = Ordinal_2020(uVar7);
+      uVar7 = ordfloat_int_to_float2(*param_1);
+      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      /* ordfloat_uint_to_float(); -- Ghidra dropped the preceding return value. */
+      iVar8 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar8) {
         iVar8 = 0xff;
       }
-      uVar7 = Ordinal_2032(param_1[1]);
-      uVar7 = Ordinal_2026(uVar7,0x3fc00000);
-      /* Ordinal_2020(); */
-      iVar9 = Ordinal_2020(uVar7);
+      uVar7 = ordfloat_int_to_float2(param_1[1]);
+      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      /* ordfloat_uint_to_float(); */
+      iVar9 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar9) {
         iVar9 = 0xff;
       }
-      uVar7 = Ordinal_2032(param_1[2]);
-      uVar7 = Ordinal_2026(uVar7,0x3fc00000);
-      /* Ordinal_2020(); */
-      iVar10 = Ordinal_2020(uVar7);
+      uVar7 = ordfloat_int_to_float2(param_1[2]);
+      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      /* ordfloat_uint_to_float(); */
+      iVar10 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar10) {
         iVar10 = 0xff;
       }
@@ -893,25 +893,25 @@ short param_2;
       *(ushort *)((intptr_t)&g_palette_rgb565 + iVar21) =
            (ushort)(iVar10 >> 3) | (ushort)((iVar9 >> 2 | (iVar8 >> 3) << 6) << 5);
       if (param_2 == 0) {
-        uVar7 = Ordinal_2032(iVar8 >> 3);
-        uVar11 = Ordinal_2032(iVar9 >> 2);
-        uVar12 = Ordinal_2032(iVar10 >> 3);
+        uVar7 = ordfloat_int_to_float2(iVar8 >> 3);
+        uVar11 = ordfloat_int_to_float2(iVar9 >> 2);
+        uVar12 = ordfloat_int_to_float2(iVar10 >> 3);
         iVar8 = 0;
         puVar20 = (ushort *)((intptr_t)&DAT_00248418 + iVar21);
         do {
-          uVar13 = Ordinal_2032(iVar8 + 0x14);
-          uVar14 = Ordinal_2026(uVar13,uVar7);
-          uVar14 = Ordinal_2026(uVar14,0x3d430c31);
-          /* Ordinal_2018(); */
-          sVar4 = Ordinal_2018(uVar14);
-          uVar14 = Ordinal_2026(uVar13,uVar11);
-          uVar14 = Ordinal_2026(uVar14,0x3d430c31);
-          /* Ordinal_2018(); */
-          uVar5 = Ordinal_2018(uVar14);
-          uVar13 = Ordinal_2026(uVar13,uVar12);
-          uVar13 = Ordinal_2026(uVar13,0x3d430c31);
-          /* Ordinal_2018(); */
-          uVar6 = Ordinal_2018(uVar13);
+          uVar13 = ordfloat_int_to_float2(iVar8 + 0x14);
+          uVar14 = ordfloat_mul(uVar13,uVar7);
+          uVar14 = ordfloat_mul(uVar14,0x3d430c31);
+          /* ordfloat_int_to_float(); */
+          sVar4 = ordfloat_int_to_float(uVar14);
+          uVar14 = ordfloat_mul(uVar13,uVar11);
+          uVar14 = ordfloat_mul(uVar14,0x3d430c31);
+          /* ordfloat_int_to_float(); */
+          uVar5 = ordfloat_int_to_float(uVar14);
+          uVar13 = ordfloat_mul(uVar13,uVar12);
+          uVar13 = ordfloat_mul(uVar13,0x3d430c31);
+          /* ordfloat_int_to_float(); */
+          uVar6 = ordfloat_int_to_float(uVar13);
           *puVar20 = uVar6 | (uVar5 | sVar4 << 6) << 5;
           iVar8 = iVar8 + -1;
           puVar20 = puVar20 + 0x100;
@@ -1005,7 +1005,7 @@ int param_3;
        instead of real pointer arithmetic against the actual (relocated)
        global -- same bug class as probe_save_slots's `-0x87020` fix and
        run_character_generator's pcVar3 fix elsewhere this session.
-       Never exercised until Ordinal_535 (GetTickCount) stopped being a
+       Never exercised until GetTickCount (GetTickCount) stopped being a
        hardcoded 0 (see its comment): this branch (param_3!=0) is only
        reached from animate_title_palette_cycle's periodic timer, which always saw
        "0ms elapsed" and never fired before that fix. Confirmed via
@@ -1051,7 +1051,7 @@ char *param_2;
 int param_3;
 
 {
-  /* iVar1 was `int`, truncating the Ordinal_1041 (malloc) heap pointer
+  /* iVar1 was `int`, truncating the ce_malloc (malloc) heap pointer
      it holds -- it's used both as the fread-destination buffer and as
      the source pointer handed to bitmap_blit_to_framebuffer (which now takes a real
      char*). */
@@ -1059,7 +1059,7 @@ int param_3;
   int iVar2;
   undefined4 uVar3;
 
-  iVar1 = Ordinal_1041(64000);
+  iVar1 = ce_malloc(64000);
   if (iVar1 == 0) {
     uVar3 = 0;
   }
@@ -1078,7 +1078,7 @@ int param_3;
         flush_dirty_rect_to_display(1);
       }
     }
-    Ordinal_1018(iVar1);
+    LocalFree(iVar1);
     uVar3 = 1;
   }
   return uVar3;
@@ -1498,7 +1498,7 @@ undefined4 param_3;
 
 // was FUN_000232b0 -- ends the active GAPI/GX draw session
 // (GXEndDraw, guarded by DAT_0023c430 tracking whether one is open) and
-// releases DAT_0023c638 (an offscreen/back-buffer pointer -- Ordinal_1018
+// releases DAT_0023c638 (an offscreen/back-buffer pointer -- LocalFree
 // is a deliberate no-op/leak stub, see its own comment). Called by
 // shutdown_game_resources right before the rest of that function tears
 // down the display and input devices.
@@ -1508,7 +1508,7 @@ void end_gx_draw_session()
   if (DAT_0023c430 != 0) {
     GXEndDraw();
   }
-  Ordinal_1018(DAT_0023c638);
+  LocalFree(DAT_0023c638);
   return;
 }
 
@@ -1557,7 +1557,7 @@ undefined1 * param_2;
    out as the mechanism for ordinary water/lava/wall-torch shimmer
    during play, if the original game has one at all. Iterates a
    16-slot table of 8-byte records (last-update clock, a rate value
-   Ordinal_2005'd against 0x38e, then a start/end palette-index byte
+   ordint_divmod'd against 0x38e, then a start/end palette-index byte
    pair) -- genuinely reusable for animating multiple independent
    palette ranges, but nothing in its enclosing function
    (render_babl_dialog_window) was found writing real per-object data into that
@@ -1581,7 +1581,7 @@ ushort * param_1;
     }
     if (param_1[1] != 0) {
       uVar2 = read_realtime_clock_units();
-      iVar3 = Ordinal_2005(param_1[1],0x38e);
+      iVar3 = ordint_divmod(param_1[1],0x38e);
       if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*param_1)) {
         uVar2 = (1 - (uint)(byte)param_1[3]) + (uint)*(byte *)((char *)param_1 + 7);
         palette_cycle_range((uint)(byte)param_1[3],uVar2,0);
@@ -1599,7 +1599,7 @@ ushort * param_1;
 
 
 // was FUN_0003af28 -- loads an embedded BMP resource (param_1/param_2:
-// Ordinal_532/FindResource-style module+name lookup) and decodes it
+// FindResourceW/FindResource-style module+name lookup) and decodes it
 // into an RGB565 buffer (param_3): reads the 0x28-byte BITMAPINFOHEADER
 // and 0x400-byte (256-entry RGBQUAD) palette, builds an RGB565 LUT
 // from that palette, then reads the bottom-up DIB row data (flipping
@@ -1627,10 +1627,10 @@ ushort * param_3;
   ushort local_62c [256];
   byte local_42c [1024];
   
-  iVar1 = Ordinal_532(param_1,param_2,2);
-  if ((iVar1 != 0) && (iVar1 = Ordinal_533(param_1), iVar1 != 0)) {
-    Ordinal_1044(auStack_654,iVar1,0x28);
-    Ordinal_1044(local_42c,iVar1 + 0x28,0x400);
+  iVar1 = FindResourceW(param_1,param_2,2);
+  if ((iVar1 != 0) && (iVar1 = LoadResource(param_1), iVar1 != 0)) {
+    ce_memmove(auStack_654,iVar1,0x28);
+    ce_memmove(local_42c,iVar1 + 0x28,0x400);
     puVar3 = local_62c;
     pbVar2 = local_42c;
     iVar4 = 0x100;
@@ -1640,14 +1640,14 @@ ushort * param_3;
       pbVar2 = pbVar2 + 4;
       puVar3 = puVar3 + 1;
     } while (iVar4 != 0);
-    pbVar2 = (byte *)Ordinal_1095(local_64c * local_650);
+    pbVar2 = (byte *)cpp_operator_new(local_64c * local_650);
     if (pbVar2 != (byte *)0x0) {
       if (0 < local_64c) {
         pbVar6 = pbVar2 + (local_64c + -1) * local_650;
         iVar4 = iVar1;
         iVar7 = local_64c;
         do {
-          Ordinal_1044(pbVar6,iVar4 + 0x428,local_650);
+          ce_memmove(pbVar6,iVar4 + 0x428,local_650);
           iVar7 = iVar7 + -1;
           iVar4 = iVar4 + local_650;
           pbVar6 = pbVar6 + -local_650;
@@ -1672,11 +1672,11 @@ ushort * param_3;
           } while (local_64c != 0);
         }
       }
-      Ordinal_912(iVar1);
-      Ordinal_1094(pbVar2);
+      DeleteObject(iVar1);
+      cpp_operator_delete(pbVar2);
       return 1;
     }
-    Ordinal_912(iVar1);
+    DeleteObject(iVar1);
   }
   return 0;
 }
@@ -1710,7 +1710,7 @@ undefined4 param_1;
 undefined4 param_2;
 
 {
-  Ordinal_1044(&DAT_00088d98,param_1,0x300);
+  ce_memmove(&DAT_00088d98,param_1,0x300);
   reinstall_active_palette(0x100,0,param_2);
   return;
 }
@@ -1768,7 +1768,7 @@ short param_2;
           psVar6 = (short *)(iVar9 + iVar8 * 2);
           sVar7 = *psVar6 - (ushort)*(byte *)(iVar8 + param_1);
           *psVar6 = sVar7;
-          uVar3 = Ordinal_2005(iVar1,sVar7);
+          uVar3 = ordint_divmod(iVar1,sVar7);
           *(undefined1 *)(iVar8 + iVar2) = uVar3;
           iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
         } while (iVar8 < 0x300);

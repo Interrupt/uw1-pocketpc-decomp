@@ -57,7 +57,7 @@ void enter_dungeon_view()
   dirty_rect_union(0,200,0,0x140);
   unregister_game_view_interact_zones();
   configure_dungeon_viewport(0x34,0x14,0xab,0x70);
-  Ordinal_1044(auStack_314,&DAT_00088d98,0x300);
+  ce_memmove(auStack_314,&DAT_00088d98,0x300);
   fade_out(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   load_pals_bank(0,auStack_314);
   /* load_pals_bank loads PALS.DAT bank 0 (the 3D dungeon-view palette --
@@ -70,8 +70,8 @@ void enter_dungeon_view()
      palette (grey -> gold) after the first frame. Mirror the loaded
      palette into DAT_00088d98 so the cycle loop keeps re-installing
      bank 0. */
-  Ordinal_1044(&DAT_00088d98,auStack_314,0x300);
-  Ordinal_1047(acStack_41c,0,0x104);
+  ce_memmove(&DAT_00088d98,auStack_314,0x300);
+  ce_memset(acStack_41c,0,0x104);
   pcVar2 = &DAT_0023cca8;
     stack0xffdc2f3c_ptr = acStack_41c;
   do {
@@ -79,7 +79,7 @@ void enter_dungeon_view()
     *stack0xffdc2f3c_ptr = cVar1; stack0xffdc2f3c_ptr = stack0xffdc2f3c_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_41c,s__DATA_main_byt_000857a8);
+  ce_strcat(acStack_41c,s__DATA_main_byt_000857a8);
   iVar3 = blit_fullscreen_bitmap_file(0xffffffff,acStack_41c,0);
   if (iVar3 == 0) {
     report_fatal_error_and_exit(0x300b);
@@ -108,7 +108,7 @@ undefined4 init_level_object_arena()
        bytes right after that for g_scheduler_table (the scheduled-
        effects queue's own link table) -- see its own (DAT_00250778's)
        comment. */
-    DAT_002029cc = Ordinal_1041(0x7c08 + 0x3a + 0x180);
+    DAT_002029cc = ce_malloc(0x7c08 + 0x3a + 0x180);
     if (DAT_002029cc == 0) {
       report_categorized_fatal_error(0x1002);
     }
@@ -449,10 +449,10 @@ short param_1;
     iVar3 = 0;
   }
   if ((short)iVar3 < 0) {
-    uVar1 = Ordinal_1053();
-    Ordinal_2005((param_1 + 1) * 4,uVar1);
+    uVar1 = ce_rand();
+    ordint_divmod((param_1 + 1) * 4,uVar1);
     if (extraout_r1_00 == 0) {
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       uw_ord2005_rem_143 = ((int)(uVar1)) % (6);
       iVar3 = uw_ord2005_rem_143 + 4;
       if ((uVar2 & 1 << (iVar3 * 0x10000 >> 0x10 & 0xffU)) != 0) {
@@ -551,7 +551,7 @@ void free_level_tile_arena()
 
 {
   if (DAT_002029cc != 0) {
-    Ordinal_1018();
+    LocalFree();
   }
   return;
 }

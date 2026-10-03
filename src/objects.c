@@ -28,7 +28,7 @@ byte *DAT_00202c6c;
 /* Was `int` despite being assigned real pointer values derived from
    DAT_002046b8 (see there) and itself assigned into g_player_object
    (`char *`) -- truncating on this 64-bit host, part of the same crash
-   chain (reset_player_object_record's Ordinal_1047 call reading g_player_object). */
+   chain (reset_player_object_record's ce_memset call reading g_player_object). */
 char *DAT_0023b82c;
 undefined1 DAT_002027d0_backing[256];
  undefined1 DAT_00202800_backing[65536];
@@ -176,7 +176,7 @@ LAB_0004b06c:
     *(byte *)(puVar6 + 1) = bVar1;
     *(byte *)((char *)puVar6 + 3) = bVar2;
     if ((byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] != 0) {
-      cVar4 = Ordinal_2005(6,(uint)(byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] * 5);
+      cVar4 = ordint_divmod(6,(uint)(byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] * 5);
       bVar3 = (cVar4 + (char)DAT_00202a3c * '\x02' + (bVar1 & 0x7f) ^ bVar1) & 0x7f ^ bVar1;
       *(byte *)(puVar6 + 1) = bVar3;
       *(byte *)((char *)puVar6 + 3) = bVar2;
@@ -358,7 +358,7 @@ char *param_1;
   if (param_1 < DAT_002046c4) {
     psVar2 = (short *)(DAT_002046a8 + 2);
     DAT_002046a8 = (char *)psVar2;
-    sVar1 = Ordinal_2005(0x1b,param_1 - DAT_002046b8);
+    sVar1 = ordint_divmod(0x1b,param_1 - DAT_002046b8);
     *psVar2 = sVar1;
     if (param_1 == DAT_0023b82c) {
       enter_free_camera_mode((int)*(short *)DAT_002046a8);
@@ -393,7 +393,7 @@ char *param_2;
   *(byte *)(param_2 + 4) = (*(byte *)(param_2 + 4) ^ bVar2) & 0x3f ^ bVar2;
   *(char *)(param_2 + 5) = (char)((ushort)uVar1 >> 8);
   if (param_2 < DAT_002046c4) {
-    sVar3 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
+    sVar3 = ordint_divmod(0x1b,param_2 - DAT_002046b8);
     uVar4 = *param_1 & 0x3f | sVar3 << 6;
   }
   else {
@@ -428,7 +428,7 @@ char *param_2;
   *(byte *)(param_2 + 4) = *(byte *)(param_2 + 4) & 0x3f;
   *(undefined1 *)(param_2 + 5) = 0;
   if (param_2 < DAT_002046c4) {
-    sVar1 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
+    sVar1 = ordint_divmod(0x1b,param_2 - DAT_002046b8);
     uVar3 = *param_1 & 0x3f | sVar1 << 6;
   }
   else {
@@ -637,7 +637,7 @@ char *param_1;
     iVar2 = 0;
   }
   else if (param_1 < DAT_002046c4) {
-    sVar1 = Ordinal_2005(0x1b,param_1 - DAT_002046b8);
+    sVar1 = ordint_divmod(0x1b,param_1 - DAT_002046b8);
     iVar2 = (int)sVar1;
   }
   else {
@@ -804,7 +804,7 @@ LAB_00038100:
           uVar6 = 0xffffffff;
         }
         else {
-          uVar5 = Ordinal_1053();
+          uVar5 = ce_rand();
           if ((uVar5 & 3) == 0) {
             uVar4 = roll_dice_sum(6,10);
             spawn_scheduled_effect_object(param_1,8,uVar4,0,0,sVar2,param_5);
@@ -899,9 +899,9 @@ int param_6;
   undefined1 local_7f;
   undefined1 local_58 [40];
   
-  Ordinal_1047(local_80,0,0x14);
-  Ordinal_1047(local_58,0,0x14);
-  Ordinal_1047(auStack_98,0,9);
+  ce_memset(local_80,0,0x14);
+  ce_memset(local_58,0,0x14);
+  ce_memset(auStack_98,0,9);
   iVar9 = param_2 + -4;
   if (iVar9 < 1) {
     iVar9 = 1;
@@ -1287,7 +1287,7 @@ undefined4 load_object_catalog_data()
   local_13c[2] = load_light_food_effect_tables;
   local_13c[6] = (code *)&load_class6_variant_effect_table;
   local_13c[7] = (code *)&load_class7_variant_effect_table;
-  Ordinal_1047(acStack_11c,0,0x104);
+  ce_memset(acStack_11c,0,0x104);
   pcVar7 = &DAT_0023cca8;
     stack0xffdc323c_ptr = stack0xffdc323c_buf;
   pcVar2 = pcVar7;
@@ -1297,7 +1297,7 @@ undefined4 load_object_catalog_data()
     *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_objects_dat_000868a8);
+  ce_strcat(acStack_11c,s__DATA_objects_dat_000868a8);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 == -1) {
     uVar4 = 0x3005;
@@ -1310,14 +1310,14 @@ undefined4 load_object_catalog_data()
       }
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 8);
-    Ordinal_553(iVar3);
-    Ordinal_1047(acStack_11c,0,0x104);
+    CloseHandle(iVar3);
+    ce_memset(acStack_11c,0,0x104);
     do {
       cVar1 = *pcVar7;
       *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
       pcVar7 = pcVar7 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_11c,s__DATA_comobj_dat_00086894);
+    ce_strcat(acStack_11c,s__DATA_comobj_dat_00086894);
     iVar5 = open_file_for_read(acStack_11c);
     if (iVar5 == -1) {
       uVar4 = 0x3006;
@@ -1339,7 +1339,7 @@ undefined4 load_object_catalog_data()
         iVar3 = iVar3 + -1;
         puVar6 = puVar6 + 0xd;
       } while (iVar3 != 0);
-      Ordinal_553(iVar5);
+      CloseHandle(iVar5);
       uVar4 = 0;
     }
   }
@@ -1938,14 +1938,14 @@ int param_1;
   int iVar3;
   
   if (DAT_002046d4 == 0) {
-    cVar1 = Ordinal_1053();
+    cVar1 = ce_rand();
     *(byte *)(param_1 + 0x14) = (cVar1 + 1U & 3) * '/';
     *(undefined1 *)(param_1 + 0x15) = 0;
     *(undefined1 *)(param_1 + 0x10) = 0xfc;
     *(undefined1 *)(param_1 + 0x11) = 0xff;
   }
   else {
-    sVar2 = Ordinal_1053();
+    sVar2 = ce_rand();
     iVar3 = (((int)sVar2 & 0x3fffU) - 0x2000) + (int)*(short *)(param_1 + 0x21);
     *(char *)(param_1 + 0x21) = (char)iVar3;
     *(char *)(param_1 + 0x22) = (char)((uint)iVar3 >> 8);
@@ -2107,17 +2107,17 @@ LAB_000564d8:
       DAT_00101454 = uVar3;
       if (DAT_002046d4 != 0) {
         *(byte *)((char *)puVar9 + 0x13) = *(byte *)((char *)puVar9 + 0x13) & 0x83 | 3;
-        uVar10 = Ordinal_1053();
+        uVar10 = ce_rand();
         uw_ord2005_rem_119 = ((int)(uVar10)) % (9);
         *(char *)((char *)puVar9 + 9) = *(char *)((char *)puVar9 + 9) + (uw_ord2005_rem_119 + '\f') * '\x10';
       }
       if (param_4 == 0) {
         return puVar9;
       }
-      bVar5 = Ordinal_1053();
+      bVar5 = ce_rand();
       *(byte *)((char *)puVar9 + 0x13) =
            ((bVar5 & 3) + 1 ^ *(byte *)((char *)puVar9 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar9 + 0x13);
-      bVar5 = Ordinal_1053();
+      bVar5 = ce_rand();
       *(byte *)(puVar9 + 10) = (byte)puVar9[10] & 7 ^ ((bVar5 & 3) + 0xe) * '\b';
       return puVar9;
     }
@@ -2507,14 +2507,14 @@ short param_5;
   while( true ) {
     if ((bVar3 != 0) || (uVar4 = param_2, uVar6 = param_3, DAT_00202c84 == 0)) {
       iVar5 = (int)(short)(param_5 * 2 + 1);
-      /* Was `Ordinal_2005(iVar5,uVar2); ... (int)extraout_r1 ...` (twice)
+      /* Was `ordint_divmod(iVar5,uVar2); ... (int)extraout_r1 ...` (twice)
          -- bare calls whose result was read back via Ghidra's
          extraout_r1 idiom, always uninitialized garbage on this host
          (there's no way to read a second register out of a normal C
-         call). Ordinal_2005 is COREDLL's div/mod ordinal
+         call). ordint_divmod is COREDLL's div/mod ordinal
          (divisor,dividend): the quotient is its real C return value,
          but this caller wants the REMAINDER -- confirmed by
-         ordinal_stubs.c's own comment on Ordinal_2005 documenting
+         ordinal_stubs.c's own comment on ordint_divmod documenting
          exactly this "extraout_r1 reads want the remainder" idiom.
          Compute it directly instead of reading a nonexistent second
          return value: this crashed 100% of the time using Use mode on
@@ -2523,9 +2523,9 @@ short param_5;
          confirmed live, because uVar4/uVar6 below were built from
          garbage stack memory, sending object placement to a wild
          tile. */
-      uVar2 = Ordinal_1053();
+      uVar2 = ce_rand();
       uVar4 = (((int)uVar2 % iVar5) - (int)param_5) + param_2;
-      uVar2 = Ordinal_1053();
+      uVar2 = ce_rand();
       uVar6 = (((int)uVar2 % iVar5) - (int)param_5) + param_3;
     }
     uVar2 = encode_object_slot_index(param_1);

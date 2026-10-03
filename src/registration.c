@@ -178,22 +178,22 @@ undefined4 check_registration_key_saved()
   local_10 = 4;
   local_14 = 4;
   uVar3 = 0;
-  Ordinal_456(0x80000001,u_Software_ZIO_Interactive_Ultima_U_00086f6c,0,0,0,0,0,&local_18,auStack_c)
+  RegCreateKeyExW(0x80000001,u_Software_ZIO_Interactive_Ultima_U_00086f6c,0,0,0,0,0,&local_18,auStack_c)
   ;
-  iVar1 = Ordinal_463(local_18,u_BuildNo_00086f5c,0,&local_10,&local_1c,&local_14);
+  iVar1 = RegQueryValueExW(local_18,u_BuildNo_00086f5c,0,&local_10,&local_1c,&local_14);
   if (iVar1 == 0) {
-    Ordinal_463(local_18,u_BuildNo_00086f5c,0,&local_10,&local_1c,&local_14);
+    RegQueryValueExW(local_18,u_BuildNo_00086f5c,0,&local_10,&local_1c,&local_14);
     if (local_1c == 0xc0f) {
       uVar3 = 1;
     }
   }
   else {
-    uVar2 = Ordinal_80();
-    Ordinal_2008(10000,uVar2);
+    uVar2 = Random();
+    ordfloat_double_mul(10000,uVar2);
     local_1c = extraout_r1 + 1;
-    Ordinal_464(local_18,u_BuildNo_00086f5c,0,local_10,&local_1c,local_14);
+    RegSetValueExW(local_18,u_BuildNo_00086f5c,0,local_10,&local_1c,local_14);
   }
-  Ordinal_455(local_18);
+  RegCloseKey(local_18);
   return uVar3;
 }
 
@@ -208,11 +208,11 @@ void save_registration_key_validated()
   undefined4 local_c;
   undefined1 auStack_8 [4];
   
-  Ordinal_456(0x80000001,u_Software_ZIO_Interactive_Ultima_U_00086f6c,0,0,0,0,0,&local_10,auStack_8)
+  RegCreateKeyExW(0x80000001,u_Software_ZIO_Interactive_Ultima_U_00086f6c,0,0,0,0,0,&local_10,auStack_8)
   ;
   local_c = 0xc0f;
-  Ordinal_464(local_10,u_BuildNo_00086f5c,0,4,&local_c,4);
-  Ordinal_455(local_10);
+  RegSetValueExW(local_10,u_BuildNo_00086f5c,0,4,&local_c,4);
+  RegCloseKey(local_10);
   return;
 }
 
@@ -224,7 +224,7 @@ void set_power_status_flag_bit()
 {
   /* Looks like a GetSystemPowerStatus/GetVersionEx-shaped call: a struct
      starting with a 4-byte "cbSize" field is zeroed, sized, and passed to
-     Ordinal_4 (unidentified coredll query, currently a no-op stub that
+     EnterCriticalSection (unidentified coredll query, currently a no-op stub that
      always reports "unsupported"/0), so the flag-setting branch below is
      presently dead. Widened from a bare 4-byte local to the full 0x30-byte
      struct Ghidra's memset call actually touches -- the original
@@ -232,12 +232,12 @@ void set_power_status_flag_bit()
   int iVar1;
   undefined1 local_34 [0x30];
   
-  Ordinal_1047(local_34,0,0x30);
+  ce_memset(local_34,0,0x30);
   *(undefined4 *)local_34 = 0x30;
-  iVar1 = Ordinal_4(0xe1,0,local_34,0);
+  iVar1 = EnterCriticalSection(0xe1,0,local_34,0);
   if (iVar1 != 0) {
     *(uint *)(local_34 + 4) = *(uint *)(local_34 + 4) | 1;
-    Ordinal_4(0xe0,0,local_34,0);
+    EnterCriticalSection(0xe0,0,local_34,0);
   }
   return;
 }
@@ -250,16 +250,16 @@ void clear_power_status_flag_bit()
 {
   /* Counterpart of set_power_status_flag_bit (see comment there): same struct shape,
      clears instead of sets the flag bit. Also dead under the current
-     Ordinal_4 stub. */
+     EnterCriticalSection stub. */
   int iVar1;
   undefined1 local_34 [0x30];
   
-  Ordinal_1047(local_34,0,0x30);
+  ce_memset(local_34,0,0x30);
   *(undefined4 *)local_34 = 0x30;
-  iVar1 = Ordinal_4(0xe1,0,local_34,0);
+  iVar1 = EnterCriticalSection(0xe1,0,local_34,0);
   if (iVar1 != 0) {
     *(uint *)(local_34 + 4) = *(uint *)(local_34 + 4) & 0xfffffffe;
-    Ordinal_4(0xe0,0,local_34,0);
+    EnterCriticalSection(0xe0,0,local_34,0);
   }
   return;
 }
@@ -274,8 +274,8 @@ undefined4 param_2;
 {
   /* This is the "enter your registration key" modal dialog gate (see the
      "Invalid Registration Key Code!!" string and the registration_key_dialog_proc
-     dialog proc it registers via Ordinal_690, a CreateDialogParam-shaped call).
-     Ordinal_690 is a generic no-op stub -- it never actually shows a
+     dialog proc it registers via DialogBoxIndirectParamW, a CreateDialogParam-shaped call).
+     DialogBoxIndirectParamW is a generic no-op stub -- it never actually shows a
      dialog or drives the dialog proc -- so DAT_0023c108 (the dialog's
      "still open" flag) would never get set and this would always report
      failure. Bypassed outright: this is exactly the kind of OS/GUI-level
@@ -308,15 +308,15 @@ short param_3;
       return 0;
     }
     if ((param_3 == 1) || (param_3 == 2)) {
-      Ordinal_691(param_1);
+      EndDialog(param_1);
       DAT_0023c108 = 0;
     }
     else {
       if (param_3 != 0x3ea) {
         return 0;
       }
-      Ordinal_687(param_1,0x3e9,&DAT_0023bf78,0xb4);
-      Ordinal_691(param_1,0x3ea);
+      GetDlgItemTextW(param_1,0x3e9,&DAT_0023bf78,0xb4);
+      EndDialog(param_1,0x3ea);
       DAT_0023c108 = 1;
     }
   }
@@ -340,8 +340,8 @@ undefined4 param_2;
   ushort local_10;
   ushort local_e;
 
-  Ordinal_25(auStack_1c);
-  Ordinal_1061((local_e + 1) * (local_10 + 1) * (local_12 + 1));
+  GetSystemTime(auStack_1c);
+  ce_srand((local_e + 1) * (local_10 + 1) * (local_12 + 1));
   iVar1 = check_registration_key_saved();
   if ((iVar1 == 0) && (iVar1 = check_registration_key_dialog(param_1,param_2), iVar1 == 0)) {
     return 0;
@@ -355,8 +355,8 @@ undefined4 param_2;
 // it right after init_gameplay_session and shows "Not enough disk space
 // for save game" on failure): builds a path from DAT_0023cca8 plus
 // ensure_save_directory_exists's suffix and queries free space via the GetDiskFreeSpace-
-// shaped Ordinal_184, requiring at least 0x9b0a0 (~635KB) free.
-// Ordinal_184 is stubbed to always report a large local_118 (see
+// shaped GetDiskFreeSpaceExW, requiring at least 0x9b0a0 (~635KB) free.
+// GetDiskFreeSpaceExW is stubbed to always report a large local_118 (see
 // ordinal_stubs.c), so this always reports success in this build.
 undefined4 check_save_disk_space()
 
@@ -382,26 +382,26 @@ undefined4 check_save_disk_space()
     *stack0xffdc3250_ptr = cVar1; stack0xffdc3250_ptr = stack0xffdc3250_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_109 + 1,&DAT_000857a0);
-  iVar3 = Ordinal_1068(acStack_109 + 1);
+  ce_strcat(acStack_109 + 1,&DAT_000857a0);
+  iVar3 = ce_strlen(acStack_109 + 1);
   acStack_109[iVar3] = '\0';
   uVar4 = load_string_resource(acStack_109 + 1);
-  Ordinal_160(uVar4,0);
+  CreateDirectoryW(uVar4,0);
   ensure_save_directory_exists(acStack_109 + 1);
   uVar4 = load_string_resource(acStack_109 + 1);
-  /* local_114 is never actually passed to Ordinal_184 (only auStack_110
+  /* local_114 is never actually passed to GetDiskFreeSpaceExW (only auStack_110
      and &local_118 are) -- in the original 32-bit binary this local
      apparently sat immediately after auStack_110 on the stack and got
      written incidentally by a GetDiskFreeSpace-shaped call writing a
      wider struct than Ghidra's 7-byte auStack_110 array captured. That
      stack-adjacency trick doesn't carry over to this recompile, so
-     local_114 would otherwise be read uninitialized. Ordinal_184 is
+     local_114 would otherwise be read uninitialized. GetDiskFreeSpaceExW is
      implemented to always report success with a large local_118 value
      (see ordinal_stubs.c) -- initialize local_114 to match so the
      always-enough-disk-space intent holds regardless of real stack
      layout. */
   local_114 = 0;
-  iVar3 = Ordinal_184(uVar4,0,auStack_110,&local_118);
+  iVar3 = GetDiskFreeSpaceExW(uVar4,0,auStack_110,&local_118);
   if ((iVar3 == 0) || ((local_114 == 0 && (local_118 < 0x9b0a0)))) {
     uVar4 = 0;
   }

@@ -1662,11 +1662,11 @@ undefined2 * param_3;
   *param_3 = uVar7;
   sVar3 = roll_skill_check(param_2,iVar5);
   if (sVar3 == -1) {
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     if ((int)((*(byte *)(param_1 + 4) & 0x3f) + (int)(short)param_2) < (int)(uVar6 & 0x3f)) {
       return 0xfffffffe;
     }
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     local_20 = -4 - (uVar4 & 7);
   }
   else {
@@ -1674,7 +1674,7 @@ undefined2 * param_3;
       return 1;
     }
     if (sVar3 == 1) {
-      sVar3 = Ordinal_2005(5,(int)(short)param_2);
+      sVar3 = ordint_divmod(5,(int)(short)param_2);
       local_20 = sVar3 + 3;
     }
     else if (sVar3 == 2) {

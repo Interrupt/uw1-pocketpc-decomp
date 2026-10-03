@@ -192,7 +192,7 @@ uint param_1;
   byte abStack_b4 [128];
   byte local_34 [8];
   
-  Ordinal_1047(&DAT_00202c70,0x11,0x12);
+  ce_memset(&DAT_00202c70,0x11,0x12);
   puVar10 = &DAT_00202bf8;
   iVar7 = 5;
   do {
@@ -906,7 +906,7 @@ byte param_7;
   int iVar9;
 
   uVar2 = DAT_00202c6c;
-  Ordinal_1047(local_pos_record, 0, sizeof(local_pos_record));
+  ce_memset(local_pos_record, 0, sizeof(local_pos_record));
   DAT_00202c6c = local_pos_record;
   local_33 = (&DAT_00202c90)[param_1 * 0xd];
   local_34 = (&DAT_00202c91)[param_1 * 0xd] & 7;

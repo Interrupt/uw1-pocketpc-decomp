@@ -114,7 +114,7 @@ static undefined DAT_00087084_backing[8192];
 #define DAT_00087084 DAT_00087084_backing[0]
 /* Was zero-initialized -- see DAT_000857a0's comment above. ensure_save_directory_exists
    appends this to a directory path before scanning it with the
-   Ordinal_167/181 FindFirstFile/FindNextFile-shaped ordinals, matching
+   FindFirstFileW/181 FindFirstFile/FindNextFile-shaped ordinals, matching
    the universal Win32 "\*.*" wildcard idiom for "list everything in this
    directory". */
 static undefined DAT_000870c8_backing[8192] = "\\*.*";
@@ -237,7 +237,7 @@ undefined4 journey_onward_load_slot_menu()
   char local_92 [122];
   
   decrement_cursor_hide_depth();
-  Ordinal_1047(acStack_1c0,0,0x104);
+  ce_memset(acStack_1c0,0,0x104);
   pcVar9 = &DAT_0023cca8;
     stack0xffdc3198_ptr = stack0xffdc3198_buf;
   pcVar3 = pcVar9;
@@ -247,7 +247,7 @@ undefined4 journey_onward_load_slot_menu()
     *stack0xffdc3198_ptr = cVar1; stack0xffdc3198_ptr = stack0xffdc3198_ptr + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
+  ce_strcat(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
   blit_fullscreen_bitmap_file(0xffffffff,acStack_1c0,1);
   cursor_show_idle_tick();
   probe_save_slots(acStack_b8,local_1d8);
@@ -297,13 +297,13 @@ undefined4 journey_onward_load_slot_menu()
       } while (sVar6 != sVar2);
     }
     decrement_cursor_hide_depth();
-    Ordinal_1047(acStack_1c0,0,0x104);
+    ce_memset(acStack_1c0,0,0x104);
     do {
       cVar1 = *pcVar9;
       *stack0xffdc3198_ptr = cVar1; stack0xffdc3198_ptr = stack0xffdc3198_ptr + 1;
       pcVar9 = pcVar9 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
+    ce_strcat(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
     blit_fullscreen_bitmap_file(0xffffffff,acStack_1c0,1);
     /* Was `uVar5 = get_message_string(0x301);` -- get_message_string returns a real
        char*, but uVar5 is this function's own `undefined4` 0/1/-1
@@ -405,9 +405,9 @@ ushort * param_2;
     *stack0xffdc3230_ptr = cVar1; stack0xffdc3230_ptr = stack0xffdc3230_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_128,&DAT_000857a0);
-  puVar3 = (undefined1 *)Ordinal_1064(acStack_128,0x30);
-  Ordinal_1063(acStack_128,&DAT_00087030);
+  ce_strcat(acStack_128,&DAT_000857a0);
+  puVar3 = (undefined1 *)ce_strchr(acStack_128,0x30);
+  ce_strcat(acStack_128,&DAT_00087030);
   *param_2 = 0;
   uVar5 = 0;
   do {
@@ -435,10 +435,10 @@ ushort * param_2;
          to be here. Dropped from this decompile; without it a save
          slot's button label ran into garbage bytes following its real
          description. */
-      Ordinal_1047(uVar5 * 0x28 + param_1,0x20,0x28);
+      ce_memset(uVar5 * 0x28 + param_1,0x20,0x28);
       read_file_handle(iVar4,uVar5 * 0x28 + param_1,0x27);
       *param_2 = *param_2 | (ushort)(1 << (uVar5 & 0xff));
-      Ordinal_553(iVar4);
+      CloseHandle(iVar4);
     }
     if (((int)(short)*param_2 & 1 << (uVar5 & 0xff)) == 0) {
       pcVar2 = s__not_used_yet__00087020;
@@ -513,7 +513,7 @@ char param_1;
     *wptr_50330 = cVar1; wptr_50330 = wptr_50330 + 1;
     pcVar6 = pcVar6 + 1;
   } while (cVar1 != '\0');
-  pcVar6 = (char *)Ordinal_1064(acStack_650,0x30);
+  pcVar6 = (char *)ce_strchr(acStack_650,0x30);
   pcVar5 = &DAT_0023cca8;
     stack0xffdc2e30_ptr = stack0xffdc2e30_buf;
   /* Same DAT_000857a0-is-unrecoverable NULL risk as probe_save_slots above
@@ -530,9 +530,9 @@ char param_1;
     *stack0xffdc2d28_ptr = cVar1; stack0xffdc2d28_ptr = stack0xffdc2d28_ptr + 1;
     pcVar6 = pcVar6 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_630,&DAT_000857a0);
+  ce_strcat(acStack_630,&DAT_000857a0);
   uVar3 = load_string_resource(acStack_630);
-  Ordinal_61(auStack_420,uVar3);
+  ce_wcscpy(auStack_420,uVar3);
   /* Was `stack0xffdc2e30_ptr = stack0xffdc2e30_buf;` above -- a stack
      slot Ghidra split into two names (same bug class as the acStack_650
      fix above), so this copy of DAT_0023cca8 landed in a buffer
@@ -551,9 +551,9 @@ char param_1;
     *stack0xffdc2e30_ptr = cVar1; stack0xffdc2e30_ptr = stack0xffdc2e30_ptr + 1;
     pcVar5 = pcVar5 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_528,acStack_650);
+  ce_strcat(acStack_528,acStack_650);
   uVar3 = load_string_resource(acStack_528);
-  Ordinal_61(auStack_218,uVar3);
+  ce_wcscpy(auStack_218,uVar3);
   print_scroll_message_by_id(0xa6);
   iVar4 = ensure_save_directory_exists(acStack_630);
   if (iVar4 != 0) {
@@ -626,7 +626,7 @@ char param_1;
    this function's own prologue drops the pointer's upper 32 bits the
    moment it's read out of the argument register, leaving every later
    dereference (message_scroll_print_wrapped, the scroll_text_entry_prompt name-entry
-   call, the strlen/Ordinal_1063 calls near the end) a wild pointer --
+   call, the strlen/ce_strcat calls near the end) a wild pointer --
    confirmed crash: "Enter a save/load name" renders fine (that prompt
    is a static string, not this buffer), but touching the corrupted
    buffer once you start typing segfaults. Same bug class as
@@ -643,7 +643,7 @@ char *param_2;
   char *pcVar3;
   int iVar4;
   /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating
-     load_string_resource's (and Ordinal_1063's) real pointer -- same
+     load_string_resource's (and ce_strcat's) real pointer -- same
      class as load_string_resource's own fix. */
   char *uVar5;
   char *pcVar6;
@@ -664,8 +664,8 @@ char *param_2;
     *stack0xffdc2e28_ptr = cVar1; stack0xffdc2e28_ptr = stack0xffdc2e28_ptr + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(local_530,&DAT_000857a0);
-  pcVar3 = (char *)Ordinal_1064(local_530,0x30);
+  ce_strcat(local_530,&DAT_000857a0);
+  pcVar3 = (char *)ce_strchr(local_530,0x30);
   /* Same DAT_000857a0-is-unrecoverable NULL risk as probe_save_slots above. */
   if (pcVar3 != (char *)0x0) {
   *pcVar3 = param_1 + '0';
@@ -690,19 +690,19 @@ char *param_2;
       local_638[iVar4] = *pcVar6;
       iVar4 = iVar4 + 1;
     } while (*pcVar6 != '\0');
-    uVar5 = Ordinal_1063(local_638,s__PLAYER_DAT_00087088);
+    uVar5 = ce_strcat(local_638,s__PLAYER_DAT_00087088);
     iVar4 = win_file_exists(local_638,0);
     if (iVar4 == -1) {
       load_string_resource(local_530);
-      Ordinal_161();
+      RemoveDirectoryW();
       uVar5 = load_string_resource(local_530);
-      iVar4 = Ordinal_160(uVar5,0);
+      iVar4 = CreateDirectoryW(uVar5,0);
       if (iVar4 < 0) goto LAB_0006c540;
     }
-    Ordinal_1063(local_530,&DAT_00087084);
+    ce_strcat(local_530,&DAT_00087084);
     iVar4 = ensure_save_directory_exists(local_530);
     if (iVar4 != 0) {
-      Ordinal_1047(local_638,0,0x104);
+      ce_memset(local_638,0,0x104);
       pcVar6 = pcVar8;
     stack0xffdc2d20_ptr = local_638;
       do {
@@ -710,19 +710,19 @@ char *param_2;
         *stack0xffdc2d20_ptr = cVar1; stack0xffdc2d20_ptr = stack0xffdc2d20_ptr + 1;
         pcVar6 = pcVar6 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(local_638,s__SAVE0_desc_00087078);
-      uVar7 = Ordinal_1068(param_2);
+      ce_strcat(local_638,s__SAVE0_desc_00087078);
+      uVar7 = ce_strlen(param_2);
       iVar4 = write_buffer_to_file(param_2,local_638,(uVar7 & 0xffff) + 1);
       if (iVar4 != 0) {
         pcVar3[2] = '\0';
         print_scroll_message_by_id(0xaa);
-        Ordinal_1047(local_638,0,0x104);
+        ce_memset(local_638,0,0x104);
         do {
           cVar1 = *pcVar8;
           *stack0xffdc2d20_ptr = cVar1; stack0xffdc2d20_ptr = stack0xffdc2d20_ptr + 1;
           pcVar8 = pcVar8 + 1;
         } while (cVar1 != '\0');
-        Ordinal_1063(local_638,&DAT_000857a0);
+        ce_strcat(local_638,&DAT_000857a0);
         iVar4 = write_player_save_record(local_638);
         if (iVar4 != 0) {
           print_scroll_message_by_id(0xaa);
@@ -730,9 +730,9 @@ char *param_2;
           if (iVar4 != 0) {
             print_scroll_message_by_id(0xaa);
             uVar5 = load_string_resource(local_530);
-            Ordinal_61(auStack_428,uVar5);
+            ce_wcscpy(auStack_428,uVar5);
             uVar5 = load_string_resource(local_638);
-            Ordinal_61(auStack_220,uVar5);
+            ce_wcscpy(auStack_220,uVar5);
             /* Was copy_save_slot_files(local_638,local_530) -- i.e.
                (dest="\SAVE0", src="\SAVEn"), copying the CHOSEN SLOT
                back onto the active session. That's backwards for this
@@ -775,7 +775,7 @@ LAB_0006c544:
 // was FUN_00015870
 /* param_2 was dropped entirely -- declared with only 1 parameter but
    every caller passes 2 (the filename to open, e.g.
-   s__SAVE0_lev_ark_000842fc). `Ordinal_1063(local_120);` (a strcat-
+   s__SAVE0_lev_ark_000842fc). `ce_strcat(local_120);` (a strcat-
    shaped Ordinal used with an explicit 2-arg form everywhere else in
    this file) was being called with just 1 visible argument, relying on
    whatever the compiler happened to leave in the dropped argument's
@@ -807,7 +807,7 @@ char * param_2;
   uint uVar7;
   bool bVar8;
   /* Was reusing `iVar3` (an int, otherwise a loop counter / file handle
-     elsewhere in this function) to also hold Ordinal_1407's (strrchr)
+     elsewhere in this function) to also hold ce_strrchr's (strrchr)
      return -- harmless while that ordinal was a dead `return 0;` stub
      (see its own comment: fixed for real this session), but now that it
      returns a genuine 64-bit pointer into local_228, storing it in an
@@ -834,14 +834,14 @@ char * param_2;
     local_228[iVar3] = *pcVar2;
     iVar3 = iVar3 + 1;
   } while (*pcVar2 != '\0');
-  pLastSlash = (char *)Ordinal_1407(local_228,0x5c);
+  pLastSlash = (char *)ce_strrchr(local_228,0x5c);
   if (pLastSlash == 0) {
     local_228[0] = '\0';
   }
   else {
     pLastSlash[1] = 0;
   }
-  Ordinal_1063(local_228,s__arc_tmp_000842b4);
+  ce_strcat(local_228,s__arc_tmp_000842b4);
   /* Was `open_existing_file_rw_alt(local_120)` -- opens read-only (uw_file_open_read).
      This handle (*param_1 in every downstream caller) is later WRITTEN
      to directly by write_archive_entry (the archive-entry byte-write a level
@@ -892,7 +892,7 @@ char * param_2;
       (&DAT_000b98b8)[iVar3] = cVar1;
       iVar3 = iVar3 + 1;
     } while (cVar1 != '\0');
-    iVar3 = Ordinal_1068(local_120);
+    iVar3 = ce_strlen(local_120);
     pcVar2 = local_228;
     do {
       cVar1 = *pcVar2;
@@ -928,9 +928,9 @@ undefined4 * param_1;
     iVar4 = write_file_handle(*param_1,&DAT_000b78b8,(uVar2 & 0x3fff) << 2);
     bVar6 = iVar3 == 2 && iVar4 == (uVar2 & 0x3fff) * 4;
   }
-  iVar4 = Ordinal_553(*param_1);
-  Ordinal_553(CONCAT13(*(undefined1 *)((char *)param_1 + 7),*(undefined3 *)(param_1 + 1)));
-  iVar3 = Ordinal_1068(&DAT_000b98b8);
+  iVar4 = CloseHandle(*param_1);
+  CloseHandle(CONCAT13(*(undefined1 *)((char *)param_1 + 7),*(undefined3 *)(param_1 + 1)));
+  iVar3 = ce_strlen(&DAT_000b98b8);
   pcVar5 = &DAT_000b98b9 + iVar3;
   iVar3 = -(int)pcVar5;
   do {
@@ -954,9 +954,9 @@ uint param_2;
 /* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live
    object arena) pointer write_level_tilemap_to_archive passes in as the source buffer for
    the archive-entry write. Harmless while every actual write attempt
-   through it failed anyway for other reasons (Ordinal_1407 stub,
+   through it failed anyway for other reasons (ce_strrchr stub,
    read-only archive handle -- both fixed, see open_level_archive's and
-   Ordinal_1407's own comments); with those fixed this is the last thing
+   ce_strrchr's own comments); with those fixed this is the last thing
    standing between a save and actually writing anything: fwrite() on
    the truncated (now only-32-bit, so on a 64-bit host a wild/unmapped)
    pointer fails with EFAULT, confirmed via a UW_DEBUG_INPUTEVENT trace
@@ -1067,7 +1067,7 @@ uint param_4;
         *wptr_4897 = cVar1; wptr_4897 = wptr_4897 + 1;
         pcVar14 = pcVar14 + 1;
       } while (cVar1 != '\0');
-      iVar8 = Ordinal_1068(&DAT_000b98b8);
+      iVar8 = ce_strlen(&DAT_000b98b8);
       pcVar14 = &DAT_000b98b9 + iVar8;
       iVar8 = -(int)pcVar14;
       do {
@@ -1081,20 +1081,20 @@ uint param_4;
         acStack_129[iVar8 + 1] = cVar1;
         iVar8 = iVar8 + 1;
       } while (cVar1 != '\0');
-      iVar8 = Ordinal_1068(local_338);
+      iVar8 = ce_strlen(local_338);
       acStack_129[iVar8] = '_';
-      Ordinal_553(*param_1);
-      Ordinal_553(param_1[1]);
+      CloseHandle(*param_1);
+      CloseHandle(param_1[1]);
       close_file_handle(acStack_230);
       uVar4 = open_file_for_read(local_338);
       uVar9 = open_existing_file_rw(acStack_230);
-      uVar10 = Ordinal_172(uVar4,0);
-      uVar11 = Ordinal_1041();
+      uVar10 = GetFileSize(uVar4,0);
+      uVar11 = ce_malloc();
       read_file_handle(uVar4,uVar11,uVar10);
       write_file_handle(uVar9,uVar11,uVar10);
-      Ordinal_1018(uVar11);
-      Ordinal_553(uVar4);
-      Ordinal_553(uVar9);
+      LocalFree(uVar11);
+      CloseHandle(uVar4);
+      CloseHandle(uVar9);
       close_file_handle(local_338);
       uVar4 = open_existing_file_rw_alt(acStack_230);
       *(char *)param_1 = (char)uVar4;
@@ -1207,7 +1207,7 @@ uint param_2;
     iVar5 = (param_2 & 0xffff) * 4 + 2;
     iVar3 = seek_file_handle(iVar2,iVar5,0);
     iVar4 = read_file_handle(iVar2,&local_14,4);
-    iVar2 = Ordinal_553(iVar2);
+    iVar2 = CloseHandle(iVar2);
     if ((iVar3 == iVar5 && iVar4 == 4) && iVar2 != 0) {
       if (local_14 == 0) {
         sVar1 = 0;
@@ -1392,10 +1392,10 @@ undefined4 param_2;
 
 
 // was ensure_save_directory_exists -- ensures the save-game directory exists: scans it
-// via the Ordinal_167/181 FindFirstFile/FindNextFile-shaped ordinals
+// via the FindFirstFileW/181 FindFirstFile/FindNextFile-shaped ordinals
 // (appending DAT_000870c8's "\*.*" wildcard) and, if that scan finds
 // nothing (directory missing or empty), strips the wildcard back off
-// and creates it via Ordinal_165 (CreateDirectory-shaped).
+// and creates it via create_directory_path (CreateDirectory-shaped).
 undefined4 ensure_save_directory_exists(param_1)
 char * param_1;
 
@@ -1404,7 +1404,7 @@ char * param_1;
   short sVar2;
   int iVar3;
   char *uVar4;  /* was undefined4 -- truncated the real load_string_resource()
-                   pointer to 32 bits, which Ordinal_167 now actually
+                   pointer to 32 bits, which FindFirstFileW now actually
                    dereferences (used to be a harmless no-op stub) */
   int iVar5;
   char *pcVar6;
@@ -1423,14 +1423,14 @@ char * param_1;
     param_1[(int)(acStack_348 + iVar3)] = cVar1;
     param_1 = param_1 + 1;
   } while (cVar1 != '\0');
-  iVar3 = Ordinal_1068(acStack_348);
-  Ordinal_1063(acStack_348,&DAT_000870c8);
+  iVar3 = ce_strlen(acStack_348);
+  ce_strcat(acStack_348,&DAT_000870c8);
   uVar4 = load_string_resource(acStack_348);
-  iVar5 = Ordinal_167(uVar4,local_240);
+  iVar5 = FindFirstFileW(uVar4,local_240);
   bVar10 = iVar5 == -1;
   while (!bVar10) {
     if (local_240[0] != 0x10) goto LAB_0006c5f8;
-    iVar7 = Ordinal_181(iVar5,local_240);
+    iVar7 = FindNextFileW(iVar5,local_240);
     bVar10 = iVar7 == 0;
   }
   bVar9 = false;
@@ -1440,16 +1440,16 @@ LAB_0006c5f8:
        `load_string_resource_large(auStack_218)` each pass -- auStack_218 is never
        written anywhere in this function, so that read uninitialized
        stack memory as a string, and the loop's own exit condition
-       (`Ordinal_181` against `iVar5`, a handle already exhausted by the
+       (`FindNextFileW` against `iVar5`, a handle already exhausted by the
        while-loop above) meant it could only ever run once anyway even if
        that read were meaningful. Simplified to the one real step this
        was trying to do: undo the "\*.*" suffix appended above (acStack_348
        was NUL-terminated at its original length `iVar3` before the
-       suffix) and create that plain directory. Also fixes `Ordinal_165()`
+       suffix) and create that plain directory. Also fixes `create_directory_path()`
        being called with no arguments -- every other CreateDirectory-shaped
        call in this file takes the path it's creating. */
     acStack_348[iVar3] = '\0';
-    iVar7 = Ordinal_165(acStack_348);
+    iVar7 = create_directory_path(acStack_348);
     if (iVar7 == 0) {
       return 0;
     }
@@ -1463,9 +1463,9 @@ LAB_0006c5f8:
 
 
 /* Was a generic "copy every file matching dest\*.* " directory-copy
-   using CopyFileW/FindFirstFileW/FindNextFileW (Ordinal_164/167/181) via
-   wide-string paths built through Ordinal_58/61/63 -- all six of those
-   are still no-op stubs (Ordinal_167/181 real enough now for
+   using CopyFileW/FindFirstFileW/FindNextFileW (CopyFileW/167/181) via
+   wide-string paths built through ce_wcscat/61/63 -- all six of those
+   are still no-op stubs (FindFirstFileW/181 real enough now for
    ensure_save_directory_exists's own narrower directory-exists-or-create use, but not
    real filename enumeration), so this always silently copied nothing.
    Same situation the existing \SAVE0\lev.ark new-game seed already hit
@@ -1580,7 +1580,7 @@ ushort param_3;
   else {
     uVar2 = write_file_handle(iVar1,param_1,param_3);
     bVar3 = uVar2 == param_3;
-    Ordinal_553(iVar1);
+    CloseHandle(iVar1);
   }
   return bVar3;
 }
@@ -1663,7 +1663,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   close_panels_before_level_change();
-  if ((g_save_record_buffer == 0) && (g_save_record_buffer = Ordinal_1041(0x4000), g_save_record_buffer == 0)) {
+  if ((g_save_record_buffer == 0) && (g_save_record_buffer = ce_malloc(0x4000), g_save_record_buffer == 0)) {
     return 0;
   }
   if (param_1 != 0) {
@@ -1674,8 +1674,8 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
       *stack0xffdc3234_ptr = cVar1; stack0xffdc3234_ptr = stack0xffdc3234_ptr + 1;
       pcVar2 = pcVar2 + 1;
     } while (cVar1 != '\0');
-    Ordinal_1063(acStack_124,param_1);
-    Ordinal_1063(acStack_124,s_player_dat_00085a74);
+    ce_strcat(acStack_124,param_1);
+    ce_strcat(acStack_124,s_player_dat_00085a74);
     iVar3 = open_file_for_read(acStack_124);
     if (iVar3 == -1) {
       uVar4 = 0;
@@ -1689,14 +1689,14 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     read_player_status_block(iVar3);
     read_file_handle(iVar3,&g_save_record_count,2);
     read_file_handle(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
-    Ordinal_553(iVar3);
+    CloseHandle(iVar3);
     reload_paperdoll_body_sprite();
   }
   restore_player_save_record(g_save_record_buffer);
   refresh_player_equipment_effects();
 LAB_00044730:
   if (g_save_record_buffer != 0) {
-    Ordinal_1018();
+    LocalFree();
     g_save_record_buffer = 0;
   }
   if ((param_1 != 0) && (-1 < DAT_00202080)) {
@@ -1800,7 +1800,7 @@ int param_2;
      (stack-protector enabled) that finally tripped `__stack_chk_fail`
      and aborted -- confirmed via lldb, never hit before because nothing
      reached this function successfully until the write-path bugs above
-     it (Ordinal_1407, open_level_archive's read-only handle,
+     it (ce_strrchr, open_level_archive's read-only handle,
      write_archive_entry/scheduler_save's own pointer-truncation and fabricated-
      return-0 bugs) were fixed. One properly-sized buffer instead. */
   undefined2 local_8c [64];

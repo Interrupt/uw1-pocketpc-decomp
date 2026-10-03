@@ -27,7 +27,7 @@ unsigned int param_1;
      6 entries opened and read its header fine, then failed right at the
      allocate-a-destination-buffer step. Real allocator like its
      siblings. */
-  return Ordinal_1041(param_1);
+  return ce_malloc(param_1);
 }
 
 

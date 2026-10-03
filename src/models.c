@@ -12,7 +12,7 @@
 #include <string.h>
 
 /* Widened from 32768: load_3d_object_models does
-   `Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
+   `ce_memmove(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
    memmove, confirmed by ASAN global-buffer-overflow), matching
    DAT_00189590's own size (985856, an earlier widening pass already
    caught the destination but missed this source). */
@@ -159,7 +159,7 @@ static char s_Error__extended_color_for_part___00084768[] = "Error:_extended_col
 /* Was "%lx%1s" -- correct as recovered from the original 32-bit binary,
    where 'long' and 'int' are both 4 bytes, matching the destination
    (parse_e_model_file's `int local_208;`). On this 64-bit host 'long' is 8
-   bytes, so vfscanf wrote a full 8-byte value through Ordinal_1114 into
+   bytes, so vfscanf wrote a full 8-byte value through ce_fscanf into
    that 4-byte stack slot -- a real stack-buffer-overflow (confirmed via
    ASAN), not a truncation-in-the-other-direction case like most of this
    file's other pointer/int-width bugs. Fixed by dropping the 'l' length
@@ -226,7 +226,7 @@ static char s_error___s__c_000849b8[] = "error:_%s,%c";
    the game's text script parser (parse_e_model_file) brackets every model with
    a BEGIN...END pair (see s_BEGIN_00084a14/s_Input_file_error...), and
    this is the only unresolved string used as the closing-token
-   comparison (Ordinal_1065(token,&DAT_000849c8) / Ordinal_1070 with
+   comparison (ce_strcmp(token,&DAT_000849c8) / ce_strncmp with
    length 3 for a truncated-token EOF check) right where a real file's
    content literally ends with the line "END". Leaving it empty meant
    "END" never matched, so every model's parse fell through to the
@@ -1055,7 +1055,7 @@ short frame_or_texid;
         bVar8 = (bVar5 >> 5) + 1;
         if ((*(byte *)(obj + 1) >> 1 & 0xf) < bVar8) {
           DAT_0023b834 = 2;
-          Ordinal_2005(bVar8,*(byte *)(obj + 1) >> 1 & 0xf);
+          ordint_divmod(bVar8,*(byte *)(obj + 1) >> 1 & 0xf);
           /* real ARM idivmod leaves the remainder in r1 (Ghidra's extraout_r1) */
           extraout_r1 = (short)((*(byte *)(obj + 1) >> 1 & 0xf) % bVar8);
           uVar21 = (uint)DAT_00202734;
@@ -1098,7 +1098,7 @@ short frame_or_texid;
       else {
         cVar9 = (bVar5 >> 5) + 1;
         if (cVar9 != '\0') {
-          Ordinal_2005(cVar9,*(byte *)(obj + 1) >> 1 & 0xf);
+          ordint_divmod(cVar9,*(byte *)(obj + 1) >> 1 & 0xf);
           extraout_r1_00 = (short)((*(byte *)(obj + 1) >> 1 & 0xf) % (unsigned char)cVar9);
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1_00 + (uint)DAT_00202734 + 0x10;
           if (getenv("UW_DEBUG_DOOR"))
@@ -1394,11 +1394,11 @@ short frame_or_texid;
         do {
           iVar27 = (int)(short)DAT_0023b91c;
           iVar30 = *(int *)(_anim + 0xc14 + ((int)local_58 + local_60) * 4 + 4);
-          uVar17 = Ordinal_2032(iVar27);
-          uVar17 = Ordinal_2051(*(undefined4 *)(iVar30 * 0xc + _anim + 0xc),uVar17);
-          iVar18 = Ordinal_2036(uVar17,0x44800000);
+          uVar17 = ordfloat_int_to_float2(iVar27);
+          uVar17 = ordfloat_add(*(undefined4 *)(iVar30 * 0xc + _anim + 0xc),uVar17);
+          iVar18 = ordfloat_gt(uVar17,0x44800000);
           if (iVar18 != 0) {
-            uVar17 = Ordinal_2032(0x400 - iVar27);
+            uVar17 = ordfloat_int_to_float2(0x400 - iVar27);
             puVar24 = (undefined1 *)((iVar30 + 1) * 0xc + _anim);
             *puVar24 = (char)uVar17;
             puVar24[1] = (char)((uint)uVar17 >> 8);
@@ -1408,22 +1408,22 @@ short frame_or_texid;
           local_60 = (local_60 + 1) * 0x10000 >> 0x10;
         } while (local_60 < 4);
         _vptr = *(int *)(_face_rec + 8) * 0xc + _anim;
-        uVar17 = Ordinal_2032(iVar2 + -1);
+        uVar17 = ordfloat_int_to_float2(iVar2 + -1);
         puVar26 = (undefined4 *)(_anim + 0x3c1c);
-        uVar19 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar19 = Ordinal_2026(uVar19,0x3b800000);
-        Ordinal_2026(uVar19,uVar17);
-        uVar19 = Ordinal_2020();
+        uVar19 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar19 = ordfloat_mul(uVar19,0x3b800000);
+        ordfloat_mul(uVar19,uVar17);
+        uVar19 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x24) = (char)uVar19;
         *(char *)(_face_rec + 0x25) = (char)((uint)uVar19 >> 8);
         *(char *)(_face_rec + 0x26) = (char)((uint)uVar19 >> 0x10);
         *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
-        uVar19 = Ordinal_2032(iVar3 + -1);
+        uVar19 = ordfloat_int_to_float2(iVar3 + -1);
         puVar28 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar20 = Ordinal_2026(uVar20,0x3b800000);
-        Ordinal_2026(uVar20,uVar19);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = ordfloat_mul(uVar20,0x3b800000);
+        ordfloat_mul(uVar20,uVar19);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x28) = (char)uVar20;
         *(char *)(_face_rec + 0x29) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2a) = (char)((uint)uVar20 >> 0x10);
@@ -1432,18 +1432,18 @@ short frame_or_texid;
                           CONCAT12(*(undefined1 *)(_face_rec + 6),
                                    CONCAT11(*(undefined1 *)(_face_rec + 5),*(undefined1 *)(_face_rec + 4))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar20 = Ordinal_2026(uVar20,0x3b800000);
-        Ordinal_2026(uVar20,uVar17);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar20 = ordfloat_mul(uVar20,0x3b800000);
+        ordfloat_mul(uVar20,uVar17);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x2c) = (char)uVar20;
         *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar20 = Ordinal_2026(uVar20,0x3b800000);
-        Ordinal_2026(uVar20,uVar19);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = ordfloat_mul(uVar20,0x3b800000);
+        ordfloat_mul(uVar20,uVar19);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x30) = (char)uVar20;
         *(char *)(_face_rec + 0x31) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x32) = (char)((uint)uVar20 >> 0x10);
@@ -1452,18 +1452,18 @@ short frame_or_texid;
                           CONCAT12(*(undefined1 *)(_face_rec + 0x12),
                                    CONCAT11(*(undefined1 *)(_face_rec + 0x11),
                                             *(undefined1 *)(_face_rec + 0x10)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar20 = Ordinal_2026(uVar20,0x3b800000);
-        Ordinal_2026(uVar20,uVar17);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar20 = ordfloat_mul(uVar20,0x3b800000);
+        ordfloat_mul(uVar20,uVar17);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x34) = (char)uVar20;
         *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar20 = Ordinal_2026(uVar20,0x3b800000);
-        Ordinal_2026(uVar20,uVar19);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = ordfloat_mul(uVar20,0x3b800000);
+        ordfloat_mul(uVar20,uVar19);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x38) = (char)uVar20;
         *(char *)(_face_rec + 0x39) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x3a) = (char)((uint)uVar20 >> 0x10);
@@ -1472,39 +1472,39 @@ short frame_or_texid;
                           CONCAT12(*(undefined1 *)(_face_rec + 0xe),
                                    CONCAT11(*(undefined1 *)(_face_rec + 0xd),
                                             *(undefined1 *)(_face_rec + 0xc)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar20 = Ordinal_2026(uVar20,0x3b800000);
-        Ordinal_2026(uVar20,uVar17);
-        uVar17 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar20 = ordfloat_mul(uVar20,0x3b800000);
+        ordfloat_mul(uVar20,uVar17);
+        uVar17 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x3c) = (char)uVar17;
         *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
         *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
         *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar17 = Ordinal_2026(uVar17,0x3b800000);
-        Ordinal_2026(uVar17,uVar19);
-        uVar17 = Ordinal_2020();
+        uVar17 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar17 = ordfloat_mul(uVar17,0x3b800000);
+        ordfloat_mul(uVar17,uVar19);
+        uVar17 = ordfloat_uint_to_float();
       }
       else if (((catalog_u == 0xe) || (catalog_u == 0xf)) || (catalog_u == 0x13)) {
         _vptr = *(int *)(_face_rec + 0xc) * 0xc + _anim;
-        uVar17 = Ordinal_2032(iVar2 + -1);
+        uVar17 = ordfloat_int_to_float2(iVar2 + -1);
         puVar26 = (undefined4 *)(_anim + 0x3c1c);
-        uVar19 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar19 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
         puVar28 = (undefined4 *)(_anim + 0x3c20);
-        uVar19 = Ordinal_2047(uVar19,*puVar28);
-        Ordinal_2026(uVar19,uVar17);
-        uVar19 = Ordinal_2020();
+        uVar19 = ordfloat_div(uVar19,*puVar28);
+        ordfloat_mul(uVar19,uVar17);
+        uVar19 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x24) = (char)uVar19;
         *(char *)(_face_rec + 0x25) = (char)((uint)uVar19 >> 8);
         *(char *)(_face_rec + 0x26) = (char)((uint)uVar19 >> 0x10);
         *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
-        uVar19 = Ordinal_2032(iVar3 + -1);
+        uVar19 = ordfloat_int_to_float2(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
-        uVar20 = Ordinal_2047(uVar20,_vext_bits);
-        Ordinal_2026(uVar20,uVar19);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_div(uVar20,_vext_bits);
+        ordfloat_mul(uVar20,uVar19);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x28) = (char)uVar20;
         *(char *)(_face_rec + 0x29) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2a) = (char)((uint)uVar20 >> 0x10);
@@ -1513,18 +1513,18 @@ short frame_or_texid;
                           CONCAT12(*(undefined1 *)(_face_rec + 0x12),
                                    CONCAT11(*(undefined1 *)(_face_rec + 0x11),
                                             *(undefined1 *)(_face_rec + 0x10)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar20 = Ordinal_2047(uVar20,*puVar28);
-        Ordinal_2026(uVar20,uVar17);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar20 = ordfloat_div(uVar20,*puVar28);
+        ordfloat_mul(uVar20,uVar17);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x2c) = (char)uVar20;
         *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar20 = Ordinal_2047(uVar20,_vext_bits);
-        Ordinal_2026(uVar20,uVar19);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = ordfloat_div(uVar20,_vext_bits);
+        ordfloat_mul(uVar20,uVar19);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x30) = (char)uVar20;
         *(char *)(_face_rec + 0x31) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x32) = (char)((uint)uVar20 >> 0x10);
@@ -1533,18 +1533,18 @@ short frame_or_texid;
                           CONCAT12(*(undefined1 *)(_face_rec + 6),
                                    CONCAT11(*(undefined1 *)(_face_rec + 5),*(undefined1 *)(_face_rec + 4))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar20 = Ordinal_2047(uVar20,*puVar28);
-        Ordinal_2026(uVar20,uVar17);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar20 = ordfloat_div(uVar20,*puVar28);
+        ordfloat_mul(uVar20,uVar17);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x34) = (char)uVar20;
         *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar20 = Ordinal_2047(uVar20,_vext_bits);
-        Ordinal_2026(uVar20,uVar19);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = ordfloat_div(uVar20,_vext_bits);
+        ordfloat_mul(uVar20,uVar19);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x38) = (char)uVar20;
         *(char *)(_face_rec + 0x39) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x3a) = (char)((uint)uVar20 >> 0x10);
@@ -1553,39 +1553,39 @@ short frame_or_texid;
                           CONCAT12(*(undefined1 *)(_face_rec + 10),
                                    CONCAT11(*(undefined1 *)(_face_rec + 9),*(undefined1 *)(_face_rec + 8))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar20 = Ordinal_2047(uVar20,*puVar28);
-        Ordinal_2026(uVar20,uVar17);
-        uVar17 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar20 = ordfloat_div(uVar20,*puVar28);
+        ordfloat_mul(uVar20,uVar17);
+        uVar17 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x3c) = (char)uVar17;
         *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
         *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
         *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar17 = Ordinal_2047(uVar17,_vext_bits);
-        Ordinal_2026(uVar17,uVar19);
-        uVar17 = Ordinal_2020();
+        uVar17 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar17 = ordfloat_div(uVar17,_vext_bits);
+        ordfloat_mul(uVar17,uVar19);
+        uVar17 = ordfloat_uint_to_float();
       }
       else {
         _vptr = *(int *)(_face_rec + 8) * 0xc + _anim;
-        uVar17 = Ordinal_2032(iVar2 + -1);
+        uVar17 = ordfloat_int_to_float2(iVar2 + -1);
         puVar26 = (undefined4 *)(_anim + 0x3c1c);
-        uVar19 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar19 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
         puVar28 = (undefined4 *)(_anim + 0x3c20);
-        uVar19 = Ordinal_2047(uVar19,*puVar28);
-        Ordinal_2026(uVar19,uVar17);
-        uVar19 = Ordinal_2020();
+        uVar19 = ordfloat_div(uVar19,*puVar28);
+        ordfloat_mul(uVar19,uVar17);
+        uVar19 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x24) = (char)uVar19;
         *(char *)(_face_rec + 0x25) = (char)((uint)uVar19 >> 8);
         *(char *)(_face_rec + 0x26) = (char)((uint)uVar19 >> 0x10);
         *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
-        uVar19 = Ordinal_2032(iVar3 + -1);
+        uVar19 = ordfloat_int_to_float2(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
-        uVar20 = Ordinal_2047(uVar20,_vext_bits);
-        Ordinal_2026(uVar20,uVar19);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_div(uVar20,_vext_bits);
+        ordfloat_mul(uVar20,uVar19);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x28) = (char)uVar20;
         *(char *)(_face_rec + 0x29) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2a) = (char)((uint)uVar20 >> 0x10);
@@ -1594,18 +1594,18 @@ short frame_or_texid;
                           CONCAT12(*(undefined1 *)(_face_rec + 6),
                                    CONCAT11(*(undefined1 *)(_face_rec + 5),*(undefined1 *)(_face_rec + 4))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar20 = Ordinal_2047(uVar20,*puVar28);
-        Ordinal_2026(uVar20,uVar17);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar20 = ordfloat_div(uVar20,*puVar28);
+        ordfloat_mul(uVar20,uVar17);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x2c) = (char)uVar20;
         *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar20 = Ordinal_2047(uVar20,_vext_bits);
-        Ordinal_2026(uVar20,uVar19);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = ordfloat_div(uVar20,_vext_bits);
+        ordfloat_mul(uVar20,uVar19);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x30) = (char)uVar20;
         *(char *)(_face_rec + 0x31) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x32) = (char)((uint)uVar20 >> 0x10);
@@ -1614,18 +1614,18 @@ short frame_or_texid;
                           CONCAT12(*(undefined1 *)(_face_rec + 0x12),
                                    CONCAT11(*(undefined1 *)(_face_rec + 0x11),
                                             *(undefined1 *)(_face_rec + 0x10)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar20 = Ordinal_2047(uVar20,*puVar28);
-        Ordinal_2026(uVar20,uVar17);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar20 = ordfloat_div(uVar20,*puVar28);
+        ordfloat_mul(uVar20,uVar17);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x34) = (char)uVar20;
         *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar20 = Ordinal_2047(uVar20,_vext_bits);
-        Ordinal_2026(uVar20,uVar19);
-        uVar20 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = ordfloat_div(uVar20,_vext_bits);
+        ordfloat_mul(uVar20,uVar19);
+        uVar20 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x38) = (char)uVar20;
         *(char *)(_face_rec + 0x39) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x3a) = (char)((uint)uVar20 >> 0x10);
@@ -1634,18 +1634,18 @@ short frame_or_texid;
                           CONCAT12(*(undefined1 *)(_face_rec + 0xe),
                                    CONCAT11(*(undefined1 *)(_face_rec + 0xd),
                                             *(undefined1 *)(_face_rec + 0xc)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
-        uVar20 = Ordinal_2047(uVar20,*puVar28);
-        Ordinal_2026(uVar20,uVar17);
-        uVar17 = Ordinal_2020();
+        uVar20 = ordfloat_sub(*(undefined4 *)(_vptr + 8),*puVar26);
+        uVar20 = ordfloat_div(uVar20,*puVar28);
+        ordfloat_mul(uVar20,uVar17);
+        uVar17 = ordfloat_uint_to_float();
         *(char *)(_face_rec + 0x3c) = (char)uVar17;
         *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
         *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
         *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
-        uVar17 = Ordinal_2047(uVar17,_vext_bits);
-        Ordinal_2026(uVar17,uVar19);
-        uVar17 = Ordinal_2020();
+        uVar17 = ordfloat_sub(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar17 = ordfloat_div(uVar17,_vext_bits);
+        ordfloat_mul(uVar17,uVar19);
+        uVar17 = ordfloat_uint_to_float();
       }
       *(char *)(_face_rec + 0x40) = (char)uVar17;
       *(char *)(_face_rec + 0x41) = (char)((uint)uVar17 >> 8);
@@ -1656,17 +1656,17 @@ short frame_or_texid;
       faces_remaining = faces_remaining + -1;
     } while (faces_remaining != 0);
   }
-  uVar17 = Ordinal_2032((int)(short)DAT_0023b904);
+  uVar17 = ordfloat_int_to_float2((int)(short)DAT_0023b904);
   *(char *)(_anim + 0xc08) = (char)uVar17;
   *(char *)(_anim + 0xc09) = (char)((uint)uVar17 >> 8);
   *(char *)(_anim + 0xc0a) = (char)((uint)uVar17 >> 0x10);
   *(char *)(_anim + 0xc0b) = (char)((uint)uVar17 >> 0x18);
-  uVar17 = Ordinal_2032((int)(short)DAT_0023b91c);
+  uVar17 = ordfloat_int_to_float2((int)(short)DAT_0023b91c);
   *(char *)(_anim + 0xc0c) = (char)uVar17;
   *(char *)(_anim + 0xc0d) = (char)((uint)uVar17 >> 8);
   *(char *)(_anim + 0xc0e) = (char)((uint)uVar17 >> 0x10);
   *(char *)(_anim + 0xc0f) = (char)((uint)uVar17 >> 0x18);
-  uVar17 = Ordinal_2032((int)(short)DAT_0023b920);
+  uVar17 = ordfloat_int_to_float2((int)(short)DAT_0023b920);
   *(char *)(_anim + 0xc10) = (char)uVar17;
   *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
   *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
@@ -1724,17 +1724,17 @@ LAB_000640ec:
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] swing: catalog=%d DAT_0018957a=%d local_7c(before)=%d\n",
               (int)catalog_u, (int)(short)DAT_0018957a, (int)(short)local_7c);
-    uVar17 = Ordinal_2032((int)(short)DAT_0018957a);
-    uVar19 = Ordinal_2032((int)(short)local_7c);
-    Ordinal_2051(uVar17,uVar19);
-    local_7c = Ordinal_2020();
+    uVar17 = ordfloat_int_to_float2((int)(short)DAT_0018957a);
+    uVar19 = ordfloat_int_to_float2((int)(short)local_7c);
+    ordfloat_add(uVar17,uVar19);
+    local_7c = ordfloat_uint_to_float();
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] swing: local_7c(after)=%d\n", (int)(short)local_7c);
   }
-  uVar17 = Ordinal_2032((int)(short)local_7c);
-  uVar17 = Ordinal_2026(uVar17,0x38000000);
-  Ordinal_2026(uVar17,0x43340000);
-  for (sVar13 = Ordinal_2020(); 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
+  uVar17 = ordfloat_int_to_float2((int)(short)local_7c);
+  uVar17 = ordfloat_mul(uVar17,0x38000000);
+  ordfloat_mul(uVar17,0x43340000);
+  for (sVar13 = ordfloat_uint_to_float(); 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
   }
@@ -1868,19 +1868,19 @@ LAB_000640ec:
        by-then-already-modified globals) ever picked up the change.
        Re-bake right here with the corrected values so this call's own
        transform (a few lines below) actually uses them -- same
-       Ordinal_2032 float-encode + byte-split writes as the original
+       ordfloat_int_to_float2 float-encode + byte-split writes as the original
        bake, just re-run after the correction instead of before it. */
-    uVar17 = Ordinal_2032((int)(short)DAT_0023b904);
+    uVar17 = ordfloat_int_to_float2((int)(short)DAT_0023b904);
     *(char *)(_anim + 0xc08) = (char)uVar17;
     *(char *)(_anim + 0xc09) = (char)((uint)uVar17 >> 8);
     *(char *)(_anim + 0xc0a) = (char)((uint)uVar17 >> 0x10);
     *(char *)(_anim + 0xc0b) = (char)((uint)uVar17 >> 0x18);
-    uVar17 = Ordinal_2032((int)(short)DAT_0023b91c);
+    uVar17 = ordfloat_int_to_float2((int)(short)DAT_0023b91c);
     *(char *)(_anim + 0xc0c) = (char)uVar17;
     *(char *)(_anim + 0xc0d) = (char)((uint)uVar17 >> 8);
     *(char *)(_anim + 0xc0e) = (char)((uint)uVar17 >> 0x10);
     *(char *)(_anim + 0xc0f) = (char)((uint)uVar17 >> 0x18);
-    uVar17 = Ordinal_2032((int)(short)DAT_0023b920);
+    uVar17 = ordfloat_int_to_float2((int)(short)DAT_0023b920);
     *(char *)(_anim + 0xc10) = (char)uVar17;
     *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
     *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
@@ -1907,12 +1907,12 @@ LAB_000640ec:
     if (getenv("UW_DEBUG_DOOR_POS"))
       fprintf(stderr, "[doorpos] leaf hinge offset: angle=%d wideIsX=%d off=%d anchor=(%d,%d)->(%d,%d)\n",
               (int)sVar13, _wideIsX, _off, (int)DAT_0023b904, (int)DAT_0023b920, (int)_hx, (int)_hz);
-    uVar17 = Ordinal_2032((int)_hx);
+    uVar17 = ordfloat_int_to_float2((int)_hx);
     *(char *)(_anim + 0xc08) = (char)uVar17;
     *(char *)(_anim + 0xc09) = (char)((uint)uVar17 >> 8);
     *(char *)(_anim + 0xc0a) = (char)((uint)uVar17 >> 0x10);
     *(char *)(_anim + 0xc0b) = (char)((uint)uVar17 >> 0x18);
-    uVar17 = Ordinal_2032((int)_hz);
+    uVar17 = ordfloat_int_to_float2((int)_hz);
     *(char *)(_anim + 0xc10) = (char)uVar17;
     *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
     *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
@@ -2350,7 +2350,7 @@ LAB_00064cdc:
 
 
 // was FUN_0001e594 -- adds a per-axis float offset (param_2/3/4, each an
-// int converted to float via Ordinal_2032) to the model animation
+// int converted to float via ordfloat_int_to_float2) to the model animation
 // block's own stored position floats at offsets 0xc08/0xc0c/0xc10 (x/y/z).
 // The one real caller (emit_catalog_object, src/models.c) uses it to
 // apply a heading-dependent directional offset (looked up from the
@@ -2370,20 +2370,20 @@ undefined4 param_4;
 {
   undefined4 uVar1;
   
-  uVar1 = Ordinal_2032(param_2);
-  uVar1 = Ordinal_2051(*(undefined4 *)(param_1 + 0xc08),uVar1);
+  uVar1 = ordfloat_int_to_float2(param_2);
+  uVar1 = ordfloat_add(*(undefined4 *)(param_1 + 0xc08),uVar1);
   *(char *)(param_1 + 0xc08) = (char)uVar1;
   *(char *)(param_1 + 0xc09) = (char)((uint)uVar1 >> 8);
   *(char *)(param_1 + 0xc0a) = (char)((uint)uVar1 >> 0x10);
   *(char *)(param_1 + 0xc0b) = (char)((uint)uVar1 >> 0x18);
-  uVar1 = Ordinal_2032(param_3);
-  uVar1 = Ordinal_2051(*(undefined4 *)(param_1 + 0xc0c),uVar1);
+  uVar1 = ordfloat_int_to_float2(param_3);
+  uVar1 = ordfloat_add(*(undefined4 *)(param_1 + 0xc0c),uVar1);
   *(char *)(param_1 + 0xc0c) = (char)uVar1;
   *(char *)(param_1 + 0xc0d) = (char)((uint)uVar1 >> 8);
   *(char *)(param_1 + 0xc0e) = (char)((uint)uVar1 >> 0x10);
   *(char *)(param_1 + 0xc0f) = (char)((uint)uVar1 >> 0x18);
-  uVar1 = Ordinal_2032(param_4);
-  uVar1 = Ordinal_2051(*(undefined4 *)(param_1 + 0xc10),uVar1);
+  uVar1 = ordfloat_int_to_float2(param_4);
+  uVar1 = ordfloat_add(*(undefined4 *)(param_1 + 0xc10),uVar1);
   *(char *)(param_1 + 0xc10) = (char)uVar1;
   *(char *)(param_1 + 0xc11) = (char)((uint)uVar1 >> 8);
   *(char *)(param_1 + 0xc12) = (char)((uint)uVar1 >> 0x10);
@@ -2393,7 +2393,7 @@ undefined4 param_4;
 
 
 
-// was FUN_0001e6f0 -- multiplies (Ordinal_2026, float MULTIPLY) a model
+// was FUN_0001e6f0 -- multiplies (ordfloat_mul, float MULTIPLY) a model
 // animation block's own position floats by per-axis scale factors
 // (param_2/3/4). param_1[0] is read as a sub-part count; each iteration
 // scales the 3 floats at the current element's own offsets +8/+0xc/+0x10
@@ -2419,12 +2419,12 @@ undefined4 param_4;
   piVar2 = param_1;
   if (0 < *param_1) {
     do {
-      uVar1 = Ordinal_2026(piVar2[2],param_2);
+      uVar1 = ordfloat_mul(piVar2[2],param_2);
       *(char *)(piVar2 + 2) = (char)uVar1;
       *(char *)((char *)piVar2 + 9) = (char)((uint)uVar1 >> 8);
       *(char *)((char *)piVar2 + 10) = (char)((uint)uVar1 >> 0x10);
       *(char *)((char *)piVar2 + 0xb) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = Ordinal_2026(CONCAT13(*(undefined1 *)((char *)piVar2 + 0xf),
+      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)piVar2 + 0xf),
                                     CONCAT12(*(undefined1 *)((char *)piVar2 + 0xe),
                                              CONCAT11(*(undefined1 *)((char *)piVar2 + 0xd),
                                                       (char)piVar2[3]))),param_3);
@@ -2432,7 +2432,7 @@ undefined4 param_4;
       *(char *)((char *)piVar2 + 0xd) = (char)((uint)uVar1 >> 8);
       *(char *)((char *)piVar2 + 0xe) = (char)((uint)uVar1 >> 0x10);
       *(char *)((char *)piVar2 + 0xf) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = Ordinal_2026(CONCAT13(*(undefined1 *)((char *)piVar2 + 0x13),
+      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)piVar2 + 0x13),
                                     CONCAT12(*(undefined1 *)((char *)piVar2 + 0x12),
                                              CONCAT11(*(undefined1 *)((char *)piVar2 + 0x11),
                                                       (char)piVar2[4]))),param_4);
@@ -2486,7 +2486,7 @@ void load_3d_object_models()
   parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894,0);
   parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0,0);
   parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec,0);
-  Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);
+  ce_memmove(&DAT_00189590,&DAT_00110ff0,0x78580);
   return;
 }
 
@@ -2590,12 +2590,12 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   int *piVar20;
   undefined4 *****pppppuVar21;
   char local_260 [4];
-  /* local_25c/pvVar_fh hold the real fopen() handle from Ordinal_1113,
-     used across the whole function's Ordinal_1114 (fscanf) calls -- were
+  /* local_25c/pvVar_fh hold the real fopen() handle from ce_fopen,
+     used across the whole function's ce_fscanf (fscanf) calls -- were
      declared int, truncating the pointer on this 64-bit host. iVar3 is
      reused throughout this function for unrelated numeric work
      interleaved with "restore the file handle" (iVar3 = local_25c;)
-     idioms right before each Ordinal_1114 call, so it couldn't just be
+     idioms right before each ce_fscanf call, so it couldn't just be
      retyped in place -- pvVar_fh takes over only those restore/use
      sites. */
   void *local_25c;
@@ -2643,7 +2643,7 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   char acStack_130 [260];
 
   local_258 = &DAT_000da480;
-  Ordinal_1047(acStack_130,0,0x104);
+  ce_memset(acStack_130,0,0x104);
   pcVar2 = &DAT_0023cca8;
     stack0xffdc3228_ptr = acStack_130;
   do {
@@ -2651,11 +2651,11 @@ int flip_winding; /* HACK: not part of the original recovered signature --
     *stack0xffdc3228_ptr = cVar18; stack0xffdc3228_ptr = stack0xffdc3228_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar18 != '\0');
-  Ordinal_1063(acStack_130,param_1);
-  pvVar_fh = Ordinal_1113(acStack_130,&DAT_00084a24);
+  ce_strcat(acStack_130,param_1);
+  pvVar_fh = ce_fopen(acStack_130,&DAT_00084a24);
   pvVar_fh = uw_e_model_strip_cr(pvVar_fh);
   local_25c = pvVar_fh;
-  /* This whole function's 11 fatal-error checks (Ordinal_1102 message +
+  /* This whole function's 11 fatal-error checks (NKDbgPrintfW message +
      terminate_process, killing the entire process) originally treated any
      malformed/unparseable ".E" model script as unrecoverable. That's far
      too strict for a recompile whose parser for this text format is
@@ -2682,15 +2682,15 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   param_2[0xc11] = 0;
   param_2[0xc12] = 0;
   param_2[0xc13] = 0;
-  Ordinal_1114(pvVar_fh,s__100s_00084a1c,auStack_1c8);
-  iVar4 = Ordinal_1065(auStack_1c8,s_BEGIN_00084a14);
+  ce_fscanf(pvVar_fh,s__100s_00084a1c,auStack_1c8);
+  iVar4 = ce_strcmp(auStack_1c8,s_BEGIN_00084a14);
   if (iVar4 != 0) {
-    Ordinal_1102(s_Input_file_error__BEGIN_statemen_000849e8);
+    NKDbgPrintfW(s_Input_file_error__BEGIN_statemen_000849e8);
     goto LAB_0002263c;
   }
   pppppuVar21 = (undefined4 *****)&pppuStack_244;
   pcVar15 = &DAT_000d98c8;
-  Ordinal_1114(pvVar_fh,s__1s__a_z__1s_000849d8,auStack_24c,&DAT_000d98c8,pppppuVar21);
+  ce_fscanf(pvVar_fh,s__1s__a_z__1s_000849d8,auStack_24c,&DAT_000d98c8,pppppuVar21);
   pcVar2 = pcVar15;
   if (DAT_000db45c == (undefined1 *)0x0) {
     do {
@@ -2706,40 +2706,40 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   piVar20 = (int *)&DAT_000c9dd8;
   while( true ) {
     pvVar_fh = local_25c;
-    iVar4 = Ordinal_1114(local_25c,s__100s_1s_000849cc,auStack_1c8,local_260,pppppuVar21);
-    if (((iVar4 == -1) && (iVar5 = Ordinal_1070(auStack_1c8,&DAT_000849c8,3), iVar5 == 0)) ||
-       ((iVar4 != 0 && (iVar5 = Ordinal_1065(auStack_1c8,&DAT_000849c8), iVar5 == 0))))
+    iVar4 = ce_fscanf(local_25c,s__100s_1s_000849cc,auStack_1c8,local_260,pppppuVar21);
+    if (((iVar4 == -1) && (iVar5 = ce_strncmp(auStack_1c8,&DAT_000849c8,3), iVar5 == 0)) ||
+       ((iVar4 != 0 && (iVar5 = ce_strcmp(auStack_1c8,&DAT_000849c8), iVar5 == 0))))
     goto LAB_0002263c;
     if (iVar4 == -1) break;
     if ((iVar4 != 2) || (local_260[0] != '{')) {
-      Ordinal_1102(s_error___s__c_000849b8,auStack_1c8,(int)local_260[0]);
+      NKDbgPrintfW(s_error___s__c_000849b8,auStack_1c8,(int)local_260[0]);
     }
-    iVar4 = Ordinal_1065(auStack_1c8,s_VERSION_000849b0);
+    iVar4 = ce_strcmp(auStack_1c8,s_VERSION_000849b0);
     if (iVar4 == 0) {
-      Ordinal_1114(pvVar_fh,&DAT_000849ac,&DAT_000db454);
+      ce_fscanf(pvVar_fh,&DAT_000849ac,&DAT_000db454);
       pcVar2 = &DAT_000849a8;
 LAB_00022604:
-      iVar4 = Ordinal_1114(pvVar_fh,pcVar2,local_260);
+      iVar4 = ce_fscanf(pvVar_fh,pcVar2,local_260);
     }
     else {
-      iVar4 = Ordinal_1065(auStack_1c8,s_NAMES_000849a0);
+      iVar4 = ce_strcmp(auStack_1c8,s_NAMES_000849a0);
       if (iVar4 == 0) {
         puVar16 = &DAT_000da480;
         do {
           pppppuVar21 = (undefined4 *****)&pppuStack_244;
-          local_1cc = Ordinal_1114(pvVar_fh,s__1s______1s_00084994,auStack_24c,puVar16,pppppuVar21);
+          local_1cc = ce_fscanf(pvVar_fh,s__1s______1s_00084994,auStack_24c,puVar16,pppppuVar21);
           uVar7 = 0;
           if (local_1cc != 0) {
-            iVar4 = Ordinal_1068(puVar16);
+            iVar4 = ce_strlen(puVar16);
             puVar16 = puVar16 + iVar4 + 1;
             uVar7 = extraout_r3;
           }
-          iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260,uVar7,pppppuVar21);
+          iVar4 = ce_fscanf(pvVar_fh,&DAT_000849a8,local_260,uVar7,pppppuVar21);
           DAT_000db458 = DAT_000db458 + 1;
         } while (local_260[0] == ';');
       }
       else {
-        iVar4 = Ordinal_1065(auStack_1c8,s_POINTS_0008498c);
+        iVar4 = ce_strcmp(auStack_1c8,s_POINTS_0008498c);
         if (iVar4 == 0) {
           iVar5 = -10000;
           iVar3 = 10000;
@@ -2748,7 +2748,7 @@ LAB_00022604:
           iVar10 = iVar5;
           while( true ) {
             pppppuVar21 = (undefined4 *****)&local_214;
-            iVar6 = Ordinal_1114(local_25c,s__d__d__d__00084980,&local_204,&local_224,pppppuVar21);
+            iVar6 = ce_fscanf(local_25c,s__d__d__d__00084980,&local_204,&local_224,pppppuVar21);
             iVar19 = g_model_parse_point_count;
             if (iVar6 != 3) break;
             iVar6 = g_model_parse_point_count * 0x2c;
@@ -2792,29 +2792,29 @@ LAB_00022604:
             (&DAT_000d2ac1)[iVar6] = 0;
             (&DAT_000d2ac2)[iVar6] = 0;
             (&DAT_000d2ac3)[iVar6] = 0;
-            /* Was `Ordinal_2032()` with the argument dropped -- the two
+            /* Was `ordfloat_int_to_float2()` with the argument dropped -- the two
                sibling conversions right below it (Y=local_224, Z=local_214)
                both pass their value explicitly; this one, the X coordinate,
                did not. Confirmed via a raw memory dump of the parsed
                ROCKSMAL.E buffer: every point's first float came out as a
-               constant 3.0 (Ordinal_2032((float)x)'s bit pattern for x=3,
+               constant 3.0 (ordfloat_int_to_float2((float)x)'s bit pattern for x=3,
                whatever this build's calling convention happened to leave in
                the argument register) while Y/Z matched the source file
                exactly. Same "dropped argument, register-leftover idiom
                doesn't survive a literal recompile" bug class as everywhere
                else in this file. */
-            uVar7 = Ordinal_2032(local_204);
+            uVar7 = ordfloat_int_to_float2(local_204);
             param_2[iVar19 * 0xc + 8] = (char)uVar7;
             param_2[iVar19 * 0xc + 9] = (char)((uint)uVar7 >> 8);
             param_2[iVar19 * 0xc + 10] = (char)((uint)uVar7 >> 0x10);
             param_2[iVar19 * 0xc + 0xb] = (char)((uint)uVar7 >> 0x18);
-            uVar7 = Ordinal_2032(local_224);
+            uVar7 = ordfloat_int_to_float2(local_224);
             puVar13 = param_2 + (g_model_parse_point_count + 1) * 0xc;
             *puVar13 = (char)uVar7;
             puVar13[1] = (char)((uint)uVar7 >> 8);
             puVar13[2] = (char)((uint)uVar7 >> 0x10);
             puVar13[3] = (char)((uint)uVar7 >> 0x18);
-            uVar7 = Ordinal_2032(local_214);
+            uVar7 = ordfloat_int_to_float2(local_214);
             iVar19 = g_model_parse_point_count;
             param_2[g_model_parse_point_count * 0xc + 0x10] = (char)uVar7;
             param_2[iVar19 * 0xc + 0x11] = (char)((uint)uVar7 >> 8);
@@ -2822,7 +2822,7 @@ LAB_00022604:
             param_2[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
             g_model_parse_point_count = g_model_parse_point_count + 1;
             if (600 < g_model_parse_point_count) {
-              Ordinal_1102(s_Too_many_points___d__00084968);
+              NKDbgPrintfW(s_Too_many_points___d__00084968);
               goto LAB_0002263c;
             }
           }
@@ -2831,22 +2831,22 @@ LAB_00022604:
           *param_2 = (char)iVar19;
           param_2[2] = (char)((uint)iVar19 >> 0x10);
           param_2[3] = (char)((uint)iVar19 >> 0x18);
-          uVar7 = Ordinal_2032(iVar4);
+          uVar7 = ordfloat_int_to_float2(iVar4);
           param_2[0x3c1c] = (char)uVar7;
           param_2[0x3c1d] = (char)((uint)uVar7 >> 8);
           param_2[0x3c1e] = (char)((uint)uVar7 >> 0x10);
           param_2[0x3c1f] = (char)((uint)uVar7 >> 0x18);
-          uVar7 = Ordinal_2032(iVar10 - iVar4);
+          uVar7 = ordfloat_int_to_float2(iVar10 - iVar4);
           param_2[0x3c20] = (char)uVar7;
           param_2[0x3c21] = (char)((uint)uVar7 >> 8);
           param_2[0x3c22] = (char)((uint)uVar7 >> 0x10);
           param_2[0x3c23] = (char)((uint)uVar7 >> 0x18);
-          uVar7 = Ordinal_2032(iVar3);
+          uVar7 = ordfloat_int_to_float2(iVar3);
           param_2[0x3c24] = (char)uVar7;
           param_2[0x3c25] = (char)((uint)uVar7 >> 8);
           param_2[0x3c26] = (char)((uint)uVar7 >> 0x10);
           param_2[0x3c27] = (char)((uint)uVar7 >> 0x18);
-          uVar7 = Ordinal_2032(iVar5 - iVar3);
+          uVar7 = ordfloat_int_to_float2(iVar5 - iVar3);
           pcVar2 = &DAT_000849a8;
           param_2[0x3c28] = (char)uVar7;
           param_2[0x3c29] = (char)((uint)uVar7 >> 8);
@@ -2855,17 +2855,17 @@ LAB_00022604:
           pvVar_fh = local_25c;
           goto LAB_00022604;
         }
-        iVar4 = Ordinal_1065(auStack_1c8,s_PARTS_00084960);
+        iVar4 = ce_strcmp(auStack_1c8,s_PARTS_00084960);
         if (iVar4 == 0) {
           DAT_000c8b00 = &DAT_000c4c38;
           g_model_parse_part_count = 0;
           do {
-            iVar5 = Ordinal_1114(pvVar_fh,s___c_1____00084954,local_260);
+            iVar5 = ce_fscanf(pvVar_fh,s___c_1____00084954,local_260);
             iVar4 = 1;
             if (iVar5 != 1) {
               puVar13 = local_21c;
               pppppuVar21 = (undefined4 *****)&local_1dc;
-              Ordinal_1114(pvVar_fh,s__d__1s__d__x__00084944,&local_23c,&local_254,pppppuVar21,puVar13)
+              ce_fscanf(pvVar_fh,s__d__1s__d__x__00084944,&local_23c,&local_254,pppppuVar21,puVar13)
               ;
               iVar4 = g_model_parse_part_count;
               iVar5 = g_model_parse_part_count * 0x67;
@@ -2906,7 +2906,7 @@ LAB_00022604:
                 (&DAT_000c9de1)[iVar5] = 0xff;
                 (&DAT_000c9de2)[iVar5] = 0xff;
                 (&DAT_000c9de3)[iVar5] = 0xff;
-                Ordinal_1102(s_got_bitmap__d___d_00084930);
+                NKDbgPrintfW(s_got_bitmap__d___d_00084930);
                 iVar4 = g_model_parse_part_count;
               }
               else {
@@ -2931,7 +2931,7 @@ LAB_00022604:
                 (&DAT_000c9e23)[iVar10] = (char)((uint)local_258 >> 8);
                 (&DAT_000c9e24)[iVar10] = (char)((uint)local_258 >> 0x10);
                 (&DAT_000c9e25)[iVar10] = (char)((uint)local_258 >> 0x18);
-                iVar4 = Ordinal_1068(local_258);
+                iVar4 = ce_strlen(local_258);
                 puVar16 = puVar16 + iVar4 + 1;
                 local_258 = puVar16;
               }
@@ -2952,12 +2952,12 @@ LAB_000218b8:
                 DAT_000c8b00 = piVar12;
                 (&DAT_000c9dda)[iVar10] = (char)((uint)piVar12 >> 0x10);
                 (&DAT_000c9ddb)[iVar10] = (char)((uint)piVar12 >> 0x18);
-                iVar4 = Ordinal_1114(local_25c,&DAT_000849a8,local_260,(uint)piVar12 >> 0x18,
+                iVar4 = ce_fscanf(local_25c,&DAT_000849a8,local_260,(uint)piVar12 >> 0x18,
                                      pppppuVar21,puVar13);
                 iVar3 = 0;
                 do {
                   iVar19 = iVar3;
-                  Ordinal_1114(local_25c,s__d_1s_000848c8,&local_210,local_260);
+                  ce_fscanf(local_25c,s__d_1s_000848c8,&local_210,local_260);
                   iVar3 = iVar19 + 1;
                   *DAT_000c8b00 = local_210;
                   DAT_000c8b00 = DAT_000c8b00 + 1;
@@ -3017,10 +3017,10 @@ LAB_000218b8:
                 vec3_sub(param_2 + iVar5 * 0xc + 8,param_2 + iVar10 * 0xc + 8,auStack_160);
                 vec3_cross(auStack_160,auStack_150,auStack_140);
                 if ((local_23c == 4) && (iVar3 != 4)) {
-                  Ordinal_1102(s_Error__polygon__d__bitmap_must_h_00084898,g_model_parse_part_count);
+                  NKDbgPrintfW(s_Error__polygon__d__bitmap_must_h_00084898,g_model_parse_part_count);
                 }
                 if (iVar3 < 3) {
-                  Ordinal_1102(s_Error__Part__d_is_a_polygon_with_00084868,g_model_parse_part_count,iVar3);
+                  NKDbgPrintfW(s_Error__Part__d_is_a_polygon_with_00084868,g_model_parse_part_count,iVar3);
                 }
                 iVar5 = g_model_parse_part_count * 0x67;
                 (&DAT_000c9ddc)[iVar5] = (char)iVar3;
@@ -3051,18 +3051,18 @@ LAB_000218b8:
                 }
                 g_model_parse_part_count = g_model_parse_part_count + 1;
                 if (0x15e < g_model_parse_part_count) {
-                  Ordinal_1102(s_Too_many_polys_000848f8);
+                  NKDbgPrintfW(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
                 }
                 if (&DAT_000c8a90 < DAT_000c8b00) {
-                  Ordinal_1102(s_Out_of_vertex_list_space_00084908);
+                  NKDbgPrintfW(s_Out_of_vertex_list_space_00084908);
                   goto LAB_0002263c;
                 }
-                Ordinal_1114(local_25c,&DAT_000849a8,local_260);
+                ce_fscanf(local_25c,&DAT_000849a8,local_260);
                 pvVar_fh = local_25c;
               }
               else if (iVar5 == 1) {
-                iVar4 = Ordinal_1114(pvVar_fh,s__d__d_000848d0,&local_1e0,&local_20c,pppppuVar21,
+                iVar4 = ce_fscanf(pvVar_fh,s__d__d_000848d0,&local_1e0,&local_20c,pppppuVar21,
                                      puVar13);
                 piVar17 = DAT_000c8b00;
                 iVar5 = g_model_parse_part_count * 0x67;
@@ -3085,15 +3085,15 @@ LAB_00021838:
                 *DAT_000c8b00 = iVar5;
                 DAT_000c8b00 = DAT_000c8b00 + 1;
                 if (&DAT_000c8a90 < DAT_000c8b00) {
-                  Ordinal_1102(s_Out_of_vertex_list_space_00084908);
+                  NKDbgPrintfW(s_Out_of_vertex_list_space_00084908);
                   goto LAB_0002263c;
                 }
                 g_model_parse_part_count = g_model_parse_part_count + 1;
                 if (0x15e < g_model_parse_part_count) {
-                  Ordinal_1102(s_Too_many_polys_000848f8);
+                  NKDbgPrintfW(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
                 }
-                Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260);
+                ce_fscanf(pvVar_fh,&DAT_000849a8,local_260);
               }
               else {
                 if (1 < iVar5) {
@@ -3106,8 +3106,8 @@ LAB_00021838:
                       (&DAT_000c9e3e)[iVar10] = 0;
                     }
                     else {
-                      Ordinal_1114(pvVar_fh,&DAT_000848f4,&local_218,puVar16,pppppuVar21,puVar13);
-                      Ordinal_1102(s_got_sphere__d_000848e4,local_218);
+                      ce_fscanf(pvVar_fh,&DAT_000848f4,&local_218,puVar16,pppppuVar21,puVar13);
+                      NKDbgPrintfW(s_got_sphere__d_000848e4,local_218);
                       iVar4 = g_model_parse_part_count * 0x67;
                       puVar14 = &DAT_000c9dd8 + iVar4;
                       (&DAT_000c9e3b)[iVar4] = (char)local_218;
@@ -3115,7 +3115,7 @@ LAB_00021838:
                       (&DAT_000c9e3d)[iVar4] = (char)((uint)local_218 >> 0x10);
                       (&DAT_000c9e3e)[iVar4] = (char)((uint)local_218 >> 0x18);
                     }
-                    iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849ac,&local_1f4,puVar14,pppppuVar21,puVar13)
+                    iVar4 = ce_fscanf(pvVar_fh,&DAT_000849ac,&local_1f4,puVar14,pppppuVar21,puVar13)
                     ;
                     piVar17 = DAT_000c8b00;
                     iVar5 = g_model_parse_part_count * 0x67;
@@ -3137,7 +3137,7 @@ LAB_00021838:
                   if (iVar5 == 5) {
                     piVar12 = &local_220;
                     pppppuVar21 = (undefined4 *****)&local_1d4;
-                    iVar4 = Ordinal_1114(pvVar_fh,s__d__d__d__d_00084924,&local_1fc,&local_228,
+                    iVar4 = ce_fscanf(pvVar_fh,s__d__d__d__d_00084924,&local_1fc,&local_228,
                                          pppppuVar21,piVar12);
                     piVar17 = DAT_000c8b00;
                     if (DAT_00084660 < local_228) {
@@ -3195,23 +3195,23 @@ LAB_00021838:
                     (&DAT_000c9e39)[iVar5] = (char)((uint)local_220 >> 0x10);
                     (&DAT_000c9e3a)[iVar5] = (char)((uint)local_220 >> 0x18);
                     if (&DAT_000c8a90 < piVar17) {
-                      Ordinal_1102(s_Out_of_vertex_list_space_00084908);
+                      NKDbgPrintfW(s_Out_of_vertex_list_space_00084908);
                       goto LAB_0002263c;
                       iVar3 = g_model_parse_part_count;
                     }
                     g_model_parse_part_count = iVar3 + 1;
                     uVar7 = 0x15e;
                     if (0x15e < g_model_parse_part_count) {
-                      Ordinal_1102(s_Too_many_polys_000848f8);
+                      NKDbgPrintfW(s_Too_many_polys_000848f8);
                       goto LAB_0002263c;
                       uVar7 = extraout_r3_00;
                     }
-                    Ordinal_1114(local_25c,&DAT_000849a8,local_260,uVar7,pppppuVar21,piVar12);
+                    ce_fscanf(local_25c,&DAT_000849a8,local_260,uVar7,pppppuVar21,piVar12);
                     pvVar_fh = local_25c;
                     goto LAB_00021bec;
                   }
                 }
-                iVar4 = Ordinal_1114(pvVar_fh,s_________c_000848d8,local_260,puVar16,pppppuVar21,
+                iVar4 = ce_fscanf(pvVar_fh,s_________c_000848d8,local_260,puVar16,pppppuVar21,
                                      puVar13);
               }
             }
@@ -3230,7 +3230,7 @@ LAB_00021bec:
             do {
               if (((((char)piVar17[0x14] == 'A') && (DAT_000db480 == 0)) && (DAT_000db470 == 0)) &&
                  (iVar19 = piVar17[1], 2 < iVar19)) {
-                Ordinal_1102(s_making_backside_of__d_____d_00084848,iVar10,iVar5);
+                NKDbgPrintfW(s_making_backside_of__d_____d_00084848,iVar10,iVar5);
                 iVar6 = g_model_parse_part_count * 0x67;
                 iVar5 = piVar17[2];
                 (&DAT_000c9de0)[iVar6] = (char)iVar5;
@@ -3274,7 +3274,7 @@ LAB_00021bec:
                 g_model_parse_part_count = iVar6 + 1;
                 iVar5 = g_model_parse_part_count;
                 if (0x15e < g_model_parse_part_count) {
-                  Ordinal_1102(s_Too_many_polys_000848f8);
+                  NKDbgPrintfW(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
                   iVar5 = g_model_parse_part_count;
                 }
@@ -3286,10 +3286,10 @@ LAB_00021bec:
         }
         else if (DAT_000db480 == 0) {
 LAB_0002226c:
-          iVar4 = Ordinal_1065(auStack_1c8,s_INTERSECTIONS_000847bc);
+          iVar4 = ce_strcmp(auStack_1c8,s_INTERSECTIONS_000847bc);
           if (iVar4 == 0) {
             do {
-              iVar4 = Ordinal_1114(pvVar_fh,s__d_1s_000848c8,&local_1d0,local_260);
+              iVar4 = ce_fscanf(pvVar_fh,s__d_1s_000848c8,&local_1d0,local_260);
               if (iVar4 == 2) {
                 *(undefined4 *)(&DAT_000c8b08 + DAT_000db4d0 * 4) = local_1d0;
                 DAT_000db4d0 = DAT_000db4d0 + 1;
@@ -3297,12 +3297,12 @@ LAB_0002226c:
             } while (local_260[0] == ',');
           }
           else {
-            iVar4 = Ordinal_1065(auStack_1c8,s_EXTENDED_COLORS_000847ac);
+            iVar4 = ce_strcmp(auStack_1c8,s_EXTENDED_COLORS_000847ac);
             if (iVar4 == 0) {
               iVar5 = 0;
               piVar17 = piVar20;
               do {
-                iVar4 = Ordinal_1114(pvVar_fh,s__lx_1s_000847a4,&local_208,local_260);
+                iVar4 = ce_fscanf(pvVar_fh,s__lx_1s_000847a4,&local_208,local_260);
                 if (DAT_000db494 != 0) {
                   piVar12 = &g_model_known_ext_colors;
                   iVar10 = 0;
@@ -3318,7 +3318,7 @@ LAB_0002226c:
                     piVar12 = piVar12 + 1;
                   } while (iVar10 < 0x20);
                   if (iVar10 == 0x20) {
-                    Ordinal_1102(s_Error__extended_color_for_part___00084768,iVar5);
+                    NKDbgPrintfW(s_Error__extended_color_for_part___00084768,iVar5);
                     goto LAB_0002263c;
                   }
                   iVar5 = iVar5 + 1;
@@ -3327,7 +3327,7 @@ LAB_0002226c:
               } while (local_260[0] == ',');
             }
             else {
-              iVar4 = Ordinal_1065(auStack_1c8,s_ANIMATE_00084760);
+              iVar4 = ce_strcmp(auStack_1c8,s_ANIMATE_00084760);
               if (iVar4 != 0) {
                 pcVar2 = s________c_0008471c;
                 goto LAB_00022604;
@@ -3337,7 +3337,7 @@ LAB_0002226c:
                 puVar13 = auStack_1ec;
                 pppppuVar21 = &local_1f8;
                 iVar5 = 0;
-                iVar4 = Ordinal_1114(pvVar_fh,s__d__1s__d__d__1s_0008474c,&local_200,local_260,
+                iVar4 = ce_fscanf(pvVar_fh,s__d__1s__d__d__1s_0008474c,&local_200,local_260,
                                      pppppuVar21,&local_1f0,puVar13);
                 iVar3 = DAT_000db4e0;
                 if ((iVar4 != 1) || (iVar4 = 1, local_260[0] != '}')) {
@@ -3357,7 +3357,7 @@ LAB_0002226c:
                   (&DAT_000d977b)[iVar4] = (char)((uint)local_1f0 >> 0x18);
                   pppppuVar21 = (undefined4 *****)local_1f8;
                   uVar7 = local_1f0;
-                  Ordinal_1102(s_anim__d___d__c__d__d___00084734,iVar3,local_200,local_260,local_1f8
+                  NKDbgPrintfW(s_anim__d___d__c__d__d___00084734,iVar3,local_200,local_260,local_1f8
                                ,local_1f0);
                   pvVar_fh = local_25c;
                   iVar4 = DAT_000db4e0 * 0x15;
@@ -3366,7 +3366,7 @@ LAB_0002226c:
                   (&DAT_000d9772)[iVar4] = (char)((uint)piVar17 >> 0x10);
                   (&DAT_000d9773)[iVar4] = (char)((uint)piVar17 >> 0x18);
                   do {
-                    Ordinal_1114(pvVar_fh,s__d_1s_000848c8,&local_1e8,local_260,pppppuVar21,uVar7,
+                    ce_fscanf(pvVar_fh,s__d_1s_000848c8,&local_1e8,local_260,pppppuVar21,uVar7,
                                  puVar13);
                     iVar5 = iVar5 + 1;
                     iVar10 = DAT_000db4e0 + 1;
@@ -3377,16 +3377,16 @@ LAB_0002226c:
                     (&DAT_000d2ad1)[iVar4] = (char)((uint)iVar10 >> 8);
                     (&DAT_000d2ad2)[iVar4] = (char)((uint)iVar10 >> 0x10);
                     (&DAT_000d2ad3)[iVar4] = (char)((uint)iVar10 >> 0x18);
-                    Ordinal_1102(&DAT_00084730);
+                    NKDbgPrintfW(&DAT_00084730);
                   } while (local_260[0] == ',');
                   iVar4 = DAT_000db4e0 * 0x15;
                   (&DAT_000d976c)[iVar4] = (char)iVar5;
                   (&DAT_000d976d)[iVar4] = (char)((uint)iVar5 >> 8);
                   (&DAT_000d976e)[iVar4] = (char)((uint)iVar5 >> 0x10);
                   (&DAT_000d976f)[iVar4] = (char)((uint)iVar5 >> 0x18);
-                  Ordinal_1102(s___d__00084728,iVar5);
+                  NKDbgPrintfW(s___d__00084728,iVar5);
                   DAT_000db4e0 = DAT_000db4e0 + 1;
-                  iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260);
+                  iVar4 = ce_fscanf(pvVar_fh,&DAT_000849a8,local_260);
                   if (iVar4 != 1) break;
                 }
                 pvVar_fh = local_25c;
@@ -3395,18 +3395,18 @@ LAB_0002226c:
           }
         }
         else {
-          iVar4 = Ordinal_1065(auStack_1c8,s_CLUSTERS_0008483c);
+          iVar4 = ce_strcmp(auStack_1c8,s_CLUSTERS_0008483c);
           if (iVar4 == 0) {
             puVar8 = (undefined4 *)&DAT_000c8ca0;
             do {
               cVar18 = '\0';
-              iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260);
+              iVar4 = ce_fscanf(pvVar_fh,&DAT_000849a8,local_260);
               puVar16 = local_258;
               if ((iVar4 != 1) || (iVar4 = 1, local_260[0] != '}')) {
                 iVar4 = DAT_000db4d4 * 4;
                 if (DAT_000db4d4 + g_model_parse_part_count < DAT_000db458) {
                   *(undefined **)(&DAT_000da868 + iVar4) = local_258;
-                  iVar5 = Ordinal_1068(local_258);
+                  iVar5 = ce_strlen(local_258);
                   local_258 = puVar16 + iVar5 + 1;
                 }
                 else {
@@ -3415,37 +3415,37 @@ LAB_0002226c:
                 *(undefined4 **)(&DAT_000dab90 + iVar4) = puVar8;
                 puVar8 = puVar8 + 1;
                 do {
-                  Ordinal_1114(pvVar_fh,s__d_1s_000848c8,&local_1d8,local_260);
+                  ce_fscanf(pvVar_fh,s__d_1s_000848c8,&local_1d8,local_260);
                   cVar18 = cVar18 + '\x01';
                   *puVar8 = local_1d8;
                   puVar8 = puVar8 + 1;
                 } while (local_260[0] == ',');
                 **(char **)(&DAT_000dab90 + DAT_000db4d4 * 4) = cVar18;
                 DAT_000db4d4 = DAT_000db4d4 + 1;
-                iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849a8,local_260);
+                iVar4 = ce_fscanf(pvVar_fh,&DAT_000849a8,local_260);
                 if (iVar4 != 1) break;
               }
             } while (local_260[0] == ';');
           }
           else {
-            iVar4 = Ordinal_1065(auStack_1c8,s_NODES_00084834);
+            iVar4 = ce_strcmp(auStack_1c8,s_NODES_00084834);
             if ((iVar4 != 0) &&
-               (iVar4 = Ordinal_1065(auStack_1c8,s_SUPER_NODES_00084828), iVar4 != 0))
+               (iVar4 = ce_strcmp(auStack_1c8,s_SUPER_NODES_00084828), iVar4 != 0))
             goto LAB_0002226c;
-            iVar4 = Ordinal_1065(auStack_1c8,s_SUPER_NODES_00084828);
+            iVar4 = ce_strcmp(auStack_1c8,s_SUPER_NODES_00084828);
             iVar5 = -1;
             if (iVar4 != 0) {
               iVar5 = 0;
             }
             do {
-              iVar4 = Ordinal_1114(pvVar_fh,&DAT_00084820,&local_1e4);
+              iVar4 = ce_fscanf(pvVar_fh,&DAT_00084820,&local_1e4);
               iVar10 = DAT_000db4d8;
               if (local_260[0] != '}') {
                 (&DAT_000c9540)[DAT_000db4d8 * 0x16] = (char)local_1e4;
                 if (local_1e4 == 0x4c) {
-                  Ordinal_1102(s_leaf_00084818);
-                  iVar4 = Ordinal_1114(pvVar_fh,s__d_1s_000848c8,&local_22c,local_260);
-                  Ordinal_1102(&DAT_00084814,local_22c);
+                  NKDbgPrintfW(s_leaf_00084818);
+                  iVar4 = ce_fscanf(pvVar_fh,s__d_1s_000848c8,&local_22c,local_260);
+                  NKDbgPrintfW(&DAT_00084814,local_22c);
                   iVar10 = DAT_000db4d8 * 0x16;
                   (&DAT_000c9542)[iVar10] = (char)local_22c;
                   (&DAT_000c9543)[iVar10] = (char)((uint)local_22c >> 8);
@@ -3454,20 +3454,20 @@ LAB_0002226c:
                   iVar10 = DAT_000db4d8;
                 }
                 else if (local_1e4 == 0x42) {
-                  Ordinal_1102(s_branch_0008480c);
+                  NKDbgPrintfW(s_branch_0008480c);
                   if (iVar5 == 0) {
-                    iVar4 = Ordinal_1114(pvVar_fh,s__1s__d__d__d_1s_000847e4,&local_234,&local_250,
+                    iVar4 = ce_fscanf(pvVar_fh,s__1s__d__d__d_1s_000847e4,&local_234,&local_250,
                                          &local_238,&local_230,local_260);
                     local_240 = (undefined4 *****)0xffffffff;
                     local_248 = 0xffffffff;
                   }
                   else {
-                    iVar4 = Ordinal_1114(pvVar_fh,s__1s__d__d__d__d__d_1s_000847f4,&local_234,
+                    iVar4 = ce_fscanf(pvVar_fh,s__1s__d__d__d__d__d_1s_000847f4,&local_234,
                                          &local_250,&local_248,&local_240,&local_238,&local_230,
                                          local_260);
                   }
                   pppppuVar21 = (undefined4 *****)local_240;
-                  Ordinal_1102(s__c__d__d__d__d__d___c__000847cc,local_234,local_250,local_248,
+                  NKDbgPrintfW(s__c__d__d__d__d__d___c__000847cc,local_234,local_250,local_248,
                                local_240,local_238,local_230,(int)local_260[0]);
                   iVar10 = DAT_000db4d8 * 0x16;
                   (&DAT_000c9541)[iVar10] = (undefined1)local_234;
@@ -3504,14 +3504,14 @@ LAB_0002226c:
       goto LAB_0002263c;
     }
   }
-  Ordinal_1102(s_unexpected_EOF___no_END_statemen_000846f8);
+  NKDbgPrintfW(s_unexpected_EOF___no_END_statemen_000846f8);
 LAB_0002263c:
-  /* Ordinal_1118 is fclose-shaped, closing the handle Ordinal_1113 (fopen)
+  /* ce_fclose is fclose-shaped, closing the handle ce_fopen (fopen)
      opened at the top of this function -- was called with iVar3 (reused
      throughout this function for unrelated numeric work, and not
      reliably holding the handle by this point even before the
      local_25c/pvVar_fh pointer-width fix), should be the real handle. */
-  Ordinal_1118(local_25c);
+  ce_fclose(local_25c);
   iVar3 = g_model_parse_part_count;
   if ((DAT_000db494 != 0) && (iVar4 = 0, 0 < g_model_parse_part_count)) {
     do {

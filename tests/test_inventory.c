@@ -52,8 +52,8 @@ static int prompt_prints, combination_calls, released_clicks, reset_cursor;
 static uint scroll_message;
 static int target_reachable = 1, target_obstructed;
 
-unsigned int Ordinal_1068(char *text) { return (unsigned int)strlen(text); }
-char *Ordinal_1063(char *dest, const char *text) { return strcat(dest, text); }
+unsigned int ce_strlen(char *text) { return (unsigned int)strlen(text); }
+char *ce_strcat(char *dest, const char *text) { return strcat(dest, text); }
 undefined4 build_object_display_name(char *text, ushort *object, int a, int b)
 {
     TEST_ASSERT_EQUAL_PTR(objects[2], object);

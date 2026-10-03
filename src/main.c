@@ -68,7 +68,7 @@ undefined4 param_1;
 }
 // was FUN_00082448 -- registers an atexit-style handler: appends
 // param_1 to a dynamically-grown array (DAT_00250908/DAT_0025090c),
-// reallocating via Ordinal_33/34/35 (malloc/realloc/size-query style
+// reallocating via LocalAlloc/34/35 (malloc/realloc/size-query style
 // WinCE ordinals) when it's full. In this port, those three ordinals
 // are stubbed to always return 0 (src/ordinal_stubs.c), so the
 // "grow the buffer" branch always fails and this function always
@@ -84,14 +84,14 @@ undefined4 param_1;
   uint uVar1;
   int iVar2;
 
-  uVar1 = Ordinal_35(DAT_0025090c);
+  uVar1 = LocalSize(DAT_0025090c);
   if (uVar1 < (uint)((int)DAT_00250908 + (4 - (int)DAT_0025090c))) {
     if (DAT_0025090c == 0) {
-      iVar2 = Ordinal_33(0,0x10);
+      iVar2 = LocalAlloc(0,0x10);
     }
     else {
-      iVar2 = Ordinal_35();
-      iVar2 = Ordinal_34(DAT_0025090c,iVar2 + 0x10,2);
+      iVar2 = LocalSize();
+      iVar2 = LocalReAlloc(DAT_0025090c,iVar2 + 0x10,2);
     }
     if (iVar2 == 0) {
       return 0;

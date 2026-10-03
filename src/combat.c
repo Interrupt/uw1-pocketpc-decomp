@@ -152,12 +152,12 @@ void npc_combat_approach_tick()
     sVar4 = integer_sqrt(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448);
     cVar3 = DAT_00101918;
     iVar8 = (int)DAT_00101408;
-    iVar5 = Ordinal_2005((int)sVar4,
+    iVar5 = ordint_divmod((int)sVar4,
                          (((int)DAT_00101918 - (int)(short)DAT_00101408) * 0x10000 >> 0x10) << 2);
     cVar2 = DAT_001013f8;
     iVar5 = ((int)iVar5 + (int)iVar8) * 0x1000000;
     iVar9 = (int)DAT_00101410;
-    iVar8 = Ordinal_2005((int)sVar4,
+    iVar8 = ordint_divmod((int)sVar4,
                          (((int)DAT_001013f8 - (int)(short)DAT_00101410) * 0x10000 >> 0x10) << 2);
     iVar8 = (iVar8 + iVar9) * 0x1000000;
     {
@@ -329,7 +329,7 @@ ushort param_1;
   *(undefined1 *)(DAT_0010190c + 9) = uVar1;
   *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xbf;
   if (param_1 < 0x31) {
-    uVar5 = Ordinal_1053();
+    uVar5 = ce_rand();
     uw_ord2005_rem_47 = ((int)(uVar5)) % (4);
     if (uw_ord2005_rem_47 != 0) {
       *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 199 | 7;
@@ -339,14 +339,14 @@ LAB_00030534:
       bVar8 = *(byte *)(DAT_0010190c + 0x13) & 0x82 | 2;
       goto LAB_000305e4;
     }
-    uVar5 = Ordinal_1053();
+    uVar5 = ce_rand();
     *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc0;
     uw_ord2005_rem_49 = ((int)(uVar5)) % (2);
     uw_ord2005_rem_50 = ((int)(uVar9 + uw_ord2005_rem_49 * 4 + 6)) % (8);
     *(char *)(DAT_0010190c + 9) = (char)(uw_ord2005_rem_50 << 5);
     iVar6 = DAT_0010190c;
     bVar8 = *(byte *)(DAT_0010190c + 0x13);
-    bVar3 = Ordinal_2005(3,(uint)*(byte *)(DAT_00101404 + 0xb) << 1);
+    bVar3 = ordint_divmod(3,(uint)*(byte *)(DAT_00101404 + 0xb) << 1);
     *(byte *)(iVar6 + 0x13) = (bVar3 ^ bVar8) & 0x7f ^ bVar8;
   }
   else {
@@ -355,11 +355,11 @@ LAB_00030534:
       *(undefined1 *)(DAT_0010190c + 9) = uVar1;
       goto LAB_00030534;
     }
-    uVar5 = Ordinal_1053();
+    uVar5 = ce_rand();
     bVar8 = *(byte *)(DAT_00101404 + 6);
     uw_ord2005_rem_51 = ((int)(uVar5)) % (0x40);
     if (uw_ord2005_rem_51 < (int)(uint)bVar8) {
-      uVar5 = Ordinal_1053();
+      uVar5 = ce_rand();
       *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc0;
       uw_ord2005_rem_52 = ((int)(uVar5)) % (8);
       *(char *)(DAT_0010190c + 9) = (char)(uw_ord2005_rem_52 << 5);
@@ -381,7 +381,7 @@ LAB_000305e4:
         bVar8 = *(byte *)(DAT_0010190c + 0x14) & 7 | 0x70;
       }
       else {
-        uVar5 = Ordinal_1053();
+        uVar5 = ce_rand();
         uw_ord2005_rem_53 = ((int)(uVar5)) % (3);
         bVar8 = *(byte *)(DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_53 + '\x0f') * '\b';
       }
@@ -392,10 +392,10 @@ LAB_000305e4:
     *(byte *)(DAT_0010190c + 0x14) = bVar8;
   }
   if (param_1 < 0x65) {
-    uVar5 = Ordinal_1053();
+    uVar5 = ce_rand();
     uw_ord2005_rem_54 = ((int)(uVar5)) % (4);
     if (uw_ord2005_rem_54 == 0) {
-      uVar5 = Ordinal_1053();
+      uVar5 = ce_rand();
       uw_ord2005_rem_55 = ((int)(uVar5)) % (100);
       iVar6 = (int)uw_ord2005_rem_55;
       iVar7 = 0;
@@ -532,12 +532,12 @@ void npc_combat_position_tick()
   bVar4 = *(byte *)(DAT_00101400 + 2);
   if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
     if ((uVar6 & 0x7f) < 0x6f) {
-      uVar2 = Ordinal_1053();
+      uVar2 = ce_rand();
       uw_ord2005_rem_64 = ((int)(uVar2)) % (5);
       iVar7 = (uw_ord2005_rem_64 & 0xff) + 0xf;
     }
     else {
-      uVar2 = Ordinal_1053();
+      uVar2 = ce_rand();
       uw_ord2005_rem_65 = ((int)(uVar2)) % (5);
       iVar7 = (uw_ord2005_rem_65 & 0xff) + 0xd;
     }
@@ -546,7 +546,7 @@ void npc_combat_position_tick()
   if ((DAT_00101900 < 4) &&
      (iVar7 = ((bVar4 & 0x7f) - (uVar6 & 0x7f)) * 0x1000000, uVar8 = (int)(iVar7) >> 0x1f,
      (int)(((int)(iVar7) >> 0x18 ^ uVar8) - uVar8) < 0x10)) {
-    uVar2 = Ordinal_1053();
+    uVar2 = ce_rand();
     bVar4 = *(byte *)(DAT_00101404 + 0x1c);
     uw_ord2005_rem_66 = ((int)(uVar2)) % (0x100);
     if (((int)(bVar4 >> 3 & 1) <= uw_ord2005_rem_66) && ((DAT_00101924 == 0 || (DAT_00101430 != 0)))) {
@@ -579,11 +579,11 @@ LAB_000314d0:
       if (iVar7 != 0) {
         return;
       }
-      uVar2 = Ordinal_1053();
+      uVar2 = ce_rand();
       bVar4 = *(byte *)(DAT_00101404 + 0x1f);
       uw_ord2005_rem_69 = ((int)(uVar2)) % (0x40);
       if ((uw_ord2005_rem_69 & 0xff) < (bVar4 & 0xf) + 8) {
-        uVar2 = Ordinal_1053();
+        uVar2 = ce_rand();
         iVar7 = DAT_0010190c;
         bVar4 = *(byte *)(DAT_0010190c + 9);
         uw_ord2005_rem_70 = ((int)(uVar2)) % (0x40);
@@ -627,8 +627,8 @@ LAB_000314d0:
         }
         goto LAB_000314d0;
       }
-      uVar2 = Ordinal_1053();
-      uVar3 = Ordinal_1053();
+      uVar2 = ce_rand();
+      uVar3 = ce_rand();
       iVar7 = DAT_0010190c;
       bVar4 = *(byte *)(DAT_0010190c + 9);
       uw_ord2005_rem_73 = ((int)(uVar2)) % (2);
@@ -703,7 +703,7 @@ void npc_combat_disengage_tick()
       *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfe | 6;
       *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
       *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xe0 | 0x20;
-      uVar4 = Ordinal_1053();
+      uVar4 = ce_rand();
       uw_ord2005_rem_77 = ((int)(uVar4)) % (2);
       iVar2 = DAT_0010190c;
       if (uw_ord2005_rem_77 != 0) {
@@ -720,7 +720,7 @@ void npc_combat_disengage_tick()
       *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
       *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xe0 | 0x20;
       *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfe | 6;
-      uVar4 = Ordinal_1053();
+      uVar4 = ce_rand();
       uw_ord2005_rem_79 = ((int)(uVar4)) % (2);
       iVar2 = DAT_0010190c;
       if (uw_ord2005_rem_79 != 0) {
@@ -783,18 +783,18 @@ LAB_00025aec:
   }
   else {
     if (iVar1 < (short)((int)param_2 + (int)param_1 >> 1)) {
-      uVar2 = Ordinal_1053();
+      uVar2 = ce_rand();
       uw_ord2005_rem_3 = ((int)(uVar2)) % (2);
       if (uw_ord2005_rem_3 != 0) {
         return 2;
       }
     }
     else {
-      uVar2 = Ordinal_1053();
+      uVar2 = ce_rand();
       uw_ord2005_rem_4 = ((int)(uVar2)) % (3);
       if (uw_ord2005_rem_4 == 0) goto LAB_00025aec;
     }
-    uVar2 = Ordinal_1053();
+    uVar2 = ce_rand();
     uw_ord2005_rem_5 = ((int)(uVar2)) % (3);
     uVar2 = 0;
     if (uw_ord2005_rem_5 == 0) {
@@ -1041,7 +1041,7 @@ undefined4 resolve_melee_swing_hit()
 #define local_33 (local_pos_record[9])
 #define local_32 (*(short *)(local_pos_record + 0xa))
 
-  Ordinal_1047(local_pos_record, 0, sizeof(local_pos_record));
+  ce_memset(local_pos_record, 0, sizeof(local_pos_record));
   DAT_00202c6c = &local_3c;
   uVar7 = (uint)DAT_001005f4;
   local_34 = (char)DAT_001005f4 + '\x01';
@@ -1050,8 +1050,8 @@ undefined4 resolve_melee_swing_hit()
   iVar5 = (int)DAT_00100610;
   puVar6 = (ushort *)(iVar5 * 0x1b + DAT_002046b8);
   bVar1 = (&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd];
-  iVar4 = Ordinal_2005(3,(int)DAT_001005f8);
-  sVar3 = Ordinal_2005(3,(uint)bVar1 * iVar4);
+  iVar4 = ordint_divmod(3,(int)DAT_001005f8);
+  sVar3 = ordint_divmod(3,(uint)bVar1 * iVar4);
   sVar3 = ((byte)puVar6[1] & 0x7f) + sVar3;
   if (iVar5 == 1) {
     iVar5 = (int)DAT_0023beb4;
@@ -1063,7 +1063,7 @@ undefined4 resolve_melee_swing_hit()
     sVar3 = sVar3 - (short)(iVar5 >> 9);
   }
   local_38 = sVar3;
-  cVar2 = Ordinal_2005(6,(&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd]);
+  cVar2 = ordint_divmod(6,(&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd]);
   DAT_001005dc = cVar2 + (char)sVar3;
   local_3c = (short)((puVar6[0xb] & 0xfc00) >> 7) + (ushort)(*(byte *)((char *)puVar6 + 3) >> 5);
   local_3a = (short)((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
@@ -1164,13 +1164,13 @@ undefined4 param_2;
       return 1 - iVar3;
     }
     DAT_001005d8 = 1;
-    uVar6 = Ordinal_1053();
+    uVar6 = ce_rand();
     DAT_0010061c = (short)((int)((uVar6 & 0x1f) + 0x30) >> 5) * DAT_0010061c;
     if ((short)param_2 == 1) {
       weapon_overlay_flash_once(0xb8);
       uVar8 = DAT_00100624 + 1U & 3;
       if (uVar8 == 3) {
-        uVar4 = Ordinal_1053();
+        uVar4 = ce_rand();
         uw_ord2005_rem_6 = ((int)(uVar4)) % (5);
         uVar8 = (uw_ord2005_rem_6 == 0) + 3;
       }
@@ -1233,7 +1233,7 @@ undefined1 param_1;
   if (DAT_0010061c < 2) {
     sVar3 = 2;
   }
-  sVar2 = Ordinal_2005(6,(int)sVar3);
+  sVar2 = ordint_divmod(6,(int)sVar3);
   uw_ord2005_rem_7 = ((int)((int)sVar3)) % (6);
   DAT_0010061c = 0;
   if (sVar2 != 0) {
@@ -1265,7 +1265,7 @@ undefined1 param_1;
       uVar4 = (ushort)(byte)(&DAT_001007d0)[iVar11];
     }
     if ((sVar2 != 1) && ((puVar6[7] & 4) != 0)) {
-      uVar4 = Ordinal_2005(3,(short)uVar4 * 5);
+      uVar4 = ordint_divmod(3,(short)uVar4 * 5);
     }
     if ((int)(uVar9 * 0x10000) >> 0x10 < (int)(short)uVar4) {
       sVar3 = 0;
@@ -1296,7 +1296,7 @@ undefined1 param_1;
       DAT_00100624 = 4;
     }
     uVar8 = DAT_00100624;
-    sVar3 = Ordinal_2005(0x1b,DAT_0023b82c - DAT_002046b8);
+    sVar3 = ordint_divmod(0x1b,DAT_0023b82c - DAT_002046b8);
     if (DAT_00100620 == sVar3) {
       set_movement_animation_timer(0x20,(uint)(byte)local_38 * 5);
     }
@@ -1307,7 +1307,7 @@ undefined1 param_1;
             iVar11 = 0;
           }
           else {
-            sVar3 = Ordinal_2005((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30],(uint)(byte)puVar6[4] * 3);
+            sVar3 = ordint_divmod((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30],(uint)(byte)puVar6[4] * 3);
             iVar11 = (int)sVar3;
           }
           if (2 < (short)iVar11) {
@@ -1326,7 +1326,7 @@ undefined1 param_1;
           if (DAT_00100610 != 1) {
             return;
           }
-          uVar5 = Ordinal_1053();
+          uVar5 = ce_rand();
           spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,
                        (uVar5 & 1) * 5 + (short)(&DAT_00084f18)[(short)DAT_00100624] + -2,
                        DAT_00100600,DAT_00100604);
@@ -1597,18 +1597,18 @@ short param_3;
   sVar5 = (ushort)*(byte *)((short)uVar3 + DAT_00086df8 + 0x21) +
           (ushort)(*(byte *)(DAT_00086df8 + 0x21) >> 1);
   DAT_00100608 = sVar5;
-  sVar4 = Ordinal_2005(7,*(undefined1 *)(DAT_00086df8 + 0x1f));
+  sVar4 = ordint_divmod(7,*(undefined1 *)(DAT_00086df8 + 0x1f));
   DAT_00100608 = sVar5 + sVar4;
   if (*(char *)(iVar2 + 0xb4) != '\0') {
     DAT_00100608 = DAT_00100608 + 7;
   }
   if ((short)uVar3 == 2) {
-    sVar4 = Ordinal_2005(6);
-    sVar5 = Ordinal_2005(5,(uint)*(byte *)(iVar2 + 0x23) << 1);
+    sVar4 = ordint_divmod(6);
+    sVar5 = ordint_divmod(5,(uint)*(byte *)(iVar2 + 0x23) << 1);
     DAT_0010061c = sVar4 + sVar5 + 4;
   }
   else {
-    sVar4 = Ordinal_2005(9,(&DAT_001007d5)[(*g_player_object & 0x3f) * 0x30]);
+    sVar4 = ordint_divmod(9,(&DAT_001007d5)[(*g_player_object & 0x3f) * 0x30]);
     DAT_0010061c = (ushort)*(byte *)(param_1 + (uint)(byte)(&DAT_00084eff)[param_3]) + sVar4;
   }
   DAT_00100610 = 1;
@@ -1716,13 +1716,13 @@ short param_5;
   DAT_0010061c = (ushort)bVar1;
   DAT_001005f8 = param_2;
   DAT_001005fc = param_3;
-  sVar3 = Ordinal_2005(5,(&DAT_001007d5)[(*param_1 & 0x3f) * 0x30]);
+  sVar3 = ordint_divmod(5,(&DAT_001007d5)[(*param_1 & 0x3f) * 0x30]);
   DAT_0010061c = (ushort)bVar1 + sVar3;
   DAT_00100608 = (short)(char)(&DAT_001007d0)[iVar5 + 0x13] +
                  (short)((int)(char)(&DAT_001007e1)[iVar6] >> 1);
   if ((param_1[0xe] & 4) != 0) {
-    /* Both Ordinal_2005 calls below were the same fabricated-remainder
-       bug fixed elsewhere this session (this port's Ordinal_2005 never
+    /* Both ordint_divmod calls below were the same fabricated-remainder
+       bug fixed elsewhere this session (this port's ordint_divmod never
        populates extraout_r1/extraout_r1_00); computed each remainder
        directly instead. This randomizes a wander/patrol target offset,
        so previously always added a fixed +7/+4 instead of a real
@@ -1730,9 +1730,9 @@ short param_5;
        the "NPC teleports far away on its first tick" bug this session's
        QA pass reported, traced to npc_ai_tick's own dropped 5th argument
        to this function (see its call site's comment). */
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     DAT_00100608 = DAT_00100608 + (short)(uVar4 % 6) + 7;
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     DAT_0010061c = DAT_0010061c + (short)(uVar4 % 0xc) + 4;
   }
   if (getenv("UW_DEBUG_NPC_WANDER")) {
@@ -1786,7 +1786,7 @@ ushort * param_1;
     iVar2 = roll_dice_sum(2,(int)sVar1);
     iVar2 = iVar2 + sVar1 * 4;
     if ((param_1[7] & 4) != 0) {
-      uVar3 = Ordinal_1053();
+      uVar3 = ce_rand();
       uw_ord2005_rem_10 = ((int)(uVar3)) % (0x18);
       iVar2 = (uw_ord2005_rem_10 + 0x18) * (iVar2 * 0x10000 >> 0x10);
       if (iVar2 < 0) {
@@ -1820,7 +1820,7 @@ void load_combat_data_file()
     *stack0xffdc3250_ptr = cVar1; stack0xffdc3250_ptr = stack0xffdc3250_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(acStack_108,s__DATA_cmb_dat_00084f40);
+  ce_strcat(acStack_108,s__DATA_cmb_dat_00084f40);
   read_buffer_from_file(acStack_108,&DAT_00100630,0x3c);
   return;
 }
@@ -1860,7 +1860,7 @@ undefined4 try_npc_special_ability_no_los()
   uint uVar4;
   
   if (*(char *)(DAT_00101404 + 0x2c) != -1) {
-    uVar2 = Ordinal_1053();
+    uVar2 = ce_rand();
     bVar1 = *(byte *)(DAT_00101404 + 0x2d);
     uw_ord2005_rem_59 = ((int)(uVar2)) % (0x100);
     if (((uw_ord2005_rem_59 < (int)(uint)(bVar1 >> 1)) &&
@@ -1912,13 +1912,13 @@ undefined4 try_npc_special_ability_ranged()
                              (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
                              ((byte)DAT_00101400[1] & 0x7f)), iVar3 != 0)))) &&
      (iVar3 = check_npc_target_alignment(1), iVar3 != 0)) {
-    uVar4 = Ordinal_1053();
+    uVar4 = ce_rand();
     bVar1 = *(byte *)(DAT_00101404 + 0x2d);
     uw_ord2005_rem_60 = ((int)(uVar4)) % (0x80);
     if (uw_ord2005_rem_60 < (short)(ushort)(bVar1 >> 1)) {
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xcd | 0xd;
-      uVar4 = Ordinal_1053();
+      uVar4 = ce_rand();
       uw_ord2005_rem_61 = ((int)(uVar4)) % (0x10);
       cVar2 = '\x01';
       if (10 < uw_ord2005_rem_61) {
@@ -1959,7 +1959,7 @@ undefined4 try_npc_special_ability_alt()
                             (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
                             ((byte)DAT_00101400[1] & 0x7f)), iVar2 != 0)) &&
      (iVar2 = check_npc_target_alignment(1), iVar2 != 0)) {
-    uVar3 = Ordinal_1053();
+    uVar3 = ce_rand();
     bVar1 = *(byte *)(DAT_00101404 + 6);
     uw_ord2005_rem_62 = ((int)(uVar3)) % (0xc0);
     if (uw_ord2005_rem_62 <= (int)(uint)bVar1) {
@@ -1981,7 +1981,7 @@ undefined4 try_npc_special_ability_alt()
 // toward the player and, based on the angular difference from the
 // NPC's own current heading, snaps param_1 to one of 4 discrete
 // swerve-left/swerve-right offsets around it. Already had its 5
-// fabricated-remainder Ordinal_2005/extraout_r1 calls fixed by an
+// fabricated-remainder ordint_divmod/extraout_r1 calls fixed by an
 // earlier pass this session (see that fix's own comment just below).
 uint adjust_heading_away_from_player(param_1,param_2)
 uint param_1;
@@ -2015,8 +2015,8 @@ uint param_2;
   if ((int)(uVar4 * uVar4 + uVar2 * uVar2 & 0xffff) < (int)((param_2 & 0xffff) * (param_2 & 0xffff))
      ) {
     uVar2 = compute_movement_heading((int)(uVar3 * 0x1000000) >> 0x18,(int)(uVar5 * 0x1000000) >> 0x18);
-    /* All 5 Ordinal_2005 calls below were the same fabricated-remainder
-       bug fixed elsewhere this session (this port's Ordinal_2005 never
+    /* All 5 ordint_divmod calls below were the same fabricated-remainder
+       bug fixed elsewhere this session (this port's ordint_divmod never
        populates extraout_r1/extraout_r1_NN) -- computed each remainder
        directly instead. Divisors are constants (8, 0x100), so `% 8`/
        `% 0x100` is exact (the latter equals `& 0xff`, matching the
@@ -2146,13 +2146,13 @@ char param_2;
     else {
       iVar7 = -0x8000;
       if (-uVar3 != uVar1) {
-        sVar2 = Ordinal_2005(uVar3,uVar1 << 0xf);
+        sVar2 = ordint_divmod(uVar3,uVar1 << 0xf);
         iVar7 = (int)sVar2;
       }
     }
     iVar5 = 0x7fff;
     if ((uVar6 != uVar3) && (iVar5 = -0x8000, -uVar3 != uVar6)) {
-      sVar2 = Ordinal_2005(uVar3,uVar6 << 0xf);
+      sVar2 = ordint_divmod(uVar3,uVar6 << 0xf);
       iVar5 = (int)sVar2;
     }
     uVar3 = compute_angle_from_slope(iVar7,iVar5);
@@ -2189,7 +2189,7 @@ char param_2;
 // decrements HP, and on HP exhaustion routes through
 // handle_monster_death/award_monster_kill_experience. Also drives combat
 // music track selection (set_pending_music_track) based on the target's
-// remaining HP fraction via Ordinal_2005.
+// remaining HP fraction via ordint_divmod.
 undefined4 apply_damage_to_object(param_1,param_2,param_3)
 ushort * param_1;
 byte param_2;
@@ -2251,7 +2251,7 @@ ushort * param_3;
     }
   }
   if (uVar2 == 1) {
-    sVar1 = Ordinal_2005((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)(byte)param_1[4] << 6);
+    sVar1 = ordint_divmod((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)(byte)param_1[4] << 6);
     uVar4 = 5;
   }
   else {
@@ -2261,7 +2261,7 @@ ushort * param_3;
     if (uVar2 == 0) {
       return 0;
     }
-    sVar1 = Ordinal_2005(*(byte *)(DAT_0023be74 + 4) + 1,(uint)(byte)g_player_object[4] << 6);
+    sVar1 = ordint_divmod(*(byte *)(DAT_0023be74 + 4) + 1,(uint)(byte)g_player_object[4] << 6);
     uVar4 = 7;
   }
   if (0xf < sVar1) {
@@ -2296,7 +2296,7 @@ uint param_3;
   uVar2 = (uint)(byte)(&DAT_00202c99)[(*param_1 & 0x1ff) * 0xd];
   if ((uVar2 & param_3 & 0xff) != 0) {
     if ((param_3 & 3) != 0) {
-      uVar1 = Ordinal_1053();
+      uVar1 = ce_rand();
       uw_ord2005_rem_102 = ((int)(uVar1)) % (3);
       if (uw_ord2005_rem_102 < (int)(uVar2 & 3)) {
         return 0;
@@ -2538,17 +2538,17 @@ int param_5;
     *(undefined1 *)puVar5 = 0xf;
     *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar3 >> 8) & 0xfe;
   }
-  iVar6 = Ordinal_1068(acStack_4d + 1);
+  iVar6 = ce_strlen(acStack_4d + 1);
   build_object_display_name(acStack_4d + iVar6 + 1,puVar5,0,0);
-  iVar6 = Ordinal_1068(acStack_4d + 1);
+  iVar6 = ce_strlen(acStack_4d + 1);
   if (acStack_4d[iVar6] == 's') {
     pcVar8 = s_were_00085a98;
   }
   else {
     pcVar8 = &DAT_00085a90;
   }
-  Ordinal_1063(acStack_4d + 1,pcVar8);
-  Ordinal_1063(acStack_4d + 1,pcVar9);
+  ce_strcat(acStack_4d + 1,pcVar8);
+  ce_strcat(acStack_4d + 1,pcVar9);
   message_scroll_print_wrapped(acStack_4d + 1);
   redraw_backpack_slot_widget(param_1);
   return uVar7;
@@ -2626,7 +2626,7 @@ char param_3;
 // when nothing else handles it (param_1, the object that struck it,
 // is unused): takes a position snapshot, and if the snapshot's
 // velocity-like field is nonzero, computes a randomized bounce/
-// scatter offset (Ordinal_2005 roll scaled by the object's own speed
+// scatter offset (ordint_divmod roll scaled by the object's own speed
 // field) and commits the new position via sync_object_tile_position.
 // Always returns 4. Confirmed as the fallback tail of
 // resolve_collision_candidate_interaction's door/usable-object checks.
@@ -2664,7 +2664,7 @@ ushort *param_2;
     local_30 = *(short *)(auStack_48 + 0x18);
     iVar3 = DAT_00204874;
     if (local_30 != 0) {
-      sVar2 = Ordinal_2005((int)local_30,(int)*(short *)(DAT_00204874 + 0x18) << 6);
+      sVar2 = ordint_divmod((int)local_30,(int)*(short *)(DAT_00204874 + 0x18) << 6);
       uVar1 = *(undefined2 *)(iVar3 + 0x21);
       if (0x80 < sVar2) {
         sVar2 = 0x80;
