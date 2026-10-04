@@ -2391,7 +2391,7 @@ undefined1 param_6;
 // trigger_object_trap_or_use_action(action 4).
 bool apply_object_durability_damage(param_1,param_2,param_3,param_4,param_5)
 ushort * param_1;
-undefined4 param_2;
+ushort *param_2; /* damaging actor, forwarded to the destruction trigger */
 short param_3;
 undefined4 param_4;
 undefined2 param_5;
@@ -2723,9 +2723,11 @@ ushort *param_2;
 // (+0x27) before applying it to param_1 through apply_direct_object_hit.
 // Confirmed called from use_object_on_target for class-0/family-1
 // targets -- a "use this object on a trap/trigger" damage effect.
+/* ARM 0x545c0 preserves the target in r8 and 0x54698 passes that address
+   in r2 to apply_direct_object_hit. undefined4 truncated it on 64-bit hosts. */
 void apply_trap_type_damage_effect(param_1,param_2)
 byte * param_1;
-undefined4 param_2;
+ushort * param_2;
 
 {
   byte bVar1;

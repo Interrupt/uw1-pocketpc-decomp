@@ -714,9 +714,11 @@ char *param_2;
 // contents recursively freed. Falls through to a shared tail that
 // may randomly transform the object into a spent (0xd5/0xd6) type and
 // re-settle it into the world, returning whether the object survived.
+/* ARM 0x3803c forwards the damaging actor's address to the door callback.
+   Keep it pointer-sized rather than truncating it through undefined4. */
 undefined4 apply_object_destruction_effect(param_1,param_2,param_3,param_4,param_5)
 ushort * param_1;
-undefined4 param_2;
+ushort *param_2;
 uint param_3;
 undefined4 param_4;
 short param_5;

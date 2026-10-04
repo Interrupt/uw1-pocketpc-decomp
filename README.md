@@ -44,9 +44,27 @@ vendored under `third_party/unity`. Tests also require Python 3. Build and run t
 ./run-tests.sh
 ```
 
+Test build rules live in `tests/CMakeLists.txt`. `uw_test_support` shares the
+compiled character initializer and archive reader and provides headless
+`uw_test_create_character`, `uw_test_load_map`, and
+`uw_test_load_object_properties` helpers. `uw_test_movement` adds the compiled
+collision functions and a reusable movement fixture. The other suites likewise
+link `uw_test_<suite>` fixture libraries, with setup, mocks, and reusable helpers
+in `tests/support/`. Map loading, object-slot lookup, data reads, string/memory
+services, and division are shared across fixtures. Game functions stay in
+their source files; generated units are rebuilt when those sources change.
+
+A new movement suite can link `uw_test_movement` with
+`add_supported_game_unit_test(my_movement uw_test_movement)` and reset its
+fixture with `movement_fixture_reset()`. The fixture loads real level 1 and
+object properties, creates a character through the game initializer, and
+isolates the actors. Collision sampling remains controlled by the fixture's
+wall, stair and door inputs. Each case can select an exact contact condition
+and assert the game's collision response.
+
 `tests/test_math.c` checks `step_value_toward_limit` in both directions,
-including exact limits and rejected steps. It compiles the real `src/math.c`
-with test stubs for unrelated game services; no game data or SDL window is
+including exact limits and rejected steps. It links the compiled function from
+`src/math.c` without stubs for unrelated functions; no game data or SDL window is
 needed. The existing CMake configuration still requires SDL2 to be installed.
 
 `tests/test_chargen.c` tests new-character defaults, starting rolls, class

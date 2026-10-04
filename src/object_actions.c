@@ -972,14 +972,17 @@ undefined4 param_3;
 undefined4 dispatch_special_action(param_1,param_2,param_3,param_4)
 uint param_1;
 uint param_2;
-uint param_3;
-int param_4;
+uintptr_t param_3;
+intptr_t param_4;
 
 {
   undefined2 uVar1;
   int iVar2;
 
-  if ((param_3 < DAT_002046c4) || (0xb < (param_1 & 0xff))) {
+  /* ARM 0x73b74 receives object addresses in r2/r3 and reads the actor's
+     position at +0x16. Keep these address-sized on the native host: Ghidra's
+     uint/int declarations truncated the player pointer during rune casts. */
+  if ((param_3 < (uintptr_t)DAT_002046c4) || (0xb < (param_1 & 0xff))) {
     iVar2 = tile_is_no_magic(*(ushort *)(param_3 + 0x16) >> 10,
                          (*(ushort *)(param_3 + 0x16) & 0x3f0) >> 4);
     if (iVar2 != 0) {
@@ -1007,7 +1010,7 @@ int param_4;
     goto LAB_00073c90;
   case 3:
 LAB_00073c90:
-    if ((param_3 != g_player_object) ||
+    if ((param_3 != (uintptr_t)g_player_object) ||
        (iVar2 = add_active_light_source(param_1,param_2 & 0x3f,param_2 & 0xc0), iVar2 == 0)) {
       return 0;
     }
@@ -1019,14 +1022,14 @@ LAB_00073c90:
     apply_healing_item_effect(param_4,param_2);
     return 1;
   case 5:
-    if (param_3 == g_player_object) {
+    if (param_3 == (uintptr_t)g_player_object) {
       g_cursor_holding_state = 3;
       DAT_00202094 = param_2 & 0xff;
       DAT_00202098 = g_player_object;
       push_cursor_icon(0x1075);
     }
     else {
-      apply_targeted_spell_effect(param_3,param_2);
+      apply_targeted_spell_effect((ushort *)param_3,param_2);
     }
     break;
   case 6:
@@ -1122,8 +1125,11 @@ char param_2;
 // this cast), deducts it from the player's mana stat
 // (DAT_00086df8+0x37, "play_mana" -- see babl.c's own read of the
 // same offset). DAT_0023c3e0 is always cleared back to 0 afterward.
+/* ARM passes the actor address unchanged through r0 (0x740e8 and 0x7ca1c).
+   Keep it pointer-sized here: an int truncates the queued player's address
+   before projectile placement on a 64-bit host. */
 void apply_targeted_spell_effect(param_1,param_2)
-int param_1;
+ushort *param_1;
 char param_2;
 
 {
@@ -2556,7 +2562,7 @@ uint param_3;
 void complete_cast_spell_on_target()
 
 {
-  apply_targeted_spell_effect((int)DAT_00202098,(int)(char)DAT_00202094);
+  apply_targeted_spell_effect((ushort *)DAT_00202098,(int)(char)DAT_00202094);
   g_cursor_holding_state = 0;
   pop_cursor_icon(3);
   wait_for_click_release(1);
@@ -3578,32 +3584,32 @@ LAB_000497a0:
 // (apply_targeted_spell_effect) and ranged-attack spawns. Returns
 // whether the spawn succeeded.
 bool spawn_object_near_actor(param_1,param_2)
-uint param_1;
+ushort *param_1;
 short param_2;
 
 {
-  int iVar1;
+  ushort *puVar1; /* ARM 0x4a678 tests the returned object pointer for NULL. */
   
   DAT_00202a38 = param_2 + 0x10;
   DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[param_2 * 3];
-  DAT_00202a4c = (ushort)(*(byte *)(param_1 + 0x17) >> 2);
-  DAT_00202a50 = (ushort)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
+  DAT_00202a4c = (ushort)(*((byte *)param_1 + 0x17) >> 2);
+  DAT_00202a50 = (ushort)((param_1[11] & 0x3f0) >> 4);
   DAT_00202a54 = 1;
   DAT_00202a44 = param_1;
   if (param_1 == g_player_object) {
     compute_drop_aim_from_cursor();
   }
   else {
-    if (DAT_002046c4 <= param_1) {
+    if ((uintptr_t)DAT_002046c4 <= (uintptr_t)param_1) {
       DAT_00202a4c = (ushort)DAT_0023c3dc;
       DAT_00202a50 = (ushort)DAT_0023c3d8;
       DAT_00202a3c = 0;
     }
-    DAT_00202a54 = (ushort)(DAT_002046c4 > param_1);
+    DAT_00202a54 = (ushort)((uintptr_t)DAT_002046c4 > (uintptr_t)param_1);
     DAT_00202a40 = 0;
   }
-  iVar1 = spawn_object_near_player();
-  return iVar1 != 0;
+  puVar1 = spawn_object_near_player();
+  return puVar1 != 0;
 }
 
 
