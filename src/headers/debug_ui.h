@@ -1,6 +1,10 @@
 /* Minimal immediate-mode debug GUI, built on top of this project's own recovered UW1 drawing
    primitives (rect_fill_or_save_restore, set_draw_color, draw_text_string) rather than a separate
-   rendering path... */
+   rendering path. General subsystem debug panel: populated once per frame, unconditionally, from
+   main_loop_hud_flush (hud.c) with on/off toggles for whole render/simulation subsystems bound
+   directly to each subsystem's own global flag. Add a new subsystem toggle at that same call site
+   instead of starting a second panel -- there is exactly one field list, rebuilt every frame, live
+   at a time. */
 #ifndef DEBUG_UI_H
 #define DEBUG_UI_H
 

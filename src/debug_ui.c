@@ -245,6 +245,11 @@ void dbgui_feed_mouse_down(int lx, int ly)
 {
   if (!g_visible) return;
   int i;
+  if (getenv("UW_DEBUG_DBGUI")) {
+    fprintf(stderr, "[dbgui] feed_mouse_down lx=%d ly=%d field_count=%d\n", lx, ly, g_field_count);
+    for (i = 0; i < g_field_count; i++)
+      fprintf(stderr, "[dbgui]   field[%d] name=%s row_y=%d\n", i, g_fields[i].name, g_fields[i].row_y);
+  }
   for (i = 0; i < g_field_count; i++) {
     DbgField *f = &g_fields[i];
     if (ly >= f->row_y - 1 && ly < f->row_y + DBGUI_ROW_H - 2 &&
@@ -256,6 +261,8 @@ void dbgui_feed_mouse_down(int lx, int ly)
       }
       if (f->is_toggle) {
         *f->ival = !*f->ival;
+        if (getenv("UW_DEBUG_DBGUI"))
+          fprintf(stderr, "[dbgui]   toggled field[%d] %s -> %d\n", i, f->name, *f->ival);
         return;
       }
       g_editing = 1;

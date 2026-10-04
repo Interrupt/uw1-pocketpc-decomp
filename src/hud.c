@@ -3,6 +3,10 @@
    message scroll panel (word-wrap, line-by-line scroll, draw). */
 #include "headers/hud.h"
 #include "headers/debug.h"
+#include "headers/debug_ui.h"
+#include "headers/models.h"
+#include "headers/movement.h"
+#include "headers/tmap.h"
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1017,6 +1021,17 @@ void main_loop_hud_flush()
     if (_force_cursor < 0) _force_cursor = (getenv("UW_NO_FORCE_CURSOR_REDRAW") == NULL);
     if (_force_cursor) update_mouse_state();
   }
+  /* General debug panel: subsystem on/off toggles, bound directly to each subsystem's own global
+     flag. Populated unconditionally, once per frame, HERE rather than from inside whatever
+     subsystem happens to run that frame. Add a new subsystem toggle here, not at a second call
+     site -- there's exactly one field list live at a time. */
+  dbgui_begin("Debug Panel");
+  dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  dbgui_field_toggle("3d_objects", &g_uw_3d_objects_enabled);
+  dbgui_field_toggle("npc_tick", &g_npc_tick_enabled);
+  dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
+  dbgui_end();
   /* Debug UI: must draw HERE, after the forced 3D redraw above (or it gets painted over) but before
      flush_dirty_rect_to_display(1) below -- that call is the actual screen present for this tick
      (blits the software framebuffer through to GXEndDraw/SDL_RenderPresent, see gx_stub.c). */
