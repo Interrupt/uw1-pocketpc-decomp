@@ -119,6 +119,27 @@ static void dbgui_restore_backing(void)
   g_saved_valid = 0;
 }
 
+/* Puts back the real game pixels behind the panel, then immediately
+   re-saves them -- for switching the panel's own CONTENT mid-session
+   (toggle panel <-> object inspector <-> texture inspector) while it
+   stays open, not for closing it (dbgui_toggle already does exactly
+   this restore/re-arm pair around a close/reopen). A content switch
+   can shrink the panel (5-row door inspector -> 3-row texture
+   inspector), and relying on the next draw's own fill to cover
+   whatever the previous, taller content left behind depends on
+   redraw/flush ordering elsewhere in the frame that this module
+   doesn't control; stamping the known-correct real pixels back in
+   directly, unconditionally, before the new content draws over them
+   sidesteps that entirely regardless of what does or doesn't redraw
+   this region afterward. Call this whenever the caller is about to
+   switch content and the panel was already visible (not on a fresh
+   open -- dbgui_toggle's own save already started it clean then). */
+void dbgui_invalidate_region(void)
+{
+  dbgui_restore_backing();
+  dbgui_save_backing();
+}
+
 /* SDL_Keycode values duplicated here (not #include <SDL.h>) to keep
    this file decoupled from SDL -- these are SDL2's own stable public
    values, scancode-based for the non-ASCII ones (1<<30 | scancode). */

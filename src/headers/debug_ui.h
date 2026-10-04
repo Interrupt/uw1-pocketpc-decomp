@@ -84,6 +84,15 @@ int dbgui_visible(void);
  * SDLK_BACKQUOTE (96), before checking dbgui_visible(), so the panel
  * can always be brought back even while hidden. */
 void dbgui_toggle(void);
+/* Call when the caller is about to switch the panel's own content
+   (toggle panel <-> object inspector <-> texture inspector) while it
+   stays open -- puts the real game pixels back behind the panel and
+   re-saves them, so the new content's own fill never has to rely on
+   covering whatever a previous, possibly-taller/wider draw left behind
+   (see its own comment in debug_ui.c for why that's not safe to lean
+   on). Do not call this around an actual close/reopen -- dbgui_toggle
+   already does the equivalent restore/re-arm pair for that. */
+void dbgui_invalidate_region(void);
 
 /* Raw input feed from gx_stub.c's SDL event loop, BEFORE any of the
  * game's own WM_*-message translation -- landscape logical pixel
