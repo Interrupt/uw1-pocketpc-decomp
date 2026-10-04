@@ -76,6 +76,20 @@ void dbgui_feed_mouse_down(int lx, int ly);
 void dbgui_feed_key(int sdl_keycode);
 void dbgui_feed_text(const char *utf8);
 
+/* Test-only accessors (tests/test_debug_ui.c) -- never called by game
+ * code. dbgui_test_reset() clears all panel/selection/edit state back
+ * to a fresh process start, so each test case gets a known baseline
+ * regardless of what an earlier test left behind (dbgui_begin() itself
+ * deliberately does NOT reset selection -- real play wants the cursor
+ * to survive from frame to frame). dbgui_test_row_x/row_y expose the
+ * real per-field click rect dbgui_draw() just computed, instead of
+ * tests duplicating DBGUI_PANEL_X/DBGUI_ROW_H's values by hand (only
+ * valid after a dbgui_draw() call this "frame", same as real mouse
+ * picking -- returns -1 for an out-of-range index). */
+void dbgui_test_reset(void);
+int dbgui_test_row_x(void);
+int dbgui_test_row_y(int field_index);
+
 #ifdef __cplusplus
 }
 #endif
