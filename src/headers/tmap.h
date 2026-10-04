@@ -31,9 +31,9 @@ extern byte DAT_0023bc88;
 extern char *DAT_0023ae38;
 extern char *DAT_0023ae3c;
 extern byte DAT_0023b4a0;
-extern undefined2 DAT_0023b848_backing[64];
+extern undefined2 DAT_0023b848_backing[32];
 #define DAT_0023b848 DAT_0023b848_backing[0]
-extern undefined1 DAT_0023b8c8_backing[128];
+extern undefined1 DAT_0023b8c8_backing[32];
 #define DAT_0023b8c8 DAT_0023b8c8_backing[0]
 #define DAT_0023b8c9 DAT_0023b8c8_backing[1]
 extern undefined2 DAT_0023b8c0;

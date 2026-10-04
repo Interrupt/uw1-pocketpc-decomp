@@ -37,7 +37,7 @@ extern unsigned char g_backpack_slot_to_widget_backing[0x1c];
 #define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
 extern undefined2 g_save_record_count_backing[8192];
 #define g_save_record_count g_save_record_count_backing[0]
-extern undefined4 DAT_002028e8_backing[64];
+extern undefined4 DAT_002028e8_backing[32];
 #define DAT_002028e8 DAT_002028e8_backing[0]
 extern code * DAT_002020b8;
 extern undefined4 DAT_00202938;

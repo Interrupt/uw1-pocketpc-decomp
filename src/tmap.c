@@ -328,8 +328,14 @@ static undefined1 DAT_0023b940_backing[1024];
    Recompiled as separate scalars the indexed writes and reads land on
    different memory (NULL slot deref crash). Back them with real arrays;
    all uses are confined to that function span, no external refs. */
- undefined2 DAT_0023b848_backing[64];
- undefined1 DAT_0023b8c8_backing[128];
+/* Sizing-audit pass: DAT_0023b848[i] real extent is i in 0..8 (9
+   u16 elements, 18 bytes) per the comment above. Sized to 32 elements
+   (64 bytes) for headroom; down from 64. */
+ undefined2 DAT_0023b848_backing[32];
+/* Sizing-audit pass: DAT_0023b8c8[i]/[i+1] real extent is i in 0..8
+   too (same object count, max i+1=9, 10 bytes). Sized to 32 for
+   headroom; down from 128. */
+ undefined1 DAT_0023b8c8_backing[32];
  undefined1 DAT_0023bb98_backing[512];
 /* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view-
    facing corner-index remap for a rotating quad: resolve_billboard_corner_offset reads

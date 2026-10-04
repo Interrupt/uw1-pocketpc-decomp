@@ -646,6 +646,27 @@ static char s__DATA3D_40LOTUS_E_000855e8[] = "\\DATA3D\\40LOTUS.E";
 static char s__DATA3D_BENCH_E_000855fc[] = "\\DATA3D\\BENCH.E";
 static char s__DATA3D_FBRIDGE_E_0008560c[] = "\\DATA3D\\FBRIDGE.E";
 static char s__DATA3D_DFRAME_E_00085620[] = "\\DATA3D\\DFRAME.E";
+/* Sizing-audit pass: these ~30 per-model catalog buffers (one per .E
+   file, each passed as parse_e_model_file's own param_2) were checked
+   for oversizing like every other array in this audit, but turned out
+   NOT to be oversized -- they're already reasonably tight. Traced
+   every dynamic write into param_2 (PARTS stride 0x60 based at
+   0xc14..., POINTS stride 0xc based at +8...) and parsed all 30 real
+   data/DATA3D/*.E files directly: worst real case is SHRINE.E (76
+   parts, 47 points) at ~10383 bytes -- 63% of the declared 16384, a
+   reasonable ~37% margin.
+
+   Separately (NOT a sizing-audit finding, flagging for visibility
+   only): the PARTS block's own governing cap is 350 parts
+   (`g_model_parse_part_count`), and the per-face vertex-index loop
+   feeding +0xc18 has no cap at all tied to this buffer's size, so the
+   code's own theoretical reachable worst case (~36791 bytes) exceeds
+   16384 -- a latent gap, not a live bug, since no real shipped file
+   comes remotely close (76 parts vs the 350 cap; 5 verts/face vs the
+   ~23-24 designed slots). Left exactly as-is: this is the one family
+   in the whole audit that should arguably grow or gain an explicit
+   size guard, not shrink, and that's a separate change from this
+   sizing pass. */
 static undefined DAT_00114c1c_backing[16384];
 #define DAT_00114c1c DAT_00114c1c_backing[0]
 static undefined DAT_00118848_backing[16384];

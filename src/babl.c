@@ -290,7 +290,14 @@ static undefined1 DAT_001006d8_backing[8192];
    correctly. Same "array Ghidra/this port declared as a bare scalar"
    bug class as DAT_00100728 and this array's own sibling DAT_001007a0
    (already fixed with a real backing array). Sized to match. */
-static short DAT_00100770_backing[32768];
+/* Sizing-audit pass: indexed by wrapped-line position, bounded by the
+   same CONV.BYT-budget judgment call as its siblings DAT_00100680/
+   001006d8/001007a0 (see DAT_00100680's own comment) -- a long menu
+   message could wrap past the fixed "10 visible lines" bound, but
+   the total text driving it still comes from the same tiny per-NPC
+   script budget. Sized to 1024 for consistency with those siblings;
+   down from 32768. */
+static short DAT_00100770_backing[1024];
 #define DAT_00100770 DAT_00100770_backing[0]
 /* Sizing-audit pass: same index/cap reasoning as DAT_00100680 above,
    but a 2-byte (short) stride, not 8 -- 1024 items * 2 = 2048 bytes.

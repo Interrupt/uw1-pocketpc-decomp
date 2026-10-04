@@ -34,7 +34,10 @@ char *g_open_container_list;
    bearing `char *`), corrupting an equipped-item lookup and crashing
    refresh_player_equipment_effects on the very first in-game frame. Widened with a safety
    margin. */
-static undefined4 DAT_002028a0_backing[64];
+/* Sizing-audit pass: real index range is i up to 7 (8 elements), per
+   the comment above -- 32 bytes real need. Sized to 16 elements (64
+   bytes) for headroom; down from 64 (256 bytes). */
+static undefined4 DAT_002028a0_backing[16];
 #define DAT_002028a0 DAT_002028a0_backing[0]
 static undefined DAT_00202978_backing[8192];
 #define DAT_00202978 DAT_00202978_backing[0]
