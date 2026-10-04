@@ -476,15 +476,15 @@
       "kind": "macro_alias",
       "type": "undefined",
       "backing_array": "DAT_00084730_backing",
-      "size": 8192,
+      "size": 64,
       "readers": 1,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "8192-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: a bare NKDbgPrintfW debug-message format string (no args), content unrecovered, surrounded entirely by short (<40 char) literal strings in this same table.",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00084814",
@@ -492,15 +492,15 @@
       "kind": "macro_alias",
       "type": "undefined",
       "backing_array": "DAT_00084814_backing",
-      "size": 8192,
+      "size": 64,
       "readers": 1,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "8192-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: an NKDbgPrintfW debug-message format string (one %-arg, local_22c), content unrecovered, sibling of the \"branch\"/\"leaf\" literals right around it. Sized to 64 for headroom; down from 8192.",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00084820",
@@ -508,15 +508,15 @@
       "kind": "macro_alias",
       "type": "undefined",
       "backing_array": "DAT_00084820_backing",
-      "size": 8192,
-      "readers": 1,
+      "size": 64,
+      "readers": 2,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "8192-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: a ce_fscanf format string (`ce_fscanf(pvVar_fh, &DAT_00084820,&local_1e4)`, one int destination), content unrecovered, sibling of the short format-string literals around it (e.g. s__d_1s_000848c8 = \"%d%1s\").",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000848f4",
@@ -524,15 +524,15 @@
       "kind": "macro_alias",
       "type": "undefined",
       "backing_array": "DAT_000848f4_backing",
-      "size": 8192,
+      "size": 64,
       "readers": 1,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "8192-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: a ce_fscanf format string (multiple destination pointers), content unrecovered, sibling of \"got_sphere_%d\" right above it. Sized to 64 for headroom; down from 8192.",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000849a8",
@@ -540,7 +540,7 @@
       "kind": "macro_alias",
       "type": "char",
       "backing_array": "DAT_000849a8_backing",
-      "size": 8192,
+      "size": 16,
       "readers": 12,
       "writers": 0,
       "reader_file_count": 1,
@@ -548,7 +548,7 @@
       "description": "Unrecoverable scanf-format string constants (Ghidra never recovered their content).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000849ac",
@@ -556,15 +556,15 @@
       "kind": "macro_alias",
       "type": "char",
       "backing_array": "DAT_000849ac_backing",
-      "size": 8192,
+      "size": 16,
       "readers": 6,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "8192-element char backing store; read 6 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
+      "description": "16-element char backing store; read 6 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000849c8",
@@ -572,7 +572,7 @@
       "kind": "macro_alias",
       "type": "char",
       "backing_array": "DAT_000849c8_backing",
-      "size": 8192,
+      "size": 16,
       "readers": 7,
       "writers": 0,
       "reader_file_count": 1,
@@ -580,7 +580,7 @@
       "description": "Unrecoverable string constant (Ghidra never recovered its content) -- confirmed \"END\" by inspecting a real .E model file (DATA3D/DFRAME.E): the game's text script parser (parse_e_model_file) brackets every model with a BEGIN...END pair (see...",
       "description_source": "backing_array",
       "rename_suggestion": "s_model_end_keyword",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00084a24",
@@ -588,15 +588,15 @@
       "kind": "macro_alias",
       "type": "undefined",
       "backing_array": "DAT_00084a24_backing",
-      "size": 8192,
-      "readers": 1,
+      "size": 16,
+      "readers": 2,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "8192-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: ce_fopen's mode-string argument (`ce_fopen(acStack_130,&DAT_00084a24)`), content unrecovered -- fopen mode strings are always a handful of chars (e.g. \"rb\").",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00084a40",
@@ -13421,7 +13421,7 @@
       "type": "undefined",
       "backing_array": "DAT_00110ff0_backing",
       "size": 524288,
-      "readers": 6,
+      "readers": 7,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
@@ -13437,14 +13437,14 @@
       "type": "undefined",
       "backing_array": "DAT_00110ffc_backing",
       "size": 256,
-      "readers": 1,
+      "readers": 2,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "256-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: DAT_00110ffc/DAT_0018959c-f's only use is inside tick_anim_record's dead legacy address-walk (the same one documented at DAT_00110ff0/DAT_00189590's own comment above) -- indexed by `catalog*0x3c2c`, which would be a severe overflow against these 256-byte...",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00114c1c",
@@ -13916,15 +13916,15 @@
       "kind": "macro_alias",
       "type": "undefined2",
       "backing_array": "DAT_00189570_backing",
-      "size": 256,
+      "size": 16,
       "readers": 3,
       "writers": 2,
       "reader_file_count": 2,
       "writer_file_count": 2,
-      "description": "256-element undefined2 backing store; read 3 time(s), written 2 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: both write loops index it by `iVar29 < uVar21` where `uVar21 = catalog_flags & 7` -- max index 6 (7 elements, 14 bytes real). Sized to 16 for headroom; down from 256 (512 bytes, undefined2 element type).",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00189572",
@@ -14125,11 +14125,11 @@
       "type": "undefined1",
       "backing_array": "DAT_00189590_backing",
       "size": 524288,
-      "readers": 5,
+      "readers": 6,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "524288-element undefined1 backing store; read 5 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
+      "description": "524288-element undefined1 backing store; read 6 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
       "audited": true
@@ -14141,14 +14141,14 @@
       "type": "undefined",
       "backing_array": "DAT_0018959c_backing",
       "size": 256,
-      "readers": 1,
+      "readers": 2,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "256-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
+      "description": "256-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0018959d",
@@ -14164,7 +14164,7 @@
       "description": "256-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0018959e",
@@ -14180,7 +14180,7 @@
       "description": "256-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0018959f",
@@ -14196,7 +14196,7 @@
       "description": "256-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00201b10",
