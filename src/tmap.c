@@ -711,25 +711,14 @@ byte * param_1;
             (int)(*param_1 == 0));
   }
   if ((local_48 & 0x80) == 0) {
-    // HACK: bVar25==0 means run_visibility_flood's own clearing loop
-    // explicitly zeroed this cell -- the ray-flood never touched it at
-    // all -- as opposed to a nonzero-but-bit80-clear byte, which would
-    // mean the flood *did* reach this cell but just didn't flag it for
-    // 3D geometry. Before this check, both cases fell through to the
-    // same unconditional reveal, so the wide (~33-tile) rendering-
-    // frustum sweep this is called from revealed everything it swept
-    // over, touched or not -- confirmed live via a recorded repro
-    // (bug-fresh-map.txt): every "far" (>3 tiles) revealed cell had
-    // rawbyte==0, while every genuinely-reached near cell was already
-    // nonzero with bit 0x80 set. Root cause, not the door/light
-    // theories floated earlier (checked and ruled out: the revealed
-    // shape was a mathematically perfect rectangle, not a flood-fill
-    // following room/door connectivity).
+    /* Unreached cells stay unknown. For reached cells without geometry,
+       use the tile's shade to distinguish discovered floors from the
+       original unknown shapes (10..15) used for boundary walls. */
     if ((*param_1 == 0) && (bVar25 != 0)) {
-      /* Same floor-texture-aware reveal encoding as walk_visible_tiles's
-         ring-walk. Was DAT_00086bf0[type], which made every floor the
-         same (all blue, with the earlier reconstruction). */
-      *param_1 = automap_reveal_byte(DAT_0023b4ec);
+      /* Shade indices below 8 are bright enough to discover the floor. */
+      *param_1 = (DAT_0023b820[1] & 0xf) < 8
+          ? automap_reveal_byte(DAT_0023b4ec)
+          : DAT_00086bf0_real_table[g_current_tile->tile_type];
       DAT_0023b810 = DAT_0023b810 + 1;
     }
     flush_pending_tile_features();
@@ -764,7 +753,10 @@ byte * param_1;
         || (int)(uint)DAT_0023b838 >= 512 - 28
         || (int)DAT_0023b83c >= 490 - 6) {
       if (*param_1 == 0) {
-        *param_1 = automap_reveal_byte(DAT_0023b4ec);
+        /* Even when geometry storage is full, darkness must not reveal floors. */
+        *param_1 = (DAT_0023b820[1] & 0xf) < 8
+            ? automap_reveal_byte(DAT_0023b4ec)
+            : DAT_00086bf0_real_table[g_current_tile->tile_type];
         DAT_0023b810 = DAT_0023b810 + 1;
       }
       return;

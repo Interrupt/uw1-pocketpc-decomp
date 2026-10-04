@@ -261,7 +261,10 @@ int param_3;
 LAB_000168f8:
     iVar2 = 0;
     do {
-      darken_pixel((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1,uVar4,uVar5);
+      if (bVar1 >= 10)
+        darken_pixel_undiscovered((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1);
+      else
+        darken_pixel((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1,uVar4,uVar5);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
   }
@@ -277,7 +280,10 @@ LAB_000168f8:
     }
     iVar2 = 0;
     do {
-      darken_pixel(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10,uVar4,uVar5);
+      if (bVar1 >= 10)
+        darken_pixel_undiscovered(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10);
+      else
+        darken_pixel(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10,uVar4,uVar5);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
   }
@@ -562,11 +568,31 @@ int param_2;
   puVar1 = (ushort *)
            ((g_uw_framebuffer) +
            ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
-  *puVar1 = *puVar1 >> 1 & 0x7bef;
+  /* HACK: retain 5/8 brightness for discovered walls and map accents
+     instead of ARM's 1/2, to match the lighter reference automap. */
+  ushort color = *puVar1;
+  *puVar1 = (color >> 1 & 0x7bef) + (color >> 3 & 0x18e3);
   debug_framebuffer_dump("darken_pixel");
   return;
 }
 
+
+
+/* Undiscovered boundary walls are a lighter cue than explored floor fill.
+   Use a 1/8 brightness reduction versus the floor's 1/4 reduction. This
+   shade is an explicit visual adjustment: ARM's darken_pixel ignores its
+   extra shade arguments and halves every boundary pixel. */
+void darken_pixel_undiscovered(param_1,param_2)
+uint param_1;
+int param_2;
+
+{
+  ushort *pixel = (ushort *)((byte *)g_uw_framebuffer +
+      ((200U - param_2 & 0xffff) * 320 + (param_1 & 0xffff)) * 2);
+  ushort color = *pixel;
+  *pixel = (color >> 1 & 0x7bef) + (color >> 2 & 0x39e7) + (color >> 3 & 0x18e3);
+  return;
+}
 
 
 /* Like darken_pixel but only a 25% cut (x 3/4 brightness) instead of a
@@ -575,7 +601,7 @@ int param_2;
    via darken_pixel, which comes out far darker than the reference map
    (whose explored floor is a light tint over the parchment).  Used
    only for the draw_automap_cell floor fill; wall edges / accent
-   pixels keep the faithful darken_pixel. */
+   pixels use darken_pixel's darker 5/8 brightness. */
 void darken_pixel_light(param_1,param_2)
 uint param_1;
 int param_2;
