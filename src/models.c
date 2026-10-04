@@ -819,6 +819,24 @@ static unsigned char g_anim_model_scratch[30][16384];
 undefined2 DAT_00189570_backing[16];
 #define DAT_00189570 DAT_00189570_backing[0]
 char *DAT_00110fc0 = DAT_00110fc0_scratch;
+/* Sizing-audit pass: investigated, NOT confidently resolved. The one
+   real caller passes `&DAT_00202520 + pcVar15[3]*0x10` into
+   decompress_gr_bitmap's param_2 (a .GR tile's compression-mode-4
+   "auxiliary nibble->8bit remap table" bank selector); the only
+   confirmed direct read of it anywhere in that function is a single
+   byte, `param_2[1]` (resources.c's select_gr_bitmap_remap_table
+   call) -- every other reference to the shared remap cursor
+   (DAT_000b5630) gets reassigned to point into the compressed input
+   stream instead before ever being dereferenced. So the real bound
+   depends entirely on how many distinct `pcVar15[3]` bank values
+   exist across every real mode-4 .GR tile in the shipped assets --
+   not derivable from the code alone. Added live instrumentation
+   (reusing UW_DEBUG_DUMP_GR, see the call site) to find that bank
+   value empirically, but this code path never fired once across the
+   full 19-script regression suite (mode-4 .GR tiles aren't exercised
+   by that corpus), so no real high-water mark was obtained. Left at
+   1024 rather than guess; worth revisiting with a broader live
+   session or a direct scan of the shipped .GR files. */
  undefined1 DAT_00202520_backing[1024];
 short DAT_000b4620;
 static short DAT_00189584;
@@ -1363,6 +1381,9 @@ short frame_or_texid;
       texptr = (byte *)(pcVar15 + 5);
     }
     else {
+      if (getenv("UW_DEBUG_DUMP_GR")) {
+        fprintf(stderr, "[gr-remap] DAT_00202520 bank=%u\n", (unsigned)(byte)pcVar15[3]);
+      }
       texptr = (byte *)decompress_gr_bitmap(pcVar15 + 4,&DAT_00202520 + (uint)(byte)pcVar15[3] * 0x10);
     }
   }
