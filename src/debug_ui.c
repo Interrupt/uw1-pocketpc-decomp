@@ -22,16 +22,20 @@ typedef struct {
   int is_button;
   int is_toggle;
   int is_text;
+  int is_toggle_action;
   double *dval;
   int *ival;
   void (*on_press)(void);
   double step;
-  /* Snapshotted fresh every dbgui_field_text() call (unlike the other
-     field kinds, a text field has no live pointer debug_ui.c itself
-     re-reads -- the caller already resolved whatever string/number it
-     wanted shown before calling, same as building the row text by
-     hand would require anyway). */
+  /* Snapshotted fresh every dbgui_field_text()/dbgui_field_toggle_
+     action() call (unlike dbgui_field_toggle's own live *ival, these
+     two field kinds have no persistent boolean/string debug_ui.c
+     itself owns or re-reads -- the caller already resolved whatever
+     value it wanted shown before calling, same as building the row
+     text by hand would require anyway). toggle_display_value is only
+     meaningful when is_toggle_action; text_value only when is_text. */
   char text_value[40];
+  int toggle_display_value;
   /* Cached screen rect from the last dbgui_end(), for mouse hit-testing
      next frame (this frame's clicks arrive interleaved with drawing,
      so we test against where things were last actually drawn). */
@@ -181,6 +185,29 @@ void dbgui_field_toggle(const char *name, int *value)
   f->step = 1;
 }
 
+/* A toggle-styled row ("name: ON"/"name: OFF", same click/RETURN/LEFT/
+   RIGHT dispatch as dbgui_field_toggle) for a boolean that's really a
+   COMPUTED property with a genuine action behind changing it, not a
+   plain in-memory flag to flip -- e.g. a door's locked state: "locked"
+   is re-derived fresh every frame from the door's own link chain, and
+   the only real way to change it is to run the actual unlock action,
+   not just flip a bit somewhere. `value` is the state to display THIS
+   frame (the caller already computed it, same as dbgui_field_text's
+   own value); on_toggle is called on activation and decides what (if
+   anything) really happens -- if it does nothing, or the underlying
+   state genuinely can't go the other way (there's no real "re-lock a
+   door" action in this game to call, for instance), the row just shows
+   the same value again next frame, same as any other field whose
+   caller declines to change its bound value. */
+void dbgui_field_toggle_action(const char *name, int value, void (*on_toggle)(void))
+{
+  DbgField *f = dbgui_new_field(name);
+  if (!f) return;
+  f->is_toggle_action = 1;
+  f->toggle_display_value = value;
+  f->on_press = on_toggle;
+}
+
 static double dbgui_field_get(const DbgField *f)
 {
   return f->is_int ? (double)*f->ival : *f->dval;
@@ -263,6 +290,8 @@ void dbgui_draw(void)
       snprintf(line, sizeof(line), "%s: %s", f->name, f->text_value);
     } else if (f->is_toggle) {
       snprintf(line, sizeof(line), "%s: %s", f->name, *f->ival ? "ON" : "OFF");
+    } else if (f->is_toggle_action) {
+      snprintf(line, sizeof(line), "%s: %s", f->name, f->toggle_display_value ? "ON" : "OFF");
     } else if (g_editing && i == g_selected) {
       snprintf(line, sizeof(line), "%s: %s_", f->name, g_edit_buf);
     } else {
@@ -331,6 +360,10 @@ void dbgui_feed_mouse_down(int lx, int ly)
           fprintf(stderr, "[dbgui]   toggled field[%d] %s -> %d\n", i, f->name, *f->ival);
         return;
       }
+      if (f->is_toggle_action) {
+        if (f->on_press) f->on_press();
+        return;
+      }
       g_editing = 1;
       snprintf(g_edit_buf, sizeof(g_edit_buf), "%g", dbgui_field_get(f));
       g_edit_len = (int)strlen(g_edit_buf);
@@ -373,6 +406,10 @@ void dbgui_feed_key(int sdl_keycode)
   } else if (f->is_toggle) {
     if (sdl_keycode == DBGUI_KEY_RETURN || sdl_keycode == DBGUI_KEY_LEFT || sdl_keycode == DBGUI_KEY_RIGHT)
       *f->ival = !*f->ival;
+  } else if (f->is_toggle_action) {
+    if (sdl_keycode == DBGUI_KEY_RETURN || sdl_keycode == DBGUI_KEY_LEFT || sdl_keycode == DBGUI_KEY_RIGHT) {
+      if (f->on_press) f->on_press();
+    }
   } else if (sdl_keycode == DBGUI_KEY_LEFT) {
     dbgui_field_set(f, dbgui_field_get(f) - f->step);
   } else if (sdl_keycode == DBGUI_KEY_RIGHT) {

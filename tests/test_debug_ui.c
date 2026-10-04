@@ -211,6 +211,44 @@ static void test_shrinking_panel_clears_the_now_unused_rows(void)
         "shrinking panel's fill didn't cover the taller previous panel's rows");
 }
 
+/* A toggle-action row (debug panel's door "locked" field, in real
+ * usage) must call its on_toggle callback on click/RETURN/LEFT/RIGHT,
+ * display whatever value the caller passed this frame (not flip an
+ * owned bit itself -- the real state lives in the caller, same as
+ * dbgui_field_text), and never enter numeric-edit mode. */
+static int g_action_calls;
+static void count_action_call(void) { g_action_calls++; }
+
+static void test_toggle_action_field_calls_its_callback(void)
+{
+    int before[N_FIELDS];
+    g_action_calls = 0;
+    dbgui_begin("Test Panel");
+    dbgui_field_toggle("f0", &vals[0]);
+    dbgui_field_toggle_action("locked", 1, count_action_call);
+    dbgui_field_toggle("f1", &vals[1]);
+    dbgui_end();
+    dbgui_draw();
+    memcpy(before, vals, sizeof(vals));
+
+    dbgui_feed_mouse_down(dbgui_test_row_x(), dbgui_test_row_y(1));
+    TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_action_calls, "click did not call on_toggle");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(before[0], vals[0], "click on action row changed a toggle");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(before[1], vals[1], "click on action row changed a toggle");
+
+    dbgui_feed_key(DBGUI_KEY_RETURN);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(2, g_action_calls, "RETURN did not call on_toggle");
+    dbgui_feed_key(DBGUI_KEY_LEFT);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(3, g_action_calls, "LEFT did not call on_toggle");
+    dbgui_feed_key(DBGUI_KEY_RIGHT);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(4, g_action_calls, "RIGHT did not call on_toggle");
+
+    /* Selection must still pass through it to reach the field after. */
+    dbgui_feed_key(DBGUI_KEY_DOWN); /* locked row -> f1 */
+    dbgui_feed_key(DBGUI_KEY_RETURN);
+    TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(before[1], vals[1], "selection did not pass through the action row to f1");
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -223,5 +261,6 @@ int main(void)
     RUN_TEST(test_mouse_click_outside_panel_dispatches_nothing);
     RUN_TEST(test_text_field_is_read_only);
     RUN_TEST(test_shrinking_panel_clears_the_now_unused_rows);
+    RUN_TEST(test_toggle_action_field_calls_its_callback);
     return UNITY_END();
 }
