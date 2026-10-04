@@ -78,9 +78,24 @@ static char s_bad_tmap_ids_size_000869b7[] = "bad_tmap_ids_size";
    colour-light table arena: load_dungeon_texture_arenas sets
    DAT_0023ae38 = &DAT_002049e0 and loads several .tr/.dat files into
    it, then get_texture_page hands out `&DAT_002049e0 + page*stride`
-   pointers. Needs real backing storage (1 MB is comfortably more
-   than UW1's texture set). */
-undefined1 DAT_002049e0_backing[0x100000];
+   pointers. Needs real backing storage.
+
+   Sizing pass: "1 MB is comfortably more than UW1's texture set" was
+   never derived from anything -- the real bound is exact and provable
+   from the level file format itself, not an estimate. load_level_
+   texture_ids's own header comment: "read the level's 0x7a-byte
+   tmap-id block (48 wall + 10 floor + 3) from the .ark" -- the format
+   has exactly 48 wall-texture and 10 floor-texture id slots, full
+   stop, no level can ever have more. load_dungeon_texture_arenas
+   loads 4 fixed real files against those two counts: w64.tr (48 x
+   64x64 = 4096B), f32.tr (10 x 32x32 = 1024B), w16.tr (48 x 16x16 =
+   256B), f16.tr (10 x 16x16 = 256B) -- exact max 48*4096 + 10*1024 +
+   48*256 + 10*256 = 221696 bytes. Verified live too
+   (UW_DEBUG_TEXTURE_ARENA=1, full 19-script regression suite): real
+   usage is exactly 221696 bytes every time (both counts always fully
+   populated), matching the theoretical max exactly. Sized to 0x40000
+   (262144) for headroom, down from 0x100000 (1048576). */
+undefined1 DAT_002049e0_backing[0x40000];
 static char s__DATA_terrain_dat_000869ec[] = "\\DATA\\terrain.dat";
 // was DAT_0023b01c -- set by the 3D-viewport setup function
 // (configure_dungeon_viewport) whenever the real in-game dungeon-view mode (game

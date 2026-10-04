@@ -14,7 +14,7 @@ extern undefined2 DAT_00189578;
 extern ushort DAT_0023adc0;
 extern char *DAT_0023ae34;
 extern char *DAT_0023ae30;
-extern undefined1 DAT_002049e0_backing[0x100000];
+extern undefined1 DAT_002049e0_backing[0x40000];
 #define DAT_002049e0 DAT_002049e0_backing[0]
 extern short DAT_00086b28;
 extern char s__DATA_light_dat_000872c8[];

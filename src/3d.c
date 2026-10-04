@@ -1711,6 +1711,15 @@ void load_dungeon_texture_arenas()
   } while (cVar1 != '\0');
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
+  if (getenv("UW_DEBUG_TEXTURE_ARENA")) {
+    static long hwm_bytes = -1;
+    long used = (long)((DAT_0023ae30 + (int)DAT_0023aeb8 * 0x100) - (char *)&DAT_002049e0);
+    if (used > hwm_bytes) {
+      hwm_bytes = used;
+      fprintf(stderr, "[texture-arena] new high-water usage: %ld bytes (w16 count=%d f16 count=%d)\n",
+              used, (int)local_11c[0], (int)DAT_0023aeb8);
+    }
+  }
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] load_dungeon_texture_arenas: about to call load_door_frames (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
   load_door_frames();
