@@ -15,12 +15,25 @@
    `ce_memmove(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
    memmove, confirmed by ASAN global-buffer-overflow), matching
    DAT_00189590's own size (985856, an earlier widening pass already
-   caught the destination but missed this source). */
-static undefined DAT_00110ff0_backing[985856];
+   caught the destination but missed this source).
+
+   Sizing pass: traced 985856's own history back to its first-ever
+   widening (commit ac76d8f) -- no comment anywhere ever derived that
+   number from anything; every later fix (including this file's own
+   comment above) just matched it without re-deriving it. The one
+   concrete, confirmed figure in this whole chain is the memmove's own
+   literal 0x78580 (492928) byte count -- a fixed constant baked into
+   load_3d_object_models, copied unconditionally on every model load
+   regardless of which level/model set is active, so it's the real
+   size in the original binary, not an estimate. 985856 is exactly
+   double that. Shrunk both this array and DAT_00189590_backing below
+   to 0x80000 (524288), comfortable headroom above the confirmed need
+   without preserving an unexplained 2x. */
+static undefined DAT_00110ff0_backing[524288];
 #define DAT_00110ff0 DAT_00110ff0_backing[0]
 static undefined DAT_00110ffc_backing[256];
 #define DAT_00110ffc DAT_00110ffc_backing[0]
-static undefined1 DAT_00189590_backing[985856];
+static undefined1 DAT_00189590_backing[524288];
 #define DAT_00189590 DAT_00189590_backing[0]
 static undefined DAT_0018959c_backing[256];
 #define DAT_0018959c DAT_0018959c_backing[0]
