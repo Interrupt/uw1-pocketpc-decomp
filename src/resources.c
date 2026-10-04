@@ -58,23 +58,41 @@ static char s_doors_00085a64[] = "doors";
 undefined1 DAT_00202750_backing[256];
 static char *DAT_0023c3fc;
 static undefined4 *DAT_0023c404;
-/* DAT_0024bfa0-family (6 arrays) were already widened once (from a
-   pre-this-session pass) to 8200 bytes, but register_interned_string indexes with a
-   0x804(2052)-byte stride and DAT_0024cfc0 (the record count) grows
-   unboundedly as new entries are registered at runtime -- 8200 bytes
-   only covers ~4 records, and ASAN caught real startup traffic already
-   exceeding that. Widened further to a generous 64-record margin. */
-static undefined1 DAT_0024bfa0_backing[1052672];
+/* Sizing pass: the "grows unboundedly" claim below was wrong from the
+   moment it was written, not just stale -- register_interned_string
+   (this family's ONLY writer) has an unconditional `if (1 < iVar2)
+   return 0;` early return that hard-caps the real record/page count
+   (DAT_0024cfc0) at exactly 2, and every one of the 6 real call sites
+   across the whole codebase (babl.c x5, game.c x1) passes one of only
+   2 distinct page constants (0x7c/0x7d) -- independently confirmed by
+   get_message_string's own header comment ("capped to at most 2
+   distinct pages"). That cap isn't a recent fix either: it's been
+   there since this function was first extracted/named (commit
+   95f878f) with no behavior change, so it predates every widening
+   pass that assumed otherwise. Verified live too: instrumented every
+   high-water mark (UW_DEBUG_STRING_CACHE=1) and ran the full 19-script
+   regression suite -- real usage never exceeded 1 page / 1 slot.
+   Per-page stride is 0x804 (2052) bytes, so page index max 1 needs
+   at most byte offset 2052+1; rounded up to 4096 for headroom. (The
+   byte-plane pointer arrays just below have a different, finer-
+   grained real bound -- see their own comment.) */
+static undefined1 DAT_0024bfa0_backing[4096];
 #define DAT_0024bfa0 DAT_0024bfa0_backing[0]
-static undefined1 DAT_0024bfa1_backing[1052672];
+static undefined1 DAT_0024bfa1_backing[4096];
 #define DAT_0024bfa1 DAT_0024bfa1_backing[0]
-static undefined1 DAT_0024bfa2_backing[1052672];
+/* Sizing pass: byte-plane index is `(page*0x201 + sub_index) * 4`,
+   page capped at 1 (see DAT_0024bfa0's own comment) and sub_index
+   capped at 511 by register_interned_string's own zero-init loop
+   (`while (iVar4 < 0x200)`, 512 slots per page) -- max byte offset
+   (1*0x201+511)*4 = 4096. Rounded up to 8192 for headroom, down from
+   1052672. */
+static undefined1 DAT_0024bfa2_backing[8192];
 #define DAT_0024bfa2 DAT_0024bfa2_backing[0]
-static undefined1 DAT_0024bfa3_backing[1052672];
+static undefined1 DAT_0024bfa3_backing[8192];
 #define DAT_0024bfa3 DAT_0024bfa3_backing[0]
-static undefined1 DAT_0024bfa4_backing[1052672];
+static undefined1 DAT_0024bfa4_backing[8192];
 #define DAT_0024bfa4 DAT_0024bfa4_backing[0]
-static undefined1 DAT_0024bfa5_backing[1052672];
+static undefined1 DAT_0024bfa5_backing[8192];
 #define DAT_0024bfa5 DAT_0024bfa5_backing[0]
 /* The record-registration function (near FUN_00078820, "the string-
    interning cache") splits a real char* pointer byte-by-byte across
@@ -83,21 +101,20 @@ static undefined1 DAT_0024bfa5_backing[1052672];
    capturing only the pointer's low 32 bits even before this port's
    64-bit truncation concerns. A side table of real pointers, indexed
    the same way (record*0x201+slot, i.e. the byte-plane index /4) is
-   used instead wherever the real pointer is needed. Sized to match
-   DAT_0024bfa2_backing's total addressable slot count (1052672/4). */
-static char *g_bfa2_real_ptrs[263168];
-/* Was undersized at 8200 bytes (~4 records) while their DAT_0024bfa0-
-   family siblings (same 0x804-byte-stride, same DAT_0024cfc0 record
-   count, same growing-table indexing -- see that comment above) were
-   already widened to 1052672 bytes. Both are indexed identically
-   (`sVar5 * 0x804`, sVar5 up to DAT_0024cfc0-1) by the exact same
-   string-resource-cache registration path (get_message_string), so once
-   more than ~4 pages register at runtime -- already observed for the
-   sibling arrays -- this pair silently read/wrote out of bounds.
-   Widened to match. */
-static undefined1 DAT_0024c7a2_backing[1052672];
+   used instead wherever the real pointer is needed.
+   Sizing pass: was matched to DAT_0024bfa2_backing's own (then-
+   inflated) size/4; now matches its real bound instead (max slot
+   index 1*0x201+511=1024, rounded up to 2048). */
+static char *g_bfa2_real_ptrs[2048];
+/* Sizing pass: same real bound as DAT_0024bfa0 above (this pair is
+   indexed identically, `iVar3 * 0x804`, iVar3 capped at 1 by the same
+   register_interned_string cap) -- the "once more than ~4 pages
+   register" premise below was never possible; see DAT_0024bfa0's own
+   comment for the full trace (git history, cap, and live
+   verification). */
+static undefined1 DAT_0024c7a2_backing[4096];
 #define DAT_0024c7a2 DAT_0024c7a2_backing[0]
-static undefined1 DAT_0024c7a3_backing[1052672];
+static undefined1 DAT_0024c7a3_backing[4096];
 #define DAT_0024c7a3 DAT_0024c7a3_backing[0]
 static undefined4 DAT_0024bf98;
 /* Declared char* despite always being allocated/read/cast as a single
@@ -942,6 +959,13 @@ undefined4 param_2;
     } while (iVar4 < 0x200);
     sVar5 = DAT_0024cfc0;
     DAT_0024cfc0 = (short)((uint)((iVar2 + 1) * 0x10000) >> 0x10);
+    if (getenv("UW_DEBUG_STRING_CACHE")) {
+      static int hwm_pages = -1;
+      if (DAT_0024cfc0 > hwm_pages) {
+        hwm_pages = DAT_0024cfc0;
+        fprintf(stderr, "[string-cache] new high-water page count: %d\n", (int)DAT_0024cfc0);
+      }
+    }
   }
   iVar4 = sVar5 * 0x804;
   uVar3 = *(ushort *)(&DAT_0024c7a2 + iVar4);
@@ -954,6 +978,15 @@ undefined4 param_2;
   (&DAT_0024bfa3)[iVar2] = (char)((uint)param_1 >> 8);
   (&DAT_0024bfa4)[iVar2] = (char)((uint)param_1 >> 0x10);
   (&DAT_0024bfa5)[iVar2] = (char)((uint)param_1 >> 0x18);
+  if (getenv("UW_DEBUG_STRING_CACHE")) {
+    static int hwm_slot = -1;
+    int slot = sVar5 * 0x201 + (int)(short)uVar3;
+    if (slot > hwm_slot) {
+      hwm_slot = slot;
+      fprintf(stderr, "[string-cache] new high-water slot index: %d (page %d sub-index %u, byte-plane byte offset %d)\n",
+              slot, (int)sVar5, (unsigned)uVar3, iVar2);
+    }
+  }
   sVar5 = *(short *)(&DAT_0024c7a2 + iVar4);
   (&DAT_0024c7a2)[iVar4] = (char)(sVar5 + 1);
   (&DAT_0024c7a3)[iVar4] = (char)((uint)(sVar5 + 1) >> 8);
