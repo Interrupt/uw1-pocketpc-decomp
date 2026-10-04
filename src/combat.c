@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DAT_00085aa0 DAT_00085aa0_backing[0]
 ushort DAT_00100610;
 static undefined2 DAT_00100600;
 static ushort DAT_00100604;
@@ -92,12 +91,14 @@ static char DAT_00085a90[] = " was";
    degradation_message relies on that leading space the same way its
    sibling DAT_00085a90 above does. */
 static char s_were_00085a98[] = " were";
-/* Was silently empty (zero-initialized 32768-byte placeholder, never
-   written). Confirmed via a Ghidra memory dump of the real UU.exe that
-   the real bytes are "Your \0" -- this is the message's opening
+/* Was a zero-initialized 32768-byte placeholder (oversized -- nothing
+   else aliases into it and its only reader just copies it out as a
+   plain null-terminated string, so it needs no more headroom than its
+   own content). Confirmed via a Ghidra memory dump of the real UU.exe
+   that the real bytes are "Your \0" -- this is the message's opening
    subject ("Your <item> was/were damaged/destroyed."), copied into a
    local buffer before the item's own display name is appended. */
-static undefined1 DAT_00085aa0_backing[32768] = "Your ";
+static char DAT_00085aa0[] = "Your ";
 /* Was missing its leading space and trailing newline -- confirmed via
    a Ghidra memory dump of the real UU.exe that the real bytes are
    " damaged.\n\0", matching the leading-space convention this whole
@@ -2552,7 +2553,7 @@ int param_5;
     pcVar9 = s_destroyed__00085ab4;
     uVar7 = 1;
   }
-  pcVar8 = &DAT_00085aa0;
+  pcVar8 = DAT_00085aa0;
     wptr_30396 = acStackY_85aec;
   do {
     cVar2 = *pcVar8;
