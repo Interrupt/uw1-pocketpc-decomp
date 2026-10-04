@@ -289,3 +289,60 @@ DAT_0023b928
 DAT_0023b90a
 # Confirmed already correct (not a target, no code change needed):
 DAT_00248418
+
+# 128/64/32-byte cluster, personally checked (2026-10-04): most already
+# deliberately resolved by earlier passes with documented headroom;
+# DAT_0023b848/DAT_0023b8c8/DAT_002028a0/DAT_002028e8 genuinely fixed
+# this round.
+DAT_00086810
+DAT_00110fd0
+DAT_00201b18
+DAT_00086e6c
+DAT_002049c8
+DAT_00086e87
+DAT_0024f090
+DAT_0024f0ca
+DAT_00204880
+DAT_0023b848
+DAT_0023b8c8
+DAT_002028a0
+DAT_002028e8
+
+# models.c per-model catalog buffers (30 members, 16384 each) --
+# CONFIRMED NOT oversized via dedicated fork investigation (full
+# control-flow trace + direct parse of all 30 real data/DATA3D/*.E
+# files): worst real case ~10383 bytes (63% utilization). A separate
+# latent theoretical-overflow note is documented at the declaration
+# (src/models.c) but is out of this sizing audit's scope -- no size
+# change made.
+DAT_00114c1c
+DAT_00118848
+DAT_0011c474
+DAT_001200a0
+DAT_00123ccc
+DAT_001278f8
+DAT_0012b524
+DAT_0012f150
+DAT_00132d7c
+DAT_001369a8
+DAT_0013a5d4
+DAT_0013e200
+DAT_00141e2c
+DAT_00145a58
+DAT_00149684
+DAT_0014d2b0
+DAT_00150edc
+DAT_00154b08
+DAT_00158734
+DAT_0015c360
+DAT_0015ff8c
+DAT_00163bb8
+DAT_001677e4
+DAT_0016b410
+DAT_0016f03c
+DAT_00172c68
+DAT_00176894
+DAT_0017a4c0
+DAT_0017e0ec
+DAT_000c4c38
+DAT_00100770

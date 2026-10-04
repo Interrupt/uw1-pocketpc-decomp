@@ -1940,7 +1940,7 @@
       "description": "DAT_00086810: declared as a scalar but indexed as (&DAT_00086810)[pos] in apply_mod_vibrato_effect/apply_mod_tremolo_effect, where pos is a per-channel counter that wraps at 0x20 (32) -- a 32-entry sine lookup table for the MOD tracker's vibrato/tremolo effects.",
       "description_source": "backing_array",
       "rename_suggestion": "g_mod_sine_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086884",
@@ -2196,7 +2196,7 @@
       "description": "Sizing pass: both aliases are indexed only by DAT_0008698c/ DAT_0008698e (confirmed 0 or 1, the \"which movement axis is dominant\" selector) at a 2-byte stride -- real max byte offset across both aliases is 3, +2 for a short read = 8 bytes.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0008698a",
@@ -3636,7 +3636,7 @@
       "description": "DAT_00086a18 and DAT_00086a20 are now offsets into DAT_00086a00_region (real bytes recovered from UU.exe) -- see its definition further down.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086e70",
@@ -3684,7 +3684,7 @@
       "description": "Was a lone `undefined` scalar, but grant_experience_points indexes it as a per-character-level XP-threshold table (`(&DAT_00086e87)[level]`), with the loop's own upper bound (0x10 = 16) confirming at least 17 entries (0-16) are live; the very first access (by the raw...",
       "description_source": "backing_array",
       "rename_suggestion": "g_xp_level_threshold_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086f0c",
@@ -8164,7 +8164,7 @@
       "description": "DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's \".E\" model parser: `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor there and walks it forward one 4-byte slot at a time while parsing PARTS) was declared as a lone undefined4 scalar -- Ghidra only saw the...",
       "description_source": "backing_array",
       "rename_suggestion": "g_model_vertex_scratch_buffer",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000c8a90",
@@ -8180,7 +8180,7 @@
       "description": "DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's \".E\" model parser: `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor there and walks it forward one 4-byte slot at a time while parsing PARTS) was declared as a lone undefined4 scalar -- Ghidra only saw the...",
       "description_source": "backing_array",
       "rename_suggestion": "g_model_vertex_scratch_buffer",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000c8ac0",
@@ -11437,7 +11437,7 @@
       "type": "undefined1",
       "backing_array": "DAT_00100680_backing",
       "size": 8192,
-      "readers": 18,
+      "readers": 20,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
@@ -11580,7 +11580,7 @@
       "kind": "macro_alias",
       "type": "short",
       "backing_array": "DAT_00100770_backing",
-      "size": 32768,
+      "size": 1024,
       "readers": 8,
       "writers": 0,
       "reader_file_count": 1,
@@ -11588,7 +11588,7 @@
       "description": "Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/select_babl_menu_response all index it as a real array -- `(&DAT_00100770)[idx]` for idx up to 9 (a fixed \"10 visible scroll lines\" loop bound) and up to whatever message_scroll_print_wrapped's own wrapped-line-count...",
       "description_source": "backing_array",
       "rename_suggestion": "g_babl_menu_scroll_lines",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00100784",
@@ -13412,7 +13412,7 @@
       "description": "32-element undefined1 backing store; read 5 time(s), written 1 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00110ff0",
@@ -13457,10 +13457,10 @@
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: these ~30 per-model catalog buffers (one per .E file, each passed as parse_e_model_file's own param_2) were checked for oversizing like every other array in this audit, but turned out NOT to be oversized -- they're already reasonably tight.",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00118848",
@@ -13476,7 +13476,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0011c474",
@@ -13492,7 +13492,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001200a0",
@@ -13508,7 +13508,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00123ccc",
@@ -13524,7 +13524,7 @@
       "description": "The 29 catalog 3D model buffers load_3d_object_models fills via parse_e_model_file, indexed by g_anim_model_slot -- see that array's own comment for the slot-order table.",
       "description_source": "backing_array",
       "rename_suggestion": "g_catalog_model_buffers",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001278f8",
@@ -13540,7 +13540,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0012b524",
@@ -13556,7 +13556,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0012f150",
@@ -13572,7 +13572,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00132d7c",
@@ -13588,7 +13588,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001369a8",
@@ -13604,7 +13604,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0013a5d4",
@@ -13620,7 +13620,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0013e200",
@@ -13636,7 +13636,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00141e2c",
@@ -13652,7 +13652,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00145a58",
@@ -13668,7 +13668,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00149684",
@@ -13684,7 +13684,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0014d2b0",
@@ -13700,7 +13700,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00150edc",
@@ -13716,7 +13716,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00154b08",
@@ -13732,7 +13732,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00158734",
@@ -13748,7 +13748,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0015c360",
@@ -13764,7 +13764,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0015ff8c",
@@ -13780,7 +13780,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00163bb8",
@@ -13796,7 +13796,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001677e4",
@@ -13812,7 +13812,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0016b410",
@@ -13828,7 +13828,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0016f03c",
@@ -13844,7 +13844,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00172c68",
@@ -13860,7 +13860,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00176894",
@@ -13876,7 +13876,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0017a4c0",
@@ -13892,7 +13892,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0017e0ec",
@@ -13908,7 +13908,7 @@
       "description": "16384-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00189570",
@@ -14228,7 +14228,7 @@
       "description": "32-element undefined1 backing store; read 1 time(s), written 1 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00201b38",
@@ -15572,7 +15572,7 @@
       "description": "Sizing pass: resources.c's own loader confirms the exact real size -- `read_file_handle(param_1,&DAT_00202800,0x80);` (128 bytes). Also indexed as `&DAT_00202800 + nibble*8` (nibble 0-15, max 15*8+8=128) throughout combat.c/objects.c/player.c -- same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202807",
@@ -15692,7 +15692,7 @@
       "kind": "macro_alias",
       "type": "undefined4",
       "backing_array": "DAT_002028a0_backing",
-      "size": 64,
+      "size": 16,
       "readers": 13,
       "writers": 0,
       "reader_file_count": 2,
@@ -15700,7 +15700,7 @@
       "description": "Was a lone `undefined4` scalar, but indexed as `(&DAT_002028a0)[i]` for i up to 7 (free_open_container_chain's icon save/restore swap) -- classic \"undersized global used as an array\" bug (same class as DAT_0024bfa0/DAT_000891b0 etc.), and it happened to corrupt whatever real...",
       "description_source": "backing_array",
       "rename_suggestion": "g_container_icon_swap_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002028d0",
@@ -15772,7 +15772,7 @@
       "kind": "macro_alias",
       "type": "undefined4",
       "backing_array": "DAT_002028e8_backing",
-      "size": 64,
+      "size": 32,
       "readers": 16,
       "writers": 1,
       "reader_file_count": 5,
@@ -15780,7 +15780,7 @@
       "description": "Same bug: indexed as `(&DAT_002028e8)[i]` for i up to 0x16 (22) in init_inventory_panel_hotspots/free_open_container_chain/etc. -- this is the specific array whose overflow was landing on and corrupting g_selected_object (see above).",
       "description_source": "backing_array",
       "rename_suggestion": "g_inventory_hotspot_icon_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002028ec",
@@ -15788,7 +15788,7 @@
       "kind": "macro_alias",
       "type": "undefined4",
       "backing_array": "DAT_002028e8_backing",
-      "size": 64,
+      "size": 32,
       "readers": 3,
       "writers": 1,
       "reader_file_count": 2,
@@ -15796,7 +15796,7 @@
       "description": "Same bug: indexed as `(&DAT_002028e8)[i]` for i up to 0x16 (22) in init_inventory_panel_hotspots/free_open_container_chain/etc. -- this is the specific array whose overflow was landing on and corrupting g_selected_object (see above).",
       "description_source": "backing_array",
       "rename_suggestion": "g_inventory_hotspot_icon_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202938",
@@ -16244,7 +16244,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202bfa",
@@ -16260,7 +16260,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202bfb",
@@ -16276,7 +16276,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202bfc",
@@ -16292,7 +16292,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202bfd",
@@ -16308,7 +16308,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202bfe",
@@ -16324,7 +16324,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202bff",
@@ -16340,7 +16340,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c02",
@@ -16356,7 +16356,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c03",
@@ -16372,7 +16372,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c04",
@@ -16388,7 +16388,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c07",
@@ -16404,7 +16404,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c08",
@@ -16420,7 +16420,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c09",
@@ -16436,7 +16436,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c0a",
@@ -16452,7 +16452,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c0c",
@@ -16468,7 +16468,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c0d",
@@ -16484,7 +16484,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c0e",
@@ -16500,7 +16500,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c14",
@@ -16516,7 +16516,7 @@
       "description": "collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads them by...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c18",
@@ -16836,7 +16836,7 @@
       "description": "Sizing pass: `ce_memset(&DAT_00202c70,0x11,0x12)` -- 18 bytes exact.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c84",
@@ -16884,7 +16884,7 @@
       "description": "Sizing pass: the real COMOBJ \"class 0\" object-record table, indexed throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max 511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825) sits comfortably within that same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c93",
@@ -16900,7 +16900,7 @@
       "description": "Sizing pass: the real COMOBJ \"class 0\" object-record table, indexed throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max 511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825) sits comfortably within that same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c95",
@@ -16916,7 +16916,7 @@
       "description": "Sizing pass: the real COMOBJ \"class 0\" object-record table, indexed throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max 511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825) sits comfortably within that same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c97",
@@ -16932,7 +16932,7 @@
       "description": "Sizing pass: the real COMOBJ \"class 0\" object-record table, indexed throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max 511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825) sits comfortably within that same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c98",
@@ -16948,7 +16948,7 @@
       "description": "Sizing pass: the real COMOBJ \"class 0\" object-record table, indexed throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max 511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825) sits comfortably within that same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c99",
@@ -16964,7 +16964,7 @@
       "description": "Sizing pass: the real COMOBJ \"class 0\" object-record table, indexed throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max 511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825) sits comfortably within that same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c9a",
@@ -16980,7 +16980,7 @@
       "description": "Sizing pass: the real COMOBJ \"class 0\" object-record table, indexed throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max 511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825) sits comfortably within that same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c9b",
@@ -16996,7 +16996,7 @@
       "description": "Sizing pass: the real COMOBJ \"class 0\" object-record table, indexed throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max 511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825) sits comfortably within that same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202d54",
@@ -17076,7 +17076,7 @@
       "description": "Treasure values are fields of the loaded COMOBJ table (type 0xa0, offset 5), not an independent, never-loaded array.",
       "description_source": "own",
       "rename_suggestion": "g_comobj_item_value",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002035cf",
@@ -18244,7 +18244,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00204882",
@@ -18260,7 +18260,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00204884",
@@ -18276,7 +18276,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00204886",
@@ -18292,7 +18292,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00204888",
@@ -18308,7 +18308,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0020488c",
@@ -18324,7 +18324,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0020488e",
@@ -18340,7 +18340,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00204892",
@@ -18356,7 +18356,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00204896",
@@ -18372,7 +18372,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00204897",
@@ -18388,7 +18388,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048a1",
@@ -18404,7 +18404,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048a2",
@@ -18420,7 +18420,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048a3",
@@ -18436,7 +18436,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048a4",
@@ -18452,7 +18452,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048a5",
@@ -18468,7 +18468,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048a6",
@@ -18484,7 +18484,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048a7",
@@ -18500,7 +18500,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048a8",
@@ -18516,7 +18516,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048a9",
@@ -18532,7 +18532,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048aa",
@@ -18548,7 +18548,7 @@
       "description": "DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step, sweep_apply_collision, sweep_writeback_position --...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048b0",
@@ -19348,7 +19348,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049ca",
@@ -19364,7 +19364,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049cc",
@@ -19380,7 +19380,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049ce",
@@ -19396,7 +19396,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049d0",
@@ -19412,7 +19412,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049d1",
@@ -19428,7 +19428,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049d2",
@@ -19444,7 +19444,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049d4",
@@ -19460,7 +19460,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049d6",
@@ -19476,7 +19476,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049d8",
@@ -19492,7 +19492,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049d9",
@@ -19508,7 +19508,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049da",
@@ -19524,7 +19524,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049dc",
@@ -19540,7 +19540,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049dd",
@@ -19556,7 +19556,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049de",
@@ -19572,7 +19572,7 @@
       "description": "The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14 separate globals (DAT_002049c8 ..",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002049e0",
@@ -20844,15 +20844,15 @@
       "kind": "macro_alias",
       "type": "undefined2",
       "backing_array": "DAT_0023b848_backing",
-      "size": 64,
-      "readers": 8,
+      "size": 32,
+      "readers": 9,
       "writers": 0,
       "reader_file_count": 2,
       "writer_file_count": 0,
       "description": "Object/feature-draw sort scratch (emit_tile_features and helpers sort_feature_pairs_by_depth/ ec8/508c/5128/65210/652e8, ~uw.c:49340-49766).",
       "description_source": "backing_array",
       "rename_suggestion": "g_tile_feature_sort_scratch",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023b8c0",
@@ -20892,15 +20892,15 @@
       "kind": "macro_alias",
       "type": "undefined1",
       "backing_array": "DAT_0023b8c8_backing",
-      "size": 128,
-      "readers": 9,
+      "size": 32,
+      "readers": 10,
       "writers": 0,
       "reader_file_count": 2,
       "writer_file_count": 0,
-      "description": "128-element undefined1 backing store; read 9 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: DAT_0023b8c8[i]/[i+1] real extent is i in 0..8 too (same object count, max i+1=9, 10 bytes). Sized to 32 for headroom; down from 128.",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023b8c9",
@@ -20908,15 +20908,15 @@
       "kind": "macro_alias",
       "type": "undefined1",
       "backing_array": "DAT_0023b8c8_backing",
-      "size": 128,
+      "size": 32,
       "readers": 4,
       "writers": 0,
       "reader_file_count": 1,
       "writer_file_count": 0,
-      "description": "128-element undefined1 backing store; read 4 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: DAT_0023b8c8[i]/[i+1] real extent is i in 0..8 too (same object count, max i+1=9, 10 bytes). Sized to 32 for headroom; down from 128.",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023b904",
@@ -23892,7 +23892,7 @@
       "description": "Sizing pass: this is the real Microsoft GXDisplayProperties struct (see gx_stub.c's own \"6 x 4-byte fields = 0x18\" comment) -- confirmed by game.c's GXGetDisplayProperties population site, which copies exactly 0x18 (24) bytes into &DAT_0023cdb0 in a fixed-count loop.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023cdbc",
@@ -23908,7 +23908,7 @@
       "description": "Sizing pass: this is the real Microsoft GXDisplayProperties struct (see gx_stub.c's own \"6 x 4-byte fields = 0x18\" comment) -- confirmed by game.c's GXGetDisplayProperties population site, which copies exactly 0x18 (24) bytes into &DAT_0023cdb0 in a fixed-count loop.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023cdc0",
@@ -23924,7 +23924,7 @@
       "description": "Sizing pass: this is the real Microsoft GXDisplayProperties struct (see gx_stub.c's own \"6 x 4-byte fields = 0x18\" comment) -- confirmed by game.c's GXGetDisplayProperties population site, which copies exactly 0x18 (24) bytes into &DAT_0023cdb0 in a fixed-count loop.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ce10",
@@ -23956,7 +23956,7 @@
       "description": "Sizing pass: this is the real Microsoft GXKeyList struct (see gx_stub.c's own \"8x (short vk + POINT pt), 12 bytes each ... = 0x60\" comment) -- 96 bytes total, not 65536.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ce28",
@@ -23972,7 +23972,7 @@
       "description": "Sizing pass: this is the real Microsoft GXKeyList struct (see gx_stub.c's own \"8x (short vk + POINT pt), 12 bytes each ... = 0x60\" comment) -- 96 bytes total, not 65536.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ce34",
@@ -23988,7 +23988,7 @@
       "description": "Sizing pass: this is the real Microsoft GXKeyList struct (see gx_stub.c's own \"8x (short vk + POINT pt), 12 bytes each ... = 0x60\" comment) -- 96 bytes total, not 65536.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ce40",
@@ -24004,7 +24004,7 @@
       "description": "Sizing pass: this is the real Microsoft GXKeyList struct (see gx_stub.c's own \"8x (short vk + POINT pt), 12 bytes each ... = 0x60\" comment) -- 96 bytes total, not 65536.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ce4c",
@@ -24020,7 +24020,7 @@
       "description": "Sizing pass: this is the real Microsoft GXKeyList struct (see gx_stub.c's own \"8x (short vk + POINT pt), 12 bytes each ... = 0x60\" comment) -- 96 bytes total, not 65536.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ce58",
@@ -24036,7 +24036,7 @@
       "description": "Sizing pass: this is the real Microsoft GXKeyList struct (see gx_stub.c's own \"8x (short vk + POINT pt), 12 bytes each ... = 0x60\" comment) -- 96 bytes total, not 65536.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ce64",
@@ -24052,7 +24052,7 @@
       "description": "Sizing pass: this is the real Microsoft GXKeyList struct (see gx_stub.c's own \"8x (short vk + POINT pt), 12 bytes each ... = 0x60\" comment) -- 96 bytes total, not 65536.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ce70",
@@ -24884,7 +24884,7 @@
       "description": "Really a 58 (0x3a)-entry byte array, paired with the parallel DAT_0024f0ca array right below -- reset_texture_id_lists's own loop proves the bound (`for (iVar3 = ...; iVar3 < 0x3a; ...)` zeroing both `(&DAT_0024f090)[iVar3]` and `(&DAT_0024f0ca)[iVar3]`).",
       "description_source": "backing_array",
       "rename_suggestion": "g_texture_id_aux_list",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0024f0ca",
@@ -24900,7 +24900,7 @@
       "description": "Parallel array to DAT_0024f090 (0x3a/58 entries) -- see that array's own comment.",
       "description_source": "backing_array",
       "rename_suggestion": "g_texture_id_aux_parallel_list",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0024f90c",
@@ -25364,7 +25364,7 @@
       "description": "Sizing pass: own loader confirms the exact real size -- `read_file_handle(param_1,&DAT_00250730,0x40);` (64 bytes). Also indexed as `&DAT_00250730 + nibble*4` (nibble 0-15, max 15*4+4=64) -- same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00250733",
@@ -25380,7 +25380,7 @@
       "description": "Sizing pass: own loader confirms the exact real size -- `read_file_handle(param_1,&DAT_00250730,0x40);` (64 bytes). Also indexed as `&DAT_00250730 + nibble*4` (nibble 0-15, max 15*4+4=64) -- same bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00250778",
