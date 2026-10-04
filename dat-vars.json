@@ -36,7 +36,7 @@
       "description": "Sizing-audit pass: its ADDRESS (not its contents) is passed as register_key_binding's handler function-pointer argument for key 0x1b -- a stand-in for an unrecovered callback (same class as traps.c's DAT_0007e644), never read/written/indexed as data.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0007e644",
@@ -772,7 +772,7 @@
       "description": "Sizing-audit pass: read-only (ce_strcat/message_scroll_print_wrapped sentence-suffix text across ai.c/object_actions.c), 0 writers -- content unrecovered. Sized to 128 for headroom as a display-text fragment; down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00085230",
@@ -836,7 +836,7 @@
       "description": "DAT_00085240/44/48 are the look-text word-separator/article constants (\" \", \"a \", \"an \") used by dispatch_object_action/dispatch_object_action_dup and build_creature_look_text to glue \"a\"/\"an\" + adjective + noun [+ \"named\" + proper name] together -- none had a writer anywhere in...",
       "description_source": "backing_array",
       "rename_suggestion": "g_article_a",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00085244",
@@ -1300,7 +1300,7 @@
       "description": "Sizing-audit pass: a filename template with digit pokes at fixed offsets 8,9,0x10,0x11 (via DAT_00085910/11/18/19) -- hard lower bound 18 bytes, exact template text unrecovered.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00085910",
@@ -1684,7 +1684,7 @@
       "description": "Was a zero-initialized 8192-byte placeholder -- confirmed via a Ghidra memory dump of the real UU.exe that the real bytes are \"s\\0\", the plural suffix appended after \"full charge\" when the count isn't exactly 1.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00085cc8",
@@ -1764,7 +1764,7 @@
       "description": "Was a zero-initialized 8192-byte placeholder (this file's own adjacent comment guessed \": \"-shaped, but a Ghidra memory dump of the real UU.exe shows the real bytes are \" of \\0\") -- this prefixes a special/unique item's proper name onto its base name, e.g. \"<item> of <name>\",...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00085ce0",
@@ -1780,7 +1780,7 @@
       "description": "Sizing-audit pass: single use, `ce_strcat(acStack_7c,&DAT_00085ce0)`, 0 writers -- content unrecovered. Sized to 32 for headroom; down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00085d20",
@@ -3524,7 +3524,7 @@
       "description": "Sizing-audit pass: printed whole via message_scroll_print_wrapped (print_help_message), 0 writers of its own text content -- content unrecovered. Sized to 128 for headroom as a display-text fragment; down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086e05",
@@ -4148,7 +4148,7 @@
       "description": "Sizing-audit pass: single use, `debug_print(&DAT_00087298)`, 0 writers -- content unrecovered. Sized to 32 for headroom; down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000872a0",
@@ -4196,7 +4196,7 @@
       "description": "Sizing-audit pass: BUG FIX, not just a shrink -- advance_character_ level builds a 2-digit level-number string here (tens digit/space at offset 0, units digit written to the separately-declared DAT_0008730d at real address +1) then prints it via...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0008730d",
@@ -4212,7 +4212,7 @@
       "description": "Sizing-audit pass: BUG FIX, not just a shrink -- advance_character_ level builds a 2-digit level-number string here (tens digit/space at offset 0, units digit written to the separately-declared DAT_0008730d at real address +1) then prints it via...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00087318",
@@ -4436,7 +4436,7 @@
       "description": "Sizing-audit pass: damage_all_objects_at_tile's only caller passes param_3 in {1,2}, so the shared `bVar5=param_3-1` index is 0-1 -- max byte touched is DAT_00087634's offset 8+1=9.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00087630",
@@ -4452,7 +4452,7 @@
       "description": "Sizing-audit pass: damage_all_objects_at_tile's only caller passes param_3 in {1,2}, so the shared `bVar5=param_3-1` index is 0-1 -- max byte touched is DAT_00087634's offset 8+1=9.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00087634",
@@ -4468,7 +4468,7 @@
       "description": "Sizing-audit pass: damage_all_objects_at_tile's only caller passes param_3 in {1,2}, so the shared `bVar5=param_3-1` index is 0-1 -- max byte touched is DAT_00087634's offset 8+1=9.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00087638",
@@ -4820,7 +4820,7 @@
       "description": "Sizing-audit pass: expand_pals_bytes's own loop writes exactly 256*3=768 bytes (`iVar3<0x100`, 3 bytes/iteration) -- HARD exact bound. Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00088950",
@@ -4932,7 +4932,7 @@
       "description": "Sizing-audit pass: both ce_memmove sites copy exactly 0x300 (768) bytes, bidirectionally -- HARD exact bound (256-entry VGA palette, 3 bytes/entry). Down from 1536.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000890a4",
@@ -6660,7 +6660,7 @@
       "description": "Sizing-audit pass: `ce_memset(&DAT_000b99d0,0,0x1000)` and write_archive_entry's matching 0x1000-byte archive write (64x64 reveal grid) -- exact HARD bound. Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000ba9d0",
@@ -7188,7 +7188,7 @@
       "description": "Sizing-audit pass: reset loop `while(iVar7<4)` writes both `[iVar7]` and `[iVar7+4]` -- max index 7, 8 elements (16 bytes, undefined2 type). HARD. Down from 8192 elements (16384 bytes).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000bbfb0",
@@ -7252,7 +7252,7 @@
       "description": "8-element undefined2 backing store; read 5 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000bbfc8",
@@ -10692,7 +10692,7 @@
       "description": "Sizing-audit pass: `WideCharToMultiByte(...,&DAT_000fb550,0xff,...)` -- cbMultiByte=0xff(255) bytes exact. Sized to 256. Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000fb650",
@@ -10708,7 +10708,7 @@
       "description": "Sizing-audit pass: `MultiByteToWideChar(...,&DAT_000fb650,0xff)` -- cchWideChar=0xff(255) counts WCHAR units, not bytes: real need 510 bytes. Sized to 512. Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000fb858",
@@ -11796,7 +11796,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007d5",
@@ -11812,7 +11812,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007d8",
@@ -11828,7 +11828,7 @@
       "description": "Monster effect flags at offset 8 of each loaded 0x30-byte record.",
       "description_source": "own",
       "rename_suggestion": "g_monster_effect_flags",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007d9",
@@ -11844,7 +11844,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007da",
@@ -11860,7 +11860,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007dd",
@@ -11876,7 +11876,7 @@
       "description": "Sizing-audit pass: these three were declared as independent 256-byte arrays in babl.c/combat.c, but every use indexes them with the exact same per-class `(id&0x3f)*0x30` base as g_monster_max_ stats_table/DAT_001007d5 right alongside them in the same functions (babl.c's...",
       "description_source": "own",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007de",
@@ -11892,7 +11892,7 @@
       "description": "Sizing-audit pass: `iVar6 = (*DAT_00100674 & 0x3f) * 0x30` -- same &0x3f mask * 0x30 stride as ai.c's DAT_001007d0 (same monster-class table shape, independently duplicated here).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007e0",
@@ -11908,7 +11908,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007e1",
@@ -11924,7 +11924,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007e2",
@@ -11940,7 +11940,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007e3",
@@ -11956,7 +11956,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007ed",
@@ -11972,7 +11972,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007ee",
@@ -11988,7 +11988,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007f8",
@@ -12004,7 +12004,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001007fd",
@@ -12020,7 +12020,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's `&0x3f` class-id mask * 0x30 stride (63*48+48=3072).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001013a4",
@@ -12276,7 +12276,7 @@
       "description": "Sizing-audit pass: find_nearby_door_in_candidates's only use (`*param_2 = ...`) is a plain scalar write, overwritten each loop iteration, never indexed. Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0010142c",
@@ -12548,7 +12548,7 @@
       "description": "Sizing-audit pass: NPC path-cache, slot index masked `&0xf` everywhere (16 slots), 28-byte per-slot record (see advance_cached_path_step's own comment) -- 16*28=448 bytes, a HARD bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101569",
@@ -12564,7 +12564,7 @@
       "description": "Sizing-audit pass: was an independent 256-byte array, but its only use (`(&DAT_00101569)[iVar6]` at ai.c:585, `iVar6=(uVar3&0xf)*0x1c`) indexes it with the exact same per-slot cache-record base as DAT_00101568 right above -- a field of that same record, not a separate table.",
       "description_source": "own",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101728",
@@ -12580,7 +12580,7 @@
       "description": "Sizing-audit pass: pure scalar (distance-squared int), never indexed anywhere. Down from 256 elements.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0010172c",
@@ -12628,7 +12628,7 @@
       "description": "Sizing-audit pass: pure scalar (combat-state flag) everywhere, including its one pointer-alias use in movement.c (still scalar-deref'd there) -- never indexed. Down from 256 elements.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101738",
@@ -12676,7 +12676,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101741",
@@ -12692,7 +12692,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101742",
@@ -12708,7 +12708,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101743",
@@ -12724,7 +12724,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101744",
@@ -12740,7 +12740,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101746",
@@ -12756,7 +12756,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101747",
@@ -12772,7 +12772,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101748",
@@ -12788,7 +12788,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101749",
@@ -12804,7 +12804,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0010174a",
@@ -12820,7 +12820,7 @@
       "description": "NPC waypoints are contiguous 7-byte records at the original 0x101740. Alias the adjacent field symbols into this array so recording later waypoints cannot overwrite unrelated globals or 64-bit AI pointers.",
       "description_source": "backing_array",
       "rename_suggestion": "g_npc_waypoint_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001018fc",
@@ -13252,7 +13252,7 @@
       "description": "Sizing-audit pass: every build site does `ce_memset(&DAT_00101968,0,0x104)` right before use -- exact HARD bound, 260 bytes (MAX_PATH-style). Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00101a6c",
@@ -14452,7 +14452,7 @@
       "description": "Sizing-audit pass: fatal-error message buffer, written via ce_strncpy from either a 42-byte stack buffer (report_fatal_error_ and_exit) or an unbounded caller string (report_fatal_error_ message_and_exit) -- but both of that function's only two real callers pass literals...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00201c70",
@@ -15188,7 +15188,7 @@
       "description": "Sizing-audit pass: shutdown_game_resources's own teardown loop is a HARD exact `iVar1 = 0x80` (128) count. Down from 256.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202508",
@@ -15268,7 +15268,7 @@
       "description": "Sizing-audit pass: `read_file_handle(DAT_00202514,&DAT_00202518,1)` -- pure 1-byte scalar, never indexed. Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202520",
@@ -15348,7 +15348,7 @@
       "description": "Sizing-audit pass: `read_file_handle(DAT_00202514,&DAT_00202724,1)` -- pure 1-byte scalar (`(uint)DAT_00202724<<5`), never indexed. Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202728",
@@ -15492,7 +15492,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_00202750,0x80)` -- exactly 128 bytes, matching its own nibble*4-stride indexing. HARD exact. Down from 256.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002027d0",
@@ -15508,7 +15508,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_002027d0,0x30)` (resources.c) reads exactly 48 bytes, matching its own nibble*3-stride indexing (max 15*3+2=47). HARD exact.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002027d1",
@@ -15524,7 +15524,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_002027d0,0x30)` (resources.c) reads exactly 48 bytes, matching its own nibble*3-stride indexing (max 15*3+2=47). HARD exact.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002027d2",
@@ -15540,7 +15540,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_002027d0,0x30)` (resources.c) reads exactly 48 bytes, matching its own nibble*3-stride indexing (max 15*3+2=47). HARD exact.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202800",
@@ -15892,7 +15892,7 @@
       "description": "Sizing-audit pass: accessed only as a 4-byte uint scalar via the `_DAT_00202978` macro, never indexed. Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202980",
@@ -16660,7 +16660,7 @@
       "description": "Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below, already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of a repeating 6-byte-stride per-candidate record in collision_height_envelope/sort_collision_candidates's up-to-256-entry collision candidate...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c39",
@@ -16676,7 +16676,7 @@
       "description": "BUG FIX (unit-testing-framework merge): this branch's own history had drifted into giving DAT_00202c39..3f each their OWN independent backing array -- but every real use (uw.c's `(&DAT_00202c38)[i*6]`/`(&DAT_00202c3a)[i*6]`/`&DAT_00202c3c + i*6` address arithmetic) treats them...",
       "description_source": "own",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c3a",
@@ -16692,7 +16692,7 @@
       "description": "Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below, already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of a repeating 6-byte-stride per-candidate record in collision_height_envelope/sort_collision_candidates's up-to-256-entry collision candidate...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c3b",
@@ -16708,7 +16708,7 @@
       "description": "Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below, already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of a repeating 6-byte-stride per-candidate record in collision_height_envelope/sort_collision_candidates's up-to-256-entry collision candidate...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c3c",
@@ -16724,7 +16724,7 @@
       "description": "Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below, already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of a repeating 6-byte-stride per-candidate record in collision_height_envelope/sort_collision_candidates's up-to-256-entry collision candidate...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c3d",
@@ -16740,7 +16740,7 @@
       "description": "Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below, already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of a repeating 6-byte-stride per-candidate record in collision_height_envelope/sort_collision_candidates's up-to-256-entry collision candidate...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c3e",
@@ -16756,7 +16756,7 @@
       "description": "Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below, already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of a repeating 6-byte-stride per-candidate record in collision_height_envelope/sort_collision_candidates's up-to-256-entry collision candidate...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c3f",
@@ -16772,7 +16772,7 @@
       "description": "Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below, already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of a repeating 6-byte-stride per-candidate record in collision_height_envelope/sort_collision_candidates's up-to-256-entry collision candidate...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202c68",
@@ -18564,7 +18564,7 @@
       "description": "Sizing-audit pass: pure scalar, only ever set to 0 or 0x1000 and passed by address into movement_collision_sweep, which only dereferences its own callee-side alias (DAT_002048bc) up to offset +4 as a ushort -- max byte touched 5.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002048b2",
@@ -20820,7 +20820,7 @@
       "description": "Sizing-audit pass: door-type slot table, explicit loop bound `while(iVar3<6)` (load_door_frames). HARD. Down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023b841",
@@ -20836,7 +20836,7 @@
       "description": "High byte of DAT_0023b840's packed short (write pattern: `(&DAT_0023b840)[i] = low;",
       "description_source": "own",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023b848",
@@ -21204,7 +21204,7 @@
       "description": "Base of a large fixed-offset record (reset_player_object_record: `DAT_00086df8 = &DAT_0023bca8;`, then init_new_character_record and others write through DAT_00086df8 at offsets up to at least 0xd1/209 -- a device/config-ish struct, not yet fully identified).",
       "description_source": "backing_array",
       "rename_suggestion": "g_player_config_record",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023bd7c",
@@ -22084,7 +22084,7 @@
       "description": "Sizing-audit pass: `GetDlgItemTextW(param_1,0x3e9,&DAT_0023bf78, 0xb4)` -- the W (wide-char) API, so 0xb4 (180) counts WCHAR units, not bytes: real need 360 bytes. HARD exact.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c108",
@@ -23092,7 +23092,7 @@
       "description": "Sizing-audit pass: max real index is 0xff*5+4=1279 (confirmed by the comment below, an 8-bit id field * 5-byte stride) -- a HARD bound. Sized all 4 siblings to 1280; down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c2b1",
@@ -23108,7 +23108,7 @@
       "description": "Same per-sound-effect-id table shape as DAT_0023c2b0 just above (all four indexed by play_positional_sound_effect's own `id*5`-stride iVar10) -- were lone scalars, so every id past 0 read into whatever the compiler placed next, corrupting the volume/pan parameters...",
       "description_source": "backing_array",
       "rename_suggestion": "g_sound_effect_param_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c2b2",
@@ -23124,7 +23124,7 @@
       "description": "1280-element undefined backing store; read 4 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c2b3",
@@ -23140,7 +23140,7 @@
       "description": "1280-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c32c",
@@ -23284,7 +23284,7 @@
       "description": "Sizing-audit pass: 0 writers, used only as a path-string argument (audio.c's SetFileTime-named ordinal stub), content unrecovered. Sized to 128 for headroom as a path-text fragment; down from 8192.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c3d8",
@@ -24068,7 +24068,7 @@
       "description": "Sizing-audit pass: `read_file_handle(iVar8,&DAT_0023ce70,0x80)` (ai.c's load_critter_association_tables) reads exactly 128 bytes, matching its own fill loop's `<0x80` bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ce71",
@@ -24084,7 +24084,7 @@
       "description": "Sizing-audit pass: `read_file_handle(iVar8,&DAT_0023ce70,0x80)` (ai.c's load_critter_association_tables) reads exactly 128 bytes, matching its own fill loop's `<0x80` bound.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023cef0",
@@ -24132,7 +24132,7 @@
       "description": "Sizing-audit pass: BUG FIX, not a shrink -- these 4 siblings are indexed by the exact same `iVar18 = (iVar8 + iVar7*0x40) * 5` formula as DAT_0023cf08 right above (confirmed: `(&DAT_0023cf0b) [iVar18]` and `(&DAT_0023cf08)[iVar18]` share the same iVar18 at this call site), which...",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023cf0a",
@@ -24148,7 +24148,7 @@
       "description": "20480-element undefined backing store; read 8 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023cf0b",
@@ -24164,7 +24164,7 @@
       "description": "20480-element undefined backing store; read 9 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023cf0c",
@@ -24180,7 +24180,7 @@
       "description": "20480-element undefined backing store; read 5 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00241f08",
@@ -24420,7 +24420,7 @@
       "description": "decode_strings_pak_entry's decoded-string ring buffer: DAT_0024cfb4 cycles through offsets 0, 0x200, 0x400, ... wrapping back to 0 once it would reach 0x1000 (4096), and each slot can hold up to a 0x200-byte decoded string.",
       "description_source": "backing_array",
       "rename_suggestion": "g_decoded_string_ring_buffer",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0024bf98",
@@ -24644,7 +24644,7 @@
       "description": "Sizing-audit pass: `read_file_handle(param_1,&DAT_0024cfbc,1)` -- pure 1-byte huffman bit-register scalar (shifted/masked), never indexed. Down from 8192 elements.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0024cfc0",
@@ -24756,7 +24756,7 @@
       "description": "Was a lone `undefined` scalar, but the real class6 variant-effect lookup (uw.c ~46760, class6_variant_effect_table_lookup) indexes it as `&DAT_0024cfe0 + nibble` for nibble 0..0xf, and its boot-time loader (load_class6_variant_effect_table) reads exactly 0x10 bytes into it --...",
       "description_source": "backing_array",
       "rename_suggestion": "g_class6_variant_effect_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0024cff0",
