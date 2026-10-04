@@ -694,7 +694,12 @@ static ushort *DAT_0023c414;
    like a genuine bug already present in the original, not a decompile
    artifact; left as-is since it's dead either way. */
 static char *DAT_0023c410;
- undefined1 DAT_0023cdb0_backing[32768];
+/* Sizing pass: this is the real Microsoft GXDisplayProperties struct
+   (see gx_stub.c's own "6 x 4-byte fields = 0x18" comment) -- confirmed
+   by game.c's GXGetDisplayProperties population site, which copies
+   exactly 0x18 (24) bytes into &DAT_0023cdb0 in a fixed-count loop.
+   Was oversized at 32768 bytes for a 24-byte struct. */
+undefined1 DAT_0023cdb0_backing[32];
 undefined *DAT_00250704;
 static undefined2 DAT_00250714;
 // was DAT_00087960

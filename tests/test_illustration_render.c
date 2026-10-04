@@ -5,7 +5,7 @@
 /* Real script, LPF page loading, RLE decoding and viewer loop. Stub only the
    display/audio/input services; one click dismisses the static window image. */
 undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
-undefined1 DAT_0023c698_backing[32768];
+undefined1 DAT_0023c698_backing[1024];
 undefined1 DAT_00101968_backing[8192];
 uintptr_t DAT_00101a70;
 ushort DAT_00101a6c, DAT_000853f8, DAT_000853fc, DAT_00085400;
@@ -180,7 +180,7 @@ undefined2 DAT_00248418_backing[20 * 256], DAT_00242010_backing[32768];
 undefined2 DAT_000a85c0;
 int g_blit_transparent_mode, DAT_0024af70;
 void *DAT_0023c430;
-undefined1 DAT_0023cdb0_backing[32768];
+undefined1 DAT_0023cdb0_backing[32];
 short DAT_00201c84;
 int uw_defer_present(void);
 void *GXBeginDraw(void) { return hardware_framebuffer; }

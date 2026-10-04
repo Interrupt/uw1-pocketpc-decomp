@@ -22,7 +22,7 @@ extern char DAT_0023c3e0;
    translation units see the same storage. */
 extern code * DAT_00086b38_fnptrs[6];
 extern undefined1 DAT_0023c118_arr[9];
-extern undefined1 DAT_0023cdb0_backing[32768];
+extern undefined1 DAT_0023cdb0_backing[32];
 
 #define DAT_0023c118 DAT_0023c118_arr[0]
 #define DAT_00086b38 (DAT_00086b38_fnptrs[0])

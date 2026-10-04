@@ -348,7 +348,16 @@ static char s_npc_level_00085334[] = "npc_level";
 undefined2 DAT_00101960;
 ushort DAT_000853fc;
 static undefined1 DAT_00101968_backing[8192];
-undefined1 DAT_0023c698_backing[32768];
+/* Sizing pass: this is the "CUTS"-directory override path string
+   (cleared via ce_memset(&DAT_0023c698,0,0x104) in game.c, i.e. a
+   Windows MAX_PATH=260-byte buffer by design). Its one real writer
+   (game.c's registry-install-dir read, right next to its sibling
+   DAT_0023cca8's own identical pattern) copies a null-terminated
+   string out of a 520-byte scratch buffer with no further length
+   check, so the real structural ceiling is that buffer's own 520
+   bytes, not just the 260-byte memset -- sized to 1024 for headroom
+   above that, well short of the previous 32768. */
+undefined1 DAT_0023c698_backing[1024];
 static ushort DAT_00101a6c;
 /* Bitmap workspace supplied by cache_ambient_sound_handle; retain the full
    allocation address on 64-bit hosts. */

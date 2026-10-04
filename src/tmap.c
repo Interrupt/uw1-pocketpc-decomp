@@ -283,7 +283,14 @@ static const unsigned char DAT_00086cc0_arr[32] = {
   4,4,4,5,5,5,6,6, 6,6,6,7,7,7,0,0,
 };
 #define DAT_00086cc0 (DAT_00086cc0_arr[0])
-static undefined2 DAT_0023b908_backing[8192];
+/* Sizing pass: every access to this array is bounded to 0x12 (18)
+   bytes (the ce_memmove/ce_memset sites just below, and the plain
+   scalar DAT_0023b908 read/write) -- was oversized at 8192 elements
+   (16384 bytes) for an 18-byte need. Its sibling DAT_0023b928_backing
+   just below is NOT touched here: unlike this array, it's written at
+   a dynamic self-relative offset elsewhere in this file and needs its
+   own separate, more careful review before any resize. */
+static undefined2 DAT_0023b908_backing[32];
 #define DAT_0023b908 DAT_0023b908_backing[0]
 static undefined2 DAT_0023b928_backing[8192];
 #define DAT_0023b928 DAT_0023b928_backing[0]

@@ -12,7 +12,7 @@
 extern short g_mouse_x;
 extern short g_mouse_y;
 extern undefined2 DAT_0023be8c;
-extern undefined1 DAT_0023ce10_backing[65536];
+extern undefined1 DAT_0023ce10_backing[128];
 #define DAT_0023ce10 DAT_0023ce10_backing[0]
 #define DAT_0023ce1c (*(ushort *)(DAT_0023ce10_backing + 0xc))
 #define DAT_0023ce28 (*(ushort *)(DAT_0023ce10_backing + 0x18))

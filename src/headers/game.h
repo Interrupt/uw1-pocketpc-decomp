@@ -33,7 +33,7 @@ extern void *DAT_0023c7a0_arr[0x140];
 #define DAT_0023c7a0 DAT_0023c7a0_arr[0]
 extern char *DAT_0023cca0;
 extern char *DAT_0023cca4;
-extern undefined1 DAT_0023cca8_backing[32768];
+extern undefined1 DAT_0023cca8_backing[1024];
 #define DAT_0023cca8 DAT_0023cca8_backing[0]
 extern char *DAT_00248410;
 extern int DAT_0024af60;

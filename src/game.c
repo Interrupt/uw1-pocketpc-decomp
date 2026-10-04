@@ -53,8 +53,14 @@ byte *DAT_0024af78;
 byte *DAT_0024af7c;
 char *DAT_0023cca0;
 /* Not `static` -- also used by game.c (app_main_loop, main_menu_loop);
-   see the extern declaration and DAT_0023cca8 macro alias in uw.h. */
-undefined1 DAT_0023cca8_backing[32768];
+   see the extern declaration and DAT_0023cca8 macro alias in uw.h.
+   Sizing pass: this is the install-dir path string, ce_memset(0,0x104)
+   cleared right next to its sibling DAT_0023c698 (same comment there
+   applies -- real structural ceiling is the 520-byte registry-read
+   scratch buffer its one writer copies from, not just the 260-byte
+   memset). Sized to 1024 for headroom, well short of the previous
+   32768. */
+undefined1 DAT_0023cca8_backing[1024];
 static undefined1 DAT_00084298_backing[128];
 undefined1 *DAT_00084298 = DAT_00084298_backing;
 /* Was `undefined4` despite being assigned a real malloc'd pointer
@@ -296,7 +302,11 @@ static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program_Files\\ZI
 // byte / a separately-backed array, so the `int*` walk read past
 // DAT_000830b0's 1-byte allocation into unrelated memory. Aliased
 // into one shared backing array at their real relative offsets.
-static undefined1 DAT_000830b0_backing[65536];
+//
+// Sizing pass: dispatch_window_message's own loop bound (`uVar1 < 0x13`,
+// 8-byte stride) confirms the table is exactly 0x13 (19) entries, 152
+// bytes total -- was oversized at 65536 bytes.
+static undefined1 DAT_000830b0_backing[256];
 #define DAT_000830b0 DAT_000830b0_backing[0]
 #define UNK_000830b4 DAT_000830b0_backing[4]
 

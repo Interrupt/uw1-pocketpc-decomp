@@ -5,9 +5,9 @@
    writes in memory so tests never change the shipped cutscene files. */
 short DAT_00201b68;
 undefined2 DAT_0023add0_backing[8192];
-undefined1 DAT_0023c698_backing[32768];
+undefined1 DAT_0023c698_backing[1024];
 undefined1 DAT_00085460_backing[11] = "\\CSXXX.N00";
-undefined1 DAT_0023cca8_backing[32768];
+undefined1 DAT_0023cca8_backing[1024];
 char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 undefined s_scroll_newline_0008522c_backing[8192] = "\n";
 static byte level_one[0x7c08], script[16];

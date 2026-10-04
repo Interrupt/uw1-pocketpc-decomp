@@ -18,7 +18,7 @@ short DAT_00202080;
 short *DAT_00085a6c = mode_state;
 undefined2 DAT_00201b60, DAT_000868d8;
 short DAT_00201b64;
-undefined1 DAT_0023cca8_backing[32768];
+undefined1 DAT_0023cca8_backing[1024];
 undefined1 DAT_000857a0_backing[32768];
 char s__DATA_lev_ark_00085734[] = "\\DATA\\lev.ark";
 char s__SAVE0_lev_ark_000842fc[] = "\\SAVE0\\lev.ark";
