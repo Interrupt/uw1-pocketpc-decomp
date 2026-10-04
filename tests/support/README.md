@@ -78,6 +78,11 @@ current triangles without opening a window. The clipped-record buffer is
 extracted from `src/3d.c` itself so AddressSanitizer checks its actual size;
 the fixture does not substitute a larger buffer and hide an overflow.
 
+`uw_test_spells` runs the real rune-table lookup, casting, special-action
+dispatcher, and light effect with a character from the common helper. Skill
+results, dice, sound, and UI boundaries remain controlled; tests also exercise
+critical failures and no-magic tiles using the full player address.
+
 Generated function units are build artifacts. CMake regenerates them from the
 source files when those files change. Game implementations remain in their
 original files; no implementation copies are checked into tests.

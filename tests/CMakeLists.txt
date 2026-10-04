@@ -212,3 +212,11 @@ add_fixture_game_unit_test(geometry
   src/ordinal_stubs.c:ordfloat_mul src/ordinal_stubs.c:ordfloat_div
   src/ordinal_stubs.c:ordfloat_ge src/ordinal_stubs.c:ordfloat_uint_to_float
   src/ordinal_stubs.c:ordfloat_int_to_float2)
+
+add_fixture_game_unit_test(spells
+  src/hud.c:@DAT_00087530_backing
+  src/hud.c:handle_cast_spell_click src/hud.c:cast_spell_from_rune_combo
+  src/hud.c:report_spell_cast_failure
+  src/object_actions.c:dispatch_special_action
+  src/object_actions.c:reduce_item_quality_on_use
+  src/combat.c:add_active_light_source src/tmap.c:tile_is_no_magic)

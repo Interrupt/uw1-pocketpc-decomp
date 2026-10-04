@@ -937,14 +937,17 @@ undefined4 param_3;
 undefined4 dispatch_special_action(param_1,param_2,param_3,param_4)
 uint param_1;
 uint param_2;
-uint param_3;
-int param_4;
+uintptr_t param_3;
+intptr_t param_4;
 
 {
   undefined2 uVar1;
   int iVar2;
 
-  if ((param_3 < DAT_002046c4) || (0xb < (param_1 & 0xff))) {
+  /* ARM 0x73b74 receives object addresses in r2/r3 and reads the actor's
+     position at +0x16. Keep these address-sized on the native host: Ghidra's
+     uint/int declarations truncated the player pointer during rune casts. */
+  if ((param_3 < (uintptr_t)DAT_002046c4) || (0xb < (param_1 & 0xff))) {
     iVar2 = tile_is_no_magic(*(ushort *)(param_3 + 0x16) >> 10,
                          (*(ushort *)(param_3 + 0x16) & 0x3f0) >> 4);
     if (iVar2 != 0) {
@@ -972,7 +975,7 @@ int param_4;
     goto LAB_00073c90;
   case 3:
 LAB_00073c90:
-    if ((param_3 != g_player_object) ||
+    if ((param_3 != (uintptr_t)g_player_object) ||
        (iVar2 = add_active_light_source(param_1,param_2 & 0x3f,param_2 & 0xc0), iVar2 == 0)) {
       return 0;
     }
@@ -984,7 +987,7 @@ LAB_00073c90:
     apply_healing_item_effect(param_4,param_2);
     return 1;
   case 5:
-    if (param_3 == g_player_object) {
+    if (param_3 == (uintptr_t)g_player_object) {
       g_cursor_holding_state = 3;
       DAT_00202094 = param_2 & 0xff;
       DAT_00202098 = g_player_object;
