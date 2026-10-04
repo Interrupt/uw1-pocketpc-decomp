@@ -15,6 +15,7 @@
 #include "headers/objects.h"
 #include "headers/resources.h"
 #include "headers/ai.h"
+#include "headers/object_actions.h"
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1371,6 +1372,24 @@ static int g_dbgui_inspect_tex_pick = 0;
 
 static void dbgui_inspector_back(void) { g_dbgui_inspect_obj = 0; g_dbgui_inspect_tex_pick = 0; }
 
+/* "locked" (door inspector rows, below) is shown as a toggle rather
+   than plain text per direct request, so this tool can unlock a door
+   for testing -- but there's no real "lock a door" action anywhere in
+   this game to call the other way (doors only ever start locked from
+   level data, never get relocked at runtime), so this is a one-way
+   action: if the door is locked, run the exact same forced-unlock
+   object_actions.c already has for a real "unlock" spell/effect
+   (force_unlock_target_object -- temporarily maxes the pick-locks
+   skill so its own internal skill-gated check always passes, same as
+   a guaranteed scripted unlock); if it's already unlocked, there's
+   nothing to do and this is a no-op. The row keeps showing whatever
+   find_object_in_chain reports fresh next frame either way, so it
+   can't drift from the object's real state. */
+static void dbgui_inspector_toggle_door_lock(void)
+{
+  if (g_dbgui_inspect_obj != 0) force_unlock_target_object(0,0,g_dbgui_inspect_obj);
+}
+
 void dbgui_object_inspector_pick(void)
 {
   ushort *obj;
@@ -1401,8 +1420,10 @@ void dbgui_object_inspector_pick(void)
    (find_object_in_chain(chain,0,6,2,3) -- class 6/subclass 2/id-low-
    nibble 3) is the exact same lock-record search
    force_unlock_target_object (object_actions.c) already does before
-   attempting a real unlock, not a guess. HP: current (object record
-   byte +8, confirmed by npc_ai_tick's own regen check) over max
+   attempting a real unlock, not a guess; "locked" is a toggle (see
+   dbgui_inspector_toggle_door_lock above) so this tool can actually
+   unlock the door, not just report its state. HP: current (object
+   record byte +8, confirmed by npc_ai_tick's own regen check) over max
    (g_monster_max_stats_table[(id&0x3f)*0x30], the per-creature-type
    stat template load_monster_combat_stats loads from OBJECTS.DAT). */
 static void populate_debug_object_inspector(ushort *obj)
@@ -1422,7 +1443,7 @@ static void populate_debug_object_inspector(ushort *obj)
   if ((id & 0x1f0) == 0x140) {
     ushort *chain = obj + 3;
     int locked = find_object_in_chain(&chain,0,6,2,3) != 0;
-    dbgui_field_text("locked", locked ? "yes" : "no");
+    dbgui_field_toggle_action("locked", locked, dbgui_inspector_toggle_door_lock);
   }
   if ((id & 0x1c0) == 0x40) {
     int hp = *(byte *)((char *)obj + 8);

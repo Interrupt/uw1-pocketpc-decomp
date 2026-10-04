@@ -56,6 +56,15 @@ void dbgui_field_toggle(const char *name, int *value);
    again next frame with a freshly formatted string for a live
    display, same as every other field kind being rebuilt each frame. */
 void dbgui_field_text(const char *name, const char *value);
+/* A toggle-styled row ("name: ON"/"name: OFF", same click/RETURN/LEFT/
+   RIGHT dispatch as dbgui_field_toggle) for a boolean that's really a
+   COMPUTED property with a genuine action behind changing it rather
+   than a plain flag to flip (a door's locked state, driven by running
+   the real unlock action, not by writing a bit somewhere). `value` is
+   the state to display THIS frame, same as dbgui_field_text's value;
+   on_toggle is called on activation and decides what (if anything)
+   really changes -- see its own doc comment in debug_ui.c for why. */
+void dbgui_field_toggle_action(const char *name, int value, void (*on_toggle)(void));
 void dbgui_end(void);
 /* Actually paints the panel -- call once per frame from the true end of
  * the frame (after the 3D view and HUD have drawn), NOT from wherever
