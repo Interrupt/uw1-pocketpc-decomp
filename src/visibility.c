@@ -78,9 +78,24 @@ static char s_bad_tmap_ids_size_000869b7[] = "bad_tmap_ids_size";
    colour-light table arena: load_dungeon_texture_arenas sets
    DAT_0023ae38 = &DAT_002049e0 and loads several .tr/.dat files into
    it, then get_texture_page hands out `&DAT_002049e0 + page*stride`
-   pointers. Needs real backing storage (1 MB is comfortably more
-   than UW1's texture set). */
-undefined1 DAT_002049e0_backing[0x100000];
+   pointers. Needs real backing storage.
+
+   Sizing pass: "1 MB is comfortably more than UW1's texture set" was
+   never derived from anything -- the real bound is exact and provable
+   from the level file format itself, not an estimate. load_level_
+   texture_ids's own header comment: "read the level's 0x7a-byte
+   tmap-id block (48 wall + 10 floor + 3) from the .ark" -- the format
+   has exactly 48 wall-texture and 10 floor-texture id slots, full
+   stop, no level can ever have more. load_dungeon_texture_arenas
+   loads 4 fixed real files against those two counts: w64.tr (48 x
+   64x64 = 4096B), f32.tr (10 x 32x32 = 1024B), w16.tr (48 x 16x16 =
+   256B), f16.tr (10 x 16x16 = 256B) -- exact max 48*4096 + 10*1024 +
+   48*256 + 10*256 = 221696 bytes. Verified live too
+   (UW_DEBUG_TEXTURE_ARENA=1, full 19-script regression suite): real
+   usage is exactly 221696 bytes every time (both counts always fully
+   populated), matching the theoretical max exactly. Sized to 0x40000
+   (262144) for headroom, down from 0x100000 (1048576). */
+undefined1 DAT_002049e0_backing[0x40000];
 static char s__DATA_terrain_dat_000869ec[] = "\\DATA\\terrain.dat";
 // was DAT_0023b01c -- set by the 3D-viewport setup function
 // (configure_dungeon_viewport) whenever the real in-game dungeon-view mode (game
@@ -92,7 +107,9 @@ undefined2 DAT_0023aed4;
 undefined2 *DAT_0023aed0;
 static short DAT_0023b4cc;
 static char s_R__lu_P__lu_S__lu_F__d__d_00086b04[] = "R:%lu_P:%lu_S:%lu_F:%d.%d";
-static undefined1 DAT_0023b4a8_backing[65536];
+/* Sizing pass: explicit 16-slot ring buffer (`DAT_0023b4c8 = sVar1 +
+   1U & 0xf`), 2-byte stride -- real max 15*2+2=32 bytes. */
+static undefined1 DAT_0023b4a8_backing[64];
 #define DAT_0023b4a8 DAT_0023b4a8_backing[0]
 static int DAT_0023aec8;
 static ushort DAT_0023b4c8;
@@ -196,7 +213,11 @@ static const undefined1 DAT_00086af8_region[12] = {
 #define DAT_00086b00 (*(undefined1 *)(DAT_00086af8_region + 8))
 short g_visibility_ring_depth;
 undefined1 g_visibility_ring_buffer_backing[32768];
-static undefined DAT_00086b34;
+/* Was silently zero -- read into a draw-command opcode and into
+   DAT_00189578 (both widened casts of this one byte). Confirmed via a
+   Ghidra memory dump of the real UU.exe that its actual value is 1,
+   not zero; no writer anywhere in this decompile. */
+static undefined DAT_00086b34 = 1;
 undefined2 DAT_00189578;
 undefined DAT_0023b4dc;
 short DAT_00086b2c;

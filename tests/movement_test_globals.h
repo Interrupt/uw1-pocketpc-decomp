@@ -1,13 +1,14 @@
-/* Private uw.c state needed by the extracted collision functions. */
+/* Private game state supplied by support/movement_fixture.c to the
+   compiled movement test library. */
 #include "src/headers/uw.h"
 extern byte DAT_002046d8, DAT_002046dc, DAT_002046e0, DAT_002046e4;
 extern int DAT_002046e8;
 /* These used to be plain (non-static) globals visible everywhere via
    uw.h; the code-cleanup-pass-2 global-reorganization made them
    file-local statics in their real owning .c files (single real
-   consumer each), so the test's own fixture copies (in test_movement.c)
-   now need an explicit extern here too for movement_functions.c (the
-   extracted-function translation unit) to see them. */
+   consumer each), so the test's fixture copies (in support/movement_fixture.c)
+   now need an explicit extern here too for the
+   extracted-function translation unit to see them. */
 extern short DAT_00086980, DAT_00086982, DAT_00086996;
 extern ushort DAT_0008698c;
 extern undefined1 DAT_00086986_backing[];

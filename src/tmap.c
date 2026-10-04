@@ -92,7 +92,11 @@ byte * DAT_0023b814;
    backing store; keep the exact `v*2 + 2` index math at both use sites. */
 code *DAT_0023b4f4;
 short g_pick_tile_off_backing[0x200];
-undefined1 DAT_0023b676_backing[65536];
+/* Sizing pass: indexed by the same DAT_0023b830 cursor as
+   g_pick_tile_off_backing right above (interact.c:1032, tmap.c:2393),
+   a 2-byte stride -- sized to match that sibling's own real extent
+   (0x200 elements * 2 bytes = 1024 bytes), down from 65536. */
+undefined1 DAT_0023b676_backing[1024];
 int DAT_0023b83c;
 /* Were int / undefined4, truncating the real &DAT_002049e0-relative
    pointers this loader (FUN_00042174 area) computes into them:
@@ -227,7 +231,12 @@ short DAT_0023b4e4;
 undefined1 *DAT_0023b820;
 ushort DAT_0023b828;
 undefined2 DAT_0023b824;
-char DAT_00087938;
+/* Was silently zero -- compared against the literal `'d'` at all 4
+   call sites in this file. Confirmed via a Ghidra memory dump of the
+   real UU.exe that its actual byte value is 0x64 ('d'), not zero; no
+   writer anywhere in this decompile, so every `DAT_00087938 != 'd'`
+   check was permanently true regardless of real game state. */
+char DAT_00087938 = 'd';
 short DAT_00086b24;
 ushort DAT_0023b81c;
 ushort DAT_0023b4d8;
@@ -278,14 +287,22 @@ static const unsigned char DAT_00086cc0_arr[32] = {
   4,4,4,5,5,5,6,6, 6,6,6,7,7,7,0,0,
 };
 #define DAT_00086cc0 (DAT_00086cc0_arr[0])
-static undefined2 DAT_0023b908_backing[8192];
+/* Sizing pass: every access to this array is bounded to 0x12 (18)
+   bytes (the ce_memmove/ce_memset sites just below, and the plain
+   scalar DAT_0023b908 read/write) -- was oversized at 8192 elements
+   (16384 bytes) for an 18-byte need. Its sibling DAT_0023b928_backing
+   just below is NOT touched here: unlike this array, it's written at
+   a dynamic self-relative offset elsewhere in this file and needs its
+   own separate, more careful review before any resize. */
+static undefined2 DAT_0023b908_backing[32];
 #define DAT_0023b908 DAT_0023b908_backing[0]
 static undefined2 DAT_0023b928_backing[8192];
 #define DAT_0023b928 DAT_0023b928_backing[0]
 char DAT_0023bb94;
 static undefined DAT_0023b90a_backing[8192];
 #define DAT_0023b90a DAT_0023b90a_backing[0]
-static undefined1 DAT_0023b940_backing[65536];
+/* Sizing pass: `ce_memset(&DAT_0023b940,0,0x252)` -- 594 bytes exact. */
+static undefined1 DAT_0023b940_backing[1024];
 #define DAT_0023b940 DAT_0023b940_backing[0]
 /* Object/feature-draw sort scratch (emit_tile_features and helpers sort_feature_pairs_by_depth/
    ec8/508c/5128/65210/652e8, ~uw.c:49340-49766). Ghidra split each of

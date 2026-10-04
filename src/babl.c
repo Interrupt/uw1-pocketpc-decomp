@@ -147,8 +147,22 @@ static undefined DAT_001007dd_backing[256];
 #define DAT_001007dd DAT_001007dd_backing[0]
 static undefined DAT_001007de_backing[8192];
 #define DAT_001007de DAT_001007de_backing[0]
-static undefined *PTR_DAT_000845c8;
-static undefined1 DAT_000845e8_backing[65536];
+/* Was a lone scalar pointer slot -- its only use is `&PTR_DAT_000845c8 +
+   iVar2*4` (a 4-byte-stride coordinate table, same convention as the
+   sibling DAT_000845b8/DAT_000845d8/DAT_000845e8 tables right around
+   it in the original .data layout), so draw_hotspot_crosshair_marker's
+   worn-slot branch (param_1 != 0, up to 4 slots per init_barter_ui's
+   own loop) walked straight off the end of this single 8-byte slot on
+   this 64-bit host -- confirmed live via an ASan global-buffer-overflow
+   reached through ordinary Talk-mode/barter interaction. Given the same
+   256-byte safety margin as those sibling tables. */
+static undefined1 PTR_DAT_000845c8_backing[256];
+#define PTR_DAT_000845c8 PTR_DAT_000845c8_backing[0]
+/* Sizing pass: sibling of PTR_DAT_000845c8 right above in
+   draw_hotspot_crosshair_marker's worn-slot branch (`&DAT_000845e8 +
+   iVar2*4`, iVar2 up to 4 slots per init_barter_ui's own loop) --
+   same bound, given the same 256-byte margin. */
+static undefined1 DAT_000845e8_backing[256];
 #define DAT_000845e8 DAT_000845e8_backing[0]
 static undefined2 DAT_000bbfc8_backing[8192];
 #define DAT_000bbfc8 DAT_000bbfc8_backing[0]
@@ -338,7 +352,16 @@ static char s_npc_level_00085334[] = "npc_level";
 undefined2 DAT_00101960;
 ushort DAT_000853fc;
 static undefined1 DAT_00101968_backing[8192];
-undefined1 DAT_0023c698_backing[32768];
+/* Sizing pass: this is the "CUTS"-directory override path string
+   (cleared via ce_memset(&DAT_0023c698,0,0x104) in game.c, i.e. a
+   Windows MAX_PATH=260-byte buffer by design). Its one real writer
+   (game.c's registry-install-dir read, right next to its sibling
+   DAT_0023cca8's own identical pattern) copies a null-terminated
+   string out of a 520-byte scratch buffer with no further length
+   check, so the real structural ceiling is that buffer's own 520
+   bytes, not just the 260-byte memset -- sized to 1024 for headroom
+   above that, well short of the previous 32768. */
+undefined1 DAT_0023c698_backing[1024];
 static ushort DAT_00101a6c;
 /* Bitmap workspace supplied by cache_ambient_sound_handle; retain the full
    allocation address on 64-bit hosts. */
@@ -4944,12 +4967,12 @@ undefined ** param_2;
   undefined4 *puVar4;
   
   sVar1 = (short)param_2;
-  if (param_1 != 0) {
-    param_2 = &PTR_DAT_000845c8;
-  }
   iVar2 = (int)sVar1;
   if (param_1 != 0) {
-    param_2 = param_2 + iVar2;
+    /* Was `param_2 + iVar2` on the `undefined **` field -- pointer
+       arithmetic on an 8-byte stride, doubling (and past index 1,
+       overrunning) the intended 4-byte-stride table below. */
+    param_2 = (undefined **)(&PTR_DAT_000845c8 + iVar2 * 4);
     puVar4 = &DAT_000bbf98;
   }
   else {

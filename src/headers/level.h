@@ -6,7 +6,33 @@
  * itself so this header is self-contained for any caller. */
 #include "uw.h"
 
+extern short DAT_00201b68;
+extern char *DAT_0024cff4;
+extern char * g_selected_object;
+/* Globals defined in uw.c but also used by functions that now live in
+   level.c (level loading) -- extern'd here so both translation units
+   see the same storage. */
+extern undefined1 DAT_00088d98_backing[1536];
+#define DAT_00088d98 DAT_00088d98_backing[0]
+extern undefined4 DAT_002029d0;
+extern undefined2 DAT_00201c90;
+extern undefined2 DAT_00201c8c;
+extern short DAT_00201c7c;
+
+
 /* Port-only timing flag consumed by the first entry after character creation. */
 extern bool g_new_game_entry_pause_pending;
+
+undefined4 teleport_object_to_level_tile();
+void reset_level_arena_and_invalidate();
+void enter_dungeon_view();
+undefined4 init_level_object_arena();
+void free_level_tile_arena();
+int load_level_object_table();
+void reset_level_object_arena();
+int load_level();
+int transition_to_level();
+void save_or_restore_level_special_state();
+undefined4 trigger_random_level_special_event();
 
 #endif

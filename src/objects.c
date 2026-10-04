@@ -24,14 +24,23 @@ byte *DAT_00202c6c;
    lldb/ASan since they lay out globals differently, masking it there).
    Keep the aliases in uw.h: independent arrays lose the link high byte. */
  undefined1 DAT_00202c38_backing[8192];
- undefined1 DAT_00202c90_backing[65536];
+/* Sizing pass: the real COMOBJ "class 0" object-record table, indexed
+   throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max
+   511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825)
+   sits comfortably within that same bound. Sized to 8192 for
+   headroom, down from 65536. */
+undefined1 DAT_00202c90_backing[8192];
 /* Was `int` despite being assigned real pointer values derived from
    DAT_002046b8 (see there) and itself assigned into g_player_object
    (`char *`) -- truncating on this 64-bit host, part of the same crash
    chain (reset_player_object_record's ce_memset call reading g_player_object). */
 char *DAT_0023b82c;
 undefined1 DAT_002027d0_backing[256];
- undefined1 DAT_00202800_backing[65536];
+/* Sizing pass: resources.c's own loader confirms the exact real size
+   -- `read_file_handle(param_1,&DAT_00202800,0x80);` (128 bytes).
+   Also indexed as `&DAT_00202800 + nibble*8` (nibble 0-15, max
+   15*8+8=128) throughout combat.c/objects.c/player.c -- same bound. */
+undefined1 DAT_00202800_backing[256];
 byte *g_scratch_object_ptr;
 short DAT_00101454;
 short DAT_0010144c;
@@ -80,7 +89,11 @@ static int DAT_002046ec;
    into it -- same lone-scalar-treated-as-array bug class fixed
    repeatedly elsewhere in this file. */
 undefined1 DAT_0024cfe0_backing[8192];
-undefined1 DAT_00250730_backing[65536];
+/* Sizing pass: own loader confirms the exact real size --
+   `read_file_handle(param_1,&DAT_00250730,0x40);` (64 bytes). Also
+   indexed as `&DAT_00250730 + nibble*4` (nibble 0-15, max
+   15*4+4=64) -- same bound. */
+undefined1 DAT_00250730_backing[128];
 
 
 
@@ -701,9 +714,11 @@ char *param_2;
 // contents recursively freed. Falls through to a shared tail that
 // may randomly transform the object into a spent (0xd5/0xd6) type and
 // re-settle it into the world, returning whether the object survived.
+/* ARM 0x3803c forwards the damaging actor's address to the door callback.
+   Keep it pointer-sized rather than truncating it through undefined4. */
 undefined4 apply_object_destruction_effect(param_1,param_2,param_3,param_4,param_5)
 ushort * param_1;
-undefined4 param_2;
+ushort *param_2;
 uint param_3;
 undefined4 param_4;
 short param_5;

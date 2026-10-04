@@ -121,8 +121,13 @@ undefined4 DAT_000858a0;
    -> the 3D camera sat at floor level + a 164-unit eye offset while the
    tile geometry's Y is `height*64` (~768 for a mid-level floor), so
    every floor projected far above the viewport. Also used by
-   process_visible_tile_cell's height cull. */
- undefined1 DAT_00085d20_backing[65536] = {
+   process_visible_tile_cell's height cull.
+   Sizing pass: the real initializer below is only 18 shorts (36
+   bytes); tmap.c's own usage adds a small direction-offset byte to
+   the nibble index at one call site (`uVar1 + *pbVar35`), so sized to
+   128 for headroom past the real data rather than the exact 36,
+   down from 65536. */
+ undefined1 DAT_00085d20_backing[128] = {
   0x00,0x00, 0x40,0x00, 0x80,0x00, 0xc0,0x00, 0x00,0x01, 0x40,0x01,
   0x80,0x01, 0xc0,0x01, 0x00,0x02, 0x40,0x02, 0x80,0x02, 0xc0,0x02,
   0x00,0x03, 0x40,0x03, 0x00,0x00, 0x00,0x00, 0x00,0x04, 0x00,0x00,

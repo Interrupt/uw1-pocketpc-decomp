@@ -20,7 +20,12 @@ static undefined1 DAT_000b98b8_backing[32768];
 #define DAT_000b98b8 DAT_000b98b8_backing[0]
 static undefined1 DAT_000b98b9_backing[32768];
 #define DAT_000b98b9 DAT_000b98b9_backing[0]
-static undefined1 DAT_000b58b8_backing[16384];
+/* Sizing pass: this is a file-copy scratch buffer, read in chunks
+   explicitly clamped to 0x2000 (8192) bytes right before every read
+   into it (see the `if (0x2000 < uVar12) uVar12 = 0x2000;` clamp and
+   the sibling fixed-0x2000 read_file_handle call a few lines below it)
+   -- was oversized at 16384 bytes for an 8192-byte chunk. */
+static undefined1 DAT_000b58b8_backing[8448];
 #define DAT_000b58b8 DAT_000b58b8_backing[0]
 char s__SAVE0_lev_ark_000842fc[] = "\\SAVE0\\lev.ark";
 // was DAT_002028c8

@@ -26,4 +26,8 @@ int demomode_active(void);
  * uw_pump_events. */
 void demomode_abort(const char *reason);
 
+/* Shared scratch fallback buffer DAT_00110fc0/DAT_00110fcc point into;
+   also read directly by demomode.c's debug accessors. */
+extern char DAT_00110fc0_scratch[65536];
+
 #endif

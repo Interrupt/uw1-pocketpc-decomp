@@ -87,9 +87,13 @@ static undefined4 DAT_00084608 = 0x40a00000u;
    record). As lone scalars this walks off into whatever memory happens to
    follow them, corrupting adjacent globals -- confirmed crashing
    (EXC_BAD_ACCESS) a few calls further down this same file. Same
-   lone-scalar-used-as-array pattern fixed repeatedly this session; given
-   DAT_000bc044's real size the same generous record count. */
-static undefined DAT_000bc038_backing[32768];
+   lone-scalar-used-as-array pattern fixed repeatedly this session.
+   Size this in records, matching the texture side tables: the old 32768
+   bytes held only 240 complete 0x88-byte records, while the input arena
+   can emit 490. Clipping a larger list wrote past this buffer and corrupted
+   other geometry state, which can make old/invalid polygons appear on screen.
+   The ARM function at 0x1f370 advances the output by 0x88 per polygon. */
+static undefined DAT_000bc038_backing[0x88 * UW_MAX_VIS_TILES] = {0};
 #define DAT_000bc038 DAT_000bc038_backing[0]
 #define DAT_000bc039 DAT_000bc038_backing[1]
 #define DAT_000bc03a DAT_000bc038_backing[2]
@@ -1711,6 +1715,15 @@ void load_dungeon_texture_arenas()
   } while (cVar1 != '\0');
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
+  if (getenv("UW_DEBUG_TEXTURE_ARENA")) {
+    static long hwm_bytes = -1;
+    long used = (long)((DAT_0023ae30 + (int)DAT_0023aeb8 * 0x100) - (char *)&DAT_002049e0);
+    if (used > hwm_bytes) {
+      hwm_bytes = used;
+      fprintf(stderr, "[texture-arena] new high-water usage: %ld bytes (w16 count=%d f16 count=%d)\n",
+              used, (int)local_11c[0], (int)DAT_0023aeb8);
+    }
+  }
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] load_dungeon_texture_arenas: about to call load_door_frames (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
   load_door_frames();

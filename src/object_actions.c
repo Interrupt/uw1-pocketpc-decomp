@@ -73,19 +73,54 @@ int DAT_002022fc;
 ushort g_player_max_carry_weight = 200;
 static char s_cursed_00085ca0[] = "cursed";
 static char s_magical_00085ca8[] = "magical";
-static char s_full_charge_00085cb8[] = "full_charge";
-static undefined DAT_00085cc8;
-static char s_with_00085cd0[] = "with";
-static undefined DAT_00085cd8_backing[8192];
+/* Ghidra rendered the embedded space as an underscore and dropped the
+   leading space entirely -- confirmed via a Ghidra memory dump of the
+   real UU.exe that the real bytes are " full charge\0" (with a real
+   space, not '_', between "full" and "charge"), appended right after
+   the charge count in append_object_special_name-adjacent charge-
+   count message building. */
+static char s_full_charge_00085cb8[] = " full charge";
+/* Was a bare scalar read through &DAT_00085cc8 as a 2-char C string
+   (the "no charges" case of the same charge-count message). Confirmed
+   via a Ghidra memory dump of the real UU.exe that the real bytes are
+   "no\0". */
+static char DAT_00085cc8[] = "no";
+/* Was missing both its leading and trailing space -- confirmed via a
+   Ghidra memory dump of the real UU.exe that the real bytes are
+   " with \0", not "with\0"; matches the same leading/trailing-space-
+   per-fragment convention as the full_charge/DAT_00085cc8 strings
+   just above. */
+static char s_with_00085cd0[] = " with ";
+/* Was a zero-initialized 8192-byte placeholder (this file's own
+   adjacent comment guessed ": "-shaped, but a Ghidra memory dump of
+   the real UU.exe shows the real bytes are " of \0") -- this prefixes
+   a special/unique item's proper name onto its base name, e.g.
+   "<item> of <name>", not "<item>: <name>". */
+static undefined DAT_00085cd8_backing[8192] = " of ";
 static undefined4 DAT_0024cfcc;
+/* DAT_00085ccc/ccd/cce sit right after DAT_00085cc8 ("no\0", above) in
+   real memory ("00\0" -- 0x30 0x30 0x00) and get copied into this
+   function's own digit-formatting scratch buffer before being
+   overwritten by the actual computed digits (or, for cce, already
+   relied on as the buffer's zero terminator) -- real values confirmed
+   via the same memory dump, but left as this port's zero defaults
+   since every call path here either overwrites ccc/ccd before they're
+   read or already depends on cce being 0; restating '0'/'0'/0 here
+   would change no observable behavior. */
 static undefined1 DAT_00085ccc;
 static undefined1 DAT_00085ccd;
 static undefined1 DAT_00085cce;
-static undefined DAT_00085cb4_backing[8192];
+/* Was a zero-initialized 8192-byte placeholder -- confirmed via a
+   Ghidra memory dump of the real UU.exe that the real bytes are
+   "s\0", the plural suffix appended after "full charge" when the
+   count isn't exactly 1. */
+static undefined DAT_00085cb4_backing[8192] = "s";
 static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 static char s_an_adventurer__00085d08[] = "an_adventurer.";
 static uint DAT_00202094;
-undefined1 DAT_00087604_backing[65536];
+/* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
+   (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
+undefined1 DAT_00087604_backing[256];
 undefined *PTR_FUN_00087614;
 static undefined DAT_0008762c_backing[8192];
 #define DAT_0008762c DAT_0008762c_backing[0]
@@ -937,14 +972,17 @@ undefined4 param_3;
 undefined4 dispatch_special_action(param_1,param_2,param_3,param_4)
 uint param_1;
 uint param_2;
-uint param_3;
-int param_4;
+uintptr_t param_3;
+intptr_t param_4;
 
 {
   undefined2 uVar1;
   int iVar2;
 
-  if ((param_3 < DAT_002046c4) || (0xb < (param_1 & 0xff))) {
+  /* ARM 0x73b74 receives object addresses in r2/r3 and reads the actor's
+     position at +0x16. Keep these address-sized on the native host: Ghidra's
+     uint/int declarations truncated the player pointer during rune casts. */
+  if ((param_3 < (uintptr_t)DAT_002046c4) || (0xb < (param_1 & 0xff))) {
     iVar2 = tile_is_no_magic(*(ushort *)(param_3 + 0x16) >> 10,
                          (*(ushort *)(param_3 + 0x16) & 0x3f0) >> 4);
     if (iVar2 != 0) {
@@ -972,7 +1010,7 @@ int param_4;
     goto LAB_00073c90;
   case 3:
 LAB_00073c90:
-    if ((param_3 != g_player_object) ||
+    if ((param_3 != (uintptr_t)g_player_object) ||
        (iVar2 = add_active_light_source(param_1,param_2 & 0x3f,param_2 & 0xc0), iVar2 == 0)) {
       return 0;
     }
@@ -984,14 +1022,14 @@ LAB_00073c90:
     apply_healing_item_effect(param_4,param_2);
     return 1;
   case 5:
-    if (param_3 == g_player_object) {
+    if (param_3 == (uintptr_t)g_player_object) {
       g_cursor_holding_state = 3;
       DAT_00202094 = param_2 & 0xff;
       DAT_00202098 = g_player_object;
       push_cursor_icon(0x1075);
     }
     else {
-      apply_targeted_spell_effect(param_3,param_2);
+      apply_targeted_spell_effect((ushort *)param_3,param_2);
     }
     break;
   case 6:
@@ -1087,8 +1125,11 @@ char param_2;
 // this cast), deducts it from the player's mana stat
 // (DAT_00086df8+0x37, "play_mana" -- see babl.c's own read of the
 // same offset). DAT_0023c3e0 is always cleared back to 0 afterward.
+/* ARM passes the actor address unchanged through r0 (0x740e8 and 0x7ca1c).
+   Keep it pointer-sized here: an int truncates the queued player's address
+   before projectile placement on a 64-bit host. */
 void apply_targeted_spell_effect(param_1,param_2)
-int param_1;
+ushort *param_1;
 char param_2;
 
 {
@@ -2521,7 +2562,7 @@ uint param_3;
 void complete_cast_spell_on_target()
 
 {
-  apply_targeted_spell_effect((int)DAT_00202098,(int)(char)DAT_00202094);
+  apply_targeted_spell_effect((ushort *)DAT_00202098,(int)(char)DAT_00202094);
   g_cursor_holding_state = 0;
   pop_cursor_icon(3);
   wait_for_click_release(1);
@@ -3108,9 +3149,9 @@ char *param_3;     /* was undefined4 -- caller's stack buffer for ce_strcat */
 // build_object_display_name), for param_2==3: resolves the item's
 // variant/special-link data, looks up a name-table message string
 // keyed by its quality/link fields (falling back to "UNNAMED" if the
-// lookup misses), and appends it prefixed by DAT_00085cd8 (": "-shaped
-// separator). Also checks the object's own content chain for a
-// matching link entry.
+// lookup misses), and appends it prefixed by DAT_00085cd8 (" of ",
+// e.g. "<item> of <name>"). Also checks the object's own content
+// chain for a matching link entry.
 // WARNING: Type propagation algorithm not settling
 
 undefined4 append_object_special_name(param_1,param_2,param_3)
@@ -3187,7 +3228,7 @@ LAB_00048e80:
       if (-1 < iVar2) {
         ce_strcat(param_3,s_with_00085cd0);
         if (iVar2 < 1) {
-          puVar7 = (undefined2 *)&DAT_00085cc8;
+          puVar7 = (undefined2 *)DAT_00085cc8;
         }
         else {
           local_26[1] = DAT_00085ccd;
@@ -3543,32 +3584,32 @@ LAB_000497a0:
 // (apply_targeted_spell_effect) and ranged-attack spawns. Returns
 // whether the spawn succeeded.
 bool spawn_object_near_actor(param_1,param_2)
-uint param_1;
+ushort *param_1;
 short param_2;
 
 {
-  int iVar1;
+  ushort *puVar1; /* ARM 0x4a678 tests the returned object pointer for NULL. */
   
   DAT_00202a38 = param_2 + 0x10;
   DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[param_2 * 3];
-  DAT_00202a4c = (ushort)(*(byte *)(param_1 + 0x17) >> 2);
-  DAT_00202a50 = (ushort)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
+  DAT_00202a4c = (ushort)(*((byte *)param_1 + 0x17) >> 2);
+  DAT_00202a50 = (ushort)((param_1[11] & 0x3f0) >> 4);
   DAT_00202a54 = 1;
   DAT_00202a44 = param_1;
   if (param_1 == g_player_object) {
     compute_drop_aim_from_cursor();
   }
   else {
-    if (DAT_002046c4 <= param_1) {
+    if ((uintptr_t)DAT_002046c4 <= (uintptr_t)param_1) {
       DAT_00202a4c = (ushort)DAT_0023c3dc;
       DAT_00202a50 = (ushort)DAT_0023c3d8;
       DAT_00202a3c = 0;
     }
-    DAT_00202a54 = (ushort)(DAT_002046c4 > param_1);
+    DAT_00202a54 = (ushort)((uintptr_t)DAT_002046c4 > (uintptr_t)param_1);
     DAT_00202a40 = 0;
   }
-  iVar1 = spawn_object_near_player();
-  return iVar1 != 0;
+  puVar1 = spawn_object_near_player();
+  return puVar1 != 0;
 }
 
 

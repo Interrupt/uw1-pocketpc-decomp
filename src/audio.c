@@ -23,7 +23,13 @@ static undefined1 DAT_0024f90c;
 static ushort DAT_000853f8;
 static ushort DAT_00085400;
 static char *DAT_002506ec;
-static int DAT_00086368;
+/* Was silently zero -- the resampler's output rate, compared against
+   both real sample rates it supports (`== 0xac44` i.e. 44100 and
+   `== 0x5622` i.e. 22050 throughout this file). Confirmed via a Ghidra
+   memory dump of the real UU.exe that its actual initial value is
+   0x5622 (22050), not zero; no writer anywhere in this decompile, so
+   neither branch of either comparison ever matched. */
+static int DAT_00086368 = 0x5622;
 static unsigned short u_WAVE_0008686c[] = u"WAVE";
 /* Was a bare scalar, but process_mod_tracker_row indexes it as
    `(&DAT_00086370)[iVar14]` with iVar14 clamped to [0,0x127] -- the
@@ -44,8 +50,15 @@ static undefined4 DAT_00086370_backing[296];
    the access safe. */
 static undefined1 DAT_00086810_backing[32];
 #define DAT_00086810 DAT_00086810_backing[0]
-static undefined1 DAT_00202a58_backing[65536];
-static undefined1 DAT_00087414_backing[65536];
+/* Sizing pass: init_all_sound_channel_slots's own comment already
+   says it -- "16 hardware sound-channel slots (0x1a/26-byte
+   records)" -- 16*26=416 bytes real need. */
+static undefined1 DAT_00202a58_backing[512];
+/* Sizing pass: per-music-track duration table, indexed by the current
+   track byte (DAT_0023c3a8) at a 4-byte stride; real shipped tracks
+   (data/SOUND/UW*.MOD) top out at track 15. Sibling of DAT_000873e0
+   below, same bound. */
+static undefined1 DAT_00087414_backing[256];
 #define DAT_00087414 DAT_00087414_backing[0]
 static char s__SOUND__0008750c[] = "\\SOUND\\";
 static char s_uw00_mod_00087514[] = "uw00.mod";
@@ -92,7 +105,10 @@ static undefined DAT_0023c3d4_backing[8192];
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
 static int DAT_0023c3bc;
 static int DAT_0023c378;
-static undefined1 DAT_000873e0_backing[65536];
+/* Sizing pass: sibling of DAT_00087414 above -- same per-track,
+   4-byte-stride indexing by DAT_0023c3a8, same real bound (max
+   shipped track 15). */
+static undefined1 DAT_000873e0_backing[256];
 #define DAT_000873e0 DAT_000873e0_backing[0]
 static undefined4 DAT_00087458;
 static undefined1 DAT_00087520_backing[32768];

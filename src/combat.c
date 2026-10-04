@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DAT_00085aa0 DAT_00085aa0_backing[0]
 ushort DAT_00100610;
 static undefined2 DAT_00100600;
 static ushort DAT_00100604;
@@ -79,11 +78,35 @@ short DAT_00101448; /* signed fine-coordinate delta; ARM reads 16 bits */
 char DAT_0010143c;
 char DAT_0010173c;
 char *DAT_00101400;
-static undefined DAT_00085a90;
-static char s_were_00085a98[] = "were";
-static undefined1 DAT_00085aa0_backing[32768];
-static char s_damaged__00085aa8[] = "damaged.";
-static char s_destroyed__00085ab4[] = "destroyed.";
+/* Was a bare scalar, but apply_equipment_degradation_message reads it
+   through &DAT_00085a90 as a C string (the "was" half of the was/were
+   pair right before it in memory, see s_were_00085a98 below) -- so the
+   first byte being this port's always-zero default made it read as an
+   empty string. Confirmed via a Ghidra memory dump of the real UU.exe:
+   the actual bytes here are " was\0" (with the leading space the
+   damaged/destroyed message depends on for spacing). */
+static char DAT_00085a90[] = " was";
+/* Was missing its leading space -- confirmed via the same memory dump
+   that the real bytes are " were\0", not "were\0"; apply_equipment_
+   degradation_message relies on that leading space the same way its
+   sibling DAT_00085a90 above does. */
+static char s_were_00085a98[] = " were";
+/* Was a zero-initialized 32768-byte placeholder (oversized -- nothing
+   else aliases into it and its only reader just copies it out as a
+   plain null-terminated string, so it needs no more headroom than its
+   own content). Confirmed via a Ghidra memory dump of the real UU.exe
+   that the real bytes are "Your \0" -- this is the message's opening
+   subject ("Your <item> was/were damaged/destroyed."), copied into a
+   local buffer before the item's own display name is appended. */
+static char DAT_00085aa0[] = "Your ";
+/* Was missing its leading space and trailing newline -- confirmed via
+   a Ghidra memory dump of the real UU.exe that the real bytes are
+   " damaged.\n\0", matching the leading-space convention this whole
+   was/were/damaged/destroyed cluster uses for inter-word spacing. */
+static char s_damaged__00085aa8[] = " damaged.\n";
+/* Same leading-space/trailing-newline fix as s_damaged__00085aa8 just
+   above; real bytes confirmed " destroyed.\n\0". */
+static char s_destroyed__00085ab4[] = " destroyed.\n";
 static byte DAT_002046d8;
 static byte DAT_002046dc;
 static int DAT_002046e8;
@@ -2368,7 +2391,7 @@ undefined1 param_6;
 // trigger_object_trap_or_use_action(action 4).
 bool apply_object_durability_damage(param_1,param_2,param_3,param_4,param_5)
 ushort * param_1;
-undefined4 param_2;
+ushort *param_2; /* damaging actor, forwarded to the destruction trigger */
 short param_3;
 undefined4 param_4;
 undefined2 param_5;
@@ -2530,7 +2553,7 @@ int param_5;
     pcVar9 = s_destroyed__00085ab4;
     uVar7 = 1;
   }
-  pcVar8 = &DAT_00085aa0;
+  pcVar8 = DAT_00085aa0;
     wptr_30396 = acStackY_85aec;
   do {
     cVar2 = *pcVar8;
@@ -2549,7 +2572,7 @@ int param_5;
     pcVar8 = s_were_00085a98;
   }
   else {
-    pcVar8 = &DAT_00085a90;
+    pcVar8 = DAT_00085a90;
   }
   ce_strcat(acStack_4d + 1,pcVar8);
   ce_strcat(acStack_4d + 1,pcVar9);
@@ -2700,9 +2723,11 @@ ushort *param_2;
 // (+0x27) before applying it to param_1 through apply_direct_object_hit.
 // Confirmed called from use_object_on_target for class-0/family-1
 // targets -- a "use this object on a trap/trigger" damage effect.
+/* ARM 0x545c0 preserves the target in r8 and 0x54698 passes that address
+   in r2 to apply_direct_object_hit. undefined4 truncated it on 64-bit hosts. */
 void apply_trap_type_damage_effect(param_1,param_2)
 byte * param_1;
-undefined4 param_2;
+ushort * param_2;
 
 {
   byte bVar1;

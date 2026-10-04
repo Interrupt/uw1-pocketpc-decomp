@@ -122,7 +122,10 @@ static undefined2 DAT_0023bd7c;
 static undefined DAT_00086e70_backing[256];
 #define DAT_00086e70 DAT_00086e70_backing[0]
 static undefined4 DAT_0023bf50;
-undefined1 DAT_0023ce10_backing[65536];
+/* Sizing pass: this is the real Microsoft GXKeyList struct (see
+   gx_stub.c's own "8x (short vk + POINT pt), 12 bytes each ... = 0x60"
+   comment) -- 96 bytes total, not 65536. */
+undefined1 DAT_0023ce10_backing[128];
 HWND__ *DAT_0023c548;
 
 

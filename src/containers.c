@@ -1323,27 +1323,29 @@ int param_2;
 // try_empty_container (a different implementation for a different
 // object-class case), used here for doors and a couple of specific
 // item types.
+/* The object and matching chain entries are addresses, not 32-bit ints.
+   ARM 0x37f48 adds six bytes to the object to reach its contents link. */
 undefined4 discard_container_contents(param_1,param_2)
-int param_1;
+ushort *param_1;
 int param_2;
 
 {
-  int iVar1;
+  ushort *puVar1; /* ARM 0x37fcc keeps the found object address in r4. */
   undefined4 uVar2;
   ushort *local_18;
 
   uVar2 = 0;
-  if (((*(byte *)(param_1 + 1) & 0x80) == 0) &&
-     (local_18 = (ushort *)(param_1 + 6), (*local_18 & 0xffc0) != 0)) {
-    iVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
-    while (iVar1 != 0) {
-      object_list_unlink(local_18,iVar1);
-      free_object_slot(iVar1);
+  if (((*((byte *)param_1 + 1) & 0x80) == 0) &&
+     (local_18 = param_1 + 3, (*local_18 & 0xffc0) != 0)) {
+    puVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
+    while (puVar1 != 0) {
+      object_list_unlink(local_18,puVar1);
+      free_object_slot(puVar1);
       if (param_2 == 0) {
         return uVar2;
       }
       uVar2 = 1;
-      iVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
+      puVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
     }
   }
   else {

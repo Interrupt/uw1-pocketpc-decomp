@@ -34,9 +34,18 @@ undefined2 g_palette_rgb565_backing[32768];
    aside every non-transparent pixel across the whole 320x200 framebuffer
    into it; screen_backup_restore/screen_backup_restore_rect restore from it
    later) -- classic
-   "undersized global used as a large table" bug. Widened to match
-   g_uw_framebuffer's exact size (0x25800 bytes = 76800 shorts). */
-static undefined2 DAT_000891b0_backing[76800];
+   "undersized global used as a large table" bug. Was widened to match
+   g_uw_framebuffer's exact size (0x25800 bytes = 76800 shorts), but
+   that's the full real 240x320 portrait hardware framebuffer -- this
+   buffer only ever covers the specific 320x200 region
+   screen_backup_save/restore/restore_rect actually touch, confirmed
+   by three independent hardcoded bounds: screen_backup_save's own
+   200/0x140 (320) loop counts, screen_backup_restore's `iVar1 <
+   0x1f400` (128000 bytes), and screen_backup_restore_rect's `63999 <
+   iVar4` (element index) guard -- all three agree on exactly 64000
+   shorts (320*200), not 76800. Sizing pass: shrunk to that confirmed
+   real need. */
+static undefined2 DAT_000891b0_backing[64000];
 #define DAT_000891b0 DAT_000891b0_backing[0]
 undefined2 DAT_000a85c0;
 undefined2 DAT_000a85c4;
