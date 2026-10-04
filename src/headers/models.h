@@ -22,7 +22,7 @@ extern char *DAT_00110fc0;
    own comment for the slot-order table. */
 extern undefined DAT_00123ccc_backing[16384];
 #define DAT_00123ccc DAT_00123ccc_backing[0]
-extern undefined2 DAT_00189570_backing[256];
+extern undefined2 DAT_00189570_backing[16];
 #define DAT_00189570 DAT_00189570_backing[0]
 extern ushort DAT_0018957a;
 extern int g_uw_debug_pick_diag;

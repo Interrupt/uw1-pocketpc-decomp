@@ -31,6 +31,15 @@
    without preserving an unexplained 2x. */
 static undefined DAT_00110ff0_backing[524288];
 #define DAT_00110ff0 DAT_00110ff0_backing[0]
+/* Sizing-audit pass: DAT_00110ffc/DAT_0018959c-f's only use is inside
+   tick_anim_record's dead legacy address-walk (the same one documented
+   at DAT_00110ff0/DAT_00189590's own comment above) -- indexed by
+   `catalog*0x3c2c`, which would be a severe overflow against these
+   256-byte arrays for any catalog>0, EXCEPT that path is gated behind
+   `catalog>0 && catalog<30 && g_anim_model_slot[catalog]!=0`, which
+   intercepts every real catalog value before this code ever runs (see
+   that comment's own trace). Confirmed dead with real data; left
+   as-is rather than resizing dead code. */
 static undefined DAT_00110ffc_backing[256];
 #define DAT_00110ffc DAT_00110ffc_backing[0]
 static undefined1 DAT_00189590_backing[524288];
@@ -163,7 +172,11 @@ static undefined4 g_model_known_ext_colors;
 static char s_unexpected_EOF___no_END_statemen_000846f8[] = "unexpected_EOF_-_no_END_statemen";
 static char s________c_0008471c[] = "%*[^}]%c";
 static char s___d__00084728[] = "(%d)";
-static undefined DAT_00084730_backing[8192];
+/* Sizing-audit pass: a bare NKDbgPrintfW debug-message format string
+   (no args), content unrecovered, surrounded entirely by short (<40
+   char) literal strings in this same table. Sized to 64 for
+   headroom; down from 8192. */
+static undefined DAT_00084730_backing[64];
 #define DAT_00084730 DAT_00084730_backing[0]
 static char s_anim__d___d__c__d__d___00084734[] = "anim_%d_(%d,%c,%d,%d):";
 static char s__d__1s__d__d__1s_0008474c[] = "%d,%1s,%d,%d,%1s";
@@ -186,10 +199,19 @@ static char s__c__d__d__d__d__d___c__000847cc[] = "%c,%d,%d,%d,%d,%d_(%c)";
 static char s__1s__d__d__d_1s_000847e4[] = "%1s,%d,%d,%d%1s";
 static char s__1s__d__d__d__d__d_1s_000847f4[] = "%1s,%d,%d,%d,%d,%d%1s";
 static char s_branch_0008480c[] = "branch";
-static undefined DAT_00084814_backing[8192];
+/* Sizing-audit pass: an NKDbgPrintfW debug-message format string
+   (one %-arg, local_22c), content unrecovered, sibling of the
+   "branch"/"leaf" literals right around it. Sized to 64 for
+   headroom; down from 8192. */
+static undefined DAT_00084814_backing[64];
 #define DAT_00084814 DAT_00084814_backing[0]
 static char s_leaf_00084818[] = "leaf";
-static undefined DAT_00084820_backing[8192];
+/* Sizing-audit pass: a ce_fscanf format string (`ce_fscanf(pvVar_fh,
+   &DAT_00084820,&local_1e4)`, one int destination), content
+   unrecovered, sibling of the short format-string literals around
+   it (e.g. s__d_1s_000848c8 = "%d%1s"). Sized to 64 for headroom;
+   down from 8192. */
+static undefined DAT_00084820_backing[64];
 #define DAT_00084820 DAT_00084820_backing[0]
 static char s_SUPER_NODES_00084828[] = "SUPER_NODES";
 static char s_NODES_00084834[] = "NODES";
@@ -201,7 +223,10 @@ static char s__d_1s_000848c8[] = "%d%1s";
 static char s__d__d_000848d0[] = "%d,%d";
 static char s_________c_000848d8[] = "%*[^;}]%c";
 static char s_got_sphere__d_000848e4[] = "got_sphere_%d";
-static undefined DAT_000848f4_backing[8192];
+/* Sizing-audit pass: a ce_fscanf format string (multiple destination
+   pointers), content unrecovered, sibling of "got_sphere_%d" right
+   above it. Sized to 64 for headroom; down from 8192. */
+static undefined DAT_000848f4_backing[64];
 #define DAT_000848f4 DAT_000848f4_backing[0]
 static char s_Too_many_polys_000848f8[] = "Too_many_polys";
 static char s_Out_of_vertex_list_space_00084908[] = "Out_of_vertex_list_space";
@@ -228,9 +253,11 @@ static char s_NAMES_000849a0[] = "NAMES";
    for (this file's argument-count-per-call-site is already established
    as unreliable throughout the decompile); harmless since vfscanf simply
    won't consume args past what the format string actually specifies. */
-static char DAT_000849a8_backing[8192] = "%1s";
+/* Sizing-audit pass: recovered/guessed content is 3-4 chars, no
+   indexing. Sized to 16; down from 8192. */
+static char DAT_000849a8_backing[16] = "%1s";
 #define DAT_000849a8 DAT_000849a8_backing[0]
-static char DAT_000849ac_backing[8192] = "%d";
+static char DAT_000849ac_backing[16] = "%d";
 #define DAT_000849ac DAT_000849ac_backing[0]
 static char s_VERSION_000849b0[] = "VERSION";
 static char s_error___s__c_000849b8[] = "error:_%s,%c";
@@ -249,14 +276,20 @@ static char s_error___s__c_000849b8[] = "error:_%s,%c";
    plain char* (not a pointer-to-array) when DAT_000849c8 is itself a
    scalar macro'd to the array's first element, matching every other
    widened-global in this file. */
-static char DAT_000849c8_backing[8192] = "END";
+/* Sizing-audit pass: confirmed real content is "END" (3 chars, see
+   comment above), no indexing. Sized to 16; down from 8192. */
+static char DAT_000849c8_backing[16] = "END";
 #define DAT_000849c8 DAT_000849c8_backing[0]
 static char s__100s_1s_000849cc[] = "%100s%1s";
 static char s__1s__a_z__1s_000849d8[] = "%1s%[a-z]%1s";
 static char s_Input_file_error__BEGIN_statemen_000849e8[] = "Input_file_error:_BEGIN_statemen";
 static char s_BEGIN_00084a14[] = "BEGIN";
 static char s__100s_00084a1c[] = "%100s";
-static undefined DAT_00084a24_backing[8192];
+/* Sizing-audit pass: ce_fopen's mode-string argument
+   (`ce_fopen(acStack_130,&DAT_00084a24)`), content unrecovered --
+   fopen mode strings are always a handful of chars (e.g. "rb").
+   Sized to 16; down from 8192. */
+static undefined DAT_00084a24_backing[16];
 #define DAT_00084a24 DAT_00084a24_backing[0]
 /* DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's ".E"
    model parser: `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor
@@ -779,7 +812,11 @@ static void * const g_anim_model_slot[30] = {
    can never corrupt the same buffer a future real-3D-model consumer might
    also read. */
 static unsigned char g_anim_model_scratch[30][16384];
-undefined2 DAT_00189570_backing[256];
+/* Sizing-audit pass: both write loops index it by `iVar29 < uVar21`
+   where `uVar21 = catalog_flags & 7` -- max index 6 (7 elements, 14
+   bytes real). Sized to 16 for headroom; down from 256 (512 bytes,
+   undefined2 element type). */
+undefined2 DAT_00189570_backing[16];
 #define DAT_00189570 DAT_00189570_backing[0]
 char *DAT_00110fc0 = DAT_00110fc0_scratch;
  undefined1 DAT_00202520_backing[1024];
