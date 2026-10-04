@@ -278,13 +278,28 @@ static undefined DAT_00084a24_backing[8192];
 static char DAT_000c4c38_backing[0x3e58];
 #define DAT_000c4c38 (*(undefined4 *)DAT_000c4c38_backing)
 #define DAT_000c8a90 (*(undefined1 *)(DAT_000c4c38_backing + 0x3e58))
-static undefined1 DAT_000c8b08_backing[65536];
+/* INTERSECTIONS-block growing undefined4 array (DAT_000db4d0-indexed).
+   Sizing pass: this block's own dispatch was unreachable until this
+   session's control-flow fix (see the ANIMATE-mismatch `goto
+   LAB_check_clusters` comment a few hundred lines down) -- confirmed
+   live afterward (UW_DEBUG_MODEL_PARSE_HWM) that none of the 29 real
+   loaded models actually have an INTERSECTIONS block, so real usage
+   is 0. Sized to 256 bytes (room for a handful of real entries) rather
+   than 0, since the block is now genuinely reachable and a future
+   model could use it; down from the previous 65536 either way. */
+static undefined1 DAT_000c8b08_backing[256];
 #define DAT_000c8b08 DAT_000c8b08_backing[0]
 /* Base of a growing per-cluster-connection undefined4 array in
    parse_e_model_file's CLUSTERS block (`puVar8 = &DAT_000c8ca0; ... *puVar8 =
    local_1d8; puVar8 = puVar8 + 1;`) -- same undersized-scalar bug as
-   DAT_000da868/DAT_000dab90 right above, for the same block. */
-static undefined1 DAT_000c8ca0_backing[65536];
+   DAT_000da868/DAT_000dab90 right above, for the same block.
+   Sizing pass: CLUSTERS's own dispatch was unreachable until this
+   session's control-flow fix (see the ANIMATE-mismatch comment a few
+   hundred lines down) -- confirmed live afterward that real usage
+   across all 29 loaded models peaks at 51 undefined4 elements (204
+   bytes, from ROCKBIG.E's 50-entry connection list). Sized to 1024
+   bytes for headroom, down from 65536. */
+static undefined1 DAT_000c8ca0_backing[1024];
 #define DAT_000c8ca0 DAT_000c8ca0_backing[0]
 /* DAT_000c9540..DAT_000c9555 (22 fields): another per-record byte-field
    cluster in parse_e_model_file's ".E" model parser (NODES block), same
@@ -293,144 +308,162 @@ static undefined1 DAT_000c8ca0_backing[65536];
    every `(&DAT_x)[idx]` pattern in this function after the POINTS/PARTS/
    CLUSTERS instances turned out not to be the only ones (a real model
    file's parse was still corrupting an unrelated global afterward).
-   Widened the same way. */
-static undefined1 DAT_000c9540_backing[65536];
+   Widened the same way.
+   Sizing pass: this whole NODES block was actually unreachable code
+   until this session's separate control-flow fix (a mis-targeted
+   `goto` in the ANIMATE-mismatch case skipped past CLUSTERS and NODES
+   entirely -- see the `goto LAB_check_clusters` comment a few hundred
+   lines down) -- confirmed live (UW_DEBUG_MODEL_PARSE_HWM) that real
+   model data was being silently dropped: ROCKBIG.E etc. do have real
+   NODES content, but it never got as far as this array before the
+   fix. With the fix in, real usage across all 29 loaded models peaks
+   at 7 records (154 bytes, stride 0x16=22). Sized to 512 for
+   headroom, down from 65536. */
+static undefined1 DAT_000c9540_backing[512];
 #define DAT_000c9540 DAT_000c9540_backing[0]
-static undefined1 DAT_000c9541_backing[65536];
+static undefined1 DAT_000c9541_backing[512];
 #define DAT_000c9541 DAT_000c9541_backing[0]
-static undefined1 DAT_000c9542_backing[65536];
+static undefined1 DAT_000c9542_backing[512];
 #define DAT_000c9542 DAT_000c9542_backing[0]
-static undefined1 DAT_000c9543_backing[65536];
+static undefined1 DAT_000c9543_backing[512];
 #define DAT_000c9543 DAT_000c9543_backing[0]
-static undefined1 DAT_000c9544_backing[65536];
+static undefined1 DAT_000c9544_backing[512];
 #define DAT_000c9544 DAT_000c9544_backing[0]
-static undefined1 DAT_000c9545_backing[65536];
+static undefined1 DAT_000c9545_backing[512];
 #define DAT_000c9545 DAT_000c9545_backing[0]
-static undefined1 DAT_000c9546_backing[65536];
+static undefined1 DAT_000c9546_backing[512];
 #define DAT_000c9546 DAT_000c9546_backing[0]
-static undefined1 DAT_000c9547_backing[65536];
+static undefined1 DAT_000c9547_backing[512];
 #define DAT_000c9547 DAT_000c9547_backing[0]
-static undefined1 DAT_000c9548_backing[65536];
+static undefined1 DAT_000c9548_backing[512];
 #define DAT_000c9548 DAT_000c9548_backing[0]
-static undefined1 DAT_000c9549_backing[65536];
+static undefined1 DAT_000c9549_backing[512];
 #define DAT_000c9549 DAT_000c9549_backing[0]
-static undefined1 DAT_000c954a_backing[65536];
+static undefined1 DAT_000c954a_backing[512];
 #define DAT_000c954a DAT_000c954a_backing[0]
-static undefined1 DAT_000c954b_backing[65536];
+static undefined1 DAT_000c954b_backing[512];
 #define DAT_000c954b DAT_000c954b_backing[0]
-static undefined1 DAT_000c954c_backing[65536];
+static undefined1 DAT_000c954c_backing[512];
 #define DAT_000c954c DAT_000c954c_backing[0]
-static undefined1 DAT_000c954d_backing[65536];
+static undefined1 DAT_000c954d_backing[512];
 #define DAT_000c954d DAT_000c954d_backing[0]
-static undefined1 DAT_000c954e_backing[65536];
+static undefined1 DAT_000c954e_backing[512];
 #define DAT_000c954e DAT_000c954e_backing[0]
-static undefined1 DAT_000c954f_backing[65536];
+static undefined1 DAT_000c954f_backing[512];
 #define DAT_000c954f DAT_000c954f_backing[0]
-static undefined1 DAT_000c9550_backing[65536];
+static undefined1 DAT_000c9550_backing[512];
 #define DAT_000c9550 DAT_000c9550_backing[0]
-static undefined1 DAT_000c9551_backing[65536];
+static undefined1 DAT_000c9551_backing[512];
 #define DAT_000c9551 DAT_000c9551_backing[0]
-static undefined1 DAT_000c9552_backing[65536];
+static undefined1 DAT_000c9552_backing[512];
 #define DAT_000c9552 DAT_000c9552_backing[0]
-static undefined1 DAT_000c9553_backing[65536];
+static undefined1 DAT_000c9553_backing[512];
 #define DAT_000c9553 DAT_000c9553_backing[0]
-static undefined1 DAT_000c9554_backing[65536];
+static undefined1 DAT_000c9554_backing[512];
 #define DAT_000c9554 DAT_000c9554_backing[0]
-static undefined1 DAT_000c9555_backing[65536];
+static undefined1 DAT_000c9555_backing[512];
 #define DAT_000c9555 DAT_000c9555_backing[0]
 /* DAT_000c9dd8 through DAT_000c9de3 (12 globals) are byte fields of a
    0x67(103)-byte-stride per-PART record in parse_e_model_file's ".E" model
    parser (`iVar5 = g_model_parse_part_count * 0x67; (&DAT_000c9ddc)[iVar5] = ...`),
    bounded by `if (0x15e < g_model_parse_part_count)` (350 parts) -- same undersized-
    scalar-instead-of-real-table bug as the DAT_000d2ab0-family POINTS
-   record right above, just for PARTS. Widened the same way. */
-static undefined1 DAT_000c9dd8_backing[65536];
+   record right above, just for PARTS. Widened the same way.
+   Sizing pass: 350 parts * 103 bytes = 36050 bytes needed at the real
+   code-enforced cap (unlike CLUSTERS/NODES/ANIMATE, PARTS has always
+   been reachable, so this is a real, currently-reachable bound, not
+   just today's data) -- was oversized at 65536. Sized to 49152 for
+   headroom above the real cap. */
+static undefined1 DAT_000c9dd8_backing[49152];
 #define DAT_000c9dd8 DAT_000c9dd8_backing[0]
-static undefined1 DAT_000c9dd9_backing[65536];
+static undefined1 DAT_000c9dd9_backing[49152];
 #define DAT_000c9dd9 DAT_000c9dd9_backing[0]
-static undefined1 DAT_000c9dda_backing[65536];
+static undefined1 DAT_000c9dda_backing[49152];
 #define DAT_000c9dda DAT_000c9dda_backing[0]
-static undefined1 DAT_000c9ddb_backing[65536];
+static undefined1 DAT_000c9ddb_backing[49152];
 #define DAT_000c9ddb DAT_000c9ddb_backing[0]
-static undefined1 DAT_000c9ddc_backing[65536];
+static undefined1 DAT_000c9ddc_backing[49152];
 #define DAT_000c9ddc DAT_000c9ddc_backing[0]
-static undefined1 DAT_000c9ddd_backing[65536];
+static undefined1 DAT_000c9ddd_backing[49152];
 #define DAT_000c9ddd DAT_000c9ddd_backing[0]
-static undefined1 DAT_000c9dde_backing[65536];
+static undefined1 DAT_000c9dde_backing[49152];
 #define DAT_000c9dde DAT_000c9dde_backing[0]
-static undefined1 DAT_000c9ddf_backing[65536];
+static undefined1 DAT_000c9ddf_backing[49152];
 #define DAT_000c9ddf DAT_000c9ddf_backing[0]
-static undefined1 DAT_000c9de0_backing[65536];
+static undefined1 DAT_000c9de0_backing[49152];
 #define DAT_000c9de0 DAT_000c9de0_backing[0]
-static undefined1 DAT_000c9de1_backing[65536];
+static undefined1 DAT_000c9de1_backing[49152];
 #define DAT_000c9de1 DAT_000c9de1_backing[0]
-static undefined1 DAT_000c9de2_backing[65536];
+static undefined1 DAT_000c9de2_backing[49152];
 #define DAT_000c9de2 DAT_000c9de2_backing[0]
-static undefined1 DAT_000c9de3_backing[65536];
+static undefined1 DAT_000c9de3_backing[49152];
 #define DAT_000c9de3 DAT_000c9de3_backing[0]
 /* DAT_000c9e0e..DAT_000c9e3e (30 fields): same bug, same parser, same
-   systematic-scan discovery as DAT_000c9540 above. */
-static undefined1 DAT_000c9e0e_backing[65536];
+   systematic-scan discovery as DAT_000c9540 above.
+   Sizing pass: same PARTS record as DAT_000c9dd8 above -- see its own
+   comment (350-part code-enforced cap, 36050 bytes real need). Sized
+   to 49152, down from 65536. */
+static undefined1 DAT_000c9e0e_backing[49152];
 #define DAT_000c9e0e DAT_000c9e0e_backing[0]
-static undefined1 DAT_000c9e0f_backing[65536];
+static undefined1 DAT_000c9e0f_backing[49152];
 #define DAT_000c9e0f DAT_000c9e0f_backing[0]
-static undefined1 DAT_000c9e10_backing[65536];
+static undefined1 DAT_000c9e10_backing[49152];
 #define DAT_000c9e10 DAT_000c9e10_backing[0]
-static undefined1 DAT_000c9e11_backing[65536];
+static undefined1 DAT_000c9e11_backing[49152];
 #define DAT_000c9e11 DAT_000c9e11_backing[0]
-static undefined1 DAT_000c9e22_backing[65536];
+static undefined1 DAT_000c9e22_backing[49152];
 #define DAT_000c9e22 DAT_000c9e22_backing[0]
-static undefined1 DAT_000c9e23_backing[65536];
+static undefined1 DAT_000c9e23_backing[49152];
 #define DAT_000c9e23 DAT_000c9e23_backing[0]
-static undefined1 DAT_000c9e24_backing[65536];
+static undefined1 DAT_000c9e24_backing[49152];
 #define DAT_000c9e24 DAT_000c9e24_backing[0]
-static undefined1 DAT_000c9e25_backing[65536];
+static undefined1 DAT_000c9e25_backing[49152];
 #define DAT_000c9e25 DAT_000c9e25_backing[0]
-static undefined1 DAT_000c9e26_backing[65536];
+static undefined1 DAT_000c9e26_backing[49152];
 #define DAT_000c9e26 DAT_000c9e26_backing[0]
-static undefined1 DAT_000c9e28_backing[65536];
+static undefined1 DAT_000c9e28_backing[49152];
 #define DAT_000c9e28 DAT_000c9e28_backing[0]
-static undefined1 DAT_000c9e29_backing[65536];
+static undefined1 DAT_000c9e29_backing[49152];
 #define DAT_000c9e29 DAT_000c9e29_backing[0]
-static undefined1 DAT_000c9e2b_backing[65536];
+static undefined1 DAT_000c9e2b_backing[49152];
 #define DAT_000c9e2b DAT_000c9e2b_backing[0]
-static undefined1 DAT_000c9e2c_backing[65536];
+static undefined1 DAT_000c9e2c_backing[49152];
 #define DAT_000c9e2c DAT_000c9e2c_backing[0]
-static undefined1 DAT_000c9e2d_backing[65536];
+static undefined1 DAT_000c9e2d_backing[49152];
 #define DAT_000c9e2d DAT_000c9e2d_backing[0]
-static undefined1 DAT_000c9e2e_backing[65536];
+static undefined1 DAT_000c9e2e_backing[49152];
 #define DAT_000c9e2e DAT_000c9e2e_backing[0]
-static undefined1 DAT_000c9e2f_backing[65536];
+static undefined1 DAT_000c9e2f_backing[49152];
 #define DAT_000c9e2f DAT_000c9e2f_backing[0]
-static undefined1 DAT_000c9e30_backing[65536];
+static undefined1 DAT_000c9e30_backing[49152];
 #define DAT_000c9e30 DAT_000c9e30_backing[0]
-static undefined1 DAT_000c9e31_backing[65536];
+static undefined1 DAT_000c9e31_backing[49152];
 #define DAT_000c9e31 DAT_000c9e31_backing[0]
-static undefined1 DAT_000c9e32_backing[65536];
+static undefined1 DAT_000c9e32_backing[49152];
 #define DAT_000c9e32 DAT_000c9e32_backing[0]
-static undefined1 DAT_000c9e33_backing[65536];
+static undefined1 DAT_000c9e33_backing[49152];
 #define DAT_000c9e33 DAT_000c9e33_backing[0]
-static undefined1 DAT_000c9e34_backing[65536];
+static undefined1 DAT_000c9e34_backing[49152];
 #define DAT_000c9e34 DAT_000c9e34_backing[0]
-static undefined1 DAT_000c9e35_backing[65536];
+static undefined1 DAT_000c9e35_backing[49152];
 #define DAT_000c9e35 DAT_000c9e35_backing[0]
-static undefined1 DAT_000c9e36_backing[65536];
+static undefined1 DAT_000c9e36_backing[49152];
 #define DAT_000c9e36 DAT_000c9e36_backing[0]
-static undefined1 DAT_000c9e37_backing[65536];
+static undefined1 DAT_000c9e37_backing[49152];
 #define DAT_000c9e37 DAT_000c9e37_backing[0]
-static undefined1 DAT_000c9e38_backing[65536];
+static undefined1 DAT_000c9e38_backing[49152];
 #define DAT_000c9e38 DAT_000c9e38_backing[0]
-static undefined1 DAT_000c9e39_backing[65536];
+static undefined1 DAT_000c9e39_backing[49152];
 #define DAT_000c9e39 DAT_000c9e39_backing[0]
-static undefined1 DAT_000c9e3a_backing[65536];
+static undefined1 DAT_000c9e3a_backing[49152];
 #define DAT_000c9e3a DAT_000c9e3a_backing[0]
-static undefined1 DAT_000c9e3b_backing[65536];
+static undefined1 DAT_000c9e3b_backing[49152];
 #define DAT_000c9e3b DAT_000c9e3b_backing[0]
-static undefined1 DAT_000c9e3c_backing[65536];
+static undefined1 DAT_000c9e3c_backing[49152];
 #define DAT_000c9e3c DAT_000c9e3c_backing[0]
-static undefined1 DAT_000c9e3d_backing[65536];
+static undefined1 DAT_000c9e3d_backing[49152];
 #define DAT_000c9e3d DAT_000c9e3d_backing[0]
-static undefined1 DAT_000c9e3e_backing[65536];
+static undefined1 DAT_000c9e3e_backing[49152];
 #define DAT_000c9e3e DAT_000c9e3e_backing[0]
 /* DAT_000d2ab0 through DAT_000d2ad3 (28 globals) are individual byte
    fields of a 0x2c(44)-byte-stride per-POINT record in parse_e_model_file's
@@ -501,62 +534,76 @@ static undefined1 DAT_000d2ad3_backing[32768];
 #define DAT_000d2ad3 DAT_000d2ad3_backing[0]
 static undefined4 DAT_000d95d8;
 /* DAT_000d9768..DAT_000d977c (21 fields): same bug, same parser, same
-   systematic-scan discovery as the two clusters above. */
-static undefined1 DAT_000d9768_backing[65536];
+   systematic-scan discovery as the two clusters above.
+   Sizing pass: this is the ANIMATE block, which like CLUSTERS/NODES
+   was unreachable until this session's control-flow fix -- confirmed
+   live afterward that none of the 29 real loaded models actually have
+   an ANIMATE block (real usage 0). Sized to 256 bytes (room for a
+   handful of real entries, stride 0x15=21) rather than 0, since the
+   block is now genuinely reachable; down from 65536 either way. */
+static undefined1 DAT_000d9768_backing[256];
 #define DAT_000d9768 DAT_000d9768_backing[0]
-static undefined1 DAT_000d9769_backing[65536];
+static undefined1 DAT_000d9769_backing[256];
 #define DAT_000d9769 DAT_000d9769_backing[0]
-static undefined1 DAT_000d976a_backing[65536];
+static undefined1 DAT_000d976a_backing[256];
 #define DAT_000d976a DAT_000d976a_backing[0]
-static undefined1 DAT_000d976b_backing[65536];
+static undefined1 DAT_000d976b_backing[256];
 #define DAT_000d976b DAT_000d976b_backing[0]
-static undefined1 DAT_000d976c_backing[65536];
+static undefined1 DAT_000d976c_backing[256];
 #define DAT_000d976c DAT_000d976c_backing[0]
-static undefined1 DAT_000d976d_backing[65536];
+static undefined1 DAT_000d976d_backing[256];
 #define DAT_000d976d DAT_000d976d_backing[0]
-static undefined1 DAT_000d976e_backing[65536];
+static undefined1 DAT_000d976e_backing[256];
 #define DAT_000d976e DAT_000d976e_backing[0]
-static undefined1 DAT_000d976f_backing[65536];
+static undefined1 DAT_000d976f_backing[256];
 #define DAT_000d976f DAT_000d976f_backing[0]
-static undefined1 DAT_000d9770_backing[65536];
+static undefined1 DAT_000d9770_backing[256];
 #define DAT_000d9770 DAT_000d9770_backing[0]
-static undefined1 DAT_000d9771_backing[65536];
+static undefined1 DAT_000d9771_backing[256];
 #define DAT_000d9771 DAT_000d9771_backing[0]
-static undefined1 DAT_000d9772_backing[65536];
+static undefined1 DAT_000d9772_backing[256];
 #define DAT_000d9772 DAT_000d9772_backing[0]
-static undefined1 DAT_000d9773_backing[65536];
+static undefined1 DAT_000d9773_backing[256];
 #define DAT_000d9773 DAT_000d9773_backing[0]
-static undefined1 DAT_000d9774_backing[65536];
+static undefined1 DAT_000d9774_backing[256];
 #define DAT_000d9774 DAT_000d9774_backing[0]
-static undefined1 DAT_000d9775_backing[65536];
+static undefined1 DAT_000d9775_backing[256];
 #define DAT_000d9775 DAT_000d9775_backing[0]
-static undefined1 DAT_000d9776_backing[65536];
+static undefined1 DAT_000d9776_backing[256];
 #define DAT_000d9776 DAT_000d9776_backing[0]
-static undefined1 DAT_000d9777_backing[65536];
+static undefined1 DAT_000d9777_backing[256];
 #define DAT_000d9777 DAT_000d9777_backing[0]
-static undefined1 DAT_000d9778_backing[65536];
+static undefined1 DAT_000d9778_backing[256];
 #define DAT_000d9778 DAT_000d9778_backing[0]
-static undefined1 DAT_000d9779_backing[65536];
+static undefined1 DAT_000d9779_backing[256];
 #define DAT_000d9779 DAT_000d9779_backing[0]
-static undefined1 DAT_000d977a_backing[65536];
+static undefined1 DAT_000d977a_backing[256];
 #define DAT_000d977a DAT_000d977a_backing[0]
-static undefined1 DAT_000d977b_backing[65536];
+static undefined1 DAT_000d977b_backing[256];
 #define DAT_000d977b DAT_000d977b_backing[0]
-static undefined1 DAT_000d977c_backing[65536];
+static undefined1 DAT_000d977c_backing[256];
 #define DAT_000d977c DAT_000d977c_backing[0]
 static undefined1 DAT_000d98c8_backing[32768];
 #define DAT_000d98c8 DAT_000d98c8_backing[0]
-static undefined1 DAT_000da480_backing[65536];
+/* NAMES-block growing string-table cursor base (puVar16/local_258 walk
+   forward from here, one null-terminated name per CLUSTER entry).
+   Sizing pass: real usage across all 29 loaded models peaks at 270
+   bytes. Sized to 1024 for headroom, down from 65536. */
+static undefined1 DAT_000da480_backing[1024];
 #define DAT_000da480 DAT_000da480_backing[0]
 /* Per-CLUSTER pointer/index slot in the same ".E" model parser
    (parse_e_model_file's CLUSTERS block) as DAT_000dab90 right below, same
    "declared as a lone scalar, actually a large indexed table" bug --
    `*(undefined **)(&DAT_000da868 + iVar4) = local_258;` where iVar4
    grows per cluster. Widened the same way, matching DAT_000dab90's
-   size. */
-static undefined1 DAT_000da868_backing[65536];
+   size.
+   Sizing pass: like DAT_000c8ca0/DAT_000c9540 above, this block was
+   unreachable until this session's control-flow fix; real usage
+   afterward peaks at 8 records (32 bytes, stride 4). Sized to 128 for
+   headroom, down from 65536. */
+static undefined1 DAT_000da868_backing[128];
 #define DAT_000da868 DAT_000da868_backing[0]
-static undefined1 DAT_000dab90_backing[65536];
+static undefined1 DAT_000dab90_backing[128];
 #define DAT_000dab90 DAT_000dab90_backing[0]
 static undefined DAT_000db454_backing[8192];
 #define DAT_000db454 DAT_000db454_backing[0]
@@ -734,23 +781,35 @@ static unsigned char DAT_00086c08_backing[0x78] = {
 #define DAT_00086c09 DAT_00086c08_backing[1]
 #define DAT_00086c0a DAT_00086c08_backing[2]
 #define DAT_00086c0b DAT_00086c08_backing[3]
-static undefined4 DAT_00086ce0_backing[4096];
+/* Sizing pass: these 8 (ce0/e4/e8/ec/f0/f4/f8/fc) are a small, fixed
+   bridge-deck heading-offset lookup table, not a growing parser
+   output -- emit_catalog_object's own `switch(heading)` picks one of
+   4 sibling-pairs, each read at `[uVar21*8]` with uVar21 explicitly
+   clamped `if (3 < uVar21) uVar21 = 0;`. Real max index is 3*8=24 (one
+   undefined4 element read there); no comment ever justified the
+   original 4096-element (16384-byte) size. Sized to 32 elements for
+   headroom. */
+static undefined4 DAT_00086ce0_backing[32];
 #define DAT_00086ce0 DAT_00086ce0_backing[0]
-static undefined4 DAT_00086ce4_backing[4096];
+static undefined4 DAT_00086ce4_backing[32];
 #define DAT_00086ce4 DAT_00086ce4_backing[0]
-static undefined4 DAT_00086ce8_backing[4096];
+static undefined4 DAT_00086ce8_backing[32];
 #define DAT_00086ce8 DAT_00086ce8_backing[0]
-static undefined4 DAT_00086cec_backing[4096];
+static undefined4 DAT_00086cec_backing[32];
 #define DAT_00086cec DAT_00086cec_backing[0]
-static undefined4 DAT_00086cf0_backing[4096];
+static undefined4 DAT_00086cf0_backing[32];
 #define DAT_00086cf0 DAT_00086cf0_backing[0]
-static undefined4 DAT_00086cf4_backing[4096];
+static undefined4 DAT_00086cf4_backing[32];
 #define DAT_00086cf4 DAT_00086cf4_backing[0]
-static undefined4 DAT_00086cf8_backing[4096];
+static undefined4 DAT_00086cf8_backing[32];
 #define DAT_00086cf8 DAT_00086cf8_backing[0]
-static undefined4 DAT_00086cfc_backing[4096];
+static undefined4 DAT_00086cfc_backing[32];
 #define DAT_00086cfc DAT_00086cfc_backing[0]
-static undefined1 DAT_00086d60_backing[65536];
+/* Sizing pass: a small fixed lookup table indexed by a 4-bit nibble
+   (`(*(byte*)(obj+1)>>1 & 0xf)*2`, a ushort stride) -- real max byte
+   offset is 15*2+2=32; no comment ever justified the original 65536-
+   byte size. Sized to 64 bytes for headroom. */
+static undefined1 DAT_00086d60_backing[64];
 #define DAT_00086d60 DAT_00086d60_backing[0]
 static short DAT_0018957e;
 static short DAT_0018957c;
@@ -2719,6 +2778,34 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   while( true ) {
     pvVar_fh = local_25c;
     iVar4 = ce_fscanf(local_25c,s__100s_1s_000849cc,auStack_1c8,local_260,pppppuVar21);
+    /* Real .E files are inconsistent about a space before a block
+       keyword's opening brace -- confirmed directly against the
+       shipped files (data/DATA3D/ROCKBIG.E: "CLUSTERS {" with a space;
+       data/DATA3D/BARRCLOS.E: "CLUSTERS{", "NODES{", "EXTENDED_COLORS{",
+       "SCALE_SHIFT{" with none, even though its own POINTS/PARTS use
+       the spaced form). The %100s half of this scanf includes a glued
+       brace in the token itself, so every keyword strcmp below fails
+       to match it, and %1s goes on to consume the block's own first
+       real content byte in place of the delimiter this loop's error
+       check expects -- confirmed live (UW_DEBUG_MODEL_PARSE_HWM showed
+       zero NODES/CLUSTERS/ANIMATE/INTERSECTIONS records ever parsed
+       across the full regression suite despite 12 of the 29 loaded
+       models having real CLUSTERS+NODES content) and in a live run's
+       own "error:_CLUSTERS{,(" / "error:_NODES{,L" console output.
+       Normalize: split a trailing '{' off the token and push the
+       wrongly-consumed byte back onto the stream so the block-specific
+       parser below still sees it, exactly as if the file had the
+       spaced form. */
+    if (iVar4 == 2) {
+      size_t _tklen = ce_strlen(auStack_1c8);
+      if (_tklen > 0 && ((char *)auStack_1c8)[_tklen - 1] == '{') {
+        ((char *)auStack_1c8)[_tklen - 1] = '\0';
+        ungetc(local_260[0], (FILE *)local_25c);
+        local_260[0] = '{';
+      }
+    }
+    if (getenv("UW_DEBUG_MODEL_TOKENS"))
+      fprintf(stderr, "[model-token] file=%s iVar4=%d token='%s' delim='%c'\n", param_1, iVar4, auStack_1c8, local_260[0]);
     if (((iVar4 == -1) && (iVar5 = ce_strncmp(auStack_1c8,&DAT_000849c8,3), iVar5 == 0)) ||
        ((iVar4 != 0 && (iVar5 = ce_strcmp(auStack_1c8,&DAT_000849c8), iVar5 == 0))))
     goto LAB_0002263c;
@@ -2833,6 +2920,13 @@ LAB_00022604:
             param_2[iVar19 * 0xc + 0x12] = (char)((uint)uVar7 >> 0x10);
             param_2[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
             g_model_parse_point_count = g_model_parse_point_count + 1;
+            if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
+              static int hwm_points = -1;
+              if (g_model_parse_point_count > hwm_points) {
+                hwm_points = g_model_parse_point_count;
+                fprintf(stderr, "[model-parse-hwm] points: %d\n", hwm_points);
+              }
+            }
             if (600 < g_model_parse_point_count) {
               NKDbgPrintfW(s_Too_many_points___d__00084968);
               goto LAB_0002263c;
@@ -3062,6 +3156,13 @@ LAB_000218b8:
                   }
                 }
                 g_model_parse_part_count = g_model_parse_part_count + 1;
+                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
+                  static int hwm_parts = -1;
+                  if (g_model_parse_part_count > hwm_parts) {
+                    hwm_parts = g_model_parse_part_count;
+                    fprintf(stderr, "[model-parse-hwm] parts: %d\n", hwm_parts);
+                  }
+                }
                 if (0x15e < g_model_parse_part_count) {
                   NKDbgPrintfW(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
@@ -3101,6 +3202,13 @@ LAB_00021838:
                   goto LAB_0002263c;
                 }
                 g_model_parse_part_count = g_model_parse_part_count + 1;
+                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
+                  static int hwm_parts = -1;
+                  if (g_model_parse_part_count > hwm_parts) {
+                    hwm_parts = g_model_parse_part_count;
+                    fprintf(stderr, "[model-parse-hwm] parts: %d\n", hwm_parts);
+                  }
+                }
                 if (0x15e < g_model_parse_part_count) {
                   NKDbgPrintfW(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
@@ -3305,6 +3413,13 @@ LAB_0002226c:
               if (iVar4 == 2) {
                 *(undefined4 *)(&DAT_000c8b08 + DAT_000db4d0 * 4) = local_1d0;
                 DAT_000db4d0 = DAT_000db4d0 + 1;
+                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
+                  static int hwm_intersections = -1;
+                  if (DAT_000db4d0 > hwm_intersections) {
+                    hwm_intersections = DAT_000db4d0;
+                    fprintf(stderr, "[model-parse-hwm] intersections: %d\n", hwm_intersections);
+                  }
+                }
               }
             } while (local_260[0] == ',');
           }
@@ -3340,9 +3455,25 @@ LAB_0002226c:
             }
             else {
               iVar4 = ce_strcmp(auStack_1c8,s_ANIMATE_00084760);
+              /* BUG FIX: was an unconditional `goto LAB_00022604` (the
+                 generic "skip this unrecognized block" tail) on ANY
+                 ANIMATE mismatch -- but CLUSTERS and NODES (their own
+                 real, already-written handling sits right after this
+                 whole if/else-if chain closes, as the `else` of the
+                 outer `if (DAT_000db480 == 0)`) were never actually
+                 reachable as a result: every token that wasn't VERSION/
+                 NAMES/POINTS/PARTS/INTERSECTIONS/EXTENDED_COLORS/ANIMATE
+                 got silently skipped right here, before ever trying
+                 CLUSTERS or NODES. Confirmed live (UW_DEBUG_MODEL_
+                 PARSE_HWM): zero NODES/CLUSTERS/ANIMATE/INTERSECTIONS
+                 records ever parsed across the full regression suite,
+                 despite several of the 29 real loaded models having
+                 genuine CLUSTERS+NODES content (data/DATA3D/ROCKBIG.E
+                 etc.). Falls through to the CLUSTERS check instead;
+                 the real "give up and skip" case now lives at NODES's
+                 own final mismatch below, where it belongs. */
               if (iVar4 != 0) {
-                pcVar2 = s________c_0008471c;
-                goto LAB_00022604;
+                goto LAB_check_clusters;
               }
               piVar17 = &DAT_000d95d8;
               do {
@@ -3398,6 +3529,13 @@ LAB_0002226c:
                   (&DAT_000d976f)[iVar4] = (char)((uint)iVar5 >> 0x18);
                   NKDbgPrintfW(s___d__00084728,iVar5);
                   DAT_000db4e0 = DAT_000db4e0 + 1;
+                  if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
+                    static int hwm_animate = -1;
+                    if (DAT_000db4e0 > hwm_animate) {
+                      hwm_animate = DAT_000db4e0;
+                      fprintf(stderr, "[model-parse-hwm] animate records: %d\n", hwm_animate);
+                    }
+                  }
                   iVar4 = ce_fscanf(pvVar_fh,&DAT_000849a8,local_260);
                   if (iVar4 != 1) break;
                 }
@@ -3407,6 +3545,7 @@ LAB_0002226c:
           }
         }
         else {
+LAB_check_clusters:
           iVar4 = ce_strcmp(auStack_1c8,s_CLUSTERS_0008483c);
           if (iVar4 == 0) {
             puVar8 = (undefined4 *)&DAT_000c8ca0;
@@ -3434,6 +3573,24 @@ LAB_0002226c:
                 } while (local_260[0] == ',');
                 **(char **)(&DAT_000dab90 + DAT_000db4d4 * 4) = cVar18;
                 DAT_000db4d4 = DAT_000db4d4 + 1;
+                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
+                  static int hwm_clusters = -1;
+                  static long hwm_names_bytes = -1, hwm_conn_elems = -1;
+                  long names_used = (long)((char *)local_258 - (char *)&DAT_000da480);
+                  long conn_used = (long)(puVar8 - (undefined4 *)&DAT_000c8ca0);
+                  if (DAT_000db4d4 > hwm_clusters) {
+                    hwm_clusters = DAT_000db4d4;
+                    fprintf(stderr, "[model-parse-hwm] clusters: %d\n", hwm_clusters);
+                  }
+                  if (names_used > hwm_names_bytes) {
+                    hwm_names_bytes = names_used;
+                    fprintf(stderr, "[model-parse-hwm] NAMES bytes used: %ld\n", names_used);
+                  }
+                  if (conn_used > hwm_conn_elems) {
+                    hwm_conn_elems = conn_used;
+                    fprintf(stderr, "[model-parse-hwm] cluster-connection undefined4 elements used: %ld\n", conn_used);
+                  }
+                }
                 iVar4 = ce_fscanf(pvVar_fh,&DAT_000849a8,local_260);
                 if (iVar4 != 1) break;
               }
@@ -3441,9 +3598,24 @@ LAB_0002226c:
           }
           else {
             iVar4 = ce_strcmp(auStack_1c8,s_NODES_00084834);
+            /* BUG FIX: was `goto LAB_0002226c`, re-entering this same
+               INTERSECTIONS/EXTENDED_COLORS/ANIMATE/CLUSTERS/NODES
+               cascade from the top with the SAME already-mismatched
+               token -- which can only mismatch every one of them again
+               (nothing re-reads a token in between), re-arriving right
+               back here in an unbounded loop. This is genuinely the
+               "none of the known block keywords matched" case (e.g. a
+               real file's own SCALE_SHIFT block, which isn't one of
+               the types this parser understands); use the same
+               skip-to-this-block's-closing-brace tail VERSION/NAMES/
+               POINTS/ANIMATE's own real matches share, so an unknown
+               block is skipped once and the outer loop moves on to the
+               next token instead of spinning. */
             if ((iVar4 != 0) &&
-               (iVar4 = ce_strcmp(auStack_1c8,s_SUPER_NODES_00084828), iVar4 != 0))
-            goto LAB_0002226c;
+               (iVar4 = ce_strcmp(auStack_1c8,s_SUPER_NODES_00084828), iVar4 != 0)) {
+              pcVar2 = s________c_0008471c;
+              goto LAB_00022604;
+            }
             iVar4 = ce_strcmp(auStack_1c8,s_SUPER_NODES_00084828);
             iVar5 = -1;
             if (iVar4 != 0) {
@@ -3506,6 +3678,13 @@ LAB_0002226c:
                   iVar10 = DAT_000db4d8;
                 }
                 DAT_000db4d8 = iVar10 + 1;
+                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
+                  static int hwm_nodes = -1;
+                  if (DAT_000db4d8 > hwm_nodes) {
+                    hwm_nodes = DAT_000db4d8;
+                    fprintf(stderr, "[model-parse-hwm] nodes: %d\n", hwm_nodes);
+                  }
+                }
               }
             } while (local_260[0] == ';');
           }
