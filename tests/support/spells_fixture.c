@@ -11,7 +11,7 @@ char *DAT_002046c4, *DAT_00202098;
 uint DAT_00202094;
 undefined1 DAT_0023c3dc, DAT_0023c3d8;
 
-undefined1 DAT_00202c90_backing[8192], DAT_002027d0_backing[256];
+undefined1 DAT_00202c90_backing[8192], DAT_002027d0_backing[48];
 short DAT_00202a38, DAT_00202a3c, DAT_00202a40, DAT_0023beb4;
 ushort *DAT_00202a44;
 ushort DAT_00202a48, DAT_00202a4c;

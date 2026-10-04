@@ -9,7 +9,7 @@ extern byte mobile_objects[256 * 27];
 extern char *DAT_002046b8;
 extern byte *DAT_00202c6c;
 extern undefined1 DAT_00202c90_backing[8192];
-extern undefined1 DAT_00202c38_backing[8192];
+extern undefined1 DAT_00202c38_backing[1536];
 extern short DAT_001005f4, DAT_001005f8, DAT_0023beb4;
 extern char DAT_001005dc;
 extern ushort DAT_00100610, DAT_00100620, DAT_00100604;

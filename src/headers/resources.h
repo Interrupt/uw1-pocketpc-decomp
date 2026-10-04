@@ -10,12 +10,12 @@
    resources.c (.GR bitmap loading, flip-grtile slots, door frames) --
    extern'd here so both translation units see the same storage. */
 extern ushort DAT_00202744;
-extern undefined1 DAT_0023b840_backing[8192];
+extern undefined1 DAT_0023b840_backing[8];
 
 #define DAT_0023b841 DAT_0023b840_backing[1]
 
 #define DAT_0023b840 DAT_0023b840_backing[0]
-extern undefined1 DAT_00202750_backing[256];
+extern undefined1 DAT_00202750_backing[128];
 #define DAT_00202750 DAT_00202750_backing[0]
 extern void * g_grtile_real_ptrs[320];
 extern char s__DATA__00085970[];

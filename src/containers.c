@@ -39,7 +39,9 @@ char *g_open_container_list;
    bytes) for headroom; down from 64 (256 bytes). */
 static undefined4 DAT_002028a0_backing[16];
 #define DAT_002028a0 DAT_002028a0_backing[0]
-static undefined DAT_00202978_backing[8192];
+/* Sizing-audit pass: accessed only as a 4-byte uint scalar via the
+   `_DAT_00202978` macro, never indexed. Down from 8192. */
+static undefined DAT_00202978_backing[8];
 #define DAT_00202978 DAT_00202978_backing[0]
 static ushort DAT_00202986;
 static undefined2 DAT_00202980;

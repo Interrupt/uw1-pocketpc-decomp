@@ -243,7 +243,7 @@ short DAT_00201b44;
 
 void *g_uw_framebuffer;
 
-undefined1 DAT_00088d98_backing[1536];
+undefined1 DAT_00088d98_backing[768];
 
 byte draw_color;
 

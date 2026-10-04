@@ -77,7 +77,7 @@ undefined1 DAT_00204980_backing[32];
 
 undefined2 DAT_00204990_backing[16], DAT_002049b0_backing[16];
 
-undefined1 DAT_002027d0_backing[256];
+undefined1 DAT_002027d0_backing[48];
 
 undefined DAT_000853d8;
 

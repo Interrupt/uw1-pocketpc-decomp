@@ -12,9 +12,14 @@
 static byte *DAT_000b4624;
 static byte *DAT_000b462c;
 static byte *DAT_000b4618;
-static undefined DAT_000fb650_backing[8192];
+/* Sizing-audit pass: `MultiByteToWideChar(...,&DAT_000fb650,0xff)`
+   -- cchWideChar=0xff(255) counts WCHAR units, not bytes: real need
+   510 bytes. Sized to 512. Down from 8192. */
+static undefined DAT_000fb650_backing[512];
 #define DAT_000fb650 DAT_000fb650_backing[0]
-static undefined DAT_000fb550_backing[8192];
+/* Sizing-audit pass: `WideCharToMultiByte(...,&DAT_000fb550,0xff,...)`
+   -- cbMultiByte=0xff(255) bytes exact. Sized to 256. Down from 8192. */
+static undefined DAT_000fb550_backing[256];
 #define DAT_000fb550 DAT_000fb550_backing[0]
 /* Real string, recovered via Ghidra disassembly of decode_critter_sprite_page
    (the caching "\CRIT\CR<pp>PAGE.N<nn>" per-page critter-animation
@@ -38,10 +43,15 @@ static char s__DATA_pals_dat_00085978[] = "\\DATA\\pals.dat";
 static undefined4 DAT_00202514;
 static int DAT_00202720_backing[128];
 static int *DAT_00202720 = DAT_00202720_backing;
-static undefined1 DAT_00202724_backing[8192];
+/* Sizing-audit pass: `read_file_handle(DAT_00202514,&DAT_00202724,1)`
+   -- pure 1-byte scalar (`(uint)DAT_00202724<<5`), never indexed.
+   Down from 8192. */
+static undefined1 DAT_00202724_backing[4];
 static undefined4 DAT_00202728;
 static char *DAT_0020274c;
-static undefined DAT_00202518_backing[8192];
+/* Sizing-audit pass: `read_file_handle(DAT_00202514,&DAT_00202518,1)`
+   -- pure 1-byte scalar, never indexed. Down from 8192. */
+static undefined DAT_00202518_backing[4];
 #define DAT_00202518 DAT_00202518_backing[0]
 ushort DAT_00202744;
 static undefined2 DAT_000859a8;
@@ -54,8 +64,13 @@ static undefined2 DAT_000859a8;
 static void *DAT_00202510;
 static undefined2 DAT_00202748;
 static char s_doors_00085a64[] = "doors";
- undefined1 DAT_0023b840_backing[8192];
-undefined1 DAT_00202750_backing[256];
+/* Sizing-audit pass: door-type slot table, explicit loop bound
+   `while(iVar3<6)` (load_door_frames). HARD. Down from 8192. */
+ undefined1 DAT_0023b840_backing[8];
+/* Sizing-audit pass: `read_file_handle(param_1,&DAT_00202750,0x80)`
+   -- exactly 128 bytes, matching its own nibble*4-stride indexing.
+   HARD exact. Down from 256. */
+undefined1 DAT_00202750_backing[128];
 static char *DAT_0023c3fc;
 static undefined4 *DAT_0023c404;
 /* Sizing pass: the "grows unboundedly" claim below was wrong from the
@@ -152,7 +167,10 @@ static undefined2 DAT_000878bc;
    for the rest of the process fails. */
 static undefined1 DAT_0024af98_backing[4096];
 #define DAT_0024af98 DAT_0024af98_backing[0]
-static undefined2 DAT_0024cfbc_backing[8192];
+/* Sizing-audit pass: `read_file_handle(param_1,&DAT_0024cfbc,1)` --
+   pure 1-byte huffman bit-register scalar (shifted/masked), never
+   indexed. Down from 8192 elements. */
+static undefined2 DAT_0024cfbc_backing[4];
 #define DAT_0024cfbc DAT_0024cfbc_backing[0]
 
 

@@ -46,7 +46,10 @@ static char s_Move_how_many__00085c68[] = "Move_how_many?";
 static char s_is_too_full__00085c78[] = "is_too_full.";
 static undefined DAT_002029f9_backing[256];
 #define DAT_002029f9 DAT_002029f9_backing[0]
-undefined DAT_00085ce0_backing[8192];
+/* Sizing-audit pass: single use, `ce_strcat(acStack_7c,&DAT_00085ce0)`,
+   0 writers -- content unrecovered. Sized to 32 for headroom; down
+   from 8192. */
+undefined DAT_00085ce0_backing[32];
 char s_You_read_the_00085ce8[] = "You_read_the";
 // g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
 // object id's low nibble) effect/quality byte table, loaded at runtime

@@ -101,7 +101,10 @@ static undefined4 DAT_0023c638;
 static undefined1 DAT_001005cc;
 static undefined1 DAT_001005cd;
 static undefined1 DAT_001005ce;
-static undefined DAT_00088640_backing[8192];
+/* Sizing-audit pass: expand_pals_bytes's own loop writes exactly
+   256*3=768 bytes (`iVar3<0x100`, 3 bytes/iteration) -- HARD exact
+   bound. Down from 8192. */
+static undefined DAT_00088640_backing[768];
 #define DAT_00088640 DAT_00088640_backing[0]
 // HACK: RGB lighting calibration, default 64 when no override is set.
 // UW_AMBIENT_BIAS_REDUCTION=0 retains the ARM formulas.

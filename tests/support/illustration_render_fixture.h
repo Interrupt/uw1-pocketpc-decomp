@@ -40,7 +40,7 @@ extern int DAT_00201b54, DAT_00201b4c, DAT_00201b58, DAT_00201b3c;
 extern ushort DAT_00201b48;
 extern short DAT_00201b44;
 extern void *g_uw_framebuffer;
-extern undefined1 DAT_00088d98_backing[1536];
+extern undefined1 DAT_00088d98_backing[768];
 extern byte draw_color;
 extern byte *g_draw_color_index;
 extern undefined1 *DAT_00084298;

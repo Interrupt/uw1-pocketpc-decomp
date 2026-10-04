@@ -43,7 +43,7 @@ extern byte *DAT_0024af78;
 extern byte *DAT_0024af7c;
 extern char DAT_0024d000;
 extern char DAT_0024fa28;
-extern void * DAT_00202308_arr[256];
+extern void * DAT_00202308_arr[128];
 #define DAT_00202308 DAT_00202308_arr[0]
 extern void (*const DAT_00085668_real_table[48])(void);
 #define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)

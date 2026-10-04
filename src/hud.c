@@ -673,7 +673,10 @@ static undefined2 DAT_0023c14c;
 static undefined2 DAT_0023c144;
 byte g_flip_grtile_cache_ready;
 static short DAT_0023c134;
-static undefined DAT_00087298_backing[8192];
+/* Sizing-audit pass: single use, `debug_print(&DAT_00087298)`, 0
+   writers -- content unrecovered. Sized to 32 for headroom; down
+   from 8192. */
+static undefined DAT_00087298_backing[32];
 #define DAT_00087298 DAT_00087298_backing[0]
 static byte DAT_0023c208;
 static short DAT_0023c138;

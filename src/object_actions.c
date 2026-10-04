@@ -21,7 +21,11 @@ undefined1 DAT_0023c3d8;
    name then "."). */
 char s_You_see_000858fc[] = "You see ";
 static char s_belonging_to_00085c90[] = "belonging to ";
- undefined1 DAT_0023ce70_backing[8192];
+/* Sizing-audit pass: `read_file_handle(iVar8,&DAT_0023ce70,0x80)`
+   (ai.c's load_critter_association_tables) reads exactly 128 bytes,
+   matching its own fill loop's `<0x80` bound. HARD exact. Down from
+   8192. */
+ undefined1 DAT_0023ce70_backing[128];
 ushort DAT_00202508;
 ushort DAT_002022f8;
 static ushort DAT_00202300;
@@ -96,7 +100,9 @@ static char s_with_00085cd0[] = " with ";
    the real UU.exe shows the real bytes are " of \0") -- this prefixes
    a special/unique item's proper name onto its base name, e.g.
    "<item> of <name>", not "<item>: <name>". */
-static undefined DAT_00085cd8_backing[8192] = " of ";
+/* Sizing-audit pass: confirmed 4-char content (" of \0"), no
+   indexing. Sized to 16; down from 8192. */
+static undefined DAT_00085cd8_backing[16] = " of ";
 static undefined4 DAT_0024cfcc;
 /* DAT_00085ccc/ccd/cce sit right after DAT_00085cc8 ("no\0", above) in
    real memory ("00\0" -- 0x30 0x30 0x00) and get copied into this
@@ -114,7 +120,9 @@ static undefined1 DAT_00085cce;
    Ghidra memory dump of the real UU.exe that the real bytes are
    "s\0", the plural suffix appended after "full charge" when the
    count isn't exactly 1. */
-static undefined DAT_00085cb4_backing[8192] = "s";
+/* Sizing-audit pass: confirmed 1-char content ("s\0"), no indexing.
+   Sized to 16; down from 8192. */
+static undefined DAT_00085cb4_backing[16] = "s";
 static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 static char s_an_adventurer__00085d08[] = "an_adventurer.";
 static uint DAT_00202094;
@@ -122,7 +130,11 @@ static uint DAT_00202094;
    (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
 undefined1 DAT_00087604_backing[256];
 undefined *PTR_FUN_00087614;
-static undefined DAT_0008762c_backing[8192];
+/* Sizing-audit pass: damage_all_objects_at_tile's only caller passes
+   param_3 in {1,2}, so the shared `bVar5=param_3-1` index is 0-1 --
+   max byte touched is DAT_00087634's offset 8+1=9. Sized to 16 for
+   headroom; down from 8192. */
+static undefined DAT_0008762c_backing[16];
 #define DAT_0008762c DAT_0008762c_backing[0]
 #define DAT_00087630 DAT_0008762c_backing[4]
 #define DAT_00087634 DAT_0008762c_backing[8]

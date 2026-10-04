@@ -48,7 +48,7 @@ extern undefined2 DAT_002049a0_backing[16];
 extern undefined2 DAT_002049b0_backing[16];
 #define DAT_002049b0 DAT_002049b0_backing[0]
 extern undefined1 DAT_00101424;
-extern undefined1 DAT_00101428_backing[8192];
+extern undefined1 DAT_00101428_backing[4];
 #define DAT_00101428 DAT_00101428_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    movement.c (the movement collision sweep) -- extern'd here so both

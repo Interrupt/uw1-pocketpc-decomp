@@ -26,7 +26,10 @@ static int DAT_00086f0c;
 static unsigned short u_BuildNo_00086f5c[] = u"BuildNo";
 static unsigned short u_Software_ZIO_Interactive_Ultima_U_00086f6c[] = u"Software\\ZIO_Interactive_Ultima_U";
 static int DAT_0023c108;
-static undefined DAT_0023bf78_backing[8192];
+/* Sizing-audit pass: `GetDlgItemTextW(param_1,0x3e9,&DAT_0023bf78,
+   0xb4)` -- the W (wide-char) API, so 0xb4 (180) counts WCHAR units,
+   not bytes: real need 360 bytes. HARD exact. Down from 8192. */
+static undefined DAT_0023bf78_backing[360];
 #define DAT_0023bf78 DAT_0023bf78_backing[0]
 
 

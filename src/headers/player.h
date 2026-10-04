@@ -81,11 +81,11 @@ extern short DAT_00202088;
 extern undefined4 DAT_002020d8;
 extern undefined1 DAT_00203303;
 extern undefined2 DAT_00203304;
-extern undefined2 DAT_002048b0_backing[8192];
+extern undefined2 DAT_002048b0_backing[16];
 #define DAT_002048b0 DAT_002048b0_backing[0]
 extern undefined2 DAT_002048b2;
 extern undefined1 * DAT_002048b8;
-extern undefined1 DAT_0023bca8_backing[8192];
+extern undefined1 DAT_0023bca8_backing[256];
 #define DAT_0023bca8 DAT_0023bca8_backing[0]
 extern undefined2 DAT_0023be98;
 extern undefined4 DAT_0023bea8;

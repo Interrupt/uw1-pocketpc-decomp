@@ -95,7 +95,10 @@ undefined2 DAT_002048c0_backing[64];
 static undefined2 DAT_002048c8;
 static undefined2 DAT_002048c6;
 undefined1 DAT_00101424;
-undefined1 DAT_00101428_backing[8192];
+/* Sizing-audit pass: find_nearby_door_in_candidates's only use
+   (`*param_2 = ...`) is a plain scalar write, overwritten each loop
+   iteration, never indexed. Down from 8192. */
+undefined1 DAT_00101428_backing[4];
 static undefined2 DAT_002048fa;
 static undefined2 DAT_00204958;
 static undefined2 DAT_00204956;

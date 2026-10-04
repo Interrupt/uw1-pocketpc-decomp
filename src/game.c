@@ -152,8 +152,16 @@ static char s_Could_not_read_data___00085804[] = "Could_not_read_data.$";
 static char s_Could_not_write_data___0008581c[] = "Could_not_write_data.$";
 static char s_Resource_problem_or_internal_err_00085834[] = "Resource_problem_or_internal_err";
 static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld_can_no_longer_run._Er";
-static undefined DAT_00201b70_backing[8192];
-void *DAT_00202308_arr[256];
+/* Sizing-audit pass: fatal-error message buffer, written via
+   ce_strncpy from either a 42-byte stack buffer (report_fatal_error_
+   and_exit) or an unbounded caller string (report_fatal_error_
+   message_and_exit) -- but both of that function's only two real
+   callers pass literals comfortably under 42 bytes. Sized to 64 for
+   headroom; down from 8192. */
+static undefined DAT_00201b70_backing[64];
+/* Sizing-audit pass: shutdown_game_resources's own teardown loop is a
+   HARD exact `iVar1 = 0x80` (128) count. Down from 256. */
+void *DAT_00202308_arr[128];
 /* Per-geometry-record decoded-sprite pixel buffers, one malloc per visible
    object, freed each frame by free_frame_geometry_buffers. Ghidra typed it
    `undefined4` (4 bytes), truncating the 64-bit ce_malloc pointer -- the
@@ -207,13 +215,26 @@ static ushort DAT_000876bc_backing[128];
 ushort *DAT_000876bc = DAT_000876bc_backing;
 static short DAT_000876c0_backing[128];
 short *DAT_000876c0 = DAT_000876c0_backing;
-static undefined DAT_00028bfc_backing[8192];
+/* Sizing-audit pass: its ADDRESS (not its contents) is passed as
+   register_key_binding's handler function-pointer argument for key
+   0x1b -- a stand-in for an unrecovered callback (same class as
+   traps.c's DAT_0007e644), never read/written/indexed as data.
+   Sizing doesn't matter for its actual role; shrunk for consistency.
+   Down from 8192. */
+static undefined DAT_00028bfc_backing[16];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
 static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev_%d_@_%2.2u.%1.1u_%2.2u.%1.1u";
 static byte DAT_0023bd84;
 static undefined1 DAT_00086e05;
 static undefined1 DAT_00086e06;
-static undefined DAT_00086e00_backing[8192];
+/* Sizing-audit pass: printed whole via message_scroll_print_wrapped
+   (print_help_message), 0 writers of its own text content --
+   content unrecovered. Sized to 128 for headroom as a display-text
+   fragment; down from 8192. (DAT_00086e05/06 right after it are
+   separate write-only scalars with no confirmed read anywhere --
+   unlike the automap note-position bug, there's no second proof they
+   belong inside this buffer, so left untouched.) */
+static undefined DAT_00086e00_backing[128];
 #define DAT_00086e00 DAT_00086e00_backing[0]
 static int DAT_000db500;
 short DAT_0024af6c;

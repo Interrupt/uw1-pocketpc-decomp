@@ -10,7 +10,10 @@
 
 short DAT_00201b68;
 char *g_selected_object;
-undefined1 DAT_00088d98_backing[1536];
+/* Sizing-audit pass: both ce_memmove sites copy exactly 0x300 (768)
+   bytes, bidirectionally -- HARD exact bound (256-entry VGA palette,
+   3 bytes/entry). Down from 1536. */
+undefined1 DAT_00088d98_backing[768];
 short DAT_00201c7c;
 undefined2 DAT_00201c90;
 undefined2 DAT_00201c8c;

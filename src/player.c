@@ -109,7 +109,13 @@ byte DAT_0020208c;
 undefined2 DAT_00203304;
 undefined1 DAT_00203303;
 short DAT_00202078;
- undefined2 DAT_002048b0_backing[8192];
+/* Sizing-audit pass: pure scalar, only ever set to 0 or 0x1000 and
+   passed by address into movement_collision_sweep, which only
+   dereferences its own callee-side alias (DAT_002048bc) up to offset
+   +4 as a ushort -- max byte touched 5. Sized to 16 for headroom,
+   matching the project's established 4-buffer-family convention;
+   down from 8192 elements (16384 bytes). */
+ undefined2 DAT_002048b0_backing[16];
 undefined1 *DAT_002048b8;
 undefined2 DAT_002048b2;
 undefined2 DAT_0023be98;
@@ -209,9 +215,13 @@ undefined2 DAT_0023beb8;
    scalar, byte 0 of that struct -- an lldb watchpoint on the unrelated
    DAT_0023be74 (which happens to sit right after this in memory) caught
    this overflowing into it one byte per loop iteration in init_new_character_record,
-   corrupting it and causing a later SEGV. Widened generously since the
-   struct's exact real size isn't confirmed. */
- undefined1 DAT_0023bca8_backing[8192];
+   corrupting it and causing a later SEGV.
+
+   Sizing-audit pass: the struct's exact real size IS now confirmed --
+   both save (player.c:746) and load (player.c:835) round-trip it via
+   `ce_memmove(...,&DAT_0023bca8,220)`, an exact, symmetric, HARD
+   bound. Sized to 256 for headroom; down from 8192. */
+ undefined1 DAT_0023bca8_backing[256];
 short DAT_0023be90;
 short DAT_0023be92;
 short DAT_0023be94;
@@ -257,9 +267,24 @@ char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
    stayed 0 and every visible tile drew with the 16x16 low-detail
    texture. Sentinel = no level loaded yet. */
 char DAT_000872a0 = -1;
-static undefined1 DAT_0008730c_backing[8192];
+/* Sizing-audit pass: BUG FIX, not just a shrink -- advance_character_
+   level builds a 2-digit level-number string here (tens digit/space
+   at offset 0, units digit written to the separately-declared
+   DAT_0008730d at real address +1) then prints it via
+   message_scroll_print_wrapped(&DAT_0008730c), which needs a real
+   NUL right after. DAT_0008730d was never aliased in, so the units
+   digit landed in a dead, never-read global instead of the string
+   buffer -- message_scroll_print_wrapped would see DAT_0008730c_
+   backing[1] (always zero, nothing else writes it) immediately after
+   the tens digit/space and print a 1-character message, silently
+   dropping the units digit on every level-up message (visibly wrong
+   once the character reaches level 10+, reachable in normal play).
+   Aliased DAT_0008730d into DAT_0008730c_backing[1] so the real
+   write lands in the string, with backing[2] as the (already zero)
+   NUL terminator. Sized to 16 for headroom; down from 8192. */
+static undefined1 DAT_0008730c_backing[16];
 #define DAT_0008730c DAT_0008730c_backing[0]
-static undefined1 DAT_0008730d;
+#define DAT_0008730d DAT_0008730c_backing[1]
 /* Was a lone scalar, but roll_skill_use_improvement indexes it
    `(&DAT_00087308)[tier]` for tier 0..2 (classify_skill_training_tier's
    full range) as a per-tier probability threshold for
