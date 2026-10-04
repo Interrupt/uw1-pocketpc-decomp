@@ -8,6 +8,7 @@ extern unsigned char g_visibility_ray_table_backing[1024];
 extern unsigned char g_visibility_ring_done;
 extern char *g_visibility_ray_realptr[24];
 extern char *g_visibility_ray_realptr2[24];
+extern char *g_visibility_ray_clearptr[24];
 extern char g_visibility_ray_fallback[64];
 extern undefined1 g_visibility_ring_buffer_backing[32768];
 extern short g_visibility_ring_depth;
@@ -27,6 +28,7 @@ unsigned char ring_cell(int depth, int side);
 #define RING_CELL_SENTINEL 0xaa
 
 int ring_cell_untouched(int depth, int side);
+void repeat_flood_on(const void *map, int player_x, int player_y, int facing);
 void run_flood_on(const void *map, int player_x, int player_y, int facing);
 void run_flood(int player_x, int player_y, int facing);
 void visibility_walk_fixture_reset(void);

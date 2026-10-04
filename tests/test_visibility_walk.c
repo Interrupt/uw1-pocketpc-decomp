@@ -112,6 +112,62 @@ static void test_real_level_one_starting_hallway_is_contained(void)
     }
 }
 
+static void test_repeated_frames_clear_walls_outside_the_current_visibility_fan(void)
+{
+    /* Move and turn through an open room, retaining the old grid as the game does. Comparing
+       the visibility byte against a fresh flood catches skipped clearing;
+       the second byte contains lighting/edge metadata and is separate. */
+    memset(g_visibility_ring_buffer_backing, 0, sizeof(g_visibility_ring_buffer_backing));
+    g_visibility_max_ring_passes = 8;
+    for (int frame = 0; frame < 64; ++frame) {
+        int x = 28 + frame % 8, y = 28 + frame / 8;
+        int facing = -0x1800 + (frame % 7) * 0x800;
+        repeat_flood_on(tilemap, x, y, facing);
+        int depth = g_visibility_ring_depth;
+        unsigned char reused[33 * 17];
+        for (int row = 0; row <= depth; ++row)
+            for (int side = -16; side <= 16; ++side)
+                reused[row * 33 + side + 16] = ring_cell(row, side);
+        memset(g_visibility_ring_buffer_backing, 0, sizeof(g_visibility_ring_buffer_backing));
+        repeat_flood_on(tilemap, x, y, facing);
+        TEST_ASSERT_EQUAL_INT(depth, g_visibility_ring_depth);
+        for (int row = 0; row <= depth; ++row)
+            for (int side = -16; side <= 16; ++side)
+            {
+                char msg[96]; snprintf(msg, sizeof msg, "frame=%d row=%d side=%d", frame, row, side);
+                TEST_ASSERT_EQUAL_HEX8_MESSAGE(reused[row * 33 + side + 16], ring_cell(row, side), msg);
+            }
+    }
+}
+
+static void test_level_one_westward_walk_has_no_previous_frame_visibility(void)
+{
+    load_real_level_one();
+    g_visibility_max_ring_passes = 8;
+    /* Reported route near (16.60,6.49), heading 276 degrees, four tiles west. */
+    for (int x = 16; x >= 12; --x) {
+        repeat_flood_on(level_one, x, 6, 0xc444);
+        unsigned char previous[sizeof g_visibility_ring_buffer_backing];
+        memcpy(previous, g_visibility_ring_buffer_backing, sizeof previous);
+        memset(g_visibility_ring_buffer_backing, 0, sizeof previous);
+        repeat_flood_on(level_one, x, 6, 0xc444);
+        for (int cell = 0; cell < 17 * 33; ++cell)
+            TEST_ASSERT_EQUAL_HEX8(previous[cell * 2], g_visibility_ring_buffer_backing[cell * 2]);
+    }
+}
+
+static void test_visibility_reset_preserves_the_adjacent_light_grid(void)
+{
+    g_visibility_max_ring_passes = 3;
+    /* Beyond the flood's active rows: lighting survives, stale geometry does not. */
+    int offset = 16 * 0x42 + 32;
+    g_visibility_ring_buffer_backing[offset] = 0x80;
+    g_visibility_ring_buffer_backing[offset + 1] = 7;
+    repeat_flood_on(tilemap, 32, 32, 0);
+    TEST_ASSERT_EQUAL_HEX8(0, g_visibility_ring_buffer_backing[offset]);
+    TEST_ASSERT_EQUAL_HEX8(7, g_visibility_ring_buffer_backing[offset + 1]);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -119,5 +175,8 @@ int main(void)
     RUN_TEST(test_wall_blocks_tiles_behind_it);
     RUN_TEST(test_flood_does_not_exceed_the_level_max_ring_passes);
     RUN_TEST(test_real_level_one_starting_hallway_is_contained);
+    RUN_TEST(test_repeated_frames_clear_walls_outside_the_current_visibility_fan);
+    RUN_TEST(test_level_one_westward_walk_has_no_previous_frame_visibility);
+    RUN_TEST(test_visibility_reset_preserves_the_adjacent_light_grid);
     return UNITY_END();
 }

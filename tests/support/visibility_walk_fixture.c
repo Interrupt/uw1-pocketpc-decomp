@@ -11,6 +11,7 @@ unsigned char g_visibility_ring_done;
 char *g_visibility_ray_realptr[24];
 
 char *g_visibility_ray_realptr2[24];
+char *g_visibility_ray_clearptr[24];
 
 char g_visibility_ray_fallback[64];
 
@@ -88,26 +89,34 @@ unsigned char ring_cell(int depth, int side)
 
 int ring_cell_untouched(int depth, int side)
 {
-    return ring_cell(depth, side) == RING_CELL_SENTINEL;
+    return ring_cell(depth, side) == 0;
 }
 
-void run_flood_on(const void *map, int player_x, int player_y, int facing)
+void repeat_flood_on(const void *map, int player_x, int player_y, int facing)
 {
     DAT_002029cc = (char *)map;
     memset(g_visibility_ray_table_backing, 0, sizeof(g_visibility_ray_table_backing));
     memset(g_visibility_ray_realptr, 0, sizeof(g_visibility_ray_realptr));
     memset(g_visibility_ray_realptr2, 0, sizeof(g_visibility_ray_realptr2));
-    memset(g_visibility_ring_buffer_backing, 0xaa, sizeof(g_visibility_ring_buffer_backing));
+    memset(g_visibility_ray_clearptr, 0, sizeof(g_visibility_ray_clearptr));
     g_visibility_ring_depth = 0;
 
-    DAT_0023b4a0 = 0; /* facing quadrant 0: identity tile-shape mapping, no view-x/y rotation */
-    g_current_view->view_x = 0x80; /* centered sub-tile position within the player's own tile */
-    g_current_view->view_y = 0x80;
-    g_current_view->view_facing = (short)facing;
+    /* Match build_frame_draw_list's quadrant and sub-tile view rotation. */
+    DAT_0023b4a0 = ((((short)facing >> 13) + 1) >> 1) & 3;
+    g_current_view->view_x = DAT_0023b4a0 == 1 || DAT_0023b4a0 == 2 ? 0x7f : 0x80;
+    g_current_view->view_y = DAT_0023b4a0 == 2 || DAT_0023b4a0 == 3 ? 0x7f : 0x80;
+    g_current_view->view_facing = (short)(facing - DAT_0023b4a0 * 0x4000);
     DAT_0023aecc = (char *)tilemap_lookup(player_x, player_y);
 
     seed_visibility_queue();
     run_visibility_flood();
+}
+
+void run_flood_on(const void *map, int player_x, int player_y, int facing)
+{
+    memset(g_visibility_ring_buffer_backing, RING_CELL_SENTINEL,
+           sizeof(g_visibility_ring_buffer_backing));
+    repeat_flood_on(map, player_x, player_y, facing);
 }
 
 void run_flood(int player_x, int player_y, int facing)

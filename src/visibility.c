@@ -134,20 +134,13 @@ static undefined1 g_visibility_ray_table_backing[1024];
    the "unpopulated" state advance_visibility_ray's own `(*param_1 & 0x80) == uVar1`
    guard already treats as "nothing to look up" for a zeroed record. */
 static char *g_visibility_ray_realptr[24];
-/* Second real-pointer side table, for this record's OTHER packed pointer
-   field (offsets 0xd and its byte-mirrored copy at 0x11-0x14 -- see
-   seed_visibility_queue's DAT_0023aeed/aeee/aef0 writes). Unlike the offset-9
-   field, this one is always the SAME fixed original-binary address
-   (0x0023b058, confirmed identical for entry 0's 3-field pack and
-   entry 1's combined `_DAT_0023af02` write) -- a hardcoded literal
-   pointer into the shared g_visibility_ring_buffer output-list buffer (0x0023b058 -
-   0x0023b038 = 0x20), same "hardcoded original 32-bit address instead of
-   a symbolic reference" bug class fixed elsewhere all session, just
-   packed byte-by-byte instead of written as one literal. Populated once
-   below (not per-entry -- every entry that sets this field wants the
-   same target), read via the same per-entry lookup as the offset-9
-   table for consistency with how the field is indexed. */
+/* Packed offset 0xd is the moving visibility-grid cursor. Offset 0x11
+   is a snapshot taken by advance_visibility_ray before/after advancing,
+   depending on the ray direction. The flood clears up to that snapshot,
+   not the moving cursor (ARM FUN_0005d13c reads bytes 0x11..0x14).
+   Keep both pointers separate when widening them for the host. */
 static char *g_visibility_ray_realptr2[24];
+static char *g_visibility_ray_clearptr[24];
 #define DAT_0023aee1 g_visibility_ray_table_backing[1]
 #define DAT_0023aee3 g_visibility_ray_table_backing[3]
 #define DAT_0023aee5 g_visibility_ray_table_backing[5]
@@ -1153,6 +1146,8 @@ byte * param_1;
   }
   uVar1 = iVar3 << 7;
   if ((*param_1 & 0x80) == uVar1) {
+    g_visibility_ray_clearptr[visibility_ray_idx(param_1)] =
+        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(param_1));
     uVar7 = *(undefined4 *)(param_1 + 0xd);
     param_1[0x11] = (byte)uVar7;
     param_1[0x12] = (byte)((uint)uVar7 >> 8);
@@ -1279,6 +1274,8 @@ LAB_0005ce50:
   bVar5 = *param_1;
 LAB_0005ce60:
   if ((bVar5 & 0x80) != uVar1) {
+    g_visibility_ray_clearptr[visibility_ray_idx(param_1)] =
+        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(param_1));
     uVar7 = *(undefined4 *)(param_1 + 0xd);
     param_1[0x11] = (byte)uVar7;
     param_1[0x12] = (byte)((uint)uVar7 >> 8);
@@ -1294,8 +1291,8 @@ LAB_0005ce60:
    pointers run_visibility_flood always calls this with (`&local_20`/`&local_24`,
    both real `byte*`/`undefined1*` locals) -- same fix as this record
    array's other consumers. `*param_2`'s assignment below is this same
-   record's offset+0xd/0x11 packed-pointer field again, routed through
-   the shared real-pointer side table. */
+   record's saved offset-0x11 cursor, kept separate from its moving
+   offset-0xd cursor on the host. */
 void merge_adjacent_visibility_rays(param_1,param_2)
 byte ** param_1;
 undefined1 ** param_2;
@@ -1329,7 +1326,7 @@ undefined1 ** param_2;
   pcVar9 = &g_visibility_ray_table + iVar10;
   iVar5 = ((int)*pcVar9 & 0xfU) * 0x15;
   pbVar8 = &g_visibility_ray_table + iVar5;
-  *param_2 = (undefined1 *)(VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, iVar5 / 0x15) + 2);
+  *param_2 = (undefined1 *)(g_visibility_ray_clearptr[iVar5 / 0x15] + 2);
   while( true ) {
     iVar3 = compute_visibility_ray_offset(pcVar9,1,8);
     if (iVar3 == 0) break;
@@ -1413,6 +1410,13 @@ void run_visibility_flood()
   undefined1 *local_24;
   byte *local_20;
   
+  /* Visibility bits belong to this frame. A flood that stops at the view
+     distance limit can leave the interior of its final row unwritten;
+     retaining those bits draws walls from an earlier camera position.
+     Reset only visibility bytes, keeping the adjacent light/edge bytes. */
+  for (int cell = 0; cell < 17 * 33; ++cell)
+    g_visibility_ring_buffer_backing[cell * 2] = 0;
+
   puVar3 = &g_visibility_ring_buffer;
   g_visibility_ring_depth = -1;
   local_24 = &g_visibility_ring_buffer;
@@ -1432,12 +1436,8 @@ void run_visibility_flood()
     puVar3 = puVar2;
     bVar1 = g_visibility_ring_done;
     while (uVar4 = (uint)(char)bVar1, (uVar4 & 0xf) != 0xf) {
-      /* Was `*(undefined1 **)(&DAT_0023aef1 + uVar4 * 0x15)` -- same
-         packed-pointer-reassembly bug as advance_visibility_ray's offset+9/0xd
-         fields (this is that same offset-0xd/0x11 field, just indexed
-         relative to DAT_0023aef1 instead of g_visibility_ray_table+0xd), routed
-         through the same real-pointer side table. */
-      while (puVar3 < (undefined1 *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, uVar4 & 0xf)) {
+      /* Offset 0x11 is the saved boundary, not the live offset-0xd cursor. */
+      while (puVar3 < (undefined1 *)g_visibility_ray_clearptr[uVar4 & 0xf]) {
         *puVar3 = 0;
         uVar4 = (uint)(char)*local_20;
         puVar3 = local_24 + 2;
