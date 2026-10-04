@@ -135,8 +135,6 @@ undefined DAT_00087530_backing[212] = {
 char DAT_0023c3e0;
 char s_bodies_00085c58[] = "bodies";
 static int DAT_002029a4;
-short DAT_00085b64;
-undefined2 DAT_00085b72;
 static undefined2 DAT_00202998;
 undefined2 DAT_00085c50;
 static int DAT_002046f8;

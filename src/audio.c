@@ -23,7 +23,13 @@ static undefined1 DAT_0024f90c;
 static ushort DAT_000853f8;
 static ushort DAT_00085400;
 static char *DAT_002506ec;
-static int DAT_00086368;
+/* Was silently zero -- the resampler's output rate, compared against
+   both real sample rates it supports (`== 0xac44` i.e. 44100 and
+   `== 0x5622` i.e. 22050 throughout this file). Confirmed via a Ghidra
+   memory dump of the real UU.exe that its actual initial value is
+   0x5622 (22050), not zero; no writer anywhere in this decompile, so
+   neither branch of either comparison ever matched. */
+static int DAT_00086368 = 0x5622;
 static unsigned short u_WAVE_0008686c[] = u"WAVE";
 /* Was a bare scalar, but process_mod_tracker_row indexes it as
    `(&DAT_00086370)[iVar14]` with iVar14 clamped to [0,0x127] -- the

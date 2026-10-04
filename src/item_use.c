@@ -31,14 +31,6 @@ undefined4 g_weapon_overlay_enabled;
 static undefined1 DAT_002028e0_backing[16];
 #define DAT_002028e0 DAT_002028e0_backing[0]
 static char s_armor_f_00085c60[] = "armor_f";
-static undefined1 DAT_00085b77;
-static byte DAT_00085b76;
-static short DAT_00085b74;
-static undefined4 DAT_00202914;
-static undefined1 DAT_00085b69;
-static byte DAT_00085b68;
-static short DAT_00085b66;
-static undefined4 DAT_00202910;
 static ushort DAT_00202962;
 static ushort DAT_00202964;
 static char s_Move_how_many__00085c68[] = "Move_how_many?";
@@ -3422,8 +3414,25 @@ void redraw_armor_overlay_widgets()
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 6);
     g_blit_transparent_mode = 0;
-    capture_framebuffer_rect_to_grtile(DAT_00202914,(int)DAT_00085b72,(int)DAT_00085b74,DAT_00085b76 - 5,DAT_00085b77);
-    capture_framebuffer_rect_to_grtile(DAT_00202910,DAT_00085b64 + 5,(int)DAT_00085b66,DAT_00085b68 - 5,DAT_00085b69);
+    /* Widgets 10/11 (the finger/ring slots, per g_inventory_hotspot_table's
+       own comment) are handled as a one-off pair here instead of folding
+       into the loop above like widgets 1-5 do -- but this block still used
+       10 standalone scalars (DAT_00085b64/66/68/69/72/74/76/77 for the
+       draw rect, DAT_00202910/00202914 for the saved-icon grtile handle)
+       that were never aliased into their real backing storage, the same
+       "hardcoded original-binary address instead of a symbolic reference"
+       bug hud.c's own main_loop_hud_flush path already fixed for these
+       exact two slots (see its comment: "0x85ad8 + 10*7 shorts = 0x85b64,
+       etc."). Rewritten to the same g_inv_hotspot_draw_x/y/dirty_w/dirty_h
+       and DAT_002028e8 indexed form, so these rects/handles resolve
+       against the real recovered inventory-hotspot table instead of
+       always-zero dead globals. */
+    capture_framebuffer_rect_to_grtile((&DAT_002028e8)[11],(int)(&g_inv_hotspot_draw_x)[11 * 7],
+                 (int)(&g_inv_hotspot_draw_y)[11 * 7],(&g_inv_hotspot_dirty_w)[11 * 0xe] - 5,
+                 (&g_inv_hotspot_dirty_h)[11 * 0xe]);
+    capture_framebuffer_rect_to_grtile((&DAT_002028e8)[10],(&g_inv_hotspot_draw_x)[10 * 7] + 5,
+                 (int)(&g_inv_hotspot_draw_y)[10 * 7],(&g_inv_hotspot_dirty_w)[10 * 0xe] - 5,
+                 (&g_inv_hotspot_dirty_h)[10 * 0xe]);
     if (((DAT_00202962 & 0xffc0) != 0) || ((DAT_00202964 & 0xffc0) != 0)) {
       redraw_inventory_widget_range(10,0xb);
     }

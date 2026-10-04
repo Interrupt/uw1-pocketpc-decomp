@@ -196,7 +196,11 @@ static const undefined1 DAT_00086af8_region[12] = {
 #define DAT_00086b00 (*(undefined1 *)(DAT_00086af8_region + 8))
 short g_visibility_ring_depth;
 undefined1 g_visibility_ring_buffer_backing[32768];
-static undefined DAT_00086b34;
+/* Was silently zero -- read into a draw-command opcode and into
+   DAT_00189578 (both widened casts of this one byte). Confirmed via a
+   Ghidra memory dump of the real UU.exe that its actual value is 1,
+   not zero; no writer anywhere in this decompile. */
+static undefined DAT_00086b34 = 1;
 undefined2 DAT_00189578;
 undefined DAT_0023b4dc;
 short DAT_00086b2c;

@@ -227,7 +227,12 @@ short DAT_0023b4e4;
 undefined1 *DAT_0023b820;
 ushort DAT_0023b828;
 undefined2 DAT_0023b824;
-char DAT_00087938;
+/* Was silently zero -- compared against the literal `'d'` at all 4
+   call sites in this file. Confirmed via a Ghidra memory dump of the
+   real UU.exe that its actual byte value is 0x64 ('d'), not zero; no
+   writer anywhere in this decompile, so every `DAT_00087938 != 'd'`
+   check was permanently true regardless of real game state. */
+char DAT_00087938 = 'd';
 short DAT_00086b24;
 ushort DAT_0023b81c;
 ushort DAT_0023b4d8;

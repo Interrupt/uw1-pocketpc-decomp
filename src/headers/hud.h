@@ -57,8 +57,6 @@ extern char s_bodies_00085c58[];
 extern undefined2 DAT_00085c50;
 extern undefined1 DAT_00202988_backing[16];
 #define DAT_00202988 DAT_00202988_backing[0]
-extern short DAT_00085b64;
-extern undefined2 DAT_00085b72;
 
 
 void dirty_rect_union();
