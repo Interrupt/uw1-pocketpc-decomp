@@ -73,15 +73,48 @@ int DAT_002022fc;
 ushort g_player_max_carry_weight = 200;
 static char s_cursed_00085ca0[] = "cursed";
 static char s_magical_00085ca8[] = "magical";
-static char s_full_charge_00085cb8[] = "full_charge";
-static undefined DAT_00085cc8;
-static char s_with_00085cd0[] = "with";
-static undefined DAT_00085cd8_backing[8192];
+/* Ghidra rendered the embedded space as an underscore and dropped the
+   leading space entirely -- confirmed via a Ghidra memory dump of the
+   real UU.exe that the real bytes are " full charge\0" (with a real
+   space, not '_', between "full" and "charge"), appended right after
+   the charge count in append_object_special_name-adjacent charge-
+   count message building. */
+static char s_full_charge_00085cb8[] = " full charge";
+/* Was a bare scalar read through &DAT_00085cc8 as a 2-char C string
+   (the "no charges" case of the same charge-count message). Confirmed
+   via a Ghidra memory dump of the real UU.exe that the real bytes are
+   "no\0". */
+static char DAT_00085cc8[] = "no";
+/* Was missing both its leading and trailing space -- confirmed via a
+   Ghidra memory dump of the real UU.exe that the real bytes are
+   " with \0", not "with\0"; matches the same leading/trailing-space-
+   per-fragment convention as the full_charge/DAT_00085cc8 strings
+   just above. */
+static char s_with_00085cd0[] = " with ";
+/* Was a zero-initialized 8192-byte placeholder (this file's own
+   adjacent comment guessed ": "-shaped, but a Ghidra memory dump of
+   the real UU.exe shows the real bytes are " of \0") -- this prefixes
+   a special/unique item's proper name onto its base name, e.g.
+   "<item> of <name>", not "<item>: <name>". */
+static undefined DAT_00085cd8_backing[8192] = " of ";
 static undefined4 DAT_0024cfcc;
+/* DAT_00085ccc/ccd/cce sit right after DAT_00085cc8 ("no\0", above) in
+   real memory ("00\0" -- 0x30 0x30 0x00) and get copied into this
+   function's own digit-formatting scratch buffer before being
+   overwritten by the actual computed digits (or, for cce, already
+   relied on as the buffer's zero terminator) -- real values confirmed
+   via the same memory dump, but left as this port's zero defaults
+   since every call path here either overwrites ccc/ccd before they're
+   read or already depends on cce being 0; restating '0'/'0'/0 here
+   would change no observable behavior. */
 static undefined1 DAT_00085ccc;
 static undefined1 DAT_00085ccd;
 static undefined1 DAT_00085cce;
-static undefined DAT_00085cb4_backing[8192];
+/* Was a zero-initialized 8192-byte placeholder -- confirmed via a
+   Ghidra memory dump of the real UU.exe that the real bytes are
+   "s\0", the plural suffix appended after "full charge" when the
+   count isn't exactly 1. */
+static undefined DAT_00085cb4_backing[8192] = "s";
 static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 static char s_an_adventurer__00085d08[] = "an_adventurer.";
 static uint DAT_00202094;
@@ -3108,9 +3141,9 @@ char *param_3;     /* was undefined4 -- caller's stack buffer for ce_strcat */
 // build_object_display_name), for param_2==3: resolves the item's
 // variant/special-link data, looks up a name-table message string
 // keyed by its quality/link fields (falling back to "UNNAMED" if the
-// lookup misses), and appends it prefixed by DAT_00085cd8 (": "-shaped
-// separator). Also checks the object's own content chain for a
-// matching link entry.
+// lookup misses), and appends it prefixed by DAT_00085cd8 (" of ",
+// e.g. "<item> of <name>"). Also checks the object's own content
+// chain for a matching link entry.
 // WARNING: Type propagation algorithm not settling
 
 undefined4 append_object_special_name(param_1,param_2,param_3)
@@ -3187,7 +3220,7 @@ LAB_00048e80:
       if (-1 < iVar2) {
         ce_strcat(param_3,s_with_00085cd0);
         if (iVar2 < 1) {
-          puVar7 = (undefined2 *)&DAT_00085cc8;
+          puVar7 = (undefined2 *)DAT_00085cc8;
         }
         else {
           local_26[1] = DAT_00085ccd;
