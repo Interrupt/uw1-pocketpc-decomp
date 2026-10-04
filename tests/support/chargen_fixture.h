@@ -9,7 +9,7 @@ extern char *DAT_00086df8;
 extern char *DAT_0023be74;
 extern ushort *g_player_object;
 extern short DAT_00201b68;
-extern undefined1 DAT_000fb860_backing[256];
+extern undefined1 DAT_000fb860_backing[32];
 extern undefined1 DAT_000fb8f0_backing[1680];
 extern int random_values[64], random_count, random_index;
 extern int dice_calls, hazard_calls, equipment_calls, reset_calls;

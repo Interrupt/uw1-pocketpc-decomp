@@ -40,7 +40,9 @@ static short DAT_0023c1ec;
 static undefined2 DAT_000870e8;
 static int DAT_0023c260;
 static char s__DATA_weapons_cm_00087284[] = "\\DATA\\weapons.cm";
-static undefined1 DAT_00202700_backing[256];
+/* Sizing-audit pass: `read_file_handle(iVar4,&DAT_00202700,0x10)`
+   -- exact 16-byte real need. Down from 256. */
+static undefined1 DAT_00202700_backing[16];
 #define DAT_00202700 DAT_00202700_backing[0]
 
 

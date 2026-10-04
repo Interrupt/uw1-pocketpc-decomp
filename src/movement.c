@@ -252,7 +252,11 @@ static short DAT_00086980_arr[3];
 #define DAT_00086982 DAT_00086980_arr[1]
 #define DAT_00086984 DAT_00086980_arr[2]
 static undefined4 DAT_00204878;
-static undefined DAT_00202c32_backing[256];
+/* Sizing-audit pass: dead -- per the comment at its one real mention
+   (collision height-field lookup, ~line 496), the correct access goes
+   through DAT_00202c38 directly; this symbol is never actually
+   read/written anywhere in the live decompile. Down from 256. */
+static undefined DAT_00202c32_backing[4];
 #define DAT_00202c32 DAT_00202c32_backing[0]
 static ushort DAT_0008698c;
 static short DAT_0008698e;
@@ -326,9 +330,11 @@ char DAT_00086e84;
 static int DAT_0023bf64;
 static char DAT_0023bf60;
 static uint DAT_0023bf5c;
-static undefined DAT_00086e38_backing[256];
+/* Sizing-audit pass: index is `bVar1>>4` -- a nibble, max 15. Sized
+   to 16 each; down from 256. */
+static undefined DAT_00086e38_backing[16];
 #define DAT_00086e38 DAT_00086e38_backing[0]
-static undefined DAT_00086e48_backing[256];
+static undefined DAT_00086e48_backing[16];
 #define DAT_00086e48 DAT_00086e48_backing[0]
 
 

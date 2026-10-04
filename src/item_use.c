@@ -47,7 +47,9 @@ static ushort DAT_00202962;
 static ushort DAT_00202964;
 static char s_Move_how_many__00085c68[] = "Move_how_many?";
 static char s_is_too_full__00085c78[] = "is_too_full.";
-static undefined DAT_002029f9_backing[256];
+/* Sizing-audit pass: index is `(nibble&0xf)*3`, max 45, read as a
+   short there (max byte 46). Sized to 48; down from 256. */
+static undefined DAT_002029f9_backing[48];
 #define DAT_002029f9 DAT_002029f9_backing[0]
 /* Sizing-audit pass: single use, `ce_strcat(acStack_7c,&DAT_00085ce0)`,
    0 writers -- content unrecovered. Sized to 32 for headroom; down

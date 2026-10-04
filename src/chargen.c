@@ -32,7 +32,9 @@ static char *DAT_000fb858;
 static char *DAT_001005c4;
 /* Not `static` -- also used by chargen.c; see the extern declaration and
    DAT_000fb860 macro alias in uw.h. */
-static undefined1 DAT_000fb860_backing[256];
+/* Sizing-audit pass: `ce_memmove(&DAT_000fb860,&DAT_000fb8f0,0x20)`
+   -- exact 32-byte real need. Down from 256. */
+static undefined1 DAT_000fb860_backing[32];
 /* DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. */
 /* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]`
    (4-byte stride) with idx up to a CONCAT11 of two record byte fields

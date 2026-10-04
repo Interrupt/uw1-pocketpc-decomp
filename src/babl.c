@@ -98,7 +98,10 @@ static short DAT_000bbf08;
    separate mechanism). */
 static char DAT_000845a8[] = "say";
 static char s_respond_000845ac[] = "respond";
-static undefined2 DAT_000bbfe8_backing[256];
+/* Sizing-audit pass: sum_barter_offer_value's own `iVar4<4` loop
+   bound (2-byte stride for this param slot) -- max byte 3*2+1=7.
+   Sized to 8 for headroom; down from 256. */
+static undefined2 DAT_000bbfe8_backing[8];
 #define DAT_000bbfe8 DAT_000bbfe8_backing[0]
 static undefined2 DAT_000bbfd8;
 static undefined2 DAT_000bbfdc;
@@ -110,15 +113,21 @@ static undefined2 DAT_000bbfe0;
 static undefined2 DAT_000bbfb8;
 static char *DAT_000bc020;
 static char *DAT_000bc000;
-static undefined1 DAT_000845b8_backing[256];
+/* Sizing-audit pass: 4 barter-icon-slot coordinate tables, explicit
+   `if(3<iVar1)` caps (init_barter_ui's capture loop, `iVar1=iVar7*4`)
+   -- max byte 3*4+1=13. Sized to 16 each for headroom; down from 256. */
+static undefined1 DAT_000845b8_backing[16];
 #define DAT_000845b8 DAT_000845b8_backing[0]
-static undefined1 DAT_000845ba_backing[256];
+static undefined1 DAT_000845ba_backing[16];
 #define DAT_000845ba DAT_000845ba_backing[0]
-static undefined1 DAT_000845d8_backing[256];
+static undefined1 DAT_000845d8_backing[16];
 #define DAT_000845d8 DAT_000845d8_backing[0]
-static undefined1 DAT_000845da_backing[256];
+static undefined1 DAT_000845da_backing[16];
 #define DAT_000845da DAT_000845da_backing[0]
-static undefined4 DAT_000bbf98_backing[256];
+/* Sizing-audit pass: sum_barter_offer_value's own `iVar4<4` loop
+   bound, 4-byte stride (matching this element type exactly) -- max
+   index 3. Sized to 8 for headroom; down from 256. */
+static undefined4 DAT_000bbf98_backing[8];
 #define DAT_000bbf98 DAT_000bbf98_backing[0]
 /* Sizing-audit pass: reset loop `while(iVar7<4)` writes both
    `[iVar7]` and `[iVar7+4]` -- max index 7, 8 elements (16 bytes,
@@ -127,7 +136,9 @@ static undefined2 DAT_000bbfa8_backing[8];
 #define DAT_000bbfa8 DAT_000bbfa8_backing[0]
 static undefined2 DAT_000bbfc0_backing[8];
 #define DAT_000bbfc0 DAT_000bbfc0_backing[0]
-static undefined2 DAT_000bbfd0_backing[256];
+/* Sizing-audit pass: same bound as DAT_000bbfe8 (sum_barter_offer_
+   value's `iVar4<4` loop, 2-byte stride). Sized to 8; down from 256. */
+static undefined2 DAT_000bbfd0_backing[8];
 #define DAT_000bbfd0 DAT_000bbfd0_backing[0]
 /* New this round -- referenced only via literal-pool constants inside
    babl_builtin_take_from_npc/take_id_from_npc (both still-unrecovered
@@ -140,11 +151,15 @@ static undefined2 DAT_000bbfd0_backing[256];
    script yet, so their exact semantics haven't been confirmed live. */
 static intptr_t DAT_00202948; // was `int` in the raw decompile -- holds a real object pointer, same truncation bug class as every other pointer-holding global in this cluster
 static short DAT_002020c4;
-static undefined4 DAT_000bbff0_backing[256];
+/* Sizing-audit pass: same bound as DAT_000bbf98 (sum_barter_offer_
+   value's `iVar4<4` loop, 4-byte stride). Sized to 8; down from 256. */
+static undefined4 DAT_000bbff0_backing[8];
 #define DAT_000bbff0 DAT_000bbff0_backing[0]
-static undefined4 DAT_000bc010_backing[256];
+/* Sizing-audit pass: init_barter_ui's own `while(iVar7<4)` loop --
+   max index 3 (4 elements, 16 bytes). Down from 256. */
+static undefined4 DAT_000bc010_backing[4];
 #define DAT_000bc010 DAT_000bc010_backing[0]
-static undefined4 DAT_000bc028_backing[256];
+static undefined4 DAT_000bc028_backing[4];
 #define DAT_000bc028 DAT_000bc028_backing[0]
 /* Sizing-audit pass: `iVar6 = (*DAT_00100674 & 0x3f) * 0x30` -- same
    &0x3f mask * 0x30 stride as ai.c's DAT_001007d0 (same monster-class

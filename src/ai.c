@@ -57,9 +57,12 @@ static char DAT_00101740_backing[448];
 #define DAT_00101746 DAT_00101740_backing[6]
 #define DAT_00101747 DAT_00101740_backing[7]
 #define DAT_00101748 DAT_00101740_backing[8]
-static undefined1 DAT_000853b0_backing[256];
+/* Sizing-audit pass: direction-delta table, every index is
+   `(2-bit value)*2` -- max 3*2=6. Sized to 8 for headroom; down from
+   256. */
+static undefined1 DAT_000853b0_backing[8];
 #define DAT_000853b0 DAT_000853b0_backing[0]
-static undefined1 DAT_000853b1_backing[256];
+static undefined1 DAT_000853b1_backing[8];
 #define DAT_000853b1 DAT_000853b1_backing[0]
 static undefined1 DAT_00101460;
 static undefined1 DAT_001014e0_backing[256];
@@ -156,7 +159,9 @@ static undefined1 DAT_002048f0_backing[128];
 static undefined1 DAT_00204950_backing[128];
 #define DAT_00204950 DAT_00204950_backing[0]
 undefined4 DAT_00101944;
-static undefined DAT_000853d8_backing[256];
+/* Sizing-audit pass: index is `(byte>>4)*2` -- a nibble (0-15),
+   max 30. Sized to 32 for headroom; down from 256. */
+static undefined DAT_000853d8_backing[32];
 #define DAT_000853d8 DAT_000853d8_backing[0]
 short DAT_00101938;
 short DAT_0010193c;

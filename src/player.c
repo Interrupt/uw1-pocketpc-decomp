@@ -36,7 +36,19 @@ char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
 ushort *g_player_object;
 char *DAT_0023be74;
 short DAT_0023beb4;
-undefined1 DAT_0010060c_backing[256];
+/* Sizing-audit pass: investigated, NOT confidently shrunk to the
+   minimum. DAT_0010060c/d/e/f are always touched in lockstep (reset
+   and `+=3`'d together) and DAT_0010060c has at least one real
+   indexed access (`(&DAT_0010060c)[local_1c[iVar6]]`), raising the
+   same split-symbol-cluster question already fixed elsewhere this
+   session (c/d/e/f's real addresses are consecutive). But that
+   index's second-iteration value can come from an unbounded
+   `param_4`-derived short, not a clearly-capped category id, so
+   unlike the automap case there's no confirmed max index here.
+   Given that ambiguity, widened conservatively instead of guessing
+   either an exact bound or a merge target; down from 256 to 8. Worth
+   a dedicated follow-up pass. */
+undefined1 DAT_0010060c_backing[8];
 #define DAT_0010060c DAT_0010060c_backing[0]
 short DAT_00201c74;
 undefined1 DAT_0023bf0c;
@@ -192,9 +204,15 @@ static undefined4 DAT_002020dc;
 undefined4 DAT_002020d8;
 undefined4 DAT_002020d4;
 static char DAT_00086db4;
-static int DAT_00086db8_backing[256];
+/* Sizing-audit pass: accessed as a raw byte blob at
+   `(intptr_t)&DAT_00086db8 + uVar1 + 3` with uVar1 guarded to [5,9]
+   -- max byte 12. Sized to 4 int elements (16 bytes) for headroom;
+   down from 256. */
+static int DAT_00086db8_backing[4];
 #define DAT_00086db8 DAT_00086db8_backing[0]
-static undefined1 DAT_00086da8_backing[256];
+/* Sizing-audit pass: equip-slot weight table, loop bound
+   `iVar4<5` (5 equip slots). HARD. Down from 256. */
+static undefined1 DAT_00086da8_backing[5];
 #define DAT_00086da8 DAT_00086da8_backing[0]
 /* Was a lone `undefined` scalar, but compute_light_source_colors
    indexes it as a 16-entry (0-0xf) light-type -> base-color-index
@@ -240,7 +258,10 @@ undefined2 DAT_0023be9c;
 undefined2 DAT_0023be9a;
 static char DAT_0023bf14;
 static byte DAT_0023bf10;
-static undefined DAT_00086e58_backing[256];
+/* Sizing-audit pass: index is `DAT_0023bf18>>4` (a nibble, max 15),
+   and the second access site masks with an extra `&0xf` regardless.
+   Sized to 16; down from 256. */
+static undefined DAT_00086e58_backing[16];
 #define DAT_00086e58 DAT_00086e58_backing[0]
 static short DAT_0023bf30;
 static short DAT_0023bf34;

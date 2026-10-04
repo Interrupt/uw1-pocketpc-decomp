@@ -625,7 +625,10 @@ static const unsigned short DAT_000871b8_arr[14] = {
   0x208d, 0x208e, 0x208f, 0x2090, 0x208f, 0x208e, 0x208d,
 };
 #define DAT_000871b8 (*(undefined1 *)DAT_000871b8_arr)
-static undefined DAT_0023c124_backing[256];
+/* Sizing-audit pass: index is `iVar6*2` where iVar6 = param_1-4,
+   param_1 guarded to {4,5} -- max byte 2+1=3. Sized to 4; down from
+   256. */
+static undefined DAT_0023c124_backing[4];
 #define DAT_0023c124 DAT_0023c124_backing[0]
 static short DAT_0023c254;
 static short DAT_00087258;
