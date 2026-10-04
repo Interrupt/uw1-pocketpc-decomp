@@ -1,0 +1,18 @@
+# List of bugs to investigate
+
+[ ] Main menu stat names not displaying
+[ ] Can't enter lower case text
+[ ] Monsters giving too much XP
+[ ] Carry weight too low on start
+[ ] "Use key / combine" cursor not drawing over 3d view - timing?
+[ ] Automap cursor not invalidating, leaves a trail behind
+[ ] Automap should lightly draw a wall when not discovered
+[ ] Automap notes not persisting
+[ ] Crash when using a mantra
+[ ] Crash when using a ranged weapon
+[ ] Attack charge not consistent
+[ ] Pitch off - spell casting offset is off now. Revert earlier fix, reverse pitch look direction visually?
+[ ] Door placement / collision
+[ ] Spell crashes - test each
+[ ] Critters dropping shrines during combat / death
+[ ] Cursors not drawing always
