@@ -12,14 +12,8 @@
 #define _DAT_0023aee1 (*(uint*)&DAT_0023aee1)
 #define _DAT_0023aee3 (*(uint*)&DAT_0023aee3)
 #define _DAT_0023af02 (*(uint*)&DAT_0023af02)
-// was DAT_0023bca0 -- per-level view-distance default, loaded from
-// SHADES.DAT's per-record field 3 by load_shading_level_config (see its own
-// comment) and, since this session, consumed by
-// extend_visibility_ray_row as the automap-reveal flood's real
-// max-ring-passes limit (was a flat hardcoded 16). Also still passed
-// (dropped-argument bug, unrelated, not fixed here) to
-// weapon_overlay_flash_hold/weapon_overlay_flash_restore, and to the otherwise-dead
-// build_visibility_light_grid.
+// was DAT_0023bca0 -- shading distance loaded from SHADES.DAT field 3.
+// Keep the historical name; the ARM ray flood has its own fixed 16-row bound.
 short g_visibility_max_ring_passes;
 /* Sizing-audit pass: wall-tmap-id list. Loader fills 48 entries
    (`while(iVar4<0x30)`) and interact.c's own reader guards
@@ -166,20 +160,13 @@ static undefined1 g_visibility_ray_table_backing[1024];
    the "unpopulated" state advance_visibility_ray's own `(*param_1 & 0x80) == uVar1`
    guard already treats as "nothing to look up" for a zeroed record. */
 static char *g_visibility_ray_realptr[24];
-/* Second real-pointer side table, for this record's OTHER packed pointer
-   field (offsets 0xd and its byte-mirrored copy at 0x11-0x14 -- see
-   seed_visibility_queue's DAT_0023aeed/aeee/aef0 writes). Unlike the offset-9
-   field, this one is always the SAME fixed original-binary address
-   (0x0023b058, confirmed identical for entry 0's 3-field pack and
-   entry 1's combined `_DAT_0023af02` write) -- a hardcoded literal
-   pointer into the shared g_visibility_ring_buffer output-list buffer (0x0023b058 -
-   0x0023b038 = 0x20), same "hardcoded original 32-bit address instead of
-   a symbolic reference" bug class fixed elsewhere all session, just
-   packed byte-by-byte instead of written as one literal. Populated once
-   below (not per-entry -- every entry that sets this field wants the
-   same target), read via the same per-entry lookup as the offset-9
-   table for consistency with how the field is indexed. */
+/* Packed offset 0xd is the moving visibility-grid cursor. Offset 0x11
+   is a snapshot taken by advance_visibility_ray before/after advancing,
+   depending on the ray direction. The flood clears up to that snapshot,
+   not the moving cursor (ARM FUN_0005d13c reads bytes 0x11..0x14).
+   Keep both pointers separate when widening them for the host. */
 static char *g_visibility_ray_realptr2[24];
+static char *g_visibility_ray_clearptr[24];
 #define DAT_0023aee1 g_visibility_ray_table_backing[1]
 #define DAT_0023aee3 g_visibility_ray_table_backing[3]
 #define DAT_0023aee5 g_visibility_ray_table_backing[5]
@@ -819,8 +806,11 @@ void seed_visibility_queue()
        ever marked one tile visible. Shift each 16-bit delta on its own. */
     *(short *)&g_visibility_ray_table_backing[1] = (short)(*(short *)&g_visibility_ray_table_backing[1] >> 4);
     *(short *)&g_visibility_ray_table_backing[3] = (short)(*(short *)&g_visibility_ray_table_backing[3] >> 4);
-    DAT_0023aef6 = DAT_0023aef6 >> 4;
-    DAT_0023aef8 = DAT_0023aef8 >> 4;
+    /* The right edge uses signed deltas too (ARM FUN_0005bf40).
+       Near a quadrant boundary Y becomes negative; shifting the unsigned
+       aliases turns -1 into 4095 and collapses the visibility fan. */
+    DAT_0023aef6 = (short)DAT_0023aef6 >> 4;
+    DAT_0023aef8 = (short)DAT_0023aef8 >> 4;
   }
   return;
 }
@@ -1074,24 +1064,11 @@ byte * param_2;
 
   iVar5 = *(char *)(param_1 + 7) + 1;
   *(char *)(param_1 + 7) = (char)iVar5;
-  /* Was a hardcoded `< 0x11` (16 allowed ring-passes) -- confirmed
-     against the real disassembly in an earlier round as a literal, not
-     an obvious variable read, so it was left alone (see this
-     function's own header comment and mysteries.md's "hard-coded
-     ceiling of 16 passes" writeup). User-supplied evidence points at
-     SHADES.DAT instead: its 6-field-per-record layout (field 3 is the
-     per-level view-distance default) is already parsed correctly by
-     load_shading_level_config into g_visibility_max_ring_passes (was DAT_0023bca0)
-     -- confirmed live, and against the raw file bytes, that record 0's
-     field 3 really is 3, not 16 (fields 4/5, the texture-LOD
-     thresholds, both really are 16 -- easy to conflate). Whatever the
-     original compiled form of this check really was, using the
-     already-correctly-loaded per-level value here instead of the flat
-     16 is well-motivated and makes this global (previously read only
-     by two dead/tangential call sites) finally meaningful. +1 because
-     this counter starts at 1 after the pre-increment above, so a
-     field-3 value of N should allow N total ring-passes, not N-1. */
-  if (iVar5 * 0x1000000 >> 0x18 < (int)g_visibility_max_ring_passes + 1) {
+  /* ARM FUN_0005c70c compares this row counter with the literal 0x11.
+     The shading distance (historically named g_visibility_max_ring_passes)
+     is not this bound. Substituting it stops on a partially filled row:
+     level 1's value 3 makes tile (26,5) disappear at some headings. */
+  if (iVar5 * 0x1000000 >> 0x18 < 0x11) {
     do {
       if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx1)[0x43] & 0xf) != 0xf) {
         cVar3 = *(char *)(param_1 + 7);
@@ -1191,6 +1168,8 @@ byte * param_1;
   }
   uVar1 = iVar3 << 7;
   if ((*param_1 & 0x80) == uVar1) {
+    g_visibility_ray_clearptr[visibility_ray_idx(param_1)] =
+        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(param_1));
     uVar7 = *(undefined4 *)(param_1 + 0xd);
     param_1[0x11] = (byte)uVar7;
     param_1[0x12] = (byte)((uint)uVar7 >> 8);
@@ -1317,6 +1296,8 @@ LAB_0005ce50:
   bVar5 = *param_1;
 LAB_0005ce60:
   if ((bVar5 & 0x80) != uVar1) {
+    g_visibility_ray_clearptr[visibility_ray_idx(param_1)] =
+        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(param_1));
     uVar7 = *(undefined4 *)(param_1 + 0xd);
     param_1[0x11] = (byte)uVar7;
     param_1[0x12] = (byte)((uint)uVar7 >> 8);
@@ -1332,8 +1313,8 @@ LAB_0005ce60:
    pointers run_visibility_flood always calls this with (`&local_20`/`&local_24`,
    both real `byte*`/`undefined1*` locals) -- same fix as this record
    array's other consumers. `*param_2`'s assignment below is this same
-   record's offset+0xd/0x11 packed-pointer field again, routed through
-   the shared real-pointer side table. */
+   record's saved offset-0x11 cursor, kept separate from its moving
+   offset-0xd cursor on the host. */
 void merge_adjacent_visibility_rays(param_1,param_2)
 byte ** param_1;
 undefined1 ** param_2;
@@ -1367,7 +1348,7 @@ undefined1 ** param_2;
   pcVar9 = &g_visibility_ray_table + iVar10;
   iVar5 = ((int)*pcVar9 & 0xfU) * 0x15;
   pbVar8 = &g_visibility_ray_table + iVar5;
-  *param_2 = (undefined1 *)(VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, iVar5 / 0x15) + 2);
+  *param_2 = (undefined1 *)(g_visibility_ray_clearptr[iVar5 / 0x15] + 2);
   while( true ) {
     iVar3 = compute_visibility_ray_offset(pcVar9,1,8);
     if (iVar3 == 0) break;
@@ -1451,6 +1432,13 @@ void run_visibility_flood()
   undefined1 *local_24;
   byte *local_20;
   
+  /* Visibility bits belong to this frame. A flood that stops at the view
+     distance limit can leave the interior of its final row unwritten;
+     retaining those bits draws walls from an earlier camera position.
+     Reset only visibility bytes, keeping the adjacent light/edge bytes. */
+  for (int cell = 0; cell < 17 * 33; ++cell)
+    g_visibility_ring_buffer_backing[cell * 2] = 0;
+
   puVar3 = &g_visibility_ring_buffer;
   g_visibility_ring_depth = -1;
   local_24 = &g_visibility_ring_buffer;
@@ -1470,12 +1458,8 @@ void run_visibility_flood()
     puVar3 = puVar2;
     bVar1 = g_visibility_ring_done;
     while (uVar4 = (uint)(char)bVar1, (uVar4 & 0xf) != 0xf) {
-      /* Was `*(undefined1 **)(&DAT_0023aef1 + uVar4 * 0x15)` -- same
-         packed-pointer-reassembly bug as advance_visibility_ray's offset+9/0xd
-         fields (this is that same offset-0xd/0x11 field, just indexed
-         relative to DAT_0023aef1 instead of g_visibility_ray_table+0xd), routed
-         through the same real-pointer side table. */
-      while (puVar3 < (undefined1 *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, uVar4 & 0xf)) {
+      /* Offset 0x11 is the saved boundary, not the live offset-0xd cursor. */
+      while (puVar3 < (undefined1 *)g_visibility_ray_clearptr[uVar4 & 0xf]) {
         *puVar3 = 0;
         uVar4 = (uint)(char)*local_20;
         puVar3 = local_24 + 2;
