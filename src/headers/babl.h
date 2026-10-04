@@ -9,7 +9,7 @@ extern char s_FONTBIG_SYS_00085454[];
 /* Globals defined in uw.c but also used by functions that now live in
    babl.c (the conversation/dialogue scripting VM) -- extern'd here so
    both translation units see the same storage. */
-extern char DAT_00085240_backing[8192];
+extern char DAT_00085240_backing[16];
 #define DAT_00085240 DAT_00085240_backing[0]
 extern char DAT_00085244_backing[16];
 #define DAT_00085244 DAT_00085244_backing[0]

@@ -15,8 +15,16 @@
 #define DAT_0024ac18 DAT_0024ac18_backing[0]
 short DAT_0010061c;
 short DAT_00100608;
- undefined1 DAT_001007d0_backing[6144];
- undefined DAT_00084f20_backing[8192];
+/* Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)`
+   (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072)
+   bytes, matching every indexed access's `&0x3f` class-id mask * 0x30
+   stride (63*48+48=3072). HARD exact bound. Down from 6144. */
+ undefined1 DAT_001007d0_backing[3072];
+/* Sizing-audit pass: read-only (ce_strcat/message_scroll_print_wrapped
+   sentence-suffix text across ai.c/object_actions.c), 0 writers --
+   content unrecovered. Sized to 128 for headroom as a display-text
+   fragment; down from 8192. */
+ undefined DAT_00084f20_backing[128];
 ushort DAT_00101414;
 char *DAT_00101904;
 undefined4 DAT_00101560;
@@ -34,7 +42,14 @@ static undefined1 DAT_0010142c;
 /* NPC waypoints are contiguous 7-byte records at the original 0x101740.
    Alias the adjacent field symbols into this array so recording later
    waypoints cannot overwrite unrelated globals or 64-bit AI pointers. */
-static char DAT_00101740_backing[8192];
+/* Sizing-audit pass: shared waypoint/scalar array, 7-byte stride.
+   record_line_walk_step's own cap (`if (uVar1 < 0x40)` after the
+   write, ai.c:~2448) allows the write index up to 63*7=441 before
+   that function stops advancing further -- the GOVERNING bound,
+   wider than reconstruct_path_from_bfs's own smaller 31-deep cap on
+   the same array (sizing off that smaller cap alone would have
+   under-sized this). HARD: 64*7=448. Down from 8192. */
+static char DAT_00101740_backing[448];
 #define DAT_00101740 DAT_00101740_backing[0]
 #define DAT_00101741 DAT_00101740_backing[1]
 #define DAT_00101743 DAT_00101740_backing[3]
@@ -56,13 +71,20 @@ static undefined1 DAT_001014e1_backing[256];
    size. */
 static undefined1 DAT_0023cf08_backing[20480];
 #define DAT_0023cf08 DAT_0023cf08_backing[0]
-static undefined DAT_0023cf09_backing[256];
+/* Sizing-audit pass: BUG FIX, not a shrink -- these 4 siblings are
+   indexed by the exact same `iVar18 = (iVar8 + iVar7*0x40) * 5`
+   formula as DAT_0023cf08 right above (confirmed: `(&DAT_0023cf0b)
+   [iVar18]` and `(&DAT_0023cf08)[iVar18]` share the same iVar18 at
+   this call site), which needs the full confirmed 0x5000 (20480)
+   bytes -- these were left at the old 256-byte placeholder, a real
+   out-of-bounds write/read risk. Matched to DAT_0023cf08's size. */
+static undefined DAT_0023cf09_backing[20480];
 #define DAT_0023cf09 DAT_0023cf09_backing[0]
-static undefined DAT_0023cf0a_backing[256];
+static undefined DAT_0023cf0a_backing[20480];
 #define DAT_0023cf0a DAT_0023cf0a_backing[0]
-static undefined DAT_0023cf0b_backing[256];
+static undefined DAT_0023cf0b_backing[20480];
 #define DAT_0023cf0b DAT_0023cf0b_backing[0]
-static undefined DAT_0023cf0c_backing[256];
+static undefined DAT_0023cf0c_backing[20480];
 #define DAT_0023cf0c DAT_0023cf0c_backing[0]
 #define DAT_00101742 DAT_00101740_backing[2]
 static undefined4 DAT_00101728_backing[256];
@@ -90,10 +112,18 @@ ushort DAT_0010141c;
 ushort DAT_00101910;
 static undefined4 DAT_00101920;
 static undefined4 DAT_00101914;
-static undefined DAT_00101568_backing[8192];
+/* Sizing-audit pass: NPC path-cache, slot index masked `&0xf`
+   everywhere (16 slots), 28-byte per-slot record (see
+   advance_cached_path_step's own comment) -- 16*28=448 bytes, a HARD
+   bound. Down from 8192. */
+static undefined DAT_00101568_backing[448];
 #define DAT_00101568 DAT_00101568_backing[0]
-static undefined DAT_00101569_backing[256];
-#define DAT_00101569 DAT_00101569_backing[0]
+/* Sizing-audit pass: was an independent 256-byte array, but its only
+   use (`(&DAT_00101569)[iVar6]` at ai.c:585, `iVar6=(uVar3&0xf)*0x1c`)
+   indexes it with the exact same per-slot cache-record base as
+   DAT_00101568 right above -- a field of that same record, not a
+   separate table. Aliased at offset 1. */
+#define DAT_00101569 DAT_00101568_backing[1]
 undefined2 DAT_00101418;
 undefined2 DAT_00101908;
 static undefined1 DAT_00101738;
@@ -144,7 +174,11 @@ static char DAT_00085910;
 static char DAT_00085911;
 static char DAT_00085918;
 static char DAT_00085919;
-static undefined DAT_00085908_backing[8192];
+/* Sizing-audit pass: a filename template with digit pokes at fixed
+   offsets 8,9,0x10,0x11 (via DAT_00085910/11/18/19) -- hard lower
+   bound 18 bytes, exact template text unrecovered. Sized to 32 for
+   headroom; down from 8192. */
+static undefined DAT_00085908_backing[32];
 static char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
 /* Sizing-audit pass: load_critter_association_tables's own per-level
    write is `puVar6[iVar7]` where `iVar7 = iVar10*3 + iVar5`, iVar10

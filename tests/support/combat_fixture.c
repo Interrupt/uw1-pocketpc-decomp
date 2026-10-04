@@ -76,7 +76,7 @@ undefined4 DAT_001005d8;
 
 char DAT_00084f18_backing[5] = {5, 3, 1, 7, 0};
 
-undefined1 DAT_001007d0_backing[6144];
+undefined1 DAT_001007d0_backing[3072];
 
 undefined1 DAT_001007d4_backing[8192];
 

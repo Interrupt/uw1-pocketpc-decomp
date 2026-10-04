@@ -76,7 +76,7 @@ undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
 
 undefined1 DAT_0023c698_backing[1024];
 
-undefined1 DAT_00101968_backing[8192];
+undefined1 DAT_00101968_backing[260];
 
 uintptr_t DAT_00101a70;
 

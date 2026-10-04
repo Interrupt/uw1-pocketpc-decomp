@@ -24,7 +24,7 @@ extern byte DAT_00100628, DAT_001005fc;
 extern short DAT_0010061c;
 extern undefined4 DAT_001005d8;
 extern char DAT_00084f18_backing[5];
-extern undefined1 DAT_001007d0_backing[6144];
+extern undefined1 DAT_001007d0_backing[3072];
 extern undefined1 DAT_001007d4_backing[8192];
 extern byte player_stats[256];
 extern char *DAT_00086df8;

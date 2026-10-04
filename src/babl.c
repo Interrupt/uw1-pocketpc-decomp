@@ -120,9 +120,12 @@ static undefined1 DAT_000845da_backing[256];
 #define DAT_000845da DAT_000845da_backing[0]
 static undefined4 DAT_000bbf98_backing[256];
 #define DAT_000bbf98 DAT_000bbf98_backing[0]
-static undefined2 DAT_000bbfa8_backing[8192];
+/* Sizing-audit pass: reset loop `while(iVar7<4)` writes both
+   `[iVar7]` and `[iVar7+4]` -- max index 7, 8 elements (16 bytes,
+   undefined2 type). HARD. Down from 8192 elements (16384 bytes). */
+static undefined2 DAT_000bbfa8_backing[8];
 #define DAT_000bbfa8 DAT_000bbfa8_backing[0]
-static undefined2 DAT_000bbfc0_backing[8192];
+static undefined2 DAT_000bbfc0_backing[8];
 #define DAT_000bbfc0 DAT_000bbfc0_backing[0]
 static undefined2 DAT_000bbfd0_backing[256];
 #define DAT_000bbfd0 DAT_000bbfd0_backing[0]
@@ -143,9 +146,11 @@ static undefined4 DAT_000bc010_backing[256];
 #define DAT_000bc010 DAT_000bc010_backing[0]
 static undefined4 DAT_000bc028_backing[256];
 #define DAT_000bc028 DAT_000bc028_backing[0]
-static undefined DAT_001007dd_backing[256];
-#define DAT_001007dd DAT_001007dd_backing[0]
-static undefined DAT_001007de_backing[8192];
+/* Sizing-audit pass: `iVar6 = (*DAT_00100674 & 0x3f) * 0x30` -- same
+   &0x3f mask * 0x30 stride as ai.c's DAT_001007d0 (same monster-class
+   table shape, independently duplicated here). HARD: 63*48+48=3072.
+   Down from 8192. */
+static undefined DAT_001007de_backing[3072];
 #define DAT_001007de DAT_001007de_backing[0]
 /* Was a lone scalar pointer slot -- its only use is `&PTR_DAT_000845c8 +
    iVar2*4` (a 4-byte-stride coordinate table, same convention as the
@@ -326,7 +331,7 @@ static undefined1 DAT_001007a0_backing[2048];
    on a larger extent. */
 static undefined1 DAT_00085230_backing[16] = { 0x5c,0x50,0x00 };
 #define DAT_00085230 DAT_00085230_backing[0]
-static undefined DAT_00085234_backing[8192] = { 0x5c,0x30,0x0a,0x00 };
+static undefined DAT_00085234_backing[16] = { 0x5c,0x30,0x0a,0x00 };
 #define DAT_00085234 DAT_00085234_backing[0]
 static undefined1 DAT_0008523c_backing[16] = { 0x5c,0x32,0x00 };
 #define DAT_0008523c DAT_0008523c_backing[0]
@@ -342,7 +347,7 @@ static short DAT_001007bc;
    The real recovered string is lost like several others this session,
    but the correct content is unambiguous from every call site's usage
    -- give them real values instead of leaving them silently empty. */
- char DAT_00085240_backing[8192] = " ";
+ char DAT_00085240_backing[16] = " ";
 /* Selected when the following word starts with a vowel (see the callers'
    own vowel checks) -- so this one is "an ", not "a ".
    Sizing pass: both are fixed 2-3 char literals with no indexing. */
@@ -357,10 +362,12 @@ static char s_npc_hp_00085380[] = "npc_hp";
 static char s_npc_health_00085388[] = "npc_health";
 static char s_npc_hunger_00085394[] = "npc_hunger";
 static char s_npc_whoami_000853a0[] = "npc_whoami";
-static undefined DAT_001007e3_backing[256];
-#define DAT_001007e3 DAT_001007e3_backing[0]
-static undefined DAT_001007fd_backing[256];
-#define DAT_001007fd DAT_001007fd_backing[0]
+/* Sizing-audit pass: DAT_001007e3/DAT_001007fd (used just below in
+   sync_conv_vars_from_npc) were independent 256-byte arrays, but
+   every use indexes them by the same per-class record base as
+   g_monster_max_stats_table/DAT_001007d5 in this same function --
+   aliased into DAT_001007d0_backing in ai.h instead (see that
+   header's own comment). */
 static char s_play_name_0008524c[] = "play_name";
 static char s_play_drawn_00085258[] = "play_drawn";
 static char s_play_poison_00085264[] = "play_poison";
@@ -383,7 +390,10 @@ static char s_npc_xhome_00085328[] = "npc_xhome";
 static char s_npc_level_00085334[] = "npc_level";
 undefined2 DAT_00101960;
 ushort DAT_000853fc;
-static undefined1 DAT_00101968_backing[8192];
+/* Sizing-audit pass: every build site does
+   `ce_memset(&DAT_00101968,0,0x104)` right before use -- exact HARD
+   bound, 260 bytes (MAX_PATH-style). Down from 8192. */
+static undefined1 DAT_00101968_backing[260];
 /* Sizing pass: this is the "CUTS"-directory override path string
    (cleared via ce_memset(&DAT_0023c698,0,0x104) in game.c, i.e. a
    Windows MAX_PATH=260-byte buffer by design). Its one real writer

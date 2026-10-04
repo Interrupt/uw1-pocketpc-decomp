@@ -10,7 +10,10 @@
 static int DAT_000bbefc;
 static undefined2 DAT_000b99c0;
 static undefined4 DAT_000b99c4;
- undefined1 DAT_000b99d0_backing[8192];
+/* Sizing-audit pass: `ce_memset(&DAT_000b99d0,0,0x1000)` and
+   write_archive_entry's matching 0x1000-byte archive write (64x64
+   reveal grid) -- exact HARD bound. Down from 8192. */
+ undefined1 DAT_000b99d0_backing[4096];
 static short DAT_000ba9d0;
 undefined4 DAT_000bbef4;
 /* Was a lone `undefined` scalar; draw_automap_tiles indexes it as
@@ -92,10 +95,16 @@ static undefined1 DAT_000ba9d8_backing[5400];
    above in movement.c). One real backing buffer per pair instead, with
    the second name aliased at a fixed +1 byte offset so the low/high
    split and the combined short-read are provably the same storage. */
-static undefined1 DAT_000baa0a_backing[258];
+/* Sizing-audit pass: BUG FIX, not a shrink -- real indexing is
+   `iVar7 = DAT_000bbef0 * 0x36` (DAT_000bbef0 guarded `!= 100`, same
+   100-record/0x36-stride bound as the sibling DAT_000ba9d8 table
+   right above), max offset 99*0x36+1=5347 -- the previous 258-byte
+   size was a live out-of-bounds write on any note past the first ~5.
+   Matched to DAT_000ba9d8's own confirmed 5400. */
+static undefined1 DAT_000baa0a_backing[5400];
 #define DAT_000baa0a DAT_000baa0a_backing[0]
 #define DAT_000baa0b DAT_000baa0a_backing[1]
-static undefined1 DAT_000baa0c_backing[258];
+static undefined1 DAT_000baa0c_backing[5400];
 #define DAT_000baa0c DAT_000baa0c_backing[0]
 #define DAT_000baa0d DAT_000baa0c_backing[1]
 static undefined2 DAT_000b99c8;

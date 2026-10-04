@@ -12,10 +12,21 @@ extern short DAT_00100608;
 /* Globals defined in uw.c but also used by functions that now live in
    ai.c (NPC AI) -- extern'd here so both translation units see the
    same storage. */
-extern undefined DAT_00084f20_backing[8192];
+extern undefined DAT_00084f20_backing[128];
 
 #define DAT_001007d5 DAT_001007d0_backing[0x5]
 #define DAT_001007d9 DAT_001007d0_backing[0x9]
+/* Sizing-audit pass: these three were declared as independent
+   256-byte arrays in babl.c/combat.c, but every use indexes them with
+   the exact same per-class `(id&0x3f)*0x30` base as g_monster_max_
+   stats_table/DAT_001007d5 right alongside them in the same functions
+   (babl.c's sync_conv_vars_from_npc, combat.c:1418/1433) -- they're
+   fields of this same table, not separate tables. Aliased in; their
+   old independent backing arrays removed. */
+#define DAT_001007dd DAT_001007d0_backing[0xd]
+#define DAT_001007e0 DAT_001007d0_backing[0x10]
+#define DAT_001007e3 DAT_001007d0_backing[0x13]
+#define DAT_001007fd DAT_001007d0_backing[0x2d]
 /* OBJECTS.DAT monster records are loaded at DAT_001007d0, stride 0x30.
    These original addresses are fields of that same table: max HP (+4),
    flags (+0xa), defense (+0x12), perception (+0x1d). Separate backing
@@ -30,7 +41,7 @@ extern undefined DAT_00084f20_backing[8192];
 #define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
 
 #define DAT_00084f20 DAT_00084f20_backing[0]
-extern undefined1 DAT_001007d0_backing[6144];
+extern undefined1 DAT_001007d0_backing[3072];
 #define DAT_001007d0 DAT_001007d0_backing[0]
 extern undefined4 DAT_001013fc;
 extern ushort DAT_00101414;

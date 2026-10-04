@@ -22,8 +22,10 @@ byte DAT_001005fc;
 static char DAT_00084f18_backing[5] = {5, 3, 1, 7, 0};
 #define DAT_00084f18 DAT_00084f18_backing[0]
 #define DAT_00084f1c DAT_00084f18_backing[4]
-static undefined DAT_001007e0_backing[256];
-#define DAT_001007e0 DAT_001007e0_backing[0]
+/* Sizing-audit pass: was an independent 256-byte array, but both uses
+   (`(&DAT_001007e0)[(uVar1&0x3f)*0x30]`, combat.c:1418/1433) index it
+   by the same per-class monster-record base as ai.c's DAT_001007d0 --
+   aliased into DAT_001007d0_backing in ai.h instead. */
 static ushort DAT_00202d54;
 undefined DAT_00202878;
 /* Was a lone `undefined` scalar (1 byte), but tick_weapon_swing_state indexes it

@@ -67,7 +67,7 @@ char *DAT_00101404, *DAT_00101438;
 
 void *DAT_0010172c;
 
-undefined1 DAT_001007d0_backing[6144], DAT_00202c90_backing[8192];
+undefined1 DAT_001007d0_backing[3072], DAT_00202c90_backing[8192];
 
 undefined2 DAT_002048c0_backing[64];
 

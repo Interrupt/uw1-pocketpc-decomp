@@ -11,7 +11,7 @@
    units see the same storage. */
 extern undefined1 DAT_000878d0_backing[256];
 #define DAT_000878d0 DAT_000878d0_backing[0]
-extern undefined1 DAT_000b99d0_backing[8192];
+extern undefined1 DAT_000b99d0_backing[4096];
 #define DAT_000b99d0 DAT_000b99d0_backing[0]
 extern undefined4 DAT_000bbef4;
 extern char * DAT_002029cc;

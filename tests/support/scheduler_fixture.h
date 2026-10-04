@@ -23,7 +23,7 @@ extern int corpses_spawned, corpses_placed, corpse_type;
 extern ushort *DAT_0010190c;
 extern char *DAT_00101404, *DAT_00101438;
 extern void *DAT_0010172c;
-extern undefined1 DAT_001007d0_backing[6144], DAT_00202c90_backing[8192];
+extern undefined1 DAT_001007d0_backing[3072], DAT_00202c90_backing[8192];
 extern undefined2 DAT_002048c0_backing[64];
 extern undefined1 DAT_002048f0_backing[128], DAT_00204950_backing[128];
 extern undefined1 DAT_00204980_backing[32];
