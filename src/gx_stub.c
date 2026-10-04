@@ -535,7 +535,21 @@ void uw_pump_events(void) {
                     if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
                         if (getenv("UW_DEBUG_DBGUI"))
                             fprintf(stderr, "[dbgui] click win=(%d,%d) landscape=(%d,%d)\n", win_x, win_y, landscape_x, landscape_y);
-                        dbgui_feed_mouse_down(landscape_x, landscape_y);
+                        /* A click inside the 3D viewport's own registered
+                           rect (the exact bounds pick_object_under_cursor
+                           itself guards with -- see its own comment) runs
+                           the real object pick and swaps the debug panel
+                           into the object inspector; anywhere else (the
+                           panel itself, or any other HUD chrome) is a
+                           normal panel click as before. */
+                        if (landscape_x >= DAT_0023be5c && landscape_x < DAT_0023be5c + DAT_0023bd80 &&
+                            landscape_y >= (short)(DAT_0023be80 - DAT_0023be88) && landscape_y < DAT_0023be80) {
+                            g_mouse_x = landscape_x;
+                            g_mouse_y = landscape_y;
+                            dbgui_object_inspector_pick();
+                        } else {
+                            dbgui_feed_mouse_down(landscape_x, landscape_y);
+                        }
                     }
                     return;
                 }

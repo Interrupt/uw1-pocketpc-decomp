@@ -16,9 +16,23 @@ unsigned short g_text_flat_color;
    so these just need real storage to link, not any particular value. */
 unsigned short DAT_000a85c4, DAT_000a85c8, DAT_000842a4, DAT_000842a8;
 
-void set_draw_color(int color) { (void)color; }
+/* Records the bottom edge of the panel's own background fill (palette
+   0x1a, see debug_ui.c's own comment on that color) so
+   test_debug_ui.c can assert dbgui_draw() actually clears a shrinking
+   panel's now-vacated rows instead of leaving stale text behind. */
+static int g_last_draw_color = -1;
+int g_last_bg_fill_y1 = -1;
+void set_draw_color(int color) { g_last_draw_color = color; }
 void rect_fill_or_save_restore(int x0, int y0, int x1, int y1)
-{ (void)x0; (void)y0; (void)x1; (void)y1; }
+{
+  (void)x0; (void)y0; (void)x1;
+  if (g_last_draw_color == 0x1a) g_last_bg_fill_y1 = y1;
+}
 void draw_text_string(const char *s, int x, int y) { (void)s; (void)x; (void)y; }
 void dirty_rect_union(int x0, int x1, int y0, int y1)
 { (void)x0; (void)x1; (void)y0; (void)y1; }
+/* dbgui_draw's own row-width clipping (debug_ui.c) calls this to decide
+   whether a row needs truncating -- a plausible flat per-glyph width
+   (not the real variable-width font metric) so a short row never gets
+   clipped here, matching every field this suite's own tests build. */
+int measure_text_width(const char *s) { return s ? (int)strlen(s) * 5 : 0; }

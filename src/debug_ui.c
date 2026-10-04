@@ -21,10 +21,17 @@ typedef struct {
   int is_int;
   int is_button;
   int is_toggle;
+  int is_text;
   double *dval;
   int *ival;
   void (*on_press)(void);
   double step;
+  /* Snapshotted fresh every dbgui_field_text() call (unlike the other
+     field kinds, a text field has no live pointer debug_ui.c itself
+     re-reads -- the caller already resolved whatever string/number it
+     wanted shown before calling, same as building the row text by
+     hand would require anyway). */
+  char text_value[40];
   /* Cached screen rect from the last dbgui_end(), for mouse hit-testing
      next frame (this frame's clicks arrive interleaved with drawing,
      so we test against where things were last actually drawn). */
@@ -40,6 +47,10 @@ static int g_selected = 0;
 static int g_editing = 0;
 static char g_edit_buf[32];
 static int g_edit_len = 0;
+/* How many rows dbgui_draw's own background fill covered last time it
+   ran -- see its own comment on why the fill has to track this instead
+   of just this frame's g_field_count. */
+static int g_last_rows = 0;
 
 /* Real pixel save/restore for the panel's own screen region, so closing it doesn't leave stale
    pixels behind -- see dbgui_toggle()'s own comment for why dirty_rect_union alone isn't enough... */
@@ -100,58 +111,73 @@ void dbgui_begin(const char *title)
   g_field_count = 0;
 }
 
-static void dbgui_add_field(const char *name, int is_int, double *dval, int *ival, double step)
+/* Shared allocator for every field kind below: zeroes the whole struct
+   (so a kind-specific constructor only has to set what it actually
+   uses -- the repeated "zero every OTHER kind's fields by hand" shape
+   this used to have was exactly how is_text almost shipped without
+   dbgui_field_double/int/button/toggle clearing it) and stamps the
+   name. Returns NULL once DBGUI_MAX_FIELDS is hit; every caller below
+   already no-ops on NULL via the `if (!f) return;` guard. */
+static DbgField *dbgui_new_field(const char *name)
 {
-  if (g_field_count >= DBGUI_MAX_FIELDS) return;
-  DbgField *f = &g_fields[g_field_count++];
+  DbgField *f;
+  if (g_field_count >= DBGUI_MAX_FIELDS) return 0;
+  f = &g_fields[g_field_count++];
+  memset(f, 0, sizeof(*f));
   strncpy(f->name, name, sizeof(f->name) - 1);
   f->name[sizeof(f->name) - 1] = 0;
-  f->is_int = is_int;
-  f->is_button = 0;
-  f->is_toggle = 0;
-  f->dval = dval;
-  f->ival = ival;
-  f->on_press = 0;
-  f->step = step;
+  return f;
 }
 
 void dbgui_field_double(const char *name, double *value, double step)
 {
-  dbgui_add_field(name, 0, value, 0, step);
+  DbgField *f = dbgui_new_field(name);
+  if (!f) return;
+  f->dval = value;
+  f->step = step;
 }
 
 void dbgui_field_int(const char *name, int *value, int step)
 {
-  dbgui_add_field(name, 1, 0, value, (double)step);
+  DbgField *f = dbgui_new_field(name);
+  if (!f) return;
+  f->is_int = 1;
+  f->ival = value;
+  f->step = (double)step;
 }
 
 void dbgui_field_button(const char *name, void (*on_press)(void))
 {
-  if (g_field_count >= DBGUI_MAX_FIELDS) return;
-  DbgField *f = &g_fields[g_field_count++];
-  strncpy(f->name, name, sizeof(f->name) - 1);
-  f->name[sizeof(f->name) - 1] = 0;
-  f->is_int = 0;
+  DbgField *f = dbgui_new_field(name);
+  if (!f) return;
   f->is_button = 1;
-  f->is_toggle = 0;
-  f->dval = 0;
-  f->ival = 0;
   f->on_press = on_press;
-  f->step = 0;
+}
+
+/* A read-only row, shown as "name: value" -- for displaying information
+   (an object's id/type/position/...) that isn't a live editable
+   setting. Selectable for keyboard-nav consistency (so arrowing past
+   it doesn't skip a row), but RETURN/LEFT/RIGHT/click are all no-ops
+   on it, same as a label. `value` is copied immediately (truncated to
+   this field's own small buffer) -- callers that want a live-updating
+   display just call this again next frame with a freshly formatted
+   string, same as every other field kind being rebuilt each frame. */
+void dbgui_field_text(const char *name, const char *value)
+{
+  DbgField *f = dbgui_new_field(name);
+  if (!f) return;
+  f->is_text = 1;
+  strncpy(f->text_value, value, sizeof(f->text_value) - 1);
+  f->text_value[sizeof(f->text_value) - 1] = 0;
 }
 
 void dbgui_field_toggle(const char *name, int *value)
 {
-  if (g_field_count >= DBGUI_MAX_FIELDS) return;
-  DbgField *f = &g_fields[g_field_count++];
-  strncpy(f->name, name, sizeof(f->name) - 1);
-  f->name[sizeof(f->name) - 1] = 0;
+  DbgField *f = dbgui_new_field(name);
+  if (!f) return;
   f->is_int = 1;
-  f->is_button = 0;
   f->is_toggle = 1;
-  f->dval = 0;
   f->ival = value;
-  f->on_press = 0;
   f->step = 1;
 }
 
@@ -181,9 +207,23 @@ void dbgui_draw(void)
      framebuffer. */
   if (!g_visible || g_field_count == 0) return;
 
-  int panel_h = DBGUI_ROW_H * (g_field_count + 1) + 4;
+  /* The background fill below covers max(this frame's rows, last
+     frame's rows), not just this frame's -- the panel can legitimately
+     get SHORTER between one frame and the next now (toggle panel ->
+     object/texture inspector, 4 rows -> 3), and without this the newly
+     -uncovered row(s) from the taller previous panel are never
+     repainted by anything (this fill is the only thing that ever
+     touches that screen region -- see dbgui_toggle's own save/restore
+     comment), so their old text just sits there as a stale ghost row
+     forever. Confirmed live: picking a wall left a leftover
+     "pick_diag:" row below the 3-row Texture Inspector's own "desc"
+     row. Shrinks to the real size cleanly one frame later once
+     g_last_rows itself catches down to g_field_count. */
+  int fill_rows = g_field_count > g_last_rows ? g_field_count : g_last_rows;
+  int panel_h = DBGUI_ROW_H * (fill_rows + 1) + 4;
   int x0 = DBGUI_PANEL_X, y0 = DBGUI_PANEL_Y;
   int x1 = x0 + DBGUI_PANEL_W, y1 = y0 + panel_h;
+  g_last_rows = g_field_count;
 
   if (getenv("UW_DEBUG_DBGUI"))
     fprintf(stderr, "[dbgui] draw field_count=%d panel y0=%d y1=%d clip=(%d,%d)-(%d,%d)\n",
@@ -219,12 +259,31 @@ void dbgui_draw(void)
     char line[64];
     if (f->is_button) {
       snprintf(line, sizeof(line), "[ %s ]", f->name);
+    } else if (f->is_text) {
+      snprintf(line, sizeof(line), "%s: %s", f->name, f->text_value);
     } else if (f->is_toggle) {
       snprintf(line, sizeof(line), "%s: %s", f->name, *f->ival ? "ON" : "OFF");
     } else if (g_editing && i == g_selected) {
       snprintf(line, sizeof(line), "%s: %s_", f->name, g_edit_buf);
     } else {
       snprintf(line, sizeof(line), "%s: %g", f->name, dbgui_field_get(f));
+    }
+    /* Clip to the panel's own real pixel width (measure_text_width is
+       the same per-glyph metric draw_text_string itself uses -- a
+       variable-width font, so a fixed character-count budget silently
+       runs long or short depending on which letters show up). Without
+       this, a row that overflows DBGUI_PANEL_W just draws straight
+       through it into whatever's behind the panel (the 3D view, other
+       HUD chrome) with no visible boundary -- confirmed live with the
+       object inspector's "type: a_door" row, legible edge sitting well
+       short of the full string before this fix. Toggle rows ("name:
+       ON"/"OFF") have stayed short by convention and were never
+       actually hitting this, but any row can in principle. */
+    { int _maxw = (x1 - 3) - (x0 + 3);
+      int _len = (int)strlen(line);
+      while (_len > 0 && measure_text_width(line) > _maxw) {
+        line[--_len] = 0;
+      }
     }
     draw_text_string(line, x0 + 3, ry);
   }
@@ -265,6 +324,7 @@ void dbgui_feed_mouse_down(int lx, int ly)
         if (f->on_press) f->on_press();
         return;
       }
+      if (f->is_text) return;
       if (f->is_toggle) {
         *f->ival = !*f->ival;
         if (getenv("UW_DEBUG_DBGUI"))
@@ -308,6 +368,8 @@ void dbgui_feed_key(int sdl_keycode)
       fprintf(stderr, "[dbgui] key DOWN field_count=%d selected %d -> %d\n", g_field_count, before, g_selected);
   } else if (f->is_button) {
     if (sdl_keycode == DBGUI_KEY_RETURN && f->on_press) f->on_press();
+  } else if (f->is_text) {
+    /* read-only: UP/DOWN already handled above, everything else is a no-op */
   } else if (f->is_toggle) {
     if (sdl_keycode == DBGUI_KEY_RETURN || sdl_keycode == DBGUI_KEY_LEFT || sdl_keycode == DBGUI_KEY_RIGHT)
       *f->ival = !*f->ival;
@@ -330,6 +392,7 @@ void dbgui_test_reset(void)
   g_edit_len = 0;
   g_visible = 0;
   g_saved_valid = 0;
+  g_last_rows = 0;
 }
 
 int dbgui_test_row_x(void) { return DBGUI_PANEL_X + 1; }

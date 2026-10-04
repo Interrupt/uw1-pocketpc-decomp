@@ -23,6 +23,14 @@ void dbgui_field_button(const char *name, void (*on_press)(void));
    nonzero == ON). RETURN, LEFT, or RIGHT all just flip it -- no numeric-
    edit mode, unlike double/int fields. */
 void dbgui_field_toggle(const char *name, int *value);
+/* A read-only "name: value" row for displaying information rather than
+   an editable setting (an inspected object's id/type/position/...).
+   Selectable (keyboard nav doesn't skip it) but never enters edit mode
+   and ignores RETURN/LEFT/RIGHT/click, same as a plain label. `value`
+   is copied immediately, truncated to a small fixed buffer -- call
+   again next frame with a freshly formatted string for a live
+   display, same as every other field kind being rebuilt each frame. */
+void dbgui_field_text(const char *name, const char *value);
 void dbgui_end(void);
 /* Actually paints the panel -- call once per frame from the true end of the frame (after the 3D
    view and HUD have drawn), NOT from wherever dbgui_begin/dbgui_field_.../dbgui_end happened to
