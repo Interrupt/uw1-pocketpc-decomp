@@ -628,7 +628,7 @@
       "description": "Sizing-audit pass: each used exactly once via `draw_text_string`, 0 writers, content unrecovered -- 4 short UI label strings (8 bytes apart in the original address space, hinting each was originally <=8 chars).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00084e48",
@@ -644,7 +644,7 @@
       "description": "16-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00084e50",
@@ -660,7 +660,7 @@
       "description": "16-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00084e58",
@@ -676,7 +676,7 @@
       "description": "16-element undefined backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00084eff",
@@ -708,7 +708,7 @@
       "description": "Was a lone `undefined` scalar, same bug as DAT_00084eff just above -- tick_weapon_swing_state indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 = attack-type/3 (0-3), selecting which of a small set of swing animations (`DAT_00084f10`) to play.",
       "description_source": "backing_array",
       "rename_suggestion": "g_weapon_swing_anim_select_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00084f10",
@@ -1076,7 +1076,7 @@
       "description": "was a raw `iVar4 + 0x85638` absolute-address literal inside trigger_quest_milestone_cleanup_event (no declared global at all -- Ghidra never recovered this one), read as a 9-entry object-type-id table.",
       "description_source": "own",
       "rename_suggestion": "g_quest_milestone_object_type_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00085668",
@@ -1876,7 +1876,7 @@
       "description": "Were bare 1-byte scalars, but lookup_arctan_primary_range/ lookup_arctan_reciprocal_range index them as `*(ushort *)(&DAT_00086260 + iVar1)` with iVar1 up to (0xff * 4) == 0x3fc -- the same scalar-declared-but-accessed-as-array bug class fixed many times this session (e.g. the...",
       "description_source": "backing_array",
       "rename_suggestion": "g_arctan_lookup_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086264",
@@ -1892,7 +1892,7 @@
       "description": "1024-element undefined1 backing store; read 4 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086368",
@@ -2148,7 +2148,7 @@
       "description": "X/Y/Z fine sweep position, indexed as a real 3-element array throughout this file (`(&DAT_00086980)[axis]` for axis 0/1/2) -- see this block's own comment above.",
       "description_source": "backing_array",
       "rename_suggestion": "g_sweep_fine_position",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086984",
@@ -2164,7 +2164,7 @@
       "description": "X/Y/Z fine sweep position, indexed as a real 3-element array throughout this file (`(&DAT_00086980)[axis]` for axis 0/1/2) -- see this block's own comment above.",
       "description_source": "backing_array",
       "rename_suggestion": "g_sweep_fine_position",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086986",
@@ -2548,7 +2548,7 @@
       "description": "176-element const undefined1 backing store; read 8 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086a18",
@@ -2564,7 +2564,7 @@
       "description": "176-element const undefined1 backing store; read 4 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086a20",
@@ -2580,7 +2580,7 @@
       "description": "176-element const undefined1 backing store; read 11 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086a60",
@@ -2596,7 +2596,7 @@
       "description": "176-element const undefined1 backing store; read 3 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086af0",
@@ -2612,7 +2612,7 @@
       "description": "{0x10, 0x00}: compute_visibility_ray_offset reads (&DAT_00086af0)[bool]. Was a silently-zero undefined4.",
       "description_source": "backing_array",
       "rename_suggestion": "g_visibility_ray_offset_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086af8",
@@ -10308,7 +10308,7 @@
       "description": "build_trig_tables builds these as 361-entry (0..360 degrees) sin / cos tables (float bit patterns); every reader indexes `(&DAT_000d99xx)[angle]`. Were lone `undefined4` scalars, so build_trig_tables's `[0..360]` writes smashed ~1.4 KB of adjacent globals.",
       "description_source": "backing_array",
       "rename_suggestion": "g_trig_sin_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000d9ed8",
@@ -10324,7 +10324,7 @@
       "description": "361-element undefined4 backing store; read 16 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000da47c",
@@ -10772,7 +10772,7 @@
       "description": "DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]` (4-byte stride) with idx up to a CONCAT11 of two record byte fields (draw_chargen_field_value).",
       "description_source": "backing_array",
       "rename_suggestion": "g_chargen_bonus_pool_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000fb884",
@@ -10804,7 +10804,7 @@
       "description": "DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]` (4-byte stride) with idx up to a CONCAT11 of two record byte fields (draw_chargen_field_value).",
       "description_source": "backing_array",
       "rename_suggestion": "g_chargen_bonus_pool_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000fb8c4",
@@ -10820,7 +10820,7 @@
       "description": "DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]` (4-byte stride) with idx up to a CONCAT11 of two record byte fields (draw_chargen_field_value).",
       "description_source": "backing_array",
       "rename_suggestion": "g_chargen_bonus_pool_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_000fb8f0",
@@ -10836,7 +10836,7 @@
       "description": "DAT_000fb8c4's address (0xfb8c4) is 0x44 bytes = 17 elements past DAT_000fb880's (0xfb880) -- like DAT_000fb884, not a separate table but an alias into the SAME cumulative per-entry offset array chrbtns_offset_table_builder builds for chrbtns.gr, viewed starting at element 17.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_001005c0",
@@ -15108,7 +15108,7 @@
       "description": "Both real 0x80-element pointer-cache arrays (per free_frame_geometry_buffers's own comment -- \"DAT_0023c7a0[0x140], DAT_002020f8[0x80]\" -- and shutdown_game_resources's matching 0x80-iteration cleanup loop for DAT_00202308), same \"lone undefined4 scalar indexed as an array\" bug...",
       "description_source": "backing_array",
       "rename_suggestion": "g_grtile_ptr_cache",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_002022f8",
@@ -15300,7 +15300,7 @@
       "description": "Both were single `undefined` scalars, but resolve_lock_difficulty_rating (the only function anywhere in this decompile that touches either) indexes each one via `(&DAT_xxx)[i]` up to the extents below -- the same out-of-bounds scalar-as-array bug class as DAT_001007ee and the...",
       "description_source": "own",
       "rename_suggestion": "g_lock_difficulty_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202700",
@@ -15588,7 +15588,7 @@
       "description": "121-element undefined backing store; read 2 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00202878",
@@ -19660,15 +19660,15 @@
       "kind": "macro_alias",
       "type": "undefined2",
       "backing_array": "DAT_0023add0_backing",
-      "size": 8192,
+      "size": 64,
       "readers": 10,
       "writers": 1,
       "reader_file_count": 5,
       "writer_file_count": 1,
-      "description": "8192-element undefined2 backing store; read 10 time(s), written 1 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: wall-texture property table. Loader fills only 48 entries, but every read site masks the index with `&0x3f` (0-63) -- the wider read-side mask governs.",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ae30",
@@ -19740,15 +19740,15 @@
       "kind": "macro_alias",
       "type": "undefined2",
       "backing_array": "DAT_0023ae40_backing",
-      "size": 8192,
+      "size": 16,
       "readers": 20,
       "writers": 0,
       "reader_file_count": 7,
       "writer_file_count": 0,
-      "description": "8192-element undefined2 backing store; read 20 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
-      "description_source": "none",
+      "description": "Sizing-audit pass: floor-texture property table. Loader fills only 10 entries, but every read site masks the index with `&0xf` (0-15) -- the wider read-side mask governs.",
+      "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023ae58",
@@ -22196,7 +22196,7 @@
       "description": "Was 2 lone `undefined1` scalars -- same \"split symbol\" bug as DAT_0023c224/DAT_0023c230 etc. above: both are used throughout as real 2-element byte arrays (`(&DAT_0023c11c)[iVar6]`/ `(&DAT_0023c12c)[iVar6]` for index 0 AND 1, including redraw_hud_ panels's own creation loop).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c11f",
@@ -22212,7 +22212,7 @@
       "description": "Was 2 lone `undefined1` scalars -- same \"split symbol\" bug as DAT_0023c224/DAT_0023c230 etc. (see DAT_0023c224's comment for the full writeup).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c120",
@@ -22228,7 +22228,7 @@
       "description": "Was 2 lone `undefined1` scalars -- same \"split symbol\" bug as DAT_0023c224/DAT_0023c230 etc. (see DAT_0023c224's comment for the full writeup).",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c124",
@@ -22308,7 +22308,7 @@
       "description": "2-element undefined1 backing store; read 1 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c12f",
@@ -22324,7 +22324,7 @@
       "description": "9-element undefined1 backing store; read 5 time(s), written 2 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c130",
@@ -22548,7 +22548,7 @@
       "description": "Same split-symbol bug, same fix: `hud_dragon_reaction_tick` indexes `&DAT_0023c1e4 + iVar6` (the animation-phase state byte per dragon side) and `reset_hud_panel_animation_state` resets both elements individually (`DAT_0023c1e6 = 0; ...",
       "description_source": "backing_array",
       "rename_suggestion": "g_dragon_reaction_phase",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c1e8",
@@ -22580,7 +22580,7 @@
       "description": "Was two lone `short` scalars -- same split-symbol bug as DAT_0023c11c/DAT_0023c230 etc. elsewhere in this file. `hud_dragon_reaction_tick` indexes `&DAT_0023c1e8 + iVar6` (iVar6=0/1, left/right dragon's HEAD-animation sprite-list slot handle -- a separate, dynamically-allocated...",
       "description_source": "backing_array",
       "rename_suggestion": "g_dragon_head_sprite_handle",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c1ec",
@@ -22660,7 +22660,7 @@
       "description": "Was 3 separate `undefined2` scalars (DAT_0023c200/202/204) -- same split-symbol bug as DAT_0023c118/DAT_0023c128 just above (see that comment's full writeup, found chasing the same chain-hotspot/ stats-panel revival): begin_hud_panel_flip/advance_hud_panel_flip both index...",
       "description_source": "backing_array",
       "rename_suggestion": "g_hud_panel_flip_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c204",
@@ -22676,7 +22676,7 @@
       "description": "Was 3 separate `undefined2` scalars (DAT_0023c200/202/204) -- same split-symbol bug as DAT_0023c118/DAT_0023c128 just above (see that comment's full writeup, found chasing the same chain-hotspot/ stats-panel revival): begin_hud_panel_flip/advance_hud_panel_flip both index...",
       "description_source": "backing_array",
       "rename_suggestion": "g_hud_panel_flip_table",
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0023c208",
@@ -25028,7 +25028,7 @@
       "description": "Sizing-audit pass: `read_file_handle(iVar3,&DAT_0024fa38,0x600)` -- exact 1536 bytes, sole usage. HARD exact. Down from 3072.",
       "description_source": "backing_array",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_0025063c",

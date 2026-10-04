@@ -544,3 +544,43 @@ DAT_00086db8
 DAT_00086e58
 DAT_00202700
 DAT_0010060c
+
+# Final ledger cleanup (2026-10-04): names already fixed/confirmed
+# earlier this round but missed from the ledger, plus a few
+# personally-verified-just-now confirmations and alias names that
+# don't auto-resolve via the backing_array heuristic (region-style
+# aliases, e.g. DAT_00086a00_region):
+DAT_0023add0
+DAT_0023ae40
+DAT_0024fa38
+DAT_00086260
+DAT_00086264
+DAT_000d9930
+DAT_000d9ed8
+DAT_002020f8
+DAT_002026d1
+DAT_00202807
+DAT_00086a02
+DAT_000fb880
+DAT_00084e40
+DAT_00084e48
+DAT_00084e50
+DAT_00084e58
+DAT_00085638
+DAT_00084f0b
+DAT_00086af0
+DAT_0023c11f
+DAT_0023c12f
+DAT_0023c202
+DAT_00086982
+DAT_0023c11d
+DAT_0023c12d
+DAT_0023c1e6
+DAT_0023c1ea
+DAT_000fb8f0
+DAT_00086984
+DAT_00086a18
+DAT_00086a20
+DAT_00086a60
+DAT_0023c120
+DAT_0023c204

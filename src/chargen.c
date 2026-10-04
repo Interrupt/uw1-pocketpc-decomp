@@ -70,6 +70,13 @@ static short DAT_001005c0;
    chrbtns_offset_table_builder's role was known) split it from the real data and left it
    permanently zero -- so no body was ever drawn. Aliased onto the real
    array instead. See uw.h. */
+/* Sizing-audit pass: investigated, NOT shrunk -- SKILLS.DAT+CHRGEN.DAT
+   (the real shipped assets) only need 441 bytes together, which made
+   a smaller size look safe, but tests/test_chargen.c:128-130 asserts
+   against DAT_000fb8f0_backing[1000]/[1002], proving some exercised
+   path (character_generator_loop's record-table writes, stride 0x14)
+   needs far more than the real asset files alone would suggest.
+   Left at 1680 rather than break that real, already-passing coverage. */
 static undefined1 DAT_000fb8f0_backing[1680];
 char s_FONT5X6P_SYS_00084e9c[] = "FONT5X6P.SYS";
 static char s__DATA_CHARGEN_BYT_00084eac[] = "\\DATA\\CHARGEN.BYT";
