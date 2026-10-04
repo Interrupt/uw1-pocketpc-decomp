@@ -2339,16 +2339,12 @@ void run_game_startup_sequence()
   char acStack_524 [264];
   undefined1 auStack_41c [520];
   undefined1 auStack_214 [520];
-  /* UW_SKIP_INTRO: debug-only switch to skip past the three
-     presentation splash screens below (pres1.byt, pres2.byt, the
-     copyright screen) straight to main_menu_loop -- for development/
-     testing, so every run doesn't have to sit through them (even with
-     UW_FAST_SLEEP, which only skips their dwell time, not the blit
-     itself). Checked once and cached, same pattern as UW_FAST_SLEEP
-     (ordinal_stubs.c) -- a debug hook, not something read every call.
-     Does NOT skip load_startup_gr_resources() between splash 2 and 3,
-     a real resource load the rest of startup depends on, only the
-     purely-visual blit+dwell pairs around it. */
+  /* UW_SKIP_INTRO: debug-only switch to skip the three presentation
+     splash screens' dwell below (pres1.byt, pres2.byt, the copyright
+     screen) -- each still blits for one frame, just with no delay
+     after, same idea as UW_FAST_SLEEP (ordinal_stubs.c) but specific
+     to these three so it can be toggled independently. Checked once
+     and cached -- a debug hook, not something read every call. */
   static int skip_intro = -1;
   if (skip_intro < 0) {
     skip_intro = getenv("UW_SKIP_INTRO") != NULL;
@@ -2377,10 +2373,8 @@ void run_game_startup_sequence()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   ce_strcat(acStack_62c,s__DATA_pres1_byt_00085790);
-  if (!skip_intro) {
-    blit_fullscreen_bitmap_file(5,acStack_62c,1);
-    Sleep(0x5dc);
-  }
+  blit_fullscreen_bitmap_file(5,acStack_62c,1);
+  if (!skip_intro) Sleep(0x5dc);
   play_music_track(1,1);
   init_grtile_registry();
   ce_memset(acStack_62c,0,0x104);
@@ -2392,10 +2386,8 @@ void run_game_startup_sequence()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   ce_strcat(acStack_62c,s__DATA_pres2_byt_00085780);
-  if (!skip_intro) {
-    blit_fullscreen_bitmap_file(6,acStack_62c,1);
-    Sleep(0x5dc);
-  }
+  blit_fullscreen_bitmap_file(6,acStack_62c,1);
+  if (!skip_intro) Sleep(0x5dc);
   sVar2 = load_startup_gr_resources();
   if (sVar2 != 0) {
     report_fatal_error_and_exit();
@@ -2409,12 +2401,10 @@ void run_game_startup_sequence()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   ce_strcat(acStack_62c,s__DATA_COPYRIGHT_BYT_0008576c);
-  if (!skip_intro) {
-    blit_fullscreen_bitmap_file(2,acStack_62c,1);
-    /* Intentional deviation: the original gave the final copyright splash
-       no dwell. Keep it visible for 1.5 seconds, like the preceding splashes. */
-    Sleep(0x5dc);
-  }
+  blit_fullscreen_bitmap_file(2,acStack_62c,1);
+  /* Intentional deviation: the original gave the final copyright splash
+     no dwell. Keep it visible for 1.5 seconds, like the preceding splashes. */
+  if (!skip_intro) Sleep(0x5dc);
   sVar2 = init_cursor_subsystem();
   if (sVar2 < 0) {
     report_fatal_error_and_exit(2);
