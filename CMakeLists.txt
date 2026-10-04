@@ -231,6 +231,8 @@ if(BUILD_TESTING)
     src/math.c:pack_angle_byte)
   target_compile_options(test_visibility_walk PRIVATE
     -include "${CMAKE_CURRENT_SOURCE_DIR}/tests/visibility_walk_test_globals.h")
+  target_compile_definitions(test_visibility_walk PRIVATE
+    UW_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
   add_game_unit_test(illustrations
     src/object_actions.c:look_at_inscribed_object
     src/interact.c:trigger_terrain_discovery_illustration

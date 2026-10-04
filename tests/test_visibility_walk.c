@@ -28,6 +28,11 @@ short g_visibility_max_ring_passes;
 /* --- tilemap_lookup's backing store (tmap.c owns the real one via
    ce_malloc; this test supplies its own fixed 64x64 buffer). --- */
 static unsigned char tilemap[64 * 64 * 4];
+/* Level 1's real block from LEV.ARK: the 64x64 tilemap (0x4000 bytes)
+   plus the mobile/static object tables (test_traps.c's level_one has
+   the same layout and size -- not needed here, only the tilemap
+   portion is read). */
+static unsigned char level_one[0x7c08];
 char *DAT_002029cc;
 char *DAT_0023aecc;
 byte DAT_0023b4a0;
@@ -90,6 +95,22 @@ static void set_room(int x0, int y0, int x1, int y1)
     }
 }
 
+/* Same LEV.ARK header/offset layout test_traps.c's orb_text_trap() already
+   relies on: a 6-byte archive header whose bytes 2-5 are a little-endian
+   file offset to level 1's data block. */
+static void load_real_level_one(void)
+{
+    FILE *archive = fopen(UW_TEST_DATA_DIR "/DATA/LEV.ARK", "rb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(archive, "data/DATA/LEV.ARK is required");
+    unsigned char header[6];
+    TEST_ASSERT_EQUAL_UINT(6, fread(header, 1, 6, archive));
+    unsigned offset = header[2] | (unsigned)header[3] << 8 |
+                       (unsigned)header[4] << 16 | (unsigned)header[5] << 24;
+    TEST_ASSERT_EQUAL_INT(0, fseek(archive, offset, SEEK_SET));
+    TEST_ASSERT_EQUAL_UINT(sizeof(level_one), fread(level_one, 1, sizeof(level_one), archive));
+    TEST_ASSERT_EQUAL_INT(0, fclose(archive));
+}
+
 /* Ring-buffer cell for ring depth `depth` (0 = player's own row, growing
    away from the player -- for facing 0, player Y + depth) and lateral
    offset `side` (-16..16, 0 = straight ahead -- for facing 0, player X +
@@ -116,9 +137,9 @@ static int ring_cell_untouched(int depth, int side)
     return ring_cell(depth, side) == RING_CELL_SENTINEL;
 }
 
-static void run_flood(int player_x, int player_y, int facing)
+static void run_flood_on(const void *map, int player_x, int player_y, int facing)
 {
-    DAT_002029cc = (char *)tilemap;
+    DAT_002029cc = (char *)map;
     memset(g_visibility_ray_table_backing, 0, sizeof(g_visibility_ray_table_backing));
     memset(g_visibility_ray_realptr, 0, sizeof(g_visibility_ray_realptr));
     memset(g_visibility_ray_realptr2, 0, sizeof(g_visibility_ray_realptr2));
@@ -133,6 +154,11 @@ static void run_flood(int player_x, int player_y, int facing)
 
     seed_visibility_queue();
     run_visibility_flood();
+}
+
+static void run_flood(int player_x, int player_y, int facing)
+{
+    run_flood_on(tilemap, player_x, player_y, facing);
 }
 
 void setUp(void)
@@ -205,11 +231,58 @@ static void test_flood_does_not_exceed_the_level_max_ring_passes(void)
         "an open map's flood should expand exactly to the level's max-ring-passes limit, not walk further");
 }
 
+static void test_real_level_one_starting_hallway_is_contained(void)
+{
+    /* The actual new-game spawn point (src/game.c's prepare_new_game:
+       `set_player_tile_position(0x20, 2, 1);`), facing south (+Y, this
+       file's facing-0 convention) down the starting hallway. Capped to
+       an 8-tile walk distance. The hallway's real per-depth open width
+       (confirmed empirically against the real LEV.ARK data: a lone
+       1-2 tile-wide passage from y=2 to y=7, widening at y=8-10 where
+       side rooms branch off but stay mostly out of the ray fan's
+       reach) is hardcoded below as [min_side,max_side] per depth --
+       anything outside that range, including the real open floor in
+       those side rooms and the wider room past y=8, must stay
+       unrevealed. */
+    static const struct { int min_side, max_side; } hallway[9] = {
+        /* depth 0, y=2 */ {-1, 1},
+        /* depth 1, y=3 */ {-2, 1},
+        /* depth 2, y=4 */ {-1, 0},
+        /* depth 3, y=5 */ {-1, 0},
+        /* depth 4, y=6 */ {-1, 0},
+        /* depth 5, y=7 */ {-1, 0},
+        /* depth 6, y=8 */ {-2, 1},
+        /* depth 7, y=9 */ {-2, 0},
+        /* depth 8, y=10 */ {-2, 0},
+    };
+
+    load_real_level_one();
+    g_visibility_max_ring_passes = 8;
+    run_flood_on(level_one, 32, 2, 0);
+
+    TEST_ASSERT_EQUAL_INT_MESSAGE(8, g_visibility_ring_depth,
+        "the starting hallway should walk the full 8-tile distance, not stop short");
+
+    for (int depth = 0; depth <= 8; depth++) {
+        for (int side = -16; side <= 16; side++) {
+            char msg[96];
+            snprintf(msg, sizeof(msg), "depth=%d (y=%d) side=%d (x=%d)",
+                     depth, 2 + depth, side, 32 + side);
+            if (side >= hallway[depth].min_side && side <= hallway[depth].max_side) {
+                TEST_ASSERT_NOT_EQUAL_MESSAGE(0, ring_cell(depth, side), msg);
+            } else {
+                TEST_ASSERT_EQUAL_INT_MESSAGE(0, ring_cell(depth, side), msg);
+            }
+        }
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_open_room_reveals_the_player_and_tiles_ahead);
     RUN_TEST(test_wall_blocks_tiles_behind_it);
     RUN_TEST(test_flood_does_not_exceed_the_level_max_ring_passes);
+    RUN_TEST(test_real_level_one_starting_hallway_is_contained);
     return UNITY_END();
 }
