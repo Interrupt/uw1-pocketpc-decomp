@@ -4,7 +4,7 @@
 #include "unity.h"
 #include "src/headers/uw.h"
 extern short DAT_00201b68;
-extern undefined2 DAT_0023add0_backing[8192];
+extern undefined2 DAT_0023add0_backing[64];
 extern undefined1 DAT_0023c698_backing[1024];
 extern undefined1 DAT_00085460_backing[11];
 extern undefined1 DAT_0023cca8_backing[1024];

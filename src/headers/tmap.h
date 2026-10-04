@@ -173,9 +173,9 @@ extern char DAT_0023b834;
 extern undefined4 DAT_0023b838;
 extern int DAT_0023b83c;
 extern int g_uw_hide_walls;
-extern undefined2 DAT_0023add0_backing[8192];
+extern undefined2 DAT_0023add0_backing[64];
 #define DAT_0023add0 DAT_0023add0_backing[0]
-extern undefined2 DAT_0023ae40_backing[8192];
+extern undefined2 DAT_0023ae40_backing[16];
 #define DAT_0023ae40 DAT_0023ae40_backing[0]
 extern undefined4 DAT_0023b804;
 extern short DAT_0025063c;

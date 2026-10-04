@@ -65,8 +65,16 @@ static undefined4 DAT_00084638 = 0x84;
    silently zero -> that offset was always 0, so every tile triangle
    projected to the single centre point (x=140, y=80). */
 static undefined4 DAT_00084610 = 100u;
- undefined2 DAT_0023add0_backing[8192];
- undefined2 DAT_0023ae40_backing[8192];
+/* Sizing-audit pass: wall-texture property table. Loader fills only
+   48 entries, but every read site masks the index with `&0x3f`
+   (0-63) -- the wider read-side mask governs. HARD: 64 elements
+   (128 bytes). Down from 8192. */
+ undefined2 DAT_0023add0_backing[64];
+/* Sizing-audit pass: floor-texture property table. Loader fills only
+   10 entries, but every read site masks the index with `&0xf`
+   (0-15) -- the wider read-side mask governs. HARD: 16 elements
+   (32 bytes). Down from 8192. */
+ undefined2 DAT_0023ae40_backing[16];
 /* Was a lone `undefined4` (zero-initialized), but confirmed via a raw
    Ghidra memory read of the real UU.exe's .data section that this
    address's real static initial value is 1, not 0 -- same "silently-
