@@ -19,7 +19,8 @@
 undefined DAT_00204920_backing[128];
 short DAT_00202c68;
 short DAT_00202c30;
-static undefined1 DAT_00202c70_backing[65536];
+/* Sizing pass: `ce_memset(&DAT_00202c70,0x11,0x12)` -- 18 bytes exact. */
+static undefined1 DAT_00202c70_backing[64];
 #define DAT_00202c70 DAT_00202c70_backing[0]
 #define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
 static ushort *_DAT_00202c34;

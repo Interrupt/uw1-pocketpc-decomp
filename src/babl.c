@@ -158,7 +158,11 @@ static undefined DAT_001007de_backing[8192];
    256-byte safety margin as those sibling tables. */
 static undefined1 PTR_DAT_000845c8_backing[256];
 #define PTR_DAT_000845c8 PTR_DAT_000845c8_backing[0]
-static undefined1 DAT_000845e8_backing[65536];
+/* Sizing pass: sibling of PTR_DAT_000845c8 right above in
+   draw_hotspot_crosshair_marker's worn-slot branch (`&DAT_000845e8 +
+   iVar2*4`, iVar2 up to 4 slots per init_barter_ui's own loop) --
+   same bound, given the same 256-byte margin. */
+static undefined1 DAT_000845e8_backing[256];
 #define DAT_000845e8 DAT_000845e8_backing[0]
 static undefined2 DAT_000bbfc8_backing[8192];
 #define DAT_000bbfc8 DAT_000bbfc8_backing[0]

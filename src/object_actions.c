@@ -118,7 +118,9 @@ static undefined DAT_00085cb4_backing[8192] = "s";
 static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 static char s_an_adventurer__00085d08[] = "an_adventurer.";
 static uint DAT_00202094;
-undefined1 DAT_00087604_backing[65536];
+/* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
+   (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
+undefined1 DAT_00087604_backing[256];
 undefined *PTR_FUN_00087614;
 static undefined DAT_0008762c_backing[8192];
 #define DAT_0008762c DAT_0008762c_backing[0]

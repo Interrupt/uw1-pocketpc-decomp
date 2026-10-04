@@ -7,7 +7,7 @@
 #include "uw.h"
 
 extern short g_pick_tile_off_backing[0x200];
-extern undefined1 DAT_0023b676_backing[65536];
+extern undefined1 DAT_0023b676_backing[1024];
 
 #define DAT_000a85d0 DAT_000a85d0_backing[0]
 #define DAT_00086a00 (*(undefined1 *)(DAT_00086a00_region + 0x00))

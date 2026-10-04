@@ -21,7 +21,7 @@ extern ushort g_player_max_carry_weight;
 extern char s_You_see_000858fc[];
 extern undefined1 DAT_0023c3dc;
 extern undefined1 DAT_0023c3d8;
-extern undefined1 DAT_00087604_backing[65536];
+extern undefined1 DAT_00087604_backing[256];
 #define DAT_00087604 DAT_00087604_backing[0]
 extern undefined *PTR_FUN_00087614;
 

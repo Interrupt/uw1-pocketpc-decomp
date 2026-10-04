@@ -107,7 +107,9 @@ undefined2 DAT_0023aed4;
 undefined2 *DAT_0023aed0;
 static short DAT_0023b4cc;
 static char s_R__lu_P__lu_S__lu_F__d__d_00086b04[] = "R:%lu_P:%lu_S:%lu_F:%d.%d";
-static undefined1 DAT_0023b4a8_backing[65536];
+/* Sizing pass: explicit 16-slot ring buffer (`DAT_0023b4c8 = sVar1 +
+   1U & 0xf`), 2-byte stride -- real max 15*2+2=32 bytes. */
+static undefined1 DAT_0023b4a8_backing[64];
 #define DAT_0023b4a8 DAT_0023b4a8_backing[0]
 static int DAT_0023aec8;
 static ushort DAT_0023b4c8;

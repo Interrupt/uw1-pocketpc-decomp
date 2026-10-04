@@ -177,7 +177,10 @@ static undefined2 DAT_00204798;
 static undefined2 DAT_00204790;
 static undefined2 DAT_00204794;
 static short DAT_00204854;
-static undefined1 DAT_00204720_backing[65536];
+/* Sizing pass: register_cursor_hotspot's own loop bound is a fixed
+   20-slot table (`while(iVar2<0x14)`), 2-byte stride -- real max
+   19*2+2=40 bytes. */
+static undefined1 DAT_00204720_backing[64];
 static undefined2 DAT_00204750_backing[256];
 #define DAT_00204750 DAT_00204750_backing[0]
 static undefined2 DAT_002047e0_backing[256];
@@ -482,9 +485,11 @@ static ushort DAT_0023c1e0;
 static undefined1 DAT_0023c11b;
 static byte DAT_0023c12a;
 static byte DAT_0023c150;
-static undefined1 DAT_0023c1f0_backing[65536];
+/* Sizing pass: both indexed only by `sVar3 & 1` (0 or 1), a 4-byte
+   stride -- real max 1*4+4=8 bytes each. */
+static undefined1 DAT_0023c1f0_backing[64];
 #define DAT_0023c1f0 DAT_0023c1f0_backing[0]
-static undefined1 DAT_0023c1f8_backing[65536];
+static undefined1 DAT_0023c1f8_backing[64];
 #define DAT_0023c1f8 DAT_0023c1f8_backing[0]
 /* Was `undefined2 DAT_00087254;` -- split-symbol bug: real ARM code
    (confirmed via disassembly of FUN_0006d4a4/hud_vitals_bar_tick)

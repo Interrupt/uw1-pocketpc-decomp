@@ -92,7 +92,11 @@ byte * DAT_0023b814;
    backing store; keep the exact `v*2 + 2` index math at both use sites. */
 code *DAT_0023b4f4;
 short g_pick_tile_off_backing[0x200];
-undefined1 DAT_0023b676_backing[65536];
+/* Sizing pass: indexed by the same DAT_0023b830 cursor as
+   g_pick_tile_off_backing right above (interact.c:1032, tmap.c:2393),
+   a 2-byte stride -- sized to match that sibling's own real extent
+   (0x200 elements * 2 bytes = 1024 bytes), down from 65536. */
+undefined1 DAT_0023b676_backing[1024];
 int DAT_0023b83c;
 /* Were int / undefined4, truncating the real &DAT_002049e0-relative
    pointers this loader (FUN_00042174 area) computes into them:
@@ -297,7 +301,8 @@ static undefined2 DAT_0023b928_backing[8192];
 char DAT_0023bb94;
 static undefined DAT_0023b90a_backing[8192];
 #define DAT_0023b90a DAT_0023b90a_backing[0]
-static undefined1 DAT_0023b940_backing[65536];
+/* Sizing pass: `ce_memset(&DAT_0023b940,0,0x252)` -- 594 bytes exact. */
+static undefined1 DAT_0023b940_backing[1024];
 #define DAT_0023b940 DAT_0023b940_backing[0]
 /* Object/feature-draw sort scratch (emit_tile_features and helpers sort_feature_pairs_by_depth/
    ec8/508c/5128/65210/652e8, ~uw.c:49340-49766). Ghidra split each of

@@ -7,7 +7,7 @@
 static byte mobile_objects[256 * 27];
 char *DAT_002046b8 = (char *)mobile_objects;
 byte *DAT_00202c6c;
-undefined1 DAT_00202c90_backing[65536];
+undefined1 DAT_00202c90_backing[8192];
 undefined1 DAT_00202c38_backing[8192];
 short DAT_001005f4, DAT_001005f8, DAT_0023beb4;
 char DAT_001005dc;
@@ -67,14 +67,14 @@ ushort DAT_0023c1d8, DAT_0023c1dc, DAT_0023c1e0;
 byte DAT_0023c150, DAT_0023c12a, DAT_0023c25c;
 int DAT_00088954, DAT_0008895c, DAT_00088950, DAT_00088958;
 undefined1 DAT_0023c11c_arr[2], DAT_0023c12c_arr[2];
-undefined1 DAT_0023c1f0_backing[65536], DAT_0023c1f8_backing[65536];
+undefined1 DAT_0023c1f0_backing[64], DAT_0023c1f8_backing[64];
 undefined1 DAT_0023c11a;
 undefined1 g_active_hud_panel;
 undefined1 DAT_0023c11b;
 char DAT_000870d8, DAT_000870dc;
 short DAT_0023c21c;
 undefined2 DAT_0023c220;
-undefined1 DAT_0023c1f0_backing[65536], DAT_0023c1f8_backing[65536];
+undefined1 DAT_0023c1f0_backing[64], DAT_0023c1f8_backing[64];
 static int hud_flushes, wipe_frames;
 static uint frames[32];
 static void other_panel_tick(int index)

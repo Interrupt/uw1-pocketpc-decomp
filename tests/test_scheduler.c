@@ -5,7 +5,7 @@
 #include <string.h>
 
 /* Real scheduler functions, with a small tile/object arena fixture. */
-undefined1 DAT_00250730_backing[65536];
+undefined1 DAT_00250730_backing[128];
 char *g_scheduler_table;
 undefined1 g_scheduler_count;
 undefined4 DAT_0023b804;
@@ -23,7 +23,7 @@ static int corpses_spawned, corpses_placed, corpse_type;
 ushort *DAT_0010190c;
 char *DAT_00101404, *DAT_00101438;
 void *DAT_0010172c;
-undefined1 DAT_001007d0_backing[6144], DAT_00202c90_backing[65536];
+undefined1 DAT_001007d0_backing[6144], DAT_00202c90_backing[8192];
 undefined2 DAT_002048c0_backing[64];
 undefined1 DAT_002048f0_backing[128], DAT_00204950_backing[128];
 undefined1 DAT_00204980_backing[32];

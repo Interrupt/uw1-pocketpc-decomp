@@ -9,7 +9,7 @@
 extern undefined2 DAT_002020a0;
 extern undefined2 DAT_002020a4;
 extern undefined4 DAT_00202c84;
-extern undefined1 DAT_00202c90_backing[65536];
+extern undefined1 DAT_00202c90_backing[8192];
 
 // Typed view over the same array for new code -- see uw_object_type_props_t
 // above. Index by an object's type id (obj_hdr.item_id & 0x1ff), matching
@@ -50,12 +50,12 @@ extern undefined1 DAT_00202c90_backing[65536];
 #define DAT_00202c9a DAT_00202c90_backing[0xa]
 extern undefined1 DAT_002027d0_backing[256];
 #define DAT_002027d0 DAT_002027d0_backing[0]
-extern undefined1 DAT_00202800_backing[65536];
+extern undefined1 DAT_00202800_backing[256];
 #define DAT_00202800 DAT_00202800_backing[0]
 extern ushort *DAT_002046b4;
 extern undefined1 DAT_0024cfe0_backing[8192];
 #define DAT_0024cfe0 DAT_0024cfe0_backing[0]
-extern undefined1 DAT_00250730_backing[65536];
+extern undefined1 DAT_00250730_backing[128];
 #define DAT_00250730 DAT_00250730_backing[0]
 #define DAT_00250732 DAT_00250730_backing[2]
 #define DAT_00250733 DAT_00250730_backing[3]
@@ -63,7 +63,7 @@ extern short DAT_00202080;
 extern byte * DAT_00202c6c;
 extern char * DAT_0023b82c;
 extern byte * g_scratch_object_ptr;
-extern undefined1 DAT_00202800_backing[65536];
+extern undefined1 DAT_00202800_backing[256];
 /* Globals defined in uw.c but also used by functions that now live in
    objects.c (the object table) -- extern'd here so both translation
    units see the same storage. */

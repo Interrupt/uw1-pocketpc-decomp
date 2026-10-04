@@ -250,7 +250,11 @@ static short DAT_0008698e;
 static ushort DAT_00086992;
 static short DAT_00086994;
 static short DAT_0008698a;
-static undefined1 DAT_00086986_backing[65536];
+/* Sizing pass: both aliases are indexed only by DAT_0008698c/
+   DAT_0008698e (confirmed 0 or 1, the "which movement axis is
+   dominant" selector) at a 2-byte stride -- real max byte offset
+   across both aliases is 3, +2 for a short read = 8 bytes. */
+static undefined1 DAT_00086986_backing[64];
 #define DAT_00086986 DAT_00086986_backing[0]
 #define DAT_00086987 DAT_00086986_backing[1]
 /* Wall-slide deflection candidate-heading table (was a zero-initialized

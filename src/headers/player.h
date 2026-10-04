@@ -73,7 +73,7 @@ extern undefined4 DAT_002028d8;
    player.c (player state/movement/save persistence) -- extern'd here
    so both translation units see the same storage. */
 extern undefined4 DAT_000858a0;
-extern undefined1 DAT_00085d20_backing[65536];
+extern undefined1 DAT_00085d20_backing[128];
 #define DAT_00085d20 DAT_00085d20_backing[0]
 extern short DAT_00201c70;
 extern undefined2 DAT_00201c78;
