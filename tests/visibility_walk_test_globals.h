@@ -41,6 +41,7 @@ extern unsigned char g_visibility_ring_done;
 
 extern char *g_visibility_ray_realptr[24];
 extern char *g_visibility_ray_realptr2[24];
+extern char *g_visibility_ray_clearptr[24];
 extern char g_visibility_ray_fallback[64];
 #define VISIBILITY_RAY_REALPTR(table, idx) \
     ((table)[(idx)] != 0 ? (table)[(idx)] : g_visibility_ray_fallback)
