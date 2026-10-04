@@ -293,11 +293,14 @@ static undefined1 DAT_001007a0_backing[65536];
    expecting it to insert a newline after the echoed choice; with it
    empty, the echoed text ran straight into the NPC's next line with
    no break at all (e.g. "...the Abyss.Exploring, eh?..."). */
-static undefined1 DAT_00085230_backing[32768] = { 0x5c,0x50,0x00 };
+/* Sizing pass: these are 3-4-byte control-code constants (confirmed by
+   a real Ghidra memory dump, see above); no indexing, nothing depends
+   on a larger extent. */
+static undefined1 DAT_00085230_backing[16] = { 0x5c,0x50,0x00 };
 #define DAT_00085230 DAT_00085230_backing[0]
 static undefined DAT_00085234_backing[8192] = { 0x5c,0x30,0x0a,0x00 };
 #define DAT_00085234 DAT_00085234_backing[0]
-static undefined1 DAT_0008523c_backing[32768] = { 0x5c,0x32,0x00 };
+static undefined1 DAT_0008523c_backing[16] = { 0x5c,0x32,0x00 };
 #define DAT_0008523c DAT_0008523c_backing[0]
 static short DAT_001007bc;
 /* DAT_00085240/44/48 are the look-text word-separator/article
@@ -313,9 +316,10 @@ static short DAT_001007bc;
    -- give them real values instead of leaving them silently empty. */
  char DAT_00085240_backing[8192] = " ";
 /* Selected when the following word starts with a vowel (see the callers'
-   own vowel checks) -- so this one is "an ", not "a ". */
- char DAT_00085244_backing[32768] = "an ";
- char DAT_00085248_backing[32768] = "a ";
+   own vowel checks) -- so this one is "an ", not "a ".
+   Sizing pass: both are fixed 2-3 char literals with no indexing. */
+ char DAT_00085244_backing[16] = "an ";
+ char DAT_00085248_backing[16] = "a ";
 static char s_npc_talkedto_00085340[] = "npc_talkedto";
 static char s_npc_gtarg_00085350[] = "npc_gtarg";
 static char s_npc_goal_0008535c[] = "npc_goal";

@@ -59,7 +59,12 @@ static char DAT_001005e0_backing[128];
 char *DAT_001005e0 = DAT_001005e0_backing;
 #define DAT_001007e1 DAT_001007d0_backing[0x11]
 static char s__DATA_cmb_dat_00084f40[] = "\\DATA\\cmb.dat";
-undefined2 DAT_00100630_backing[32768];
+/* Sizing pass: units trap -- declared element type is undefined2 (2
+   bytes), so [32768] was actually 65536 real bytes, not 32768. Its
+   only use is `read_buffer_from_file(acStack_108,&DAT_00100630,0x3c)`
+   -- exactly 0x3c (60) bytes read, so 32 elements (64 bytes) covers
+   it with a little headroom. */
+undefined2 DAT_00100630_backing[32];
 ushort *DAT_0010190c;
 undefined4 DAT_00101924;
 undefined4 DAT_00101734_backing[256];

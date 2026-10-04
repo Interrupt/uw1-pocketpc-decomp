@@ -11,9 +11,9 @@ extern char s_FONTBIG_SYS_00085454[];
    both translation units see the same storage. */
 extern char DAT_00085240_backing[8192];
 #define DAT_00085240 DAT_00085240_backing[0]
-extern char DAT_00085244_backing[32768];
+extern char DAT_00085244_backing[16];
 #define DAT_00085244 DAT_00085244_backing[0]
-extern char DAT_00085248_backing[32768];
+extern char DAT_00085248_backing[16];
 #define DAT_00085248 DAT_00085248_backing[0]
 extern undefined4 DAT_00085c54;
 extern ushort * DAT_00100674;

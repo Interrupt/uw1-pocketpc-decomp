@@ -71,7 +71,11 @@ static const signed char DAT_000842f8_real_table[4] = { 0, -1, -1, -1 };
 #define DAT_000842f8 (*(undefined1 *)DAT_000842f8_real_table)
 static short DAT_000bbef0;
 char s_font4x5p_sys_0008431c[] = "font4x5p.sys";
-static undefined1 DAT_000ba9d8_backing[32768];
+/* Sizing pass: hard-capped at 100 records (`if (DAT_000bbef0 != 100)`
+   guard) with a 0x36 (54)-byte stride, and the literal 0x1518
+   (5400 = 100*54) total is baked directly into a ce_memmove call on
+   this array -- an airtight, exact real size. */
+static undefined1 DAT_000ba9d8_backing[5400];
 #define DAT_000ba9d8 DAT_000ba9d8_backing[0]
 /* DAT_000baa0a/b (and the parallel DAT_000baa0c/d pair below) are a
    note label's X (resp. Y) screen position, written as separate low/high

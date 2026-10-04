@@ -40,7 +40,12 @@ static undefined DAT_00202978_backing[8192];
 #define DAT_00202978 DAT_00202978_backing[0]
 static ushort DAT_00202986;
 static undefined2 DAT_00202980;
- undefined1 DAT_00085c88_backing[32768];
+/* Sizing pass: its only use (empty_container_into_world's caller) is a
+   read-only copy-until-NUL into a local scratch buffer -- a short
+   message-prefix string, not indexed. Real content is unrecovered
+   (currently reads as empty), but sized generously since it's a
+   display-text fragment like its siblings in this file. */
+ undefined1 DAT_00085c88_backing[128];
 static char s_is_empty__0008790c[] = "is_empty.";
 
 

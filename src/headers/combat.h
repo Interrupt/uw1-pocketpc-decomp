@@ -30,7 +30,7 @@ extern ushort * DAT_0010190c;
 extern byte DAT_00101918;
 extern undefined4 DAT_00101924;
 extern byte DAT_001005fc;
-extern undefined2 DAT_00100630_backing[32768];
+extern undefined2 DAT_00100630_backing[32];
 #define DAT_00100630 DAT_00100630_backing[0]
 extern ushort DAT_00100610;
 extern char *DAT_001005e4;

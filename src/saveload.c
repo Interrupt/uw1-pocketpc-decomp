@@ -16,10 +16,22 @@ static char s__arc_tmp_000842b4[] = "_arc.tmp";
    extern declarations and macro aliases in uw.h. */
 static undefined DAT_000b78b8_backing[8192];
 #define DAT_000b78b8 DAT_000b78b8_backing[0]
-static undefined1 DAT_000b98b8_backing[32768];
+/* Sizing pass: DAT_000b98b8 and DAT_000b98b9's real ARM addresses are
+   exactly 1 byte apart (0xb98b8/0xb98b9), and every real use confirms
+   they're one combined buffer, not two independent ones: both call
+   sites compute DAT_000b98b9's effective string position as
+   `&DAT_000b98b9 + ce_strlen(&DAT_000b98b8)` (open_level_archive at
+   line ~904, close_level_archive at line ~1076/1080) -- i.e. "right
+   after DAT_000b98b8's own NUL terminator, plus the 1-byte base
+   offset" -- a NUL-separated two-path-component layout in one real
+   buffer, matching this codebase's split-symbol pattern seen
+   elsewhere (e.g. the old DAT_0023b840/DAT_0023b841 pair). Worst case:
+   1 (base byte) + strlen(local_120, <=259) + 1 (NUL) +
+   strlen(local_228, <=263) + 1 (NUL) = 525 real bytes; sized with
+   headroom since nothing pins it to that exact byte count. */
+static undefined1 DAT_000b98b8_backing[1024];
 #define DAT_000b98b8 DAT_000b98b8_backing[0]
-static undefined1 DAT_000b98b9_backing[32768];
-#define DAT_000b98b9 DAT_000b98b9_backing[0]
+#define DAT_000b98b9 DAT_000b98b8_backing[1]
 /* Sizing pass: this is a file-copy scratch buffer, read in chunks
    explicitly clamped to 0x2000 (8192) bytes right before every read
    into it (see the `if (0x2000 < uVar12) uVar12 = 0x2000;` clamp and

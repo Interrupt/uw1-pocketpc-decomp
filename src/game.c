@@ -88,9 +88,11 @@ static char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
    spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
    and probe_save_slots/load_game_from_slot both search the built path for a literal
    '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
-   supplies one. Recovered as "\SAVE0"; kept the oversized backing array
-   since nothing else relies on its exact size. */
-undefined1 DAT_000857a0_backing[32768] = "\\SAVE0";
+   supplies one. Recovered as "\SAVE0"; a prior pass kept the oversized
+   backing array reasoning that nothing relies on its exact size, but
+   that cuts the other way too -- nothing needs it oversized either, so
+   this pass shrinks it to the literal's own 7 bytes plus headroom. */
+undefined1 DAT_000857a0_backing[16] = "\\SAVE0";
 static undefined2 DAT_00201b6c;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
    dispatch_sticky_mode_handlers/enter_dungeon_view/handle_player_death_and_menu_transition/change_game_mode (DAT_00201b64 = the

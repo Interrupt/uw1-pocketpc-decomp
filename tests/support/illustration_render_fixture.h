@@ -63,7 +63,7 @@ extern short DAT_00201b64;
 extern undefined2 DAT_00201c90;
 extern char selected_window;
 extern undefined2 g_palette_rgb565_backing[32768];
-extern undefined1 DAT_00084a40_backing[32768];
+extern undefined1 DAT_00084a40_backing[1024];
 extern undefined2 DAT_00248418_backing[20 * 256], DAT_00242010_backing[32768];
 extern undefined2 DAT_000a85c0;
 extern int g_blit_transparent_mode, DAT_0024af70;

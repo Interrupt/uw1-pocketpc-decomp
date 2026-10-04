@@ -331,7 +331,7 @@ char selected_window;
 
 undefined2 g_palette_rgb565_backing[32768];
 
-undefined1 DAT_00084a40_backing[32768];
+undefined1 DAT_00084a40_backing[1024];
 
 undefined2 DAT_00248418_backing[20 * 256], DAT_00242010_backing[32768];
 

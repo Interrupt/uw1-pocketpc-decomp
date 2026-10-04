@@ -60,7 +60,10 @@ char s_You_read_the_00085ce8[] = "You_read_the";
    dispatch chain (finish_object_use and friends). */
 char *DAT_00202098;
 static char s_on_what__000878e0[] = "on_what?";
-static undefined1 DAT_000878ec_backing[32768];
+/* Sizing pass: read-only (`pcVar3 = &DAT_000878ec;`), copied into a
+   40-byte local (acStack_34). Real content unrecovered (currently
+   empty); sized generously above that destination. */
+static undefined1 DAT_000878ec_backing[64];
 #define DAT_000878ec DAT_000878ec_backing[0]
 static char s_That_000878f4[] = "That";
 static char s_is_locked__000878fc[] = "is_locked.";

@@ -15,7 +15,12 @@
 // background; menu screens with a dark backdrop need the palette-
 // indexed path instead (force g_text_use_palette_color there).
 undefined2 g_text_flat_color;
-static undefined2 DAT_000890b0_backing[32768];
+/* Sizing pass: units trap -- declared element type is undefined2 (2
+   bytes), so [32768] was actually 65536 real bytes, not 32768. Every
+   use indexes it by a plain `byte` (0-255, mathematically exact, can
+   never exceed that range), so 256 elements is the precise real need
+   with no headroom required. */
+static undefined2 DAT_000890b0_backing[256];
 #define DAT_000890b0 DAT_000890b0_backing[0]
 // was DAT_0008909c. Line height (pixels) of the currently-active font,
 // read from its header by load_font_metrics; 0 would make

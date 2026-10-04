@@ -583,7 +583,11 @@ static undefined1 DAT_000d977b_backing[256];
 #define DAT_000d977b DAT_000d977b_backing[0]
 static undefined1 DAT_000d977c_backing[256];
 #define DAT_000d977c DAT_000d977c_backing[0]
-static undefined1 DAT_000d98c8_backing[32768];
+/* Sizing pass: live instrumentation (UW_DEBUG_MODEL_PARSE_HWM) across
+   the full 19-script regression suite (29 real .E model files loaded)
+   showed a real high-water mark of 8 chars for the unbounded %[a-z]
+   token this feeds. Sized to 64 bytes for headroom above that. */
+static undefined1 DAT_000d98c8_backing[64];
 #define DAT_000d98c8 DAT_000d98c8_backing[0]
 /* NAMES-block growing string-table cursor base (puVar16/local_258 walk
    forward from here, one null-terminated name per CLUSTER entry).
@@ -2762,6 +2766,14 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   pppppuVar21 = (undefined4 *****)&pppuStack_244;
   pcVar15 = &DAT_000d98c8;
   ce_fscanf(pvVar_fh,s__1s__a_z__1s_000849d8,auStack_24c,&DAT_000d98c8,pppppuVar21);
+  /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION): the %[a-z]
+     conversion above has no width limit, so DAT_000d98c8's real need is
+     whatever the longest actual token in the shipped .E model files is,
+     not a value derivable from the format string alone. Reusing the
+     existing model-parse debug var to find a true high-water mark. */
+  if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
+    fprintf(stderr, "[model-parse-hwm] DAT_000d98c8 token_len=%d\n", (int)ce_strlen(&DAT_000d98c8));
+  }
   pcVar2 = pcVar15;
   if (DAT_000db45c == (undefined1 *)0x0) {
     do {

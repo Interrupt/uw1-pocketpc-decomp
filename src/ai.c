@@ -51,7 +51,10 @@ static undefined1 DAT_001014e0_backing[256];
 #define DAT_001014e0 DAT_001014e0_backing[0]
 static undefined1 DAT_001014e1_backing[256];
 #define DAT_001014e1 DAT_001014e1_backing[0]
-static undefined1 DAT_0023cf08_backing[40960];
+/* Sizing pass: `ce_memset(&DAT_0023cf08,0,0x5000)` is the only touch of
+   its real extent -- exactly 0x5000 (20480) bytes, half the declared
+   size. */
+static undefined1 DAT_0023cf08_backing[20480];
 #define DAT_0023cf08 DAT_0023cf08_backing[0]
 static undefined DAT_0023cf09_backing[256];
 #define DAT_0023cf09 DAT_0023cf09_backing[0]
