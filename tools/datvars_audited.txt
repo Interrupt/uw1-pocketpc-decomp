@@ -1,0 +1,31 @@
+# Ledger of DAT_<hex> names that have been personally investigated and
+# resolved (sized, fixed, or deliberately left as-is with a documented
+# reason) during the decomp-cleanup sizing passes. One bare name per
+# line. The dat-vars.json generator (tools/datvars_build_catalog.py /
+# write_json.py) reads this file and sets "audited": true for any name
+# listed here, false otherwise, so future "find the next oversized
+# array" passes can filter already-handled entries out automatically.
+#
+# This ledger starts with the batch fixed in the 2026-10-04 session
+# (DAT_0023cf08 + the 16 32768-byte arrays across babl.c, graphics.c,
+# game.c, containers.c, audio.c, item_use.c, text.c, saveload.c,
+# automap.c, models.c, combat.c). Earlier sizing passes this same
+# session (the 18/18 and 19-array batches, etc.) are NOT backfilled
+# here yet -- only entries added from this point forward are tracked.
+DAT_0023cf08
+DAT_00084a40
+DAT_00085230
+DAT_0008523c
+DAT_00085244
+DAT_00085248
+DAT_000857a0
+DAT_00085c88
+DAT_00087520
+DAT_000878ec
+DAT_000890b0
+DAT_000b98b8
+DAT_000b98b9
+DAT_000ba9d8
+DAT_00100630
+DAT_000879b8
+DAT_000d98c8
