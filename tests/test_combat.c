@@ -311,6 +311,30 @@ static void test_magic_arrow_impact_on_closed_door_preserves_target_pointer(void
     TEST_ASSERT_LESS_THAN_UINT16(63, wall_effect[2] & 0x3f);
     TEST_ASSERT_GREATER_THAN_UINT16(0, wall_effect[2] & 0x3f);
 }
+static void test_magic_arrow_breaks_door_and_cleans_up_linked_object(void)
+{
+    uw_test_load_object_properties(DAT_00202c90_backing, sizeof DAT_00202c90_backing);
+    uw_test_read_data("DATA/OBJECTS.DAT", DAT_002027d0_backing, 0x30, 2+0x80, SEEK_SET);
+    ushort *arrow=object_at(3);
+    arrow[0]=0x17;
+    arrow[1]=40;
+    ((byte *)arrow)[0x12]=1;
+    wall_effect[0]=0x140;
+    wall_effect[2]=1; /* one point of remaining durability */
+    wall_effect[3]=4 << 6; /* linked lock object */
+    object_at(4)[0]=0x10f;
+    expected_effect_target=wall_effect;
+    DAT_002046e0=DAT_002046e4=10;
+    apply_trap_type_damage_effect((byte *)arrow, wall_effect);
+    TEST_ASSERT_EQUAL_INT(2, door_triggers);
+    TEST_ASSERT_EQUAL_INT(1, door_scheduled);
+    TEST_ASSERT_EQUAL_HEX16(0x1cf, wall_effect[0] & 0x1ff);
+    TEST_ASSERT_EQUAL_UINT16(0, wall_effect[2] & 0x3f);
+    TEST_ASSERT_EQUAL_UINT16(0, wall_effect[3] & 0xffc0);
+    TEST_ASSERT_EQUAL_INT(1, discarded_links);
+    TEST_ASSERT_EQUAL_INT(1, effects);
+    TEST_ASSERT_EQUAL_INT(0xb, effect_types[0]);
+}
 int main(void)
 {
     UNITY_BEGIN();
@@ -340,5 +364,6 @@ int main(void)
     RUN_TEST(test_special_blood_hit_spawns_the_second_splat);
     RUN_TEST(test_blood_hit_outside_zones_uses_runtime_height);
     RUN_TEST(test_magic_arrow_impact_on_closed_door_preserves_target_pointer);
+    RUN_TEST(test_magic_arrow_breaks_door_and_cleans_up_linked_object);
     return UNITY_END();
 }

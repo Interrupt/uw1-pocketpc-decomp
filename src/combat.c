@@ -2368,7 +2368,7 @@ undefined1 param_6;
 // trigger_object_trap_or_use_action(action 4).
 bool apply_object_durability_damage(param_1,param_2,param_3,param_4,param_5)
 ushort * param_1;
-undefined4 param_2;
+ushort *param_2; /* damaging actor, forwarded to the destruction trigger */
 short param_3;
 undefined4 param_4;
 undefined2 param_5;

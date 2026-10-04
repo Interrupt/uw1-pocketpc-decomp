@@ -129,7 +129,10 @@ add_fixture_game_unit_test(combat
   src/combat.c:resolve_melee_swing_hit src/combat.c:spawn_blood_splat_object
   src/combat.c:load_monster_combat_stats
   src/combat.c:apply_trap_type_damage_effect src/combat.c:apply_direct_object_hit
-  src/combat.c:apply_object_durability_damage)
+  src/combat.c:apply_object_durability_damage
+  src/objects.c:apply_object_destruction_effect
+  src/containers.c:discard_container_contents
+  src/doors.c:close_door_object src/doors.c:schedule_door_open_animation)
 add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(visibility_walk

@@ -19,7 +19,6 @@ undefined4 play_sound_effect_with_pan(void);
 undefined4 play_positional_sound_effect(int sound, int x, int y, int volume);
 void set_movement_animation_timer(void);
 undefined4 play_weapon_impact_sound(int result);
-undefined4 apply_object_destruction_effect(void);
 long ce_rand(void);
 void project_position_by_heading(int heading, int distance, short *x, short *y);
 void collision_height_envelope(int mode, int collision);
@@ -31,7 +30,7 @@ void *spawn_new_object(int type, int mobile);
 uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y);
 void *tilemap_lookup(int x, int y);
 void object_list_append_tail(void *head, void *object);
-void free_object_slot(void);
+void free_object_slot(ushort *object);
 undefined4 read_file_handle(int handle, void *destination, int count);
 
 byte mobile_objects[256 * 27];
@@ -228,8 +227,18 @@ undefined4 spawn_scheduled_effect_object(ushort *target, int type, int mode, int
 
 undefined4 play_weapon_impact_sound(int result) { impact_sounds++; return result; }
 
-void trigger_object_trap_or_use_action(void)
-{ TEST_FAIL_MESSAGE("Unexpected door destruction trigger"); }
+int door_triggers, door_scheduled, discarded_links;
+undefined2 DAT_002020a0, DAT_002020a4;
+char *DAT_002046c4;
+void trigger_object_trap_or_use_action(ushort *actor, ushort *target, int action, int x, int y)
+{
+    TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
+    TEST_ASSERT_EQUAL_PTR(wall_effect, target);
+    TEST_ASSERT_EQUAL_INT(door_triggers == 0 ? 4 : 7, action);
+    TEST_ASSERT_EQUAL_INT(10, x);
+    TEST_ASSERT_EQUAL_INT(10, y);
+    door_triggers++;
+}
 undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
 {
     TEST_ASSERT_EQUAL_INT(4, sound);
@@ -239,7 +248,30 @@ undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
     return 0;
 }
 
-undefined4 apply_object_destruction_effect(void) { TEST_FAIL_MESSAGE("Unexpected non-critter destruction"); return 0; }
+/* Other destruction branches must not run for a door. */
+void try_combine_or_stow_object(void) { TEST_FAIL_MESSAGE("Unexpected container combination"); }
+undefined4 rand_below(void) { TEST_FAIL_MESSAGE("Unexpected random destruction"); return 0; }
+void try_empty_container(void) { TEST_FAIL_MESSAGE("Unexpected container emptying"); }
+undefined4 roll_object_destroy_chance(void) { TEST_FAIL_MESSAGE("Unexpected destroy chance"); return 0; }
+undefined4 reset_burnt_out_item_state(void) { TEST_FAIL_MESSAGE("Unexpected burnt item"); return 0; }
+void free_linked_object_recursive(void) { TEST_FAIL_MESSAGE("Unexpected recursive cleanup"); }
+ushort *settle_dropped_object(void) { TEST_FAIL_MESSAGE("Unexpected settling"); return 0; }
+void adjust_door_close_animation_delay(void) { TEST_FAIL_MESSAGE("Unexpected closing door"); }
+ushort *find_object_in_chain(ushort **head, int recurse, int category, int family, int subtype)
+{
+    TEST_ASSERT_EQUAL_PTR(wall_effect+3, *head);
+    TEST_ASSERT_EQUAL_INT(1, recurse);
+    TEST_ASSERT_EQUAL_INT(4, category);
+    TEST_ASSERT_EQUAL_INT(0, family);
+    TEST_ASSERT_EQUAL_INT(15, subtype);
+    return (**head & 0xffc0) ? object_at(4) : NULL;
+}
+void object_list_unlink(ushort *head, ushort *object)
+{
+    TEST_ASSERT_EQUAL_PTR(wall_effect+3, head);
+    TEST_ASSERT_EQUAL_PTR(object_at(4), object);
+    *head &= 0x3f;
+}
 
 long ce_rand(void) { return 1; }
 
@@ -292,7 +324,10 @@ void *spawn_new_object(int type, int mobile)
 uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y)
 {
     TEST_ASSERT_EQUAL_UINT(0x100, slot);
-    TEST_ASSERT_EQUAL_INT(2, delay);
+    if ((wall_effect[0] & 0x1ff) == 0x1cf) {
+        TEST_ASSERT_EQUAL_INT(5, delay);
+        door_scheduled++;
+    } else TEST_ASSERT_EQUAL_INT(2, delay);
     TEST_ASSERT_EQUAL_INT(0, frame);
     TEST_ASSERT_EQUAL_INT(10, x);
     TEST_ASSERT_EQUAL_INT(10, y);
@@ -313,7 +348,8 @@ void object_list_append_tail(void *head, void *object)
     wall_collision++;
 }
 
-void free_object_slot(void) { TEST_FAIL_MESSAGE("Unexpected full effect queue"); }
+void free_object_slot(ushort *object)
+{ TEST_ASSERT_EQUAL_PTR(object_at(4), object); discarded_links++; }
 
 FILE *monster_data;
 
@@ -356,6 +392,9 @@ void combat_fixture_reset(void)
     memset(DAT_002027d0_backing, 0, sizeof DAT_002027d0_backing);
     DAT_002046d8=DAT_002046dc=DAT_002046e0=DAT_002046e4=0;
     DAT_002046e8=0;
+    door_triggers=door_scheduled=discarded_links=0;
+    DAT_002020a0=DAT_002020a4=0;
+    DAT_002046c4=(char *)wall_effect;
     memset(DAT_00202c90_backing, 0, sizeof(DAT_00202c90_backing));
     memset(DAT_00202c38_backing, 0, sizeof(DAT_00202c38_backing));
     DAT_00100610 = 1;
