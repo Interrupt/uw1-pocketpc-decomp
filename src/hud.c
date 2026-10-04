@@ -899,14 +899,31 @@ void flush_dirty_rect_to_display()
   }
   iVar10 = 0x140 - DAT_00088958;
   iVar11 = 0x140 - DAT_00088950;
+  /* UW_ALWAYS_FLUSH: debug-only switch to bypass the g_selected_object/
+     DAT_0023c63c gate below entirely. Confirmed via disassembly that
+     gate is authentic original behavior, but its only original
+     exception (g_force_flush) was a narrow one: draw_idle_mouse_cursor
+     briefly forcing through just its own single cursor-icon blit.
+     Every other place this port sets g_force_flush -- the held-click
+     walk fix, modal views, chargen's drag loop, the demo harness's
+     SCREENSHOT command -- is a port-side reuse of that same escape
+     hatch for problems the original game either didn't have or solved
+     some other way we haven't identified. This flag always-flushes
+     unconditionally instead, to test live whether the gate is still
+     pulling its weight on this port at all, or whether those other
+     call sites' own g_force_flush bracketing could be dropped in
+     favor of just always flushing. Checked once and cached -- a debug
+     hook, not something read every call. */
+  static int always_flush = -1;
+  if (always_flush < 0) always_flush = (getenv("UW_ALWAYS_FLUSH") != NULL);
   if (getenv("UW_DEBUG_FLUSHGATE")) {
-    int willflush = ((0 < DAT_00084f10) ||
+    int willflush = (always_flush || (0 < DAT_00084f10) ||
       (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0))))));
-    fprintf(stderr, "[flushgate] willflush=%d selected=%p force=%d rect=(%d,%d,%d,%d)\n",
-            willflush, (void *)g_selected_object, (int)g_force_flush,
+    fprintf(stderr, "[flushgate] willflush=%d selected=%p force=%d always_flush=%d rect=(%d,%d,%d,%d)\n",
+            willflush, (void *)g_selected_object, (int)g_force_flush, always_flush,
             (int)DAT_00088954, (int)DAT_0008895c, (int)DAT_00088950, (int)DAT_00088958);
   }
-  if (((0 < DAT_00084f10) ||
+  if ((always_flush || (0 < DAT_00084f10) ||
       (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0)))))
       ) && ((DAT_0023cdc0 == 0x10 && (DAT_0023c430 = GXBeginDraw(), DAT_0023c430 != (void *)0x0))))
   {
@@ -1370,7 +1387,24 @@ static int g_dbgui_inspect_tile_x = 0, g_dbgui_inspect_tile_y = 0;
    the byte already checked > 0xbf). */
 static int g_dbgui_inspect_tex_pick = 0;
 
-static void dbgui_inspector_back(void) { g_dbgui_inspect_obj = 0; g_dbgui_inspect_tex_pick = 0; }
+/* Puts the real game pixels back behind the panel and re-arms the
+   save, synchronously, right as the content actually changes -- not
+   deferred to the next frame's populate_debug_panel() call. This
+   function runs from the SDL mouse-event handler, mid-frame, BEFORE
+   this tick's own forced-3D-redraw has run; a present that slips
+   through during that redraw's own suspend/resume present-batch
+   window (the click-and-hold-freeze fix's own bypass -- see
+   uw_suspend_present_batch's comment) can land between "this tick's
+   3D view redrawn" and "this tick's own populate_debug_panel/
+   dbgui_draw call", so by the time THAT happens the real pixels
+   -- not a stale previous layout's leftover content -- need to
+   already be there for it to have any chance of showing something
+   consistent. */
+static void dbgui_inspector_back(void) {
+  dbgui_invalidate_region();
+  g_dbgui_inspect_obj = 0;
+  g_dbgui_inspect_tex_pick = 0;
+}
 
 /* "locked" (door inspector rows, below) is shown as a toggle rather
    than plain text per direct request, so this tool can unlock a door
@@ -1394,6 +1428,10 @@ void dbgui_object_inspector_pick(void)
 {
   ushort *obj;
   if (!dbgui_visible()) return;
+  /* Same reasoning as dbgui_inspector_back's own comment -- invalidate
+     synchronously, right as this click is about to replace whatever
+     the panel was showing, not deferred to next frame. */
+  dbgui_invalidate_region();
   obj = pick_object_under_cursor();
   g_dbgui_inspect_obj = obj;
   g_dbgui_inspect_tex_pick = 0;
@@ -1507,15 +1545,6 @@ static void populate_debug_texture_inspector(int pick)
    never left "Debug Panel"). A stale arena pointer here is the same
    class of risk every other debug-only, one-click-lifetime display in
    this panel already accepts. */
-/* Which of the panel's three distinct layouts populate_debug_panel
-   drew last frame (0=toggle panel, 1=object inspector, 2=texture
-   inspector), so a switch between them can be detected -- see its own
-   dbgui_invalidate_region() call below for why. -1 means "none yet /
-   panel was just (re)opened", so the very first frame after an open
-   never spuriously invalidates (dbgui_toggle's own open-time save
-   already started the backing clean for that case). */
-static int g_dbgui_last_kind = -1;
-
 void populate_debug_panel(void)
 {
   /* Closing the panel (backtick) should always land back on the base
@@ -1527,24 +1556,18 @@ void populate_debug_panel(void)
   if (!dbgui_visible()) {
     g_dbgui_inspect_obj = 0;
     g_dbgui_inspect_tex_pick = 0;
-    g_dbgui_last_kind = -1;
     return;
   }
-  int kind = (g_dbgui_inspect_obj != 0) ? 1 : (g_dbgui_inspect_tex_pick != 0) ? 2 : 0;
-  /* Switching which of the three layouts is showing, while the panel
-     stays open (object inspector -> back to the toggle panel, a pick
-     swapping straight from one inspector to the other, ...), can shrink
-     or reshape the panel. Put the real pixels back and re-arm the save
-     before the new layout draws, rather than trusting the new layout's
-     own fill call to correctly cover whatever the old one left behind
-     -- confirmed live this depends on redraw/flush ordering this module
-     doesn't fully control (stale "3d_objects"/"npc_tick"/"pick_diag"
-     row content survived on screen after an inspector's own "< back"
-     click despite the fill itself covering the right rect). */
-  if (g_dbgui_last_kind != -1 && g_dbgui_last_kind != kind) {
-    dbgui_invalidate_region();
-  }
-  g_dbgui_last_kind = kind;
+  /* Invalidating the region on a layout switch (toggle panel <->
+     object inspector <-> texture inspector) happens synchronously at
+     the two points that actually change g_dbgui_inspect_obj/tex_pick
+     -- dbgui_inspector_back() and dbgui_object_inspector_pick(), see
+     their own comments -- not here. This function runs once per tick,
+     strictly after this tick's own forced-3D-redraw has already run;
+     a present that slips through during that redraw's own window (see
+     dbgui_inspector_back's comment) happens before this function is
+     even reached, so invalidating here would already be too late to
+     matter for that window. */
   if (g_dbgui_inspect_obj != 0) {
     populate_debug_object_inspector(g_dbgui_inspect_obj);
     return;
