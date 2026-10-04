@@ -223,6 +223,12 @@ void dbgui_draw(void)
   int x0 = DBGUI_PANEL_X, y0 = DBGUI_PANEL_Y;
   int x1 = x0 + DBGUI_PANEL_W, y1 = y0 + panel_h;
 
+  if (getenv("UW_DEBUG_DBGUI"))
+    fprintf(stderr, "[dbgui] draw field_count=%d panel y0=%d y1=%d clip=(%d,%d)-(%d,%d)\n",
+            g_field_count, y0, y1,
+            (int)(short)DAT_000a85c4, (int)(short)DAT_000a85c8,
+            (int)(short)DAT_000842a4, (int)(short)DAT_000842a8);
+
   /* Text color: draw_text_string does NOT use set_draw_color's palette
      index (confirmed by reading its own body, uw.c ~5826-5834) -- it
      honours g_text_flat_color (a direct RGB565 value) unless a caller
@@ -351,9 +357,15 @@ void dbgui_feed_key(int sdl_keycode)
   }
 
   if (sdl_keycode == DBGUI_KEY_UP) {
+    int before = g_selected;
     g_selected = (g_selected - 1 + g_field_count) % g_field_count;
+    if (getenv("UW_DEBUG_DBGUI"))
+      fprintf(stderr, "[dbgui] key UP field_count=%d selected %d -> %d\n", g_field_count, before, g_selected);
   } else if (sdl_keycode == DBGUI_KEY_DOWN) {
+    int before = g_selected;
     g_selected = (g_selected + 1) % g_field_count;
+    if (getenv("UW_DEBUG_DBGUI"))
+      fprintf(stderr, "[dbgui] key DOWN field_count=%d selected %d -> %d\n", g_field_count, before, g_selected);
   } else if (f->is_button) {
     if (sdl_keycode == DBGUI_KEY_RETURN && f->on_press) f->on_press();
   } else if (f->is_toggle) {
