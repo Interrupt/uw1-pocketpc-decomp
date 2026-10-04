@@ -310,6 +310,24 @@ void dbgui_feed_key(int sdl_keycode)
   }
 }
 
+void dbgui_test_reset(void)
+{
+  g_field_count = 0;
+  g_selected = 0;
+  g_editing = 0;
+  g_edit_len = 0;
+  g_visible = 0;
+  g_saved_valid = 0;
+}
+
+int dbgui_test_row_x(void) { return DBGUI_PANEL_X + 1; }
+
+int dbgui_test_row_y(int field_index)
+{
+  if (field_index < 0 || field_index >= g_field_count) return -1;
+  return g_fields[field_index].row_y;
+}
+
 void dbgui_feed_text(const char *utf8)
 {
   if (!g_visible || !g_editing || g_field_count == 0) return;
