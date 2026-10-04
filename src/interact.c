@@ -1070,31 +1070,52 @@ ushort *pick_object_under_cursor()
 
 
 // was FUN_0003ed6c
+/* Resolves a raw terrain pick index (DAT_002020ac -- pick_object_under_
+   cursor's own "the pick stencil wasn't an object slot, here's a wall/
+   floor texture index instead" output, byte - 0xbf) to a real texture
+   id and its message-string description. Factored out of
+   describe_picked_terrain's own real "Look" logic below (byte-for-byte
+   the same resolution, not a reimplementation) so the debug object
+   inspector (hud.c) can show the same wall/floor pick information
+   without reaching into this file's own DAT_0023ad58/DAT_0023ae58
+   terrain-property tables directly. Returns the resolved texture id;
+   *out_desc is get_message_string's own result (NULL/empty are both
+   possible, same as every other get_message_string caller). */
+int resolve_picked_terrain_texture(param_1,out_desc)
+short param_1;
+char **out_desc;
+{
+  int iVar1;
+  uint uVar2;
+
+  iVar1 = (param_1 + -1) * 0x10000 >> 0x10;
+  if (iVar1 < 0x30) {
+    uVar2 = (uint)(short)(&DAT_0023ae58)[iVar1];
+  }
+  else if (iVar1 < 0x3a) {
+    uVar2 = 0x1fe - (int)*(short *)(&DAT_0023ad58 + iVar1 * 2);
+  }
+  else {
+    uVar2 = 0x1ff;
+  }
+  *out_desc = get_message_string(uVar2 | 0x1400);
+  return (int)uVar2;
+}
+
 void describe_picked_terrain(param_1,param_2)
 byte param_1;
 short param_2;
 
 {
-  int iVar1;
-  uint uVar2;
-  
+  char *desc;
+
   if ((param_2 < 1) || (param_1 != 2)) {
     print_scroll_message_by_id(param_1 + 0x98);
   }
   else {
-    iVar1 = (param_2 + -1) * 0x10000 >> 0x10;
-    if (iVar1 < 0x30) {
-      uVar2 = (uint)(short)(&DAT_0023ae58)[iVar1];
-    }
-    else if (iVar1 < 0x3a) {
-      uVar2 = 0x1fe - (int)*(short *)(&DAT_0023ad58 + iVar1 * 2);
-    }
-    else {
-      uVar2 = 0x1ff;
-    }
+    resolve_picked_terrain_texture(param_2,&desc);
     message_scroll_print_wrapped(s_You_see_000858fc);
-    get_message_string(uVar2 | 0x1400);
-    message_scroll_print_wrapped();
+    message_scroll_print_wrapped(desc);
     message_scroll_print_wrapped(&DAT_00084f20);
     /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
        fix -- back-to-back terrain Looks (e.g. the ceiling, wall signs)

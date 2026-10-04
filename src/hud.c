@@ -11,6 +11,10 @@
 #include "headers/models.h"
 #include "headers/movement.h"
 #include "headers/tmap.h"
+#include "headers/interact.h"
+#include "headers/objects.h"
+#include "headers/resources.h"
+#include "headers/ai.h"
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1337,6 +1341,174 @@ short param_1;
 
 
 
+/* Debug object inspector: clicking inside the 3D viewport while the
+   debug panel is open (gx_stub.c's own mouse-down handling decides
+   "inside the viewport" vs. "on the panel", the one other place that
+   already knows the viewport's registered bounds -- the same ones
+   pick_object_under_cursor's own guard checks) swaps the panel from
+   subsystem toggles to a read-only properties view of whatever object
+   was under the cursor. g_dbgui_inspect_tile_x/y are snapshotted once,
+   at pick time (via target_in_range(0,...), the same cheap "just
+   resolve DAT_002020a0/a4 from this object's own tile, skip the real
+   range/line-of-sight check" call interact_default's own range check
+   uses) rather than recomputed every frame the panel redraws -- by
+   the time a LATER frame's redraw runs, DAT_002020a0/a4/DAT_002020b0
+   could easily have been overwritten by something else's own pick
+   (e.g. a real gameplay interact elsewhere), so capture while they're
+   still guaranteed fresh from THIS pick. */
+static ushort *g_dbgui_inspect_obj = 0;
+static int g_dbgui_inspect_tile_x = 0, g_dbgui_inspect_tile_y = 0;
+/* Set instead of g_dbgui_inspect_obj when the pick stencil resolved to
+   a wall/floor texture rather than an object slot (see
+   dbgui_object_inspector_pick's own comment) -- the raw DAT_002020ac
+   pick index, resolved to a real texture id/description at display
+   time by the exact same call the real "Look" feature uses
+   (resolve_picked_terrain_texture, interact.c). 0 means "no texture
+   pick showing" (DAT_002020ac itself is never a real pick value of 0 --
+   pick_object_under_cursor only ever sets it from `byte - 0xbf` with
+   the byte already checked > 0xbf). */
+static int g_dbgui_inspect_tex_pick = 0;
+
+static void dbgui_inspector_back(void) { g_dbgui_inspect_obj = 0; g_dbgui_inspect_tex_pick = 0; }
+
+void dbgui_object_inspector_pick(void)
+{
+  ushort *obj;
+  if (!dbgui_visible()) return;
+  obj = pick_object_under_cursor();
+  g_dbgui_inspect_obj = obj;
+  g_dbgui_inspect_tex_pick = 0;
+  if (obj != 0) {
+    target_in_range(0,(char *)obj,DAT_002020b0);
+    g_dbgui_inspect_tile_x = (int)(short)DAT_002020a0;
+    g_dbgui_inspect_tile_y = (int)(short)DAT_002020a4;
+  } else if (DAT_002020ac != 0) {
+    /* No object under the cursor, but the pick stencil DID resolve to
+       a wall/floor texture index (pick_object_under_cursor's own
+       `(0xbf < uVar4) && (uVar4 < 0xfb)` branch) -- show that instead
+       of falling back to the toggle panel. */
+    g_dbgui_inspect_tex_pick = (int)DAT_002020ac;
+  }
+}
+
+/* Populates the panel for the currently-inspected object -- see
+   dbgui_object_inspector_pick above. Per direct request, "locked" is
+   shown only for doors ((id&0x1f0)==0x140 -- the 0x140-0x14f id range
+   confirmed throughout this project as the real "is a door" test, see
+   e.g. doors.c/ai.c) rather than every object with a special-link
+   field, and "hp" only for creatures ((id&0x1c0)==0x40, the same NPC-
+   class test used throughout ai.c/combat.c). The "locked" check itself
+   (find_object_in_chain(chain,0,6,2,3) -- class 6/subclass 2/id-low-
+   nibble 3) is the exact same lock-record search
+   force_unlock_target_object (object_actions.c) already does before
+   attempting a real unlock, not a guess. HP: current (object record
+   byte +8, confirmed by npc_ai_tick's own regen check) over max
+   (g_monster_max_stats_table[(id&0x3f)*0x30], the per-creature-type
+   stat template load_monster_combat_stats loads from OBJECTS.DAT). */
+static void populate_debug_object_inspector(ushort *obj)
+{
+  char line[40];
+  char *name;
+  int id = *obj & 0x1ff;
+
+  dbgui_begin("Object Inspector");
+  dbgui_field_button("< back", dbgui_inspector_back);
+  snprintf(line, sizeof(line), "0x%03x", id);
+  dbgui_field_text("id", line);
+  name = get_message_string(0x800 | id);
+  dbgui_field_text("type", (name != 0 && *name != 0) ? name : "(unnamed)");
+  snprintf(line, sizeof(line), "(%d,%d)", g_dbgui_inspect_tile_x, g_dbgui_inspect_tile_y);
+  dbgui_field_text("tile", line);
+  if ((id & 0x1f0) == 0x140) {
+    ushort *chain = obj + 3;
+    int locked = find_object_in_chain(&chain,0,6,2,3) != 0;
+    dbgui_field_text("locked", locked ? "yes" : "no");
+  }
+  if ((id & 0x1c0) == 0x40) {
+    int hp = *(byte *)((char *)obj + 8);
+    int maxhp = (&g_monster_max_stats_table)[(id & 0x3f) * 0x30];
+    snprintf(line, sizeof(line), "%d / %d", hp, maxhp);
+    dbgui_field_text("hp", line);
+  }
+  dbgui_end();
+}
+
+/* Populates the panel for a picked wall/floor texture instead of an
+   object -- see dbgui_object_inspector_pick's own comment on
+   g_dbgui_inspect_tex_pick. resolve_picked_terrain_texture
+   (interact.c) is the exact same resolution the real "Look" feature's
+   describe_picked_terrain uses for the "You see ..." message; nothing
+   reimplemented here. */
+static void populate_debug_texture_inspector(int pick)
+{
+  char line[40];
+  char *desc;
+  int texid = resolve_picked_terrain_texture((short)pick,&desc);
+
+  dbgui_begin("Texture Inspector");
+  dbgui_field_button("< back", dbgui_inspector_back);
+  snprintf(line, sizeof(line), "%d", texid);
+  dbgui_field_text("id", line);
+  dbgui_field_text("desc", (desc != 0 && *desc != 0) ? desc : "(none)");
+  dbgui_end();
+}
+
+/* General debug panel: subsystem on/off toggles, bound directly to
+   each subsystem's own global flag. Populated unconditionally, once
+   per frame, from main_loop_hud_flush below -- rather than from inside
+   whatever subsystem happens to run that frame (the old per-catalog
+   "Object Tuner" in models.c only populated the panel when a 3D model
+   was actually on screen, and stomped it right back out the next
+   frame a model wasn't drawn -- same shared-field-list conflict
+   dbgui_begin's own header comment now calls out). Add a new
+   subsystem toggle here, not at a second call site -- there's exactly
+   one field list live at a time. Kept as its own function (rather than
+   inlined into main_loop_hud_flush) so the tests/ unit-testing
+   pipeline's isolated extraction of main_loop_hud_flush itself (see
+   tests/CMakeLists.txt's illustration_render suite) doesn't have to
+   grow a fixture stub for every object-inspector dependency this pulls
+   in -- it already stubs a plain `void populate_debug_panel(void) {}`
+   alongside its other dbgui_* no-ops.
+
+   Swaps to the object inspector instead whenever dbgui_object_
+   inspector_pick (gx_stub.c, on a 3D-viewport click) picked an object.
+   No extra liveness check here on later frames -- object_ptr_in_arena
+   looked like the right one at first (used elsewhere as a guard before
+   dereferencing a picked object) but it actually tests something
+   different: "is this specifically a MOBILE-record (27-byte, small
+   0..0xff slot range) pointer", true for the player/NPCs only, false
+   for every static object (0x100+ slots: doors, containers, plain
+   items, ...) -- confirmed via containers.c's own use of it to decide
+   whether an object has the mobile-only +0x16 tile-position field at
+   all. Guarding on it here silently dropped the inspector back to the
+   toggle panel for anything that wasn't an NPC, i.e. nearly every real
+   pick (confirmed live clicking a door -- found objid=0x140, panel
+   never left "Debug Panel"). A stale arena pointer here is the same
+   class of risk every other debug-only, one-click-lifetime display in
+   this panel already accepts. */
+void populate_debug_panel(void)
+{
+  if (g_dbgui_inspect_obj != 0) {
+    populate_debug_object_inspector(g_dbgui_inspect_obj);
+    return;
+  }
+  if (g_dbgui_inspect_tex_pick != 0) {
+    populate_debug_texture_inspector(g_dbgui_inspect_tex_pick);
+    return;
+  }
+  dbgui_begin("Debug Panel");
+  dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  /* Field names kept short (DBGUI_PANEL_W, debug_ui.c, is a fixed 140
+     logical px, sized for the panel's small top-left corner of free
+     screen real estate -- a longer name runs into neighboring HUD
+     chrome, confirmed by eye). */
+  dbgui_field_toggle("3d_objects", &g_uw_3d_objects_enabled);
+  dbgui_field_toggle("npc_tick", &g_npc_tick_enabled);
+  dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
+  dbgui_end();
+}
+
 // was FUN_000497cc -- runs once per in-game main-loop iteration: resets
 // the dirty rect to a degenerate {100,100,100,100}, redraws the small
 // HUD/cursor element, and flushes that to the display
@@ -1460,26 +1632,7 @@ void main_loop_hud_flush()
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
-  /* General debug panel: subsystem on/off toggles, bound directly to
-     each subsystem's own global flag. Populated unconditionally, once
-     per frame, HERE rather than from inside whatever subsystem happens
-     to run that frame (the old per-catalog "Object Tuner" in models.c
-     only populated the panel when a 3D model was actually on screen,
-     and stomped it right back out the next frame a model wasn't drawn
-     -- same shared-field-list conflict dbgui_begin's own header comment
-     now calls out). Add a new subsystem toggle here, not at a second
-     call site -- there's exactly one field list live at a time. */
-  dbgui_begin("Debug Panel");
-  dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
-  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
-  /* Field names kept short (DBGUI_PANEL_W, debug_ui.c, is a fixed 140
-     logical px, sized for the panel's small top-left corner of free
-     screen real estate -- a longer name runs into neighboring HUD
-     chrome, confirmed by eye). */
-  dbgui_field_toggle("3d_objects", &g_uw_3d_objects_enabled);
-  dbgui_field_toggle("npc_tick", &g_npc_tick_enabled);
-  dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
-  dbgui_end();
+  populate_debug_panel();
   /* Debug UI: must draw HERE, after the forced 3D redraw above (or it
      gets painted over) but before flush_dirty_rect_to_display(1) below
      -- that call is the actual screen present for this tick (blits the

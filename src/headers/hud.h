@@ -96,6 +96,21 @@ void init_inventory_panel_hotspots();
 void redraw_container_icon_slot();
 bool update_carry_weight_display();
 void main_loop_hud_flush();
+/* Debug object inspector (gx_stub.c's own mouse-down handling calls
+   this for a click inside the 3D viewport while the debug panel is
+   visible) -- runs the real object pick and swaps the debug panel
+   into a read-only properties view of whatever was under the cursor,
+   or back to the normal subsystem-toggle panel if nothing was there. */
+void dbgui_object_inspector_pick(void);
+/* Populates the general debug panel (subsystem toggles, or the object
+   inspector -- see dbgui_object_inspector_pick above) for the current
+   frame; call once, right before dbgui_draw(). Its own function (not
+   static, not inlined into main_loop_hud_flush) so the tests/ unit-
+   testing pipeline's isolated extraction of main_loop_hud_flush can
+   declare it via this header and stub it with one no-op line instead
+   of needing fixtures for the object inspector's own dependencies --
+   see populate_debug_panel's own comment in hud.c. */
+void populate_debug_panel(void);
 void release_grtile_handle();
 void run_pause_menu_modal_loop();
 void redraw_pause_menu_icon();
