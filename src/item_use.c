@@ -18,7 +18,13 @@ static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking_if_%d_and_
    search loop) at a 6-byte stride -- real max 9*6+2=56 bytes. */
 static undefined1 DAT_00100634_backing[128];
 #define DAT_00100634 DAT_00100634_backing[0]
-static undefined2 DAT_00100632_backing[256];
+/* Sizing-audit pass: sibling high-slot of DAT_00100630 (combat.c),
+   same combination-index param_2 (0-9) and the same `*3` ushort
+   stride (`&DAT_00100632 + param_2*3` in is_object_consumed_in_
+   combination) -- real max 9*3=27, 28 elements (56 bytes), same
+   bound as DAT_00100630's own fix. Sized to 32 elements (64 bytes)
+   to match; down from 256. */
+static undefined2 DAT_00100632_backing[32];
 #define DAT_00100632 DAT_00100632_backing[0]
 /* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes)
    via the _DAT_002035cf macro below -- widened to its own real backing

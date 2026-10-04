@@ -115,8 +115,14 @@ short DAT_0023bf48;
    tiles reported the same floor height as open floor, so collision never
    stopped the player at a wall. Alias every field into the one backing
    buffer. Per-corner layout: [0]=shape/index, [1..2]=diag corner offsets,
-   [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05). */
- undefined1 DAT_00202bf8_backing[32768];
+   [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05).
+
+   Sizing-audit pass: every field is a named, explicitly-offset alias
+   (see movement.h) -- the furthest is DAT_00202c14, a 4-byte uint at
+   offset 0x1c, ending at byte 31. Exact real need is 32 bytes, a HARD
+   bound (no dynamic indexing past these fixed offsets exists). Down
+   from 32768. */
+ undefined1 DAT_00202bf8_backing[32];
 /* Wall-slide corner-classification tables, used by resolve_wall_slide_corner (called
    from sweep_slide_along_wall when a wall hit has a specific blocked-
    corner shape) to pick which of the 8 candidate headings in

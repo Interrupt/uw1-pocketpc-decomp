@@ -164,9 +164,14 @@ static undefined1 PTR_DAT_000845c8_backing[256];
    same bound, given the same 256-byte margin. */
 static undefined1 DAT_000845e8_backing[256];
 #define DAT_000845e8 DAT_000845e8_backing[0]
-static undefined2 DAT_000bbfc8_backing[8192];
+/* Sizing-audit pass: both are a sum_barter_offer_value param_4 cache
+   (`psVar3 = (short*)(iVar4*2+param_4)`), and that function's own loop
+   bound is `iVar4 < 4` -- exact max offset 3*2=6 (4 shorts, 8 bytes),
+   a HARD bound. Sized to 16 elements (32 bytes) for headroom; down
+   from 8192. */
+static undefined2 DAT_000bbfc8_backing[16];
 #define DAT_000bbfc8 DAT_000bbfc8_backing[0]
-static undefined2 DAT_000bbfb0_backing[8192];
+static undefined2 DAT_000bbfb0_backing[16];
 #define DAT_000bbfb0 DAT_000bbfb0_backing[0]
 static char s_npc_attitude_000845f8[] = "npc_attitude";
 static char *DAT_00100784;
@@ -251,11 +256,24 @@ static char s_do_offer_00085180[] = "do_offer";
 static char s_identify_inv_0008518c[] = "identify_inv";
 static short DAT_0010078c;
 static short DAT_00100794;
-static undefined1 DAT_00100680_backing[65536];
+/* Sizing-audit pass: no code-level cap exists -- indexed by DAT_00100794,
+   a count of consecutive non-zero babl-script words read until a 0
+   sentinel (babl_menu/babl_fmenu). The only real ceiling is CONV.BYT
+   itself (data/DATA/CONV.BYT is exactly 64000 bytes for EVERY NPC's
+   compiled conversation script combined), which strongly implies any
+   single menu's item count is small (tens, not thousands). Sized to
+   1024 items (8 bytes/item pointer stride = 8192 bytes) for generous
+   headroom against that budget rather than a derived exact number --
+   flagging as a judgment call, not a hard-proven bound. Down from
+   65536. */
+static undefined1 DAT_00100680_backing[8192];
 #define DAT_00100680 DAT_00100680_backing[0]
 static undefined2 DAT_00100790;
 static short DAT_00100788;
-static undefined1 DAT_001006d8_backing[65536];
+/* Sizing-audit pass: sibling raw-string cache for DAT_00100680, same
+   index (DAT_00100794) and same judgment-call headroom reasoning --
+   see that array's own comment. Down from 65536. */
+static undefined1 DAT_001006d8_backing[8192];
 #define DAT_001006d8 DAT_001006d8_backing[0]
 /* Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/select_babl_menu_response
    all index it as a real array -- `(&DAT_00100770)[idx]` for idx up to
@@ -274,7 +292,10 @@ static undefined1 DAT_001006d8_backing[65536];
    (already fixed with a real backing array). Sized to match. */
 static short DAT_00100770_backing[32768];
 #define DAT_00100770 DAT_00100770_backing[0]
-static undefined1 DAT_001007a0_backing[65536];
+/* Sizing-audit pass: same index/cap reasoning as DAT_00100680 above,
+   but a 2-byte (short) stride, not 8 -- 1024 items * 2 = 2048 bytes.
+   Down from 65536. */
+static undefined1 DAT_001007a0_backing[2048];
 #define DAT_001007a0 DAT_001007a0_backing[0]
 /* DAT_00085230/34/38/3c are 4 tiny (<=3-char) control-code constants,
    packed 4 bytes apart in the original binary -- confirmed via a real

@@ -37,7 +37,7 @@ extern int g_blit_transparent_mode;
    palette_cycle_range) -- extern'd here so both translation units see
    the same storage. */
 extern int DAT_0024af70;
-extern undefined2 DAT_00242010_backing[32768];
+extern undefined2 DAT_00242010_backing[12800];
 #define DAT_00242010 DAT_00242010_backing[0]
 extern undefined2 DAT_00248418_backing[20 * 256];
 #define DAT_00248418 DAT_00248418_backing[0]

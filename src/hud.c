@@ -181,16 +181,25 @@ static short DAT_00204854;
    20-slot table (`while(iVar2<0x14)`), 2-byte stride -- real max
    19*2+2=40 bytes. */
 static undefined1 DAT_00204720_backing[64];
-static undefined2 DAT_00204750_backing[256];
+/* Sizing-audit pass: siblings of DAT_00204720 right above, same
+   register_cursor_hotspot 20-slot table, but indexed directly by
+   element (not a byte offset) -- real max index 19, 20 elements * 2
+   bytes = 40 bytes real need. Sized to 32 elements (64 bytes) to
+   match DAT_00204720's own headroom; down from 256. */
+static undefined2 DAT_00204750_backing[32];
 #define DAT_00204750 DAT_00204750_backing[0]
-static undefined2 DAT_002047e0_backing[256];
+static undefined2 DAT_002047e0_backing[32];
 #define DAT_002047e0 DAT_002047e0_backing[0]
-static undefined2 DAT_00204808_backing[256];
+static undefined2 DAT_00204808_backing[32];
 #define DAT_00204808 DAT_00204808_backing[0]
 static undefined2 DAT_00086970;
 static char DAT_00204858;
 static undefined2 DAT_00204704;
-static undefined2 DAT_00204714_backing[256];
+/* Sizing-audit pass: push_cursor_icon/pop_cursor_icon's own cursor-
+   icon stack, guarded by `if (DAT_00204858 != '\x03')` -- max depth
+   3, real need 3 elements (6 bytes). Sized to 8 for headroom; down
+   from 256. */
+static undefined2 DAT_00204714_backing[8];
 #define DAT_00204714 DAT_00204714_backing[0]
 static short DAT_002047a8;
 static short DAT_0020478c;

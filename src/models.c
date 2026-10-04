@@ -475,7 +475,13 @@ static undefined1 DAT_000c9e3e_backing[49152];
    real model file's parse, which crashed much later and far from the
    actual bad write -- the same "detected at a distance" pattern as the
    STRINGS.PAK heap corruption. Widened with the usual backing-buffer
-   pattern. */
+   pattern.
+
+   Sizing-audit pass: real hard cap is 600 points * 0x2c (44) = 26400
+   bytes -- confirmed already comfortably covered by the current 32768
+   (24% headroom), tighter than the sibling PARTS family's own 36%
+   headroom choice just below. Left as-is rather than churning for a
+   marginal gain. */
 static undefined1 DAT_000d2ab0_backing[32768];
 #define DAT_000d2ab0 DAT_000d2ab0_backing[0]
 static undefined1 DAT_000d2ab1_backing[32768];
@@ -609,7 +615,12 @@ static undefined1 DAT_000da868_backing[128];
 #define DAT_000da868 DAT_000da868_backing[0]
 static undefined1 DAT_000dab90_backing[128];
 #define DAT_000dab90 DAT_000dab90_backing[0]
-static undefined DAT_000db454_backing[8192];
+/* Sizing-audit pass: its only use is
+   `ce_fscanf(pvVar_fh,&DAT_000849ac,&DAT_000db454)` where DAT_000849ac
+   is the format string "%d" -- a single int destination, not a table.
+   Sized to 16 bytes for alignment/type-punning safety, down from
+   8192. */
+static undefined DAT_000db454_backing[16];
 #define DAT_000db454 DAT_000db454_backing[0]
 static char s__DATA3D_BED2_E_00085474[] = "\\DATA3D\\BED2.E";
 static char s__DATA3D_CHAIRSIM_E_00085484[] = "\\DATA3D\\CHAIRSIM.E";

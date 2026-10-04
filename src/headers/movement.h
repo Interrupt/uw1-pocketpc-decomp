@@ -61,7 +61,7 @@ extern char * DAT_002048bc;
 /* Globals defined in uw.c but also used by functions that now live in
    collision.c (collision geometry) -- extern'd here so both
    translation units see the same storage. */
-extern undefined1 DAT_00202bf8_backing[32768];
+extern undefined1 DAT_00202bf8_backing[32];
 #define DAT_00202bf8 DAT_00202bf8_backing[0]
 #define DAT_00202bf9  (DAT_00202bf8_backing[0x01])
 #define DAT_00202bfa  (DAT_00202bf8_backing[0x02])

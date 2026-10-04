@@ -275,7 +275,12 @@ char *g_weapon_swing_current_frame;
    g_weapon_swing_raw_frames instead (see that comment) -- kept only
    because app_main_loop still allocates and assigns it. */
 static char *g_weapon_swing_startup_scratch_buffer;
-undefined1 DAT_00241f08_backing[32768];
+/* Sizing-audit pass: a third sibling of DAT_0023cca8/DAT_0023c698
+   (same registry-install-dir-lookup pattern, right above/at line
+   1889/1891) -- written from the same 520-byte (0x208) stack buffer
+   (auStack_228) as those two, which were already sized to 1024 for
+   this exact reason. Matched here for consistency, down from 32768. */
+undefined1 DAT_00241f08_backing[1024];
 static undefined2 DAT_0023c59e;
 static undefined2 DAT_0023c5a0;
 static char *DAT_0023c44c;

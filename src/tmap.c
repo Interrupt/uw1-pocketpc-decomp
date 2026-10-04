@@ -296,10 +296,24 @@ static const unsigned char DAT_00086cc0_arr[32] = {
    own separate, more careful review before any resize. */
 static undefined2 DAT_0023b908_backing[32];
 #define DAT_0023b908 DAT_0023b908_backing[0]
-static undefined2 DAT_0023b928_backing[8192];
+/* Sizing-audit pass: the "separate, more careful review" flagged
+   above is done. update_wall_partition_phase's dynamic write
+   (`ce_memmove(&DAT_0023b928 + uVar2 + 1, &DAT_0023b90a, ...)`) is
+   clamped so `uVar2 + uVar1 <= 8` (the function's own "8-entry
+   window" cap), so max index touched is 8 (9 elements). This also
+   matches the literal `ce_memmove(&DAT_0023b908,&DAT_0023b928,0x12)`
+   copy between the two siblings -- same exact 18-byte real bound as
+   DAT_0023b908. Sized to 32 elements (64 bytes) to match; down from
+   8192. */
+static undefined2 DAT_0023b928_backing[32];
 #define DAT_0023b928 DAT_0023b928_backing[0]
 char DAT_0023bb94;
-static undefined DAT_0023b90a_backing[8192];
+/* Sizing-audit pass: only read as a memmove source
+   (`ce_memmove(&DAT_0023b928+uVar2+1,&DAT_0023b90a,(uVar1&0xffff)<<1)`)
+   with uVar1 capped at 8 (same 8-entry window cap as DAT_0023b928) --
+   max byte count 8*2=16 bytes. Sized to 32 for headroom; down from
+   8192. */
+static undefined DAT_0023b90a_backing[32];
 #define DAT_0023b90a DAT_0023b90a_backing[0]
 /* Sizing pass: `ce_memset(&DAT_0023b940,0,0x252)` -- 594 bytes exact. */
 static undefined1 DAT_0023b940_backing[1024];

@@ -146,7 +146,13 @@ static char DAT_00085918;
 static char DAT_00085919;
 static undefined DAT_00085908_backing[8192];
 static char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
-undefined1 DAT_0023c460_backing[32768];
+/* Sizing-audit pass: load_critter_association_tables's own per-level
+   write is `puVar6[iVar7]` where `iVar7 = iVar10*3 + iVar5`, iVar10
+   bounded to 32 levels (`< 0x20`) and iVar5 bounded to 3 (`if (iVar5
+   < 3)` write guard) -- exact max index 31*3+2 = 95, a HARD bound (32
+   levels * 3 slots is the real table shape, not an estimate). Sized
+   to 128 for headroom, down from 32768. */
+undefined1 DAT_0023c460_backing[128];
 /* DAT_0023c4c0/DAT_0023c5b8/DAT_0024ac18 (a resource-slot status table,
    load_critter_association_tables) were lone-byte scalars indexed up to 0x80 (128) --
    confirmed overflowing into the unrelated DAT_00248410 (a malloc'd

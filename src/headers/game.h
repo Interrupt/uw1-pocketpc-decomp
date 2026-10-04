@@ -47,7 +47,7 @@ extern void * DAT_00202308_arr[256];
 #define DAT_00202308 DAT_00202308_arr[0]
 extern void (*const DAT_00085668_real_table[48])(void);
 #define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)
-extern undefined1 DAT_00241f08_backing[32768];
+extern undefined1 DAT_00241f08_backing[1024];
 #define DAT_00241f08 DAT_00241f08_backing[0]
 
 

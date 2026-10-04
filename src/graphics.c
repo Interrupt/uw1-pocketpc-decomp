@@ -76,7 +76,16 @@ void *DAT_0023c430;
    g_palette_rgb565 -- exactly 256*4 = 1024 real bytes. */
 static undefined1 DAT_00084a40_backing[1024];
 #define DAT_00084a40 DAT_00084a40_backing[0]
-undefined2 DAT_00242010_backing[32768];
+/* Sizing-audit pass: units trap too -- element type is undefined2 (2
+   bytes), so [32768] was really 65536 bytes, not 32768. Its one real
+   consumer (the GAPI blit a few hundred lines down, `iVar8=0x28` rows
+   * `iVar10=0x140` cols, stride `0x28`) reads this buffer with fully
+   hardcoded literals: max offset is 39 (last row) + 319*40 (last col
+   step) = 12799, i.e. exactly 12800 elements (a 320x40 bitmap row-major
+   buffer) -- a HARD bound from fixed blit geometry, matching what
+   load_bmp_resource_to_rgb565 loads resource 0x94 into. Down from
+   32768 elements (65536 bytes) to 12800 elements (25600 bytes). */
+undefined2 DAT_00242010_backing[12800];
 /* Was a lone `undefined2` scalar, but build_rgb565_palette uses it as the base of a
    20-level x 256-entry faded-palette table (`(ushort*)(&DAT_00248418 +
    iVar21) + level*0x100`, iVar21 stepping by 2 per palette entry, 20 levels

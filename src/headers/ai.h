@@ -59,7 +59,7 @@ extern undefined1 DAT_00101934; // last attacker's heading
 extern char DAT_0010194c; // last attacker's object slot index
 extern char DAT_000853d0; // last attacker's class id
 extern int DAT_00101940; // game-clock timestamp the attack was recorded at
-extern undefined1 DAT_0023c460_backing[32768];
+extern undefined1 DAT_0023c460_backing[128];
 #define DAT_0023c460 DAT_0023c460_backing[0]
 
 
