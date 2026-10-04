@@ -37,8 +37,11 @@ undefined2 DAT_000da47c;
    build_trig_tables's `[0..360]` writes smashed ~1.4 KB of adjacent
    globals. In UU.exe they are contiguous .bss (0xd9930 sin, 0xd9ed8
    cos). */
- undefined4 DAT_000d9930_arr[512];
- undefined4 DAT_000d9ed8_arr[512];
+/* Sizing-audit pass: build_trig_tables's own loop is `iVar2<0x169`
+   (361, degrees 0-360) -- HARD exact for both sin/cos tables. Down
+   from 512 each. */
+ undefined4 DAT_000d9930_arr[361];
+ undefined4 DAT_000d9ed8_arr[361];
 undefined4 DAT_000db438;
 undefined4 DAT_000db43c;
 undefined4 DAT_000db440;

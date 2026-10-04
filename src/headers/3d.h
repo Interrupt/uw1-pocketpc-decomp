@@ -26,8 +26,8 @@ extern undefined4 DAT_000db440;
 extern int DAT_000db448;
 extern int DAT_000db44c;
 extern char DAT_0023b830;
-extern undefined4 DAT_000d9930_arr[512];
-extern undefined4 DAT_000d9ed8_arr[512];
+extern undefined4 DAT_000d9930_arr[361];
+extern undefined4 DAT_000d9ed8_arr[361];
 
 
 void set_viewport_clip_rect();

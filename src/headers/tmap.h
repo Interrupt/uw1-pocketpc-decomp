@@ -38,7 +38,7 @@ extern undefined1 DAT_0023b8c8_backing[32];
 #define DAT_0023b8c9 DAT_0023b8c8_backing[1]
 extern undefined2 DAT_0023b8c0;
 extern char DAT_0023bb94;
-extern undefined1 DAT_0023bb98_backing[512];
+extern undefined1 DAT_0023bb98_backing[256];
 #define DAT_0023bb98 DAT_0023bb98_backing[0]
 #define DAT_0023bb99 DAT_0023bb98_backing[1]
 #define DAT_0023bb9a DAT_0023bb98_backing[2]

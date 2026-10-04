@@ -37,7 +37,10 @@ static undefined DAT_002035cf_backing[8];
 // screen fades) so the weapon overlay doesn't glitch mid-transition,
 // then restored once the transition finishes.
 undefined4 g_weapon_overlay_enabled;
-static undefined1 DAT_002028e0_backing[16];
+/* Sizing-audit pass: sibling of hud.c's DAT_00202988, same loop
+   (`iVar4<6`) in the shared paperdoll-overlay refresh code. HARD.
+   Down from 16. */
+static undefined1 DAT_002028e0_backing[6];
 #define DAT_002028e0 DAT_002028e0_backing[0]
 static char s_armor_f_00085c60[] = "armor_f";
 static ushort DAT_00202962;

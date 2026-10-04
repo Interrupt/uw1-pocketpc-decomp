@@ -67,7 +67,9 @@ static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
    binary `idx + 0x202988` was real addressing; here it hits an unmapped
    low address and segfaults level init. Give them real backing storage
    and address them as `&DAT_00202988 + idx`. */
-undefined1 DAT_00202988_backing[16];
+/* Sizing-audit pass: reload_paperdoll_body_sprite's own loop is
+   `iVar1<6` (indices 0-5). HARD. Down from 16. */
+undefined1 DAT_00202988_backing[6];
 short g_player_carry_weight;
 static int DAT_002028d0;
 static char s_Not_a_spell_00085a80[] = "Not_a_spell";
@@ -395,7 +397,9 @@ static short DAT_00087174_arr[2] = { 36, 204};
    placed at ((&DAT_000871b4)[side], 0x42), size 0xc x 0x1c
    (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
    0x208d (right) at 54196, NOT from a table. */
-static short DAT_000871b4_arr[4] = { 40, 224};
+/* Sizing-audit pass: same `iVar3<2` loop as its 2-element siblings
+   DAT_00087170/DAT_00087174 right above. HARD. Down from 4. */
+static short DAT_000871b4_arr[2] = { 40, 224};
 #define DAT_000871b4 DAT_000871b4_arr[0]
 /* Was `FIXME[hud-dragon-frames]: .data 0x871d4 -- ... reads 0 now`.
    Same class of gap as the position tables above -- recovered via

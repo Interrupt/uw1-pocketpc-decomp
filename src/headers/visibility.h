@@ -28,11 +28,11 @@ extern short DAT_00086b2c;
 extern void * DAT_002020f8_arr[256];
 #define DAT_002020f8 DAT_002020f8_arr[0]
 extern undefined2 DAT_0023adb0;
-extern undefined2 DAT_0023adb8_backing[8192];
+extern undefined2 DAT_0023adb8_backing[16];
 #define DAT_0023adb8 DAT_0023adb8_backing[0]
-extern undefined2 DAT_0023ae58_backing[8192];
+extern undefined2 DAT_0023ae58_backing[48];
 #define DAT_0023ae58 DAT_0023ae58_backing[0]
-extern undefined2 DAT_0023aeb8_backing[8192];
+extern undefined2 DAT_0023aeb8_backing[4];
 #define DAT_0023aeb8 DAT_0023aeb8_backing[0]
 extern undefined2 * DAT_0023aed0;
 extern undefined2 DAT_0023aed4;

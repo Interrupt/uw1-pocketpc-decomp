@@ -9,6 +9,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Sizing-audit pass: investigated, NOT shrunk -- per the overflow-
+   guard comment a few hundred lines down (0x4814 record region base,
+   ~490-record cap, 0x60-byte stride), real worst case is
+   0x4814+490*0x60=65492 bytes=16373 elements -- already a near-exact
+   match for the current 16384, not oversized. (An initial pass at
+   this arithmetic mistakenly computed 47852 bytes; rechecked by hand
+   here.) Left as-is. */
  undefined4 DAT_000a85d0_backing[16384];
 /* Set (0-359) by emit_tile_objects's class-2 TMOBJ/sign branch right
    before jumping into the shared class-0 mesh-quad code, to make a
@@ -336,7 +343,10 @@ static undefined1 DAT_0023b940_backing[1024];
    too (same object count, max i+1=9, 10 bytes). Sized to 32 for
    headroom; down from 128. */
  undefined1 DAT_0023b8c8_backing[32];
- undefined1 DAT_0023bb98_backing[512];
+/* Sizing-audit pass: DAT_0023bb98[i*4+0/1/2] real extent is i in
+   0..0x3b (per the comment above), max byte 59*4+2=238. Sized to
+   256 for headroom; down from 512. */
+ undefined1 DAT_0023bb98_backing[256];
 /* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view-
    facing corner-index remap for a rotating quad: resolve_billboard_corner_offset reads
    `(&DAT_00086d68)[idx*2]` (low byte) and `(&DAT_00086d69)[idx*2]` (high

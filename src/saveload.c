@@ -14,6 +14,20 @@ static char s__arc_tmp_000842b4[] = "_arc.tmp";
 /* Not `static` -- also used by saveload.c (open_level_archive,
    close_level_archive, write_archive_entry, read_archive_entry); see the
    extern declarations and macro aliases in uw.h. */
+/* Sizing-audit pass: investigated, NOT shrunk -- flagged as a
+   caution, not a confirmed-safe target. Three call sites disagree on
+   the real bound: open_level_archive's read has no mask at all (up
+   to 65535 entries -> 262140 bytes); close_level_archive's write
+   masks the count with `&0x3fff` (16383 entries -> 65532 bytes);
+   write_archive_entry validates against the raw 16-bit count with no
+   0x3fff mask. The weakest of these (the 0x3fff mask) alone already
+   implies a need for 65532 bytes -- over 8x the current 8192. Real
+   lev.ark files almost certainly never have anywhere near that many
+   entries, but nothing in this code path actually enforces a smaller
+   number consistently, so shrinking below the current size would be
+   actively dangerous rather than merely untidy. Left as-is; the
+   inconsistent masking is a separate correctness question for
+   another pass. */
 static undefined DAT_000b78b8_backing[8192];
 #define DAT_000b78b8 DAT_000b78b8_backing[0]
 /* Sizing pass: DAT_000b98b8 and DAT_000b98b9's real ARM addresses are
@@ -114,7 +128,9 @@ static char s__not_used_yet__00087020[] = "<not used yet>";
    path, then substitutes the '0' with '1'..'4'; the already-recovered
    s__SAVE0_desc_00087078 == "\SAVE0\desc" spells out exactly what that
    concatenation should produce, confirming this suffix is "\desc". */
-static undefined DAT_00087030_backing[8192] = "\\desc";
+/* Sizing-audit pass: confirmed 5-char content ("\desc"), no
+   indexing. Sized to 16; down from 8192. */
+static undefined DAT_00087030_backing[16] = "\\desc";
 #define DAT_00087030 DAT_00087030_backing[0]
 static char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
 /* Was `"Please_enter_a_Save_Game_file_an"` -- a garbled placeholder that
@@ -127,14 +143,19 @@ static char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
    trailing period, a trailing newline before the NUL. */
 static char s_Please_enter_a_Save_Game_file_an_00087094[] = "  Please enter a Save Game file and press Enter\n";
 static char s__SAVE0_desc_00087078[] = "\\SAVE0\\desc";
-static undefined DAT_00087084_backing[8192];
+/* Sizing-audit pass: a directory-scan path suffix, content
+   unrecovered, appended once before a FindFirstFile-style scan.
+   Sized to 32 for headroom; down from 8192. */
+static undefined DAT_00087084_backing[32];
 #define DAT_00087084 DAT_00087084_backing[0]
 /* Was zero-initialized -- see DAT_000857a0's comment above. ensure_save_directory_exists
    appends this to a directory path before scanning it with the
    FindFirstFileW/181 FindFirstFile/FindNextFile-shaped ordinals, matching
    the universal Win32 "\*.*" wildcard idiom for "list everything in this
    directory". */
-static undefined DAT_000870c8_backing[8192] = "\\*.*";
+/* Sizing-audit pass: confirmed 4-char content ("\*.*"), no indexing.
+   Sized to 16; down from 8192. */
+static undefined DAT_000870c8_backing[16] = "\\*.*";
 #define DAT_000870c8 DAT_000870c8_backing[0]
 
 

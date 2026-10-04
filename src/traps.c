@@ -32,7 +32,11 @@ static undefined DAT_00202807[121];
 static char s_Look__it_s_a_text_trap_00087918[] = "Look,_it's_a_text_trap";
 static undefined4 DAT_0024cff8;
 static undefined4 DAT_0024cfd4;
-static undefined DAT_0007e644_backing[8192];
+/* Sizing-audit pass: its ADDRESS is passed as scan_area_ahead_of_
+   object's callback argument (see the GAP note below) -- a stand-in
+   for an unrecovered callback, never read/written/indexed as data.
+   Shrunk for consistency; down from 8192. */
+static undefined DAT_0007e644_backing[16];
 #define DAT_0007e644 DAT_0007e644_backing[0]
 
 
