@@ -65,6 +65,9 @@ void dispatch_sticky_mode_handlers(void);
 void uw_debug_blit_pick_buffer(void);
 void render_dungeon_view_frame(void);
 void uw_debug_draw_inv_hotspot_positions(void);
+void dbgui_begin(const char *title);
+void dbgui_field_toggle(const char *name, int *value);
+void dbgui_end(void);
 void dbgui_draw(void);
 void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_dump_critter_sheet_once(void);
@@ -183,6 +186,13 @@ undefined2 DAT_00201b60;
 int DAT_0020484c;
 
 undefined4 DAT_00204868;
+
+/* Storage for the general debug panel's subsystem toggles
+   (main_loop_hud_flush, hud.c) -- this suite doesn't exercise the panel
+   itself (dbgui_begin/field_toggle/end are no-op stubs above), just
+   needs real backing storage for main_loop_hud_flush's own reads of
+   them. */
+int g_uw_hide_walls, g_uw_3d_objects_enabled, g_npc_tick_enabled, g_uw_debug_pick_diag;
 
 char DAT_002506aa, DAT_002506ab;
 
@@ -463,6 +473,9 @@ void render_dungeon_view_frame(void) {}
 
 void uw_debug_draw_inv_hotspot_positions(void) {}
 
+void dbgui_begin(const char *title) { (void)title; }
+void dbgui_field_toggle(const char *name, int *value) { (void)name; (void)value; }
+void dbgui_end(void) {}
 void dbgui_draw(void) {}
 
 void uw_debug_dump_sprite_frames_once(void) {}

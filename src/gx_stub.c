@@ -703,6 +703,8 @@ void uw_pump_events(void) {
                 int landscape_x = (int)lx, landscape_y = (int)ly;
                 if (dbgui_visible()) {
                     if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
+                        if (getenv("UW_DEBUG_DBGUI"))
+                            fprintf(stderr, "[dbgui] click win=(%d,%d) landscape=(%d,%d)\n", win_x, win_y, landscape_x, landscape_y);
                         dbgui_feed_mouse_down(landscape_x, landscape_y);
                     }
                     return;

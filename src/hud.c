@@ -7,6 +7,10 @@
  */
 #include "headers/hud.h"
 #include "headers/debug.h"
+#include "headers/debug_ui.h"
+#include "headers/models.h"
+#include "headers/movement.h"
+#include "headers/tmap.h"
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1456,6 +1460,26 @@ void main_loop_hud_flush()
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
+  /* General debug panel: subsystem on/off toggles, bound directly to
+     each subsystem's own global flag. Populated unconditionally, once
+     per frame, HERE rather than from inside whatever subsystem happens
+     to run that frame (the old per-catalog "Object Tuner" in models.c
+     only populated the panel when a 3D model was actually on screen,
+     and stomped it right back out the next frame a model wasn't drawn
+     -- same shared-field-list conflict dbgui_begin's own header comment
+     now calls out). Add a new subsystem toggle here, not at a second
+     call site -- there's exactly one field list live at a time. */
+  dbgui_begin("Debug Panel");
+  dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  /* Field names kept short (DBGUI_PANEL_W, debug_ui.c, is a fixed 140
+     logical px, sized for the panel's small top-left corner of free
+     screen real estate -- a longer name runs into neighboring HUD
+     chrome, confirmed by eye). */
+  dbgui_field_toggle("3d_objects", &g_uw_3d_objects_enabled);
+  dbgui_field_toggle("npc_tick", &g_npc_tick_enabled);
+  dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
+  dbgui_end();
   /* Debug UI: must draw HERE, after the forced 3D redraw above (or it
      gets painted over) but before flush_dirty_rect_to_display(1) below
      -- that call is the actual screen present for this tick (blits the

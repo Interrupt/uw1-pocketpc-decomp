@@ -109,6 +109,12 @@ static int g_tune_last_catalog = -1;
    each pick call, not cached, so toggling it mid-session takes effect on
    the very next click. */
 int g_uw_debug_pick_diag = 0;
+/* Debug-panel toggle for tick_anim_record's own UW_DISABLE_3D_OBJECTS
+   gate -- see that function's own comment. -1 = env var not yet
+   checked this process; resolved to a real 0/1 on first read (by
+   tick_anim_record or by the general debug panel, whichever runs
+   first in a given frame), then flippable live via the panel. */
+int g_uw_3d_objects_enabled = -1;
 static undefined1 *DAT_000db45c;
 static int DAT_000db458;
 // was DAT_000d91d0 -- running point count while parse_e_model_file reads
@@ -855,26 +861,27 @@ short catalog;
   /* Native 3D catalog-object rendering (doors/frames drawing as real .E
      model geometry instead of flat sprites) is enabled by default --
      no env var needed, unlike this project's earlier, now-removed
-     g_model_map hack (which defaulted off). UW_DISABLE_3D_OBJECTS is
+     g_model_map hack (which defaulted off). g_uw_3d_objects_enabled
+     (-1 = not yet resolved; env-var-checked once, then a real 0/1) is
      the opt-out, for QA comparison against the pre-this-feature
      behavior, matching the naming convention UW_DISABLE_3D_GEOMETRY
      (this file's own sibling flag for the tile/wall/floor renderer)
-     already established. Gated here, tick_anim_record's own single
-     choke point for every caller (doors via emit_anim_object_frames,
-     bridges/decals via the generic catalog dispatch) -- when set,
-     every catalog falls through to the address-walk below exactly as
-     it did before this session's fix, which lands in unrelated always-
-     zero memory and returns an empty (point_count==0) record, so
-     callers draw nothing for these objects rather than a stale flat
-     sprite (there's no old sprite path left to fall back to -- see
-     object-rendering-findings.txt). */
-  { static int _disabled = -1;
-    if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_OBJECTS") != NULL);
-    if (!_disabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
-      void *dest = g_anim_model_scratch[catalog];
-      memcpy(dest, g_anim_model_slot[catalog], 16384);
-      return dest;
-    }
+     already established, but kept as a real global (not a function-
+     local static) so the general debug panel (main_loop_hud_flush,
+     hud.c) can flip it live instead of only at launch. Gated here,
+     tick_anim_record's own single choke point for every caller (doors
+     via emit_anim_object_frames, bridges/decals via the generic
+     catalog dispatch) -- when disabled, every catalog falls through to
+     the address-walk below exactly as it did before this session's
+     fix, which lands in unrelated always-zero memory and returns an
+     empty (point_count==0) record, so callers draw nothing for these
+     objects rather than a stale flat sprite (there's no old sprite
+     path left to fall back to -- see object-rendering-findings.txt). */
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  if (g_uw_3d_objects_enabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
+    void *dest = g_anim_model_scratch[catalog];
+    memcpy(dest, g_anim_model_slot[catalog], 16384);
+    return dest;
   }
 
   iVar4 = catalog * 0x3c2c;
@@ -1828,41 +1835,18 @@ LAB_000640ec:
     g_tune_last_catalog = (int)catalog_u;
     g_tune_rotation_offset = 0.0;
   }
-  /* Was gated behind UW_MODEL_TUNER=1 -- on unconditionally now, per
-     direct request ("turn the debug panel on by default instead of
-     needing an env var"), so no relaunch-with-env-var step is needed
-     to use it. Still only POPULATES the field list here; the panel
-     itself stays hidden until backtick (dbgui_visible()/g_visible in
-     debug_ui.c, unchanged), so this has zero effect on normal play or
-     any of the regression demo scripts -- none of them press backtick. */
-  { char _tune_title[48];
-    snprintf(_tune_title, sizeof(_tune_title), "Object Tuner (catalog=%d)", (int)catalog_u);
-    dbgui_begin(_tune_title);
-    dbgui_field_double("rotation_offset", &g_tune_rotation_offset, 5.0);
-    /* HACK: was `if (catalog_u == 1)` / `if (catalog_u == 0xe || 0xf)`
-       separately -- each door-related tunable only showed up in the
-       panel on whichever exact catalog happened to be the LAST thing
-       drawn in the whole frame (dbgui_begin's own field list resets on
-       every single catalog change, not once per door), so with a
-       frame/leaf pair (or any other scene content) drawing in between,
-       the panel would show catalog=1's row often and catalog=0xe/0xf's
-       hardly ever, or vice versa, depending on draw order -- confirmed
-       live via QA report ("only able to tune leaf_hinge_offset on
-       doors of type 14, not 1"). Show every door-family tunable
-       together whenever ANY door catalog (frame or either leaf id)
-       last drew, instead of splitting them by exact catalog, so
-       whichever one happens to land last this frame still exposes the
-       whole set. */
-    if ((catalog_u == 1) || (catalog_u == 0xe) || (catalog_u == 0xf)) {
-      dbgui_field_double("wide_center", &g_tune_wide_center, 1.0);
-      dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
-      dbgui_field_double("leaf_hinge_offset", &g_tune_leaf_hinge_offset, 8.0);
-    }
-    dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
-    dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
-    dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
-    dbgui_end();
-  }
+  /* This used to populate the shared debug-UI field list with a live
+     per-catalog "Object Tuner" panel (rotation_offset, door-specific
+     wide_center/edge_offset/leaf_hinge_offset, a dump_3d_frame button)
+     every time a model drew -- which also meant it silently overwrote
+     whatever the general debug panel (main_loop_hud_flush, hud.c) had
+     just populated that same frame, since dbgui_begin/_end share one
+     static field list. Per direct request, the debug panel is a
+     general subsystem-toggle panel now, not a model debugger -- this
+     site no longer touches it. g_tune_rotation_offset/wide_center/
+     edge_offset/leaf_hinge_offset keep applying below at their known-
+     good default values (128.0/128.0/0.0 -- see their own declaration
+     comments); they're just no longer live-editable from the UI. */
   sVar13 = (short)((int)sVar13 + (int)g_tune_rotation_offset);
   for (; 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
   }

@@ -2,18 +2,28 @@
  * recovered UW1 drawing primitives (rect_fill_or_save_restore,
  * set_draw_color, draw_text_string) rather than a separate rendering
  * path -- so it composites correctly with the game's own screen without
- * needing its own framebuffer or blit step. Always populated when a
- * catalog object draws (no env var needed), but hidden until backtick
- * (dbgui_visible()/dbgui_toggle() below) so it has zero effect on normal
- * play or any demo script that never presses it. Built for live-tuning
- * numeric constants (model scale/offset/UV params) without editing code
- * and rebuilding for every value.
+ * needing its own framebuffer or blit step. Hidden until backtick
+ * (dbgui_visible()/dbgui_toggle() below), so it has zero effect on
+ * normal play or any demo script that never presses it.
  *
- * Usage, once per frame, from anywhere already inside the render pass:
- *   dbgui_begin("Door Frame Tuner");
- *   dbgui_field_double("scale", &my_scale, 0.01);
- *   dbgui_field_double("yoff", &my_yoff, 1.0);
- *   dbgui_field_int("heading_step", &my_step, 1);
+ * General subsystem debug panel: populated once per frame, unconditionally,
+ * from main_loop_hud_flush (hud.c) with on/off toggles for whole render/
+ * simulation subsystems (wall rendering, 3D object rendering, NPC/object
+ * ticking, the pick-diagnostic overlay, ...) bound directly to each
+ * subsystem's own global flag. Earlier in this project's history this
+ * module instead hosted a per-object "model tuner" populated from inside
+ * the 3D model-draw call itself (models.c) -- removed, since any site that
+ * calls dbgui_begin() again before main_loop_hud_flush's own call runs
+ * would overwrite the shared field list for the rest of that frame (there
+ * is exactly one field list, one dbgui_begin/dbgui_end pair's worth, live
+ * at a time). Add a new subsystem toggle at that same call site instead
+ * of starting a second panel.
+ *
+ * Usage, once per frame:
+ *   dbgui_begin("Debug Panel");
+ *   dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
+ *   dbgui_field_double("some_tunable", &my_value, 1.0);
+ *   dbgui_field_int("some_count", &my_count, 1);
  *   dbgui_end();
  *
  * The field list is rebuilt every frame (cheap, a few pointers) --

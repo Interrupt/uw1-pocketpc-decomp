@@ -26,6 +26,7 @@ extern undefined2 DAT_00189570_backing[256];
 #define DAT_00189570 DAT_00189570_backing[0]
 extern ushort DAT_0018957a;
 extern int g_uw_debug_pick_diag;
+extern int g_uw_3d_objects_enabled;
 extern undefined1 DAT_00202520_backing[1024];
 #define DAT_00202520 DAT_00202520_backing[0]
 extern char * DAT_00110fc0;
