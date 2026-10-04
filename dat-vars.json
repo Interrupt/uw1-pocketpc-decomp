@@ -3124,7 +3124,7 @@
       "description": "8-element const undefined1 backing store; read 3 time(s), written 0 time(s) across the codebase. No recovery comment on file.",
       "description_source": "none",
       "rename_suggestion": null,
-      "audited": false
+      "audited": true
     },
     {
       "name": "DAT_00086c08",
