@@ -28,6 +28,8 @@ unsigned char ring_cell(int depth, int side);
 #define RING_CELL_SENTINEL 0xaa
 
 int ring_cell_untouched(int depth, int side);
+void flood_at(const void *map, int x_fixed, int y_fixed, int facing);
+unsigned char visible_world_tile(int player_x, int player_y, int tile_x, int tile_y);
 void repeat_flood_on(const void *map, int player_x, int player_y, int facing);
 void run_flood_on(const void *map, int player_x, int player_y, int facing);
 void run_flood(int player_x, int player_y, int facing);

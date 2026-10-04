@@ -92,7 +92,7 @@ int ring_cell_untouched(int depth, int side)
     return ring_cell(depth, side) == 0;
 }
 
-void repeat_flood_on(const void *map, int player_x, int player_y, int facing)
+void flood_at(const void *map, int x_fixed, int y_fixed, int facing)
 {
     DAT_002029cc = (char *)map;
     memset(g_visibility_ray_table_backing, 0, sizeof(g_visibility_ray_table_backing));
@@ -103,13 +103,33 @@ void repeat_flood_on(const void *map, int player_x, int player_y, int facing)
 
     /* Match build_frame_draw_list's quadrant and sub-tile view rotation. */
     DAT_0023b4a0 = ((((short)facing >> 13) + 1) >> 1) & 3;
-    g_current_view->view_x = DAT_0023b4a0 == 1 || DAT_0023b4a0 == 2 ? 0x7f : 0x80;
-    g_current_view->view_y = DAT_0023b4a0 == 2 || DAT_0023b4a0 == 3 ? 0x7f : 0x80;
+    int x = x_fixed & 255, y = y_fixed & 255;
+    if (DAT_0023b4a0 == 1) { int old_x = x; x = 255-y; y = old_x; }
+    else if (DAT_0023b4a0 == 2) { x = 255-x; y = 255-y; }
+    else if (DAT_0023b4a0 == 3) { int old_x = x; x = y; y = 255-old_x; }
+    g_current_view->view_x = x;
+    g_current_view->view_y = y;
     g_current_view->view_facing = (short)(facing - DAT_0023b4a0 * 0x4000);
-    DAT_0023aecc = (char *)tilemap_lookup(player_x, player_y);
+    DAT_0023aecc = (char *)tilemap_lookup(x_fixed >> 8, y_fixed >> 8);
 
     seed_visibility_queue();
     run_visibility_flood();
+}
+
+void repeat_flood_on(const void *map, int player_x, int player_y, int facing)
+{
+    flood_at(map, player_x * 256 + 128, player_y * 256 + 128, facing);
+}
+
+unsigned char visible_world_tile(int player_x, int player_y, int tile_x, int tile_y)
+{
+    int side_step = *(const short *)(DAT_00086a00_region + DAT_0023b4a0 * 6);
+    int depth_step = *(const short *)(DAT_00086a00_region + DAT_0023b4a0 * 6 + 2);
+    int dx = tile_x-player_x, dy = tile_y-player_y;
+    int side = side_step == 1 ? dx : side_step == -1 ? -dx : side_step == 64 ? dy : -dy;
+    int depth = depth_step == 1 ? dx : depth_step == -1 ? -dx : depth_step == 64 ? dy : -dy;
+    if (depth < 0 || depth > g_visibility_ring_depth || side < -16 || side > 16) return 0;
+    return ring_cell(depth, side);
 }
 
 void run_flood_on(const void *map, int player_x, int player_y, int facing)

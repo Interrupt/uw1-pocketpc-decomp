@@ -12,14 +12,8 @@
 #define _DAT_0023aee1 (*(uint*)&DAT_0023aee1)
 #define _DAT_0023aee3 (*(uint*)&DAT_0023aee3)
 #define _DAT_0023af02 (*(uint*)&DAT_0023af02)
-// was DAT_0023bca0 -- per-level view-distance default, loaded from
-// SHADES.DAT's per-record field 3 by load_shading_level_config (see its own
-// comment) and, since this session, consumed by
-// extend_visibility_ray_row as the automap-reveal flood's real
-// max-ring-passes limit (was a flat hardcoded 16). Also still passed
-// (dropped-argument bug, unrelated, not fixed here) to
-// weapon_overlay_flash_hold/weapon_overlay_flash_restore, and to the otherwise-dead
-// build_visibility_light_grid.
+// was DAT_0023bca0 -- shading distance loaded from SHADES.DAT field 3.
+// Keep the historical name; the ARM ray flood has its own fixed 16-row bound.
 short g_visibility_max_ring_passes;
  undefined2 DAT_0023ae58_backing[8192];
 /* Both real 0x80-element pointer-cache arrays (per free_frame_geometry_buffers's
@@ -774,8 +768,11 @@ void seed_visibility_queue()
        ever marked one tile visible. Shift each 16-bit delta on its own. */
     *(short *)&g_visibility_ray_table_backing[1] = (short)(*(short *)&g_visibility_ray_table_backing[1] >> 4);
     *(short *)&g_visibility_ray_table_backing[3] = (short)(*(short *)&g_visibility_ray_table_backing[3] >> 4);
-    DAT_0023aef6 = DAT_0023aef6 >> 4;
-    DAT_0023aef8 = DAT_0023aef8 >> 4;
+    /* The right edge uses signed deltas too (ARM FUN_0005bf40).
+       Near a quadrant boundary Y becomes negative; shifting the unsigned
+       aliases turns -1 into 4095 and collapses the visibility fan. */
+    DAT_0023aef6 = (short)DAT_0023aef6 >> 4;
+    DAT_0023aef8 = (short)DAT_0023aef8 >> 4;
   }
   return;
 }
@@ -1029,24 +1026,11 @@ byte * param_2;
 
   iVar5 = *(char *)(param_1 + 7) + 1;
   *(char *)(param_1 + 7) = (char)iVar5;
-  /* Was a hardcoded `< 0x11` (16 allowed ring-passes) -- confirmed
-     against the real disassembly in an earlier round as a literal, not
-     an obvious variable read, so it was left alone (see this
-     function's own header comment and mysteries.md's "hard-coded
-     ceiling of 16 passes" writeup). User-supplied evidence points at
-     SHADES.DAT instead: its 6-field-per-record layout (field 3 is the
-     per-level view-distance default) is already parsed correctly by
-     load_shading_level_config into g_visibility_max_ring_passes (was DAT_0023bca0)
-     -- confirmed live, and against the raw file bytes, that record 0's
-     field 3 really is 3, not 16 (fields 4/5, the texture-LOD
-     thresholds, both really are 16 -- easy to conflate). Whatever the
-     original compiled form of this check really was, using the
-     already-correctly-loaded per-level value here instead of the flat
-     16 is well-motivated and makes this global (previously read only
-     by two dead/tangential call sites) finally meaningful. +1 because
-     this counter starts at 1 after the pre-increment above, so a
-     field-3 value of N should allow N total ring-passes, not N-1. */
-  if (iVar5 * 0x1000000 >> 0x18 < (int)g_visibility_max_ring_passes + 1) {
+  /* ARM FUN_0005c70c compares this row counter with the literal 0x11.
+     The shading distance (historically named g_visibility_max_ring_passes)
+     is not this bound. Substituting it stops on a partially filled row:
+     level 1's value 3 makes tile (26,5) disappear at some headings. */
+  if (iVar5 * 0x1000000 >> 0x18 < 0x11) {
     do {
       if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx1)[0x43] & 0xf) != 0xf) {
         cVar3 = *(char *)(param_1 + 7);
