@@ -37,7 +37,7 @@ extern byte DAT_001018fc, DAT_00101434, DAT_00101730;
 extern char DAT_0010143c, DAT_0010173c;
 extern undefined1 DAT_00101738;
 extern undefined4 DAT_00101924, DAT_0010191c, DAT_001013fc;
-extern undefined4 DAT_00101734_backing[256];
+extern undefined4 DAT_00101734_backing[1];
 extern undefined4 DAT_00101560, DAT_00101914, DAT_00101944;
 extern int DAT_00101430;
 void scheduler_fixture_reset(void);

@@ -95,7 +95,7 @@ undefined1 DAT_00101738;
 
 undefined4 DAT_00101924, DAT_0010191c, DAT_001013fc;
 
-undefined4 DAT_00101734_backing[256];
+undefined4 DAT_00101734_backing[1];
 
 undefined4 DAT_00101560, DAT_00101914, DAT_00101944;
 

@@ -69,7 +69,10 @@ static char s__DATA_cmb_dat_00084f40[] = "\\DATA\\cmb.dat";
 undefined2 DAT_00100630_backing[32];
 ushort *DAT_0010190c;
 undefined4 DAT_00101924;
-undefined4 DAT_00101734_backing[256];
+/* Sizing-audit pass: pure scalar (combat-state flag) everywhere,
+   including its one pointer-alias use in movement.c (still
+   scalar-deref'd there) -- never indexed. Down from 256 elements. */
+undefined4 DAT_00101734_backing[1];
 #define DAT_00101734 DAT_00101734_backing[0]
 char *DAT_00101404;
 byte DAT_001013f8;

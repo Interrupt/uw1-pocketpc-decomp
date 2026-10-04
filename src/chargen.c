@@ -10,13 +10,17 @@
 #define DAT_000fb863 DAT_000fb860_backing[3]
 #define DAT_000fb8f0 DAT_000fb8f0_backing[0]
 char *DAT_00086df8;
-static undefined DAT_00084e40_backing[8192];
+/* Sizing-audit pass: each used exactly once via `draw_text_string`,
+   0 writers, content unrecovered -- 4 short UI label strings (8 bytes
+   apart in the original address space, hinting each was originally
+   <=8 chars). Sized to 16 each for headroom; down from 8192. */
+static undefined DAT_00084e40_backing[16];
 #define DAT_00084e40 DAT_00084e40_backing[0]
-static undefined DAT_00084e48_backing[8192];
+static undefined DAT_00084e48_backing[16];
 #define DAT_00084e48 DAT_00084e48_backing[0]
-static undefined DAT_00084e50_backing[8192];
+static undefined DAT_00084e50_backing[16];
 #define DAT_00084e50 DAT_00084e50_backing[0]
-static undefined DAT_00084e58_backing[8192];
+static undefined DAT_00084e58_backing[16];
 #define DAT_00084e58 DAT_00084e58_backing[0]
 char *DAT_001005c8;
 /* Was `undefined4` (4 bytes), but assigned real char* pointers
@@ -38,7 +42,17 @@ static undefined1 DAT_000fb860_backing[256];
    entry byte-size table when the "chrbtns" resource loads.
    Not `static` -- chargen.c reaches it through the DAT_000fb8c4 alias
    in uw.h (case 4's body-figure offset lookup). */
-undefined4 DAT_000fb880_backing[4096];
+/* Sizing-audit pass: chrbtns_offset_table_builder (the real
+   populator) only ever writes idx 0..26 (10 body-figure entries at
+   17-26, per DAT_000fb8c4's own comment below). One reader
+   (draw_chargen_field_value) indexes it via a CONCAT11 of two record
+   byte fields rather than the plain param_1[6] index used elsewhere,
+   but that site's own comment confirms the value stays within the
+   same legitimate per-field range in practice (investigated and
+   ruled out as a bug source this session), not a genuinely wider
+   index. Sized to 64 elements (256 bytes) for extra headroom given
+   that residual ambiguity; down from 4096. */
+undefined4 DAT_000fb880_backing[64];
 static char s_key_to_continue_00084e60[] = "key_to_continue";
 static char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
 static char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";

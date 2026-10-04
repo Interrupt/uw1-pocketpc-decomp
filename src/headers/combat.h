@@ -22,7 +22,7 @@ extern int DAT_00101430;
 extern char DAT_0010143c;
 extern short DAT_00101444; /* signed fine-coordinate delta; ARM reads 16 bits */
 extern short DAT_00101448; /* signed fine-coordinate delta; ARM reads 16 bits */
-extern undefined4 DAT_00101734_backing[256];
+extern undefined4 DAT_00101734_backing[1];
 #define DAT_00101734 DAT_00101734_backing[0]
 extern char DAT_0010173c;
 extern ushort DAT_00101900;

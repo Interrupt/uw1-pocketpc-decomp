@@ -87,7 +87,9 @@ static undefined DAT_0023cf0b_backing[20480];
 static undefined DAT_0023cf0c_backing[20480];
 #define DAT_0023cf0c DAT_0023cf0c_backing[0]
 #define DAT_00101742 DAT_00101740_backing[2]
-static undefined4 DAT_00101728_backing[256];
+/* Sizing-audit pass: pure scalar (distance-squared int), never
+   indexed anywhere. Down from 256 elements. */
+static undefined4 DAT_00101728_backing[1];
 #define DAT_00101728 DAT_00101728_backing[0]
 /* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
    npc_ai_tick/setup_npc_ai_tick_state store here (&DAT_002048c0/002048f0/00204950,

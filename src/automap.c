@@ -84,29 +84,31 @@ static undefined1 DAT_000ba9d8_backing[5400];
    note label's X (resp. Y) screen position, written as separate low/high
    bytes at the same index (`(&DAT_000baa0a)[i] = low; (&DAT_000baa0b)[i]
    = high;`) and read back as one packed short via `*(short
-   *)(&DAT_000baa0a + i)` -- which only works if DAT_000baa0b's storage
-   sits exactly 1 byte after DAT_000baa0a's, for every i. An earlier
-   widening pass (code-cleanup-pass-2, chasing an out-of-bounds risk on
-   each name independently) gave the two their own separate padded
-   arrays and broke that adjacency: the short-read started pulling its
-   high byte from DAT_000baa0a's own unused padding instead of
-   DAT_000baa0b's real storage, so every note's X coordinate silently
-   came back wrong (same failure class as DAT_00086980/82/84's fix
-   above in movement.c). One real backing buffer per pair instead, with
-   the second name aliased at a fixed +1 byte offset so the low/high
-   split and the combined short-read are provably the same storage. */
-/* Sizing-audit pass: BUG FIX, not a shrink -- real indexing is
-   `iVar7 = DAT_000bbef0 * 0x36` (DAT_000bbef0 guarded `!= 100`, same
-   100-record/0x36-stride bound as the sibling DAT_000ba9d8 table
-   right above), max offset 99*0x36+1=5347 -- the previous 258-byte
-   size was a live out-of-bounds write on any note past the first ~5.
-   Matched to DAT_000ba9d8's own confirmed 5400. */
-static undefined1 DAT_000baa0a_backing[5400];
-#define DAT_000baa0a DAT_000baa0a_backing[0]
-#define DAT_000baa0b DAT_000baa0a_backing[1]
-static undefined1 DAT_000baa0c_backing[5400];
-#define DAT_000baa0c DAT_000baa0c_backing[0]
-#define DAT_000baa0d DAT_000baa0c_backing[1]
+   *)(&DAT_000baa0a + i)`.
+
+   PERSISTENCE BUG (found investigating a user report that automap
+   notes vanish on map close/reopen): their real ARM addresses are
+   0xbaa0a/0xbaa0c -- 0x32 (50) and 0x34 (52) bytes past DAT_000ba9d8
+   (0xba9d8), i.e. the LAST 4 bytes of DAT_000ba9d8's own 0x36
+   (54)-byte per-note record (bytes 50-53 of 0-53), not a separate
+   table at all. Confirmed independently by the indexing itself:
+   `(&DAT_000baa0a)[iVar7]` with `iVar7 = DAT_000bbef0*0x36` is the
+   exact same per-record base as DAT_000ba9d8's own accesses, and by
+   the save path's own byte count --
+   `write_archive_entry(...,&DAT_000ba9d8,count*0x36)` already writes
+   the full 54-byte stride per note, which only actually covers this
+   X/Y data if it lives inside DAT_000ba9d8_backing itself. A prior
+   pass (code-cleanup-pass-2) gave these their own independent
+   backing arrays instead of aliasing them in -- fixing the immediate
+   low/high-byte adjacency bug but leaving them outside the save/load
+   path entirely, so every note's screen position was lost on every
+   level save/reload (the note text itself, elsewhere in the same
+   record, did survive). Aliased into DAT_000ba9d8_backing at their
+   real offsets so save/load now covers them too. */
+#define DAT_000baa0a DAT_000ba9d8_backing[50]
+#define DAT_000baa0b DAT_000ba9d8_backing[51]
+#define DAT_000baa0c DAT_000ba9d8_backing[52]
+#define DAT_000baa0d DAT_000ba9d8_backing[53]
 static undefined2 DAT_000b99c8;
 char s_fontbig_sys_0008432c[] = "fontbig.sys";
 static char s__DATA_blnkmap_byt_00084338[] = "\\DATA\\blnkmap.byt";
