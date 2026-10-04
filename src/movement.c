@@ -12,7 +12,11 @@
 #define _DAT_00204982 (*(uint*)&DAT_00204982)
 #define _DAT_00204986 (*(uint*)&DAT_00204986)
 #define _DAT_00204992 (*(uint*)&DAT_00204992)
- undefined2 DAT_002049a0_backing[8192];
+/* Sizing pass: one of 4 interchangeable collision-response-profile
+   buffers (siblings DAT_00204980/990/9b0 below) -- see their own
+   combined sizing-pass comment a few lines down for the full trace.
+   Real max touched offset is 7 (8 bytes); sized to 32 for headroom. */
+undefined2 DAT_002049a0_backing[16];
 static undefined2 DAT_002048cc;
 static undefined2 DAT_002048ce;
 static undefined1 DAT_002048d7;
@@ -36,7 +40,20 @@ static undefined2 DAT_00204984;
    its comment), via the _DAT_00204986 macro below. */
 static undefined DAT_00204986_backing[8];
 #define DAT_00204986 DAT_00204986_backing[0]
- undefined1 DAT_00204980_backing[65536];
+/* Sizing pass: this and its 3 siblings (DAT_00204990/9a0/9b0, and
+   DAT_00204982/84/86/88 right above -- all really one struct Ghidra
+   split into separate globals) are the 4 interchangeable collision-
+   response-profile buffers npc_ai_tick selects between (see
+   init_collision_response_profiles's own field-by-field init, and
+   movement.c's DAT_002048bc/DAT_00101438 dispatch -- sweep_apply_
+   collision and npc_ai_tick touch byte offsets 0 through 7 across
+   all of them, never further: `*DAT_002048bc`, `*(ushort*)
+   (DAT_002048bc+2)`, `*(ushort*)(DAT_002048bc+4)`, and ai.c's
+   DAT_00101438[6]/[7]). The already-fixed sibling scalars
+   DAT_00204982_backing/DAT_00204986_backing/DAT_002048c2_backing just
+   above independently confirm the same 8-byte real extent. Was
+   oversized at 65536 bytes; sized to 32 for headroom. */
+undefined1 DAT_00204980_backing[32];
 static undefined *DAT_00204988;
 /* Same wider-access-than-declared-size issue as DAT_00204982 above (see
    its comment), via the _DAT_00204992 macro below. */
@@ -44,7 +61,9 @@ static undefined DAT_00204992_backing[8];
 #define DAT_00204992 DAT_00204992_backing[0]
 static undefined2 DAT_00204994;
 static undefined2 DAT_00204996;
- undefined2 DAT_00204990_backing[32768];
+/* Sizing pass: sibling of DAT_00204980 above -- see its combined
+   comment for the full trace. Sized to 16 elements (32 bytes). */
+undefined2 DAT_00204990_backing[16];
 static undefined *DAT_00204998;
 static undefined2 DAT_002049a2;
 static undefined2 DAT_002049a4;
@@ -53,7 +72,9 @@ static undefined1 *DAT_002049a8;
 static undefined2 DAT_002049b2;
 static undefined2 DAT_002049b4;
 static undefined2 DAT_002049b6;
- undefined2 DAT_002049b0_backing[32768];
+/* Sizing pass: sibling of DAT_00204980 above -- see its combined
+   comment for the full trace. Sized to 16 elements (32 bytes). */
+undefined2 DAT_002049b0_backing[16];
 static undefined *DAT_002049b8;
 static short DAT_002048d0;
 /* Same wider-access-than-declared-size issue as DAT_00204982 above (see
@@ -64,8 +85,13 @@ static undefined DAT_002048c2_backing[8];
    DAT_00204950 below (see their own comment): build_object_placement_snapshot writes up to
    offset 0x28 into whichever of these three globals DAT_0010172c
    currently points at, a massive out-of-bounds write past a 2-byte
-   scalar. Oversized generously like its siblings. */
- undefined2 DAT_002048c0_backing[32768];
+   scalar. Was oversized generously like its siblings.
+
+   Sizing pass: see ai.c's DAT_002048f0_backing for the full trace
+   across every real reader/writer of this 4-buffer family (confirmed
+   max touched offset 0x2a/42 bytes). Sized to 64 elements (128
+   bytes), matching its siblings, rather than the previous 32768. */
+undefined2 DAT_002048c0_backing[64];
 static undefined2 DAT_002048c8;
 static undefined2 DAT_002048c6;
 undefined1 DAT_00101424;

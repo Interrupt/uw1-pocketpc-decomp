@@ -9,7 +9,7 @@
 extern int g_npc_tick_enabled;
 extern char DAT_00086e84;
 extern char *DAT_0008794c;
-extern undefined2 DAT_002048c0_backing[32768];
+extern undefined2 DAT_002048c0_backing[64];
 
 #define DAT_00086998  (*(signed char *)(DAT_00086998_backing + 0))
 #define DAT_00086999  (DAT_00086998_backing[1])
@@ -39,13 +39,13 @@ extern undefined2 DAT_002048c0_backing[32768];
 #define _DAT_00202c05 (*(unsigned short*)(DAT_00202bf8_backing + 0x0d))
 
 #define DAT_002048c0 DAT_002048c0_backing[0]
-extern undefined1 DAT_00204980_backing[65536];
+extern undefined1 DAT_00204980_backing[32];
 #define DAT_00204980 DAT_00204980_backing[0]
-extern undefined2 DAT_00204990_backing[32768];
+extern undefined2 DAT_00204990_backing[16];
 #define DAT_00204990 DAT_00204990_backing[0]
-extern undefined2 DAT_002049a0_backing[8192];
+extern undefined2 DAT_002049a0_backing[16];
 #define DAT_002049a0 DAT_002049a0_backing[0]
-extern undefined2 DAT_002049b0_backing[32768];
+extern undefined2 DAT_002049b0_backing[16];
 #define DAT_002049b0 DAT_002049b0_backing[0]
 extern undefined1 DAT_00101424;
 extern undefined1 DAT_00101428_backing[8192];

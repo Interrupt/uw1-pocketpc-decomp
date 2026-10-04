@@ -8,7 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
- undefined DAT_00204920_backing[8192];
+/* Sizing pass: this is one of 4 interchangeable object-placement
+   snapshot buffers (siblings DAT_002048c0/002048f0/00204950 in
+   movement.c/ai.c) that build_object_placement_snapshot and
+   sync_object_tile_position fill/read -- traced every write/read site
+   across both functions and the real max touched offset is 0x2a (42),
+   from sync_object_tile_position's `*(ushort*)((char*)param_2+0x29)`.
+   Was oversized at 8192 bytes for a ~43-byte struct; sized to 128
+   (matching its siblings) for headroom. */
+undefined DAT_00204920_backing[128];
 short DAT_00202c68;
 short DAT_00202c30;
 static undefined1 DAT_00202c70_backing[65536];

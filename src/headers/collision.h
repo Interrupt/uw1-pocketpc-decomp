@@ -8,7 +8,7 @@
 
 extern short DAT_00202c68;
 extern short DAT_00202c30;
-extern undefined DAT_00204920_backing[8192];
+extern undefined DAT_00204920_backing[128];
 #define DAT_00204920 DAT_00204920_backing[0]
 
 

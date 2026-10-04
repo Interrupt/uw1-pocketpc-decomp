@@ -105,12 +105,20 @@ static byte DAT_00101434;
    (EXC_BAD_ACCESS writing param_2[0x23]) the first time an NPC actually
    got far enough through its per-tick AI (npc_ai_tick) to reach this
    call -- which never happened before g_npc_tick_enabled/npc_ai_tick's other
-   fixes let that code run at all. Oversized generously like its
-   siblings rather than tightly to 0x29 bytes, in case another
-   not-yet-exercised caller writes further into the same real struct. */
-static undefined1 DAT_002048f0_backing[65536];
+   fixes let that code run at all. Was then oversized generously rather
+   than tightly to 0x29 bytes, in case another not-yet-exercised caller
+   wrote further into the same real struct.
+   Sizing pass: traced every actual reader/writer of this whole 4-buffer
+   family (build_object_placement_snapshot, sync_object_tile_position,
+   randomize_settled_snapshot_position) across ai.c/objects.c/
+   collision.c -- the real max touched offset across all of them is
+   0x2a (42, from sync_object_tile_position's
+   `*(ushort*)((char*)param_2+0x29)`), not just this function's own
+   0x28. Sized to 128 for 3x headroom above that confirmed bound,
+   rather than the previous 65536. */
+static undefined1 DAT_002048f0_backing[128];
 #define DAT_002048f0 DAT_002048f0_backing[0]
-static undefined1 DAT_00204950_backing[65536];
+static undefined1 DAT_00204950_backing[128];
 #define DAT_00204950 DAT_00204950_backing[0]
 undefined4 DAT_00101944;
 static undefined DAT_000853d8_backing[256];
