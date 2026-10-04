@@ -127,7 +127,9 @@ add_fixture_game_unit_test(combat
   src/hud.c:set_hud_status_value src/hud.c:hud_panel_redraw_dispatch
   src/hud.c:hud_panel_wipe_transition_tick
   src/combat.c:resolve_melee_swing_hit src/combat.c:spawn_blood_splat_object
-  src/combat.c:load_monster_combat_stats)
+  src/combat.c:load_monster_combat_stats
+  src/combat.c:apply_trap_type_damage_effect src/combat.c:apply_direct_object_hit
+  src/combat.c:apply_object_durability_damage)
 add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(visibility_walk
@@ -219,4 +221,11 @@ add_fixture_game_unit_test(spells
   src/hud.c:report_spell_cast_failure
   src/object_actions.c:dispatch_special_action
   src/object_actions.c:reduce_item_quality_on_use
-  src/combat.c:add_active_light_source src/tmap.c:tile_is_no_magic)
+  src/combat.c:add_active_light_source src/tmap.c:tile_is_no_magic
+  src/object_actions.c:complete_cast_spell_on_target
+  src/object_actions.c:apply_targeted_spell_effect
+  src/object_actions.c:spawn_object_near_actor
+  src/game.c:handle_game_view_click
+  src/item_use.c:compute_drop_aim_from_cursor
+  src/objects.c:spawn_object_near_player
+  src/objects.c:compute_object_placement_fields)

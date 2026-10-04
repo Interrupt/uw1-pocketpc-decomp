@@ -31,7 +31,7 @@ extern char *DAT_00086df8;
 extern char *DAT_0023b82c;
 extern int skill_result, skill_checks, effects, impact_sounds;
 extern int effect_types[2], effect_heights[2];
-extern int experience, experience_awards, talks, death_sounds;
+extern int experience, experience_awards, talks, death_sounds, positional_impacts;
 extern ushort *expected_effect_target;
 extern ushort *g_player_object;
 extern char *DAT_0023be74, *DAT_00101404;

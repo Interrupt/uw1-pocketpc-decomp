@@ -994,7 +994,7 @@ LAB_00073c90:
       push_cursor_icon(0x1075);
     }
     else {
-      apply_targeted_spell_effect(param_3,param_2);
+      apply_targeted_spell_effect((ushort *)param_3,param_2);
     }
     break;
   case 6:
@@ -1090,8 +1090,11 @@ char param_2;
 // this cast), deducts it from the player's mana stat
 // (DAT_00086df8+0x37, "play_mana" -- see babl.c's own read of the
 // same offset). DAT_0023c3e0 is always cleared back to 0 afterward.
+/* ARM passes the actor address unchanged through r0 (0x740e8 and 0x7ca1c).
+   Keep it pointer-sized here: an int truncates the queued player's address
+   before projectile placement on a 64-bit host. */
 void apply_targeted_spell_effect(param_1,param_2)
-int param_1;
+ushort *param_1;
 char param_2;
 
 {
@@ -2524,7 +2527,7 @@ uint param_3;
 void complete_cast_spell_on_target()
 
 {
-  apply_targeted_spell_effect((int)DAT_00202098,(int)(char)DAT_00202094);
+  apply_targeted_spell_effect((ushort *)DAT_00202098,(int)(char)DAT_00202094);
   g_cursor_holding_state = 0;
   pop_cursor_icon(3);
   wait_for_click_release(1);
@@ -3546,32 +3549,32 @@ LAB_000497a0:
 // (apply_targeted_spell_effect) and ranged-attack spawns. Returns
 // whether the spawn succeeded.
 bool spawn_object_near_actor(param_1,param_2)
-uint param_1;
+ushort *param_1;
 short param_2;
 
 {
-  int iVar1;
+  ushort *puVar1; /* ARM 0x4a678 tests the returned object pointer for NULL. */
   
   DAT_00202a38 = param_2 + 0x10;
   DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[param_2 * 3];
-  DAT_00202a4c = (ushort)(*(byte *)(param_1 + 0x17) >> 2);
-  DAT_00202a50 = (ushort)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
+  DAT_00202a4c = (ushort)(*((byte *)param_1 + 0x17) >> 2);
+  DAT_00202a50 = (ushort)((param_1[11] & 0x3f0) >> 4);
   DAT_00202a54 = 1;
   DAT_00202a44 = param_1;
   if (param_1 == g_player_object) {
     compute_drop_aim_from_cursor();
   }
   else {
-    if (DAT_002046c4 <= param_1) {
+    if ((uintptr_t)DAT_002046c4 <= (uintptr_t)param_1) {
       DAT_00202a4c = (ushort)DAT_0023c3dc;
       DAT_00202a50 = (ushort)DAT_0023c3d8;
       DAT_00202a3c = 0;
     }
-    DAT_00202a54 = (ushort)(DAT_002046c4 > param_1);
+    DAT_00202a54 = (ushort)((uintptr_t)DAT_002046c4 > (uintptr_t)param_1);
     DAT_00202a40 = 0;
   }
-  iVar1 = spawn_object_near_player();
-  return iVar1 != 0;
+  puVar1 = spawn_object_near_player();
+  return puVar1 != 0;
 }
 
 

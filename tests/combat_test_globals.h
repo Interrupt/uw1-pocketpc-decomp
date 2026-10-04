@@ -33,3 +33,7 @@ extern byte DAT_0023c150, DAT_0023c25c;
 extern undefined2 DAT_0023c220;
 extern short DAT_0023c21c;
 extern short DAT_001005f4, DAT_001005f8;
+
+extern byte DAT_002046d8, DAT_002046dc;
+extern int DAT_002046e8;
+extern undefined1 DAT_002046e0, DAT_002046e4;

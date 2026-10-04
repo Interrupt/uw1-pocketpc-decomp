@@ -19,7 +19,6 @@ undefined4 play_sound_effect_with_pan(void);
 undefined4 play_positional_sound_effect(int sound, int x, int y, int volume);
 void set_movement_animation_timer(void);
 undefined4 play_weapon_impact_sound(int result);
-bool apply_object_durability_damage(void);
 undefined4 apply_object_destruction_effect(void);
 long ce_rand(void);
 void project_position_by_heading(int heading, int distance, short *x, short *y);
@@ -36,6 +35,11 @@ void free_object_slot(void);
 undefined4 read_file_handle(int handle, void *destination, int count);
 
 byte mobile_objects[256 * 27];
+undefined1 DAT_002027d0_backing[256];
+byte DAT_002046d8, DAT_002046dc;
+int DAT_002046e8;
+undefined1 DAT_002046e0, DAT_002046e4;
+
 
 char *DAT_002046b8 = (char *)mobile_objects;
 
@@ -87,7 +91,7 @@ int skill_result, skill_checks, effects, impact_sounds;
 
 int effect_types[2], effect_heights[2];
 
-int experience, experience_awards, talks, death_sounds;
+int experience, experience_awards, talks, death_sounds, positional_impacts;
 
 ushort *expected_effect_target;
 
@@ -200,11 +204,13 @@ int resolve_weapon_hit_skill_check(int attacker, int target)
 }
 
 int roll_dice_sum(int count, int sides) { return count * sides; }
+undefined4 roll_skill_check(void)
+{ TEST_FAIL_MESSAGE("Magic Arrow does not use the ranged weapon skill check"); return 0; }
 
 undefined4 play_sound_effect_with_pan(void) { return 0; }
 
 undefined4 play_positional_sound_effect(int sound, int x, int y, int volume)
-{ (void)x; (void)y; (void)volume; if (sound == 6) death_sounds++; return 0; }
+{ (void)x; (void)y; (void)volume; if (sound == 6) death_sounds++; if (sound == 4) positional_impacts++; return 0; }
 
 void set_movement_animation_timer(void) { TEST_FAIL_MESSAGE("Unexpected player hit animation"); }
 
@@ -222,7 +228,16 @@ undefined4 spawn_scheduled_effect_object(ushort *target, int type, int mode, int
 
 undefined4 play_weapon_impact_sound(int result) { impact_sounds++; return result; }
 
-bool apply_object_durability_damage(void) { TEST_FAIL_MESSAGE("Unexpected non-critter damage"); return false; }
+void trigger_object_trap_or_use_action(void)
+{ TEST_FAIL_MESSAGE("Unexpected door destruction trigger"); }
+undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
+{
+    TEST_ASSERT_EQUAL_INT(4, sound);
+    TEST_ASSERT_EQUAL_PTR(wall_effect, object);
+    TEST_ASSERT_EQUAL_INT(0, mode);
+    impact_sounds++;
+    return 0;
+}
 
 undefined4 apply_object_destruction_effect(void) { TEST_FAIL_MESSAGE("Unexpected non-critter destruction"); return 0; }
 
@@ -255,6 +270,7 @@ void sort_collision_candidates(void)
 
 void *get_object_record_by_slot_index(int slot)
 {
+    if (slot == 0x100) return wall_effect;
     TEST_ASSERT_GREATER_THAN_INT(0, slot);
     TEST_ASSERT_LESS_THAN_INT(256, slot);
     TEST_ASSERT_LESS_THAN_INT(32, lookup_count);
@@ -263,7 +279,7 @@ void *get_object_record_by_slot_index(int slot)
 }
 
 undefined4 object_ptr_in_arena(ushort *object)
-{ TEST_ASSERT_NOT_NULL(object); return 1; }
+{ TEST_ASSERT_NOT_NULL(object); return object != wall_effect; }
 
 void *spawn_new_object(int type, int mobile)
 {
@@ -337,6 +353,9 @@ void candidate(unsigned index, unsigned slot, short displacement)
 void combat_fixture_reset(void)
 {
     memset(mobile_objects, 0, sizeof(mobile_objects));
+    memset(DAT_002027d0_backing, 0, sizeof DAT_002027d0_backing);
+    DAT_002046d8=DAT_002046dc=DAT_002046e0=DAT_002046e4=0;
+    DAT_002046e8=0;
     memset(DAT_00202c90_backing, 0, sizeof(DAT_00202c90_backing));
     memset(DAT_00202c38_backing, 0, sizeof(DAT_00202c38_backing));
     DAT_00100610 = 1;
@@ -351,7 +370,7 @@ void combat_fixture_reset(void)
     DAT_00100628 = DAT_001005fc = DAT_001005d8 = 0;
     DAT_0010061c = 6;
     skill_result = skill_checks = effects = impact_sounds = 0;
-    experience = experience_awards = talks = death_sounds = 0;
+    experience = experience_awards = talks = death_sounds = positional_impacts = 0;
     music_track = 0;
     clock_units = 0;
     hud_flushes = wipe_frames = 0;

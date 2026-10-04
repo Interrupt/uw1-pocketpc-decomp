@@ -1,4 +1,5 @@
 #include "combat_fixture.h"
+#include "game_fixture.h"
 
 void setUp(void) { combat_fixture_reset(); }
 void tearDown(void) { combat_fixture_dispose(); }
@@ -286,6 +287,30 @@ static void test_blood_hit_outside_zones_uses_runtime_height(void)
     TEST_ASSERT_EQUAL_INT(-40, effect_heights[0]);
 }
 
+static void test_magic_arrow_impact_on_closed_door_preserves_target_pointer(void)
+{
+    uw_test_load_object_properties(DAT_00202c90_backing, sizeof DAT_00202c90_backing);
+    uw_test_read_data("DATA/OBJECTS.DAT", DAT_002027d0_backing, 0x30, 2+0x80, SEEK_SET);
+    ushort *arrow=object_at(3);
+    arrow[0]=0x17;
+    arrow[1]=40; /* launch height */
+    ((byte *)arrow)[0x12]=1; /* launched by player */
+    wall_effect[0]=0x140; /* closed door, static slot 0x100 */
+    wall_effect[1]=0;
+    wall_effect[2]=63;
+    wall_effect[3]=0;
+    expected_effect_target=wall_effect;
+    TEST_ASSERT_TRUE((uintptr_t)wall_effect > UINT32_MAX);
+    apply_trap_type_damage_effect((byte *)arrow, wall_effect);
+    TEST_ASSERT_EQUAL_UINT16(0x100, DAT_00100620);
+    TEST_ASSERT_EQUAL_UINT16(1, DAT_00100610);
+    TEST_ASSERT_EQUAL_INT(1, positional_impacts);
+    TEST_ASSERT_EQUAL_INT(1, effects);
+    TEST_ASSERT_EQUAL_INT(0xb, effect_types[0]); /* impact spark */
+    TEST_ASSERT_EQUAL_HEX16(0x140, wall_effect[0]);
+    TEST_ASSERT_LESS_THAN_UINT16(63, wall_effect[2] & 0x3f);
+    TEST_ASSERT_GREATER_THAN_UINT16(0, wall_effect[2] & 0x3f);
+}
 int main(void)
 {
     UNITY_BEGIN();
@@ -314,5 +339,6 @@ int main(void)
     RUN_TEST(test_blood_height_offsets_cover_each_hit_zone);
     RUN_TEST(test_special_blood_hit_spawns_the_second_splat);
     RUN_TEST(test_blood_hit_outside_zones_uses_runtime_height);
+    RUN_TEST(test_magic_arrow_impact_on_closed_door_preserves_target_pointer);
     return UNITY_END();
 }
