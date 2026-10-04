@@ -72,6 +72,12 @@ wins over the default without pulling in unrelated mocks.
 `uw_test_math` compiles just the original value-stepping function and needs no
 unrelated service stubs. `test_support.c` demonstrates the common helpers.
 
+`uw_test_geometry` exercises the real near-plane clipping and polygon-list
+renderer against controlled arena records. Its raster callback captures the
+current triangles without opening a window. The clipped-record buffer is
+extracted from `src/3d.c` itself so AddressSanitizer checks its actual size;
+the fixture does not substitute a larger buffer and hide an overflow.
+
 Generated function units are build artifacts. CMake regenerates them from the
 source files when those files change. Game implementations remain in their
 original files; no implementation copies are checked into tests.

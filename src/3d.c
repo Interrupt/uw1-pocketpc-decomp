@@ -87,9 +87,13 @@ static undefined4 DAT_00084608 = 0x40a00000u;
    record). As lone scalars this walks off into whatever memory happens to
    follow them, corrupting adjacent globals -- confirmed crashing
    (EXC_BAD_ACCESS) a few calls further down this same file. Same
-   lone-scalar-used-as-array pattern fixed repeatedly this session; given
-   DAT_000bc044's real size the same generous record count. */
-static undefined DAT_000bc038_backing[32768];
+   lone-scalar-used-as-array pattern fixed repeatedly this session.
+   Size this in records, matching the texture side tables: the old 32768
+   bytes held only 240 complete 0x88-byte records, while the input arena
+   can emit 490. Clipping a larger list wrote past this buffer and corrupted
+   other geometry state, which can make old/invalid polygons appear on screen.
+   The ARM function at 0x1f370 advances the output by 0x88 per polygon. */
+static undefined DAT_000bc038_backing[0x88 * UW_MAX_VIS_TILES] = {0};
 #define DAT_000bc038 DAT_000bc038_backing[0]
 #define DAT_000bc039 DAT_000bc038_backing[1]
 #define DAT_000bc03a DAT_000bc038_backing[2]

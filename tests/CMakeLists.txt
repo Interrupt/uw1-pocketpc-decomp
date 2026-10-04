@@ -203,3 +203,12 @@ add_fixture_game_unit_test(inventory
   src/item_use.c:prompt_use_item_on_target
   src/item_use.c:complete_use_item_on_player
   src/game.c:handle_game_view_click)
+
+add_fixture_game_unit_test(geometry
+  src/3d.c:@DAT_000bc038_backing
+  src/3d.c:near_clip_visible_tiles src/tmap.c:render_visible_tile_list
+  src/ordinal_stubs.c:ordfloat_bits_to_float src/ordinal_stubs.c:ordfloat_float_to_bits
+  src/ordinal_stubs.c:ordfloat_add src/ordinal_stubs.c:ordfloat_sub
+  src/ordinal_stubs.c:ordfloat_mul src/ordinal_stubs.c:ordfloat_div
+  src/ordinal_stubs.c:ordfloat_ge src/ordinal_stubs.c:ordfloat_uint_to_float
+  src/ordinal_stubs.c:ordfloat_int_to_float2)
