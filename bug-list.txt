@@ -6,8 +6,8 @@
 [ ] Carry weight too low on start
 [ ] "Use key / combine" cursor not drawing over 3d view - timing?
 [ ] Automap cursor not invalidating, leaves a trail behind
-[ ] Automap should lightly draw a wall when not discovered
-[ ] Automap notes not persisting
+[x] Automap should lightly draw a wall when not discovered (fixed in 0d1d7f5/b676768, merged from bug-fixes-pass-1)
+[x] Automap notes not persisting (fixed in 7d8825b, earlier this session)
 [ ] Crash when using a mantra
 [ ] Crash when using a ranged weapon
 [ ] Attack charge not consistent
