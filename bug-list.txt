@@ -3,7 +3,7 @@
 [x] Main menu stat names not displaying (fixed in a7bc6c9: chargen attribute labels were empty backing buffers)
 [x] Can't enter lower case text (fixed in 8f8536a: command-input-mode flag never cleared, uppercase-folding every text field)
 [ ] Monsters giving too much XP
-[ ] Carry weight too low on start
+[x] Carry weight too low on start (fixed in c8e1166: Strength-based formula never fed the flat carry-weight global)
 [ ] "Use key / combine" cursor not drawing over 3d view - timing?
 [ ] Automap cursor not invalidating, leaves a trail behind
 [x] Automap should lightly draw a wall when not discovered (fixed in 0d1d7f5/b676768, merged from bug-fixes-pass-1)
