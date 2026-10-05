@@ -1130,6 +1130,12 @@ void unregister_game_view_interact_zones()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+/* scroll_text_entry_prompt (hud.c)'s "a raw text field is actively reading
+ * keystrokes right now" flag -- see its own extern/comment in gx_stub.c and
+ * its set/clear in hud.c. Needed here too: see this function's own
+ * DAT_0024af60 comment just below. */
+extern int g_text_input_active;
+
 // was FUN_00077b2c
 undefined4 handle_keyboard_message(param_1,param_2,param_3)
 undefined4 param_1;
@@ -1140,7 +1146,7 @@ uint param_3;
   ushort uVar1;
   undefined4 *puVar2;
   undefined4 uVar3;
-  
+
   if (param_2 == 7) {
     GXResume();
     return 0;
@@ -1161,7 +1167,31 @@ uint param_3;
     if (param_2 != 0x102) {
       return 0;
     }
-    if (((DAT_0024af60 != 0) && (0x60 < param_3)) && (param_3 < 0x7b)) {
+    /* DAT_0024af60 ("command-input mode", see init_gameplay_session's own
+     * comment at game.c ~828) is set once at session start and NEVER
+     * cleared again for the rest of the whole play session -- its only
+     * writer besides that init is the Caps-Lock-key (VK 0x14) toggle
+     * below, which nothing on this port's desktop/SDL keyboard maps to
+     * (translate_vk in gx_stub.c has no case feeding 0x14), and which the
+     * original on-screen keyboard's own matching button is no reason to
+     * expect a player to discover either. That init comment's claim that
+     * "text-entry screens needing raw lowercase run before this
+     * function" is only true for chargen's name field (which does run
+     * before init_gameplay_session) -- every OTHER raw-text field runs
+     * DURING the session, after this flag is latched on: automap notes,
+     * and (via scroll_text_entry_prompt) the save-game-name field, "Move
+     * how many", "Chant the mantra", etc. With the flag stuck on, every
+     * lowercase letter typed into any of those fields was silently
+     * folded to uppercase before it ever reached the field's own buffer
+     * -- confirmed as the reported "can't enter lower case text" bug.
+     * Fix: suppress the fold while g_text_input_active (scroll_text_
+     * entry_prompt's own "a raw text field owns the keyboard right now"
+     * flag) is set, exactly like gx_stub.c's in_dungeon_freelook() already
+     * uses the same flag to stop WASD from being eaten as movement while
+     * a text field is open -- same intent, same flag, now honored in the
+     * one place that actually performs the letter-case fold. */
+    if (((DAT_0024af60 != 0) && (!g_text_input_active)) &&
+        ((0x60 < param_3) && (param_3 < 0x7b))) {
       DAT_0023c448 = uVar1 - 0x20 | DAT_0023c448;
       return 0;
     }

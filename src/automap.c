@@ -7,6 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* scroll_text_entry_prompt (hud.c)'s "a raw text field is actively reading
+ * keystrokes right now" flag -- see handle_automap_note_click's own use of
+ * it below, and handle_keyboard_message's matching comment in input.c. */
+extern int g_text_input_active;
+
 static int DAT_000bbefc;
 /* Retain BLNKMAP.BYT's indices while drawing the map. RGB565 loses
    palette identity (some entries share a color), so the DOS tint cannot
@@ -911,6 +916,14 @@ LAB_000170bc:
         local_58[0] = '\0';
         iVar8 = *(short *)(&DAT_000baa0a + iVar7) + -1;
         warp_mouse_cursor(*(short *)(&DAT_000baa0a + iVar7) + 9,local_60 + -0x12);
+        /* Same raw-text-field flag scroll_text_entry_prompt (hud.c) sets while
+           it owns the keyboard -- see handle_keyboard_message's own
+           DAT_0024af60 comment (input.c) for why this matters: without
+           it, this loop's typed characters got silently uppercased by
+           the session's stuck "command mode" flag the same way every
+           other text field did before that fix. Cleared at this loop's
+           one exit point, LAB_0001739c below. */
+        g_text_input_active = 1;
 LAB_000171bc:
         sVar2 = poll_input_event(0);
         if (sVar2 < 0) goto LAB_000171a4;
@@ -983,6 +996,7 @@ LAB_000171d0:
   }
   goto LAB_000171bc;
 LAB_0001739c:
+  g_text_input_active = 0;
   select_active_font(s_font5x6p_sys_0008430c);
   if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: local_58=\"%s\" (empty=%d)\n", local_58, local_58[0]=='\0');
   if (local_58[0] != '\0') {
