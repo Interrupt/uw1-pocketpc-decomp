@@ -6924,6 +6924,30 @@ static void restore_clip_after_cursor_blit()
   }
 }
 
+/* True while the active clip rect is the 3D viewport's own narrow
+   bounds (set_viewport_clip_rect(0x34,0x13,...), the fixed 0x34=52
+   left edge used nowhere else in this codebase -- see
+   render_dungeon_frame_timed/full_dungeon_redraw's own narrow-clip
+   bracket around render_dungeon_view/weapon_swing_draw_tick/
+   track_hotspot_hover_state). The 3D view is fully repainted from
+   scratch every single tick while this is active (confirmed:
+   render_dungeon_frame_timed runs unconditionally from
+   main_loop_hud_flush's own per-tick force-redraw hack), so a cursor
+   positioned over it never needs its own save/restore -- the next
+   tick's full repaint already overwrites whatever the cursor drew,
+   the same way a fresh frame overwrites the previous one everywhere
+   else on a normal double-buffered display. Used to skip the cursor's
+   save/restore there entirely (see draw_idle_mouse_cursor's own use),
+   since restoring a background captured on some EARLIER tick paints
+   stale, no-longer-current pixels over the just-repainted live view --
+   confirmed live via a user report: a "use item" cursor over the 3D
+   view showed a visibly frozen patch of dungeon wall behind it while
+   the player walked and the rest of the view updated normally. */
+static int cursor_over_live_3d_view()
+{
+  return (short)DAT_000a85c4 == 0x34;
+}
+
 
 
 // was FUN_00056fe8 -- erases the dragged-item cursor icon if one is
@@ -7884,12 +7908,29 @@ void draw_idle_mouse_cursor()
      tracking runs continuously. Erase whatever's already shown first,
      so a second draw in the same tick re-saves the REAL background
      instead of the previous draw. */
-  if (uw_always_show_cursor() && DAT_00204844 != 0) {
-    if (erase_cursor_icon() != 0) {
-      DAT_00204844 = 0;
+  if (uw_always_show_cursor() && cursor_over_live_3d_view()) {
+    /* See cursor_over_live_3d_view's own comment: the 3D view repaints
+       itself fully every tick, so there's nothing stale to erase and
+       no point saving a background that'll be stale again next tick
+       regardless -- just draw straight onto the current, already-
+       fresh frame. Leave DAT_00204844 at 0 (erase whatever WAS shown
+       first, same as the general case below, in case the cursor just
+       moved onto the view from somewhere that DID leave a real saved
+       background pending) so the ordinary erase machinery stays a
+       correct no-op for as long as the cursor stays over the view. */
+    if (DAT_00204844 != 0) {
+      if (erase_cursor_icon() != 0) {
+        DAT_00204844 = 0;
+      }
     }
+  } else {
+    if (uw_always_show_cursor() && DAT_00204844 != 0) {
+      if (erase_cursor_icon() != 0) {
+        DAT_00204844 = 0;
+      }
+    }
+    save_cursor_background();
   }
-  save_cursor_background();
 LAB_00058674:
   g_blit_transparent_mode = 1;
   g_force_flush = 1;
