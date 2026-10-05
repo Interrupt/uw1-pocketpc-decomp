@@ -7,6 +7,15 @@
  */
 #include "headers/hud.h"
 #include "headers/debug.h"
+/* Frame id for the real, correctly-loaded "plain arrow" cursor sprite
+   -- see update_hotspot_cursor_icon's own comment on why this exists
+   (the game's real default cursor id, 0x106c, never resolves to real
+   sprite data in this port). The first entry the "cursors" resource
+   group actually registers (frames [620,638), see
+   load_gr_resource_group's UW_DEBUG_DUMP_GR trace); confirmed live via
+   a direct lookup_grtile_by_id(620) dump: real, non-zero 16x15 pixel
+   data. */
+#define UW_DESKTOP_CURSOR_ARROW_FRAME 620
 #include "headers/debug_ui.h"
 #include "headers/models.h"
 #include "headers/movement.h"
@@ -7565,7 +7574,31 @@ void update_hotspot_cursor_icon()
     }
     if ((DAT_00086970 != -1) && ((short)iVar2 == DAT_00204854)) {
       DAT_00086970 = -1;
-      set_cursor_sprite_id(0x106c);
+      /* 0x106c is the real "no specific hotspot" default id -- but its
+         sprite data was never actually registered anywhere this port's
+         resource loader reaches: g_grtile_registry[0x106c] stays
+         permanently empty (confirmed live via UW_DEBUG_DUMP_GR -- the
+         "cursors" resource group, the plausible owner, only ever
+         registers 19 entries at frames [620,638), nowhere near
+         0x106c==4204). On authentic touchscreen behavior
+         (UW_ALWAYS_SHOW_CURSOR unset) this never mattered: this exact
+         sprite is specifically excluded from ever actually being drawn
+         (see draw_idle_mouse_cursor's own gate on DAT_00204788!=0x106c),
+         so its broken zero-size lookup was silently harmless. With
+         UW_ALWAYS_SHOW_CURSOR it DOES get drawn, and that zero size
+         broke save_cursor_background/erase_cursor_icon's own save/
+         restore rect math (both size their rect from the current
+         sprite's width/height) -- confirmed live, this left a trail of
+         un-erased cursor stamps across the inventory panel instead of
+         one cursor that properly follows the mouse, since erase could
+         only ever restore a ~1px sliver of whatever icon had actually
+         been drawn. UW_DESKTOP_CURSOR_ARROW_FRAME (620) is the
+         "cursors" group's own first real, correctly-loaded entry (a
+         plain arrow, confirmed live: 16x15 real pixels, not 0x0) --
+         use that instead, only when UW_ALWAYS_SHOW_CURSOR=1; the
+         authentic touchscreen id and behavior are unchanged
+         otherwise. */
+      set_cursor_sprite_id(uw_always_show_cursor() ? UW_DESKTOP_CURSOR_ARROW_FRAME : 0x106c);
     }
   }
   return;
