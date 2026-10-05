@@ -1,7 +1,7 @@
 # List of bugs to investigate
 
 [x] Main menu stat names not displaying (fixed in a7bc6c9: chargen attribute labels were empty backing buffers)
-[ ] Can't enter lower case text
+[x] Can't enter lower case text (fixed in 8f8536a: command-input-mode flag never cleared, uppercase-folding every text field)
 [ ] Monsters giving too much XP
 [ ] Carry weight too low on start
 [ ] "Use key / combine" cursor not drawing over 3d view - timing?
