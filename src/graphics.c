@@ -160,8 +160,37 @@ short param_4;
   if ((int)(short)DAT_000a85c4 <= iVar11 + iVar14 + -1) {
     if (iVar14 < (short)DAT_000a85c4) {
       iVar14 = (int)(short)DAT_000a85c4;
-      iVar11 = ((int)(short)DAT_000a85c4 - (int)(short)DAT_000a85c4) +
-               (int)(short)((uint)iVar13 >> 0x10);
+      /* BUG FIX: was `(DAT_000a85c4 - DAT_000a85c4) + original_width` --
+         the same value subtracted from itself, always zero, so the
+         clamped width came out as the ORIGINAL unclamped width every
+         time instead of being shrunk by however much got clipped off
+         the left. NOT a Ghidra decompile artifact -- pulled the raw
+         ARM disassembly for this function (FUN_00011774 @ 0x11774,
+         the clip-left branch at 0x11814-0x11834) and hand-traced the
+         registers: r2 and r0 are BOTH loaded from the clip-left global
+         (*DAT_000119e8) a few instructions apart, so `sub r3,r2,r3,asr
+         #0x10` at 0x1182c really does compute clip_left - clip_left in
+         the compiled binary itself, not just in the decompiled C. This
+         is a genuine bug in the original 2002 shipped code (likely a
+         source-level variable-reuse mistake on Looking Glass's end,
+         where whatever held "old x0" got overwritten with the new
+         clamped value before this subtraction read it) -- harmless on
+         the original touchscreen, which never tracked a persistent
+         moving cursor near a clip boundary long enough to notice.
+         Leaving x0 clamped to the clip-left boundary but NOT shrinking
+         the width means x1 (= new_x0 + width) ends up pushed past the
+         rect's real right edge by exactly the number of pixels clipped
+         off the left -- every fill/erase/save/restore call whose rect
+         crosses the clip-left boundary (e.g. the cursor icon near the
+         3D viewport's left edge) touches extra pixels beyond its
+         intended bounds. Confirmed live via a user report: a "strange
+         rect invalidation" along ~16px (= the cursor's own width) at
+         the viewport's edges. Recompute the width the same way the
+         clip-right branch just below already does it correctly
+         (clip_bound - new_x0 [+1]): here, new_width = original x1
+         (still held in param_3, untouched up to this point) minus the
+         new clamped x0. */
+      iVar11 = (int)(short)param_3 - (int)(short)DAT_000a85c4;
       param_1 = DAT_000a85c4;
     }
     sVar10 = (short)iVar11;
