@@ -7242,35 +7242,60 @@ void set_cursor_sprite_id(param_1)
 undefined4 param_1;
 
 {
-  /* lookup_grtile_by_id's argument is dropped by Ghidra at this call site;
-     forwarding param_1 matches the resolve_sprite_id_to_frame(param_1) call right
-     above it and lookup_grtile_by_id's own g_grtile_registry-indexed-by-id shape. */
+  /* Was a genuinely dropped RETURN VALUE, not just a dropped argument:
+     resolve_sprite_id_to_frame(param_1) was called and its result thrown
+     away, then the lookup just below re-used the raw, UNRESOLVED
+     param_1 -- a previous pass here misdiagnosed this as the simpler
+     "argument dropped by Ghidra" idiom and patched it by forwarding
+     param_1 into lookup_grtile_by_id, which avoids a NULL-deref crash
+     but keeps indexing with the wrong id.
+
+     resolve_sprite_id_to_frame exists precisely to translate a symbolic
+     UI sprite id into its real absolute g_grtile_registry frame: ids
+     below 0x1000 are already absolute OBJECTS.GR frames (resolved ==
+     param_1, so this fix is a no-op for those), but every cursor icon
+     this project actually pushes -- 0x106c (the default idle cursor),
+     0x1077-0x107a (the automap/map-note cursors), etc -- lives in the
+     0x1000-0x1fff BUTTONS.GR range, which resolve_sprite_id_to_frame
+     remaps to DAT_00202730+(id-0x1000) before any table lookup is
+     valid. draw_sprite_by_id (the function that actually PAINTS this
+     cursor) does resolve first; this function, which decides the
+     cursor's save/erase RECT SIZE for the hide/show cycle, did not --
+     so for every one of those ids it looked up g_grtile_registry[raw
+     id] (an unrelated, unpopulated slot), silently fell back to the
+     zeroed dummy sprite, and set DAT_00204784/DAT_002047a4 (this
+     cursor's width/height, consumed by save_cursor_background/
+     erase_cursor_icon's own rect math in rect_fill_or_save_restore) to
+     0 -- while the real paint elsewhere drew the sprite at its real,
+     much larger size through the correctly-resolved frame. A 0-sized
+     erase can never remove what a full-sized draw just painted: a
+     permanent ghost of that cursor sprite stuck on screen, never
+     cleared by any later cursor move. Confirmed live via
+     UW_DEBUG_CURSORSHOW/CURSORERASE tracing: entering the automap
+     (draw_automap_screen's own idle-cursor draw, sprite 0x106c, fires
+     before enter_automap_screen ever pushes the real map cursor) logged
+     a 15x16ish real sprite blit immediately followed by an erase
+     clipped to rect_fill_or_save_restore(1,0,2,1) -- a 1x1 no-op --
+     leaving that default-cursor arrow permanently stamped in the
+     automap's top-left corner through every subsequent mouse move
+     (bug: "Automap cursor not invalidating, leaves a trail behind").
+     Capturing and using the resolved frame here fixes the save/erase
+     size for every cursor icon in the 0x1000+ range, not just this one
+     screen -- the same shared root cause other cursor-invalidation
+     reports on other screens trace back to. */
   char *iVar1;
+  uint resolved_frame;
 
   erase_cursor_icon();
-  resolve_sprite_id_to_frame(param_1);
+  resolved_frame = resolve_sprite_id_to_frame(param_1);
   /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id
      only covers ids below DAT_00202738 (the "still-compressed .GR
      resource entry, needs decoding" range); ids at or above it are
      already-resident raw sprites living directly in g_grtile_registry's own
-     table (see blit_object_sprite_by_frame's own identical branch,
-     which this function was missing). For those higher ids
-     lookup_grtile_by_id's own table lookup misses (a *different* resource's
-     entries live there) and falls back to its zeroed dummy glyph,
-     silently handing back width=height=0 here. First found while
-     chasing a user report of several items (a map, a bag, apple,
-     bread) showing the wrong cursor icon or none at all when picked
-     up -- the real cause of THAT turned out to be a separate bug
-     (g_selected_object's own sign-extension, see
-     swap_cursor_and_slot_item's fix comment) that was corrupting
-     these objects' ids into the >= DAT_00202738 range in the first
-     place; with that fixed these particular items no longer reach
-     this branch at all. Kept anyway since it's a real, independently
-     confirmed divergence from blit_object_sprite_by_frame's own
-     already-correct behavior, for whatever legitimately-high-id items
-     do reach here. */
-  iVar1 = (int)(short)param_1 < (int)(uint)DAT_00202738 ?
-          lookup_grtile_by_id(param_1) : (char *)g_grtile_registry[(int)(short)param_1];
+     table (see blit_object_sprite_by_frame's own identical branch on
+     this same resolved-frame value, which this function now matches). */
+  iVar1 = (int)resolved_frame < (int)(uint)DAT_00202738 ?
+          lookup_grtile_by_id((short)resolved_frame) : (char *)g_grtile_registry[resolved_frame];
   if (iVar1 == (char *)0x0) {
     /* Same "table slot never populated" fallback as
        blit_object_sprite_by_frame's own identical guard. */
