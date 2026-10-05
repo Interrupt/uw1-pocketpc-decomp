@@ -141,6 +141,8 @@ add_fixture_game_unit_test(combat
   src/doors.c:close_door_object src/doors.c:schedule_door_open_animation)
 add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
+add_fixture_game_unit_test(noise
+  src/ai.c:alert_npc_to_noise_callback src/ai.c:emit_noise_alert)
 add_fixture_game_unit_test(visibility_walk
   src/visibility.c:@DAT_00086af0_arr
   src/visibility.c:@DAT_00086af8_region

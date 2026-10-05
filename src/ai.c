@@ -4388,7 +4388,9 @@ ushort * param_3;
   ushort uVar1;
   ushort uVar2;
   int iVar3;
-  undefined4 uVar4;
+  /* ARM passes get_message_string's returned pointer straight to strcat;
+     a 32-bit undefined4 truncated it on the host when an NPC heard noise. */
+  char *uVar4;
   int iVar5;
   uint uVar6;
   int iVar7;
