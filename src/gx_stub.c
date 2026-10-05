@@ -1540,7 +1540,29 @@ void uw_end_present_batch(void)
     if (g_present_state.batch_depth == 0) return;
     if (--g_present_state.batch_depth == 0 && g_present_state.pending) {
         g_present_state.pending = 0;
-        GXEndDraw();
+        /* This is the true end of one complete per-tick render loop --
+           every nested begin/suspend/resume present-batch call for
+           this tick has now unwound, meaning the whole tick's drawing
+           (3D view, debug panel, every other HUD element) is finished,
+           not just some of it. A finished frame belongs on screen
+           unconditionally, not subject to the separate display-pacing
+           clock GXEndDraw (used everywhere else -- every OTHER,
+           usually-redundant mid-tick present attempt) defers to --
+           see GXFinalizeDraw's own comment for why gating this one
+           too, on top of that, actively lost frames: a fully-finished,
+           correct frame could sit deferred for an indeterminate number
+           of ticks while only a stale, partially-drawn one (from
+           whatever present last slipped out through the click-and-hold
+           fix's own present-batch suspend window) stayed the last
+           thing actually on screen. Confirmed live: exactly that -- the
+           debug panel switching to a smaller layout showed garbled
+           leftover text well after the tick that drew it correctly had
+           finished. The display is vsync-locked (SDL_RENDERER_PRESENTVSYNC,
+           see GXOpenDisplay), so calling this every tick doesn't
+           flood the screen with extra presents the way bypassing
+           pacing anywhere else would -- SDL_RenderPresent itself
+           blocks to the next vblank regardless of call rate. */
+        GXFinalizeDraw();
     }
 }
 
@@ -1582,21 +1604,26 @@ int uw_defer_present(void)
     return 0;
 }
 
-int GXEndDraw(void) {
-    if (uw_defer_present()) return 1;
-    if (!g_tex) return 0;
-    if (!uw_present_frame_due(uw_gx_time_us())) return 1;
-    /* UW_DEBUG_ENDDRAW: log every real call to this function (i.e. every
-       actual SDL_RenderPresent, the true screen-present) with its
-       immediate caller's symbol. Early flushes return above without
-       presenting or waiting on another vsync. */
+/* Shared by GXEndDraw and GXFinalizeDraw -- the actual un-rotate +
+   SDL present + timelapse-capture work, once a caller has already
+   decided (by whatever gate it uses) that this frame is going on
+   screen now. Never called directly -- see each caller's own comment
+   for what gates it. */
+static int uw_present_now(const char *who, void *caller) {
+    /* UW_DEBUG_ENDDRAW: log every real present (i.e. every actual
+       SDL_RenderPresent, the true screen-present) with its immediate
+       caller's symbol (passed in by each public entry point via its
+       own __builtin_return_address(0) -- not re-derived here, since
+       walking an extra frame up via __builtin_return_address(1) isn't
+       reliably safe across optimization levels). Early-outs above/in
+       the two public entry points return without presenting or
+       waiting on another vsync. */
     if (getenv("UW_DEBUG_ENDDRAW")) {
-        void *caller = __builtin_return_address(0);
         Dl_info info;
         const char *name = (dladdr(caller, &info) && info.dli_sname) ? info.dli_sname : "?";
         static unsigned int call_count = 0;
         call_count++;
-        fprintf(stderr, "[enddraw] call=%u tick=%u caller=%s(%p)\n", call_count, g_uw_frame_clock_units, name, caller);
+        fprintf(stderr, "[enddraw] call=%u tick=%u via=%s caller=%s(%p)\n", call_count, g_uw_frame_clock_units, who, name, caller);
     }
     /* Un-rotate the portrait "hardware" framebuffer back to a natural
      * landscape image for display -- see the HW_W/HW_H comment above.
@@ -1662,6 +1689,44 @@ int GXEndDraw(void) {
     }
 
     return 1;
+}
+
+int GXEndDraw(void) {
+    if (uw_defer_present()) return 1;
+    if (!g_tex) return 0;
+    if (!uw_present_frame_due(uw_gx_time_us())) return 1;
+    return uw_present_now("GXEndDraw", __builtin_return_address(0));
+}
+
+/* The true, final present of a complete per-tick render loop -- see
+   uw_end_present_batch's own comment, its only call site. Unlike
+   GXEndDraw, this never defers to the separate display-pacing clock
+   (uw_present_frame_due): a finished frame belongs on screen now, not
+   subject to a SEPARATE throttle on top of the game's own tick
+   pacing. Still respects uw_defer_present() (so a genuinely
+   still-nested call, e.g. a modal view mid-draw, doesn't present a
+   half-finished frame either); it just doesn't ALSO defer to this
+   other, redundant clock on top of that. Deliberately NOT used for
+   every present (e.g. not wired into flush_dirty_rect_to_display's
+   own g_force_flush path, despite that looking like a natural fit) --
+   tried that, and it made the demo harness's own SCREENSHOT capture
+   LESS reliable, not more: forcing that specific read to always
+   reflect whatever's immediately in the framebuffer right then,
+   instead of whatever the pacing clock had last naturally settled on,
+   more often caught a mid-tick frame instead of a finished one. */
+int GXFinalizeDraw(void) {
+    if (uw_defer_present()) return 1;
+    if (!g_tex) return 0;
+    int ok = uw_present_now("GXFinalizeDraw", __builtin_return_address(0));
+    /* Keep the display-pacing clock in sync with the present that just
+       actually happened, so a later GXEndDraw call (a mid-tick blit,
+       the demo harness's own SCREENSHOT flush, ...) paces itself off
+       of what's really on screen now instead of either immediately
+       re-presenting the same frame again or still waiting on a vsync
+       slot this call already delivered. */
+    uw_claim_frame(&g_display_pacing, uw_gx_time_us());
+    g_display_pacing.pending = 0;
+    return ok;
 }
 
 int GXOpenInput(void) { fprintf(stderr, "[gx] GXOpenInput\n"); return 1; }

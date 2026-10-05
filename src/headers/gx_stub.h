@@ -19,6 +19,14 @@ int GXOpenDisplay(void *hwnd, unsigned int flags);
 int GXCloseDisplay(void);
 void *GXBeginDraw(void);
 int GXEndDraw(void);
+/* Presents unconditionally (no separate display-pacing gate on top of
+   the game's own tick pacing) once not deferred by present-batch
+   nesting -- called exactly once per tick, by uw_end_present_batch,
+   at the true end of a complete per-tick render loop. See its own
+   doc comment in gx_stub.c for why GXEndDraw's extra pacing gate is
+   wrong for that one call site specifically. Not meant to be called
+   from anywhere else. */
+int GXFinalizeDraw(void);
 /* Batch a gameplay tick's draw requests into one display refresh. Modal
    viewers present immediately while the surrounding tick is suspended. */
 void uw_begin_present_batch(void);

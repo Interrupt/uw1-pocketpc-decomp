@@ -356,6 +356,18 @@ int GXEndDraw(void)
     return 1;
 }
 
+/* Same real present as GXEndDraw, from this suite's point of view --
+   uw_end_present_batch (extracted from the real gx_stub.c) always
+   uses this one now, but either represents a frame actually reaching
+   the screen. */
+int GXFinalizeDraw(void)
+{
+    if (uw_defer_present()) return 1;
+    presents++;
+    if (!testing_game_tick) assert_visible_picture();
+    return 1;
+}
+
 void assert_visible_picture(void)
 {
     unsigned colored_pixels = 0;
