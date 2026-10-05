@@ -6643,8 +6643,43 @@ int erase_cursor_icon()
             (int)DAT_00204844, DAT_00204844 != 0, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
   if (DAT_00204844 != 0) {
-    set_draw_color(0x15);
-    rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
+    /* Bug fix ("Clicking in the inventory area stamps a yellow box
+       there"): only actually paint a restore when DAT_00204848 (the
+       rect_fill_or_save_restore save/restore sentinel -- see its own
+       comment) is armed, i.e. a real save_cursor_background() SAVE is
+       pending to restore. DAT_00204844 is not exclusively owned by
+       that save/show/erase protocol -- handle_mouse_message's
+       WM_LBUTTONDOWN handler (src/input.c) also sets it directly
+       (1, or 2 whenever g_cursor_mode/g_cursor_holding_state is
+       nonzero) as a general click-pending flag, with no
+       save_cursor_background() call to match, so DAT_00204848 stays 0.
+       draw_idle_mouse_cursor's own "SKIP-SAVE" path (reached whenever
+       g_cursor_mode != 0) also never arms DAT_00204848, for the same
+       reason. Previously this unconditionally called
+       rect_fill_or_save_restore with draw color 0x15 regardless, and
+       rect_fill_or_save_restore only honors 0x15 as "RESTORE" while
+       DAT_00204848 != 0 (its own comment) -- with DAT_00204848 == 0 it
+       silently falls through to an ordinary flat fill using 0x15 as a
+       literal palette index instead, painting a solid box (that
+       palette entry renders bright yellow) at the mouse position and
+       leaving it there permanently (nothing ever marks it dirty again
+       to paint over it). Confirmed live via a temporary unconditional
+       trace in rect_fill_or_save_restore: a plain click inside the
+       open inventory panel reproduced exactly this -- DAT_00204844
+       freshly set to 2 by handle_mouse_message (g_cursor_mode was
+       nonzero), DAT_00204848 still 0, erase_cursor_icon's rect_fill
+       call landing in the flat-fill branch with color 21 (0x15).
+       Skipping the paint (and its flush/DAT_00204848 reset) when
+       there's nothing real to restore leaves DAT_00204844 itself
+       untouched here -- same as before this fix, every caller already
+       clears it off this function's own return value when nonzero
+       (see this function's own doc comment), and
+       handle_mouse_message's WM_LBUTTONUP handler unconditionally
+       zeroes it regardless, so a stale 1/2 left by a mismatched
+       button-down is still cleared on release either way. */
+    if (DAT_00204848 != 0) {
+      set_draw_color(0x15);
+      rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
     /* REVERTED (was: force g_force_flush around this call, matching
@@ -6688,8 +6723,9 @@ int erase_cursor_icon()
        inventory drag/drop convention uses the RIGHT mouse button
        throughout anyway (gx_stub.c's uw_inject_mouse_rdown/rup), not
        left, so that handler may not even be on the relevant path. */
-    flush_dirty_rect_to_display(1);
-    DAT_00204848 = 0;
+      flush_dirty_rect_to_display(1);
+      DAT_00204848 = 0;
+    }
     iVar1 = DAT_00204844;
   }
   return iVar1;
