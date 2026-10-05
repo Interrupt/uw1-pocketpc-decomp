@@ -201,7 +201,25 @@ short param_4;
       sVar1 = (short)((uint)iVar15 >> 0x10);
       if ((int)DAT_000a85c8 <= sVar1 + iVar4) {
         if (iVar4 < DAT_000a85c8) {
-          iVar12 = ((int)DAT_000a85c8 - (int)(short)param_2) + (int)sVar1;
+          /* BUG FIX: same bug class as the left-edge X clamp above, this
+             time a sign error rather than a self-cancellation -- was
+             `(clip_top - original_y0) + original_height`, which ADDS
+             the clipped-off amount back onto the height instead of
+             subtracting it, so clamping y0 up to the clip-top boundary
+             makes the rect even TALLER (pushing y1 down past its real
+             bound by roughly double the clipped amount) rather than
+             shrinking it. Confirmed in the real ARM disassembly too
+             (FUN_00011774 @ 0x11774, the top-clip branch at
+             0x11890-0x118a8: `addgt r7,r3,r1` where r3 = clip_top -
+             y0_orig and r1 = original height) -- a genuine bug in the
+             original 2002 shipped code, same story as the left-edge
+             one: harmless on the original touchscreen, now visible as
+             a ~16px cursor-shaped stamp along the 3D viewport's top
+             edge under UW_ALWAYS_SHOW_CURSOR's persistent cursor.
+             Recompute the same way the left-edge X fix above does:
+             new_height = original y1 (still held in param_4, untouched
+             up to this point) minus the new clamped y0. */
+          iVar12 = (int)(short)param_4 - (int)(short)DAT_000a85c8;
           param_2 = (int)DAT_000a85c8;
         }
         if ((int)(short)param_2 <= (int)DAT_000842a8) {
