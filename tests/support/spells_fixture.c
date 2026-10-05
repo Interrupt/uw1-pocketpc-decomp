@@ -61,7 +61,7 @@ undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
 }
 
 void configure_texture_detail_functions(void) {}
-undefined4 recompute_level7_hazard_from_character_level(int level) { (void)level; return 0; }
+undefined4 recalculate_player_stats(int level) { (void)level; return 0; }
 void refresh_player_equipment_effects(void) { spells_fixture.equipment_refreshes++; }
 int roll_dice_sum(count, sides)
 int count;

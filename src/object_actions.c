@@ -31,50 +31,6 @@ ushort DAT_002022f8;
 static ushort DAT_00202300;
 static ushort DAT_00202304;
 int DAT_002022fc;
-// was DAT_0023bcf4, offset +0x4c of the "large fixed-offset record"
-// based at DAT_0023bca8 (see that array's own declaration comment a few
-// hundred lines up -- a "device/config-ish struct, not yet fully
-// identified" that a prior session already had to widen to a real 8192-
-// byte backing array after catching an unrelated overflow into it).
-// g_player_carry_weight (was DAT_0023bcf2, "+0x4a", the sibling field 2
-// bytes before this one) is that struct's actively-maintained "current
-// carried weight" running total.
-//
-// Two things worth ruling out before assuming a hardcoded default is
-// the right call, both checked directly rather than assumed:
-// - NOT part of the player.dat save/load blob: that save path (uw.c
-//   ~32660) serializes the player's OBJECT graph (walking
-//   resolve_object_link), not this stats struct -- no overlap, so this
-//   isn't a save/load wiring gap.
-// - NOT a split-symbol/should-be-one-array bug either, despite living
-//   inside that same not-fully-identified struct: a whole-binary
-//   instruction-pattern scan (every "str/strh/strb ..., [reg, #0x4c]"
-//   in the binary, not just literal-address xrefs, specifically to also
-//   catch a write reached via the DAT_00086df8 struct-pointer indirection
-//   the way init_new_character_record's already-documented overflow into this same
-//   struct was) found zero halfword writes to +0x4c anywhere, by any
-//   addressing pattern. Every real writer of the sibling +0x4a field
-//   also resolves through a literal constant address, not the pointer
-//   indirection, matching how this file already represents both fields
-//   as flat globals -- so unifying them into an explicit array wouldn't
-//   change reachability here the way it has for other DAT_0023bca8-
-//   adjacent fields elsewhere in this file.
-// - Confirmed via a real Ghidra reference search against UU.exe (not
-//   just this decompile): every access to +0x4c anywhere in the shipped
-//   binary is a READ (check_object_carry_weight's "can I pick this up" check, and
-//   update_carry_weight_display, apparently a HUD burden/encumbrance display) -- there
-//   is no write to it ANYWHERE, so it stays at its zero BSS default for
-//   the life of the process. Net effect: every pickup attempt failed
-//   with "too heavy" regardless of the item (confirmed live: a 30-unit
-//   sack, well within any plausible real capacity, was rejected).
-//
-// Whatever real formula (almost certainly Strength-derived) originally
-// populated this is not recoverable from this binary -- it's a genuinely
-// dead computation in the shipped game, not a decompile gap. Seeding a
-// generous, clearly-provisional default here so carrying items functions
-// at all rather than being permanently broken -- revisit if the real
-// per-character formula (or its expected value range) ever turns up.
-ushort g_player_max_carry_weight = 200;
 static char s_cursed_00085ca0[] = "cursed";
 static char s_magical_00085ca8[] = "magical";
 /* Ghidra rendered the embedded space as an underscore and dropped the

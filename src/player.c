@@ -194,9 +194,10 @@ static byte DAT_002046cc;
 static undefined1 DAT_0020330c;
 static char DAT_00086db0;
 static char DAT_00086db1;
-static undefined1 DAT_0010060d;
-static undefined1 DAT_0010060e;
-static undefined1 DAT_0010060f;
+// These armor bonuses are consecutive bytes in the ARM bonus array.
+#define DAT_0010060d DAT_0010060c_backing[1]
+#define DAT_0010060e DAT_0010060c_backing[2]
+#define DAT_0010060f DAT_0010060c_backing[3]
 static undefined4 DAT_0023bc9c;
 static undefined4 DAT_0023bc98;
 undefined4 DAT_002020d0;
@@ -211,32 +212,25 @@ static char DAT_00086db4;
 static int DAT_00086db8_backing[4];
 #define DAT_00086db8 DAT_00086db8_backing[0]
 /* Sizing-audit pass: equip-slot weight table, loop bound
-   `iVar4<5` (5 equip slots). HARD. Down from 256. */
-static undefined1 DAT_00086da8_backing[5];
+   `iVar4<5` (5 equip slots). HARD. Down from 256.
+   ARM equipment slot -> armor region table at 0x86da8 (real recovered
+   data, not just zero-init). */
+static undefined1 DAT_00086da8_backing[5] = {3, 0, 1, 2, 2};
 #define DAT_00086da8 DAT_00086da8_backing[0]
 /* Was a lone `undefined` scalar, but compute_light_source_colors
    indexes it as a 16-entry (0-0xf) light-type -> base-color-index
    table (`(&DAT_00086dc8)[light_type & 0xf]`). Widened to match. */
 static undefined DAT_00086dc8_backing[16];
 #define DAT_00086dc8 DAT_00086dc8_backing[0]
-/* Was a lone `undefined` scalar, but compute_object_weight indexes it
-   as a 512-entry (9-bit item-id, 0-0x1ff), 4-byte-stride table
-   (`(&g_object_weight_table)[item_id * 4]`, only byte 0 of each entry
-   read). Widened to match. */
-static undefined g_object_weight_table_backing[2048];
-#define g_object_weight_table g_object_weight_table_backing[0]
 undefined2 DAT_0023beb8;
-/* Base of a large fixed-offset record (reset_player_object_record: `DAT_00086df8 =
-   &DAT_0023bca8;`, then init_new_character_record and others write through
-   DAT_00086df8 at offsets up to at least 0xd1/209 -- a device/config-ish
-   struct, not yet fully identified). Declared as a lone `undefined`
-   scalar, byte 0 of that struct -- an lldb watchpoint on the unrelated
-   DAT_0023be74 (which happens to sit right after this in memory) caught
-   this overflowing into it one byte per loop iteration in init_new_character_record,
-   corrupting it and causing a later SEGV.
+/* Player status record: character attributes, skills, mana, carry weights,
+   quest flags, and world state. DAT_00086df8 points here in the game;
+   write_player_status_block serializes 0xd2 bytes, and the inventory save
+   path also preserves a 220-byte snapshot. Field aliases must share this
+   storage so calculations, HUD reads, and save/restore see the same values.
 
-   Sizing-audit pass: the struct's exact real size IS now confirmed --
-   both save (player.c:746) and load (player.c:835) round-trip it via
+   Sizing-audit pass: the struct's exact real size IS confirmed -- both
+   save (player.c:746) and load (player.c:835) round-trip it via
    `ce_memmove(...,&DAT_0023bca8,220)`, an exact, symmetric, HARD
    bound. Sized to 256 for headroom; down from 8192. */
  undefined1 DAT_0023bca8_backing[256];
@@ -893,7 +887,7 @@ void refresh_player_equipment_effects()
   ushort uVar2;
   char cVar3;
   int iVar4;
-  int iVar5;
+  ushort *iVar5;
   ushort *puVar6;
   byte *iVar7; /* Was `int` -- truncated the 64-bit pointer get_scanned_object_class_effect_ptr
                   returns (see its own comment); made a real crash once
@@ -919,7 +913,7 @@ void refresh_player_equipment_effects()
   do {
     iVar5 = get_equipped_item_at_slot(iVar4);
     if (iVar5 != 0) {
-      cVar3 = compute_object_weight();
+      cVar3 = compute_object_weight(iVar5);
       DAT_0023be74[(char)(&DAT_00086da8)[iVar4]] =
            cVar3 + DAT_0023be74[(char)(&DAT_00086da8)[iVar4]];
     }
@@ -928,7 +922,7 @@ void refresh_player_equipment_effects()
   puVar6 = (ushort *)get_equipped_item_at_slot((*(byte *)(DAT_00086df8 + 100) & 1) + 7);
   if ((((puVar6 != (ushort *)0x0) && (uVar11 = *puVar6, (uVar11 & 0x1c0) == 0)) &&
       ((uVar11 & 0x30) == 0x30)) && ((10 < (uVar11 & 0xf) && ((uVar11 & 0xf) < 0x10)))) {
-    cVar3 = compute_object_weight();
+    cVar3 = compute_object_weight(puVar6);
     *DAT_0023be74 = cVar3 + *DAT_0023be74;
     DAT_0023be74[1] = DAT_0023be74[1] + cVar3;
   }
@@ -1592,7 +1586,9 @@ uint param_1;
 
 
 
-// WARNING: Removing unreachable block (ram,0x000667b0)
+// ARM 0x6674c calculates armor protection from OBJECTS.DAT and item quality.
+// Its table starts at item 0x20; the old separate backing array never loaded
+// those protection values. Keep the existing function name for its callers.
 
 int compute_object_weight(param_1)
 ushort * param_1;
@@ -1606,7 +1602,7 @@ ushort * param_1;
     iVar2 = 0;
   }
   else {
-    iVar2 = (((int)((uint)(byte)(&g_object_weight_table)[(uVar1 & 0x1ff) * 4] * ((byte)param_1[2] & 0x3f)) >>
+    iVar2 = (((int)((uint)(byte)(&DAT_00202750)[(uVar1 & 0x1ff) * 4 - 0x80] * ((byte)param_1[2] & 0x3f)) >>
              6) + 1) * 0x10000 >> 0x10;
   }
   return iVar2;
@@ -2224,23 +2220,19 @@ int param_1;
 
 
 
-// was FUN_000703a0 -- recomputes the level-7-specific hazard/regen
-// fields derived from the player's current character level
-// (DAT_00086df8+0x3d) and their class's base stat row (DAT_0023be74,
-// see its own declaration comment): writes a scaled value to
-// DAT_00086df8+0xb0 (if the current level is 7) or +0x38 otherwise --
-// the same pair save_or_restore_level_special_state saves/restores for
-// level 7's floor hazard -- and a 2-byte regen-rate field at +0x4c/
-// +0x4d. param_1!=0 also copies the new +0x38 value into +0x37 (the
-// active hazard byte). Called by advance_character_level after a
-// level-up (param_1=0) and by chargen (context not traced here).
-undefined4 recompute_level7_hazard_from_character_level(param_1)
+// was FUN_000703a0 -- recalculates maximum HP (30 + level * STR / 5),
+// maximum mana ((casting skill + 1) * INT / 8), and carrying capacity
+// (STR * 20, in tenths of a stone). Level 7 keeps normal maximum mana
+// at +0xb0 while its special state occupies +0x38. A nonzero argument
+// refills current mana from +0x38 during character creation.
+undefined4 recalculate_player_stats(param_1)
 int param_1;
 
 {
   undefined1 uVar1;
   char cVar2;
   char *iVar3;
+  uint carry_capacity;
   
   iVar3 = DAT_0023be74;
   cVar2 = ordint_divmod(5,(uint)*(byte *)(DAT_00086df8 + 0x3d) * (uint)*(byte *)(DAT_0023be74 + 5)).quot;
@@ -2253,9 +2245,9 @@ int param_1;
   else {
     *(undefined1 *)(DAT_00086df8 + 0x38) = uVar1;
   }
-  iVar3 = (uint)*(byte *)(DAT_0023be74 + 5) * 0x14;
-  *(char *)(DAT_00086df8 + 0x4c) = (char)iVar3;
-  *(char *)(DAT_00086df8 + 0x4d) = (char)((uint)iVar3 >> 8);
+  carry_capacity = (uint)*(byte *)(DAT_0023be74 + 5) * 0x14;
+  *(char *)(DAT_00086df8 + 0x4c) = (char)carry_capacity;
+  *(char *)(DAT_00086df8 + 0x4d) = (char)(carry_capacity >> 8);
   if (param_1 != 0) {
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
   }
@@ -2290,7 +2282,7 @@ char param_1;
   print_scroll_message_by_id(0x93);
   message_scroll_print_wrapped(&DAT_0008730c);
   *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + param_1;
-  recompute_level7_hazard_from_character_level(0);
+  recalculate_player_stats(0);
   refresh_stats_panel_if_active();
   return;
 }
@@ -2703,7 +2695,7 @@ LAB_00070c78:
     print_skill_improvement_list(local_60);
     *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + -1;
   }
-  recompute_level7_hazard_from_character_level(0);
+  recalculate_player_stats(0);
   refresh_stats_panel_if_active();
 LAB_00070b58:
   refresh_player_equipment_effects();

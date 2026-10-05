@@ -1,3 +1,4 @@
+#include "game_fixture.h"
 #include "chargen_fixture.h"
 
 void setUp(void) { chargen_fixture_reset(); }
@@ -28,9 +29,8 @@ static void test_reset_creates_blank_stats_and_new_character_defaults(void)
     TEST_ASSERT_EQUAL_UINT8(4, ((byte)record[100] >> 2) & 7);
     TEST_ASSERT_EQUAL_UINT8(1, ((byte)record[100] >> 1) & 1);
     TEST_ASSERT_EQUAL_UINT8(5, (byte)record[100] >> 5); /* class preserved */
-    TEST_ASSERT_EQUAL_UINT8(29, ((byte *)player_object)[8]);
+    TEST_ASSERT_EQUAL_UINT8(19, ((byte *)player_object)[8]);
     TEST_ASSERT_EQUAL_INT(1, DAT_00201b68);
-    TEST_ASSERT_EQUAL_INT(1, hazard_calls);
     TEST_ASSERT_EQUAL_INT(1, equipment_calls);
     TEST_ASSERT_EQUAL_INT(1, reset_calls);
 }
@@ -42,11 +42,16 @@ static void test_finalization_rolls_twenty_skills_and_three_attributes(void)
     TEST_ASSERT_EQUAL_INT(23, dice_calls);
     for (int i = 0; i < 20; i++) TEST_ASSERT_EQUAL_UINT8(6, record[0x21 + i]);
     for (int i = 5; i < 8; i++) TEST_ASSERT_EQUAL_UINT8(21, attributes[i]);
-    TEST_ASSERT_EQUAL_UINT8(40, attributes[4]);
+    TEST_ASSERT_EQUAL_UINT8(34, attributes[4]);
+    TEST_ASSERT_EQUAL_UINT8(18, record[0x38]);
+    TEST_ASSERT_EQUAL_UINT8(18, record[0x37]);
+    TEST_ASSERT_EQUAL_UINT16(420, g_player_max_carry_weight);
+    TEST_ASSERT_EQUAL_INT16(0, g_player_carry_weight);
 }
 
 static void test_each_class_uses_its_own_base_attributes(void)
 {
+    record[0x3d] = 1;
     for (int cls = 0; cls < 8; cls++) {
         const byte *row = DAT_000fb860_backing + cls * 4;
         random_index = 0;
@@ -65,9 +70,9 @@ static void test_each_class_uses_its_own_base_attributes(void)
         for (int skill = 0; skill < 20; skill++)
             TEST_ASSERT_EQUAL_UINT8(0, record[0x21 + skill]);
         TEST_ASSERT_EQUAL_UINT8((cls << 5) | 0x1b, record[100]);
-        TEST_ASSERT_EQUAL_UINT8(40, ((byte *)player_object)[8]);
+        TEST_ASSERT_EQUAL_UINT8(30 + (byte)attributes[5] / 5, ((byte *)player_object)[8]);
+        TEST_ASSERT_EQUAL_UINT16((byte)attributes[5] * 20, g_player_max_carry_weight);
     }
-    TEST_ASSERT_EQUAL_INT(8, hazard_calls);
 }
 
 static void test_bonus_pool_caps_attributes_and_spends_remainder(void)
@@ -164,9 +169,119 @@ static void test_confirmed_picks_resume_without_retraining_previous_choices(void
     TEST_ASSERT_EQUAL_INT(3, trained_count);
 }
 
+static void test_recalculation_updates_limits_without_refilling_live_mana(void)
+{
+    record[0x3d] = 5;
+    record[0x28] = 15;
+    record[0x37] = 3;
+    attributes[5] = 30;
+    attributes[7] = 24;
+    g_player_carry_weight = 175;
+    recalculate_player_stats(0);
+    TEST_ASSERT_EQUAL_UINT8(60, attributes[4]);
+    TEST_ASSERT_EQUAL_UINT8(48, record[0x38]);
+    TEST_ASSERT_EQUAL_UINT8(3, record[0x37]);
+    TEST_ASSERT_EQUAL_UINT16(600, g_player_max_carry_weight);
+    TEST_ASSERT_EQUAL_INT16(175, g_player_carry_weight);
+    TEST_ASSERT_EQUAL_UINT8(0x58, record[0x4c]);
+    TEST_ASSERT_EQUAL_UINT8(2, record[0x4d]);
+    recalculate_player_stats(1);
+    TEST_ASSERT_EQUAL_UINT8(48, record[0x37]);
+}
+
+static void test_level_seven_preserves_special_mana_state(void)
+{
+    DAT_00201b68 = 7;
+    record[0x3d] = 1;
+    record[0x28] = 7;
+    record[0x37] = 2;
+    record[0x38] = 9;
+    attributes[5] = 20;
+    attributes[7] = 25;
+    recalculate_player_stats(0);
+    TEST_ASSERT_EQUAL_UINT8(25, record[0xb0]);
+    TEST_ASSERT_EQUAL_UINT8(9, record[0x38]);
+    TEST_ASSERT_EQUAL_UINT8(2, record[0x37]);
+    TEST_ASSERT_EQUAL_UINT16(400, g_player_max_carry_weight);
+}
+
+static void test_status_save_restores_calculated_stats_and_carry_fields(void)
+{
+    prepare_initial_randomness();
+    init_new_character_record(0);
+    g_player_carry_weight = 75;
+    write_player_status_block(1);
+    memset(record, 0, sizeof record);
+    memset(attributes, 0, sizeof attributes);
+    read_player_status_block(1);
+    TEST_ASSERT_EQUAL_UINT8(21, attributes[5]);
+    TEST_ASSERT_EQUAL_UINT8(21, attributes[6]);
+    TEST_ASSERT_EQUAL_UINT8(21, attributes[7]);
+    TEST_ASSERT_EQUAL_UINT8(34, attributes[4]);
+    TEST_ASSERT_EQUAL_UINT8(18, record[0x38]);
+    TEST_ASSERT_EQUAL_UINT8(18, record[0x37]);
+    TEST_ASSERT_EQUAL_UINT16(420, g_player_max_carry_weight);
+    TEST_ASSERT_EQUAL_INT16(75, g_player_carry_weight);
+}
+
+static void test_armor_protection_uses_loaded_table_and_quality(void)
+{
+    uw_test_read_data("DATA/OBJECTS.DAT", DAT_00202750_backing, 0x80,
+                      2 + 0x80 + 0x30, SEEK_SET);
+    for (int item = 0x20; item < 0x40; item++) {
+        player_object[0] = item;
+        player_object[2] = 63;
+        TEST_ASSERT_EQUAL_INT(1 + DAT_00202750_backing[(item - 0x20) * 4] * 63 / 64,
+                              compute_object_weight(player_object));
+        player_object[2] = 0;
+        TEST_ASSERT_EQUAL_INT(1, compute_object_weight(player_object));
+    }
+}
+
+static void test_pickup_limit_reads_capacity_and_current_load_from_record(void)
+{
+    record[0x3d] = 1;
+    attributes[5] = 21;
+    recalculate_player_stats(0);
+    g_player_carry_weight = 395;
+    TEST_ASSERT_TRUE(check_object_carry_weight(player_object));
+    g_player_carry_weight = 396;
+    TEST_ASSERT_FALSE(check_object_carry_weight(player_object));
+}
+
+static void test_equipment_bonus_updates_all_regions_and_reset_clears_them(void)
+{
+    reset_player_derived_state();
+    apply_equipped_item_effect(3, 1, player_object, 0);
+    const byte expected[] = {3, 3, 3, 3};
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(expected, DAT_0010060c_backing, 4);
+    reset_player_derived_state();
+    const byte cleared[] = {0, 0, 0, 0};
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(cleared, DAT_0010060c_backing, 4);
+}
+
+static void test_equipment_slots_apply_bonuses_to_original_armor_regions(void)
+{
+    const int regions[] = {3, 0, 1, 2, 2};
+    for (int slot = 0; slot < 5; slot++) {
+        reset_player_derived_state();
+        apply_equipped_item_effect(0xc, 2, player_object, slot);
+        for (int region = 0; region < 4; region++)
+            TEST_ASSERT_EQUAL_UINT8(region == regions[slot] ? 3 : 0,
+                                     DAT_0010060c_backing[region]);
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_pickup_limit_reads_capacity_and_current_load_from_record);
+    RUN_TEST(test_equipment_bonus_updates_all_regions_and_reset_clears_them);
+    RUN_TEST(test_equipment_slots_apply_bonuses_to_original_armor_regions);
+    RUN_TEST(test_recalculation_updates_limits_without_refilling_live_mana);
+    RUN_TEST(test_level_seven_preserves_special_mana_state);
+    RUN_TEST(test_status_save_restores_calculated_stats_and_carry_fields);
+    RUN_TEST(test_armor_protection_uses_loaded_table_and_quality);
     RUN_TEST(test_reset_creates_blank_stats_and_new_character_defaults);
     RUN_TEST(test_finalization_rolls_twenty_skills_and_three_attributes);
     RUN_TEST(test_each_class_uses_its_own_base_attributes);

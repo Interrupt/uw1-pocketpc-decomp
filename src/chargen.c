@@ -390,7 +390,7 @@ LAB_00025468:
           goto LAB_00025468;
         }
         sVar8 = 8;
-        uVar15 = recompute_level7_hazard_from_character_level(1);
+        uVar15 = recalculate_player_stats(1);
       }
     }
     if (7 < sVar8) {
@@ -744,7 +744,7 @@ int param_1;
     *(char *)(iVar6 + DAT_0023be74 + 5) = cVar3;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 3);
-  recompute_level7_hazard_from_character_level(1);
+  recalculate_player_stats(1);
   *(undefined1 *)(DAT_00086df8 + 0x4a) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x4b) = 0;
   uVar4 = ce_rand();
@@ -997,7 +997,7 @@ void reroll_attributes_for_class_race()
     }
     *(byte *)(DAT_0023be74 + uw_ord2005_rem_2 + 5) = (char)uVar3 + bVar1;
   }
-  recompute_level7_hazard_from_character_level(1);
+  recalculate_player_stats(1);
   *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_0023be74 + 4);
   return;
 }

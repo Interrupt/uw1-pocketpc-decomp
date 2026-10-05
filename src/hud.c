@@ -70,7 +70,6 @@ static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
 /* Sizing-audit pass: reload_paperdoll_body_sprite's own loop is
    `iVar1<6` (indices 0-5). HARD. Down from 16. */
 undefined1 DAT_00202988_backing[6];
-short g_player_carry_weight;
 static int DAT_002028d0;
 static char s_Not_a_spell_00085a80[] = "Not_a_spell";
 static byte DAT_002028d4;

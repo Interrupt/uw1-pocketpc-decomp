@@ -63,12 +63,13 @@ add_game_test_library(uw_test_memory src/ordinal_stubs.c:ce_memset)
 add_game_test_library(uw_test_string_append src/ordinal_stubs.c:ce_strcat)
 add_game_test_library(uw_test_string_length src/ordinal_stubs.c:ce_strlen)
 add_game_test_library(uw_test_character_rules src/chargen.c:init_new_character_record)
+add_game_test_library(uw_test_player_stats src/player.c:recalculate_player_stats)
 add_game_test_library(uw_test_archive_rules src/saveload.c:read_archive_entry)
 target_compile_options(uw_test_archive_rules PRIVATE
   -include "${CMAKE_CURRENT_SOURCE_DIR}/support/game_fixture.h")
 add_library(uw_test_support STATIC support/data_fixture.c)
 uw_configure_test_target(uw_test_support)
-target_link_libraries(uw_test_support PUBLIC uw_test_character_rules uw_test_archive_rules
+target_link_libraries(uw_test_support PUBLIC uw_test_character_rules uw_test_player_stats uw_test_archive_rules
   uw_test_memory uw_test_string_append uw_test_string_length)
 target_sources(uw_test_support PRIVATE support/game_fixture.c
   support/character_services.c support/character_storage.c
@@ -85,6 +86,11 @@ add_supported_game_unit_test(math uw_test_math)
 add_supported_game_unit_test(support uw_test_support)
 
 add_fixture_game_unit_test(chargen
+  src/player.c:write_player_status_block src/player.c:read_player_status_block
+  src/player.c:@DAT_00086da8_backing
+  src/player.c:reset_player_derived_state src/player.c:apply_equipped_item_effect
+  src/object_actions.c:check_object_carry_weight
+  src/player.c:compute_object_weight
   src/chargen.c:advance_skill_tree_node
   src/chargen.c:apply_confirmed_skill_picks
   src/chargen.c:reroll_attributes_for_class_race)
