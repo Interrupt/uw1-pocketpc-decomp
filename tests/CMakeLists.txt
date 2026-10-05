@@ -265,3 +265,11 @@ add_fixture_game_unit_test(automap
   src/hud.c:warp_mouse_cursor src/hud.c:get_mouse_position
   src/graphics.c:rect_fill_or_save_restore src/graphics.c:set_draw_color)
 target_sources(uw_test_automap PRIVATE support/automap_storage_fixture.c)
+
+add_fixture_game_unit_test(weapon_ready
+  src/item_use.c:@g_weapon_overlay_enabled
+  src/hud.c:cursor_mode_button_click src/hud.c:set_hud_status_value
+  src/item_use.c:ready_weapon src/item_use.c:unready_weapon
+  src/inventory.c:toggle_weapon_ready
+  src/weapon_swing.c:advance_action_animation_frame
+  src/weapon_swing.c:weapon_swing_draw_tick)
