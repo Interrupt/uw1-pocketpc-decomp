@@ -6942,10 +6942,40 @@ static void restore_clip_after_cursor_blit()
    stale, no-longer-current pixels over the just-repainted live view --
    confirmed live via a user report: a "use item" cursor over the 3D
    view showed a visibly frozen patch of dungeon wall behind it while
-   the player walked and the rest of the view updated normally. */
+   the player walked and the rest of the view updated normally.
+
+   BUG FIX: originally just checked DAT_000a85c4==0x34 (is the narrow
+   viewport clip active right now), with no check that the cursor's
+   OWN rect actually sits entirely within it. The viewport's narrow
+   clip rect IS the viewport's own bounds while active, so when the
+   cursor straddles the edge -- partially over the live 3D content,
+   partially over the static ornate border/vine decoration just
+   outside it -- the clip being narrow still made this return true for
+   the WHOLE icon, skipping save/restore for the sliver that overlaps
+   the border too. That sliver is never redrawn by anything (unlike
+   the 3D content, it isn't repainted every tick), so skipping its
+   save/restore left a permanent trail exactly there -- confirmed live
+   via a user report: trails specifically along the 3D view's left,
+   right, and top edges, persisting after the first viewport-staleness
+   fix. Now also requires the cursor's full draw rect (hotspot-offset
+   position to position+width/height, matching erase_cursor_icon's own
+   rect math) to fit entirely inside the current clip bounds -- which,
+   while the narrow clip is active, are exactly the viewport's real
+   edges -- before treating it as "over the live view". A straddling
+   cursor falls through to the normal save/restore path instead,
+   matching the already-correct handling for the fully-outside case. */
 static int cursor_over_live_3d_view()
 {
-  return (short)DAT_000a85c4 == 0x34;
+  int x0, y0, x1, y1;
+  if ((short)DAT_000a85c4 != 0x34) {
+    return 0;
+  }
+  x0 = (int)g_mouse_x - (int)DAT_0020471c;
+  y0 = (int)g_mouse_y - (int)DAT_00204748;
+  x1 = x0 + (int)DAT_00204784;
+  y1 = y0 + (int)DAT_002047a4;
+  return (x0 >= (int)(short)DAT_000a85c4) && (y0 >= (int)(short)DAT_000a85c8) &&
+         (x1 <= (int)(short)DAT_000842a4) && (y1 <= (int)(short)DAT_000842a8);
 }
 
 
