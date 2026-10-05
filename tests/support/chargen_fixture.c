@@ -6,7 +6,7 @@ long ce_rand(void);
 void configure_texture_detail_functions(void);
 void refresh_player_equipment_effects(void);
 
-undefined1 DAT_0023bca8_backing[8192];
+undefined1 DAT_0023bca8_backing[256];
 char attributes[16];
 
 ushort player_object[16];
@@ -97,7 +97,7 @@ void prepare_initial_randomness(void)
 
 /* Isolate the storage/encoding boundary while testing the real status pack
    and unpack functions. No HUD or audio initialization is needed. */
-undefined1 DAT_00204880_backing[128], DAT_00202750_backing[256];
+undefined1 DAT_00204880_backing[128], DAT_00202750_backing[128];
 short DAT_00201c70;
 static byte saved_status[0xd2], saved_key;
 undefined4 is_sound_effects_enabled(void) { return 0; }
@@ -130,7 +130,7 @@ short read_xor_scrambled_block(int handle, int key, void *buffer, int size)
     return size;
 }
 
-undefined1 DAT_0010060c_backing[256];
+undefined1 DAT_0010060c_backing[8];
 byte DAT_0020330c, DAT_002046cc, DAT_0020208c;
 char DAT_00086db0, DAT_00086db1;
 int DAT_00086db8_backing[256], DAT_0023bc94;

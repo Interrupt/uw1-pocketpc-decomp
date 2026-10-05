@@ -3,7 +3,23 @@
 [x] Main menu stat names not displaying (fixed in a7bc6c9: chargen attribute labels were empty backing buffers)
 [ ] Can't enter lower case text
 [x] Monsters giving too much XP (investigated, no decompilation bug: formula verified byte-for-byte against the real shipped ARM binary (disassembled UU.exe); displayed XP curve is ~3-675 vs a level-16 cap of 9600, an unremarkable RPG curve. This appears to be the original game's actual balance, not a port bug.)
-[x] Carry weight too low on start (fixed properly in d4ba628, merged from bug-fixes-pass-2 at 45d4093: recompute_level7_hazard_from_character_level renamed to recalculate_player_stats, and g_player_carry_weight/g_player_max_carry_weight are now #define aliases directly into the player status struct (DAT_0023bca8_backing+0x4a/+0x4c) instead of separate flat globals needing manual sync -- the real root-cause fix, superseding the earlier reverted c8e1166 sync-based patch. Also fixed a dropped-argument bug in compute_object_weight and populated real recovered armor-protection table data. A broader character-stats-pipeline investigation is still in progress to check for any other symptoms this doesn't cover.)
+[x] Carry weight too low on start (fixed properly in d4ba628, merged from bug-fixes-pass-2 at 45d4093: recompute_level7_hazard_from_character_level renamed to recalculate_player_stats, and g_player_carry_weight/g_player_max_carry_weight are now #define aliases directly into the player status struct (DAT_0023bca8_backing+0x4a/+0x4c) instead of separate flat globals needing manual sync -- the real root-cause fix, superseding the earlier reverted c8e1166 sync-based patch. Also fixed a dropped-argument bug in compute_object_weight and populated real recovered armor-protection table data. Broader character-stats-pipeline investigation now complete: traced
+    every recalculate_player_stats call site (chargen's initial roll,
+    chargen's class/race bonus reroll, level-up, and skill training's
+    own stat bump) -- all 5 real call sites are present, none missing.
+    Checked both save/load paths (write_player_status_block/
+    read_player_status_block's 0xd2-byte block, and
+    write_player_save_record/restore_player_save_record's 220-byte
+    DAT_0023bca8 memmove) against every other derived stat (max HP,
+    current/max mana, Strength/Dexterity/Intelligence): all of them
+    already read/write the struct directly with no separate flat-
+    global duplicate, so the carry-weight pair was a real but isolated
+    instance of the split-symbol pattern, not a wider epidemic --
+    confirmed by grepping for every `g_player_*` flat global in src/
+    and finding none left after this fix. Live-verified via
+    UW_DEBUG_WEIGHT=1 against a freshly chargen'd character:
+    max_capacity=400, scaling correctly with rolled Strength instead
+    of the old hardcoded 200.)
 [x] "Use key / combine" cursor not drawing over 3d view - timing? (investigated; this turned out to be two overlapping issues, both already resolved. (1) An older, already-fixed root cause: draw_idle_mouse_cursor's confine-rect check (src/hud.c) used to get corrupted by init_cursor_subsystem's `(&DAT_002047b0)[iVar2]=10000` loop writing 20 shorts through a lone-scalar global -- but DAT_002047b0 was already widened to a real 20-element array in the code-cleanup-pass-2 merge (commit e0e419e), well before this pass, so that corruption no longer happens; confirmed live by holding/hovering the cursor at screen x=131, past the old corrupted bound's x2=109, with no confine-rect early-return. (2) The real remaining cause of the "timing" symptom -- the forced per-tick 3D redraw (main_loop_hud_flush) painting over the cursor whenever the mouse sat still for a tick -- is the SAME mechanism as bug-list item "Cursors not drawing always" and is fixed by that item's commit 05e8727 (main_loop_hud_flush now calls update_mouse_state() unconditionally every tick). No separate fix needed/made here; re-verified live after rebasing onto that commit.)
 [x] Automap cursor not invalidating, leaves a trail behind (fixed in ebacc53: set_cursor_sprite_id discarded resolve_sprite_id_to_frame's result, using the raw unresolved id for the g_grtile_registry lookup, so the cursor's tracked erase-rect size fell back to 0x0 for every 0x1000+ (BUTTONS.GR) icon)
 [x] Automap should lightly draw a wall when not discovered (fixed in 0d1d7f5/b676768, merged from bug-fixes-pass-1)
