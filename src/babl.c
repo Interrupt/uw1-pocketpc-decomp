@@ -600,7 +600,26 @@ intptr_t param_1;
   if (DAT_00202948 == 0) {
     iVar8 = DAT_00100674;
     if ((*(byte *)(iVar8 + 0xe) & 0x10) == 0) {
-      spawn_creature_death_loot();
+      /* Was a dropped argument -- spawn_creature_death_loot's own K&R
+         declaration (`void spawn_creature_death_loot(param_1)`) takes
+         the creature object pointer, but every one of this file's 4
+         call sites invoked it with empty parens, leaving param_1 to
+         whatever garbage happened to be sitting in the argument
+         register/slot. spawn_creature_death_loot dereferences that
+         pointer directly (`param_1[7]`, `*param_1`) and then has each
+         of its 4 sub-rolls object_list_insert_head a freshly spawned
+         item into `param_1 + 6` -- a wild write through garbage when
+         param_1 isn't the real creature. The intended argument is
+         plainly DAT_00100674 (the current conversation partner --
+         every other statement around this call reads/writes it, and
+         every sibling call site below re-reads it right after this
+         same call). Confirmed as (at least a) real contributor to the
+         "critters dropping shrines" bug report: a wild
+         object_list_insert_head here can corrupt an unrelated object's
+         own link chain (e.g. a nearby shrine fixture's), making it
+         look like that object got spliced into a dead creature's
+         drop/inventory list. */
+      spawn_creature_death_loot(DAT_00100674);
       iVar8 = *piVar3;
     }
     puVar9 = (ushort *)resolve_object_link((ushort *)(iVar8 + 6));
@@ -2827,7 +2846,9 @@ void start_npc_conversation()
     sync_conv_vars_from_npc(DAT_00100674);
     DAT_001007b8 = babl_alloc(0xa0);
     if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
-      spawn_creature_death_loot();
+      /* Dropped argument -- see babl_builtin_take_from_npc's identical
+         call for the full explanation; intended arg is DAT_00100674. */
+      spawn_creature_death_loot(DAT_00100674);
     }
     /* Debug-only static dump of every string in this NPC's own compiled
        conversation, independent of which branches a live playthrough
@@ -3358,7 +3379,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   uVar4 = babl_read_var_word((int)*(short *)(param_1 + -4));
   local_10 = g_player_object;
   if ((sVar3 == 0) && (local_10 = DAT_00100674, (*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0)) {
-    spawn_creature_death_loot();
+    /* Dropped argument -- see babl_builtin_take_from_npc's identical
+       call for the full explanation; intended arg is DAT_00100674. */
+    spawn_creature_death_loot(DAT_00100674);
     local_10 = DAT_00100674;
   }
   local_10 = local_10 + 6;
@@ -4305,7 +4328,9 @@ void babl_builtin_setup_to_barter()
   bVar2 = false;
   bVar3 = false;
   if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
-    spawn_creature_death_loot();
+    /* Dropped argument -- see babl_builtin_take_from_npc's identical
+       call for the full explanation; intended arg is DAT_00100674. */
+    spawn_creature_death_loot(DAT_00100674);
   }
   iVar13 = DAT_00100674 + 6;
   puVar6 = (ushort *)resolve_object_link(iVar13);
