@@ -7,6 +7,7 @@
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 char *DAT_0024fa2c;
 char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
@@ -182,6 +183,8 @@ undefined1 *g_save_record_base_ptr;
    ("...\SAVE0player.dat"). A leading "\\" here is harmless even for a
    caller whose own prefix already ends in one (resolve_path collapses
    repeated separators). */
+/* Original bytes are "player.dat"; the port's save-directory prefix
+   omits its trailing separator, so this suffix supplies it instead. */
 char s_player_dat_00085a74[] = "\\player.dat";
 /* g_light_source_slots: light-source-eligible equip slots {5,6,7,8} (see
    refresh_player_equipment_effects and decay_equipped_light_sources's light-scan loops, and use_light_source's
@@ -249,7 +252,8 @@ undefined2 DAT_0023bea0;
 short DAT_0023bea4;
 short DAT_0023bf08;
 undefined4 DAT_0023bea8;
-char DAT_0023bf18;
+// ARM uses unsigned phase shifts to index the 16-entry bob waveforms.
+byte DAT_0023bf18;
 undefined2 DAT_0023be9e;
 undefined2 DAT_0023be9c;
 undefined2 DAT_0023be9a;
@@ -258,7 +262,9 @@ static byte DAT_0023bf10;
 /* Real static lookup table, same recovery/boundary evidence as
    movement.c's DAT_00086e38/DAT_00086e48 (bytes at 0x86e58..0x86e67 in
    UU.exe's .data, immediately after those two and immediately before
-   the already-recovered DAT_00086e68 == 15 scalar). trigger_view_transition
+   the already-recovered DAT_00086e68 == 15 scalar). Independently
+   cross-confirmed byte-for-byte by a second, concurrent recovery pass
+   (bug-fixes-pass-2) via the same Ghidra method. trigger_view_transition
    indexes this with `(char)bVar8` and `(char)bVar8 + 2 & 0xf` (bVar8 =
    DAT_0023bf18 >> 4), so 16 real entries -- a symmetric wobble curve
    used for the jump/landing camera-bob wobble (DAT_0023be98/be9e). Was
@@ -306,10 +312,13 @@ char DAT_000872a0 = -1;
    dropping the units digit on every level-up message (visibly wrong
    once the character reaches level 10+, reachable in normal play).
    Aliased DAT_0008730d into DAT_0008730c_backing[1] so the real
-   write lands in the string, with backing[2] as the (already zero)
-   NUL terminator. Sized to 16 for headroom; down from 8192. */
-static undefined1 DAT_0008730c_backing[16];
+   write lands in the string, with backing[2] as the NUL terminator.
+   Real initial template content confirmed via direct Ghidra memory
+   export of UU.exe: " 0\n". Sized to 16 for headroom; down from
+   8192. */
+static undefined1 DAT_0008730c_backing[16] = " 0\n";
 #define DAT_0008730c DAT_0008730c_backing[0]
+/* The second digit belongs to the same scroll-message buffer. */
 #define DAT_0008730d DAT_0008730c_backing[1]
 /* Was a lone scalar, but roll_skill_use_improvement indexes it
    `(&DAT_00087308)[tier]` for tier 0..2 (classify_skill_training_tier's
@@ -323,14 +332,16 @@ static undefined1 DAT_0008730c_backing[16];
    improvement over reading unrelated string bytes as a probability. */
 static undefined DAT_00087308_arr[3];
 #define DAT_00087308 DAT_00087308_arr[0]
-char s_and_00087310[] = "and";
+/* Ghidra rendered this as "and" (dropped the real leading/trailing
+   spaces). Real bytes at 0x87310 (ARM UU.exe .data, confirmed via
+   tests/fixtures/static_strings.json's direct memory export):
+   " and ". */
+char s_and_00087310[] = " and ";
 /* Used as a NUL-terminated string (&DAT_00087318) by
    print_skill_improvement_list, joining middle entries of its skill-
-   name list (likely ", " between the original real data). Ghidra never
-   surfaced this as initialized string data, so it currently prints as
-   an empty separator -- not guessed at, same as this project's other
-   unrecovered-rodata symbols (e.g. DAT_00086f0c). */
-static undefined DAT_00087318;
+   name list. Ghidra never surfaced this as initialized string data;
+   real bytes confirmed via the same direct memory export: ", ". */
+static char DAT_00087318[] = ", ";
 /* Ghidra rendered the embedded spaces as underscores and dropped
    the trailing space. Real bytes at 0x8731c (ARM UU.exe .data):
    "Chant the mantra: ". */
@@ -1677,7 +1688,18 @@ void trigger_view_transition()
     DAT_0023be98 = sVar9 + (short)(char)(&DAT_00086e58)[(int)(char)bVar8 + 2U & 0xf] * (short)cVar3
                            * 2;
     uVar4 = ce_rand();
-    DAT_0023be9a = ((uVar4 & 0x7f) - 0x40) * (short)cVar3;
+    /* HACK: replace ARM's per-tick random water yaw with three smooth
+       sine waves at 0.55, 1.1 and 1.9 Hz. The shared game clock uses
+       4 ms units, so phase depends on elapsed time, not tick count.
+       Weights sum to 64, retaining the original speed-scaled amplitude.
+       Keep the random draw above so subsequent effects keep their RNG
+       sequence. This changes only water yaw, not the player heading. */
+    {
+      double phase = (double)uw_frame_clock_ms() * 0.004 * 6.283185307179586;
+      DAT_0023be9a = (short)((32.0 * sin(phase * 0.55) +
+                             20.0 * sin(phase * 1.1) +
+                             12.0 * sin(phase * 1.9)) * (short)cVar3);
+    }
     uVar4 = ce_rand();
     DAT_0023be9c = ((uVar4 & 0x7f) - 0x40) * (short)cVar3;
   }
@@ -2516,9 +2538,7 @@ int param_2;
 // 4 entries): message 0x1e if the list is empty (*param_1==-1), else
 // message 0x1d followed by each skill name, separated by DAT_00087318
 // between middle entries and s_and_00087310 ("and") before the last.
-// DAT_00087318's real content wasn't recovered (a likely ", " list
-// separator, currently prints as empty -- see its own declaration
-// comment) -- not guessed.
+// The comma/space separator is verified against UU.exe at 0x87318.
 void print_skill_improvement_list(param_1)
 char * param_1;
 

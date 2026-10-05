@@ -8,9 +8,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Ghidra rendered the embedded spaces as underscores. Real bytes at
-   0x87360 (ARM UU.exe .data): "At %d %d". */
-static char s_At__d__d_00087360[] = "At %d %d";
+/* Ghidra rendered the embedded spaces as underscores and dropped the
+   trailing newline. Real bytes at 0x87360 (ARM UU.exe .data, confirmed
+   via tests/fixtures/static_strings.json's direct memory export):
+   "At %d %d\n". */
+static char s_At__d__d_00087360[] = "At %d %d\n";
 
 // was LAB_000415b4
 void *alloc_door_frame_buffer(param_1)

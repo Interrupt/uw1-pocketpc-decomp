@@ -169,19 +169,20 @@ static int DAT_000db4e0;
 // DAT_000db494 above, so this table is currently never actually
 // consulted despite being real, meaningful data.
 static undefined4 g_model_known_ext_colors;
-static char s_unexpected_EOF___no_END_statemen_000846f8[] = "unexpected_EOF_-_no_END_statemen";
+static char s_unexpected_EOF___no_END_statemen_000846f8[] = "unexpected EOF - no END statement\n";
 static char s________c_0008471c[] = "%*[^}]%c";
-static char s___d__00084728[] = "(%d)";
+static char s___d__00084728[] = "(%d)\n";
 /* Sizing-audit pass: a bare NKDbgPrintfW debug-message format string
-   (no args), content unrecovered, surrounded entirely by short (<40
-   char) literal strings in this same table. Sized to 64 for
-   headroom; down from 8192. */
-static undefined DAT_00084730_backing[64];
+   (no args), surrounded entirely by short (<40 char) literal strings
+   in this same table. Real content confirmed via direct Ghidra memory
+   export of UU.exe (tests/fixtures/static_strings.json): "%d ". Sized
+   to 64 for headroom; down from 8192. */
+static undefined DAT_00084730_backing[64] = "%d ";
 #define DAT_00084730 DAT_00084730_backing[0]
-static char s_anim__d___d__c__d__d___00084734[] = "anim_%d_(%d,%c,%d,%d):";
+static char s_anim__d___d__c__d__d___00084734[] = "anim %d (%d,%c,%d,%d): ";
 static char s__d__1s__d__d__1s_0008474c[] = "%d,%1s,%d,%d,%1s";
 static char s_ANIMATE_00084760[] = "ANIMATE";
-static char s_Error__extended_color_for_part___00084768[] = "Error:_extended_color_for_part_%";
+static char s_Error__extended_color_for_part___00084768[] = "Error: extended color for part %d not in Mac color table\n";
 /* Was "%lx%1s" -- correct as recovered from the original 32-bit binary,
    where 'long' and 'int' are both 4 bytes, matching the destination
    (parse_e_model_file's `int local_208;`). On this 64-bit host 'long' is 8
@@ -195,47 +196,49 @@ static char s_Error__extended_color_for_part___00084768[] = "Error:_extended_col
 static char s__lx_1s_000847a4[] = "%x%1s";
 static char s_EXTENDED_COLORS_000847ac[] = "EXTENDED_COLORS";
 static char s_INTERSECTIONS_000847bc[] = "INTERSECTIONS";
-static char s__c__d__d__d__d__d___c__000847cc[] = "%c,%d,%d,%d,%d,%d_(%c)";
+static char s__c__d__d__d__d__d___c__000847cc[] = "%c,%d,%d,%d,%d,%d (%c)\n";
 static char s__1s__d__d__d_1s_000847e4[] = "%1s,%d,%d,%d%1s";
 static char s__1s__d__d__d__d__d_1s_000847f4[] = "%1s,%d,%d,%d,%d,%d%1s";
-static char s_branch_0008480c[] = "branch";
+static char s_branch_0008480c[] = "branch ";
 /* Sizing-audit pass: an NKDbgPrintfW debug-message format string
-   (one %-arg, local_22c), content unrecovered, sibling of the
-   "branch"/"leaf" literals right around it. Sized to 64 for
-   headroom; down from 8192. */
-static undefined DAT_00084814_backing[64];
+   (one %-arg, local_22c), sibling of the "branch"/"leaf" literals
+   right around it. Real content confirmed via direct Ghidra memory
+   export of UU.exe: "%d\n". Sized to 64 for headroom; down from
+   8192. */
+static undefined DAT_00084814_backing[64] = "%d\n";
 #define DAT_00084814 DAT_00084814_backing[0]
-static char s_leaf_00084818[] = "leaf";
+static char s_leaf_00084818[] = "leaf ";
 /* Sizing-audit pass: a ce_fscanf format string (`ce_fscanf(pvVar_fh,
-   &DAT_00084820,&local_1e4)`, one int destination), content
-   unrecovered, sibling of the short format-string literals around
-   it (e.g. s__d_1s_000848c8 = "%d%1s"). Sized to 64 for headroom;
-   down from 8192. */
-static undefined DAT_00084820_backing[64];
+   &DAT_00084820,&local_1e4)`, one int destination), sibling of the
+   short format-string literals around it (e.g. s__d_1s_000848c8 =
+   "%d%1s"). Real content confirmed via direct Ghidra memory export of
+   UU.exe: "%1s,". Sized to 64 for headroom; down from 8192. */
+static undefined DAT_00084820_backing[64] = "%1s,";
 #define DAT_00084820 DAT_00084820_backing[0]
 static char s_SUPER_NODES_00084828[] = "SUPER_NODES";
 static char s_NODES_00084834[] = "NODES";
 static char s_CLUSTERS_0008483c[] = "CLUSTERS";
-static char s_making_backside_of__d_____d_00084848[] = "making_backside_of_%d_->_%d";
-static char s_Error__Part__d_is_a_polygon_with_00084868[] = "Error:_Part_%d_is_a_polygon_with";
-static char s_Error__polygon__d__bitmap_must_h_00084898[] = "Error:_polygon_%d:_bitmap_must_h";
+static char s_making_backside_of__d_____d_00084848[] = "making backside of %d -> %d\n";
+static char s_Error__Part__d_is_a_polygon_with_00084868[] = "Error: Part %d is a polygon with only %d points";
+static char s_Error__polygon__d__bitmap_must_h_00084898[] = "Error: polygon %d: bitmap must have 4 points\n";
 static char s__d_1s_000848c8[] = "%d%1s";
 static char s__d__d_000848d0[] = "%d,%d";
 static char s_________c_000848d8[] = "%*[^;}]%c";
-static char s_got_sphere__d_000848e4[] = "got_sphere_%d";
+static char s_got_sphere__d_000848e4[] = "got sphere %d\n";
 /* Sizing-audit pass: a ce_fscanf format string (multiple destination
-   pointers), content unrecovered, sibling of "got_sphere_%d" right
-   above it. Sized to 64 for headroom; down from 8192. */
-static undefined DAT_000848f4_backing[64];
+   pointers), sibling of "got sphere %d\n" right above it. Real
+   content confirmed via direct Ghidra memory export of UU.exe: "%d,".
+   Sized to 64 for headroom; down from 8192. */
+static undefined DAT_000848f4_backing[64] = "%d,";
 #define DAT_000848f4 DAT_000848f4_backing[0]
-static char s_Too_many_polys_000848f8[] = "Too_many_polys";
-static char s_Out_of_vertex_list_space_00084908[] = "Out_of_vertex_list_space";
+static char s_Too_many_polys_000848f8[] = "Too many polys\n";
+static char s_Out_of_vertex_list_space_00084908[] = "Out of vertex list space\n";
 static char s__d__d__d__d_00084924[] = "%d,%d,%d,%d";
-static char s_got_bitmap__d___d_00084930[] = "got_bitmap_%d:_%d";
+static char s_got_bitmap__d___d_00084930[] = "got bitmap %d: %d\n";
 static char s__d__1s__d__x__00084944[] = "%d,%1s,%d,%x,";
 static char s___c_1____00084954[] = "%*c%1[}]";
 static char s_PARTS_00084960[] = "PARTS";
-static char s_Too_many_points___d__00084968[] = "Too_many_points_(%d)";
+static char s_Too_many_points___d__00084968[] = "Too many points (%d)\n";
 static char s__d__d__d__00084980[] = "%d,%d,%d;";
 static char s_POINTS_0008498c[] = "POINTS";
 static char s__1s______1s_00084994[] = "%1s%[^\"]%1s";
@@ -260,7 +263,7 @@ static char DAT_000849a8_backing[16] = "%1s";
 static char DAT_000849ac_backing[16] = "%d";
 #define DAT_000849ac DAT_000849ac_backing[0]
 static char s_VERSION_000849b0[] = "VERSION";
-static char s_error___s__c_000849b8[] = "error:_%s,%c";
+static char s_error___s__c_000849b8[] = "error: %s,%c\n";
 /* Unrecoverable string constant (Ghidra never recovered its content) --
    confirmed "END" by inspecting a real .E model file (DATA3D/DFRAME.E):
    the game's text script parser (parse_e_model_file) brackets every model with
@@ -282,14 +285,14 @@ static char DAT_000849c8_backing[16] = "END";
 #define DAT_000849c8 DAT_000849c8_backing[0]
 static char s__100s_1s_000849cc[] = "%100s%1s";
 static char s__1s__a_z__1s_000849d8[] = "%1s%[a-z]%1s";
-static char s_Input_file_error__BEGIN_statemen_000849e8[] = "Input_file_error:_BEGIN_statemen";
+static char s_Input_file_error__BEGIN_statemen_000849e8[] = "Input file error: BEGIN statement missing\n";
 static char s_BEGIN_00084a14[] = "BEGIN";
 static char s__100s_00084a1c[] = "%100s";
 /* Sizing-audit pass: ce_fopen's mode-string argument
-   (`ce_fopen(acStack_130,&DAT_00084a24)`), content unrecovered --
-   fopen mode strings are always a handful of chars (e.g. "rb").
-   Sized to 16; down from 8192. */
-static undefined DAT_00084a24_backing[16];
+   (`ce_fopen(acStack_130,&DAT_00084a24)`). Real content confirmed via
+   direct Ghidra memory export of UU.exe: "r". Sized to 16; down from
+   8192. */
+static undefined DAT_00084a24_backing[16] = "r";
 #define DAT_00084a24 DAT_00084a24_backing[0]
 /* DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's ".E"
    model parser: `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor

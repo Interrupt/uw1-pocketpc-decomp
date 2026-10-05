@@ -118,9 +118,10 @@ static undefined1 DAT_000873e0_backing[256];
 #define DAT_000873e0 DAT_000873e0_backing[0]
 static undefined4 DAT_00087458;
 /* Sizing pass: read-only (`pcVar4 = &DAT_00087520;`), a base-directory
-   path fragment per its usage context. Real content unrecovered
-   (currently empty); sized generously for a path component. */
-static undefined1 DAT_00087520_backing[256];
+   path fragment per its usage context. Real content confirmed via
+   direct Ghidra memory export of UU.exe: "\VOC00.WAV". Sized
+   generously for a path component; down from 32768. */
+static undefined1 DAT_00087520_backing[256] = "\\VOC00.WAV";
 #define DAT_00087520 DAT_00087520_backing[0]
 static short DAT_002506f0;
 static undefined2 DAT_002029c8;

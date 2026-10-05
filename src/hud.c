@@ -41,7 +41,7 @@ static undefined2 DAT_002020b4;
 static undefined2 DAT_00202090;
 static undefined2 DAT_002020c8;
 static undefined2 DAT_002020bc;
-static char s_init_gamedisp_goes_000858e8[] = "init_gamedisp_goes";
+static char s_init_gamedisp_goes_000858e8[] = "init_gamedisp goes\n";
 /* Real, compile-time-baked data recovered directly from UU.exe (same
    technique/precedent as DAT_00085668 -- see memory.md's "HOW WE GOT THE
    DISPATCH TABLES POPULATED"), not something a runtime populator ever
@@ -686,9 +686,12 @@ static undefined2 DAT_0023c144;
 byte g_flip_grtile_cache_ready;
 static short DAT_0023c134;
 /* Sizing-audit pass: single use, `debug_print(&DAT_00087298)`, 0
-   writers -- content unrecovered. Sized to 32 for headroom; down
-   from 8192. */
-static undefined DAT_00087298_backing[32];
+   writers. Real content confirmed via direct Ghidra memory export of
+   UU.exe (tests/fixtures/static_strings.json): "ick\n" -- an odd
+   short fragment, but that's genuinely what's at this address in the
+   real binary's .data section. Sized to 16 for headroom; down from
+   8192. */
+static undefined DAT_00087298_backing[16] = "ick\n";
 #define DAT_00087298 DAT_00087298_backing[0]
 static byte DAT_0023c208;
 static short DAT_0023c138;

@@ -190,9 +190,9 @@ static char DAT_00085918;
 static char DAT_00085919;
 /* Sizing-audit pass: a filename template with digit pokes at fixed
    offsets 8,9,0x10,0x11 (via DAT_00085910/11/18/19) -- hard lower
-   bound 18 bytes, exact template text unrecovered. Sized to 32 for
-   headroom; down from 8192. */
-static undefined DAT_00085908_backing[32];
+   bound 18 bytes. Real template text recovered (bug-fixes-pass-2):
+   "\CRIT\CR00PAGE.N00". Sized to 32 for headroom; down from 8192. */
+static undefined DAT_00085908_backing[32] = "\\CRIT\\CR00PAGE.N00";
 static char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
 /* Sizing-audit pass: load_critter_association_tables's own per-level
    write is `puVar6[iVar7]` where `iVar7 = iVar10*3 + iVar5`, iVar10
@@ -1191,10 +1191,7 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
     }
   }
   ce_strcat(param_2,&DAT_00084f20);
-  /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
-     fix -- back-to-back Looks at a creature otherwise all land on the
-     same visible scroll line. */
-  ce_strcat(param_2,"\n");
+  /* DAT_00084f20 already supplies the original period and newline. */
   message_scroll_print_wrapped(param_2);
   return;
 }

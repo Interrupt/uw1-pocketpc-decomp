@@ -87,16 +87,15 @@ static char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
    Was zero-initialized -- an "unrecoverable string constant" Ghidra never
    populated (same class of bug as the CHRBTNS/opbtn resource-name fixes),
    but unlike those it has NO writer anywhere in uw.c or game.c either, so
-   it's a real compile-time constant, not a runtime-built buffer. Every
-   reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
-   bglobals.dat, desc) alongside already-recovered sibling constants that
-   spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
-   and probe_save_slots/load_game_from_slot both search the built path for a literal
-   '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
-   supplies one. Recovered as "\SAVE0"; a prior pass kept the oversized
-   backing array reasoning that nothing relies on its exact size, but
-   that cuts the other way too -- nothing needs it oversized either, so
-   this pass shrinks it to the literal's own 7 bytes plus headroom. */
+   it's a real compile-time constant, not a runtime-built buffer. Original
+   UU.exe bytes at 0x857a0 are "\SAVE0\" -- this port keeps the final
+   separator on the filename suffixes (\desc, \player.dat, \*.*) instead
+   and recovers this constant as "\SAVE0" (no trailing separator); both
+   layouts produce the same filenames. probe_save_slots/load_game_from_slot
+   both search the built path for a literal '0' character to substitute a
+   real slot digit (1-4) -- only "SAVE0" supplies one. Sizing-audit pass:
+   nothing relies on this being oversized either, so shrunk to the
+   literal's own 7 bytes plus headroom. */
 undefined1 DAT_000857a0_backing[16] = "\\SAVE0";
 static undefined2 DAT_00201b6c;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
@@ -235,7 +234,7 @@ short *DAT_000876c0 = DAT_000876c0_backing;
    Down from 8192. */
 static undefined DAT_00028bfc_backing[16];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
-static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev_%d_@_%2.2u.%1.1u_%2.2u.%1.1u";
+static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev %d @ %2.2u.%1.1u %2.2u.%1.1u %2.2x %2.2x \n";
 static byte DAT_0023bd84;
 static undefined1 DAT_00086e05;
 static undefined1 DAT_00086e06;
@@ -326,13 +325,13 @@ undefined4 DAT_0023c648;
 static unsigned short u_UltimaUW_00087678[] = u"UltimaUW";
 static unsigned short u_Ultima_Under_World_00087690[] = u"Ultima_Under_World";
 static unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[] = u"Software\\Apps\\ZIO_Interactive_Ul";
-static char s__Program_Files_ZIO_Interactive_U_00087804[] = "\\Program_Files\\ZIO_Interactive\\U";
+static char s__Program_Files_ZIO_Interactive_U_00087804[] = "\\Program Files\\ZIO Interactive\\Ultima Underworld";
 static unsigned short u_InstlDir_00087838[] = u"InstlDir";
 static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008784c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
 static unsigned short u_HP_Jornada_540_000876cc[] = u"HP,Jornada_540";
-static char s__Program_Files_ZIO_Interactive_U_000876ec[] = "\\Program_Files\\ZIO_Interactive\\U";
+static char s__Program_Files_ZIO_Interactive_U_000876ec[] = "\\Program Files\\ZIO Interactive\\Ultima(Voice)";
 static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008771c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
-static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program_Files\\ZIO_Interactive\\U";
+static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program Files\\ZIO Interactive\\Ultima(CutScene)";
 // DAT_000830b0 and UNK_000830b4 are the same {int msg_id; void
 // *handler;} 8-byte-stride table (dispatch_window_message walks
 // msg_id entries from &DAT_000830b0 via an `int*`, and reads the

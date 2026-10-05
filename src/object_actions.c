@@ -20,7 +20,11 @@ undefined1 DAT_0023c3d8;
    space (see describe_picked_terrain: message_scroll_print_wrapped(this) then the
    name then "."). */
 char s_You_see_000858fc[] = "You see ";
-static char s_belonging_to_00085c90[] = "belonging to ";
+/* Ghidra rendered the embedded space as an underscore and put it on
+   the wrong side -- real bytes at 0x85c90 (ARM UU.exe .data, confirmed
+   via tests/fixtures/static_strings.json's direct memory export):
+   " belonging to" (leading space, no trailing space). */
+static char s_belonging_to_00085c90[] = " belonging to";
 /* Sizing-audit pass: `read_file_handle(iVar8,&DAT_0023ce70,0x80)`
    (ai.c's load_critter_association_tables) reads exactly 128 bytes,
    matching its own fill loop's `<0x80` bound. HARD exact. Down from
@@ -31,8 +35,8 @@ ushort DAT_002022f8;
 static ushort DAT_00202300;
 static ushort DAT_00202304;
 int DAT_002022fc;
-static char s_cursed_00085ca0[] = "cursed";
-static char s_magical_00085ca8[] = "magical";
+static char s_cursed_00085ca0[] = "cursed ";
+static char s_magical_00085ca8[] = "magical ";
 /* Ghidra rendered the embedded space as an underscore and dropped the
    leading space entirely -- confirmed via a Ghidra memory dump of the
    real UU.exe that the real bytes are " full charge\0" (with a real
@@ -251,13 +255,7 @@ LAB_000489fc:
     ce_strcat(acStack_7c,pcVar6);
   }
   ce_strcat(acStack_7c,&DAT_00084f20);
-  /* No trailing newline was ever appended, so back-to-back Looks (the
-     scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
-     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
-     line: confirmed live, 3 Looks at the sack rendered as one run-on
-     "You see a sackYou see a sackYou see a sack" instead of 3 separate
-     lines. */
-  ce_strcat(acStack_7c,"\n");
+  /* DAT_00084f20 already supplies the original period and newline. */
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   describe_special_object_property(param_1,param_2);
@@ -601,7 +599,8 @@ int param_2;
     return;
   }
   pcVar6 = s_You_see_000858fc;
-    wptr_31634 = acStack_85978;
+  /* Like dispatch_object_action, seed the actual message buffer. */
+  wptr_31634 = acStack_7c;
   do {
     cVar10 = *pcVar6;
     *wptr_31634 = cVar10; wptr_31634 = wptr_31634 + 1;
@@ -681,13 +680,7 @@ LAB_000489fc:
     ce_strcat(acStack_7c,pcVar6);
   }
   ce_strcat(acStack_7c,&DAT_00084f20);
-  /* No trailing newline was ever appended, so back-to-back Looks (the
-     scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
-     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
-     line: confirmed live, 3 Looks at the sack rendered as one run-on
-     "You see a sackYou see a sackYou see a sack" instead of 3 separate
-     lines. */
-  ce_strcat(acStack_7c,"\n");
+  /* DAT_00084f20 already supplies the original period and newline. */
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   describe_special_object_property(param_1,param_2);

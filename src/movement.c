@@ -337,6 +337,8 @@ static uint DAT_0023bf5c;
    this table and DAT_00086e48/DAT_00086e58 below) was already separately
    recovered elsewhere in this codebase as the literal 15 found at
    0x86e68 -- matching this same dump and confirming the alignment.
+   Independently cross-confirmed byte-for-byte by a second, concurrent
+   recovery pass (bug-fixes-pass-2) via the same Ghidra method.
    apply_movement_tick indexes this with `bVar1 >> 4` (bVar1 =
    DAT_0023bf18, a byte that free-runs upward every tick), so only 16
    entries are ever live; the real data is this exact 8-value bob curve

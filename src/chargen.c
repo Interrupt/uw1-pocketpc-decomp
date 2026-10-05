@@ -11,38 +11,26 @@
 #define DAT_000fb8f0 DAT_000fb8f0_backing[0]
 char *DAT_00086df8;
 /* These 4 were zero-initialized "backing" buffers standing in for
-   unrecovered string constants (same class as s_chrbtns_00084ef8 and
-   s_dash_000879a4 below -- Ghidra had no .data content at these
-   addresses, just dangling references), passed straight into
-   draw_text_string by draw_chargen_attribute_summary as the row
-   labels for the 4 values it draws. With no initializer they read as
-   empty strings, so the label half of each row silently drew nothing
-   -- the "stat names not displaying" bug: numbers appeared, labels
-   didn't. No original-binary bytes were available to dump for these
-   (no UU.exe/CHARGEN resources ship in this source repo, unlike the
-   chrbtns fix which could read the real ARM binary directly), so the
-   exact original text can't be byte-confirmed. Filled in with the
-   field roles that ARE confirmed elsewhere in this codebase: offsets
-   +5/+6/+7 of this same DAT_0023be74 row are documented (see
-   write_player_save_record's comment, player.dat offset 0x1e) as
-   Strength/Dexterity/Intelligence in that order, and offset +4 is the
-   same field draw_hp_stat_display reads as the character's max HP.
-   Abbreviated to fit the ~47px-wide label+value row
-   (draw_chargen_attribute_summary's own fill rect is only 0x8c-0x5d
-   wide) the way this genre's UIs conventionally abbreviate these.
-   Sizing-audit pass (separate, concurrent fix): each is used exactly
-   once via draw_text_string, 0 writers -- 4 short UI label strings (8
-   bytes apart in the original address space, hinting each was
-   originally <=8 chars). Sized to 16 each for headroom; down from the
-   earlier placeholder 8192, still comfortably fitting "Str"/"Dex"/
-   "Int"/"Hp" plus a NUL. */
-static undefined DAT_00084e40_backing[16] = "Hp";
+   unrecovered string constants, passed straight into draw_text_string
+   by draw_chargen_attribute_summary as the row labels for the 4
+   values it draws. With no initializer they read as empty strings, so
+   the label half of each row silently drew nothing -- the "stat names
+   not displaying" bug: numbers appeared, labels didn't. Real bytes
+   confirmed via a direct Ghidra memory export of UU.exe (see
+   tests/fixtures/static_strings.json's provenance) -- an earlier
+   best-effort guess here ("Hp"/"Int"/"Dex"/"Str", no colons) turned
+   out wrong on both counts once the real binary was actually read:
+   it's "Vit:" (Vitality, not Hp) and all four carry a trailing colon.
+   Sizing-audit pass: each is used exactly once via draw_text_string, 0
+   writers -- 4 short UI label strings (8 bytes apart in the original
+   address space). Sized to 16 each for headroom; down from 8192. */
+static undefined DAT_00084e40_backing[16] = "Vit:";
 #define DAT_00084e40 DAT_00084e40_backing[0]
-static undefined DAT_00084e48_backing[16] = "Int";
+static undefined DAT_00084e48_backing[16] = "Int:";
 #define DAT_00084e48 DAT_00084e48_backing[0]
-static undefined DAT_00084e50_backing[16] = "Dex";
+static undefined DAT_00084e50_backing[16] = "Dex:";
 #define DAT_00084e50 DAT_00084e50_backing[0]
-static undefined DAT_00084e58_backing[16] = "Str";
+static undefined DAT_00084e58_backing[16] = "Str:";
 #define DAT_00084e58 DAT_00084e58_backing[0]
 char *DAT_001005c8;
 /* Was `undefined4` (4 bytes), but assigned real char* pointers

@@ -10,9 +10,9 @@
 
 #define _DAT_002035cf (*(uint*)&DAT_002035cf)
 char s_UNNAMED_00084f24[] = "UNNAMED";
-static char s_objsbecombinable_returns__d_00084f50[] = "objsbecombinable_returns_%d";
-static char s_combination__d_is__d_and__d__00084f70[] = "combination_%d_is_%d_and_%d.";
-static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking_if_%d_and_%d_are_combin";
+static char s_objsbecombinable_returns__d_00084f50[] = "objsbecombinable returns %d\n";
+static char s_combination__d_is__d_and__d__00084f70[] = "combination %d is %d and %d.\n";
+static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking if %d and %d are combinable...\n";
 /* Sizing pass: combination-result table, indexed by
    objects_are_combinable's own return (0-9, a fixed "10 entries"
    search loop) at a 6-byte stride -- real max 9*6+2=56 bytes. */
