@@ -12,7 +12,7 @@
 [ ] Crash when using a ranged weapon
 [ ] Attack charge not consistent
 [ ] Pitch off - spell casting offset is off now. Revert earlier fix, reverse pitch look direction visually?
-[ ] Door placement / collision
+[x] Door placement / collision (investigated, no reproducible bug: movement collision confirmed working live, visual placement already fixed earlier; found but did NOT fix an unrelated issue -- automap visibility flood sees through closed doors, see src/visibility.c / mysteries.md:135-138, needs real disasm to fix safely)
 [ ] Spell crashes - test each
 [ ] Critters dropping shrines during combat / death
 [ ] Cursors not drawing always
