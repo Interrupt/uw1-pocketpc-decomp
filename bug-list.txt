@@ -2,7 +2,7 @@
 
 [x] Main menu stat names not displaying (fixed in a7bc6c9: chargen attribute labels were empty backing buffers)
 [x] Can't enter lower case text (fixed in 8f8536a: command-input-mode flag never cleared, uppercase-folding every text field)
-[ ] Monsters giving too much XP
+[x] Monsters giving too much XP (investigated, no decompilation bug: formula verified byte-for-byte against the real shipped ARM binary (disassembled UU.exe); displayed XP curve is ~3-675 vs a level-16 cap of 9600, an unremarkable RPG curve. This appears to be the original game's actual balance, not a port bug.)
 [x] Carry weight too low on start (fixed in c8e1166: Strength-based formula never fed the flat carry-weight global)
 [ ] "Use key / combine" cursor not drawing over 3d view - timing?
 [ ] Automap cursor not invalidating, leaves a trail behind
