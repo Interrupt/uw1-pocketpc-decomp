@@ -8,7 +8,6 @@ extern undefined1 DAT_0023c11c_arr[2], DAT_0023c12c_arr[2];
 #define DAT_0023c12d DAT_0023c12c_arr[1]
 extern int DAT_0023c260;
 extern short DAT_0023c1ec;
-extern undefined2 DAT_000870e8;
 extern void *g_weapon_swing_raw_frames[UW_WEAPON_SWING_FRAME_COUNT];
 extern byte weapon_frame_x[UW_WEAPON_SWING_FRAME_COUNT];
 extern byte weapon_frame_y[UW_WEAPON_SWING_FRAME_COUNT];

@@ -269,6 +269,11 @@ add_fixture_game_unit_test(automap
 target_sources(uw_test_automap PRIVATE support/automap_storage_fixture.c)
 
 add_fixture_game_unit_test(weapon_ready
+  src/hud.c:@DAT_000870d8 src/hud.c:@DAT_000870dc
+  src/weapon_swing.c:@DAT_000870e0 src/weapon_swing.c:@DAT_000870e4
+  src/weapon_swing.c:@DAT_000870e8
+  src/weapon_swing.c:request_weapon_swing_graphic
+  src/item_use.c:attach_picked_up_object_to_cursor
   src/item_use.c:@g_weapon_overlay_enabled
   src/hud.c:cursor_mode_button_click src/hud.c:set_hud_status_value
   src/item_use.c:ready_weapon src/item_use.c:unready_weapon
