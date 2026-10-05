@@ -7233,7 +7233,48 @@ void track_hotspot_hover_state()
         }
       }
       if ((DAT_00204840 == 1) && (g_selected_object == 0)) {
-        draw_idle_mouse_cursor();
+        /* DEVIATION FROM AUTHENTIC BEHAVIOR: the original calls
+           draw_idle_mouse_cursor() here unconditionally (confirmed via
+           the real ARM disassembly, FUN_0005721c @ 0x5721c) --
+           authentically safe, since nothing else ever reached
+           draw_idle_mouse_cursor for the SAME tick's SAME mouse
+           position on the real touchscreen. Under UW_ALWAYS_SHOW_CURSOR,
+           though, this function runs from render_dungeon_frame_timed,
+           which already ran rebuild_dungeon_view's own incidental
+           handle_mouse_button_message(0) -> update_mouse_state() a few
+           lines earlier in the SAME call -- and that already drew the
+           cursor (DAT_00204840 stays 1 the whole time the cursor's
+           shown, so this check alone can't tell "already handled this
+           tick" from "needs handling"). Calling draw_idle_mouse_cursor
+           again here with DAT_00204844 already 1 made its own
+           save_cursor_background() capture the FIRST call's just-drawn
+           cursor sprite as the "background" instead of the real one
+           underneath it -- confirmed live (UW_DEBUG_CURSORSHOW): a
+           second "normal path" firing right after the first, same
+           position, DAT_00204844 already set. Nothing ever erases that
+           corrupted save (DAT_00204844 already reads nonzero, so later
+           erase/redraw cycles treat it as already-consistent), leaving
+           a permanent ghost of the cursor behind -- confirmed live via
+           a user report of a persistent cursor-shaped stamp, worse
+           along the 3D viewport's edges where this function's own
+           hover-border tracking runs continuously. An earlier attempt
+           fixed this reactively inside draw_idle_mouse_cursor itself
+           (erase whatever's already shown before re-saving) -- reverted
+           per user feedback: that broke a DIFFERENT screen-transition
+           case (chargen's own full-page reblits) where DAT_00204844
+           being stale from the PREVIOUS screen is actually correct to
+           just overwrite with a fresh save, not erase/restore first.
+           Fixing it here instead, at the actual redundant call, avoids
+           that conflict entirely: DAT_00204844 != 0 already means "a
+           valid icon is correctly shown right now" whenever this
+           SPECIFIC call would otherwise redundantly re-enter the same
+           draw this same tick, so skip the call outright rather than
+           letting draw_idle_mouse_cursor react to a state it can't
+           distinguish from "stale". Gated behind uw_always_show_cursor()
+           since the original single-call guarantee holds without it. */
+        if (!uw_always_show_cursor() || DAT_00204844 == 0) {
+          draw_idle_mouse_cursor();
+        }
         return;
       }
       if (DAT_00204840 < 2) {
@@ -7912,53 +7953,20 @@ void draw_idle_mouse_cursor()
     }
   }
   if (_dbg_show) fprintf(stderr, "[cursorshow] normal path: saving then drawing sprite=%d\n", (int)DAT_00204788);
-  /* DEVIATION FROM AUTHENTIC BEHAVIOR: the original always calls
-     save_cursor_background() here unconditionally, with no guard
-     against a cursor icon ALREADY being shown (DAT_00204844 != 0) --
-     authentically safe, since on the real touchscreen this function's
-     own gates meant it was practically never reachable more than once
-     per tick in the first place. Under UW_ALWAYS_SHOW_CURSOR, though,
-     this port has TWO separate call paths that can both legitimately
-     reach here in the SAME tick: update_mouse_state's own erase-then-
-     draw pair, and track_hotspot_hover_state's own direct
-     `if (DAT_00204840==1 && !selected) draw_idle_mouse_cursor();` call
-     a few lines after rebuild_dungeon_view's incidental
-     handle_mouse_button_message(0)-driven update_mouse_state call
-     already ran (both reachable from render_dungeon_frame_timed, see
-     its own call sequence). Confirmed live (UW_DEBUG_CURSORSHOW): a
-     second "normal path" fires right after the first, with
-     DAT_00204844 already 1 -- so this second save_cursor_background()
-     call saves the FIRST call's just-drawn cursor sprite as the
-     "background," not the true background underneath it. Nothing ever
-     erases that corrupted save (DAT_00204844 already reads nonzero, so
-     later erase/redraw cycles treat it as already-consistent), leaving
-     a permanent ghost of the cursor behind -- confirmed live via a
-     user report of a persistent cursor-shaped stamp, worse along the
-     3D viewport's edges where track_hotspot_hover_state's hover-border
-     tracking runs continuously. Erase whatever's already shown first,
-     so a second draw in the same tick re-saves the REAL background
-     instead of the previous draw. */
-  if (uw_always_show_cursor() && cursor_over_live_3d_view()) {
-    /* See cursor_over_live_3d_view's own comment: the 3D view repaints
-       itself fully every tick, so there's nothing stale to erase and
-       no point saving a background that'll be stale again next tick
-       regardless -- just draw straight onto the current, already-
-       fresh frame. Leave DAT_00204844 at 0 (erase whatever WAS shown
-       first, same as the general case below, in case the cursor just
-       moved onto the view from somewhere that DID leave a real saved
-       background pending) so the ordinary erase machinery stays a
-       correct no-op for as long as the cursor stays over the view. */
-    if (DAT_00204844 != 0) {
-      if (erase_cursor_icon() != 0) {
-        DAT_00204844 = 0;
-      }
-    }
-  } else {
-    if (uw_always_show_cursor() && DAT_00204844 != 0) {
-      if (erase_cursor_icon() != 0) {
-        DAT_00204844 = 0;
-      }
-    }
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR: see cursor_over_live_3d_view's
+     own comment -- the 3D view repaints itself fully every tick, so
+     there's nothing to erase and no point saving a background that'll
+     be stale again next tick regardless; just draw straight onto the
+     current, already-fresh frame. Everywhere else, this matches the
+     original unconditionally: always save_cursor_background() before
+     drawing. (An earlier attempt at this fix added an erase-before-
+     resave guard here instead, reacting to draw_idle_mouse_cursor
+     being reachable twice in the same tick under UW_ALWAYS_SHOW_CURSOR
+     -- see track_hotspot_hover_state's own comment for why that's
+     fixed at the actual source instead: a correctly-guarded caller
+     means this function is never redundantly re-entered in the first
+     place, so it doesn't need to defend against it itself.) */
+  if (!(uw_always_show_cursor() && cursor_over_live_3d_view())) {
     save_cursor_background();
   }
 LAB_00058674:
