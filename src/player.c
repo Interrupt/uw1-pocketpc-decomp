@@ -252,10 +252,18 @@ undefined2 DAT_0023be9c;
 undefined2 DAT_0023be9a;
 static char DAT_0023bf14;
 static byte DAT_0023bf10;
-/* Sizing-audit pass: index is `DAT_0023bf18>>4` (a nibble, max 15),
-   and the second access site masks with an extra `&0xf` regardless.
-   Sized to 16; down from 256. */
-static undefined DAT_00086e58_backing[16];
+/* Real static lookup table, same recovery/boundary evidence as
+   movement.c's DAT_00086e38/DAT_00086e48 (bytes at 0x86e58..0x86e67 in
+   UU.exe's .data, immediately after those two and immediately before
+   the already-recovered DAT_00086e68 == 15 scalar). trigger_view_transition
+   indexes this with `(char)bVar8` and `(char)bVar8 + 2 & 0xf` (bVar8 =
+   DAT_0023bf18 >> 4), so 16 real entries -- a symmetric wobble curve
+   used for the jump/landing camera-bob wobble (DAT_0023be98/be9e). Was
+   an all-zero 256-byte placeholder, silently zeroing that wobble. */
+static const signed char DAT_00086e58_backing[16] = {
+  -4, -3, -2, -1,  0,  1,  2,  3,
+   4,  3,  2,  1,  0, -1, -2, -3
+};
 #define DAT_00086e58 DAT_00086e58_backing[0]
 static short DAT_0023bf30;
 static short DAT_0023bf34;
