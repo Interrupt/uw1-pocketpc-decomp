@@ -80,6 +80,43 @@ static void test_long_message_wraps_without_losing_words(void)
     TEST_ASSERT_EQUAL_STRING("The writing reads: We attacked the entrance and found the door locked.", combined);
     TEST_ASSERT_EQUAL_STRING("The writing reads: We attacked the entrance and found the door locked.\n", text);
 }
+static void check_repeated_looks(void (*handler)(ushort *, int))
+{
+    ushort sack[4] = {0x80}, torch[4] = {0x81};
+    handler(sack, 0);
+    handler(torch, 0);
+    message_scroll_print_wrapped("Next");
+    TEST_ASSERT_EQUAL_STRING("You see a sack.", scroll_messages_fixture_line(0));
+    TEST_ASSERT_EQUAL_STRING("You see a torch.", scroll_messages_fixture_line(1));
+    TEST_ASSERT_EQUAL_STRING("Next", scroll_messages_fixture_line(2));
+}
+static void test_look_messages_have_one_line_ending(void)
+{
+    check_repeated_looks(dispatch_object_action);
+}
+static void test_alternate_look_messages_have_one_line_ending(void)
+{
+    check_repeated_looks(dispatch_object_action_dup);
+}
+static void test_creature_looks_have_one_line_ending(void)
+{
+    ushort goblin[16] = {0x40};
+    dispatch_object_action(goblin, 0);
+    dispatch_object_action_dup(goblin, 0);
+    message_scroll_print_wrapped("Next");
+    TEST_ASSERT_EQUAL_STRING("You see a goblin.", scroll_messages_fixture_line(0));
+    TEST_ASSERT_EQUAL_STRING("You see a goblin.", scroll_messages_fixture_line(1));
+    TEST_ASSERT_EQUAL_STRING("Next", scroll_messages_fixture_line(2));
+}
+static void test_terrain_looks_have_one_line_ending(void)
+{
+    describe_picked_terrain(2, 1);
+    describe_picked_terrain(2, 2);
+    message_scroll_print_wrapped("Next");
+    TEST_ASSERT_EQUAL_STRING("You see a stone wall.", scroll_messages_fixture_line(0));
+    TEST_ASSERT_EQUAL_STRING("You see a stone floor.", scroll_messages_fixture_line(1));
+    TEST_ASSERT_EQUAL_STRING("Next", scroll_messages_fixture_line(2));
+}
 int main(void)
 {
     UNITY_BEGIN();
@@ -90,5 +127,9 @@ int main(void)
     RUN_TEST(test_sentence_newlines_survive_repeated_prints);
     RUN_TEST(test_level_number_updates_in_the_same_newline_terminated_buffer);
     RUN_TEST(test_long_message_wraps_without_losing_words);
+    RUN_TEST(test_look_messages_have_one_line_ending);
+    RUN_TEST(test_alternate_look_messages_have_one_line_ending);
+    RUN_TEST(test_creature_looks_have_one_line_ending);
+    RUN_TEST(test_terrain_looks_have_one_line_ending);
     return UNITY_END();
 }

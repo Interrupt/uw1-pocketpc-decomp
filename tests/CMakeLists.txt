@@ -316,10 +316,16 @@ add_fixture_game_unit_test(scroll_messages
   src/hud.c:@s_Not_a_spell_00085a80 src/item_use.c:@DAT_000878ec_backing
   src/item_use.c:@s_on_what__000878e0 src/item_use.c:@s_UNNAMED_00084f24
   src/player.c:@DAT_0008730c_backing
+  src/object_actions.c:@s_You_see_000858fc src/object_actions.c:@s_belonging_to_00085c90
+  src/ai.c:@DAT_00084f20_backing
+  src/ai.c:@s_named_00085d18
+  src/babl.c:@DAT_00085240_backing src/babl.c:@DAT_00085244_backing src/babl.c:@DAT_00085248_backing
   src/hud.c:message_scroll_print_wrapped src/hud.c:msg_scroll_split_escape_segments
   src/hud.c:msg_scroll_split_newline_segments src/hud.c:msg_scroll_draw_wrapped_span
   src/hud.c:msg_scroll_wrap_split_line src/hud.c:print_not_a_spell_message
   src/item_use.c:prompt_use_item_on_target
   src/player.c:advance_character_level
+  src/object_actions.c:dispatch_object_action src/object_actions.c:dispatch_object_action_dup
+  src/ai.c:build_creature_look_text src/interact.c:describe_picked_terrain
   src/ordinal_stubs.c:ce_memmove src/ordinal_stubs.c:ce_strchr src/ordinal_stubs.c:ce_strrchr)
 target_link_libraries(uw_test_scroll_messages PUBLIC uw_test_static_strings)

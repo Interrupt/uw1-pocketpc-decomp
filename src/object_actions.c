@@ -224,13 +224,7 @@ LAB_000489fc:
     ce_strcat(acStack_7c,pcVar6);
   }
   ce_strcat(acStack_7c,&DAT_00084f20);
-  /* No trailing newline was ever appended, so back-to-back Looks (the
-     scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
-     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
-     line: confirmed live, 3 Looks at the sack rendered as one run-on
-     "You see a sackYou see a sackYou see a sack" instead of 3 separate
-     lines. */
-  ce_strcat(acStack_7c,"\n");
+  /* DAT_00084f20 already supplies the original period and newline. */
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   describe_special_object_property(param_1,param_2);
@@ -574,7 +568,8 @@ int param_2;
     return;
   }
   pcVar6 = s_You_see_000858fc;
-    wptr_31634 = acStack_85978;
+  /* Like dispatch_object_action, seed the actual message buffer. */
+  wptr_31634 = acStack_7c;
   do {
     cVar10 = *pcVar6;
     *wptr_31634 = cVar10; wptr_31634 = wptr_31634 + 1;
@@ -654,13 +649,7 @@ LAB_000489fc:
     ce_strcat(acStack_7c,pcVar6);
   }
   ce_strcat(acStack_7c,&DAT_00084f20);
-  /* No trailing newline was ever appended, so back-to-back Looks (the
-     scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
-     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
-     line: confirmed live, 3 Looks at the sack rendered as one run-on
-     "You see a sackYou see a sackYou see a sack" instead of 3 separate
-     lines. */
-  ce_strcat(acStack_7c,"\n");
+  /* DAT_00084f20 already supplies the original period and newline. */
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   describe_special_object_property(param_1,param_2);

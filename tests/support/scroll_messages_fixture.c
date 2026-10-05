@@ -17,6 +17,9 @@ char *g_selected_object;
 undefined2 g_cursor_holding_state;
 char *DAT_00202098;
 code *DAT_002020b8;
+undefined1 DAT_00202c90_backing[8192];
+undefined2 DAT_0023ae58_backing[8192];
+undefined1 DAT_0023ad58_backing[256];
 
 void scroll_messages_fixture_reset(void)
 {
@@ -24,6 +27,12 @@ void scroll_messages_fixture_reset(void)
     memset(font, 0, sizeof font);
     memset(lines, 0, sizeof lines);
     memset(character, 0, sizeof character);
+    memset(DAT_00202c90_backing, 0, sizeof DAT_00202c90_backing);
+    g_object_type_props[0x80].has_look_description = 1;
+    g_object_type_props[0x81].has_look_description = 1;
+    g_object_type_props[0x40].has_look_description = 1;
+    DAT_0023ae58_backing[0] = 5;
+    DAT_0023ae58_backing[1] = 6;
     character[0x3d] = 1;
     DAT_00250704 = (undefined *)panel;
     DAT_000879b0 = (char *)font;
@@ -85,6 +94,30 @@ undefined4 recalculate_player_stats(int refill) { return 0; }
 void refresh_stats_panel_if_active(void) {}
 undefined4 build_object_display_name(char *buffer, ushort *object, int article, int mode)
 {
-    strcpy(buffer, "iron key");
+    strcpy(buffer, (*object & 0x1ff) == 0x80 ? "a sack" :
+                   (*object & 0x1ff) == 0x81 ? "a torch" : "iron key");
     return 1;
 }
+char *get_message_string(unsigned id)
+{
+    switch (id) {
+        case 0xa00: case 0xa60: return NULL; /* No quality adjective. */
+        case 0x840: return "goblin";
+        case 0x1405: return "a stone wall";
+        case 0x1406: return "a stone floor";
+        default: TEST_FAIL_MESSAGE("Unexpected message ID"); return NULL;
+    }
+}
+undefined4 append_object_property_tag(ushort *object, int mode, char *buffer) { return 0; }
+undefined4 append_object_special_name(ushort *object, int mode, char *buffer) { return 0; }
+void describe_special_object_property(ushort *object, int mode) {}
+undefined4 identify_mushroom_type(ushort *object, void *properties) { return 0; }
+void look_at_inscribed_object(ushort *object, int mode) { TEST_FAIL_MESSAGE("Unexpected inscription"); }
+undefined1 *format_object_display_name(char *name, int article, int mode)
+{
+    TEST_ASSERT_EQUAL_STRING("goblin", name);
+    TEST_ASSERT_EQUAL_INT(1, article);
+    return (undefined1 *)"a goblin";
+}
+long _isctype(int value, int flags) { TEST_FAIL_MESSAGE("Unexpected named creature"); return 0; }
+long _itoa(int value, char *buffer, int radix) { TEST_FAIL_MESSAGE("Unexpected quantity"); return (long)buffer; }

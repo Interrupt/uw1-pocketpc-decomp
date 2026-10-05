@@ -1134,10 +1134,7 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
     }
   }
   ce_strcat(param_2,&DAT_00084f20);
-  /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
-     fix -- back-to-back Looks at a creature otherwise all land on the
-     same visible scroll line. */
-  ce_strcat(param_2,"\n");
+  /* DAT_00084f20 already supplies the original period and newline. */
   message_scroll_print_wrapped(param_2);
   return;
 }

@@ -1093,13 +1093,9 @@ short param_2;
       uVar2 = 0x1ff;
     }
     message_scroll_print_wrapped(s_You_see_000858fc);
-    get_message_string(uVar2 | 0x1400);
-    message_scroll_print_wrapped();
+    /* Ghidra dropped the argument carried in ARM's return register. */
+    message_scroll_print_wrapped(get_message_string(uVar2 | 0x1400));
     message_scroll_print_wrapped(&DAT_00084f20);
-    /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
-       fix -- back-to-back terrain Looks (e.g. the ceiling, wall signs)
-       otherwise all land on the same visible scroll line. */
-    message_scroll_print_wrapped("\n");
   }
   return;
 }
