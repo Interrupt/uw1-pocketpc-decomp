@@ -368,6 +368,13 @@ LAB_00025468:
         cursor_show_idle_tick();
         uVar10 = extraout_r1_00;
         if (*pcVar5 != '\0') {
+          /* Regression-verification hook only (see bugfix/lowercase-text-
+             universal): no other UW_DEBUG_* trace in this file surfaces the
+             committed name-entry text, which is the one piece of chargen
+             state a lowercase-text-entry regression test needs to check
+             without screenshot-diffing. Zero cost unless UW_DEBUG_LEVEL=
+             TRACE is set. */
+          DEBUG(TRACE, "[chargen] name field committed: \"%s\"", pcVar5);
           ce_strncpy(DAT_00086df8,pcVar5,0x1d);
           uVar10 = extraout_r1_01;
         }

@@ -1,0 +1,95 @@
+# Regression test for "Can't enter lower case text" (bugfix/lowercase-
+# text-universal): types all-lowercase text into TWO DIFFERENT raw
+# text-entry paths in one run and checks both come out lowercase, so a
+# narrow fix that only covers one path can't silently regress the
+# other.
+#
+#   1. Chargen's name field (character_generator_loop/
+#      wait_for_chargen_field_input, chargen.c) -- runs BEFORE
+#      init_gameplay_session latches DAT_0024af60 ("command-input
+#      mode") on, so this path was never actually broken by the bug;
+#      included as a baseline that must keep working.
+#   2. The automap note field (handle_automap_note_click, automap.c) --
+#      runs DURING the session, after DAT_0024af60 is latched on, and
+#      is the one raw-keystroke text-entry loop that does not go
+#      through the shared scroll_text_entry_prompt primitive (hud.c),
+#      so it has to set g_text_input_active itself. This is the path
+#      that was actually broken: every lowercase letter typed here got
+#      silently folded to uppercase by handle_keyboard_message's stuck
+#      command-mode fold (input.c) before the fix.
+#
+# Verify with:
+#   UW_DEBUG_LEVEL=TRACE UW_DEBUG_AUTOMAP_NOTE=1 UW_DATA_DIR=<an EMPTY/isolated
+#     save dir, e.g. run-regressions.sh's own per-script copy -- a non-empty
+#     SAVE0 makes the title menu default to "Journey Onward" and skip
+#     chargen entirely> UW_DEMO_FILE="$(pwd)/demo_lowercase_text_entry_test.txt" \
+#     UW_FAST_SLEEP=1 ./build/uw_dbg 2>&1 | \
+#     grep -E '\[chargen\] name field committed|\[map-note\] COMMIT'
+# Expect:
+#   [chargen] name field committed: "lowertest"
+#   [map-note] COMMIT: local_58="notecase" (empty=0)
+#
+# STATUS: run via ./run-regressions.sh (crash-only check) confirmed clean,
+# but the exact title-menu/splash-screen keypress timing needed to
+# reliably land this script in chargen and then the automap in THIS
+# environment was not pinned down with confidence (several pre-existing
+# demo scripts in this repo show the same "still on the title screen
+# after the expected number of ENTERs" symptom when screenshotted here --
+# looks like a splash/menu pacing issue, not something this fix caused).
+# The AUTHORITATIVE regression coverage for this bug is
+# tests/test_keyboard.c (the "keyboard" ctest suite), which drives
+# handle_keyboard_message directly and is confirmed (by temporarily
+# reverting the fix) to fail without it. Treat this script as a best-
+# effort scripted repro to tune further, not as the thing that was
+# actually used to confirm the fix.
+# (both lowercase, not folded to "LOWERTEST"/"NOTECASE").
+
+# Title screen -> character generation -> click through sex/handedness/
+# class/skill/portrait/difficulty pages with defaults (matches
+# demo_dungeon_room.txt's own chargen walk-through).
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+
+# Name field -- all lowercase on purpose.
+TYPE lowertest
+ENTER
+
+# Confirm page -> into the dungeon.
+ENTER
+ENTER
+ENTER
+ENTER
+
+WAIT 10
+SCREENSHOT /tmp/lowercase_00_in_dungeon.bmp
+
+# Open the automap and place a note -- all lowercase on purpose.
+OPENMAP
+WAIT 20
+SCREENSHOT /tmp/lowercase_01_map_opened.bmp
+SDLDOWN 300 300
+WAIT 5
+SDLUP 300 300
+WAIT 5
+SCREENSHOT /tmp/lowercase_02_note_clicked.bmp
+TYPE notecase
+WAIT 5
+SCREENSHOT /tmp/lowercase_03_note_typed.bmp
+ENTER
+WAIT 10
+SCREENSHOT /tmp/lowercase_04_note_committed.bmp

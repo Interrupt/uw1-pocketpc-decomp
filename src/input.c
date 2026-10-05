@@ -1130,6 +1130,17 @@ void unregister_game_view_interact_zones()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+/* scroll_text_entry_prompt (hud.c)'s "a raw text field is actively reading
+ * keystrokes right now" flag -- see its own extern/comment in gx_stub.c and
+ * its set/clear in hud.c, and the matching comment on its use just below.
+ * This is NOT a per-call-site patch: it is the one generic signal every
+ * raw-keystroke text-entry path in the game already either sets directly
+ * (scroll_text_entry_prompt itself, so save-name/"Move how many"/"Chant the
+ * mantra" all get this for free) or must set around its own loop if it
+ * rolls its own raw polling loop instead of going through that shared
+ * primitive (automap notes -- see handle_automap_note_click in automap.c). */
+extern int g_text_input_active;
+
 // was FUN_00077b2c
 undefined4 handle_keyboard_message(param_1,param_2,param_3)
 undefined4 param_1;
@@ -1161,7 +1172,44 @@ uint param_3;
     if (param_2 != 0x102) {
       return 0;
     }
-    if (((DAT_0024af60 != 0) && (0x60 < param_3)) && (param_3 < 0x7b)) {
+    /* DAT_0024af60 ("command-input mode", see init_gameplay_session's own
+     * comment at game.c ~828) is set once at session start and NEVER
+     * cleared again for the rest of the whole play session -- its only
+     * writer besides that init is the Caps-Lock-key (VK 0x14) toggle
+     * below, which nothing on this port's desktop/SDL keyboard maps to
+     * (translate_vk in gx_stub.c has no case feeding 0x14), and which the
+     * original on-screen keyboard's own matching button is no reason to
+     * expect a player to discover either. That init comment's claim that
+     * "text-entry screens needing raw lowercase run before this
+     * function" is only true for chargen's name field (which does run
+     * before init_gameplay_session, so DAT_0024af60 is still 0 there and
+     * this fold never fires for it regardless) -- every OTHER raw-text
+     * field in the game runs DURING the session, after this flag is
+     * latched on: automap notes, and (via scroll_text_entry_prompt) the
+     * save-game-name field, "Move how many", and "Chant the mantra". With
+     * the flag stuck on, every lowercase letter typed into any of those
+     * fields was silently folded to uppercase before it ever reached the
+     * field's own buffer -- confirmed as the reported "can't enter lower
+     * case text" bug.
+     *
+     * Fix: suppress the fold while g_text_input_active is set, exactly
+     * like gx_stub.c's in_dungeon_freelook() already uses this same flag
+     * to stop WASD from being eaten as movement while a text field is
+     * open -- same intent, same already-shared flag, now ALSO honored in
+     * the one place that actually performs the letter-case fold. This is
+     * general rather than a fix for any one field: scroll_text_entry_prompt
+     * (hud.c) is the ONE shared primitive behind save-name/"Move how
+     * many"/"Chant the mantra", and it already sets/clears this flag
+     * itself, so all three get fixed here with no per-field change at
+     * all. The single raw-polling loop that does NOT go through that
+     * shared primitive (automap notes, handle_automap_note_click in
+     * automap.c) is the one place in the whole codebase that must set
+     * this flag on its own -- fixed there to match, with a comment
+     * pointing back here. Any FUTURE raw text-entry loop either goes
+     * through scroll_text_entry_prompt (free fix) or must set this one
+     * documented flag around itself, same contract hud.c's own top-of-
+     * file comment on g_text_input_active already describes. */
+    if ((((DAT_0024af60 != 0) && !g_text_input_active) && (0x60 < param_3)) && (param_3 < 0x7b)) {
       DAT_0023c448 = uVar1 - 0x20 | DAT_0023c448;
       return 0;
     }
