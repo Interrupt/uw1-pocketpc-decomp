@@ -2,6 +2,8 @@
 
 static char character[256], attributes[256];
 static ushort player[16];
+static unsigned random_value;
+unsigned int g_uw_frame_clock_units;
 char *DAT_00086df8, *DAT_0023be74, *DAT_0023b82c, *DAT_002046b8;
 ushort *g_player_object;
 short DAT_00201b68, DAT_00202078, DAT_00201c70;
@@ -43,6 +45,8 @@ void head_bob_fixture_reset(void)
     DAT_0023bf5c = ~0u; /* Keep footstep audio outside these camera tests. */
     DAT_000db438 = DAT_000db43c = DAT_000db440 = 0;
     DAT_000db448 = DAT_000db44c = DAT_000db450 = 0;
+    g_uw_frame_clock_units = 0;
+    random_value = 0x40;
 }
 
 float head_bob_fixture_matrix_element(unsigned index)
@@ -55,11 +59,14 @@ float head_bob_fixture_matrix_element(unsigned index)
 
 void head_bob_fixture_tick(int mode, int speed, unsigned elapsed)
 {
+    g_uw_frame_clock_units += elapsed;
     g_movement_mode = mode;
     g_jump_ascent_timer = speed;
     movement_tick(elapsed, 0, 0);
     update_current_view_from_subject();
 }
+
+void head_bob_fixture_set_random(unsigned value) { random_value = value; }
 
 /* Physics and audio are boundaries: the actual movement tick, animation
    calculations, and camera-record updates run unmodified. */
@@ -72,7 +79,8 @@ void tick_mobile_objects(int elapsed) { TEST_FAIL_MESSAGE("Unexpected NPC tick")
 void stop_movement_sound_handle(void) {}
 undefined4 play_sound_effect_with_pan(int sound, int pan, int volume) { return 0; }
 uint read_realtime_clock_units(void) { return 0; }
-long ce_rand(void) { return 0x40; }
+unsigned int uw_frame_clock_ms(void) { return g_uw_frame_clock_units; }
+long ce_rand(void) { return random_value; }
 undefined4 apply_typed_damage_to_object(void) { TEST_FAIL_MESSAGE("Unexpected hazard damage"); return 0; }
 void angle_to_screen_delta(int angle, short *x, short *y)
 { TEST_FAIL_MESSAGE("Unexpected alternate camera subject"); }

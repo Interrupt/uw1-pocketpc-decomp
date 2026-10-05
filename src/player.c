@@ -7,6 +7,7 @@
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 char *DAT_0024fa2c;
 char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
@@ -1619,7 +1620,18 @@ void trigger_view_transition()
     DAT_0023be98 = sVar9 + (short)(char)(&DAT_00086e58)[(int)(char)bVar8 + 2U & 0xf] * (short)cVar3
                            * 2;
     uVar4 = ce_rand();
-    DAT_0023be9a = ((uVar4 & 0x7f) - 0x40) * (short)cVar3;
+    /* HACK: replace ARM's per-tick random water yaw with three smooth
+       sine waves at 0.55, 1.1 and 1.9 Hz. The shared game clock uses
+       4 ms units, so phase depends on elapsed time, not tick count.
+       Weights sum to 64, retaining the original speed-scaled amplitude.
+       Keep the random draw above so subsequent effects keep their RNG
+       sequence. This changes only water yaw, not the player heading. */
+    {
+      double phase = (double)uw_frame_clock_ms() * 0.004 * 6.283185307179586;
+      DAT_0023be9a = (short)((32.0 * sin(phase * 0.55) +
+                             20.0 * sin(phase * 1.1) +
+                             12.0 * sin(phase * 1.9)) * (short)cVar3);
+    }
     uVar4 = ce_rand();
     DAT_0023be9c = ((uVar4 & 0x7f) - 0x40) * (short)cVar3;
   }

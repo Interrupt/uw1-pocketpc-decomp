@@ -114,6 +114,53 @@ static void test_combined_camera_rotations_preserve_geometry(void)
     }
 }
 
+static int camera_yaw_offset(void)
+{
+    return (short)(g_current_view->view_facing - DAT_00201c70);
+}
+
+static void test_water_yaw_matches_at_equal_times_with_different_tick_sizes(void)
+{
+    int reference[100];
+    const unsigned tick_sizes[] = {2, 4, 8, 20}; /* Clock units are 4 ms. */
+    for (unsigned rate = 0; rate < 4; rate++) {
+        head_bob_fixture_reset();
+        DAT_00086df8[0xb8] = 1;
+        DAT_00086df8[0xb9] = 100;
+        for (unsigned sample = 0; sample < 100; sample++) {
+            for (unsigned elapsed = 0; elapsed < 40; elapsed += tick_sizes[rate])
+                head_bob_fixture_tick(1, 400, tick_sizes[rate]);
+            if (rate == 0) reference[sample] = camera_yaw_offset();
+            else TEST_ASSERT_EQUAL_INT(reference[sample], camera_yaw_offset());
+        }
+    }
+    TEST_ASSERT_EQUAL_INT(0x2000, DAT_00201c70);
+}
+
+static void test_water_yaw_is_smooth_bounded_and_independent_of_random_draws(void)
+{
+    DAT_00086df8[0xb8] = 1;
+    DAT_00086df8[0xb9] = 100;
+    int previous = 0, minimum = 0, maximum = 0;
+    for (unsigned elapsed = 0; elapsed < 2500; elapsed++) {
+        head_bob_fixture_tick(1, 400, 1);
+        int yaw = camera_yaw_offset();
+        TEST_ASSERT_INT_WITHIN(320, 0, yaw); /* Preserve the original maximum amplitude. */
+        TEST_ASSERT_INT_WITHIN(10, previous, yaw);
+        if (yaw < minimum) minimum = yaw;
+        if (yaw > maximum) maximum = yaw;
+        previous = yaw;
+    }
+    TEST_ASSERT_GREATER_THAN_INT(160, maximum);
+    TEST_ASSERT_LESS_THAN_INT(-160, minimum);
+    head_bob_fixture_set_random(0);
+    head_bob_fixture_tick(1, 400, 0);
+    int yaw = camera_yaw_offset();
+    head_bob_fixture_set_random(127);
+    head_bob_fixture_tick(1, 400, 0);
+    TEST_ASSERT_EQUAL_INT(yaw, camera_yaw_offset());
+}
+
 static void test_bob_phase_advances_with_elapsed_movement_time_and_wraps(void)
 {
     head_bob_fixture_tick(1, 200, 16);
@@ -143,6 +190,8 @@ int main(void)
     RUN_TEST(test_wading_roll_rotates_the_rendered_view_in_both_directions);
     RUN_TEST(test_leaving_water_clears_rendered_roll);
     RUN_TEST(test_combined_camera_rotations_preserve_geometry);
+    RUN_TEST(test_water_yaw_matches_at_equal_times_with_different_tick_sizes);
+    RUN_TEST(test_water_yaw_is_smooth_bounded_and_independent_of_random_draws);
     RUN_TEST(test_swimming_modes_use_the_original_vertical_waveform);
     RUN_TEST(test_bob_phase_advances_with_elapsed_movement_time_and_wraps);
     RUN_TEST(test_stationary_camera_returns_to_unmodified_eye_height);
