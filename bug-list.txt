@@ -1,6 +1,6 @@
 # List of bugs to investigate
 
-[ ] Main menu stat names not displaying
+[x] Main menu stat names not displaying (fixed in a7bc6c9: chargen attribute labels were empty backing buffers)
 [ ] Can't enter lower case text
 [ ] Monsters giving too much XP
 [ ] Carry weight too low on start
