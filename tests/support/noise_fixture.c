@@ -5,7 +5,7 @@ static ushort player[16];
 char *DAT_00086df8, *DAT_0023be74;
 ushort *g_player_object;
 short DAT_00201b68;
-undefined1 DAT_001007d0_backing[6144], DAT_00202c90_backing[8192];
+undefined1 DAT_001007d0_backing[3072], DAT_00202c90_backing[8192];
 byte DAT_0010195c;
 ushort *DAT_00101958;
 undefined2 DAT_002020a0, DAT_002020a4;
