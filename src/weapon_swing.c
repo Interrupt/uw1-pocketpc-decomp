@@ -11,7 +11,8 @@
 static char s_Sorry__you_have_no_00084f2c[] = "Sorry,_you_have_no";
 static undefined4 DAT_001005ec;
 static short DAT_00100618;
-short DAT_000870e4;
+// Original ARM .data defaults: idle frame counter and pending action.
+short DAT_000870e4 = -1;
 static short DAT_001005e8;
 static undefined DAT_001005f0;
 static byte DAT_00100614;
@@ -23,7 +24,8 @@ static byte DAT_00100614;
    exactly 5 bytes later): 00 34 27 19 00. */
 static unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
 #define DAT_00084f0b DAT_00084f0b_backing[0]
-undefined1 DAT_000870e0;
+// After a sprite-category load, restore idle (6), not swing action 0.
+undefined1 DAT_000870e0 = 6;
 static void *g_weapon_swing_raw_frames[UW_WEAPON_SWING_FRAME_COUNT];
 static char s__DATA_weapons_dat_00087268[] = "\\DATA\\weapons.dat";
 static char s_weapons_0008727c[] = "weapons";
@@ -37,7 +39,8 @@ static undefined1 g_weapon_swing_frame_y_offset_backing[256];
 static undefined1 g_weapon_swing_frame_x_offset_backing[256];
 #define g_weapon_swing_frame_x_offset g_weapon_swing_frame_x_offset_backing[0]
 static short DAT_0023c1ec;
-static undefined2 DAT_000870e8;
+// ARM 0x870e8 initializes the ready-pose frame offset to 1.
+static undefined2 DAT_000870e8 = 1;
 static int DAT_0023c260;
 static char s__DATA_weapons_cm_00087284[] = "\\DATA\\weapons.cm";
 /* Sizing-audit pass: `read_file_handle(iVar4,&DAT_00202700,0x10)`

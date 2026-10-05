@@ -63,12 +63,13 @@ add_game_test_library(uw_test_memory src/ordinal_stubs.c:ce_memset)
 add_game_test_library(uw_test_string_append src/ordinal_stubs.c:ce_strcat)
 add_game_test_library(uw_test_string_length src/ordinal_stubs.c:ce_strlen)
 add_game_test_library(uw_test_character_rules src/chargen.c:init_new_character_record)
+add_game_test_library(uw_test_player_stats src/player.c:recalculate_player_stats)
 add_game_test_library(uw_test_archive_rules src/saveload.c:read_archive_entry)
 target_compile_options(uw_test_archive_rules PRIVATE
   -include "${CMAKE_CURRENT_SOURCE_DIR}/support/game_fixture.h")
 add_library(uw_test_support STATIC support/data_fixture.c)
 uw_configure_test_target(uw_test_support)
-target_link_libraries(uw_test_support PUBLIC uw_test_character_rules uw_test_archive_rules
+target_link_libraries(uw_test_support PUBLIC uw_test_character_rules uw_test_player_stats uw_test_archive_rules
   uw_test_memory uw_test_string_append uw_test_string_length)
 target_sources(uw_test_support PRIVATE support/game_fixture.c
   support/character_services.c support/character_storage.c
@@ -85,6 +86,11 @@ add_supported_game_unit_test(math uw_test_math)
 add_supported_game_unit_test(support uw_test_support)
 
 add_fixture_game_unit_test(chargen
+  src/player.c:write_player_status_block src/player.c:read_player_status_block
+  src/player.c:@DAT_00086da8_backing
+  src/player.c:reset_player_derived_state src/player.c:apply_equipped_item_effect
+  src/object_actions.c:check_object_carry_weight
+  src/player.c:compute_object_weight
   src/chargen.c:advance_skill_tree_node
   src/chargen.c:apply_confirmed_skill_picks
   src/chargen.c:reroll_attributes_for_class_race)
@@ -135,6 +141,8 @@ add_fixture_game_unit_test(combat
   src/doors.c:close_door_object src/doors.c:schedule_door_open_animation)
 add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
+add_fixture_game_unit_test(noise
+  src/ai.c:alert_npc_to_noise_callback src/ai.c:emit_noise_alert)
 add_fixture_game_unit_test(visibility_walk
   src/visibility.c:@DAT_00086af0_arr
   src/visibility.c:@DAT_00086af8_region
@@ -259,3 +267,16 @@ add_fixture_game_unit_test(automap
   src/hud.c:warp_mouse_cursor src/hud.c:get_mouse_position
   src/graphics.c:rect_fill_or_save_restore src/graphics.c:set_draw_color)
 target_sources(uw_test_automap PRIVATE support/automap_storage_fixture.c)
+
+add_fixture_game_unit_test(weapon_ready
+  src/hud.c:@DAT_000870d8 src/hud.c:@DAT_000870dc
+  src/weapon_swing.c:@DAT_000870e0 src/weapon_swing.c:@DAT_000870e4
+  src/weapon_swing.c:@DAT_000870e8
+  src/weapon_swing.c:request_weapon_swing_graphic
+  src/item_use.c:attach_picked_up_object_to_cursor
+  src/item_use.c:@g_weapon_overlay_enabled
+  src/hud.c:cursor_mode_button_click src/hud.c:set_hud_status_value
+  src/item_use.c:ready_weapon src/item_use.c:unready_weapon
+  src/inventory.c:toggle_weapon_ready
+  src/weapon_swing.c:advance_action_animation_frame
+  src/weapon_swing.c:weapon_swing_draw_tick)

@@ -70,7 +70,6 @@ static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
 /* Sizing-audit pass: reload_paperdoll_body_sprite's own loop is
    `iVar1<6` (indices 0-5). HARD. Down from 16. */
 undefined1 DAT_00202988_backing[6];
-short g_player_carry_weight;
 static int DAT_002028d0;
 static char s_Not_a_spell_00085a80[] = "Not_a_spell";
 static byte DAT_002028d4;
@@ -489,8 +488,9 @@ static undefined4 DAT_0023c200_arr[3];
 #define DAT_0023c200 DAT_0023c200_arr[0]
 #define DAT_0023c202 DAT_0023c200_arr[1]
 #define DAT_0023c204 DAT_0023c200_arr[2]
-char DAT_000870dc;
-char DAT_000870d8;
+// ARM .data starts both weapon sprite categories at -1 (not loaded).
+char DAT_000870dc = -1;
+char DAT_000870d8 = -1;
 ushort DAT_0023c1dc;
 #define DAT_0023c11d DAT_0023c11c_arr[1]
 #define DAT_0023c12d DAT_0023c12c_arr[1]

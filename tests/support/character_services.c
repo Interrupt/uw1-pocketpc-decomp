@@ -6,7 +6,6 @@
 
 void configure_texture_detail_functions(void) {}
 void refresh_player_equipment_effects(void) {}
-undefined4 recompute_level7_hazard_from_character_level(int level) { return 0; }
 int roll_dice_sum(count, sides)
 int count;
 short sides;

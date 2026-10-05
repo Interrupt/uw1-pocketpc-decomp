@@ -5,9 +5,9 @@
 long ce_rand(void);
 void configure_texture_detail_functions(void);
 void refresh_player_equipment_effects(void);
-undefined4 recompute_level7_hazard_from_character_level(int level);
 
-char record[256], attributes[16];
+undefined1 DAT_0023bca8_backing[256];
+char attributes[16];
 
 ushort player_object[16];
 
@@ -25,7 +25,7 @@ undefined1 DAT_000fb8f0_backing[1680];
 
 int random_values[64], random_count, random_index;
 
-int dice_calls, hazard_calls, equipment_calls, reset_calls;
+int dice_calls, equipment_calls, reset_calls;
 
 int trained[6], trained_count;
 
@@ -56,13 +56,6 @@ void configure_texture_detail_functions(void) { reset_calls++; }
 
 void refresh_player_equipment_effects(void) { equipment_calls++; }
 
-undefined4 recompute_level7_hazard_from_character_level(int level)
-{
-    TEST_ASSERT_EQUAL_INT(1, level);
-    hazard_calls++;
-    return 0;
-}
-
 void advance_skill_training(skill)
 short skill;
 {
@@ -83,7 +76,7 @@ void chargen_fixture_reset(void)
     TEST_ASSERT_EQUAL_INT(0, fclose(skills));
     memcpy(DAT_000fb860_backing, DAT_000fb8f0_backing, 0x20);
     memset(random_values, 0, sizeof(random_values));
-    random_count = random_index = dice_calls = hazard_calls = 0;
+    random_count = random_index = dice_calls = 0;
     equipment_calls = reset_calls = trained_count = 0;
     DAT_00201b68 = 0;
     attributes[4] = 40;
@@ -101,3 +94,48 @@ void prepare_initial_randomness(void)
     random_values[2] = 5; /* initial object stat adjustment */
     random_count = 3;
 }
+
+/* Isolate the storage/encoding boundary while testing the real status pack
+   and unpack functions. No HUD or audio initialization is needed. */
+undefined1 DAT_00204880_backing[128], DAT_00202750_backing[128];
+short DAT_00201c70;
+static byte saved_status[0xd2], saved_key;
+undefined4 is_sound_effects_enabled(void) { return 0; }
+undefined4 is_music_playing(void) { return 0; }
+void set_sound_effects_enabled(int enabled) {}
+void set_music_enabled(int enabled) {}
+void apply_movement_mode_profile(int mode) {}
+undefined4 write_file_handle(int handle, const void *buffer, uint size)
+{
+    TEST_ASSERT_EQUAL_UINT(1, size);
+    saved_key = *(const byte *)buffer;
+    return size;
+}
+undefined4 read_file_handle(int handle, void *buffer, uint size)
+{
+    TEST_ASSERT_EQUAL_UINT(1, size);
+    *(byte *)buffer = saved_key;
+    return size;
+}
+int write_xor_scrambled_block(int handle, int key, const void *buffer, int size)
+{
+    TEST_ASSERT_EQUAL_UINT(sizeof saved_status, size);
+    memcpy(saved_status, buffer, size);
+    return size;
+}
+short read_xor_scrambled_block(int handle, int key, void *buffer, int size)
+{
+    TEST_ASSERT_EQUAL_UINT(sizeof saved_status, size);
+    memcpy(buffer, saved_status, size);
+    return size;
+}
+
+undefined1 DAT_0010060c_backing[8];
+byte DAT_0020330c, DAT_002046cc, DAT_0020208c;
+char DAT_00086db0, DAT_00086db1;
+int DAT_00086db8_backing[256], DAT_0023bc94;
+undefined4 DAT_0023bc9c, DAT_0023bc98, DAT_002020dc;
+undefined4 DAT_002020d0, DAT_002020d4, DAT_002020d8;
+short DAT_000858c4;
+void reduce_item_quality_on_use(ushort *object) { TEST_FAIL_MESSAGE("Unexpected quality decay"); }
+uint calculate_object_weight(ushort *object) { return 25; }
