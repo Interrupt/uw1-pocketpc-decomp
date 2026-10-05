@@ -1475,6 +1475,39 @@ void main_loop_hud_flush()
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
+  /* HACK: re-run the per-tick mouse/cursor refresh (update_mouse_state)
+     unconditionally every main-loop iteration, not just when this tick
+     happens to dequeue a real OS input message.
+
+     update_mouse_state's own cursor-draw (draw_idle_mouse_cursor) is
+     reached only through poll_input_event()->poll_mouse_event(), which
+     is itself gated behind PeekMessageW finding a message THIS tick
+     (see poll_input_event's own body in input.c). A plain, physically
+     stationary mouse generates no WM_MOUSEMOVE at all between actual
+     pointer motions -- but the forced full dungeon-view redraw just
+     above (this same function's earlier hack) repaints the entire 3D
+     viewport every single tick regardless, painting over wherever the
+     cursor sprite was last drawn. The net effect: a motionless cursor
+     hovering over the 3D view gets erased by the next redraw tick and
+     stays invisible until the next real mouse-move message happens to
+     arrive -- "cursor not drawing always", reproducible anywhere the
+     view keeps redrawing without the mouse itself moving (idle hover,
+     combat, automap panning, dialogs advancing on their own).
+
+     update_mouse_state() is already safe to call speculatively: it
+     early-returns to a no-op whenever there's nothing to do (mouse
+     physically idle and D-pad/joystick emulation inactive, or
+     DAT_000bbef8's own suspend flag set), and its own erase-then-redraw
+     protocol (erase_cursor_icon() first, save_cursor_background() again
+     before the fresh draw) makes a redundant extra call in the same
+     tick as a real message-driven call harmless -- same sequence the
+     original code already performs every time a mouse message arrives,
+     just invoked more often. Set UW_NO_FORCE_CURSOR_REDRAW to restore
+     the message-reactive-only behaviour. */
+  { static int _force_cursor = -1;
+    if (_force_cursor < 0) _force_cursor = (getenv("UW_NO_FORCE_CURSOR_REDRAW") == NULL);
+    if (_force_cursor) update_mouse_state();
+  }
   /* Debug UI: must draw HERE, after the forced 3D redraw above (or it
      gets painted over) but before flush_dirty_rect_to_display(1) below
      -- that call is the actual screen present for this tick (blits the
