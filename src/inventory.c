@@ -116,7 +116,10 @@ char *g_backpack_slot_table;
    init_inventory_panel_hotspots/free_open_container_chain/etc. -- this is the specific array whose
    overflow was landing on and corrupting g_selected_object (see above).
    Widened with a safety margin. */
- undefined4 DAT_002028e8_backing[64];
+/* Sizing-audit pass: real index range is i up to 0x16 (22 elements),
+   per the comment above -- 92 bytes real need. Sized to 32 elements
+   (128 bytes) for headroom; down from 64 (256 bytes). */
+ undefined4 DAT_002028e8_backing[32];
 undefined4 DAT_002029a0;
 undefined4 DAT_0020299c;
 /* .data 0x85ad0: the HUD hotspot / layout table -- 0x17 records of 0xe

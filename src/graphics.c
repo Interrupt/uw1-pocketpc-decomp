@@ -71,9 +71,21 @@ int DAT_00204848;
 int g_blit_transparent_mode;
 int DAT_0024af70;
 void *DAT_0023c430;
-static undefined1 DAT_00084a40_backing[32768];
+/* Sizing pass: a 256-entry palette table read 4 bytes/entry (the
+   `pbVar15 = pbVar15 + 4` stride, 0x100 iterations) while building
+   g_palette_rgb565 -- exactly 256*4 = 1024 real bytes. */
+static undefined1 DAT_00084a40_backing[1024];
 #define DAT_00084a40 DAT_00084a40_backing[0]
-undefined2 DAT_00242010_backing[32768];
+/* Sizing-audit pass: units trap too -- element type is undefined2 (2
+   bytes), so [32768] was really 65536 bytes, not 32768. Its one real
+   consumer (the GAPI blit a few hundred lines down, `iVar8=0x28` rows
+   * `iVar10=0x140` cols, stride `0x28`) reads this buffer with fully
+   hardcoded literals: max offset is 39 (last row) + 319*40 (last col
+   step) = 12799, i.e. exactly 12800 elements (a 320x40 bitmap row-major
+   buffer) -- a HARD bound from fixed blit geometry, matching what
+   load_bmp_resource_to_rgb565 loads resource 0x94 into. Down from
+   32768 elements (65536 bytes) to 12800 elements (25600 bytes). */
+undefined2 DAT_00242010_backing[12800];
 /* Was a lone `undefined2` scalar, but build_rgb565_palette uses it as the base of a
    20-level x 256-entry faded-palette table (`(ushort*)(&DAT_00248418 +
    iVar21) + level*0x100`, iVar21 stepping by 2 per palette entry, 20 levels
@@ -89,7 +101,10 @@ static undefined4 DAT_0023c638;
 static undefined1 DAT_001005cc;
 static undefined1 DAT_001005cd;
 static undefined1 DAT_001005ce;
-static undefined DAT_00088640_backing[8192];
+/* Sizing-audit pass: expand_pals_bytes's own loop writes exactly
+   256*3=768 bytes (`iVar3<0x100`, 3 bytes/iteration) -- HARD exact
+   bound. Down from 8192. */
+static undefined DAT_00088640_backing[768];
 #define DAT_00088640 DAT_00088640_backing[0]
 // HACK: RGB lighting calibration, default 64 when no override is set.
 // UW_AMBIENT_BIAS_REDUCTION=0 retains the ARM formulas.
@@ -98,8 +113,15 @@ static int g_ambient_bias_reduction = 64;
 /* Scratch buffer for rect_fill_or_save_restore's save/restore modes --
  * only ever used within this function, so it stays local to this file
  * (unlike g_palette_rgb565_backing, which uw.c also needs and is extern'd in
- * uw.h instead). */
-static undefined2 DAT_000879b8_backing[32768];
+ * uw.h instead).
+ * Sizing pass: live instrumentation (UW_DEBUG_CURSORSHOW) across the
+ * full 19-script regression suite showed a real high-water mark of
+ * 340 pixels (elements) copied per save/restore call, far below the
+ * theoretical 320*200=64000-pixel worst case this clipped loop could
+ * reach. Sized to 4096 elements (~12x that observed HWM) rather than
+ * the clip-bound theoretical max, since real cursor sprites are small
+ * and the prior 32768-element size was never actually exercised. */
+static undefined2 DAT_000879b8_backing[4096];
 #define DAT_000879b8 DAT_000879b8_backing[0]
 
 
@@ -199,6 +221,15 @@ short param_4;
               pvVar_buf25800 = g_uw_framebuffer;
               do {
                 if (63999 < iVar15) {
+                  /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION):
+                     reusing hud.c's save_cursor_background env var -- logs
+                     the real pixel count (= elements of DAT_000879b8)
+                     written this call, to find a true high-water mark
+                     instead of guessing against the theoretical 320*200
+                     worst case. */
+                  if (getenv("UW_DEBUG_CURSORSHOW")) {
+                    fprintf(stderr, "[cursorshow] DAT_000879b8 pixels_written=%d\n", iVar13);
+                  }
                   return;
                 }
                 if (uVar2 < param_1) {
@@ -216,6 +247,9 @@ short param_4;
                 uVar5 = uVar5 + 1;
                 iVar15 = iVar15 + 0x140;
                 if ((int)(uVar9 & 0xffff) <= (int)uVar5) {
+                  if (getenv("UW_DEBUG_CURSORSHOW")) {
+                    fprintf(stderr, "[cursorshow] DAT_000879b8 pixels_written=%d\n", iVar13);
+                  }
                   return;
                 }
               } while( true );

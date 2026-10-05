@@ -98,7 +98,10 @@ static short DAT_000bbf08;
    separate mechanism). */
 static char DAT_000845a8[] = "say";
 static char s_respond_000845ac[] = "respond";
-static undefined2 DAT_000bbfe8_backing[256];
+/* Sizing-audit pass: sum_barter_offer_value's own `iVar4<4` loop
+   bound (2-byte stride for this param slot) -- max byte 3*2+1=7.
+   Sized to 8 for headroom; down from 256. */
+static undefined2 DAT_000bbfe8_backing[8];
 #define DAT_000bbfe8 DAT_000bbfe8_backing[0]
 static undefined2 DAT_000bbfd8;
 static undefined2 DAT_000bbfdc;
@@ -110,21 +113,32 @@ static undefined2 DAT_000bbfe0;
 static undefined2 DAT_000bbfb8;
 static char *DAT_000bc020;
 static char *DAT_000bc000;
-static undefined1 DAT_000845b8_backing[256];
+/* Sizing-audit pass: 4 barter-icon-slot coordinate tables, explicit
+   `if(3<iVar1)` caps (init_barter_ui's capture loop, `iVar1=iVar7*4`)
+   -- max byte 3*4+1=13. Sized to 16 each for headroom; down from 256. */
+static undefined1 DAT_000845b8_backing[16];
 #define DAT_000845b8 DAT_000845b8_backing[0]
-static undefined1 DAT_000845ba_backing[256];
+static undefined1 DAT_000845ba_backing[16];
 #define DAT_000845ba DAT_000845ba_backing[0]
-static undefined1 DAT_000845d8_backing[256];
+static undefined1 DAT_000845d8_backing[16];
 #define DAT_000845d8 DAT_000845d8_backing[0]
-static undefined1 DAT_000845da_backing[256];
+static undefined1 DAT_000845da_backing[16];
 #define DAT_000845da DAT_000845da_backing[0]
-static undefined4 DAT_000bbf98_backing[256];
+/* Sizing-audit pass: sum_barter_offer_value's own `iVar4<4` loop
+   bound, 4-byte stride (matching this element type exactly) -- max
+   index 3. Sized to 8 for headroom; down from 256. */
+static undefined4 DAT_000bbf98_backing[8];
 #define DAT_000bbf98 DAT_000bbf98_backing[0]
-static undefined2 DAT_000bbfa8_backing[8192];
+/* Sizing-audit pass: reset loop `while(iVar7<4)` writes both
+   `[iVar7]` and `[iVar7+4]` -- max index 7, 8 elements (16 bytes,
+   undefined2 type). HARD. Down from 8192 elements (16384 bytes). */
+static undefined2 DAT_000bbfa8_backing[8];
 #define DAT_000bbfa8 DAT_000bbfa8_backing[0]
-static undefined2 DAT_000bbfc0_backing[8192];
+static undefined2 DAT_000bbfc0_backing[8];
 #define DAT_000bbfc0 DAT_000bbfc0_backing[0]
-static undefined2 DAT_000bbfd0_backing[256];
+/* Sizing-audit pass: same bound as DAT_000bbfe8 (sum_barter_offer_
+   value's `iVar4<4` loop, 2-byte stride). Sized to 8; down from 256. */
+static undefined2 DAT_000bbfd0_backing[8];
 #define DAT_000bbfd0 DAT_000bbfd0_backing[0]
 /* New this round -- referenced only via literal-pool constants inside
    babl_builtin_take_from_npc/take_id_from_npc (both still-unrecovered
@@ -137,15 +151,21 @@ static undefined2 DAT_000bbfd0_backing[256];
    script yet, so their exact semantics haven't been confirmed live. */
 static intptr_t DAT_00202948; // was `int` in the raw decompile -- holds a real object pointer, same truncation bug class as every other pointer-holding global in this cluster
 static short DAT_002020c4;
-static undefined4 DAT_000bbff0_backing[256];
+/* Sizing-audit pass: same bound as DAT_000bbf98 (sum_barter_offer_
+   value's `iVar4<4` loop, 4-byte stride). Sized to 8; down from 256. */
+static undefined4 DAT_000bbff0_backing[8];
 #define DAT_000bbff0 DAT_000bbff0_backing[0]
-static undefined4 DAT_000bc010_backing[256];
+/* Sizing-audit pass: init_barter_ui's own `while(iVar7<4)` loop --
+   max index 3 (4 elements, 16 bytes). Down from 256. */
+static undefined4 DAT_000bc010_backing[4];
 #define DAT_000bc010 DAT_000bc010_backing[0]
-static undefined4 DAT_000bc028_backing[256];
+static undefined4 DAT_000bc028_backing[4];
 #define DAT_000bc028 DAT_000bc028_backing[0]
-static undefined DAT_001007dd_backing[256];
-#define DAT_001007dd DAT_001007dd_backing[0]
-static undefined DAT_001007de_backing[8192];
+/* Sizing-audit pass: `iVar6 = (*DAT_00100674 & 0x3f) * 0x30` -- same
+   &0x3f mask * 0x30 stride as ai.c's DAT_001007d0 (same monster-class
+   table shape, independently duplicated here). HARD: 63*48+48=3072.
+   Down from 8192. */
+static undefined DAT_001007de_backing[3072];
 #define DAT_001007de DAT_001007de_backing[0]
 /* Was a lone scalar pointer slot -- its only use is `&PTR_DAT_000845c8 +
    iVar2*4` (a 4-byte-stride coordinate table, same convention as the
@@ -164,9 +184,14 @@ static undefined1 PTR_DAT_000845c8_backing[256];
    same bound, given the same 256-byte margin. */
 static undefined1 DAT_000845e8_backing[256];
 #define DAT_000845e8 DAT_000845e8_backing[0]
-static undefined2 DAT_000bbfc8_backing[8192];
+/* Sizing-audit pass: both are a sum_barter_offer_value param_4 cache
+   (`psVar3 = (short*)(iVar4*2+param_4)`), and that function's own loop
+   bound is `iVar4 < 4` -- exact max offset 3*2=6 (4 shorts, 8 bytes),
+   a HARD bound. Sized to 16 elements (32 bytes) for headroom; down
+   from 8192. */
+static undefined2 DAT_000bbfc8_backing[16];
 #define DAT_000bbfc8 DAT_000bbfc8_backing[0]
-static undefined2 DAT_000bbfb0_backing[8192];
+static undefined2 DAT_000bbfb0_backing[16];
 #define DAT_000bbfb0 DAT_000bbfb0_backing[0]
 static char s_npc_attitude_000845f8[] = "npc_attitude";
 static char *DAT_00100784;
@@ -251,11 +276,24 @@ static char s_do_offer_00085180[] = "do_offer";
 static char s_identify_inv_0008518c[] = "identify_inv";
 static short DAT_0010078c;
 static short DAT_00100794;
-static undefined1 DAT_00100680_backing[65536];
+/* Sizing-audit pass: no code-level cap exists -- indexed by DAT_00100794,
+   a count of consecutive non-zero babl-script words read until a 0
+   sentinel (babl_menu/babl_fmenu). The only real ceiling is CONV.BYT
+   itself (data/DATA/CONV.BYT is exactly 64000 bytes for EVERY NPC's
+   compiled conversation script combined), which strongly implies any
+   single menu's item count is small (tens, not thousands). Sized to
+   1024 items (8 bytes/item pointer stride = 8192 bytes) for generous
+   headroom against that budget rather than a derived exact number --
+   flagging as a judgment call, not a hard-proven bound. Down from
+   65536. */
+static undefined1 DAT_00100680_backing[8192];
 #define DAT_00100680 DAT_00100680_backing[0]
 static undefined2 DAT_00100790;
 static short DAT_00100788;
-static undefined1 DAT_001006d8_backing[65536];
+/* Sizing-audit pass: sibling raw-string cache for DAT_00100680, same
+   index (DAT_00100794) and same judgment-call headroom reasoning --
+   see that array's own comment. Down from 65536. */
+static undefined1 DAT_001006d8_backing[8192];
 #define DAT_001006d8 DAT_001006d8_backing[0]
 /* Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/select_babl_menu_response
    all index it as a real array -- `(&DAT_00100770)[idx]` for idx up to
@@ -272,9 +310,19 @@ static undefined1 DAT_001006d8_backing[65536];
    correctly. Same "array Ghidra/this port declared as a bare scalar"
    bug class as DAT_00100728 and this array's own sibling DAT_001007a0
    (already fixed with a real backing array). Sized to match. */
-static short DAT_00100770_backing[32768];
+/* Sizing-audit pass: indexed by wrapped-line position, bounded by the
+   same CONV.BYT-budget judgment call as its siblings DAT_00100680/
+   001006d8/001007a0 (see DAT_00100680's own comment) -- a long menu
+   message could wrap past the fixed "10 visible lines" bound, but
+   the total text driving it still comes from the same tiny per-NPC
+   script budget. Sized to 1024 for consistency with those siblings;
+   down from 32768. */
+static short DAT_00100770_backing[1024];
 #define DAT_00100770 DAT_00100770_backing[0]
-static undefined1 DAT_001007a0_backing[65536];
+/* Sizing-audit pass: same index/cap reasoning as DAT_00100680 above,
+   but a 2-byte (short) stride, not 8 -- 1024 items * 2 = 2048 bytes.
+   Down from 65536. */
+static undefined1 DAT_001007a0_backing[2048];
 #define DAT_001007a0 DAT_001007a0_backing[0]
 /* DAT_00085230/34/38/3c are 4 tiny (<=3-char) control-code constants,
    packed 4 bytes apart in the original binary -- confirmed via a real
@@ -293,11 +341,14 @@ static undefined1 DAT_001007a0_backing[65536];
    expecting it to insert a newline after the echoed choice; with it
    empty, the echoed text ran straight into the NPC's next line with
    no break at all (e.g. "...the Abyss.Exploring, eh?..."). */
-static undefined1 DAT_00085230_backing[32768] = { 0x5c,0x50,0x00 };
+/* Sizing pass: these are 3-4-byte control-code constants (confirmed by
+   a real Ghidra memory dump, see above); no indexing, nothing depends
+   on a larger extent. */
+static undefined1 DAT_00085230_backing[16] = { 0x5c,0x50,0x00 };
 #define DAT_00085230 DAT_00085230_backing[0]
-static undefined DAT_00085234_backing[8192] = { 0x5c,0x30,0x0a,0x00 };
+static undefined DAT_00085234_backing[16] = { 0x5c,0x30,0x0a,0x00 };
 #define DAT_00085234 DAT_00085234_backing[0]
-static undefined1 DAT_0008523c_backing[32768] = { 0x5c,0x32,0x00 };
+static undefined1 DAT_0008523c_backing[16] = { 0x5c,0x32,0x00 };
 #define DAT_0008523c DAT_0008523c_backing[0]
 static short DAT_001007bc;
 /* DAT_00085240/44/48 are the look-text word-separator/article
@@ -311,11 +362,12 @@ static short DAT_001007bc;
    The real recovered string is lost like several others this session,
    but the correct content is unambiguous from every call site's usage
    -- give them real values instead of leaving them silently empty. */
- char DAT_00085240_backing[8192] = " ";
+ char DAT_00085240_backing[16] = " ";
 /* Selected when the following word starts with a vowel (see the callers'
-   own vowel checks) -- so this one is "an ", not "a ". */
- char DAT_00085244_backing[32768] = "an ";
- char DAT_00085248_backing[32768] = "a ";
+   own vowel checks) -- so this one is "an ", not "a ".
+   Sizing pass: both are fixed 2-3 char literals with no indexing. */
+ char DAT_00085244_backing[16] = "an ";
+ char DAT_00085248_backing[16] = "a ";
 static char s_npc_talkedto_00085340[] = "npc_talkedto";
 static char s_npc_gtarg_00085350[] = "npc_gtarg";
 static char s_npc_goal_0008535c[] = "npc_goal";
@@ -325,10 +377,12 @@ static char s_npc_hp_00085380[] = "npc_hp";
 static char s_npc_health_00085388[] = "npc_health";
 static char s_npc_hunger_00085394[] = "npc_hunger";
 static char s_npc_whoami_000853a0[] = "npc_whoami";
-static undefined DAT_001007e3_backing[256];
-#define DAT_001007e3 DAT_001007e3_backing[0]
-static undefined DAT_001007fd_backing[256];
-#define DAT_001007fd DAT_001007fd_backing[0]
+/* Sizing-audit pass: DAT_001007e3/DAT_001007fd (used just below in
+   sync_conv_vars_from_npc) were independent 256-byte arrays, but
+   every use indexes them by the same per-class record base as
+   g_monster_max_stats_table/DAT_001007d5 in this same function --
+   aliased into DAT_001007d0_backing in ai.h instead (see that
+   header's own comment). */
 static char s_play_name_0008524c[] = "play_name";
 static char s_play_drawn_00085258[] = "play_drawn";
 static char s_play_poison_00085264[] = "play_poison";
@@ -351,7 +405,10 @@ static char s_npc_xhome_00085328[] = "npc_xhome";
 static char s_npc_level_00085334[] = "npc_level";
 undefined2 DAT_00101960;
 ushort DAT_000853fc;
-static undefined1 DAT_00101968_backing[8192];
+/* Sizing-audit pass: every build site does
+   `ce_memset(&DAT_00101968,0,0x104)` right before use -- exact HARD
+   bound, 260 bytes (MAX_PATH-style). Down from 8192. */
+static undefined1 DAT_00101968_backing[260];
 /* Sizing pass: this is the "CUTS"-directory override path string
    (cleared via ce_memset(&DAT_0023c698,0,0x104) in game.c, i.e. a
    Windows MAX_PATH=260-byte buffer by design). Its one real writer
@@ -543,7 +600,26 @@ intptr_t param_1;
   if (DAT_00202948 == 0) {
     iVar8 = DAT_00100674;
     if ((*(byte *)(iVar8 + 0xe) & 0x10) == 0) {
-      spawn_creature_death_loot();
+      /* Was a dropped argument -- spawn_creature_death_loot's own K&R
+         declaration (`void spawn_creature_death_loot(param_1)`) takes
+         the creature object pointer, but every one of this file's 4
+         call sites invoked it with empty parens, leaving param_1 to
+         whatever garbage happened to be sitting in the argument
+         register/slot. spawn_creature_death_loot dereferences that
+         pointer directly (`param_1[7]`, `*param_1`) and then has each
+         of its 4 sub-rolls object_list_insert_head a freshly spawned
+         item into `param_1 + 6` -- a wild write through garbage when
+         param_1 isn't the real creature. The intended argument is
+         plainly DAT_00100674 (the current conversation partner --
+         every other statement around this call reads/writes it, and
+         every sibling call site below re-reads it right after this
+         same call). Confirmed as (at least a) real contributor to the
+         "critters dropping shrines" bug report: a wild
+         object_list_insert_head here can corrupt an unrelated object's
+         own link chain (e.g. a nearby shrine fixture's), making it
+         look like that object got spliced into a dead creature's
+         drop/inventory list. */
+      spawn_creature_death_loot(DAT_00100674);
       iVar8 = *piVar3;
     }
     puVar9 = (ushort *)resolve_object_link((ushort *)(iVar8 + 6));
@@ -2770,7 +2846,9 @@ void start_npc_conversation()
     sync_conv_vars_from_npc(DAT_00100674);
     DAT_001007b8 = babl_alloc(0xa0);
     if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
-      spawn_creature_death_loot();
+      /* Dropped argument -- see babl_builtin_take_from_npc's identical
+         call for the full explanation; intended arg is DAT_00100674. */
+      spawn_creature_death_loot(DAT_00100674);
     }
     /* Debug-only static dump of every string in this NPC's own compiled
        conversation, independent of which branches a live playthrough
@@ -3301,7 +3379,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   uVar4 = babl_read_var_word((int)*(short *)(param_1 + -4));
   local_10 = g_player_object;
   if ((sVar3 == 0) && (local_10 = DAT_00100674, (*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0)) {
-    spawn_creature_death_loot();
+    /* Dropped argument -- see babl_builtin_take_from_npc's identical
+       call for the full explanation; intended arg is DAT_00100674. */
+    spawn_creature_death_loot(DAT_00100674);
     local_10 = DAT_00100674;
   }
   local_10 = local_10 + 6;
@@ -4248,7 +4328,9 @@ void babl_builtin_setup_to_barter()
   bVar2 = false;
   bVar3 = false;
   if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
-    spawn_creature_death_loot();
+    /* Dropped argument -- see babl_builtin_take_from_npc's identical
+       call for the full explanation; intended arg is DAT_00100674. */
+    spawn_creature_death_loot(DAT_00100674);
   }
   iVar13 = DAT_00100674 + 6;
   puVar6 = (ushort *)resolve_object_link(iVar13);

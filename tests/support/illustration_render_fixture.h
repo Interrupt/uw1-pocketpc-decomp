@@ -6,7 +6,7 @@
 #include "src/headers/file_io.h"
 extern undefined1 DAT_00085448_backing[11];
 extern undefined1 DAT_0023c698_backing[1024];
-extern undefined1 DAT_00101968_backing[8192];
+extern undefined1 DAT_00101968_backing[260];
 extern uintptr_t DAT_00101a70;
 extern ushort DAT_00101a6c, DAT_000853f8, DAT_000853fc, DAT_00085400;
 extern byte image[64000];
@@ -40,7 +40,7 @@ extern int DAT_00201b54, DAT_00201b4c, DAT_00201b58, DAT_00201b3c;
 extern ushort DAT_00201b48;
 extern short DAT_00201b44;
 extern void *g_uw_framebuffer;
-extern undefined1 DAT_00088d98_backing[1536];
+extern undefined1 DAT_00088d98_backing[768];
 extern byte draw_color;
 extern byte *g_draw_color_index;
 extern undefined1 *DAT_00084298;
@@ -63,8 +63,8 @@ extern short DAT_00201b64;
 extern undefined2 DAT_00201c90;
 extern char selected_window;
 extern undefined2 g_palette_rgb565_backing[32768];
-extern undefined1 DAT_00084a40_backing[32768];
-extern undefined2 DAT_00248418_backing[20 * 256], DAT_00242010_backing[32768];
+extern undefined1 DAT_00084a40_backing[1024];
+extern undefined2 DAT_00248418_backing[20 * 256], DAT_00242010_backing[12800];
 extern undefined2 DAT_000a85c0;
 extern int g_blit_transparent_mode, DAT_0024af70;
 extern void *DAT_0023c430;

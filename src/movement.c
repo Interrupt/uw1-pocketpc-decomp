@@ -95,7 +95,10 @@ undefined2 DAT_002048c0_backing[64];
 static undefined2 DAT_002048c8;
 static undefined2 DAT_002048c6;
 undefined1 DAT_00101424;
-undefined1 DAT_00101428_backing[8192];
+/* Sizing-audit pass: find_nearby_door_in_candidates's only use
+   (`*param_2 = ...`) is a plain scalar write, overwritten each loop
+   iteration, never indexed. Down from 8192. */
+undefined1 DAT_00101428_backing[4];
 static undefined2 DAT_002048fa;
 static undefined2 DAT_00204958;
 static undefined2 DAT_00204956;
@@ -115,8 +118,14 @@ short DAT_0023bf48;
    tiles reported the same floor height as open floor, so collision never
    stopped the player at a wall. Alias every field into the one backing
    buffer. Per-corner layout: [0]=shape/index, [1..2]=diag corner offsets,
-   [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05). */
- undefined1 DAT_00202bf8_backing[32768];
+   [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05).
+
+   Sizing-audit pass: every field is a named, explicitly-offset alias
+   (see movement.h) -- the furthest is DAT_00202c14, a 4-byte uint at
+   offset 0x1c, ending at byte 31. Exact real need is 32 bytes, a HARD
+   bound (no dynamic indexing past these fixed offsets exists). Down
+   from 32768. */
+ undefined1 DAT_00202bf8_backing[32];
 /* Wall-slide corner-classification tables, used by resolve_wall_slide_corner (called
    from sweep_slide_along_wall when a wall hit has a specific blocked-
    corner shape) to pick which of the 8 candidate headings in
@@ -243,7 +252,11 @@ static short DAT_00086980_arr[3];
 #define DAT_00086982 DAT_00086980_arr[1]
 #define DAT_00086984 DAT_00086980_arr[2]
 static undefined4 DAT_00204878;
-static undefined DAT_00202c32_backing[256];
+/* Sizing-audit pass: dead -- per the comment at its one real mention
+   (collision height-field lookup, ~line 496), the correct access goes
+   through DAT_00202c38 directly; this symbol is never actually
+   read/written anywhere in the live decompile. Down from 256. */
+static undefined DAT_00202c32_backing[4];
 #define DAT_00202c32 DAT_00202c32_backing[0]
 static ushort DAT_0008698c;
 static short DAT_0008698e;
@@ -317,9 +330,11 @@ char DAT_00086e84;
 static int DAT_0023bf64;
 static char DAT_0023bf60;
 static uint DAT_0023bf5c;
-static undefined DAT_00086e38_backing[256];
+/* Sizing-audit pass: index is `bVar1>>4` -- a nibble, max 15. Sized
+   to 16 each; down from 256. */
+static undefined DAT_00086e38_backing[16];
 #define DAT_00086e38 DAT_00086e38_backing[0]
-static undefined DAT_00086e48_backing[256];
+static undefined DAT_00086e48_backing[16];
 #define DAT_00086e48 DAT_00086e48_backing[0]
 
 

@@ -67,7 +67,7 @@ char *DAT_00101404, *DAT_00101438;
 
 void *DAT_0010172c;
 
-undefined1 DAT_001007d0_backing[6144], DAT_00202c90_backing[8192];
+undefined1 DAT_001007d0_backing[3072], DAT_00202c90_backing[8192];
 
 undefined2 DAT_002048c0_backing[64];
 
@@ -77,7 +77,7 @@ undefined1 DAT_00204980_backing[32];
 
 undefined2 DAT_00204990_backing[16], DAT_002049b0_backing[16];
 
-undefined1 DAT_002027d0_backing[256];
+undefined1 DAT_002027d0_backing[48];
 
 undefined DAT_000853d8;
 
@@ -95,7 +95,7 @@ undefined1 DAT_00101738;
 
 undefined4 DAT_00101924, DAT_0010191c, DAT_001013fc;
 
-undefined4 DAT_00101734_backing[256];
+undefined4 DAT_00101734_backing[1];
 
 undefined4 DAT_00101560, DAT_00101914, DAT_00101944;
 

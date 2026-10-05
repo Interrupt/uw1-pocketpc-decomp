@@ -34,7 +34,7 @@ void free_object_slot(ushort *object);
 undefined4 read_file_handle(int handle, void *destination, int count);
 
 byte mobile_objects[256 * 27];
-undefined1 DAT_002027d0_backing[256];
+undefined1 DAT_002027d0_backing[48];
 byte DAT_002046d8, DAT_002046dc;
 int DAT_002046e8;
 undefined1 DAT_002046e0, DAT_002046e4;
@@ -46,7 +46,7 @@ byte *DAT_00202c6c;
 
 undefined1 DAT_00202c90_backing[8192];
 
-undefined1 DAT_00202c38_backing[8192];
+undefined1 DAT_00202c38_backing[1536];
 
 short DAT_001005f4, DAT_001005f8, DAT_0023beb4;
 
@@ -76,7 +76,7 @@ undefined4 DAT_001005d8;
 
 char DAT_00084f18_backing[5] = {5, 3, 1, 7, 0};
 
-undefined1 DAT_001007d0_backing[6144];
+undefined1 DAT_001007d0_backing[3072];
 
 undefined1 DAT_001007d4_backing[8192];
 

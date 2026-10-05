@@ -14,7 +14,7 @@
 extern ushort DAT_002022f8;
 extern int DAT_002022fc;
 extern ushort DAT_00202508;
-extern undefined1 DAT_0023ce70_backing[8192];
+extern undefined1 DAT_0023ce70_backing[128];
 #define DAT_0023ce70 DAT_0023ce70_backing[0]
 #define DAT_0023ce71 DAT_0023ce70_backing[1]
 extern ushort g_player_max_carry_weight;
@@ -23,7 +23,8 @@ extern undefined1 DAT_0023c3dc;
 extern undefined1 DAT_0023c3d8;
 extern undefined1 DAT_00087604_backing[256];
 #define DAT_00087604 DAT_00087604_backing[0]
-extern undefined *PTR_FUN_00087614;
+extern undefined *PTR_FUN_00087614_backing[64];
+#define PTR_FUN_00087614 PTR_FUN_00087614_backing[0]
 
 
 undefined4 decode_critter_sprite_page();

@@ -55,7 +55,7 @@ extern undefined * DAT_00250704;
 extern undefined4 g_scroll_control_codes_enabled;
 extern char s_bodies_00085c58[];
 extern undefined2 DAT_00085c50;
-extern undefined1 DAT_00202988_backing[16];
+extern undefined1 DAT_00202988_backing[6];
 #define DAT_00202988 DAT_00202988_backing[0]
 
 

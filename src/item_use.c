@@ -18,7 +18,13 @@ static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking_if_%d_and_
    search loop) at a 6-byte stride -- real max 9*6+2=56 bytes. */
 static undefined1 DAT_00100634_backing[128];
 #define DAT_00100634 DAT_00100634_backing[0]
-static undefined2 DAT_00100632_backing[256];
+/* Sizing-audit pass: sibling high-slot of DAT_00100630 (combat.c),
+   same combination-index param_2 (0-9) and the same `*3` ushort
+   stride (`&DAT_00100632 + param_2*3` in is_object_consumed_in_
+   combination) -- real max 9*3=27, 28 elements (56 bytes), same
+   bound as DAT_00100630's own fix. Sized to 32 elements (64 bytes)
+   to match; down from 256. */
+static undefined2 DAT_00100632_backing[32];
 #define DAT_00100632 DAT_00100632_backing[0]
 /* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes)
    via the _DAT_002035cf macro below -- widened to its own real backing
@@ -31,16 +37,24 @@ static undefined DAT_002035cf_backing[8];
 // screen fades) so the weapon overlay doesn't glitch mid-transition,
 // then restored once the transition finishes.
 undefined4 g_weapon_overlay_enabled;
-static undefined1 DAT_002028e0_backing[16];
+/* Sizing-audit pass: sibling of hud.c's DAT_00202988, same loop
+   (`iVar4<6`) in the shared paperdoll-overlay refresh code. HARD.
+   Down from 16. */
+static undefined1 DAT_002028e0_backing[6];
 #define DAT_002028e0 DAT_002028e0_backing[0]
 static char s_armor_f_00085c60[] = "armor_f";
 static ushort DAT_00202962;
 static ushort DAT_00202964;
 static char s_Move_how_many__00085c68[] = "Move_how_many?";
 static char s_is_too_full__00085c78[] = "is_too_full.";
-static undefined DAT_002029f9_backing[256];
+/* Sizing-audit pass: index is `(nibble&0xf)*3`, max 45, read as a
+   short there (max byte 46). Sized to 48; down from 256. */
+static undefined DAT_002029f9_backing[48];
 #define DAT_002029f9 DAT_002029f9_backing[0]
-undefined DAT_00085ce0_backing[8192];
+/* Sizing-audit pass: single use, `ce_strcat(acStack_7c,&DAT_00085ce0)`,
+   0 writers -- content unrecovered. Sized to 32 for headroom; down
+   from 8192. */
+undefined DAT_00085ce0_backing[32];
 char s_You_read_the_00085ce8[] = "You_read_the";
 // g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
 // object id's low nibble) effect/quality byte table, loaded at runtime
@@ -60,7 +74,10 @@ char s_You_read_the_00085ce8[] = "You_read_the";
    dispatch chain (finish_object_use and friends). */
 char *DAT_00202098;
 static char s_on_what__000878e0[] = "on_what?";
-static undefined1 DAT_000878ec_backing[32768];
+/* Sizing pass: read-only (`pcVar3 = &DAT_000878ec;`), copied into a
+   40-byte local (acStack_34). Real content unrecovered (currently
+   empty); sized generously above that destination. */
+static undefined1 DAT_000878ec_backing[64];
 #define DAT_000878ec DAT_000878ec_backing[0]
 static char s_That_000878f4[] = "That";
 static char s_is_locked__000878fc[] = "is_locked.";
@@ -4458,7 +4475,24 @@ bool compute_drop_aim_from_cursor()
   sVar3 = ordint_divmod(0xd,(sVar3 + -0x56) * 5).quot;
   DAT_00202a40 = sVar3 + -1;
   sVar3 = ordint_divmod(6,sVar5 + -0x38).quot;
-  sVar4 = ordint_divmod(0x300,(int)DAT_0023beb4).quot;
+  /* Sign fix: DAT_00202a3c is "aim/launch angle, positive = up" --
+     confirmed by compute_vertical_aim_offset (src/ai.c), which assigns it
+     directly from (target_height - npc_height), positive when the target
+     is above. The cursor term above already follows that convention
+     (sVar5, and so sVar3, grows as the cursor moves toward the top of
+     the screen). But DAT_0023beb4 is "view pitch, negative = up" (see
+     src/game.c's recovered original key-1/2/3 handler,
+     debug_adjust_view_heading, which drives it negative for the "look
+     up" key; src/player.c's camera-projection consumer agrees and is
+     screenshot-verified). Dividing DAT_0023beb4 directly, as the
+     original decompile did here, added it with the OPPOSITE sign from
+     the cursor term -- harmless while nothing ever drove DAT_0023beb4
+     off zero, but once view-pitch controls exist (1/2/3 keys) it makes
+     thrown items and player-cast targeted spell effects
+     (apply_targeted_spell_effect -> spawn_object_near_actor -> here)
+     launch toward the floor when looking up and the ceiling when
+     looking down. Negate it to match. */
+  sVar4 = -ordint_divmod(0x300,(int)DAT_0023beb4).quot;
   DAT_00202a3c = sVar3 + sVar4;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",

@@ -67,7 +67,9 @@ static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
    binary `idx + 0x202988` was real addressing; here it hits an unmapped
    low address and segfaults level init. Give them real backing storage
    and address them as `&DAT_00202988 + idx`. */
-undefined1 DAT_00202988_backing[16];
+/* Sizing-audit pass: reload_paperdoll_body_sprite's own loop is
+   `iVar1<6` (indices 0-5). HARD. Down from 16. */
+undefined1 DAT_00202988_backing[6];
 short g_player_carry_weight;
 static int DAT_002028d0;
 static char s_Not_a_spell_00085a80[] = "Not_a_spell";
@@ -181,16 +183,25 @@ static short DAT_00204854;
    20-slot table (`while(iVar2<0x14)`), 2-byte stride -- real max
    19*2+2=40 bytes. */
 static undefined1 DAT_00204720_backing[64];
-static undefined2 DAT_00204750_backing[256];
+/* Sizing-audit pass: siblings of DAT_00204720 right above, same
+   register_cursor_hotspot 20-slot table, but indexed directly by
+   element (not a byte offset) -- real max index 19, 20 elements * 2
+   bytes = 40 bytes real need. Sized to 32 elements (64 bytes) to
+   match DAT_00204720's own headroom; down from 256. */
+static undefined2 DAT_00204750_backing[32];
 #define DAT_00204750 DAT_00204750_backing[0]
-static undefined2 DAT_002047e0_backing[256];
+static undefined2 DAT_002047e0_backing[32];
 #define DAT_002047e0 DAT_002047e0_backing[0]
-static undefined2 DAT_00204808_backing[256];
+static undefined2 DAT_00204808_backing[32];
 #define DAT_00204808 DAT_00204808_backing[0]
 static undefined2 DAT_00086970;
 static char DAT_00204858;
 static undefined2 DAT_00204704;
-static undefined2 DAT_00204714_backing[256];
+/* Sizing-audit pass: push_cursor_icon/pop_cursor_icon's own cursor-
+   icon stack, guarded by `if (DAT_00204858 != '\x03')` -- max depth
+   3, real need 3 elements (6 bytes). Sized to 8 for headroom; down
+   from 256. */
+static undefined2 DAT_00204714_backing[8];
 #define DAT_00204714 DAT_00204714_backing[0]
 static short DAT_002047a8;
 static short DAT_0020478c;
@@ -386,7 +397,9 @@ static short DAT_00087174_arr[2] = { 36, 204};
    placed at ((&DAT_000871b4)[side], 0x42), size 0xc x 0x1c
    (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
    0x208d (right) at 54196, NOT from a table. */
-static short DAT_000871b4_arr[4] = { 40, 224};
+/* Sizing-audit pass: same `iVar3<2` loop as its 2-element siblings
+   DAT_00087170/DAT_00087174 right above. HARD. Down from 4. */
+static short DAT_000871b4_arr[2] = { 40, 224};
 #define DAT_000871b4 DAT_000871b4_arr[0]
 /* Was `FIXME[hud-dragon-frames]: .data 0x871d4 -- ... reads 0 now`.
    Same class of gap as the position tables above -- recovered via
@@ -612,7 +625,10 @@ static const unsigned short DAT_000871b8_arr[14] = {
   0x208d, 0x208e, 0x208f, 0x2090, 0x208f, 0x208e, 0x208d,
 };
 #define DAT_000871b8 (*(undefined1 *)DAT_000871b8_arr)
-static undefined DAT_0023c124_backing[256];
+/* Sizing-audit pass: index is `iVar6*2` where iVar6 = param_1-4,
+   param_1 guarded to {4,5} -- max byte 2+1=3. Sized to 4; down from
+   256. */
+static undefined DAT_0023c124_backing[4];
 #define DAT_0023c124 DAT_0023c124_backing[0]
 static short DAT_0023c254;
 static short DAT_00087258;
@@ -664,7 +680,10 @@ static undefined2 DAT_0023c14c;
 static undefined2 DAT_0023c144;
 byte g_flip_grtile_cache_ready;
 static short DAT_0023c134;
-static undefined DAT_00087298_backing[8192];
+/* Sizing-audit pass: single use, `debug_print(&DAT_00087298)`, 0
+   writers -- content unrecovered. Sized to 32 for headroom; down
+   from 8192. */
+static undefined DAT_00087298_backing[32];
 #define DAT_00087298 DAT_00087298_backing[0]
 static byte DAT_0023c208;
 static short DAT_0023c138;
@@ -1455,6 +1474,39 @@ void main_loop_hud_flush()
   { static int _div = -1;
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
+  }
+  /* HACK: re-run the per-tick mouse/cursor refresh (update_mouse_state)
+     unconditionally every main-loop iteration, not just when this tick
+     happens to dequeue a real OS input message.
+
+     update_mouse_state's own cursor-draw (draw_idle_mouse_cursor) is
+     reached only through poll_input_event()->poll_mouse_event(), which
+     is itself gated behind PeekMessageW finding a message THIS tick
+     (see poll_input_event's own body in input.c). A plain, physically
+     stationary mouse generates no WM_MOUSEMOVE at all between actual
+     pointer motions -- but the forced full dungeon-view redraw just
+     above (this same function's earlier hack) repaints the entire 3D
+     viewport every single tick regardless, painting over wherever the
+     cursor sprite was last drawn. The net effect: a motionless cursor
+     hovering over the 3D view gets erased by the next redraw tick and
+     stays invisible until the next real mouse-move message happens to
+     arrive -- "cursor not drawing always", reproducible anywhere the
+     view keeps redrawing without the mouse itself moving (idle hover,
+     combat, automap panning, dialogs advancing on their own).
+
+     update_mouse_state() is already safe to call speculatively: it
+     early-returns to a no-op whenever there's nothing to do (mouse
+     physically idle and D-pad/joystick emulation inactive, or
+     DAT_000bbef8's own suspend flag set), and its own erase-then-redraw
+     protocol (erase_cursor_icon() first, save_cursor_background() again
+     before the fresh draw) makes a redundant extra call in the same
+     tick as a real message-driven call harmless -- same sequence the
+     original code already performs every time a mouse message arrives,
+     just invoked more often. Set UW_NO_FORCE_CURSOR_REDRAW to restore
+     the message-reactive-only behaviour. */
+  { static int _force_cursor = -1;
+    if (_force_cursor < 0) _force_cursor = (getenv("UW_NO_FORCE_CURSOR_REDRAW") == NULL);
+    if (_force_cursor) update_mouse_state();
   }
   /* Debug UI: must draw HERE, after the forced 3D redraw above (or it
      gets painted over) but before flush_dirty_rect_to_display(1) below
@@ -6591,8 +6643,43 @@ int erase_cursor_icon()
             (int)DAT_00204844, DAT_00204844 != 0, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
   if (DAT_00204844 != 0) {
-    set_draw_color(0x15);
-    rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
+    /* Bug fix ("Clicking in the inventory area stamps a yellow box
+       there"): only actually paint a restore when DAT_00204848 (the
+       rect_fill_or_save_restore save/restore sentinel -- see its own
+       comment) is armed, i.e. a real save_cursor_background() SAVE is
+       pending to restore. DAT_00204844 is not exclusively owned by
+       that save/show/erase protocol -- handle_mouse_message's
+       WM_LBUTTONDOWN handler (src/input.c) also sets it directly
+       (1, or 2 whenever g_cursor_mode/g_cursor_holding_state is
+       nonzero) as a general click-pending flag, with no
+       save_cursor_background() call to match, so DAT_00204848 stays 0.
+       draw_idle_mouse_cursor's own "SKIP-SAVE" path (reached whenever
+       g_cursor_mode != 0) also never arms DAT_00204848, for the same
+       reason. Previously this unconditionally called
+       rect_fill_or_save_restore with draw color 0x15 regardless, and
+       rect_fill_or_save_restore only honors 0x15 as "RESTORE" while
+       DAT_00204848 != 0 (its own comment) -- with DAT_00204848 == 0 it
+       silently falls through to an ordinary flat fill using 0x15 as a
+       literal palette index instead, painting a solid box (that
+       palette entry renders bright yellow) at the mouse position and
+       leaving it there permanently (nothing ever marks it dirty again
+       to paint over it). Confirmed live via a temporary unconditional
+       trace in rect_fill_or_save_restore: a plain click inside the
+       open inventory panel reproduced exactly this -- DAT_00204844
+       freshly set to 2 by handle_mouse_message (g_cursor_mode was
+       nonzero), DAT_00204848 still 0, erase_cursor_icon's rect_fill
+       call landing in the flat-fill branch with color 21 (0x15).
+       Skipping the paint (and its flush/DAT_00204848 reset) when
+       there's nothing real to restore leaves DAT_00204844 itself
+       untouched here -- same as before this fix, every caller already
+       clears it off this function's own return value when nonzero
+       (see this function's own doc comment), and
+       handle_mouse_message's WM_LBUTTONUP handler unconditionally
+       zeroes it regardless, so a stale 1/2 left by a mismatched
+       button-down is still cleared on release either way. */
+    if (DAT_00204848 != 0) {
+      set_draw_color(0x15);
+      rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
     /* REVERTED (was: force g_force_flush around this call, matching
@@ -6636,8 +6723,9 @@ int erase_cursor_icon()
        inventory drag/drop convention uses the RIGHT mouse button
        throughout anyway (gx_stub.c's uw_inject_mouse_rdown/rup), not
        left, so that handler may not even be on the relevant path. */
-    flush_dirty_rect_to_display(1);
-    DAT_00204848 = 0;
+      flush_dirty_rect_to_display(1);
+      DAT_00204848 = 0;
+    }
     iVar1 = DAT_00204844;
   }
   return iVar1;
@@ -7223,35 +7311,60 @@ void set_cursor_sprite_id(param_1)
 undefined4 param_1;
 
 {
-  /* lookup_grtile_by_id's argument is dropped by Ghidra at this call site;
-     forwarding param_1 matches the resolve_sprite_id_to_frame(param_1) call right
-     above it and lookup_grtile_by_id's own g_grtile_registry-indexed-by-id shape. */
+  /* Was a genuinely dropped RETURN VALUE, not just a dropped argument:
+     resolve_sprite_id_to_frame(param_1) was called and its result thrown
+     away, then the lookup just below re-used the raw, UNRESOLVED
+     param_1 -- a previous pass here misdiagnosed this as the simpler
+     "argument dropped by Ghidra" idiom and patched it by forwarding
+     param_1 into lookup_grtile_by_id, which avoids a NULL-deref crash
+     but keeps indexing with the wrong id.
+
+     resolve_sprite_id_to_frame exists precisely to translate a symbolic
+     UI sprite id into its real absolute g_grtile_registry frame: ids
+     below 0x1000 are already absolute OBJECTS.GR frames (resolved ==
+     param_1, so this fix is a no-op for those), but every cursor icon
+     this project actually pushes -- 0x106c (the default idle cursor),
+     0x1077-0x107a (the automap/map-note cursors), etc -- lives in the
+     0x1000-0x1fff BUTTONS.GR range, which resolve_sprite_id_to_frame
+     remaps to DAT_00202730+(id-0x1000) before any table lookup is
+     valid. draw_sprite_by_id (the function that actually PAINTS this
+     cursor) does resolve first; this function, which decides the
+     cursor's save/erase RECT SIZE for the hide/show cycle, did not --
+     so for every one of those ids it looked up g_grtile_registry[raw
+     id] (an unrelated, unpopulated slot), silently fell back to the
+     zeroed dummy sprite, and set DAT_00204784/DAT_002047a4 (this
+     cursor's width/height, consumed by save_cursor_background/
+     erase_cursor_icon's own rect math in rect_fill_or_save_restore) to
+     0 -- while the real paint elsewhere drew the sprite at its real,
+     much larger size through the correctly-resolved frame. A 0-sized
+     erase can never remove what a full-sized draw just painted: a
+     permanent ghost of that cursor sprite stuck on screen, never
+     cleared by any later cursor move. Confirmed live via
+     UW_DEBUG_CURSORSHOW/CURSORERASE tracing: entering the automap
+     (draw_automap_screen's own idle-cursor draw, sprite 0x106c, fires
+     before enter_automap_screen ever pushes the real map cursor) logged
+     a 15x16ish real sprite blit immediately followed by an erase
+     clipped to rect_fill_or_save_restore(1,0,2,1) -- a 1x1 no-op --
+     leaving that default-cursor arrow permanently stamped in the
+     automap's top-left corner through every subsequent mouse move
+     (bug: "Automap cursor not invalidating, leaves a trail behind").
+     Capturing and using the resolved frame here fixes the save/erase
+     size for every cursor icon in the 0x1000+ range, not just this one
+     screen -- the same shared root cause other cursor-invalidation
+     reports on other screens trace back to. */
   char *iVar1;
+  uint resolved_frame;
 
   erase_cursor_icon();
-  resolve_sprite_id_to_frame(param_1);
+  resolved_frame = resolve_sprite_id_to_frame(param_1);
   /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id
      only covers ids below DAT_00202738 (the "still-compressed .GR
      resource entry, needs decoding" range); ids at or above it are
      already-resident raw sprites living directly in g_grtile_registry's own
-     table (see blit_object_sprite_by_frame's own identical branch,
-     which this function was missing). For those higher ids
-     lookup_grtile_by_id's own table lookup misses (a *different* resource's
-     entries live there) and falls back to its zeroed dummy glyph,
-     silently handing back width=height=0 here. First found while
-     chasing a user report of several items (a map, a bag, apple,
-     bread) showing the wrong cursor icon or none at all when picked
-     up -- the real cause of THAT turned out to be a separate bug
-     (g_selected_object's own sign-extension, see
-     swap_cursor_and_slot_item's fix comment) that was corrupting
-     these objects' ids into the >= DAT_00202738 range in the first
-     place; with that fixed these particular items no longer reach
-     this branch at all. Kept anyway since it's a real, independently
-     confirmed divergence from blit_object_sprite_by_frame's own
-     already-correct behavior, for whatever legitimately-high-id items
-     do reach here. */
-  iVar1 = (int)(short)param_1 < (int)(uint)DAT_00202738 ?
-          lookup_grtile_by_id(param_1) : (char *)g_grtile_registry[(int)(short)param_1];
+     table (see blit_object_sprite_by_frame's own identical branch on
+     this same resolved-frame value, which this function now matches). */
+  iVar1 = (int)resolved_frame < (int)(uint)DAT_00202738 ?
+          lookup_grtile_by_id((short)resolved_frame) : (char *)g_grtile_registry[resolved_frame];
   if (iVar1 == (char *)0x0) {
     /* Same "table slot never populated" fallback as
        blit_object_sprite_by_frame's own identical guard. */
@@ -7441,7 +7554,35 @@ void draw_idle_mouse_cursor()
        mouse. Skipped only when UW_ALWAYS_SHOW_CURSOR=1, since a
        Pocket-PC-panel-specific tap-area clamp isn't meaningful on a desktop
        port anyway; left enforced by default rather than chasing the
-       separate corruption bug. */
+       separate corruption bug.
+
+       FOLLOW-UP (bug-list: "'Use key / combine' cursor not drawing over 3d
+       view"): the wild-write bug named above is already fixed --
+       DAT_002047b0 is a real 20-element array (DAT_002047b0_backing[20])
+       as of the code-cleanup-pass-2 merge (commit e0e419e), so
+       init_cursor_subsystem's `(&DAT_002047b0)[iVar2] = 10000` loop can no
+       longer bleed into this rectangle's globals. Re-verified live
+       (UW_DEBUG_CURSORSHOW + UW_DEBUG_MODEBTN): selected a mode cursor
+       (g_cursor_mode=3, icon 0x1077) and held/hovered at mouse x=131 --
+       past the old corrupted bound's x2=109 -- and the cursor drew every
+       tick with no "out of bounds" early-return, both with a held button
+       (default visibility rule) and under UW_ALWAYS_SHOW_CURSOR=1; this
+       confine-rect enforcement itself is fine as-is.
+
+       The actual remaining cause of the bug-list symptom was a separate,
+       general issue, not specific to this rectangle or to the 3D view:
+       main_loop_hud_flush's forced per-tick 3D redraw (see that
+       function's own "HACK: redraw the 3D dungeon view" comment) repaints
+       the whole viewport every tick, painting over wherever the cursor
+       was last drawn, while this function is only reached reactively
+       through update_mouse_state() -- itself only called when a real OS
+       mouse message happens to arrive that tick. A motionless cursor
+       hovering the 3D view got erased by the next forced redraw and
+       stayed invisible until the next real mouse-move message. Fixed by
+       bug-list item "Cursors not drawing always" (commit 05e8727):
+       main_loop_hud_flush now also calls update_mouse_state()
+       unconditionally every tick, see the hack comment just below the
+       forced-3D-redraw block above. */
     if ((((ushort)DAT_00201b60 & 0xc9) != 0) && !uw_always_show_cursor()) {
       if (g_mouse_x < DAT_00204838) {
         if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");

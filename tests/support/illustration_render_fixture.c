@@ -76,7 +76,7 @@ undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
 
 undefined1 DAT_0023c698_backing[1024];
 
-undefined1 DAT_00101968_backing[8192];
+undefined1 DAT_00101968_backing[260];
 
 uintptr_t DAT_00101a70;
 
@@ -243,7 +243,7 @@ short DAT_00201b44;
 
 void *g_uw_framebuffer;
 
-undefined1 DAT_00088d98_backing[1536];
+undefined1 DAT_00088d98_backing[768];
 
 byte draw_color;
 
@@ -331,9 +331,9 @@ char selected_window;
 
 undefined2 g_palette_rgb565_backing[32768];
 
-undefined1 DAT_00084a40_backing[32768];
+undefined1 DAT_00084a40_backing[1024];
 
-undefined2 DAT_00248418_backing[20 * 256], DAT_00242010_backing[32768];
+undefined2 DAT_00248418_backing[20 * 256], DAT_00242010_backing[12800];
 
 undefined2 DAT_000a85c0;
 

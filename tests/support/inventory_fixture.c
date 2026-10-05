@@ -79,7 +79,7 @@ short DAT_000858c4, DAT_002020ac;
 
 code *DAT_002020b8;
 
-undefined1 DAT_000878ec_backing[32768];
+undefined1 DAT_000878ec_backing[64];
 
 char s_UNNAMED_00084f24[] = "UNNAMED";
 

@@ -88,9 +88,11 @@ static char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
    spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
    and probe_save_slots/load_game_from_slot both search the built path for a literal
    '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
-   supplies one. Recovered as "\SAVE0"; kept the oversized backing array
-   since nothing else relies on its exact size. */
-undefined1 DAT_000857a0_backing[32768] = "\\SAVE0";
+   supplies one. Recovered as "\SAVE0"; a prior pass kept the oversized
+   backing array reasoning that nothing relies on its exact size, but
+   that cuts the other way too -- nothing needs it oversized either, so
+   this pass shrinks it to the literal's own 7 bytes plus headroom. */
+undefined1 DAT_000857a0_backing[16] = "\\SAVE0";
 static undefined2 DAT_00201b6c;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
    dispatch_sticky_mode_handlers/enter_dungeon_view/handle_player_death_and_menu_transition/change_game_mode (DAT_00201b64 = the
@@ -150,8 +152,16 @@ static char s_Could_not_read_data___00085804[] = "Could_not_read_data.$";
 static char s_Could_not_write_data___0008581c[] = "Could_not_write_data.$";
 static char s_Resource_problem_or_internal_err_00085834[] = "Resource_problem_or_internal_err";
 static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld_can_no_longer_run._Er";
-static undefined DAT_00201b70_backing[8192];
-void *DAT_00202308_arr[256];
+/* Sizing-audit pass: fatal-error message buffer, written via
+   ce_strncpy from either a 42-byte stack buffer (report_fatal_error_
+   and_exit) or an unbounded caller string (report_fatal_error_
+   message_and_exit) -- but both of that function's only two real
+   callers pass literals comfortably under 42 bytes. Sized to 64 for
+   headroom; down from 8192. */
+static undefined DAT_00201b70_backing[64];
+/* Sizing-audit pass: shutdown_game_resources's own teardown loop is a
+   HARD exact `iVar1 = 0x80` (128) count. Down from 256. */
+void *DAT_00202308_arr[128];
 /* Per-geometry-record decoded-sprite pixel buffers, one malloc per visible
    object, freed each frame by free_frame_geometry_buffers. Ghidra typed it
    `undefined4` (4 bytes), truncating the 64-bit ce_malloc pointer -- the
@@ -205,13 +215,26 @@ static ushort DAT_000876bc_backing[128];
 ushort *DAT_000876bc = DAT_000876bc_backing;
 static short DAT_000876c0_backing[128];
 short *DAT_000876c0 = DAT_000876c0_backing;
-static undefined DAT_00028bfc_backing[8192];
+/* Sizing-audit pass: its ADDRESS (not its contents) is passed as
+   register_key_binding's handler function-pointer argument for key
+   0x1b -- a stand-in for an unrecovered callback (same class as
+   traps.c's DAT_0007e644), never read/written/indexed as data.
+   Sizing doesn't matter for its actual role; shrunk for consistency.
+   Down from 8192. */
+static undefined DAT_00028bfc_backing[16];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
 static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev_%d_@_%2.2u.%1.1u_%2.2u.%1.1u";
 static byte DAT_0023bd84;
 static undefined1 DAT_00086e05;
 static undefined1 DAT_00086e06;
-static undefined DAT_00086e00_backing[8192];
+/* Sizing-audit pass: printed whole via message_scroll_print_wrapped
+   (print_help_message), 0 writers of its own text content --
+   content unrecovered. Sized to 128 for headroom as a display-text
+   fragment; down from 8192. (DAT_00086e05/06 right after it are
+   separate write-only scalars with no confirmed read anywhere --
+   unlike the automap note-position bug, there's no second proof they
+   belong inside this buffer, so left untouched.) */
+static undefined DAT_00086e00_backing[128];
 #define DAT_00086e00 DAT_00086e00_backing[0]
 static int DAT_000db500;
 short DAT_0024af6c;
@@ -273,7 +296,12 @@ char *g_weapon_swing_current_frame;
    g_weapon_swing_raw_frames instead (see that comment) -- kept only
    because app_main_loop still allocates and assigns it. */
 static char *g_weapon_swing_startup_scratch_buffer;
-undefined1 DAT_00241f08_backing[32768];
+/* Sizing-audit pass: a third sibling of DAT_0023cca8/DAT_0023c698
+   (same registry-install-dir-lookup pattern, right above/at line
+   1889/1891) -- written from the same 520-byte (0x208) stack buffer
+   (auStack_228) as those two, which were already sized to 1024 for
+   this exact reason. Matched here for consistency, down from 32768. */
+undefined1 DAT_00241f08_backing[1024];
 static undefined2 DAT_0023c59e;
 static undefined2 DAT_0023c5a0;
 static char *DAT_0023c44c;

@@ -19,7 +19,7 @@ ushort *g_player_object = player_object;
 
 short DAT_00201b68;
 
-undefined1 DAT_000fb860_backing[256];
+undefined1 DAT_000fb860_backing[32];
 
 undefined1 DAT_000fb8f0_backing[1680];
 

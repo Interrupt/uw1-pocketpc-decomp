@@ -31,6 +31,15 @@
    without preserving an unexplained 2x. */
 static undefined DAT_00110ff0_backing[524288];
 #define DAT_00110ff0 DAT_00110ff0_backing[0]
+/* Sizing-audit pass: DAT_00110ffc/DAT_0018959c-f's only use is inside
+   tick_anim_record's dead legacy address-walk (the same one documented
+   at DAT_00110ff0/DAT_00189590's own comment above) -- indexed by
+   `catalog*0x3c2c`, which would be a severe overflow against these
+   256-byte arrays for any catalog>0, EXCEPT that path is gated behind
+   `catalog>0 && catalog<30 && g_anim_model_slot[catalog]!=0`, which
+   intercepts every real catalog value before this code ever runs (see
+   that comment's own trace). Confirmed dead with real data; left
+   as-is rather than resizing dead code. */
 static undefined DAT_00110ffc_backing[256];
 #define DAT_00110ffc DAT_00110ffc_backing[0]
 static undefined1 DAT_00189590_backing[524288];
@@ -163,7 +172,11 @@ static undefined4 g_model_known_ext_colors;
 static char s_unexpected_EOF___no_END_statemen_000846f8[] = "unexpected_EOF_-_no_END_statemen";
 static char s________c_0008471c[] = "%*[^}]%c";
 static char s___d__00084728[] = "(%d)";
-static undefined DAT_00084730_backing[8192];
+/* Sizing-audit pass: a bare NKDbgPrintfW debug-message format string
+   (no args), content unrecovered, surrounded entirely by short (<40
+   char) literal strings in this same table. Sized to 64 for
+   headroom; down from 8192. */
+static undefined DAT_00084730_backing[64];
 #define DAT_00084730 DAT_00084730_backing[0]
 static char s_anim__d___d__c__d__d___00084734[] = "anim_%d_(%d,%c,%d,%d):";
 static char s__d__1s__d__d__1s_0008474c[] = "%d,%1s,%d,%d,%1s";
@@ -186,10 +199,19 @@ static char s__c__d__d__d__d__d___c__000847cc[] = "%c,%d,%d,%d,%d,%d_(%c)";
 static char s__1s__d__d__d_1s_000847e4[] = "%1s,%d,%d,%d%1s";
 static char s__1s__d__d__d__d__d_1s_000847f4[] = "%1s,%d,%d,%d,%d,%d%1s";
 static char s_branch_0008480c[] = "branch";
-static undefined DAT_00084814_backing[8192];
+/* Sizing-audit pass: an NKDbgPrintfW debug-message format string
+   (one %-arg, local_22c), content unrecovered, sibling of the
+   "branch"/"leaf" literals right around it. Sized to 64 for
+   headroom; down from 8192. */
+static undefined DAT_00084814_backing[64];
 #define DAT_00084814 DAT_00084814_backing[0]
 static char s_leaf_00084818[] = "leaf";
-static undefined DAT_00084820_backing[8192];
+/* Sizing-audit pass: a ce_fscanf format string (`ce_fscanf(pvVar_fh,
+   &DAT_00084820,&local_1e4)`, one int destination), content
+   unrecovered, sibling of the short format-string literals around
+   it (e.g. s__d_1s_000848c8 = "%d%1s"). Sized to 64 for headroom;
+   down from 8192. */
+static undefined DAT_00084820_backing[64];
 #define DAT_00084820 DAT_00084820_backing[0]
 static char s_SUPER_NODES_00084828[] = "SUPER_NODES";
 static char s_NODES_00084834[] = "NODES";
@@ -201,7 +223,10 @@ static char s__d_1s_000848c8[] = "%d%1s";
 static char s__d__d_000848d0[] = "%d,%d";
 static char s_________c_000848d8[] = "%*[^;}]%c";
 static char s_got_sphere__d_000848e4[] = "got_sphere_%d";
-static undefined DAT_000848f4_backing[8192];
+/* Sizing-audit pass: a ce_fscanf format string (multiple destination
+   pointers), content unrecovered, sibling of "got_sphere_%d" right
+   above it. Sized to 64 for headroom; down from 8192. */
+static undefined DAT_000848f4_backing[64];
 #define DAT_000848f4 DAT_000848f4_backing[0]
 static char s_Too_many_polys_000848f8[] = "Too_many_polys";
 static char s_Out_of_vertex_list_space_00084908[] = "Out_of_vertex_list_space";
@@ -228,9 +253,11 @@ static char s_NAMES_000849a0[] = "NAMES";
    for (this file's argument-count-per-call-site is already established
    as unreliable throughout the decompile); harmless since vfscanf simply
    won't consume args past what the format string actually specifies. */
-static char DAT_000849a8_backing[8192] = "%1s";
+/* Sizing-audit pass: recovered/guessed content is 3-4 chars, no
+   indexing. Sized to 16; down from 8192. */
+static char DAT_000849a8_backing[16] = "%1s";
 #define DAT_000849a8 DAT_000849a8_backing[0]
-static char DAT_000849ac_backing[8192] = "%d";
+static char DAT_000849ac_backing[16] = "%d";
 #define DAT_000849ac DAT_000849ac_backing[0]
 static char s_VERSION_000849b0[] = "VERSION";
 static char s_error___s__c_000849b8[] = "error:_%s,%c";
@@ -249,14 +276,20 @@ static char s_error___s__c_000849b8[] = "error:_%s,%c";
    plain char* (not a pointer-to-array) when DAT_000849c8 is itself a
    scalar macro'd to the array's first element, matching every other
    widened-global in this file. */
-static char DAT_000849c8_backing[8192] = "END";
+/* Sizing-audit pass: confirmed real content is "END" (3 chars, see
+   comment above), no indexing. Sized to 16; down from 8192. */
+static char DAT_000849c8_backing[16] = "END";
 #define DAT_000849c8 DAT_000849c8_backing[0]
 static char s__100s_1s_000849cc[] = "%100s%1s";
 static char s__1s__a_z__1s_000849d8[] = "%1s%[a-z]%1s";
 static char s_Input_file_error__BEGIN_statemen_000849e8[] = "Input_file_error:_BEGIN_statemen";
 static char s_BEGIN_00084a14[] = "BEGIN";
 static char s__100s_00084a1c[] = "%100s";
-static undefined DAT_00084a24_backing[8192];
+/* Sizing-audit pass: ce_fopen's mode-string argument
+   (`ce_fopen(acStack_130,&DAT_00084a24)`), content unrecovered --
+   fopen mode strings are always a handful of chars (e.g. "rb").
+   Sized to 16; down from 8192. */
+static undefined DAT_00084a24_backing[16];
 #define DAT_00084a24 DAT_00084a24_backing[0]
 /* DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's ".E"
    model parser: `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor
@@ -475,7 +508,13 @@ static undefined1 DAT_000c9e3e_backing[49152];
    real model file's parse, which crashed much later and far from the
    actual bad write -- the same "detected at a distance" pattern as the
    STRINGS.PAK heap corruption. Widened with the usual backing-buffer
-   pattern. */
+   pattern.
+
+   Sizing-audit pass: real hard cap is 600 points * 0x2c (44) = 26400
+   bytes -- confirmed already comfortably covered by the current 32768
+   (24% headroom), tighter than the sibling PARTS family's own 36%
+   headroom choice just below. Left as-is rather than churning for a
+   marginal gain. */
 static undefined1 DAT_000d2ab0_backing[32768];
 #define DAT_000d2ab0 DAT_000d2ab0_backing[0]
 static undefined1 DAT_000d2ab1_backing[32768];
@@ -583,7 +622,11 @@ static undefined1 DAT_000d977b_backing[256];
 #define DAT_000d977b DAT_000d977b_backing[0]
 static undefined1 DAT_000d977c_backing[256];
 #define DAT_000d977c DAT_000d977c_backing[0]
-static undefined1 DAT_000d98c8_backing[32768];
+/* Sizing pass: live instrumentation (UW_DEBUG_MODEL_PARSE_HWM) across
+   the full 19-script regression suite (29 real .E model files loaded)
+   showed a real high-water mark of 8 chars for the unbounded %[a-z]
+   token this feeds. Sized to 64 bytes for headroom above that. */
+static undefined1 DAT_000d98c8_backing[64];
 #define DAT_000d98c8 DAT_000d98c8_backing[0]
 /* NAMES-block growing string-table cursor base (puVar16/local_258 walk
    forward from here, one null-terminated name per CLUSTER entry).
@@ -605,7 +648,12 @@ static undefined1 DAT_000da868_backing[128];
 #define DAT_000da868 DAT_000da868_backing[0]
 static undefined1 DAT_000dab90_backing[128];
 #define DAT_000dab90 DAT_000dab90_backing[0]
-static undefined DAT_000db454_backing[8192];
+/* Sizing-audit pass: its only use is
+   `ce_fscanf(pvVar_fh,&DAT_000849ac,&DAT_000db454)` where DAT_000849ac
+   is the format string "%d" -- a single int destination, not a table.
+   Sized to 16 bytes for alignment/type-punning safety, down from
+   8192. */
+static undefined DAT_000db454_backing[16];
 #define DAT_000db454 DAT_000db454_backing[0]
 static char s__DATA3D_BED2_E_00085474[] = "\\DATA3D\\BED2.E";
 static char s__DATA3D_CHAIRSIM_E_00085484[] = "\\DATA3D\\CHAIRSIM.E";
@@ -631,6 +679,27 @@ static char s__DATA3D_40LOTUS_E_000855e8[] = "\\DATA3D\\40LOTUS.E";
 static char s__DATA3D_BENCH_E_000855fc[] = "\\DATA3D\\BENCH.E";
 static char s__DATA3D_FBRIDGE_E_0008560c[] = "\\DATA3D\\FBRIDGE.E";
 static char s__DATA3D_DFRAME_E_00085620[] = "\\DATA3D\\DFRAME.E";
+/* Sizing-audit pass: these ~30 per-model catalog buffers (one per .E
+   file, each passed as parse_e_model_file's own param_2) were checked
+   for oversizing like every other array in this audit, but turned out
+   NOT to be oversized -- they're already reasonably tight. Traced
+   every dynamic write into param_2 (PARTS stride 0x60 based at
+   0xc14..., POINTS stride 0xc based at +8...) and parsed all 30 real
+   data/DATA3D/*.E files directly: worst real case is SHRINE.E (76
+   parts, 47 points) at ~10383 bytes -- 63% of the declared 16384, a
+   reasonable ~37% margin.
+
+   Separately (NOT a sizing-audit finding, flagging for visibility
+   only): the PARTS block's own governing cap is 350 parts
+   (`g_model_parse_part_count`), and the per-face vertex-index loop
+   feeding +0xc18 has no cap at all tied to this buffer's size, so the
+   code's own theoretical reachable worst case (~36791 bytes) exceeds
+   16384 -- a latent gap, not a live bug, since no real shipped file
+   comes remotely close (76 parts vs the 350 cap; 5 verts/face vs the
+   ~23-24 designed slots). Left exactly as-is: this is the one family
+   in the whole audit that should arguably grow or gain an explicit
+   size guard, not shrink, and that's a separate change from this
+   sizing pass. */
 static undefined DAT_00114c1c_backing[16384];
 #define DAT_00114c1c DAT_00114c1c_backing[0]
 static undefined DAT_00118848_backing[16384];
@@ -743,9 +812,31 @@ static void * const g_anim_model_slot[30] = {
    can never corrupt the same buffer a future real-3D-model consumer might
    also read. */
 static unsigned char g_anim_model_scratch[30][16384];
-undefined2 DAT_00189570_backing[256];
+/* Sizing-audit pass: both write loops index it by `iVar29 < uVar21`
+   where `uVar21 = catalog_flags & 7` -- max index 6 (7 elements, 14
+   bytes real). Sized to 16 for headroom; down from 256 (512 bytes,
+   undefined2 element type). */
+undefined2 DAT_00189570_backing[16];
 #define DAT_00189570 DAT_00189570_backing[0]
 char *DAT_00110fc0 = DAT_00110fc0_scratch;
+/* Sizing-audit pass: investigated, NOT confidently resolved. The one
+   real caller passes `&DAT_00202520 + pcVar15[3]*0x10` into
+   decompress_gr_bitmap's param_2 (a .GR tile's compression-mode-4
+   "auxiliary nibble->8bit remap table" bank selector); the only
+   confirmed direct read of it anywhere in that function is a single
+   byte, `param_2[1]` (resources.c's select_gr_bitmap_remap_table
+   call) -- every other reference to the shared remap cursor
+   (DAT_000b5630) gets reassigned to point into the compressed input
+   stream instead before ever being dereferenced. So the real bound
+   depends entirely on how many distinct `pcVar15[3]` bank values
+   exist across every real mode-4 .GR tile in the shipped assets --
+   not derivable from the code alone. Added live instrumentation
+   (reusing UW_DEBUG_DUMP_GR, see the call site) to find that bank
+   value empirically, but this code path never fired once across the
+   full 19-script regression suite (mode-4 .GR tiles aren't exercised
+   by that corpus), so no real high-water mark was obtained. Left at
+   1024 rather than guess; worth revisiting with a broader live
+   session or a direct scan of the shipped .GR files. */
  undefined1 DAT_00202520_backing[1024];
 short DAT_000b4620;
 static short DAT_00189584;
@@ -1290,6 +1381,9 @@ short frame_or_texid;
       texptr = (byte *)(pcVar15 + 5);
     }
     else {
+      if (getenv("UW_DEBUG_DUMP_GR")) {
+        fprintf(stderr, "[gr-remap] DAT_00202520 bank=%u\n", (unsigned)(byte)pcVar15[3]);
+      }
       texptr = (byte *)decompress_gr_bitmap(pcVar15 + 4,&DAT_00202520 + (uint)(byte)pcVar15[3] * 0x10);
     }
   }
@@ -2762,6 +2856,14 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   pppppuVar21 = (undefined4 *****)&pppuStack_244;
   pcVar15 = &DAT_000d98c8;
   ce_fscanf(pvVar_fh,s__1s__a_z__1s_000849d8,auStack_24c,&DAT_000d98c8,pppppuVar21);
+  /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION): the %[a-z]
+     conversion above has no width limit, so DAT_000d98c8's real need is
+     whatever the longest actual token in the shipped .E model files is,
+     not a value derivable from the format string alone. Reusing the
+     existing model-parse debug var to find a true high-water mark. */
+  if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
+    fprintf(stderr, "[model-parse-hwm] DAT_000d98c8 token_len=%d\n", (int)ce_strlen(&DAT_000d98c8));
+  }
   pcVar2 = pcVar15;
   if (DAT_000db45c == (undefined1 *)0x0) {
     do {

@@ -32,6 +32,10 @@
  *                    type/flags words -- ground truth for what the level
  *                    actually loaded at this tile, independent of any
  *                    render-time culling.
+ *   CALLMANTRA    -- calls handle_mantra_chant() (the "Chant the mantra"
+ *                    feature) directly, bypassing the in-world
+ *                    mantra-statue click path. Pair with TYPE + ENTER to
+ *                    drive its text-entry prompt. See demo_mantra_test.txt.
  *   SETPLAYERPOS <x> <y> <z> <yaw> <pitch>  -- like TELEPORT but fine-grained:
  *                    x/y take a fractional tile position (e.g. "32.5 2.25"),
  *                    z is the raw height unit the [playerpos] print's own
@@ -727,6 +731,26 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strcasecmp(p, "CALLMANTRA") == 0) {
+        /* Calls handle_mantra_chant() (player.c's "Chant the mantra"
+         * feature) directly, bypassing the in-world mantra-statue click
+         * path (dispatch_world_object_interaction_by_family / family 1,
+         * low nibble 7) -- lets a regression demo exercise the feature's
+         * text-entry-prompt + known-mantra-string-table matching loop
+         * without needing to navigate to and right-click a specific
+         * statue object in the dungeon. See demo_mantra_test.txt: this
+         * reproduced a real crash (ce_strcmp deref'ing a get_message_string
+         * pointer that had been truncated to 32 bits by an `undefined4`
+         * local -- see handle_mantra_chant's own comment) on every call,
+         * independent of what's typed afterward. */
+        extern void handle_mantra_chant();
+        fprintf(stderr, "[callmantra] invoking handle_mantra_chant()\n");
+        handle_mantra_chant();
+        fprintf(stderr, "[callmantra] returned\n");
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     if (strncasecmp(p, "SCANOBJTYPE ", 12) == 0) {
         /* Diagnostic: scan BOTH object tables (small: DAT_002046b8, 0x1b
          * bytes/slot, indices 1-0xff; large: DAT_002046c4, 8 bytes/slot,
@@ -867,6 +891,37 @@ void demomode_pump(void) {
         fprintf(stderr, "[triggersave] calling commit_level_to_save_slot(%d)\n", (int)DAT_00201b68);
         unsigned int _r = commit_level_to_save_slot((int)DAT_00201b68);
         fprintf(stderr, "[triggersave] result=%u\n", _r);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "CASTALLSPELLS") == 0) {
+        /* Diagnostic/regression hook for the "Spell crashes - test each"
+         * bug report: directly drives dispatch_special_action (the real
+         * per-spell effect dispatcher cast_spell_from_rune_combo calls
+         * after its mana/skill checks pass) once for each of the 48
+         * readied-spell entries in the real spell table
+         * (DAT_00087530_backing, see hud.c's own comment on its layout:
+         * 4-byte-stride records, byte 0 >> 3 = action type, byte 3 =
+         * action parameter), bypassing rune-matching/mana/skill-check UI
+         * entirely so every spell's effect handler gets exercised in
+         * one deterministic pass regardless of the player's actual
+         * reagents/mana/skill. Target and actor are both g_player_object,
+         * matching cast_spell_from_rune_combo's own real call shape. */
+        extern ushort *g_player_object;
+        extern undefined DAT_00087530_backing[212];
+        extern unsigned int dispatch_special_action(unsigned int type, unsigned int param,
+                                                      uintptr_t actor, intptr_t target);
+        int i;
+        for (i = 0; i < 48; i++) {
+            unsigned char byte0 = DAT_00087530_backing[i * 4];
+            unsigned char byte3 = DAT_00087530_backing[i * 4 + 3];
+            unsigned int type = byte0 >> 3;
+            fprintf(stderr, "[castallspells] spell %d: type=%u param=%u\n", i, type, byte3);
+            dispatch_special_action(type, byte3, (uintptr_t)g_player_object, (intptr_t)g_player_object);
+            fprintf(stderr, "[castallspells] spell %d: survived\n", i);
+        }
+        fprintf(stderr, "[castallspells] all 48 spells dispatched\n");
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

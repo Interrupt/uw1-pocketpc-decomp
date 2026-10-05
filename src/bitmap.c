@@ -28,7 +28,9 @@ byte *DAT_000b4610;
    `.data` word at 0x842ac literally being 0xb45f0. As NULL it made
    `ce_memset(DAT_000842ac, 10, 0x20)` memset through address 0 and
    the blit write past it. Backed by a real (over-sized) buffer. */
- undefined1 DAT_000842ac_backing[4096];
+/* Sizing-audit pass: `ce_memset(DAT_000842ac,10,0x20)` -- exact
+   32-byte real need. Down from 4096. */
+ undefined1 DAT_000842ac_backing[32];
 char *DAT_000b4614;
 byte *DAT_000b5630;
 /* struct-recovery-plan.md's "DAT_0024e090 pointer table" candidate:

@@ -9,6 +9,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Sizing-audit pass: investigated, NOT shrunk -- per the overflow-
+   guard comment a few hundred lines down (0x4814 record region base,
+   ~490-record cap, 0x60-byte stride), real worst case is
+   0x4814+490*0x60=65492 bytes=16373 elements -- already a near-exact
+   match for the current 16384, not oversized. (An initial pass at
+   this arithmetic mistakenly computed 47852 bytes; rechecked by hand
+   here.) Left as-is. */
  undefined4 DAT_000a85d0_backing[16384];
 /* Set (0-359) by emit_tile_objects's class-2 TMOBJ/sign branch right
    before jumping into the shared class-0 mesh-quad code, to make a
@@ -58,8 +65,16 @@ static undefined4 DAT_00084638 = 0x84;
    silently zero -> that offset was always 0, so every tile triangle
    projected to the single centre point (x=140, y=80). */
 static undefined4 DAT_00084610 = 100u;
- undefined2 DAT_0023add0_backing[8192];
- undefined2 DAT_0023ae40_backing[8192];
+/* Sizing-audit pass: wall-texture property table. Loader fills only
+   48 entries, but every read site masks the index with `&0x3f`
+   (0-63) -- the wider read-side mask governs. HARD: 64 elements
+   (128 bytes). Down from 8192. */
+ undefined2 DAT_0023add0_backing[64];
+/* Sizing-audit pass: floor-texture property table. Loader fills only
+   10 entries, but every read site masks the index with `&0xf`
+   (0-15) -- the wider read-side mask governs. HARD: 16 elements
+   (32 bytes). Down from 8192. */
+ undefined2 DAT_0023ae40_backing[16];
 /* Was a lone `undefined4` (zero-initialized), but confirmed via a raw
    Ghidra memory read of the real UU.exe's .data section that this
    address's real static initial value is 1, not 0 -- same "silently-
@@ -191,7 +206,11 @@ ushort DAT_00189580;
   0x01,0x00,0xff,0xff,0x01,0x00,0x00,0x01, 0x01,0x01,0x01,0x01,0x00,0x00,0xff,0x01,
   0x00,0x04,0xff,0x00,0x04,0x01,0xff,0x04, 0x00,0x01,0x04,0x00,0x00,0x00,0x00,0x00,
 };
-static const undefined1 DAT_00086c00_arr[8] = { 0x00,0x01,0x02,0x00,0x00,0x00,0x00,0x00 };
+/* Sizing-audit pass: process_visible_tile_cell's own loop is
+   `} while (local_54 < 3);` -- max index 2, matching the real
+   recovered content (0,1,2; the rest was always just padding).
+   HARD. Down from 8. */
+static const undefined1 DAT_00086c00_arr[3] = { 0x00,0x01,0x02 };
 #define DAT_00086c00 (*(const undefined1 *)DAT_00086c00_arr)
 undefined2 DAT_0023bc8c;
 undefined2 DAT_0023b8c0;
@@ -296,10 +315,24 @@ static const unsigned char DAT_00086cc0_arr[32] = {
    own separate, more careful review before any resize. */
 static undefined2 DAT_0023b908_backing[32];
 #define DAT_0023b908 DAT_0023b908_backing[0]
-static undefined2 DAT_0023b928_backing[8192];
+/* Sizing-audit pass: the "separate, more careful review" flagged
+   above is done. update_wall_partition_phase's dynamic write
+   (`ce_memmove(&DAT_0023b928 + uVar2 + 1, &DAT_0023b90a, ...)`) is
+   clamped so `uVar2 + uVar1 <= 8` (the function's own "8-entry
+   window" cap), so max index touched is 8 (9 elements). This also
+   matches the literal `ce_memmove(&DAT_0023b908,&DAT_0023b928,0x12)`
+   copy between the two siblings -- same exact 18-byte real bound as
+   DAT_0023b908. Sized to 32 elements (64 bytes) to match; down from
+   8192. */
+static undefined2 DAT_0023b928_backing[32];
 #define DAT_0023b928 DAT_0023b928_backing[0]
 char DAT_0023bb94;
-static undefined DAT_0023b90a_backing[8192];
+/* Sizing-audit pass: only read as a memmove source
+   (`ce_memmove(&DAT_0023b928+uVar2+1,&DAT_0023b90a,(uVar1&0xffff)<<1)`)
+   with uVar1 capped at 8 (same 8-entry window cap as DAT_0023b928) --
+   max byte count 8*2=16 bytes. Sized to 32 for headroom; down from
+   8192. */
+static undefined DAT_0023b90a_backing[32];
 #define DAT_0023b90a DAT_0023b90a_backing[0]
 /* Sizing pass: `ce_memset(&DAT_0023b940,0,0x252)` -- 594 bytes exact. */
 static undefined1 DAT_0023b940_backing[1024];
@@ -314,9 +347,18 @@ static undefined1 DAT_0023b940_backing[1024];
    Recompiled as separate scalars the indexed writes and reads land on
    different memory (NULL slot deref crash). Back them with real arrays;
    all uses are confined to that function span, no external refs. */
- undefined2 DAT_0023b848_backing[64];
- undefined1 DAT_0023b8c8_backing[128];
- undefined1 DAT_0023bb98_backing[512];
+/* Sizing-audit pass: DAT_0023b848[i] real extent is i in 0..8 (9
+   u16 elements, 18 bytes) per the comment above. Sized to 32 elements
+   (64 bytes) for headroom; down from 64. */
+ undefined2 DAT_0023b848_backing[32];
+/* Sizing-audit pass: DAT_0023b8c8[i]/[i+1] real extent is i in 0..8
+   too (same object count, max i+1=9, 10 bytes). Sized to 32 for
+   headroom; down from 128. */
+ undefined1 DAT_0023b8c8_backing[32];
+/* Sizing-audit pass: DAT_0023bb98[i*4+0/1/2] real extent is i in
+   0..0x3b (per the comment above), max byte 59*4+2=238. Sized to
+   256 for headroom; down from 512. */
+ undefined1 DAT_0023bb98_backing[256];
 /* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view-
    facing corner-index remap for a rotating quad: resolve_billboard_corner_offset reads
    `(&DAT_00086d68)[idx*2]` (low byte) and `(&DAT_00086d69)[idx*2]` (high

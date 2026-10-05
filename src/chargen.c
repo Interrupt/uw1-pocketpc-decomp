@@ -10,13 +10,39 @@
 #define DAT_000fb863 DAT_000fb860_backing[3]
 #define DAT_000fb8f0 DAT_000fb8f0_backing[0]
 char *DAT_00086df8;
-static undefined DAT_00084e40_backing[8192];
+/* These 4 were zero-initialized "backing" buffers standing in for
+   unrecovered string constants (same class as s_chrbtns_00084ef8 and
+   s_dash_000879a4 below -- Ghidra had no .data content at these
+   addresses, just dangling references), passed straight into
+   draw_text_string by draw_chargen_attribute_summary as the row
+   labels for the 4 values it draws. With no initializer they read as
+   empty strings, so the label half of each row silently drew nothing
+   -- the "stat names not displaying" bug: numbers appeared, labels
+   didn't. No original-binary bytes were available to dump for these
+   (no UU.exe/CHARGEN resources ship in this source repo, unlike the
+   chrbtns fix which could read the real ARM binary directly), so the
+   exact original text can't be byte-confirmed. Filled in with the
+   field roles that ARE confirmed elsewhere in this codebase: offsets
+   +5/+6/+7 of this same DAT_0023be74 row are documented (see
+   write_player_save_record's comment, player.dat offset 0x1e) as
+   Strength/Dexterity/Intelligence in that order, and offset +4 is the
+   same field draw_hp_stat_display reads as the character's max HP.
+   Abbreviated to fit the ~47px-wide label+value row
+   (draw_chargen_attribute_summary's own fill rect is only 0x8c-0x5d
+   wide) the way this genre's UIs conventionally abbreviate these.
+   Sizing-audit pass (separate, concurrent fix): each is used exactly
+   once via draw_text_string, 0 writers -- 4 short UI label strings (8
+   bytes apart in the original address space, hinting each was
+   originally <=8 chars). Sized to 16 each for headroom; down from the
+   earlier placeholder 8192, still comfortably fitting "Str"/"Dex"/
+   "Int"/"Hp" plus a NUL. */
+static undefined DAT_00084e40_backing[16] = "Hp";
 #define DAT_00084e40 DAT_00084e40_backing[0]
-static undefined DAT_00084e48_backing[8192];
+static undefined DAT_00084e48_backing[16] = "Int";
 #define DAT_00084e48 DAT_00084e48_backing[0]
-static undefined DAT_00084e50_backing[8192];
+static undefined DAT_00084e50_backing[16] = "Dex";
 #define DAT_00084e50 DAT_00084e50_backing[0]
-static undefined DAT_00084e58_backing[8192];
+static undefined DAT_00084e58_backing[16] = "Str";
 #define DAT_00084e58 DAT_00084e58_backing[0]
 char *DAT_001005c8;
 /* Was `undefined4` (4 bytes), but assigned real char* pointers
@@ -28,7 +54,9 @@ static char *DAT_000fb858;
 static char *DAT_001005c4;
 /* Not `static` -- also used by chargen.c; see the extern declaration and
    DAT_000fb860 macro alias in uw.h. */
-static undefined1 DAT_000fb860_backing[256];
+/* Sizing-audit pass: `ce_memmove(&DAT_000fb860,&DAT_000fb8f0,0x20)`
+   -- exact 32-byte real need. Down from 256. */
+static undefined1 DAT_000fb860_backing[32];
 /* DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. */
 /* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]`
    (4-byte stride) with idx up to a CONCAT11 of two record byte fields
@@ -38,7 +66,17 @@ static undefined1 DAT_000fb860_backing[256];
    entry byte-size table when the "chrbtns" resource loads.
    Not `static` -- chargen.c reaches it through the DAT_000fb8c4 alias
    in uw.h (case 4's body-figure offset lookup). */
-undefined4 DAT_000fb880_backing[4096];
+/* Sizing-audit pass: chrbtns_offset_table_builder (the real
+   populator) only ever writes idx 0..26 (10 body-figure entries at
+   17-26, per DAT_000fb8c4's own comment below). One reader
+   (draw_chargen_field_value) indexes it via a CONCAT11 of two record
+   byte fields rather than the plain param_1[6] index used elsewhere,
+   but that site's own comment confirms the value stays within the
+   same legitimate per-field range in practice (investigated and
+   ruled out as a bug source this session), not a genuinely wider
+   index. Sized to 64 elements (256 bytes) for extra headroom given
+   that residual ambiguity; down from 4096. */
+undefined4 DAT_000fb880_backing[64];
 static char s_key_to_continue_00084e60[] = "key_to_continue";
 static char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
 static char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
@@ -54,6 +92,13 @@ static short DAT_001005c0;
    chrbtns_offset_table_builder's role was known) split it from the real data and left it
    permanently zero -- so no body was ever drawn. Aliased onto the real
    array instead. See uw.h. */
+/* Sizing-audit pass: investigated, NOT shrunk -- SKILLS.DAT+CHRGEN.DAT
+   (the real shipped assets) only need 441 bytes together, which made
+   a smaller size look safe, but tests/test_chargen.c:128-130 asserts
+   against DAT_000fb8f0_backing[1000]/[1002], proving some exercised
+   path (character_generator_loop's record-table writes, stride 0x14)
+   needs far more than the real asset files alone would suggest.
+   Left at 1680 rather than break that real, already-passing coverage. */
 static undefined1 DAT_000fb8f0_backing[1680];
 char s_FONT5X6P_SYS_00084e9c[] = "FONT5X6P.SYS";
 static char s__DATA_CHARGEN_BYT_00084eac[] = "\\DATA\\CHARGEN.BYT";
@@ -792,8 +837,10 @@ char *param_4;
 // was FUN_00023a00 -- draws the chargen stat screen's 4 attribute values
 // (DAT_0023be74 offsets +5/+6/+7 -- the 3 rolled 2d10+10 attributes set
 // by init_new_character_record -- and +4, a 4th value read rather than
-// rolled there) as right-aligned numbers next to their (missing-.data,
-// currently-empty) labels. Real labels not otherwise confirmed.
+// rolled there) as right-aligned numbers next to their Str/Dex/Int/Hp
+// labels (see the DAT_00084e40/48/50/58_backing initializers above for
+// why those were empty and how the real roles were confirmed -- this
+// was the "main menu stat names not displaying" bug).
 void draw_chargen_attribute_summary()
 
 {

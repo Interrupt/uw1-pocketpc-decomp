@@ -23,7 +23,10 @@ byte *DAT_00202c6c;
    run walking toward a critter; the same bug reproduced fine under
    lldb/ASan since they lay out globals differently, masking it there).
    Keep the aliases in uw.h: independent arrays lose the link high byte. */
- undefined1 DAT_00202c38_backing[8192];
+/* Sizing-audit pass: up-to-256-entry collision candidate list (per
+   the comment above), 6-byte stride -- HARD: 256*6=1536. Down from
+   8192. */
+ undefined1 DAT_00202c38_backing[1536];
 /* Sizing pass: the real COMOBJ "class 0" object-record table, indexed
    throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max
    511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825)
@@ -35,7 +38,11 @@ undefined1 DAT_00202c90_backing[8192];
    (`char *`) -- truncating on this 64-bit host, part of the same crash
    chain (reset_player_object_record's ce_memset call reading g_player_object). */
 char *DAT_0023b82c;
-undefined1 DAT_002027d0_backing[256];
+/* Sizing-audit pass: `read_file_handle(param_1,&DAT_002027d0,0x30)`
+   (resources.c) reads exactly 48 bytes, matching its own
+   nibble*3-stride indexing (max 15*3+2=47). HARD exact. Down from
+   256. */
+undefined1 DAT_002027d0_backing[48];
 /* Sizing pass: resources.c's own loader confirms the exact real size
    -- `read_file_handle(param_1,&DAT_00202800,0x80);` (128 bytes).
    Also indexed as `&DAT_00202800 + nibble*8` (nibble 0-15, max
@@ -88,7 +95,10 @@ static int DAT_002046ec;
    loader (load_class6_variant_effect_table) reads exactly 0x10 bytes
    into it -- same lone-scalar-treated-as-array bug class fixed
    repeatedly elsewhere in this file. */
-undefined1 DAT_0024cfe0_backing[8192];
+/* Sizing-audit pass: `read_file_handle(param_1,&DAT_0024cfe0,0x10)`
+   reads exactly 16 bytes, matching its own nibble (0-0xf) indexing.
+   HARD exact. Down from 8192. */
+undefined1 DAT_0024cfe0_backing[16];
 /* Sizing pass: own loader confirms the exact real size --
    `read_file_handle(param_1,&DAT_00250730,0x40);` (64 bytes). Also
    indexed as `&DAT_00250730 + nibble*4` (nibble 0-15, max

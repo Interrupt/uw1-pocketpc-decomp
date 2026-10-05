@@ -31,7 +31,7 @@ byte *DAT_00202c6c = DAT_002049c8_backing;
 unsigned char DAT_00086998_backing[16];
 undefined1 DAT_00202c70_backing[64];
 undefined1 DAT_00202c90_backing[8192];
-undefined1 DAT_00202c38_backing[8192];
+undefined1 DAT_00202c38_backing[1536];
 int DAT_00204870;
 undefined4 DAT_00204878;
 char *DAT_002046b8 = (char *)movement_fixture.object_arena + 0x4000;

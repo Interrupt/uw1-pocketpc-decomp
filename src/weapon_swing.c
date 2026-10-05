@@ -40,7 +40,9 @@ static short DAT_0023c1ec;
 static undefined2 DAT_000870e8;
 static int DAT_0023c260;
 static char s__DATA_weapons_cm_00087284[] = "\\DATA\\weapons.cm";
-static undefined1 DAT_00202700_backing[256];
+/* Sizing-audit pass: `read_file_handle(iVar4,&DAT_00202700,0x10)`
+   -- exact 16-byte real need. Down from 256. */
+static undefined1 DAT_00202700_backing[16];
 #define DAT_00202700 DAT_00202700_backing[0]
 
 
@@ -546,7 +548,15 @@ short param_1;
   short sVar2;
   int iVar3;
   char *pcVar4;
-  char acStackY_84f60 [544528];
+  /* Was 544528 bytes -- same Ghidra stack-frame-size-miscalculation
+     artifact already fixed elsewhere this session (check_object_fits_in_slot,
+     dispatch_object_action, try_combine_or_stow_object): a scratch copy of
+     the short "UNNAMED" string that's never read back afterward (the
+     actual display-name buffer printed below is acStack_3c, not this
+     one). Left at its bogus size this reserved ~532KB of stack on every
+     single ranged-weapon-attack-with-no-ammo check -- on the hot combat
+     path, unlike the other three (UI-only) call sites. */
+  char acStackY_84f60 [64];
   short local_4c [4];
   ushort local_44 [4];
   char acStack_3c [52];
@@ -984,7 +994,20 @@ short param_1;
           *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;
         }
       }
-      free_object_slot();
+      /* Was a dropped argument -- free_object_slot(param_1) always takes
+         the object pointer to free (every other call site in the
+         codebase, e.g. src/objects.c, src/traps.c, src/babl.c, passes
+         one); called bare here it freed whatever pointer happened to be
+         left over in the argument register from an earlier call/
+         computation instead of the ammo object this function just
+         consumed (puVar7, extracted above via extract_ammo_and_refresh).
+         free_object_slot() then used that garbage pointer to compute a
+         free-list slot index and fed it straight into
+         active_mobile_list_remove (and possibly enter_free_camera_mode),
+         corrupting the free-object-slot list and active-mobile list on
+         every single ranged-weapon shot -- the "crash when using a
+         ranged weapon" bug. */
+      free_object_slot(puVar7);
     }
     if ((iVar1 == 9) || (iVar1 == 10)) {
       play_sound_effect_with_pan(9,0x40,0);

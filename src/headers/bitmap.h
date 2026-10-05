@@ -11,7 +11,7 @@
 /* Globals defined in uw.c but also used by functions that now live in
    bitmap.c (sprite blitting / sprite-list system) -- extern'd here so
    both translation units see the same storage. */
-extern undefined1 DAT_000842ac_backing[4096];
+extern undefined1 DAT_000842ac_backing[32];
 
 #define g_current_view ((uw_current_view_t *)DAT_00086e6c_backing)
 

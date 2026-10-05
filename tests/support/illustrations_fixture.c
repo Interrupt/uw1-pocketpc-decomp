@@ -18,7 +18,7 @@ void display_book_or_scroll_page(uint page);
 
 short DAT_00201b68;
 
-undefined2 DAT_0023add0_backing[8192];
+undefined2 DAT_0023add0_backing[64];
 
 undefined1 DAT_0023c698_backing[1024];
 

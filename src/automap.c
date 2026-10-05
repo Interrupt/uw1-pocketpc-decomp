@@ -14,7 +14,10 @@ static int DAT_000bbefc;
 static byte *g_automap_tint_bitmap;
 static undefined2 DAT_000b99c0;
 static undefined4 DAT_000b99c4;
- undefined1 DAT_000b99d0_backing[8192];
+/* Sizing-audit pass: `ce_memset(&DAT_000b99d0,0,0x1000)` and
+   write_archive_entry's matching 0x1000-byte archive write (64x64
+   reveal grid) -- exact HARD bound. Down from 8192. */
+ undefined1 DAT_000b99d0_backing[4096];
 static short DAT_000ba9d0;
 undefined4 DAT_000bbef4;
 /* Was a lone `undefined` scalar; draw_automap_tiles indexes it as
@@ -75,29 +78,41 @@ static const signed char DAT_000842f8_real_table[4] = { 0, -1, -1, -1 };
 #define DAT_000842f8 (*(undefined1 *)DAT_000842f8_real_table)
 static short DAT_000bbef0;
 char s_font4x5p_sys_0008431c[] = "font4x5p.sys";
-static undefined1 DAT_000ba9d8_backing[32768];
+/* Sizing pass: hard-capped at 100 records (`if (DAT_000bbef0 != 100)`
+   guard) with a 0x36 (54)-byte stride, and the literal 0x1518
+   (5400 = 100*54) total is baked directly into a ce_memmove call on
+   this array -- an airtight, exact real size. */
+static undefined1 DAT_000ba9d8_backing[5400];
 #define DAT_000ba9d8 DAT_000ba9d8_backing[0]
 /* DAT_000baa0a/b (and the parallel DAT_000baa0c/d pair below) are a
    note label's X (resp. Y) screen position, written as separate low/high
    bytes at the same index (`(&DAT_000baa0a)[i] = low; (&DAT_000baa0b)[i]
    = high;`) and read back as one packed short via `*(short
-   *)(&DAT_000baa0a + i)` -- which only works if DAT_000baa0b's storage
-   sits exactly 1 byte after DAT_000baa0a's, for every i. An earlier
-   widening pass (code-cleanup-pass-2, chasing an out-of-bounds risk on
-   each name independently) gave the two their own separate padded
-   arrays and broke that adjacency: the short-read started pulling its
-   high byte from DAT_000baa0a's own unused padding instead of
-   DAT_000baa0b's real storage, so every note's X coordinate silently
-   came back wrong (same failure class as DAT_00086980/82/84's fix
-   above in movement.c). One real backing buffer per pair instead, with
-   the second name aliased at a fixed +1 byte offset so the low/high
-   split and the combined short-read are provably the same storage. */
-static undefined1 DAT_000baa0a_backing[258];
-#define DAT_000baa0a DAT_000baa0a_backing[0]
-#define DAT_000baa0b DAT_000baa0a_backing[1]
-static undefined1 DAT_000baa0c_backing[258];
-#define DAT_000baa0c DAT_000baa0c_backing[0]
-#define DAT_000baa0d DAT_000baa0c_backing[1]
+   *)(&DAT_000baa0a + i)`.
+
+   PERSISTENCE BUG (found investigating a user report that automap
+   notes vanish on map close/reopen): their real ARM addresses are
+   0xbaa0a/0xbaa0c -- 0x32 (50) and 0x34 (52) bytes past DAT_000ba9d8
+   (0xba9d8), i.e. the LAST 4 bytes of DAT_000ba9d8's own 0x36
+   (54)-byte per-note record (bytes 50-53 of 0-53), not a separate
+   table at all. Confirmed independently by the indexing itself:
+   `(&DAT_000baa0a)[iVar7]` with `iVar7 = DAT_000bbef0*0x36` is the
+   exact same per-record base as DAT_000ba9d8's own accesses, and by
+   the save path's own byte count --
+   `write_archive_entry(...,&DAT_000ba9d8,count*0x36)` already writes
+   the full 54-byte stride per note, which only actually covers this
+   X/Y data if it lives inside DAT_000ba9d8_backing itself. A prior
+   pass (code-cleanup-pass-2) gave these their own independent
+   backing arrays instead of aliasing them in -- fixing the immediate
+   low/high-byte adjacency bug but leaving them outside the save/load
+   path entirely, so every note's screen position was lost on every
+   level save/reload (the note text itself, elsewhere in the same
+   record, did survive). Aliased into DAT_000ba9d8_backing at their
+   real offsets so save/load now covers them too. */
+#define DAT_000baa0a DAT_000ba9d8_backing[50]
+#define DAT_000baa0b DAT_000ba9d8_backing[51]
+#define DAT_000baa0c DAT_000ba9d8_backing[52]
+#define DAT_000baa0d DAT_000ba9d8_backing[53]
 static undefined2 DAT_000b99c8;
 char s_fontbig_sys_0008432c[] = "fontbig.sys";
 static char s__DATA_blnkmap_byt_00084338[] = "\\DATA\\blnkmap.byt";
@@ -717,7 +732,7 @@ short param_4;
   if ((param_1 != (char *)0x0) && (pcVar7 = param_1, param_2 != (char *)0x0)) {
     do {
       cVar5 = *pcVar7;
-      pcVar7[(int)(acStack_50 + -(int)param_1)] = cVar5;
+      acStack_50[pcVar7 - param_1] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
     sVar6 = measure_text_width(acStack_50);
@@ -732,7 +747,7 @@ short param_4;
     pcVar7 = param_2;
     do {
       cVar5 = *pcVar7;
-      pcVar7[(int)(acStack_50 + -(int)param_2)] = cVar5;
+      acStack_50[pcVar7 - param_2] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
     sVar6 = measure_text_width(acStack_50);
@@ -838,7 +853,7 @@ LAB_000170bc:
             pcVar6 = pcVar9;
             do {
               cVar1 = *pcVar6;
-              pcVar6[(int)(local_58 + -(int)pcVar9)] = cVar1;
+              local_58[pcVar6 - pcVar9] = cVar1;
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
             sVar2 = measure_text_width(local_58);
@@ -846,7 +861,7 @@ LAB_000170bc:
                ((int)local_5e <= (int)*(short *)(&DAT_000baa0a + iVar8) + (int)sVar2)) {
               if (((int)local_60 <= *(short *)(&DAT_000baa0c + iVar8) + 5) &&
                  (((int)*(short *)(&DAT_000baa0c + iVar8) <= (int)local_60 &&
-                  (pcVar5 = (char *)pick_closer_note_label(pcVar5,pcVar9), pcVar5 == pcVar9)))) {
+                  (pcVar5 = (char *)pick_closer_note_label(pcVar5,pcVar9,local_5e,local_60), pcVar5 == pcVar9)))) {
                 iVar7 = iVar10;
               }
             }
@@ -857,7 +872,7 @@ LAB_000170bc:
             pcVar6 = pcVar5;
             do {
               cVar1 = *pcVar6;
-              pcVar6[(int)(local_58 + -(int)pcVar5)] = cVar1;
+              local_58[pcVar6 - pcVar5] = cVar1;
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
             iVar10 = measure_text_width(local_58);
@@ -975,7 +990,7 @@ LAB_0001739c:
     pcVar5 = local_58;
     do {
       cVar1 = *pcVar5;
-      pcVar5[(int)(&DAT_000ba9d8 + (iVar7 - (int)local_58))] = cVar1;
+      (&DAT_000ba9d8)[iVar7 + (pcVar5 - local_58)] = cVar1;
       pcVar5 = pcVar5 + 1;
     } while (cVar1 != '\0');
     DAT_000bbef0 = DAT_000bbef0 + 1;
@@ -1009,8 +1024,7 @@ void draw_automap_notes()
   char *pcVar5;
   short sVar6;
   int iVar7;
-  char acStack_baa20 [764376];
-  undefined1 auStack_48 [52];
+  char auStack_48 [52]; /* ARM allocates a single 52-byte text buffer. */
   
   select_active_font(s_font4x5p_sys_0008431c);
   *g_draw_color_index = 0x2d;
@@ -1021,9 +1035,9 @@ void draw_automap_notes()
     do {
       iVar4 = iVar7 * 0x36;
       pcVar3 = &DAT_000ba9d8 + iVar4;
-    wptr_5787 = (acStack_baa20 + iVar7 * -0x36);
+      wptr_5787 = auStack_48;
       pcVar5 = pcVar3;
-    wptr_5780 = (acStack_baa20 + iVar7 * -0x36);
+      wptr_5780 = auStack_48;
       do {
         cVar1 = *pcVar5;
         *wptr_5780 = cVar1; wptr_5780 = wptr_5780 + 1;
@@ -1073,6 +1087,8 @@ int param_1;
             ce_memmove(&DAT_000ba9d8 + iVar4 * 0x36,&DAT_000ba9d8 + (iVar4 + 1) * 0x36,
                          iVar4 * -0x36 + 0x1518);
             iVar3 = (iVar2 + -1) * 0x10000 >> 0x10;
+            /* Check the record moved into this slot as well. */
+            iVar4 = iVar4 - 1;
           }
           iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
           iVar2 = (int)(short)iVar3;
@@ -1080,12 +1096,12 @@ int param_1;
         } while (iVar4 < iVar2);
       }
       DAT_000bbef0 = sVar1;
-      iVar2 = open_level_archive(auStack_2c,s__SAVE0_lev_ark_000842fc);
-      if (iVar2 != 0) {
-        write_archive_entry(auStack_2c,param_1 + 0x23,&DAT_000ba9d8,(uint)(DAT_000bbef0 * 0x360000) >> 0x10
-                    );
-        close_level_archive(auStack_2c);
-      }
+    }
+    /* A zero-length entry also persists deletion of the last note. */
+    iVar2 = open_level_archive(auStack_2c,s__SAVE0_lev_ark_000842fc);
+    if (iVar2 != 0) {
+      write_archive_entry(auStack_2c,param_1 + 0x23,&DAT_000ba9d8,(uint)(DAT_000bbef0 * 0x360000) >> 0x10);
+      close_level_archive(auStack_2c);
     }
   }
   return;

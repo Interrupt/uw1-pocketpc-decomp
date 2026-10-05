@@ -48,12 +48,12 @@ extern undefined1 DAT_00202c90_backing[8192];
 #define DAT_00202c98 DAT_00202c90_backing[8]
 #define DAT_00202c99 DAT_00202c90_backing[9]
 #define DAT_00202c9a DAT_00202c90_backing[0xa]
-extern undefined1 DAT_002027d0_backing[256];
+extern undefined1 DAT_002027d0_backing[48];
 #define DAT_002027d0 DAT_002027d0_backing[0]
 extern undefined1 DAT_00202800_backing[256];
 #define DAT_00202800 DAT_00202800_backing[0]
 extern ushort *DAT_002046b4;
-extern undefined1 DAT_0024cfe0_backing[8192];
+extern undefined1 DAT_0024cfe0_backing[16];
 #define DAT_0024cfe0 DAT_0024cfe0_backing[0]
 extern undefined1 DAT_00250730_backing[128];
 #define DAT_00250730 DAT_00250730_backing[0]
@@ -91,7 +91,7 @@ extern undefined1 DAT_002029d8_backing[256];
 #define g_light_radius_table DAT_002029d8_backing[0]
 /* Six-byte collision candidates: top, bottom, packed link, tile offset.
  * Ghidra split overlapping fields (and next-record sort views) into globals. */
-extern undefined1 DAT_00202c38_backing[8192];
+extern undefined1 DAT_00202c38_backing[1536];
 #define DAT_00202c38 DAT_00202c38_backing[0]
 
 

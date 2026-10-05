@@ -15,7 +15,11 @@
 // was DAT_0023bca0 -- shading distance loaded from SHADES.DAT field 3.
 // Keep the historical name; the ARM ray flood has its own fixed 16-row bound.
 short g_visibility_max_ring_passes;
- undefined2 DAT_0023ae58_backing[8192];
+/* Sizing-audit pass: wall-tmap-id list. Loader fills 48 entries
+   (`while(iVar4<0x30)`) and interact.c's own reader guards
+   `if(iVar1<0x30)` before indexing -- both bounds agree exactly.
+   HARD: 48 elements (96 bytes). Down from 8192. */
+ undefined2 DAT_0023ae58_backing[48];
 /* Both real 0x80-element pointer-cache arrays (per free_frame_geometry_buffers's
    own comment -- "DAT_0023c7a0[0x140], DAT_002020f8[0x80]" -- and
    shutdown_game_resources's matching 0x80-iteration cleanup loop for DAT_00202308),
@@ -33,7 +37,10 @@ char *DAT_0023ae30;
 static undefined1 DAT_0024f0ca_backing[64];
 #define DAT_0024f0ca DAT_0024f0ca_backing[0]
 undefined2 DAT_0023adb0;
- undefined2 DAT_0023aeb8_backing[8192];
+/* Sizing-audit pass: pure scalar (`DAT_0023aeb8 = 10;`), passed by
+   address into load_texture_arena purely as a `short*` count output,
+   never indexed. Down from 8192 elements. */
+ undefined2 DAT_0023aeb8_backing[4];
 /* Was a lone `undefined2` scalar, but it is the per-level floor/ceiling
    texture-id list -- reset_texture_id_lists / load_level_texture_ids write (&DAT_0023adb8)[0..9]
    and load_texture_arena reads them to pick which F32.TR / W16.TR entries to load
@@ -44,7 +51,11 @@ undefined2 DAT_0023adb0;
    far past the 2-texture arena into the W16/colour-light memory -> wrong
    ceiling texture. Sibling lists DAT_0023ae58 / DAT_0023add0 / DAT_0023b840
    already have backing arrays; this one was missed. */
- undefined2 DAT_0023adb8_backing[8192];
+/* Sizing-audit pass: floor-tmap-id list. Loader fills only 10
+   entries, but doors.c's own reader indexes it with an explicit
+   `&0xf` mask (0-15) -- the wider read-side bound governs. HARD: 16
+   elements (32 bytes). Down from 8192. */
+ undefined2 DAT_0023adb8_backing[16];
 /* Really a 58 (0x3a)-entry byte array, paired with the parallel
    DAT_0024f0ca array right below -- reset_texture_id_lists's own loop
    proves the bound (`for (iVar3 = ...; iVar3 < 0x3a; ...)` zeroing both
@@ -112,7 +123,11 @@ static undefined *DAT_0023b02c;
 /* Original 0x23b039 is the light byte immediately after the visibility
    byte at 0x23b038. Both are fields of the same 0x42-byte-stride grid.
    A separate backing array disconnected the lighting writer from the
-   ray flood and automap readers, making every tile appear fully lit. */
+   ray flood and automap readers, making every tile appear fully lit.
+   (My own earlier sizing-audit pass gave this its own 4096/1152-byte
+   backing array based purely on its index math, without realizing it
+   should have been aliased into this existing struct -- superseded
+   by this fix.) */
 #define DAT_0023b039 g_visibility_ring_buffer_backing[1]
 static undefined1 g_visibility_ring_done;
 /* g_visibility_ray_table-family: ~20 separately-declared globals that are really
@@ -216,7 +231,9 @@ static char s__DATA_shades_dat_000872a4[] = "\\DATA\\shades.dat";
 char s__DATA_light_dat_000872c8[] = "\\DATA\\light.dat";
 static char s__DATA_xfer_dat_000872d8[] = "\\DATA\\xfer.dat";
 static char s_cLightTabs_allocation_error_____000872e8[] = "cLightTabs_allocation_error_...";
-static undefined1 DAT_0024fa38_backing[3072];
+/* Sizing-audit pass: `read_file_handle(iVar3,&DAT_0024fa38,0x600)`
+   -- exact 1536 bytes, sole usage. HARD exact. Down from 3072. */
+static undefined1 DAT_0024fa38_backing[1536];
 #define DAT_0024fa38 DAT_0024fa38_backing[0]
 
 /* Only entries 0 and 1 (the player's own visibility-ray slot, always populated

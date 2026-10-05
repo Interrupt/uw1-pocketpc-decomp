@@ -13,7 +13,7 @@ extern ushort * g_player_object;
 /* Globals defined in uw.c but also used by functions that now live in
    player.c (reset_player_derived_state) -- extern'd here so both
    translation units see the same storage. */
-extern undefined1 DAT_0010060c_backing[256];
+extern undefined1 DAT_0010060c_backing[8];
 
 #define DAT_002048a5 DAT_00204880_backing[0x25]
 #define DAT_002048a6 DAT_00204880_backing[0x26]
@@ -81,11 +81,11 @@ extern short DAT_00202088;
 extern undefined4 DAT_002020d8;
 extern undefined1 DAT_00203303;
 extern undefined2 DAT_00203304;
-extern undefined2 DAT_002048b0_backing[8192];
+extern undefined2 DAT_002048b0_backing[16];
 #define DAT_002048b0 DAT_002048b0_backing[0]
 extern undefined2 DAT_002048b2;
 extern undefined1 * DAT_002048b8;
-extern undefined1 DAT_0023bca8_backing[8192];
+extern undefined1 DAT_0023bca8_backing[256];
 #define DAT_0023bca8 DAT_0023bca8_backing[0]
 extern undefined2 DAT_0023be98;
 extern undefined4 DAT_0023bea8;

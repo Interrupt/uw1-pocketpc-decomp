@@ -22,7 +22,7 @@ extern char *DAT_00086df8;
    relationship DAT_000fb884 (element 1) has, matching the 0xfb8c4 vs
    0xfb880 symbol addresses (0x44 = 17*4). Elements 17..26 are the
    full-body figure offsets read by character_generator_loop case 4. */
-extern undefined4 DAT_000fb880_backing[4096];
+extern undefined4 DAT_000fb880_backing[64];
 #define DAT_000fb8c4 (((undefined1 *)DAT_000fb880_backing)[0x44])
 #define DAT_000fb880 DAT_000fb880_backing[0]
 #define DAT_000fb884 (((undefined1 *)DAT_000fb880_backing)[4])

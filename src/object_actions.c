@@ -21,7 +21,11 @@ undefined1 DAT_0023c3d8;
    name then "."). */
 char s_You_see_000858fc[] = "You see ";
 static char s_belonging_to_00085c90[] = "belonging to ";
- undefined1 DAT_0023ce70_backing[8192];
+/* Sizing-audit pass: `read_file_handle(iVar8,&DAT_0023ce70,0x80)`
+   (ai.c's load_critter_association_tables) reads exactly 128 bytes,
+   matching its own fill loop's `<0x80` bound. HARD exact. Down from
+   8192. */
+ undefined1 DAT_0023ce70_backing[128];
 ushort DAT_00202508;
 ushort DAT_002022f8;
 static ushort DAT_00202300;
@@ -96,7 +100,9 @@ static char s_with_00085cd0[] = " with ";
    the real UU.exe shows the real bytes are " of \0") -- this prefixes
    a special/unique item's proper name onto its base name, e.g.
    "<item> of <name>", not "<item>: <name>". */
-static undefined DAT_00085cd8_backing[8192] = " of ";
+/* Sizing-audit pass: confirmed 4-char content (" of \0"), no
+   indexing. Sized to 16; down from 8192. */
+static undefined DAT_00085cd8_backing[16] = " of ";
 static undefined4 DAT_0024cfcc;
 /* DAT_00085ccc/ccd/cce sit right after DAT_00085cc8 ("no\0", above) in
    real memory ("00\0" -- 0x30 0x30 0x00) and get copied into this
@@ -114,15 +120,30 @@ static undefined1 DAT_00085cce;
    Ghidra memory dump of the real UU.exe that the real bytes are
    "s\0", the plural suffix appended after "full charge" when the
    count isn't exactly 1. */
-static undefined DAT_00085cb4_backing[8192] = "s";
+/* Sizing-audit pass: confirmed 1-char content ("s\0"), no indexing.
+   Sized to 16; down from 8192. */
+static undefined DAT_00085cb4_backing[16] = "s";
 static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 static char s_an_adventurer__00085d08[] = "an_adventurer.";
 static uint DAT_00202094;
 /* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
    (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
 undefined1 DAT_00087604_backing[256];
-undefined *PTR_FUN_00087614;
-static undefined DAT_0008762c_backing[8192];
+/* Sizing pass: cast_targeted_search_effect indexes this as
+   `(&PTR_FUN_00087614)[param_2 & 0x3f]` (6-bit mask, 64 entries) --
+   a bare scalar `undefined *` only backs index 0, so every other
+   index (63 of 64 possible spell-table params) read past the end of
+   this single-pointer global. Confirmed as a real global-buffer-overflow
+   class, same "scalar declared but accessed as array" bug fixed
+   several times elsewhere in this port (e.g. DAT_002047b0's own
+   comment in hud.c) -- widened to real 64-slot backing storage. */
+undefined *PTR_FUN_00087614_backing[64];
+#define PTR_FUN_00087614 PTR_FUN_00087614_backing[0]
+/* Sizing-audit pass: damage_all_objects_at_tile's only caller passes
+   param_3 in {1,2}, so the shared `bVar5=param_3-1` index is 0-1 --
+   max byte touched is DAT_00087634's offset 8+1=9. Sized to 16 for
+   headroom; down from 8192. */
+static undefined DAT_0008762c_backing[16];
 #define DAT_0008762c DAT_0008762c_backing[0]
 #define DAT_00087630 DAT_0008762c_backing[4]
 #define DAT_00087634 DAT_0008762c_backing[8]
@@ -1546,7 +1567,29 @@ char param_8;
   bool bVar18;
   short local_60;
   short local_5e;
-  
+
+  /* param_3 (the match callback) legitimately arrives NULL for a
+     cone-damage/search-effect spell cast (dispatch_special_action
+     case 6/7, via cast_cone_damage_spell/cast_targeted_search_effect):
+     their own DAT_00087604/PTR_FUN_00087614 lookup tables were never
+     populated by this decompile's data-recovery (no .data initializer
+     for either symbol was found anywhere -- see cast_cone_damage_spell's
+     own comment), so every lookup into them currently yields NULL.
+     Every call site below invoked `(*param_3)(...)` unconditionally,
+     i.e. called through a NULL function pointer. Confirmed as a live
+     crash via lldb (bug_spell_crash.txt, CASTALLSPELLS spell index 31,
+     a cone-damage spell, once the pointer-truncation bug ahead of this
+     one -- see cast_cone_damage_spell's comment -- was fixed enough to
+     reach here). Recovering the real callback table contents needs
+     archaeology against the original binary's .data section, not
+     available here; treat a NULL callback as "no matches" (same
+     no-op-and-return contract this function already has for an
+     out-of-bounds scan rectangle just below) rather than crashing --
+     same defensive-NULL-guard precedent as tile_pair_los_blocked's own
+     fix for an analogous never-fully-recovered-data gap. */
+  if (param_3 == (codeval *)0) {
+    return;
+  }
   iVar1 = (int)param_5;
   local_5e = 0;
   if (((iVar1 < 0x40) && (iVar8 = iVar1 + param_7, -1 < iVar8)) &&
@@ -1765,26 +1808,41 @@ codeval * param_4;
 // param_2's low 6 bits, 4-byte stride), passing the rolled damage as
 // the match-count argument and param_2's top 2 bits as the scan mode.
 //
-// POSSIBLE LATENT BUG (not fixed here): DAT_00087604_backing and
-// PTR_FUN_00087614 (used by cast_targeted_search_effect below) have
+// param_1 was declared `undefined4` (cast_targeted_search_effect below
+// had the same bug as a plain `int`) -- truncating the real caster
+// pointer to its low 32 bits on this 64-bit host before
+// scan_area_ahead_of_object's very first dereference of it. Confirmed
+// as a live crash via lldb (bug_spell_crash.txt, CASTALLSPELLS spell
+// index 31, a cone-damage spell): param_1 arrived as 411101723
+// (0x1880EA1B), the low 32 bits of the real caster address
+// 0x1_1880EA1B, and EXC_BAD_ACCESS'd reading *(ushort*)(param_1+2) in
+// scan_area_ahead_of_object. Same truncation-bug class already fixed
+// in dispatch_special_action itself (see its own param_3/param_4
+// comment) -- this sibling handler was never patched for it.
+//
+// SEPARATE LATENT BUG (mitigated, not recovered, below): DAT_00087604_backing
+// and PTR_FUN_00087614 (used by cast_targeted_search_effect below) have
 // no initializer anywhere in the decompile -- no assignment to either
 // symbol was found by grep -- so on this host they're just
 // zero-filled globals. The original binary almost certainly had a
 // real static table of spell-effect handler addresses baked into its
 // .data section here, which this decompile's data-recovery pipeline
-// apparently didn't capture. If this code path is ever actually
-// reached (dispatch_special_action case 6/7 -- an item's SPECIAL
-// action id), it will currently call through a NULL function pointer
-// and crash. Recovering the real table contents would need archaeology
-// against the original PocketPC binary's .data section; out of scope
-// for this naming/extraction pass -- flagging for a future pass.
+// apparently didn't capture. Once the truncation above is fixed, this
+// path IS reached by real spell casts (type 6/7 in the readied-spell
+// table) and calls through a NULL function pointer -- confirmed live,
+// same repro, one step further in. Recovering the real table contents
+// would need archaeology against the original PocketPC binary's .data
+// section, out of reach here; scan_area_for_matching_objects (below)
+// now guards against a NULL callback instead of crashing, same as
+// tile_pair_los_blocked's existing NULL guard for an analogous
+// never-fully-recovered-data gap.
 void cast_cone_damage_spell(param_1,param_2)
-undefined4 param_1;
+uintptr_t param_1;
 uint param_2;
 
 {
   char cVar1;
-  
+
   cVar1 = roll_dice_sum(3,4);
   scan_area_ahead_of_object(param_1,(int)cVar1,*(undefined4 *)(&DAT_00087604 + (param_2 & 0x3f) * 4),
                param_2 & 0xc0,4,2);
@@ -1798,12 +1856,14 @@ uint param_2;
 // cast_cone_damage_spell, but fixed to a single match and drawing
 // its callback from a different function-pointer table
 // (PTR_FUN_00087614, also indexed by param_2's low 6 bits).
+// param_1 had the same `int`-truncates-the-caster-pointer bug as
+// cast_cone_damage_spell above -- see that function's comment.
 void cast_targeted_search_effect(param_1,param_2)
-int param_1;
+uintptr_t param_1;
 uint param_2;
 
 {
-  if (param_1 == g_player_object) {
+  if (param_1 == (uintptr_t)g_player_object) {
     scan_area_ahead_of_object(param_1,1,(&PTR_FUN_00087614)[param_2 & 0x3f],param_2 & 0xc0,4,2);
   }
   return;
@@ -1837,8 +1897,20 @@ uint param_2;
 // into the tile and settles it; on failure (no valid spawn point, or
 // the case-3 trap-placement path) prints a "no effect"-style scroll
 // message via print_scroll_message_by_id.
+/* ARM passes the caster/actor address unchanged through r0 (dispatch_special_action's
+   case 8, which itself already keeps this address-sized -- see that
+   function's own comment on the same host-truncation class). param_1
+   was declared `int`, which truncates the real pointer to its low 32
+   bits on this 64-bit host before the very first dereference
+   (`*(ushort *)(param_1 + 2)` below): confirmed live via lldb
+   (bug_spell_crash.txt, CASTALLSPELLS spell index 3) -- param_1 arrived
+   as 721927195 (0x2B07BB5B), the low 32 bits of g_player_object's real
+   ~5016894491 (0x12B07BB5B) address, and EXC_BAD_ACCESS'd on the very
+   first line. Kept as uintptr_t (not a real pointer type) since the
+   rest of this function already treats it as a raw byte offset via
+   explicit `*(T *)(param_1 + N)` casts throughout. */
 void cast_summon_or_spawn_effect(param_1,param_2)
-int param_1;
+uintptr_t param_1;
 char param_2;
 
 {
@@ -1893,7 +1965,40 @@ char param_2;
     }
   }
   else {
-    pbVar5 = (byte *)tilemap_lookup();
+    /* Was `tilemap_lookup()` -- dropped both arguments (the same K&R
+       decompile bug already found and fixed at ~30 other call sites in
+       babl.c and ai.c's npc_walk_toward_tile: Ghidra's decompiler
+       doesn't show the real ARM r0/r1 setup for some call shapes, but
+       the real binary always passes them). The intended tile
+       coordinates are local_2c/local_2e, the same tile-ified projected
+       destination (local_34/local_32 >> 3) this function later hands
+       to settle_dropped_object below -- confirmed against the matching
+       "spawn at a projected position" shape in babl.c's own
+       tilemap_lookup(uVar5,uVar6) call (same *pbVar>>4<<3 floor-height
+       read immediately after). Confirmed as a live crash: calling with
+       no args let tilemap_lookup run on whatever garbage was in its
+       parameter registers, returning a wild/NULL pointer that
+       `*pbVar5` then dereferenced unchecked -- a real SIGSEGV casting
+       any "summon/spawn" spell (dispatch_special_action case 8) via
+       cast_spell_from_rune_combo (bug_spell_crash.txt, CASTALLSPELLS
+       spell index 3: type=8 param=1, the "spawn a random monster from
+       a nearby ID range" branch). */
+    pbVar5 = (byte *)tilemap_lookup(local_2c,local_2e);
+    /* tilemap_lookup legitimately returns NULL for an out-of-range tile
+       (its own documented contract, see tile_pair_los_blocked's NULL
+       guard for the same reason) -- the projected destination here
+       (local_2c/local_2e, up to 9 tiles ahead of the caster per
+       project_position_by_heading above) can land off the 0-63 map
+       near an edge/corner. Treat that the same as this function's own
+       existing "couldn't place it" failure path just below (clearance
+       check failed / non-player caster) rather than dereferencing NULL. */
+    if (pbVar5 == (byte *)0) {
+      if (param_1 != g_player_object) {
+        return;
+      }
+      print_scroll_message_by_id(0x115);
+      return;
+    }
     local_30 = (ushort)(*pbVar5 >> 4) << 3;
     local_28 = pbVar5;
     if (param_2 == '\x01') {

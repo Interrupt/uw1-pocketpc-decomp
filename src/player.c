@@ -36,7 +36,19 @@ char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
 ushort *g_player_object;
 char *DAT_0023be74;
 short DAT_0023beb4;
-undefined1 DAT_0010060c_backing[256];
+/* Sizing-audit pass: investigated, NOT confidently shrunk to the
+   minimum. DAT_0010060c/d/e/f are always touched in lockstep (reset
+   and `+=3`'d together) and DAT_0010060c has at least one real
+   indexed access (`(&DAT_0010060c)[local_1c[iVar6]]`), raising the
+   same split-symbol-cluster question already fixed elsewhere this
+   session (c/d/e/f's real addresses are consecutive). But that
+   index's second-iteration value can come from an unbounded
+   `param_4`-derived short, not a clearly-capped category id, so
+   unlike the automap case there's no confirmed max index here.
+   Given that ambiguity, widened conservatively instead of guessing
+   either an exact bound or a merge target; down from 256 to 8. Worth
+   a dedicated follow-up pass. */
+undefined1 DAT_0010060c_backing[8];
 #define DAT_0010060c DAT_0010060c_backing[0]
 short DAT_00201c74;
 undefined1 DAT_0023bf0c;
@@ -109,7 +121,13 @@ byte DAT_0020208c;
 undefined2 DAT_00203304;
 undefined1 DAT_00203303;
 short DAT_00202078;
- undefined2 DAT_002048b0_backing[8192];
+/* Sizing-audit pass: pure scalar, only ever set to 0 or 0x1000 and
+   passed by address into movement_collision_sweep, which only
+   dereferences its own callee-side alias (DAT_002048bc) up to offset
+   +4 as a ushort -- max byte touched 5. Sized to 16 for headroom,
+   matching the project's established 4-buffer-family convention;
+   down from 8192 elements (16384 bytes). */
+ undefined2 DAT_002048b0_backing[16];
 undefined1 *DAT_002048b8;
 undefined2 DAT_002048b2;
 undefined2 DAT_0023be98;
@@ -186,9 +204,15 @@ static undefined4 DAT_002020dc;
 undefined4 DAT_002020d8;
 undefined4 DAT_002020d4;
 static char DAT_00086db4;
-static int DAT_00086db8_backing[256];
+/* Sizing-audit pass: accessed as a raw byte blob at
+   `(intptr_t)&DAT_00086db8 + uVar1 + 3` with uVar1 guarded to [5,9]
+   -- max byte 12. Sized to 4 int elements (16 bytes) for headroom;
+   down from 256. */
+static int DAT_00086db8_backing[4];
 #define DAT_00086db8 DAT_00086db8_backing[0]
-static undefined1 DAT_00086da8_backing[256];
+/* Sizing-audit pass: equip-slot weight table, loop bound
+   `iVar4<5` (5 equip slots). HARD. Down from 256. */
+static undefined1 DAT_00086da8_backing[5];
 #define DAT_00086da8 DAT_00086da8_backing[0]
 /* Was a lone `undefined` scalar, but compute_light_source_colors
    indexes it as a 16-entry (0-0xf) light-type -> base-color-index
@@ -209,9 +233,13 @@ undefined2 DAT_0023beb8;
    scalar, byte 0 of that struct -- an lldb watchpoint on the unrelated
    DAT_0023be74 (which happens to sit right after this in memory) caught
    this overflowing into it one byte per loop iteration in init_new_character_record,
-   corrupting it and causing a later SEGV. Widened generously since the
-   struct's exact real size isn't confirmed. */
- undefined1 DAT_0023bca8_backing[8192];
+   corrupting it and causing a later SEGV.
+
+   Sizing-audit pass: the struct's exact real size IS now confirmed --
+   both save (player.c:746) and load (player.c:835) round-trip it via
+   `ce_memmove(...,&DAT_0023bca8,220)`, an exact, symmetric, HARD
+   bound. Sized to 256 for headroom; down from 8192. */
+ undefined1 DAT_0023bca8_backing[256];
 short DAT_0023be90;
 short DAT_0023be92;
 short DAT_0023be94;
@@ -230,7 +258,10 @@ undefined2 DAT_0023be9c;
 undefined2 DAT_0023be9a;
 static char DAT_0023bf14;
 static byte DAT_0023bf10;
-static undefined DAT_00086e58_backing[256];
+/* Sizing-audit pass: index is `DAT_0023bf18>>4` (a nibble, max 15),
+   and the second access site masks with an extra `&0xf` regardless.
+   Sized to 16; down from 256. */
+static undefined DAT_00086e58_backing[16];
 #define DAT_00086e58 DAT_00086e58_backing[0]
 static short DAT_0023bf30;
 static short DAT_0023bf34;
@@ -257,9 +288,24 @@ char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
    stayed 0 and every visible tile drew with the 16x16 low-detail
    texture. Sentinel = no level loaded yet. */
 char DAT_000872a0 = -1;
-static undefined1 DAT_0008730c_backing[8192];
+/* Sizing-audit pass: BUG FIX, not just a shrink -- advance_character_
+   level builds a 2-digit level-number string here (tens digit/space
+   at offset 0, units digit written to the separately-declared
+   DAT_0008730d at real address +1) then prints it via
+   message_scroll_print_wrapped(&DAT_0008730c), which needs a real
+   NUL right after. DAT_0008730d was never aliased in, so the units
+   digit landed in a dead, never-read global instead of the string
+   buffer -- message_scroll_print_wrapped would see DAT_0008730c_
+   backing[1] (always zero, nothing else writes it) immediately after
+   the tens digit/space and print a 1-character message, silently
+   dropping the units digit on every level-up message (visibly wrong
+   once the character reaches level 10+, reachable in normal play).
+   Aliased DAT_0008730d into DAT_0008730c_backing[1] so the real
+   write lands in the string, with backing[2] as the (already zero)
+   NUL terminator. Sized to 16 for headroom; down from 8192. */
+static undefined1 DAT_0008730c_backing[16];
 #define DAT_0008730c DAT_0008730c_backing[0]
-static undefined1 DAT_0008730d;
+#define DAT_0008730d DAT_0008730c_backing[1]
 /* Was a lone scalar, but roll_skill_use_improvement indexes it
    `(&DAT_00087308)[tier]` for tier 0..2 (classify_skill_training_tier's
    full range) as a per-tier probability threshold for
@@ -2510,6 +2556,16 @@ LAB_00070874:
 //   skills (base/count/spread per id), printed via
 //   print_skill_improvement_list.
 // - no match ('M'/0x4d): "you don't know that mantra" (message 0x19).
+//
+// BUG FIX (crash when using a mantra): the matching loop's two locals
+// holding _strupr's and get_message_string's return values were
+// `undefined4` (32-bit) -- on this 64-bit host that truncated both
+// real pointers down to their low 32 bits before ce_strcmp ever saw
+// them, so ce_strcmp dereferenced a bogus, zero-extended address and
+// crashed with SIGSEGV. This was unconditional: it crashed on the very
+// first comparison (id 0x33) regardless of what the player typed, i.e.
+// every single invocation of "Chant the mantra". Fixed by giving them
+// their own correctly-sized `char *` locals (pcVar_name/pcVar_typed).
 void handle_mantra_chant()
 
 {
@@ -2517,7 +2573,6 @@ void handle_mantra_chant()
   undefined2 uVar2;
   short sVar3;
   undefined4 uVar4;
-  undefined4 uVar5;
   int iVar6;
   int iVar7;
   uint uVar8;
@@ -2526,17 +2581,28 @@ void handle_mantra_chant()
   char cVar11;
   uint uVar12;
   short sVar13;
+  char *pcVar_typed;
+  char *pcVar_name;
   undefined1 local_60 [8];
   undefined1 local_58 [52];
-  
+
   local_58[0] = 0;
   scroll_text_entry_prompt(s_Chant_the_mantra__0008731c,0,local_58,1,10);
   message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   iVar10 = 0x33;
   do {
-    uVar4 = _strupr(local_58);
-    uVar5 = get_message_string((int)(char)iVar10 | 0x400);
-    iVar6 = ce_strcmp(uVar5,uVar4);
+    /* uVar4/uVar5 were `undefined4` (32-bit) here, truncating _strupr's
+       and get_message_string's real 64-bit pointer returns -- the same
+       pointer-truncation bug class already fixed at dozens of other
+       get_message_string call sites in this codebase (see player.c's
+       other FUN_... comments, object_actions.c, chargen.c, babl.c).
+       ce_strcmp then dereferenced the zero-extended, bogus low-32-bits
+       pointer and crashed. Confirmed live: this crashed every "Chant
+       the mantra" invocation with a SIGSEGV inside ce_strcmp. */
+    pcVar_typed = (char *)_strupr(local_58);
+    pcVar_name = get_message_string((int)(char)iVar10 | 0x400);
+    iVar6 = ce_strcmp(pcVar_name,pcVar_typed);
+    if (getenv("UW_DEBUG_MANTRA")) fprintf(stderr, "[mantra] id=0x%02x name='%s' typed='%s' cmp=%d\n", iVar10, pcVar_name, pcVar_typed, iVar6);
     if (iVar6 == 0) break;
     iVar10 = iVar10 + 1;
   } while (iVar10 * 0x1000000 >> 0x18 < 0x4d);

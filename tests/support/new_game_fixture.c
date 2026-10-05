@@ -56,7 +56,7 @@ short DAT_00201b64;
 
 undefined1 DAT_0023cca8_backing[1024];
 
-undefined1 DAT_000857a0_backing[32768];
+undefined1 DAT_000857a0_backing[16];
 
 char s__DATA_lev_ark_00085734[] = "\\DATA\\lev.ark";
 

@@ -6,7 +6,7 @@
  * header is self-contained for any caller. */
 #include "uw.h"
 
-extern undefined DAT_00085ce0_backing[8192];
+extern undefined DAT_00085ce0_backing[32];
 #define DAT_00085ce0 DAT_00085ce0_backing[0]
 extern char s_You_read_the_00085ce8[];
 /* Globals defined in uw.c but also used by functions that now live in

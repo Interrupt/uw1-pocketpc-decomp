@@ -34,13 +34,23 @@ char *g_open_container_list;
    bearing `char *`), corrupting an equipped-item lookup and crashing
    refresh_player_equipment_effects on the very first in-game frame. Widened with a safety
    margin. */
-static undefined4 DAT_002028a0_backing[64];
+/* Sizing-audit pass: real index range is i up to 7 (8 elements), per
+   the comment above -- 32 bytes real need. Sized to 16 elements (64
+   bytes) for headroom; down from 64 (256 bytes). */
+static undefined4 DAT_002028a0_backing[16];
 #define DAT_002028a0 DAT_002028a0_backing[0]
-static undefined DAT_00202978_backing[8192];
+/* Sizing-audit pass: accessed only as a 4-byte uint scalar via the
+   `_DAT_00202978` macro, never indexed. Down from 8192. */
+static undefined DAT_00202978_backing[8];
 #define DAT_00202978 DAT_00202978_backing[0]
 static ushort DAT_00202986;
 static undefined2 DAT_00202980;
- undefined1 DAT_00085c88_backing[32768];
+/* Sizing pass: its only use (empty_container_into_world's caller) is a
+   read-only copy-until-NUL into a local scratch buffer -- a short
+   message-prefix string, not indexed. Real content is unrecovered
+   (currently reads as empty), but sized generously since it's a
+   display-text fragment like its siblings in this file. */
+ undefined1 DAT_00085c88_backing[128];
 static char s_is_empty__0008790c[] = "is_empty.";
 
 

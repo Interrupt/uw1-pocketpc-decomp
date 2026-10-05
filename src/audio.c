@@ -72,7 +72,10 @@ static undefined4 DAT_0023c330;
 static short DAT_0023c32c;
 static int DAT_00087450;
 static undefined4 DAT_0008744c;
-static undefined DAT_0023c2b0_backing[8192];
+/* Sizing-audit pass: max real index is 0xff*5+4=1279 (confirmed by
+   the comment below, an 8-bit id field * 5-byte stride) -- a HARD
+   bound. Sized all 4 siblings to 1280; down from 8192. */
+static undefined DAT_0023c2b0_backing[1280];
 #define DAT_0023c2b0 DAT_0023c2b0_backing[0]
 /* Same per-sound-effect-id table shape as DAT_0023c2b0 just above (all
    four indexed by play_positional_sound_effect's own `id*5`-stride
@@ -81,11 +84,11 @@ static undefined DAT_0023c2b0_backing[8192];
    play_positional_sound_effect derives for any sound but the first.
    Widened to match DAT_0023c2b0_backing's own generous sizing (max
    real index is 0xff*5+4=1279, given the 8-bit id field). */
-static undefined DAT_0023c2b1_backing[8192];
+static undefined DAT_0023c2b1_backing[1280];
 #define DAT_0023c2b1 DAT_0023c2b1_backing[0]
-static undefined DAT_0023c2b2_backing[8192];
+static undefined DAT_0023c2b2_backing[1280];
 #define DAT_0023c2b2 DAT_0023c2b2_backing[0]
-static undefined DAT_0023c2b3_backing[8192];
+static undefined DAT_0023c2b3_backing[1280];
 #define DAT_0023c2b3 DAT_0023c2b3_backing[0]
 static byte DAT_0023c39c;
 /* allocate_and_play_sound_channel indexed these two by raw hardcoded
@@ -101,7 +104,10 @@ static byte DAT_0023c39c;
    indexing implies and rewritten to index them properly. */
 static byte g_sound_channel_state[4];
 static ushort g_sound_channel_group[4];
-static undefined DAT_0023c3d4_backing[8192];
+/* Sizing-audit pass: 0 writers, used only as a path-string argument
+   (audio.c's SetFileTime-named ordinal stub), content unrecovered.
+   Sized to 128 for headroom as a path-text fragment; down from 8192. */
+static undefined DAT_0023c3d4_backing[128];
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
 static int DAT_0023c3bc;
 static int DAT_0023c378;
@@ -111,7 +117,10 @@ static int DAT_0023c378;
 static undefined1 DAT_000873e0_backing[256];
 #define DAT_000873e0 DAT_000873e0_backing[0]
 static undefined4 DAT_00087458;
-static undefined1 DAT_00087520_backing[32768];
+/* Sizing pass: read-only (`pcVar4 = &DAT_00087520;`), a base-directory
+   path fragment per its usage context. Real content unrecovered
+   (currently empty); sized generously for a path component. */
+static undefined1 DAT_00087520_backing[256];
 #define DAT_00087520 DAT_00087520_backing[0]
 static short DAT_002506f0;
 static undefined2 DAT_002029c8;
