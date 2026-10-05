@@ -1327,7 +1327,37 @@ int param_4;
         fprintf(stderr, "[cursorclick] WM_LBUTTONDOWN before DAT_00204844=%d selected=%p holdstate=%d\n",
                 (int)DAT_00204844, (void *)g_selected_object, (int)g_cursor_holding_state);
       }
-      DAT_00204844 = 1;
+      /* BUG FIX: was an unconditional `DAT_00204844 = 1/2`, forcing the
+         "a cursor icon is currently shown with a valid saved
+         background" flag true WITHOUT actually calling
+         save_cursor_background() to establish that saved background --
+         a touchscreen-tap-era shortcut (see this function's own top
+         comment: "a general click-pending flag consumed elsewhere" was
+         the original intent) that never mattered on the real device,
+         since there's no persistent idle cursor there to desync from.
+         Under UW_ALWAYS_SHOW_CURSOR's persistent desktop cursor, though,
+         erase_cursor_icon()/rect_fill_or_save_restore's save-vs-fill
+         branch is keyed off a SEPARATE flag (DAT_00204848) that only a
+         real save_cursor_background() call sets -- forcing DAT_00204844
+         truthy without one breaks that pairing. The very next
+         update_mouse_state() tick then sees DAT_00204844 != 0 and calls
+         erase_cursor_icon(), which -- finding DAT_00204848 still 0 --
+         falls through rect_fill_or_save_restore's save/restore branch
+         entirely into its plain FILL path, flat-filling the cursor's
+         16x16 rect with palette entry 0x15 (erase_cursor_icon's own
+         "restore" sentinel color, misread as a literal palette index)
+         at the click position -- confirmed live via a user report
+         matching this exactly: a bright yellow 16x16 square permanently
+         stamped at the click point, cursor otherwise invisible until
+         next moved. Routing this through save_cursor_background() when
+         nothing was already validly shown establishes the matching
+         DAT_00204848 pairing instead, exactly like every other
+         DAT_00204844 producer in this file does. */
+      if (DAT_00204844 == 0) {
+        save_cursor_background();
+      } else {
+        DAT_00204844 = 1;
+      }
       if ((g_cursor_mode != 0) || (g_cursor_holding_state != 0)) {
         DAT_00204844 = 2;
       }
