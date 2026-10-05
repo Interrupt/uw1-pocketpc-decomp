@@ -7530,9 +7530,23 @@ void draw_idle_mouse_cursor()
        (g_cursor_mode=3, icon 0x1077) and held/hovered at mouse x=131 --
        past the old corrupted bound's x2=109 -- and the cursor drew every
        tick with no "out of bounds" early-return, both with a held button
-       (default visibility rule) and under UW_ALWAYS_SHOW_CURSOR=1. No
-       reproducible bug in current code; this confine-rect enforcement can
-       stay as-is. */
+       (default visibility rule) and under UW_ALWAYS_SHOW_CURSOR=1; this
+       confine-rect enforcement itself is fine as-is.
+
+       The actual remaining cause of the bug-list symptom was a separate,
+       general issue, not specific to this rectangle or to the 3D view:
+       main_loop_hud_flush's forced per-tick 3D redraw (see that
+       function's own "HACK: redraw the 3D dungeon view" comment) repaints
+       the whole viewport every tick, painting over wherever the cursor
+       was last drawn, while this function is only reached reactively
+       through update_mouse_state() -- itself only called when a real OS
+       mouse message happens to arrive that tick. A motionless cursor
+       hovering the 3D view got erased by the next forced redraw and
+       stayed invisible until the next real mouse-move message. Fixed by
+       bug-list item "Cursors not drawing always" (commit 05e8727):
+       main_loop_hud_flush now also calls update_mouse_state()
+       unconditionally every tick, see the hack comment just below the
+       forced-3D-redraw block above. */
     if ((((ushort)DAT_00201b60 & 0xc9) != 0) && !uw_always_show_cursor()) {
       if (g_mouse_x < DAT_00204838) {
         if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");
