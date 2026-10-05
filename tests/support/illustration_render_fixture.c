@@ -324,6 +324,8 @@ short DAT_00084f10;
 
 int DAT_00088954, DAT_0008895c, DAT_00088950, DAT_00088958;
 
+int g_mouse_state_updated_this_tick;
+
 short DAT_00201b64;
 
 undefined2 DAT_00201c90;

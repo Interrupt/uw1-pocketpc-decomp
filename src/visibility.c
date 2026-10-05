@@ -605,6 +605,16 @@ void render_dungeon_frame_timed()
   iVar8 = read_realtime_clock_units();
   iVar8 = iVar8 - DAT_0023aec8;
   iVar4 = render_dungeon_view();
+  /* See g_mouse_state_updated_this_tick's own declaration comment --
+     render_dungeon_view just repainted the whole viewport (whether or
+     not rebuild_dungeon_view ran a few lines up; it always runs),
+     overpainting anything the cursor drew earlier this tick. Reset the
+     flag here, right after the LAST 3D repaint of the tick, so
+     whichever cursor-refresh call comes next (track_hotspot_hover_state
+     just below, or main_loop_hud_flush's own per-tick call afterward)
+     knows a fresh redraw is actually needed, not just a same-tick
+     duplicate of one that already happened. */
+  g_mouse_state_updated_this_tick = 0;
   iVar5 = read_realtime_clock_units();
   if (g_dungeon_view_active != 0) {
     weapon_swing_draw_tick();

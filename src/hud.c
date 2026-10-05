@@ -40,6 +40,24 @@ undefined1 g_active_hud_panel;
    extern) alongside DAT_00201b64. */
 int g_text_input_active;
 undefined2 g_cursor_mode;
+/* Port-side, not decompiled: true once the cursor has been (re)drawn
+   since the LAST 3D-viewport repaint this tick -- NOT just "drawn at
+   some point this tick". Set inside draw_idle_mouse_cursor() itself,
+   the one function both of this tick's cursor-refresh call sites
+   (track_hotspot_hover_state's own direct call, and
+   main_loop_hud_flush's own per-tick update_mouse_state() call -- see
+   each one's own comment) actually go through. Reset twice: once per
+   tick at the top of main_loop_hud_flush (the default, before anything
+   has drawn anything), and again by render_dungeon_frame_timed right
+   after its own render_dungeon_view() call, which repaints the whole
+   viewport from scratch every tick (whether or not a rebuild happened
+   a few lines up) and so invalidates whatever the cursor drew before
+   it. A caller sees true only when it can be sure nothing has
+   overpainted the cursor since the last time it (or someone else) drew
+   it, and can safely skip a redundant redraw; sees false whenever a
+   fresh one is actually owed, including right after a repaint even if
+   the cursor was already drawn once earlier in the very same tick. */
+int g_mouse_state_updated_this_tick;
 int DAT_00250718;
 static char s_out_of_000858dc[] = "out_of";
 static undefined2 DAT_0020209c;
@@ -1599,6 +1617,11 @@ void main_loop_hud_flush()
   unsigned int _dbg_hf_t0 = 0;
   int _dbg_hf = getenv("UW_DEBUG_HUDSPLIT") != NULL;
   if (_dbg_hf) _dbg_hf_t0 = read_realtime_clock_units() * 4;
+  /* See g_mouse_state_updated_this_tick's own declaration comment --
+     reset once here, at the one guaranteed-once-per-tick entry point,
+     before anything below (including render_dungeon_frame_timed,
+     which may set it back to 1) gets a chance to run. */
+  g_mouse_state_updated_this_tick = 0;
   dirty_rect_set(100,100,100,100);
   /* HACK: redraw the 3D dungeon view on every main-loop iteration.
      Normally the redraw is driven off dirty bit 3, which apply_movement_tick
@@ -1697,40 +1720,37 @@ void main_loop_hud_flush()
     if (_swing_tick) tick_weapon_swing_state(0);
   }
   /* HACK: service the idle mouse/cursor state (position easing, active
-     hotspot, redraw) every main-loop tick, same idea and same
-     justification as the render_dungeon_frame_timed/tick_weapon_swing_state
-     hacks just above: update_mouse_state is the one function that
-     actually consumes handle_mouse_message's own freshly-set
-     *DAT_000876bc/*DAT_000876c0/*DAT_000876c4 ("trust real mouse
-     input") and turns them into g_mouse_x/y, the active hotspot, and a
-     redrawn cursor icon -- handle_mouse_message itself never calls it.
-     This currently happens to run anyway, every tick, as a side effect
-     of rebuild_dungeon_view's own unconditional
-     handle_mouse_button_message(0) call just above (confirmed live via
-     a caller trace: one call per tick during plain mouse motion) -- but
-     that's gated behind this same function's own forced-3D-redraw
-     conditions a few lines up (skipped during a level transition,
-     while an animation owns the view, ...), so the cursor's idle state
-     can go stale exactly when those conditions aren't met. Calling it
-     directly and unconditionally here closes that gap for dungeon-view
-     gameplay specifically, cheap when idle just like its two
-     neighbors. Deliberately NOT added to uw_pump_events() (gx_stub.c,
-     every context including menus) -- tried that first and it
-     regressed live: calling update_mouse_state() on every SDL poll
-     (far more often than once per tick) raced with this same
-     function's own existing indirect call and with the menu's own
-     poll_mouse_event()-driven wait loop, intermittently leaving no
-     cursor drawn at all, and once reaching draw_idle_mouse_cursor
-     before any real mouse position had ever been established (cursor
-     still at its startup default, producing negative hotspot-offset
-     coordinates) hung inside rect_fill_or_save_restore's own clipping
-     math. This narrower, once-per-tick placement doesn't carry that
-     risk: main_loop_hud_flush only runs after the main menu and
-     chargen have already established a real mouse position. Set
+     hotspot, redraw) every main-loop tick, same idea as the
+     render_dungeon_frame_timed/tick_weapon_swing_state hacks above --
+     update_mouse_state is the one function that turns real mouse input
+     into g_mouse_x/y, the active hotspot, and a redrawn cursor icon,
+     but handle_mouse_message itself never calls it, and
+     render_dungeon_frame_timed only reaches it (incidentally, via
+     rebuild_dungeon_view's own handle_mouse_button_message(0) call)
+     when build_frame_draw_list signals a rebuild is actually needed --
+     not every tick. Skipped on a tick where that incidental call
+     already ran (see g_mouse_state_updated_this_tick's own comment):
+     an earlier version of this hack called update_mouse_state()
+     unconditionally here, landing a second call back to back with the
+     incidental one on ticks where both fired. update_mouse_state does
+     real-time-paced position easing and its own erase/redraw cycle --
+     calling it twice in immediate succession raced the two calls'
+     erase/redraw pairs against each other, corrupting the saved
+     background for any cursor sprite whose draw rect happened to
+     straddle the 3D viewport's clip bounds (the ones NOT covered by
+     cursor_over_live_3d_view's own skip-save path) -- confirmed live
+     via a user report: a persistent dark, stale-looking patch behind
+     the cursor specifically under this always-both-fired condition,
+     reproduced and then cleared by toggling this exact guard. Without
+     this hack entirely, the opposite problem reproduces instead:
+     render_dungeon_view can repaint the viewport on a later tick with
+     neither mechanism following up to redraw the cursor on top,
+     confirmed live via a trace showing a 3D repaint running right
+     before a screenshot with no cursor draw after it. Set
      UW_NO_FORCE_MOUSE_TICK to restore the (gappy) original behaviour. */
   { static int _mouse_tick = -1;
     if (_mouse_tick < 0) _mouse_tick = (getenv("UW_NO_FORCE_MOUSE_TICK") == NULL);
-    if (_mouse_tick) update_mouse_state();
+    if (_mouse_tick && !g_mouse_state_updated_this_tick) update_mouse_state();
   }
   { unsigned int _t1 = 0, _t2 = 0;
     if (_dbg_hf) _t1 = read_realtime_clock_units() * 4;
@@ -7257,40 +7277,36 @@ void track_hotspot_hover_state()
            authentically safe, since nothing else ever reached
            draw_idle_mouse_cursor for the SAME tick's SAME mouse
            position on the real touchscreen. Under UW_ALWAYS_SHOW_CURSOR,
-           though, this function runs from render_dungeon_frame_timed,
-           which already ran rebuild_dungeon_view's own incidental
-           handle_mouse_button_message(0) -> update_mouse_state() a few
-           lines earlier in the SAME call -- and that already drew the
-           cursor (DAT_00204840 stays 1 the whole time the cursor's
-           shown, so this check alone can't tell "already handled this
-           tick" from "needs handling"). Calling draw_idle_mouse_cursor
-           again here with DAT_00204844 already 1 made its own
+           this function runs from render_dungeon_frame_timed, right
+           after its own render_dungeon_view() call -- which may or may
+           not have been preceded by rebuild_dungeon_view's own
+           incidental handle_mouse_button_message(0) -> update_mouse_state()
+           a bit earlier in the SAME call, depending on whether a
+           rebuild happened to be needed this tick. Calling
+           draw_idle_mouse_cursor unconditionally both times, back to
+           back with no repaint in between, made the second call's own
            save_cursor_background() capture the FIRST call's just-drawn
            cursor sprite as the "background" instead of the real one
            underneath it -- confirmed live (UW_DEBUG_CURSORSHOW): a
            second "normal path" firing right after the first, same
-           position, DAT_00204844 already set. Nothing ever erases that
-           corrupted save (DAT_00204844 already reads nonzero, so later
-           erase/redraw cycles treat it as already-consistent), leaving
-           a permanent ghost of the cursor behind -- confirmed live via
-           a user report of a persistent cursor-shaped stamp, worse
-           along the 3D viewport's edges where this function's own
-           hover-border tracking runs continuously. An earlier attempt
-           fixed this reactively inside draw_idle_mouse_cursor itself
-           (erase whatever's already shown before re-saving) -- reverted
-           per user feedback: that broke a DIFFERENT screen-transition
-           case (chargen's own full-page reblits) where DAT_00204844
-           being stale from the PREVIOUS screen is actually correct to
-           just overwrite with a fresh save, not erase/restore first.
-           Fixing it here instead, at the actual redundant call, avoids
-           that conflict entirely: DAT_00204844 != 0 already means "a
-           valid icon is correctly shown right now" whenever this
-           SPECIFIC call would otherwise redundantly re-enter the same
-           draw this same tick, so skip the call outright rather than
-           letting draw_idle_mouse_cursor react to a state it can't
-           distinguish from "stale". Gated behind uw_always_show_cursor()
+           position. Nothing ever erases that corrupted save, leaving a
+           permanent ghost of the cursor behind -- confirmed live via a
+           user report of a persistent cursor-shaped stamp. A DIFFERENT,
+           cruder guard here before (checking DAT_00204844 != 0 alone)
+           overcorrected: render_dungeon_view's own repaint, which
+           ALWAYS runs between the incidental call and this one,
+           overpaints the cursor regardless of whether a rebuild
+           happened -- DAT_00204844 stays "shown" throughout, so that
+           guard also skipped the redraw this function is specifically
+           here to provide after a genuine repaint, confirmed live via
+           a user report of the cursor going invisible after settling
+           (a 3D repaint ran with no cursor draw following it).
+           g_mouse_state_updated_this_tick (see its own comment)
+           distinguishes the two cases properly: true only when nothing
+           has repainted since the cursor was last drawn, which a
+           repaint always clears. Gated behind uw_always_show_cursor()
            since the original single-call guarantee holds without it. */
-        if (!uw_always_show_cursor() || DAT_00204844 == 0) {
+        if (!uw_always_show_cursor() || !g_mouse_state_updated_this_tick) {
           draw_idle_mouse_cursor();
         }
         return;
@@ -7999,6 +8015,11 @@ LAB_00058674:
   g_blit_transparent_mode = 0;
   g_force_flush = 0;
   set_draw_color(0);
+  /* See g_mouse_state_updated_this_tick's own declaration comment --
+     the cursor has now genuinely been redrawn since the last 3D
+     repaint, so later same-tick callers (if any) can skip a redundant
+     redraw until the next repaint resets this again. */
+  g_mouse_state_updated_this_tick = 1;
   return;
 }
 

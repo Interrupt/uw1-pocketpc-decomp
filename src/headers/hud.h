@@ -15,6 +15,7 @@
 extern int DAT_00250718;
 extern undefined1 g_active_hud_panel;
 extern undefined2 g_cursor_mode;
+extern int g_mouse_state_updated_this_tick;
 extern int g_text_input_active;
 extern char DAT_0023c3e0;
 /* Globals defined in uw.c but also used by functions that now live in
