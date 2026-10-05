@@ -238,4 +238,4 @@ add_fixture_game_unit_test(spells
 
 add_fixture_game_unit_test(automap
   src/automap.c:draw_automap_cell_edge src/automap.c:darken_pixel
-  src/automap.c:darken_pixel_light src/automap.c:darken_pixel_undiscovered)
+  src/automap.c:@DAT_000842c0_real_table src/automap.c:draw_automap_cell)

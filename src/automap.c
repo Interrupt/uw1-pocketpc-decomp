@@ -8,6 +8,10 @@
 #include <stdlib.h>
 
 static int DAT_000bbefc;
+/* Retain BLNKMAP.BYT's indices while drawing the map. RGB565 loses
+   palette identity (some entries share a color), so the DOS tint cannot
+   reliably recover the original index from the displayed pixel. */
+static byte *g_automap_tint_bitmap;
 static undefined2 DAT_000b99c0;
 static undefined4 DAT_000b99c4;
  undefined1 DAT_000b99d0_backing[8192];
@@ -261,10 +265,7 @@ int param_3;
 LAB_000168f8:
     iVar2 = 0;
     do {
-      if (bVar1 >= 10)
-        darken_pixel_undiscovered((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1);
-      else
-        darken_pixel((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1,uVar4,uVar5);
+      darken_pixel((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1,uVar4,uVar5);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
   }
@@ -280,10 +281,7 @@ LAB_000168f8:
     }
     iVar2 = 0;
     do {
-      if (bVar1 >= 10)
-        darken_pixel_undiscovered(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10);
-      else
-        darken_pixel(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10,uVar4,uVar5);
+      darken_pixel(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10,uVar4,uVar5);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
   }
@@ -333,13 +331,10 @@ int param_3;
         if ((&DAT_000842c0)[(((param_1 + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
             '\x01') {
           if (bVar1 == 0) {
-            /* Normal explored floor. The binary calls darken_pixel
-               here (uVar4/uVar7 args are ignored by it) for a 50%
-               darken; that's much darker than the reference automap,
-               so use the 25% darken instead. Deliberate deviation. */
-            darken_pixel_light(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
-                       ((int)(short)uVar8 + (iVar11 * 0x10000 >> 0x10)) * 0x10000 >> 0x10);
-            goto LAB_00016b00;
+            /* ARM 0x16a20..0x16acc retains DOS floor tint (2,3). */
+            uVar7 = 3;
+            uVar4 = 2;
+            goto LAB_00016acc;
           }
           if (bVar1 == 1) {
             /* Water fill: (rand % 2) + 0xb1 -> a 2-tone dither between
@@ -355,6 +350,8 @@ int param_3;
           }
           plot_pixel(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar8) + 200,iVar5);
+          g_automap_tint_bitmap[(199 - iVar11 - (short)uVar8) * 320 +
+                               iVar10 + (short)uVar9] = (byte)iVar5;
         }
         else if ((&DAT_000842c0)[(((param_1 + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
                  '\x02') {
@@ -385,6 +382,8 @@ LAB_00016b00:
           plot_pixel(uVar13 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar9) + 200,sVar3 + 0xe9)
           ;
+          g_automap_tint_bitmap[(199 - iVar11 - (short)uVar9) * 320 +
+                               iVar10 + (short)uVar13] = (byte)(sVar3 + 0xe9);
           uVar6 = uVar6 + 1;
           uVar13 = (uint)uVar6;
         } while (uVar6 < 3);
@@ -493,7 +492,9 @@ undefined4 param_1;
     set_palette_bank(1);
     bitmap_blit_to_framebuffer(0,1,uVar3,200,0x140,0,0,1);
     uw_debug_dump_revealmap((unsigned char *)&DAT_000b99d0);
+    g_automap_tint_bitmap = uVar3;
     draw_automap_tiles();
+    g_automap_tint_bitmap = NULL;
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
       g_blit_transparent_mode = 1;
@@ -558,9 +559,11 @@ void automap_reveal_all_tiles(void)
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00016940
-void darken_pixel(param_1,param_2)
+void darken_pixel(param_1,param_2,param_3,param_4)
 uint param_1;
 int param_2;
+int param_3;
+int param_4;
 
 {
   ushort *puVar1;
@@ -568,56 +571,24 @@ int param_2;
   puVar1 = (ushort *)
            ((g_uw_framebuffer) +
            ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
-  /* HACK: retain 5/8 brightness for discovered walls and map accents
-     instead of ARM's 1/2, to match the lighter reference automap. */
-  ushort color = *puVar1;
-  *puVar1 = (color >> 1 & 0x7bef) + (color >> 3 & 0x18e3);
+  /* Restore the DOS palette tint using the shade arguments still passed
+     by ARM callers; ARM replaced this with fixed RGB565 halving. The
+     original takes two random draws, discarding the first result.
+     ce_rand uses host rand(), so mask to DOS/WinCE's 15-bit range. */
+  int step = 0x7fff / param_4;
+  (void)ce_rand();
+  int roll = (ce_rand() & 0x7fff) / step;
+  /* The map bitmap is blitted at screen row 1, whereas darken_pixel's
+     coordinates are measured upwards from row 200. Keep the indexed
+     pixel updated too, so overlapping strokes tint cumulatively. */
+  byte *index = g_automap_tint_bitmap +
+      (199 - param_2) * 320 + (param_1 & 0xffff);
+  *index = (byte)(*index + param_3 + roll);
+  *puVar1 = (&g_palette_rgb565)[*index];
   debug_framebuffer_dump("darken_pixel");
   return;
 }
 
-
-
-/* Undiscovered boundary walls are a lighter cue than explored floor fill.
-   Use a 1/8 brightness reduction versus the floor's 1/4 reduction. This
-   shade is an explicit visual adjustment: ARM's darken_pixel ignores its
-   extra shade arguments and halves every boundary pixel. */
-void darken_pixel_undiscovered(param_1,param_2)
-uint param_1;
-int param_2;
-
-{
-  ushort *pixel = (ushort *)((byte *)g_uw_framebuffer +
-      ((200U - param_2 & 0xffff) * 320 + (param_1 & 0xffff)) * 2);
-  ushort color = *pixel;
-  *pixel = (color >> 1 & 0x7bef) + (color >> 2 & 0x39e7) + (color >> 3 & 0x18e3);
-  return;
-}
-
-
-/* Like darken_pixel but only a 25% cut (x 3/4 brightness) instead of a
-   halve: RGB565 (px>>1 & 0x7bef) + (px>>2 & 0x39e7).  Not in the
-   original binary -- the Pocket-PC automap 50%-darkens explored floor
-   via darken_pixel, which comes out far darker than the reference map
-   (whose explored floor is a light tint over the parchment).  Used
-   only for the draw_automap_cell floor fill; wall edges / accent
-   pixels use darken_pixel's darker 5/8 brightness. */
-void darken_pixel_light(param_1,param_2)
-uint param_1;
-int param_2;
-
-{
-  ushort *puVar1;
-  ushort uVar2;
-
-  puVar1 = (ushort *)
-           ((g_uw_framebuffer) +
-           ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
-  uVar2 = *puVar1;
-  *puVar1 = (uVar2 >> 1 & 0x7bef) + (uVar2 >> 2 & 0x39e7);
-  debug_framebuffer_dump("darken_pixel_light");
-  return;
-}
 
 
 
@@ -1208,9 +1179,7 @@ undefined4 debug_noop_overflow_hook()
    style 0 -> shaded floor).  floor-tex index is tile-record byte 1
    bits 2-5.  The simple ring-walk was instead using DAT_00086bf0[type],
    which has no floor-texture info and so couldn't tell water from
-   normal floor.  (The floor being *too dark* vs the reference is a
-   separate issue, fixed in draw_automap_cell by using a 25% darken
-   for the fill instead of darken_pixel's 50%.) */
+   normal floor. */
 byte automap_reveal_byte(byte *tile_rec)
 {
   if (getenv("UW_DEBUG_AUTOMAP_REVEAL")) {
