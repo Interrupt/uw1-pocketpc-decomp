@@ -18,6 +18,9 @@ uint DAT_0023bf5c;
 int DAT_0023bf64, g_npc_tick_enabled;
 short DAT_0023be90, DAT_0023be92, DAT_0023be94, DAT_0023bf00, DAT_0023bea4, DAT_0023bf08;
 undefined2 DAT_0023bf02, DAT_0023bf04, DAT_0023bea0;
+undefined4 DAT_000d9930_arr[512], DAT_000d9ed8_arr[512], DAT_000c8ac0_mtx[16];
+undefined4 DAT_000db438, DAT_000db43c, DAT_000db440;
+int DAT_000db448, DAT_000db44c, DAT_000db450;
 
 void head_bob_fixture_reset(void)
 {
@@ -38,6 +41,16 @@ void head_bob_fixture_reset(void)
     g_npc_tick_enabled = DAT_002020d0 = DAT_000858a0 = 0;
     DAT_00086e84 = -1;
     DAT_0023bf5c = ~0u; /* Keep footstep audio outside these camera tests. */
+    DAT_000db438 = DAT_000db43c = DAT_000db440 = 0;
+    DAT_000db448 = DAT_000db44c = DAT_000db450 = 0;
+}
+
+float head_bob_fixture_matrix_element(unsigned index)
+{
+    float value;
+    TEST_ASSERT_LESS_THAN_UINT(16, index);
+    memcpy(&value, &DAT_000c8ac0_mtx[index], sizeof value);
+    return value;
 }
 
 void head_bob_fixture_tick(int mode, int speed, unsigned elapsed)

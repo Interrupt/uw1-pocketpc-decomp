@@ -285,4 +285,12 @@ add_fixture_game_unit_test(head_bob
   src/movement.c:@DAT_00086e38_backing src/movement.c:@DAT_00086e48_backing
   src/player.c:@DAT_00086e58_backing
   src/movement.c:movement_tick src/movement.c:apply_movement_tick
-  src/player.c:trigger_view_transition src/player.c:update_current_view_from_subject)
+  src/player.c:trigger_view_transition src/player.c:update_current_view_from_subject
+  src/3d.c:build_view_matrix src/3d.c:build_trig_tables
+  src/3d.c:set_identity_matrix4x4 src/3d.c:multiply_matrix4x4
+  src/ordinal_stubs.c:ordfloat_bits_to_float src/ordinal_stubs.c:ordfloat_float_to_bits
+  src/ordinal_stubs.c:ordfloat_negate src/ordinal_stubs.c:ordfloat_mul
+  src/ordinal_stubs.c:ordfloat_add src/ordinal_stubs.c:ordfloat_int_to_float2
+  src/ordinal_stubs.c:ordfloat_float_to_double src/ordinal_stubs.c:ordfloat_double_to_float
+  src/ordinal_stubs.c:ordfloat_double_mul2 src/ordinal_stubs.c:ordfloat_cos
+  src/ordinal_stubs.c:ordfloat_sin)

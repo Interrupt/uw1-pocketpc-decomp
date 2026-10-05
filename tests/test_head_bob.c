@@ -1,4 +1,5 @@
 #include "head_bob_fixture.h"
+#include <math.h>
 
 void setUp(void) { head_bob_fixture_reset(); }
 void tearDown(void) {}
@@ -57,6 +58,62 @@ static void test_swimming_modes_use_the_original_vertical_waveform(void)
     }
 }
 
+static void test_wading_roll_rotates_the_rendered_view_in_both_directions(void)
+{
+    DAT_00086df8[0xb8] = 1;
+    DAT_00086df8[0xb9] = 100;
+    for (unsigned phase = 0; phase < 16; phase++) {
+        DAT_0023bf18 = phase << 4;
+        head_bob_fixture_tick(1, 400, 0);
+        build_view_matrix();
+        /* The ARM radians constant and float rounding differ slightly
+           from native double-precision pi, especially near 360 degrees. */
+        double radians = (g_current_view->view_shake_y / 256) * (acos(-1.0) / 180.0);
+        /* A horizontal line acquires opposite vertical slopes on the two
+           halves of the water cycle. Test the matrix consumed by rendering. */
+        TEST_ASSERT_FLOAT_WITHIN(0.00001f, cos(radians), head_bob_fixture_matrix_element(0));
+        TEST_ASSERT_FLOAT_WITHIN(0.00001f, -sin(radians), head_bob_fixture_matrix_element(1));
+        TEST_ASSERT_FLOAT_WITHIN(0.00001f, sin(radians), head_bob_fixture_matrix_element(4));
+        TEST_ASSERT_FLOAT_WITHIN(0.00001f, cos(radians), head_bob_fixture_matrix_element(5));
+        TEST_ASSERT_FLOAT_WITHIN(0.00001f, 1, head_bob_fixture_matrix_element(10));
+    }
+}
+
+static void test_leaving_water_clears_rendered_roll(void)
+{
+    DAT_00086df8[0xb8] = 1;
+    DAT_00086df8[0xb9] = 100;
+    head_bob_fixture_tick(1, 400, 0);
+    build_view_matrix();
+    TEST_ASSERT_GREATER_THAN_FLOAT(0.01f, head_bob_fixture_matrix_element(1));
+    DAT_00086df8[0xb8] = DAT_00086df8[0xb9] = 0;
+    head_bob_fixture_tick(1, 400, 0);
+    build_view_matrix();
+    TEST_ASSERT_FLOAT_WITHIN(0.000001f, 0, head_bob_fixture_matrix_element(1));
+    TEST_ASSERT_FLOAT_WITHIN(0.000001f, 0, head_bob_fixture_matrix_element(4));
+    TEST_ASSERT_FLOAT_WITHIN(0.000001f, 1, head_bob_fixture_matrix_element(0));
+}
+
+static void test_combined_camera_rotations_preserve_geometry(void)
+{
+    DAT_000db448 = 14;
+    DAT_000db44c = 27;
+    DAT_00086df8[0xb8] = 1;
+    DAT_00086df8[0xb9] = 100;
+    head_bob_fixture_tick(1, 400, 0);
+    build_view_matrix();
+    /* All three rotations must preserve lengths and perpendicular axes. */
+    for (unsigned row = 0; row < 3; row++) {
+        for (unsigned other = 0; other < 3; other++) {
+            float dot = 0;
+            for (unsigned column = 0; column < 3; column++)
+                dot += head_bob_fixture_matrix_element(row * 4 + column) *
+                       head_bob_fixture_matrix_element(other * 4 + column);
+            TEST_ASSERT_FLOAT_WITHIN(0.000001f, row == other ? 1 : 0, dot);
+        }
+    }
+}
+
 static void test_bob_phase_advances_with_elapsed_movement_time_and_wraps(void)
 {
     head_bob_fixture_tick(1, 200, 16);
@@ -83,6 +140,9 @@ int main(void)
     RUN_TEST(test_walking_camera_bobs_through_full_original_waveform);
     RUN_TEST(test_running_has_larger_bob_than_walking);
     RUN_TEST(test_wading_camera_bobs_and_sways_over_full_cycle);
+    RUN_TEST(test_wading_roll_rotates_the_rendered_view_in_both_directions);
+    RUN_TEST(test_leaving_water_clears_rendered_roll);
+    RUN_TEST(test_combined_camera_rotations_preserve_geometry);
     RUN_TEST(test_swimming_modes_use_the_original_vertical_waveform);
     RUN_TEST(test_bob_phase_advances_with_elapsed_movement_time_and_wraps);
     RUN_TEST(test_stationary_camera_returns_to_unmodified_eye_height);
