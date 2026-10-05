@@ -938,6 +938,7 @@ void build_view_matrix()
   undefined4 uVar1;
   undefined4 uVar2;
   undefined4 uVar3;
+  undefined4 negated_sine;
   /* This function's four matrices (local_198.., auStack_158, local_118,
      auStack_d8) were each declared as only as many bytes as this function
      happens to name individual elements of, but set_identity_matrix4x4 (called on
@@ -974,6 +975,13 @@ void build_view_matrix()
     if (!dd2c_done) { dd2c_done = 1; build_trig_tables(); }
   }
 
+  /* Restore water roll to the rendered view. The ARM water animation
+     updates current_view + 0x2a, but its matrix roll angle (0xdb450)
+     has no writer. Connect the existing animation to that rotation;
+     camera tilt uses 256 units per degree, like the pitch at +0x28. */
+  DAT_000db450 = g_current_view->view_shake_y / 256;
+  if (DAT_000db450 < 0) DAT_000db450 += 360;
+
   set_identity_matrix4x4(auStack_d8);
   set_identity_matrix4x4(auStack_158);
   set_identity_matrix4x4(local_118);
@@ -985,22 +993,24 @@ void build_view_matrix()
   uVar3 = (&DAT_000d9930)[DAT_000db448];
   ((undefined4 *)auStack_158)[5] = uVar1;
   ((undefined4 *)auStack_158)[6] = ordfloat_negate(uVar3);
-  ordfloat_negate(uVar3);
-  ((undefined4 *)auStack_158)[9] = ordfloat_negate();
+  /* ARM passes the first negate's return in r0 to the second call.
+     Ghidra omitted that argument in all three rotation matrices. */
+  negated_sine = ordfloat_negate(uVar3);
+  ((undefined4 *)auStack_158)[9] = ordfloat_negate(negated_sine);
   uVar2 = (&DAT_000d9ed8)[DAT_000db44c];
   uVar3 = (&DAT_000d9930)[DAT_000db44c];
   ((undefined4 *)auStack_158)[10] = uVar1;
   local_118[0] = uVar2;
-  ordfloat_negate(uVar3);
-  local_118[2] = ordfloat_negate();
+  negated_sine = ordfloat_negate(uVar3);
+  local_118[2] = ordfloat_negate(negated_sine);
   local_118[8] = ordfloat_negate(uVar3);
   uVar1 = (&DAT_000d9ed8)[DAT_000db450];
   uVar3 = (&DAT_000d9930)[DAT_000db450];
   local_198_mtx[0] = uVar1;
   local_118[10] = uVar2;
   local_198_mtx[1] = ordfloat_negate(uVar3);
-  ordfloat_negate(uVar3);
-  local_198_mtx[4] = ordfloat_negate();
+  negated_sine = ordfloat_negate(uVar3);
+  local_198_mtx[4] = ordfloat_negate(negated_sine);
   local_198_mtx[5] = uVar1;
   multiply_matrix4x4(auStack_d8,local_118,auStack_98);
   multiply_matrix4x4(auStack_98,auStack_158,auStack_58);
@@ -1623,16 +1633,17 @@ void build_trig_tables()
   
   iVar2 = 0;
   do {
-    ordfloat_int_to_float2(iVar2);
-    uVar3 = ordfloat_float_to_double();
-    ordfloat_double_mul2((int)uVar3,(int)((ulonglong)uVar3 >> 0x20),0xa50de271,0x3f91df45);
-    ordfloat_double_to_float();
-    uVar3 = ordfloat_float_to_double();
-    ordfloat_cos();
-    uVar1 = ordfloat_double_to_float();
+    /* Preserve the softfloat return-register arguments dropped by
+       Ghidra, including the float rounding of degrees -> radians. */
+    uVar1 = ordfloat_int_to_float2(iVar2);
+    uVar3 = ordfloat_float_to_double(uVar1);
+    uVar3 = ordfloat_double_mul2((int)uVar3,(int)((ulonglong)uVar3 >> 0x20),0xa50de271,0x3f91df45);
+    uVar1 = ordfloat_double_to_float(uVar3);
+    uVar3 = ordfloat_float_to_double(uVar1);
+    uVar1 = ordfloat_double_to_float(ordfloat_cos(uVar3));
     (&DAT_000d9ed8)[iVar2] = uVar1;
-    ordfloat_sin((int)uVar3,(int)((ulonglong)uVar3 >> 0x20));
-    uVar1 = ordfloat_double_to_float();
+    uVar1 = ordfloat_double_to_float(
+        ordfloat_sin((int)uVar3,(int)((ulonglong)uVar3 >> 0x20)));
     (&DAT_000d9930)[iVar2] = uVar1;
     iVar2 = iVar2 + 1;
   } while (iVar2 < 0x169);

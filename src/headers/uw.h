@@ -213,19 +213,34 @@ typedef struct __attribute__((packed)) {
  * 0xd), indexed by an object's type id (obj_hdr.item_id & 0x1ff).
  * Dozens of call sites throughout uw.c and the split-out src files read individual
  * byte offsets of this record directly; see struct-recovery-plan.md
- * for the fuller catalog. Only two single-bit fields have confirmed
- * evidence so far -- each is named directly in a comment elsewhere
- * in this codebase (see below) -- so everything else is left as an
- * honest unnamed gap per the struct-recovery methodology, even where
- * a mask/shift at some call site proves a byte packs multiple
- * sub-fields (offsets 1-2, 3, 7, 8, 9, 0xa, 0xb all have at least one
- * confirmed-used bit or value that just isn't individually pinned
- * down and named yet). Don't add fields here without the same bar of
- * evidence (a direct, already-written comment naming the bit/byte's
- * real meaning) that is_container/has_look_description had. */
+ * for the fuller catalog. Don't add fields here without the same bar
+ * of evidence (a direct, already-written comment naming the bit/
+ * byte's real meaning) that is_container/has_look_description had --
+ * offsets 3, 7, 8, 9, 0xa, 0xb still have at least one confirmed-used
+ * bit or value that isn't individually pinned down and named yet. */
 typedef struct __attribute__((packed)) {
     unsigned char _unk00;        /* offset 0x00: a numeric stat (fed into ordint_divmod/roll-style calls in several places) -- not yet confirmed */
-    unsigned char _unk01_02[2];  /* offsets 0x01-0x02: packed sub-fields -- a low 3 bits (&7) value read separately from a >>4 value spanning into offset 2, neither named yet */
+
+    /* offsets 0x01-0x02: 16-bit little-endian packed field (read as
+     * `*(ushort*)(&DAT_00202c91 + type*0xd)` at several call sites).
+     * Investigated for "Door collision box seems too large and
+     * misplaced" via a fresh Ghidra headless decompile of the real
+     * ARM UU.exe collision_add_candidate_object (was FUN_00051658,
+     * 0x51658-0x51743; decompile matches src/collision.c line-for-
+     * line, so this is NOT a decompilation bug) plus a direct read of
+     * the real data/DATA/COMOBJ.DAT bytes for every door type (the
+     * 11-byte-on-disk/13-byte-in-memory record for type ids
+     * 0x140-0x147, confirmed as "7 door skins/types + secret" by
+     * src/tmap.c's own emit_anim_object_frames comment): every one of
+     * the 8 door types has low3 bits (collision_radius) == 3, never 4
+     * -- so doors do NOT hit collision_add_candidate_object's
+     * shape==4 full-tile-box special case (collision.c's own
+     * long-suspected "oversized full-tile branch" culprit), ruling
+     * that out as the cause. */
+    unsigned short collision_radius : 3; /* bits 0-2 (&7): CONFIRMED -- a symmetric collision/placement half-width in eighths-of-a-tile, read identically (and always as a plain radius, never a lookup index) by collision_add_candidate_object/collision_sample_floor_height (src/collision.c), the tile-boundary-crossing check in emit_tile_features (src/tmap.c, "& 8"-gated block a few lines below), src/ai.c, src/combat.c, src/movement.c and src/object_actions.c. Independently corroborated by uw1-decomp's own from-scratch disassembly of the original DOS binary, which names the analogous player-entity field "the player's radius word" and confirms it is consumed as a plain radial distance (collision.json: "wall_rest_is_radius_determined"). */
+    unsigned short _unk01_b3        : 1; /* bit 3 (&8): confirmed used as a standalone flag gating a billboard/sprite-partition branch in src/tmap.c (`(&DAT_00202c91)[type*0xd] & 8`), not yet named */
+    unsigned short unit_weight       : 12; /* bits 4-15 (the remaining 4 bits of offset 0x01 plus all of offset 0x02): CONFIRMED -- src/objects.c's calculate_object_weight (was FUN_00046260) names this exact `>>4` value its own "per-class base weight", multiplied by quantity for stackable items or summed with container contents */
+
     unsigned char _unk03;        /* offset 0x03: flag byte -- bits 2/3/8(0x8) individually checked at different call sites, none named yet */
     unsigned char _unk04;        /* offset 0x04: unconfirmed */
     unsigned short _unk05;       /* offsets 0x05-0x06: read as a 2-byte value, ==0/!=0 checked (possibly a "special/quest object" id) -- not yet confirmed */

@@ -330,11 +330,38 @@ char DAT_00086e84;
 static int DAT_0023bf64;
 static char DAT_0023bf60;
 static uint DAT_0023bf5c;
-/* Sizing-audit pass: index is `bVar1>>4` -- a nibble, max 15. Sized
-   to 16 each; down from 256. */
-static undefined DAT_00086e38_backing[16];
+/* Real static lookup table (.data, read-only in practice) recovered
+   byte-for-byte from UU.exe via Ghidra (bytes at 0x86e38..0x86e47) --
+   confirmed boundary: the string literal just before it ("Lev %d @ ...")
+   ends exactly at 0x86e38, and DAT_00086e68 (the next real scalar after
+   this table and DAT_00086e48/DAT_00086e58 below) was already separately
+   recovered elsewhere in this codebase as the literal 15 found at
+   0x86e68 -- matching this same dump and confirming the alignment.
+   Independently cross-confirmed byte-for-byte by a second, concurrent
+   recovery pass (bug-fixes-pass-2) via the same Ghidra method.
+   apply_movement_tick indexes this with `bVar1 >> 4` (bVar1 =
+   DAT_0023bf18, a byte that free-runs upward every tick), so only 16
+   entries are ever live; the real data is this exact 8-value bob curve
+   (+1,+3,+4,+3,+1,-3,0,0, one footfall) repeated twice, i.e. two
+   footfalls per full 0-255 wrap of DAT_0023bf18 -- the walking
+   head-bob curve. This table was previously left as an all-zero 256-
+   byte placeholder, which silently disabled head bob while walking
+   (DAT_0023be98 always came out 0 here) without affecting anything
+   else, since every real access stays inside these first 16 bytes. */
+static const signed char DAT_00086e38_backing[16] = {
+   1,  3,  4,  3,  1, -3,  0,  0,
+   1,  3,  4,  3,  1, -3,  0,  0
+};
 #define DAT_00086e38 DAT_00086e38_backing[0]
-static undefined DAT_00086e48_backing[16];
+/* Real static lookup table, same recovery as DAT_00086e38 just above
+   (bytes at 0x86e48..0x86e57, immediately following it in UU.exe's
+   .data). apply_movement_tick indexes this with the same `bVar1 >> 4`
+   for the sidestep-move bob curve (g_movement_mode 9/10). Also 16 real
+   entries. */
+static const signed char DAT_00086e48_backing[16] = {
+   0,  0, -1, -2, -3, -4, -5, -6,
+  -6, -4, -3, -2, -1,  0,  0,  0
+};
 #define DAT_00086e48 DAT_00086e48_backing[0]
 
 

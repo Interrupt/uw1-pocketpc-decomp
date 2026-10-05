@@ -627,6 +627,26 @@ uint param_2;
 // entry is 6 bytes (id, height, two flag bytes, tile x/y word) at
 // DAT_00202c38/39/3a/3b/3c+count*6, with the live count at
 // DAT_00202c6c+0x14.
+//
+// Investigated for "Door collision box seems too large and
+// misplaced": a fresh Ghidra headless decompile of this exact
+// function in the real ARM UU.exe (FUN_00051658, 0x51658-0x51743)
+// matches this file line-for-line, including the `local_40[1] & 7 ==
+// 4` full-tile special case below and the sub-tile position decode
+// (param_1+3 >> 5 / >> 2 & 7) -- which independently matches
+// uw_object_hdr_t's own confirmed xpos (bits 13-15)/ypos (bits 10-12)
+// bitfields exactly (src/headers/uw.h). Reading the real
+// data/DATA/COMOBJ.DAT bytes for every door type id (0x140-0x147,
+// confirmed as "7 door skins/types + secret" by src/tmap.c's
+// emit_anim_object_frames comment) shows every one has
+// collision_radius (uw_object_type_props_t, src/headers/uw.h) == 3,
+// never 4 -- so doors use the ordinary radius-centered box below, not
+// the full-tile special case, and both the box size (radius 3
+// eighths-of-a-tile each way) and position decode check out against
+// real data and real disassembly. No collision-math bug found; see
+// bug-list.txt's checkoff for this item and src/tmap.c's own
+// still-open "door frame looks to be offset 16 units into the wall"
+// note for the likely real (visual, not collision) explanation.
 void collision_add_candidate_object(param_1,param_2,param_3,param_4,param_5)
 ushort * param_1;
 ushort param_2;

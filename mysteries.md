@@ -134,9 +134,29 @@ automap-reveal sections and the git log around commit `97fe3e6`):
    walls stop the flood well before the 16-pass ceiling would ever
    matter (measured ring depth: 8). The over-reveal comes from doorway
    tiles being ordinary open floor in the static geometry regardless of
-   the door object's own open/closed state (a separate, currently
+   the door object's own open/closed state (a separate, previously
    unfixed gap — see the `objects` branch's own conversation history),
    not from anything related to distance or light.
+
+   **UPDATE (door-collision re-verify pass):** checked this directly
+   against the real ARM binary via Ghidra headless decompilation rather
+   than just the port's own code -- decompiled `FUN_0005cacc`/
+   `FUN_0005c70c` (`advance_visibility_ray`/`extend_visibility_ray_row`),
+   `FUN_0005e604` (`process_visible_tile_cell`), and `automap_reveal_byte`
+   fresh from the binary and confirmed byte-for-byte that NONE of them
+   reference any door object, door state, or anything beyond the static
+   per-tile shape nibble (`tile_rec[0] & 0xf`, the same table this port's
+   `DAT_00086a20`/`DAT_000878d0`/`DAT_00086bf0_real_table` already
+   reproduce) and the floor-texture fill-style byte. There is no hidden
+   door-aware check in the real binary that this port dropped -- the
+   gap is in the *original 1992 engine's own design*: the tile grid the
+   visibility ray walks has no "door" tile type distinct from open
+   floor at all (doors are objects overlaid on an ordinary floor tile,
+   confirmed via `uw_tile_t.tile_type`'s 4-bit range and the object-
+   placement findings in `object-rendering-findings.txt`). So this is
+   not a portability bug and not fixable without inventing new game
+   logic the original never had -- correctly left alone, same standard
+   as the door-collision investigation itself (don't guess-fix).
 
 **The light-level system exists — and is functionally dead:**
 - `build_visibility_light_grid(radius)` builds a real 17×33 radial

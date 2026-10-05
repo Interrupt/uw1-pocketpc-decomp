@@ -8,6 +8,11 @@ byte *g_automap_tint_bitmap = automap_indices;
 undefined2 g_palette_rgb565_backing[32768];
 long automap_random[128];
 int automap_random_calls;
+/* scroll_text_entry_prompt's (hud.c) raw-text-field-active flag --
+   handle_automap_note_click (extracted below) sets/clears it around its
+   own note-typing loop; hud.c isn't part of this build, so provide its
+   storage here. See bugfix/lowercase-text-universal. */
+int g_text_input_active;
 void *g_uw_framebuffer = automap_pixels;
 void debug_framebuffer_dump(const char *tag) { (void)tag; }
 long ce_rand(void)

@@ -20,11 +20,18 @@ short DAT_00100608;
    bytes, matching every indexed access's `&0x3f` class-id mask * 0x30
    stride (63*48+48=3072). HARD exact bound. Down from 6144. */
  undefined1 DAT_001007d0_backing[3072];
-/* Sizing-audit pass: read-only (ce_strcat/message_scroll_print_wrapped
-   sentence-suffix text across ai.c/object_actions.c), 0 writers --
-   content unrecovered. Sized to 128 for headroom as a display-text
-   fragment; down from 8192. */
- undefined DAT_00084f20_backing[128];
+/* Reused-global-holding-a-real-string pattern (see the
+   s_scroll_newline_0008522c comment in player.h) -- interact.c, ai.c
+   and player.c all pass `&DAT_00084f20` straight into
+   message_scroll_print_wrapped/ce_strcat with no write beforehand, to
+   terminate an item/trap name with a period and newline. Real bytes
+   at 0x84f20 (ARM UU.exe .data, read via Ghidra headless): ".\n"
+   (immediately followed by s_UNNAMED_00084f24's "UNNAMED" at
+   0x84f24) -- not actually unrecovered, just needed a direct byte
+   read against the binary rather than a source-level pattern match.
+   Sized to 128 for headroom as a display-text fragment; down from
+   8192. */
+ undefined DAT_00084f20_backing[128] = ".\n";
 ushort DAT_00101414;
 char *DAT_00101904;
 undefined4 DAT_00101560;
@@ -183,9 +190,9 @@ static char DAT_00085918;
 static char DAT_00085919;
 /* Sizing-audit pass: a filename template with digit pokes at fixed
    offsets 8,9,0x10,0x11 (via DAT_00085910/11/18/19) -- hard lower
-   bound 18 bytes, exact template text unrecovered. Sized to 32 for
-   headroom; down from 8192. */
-static undefined DAT_00085908_backing[32];
+   bound 18 bytes. Real template text recovered (bug-fixes-pass-2):
+   "\CRIT\CR00PAGE.N00". Sized to 32 for headroom; down from 8192. */
+static undefined DAT_00085908_backing[32] = "\\CRIT\\CR00PAGE.N00";
 static char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
 /* Sizing-audit pass: load_critter_association_tables's own per-level
    write is `puVar6[iVar7]` where `iVar7 = iVar10*3 + iVar5`, iVar10
@@ -1184,10 +1191,7 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
     }
   }
   ce_strcat(param_2,&DAT_00084f20);
-  /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
-     fix -- back-to-back Looks at a creature otherwise all land on the
-     same visible scroll line. */
-  ce_strcat(param_2,"\n");
+  /* DAT_00084f20 already supplies the original period and newline. */
   message_scroll_print_wrapped(param_2);
   return;
 }
@@ -4664,8 +4668,19 @@ int param_1;
   int extraout_r2_00;
   ushort uVar9;
   int iVar10;
-  byte local_130;
-  byte local_12f;
+  /* Were two independently-declared single-byte scalars, relying on
+     accidental stack adjacency to work as one 2-byte destination for
+     `read_file_handle(puVar6,&local_130,2)` below (and the combined
+     `(ushort)local_12f + (ushort)local_130` read right after) -- the
+     same original-32-bit-ARM-stack-layout assumption already fixed
+     elsewhere in this port via a real backing array. This path was
+     unreachable until DAT_00085908's real template string was
+     recovered (see its own comment above); once reachable, ASan
+     caught the stack-buffer-overflow the very first time
+     read_file_handle actually got called with a real file handle. */
+  byte local_130_arr[2];
+#define local_130 local_130_arr[0]
+#define local_12f local_130_arr[1]
   undefined1 *local_12c;
   char acStack_128 [260];
   

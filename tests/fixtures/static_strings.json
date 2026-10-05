@@ -1,0 +1,2073 @@
+{
+  "provenance": "Read-only Ghidra memory export of the original Pocket PC UU.exe; addresses are executable virtual addresses. All initialized byte-string declarations in src/*.c are covered. Source symbols preserve Ghidra names; their labels are not the string contents.",
+  "strings": [
+    {
+      "source": "src/3d.c",
+      "symbol": "DAT_000869cc_str",
+      "address": "000869cc",
+      "original": "f16.tr"
+    },
+    {
+      "source": "src/3d.c",
+      "symbol": "DAT_000869d4_str",
+      "address": "000869d4",
+      "original": "w16.tr"
+    },
+    {
+      "source": "src/3d.c",
+      "symbol": "DAT_000869dc_str",
+      "address": "000869dc",
+      "original": "f32.tr"
+    },
+    {
+      "source": "src/3d.c",
+      "symbol": "DAT_000869e4_str",
+      "address": "000869e4",
+      "original": "w64.tr"
+    },
+    {
+      "source": "src/ai.c",
+      "symbol": "DAT_00084f20_backing",
+      "address": "00084f20",
+      "original": ".\n"
+    },
+    {
+      "source": "src/ai.c",
+      "symbol": "DAT_00085908_backing",
+      "address": "00085908",
+      "original": "\\CRIT\\CR00PAGE.N00"
+    },
+    {
+      "source": "src/ai.c",
+      "symbol": "s__CRIT_assoc_anm_00085934",
+      "address": "00085934",
+      "original": "\\CRIT\\assoc.anm"
+    },
+    {
+      "source": "src/ai.c",
+      "symbol": "s_named_00085d18",
+      "address": "00085d18",
+      "original": " named "
+    },
+    {
+      "source": "src/audio.c",
+      "symbol": "s__SOUND__0008750c",
+      "address": "0008750c",
+      "original": "\\SOUND\\"
+    },
+    {
+      "source": "src/audio.c",
+      "symbol": "s_uw00_mod_00087514",
+      "address": "00087514",
+      "original": "uw00.mod"
+    },
+    {
+      "source": "src/audio.c",
+      "symbol": "DAT_00087520_backing",
+      "address": "00087520",
+      "original": "\\VOC00.WAV"
+    },
+    {
+      "source": "src/automap.c",
+      "symbol": "s_font4x5p_sys_0008431c",
+      "address": "0008431c",
+      "original": "font4x5p.sys"
+    },
+    {
+      "source": "src/automap.c",
+      "symbol": "s_fontbig_sys_0008432c",
+      "address": "0008432c",
+      "original": "fontbig.sys"
+    },
+    {
+      "source": "src/automap.c",
+      "symbol": "s__DATA_blnkmap_byt_00084338",
+      "address": "00084338",
+      "original": "\\DATA\\blnkmap.byt"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s__SAVE0_bglobals_dat_00084538",
+      "address": "00084538",
+      "original": "\\SAVE0\\bglobals.dat"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s__DATA_babglobs_dat_0008454c",
+      "address": "0008454c",
+      "original": "\\DATA\\babglobs.dat"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_val_00084560",
+      "address": "00084560",
+      "original": "val"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_length_00084564",
+      "address": "00084564",
+      "original": "length"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_find_0008456c",
+      "address": "0008456c",
+      "original": "find"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_copy_00084574",
+      "address": "00084574",
+      "original": "copy"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_append_0008457c",
+      "address": "0008457c",
+      "original": "append"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_contains_00084584",
+      "address": "00084584",
+      "original": "contains"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_plural_00084590",
+      "address": "00084590",
+      "original": "plural"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_random_00084598",
+      "address": "00084598",
+      "original": "random"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_compare_000845a0",
+      "address": "000845a0",
+      "original": "compare"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "DAT_000845a8",
+      "address": "000845a8",
+      "original": "say"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_respond_000845ac",
+      "address": "000845ac",
+      "original": "respond"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_attitude_000845f8",
+      "address": "000845f8",
+      "original": "npc_attitude"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_genhead_00084fd8",
+      "address": "00084fd8",
+      "original": "genhead"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_charhead_00084fe0",
+      "address": "00084fe0",
+      "original": "charhead"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_heads_00084fec",
+      "address": "00084fec",
+      "original": "heads"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_converse_00084ff4",
+      "address": "00084ff4",
+      "original": "converse"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_take_id_from_npc_0008519c",
+      "address": "0008519c",
+      "original": "take_id_from_npc"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_take_from_npc_000851b0",
+      "address": "000851b0",
+      "original": "take_from_npc"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_find_inv_000851c0",
+      "address": "000851c0",
+      "original": "find_inv"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_give_to_npc_000851cc",
+      "address": "000851cc",
+      "original": "give_to_npc"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_show_inv_000851d8",
+      "address": "000851d8",
+      "original": "show_inv"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_print_000851e4",
+      "address": "000851e4",
+      "original": "print"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_babl_ask_000851ec",
+      "address": "000851ec",
+      "original": "babl_ask"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_sex_000851f8",
+      "address": "000851f8",
+      "original": "sex"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_set_quest_000851fc",
+      "address": "000851fc",
+      "original": "set_quest"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_get_quest_00085208",
+      "address": "00085208",
+      "original": "get_quest"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_babl_fmenu_00085214",
+      "address": "00085214",
+      "original": "babl_fmenu"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_babl_menu_00085220",
+      "address": "00085220",
+      "original": "babl_menu"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_give_ptr_npc_00085000",
+      "address": "00085000",
+      "original": "give_ptr_npc"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_find_barter_total_00085010",
+      "address": "00085010",
+      "original": "find_barter_total"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_find_barter_00085024",
+      "address": "00085024",
+      "original": "find_barter"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_x_obj_pos_00085030",
+      "address": "00085030",
+      "original": "x_obj_pos"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_x_obj_stuff_0008503c",
+      "address": "0008503c",
+      "original": "x_obj_stuff"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_x_traps_00085048",
+      "address": "00085048",
+      "original": "x_traps"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_x_skills_00085050",
+      "address": "00085050",
+      "original": "x_skills"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_remove_talker_0008505c",
+      "address": "0008505c",
+      "original": "remove_talker"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_place_object_0008506c",
+      "address": "0008506c",
+      "original": "place_object"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_add_to_npc_inv_0008507c",
+      "address": "0008507c",
+      "original": "add_to_npc_inv"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_take_from_npc_inv_0008508c",
+      "address": "0008508c",
+      "original": "take_from_npc_inv"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_set_race_attitude_000850a0",
+      "address": "000850a0",
+      "original": "set_race_attitude"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_set_attitude_000850b4",
+      "address": "000850b4",
+      "original": "set_attitude"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_gronk_door_000850c4",
+      "address": "000850c4",
+      "original": "gronk_door"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_count_inv_000850d0",
+      "address": "000850d0",
+      "original": "count_inv"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_set_inv_quality_000850dc",
+      "address": "000850dc",
+      "original": "set_inv_quality"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_check_inv_quality_000850ec",
+      "address": "000850ec",
+      "original": "check_inv_quality"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_do_inv_delete_00085100",
+      "address": "00085100",
+      "original": "do_inv_delete"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_do_inv_create_00085110",
+      "address": "00085110",
+      "original": "do_inv_create"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_set_likes_dislikes_00085120",
+      "address": "00085120",
+      "original": "set_likes_dislikes"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_pause_00085134",
+      "address": "00085134",
+      "original": "pause"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_setup_to_barter_0008513c",
+      "address": "0008513c",
+      "original": "setup_to_barter"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_end_barter_0008514c",
+      "address": "0008514c",
+      "original": "end_barter"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_do_judgement_00085158",
+      "address": "00085158",
+      "original": "do_judgement"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_do_decline_00085168",
+      "address": "00085168",
+      "original": "do_decline"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_do_demand_00085174",
+      "address": "00085174",
+      "original": "do_demand"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_do_offer_00085180",
+      "address": "00085180",
+      "original": "do_offer"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_identify_inv_0008518c",
+      "address": "0008518c",
+      "original": "identify_inv"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "DAT_00085240_backing",
+      "address": "00085240",
+      "original": " "
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "DAT_00085244_backing",
+      "address": "00085244",
+      "original": "an "
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "DAT_00085248_backing",
+      "address": "00085248",
+      "original": "a "
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_talkedto_00085340",
+      "address": "00085340",
+      "original": "npc_talkedto"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_gtarg_00085350",
+      "address": "00085350",
+      "original": "npc_gtarg"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_goal_0008535c",
+      "address": "0008535c",
+      "original": "npc_goal"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_power_00085368",
+      "address": "00085368",
+      "original": "npc_power"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_arms_00085374",
+      "address": "00085374",
+      "original": "npc_arms"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_hp_00085380",
+      "address": "00085380",
+      "original": "npc_hp"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_health_00085388",
+      "address": "00085388",
+      "original": "npc_health"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_hunger_00085394",
+      "address": "00085394",
+      "original": "npc_hunger"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_whoami_000853a0",
+      "address": "000853a0",
+      "original": "npc_whoami"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_name_0008524c",
+      "address": "0008524c",
+      "original": "play_name"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_drawn_00085258",
+      "address": "00085258",
+      "original": "play_drawn"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_poison_00085264",
+      "address": "00085264",
+      "original": "play_poison"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_sex_00085270",
+      "address": "00085270",
+      "original": "play_sex"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_new_player_exp_0008527c",
+      "address": "0008527c",
+      "original": "new_player_exp"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_game_days_0008528c",
+      "address": "0008528c",
+      "original": "game_days"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_game_mins_00085298",
+      "address": "00085298",
+      "original": "game_mins"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_game_time_000852a4",
+      "address": "000852a4",
+      "original": "game_time"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_dungeon_level_000852b0",
+      "address": "000852b0",
+      "original": "dungeon_level"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_level_000852c0",
+      "address": "000852c0",
+      "original": "play_level"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_mana_000852cc",
+      "address": "000852cc",
+      "original": "play_mana"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_power_000852d8",
+      "address": "000852d8",
+      "original": "play_power"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_arms_000852e4",
+      "address": "000852e4",
+      "original": "play_arms"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_hp_000852f0",
+      "address": "000852f0",
+      "original": "play_hp"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_health_000852f8",
+      "address": "000852f8",
+      "original": "play_health"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_play_hunger_00085304",
+      "address": "00085304",
+      "original": "play_hunger"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_name_00085310",
+      "address": "00085310",
+      "original": "npc_name"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_yhome_0008531c",
+      "address": "0008531c",
+      "original": "npc_yhome"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_xhome_00085328",
+      "address": "00085328",
+      "original": "npc_xhome"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_npc_level_00085334",
+      "address": "00085334",
+      "original": "npc_level"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "DAT_00085448_backing",
+      "address": "00085448",
+      "original": "\\CSXXX.nXX"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "s_FONTBIG_SYS_00085454",
+      "address": "00085454",
+      "original": "FONTBIG.SYS"
+    },
+    {
+      "source": "src/babl.c",
+      "symbol": "DAT_00085460_backing",
+      "address": "00085460",
+      "original": "\\CSXXX.N00"
+    },
+    {
+      "source": "src/bitmap.c",
+      "symbol": "s_lfti_000859fc",
+      "address": "000859fc",
+      "original": "lfti"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "DAT_00084e40_backing",
+      "address": "00084e40",
+      "original": "Vit:"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "DAT_00084e48_backing",
+      "address": "00084e48",
+      "original": "Int:"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "DAT_00084e50_backing",
+      "address": "00084e50",
+      "original": "Dex:"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "DAT_00084e58_backing",
+      "address": "00084e58",
+      "original": "Str:"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "s_key_to_continue_00084e60",
+      "address": "00084e60",
+      "original": "key to continue"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "s_then_press_the_Enter_00084e70",
+      "address": "00084e70",
+      "original": "then press the Enter"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "s_Enter_your_name_and_00084e88",
+      "address": "00084e88",
+      "original": "Enter your name and"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "s_FONT5X6P_SYS_00084e9c",
+      "address": "00084e9c",
+      "original": "FONT5X6P.SYS"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "s__DATA_CHARGEN_BYT_00084eac",
+      "address": "00084eac",
+      "original": "\\DATA\\CHARGEN.BYT"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "s_FONTCHAR_SYS_00084ec0",
+      "address": "00084ec0",
+      "original": "FONTCHAR.SYS"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "s__DATA_chrgen_dat_00084ed0",
+      "address": "00084ed0",
+      "original": "\\DATA\\chrgen.dat"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "s__DATA_skills_dat_00084ee4",
+      "address": "00084ee4",
+      "original": "\\DATA\\skills.dat"
+    },
+    {
+      "source": "src/chargen.c",
+      "symbol": "s_chrbtns_00084ef8",
+      "address": "00084ef8",
+      "original": "chrbtns"
+    },
+    {
+      "source": "src/combat.c",
+      "symbol": "s__DATA_cmb_dat_00084f40",
+      "address": "00084f40",
+      "original": "\\DATA\\cmb.dat"
+    },
+    {
+      "source": "src/combat.c",
+      "symbol": "DAT_00085a90",
+      "address": "00085a90",
+      "original": " was"
+    },
+    {
+      "source": "src/combat.c",
+      "symbol": "s_were_00085a98",
+      "address": "00085a98",
+      "original": " were"
+    },
+    {
+      "source": "src/combat.c",
+      "symbol": "DAT_00085aa0",
+      "address": "00085aa0",
+      "original": "Your "
+    },
+    {
+      "source": "src/combat.c",
+      "symbol": "s_damaged__00085aa8",
+      "address": "00085aa8",
+      "original": " damaged.\n"
+    },
+    {
+      "source": "src/combat.c",
+      "symbol": "s_destroyed__00085ab4",
+      "address": "00085ab4",
+      "original": " destroyed.\n"
+    },
+    {
+      "source": "src/containers.c",
+      "symbol": "DAT_00085c88_backing",
+      "address": "00085c88",
+      "original": "The "
+    },
+    {
+      "source": "src/containers.c",
+      "symbol": "s_is_empty__0008790c",
+      "address": "0008790c",
+      "original": " is empty.\n"
+    },
+    {
+      "source": "src/doors.c",
+      "symbol": "s_At__d__d_00087360",
+      "address": "00087360",
+      "original": "At %d %d\n"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__DATA_pres1_byt_00085790",
+      "address": "00085790",
+      "original": "\\DATA\\pres1.byt"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__DATA_lev_ark_00085734",
+      "address": "00085734",
+      "original": "\\DATA\\lev.ark"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_Not_enough_disk_space_for_save_g_00085744",
+      "address": "00085744",
+      "original": "Not enough disk space for save game.$"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__DATA_COPYRIGHT_BYT_0008576c",
+      "address": "0008576c",
+      "original": "\\DATA\\COPYRIGHT.BYT"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__DATA_pres2_byt_00085780",
+      "address": "00085780",
+      "original": "\\DATA\\pres2.byt"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "DAT_000857a0_backing",
+      "address": "000857a0",
+      "original": "\\SAVE0\\",
+      "port_value": "\\SAVE0",
+      "reason": "Port save paths keep the separator on the filename suffix rather than the directory prefix."
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_Error_code_XXXX___000857c8",
+      "address": "000857c8",
+      "original": " Error code XXXX\r\n$"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_Out_of_Low_Memory___000857dc",
+      "address": "000857dc",
+      "original": "Out of Low Memory.$"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_Out_of_EMS_Memory___000857f0",
+      "address": "000857f0",
+      "original": "Out of EMS Memory.$"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_Could_not_read_data___00085804",
+      "address": "00085804",
+      "original": "Could not read data.$"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_Could_not_write_data___0008581c",
+      "address": "0008581c",
+      "original": "Could not write data.$"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_Resource_problem_or_internal_err_00085834",
+      "address": "00085834",
+      "original": "Resource problem or internal error.$"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_Underworld_can_no_longer_run__Er_0008585c",
+      "address": "0008585c",
+      "original": "Underworld can no longer run.  Error code XXXX.\r\n$"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_optb_000859ac",
+      "address": "000859ac",
+      "original": "optb"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_scrledge_000859b4",
+      "address": "000859b4",
+      "original": "scrledge"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_spells_000859c0",
+      "address": "000859c0",
+      "original": "spells"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_chains_000859c8",
+      "address": "000859c8",
+      "original": "chains"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_eyes_000859d0",
+      "address": "000859d0",
+      "original": "eyes"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_power_000859d8",
+      "address": "000859d8",
+      "original": "power"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_inv_000859e0",
+      "address": "000859e0",
+      "original": "inv"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_dragons_000859e4",
+      "address": "000859e4",
+      "original": "dragons"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_compass_000859ec",
+      "address": "000859ec",
+      "original": "compass"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_flasks_000859f4",
+      "address": "000859f4",
+      "original": "flasks"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_tmobj_00085a04",
+      "address": "00085a04",
+      "original": "tmobj"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_tmflat_00085a0c",
+      "address": "00085a0c",
+      "original": "tmflat"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_3dwin_00085a14",
+      "address": "00085a14",
+      "original": "3dwin"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_cursors_00085a1c",
+      "address": "00085a1c",
+      "original": "cursors"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_buttons_00085a24",
+      "address": "00085a24",
+      "original": "buttons"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_animo_00085a2c",
+      "address": "00085a2c",
+      "original": "animo"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_objects_00085a34",
+      "address": "00085a34",
+      "original": "objects"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_views_00085a3c",
+      "address": "00085a3c",
+      "original": "views"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_question_00085a44",
+      "address": "00085a44",
+      "original": "question"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__DATA_allpals_dat_00085a50",
+      "address": "00085a50",
+      "original": "\\DATA\\allpals.dat"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08",
+      "address": "00086e08",
+      "original": "Lev %d @ %2.2u.%1.1u %2.2u.%1.1u %2.2x %2.2x \n"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__DATA_CREDIT3_BYT_00086ea8",
+      "address": "00086ea8",
+      "original": "\\DATA\\CREDIT3.BYT"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__DATA_CREDIT2_BYT_00086ebc",
+      "address": "00086ebc",
+      "original": "\\DATA\\CREDIT2.BYT"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__DATA_CREDIT1_BYT_00086ed0",
+      "address": "00086ed0",
+      "original": "\\DATA\\CREDIT1.BYT"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s_opbtn_00086ee4",
+      "address": "00086ee4",
+      "original": "opbtn"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__DATA_opscr_byt_00086eec",
+      "address": "00086eec",
+      "original": "\\DATA\\opscr.byt"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__Program_Files_ZIO_Interactive_U_00087804",
+      "address": "00087804",
+      "original": "\\Program Files\\ZIO Interactive\\Ultima Underworld"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__Program_Files_ZIO_Interactive_U_000876ec",
+      "address": "000876ec",
+      "original": "\\Program Files\\ZIO Interactive\\Ultima(Voice)"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "s__Program_Files_ZIO_Interactive_U_00087774",
+      "address": "00087774",
+      "original": "\\Program Files\\ZIO Interactive\\Ultima(CutScene)"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_out_of_000858dc",
+      "address": "000858dc",
+      "original": " out of "
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_init_gamedisp_goes_000858e8",
+      "address": "000858e8",
+      "original": "init_gamedisp goes\n"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_Not_a_spell_00085a80",
+      "address": "00085a80",
+      "original": "Not a spell\n"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_bodies_00085c58",
+      "address": "00085c58",
+      "original": "bodies"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_optbtns_00086954",
+      "address": "00086954",
+      "original": "optbtns"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_panels_00087260",
+      "address": "00087260",
+      "original": "panels"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "DAT_00087298_backing",
+      "address": "00087298",
+      "original": "ick\n"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s__MORE__00087994",
+      "address": "00087994",
+      "original": "[MORE]"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_No_0008799c",
+      "address": "0008799c",
+      "original": "No"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_Yes_000879a0",
+      "address": "000879a0",
+      "original": "Yes"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_dash_000879a4_backing",
+      "address": "000879a4",
+      "original": "-"
+    },
+    {
+      "source": "src/hud.c",
+      "symbol": "s_scroll_prompt_arrow_000879a8_backing",
+      "address": "000879a8",
+      "original": ">"
+    },
+    {
+      "source": "src/interact.c",
+      "symbol": "s__DATA_cnv_ark_00084fc8",
+      "address": "00084fc8",
+      "original": "\\DATA\\cnv.ark"
+    },
+    {
+      "source": "src/interact.c",
+      "symbol": "s_Unable_to_defuse_trap__0008736c",
+      "address": "0008736c",
+      "original": "Unable to defuse trap.\n"
+    },
+    {
+      "source": "src/interact.c",
+      "symbol": "s_Your_bumbling_attempts_have_set_o_00087384",
+      "address": "00087384",
+      "original": "Your bumbling attempts have set off the "
+    },
+    {
+      "source": "src/interact.c",
+      "symbol": "s_was_successfully_dearmed__000873b0",
+      "address": "000873b0",
+      "original": " was successfully dearmed.\n"
+    },
+    {
+      "source": "src/interact.c",
+      "symbol": "s_on_the_000873cc",
+      "address": "000873cc",
+      "original": " on the "
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_UNNAMED_00084f24",
+      "address": "00084f24",
+      "original": "UNNAMED"
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_objsbecombinable_returns__d_00084f50",
+      "address": "00084f50",
+      "original": "objsbecombinable returns %d\n"
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_combination__d_is__d_and__d__00084f70",
+      "address": "00084f70",
+      "original": "combination %d is %d and %d.\n"
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_checking_if__d_and__d_are_combin_00084f90",
+      "address": "00084f90",
+      "original": "checking if %d and %d are combinable...\n"
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_armor_f_00085c60",
+      "address": "00085c60",
+      "original": "armor_f"
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_Move_how_many__00085c68",
+      "address": "00085c68",
+      "original": "Move how many? "
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_is_too_full__00085c78",
+      "address": "00085c78",
+      "original": " is too full.\n"
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "DAT_00085ce0_backing",
+      "address": "00085ce0",
+      "original": "...\n"
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_You_read_the_00085ce8",
+      "address": "00085ce8",
+      "original": "You read the "
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_on_what__000878e0",
+      "address": "000878e0",
+      "original": " on what?\n"
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "DAT_000878ec_backing",
+      "address": "000878ec",
+      "original": "Use "
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_That_000878f4",
+      "address": "000878f4",
+      "original": "That "
+    },
+    {
+      "source": "src/item_use.c",
+      "symbol": "s_is_locked__000878fc",
+      "address": "000878fc",
+      "original": " is locked.\n"
+    },
+    {
+      "source": "src/level.c",
+      "symbol": "s__DATA_main_byt_000857a8",
+      "address": "000857a8",
+      "original": "\\DATA\\main.byt"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_unexpected_EOF___no_END_statemen_000846f8",
+      "address": "000846f8",
+      "original": "unexpected EOF - no END statement\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s________c_0008471c",
+      "address": "0008471c",
+      "original": "%*[^}]%c"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s___d__00084728",
+      "address": "00084728",
+      "original": "(%d)\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "DAT_00084730_backing",
+      "address": "00084730",
+      "original": "%d "
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_anim__d___d__c__d__d___00084734",
+      "address": "00084734",
+      "original": "anim %d (%d,%c,%d,%d): "
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__d__1s__d__d__1s_0008474c",
+      "address": "0008474c",
+      "original": "%d,%1s,%d,%d,%1s"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_ANIMATE_00084760",
+      "address": "00084760",
+      "original": "ANIMATE"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_Error__extended_color_for_part___00084768",
+      "address": "00084768",
+      "original": "Error: extended color for part %d not in Mac color table\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__lx_1s_000847a4",
+      "address": "000847a4",
+      "original": "%lx%1s",
+      "port_value": "%x%1s",
+      "reason": "Match the 32-bit scanf destination on hosts with 64-bit long."
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_EXTENDED_COLORS_000847ac",
+      "address": "000847ac",
+      "original": "EXTENDED_COLORS"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_INTERSECTIONS_000847bc",
+      "address": "000847bc",
+      "original": "INTERSECTIONS"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__c__d__d__d__d__d___c__000847cc",
+      "address": "000847cc",
+      "original": "%c,%d,%d,%d,%d,%d (%c)\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__1s__d__d__d_1s_000847e4",
+      "address": "000847e4",
+      "original": "%1s,%d,%d,%d%1s"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__1s__d__d__d__d__d_1s_000847f4",
+      "address": "000847f4",
+      "original": "%1s,%d,%d,%d,%d,%d%1s"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_branch_0008480c",
+      "address": "0008480c",
+      "original": "branch "
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "DAT_00084814_backing",
+      "address": "00084814",
+      "original": "%d\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_leaf_00084818",
+      "address": "00084818",
+      "original": "leaf "
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "DAT_00084820_backing",
+      "address": "00084820",
+      "original": "%1s,"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_SUPER_NODES_00084828",
+      "address": "00084828",
+      "original": "SUPER_NODES"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_NODES_00084834",
+      "address": "00084834",
+      "original": "NODES"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_CLUSTERS_0008483c",
+      "address": "0008483c",
+      "original": "CLUSTERS"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_making_backside_of__d_____d_00084848",
+      "address": "00084848",
+      "original": "making backside of %d -> %d\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_Error__Part__d_is_a_polygon_with_00084868",
+      "address": "00084868",
+      "original": "Error: Part %d is a polygon with only %d points"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_Error__polygon__d__bitmap_must_h_00084898",
+      "address": "00084898",
+      "original": "Error: polygon %d: bitmap must have 4 points\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__d_1s_000848c8",
+      "address": "000848c8",
+      "original": "%d%1s"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__d__d_000848d0",
+      "address": "000848d0",
+      "original": "%d,%d"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_________c_000848d8",
+      "address": "000848d8",
+      "original": "%*[^;}]%c"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_got_sphere__d_000848e4",
+      "address": "000848e4",
+      "original": "got sphere %d\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "DAT_000848f4_backing",
+      "address": "000848f4",
+      "original": "%d,"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_Too_many_polys_000848f8",
+      "address": "000848f8",
+      "original": "Too many polys\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_Out_of_vertex_list_space_00084908",
+      "address": "00084908",
+      "original": "Out of vertex list space\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__d__d__d__d_00084924",
+      "address": "00084924",
+      "original": "%d,%d,%d,%d"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_got_bitmap__d___d_00084930",
+      "address": "00084930",
+      "original": "got bitmap %d: %d\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__d__1s__d__x__00084944",
+      "address": "00084944",
+      "original": "%d,%1s,%d,%x,"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s___c_1____00084954",
+      "address": "00084954",
+      "original": "%*c%1[}]"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_PARTS_00084960",
+      "address": "00084960",
+      "original": "PARTS"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_Too_many_points___d__00084968",
+      "address": "00084968",
+      "original": "Too many points (%d)\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__d__d__d__00084980",
+      "address": "00084980",
+      "original": "%d,%d,%d;"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_POINTS_0008498c",
+      "address": "0008498c",
+      "original": "POINTS"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__1s______1s_00084994",
+      "address": "00084994",
+      "original": "%1s%[^\"]%1s"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_NAMES_000849a0",
+      "address": "000849a0",
+      "original": "NAMES"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "DAT_000849a8_backing",
+      "address": "000849a8",
+      "original": "%1s"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "DAT_000849ac_backing",
+      "address": "000849ac",
+      "original": "%d"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_VERSION_000849b0",
+      "address": "000849b0",
+      "original": "VERSION"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_error___s__c_000849b8",
+      "address": "000849b8",
+      "original": "error: %s,%c\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "DAT_000849c8_backing",
+      "address": "000849c8",
+      "original": "END"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__100s_1s_000849cc",
+      "address": "000849cc",
+      "original": "%100s%1s"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__1s__a_z__1s_000849d8",
+      "address": "000849d8",
+      "original": "%1s%[a-z]%1s"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_Input_file_error__BEGIN_statemen_000849e8",
+      "address": "000849e8",
+      "original": "Input file error: BEGIN statement missing\n"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s_BEGIN_00084a14",
+      "address": "00084a14",
+      "original": "BEGIN"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__100s_00084a1c",
+      "address": "00084a1c",
+      "original": "%100s"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "DAT_00084a24_backing",
+      "address": "00084a24",
+      "original": "r"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_BED2_E_00085474",
+      "address": "00085474",
+      "original": "\\DATA3D\\BED2.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_CHAIRSIM_E_00085484",
+      "address": "00085484",
+      "original": "\\DATA3D\\CHAIRSIM.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_BARRCLOS_E_00085498",
+      "address": "00085498",
+      "original": "\\DATA3D\\BARRCLOS.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_NITESTAN_E_000854ac",
+      "address": "000854ac",
+      "original": "\\DATA3D\\NITESTAN.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_CHEST_E_000854c0",
+      "address": "000854c0",
+      "original": "\\DATA3D\\CHEST.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_TABLF3_E_000854d0",
+      "address": "000854d0",
+      "original": "\\DATA3D\\TABLF3.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_GATE_E_000854e4",
+      "address": "000854e4",
+      "original": "\\DATA3D\\GATE.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_TMAP64X64_E_000854f4",
+      "address": "000854f4",
+      "original": "\\DATA3D\\TMAP64X64.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_TMAP32X32_E_00085508",
+      "address": "00085508",
+      "original": "\\DATA3D\\TMAP32X32.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_GRAVE_E_0008551c",
+      "address": "0008551c",
+      "original": "\\DATA3D\\GRAVE.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_TMAP16X16_E_0008552c",
+      "address": "0008552c",
+      "original": "\\DATA3D\\TMAP16X16.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_DOOR_E_00085540",
+      "address": "00085540",
+      "original": "\\DATA3D\\DOOR.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_NEWPORT_E_00085550",
+      "address": "00085550",
+      "original": "\\DATA3D\\NEWPORT.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_SHRINE_E_00085564",
+      "address": "00085564",
+      "original": "\\DATA3D\\SHRINE.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_NEWPILL_E_00085578",
+      "address": "00085578",
+      "original": "\\DATA3D\\NEWPILL.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_BEAM_E_0008558c",
+      "address": "0008558c",
+      "original": "\\DATA3D\\BEAM.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_ARROW_E_0008559c",
+      "address": "0008559c",
+      "original": "\\DATA3D\\ARROW.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_ROCKBIG_E_000855ac",
+      "address": "000855ac",
+      "original": "\\DATA3D\\ROCKBIG.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_ROCKMED_E_000855c0",
+      "address": "000855c0",
+      "original": "\\DATA3D\\ROCKMED.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_ROCKSMAL_E_000855d4",
+      "address": "000855d4",
+      "original": "\\DATA3D\\ROCKSMAL.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_40LOTUS_E_000855e8",
+      "address": "000855e8",
+      "original": "\\DATA3D\\40LOTUS.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_BENCH_E_000855fc",
+      "address": "000855fc",
+      "original": "\\DATA3D\\BENCH.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_FBRIDGE_E_0008560c",
+      "address": "0008560c",
+      "original": "\\DATA3D\\FBRIDGE.E"
+    },
+    {
+      "source": "src/models.c",
+      "symbol": "s__DATA3D_DFRAME_E_00085620",
+      "address": "00085620",
+      "original": "\\DATA3D\\DFRAME.E"
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "s_You_see_000858fc",
+      "address": "000858fc",
+      "original": "You see "
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "s_belonging_to_00085c90",
+      "address": "00085c90",
+      "original": " belonging to"
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "s_cursed_00085ca0",
+      "address": "00085ca0",
+      "original": "cursed "
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "s_magical_00085ca8",
+      "address": "00085ca8",
+      "original": "magical "
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "s_full_charge_00085cb8",
+      "address": "00085cb8",
+      "original": " full charge"
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "DAT_00085cc8",
+      "address": "00085cc8",
+      "original": "no"
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "s_with_00085cd0",
+      "address": "00085cd0",
+      "original": " with "
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "DAT_00085cd8_backing",
+      "address": "00085cd8",
+      "original": " of "
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "DAT_00085cb4_backing",
+      "address": "00085cb4",
+      "original": "s"
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "s__DATA_grave_dat_00085cf8",
+      "address": "00085cf8",
+      "original": "\\DATA\\grave.dat"
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "s_an_adventurer__00085d08",
+      "address": "00085d08",
+      "original": "an adventurer.\n"
+    },
+    {
+      "source": "src/object_actions.c",
+      "symbol": "s_very_near_00087954",
+      "address": "00087954",
+      "original": "very near"
+    },
+    {
+      "source": "src/objects.c",
+      "symbol": "s__DATA_comobj_dat_00086894",
+      "address": "00086894",
+      "original": "\\DATA\\comobj.dat"
+    },
+    {
+      "source": "src/objects.c",
+      "symbol": "s__DATA_objects_dat_000868a8",
+      "address": "000868a8",
+      "original": "\\DATA\\objects.dat"
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s_font5x6p_sys_0008430c",
+      "address": "0008430c",
+      "original": "font5x6p.sys"
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s_scroll_newline_0008522c_backing",
+      "address": "0008522c",
+      "original": "\n"
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s_You_died_000857b8",
+      "address": "000857b8",
+      "original": "    You died\n"
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s_player_dat_00085a74",
+      "address": "00085a74",
+      "original": "player.dat",
+      "port_value": "\\player.dat",
+      "reason": "Port save paths keep the separator on the filename suffix rather than the directory prefix."
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s_font5x6i_sys_00086e98",
+      "address": "00086e98",
+      "original": "font5x6i.sys"
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s__DATA_mono_dat_000872b8",
+      "address": "000872b8",
+      "original": "\\DATA\\mono.dat"
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "DAT_0008730c_backing",
+      "address": "0008730c",
+      "original": " 0\n"
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s_and_00087310",
+      "address": "00087310",
+      "original": " and "
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "DAT_00087318",
+      "address": "00087318",
+      "original": ", "
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s_Chant_the_mantra__0008731c",
+      "address": "0008731c",
+      "original": "Chant the mantra: "
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s_fontchar_sys_00087330",
+      "address": "00087330",
+      "original": "fontchar.sys"
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s__DATA_win1_byt_00087350",
+      "address": "00087350",
+      "original": "\\DATA\\win1.byt"
+    },
+    {
+      "source": "src/player.c",
+      "symbol": "s__DATA_win2_byt_00087340",
+      "address": "00087340",
+      "original": "\\DATA\\win2.byt"
+    },
+    {
+      "source": "src/resources.c",
+      "symbol": "DAT_00085920_backing",
+      "address": "00085920",
+      "original": "\\CRIT\\CR00PAGE.N00"
+    },
+    {
+      "source": "src/resources.c",
+      "symbol": "s__DATA__00085970",
+      "address": "00085970",
+      "original": "\\DATA\\"
+    },
+    {
+      "source": "src/resources.c",
+      "symbol": "s__DATA_pals_dat_00085978",
+      "address": "00085978",
+      "original": "\\DATA\\pals.dat"
+    },
+    {
+      "source": "src/resources.c",
+      "symbol": "s_doors_00085a64",
+      "address": "00085a64",
+      "original": "doors"
+    },
+    {
+      "source": "src/resources.c",
+      "symbol": "s_strings_pak_000878c0",
+      "address": "000878c0",
+      "original": "strings.pak"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s__arc_tmp_000842b4",
+      "address": "000842b4",
+      "original": "_arc.tmp"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s__SAVE0_lev_ark_000842fc",
+      "address": "000842fc",
+      "original": "\\SAVE0\\lev.ark"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s_IV__0008705c",
+      "address": "0008705c",
+      "original": "IV- "
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s_III__00087064",
+      "address": "00087064",
+      "original": "III- "
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s_II__0008706c",
+      "address": "0008706c",
+      "original": "II- "
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s_I__00087074",
+      "address": "00087074",
+      "original": "I- "
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s_scroll_color_reset_00087038_backing",
+      "address": "00087038",
+      "original": "\\0"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s__6_Save_Game_Descriptions_0008703c",
+      "address": "0008703c",
+      "original": "\\6    Save Game Descriptions"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s__DATA_OPSCR_BYT_00086efc",
+      "address": "00086efc",
+      "original": "\\DATA\\OPSCR.BYT"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s__not_used_yet__00087020",
+      "address": "00087020",
+      "original": "<not used yet>"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "DAT_00087030_backing",
+      "address": "00087030",
+      "original": "desc",
+      "port_value": "\\desc",
+      "reason": "Port save paths keep the separator on the filename suffix rather than the directory prefix."
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s__PLAYER_DAT_00087088",
+      "address": "00087088",
+      "original": "\\PLAYER.DAT"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s_Please_enter_a_Save_Game_file_an_00087094",
+      "address": "00087094",
+      "original": "  Please enter a Save Game file and press Enter\n"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "s__SAVE0_desc_00087078",
+      "address": "00087078",
+      "original": "\\SAVE0\\desc"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "DAT_00087084_backing",
+      "address": "00087084",
+      "original": "\\"
+    },
+    {
+      "source": "src/saveload.c",
+      "symbol": "DAT_000870c8_backing",
+      "address": "000870c8",
+      "original": "*.*",
+      "port_value": "\\*.*",
+      "reason": "Port save paths keep the separator on the filename suffix rather than the directory prefix."
+    },
+    {
+      "source": "src/text.c",
+      "symbol": "s_0123456789ABCDEF_00084a28",
+      "address": "00084a28",
+      "original": "0123456789ABCDEF"
+    },
+    {
+      "source": "src/traps.c",
+      "symbol": "s_The_book_explodes_in_your_face__00085644",
+      "address": "00085644",
+      "original": "The book explodes in your face!\n"
+    },
+    {
+      "source": "src/traps.c",
+      "symbol": "s_Look__it_s_a_text_trap_00087918",
+      "address": "00087918",
+      "original": "Look, it's a text trap\n"
+    },
+    {
+      "source": "src/visibility.c",
+      "symbol": "s_bad_tmap_ids_size_000869b7",
+      "address": "000869b7",
+      "original": " bad tmap ids size\n"
+    },
+    {
+      "source": "src/visibility.c",
+      "symbol": "s__DATA_terrain_dat_000869ec",
+      "address": "000869ec",
+      "original": "\\DATA\\terrain.dat"
+    },
+    {
+      "source": "src/visibility.c",
+      "symbol": "s_R__lu_P__lu_S__lu_F__d__d_00086b04",
+      "address": "00086b04",
+      "original": "R:%lu P:%lu S:%lu F:%d.%d"
+    },
+    {
+      "source": "src/visibility.c",
+      "symbol": "s__DATA_f16_tr_00086dd8",
+      "address": "00086dd8",
+      "original": "\\DATA\\f16.tr"
+    },
+    {
+      "source": "src/visibility.c",
+      "symbol": "s__DATA_f32_tr_00086de8",
+      "address": "00086de8",
+      "original": "\\DATA\\f32.tr"
+    },
+    {
+      "source": "src/visibility.c",
+      "symbol": "s__DATA_shades_dat_000872a4",
+      "address": "000872a4",
+      "original": "\\DATA\\shades.dat"
+    },
+    {
+      "source": "src/visibility.c",
+      "symbol": "s__DATA_light_dat_000872c8",
+      "address": "000872c8",
+      "original": "\\DATA\\light.dat"
+    },
+    {
+      "source": "src/visibility.c",
+      "symbol": "s__DATA_xfer_dat_000872d8",
+      "address": "000872d8",
+      "original": "\\DATA\\xfer.dat"
+    },
+    {
+      "source": "src/visibility.c",
+      "symbol": "s_cLightTabs_allocation_error_____000872e8",
+      "address": "000872e8",
+      "original": "cLightTabs allocation error ..."
+    },
+    {
+      "source": "src/weapon_swing.c",
+      "symbol": "s_Sorry__you_have_no_00084f2c",
+      "address": "00084f2c",
+      "original": "Sorry, you have no "
+    },
+    {
+      "source": "src/weapon_swing.c",
+      "symbol": "s__DATA_weapons_dat_00087268",
+      "address": "00087268",
+      "original": "\\DATA\\weapons.dat"
+    },
+    {
+      "source": "src/weapon_swing.c",
+      "symbol": "s_weapons_0008727c",
+      "address": "0008727c",
+      "original": "weapons"
+    },
+    {
+      "source": "src/weapon_swing.c",
+      "symbol": "s__DATA_weapons_cm_00087284",
+      "address": "00087284",
+      "original": "\\DATA\\weapons.cm"
+    }
+  ]
+}

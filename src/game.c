@@ -74,7 +74,12 @@ int DAT_00201c98;
 static char s__DATA_pres1_byt_00085790[] = "\\DATA\\pres1.byt";
 undefined4 DAT_0023c540;
 static char s__DATA_lev_ark_00085734[] = "\\DATA\\lev.ark";
-static char s_Not_enough_disk_space_for_save_g_00085744[] = "Not_enough_disk_space_for_save_g";
+/* Ghidra rendered the embedded spaces as underscores and truncated
+   the string partway through (dropped "ame.$"). Real bytes at
+   0x85744 (ARM UU.exe .data): "Not enough disk space for save
+   game.$" (the trailing '$' is itself part of the real string, a
+   leftover DOS int21h-print convention baked into this data). */
+static char s_Not_enough_disk_space_for_save_g_00085744[] = "Not enough disk space for save game.$";
 static char s__DATA_COPYRIGHT_BYT_0008576c[] = "\\DATA\\COPYRIGHT.BYT";
 static char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
 /* Not `static` -- also used by game.c (app_main_loop, main_menu_loop);
@@ -82,16 +87,15 @@ static char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
    Was zero-initialized -- an "unrecoverable string constant" Ghidra never
    populated (same class of bug as the CHRBTNS/opbtn resource-name fixes),
    but unlike those it has NO writer anywhere in uw.c or game.c either, so
-   it's a real compile-time constant, not a runtime-built buffer. Every
-   reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
-   bglobals.dat, desc) alongside already-recovered sibling constants that
-   spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
-   and probe_save_slots/load_game_from_slot both search the built path for a literal
-   '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
-   supplies one. Recovered as "\SAVE0"; a prior pass kept the oversized
-   backing array reasoning that nothing relies on its exact size, but
-   that cuts the other way too -- nothing needs it oversized either, so
-   this pass shrinks it to the literal's own 7 bytes plus headroom. */
+   it's a real compile-time constant, not a runtime-built buffer. Original
+   UU.exe bytes at 0x857a0 are "\SAVE0\" -- this port keeps the final
+   separator on the filename suffixes (\desc, \player.dat, \*.*) instead
+   and recovers this constant as "\SAVE0" (no trailing separator); both
+   layouts produce the same filenames. probe_save_slots/load_game_from_slot
+   both search the built path for a literal '0' character to substitute a
+   real slot digit (1-4) -- only "SAVE0" supplies one. Sizing-audit pass:
+   nothing relies on this being oversized either, so shrunk to the
+   literal's own 7 bytes plus headroom. */
 undefined1 DAT_000857a0_backing[16] = "\\SAVE0";
 static undefined2 DAT_00201b6c;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
@@ -145,13 +149,20 @@ void (*const DAT_00085668_real_table[48])(void) = {
   0, 0, 0, (void(*)(void))exit_talk_mode,
 };
 undefined2 DAT_000868d8;
-static char s_Error_code_XXXX___000857c8[] = "Error_code_XXXX_$";
-static char s_Out_of_Low_Memory___000857dc[] = "Out_of_Low_Memory.$";
-static char s_Out_of_EMS_Memory___000857f0[] = "Out_of_EMS_Memory.$";
-static char s_Could_not_read_data___00085804[] = "Could_not_read_data.$";
-static char s_Could_not_write_data___0008581c[] = "Could_not_write_data.$";
-static char s_Resource_problem_or_internal_err_00085834[] = "Resource_problem_or_internal_err";
-static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld_can_no_longer_run._Er";
+/* All seven of these DOS-era error strings were mangled by Ghidra:
+   embedded spaces rendered as underscores, and several truncated
+   partway through (dropped trailing "\r\n$"/"or.$"/"...Error code
+   XXXX.\r\n$" text). Real bytes confirmed against the ARM UU.exe
+   .data section at each address below -- the literal '$' and
+   '\r\n' bytes are themselves real content (a DOS int21h-print
+   convention baked into this data), not artifacts to strip. */
+static char s_Error_code_XXXX___000857c8[] = " Error code XXXX\r\n$";
+static char s_Out_of_Low_Memory___000857dc[] = "Out of Low Memory.$";
+static char s_Out_of_EMS_Memory___000857f0[] = "Out of EMS Memory.$";
+static char s_Could_not_read_data___00085804[] = "Could not read data.$";
+static char s_Could_not_write_data___0008581c[] = "Could not write data.$";
+static char s_Resource_problem_or_internal_err_00085834[] = "Resource problem or internal error.$";
+static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld can no longer run.  Error code XXXX.\r\n$";
 /* Sizing-audit pass: fatal-error message buffer, written via
    ce_strncpy from either a 42-byte stack buffer (report_fatal_error_
    and_exit) or an unbounded caller string (report_fatal_error_
@@ -223,7 +234,7 @@ short *DAT_000876c0 = DAT_000876c0_backing;
    Down from 8192. */
 static undefined DAT_00028bfc_backing[16];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
-static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev_%d_@_%2.2u.%1.1u_%2.2u.%1.1u";
+static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev %d @ %2.2u.%1.1u %2.2u.%1.1u %2.2x %2.2x \n";
 static byte DAT_0023bd84;
 static undefined1 DAT_00086e05;
 static undefined1 DAT_00086e06;
@@ -314,13 +325,13 @@ undefined4 DAT_0023c648;
 static unsigned short u_UltimaUW_00087678[] = u"UltimaUW";
 static unsigned short u_Ultima_Under_World_00087690[] = u"Ultima_Under_World";
 static unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[] = u"Software\\Apps\\ZIO_Interactive_Ul";
-static char s__Program_Files_ZIO_Interactive_U_00087804[] = "\\Program_Files\\ZIO_Interactive\\U";
+static char s__Program_Files_ZIO_Interactive_U_00087804[] = "\\Program Files\\ZIO Interactive\\Ultima Underworld";
 static unsigned short u_InstlDir_00087838[] = u"InstlDir";
 static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008784c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
 static unsigned short u_HP_Jornada_540_000876cc[] = u"HP,Jornada_540";
-static char s__Program_Files_ZIO_Interactive_U_000876ec[] = "\\Program_Files\\ZIO_Interactive\\U";
+static char s__Program_Files_ZIO_Interactive_U_000876ec[] = "\\Program Files\\ZIO Interactive\\Ultima(Voice)";
 static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008771c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
-static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program_Files\\ZIO_Interactive\\U";
+static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program Files\\ZIO Interactive\\Ultima(CutScene)";
 // DAT_000830b0 and UNK_000830b4 are the same {int msg_id; void
 // *handler;} 8-byte-stride table (dispatch_window_message walks
 // msg_id entries from &DAT_000830b0 via an `int*`, and reads the
@@ -411,7 +422,13 @@ undefined4 param_4;
       DAT_00201c98 = 1;
       while (DAT_00201b6c != 0) {
         if (DAT_000876c8 == 0) {
-          if ((DAT_0024af60 == 0) || (100 < DAT_0024af6c)) {
+          /* Was gated on `(DAT_0024af60 == 0) || ...` -- DAT_0024af60 was
+             always 1 throughout this loop (set once at session start,
+             never cleared in practice; see its init comment below), so
+             that disjunct was always false here and this reduces to the
+             exact same observed behavior with no dependency on a flag
+             that now defaults to 0 for an unrelated reason. */
+          if (100 < DAT_0024af6c) {
             if (DAT_0024af6c < 0x33) {
               DAT_0024af6c = (short)((int)DAT_0024af6c << 1);
             }
@@ -853,18 +870,25 @@ void init_gameplay_session()
   DAT_00201c70 = 0;
   DAT_0023beb4 = 0;
   DAT_0023beb8 = 0;
-  /* Command-input mode. When set, handle_keyboard_message folds a WM_CHAR
-     letter to its uppercase code before dropping it in DAT_0023c448, so
-     the movement key bindings registered just below (W/S/X/A/D = VK
-     codes 0x57/0x53/0x58/0x41/0x44) actually match a keypress, and the
-     main loop ramps the hold-acceleration counter faster. It is a
-     link-time-initialised flag whose real setup Ghidra dropped (same
-     silently-zero class as DAT_00086e68 / DAT_0008589c etc.): left at 0
-     the keyboard movement keys were dead. Toggled off again by the
-     Caps-Lock key (VK 0x14) in handle_keyboard_message; text-entry
-     screens that need raw lowercase (chargen name entry) run before this
-     function. */
-  DAT_0024af60 = 1;
+  /* Caps-Lock state (toggled by VK 0x14 in handle_keyboard_message).
+     Previously set to 1 here and never cleared again for the entire
+     session, because handle_keyboard_message used to fold every WM_CHAR
+     lowercase letter to uppercase whenever this was set -- a workaround
+     so lowercase W/S/X/A/D keypresses would match the movement key
+     bindings below, which were (and still are) registered using their
+     uppercase VK codes. That workaround uppercased every OTHER raw-text
+     field's input too for the rest of the session (automap notes,
+     save-name entry, "Move how many", "Chant the mantra" -- the reported
+     "can't enter lower case text" bug), since nothing on this port's
+     desktop/SDL keyboard ever maps to VK 0x14 to toggle it back off.
+     Fixed at the root instead: W/S/X/A/D/Z/C are now ALSO registered
+     under their lowercase VK codes (see the "Lowercase duplicates"
+     comment a few lines below), so movement no longer depends on any
+     case-folding, and handle_keyboard_message no longer folds letters at
+     all. With nothing left depending on this flag's value, it now
+     starts at its real, correct default -- caps lock off -- like any
+     other session. */
+  DAT_0024af60 = 0;
   DAT_00201b68 = 1;
   DAT_002048a7 = 8;
   DAT_002048a3 = 1;
@@ -926,14 +950,15 @@ void init_gameplay_session()
   register_key_binding(0x8d,5,1,move_command_dispatch);
   register_key_binding(0x8f,3,1,move_command_dispatch);
   register_key_binding(0x91,4,1,move_command_dispatch);
-  /* Z / C strafe: the original registered these as raw lowercase ascii
-     (0x7a 'z', 0x63 'c'), but every other letter movement key here uses
-     the uppercase VK code (W=0x57 ...) and handle_keyboard_message
-     upper-cases letters in command mode -- so as shipped the lowercase
-     entries could never match. Use the uppercase VK codes (VK_Z 0x5a,
-     VK_C 0x43) for consistency with W/S/X/A/D. */
+  /* Z / C strafe. Register both the uppercase VK code (VK_Z 0x5a, VK_C
+     0x43, matching W/S/X/A/D below) and the raw lowercase ascii (0x7a
+     'z', 0x63 'c') the original shipped with -- see the comment on
+     DAT_0024af60's init (game.c, init_gameplay_session) for why both
+     are needed now that nothing force-uppercases keystrokes anymore. */
   register_key_binding(0x5a,9,1,move_command_dispatch);
   register_key_binding(0x43,10,1,move_command_dispatch);
+  register_key_binding(0x7a,9,1,move_command_dispatch);
+  register_key_binding(0x63,10,1,move_command_dispatch);
   /* Sidestep: the DOS "," / "." strafe keys. decode_movement_command
      already turns input codes 0x2c / 0x2e into g_movement_mode 9 / 10
      (resolve_move_vector cases 9/10 = move at heading -/+ 90 degrees, facing
@@ -950,6 +975,15 @@ void init_gameplay_session()
   register_key_binding(0x53,0,1,move_key_directional_step);
   register_key_binding(0x58,0xfffffffe,1,move_key_directional_step);
   register_key_binding(0x57,2,1,move_key_directional_step);
+  /* Lowercase duplicates of A/D/S/X/W above -- see DAT_0024af60's init
+     comment. Safe to add unconditionally: unlike 'j'/'J' (0x6a/0x4a,
+     registered a few lines down as two deliberately DIFFERENT actions),
+     none of these five lowercase codes are bound to anything else. */
+  register_key_binding(0x61,0xffffffff,1,move_key_directional_step);
+  register_key_binding(0x64,1,1,move_key_directional_step);
+  register_key_binding(0x73,0,1,move_key_directional_step);
+  register_key_binding(0x78,0xfffffffe,1,move_key_directional_step);
+  register_key_binding(0x77,2,1,move_key_directional_step);
   register_click_region(0x6b,0xa7,0x7b,0x99,0xffff,1,move_key_directional_step);
   register_click_region(0x82,0xa9,0x92,0x9c,0,1,move_key_directional_step);
   register_click_region(0x9b,0xa7,0xaa,0x99,1,1,move_key_directional_step);

@@ -144,10 +144,11 @@ static char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
    trailing period, a trailing newline before the NUL. */
 static char s_Please_enter_a_Save_Game_file_an_00087094[] = "  Please enter a Save Game file and press Enter\n";
 static char s__SAVE0_desc_00087078[] = "\\SAVE0\\desc";
-/* Sizing-audit pass: a directory-scan path suffix, content
-   unrecovered, appended once before a FindFirstFile-style scan.
-   Sized to 32 for headroom; down from 8192. */
-static undefined DAT_00087084_backing[32];
+/* Sizing-audit pass: a directory-scan path suffix, appended once
+   before a FindFirstFile-style scan. Real content confirmed via
+   direct Ghidra memory export of UU.exe: "\". Sized to 32 for
+   headroom; down from 8192. */
+static undefined DAT_00087084_backing[32] = "\\";
 #define DAT_00087084 DAT_00087084_backing[0]
 /* Was zero-initialized -- see DAT_000857a0's comment above. ensure_save_directory_exists
    appends this to a directory path before scanning it with the

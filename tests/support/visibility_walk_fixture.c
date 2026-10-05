@@ -32,6 +32,10 @@ char *DAT_00086df8 = character, *DAT_0023be74 = derived;
 char *g_selected_object;
 byte *g_scratch_object_ptr;
 undefined4 DAT_002020d8, DAT_0023bc98;
+/* DAT_00202800_backing's size here must track src/headers/objects.h's
+   extern declaration (shrunk from 65536 to 256 by the "sizing pass"
+   commit) -- a mismatched tentative-definition size is a hard
+   redefinition error under this compiler, not just a mismatch. */
 undefined1 DAT_00086da8_backing[256], DAT_00202800_backing[256];
 unsigned char DAT_00085ac8_backing[16] = {5,6,7,8};
 int visibility_light_config_record, visibility_ambient_strength;

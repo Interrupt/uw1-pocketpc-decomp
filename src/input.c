@@ -1130,6 +1130,17 @@ void unregister_game_view_interact_zones()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+/* scroll_text_entry_prompt (hud.c)'s "a raw text field is actively reading
+ * keystrokes right now" flag -- see its own extern/comment in gx_stub.c and
+ * its set/clear in hud.c, and the matching comment on its use just below.
+ * This is NOT a per-call-site patch: it is the one generic signal every
+ * raw-keystroke text-entry path in the game already either sets directly
+ * (scroll_text_entry_prompt itself, so save-name/"Move how many"/"Chant the
+ * mantra" all get this for free) or must set around its own loop if it
+ * rolls its own raw polling loop instead of going through that shared
+ * primitive (automap notes -- see handle_automap_note_click in automap.c). */
+extern int g_text_input_active;
+
 // was FUN_00077b2c
 undefined4 handle_keyboard_message(param_1,param_2,param_3)
 undefined4 param_1;
@@ -1161,10 +1172,19 @@ uint param_3;
     if (param_2 != 0x102) {
       return 0;
     }
-    if (((DAT_0024af60 != 0) && (0x60 < param_3)) && (param_3 < 0x7b)) {
-      DAT_0023c448 = uVar1 - 0x20 | DAT_0023c448;
-      return 0;
-    }
+    /* No case-folding here any more. This used to force a WM_CHAR
+     * lowercase letter to uppercase whenever DAT_0024af60 ("command-input
+     * mode" / Caps Lock, see init_gameplay_session's comment at game.c
+     * ~862) was set, so lowercase W/S/X/A/D keypresses would match the
+     * movement key bindings' uppercase VK codes -- but DAT_0024af60 was
+     * latched on at session start and never cleared again in practice,
+     * so this also uppercased every OTHER raw-text field's input for the
+     * rest of the session (automap notes, save-name entry, "Move how
+     * many", "Chant the mantra" -- the reported "can't enter lower case
+     * text" bug). Fixed at the root in game.c instead: W/S/X/A/D/Z/C are
+     * now registered under BOTH their uppercase and lowercase VK codes,
+     * so movement no longer needs any case-folding to match, and raw
+     * text entry now always sees exactly what was typed. */
     DAT_0023c448 = DAT_0023c448 | uVar1;
     return 0;
   }

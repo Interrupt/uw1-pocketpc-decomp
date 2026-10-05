@@ -14,7 +14,7 @@ def extract(source, name):
     is_array = name.startswith("@")
     if is_array:
         name = name[1:]
-        pattern = r"^\w[^\n;]*\b" + re.escape(name) + r"[^\n;]*=\s*"
+        pattern = r"^[ \t]*\w[^\n;]*\b" + re.escape(name) + r"[^\n;]*=\s*"
     else:
         pattern = r"^\w[^\n;]*\b" + re.escape(name) + r"\([^;]*?\)\s*\n"
     definition = re.search(

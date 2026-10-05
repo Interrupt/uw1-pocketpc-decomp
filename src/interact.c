@@ -31,10 +31,15 @@ void (*const PTR_FUN_000858c8_table[5])(void) = {
   interact_default,     /* 3: get (mode 4) */
   interact_talk_npc,    /* 4: talk (mode 5, topmost icon) */
 };
-static char s_Unable_to_defuse_trap__0008736c[] = "Unable_to_defuse_trap.";
-static char s_Your_bumbling_attempts_have_set_o_00087384[] = "Your_bumbling_attempts_have_set_o";
-static char s_was_successfully_dearmed__000873b0[] = "was_successfully_dearmed.";
-static char s_on_the_000873cc[] = "on_the";
+/* These four were all mangled by Ghidra the same way: embedded spaces
+   rendered as underscores, and in s_Your_bumbling_attempts_have_set_o's
+   case the tail of the string ("ff the ", plus a trailing space) was
+   dropped entirely. Real bytes confirmed against the ARM UU.exe .data
+   section at each address below. */
+static char s_Unable_to_defuse_trap__0008736c[] = "Unable to defuse trap.\n";
+static char s_Your_bumbling_attempts_have_set_o_00087384[] = "Your bumbling attempts have set off the ";
+static char s_was_successfully_dearmed__000873b0[] = " was successfully dearmed.\n";
+static char s_on_the_000873cc[] = " on the ";
 /* HACK: was `undefined4` -- truncated a real 64-bit object pointer.
    Same bug class as DAT_0024cff4 right above (already a real pointer
    type) and countless other fixes throughout this file: apply_trap_or_link_effect
@@ -1093,13 +1098,9 @@ short param_2;
       uVar2 = 0x1ff;
     }
     message_scroll_print_wrapped(s_You_see_000858fc);
-    get_message_string(uVar2 | 0x1400);
-    message_scroll_print_wrapped();
+    /* Ghidra dropped the argument carried in ARM's return register. */
+    message_scroll_print_wrapped(get_message_string(uVar2 | 0x1400));
     message_scroll_print_wrapped(&DAT_00084f20);
-    /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
-       fix -- back-to-back terrain Looks (e.g. the ceiling, wall signs)
-       otherwise all land on the same visible scroll line. */
-    message_scroll_print_wrapped("\n");
   }
   return;
 }

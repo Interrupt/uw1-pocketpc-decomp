@@ -143,6 +143,7 @@ add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(noise
   src/ai.c:alert_npc_to_noise_callback src/ai.c:emit_noise_alert)
+add_fixture_game_unit_test(keyboard src/input.c:handle_keyboard_message)
 add_fixture_game_unit_test(visibility_walk
   src/visibility.c:@DAT_00086af0_arr
   src/visibility.c:@DAT_00086af8_region
@@ -280,3 +281,65 @@ add_fixture_game_unit_test(weapon_ready
   src/inventory.c:toggle_weapon_ready
   src/weapon_swing.c:advance_action_animation_frame
   src/weapon_swing.c:weapon_swing_draw_tick)
+
+add_fixture_game_unit_test(head_bob
+  src/movement.c:@DAT_00086e38_backing src/movement.c:@DAT_00086e48_backing
+  src/player.c:@DAT_00086e58_backing
+  src/movement.c:movement_tick src/movement.c:apply_movement_tick
+  src/player.c:trigger_view_transition src/player.c:update_current_view_from_subject
+  src/3d.c:build_view_matrix src/3d.c:build_trig_tables
+  src/3d.c:set_identity_matrix4x4 src/3d.c:multiply_matrix4x4
+  src/ordinal_stubs.c:ordfloat_bits_to_float src/ordinal_stubs.c:ordfloat_float_to_bits
+  src/ordinal_stubs.c:ordfloat_negate src/ordinal_stubs.c:ordfloat_mul
+  src/ordinal_stubs.c:ordfloat_add src/ordinal_stubs.c:ordfloat_int_to_float2
+  src/ordinal_stubs.c:ordfloat_float_to_double src/ordinal_stubs.c:ordfloat_double_to_float
+  src/ordinal_stubs.c:ordfloat_double_mul2 src/ordinal_stubs.c:ordfloat_cos
+  src/ordinal_stubs.c:ordfloat_sin)
+
+# Independent expectations are bytes exported from the original UU.exe,
+# including documented host adaptations. Compile the actual declarations.
+file(GLOB game_string_sources CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.c")
+set(static_strings_source "${CMAKE_CURRENT_BINARY_DIR}/static_strings_generated.c")
+add_custom_command(OUTPUT "${static_strings_source}"
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_static_strings.py"
+    --root "${PROJECT_SOURCE_DIR}"
+    --audit "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/static_strings.json"
+    --output "${static_strings_source}"
+  DEPENDS ${game_string_sources} "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_static_strings.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/static_strings.json"
+  VERBATIM)
+add_library(uw_test_static_strings STATIC "${static_strings_source}")
+uw_configure_test_target(uw_test_static_strings)
+target_include_directories(uw_test_static_strings PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+add_supported_game_unit_test(static_strings uw_test_static_strings)
+
+add_fixture_game_unit_test(scroll_messages
+  src/hud.c:@s_Not_a_spell_00085a80 src/item_use.c:@DAT_000878ec_backing
+  src/item_use.c:@s_on_what__000878e0 src/item_use.c:@s_UNNAMED_00084f24
+  src/player.c:@DAT_0008730c_backing
+  src/object_actions.c:@s_You_see_000858fc src/object_actions.c:@s_belonging_to_00085c90
+  src/ai.c:@DAT_00084f20_backing
+  src/ai.c:@s_named_00085d18
+  src/babl.c:@DAT_00085240_backing src/babl.c:@DAT_00085244_backing src/babl.c:@DAT_00085248_backing
+  src/hud.c:message_scroll_print_wrapped src/hud.c:msg_scroll_split_escape_segments
+  src/hud.c:msg_scroll_split_newline_segments src/hud.c:msg_scroll_draw_wrapped_span
+  src/hud.c:msg_scroll_wrap_split_line src/hud.c:print_not_a_spell_message
+  src/item_use.c:prompt_use_item_on_target
+  src/player.c:advance_character_level
+  src/object_actions.c:dispatch_object_action src/object_actions.c:dispatch_object_action_dup
+  src/ai.c:build_creature_look_text src/interact.c:describe_picked_terrain
+  src/ordinal_stubs.c:ce_memmove src/ordinal_stubs.c:ce_strchr src/ordinal_stubs.c:ce_strrchr)
+target_link_libraries(uw_test_scroll_messages PUBLIC uw_test_static_strings)
+
+add_fixture_game_unit_test(door_models
+  src/tmap.c:@DAT_00086d68_region src/tmap.c:resolve_billboard_corner_offset
+  src/models.c:@DAT_00086c08_backing src/models.c:@DAT_00086ce0_backing
+  src/models.c:emit_catalog_object src/models.c:apply_model_position_offset
+  src/models.c:scale_model_part_offsets src/3d.c:build_euler_rotation_matrix
+  src/3d.c:transform_points_by_matrix src/3d.c:set_identity_matrix4x4
+  src/3d.c:multiply_matrix4x4 src/3d.c:copy_matrix4x4
+  src/ordinal_stubs.c:ordfloat_bits_to_float src/ordinal_stubs.c:ordfloat_float_to_bits
+  src/ordinal_stubs.c:ordfloat_mul src/ordinal_stubs.c:ordfloat_add
+  src/ordinal_stubs.c:ordfloat_negate src/ordinal_stubs.c:ordfloat_div
+  src/ordinal_stubs.c:ordfloat_int_to_float2 src/ordinal_stubs.c:ordfloat_uint_to_float
+  src/ordinal_stubs.c:ordfloat_gt src/ordinal_stubs.c:ordfloat_sub)

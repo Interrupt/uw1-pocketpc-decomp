@@ -20,7 +20,11 @@ undefined1 DAT_0023c3d8;
    space (see describe_picked_terrain: message_scroll_print_wrapped(this) then the
    name then "."). */
 char s_You_see_000858fc[] = "You see ";
-static char s_belonging_to_00085c90[] = "belonging to ";
+/* Ghidra rendered the embedded space as an underscore and put it on
+   the wrong side -- real bytes at 0x85c90 (ARM UU.exe .data, confirmed
+   via tests/fixtures/static_strings.json's direct memory export):
+   " belonging to" (leading space, no trailing space). */
+static char s_belonging_to_00085c90[] = " belonging to";
 /* Sizing-audit pass: `read_file_handle(iVar8,&DAT_0023ce70,0x80)`
    (ai.c's load_critter_association_tables) reads exactly 128 bytes,
    matching its own fill loop's `<0x80` bound. HARD exact. Down from
@@ -31,8 +35,8 @@ ushort DAT_002022f8;
 static ushort DAT_00202300;
 static ushort DAT_00202304;
 int DAT_002022fc;
-static char s_cursed_00085ca0[] = "cursed";
-static char s_magical_00085ca8[] = "magical";
+static char s_cursed_00085ca0[] = "cursed ";
+static char s_magical_00085ca8[] = "magical ";
 /* Ghidra rendered the embedded space as an underscore and dropped the
    leading space entirely -- confirmed via a Ghidra memory dump of the
    real UU.exe that the real bytes are " full charge\0" (with a real
@@ -80,7 +84,10 @@ static undefined1 DAT_00085cce;
    Sized to 16; down from 8192. */
 static undefined DAT_00085cb4_backing[16] = "s";
 static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
-static char s_an_adventurer__00085d08[] = "an_adventurer.";
+/* Ghidra rendered the embedded space as an underscore and dropped
+   the trailing newline. Real bytes at 0x85d08 (ARM UU.exe .data):
+   "an adventurer.\n". */
+static char s_an_adventurer__00085d08[] = "an adventurer.\n";
 static uint DAT_00202094;
 /* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
    (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
@@ -103,7 +110,10 @@ static undefined DAT_0008762c_backing[16];
 #define DAT_0008762c DAT_0008762c_backing[0]
 #define DAT_00087630 DAT_0008762c_backing[4]
 #define DAT_00087634 DAT_0008762c_backing[8]
-static char s_very_near_00087954[] = "very_near";
+/* Ghidra rendered the embedded space as an underscore. Real bytes at
+   0x87954 (ARM UU.exe .data): "very near" (null-terminated right
+   after, no trailing space/newline needed). */
+static char s_very_near_00087954[] = "very near";
 
 
 
@@ -245,13 +255,7 @@ LAB_000489fc:
     ce_strcat(acStack_7c,pcVar6);
   }
   ce_strcat(acStack_7c,&DAT_00084f20);
-  /* No trailing newline was ever appended, so back-to-back Looks (the
-     scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
-     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
-     line: confirmed live, 3 Looks at the sack rendered as one run-on
-     "You see a sackYou see a sackYou see a sack" instead of 3 separate
-     lines. */
-  ce_strcat(acStack_7c,"\n");
+  /* DAT_00084f20 already supplies the original period and newline. */
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   describe_special_object_property(param_1,param_2);
@@ -595,7 +599,8 @@ int param_2;
     return;
   }
   pcVar6 = s_You_see_000858fc;
-    wptr_31634 = acStack_85978;
+  /* Like dispatch_object_action, seed the actual message buffer. */
+  wptr_31634 = acStack_7c;
   do {
     cVar10 = *pcVar6;
     *wptr_31634 = cVar10; wptr_31634 = wptr_31634 + 1;
@@ -675,13 +680,7 @@ LAB_000489fc:
     ce_strcat(acStack_7c,pcVar6);
   }
   ce_strcat(acStack_7c,&DAT_00084f20);
-  /* No trailing newline was ever appended, so back-to-back Looks (the
-     scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
-     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
-     line: confirmed live, 3 Looks at the sack rendered as one run-on
-     "You see a sackYou see a sackYou see a sack" instead of 3 separate
-     lines. */
-  ce_strcat(acStack_7c,"\n");
+  /* DAT_00084f20 already supplies the original period and newline. */
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   describe_special_object_property(param_1,param_2);

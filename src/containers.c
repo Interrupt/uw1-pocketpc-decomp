@@ -47,11 +47,18 @@ static ushort DAT_00202986;
 static undefined2 DAT_00202980;
 /* Sizing pass: its only use (empty_container_into_world's caller) is a
    read-only copy-until-NUL into a local scratch buffer -- a short
-   message-prefix string, not indexed. Real content is unrecovered
-   (currently reads as empty), but sized generously since it's a
-   display-text fragment like its siblings in this file. */
- undefined1 DAT_00085c88_backing[128];
-static char s_is_empty__0008790c[] = "is_empty.";
+   message-prefix string, not indexed. Was marked "real content
+   unrecovered" by an earlier sizing pass, but a direct Ghidra
+   headless byte read against the ARM UU.exe .data section at 0x85c88
+   (this file's own string-audit method, see s_is_empty__0008790c
+   below) found it after all: "The " -- a genuine string constant
+   that just never got a proper s_ name. Sized generously since it's
+   a display-text fragment like its siblings in this file. */
+ undefined1 DAT_00085c88_backing[128] = "The ";
+/* Ghidra rendered the embedded space as an underscore, dropped the
+   leading space and trailing newline. Real bytes at 0x8790c (ARM
+   UU.exe .data): " is empty.\n". */
+static char s_is_empty__0008790c[] = " is empty.\n";
 
 
 
@@ -1283,7 +1290,7 @@ short param_2;
 // empties param_1's contents, and if it turns out param_1 had nothing
 // to empty (return 0) and param_2 is non-zero (callers pass whether
 // the container belongs to the player), prints the object's own name
-// followed by "is empty " (s_is_empty__0008790c) via
+// followed by " is empty.\n" (s_is_empty__0008790c) via
 // message_scroll_print_wrapped -- the "The sack is empty." message a
 // player sees using Use mode on an already-empty container. Called
 // from try_combine_or_stow_object, itself reached from interact_use.
