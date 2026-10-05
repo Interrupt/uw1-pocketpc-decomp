@@ -4475,7 +4475,24 @@ bool compute_drop_aim_from_cursor()
   sVar3 = ordint_divmod(0xd,(sVar3 + -0x56) * 5).quot;
   DAT_00202a40 = sVar3 + -1;
   sVar3 = ordint_divmod(6,sVar5 + -0x38).quot;
-  sVar4 = ordint_divmod(0x300,(int)DAT_0023beb4).quot;
+  /* Sign fix: DAT_00202a3c is "aim/launch angle, positive = up" --
+     confirmed by compute_vertical_aim_offset (src/ai.c), which assigns it
+     directly from (target_height - npc_height), positive when the target
+     is above. The cursor term above already follows that convention
+     (sVar5, and so sVar3, grows as the cursor moves toward the top of
+     the screen). But DAT_0023beb4 is "view pitch, negative = up" (see
+     src/game.c's recovered original key-1/2/3 handler,
+     debug_adjust_view_heading, which drives it negative for the "look
+     up" key; src/player.c's camera-projection consumer agrees and is
+     screenshot-verified). Dividing DAT_0023beb4 directly, as the
+     original decompile did here, added it with the OPPOSITE sign from
+     the cursor term -- harmless while nothing ever drove DAT_0023beb4
+     off zero, but once view-pitch controls exist (1/2/3 keys) it makes
+     thrown items and player-cast targeted spell effects
+     (apply_targeted_spell_effect -> spawn_object_near_actor -> here)
+     launch toward the floor when looking up and the ceiling when
+     looking down. Negate it to match. */
+  sVar4 = -ordint_divmod(0x300,(int)DAT_0023beb4).quot;
   DAT_00202a3c = sVar3 + sVar4;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",
