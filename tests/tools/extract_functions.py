@@ -28,6 +28,10 @@ def extract(source, name):
             definition = struct_definition
     if definition is None:
         raise ValueError(f"Function definition not found: {name}")
+    # Initialized scalars (including original binary defaults) have no body.
+    if is_array and source[definition.end():].lstrip()[0] != "{" and struct_definition is None:
+        end = source.index(";", definition.end()) + 1
+        return source[definition.start():end]
     opening = source.index("{", definition.end())
     tokens = re.compile(
         r'/\*[\s\S]*?\*/|//[^\n]*|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|[{}]'

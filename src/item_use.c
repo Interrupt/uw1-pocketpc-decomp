@@ -35,8 +35,9 @@ static undefined DAT_002035cf_backing[8];
 // was DAT_0008725c -- gates weapon_swing_draw_tick's blit; temporarily
 // cleared during full-screen wipe/dissolve transitions (level loads,
 // screen fades) so the weapon overlay doesn't glitch mid-transition,
-// then restored once the transition finishes.
-undefined4 g_weapon_overlay_enabled;
+// then restored once the transition finishes. ARM .data at 0x8725c
+// initializes this to 1; Combat mode relies on that default.
+undefined4 g_weapon_overlay_enabled = 1;
 /* Sizing-audit pass: sibling of hud.c's DAT_00202988, same loop
    (`iVar4<6`) in the shared paperdoll-overlay refresh code. HARD.
    Down from 16. */
@@ -121,22 +122,6 @@ void ready_weapon()
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar1 | 2;
     *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar1 >> 8);
-    /* Was missing entirely -- g_weapon_overlay_enabled (see its own
-       comment) defaults to 0 and, before this, was only ever set by
-       three unrelated screen-wipe utility functions, so
-       weapon_swing_draw_tick's top-level gate suppressed the overlay's
-       blit for the entire time combat stance was active, even though
-       the animation state machine below correctly cycled through
-       "raise" (state 4) and, on leave, the multi-tick "lower" animation
-       (state 5, see unready_weapon) before finally settling at the
-       already-excluded idle state 6. Confirmed live via
-       UW_DEBUG_COMBAT/UW_DEBUG_TOGGLE_READY tracing: the state machine
-       itself was always correct end to end, only this flag was never
-       set. unready_weapon does NOT need its own clear -- state 6's
-       existing exclusion in weapon_swing_draw_tick already hides the
-       overlay once the lower animation finishes, matching "disabled
-       when you leave combat mode, but with an animation delay". */
-    g_weapon_overlay_enabled = 1;
     set_hud_status_value(8,4);
     mode_icon_highlight_on((int)g_cursor_mode);
     bVar2 = get_current_music_track();
