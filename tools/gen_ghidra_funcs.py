@@ -52,6 +52,11 @@ def describe(text, fun, name=''):
         d = (d.rstrip('. ') + ' (' if d else '') + name.replace('_', ' ') + (')' if d else '')
     return d.rstrip('. ') + '.' if d else ''
 
+def describe_plain(text, name):
+    t = clean(text)
+    m = re.match(r'(.{25,260}?[.;])(\s|$)', t)
+    return m.group(1).rstrip('.;') + '.' if m else name.replace('_', ' ')
+
 def nparams(p):
     p = p.strip()
     return 0 if p in ('', 'void') else len([x for x in p.split(',') if x.strip()])
@@ -75,10 +80,9 @@ for path in sorted(glob.glob(root + '/src/*.c')):
         if fun in ATTACH and ATTACH[fun] != m.group(1): fun = None
         if not fun:
             fun = next((f for f, n in ATTACH.items() if n == m.group(1) and f not in seen), None)
-            if not fun: continue
-        if fun in seen: continue
-        out.append(dict(name=m.group(1), path=rel, line=i+1, original_name=fun,
-                        param_count=nparams(m.group(2)), description=describe(blk, fun, m.group(1))))
-        seen.add(fun)
-json.dump({'_meta': {'description': 'Functions still carrying a \"was FUN_xxxxxxxx\" comment, i.e. renamed from a Ghidra placeholder. Regenerate with tools/gen_ghidra_funcs.py.', 'count': len(out)}, 'functions': out}, open(root + '/ghidra-funcs.json', 'w'), indent=2)
-print(len(out), 'functions;', len(seen), 'distinct originals')
+        if fun in seen: fun = None
+        out.append(dict(name=m.group(1), path=rel, line=i+1, original_name=fun, ghidra_origin=bool(fun),
+                        param_count=nparams(m.group(2)), description=describe(blk, fun, m.group(1)) if fun else describe_plain(blk, m.group(1))))
+        if fun: seen.add(fun)
+json.dump({'_meta': {'description': 'Every function definition in src/*.c. Those with ghidra_origin true still carry a \"was FUN_xxxxxxxx\" comment, i.e. were renamed from a Ghidra placeholder; the rest have original_name null. Regenerate with tools/gen_ghidra_funcs.py.', 'total_functions': len(out), 'with_original_name': sum(1 for x in out if x['original_name']), 'without_original_name': sum(1 for x in out if not x['original_name']), 'still_unnamed_FUN': sum(1 for x in out if x['name'].startswith('FUN_'))}, 'functions': out}, open(root + '/ghidra-funcs.json', 'w'), indent=2)
+print(len(out), 'functions;', sum(1 for x in out if not x['original_name']), 'without original;', len(seen), 'distinct originals')
