@@ -53,7 +53,8 @@ undefined4 DAT_0023bea8, DAT_002020d0, DAT_000858a0;
 
 undefined2 DAT_0023be98;
 
-char DAT_0023bf18, DAT_00086e84, DAT_0023bf60;
+char DAT_00086e84, DAT_0023bf60;
+byte DAT_0023bf18;
 
 uint DAT_0023bf5c;
 

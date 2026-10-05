@@ -216,13 +216,17 @@ undefined2 DAT_0023bea0;
 short DAT_0023bea4;
 short DAT_0023bf08;
 undefined4 DAT_0023bea8;
-char DAT_0023bf18;
+// ARM uses unsigned phase shifts to index the 16-entry bob waveforms.
+byte DAT_0023bf18;
 undefined2 DAT_0023be9e;
 undefined2 DAT_0023be9c;
 undefined2 DAT_0023be9a;
 static char DAT_0023bf14;
 static byte DAT_0023bf10;
-static undefined DAT_00086e58_backing[256];
+// Signed camera-bob waveform recovered from ARM .data at 00086e58.
+static undefined DAT_00086e58_backing[16] = {
+    0xfc, 0xfd, 0xfe, 0xff, 0x00, 0x01, 0x02, 0x03, 0x04, 0x03, 0x02, 0x01, 0x00, 0xff, 0xfe, 0xfd
+};
 #define DAT_00086e58 DAT_00086e58_backing[0]
 static short DAT_0023bf30;
 static short DAT_0023bf34;

@@ -317,9 +317,15 @@ char DAT_00086e84;
 static int DAT_0023bf64;
 static char DAT_0023bf60;
 static uint DAT_0023bf5c;
-static undefined DAT_00086e38_backing[256];
+// Signed camera-bob waveform recovered from ARM .data at 00086e38.
+static undefined DAT_00086e38_backing[16] = {
+    0x01, 0x03, 0x04, 0x03, 0x01, 0xfd, 0x00, 0x00, 0x01, 0x03, 0x04, 0x03, 0x01, 0xfd, 0x00, 0x00
+};
 #define DAT_00086e38 DAT_00086e38_backing[0]
-static undefined DAT_00086e48_backing[256];
+// Signed camera-bob waveform recovered from ARM .data at 00086e48.
+static undefined DAT_00086e48_backing[16] = {
+    0x00, 0x00, 0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xfa, 0xfc, 0xfd, 0xfe, 0xff, 0x00, 0x00, 0x00
+};
 #define DAT_00086e48 DAT_00086e48_backing[0]
 
 

@@ -59,7 +59,7 @@ extern short DAT_0023bf08;
 extern undefined2 DAT_0023be9a;
 extern undefined2 DAT_0023be9c;
 extern undefined2 DAT_0023be9e;
-extern char DAT_0023bf18;
+extern byte DAT_0023bf18;
 extern undefined4 DAT_0024cfc8;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both

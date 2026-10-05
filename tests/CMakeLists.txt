@@ -280,3 +280,9 @@ add_fixture_game_unit_test(weapon_ready
   src/inventory.c:toggle_weapon_ready
   src/weapon_swing.c:advance_action_animation_frame
   src/weapon_swing.c:weapon_swing_draw_tick)
+
+add_fixture_game_unit_test(head_bob
+  src/movement.c:@DAT_00086e38_backing src/movement.c:@DAT_00086e48_backing
+  src/player.c:@DAT_00086e58_backing
+  src/movement.c:movement_tick src/movement.c:apply_movement_tick
+  src/player.c:trigger_view_transition src/player.c:update_current_view_from_subject)
