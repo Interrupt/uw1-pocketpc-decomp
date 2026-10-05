@@ -102,6 +102,70 @@ static void clear_notes_in_memory(void)
     automap_text_draws=0;
 }
 
+static void test_erase_cursor_icon_does_not_flat_fill_without_a_real_save(void)
+{
+    /* Regression guard: "Automap text entry has regressed - typing shows
+       only bits of text, hitting enter moves the cursor somewhere way
+       off to the right". Root cause (fixed by commit 992313f):
+       erase_cursor_icon() (src/hud.c) used to call rect_fill_or_save_
+       restore with draw color 0x15 ("RESTORE") whenever DAT_00204844 was
+       nonzero, assuming a matching save_cursor_background() SAVE (which
+       arms DAT_00204848) always preceded it. During automap note typing,
+       handle_automap_note_click's typing loop calls warp_mouse_cursor()
+       once per keystroke to slide the pencil-icon cursor along as a
+       visual caret past the growing note text -- every one of those
+       warps runs this exact erase/save cycle. Whenever DAT_00204844 was
+       left set by an earlier, unrelated cursor interaction with no
+       matching save pending (DAT_00204848 still 0, the same stale-flag
+       condition the sibling "inventory-click yellow box" bug hit),
+       rect_fill_or_save_restore silently fell through to an ordinary
+       flat fill using 0x15 as a literal palette index instead of
+       restoring anything -- stamping solid blocks of that color over
+       the note text's own pixels near the cursor's last position every
+       time it slid along, which is exactly what made typed text look
+       like only fragments survived, and left a stray visible mark where
+       the cursor's final post-Enter warp landed. Assert the real
+       (non-mocked) erase_cursor_icon/rect_fill_or_save_restore pair
+       leaves the framebuffer alone -- no flat-fill color -- whenever
+       DAT_00204848 isn't actually armed, regardless of DAT_00204844. */
+    g_mouse_x = 100; g_mouse_y = 100;
+    DAT_0020471c = 5; DAT_00204748 = 5;
+    DAT_00204784 = 10; DAT_002047a4 = 10;
+    DAT_000a85c4 = DAT_000a85c8 = 0; DAT_000842a4 = 319; DAT_000842a8 = 199;
+    int row = 100, col = 100;
+    automap_pixels[row*320+col] = 0x1234; /* sentinel: pre-existing note text pixel */
+    DAT_00204844 = 1;  /* something is marked "drawn"... */
+    DAT_00204848 = 0;  /* ...but no real save_cursor_background() save is pending */
+    int prior = erase_cursor_icon();
+    TEST_ASSERT_EQUAL_INT(1,prior);
+    TEST_ASSERT_EQUAL_HEX16(0x1234,automap_pixels[row*320+col]);
+    TEST_ASSERT_NOT_EQUAL_UINT16(g_palette_rgb565_backing[0x15],automap_pixels[row*320+col]);
+}
+
+static void test_typing_a_multichar_note_then_enter_lands_cursor_just_past_the_text(void)
+{
+    /* Companion regression guard, exercised through the real typing
+       loop (handle_automap_note_click via automap_fixture_type_note,
+       which feeds "Hello" one WM_CHAR at a time through the same real
+       warp_mouse_cursor()/erase_cursor_icon()/save_cursor_background()
+       cycle the field bug traced through) rather than calling
+       erase_cursor_icon() directly: the committed text must match
+       exactly what was typed, and the final cursor position the Enter
+       commit warps to must land just past the text's own measured
+       width (startx + strlen*4 + 0x16, this fixture's 4px-per-char
+       measure_text_width stub) -- not "way off to the right" at some
+       stale, unrelated position. */
+    enter_automap_screen();
+    automap_fixture_type_note("Hello",200,100);
+    TEST_ASSERT_EQUAL_INT(1,DAT_000bbef0);
+    TEST_ASSERT_EQUAL_STRING("Hello",(char *)DAT_000ba9d8_backing);
+    short note_x = *(short *)(DAT_000ba9d8_backing+50);
+    /* handle_automap_note_click's commit path warps to
+       (startx + measure_text_width(final text) - 1) + 0x16. */
+    int expected_cursor_x = note_x + (int)strlen("Hello")*4 - 1 + 0x16;
+    TEST_ASSERT_EQUAL_INT(expected_cursor_x,g_mouse_x);
+}
+
 static void test_closing_and_reopening_map_persists_note_text_and_coordinates(void)
 {
     enter_automap_screen();
@@ -198,6 +262,8 @@ int main(void)
     RUN_TEST(test_floor_fill_uses_original_two_add_three_spread);
     RUN_TEST(test_explored_open_neighbor_does_not_draw_a_wall);
     RUN_TEST(test_water_fill_updates_palette_indices_before_a_later_tint);
+    RUN_TEST(test_erase_cursor_icon_does_not_flat_fill_without_a_real_save);
+    RUN_TEST(test_typing_a_multichar_note_then_enter_lands_cursor_just_past_the_text);
     RUN_TEST(test_closing_and_reopening_map_persists_note_text_and_coordinates);
     RUN_TEST(test_resizing_notes_preserves_other_levels_and_level_data);
     RUN_TEST(test_deleted_notes_are_compacted_and_last_deletion_persists);
