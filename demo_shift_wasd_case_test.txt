@@ -1,0 +1,55 @@
+# Regression coverage for the "stuck Caps Lock" fix (DAT_0024af60).
+#
+# Background: handle_keyboard_message (src/input.c) used to force-fold
+# every WM_CHAR lowercase letter to uppercase whenever DAT_0024af60
+# ("command-input mode") was set -- which, after init_gameplay_session
+# ran once, was true for the whole rest of the session with no way to
+# toggle it back off (nothing on this port's SDL keyboard maps to the
+# Caps-Lock VK code that would have cleared it). That silently broke
+# every raw lowercase text field running during gameplay (automap notes,
+# save-name entry, "Move how many", "Chant the mantra").
+#
+# The fix removes the fold entirely and instead registers W/S/X/A/D/Z/C
+# under BOTH their uppercase and lowercase VK codes (game.c), so the
+# SHIFT+<letter> stepped-movement path (move_key_directional_step, via
+# register_key_binding/dispatch_key_binding) no longer needs any
+# case-folding to match. This matters because synthetic SDL text input
+# for a held SHIFT+<lowercase letter> combo delivers the RAW lowercase
+# character here (confirmed live), not an auto-uppercased one the way a
+# real OS text-composition layer might -- so this is a genuine case the
+# fix must cover, not just a defensive extra.
+#
+# This script doesn't assert movement directly (no scripted position
+# readout exists yet), but a clean exit with no crash/hang confirms the
+# dispatch path (register_key_binding -> dispatch_key_binding ->
+# move_key_directional_step) handles the raw lowercase code without
+# misbehaving. Verified manually during development: holding SHIFT+w
+# here produces WM_CHAR 0x77 (not 0x57) and invokes
+# move_key_directional_step(2), the same handler/param plain SHIFT+W
+# already used.
+
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+TYPE Avatar
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+SDLHOLD SHIFT+w 20
+SDLHOLD SHIFT+a 20
+SDLHOLD SHIFT+s 20
+SDLHOLD SHIFT+d 20
+SDLHOLD SHIFT+z 20
+SDLHOLD SHIFT+c 20

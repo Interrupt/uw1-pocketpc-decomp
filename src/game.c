@@ -411,7 +411,13 @@ undefined4 param_4;
       DAT_00201c98 = 1;
       while (DAT_00201b6c != 0) {
         if (DAT_000876c8 == 0) {
-          if ((DAT_0024af60 == 0) || (100 < DAT_0024af6c)) {
+          /* Was gated on `(DAT_0024af60 == 0) || ...` -- DAT_0024af60 was
+             always 1 throughout this loop (set once at session start,
+             never cleared in practice; see its init comment below), so
+             that disjunct was always false here and this reduces to the
+             exact same observed behavior with no dependency on a flag
+             that now defaults to 0 for an unrelated reason. */
+          if (100 < DAT_0024af6c) {
             if (DAT_0024af6c < 0x33) {
               DAT_0024af6c = (short)((int)DAT_0024af6c << 1);
             }
@@ -853,18 +859,25 @@ void init_gameplay_session()
   DAT_00201c70 = 0;
   DAT_0023beb4 = 0;
   DAT_0023beb8 = 0;
-  /* Command-input mode. When set, handle_keyboard_message folds a WM_CHAR
-     letter to its uppercase code before dropping it in DAT_0023c448, so
-     the movement key bindings registered just below (W/S/X/A/D = VK
-     codes 0x57/0x53/0x58/0x41/0x44) actually match a keypress, and the
-     main loop ramps the hold-acceleration counter faster. It is a
-     link-time-initialised flag whose real setup Ghidra dropped (same
-     silently-zero class as DAT_00086e68 / DAT_0008589c etc.): left at 0
-     the keyboard movement keys were dead. Toggled off again by the
-     Caps-Lock key (VK 0x14) in handle_keyboard_message; text-entry
-     screens that need raw lowercase (chargen name entry) run before this
-     function. */
-  DAT_0024af60 = 1;
+  /* Caps-Lock state (toggled by VK 0x14 in handle_keyboard_message).
+     Previously set to 1 here and never cleared again for the entire
+     session, because handle_keyboard_message used to fold every WM_CHAR
+     lowercase letter to uppercase whenever this was set -- a workaround
+     so lowercase W/S/X/A/D keypresses would match the movement key
+     bindings below, which were (and still are) registered using their
+     uppercase VK codes. That workaround uppercased every OTHER raw-text
+     field's input too for the rest of the session (automap notes,
+     save-name entry, "Move how many", "Chant the mantra" -- the reported
+     "can't enter lower case text" bug), since nothing on this port's
+     desktop/SDL keyboard ever maps to VK 0x14 to toggle it back off.
+     Fixed at the root instead: W/S/X/A/D/Z/C are now ALSO registered
+     under their lowercase VK codes (see the "Lowercase duplicates"
+     comment a few lines below), so movement no longer depends on any
+     case-folding, and handle_keyboard_message no longer folds letters at
+     all. With nothing left depending on this flag's value, it now
+     starts at its real, correct default -- caps lock off -- like any
+     other session. */
+  DAT_0024af60 = 0;
   DAT_00201b68 = 1;
   DAT_002048a7 = 8;
   DAT_002048a3 = 1;
@@ -926,14 +939,15 @@ void init_gameplay_session()
   register_key_binding(0x8d,5,1,move_command_dispatch);
   register_key_binding(0x8f,3,1,move_command_dispatch);
   register_key_binding(0x91,4,1,move_command_dispatch);
-  /* Z / C strafe: the original registered these as raw lowercase ascii
-     (0x7a 'z', 0x63 'c'), but every other letter movement key here uses
-     the uppercase VK code (W=0x57 ...) and handle_keyboard_message
-     upper-cases letters in command mode -- so as shipped the lowercase
-     entries could never match. Use the uppercase VK codes (VK_Z 0x5a,
-     VK_C 0x43) for consistency with W/S/X/A/D. */
+  /* Z / C strafe. Register both the uppercase VK code (VK_Z 0x5a, VK_C
+     0x43, matching W/S/X/A/D below) and the raw lowercase ascii (0x7a
+     'z', 0x63 'c') the original shipped with -- see the comment on
+     DAT_0024af60's init (game.c, init_gameplay_session) for why both
+     are needed now that nothing force-uppercases keystrokes anymore. */
   register_key_binding(0x5a,9,1,move_command_dispatch);
   register_key_binding(0x43,10,1,move_command_dispatch);
+  register_key_binding(0x7a,9,1,move_command_dispatch);
+  register_key_binding(0x63,10,1,move_command_dispatch);
   /* Sidestep: the DOS "," / "." strafe keys. decode_movement_command
      already turns input codes 0x2c / 0x2e into g_movement_mode 9 / 10
      (resolve_move_vector cases 9/10 = move at heading -/+ 90 degrees, facing
@@ -950,6 +964,15 @@ void init_gameplay_session()
   register_key_binding(0x53,0,1,move_key_directional_step);
   register_key_binding(0x58,0xfffffffe,1,move_key_directional_step);
   register_key_binding(0x57,2,1,move_key_directional_step);
+  /* Lowercase duplicates of A/D/S/X/W above -- see DAT_0024af60's init
+     comment. Safe to add unconditionally: unlike 'j'/'J' (0x6a/0x4a,
+     registered a few lines down as two deliberately DIFFERENT actions),
+     none of these five lowercase codes are bound to anything else. */
+  register_key_binding(0x61,0xffffffff,1,move_key_directional_step);
+  register_key_binding(0x64,1,1,move_key_directional_step);
+  register_key_binding(0x73,0,1,move_key_directional_step);
+  register_key_binding(0x78,0xfffffffe,1,move_key_directional_step);
+  register_key_binding(0x77,2,1,move_key_directional_step);
   register_click_region(0x6b,0xa7,0x7b,0x99,0xffff,1,move_key_directional_step);
   register_click_region(0x82,0xa9,0x92,0x9c,0,1,move_key_directional_step);
   register_click_region(0x9b,0xa7,0xaa,0x99,1,1,move_key_directional_step);
