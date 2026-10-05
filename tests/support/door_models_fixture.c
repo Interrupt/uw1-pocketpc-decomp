@@ -50,7 +50,21 @@ void door_models_reset(void)
     g_player_object = (ushort *)&player;
     DAT_00086df8 = character;
     g_tune_last_catalog = -1;
-    for (size_t angle=0; angle<sizeof DAT_000d9930_arr / sizeof DAT_000d9930_arr[0]; angle++) {
+    /* DAT_000d9930_arr/DAT_000d9ed8_arr are 361-entry (0..360 degrees)
+       tables -- matches production's build_trig_tables loop (`iVar2<0x169`,
+       src/3d.c) and the sizing-audit array sizes below (512->361, fixed in
+       fcada22). That commit shrank the declarations but missed this fill
+       loop, which still wrote indices up to 511: a 151-element (604-byte)
+       overflow past DAT_000d9930_arr's own end, landing on the start of
+       the immediately-following DAT_000d9ed8_arr and corrupting its
+       low-degree cosine entries with stray sine values. Confirmed live:
+       cos(90) came back as 1 (a sine-table leftover) instead of 0, so a
+       door frame's opening point at local X=-64 picked up a spurious
+       -64*cos(90)=-64 world-X shift at exactly the quarter-turn headings
+       where cos should be 0 -- the "off by exactly 64" door_models
+       failures. Bound this loop to the tables' own real size instead of
+       a stale literal. */
+    for (int angle=0; angle<361; angle++) {
         float s = sin(angle * 3.141592653589793 / 180.0);
         float c = cos(angle * 3.141592653589793 / 180.0);
         memcpy(&DAT_000d9930_arr[angle], &s, 4);
