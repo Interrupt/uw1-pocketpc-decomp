@@ -16,7 +16,7 @@
 short DAT_0010061c;
 short DAT_00100608;
  undefined1 DAT_001007d0_backing[6144];
- undefined DAT_00084f20_backing[8192];
+ undefined DAT_00084f20_backing[8192] = ".\n";
 ushort DAT_00101414;
 char *DAT_00101904;
 undefined4 DAT_00101560;
@@ -141,7 +141,7 @@ static char DAT_00085910;
 static char DAT_00085911;
 static char DAT_00085918;
 static char DAT_00085919;
-static undefined DAT_00085908_backing[8192];
+static undefined DAT_00085908_backing[8192] = "\\CRIT\\CR00PAGE.N00";
 static char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
 undefined1 DAT_0023c460_backing[32768];
 /* DAT_0023c4c0/DAT_0023c5b8/DAT_0024ac18 (a resource-slot status table,

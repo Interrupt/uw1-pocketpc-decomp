@@ -32,13 +32,13 @@ undefined1 g_active_hud_panel;
 int g_text_input_active;
 undefined2 g_cursor_mode;
 int DAT_00250718;
-static char s_out_of_000858dc[] = "out_of";
+static char s_out_of_000858dc[] = " out of ";
 static undefined2 DAT_0020209c;
 static undefined2 DAT_002020b4;
 static undefined2 DAT_00202090;
 static undefined2 DAT_002020c8;
 static undefined2 DAT_002020bc;
-static char s_init_gamedisp_goes_000858e8[] = "init_gamedisp_goes";
+static char s_init_gamedisp_goes_000858e8[] = "init_gamedisp goes\n";
 /* Real, compile-time-baked data recovered directly from UU.exe (same
    technique/precedent as DAT_00085668 -- see memory.md's "HOW WE GOT THE
    DISPATCH TABLES POPULATED"), not something a runtime populator ever
@@ -70,7 +70,7 @@ static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
 undefined1 DAT_00202988_backing[16];
 
 static int DAT_002028d0;
-static char s_Not_a_spell_00085a80[] = "Not_a_spell";
+static char s_Not_a_spell_00085a80[] = "Not a spell\n";
 static byte DAT_002028d4;
 /* Original UU.exe .data at 0x87530: 53 four-byte special-action records.
    The first 48 match readied spells; byte 0 >> 3 is the action type,
@@ -665,7 +665,7 @@ static undefined2 DAT_0023c14c;
 static undefined2 DAT_0023c144;
 byte g_flip_grtile_cache_ready;
 static short DAT_0023c134;
-static undefined DAT_00087298_backing[8192];
+static undefined DAT_00087298_backing[8192] = "ick\n";
 #define DAT_00087298 DAT_00087298_backing[0]
 static byte DAT_0023c208;
 static short DAT_0023c138;

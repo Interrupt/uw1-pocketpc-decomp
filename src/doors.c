@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static char s_At__d__d_00087360[] = "At_%d_%d";
+static char s_At__d__d_00087360[] = "At %d %d\n";
 
 // was LAB_000415b4
 void *alloc_door_frame_buffer(param_1)

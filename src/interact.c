@@ -31,10 +31,10 @@ void (*const PTR_FUN_000858c8_table[5])(void) = {
   interact_default,     /* 3: get (mode 4) */
   interact_talk_npc,    /* 4: talk (mode 5, topmost icon) */
 };
-static char s_Unable_to_defuse_trap__0008736c[] = "Unable_to_defuse_trap.";
-static char s_Your_bumbling_attempts_have_set_o_00087384[] = "Your_bumbling_attempts_have_set_o";
-static char s_was_successfully_dearmed__000873b0[] = "was_successfully_dearmed.";
-static char s_on_the_000873cc[] = "on_the";
+static char s_Unable_to_defuse_trap__0008736c[] = "Unable to defuse trap.\n";
+static char s_Your_bumbling_attempts_have_set_o_00087384[] = "Your bumbling attempts have set off the ";
+static char s_was_successfully_dearmed__000873b0[] = " was successfully dearmed.\n";
+static char s_on_the_000873cc[] = " on the ";
 /* HACK: was `undefined4` -- truncated a real 64-bit object pointer.
    Same bug class as DAT_0024cff4 right above (already a real pointer
    type) and countless other fixes throughout this file: apply_trap_or_link_effect

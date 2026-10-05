@@ -294,3 +294,32 @@ add_fixture_game_unit_test(head_bob
   src/ordinal_stubs.c:ordfloat_float_to_double src/ordinal_stubs.c:ordfloat_double_to_float
   src/ordinal_stubs.c:ordfloat_double_mul2 src/ordinal_stubs.c:ordfloat_cos
   src/ordinal_stubs.c:ordfloat_sin)
+
+# Independent expectations are bytes exported from the original UU.exe,
+# including documented host adaptations. Compile the actual declarations.
+file(GLOB game_string_sources CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.c")
+set(static_strings_source "${CMAKE_CURRENT_BINARY_DIR}/static_strings_generated.c")
+add_custom_command(OUTPUT "${static_strings_source}"
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_static_strings.py"
+    --root "${PROJECT_SOURCE_DIR}"
+    --audit "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/static_strings.json"
+    --output "${static_strings_source}"
+  DEPENDS ${game_string_sources} "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_static_strings.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/static_strings.json"
+  VERBATIM)
+add_library(uw_test_static_strings STATIC "${static_strings_source}")
+uw_configure_test_target(uw_test_static_strings)
+target_include_directories(uw_test_static_strings PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+add_supported_game_unit_test(static_strings uw_test_static_strings)
+
+add_fixture_game_unit_test(scroll_messages
+  src/hud.c:@s_Not_a_spell_00085a80 src/item_use.c:@DAT_000878ec_backing
+  src/item_use.c:@s_on_what__000878e0 src/item_use.c:@s_UNNAMED_00084f24
+  src/player.c:@DAT_0008730c_backing
+  src/hud.c:message_scroll_print_wrapped src/hud.c:msg_scroll_split_escape_segments
+  src/hud.c:msg_scroll_split_newline_segments src/hud.c:msg_scroll_draw_wrapped_span
+  src/hud.c:msg_scroll_wrap_split_line src/hud.c:print_not_a_spell_message
+  src/item_use.c:prompt_use_item_on_target
+  src/player.c:advance_character_level
+  src/ordinal_stubs.c:ce_memmove src/ordinal_stubs.c:ce_strchr src/ordinal_stubs.c:ce_strrchr)
+target_link_libraries(uw_test_scroll_messages PUBLIC uw_test_static_strings)

@@ -10,9 +10,9 @@
 
 #define _DAT_002035cf (*(uint*)&DAT_002035cf)
 char s_UNNAMED_00084f24[] = "UNNAMED";
-static char s_objsbecombinable_returns__d_00084f50[] = "objsbecombinable_returns_%d";
-static char s_combination__d_is__d_and__d__00084f70[] = "combination_%d_is_%d_and_%d.";
-static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking_if_%d_and_%d_are_combin";
+static char s_objsbecombinable_returns__d_00084f50[] = "objsbecombinable returns %d\n";
+static char s_combination__d_is__d_and__d__00084f70[] = "combination %d is %d and %d.\n";
+static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking if %d and %d are combinable...\n";
 /* Sizing pass: combination-result table, indexed by
    objects_are_combinable's own return (0-9, a fixed "10 entries"
    search loop) at a 6-byte stride -- real max 9*6+2=56 bytes. */
@@ -37,12 +37,12 @@ static undefined1 DAT_002028e0_backing[16];
 static char s_armor_f_00085c60[] = "armor_f";
 static ushort DAT_00202962;
 static ushort DAT_00202964;
-static char s_Move_how_many__00085c68[] = "Move_how_many?";
-static char s_is_too_full__00085c78[] = "is_too_full.";
+static char s_Move_how_many__00085c68[] = "Move how many? ";
+static char s_is_too_full__00085c78[] = " is too full.\n";
 static undefined DAT_002029f9_backing[256];
 #define DAT_002029f9 DAT_002029f9_backing[0]
-undefined DAT_00085ce0_backing[8192];
-char s_You_read_the_00085ce8[] = "You_read_the";
+undefined DAT_00085ce0_backing[8192] = "...\n";
+char s_You_read_the_00085ce8[] = "You read the ";
 // g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
 // object id's low nibble) effect/quality byte table, loaded at runtime
 // (read_file_handle) and read by use_food_item to decide a food item's
@@ -60,11 +60,11 @@ char s_You_read_the_00085ce8[] = "You_read_the";
    The "held item currently being used" global driving the item-use
    dispatch chain (finish_object_use and friends). */
 char *DAT_00202098;
-static char s_on_what__000878e0[] = "on_what?";
-static undefined1 DAT_000878ec_backing[32768];
+static char s_on_what__000878e0[] = " on what?\n";
+static undefined1 DAT_000878ec_backing[32768] = "Use ";
 #define DAT_000878ec DAT_000878ec_backing[0]
-static char s_That_000878f4[] = "That";
-static char s_is_locked__000878fc[] = "is_locked.";
+static char s_That_000878f4[] = "That ";
+static char s_is_locked__000878fc[] = " is locked.\n";
 
 
 

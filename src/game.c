@@ -74,22 +74,13 @@ int DAT_00201c98;
 static char s__DATA_pres1_byt_00085790[] = "\\DATA\\pres1.byt";
 undefined4 DAT_0023c540;
 static char s__DATA_lev_ark_00085734[] = "\\DATA\\lev.ark";
-static char s_Not_enough_disk_space_for_save_g_00085744[] = "Not_enough_disk_space_for_save_g";
+static char s_Not_enough_disk_space_for_save_g_00085744[] = "Not enough disk space for save game.$";
 static char s__DATA_COPYRIGHT_BYT_0008576c[] = "\\DATA\\COPYRIGHT.BYT";
 static char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
-/* Not `static` -- also used by game.c (app_main_loop, main_menu_loop);
-   see the extern declaration and DAT_000857a0 macro alias in uw.h.
-   Was zero-initialized -- an "unrecoverable string constant" Ghidra never
-   populated (same class of bug as the CHRBTNS/opbtn resource-name fixes),
-   but unlike those it has NO writer anywhere in uw.c or game.c either, so
-   it's a real compile-time constant, not a runtime-built buffer. Every
-   reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
-   bglobals.dat, desc) alongside already-recovered sibling constants that
-   spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
-   and probe_save_slots/load_game_from_slot both search the built path for a literal
-   '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
-   supplies one. Recovered as "\SAVE0"; kept the oversized backing array
-   since nothing else relies on its exact size. */
+/* Original UU.exe bytes at 0x857a0 are "\SAVE0\". The port keeps the
+   final separator on the filename suffixes (\desc, \player.dat, \*.*)
+   instead. Preserve that coordinated path adaptation; both layouts
+   produce the same filenames. Also used outside this file via uw.h. */
 undefined1 DAT_000857a0_backing[32768] = "\\SAVE0";
 static undefined2 DAT_00201b6c;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
@@ -143,13 +134,13 @@ void (*const DAT_00085668_real_table[48])(void) = {
   0, 0, 0, (void(*)(void))exit_talk_mode,
 };
 undefined2 DAT_000868d8;
-static char s_Error_code_XXXX___000857c8[] = "Error_code_XXXX_$";
-static char s_Out_of_Low_Memory___000857dc[] = "Out_of_Low_Memory.$";
-static char s_Out_of_EMS_Memory___000857f0[] = "Out_of_EMS_Memory.$";
-static char s_Could_not_read_data___00085804[] = "Could_not_read_data.$";
-static char s_Could_not_write_data___0008581c[] = "Could_not_write_data.$";
-static char s_Resource_problem_or_internal_err_00085834[] = "Resource_problem_or_internal_err";
-static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld_can_no_longer_run._Er";
+static char s_Error_code_XXXX___000857c8[] = " Error code XXXX\r\n$";
+static char s_Out_of_Low_Memory___000857dc[] = "Out of Low Memory.$";
+static char s_Out_of_EMS_Memory___000857f0[] = "Out of EMS Memory.$";
+static char s_Could_not_read_data___00085804[] = "Could not read data.$";
+static char s_Could_not_write_data___0008581c[] = "Could not write data.$";
+static char s_Resource_problem_or_internal_err_00085834[] = "Resource problem or internal error.$";
+static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld can no longer run.  Error code XXXX.\r\n$";
 static undefined DAT_00201b70_backing[8192];
 void *DAT_00202308_arr[256];
 /* Per-geometry-record decoded-sprite pixel buffers, one malloc per visible
@@ -207,7 +198,7 @@ static short DAT_000876c0_backing[128];
 short *DAT_000876c0 = DAT_000876c0_backing;
 static undefined DAT_00028bfc_backing[8192];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
-static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev_%d_@_%2.2u.%1.1u_%2.2u.%1.1u";
+static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev %d @ %2.2u.%1.1u %2.2u.%1.1u %2.2x %2.2x \n";
 static byte DAT_0023bd84;
 static undefined1 DAT_00086e05;
 static undefined1 DAT_00086e06;
@@ -286,13 +277,13 @@ undefined4 DAT_0023c648;
 static unsigned short u_UltimaUW_00087678[] = u"UltimaUW";
 static unsigned short u_Ultima_Under_World_00087690[] = u"Ultima_Under_World";
 static unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[] = u"Software\\Apps\\ZIO_Interactive_Ul";
-static char s__Program_Files_ZIO_Interactive_U_00087804[] = "\\Program_Files\\ZIO_Interactive\\U";
+static char s__Program_Files_ZIO_Interactive_U_00087804[] = "\\Program Files\\ZIO Interactive\\Ultima Underworld";
 static unsigned short u_InstlDir_00087838[] = u"InstlDir";
 static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008784c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
 static unsigned short u_HP_Jornada_540_000876cc[] = u"HP,Jornada_540";
-static char s__Program_Files_ZIO_Interactive_U_000876ec[] = "\\Program_Files\\ZIO_Interactive\\U";
+static char s__Program_Files_ZIO_Interactive_U_000876ec[] = "\\Program Files\\ZIO Interactive\\Ultima(Voice)";
 static unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008771c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
-static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program_Files\\ZIO_Interactive\\U";
+static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program Files\\ZIO Interactive\\Ultima(CutScene)";
 // DAT_000830b0 and UNK_000830b4 are the same {int msg_id; void
 // *handler;} 8-byte-stride table (dispatch_window_message walks
 // msg_id entries from &DAT_000830b0 via an `int*`, and reads the

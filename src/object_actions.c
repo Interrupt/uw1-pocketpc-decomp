@@ -20,15 +20,15 @@ undefined1 DAT_0023c3d8;
    space (see describe_picked_terrain: message_scroll_print_wrapped(this) then the
    name then "."). */
 char s_You_see_000858fc[] = "You see ";
-static char s_belonging_to_00085c90[] = "belonging to ";
+static char s_belonging_to_00085c90[] = " belonging to";
  undefined1 DAT_0023ce70_backing[8192];
 ushort DAT_00202508;
 ushort DAT_002022f8;
 static ushort DAT_00202300;
 static ushort DAT_00202304;
 int DAT_002022fc;
-static char s_cursed_00085ca0[] = "cursed";
-static char s_magical_00085ca8[] = "magical";
+static char s_cursed_00085ca0[] = "cursed ";
+static char s_magical_00085ca8[] = "magical ";
 /* Ghidra rendered the embedded space as an underscore and dropped the
    leading space entirely -- confirmed via a Ghidra memory dump of the
    real UU.exe that the real bytes are " full charge\0" (with a real
@@ -72,7 +72,7 @@ static undefined1 DAT_00085cce;
    count isn't exactly 1. */
 static undefined DAT_00085cb4_backing[8192] = "s";
 static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
-static char s_an_adventurer__00085d08[] = "an_adventurer.";
+static char s_an_adventurer__00085d08[] = "an adventurer.\n";
 static uint DAT_00202094;
 /* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
    (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
@@ -82,7 +82,7 @@ static undefined DAT_0008762c_backing[8192];
 #define DAT_0008762c DAT_0008762c_backing[0]
 #define DAT_00087630 DAT_0008762c_backing[4]
 #define DAT_00087634 DAT_0008762c_backing[8]
-static char s_very_near_00087954[] = "very_near";
+static char s_very_near_00087954[] = "very near";
 
 
 

@@ -10,13 +10,13 @@
 #define DAT_000fb863 DAT_000fb860_backing[3]
 #define DAT_000fb8f0 DAT_000fb8f0_backing[0]
 char *DAT_00086df8;
-static undefined DAT_00084e40_backing[8192];
+static undefined DAT_00084e40_backing[8192] = "Vit:";
 #define DAT_00084e40 DAT_00084e40_backing[0]
-static undefined DAT_00084e48_backing[8192];
+static undefined DAT_00084e48_backing[8192] = "Int:";
 #define DAT_00084e48 DAT_00084e48_backing[0]
-static undefined DAT_00084e50_backing[8192];
+static undefined DAT_00084e50_backing[8192] = "Dex:";
 #define DAT_00084e50 DAT_00084e50_backing[0]
-static undefined DAT_00084e58_backing[8192];
+static undefined DAT_00084e58_backing[8192] = "Str:";
 #define DAT_00084e58 DAT_00084e58_backing[0]
 char *DAT_001005c8;
 /* Was `undefined4` (4 bytes), but assigned real char* pointers
@@ -39,9 +39,9 @@ static undefined1 DAT_000fb860_backing[256];
    Not `static` -- chargen.c reaches it through the DAT_000fb8c4 alias
    in uw.h (case 4's body-figure offset lookup). */
 undefined4 DAT_000fb880_backing[4096];
-static char s_key_to_continue_00084e60[] = "key_to_continue";
-static char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
-static char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
+static char s_key_to_continue_00084e60[] = "key to continue";
+static char s_then_press_the_Enter_00084e70[] = "then press the Enter";
+static char s_Enter_your_name_and_00084e88[] = "Enter your name and";
 static short DAT_001005c0;
 /* DAT_000fb8c4's address (0xfb8c4) is 0x44 bytes = 17 elements past
    DAT_000fb880's (0xfb880) -- like DAT_000fb884, not a separate table but

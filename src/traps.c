@@ -20,7 +20,7 @@
    otherwise be an absolute-address dereference into unmapped memory
    on this 64-bit host. */
 static undefined1 DAT_00085638[10]; /* indices 1-9 are the ones actually read (index 0 unused) */
-static char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in_your_face!";
+static char s_The_book_explodes_in_your_face__00085644[] = "The book explodes in your face!\n";
 /* Both were single `undefined` scalars, but resolve_lock_difficulty_rating
    (the only function anywhere in this decompile that touches either)
    indexes each one via `(&DAT_xxx)[i]` up to the extents below -- the
@@ -29,7 +29,7 @@ static char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in
    arrays, sized to the highest index each is ever read at. */
 static undefined DAT_002026d1[253];
 static undefined DAT_00202807[121];
-static char s_Look__it_s_a_text_trap_00087918[] = "Look,_it's_a_text_trap";
+static char s_Look__it_s_a_text_trap_00087918[] = "Look, it's a text trap\n";
 static undefined4 DAT_0024cff8;
 static undefined4 DAT_0024cfd4;
 static undefined DAT_0007e644_backing[8192];

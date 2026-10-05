@@ -111,7 +111,7 @@ static int DAT_0023c378;
 static undefined1 DAT_000873e0_backing[256];
 #define DAT_000873e0 DAT_000873e0_backing[0]
 static undefined4 DAT_00087458;
-static undefined1 DAT_00087520_backing[32768];
+static undefined1 DAT_00087520_backing[32768] = "\\VOC00.WAV";
 #define DAT_00087520 DAT_00087520_backing[0]
 static short DAT_002506f0;
 static undefined2 DAT_002029c8;

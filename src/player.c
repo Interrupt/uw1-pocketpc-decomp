@@ -103,7 +103,7 @@ short DAT_00201c94;
 undefined4 DAT_0024cfc8;
 undefined4 DAT_002028d8;
 undefined2 DAT_00201c78;
-static char s_You_died_000857b8[] = "You_died";
+static char s_You_died_000857b8[] = "    You died\n";
 static byte DAT_00085730;
 code *DAT_00201c9c;
 byte DAT_0020208c;
@@ -162,6 +162,8 @@ undefined1 *g_save_record_base_ptr;
    ("...\SAVE0player.dat"). A leading "\\" here is harmless even for a
    caller whose own prefix already ends in one (resolve_path collapses
    repeated separators). */
+/* Original bytes are "player.dat"; the port's save-directory prefix
+   omits its trailing separator, so this suffix supplies it instead. */
 char s_player_dat_00085a74[] = "\\player.dat";
 /* g_light_source_slots: light-source-eligible equip slots {5,6,7,8} (see
    refresh_player_equipment_effects and decay_equipped_light_sources's light-scan loops, and use_light_source's
@@ -254,9 +256,10 @@ char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
    stayed 0 and every visible tile drew with the 16x16 low-detail
    texture. Sentinel = no level loaded yet. */
 char DAT_000872a0 = -1;
-static undefined1 DAT_0008730c_backing[8192];
+static undefined1 DAT_0008730c_backing[8192] = " 0\n";
 #define DAT_0008730c DAT_0008730c_backing[0]
-static undefined1 DAT_0008730d;
+/* The second digit belongs to the same scroll-message buffer. */
+#define DAT_0008730d DAT_0008730c_backing[1]
 /* Was a lone scalar, but roll_skill_use_improvement indexes it
    `(&DAT_00087308)[tier]` for tier 0..2 (classify_skill_training_tier's
    full range) as a per-tier probability threshold for
@@ -269,15 +272,10 @@ static undefined1 DAT_0008730d;
    improvement over reading unrelated string bytes as a probability. */
 static undefined DAT_00087308_arr[3];
 #define DAT_00087308 DAT_00087308_arr[0]
-char s_and_00087310[] = "and";
-/* Used as a NUL-terminated string (&DAT_00087318) by
-   print_skill_improvement_list, joining middle entries of its skill-
-   name list (likely ", " between the original real data). Ghidra never
-   surfaced this as initialized string data, so it currently prints as
-   an empty separator -- not guessed at, same as this project's other
-   unrecovered-rodata symbols (e.g. DAT_00086f0c). */
-static undefined DAT_00087318;
-static char s_Chant_the_mantra__0008731c[] = "Chant_the_mantra:";
+char s_and_00087310[] = " and ";
+/* Original UU.exe bytes at 0x87318: comma and space for skill lists. */
+static char DAT_00087318[] = ", ";
+static char s_Chant_the_mantra__0008731c[] = "Chant the mantra: ";
 static char s_fontchar_sys_00087330[] = "fontchar.sys";
 static char s__DATA_win1_byt_00087350[] = "\\DATA\\win1.byt";
 char DAT_0023c27c;
@@ -2456,9 +2454,7 @@ int param_2;
 // 4 entries): message 0x1e if the list is empty (*param_1==-1), else
 // message 0x1d followed by each skill name, separated by DAT_00087318
 // between middle entries and s_and_00087310 ("and") before the last.
-// DAT_00087318's real content wasn't recovered (a likely ", " list
-// separator, currently prints as empty -- see its own declaration
-// comment) -- not guessed.
+// The comma/space separator is verified against UU.exe at 0x87318.
 void print_skill_improvement_list(param_1)
 char * param_1;
 

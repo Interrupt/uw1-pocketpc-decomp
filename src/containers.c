@@ -40,8 +40,8 @@ static undefined DAT_00202978_backing[8192];
 #define DAT_00202978 DAT_00202978_backing[0]
 static ushort DAT_00202986;
 static undefined2 DAT_00202980;
- undefined1 DAT_00085c88_backing[32768];
-static char s_is_empty__0008790c[] = "is_empty.";
+ undefined1 DAT_00085c88_backing[32768] = "The ";
+static char s_is_empty__0008790c[] = " is empty.\n";
 
 
 

@@ -58,7 +58,7 @@ undefined2 DAT_0023adb0;
    name instead (see reset_texture_id_lists). */
 static undefined1 DAT_0024f090_backing[64];
 #define DAT_0024f090 DAT_0024f090_backing[0]
-static char s_bad_tmap_ids_size_000869b7[] = "bad_tmap_ids_size";
+static char s_bad_tmap_ids_size_000869b7[] = " bad tmap ids size\n";
 /* High byte of DAT_0023b840's packed short (write pattern: `(&DAT_0023b840)[i]
    = low; (&DAT_0023b841)[i] = high;`, read back combined via CONCAT11 and
    via `*(short*)(&DAT_0023b840 + offset)` in saveload.c/resources.c) --
@@ -100,7 +100,7 @@ undefined2 DAT_0023b020;
 undefined2 DAT_0023aed4;
 undefined2 *DAT_0023aed0;
 static short DAT_0023b4cc;
-static char s_R__lu_P__lu_S__lu_F__d__d_00086b04[] = "R:%lu_P:%lu_S:%lu_F:%d.%d";
+static char s_R__lu_P__lu_S__lu_F__d__d_00086b04[] = "R:%lu P:%lu S:%lu F:%d.%d";
 /* Sizing pass: explicit 16-slot ring buffer (`DAT_0023b4c8 = sVar1 +
    1U & 0xf`), 2-byte stride -- real max 15*2+2=32 bytes. */
 static undefined1 DAT_0023b4a8_backing[64];
@@ -215,7 +215,7 @@ static char s__DATA_f32_tr_00086de8[] = "\\DATA\\f32.tr";
 static char s__DATA_shades_dat_000872a4[] = "\\DATA\\shades.dat";
 char s__DATA_light_dat_000872c8[] = "\\DATA\\light.dat";
 static char s__DATA_xfer_dat_000872d8[] = "\\DATA\\xfer.dat";
-static char s_cLightTabs_allocation_error_____000872e8[] = "cLightTabs_allocation_error_...";
+static char s_cLightTabs_allocation_error_____000872e8[] = "cLightTabs allocation error ...";
 static undefined1 DAT_0024fa38_backing[3072];
 #define DAT_0024fa38 DAT_0024fa38_backing[0]
 

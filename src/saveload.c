@@ -97,11 +97,8 @@ static char s__DATA_OPSCR_BYT_00086efc[] = "\\DATA\\OPSCR.BYT";
    spaces instead of underscores between the words, and no trailing
    newline. */
 static char s__not_used_yet__00087020[] = "<not used yet>";
-/* Was zero-initialized -- see DAT_000857a0's comment above. probe_save_slots
-   appends this to DAT_000857a0 ("\SAVE0") to build each save-slot probe
-   path, then substitutes the '0' with '1'..'4'; the already-recovered
-   s__SAVE0_desc_00087078 == "\SAVE0\desc" spells out exactly what that
-   concatenation should produce, confirming this suffix is "\desc". */
+/* Original bytes are "desc". The port keeps the directory separator
+   here rather than at the end of DAT_000857a0's "\SAVE0" prefix. */
 static undefined DAT_00087030_backing[8192] = "\\desc";
 #define DAT_00087030 DAT_00087030_backing[0]
 static char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
@@ -115,13 +112,10 @@ static char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
    trailing period, a trailing newline before the NUL. */
 static char s_Please_enter_a_Save_Game_file_an_00087094[] = "  Please enter a Save Game file and press Enter\n";
 static char s__SAVE0_desc_00087078[] = "\\SAVE0\\desc";
-static undefined DAT_00087084_backing[8192];
+static undefined DAT_00087084_backing[8192] = "\\";
 #define DAT_00087084 DAT_00087084_backing[0]
-/* Was zero-initialized -- see DAT_000857a0's comment above. ensure_save_directory_exists
-   appends this to a directory path before scanning it with the
-   FindFirstFileW/181 FindFirstFile/FindNextFile-shaped ordinals, matching
-   the universal Win32 "\*.*" wildcard idiom for "list everything in this
-   directory". */
+/* Original bytes are "*.*". Keep the separator here to match the port's
+   save-directory paths, which omit the original trailing backslash. */
 static undefined DAT_000870c8_backing[8192] = "\\*.*";
 #define DAT_000870c8 DAT_000870c8_backing[0]
 
