@@ -8,7 +8,7 @@
 [ ] Automap cursor not invalidating, leaves a trail behind
 [x] Automap should lightly draw a wall when not discovered (fixed in 0d1d7f5/b676768, merged from bug-fixes-pass-1)
 [x] Automap notes not persisting (fixed in 7d8825b, earlier this session)
-[ ] Crash when using a mantra
+[x] Crash when using a mantra (fixed in c9d58c8: handle_mantra_chant's typed-word/mantra-name locals were `undefined4`, truncating _strupr's and get_message_string's real 64-bit pointer returns -- ce_strcmp then dereferenced the truncated pointer and crashed, unconditionally, on literally every invocation)
 [ ] Crash when using a ranged weapon
 [ ] Attack charge not consistent
 [ ] Pitch off - spell casting offset is off now. Revert earlier fix, reverse pitch look direction visually?
