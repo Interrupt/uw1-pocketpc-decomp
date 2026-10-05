@@ -32,7 +32,7 @@ char *DAT_00086df8 = character, *DAT_0023be74 = derived;
 char *g_selected_object;
 byte *g_scratch_object_ptr;
 undefined4 DAT_002020d8, DAT_0023bc98;
-undefined1 DAT_00086da8_backing[256], DAT_00202800_backing[65536];
+undefined1 DAT_00086da8_backing[256], DAT_00202800_backing[256];
 unsigned char DAT_00085ac8_backing[16] = {5,6,7,8};
 int visibility_light_config_record, visibility_ambient_strength;
 void *get_equipped_item_at_slot(int slot)
