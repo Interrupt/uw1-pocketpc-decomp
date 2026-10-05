@@ -883,7 +883,7 @@ undefined4 param_1;
     weapon_overlay_and_full_redraw();
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 0xd);
-  show_error_dialog_stub_thunk(0xf1);
+  show_error_dialog_stub_thunk();
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
   cursor_show_idle_tick();
@@ -903,7 +903,7 @@ undefined4 param_1;
   undefined4 uVar1;
   int iVar2;
 
-  decrement_cursor_hide_depth(0xc,debug_noop_frame_hook,0xf1);
+  decrement_cursor_hide_depth();  /* ARM 0x411e8: no args; (0xc,__FILE__,0xf1) belongs to the debug-trace thunk at 0x41124 */
   uVar1 = ce_malloc(0x4bec);
   ce_memmove(uVar1,DAT_00248410,0x4bec);
   g_weapon_overlay_enabled = 0;

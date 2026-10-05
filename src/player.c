@@ -833,7 +833,7 @@ char * param_1;
         CloseHandle(iVar2);
       }
       if (g_save_record_buffer != 0) {
-        LocalFree();
+        LocalFree(g_save_record_buffer);
         g_save_record_buffer = 0;
       }
       set_pending_update_flags(0x200);
@@ -2149,7 +2149,7 @@ short param_1;
     iVar8 = DAT_00086df8;
     iVar7 = 0;
     uVar3 = *(uint *)(DAT_00086df8 + 0x4e);
-    sVar4 = orduint_divmod(500).quot;
+    sVar4 = orduint_divmod(500,uVar3).quot;  /* dividend dropped; ARM 0x69d88-0x69da4 */
     uVar5 = (uint)*(byte *)(iVar8 + 0x3d);
     bVar1 = (&DAT_00086e87)[uVar5];
     uVar6 = uVar5;
@@ -2312,7 +2312,7 @@ char param_1;
     DAT_0008730c = ' ';
   }
   else {
-    cVar2 = ordint_divmod(10).quot;
+    cVar2 = ordint_divmod(10,*(byte *)(DAT_00086df8 + 0x3d)).quot;  /* dividend dropped; ARM 0x704a4 */
     DAT_0008730c = cVar2 + '0';
   }
   uw_ord2005_rem_138 = ((int)(*(undefined1 *)(iVar1 + 0x3d))) % (10);
@@ -2824,7 +2824,7 @@ void render_endgame_character_stats()
   sVar6 = ce_strlen(local_58);
   iVar12 = DAT_00086df8;
   if (9 < *(byte *)(DAT_00086df8 + 0x3d)) {
-    cVar3 = ordint_divmod(10).quot;
+    cVar3 = ordint_divmod(10,*(byte *)(DAT_00086df8 + 0x3d)).quot;  /* dividend dropped, same as advance_character_level */
     local_58[sVar6] = cVar3 + '0';
     sVar6 = (short)((uint)((sVar6 + 1) * 0x10000) >> 0x10);
   }
@@ -3411,7 +3411,7 @@ LAB_00072374:
     DAT_00085730 = 3;
     if (iVar6 != 0) {
       display_book_or_scroll_page(0x102);
-      show_error_dialog_stub_thunk(0xf1);
+      show_error_dialog_stub_thunk();
       msg_scroll_panel_reset(1);
       return;
     }
@@ -4627,7 +4627,7 @@ undefined4 dungeon_view_anim_tick()
     }
     DAT_00201c90 = local_20;
     DAT_00201c8c = local_1e;
-    set_player_tile_position((int)local_20,(int)local_1e,1);
+    set_player_tile_position((int)local_20,(int)local_1e);
     if ((DAT_00085730 & 2) != 0) {
       full_dungeon_redraw();
       weapon_overlay_flash_restore((int)g_visibility_max_ring_passes);

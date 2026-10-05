@@ -424,13 +424,15 @@ int param_3;
 // always passes base 10, so this isn't the dropped-argument bug class
 // seen elsewhere in this file; the unused-when-nonzero param_4 is simply
 // never read outside that one branch.
-void itoa_radix(param_1,param_2,param_3,param_4)
+/* Real arity is 3 (value, buffer, radix): ARM 0x229e0 reads r0-r2 only. Ghidra's param_4 was a
+   scratch register (the pad-character local) that all 21 call sites correctly leave unset. */
+void itoa_radix(param_1,param_2,param_3)
 int param_1;
 undefined1 * param_2;
 undefined4 param_3;
-undefined1 param_4;
 
 {
+  undefined1 param_4;
   char cVar1;
   int extraout_r1;
   char *pcVar2;

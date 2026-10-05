@@ -80,7 +80,7 @@ if __name__ == '__main__':
     if '--mark' in sys.argv:
         notes = json.load(open(root + '/tools/audit_notes.json'))
         for f in data['functions']:
-            n = f['name']; f['audited'] = n not in bad
+            n = f['name']; f['audited'] = n not in bad or notes.get(n, '').startswith('VERIFIED')
             f.pop('audit_note', None)
             if n in bad:
                 sites = ', '.join('%s:%d passes %d' % (r, l, k) for r, l, k, *_ in bad[n][:3])

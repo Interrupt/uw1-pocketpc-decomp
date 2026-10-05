@@ -205,7 +205,7 @@ char *param_3;
     pcVar_rec = param_3 + iVar12 * 0x14;
     iVar4 = *(int *)(pcVar_rec + 6);
     pcVar_name = (char *)&DAT_000fb8f0 + iVar4;
-    screen_backup_save((int)uVar15,(int)(uVar15 >> 0x20));
+    screen_backup_save();  /* takes no args (ARM 0x11478 never reads r0-r3); the old args were the halves of the previous call's 64-bit return */
     chargen_ui_transition_hook(1);
     DAT_000fb858 = DAT_001005c8;
     // Redraws the raw parchment background (both pages, 0,0 to 320,200) from scratch every loop iteration -- this is the mechanism that clears stale text from the *right* page between prompts (confirmed: disabling it leaves old prompt text visibly bleeding through under new prompt text). As a side effect it also wipes any stats text the previous iteration's switch-case drew on the left page. Confirmed present in the real ARM disassembly at this exact spot, in this exact order relative to the fill below -- not a decompilation bug.
@@ -1458,11 +1458,11 @@ LAB_000247f8:
 // was FUN_00024840 -- waits for input on the current chargen field:
 // navigates/selects a list, or (for the name field) runs the
 // text-entry loop.
-uint wait_for_chargen_field_input(param_1,param_2)
+uint wait_for_chargen_field_input(param_1)
 short * param_1;
-undefined4 param_2;
 
 {
+  undefined4 param_2;  /* was a 2nd parameter: only ever assigned the high half of a 64-bit return; ARM 0x24840 reads r0 only */
   byte bVar1;
   short sVar2;
   short sVar3;

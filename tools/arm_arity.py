@@ -8,15 +8,15 @@ from capstone.arm import ARM_CC_AL
 EXE = '/Users/ccuddigan/Projects/UW1/uw-arm/UU.exe'
 d = open(EXE, 'rb').read()
 BASE = 0x10000; TEXT_RVA = 0x1000; TEXT_FO = 0x400; TEXT_SZ = 0x7152c
-md = Cs(CS_ARCH_ARM, CS_MODE_ARM); md.detail = True
+md = Cs(CS_ARCH_ARM, CS_MODE_ARM); md.detail = True; md.skipdata = True
 ARGS = ('r0', 'r1', 'r2', 'r3')
 def fo(va): return TEXT_FO + (va - BASE - TEXT_RVA)
-def disasm(va, n): return list(md.disasm(d[fo(va):fo(va) + 4 * n], va))
+def disasm(va, n): return [i for i in md.disasm(d[fo(va):fo(va) + 4 * n], va) if i.mnemonic != '.byte']
 def func_insns(va, maxn=800):
     out = []
     for i in disasm(va, maxn):
         out.append(i)
-        if i.cc == ARM_CC_AL and ((i.mnemonic.startswith('ldm') and 'pc' in i.op_str) or
+        if i.cc == ARM_CC_AL and (((i.mnemonic.startswith('ldm') or i.mnemonic == 'pop') and 'pc' in i.op_str) or
                                   (i.mnemonic == 'bx' and i.op_str == 'lr') or
                                   (i.mnemonic in ('mov', 'cpy') and i.op_str == 'pc, lr')): break
     return out
@@ -27,8 +27,7 @@ def reads_before_write(insns):
         for r in rr:
             nm = i.reg_name(r)
             if nm in ARGS and nm not in written and nm not in read: read.append(nm)
-        if i.cc == ARM_CC_AL:
-            for r in rw: written.add(i.reg_name(r))
+        for r in rw: written.add(i.reg_name(r))
     return read
 def callers(target):
     res = []

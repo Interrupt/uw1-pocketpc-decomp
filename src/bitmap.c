@@ -287,10 +287,12 @@ uint param_4;
 
 
 // was FUN_00040918
-void blit_object_sprite_by_frame(param_1,param_2,param_3)
+void blit_object_sprite_by_frame(param_1,param_2,param_3,param_4,param_5)
 short param_1;
 undefined4 param_2;
 undefined4 param_3;
+undefined4 param_4;
+undefined4 param_5;
 
 {
   char cVar1;

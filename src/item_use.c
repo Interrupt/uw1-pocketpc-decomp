@@ -2555,7 +2555,7 @@ int param_3;
       iVar2 = 0;
     }
     else if (iVar2 < 0x1f) {
-      sVar1 = ordint_divmod(10).quot;
+      sVar1 = ordint_divmod(10,iVar2).quot;  /* dividend dropped; ARM 0x3abe0-0x3ac10 */
       iVar2 = sVar1 + 1;
     }
     else {

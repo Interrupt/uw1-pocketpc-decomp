@@ -581,7 +581,7 @@ undefined4 param_3;
         emit_player_noise_alert(*(ushort *)(param_1 + 6) & 0x3f);
       }
       else if (uVar1 == 0x18) {
-        handle_level4_maze_puzzle_button(*(ushort *)(param_1 + 6) & 0x3f);
+        handle_level4_maze_puzzle_button(*(ushort *)(param_1 + 6) & 0x3f,param_2,param_3);  /* ARM 0x7e198: r1/r2 pass straight through from this function's own params */
       }
       else if (uVar1 == 0x28) {
         try_combine_shrine_markers(0,param_2,param_3);
@@ -1079,7 +1079,7 @@ LAB_0003987c:
           }
           else if (uVar11 < uVar3) {
             for (puVar8 = puVar7 + 1; (*puVar8 & 0xffc0) != 0; puVar8 = puVar8 + 2) {
-              uVar14 = resolve_object_link(puVar8,uVar10);
+              uVar14 = resolve_object_link(puVar8);
               uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
               puVar8 = (ushort *)uVar14;
               if (((*puVar8 & 0x1c0) != 0x180) && ((puVar8[1] & 0x7f) == uVar3 * 8)) {
@@ -1101,7 +1101,7 @@ LAB_0003987c:
                        codebase when it gets corrupted. Leave it untouched
                        instead, matching this loop's own established
                        convention. */
-                    set_locomotion_state(0x10);
+                    set_locomotion_state(0x10,1);  /* ARM 0x39aac-0x39ab4: moveq r1,#1; moveq r0,#0x10; bleq */
                   }
                 }
                 else {
@@ -1222,7 +1222,7 @@ undefined1 param_6;
     dispatch_tile_special_action(param_6,param_3,param_4);
   }
   else {
-    dispatch_special_action(param_5 & 0xff,param_6,param_3);
+    dispatch_special_action(param_5 & 0xff,param_6,param_3,param_4);  /* 4th arg was dropped: ARM 0x39d50 passes r3 (incoming param_4) through */
   }
   return 2;
 }
@@ -1238,8 +1238,10 @@ undefined1 param_6;
 // the pattern). Strongly resembles a maze/wall-shifting puzzle device
 // (a set of directional buttons carving a path through movable
 // walls), though its exact in-game name/lore isn't confirmed here.
-void handle_level4_maze_puzzle_button(param_1)
+void handle_level4_maze_puzzle_button(param_1,param_2,param_3)
 short param_1;
+undefined4 param_2;
+undefined4 param_3;
 
 {
   byte *pbVar1;

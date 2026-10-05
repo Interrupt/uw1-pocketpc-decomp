@@ -1743,7 +1743,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
   refresh_player_equipment_effects();
 LAB_00044730:
   if (g_save_record_buffer != 0) {
-    LocalFree();
+    LocalFree(g_save_record_buffer);
     g_save_record_buffer = 0;
   }
   if ((param_1 != 0) && (-1 < DAT_00202080)) {

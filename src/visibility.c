@@ -542,14 +542,14 @@ void free_frame_geometry_buffers()
   {
     int _i;
     for (_i = 0; _i < 0x140; _i++) {
-      if (DAT_0023c7a0_arr[_i] != 0) { LocalFree(); DAT_0023c7a0_arr[_i] = 0; }
+      if (DAT_0023c7a0_arr[_i] != 0) { LocalFree(DAT_0023c7a0_arr[_i]); DAT_0023c7a0_arr[_i] = 0; }
     }
   }
   piVar1 = &DAT_002020f8;
   iVar2 = 0x80;
   do {
     if (*piVar1 != 0) {
-      LocalFree();
+      LocalFree(*piVar1);
       *piVar1 = 0;
     }
     iVar2 = iVar2 + -1;

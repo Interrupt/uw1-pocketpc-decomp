@@ -6522,10 +6522,8 @@ static const unsigned char g_menu_nav_highlight_table[8][7] = {
 // g_menu_nav_highlight_table for the current state), 1/0x164 select
 // the current row, and the remaining magic codes (0x166/0x16d/0x171/
 // 0x172/0x173) are direct hotkeys for specific rows -- all funneled
-// into dispatch_pause_menu_click. NOTE: open_pause_menu_via_hotkey
-// calls this with no argument at all (a possible dropped-argument
-// bug of the same shape fixed elsewhere this session, but not
-// confirmed/fixed here -- see its own comment).
+// into dispatch_pause_menu_click. open_pause_menu_via_hotkey forwards its
+// own key-binding arg here (previously dropped; fixed from ARM tracing).
 void handle_pause_menu_dpad_navigation(param_1)
 short param_1;
 
@@ -6603,13 +6601,17 @@ LAB_00056ddc:
 // but not confirmed (single call site, and DAT_000868dc is already
 // forced to 6 directly above regardless of its effect) -- left
 // unfixed pending stronger evidence.
-void open_pause_menu_via_hotkey()
+/* Key-binding callback: the dispatcher (input.c) calls handler(arg) with the binding's own arg
+   (0x164/0x166/0x16d/0x171-0x173 as registered in game.c). ARM 0x56ebc keeps that incoming r0
+   untouched and tail-feeds it to handle_pause_menu_dpad_navigation (0x56efc). Ghidra dropped it. */
+void open_pause_menu_via_hotkey(param_1)
+short param_1;
 
 {
   if (g_cursor_holding_state == 0) {
     DAT_002046fc = 1;
     DAT_000868dc = 6;
-    handle_pause_menu_dpad_navigation();
+    handle_pause_menu_dpad_navigation(param_1);
     run_pause_menu_modal_loop(DAT_000868dc == 6);
     DAT_002046fc = 0;
   }
@@ -7882,7 +7884,7 @@ static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
     }
   }
   if (is_frame) {
-    blit_object_sprite_by_frame(id, ox, oy);
+    blit_object_sprite_by_frame(id, ox, oy, cw, ch);  /* real arity is 5 (ARM draw_sprite_by_id passes id,x,y,w,h) */
   } else {
     draw_sprite_by_id(id, ox, oy, cw, ch);
   }

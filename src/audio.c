@@ -1288,7 +1288,7 @@ undefined4 param_1;
   uw_ord2005_rem_169 = ((int)(uVar3)) % (8);
   iVar1 = (uw_ord2005_rem_169 + 0x1b) * 0x20000 >> 0x10;
   if (0 < iVar1) {
-    iVar4 = acquire_sound_resource_slot(0x1e);
+    iVar4 = acquire_sound_resource_slot();
     DAT_002506f0 = (short)iVar4;
     iVar2 = (int)DAT_002506f0;
     if (iVar2 == 0) {
@@ -1297,7 +1297,7 @@ undefined4 param_1;
     else {
       if ((iVar2 < iVar1) && (0x23 < iVar2)) {
         release_sound_resource_slot();
-        iVar4 = acquire_sound_resource_slot(0x1e,iVar4 + -6);
+        iVar4 = acquire_sound_resource_slot();
         DAT_002506f0 = (short)iVar4;
         if (DAT_002506f0 < 0x1e) {
           report_categorized_fatal_error(0x2002);
@@ -1330,7 +1330,7 @@ void stop_ambient_sound_effect()
     release_sound_resource_slot();
   }
   if (DAT_002506ec != 0) {
-    LocalFree();
+    LocalFree(DAT_002506ec);
     DAT_002506ec = 0;
   }
   return;
@@ -1544,7 +1544,7 @@ int param_1;
 
 {
   if (*(int *)(param_1 + 0x12) != 0) {
-    cpp_operator_delete();
+    cpp_operator_delete(*(int *)(param_1 + 0x12));
   }
   return;
 }
@@ -1597,7 +1597,7 @@ undefined2 param_3;
       if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                    CONCAT12(*(undefined1 *)(param_1 + 0x14),
                             CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-        cpp_operator_delete();
+        cpp_operator_delete(CONCAT13(*(undefined1 *)(param_1 + 0x15), CONCAT12(*(undefined1 *)(param_1 + 0x14), CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))));
       }
       uVar8 = cpp_operator_new(iVar1);
       *(char *)(param_1 + 0x12) = (char)uVar8;
@@ -1628,7 +1628,7 @@ undefined2 param_3;
       if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                    CONCAT12(*(undefined1 *)(param_1 + 0x14),
                             CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-        cpp_operator_delete();
+        cpp_operator_delete(CONCAT13(*(undefined1 *)(param_1 + 0x15), CONCAT12(*(undefined1 *)(param_1 + 0x14), CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))));
       }
       uVar8 = cpp_operator_new(iVar1);
       *(char *)(param_1 + 0x12) = (char)uVar8;
@@ -1658,7 +1658,7 @@ undefined2 param_3;
       if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                    CONCAT12(*(undefined1 *)(param_1 + 0x14),
                             CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-        cpp_operator_delete();
+        cpp_operator_delete(CONCAT13(*(undefined1 *)(param_1 + 0x15), CONCAT12(*(undefined1 *)(param_1 + 0x14), CONCAT11(uVar3,*(undefined1 *)(param_1 + 0x12)))));
       }
       uVar12 = cpp_operator_new(uVar5);
       *(char *)(param_1 + 0x12) = (char)uVar12;
@@ -1731,7 +1731,7 @@ undefined4 param_3;
           if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                        CONCAT12(*(undefined1 *)(param_1 + 0x14),
                                 CONCAT11(uVar2,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-            cpp_operator_delete();
+            cpp_operator_delete(CONCAT13(*(undefined1 *)(param_1 + 0x15), CONCAT12(*(undefined1 *)(param_1 + 0x14), CONCAT11(uVar2,*(undefined1 *)(param_1 + 0x12)))));
           }
           uVar10 = cpp_operator_new(iVar7);
           *(char *)(param_1 + 0x12) = (char)uVar10;
@@ -1762,7 +1762,7 @@ undefined4 param_3;
           if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                        CONCAT12(*(undefined1 *)(param_1 + 0x14),
                                 CONCAT11(uVar2,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-            cpp_operator_delete();
+            cpp_operator_delete(CONCAT13(*(undefined1 *)(param_1 + 0x15), CONCAT12(*(undefined1 *)(param_1 + 0x14), CONCAT11(uVar2,*(undefined1 *)(param_1 + 0x12)))));
           }
           uVar10 = cpp_operator_new(iVar7);
           *(char *)(param_1 + 0x12) = (char)uVar10;
@@ -1792,7 +1792,7 @@ undefined4 param_3;
           if (CONCAT13(*(undefined1 *)(param_1 + 0x15),
                        CONCAT12(*(undefined1 *)(param_1 + 0x14),
                                 CONCAT11(uVar2,*(undefined1 *)(param_1 + 0x12)))) != 0) {
-            cpp_operator_delete();
+            cpp_operator_delete(CONCAT13(*(undefined1 *)(param_1 + 0x15), CONCAT12(*(undefined1 *)(param_1 + 0x14), CONCAT11(uVar2,*(undefined1 *)(param_1 + 0x12)))));
           }
           uVar13 = cpp_operator_new(uVar4);
           *(char *)(param_1 + 0x12) = (char)uVar13;
@@ -3004,7 +3004,7 @@ LAB_0004e184:
 LAB_0004e21c:
       iVar20 = iVar18 + *piVar19;
       if (0 < *(int *)(iVar20 + 0xc)) {
-        uVar15 = ordfloat_int_to_float2();
+        uVar15 = ordfloat_int_to_float2(*(int *)(iVar20 + 0xc));
         uVar15 = ordfloat_div(0x4a5a7a65,uVar15);
         *(char *)(iVar20 + 0x10) = (char)uVar15;
         *(char *)(iVar20 + 0x11) = (char)((uint)uVar15 >> 8);
@@ -3088,8 +3088,7 @@ int param_4;
         iVar13 = piVar11[1];
         uVar5 = ordfloat_mul(piVar11[4],0x44800000);
         uVar6 = ordfloat_int_to_float2(DAT_00086368);
-        ordfloat_div(uVar5,uVar6);
-        iVar7 = ordfloat_uint_to_float();
+        iVar7 = ordfloat_uint_to_float(ordfloat_div(uVar5,uVar6));
         uVar3 = *(uint3 *)(piVar11 + 6);
         iVar14 = 0;
         iVar12 = param_4;
@@ -3846,7 +3845,7 @@ int param_3;
   if (param_2 == 0) {
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
-      cpp_operator_delete();
+      cpp_operator_delete(*(int *)(param_1 + 4));
       *(undefined4 *)(param_1 + 4) = 0;
     }
   }
@@ -4053,7 +4052,7 @@ int param_3;
   if (param_2 == 0) {
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
-      cpp_operator_delete();
+      cpp_operator_delete(*(int *)(param_1 + 4));
       *(undefined4 *)(param_1 + 4) = 0;
     }
   }
@@ -4129,7 +4128,7 @@ undefined1 * param_1;
   param_1[2] = 8;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
-    cpp_operator_delete();
+    cpp_operator_delete(*(int *)(param_1 + 4));
   }
   *param_1 = 0x20;
   param_1[1] = 0x30;
@@ -4571,7 +4570,7 @@ int param_3;
   if (param_2 == 0) {
     param_2 = 0;
     if (*(int *)(param_1 + 4) != 0) {
-      cpp_operator_delete();
+      cpp_operator_delete(*(int *)(param_1 + 4));
       *(undefined4 *)(param_1 + 4) = 0;
     }
   }
@@ -4646,7 +4645,7 @@ undefined1 * param_1;
   param_1[2] = 8;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
-    cpp_operator_delete();
+    cpp_operator_delete(*(int *)(param_1 + 4));
   }
   *param_1 = 0x20;
   param_1[1] = 0x30;
@@ -4817,7 +4816,7 @@ undefined1 * param_1;
   param_1[2] = 8;
   param_1[3] = 0;
   if (*(int *)(param_1 + 4) != 0) {
-    cpp_operator_delete();
+    cpp_operator_delete(*(int *)(param_1 + 4));
   }
   *param_1 = 0x20;
   param_1[1] = 0x30;

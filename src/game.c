@@ -1962,7 +1962,7 @@ undefined4 param_2;
     ce_memset(auStack_638,0,0x208);
     iVar3 = RegOpenKeyExW(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008784c,0,0);
     if (iVar3 == 0) {
-      RegQueryValueExW(local_7d4,u_InstlDir_00087838,0,&local_7c4);
+      RegQueryValueExW(local_7d4,u_InstlDir_00087838,0,&local_7c4,auStack_638,&local_7c0);  /* data buffer + size dropped by Ghidra (ARM stack args) */
       pcVar4 = (char *)load_string_resource_large(auStack_638);
       do {
         cVar2 = *pcVar4;
@@ -1985,7 +1985,7 @@ undefined4 param_2;
     ce_memset(auStack_430,0,0x208);
     iVar3 = RegOpenKeyExW(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_000877a4,0,0);
     if (iVar3 == 0) {
-      RegQueryValueExW(local_7d8,u_InstlDir_00087838,0,&local_7c8);
+      RegQueryValueExW(local_7d8,u_InstlDir_00087838,0,&local_7c8,auStack_430,&local_7bc);
       pcVar9 = (char *)load_string_resource_large(auStack_430);
       do {
         cVar2 = *pcVar9;
@@ -2004,10 +2004,11 @@ undefined4 param_2;
       } while (cVar2 != '\0');
     }
     local_7b8[0] = 1;
+    local_7b8[1] = 0x208;  /* size-in-bytes store dropped by Ghidra, same as the two sibling lookups above */
     ce_memset(auStack_228,0,0x208);
     iVar3 = RegOpenKeyExW(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008771c,0,0);
     if (iVar3 == 0) {
-      RegQueryValueExW(local_7d0,u_InstlDir_00087838,0,local_7b8);
+      RegQueryValueExW(local_7d0,u_InstlDir_00087838,0,local_7b8,auStack_228,&local_7b8[1]);
       pcVar10 = (char *)load_string_resource_large(auStack_228);
       pcVar9 = &DAT_00241f08;
       do {
@@ -2171,28 +2172,28 @@ undefined4 shutdown_game_resources()
 
   end_gx_draw_session();
   if (DAT_0023c44c != 0) {
-    LocalFree();
+    LocalFree(DAT_0023c44c);
   }
   if (DAT_0023cca0 != 0) {
-    LocalFree();
+    LocalFree(DAT_0023cca0);
   }
   if (DAT_000890a4 != 0) {
-    LocalFree();
+    LocalFree(DAT_000890a4);
   }
   if (DAT_000879b0 != 0) {
-    LocalFree();
+    LocalFree(DAT_000879b0);
   }
   if (DAT_0024af78 != 0) {
-    LocalFree();
+    LocalFree(DAT_0024af78);
   }
   if (DAT_0024af7c != 0) {
-    LocalFree();
+    LocalFree(DAT_0024af7c);
   }
   piVar2 = &DAT_00202308;
   iVar1 = 0x80;
   do {
     if (*piVar2 != 0) {
-      LocalFree();
+      LocalFree(*piVar2);
     }
     iVar1 = iVar1 + -1;
     piVar2 = piVar2 + 1;
@@ -3122,7 +3123,7 @@ bool prepare_new_game(void)
     }
     if (load_level(1) < 1) return false;
 
-    set_player_tile_position(0x20, 2, 1);
+    set_player_tile_position(0x20, 2);
     debug_print_player_position("chargen-spawn");
     save_or_restore_level_special_state(1, 0);
     /* Port-only timing: the next dungeon entry pauses after its fade-out. */

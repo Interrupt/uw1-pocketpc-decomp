@@ -2019,7 +2019,7 @@ void close_gr_resource_file()
 {
   CloseHandle(DAT_00202514);
   if (DAT_0020274c != 0) {
-    LocalFree();
+    LocalFree(DAT_0020274c);
   }
   return;
 }

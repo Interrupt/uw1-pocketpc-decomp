@@ -1807,7 +1807,7 @@ LAB_0003c940:
       iVar7 = (int)(short)*(char *)(DAT_00202c6c + 0xb);
       if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
         do {
-          uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6,iVar8);
+          uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6);
           /* Was `iVar8 = (int)((ulonglong)uVar11 >> 0x20);` -- a leftover
              from the original 32-bit ARM ABI, where resolve_object_link's
              caller apparently re-read some other value out of r1 right

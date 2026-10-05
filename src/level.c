@@ -569,7 +569,7 @@ void free_level_tile_arena()
 
 {
   if (DAT_002029cc != 0) {
-    LocalFree();
+    LocalFree(DAT_002029cc);
   }
   return;
 }

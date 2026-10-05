@@ -90,7 +90,7 @@ undefined4 param_1;
       iVar2 = LocalAlloc(0,0x10);
     }
     else {
-      iVar2 = LocalSize();
+      iVar2 = LocalSize(DAT_0025090c);
       iVar2 = LocalReAlloc(DAT_0025090c,iVar2 + 0x10,2);
     }
     if (iVar2 == 0) {

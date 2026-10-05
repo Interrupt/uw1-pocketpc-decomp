@@ -6227,7 +6227,7 @@ void exit_talk_mode()
 
 {
   if (DAT_00100784 != 0) {
-    LocalFree();
+    LocalFree(DAT_00100784);
     DAT_00100784 = 0;
   }
   if (DAT_001006d0 != 0) {
