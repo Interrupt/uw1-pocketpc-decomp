@@ -123,6 +123,9 @@ target_compile_options(uw_test_movement PUBLIC
   -include "${CMAKE_CURRENT_SOURCE_DIR}/movement_test_globals.h")
 add_supported_game_unit_test(movement uw_test_movement)
 add_fixture_game_unit_test(combat
+  src/player.c:@DAT_00086e87_backing src/player.c:@DAT_0008730c_backing
+  src/player.c:grant_experience_points src/player.c:advance_character_level
+  src/ordinal_stubs.c:orduint_divmod
   src/combat.c:find_nearest_hit_target src/combat.c:resolve_combat_hit_zone
   src/combat.c:compute_attack_relative_facing
   src/combat.c:process_melee_attack_swing src/combat.c:apply_melee_damage

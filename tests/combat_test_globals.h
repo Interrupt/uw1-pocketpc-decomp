@@ -37,3 +37,7 @@ extern short DAT_001005f4, DAT_001005f8;
 extern byte DAT_002046d8, DAT_002046dc;
 extern int DAT_002046e8;
 extern undefined1 DAT_002046e0, DAT_002046e4;
+
+#define DAT_00086e87 DAT_00086e87_backing[0]
+#define DAT_0008730c DAT_0008730c_backing[0]
+#define DAT_0008730d DAT_0008730c_backing[1]

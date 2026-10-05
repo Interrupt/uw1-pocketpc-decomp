@@ -50,7 +50,7 @@ void door_models_reset(void)
     g_player_object = (ushort *)&player;
     DAT_00086df8 = character;
     g_tune_last_catalog = -1;
-    for (int angle=0; angle<512; angle++) {
+    for (size_t angle=0; angle<sizeof DAT_000d9930_arr / sizeof DAT_000d9930_arr[0]; angle++) {
         float s = sin(angle * 3.141592653589793 / 180.0);
         float c = cos(angle * 3.141592653589793 / 180.0);
         memcpy(&DAT_000d9930_arr[angle], &s, 4);
