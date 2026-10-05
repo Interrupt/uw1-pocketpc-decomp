@@ -12,10 +12,37 @@
 # object type 0x157, e.g. level 1 tile (46,18)) -- this exercises the
 # exact same crashing code path (the text-entry prompt and the
 # known-mantra-string-table matching loop) without depending on
-# dungeon navigation. Three invocations: a real matching mantra word
-# ("RA", id 0x33), a "class" mantra ("SUMM RA", id 0x4a, the multi-skill
-# dispatch branch), and a non-matching word -- all three reached the
-# crashing comparison before the fix.
+# dungeon navigation.
+#
+# Follow-up regression ("Entering a real mantra like 'summ ra' crashes
+# the game"): the above fix only stopped the ce_strcmp crash -- a
+# successfully-MATCHED "class" mantra (SUMM RA/MU AHM/OM CAH, ids
+# 0x4a-0x4c) still crashed, intermittently, further down in
+# roll_skill_use_improvement. Two real bugs found there, both only
+# reachable/visible some of the time depending on prior game state,
+# which is why a single pass of this script could pass clean before
+# either fix:
+#   1. player.c's roll_skill_use_improvement reassigned `iVar7`
+#      (declared plain `int`) to `iVar1 + DAT_00086df8`, a real 64-bit
+#      `char *` pointer -- truncating it to 32 bits before dereferencing,
+#      the same pointer-truncation bug class as #1 above. Only taken
+#      when the rolled skill's training progress is still below its
+#      class-tier base, so not every roll_skill_use_improvement call
+#      hits it. Fixed with a properly-typed `char *` local.
+#   2. hud.c's msg_scroll_wrap_split_line's backward character-shrink
+#      loop checked its `param_1` lower bound AFTER already reading/
+#      writing through the decremented pointer, one iteration too late
+#      for a 1- or 2-character span -- an AddressSanitizer stack-buffer-
+#      underflow, reached from handle_mantra_chant's very first
+#      message_scroll_print_wrapped("\n") call whenever the message-
+#      scroll cursor already sits close enough to the panel's right
+#      edge that even a bare newline needs word-wrapping. Fixed by
+#      moving the bounds check before the decrement/read/write.
+#
+# Repeats each matching mantra several times (and adds the other two
+# class mantras, MU AHM/OM CAH, covering the sVar13==7/10 skill-range
+# branches too) specifically to raise the odds of re-hitting either
+# data-dependent branch if either regresses.
 #
 # Run with:
 #   UW_ENABLE_3D_GEOMETRY=1 UW_FAST_SLEEP=1 UW_DATA_DIR="$(pwd)/data" \
@@ -37,6 +64,34 @@ ENTER
 WAIT 10
 CALLMANTRA
 TYPE SUMM RA
+ENTER
+WAIT 10
+CALLMANTRA
+TYPE SUMM RA
+ENTER
+WAIT 10
+CALLMANTRA
+TYPE SUMM RA
+ENTER
+WAIT 10
+CALLMANTRA
+TYPE SUMM RA
+ENTER
+WAIT 10
+CALLMANTRA
+TYPE MU AHM
+ENTER
+WAIT 10
+CALLMANTRA
+TYPE MU AHM
+ENTER
+WAIT 10
+CALLMANTRA
+TYPE OM CAH
+ENTER
+WAIT 10
+CALLMANTRA
+TYPE OM CAH
 ENTER
 WAIT 10
 CALLMANTRA

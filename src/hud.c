@@ -2894,9 +2894,26 @@ undefined4 param_2;
   pcVar3 = param_1 + iVar5 + -2;
   do {
     pcVar3[1] = cVar6;
-    pcVar3 = pcVar3 + -1;
-    cVar6 = *pcVar3;
-    *pcVar3 = '\0';
+    /* BUG FIX: this bounds check used to run AFTER `pcVar3 = pcVar3 - 1;
+       cVar6 = *pcVar3; *pcVar3 = '\0';` below instead of before. That's
+       fine once pcVar3 has legitimately walked down to param_1 (reading/
+       writing index 0 is still in-bounds), but for a 1- or 2-character
+       param_1 the initial `pcVar3 = param_1 + iVar5 - 2` already starts
+       at or before param_1, so the old post-decrement check caught the
+       violation one step too late: it had already read and written 1-2
+       bytes BEFORE param_1 on the very first iteration. Confirmed live
+       via AddressSanitizer: a stack-buffer-underflow in this function,
+       reached from handle_mantra_chant's very first
+       message_scroll_print_wrapped("\n") call whenever the message-
+       scroll cursor is already close enough to the panel's right edge
+       that even a bare newline has to go through the word-wrap path
+       (intermittent -- depends on scroll-cursor state carried over from
+       whatever printed just before it, which is why this surfaced as a
+       flaky "chanting a mantra sometimes crashes" rather than every
+       time). Checking here, before touching pcVar3 at all this
+       iteration, makes the short-string case take the exact same "give
+       up, force a fresh line" exit as the already-correct len>=3 case,
+       without ever stepping outside param_1's own bytes. */
     if (pcVar3 <= param_1) {
       /* Was `&s_scroll_newline_0008522c` -- confirmed via real ARM
          disassembly (0x7fc74: `ldr r0,[0x7fc88]`, and DAT_0007fc88's own
@@ -2924,6 +2941,9 @@ undefined4 param_2;
       msg_scroll_draw_wrapped_span(local_newline_copy,1);
       goto LAB_0007fc64;
     }
+    pcVar3 = pcVar3 + -1;
+    cVar6 = *pcVar3;
+    *pcVar3 = '\0';
     sVar2 = measure_text_width(param_1);
   } while ((int)*(short *)(DAT_00250704 + 6) <= (int)*(short *)(DAT_00250704 + 8) + (int)sVar2);
 LAB_0007fc2c:

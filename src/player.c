@@ -2413,8 +2413,22 @@ char param_1;
   int extraout_r1;
   uint uVar6;
   int iVar7;
+  /* Was `int`, truncating the real 64-bit pointer `iVar1 + DAT_00086df8`
+     (DAT_00086df8 is `char *`) down to 32 bits before it was dereferenced
+     just below -- same pointer-truncation bug class as every other
+     get_message_string/DAT_00086df8-pointer fix this session (see e.g.
+     handle_mantra_chant's own pcVar_typed/pcVar_name fix just above this
+     function, or refresh_player_equipment_effects's iVar7 fix). Confirmed
+     live: a SIGSEGV dereferencing the truncated pointer, reached only
+     when this skill's current training progress is still below its
+     class-tier base (data-dependent -- not every roll_skill_use_improvement
+     call takes this branch, which is why this crashed "SUMM RA" but not
+     every mantra/skill-use roll). Reusing `iVar7` (already doing double
+     duty as the tier index earlier in this function) for a pointer was
+     the actual bug; split it into its own correctly-typed local instead. */
+  char *pcVar_skillrow;
   undefined4 uVar8;
-  
+
   uVar8 = 1;
   sVar4 = classify_skill_training_tier((int)param_1);
   iVar7 = (int)sVar4;
@@ -2435,11 +2449,11 @@ char param_1;
     }
     if (*(byte *)(iVar1 + DAT_00086df8 + 0x21) < uVar6) {
       uVar5 = ce_rand();
-      iVar7 = iVar1 + DAT_00086df8;
-      bVar3 = *(byte *)(iVar7 + 0x21);
+      pcVar_skillrow = iVar1 + DAT_00086df8;
+      bVar3 = *(byte *)(pcVar_skillrow + 0x21);
       extraout_r1 = ordint_divmod(uVar2,uVar5).rem;
       if (extraout_r1 < (int)(uVar6 - bVar3)) {
-        *(byte *)(iVar7 + 0x21) = bVar3 + 1;
+        *(byte *)(pcVar_skillrow + 0x21) = bVar3 + 1;
       }
     }
     if (0x1e < *(byte *)(iVar1 + DAT_00086df8 + 0x21)) {
