@@ -7,15 +7,6 @@
  */
 #include "headers/hud.h"
 #include "headers/debug.h"
-/* Frame id for the real, correctly-loaded "plain arrow" cursor sprite
-   -- see update_hotspot_cursor_icon's own comment on why this exists
-   (the game's real default cursor id, 0x106c, never resolves to real
-   sprite data in this port). The first entry the "cursors" resource
-   group actually registers (frames [620,638), see
-   load_gr_resource_group's UW_DEBUG_DUMP_GR trace); confirmed live via
-   a direct lookup_grtile_by_id(620) dump: real, non-zero 16x15 pixel
-   data. */
-#define UW_DESKTOP_CURSOR_ARROW_FRAME 620
 #include "headers/debug_ui.h"
 #include "headers/models.h"
 #include "headers/movement.h"
@@ -7493,31 +7484,47 @@ undefined4 param_1;
      forwarding param_1 matches the resolve_sprite_id_to_frame(param_1) call right
      above it and lookup_grtile_by_id's own g_grtile_registry-indexed-by-id shape. */
   char *iVar1;
-
+  uint uVar2;
   erase_cursor_icon();
-  resolve_sprite_id_to_frame(param_1);
-  /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id
-     only covers ids below DAT_00202738 (the "still-compressed .GR
-     resource entry, needs decoding" range); ids at or above it are
-     already-resident raw sprites living directly in g_grtile_registry's own
-     table (see blit_object_sprite_by_frame's own identical branch,
-     which this function was missing). For those higher ids
-     lookup_grtile_by_id's own table lookup misses (a *different* resource's
-     entries live there) and falls back to its zeroed dummy glyph,
-     silently handing back width=height=0 here. First found while
-     chasing a user report of several items (a map, a bag, apple,
-     bread) showing the wrong cursor icon or none at all when picked
-     up -- the real cause of THAT turned out to be a separate bug
-     (g_selected_object's own sign-extension, see
-     swap_cursor_and_slot_item's fix comment) that was corrupting
-     these objects' ids into the >= DAT_00202738 range in the first
-     place; with that fixed these particular items no longer reach
-     this branch at all. Kept anyway since it's a real, independently
-     confirmed divergence from blit_object_sprite_by_frame's own
-     already-correct behavior, for whatever legitimately-high-id items
-     do reach here. */
-  iVar1 = (int)(short)param_1 < (int)(uint)DAT_00202738 ?
-          lookup_grtile_by_id(param_1) : (char *)g_grtile_registry[(int)(short)param_1];
+  /* BUG FIX: resolve_sprite_id_to_frame's return value was discarded
+     (called as a bare statement) and the RAW param_1 used for the
+     lookup below instead -- the same dropped-return-value pattern
+     this whole project has repeatedly found elsewhere, confirmed here
+     by comparing against the real ARM disassembly of this exact
+     function (FUN_00057dc0): it calls resolve_sprite_id_to_frame then
+     feeds its result straight into lookup_grtile_by_id, never
+     re-reading param_1 itself. weapon_swing.c's own
+     tick_weapon_swing_state already documents this same
+     "resolved = resolve_sprite_id_to_frame(id); lookup_grtile_by_id(resolved);"
+     pair as the correct shape. Every cursor icon id used throughout
+     the game (push_cursor_icon(0x1077)/0x106c/etc.) is a SYMBOLIC id
+     in the 0x1000-0x1fff range specifically meant to be remapped
+     through resolve_sprite_id_to_frame's own DAT_00202730-relative
+     formula onto the "cursors" resource group's real, already-loaded
+     frames [620,638) -- confirmed live: resolve_sprite_id_to_frame
+     (0x106c) computes exactly 620, the cursors group's own first
+     entry, real 16x15 pixel data. Using the raw id instead always
+     missed g_grtile_registry (nothing is ever registered at the raw
+     symbolic id, only at its resolved frame), silently handing back
+     a zeroed dummy glyph -- width=height=0 -- for every cursor icon
+     in the game. Harmless on authentic touchscreen behavior (the one
+     id ever drawn without a button held, 0x106c, is specifically
+     excluded by draw_idle_mouse_cursor's own gate, and every other id
+     only ever drew for a single discrete press/release with no
+     erase-chain to go wrong), but with UW_ALWAYS_SHOW_CURSOR's
+     persistent desktop cursor the zero size broke
+     save_cursor_background/erase_cursor_icon's own save/restore rect
+     math (both size their rect from the current sprite's width/
+     height) -- confirmed live: trailing stamps over the main menu,
+     the inventory panel, and the 3D viewport's own border hotspots.
+     Fixing the dropped return value here fixes the cursor icon itself
+     too, not just its save/restore sizing -- every hotspot now shows
+     its own real, distinct icon from the cursors resource instead of
+     a zeroed/blank sprite, matching authentic appearance even on
+     touchscreen (the single press-and-hold case) once this path is
+     reached at all. */
+  uVar2 = resolve_sprite_id_to_frame(param_1);
+  iVar1 = lookup_grtile_by_id(uVar2);
   if (iVar1 == (char *)0x0) {
     /* Same "table slot never populated" fallback as
        blit_object_sprite_by_frame's own identical guard. */
@@ -7574,31 +7581,7 @@ void update_hotspot_cursor_icon()
     }
     if ((DAT_00086970 != -1) && ((short)iVar2 == DAT_00204854)) {
       DAT_00086970 = -1;
-      /* 0x106c is the real "no specific hotspot" default id -- but its
-         sprite data was never actually registered anywhere this port's
-         resource loader reaches: g_grtile_registry[0x106c] stays
-         permanently empty (confirmed live via UW_DEBUG_DUMP_GR -- the
-         "cursors" resource group, the plausible owner, only ever
-         registers 19 entries at frames [620,638), nowhere near
-         0x106c==4204). On authentic touchscreen behavior
-         (UW_ALWAYS_SHOW_CURSOR unset) this never mattered: this exact
-         sprite is specifically excluded from ever actually being drawn
-         (see draw_idle_mouse_cursor's own gate on DAT_00204788!=0x106c),
-         so its broken zero-size lookup was silently harmless. With
-         UW_ALWAYS_SHOW_CURSOR it DOES get drawn, and that zero size
-         broke save_cursor_background/erase_cursor_icon's own save/
-         restore rect math (both size their rect from the current
-         sprite's width/height) -- confirmed live, this left a trail of
-         un-erased cursor stamps across the inventory panel instead of
-         one cursor that properly follows the mouse, since erase could
-         only ever restore a ~1px sliver of whatever icon had actually
-         been drawn. UW_DESKTOP_CURSOR_ARROW_FRAME (620) is the
-         "cursors" group's own first real, correctly-loaded entry (a
-         plain arrow, confirmed live: 16x15 real pixels, not 0x0) --
-         use that instead, only when UW_ALWAYS_SHOW_CURSOR=1; the
-         authentic touchscreen id and behavior are unchanged
-         otherwise. */
-      set_cursor_sprite_id(uw_always_show_cursor() ? UW_DESKTOP_CURSOR_ARROW_FRAME : 0x106c);
+      set_cursor_sprite_id(0x106c);
     }
   }
   return;
