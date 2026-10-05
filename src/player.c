@@ -2579,6 +2579,16 @@ LAB_00070874:
 //   skills (base/count/spread per id), printed via
 //   print_skill_improvement_list.
 // - no match ('M'/0x4d): "you don't know that mantra" (message 0x19).
+//
+// BUG FIX (crash when using a mantra): the matching loop's two locals
+// holding _strupr's and get_message_string's return values were
+// `undefined4` (32-bit) -- on this 64-bit host that truncated both
+// real pointers down to their low 32 bits before ce_strcmp ever saw
+// them, so ce_strcmp dereferenced a bogus, zero-extended address and
+// crashed with SIGSEGV. This was unconditional: it crashed on the very
+// first comparison (id 0x33) regardless of what the player typed, i.e.
+// every single invocation of "Chant the mantra". Fixed by giving them
+// their own correctly-sized `char *` locals (pcVar_name/pcVar_typed).
 void handle_mantra_chant()
 
 {
@@ -2586,7 +2596,6 @@ void handle_mantra_chant()
   undefined2 uVar2;
   short sVar3;
   undefined4 uVar4;
-  undefined4 uVar5;
   int iVar6;
   int iVar7;
   uint uVar8;
@@ -2595,17 +2604,28 @@ void handle_mantra_chant()
   char cVar11;
   uint uVar12;
   short sVar13;
+  char *pcVar_typed;
+  char *pcVar_name;
   undefined1 local_60 [8];
   undefined1 local_58 [52];
-  
+
   local_58[0] = 0;
   scroll_text_entry_prompt(s_Chant_the_mantra__0008731c,0,local_58,1,10);
   message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   iVar10 = 0x33;
   do {
-    uVar4 = _strupr(local_58);
-    uVar5 = get_message_string((int)(char)iVar10 | 0x400);
-    iVar6 = ce_strcmp(uVar5,uVar4);
+    /* uVar4/uVar5 were `undefined4` (32-bit) here, truncating _strupr's
+       and get_message_string's real 64-bit pointer returns -- the same
+       pointer-truncation bug class already fixed at dozens of other
+       get_message_string call sites in this codebase (see player.c's
+       other FUN_... comments, object_actions.c, chargen.c, babl.c).
+       ce_strcmp then dereferenced the zero-extended, bogus low-32-bits
+       pointer and crashed. Confirmed live: this crashed every "Chant
+       the mantra" invocation with a SIGSEGV inside ce_strcmp. */
+    pcVar_typed = (char *)_strupr(local_58);
+    pcVar_name = get_message_string((int)(char)iVar10 | 0x400);
+    iVar6 = ce_strcmp(pcVar_name,pcVar_typed);
+    if (getenv("UW_DEBUG_MANTRA")) fprintf(stderr, "[mantra] id=0x%02x name='%s' typed='%s' cmp=%d\n", iVar10, pcVar_name, pcVar_typed, iVar6);
     if (iVar6 == 0) break;
     iVar10 = iVar10 + 1;
   } while (iVar10 * 0x1000000 >> 0x18 < 0x4d);

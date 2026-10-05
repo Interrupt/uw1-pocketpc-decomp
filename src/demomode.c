@@ -32,6 +32,10 @@
  *                    type/flags words -- ground truth for what the level
  *                    actually loaded at this tile, independent of any
  *                    render-time culling.
+ *   CALLMANTRA    -- calls handle_mantra_chant() (the "Chant the mantra"
+ *                    feature) directly, bypassing the in-world
+ *                    mantra-statue click path. Pair with TYPE + ENTER to
+ *                    drive its text-entry prompt. See demo_mantra_test.txt.
  *   SETPLAYERPOS <x> <y> <z> <yaw> <pitch>  -- like TELEPORT but fine-grained:
  *                    x/y take a fractional tile position (e.g. "32.5 2.25"),
  *                    z is the raw height unit the [playerpos] print's own
@@ -723,6 +727,26 @@ void demomode_pump(void) {
         fprintf(stderr, "\n[dumpobjslot] slot=%d word0=0x%04x word1=0x%04x type=0x%03x\n",
                 slot, (unsigned)(rec[0] | (rec[1] << 8)), (unsigned)(rec[2] | (rec[3] << 8)),
                 (unsigned)((rec[0] | (rec[1] << 8)) & 0x1ff));
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "CALLMANTRA") == 0) {
+        /* Calls handle_mantra_chant() (player.c's "Chant the mantra"
+         * feature) directly, bypassing the in-world mantra-statue click
+         * path (dispatch_world_object_interaction_by_family / family 1,
+         * low nibble 7) -- lets a regression demo exercise the feature's
+         * text-entry-prompt + known-mantra-string-table matching loop
+         * without needing to navigate to and right-click a specific
+         * statue object in the dungeon. See demo_mantra_test.txt: this
+         * reproduced a real crash (ce_strcmp deref'ing a get_message_string
+         * pointer that had been truncated to 32 bits by an `undefined4`
+         * local -- see handle_mantra_chant's own comment) on every call,
+         * independent of what's typed afterward. */
+        extern void handle_mantra_chant();
+        fprintf(stderr, "[callmantra] invoking handle_mantra_chant()\n");
+        handle_mantra_chant();
+        fprintf(stderr, "[callmantra] returned\n");
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
