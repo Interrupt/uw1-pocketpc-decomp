@@ -302,6 +302,24 @@ static void test_contact_without_obstacle_returns_blocking_flag(void)
     TEST_ASSERT_EQUAL_INT(0, fx.obstacle_syncs);
 }
 
+static void test_real_door_types_use_collision_radius_three_not_shape_four(void)
+{
+    /* "Door collision box seems too large and misplaced" investigation:
+       collision_add_candidate_object (src/collision.c) special-cases
+       local_40[1]&7 == 4 into a fixed FULL-TILE box instead of a
+       radius-centered one. movement_fixture_reset already loads the
+       real data/DATA/COMOBJ.DAT (via uw_test_load_object_properties,
+       not synthetic data) into DAT_00202c90_backing, so this reads the
+       real per-door-type byte directly: every one of the 8 door type
+       ids (0x140-0x147 -- "7 door skins/types + secret", confirmed by
+       src/tmap.c's emit_anim_object_frames comment) has collision_radius
+       == 3, never 4, ruling out the full-tile branch for doors. */
+    for (int door_type = 0x140; door_type <= 0x147; door_type++) {
+        byte *row = DAT_00202c90_backing + door_type * 13;
+        TEST_ASSERT_EQUAL_INT_MESSAGE(3, row[1] & 7, "real COMOBJ.DAT door collision_radius");
+    }
+}
+
 static void test_door_bounds_use_original_radius_and_packed_position(void)
 {
     /* collision_add_candidate_object / ARM 0x516e4..0x51790 uses a square radius. Heading
@@ -473,6 +491,7 @@ int main(void)
     RUN_TEST(test_contact_snapshot_updates_contiguous_velocity_speed_and_heading);
     RUN_TEST(test_contact_mass_ratio_caps_transferred_velocity);
     RUN_TEST(test_contact_without_obstacle_returns_blocking_flag);
+    RUN_TEST(test_real_door_types_use_collision_radius_three_not_shape_four);
     RUN_TEST(test_door_bounds_use_original_radius_and_packed_position);
     RUN_TEST(test_object_slide_uses_original_movement_axis);
     RUN_TEST(test_copied_collision_links_resolve_like_arena_links);
