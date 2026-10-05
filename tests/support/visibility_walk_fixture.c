@@ -32,14 +32,6 @@ char *DAT_00086df8 = character, *DAT_0023be74 = derived;
 char *g_selected_object;
 byte *g_scratch_object_ptr;
 undefined4 DAT_002020d8, DAT_0023bc98;
-/* Was DAT_00202800_backing[65536] -- objects.h's own extern declares
-   this array at the real [256] size (matching objects.c's actual
-   definition); the mismatched size here is a type conflict under C
-   (an array's size is part of its type), which clang flags as a hard
-   redefinition error the moment this TU also sees objects.h's extern.
-   Nothing in this fixture or its test indexes past byte 256, so this
-   was just an accidental oversize, not a deliberate larger scratch
-   buffer. Match the real size. */
 undefined1 DAT_00086da8_backing[256], DAT_00202800_backing[256];
 unsigned char DAT_00085ac8_backing[16] = {5,6,7,8};
 int visibility_light_config_record, visibility_ambient_strength;

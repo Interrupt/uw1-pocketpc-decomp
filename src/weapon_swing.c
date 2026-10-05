@@ -15,14 +15,6 @@ short DAT_000870e4;
 static short DAT_001005e8;
 static undefined DAT_001005f0;
 static byte DAT_00100614;
-/* tick_weapon_swing_state's own swing-phase latch, independent of the
-   shared (and always-moving, unpausable) DAT_000870e4 animation
-   counter: 0 = not yet charging, 1 = charging (armed, button still
-   held), 2 = released, swing-down animation playing, armed to resolve
-   once it reaches its own impact frame. See this fix's own comment at
-   its main read site (tick_weapon_swing_state) for why DAT_000870e4
-   itself can't be used for either of those two things. */
-static byte g_swing_charge_active;
 /* Was a lone `undefined` scalar, same bug as DAT_00084eff just above --
    tick_weapon_swing_state indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 =
    attack-type/3 (0-3), selecting which of a small set of swing
@@ -610,7 +602,6 @@ void reset_weapon_swing_state()
   pop_cursor_icon(3);
   set_hud_status_value(8,4);
   DAT_001005ec = 0;
-  g_swing_charge_active = 0;
   return;
 }
 
@@ -653,7 +644,6 @@ void cancel_weapon_swing()
   DAT_0010062c = 0;
   DAT_00084f10 = 0xffff;
   DAT_00100610 = 0xffff;
-  g_swing_charge_active = 0;
   return;
 }
 
@@ -670,16 +660,6 @@ void cancel_weapon_swing()
 // countdown completes, calls compute_player_weapon_attack_stats and
 // process_melee_attack_swing to actually resolve the attack, then
 // resets state via reset_weapon_swing_state. Own "[swing]" debug trace.
-//
-// BUG FIX ("Attack charge not consistent"): the charge-hold block used
-// to be gated on DAT_000870e4 == 3 exactly. DAT_000870e4 belongs to
-// advance_action_animation_frame's shared weapon-raise/lower animation
-// counter, which only ever equals 3 for a single call per swing no
-// matter how long the attack button is held -- so the real-time charge
-// accumulator below could never run more than once, always hit its own
-// seed-the-baseline branch, and left DAT_00100614 at 0 every time. See
-// g_swing_charge_active's own comment for the fix and how it was
-// confirmed live.
 void tick_weapon_swing_state(param_1)
 short param_1;
 
@@ -715,116 +695,79 @@ LAB_00027754:
   }
   if (DAT_0010062c < 1) {
     if (DAT_0010062c < 0) {
-      /* BUG FIX ("Attack charge not consistent"): the whole charge-hold
-         block below (ranged-arm, release-to-swing transition, the
-         real-time charge accumulator, and the resolve itself) used to
-         be gated on the shared DAT_000870e4 counter reading exact
-         values (3 to charge, 6 to resolve). DAT_000870e4 is
-         advance_action_animation_frame's own sub-frame counter for the
-         weapon-raise/lower animation (see its own comment -- "the
-         exact interaction between the two ... still not fully
-         understood"): every path through that function's state machine
-         steps it by exactly +-1 per call on a fixed cadence with no way
-         to pause it, so it reads exactly 3 for at most one call per
-         swing, then -- confirmed live with a standalone harness driving
-         both state machines frame-by-frame with a fake clock -- its
-         generic "play a ~9-frame cycle, then sit idle" path leaves it
-         permanently stuck at -1 well before any realistic hold
-         finishes, regardless of how much longer the attack button
-         stays down. Under the old gating that stuck -1 reads as "still
-         in the pre-charge wind-up" (DAT_000870e4 <= 2), so a swing held
-         past that point fell through to the cancel-to-idle path below
-         on release instead of ever resolving, and even when DAT_000870e4
-         DID transiently reach 6 again on the way, it resolved
-         immediately with whatever charge happened to exist at that
-         fixed frame mark -- including while the button was still held.
-         Track our own phase in g_swing_charge_active instead (0 = not
-         yet charging, 1 = charging/held, 2 = released, swing-down
-         playing, armed to resolve on impact): once latched by seeing
-         DAT_000870e4 == 3 once, stay on this path for the rest of the
-         swing's life regardless of what the shared counter does
-         afterward, and only consult DAT_000870e4 again for the one
-         narrow "has the swing-down animation reached its own impact
-         frame" check after release. */
-      if (g_swing_charge_active == 0 && DAT_000870e4 == 3) {
-        g_swing_charge_active = 1;
-      }
-      if (g_swing_charge_active != 0) {
-        if (DAT_001005ec != 0) {
-          if ((!bVar2) && (-1 < DAT_00100618)) {
-            iVar5 = is_mouse_within_tracked_hotspot();
-            if (iVar5 != 0) {
-              fire_ranged_weapon(*DAT_001005e0 & 0xf);
-            }
-            reset_weapon_swing_state();
-            return;
-          }
-          if (-1 < DAT_00100618) {
-            return;
-          }
-          set_hud_status_value(3,9);
-          DAT_00100618 = 0;
-          g_cursor_holding_state = g_cursor_holding_state + 4;
-          push_cursor_icon(0x1075);
-          return;
-        }
-        if (!bVar2) {
-          if (g_swing_charge_active == 2) {
-            /* Already released on an earlier tick; just waiting for
-               the swing-down animation to reach its own impact frame. */
-            if (DAT_000870e4 != 6) {
-              return;
-            }
-            goto resolve_melee_swing;
-          }
-          /* First tick after release: kick off the swing-down visual
-             (unchanged from the original) and arm phase 2. */
-          set_hud_status_value(8,-1 - DAT_0010062c);
-          DAT_0010062c = 0xfffb;
-          g_swing_charge_active = 2;
-          return;
-        }
-        *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) & 0xfa | 10;
-        if (DAT_001005e8 < 0) {
-          DAT_001005f0 = read_realtime_clock_units();
-          DAT_001005e8 = 0;
-          return;
-        }
-        sVar4 = read_realtime_clock_units();
-        DAT_001005e8 = (sVar4 - (short)DAT_001005f0) + DAT_001005e8;
-        DAT_001005f0 = read_realtime_clock_units();
-        if (DAT_001005e8 < 0x11) {
-          return;
-        }
-        do {
-          DAT_00100614 = DAT_00100614 + *(char *)(pRecord + 4);
-          if (100 < DAT_00100614) {
-            DAT_00100614 = 100;
-          }
-          sVar4 = ordint_divmod(0xc,DAT_00100614).quot;
-          set_hud_status_value(3,sVar4 + 1);
-          iVar6 = (int)DAT_001005e8;
-          DAT_001005e8 = (short)(iVar6 + -0x10);
-        } while (0x10 < (iVar6 + -0x10) * 0x10000 >> 0x10);
-        return;
-      }
-      /* Not charging yet: original pre-charge wind-up / early-release
-         cancel logic, unchanged. */
       if ((-1 < DAT_000870e4) || (-10 < DAT_0010062c)) {
         if (6 < DAT_000870e4) {
           return;
         }
         if (2 < DAT_000870e4) {
-          /* DAT_000870e4 in {4,5,6} without charging ever having
-             latched (shouldn't normally happen -- every observed path
-             passes DAT_000870e4 through 3 on the way up) -- preserve
-             the original single-shot resolve-on-frame-6 fallback so
-             this stays a strict superset of the old behaviour rather
-             than a new way to get stuck. */
-          if (DAT_000870e4 != 6) {
+          if (DAT_000870e4 != 3) {
+            if (DAT_000870e4 != 6) {
+              return;
+            }
+            if (DAT_0010062c < -9) {
+              return;
+            }
+            set_hud_status_value(3,0);
+            local_20[0] = ordint_divmod(100,((int)(((uint)*(byte *)(pRecord + 5) -
+                                                  (uint)*(byte *)(pRecord + 3)) * 0x10000) >> 0x10) *
+                                           (uint)DAT_00100614).quot;
+            DAT_00100614 = *(char *)(pRecord + 3) + (char)local_20[0];
+            *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) | 0xf;
+            DAT_001005fc = DAT_00100614;
+            compute_player_weapon_attack_stats(pRecord,DAT_001005e0,(int)DAT_00100618);
+            process_melee_attack_swing();
+            DAT_0010062c = 0xfff6;
             return;
           }
-          goto resolve_melee_swing;
+          if (DAT_001005ec != 0) {
+            if ((!bVar2) && (-1 < DAT_00100618)) {
+              iVar5 = is_mouse_within_tracked_hotspot();
+              if (iVar5 != 0) {
+                fire_ranged_weapon(*DAT_001005e0 & 0xf);
+              }
+              reset_weapon_swing_state();
+              return;
+            }
+            if (-1 < DAT_00100618) {
+              return;
+            }
+            set_hud_status_value(3,9);
+            DAT_00100618 = 0;
+            g_cursor_holding_state = g_cursor_holding_state + 4;
+            push_cursor_icon(0x1075);
+            return;
+          }
+          if (!bVar2) {
+            if (DAT_0010062c < -4) {
+              return;
+            }
+            set_hud_status_value(8,-1 - DAT_0010062c);
+            DAT_0010062c = 0xfffb;
+            return;
+          }
+          *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) & 0xfa | 10;
+          if (DAT_001005e8 < 0) {
+            DAT_001005f0 = read_realtime_clock_units();
+            DAT_001005e8 = 0;
+            return;
+          }
+          sVar4 = read_realtime_clock_units();
+          DAT_001005e8 = (sVar4 - (short)DAT_001005f0) + DAT_001005e8;
+          DAT_001005f0 = read_realtime_clock_units();
+          if (DAT_001005e8 < 0x11) {
+            return;
+          }
+          do {
+            DAT_00100614 = DAT_00100614 + *(char *)(pRecord + 4);
+            if (100 < DAT_00100614) {
+              DAT_00100614 = 100;
+            }
+            sVar4 = ordint_divmod(0xc,DAT_00100614).quot;
+            set_hud_status_value(3,sVar4 + 1);
+            iVar6 = (int)DAT_001005e8;
+            DAT_001005e8 = (short)(iVar6 + -0x10);
+          } while (0x10 < (iVar6 + -0x10) * 0x10000 >> 0x10);
+          return;
         }
         if (bVar2) {
           return;
@@ -833,7 +776,6 @@ LAB_00027754:
       update_weapon_ready_hud_icon();
       DAT_0010062c = 0;
       DAT_00084f10 = 0xffff;
-      g_swing_charge_active = 0;
     }
     else if (((((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) && (iVar5 = (int)param_1, iVar5 != 0)) &&
              (DAT_000870e4 == -1)) &&
@@ -851,26 +793,8 @@ LAB_00027754:
       set_hud_status_value(3,1);
       DAT_001005e8 = -1;
       DAT_00100614 = 0;
-      g_swing_charge_active = 0;
     }
   }
-  return;
-
-resolve_melee_swing:
-  if (DAT_0010062c < -9) {
-    return;
-  }
-  set_hud_status_value(3,0);
-  local_20[0] = ordint_divmod(100,((int)(((uint)*(byte *)(pRecord + 5) -
-                                        (uint)*(byte *)(pRecord + 3)) * 0x10000) >> 0x10) *
-                                 (uint)DAT_00100614).quot;
-  DAT_00100614 = *(char *)(pRecord + 3) + (char)local_20[0];
-  *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) | 0xf;
-  DAT_001005fc = DAT_00100614;
-  compute_player_weapon_attack_stats(pRecord,DAT_001005e0,(int)DAT_00100618);
-  process_melee_attack_swing();
-  DAT_0010062c = 0xfff6;
-  g_swing_charge_active = 0;
   return;
 }
 
