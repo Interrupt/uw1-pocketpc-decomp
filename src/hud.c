@@ -1696,6 +1696,42 @@ void main_loop_hud_flush()
     if (_swing_tick < 0) _swing_tick = (getenv("UW_NO_FORCE_SWING_TICK") == NULL);
     if (_swing_tick) tick_weapon_swing_state(0);
   }
+  /* HACK: service the idle mouse/cursor state (position easing, active
+     hotspot, redraw) every main-loop tick, same idea and same
+     justification as the render_dungeon_frame_timed/tick_weapon_swing_state
+     hacks just above: update_mouse_state is the one function that
+     actually consumes handle_mouse_message's own freshly-set
+     *DAT_000876bc/*DAT_000876c0/*DAT_000876c4 ("trust real mouse
+     input") and turns them into g_mouse_x/y, the active hotspot, and a
+     redrawn cursor icon -- handle_mouse_message itself never calls it.
+     This currently happens to run anyway, every tick, as a side effect
+     of rebuild_dungeon_view's own unconditional
+     handle_mouse_button_message(0) call just above (confirmed live via
+     a caller trace: one call per tick during plain mouse motion) -- but
+     that's gated behind this same function's own forced-3D-redraw
+     conditions a few lines up (skipped during a level transition,
+     while an animation owns the view, ...), so the cursor's idle state
+     can go stale exactly when those conditions aren't met. Calling it
+     directly and unconditionally here closes that gap for dungeon-view
+     gameplay specifically, cheap when idle just like its two
+     neighbors. Deliberately NOT added to uw_pump_events() (gx_stub.c,
+     every context including menus) -- tried that first and it
+     regressed live: calling update_mouse_state() on every SDL poll
+     (far more often than once per tick) raced with this same
+     function's own existing indirect call and with the menu's own
+     poll_mouse_event()-driven wait loop, intermittently leaving no
+     cursor drawn at all, and once reaching draw_idle_mouse_cursor
+     before any real mouse position had ever been established (cursor
+     still at its startup default, producing negative hotspot-offset
+     coordinates) hung inside rect_fill_or_save_restore's own clipping
+     math. This narrower, once-per-tick placement doesn't carry that
+     risk: main_loop_hud_flush only runs after the main menu and
+     chargen have already established a real mouse position. Set
+     UW_NO_FORCE_MOUSE_TICK to restore the (gappy) original behaviour. */
+  { static int _mouse_tick = -1;
+    if (_mouse_tick < 0) _mouse_tick = (getenv("UW_NO_FORCE_MOUSE_TICK") == NULL);
+    if (_mouse_tick) update_mouse_state();
+  }
   { unsigned int _t1 = 0, _t2 = 0;
     if (_dbg_hf) _t1 = read_realtime_clock_units() * 4;
     /* Input callbacks can run blocking prompt/menu loops. Keep their
