@@ -488,8 +488,9 @@ static undefined4 DAT_0023c200_arr[3];
 #define DAT_0023c200 DAT_0023c200_arr[0]
 #define DAT_0023c202 DAT_0023c200_arr[1]
 #define DAT_0023c204 DAT_0023c200_arr[2]
-char DAT_000870dc;
-char DAT_000870d8;
+// ARM .data starts both weapon sprite categories at -1 (not loaded).
+char DAT_000870dc = -1;
+char DAT_000870d8 = -1;
 ushort DAT_0023c1dc;
 #define DAT_0023c11d DAT_0023c11c_arr[1]
 #define DAT_0023c12d DAT_0023c12c_arr[1]

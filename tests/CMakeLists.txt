@@ -141,6 +141,8 @@ add_fixture_game_unit_test(combat
   src/doors.c:close_door_object src/doors.c:schedule_door_open_animation)
 add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
+add_fixture_game_unit_test(noise
+  src/ai.c:alert_npc_to_noise_callback src/ai.c:emit_noise_alert)
 add_fixture_game_unit_test(visibility_walk
   src/visibility.c:@DAT_00086af0_arr
   src/visibility.c:@DAT_00086af8_region
@@ -267,6 +269,11 @@ add_fixture_game_unit_test(automap
 target_sources(uw_test_automap PRIVATE support/automap_storage_fixture.c)
 
 add_fixture_game_unit_test(weapon_ready
+  src/hud.c:@DAT_000870d8 src/hud.c:@DAT_000870dc
+  src/weapon_swing.c:@DAT_000870e0 src/weapon_swing.c:@DAT_000870e4
+  src/weapon_swing.c:@DAT_000870e8
+  src/weapon_swing.c:request_weapon_swing_graphic
+  src/item_use.c:attach_picked_up_object_to_cursor
   src/item_use.c:@g_weapon_overlay_enabled
   src/hud.c:cursor_mode_button_click src/hud.c:set_hud_status_value
   src/item_use.c:ready_weapon src/item_use.c:unready_weapon
