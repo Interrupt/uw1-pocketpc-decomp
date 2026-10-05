@@ -3255,30 +3255,6 @@ LAB_00061d34:
          real counterpart, not a guess. `uVar27 & 7` is the door's low 3
          id bits (0x140-0x147 -> 7 door skins/types + secret), matching
          emit_anim_object_frames's own `door_type` parameter. */
-      /* The anchor emit_tile_features computed just above (DAT_0023b904/
-         920) is a generic per-slot floor-object position, whose sub-tile
-         slot depends on how many OTHER objects share the tile and where
-         the camera is standing -- not on the door itself (same root
-         cause the wall-decal path already diagnosed, see LAB_emit_mesh_
-         sprite_quad's own g_billboard_angle_override_deg comment). Round
-         back down to the tile's own slot-quantized center the same way
-         (clear the low 5 bits -- one tile is 0x20 units -- then re-add
-         the +0x10 half-slot constant emit_tile_features' own formula
-         ends with) to remove that camera/other-object jitter.
-
-         QA report: "door frame looks to be offset 16 units into the
-         wall... to the right or left, depending on direction" -- this
-         snap alone does NOT fully fix that (confirmed still present
-         after this fix landed); tried computing an exact tile-center/
-         tile-edge anchor from the tile grid index and the model's real
-         final rotation angle instead (see this branch's git history for
-         the attempt), which made a different door disappear entirely in
-         live testing -- reverted rather than ship that regression. The
-         real fix needs the actual wall-edge side determined from real
-         disassembly/data, not inferred from the already-approximate
-         slot anchor -- still open, see object-rendering-findings.txt. */
-      DAT_0023b904 = (DAT_0023b904 & ~0x1f) | 0x10;
-      DAT_0023b920 = (DAT_0023b920 & ~0x1f) | 0x10;
       if (getenv("UW_DEBUG_DOOR_POS"))
         fprintf(stderr, "[doorpos] anchor=(%d,%d,%d) tile_word0=0x%04x\n",
                 (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,

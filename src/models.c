@@ -52,63 +52,8 @@ static undefined DAT_0018959e_backing[256];
 #define DAT_0018959e DAT_0018959e_backing[0]
 static undefined DAT_0018959f_backing[256];
 #define DAT_0018959f DAT_0018959f_backing[0]
-/* Live-tunable door-frame anchor constants (UW_MODEL_TUNER=1) -- see the
-   wall-plane fix in emit_catalog_object's own catalog_u==1 block. Three
-   real regressions already came from guessing these numbers, rebuilding,
-   and only then finding out live whether a guess was right; this lets
-   the door panel show tunable rows so a value can be nudged and watched
-   change on screen the same frame, with no rebuild. g_tune_wide_center
-   is the wide/along-the-wall axis's offset from the tile's own origin;
-   g_tune_edge_offset is the wall-perpendicular axis's offset from
-   whichever tile edge it's nearest. Live QA confirmed both at 128.0 --
-   i.e. the "wall has real thickness, the perpendicular axis sits at
-   edge+16" theory (tried and initially reported as an improvement) was
-   itself wrong; the real answer is simpler, exact tile center on BOTH
-   axes, no wall-thickness concept needed. At edge_offset==128 the near/
-   far edge-side branch in the fix below collapses to the same value
-   either way (128 or 256-128), so this is equivalent to just always
-   centering -- kept as two separately-tunable fields anyway in case a
-   future model (not a full-tile-wide one like DFRAME.E) genuinely needs
-   something else. */
-static double g_tune_wide_center = 128.0;
-static double g_tune_edge_offset = 128.0;
-/* QA report: "rotation origin is in the middle of the leaf and not the
-   hinge, so rotation looks off." The leaf (catalog_u==0xe/0xf, DOOR.E)
-   currently shares DFRAME's own anchor exactly (DAT_0023b904/920, set
-   once by the catalog_u==1 block above and simply left in place for
-   the leaf's own later, separate call to reuse) -- correct for a
-   symmetric, full-tile-wide, non-rotating object like the frame, but
-   DOOR.E's own local mesh (POINTS span local X 0-128, not symmetric
-   around 0) rotates around whatever world point its local origin
-   lands on, so sharing the frame's centered anchor puts that pivot
-   roughly mid-leaf instead of at the hinge edge. Not yet live-tuned to
-   a confirmed-correct value (unlike wide_center/edge_offset above,
-   which WERE) -- starts at 0.0 (no change from current behavior) and
-   is meant to be nudged live via the object tuner panel (backtick)
-   while watching a real door swing, the same successful process
-   wide_center/edge_offset themselves were dialed in with, rather than
-   guessed and hardcoded blind. Applied along the model's own "wide"
-   axis (the same one wide_center offsets) in the leaf-specific rebake
-   a few hundred lines below. */
-static double g_tune_leaf_hinge_offset = 0.0;
-/* General object-tuner state (UW_MODEL_TUNER=1) -- was door-only (the
-   panel only populated inside catalog_u==1, and only showed the two
-   door-anchor fields above); generalized so ANY catalog this session's
-   native mesh path draws (boulder, bridge, door, ...) gets a live panel
-   whenever it's on screen, per direct request: "convert the door debug
-   tool to a general object debug tool so we can try giving the object
-   a rotation offset and view it from all angles." g_tune_rotation_offset
-   is added directly to the model's own real final rotation angle
-   (sVar13, degrees) right before build_euler_rotation_matrix runs, so
-   walking around a normally-facing object and nudging this field is
-   equivalent to spinning the OBJECT rather than the camera -- useful
-   for exactly the kind of "does this face-order bug only show from
-   certain angles" question that motivated adding it. g_tune_last_catalog
-   resets the offset to 0 whenever the catalog on screen changes, so a
-   leftover rotation from tuning one object (e.g. a boulder) doesn't
-   silently carry over and confuse the next one (e.g. a door) -- same
-   "reseed on id change" shape the original e-model-texturing tuner used
-   for its own per-model fields. */
+/* General object tuner: zero unless edited in the debug panel. Changing
+   catalogs resets the rotation adjustment so it cannot carry between models. */
 static double g_tune_rotation_offset = 0.0;
 static int g_tune_last_catalog = -1;
 /* Debug-panel toggle (dbgui_field_toggle) for pick_object_under_cursor's
@@ -875,30 +820,24 @@ static unsigned char DAT_00086c08_backing[0x78] = {
 #define DAT_00086c09 DAT_00086c08_backing[1]
 #define DAT_00086c0a DAT_00086c08_backing[2]
 #define DAT_00086c0b DAT_00086c08_backing[3]
-/* Sizing pass: these 8 (ce0/e4/e8/ec/f0/f4/f8/fc) are a small, fixed
-   bridge-deck heading-offset lookup table, not a growing parser
-   output -- emit_catalog_object's own `switch(heading)` picks one of
-   4 sibling-pairs, each read at `[uVar21*8]` with uVar21 explicitly
-   clamped `if (3 < uVar21) uVar21 = 0;`. Real max index is 3*8=24 (one
-   undefined4 element read there); no comment ever justified the
-   original 4096-element (16384-byte) size. Sized to 32 elements for
-   headroom. */
-static undefined4 DAT_00086ce0_backing[32];
+/* ARM .data 0x86ce0: one contiguous table, four door orientations by
+   four camera quarters, each with an X/Z hinge offset. The leaf's local
+   X range is [0,128]; keep its origin at the hinge rather than recentering
+   the mesh. Separate backing arrays lost both these values and the stride. */
+static undefined4 DAT_00086ce0_backing[32] = {
+  -64, 0, 0, -64, 64, 0, 0, 64,
+  0, 64, -64, 0, 0, -64, 64, 0,
+  64, 0, 0, 64, -64, 0, 0, -64,
+  0, -64, 64, 0, 0, 64, -64, 0,
+};
 #define DAT_00086ce0 DAT_00086ce0_backing[0]
-static undefined4 DAT_00086ce4_backing[32];
-#define DAT_00086ce4 DAT_00086ce4_backing[0]
-static undefined4 DAT_00086ce8_backing[32];
-#define DAT_00086ce8 DAT_00086ce8_backing[0]
-static undefined4 DAT_00086cec_backing[32];
-#define DAT_00086cec DAT_00086cec_backing[0]
-static undefined4 DAT_00086cf0_backing[32];
-#define DAT_00086cf0 DAT_00086cf0_backing[0]
-static undefined4 DAT_00086cf4_backing[32];
-#define DAT_00086cf4 DAT_00086cf4_backing[0]
-static undefined4 DAT_00086cf8_backing[32];
-#define DAT_00086cf8 DAT_00086cf8_backing[0]
-static undefined4 DAT_00086cfc_backing[32];
-#define DAT_00086cfc DAT_00086cfc_backing[0]
+#define DAT_00086ce4 DAT_00086ce0_backing[1]
+#define DAT_00086ce8 DAT_00086ce0_backing[2]
+#define DAT_00086cec DAT_00086ce0_backing[3]
+#define DAT_00086cf0 DAT_00086ce0_backing[4]
+#define DAT_00086cf4 DAT_00086ce0_backing[5]
+#define DAT_00086cf8 DAT_00086ce0_backing[6]
+#define DAT_00086cfc DAT_00086ce0_backing[7]
 /* Sizing pass: a small fixed lookup table indexed by a 4-bit nibble
    (`(*(byte*)(obj+1)>>1 & 0xf)*2`, a ushort stride) -- real max byte
    offset is 15*2+2=32; no comment ever justified the original 65536-
@@ -1402,6 +1341,25 @@ short frame_or_texid;
   }
   _anim = (char *)tick_anim_record(catalog);
   faces_remaining = *(int *)(_anim + 4);
+  /* HACK: ARM 0x65394 places models at packed_slot * 32 + 16.
+     DFRAME.E's outer edges are at local X +/-128, so packed slot 3 or
+     4 leaves a 16-unit wall gap on one side and protrudes on the other.
+     No integer packed slot centers a 256-unit frame at 128. Fit only
+     the outer jamb vertices to the tile boundaries; keep the +/-64
+     opening, packed anchor and leaf hinge unchanged. This is a visual
+     compatibility correction, not a recovered ARM placement instruction.
+     Cardinal frames only: diagonal frames do not span this tile axis. */
+  if (catalog_u == 1 && (local_7c & 0x3fff) == 0) {
+    int _quarter = local_7c >> 14;
+    int _along = ((_quarter & 1) ? DAT_0023b920 : DAT_0023b904) & 0xff;
+    float _left = (_quarter == 1 || _quarter == 2) ? _along - 256 : -_along;
+    float _right = _left + 256;
+    for (int _point = 0; _point < *(int *)_anim; _point++) {
+      float *_x = (float *)(_anim + 8 + _point * 12);
+      if (*_x == -128.0f) *_x = _left;
+      else if (*_x == 128.0f) *_x = _right;
+    }
+  }
   if (getenv("UW_DEBUG_FACE51") && catalog == 7) {
     static int _dumped_once = 0;
     if (!_dumped_once) {
@@ -1417,57 +1375,6 @@ short frame_or_texid;
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[billboard] tick_anim_record(catalog=%d) -> _anim=%p point_count=%d face_count(faces_remaining)=%d\n",
             (int)catalog, (void *)_anim, *(int *)_anim, faces_remaining);
-  /* DOOR.E's own local X range is [0,128] (confirmed live via the print
-     below, and by reading the raw data/DATA3D/DOOR.E file directly) --
-     NOT centered on 0, unlike every other model this path draws
-     (DFRAME.E's real opening, points 0-7, is exactly [-64,64] -- the
-     same 128-unit width, but centered). No per-catalog local offset
-     exists anywhere in the real disassembly for this call chain (traced
-     emit_anim_object_frames and this function itself, both confirmed
-     matching the real ARM instructions) -- DFRAME and DOOR share the
-     exact same world anchor and heading with nothing shifting one
-     relative to the other. Confirmed live (QA report: "door leaf...
-     offset into the door frame and not perfectly in the opening"):
-     drawing DOOR.E's raw [0,128] range at the same anchor as DFRAME's
-     centered opening leaves half the opening empty and pushes the leaf
-     128 units off-axis, half sticking out past the frame into the wall.
-     This is a data-convention mismatch specific to this PORT'S OWN .E
-     export (the original engine's real door leaf asset was presumably
-     already centered, matching how every other model here behaves) --
-     not a missing piece of original logic to port, so fix it as a
-     narrow compatibility shift using the model's own already-computed
-     bounding box (parse_e_model_file's real +0x3c1c min-X/+0x3c20
-     extent-X fields) rather than a bare hardcoded -64: re-centers
-     whatever this port's own DOOR.E actually contains, and is a no-op
-     for every already-correctly-centered model (DFRAME's own full
-     [-128,128] bounding box, including its riser posts, centers to a
-     0.0 shift). Scoped to catalog==14 only -- every other catalog this
-     path draws was already confirmed correctly positioned this
-     session, so don't risk perturbing them. */
-  if (catalog == 14) {
-    int _pcx = *(int *)_anim;
-    float _minX = *(float *)(_anim + 0x3c1c);
-    float _extX = *(float *)(_anim + 0x3c20);
-    float _shiftX = -(_minX + _extX * 0.5f);
-    int _px;
-    for (_px = 0; _px < _pcx; _px++) {
-      *(float *)(_anim + 8 + _px*0xc) += _shiftX;
-    }
-    /* The per-face U computation just below reads point.X back against
-       this SAME model's own +0x3c1c min-X field (see its own comment --
-       `(point.X - min_X) / extent_X`, mapped across the texture width).
-       Shifting the points without also shifting min-X by the identical
-       amount leaves U computed against the model's OLD, now-stale
-       origin -- confirmed live (QA report: "door UVs are incorrect...
-       U seems offset by half"): half of U's range went negative,
-       visibly wrapping the texture's own left/right edges into the
-       middle of the door instead of its true edges. extent_X is
-       unchanged by a pure translation, so only min-X needs updating. */
-    *(float *)(_anim + 0x3c1c) = _minX + _shiftX;
-    if (getenv("UW_DEBUG_DOOR_POS"))
-      fprintf(stderr, "[doorpos] catalog=14 (DOOR.E) re-centered: minX=%g extX=%g shiftX=%g new_minX=%g\n",
-              (double)_minX, (double)_extX, (double)_shiftX, (double)(_minX + _shiftX));
-  }
   if (getenv("UW_DEBUG_DOOR_POS")) {
     int _pc2 = *(int *)_anim;
     float _minx = 0.0f, _maxx = 0.0f;
@@ -1894,15 +1801,16 @@ LAB_000640ec:
               (int)catalog_u, (int)(short)DAT_0018957a, (int)(short)local_7c);
     uVar17 = ordfloat_int_to_float2((int)(short)DAT_0018957a);
     uVar19 = ordfloat_int_to_float2((int)(short)local_7c);
-    ordfloat_add(uVar17,uVar19);
-    local_7c = ordfloat_uint_to_float();
+    /* ARM 0x6415c: each softfloat return is the next call's r0. */
+    uVar17 = ordfloat_add(uVar17,uVar19);
+    local_7c = ordfloat_uint_to_float(uVar17);
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] swing: local_7c(after)=%d\n", (int)(short)local_7c);
   }
   uVar17 = ordfloat_int_to_float2((int)(short)local_7c);
   uVar17 = ordfloat_mul(uVar17,0x38000000);
-  ordfloat_mul(uVar17,0x43340000);
-  for (sVar13 = ordfloat_uint_to_float(); 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
+  uVar17 = ordfloat_mul(uVar17,0x43340000);
+  for (sVar13 = ordfloat_uint_to_float(uVar17); 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
   }
@@ -1916,11 +1824,7 @@ LAB_000640ec:
      to build_euler_rotation_matrix -- nudging this while walking around
      an object spins the OBJECT, letting every face's true orientation
      be checked without needing to physically walk a full circle around
-     it in the level (not always possible -- against a wall, etc). Door-
-     specific fields (wide_center/edge_offset) stay conditional on
-     catalog_u==1 in the SAME panel/dbgui_begin call, since dbgui_begin
-     resets the field list each time it's called and only one object's
-     panel can be shown per frame anyway (whichever ran last). */
+     it in the level (not always possible -- against a wall, etc). Only one object's panel can be shown per frame (whichever ran last). */
   if ((int)catalog_u != g_tune_last_catalog) {
     g_tune_last_catalog = (int)catalog_u;
     g_tune_rotation_offset = 0.0;
@@ -1936,25 +1840,6 @@ LAB_000640ec:
     snprintf(_tune_title, sizeof(_tune_title), "Object Tuner (catalog=%d)", (int)catalog_u);
     dbgui_begin(_tune_title);
     dbgui_field_double("rotation_offset", &g_tune_rotation_offset, 5.0);
-    /* HACK: was `if (catalog_u == 1)` / `if (catalog_u == 0xe || 0xf)`
-       separately -- each door-related tunable only showed up in the
-       panel on whichever exact catalog happened to be the LAST thing
-       drawn in the whole frame (dbgui_begin's own field list resets on
-       every single catalog change, not once per door), so with a
-       frame/leaf pair (or any other scene content) drawing in between,
-       the panel would show catalog=1's row often and catalog=0xe/0xf's
-       hardly ever, or vice versa, depending on draw order -- confirmed
-       live via QA report ("only able to tune leaf_hinge_offset on
-       doors of type 14, not 1"). Show every door-family tunable
-       together whenever ANY door catalog (frame or either leaf id)
-       last drew, instead of splitting them by exact catalog, so
-       whichever one happens to land last this frame still exposes the
-       whole set. */
-    if ((catalog_u == 1) || (catalog_u == 0xe) || (catalog_u == 0xf)) {
-      dbgui_field_double("wide_center", &g_tune_wide_center, 1.0);
-      dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
-      dbgui_field_double("leaf_hinge_offset", &g_tune_leaf_hinge_offset, 8.0);
-    }
     dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
     dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
     dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
@@ -1964,127 +1849,6 @@ LAB_000640ec:
   for (; 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
-  }
-  /* Real fix for the QA report "door frame... offset 16 units into the
-     wall... depending on direction" -- the generic per-object anchor
-     emit_tile_features computed is a floor-item slot position (one of
-     8 sub-tile slots, 32 units apart); it can land near a tile's true
-     center (128 from the tile's own origin) but, with only 8 discrete
-     slots, can never land exactly ON it (the two closest slots, 3 and
-     4, are 112/144 -- each 16 units off from 128, confirmed live via
-     UW_DEBUG_DOOR_POS's tile-grid dump). A full-tile-wide object like
-     DFRAME.E needs its along-the-wall axis at the tile's EXACT center,
-     not a slot approximation -- confirmed via a fresh Ghidra decompile
-     of process_visible_tile_cell that wall vertices themselves sit at
-     exact tile boundaries (`tileIndex * 256`), never slot-quantized.
-     Recompute both axes from the tile grid index: the axis DFRAME.E's
-     own wide local X rotates into (from the model's real final rotation
-     angle, not assumed) gets the tile's exact center; the wall-
-     perpendicular axis the model's thin local Z rotates into.
-
-     The perpendicular axis is ALSO the tile's exact center, not an
-     edge-relative offset -- live QA via the tuner (g_tune_wide_center/
-     g_tune_edge_offset below) confirmed both at 128.0 look correct once
-     a separate real bug (the anchor being baked into this model's own
-     scratch buffer BEFORE this fix used to run, so only the leaf's
-     later, separate call ever picked up an edited value -- see that
-     fix's own commit) stopped masking whether the frame was actually
-     responding. The earlier "wall has real thickness, perpendicular
-     axis sits at edge+16" theory was itself wrong, arrived at while
-     that masking bug made the frame look like it needed a different
-     number than the leaf when actually neither did -- it just wasn't
-     visibly moving. At edge_offset==128 the near/far edge-side branch
-     below collapses to the same value either way (128 or 256-128), so
-     this is really just "exact tile center on both axes," the edge-
-     relative framing kept only because a future non-full-tile-width
-     model might genuinely need it. Scoped to catalog_u==1 (DFRAME,
-     always drawn first) since DFRAME and the leaf share this same
-     anchor. */
-  if (catalog_u == 1) {
-    /* wide_center/edge_offset are now populated by the general object-
-       tuner panel above (see its own comment) -- kept live-editable via
-       the SAME globals, just no longer with their own separate
-       dbgui_begin call here. */
-    double _rad = (double)sVar13 * (3.14159265358979 / 180.0);
-    int _wideIsX = fabs(cos(_rad)) > fabs(sin(_rad));
-    int _tileOriginX = (int)DAT_0023b4e4 * 256;
-    int _tileOriginZ = (int)DAT_0023b4e8 * 256;
-    int _wide = (int)g_tune_wide_center;
-    int _edge = (int)g_tune_edge_offset;
-    if (_wideIsX) {
-      DAT_0023b904 = (short)(_tileOriginX + _wide);
-      DAT_0023b920 = (short)(_tileOriginZ +
-          (((int)(short)DAT_0023b920 - _tileOriginZ < 128) ? _edge : 256 - _edge));
-    } else {
-      DAT_0023b920 = (short)(_tileOriginZ + _wide);
-      DAT_0023b904 = (short)(_tileOriginX +
-          (((int)(short)DAT_0023b904 - _tileOriginX < 128) ? _edge : 256 - _edge));
-    }
-    if (getenv("UW_DEBUG_DOOR_POS"))
-      fprintf(stderr, "[doorpos] wall-plane fix: angle=%d wideIsX=%d tileOrigin=(%d,%d) wide=%d edge=%d -> anchor=(%d,%d)\n",
-              (int)sVar13, _wideIsX, _tileOriginX, _tileOriginZ, _wide, _edge,
-              (int)(short)DAT_0023b904, (int)(short)DAT_0023b920);
-    /* REAL BUG (found via QA: "this seems to just tune the door leaf
-       position, not the door frame"): the world anchor was already
-       baked into THIS model's own scratch buffer (_anim + 0xc08..0xc13,
-       the translation build_euler_rotation_matrix/transform_points_by_
-       matrix actually apply) several dozen lines above, from whatever
-       DAT_0023b904/920 held BEFORE this fix ran -- so adjusting the
-       globals here came too late to affect the frame's (catalog_u==1)
-       own transform this same call; only the LEAF's separate call
-       (catalog_u==14, later, re-running this same bake with the
-       by-then-already-modified globals) ever picked up the change.
-       Re-bake right here with the corrected values so this call's own
-       transform (a few lines below) actually uses them -- same
-       ordfloat_int_to_float2 float-encode + byte-split writes as the original
-       bake, just re-run after the correction instead of before it. */
-    uVar17 = ordfloat_int_to_float2((int)(short)DAT_0023b904);
-    *(char *)(_anim + 0xc08) = (char)uVar17;
-    *(char *)(_anim + 0xc09) = (char)((uint)uVar17 >> 8);
-    *(char *)(_anim + 0xc0a) = (char)((uint)uVar17 >> 0x10);
-    *(char *)(_anim + 0xc0b) = (char)((uint)uVar17 >> 0x18);
-    uVar17 = ordfloat_int_to_float2((int)(short)DAT_0023b91c);
-    *(char *)(_anim + 0xc0c) = (char)uVar17;
-    *(char *)(_anim + 0xc0d) = (char)((uint)uVar17 >> 8);
-    *(char *)(_anim + 0xc0e) = (char)((uint)uVar17 >> 0x10);
-    *(char *)(_anim + 0xc0f) = (char)((uint)uVar17 >> 0x18);
-    uVar17 = ordfloat_int_to_float2((int)(short)DAT_0023b920);
-    *(char *)(_anim + 0xc10) = (char)uVar17;
-    *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
-    *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
-    *(char *)(_anim + 0xc13) = (char)((uint)uVar17 >> 0x18);
-  }
-  /* See g_tune_leaf_hinge_offset's own comment: the leaf currently
-     shares DFRAME's own centered anchor as-is (baked into _anim above,
-     on catalog_u==1's own earlier call, and simply left in place for
-     this call to reuse) -- offset it here, along the same "wide" axis
-     wide_center itself offsets, by a live-tunable amount so the pivot
-     can be walked over to the real hinge edge visually instead of
-     guessed. Zero by default: no behavior change until tuned. */
-  if (((catalog_u == 0xe) || (catalog_u == 0xf)) && (g_tune_leaf_hinge_offset != 0.0)) {
-    double _rad = (double)sVar13 * (3.14159265358979 / 180.0);
-    int _wideIsX = fabs(cos(_rad)) > fabs(sin(_rad));
-    int _off = (int)g_tune_leaf_hinge_offset;
-    short _hx = DAT_0023b904;
-    short _hz = DAT_0023b920;
-    if (_wideIsX) {
-      _hx = (short)(_hx + _off);
-    } else {
-      _hz = (short)(_hz + _off);
-    }
-    if (getenv("UW_DEBUG_DOOR_POS"))
-      fprintf(stderr, "[doorpos] leaf hinge offset: angle=%d wideIsX=%d off=%d anchor=(%d,%d)->(%d,%d)\n",
-              (int)sVar13, _wideIsX, _off, (int)DAT_0023b904, (int)DAT_0023b920, (int)_hx, (int)_hz);
-    uVar17 = ordfloat_int_to_float2((int)_hx);
-    *(char *)(_anim + 0xc08) = (char)uVar17;
-    *(char *)(_anim + 0xc09) = (char)((uint)uVar17 >> 8);
-    *(char *)(_anim + 0xc0a) = (char)((uint)uVar17 >> 0x10);
-    *(char *)(_anim + 0xc0b) = (char)((uint)uVar17 >> 0x18);
-    uVar17 = ordfloat_int_to_float2((int)_hz);
-    *(char *)(_anim + 0xc10) = (char)uVar17;
-    *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
-    *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
-    *(char *)(_anim + 0xc13) = (char)((uint)uVar17 >> 0x18);
   }
   { int _rec_start = DAT_0023b83c;
   int _vtx_start = DAT_0023b838;

@@ -320,7 +320,7 @@ static void test_real_door_types_use_collision_radius_three_not_shape_four(void)
     }
 }
 
-static void test_door_bounds_use_original_radius_and_packed_position(void)
+static void assert_door_bounds_use_original_radius_and_packed_position(void)
 {
     /* collision_add_candidate_object / ARM 0x516e4..0x51790 uses a square radius. Heading
        does not change it, and packed positions 3 and 4 remain distinct. */
@@ -342,6 +342,18 @@ static void test_door_bounds_use_original_radius_and_packed_position(void)
                 }
             }
         }
+    }
+}
+
+static void test_door_bounds_use_original_radius_and_packed_position(void)
+{
+    /* All eight shipped closed-door types use COMOBJ radius 3. Keep the
+       ARM square bounds and the packed position, rather than estimating
+       collision extents from the leaf's currently rotated mesh. */
+    for (int skin = 0; skin < 8; skin++) {
+        fx.door[0] = 0x140 + skin;
+        TEST_ASSERT_EQUAL_UINT8(3, DAT_00202c90_backing[(0x140 + skin) * 13 + 1] & 7);
+        assert_door_bounds_use_original_radius_and_packed_position();
     }
 }
 

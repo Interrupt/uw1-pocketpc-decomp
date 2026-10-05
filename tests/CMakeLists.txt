@@ -330,3 +330,16 @@ add_fixture_game_unit_test(scroll_messages
   src/ai.c:build_creature_look_text src/interact.c:describe_picked_terrain
   src/ordinal_stubs.c:ce_memmove src/ordinal_stubs.c:ce_strchr src/ordinal_stubs.c:ce_strrchr)
 target_link_libraries(uw_test_scroll_messages PUBLIC uw_test_static_strings)
+
+add_fixture_game_unit_test(door_models
+  src/tmap.c:@DAT_00086d68_region src/tmap.c:resolve_billboard_corner_offset
+  src/models.c:@DAT_00086c08_backing src/models.c:@DAT_00086ce0_backing
+  src/models.c:emit_catalog_object src/models.c:apply_model_position_offset
+  src/models.c:scale_model_part_offsets src/3d.c:build_euler_rotation_matrix
+  src/3d.c:transform_points_by_matrix src/3d.c:set_identity_matrix4x4
+  src/3d.c:multiply_matrix4x4 src/3d.c:copy_matrix4x4
+  src/ordinal_stubs.c:ordfloat_bits_to_float src/ordinal_stubs.c:ordfloat_float_to_bits
+  src/ordinal_stubs.c:ordfloat_mul src/ordinal_stubs.c:ordfloat_add
+  src/ordinal_stubs.c:ordfloat_negate src/ordinal_stubs.c:ordfloat_div
+  src/ordinal_stubs.c:ordfloat_int_to_float2 src/ordinal_stubs.c:ordfloat_uint_to_float
+  src/ordinal_stubs.c:ordfloat_gt src/ordinal_stubs.c:ordfloat_sub)
