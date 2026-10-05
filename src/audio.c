@@ -62,7 +62,58 @@ static undefined1 DAT_00087414_backing[256];
 #define DAT_00087414 DAT_00087414_backing[0]
 static char s__SOUND__0008750c[] = "\\SOUND\\";
 static char s_uw00_mod_00087514[] = "uw00.mod";
+/* Was always 0 ("audio subsystem not initialized"), with NO writer
+ * anywhere in this decompile (every one of the ~15 read sites in this
+ * file, grepped exhaustively, only ever compares it -- none assigns
+ * it) -- same "lost nonzero initial static value" bug class as
+ * DAT_00086368 above, confirmed live by instrumenting play_music_track:
+ * every single call during real gameplay (menu music cycling, chargen,
+ * dungeon entry) printed `subsys=0`, so play_music_track,
+ * resume_music_playback and set_music_enabled all permanently took
+ * their very first early-out branch -- this flag (together with its
+ * DAT_00087448 "music enabled" sibling right below) is genuinely the
+ * first-order cause of "no music playback", ahead of waveOut being
+ * stubbed.
+ *
+ * NOT flipped to 1 here, though -- see bug-fixes-pass-4's "no music
+ * playback" writeup for the full chain, but in short: fixing this flag
+ * (and cpp_operator_new, see ordinal_stubs.c, which is ALSO a
+ * hardcoded-NULL stub standing between here and any real MOD load)
+ * unlocks construct_and_load_mod_player, which has evidently never
+ * once executed since this was decompiled -- and it promptly SIGSEGVs,
+ * live-confirmed, inside the MOD engine's internal "dynamic array"
+ * bookkeeping: every one of those structs stores its cpp_operator_new
+ * allocation in a 4-byte (`undefined4`) field and reads it back later
+ * as a real address (e.g. resize_mod_pattern_array's
+ * `*(int*)(param_1+4) = uVar1` / later `ce_memmove(..., *(int
+ * *)(param_1+4), ...)`), which is exactly how the original 32-bit ARM
+ * binary represented a real pointer -- but on this native 64-bit
+ * recompile, malloc/calloc/mmap addresses here all land well above
+ * 4GB (confirmed empirically: calloc() and even MAP_FIXED mmap() at
+ * every address from 0x1000000 up to 0xff000000 are unreachable on
+ * this platform, ENOMEM every time -- arm64 macOS reserves the entire
+ * low 4GB), so storing any real allocation in one of these 4-byte
+ * fields loses the high bits and the next read-back dereferences a
+ * wrong, almost always unmapped address. Fixing that for real means
+ * either widening every one of these dynamic-array structs' data-
+ * pointer field (a large offset-shifting refactor across roughly
+ * 1400 lines/20+ functions in this file) or a guaranteed-low-address
+ * allocator (confirmed infeasible on this host) -- out of scope for
+ * this pass. Left at its original default so the game keeps working
+ * (silently, as before) rather than crashing the moment anyone enables
+ * music; see run_game_startup_sequence's own play_music_track(1,1)
+ * call for a 100%-reproducible repro once this flag is flipped. */
 static int DAT_00087454;
+/* "Is music currently enabled" -- same lost-initial-value bug class as
+ * DAT_00087454 just above (confirmed live: with DAT_00087454 flipped to
+ * 1 for testing, run_game_startup_sequence's very first
+ * play_music_track(1,1) call -- the splash-screen intro tune, before
+ * any character/save is even loaded -- still failed this gate every
+ * time, since nothing had called set_music_enabled yet). Also left at
+ * its original default for the same reason as DAT_00087454 above: both
+ * flags need fixing together to get past play_music_track's gate at
+ * all, and doing that currently only trades silence for a guaranteed
+ * crash (see that comment). */
 static int DAT_00087448;
 static byte DAT_0023c3a8;
 static undefined4 *DAT_0023c3b8;
@@ -167,6 +218,8 @@ int param_2;
 
   ce_memmove(auStack_130,s_uw00_mod_00087514,9);
   local_127 = 0;
+  DEBUG(TRACE, "[audio] play_music_track(track=%u, start=%d) gate: subsys=%d enabled=%d",
+        param_1, param_2, DAT_00087454, DAT_00087448);
   if ((DAT_00087454 == 0) || (DAT_00087448 == 0)) {
     uVar4 = 0;
   }
@@ -287,7 +340,8 @@ int param_1;
 
 {
   uint uVar1;
-  
+
+  DEBUG(TRACE, "[audio] set_music_enabled(param_1=%d) subsys=%d enabled=%d", param_1, DAT_00087454, DAT_00087448);
   if (DAT_00087454 != 0) {
     if (param_1 == 0) {
       uVar1 = 1;
