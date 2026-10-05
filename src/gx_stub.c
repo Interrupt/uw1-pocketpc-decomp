@@ -830,6 +830,15 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
         fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
         return 0;
     }
+    /* With UW_ALWAYS_SHOW_CURSOR=1, the game draws its own cursor sprite
+       every frame (see draw_idle_mouse_cursor's own deviation comment) --
+       leaving the OS cursor visible too would show two overlapping
+       cursors (the real system arrow plus the game's own icon a few
+       pixels off from it, since the drawn one is offset by its own
+       hotspot). Hide the real one up front so only the game's persists. */
+    if (uw_always_show_cursor()) {
+        SDL_ShowCursor(SDL_DISABLE);
+    }
     uw_update_present_refresh_rate();
     {
         int wx = 0, wy = 0, ww = 0, wh = 0;
