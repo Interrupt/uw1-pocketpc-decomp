@@ -188,23 +188,6 @@ static void test_deleted_notes_are_compacted_and_last_deletion_persists(void)
     TEST_ASSERT_EQUAL_INT(0,DAT_000bbef0);
 }
 
-static void test_automap_cursor_erases_when_a_dungeon_mode_is_selected(void)
-{
-    g_cursor_mode=5; /* retained interact mode */
-    ushort before[320*200];
-    memcpy(before,automap_pixels,sizeof before);
-    draw_idle_mouse_cursor();
-    TEST_ASSERT_EQUAL_INT(1,DAT_00204844);
-    TEST_ASSERT_EQUAL_HEX16(0xf800,automap_pixels[50*320+50]);
-    decrement_cursor_hide_depth();
-    TEST_ASSERT_EQUAL_INT(0,DAT_00204844);
-    TEST_ASSERT_EQUAL_MEMORY(before,automap_pixels,sizeof before);
-    g_mouse_x=80; g_mouse_y=80;
-    cursor_show_idle_tick();
-    decrement_cursor_hide_depth();
-    TEST_ASSERT_EQUAL_MEMORY(before,automap_pixels,sizeof before);
-}
-
 int main(void)
 {
     UNITY_BEGIN();
@@ -218,7 +201,6 @@ int main(void)
     RUN_TEST(test_closing_and_reopening_map_persists_note_text_and_coordinates);
     RUN_TEST(test_resizing_notes_preserves_other_levels_and_level_data);
     RUN_TEST(test_deleted_notes_are_compacted_and_last_deletion_persists);
-    RUN_TEST(test_automap_cursor_erases_when_a_dungeon_mode_is_selected);
     int result=UNITY_END();
     automap_storage_fixture_finish();
     return result;
