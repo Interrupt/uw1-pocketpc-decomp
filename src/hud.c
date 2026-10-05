@@ -7987,20 +7987,47 @@ void draw_idle_mouse_cursor()
     }
   }
   if (_dbg_show) fprintf(stderr, "[cursorshow] normal path: saving then drawing sprite=%d\n", (int)DAT_00204788);
-  /* DEVIATION FROM AUTHENTIC BEHAVIOR: see cursor_over_live_3d_view's
-     own comment -- the 3D view repaints itself fully every tick, so
-     there's nothing to erase and no point saving a background that'll
-     be stale again next tick regardless; just draw straight onto the
-     current, already-fresh frame. Everywhere else, this matches the
-     original unconditionally: always save_cursor_background() before
-     drawing. (An earlier attempt at this fix added an erase-before-
-     resave guard here instead, reacting to draw_idle_mouse_cursor
-     being reachable twice in the same tick under UW_ALWAYS_SHOW_CURSOR
-     -- see track_hotspot_hover_state's own comment for why that's
-     fixed at the actual source instead: a correctly-guarded caller
-     means this function is never redundantly re-entered in the first
-     place, so it doesn't need to defend against it itself.) */
-  if (!(uw_always_show_cursor() && cursor_over_live_3d_view())) {
+  if (uw_always_show_cursor() && cursor_over_live_3d_view()) {
+    /* See cursor_over_live_3d_view's own comment -- the 3D view
+       repaints itself fully every tick, so there's nothing to erase
+       and no point saving a background that'll be stale again next
+       tick regardless; just draw straight onto the current,
+       already-fresh frame. */
+  } else {
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR: the original always calls
+       save_cursor_background() here unconditionally, trusting
+       whatever's currently on screen to be the true background (safe
+       there, since nothing else ever redrew over an un-erased cursor
+       icon between calls). Under UW_ALWAYS_SHOW_CURSOR, a cursor whose
+       rect straddles the 3D viewport's edge -- partially over the
+       live content, partially over the static HUD border decoration
+       just outside it -- takes this path every tick while the mouse
+       sits still (track_hotspot_hover_state calls back in here
+       repeatedly, see its own comment). The sliver over the static
+       border is never touched by anything else (unlike the viewport's
+       own interior, which render_dungeon_view repaints every tick),
+       so without an erase first, each tick's save_cursor_background()
+       captures the PREVIOUS tick's own just-drawn icon as the
+       "background" instead of the true one underneath it -- the same
+       corruption class already fixed for the same-tick double-draw
+       case (see track_hotspot_hover_state's own comment), just
+       compounding across many ticks instead of within one. Confirmed
+       live via a user report: click-and-hold near the 3D view's edge
+       left a solid dark cursor-shaped patch behind once released.
+       Erase first (same as cursor_over_live_3d_view's own skip-save
+       branch no longer needs to, now that erase_cursor_icon() itself
+       already skips the actual restore there) whenever a valid save
+       exists, so each cycle's save always captures the real
+       background -- safe as long as DAT_00204844 accurately reflects
+       "a valid save exists for the CURRENT screen", which is exactly
+       what chargen's own full-page reblits now also maintain (see
+       their own call sites' comments) rather than this function having
+       to guess whether to trust it. */
+    if (DAT_00204844 != 0) {
+      if (erase_cursor_icon() != 0) {
+        DAT_00204844 = 0;
+      }
+    }
     save_cursor_background();
   }
 LAB_00058674:

@@ -170,6 +170,28 @@ char *param_3;
     DAT_000fb858 = DAT_001005c8;
     // Redraws the raw parchment background (both pages, 0,0 to 320,200) from scratch every loop iteration -- this is the mechanism that clears stale text from the *right* page between prompts (confirmed: disabling it leaves old prompt text visibly bleeding through under new prompt text). As a side effect it also wipes any stats text the previous iteration's switch-case drew on the left page. Confirmed present in the real ARM disassembly at this exact spot, in this exact order relative to the fill below -- not a decompilation bug.
     bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
+    /* draw_idle_mouse_cursor's own "normal path" (hud.c) now trusts
+       DAT_00204844 to mean "a valid save exists for the CURRENT
+       screen" and erases-then-resaves whenever it's set, rather than
+       blindly resaving on top of whatever's already there -- correct
+       and necessary for the 3D view's own per-tick redraw cycle (see
+       that function's own comment), but it depends on every full-
+       screen repaint source keeping that contract, the same way
+       render_dungeon_view already does implicitly (nothing outside the
+       3D viewport's own bounds persists a stale save across one of its
+       repaints). The parchment reblit just above is this chargen loop's
+       own equivalent repaint -- wipes the whole screen, including
+       wherever the previous page's cursor was last saved against.
+       Without clearing DAT_00204844 here, the idle tick below would
+       erase-and-restore that now-stale save, painting the PREVIOUS
+       screen's content directly onto this freshly-blank one right as
+       it's about to receive its own new text/buttons -- confirmed live
+       via a user report of exactly that. Setting it to 0 directly
+       (not calling erase_cursor_icon() first) is deliberate: there is
+       nothing left to erase, the reblit already overwrote it; the idle
+       tick below just captures a correct, fresh save of the new page
+       instead. */
+    DAT_00204844 = 0;
     cursor_show_idle_tick();
     chargen_ui_transition_hook(0);
     DAT_000fb858 = DAT_001005c4;
@@ -197,6 +219,10 @@ char *param_3;
       bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
 LAB_00025468:
       sVar8 = 0;
+      /* See the earlier reblit's own comment -- both branches that
+         jump here just redrew the whole screen fresh a couple lines
+         up, so any cursor save from before that is equally stale. */
+      DAT_00204844 = 0;
       cursor_show_idle_tick();
       chargen_ui_transition_hook(0);
       DAT_000fb858 = DAT_001005c4;
