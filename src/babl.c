@@ -111,8 +111,8 @@ static short DAT_000bc004;
 static undefined2 DAT_000bbfbc;
 static undefined2 DAT_000bbfe0;
 static undefined2 DAT_000bbfb8;
-static char *DAT_000bc020;
-static char *DAT_000bc000;
+static short *DAT_000bc020; /* ARM preference lists contain signed 16-bit words. */
+static short *DAT_000bc000;
 /* Sizing-audit pass: 4 barter-icon-slot coordinate tables, explicit
    `if(3<iVar1)` caps (init_barter_ui's capture loop, `iVar1=iVar7*4`)
    -- max byte 3*4+1=13. Sized to 16 each for headroom; down from 256. */
@@ -161,12 +161,6 @@ static undefined4 DAT_000bc010_backing[4];
 #define DAT_000bc010 DAT_000bc010_backing[0]
 static undefined4 DAT_000bc028_backing[4];
 #define DAT_000bc028 DAT_000bc028_backing[0]
-/* Sizing-audit pass: `iVar6 = (*DAT_00100674 & 0x3f) * 0x30` -- same
-   &0x3f mask * 0x30 stride as ai.c's DAT_001007d0 (same monster-class
-   table shape, independently duplicated here). HARD: 63*48+48=3072.
-   Down from 8192. */
-static undefined DAT_001007de_backing[3072];
-#define DAT_001007de DAT_001007de_backing[0]
 /* Was a lone scalar pointer slot -- its only use is `&PTR_DAT_000845c8 +
    iVar2*4` (a 4-byte-stride coordinate table, same convention as the
    sibling DAT_000845b8/DAT_000845d8/DAT_000845e8 tables right around
@@ -184,15 +178,11 @@ static undefined1 PTR_DAT_000845c8_backing[256];
    same bound, given the same 256-byte margin. */
 static undefined1 DAT_000845e8_backing[256];
 #define DAT_000845e8 DAT_000845e8_backing[0]
-/* Sizing-audit pass: both are a sum_barter_offer_value param_4 cache
-   (`psVar3 = (short*)(iVar4*2+param_4)`), and that function's own loop
-   bound is `iVar4 < 4` -- exact max offset 3*2=6 (4 shorts, 8 bytes),
-   a HARD bound. Sized to 16 elements (32 bytes) for headroom; down
-   from 8192. */
-static undefined2 DAT_000bbfc8_backing[16];
-#define DAT_000bbfc8 DAT_000bbfc8_backing[0]
-static undefined2 DAT_000bbfb0_backing[16];
-#define DAT_000bbfb0 DAT_000bbfb0_backing[0]
+/* ARM 0xbbfb0/0xbbfc8 are the second four words of the 0xbbfa8/0xbbfc0
+   caches. init_barter_ui and item changes invalidate those words; separate
+   arrays made offer evaluation reuse zero or stale values instead. */
+#define DAT_000bbfb0 DAT_000bbfa8_backing[4]
+#define DAT_000bbfc8 DAT_000bbfc0_backing[4]
 static char s_npc_attitude_000845f8[] = "npc_attitude";
 static char *DAT_00100784;
 /* Was `undefined4`, truncating the real char* buffer pointer (DAT_00100784)
@@ -1067,10 +1057,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   if (-1 < (int)uVar3) {
     if ((int)uVar3 < 0x20) {
       if (sVar2 == 0) {
-        uVar3 = *(uint *)(DAT_00086df8 + 0x65) & ~(1 << (uVar3 & 0xff));
+        uVar3 = *(uint *)(DAT_00086df8 + 0x65) & ~(1U << (uVar3 & 0xff));
       }
       else {
-        uVar3 = *(uint *)(DAT_00086df8 + 0x65) | 1 << (uVar3 & 0xff);
+        uVar3 = *(uint *)(DAT_00086df8 + 0x65) | 1U << (uVar3 & 0xff);
       }
       *(char *)(DAT_00086df8 + 0x65) = (char)uVar3;
       *(char *)(DAT_00086df8 + 0x66) = (char)(uVar3 >> 8);
@@ -1105,7 +1095,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
       return *(undefined1 *)(iVar1 + DAT_00086df8 + 0x49);
     }
     sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
-    if ((*(uint *)(DAT_00086df8 + 0x65) & 1 << ((int)sVar2 & 0xffU)) != 0) {
+    if ((*(uint *)(DAT_00086df8 + 0x65) & 1U << ((int)sVar2 & 0xffU)) != 0) {
       if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 1 (flag bit set)\n", iVar1);
       return 1;
     }
@@ -2052,8 +2042,9 @@ undefined4 build_babl_symbol_table()
 // reads the current conversation bytecode buffer (DAT_000bbf80) word by
 // word at instruction pointer DAT_000bbf74, dispatching each opcode to
 // its babl_op_* handler (arithmetic/comparison/stack ops, calls, string
-// printing, menu display via run_babl_menu_wait_loop, etc.) until opcode 0
-// ends the conversation. Confirmed as the interpreter entry point by
+// printing, menu display via run_babl_menu_wait_loop, etc.) until EXIT
+// (0x26) or a RETURN with an empty stack ends the conversation. Opcode 0
+// is a NOP, like the 0x22 entry marker. Confirmed as the entry point by
 // start_npc_conversation calling it to run a loaded CNV.ARK record, and by
 // repeated comments elsewhere in this file referring to it by name.
 undefined4 run_babl_bytecode_interpreter()
@@ -2632,8 +2623,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 undefined4 babl_builtin_set_likes_dislikes(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "set_likes_dislikes" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
-  DAT_000bc020 = babl_var_word_addr((int)*(short *)(param_1 + -4));
-  DAT_000bc000 = babl_var_word_addr((int)*(short *)(param_1 + -2));
+  DAT_000bc020 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -4));
+  DAT_000bc000 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -2));
   return 1;
 }
 
@@ -4186,7 +4177,7 @@ int * param_1;
 // returns a pointer to word index param_1 in the conversation-variable
 // segment, for intrinsics that need to pass a variable by reference
 // (e.g. an out-parameter) rather than read its value.
-int babl_var_word_addr(param_1)
+intptr_t babl_var_word_addr(param_1)
 short param_1;
 
 {
@@ -4317,22 +4308,23 @@ void babl_builtin_setup_to_barter()
   ushort *puVar6;
   ushort *puVar7;
   uint uVar8;
-  undefined4 uVar9;
+  ushort *uVar9;
   short *psVar10;
   short sVar11;
   int iVar12;
-  int iVar13;
+  intptr_t iVar13;
   ushort *puVar14;
   
   sVar11 = 0;
   bVar2 = false;
   bVar3 = false;
-  if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
+  if ((*(byte *)((char *)DAT_00100674 + 0xe) & 0x10) == 0) {
     /* Dropped argument -- see babl_builtin_take_from_npc's identical
        call for the full explanation; intended arg is DAT_00100674. */
     spawn_creature_death_loot(DAT_00100674);
   }
-  iVar13 = DAT_00100674 + 6;
+  /* ARM 0x1b2cc uses a byte offset: the NPC inventory head is at +6. */
+  iVar13 = (intptr_t)((char *)DAT_00100674 + 6);
   puVar6 = (ushort *)resolve_object_link(iVar13);
   iVar12 = 0;
   puVar14 = (ushort *)0x0;
@@ -4357,7 +4349,7 @@ void babl_builtin_setup_to_barter()
           puVar14 = (ushort *)get_object_record_by_slot_index((int)*psVar10);
         }
         uVar9 = get_object_record_by_slot_index((int)*psVar10);
-        object_list_insert_head(DAT_00100674 + 6,uVar9);
+        object_list_insert_head((char *)DAT_00100674 + 6,uVar9);
       }
       sVar5 = encode_object_slot_index(puVar6);
       *psVar10 = sVar5;
@@ -4474,19 +4466,19 @@ void init_barter_ui()
 void end_barter_ui()
 
 {
-  undefined4 uVar1;
+  ushort *uVar1;
   int iVar2;
   
   decrement_cursor_hide_depth();
   iVar2 = 0;
   do {
     if (0 < (short)(&DAT_000bbfd0)[iVar2]) {
-      uVar1 = get_object_record_by_slot_index();
+      uVar1 = get_object_record_by_slot_index((int)(short)(&DAT_000bbfd0)[iVar2]);
       drop_object_near_target(g_player_object,uVar1,5,0);
       restore_captured_grtile_backdrop((&DAT_000bc028)[iVar2]);
     }
     if (0 < (short)(&DAT_000bbfe8)[iVar2]) {
-      uVar1 = get_object_record_by_slot_index();
+      uVar1 = get_object_record_by_slot_index((int)(short)(&DAT_000bbfe8)[iVar2]);
       drop_object_near_target(DAT_00100674,uVar1,5,0);
       restore_captured_grtile_backdrop((&DAT_000bc010)[iVar2]);
     }
@@ -5083,8 +5075,8 @@ undefined ** param_2;
 // count array) and param_2 (an int value array). Returns 1 if none do
 // (the offer is effectively empty), 0 if at least one slot qualifies.
 undefined4 barter_offer_is_empty(param_1,param_2)
-int param_1;
-int param_2;
+intptr_t param_1;
+intptr_t param_2;
 
 {
   int iVar1;
@@ -5110,15 +5102,15 @@ void finalize_npc_barter_items(param_1)
 short param_1;
 
 {
-  undefined4 uVar1;
+  ushort *uVar1;
   int iVar2;
   
   decrement_cursor_hide_depth();
   iVar2 = 0;
   do {
     if ((0 < (short)(&DAT_000bbfe8)[iVar2]) && ((param_1 == 0 || ((&DAT_000bbff0)[iVar2] == 0)))) {
-      uVar1 = get_object_record_by_slot_index();
-      object_list_insert_head(DAT_00100674 + 6,uVar1);
+      uVar1 = get_object_record_by_slot_index((int)(short)(&DAT_000bbfe8)[iVar2]);
+      object_list_insert_head((char *)DAT_00100674 + 6,uVar1);
       restore_captured_grtile_backdrop((&DAT_000bc010)[iVar2]);
       (&DAT_000bbff0)[iVar2] = 0;
       (&DAT_000bbfe8)[iVar2] = 0;
@@ -5165,7 +5157,7 @@ void finalize_player_barter_items()
          comment. */
       if (((&DAT_000bbf98)[local_28] != 0) && (sVar1 = check_npc_item_preference(*psVar5), sVar1 != -1)) {
         puVar2 = (ushort *)get_object_record_by_slot_index((int)*psVar5);
-        puVar3 = (ushort *)resolve_object_link(DAT_00100674 + 6);
+        puVar3 = (ushort *)resolve_object_link((char *)DAT_00100674 + 6);
         if ((*puVar2 & 0x1ff) == 0xa1) {
           for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)resolve_object_link(puVar3 + 2)) {
             if (((((*puVar2 & 0x8000) != 0) && ((*puVar3 & 0x8000) != 0)) &&
@@ -5182,7 +5174,7 @@ void finalize_player_barter_items()
           }
         }
         if (puVar2 != (ushort *)0x0) {
-          object_list_insert_head(DAT_00100674 + 6,puVar2);
+          object_list_insert_head((char *)DAT_00100674 + 6,puVar2);
         }
         restore_captured_grtile_backdrop((&DAT_000bc028)[local_28]);
         (&DAT_000bbf98)[local_28] = 0;
@@ -5315,9 +5307,9 @@ void babl_builtin_do_judgement()
 // compute_barter_item_value, then adds it to the running total.
 int sum_barter_offer_value(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
-int param_2;
-int param_3;
-int param_4;
+intptr_t param_2;
+intptr_t param_3;
+intptr_t param_4;
 short param_5;
 
 {
@@ -5756,7 +5748,7 @@ void babl_op_sub()
 void babl_op_div()
 
 {
-  int iVar1;
+  intptr_t iVar1; /* ARM stack address: preserve the host pointer width. */
   undefined2 uVar2;
   short *psVar3;
   int iVar4;
@@ -5787,7 +5779,7 @@ void babl_op_div()
 void babl_op_mod()
 
 {
-  int iVar1;
+  intptr_t iVar1; /* ARM stack address: preserve the host pointer width. */
   undefined2 uVar2;
   short *psVar3;
   int iVar4;
@@ -6060,8 +6052,8 @@ void babl_op_set_var()
 // index from the bytecode operand, invokes the matching native function
 // pointer out of the DAT_000bbf00 table (registered by
 // babl_register_builtin/babl_op_say/babl_op_respond) passing the current
-// stack top as its argument slot, and pushes the builtin's own return
-// value back onto the stack.
+// stack top as its argument slot, and replaces that reserved slot with
+// the builtin's return value (also copied to the result register).
 void babl_op_call_builtin()
 
 {
