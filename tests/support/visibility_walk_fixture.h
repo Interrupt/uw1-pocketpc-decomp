@@ -24,6 +24,10 @@ extern undefined1 DAT_00086e6c_backing[64];
 void set_tile(int x, int y, int tile_type);
 void set_room(int x0, int y0, int x1, int y1);
 void load_real_level_one(void);
+void load_visibility_light_config(unsigned record);
+void equip_visibility_test_torch(int equipped);
+extern int visibility_light_config_record;
+extern int visibility_ambient_strength;
 unsigned char ring_cell(int depth, int side);
 #define RING_CELL_SENTINEL 0xaa
 

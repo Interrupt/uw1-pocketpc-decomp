@@ -1056,13 +1056,12 @@ LAB_000669a8:
   } while (iVar4 < 0xb);
   apply_equipment_effect_penalties(local_30);
   if (DAT_002020d8 == 0) {
-    /* HACK: DOS mode selects the strongest equipped/spell light's
-       SHADES.DAT record. ARM mode uses the RGB shading bias. */
+    /* Keep the tile-light grid in sync in both render modes. ARM's RGB
+       bias controls drawing, but does not update the SHADES.DAT grid
+       used to decide which tiles the automap can discover. */
+    load_shading_level_config(*(byte *)(DAT_00086df8 + 99) >> 4);
     const char *light_mode = getenv("UW_LIGHT_MODE");
-    if (light_mode && strcmp(light_mode, "dos") == 0) {
-      load_shading_level_config(*(byte *)(DAT_00086df8 + 99) >> 4);
-    }
-    else {
+    if (!light_mode || strcmp(light_mode, "dos") != 0) {
       /* HACK: the ARM build only distinguished lit from unlit here.
          Restore per-strength brightness: start at the unlit bias (+8),
          subtract 16 for every light level, and retain the calibration

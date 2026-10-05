@@ -120,16 +120,15 @@ static int DAT_0023aec8;
 static ushort DAT_0023b4c8;
 static undefined1 DAT_0023b028;
 static undefined *DAT_0023b02c;
-/* Lookup/gradient table in build_visibility_light_grid, indexed up to
-   (16*0x21+32)*2=1120 -- confirmed overflowing into the unrelated
-   DAT_00248410 via an lldb watchpoint (same symptom, second distinct
-   overflow source found reaching that same global). Widened. */
-/* Sizing-audit pass: fine light/shade lookup, index
-   `(iVar4*0x21+iVar3)*2` with iVar4<0x11(17), iVar3<0x21(33) -- max
-   byte offset 1120, needing 1121 bytes. Sized to 1152 for headroom;
-   down from 4096. */
-static undefined1 DAT_0023b039_backing[1152];
-#define DAT_0023b039 DAT_0023b039_backing[0]
+/* Original 0x23b039 is the light byte immediately after the visibility
+   byte at 0x23b038. Both are fields of the same 0x42-byte-stride grid.
+   A separate backing array disconnected the lighting writer from the
+   ray flood and automap readers, making every tile appear fully lit.
+   (My own earlier sizing-audit pass gave this its own 4096/1152-byte
+   backing array based purely on its index math, without realizing it
+   should have been aliased into this existing struct -- superseded
+   by this fix.) */
+#define DAT_0023b039 g_visibility_ring_buffer_backing[1]
 static undefined1 g_visibility_ring_done;
 /* g_visibility_ray_table-family: ~20 separately-declared globals that are really
    one 16-entry x 0x15(21)-byte per-ray record array for the dungeon's
