@@ -63,18 +63,51 @@ int DAT_002022fc;
 //   just this decompile): every access to +0x4c anywhere in the shipped
 //   binary is a READ (check_object_carry_weight's "can I pick this up" check, and
 //   update_carry_weight_display, apparently a HUD burden/encumbrance display) -- there
-//   is no write to it ANYWHERE, so it stays at its zero BSS default for
-//   the life of the process. Net effect: every pickup attempt failed
-//   with "too heavy" regardless of the item (confirmed live: a 30-unit
-//   sack, well within any plausible real capacity, was rejected).
+//   is no write to it ANYWHERE by the "str/strh ..., [reg, #0x4c]" literal
+//   pattern that scan looked for.
 //
-// Whatever real formula (almost certainly Strength-derived) originally
-// populated this is not recoverable from this binary -- it's a genuinely
-// dead computation in the shipped game, not a decompile gap. Seeding a
-// generous, clearly-provisional default here so carrying items functions
-// at all rather than being permanently broken -- revisit if the real
-// per-character formula (or its expected value range) ever turns up.
-ushort g_player_max_carry_weight = 200;
+// That scan's conclusion ("genuinely dead, not recoverable") turned out
+// to be wrong -- it just missed a write reached by a different
+// addressing pattern. player.c's recompute_level7_hazard_from_character_level
+// (was FUN_000703a0) already computes exactly this value and stores it,
+// just not into this global:
+//     iVar3 = (uint)*(byte *)(DAT_0023be74 + 5) * 0x14;      // Strength * 20
+//     *(char *)(DAT_00086df8 + 0x4c) = (char)iVar3;          // low byte
+//     *(char *)(DAT_00086df8 + 0x4d) = (char)((uint)iVar3 >> 8); // high byte
+// DAT_0023be74+5 is Strength (the same live attribute item_use.c's
+// roll_skill_check call sites read), and DAT_00086df8+0x4c/+0x4d is a
+// byte-by-byte store of a 16-bit value at the exact struct offset this
+// global's own name came from (DAT_0023bcf4 = DAT_0023bca8+0x4c). The
+// earlier whole-binary scan only looked for a literal "#0x4c" immediate
+// in the store instruction; a compiler that hoisted `DAT_00086df8+0x4c`
+// into its own register first (then stored at offset 0/1 from THAT
+// register) would produce exactly this store while never emitting the
+// literal pattern being searched for -- which is apparently what
+// happened here, and why the scan came up empty.
+//
+// This is the same "split-symbol" bug class the project has already
+// hit elsewhere with this exact struct (see DAT_0023bca8_backing's own
+// declaration comment in player.c): g_player_max_carry_weight was
+// decompiled as its own freestanding global instead of being recognized
+// as an alias for DAT_0023bca8+0x4c, so recompute_level7_hazard_from_character_level's
+// store landed in the (otherwise-unread-by-gameplay) struct array while
+// every real carry-weight consumer (check_object_carry_weight,
+// update_carry_weight_display) kept reading this separate, never-updated
+// global -- stuck at whatever default it was seeded with instead of the
+// real Strength * 20 (2 stones per Strength point, in 0.1-stone units).
+// Confirmed live: with the default below hardcoded to 200, a Strength-30
+// character (max carry 600) could carry barely a third of the real
+// capacity, and a below-average-Strength character could come out
+// ahead of their real cap instead of under it -- either way, wrong.
+//
+// Fixed at the real root: recompute_level7_hazard_from_character_level
+// now also assigns this global directly (see player.c), and
+// read_player_status_block syncs it from the loaded struct byte on a
+// game load (that 0xd2-byte block already round-trips +0x4c on
+// save/load, just never fed this global). The default below is now
+// only the harmless pre-chargen fallback (Strength-0 value of the real
+// formula), always overwritten before the player can carry anything.
+ushort g_player_max_carry_weight = 0;
 static char s_cursed_00085ca0[] = "cursed";
 static char s_magical_00085ca8[] = "magical";
 /* Ghidra rendered the embedded space as an underscore and dropped the

@@ -1181,6 +1181,17 @@ undefined4 param_1;
   *(undefined1 *)(DAT_0023be74 + 7) = *(undefined1 *)(DAT_00086df8 + 0x20);
   *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_00086df8 + 0x35);
   *(undefined1 *)(DAT_0023be74 + 4) = *(undefined1 *)(DAT_00086df8 + 0x36);
+  /* BUG FIX: this 0xd2-byte block already round-trips the player's
+     current/max carry weight at +0x4a/+0x4c (see
+     recompute_level7_hazard_from_character_level's own comment for the
+     split-symbol story), but nothing fed those loaded bytes into
+     g_player_carry_weight/g_player_max_carry_weight -- the separate
+     flat globals check_object_carry_weight and update_carry_weight_display
+     actually read. Without this, loading a save left carry weight at
+     whatever the globals happened to already hold (e.g. still the
+     chargen default) instead of this character's real values. */
+  g_player_carry_weight = *(short *)(DAT_00086df8 + 0x4a);
+  g_player_max_carry_weight = *(ushort *)(DAT_00086df8 + 0x4c);
   DAT_00204880 = *(undefined2 *)(DAT_00086df8 + 0x54);
   DAT_00204882 = *(undefined2 *)(DAT_00086df8 + 0x56);
   DAT_00204884 = *(undefined2 *)(DAT_00086df8 + 0x58);
@@ -2230,10 +2241,14 @@ int param_1;
 // see its own declaration comment): writes a scaled value to
 // DAT_00086df8+0xb0 (if the current level is 7) or +0x38 otherwise --
 // the same pair save_or_restore_level_special_state saves/restores for
-// level 7's floor hazard -- and a 2-byte regen-rate field at +0x4c/
-// +0x4d. param_1!=0 also copies the new +0x38 value into +0x37 (the
-// active hazard byte). Called by advance_character_level after a
-// level-up (param_1=0) and by chargen (context not traced here).
+// level 7's floor hazard -- and the player's max carry weight at +0x4c/
+// +0x4d (0.1-stone units, Strength * 20 -- i.e. 2 stones per Strength
+// point; this is the SAME field object_actions.c's g_player_max_carry_weight
+// global was split off from, see its own declaration comment there for
+// the full story). param_1!=0 also copies the new +0x38 value into
+// +0x37 (the active hazard byte). Called by advance_character_level
+// after a level-up (param_1=0) and by chargen (param_1=1, right after
+// Strength is rolled).
 undefined4 recompute_level7_hazard_from_character_level(param_1)
 int param_1;
 
@@ -2241,7 +2256,7 @@ int param_1;
   undefined1 uVar1;
   char cVar2;
   char *iVar3;
-  
+
   iVar3 = DAT_0023be74;
   cVar2 = ordint_divmod(5,(uint)*(byte *)(DAT_00086df8 + 0x3d) * (uint)*(byte *)(DAT_0023be74 + 5)).quot;
   *(char *)(iVar3 + 4) = cVar2 + '\x1e';
@@ -2256,6 +2271,14 @@ int param_1;
   iVar3 = (uint)*(byte *)(DAT_0023be74 + 5) * 0x14;
   *(char *)(DAT_00086df8 + 0x4c) = (char)iVar3;
   *(char *)(DAT_00086df8 + 0x4d) = (char)((uint)iVar3 >> 8);
+  /* BUG FIX: the two stores above landed only in the DAT_0023bca8 struct
+     array, never reaching g_player_max_carry_weight -- the separate
+     flat global check_object_carry_weight and update_carry_weight_display
+     (object_actions.c / hud.c) actually read for the "can I pick this up"
+     check and the HUD burden display. Classic split-symbol decompile gap:
+     this global IS that struct's +0x4c field, just given its own storage.
+     Keep both in sync until/unless they're unified outright. */
+  g_player_max_carry_weight = (ushort)iVar3;
   if (param_1 != 0) {
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
   }
