@@ -1860,6 +1860,9 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
     uVar1 = *(ushort *)(g_despawn_creature_record + uVar8 * 2 + 0x22);
     uw_ord2005_rem_164 = ((int)(uVar5)) % (0x10);
     if (uw_ord2005_rem_164 < (int)(uVar1 & 0xf)) {
+      if (getenv("UW_DEBUG_LOOT"))
+        fprintf(stderr, "[loot] spawn_creature_misc_item_drop slot=%u raw=0x%x id=0x%x\n",
+                uVar8, (unsigned)uVar1, (unsigned)(uVar1 >> 4));
       iVar6 = (char *)spawn_new_object(uVar1 >> 4,0);
       uVar5 = ce_rand();
       uw_ord2005_rem_165 = ((int)(uVar5)) % (2);
@@ -1912,6 +1915,9 @@ ushort * param_1;
   if ((param_1[7] & 0x10) == 0) {
     g_despawn_creature_record = &DAT_001007d0 +
                    (((int)(short)*param_1 & 0xfU) + (short)((*param_1 & 0x30) >> 4) * 0x10) * 0x30;
+    if (getenv("UW_DEBUG_LOOT"))
+      fprintf(stderr, "[loot] spawn_creature_death_loot param_1=%p *param_1=0x%x (id=0x%x)\n",
+              (void *)param_1, (unsigned)*param_1, (unsigned)(*param_1 & 0x1ff));
     spawn_creature_treasure_drop(param_1);
     spawn_creature_special_item_drop(param_1);
     spawn_creature_equipment_drop(param_1);
