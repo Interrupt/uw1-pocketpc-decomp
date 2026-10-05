@@ -378,7 +378,32 @@ char *param_1;
        is allocated at a fixed 0x1080 (4224) bytes -- comfortably larger
        than any of these font files' real data -- so just read up to
        that whole capacity; fread naturally stops at EOF for smaller
-       files. */
+       files.
+
+       BUG FIX: that EOF-stop means a SMALLER font's fread leaves the
+       buffer's tail (past its own real glyph data) completely
+       untouched -- still holding whatever a PREVIOUS, possibly larger,
+       font's select_active_font call wrote there, since DAT_000890a4
+       is one fixed buffer reused across every font switch, never
+       reallocated or cleared. load_font_metrics (just below) always
+       walks a full 128 glyph slots regardless of the new font's real
+       size, so any slot past the new font's own glyph count reads
+       that stale leftover data as its "width" (load_font_metrics) and
+       "bitmap" (unpack_glyph_bitmap, via g_font_glyph_data_base) --
+       garbage, not zero/undefined. Confirmed live via
+       UW_DEBUG_AUTOMAP_NOTE: FONT4X5P.SYS (the automap note font) only
+       defines 97 glyphs (codes 0-0x60, no lowercase), loaded right
+       after the normal, larger FONT5X6P.SYS UI font -- DAT_000890b0's
+       entries for 'w' (0x77) and 'c' (0x63) came back as leftover
+       widths of 240 and 176 pixels (FONT5X6P.SYS's own leftover glyph
+       bytes misread as widths under FONT4X5P.SYS's narrower stride),
+       instantly blowing the note's ~316px width budget and making
+       handle_automap_note_click (automap.c) silently reject -- drop --
+       those keystrokes on every single press, even on a nearly-empty
+       note. Clearing the buffer first makes every undefined slot read
+       as a real, consistent 0 (zero-width, blank glyph) instead of
+       whatever the previous font happened to leave behind. */
+    ce_memset(DAT_000890a4,0,0x1080);
     read_file_handle(iVar3,DAT_000890a4,0x1080);
     CloseHandle(iVar3);
     load_font_metrics();

@@ -160,7 +160,7 @@ for s in $SCRIPTS; do
     # rather than finishing on its own.
     if [ "$rc" -eq 137 ] || [ "$rc" -eq 143 ]; then
       echo "TIMEOUT $rc" >"$result"
-    elif grep -qi "fatal signal\|EXC_BAD_ACCESS\|SIGSEGV\|Segmentation fault\|ERROR: AddressSanitizer\|ERROR: LeakSanitizer" "$log"; then
+    elif grep -qi "fatal signal\|EXC_BAD_ACCESS\|SIGSEGV\|Segmentation fault\|ERROR: AddressSanitizer\|ERROR: LeakSanitizer\|ASSERT FAILED" "$log"; then
       echo "CRASH $rc" >"$result"
     else
       echo "CLEAN $rc" >"$result"

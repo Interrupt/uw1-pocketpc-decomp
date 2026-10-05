@@ -1,0 +1,69 @@
+# Regression test for "Automap note entry drops keystrokes while typing".
+#
+# Root cause (fixed in text.c's select_active_font): DAT_000890a4, the
+# shared glyph-bitmap/width scratch buffer every font load reads into,
+# was never cleared between font switches. A smaller font's fread stops
+# at its own EOF (deliberately, to avoid truncating bigger fonts -- see
+# that function's own earlier comment), leaving the buffer's tail --
+# anything past the new font's own glyph data -- holding whatever a
+# PREVIOUS, larger font left there. load_font_metrics always walks a
+# fixed 128 glyph slots regardless of the new font's real size, so any
+# slot past the real data read that leftover byte as its "width".
+# FONT4X5P.SYS (the automap note font) only defines 97 glyphs (codes
+# 0-0x60, no lowercase) and is loaded right after the normal, wider
+# FONT5X6P.SYS UI font -- so every lowercase code (0x61-0x7a) measured
+# using FONT5X6P.SYS's own leftover glyph bytes misread as widths under
+# FONT4X5P.SYS's narrower stride. Confirmed live: 'w' and 'c' came back
+# as 240px/176px -- instantly blowing the note's ~316px width budget --
+# while 'l'/'o'/'e'/'a'/'s' happened to come back small. handle_automap_
+# note_click's own per-keystroke "does it still fit" check then silently
+# rejected (dropped) just those oversized-seeming characters on every
+# press, turning "lowercase" into "loease" with zero visible error.
+#
+# This script types a string containing ALL of the originally-dropped
+# characters (w, r, c) plus the rest of the alphabet, well past what a
+# single stale leftover byte or two could mask by coincidence.
+#
+# Run with UW_DEBUG_AUTOMAP_NOTE=1 and check the trace's final
+# "[map-note] COMMIT: local_58=..." line against the typed text below,
+# or set UW_ASSERT_AUTOMAP_NOTE_TEXT=thequickbrownfoxjumps to make the
+# binary itself abort() (a CRASH under run-regressions.sh, via its
+# "ASSERT FAILED" log marker) if even one character goes missing:
+#
+#   UW_ASSERT_AUTOMAP_NOTE_TEXT=thequickbrownfoxjumps \
+#     UW_DEBUG_AUTOMAP_NOTE=1 UW_DATA_DIR=./data UW_FAST_SLEEP=1 \
+#     UW_DEMO_FILE=demo_automap_note_longtext_test.txt ./build/uw_dbg
+
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+TYPE Avatar
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+WAIT 2
+OPENMAP
+WAIT 20
+SDLCLICK 300 300
+WAIT 5
+TYPE thequickbrownfoxjumps
+WAIT 5
+ENTER
+WAIT 10
+SCREENSHOT /tmp/automap_note_longtext_committed.bmp

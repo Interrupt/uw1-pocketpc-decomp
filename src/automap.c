@@ -6,6 +6,7 @@
 #include "headers/automap.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* scroll_text_entry_prompt (hud.c)'s "a raw text field is actively reading
  * keystrokes right now" flag -- see its own extern/comment in gx_stub.c,
@@ -1005,6 +1006,26 @@ LAB_0001739c:
   g_text_input_active = 0;
   select_active_font(s_font5x6p_sys_0008430c);
   if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: local_58=\"%s\" (empty=%d)\n", local_58, local_58[0]=='\0');
+  /* Regression guard (opt-in, zero cost unless set): UW_ASSERT_AUTOMAP_NOTE_TEXT=<expected>
+     fails loudly if the committed note text doesn't exactly match what the
+     demo script actually typed -- catches silent keystroke drops (see the
+     "Automap note entry drops keystrokes while typing" bug: a stale glyph-
+     width-table entry left over from a previously-loaded, larger font made
+     specific characters measure as absurdly wide under the automap's own
+     narrow note font, FONT4X5P.SYS, so handle_automap_note_click's own
+     "does it still fit" width check silently rejected them -- fixed at the
+     root in select_active_font/text.c, which now clears the shared glyph
+     buffer before every font load instead of leaving a previous font's
+     tail bytes behind for the new, possibly-smaller font to misread as
+     widths) without needing a human to read a screenshot or grep a trace
+     line by hand. */
+  { const char *_expect = getenv("UW_ASSERT_AUTOMAP_NOTE_TEXT");
+    if (_expect && strcmp(_expect, local_58) != 0) {
+      fprintf(stderr, "[map-note] ASSERT FAILED: expected note text \"%s\" but committed \"%s\"\n", _expect, local_58);
+      fflush(stderr);
+      abort();
+    }
+  }
   if (local_58[0] != '\0') {
     DAT_000b99c4 = 1;
     pcVar5 = local_58;
