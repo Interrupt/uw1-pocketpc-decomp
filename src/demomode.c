@@ -895,6 +895,37 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strcasecmp(p, "CASTALLSPELLS") == 0) {
+        /* Diagnostic/regression hook for the "Spell crashes - test each"
+         * bug report: directly drives dispatch_special_action (the real
+         * per-spell effect dispatcher cast_spell_from_rune_combo calls
+         * after its mana/skill checks pass) once for each of the 48
+         * readied-spell entries in the real spell table
+         * (DAT_00087530_backing, see hud.c's own comment on its layout:
+         * 4-byte-stride records, byte 0 >> 3 = action type, byte 3 =
+         * action parameter), bypassing rune-matching/mana/skill-check UI
+         * entirely so every spell's effect handler gets exercised in
+         * one deterministic pass regardless of the player's actual
+         * reagents/mana/skill. Target and actor are both g_player_object,
+         * matching cast_spell_from_rune_combo's own real call shape. */
+        extern ushort *g_player_object;
+        extern undefined DAT_00087530_backing[212];
+        extern unsigned int dispatch_special_action(unsigned int type, unsigned int param,
+                                                      uintptr_t actor, intptr_t target);
+        int i;
+        for (i = 0; i < 48; i++) {
+            unsigned char byte0 = DAT_00087530_backing[i * 4];
+            unsigned char byte3 = DAT_00087530_backing[i * 4 + 3];
+            unsigned int type = byte0 >> 3;
+            fprintf(stderr, "[castallspells] spell %d: type=%u param=%u\n", i, type, byte3);
+            dispatch_special_action(type, byte3, (uintptr_t)g_player_object, (intptr_t)g_player_object);
+            fprintf(stderr, "[castallspells] spell %d: survived\n", i);
+        }
+        fprintf(stderr, "[castallspells] all 48 spells dispatched\n");
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     if (strcasecmp(p, "DUMPTILEOBJS") == 0) {
         /* Diagnostic: walk the current player tile's raw object chain
          * (the same tilemap_lookup(row,col)+2 -> resolve_object_link ->
