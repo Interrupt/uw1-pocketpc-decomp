@@ -672,6 +672,7 @@ undefined1 * param_1;
 
 
 
+// was FUN_00057604
 void wait_for_click_release(param_1)
 int param_1;
 
@@ -723,6 +724,7 @@ undefined4 next_input_event()
 
 
 
+// was FUN_00057ff0
 void update_mouse_state()
 
 {
@@ -1291,6 +1293,7 @@ LAB_00077d70:
    path real keyboard input already uses. Taps outside that strip instead
    set DAT_00204844, a general click-pending flag consumed elsewhere
    (main game world / inventory click handling, not chargen). */
+// was FUN_00077dd0
 undefined4 handle_mouse_message(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
@@ -2071,6 +2074,7 @@ void dispatch_sticky_mode_handlers()
 }
 
 
+// was FUN_00057888
 int poll_mouse_event()
 
 {

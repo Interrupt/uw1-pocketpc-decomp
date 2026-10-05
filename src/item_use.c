@@ -193,6 +193,7 @@ void unready_weapon()
 
 
 
+// was FUN_00046a94
 void attach_picked_up_object_to_cursor(param_1)
 ushort * param_1;
 
@@ -281,6 +282,7 @@ ushort * param_1;
 
 
 
+// was FUN_0004a69c
 undefined4 drop_held_object_near_player(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -825,6 +827,7 @@ LAB_0007b254:
 
 
 
+// was FUN_0007c93c
 void try_combine_or_stow_object(param_1,param_2,param_3)
 /* Was `int param_1; undefined4 param_2;` -- both real object pointers
    (matching check_object_combination's own param_1/param_2 types, forwarded to it
@@ -894,6 +897,7 @@ int param_3;
 
 
 
+// was FUN_00079984
 ushort *use_object_on_target(param_1,param_2,param_3)
 /* Was `int param_1` -- every call site passes a real object pointer
    (g_player_object, the player object, at most sites), truncating it to
@@ -3378,6 +3382,7 @@ ushort param_5;
    relying on two separate locals happening to land adjacently on the
    stack (true in the original 32-bit ARM build, not guaranteed by a
    modern compiler). */
+// was FUN_00046b88
 undefined4 load_armor_overlay_frame(param_1,param_2)
 int param_1;
 undefined4 param_2;
@@ -3400,6 +3405,7 @@ undefined4 param_2;
 
 
 
+// was FUN_00046bfc
 void redraw_armor_overlay_widgets()
 
 {
@@ -3481,6 +3487,7 @@ void redraw_armor_overlay_widgets()
 
 
 
+// was FUN_00046ff4
 void swap_cursor_and_slot_item(param_1,param_2)
 undefined4 param_1;
 int param_2;
@@ -3602,6 +3609,7 @@ undefined1 * param_1;
 }
 
 
+// was FUN_0004506c
 undefined4 place_object_in_backpack_slot(param_1,param_2)
 /* Was `undefined4 param_1` -- same 64-bit-pointer-truncated-through-a-
    32-bit-typedef-parameter bug as place_held_item_in_empty_slot's identical fix just
@@ -3768,6 +3776,7 @@ ushort *param_1;
 
 
 
+// was FUN_000472c4
 uint check_object_fits_in_slot(param_1,param_2)
 ushort * param_1;
 undefined4 param_2;
@@ -4082,6 +4091,7 @@ LAB_000479c0:
 
 
 
+// was FUN_00047a7c
 void handle_backpack_slot_click(param_1)
 short param_1;
 
@@ -4112,6 +4122,7 @@ short param_1;
 
 
 
+// was FUN_00047ae0
 undefined4 place_held_item_in_empty_slot(param_1,param_2)
 /* Was `undefined4 param_1` -- a 64-bit pointer truncates to its low 32
    bits the moment a caller passes it to a function whose own signature
@@ -4161,6 +4172,7 @@ short param_2;
 
 // WARNING: Removing unreachable block (ram,0x00047f40)
 
+// was FUN_00047cfc
 undefined4 handle_backpack_slot_interact(param_1,param_2)
 ushort * param_1;
 uint param_2;
@@ -4292,6 +4304,7 @@ uint param_2;
 }
 
 
+// was FUN_00042870
 void handle_object_drop_target(param_1)
 short param_1;
 

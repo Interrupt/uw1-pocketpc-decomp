@@ -1,0 +1,866 @@
+{
+ "emit_floor_texture_select": {
+  "original": "FUN_0005e12c",
+  "chain": [
+   "emit_floor_texture_select"
+  ],
+  "commit": "c7f94fb"
+ },
+ "build_creature_look_text": {
+  "original": "FUN_00049404",
+  "chain": [
+   "build_creature_look_text"
+  ],
+  "commit": "e831377"
+ },
+ "npc_set_walk_target": {
+  "original": "FUN_0002e454",
+  "chain": [
+   "npc_set_walk_target"
+  ],
+  "commit": "e178b98"
+ },
+ "babl_alloc": {
+  "original": "FUN_00018ac8",
+  "chain": [
+   "babl_alloc"
+  ],
+  "commit": "e15a7c2"
+ },
+ "babl_free": {
+  "original": "FUN_00018ccc",
+  "chain": [
+   "babl_free"
+  ],
+  "commit": "e15a7c2"
+ },
+ "babl_resize": {
+  "original": "FUN_00018f34",
+  "chain": [
+   "babl_resize"
+  ],
+  "commit": "e15a7c2"
+ },
+ "load_npc_conversation_variables": {
+  "original": "FUN_0001927c",
+  "chain": [
+   "load_npc_conversation_variables"
+  ],
+  "commit": "07bca3e"
+ },
+ "babl_expand_string_refs": {
+  "original": "FUN_00019aa0",
+  "chain": [
+   "babl_expand_string_refs"
+  ],
+  "commit": "14a870b"
+ },
+ "build_babl_symbol_table": {
+  "original": "FUN_00019e58",
+  "chain": [
+   "build_babl_symbol_table"
+  ],
+  "commit": "e15a7c2"
+ },
+ "start_npc_conversation": {
+  "original": "FUN_00028c00",
+  "chain": [
+   "start_npc_conversation"
+  ],
+  "commit": "e15a7c2"
+ },
+ "sync_conv_vars_from_npc": {
+  "original": "FUN_0002a8e0",
+  "chain": [
+   "sync_conv_vars_from_npc"
+  ],
+  "commit": "59c29b8"
+ },
+ "sync_conv_vars_to_npc": {
+  "original": "FUN_0002af88",
+  "chain": [
+   "sync_conv_vars_to_npc"
+  ],
+  "commit": "59c29b8"
+ },
+ "load_npc_conversation_record": {
+  "original": "FUN_00019470",
+  "chain": [
+   "load_npc_conversation_record"
+  ],
+  "commit": "e15a7c2"
+ },
+ "save_npc_conversation_variables": {
+  "original": "FUN_0001a5bc",
+  "chain": [
+   "save_npc_conversation_variables"
+  ],
+  "commit": "07bca3e"
+ },
+ "blit_object_sprite_by_frame": {
+  "original": "FUN_00040918",
+  "chain": [
+   "blit_object_sprite_by_frame"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "character_generator_loop": {
+  "original": "FUN_00024e24",
+  "chain": [
+   "character_generator_loop"
+  ],
+  "commit": "206a870"
+ },
+ "run_character_generator": {
+  "original": "FUN_00025608",
+  "chain": [
+   "run_character_generator"
+  ],
+  "commit": "d97a671"
+ },
+ "character_generator_start": {
+  "original": "FUN_000259a0",
+  "chain": [
+   "character_generator_entry",
+   "character_generator_start"
+  ],
+  "commit": "d97a671"
+ },
+ "character_generator_touch_select": {
+  "original": "FUN_0002454c",
+  "chain": [
+   "character_generator_touch_select"
+  ],
+  "commit": "bdd8463"
+ },
+ "release_container_reference": {
+  "original": "FUN_00042a44",
+  "chain": [
+   "release_container_reference"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "free_open_container_chain": {
+  "original": "FUN_00042aa8",
+  "chain": [
+   "free_open_container_chain"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "close_backpack_container": {
+  "original": "FUN_00042b38",
+  "chain": [
+   "close_backpack_container"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "leave_nested_container_level": {
+  "original": "FUN_00042c5c",
+  "chain": [
+   "leave_nested_container_level"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "refresh_container_view": {
+  "original": "FUN_00042d70",
+  "chain": [
+   "refresh_container_view"
+  ],
+  "commit": "dcd7396"
+ },
+ "repopulate_container_grid_slots": {
+  "original": "FUN_00042e30",
+  "chain": [
+   "repopulate_container_grid_slots"
+  ],
+  "commit": "dcd7396"
+ },
+ "open_backpack_container": {
+  "original": "FUN_00043100",
+  "chain": [
+   "open_backpack_container"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "auto_place_in_container": {
+  "original": "FUN_00043734",
+  "chain": [
+   "auto_place_in_container"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "sum_container_weight": {
+  "original": "FUN_00043d40",
+  "chain": [
+   "sum_container_weight"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "get_equipped_item_at_slot": {
+  "original": "FUN_00045054",
+  "chain": [
+   "get_equipped_item_at_slot"
+  ],
+  "commit": "5a89323"
+ },
+ "app_main_loop": {
+  "original": "FUN_00077004",
+  "chain": [
+   "app_main_loop"
+  ],
+  "commit": "d97a671"
+ },
+ "main_menu_loop": {
+  "original": "FUN_0006a3d8",
+  "chain": [
+   "main_menu_loop"
+  ],
+  "commit": "d97a671"
+ },
+ "spin_view_full_rotation": {
+  "original": "FUN_00067f1c",
+  "chain": [
+   "spin_view_full_rotation"
+  ],
+  "commit": "2d5a7ac"
+ },
+ "poll_menu_pointer_selection": {
+  "original": "FUN_0006ac38",
+  "chain": [
+   "poll_menu_pointer_selection"
+  ],
+  "commit": "55c7339"
+ },
+ "set_draw_color": {
+  "original": "FUN_00011694",
+  "chain": [
+   "set_draw_color"
+  ],
+  "commit": "94f6fc0"
+ },
+ "rect_fill_or_save_restore": {
+  "original": "FUN_00011774",
+  "chain": [
+   "rect_fill_or_save_restore"
+  ],
+  "commit": "94f6fc0"
+ },
+ "bitmap_blit_to_framebuffer": {
+  "original": "FUN_00011e5c",
+  "chain": [
+   "bitmap_blit",
+   "bitmap_blit_to_framebuffer"
+  ],
+  "commit": "206a870"
+ },
+ "screen_backup_save": {
+  "original": "FUN_00011478",
+  "chain": [
+   "screen_backup_save"
+  ],
+  "commit": "29b0e24"
+ },
+ "screen_backup_restore": {
+  "original": "FUN_000114e4",
+  "chain": [
+   "screen_backup_restore"
+  ],
+  "commit": "29b0e24"
+ },
+ "screen_backup_restore_rect": {
+  "original": "FUN_0001156c",
+  "chain": [
+   "screen_backup_restore_rect"
+  ],
+  "commit": "29b0e24"
+ },
+ "build_shade_lut": {
+  "original": "FUN_00014294",
+  "chain": [
+   "build_shade_lut"
+  ],
+  "commit": "cfe8769"
+ },
+ "set_ambient_bias_without_light": {
+  "original": "FUN_0001433c",
+  "chain": [
+   "set_ambient_bias_without_light"
+  ],
+  "commit": "5a89323"
+ },
+ "expand_pals_bytes": {
+  "original": "FUN_00022abc",
+  "chain": [
+   "expand_pals_bytes"
+  ],
+  "commit": "cfe8769"
+ },
+ "build_rgb565_palette": {
+  "original": "FUN_00022b54",
+  "chain": [
+   "build_rgb565_palette"
+  ],
+  "commit": "cfe8769"
+ },
+ "palette_cycle_range": {
+  "original": "FUN_000259c0",
+  "chain": [
+   "palette_cycle_range"
+  ],
+  "commit": "cfe8769"
+ },
+ "poll_dungeon_movement_keys": {
+  "original": "FUN_0007830c",
+  "chain": [
+   "draw_stats_panel_content",
+   "to",
+   "looks",
+   "frame",
+   "every",
+   "it",
+   "background",
+   "the",
+   "poll_dungeon_movement_keys"
+  ],
+  "commit": "82a7be7"
+ },
+ "redraw_hud_panels": {
+  "original": "FUN_0006cca8",
+  "chain": [
+   "redraw_hud_panels"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "tick_hud_panel_transition": {
+  "original": "FUN_0006e130",
+  "chain": [
+   "tick_hud_panel_transition"
+  ],
+  "commit": "82a7be7"
+ },
+ "redraw_active_hud_panel": {
+  "original": "FUN_0006ed0c",
+  "chain": [
+   "redraw_active_hud_panel"
+  ],
+  "commit": "82a7be7"
+ },
+ "init_cursor_subsystem": {
+  "original": "FUN_00056f28",
+  "chain": [
+   "init_cursor_subsystem"
+  ],
+  "commit": "b8812de"
+ },
+ "cursor_show_idle_tick": {
+  "original": "FUN_000570b4",
+  "chain": [
+   "cursor_show_idle_tick"
+  ],
+  "commit": "b8812de"
+ },
+ "draw_idle_mouse_cursor": {
+  "original": "FUN_0005857c",
+  "chain": [
+   "draw_idle_mouse_cursor"
+  ],
+  "commit": "b8812de"
+ },
+ "toggle_stats_panel": {
+  "original": "FUN_0003def4",
+  "chain": [
+   "toggle_stats_panel"
+  ],
+  "commit": "82a7be7"
+ },
+ "reset_cursor_confine_rect": {
+  "original": "FUN_000577f0",
+  "chain": [
+   "reset_cursor_confine_rect"
+  ],
+  "commit": "b8812de"
+ },
+ "set_cursor_confine_rect": {
+  "original": "FUN_00057788",
+  "chain": [
+   "set_cursor_confine_rect"
+  ],
+  "commit": "b8812de"
+ },
+ "wait_for_click_release": {
+  "original": "FUN_00057604",
+  "chain": [
+   "wait_for_click_release"
+  ],
+  "commit": "dcd7396"
+ },
+ "update_mouse_state": {
+  "original": "FUN_00057ff0",
+  "chain": [
+   "update_mouse_state"
+  ],
+  "commit": "bdd8463"
+ },
+ "handle_mouse_message": {
+  "original": "FUN_00077dd0",
+  "chain": [
+   "handle_mouse_message"
+  ],
+  "commit": "b8812de"
+ },
+ "poll_mouse_event": {
+  "original": "FUN_00057888",
+  "chain": [
+   "poll_mouse_event"
+  ],
+  "commit": "bdd8463"
+ },
+ "handle_inventory_panel_normal_click": {
+  "original": "FUN_0003f7e0",
+  "chain": [
+   "handle_inventory_panel_normal_click"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "inventory_panel_click_region": {
+  "original": "FUN_0003f95c",
+  "chain": [
+   "inventory_panel_click_region"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "handle_inventory_panel_click": {
+  "original": "FUN_00046698",
+  "chain": [
+   "handle_inventory_panel_click"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "redraw_inventory_widget": {
+  "original": "FUN_00046eec",
+  "chain": [
+   "redraw_inventory_widget"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "redraw_inventory_widget_range": {
+  "original": "FUN_00048198",
+  "chain": [
+   "redraw_inventory_widget_range"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "hit_test_inventory_widget": {
+  "original": "FUN_000485f4",
+  "chain": [
+   "hit_test_inventory_widget"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "attach_picked_up_object_to_cursor": {
+  "original": "FUN_00046a94",
+  "chain": [
+   "attach_picked_up_object_to_cursor"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "drop_held_object_near_player": {
+  "original": "FUN_0004a69c",
+  "chain": [
+   "drop_held_object_near_player"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "try_combine_or_stow_object": {
+  "original": "FUN_0007c93c",
+  "chain": [
+   "try_combine_or_stow_object"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "use_object_on_target": {
+  "original": "FUN_00079984",
+  "chain": [
+   "use_object_on_target"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "load_armor_overlay_frame": {
+  "original": "FUN_00046b88",
+  "chain": [
+   "load_armor_overlay_frame"
+  ],
+  "commit": "1162137"
+ },
+ "redraw_armor_overlay_widgets": {
+  "original": "FUN_00046bfc",
+  "chain": [
+   "redraw_armor_overlay_widgets"
+  ],
+  "commit": "1162137"
+ },
+ "swap_cursor_and_slot_item": {
+  "original": "FUN_00046ff4",
+  "chain": [
+   "swap_cursor_and_slot_item"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "place_object_in_backpack_slot": {
+  "original": "FUN_0004506c",
+  "chain": [
+   "place_object_in_backpack_slot"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "check_object_fits_in_slot": {
+  "original": "FUN_000472c4",
+  "chain": [
+   "check_object_fits_in_slot"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "handle_backpack_slot_click": {
+  "original": "FUN_00047a7c",
+  "chain": [
+   "handle_backpack_slot_click"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "place_held_item_in_empty_slot": {
+  "original": "FUN_00047ae0",
+  "chain": [
+   "place_held_item_in_empty_slot"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "handle_backpack_slot_interact": {
+  "original": "FUN_00047cfc",
+  "chain": [
+   "handle_backpack_slot_interact"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "handle_object_drop_target": {
+  "original": "FUN_00042870",
+  "chain": [
+   "handle_object_drop_target"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "enter_dungeon_view": {
+  "original": "FUN_0003bd50",
+  "chain": [
+   "enter_dungeon_view"
+  ],
+  "commit": "cfe8769"
+ },
+ "init_level_object_arena": {
+  "original": "FUN_00049960",
+  "chain": [
+   "init_level_object_arena"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "load_level_object_table": {
+  "original": "FUN_000499c0",
+  "chain": [
+   "load_level_object_table"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "reset_level_object_arena": {
+  "original": "FUN_00052960",
+  "chain": [
+   "reset_level_object_arena"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "load_level": {
+  "original": "FUN_0006bc28",
+  "chain": [
+   "load_level"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "entry": {
+  "original": "FUN_0006edfc",
+  "chain": [
+   "in",
+   "is",
+   "the",
+   "same",
+   "this",
+   "repeatedly",
+   "fixed",
+   "with",
+   "entry"
+  ],
+  "commit": "eeab884"
+ },
+ "collision_flags_to_locomotion_code": {
+  "original": "FUN_0005a630",
+  "chain": [
+   "collision_flags_to_locomotion_code"
+  ],
+  "commit": "78ac060"
+ },
+ "check_object_carry_weight": {
+  "original": "FUN_00046358",
+  "chain": [
+   "check_object_carry_weight"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "dispatch_object_action_dup": {
+  "original": "FUN_00048764",
+  "chain": [
+   "dispatch_object_action_dup"
+  ],
+  "commit": "e831377"
+ },
+ "check_object_combination": {
+  "original": "FUN_0007bf38",
+  "chain": [
+   "check_object_combination"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "spawn_and_prime_spell_effect_object": {
+  "original": "FUN_00074150",
+  "chain": [
+   "spawn_and_prime_spell_effect_object"
+  ],
+  "commit": "47399b1"
+ },
+ "format_object_display_name": {
+  "original": "FUN_00078bfc",
+  "chain": [
+   "format_object_display_name"
+  ],
+  "commit": "e831377"
+ },
+ "check_scheduled_object_location_callback": {
+  "original": "FUN_00072268",
+  "chain": [
+   "check_scheduled_object_location_callback"
+  ],
+  "commit": "c57a811"
+ },
+ "get_scanned_object_class_effect_ptr": {
+  "original": "FUN_000528a8",
+  "chain": [
+   "get_scanned_object_class_effect_ptr"
+  ],
+  "commit": "ac974c0"
+ },
+ "get_object_record_by_slot_index": {
+  "original": "FUN_000535fc",
+  "chain": [
+   "get_object_record_by_slot_index"
+  ],
+  "commit": "4d557ea"
+ },
+ "active_mobile_list_add": {
+  "original": "FUN_00053750",
+  "chain": [
+   "active_mobile_list_add"
+  ],
+  "commit": "dd0b331"
+ },
+ "active_mobile_list_remove": {
+  "original": "FUN_00053774",
+  "chain": [
+   "active_mobile_list_remove"
+  ],
+  "commit": "dd0b331"
+ },
+ "GetTickCount": {
+  "original": "FUN_0002294c",
+  "chain": [
+   "read_realtime_clock_units",
+   "Ordinal_535",
+   "GetTickCount"
+  ],
+  "commit": "f530c29"
+ },
+ "ce_rand": {
+  "original": "FUN_00022910",
+  "chain": [
+   "rand_below",
+   "Ordinal_1053",
+   "ce_rand"
+  ],
+  "commit": "fa89cd0"
+ },
+ "ordint_divmod": {
+  "original": "FUN_00053514",
+  "chain": [
+   "resolve_object_link",
+   "char",
+   "ushort",
+   "int",
+   "undefined4",
+   "undefined1",
+   "0x100",
+   "Ordinal_2005",
+   "ordint_divmod"
+  ],
+  "commit": "b7bc9f5"
+ },
+ "refresh_player_equipment_effects": {
+  "original": "FUN_000667cc",
+  "chain": [
+   "refresh_player_equipment_effects"
+  ],
+  "commit": "5a89323"
+ },
+ "compute_object_weight": {
+  "original": "FUN_0006674c",
+  "chain": [
+   "compute_object_weight"
+  ],
+  "commit": "5a89323"
+ },
+ "draw_stats_panel_content": {
+  "original": "FUN_0007830c",
+  "chain": [
+   "draw_stats_panel_content"
+  ],
+  "commit": "82a7be7"
+ },
+ "refresh_stats_panel_if_active": {
+  "original": "FUN_00078550",
+  "chain": [
+   "refresh_stats_panel_if_active"
+  ],
+  "commit": "82a7be7"
+ },
+ "alloc_flip_grtile_slot": {
+  "original": "FUN_0004994c",
+  "chain": [
+   "alloc_flip_grtile_slot"
+  ],
+  "commit": "0f69eed"
+ },
+ "resolve_flip_grtile_slot": {
+  "original": "FUN_00049954",
+  "chain": [
+   "resolve_flip_grtile_slot"
+  ],
+  "commit": "0f69eed"
+ },
+ "load_armor_variant_tables": {
+  "original": "FUN_00041e40",
+  "chain": [
+   "load_armor_variant_tables"
+  ],
+  "commit": "478eb82"
+ },
+ "load_pals_bank": {
+  "original": "FUN_00040e24",
+  "chain": [
+   "load_pals_bank"
+  ],
+  "commit": "cfe8769"
+ },
+ "set_palette_bank": {
+  "original": "FUN_00040efc",
+  "chain": [
+   "set_palette_bank"
+  ],
+  "commit": "cfe8769"
+ },
+ "load_light_food_effect_tables": {
+  "original": "FUN_0004a02c",
+  "chain": [
+   "load_light_food_effect_tables"
+  ],
+  "commit": "ac974c0"
+ },
+ "read_archive_entry": {
+  "original": "FUN_0001613c",
+  "chain": [
+   "read_archive_entry"
+  ],
+  "commit": "7fb2d8e"
+ },
+ "handle_save_load_menu_action": {
+  "original": "FUN_0006bfec",
+  "chain": [
+   "handle_save_load_menu_action"
+  ],
+  "commit": "db3e647"
+ },
+ "ensure_save_directory_exists": {
+  "original": "FUN_0006c560",
+  "chain": [
+   "ensure_save_directory_exists"
+  ],
+  "commit": "db3e647"
+ },
+ "visibility_ray_step_forward": {
+  "original": "FUN_0005c0c4",
+  "chain": [
+   "reaction_advance_tile",
+   "visibility_ray_step_forward"
+  ],
+  "commit": "346a595"
+ },
+ "visibility_ray_step_backward": {
+  "original": "FUN_0005c16c",
+  "chain": [
+   "reaction_retreat_tile",
+   "visibility_ray_step_backward"
+  ],
+  "commit": "346a595"
+ },
+ "compute_visibility_ray_offset": {
+  "original": "FUN_0005c214",
+  "chain": [
+   "compute_reaction_offset",
+   "compute_visibility_ray_offset"
+  ],
+  "commit": "346a595"
+ },
+ "extend_visibility_ray_row": {
+  "original": "FUN_0005c70c",
+  "chain": [
+   "reactions_should_merge",
+   "reaction_advance_row",
+   "extend_visibility_ray_row"
+  ],
+  "commit": "346a595"
+ },
+ "advance_visibility_ray": {
+  "original": "FUN_0005cacc",
+  "chain": [
+   "process_reaction_entry",
+   "advance_visibility_ray"
+  ],
+  "commit": "346a595"
+ },
+ "merge_adjacent_visibility_rays": {
+  "original": "FUN_0005cf74",
+  "chain": [
+   "merge_adjacent_reactions",
+   "merge_adjacent_visibility_rays"
+  ],
+  "commit": "346a595"
+ },
+ "run_visibility_flood": {
+  "original": "FUN_0005d13c",
+  "chain": [
+   "process_reaction_queue",
+   "run_visibility_flood"
+  ],
+  "commit": "346a595"
+ },
+ "open_existing_file_rw_alt": {
+  "original": "FUN_00022810",
+  "chain": [
+   "open_existing_file_rw_alt"
+  ],
+  "commit": "777436c"
+ }
+}

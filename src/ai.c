@@ -1111,6 +1111,7 @@ LAB_00034a98:
 
 
 
+// was FUN_00049404
 void build_creature_look_text(param_1,param_2)
 ushort * param_1;
 char *param_2;   /* was undefined4 -- the caller's stack description buffer
@@ -4835,6 +4836,7 @@ undefined2 param_3;
 
 // was npc_set_walk_target -- write an NPC's goal (byte 0xf bits 0-5), goal target
 // (bits 6-11) and attitude (byte 0xd bits 4-7), flagging the change in byte 0x18
+// was FUN_0002e454
 void npc_set_walk_target(param_1,param_2,param_3)
 byte param_1;
 uint param_2;

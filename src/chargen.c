@@ -116,6 +116,7 @@ static char s_chrbtns_00084ef8[] = "chrbtns";
 
 
 // The main character-generation state machine: steps through portrait/gender/skills/stats/name/confirm, one screen per state.
+// was FUN_00024e24
 undefined4 character_generator_loop(param_1,param_2,param_3)
 char *param_1;
 char *param_2;
@@ -427,6 +428,7 @@ LAB_00025468:
 
 
 // Loads CHRGEN.DAT/CHARGEN.BYT/fonts/palette, builds the per-field record array, and drives character_generator_loop's state machine.
+// was FUN_00025608
 int run_character_generator()
 
 {
@@ -589,6 +591,7 @@ int run_character_generator()
 
 
 // Thin wrapper that enters/exits a critical section around run_character_generator.
+// was FUN_000259a0
 undefined4 character_generator_start()
 
 {
@@ -1323,6 +1326,7 @@ byte param_3;
 
 
 // Translates a touch/shortcut-key position into a selected item index for the current chargen field.
+// was FUN_0002454c
 uint character_generator_touch_select(param_1,param_2)
 short * param_1;
 uint param_2;

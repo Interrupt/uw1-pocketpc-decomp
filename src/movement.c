@@ -2835,6 +2835,7 @@ LAB_0005abe4:
 // animation and physics. Always called right after sweep_collision_flags()
 // with its return value (both call sites had this dropped by Ghidra --
 // fixed this session, see [[water-wading-and-wall-slide-findings]]).
+// was FUN_0005a630
 uint collision_flags_to_locomotion_code(param_1)
 short param_1;
 

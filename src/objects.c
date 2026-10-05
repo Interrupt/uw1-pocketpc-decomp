@@ -1332,6 +1332,7 @@ undefined4 load_object_catalog_data()
    function returns a POINTER into one of the runtime tables class2_variant_effect_table_lookup
    and friends compute, and on a 64-bit build `undefined4` silently drops
    the pointer's upper 32 bits, handing the caller a wild address. */
+// was FUN_000528a8
 void *get_scanned_object_class_effect_ptr()
 
 {
@@ -1610,6 +1611,7 @@ int param_3;
    (e.g. `puVar4 = (undefined1 *)get_object_record_by_slot_index()`), so they got a
    truncated pointer back regardless of their own care. Confirmed as a
    crash source in reset_npc_path_cache (level-load object-table reset). */
+// was FUN_000535fc
 void *get_object_record_by_slot_index(param_1)
 short param_1;
 
@@ -1718,6 +1720,7 @@ char *param_1;
 
 
 // was active_mobile_list_add
+// was FUN_00053750
 void active_mobile_list_add(param_1)
 undefined1 param_1;
 
@@ -1730,6 +1733,7 @@ undefined1 param_1;
 
 
 // was active_mobile_list_remove
+// was FUN_00053774
 void active_mobile_list_remove(param_1)
 char param_1;
 

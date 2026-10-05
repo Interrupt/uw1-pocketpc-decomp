@@ -1334,6 +1334,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
 
 
+// was FUN_00018ac8
 uint *babl_alloc(param_1)
 int param_1;
 
@@ -1363,6 +1364,7 @@ int param_1;
 
 
 
+// was FUN_00018ccc
 void babl_free(param_1)
 intptr_t param_1;
 /* HACK: matching replacement for babl_alloc -- see its own comment.
@@ -1387,6 +1389,7 @@ intptr_t param_1;
 
 
 
+// was FUN_00018f34
 intptr_t babl_resize(param_1,param_2)
 intptr_t param_1;
 int param_2;
@@ -1415,6 +1418,7 @@ int param_2;
 
 
 
+// was FUN_0001927c
 void load_npc_conversation_variables(param_1,param_2)
 intptr_t param_1; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer its own caller passes (load_npc_conversation_record); dormant (silently never reached the write) until the scan-alignment fix in this same function let execution actually get to read_file_handle(iVar4,param_1,...) below, which then crashed writing through the truncated address
 short param_2;
@@ -1738,6 +1742,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
 
 
+// was FUN_00019aa0
 char *babl_expand_string_refs(param_1)
 char * param_1;
 
@@ -1924,6 +1929,7 @@ LAB_00019cc0:
 
 
 
+// was FUN_00019e58
 undefined4 build_babl_symbol_table()
 
 {
@@ -2754,6 +2760,7 @@ void enter_conversation_mode_screen()
 
 
 
+// was FUN_00028c00
 void start_npc_conversation()
 
 {
@@ -3564,6 +3571,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
    is the real object-record/console-variable binding the "npc_xhome"/
    "npc_yhome" evidence for uw_object_hdr_t's quality/owner fields (see
    struct-recovery-plan.md) came from. */
+// was FUN_0002a8e0
 void sync_conv_vars_from_npc(param_1)
 ushort * param_1;
 
@@ -3709,6 +3717,7 @@ ushort * param_1;
    tool. Return value reflects whether npc_attitude ended up 0 after the
    script ran; the caller uses it (OR'd with DAT_001007b4) to decide
    whether to skip a post-conversation delay. */
+// was FUN_0002af88
 bool sync_conv_vars_to_npc(param_1)
 char *param_1;
 
@@ -3780,6 +3789,7 @@ char *param_1;
 
 
 
+// was FUN_00019470
 undefined4 load_npc_conversation_record(param_1,param_2)
 char *param_1;
 undefined1 *param_2;
@@ -3884,6 +3894,7 @@ undefined1 *param_2;
 
 
 
+// was FUN_0001a5bc
 void save_npc_conversation_variables()
 
 {

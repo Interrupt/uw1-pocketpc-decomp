@@ -126,6 +126,7 @@ static undefined2 DAT_000879b8_backing[4096];
 
 
 
+// was FUN_00011694
 void set_draw_color(param_1)
 undefined2 param_1;
 
@@ -139,6 +140,7 @@ undefined2 param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// was FUN_00011774
 void rect_fill_or_save_restore(param_1,param_2,param_3,param_4)
 ushort param_1;
 uint param_2;
@@ -314,6 +316,7 @@ short param_4;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// was FUN_00011e5c
 void bitmap_blit_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 ushort param_1;
 ushort param_2;
@@ -454,6 +457,7 @@ short param_7;
 // background here, draws a panel over it leaving untouched areas in the
 // transparent key color, then calls screen_backup_restore[_rect] to pour
 // the saved pixels back into those gaps.
+// was FUN_00011478
 undefined4 screen_backup_save()
 
 {
@@ -499,6 +503,7 @@ undefined4 screen_backup_save()
 // Whole-screen composite: every framebuffer pixel still equal to
 // g_transparent_screen_color is refilled from the screen_backup_save
 // snapshot (DAT_000891b0), then the frame is presented.
+// was FUN_000114e4
 void screen_backup_restore()
 
 {
@@ -530,6 +535,7 @@ void screen_backup_restore()
 
 // screen_backup_restore bounded to the rect (param_1,param_2)-(param_3,
 // param_4); unlike the full-screen version it does not present.
+// was FUN_0001156c
 void screen_backup_restore_rect(param_1,param_2,param_3,param_4)
 uint param_1;
 uint param_2;
@@ -770,6 +776,7 @@ undefined4 render_dungeon_view()
 
 
 // was build_shade_lut -- build the 160-entry distance-shade LUT DAT_000b5638
+// was FUN_00014294
 void build_shade_lut()
 
 {
@@ -821,6 +828,7 @@ char param_1;
 
 
 
+// was FUN_0001433c
 void set_ambient_bias_without_light(param_1)
 char param_1;
 
@@ -836,6 +844,7 @@ char param_1;
 
 // was expand_pals_bytes -- expand PALS.DAT 6-bit channel bytes (param_2) to 8-bit into
 // param_1; param_3!=0 copies unscaled
+// was FUN_00022abc
 void expand_pals_bytes(param_1,param_2,param_3)
 char *param_1;
 char * param_2;
@@ -885,6 +894,7 @@ int param_3;
 
 // was build_rgb565_palette -- build g_palette_rgb565 from an RGB buffer (param_1; NULL =
 // built-in default). param_2==0 also builds the 21-level shade ramp DAT_00248418.
+// was FUN_00022b54
 void build_rgb565_palette(param_1,param_2)
 undefined1 * param_1;
 short param_2;
@@ -1044,6 +1054,7 @@ short param_2;
 // bank 0 -- see mode-icon-and-hud-icon-flicker-fixes memory). Whatever
 // drives ordinary per-tile water/lava/wall-torch animation during normal
 // walking, if the original game has one at all, is still unfound.
+// was FUN_000259c0
 void palette_cycle_range(param_1,param_2,param_3)
 uint param_1;
 uint param_2;

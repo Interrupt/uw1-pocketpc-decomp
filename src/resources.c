@@ -393,6 +393,7 @@ void load_door_frames()
    and the g_grtile_real_ptrs registry-walk resolution already used by
    capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop/blit_grtile_to_framebuffer) rather
    than invented from nothing. */
+// was FUN_0004994c
 undefined4 alloc_flip_grtile_slot()
 
 {
@@ -408,6 +409,7 @@ undefined4 alloc_flip_grtile_slot()
 
 
 
+// was FUN_00049954
 void *resolve_flip_grtile_slot(param_1)
 undefined4 param_1;
 
@@ -2438,6 +2440,7 @@ codeval * param_5;
 
 
 
+// was FUN_00041e40
 void load_armor_variant_tables(param_1)
 undefined4 param_1;
 
@@ -2459,6 +2462,7 @@ undefined4 param_1;
 
 // was load_pals_bank -- read PALS.DAT bank param_1 (768 raw bytes) into param_2 and
 // install it via build_rgb565_palette
+// was FUN_00040e24
 bool load_pals_bank(param_1,param_2)
 undefined4 param_1;
 void *param_2;
@@ -2497,6 +2501,7 @@ void *param_2;
 
 // was set_palette_bank -- switch active palette to PALS.DAT bank param_1 (load into
 // DAT_00088d98, install, reinstall_active_palette)
+// was FUN_00040efc
 bool set_palette_bank(param_1)
 undefined4 param_1;
 
@@ -2589,6 +2594,7 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
 }
 
 
+// was FUN_0004a02c
 void load_light_food_effect_tables(param_1)
 undefined4 param_1;
 

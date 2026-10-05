@@ -352,6 +352,7 @@ static undefined1 DAT_000830b0_backing[256];
 
 
 // WinMain's real body: single-instance mutex check, window class/window creation, framebuffer + subsystem init, shows the main menu once, then runs the PeekMessage/Translate/Dispatch message pump until quit.
+// was FUN_00077004
 undefined4 app_main_loop(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
@@ -473,6 +474,7 @@ undefined4 param_4;
 
 
 // Title/main menu loop: builds the menu layout, dispatches on the selected option (0=continue?, 1=new game -> character_generator_loop, 2=show CREDIT1/2/3.BYT credits screens, 3=load a saved game), looping back to the menu until a game session actually starts.
+// was FUN_0006a3d8
 void main_menu_loop(param_1)
 undefined4 param_1;
 
@@ -1316,6 +1318,7 @@ short param_3;
 // argument this K&R declaration doesn't accept -- harmless (K&R
 // ignores extra args) but not yet understood; flagging rather than
 // guessing.
+// was FUN_00067f1c
 void spin_view_full_rotation()
 
 {
@@ -1594,6 +1597,7 @@ short param_4;
 // once it moves off after having hit one, returns that index offset
 // by param_1 instead (its caller, menu_button_list_navigate, decodes
 // this by comparing against/subtracting param_1).
+// was FUN_0006ac38
 int poll_menu_pointer_selection(param_1,param_2,param_3)
 undefined4 param_1;
 char *param_2;

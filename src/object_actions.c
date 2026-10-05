@@ -542,6 +542,7 @@ uint param_4;
 // picked up fit in the backpack" weight/capacity check -- same "wrapper
 // forgot to forward its own argument" idiom as get_equipped_item_at_slot elsewhere in
 // this file, just a missing forward instead of a hardcoded return.
+// was FUN_00046358
 bool check_object_carry_weight(param_1)
 ushort *param_1;
 
@@ -559,6 +560,7 @@ ushort *param_1;
 
 
 
+// was FUN_00048764
 void dispatch_object_action_dup(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -844,6 +846,7 @@ LAB_0004b4d4:
 
 
 
+// was FUN_0007bf38
 undefined4 check_object_combination(param_1,param_2,param_3)
 char *param_1;
 ushort * param_2;
@@ -1133,6 +1136,7 @@ char param_2;
 
 
 
+// was FUN_00074150
 void *spawn_and_prime_spell_effect_object(param_1,param_2)
 /* Was `int spawn_and_prime_spell_effect_object(...)` -- returned spawn_new_object's real object
    pointer through a 32-bit int, truncated on this host; both callers
@@ -2516,6 +2520,7 @@ undefined4 param_4;
 
 
 
+// was FUN_00078bfc
 undefined1 *format_object_display_name(param_1,param_2,param_3)
 undefined1 * param_1;
 int param_2;
@@ -3679,6 +3684,7 @@ short param_2;
    the already-named player-stats struct pointer DAT_00086df8; reads a
    nibble from it at offset 0x5e and hands it (plus a fixed msgid 0x126)
    to the already-recovered check_scheduled_object_level_match. */
+// was FUN_00072268
 void check_scheduled_object_location_callback()
 {
   check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) & 0xf,0x126);

@@ -1990,6 +1990,7 @@ ushort param_4;
 
 
 // was emit_floor_texture_select
+// was FUN_0005e12c
 void emit_floor_texture_select(param_1,param_2,param_3)
 byte * param_1;
 uint param_2;

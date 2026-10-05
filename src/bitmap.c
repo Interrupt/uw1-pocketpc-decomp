@@ -285,6 +285,7 @@ uint param_4;
 
 
 
+// was FUN_00040918
 void blit_object_sprite_by_frame(param_1,param_2,param_3)
 short param_1;
 undefined4 param_2;

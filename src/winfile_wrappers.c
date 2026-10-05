@@ -129,6 +129,7 @@ char *param_1;
    cause here supersedes that workaround without conflicting with it
    (open_existing_file_rw is also read-write, just with different
    create-vs-open-existing disposition logic). */
+// was FUN_00022810
 undefined4 open_existing_file_rw_alt(param_1)
 char *param_1;
 

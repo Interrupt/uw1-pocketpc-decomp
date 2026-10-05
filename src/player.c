@@ -905,6 +905,7 @@ undefined1 * param_1;
 
 
 
+// was FUN_000667cc
 void refresh_player_equipment_effects()
 
 {
@@ -1615,6 +1616,7 @@ uint param_1;
 // Its table starts at item 0x20; the old separate backing array never loaded
 // those protection values. Keep the existing function name for its callers.
 
+// was FUN_0006674c
 int compute_object_weight(param_1)
 ushort * param_1;
 
@@ -3833,6 +3835,7 @@ void handle_stats_panel_skill_scroll_click()
 
 
 
+// was FUN_00078550
 void refresh_stats_panel_if_active()
 
 {

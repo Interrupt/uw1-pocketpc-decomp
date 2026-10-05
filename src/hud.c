@@ -1696,6 +1696,7 @@ short param_1;
 
 
 
+// was FUN_0006cca8
 void redraw_hud_panels()
 
 {
@@ -2482,6 +2483,7 @@ void hud_compass_needle_tick()
 
 
 
+// was FUN_0006e130
 void tick_hud_panel_transition()
 
 {
@@ -2514,6 +2516,7 @@ void tick_hud_panel_transition()
 
 
 
+// was FUN_0006ed0c
 void redraw_active_hud_panel()
 
 {
@@ -6619,6 +6622,7 @@ void open_pause_menu_via_hotkey()
 
 
 
+// was FUN_00056f28
 undefined4 init_cursor_subsystem()
 
 {
@@ -6776,6 +6780,7 @@ int uw_always_show_cursor(void)
 
 
 
+// was FUN_000570b4
 undefined4 cursor_show_idle_tick()
 
 {
@@ -7515,6 +7520,7 @@ void save_cursor_background()
 
 
 
+// was FUN_0005857c
 void draw_idle_mouse_cursor()
 
 {
@@ -7688,6 +7694,7 @@ uint poll_mouse_button_flags()
 }
 
 
+// was FUN_0003def4
 void toggle_stats_panel()
 
 {
@@ -7711,6 +7718,7 @@ void toggle_stats_panel()
 }
 
 
+// was FUN_000577f0
 void reset_cursor_confine_rect()
 
 {
@@ -7737,6 +7745,7 @@ void reset_cursor_confine_rect()
 }
 
 
+// was FUN_00057788
 void set_cursor_confine_rect(param_1,param_2,param_3,param_4)
 short param_1;
 short param_2;

@@ -819,6 +819,7 @@ void seed_visibility_queue()
 
 
 // Was FUN_0005c0c4. Same param_1-truncation + packed-pointer-arithmetic fix as its mirror-image sibling visibility_ray_step_backward.
+// was FUN_0005c0c4
 void visibility_ray_step_forward(param_1)
 intptr_t param_1;
 
@@ -859,6 +860,7 @@ intptr_t param_1;
    side tables instead; the packed-byte writes are left in place as
    harmless dead state (nothing safely reads a pointer back out of them
    any more -- see g_visibility_ray_realptr's comment). */
+// was FUN_0005c16c
 void visibility_ray_step_backward(param_1)
 intptr_t param_1;
 
@@ -893,6 +895,7 @@ intptr_t param_1;
    passes -- same fix as advance_visibility_ray. Its two packed-pointer field reads
    (offsets 0xd and 9) go through the same real-pointer side tables that
    function uses too, for the same reason (see their comments). */
+// was FUN_0005c214
 undefined4 compute_visibility_ray_offset(param_1,param_2,param_3)
 intptr_t param_1;
 char param_2;
@@ -1042,6 +1045,7 @@ char param_3;
    carried in g_visibility_ray_realptr / _realptr2 on this 64-bit port; the
    original's byte-packed writes are kept as harmless dead state. Verified
    against the 0x5c70c disasm. */
+// was FUN_0005c70c
 undefined4 extend_visibility_ray_row(param_1,param_2)
 byte * param_1;
 byte * param_2;
@@ -1139,6 +1143,7 @@ byte * param_2;
 
 
 // Was FUN_0005cacc.
+// was FUN_0005cacc
 void advance_visibility_ray(param_1)
 byte * param_1;
 
@@ -1316,6 +1321,7 @@ LAB_0005ce60:
    array's other consumers. `*param_2`'s assignment below is this same
    record's saved offset-0x11 cursor, kept separate from its moving
    offset-0xd cursor on the host. */
+// was FUN_0005cf74
 void merge_adjacent_visibility_rays(param_1,param_2)
 byte ** param_1;
 undefined1 ** param_2;
@@ -1422,6 +1428,7 @@ LAB_0005d064:
 
 
 // Was FUN_0005d13c.
+// was FUN_0005d13c
 void run_visibility_flood()
 
 {
