@@ -18,7 +18,7 @@ undefined2 g_cursor_holding_state;
 char *DAT_00202098;
 code *DAT_002020b8;
 undefined1 DAT_00202c90_backing[8192];
-undefined2 DAT_0023ae58_backing[8192];
+undefined2 DAT_0023ae58_backing[48];
 undefined1 DAT_0023ad58_backing[256];
 
 void scroll_messages_fixture_reset(void)

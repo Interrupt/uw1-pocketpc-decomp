@@ -4668,8 +4668,19 @@ int param_1;
   int extraout_r2_00;
   ushort uVar9;
   int iVar10;
-  byte local_130;
-  byte local_12f;
+  /* Were two independently-declared single-byte scalars, relying on
+     accidental stack adjacency to work as one 2-byte destination for
+     `read_file_handle(puVar6,&local_130,2)` below (and the combined
+     `(ushort)local_12f + (ushort)local_130` read right after) -- the
+     same original-32-bit-ARM-stack-layout assumption already fixed
+     elsewhere in this port via a real backing array. This path was
+     unreachable until DAT_00085908's real template string was
+     recovered (see its own comment above); once reachable, ASan
+     caught the stack-buffer-overflow the very first time
+     read_file_handle actually got called with a real file handle. */
+  byte local_130_arr[2];
+#define local_130 local_130_arr[0]
+#define local_12f local_130_arr[1]
   undefined1 *local_12c;
   char acStack_128 [260];
   

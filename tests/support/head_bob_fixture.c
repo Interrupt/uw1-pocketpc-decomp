@@ -9,7 +9,7 @@ ushort *g_player_object;
 short DAT_00201b68, DAT_00202078, DAT_00201c70;
 short g_movement_mode, DAT_0023beb4;
 undefined1 DAT_00204880_backing[128], DAT_00086e6c_backing[64];
-undefined2 DAT_002048b0_backing[8192];
+undefined2 DAT_002048b0_backing[16];
 undefined1 DAT_00202c90_backing[8192];
 undefined4 DAT_0023bea8, DAT_002020d0, DAT_000858a0, DAT_0023bc98;
 undefined2 DAT_0023be98, DAT_0023be9a, DAT_0023be9c, DAT_0023be9e, DAT_0023beb8;
@@ -20,7 +20,7 @@ uint DAT_0023bf5c;
 int DAT_0023bf64, g_npc_tick_enabled;
 short DAT_0023be90, DAT_0023be92, DAT_0023be94, DAT_0023bf00, DAT_0023bea4, DAT_0023bf08;
 undefined2 DAT_0023bf02, DAT_0023bf04, DAT_0023bea0;
-undefined4 DAT_000d9930_arr[512], DAT_000d9ed8_arr[512], DAT_000c8ac0_mtx[16];
+undefined4 DAT_000d9930_arr[361], DAT_000d9ed8_arr[361], DAT_000c8ac0_mtx[16];
 undefined4 DAT_000db438, DAT_000db43c, DAT_000db440;
 int DAT_000db448, DAT_000db44c, DAT_000db450;
 
