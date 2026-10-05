@@ -6865,6 +6865,67 @@ undefined4 init_cursor_subsystem()
 
 
 
+/* Desktop deviation: the cursor icon's own save/erase/draw rects
+   (erase_cursor_icon, save_cursor_background, draw_idle_mouse_cursor's
+   own sprite blit) are each individually subject to whatever the
+   game's CURRENT 3D-viewport clip rect happens to be at the moment
+   they run -- narrowed to the viewport's own bounds for most of every
+   tick (see render_dungeon_frame_timed/full_dungeon_redraw's own
+   set_viewport_clip_rect(0x34,0x13,...)/(0,0,0x13f,199) bracket), only
+   widened back to the full screen at specific, inconsistently-covered
+   call sites (update_mouse_state's own DAT_0020485c-gated widen,
+   track_hotspot_hover_state's widen around its decrement_cursor_hide_depth()
+   call but not its sibling draw_idle_mouse_cursor() call, ...). On the
+   real touchscreen this never mattered: nothing drew a persistent,
+   continuously-moving cursor near the viewport's own clip boundary for
+   the mismatch to matter. Under UW_ALWAYS_SHOW_CURSOR, though, a cursor
+   rect that gets SAVED (or ERASED) while the narrow clip is active, then
+   ERASED (or redrawn) later under a wider one -- or vice versa -- can
+   save/restore/draw only a clipped slice of its real footprint, leaving
+   a permanent stamp of whatever fell outside that slice. Confirmed live
+   via a user report: a ~16px cursor-shaped stamp persisting right along
+   the 3D viewport's edges (left, right, and top), reproduced even after
+   fixing both of rect_fill_or_save_restore's own clip-math bugs (the
+   width-clamp fixes just above/below in graphics.c) -- those made each
+   individual clipped operation correctly SIZED, but didn't address the
+   save and the erase being clipped to DIFFERENT rects in the first
+   place. Rather than chase every individual call site that's missing a
+   widen (whack-a-mole -- track_hotspot_hover_state's draw_idle_mouse_cursor
+   call was one, there may be others), these two helpers let each of the
+   three cursor-rect operations unconditionally widen the clip to the
+   full screen around just its own rect_fill_or_save_restore/
+   draw_sprite_by_id call, then restore whatever the clip was before --
+   guaranteeing save and erase always operate against the SAME (full
+   screen) bounds regardless of caller, only under
+   UW_ALWAYS_SHOW_CURSOR=1. Safe to call from all three (never nested
+   within each other mid-widen -- draw_idle_mouse_cursor's own call to
+   save_cursor_background always completes, restoring the clip, before
+   draw_idle_mouse_cursor's separate widen for its own sprite blit
+   begins), so a flat save/restore pair (not a stack) suffices. */
+static int g_cursor_blit_saved_clip_x0, g_cursor_blit_saved_clip_y0;
+static int g_cursor_blit_saved_clip_x1, g_cursor_blit_saved_clip_y1;
+
+static void widen_clip_for_cursor_blit()
+{
+  if (uw_always_show_cursor()) {
+    g_cursor_blit_saved_clip_x0 = (int)DAT_000a85c4;
+    g_cursor_blit_saved_clip_y0 = (int)DAT_000a85c8;
+    g_cursor_blit_saved_clip_x1 = (int)DAT_000842a4;
+    g_cursor_blit_saved_clip_y1 = (int)DAT_000842a8;
+    set_viewport_clip_rect(0,0,0x13f,199);
+  }
+}
+
+static void restore_clip_after_cursor_blit()
+{
+  if (uw_always_show_cursor()) {
+    set_viewport_clip_rect(g_cursor_blit_saved_clip_x0,g_cursor_blit_saved_clip_y0,
+                            g_cursor_blit_saved_clip_x1,g_cursor_blit_saved_clip_y1);
+  }
+}
+
+
+
 // was FUN_00056fe8 -- erases the dragged-item cursor icon if one is
 // currently drawn (DAT_00204844 != 0): restores the saved background
 // pixels under its last-drawn rect and flushes. Returns the PRIOR value
@@ -6885,9 +6946,11 @@ int erase_cursor_icon()
   }
   if (DAT_00204844 != 0) {
     set_draw_color(0x15);
+    widen_clip_for_cursor_blit();
     rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
+    restore_clip_after_cursor_blit();
     /* REVERTED (was: force g_force_flush around this call, matching
        draw_idle_mouse_cursor's own sibling wrapping) -- caused a visible flicker
        regression: rect_fill_or_save_restore's own dirty_rect_union call
@@ -7674,9 +7737,11 @@ void save_cursor_background()
   }
   DAT_00204848 = 1;
   set_draw_color(0x14);
+  widen_clip_for_cursor_blit();
   rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
+  restore_clip_after_cursor_blit();
   DAT_00204844 = 1;
   return;
 }
@@ -7793,13 +7858,46 @@ void draw_idle_mouse_cursor()
     }
   }
   if (_dbg_show) fprintf(stderr, "[cursorshow] normal path: saving then drawing sprite=%d\n", (int)DAT_00204788);
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR: the original always calls
+     save_cursor_background() here unconditionally, with no guard
+     against a cursor icon ALREADY being shown (DAT_00204844 != 0) --
+     authentically safe, since on the real touchscreen this function's
+     own gates meant it was practically never reachable more than once
+     per tick in the first place. Under UW_ALWAYS_SHOW_CURSOR, though,
+     this port has TWO separate call paths that can both legitimately
+     reach here in the SAME tick: update_mouse_state's own erase-then-
+     draw pair, and track_hotspot_hover_state's own direct
+     `if (DAT_00204840==1 && !selected) draw_idle_mouse_cursor();` call
+     a few lines after rebuild_dungeon_view's incidental
+     handle_mouse_button_message(0)-driven update_mouse_state call
+     already ran (both reachable from render_dungeon_frame_timed, see
+     its own call sequence). Confirmed live (UW_DEBUG_CURSORSHOW): a
+     second "normal path" fires right after the first, with
+     DAT_00204844 already 1 -- so this second save_cursor_background()
+     call saves the FIRST call's just-drawn cursor sprite as the
+     "background," not the true background underneath it. Nothing ever
+     erases that corrupted save (DAT_00204844 already reads nonzero, so
+     later erase/redraw cycles treat it as already-consistent), leaving
+     a permanent ghost of the cursor behind -- confirmed live via a
+     user report of a persistent cursor-shaped stamp, worse along the
+     3D viewport's edges where track_hotspot_hover_state's hover-border
+     tracking runs continuously. Erase whatever's already shown first,
+     so a second draw in the same tick re-saves the REAL background
+     instead of the previous draw. */
+  if (uw_always_show_cursor() && DAT_00204844 != 0) {
+    if (erase_cursor_icon() != 0) {
+      DAT_00204844 = 0;
+    }
+  }
   save_cursor_background();
 LAB_00058674:
   g_blit_transparent_mode = 1;
   g_force_flush = 1;
+  widen_clip_for_cursor_blit();
   draw_sprite_by_id((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
                ((int)g_mouse_y - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
                DAT_00204784);
+  restore_clip_after_cursor_blit();
   flush_dirty_rect_to_display(1);
   g_blit_transparent_mode = 0;
   g_force_flush = 0;
