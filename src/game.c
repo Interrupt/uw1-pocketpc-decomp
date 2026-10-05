@@ -74,7 +74,12 @@ int DAT_00201c98;
 static char s__DATA_pres1_byt_00085790[] = "\\DATA\\pres1.byt";
 undefined4 DAT_0023c540;
 static char s__DATA_lev_ark_00085734[] = "\\DATA\\lev.ark";
-static char s_Not_enough_disk_space_for_save_g_00085744[] = "Not_enough_disk_space_for_save_g";
+/* Ghidra rendered the embedded spaces as underscores and truncated
+   the string partway through (dropped "ame.$"). Real bytes at
+   0x85744 (ARM UU.exe .data): "Not enough disk space for save
+   game.$" (the trailing '$' is itself part of the real string, a
+   leftover DOS int21h-print convention baked into this data). */
+static char s_Not_enough_disk_space_for_save_g_00085744[] = "Not enough disk space for save game.$";
 static char s__DATA_COPYRIGHT_BYT_0008576c[] = "\\DATA\\COPYRIGHT.BYT";
 static char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
 /* Not `static` -- also used by game.c (app_main_loop, main_menu_loop);
@@ -145,13 +150,20 @@ void (*const DAT_00085668_real_table[48])(void) = {
   0, 0, 0, (void(*)(void))exit_talk_mode,
 };
 undefined2 DAT_000868d8;
-static char s_Error_code_XXXX___000857c8[] = "Error_code_XXXX_$";
-static char s_Out_of_Low_Memory___000857dc[] = "Out_of_Low_Memory.$";
-static char s_Out_of_EMS_Memory___000857f0[] = "Out_of_EMS_Memory.$";
-static char s_Could_not_read_data___00085804[] = "Could_not_read_data.$";
-static char s_Could_not_write_data___0008581c[] = "Could_not_write_data.$";
-static char s_Resource_problem_or_internal_err_00085834[] = "Resource_problem_or_internal_err";
-static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld_can_no_longer_run._Er";
+/* All seven of these DOS-era error strings were mangled by Ghidra:
+   embedded spaces rendered as underscores, and several truncated
+   partway through (dropped trailing "\r\n$"/"or.$"/"...Error code
+   XXXX.\r\n$" text). Real bytes confirmed against the ARM UU.exe
+   .data section at each address below -- the literal '$' and
+   '\r\n' bytes are themselves real content (a DOS int21h-print
+   convention baked into this data), not artifacts to strip. */
+static char s_Error_code_XXXX___000857c8[] = " Error code XXXX\r\n$";
+static char s_Out_of_Low_Memory___000857dc[] = "Out of Low Memory.$";
+static char s_Out_of_EMS_Memory___000857f0[] = "Out of EMS Memory.$";
+static char s_Could_not_read_data___00085804[] = "Could not read data.$";
+static char s_Could_not_write_data___0008581c[] = "Could not write data.$";
+static char s_Resource_problem_or_internal_err_00085834[] = "Resource problem or internal error.$";
+static char s_Underworld_can_no_longer_run__Er_0008585c[] = "Underworld can no longer run.  Error code XXXX.\r\n$";
 /* Sizing-audit pass: fatal-error message buffer, written via
    ce_strncpy from either a 42-byte stack buffer (report_fatal_error_
    and_exit) or an unbounded caller string (report_fatal_error_

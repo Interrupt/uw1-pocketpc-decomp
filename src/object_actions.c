@@ -80,7 +80,10 @@ static undefined1 DAT_00085cce;
    Sized to 16; down from 8192. */
 static undefined DAT_00085cb4_backing[16] = "s";
 static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
-static char s_an_adventurer__00085d08[] = "an_adventurer.";
+/* Ghidra rendered the embedded space as an underscore and dropped
+   the trailing newline. Real bytes at 0x85d08 (ARM UU.exe .data):
+   "an adventurer.\n". */
+static char s_an_adventurer__00085d08[] = "an adventurer.\n";
 static uint DAT_00202094;
 /* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
    (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
@@ -103,7 +106,10 @@ static undefined DAT_0008762c_backing[16];
 #define DAT_0008762c DAT_0008762c_backing[0]
 #define DAT_00087630 DAT_0008762c_backing[4]
 #define DAT_00087634 DAT_0008762c_backing[8]
-static char s_very_near_00087954[] = "very_near";
+/* Ghidra rendered the embedded space as an underscore. Real bytes at
+   0x87954 (ARM UU.exe .data): "very near" (null-terminated right
+   after, no trailing space/newline needed). */
+static char s_very_near_00087954[] = "very near";
 
 
 

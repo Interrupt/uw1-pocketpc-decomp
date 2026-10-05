@@ -77,9 +77,15 @@ static undefined1 DAT_000fb860_backing[32];
    index. Sized to 64 elements (256 bytes) for extra headroom given
    that residual ambiguity; down from 4096. */
 undefined4 DAT_000fb880_backing[64];
-static char s_key_to_continue_00084e60[] = "key_to_continue";
-static char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
-static char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
+/* These three were all mangled the same way: Ghidra rendered the
+   embedded spaces as underscores. Real bytes confirmed against the
+   ARM UU.exe .data section; none of the three actually carries a
+   trailing space or newline (each is null-terminated right after the
+   last visible character), so only the underscores-for-spaces need
+   fixing here. */
+static char s_key_to_continue_00084e60[] = "key to continue";
+static char s_then_press_the_Enter_00084e70[] = "then press the Enter";
+static char s_Enter_your_name_and_00084e88[] = "Enter your name and";
 static short DAT_001005c0;
 /* DAT_000fb8c4's address (0xfb8c4) is 0x44 bytes = 17 elements past
    DAT_000fb880's (0xfb880) -- like DAT_000fb884, not a separate table but

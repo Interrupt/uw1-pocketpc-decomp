@@ -114,7 +114,10 @@ short DAT_00201c94;
 undefined4 DAT_0024cfc8;
 undefined4 DAT_002028d8;
 undefined2 DAT_00201c78;
-static char s_You_died_000857b8[] = "You_died";
+/* Ghidra under-recovered this: it rendered the embedded spaces as
+   underscores and dropped the leading padding and trailing newline.
+   Real bytes at 0x857b8 (confirmed via ARM UU.exe .data): "    You died\n". */
+static char s_You_died_000857b8[] = "    You died\n";
 static byte DAT_00085730;
 code *DAT_00201c9c;
 byte DAT_0020208c;
@@ -328,7 +331,10 @@ char s_and_00087310[] = "and";
    an empty separator -- not guessed at, same as this project's other
    unrecovered-rodata symbols (e.g. DAT_00086f0c). */
 static undefined DAT_00087318;
-static char s_Chant_the_mantra__0008731c[] = "Chant_the_mantra:";
+/* Ghidra rendered the embedded spaces as underscores and dropped
+   the trailing space. Real bytes at 0x8731c (ARM UU.exe .data):
+   "Chant the mantra: ". */
+static char s_Chant_the_mantra__0008731c[] = "Chant the mantra: ";
 static char s_fontchar_sys_00087330[] = "fontchar.sys";
 static char s__DATA_win1_byt_00087350[] = "\\DATA\\win1.byt";
 char DAT_0023c27c;

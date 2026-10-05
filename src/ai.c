@@ -20,11 +20,18 @@ short DAT_00100608;
    bytes, matching every indexed access's `&0x3f` class-id mask * 0x30
    stride (63*48+48=3072). HARD exact bound. Down from 6144. */
  undefined1 DAT_001007d0_backing[3072];
-/* Sizing-audit pass: read-only (ce_strcat/message_scroll_print_wrapped
-   sentence-suffix text across ai.c/object_actions.c), 0 writers --
-   content unrecovered. Sized to 128 for headroom as a display-text
-   fragment; down from 8192. */
- undefined DAT_00084f20_backing[128];
+/* Reused-global-holding-a-real-string pattern (see the
+   s_scroll_newline_0008522c comment in player.h) -- interact.c, ai.c
+   and player.c all pass `&DAT_00084f20` straight into
+   message_scroll_print_wrapped/ce_strcat with no write beforehand, to
+   terminate an item/trap name with a period and newline. Real bytes
+   at 0x84f20 (ARM UU.exe .data, read via Ghidra headless): ".\n"
+   (immediately followed by s_UNNAMED_00084f24's "UNNAMED" at
+   0x84f24) -- not actually unrecovered, just needed a direct byte
+   read against the binary rather than a source-level pattern match.
+   Sized to 128 for headroom as a display-text fragment; down from
+   8192. */
+ undefined DAT_00084f20_backing[128] = ".\n";
 ushort DAT_00101414;
 char *DAT_00101904;
 undefined4 DAT_00101560;

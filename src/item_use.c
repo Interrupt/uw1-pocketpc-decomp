@@ -46,17 +46,29 @@ static undefined1 DAT_002028e0_backing[6];
 static char s_armor_f_00085c60[] = "armor_f";
 static ushort DAT_00202962;
 static ushort DAT_00202964;
-static char s_Move_how_many__00085c68[] = "Move_how_many?";
-static char s_is_too_full__00085c78[] = "is_too_full.";
+/* Ghidra rendered the embedded space as an underscore and dropped the
+   trailing space. Real bytes at 0x85c68 (ARM UU.exe .data):
+   "Move how many? ". */
+static char s_Move_how_many__00085c68[] = "Move how many? ";
+/* Ghidra rendered the embedded space as an underscore, dropped the
+   leading space and trailing newline. Real bytes at 0x85c78 (ARM
+   UU.exe .data): " is too full.\n". */
+static char s_is_too_full__00085c78[] = " is too full.\n";
 /* Sizing-audit pass: index is `(nibble&0xf)*3`, max 45, read as a
    short there (max byte 46). Sized to 48; down from 256. */
 static undefined DAT_002029f9_backing[48];
 #define DAT_002029f9 DAT_002029f9_backing[0]
-/* Sizing-audit pass: single use, `ce_strcat(acStack_7c,&DAT_00085ce0)`,
-   0 writers -- content unrecovered. Sized to 32 for headroom; down
-   from 8192. */
-undefined DAT_00085ce0_backing[32];
-char s_You_read_the_00085ce8[] = "You_read_the";
+/* Sizing-audit pass sized this to 32 and marked its content
+   "unrecovered" (single use, `ce_strcat(acStack_7c,&DAT_00085ce0)`,
+   0 writers). A direct Ghidra headless byte read against the ARM
+   UU.exe .data section at 0x85ce0 found it after all: "...\n" (an
+   ellipsis-and-newline fragment immediately followed by
+   s_You_read_the_00085ce8's "You read the " four bytes later). */
+undefined DAT_00085ce0_backing[32] = "...\n";
+/* Ghidra rendered the embedded spaces as underscores and dropped the
+   trailing space. Real bytes at 0x85ce8 (ARM UU.exe .data):
+   "You read the ". */
+char s_You_read_the_00085ce8[] = "You read the ";
 // g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
 // object id's low nibble) effect/quality byte table, loaded at runtime
 // (read_file_handle) and read by use_food_item to decide a food item's
@@ -74,14 +86,25 @@ char s_You_read_the_00085ce8[] = "You_read_the";
    The "held item currently being used" global driving the item-use
    dispatch chain (finish_object_use and friends). */
 char *DAT_00202098;
-static char s_on_what__000878e0[] = "on_what?";
-/* Sizing pass: read-only (`pcVar3 = &DAT_000878ec;`), copied into a
-   40-byte local (acStack_34). Real content unrecovered (currently
-   empty); sized generously above that destination. */
-static undefined1 DAT_000878ec_backing[64];
+/* Ghidra rendered the embedded space as an underscore, dropped the
+   leading space and trailing newline. Real bytes at 0x878e0 (ARM
+   UU.exe .data): " on what?\n". */
+static char s_on_what__000878e0[] = " on what?\n";
+/* Sizing pass sized this to 64 and marked its content "unrecovered"
+   (read-only, `pcVar3 = &DAT_000878ec;`, copied into a 40-byte local
+   acStack_34). A direct Ghidra headless byte read against the ARM
+   UU.exe .data section at 0x878ec found it after all: "Use " (four
+   bytes before s_That_000878f4's "That "). Sized generously above
+   that 40-byte destination. */
+static undefined1 DAT_000878ec_backing[64] = "Use ";
 #define DAT_000878ec DAT_000878ec_backing[0]
-static char s_That_000878f4[] = "That";
-static char s_is_locked__000878fc[] = "is_locked.";
+/* Ghidra dropped the trailing space. Real bytes at 0x878f4 (ARM
+   UU.exe .data): "That ". */
+static char s_That_000878f4[] = "That ";
+/* Ghidra rendered the embedded space as an underscore, dropped the
+   leading space and trailing newline. Real bytes at 0x878fc (ARM
+   UU.exe .data): " is locked.\n". */
+static char s_is_locked__000878fc[] = " is locked.\n";
 
 
 

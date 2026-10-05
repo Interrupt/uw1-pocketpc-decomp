@@ -8,7 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static char s_Sorry__you_have_no_00084f2c[] = "Sorry,_you_have_no";
+/* Ghidra rendered the embedded space as an underscore and dropped the
+   trailing space. Real bytes at 0x84f2c (ARM UU.exe .data):
+   "Sorry, you have no ". */
+static char s_Sorry__you_have_no_00084f2c[] = "Sorry, you have no ";
 static undefined4 DAT_001005ec;
 static short DAT_00100618;
 // Original ARM .data defaults: idle frame counter and pending action.
