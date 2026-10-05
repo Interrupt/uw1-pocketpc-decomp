@@ -65,3 +65,8 @@ extern char g_visibility_ray_fallback[64];
    tests/test_visibility_walk.c -- prototype needed here since the
    generated tests/visibility_walk_functions.c TU calls it too. */
 int visibility_ray_idx(const void *p);
+
+#define DAT_0023b039 g_visibility_ring_buffer_backing[1]
+extern undefined1 DAT_00086da8_backing[256];
+#define DAT_00086da8 DAT_00086da8_backing[0]
+extern undefined4 DAT_0023bc98;

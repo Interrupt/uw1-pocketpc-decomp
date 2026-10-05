@@ -140,6 +140,9 @@ add_fixture_game_unit_test(visibility_walk
   src/visibility.c:@DAT_00086af8_region
   src/math.c:@DAT_00085d48_sine
   src/math.c:@DAT_00085f50_cosine
+  src/visibility.c:build_visibility_light_grid
+  src/player.c:refresh_player_equipment_effects
+  src/math.c:integer_sqrt
   src/visibility.c:seed_visibility_queue
   src/visibility.c:run_visibility_flood
   src/visibility.c:merge_adjacent_visibility_rays
@@ -232,3 +235,7 @@ add_fixture_game_unit_test(spells
   src/item_use.c:compute_drop_aim_from_cursor
   src/objects.c:spawn_object_near_player
   src/objects.c:compute_object_placement_fields)
+
+add_fixture_game_unit_test(automap
+  src/automap.c:draw_automap_cell_edge src/automap.c:darken_pixel
+  src/automap.c:@DAT_000842c0_real_table src/automap.c:draw_automap_cell)

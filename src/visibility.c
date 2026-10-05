@@ -109,12 +109,11 @@ static int DAT_0023aec8;
 static ushort DAT_0023b4c8;
 static undefined1 DAT_0023b028;
 static undefined *DAT_0023b02c;
-/* Lookup/gradient table in build_visibility_light_grid, indexed up to
-   (16*0x21+32)*2=1120 -- confirmed overflowing into the unrelated
-   DAT_00248410 via an lldb watchpoint (same symptom, second distinct
-   overflow source found reaching that same global). Widened. */
-static undefined1 DAT_0023b039_backing[4096];
-#define DAT_0023b039 DAT_0023b039_backing[0]
+/* Original 0x23b039 is the light byte immediately after the visibility
+   byte at 0x23b038. Both are fields of the same 0x42-byte-stride grid.
+   A separate backing array disconnected the lighting writer from the
+   ray flood and automap readers, making every tile appear fully lit. */
+#define DAT_0023b039 g_visibility_ring_buffer_backing[1]
 static undefined1 g_visibility_ring_done;
 /* g_visibility_ray_table-family: ~20 separately-declared globals that are really
    one 16-entry x 0x15(21)-byte per-ray record array for the dungeon's

@@ -212,8 +212,8 @@ static void test_right_frustum_edge_keeps_its_negative_y_direction(void)
 static void test_level_one_tile_26_5_stays_visible_at_the_right_edge(void)
 {
     load_real_level_one();
-    /* Actual level 1 SHADES.DAT field 3. Using 8 masked this regression. */
-    g_visibility_max_ring_passes = 3;
+    /* Actual level 1 shading grid, including its distance cutoff. */
+    load_visibility_light_config(0);
     const int first_angle = (81 * 65536 + 180) / 360;
     const int last_angle = (87 * 65536 + 180) / 360;
     for (int pass = 0; pass < 2; ++pass) {
@@ -229,6 +229,60 @@ static void test_level_one_tile_26_5_stays_visible_at_the_right_edge(void)
     }
 }
 
+static void test_visibility_flood_reads_the_real_tile_light_grid(void)
+{
+    load_visibility_light_config(0); /* Level 1 without an active light: radius 3. */
+    TEST_ASSERT_EQUAL_HEX8(0xf, g_visibility_ring_buffer_backing[4 * 66 + 33] & 0xf);
+    flood_at(tilemap, 32 * 256 + 128, 32 * 256 + 128, 0);
+    TEST_ASSERT_TRUE(visible_world_tile(32,32,32,33) & 0x80);
+    TEST_ASSERT_EQUAL_HEX8(0, visible_world_tile(32,32,32,38));
+    TEST_ASSERT_LESS_OR_EQUAL_INT(3, g_visibility_ring_depth);
+}
+
+static void test_stronger_light_expands_the_visible_automap_area(void)
+{
+    load_visibility_light_config(0);
+    flood_at(tilemap, 32 * 256 + 128, 32 * 256 + 128, 0);
+    TEST_ASSERT_EQUAL_HEX8(0, visible_world_tile(32,32,32,37));
+    load_visibility_light_config(6); /* Bright light record: radius 7. */
+    flood_at(tilemap, 32 * 256 + 128, 32 * 256 + 128, 0);
+    TEST_ASSERT_TRUE(visible_world_tile(32,32,32,37) & 0x80);
+    TEST_ASSERT_LESS_THAN_INT(8, g_visibility_ring_buffer_backing[2 * 66 + 33] & 0xf);
+    TEST_ASSERT_EQUAL_HEX8(0, visible_world_tile(32,32,32,41));
+}
+
+static void test_arm_torch_updates_automap_light_and_extinguishing_restores_darkness(void)
+{
+    unsetenv("UW_LIGHT_MODE"); /* Default ARM rendering. */
+    refresh_player_equipment_effects();
+    TEST_ASSERT_EQUAL_INT(0, visibility_light_config_record);
+    TEST_ASSERT_GREATER_OR_EQUAL_INT(8, g_visibility_ring_buffer_backing[66 + 33] & 0xf);
+    equip_visibility_test_torch(1);
+    refresh_player_equipment_effects();
+    TEST_ASSERT_EQUAL_INT(4, visibility_light_config_record);
+    TEST_ASSERT_EQUAL_INT(64, visibility_ambient_strength);
+    TEST_ASSERT_LESS_THAN_INT(8, g_visibility_ring_buffer_backing[66 + 33] & 0xf);
+    flood_at(tilemap,32 * 256 + 128,32 * 256 + 128,0);
+    TEST_ASSERT_TRUE(visible_world_tile(32,32,32,36) & 0x80);
+    equip_visibility_test_torch(0);
+    refresh_player_equipment_effects();
+    TEST_ASSERT_EQUAL_INT(0, visibility_light_config_record);
+    TEST_ASSERT_EQUAL_INT(0, visibility_ambient_strength);
+    flood_at(tilemap,32 * 256 + 128,32 * 256 + 128,0);
+    TEST_ASSERT_EQUAL_HEX8(0, visible_world_tile(32,32,32,36));
+}
+
+static void test_dos_torch_updates_the_same_automap_light_table(void)
+{
+    setenv("UW_LIGHT_MODE","dos",1);
+    equip_visibility_test_torch(1);
+    refresh_player_equipment_effects();
+    unsetenv("UW_LIGHT_MODE");
+    TEST_ASSERT_EQUAL_INT(4, visibility_light_config_record);
+    TEST_ASSERT_EQUAL_INT(-1, visibility_ambient_strength);
+    TEST_ASSERT_LESS_THAN_INT(8, g_visibility_ring_buffer_backing[66 + 33] & 0xf);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -242,5 +296,9 @@ int main(void)
     RUN_TEST(test_level_one_adjacent_tiles_stay_visible_through_each_yaw_increment);
     RUN_TEST(test_right_frustum_edge_keeps_its_negative_y_direction);
     RUN_TEST(test_level_one_tile_26_5_stays_visible_at_the_right_edge);
+    RUN_TEST(test_visibility_flood_reads_the_real_tile_light_grid);
+    RUN_TEST(test_stronger_light_expands_the_visible_automap_area);
+    RUN_TEST(test_arm_torch_updates_automap_light_and_extinguishing_restores_darkness);
+    RUN_TEST(test_dos_torch_updates_the_same_automap_light_table);
     return UNITY_END();
 }
