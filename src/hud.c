@@ -7769,7 +7769,25 @@ void draw_idle_mouse_cursor()
         return;
       }
     }
-    if (g_cursor_mode != 0) {
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (5th of this function's own
+       deviations -- see the matching comments above): confirmed via
+       the real ARM disassembly (FUN_0005857c) that skipping
+       save_cursor_background() whenever a cursor mode is active
+       (g_cursor_mode != 0, e.g. Interact) is genuinely original
+       behavior, not a port bug -- `if (*DAT_00058710 != 0) goto
+       LAB_00058674;` skips the save call outright. On the real
+       touchscreen this was harmless: a mode-cursor icon only ever got
+       drawn once per discrete tap, with no continuous movement to
+       leave a trail from. Under UW_ALWAYS_SHOW_CURSOR's persistent,
+       continuously-moving desktop cursor, though, skipping the save
+       means DAT_00204844 never gets set, so the NEXT tick's
+       erase_cursor_icon() finds nothing to erase and the previous
+       draw is never cleaned up -- confirmed live via a user report:
+       switching to Interact mode (red cursor) stamps a trail of its
+       icon across the HUD as the mouse moves. Only bypass the skip
+       when the persistent cursor is in play; the original one-shot
+       touchscreen behavior is unaffected otherwise. */
+    if ((g_cursor_mode != 0) && !uw_always_show_cursor()) {
       if (_dbg_show) fprintf(stderr, "[cursorshow] SKIP-SAVE path (mode!=0), drawing sprite=%d without a save\n", (int)DAT_00204788);
       goto LAB_00058674;
     }
