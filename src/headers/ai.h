@@ -24,6 +24,7 @@ extern undefined DAT_00084f20_backing[128];
    fields of this same table, not separate tables. Aliased in; their
    old independent backing arrays removed. */
 #define DAT_001007dd DAT_001007d0_backing[0xd]
+#define DAT_001007de DAT_001007d0_backing[0xe] // same monster record byte used by barter pricing
 #define DAT_001007e0 DAT_001007d0_backing[0x10]
 #define DAT_001007e3 DAT_001007d0_backing[0x13]
 #define DAT_001007fd DAT_001007d0_backing[0x2d]
