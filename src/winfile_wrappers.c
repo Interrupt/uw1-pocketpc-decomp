@@ -83,11 +83,14 @@ char *param_1;
 
 
 // was FUN_000227b8
+/* All original callers pass a filename: this is the DeleteFile-shaped
+   wrapper used to replace an archive and remove its temporary file. */
 bool close_file_handle(param_1)
-int param_1;
+char *param_1;
 
 {
-  return uw_file_close(param_1) == 0;
+  char path[4096];
+  return uw_resolve_win_path(param_1,path,sizeof path) && remove(path) == 0;
 }
 
 

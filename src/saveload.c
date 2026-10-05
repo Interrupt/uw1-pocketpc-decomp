@@ -45,6 +45,7 @@ static undefined DAT_000b78b8_backing[8192];
    headroom since nothing pins it to that exact byte count. */
 static undefined1 DAT_000b98b8_backing[1024];
 #define DAT_000b98b8 DAT_000b98b8_backing[0]
+/* Archive name followed by NUL and the temporary-file name. */
 #define DAT_000b98b9 DAT_000b98b8_backing[1]
 /* Sizing pass: this is a file-copy scratch buffer, read in chunks
    explicitly clamped to 0x2000 (8192) bytes right before every read
@@ -934,7 +935,7 @@ char * param_2;
     pcVar2 = local_228;
     do {
       cVar1 = *pcVar2;
-      pcVar2[(int)(&DAT_000b98b9 + (iVar3 - (int)local_228))] = cVar1;
+      (&DAT_000b98b9)[iVar3 + (pcVar2 - local_228)] = cVar1;
       pcVar2 = pcVar2 + 1;
     } while (cVar1 != '\0');
   }
@@ -970,10 +971,10 @@ undefined4 * param_1;
   CloseHandle(CONCAT13(*(undefined1 *)((char *)param_1 + 7),*(undefined3 *)(param_1 + 1)));
   iVar3 = ce_strlen(&DAT_000b98b8);
   pcVar5 = &DAT_000b98b9 + iVar3;
-  iVar3 = -(int)pcVar5;
+  char *path_start = pcVar5;
   do {
     cVar1 = *pcVar5;
-    pcVar5[(int)(acStack_118 + iVar3)] = cVar1;
+    acStack_118[pcVar5 - path_start] = cVar1;
     pcVar5 = pcVar5 + 1;
   } while (cVar1 != '\0');
   close_file_handle(acStack_118);
@@ -1003,7 +1004,6 @@ void *param_3;
 uint param_4;
 
 {
-  char *wptr_4897;
   char cVar1;
   undefined2 uVar2;
   short sVar3;
@@ -1014,14 +1014,13 @@ uint param_4;
   int iVar8;
   undefined4 uVar9;
   undefined4 uVar10;
-  undefined4 uVar11;
+  void *uVar11;
   uint uVar12;
   uint uVar13;
   char *pcVar14;
   uint uVar15;
   uint uVar16;
   uint uVar17;
-  char acStack_b9ae8 [759728];
   char local_338 [264];
   char acStack_230 [263];
   char acStack_129 [261];
@@ -1038,6 +1037,9 @@ uint param_4;
             param_2, (uint)*(ushort *)(param_1 + 2), uVar15, param_4, (int)*param_1, (int)param_1[1]);
   if ((param_2 & 0xffff) <= (uint)*(ushort *)(param_1 + 2)) {
     if (uVar15 == 0) {
+      /* Zero offsets represent empty entries. An EOF offset for an
+         empty note page would alias the next entry appended there. */
+      if ((param_4 & 0xffff) == 0) return true;
       uVar4 = seek_file_handle(*param_1,0,2);
       uVar15 = write_file_handle(*param_1,param_3,param_4 & 0xffff);
       if (getenv("UW_DEBUG_INPUTEVENT"))
@@ -1082,7 +1084,8 @@ uint param_4;
       while( true ) {
         sVar3 = read_file_handle(*param_1,&DAT_000b58b8,0x2000);
         if (sVar3 == 0) break;
-        iVar5 = write_file_handle(param_1[1],&DAT_000b58b8);
+        /* ARM 0x15ebc retains the byte count in r2 for this write. */
+        iVar5 = write_file_handle(param_1[1],&DAT_000b58b8,(ushort)sVar3);
         uVar16 = uVar16 + iVar5;
       }
       write_file_handle(param_1[1],param_3,param_4);
@@ -1098,19 +1101,19 @@ uint param_4;
         } while (uVar12 < *(ushort *)(param_1 + 2));
       }
       pcVar14 = &DAT_000b98b8;
-    wptr_4897 = acStack_b9ae8;
-      *(uint *)((char *)&DAT_000b78b8 + iVar8) = uVar16;
+      *(uint *)((char *)&DAT_000b78b8 + iVar8) = param_4 == 0 ? 0 : uVar16;
       do {
         cVar1 = *pcVar14;
-        *wptr_4897 = cVar1; wptr_4897 = wptr_4897 + 1;
+        /* ARM 0x15f94 uses sp+0x108: the archive-name buffer. */
+        acStack_230[pcVar14 - (char *)&DAT_000b98b8] = cVar1;
         pcVar14 = pcVar14 + 1;
       } while (cVar1 != '\0');
       iVar8 = ce_strlen(&DAT_000b98b8);
       pcVar14 = &DAT_000b98b9 + iVar8;
-      iVar8 = -(int)pcVar14;
+      char *path_start = pcVar14;
       do {
         cVar1 = *pcVar14;
-        pcVar14[(int)(local_338 + iVar8)] = cVar1;
+        local_338[pcVar14 - path_start] = cVar1;
         pcVar14 = pcVar14 + 1;
       } while (cVar1 != '\0');
       iVar8 = 0;
@@ -1127,14 +1130,16 @@ uint param_4;
       uVar4 = open_file_for_read(local_338);
       uVar9 = open_existing_file_rw(acStack_230);
       uVar10 = GetFileSize(uVar4,0);
-      uVar11 = ce_malloc();
+      /* ARM 0x16098 forwards GetFileSize's return as malloc's size. */
+      uVar11 = ce_malloc(uVar10);
       read_file_handle(uVar4,uVar11,uVar10);
       write_file_handle(uVar9,uVar11,uVar10);
       LocalFree(uVar11);
       CloseHandle(uVar4);
       CloseHandle(uVar9);
       close_file_handle(local_338);
-      uVar4 = open_existing_file_rw_alt(acStack_230);
+      /* close_level_archive still needs to write the offset table. */
+      uVar4 = open_existing_file_rw(acStack_230);
       *(char *)param_1 = (char)uVar4;
       *(char *)((char *)param_1 + 1) = (char)((uint)uVar4 >> 8);
       *(char *)((char *)param_1 + 2) = (char)((uint)uVar4 >> 0x10);

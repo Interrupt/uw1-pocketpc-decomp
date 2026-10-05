@@ -732,7 +732,7 @@ short param_4;
   if ((param_1 != (char *)0x0) && (pcVar7 = param_1, param_2 != (char *)0x0)) {
     do {
       cVar5 = *pcVar7;
-      pcVar7[(int)(acStack_50 + -(int)param_1)] = cVar5;
+      acStack_50[pcVar7 - param_1] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
     sVar6 = measure_text_width(acStack_50);
@@ -747,7 +747,7 @@ short param_4;
     pcVar7 = param_2;
     do {
       cVar5 = *pcVar7;
-      pcVar7[(int)(acStack_50 + -(int)param_2)] = cVar5;
+      acStack_50[pcVar7 - param_2] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
     sVar6 = measure_text_width(acStack_50);
@@ -853,7 +853,7 @@ LAB_000170bc:
             pcVar6 = pcVar9;
             do {
               cVar1 = *pcVar6;
-              pcVar6[(int)(local_58 + -(int)pcVar9)] = cVar1;
+              local_58[pcVar6 - pcVar9] = cVar1;
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
             sVar2 = measure_text_width(local_58);
@@ -861,7 +861,7 @@ LAB_000170bc:
                ((int)local_5e <= (int)*(short *)(&DAT_000baa0a + iVar8) + (int)sVar2)) {
               if (((int)local_60 <= *(short *)(&DAT_000baa0c + iVar8) + 5) &&
                  (((int)*(short *)(&DAT_000baa0c + iVar8) <= (int)local_60 &&
-                  (pcVar5 = (char *)pick_closer_note_label(pcVar5,pcVar9), pcVar5 == pcVar9)))) {
+                  (pcVar5 = (char *)pick_closer_note_label(pcVar5,pcVar9,local_5e,local_60), pcVar5 == pcVar9)))) {
                 iVar7 = iVar10;
               }
             }
@@ -872,7 +872,7 @@ LAB_000170bc:
             pcVar6 = pcVar5;
             do {
               cVar1 = *pcVar6;
-              pcVar6[(int)(local_58 + -(int)pcVar5)] = cVar1;
+              local_58[pcVar6 - pcVar5] = cVar1;
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
             iVar10 = measure_text_width(local_58);
@@ -990,7 +990,7 @@ LAB_0001739c:
     pcVar5 = local_58;
     do {
       cVar1 = *pcVar5;
-      pcVar5[(int)(&DAT_000ba9d8 + (iVar7 - (int)local_58))] = cVar1;
+      (&DAT_000ba9d8)[iVar7 + (pcVar5 - local_58)] = cVar1;
       pcVar5 = pcVar5 + 1;
     } while (cVar1 != '\0');
     DAT_000bbef0 = DAT_000bbef0 + 1;
@@ -1024,8 +1024,7 @@ void draw_automap_notes()
   char *pcVar5;
   short sVar6;
   int iVar7;
-  char acStack_baa20 [764376];
-  undefined1 auStack_48 [52];
+  char auStack_48 [52]; /* ARM allocates a single 52-byte text buffer. */
   
   select_active_font(s_font4x5p_sys_0008431c);
   *g_draw_color_index = 0x2d;
@@ -1036,9 +1035,9 @@ void draw_automap_notes()
     do {
       iVar4 = iVar7 * 0x36;
       pcVar3 = &DAT_000ba9d8 + iVar4;
-    wptr_5787 = (acStack_baa20 + iVar7 * -0x36);
+      wptr_5787 = auStack_48;
       pcVar5 = pcVar3;
-    wptr_5780 = (acStack_baa20 + iVar7 * -0x36);
+      wptr_5780 = auStack_48;
       do {
         cVar1 = *pcVar5;
         *wptr_5780 = cVar1; wptr_5780 = wptr_5780 + 1;
@@ -1088,6 +1087,8 @@ int param_1;
             ce_memmove(&DAT_000ba9d8 + iVar4 * 0x36,&DAT_000ba9d8 + (iVar4 + 1) * 0x36,
                          iVar4 * -0x36 + 0x1518);
             iVar3 = (iVar2 + -1) * 0x10000 >> 0x10;
+            /* Check the record moved into this slot as well. */
+            iVar4 = iVar4 - 1;
           }
           iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
           iVar2 = (int)(short)iVar3;
@@ -1095,12 +1096,12 @@ int param_1;
         } while (iVar4 < iVar2);
       }
       DAT_000bbef0 = sVar1;
-      iVar2 = open_level_archive(auStack_2c,s__SAVE0_lev_ark_000842fc);
-      if (iVar2 != 0) {
-        write_archive_entry(auStack_2c,param_1 + 0x23,&DAT_000ba9d8,(uint)(DAT_000bbef0 * 0x360000) >> 0x10
-                    );
-        close_level_archive(auStack_2c);
-      }
+    }
+    /* A zero-length entry also persists deletion of the last note. */
+    iVar2 = open_level_archive(auStack_2c,s__SAVE0_lev_ark_000842fc);
+    if (iVar2 != 0) {
+      write_archive_entry(auStack_2c,param_1 + 0x23,&DAT_000ba9d8,(uint)(DAT_000bbef0 * 0x360000) >> 0x10);
+      close_level_archive(auStack_2c);
     }
   }
   return;

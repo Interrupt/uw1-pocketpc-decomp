@@ -238,4 +238,24 @@ add_fixture_game_unit_test(spells
 
 add_fixture_game_unit_test(automap
   src/automap.c:draw_automap_cell_edge src/automap.c:darken_pixel
-  src/automap.c:@DAT_000842c0_real_table src/automap.c:draw_automap_cell)
+  src/automap.c:@DAT_000842c0_real_table src/automap.c:draw_automap_cell
+  src/automap.c:draw_automap_notes src/automap.c:save_automap_notes_to_archive
+  src/automap.c:load_automap_notes_from_archive
+  src/automap.c:enter_automap_screen src/automap.c:exit_automap_screen
+  src/automap.c:handle_automap_note_click src/automap.c:pick_closer_note_label
+  src/automap.c:debug_noop_overflow_hook
+  src/saveload.c:open_level_archive src/saveload.c:close_level_archive
+  src/saveload.c:write_archive_entry src/saveload.c:read_archive_entry
+  src/winfile_wrappers.c:open_existing_file_rw src/winfile_wrappers.c:open_file_for_read
+  src/winfile_wrappers.c:write_file_handle src/winfile_wrappers.c:close_file_handle
+  src/ordinal_stubs.c:ce_strrchr src/ordinal_stubs.c:ce_memmove
+  src/ordinal_stubs.c:ce_malloc src/ordinal_stubs.c:LocalFree
+  src/ordinal_stubs.c:CloseHandle src/ordinal_stubs.c:GetFileSize
+  src/ordinal_stubs.c:orduint_divmod
+  src/ordinal_stubs.c:ce_toupper
+  src/hud.c:draw_idle_mouse_cursor src/hud.c:save_cursor_background
+  src/hud.c:erase_cursor_icon src/hud.c:decrement_cursor_hide_depth
+  src/hud.c:cursor_show_idle_tick
+  src/hud.c:warp_mouse_cursor src/hud.c:get_mouse_position
+  src/graphics.c:rect_fill_or_save_restore src/graphics.c:set_draw_color)
+target_sources(uw_test_automap PRIVATE support/automap_storage_fixture.c)
