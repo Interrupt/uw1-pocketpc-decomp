@@ -7518,7 +7518,21 @@ void draw_idle_mouse_cursor()
        mouse. Skipped only when UW_ALWAYS_SHOW_CURSOR=1, since a
        Pocket-PC-panel-specific tap-area clamp isn't meaningful on a desktop
        port anyway; left enforced by default rather than chasing the
-       separate corruption bug. */
+       separate corruption bug.
+
+       FOLLOW-UP (bug-list: "'Use key / combine' cursor not drawing over 3d
+       view"): the wild-write bug named above is already fixed --
+       DAT_002047b0 is a real 20-element array (DAT_002047b0_backing[20])
+       as of the code-cleanup-pass-2 merge (commit e0e419e), so
+       init_cursor_subsystem's `(&DAT_002047b0)[iVar2] = 10000` loop can no
+       longer bleed into this rectangle's globals. Re-verified live
+       (UW_DEBUG_CURSORSHOW + UW_DEBUG_MODEBTN): selected a mode cursor
+       (g_cursor_mode=3, icon 0x1077) and held/hovered at mouse x=131 --
+       past the old corrupted bound's x2=109 -- and the cursor drew every
+       tick with no "out of bounds" early-return, both with a held button
+       (default visibility rule) and under UW_ALWAYS_SHOW_CURSOR=1. No
+       reproducible bug in current code; this confine-rect enforcement can
+       stay as-is. */
     if ((((ushort)DAT_00201b60 & 0xc9) != 0) && !uw_always_show_cursor()) {
       if (g_mouse_x < DAT_00204838) {
         if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");
