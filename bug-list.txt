@@ -9,7 +9,7 @@
 [x] Automap should lightly draw a wall when not discovered (fixed in 0d1d7f5/b676768, merged from bug-fixes-pass-1)
 [x] Automap notes not persisting (fixed in 7d8825b, earlier this session)
 [x] Crash when using a mantra (fixed in c9d58c8: handle_mantra_chant's typed-word/mantra-name locals were `undefined4`, truncating _strupr's and get_message_string's real 64-bit pointer returns -- ce_strcmp then dereferenced the truncated pointer and crashed, unconditionally, on literally every invocation)
-[ ] Crash when using a ranged weapon
+[x] Crash when using a ranged weapon (fixed: fire_ranged_weapon called free_object_slot() with no argument instead of free_object_slot(puVar7), the consumed ammo object's slot -- every other call site in the codebase passes the object pointer; this one read whatever was left in the argument register instead, corrupting the free-object-slot list on every shot. Also right-sized find_and_consume_ammo's unrelated oversized dead scratch buffer (544528 -> 64 bytes), the same already-fixed Ghidra stack-size artifact, left unfixed on this hot path.)
 [ ] Attack charge not consistent
 [ ] Pitch off - spell casting offset is off now. Revert earlier fix, reverse pitch look direction visually?
 [x] Door placement / collision (investigated, no reproducible bug: movement collision confirmed working live, visual placement already fixed earlier; found but did NOT fix an unrelated issue -- automap visibility flood sees through closed doors, see src/visibility.c / mysteries.md:135-138, needs real disasm to fix safely)
