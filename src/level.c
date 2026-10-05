@@ -551,7 +551,8 @@ LAB_00039784:
 // normal save/restore path when a level's transient state can't be
 // trusted (save_or_restore_level_special_state's own "needs reset"
 // bit case).
-void reset_level_arena_and_invalidate()
+void reset_level_arena_and_invalidate(param_1)
+undefined4 param_1;
 
 {
   reset_level_object_arena();

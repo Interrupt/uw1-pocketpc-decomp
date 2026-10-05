@@ -317,7 +317,7 @@ short param_4;
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00011e5c
-void bitmap_blit_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+void bitmap_blit_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 ushort param_1;
 ushort param_2;
 char *param_3;
@@ -325,6 +325,7 @@ short param_4;
 short param_5;
 short param_6;
 short param_7;
+undefined1 param_8;
 
 {
   short sVar1;
@@ -1231,7 +1232,10 @@ undefined4 blit_framebuffer_to_gx_display()
 
 // was FUN_0007e99c -- re-expand DAT_00088d98 into DAT_00088640 and re-install it as
 // g_palette_rgb565 (real light-level/tint args dropped by Ghidra)
-void reinstall_active_palette()
+void reinstall_active_palette(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
 
 {
   /* expand_pals_bytes's 3rd argument was dropped here -- confirmed via real
@@ -1286,7 +1290,7 @@ short param_3;
   *(undefined2 *)
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
        (&g_palette_rgb565)[param_3];
-  dirty_rect_union(iVar1,iVar1,(int)param_1);
+  dirty_rect_union(iVar1,iVar1 + 1,(int)param_1,(int)param_1 + 1);  /* 4th (right) bound was missing: dirty_rect_union takes (top,bottom,left,right) */
   debug_framebuffer_dump("plot_pixel");
   return;
 }

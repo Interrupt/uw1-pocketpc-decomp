@@ -214,7 +214,7 @@ void interact_look()
     wait_for_click_release(1);
   }
   else {
-    iVar2 = wait_for_key_or_mouse_move();
+    iVar2 = wait_for_key_or_mouse_move(1);
     if (iVar2 != 0) {
       interact_default();
     }
@@ -687,7 +687,7 @@ int param_2;
   uVar1 = encode_object_slot_index(param_2);
   iVar2 = find_object_by_encoded_slot_in_chain(param_1,1,uVar1);
   if (iVar2 != 0) {
-    unlink_and_free_object(DAT_002046b4);
+    unlink_and_free_object(DAT_002046b4,iVar2);  /* ARM 0x7e0c0-0x7e0cc: r0 = DAT_002046b4, r1 = the find result */
   }
   return;
 }
@@ -723,7 +723,7 @@ ushort * param_1;
   uVar6 = *param_1 & 0x1ff;
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction entry: param_1=%p uVar6(itemid)=0x%x raw=0x%x classcheck=0x%x\n", (void *)param_1, (unsigned)uVar6, (unsigned)*param_1, (unsigned)(*param_1 & 0x1c0));
   if (uVar6 == 0x157) {
-    handle_mantra_chant(0);
+    handle_mantra_chant();
     return;
   }
   if (uVar6 == 0x16e) {
@@ -984,7 +984,8 @@ char *param_2;  /* was int -- truncated g_interact_target; deref'd at param_2+2 
 
 
 // was FUN_0003ec00
-ushort *pick_object_under_cursor()
+ushort *pick_object_under_cursor(param_1)
+undefined4 param_1;
 
 {
   byte bVar1;

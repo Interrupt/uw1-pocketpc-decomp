@@ -197,8 +197,9 @@ uint param_3;
     if (((*puVar12 & 0x1c0) == 0x40) && (iVar16 = check_object_area_for_spawn_block(puVar12), iVar16 != 0)) {
       return 2;
     }
-    object_ptr_in_arena(puVar12);
-    puVar8 = (ushort *)alloc_object_slot();
+    /* alloc_object_slot's argument is object_ptr_in_arena's return value (ARM 0x7d708-0x7d70c:
+       bl object_ptr_in_arena; bl alloc_object_slot with r0 untouched) -- Ghidra dropped it. */
+    puVar8 = (ushort *)alloc_object_slot(object_ptr_in_arena(puVar12));
     if (puVar8 != (ushort *)0x0) {
       iVar16 = object_ptr_in_arena(puVar12);
       if (iVar16 == 0) {
@@ -570,7 +571,7 @@ undefined4 param_3;
       trigger_exploding_book_trap_at_tile(0,param_2,param_3);
     }
     else if (uVar1 == 2) {
-      restore_view_from_object_record();
+      restore_view_from_object_record(param_1,param_2,param_3);
     }
     else if (2 < uVar1) {
       if (uVar1 < 5) {
@@ -1158,9 +1159,11 @@ LAB_0003987c:
 // dropped here. NOT fixed: no concrete evidence for where inside this
 // function that 4th value should plug in, so speculatively adding it
 // risks a behavior change rather than a verified bug fix.
-undefined4 apply_poison_or_damage_trap_effect(param_1,param_2)
+undefined4 apply_poison_or_damage_trap_effect(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
+undefined4 param_3;
+undefined4 param_4;
 
 {
   char cVar1;
@@ -1170,7 +1173,7 @@ uint param_2;
   uint uVar5;
   
   sVar4 = (short)param_2;
-  iVar2 = get_object_record_by_slot_index();
+  iVar2 = get_object_record_by_slot_index(param_1);
   iVar3 = (int)sVar4;
   if (iVar3 < 0) {
     if (iVar2 == g_player_object) {

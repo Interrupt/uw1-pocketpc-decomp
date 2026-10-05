@@ -1654,7 +1654,7 @@ bool check_can_save_game()
     sVar1 = 0x9f;
   }
   if (sVar1 != 0) {
-    print_scroll_message_by_id();
+    print_scroll_message_by_id(sVar1);
   }
   return sVar1 == 0;
 }

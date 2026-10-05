@@ -1120,7 +1120,7 @@ short param_1;
     }
   }
   else if (param_1 < 0x100) {
-    iVar1 = get_object_record_by_slot_index();
+    iVar1 = get_object_record_by_slot_index(param_1);
     DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);
     DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
     DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;
@@ -1144,7 +1144,8 @@ short param_1;
 // counterpart to normal player movement, driven from
 // handle_game_view_click_hold when DAT_002020d8 (free-camera mode) is
 // set.
-void move_custom_view_target()
+void move_custom_view_target(param_1)
+undefined4 param_1;
 
 {
   short *psVar1;
@@ -1208,7 +1209,7 @@ short param_1;
     if (DAT_000db500 == 0) {
       return;
     }
-    sVar2 = encode_object_slot_index();
+    sVar2 = encode_object_slot_index(DAT_000db500);
     iVar1 = (int)sVar2;
     if (iVar1 == 0) {
       return;
@@ -1259,7 +1260,8 @@ short param_1;
 // position" case per its own switch, matching this function's own
 // role, so pass it explicitly rather than relying on leftover
 // register state.
-void enter_free_camera_mode()
+void enter_free_camera_mode(param_1)
+undefined4 param_1;
 
 {
   set_custom_view_target(0);
@@ -1319,7 +1321,8 @@ short param_3;
 // ignores extra args) but not yet understood; flagging rather than
 // guessing.
 // was FUN_00067f1c
-void spin_view_full_rotation()
+void spin_view_full_rotation(param_1)
+undefined4 param_1;
 
 {
   int iVar1;
@@ -2446,7 +2449,7 @@ void run_game_startup_sequence()
   Sleep(0x5dc);
   sVar2 = load_startup_gr_resources();
   if (sVar2 != 0) {
-    report_fatal_error_and_exit();
+    report_fatal_error_and_exit(sVar2);
   }
   ce_memset(acStack_62c,0,0x104);
   pcVar4 = pcVar6;
@@ -2467,7 +2470,7 @@ void run_game_startup_sequence()
   }
   sVar2 = load_object_catalog_data();
   if (sVar2 != 0) {
-    report_fatal_error_and_exit();
+    report_fatal_error_and_exit(sVar2);
   }
   reset_texture_id_lists();
   init_dungeon_rendering();
@@ -2505,7 +2508,7 @@ void run_game_startup_sequence()
   CopyFileW(auStack_214,auStack_41c,0);
   sVar2 = seed_conversation_globals_for_new_game();
   if (sVar2 != 0) {
-    report_fatal_error_and_exit();
+    report_fatal_error_and_exit(sVar2);
   }
   clear_screen_and_restore_cursor();
   set_palette_bank(5);
@@ -2517,7 +2520,8 @@ void run_game_startup_sequence()
 // run_game_startup_sequence: frees input bindings, stops ambient
 // sound and other sound effects/music, releases panel-wipe grtiles,
 // then builds the save directory path and ensures it exists.
-void run_game_shutdown_sequence()
+void run_game_shutdown_sequence(param_1)
+undefined4 param_1;
 
 {
   char stack0xffdc3250_buf [256];
@@ -2591,7 +2595,8 @@ void init_main_loop_state()
 // was FUN_0003bc08 -- key-binding callback (registered by
 // init_main_loop_state) that clears the "game running" flag,
 // signaling the main loop to exit.
-void request_game_exit()
+void request_game_exit(param_1)
+undefined4 param_1;
 
 {
   DAT_00201b6c = 0;
@@ -3108,9 +3113,12 @@ bool prepare_new_game(void)
     ce_wcscpy(destination_copy_path, converted_path);
     if (!CopyFileW(source_copy_path, destination_copy_path, 0)) return false;
 
-    if (seed_conversation_globals_for_new_game() != 0) {
-        report_fatal_error_and_exit();
-        return false;
+    {
+        int seed_status = seed_conversation_globals_for_new_game();
+        if (seed_status != 0) {
+            report_fatal_error_and_exit(seed_status);
+            return false;
+        }
     }
     if (load_level(1) < 1) return false;
 

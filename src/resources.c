@@ -1395,7 +1395,7 @@ int param_3;
 // the captured background rect behind a row before redrawing its
 // text over it -- the third member of the capture/restore/blit trio
 // documented together in src/resources.c.
-void blit_grtile_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+void blit_grtile_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 ushort param_1;
 int param_2;
 int param_3;
@@ -1403,6 +1403,7 @@ short param_4;
 short param_5;
 short param_6;
 short param_7;
+undefined4 param_8;
 
 {
   int iVar1;
@@ -1475,7 +1476,7 @@ short param_7;
   if (200 < iVar2) {
     sVar12 = (short)iVar6 + -200;
   }
-  dirty_rect_union(iVar13,iVar2,iVar7);
+  dirty_rect_union(iVar13,iVar2,iVar7,iVar7 + iVar1);  /* 4th (right) bound was dropped; same (top,bottom,left,right) shape as bitmap.c's blit_raw_sprite_clipped */
   iVar3 = (int)local_30;
   if (g_blit_transparent_mode == 0) {
     iVar5 = iVar5 - sVar12;

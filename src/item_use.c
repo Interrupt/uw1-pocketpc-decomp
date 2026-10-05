@@ -1522,9 +1522,10 @@ short param_2;
 // a major one-time quest/ritual completion rather than an everyday
 // item interaction; the exact quest isn't identified here. No
 // callers found by grep in the remaining decompile.
-void complete_use_item_special_quest_event(param_1,param_2)
+void complete_use_item_special_quest_event(param_1,param_2,param_3)
 ushort * param_1;
 int param_2;
+undefined4 param_3;
 
 {
   undefined2 uVar1;
@@ -1690,8 +1691,7 @@ uint param_2;
         *param_1 = (bVar2 + 4 ^ bVar2) & 0xf ^ bVar2;
         param_1[1] = (byte)((ushort)uVar1 >> 8);
         print_scroll_message_by_id(0x7d);
-        find_or_assign_object_widget(param_1);
-        redraw_backpack_slot_widget();
+        redraw_backpack_slot_widget(find_or_assign_object_widget(param_1));  /* r0 passthrough, ARM 0x7acb8-0x7acbc */
       }
     }
   }
@@ -1855,8 +1855,7 @@ int param_3;
       uVar2 = *param_1;
       *(undefined1 *)param_1 = 0x91;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8) & 0xfe;
-      find_or_assign_object_widget(param_1);
-      redraw_backpack_slot_widget();
+      redraw_backpack_slot_widget(find_or_assign_object_widget(param_1));  /* r0 passthrough, ARM 0x7b67c-0x7b680 */
     }
   }
   return;
@@ -2175,7 +2174,7 @@ ushort * param_2;
   else if (uVar4 == 1) {
     uVar4 = uVar5 & 0xf;
     if (uVar4 == 7) {
-      handle_mantra_chant(0);
+      handle_mantra_chant();
     }
     else if (((uVar4 == 0xb) || (uVar4 == 0xd)) && ((uVar5 & 0x8000) == 0)) {
       try_combine_or_stow_object(param_1,param_2,0);
@@ -3504,8 +3503,7 @@ int param_2;
   }
   else {
     iVar1 = get_equipped_item_at_slot(param_1);
-    resolve_object_link(iVar1 + 4);
-    uVar2 = encode_object_slot_index();
+    uVar2 = encode_object_slot_index(resolve_object_link(iVar1 + 4));  /* ARM 0x47030: r0 passthrough */
   }
   g_selected_object = (ushort *)extract_matching_object_from_slot(0xffffffff,0xffffffff,0xffffffff,param_1,0);
   if (g_selected_object != (ushort *)0x0) {

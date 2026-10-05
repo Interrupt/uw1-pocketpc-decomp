@@ -533,7 +533,8 @@ bool load_weapon_combat_maneuver_data()
 // wait_for_click_to_continue calls). Matches the same "dead/stripped
 // debug hook" pattern already confirmed for debug_print_init,
 // debug_print, and debug_noop_checkpoint elsewhere in this file.
-void debug_noop_frame_hook()
+void debug_noop_frame_hook(param_1)
+undefined4 param_1;
 
 {
   return;
@@ -854,7 +855,7 @@ undefined4 param_3;
        .GR entries. */
     pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
   }
-  bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1,unaff_r4,unaff_r5);
+  bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1);
   return;
 }
 
@@ -868,7 +869,8 @@ undefined4 param_3;
 // parameters) codes across combat/player/object-action damage and
 // hazard events, and paired with weapon_overlay_flash_restore in
 // play_view_restore_transition below.
-void weapon_overlay_flash_hold()
+void weapon_overlay_flash_hold(param_1)
+undefined4 param_1;
 
 {
   int iVar1;
@@ -894,7 +896,8 @@ void weapon_overlay_flash_hold()
 // blank redraws, snapshots the live screen region (DAT_00248410) and
 // repeatedly restores it over the overlay-disabled redraw loop,
 // holding a frozen frame while the overlay stays hidden.
-void weapon_overlay_flash_restore()
+void weapon_overlay_flash_restore(param_1)
+undefined4 param_1;
 
 {
   undefined4 uVar1;
@@ -922,7 +925,8 @@ void weapon_overlay_flash_restore()
 // damage/hazard events (src/combat.c, src/player.c, src/object_actions.c
 // call it with various scroll-message-like codes, all ignored since it
 // takes no parameters).
-void weapon_overlay_flash_once()
+void weapon_overlay_flash_once(param_1)
+undefined4 param_1;
 
 {
   show_error_dialog_stub_thunk();

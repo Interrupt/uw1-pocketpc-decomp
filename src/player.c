@@ -2526,8 +2526,7 @@ int param_2;
   }
   else {
     print_scroll_message_by_id(0x1c);
-    get_message_string(param_1 + 0x1fU | 0x400);
-    message_scroll_print_wrapped();
+    message_scroll_print_wrapped(get_message_string(param_1 + 0x1fU | 0x400));
     message_scroll_print_wrapped(&DAT_00084f20);
   }
   return;
@@ -2568,8 +2567,7 @@ LAB_00070874:
           pcVar1 = &DAT_00087318;
           goto LAB_00070874;
         }
-        get_message_string((byte)param_1[iVar2] + 0x1f | 0x400);
-        message_scroll_print_wrapped();
+        message_scroll_print_wrapped(get_message_string((byte)param_1[iVar2] + 0x1f | 0x400));
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
       } while (param_1[iVar2] != -1);
     }
@@ -4256,7 +4254,8 @@ short param_1;
 // earlier in this pass, there's only ONE call site here and the
 // animation is always the same fixed timing, so this is left as a
 // no-arg function rather than guessed into taking one.
-void trigger_quest_stumble_animation()
+void trigger_quest_stumble_animation(param_1)
+undefined4 param_1;
 
 {
   set_movement_animation_timer(0x40,0x1e);

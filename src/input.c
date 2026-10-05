@@ -1546,7 +1546,7 @@ int param_1;
     uVar4 = 0xffffffff;
   }
   else {
-    DAT_00204868 = read_realtime_clock_units(uVar2);
+    DAT_00204868 = read_realtime_clock_units();
     if ((uVar2 & 0x80) == 0) {
       if ((*DAT_0008794c != '\0') && (iVar3 = _isctype(sVar1,0x103), iVar3 != 0)) {
         if (DAT_0023c448 == 0x400) {

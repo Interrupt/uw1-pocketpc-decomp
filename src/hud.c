@@ -2660,7 +2660,7 @@ char *param_1;
             iVar2);
 
   if (iVar2 == 1 || iVar2 == 4) {
-    check_mouse_over_msg_scroll_panel(iVar2);
+    check_mouse_over_msg_scroll_panel();
     iVar2 = extraout_r3;
     if (DAT_00250708 != 0) {
       decrement_cursor_hide_depth();
@@ -5523,8 +5523,7 @@ void handle_light_source_click()
       }
       else {
         compute_light_source_colors(abStack_e);
-        get_message_string(abStack_e[local_10] + 0x180 | 0xc00);
-        message_scroll_print_wrapped();
+        message_scroll_print_wrapped(get_message_string(abStack_e[local_10] + 0x180 | 0xc00));
         bVar1 = *(byte *)(DAT_00086df8 + local_10 * 2 + 0x3f);
         if (bVar1 < 3) {
           iVar2 = 0;
@@ -7695,7 +7694,8 @@ uint poll_mouse_button_flags()
 
 
 // was FUN_0003def4
-void toggle_stats_panel()
+void toggle_stats_panel(param_1)
+undefined4 param_1;
 
 {
   undefined4 uVar1;

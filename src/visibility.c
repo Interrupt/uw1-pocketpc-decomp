@@ -1658,7 +1658,8 @@ void rebuild_dungeon_view()
 
 
 // was FUN_0005d2ac -- empty hook called before the visibility walk in build_frame_draw_list (disabled / never recovered)
-void dungeon_view_prepass_stub()
+void dungeon_view_prepass_stub(param_1)
+undefined4 param_1;
 
 {
   return;

@@ -1506,7 +1506,7 @@ undefined4 param_2;
   if ((*param_1 == 0) || (*(int *)(param_1 + 1) == 0)) {
     do {
       do {
-        advance_menu_music_track(uVar6,param_2);
+        advance_menu_music_track();
         flush_dirty_rect_to_display(1);
         uVar14 = next_input_event();
         param_2 = (undefined4)((ulonglong)uVar14 >> 0x20);
@@ -1754,7 +1754,8 @@ LAB_00024dd4:
 // of this build) or a decompilation gap -- not confirmed via
 // disassembly. Kept as-is, matching its real (argument-less) decompiled
 // signature.
-void chargen_ui_transition_hook()
+void chargen_ui_transition_hook(param_1)
+undefined4 param_1;
 
 {
   return;

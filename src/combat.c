@@ -2524,7 +2524,7 @@ int param_5;
   char acStackY_85aec [547480];
   char acStack_4d [53];
   
-  puVar5 = (undefined2 *)get_equipped_item_at_slot();
+  puVar5 = (undefined2 *)get_equipped_item_at_slot(param_1);
   if (puVar5 == (undefined2 *)0x0) {
     return 0xfffffffe;
   }

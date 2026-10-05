@@ -491,11 +491,11 @@ char *param_1;  /* was `undefined4` -- truncated the real object-record
     }
     else {
       if ((puVar1[2] & 0xffc0) != 0) {
-        free_linked_object_recursive();
+        free_linked_object_recursive((char *)(puVar1 + 2));  /* ARM 0x5342c: add r0,r4,#4 */
       }
       if ((*puVar1 & 0x8000) == 0) {
         if ((puVar1[3] & 0xffc0) != 0) {
-          free_linked_object_recursive();
+          free_linked_object_recursive((char *)(puVar1 + 3));  /* ARM 0x53470: add r0,r4,#6 */
         }
       }
       object_list_unlink(param_1,puVar1);

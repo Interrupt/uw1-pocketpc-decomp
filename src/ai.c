@@ -5491,8 +5491,9 @@ void npc_clear_special_goal()
 // nonzero is tick_mobile_objects' entire loop-termination signal, since
 // npc_ai_tick/mobile_object_tick's own return values don't reliably
 // carry that meaning (npc_ai_tick always returns 1).
-undefined4 object_tick_is_due(param_1)
+undefined4 object_tick_is_due(param_1,param_2)
 short param_1;
+undefined4 param_2;
 
 {
   int iVar1;

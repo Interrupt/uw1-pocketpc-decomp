@@ -1692,7 +1692,7 @@ char param_6;
   ushort local_1c;
   ushort local_1a;
   
-  uVar2 = encode_object_slot_index();
+  uVar2 = encode_object_slot_index(param_1);  /* ARM 0x74ad0-0x74ae8: r0 untouched since entry */
   uVar3 = *(ushort *)(param_1 + 2) & 0x380;
   if ((short)uVar2 < 0x100) {
     uVar2 = uVar2 & 0xff;
@@ -2445,7 +2445,7 @@ undefined1 param_4;
 
   bVar5 = param_3 - 1;
   if (param_3 != '\0') {
-    iVar2 = (char *)tilemap_lookup(param_1);
+    iVar2 = (char *)tilemap_lookup(param_1,param_2);  /* ARM 0x75ab4-0x75ab8: r1 still holds param_2 */
     iVar2 = (char *)resolve_object_link(iVar2 + 2);
     if (iVar2 != 0) {
       do {
@@ -3512,11 +3512,11 @@ ushort * param_1;
 short param_2;
 
 {
-  int iVar1;
+  char *iVar1;  /* was `int`: truncated get_message_string's real pointer, now actually dereferenced by message_scroll_print_wrapped */
 
   if ((param_2 != 0) &&
      (iVar1 = get_message_string((*(byte *)((char *)param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
-    message_scroll_print_wrapped();
+    message_scroll_print_wrapped(iVar1);
   }
   return;
 }

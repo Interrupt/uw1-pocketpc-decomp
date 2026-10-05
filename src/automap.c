@@ -1189,7 +1189,9 @@ undefined4 param_1;
 // likely a stripped-out warning/beep for "automap note text
 // truncated", though not individually re-checked against the real
 // disassembly to confirm.
-undefined4 debug_noop_overflow_hook()
+undefined4 debug_noop_overflow_hook(param_1,param_2)
+undefined4 param_1;
+undefined4 param_2;
 
 {
   return 0;

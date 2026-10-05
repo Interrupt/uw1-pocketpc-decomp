@@ -237,7 +237,7 @@ int param_2;
       ce_strcat(acStack_120,s__SOUND__0008750c);
       ce_strcat(acStack_120,auStack_130);
       if (DAT_0023c3b8 != (undefined4 *)0x0) {
-        stop_mod_player_playback();
+        stop_mod_player_playback(DAT_0023c3b8);
         if (DAT_0023c3b8 != (undefined4 *)0x0) {
           (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
         }
@@ -647,11 +647,13 @@ void stop_current_audio_handle_dup()
 // then dispatches the actual sample trigger via trigger_sound_sample_note.
 // Called by play_positional_sound_effect and siblings as their final
 // low-level step.
-uint allocate_and_play_sound_channel(param_1,param_2,param_3,param_4)
+uint allocate_and_play_sound_channel(param_1,param_2,param_3,param_4,param_5,param_6)
 byte param_1;
 undefined4 param_2;
 undefined4 param_3;
 undefined1 param_4;
+undefined4 param_5;
+undefined4 param_6;
 
 {
   byte bVar1;
@@ -706,8 +708,9 @@ LAB_00073108:
 // as a one-shot note into the module player (load_and_resample_wave_sample/
 // arm_sfx_trigger_slot/start_sfx_trigger_slot), all through the audio interface
 // DAT_0023c3b8.
-void trigger_sound_sample_note(param_1)
+void trigger_sound_sample_note(param_1,param_2)
 int param_1;
+undefined4 param_2;
 
 {
   char cVar1;
@@ -728,7 +731,7 @@ int param_1;
         SetFileTime(&local_18,&DAT_0023c3d4);
         DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar2,local_18);
       }
-      start_mod_player_playback();
+      start_mod_player_playback(DAT_0023c3b8);
       DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
     }
@@ -1154,7 +1157,7 @@ short param_1;
         SetFileTime(local_228,&DAT_0023c3d4);
         DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar3,local_228[0]);
       }
-      start_mod_player_playback();
+      start_mod_player_playback(DAT_0023c3b8);
       DAT_0023c330 = 0;
       DAT_00087448 = 1;
     }
@@ -1270,7 +1273,8 @@ void voice_sample_cluster_stub_2()
 // reporting a third fatal-error code (0x1007) if that allocation
 // fails too -- this second half's exact purpose (distinct from the
 // ambient-sound roll above it) isn't confirmed.
-void start_ambient_sound_effect()
+void start_ambient_sound_effect(param_1)
+undefined4 param_1;
 
 {
   int uw_ord2005_rem_169 = 0;
@@ -1835,11 +1839,11 @@ undefined4 param_3;
 // looks like Ghidra mislabeling local scratch stack slots as incoming
 // parameters (same shape as a real 2-parameter function), not a genuine
 // dropped-argument bug, so left alone rather than "fixed" on no evidence.
-undefined1 *construct_and_load_mod_player(param_1,param_2,param_3,param_4)
+/* Real arity is 2: all three ARM call sites set only r0/r1; Ghidra's param_3/param_4 were the
+   unwritten r2/r3 spilled into stack slots that nothing read. */
+undefined1 *construct_and_load_mod_player(param_1,param_2)
 undefined1 * param_1;
 undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
 
 {
   char cVar1;
@@ -1883,12 +1887,8 @@ undefined4 param_4;
   undefined1 auStack_2b0 [72];
   undefined1 auStack_268 [560];
   undefined4 local_c;
-  undefined4 uStack_8;
-  undefined4 uStack_4;
   
   local_c = param_2;
-  uStack_8 = param_3;
-  uStack_4 = param_4;
   FindNextFileW(param_1 + 0x104d8);
   init_mod_dynamic_array(param_1 + 0x104e0);
   local_334 = param_1 + 0x104f4;
@@ -2216,7 +2216,7 @@ undefined4 param_1;
 uint param_2;
 
 {
-  reset_mod_player_state();
+  reset_mod_player_state(param_1);
   if ((param_2 & 1) != 0) {
     cpp_operator_delete(param_1);
   }
@@ -2540,7 +2540,7 @@ int param_1;
           process_mod_tracker_row(param_1);
         }
         else {
-          apply_mod_tracker_tick_effects();
+          apply_mod_tracker_tick_effects(param_1);
         }
         iVar10 = *piVar13 + 1;
         *(char *)piVar13 = (char)iVar10;

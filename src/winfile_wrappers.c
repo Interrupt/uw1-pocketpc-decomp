@@ -30,8 +30,9 @@
 // resource loader -- load_string_resource's real behavior may need
 // re-examining in light of this (its other ~15 call sites also pass
 // path-shaped stack buffers, not integer resource ids -- see todo.md).
-undefined4 win_file_exists(path)
+undefined4 win_file_exists(path,param_2)
 char *path;
+undefined4 param_2;
 
 {
   /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating

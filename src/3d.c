@@ -2373,7 +2373,7 @@ LAB_0001e9c4:
         else {
           if (uVar11 != 6) {
             if (uVar11 != 7) goto LAB_0001ea18;
-            multiply_matrix4x4(auStack_124,local_a4,auStack_64,uVar8,uVar14);
+            multiply_matrix4x4(auStack_124,local_a4,auStack_64);
             puVar4 = auStack_64;
             goto LAB_0001e9c4;
           }

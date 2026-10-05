@@ -1326,7 +1326,7 @@ short frame_or_texid;
       if (getenv("UW_DEBUG_DUMP_GR")) {
         fprintf(stderr, "[gr-remap] DAT_00202520 bank=%u\n", (unsigned)(byte)pcVar15[3]);
       }
-      texptr = (byte *)decompress_gr_bitmap(pcVar15 + 4,&DAT_00202520 + (uint)(byte)pcVar15[3] * 0x10);
+      texptr = (byte *)decompress_gr_bitmap(pcVar15 + 4,&DAT_00202520 + (uint)(byte)pcVar15[3] * 0x10,*pcVar15);  /* compression-mode byte: same dropped-3rd-arg bug fixed at every sibling call site */
     }
   }
   else {

@@ -344,7 +344,7 @@ void refresh_container_view()
   while ((iVar2 = resolve_object_link(iVar2), iVar2 != 0 && ((*(byte *)(iVar2 + 1) & 0x40) != 0))) {
     iVar2 = iVar2 + 4;
   }
-  sVar1 = encode_object_slot_index();
+  sVar1 = encode_object_slot_index(iVar2);
   DAT_002029a0 = (uint)((uint)(_DAT_00202978 >> 6) != (int)sVar1);
   DAT_0020299c = (uint)((DAT_00202986 & 0xffc0) != 0);
   redraw_inventory_widget(0x15);

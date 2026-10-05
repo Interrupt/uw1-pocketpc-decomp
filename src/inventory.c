@@ -553,7 +553,7 @@ ushort * param_2;
     puVar1[5] = puVar3[5];
     puVar1[6] = puVar3[6];
     puVar1[7] = puVar3[7];
-    uVar2 = encode_object_slot_index();
+    uVar2 = encode_object_slot_index(puVar1);
     *param_1 = *param_1 & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
     param_1[1] = (byte)((uVar2 << 0x16) >> 0x18);
     decode_equipped_item_index(param_1,param_2);

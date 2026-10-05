@@ -448,7 +448,8 @@ void sweep_init_position()
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_0005898c -- pick the object under the view reticle (-> DAT_00086998 slot, DAT_00086999/9a tile x/y)
-void reticle_object_pick()
+void reticle_object_pick(param_1)
+undefined4 param_1;
 
 {
   byte bVar1;
@@ -667,7 +668,7 @@ int param_2;
     return 0;
   }
   if (param_1 != 0) {
-    sweep_init_position(psVar11);
+    sweep_init_position();
   }
   iVar8 = DAT_00204874;
   psVar11 = g_sweep_velocity;
@@ -1941,7 +1942,7 @@ int param_3;
           iVar3 = 0x38;
           uVar6 = 2;
         }
-        play_sound_effect_with_pan(uVar6,iVar3,uVar2 - 0x10,uVar2,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_lr);
+        play_sound_effect_with_pan(uVar6,iVar3,uVar2 - 0x10);
         DAT_0023bf60 = DAT_0023bf60 == '\0';
         iVar3 = read_realtime_clock_units();
         DAT_0023bf5c = iVar3 + 100;
