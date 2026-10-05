@@ -6999,12 +6999,30 @@ int erase_cursor_icon()
             (int)DAT_00204844, DAT_00204844 != 0, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
   if (DAT_00204844 != 0) {
-    set_draw_color(0x15);
-    widen_clip_for_cursor_blit();
-    rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
-                 ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
-                 ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
-    restore_clip_after_cursor_blit();
+    /* Desktop deviation: skip the actual pixel restore when the cursor
+       is over the live 3D view (see cursor_over_live_3d_view's own
+       comment) -- centralized here, the one place that actually
+       touches the framebuffer for an erase, rather than guarding every
+       individual caller (update_mouse_state, decrement_cursor_hide_depth,
+       draw_idle_mouse_cursor, ...). The 3D view repaints itself fully
+       every tick, so whatever DAT_00204844's saved background holds is
+       for a screen that no longer exists; restoring it paints stale,
+       no-longer-current pixels over the just-repainted live view --
+       confirmed live via a user report of a persistently visible dark
+       patch of old frame data under the cursor near the 3D view, even
+       after draw_idle_mouse_cursor's own save-side guard already
+       stopped drawing a fresh one there. DAT_00204848 still gets
+       cleared and the prior DAT_00204844 still gets returned below, so
+       callers correctly treat this as "handled" and clear their own
+       copy -- there's just nothing left to paint back. */
+    if (!(uw_always_show_cursor() && cursor_over_live_3d_view())) {
+      set_draw_color(0x15);
+      widen_clip_for_cursor_blit();
+      rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
+                   ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
+                   ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
+      restore_clip_after_cursor_blit();
+    }
     /* REVERTED (was: force g_force_flush around this call, matching
        draw_idle_mouse_cursor's own sibling wrapping) -- caused a visible flicker
        regression: rect_fill_or_save_restore's own dirty_rect_union call
