@@ -41,7 +41,7 @@ extern undefined1 DAT_0023cdb0_backing[32];
 
 #define DAT_0023cdb0 DAT_0023cdb0_backing[0]
 extern void (*const g_hud_panel_handlers_table[13])(void);
-extern short g_player_carry_weight;
+
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;

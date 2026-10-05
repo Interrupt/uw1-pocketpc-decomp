@@ -68,7 +68,7 @@ static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
    low address and segfaults level init. Give them real backing storage
    and address them as `&DAT_00202988 + idx`. */
 undefined1 DAT_00202988_backing[16];
-short g_player_carry_weight;
+
 static int DAT_002028d0;
 static char s_Not_a_spell_00085a80[] = "Not_a_spell";
 static byte DAT_002028d4;

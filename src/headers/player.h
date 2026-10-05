@@ -87,6 +87,10 @@ extern undefined2 DAT_002048b2;
 extern undefined1 * DAT_002048b8;
 extern undefined1 DAT_0023bca8_backing[8192];
 #define DAT_0023bca8 DAT_0023bca8_backing[0]
+/* ARM 0x23bcf2/0x23bcf4 are fields of the serialized player status
+   record, also written through DAT_00086df8 by character creation. */
+#define g_player_carry_weight (*(short *)(DAT_0023bca8_backing + 0x4a))
+#define g_player_max_carry_weight (*(ushort *)(DAT_0023bca8_backing + 0x4c))
 extern undefined2 DAT_0023be98;
 extern undefined4 DAT_0023bea8;
 extern short DAT_0023beb4;
@@ -161,7 +165,7 @@ undefined4 roll_skill_check();
 void grant_experience_points();
 void refresh_experience_display();
 void toggle_light_table_flicker();
-undefined4 recompute_level7_hazard_from_character_level();
+undefined4 recalculate_player_stats(int refill_mana);
 void advance_character_level();
 undefined4 classify_skill_training_tier();
 void advance_skill_training();
