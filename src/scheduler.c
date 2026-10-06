@@ -167,9 +167,7 @@ void scheduler_finish_entry(int entry_slot)
     uVar5 = (uVar10 ^ uVar5) & 0xf ^ uVar10;
     *(byte *)puVar4 = (byte)uVar5;
     *(byte *)((char *)puVar4 + 1) = (byte)(uVar10 >> 8);
-    uVar10 = CONCAT11(*(byte *)((char *)puVar4 + 7),(byte)puVar4[3]) & 0xffc0;
-    *(byte *)(puVar4 + 3) = (byte)uVar10;
-    *(byte *)((char *)puVar4 + 7) = (byte)(uVar10 >> 8);
+    ((uw_object_hdr_t *)puVar4)->owner = 0;
     uVar8 = (ushort)uVar5;
     if ((uVar5 & 0x1000) == 0) {
       uVar8 = ((uVar8 & 0xe00) - 0xe01 ^ uVar8) & 0x1e00 ^ uVar8;

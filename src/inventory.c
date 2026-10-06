@@ -236,7 +236,7 @@ void serialize_inventory_link_chain(byte *link_chain, byte *out_link)
     encode_equipped_item_index(link_chain,out_link);
     link_chain = puVar1 + 4;
     out_link = puVar2 + 4;
-    if (((puVar1[1] & 0x80) == 0) && ((*(ushort *)(puVar1 + 6) & 0xffc0) != 0)) {
+    if (((puVar1[1] & 0x80) == 0) && (((uw_object_hdr_t *)puVar1)->link != 0)) {
       serialize_inventory_link_chain(puVar1 + 6,puVar2 + 6);
     }
     puVar1 = (undefined1 *)resolve_object_link(link_chain);
@@ -269,7 +269,7 @@ void deserialize_inventory_link_chain(byte *link_field, ushort *saved_link)
     decode_equipped_item_index(link_field,saved_link);
     link_field = puVar1 + 4;
     saved_link = (ushort *)(puVar3 + 4);
-    if (((puVar3[1] & 0x80) == 0) && ((*(ushort *)(puVar3 + 6) & 0xffc0) != 0)) {
+    if (((puVar3[1] & 0x80) == 0) && (((uw_object_hdr_t *)puVar3)->link != 0)) {
       /* Dropped 2nd argument -- deserialize_inventory_link_chain takes (link_field, saved_link) and every
          other call site (both non-recursive ones, a few lines up this file) passes both; this
          self-recursive call for a nested container's own contents only passed the first. */
@@ -322,7 +322,7 @@ void handle_inventory_panel_click(short slot)
     if (g_selected_object == 0) {
       iVar9 = (int)(short)cVar2;
       if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[weapon-ready] click-dispatch: slot=%d equipped_raw=0x%04x weaponhand_target=%d\n", iVar9, (unsigned)*(ushort *)(&g_equipped_items + iVar9 * 2), 8 - (*(byte *)(DAT_00086df8 + 100) & 1));
-      if ((*(ushort *)(&g_equipped_items + iVar9 * 2) & 0xffc0) == 0) {
+      if (((uw_chain_word_t *)(&g_equipped_items + iVar9 * 2))->chain == 0) {
         if (iVar9 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
           toggle_weapon_ready();
         }
@@ -347,7 +347,7 @@ void handle_inventory_panel_click(short slot)
             }
           }
         }
-        else if ((puVar7[3] & 0xffc0) != 0x40) {
+        else if (((uw_object_hdr_t *)puVar7)->link != 1) {
           puVar10 = (ushort *)prompt_split_object_stack(puVar7);
           if (puVar10 == (ushort *)0x0) {
             return;
@@ -528,7 +528,7 @@ joined_r0x00048308:
                     iVar6, (char)(&g_backpack_widget_to_slot)[iVar6],
                     (unsigned)*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
           if (iVar6 < 0x15) {
-            if ((*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2) & 0xffc0) != 0) {
+            if (((uw_chain_word_t *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2))->chain != 0) {
               if (getenv("UW_DEBUG_INV"))
                 fprintf(stderr, "[inv] resolve addr=%p table=%p lo=%p hi=%p\n",
                         (void *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2),
@@ -583,10 +583,10 @@ joined_r0x00048308:
         fprintf(stderr, "[w20] slot=%d raw=0x%04x occupied=%d DAT_00202938=%p x=%d y=%d w=%d h=%d\n",
                 (int)(unsigned char)DAT_00085c4c,
                 (unsigned)*(ushort *)(&g_equipped_items + DAT_00085c4c * 2),
-                (int)((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0),
+                (int)(((uw_chain_word_t *)(&g_equipped_items + DAT_00085c4c * 2))->chain != 0),
                 (void *)DAT_00202938, (int)_DAT_00085bf0, (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                 (int)DAT_00085bf5, (int)DAT_00085bf4);
-      if ((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0) {
+      if (((uw_chain_word_t *)(&g_equipped_items + DAT_00085c4c * 2))->chain != 0) {
         puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + DAT_00085c4c * 2));
         if (getenv("UW_DEBUG_W20"))
           fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7, puVar7 ? (unsigned)(((uw_object_hdr_t *)puVar7)->item_id) : 0u);
