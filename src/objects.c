@@ -1971,8 +1971,7 @@ int find_object_placement(ushort *object, uint tile_x, uint tile_y, short height
   }
   pTile = (char *)tilemap_lookup((int)uVar4 >> 3,(int)uVar6 >> 3);
   uVar1 = object[1];
-  bVar3 = (byte)(uVar1 & 0x3ff);
-  *(byte *)(object + 1) = (bVar3 ^ (byte)height) & 0x7f ^ bVar3;
+  ((uw_object_hdr_t *)object)->zpos = height;
   *(byte *)((char *)object + 3) =
        (byte)((uVar1 & 0x3ff) >> 8) | (byte)(((uVar6 & 7 | (uVar4 & 0x1fff) << 3) << 10) >> 8);
   object_list_append_tail(pTile + 2,object);

@@ -268,8 +268,7 @@ int drop_held_object_near_player(ushort *held_object, int force)
   if (held_object != (ushort *)0x0) {
     local_28 = (ushort)(*(byte *)((char *)g_player_object + 3) >> 5) + DAT_00202a4c * 8;
     local_26 = (short)((*(byte *)((char *)g_player_object + 3) & 0x1c) >> 2) + DAT_00202a50 * 8;
-    *(byte *)(held_object + 1) = ((byte)g_player_object[1] ^ (byte)held_object[1]) & 0x7f ^ (byte)held_object[1];
-    *(byte *)((char *)held_object + 3) = *(byte *)((char *)held_object + 3);
+    ((uw_object_hdr_t *)held_object)->zpos = ((uw_object_hdr_t *)g_player_object)->zpos;
     cVar9 = ((&DAT_00202c91)[((uw_object_hdr_t *)held_object)->item_id * 0xd] &
             7) + ((&DAT_00202c91)[((uw_object_hdr_t *)g_player_object)->item_id * 0xd] & 7) + '\x01';
     if (getenv("UW_DEBUG_THROW"))

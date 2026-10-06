@@ -2271,10 +2271,7 @@ void spawn_effect_debris_burst(byte *template, uint tile_x, int tile_y)
          (bVar3 ^ (byte)(((((int)uw_ord2005_rem_172 - 2U & 0xffff) + uVar9 & 0xffff) << 10) >> 8)) &
          0x1c ^ bVar3;
     bVar4 = ce_rand();
-    uVar2 = puVar8[1];
-    bVar3 = (byte)uVar2;
-    *(byte *)(puVar8 + 1) = (((bVar4 & 0xf) + bVar3) - 8 ^ bVar3) & 0x7f ^ bVar3;
-    *(char *)((char *)puVar8 + 3) = (char)(uVar2 >> 8);
+    ((uw_object_hdr_t *)puVar8)->zpos = ((uw_object_hdr_t *)puVar8)->zpos + (bVar4 & 0xf) - 8;
     /* was folded into `int iVar7` (this function's loop counter, reused
        immediately after this for unrelated int values) -- truncated
        tilemap_lookup's real `void *` return */

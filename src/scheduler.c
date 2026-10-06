@@ -159,10 +159,7 @@ void scheduler_finish_entry(int entry_slot)
       play_positional_sound_effect(0xc,(uint)(*(byte *)((char *)puVar4 + 3) >> 5) + (short)DAT_0010144c * 8,
                    (*(byte *)((char *)puVar4 + 3) >> 2 & 7) + (short)DAT_00101454 * 8,0);
     }
-    uVar2 = puVar4[1];
-    bVar3 = (byte)uVar2;
-    *(byte *)(puVar4 + 1) = (bVar3 ^ (byte)uVar8) & 0x7f ^ bVar3;
-    *(byte *)((char *)puVar4 + 3) = (byte)(uVar2 >> 8);
+    ((uw_object_hdr_t *)puVar4)->zpos = uVar8;
     uVar10 = *puVar4 & 0xff4f | (uVar10 | 0x14) << 4;
     uVar5 = (uVar10 ^ uVar5) & 0xf ^ uVar10;
     *(byte *)puVar4 = (byte)uVar5;
@@ -285,7 +282,6 @@ uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byt
 void scheduler_step_entry(int entry_slot, int elapsed)
 {
   int iVar1;
-  byte bVar2;
   ushort uVar3;
   ushort *puVar4;
   uint uVar5;
@@ -349,10 +345,7 @@ LAB_00081254:
             elapsed = (short)elapsed * -0x10000 >> 0x10;
           }
           if ((puVar4[3] & 7) == 6) {
-            uVar8 = puVar4[1];
-            bVar2 = (byte)uVar8;
-            *(byte *)(puVar4 + 1) = ((char)elapsed * '\x06' + bVar2 ^ bVar2) & 0x7f ^ bVar2;
-            *(char *)((char *)puVar4 + 3) = (char)(uVar8 >> 8);
+            ((uw_object_hdr_t *)puVar4)->zpos = ((uw_object_hdr_t *)puVar4)->zpos + (char)elapsed * 6;
           }
           uVar5 = (uint)*puVar4;
           uVar5 = ((uVar5 & 0xe00) + (uVar5 & 0xf000) + elapsed * 0x200 ^ uVar5) & 0x1e00 ^ uVar5;

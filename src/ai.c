@@ -1267,10 +1267,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
           iVar8 = 8;
           do {
             bVar4 = ce_rand();
-            uVar1 = object[1];
-            bVar5 = (byte)uVar1;
-            *(byte *)(object + 1) = ((bVar4 & 7) + bVar5 + 4 ^ bVar5) & 0x7f ^ bVar5;
-            *(byte *)((char *)object + 3) = (byte)(uVar1 >> 8);
+            ((uw_object_hdr_t *)object)->zpos = ((uw_object_hdr_t *)object)->zpos + (bVar4 & 7) + 4;
             uVar6 = ce_rand();
             uVar7 = ce_rand();
             /* Was `ordint_divmod(3,uVar6); ... extraout_r1_00` / same for uVar7/extraout_r1 -- the

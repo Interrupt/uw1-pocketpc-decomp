@@ -26,7 +26,6 @@ void close_door_object(char *actor, ushort *door)
 {
   ushort quality_word;
   ushort state;
-  byte low_byte;
   undefined4 sound_id;
 
   if (getenv("UW_DEBUG_DOOR"))
@@ -50,10 +49,7 @@ void close_door_object(char *actor, ushort *door)
     *(byte *)(door + 3) = (byte)(quality_word & 0xfffe);
     *(byte *)((char *)door + 7) = (byte)((quality_word & 0xfffe) >> 8);
     if (state != 6) {
-      state = door[1];
-      low_byte = (byte)state;
-      *(byte *)(door + 1) = (low_byte + 0x18 ^ low_byte) & 0x7f ^ low_byte;
-      *(byte *)((char *)door + 3) = (byte)(state >> 8);
+      ((uw_object_hdr_t *)door)->zpos = ((uw_object_hdr_t *)door)->zpos + 0x18;
     }
     trigger_object_trap_or_use_action(actor, door, 7, (int)DAT_002020a0, DAT_002020a4);
     schedule_door_open_animation(door);
