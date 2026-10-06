@@ -68,11 +68,61 @@ static void test_trigger_sound_sample_note_plays_resource_id_plus_800(void)
     TEST_ASSERT_EQUAL_INT(859, audio_fixture_last_sfx_resource_id());
 }
 
+/* play_numbered_voice_sample (was FUN_000738c4) plays a numbered VOC
+   voice/narration sample -- see its own "BUG FIX (real voice-sample
+   playback)" comment history in audio.c. This is a pure logic-level
+   check that the real interception calls platform_voice_play with
+   exactly the id it was given, independent of the dead
+   DAT_0023c3b8-gated body underneath it (which stays unreached here,
+   same as every other scenario this suite drives -- see
+   audio_fixture_reset). */
+static void test_play_numbered_voice_sample_plays_the_given_id(void)
+{
+    play_numbered_voice_sample(5);
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_voice_play_call_count());
+    TEST_ASSERT_EQUAL_INT(5, audio_fixture_last_voice_sample_id());
+
+    play_numbered_voice_sample(27);
+    TEST_ASSERT_EQUAL_INT(2, audio_fixture_voice_play_call_count());
+    TEST_ASSERT_EQUAL_INT(27, audio_fixture_last_voice_sample_id());
+}
+
+/* is_voice_sample_finished (was FUN_00073ac4) is the real query behind
+   babl_render_tick's "has the forced-on voice line finished?" check --
+   see its own "BUG FIX (real voice-sample playback)" comment in
+   audio.c for the live-crash finding this interception avoids. This
+   confirms the function returns platform_voice_is_finished()'s answer
+   directly in both directions, never touching the dead (and, for
+   is_voice_sample_finished specifically, unguarded/crash-prone) body
+   underneath. */
+static void test_is_voice_sample_finished_reflects_the_real_backend(void)
+{
+    audio_fixture_set_voice_is_finished(0);
+    TEST_ASSERT_FALSE(is_voice_sample_finished());
+
+    audio_fixture_set_voice_is_finished(1);
+    TEST_ASSERT_TRUE(is_voice_sample_finished());
+}
+
+/* stop_voice_sample (was FUN_00073aec) is the real stop behind babl.c's
+   end-of-conversation cleanup. Logic-level check that it reaches the
+   real backend, independent of the dead DAT_0023c3b8-gated body
+   underneath (unreached here, same as play_numbered_voice_sample
+   above). */
+static void test_stop_voice_sample_stops_the_real_backend(void)
+{
+    stop_voice_sample();
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_voice_stop_call_count());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_ambient_track_stays_stable_well_within_its_real_duration);
     RUN_TEST(test_ambient_track_advances_once_its_real_duration_elapses);
     RUN_TEST(test_trigger_sound_sample_note_plays_resource_id_plus_800);
+    RUN_TEST(test_play_numbered_voice_sample_plays_the_given_id);
+    RUN_TEST(test_is_voice_sample_finished_reflects_the_real_backend);
+    RUN_TEST(test_stop_voice_sample_stops_the_real_backend);
     return UNITY_END();
 }

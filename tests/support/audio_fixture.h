@@ -10,5 +10,9 @@ int audio_fixture_load_track_call_count(void);
 const char *audio_fixture_last_loaded_track(void);
 int audio_fixture_sfx_play_call_count(void);
 int audio_fixture_last_sfx_resource_id(void);
+int audio_fixture_voice_play_call_count(void);
+int audio_fixture_last_voice_sample_id(void);
+void audio_fixture_set_voice_is_finished(int value);
+int audio_fixture_voice_stop_call_count(void);
 
 #endif

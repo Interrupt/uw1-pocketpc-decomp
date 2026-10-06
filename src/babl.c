@@ -7133,8 +7133,10 @@ intptr_t param_1;
 // dispatching embedded opcode bytes < 0x10 through the
 // PTR_FUN_00085408 table (babl_render_op_wrap_message,
 // babl_render_op_say, babl_render_op_show_code,
-// babl_render_op_play_sound), streaming voice-sample audio via
-// load_voice_sample_page/read_voice_sample_page_chunk, driving
+// babl_render_op_play_sound), streaming illustrated book/scroll bitmap
+// animation-frame data via load_voice_sample_page/
+// read_voice_sample_page_chunk (despite their "voice_sample" names --
+// see load_voice_sample_page's own comment in audio.c), driving
 // portrait/illustration palette-cycle animation via
 // tick_book_illustration_palette_cycles, and per-tick housekeeping
 // via babl_render_tick. See the individual opcode handlers and

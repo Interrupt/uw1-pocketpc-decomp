@@ -55,6 +55,7 @@ set(UW_SOURCES
   src/audio.c
   src/platform_music.c
   src/platform_sfx.c
+  src/platform_voice.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

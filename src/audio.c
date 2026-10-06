@@ -6,6 +6,7 @@
 #include "headers/audio.h"
 #include "headers/platform_music.h"
 #include "headers/platform_sfx.h"
+#include "headers/platform_voice.h"
 #include "headers/debug.h"
 #include "headers/file_io.h"
 #include <stdio.h>
@@ -206,7 +207,25 @@ static undefined1 DAT_000873e0_backing[256] = {
   1,0,0,0, 1,0,0,0, 126,0,0,0, 121,0,0,0
 };
 #define DAT_000873e0 DAT_000873e0_backing[0]
-static undefined4 DAT_00087458;
+/* BUG FIX (missing table data): was a plain zero-initialized
+   `undefined4` -- get_audio_subsystem_flag's own comment used to say
+   this is "not otherwise written anywhere in this decompile (always
+   its zero-initialized default)", which is true for CODE writers, but
+   the real UU.exe .data byte at this address, confirmed via a live
+   Ghidra memory read (same technique as DAT_00087414/DAT_000873e0/
+   DAT_00087520 above/below), is `01 00 00 00` -- i.e. this flag
+   defaults to 1 (enabled), it's just never written by any function,
+   only ever read once (by get_audio_subsystem_flag itself). Left at 0
+   here, render_babl_dialog_window's own `bVar4 = get_audio_subsystem_flag();
+   local_8b = local_8b & 0xdf | (bVar4 & 1) << 5;` (babl.c) permanently
+   clears the babl conversation-render state's "voice available" bit --
+   confirmed live: every voiced-line call site this port's demo scripts
+   exercise (babl.c's play_numbered_voice_sample call, gated on that
+   same bit) traced to zero calls across 10 different demo scripts
+   before this fix. Corrected to match the real .data content, making
+   the whole numbered-VOC-sample pool (see platform_voice.c) actually
+   reachable for the first time. */
+static undefined4 DAT_00087458 = 1;
 /* Sizing pass: read-only (`pcVar4 = &DAT_00087520;`), a base-directory
    path fragment per its usage context. Real content confirmed via
    direct Ghidra memory export of UU.exe: "\VOC00.WAV". Sized
@@ -988,9 +1007,15 @@ int param_1;
 // empty body). Called immediately before shutdown_music_module in the
 // app-shutdown sequence, so most plausibly meant to shut down the
 // sound-effects subsystem as its counterpart.
+// BUG FIX (real voice-sample playback): added platform_voice_shutdown()
+// to actually close the real voice-sample audio device before process
+// exit, same shape as shutdown_music_module's own
+// platform_music_shutdown() addition just below. (platform_sfx's own
+// shutdown is a separate cluster's call site, not touched here.)
 void shutdown_sound_effects()
 
 {
+  platform_voice_shutdown();
   return;
 }
 
@@ -1183,8 +1208,12 @@ bool advance_menu_music_track_elapsed()
 
 
 // was FUN_000738ac -- returns DAT_00087458, an audio-subsystem-related
-// flag not otherwise written anywhere in this decompile (always its
-// zero-initialized default in this build).
+// flag not otherwise written anywhere in this decompile (no function
+// ever assigns it -- see its own declaration comment above for why
+// it's still initialized to 1, not left at a zero default: confirmed
+// real .data content, not a guess). The one real caller,
+// render_babl_dialog_window (babl.c), uses this value to gate whether
+// a conversation line's "voice available" bit is ever set at all.
 undefined4 get_audio_subsystem_flag()
 
 {
@@ -1206,14 +1235,21 @@ undefined4 audio_always_true_stub()
 // was FUN_000738c4 -- plays a numbered voice/speech sample: lazily
 // reloads the music module if playback had stopped (same pattern as
 // trigger_sound_sample_note), waits for any currently-playing sample
-// to finish, lazily allocates the sample-set handle, then builds a
-// path from a base directory (DAT_00087520) plus param_1 formatted as
-// two ASCII digits into a filename template (DAT_00241f08) and loads/
-// plays that sample as a one-shot note. Neither buffer's real content
-// was recovered (both are zero-initialized, built entirely at
-// runtime), so the exact directory/filename pattern and what these
-// numbered samples actually are (spoken narration? sound bites?)
-// isn't confirmed.
+// to finish, lazily allocates the sample-set handle, then patches two
+// ASCII decimal digits (param_1/10, param_1%10 -- confirmed genuine
+// divide-by-10 via a live Ghidra decompile, NOT the base-8 scheme
+// play_music_track's own filename digits turned out to need) into the
+// "00" placeholder of a stack copy of DAT_00087520 ("\VOC00.WAV",
+// already-recovered real content, see its own declaration comment
+// above -- this comment used to wrongly claim neither buffer here was
+// ever recovered), then strcats that patched "\VOCnn.WAV" onto a stack
+// copy of DAT_00241f08 (confirmed, via its other use site in game.c's
+// registry-install-dir lookup, to hold the game's absolute install
+// directory, not a second filename template) before loading/playing
+// the result as a one-shot note. See platform_voice.c's own block
+// comment for the full chain (including why DAT_00241f08's half is
+// irrelevant to this port) and the real playback backend hooked in
+// below.
 undefined4 play_numbered_voice_sample(param_1)
 short param_1;
 
@@ -1239,7 +1275,9 @@ short param_1;
   char local_21c;
   char local_21b;
   char acStack_118 [260];
-  
+
+  platform_voice_play(param_1);
+
   if (DAT_0023c3b8 == (undefined4 *)0x0) {
     uVar2 = 0;
   }
@@ -1323,9 +1361,27 @@ void voice_sample_cluster_stub_1()
 
 // was FUN_00073ac4 -- true once the voice/speech sample most recently
 // started (via play_numbered_voice_sample) has finished playing.
+//
+// BUG FIX (real voice-sample playback): unlike play_numbered_voice_sample
+// and stop_voice_sample just below, this function's real decompiled body
+// has NO `DAT_0023c3b8 == 0` guard at all -- it unconditionally calls
+// is_sfx_trigger_slot_active(DAT_0023c3b8, 0), which dereferences
+// `*(char*)(param_2*0xd + param_1 + 0x10410)` with param_1 (DAT_0023c3b8)
+// always NULL on this codebase's current (deliberately dead) MOD-engine
+// path, i.e. a raw dereference of address 0x10410 -- a real crash the
+// instant any babl conversation line sets the "voice forced on" flag
+// (see babl.c's render_babl_dialog_window/babl_render_tick), not just a
+// hypothetical. The real platform_voice backend (see platform_voice.c)
+// replaces this whole body outright -- returning its real answer
+// directly, rather than prepending a call and falling through the way
+// play_numbered_voice_sample/stop_voice_sample do -- specifically to
+// never reach that unguarded dereference. The original body is left
+// completely untouched/still unreachable underneath.
 bool is_voice_sample_finished()
 
 {
+  return platform_voice_is_finished();
+
   char cVar1;
 
   cVar1 = is_sfx_trigger_slot_active(DAT_0023c3b8,0);
@@ -1339,6 +1395,8 @@ bool is_voice_sample_finished()
 void stop_voice_sample()
 
 {
+  platform_voice_stop();
+
   if (DAT_0023c3b8 != 0) {
     stop_sfx_trigger_slot(DAT_0023c3b8,0);
   }
@@ -1500,13 +1558,27 @@ undefined4 reset_dialogue_speech_state()
 }
 
 
-// was FUN_00035ec4 -- fully loads one voice-sample page (param_2,
-// indexing into the resource at param_1) into the caller's buffer
-// (param_4, a freshly-allocated 0x10000-byte block at its only known
-// call site) in a single ce_memmove read, sized from the page's own
-// header fields at param_3. See the sibling
-// read_voice_sample_page_chunk for the incremental/streaming variant
-// used during actual playback.
+// was FUN_00035ec4 -- despite the "voice_sample" name (kept to avoid
+// an unrelated rename churn -- see the correction below), this is NOT
+// part of the numbered VOC voice-sample pool (play_numbered_voice_sample/
+// is_voice_sample_finished/stop_voice_sample, now backed by
+// platform_voice.c). Its only real caller, render_babl_dialog_window
+// (babl.c, inside the illustrated book/scroll-viewer branch), feeds its
+// output straight into ce_memmove(..., 64000)/decompress_rle_stream/
+// bitmap_blit_to_framebuffer -- i.e. this pages in 320x200 RLE/raw
+// bitmap ANIMATION FRAMES for the picture viewer, not audio. (This
+// project's own test grouping already bundles this function with
+// render_babl_dialog_window/decompress_rle_stream/
+// bitmap_blit_to_framebuffer under the "illustration_render" suite,
+// independently agreeing.) Confirmed via a live Ghidra decompile plus
+// tracing render_babl_dialog_window's own consumer of this data.
+//
+// Fully loads one picture-page (param_2, indexing into the resource at
+// param_1) into the caller's buffer (param_4, a freshly-allocated
+// 0x10000-byte block at its only known call site) in a single
+// ce_memmove read, sized from the page's own header fields at param_3.
+// See the sibling read_voice_sample_page_chunk for the incremental/
+// streaming variant used during actual playback.
 undefined2 load_voice_sample_page(param_1,param_2,param_3,param_4)
 intptr_t param_1;
 int param_2;
@@ -1529,12 +1601,14 @@ intptr_t param_4;
 
 
 // was FUN_00035f24 -- incremental/streaming counterpart to
-// load_voice_sample_page: reads up to param_4 bytes of voice-sample
-// page param_2 into param_5, caching the page's total remaining size
+// load_voice_sample_page: reads up to param_4 bytes of picture-page
+// param_2 into param_5, caching the page's total remaining size
 // (DAT_000853fc/DAT_00085400) across calls so repeated calls for the
 // same page don't recompute it, and returning 0 once the page is
 // exhausted. Used by the babl conversation-rendering loop to stream
-// sample audio in playback-sized pieces.
+// illustrated-book/scroll bitmap ANIMATION FRAME data in display-sized
+// pieces (NOT voice-sample audio -- see load_voice_sample_page's own
+// comment just above for the full correction).
 uint read_voice_sample_page_chunk(param_1,param_2,param_3,param_4,param_5)
 intptr_t param_1;
 ushort param_2;
