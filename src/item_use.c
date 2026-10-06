@@ -162,7 +162,7 @@ void attach_picked_up_object_to_cursor(ushort *object)
   short local_10 [2];
   
   g_selected_object = object;
-  push_cursor_icon(*object & 0x1ff);
+  push_cursor_icon(((uw_object_hdr_t *)object)->item_id);
   poll_keyboard_char_input(&local_14);
   if ((local_14 != 0) && (wait_for_click_release(1), g_selected_object != (ushort *)0x0)) {
     get_mouse_position(local_10,&local_12);
@@ -225,7 +225,7 @@ int drop_held_object_near_player(ushort *held_object, int force)
   
   DAT_00202a4c = (ushort)(*(byte *)((char *)g_player_object + 0x17) >> 2);
   DAT_00202a50 = (short)((g_player_object[0xb] & 0x3f0) >> 4);
-  if (getenv("UW_DEBUG_THROW") && (*held_object & 0x1ff) == 0x80)
+  if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)held_object)->item_id) == 0x80)
     fprintf(stderr, "[throw-playertile] player tile=(%d,%d) fine_pos(DAT_00204880/2/4)=(%d,%d,%d) = world(%g,%g) tile-frac(%g,%g)\n",
             (int)DAT_00202a4c, (int)DAT_00202a50,
             (int)DAT_00204880, (int)DAT_00204882, (int)DAT_00204884,
@@ -236,7 +236,7 @@ int drop_held_object_near_player(ushort *held_object, int force)
   if ((*(short *)(DAT_00085a6c + 8) == 1) && (iVar4 = compute_drop_aim_from_cursor(), iVar4 != 0)) {
     DAT_00202a54 = 1;
     DAT_00202a44 = g_player_object;
-    DAT_00202a38 = *held_object & 0x1ff;
+    DAT_00202a38 = ((uw_object_hdr_t *)held_object)->item_id;
     DAT_00202a48 = 0xf;
     puVar5 = (ushort *)spawn_object_near_player();
     if (puVar5 != (ushort *)0x0) {
@@ -258,7 +258,7 @@ int drop_held_object_near_player(ushort *held_object, int force)
       *(char *)puVar5 = (char)*puVar5;
       *(byte *)((char *)puVar5 + 1) =
            (bVar1 ^ *(byte *)((char *)puVar5 + 1)) & 0x20 ^ *(byte *)((char *)puVar5 + 1);
-      if (((*held_object & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(*held_object & 0x1ff) * 0xd] & 3) != 2)) {
+      if (((*held_object & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(((uw_object_hdr_t *)held_object)->item_id) * 0xd] & 3) != 2)) {
         *(byte *)(puVar5 + 0xd) = (byte)(held_object[1] >> 7) & 7;
       }
       free_object_slot(held_object);
@@ -270,8 +270,8 @@ int drop_held_object_near_player(ushort *held_object, int force)
     local_26 = (short)((*(byte *)((char *)g_player_object + 3) & 0x1c) >> 2) + DAT_00202a50 * 8;
     *(byte *)(held_object + 1) = ((byte)g_player_object[1] ^ (byte)held_object[1]) & 0x7f ^ (byte)held_object[1];
     *(byte *)((char *)held_object + 3) = *(byte *)((char *)held_object + 3);
-    cVar9 = ((&DAT_00202c91)[(CONCAT11(*(byte *)((char *)held_object + 1),(byte)*held_object) & 0x1ff) * 0xd] &
-            7) + ((&DAT_00202c91)[(*g_player_object & 0x1ff) * 0xd] & 7) + '\x01';
+    cVar9 = ((&DAT_00202c91)[((uw_object_hdr_t *)held_object)->item_id * 0xd] &
+            7) + ((&DAT_00202c91)[((uw_object_hdr_t *)g_player_object)->item_id * 0xd] & 7) + '\x01';
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] facing_byte(g_player_object+0x18)&0x1f=%d fine_aim((g_player_object[1]&0x380)>>2)=%d heading=%d dist(cVar9)=%d start=(%d,%d)\n",
               (int)((byte)g_player_object[0xc] & 0x1f), (int)((g_player_object[1] & 0x380) >> 2),
@@ -282,7 +282,7 @@ int drop_held_object_near_player(ushort *held_object, int force)
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] after 1st project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
               (int)local_28, (int)local_26);
-    iVar4 = check_object_placement_clearance(*held_object & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
+    iVar4 = check_object_placement_clearance(((uw_object_hdr_t *)held_object)->item_id,0,(int)(short)local_28,(int)(short)local_26,
                          (byte)g_player_object[1] & 0x7f,1,cVar9);
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] 1st check_object_placement_clearance iVar4=%d\n", iVar4);
@@ -295,7 +295,7 @@ int drop_held_object_near_player(ushort *held_object, int force)
       if (getenv("UW_DEBUG_THROW"))
         fprintf(stderr, "[throw-heading] after 2nd(retry) project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
                 (int)local_28, (int)local_26);
-      iVar4 = check_object_placement_clearance(*held_object & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
+      iVar4 = check_object_placement_clearance(((uw_object_hdr_t *)held_object)->item_id,0,(int)(short)local_28,(int)(short)local_26,
                            (byte)g_player_object[1] & 0x7f,1,cVar9);
       if (getenv("UW_DEBUG_THROW"))
         fprintf(stderr, "[throw-heading] 2nd check_object_placement_clearance iVar4=%d\n", iVar4);
@@ -330,10 +330,10 @@ int drop_held_object_near_player(ushort *held_object, int force)
          (byte)(((local_26 & 7 | (local_28 & 0x1fff) << 3) << 10) >> 8);
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-fallback] inserting held_object=%p type=0x%x at pDropTile+2=%p heightfield(held_object[7]/8)=%d\n",
-              (void *)held_object, (unsigned)(*held_object & 0x1ff), (void *)(pDropTile + 2),
+              (void *)held_object, (unsigned)(((uw_object_hdr_t *)held_object)->item_id), (void *)(pDropTile + 2),
               (int)*(short *)((char *)held_object + 0xe));
     DEBUG(INFO, "[drop] object id=0x%03x landed at tile=(%d,%d)\n",
-          (unsigned)(*held_object & 0x1ff), iVar7 >> 3, iVar8 >> 3);
+          (unsigned)(((uw_object_hdr_t *)held_object)->item_id), iVar7 >> 3, iVar8 >> 3);
     object_list_append_tail((byte *)(pDropTile + 2),(char *)held_object);
     uVar2 = *held_object;
     if ((((uVar2 & 0x1f0) == 0x90) && (3 < (uVar2 & 0xf))) && ((uVar2 & 0xf) < 7)) {
@@ -404,7 +404,7 @@ void use_light_source(ushort *object, int turn_on)
         iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
       } while (iVar8 < 4);
       if ((short)iVar8 == 4) {
-        uVar4 = *object & 0x1ff;
+        uVar4 = ((uw_object_hdr_t *)object)->item_id;
         if ((((uVar4 == 0x91) || (uVar4 == 0x92)) || (uVar4 == 0x90)) || (uVar4 == 0x93)) {
           iVar8 = 5;
           iVar6 = 0;
@@ -498,7 +498,7 @@ int use_food_item(char *actor, ushort *object, int consume)
     puVar7 = (ushort *)&g_food_effect_table;
     uVar10 = uVar8 & 0xf;
   }
-  uVar8 = uVar8 & 0x1ff;
+  uVar8 = ((uw_object_hdr_t *)object)->item_id;
   if (bVar13) {
     /* Was `(int)puVar7` -- round-tripping a real pointer (&g_food_effect_table, a static global
        whose real address can be anywhere in this 64-bit process, not just the low 32 bits) through
@@ -653,7 +653,7 @@ LAB_0007b2e0:
       iVar11 = iVar11 + 0xac;
     }
     print_scroll_message_by_id(iVar11);
-    if ((*object & 0x1ff) == 0xb9) {
+    if ((((uw_object_hdr_t *)object)->item_id) == 0xb9) {
       uVar9 = *(ushort *)(DAT_00086df8 + 0x5f);
       if ((uVar9 & 0x3c) < 0x10) {
         uVar9 = uVar9 & 0xffd3 | 0x10;
@@ -794,7 +794,7 @@ ushort *use_object_on_target(ushort *actor, ushort *used_object, int flag)
     if (uVar1 < 2) {
       arm_use_item_on_target_prompt(used_object,flag);
     }
-    else if (((uVar1 == 2) && ((uVar7 & 0x1ff) == 0xe7)) && (flag != 0)) {
+    else if (((uVar1 == 2) && (((uw_object_hdr_t *)used_object)->item_id == 0xe7)) && (flag != 0)) {
       prompt_use_item_on_target(used_object,complete_use_item_on_flagged_tile);
     }
   }
@@ -848,7 +848,7 @@ ushort *use_object_on_target(ushort *actor, ushort *used_object, int flag)
         goto LAB_00079cb8;
       }
       if (((used_object[2] & 0xffc0) == 0) ||
-         (puVar6 = (ushort *)resolve_object_link(used_object + 2), (*puVar6 & 0x1ff) != 0x12e)) goto LAB_00079cb8;
+         (puVar6 = (ushort *)resolve_object_link(used_object + 2), ((uw_object_hdr_t *)puVar6)->item_id != 0x12e)) goto LAB_00079cb8;
     }
     dispatch_use_special_item_by_type(actor,puVar6,flag);
   }
@@ -912,7 +912,7 @@ short *begin_holding_object_on_cursor(short *object, uint object_type)
       object = (short *)spawn_new_object(object_type,0);
     }
     else {
-      object_type = (int)*object & 0x1ff;
+      object_type = (int)((uw_object_hdr_t *)object)->item_id;
     }
     g_cursor_holding_state = 1;
     g_selected_object = object;
@@ -987,11 +987,11 @@ void arm_use_item_on_player_prompt(ushort *item, int confirmed)
   code *pcVar1;
 
   if (confirmed != 0) {
-    if ((*item & 0x1ff) == 0x101) {
+    if ((((uw_object_hdr_t *)item)->item_id) == 0x101) {
       pcVar1 = complete_use_reagent_on_player;
     }
     else {
-      if (0x10e < (*item & 0x1ff)) {
+      if (0x10e < (((uw_object_hdr_t *)item)->item_id)) {
         return;
       }
       pcVar1 = complete_use_item_on_player;
@@ -1028,7 +1028,7 @@ void prompt_use_item_on_target(ushort *item, void (*completion)())
   }
   ce_strcat(acStack_34,s_on_what__000878e0);
   message_scroll_print_wrapped(acStack_34);
-  push_cursor_icon(*item & 0x1ff);
+  push_cursor_icon(((uw_object_hdr_t *)item)->item_id);
   g_selected_object = item;
   g_cursor_holding_state = 2;
   DAT_00202098 = item;
@@ -1047,7 +1047,7 @@ void complete_use_item_on_special_target(ushort *target)
 {
   ushort uVar1;
   
-  if (((*target & 0x1ff) < 0x140) || (0x147 < (*target & 0x1ff))) {
+  if (((((uw_object_hdr_t *)target)->item_id) < 0x140) || (0x147 < (((uw_object_hdr_t *)target)->item_id))) {
     print_scroll_message_by_id(0x80);
   }
   else {
@@ -1095,7 +1095,7 @@ void complete_use_item_on_quest_target(ushort *target, int consume)
   pop_cursor_icon(3);
   g_selected_object = 0;
   g_cursor_holding_state = 0;
-  if ((*target & 0x1ff) == 0x165) {
+  if ((((uw_object_hdr_t *)target)->item_id) == 0x165) {
     if ((*(byte *)(DAT_00202098 + 6) & 0x3f) == 0x3e) {
       if ((((*target & 0x8000) == 0) || ((target[3] & 0x8000) == 0)) ||
          ((target[3] & 0x7fc0) != 0x840)) {
@@ -1181,7 +1181,7 @@ void arm_use_item_on_target_prompt(ushort *item, int confirmed)
   ushort uVar1;
   code *pcVar2;
   
-  uVar1 = *item & 0x1ff;
+  uVar1 = ((uw_object_hdr_t *)item)->item_id;
   if ((uVar1 < 0xc2) || (0xc6 < uVar1)) {
     if (uVar1 == 0xd7) {
       pcVar2 = complete_use_item_skill_check;
@@ -1238,7 +1238,7 @@ void complete_use_item_special_quest_event(ushort *target, int confirmed, int un
   undefined2 uVar1;
   char *iVar2;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
 
-  if ((*target & 0x1ff) == 0x117) {
+  if ((((uw_object_hdr_t *)target)->item_id) == 0x117) {
     print_scroll_message_by_id(0x85);
     if (confirmed != 0) {
       finish_object_use(DAT_00202098,confirmed,1);
@@ -1276,7 +1276,7 @@ void complete_use_item_on_flagged_tile(ushort *target, int consume)
   pop_cursor_icon(3);
   g_selected_object = 0;
   g_cursor_holding_state = 0;
-  if (((*target & 0x1ff) == 0x16e) && (((&DAT_0023add0)[(byte)target[3] & 0x3f] & 0xff) == 0xb)) {
+  if (((((uw_object_hdr_t *)target)->item_id) == 0x16e) && (((&DAT_0023add0)[(byte)target[3] & 0x3f] & 0xff) == 0xb)) {
     finish_object_use(DAT_00202098,consume,1);
     trigger_object_trap_or_use_action(g_player_object,target,7,(int)DAT_002020a0,DAT_002020a4);
     return;
@@ -1297,7 +1297,7 @@ void dispatch_use_held_item_by_type(ushort *target, ushort *item, int confirmed)
   short extraout_r1;
   int iVar4;
   
-  uVar3 = *item & 0x1ff;
+  uVar3 = ((uw_object_hdr_t *)item)->item_id;
   if (uVar3 == 0x112) {
     if (confirmed == 0) {
       DAT_00202098 = item;
@@ -1401,7 +1401,7 @@ void complete_use_item_scatter_spawn(short *target, int clicked, int confirmed)
     uVar5 = encode_object_slot_index(target);
     iVar6 = find_object_by_encoded_slot_in_chain((char *)g_player_object + 6,1,uVar5);
     if (iVar6 == 0) {
-      uVar11 = (int)*target & 0x1ff;
+      uVar11 = (int)((uw_object_hdr_t *)target)->item_id;
       if (((ushort)uVar11 < 0x153) || (0x156 < (ushort)uVar11)) {
         print_scroll_message_by_id(0x84);
       }
@@ -1466,7 +1466,7 @@ void complete_use_item_fill_flask(ushort *target, int clicked, int confirmed)
   short sVar3;
   int iVar4;
   
-  uVar2 = *target & 0x1ff;
+  uVar2 = ((uw_object_hdr_t *)target)->item_id;
   if ((uVar2 == 0x90) || (sVar3 = 4, uVar2 == 0x94)) {
     sVar3 = 0;
   }
@@ -1533,7 +1533,7 @@ void dispatch_use_special_item_by_type(ushort *actor, ushort *item, int flag)
   undefined1 auStack_1c [4];
   
   if (flag == 0) {
-    uVar1 = *item & 0x1ff;
+    uVar1 = ((uw_object_hdr_t *)item)->item_id;
     if (uVar1 == 0x129) {
       if (actor != g_player_object) {
         return;
@@ -1541,7 +1541,7 @@ void dispatch_use_special_item_by_type(ushort *actor, ushort *item, int flag)
       /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's own identical fix
          comment. 0x129 has its own bit 8 set, so this comparison could never even succeed while
          reading a sign-extended single byte... */
-      if ((g_selected_object == (ushort *)0x0) || ((*(ushort *)g_selected_object & 0x1ff) != 0x129)) {
+      if ((g_selected_object == (ushort *)0x0) || ((((uw_object_hdr_t *)g_selected_object)->item_id) != 0x129)) {
         puVar4 = (ushort *)find_equipped_item_by_category(4,2,9,2,&local_22);
         if (puVar4 == (ushort *)0x0) {
           puVar4 = (ushort *)find_equipped_item_by_category(4,2,9,4,&local_22);
@@ -1593,7 +1593,7 @@ void dispatch_use_special_item_by_type(ushort *actor, ushort *item, int flag)
     }
     goto LAB_0007b9b8;
   }
-  switch(*item & 0x1ff) {
+  switch(((uw_object_hdr_t *)item)->item_id) {
   case 0x121:
     /* ARM 0x7b7b8..0x7b7c0 reads the mode at byte offset 8. */
     if (*(short *)((char *)DAT_00085a6c + 8) == 1) {
@@ -1621,7 +1621,7 @@ LAB_0007b9b8:
     goto LAB_0007b7e4;
   case 0x124:
 LAB_0007b7e4:
-    play_musical_instrument((*item & 0x1ff) - 0x123);
+    play_musical_instrument((((uw_object_hdr_t *)item)->item_id) - 0x123);
     break;
   case 0x125:
     uVar6 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
@@ -1681,7 +1681,7 @@ void use_readable_item(ushort *item, int flag)
   
   if (flag != 0) {
     uVar2 = *item;
-    if ((uVar2 & 0x1ff) == 0x13b) {
+    if (((uw_object_hdr_t *)item)->item_id == 0x13b) {
       if (*(short *)(DAT_00085a6c + 8) == 1) {
         change_game_mode(2);
       }
@@ -1747,7 +1747,7 @@ void dispatch_world_object_interaction_by_family(ushort *actor, ushort *object)
     if ((uVar5 & 0xf) < 8) {
       sVar2 = check_object_combination(actor,object,0);
       if (sVar2 == 0) {
-        if ((*actor & 0x1ff) == 0x7f) {
+        if ((((uw_object_hdr_t *)actor)->item_id) == 0x7f) {
           sVar2 = build_object_display_name(acStack_20,object,0,0);
           if (sVar2 == 0) {
             pcVar3 = s_UNNAMED_00084f24;
@@ -1820,7 +1820,7 @@ int trigger_object_use_babl_script(int context_x, int context_y, ushort *actor, 
   if ((iVar1 != 0) && (local_18 != 0)) {
     if (confirmed == 0) {
       puVar2 = object;
-      if (((actor != g_player_object) || ((*object & 0x1ff) < 0x98)) || (0x9b < (*object & 0x1ff)))
+      if (((actor != g_player_object) || ((((uw_object_hdr_t *)object)->item_id) < 0x98)) || (0x9b < (((uw_object_hdr_t *)object)->item_id)))
       goto LAB_0007c2b8;
     }
     else {
@@ -1886,8 +1886,8 @@ int objects_are_combinable(ushort *object_a, ushort *object_b)
     uVar1 = *object_b;
     if ((((uVar1 & 0x8000) == 0) || ((object_b[3] & 0xffc0) < 0x41)) &&
        (((uVar1 & 0x8000) != 0 || ((object_b[3] & 0xffc0) == 0)))) {
-      uVar1 = uVar1 & 0x1ff;
-      uVar2 = uVar2 & 0x1ff;
+      uVar1 = ((uw_object_hdr_t *)object_b)->item_id;
+      uVar2 = ((uw_object_hdr_t *)object_a)->item_id;
       debug_print(s_checking_if__d_and__d_are_combin_00084f90,uVar2,uVar1);
       puVar7 = &DAT_00100630;
       iVar8 = 0;
@@ -1983,9 +1983,9 @@ int check_offering_container_puzzle()
       iVar8 = 0;
       do {
         psVar1 = local_24 + iVar8;
-        local_2c[iVar8] = local_2c[iVar8] + (ushort)((uVar2 & 0x1ff) == (int)*psVar1);
+        local_2c[iVar8] = local_2c[iVar8] + (ushort)(((uw_object_hdr_t *)puVar7)->item_id == (int)*psVar1);
         iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
-        bVar3 = (bool)(bVar3 | (uVar2 & 0x1ff) == (int)*psVar1);
+        bVar3 = (bool)(bVar3 | ((uw_object_hdr_t *)puVar7)->item_id == (int)*psVar1);
       } while (iVar8 < 3);
       if (!bVar3) goto LAB_000283ec;
       puVar7 = puVar7 + 2;
@@ -2182,7 +2182,7 @@ bool place_object_in_equipment_slot(ushort *equip_object, int slot)
         pop_cursor_icon(3);
         /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
            own identical fix comment. */
-        push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
+        push_cursor_icon(((uw_object_hdr_t *)g_selected_object)->item_id);
         equip_object = puVar5;
       }
       object_list_insert_head(puVar10,equip_object);
@@ -2236,11 +2236,11 @@ int objects_can_stack(ushort *object_a, ushort *object_b)
   uint uVar6;
   
   uVar3 = *object_a;
-  if ((((((*object_b ^ uVar3) & 0x1ff) == 0) &&
+  if (((((((uw_object_hdr_t *)object_b)->item_id == ((uw_object_hdr_t *)object_a)->item_id)) &&
        (((uVar3 & 0x8000) != 0 || ((object_a[3] & 0xffc0) == 0)))) &&
       (((*object_b & 0x8000) != 0 || ((object_b[3] & 0xffc0) == 0)))) &&
      ((uVar4 = object_a[3], (uVar4 & 0x8000) == 0 && (uVar5 = object_b[3], (uVar5 & 0x8000) == 0)))) {
-    uVar6 = uVar3 & 0x1ff;
+    uVar6 = ((uw_object_hdr_t *)object_a)->item_id;
     if (((((&DAT_00202c93)[uVar6 * 0xd] & 0xc0) != 0x40) &&
         (((&DAT_00202c93)[uVar6 * 0xd] & 0xc0) != 0xc0)) &&
        ((((uVar3 & 0x1f0) != 0x100 || (((uVar5 ^ uVar4) & 0x3f) == 0)) &&
@@ -2839,7 +2839,7 @@ void swap_cursor_and_slot_item(int slot, int mode)
     /* Was `*g_selected_object & 0x1ff` -- g_selected_object is declared `char *` (a single signed
        byte, used elsewhere in this file for genuine byte-level access), but an object's own id is a
        9-bit field spanning 2 bytes, needing a real `ushort` read. */
-    push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
+    push_cursor_icon(((uw_object_hdr_t *)g_selected_object)->item_id);
     cursor_show_idle_tick();
     refresh_player_equipment_effects();
   }
@@ -3048,7 +3048,7 @@ uint check_object_fits_in_slot(ushort *object, int slot)
   char *_parentRec;
   undefined2 _savedLink;
 
-  local_4c = (uint)(short)(*object & 0x1ff);
+  local_4c = (uint)(short)(((uw_object_hdr_t *)object)->item_id);
   local_48 = &DAT_00202c90 + local_4c * 0xd;
   uVar1 = *object >> 6 & 7;
   uVar5 = ((byte)*object & 0x30) >> 4;
@@ -3146,7 +3146,7 @@ LAB_00047a68:
     goto LAB_00047a68;
   }
   if ((iVar15 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) && ((uVar1 == 0 && (uVar5 == 0)))) {
-    if ((puVar11 != (ushort *)0x0) && ((*puVar11 & 0x1ff) == local_4c)) {
+    if ((puVar11 != (ushort *)0x0) && (((uw_object_hdr_t *)puVar11)->item_id == local_4c)) {
       return 0;
     }
     if ((((*object & 0x8000) != 0) && ((object[3] & 0x8000) == 0)) &&
@@ -3374,7 +3374,7 @@ int handle_backpack_slot_interact(ushort *object, uint slot)
           pop_cursor_icon(0);
           /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
              own identical fix comment. */
-          push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
+          push_cursor_icon(((uw_object_hdr_t *)g_selected_object)->item_id);
         }
       }
       else {
@@ -3397,7 +3397,7 @@ int handle_backpack_slot_interact(ushort *object, uint slot)
         pop_cursor_icon(3);
         /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
            own identical fix comment. */
-        push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
+        push_cursor_icon(((uw_object_hdr_t *)g_selected_object)->item_id);
       }
       iVar8 = is_object_consumed_in_combination(puVar4,uVar6);
       if (iVar8 != 0) {
@@ -3432,7 +3432,7 @@ int handle_backpack_slot_interact(ushort *object, uint slot)
       *(byte *)(puVar4 + 3) = (byte)puVar4[3] & 0x3f | 0x40;
       *(undefined1 *)((char *)puVar4 + 7) = 0;
     }
-    iVar8 = (*(ushort *)(&DAT_00202c91 + (*object & 0x1ff) * 0xd) >> 4) * slot;
+    iVar8 = (*(ushort *)(&DAT_00202c91 + (((uw_object_hdr_t *)object)->item_id) * 0xd) >> 4) * slot;
     iVar5 = g_current_container_record;
     /* Legacy truncated "prev" walk -- same fix as
        place_object_in_backpack_slot's sibling copy (search "still
@@ -3483,7 +3483,7 @@ void handle_object_drop_target(short widget)
         /* Was missing a NULL check -- resolve_object_link legitimately returns 0 for an empty slot
            (its own link word has no object-table bits set, see its own comment), and every fresh
            character's weapon-hand slot IS empty by default (confirmed live). */
-        if ((puVar1 != 0) && (uVar3 = *puVar1 & 0x1ff,
+        if ((puVar1 != 0) && (uVar3 = ((uw_object_hdr_t *)puVar1)->item_id,
            ((((*puVar1 & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
            ((uVar3 == 0x1a || (uVar3 == 0x1f))))) {
           toggle_weapon_ready();
@@ -3553,9 +3553,9 @@ void handle_object_drop_target(short widget)
     /* Page 4 of comobj's string data is the base object-name table,
        indexed directly by id (0x800 | id) -- same lookup the
        UW_DUMP_OBJECTS_FILE census tool already uses. */
-    char *_useName = (char *)get_message_string(0x800 | (*puVar2 & 0x1ff));
+    char *_useName = (char *)get_message_string(0x800 | ((uw_object_hdr_t *)puVar2)->item_id);
     DEBUG(INFO, "[inv] use item: id=0x%03x type=0x%03x name=\"%s\"\n",
-          (unsigned)(*puVar2 & 0x1ff), (unsigned)(*puVar2 & 0x1f0),
+          (unsigned)(((uw_object_hdr_t *)puVar2)->item_id), (unsigned)(*puVar2 & 0x1f0),
           (_useName && _useName[0]) ? _useName : "(unnamed)");
     use_object_on_target(g_player_object,puVar2,1);
   }
