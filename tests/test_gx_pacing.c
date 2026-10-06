@@ -40,6 +40,7 @@ static void test_refresh_rates_do_not_change_game_time(void)
     for (unsigned rate = 0; rate < sizeof rates / sizeof *rates; rate++) {
         uw_reset_frame_pacing();
         uw_service_game_clock(0);
+        uw_set_present_refresh_rate(rates[rate]);
         unsigned start = g_uw_frame_clock_units;
         for (unsigned sample = 1; sample <= rates[rate]; sample++) {
             uint64_t time = (uint64_t)sample * 1000000 / rates[rate];
@@ -47,6 +48,22 @@ static void test_refresh_rates_do_not_change_game_time(void)
             uw_service_game_clock(time); /* extra input/flush calls */
         }
         TEST_ASSERT_EQUAL_UINT(250, g_uw_frame_clock_units - start);
+    }
+}
+static void test_display_cadence_matches_monitor_without_speeding_up_logic(void)
+{
+    const unsigned rates[] = {60, 120, 144, 240};
+    for (unsigned i = 0; i < sizeof rates / sizeof *rates; i++) {
+        uw_reset_frame_pacing();
+        uw_set_present_refresh_rate(rates[i]);
+        unsigned displays = 0, game_ticks = 0;
+        for (uint64_t time = 0; time < 1000000; time += 100) {
+            displays += uw_present_frame_due(time);
+            game_ticks += uw_service_game_clock(time);
+        }
+        /* The grace window can admit the first slot of the next second. */
+        TEST_ASSERT_EQUAL_UINT(rates[i] + 1, displays);
+        TEST_ASSERT_EQUAL_UINT(60, game_ticks);
     }
 }
 static void test_deadlines_do_not_drift_after_a_late_present(void)
@@ -97,22 +114,53 @@ static void test_grace_window_tracks_monitor_refresh_rate(void)
         uw_set_present_refresh_rate(rates[i]);
         unsigned rate = rates[i] ? rates[i] : 60;
         uint64_t grace = 1000000 / ((uint64_t)rate * 8);
+        uint64_t first = 1000000 / rate;
+        uint64_t second = 2000000 / rate;
         TEST_ASSERT_TRUE(uw_present_frame_due(0));
-        TEST_ASSERT_FALSE(uw_present_frame_due(16666 - grace - 1));
-        TEST_ASSERT_TRUE(uw_present_frame_due(16666 - grace));
-        TEST_ASSERT_FALSE(uw_present_frame_due(16666 - grace));
-        TEST_ASSERT_FALSE(uw_present_frame_due(16666));
-        TEST_ASSERT_TRUE(uw_present_frame_due(33333 - grace));
+        TEST_ASSERT_FALSE(uw_present_frame_due(first - grace - 1));
+        TEST_ASSERT_TRUE(uw_present_frame_due(first - grace));
+        TEST_ASSERT_FALSE(uw_present_frame_due(first - grace));
+        TEST_ASSERT_FALSE(uw_present_frame_due(first));
+        TEST_ASSERT_TRUE(uw_present_frame_due(second - grace));
     }
 }
-static void test_changing_display_shrinks_grace_without_resetting_deadline(void)
+static void test_changing_display_rate_preserves_pending_flush_and_game_clock(void)
 {
-    TEST_ASSERT_TRUE(uw_present_frame_due(0));
-    uw_set_present_refresh_rate(240);
-    TEST_ASSERT_FALSE(uw_present_frame_due(15666)); /* 1ms early exceeds 240Hz grace */
-    TEST_ASSERT_TRUE(uw_present_frame_due(16666));
-    uw_set_present_refresh_rate(60);
-    TEST_ASSERT_TRUE(uw_present_frame_due(32333));
+    GXEndDraw();
+    uw_service_game_clock(0);
+    unsigned clock = g_uw_frame_clock_units;
+    now_us = 1000;
+    framebuffer_version = 42;
+    GXEndDraw(); /* queued at 60Hz */
+    uw_set_present_refresh_rate(120);
+    uw_service_pending_present(now_us);
+    TEST_ASSERT_EQUAL_INT(2, presents);
+    TEST_ASSERT_EQUAL_INT(42, displayed_version);
+    TEST_ASSERT_EQUAL_UINT(clock, g_uw_frame_clock_units);
+    TEST_ASSERT_FALSE(uw_present_frame_due(1000 + 8333 - 1041 - 1));
+    TEST_ASSERT_TRUE(uw_present_frame_due(1000 + 8333 - 1041));
+}
+static void test_cursor_updates_at_120hz_between_60hz_game_ticks(void)
+{
+    uw_set_present_refresh_rate(120);
+    GXEndDraw();
+    uw_service_game_clock(0);
+    unsigned clock = g_uw_frame_clock_units;
+    DAT_00201c84 = 0;
+    now_us = 8333;
+    framebuffer_version = 42;
+    uw_request_cursor_present();
+    uw_service_pending_present(now_us);
+    TEST_ASSERT_EQUAL_INT(2, presents);
+    TEST_ASSERT_EQUAL_INT(42, displayed_version);
+    TEST_ASSERT_FALSE(uw_service_game_clock(now_us));
+    TEST_ASSERT_EQUAL_UINT(clock, g_uw_frame_clock_units);
+    TEST_ASSERT_EQUAL_INT(0, DAT_00201c84);
+    now_us = 16666;
+    uw_request_cursor_present();
+    uw_service_pending_present(now_us);
+    TEST_ASSERT_EQUAL_INT(3, presents);
+    TEST_ASSERT_TRUE(uw_service_game_clock(now_us));
 }
 static void test_input_wait_uses_the_same_clock_as_the_normal_game_loop(void)
 {
@@ -148,12 +196,14 @@ int main(void)
     RUN_TEST(test_early_cursor_flushes_do_not_present_another_frame);
     RUN_TEST(test_last_flush_reaches_display_during_an_input_wait);
     RUN_TEST(test_refresh_rates_do_not_change_game_time);
+    RUN_TEST(test_display_cadence_matches_monitor_without_speeding_up_logic);
     RUN_TEST(test_deadlines_do_not_drift_after_a_late_present);
     RUN_TEST(test_input_wait_uses_the_same_clock_as_the_normal_game_loop);
     RUN_TEST(test_modal_views_do_not_advance_game_time_or_request_dungeon_redraw);
     RUN_TEST(test_near_deadline_flush_is_admitted_without_advancing_time);
     RUN_TEST(test_grace_window_is_bounded_and_does_not_advance_game_time);
     RUN_TEST(test_grace_window_tracks_monitor_refresh_rate);
-    RUN_TEST(test_changing_display_shrinks_grace_without_resetting_deadline);
+    RUN_TEST(test_changing_display_rate_preserves_pending_flush_and_game_clock);
+    RUN_TEST(test_cursor_updates_at_120hz_between_60hz_game_ticks);
     return UNITY_END();
 }

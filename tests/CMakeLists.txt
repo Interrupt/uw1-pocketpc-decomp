@@ -635,6 +635,7 @@ add_game_test_library(uw_test_gx_pacing
   src/gx_stub.c:uw_set_present_refresh_rate
   src/gx_stub.c:uw_reset_frame_pacing
   src/gx_stub.c:uw_claim_frame
+  src/gx_stub.c:uw_request_cursor_present
   src/gx_stub.c:uw_present_frame_due
   src/gx_stub.c:uw_service_pending_present
   src/gx_stub.c:uw_service_game_clock)

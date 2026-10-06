@@ -358,16 +358,24 @@ static void poll_dungeon_movement_keys(int game_frame_due)
 struct uw_frame_pacing {
     uint64_t origin_us, next_us, frame_number, grace_us;
     int initialized, pending;
+    unsigned rate_hz;
 };
 static struct uw_frame_pacing g_display_pacing = {0};
 static struct uw_frame_pacing g_game_pacing = {0};
 
 void uw_set_present_refresh_rate(unsigned refresh_hz)
 {
-    /* Port timing: admit early flushes within one eighth of the monitor's refresh
-       interval. Fast displays get a shorter tolerance; an unknown rate
-       uses 60Hz. The game/display deadlines themselves remain at 60Hz. */
+    /* Port timing deviation: present cursor/HUD changes at monitor refresh,
+       while the existing game clock stays at 60Hz. Admit early flushes within
+       one eighth of a refresh interval and let SDL wait for vsync. */
     if (refresh_hz == 0) refresh_hz = 60;
+    if (g_display_pacing.rate_hz != refresh_hz) {
+        /* A display change starts a new presentation cadence, preserving any
+           queued flush and leaving the game clock untouched. */
+        g_display_pacing.initialized = 0;
+        g_display_pacing.next_us = 0;
+        g_display_pacing.rate_hz = refresh_hz;
+    }
     g_display_pacing.grace_us = 1000000 / ((uint64_t)refresh_hz * 8);
 }
 
@@ -379,19 +387,20 @@ void uw_reset_frame_pacing(void)
     uw_set_present_refresh_rate(60);
 }
 
-/* Port timing: retain a 60Hz game cadence independently of monitor vsync.
-   Absolute microsecond deadlines avoid the drift of repeated 16ms delays.
-   Multiple cursor/HUD flushes in one interval never buy another frame. */
+/* Absolute deadlines avoid drift from rounded millisecond delays. The game
+   uses 60Hz; display pacing uses the monitor rate. Multiple flushes within
+   one display interval never buy another presentation. */
 int uw_claim_frame(struct uw_frame_pacing *pacing, uint64_t now_us)
 {
+    unsigned rate_hz = pacing->rate_hz ? pacing->rate_hz : 60;
     if (!pacing->initialized) {
         pacing->origin_us = now_us;
         pacing->initialized = 1;
     } else if (now_us < pacing->next_us) {
         return 0;
     }
-    pacing->frame_number = ((now_us - pacing->origin_us + 1) * 60) / 1000000 + 1;
-    pacing->next_us = pacing->origin_us + pacing->frame_number * 1000000 / 60;
+    pacing->frame_number = ((now_us - pacing->origin_us + 1) * rate_hz) / 1000000 + 1;
+    pacing->next_us = pacing->origin_us + pacing->frame_number * 1000000 / rate_hz;
     return 1;
 }
 
