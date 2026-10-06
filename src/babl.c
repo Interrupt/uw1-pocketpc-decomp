@@ -1033,27 +1033,21 @@ void babl_builtin_x_obj_pos(char *args)
   else {
     uVar8 = *puVar2;
     if (uVar8 != 0xffff) {
-      uVar7 = *(ushort *)(iVar5 + 2) & 0x1fff;
-      *(char *)(iVar5 + 2) = (char)uVar7;
-      *(byte *)(iVar5 + 3) = (byte)(uVar7 >> 8) | (byte)(((uVar8 & 7) << 0xd) >> 8);
+      ((uw_object_hdr_t *)iVar5)->xpos = uVar8 & 7;
     }
     sVar1 = *psVar3;
     if ((int)sVar1 != 0xffffffff) {
-      uVar7 = *(ushort *)(iVar5 + 2) & 0xe3ff;
-      *(char *)(iVar5 + 2) = (char)uVar7;
-      *(byte *)(iVar5 + 3) = (byte)(uVar7 >> 8) | (byte)((((int)sVar1 & 7U) << 10) >> 8);
+      ((uw_object_hdr_t *)iVar5)->ypos = sVar1 & 7;
     }
     uVar8 = *puVar4;
     if (uVar8 != 0xffff) {
       if ((short)uVar8 < 0x80) {
-        uVar8 = (uVar8 ^ *(ushort *)(iVar5 + 2)) & 0x7f ^ *(ushort *)(iVar5 + 2);
+        ((uw_object_hdr_t *)iVar5)->zpos = uVar8;
       }
       else {
         pbVar6 = (byte *)tilemap_lookup((int)(short)*puVar2,(int)*psVar3);
-        uVar8 = *pbVar6 >> 1 & 0x78 | *(ushort *)(iVar5 + 2) & 0xff80;
+        ((uw_object_hdr_t *)iVar5)->zpos = ((uw_tile_t *)pbVar6)->floor_height << 3;
       }
-      *(char *)(iVar5 + 2) = (char)uVar8;
-      *(char *)(iVar5 + 3) = (char)(uVar8 >> 8);
     }
   }
 }

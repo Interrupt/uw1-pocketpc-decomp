@@ -236,22 +236,15 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
   if (((&DAT_000878d0)[((uw_tile_t *)(DAT_002029cc + iVar2 * 4))->tile_type] & 0x20) != 0) {
     DAT_00204884 = DAT_00204884 + 0x20;
   }
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xff80;
-  *(byte *)((char *)g_player_object + 2) =
-       (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
+  ((uw_object_hdr_t *)g_player_object)->zpos = ((int)DAT_00204884 & 0x3f8) >> 3;
   uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
   *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
   *(byte *)((char *)g_player_object + 0x17) = (byte)(uVar3 >> 8) | (byte)(((tile_x & 0x3f) << 10) >> 8);
   uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f | (tile_y & 0x3f) << 4;
   *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
   *(char *)((char *)g_player_object + 0x17) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 3) = (byte)(uVar3 >> 8) | 0x60;
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xefff;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 3) = (byte)(uVar3 >> 8) | 0xc;
+  ((uw_object_hdr_t *)g_player_object)->xpos = 3;
+  ((uw_object_hdr_t *)g_player_object)->ypos = 3;
   *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
   ((uw_object_hdr_t *)g_player_object)->quality = 0;
   ((uw_object_hdr_t *)g_player_object)->next = 0;
@@ -331,20 +324,9 @@ void commit_player_move()
     *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
     *(char *)((char *)g_player_object + 0x17) = (char)(uVar3 >> 8);
   }
-  uVar5 = DAT_00204880 & 0xe0;
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 3) =
-       (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 0xd) >> 8);
-  uVar5 = DAT_00204882 & 0xe0;
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xe3ff;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 3) =
-       (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 10) >> 8);
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xff80;
-  *(byte *)((char *)g_player_object + 2) =
-       (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
+  ((uw_object_hdr_t *)g_player_object)->xpos = (short)(DAT_00204880 & 0xe0) >> 5;
+  ((uw_object_hdr_t *)g_player_object)->ypos = (short)(DAT_00204882 & 0xe0) >> 5;
+  ((uw_object_hdr_t *)g_player_object)->zpos = ((int)DAT_00204884 & 0x3f8) >> 3;
   uVar3 = read_realtime_clock_units();
   uVar4 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
   *(char *)((char *)g_player_object + 0xb) = (char)uVar4;
