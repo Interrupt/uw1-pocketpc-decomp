@@ -1090,18 +1090,9 @@ int sync_object_tile_position(ushort *object, ushort *position)
       object_list_insert_head(iVar5 + 2,object);
     }
   }
-  uVar7 = (uint)object[1];
-  bVar9 = (byte)((int)(((int)(short)position[2] & 0x3f8U) << 0x10) >> 0x13);
-  *(byte *)(object + 1) = (byte)(uVar7 & 0xff80) | bVar9;
-  *(char *)((char *)object + 3) = (char)((uVar7 & 0xff80) >> 8);
-  bVar3 = (byte)((uint)(((int)(short)(*position & 0xe0) >> 5) << 0xd) >> 8);
-  *(byte *)(object + 1) = (byte)(uVar7 & 0x1f80) | bVar9;
-  *(byte *)((char *)object + 3) = (byte)((uVar7 & 0x1f80) >> 8) | bVar3;
-  uVar1 = position[1];
-  *(byte *)(object + 1) = (byte)(uVar7 & 0x380) | bVar9;
-  *(byte *)((char *)object + 3) =
-       (byte)((uVar7 & 0x380) >> 8) | bVar3 |
-       (byte)((uint)(((int)(short)(uVar1 & 0xe0) >> 5) << 10) >> 8);
+  ((uw_object_hdr_t *)object)->zpos = ((short)position[2] & 0x3f8) >> 3;
+  ((uw_object_hdr_t *)object)->xpos = (short)(*position & 0xe0) >> 5;
+  ((uw_object_hdr_t *)object)->ypos = (short)(position[1] & 0xe0) >> 5;
   if (object < DAT_002046c4) {
     *(byte *)(object + 4) = (byte)position[0xf];
   }
