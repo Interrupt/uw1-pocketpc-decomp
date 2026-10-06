@@ -149,8 +149,8 @@ static void test_typing_a_multichar_note_then_enter_lands_cursor_just_past_the_t
        which feeds "Hello" one WM_CHAR at a time through the same real
        warp_mouse_cursor()/erase_cursor_icon()/save_cursor_background()
        cycle the field bug traced through) rather than calling
-       erase_cursor_icon() directly: the committed text must match
-       exactly what was typed, and the final cursor position the Enter
+       erase_cursor_icon() directly: the committed text must be uppercased
+       for the automap font, and the final cursor position the Enter
        commit warps to must land just past the text's own measured
        width (startx + strlen*4 + 0x16, this fixture's 4px-per-char
        measure_text_width stub) -- not "way off to the right" at some
@@ -158,12 +158,30 @@ static void test_typing_a_multichar_note_then_enter_lands_cursor_just_past_the_t
     enter_automap_screen();
     automap_fixture_type_note("Hello",200,100);
     TEST_ASSERT_EQUAL_INT(1,DAT_000bbef0);
-    TEST_ASSERT_EQUAL_STRING("Hello",(char *)DAT_000ba9d8_backing);
+    TEST_ASSERT_EQUAL_STRING("HELLO",(char *)DAT_000ba9d8_backing);
+    TEST_ASSERT_GREATER_THAN_INT(0,automap_text_draws);
+    TEST_ASSERT_EQUAL_STRING("HELLO",automap_drawn_text[automap_text_draws-1]);
     short note_x = *(short *)(DAT_000ba9d8_backing+50);
     /* handle_automap_note_click's commit path warps to
        (startx + measure_text_width(final text) - 1) + 0x16. */
     int expected_cursor_x = note_x + (int)strlen("Hello")*4 - 1 + 0x16;
     TEST_ASSERT_EQUAL_INT(expected_cursor_x,g_mouse_x);
+}
+
+static void test_note_entry_uppercases_letters_preserving_digits_and_punctuation(void)
+{
+    enter_automap_screen();
+    automap_fixture_type_note("aZ stairs 1!?",200,100);
+    TEST_ASSERT_EQUAL_INT(1,DAT_000bbef0);
+    TEST_ASSERT_EQUAL_STRING("AZ STAIRS 1!?",(char *)DAT_000ba9d8_backing);
+    for(int i=0;i<automap_text_draws;++i)
+        for(const char *p=automap_drawn_text[i];*p;++p)
+            TEST_ASSERT_FALSE(*p>='a' && *p<='z');
+    exit_automap_screen();
+    clear_notes_in_memory();
+    enter_automap_screen();
+    TEST_ASSERT_EQUAL_STRING("AZ STAIRS 1!?",(char *)DAT_000ba9d8_backing);
+    TEST_ASSERT_EQUAL_STRING("AZ STAIRS 1!?",automap_drawn_text[automap_text_draws-1]);
 }
 
 static void test_closing_and_reopening_map_persists_note_text_and_coordinates(void)
@@ -264,6 +282,7 @@ int main(void)
     RUN_TEST(test_water_fill_updates_palette_indices_before_a_later_tint);
     RUN_TEST(test_erase_cursor_icon_does_not_flat_fill_without_a_real_save);
     RUN_TEST(test_typing_a_multichar_note_then_enter_lands_cursor_just_past_the_text);
+    RUN_TEST(test_note_entry_uppercases_letters_preserving_digits_and_punctuation);
     RUN_TEST(test_closing_and_reopening_map_persists_note_text_and_coordinates);
     RUN_TEST(test_resizing_notes_preserves_other_levels_and_level_data);
     RUN_TEST(test_deleted_notes_are_compacted_and_last_deletion_persists);

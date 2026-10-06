@@ -433,3 +433,22 @@ add_fixture_game_unit_test(babl_vm
   src/babl.c:run_babl_menu_wait_loop
   src/babl.c:select_babl_menu_response
   src/ordinal_stubs.c:ce_strcmp src/ordinal_stubs.c:ce_tolower)
+
+add_game_test_library(uw_test_cursor
+  src/hud.c:uw_always_show_cursor src/hud.c:uw_composite_desktop_cursor
+  src/hud.c:set_cursor_sprite_id
+  src/hud.c:draw_idle_mouse_cursor src/hud.c:save_cursor_background
+  src/hud.c:erase_cursor_icon src/hud.c:decrement_cursor_hide_depth
+  src/hud.c:dirty_rect_union src/hud.c:dirty_rect_set
+  src/3d.c:set_viewport_clip_rect
+  src/gx_stub.c:@uw_frame_pacing src/gx_stub.c:@g_display_pacing
+  src/gx_stub.c:@g_game_pacing src/gx_stub.c:uw_reset_frame_pacing
+  src/gx_stub.c:uw_set_present_refresh_rate src/gx_stub.c:uw_claim_frame
+  src/gx_stub.c:uw_present_frame_due src/gx_stub.c:uw_request_cursor_present
+  src/gx_stub.c:uw_service_pending_present)
+target_compile_options(uw_test_cursor PUBLIC
+  -include "${CMAKE_CURRENT_SOURCE_DIR}/cursor_test_globals.h")
+add_supported_game_unit_test(cursor uw_test_cursor)
+target_compile_definitions(test_cursor PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_test(NAME cursor_stylus COMMAND test_cursor --stylus)
+add_test(NAME cursor_enabled COMMAND test_cursor --enabled)

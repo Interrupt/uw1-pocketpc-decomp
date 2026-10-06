@@ -804,26 +804,14 @@ long param_1;
     return param_1;
 }
 
-/* Sibling of ce_tolower just above -- same fix, same reasoning. This
- * one's OWN call site (uw.c ~10375, the automap note-text-entry loop)
- * was ALSO calling it bare (no argument), the classic "dropped
- * register-forwarding arg" idiom this whole project hits repeatedly:
- * real ARM code relies on the immediately-preceding computation
- * leaving the intended character code in r0, which this compiler does
- * not reproduce for a literal `ce_toupper()` call. Confirmed live via
- * UW_DEBUG_AUTOMAP_NOTE tracing: typing "TEST" while placing an automap
- * note correctly decoded each keystroke (sVar2 read back 84/69/83/84 =
- * 'T'/'E'/'S'/'T') but the note's own text buffer stayed empty the
- * entire time, because every appended character came from this
- * always-0 stub -- the single root cause of "leaving notes doesn't
- * work in the automap" (every character typed was silently replaced
- * with NUL, so the buffer's first byte was always the string
- * terminator). Fixed the call site to pass the real key code (uw.c's
- * own `sVar2`) explicitly, same as ce_tolower's own call site
- * already does. */
+/* Windows CE toupper import: the automap note editor uses this to map
+ * lowercase input to the uppercase-only FONT4X5P.SYS glyphs. The original
+ * dropped argument was restored earlier, but the identity stub still left
+ * lowercase notes invisible. Preserve nonletters and input sentinels. */
 long ce_toupper(param_1)
 long param_1;
 {
+    if (param_1 >= 'a' && param_1 <= 'z') return param_1 - 'a' + 'A';
     return param_1;
 }
 
