@@ -213,17 +213,32 @@ them.
    object_actions.c, item_use.c, objects.c, tmap.c, traps.c,
    resources.c still have ~84 remaining raw sites — same methodology,
    continue file by file).
-4. **A dedicated writes-focused pass** for `uw_object_hdr_t` — the
-   remaining `*(byte*)(ptr+N) = (byte)ptr[N] & MASK [| ...]`
-   self-masking write sites for `item_id`/`zpos`/`is_quant`
-   specifically (quality/owner/next/link's own write sites are now
-   substantially converted, see the Status table row and the
-   `code-cleanup-structs` commit history for the full per-field
-   list). Needs its own care because, unlike reads, getting the
-   written bits wrong is a silent correctness bug instead of a
-   compile error — though the merge-sum and field-clear writes
-   converted so far show the same bit-level-proof technique works
-   reliably for writes too, not just reads.
+4. **The writes-focused pass is in progress.** `item_id` writes (the
+   clean single-field XOR-preserve idiom, plus one `+= (rand&1)+1`
+   increment and one debug-only direct assignment) and `is_quant`
+   writes (plus `doordir`/`invisible`/`heading` found alongside them
+   in the same function) are converted where the bit math reduces
+   to a plain field assignment -- see the `code-cleanup-structs`
+   commit history. `zpos` writes are converted project-wide: direct
+   assignments, `+=`/`-=` randomize-and-clamp idioms, and same-object
+   copies, all verified via the bit-level proof technique (3-term
+   XOR idiom's "outside mask" half always reduces to a no-op on the
+   sibling field, same as every quality/owner/next/link write
+   converted earlier). Left raw, deliberately: sites where the XOR's
+   third operand isn't the field's own prior value (ai.c's
+   hazard-spawn site, where it's a separate template word instead);
+   display-name scratch buffers that aren't live object records.
+   **Still remaining**: `ypos`/`xpos` writes are NOT yet converted --
+   every site found builds the zpos|heading|ypos|xpos word across
+   several overlapping sequential writes (set zpos first preserving
+   the rest, then OR in position bits in 1-2 more steps), meaningfully
+   more complex than the single-field patterns already proven safe.
+   This class of write caused the one real regression already caught
+   this session (a mis-based pointer cast, unrelated but a reminder
+   of the stakes), so it deserves its own careful session rather than
+   rushing it here. `doors.c:150-165`, `object_actions.c:1470-1485`,
+   `combat.c:910-920`, `objects.c:1805-1815`/`1970-1977`,
+   `item_use.c:325-330` are the known call sites to start from.
 5. **comobj.dat property record** (0xd bytes) — next-highest leverage
    after the two now-mostly-done types: well-documented, touches
    gameplay-visible logic (`dispatch_object_action`), bounded call-site
