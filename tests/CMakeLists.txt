@@ -815,3 +815,20 @@ target_link_libraries(uw_test_transitions PUBLIC uw_test_division)
 foreach(suite creatures critter_palette throw throw_cursor)
   target_link_libraries(uw_test_${suite} PUBLIC uw_test_support)
 endforeach()
+
+add_fixture_game_unit_test(special_use
+  src/item_use.c:dispatch_use_special_item_by_type
+  src/traps.c:dispatch_trap_special_or_tile_action
+  src/object_actions.c:dispatch_tile_special_action
+  src/object_actions.c:dispatch_special_action
+  src/object_actions.c:resolve_object_variant_or_special_link
+  src/objects.c:find_object_in_chain
+  src/objects.c:resolve_object_link
+  src/objects.c:encode_object_slot_index
+  src/object_actions.c:scan_area_for_matching_objects
+  src/object_actions.c:scan_area_ahead_of_object
+  src/player.c:detect_unsafe_rest_object_callback
+  src/player.c:check_rest_area_unsafe
+  src/player.c:apply_healing_item_effect
+  src/player.c:restore_stat_capped
+  src/tmap.c:tilemap_lookup)

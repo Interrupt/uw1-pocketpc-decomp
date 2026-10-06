@@ -3408,7 +3408,9 @@ short param_4;
 undefined4 detect_unsafe_rest_object_callback(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
-int param_3;
+/* ARM 0x352d4 preserves the scanned object from r2 in r4 before reading
+   +0xb/+0x19. Keep that record address intact on a 64-bit host. */
+char *param_3;
 
 {
   byte bVar1;

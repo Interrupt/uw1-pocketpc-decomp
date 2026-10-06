@@ -117,3 +117,9 @@ ordinal and quotient/remainder return convention.
 
 The original commits and their already-ported source fixes are listed in
 [the recovery audit](../fixtures/legacy-test-recovery.md).
+
+`uw_test_special_use` loads the real level 1 fountain and bedroll records.
+`special_use_fixture_reset` creates the player and installs the map arenas;
+`special_use_empty_area` and `special_use_npc` arrange rest safety scenarios.
+The real special-action dispatch, healing, area scan and safety callback run;
+only the rest UI/time advancement and output services are controlled.

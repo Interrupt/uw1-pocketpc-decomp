@@ -745,8 +745,8 @@ LAB_0007c130:
 // dispatch_special_action with param_2/param_3 as the actor object and an extra parameter.
 void dispatch_tile_special_action(param_1,param_2,param_3)
 uint param_1;
-undefined4 param_2;
-undefined4 param_3;
+uintptr_t param_2;
+intptr_t param_3;
 
 {
   param_1 = param_1 & 0xff;
@@ -1389,7 +1389,9 @@ LAB_000749bc:
 void scan_area_ahead_of_object(param_1,param_2,param_3,param_4,param_5,param_6)
 char *param_1;
 undefined4 param_2;
-undefined4 param_3;
+/* ARM carries the callback unchanged into the scan (r11 -> pc at
+   0x749e4). A 32-bit integer truncates its native function address. */
+codeval *param_3;
 undefined4 param_4;
 undefined1 param_5;
 char param_6;
