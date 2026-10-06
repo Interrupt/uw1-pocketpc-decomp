@@ -190,9 +190,69 @@ static void test_modal_views_do_not_advance_game_time_or_request_dungeon_redraw(
     TEST_ASSERT_EQUAL_UINT(start, g_uw_frame_clock_units);
     TEST_ASSERT_EQUAL_INT(0, DAT_00201c84);
 }
+static void test_finalized_render_presents_without_an_intermediate_flush(void)
+{
+    uw_begin_present_batch();
+    framebuffer_version = 42;
+    TEST_ASSERT_EQUAL_INT(0, presents);
+    gfx_finalizedraw();
+    TEST_ASSERT_EQUAL_INT(1, presents);
+    TEST_ASSERT_EQUAL_INT(42, displayed_version);
+}
+static void test_finalized_render_bypasses_deadline_and_uses_vsync_completion_time(void)
+{
+    uw_set_present_refresh_rate(120);
+    GXEndDraw(); /* Earlier cursor presentation. */
+    uw_service_game_clock(0);
+    unsigned clock = g_uw_frame_clock_units;
+    now_us = 1000;
+    present_wait_us = 7333; /* SDL waits for the next refresh. */
+    uw_begin_present_batch();
+    framebuffer_version = 42;
+    GXEndDraw();
+    TEST_ASSERT_EQUAL_INT(1, presents);
+    gfx_finalizedraw();
+    TEST_ASSERT_EQUAL_INT(2, presents);
+    TEST_ASSERT_EQUAL_INT(42, displayed_version);
+    TEST_ASSERT_EQUAL_UINT64(8333, now_us);
+    TEST_ASSERT_EQUAL_UINT(clock, g_uw_frame_clock_units);
+    present_wait_us = 0;
+    uw_service_pending_present(now_us); /* Final presentation consumed the queue. */
+    GXEndDraw(); /* Cursor flush immediately afterward stays queued. */
+    TEST_ASSERT_EQUAL_INT(2, presents);
+    now_us = 16666;
+    uw_service_pending_present(now_us);
+    TEST_ASSERT_EQUAL_INT(3, presents);
+}
+static void test_nested_render_finalization_waits_for_outer_render(void)
+{
+    uw_begin_present_batch();
+    uw_begin_present_batch();
+    gfx_finalizedraw();
+    TEST_ASSERT_EQUAL_INT(0, presents);
+    framebuffer_version = 42;
+    gfx_finalizedraw();
+    TEST_ASSERT_EQUAL_INT(1, presents);
+    TEST_ASSERT_EQUAL_INT(42, displayed_version);
+}
+static void test_unbatched_finalization_always_presents_but_cursor_flushes_stay_paced(void)
+{
+    gfx_finalizedraw();
+    gfx_finalizedraw();
+    TEST_ASSERT_EQUAL_INT(2, presents);
+    GXEndDraw();
+    TEST_ASSERT_EQUAL_INT(2, presents);
+    now_us = 16666;
+    uw_service_pending_present(now_us);
+    TEST_ASSERT_EQUAL_INT(3, presents);
+}
 int main(void)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_finalized_render_presents_without_an_intermediate_flush);
+    RUN_TEST(test_finalized_render_bypasses_deadline_and_uses_vsync_completion_time);
+    RUN_TEST(test_nested_render_finalization_waits_for_outer_render);
+    RUN_TEST(test_unbatched_finalization_always_presents_but_cursor_flushes_stay_paced);
     RUN_TEST(test_early_cursor_flushes_do_not_present_another_frame);
     RUN_TEST(test_last_flush_reaches_display_during_an_input_wait);
     RUN_TEST(test_refresh_rates_do_not_change_game_time);

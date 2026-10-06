@@ -46,6 +46,7 @@ void load_dungeon_texture_arenas(void);
 void change_game_mode(void);
 undefined4 cursor_show_idle_tick(void);
 int uw_defer_present(void);
+int uw_take_completed_frame(void);
 void *GXBeginDraw(void);
 void assert_visible_picture(void);
 void render_dungeon_frame_timed(void);
@@ -352,6 +353,7 @@ void *GXBeginDraw(void) { return hardware_framebuffer; }
 int GXEndDraw(void)
 {
     if (uw_defer_present()) return 1;
+    uw_take_completed_frame();
     presents++;
     if (!testing_game_tick) assert_visible_picture();
     return 1;

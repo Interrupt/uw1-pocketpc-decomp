@@ -9,3 +9,5 @@ extern int presents, framebuffer_version, displayed_version;
 #include "gx_pacing_test_api.h"
 #include <math.h>
 #include <math.h>
+
+extern uint64_t present_wait_us;

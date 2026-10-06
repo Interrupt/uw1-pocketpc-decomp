@@ -202,6 +202,8 @@ add_fixture_game_unit_test(illustration_render
   src/game.c:@DAT_00085668_real_table
   src/gx_stub.c:@uw_present_state src/gx_stub.c:@g_present_state
   src/gx_stub.c:uw_begin_present_batch src/gx_stub.c:uw_end_present_batch
+  src/gx_stub.c:gfx_finalizedraw
+  src/gx_stub.c:uw_take_completed_frame
   src/gx_stub.c:uw_begin_modal_present src/gx_stub.c:uw_end_modal_present
   src/gx_stub.c:uw_suspend_present_batch src/gx_stub.c:uw_resume_present_batch
   src/gx_stub.c:uw_defer_present
@@ -629,6 +631,13 @@ add_supported_game_unit_test(creatures uw_test_creatures)
 target_compile_definitions(test_creatures PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 
 add_game_test_library(uw_test_gx_pacing
+  src/gx_stub.c:@uw_present_state
+  src/gx_stub.c:@g_present_state
+  src/gx_stub.c:uw_begin_present_batch
+  src/gx_stub.c:uw_end_present_batch
+  src/gx_stub.c:gfx_finalizedraw
+  src/gx_stub.c:uw_take_completed_frame
+  src/gx_stub.c:uw_defer_present
   src/gx_stub.c:@uw_frame_pacing
   src/gx_stub.c:@g_display_pacing
   src/gx_stub.c:@g_game_pacing
@@ -636,6 +645,7 @@ add_game_test_library(uw_test_gx_pacing
   src/gx_stub.c:uw_reset_frame_pacing
   src/gx_stub.c:uw_claim_frame
   src/gx_stub.c:uw_request_cursor_present
+  src/gx_stub.c:uw_record_completed_present
   src/gx_stub.c:uw_present_frame_due
   src/gx_stub.c:uw_service_pending_present
   src/gx_stub.c:uw_service_game_clock)
@@ -759,6 +769,8 @@ add_game_test_library(uw_test_transitions
   src/gx_stub.c:@g_present_state
   src/gx_stub.c:uw_begin_present_batch
   src/gx_stub.c:uw_end_present_batch
+  src/gx_stub.c:gfx_finalizedraw
+  src/gx_stub.c:uw_take_completed_frame
   src/gx_stub.c:uw_suspend_present_batch
   src/gx_stub.c:uw_resume_present_batch
   src/gx_stub.c:uw_begin_modal_present

@@ -1560,7 +1560,7 @@ void main_loop_hud_flush()
      the same palette range and timing, corrupting or double-animating
      it. Pulled until that original mechanism is found or ruled out for
      good; the equipped lit-torch HUD icon is back to not animating. */
-  uw_end_present_batch();
+  gfx_finalizedraw();
   return;
 }
 

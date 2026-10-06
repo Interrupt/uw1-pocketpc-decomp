@@ -238,10 +238,12 @@ void *DAT_0023c430;
 undefined1 DAT_0023cdb0_backing[32];
 short DAT_00201c84;
 int uw_defer_present(void);
+int uw_take_completed_frame(void);
 void *GXBeginDraw(void) { return hardware_framebuffer; }
 int GXEndDraw(void)
 {
     if (uw_defer_present()) return 1;
+    uw_take_completed_frame();
     presents++;
     if (testing_fade) fade_clock_ms += fade_present_ms;
     if (testing_fade || intro_fade_test) {
