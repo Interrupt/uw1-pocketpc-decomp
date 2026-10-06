@@ -442,15 +442,15 @@ void full_dungeon_redraw(void)
 void weapon_overlay_and_full_redraw(void) { flush_dirty_rect_to_display(1); }
 undefined2 DAT_000868d8;
 int DAT_002046f8;
-void enter_pause_menu_state(int state)
+void enter_pause_menu_state(short state)
 {
     TEST_ASSERT_EQUAL_INT(6, state);
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0x001f;
     dirty_rect_union(0, 200, 0, 320);
 }
-void get_mouse_position(void) { TEST_FAIL_MESSAGE("Menu regression uses the keyboard"); }
-void handle_pause_menu_region_click(void) { TEST_FAIL_MESSAGE("Menu regression uses the keyboard"); }
-void handle_pause_menu_dpad_navigation(void) { TEST_FAIL_MESSAGE("Menu regression closes without taking an action"); }
+void get_mouse_position(ushort *out_x, ushort *out_y) { (void)out_x; (void)out_y; TEST_FAIL_MESSAGE("Menu regression uses the keyboard"); }
+void handle_pause_menu_region_click(int region, short click_y) { (void)region; (void)click_y; TEST_FAIL_MESSAGE("Menu regression uses the keyboard"); }
+void handle_pause_menu_dpad_navigation(short key_code) { (void)key_code; TEST_FAIL_MESSAGE("Menu regression closes without taking an action"); }
 void close_ui_panel_return_to_game(void) { DAT_000868d8 = 0; DAT_002046f8 = 1; }
 int g_text_input_active;
 undefined4 g_scroll_control_codes_enabled;
@@ -460,7 +460,7 @@ undefined s_dash_000879a4_backing[8192] = "-";
 undefined s_scroll_prompt_arrow_000879a8_backing[8192] = ">";
 short prompt_panel[16], prompt_font[8];
 void select_msg_scroll_mode_normal(void) {}
-int message_scroll_print_wrapped(void)
+int message_scroll_print_wrapped(char *text)
 {
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0x001f;
     dirty_rect_union(0, 200, 0, 320);

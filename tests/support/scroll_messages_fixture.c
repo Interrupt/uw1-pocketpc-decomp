@@ -82,9 +82,9 @@ undefined4 cursor_show_idle_tick(void) { TEST_FAIL_MESSAGE("Unexpected cursor sh
 void msg_scroll_panel_reset(int mode) { TEST_FAIL_MESSAGE("Unexpected scroll reset"); }
 void msg_scroll_more_prompt(void) { TEST_FAIL_MESSAGE("Unexpected MORE prompt"); }
 void msg_scroll_scroll_up_line(int bottom) { TEST_FAIL_MESSAGE("Unexpected scrolling"); }
-void wait_for_click_to_continue(int delay, int mode) { TEST_FAIL_MESSAGE("Unexpected input wait"); }
+void wait_for_click_to_continue(short delay, uint mode) { TEST_FAIL_MESSAGE("Unexpected input wait"); }
 uint read_realtime_clock_units(void) { return 0; }
-void push_cursor_icon(unsigned icon) {}
+void push_cursor_icon(int icon) {}
 void print_scroll_message_by_id(unsigned id)
 {
     TEST_ASSERT_EQUAL_HEX(0x93, id);

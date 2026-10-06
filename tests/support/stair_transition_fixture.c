@@ -22,7 +22,7 @@ uint clock_units;
 int scan_calls;
 
 void cancel_weapon_swing(void) {}
-void pop_cursor_icon(int state) {}
+void pop_cursor_icon(ushort state) {}
 void save_or_restore_level_special_state(short level, short save) {}
 int commit_level_to_save_slot(int level) { return 1; }
 int load_level(int level)
@@ -68,7 +68,7 @@ void *resolve_object_link(ushort *link) { return NULL; }
 int object_ptr_in_arena(char *object) { return 0; }
 ushort *discard_misplaced_object(char *head, ushort *object, int flag) { return NULL; }
 void tick_weapon_swing_state(short flag) {}
-void set_hud_status_value(int slot, int value) { if (slot == 0) hud_hp = value; }
+void set_hud_status_value(byte slot, ushort value) { if (slot == 0) hud_hp = value; }
 void handle_starvation_penalty(void) { deaths++; }
 uint read_realtime_clock_units(void) { return clock_units; }
 void update_ingame_music_track(void) {}

@@ -71,14 +71,14 @@ void weapon_ready_fixture_animate(void)
 void mode_icon_highlight_on(int mode) {}
 void mode_icon_highlight_off(int mode) {}
 void push_cursor_icon(int icon) {}
-void pop_cursor_icon(int depth) {}
+void pop_cursor_icon(ushort depth) {}
 void wait_for_click_release(int mode)
 {
     TEST_ASSERT_EQUAL_INT(1, mode);
     if (g_selected_object) weapon_ready_fixture_animate();
 }
-void handle_pause_menu_region_click(int x, int y) { TEST_FAIL_MESSAGE("Unexpected pause click"); }
-void run_pause_menu_modal_loop(int mode) { TEST_FAIL_MESSAGE("Unexpected pause menu"); }
+void handle_pause_menu_region_click(int x, short y) { TEST_FAIL_MESSAGE("Unexpected pause click"); }
+void run_pause_menu_modal_loop(short mode) { TEST_FAIL_MESSAGE("Unexpected pause menu"); }
 byte get_current_music_track(void) { return music_track; }
 void set_pending_music_track(uint track) { music_track = track; }
 void pick_random_pending_music_track(void) { music_track = 0; }
@@ -110,7 +110,7 @@ void weapon_ready_fixture_start_unloaded(void)
     DAT_000870e4 = initial_frame;
 }
 int poll_keyboard_char_input(short *buttons) { *buttons = 2; return 2; }
-void get_mouse_position(short *x, short *y) { *x = *y = 0; }
+void get_mouse_position(ushort *x, ushort *y) { *x = *y = 0; }
 int hit_test_inventory_widget(short x, short y) { return 0; }
 int erase_cursor_icon(void) { return 0; }
 void handle_backpack_slot_click(short slot) { TEST_FAIL_MESSAGE("Unexpected slot drop"); }

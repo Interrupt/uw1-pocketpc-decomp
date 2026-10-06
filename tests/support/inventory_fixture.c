@@ -6,7 +6,7 @@ void *resolve_object_link(ushort *link);
 int encode_object_slot_index(char *object);
 int build_object_display_name(char *text, ushort *object, int a, int b);
 void push_cursor_icon(int type);
-void pop_cursor_icon(int mode);
+void pop_cursor_icon(ushort mode);
 ushort *pick_object_under_cursor(int mode);
 int target_in_range(short actor, char *target, char *range);
 int target_line_of_sight(short actor, char *target);
@@ -105,7 +105,7 @@ int build_object_display_name(char *text, ushort *object, int a, int b)
 
 void push_cursor_icon(int type) { TEST_ASSERT_EQUAL_HEX16(0x106, type); }
 
-void pop_cursor_icon(int mode) { TEST_ASSERT_EQUAL_INT(3, mode); reset_cursor++; }
+void pop_cursor_icon(ushort mode) { TEST_ASSERT_EQUAL_INT(3, mode); reset_cursor++; }
 
 ushort *pick_object_under_cursor(int mode)
 { TEST_ASSERT_EQUAL_INT(2, mode); return picked_target; }
@@ -277,7 +277,7 @@ int capture_framebuffer_rect_to_grtile(short *tile, int x, int y, int w, short h
 { (void)tile; (void)x; (void)y; (void)w; (void)h; return 1; }
 void draw_sprite_by_id(int tile, int x, int y, int w, short h)
 { (void)tile; (void)x; (void)y; (void)w; (void)h; }
-void set_hud_status_value(int field, int value)
+void set_hud_status_value(byte field, ushort value)
 { (void)field; (void)value; TEST_FAIL_MESSAGE("Unexpected special container"); }
 void *ce_malloc(unsigned int size)
 {

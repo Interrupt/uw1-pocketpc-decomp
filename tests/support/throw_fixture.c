@@ -37,7 +37,7 @@ void *resolve_object_link(ushort *head)
 }
 void *get_object_record_by_slot_index(short slot)
 { return slot<256 ? DAT_002046b8+slot*27 : DAT_002046c4+(slot-256)*8; }
-void get_mouse_position(short *x, short *y) { *x=141; *y=cursor_y; }
+void get_mouse_position(ushort *x, ushort *y) { *x=141; *y=cursor_y; }
 long ce_rand(void) { return 0; }
 void angle_to_screen_delta(uint heading, short *x, short *y)
 {

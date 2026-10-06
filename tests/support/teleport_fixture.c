@@ -9,7 +9,7 @@ void stop_movement_sound_handle(void);
 uint read_realtime_clock_units(void);
 undefined4 play_sound_effect_with_pan(void);
 void cancel_weapon_swing(void);
-void pop_cursor_icon(int state);
+void pop_cursor_icon(ushort state);
 int commit_level_to_save_slot(int level);
 int load_level(int level);
 void set_player_tile_position(uint tile_x, uint tile_y, int flag);
@@ -106,7 +106,7 @@ undefined4 play_sound_effect_with_pan(void)
 
 void cancel_weapon_swing(void) { cancelled_swings++; }
 
-void pop_cursor_icon(int state)
+void pop_cursor_icon(ushort state)
 {
     TEST_ASSERT_EQUAL_INT(3, state);
     cursor_updates++;

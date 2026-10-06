@@ -21,7 +21,7 @@ byte close_level_archive(undefined4 *handle);
 void set_player_tile_position(uint tile_x, uint tile_y, int flag);
 void debug_print_player_position(const char *label);
 void save_or_restore_level_special_state(short restore, short slot);
-void pop_cursor_icon(int state);
+void pop_cursor_icon(ushort state);
 undefined4 cursor_show_idle_tick(void);
 void set_pending_update_flags(ushort sound);
 void reset_cursor_confine_rect(void);
@@ -220,7 +220,7 @@ void save_or_restore_level_special_state(short restore, short slot)
     special_state_calls++;
 }
 
-void pop_cursor_icon(int state) { TEST_ASSERT_EQUAL_INT(3, state); }
+void pop_cursor_icon(ushort state) { TEST_ASSERT_EQUAL_INT(3, state); }
 
 undefined4 cursor_show_idle_tick(void) { return 0; }
 

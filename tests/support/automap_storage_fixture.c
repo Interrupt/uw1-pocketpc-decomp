@@ -73,10 +73,10 @@ int next_input_event(void) { return 1; }
 void update_hotspot_cursor_icon(void) {}
 void screen_backup_restore_rect(uint x, uint y, uint right, uint bottom) {}
 void switch_automap_level_display(int level) {}
-void set_cursor_confine_rect(int left,int bottom,int right,int top) {}
+void set_cursor_confine_rect(short left, short bottom, short right, short top) {}
 void reset_cursor_confine_rect(void) {}
 void push_cursor_icon(int id) { DAT_00204788=id; }
-void pop_cursor_icon(int mode) {}
+void pop_cursor_icon(ushort mode) {}
 void unregister_key_binding(short id) {}
 void pick_random_pending_music_track(void) {}
 void clear_screen_and_restore_cursor(void) {}

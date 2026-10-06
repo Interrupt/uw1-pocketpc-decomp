@@ -25,9 +25,9 @@ void (*const PTR_FUN_000858c8_table[5])(void) = {0};
 
 void push_cursor_icon(int icon)
 { TEST_ASSERT_EQUAL_HEX16(0x1075, icon); spells_fixture.cursor_pushes++; }
-void pop_cursor_icon(int mode)
+void pop_cursor_icon(ushort mode)
 { TEST_ASSERT_EQUAL_INT(3, mode); spells_fixture.cursor_pops++; }
-void get_mouse_position(short *x, short *y)
+void get_mouse_position(ushort *x, ushort *y)
 { *x=spells_fixture.mouse_x; *y=spells_fixture.mouse_y; }
 void *alloc_object_slot(int region)
 {

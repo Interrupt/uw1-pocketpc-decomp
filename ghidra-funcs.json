@@ -7,8 +7,8 @@
     "still_unnamed_FUN": 12,
     "audited_true": 1464,
     "audited_false": 0,
-    "modernized_true": 1091,
-    "modernized_false": 373
+    "modernized_true": 1157,
+    "modernized_false": 307
   },
   "functions": [
     {
@@ -6071,7 +6071,7 @@
       "description": "real body confirmed stripped from the shipped ARM code (disassembly.",
       "audited": true,
       "modernized": true,
-      "audit_note": "VERIFIED vs ARM: variadic; ARM prologue homes r0-r3 (mov ip,sp; push {r0-r3}) (declared 2; e.g. src/doors.c:204 passes 3, src/hud.c:701 passes 1, src/hud.c:1919 passes 1, ...)"
+      "audit_note": "VERIFIED vs ARM: variadic; ARM prologue homes r0-r3 (mov ip,sp; push {r0-r3}) (declared 2; e.g. src/doors.c:204 passes 3, src/hud.c:689 passes 1, src/hud.c:1882 passes 1, ...)"
     },
     {
       "name": "print_debug_stat_message",
@@ -6951,23 +6951,23 @@
       "param_count": 4,
       "description": "expand the damaged-region bounds (DAT_00088950..5c) to include the given rect.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dirty_rect_set",
       "path": "src/hud.c",
-      "line": 474,
+      "line": 468,
       "original_name": "FUN_00011040",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "dirty-rect SET (overwrite the damaged-region bounds to exact values.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "flush_dirty_rect_to_display",
       "path": "src/hud.c",
-      "line": 497,
+      "line": 485,
       "original_name": "FUN_00022f0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6979,7 +6979,7 @@
     {
       "name": "flush_dirty_rect_to_display_240",
       "path": "src/hud.c",
-      "line": 608,
+      "line": 596,
       "original_name": "FUN_0002310c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6990,7 +6990,7 @@
     {
       "name": "enter_dungeon_view_hud_init",
       "path": "src/hud.c",
-      "line": 698,
+      "line": 686,
       "original_name": "FUN_0003e44c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7001,51 +7001,51 @@
     {
       "name": "mode_icon_highlight_on",
       "path": "src/hud.c",
-      "line": 728,
+      "line": 716,
       "original_name": "FUN_0003f99c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "draws the \"selected\" state for mode icon param_1 (1-based) by blitting LFTI.GR's per-icon highlight frame (id (param_1-1)*-2+0x200b) at that icon's registered position (DAT_000858a8/DAT_000858b8).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "mode_icon_highlight_off",
       "path": "src/hud.c",
-      "line": 758,
+      "line": 743,
       "original_name": "FUN_0003fa1c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "un-highlights mode icon param_1 (1-based), mode_icon_highlight_on's counterpart.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cursor_mode_button_click",
       "path": "src/hud.c",
-      "line": 786,
+      "line": 768,
       "original_name": "FUN_0003faa0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "cursor mode button click.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cursor_mode_button_click_restricted",
       "path": "src/hud.c",
-      "line": 880,
+      "line": 859,
       "original_name": "FUN_0003fd14",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "registered over the same mode-icon-bar click rect as cursor_mode_button_click but under a different active-mask bit (4, not 1), so it's live in a different input context.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "main_loop_hud_flush",
       "path": "src/hud.c",
-      "line": 948,
+      "line": 924,
       "original_name": "FUN_000497cc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7056,7 +7056,7 @@
     {
       "name": "emit_hud_draw_commands",
       "path": "src/hud.c",
-      "line": 1059,
+      "line": 1035,
       "original_name": "FUN_0005d704",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7067,18 +7067,18 @@
     {
       "name": "hud_vitals_threshold_shake",
       "path": "src/hud.c",
-      "line": 1142,
+      "line": 1118,
       "original_name": "FUN_0006ca4c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "brief \"shake\" animation played on a flask's shared decoration slot ((&DAT_0023c224)[iVar1]) when hud_vitals_bar_tick's health-poisoned or mana threshold check crosses over.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "redraw_hud_panels",
       "path": "src/hud.c",
-      "line": 1188,
+      "line": 1161,
       "original_name": "FUN_0006cca8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7089,18 +7089,18 @@
     {
       "name": "set_hud_status_value",
       "path": "src/hud.c",
-      "line": 1267,
+      "line": 1240,
       "original_name": "FUN_0006cff4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "generic \"set HUD status slot param_1 to param_2\" dispatcher.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "hud_panel_redraw_dispatch",
       "path": "src/hud.c",
-      "line": 1382,
+      "line": 1351,
       "original_name": "FUN_0006d284",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7111,29 +7111,29 @@
     {
       "name": "hud_vitals_bar_tick",
       "path": "src/hud.c",
-      "line": 1469,
+      "line": 1438,
       "original_name": "FUN_0006d4a4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "hud vitals bar tick.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "hud_dragon_reaction_tick",
       "path": "src/hud.c",
-      "line": 1591,
+      "line": 1557,
       "original_name": "FUN_0006d894",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "briefly named hud_damage_flash_tick by an earlier pass.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "hud_compass_needle_tick",
       "path": "src/hud.c",
-      "line": 1838,
+      "line": 1801,
       "original_name": "FUN_0006df70",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7144,7 +7144,7 @@
     {
       "name": "tick_hud_panel_transition",
       "path": "src/hud.c",
-      "line": 1879,
+      "line": 1842,
       "original_name": "FUN_0006e130",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7155,7 +7155,7 @@
     {
       "name": "redraw_active_hud_panel",
       "path": "src/hud.c",
-      "line": 1912,
+      "line": 1875,
       "original_name": "FUN_0006ed0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7166,7 +7166,7 @@
     {
       "name": "msg_scroll_draw_edges",
       "path": "src/hud.c",
-      "line": 1936,
+      "line": 1899,
       "original_name": "FUN_0007f208",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7177,18 +7177,18 @@
     {
       "name": "msg_scroll_scroll_up_line",
       "path": "src/hud.c",
-      "line": 1955,
+      "line": 1918,
       "original_name": "FUN_0007f340",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "msg scroll scroll up line.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "msg_scroll_more_prompt",
       "path": "src/hud.c",
-      "line": 1984,
+      "line": 1944,
       "original_name": "FUN_0007f454",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7199,62 +7199,62 @@
     {
       "name": "message_scroll_print_wrapped",
       "path": "src/hud.c",
-      "line": 2013,
+      "line": 1973,
       "original_name": "FUN_0007f570",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "print a string to the message scroll, word-wrapped at ~0x31 columns (one msg_scroll_split_escape_segments call per line).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "msg_scroll_draw_wrapped_span",
       "path": "src/hud.c",
-      "line": 2093,
+      "line": 2051,
       "original_name": "FUN_0007f7cc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "msg scroll draw wrapped span.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "msg_scroll_wrap_split_line",
       "path": "src/hud.c",
-      "line": 2223,
+      "line": 2177,
       "original_name": "FUN_0007fb2c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "msg scroll wrap split line.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "msg_scroll_panel_init",
       "path": "src/hud.c",
-      "line": 2293,
+      "line": 2243,
       "original_name": "FUN_0007fc8c",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "msg scroll panel init.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "msg_scroll_panel_reset",
       "path": "src/hud.c",
-      "line": 2335,
+      "line": 2278,
       "original_name": "FUN_0007fce8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "Every field-offset constant below that was written as a bare `DAT_00250704 + N` (no cast before the addition) was wrong -- half what it should be.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "snap_compass_to_heading",
       "path": "src/hud.c",
-      "line": 2386,
+      "line": 2326,
       "original_name": "FUN_0006cb74",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7265,7 +7265,7 @@
     {
       "name": "reset_hud_panel_animation_state",
       "path": "src/hud.c",
-      "line": 2407,
+      "line": 2347,
       "original_name": "FUN_0006cbf0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7276,7 +7276,7 @@
     {
       "name": "release_panel_wipe_grtiles",
       "path": "src/hud.c",
-      "line": 2442,
+      "line": 2382,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7287,7 +7287,7 @@
     {
       "name": "update_hud_status_icon_frame",
       "path": "src/hud.c",
-      "line": 2465,
+      "line": 2405,
       "original_name": "FUN_0006e038",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7298,7 +7298,7 @@
     {
       "name": "hud_panel_wipe_transition_tick",
       "path": "src/hud.c",
-      "line": 2510,
+      "line": 2450,
       "original_name": "FUN_0006e1d4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7309,40 +7309,40 @@
     {
       "name": "update_ready_rune_slot_icons",
       "path": "src/hud.c",
-      "line": 2558,
+      "line": 2500,
       "original_name": "FUN_0006e96c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the \"ready to cast\" rune-slot icon updater (see DAT_0023c268's own declaration comment).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "update_light_source_color_icons",
       "path": "src/hud.c",
-      "line": 2600,
+      "line": 2538,
       "original_name": "FUN_0006ea54",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "HUD light-color indicator.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "begin_hud_panel_flip",
       "path": "src/hud.c",
-      "line": 2643,
+      "line": 2577,
       "original_name": "FUN_0006eb64",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "begins the HUD panel-switch flip transition to param_1 (the target panel).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "release_hud_panel_flip_grtiles",
       "path": "src/hud.c",
-      "line": 2741,
+      "line": 2668,
       "original_name": "FUN_0006edb8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7353,7 +7353,7 @@
     {
       "name": "advance_hud_panel_flip",
       "path": "src/hud.c",
-      "line": 2761,
+      "line": 2688,
       "original_name": "FUN_0006edfc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7364,29 +7364,29 @@
     {
       "name": "squash_hud_panel_flip_rows",
       "path": "src/hud.c",
-      "line": 3044,
+      "line": 2971,
       "original_name": "FUN_0006f6e0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "draws one stage of the HUD panel-flip's squashed- panel visual.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "copy_hud_panel_flip_column",
       "path": "src/hud.c",
-      "line": 3188,
+      "line": 3110,
       "original_name": "FUN_0006fa28",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "copies one column of the HUD panel-flip's squashed panel content from a source column (param_1) into a destination column (param_2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_sprite_list_buffers",
       "path": "src/hud.c",
-      "line": 3293,
+      "line": 3211,
       "original_name": "FUN_00075be0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7397,18 +7397,18 @@
     {
       "name": "clear_sprite_list_slot_flag",
       "path": "src/hud.c",
-      "line": 3319,
+      "line": 3237,
       "original_name": "FUN_00076488",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "clears a HUD sprite-list slot's status-word flags (masked by DAT_0023c418) and queues it for redraw, but only if the slot's status word currently has DAT_0008763c set (a \"valid/active\" bit).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "flush_sprite_list_compositor",
       "path": "src/hud.c",
-      "line": 3343,
+      "line": 3259,
       "original_name": "FUN_00076508",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7419,18 +7419,18 @@
     {
       "name": "capture_framebuffer_rect_to_grtile_paletted",
       "path": "src/hud.c",
-      "line": 3482,
+      "line": 3398,
       "original_name": "FUN_0007e998",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "Not decompiled -- confirmed a genuine dead stub in the real binary too (disassembly at 0x0007e998 is just `cpy pc,lr`, 4 bytes, no body).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_msg_scroll_panel",
       "path": "src/hud.c",
-      "line": 3535,
+      "line": 3445,
       "original_name": "FUN_0007f044",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7441,7 +7441,7 @@
     {
       "name": "check_mouse_over_msg_scroll_panel",
       "path": "src/hud.c",
-      "line": 3550,
+      "line": 3460,
       "original_name": "FUN_0007f094",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7452,7 +7452,7 @@
     {
       "name": "select_msg_scroll_mode_normal",
       "path": "src/hud.c",
-      "line": 3562,
+      "line": 3472,
       "original_name": "FUN_0007f0e0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7463,7 +7463,7 @@
     {
       "name": "select_msg_scroll_mode_conversation",
       "path": "src/hud.c",
-      "line": 3576,
+      "line": 3486,
       "original_name": "FUN_0007f110",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7474,7 +7474,7 @@
     {
       "name": "select_msg_scroll_mode_2",
       "path": "src/hud.c",
-      "line": 3590,
+      "line": 3500,
       "original_name": "FUN_0007f140",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7485,18 +7485,18 @@
     {
       "name": "wait_for_click_to_continue",
       "path": "src/hud.c",
-      "line": 3605,
+      "line": 3515,
       "original_name": "FUN_0007f170",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "input-pump wait loop used by the message-scroll panel.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_conversation_window_decoration",
       "path": "src/hud.c",
-      "line": 3641,
+      "line": 3547,
       "original_name": "FUN_0007f290",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7507,73 +7507,73 @@
     {
       "name": "msg_scroll_split_escape_segments",
       "path": "src/hud.c",
-      "line": 3668,
+      "line": 3574,
       "original_name": "FUN_0007f6fc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "confirmed by message_scroll_print_wrapped's own pre-existing comment (src/hud.c) as its per-~49-char-chunk worker (one call per line in the word-wrap loop).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "msg_scroll_split_newline_segments",
       "path": "src/hud.c",
-      "line": 3694,
+      "line": 3596,
       "original_name": "FUN_0007f770",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "confirmed by pre-existing callers' comments (src/object_actions.c) as \"the scroll's own line-break logic\".",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "echo_number_to_scroll",
       "path": "src/hud.c",
-      "line": 3721,
+      "line": 3619,
       "original_name": "FUN_0007fe20",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "prints the decimal string form of param_1 (via itoa_radix) to the message scroll, restoring the cursor to the saved column (DAT_0025070c) first.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "echo_yes_no_to_scroll",
       "path": "src/hud.c",
-      "line": 3749,
+      "line": 3644,
       "original_name": "FUN_0007fee8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "prints \"Yes\" or \"No\" to the message scroll (param_1 nonzero == \"Yes\"), restoring the cursor to the saved column first, the same setup echo_number_to_scroll does.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scroll_text_entry_prompt",
       "path": "src/hud.c",
-      "line": 3782,
+      "line": 3674,
       "original_name": "FUN_0007ffa8",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "scroll text entry prompt.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "prompt_yes_no_scroll",
       "path": "src/hud.c",
-      "line": 4060,
+      "line": 3946,
       "original_name": "FUN_00080828",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "interactive yes/no scroll prompt.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "print_character_description_scroll",
       "path": "src/hud.c",
-      "line": 4130,
+      "line": 4012,
       "original_name": "FUN_0003df28",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7584,7 +7584,7 @@
     {
       "name": "show_flask_value_tooltip",
       "path": "src/hud.c",
-      "line": 4168,
+      "line": 4050,
       "original_name": "FUN_0003e0b4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7595,7 +7595,7 @@
     {
       "name": "register_stats_panel_click_regions",
       "path": "src/hud.c",
-      "line": 4223,
+      "line": 4105,
       "original_name": "FUN_0003e2a4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7606,7 +7606,7 @@
     {
       "name": "unregister_stats_panel_click_regions",
       "path": "src/hud.c",
-      "line": 4240,
+      "line": 4122,
       "original_name": "FUN_0003e404",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7617,7 +7617,7 @@
     {
       "name": "refresh_equipment_display_if_visible",
       "path": "src/hud.c",
-      "line": 4255,
+      "line": 4137,
       "original_name": "FUN_0003e644",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7628,7 +7628,7 @@
     {
       "name": "clear_rune_bag_contents",
       "path": "src/hud.c",
-      "line": 4271,
+      "line": 4153,
       "original_name": "FUN_00044814",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7639,18 +7639,18 @@
     {
       "name": "draw_rune_icon",
       "path": "src/hud.c",
-      "line": 4288,
+      "line": 4170,
       "original_name": "FUN_00044848",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "draws a single rune's icon (param_1, a rune index 0-0x17) at its grid position in the rune-bag panel.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "redraw_rune_bag_display",
       "path": "src/hud.c",
-      "line": 4308,
+      "line": 4187,
       "original_name": "FUN_000448a8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7661,7 +7661,7 @@
     {
       "name": "reset_ready_rune_slots",
       "path": "src/hud.c",
-      "line": 4332,
+      "line": 4211,
       "original_name": "FUN_00044920",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7672,7 +7672,7 @@
     {
       "name": "handle_rune_bag_click",
       "path": "src/hud.c",
-      "line": 4351,
+      "line": 4230,
       "original_name": "FUN_0004497c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7683,7 +7683,7 @@
     {
       "name": "print_not_a_spell_message",
       "path": "src/hud.c",
-      "line": 4417,
+      "line": 4296,
       "original_name": "FUN_00044bcc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7694,7 +7694,7 @@
     {
       "name": "handle_light_source_click",
       "path": "src/hud.c",
-      "line": 4428,
+      "line": 4307,
       "original_name": "FUN_00044bd8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7705,40 +7705,40 @@
     {
       "name": "handle_cast_spell_click",
       "path": "src/hud.c",
-      "line": 4472,
+      "line": 4351,
       "original_name": "FUN_00044d14",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the \"cast spell\" button click handler (registered in register_stats_panel_click_regions at (0xb0,0x9b), also bound as a key binding in run_game_startup_sequence).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "report_spell_cast_failure",
       "path": "src/hud.c",
-      "line": 4515,
+      "line": 4391,
       "original_name": "FUN_00044e74",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "shared spell-cast-failure reporter.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cast_spell_from_rune_combo",
       "path": "src/hud.c",
-      "line": 4531,
+      "line": 4405,
       "original_name": "FUN_00044e9c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "resolves and attempts to cast the spell matched by handle_cast_spell_click's rune-combo lookup.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reload_paperdoll_body_sprite",
       "path": "src/hud.c",
-      "line": 4592,
+      "line": 4464,
       "original_name": "FUN_0004638c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7749,7 +7749,7 @@
     {
       "name": "init_inventory_panel_hotspots",
       "path": "src/hud.c",
-      "line": 4612,
+      "line": 4484,
       "original_name": "FUN_00046414",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7760,7 +7760,7 @@
     {
       "name": "redraw_container_icon_slot",
       "path": "src/hud.c",
-      "line": 4669,
+      "line": 4541,
       "original_name": "FUN_00048110",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7771,18 +7771,18 @@
     {
       "name": "update_carry_weight_display",
       "path": "src/hud.c",
-      "line": 4690,
+      "line": 4562,
       "original_name": "FUN_00048514",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the HUD carry-weight/encumbrance display.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "release_grtile_handle",
       "path": "src/hud.c",
-      "line": 4725,
+      "line": 4595,
       "original_name": "FUN_0004995c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7793,51 +7793,51 @@
     {
       "name": "run_pause_menu_modal_loop",
       "path": "src/hud.c",
-      "line": 4734,
+      "line": 4604,
       "original_name": "FUN_000564f8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the pause-menu's modal event loop.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "redraw_pause_menu_icon",
       "path": "src/hud.c",
-      "line": 4829,
+      "line": 4697,
       "original_name": "FUN_00056640",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "redraws the pause-menu's main icon slot (OPTBTNS.GR tile 0x20eb) showing sub-panel/highlight variant param_1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "redraw_pause_submenu_icon",
       "path": "src/hud.c",
-      "line": 4843,
+      "line": 4708,
       "original_name": "FUN_00056688",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "redraws one row of the pause-menu's sub-icon strip (OPTBTNS.GR tile 0x20ec) at a position derived from row index param_1, showing highlight/content variant param_2.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "update_pause_submenu_highlight",
       "path": "src/hud.c",
-      "line": 4858,
+      "line": 4719,
       "original_name": "FUN_000566dc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "moves the pause-menu's sub-icon highlight.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "close_ui_panel_return_to_game",
       "path": "src/hud.c",
-      "line": 4877,
+      "line": 4734,
       "original_name": "FUN_00056724",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7848,7 +7848,7 @@
     {
       "name": "draw_pause_menu_main_list",
       "path": "src/hud.c",
-      "line": 4942,
+      "line": 4793,
       "original_name": "FUN_000567c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7859,7 +7859,7 @@
     {
       "name": "draw_quit_confirm_panel",
       "path": "src/hud.c",
-      "line": 4954,
+      "line": 4805,
       "original_name": "FUN_00056838",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7870,7 +7870,7 @@
     {
       "name": "draw_music_or_sound_toggle_panel",
       "path": "src/hud.c",
-      "line": 4967,
+      "line": 4818,
       "original_name": "FUN_00056864",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7881,7 +7881,7 @@
     {
       "name": "draw_detail_level_panel",
       "path": "src/hud.c",
-      "line": 5004,
+      "line": 4855,
       "original_name": "FUN_0005693c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7892,128 +7892,128 @@
     {
       "name": "handle_music_toggle_click",
       "path": "src/hud.c",
-      "line": 5022,
+      "line": 4873,
       "original_name": "FUN_000569c0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "click handler for the music-toggle panel (state 2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_sound_toggle_click",
       "path": "src/hud.c",
-      "line": 5053,
+      "line": 4901,
       "original_name": "FUN_00056a18",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "click handler for the sound-toggle panel (state 3).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_detail_level_click",
       "path": "src/hud.c",
-      "line": 5085,
+      "line": 4930,
       "original_name": "FUN_00056a70",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "click handler for the texture detail-level panel (state 4).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_pause_menu_main_list_click",
       "path": "src/hud.c",
-      "line": 5120,
+      "line": 4962,
       "original_name": "FUN_00056b48",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "click handler for the top-level list (state 6).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_save_load_slot_click",
       "path": "src/hud.c",
-      "line": 5171,
+      "line": 5010,
       "original_name": "FUN_00056bdc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "click handler shared by the load (state 0) and save (state 1) slot lists.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_quit_confirm_click",
       "path": "src/hud.c",
-      "line": 5212,
+      "line": 5048,
       "original_name": "FUN_00056c88",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "click handler for the quit-confirm panel (state 5).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "enter_pause_menu_state",
       "path": "src/hud.c",
-      "line": 5234,
+      "line": 5067,
       "original_name": "FUN_00056cc8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "enters pause-menu state param_1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_pause_menu_click",
       "path": "src/hud.c",
-      "line": 5252,
+      "line": 5082,
       "original_name": "FUN_00056cf8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "dispatches a click (param_1, a row/item index) to the current pause-menu state's click handler in PTR_FUN_00086900_table.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_pause_menu_region_click",
       "path": "src/hud.c",
-      "line": 5273,
+      "line": 5100,
       "original_name": "FUN_00056d38",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "converts a raw click Y offset (param_2) within the pause-menu's button region into a row index (one of 16 rows, param_2/15) and dispatches it via dispatch_pause_menu_click.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_pause_menu_dpad_navigation",
       "path": "src/hud.c",
-      "line": 5303,
+      "line": 5126,
       "original_name": "FUN_00056d6c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "D-pad/hotkey navigation for the pause menu.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "open_pause_menu_via_hotkey",
       "path": "src/hud.c",
-      "line": 5376,
+      "line": 5196,
       "original_name": "FUN_00056ebc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "opens the pause menu via a bound hotkey (registered in game.c for several key codes).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_cursor_subsystem",
       "path": "src/hud.c",
-      "line": 5396,
+      "line": 5213,
       "original_name": "FUN_00056f28",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8024,7 +8024,7 @@
     {
       "name": "erase_cursor_icon",
       "path": "src/hud.c",
-      "line": 5431,
+      "line": 5248,
       "original_name": "FUN_00056fe8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8035,7 +8035,7 @@
     {
       "name": "uw_always_show_cursor",
       "path": "src/hud.c",
-      "line": 5467,
+      "line": 5284,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -8046,7 +8046,7 @@
     {
       "name": "uw_composite_desktop_cursor",
       "path": "src/hud.c",
-      "line": 5482,
+      "line": 5299,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -8057,7 +8057,7 @@
     {
       "name": "cursor_show_idle_tick",
       "path": "src/hud.c",
-      "line": 5510,
+      "line": 5327,
       "original_name": "FUN_000570b4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8068,7 +8068,7 @@
     {
       "name": "decrement_cursor_hide_depth",
       "path": "src/hud.c",
-      "line": 5535,
+      "line": 5352,
       "original_name": "FUN_00057118",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8079,7 +8079,7 @@
     {
       "name": "decrement_cursor_hide_depth_thunk",
       "path": "src/hud.c",
-      "line": 5557,
+      "line": 5374,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -8090,18 +8090,18 @@
     {
       "name": "set_tracked_hotspot_rect",
       "path": "src/hud.c",
-      "line": 5568,
+      "line": 5385,
       "original_name": "FUN_00057188",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "records the currently-tracked UI hotspot's rectangle (x,y,width,height) into DAT_0020479c/DAT_002047a0/ DAT_00204798/DAT_00204790, read by is_mouse_within_tracked_hotspot and track_hotspot_hover_state.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "is_mouse_within_tracked_hotspot",
       "path": "src/hud.c",
-      "line": 5586,
+      "line": 5397,
       "original_name": "FUN_000571c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8112,7 +8112,7 @@
     {
       "name": "track_hotspot_hover_state",
       "path": "src/hud.c",
-      "line": 5602,
+      "line": 5413,
       "original_name": "FUN_0005721c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8123,7 +8123,7 @@
     {
       "name": "redraw_hotspot_border_cursor",
       "path": "src/hud.c",
-      "line": 5665,
+      "line": 5476,
       "original_name": "FUN_00057460",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8134,29 +8134,29 @@
     {
       "name": "get_mouse_position",
       "path": "src/hud.c",
-      "line": 5688,
+      "line": 5499,
       "original_name": "FUN_00057504",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "returns the current raw mouse position.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "get_click_position",
       "path": "src/hud.c",
-      "line": 5703,
+      "line": 5510,
       "original_name": "FUN_00057528",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "returns the effective position for a click.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_keyboard_char_input",
       "path": "src/hud.c",
-      "line": 5725,
+      "line": 5528,
       "original_name": "FUN_00057570",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8167,7 +8167,7 @@
     {
       "name": "noop_post_input_reset_hook",
       "path": "src/hud.c",
-      "line": 5739,
+      "line": 5542,
       "original_name": "FUN_0005758c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8178,117 +8178,117 @@
     {
       "name": "warp_mouse_cursor",
       "path": "src/hud.c",
-      "line": 5750,
+      "line": 5553,
       "original_name": "FUN_00057590",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "warps the mouse cursor to (param_1,param_2) directly, bracketed by a cursor-hide-depth pop/idle-tick pair.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "poll_keyboard_char_input",
       "path": "src/hud.c",
-      "line": 5768,
+      "line": 5567,
       "original_name": "FUN_000575c4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "polls for a pending keyboard character (via poll_mouse_button_flags, not yet named), clearing DAT_00086968's \"pending\" sentinel back to -1 (0xffff) when none is available, and recording the result in DAT_00204850.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "wait_for_key_or_mouse_move",
       "path": "src/hud.c",
-      "line": 5788,
+      "line": 5585,
       "original_name": "FUN_000576d0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "a \"press any key or move the mouse\" modal wait.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "lookup_onscreen_keyboard_key_hit",
       "path": "src/hud.c",
-      "line": 5830,
+      "line": 5625,
       "original_name": "FUN_00057a80",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "looks up which on-screen-keyboard key was touched at (param_1,param_2), confirmed by DAT_00087650's own existing comment describing this exact [row+column*20] indexing scheme.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "register_cursor_hotspot",
       "path": "src/hud.c",
-      "line": 5855,
+      "line": 5647,
       "original_name": "FUN_00057af0",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "registers a cursor hotspot rectangle (x1=param_1, y1=param_2, x2=param_3, y2=param_4, tag id=param_5) into the 20-slot DAT_002047b0 parallel-array table, returning its slot index or -1 if full.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "unregister_cursor_hotspot",
       "path": "src/hud.c",
-      "line": 5894,
+      "line": 5680,
       "original_name": "FUN_00057bb0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "unregisters cursor hotspot slot param_1 (register_cursor_hotspot's counterpart), clearing its sentinel and compacting the active-slot count if it was the last one.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "push_cursor_icon",
       "path": "src/hud.c",
-      "line": 5929,
+      "line": 5712,
       "original_name": "FUN_00057c5c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "pushes cursor sprite param_1 onto a small (max 3-deep) cursor-icon stack and makes it active, confirmed by its ubiquitous use alongside pop_cursor_icon across nearly every UI subsystem to show a context-specific cursor (e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "pop_cursor_icon",
       "path": "src/hud.c",
-      "line": 5951,
+      "line": 5731,
       "original_name": "FUN_00057cac",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "pops the cursor-icon stack (push_cursor_icon's counterpart), restoring the previous sprite (or the default 0x106c if the stack is empty).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "is_position_within_rect",
       "path": "src/hud.c",
-      "line": 5979,
+      "line": 5756,
       "original_name": "FUN_00057d1c",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "tests whether the mouse is within rect (param_1,param_2)-(param_3,param_4), inset by half the cursor's own dimensions on each axis (so the cursor's hotspot, not just its top-left corner, must overlap).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "set_cursor_sprite_id",
       "path": "src/hud.c",
-      "line": 6006,
+      "line": 5778,
       "original_name": "FUN_00057dc0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "sets the active cursor sprite to resource id param_1, resolving it to its sprite frame/dimensions (lookup_grtile_by_id or a direct g_grtile_registry lookup for already-resident high ids).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "update_hotspot_cursor_icon",
       "path": "src/hud.c",
-      "line": 6054,
+      "line": 5823,
       "original_name": "FUN_00057e54",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8299,18 +8299,18 @@
     {
       "name": "handle_mouse_button_message",
       "path": "src/hud.c",
-      "line": 6095,
+      "line": 5864,
       "original_name": "FUN_00058438",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "handles a mouse button state change.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "save_cursor_background",
       "path": "src/hud.c",
-      "line": 6124,
+      "line": 5890,
       "original_name": "FUN_000584c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8321,7 +8321,7 @@
     {
       "name": "draw_idle_mouse_cursor",
       "path": "src/hud.c",
-      "line": 6145,
+      "line": 5911,
       "original_name": "FUN_0005857c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8332,7 +8332,7 @@
     {
       "name": "noop_key_handler",
       "path": "src/hud.c",
-      "line": 6215,
+      "line": 5981,
       "original_name": "FUN_00058734",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8343,7 +8343,7 @@
     {
       "name": "poll_mouse_button_flags",
       "path": "src/hud.c",
-      "line": 6226,
+      "line": 5992,
       "original_name": "FUN_00058738",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8354,18 +8354,18 @@
     {
       "name": "toggle_stats_panel",
       "path": "src/hud.c",
-      "line": 6245,
+      "line": 6011,
       "original_name": "FUN_0003def4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "toggle stats panel.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_cursor_confine_rect",
       "path": "src/hud.c",
-      "line": 6270,
+      "line": 6033,
       "original_name": "FUN_000577f0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8376,18 +8376,18 @@
     {
       "name": "set_cursor_confine_rect",
       "path": "src/hud.c",
-      "line": 6297,
+      "line": 6060,
       "original_name": "FUN_00057788",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "set cursor confine rect.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "uw_debug_blit_pick_buffer",
       "path": "src/hud.c",
-      "line": 6323,
+      "line": 6080,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,

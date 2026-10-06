@@ -56,7 +56,7 @@ void handle_rest_action(short mode)
 #define UNUSED_RESULT(name) undefined4 name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); return 0; }
 void trigger_player_jump_if_grounded(char *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected trigger_player_jump_if_grounded"); }
 int add_active_light_source(uint light_id, uint duration, char flag) { (void)light_id; (void)duration; (void)flag; TEST_FAIL_MESSAGE("Unexpected add_active_light_source"); return 0; }
-UNUSED_VOID(push_cursor_icon)
+void push_cursor_icon(int icon) { (void)icon; TEST_FAIL_MESSAGE("Unexpected push_cursor_icon"); }
 void apply_targeted_spell_effect(ushort *caster, char effect_index) { (void)caster; (void)effect_index; TEST_FAIL_MESSAGE("Unexpected apply_targeted_spell_effect"); }
 void cast_cone_damage_spell(uintptr_t caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_cone_damage_spell"); }
 void cast_targeted_search_effect(uintptr_t caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_targeted_search_effect"); }

@@ -18,7 +18,7 @@ short click[8];
 int invalid_spells, effects, effect_type, effect_param, sound, failure;
 int skill_result;
 void wait_for_click_release(int buttons) { TEST_ASSERT_EQUAL_INT(1, buttons); }
-int message_scroll_print_wrapped(const char *message)
+int message_scroll_print_wrapped(char *message)
 {
     TEST_ASSERT_EQUAL_STRING("Not a spell", message);
     invalid_spells++;

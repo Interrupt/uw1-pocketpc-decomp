@@ -9,7 +9,7 @@ int encode_object_slot_index(char *object);
 void *tilemap_lookup(short x, short y);
 void *resolve_object_link(ushort *head);
 void *get_object_record_by_slot_index(short slot);
-void get_mouse_position(short *x, short *y);
+void get_mouse_position(ushort *x, ushort *y);
 long ce_rand(void);
 void angle_to_screen_delta(uint heading, short *x, short *y);
 void collision_build_height_field(uint step_limit);

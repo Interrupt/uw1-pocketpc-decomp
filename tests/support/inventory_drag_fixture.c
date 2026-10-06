@@ -57,7 +57,7 @@ int GXEndDraw(void)
 }
 
 void push_cursor_icon(int type) { TEST_ASSERT_EQUAL_HEX16(0x82, type); }
-void get_mouse_position(short *x, short *y) { *x = g_mouse_x; *y = g_mouse_y; }
+void get_mouse_position(ushort *x, ushort *y) { *x = g_mouse_x; *y = g_mouse_y; }
 int hit_test_inventory_widget(short x, short y)
 {
     TEST_ASSERT_EQUAL_INT(release_poll, polls);
@@ -66,7 +66,7 @@ int hit_test_inventory_widget(short x, short y)
     return target_widget;
 }
 int erase_cursor_icon(void) { return 1; }
-void pop_cursor_icon(int mode) { TEST_ASSERT_EQUAL_INT(3, mode); }
+void pop_cursor_icon(ushort mode) { TEST_ASSERT_EQUAL_INT(3, mode); }
 void handle_object_drop_target(short widget)
 {
     TEST_ASSERT_EQUAL_INT(0x17, widget);

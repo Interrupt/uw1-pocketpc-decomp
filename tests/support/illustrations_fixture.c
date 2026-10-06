@@ -5,9 +5,9 @@
 void describe_picked_terrain(byte mode, short texture);
 void print_scroll_message_by_id(uint message_id);
 char *get_message_string(ushort message_id);
-void msg_scroll_panel_reset(void);
+void msg_scroll_panel_reset(int redraw);
 byte *format_object_display_name(byte *buffer, int flag_a, int flag_b);
-int message_scroll_print_wrapped(void);
+int message_scroll_print_wrapped(char *text);
 int open_file_for_read(const char *path);
 int read_file_handle(int handle, void *buffer, uint count);
 int open_existing_file_rw_alt(const char *path);
@@ -47,11 +47,11 @@ void print_scroll_message_by_id(uint message_id) { (void)message_id; TEST_FAIL_M
 
 char *get_message_string(ushort message_id) { (void)message_id; TEST_FAIL_MESSAGE("Unexpected inscription text"); return NULL; }
 
-void msg_scroll_panel_reset(void) { TEST_FAIL_MESSAGE("Unexpected inscription reset"); }
+void msg_scroll_panel_reset(int redraw) { (void)redraw; TEST_FAIL_MESSAGE("Unexpected inscription reset"); }
 
 byte *format_object_display_name(byte *buffer, int flag_a, int flag_b) { (void)buffer; (void)flag_a; (void)flag_b; TEST_FAIL_MESSAGE("Unexpected inscription formatting"); return NULL; }
 
-int message_scroll_print_wrapped(void) { TEST_FAIL_MESSAGE("Unexpected inscription printing"); return 0; }
+int message_scroll_print_wrapped(char *text) { (void)text; TEST_FAIL_MESSAGE("Unexpected inscription printing"); return 0; }
 
 int open_file_for_read(const char *path) { (void)path; TEST_FAIL_MESSAGE("Unexpected grave file"); return -1; }
 

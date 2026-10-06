@@ -3,7 +3,7 @@
 #include "unity.h"
 #include "../spell_runes_test_globals.h"
 void wait_for_click_release(int buttons);
-int message_scroll_print_wrapped(const char *message);
+int message_scroll_print_wrapped(char *message);
 undefined4 play_sound_effect_with_pan(int id, int pan, int mode);
 void print_scroll_message_by_id(uint id);
 int roll_skill_check(int skill, int difficulty);

@@ -27,7 +27,7 @@ void debug_framebuffer_dump(const char *tag) { (void)tag; }
 void uw_debug_dump_3d_face(const char *tag) { (void)tag; }
 int uw_debug_3d_frame_dump_finish(void) { return -1; }
 const char *uw_debug_3d_frame_dump_last_dir(void) { return ""; }
-int message_scroll_print_wrapped(void) { TEST_FAIL_MESSAGE("Unexpected debug message"); return 0; }
+int message_scroll_print_wrapped(char *text) { (void)text; TEST_FAIL_MESSAGE("Unexpected debug message"); return 0; }
 
 void geometry_fixture_reset(void)
 {
