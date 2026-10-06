@@ -41,6 +41,10 @@ presented frame without the Pocket PC stylus hiding rules. It stays out of the
 game framebuffer, so moving it does not leave trails or enter screen backups.
 Set `UW_ALWAYS_SHOW_CURSOR=0` to restore the original stylus behavior.
 
+The display defaults to the original 320×200 game area, initially scaled 2×.
+Set `UW_TOUCHSCREEN=1 ./run.sh` to include the Pocket PC touch input strip
+below it (320×240). Leaving it unset or setting `UW_TOUCHSCREEN=0` hides it.
+
 ## Unit tests
 
 The C unit tests use [Unity](https://github.com/ThrowTheSwitch/Unity),
