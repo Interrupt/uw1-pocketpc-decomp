@@ -202,6 +202,8 @@ add_fixture_game_unit_test(illustration_render
   src/game.c:@DAT_00085668_real_table
   src/gx_stub.c:@uw_present_state src/gx_stub.c:@g_present_state
   src/gx_stub.c:uw_begin_present_batch src/gx_stub.c:uw_end_present_batch
+  src/gx_stub.c:gfx_finalizedraw
+  src/gx_stub.c:uw_take_completed_frame
   src/gx_stub.c:uw_begin_modal_present src/gx_stub.c:uw_end_modal_present
   src/gx_stub.c:uw_suspend_present_batch src/gx_stub.c:uw_resume_present_batch
   src/gx_stub.c:uw_defer_present
@@ -452,3 +454,364 @@ add_supported_game_unit_test(cursor uw_test_cursor)
 target_compile_definitions(test_cursor PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 add_test(NAME cursor_stylus COMMAND test_cursor --stylus)
 add_test(NAME cursor_enabled COMMAND test_cursor --enabled)
+add_game_test_library(uw_test_introduction
+  src/babl.c:babl_render_op_say
+  src/babl.c:babl_render_op_wrap_message
+  src/babl.c:babl_render_op_show_code
+  src/ordinal_stubs.c:ce_memset
+  src/ordinal_stubs.c:ce_strcat
+  src/resources.c:get_message_string
+  src/resources.c:decode_strings_pak_entry
+  src/resources.c:walk_strings_pak_huffman_tree
+  src/resources.c:read_strings_pak_bit
+  src/ordinal_stubs.c:ce_strchr
+  src/text.c:measure_text_width
+  src/text.c:load_font_metrics)
+target_sources(uw_test_introduction PRIVATE support/introduction_fixture.c)
+target_include_directories(uw_test_introduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_introduction PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(introduction uw_test_introduction)
+target_compile_definitions(test_introduction PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+target_sources(test_introduction PRIVATE "${PROJECT_SOURCE_DIR}/src/file_io.c" "${PROJECT_SOURCE_DIR}/src/debug.c")
+
+add_game_test_library(uw_test_stair_transition
+  src/level.c:transition_to_level
+  src/level.c:teleport_object_to_level_tile
+  src/player.c:dungeon_view_anim_tick
+  src/objects.c:find_placement_via_tile_flood_fill
+  src/player.c:sync_player_stats_to_hud
+  src/doors.c:check_scheduled_object_level_match
+  src/objects.c:find_object_in_world)
+target_sources(uw_test_stair_transition PRIVATE support/stair_transition_fixture.c)
+target_include_directories(uw_test_stair_transition PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_stair_transition PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(stair_transition uw_test_stair_transition)
+target_compile_definitions(test_stair_transition PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+
+add_game_test_library(uw_test_npc_ai
+  src/ai.c:npc_ai_tick
+  src/ai.c:npc_ai_default_tick
+  src/ai.c:refresh_npc_target_delta
+  src/ai.c:detect_npc_wander_proximity
+  src/ai.c:compute_movement_heading
+  src/ai.c:npc_wander_reposition
+  src/ai.c:npc_walk_toward_tile
+  src/ai.c:try_direct_line_walk
+  src/ai.c:record_line_walk_step
+  src/ai.c:pop_pending_path_cache_slot
+  src/ai.c:compute_pathfind_search_radius
+  src/ai.c:npc_notice_and_idle_tick
+  src/ai.c:npc_set_goal
+  src/ai.c:npc_set_walk_target
+  src/combat.c:npc_combat_engage_close_tick
+  src/combat.c:npc_combat_engage_wide_tick
+  src/combat.c:npc_combat_set_stance
+  src/combat.c:load_monster_combat_stats)
+target_sources(uw_test_npc_ai PRIVATE support/npc_ai_fixture.c)
+target_include_directories(uw_test_npc_ai PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_npc_ai PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(npc_ai uw_test_npc_ai)
+target_compile_definitions(test_npc_ai PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+
+add_game_test_library(uw_test_throw
+  src/ai.c:@DAT_000868c0_backing
+  src/item_use.c:drop_held_object_near_player
+  src/objects.c:spawn_object_near_player
+  src/item_use.c:compute_drop_aim_from_cursor
+  src/objects.c:compute_object_placement_fields
+  src/ai.c:build_object_placement_snapshot
+  src/collision.c:apply_placement_collision_sweep
+  src/ai.c:mobile_object_tick
+  src/ai.c:sync_object_tile_position
+  src/input.c:set_locomotion_state
+  src/input.c:apply_movement_mode_profile
+  src/ai.c:settle_mobile_to_immobile
+  src/movement.c:sweep_collision_flags
+  src/movement.c:collision_flags_to_locomotion_code
+  src/movement.c:collision_response_mobile_object
+  src/collision.c:sort_collision_candidates
+  src/collision.c:swap_collision_candidates
+  src/objects.c:object_list_insert_head
+  src/objects.c:object_list_unlink
+  src/movement.c:movement_collision_sweep
+  src/movement.c:movement_sweep_setup
+  src/movement.c:sweep_init_position
+  src/movement.c:reticle_object_pick
+  src/movement.c:sweep_restart_remaining
+  src/movement.c:sweep_kill_velocity
+  src/movement.c:sweep_writeback_position
+  src/movement.c:sweep_integrate_substep
+  src/movement.c:sweep_deflect_heading
+  src/movement.c:sweep_slide_along_wall
+  src/movement.c:sweep_apply_knockback
+  src/movement.c:sweep_land_on_surface
+  src/movement.c:sweep_step_vertical
+  src/movement.c:sweep_step
+  src/movement.c:sweep_apply_collision)
+target_sources(uw_test_throw PRIVATE support/throw_fixture.c)
+target_include_directories(uw_test_throw PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_throw PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(throw uw_test_throw)
+target_compile_definitions(test_throw PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+target_sources(test_throw PRIVATE "${PROJECT_SOURCE_DIR}/src/debug.c")
+
+add_game_test_library(uw_test_throw_cursor
+  src/item_use.c:drop_held_object_near_player
+  src/objects.c:spawn_object_near_player
+  src/item_use.c:compute_drop_aim_from_cursor
+  src/hud.c:get_mouse_position
+  src/objects.c:compute_object_placement_fields
+  src/object_actions.c:check_object_drop_height
+  src/math.c:project_position_by_heading
+  src/objects.c:object_list_insert_head)
+target_sources(uw_test_throw_cursor PRIVATE support/throw_cursor_fixture.c)
+target_include_directories(uw_test_throw_cursor PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_throw_cursor PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(throw_cursor uw_test_throw_cursor)
+target_compile_definitions(test_throw_cursor PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+target_sources(test_throw_cursor PRIVATE "${PROJECT_SOURCE_DIR}/src/debug.c")
+
+add_game_test_library(uw_test_lighting
+  src/item_use.c:use_light_source
+  src/player.c:refresh_player_equipment_effects
+  src/visibility.c:load_shading_level_config
+  src/visibility.c:build_visibility_light_grid
+  src/math.c:integer_sqrt
+  src/3d.c:raster_textured_span
+  src/graphics.c:build_shade_lut
+  src/graphics.c:get_ambient_bias_reduction
+  src/graphics.c:set_ambient_bias_with_light
+  src/graphics.c:set_ambient_bias_without_light
+  src/ordinal_stubs.c:ordfloat_bits_to_float
+  src/ordinal_stubs.c:ordfloat_float_to_bits
+  src/ordinal_stubs.c:ordfloat_int_to_float2
+  src/ordinal_stubs.c:ordfloat_mul
+  src/ordinal_stubs.c:ordfloat_uint_to_float)
+target_sources(uw_test_lighting PRIVATE support/lighting_fixture.c)
+target_include_directories(uw_test_lighting PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_lighting PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(lighting uw_test_lighting)
+target_compile_definitions(test_lighting PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+target_sources(test_lighting PRIVATE "${PROJECT_SOURCE_DIR}/src/file_io.c" "${PROJECT_SOURCE_DIR}/src/debug.c")
+
+add_game_test_library(uw_test_critter_palette
+  src/object_actions.c:resolve_critter_sprite_tier
+  src/object_actions.c:decode_critter_sprite_page
+  src/resources.c:decompress_gr_bitmap
+  src/resources.c:merge_byte_into_word
+  src/resources.c:select_gr_bitmap_remap_table
+  src/resources.c:decode_gr_rle_stream
+  src/bitmap.c:blit_sprite_row_remapped)
+target_sources(uw_test_critter_palette PRIVATE support/critter_palette_fixture.c)
+target_include_directories(uw_test_critter_palette PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_critter_palette PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(critter_palette uw_test_critter_palette)
+target_compile_definitions(test_critter_palette PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+
+add_game_test_library(uw_test_creatures
+  src/object_actions.c:resolve_critter_sprite_tier
+  src/ai.c:spawn_creature_death_loot
+  src/ai.c:spawn_creature_treasure_drop
+  src/ai.c:spawn_creature_special_item_drop
+  src/ai.c:spawn_creature_equipment_drop
+  src/ai.c:spawn_creature_misc_item_drop
+  src/ai.c:drop_monster_loot
+  src/ai.c:drop_creature_inventory_on_death
+  src/containers.c:empty_container_into_world
+  src/objects.c:spawn_new_object
+  src/objects.c:object_list_insert_head
+  src/ai.c:spawn_npc_thrown_weapon
+  src/objects.c:spawn_object_near_player
+  src/objects.c:compute_object_placement_fields
+  src/ai.c:settle_mobile_to_immobile)
+target_sources(uw_test_creatures PRIVATE support/creatures_fixture.c)
+target_include_directories(uw_test_creatures PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_creatures PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(creatures uw_test_creatures)
+target_compile_definitions(test_creatures PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+
+add_game_test_library(uw_test_gx_pacing
+  src/gx_stub.c:@uw_present_state
+  src/gx_stub.c:@g_present_state
+  src/gx_stub.c:uw_begin_present_batch
+  src/gx_stub.c:uw_end_present_batch
+  src/gx_stub.c:gfx_finalizedraw
+  src/gx_stub.c:uw_take_completed_frame
+  src/gx_stub.c:uw_defer_present
+  src/gx_stub.c:@uw_frame_pacing
+  src/gx_stub.c:@g_display_pacing
+  src/gx_stub.c:@g_game_pacing
+  src/gx_stub.c:uw_set_present_refresh_rate
+  src/gx_stub.c:uw_reset_frame_pacing
+  src/gx_stub.c:uw_claim_frame
+  src/gx_stub.c:uw_request_cursor_present
+  src/gx_stub.c:uw_record_completed_present
+  src/gx_stub.c:uw_present_frame_due
+  src/gx_stub.c:uw_service_pending_present
+  src/gx_stub.c:uw_service_game_clock)
+target_sources(uw_test_gx_pacing PRIVATE support/gx_pacing_fixture.c)
+target_include_directories(uw_test_gx_pacing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_gx_pacing PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(gx_pacing uw_test_gx_pacing)
+target_compile_definitions(test_gx_pacing PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+
+add_game_test_library(uw_test_look_pacing
+  src/gx_stub.c:poll_dungeon_movement_keys
+  src/gx_stub.c:@uw_frame_pacing
+  src/gx_stub.c:@g_display_pacing
+  src/gx_stub.c:@g_game_pacing
+  src/gx_stub.c:uw_set_present_refresh_rate
+  src/gx_stub.c:uw_reset_frame_pacing
+  src/gx_stub.c:uw_claim_frame
+  src/gx_stub.c:uw_present_frame_due
+  src/gx_stub.c:uw_service_pending_present
+  src/gx_stub.c:uw_service_game_clock)
+target_sources(uw_test_look_pacing PRIVATE support/look_pacing_fixture.c)
+target_include_directories(uw_test_look_pacing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_look_pacing PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(look_pacing uw_test_look_pacing)
+target_compile_definitions(test_look_pacing PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+
+add_game_test_library(uw_test_inventory_drag
+  src/item_use.c:attach_picked_up_object_to_cursor
+  src/input.c:wait_for_click_release
+  src/movement.c:movement_pacing_handler
+  src/hud.c:poll_keyboard_char_input
+  src/hud.c:poll_mouse_button_flags
+  src/hud.c:handle_mouse_button_message
+  src/gx_stub.c:@uw_frame_pacing
+  src/gx_stub.c:@g_display_pacing
+  src/gx_stub.c:@g_game_pacing
+  src/gx_stub.c:uw_set_present_refresh_rate
+  src/gx_stub.c:uw_reset_frame_pacing
+  src/gx_stub.c:uw_claim_frame
+  src/gx_stub.c:uw_present_frame_due
+  src/gx_stub.c:uw_service_pending_present
+  src/gx_stub.c:uw_service_game_clock)
+target_sources(uw_test_inventory_drag PRIVATE support/inventory_drag_fixture.c)
+target_include_directories(uw_test_inventory_drag PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_inventory_drag PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(inventory_drag uw_test_inventory_drag)
+target_compile_definitions(test_inventory_drag PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+
+foreach(suite introduction stair_transition npc_ai throw throw_cursor lighting critter_palette creatures gx_pacing look_pacing inventory_drag)
+  target_include_directories(uw_test_${suite} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_compile_options(uw_test_${suite} PUBLIC -include "${CMAKE_CURRENT_SOURCE_DIR}/${suite}_test_globals.h")
+endforeach()
+# The look poller is static; compile its extracted body with its SDL fixture.
+set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/uw_test_look_pacing_functions.c"
+  PROPERTIES HEADER_FILE_ONLY TRUE)
+target_include_directories(uw_test_look_pacing PUBLIC ${SDL2_INCLUDE_DIRS} "${CMAKE_CURRENT_BINARY_DIR}")
+
+add_library(uw_test_division STATIC support/division.c)
+uw_configure_test_target(uw_test_division)
+foreach(suite npc_ai throw throw_cursor lighting creatures stair_transition inventory_drag)
+  target_link_libraries(uw_test_${suite} PUBLIC uw_test_division)
+endforeach()
+
+target_sources(uw_test_throw PRIVATE support/throw_storage.c)
+target_sources(uw_test_throw_cursor PRIVATE support/throw_storage.c)
+add_game_test_library(uw_test_transitions
+  src/babl.c:render_babl_dialog_window
+  src/babl.c:display_book_or_scroll_page
+  src/babl.c:bubble_sort_indices_by_key_table
+  src/babl.c:babl_render_tick
+  src/babl.c:FUN_000362e8
+  src/babl.c:FUN_00036300
+  src/babl.c:FUN_00036308
+  src/babl.c:FUN_00036394
+  src/babl.c:FUN_000363f0
+  src/babl.c:FUN_00036404
+  src/babl.c:FUN_00036418
+  src/babl.c:FUN_000365bc
+  src/babl.c:FUN_000365fc
+  src/babl.c:FUN_0003663c
+  src/babl.c:FUN_00036698
+  src/babl.c:FUN_00036344
+  src/babl.c:babl_render_op_show_code
+  src/babl.c:decompress_rle_stream
+  src/babl.c:pack_byte_into_word
+  src/babl.c:read_rle_op_code
+  src/babl.c:rle_op_handle_short_run
+  src/babl.c:rle_op_copy_pairs_even
+  src/babl.c:rle_op_copy_pairs_odd
+  src/babl.c:rle_op_fill_doubled_byte_even
+  src/babl.c:rle_op_fill_doubled_byte_odd
+  src/babl.c:rle_op_finalize_length
+  src/babl.c:rle_op_mark_stream_done
+  src/audio.c:load_voice_sample_page
+  src/audio.c:read_voice_sample_page_chunk
+  src/ordinal_stubs.c:ordfloat_bits_to_float
+  src/ordinal_stubs.c:ordfloat_float_to_bits
+  src/ordinal_stubs.c:ordfloat_int_to_float2
+  src/ordinal_stubs.c:ordfloat_mul
+  src/ordinal_stubs.c:ordfloat_uint_to_float
+  src/ordinal_stubs.c:ordfloat_int_to_float
+  src/graphics.c:expand_pals_bytes
+  src/graphics.c:convert_palette_bgrx_to_rgb
+  src/graphics.c:build_rgb565_palette
+  src/graphics.c:bitmap_blit_to_framebuffer
+  src/graphics.c:fade_in
+  src/graphics.c:fade_out
+  src/chargen.c:run_character_generator
+  src/level.c:enter_dungeon_view
+  src/hud.c:run_pause_menu_modal_loop
+  src/graphics.c:blit_fullscreen_bitmap_file
+  src/hud.c:flush_dirty_rect_to_display
+  src/hud.c:dirty_rect_union
+  src/hud.c:main_loop_hud_flush
+  src/graphics.c:flush_dungeon_frame
+  src/hud.c:scroll_text_entry_prompt
+  src/ordinal_stubs.c:ce_strlen
+  src/game.c:set_pending_update_flags
+  src/game.c:@DAT_00085668_real_table
+  src/gx_stub.c:@uw_present_state
+  src/gx_stub.c:@g_present_state
+  src/gx_stub.c:uw_begin_present_batch
+  src/gx_stub.c:uw_end_present_batch
+  src/gx_stub.c:gfx_finalizedraw
+  src/gx_stub.c:uw_take_completed_frame
+  src/gx_stub.c:uw_suspend_present_batch
+  src/gx_stub.c:uw_resume_present_batch
+  src/gx_stub.c:uw_begin_modal_present
+  src/gx_stub.c:uw_end_modal_present
+  src/gx_stub.c:uw_defer_present
+  src/ordinal_stubs.c:GetFileSize
+  src/input.c:wait_for_click_release
+  src/input.c:next_input_event
+  src/input.c:peek_input_event
+  src/input.c:poll_input_event
+  src/input.c:poll_mouse_event
+  src/hud.c:poll_mouse_button_flags
+  src/input.c:process_pending_keyboard_scan_code
+  src/input.c:get_alternate_keyboard_scan_code)
+target_sources(uw_test_transitions PRIVATE support/transitions_fixture.c)
+target_include_directories(uw_test_transitions PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_transitions PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(transitions uw_test_transitions)
+target_compile_definitions(test_transitions PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+target_sources(test_transitions PRIVATE "${PROJECT_SOURCE_DIR}/src/file_io.c" "${PROJECT_SOURCE_DIR}/src/debug.c")
+
+add_game_test_library(uw_test_spell_runes
+  src/hud.c:@DAT_00087530_backing
+  src/hud.c:handle_cast_spell_click
+  src/hud.c:cast_spell_from_rune_combo
+  src/hud.c:report_spell_cast_failure
+  src/hud.c:print_not_a_spell_message)
+target_sources(uw_test_spell_runes PRIVATE support/spell_runes_fixture.c)
+target_include_directories(uw_test_spell_runes PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_definitions(uw_test_spell_runes PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(spell_runes uw_test_spell_runes)
+target_compile_definitions(test_spell_runes PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+foreach(suite transitions spell_runes)
+  target_include_directories(uw_test_${suite} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_compile_options(uw_test_${suite} PUBLIC -include "${CMAKE_CURRENT_SOURCE_DIR}/${suite}_test_globals.h")
+endforeach()
+
+target_link_libraries(uw_test_spell_runes PUBLIC uw_test_division)
+
+target_link_libraries(uw_test_transitions PUBLIC uw_test_division)
+
+foreach(suite creatures critter_palette throw throw_cursor)
+  target_link_libraries(uw_test_${suite} PUBLIC uw_test_support)
+endforeach()
