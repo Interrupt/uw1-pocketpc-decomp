@@ -6,11 +6,13 @@
  * this header is self-contained for any caller. */
 #include "uw.h"
 
-/* Opens the real SDL2 audio device + vendored HxCModPlayer backend (see
- * audio.c's "Real MOD playback backend" block comment). Call once, early
- * at startup, right after SDL_Init(... | SDL_INIT_AUDIO) and before any
- * play_music_track call. */
-void init_music_playback_subsystem(void);
+/* "Audio subsystem initialized" / "music enabled" gate flags -- defined
+ * in audio.c, but also set directly by platform_music.c's
+ * platform_music_init on success (see each global's own comment in
+ * audio.c for the full history). Use headers/platform_music.h for the
+ * actual init/load/start/stop/shutdown calls. */
+extern int DAT_00087454;
+extern int DAT_00087448;
 
 undefined4 reset_dialogue_speech_state();
 void clear_ambient_sound_target_thunk();

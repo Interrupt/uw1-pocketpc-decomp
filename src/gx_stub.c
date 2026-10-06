@@ -7,6 +7,7 @@
 #include "headers/democapture.h"
 #include "headers/debug_ui.h"
 #include "headers/audio.h"
+#include "headers/platform_music.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -825,7 +826,7 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
      * separately from SDL_INIT_VIDEO above so a sandboxed/CI environment
      * with no audio device still gets a working video/input game --
      * SDL_InitSubSystem's own failure here is reported and otherwise
-     * ignored, not fatal. init_music_playback_subsystem() itself handles
+     * ignored, not fatal. platform_music_init() itself handles
      * "no audio device" (SDL_GetNumAudioDevices()==0) and
      * SDL_OpenAudioDevice failure the same way, leaving the music gate
      * flags at their safe "subsystem not initialized" default. */
@@ -833,7 +834,7 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
         fprintf(stderr, "[gx] SDL_InitSubSystem(SDL_INIT_AUDIO) failed: %s -- music playback disabled\n",
                 SDL_GetError());
     } else {
-        init_music_playback_subsystem();
+        platform_music_init();
     }
     g_win = SDL_CreateWindow("Ultima Underworld", SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED, GX_W * 2, GX_H * 2,
