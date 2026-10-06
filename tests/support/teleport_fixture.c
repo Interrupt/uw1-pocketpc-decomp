@@ -3,21 +3,21 @@
 /* Local service declarations; game function bodies link these mocks. */
 void decode_movement_command(void);
 void tick_mobile_objects(int elapsed);
-void apply_movement_tick(void);
+void apply_movement_tick(int elapsed);
 void trigger_view_transition(void);
 void stop_movement_sound_handle(void);
 uint read_realtime_clock_units(void);
 undefined4 play_sound_effect_with_pan(void);
 void cancel_weapon_swing(void);
 void pop_cursor_icon(int state);
-undefined4 commit_level_to_save_slot(int level);
+int commit_level_to_save_slot(int level);
 int load_level(int level);
 void set_player_tile_position(uint x, uint y);
 void set_pending_update_flags(int flags);
 void report_fatal_error_and_exit(void);
 void full_dungeon_redraw(void);
-void weapon_overlay_flash_hold(undefined4 passes);
-void weapon_overlay_flash_restore(undefined4 passes);
+void weapon_overlay_flash_hold(int passes);
+void weapon_overlay_flash_restore(int passes);
 
 ushort player[16], other_object[16];
 
@@ -77,7 +77,7 @@ void tick_mobile_objects(int elapsed)
     destination_ticks++;
 }
 
-void apply_movement_tick(void)
+void apply_movement_tick(int elapsed)
 {
     TEST_FAIL_MESSAGE("Stationary player unexpectedly entered movement physics");
 }
@@ -125,7 +125,7 @@ short save;
     }
 }
 
-undefined4 commit_level_to_save_slot(int level)
+int commit_level_to_save_slot(int level)
 {
     TEST_ASSERT_EQUAL_INT(saved_level, level);
     commits++;
@@ -174,13 +174,13 @@ void report_fatal_error_and_exit(void)
 
 void full_dungeon_redraw(void) { redraws++; }
 
-void weapon_overlay_flash_hold(undefined4 passes)
+void weapon_overlay_flash_hold(int passes)
 {
     TEST_ASSERT_EQUAL_INT(g_visibility_max_ring_passes, passes);
     overlay_holds++;
 }
 
-void weapon_overlay_flash_restore(undefined4 passes)
+void weapon_overlay_flash_restore(int passes)
 {
     TEST_ASSERT_EQUAL_INT(g_visibility_max_ring_passes, passes);
     overlay_restores++;

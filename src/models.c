@@ -1863,7 +1863,7 @@ LAB_00064cdc:
 // 0xc08/0xc0c/0xc10 (x/y/z).
 /* was `int` -- truncated the real _anim pointer emit_catalog_object passes in, latent until the
    DAT_00202c9X object-property fix let real property data reach a nonzero case here */
-void apply_model_position_offset(char *model, undefined4 offset_x, undefined4 offset_y, undefined4 offset_z)
+void apply_model_position_offset(char *model, int offset_x, int offset_y, int offset_z)
 {
   undefined4 uVar1;
   
@@ -1892,7 +1892,7 @@ void apply_model_position_offset(char *model, undefined4 offset_x, undefined4 of
 // was FUN_0001e6f0 -- multiplies (ordfloat_mul, float MULTIPLY) a model animation block's own
 // position floats by per-axis scale factors (param_2/3/4). param_1[0] is read as a sub-part
 // count...
-void scale_model_part_offsets(int *model_block, undefined4 scale_x, undefined4 scale_y, undefined4 scale_z)
+void scale_model_part_offsets(int *model_block, int scale_x, int scale_y, int scale_z)
 {
   undefined4 uVar1;
   int *part;
@@ -2004,7 +2004,7 @@ static void *uw_e_model_strip_cr(void *raw_fh) {
 /* HACK: not part of the original recovered signature -- see its own use site (the "HACK:
    flip_winding" comment, right before the PARTS block's per-face vertex-reversal) for the full
    rationale. */
-void parse_e_model_file(char *path, undefined1 *out_buffer, int flip_winding)
+void parse_e_model_file(char *path, byte *out_buffer, int flip_winding)
 {
   char stack0xffdc3228_buf [256];
   char *stack0xffdc3228_ptr;

@@ -2,21 +2,21 @@
 #include "new_game_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-undefined4 character_generator_start(void);
-undefined4 ensure_save_directory_exists(char *path);
+int character_generator_start(void);
+int ensure_save_directory_exists(char *path);
 bool write_player_save_record(const char *path);
 undefined *load_string_resource(char *path);
 undefined4 seed_conversation_globals_for_new_game(void);
 bool open_level_archive(undefined1 *handle, char *path);
 int seek_file_handle(int handle, int offset, int method);
 int read_file_handle(int handle, void *destination, uint size);
-undefined4 scheduler_load(byte *handle, int level);
-undefined4 load_player_save_record(char *path);
+int scheduler_load(byte *handle, int level);
+int load_player_save_record(char *path);
 bool load_level_texture_ids(byte *handle, int level);
 void clear_automap_reveal_buffer(void);
 void reset_npc_path_cache(void);
 void clear_last_attacker_record(void);
-undefined4 load_automap_reveal_from_archive(byte *handle, int level);
+int load_automap_reveal_from_archive(byte *handle, int level);
 byte close_level_archive(undefined4 *handle);
 void set_player_tile_position(uint x, uint y);
 void debug_print_player_position(const char *label);
@@ -82,7 +82,7 @@ bool archive_open;
 
 bool g_new_game_entry_pause_pending;
 
-undefined4 character_generator_start(void)
+int character_generator_start(void)
 {
     character_calls++;
     if (!accept_character) return 0;
@@ -93,7 +93,7 @@ undefined4 character_generator_start(void)
     return 1;
 }
 
-undefined4 ensure_save_directory_exists(char *path)
+int ensure_save_directory_exists(char *path)
 {
     TEST_ASSERT_EQUAL_STRING("\\SAVE0", path);
     TEST_ASSERT_EQUAL_STRING("Test Avatar", character);
@@ -146,7 +146,7 @@ int seek_file_handle(int handle, int offset, int method)
 int read_file_handle(int handle, void *destination, uint size)
 { return uw_file_read(handle, destination, size); }
 
-undefined4 scheduler_load(byte *handle, int level)
+int scheduler_load(byte *handle, int level)
 {
     TEST_ASSERT_TRUE(archive_open);
     TEST_ASSERT_EQUAL_INT(1, level);
@@ -154,7 +154,7 @@ undefined4 scheduler_load(byte *handle, int level)
     return scheduler_result;
 }
 
-undefined4 load_player_save_record(char *path)
+int load_player_save_record(char *path)
 {
     TEST_ASSERT_NULL(path);
     TEST_ASSERT_TRUE(archive_open);
@@ -177,7 +177,7 @@ void reset_npc_path_cache(void) { cache_resets++; }
 
 void clear_last_attacker_record(void) { attacker_resets++; }
 
-undefined4 load_automap_reveal_from_archive(byte *handle, int level)
+int load_automap_reveal_from_archive(byte *handle, int level)
 {
     TEST_ASSERT_TRUE(archive_open);
     TEST_ASSERT_EQUAL_INT(1, level);

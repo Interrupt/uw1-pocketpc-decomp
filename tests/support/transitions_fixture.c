@@ -197,8 +197,8 @@ short *DAT_00085a6c;
 char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
 void debug_framebuffer_dump(const char *tag) { (void)tag; }
-void apply_palette_buffer(void) { palette_installs++; }
-void tick_book_illustration_palette_cycles(void) {}
+void apply_palette_buffer(void *palette, int flag) { (void)palette; (void)flag; palette_installs++; }
+void tick_book_illustration_palette_cycles(ushort *cycle_record) { (void)cycle_record;}
 void clear_ambient_sound_target(void) {}
 void voice_sample_cluster_stub_1(void) {}
 void voice_sample_cluster_stub_2(void) {}
@@ -357,7 +357,7 @@ void transitions_fixture_dispose(void)
 int uw_always_show_cursor(void) { return 0; }
 void clear_ambient_sound_target_thunk(void) { clear_ambient_sound_target(); }
 char *chrbtns_bump_alloc_entry(int size) { TEST_FAIL_MESSAGE("Unexpected chargen allocation callback"); return NULL; }
-undefined4 chrbtns_offset_table_builder(int index, int kind, int entry)
+int chrbtns_offset_table_builder(int index, int kind, int entry)
 { TEST_FAIL_MESSAGE("Unexpected chargen resource callback"); return 0; }
 
 
@@ -396,10 +396,10 @@ char *LAB_000255b4(void) { return NULL; }
 undefined4 LAB_000255d0(void) { return 0; }
 uint load_gr_resource_entries(void) { return 1; }
 undefined4 reset_dialogue_speech_state(void) { return 0; }
-void chargen_ui_transition_hook(undefined4 is_press) { (void)is_press;}
+void chargen_ui_transition_hook(int is_press) { (void)is_press;}
 void init_new_character_record(int mode) { (void)mode;}
 void report_fatal_error_and_exit(void) { TEST_FAIL_MESSAGE("Screen resources must load"); }
-void set_viewport_clip_rect(undefined2 left, undefined2 top, undefined2 right, undefined2 bottom) { (void)left; (void)top; (void)right; (void)bottom;}
+void set_viewport_clip_rect(short left, short top, short right, short bottom) { (void)left; (void)top; (void)right; (void)bottom;}
 bool read_buffer_from_file(char *path, void *buffer, unsigned int count)
 {
     int handle = uw_file_open_read(path);
@@ -420,7 +420,7 @@ bool load_pals_bank(unsigned int bank, void *buffer)
     build_rgb565_palette(rgb, bank);
     return true;
 }
-undefined4 character_generator_loop(char *tree_data, char *scratch_data, char *field_records)
+int character_generator_loop(char *tree_data, char *scratch_data, char *field_records)
 {
     character_screen_inputs++;
     TEST_ASSERT_EQUAL_UINT(9, fade_samples);
@@ -466,8 +466,8 @@ int message_scroll_print_wrapped(void)
     dirty_rect_union(0, 200, 0, 320);
     return 0;
 }
-void set_draw_color(void) {}
-void rect_fill_or_save_restore(void) {}
+void set_draw_color(short color_index) { (void)color_index;}
+void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom) { (void)left; (void)top; (void)right; (void)bottom;}
 void uw_debug_dump_sprite_frames_once(void) {}
 void uw_debug_dump_critter_sheet_once(void) {}
 void uw_debug_force_item_id_once(void) {}

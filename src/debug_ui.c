@@ -50,7 +50,7 @@ static int g_edit_len = 0;
 static unsigned short g_saved_px[DBGUI_PANEL_W * DBGUI_SAVE_H];
 static int g_saved_valid = 0;
 
-static void dbgui_save_backing(void)
+static void dbgui_save_backing()
 {
   unsigned short *fb = (unsigned short *)g_uw_framebuffer;
   int y;
@@ -64,7 +64,7 @@ static void dbgui_save_backing(void)
   g_saved_valid = 1;
 }
 
-static void dbgui_restore_backing(void)
+static void dbgui_restore_backing()
 {
   unsigned short *fb = (unsigned short *)g_uw_framebuffer;
   int y;
@@ -165,7 +165,7 @@ static void dbgui_field_set(DbgField *f, double v)
   if (f->is_int) *f->ival = (int)v; else *f->dval = v;
 }
 
-void dbgui_end(void)
+void dbgui_end()
 {
   /* Deliberately does NOT draw -- see dbgui_draw()'s own comment for why drawing has to happen
      later in the frame than this is called. */
@@ -174,7 +174,7 @@ void dbgui_end(void)
   if (g_selected < 0) g_selected = 0;
 }
 
-void dbgui_draw(void)
+void dbgui_draw()
 {
   /* Called once per frame from app_main_loop, AFTER main_loop_hud_flush() -- i.e. after the 3D view
      and every other HUD element for this frame have already drawn into the shared software
@@ -226,7 +226,7 @@ void dbgui_draw(void)
 
 int dbgui_visible(void) { return g_visible; }
 
-void dbgui_toggle(void)
+void dbgui_toggle()
 {
   int was_visible = g_visible;
   g_visible = !g_visible;

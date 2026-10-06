@@ -124,7 +124,7 @@ void toggle_door_object(char *actor, byte *door)
 
 
 // was FUN_00071e20 -- disabled outright on level 9.
-undefined4 spawn_scheduled_door_texture_object(void)
+int spawn_scheduled_door_texture_object()
 {
   ushort tile_word;
   byte position_high_bits;
@@ -212,7 +212,7 @@ bool check_scheduled_object_level_match(short stored_level, ushort packed_tile)
 
 // was FUN_0007213c -- applies a bundle of player-state changes (hunger restoration scaled off the
 // class base-stat row DAT_0023be74+4, the level-7 hazard byte, equipment flags)...
-void apply_special_object_use_effect(void)
+void apply_special_object_use_effect()
 {
   char hunger_roll;
   int level_matches = check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) >> 4, 0x1ca);

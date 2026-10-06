@@ -171,7 +171,7 @@ static int visibility_ray_idx(const void *p) {
 
 
 // was FUN_0005b054 -- reset texture id lists to identity + default counts (0x30 wall, 10 floor)
-undefined4 reset_texture_id_lists(void)
+int reset_texture_id_lists()
 {
   int iVar1;
   int iVar2;
@@ -222,7 +222,7 @@ undefined4 reset_texture_id_lists(void)
 
 // was FUN_0005b188 -- read the level's 0x7a-byte tmap-id block (48 wall + 10 floor + 3) from the .ark
 /* .ark handle-struct pointer -- was `undefined4`, truncating it before read_archive_entry. */
-bool load_level_texture_ids(undefined1 *archive, int level_number)
+bool load_level_texture_ids(byte *archive, int level_number)
 {
   int iVar1;
   undefined2 uVar2;
@@ -379,7 +379,7 @@ void load_terrain_texture_props(char *wall_texture_ids, char *floor_texture_ids)
 
 
 // was FUN_0005b890 -- reset the draw-command list write cursor DAT_00110fc0 back to its base DAT_0023aed0
-void draw_command_list_rewind(void)
+void draw_command_list_rewind()
 {
   DAT_00110fc0 = DAT_0023aed0;
 }
@@ -387,7 +387,7 @@ void draw_command_list_rewind(void)
 
 
 // was FUN_0005b8ac -- per-frame teardown: free the scratch geometry / clip-vertex lists (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via LocalFree
-void free_frame_geometry_buffers(void)
+void free_frame_geometry_buffers()
 {
   void **piVar1;
   int iVar2;
@@ -416,7 +416,7 @@ void free_frame_geometry_buffers(void)
 
 
 // was FUN_0005bb5c
-void full_dungeon_redraw(void)
+void full_dungeon_redraw()
 {
   build_frame_draw_list();
   draw_command_list_rewind();
@@ -432,7 +432,7 @@ void full_dungeon_redraw(void)
 
 
 // was FUN_0005bbe0 -- timed dungeon-view redraw: rebuild the draw list if needed, run render_dungeon_view, measure it (read_realtime_clock_units) and feed an adaptive-quality value
-void render_dungeon_frame_timed(void)
+void render_dungeon_frame_timed()
 {
   int uw_ord2005_rem_122 = 0;
   short sVar1;
@@ -492,7 +492,7 @@ void render_dungeon_frame_timed(void)
 
 
 // was FUN_0005bc38 -- build the per-frame HUD + world draw-command list (opcodes into DAT_00110fc0) and run the visibility pass walk_visible_tiles; returns nonzero if it rebuilt
-undefined4 build_frame_draw_list(void)
+int build_frame_draw_list()
 {
   short sVar1;
   undefined2 uVar2;
@@ -592,7 +592,7 @@ void build_visibility_light_grid(short size)
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_0005bf40
-void seed_visibility_queue(void)
+void seed_visibility_queue()
 {
   /* DAT_0023aecc is the player's current tile record; it is NULL when the player position is
      outside the 64x64 map. */
@@ -707,7 +707,7 @@ void visibility_ray_step_backward(intptr_t ray)
 /* Was FUN_0005c214. param_1 was `int`, truncating the real record pointer every caller passes --
    same fix as advance_visibility_ray. */
 // was FUN_0005c214
-undefined4 compute_visibility_ray_offset(intptr_t ray, char step_x, char step_y)
+int compute_visibility_ray_offset(intptr_t ray, char step_x, char step_y)
 {
   byte bVar1;
   byte *pbVar2;
@@ -836,7 +836,7 @@ undefined4 compute_visibility_ray_offset(intptr_t ray, char step_x, char step_y)
 /* Was FUN_0005c70c, and was mis-named `reactions_should_merge` until the un-stub below showed what
    it does. */
 // was FUN_0005c70c
-undefined4 extend_visibility_ray_row(byte *ray_a, byte *ray_b)
+int extend_visibility_ray_row(byte *ray_a, byte *ray_b)
 {
   uint uVar1;
   uint uVar2;
@@ -1073,7 +1073,7 @@ LAB_0005ce60:
    run_visibility_flood always calls this with (`&local_20`/`&local_24`, both real
    `byte*`/`undefined1*` locals)... */
 // was FUN_0005cf74
-void merge_adjacent_visibility_rays(byte **ray_cursor, undefined1 **out_cursor)
+void merge_adjacent_visibility_rays(byte **ray_cursor, byte **out_cursor)
 {
   bool bVar1;
   byte bVar2;
@@ -1164,7 +1164,7 @@ LAB_0005d064:
 
 // Was FUN_0005d13c.
 // was FUN_0005d13c
-void run_visibility_flood(void)
+void run_visibility_flood()
 {
   byte bVar1;
   undefined1 *puVar2;
@@ -1241,7 +1241,7 @@ void run_visibility_flood(void)
 // WARNING: Restarted to delay deadcode elimination for space: ram
 
 // was FUN_0005d290
-void rebuild_dungeon_view(void)
+void rebuild_dungeon_view()
 {
   undefined2 uVar1;
   ushort uVar2;
@@ -1353,7 +1353,7 @@ void rebuild_dungeon_view(void)
 
 
 // was FUN_0005d2ac -- empty hook called before the visibility walk in build_frame_draw_list (disabled / never recovered)
-void dungeon_view_prepass_stub(undefined4 phase)
+void dungeon_view_prepass_stub(int phase)
 {
 }
 
@@ -1509,7 +1509,7 @@ LAB_0006fff4:
 
 
 // was FUN_00070118
-void load_light_tables(void)
+void load_light_tables()
 {
   char stack0xffdc323c_buf [256];
   char *stack0xffdc323c_ptr;

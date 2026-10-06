@@ -4898,11 +4898,11 @@ int DAT_002046fc;
 /* Were lone `undefined *` -- the real thing is a pair of function-pointer dispatch tables for the
    in-game pause menu, indexed by menu "state" (DAT_000868dc, 0..6): PTR_FUN_000868e0 is the no-arg
    "draw this state's screen" table (enter_pause_menu_state calls table[state]())... */
-extern void draw_pause_menu_main_list(void);
-extern void draw_save_load_slot_list(void);
-extern void draw_quit_confirm_panel(void);
-extern void draw_music_or_sound_toggle_panel(void);
-extern void draw_detail_level_panel(void);
+extern void draw_pause_menu_main_list();
+extern void draw_save_load_slot_list();
+extern void draw_quit_confirm_panel();
+extern void draw_music_or_sound_toggle_panel();
+extern void draw_detail_level_panel();
 extern void handle_save_load_slot_click(int);
 extern void handle_music_toggle_click(int);
 extern void handle_sound_toggle_click(int);
@@ -5464,7 +5464,7 @@ int erase_cursor_icon()
 
 /* Desktop deviation: present the game cursor as an overlay by default.
    UW_ALWAYS_SHOW_CURSOR=0 restores the Pocket PC stylus visibility rules. */
-int uw_always_show_cursor(void)
+int uw_always_show_cursor()
 {
   static int cached = -1;
   if (cached < 0) {
@@ -6320,7 +6320,7 @@ short param_4;
 /* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D
    viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible. Call
    *after* a pick-mode render pass (render_dungeon_view_frame) has populated the buffer. */
-void uw_debug_blit_pick_buffer(void)
+void uw_debug_blit_pick_buffer()
 {
   /* 16 distinct colours for object slot ids; deliberately excludes the
      crosshair yellow (0xFFE0) and the out-of-range magenta (0xF81F). */

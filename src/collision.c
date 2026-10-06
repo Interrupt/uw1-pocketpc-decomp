@@ -64,7 +64,7 @@ int build_collision_height_field_for_object(ushort *object)
 /* Second argument was previously left undeclared, relying on it still sitting in the same ABI
    register (r1) at the tail call to movement_collision_sweep() -- a K&R "dropped-argument" idiom
    already seen (and fixed) elsewhere this session (tile_is_no_magic). */
-undefined4 apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags)
+int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags)
 {
   /* snapshot was `int`, truncating the real 64-bit pointers callers pass (&DAT_00204920, and
      DAT_0010172c after its own fix above) -- same class of bug as DAT_0010172c's own fix. */
@@ -635,7 +635,7 @@ void swap_collision_candidates(uint index)
 // was FUN_00051dd0 -- insertion-sorts collision_add_candidate_object's candidate list (up to the
 // count at DAT_00202c6c+0x14) by X position then Y position, each pass swapping out-of-order pairs
 // via swap_collision_candidates...
-void sort_collision_candidates(void)
+void sort_collision_candidates()
 {
   char cVar1;
   uint uVar2;
@@ -704,7 +704,7 @@ void sort_collision_candidates(void)
 // was FUN_00051fa0 -- checks whether an object of catalog type param_1 could occupy tile position
 // (param_3,param_4) at candidate height param_5 without being blocked by the current collision-
 // candidate list...
-undefined4 check_object_placement_clearance(short catalog_type, short ignore_slot, undefined2 position_x, undefined2 position_y, short height, int check_mode, byte step_limit)
+int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit)
 {
   byte bVar1;
   char *uVar2;
@@ -863,7 +863,7 @@ ushort collision_neighbor_shade_or_zero(ushort *base, byte idx) {
 // was FUN_00050984 -- sample the floor height at one tile corner (type 0 solid -> 0x80) PHYSICS:
 // floor height source -- returns the standable height at corner param_1 of the current tile: 0x80
 // (= tile top, "no floor / solid") for a rock tile, height*8 for flat floor...
-uint collision_sample_floor_height(uint corner, undefined4 *out_blocked)
+uint collision_sample_floor_height(uint corner, uint *out_blocked)
 {
   byte shape_byte;
   short corner_word;

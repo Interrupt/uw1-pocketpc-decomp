@@ -433,7 +433,7 @@ LAB_0007d460:
 // was FUN_0007e0d8 -- per-object callback passed to for_each_object_of_type (see
 // dispatch_quest_event_code's case 0x32, which sweeps every object of class 0xd8). When the
 // object's flags nibble at +0xb is 7, resets it to 1.
-undefined4 reset_object_ui_state_callback(char *object)
+int reset_object_ui_state_callback(char *object)
 {
   uint uVar1;
   
@@ -451,7 +451,7 @@ undefined4 reset_object_ui_state_callback(char *object)
 
 // was FUN_0007e12c -- dispatch_trap_type_effect's case 3 handler (called there as
 // `FUN_0007e12c(param_1,param_2,param_3)`, the trap/ link record and its tile x,y).
-undefined4 dispatch_quest_event_code(char *trap_record, int tile_x, int tile_y)
+int dispatch_quest_event_code(char *trap_record, int tile_x, int tile_y)
 {
   uint uVar1;
   
@@ -508,7 +508,7 @@ undefined4 dispatch_quest_event_code(char *trap_record, int tile_x, int tile_y)
 // was FUN_0007e2dc -- allocates two new object slots and links both into the tile (param_1,param_2)
 // object list at tilemap_lookup's head: the first is initialized with class/flag bits matching
 // 0x180-bracket...
-undefined4 create_scripted_trap_pair_at_tile(int tile_x, int tile_y, uint code)
+int create_scripted_trap_pair_at_tile(int tile_x, int tile_y, uint code)
 {
   int iVar1;
   ushort uVar2;
@@ -632,7 +632,7 @@ void free_trap_class_object(char *link_field, byte *trap_object)
 
 // was FUN_0007e694 -- its only confirmed caller is dispatch_trap_type_effect's case 7 ("spawn
 // trap"), which aborts the spawn when this returns nonzero for the target object (class 0x40).
-undefined4 check_object_area_for_spawn_block(ushort *object)
+int check_object_area_for_spawn_block(ushort *object)
 {
   DAT_0024cff8 = 0;
   DAT_0024cfd4 = object;
@@ -647,7 +647,7 @@ undefined4 check_object_area_for_spawn_block(ushort *object)
 // was FUN_0007e6e0 -- returns 1 when param_1 is 0, or when the tile (param_2,param_3) is more than
 // 7 tiles away from the player's own view tile (g_player_object+0x16, matching the "current view
 // tile" field used throughout this file) on either axis...
-undefined4 is_out_of_player_range(int target_present, short tile_x, short tile_y)
+int is_out_of_player_range(int target_present, short tile_x, short tile_y)
 {
   uint uVar1;
   undefined4 uVar2;
@@ -760,7 +760,7 @@ void tick_ambient_doors_and_scheduler(int target_present)
 // was FUN_00039790 -- area terrain-modification trap/spell effect: over a param_7 x param_8
 // rectangle of tiles starting at (param_1,param_2), adjusts each tile's floor-height nibble (either
 // relatively, by param_9, when param_9 is 1 or 3, or set absolutely to param_9 when under 0xe)...
-undefined4 apply_area_terrain_effect(short tile_x, int tile_y, short wall_texture, short height_value, short height_adjust, short floor_texture, short width, short height_extent, short mode)
+int apply_area_terrain_effect(short tile_x, int tile_y, short wall_texture, short height_value, short height_adjust, short floor_texture, short width, short height_extent, short mode)
 {
   int iVar1;
   int iVar2;
@@ -886,7 +886,7 @@ LAB_0003987c:
 // was FUN_00039bd8 -- confirmed as dispatch_trap_type_effect's case 0 AND case 0xb handler (a
 // "poison dart"-style trap): param_2's low 16 bits are a signed delta -- negative poisons the
 // player directly...
-undefined4 apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, undefined4 unused_a, undefined4 unused_b)
+int apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, int unused_a, int unused_b)
 {
   char cVar1;
   int iVar2;
@@ -924,7 +924,7 @@ undefined4 apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta
 // was FUN_00039d1c -- shared special-action dispatch helper: stashes two coordinate/context bytes
 // (param_1/param_2) into DAT_0023c3dc/DAT_0023c3d8, then dispatches by the sign of param_5 (a
 // signed action id): negative runs dispatch_tile_special_action...
-undefined4 dispatch_trap_special_or_tile_action(undefined1 context_x, undefined1 context_y, int tile_x, int tile_y, ushort action_id, undefined1 argument)
+int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, int tile_x, int tile_y, ushort action_id, byte argument)
 {
   DAT_0023c3d8 = context_y;
   DAT_0023c3dc = context_x;
@@ -1013,7 +1013,7 @@ void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y)
 
 
 // was FUN_0003a0e8 -- dispatch_quest_event_code's code 0x28 handler (param_1 unused throughout).
-void try_combine_shrine_markers(undefined4 unused, int tile_x, int tile_y)
+void try_combine_shrine_markers(int unused, int tile_x, int tile_y)
 {
   int iVar1;
   int iVar2;
@@ -1080,7 +1080,7 @@ void try_combine_shrine_markers(undefined4 unused, int tile_x, int tile_y)
 
 // was FUN_0003a29c -- confirmed as dispatch_quest_event_code's case 5
 // handler: emits a noise alert of type param_1 centered on the player.
-void emit_player_noise_alert(undefined1 noise_type)
+void emit_player_noise_alert(byte noise_type)
 {
   emit_noise_alert(g_player_object,noise_type);
 }
@@ -1116,7 +1116,7 @@ void apply_quest_event_numeric_effect(int context_type, char *record, int tile_x
 
 // was FUN_0003a398 -- the "booby-trapped book" item-use effect: confirmed by its own message ("The
 // book explodes in your face!").
-void trigger_exploding_book_trap(void)
+void trigger_exploding_book_trap()
 {
   undefined4 uVar1;
   int iVar2;
@@ -1144,7 +1144,7 @@ void trigger_exploding_book_trap(void)
 // was FUN_0003a4a0 -- confirmed as dispatch_quest_event_code's case 0x29 handler, a parameterized
 // sibling of trigger_exploding_book_trap: the same "book explodes" effect but checking a
 // caller-specified tile (param_2,param_3) rather than the player's own position...
-void trigger_exploding_book_trap_at_tile(undefined4 unused, int tile_x, int tile_y)
+void trigger_exploding_book_trap_at_tile(int unused, int tile_x, int tile_y)
 {
   undefined4 uVar1;
   int iVar2;
@@ -1172,7 +1172,7 @@ void trigger_exploding_book_trap_at_tile(undefined4 unused, int tile_x, int tile
 // was FUN_0003a57c -- confirmed as dispatch_quest_event_code's case 0x2a handler: spawns a
 // temporary NPC object (catalog id 0x40), sets its goal/state fields to force an immediate
 // conversation, runs interact_talk_npc() against it, then frees the slot...
-void trigger_scripted_npc_conversation(void)
+void trigger_scripted_npc_conversation()
 {
   undefined2 uVar1;
   char *iVar2;  /* was `int` -- truncated spawn_new_object's real pointer */
@@ -1195,7 +1195,7 @@ void trigger_scripted_npc_conversation(void)
 // was FUN_0003a5ec -- confirmed as dispatch_quest_event_code's case
 // 0x39 handler: advances the scheduler by 4 units then displays book/
 // scroll page 3.
-void advance_scheduler_and_show_page3(void)
+void advance_scheduler_and_show_page3()
 {
   scheduler_tick(4);
   display_book_or_scroll_page(3);
@@ -1205,7 +1205,7 @@ void advance_scheduler_and_show_page3(void)
 // was FUN_0003a604 -- for_each_object_of_type callback: unlinks and frees the given object
 // (param_1) from its own current tile. Used by trigger_quest_milestone_cleanup_event to sweep away
 // every instance of a set of object types.
-undefined4 unlink_object_from_tile_callback(char *object)
+int unlink_object_from_tile_callback(char *object)
 {
   int iVar1;
 
@@ -1220,7 +1220,7 @@ undefined4 unlink_object_from_tile_callback(char *object)
 // was FUN_0003a654 -- triggered by resolve_unique_npc_special_behavior's dispatch for a specific
 // object "special behavior" byte (0x1a) value 0xe7: shows book/scroll page 2, sets a quest-flag bit
 // (DAT_00086df8+0x6e)...
-void trigger_quest_milestone_cleanup_event(void)
+void trigger_quest_milestone_cleanup_event()
 {
   undefined2 uVar1;
   ushort *puVar2;
@@ -1277,7 +1277,7 @@ int resolve_lock_difficulty_rating(ushort *lock)
 // was FUN_0003a99c -- the lockpicking skill-check resolver: looks up the lock's difficulty
 // (resolve_lock_difficulty_rating), writes an estimated difficulty display value to *param_3, then
 // rolls a skill check (roll_skill_check) against the player's lockpicking skill (param_2).
-uint attempt_pick_lock(ushort *lock, int skill, undefined2 *out_difficulty)
+uint attempt_pick_lock(ushort *lock, int skill, ushort *out_difficulty)
 {
   undefined1 uVar1;
   byte bVar2;
@@ -1353,7 +1353,7 @@ uint attempt_pick_lock(ushort *lock, int skill, undefined2 *out_difficulty)
 // was FUN_0004ac98 -- dispatch_trap_type_effect's case-2 trap handler: spawns a fixed object class
 // (0x14) near the player, aimed from the trap record's own quality bits (+4/+6) and positioned at
 // param_2/ param_3 (the trap's tile coordinates)...
-void spawn_trap_hazard_object(int trap_record, undefined2 tile_x, undefined2 tile_y)
+void spawn_trap_hazard_object(int trap_record, short tile_x, short tile_y)
 {
   DAT_00202a38 = *(byte *)(trap_record + 6) & 0x3f | (*(byte *)(trap_record + 4) & 0x3f) << 5;
   DAT_00202a48 = 0x14;

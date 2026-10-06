@@ -8,8 +8,8 @@ undefined4 build_object_display_name(char *text, ushort *object, int a, int b);
 void push_cursor_icon(int type);
 void pop_cursor_icon(int mode);
 ushort *pick_object_under_cursor(int mode);
-undefined4 target_in_range(short actor, char *target, char *range);
-undefined4 target_line_of_sight(short actor, char *target);
+int target_in_range(short actor, char *target, char *range);
+int target_line_of_sight(short actor, char *target);
 undefined4 check_object_combination(char *actor, ushort *target, int key_id);
 void handle_game_view_click_hold(void);
 void interact_use(void);
@@ -110,10 +110,10 @@ void pop_cursor_icon(int mode) { TEST_ASSERT_EQUAL_INT(3, mode); reset_cursor++;
 ushort *pick_object_under_cursor(int mode)
 { TEST_ASSERT_EQUAL_INT(2, mode); return picked_target; }
 
-undefined4 target_in_range(short actor, char *target, char *range)
+int target_in_range(short actor, char *target, char *range)
 { (void)actor; (void)range; TEST_ASSERT_EQUAL_PTR(picked_target, target); return target_reachable; }
 
-undefined4 target_line_of_sight(short actor, char *target)
+int target_line_of_sight(short actor, char *target)
 { (void)actor; TEST_ASSERT_EQUAL_PTR(picked_target, target); return target_obstructed; }
 
 undefined4 check_object_combination(char *actor, ushort *target, int key_id)

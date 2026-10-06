@@ -1,7 +1,7 @@
 #include "hotspot_marker_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-void plot_pixel(int x, int y, int color);
+void plot_pixel(short x, short y, short color);
 void decrement_cursor_hide_depth(void);
 undefined4 cursor_show_idle_tick(void);
 undefined4 debug_noop_checkpoint(void);
@@ -18,7 +18,7 @@ plot_call plots[64];
 
 int plot_count;
 
-void plot_pixel(int x, int y, int color)
+void plot_pixel(short x, short y, short color)
 {
     TEST_ASSERT_LESS_THAN_INT(64, plot_count);
     plots[plot_count].x = x;

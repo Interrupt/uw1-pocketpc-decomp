@@ -95,14 +95,14 @@ void npc_combat_position_tick(void) {}
 void npc_combat_disengage_tick(void) {}
 void npc_clear_special_goal(void) {}
 undefined4 check_npc_morale_flee(void) { return 0; }
-undefined4 check_npc_target_alignment(void) { return 1; }
+int check_npc_target_alignment(int mode) { (void)mode; return 1; }
 byte tile_is_no_magic(int tile_x, int tile_y) { (void)tile_x; (void)tile_y; return 0; }
-undefined4 try_npc_special_ability_alt(void) { return 0; }
-undefined4 try_npc_special_ability_no_los(void) { return 0; }
-undefined4 try_npc_special_ability_ranged(void) { return 0; }
+int try_npc_special_ability_alt(void) { return 0; }
+int try_npc_special_ability_no_los(void) { return 0; }
+int try_npc_special_ability_ranged(void) { return 0; }
 void build_object_placement_snapshot(void) {}
 int build_collision_height_field_for_object(ushort *object) { (void)object; return 0; }
-undefined4 apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags) { (void)snapshot; (void)sweep_flags; return 0; }
+int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags) { (void)snapshot; (void)sweep_flags; return 0; }
 undefined4 sync_object_tile_position(void) { return 0; }
 undefined4 resolve_unique_npc_special_behavior(void) { return 1; }
 void object_list_unlink(void) {}
@@ -117,7 +117,7 @@ byte get_current_music_track(void) { return 6; }
 void set_pending_music_track(void) {}
 uint read_realtime_clock_units(void) { return 0; }
 undefined4 play_positional_sound_effect(void) { return 0; }
-int resolve_npc_melee_attack(ushort *actor, int swing, int direction, int style, int skill)
+int resolve_npc_melee_attack(byte *actor, short swing, byte direction, short style, short skill)
 {
     TEST_ASSERT_EQUAL_PTR(npc, actor);
     TEST_ASSERT_EQUAL_UINT16(1, (*(ushort *)((byte *)npc + 0xb) >> 4) & 0xff);

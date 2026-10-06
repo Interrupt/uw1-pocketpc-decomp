@@ -16,8 +16,7 @@ undefined4 DAT_00084610=100;
 int geometry_triangles, geometry_surface_ids[1024];
 undefined4 geometry_last_triangle[15];
 
-void raster_triangle(undefined4 stride, void *buffer, undefined4 *vertices, undefined4 surface,
-                     undefined4 width, undefined4 size, intptr_t texture, int *clip)
+void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int width, int size, intptr_t texture, int *clip)
 {
     (void)stride; (void)buffer; (void)width; (void)size; (void)texture; (void)clip;
     TEST_ASSERT_LESS_THAN_INT(1024, geometry_triangles);

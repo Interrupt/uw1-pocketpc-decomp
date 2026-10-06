@@ -43,28 +43,28 @@ extern undefined2 DAT_00189582;
 extern undefined DAT_0023b4dc;
 
 
-undefined4 reset_texture_id_lists(void);
-bool load_level_texture_ids(undefined1 *archive, int level_number);
+int reset_texture_id_lists();
+bool load_level_texture_ids(byte *archive, int level_number);
 void load_texture_arena(char *path, short *id_list, short *out_count, char *arena);
 void load_terrain_texture_props(char *wall_texture_ids, char *floor_texture_ids);
-void draw_command_list_rewind(void);
-void free_frame_geometry_buffers(void);
-void full_dungeon_redraw(void);
-void render_dungeon_frame_timed(void);
-undefined4 build_frame_draw_list(void);
+void draw_command_list_rewind();
+void free_frame_geometry_buffers();
+void full_dungeon_redraw();
+void render_dungeon_frame_timed();
+int build_frame_draw_list();
 void build_visibility_light_grid(short size);
-void seed_visibility_queue(void);
+void seed_visibility_queue();
 void visibility_ray_step_forward(intptr_t ray);
 void visibility_ray_step_backward(intptr_t ray);
-undefined4 compute_visibility_ray_offset(intptr_t ray, char step_x, char step_y);
-undefined4 extend_visibility_ray_row(byte *ray_a, byte *ray_b);
+int compute_visibility_ray_offset(intptr_t ray, char step_x, char step_y);
+int extend_visibility_ray_row(byte *ray_a, byte *ray_b);
 void advance_visibility_ray(byte *ray);
-void merge_adjacent_visibility_rays(byte **ray_cursor, undefined1 **out_cursor);
-void run_visibility_flood(void);
-void rebuild_dungeon_view(void);
-void dungeon_view_prepass_stub(undefined4 phase);
+void merge_adjacent_visibility_rays(byte **ray_cursor, byte **out_cursor);
+void run_visibility_flood();
+void rebuild_dungeon_view();
+void dungeon_view_prepass_stub(int phase);
 void load_floor_texture_arenas(byte special_floor_id);
 void load_shading_level_config(char shading_level);
-void load_light_tables(void);
+void load_light_tables();
 
 #endif

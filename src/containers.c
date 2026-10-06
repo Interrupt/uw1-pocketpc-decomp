@@ -61,7 +61,7 @@ void release_container_reference(char *container_link)
    this file): the body below reads/writes through the literal `iVar1*4 + 0x202870`/`iVar10*4 +
    0x202870` -- a hardcoded original-binary address... */
 // was FUN_00042aa8
-void free_open_container_chain(void)
+void free_open_container_chain()
 {
   char *_prev;
 
@@ -90,7 +90,7 @@ void free_open_container_chain(void)
 
 
 // was FUN_00042b38
-void close_backpack_container(void)
+void close_backpack_container()
 {
   int iVar1;
   undefined4 uVar2;
@@ -146,7 +146,7 @@ void close_backpack_container(void)
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00042c5c
-void leave_nested_container_level(void)
+void leave_nested_container_level()
 {
   /* Was `int iVar1;` -- resolve_object_link returns a real 64-bit pointer, truncated to 32 bits by
      this narrower type (same class as dozens of other fixes this session), then immediately
@@ -206,7 +206,7 @@ void leave_nested_container_level(void)
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00042d70
-void refresh_container_view(void)
+void refresh_container_view()
 {
   short sVar1;
   int iVar2;
@@ -229,7 +229,7 @@ void refresh_container_view(void)
 
 
 // was FUN_00042e30
-void repopulate_container_grid_slots(void)
+void repopulate_container_grid_slots()
 {
   undefined2 uVar1;
   byte bVar2;
@@ -525,7 +525,7 @@ void open_backpack_container(short container_slot)
 
 // was FUN_00043614 -- container-grid scroll up, dispatched from handle_object_drop_target's
 // `iVar2==0x15` case (widget 21's own real click rect, see g_inventory_hotspot_table's comment)...
-void scroll_container_grid_up(void)
+void scroll_container_grid_up()
 {
   if ((g_open_container_list != 0) && (DAT_0020299c != 0)) {
     _DAT_00202978 = DAT_00202980;
@@ -541,7 +541,7 @@ void scroll_container_grid_up(void)
 // was FUN_0004365c -- container-grid scroll down, the DAT_002029a0
 // ("can scroll down") counterpart to scroll_container_grid_up, same
 // dispatch/redraw pattern via widget 22.
-void scroll_container_grid_down(void)
+void scroll_container_grid_down()
 {
   short sVar1;
   char *iVar2;
@@ -585,7 +585,7 @@ LAB_00043700:
 // WARNING: Removing unreachable block (ram,0x00043adc)
 
 // was FUN_00043734
-undefined4 auto_place_in_container(ushort *object, short slot)
+int auto_place_in_container(ushort *object, short slot)
 {
   byte bVar1;
   ushort uVar2;
@@ -776,7 +776,7 @@ void sum_container_weight(ushort *link_field, short *total_weight)
 /* Same pointer-truncation bug class as alloc_save_record_slot/save_record_slot_from_index just
    below (their own comment has the full writeup) -- iVar4 was `int`... */
 // was FUN_000441d8
-void encode_equipped_item_index(ushort *item_link, undefined2 *out_index)
+void encode_equipped_item_index(ushort *item_link, ushort *out_index)
 {
   int iVar1;
   undefined2 uVar2;
@@ -802,7 +802,7 @@ void encode_equipped_item_index(ushort *item_link, undefined2 *out_index)
 
 
 // was FUN_000442dc
-void decode_equipped_item_index(undefined2 *saved_index, ushort *out_link)
+void decode_equipped_item_index(ushort *saved_index, ushort *out_link)
 {
   int iVar1;
   undefined2 uVar2;
@@ -842,7 +842,7 @@ void *get_equipped_item_at_slot(short slot)
 // was FUN_00079144 -- walks a container's (param_1) contents link chain and places each item into
 // the world near the container's own position (via place_object_in_world), clearing param_1's own
 // contents-head link as it goes. param_2, when non-zero...
-undefined4 empty_container_into_world(ushort *container, short clear_flag)
+int empty_container_into_world(ushort *container, short clear_flag)
 {
   ushort uVar1;
   ushort uVar2;
@@ -935,7 +935,7 @@ void try_empty_container(ushort *container, int owned_by_player)
 // one at a time via find_object_in_chain's scan; if param_2 is 0...
 /* The object and matching chain entries are addresses, not 32-bit ints.
    ARM 0x37f48 adds six bytes to the object to reach its contents link. */
-undefined4 discard_container_contents(ushort *container, int remove_all)
+int discard_container_contents(ushort *container, int remove_all)
 {
   ushort *puVar1; /* ARM 0x37fcc keeps the found object address in r4. */
   undefined4 uVar2;
@@ -965,7 +965,7 @@ undefined4 discard_container_contents(ushort *container, int remove_all)
 // was FUN_0004479c -- called from auto_place_in_container (src/containers.c:942) when dropping an
 // item onto the rune bag (item id 0x8f): rejects anything outside the rune id range
 // (0xe8..0xe8+0x18)...
-undefined4 place_rune_in_bag(short *rune_object)
+int place_rune_in_bag(short *rune_object)
 {
   uint uVar1;
   int iVar2;
@@ -995,7 +995,7 @@ undefined4 place_rune_in_bag(short *rune_object)
 // was FUN_000465c8 -- called from close_panels_before_level_change (right after
 // free_player_inventory_chain) and from load_level: clears the equipped-items slot-index encoding
 // and overlay-offset array...
-void reset_equipment_and_container_state(void)
+void reset_equipment_and_container_state()
 {
   int iVar1;
 

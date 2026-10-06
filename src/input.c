@@ -183,7 +183,7 @@ void set_locomotion_state(ushort collision_mask, int mode_flag)
 // was FUN_0003d94c -- resolve a movement mode (param_1 = g_movement_mode) into a travel direction
 // (DAT_00201c78) + step magnitude (*param_3): 0 stop 1 analog move/turn (DAT_0023bf48/4c rates) 6/7
 // jump 8 move + face 180 9 sidestep left 10 sidestep right...
-void resolve_move_vector(undefined2 movement_mode, short step_scale, short *out_step)
+void resolve_move_vector(short movement_mode, short step_scale, short *out_step)
 {
   short sVar1;
   int iVar2;
@@ -496,7 +496,7 @@ LAB_00042510:
 
 // was FUN_0004251c -- per-frame input pump: read the pending input code,
 // dispatch a mouse button to a click region or a key to a keybinding.
-void poll_input_bindings(undefined1 *input_state)
+void poll_input_bindings(byte *input_state)
 {
   undefined4 uVar1;
   /* Was `int`, truncating the real DAT_00202890 pointer arithmetic result below -- same
@@ -612,7 +612,7 @@ void wait_for_click_release(int mode)
 
 // was FUN_00057a70 -- poll_input_event(0): consume and return the next
 // input event code (used by the menu / prompt input-wait loops).
-undefined4 next_input_event(void)
+int next_input_event()
 {
   /* Was `poll_input_event(0); return 0;` -- computing the real event code and then discarding it in
      favor of a hardcoded 0. */
@@ -623,7 +623,7 @@ undefined4 next_input_event(void)
 
 
 // was FUN_00057ff0
-void update_mouse_state(void)
+void update_mouse_state()
 {
   short sVar1;
   short sVar4;
@@ -960,7 +960,7 @@ void register_game_view_interact_zones(int x, int y, int width, int height)
 // was FUN_000678e0 -- teardown counterpart to
 // register_game_view_interact_zones: unregisters the whole-rect key
 // binding and all 8 click regions.
-void unregister_game_view_interact_zones(void)
+void unregister_game_view_interact_zones()
 {
   unregister_key_binding((int)DAT_0023be8c);
   DAT_0023be8c = 0;
@@ -984,7 +984,7 @@ void unregister_game_view_interact_zones(void)
 extern int g_text_input_active;
 
 // was FUN_00077b2c
-undefined4 handle_keyboard_message(undefined4 window, int message, uint wparam)
+int handle_keyboard_message(int window, int message, uint wparam)
 {
   ushort uVar1;
   undefined4 *puVar2;
@@ -1096,7 +1096,7 @@ LAB_00077d70:
    that routes WM_MOUSEMOVE/WM_LBUTTONDOWN/ WM_LBUTTONUP/WM_RBUTTONDOWN/WM_RBUTTONUP (msg
    0x200/0x201/0x202/0x204/ 0x205) to this handler... */
 // was FUN_00077dd0
-undefined4 handle_mouse_message(undefined4 window, uint message, undefined4 wparam, int lparam)
+int handle_mouse_message(int window, uint message, uint wparam, int lparam)
 {
   short x;
   short y;
@@ -1233,7 +1233,7 @@ void apply_movement_mode_profile(byte anim_mode)
 
 
 // was FUN_000578fc -- always returns 0.
-undefined4 get_alternate_keyboard_scan_code(void)
+int get_alternate_keyboard_scan_code()
 {
   return 0;
 }
@@ -1335,7 +1335,7 @@ uint poll_input_event(int peek_only)
 
 // was FUN_00057a78 -- poll_input_event(1): return the pending input event
 // code without consuming it (used by the per-frame keybinding poll).
-undefined4 peek_input_event(void)
+int peek_input_event()
 {
   return poll_input_event(1);
 }
@@ -1366,7 +1366,7 @@ bool apply_swim_wade_pose(ushort collision_mask)
 
 // was FUN_0003c7f4 -- translate a W/S/X/A/D direction arg (-2..2) into
 // movement-engine target state (heading-relative goal position/heading).
-undefined4 begin_directional_move(short direction)
+int begin_directional_move(short direction)
 {
   undefined2 uVar1;
   byte bVar2;
@@ -1560,7 +1560,7 @@ LAB_0003cdf8:
 
 
 // was FUN_00041f34 -- allocate/reset the keybinding + click-region tables.
-void input_bindings_init(void)
+void input_bindings_init()
 {
   DAT_00202890 = ce_malloc(0x12);
   DAT_0020289c = ce_malloc(0xc);
@@ -1580,7 +1580,7 @@ void input_bindings_init(void)
 
 
 // was FUN_00041fe4 -- free the keybinding + click-region tables.
-void input_bindings_free(void)
+void input_bindings_free()
 {
   if (DAT_00085a70 != -0x29a) {
     LocalFree(DAT_00202890);
@@ -1593,7 +1593,7 @@ void input_bindings_free(void)
 
 // was FUN_0004202c -- append a mouse click-region record to DAT_00202890.
 /* was undefined4 -- handler fn pointer; see g_click_region_handler */
-int register_click_region(int left, int bottom, int right, int top, undefined2 arg, undefined2 mode_mask, void *handler)
+int register_click_region(int left, int bottom, int right, int top, short arg, short mode_mask, void *handler)
 {
   short sVar1;
   int iVar2;
@@ -1676,7 +1676,7 @@ void dispatch_key_binding(char *input_state, short key_code)
 // was FUN_00049818 -- dispatches DAT_00201c84's currently-set "sticky redraw/per-frame" bits
 // through the DAT_00085668 per-mode handler table (movement_pacing_handler is mode 0's bit 12, see
 // DAT_00085728's own comment)...
-void dispatch_sticky_mode_handlers(void)
+void dispatch_sticky_mode_handlers()
 {
   short sVar1;
   char cVar2;
@@ -1715,7 +1715,7 @@ void dispatch_sticky_mode_handlers(void)
 
 
 // was FUN_00057888
-int poll_mouse_event(void)
+int poll_mouse_event()
 {
   short sVar1;
 

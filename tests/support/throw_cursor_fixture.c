@@ -62,11 +62,11 @@ ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
 undefined4 play_sound_effect_with_pan(void) { return 1; }
 ushort *reallocate_object_to_arena(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
 ushort *settle_dropped_object(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
-undefined4 check_object_placement_clearance(short catalog_type, short ignore_slot, undefined2 position_x, undefined2 position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; TEST_FAIL_MESSAGE("Unexpected ground drop"); return 0; }
+int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; TEST_FAIL_MESSAGE("Unexpected ground drop"); return 0; }
 void object_list_append_tail(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); }
 undefined4 play_positional_sound_effect(void) { return 1; }
 void print_scroll_message_by_id(void) {}
-void set_ambient_bias_without_light(void) {}
+void set_ambient_bias_without_light(char light_level) { (void)light_level;}
 void throw_cursor_fixture_reset(void)
 {
     memset(arena, 0, sizeof arena);

@@ -92,7 +92,7 @@ static undefined DAT_000870c8_backing[16] = "\\*.*";
 
 
 // was FUN_000567ec
-void draw_save_load_slot_list(void)
+void draw_save_load_slot_list()
 {
   int iVar1;
   undefined1 auStack_c4 [8];
@@ -134,7 +134,7 @@ void draw_save_load_slot_list(void)
 
 
 // was FUN_0006b178.
-undefined4 journey_onward_load_slot_menu(void)
+int journey_onward_load_slot_menu()
 {
   char stack0xffdc3198_buf [256];
   char *stack0xffdc3198_ptr;
@@ -326,7 +326,7 @@ void probe_save_slots(char *slot_descriptions, ushort *used_mask)
 
 
 // was FUN_0006c0c0
-undefined4 load_game_from_slot(char slot_digit)
+int load_game_from_slot(char slot_digit)
 {
   char *wptr_50330;
   char stack0xffdc2d28_buf [256];
@@ -434,7 +434,7 @@ undefined4 load_game_from_slot(char slot_digit)
 // was FUN_0006c264
 /* Was `undefined4` -- truncates the real 64-bit buffer pointer handle_save_load_menu_action passes
    in (a pointer into its own auStack_ac local, see that function's comment). */
-undefined4 save_game_to_slot(char slot_digit, char *description)
+int save_game_to_slot(char slot_digit, char *description)
 {
   char stack0xffdc2d20_buf [256];
   char *stack0xffdc2d20_ptr;
@@ -556,7 +556,7 @@ LAB_0006c544:
 /* param_2 was dropped entirely -- declared with only 1 parameter but every caller passes 2 (the
    filename to open, e.g. s__SAVE0_lev_ark_000842fc). `ce_strcat(local_120);` (a strcat- shaped
    Ordinal used with an explicit 2-arg form everywhere else in this file) was being called with... */
-bool open_level_archive(undefined1 *archive, char *path)
+bool open_level_archive(byte *archive, char *path)
 {
   char cVar1;
   char *pcVar2;
@@ -646,7 +646,7 @@ bool open_level_archive(undefined1 *archive, char *path)
 // was FUN_00015a58 -- finalizes and closes an open_level_archive handle: rewrites the entry-offset
 // table header if the dirty flag (param_1+0xe) is set, closes both file handles, and commits the
 // tmp-file rename back over the real archive name.
-byte close_level_archive(undefined4 *archive)
+byte close_level_archive(uint *archive)
 {
   char cVar1;
   ushort uVar2;
@@ -684,7 +684,7 @@ byte close_level_archive(undefined4 *archive)
 // fit the existing slot.
 /* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live object arena) pointer
    write_level_tilemap_to_archive passes in as the source buffer for the archive-entry write. */
-bool write_archive_entry(undefined4 *archive, uint entry_index, void *data, uint byte_count)
+bool write_archive_entry(uint *archive, uint entry_index, void *data, uint byte_count)
 {
   char cVar1;
   undefined2 uVar2;
@@ -852,7 +852,7 @@ bool write_archive_entry(undefined4 *archive, uint entry_index, void *data, uint
 /* Was `undefined4`, truncating the real destination buffer pointer the callers pass
    (load_level_object_table: the malloc'd DAT_002029cc workspace; load_automap_reveal_from_archive:
    &DAT_000b99d0). */
-undefined2 read_archive_entry(undefined4 *archive, uint entry_index, void *buffer)
+short read_archive_entry(uint *archive, uint entry_index, void *buffer)
 {
   undefined2 uVar1;
   int iVar2;
@@ -941,7 +941,7 @@ int probe_archive_entry_exists(char *path, uint entry_index)
 // was FUN_0006bcd4 -- flushes the player's carried-inventory chain (freeing the live objects, since
 // write_player_save_record just above already serialized them into the save buffer), then writes
 // the current level's live tilemap+object arena to its on-disk archive.
-undefined4 commit_level_to_save_slot(int level_number)
+int commit_level_to_save_slot(int level_number)
 {
   ushort uVar1;
   int iVar2;
@@ -1042,7 +1042,7 @@ void handle_save_load_menu_action(short action, int slot)
 // FindFirstFileW/181 FindFirstFile/FindNextFile-shaped ordinals (appending DAT_000870c8's "\*.*"
 // wildcard) and, if that scan finds nothing (directory missing or empty)...
 // was FUN_0006c560
-undefined4 ensure_save_directory_exists(char *path)
+int ensure_save_directory_exists(char *path)
 {
   char cVar1;
   short sVar2;
@@ -1102,7 +1102,7 @@ LAB_0006c5f8:
    ce_wcscat/61/63... */
 // was FUN_0006c670
 /* destination directory, e.g. "\SAVE3" source directory, e.g. "\SAVE0" */
-undefined4 copy_save_slot_files(char *dest_dir, char *source_dir)
+int copy_save_slot_files(char *dest_dir, char *source_dir)
 {
   /* Was a hardcoded 3-entry list missing "player.dat" entirely -- real ARM disassembly of this
      function (0x6c670) shows it's genuinely NOT a fixed-file-list copier at all: it calls what are
@@ -1162,7 +1162,7 @@ bool write_buffer_to_file(void *buffer, char *filename, ushort byte_count)
 // was FUN_000400dc -- gates save_game_to_slot's "can save now" check (confirmed via
 // src/saveload.c's own comment on save_game_to_slot): refuses (printing a scroll warning) while the
 // cursor is holding an object, or while on level 9 (the final/Abyss level)...
-bool check_can_save_game(void)
+bool check_can_save_game()
 {
   short sVar1;
 
@@ -1184,7 +1184,7 @@ bool check_can_save_game(void)
 // was FUN_00040130 -- gates load_game_from_slot's "can load now" check (src/saveload.c's own
 // comment on load_game_from_slot confirms this "unconditional-allow" semantics): unlike
 // check_can_save_game, never refuses -- just releases any cursor-held object first...
-undefined4 check_can_load_game(void)
+int check_can_load_game()
 {
   if (g_cursor_holding_state != 0) {
     g_cursor_holding_state = 0;
@@ -1200,7 +1200,7 @@ undefined4 check_can_load_game(void)
 /* was `int` -- truncated the real DAT_000857a0 pointer load_game_from_slot passes in (the
    save-slot-copy path), which only started actually running once the save-directory- creation
    fixes above stopped it from bailing out earlier. */
-undefined4 load_player_save_record(char *slot_dir)
+int load_player_save_record(char *slot_dir)
 {
   char stack0xffdc3234_buf [256];
   char *stack0xffdc3234_ptr;
@@ -1258,7 +1258,7 @@ LAB_00044730:
 // was FUN_00049b04 -- writes the level's tilemap/object arena (g_level_tiles) and scheduler state
 // into a level archive: given param_1==NULL, opens its own fresh archive handle (for SAVE0, the
 // live session) and closes it when done; given a real param_1...
-int write_level_tilemap_to_archive(undefined1 *archive, int level_number)
+int write_level_tilemap_to_archive(byte *archive, int level_number)
 {
   bool bVar1;
   short sVar2;
@@ -1313,7 +1313,7 @@ int write_level_tilemap_to_archive(undefined1 *archive, int level_number)
 // .data regions, DAT_0023ae58/adb8/ b841+b840) and writes it to the level archive via
 // write_archive_entry.
 /* .ark handle-struct pointer -- was `undefined4`, truncating it before write_archive_entry. */
-undefined4 write_level_quest_flags_to_archive(undefined1 *archive, int level_number)
+int write_level_quest_flags_to_archive(byte *archive, int level_number)
 {
   int iVar1;
   int iVar2;

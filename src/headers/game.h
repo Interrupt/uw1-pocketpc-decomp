@@ -43,7 +43,7 @@ extern char DAT_0024d000;
 extern char DAT_0024fa28;
 extern void * DAT_00202308_arr[128];
 #define DAT_00202308 DAT_00202308_arr[0]
-extern void (*const DAT_00085668_real_table[48])(void);
+extern void (*const DAT_00085668_real_table[48])();
 #define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)
 extern undefined1 DAT_00241f08_backing[1024];
 #define DAT_00241f08 DAT_00241f08_backing[0]
@@ -54,8 +54,8 @@ extern undefined1 DAT_00241f08_backing[1024];
 
 undefined4 app_main_loop();
 void main_menu_loop();
-bool prepare_new_game(void);
-void begin_gameplay(void);
+bool prepare_new_game();
+void begin_gameplay();
 
 /* Forward declaration needed because main_menu_loop (now in game.c) takes this LAB_ callback's
    address to pass to load_gr_resource_entries; its own definition stays in uw.c... */

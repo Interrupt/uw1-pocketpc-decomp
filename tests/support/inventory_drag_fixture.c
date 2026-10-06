@@ -36,7 +36,7 @@ int g_force_flush;
 uint read_realtime_clock_units(void) { return polls * 5; } /* 20ms per OS poll */
 long GetTickCount(void) { return polls * 20; }
 unsigned int uw_frame_clock_ms(void) { return g_uw_frame_clock_units; }
-void movement_tick(uint elapsed, uint bob, int mode)
+void movement_tick(int elapsed, int bob, int mode)
 {
     TEST_ASSERT_NOT_NULL(g_selected_object);
     TEST_ASSERT_GREATER_THAN_UINT(0, elapsed);
@@ -86,7 +86,7 @@ void handle_backpack_slot_click(int slot)
 void update_mouse_state(void) { if (g_selected_object) GXEndDraw(); }
 void noop_key_handler(void) {}
 uint process_pending_keyboard_scan_code(int peek) { (void)peek; return 0; }
-undefined4 peek_input_event(void)
+int peek_input_event(void)
 {
     TEST_ASSERT_LESS_THAN_INT_MESSAGE(100, ++polls, "Pickup never noticed release");
     g_mouse_x = 100 + polls;

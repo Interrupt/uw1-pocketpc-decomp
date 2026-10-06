@@ -213,7 +213,7 @@ void inventory_panel_click_region()
 
 
 // was FUN_000440d0
-void serialize_inventory_link_chain(undefined1 *link_chain, byte *out_link)
+void serialize_inventory_link_chain(byte *link_chain, byte *out_link)
 {
   undefined1 *puVar1;
   undefined1 *puVar2;

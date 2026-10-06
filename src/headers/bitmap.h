@@ -34,24 +34,24 @@ extern ushort DAT_00202730;
 extern char s_lfti_000859fc[];
 
 
-void blit_raw_sprite_clipped(short x, short y, char *pixels, short height, short width, short src_x, short src_y, undefined4 transparent);
-void blit_sprite_row_remapped(undefined4 unused, uint pixel, uint remap_index, uint shade);
-undefined4 decode_tile_object_billboard_texture(short frame, uint unused);
+void blit_raw_sprite_clipped(short x, short y, char *pixels, short height, short width, short src_x, short src_y, int transparent);
+void blit_sprite_row_remapped(int unused, uint pixel, uint remap_index, uint shade);
+int decode_tile_object_billboard_texture(short frame, uint unused);
 void *lookup_grtile_by_id(short grtile_id);
 void blit_object_sprite_by_frame(short frame, int x, int y, int width, int height);
 uint resolve_sprite_id_to_frame(int sprite_id);
 void draw_sprite_by_id(int sprite_id, int x, int y, int width, short height);
 void sprite_list_flush_blit_raw(int sprite_id, int x, int y, short clip_top, short width, short clip_rows);
 void sprite_partition_step(int condition, short *out_index, short entry_value, short low, short high, short phase);
-void sprite_partition_tmap(undefined4 entry_index, short *out_index, int extra);
-void sprite_partition_by_depth(undefined4 entry_index, short *out_index, int extra);
+void sprite_partition_tmap(int entry_index, short *out_index, int extra);
+void sprite_partition_by_depth(int entry_index, short *out_index, int extra);
 void sprite_list_queue_slot_redraw(ushort slot);
 int sprite_list_alloc_entry(int resource_id);
 int sprite_list_alloc_raw_entry(int resource_id, int alloc_arg, int pixel_count);
-undefined4 sprite_list_set_rect(short slot, int x, int y, int width, short height);
-undefined4 sprite_list_set_position(short slot, int x, int y);
-undefined4 sprite_list_set_frame_id(short slot, int frame_id);
-undefined4 sprite_list_set_frame_id_transparent(short slot, int frame_id);
-undefined4 sprite_list_set_lifetime(short slot, int lifetime);
+int sprite_list_set_rect(short slot, int x, int y, int width, short height);
+int sprite_list_set_position(short slot, int x, int y);
+int sprite_list_set_frame_id(short slot, int frame_id);
+int sprite_list_set_frame_id_transparent(short slot, int frame_id);
+int sprite_list_set_lifetime(short slot, int lifetime);
 
 #endif

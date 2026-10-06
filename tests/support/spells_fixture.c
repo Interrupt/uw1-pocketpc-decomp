@@ -77,7 +77,7 @@ short sides;
     TEST_ASSERT_EQUAL_INT(20, sides);
     return 9;
 }
-void weapon_overlay_flash_once(undefined4 frame) { TEST_ASSERT_EQUAL_HEX16(0xa8, frame); }
+void weapon_overlay_flash_once(int frame) { TEST_ASSERT_EQUAL_HEX16(0xa8, frame); }
 undefined4 roll_skill_check(int skill, int difficulty)
 {
     TEST_ASSERT_EQUAL_INT((byte)spells_fixture.character[0x2a] + 5, skill);
@@ -124,9 +124,9 @@ UNUSED_EFFECT(handle_object_drop_target)
 #undef UNUSED_EFFECT
 ushort *pick_object_under_cursor(int mode)
 { (void)mode; TEST_FAIL_MESSAGE("Magic Arrow must not require picking a target"); return NULL; }
-undefined4 target_in_range(short range_squared, char *actor, char *target)
+int target_in_range(short range_squared, char *actor, char *target)
 { TEST_FAIL_MESSAGE("Unexpected target_in_range"); return 0; }
-undefined4 target_line_of_sight(short target_class, char *target)
+int target_line_of_sight(short target_class, char *target)
 { TEST_FAIL_MESSAGE("Unexpected target_line_of_sight"); return 0; }
 
 void spells_fixture_ready_ort_jux(int mana)

@@ -44,7 +44,7 @@ void object_list_unlink(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
 void object_list_insert_head(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
 void set_locomotion_state(ushort state, int flags) { (void)state; (void)flags; }
 undefined4 roll_skill_check(void) { TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
-undefined4 apply_typed_damage_to_object(void) { TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
+int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
 undefined4 play_sound_effect_with_pan(void) { TEST_FAIL_MESSAGE("Unexpected landing sound"); return 0; }
 
 short movement_fixture_read_short(int offset)
@@ -144,7 +144,7 @@ void sweep_land_on_surface(void)
     movement_fixture.surface_landings++;
     movement_fixture.foot_position[2] = (short)_DAT_0008699b;
 }
-undefined4 sweep_step(int direction)
+int sweep_step(int direction)
 {
     TEST_ASSERT_EQUAL_INT(-1, direction);
     /* Revert the attempted blocked sub-step to its pre-contact position. */

@@ -5,7 +5,7 @@
 uint read_realtime_clock_units(void);
 long GetTickCount(void);
 unsigned int uw_frame_clock_ms(void);
-void movement_tick(uint elapsed, uint bob, int mode);
+void movement_tick(int elapsed, int bob, int mode);
 void scheduler_tick(int elapsed);
 int GXEndDraw(void);
 void push_cursor_icon(int type);
@@ -18,7 +18,7 @@ void handle_backpack_slot_click(int slot);
 void update_mouse_state(void);
 void noop_key_handler(void);
 uint process_pending_keyboard_scan_code(int peek);
-undefined4 peek_input_event(void);
+int peek_input_event(void);
 void dispatch_sticky_mode_handlers(void);
 void inventory_drag_fixture_reset(void);
 void inventory_drag_fixture_dispose(void);

@@ -19,20 +19,20 @@ void dbgui_field_button(const char *name, void (*on_press)(void));
    nonzero == ON). RETURN, LEFT, or RIGHT all just flip it -- no numeric-
    edit mode, unlike double/int fields. */
 void dbgui_field_toggle(const char *name, int *value);
-void dbgui_end(void);
+void dbgui_end();
 /* Actually paints the panel -- call once per frame from the true end of the frame (after the 3D
    view and HUD have drawn), NOT from wherever dbgui_begin/dbgui_field_.../dbgui_end happened to
    run. See its own comment in debug_ui.c for why the two are split. */
-void dbgui_draw(void);
+void dbgui_draw();
 
 /* True once dbgui_begin has been called with a non-NULL title at least once this process and the
    panel is currently shown -- gx_stub.c's event loop checks this to decide whether raw input
    belongs to the debug UI (swallowed, not forwarded to the game) or to the game as normal. */
-int dbgui_visible(void);
+int dbgui_visible();
 /* Backtick always toggles, regardless of current visibility -- call this directly from gx_stub.c's
    SDL_KEYDOWN case for SDLK_BACKQUOTE (96), before checking dbgui_visible(), so the panel can
    always be brought back even while hidden. */
-void dbgui_toggle(void);
+void dbgui_toggle();
 
 /* Raw input feed from gx_stub.c's SDL event loop, BEFORE any of the game's own WM_*-message
    translation -- landscape logical pixel coordinates (the same 320x240 space draw_text_string/

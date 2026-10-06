@@ -9,7 +9,7 @@ typedef struct {
     int rem;
 } divmod_result;
 
-void uw_pump_events(void);
+void uw_pump_events();
 
 long EnterCriticalSection();
 long GetSystemTime();

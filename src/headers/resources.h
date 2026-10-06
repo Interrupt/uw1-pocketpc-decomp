@@ -30,13 +30,13 @@ byte *decompress_gr_bitmap();
 uint merge_byte_into_word();
 void select_gr_bitmap_remap_table();
 void decode_gr_rle_stream();
-undefined4 register_gr_group_entry(void *buf, unsigned size, int idx);
+int register_gr_group_entry(void *buf, unsigned size, int idx);
 /* Forward declarations needed because load_gr_resource_group, load_objects_gr, load_tmflat_gr,
    load_hud_icon_gr, reload_single_grtile_entry, and decode_gr_entry_to_buffer (now in
    src/resources.c) take these LAB_ callbacks' addresses and reference these globals... */
 void *gr_resource_bump_alloc_entry();
-undefined4 register_objects_gr_entry(void *buf, unsigned size, int idx);
-undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx);
+int register_objects_gr_entry(void *buf, unsigned size, int idx);
+int register_tmflat_gr_entry(void *buf, unsigned size, int idx);
 void *hud_icon_gr_bump_alloc_entry();
 void *decode_gr_entry_bump_alloc_entry();
 unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx);

@@ -25,7 +25,7 @@ static undefined DAT_0023bf78_backing[360];
 
 // was FUN_0006b3dc -- codewheel character-table lookup: returns the short value at index param_1
 // (0..0x23/35) of the table DAT_00086f0c points at, or 0 if out of range.
-undefined2 codewheel_letter_at_index(int index)
+short codewheel_letter_at_index(int index)
 {
   if ((index < 0) || (0x23 < index)) {
     return 0;
@@ -57,7 +57,7 @@ int codewheel_index_of_letter(short letter)
 
 // was FUN_0006b448 -- the code-wheel registration-word checksum: param_2 is a 12-char answer word
 // (uppercased in-place into local_48), param_1 a 4-entry ushort key.
-undefined4 validate_codewheel_word(ushort *key, int answer_address)
+int validate_codewheel_word(ushort *key, int answer_address)
 {
   int uw_ord2005_rem_128 = 0; int uw_ord2005_rem_129 = 0; int uw_ord2005_rem_130 = 0; int uw_ord2005_rem_131 = 0; int uw_ord2005_rem_132 = 0; int uw_ord2005_rem_133 = 0;
   short expected_letter;
@@ -120,7 +120,7 @@ undefined4 validate_codewheel_word(ushort *key, int answer_address)
 // was FUN_0006b718 -- checks the registry (HKLM\Software\ZIO_Interactive_ Ultima_U\BuildNo) for the
 // sentinel value 0xc0f this port's registration flow writes via save_registration_key_validated
 // once the product's been validated...
-undefined4 check_registration_key_saved(void)
+int check_registration_key_saved()
 {
   int query_result;
   undefined4 random_value;
@@ -153,7 +153,7 @@ undefined4 check_registration_key_saved(void)
 
 // was FUN_0006b838 -- writes the registry sentinel (0xc0f) check_registration_key_saved
 // looks for, marking the product as validated/registered.
-void save_registration_key_validated(void)
+void save_registration_key_validated()
 {
   undefined4 registry_key;
   undefined4 validated_sentinel;
@@ -169,7 +169,7 @@ void save_registration_key_validated(void)
 
 
 // was FUN_0006b8c0
-void set_power_status_flag_bit(void)
+void set_power_status_flag_bit()
 {
   /* Looks like a GetSystemPowerStatus/GetVersionEx-shaped call: a struct starting with a 4-byte
      "cbSize" field is zeroed, sized, and passed to EnterCriticalSection (unidentified coredll
@@ -189,7 +189,7 @@ void set_power_status_flag_bit(void)
 
 
 // was FUN_0006b920
-void clear_power_status_flag_bit(void)
+void clear_power_status_flag_bit()
 {
   /* Counterpart of set_power_status_flag_bit (see comment there): same struct shape,
      clears instead of sets the flag bit. Also dead under the current
@@ -209,7 +209,7 @@ void clear_power_status_flag_bit(void)
 
 
 // was FUN_0006b980
-undefined4 check_registration_key_dialog(undefined4 window, undefined4 instance)
+int check_registration_key_dialog(int window, int instance)
 {
   /* This is the "enter your registration key" modal dialog gate (see the "Invalid Registration Key
      Code!!" string and the registration_key_dialog_proc dialog proc it registers via
@@ -225,7 +225,7 @@ undefined4 check_registration_key_dialog(undefined4 window, undefined4 instance)
 // was FUN_0006ba54 -- window proc for the (never actually shown, see check_registration_key_dialog)
 // "enter your registration key" dialog: WM_INITDIALOG-shaped (0x110)... but that message id is
 // never checked here...
-undefined4 registration_key_dialog_proc(undefined4 dialog, int message, short control_id)
+int registration_key_dialog_proc(int dialog, int message, short control_id)
 {
   if (message != 0x110) {
     if (message != 0x111) {
@@ -252,7 +252,7 @@ undefined4 registration_key_dialog_proc(undefined4 dialog, int message, short co
 // was FUN_0006baf8 -- top-level registration check: true if the registry sentinel is already set
 // (check_registration_key_saved) or the (bypassed, always-succeeding) registration dialog gate
 // (check_registration_key_dialog) reports success.
-undefined4 is_product_registered(char *window, undefined4 instance)
+int is_product_registered(char *window, int instance)
 {
   int result;
   undefined1 system_time_header[10];
@@ -273,7 +273,7 @@ undefined4 is_product_registered(char *window, undefined4 instance)
 
 // was FUN_0006bb64 -- startup disk-space check (its only caller checks it right after
 // init_gameplay_session and shows "Not enough disk space for save game" on failure)...
-undefined4 check_save_disk_space(void)
+int check_save_disk_space()
 {
   char install_path_copy[256];
   char *path_cursor;

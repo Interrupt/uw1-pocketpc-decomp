@@ -255,7 +255,7 @@ void uw_set_present_refresh_rate(unsigned refresh_hz)
     g_display_pacing.grace_us = 1000000 / ((uint64_t)refresh_hz * 8);
 }
 
-void uw_reset_frame_pacing(void)
+void uw_reset_frame_pacing()
 {
     memset(&g_display_pacing, 0, sizeof g_display_pacing);
     memset(&g_game_pacing, 0, sizeof g_game_pacing);
@@ -314,7 +314,7 @@ void uw_record_completed_present(uint64_t now_us)
 /* Cursor-only changes need a presentation even in a blocking input wait.
    Reuse the pacing queue so the next event poll shows the latest icon and
    position without copying cursor pixels into the hardware framebuffer. */
-void uw_request_cursor_present(void)
+void uw_request_cursor_present()
 {
     g_display_pacing.pending = 1;
 }
@@ -340,13 +340,13 @@ int uw_service_game_clock(uint64_t now_us)
     return 1;
 }
 
-uint64_t uw_gx_time_us(void)
+uint64_t uw_gx_time_us()
 {
     return (uint64_t)((double)SDL_GetPerformanceCounter() * 1000000.0 /
                       (double)SDL_GetPerformanceFrequency());
 }
 
-void uw_update_present_refresh_rate(void)
+void uw_update_present_refresh_rate()
 {
     SDL_DisplayMode mode;
     int display = SDL_GetWindowDisplayIndex(g_win);
@@ -1256,12 +1256,12 @@ struct uw_present_state {
 };
 static struct uw_present_state g_present_state = {0};
 
-void uw_begin_present_batch(void)
+void uw_begin_present_batch()
 {
     g_present_state.batch_depth++;
 }
 
-void uw_end_present_batch(void)
+void uw_end_present_batch()
 {
     if (g_present_state.batch_depth == 0) return;
     if (--g_present_state.batch_depth == 0 && g_present_state.pending) {
@@ -1270,7 +1270,7 @@ void uw_end_present_batch(void)
     }
 }
 
-void gfx_finalizedraw(void)
+void gfx_finalizedraw()
 {
     /* Port timing deviation: completed frames bypass the software deadline;
        SDL vsync handles their wait. Ordinary cursor/intermediate flushes retain
@@ -1284,7 +1284,7 @@ void gfx_finalizedraw(void)
     }
 }
 
-int uw_take_completed_frame(void)
+int uw_take_completed_frame()
 {
     if (g_present_state.batch_depth) return 0;
     int completed = g_present_state.completed_frame;
@@ -1292,17 +1292,17 @@ int uw_take_completed_frame(void)
     return completed;
 }
 
-void uw_suspend_present_batch(void)
+void uw_suspend_present_batch()
 {
     g_present_state.suspend_depth++;
 }
 
-void uw_resume_present_batch(void)
+void uw_resume_present_batch()
 {
     if (g_present_state.suspend_depth) g_present_state.suspend_depth--;
 }
 
-void uw_begin_modal_present(void)
+void uw_begin_modal_present()
 {
     if (g_present_state.modal_depth++ == 0) {
         g_present_state.saved_force_flush = g_force_flush;
@@ -1311,14 +1311,14 @@ void uw_begin_modal_present(void)
     }
 }
 
-void uw_end_modal_present(void)
+void uw_end_modal_present()
 {
     if (g_present_state.modal_depth == 0) return;
     if (--g_present_state.modal_depth == 0)
         g_force_flush = g_present_state.saved_force_flush;
 }
 
-int uw_defer_present(void)
+int uw_defer_present()
 {
     if (g_present_state.batch_depth && !g_present_state.modal_depth &&
         !g_present_state.suspend_depth) {

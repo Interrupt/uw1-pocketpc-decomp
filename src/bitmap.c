@@ -56,7 +56,7 @@ static short DAT_0023c3f4;
 // a pre-decoded pixel buffer...
 /* Source-bitmap pointer -- was `int`, truncating the real `char *` the caller
    (blit_object_sprite_by_frame) already reconstructed (iVar4 + 5). */
-void blit_raw_sprite_clipped(short x, short y, char *pixels, short height, short width, short src_x, short src_y, undefined4 transparent)
+void blit_raw_sprite_clipped(short x, short y, char *pixels, short height, short width, short src_x, short src_y, int transparent)
 {
   short sVar1;
   int iVar2;
@@ -179,7 +179,7 @@ void blit_raw_sprite_clipped(short x, short y, char *pixels, short height, short
 
 
 // was FUN_00013170
-void blit_sprite_row_remapped(undefined4 unused, uint pixel, uint remap_index, uint shade)
+void blit_sprite_row_remapped(int unused, uint pixel, uint remap_index, uint shade)
 {
   byte bVar1;
   uint uVar2;
@@ -377,7 +377,7 @@ void sprite_partition_step(int condition, short *out_index, short entry_value, s
 
 // was FUN_0006508c
 /* was undefined4 -- sprite_partition_step writes through it (*param_2 = ...) */
-void sprite_partition_tmap(undefined4 entry_index, short *out_index, int extra)
+void sprite_partition_tmap(int entry_index, short *out_index, int extra)
 {
   char *_o;
   byte bVar2;
@@ -391,7 +391,7 @@ void sprite_partition_tmap(undefined4 entry_index, short *out_index, int extra)
 
 // was FUN_00065128
 /* was undefined4 -- sprite_partition_step dereferences it (*param_2 = ...) */
-void sprite_partition_by_depth(undefined4 entry_index, short *out_index, int extra)
+void sprite_partition_by_depth(int entry_index, short *out_index, int extra)
 {
   int iVar1;
   char cVar2;
@@ -630,7 +630,7 @@ int sprite_list_alloc_raw_entry(int resource_id, int alloc_arg, int pixel_count)
 // was FUN_000762c4 -- sets a compositor slot's full geometry (x, y, w, h) in one call, used at
 // creation time (redraw_hud_panels calls this right after allocating each
 // dragon/compass/status-icon slot to establish its rect).
-undefined4 sprite_list_set_rect(short slot, int x, int y, int width, short height)
+int sprite_list_set_rect(short slot, int x, int y, int width, short height)
 {
   undefined4 uVar1;
   /* Was `int`, truncating the real DAT_0023c3e8 slot-record pointer
@@ -666,7 +666,7 @@ undefined4 sprite_list_set_rect(short slot, int x, int y, int width, short heigh
 // was FUN_00076338 -- updates an already-allocated compositor slot's x/y position only (its
 // width/height, set once by sprite_list_set_rect, are left alone). Called every tick by
 // hud_compass_needle_tick to move the needle sprite through its 16-heading ellipse.
-undefined4 sprite_list_set_position(short slot, int x, int y)
+int sprite_list_set_position(short slot, int x, int y)
 {
   undefined4 uVar1;
   char * iVar2;
@@ -694,7 +694,7 @@ undefined4 sprite_list_set_position(short slot, int x, int y)
 // was FUN_00076390 -- updates an already-allocated compositor slot's displayed sprite/frame id
 // (offset+7/+0xf, separate from whatever resource id sprite_list_alloc_entry stored at creation)
 // and ORs DAT_0008763c into the slot's flags word to mark it dirty.
-undefined4 sprite_list_set_frame_id(short slot, int frame_id)
+int sprite_list_set_frame_id(short slot, int frame_id)
 {
   ushort uVar1;
   undefined4 uVar2;
@@ -720,7 +720,7 @@ undefined4 sprite_list_set_frame_id(short slot, int frame_id)
 
 // was FUN_00076404 -- sprite_list_set_frame_id's transparent-blit
 // sibling; see that function's own comment.
-undefined4 sprite_list_set_frame_id_transparent(short slot, int frame_id)
+int sprite_list_set_frame_id_transparent(short slot, int frame_id)
 {
   ushort uVar1;
   undefined4 uVar2;
@@ -746,7 +746,7 @@ undefined4 sprite_list_set_frame_id_transparent(short slot, int frame_id)
 
 
 // was FUN_0007699c
-undefined4 sprite_list_set_lifetime(short slot, int lifetime)
+int sprite_list_set_lifetime(short slot, int lifetime)
 {
   undefined4 uVar1;
   char * iVar2;
@@ -770,7 +770,7 @@ undefined4 sprite_list_set_lifetime(short slot, int lifetime)
    emit_tile_objects call site AND on the resolve_sprite_id_to_frame / lookup_grtile_by_id calls
    below... */
 // was FUN_00040770
-undefined4 decode_tile_object_billboard_texture(short frame, uint unused)
+int decode_tile_object_billboard_texture(short frame, uint unused)
 {
   byte bVar1;
   byte bVar2;

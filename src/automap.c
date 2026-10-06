@@ -76,7 +76,7 @@ char *DAT_002029cc;
 
 
 // was FUN_00016354
-void enter_automap_screen(void)
+void enter_automap_screen()
 {
   if (DAT_000bbefc == 0) {
     register_key_binding(0x1b,1,2,change_game_mode);
@@ -98,7 +98,7 @@ void enter_automap_screen(void)
 
 
 // was FUN_0001651c
-void exit_automap_screen(void)
+void exit_automap_screen()
 {
   int iVar1;
   undefined1 auStack_1c [16];
@@ -123,7 +123,7 @@ void exit_automap_screen(void)
 
 
 // was FUN_000165d0
-void draw_automap_tiles(void)
+void draw_automap_tiles()
 {
   char cVar1;
   int iVar2;
@@ -179,7 +179,7 @@ void draw_automap_tiles(void)
 
 
 // was FUN_000167d4
-undefined4 draw_automap_cell_edge(short edge, int x, int y)
+int draw_automap_cell_edge(short edge, int x, int y)
 {
   byte bVar1;
   int iVar2;
@@ -462,7 +462,7 @@ void draw_automap_screen(int level_number)
 
 /* Reveal every walkable tile of the current level's automap in a single pass -- no ring-walk, no
    dungeon redraw. */
-void automap_reveal_all_tiles(void)
+void automap_reveal_all_tiles()
 {
   int x;
   int y;
@@ -519,7 +519,7 @@ void darken_pixel(uint x, int y, int amount, int divisor)
 
 // was FUN_00016434 -- writes the DAT_000b99d0 automap-reveal buffer (64x64 grid, one nibble/byte
 // per tile -- see automap.c's readers) to archive entry param_2+0x1a.
-undefined4 save_automap_reveal_to_archive(undefined1 *archive, int level_number)
+int save_automap_reveal_to_archive(byte *archive, int level_number)
 {
   bool bVar1;
   int iVar2;
@@ -576,7 +576,7 @@ undefined4 save_automap_reveal_to_archive(undefined1 *archive, int level_number)
 // DAT_000b99d0 automap-reveal buffer (the read-side counterpart to
 // save_automap_reveal_to_archive).
 /* .ark handle-struct pointer -- was `undefined4`, truncating it before read_archive_entry. */
-undefined4 load_automap_reveal_from_archive(undefined1 *archive, int level_number)
+int load_automap_reveal_from_archive(byte *archive, int level_number)
 {
   short sVar1;
   undefined4 uVar2;
@@ -591,7 +591,7 @@ undefined4 load_automap_reveal_from_archive(undefined1 *archive, int level_numbe
 
 
 // was FUN_000165bc
-void clear_automap_reveal_buffer(void)
+void clear_automap_reveal_buffer()
 {
   ce_memset(&DAT_000b99d0,0,0x1000);
 }
@@ -665,7 +665,7 @@ char *pick_closer_note_label(char *label_a, char *label_b, short click_x, short 
 // was FUN_00016ef8 -- automap "add/edit note" click handler: resolves where the player clicked (map
 // area vs. UI chrome), places, edits, or removes a note into the DAT_000ba9d8 note-text array, and
 // can invoke switch_automap_level_display for the level-page navigation arrows.
-void handle_automap_note_click(void)
+void handle_automap_note_click()
 {
   char cVar1;
   short sVar2;
@@ -905,7 +905,7 @@ LAB_00017404:
 
 // was FUN_0001765c -- redraws every stored automap note (DAT_000bbef0
 // count of DAT_000ba9d8 records) as text at its saved screen position.
-void draw_automap_notes(void)
+void draw_automap_notes()
 {
   char *wptr_5780;
   char *wptr_5787;
@@ -1043,7 +1043,7 @@ void switch_automap_level_display(int level_number)
 // was FUN_0007edec -- always returns 0 and does nothing else; both confirmed callers
 // (src/automap.c's note-text composition, when the wrapped line buffer overflows its 46-char limit
 // or a word doesn't fit) pass literal args (300,10) that this decompiled signature takes no...
-undefined4 debug_noop_overflow_hook(undefined4 limit, undefined4 word_count)
+int debug_noop_overflow_hook(int limit, int word_count)
 {
   return 0;
 }

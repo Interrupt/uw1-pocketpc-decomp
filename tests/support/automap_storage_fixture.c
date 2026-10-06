@@ -56,22 +56,22 @@ int register_key_binding(int key,int mode,int flags,void *callback) { return 1; 
 void change_game_mode(int mode) {}
 void set_pending_music_track(int track) {}
 void update_ingame_music_track(void) {}
-undefined4 save_automap_reveal_to_archive(undefined1 *archive, int level) { return 1; }
-undefined4 load_automap_reveal_from_archive(undefined1 *archive, int level) { return 1; }
+int save_automap_reveal_to_archive(byte *archive, int level) { return 1; }
+int load_automap_reveal_from_archive(byte *archive, int level) { return 1; }
 void draw_automap_screen(int level)
 {
     DAT_000ba9d0=level;
     load_automap_notes_from_archive(level);
     DAT_000bbef4=1;
 }
-int register_click_region(int left, int bottom, int right, int top, undefined2 flags, undefined2 mode, void *handler) { return 1; }
+int register_click_region(int left, int bottom, int right, int top, short flags, short mode, void *handler) { return 1; }
 void wait_for_click_release(int mode) {}
 int measure_text_width(char *text) { return strlen(text)*4; }
 uint poll_input_event(int mode) { return *note_input ? *note_input++ : 13; }
 int poll_keyboard_char_input(short *key) { *key=0; return 0; }
-undefined4 next_input_event(void) { return 1; }
+int next_input_event(void) { return 1; }
 void update_hotspot_cursor_icon(void) {}
-void screen_backup_restore_rect(int x,int y,int right,int bottom) {}
+void screen_backup_restore_rect(uint x, uint y, uint right, uint bottom) {}
 void switch_automap_level_display(int level) {}
 void set_cursor_confine_rect(int left,int bottom,int right,int top) {}
 void reset_cursor_confine_rect(void) {}

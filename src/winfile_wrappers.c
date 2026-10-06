@@ -10,7 +10,7 @@
 
 // was FUN_000226e8 -- CreateFile(GENERIC_READ, OPEN_EXISTING) immediately followed by CloseHandle:
 // a "does this file exist" probe, not a real open.
-int win_file_exists(char *path, undefined4 reserved)
+int win_file_exists(char *path, int reserved)
 {
   /* BUG FIX (unit-testing-framework merge): the converted path was held in an `undefined4`,
      truncating load_string_resource's real pointer -- same class as that function's own fix. */

@@ -2156,7 +2156,7 @@ static void uw_register_gr_entry(unsigned base, void *buf, int idx)
     g_grtile_registry[slot] = buf;
   }
 }
-undefined4 register_gr_group_entry(void *buf, unsigned size, int idx)
+int register_gr_group_entry(void *buf, unsigned size, int idx)
 {
   /* Caller load_gr_resource_group loads at the running cursor DAT_00202744 and
      advances it by the file's entry count afterwards. */
@@ -2164,7 +2164,7 @@ undefined4 register_gr_group_entry(void *buf, unsigned size, int idx)
   uw_register_gr_entry((unsigned)DAT_00202744, buf, idx);
   return 1;
 }
-undefined4 register_objects_gr_entry(void *buf, unsigned size, int idx)
+int register_objects_gr_entry(void *buf, unsigned size, int idx)
 {
   /* Caller load_objects_gr (OBJECTS.GR) -- does not advance the cursor; the
      next file resets DAT_00202744 to 0x1c0, so OBJECTS.GR occupies the
@@ -2174,7 +2174,7 @@ undefined4 register_objects_gr_entry(void *buf, unsigned size, int idx)
   return 1;
 }
 // was LAB_00041670
-undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx)
+int register_tmflat_gr_entry(void *buf, unsigned size, int idx)
 {
   /* Caller load_tmflat_gr (TMFLAT.GR) with a fixed id base stashed in DAT_000859a8 (0x170). Real
      ARM (0x41670): registers each entry at the running cursor DAT_00202744 and ADVANCES the cursor

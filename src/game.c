@@ -2523,7 +2523,7 @@ void show_error_dialog_stub_thunk()
 // Extracted (unit-testing-framework merge) from the chargen "New Game" branch below -- the same
 // \DATA\lev.ark -> \SAVE0\lev.ark seeding sequence inlined there originally, pulled into its own
 // testable function.
-bool prepare_new_game(void)
+bool prepare_new_game()
 {
     char save_directory[264];
     char destination_path[264];
@@ -2585,7 +2585,7 @@ bool prepare_new_game(void)
 }
 
 // Added by the unit-testing-framework merge, alongside prepare_new_game.
-void begin_gameplay(void)
+void begin_gameplay()
 {
     pop_cursor_icon(3);
     cursor_show_idle_tick();

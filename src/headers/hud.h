@@ -39,7 +39,7 @@ extern undefined1 DAT_0023cdb0_backing[32];
 #define g_target_hud_panel DAT_0023c118_arr[6]
 
 #define DAT_0023cdb0 DAT_0023cdb0_backing[0]
-extern void (*const g_hud_panel_handlers_table[13])(void);
+extern void (*const g_hud_panel_handlers_table[13])();
 
 extern short DAT_00084f10;
 extern char DAT_000870d8;
@@ -60,12 +60,12 @@ extern undefined1 DAT_00202988_backing[6];
 
 void dirty_rect_union();
 void dirty_rect_set();
-void uw_debug_blit_pick_buffer(void);
-void uw_debug_draw_inv_hotspot_positions(void);
-void uw_debug_dump_critter_sheet_once(void);
-void uw_debug_dump_sprite_frames_once(void);
-void uw_debug_force_item_id_once(void);
-int uw_always_show_cursor(void);
+void uw_debug_blit_pick_buffer();
+void uw_debug_draw_inv_hotspot_positions();
+void uw_debug_dump_critter_sheet_once();
+void uw_debug_dump_sprite_frames_once();
+void uw_debug_force_item_id_once();
+int uw_always_show_cursor();
 void uw_composite_desktop_cursor(void *present_buffer);
 void flush_dirty_rect_to_display();
 void flush_dirty_rect_to_display_240();

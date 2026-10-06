@@ -27,25 +27,25 @@ extern char *DAT_001005c8;
 extern char *g_chargen_textfield_buf;
 
 
-undefined4 character_generator_start(void);
-int run_character_generator(void);
-undefined4 character_generator_loop(char *tree_data, char *scratch_data, char *field_records);
+int character_generator_start();
+int run_character_generator();
+int character_generator_loop(char *tree_data, char *scratch_data, char *field_records);
 
 /* chrbtns_bump_alloc_entry/chrbtns_offset_table_builder: orphaned callbacks Ghidra never recognized
    as real functions (only reached indirectly, via addresses passed to load_gr_resource_entries) --
    their definitions stay in uw.c (see their own comment there for the full recovery story)... */
 char *chrbtns_bump_alloc_entry(int byte_count);
-undefined4 chrbtns_offset_table_builder(int unused, int entry_size, int index);
+int chrbtns_offset_table_builder(int unused, int entry_size, int index);
 void init_new_character_record(int mode);
-undefined4 advance_skill_tree_node(byte *cursor, char *picked_skills, char *record, char *tree);
-void draw_chargen_attribute_summary(void);
-void draw_selected_skills_list(void);
+int advance_skill_tree_node(byte *cursor, char *picked_skills, char *record, char *tree);
+void draw_chargen_attribute_summary();
+void draw_selected_skills_list();
 int apply_confirmed_skill_picks(int first_index, char *picked_skills);
-void reroll_attributes_for_class_race(void);
+void reroll_attributes_for_class_race();
 void draw_chargen_field_value(short *field);
-undefined4 draw_chargen_field_options(short *field, byte option_a, byte option_b);
+int draw_chargen_field_options(short *field, byte option_a, byte option_b);
 uint character_generator_touch_select(short *field, uint position);
 uint wait_for_chargen_field_input(short *field);
-void chargen_ui_transition_hook(undefined4 is_press);
+void chargen_ui_transition_hook(int is_press);
 
 #endif

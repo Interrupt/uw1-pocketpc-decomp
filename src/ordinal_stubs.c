@@ -11,9 +11,9 @@
 #include <sys/stat.h>
 #include <SDL.h>
 
-void uw_pump_events(void);
+void uw_pump_events();
 unsigned int handle_keyboard_message(void *param_1, unsigned int param_2, unsigned int param_3);
-int uw_take_mouse_event_pending(void);
+int uw_take_mouse_event_pending();
 
 long EnterCriticalSection(param_1,param_2,param_3,param_4)
 long param_1;

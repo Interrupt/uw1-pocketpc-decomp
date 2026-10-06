@@ -96,8 +96,7 @@ char *decode_gr_entry_bitmap(void *frame)
     TEST_ASSERT_EQUAL_PTR(raw_frame, frame);
     return &decoded_pixel;
 }
-void bitmap_blit_to_framebuffer(int x, int y, void *bitmap, int height,
-                              int width, int a, int b, int transparent)
+void bitmap_blit_to_framebuffer(ushort x, ushort y, char *bitmap, short height, short width, short a, short b, byte transparent)
 {
     TEST_ASSERT_EQUAL_PTR(&decoded_pixel, bitmap);
     weapon_draws++;

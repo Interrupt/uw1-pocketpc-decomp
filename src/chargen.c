@@ -61,7 +61,7 @@ static char s_chrbtns_00084ef8[] = "chrbtns";
 
 // The main character-generation state machine: steps through portrait/gender/skills/stats/name/confirm, one screen per state.
 // was FUN_00024e24
-undefined4 character_generator_loop(char *tree_data, char *scratch_data, char *field_records)
+int character_generator_loop(char *tree_data, char *scratch_data, char *field_records)
 {
   uint uVar1;
   byte bVar2;
@@ -331,7 +331,7 @@ LAB_00025468:
 
 // Loads CHRGEN.DAT/CHARGEN.BYT/fonts/palette, builds the per-field record array, and drives character_generator_loop's state machine.
 // was FUN_00025608
-int run_character_generator(void)
+int run_character_generator()
 {
   char stack0xffdc3230_buf [256];
   char *stack0xffdc3230_ptr;
@@ -479,7 +479,7 @@ int run_character_generator(void)
 
 // Thin wrapper that enters/exits a critical section around run_character_generator.
 // was FUN_000259a0
-undefined4 character_generator_start(void)
+int character_generator_start()
 {
   undefined4 uVar1;
 
@@ -638,7 +638,7 @@ void init_new_character_record(int mode)
 // was FUN_000238b4 -- walks the character-generator skill tree (param_4, a compact
 // [count][id0][id1]...-encoded tree) starting from the cursor index *param_1: for each leaf skill
 // entry, records its id into the output array param_2 (up to 5 entries) and advances the cursor...
-undefined4 advance_skill_tree_node(byte *cursor, char *picked_skills, char *record, char *tree)
+int advance_skill_tree_node(byte *cursor, char *picked_skills, char *record, char *tree)
 {
   byte bVar1;
   short sVar2;
@@ -692,7 +692,7 @@ undefined4 advance_skill_tree_node(byte *cursor, char *picked_skills, char *reco
 
 // was FUN_00023a00 -- draws the chargen stat screen's 4 attribute values (DAT_0023be74 offsets
 // +5/+6/+7 -- the 3 rolled 2d10+10 attributes set by init_new_character_record -- and +4)...
-void draw_chargen_attribute_summary(void)
+void draw_chargen_attribute_summary()
 {
   int iVar1;
   undefined1 auStack_14 [12];
@@ -723,7 +723,7 @@ void draw_chargen_attribute_summary(void)
 // was FUN_00023b38 -- draws the chargen skill-selection screen: blits a backdrop bitmap, then lists
 // up to 6 of the player's currently-selected skills (nonzero entries in DAT_00086df8+0x21, up to 20
 // slots) with each skill's name (get_message_string) and its point value (itoa_radix)...
-void draw_selected_skills_list(void)
+void draw_selected_skills_list()
 {
   int iVar1;
   int iVar2;
@@ -783,7 +783,7 @@ int apply_confirmed_skill_picks(int first_index, char *picked_skills)
 // was FUN_00023cdc -- applies the just-chosen class/race's attribute bonuses (looked up from
 // &DAT_000fb860 by a class/race-derived index) to the 3 rolled attributes (DAT_0023be74+5/6/7),
 // clears the skill array (DAT_00086df8+0x21, 20 slots) for a fresh pick...
-void reroll_attributes_for_class_race(void)
+void reroll_attributes_for_class_race()
 {
   int uw_ord2005_rem_2 = 0;
   byte bVar1;
@@ -1004,7 +1004,7 @@ void draw_chargen_field_value(short *field)
 
 // was FUN_0002431c -- draws up to two selectable option icons/portraits
 // (e.g. prev/next choice) for the current chargen field.
-undefined4 draw_chargen_field_options(short *field, byte option_a, byte option_b)
+int draw_chargen_field_options(short *field, byte option_a, byte option_b)
 {
   byte bVar1;
   byte bVar2;
@@ -1464,7 +1464,7 @@ LAB_00024dd4:
 // was FUN_00035df8 -- takes no parameters and its decompiled body takes no action, yet every call
 // site in src/chargen.c passes a 0/1 flag at UI-transition points (screen changes, button
 // presses/releases).
-void chargen_ui_transition_hook(undefined4 is_press)
+void chargen_ui_transition_hook(int is_press)
 {
 }
 
@@ -1486,7 +1486,7 @@ char *chrbtns_bump_alloc_entry(int byte_count)
 /* r0 is loaded fresh from a literal (&DAT_000fb880), discarding whatever was passed in that
    register -- this callback's real parameters are param_2 (r1) and param_3 (r2, only its low 16
    bits used, sign-extended, as a table index). */
-undefined4 chrbtns_offset_table_builder(int unused, int entry_size, int index)
+int chrbtns_offset_table_builder(int unused, int entry_size, int index)
 {
   int idx = (short)(index & 0xffff);
   if (idx == 0) {

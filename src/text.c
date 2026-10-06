@@ -194,7 +194,7 @@ int measure_text_width(char *text)
 
 
 // was FUN_000112fc
-undefined4 unpack_glyph_bitmap(undefined1 *out_pixels, byte *glyph_bits, short bits_per_row)
+int unpack_glyph_bitmap(byte *out_pixels, byte *glyph_bits, short bits_per_row)
 {
   uint uVar1;
   undefined4 uVar2;
@@ -330,7 +330,7 @@ uint pack_word_byte(uint word, uint new_byte, int into_high_byte)
 // in base param_3 into buffer param_2 (via the s_0123456789ABCDEF_00084a28 digit table)...
 /* Real arity is 3 (value, buffer, radix): ARM 0x229e0 reads r0-r2 only. Ghidra's param_4 was a
    scratch register (the pad-character local) that all 21 call sites correctly leave unset. */
-void itoa_radix(int value, undefined1 *buffer, undefined4 radix)
+void itoa_radix(int value, byte *buffer, int radix)
 {
   undefined1 pad_char;
   char cVar1;
@@ -483,7 +483,7 @@ void init_draw_command_cursor()
 
 // was FUN_00038ae8 -- emits a glyph/sprite reference (param_1, a catalog id; param_2 a value used
 // only for the special id 0xa0) into the draw-command list at the write cursor.
-void emit_glyph_draw_command(uint glyph_id, undefined2 value)
+void emit_glyph_draw_command(uint glyph_id, short value)
 {
   byte bVar1;
   short *psVar2;

@@ -325,7 +325,7 @@ uint rand_below(int limit)
 
 // was FUN_0002294c -- GetTickCount-shaped: GetTickCount() (SDL_GetTicks(), real elapsed ms since
 // startup) scaled down to 4ms-per-unit.
-uint read_realtime_clock_units(void)
+uint read_realtime_clock_units()
 {
   return (uint)GetTickCount() >> 2;
 }

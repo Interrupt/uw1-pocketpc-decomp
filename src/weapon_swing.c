@@ -87,7 +87,7 @@ void request_weapon_swing_graphic(char category)
 // was FUN_0006e3ac -- loads WEAPONS.GR's 28-frame swing-animation sprite set for the requested
 // weapon-swing category (DAT_000870d8, set by request_weapon_swing_graphic) plus its matching
 // 28-byte timing/hit-data rows from WEAPONS.DAT...
-byte load_weapon_swing_sprites(void)
+byte load_weapon_swing_sprites()
 {
   char stack0xffdc3240_buf [256];
   char *stack0xffdc3240_ptr;
@@ -156,7 +156,7 @@ byte load_weapon_swing_sprites(void)
 // was FUN_0006fcb0 -- draws the weapon-swing sprite over the 3D viewport for the current frame of
 // advance_action_animation_frame's state machine, gated on
 // g_dungeon_view_active/g_weapon_overlay_enabled.
-void weapon_swing_draw_tick(void)
+void weapon_swing_draw_tick()
 {
   short sVar1;
   /* Was `undefined4` -- decode_gr_entry_bitmap returns a real 64-bit bitmap pointer, truncated on
@@ -216,7 +216,7 @@ void weapon_swing_draw_tick(void)
 
 // was FUN_0006fea4 -- full-screen "hard refresh" utility: draws the weapon-swing overlay (if the
 // dungeon view is active) then marks the entire screen dirty.
-void weapon_overlay_and_full_redraw(void)
+void weapon_overlay_and_full_redraw()
 {
   if (g_dungeon_view_active != 0) {
     weapon_swing_draw_tick();
@@ -285,7 +285,7 @@ void randomize_weapon_jump_shake(short intensity)
 // was FUN_0006e648 -- shared player-action animation state machine (weapon raise/ready, among
 // others): reads the requested action type (DAT_0023c120, set via set_hud_status_value(8,N)),
 // drives the current-action state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4)...
-void advance_action_animation_frame(void)
+void advance_action_animation_frame()
 {
   byte bVar1;
   int iVar2;
@@ -395,7 +395,7 @@ LAB_0006e7d0:
 // was FUN_0006e89c -- loads a 16-byte weapon combat-maneuver record from \DATA\weapons.cm into
 // DAT_00202700, seeking to offset 0x10 or 0 depending on a flag at DAT_00086df8+100 (bits 0x1c ==
 // 4, an unidentified player/class condition).
-bool load_weapon_combat_maneuver_data(void)
+bool load_weapon_combat_maneuver_data()
 {
   char stack0xffdc3248_buf [256];
   char *stack0xffdc3248_ptr;
@@ -437,7 +437,7 @@ bool load_weapon_combat_maneuver_data(void)
 // was FUN_00012948 -- always returns immediately and does nothing else; confirmed used two ways at
 // its real call sites (uw.c): once inside a 13-iteration animation loop (weapon_overlay_flash_hold)
 // alongside weapon_overlay_and_full_redraw...
-void debug_noop_frame_hook(undefined4 frame)
+void debug_noop_frame_hook(int frame)
 {
 }
 
@@ -488,7 +488,7 @@ int find_and_consume_ammo(short weapon_type)
 // was FUN_000275e0 -- resets the weapon-swing state machine after a completed swing: sets
 // DAT_0010062c to a cooldown value, clears the "swing charging" cursor-holding flags, and resets
 // the HUD status icons. Called from tick_weapon_swing_state's own swing-completion path.
-void reset_weapon_swing_state(void)
+void reset_weapon_swing_state()
 {
   DAT_0010062c = 0xfff6;
   DAT_00084f10 = 0xffff;
@@ -504,7 +504,7 @@ void reset_weapon_swing_state(void)
 // was FUN_0002764c -- sets the HUD's weapon-ready status icon (a
 // different icon depending on a flag bit at DAT_00086df8+0x5f) and
 // clears the swing-charge status icon.
-void update_weapon_ready_hud_icon(void)
+void update_weapon_ready_hud_icon()
 {
   undefined4 uVar1;
   
@@ -521,7 +521,7 @@ void update_weapon_ready_hud_icon(void)
 // was FUN_00027694 -- fully cancels an in-progress weapon swing (charging or mid-animation):
 // releases any held swing-charge cursor state, updates the HUD icons, and resets the swing phase
 // counter (DAT_0010062c), pending-swing marker (DAT_00084f10)...
-void cancel_weapon_swing(void)
+void cancel_weapon_swing()
 {
   if ((DAT_001005ec != 0) && (DAT_00100618 == 0)) {
     g_cursor_holding_state = g_cursor_holding_state + -4;
@@ -703,7 +703,7 @@ void draw_hud_icon_sprite(int sprite_id, int x, int y)
 
 // was FUN_000411b8 -- generic "flash and hold" weapon-overlay transition: hides the cursor,
 // disables the weapon overlay, redraws ~13 blank frames with it hidden...
-void weapon_overlay_flash_hold(undefined4 unused_code)
+void weapon_overlay_flash_hold(int unused_code)
 {
   int iVar1;
 
@@ -726,7 +726,7 @@ void weapon_overlay_flash_hold(undefined4 unused_code)
 // was FUN_000411cc -- sibling to weapon_overlay_flash_hold: instead of blank redraws, snapshots the
 // live screen region (DAT_00248410) and repeatedly restores it over the overlay-disabled redraw
 // loop, holding a frozen frame while the overlay stays hidden.
-void weapon_overlay_flash_restore(undefined4 unused_code)
+void weapon_overlay_flash_restore(int unused_code)
 {
   undefined4 uVar1;
   int iVar2;
@@ -750,7 +750,7 @@ void weapon_overlay_flash_restore(undefined4 unused_code)
 // was FUN_000411e0 -- the simplest of the three: a single disable-redraw-reenable cycle, used as a
 // quick screen flash cue for damage/hazard events (src/combat.c, src/player.c, src/object_actions.c
 // call it with various scroll-message-like codes, all ignored since it takes no parameters).
-void weapon_overlay_flash_once(undefined4 unused_code)
+void weapon_overlay_flash_once(int unused_code)
 {
   show_error_dialog_stub_thunk();
   decrement_cursor_hide_depth();

@@ -7,8 +7,8 @@
     "still_unnamed_FUN": 12,
     "audited_true": 1469,
     "audited_false": 0,
-    "modernized_true": 426,
-    "modernized_false": 1043
+    "modernized_true": 391,
+    "modernized_false": 1078
   },
   "functions": [
     {
@@ -108,7 +108,7 @@
       "param_count": 0,
       "description": "build the view/camera matrix into DAT_000c8ac0 from the camera translation (DAT_000db438/43c/440) and 3 axis rotations (DAT_000db448/44c/450).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "translate_verts_to_camera_space",
@@ -185,7 +185,7 @@
       "param_count": 0,
       "description": "builds the renderer's 361-entry (0..360 degrees) per-degree sin/cos tables.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "load_dungeon_texture_arenas",
@@ -196,7 +196,7 @@
       "param_count": 0,
       "description": "loads the dungeon-view texture/shade/door- frame arenas at game/level startup.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "configure_dungeon_viewport",
@@ -218,7 +218,7 @@
       "param_count": 0,
       "description": "one-time dungeon-view rendering init.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "render_dungeon_view_frame",
@@ -229,7 +229,7 @@
       "param_count": 0,
       "description": "renders one dungeon-view frame (HUD draw commands + the 3D render pass) within the dungeon viewport's clip rect.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "emit_flat_wall_texture_select",
@@ -295,7 +295,7 @@
       "param_count": 0,
       "description": "configures the dynamic entries (indices 1/3, DAT_00086b3c/DAT_00086b44) of the tile-surface texture-emit function-pointer table based on the texture detail-level setting.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "build_euler_rotation_matrix",
@@ -2330,7 +2330,7 @@
       "param_count": 0,
       "description": "enter automap screen.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "exit_automap_screen",
@@ -2341,7 +2341,7 @@
       "param_count": 0,
       "description": "exit automap screen.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "draw_automap_tiles",
@@ -2352,7 +2352,7 @@
       "param_count": 0,
       "description": "draw automap tiles.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "draw_automap_cell_edge",
@@ -2407,7 +2407,7 @@
       "param_count": 0,
       "description": "Reveal every walkable tile of the current level's automap in a single pass -- no ring-walk, no dungeon redraw.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "darken_pixel",
@@ -2451,7 +2451,7 @@
       "param_count": 0,
       "description": "clear automap reveal buffer.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "pick_closer_note_label",
@@ -2473,7 +2473,7 @@
       "param_count": 0,
       "description": "automap \"add/edit note\" click handler.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "draw_automap_notes",
@@ -2484,7 +2484,7 @@
       "param_count": 0,
       "description": "redraws every stored automap note (DAT_000bbef0 count of DAT_000ba9d8 records) as text at its saved screen position.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "save_automap_notes_to_archive",
@@ -4574,7 +4574,7 @@
       "param_count": 0,
       "description": "run character generator.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "character_generator_start",
@@ -4585,7 +4585,7 @@
       "param_count": 0,
       "description": "character generator start.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "init_new_character_record",
@@ -4618,7 +4618,7 @@
       "param_count": 0,
       "description": "draws the chargen stat screen's 4 attribute values (DAT_0023be74 offsets +5/+6/+7 -- the 3 rolled 2d10+10 attributes set by init_new_character_record -- and +4).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "draw_selected_skills_list",
@@ -4629,7 +4629,7 @@
       "param_count": 0,
       "description": "draws the chargen skill-selection screen.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "apply_confirmed_skill_picks",
@@ -4651,7 +4651,7 @@
       "param_count": 0,
       "description": "applies the just-chosen class/race's attribute bonuses (looked up from &DAT_000fb860 by a class/race-derived index) to the 3 rolled attributes (DAT_0023be74+5/6/7), clears the skill array (DAT_00086df8+0x21, 20 slots) for a fresh pick.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "draw_chargen_field_value",
@@ -4838,7 +4838,7 @@
       "param_count": 0,
       "description": "insertion-sorts collision_add_candidate_object's candidate list (up to the count at DAT_00202c6c+0x14) by X position then Y position, each pass swapping out-of-order pairs via swap_collision_candidates.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "check_object_placement_clearance",
@@ -4876,7 +4876,7 @@
     {
       "name": "npc_combat_engage_close_tick",
       "path": "src/combat.c",
-      "line": 185,
+      "line": 183,
       "original_name": "FUN_0002ff94",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4887,18 +4887,18 @@
     {
       "name": "npc_combat_set_stance",
       "path": "src/combat.c",
-      "line": 284,
+      "line": 280,
       "original_name": "FUN_00030364",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the shared attack/stance action called by every combat-engage goal handler once in range.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_combat_engage_wide_tick",
       "path": "src/combat.c",
-      "line": 431,
+      "line": 425,
       "original_name": "FUN_00030fe8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4909,7 +4909,7 @@
     {
       "name": "npc_combat_position_tick",
       "path": "src/combat.c",
-      "line": 493,
+      "line": 485,
       "original_name": "FUN_00031214",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4920,7 +4920,7 @@
     {
       "name": "npc_combat_disengage_tick",
       "path": "src/combat.c",
-      "line": 668,
+      "line": 658,
       "original_name": "FUN_00031a94",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4931,40 +4931,40 @@
     {
       "name": "resolve_combat_hit_zone",
       "path": "src/combat.c",
-      "line": 749,
+      "line": 737,
       "original_name": "FUN_00025a98",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "part of the combat hit-test flow (called from resolve_melee_swing_hit's own \"[hit-test]\" trace).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "find_nearest_hit_target",
       "path": "src/combat.c",
-      "line": 799,
+      "line": 782,
       "original_name": "FUN_00025b84",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "part of the combat hit-test flow.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_blood_splat_object",
       "path": "src/combat.c",
-      "line": 888,
+      "line": 869,
       "original_name": "FUN_00025ed8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "part of the combat hit-test flow (own \"[blood-splat]\" trace).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_melee_swing_hit",
       "path": "src/combat.c",
-      "line": 971,
+      "line": 947,
       "original_name": "FUN_00026194",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4975,40 +4975,40 @@
     {
       "name": "resolve_weapon_hit_skill_check",
       "path": "src/combat.c",
-      "line": 1068,
+      "line": 1043,
       "original_name": "FUN_00026570",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "resolves whether a confirmed hit actually penetrates.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_melee_damage",
       "path": "src/combat.c",
-      "line": 1140,
+      "line": 1112,
       "original_name": "FUN_00026858",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "applies a landed melee hit's damage.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "play_weapon_impact_sound",
       "path": "src/combat.c",
-      "line": 1296,
+      "line": 1265,
       "original_name": "FUN_00026eb4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "picks and plays a combat impact sound effect.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_attack_relative_facing",
       "path": "src/combat.c",
-      "line": 1350,
+      "line": 1317,
       "original_name": "FUN_0002702c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5019,7 +5019,7 @@
     {
       "name": "process_melee_attack_swing",
       "path": "src/combat.c",
-      "line": 1374,
+      "line": 1339,
       "original_name": "FUN_000270d0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5030,62 +5030,62 @@
     {
       "name": "resolve_equipped_weapon_attack",
       "path": "src/combat.c",
-      "line": 1424,
+      "line": 1388,
       "original_name": "FUN_000272c0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "resolves the player's currently equipped weapon (the item in the off-hand slot, 8-handedness) into an attack-data record pointer (*param_1) and outputs the raw item pointer itself (*param_2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_player_weapon_attack_stats",
       "path": "src/combat.c",
-      "line": 1470,
+      "line": 1431,
       "original_name": "FUN_000273f8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "computes the player's own weapon-swing attack stats.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_direct_object_hit",
       "path": "src/combat.c",
-      "line": 1526,
+      "line": 1482,
       "original_name": "FUN_00027b3c",
       "ghidra_origin": true,
       "param_count": 7,
       "description": "a general-purpose \"attacker object directly hits target object\" damage-application entry point (parallel to, but independent of, the player's own tick_weapon_swing_state chain).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_npc_melee_attack",
       "path": "src/combat.c",
-      "line": 1572,
+      "line": 1519,
       "original_name": "FUN_00027ce0",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "resolves an NPC's melee attack.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "award_monster_kill_experience",
       "path": "src/combat.c",
-      "line": 1641,
+      "line": 1582,
       "original_name": "FUN_00027f14",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "grants the player experience for killing param_1 (a monster object, category 0x40).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_combat_data_file",
       "path": "src/combat.c",
-      "line": 1676,
+      "line": 1614,
       "original_name": "FUN_00028004",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5096,18 +5096,18 @@
     {
       "name": "load_monster_combat_stats",
       "path": "src/combat.c",
-      "line": 1701,
+      "line": 1637,
       "original_name": "FUN_0002a2c8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "reads a fixed 0xc00-byte block from file handle param_1 into &DAT_001007d0 (the monster combat-stat table apply_melee_damage/ resolve_npc_melee_attack read armor/attack values from).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "try_npc_special_ability_no_los",
       "path": "src/combat.c",
-      "line": 1713,
+      "line": 1646,
       "original_name": "FUN_00030aac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5118,7 +5118,7 @@
     {
       "name": "try_npc_special_ability_ranged",
       "path": "src/combat.c",
-      "line": 1749,
+      "line": 1681,
       "original_name": "FUN_00030be0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5129,7 +5129,7 @@
     {
       "name": "try_npc_special_ability_alt",
       "path": "src/combat.c",
-      "line": 1799,
+      "line": 1730,
       "original_name": "FUN_00030e50",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5140,145 +5140,145 @@
     {
       "name": "adjust_heading_away_from_player",
       "path": "src/combat.c",
-      "line": 1835,
+      "line": 1765,
       "original_name": "FUN_000318d8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "adjusts an NPC's current heading (param_1) to swerve away from the player when the player is within param_2 tiles (distance squared).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_npc_target_alignment",
       "path": "src/combat.c",
-      "line": 1894,
+      "line": 1821,
       "original_name": "FUN_00032410",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "checks/adjusts an NPC's 8-way facing toward a target position (DAT_00101908/0x1c minus DAT_00101910/0x1c, the same aim-point delta check_fine_line_of_sight's own callers compute).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_npc_fine_facing_alignment",
       "path": "src/combat.c",
-      "line": 1947,
+      "line": 1872,
       "original_name": "FUN_0003276c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "checks/adjusts an NPC's fine-grained facing toward a target delta (param_1,param_2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_damage_to_object",
       "path": "src/combat.c",
-      "line": 2022,
+      "line": 1944,
       "original_name": "FUN_000346a0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "applies param_2 points of damage to object param_1 from damaging object param_3 (NULL if none, e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_damage_type_resistance",
       "path": "src/combat.c",
-      "line": 2108,
+      "line": 2026,
       "original_name": "FUN_000382cc",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "resolves elemental/damage-type resistance for object param_1 against a damage-type bitmask (param_3), returning the effective damage to apply.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_typed_damage_to_object",
       "path": "src/combat.c",
-      "line": 2140,
+      "line": 2055,
       "original_name": "FUN_00038374",
       "ghidra_origin": true,
       "param_count": 6,
       "description": "the general-purpose \"apply damage/effect to any object\" entry point (param_1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_object_durability_damage",
       "path": "src/combat.c",
-      "line": 2173,
+      "line": 2082,
       "original_name": "FUN_00038418",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "applies durability damage (param_3, already shifted right by the object type's hardness/resistance divisor from DAT_00202c97) to a non-NPC object param_1, returning whether it broke (durability reached 0).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "is_valid_equipment_slot_item",
       "path": "src/combat.c",
-      "line": 2237,
+      "line": 2140,
       "original_name": "FUN_00045f9c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "validates whether an object's class/subtype (param_1, masked to 0x1ff) is a valid match for equipment slot param_2.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "damage_equipped_item_in_slot",
       "path": "src/combat.c",
-      "line": 2262,
+      "line": 2162,
       "original_name": "FUN_00046030",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "attempts to damage the player's own equipped item in slot param_1 (combat's \"extra stagger/sound reaction\" trigger, src/combat.c), e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "add_active_light_source",
       "path": "src/combat.c",
-      "line": 2357,
+      "line": 2251,
       "original_name": "FUN_000542f8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "grants the player a new active light source.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_object_collision_scatter",
       "path": "src/combat.c",
-      "line": 2418,
+      "line": 2308,
       "original_name": "FUN_0005448c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "default collision outcome for object param_2 when nothing else handles it (param_1, the object that struck it, is unused).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_trap_type_damage_effect",
       "path": "src/combat.c",
-      "line": 2468,
+      "line": 2355,
       "original_name": "FUN_000545ac",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "looks up a base damage/flag pair for object param_1's subtype (DAT_002027d0/DAT_002027d2, 3 bytes/entry), and when a specific condition holds (param_1[0x12]==1 and that subtype's flag byte == -0x40) adjusts the damage via a skill check (+0x27) before.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_collision_candidate_interaction",
       "path": "src/combat.c",
-      "line": 2510,
+      "line": 2393,
       "original_name": "FUN_000546c4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "resolves a collision between moving object param_2 (a slot index) and collision-candidate param_1 (an index into DAT_00202c38, or -1 for \"the player directly\").",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "release_container_reference",
@@ -5300,7 +5300,7 @@
       "param_count": 0,
       "description": "NOT YET FIXED (not on the crash path reached so far, but the same bug class as everywhere else in this file): the body below reads/writes through the literal `iVar1*4 + 0x202870`/`iVar10*4 + 0x202870` -- a hardcoded original-binary address.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "close_backpack_container",
@@ -5311,7 +5311,7 @@
       "param_count": 0,
       "description": "close backpack container.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "leave_nested_container_level",
@@ -5322,7 +5322,7 @@
       "param_count": 0,
       "description": "leave nested container level.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "refresh_container_view",
@@ -5333,7 +5333,7 @@
       "param_count": 0,
       "description": "refresh container view.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "repopulate_container_grid_slots",
@@ -5344,7 +5344,7 @@
       "param_count": 0,
       "description": "repopulate container grid slots.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "open_backpack_container",
@@ -5366,7 +5366,7 @@
       "param_count": 0,
       "description": "container-grid scroll up, dispatched from handle_object_drop_target's `iVar2==0x15` case (widget 21's own real click rect, see g_inventory_hotspot_table's comment).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "scroll_container_grid_down",
@@ -5377,7 +5377,7 @@
       "param_count": 0,
       "description": "container-grid scroll down, the DAT_002029a0 (\"can scroll down\") counterpart to scroll_container_grid_up, same dispatch/redraw pattern via widget 22.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "auto_place_in_container",
@@ -5487,7 +5487,7 @@
       "param_count": 0,
       "description": "called from close_panels_before_level_change (right after free_player_inventory_chain) and from load_level.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "dbgui_save_backing",
@@ -5498,7 +5498,7 @@
       "param_count": 0,
       "description": "dbgui save backing",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "dbgui_restore_backing",
@@ -5509,7 +5509,7 @@
       "param_count": 0,
       "description": "dbgui restore backing",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "dbgui_begin",
@@ -5597,7 +5597,7 @@
       "param_count": 0,
       "description": "dbgui end",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "dbgui_draw",
@@ -5608,7 +5608,7 @@
       "param_count": 0,
       "description": "dbgui draw",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "dbgui_toggle",
@@ -5619,7 +5619,7 @@
       "param_count": 0,
       "description": "dbgui toggle",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "dbgui_feed_mouse_down",
@@ -5707,7 +5707,7 @@
       "param_count": 0,
       "description": "disabled outright on level 9.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "check_scheduled_object_level_match",
@@ -5729,7 +5729,7 @@
       "param_count": 0,
       "description": "applies a bundle of player-state changes (hunger restoration scaled off the class base-stat row DAT_0023be74+4, the level-7 hazard byte, equipment flags).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "schedule_door_open_animation",
@@ -6302,7 +6302,7 @@
       "param_count": 0,
       "description": "Extracted (unit-testing-framework merge) from the chargen \"New Game\" branch below -- the same \\DATA\\lev.ark -> \\SAVE0\\lev.ark seeding sequence inlined there originally, pulled into its own testable function.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "begin_gameplay",
@@ -6313,7 +6313,7 @@
       "param_count": 0,
       "description": "Added by the unit-testing-framework merge, alongside prepare_new_game.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "set_game_mode",
@@ -6357,34 +6357,34 @@
       "param_count": 1,
       "description": "set draw color.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "rect_fill_or_save_restore",
       "path": "src/graphics.c",
-      "line": 82,
+      "line": 79,
       "original_name": "FUN_00011774",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "rect fill or save restore.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "bitmap_blit_to_framebuffer",
       "path": "src/graphics.c",
-      "line": 255,
+      "line": 246,
       "original_name": "FUN_00011e5c",
       "ghidra_origin": true,
       "param_count": 8,
       "description": "bitmap blit to framebuffer.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "screen_backup_save",
       "path": "src/graphics.c",
-      "line": 380,
+      "line": 361,
       "original_name": "FUN_00011478",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6395,7 +6395,7 @@
     {
       "name": "screen_backup_restore",
       "path": "src/graphics.c",
-      "line": 417,
+      "line": 397,
       "original_name": "FUN_000114e4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6406,40 +6406,40 @@
     {
       "name": "screen_backup_restore_rect",
       "path": "src/graphics.c",
-      "line": 449,
+      "line": 427,
       "original_name": "FUN_0001156c",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "WARNING: Globals starting with '_' overlap smaller symbols at the same address screen_backup_restore bounded to the rect (param_1,param_2)-(param_3, param_4);.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "fade_in",
       "path": "src/graphics.c",
-      "line": 490,
+      "line": 464,
       "original_name": "FUN_000122d4",
       "ghidra_origin": true,
       "param_count": 3,
-      "description": "fade in.",
+      "description": "768-byte palette buffer to install first, or 0 to keep the current palette passed through to apply_palette_buffer/reinstall_active_palette.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "fade_out",
       "path": "src/graphics.c",
-      "line": 570,
+      "line": 541,
       "original_name": "FUN_00012444",
       "ghidra_origin": true,
       "param_count": 3,
-      "description": "fade out.",
+      "description": "768-byte palette buffer to install first, or 0 to keep the current palette passed through to apply_palette_buffer/reinstall_active_palette.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "flush_dungeon_frame",
       "path": "src/graphics.c",
-      "line": 649,
+      "line": 615,
       "original_name": "FUN_0001294c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6450,7 +6450,7 @@
     {
       "name": "render_dungeon_view",
       "path": "src/graphics.c",
-      "line": 660,
+      "line": 624,
       "original_name": "FUN_00012970",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6461,7 +6461,7 @@
     {
       "name": "build_shade_lut",
       "path": "src/graphics.c",
-      "line": 680,
+      "line": 643,
       "original_name": "FUN_00014294",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6472,7 +6472,7 @@
     {
       "name": "get_ambient_bias_reduction",
       "path": "src/graphics.c",
-      "line": 706,
+      "line": 667,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6483,73 +6483,73 @@
     {
       "name": "set_ambient_bias_with_light",
       "path": "src/graphics.c",
-      "line": 719,
+      "line": 680,
       "original_name": "FUN_00014324",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "ARM lighting bias: -32 when a light is active.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "set_ambient_bias_without_light",
       "path": "src/graphics.c",
-      "line": 732,
+      "line": 690,
       "original_name": "FUN_0001433c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "set ambient bias without light.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "expand_pals_bytes",
       "path": "src/graphics.c",
-      "line": 748,
+      "line": 703,
       "original_name": "FUN_00022abc",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "was expand_pals_bytes -- expand PALS.DAT 6-bit channel bytes (param_2) to 8-bit into param_1;.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "build_rgb565_palette",
       "path": "src/graphics.c",
-      "line": 792,
+      "line": 742,
       "original_name": "FUN_00022b54",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "was build_rgb565_palette -- build g_palette_rgb565 from an RGB buffer (param_1;.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "palette_cycle_range",
       "path": "src/graphics.c",
-      "line": 938,
+      "line": 884,
       "original_name": "FUN_000259c0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "palette cycle range.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "blit_fullscreen_bitmap_file",
       "path": "src/graphics.c",
-      "line": 993,
+      "line": 934,
       "original_name": "FUN_0006c98c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "loads and displays a raw 320x200 (64000-byte) full-screen bitmap file (param_2, a path).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "blit_framebuffer_to_gx_display",
       "path": "src/graphics.c",
-      "line": 1038,
+      "line": 975,
       "original_name": "FUN_000778fc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6560,40 +6560,40 @@
     {
       "name": "reinstall_active_palette",
       "path": "src/graphics.c",
-      "line": 1095,
+      "line": 1031,
       "original_name": "FUN_0007e99c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "re-expand DAT_00088d98 into DAT_00088640 and re-install it as g_palette_rgb565 (real light-level/tint args dropped by Ghidra).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "plot_pixel",
       "path": "src/graphics.c",
-      "line": 1113,
+      "line": 1044,
       "original_name": "FUN_0007e9c4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "plot pixel.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_horizontal_line",
       "path": "src/graphics.c",
-      "line": 1144,
+      "line": 1070,
       "original_name": "FUN_000116dc",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "draws a horizontal line of pixels at row param_2 from column param_1 to param_3, using the current color index (DAT_000a85c0) into g_palette_rgb565, and unions the drawn span into the dirty-rect tracker.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "fill_viewport_and_flush",
       "path": "src/graphics.c",
-      "line": 1178,
+      "line": 1099,
       "original_name": "FUN_00011b34",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6604,29 +6604,29 @@
     {
       "name": "blit_bitmap_to_framebuffer_clipped",
       "path": "src/graphics.c",
-      "line": 1216,
+      "line": 1137,
       "original_name": "FUN_000120c8",
       "ghidra_origin": true,
       "param_count": 8,
       "description": "a clipped variant of bitmap_blit_to_framebuffer (its own comment already cross-references it).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "copy_framebuffer_rect",
       "path": "src/graphics.c",
-      "line": 1301,
+      "line": 1210,
       "original_name": "FUN_00012850",
       "ghidra_origin": true,
       "param_count": 6,
       "description": "copies a param_3-wide by param_4-tall rect within the framebuffer from (param_5,param_6) to (param_1,param_2), unioning the destination into the dirty-rect tracker and always flushing to the display afterward.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_viewport_to_fullscreen",
       "path": "src/graphics.c",
-      "line": 1361,
+      "line": 1262,
       "original_name": "FUN_00012958",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6637,18 +6637,18 @@
     {
       "name": "compute_view_y_bound",
       "path": "src/graphics.c",
-      "line": 1372,
+      "line": 1271,
       "original_name": "FUN_000129d4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "computes `((param_1 << 16) >> 18) - param_2 + 199` (a Y-coordinate-ish transform.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "end_gx_draw_session",
       "path": "src/graphics.c",
-      "line": 1386,
+      "line": 1281,
       "original_name": "FUN_000232b0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6659,40 +6659,40 @@
     {
       "name": "convert_palette_bgrx_to_rgb",
       "path": "src/graphics.c",
-      "line": 1399,
+      "line": 1292,
       "original_name": "FUN_00035fdc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "converts a 256-entry, 4-bytes-per-entry BGRX/RGBQUAD-style palette (param_1) into a packed 3-bytes-per-entry RGB buffer (param_2), reversing each entry's first 3 bytes.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "tick_book_illustration_palette_cycles",
       "path": "src/graphics.c",
-      "line": 1425,
+      "line": 1314,
       "original_name": "FUN_0003601c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "NOT a per-tile lava/water/torch tile-shimmer driver, despite looking like one -- traced both of its two real call sites (uw.c ~37381 and ~68657) and they're gated on a special object flag right where the game prints \"You read the...\" and dispatches to.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_bmp_resource_to_rgb565",
       "path": "src/graphics.c",
-      "line": 1464,
+      "line": 1350,
       "original_name": "FUN_0003af28",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "loads an embedded BMP resource (param_1/param_2.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "clear_screen_and_restore_cursor",
       "path": "src/graphics.c",
-      "line": 1541,
+      "line": 1423,
       "original_name": "FUN_00040df0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6703,24 +6703,24 @@
     {
       "name": "apply_palette_buffer",
       "path": "src/graphics.c",
-      "line": 1556,
+      "line": 1437,
       "original_name": "FUN_00040f34",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "generic \"install this 768-byte palette buffer as the active palette\" helper, shared by set_palette_bank (a specific PALS.DAT bank) and the fade_in/fade_out RGB framebuffer crossfades (src/graphics.c).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "fade_active_palette_to_black",
       "path": "src/graphics.c",
-      "line": 1571,
+      "line": 1448,
       "original_name": "FUN_00040f64",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "fades the active palette down to black over param_2 steps (frame-paced via read_realtime_clock_units, at least 10 clock units apart), re-applying the dimmed palette via apply_palette_buffer each step.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "poll_dungeon_movement_keys",
@@ -6753,7 +6753,7 @@
       "param_count": 0,
       "description": "uw reset frame pacing",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_claim_frame",
@@ -6797,7 +6797,7 @@
       "param_count": 0,
       "description": "Cursor-only changes need a presentation even in a blocking input wait.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_service_pending_present",
@@ -6830,7 +6830,7 @@
       "param_count": 0,
       "description": "uw gx time us",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_update_present_refresh_rate",
@@ -6841,7 +6841,7 @@
       "param_count": 0,
       "description": "uw update present refresh rate",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_begin_present_batch",
@@ -6852,7 +6852,7 @@
       "param_count": 0,
       "description": "uw begin present batch",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_end_present_batch",
@@ -6863,7 +6863,7 @@
       "param_count": 0,
       "description": "uw end present batch",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "gfx_finalizedraw",
@@ -6874,7 +6874,7 @@
       "param_count": 0,
       "description": "gfx finalizedraw",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_take_completed_frame",
@@ -6885,7 +6885,7 @@
       "param_count": 0,
       "description": "uw take completed frame",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_suspend_present_batch",
@@ -6896,7 +6896,7 @@
       "param_count": 0,
       "description": "uw suspend present batch",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_resume_present_batch",
@@ -6907,7 +6907,7 @@
       "param_count": 0,
       "description": "uw resume present batch",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_begin_modal_present",
@@ -6918,7 +6918,7 @@
       "param_count": 0,
       "description": "uw begin modal present",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_end_modal_present",
@@ -6929,7 +6929,7 @@
       "param_count": 0,
       "description": "uw end modal present",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_defer_present",
@@ -6940,7 +6940,7 @@
       "param_count": 0,
       "description": "uw defer present",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "dirty_rect_union",
@@ -8041,7 +8041,7 @@
       "param_count": 0,
       "description": "Desktop deviation: present the game cursor as an overlay by default.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "uw_composite_desktop_cursor",
@@ -8393,7 +8393,7 @@
       "param_count": 0,
       "description": "Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "set_locomotion_state",
@@ -8470,7 +8470,7 @@
       "param_count": 0,
       "description": "poll_input_event(0): consume and return the next input event code (used by the menu / prompt input-wait loops).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "update_mouse_state",
@@ -8481,7 +8481,7 @@
       "param_count": 0,
       "description": "update mouse state.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "move_command_dispatch",
@@ -8525,7 +8525,7 @@
       "param_count": 0,
       "description": "teardown counterpart to register_game_view_interact_zones.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "handle_keyboard_message",
@@ -8569,7 +8569,7 @@
       "param_count": 0,
       "description": "always returns 0 (get alternate keyboard scan code).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "process_pending_keyboard_scan_code",
@@ -8602,7 +8602,7 @@
       "param_count": 0,
       "description": "poll_input_event(1): return the pending input event code without consuming it (used by the per-frame keybinding poll).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "apply_swim_wade_pose",
@@ -8635,7 +8635,7 @@
       "param_count": 0,
       "description": "allocate/reset the keybinding + click-region tables.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "input_bindings_free",
@@ -8646,7 +8646,7 @@
       "param_count": 0,
       "description": "free the keybinding + click-region tables.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "register_click_region",
@@ -8679,7 +8679,7 @@
       "param_count": 0,
       "description": "dispatches DAT_00201c84's currently-set \"sticky redraw/per-frame\" bits through the DAT_00085668 per-mode handler table (movement_pacing_handler is mode 0's bit 12, see DAT_00085728's own comment).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "poll_mouse_event",
@@ -8690,7 +8690,7 @@
       "param_count": 0,
       "description": "poll mouse event.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "interact_default",
@@ -8701,7 +8701,7 @@
       "param_count": 0,
       "description": "These four were all mangled by Ghidra the same way: embedded spaces rendered as underscores, and in s_Your_bumbling_attempts_have_set_o's case the tail of the string (\"ff the \", plus a trailing space) was dropped entirely.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "interact_talk_npc",
@@ -8712,7 +8712,7 @@
       "param_count": 0,
       "description": "interact talk npc.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "interact_look",
@@ -8723,7 +8723,7 @@
       "param_count": 0,
       "description": "interact look.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "interact_use",
@@ -8734,7 +8734,7 @@
       "param_count": 0,
       "description": "briefly named interact_converse by an earlier pass.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "interact_attack",
@@ -8745,7 +8745,7 @@
       "param_count": 0,
       "description": "interact attack.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "trigger_terrain_discovery_illustration",
@@ -8756,7 +8756,7 @@
       "param_count": 0,
       "description": "triggers the \"illustrated book/scroll\" full- screen picture feature (via record_illustration_discovery_and_display -> display_book_or_scroll_page).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "trigger_inscription_illustration",
@@ -9768,7 +9768,7 @@
       "param_count": 0,
       "description": "Sizing-audit pass: both ce_memmove sites copy exactly 0x300 (768) bytes, bidirectionally -- HARD exact bound (256-entry VGA palette, 3 bytes/entry).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "init_level_object_arena",
@@ -9779,7 +9779,7 @@
       "param_count": 0,
       "description": "init level object arena.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "load_level_object_table",
@@ -9801,7 +9801,7 @@
       "param_count": 0,
       "description": "reset level object arena.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "load_level",
@@ -9878,7 +9878,7 @@
       "param_count": 0,
       "description": "frees g_level_tiles (DAT_002029cc) if currently allocated, without clearing the pointer itself (callers are expected to overwrite it right after, e.g.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "entry",
@@ -9900,7 +9900,7 @@
       "param_count": 0,
       "description": "entry's own pre-app_main_loop setup step.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "call_function_pointer_range",
@@ -10087,7 +10087,7 @@
       "param_count": 0,
       "description": "GetTickCount-shaped: GetTickCount() (SDL_GetTicks(), real elapsed ms since startup) scaled down to 4ms-per-unit.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "tick_anim_record",
@@ -10175,12 +10175,12 @@
       "param_count": 2,
       "description": "per-tick movement + collision sweep (from apply_movement_tick).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sweep_init_position",
       "path": "src/movement.c",
-      "line": 258,
+      "line": 254,
       "original_name": "FUN_00058878",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10191,40 +10191,40 @@
     {
       "name": "reticle_object_pick",
       "path": "src/movement.c",
-      "line": 280,
+      "line": 274,
       "original_name": "FUN_0005898c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "pick the object under the view reticle (-> DAT_00086998 slot, DAT_00086999/9a tile x/y).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "movement_sweep_setup",
       "path": "src/movement.c",
-      "line": 408,
+      "line": 399,
       "original_name": "FUN_00058e08",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "set up the movement/collision sweep (screen deltas, step DDA state).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sweep_restart_remaining",
       "path": "src/movement.c",
-      "line": 567,
+      "line": 555,
       "original_name": "FUN_0005932c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "re-seed the sweep for the distance still left (after a block/redirect).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sweep_kill_velocity",
       "path": "src/movement.c",
-      "line": 587,
+      "line": 572,
       "original_name": "FUN_000593c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10235,7 +10235,7 @@
     {
       "name": "sweep_writeback_position",
       "path": "src/movement.c",
-      "line": 611,
+      "line": 594,
       "original_name": "FUN_00059488",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10246,40 +10246,40 @@
     {
       "name": "sweep_integrate_substep",
       "path": "src/movement.c",
-      "line": 657,
+      "line": 638,
       "original_name": "FUN_000595d4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "integrate one sub-tile step of the movement/collision sweep PHYSICS.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sweep_deflect_heading",
       "path": "src/movement.c",
-      "line": 744,
+      "line": 722,
       "original_name": "FUN_0005989c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "deflect the move's heading against the wall normal it hit (DAT_002049ce) so it slides along the face.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sweep_slide_along_wall",
       "path": "src/movement.c",
-      "line": 846,
+      "line": 822,
       "original_name": "FUN_00059b7c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "PHYSICS: wall collision (slide).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sweep_apply_knockback",
       "path": "src/movement.c",
-      "line": 896,
+      "line": 869,
       "original_name": "FUN_00059c38",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10290,7 +10290,7 @@
     {
       "name": "sweep_land_on_surface",
       "path": "src/movement.c",
-      "line": 930,
+      "line": 901,
       "original_name": "FUN_00059d20",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10301,29 +10301,29 @@
     {
       "name": "sweep_step_vertical",
       "path": "src/movement.c",
-      "line": 1096,
+      "line": 1065,
       "original_name": "FUN_0005a348",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "PHYSICS: vertical integrator -- applies gravity/climb to the swept foot Z (g_sweep_foot_pos[2]) and resolves floor + ceiling contact.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sweep_step",
       "path": "src/movement.c",
-      "line": 1195,
+      "line": 1161,
       "original_name": "FUN_0005a550",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "advance the sweep one step (param_1==-1 commits the move).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sweep_apply_collision",
       "path": "src/movement.c",
-      "line": 1240,
+      "line": 1204,
       "original_name": "FUN_0005ad18",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10334,7 +10334,7 @@
     {
       "name": "decode_movement_command",
       "path": "src/movement.c",
-      "line": 1350,
+      "line": 1312,
       "original_name": "FUN_000685e8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10345,7 +10345,7 @@
     {
       "name": "movement_pacing_handler",
       "path": "src/movement.c",
-      "line": 1479,
+      "line": 1439,
       "original_name": "FUN_000689a0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10356,18 +10356,18 @@
     {
       "name": "movement_tick",
       "path": "src/movement.c",
-      "line": 1551,
+      "line": 1509,
       "original_name": "FUN_00068ad4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "movement tick.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "settle_movement_to_rest",
       "path": "src/movement.c",
-      "line": 1661,
+      "line": 1614,
       "original_name": "FUN_00068c1c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10378,18 +10378,18 @@
     {
       "name": "apply_movement_tick",
       "path": "src/movement.c",
-      "line": 1678,
+      "line": 1629,
       "original_name": "FUN_00068cac",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "Was called with no args from both call sites (movement_tick's real time-delta param_1, and settle_movement_to_rest's literal 0x40) -- dropped argument, same pattern as apply_heading_turn below (which.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_collision_response_profiles",
       "path": "src/movement.c",
-      "line": 1727,
+      "line": 1675,
       "original_name": "FUN_0002b63c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10400,62 +10400,62 @@
     {
       "name": "collision_response_default",
       "path": "src/movement.c",
-      "line": 1774,
+      "line": 1720,
       "original_name": "FUN_0002b960",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the default collision-response callback (slot 0, DAT_00204988), used by npc_ai_tick for monsters whose stat template doesn't set either of the alt-locomotion flag bits.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collision_response_alt_locomotion",
       "path": "src/movement.c",
-      "line": 1860,
+      "line": 1804,
       "original_name": "FUN_0002bbec",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the \"alt locomotion\" collision-response callback (slot 1, DAT_00204998), used by npc_ai_tick for monsters whose stat template sets flag bit 0x80.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collision_response_other_locomotion",
       "path": "src/movement.c",
-      "line": 1890,
+      "line": 1832,
       "original_name": "FUN_0002bc9c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the \"other locomotion\" collision-response callback (slot 3, DAT_002049b8), used by npc_ai_tick for monsters whose stat template sets flag bit 0x40 (and neither bit is 0x80).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "can_step_between_tiles",
       "path": "src/movement.c",
-      "line": 1923,
+      "line": 1863,
       "original_name": "FUN_0002c8e0",
       "ghidra_origin": true,
       "param_count": 7,
       "description": "checks whether movement is blocked stepping from tile (param_3,param_4) to adjacent tile (param_5,param_6).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "find_nearby_door_in_candidates",
       "path": "src/movement.c",
-      "line": 1997,
+      "line": 1929,
       "original_name": "FUN_0005aea0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "scans the nearby collision-candidate list (DAT_002049dd count, base DAT_002049de) for a door object (type 0x140-0x147), writing relative tile-offset deltas (param_1,param_2) for each candidate as it scans and returning the door object.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "get_first_nearby_candidate_object",
       "path": "src/movement.c",
-      "line": 2037,
+      "line": 1966,
       "original_name": "FUN_0005b010",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10466,18 +10466,18 @@
     {
       "name": "apply_heading_turn",
       "path": "src/movement.c",
-      "line": 2053,
+      "line": 1981,
       "original_name": "FUN_0003ce04",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "apply heading turn.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_wall_slide_corner",
       "path": "src/movement.c",
-      "line": 2122,
+      "line": 2047,
       "original_name": "FUN_00051320",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10488,7 +10488,7 @@
     {
       "name": "sweep_collision_flags",
       "path": "src/movement.c",
-      "line": 2253,
+      "line": 2176,
       "original_name": "FUN_0005a6bc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10499,18 +10499,18 @@
     {
       "name": "collision_flags_to_locomotion_code",
       "path": "src/movement.c",
-      "line": 2454,
+      "line": 2376,
       "original_name": "FUN_0005a630",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "collision flags to locomotion code.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collision_response_mobile_object",
       "path": "src/movement.c",
-      "line": 2496,
+      "line": 2416,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -10521,13 +10521,13 @@
     {
       "name": "check_and_reset_landing_state",
       "path": "src/movement.c",
-      "line": 2506,
+      "line": 2425,
       "original_name": "FUN_0003d8e4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "Stored into DAT_002048b8 (a movement-state callback slot) right alongside the rest of the jump/fall fields' reset in set_player_tile_position and the game-init player setup -- always with param_1 = the player object.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_object_action",
@@ -13992,7 +13992,7 @@
       "param_count": 0,
       "description": "checks the registry (HKLM\\Software\\ZIO_Interactive_ Ultima_U\\BuildNo) for the sentinel value 0xc0f this port's registration flow writes via save_registration_key_validated once the product's been validated.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "save_registration_key_validated",
@@ -14003,7 +14003,7 @@
       "param_count": 0,
       "description": "writes the registry sentinel (0xc0f) check_registration_key_saved looks for, marking the product as validated/registered.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "set_power_status_flag_bit",
@@ -14014,7 +14014,7 @@
       "param_count": 0,
       "description": "set power status flag bit.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "clear_power_status_flag_bit",
@@ -14025,7 +14025,7 @@
       "param_count": 0,
       "description": "clear power status flag bit.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "check_registration_key_dialog",
@@ -14069,7 +14069,7 @@
       "param_count": 0,
       "description": "startup disk-space check (its only caller checks it right after init_gameplay_session and shows \"Not enough disk space for save game\" on failure).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "decode_gr_entry_bitmap",
@@ -14674,7 +14674,7 @@
       "param_count": 0,
       "description": "draw save load slot list.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "journey_onward_load_slot_menu",
@@ -14685,7 +14685,7 @@
       "param_count": 0,
       "description": "journey onward load slot menu.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "probe_save_slots",
@@ -14839,7 +14839,7 @@
       "param_count": 0,
       "description": "gates save_game_to_slot's \"can save now\" check (confirmed via src/saveload.c's own comment on save_game_to_slot).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "check_can_load_game",
@@ -14850,7 +14850,7 @@
       "param_count": 0,
       "description": "gates load_game_from_slot's \"can load now\" check (src/saveload.c's own comment on load_game_from_slot confirms this \"unconditional-allow\" semantics).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "load_player_save_record",
@@ -15533,7 +15533,7 @@
       "param_count": 0,
       "description": "the \"booby-trapped book\" item-use effect.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "trigger_exploding_book_trap_at_tile",
@@ -15555,7 +15555,7 @@
       "param_count": 0,
       "description": "confirmed as dispatch_quest_event_code's case 0x2a handler.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "advance_scheduler_and_show_page3",
@@ -15566,7 +15566,7 @@
       "param_count": 0,
       "description": "confirmed as dispatch_quest_event_code's case 0x39 handler.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "unlink_object_from_tile_callback",
@@ -15588,7 +15588,7 @@
       "param_count": 0,
       "description": "triggered by resolve_unique_npc_special_behavior's dispatch for a specific object \"special behavior\" byte (0x1a) value 0xe7.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "resolve_lock_difficulty_rating",
@@ -15632,7 +15632,7 @@
       "param_count": 0,
       "description": "reset texture id lists to identity + default counts (0x30 wall, 10 floor).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "load_level_texture_ids",
@@ -15676,7 +15676,7 @@
       "param_count": 0,
       "description": "reset the draw-command list write cursor DAT_00110fc0 back to its base DAT_0023aed0.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "free_frame_geometry_buffers",
@@ -15687,7 +15687,7 @@
       "param_count": 0,
       "description": "per-frame teardown: free the scratch geometry / clip-vertex lists (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via LocalFree.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "full_dungeon_redraw",
@@ -15698,7 +15698,7 @@
       "param_count": 0,
       "description": "full dungeon redraw.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "render_dungeon_frame_timed",
@@ -15709,7 +15709,7 @@
       "param_count": 0,
       "description": "timed dungeon-view redraw.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "build_frame_draw_list",
@@ -15720,7 +15720,7 @@
       "param_count": 0,
       "description": "build the per-frame HUD + world draw-command list (opcodes into DAT_00110fc0) and run the visibility pass walk_visible_tiles.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "build_visibility_light_grid",
@@ -15742,7 +15742,7 @@
       "param_count": 0,
       "description": "seed visibility queue.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "visibility_ray_step_forward",
@@ -15819,7 +15819,7 @@
       "param_count": 0,
       "description": "run visibility flood.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "rebuild_dungeon_view",
@@ -15830,7 +15830,7 @@
       "param_count": 0,
       "description": "WARNING: Heritage AFTER dead removal.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "dungeon_view_prepass_stub",
@@ -15874,7 +15874,7 @@
       "param_count": 0,
       "description": "load light tables.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "weapon_swing_frame_loaded",
@@ -15918,7 +15918,7 @@
       "param_count": 0,
       "description": "loads WEAPONS.GR's 28-frame swing-animation sprite set for the requested weapon-swing category (DAT_000870d8, set by request_weapon_swing_graphic) plus its matching 28-byte timing/hit-data rows from WEAPONS.DAT.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "weapon_swing_draw_tick",
@@ -15929,7 +15929,7 @@
       "param_count": 0,
       "description": "draws the weapon-swing sprite over the 3D viewport for the current frame of advance_action_animation_frame's state machine, gated on g_dungeon_view_active/g_weapon_overlay_enabled.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "weapon_overlay_and_full_redraw",
@@ -15940,7 +15940,7 @@
       "param_count": 0,
       "description": "full-screen \"hard refresh\" utility.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "randomize_weapon_jump_shake",
@@ -15962,7 +15962,7 @@
       "param_count": 0,
       "description": "shared player-action animation state machine (weapon raise/ready, among others).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "load_weapon_combat_maneuver_data",
@@ -15973,7 +15973,7 @@
       "param_count": 0,
       "description": "loads a 16-byte weapon combat-maneuver record from \\DATA\\weapons.cm into DAT_00202700, seeking to offset 0x10 or 0 depending on a flag at DAT_00086df8+100 (bits 0x1c == 4, an unidentified player/class condition).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "debug_noop_frame_hook",
@@ -16006,7 +16006,7 @@
       "param_count": 0,
       "description": "resets the weapon-swing state machine after a completed swing.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "update_weapon_ready_hud_icon",
@@ -16017,7 +16017,7 @@
       "param_count": 0,
       "description": "sets the HUD's weapon-ready status icon (a different icon depending on a flag bit at DAT_00086df8+0x5f) and clears the swing-charge status icon.",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "cancel_weapon_swing",
@@ -16028,7 +16028,7 @@
       "param_count": 0,
       "description": "fully cancels an in-progress weapon swing (charging or mid-animation).",
       "audited": true,
-      "modernized": true
+      "modernized": false
     },
     {
       "name": "tick_weapon_swing_state",

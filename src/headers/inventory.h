@@ -62,7 +62,7 @@ void perform_object_search_check();
 void handle_inventory_panel_normal_click();
 void inventory_panel_click_region();
 void toggle_weapon_ready();
-void serialize_inventory_link_chain(undefined1 *link_chain, byte *out_link);
+void serialize_inventory_link_chain(byte *link_chain, byte *out_link);
 void *alloc_save_record_slot();
 void *save_record_slot_from_index(short slot_index);
 void deserialize_inventory_link_chain(byte *link_field, ushort *saved_link);

@@ -80,14 +80,14 @@ undefined4 check_object_drop_height(void) { return 1; }
 undefined4 object_ptr_in_arena(void) { return 1; }
 undefined4 play_sound_effect_at_object(void) { return 0; }
 undefined4 play_sound_effect_with_pan(void) { return 0; }
-undefined4 apply_typed_damage_to_object(void) { return 0; }
+int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; return 0; }
 undefined4 roll_object_destroy_chance(void) { return 0; }
-undefined4 spawn_scheduled_effect_object(ushort *source_object, int effect_group, undefined4 delay, undefined1 animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
+int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
 void print_scroll_message_by_id(void) {}
 void set_pending_update_flags(void) {}
 void spawn_effect_debris_burst(void) {}
 void scheduler_relink_entry(char *new_object, char *old_object) { (void)new_object; (void)old_object;}
-void set_ambient_bias_without_light(void) {}
+void set_ambient_bias_without_light(char light_level) { (void)light_level;}
 undefined4 activate_area_hazard_object(void) { return 1; }
 ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
 {
@@ -99,10 +99,10 @@ ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
 ushort *settle_dropped_object(ushort *object, int x, int y, int mode) { return object; }
 ushort *reallocate_object_to_arena(void) { TEST_FAIL_MESSAGE("Unexpected reallocation during flight"); return NULL; }
 void project_position_by_heading(int heading, short distance, short *x, short *y) { (void)heading; (void)distance; (void)x; (void)y; TEST_FAIL_MESSAGE("Throw took the ground-drop path"); }
-undefined4 check_object_placement_clearance(short catalog_type, short ignore_slot, undefined2 position_x, undefined2 position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; return 1; }
+int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; return 1; }
 
 int compute_floor_height_at_position(ushort x_in_tile, ushort y_in_tile) { return 0; }
-undefined4 resolve_collision_candidate_interaction(int contact, int slot)
+int resolve_collision_candidate_interaction(short contact, int slot)
 {
     if(bridge_fixture && contact>=0) TEST_ASSERT_LESS_THAN_INT(bridge_count,contact);
     else TEST_ASSERT_EQUAL_INT(-1,contact);

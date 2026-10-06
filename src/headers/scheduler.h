@@ -21,15 +21,15 @@ void scheduler_despawn_entry(short entry_index);
 void scheduler_remove_entry(short object_link);
 void scheduler_finish_entry(int entry_slot);
 void scheduler_relink_entry(char *new_object, char *old_object);
-uint scheduler_add_entry(uint object_link, undefined4 delay, undefined1 animation_offset, undefined1 tile_x, undefined1 tile_y);
+uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byte tile_x, byte tile_y);
 void scheduler_step_entry(int entry_slot, int elapsed);
 void scheduler_tick(int elapsed);
-undefined4 spawn_scheduled_effect_object(ushort *source_object, int effect_group, undefined4 delay, undefined1 animation_offset, short heading_adjust, short tile_x, short tile_y);
+int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y);
 int scheduler_find_entry(char *object);
 int scheduler_get_delay(char *object);
-void scheduler_set_delay(char *object, undefined4 delay);
-undefined4 scheduler_advance_effect(short entry_slot, int elapsed);
-undefined4 scheduler_load(undefined1 *archive, int level_number);
-undefined4 scheduler_save(undefined4 *archive, int level_number);
+void scheduler_set_delay(char *object, int delay);
+int scheduler_advance_effect(short entry_slot, int elapsed);
+int scheduler_load(byte *archive, int level_number);
+int scheduler_save(uint *archive, int level_number);
 
 #endif

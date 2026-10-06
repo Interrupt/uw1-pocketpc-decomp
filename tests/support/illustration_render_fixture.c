@@ -8,7 +8,7 @@ undefined4 babl_render_op_play_sound(void);
 void *ce_malloc(unsigned int count);
 void *ce_calloc(unsigned int count, unsigned int size);
 void *ce_memmove(void *p, const void *source, unsigned int count);
-void apply_palette_buffer(void *palette, void *unused);
+void apply_palette_buffer(void *palette, int unused);
 void LocalFree(void *p);
 long GetTickCount(void);
 long Sleep(unsigned int ms);
@@ -24,7 +24,7 @@ long ce_toupper(int key);
 void noop_key_handler(void);
 void update_mouse_state(void);
 void debug_framebuffer_dump(const char *tag);
-void tick_book_illustration_palette_cycles(void);
+void tick_book_illustration_palette_cycles(ushort *cycle_record);
 void clear_ambient_sound_target(void);
 void voice_sample_cluster_stub_1(void);
 void voice_sample_cluster_stub_2(void);
@@ -125,7 +125,7 @@ void *ce_calloc(unsigned int count, unsigned int size) { return ce_malloc(count 
 
 void *ce_memmove(void *p, const void *source, unsigned int count) { return memcpy(p, source, count); }
 
-void apply_palette_buffer(void *palette, void *unused) { (void)palette; (void)unused; }
+void apply_palette_buffer(void *palette, int unused) { (void)palette; (void)unused; }
 
 void LocalFree(void *p)
 {
@@ -270,7 +270,7 @@ char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
 
 void debug_framebuffer_dump(const char *tag) { (void)tag; }
 
-void tick_book_illustration_palette_cycles(void) {}
+void tick_book_illustration_palette_cycles(ushort *cycle_record) { (void)cycle_record;}
 
 void clear_ambient_sound_target(void) {}
 

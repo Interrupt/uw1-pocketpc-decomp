@@ -231,7 +231,7 @@ void scheduler_relink_entry(char *new_object, char *old_object)
 // was FUN_00080ed4: pushes a new entry onto the scheduler -- an encoded object link (param_1),
 // delay (param_2), initial animation offset (param_3), and tile position (param_4/param_5). The
 // object's own subtype selects its animation behavior from OBJECTS.DAT.
-uint scheduler_add_entry(uint object_link, undefined4 delay, undefined1 animation_offset, undefined1 tile_x, undefined1 tile_y)
+uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byte tile_x, byte tile_y)
 {
   char cVar1;
   uint uVar2;
@@ -434,7 +434,7 @@ void scheduler_tick(int elapsed)
 // was FUN_00081814 -- general "spawn a scheduled effect object" primitive: spawns a new object of
 // type (0x1c0 + param_2, the "group" -- the same 0x1c0 family cast_area_spell_effect/
 // activate_area_hazard_object use for spell/hazard effect ids)...
-undefined4 spawn_scheduled_effect_object(ushort *source_object, int effect_group, undefined4 delay, undefined1 animation_offset, short heading_adjust, short tile_x, short tile_y)
+int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y)
 {
   undefined1 uVar1;
   byte bVar2;
@@ -539,7 +539,7 @@ int scheduler_get_delay(char *object)
 
 
 // was FUN_00081abc: re-arms scheduler_find_entry's result's delay field.
-void scheduler_set_delay(char *object, undefined4 delay)
+void scheduler_set_delay(char *object, int delay)
 {
   short sVar1;
   int iVar2;
@@ -556,7 +556,7 @@ void scheduler_set_delay(char *object, undefined4 delay)
 
 // was FUN_00081af4: scheduler_step_entry's bit-2 sub-handler, called for entries whose per-class
 // behavior flags select a positional/ directional step each tick...
-undefined4 scheduler_advance_effect(short entry_slot, int elapsed)
+int scheduler_advance_effect(short entry_slot, int elapsed)
 {
   byte bVar1;
   ushort *puVar2;
@@ -640,7 +640,7 @@ undefined4 scheduler_advance_effect(short entry_slot, int elapsed)
 // g_scheduler_count by re-scanning for the first empty entry.
 /* .ark handle-struct pointer -- was `undefined4`, truncating the stack struct
    load_level_object_table passes and crashing read_archive_entry below. */
-undefined4 scheduler_load(undefined1 *archive, int level_number)
+int scheduler_load(byte *archive, int level_number)
 {
   short sVar1;
   undefined4 uVar2;
@@ -675,7 +675,7 @@ undefined4 scheduler_load(undefined1 *archive, int level_number)
 /* Was `undefined4` -- truncated the real 64-bit archive-handle-struct pointer
    (write_level_tilemap_to_archive's own `auStack_20`) write_archive_entry needs as its own
    param_1. */
-undefined4 scheduler_save(undefined4 *archive, int level_number)
+int scheduler_save(uint *archive, int level_number)
 {
   int iVar1;
   

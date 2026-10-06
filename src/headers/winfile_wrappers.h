@@ -6,7 +6,7 @@
    against file_io.c's real file I/O. */
 #include "uw.h"
 
-int win_file_exists(char *path, undefined4 reserved);
+int win_file_exists(char *path, int reserved);
 int open_existing_file_rw(char *path);
 bool close_file_handle(char *filename);
 int open_file_for_read(const char *path);

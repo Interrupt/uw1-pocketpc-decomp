@@ -11,13 +11,13 @@ void cancel_weapon_swing(void);
 void trigger_quest_milestone_cleanup_event(void);
 void other_panel_tick(int index);
 void flush_sprite_list_compositor(void);
-undefined4 sprite_list_set_frame_id(short slot, int frame);
-int resolve_weapon_hit_skill_check(int attacker, int target);
+int sprite_list_set_frame_id(short slot, int frame);
+int resolve_weapon_hit_skill_check(short attacker, int target);
 int roll_dice_sum(int count, short sides);
 undefined4 play_sound_effect_with_pan(void);
 undefined4 play_positional_sound_effect(int sound, int x, int y, int volume);
 void set_movement_animation_timer(void);
-undefined4 play_weapon_impact_sound(int result);
+int play_weapon_impact_sound(short result);
 long ce_rand(void);
 void project_position_by_heading(int heading, short distance, short *x, short *y);
 void collision_height_envelope(int mode, int collision);
@@ -26,7 +26,7 @@ void sort_collision_candidates(void);
 void *get_object_record_by_slot_index(int slot);
 undefined4 object_ptr_in_arena(ushort *object);
 void *spawn_new_object(int type, int mobile);
-uint scheduler_add_entry(uint slot, undefined4 delay, undefined1 frame, undefined1 x, undefined1 y);
+uint scheduler_add_entry(uint slot, int delay, byte frame, byte x, byte y);
 void *tilemap_lookup(short x, short y);
 void object_list_append_tail(void *head, void *object);
 void free_object_slot(ushort *object);
@@ -214,7 +214,7 @@ void (*const g_hud_panel_handlers_table[13])(void) = {
 
 void flush_sprite_list_compositor(void) { hud_flushes++; }
 
-undefined4 sprite_list_set_frame_id(short slot, int frame)
+int sprite_list_set_frame_id(short slot, int frame)
 {
     TEST_ASSERT_EQUAL_INT(7, slot);
     TEST_ASSERT_LESS_THAN_INT(32, wipe_frames);
@@ -222,7 +222,7 @@ undefined4 sprite_list_set_frame_id(short slot, int frame)
     return 0;
 }
 
-int resolve_weapon_hit_skill_check(int attacker, int target)
+int resolve_weapon_hit_skill_check(short attacker, int target)
 {
     TEST_ASSERT_EQUAL_UINT16(DAT_00100610, attacker);
     TEST_ASSERT_EQUAL_UINT16(DAT_00100620, target);
@@ -241,8 +241,7 @@ undefined4 play_positional_sound_effect(int sound, int x, int y, int volume)
 
 void set_movement_animation_timer(void) { TEST_FAIL_MESSAGE("Unexpected player hit animation"); }
 
-undefined4 spawn_scheduled_effect_object(ushort *target, int type, undefined4 mode, undefined1 intensity,
-                                        short height, short x, short y)
+int spawn_scheduled_effect_object(ushort *target, int type, int mode, byte intensity, short height, short x, short y)
 {
     TEST_ASSERT_EQUAL_PTR(expected_effect_target, target);
     TEST_ASSERT_LESS_THAN_INT(2, effects);
@@ -253,7 +252,7 @@ undefined4 spawn_scheduled_effect_object(ushort *target, int type, undefined4 mo
     return 0;
 }
 
-undefined4 play_weapon_impact_sound(int result) { impact_sounds++; return result; }
+int play_weapon_impact_sound(short result) { impact_sounds++; return result; }
 
 int door_triggers, door_scheduled, discarded_links;
 undefined2 DAT_002020a0, DAT_002020a4;
@@ -349,7 +348,7 @@ void *spawn_new_object(int type, int mobile)
     return wall_effect;
 }
 
-uint scheduler_add_entry(uint slot, undefined4 delay, undefined1 frame, undefined1 x, undefined1 y)
+uint scheduler_add_entry(uint slot, int delay, byte frame, byte x, byte y)
 {
     TEST_ASSERT_EQUAL_UINT(0x100, slot);
     if ((wall_effect[0] & 0x1ff) == 0x1cf) {

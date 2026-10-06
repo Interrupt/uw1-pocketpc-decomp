@@ -72,7 +72,7 @@ void head_bob_fixture_set_random(unsigned value) { random_value = value; }
    calculations, and camera-record updates run unmodified. */
 void decode_movement_command(void) {}
 void apply_heading_turn(int elapsed) {}
-void movement_collision_sweep(void *position, void *snapshot) {}
+void movement_collision_sweep(char *position, char *snapshot) {}
 void commit_player_move(void) {}
 void set_pending_update_flags(int flags) {}
 void tick_mobile_objects(int elapsed) { TEST_FAIL_MESSAGE("Unexpected NPC tick"); }
@@ -81,6 +81,6 @@ undefined4 play_sound_effect_with_pan(int sound, int pan, int volume) { return 0
 uint read_realtime_clock_units(void) { return 0; }
 unsigned int uw_frame_clock_ms(void) { return g_uw_frame_clock_units; }
 long ce_rand(void) { return random_value; }
-undefined4 apply_typed_damage_to_object(void) { TEST_FAIL_MESSAGE("Unexpected hazard damage"); return 0; }
+int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; TEST_FAIL_MESSAGE("Unexpected hazard damage"); return 0; }
 void angle_to_screen_delta(uint angle, short *x, short *y)
 { TEST_FAIL_MESSAGE("Unexpected alternate camera subject"); }

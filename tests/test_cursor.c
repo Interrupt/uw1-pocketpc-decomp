@@ -66,8 +66,8 @@ void draw_sprite_by_id(int id, int x, int y, int height, short width)
                col>=DAT_000a85c4 && col<=DAT_000842a4 &&
                (row!=y || col!=x)) pixels[row*320+col]=id;
 }
-void set_draw_color(int color) {}
-void rect_fill_or_save_restore(int x,int y,int right,int bottom) { ++saves; }
+void set_draw_color(short color) {}
+void rect_fill_or_save_restore(ushort x, uint y, short right, short bottom) { ++saves; }
 void flush_dirty_rect_to_display(int mode) { ++flushes; }
 
 void setUp(void)

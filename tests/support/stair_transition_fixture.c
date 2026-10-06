@@ -24,7 +24,7 @@ int scan_calls;
 void cancel_weapon_swing(void) {}
 void pop_cursor_icon(int state) {}
 void save_or_restore_level_special_state(short level, short save) {}
-undefined4 commit_level_to_save_slot(int level) { return 1; }
+int commit_level_to_save_slot(int level) { return 1; }
 int load_level(int level)
 {
     TEST_ASSERT_EQUAL_INT(2, level);
@@ -40,8 +40,8 @@ void set_player_tile_position(uint x, uint y)
 void set_pending_update_flags(int flags) {}
 void report_fatal_error_and_exit(void) { TEST_FAIL_MESSAGE("Stair transition failed"); }
 void full_dungeon_redraw(void) {}
-void weapon_overlay_flash_hold(undefined4 passes) {}
-void weapon_overlay_flash_restore(undefined4 passes) {}
+void weapon_overlay_flash_hold(int passes) {}
+void weapon_overlay_flash_restore(int passes) {}
 void *ce_memset(void *buffer, int value, unsigned size)
 { return memset(buffer, value, size); }
 void *tilemap_lookup(short x, short y)
@@ -58,7 +58,7 @@ int encode_object_slot_index(void *object)
     TEST_ASSERT_EQUAL_PTR(player, object);
     return 1;
 }
-undefined4 check_object_placement_clearance(short type, short slot, undefined2 x, undefined2 y, short z, int flag, byte radius)
+int check_object_placement_clearance(short type, short slot, short x, short y, short z, int flag, byte radius)
 {
     TEST_ASSERT_EQUAL_INT(0x7f, type);
     TEST_ASSERT_EQUAL_INT(1, slot);

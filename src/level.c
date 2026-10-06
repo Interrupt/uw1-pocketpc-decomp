@@ -38,7 +38,7 @@ bool g_new_game_entry_pause_pending = false;
 // was enter_dungeon_view -- 3D dungeon-view entry transition (fade out, load PALS.DAT
 // bank 0, redraw dungeon, fade in)
 // was FUN_0003bd50
-void enter_dungeon_view(void)
+void enter_dungeon_view()
 {
   char *path_cursor;
   char path_char;
@@ -92,7 +92,7 @@ void enter_dungeon_view(void)
 
 
 // was FUN_00049960
-undefined4 init_level_object_arena(void)
+int init_level_object_arena()
 {
   if (DAT_002029cc == 0) {
     /* Widened by 0x3a bytes: 28 backpack/equipment slots * 2 bytes (0x38) plus
@@ -111,7 +111,7 @@ undefined4 init_level_object_arena(void)
 
 
 // was FUN_000499c0
-int load_level_object_table(undefined1 *archive_handle, int level_number)
+int load_level_object_table(byte *archive_handle, int level_number)
 {
   short objects_loaded;
   char *arena;
@@ -188,7 +188,7 @@ int load_level_object_table(undefined1 *archive_handle, int level_number)
 
 
 // was FUN_00052960
-void reset_level_object_arena(void)
+void reset_level_object_arena()
 {
   undefined2 *free_list_cursor;
   char *tile_record = DAT_002029cc;
@@ -352,7 +352,7 @@ void save_or_restore_level_special_state(short level_number, short mode)
 
 // was FUN_0007129c -- rolls for and triggers one of several as-yet- untriggered special per-level
 // dialog/effect ids (tracked as bits in the 16-bit DAT_00086df8+0x6e mask): picks a candidate id...
-undefined4 trigger_random_level_special_event(short chance_scale)
+int trigger_random_level_special_event(short chance_scale)
 {
   int uw_ord2005_rem_143 = 0;
   undefined4 random_value;
@@ -408,7 +408,7 @@ undefined4 trigger_random_level_special_event(short chance_scale)
 // was FUN_000396a0 -- teleports object param_1 to tile (param_2,param_3) on level param_4.
 // Confirmed as the "teleporter trap" handler (dispatch_trap_type_effect's case 1, teleporting the
 // current trigger object DAT_0024cff4 to a trap-record-specified tile/level).
-undefined4 teleport_object_to_level_tile(char *object, int tile_x, int tile_y, short level_number)
+int teleport_object_to_level_tile(char *object, int tile_x, int tile_y, short level_number)
 {
   short current_level = DAT_00201b68;
   int placed;
@@ -440,7 +440,7 @@ undefined4 teleport_object_to_level_tile(char *object, int tile_x, int tile_y, s
 
 // was FUN_0003bc1c -- hard-resets the level object arena (reset_level_object_arena), flushes a
 // redraw, and invalidates DAT_00202080 (a loaded-level data marker).
-void reset_level_arena_and_invalidate(undefined4 reserved)
+void reset_level_arena_and_invalidate(int reserved)
 {
   reset_level_object_arena();
   set_pending_update_flags(2);
@@ -451,7 +451,7 @@ void reset_level_arena_and_invalidate(undefined4 reserved)
 // was FUN_000499a4 -- frees g_level_tiles (DAT_002029cc) if currently
 // allocated, without clearing the pointer itself (callers are
 // expected to overwrite it right after, e.g. on loading a new level).
-void free_level_tile_arena(void)
+void free_level_tile_arena()
 {
   if (DAT_002029cc != 0) {
     LocalFree(DAT_002029cc);

@@ -120,7 +120,7 @@ static ushort DAT_0023b7f8;
 
 
 // was FUN_000116a4 -- set the active viewport/clip rectangle (DAT_000a85c4/c8 top-left, DAT_000842a4/a8 bottom-right)
-void set_viewport_clip_rect(undefined2 left, undefined2 top, undefined2 right, undefined2 bottom)
+void set_viewport_clip_rect(short left, short top, short right, short bottom)
 {
   DAT_000a85c4 = left;
   DAT_000a85c8 = top;
@@ -133,7 +133,7 @@ void set_viewport_clip_rect(undefined2 left, undefined2 top, undefined2 right, u
 
 // was FUN_000137c0 -- elementwise 3-float vector subtract, param_3 = param_2 - param_1.
 // was FUN_00020a74
-void vec3_sub(undefined4 *a, undefined4 *b, undefined1 *out)
+void vec3_sub(uint *a, uint *b, byte *out)
 {
   undefined4 uVar1;
   
@@ -158,7 +158,7 @@ void vec3_sub(undefined4 *a, undefined4 *b, undefined1 *out)
 
 // was FUN_00013904 -- standard 3-float cross product, param_3 = param_1 x param_2 (confirmed
 // component-by-component, including the Y term's sign flip the textbook formula requires).
-void vec3_cross(undefined4 *a, undefined4 *b, undefined1 *out)
+void vec3_cross(uint *a, uint *b, byte *out)
 {
   undefined4 uVar1;
   undefined4 uVar2;
@@ -194,7 +194,7 @@ void vec3_cross(undefined4 *a, undefined4 *b, undefined1 *out)
 // (raster_textured_span) UW_DEBUG_RASTER=1...
 /* was undefined4 -- the framebuffer base (g_uw_framebuffer) was undefined4 -- the tile's texture
    pixel data pointer */
-void raster_triangle(undefined4 stride, void *buffer, undefined4 *vertices, undefined4 surface, undefined4 width, undefined4 size, intptr_t texture, int *clip)
+void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int width, int size, intptr_t texture, int *clip)
 {
   undefined4 uVar1;
   int iVar2;
@@ -397,7 +397,7 @@ int raster_edge_step(intptr_t edge)
 // was FUN_000148c8 -- per-triangle perspective setup: 1/w, u/w, v/w per
 // vertex plus the screen-space interpolation gradients, into the
 // edge-coefficient array raster_edge_setup reads
-void raster_triangle_perspective_setup(undefined4 *triangle, undefined4 *coefficients)
+void raster_triangle_perspective_setup(uint *triangle, uint *coefficients)
 {
   undefined4 uVar1;
   undefined4 uVar2;
@@ -504,7 +504,7 @@ void raster_triangle_perspective_setup(undefined4 *triangle, undefined4 *coeffic
 // was FUN_00014ef4 -- per-edge setup: given two vertex indices, the
 // starting value and per-scanline step for x, u/w, v/w and 1/w
 /* was int -- edge-coeff array pointer was int -- vertex array pointer (stride 0x14) */
-void raster_edge_setup(intptr_t coefficients, intptr_t vertices, int vertex_a, int vertex_b, int row_limit, undefined4 *edge)
+void raster_edge_setup(intptr_t coefficients, intptr_t vertices, int vertex_a, int vertex_b, int row_limit, uint *edge)
 {
   int iVar1;
   uint uVar2;
@@ -780,7 +780,7 @@ void raster_textured_span(int row, intptr_t framebuffer, intptr_t gradients, int
 
 
 // was FUN_0001de0c -- build the view/camera matrix into DAT_000c8ac0 from the camera translation (DAT_000db438/43c/440) and 3 axis rotations (DAT_000db448/44c/450)
-void build_view_matrix(void)
+void build_view_matrix()
 {
   undefined4 uVar1;
   undefined4 uVar2;
@@ -1282,7 +1282,7 @@ LAB_0002029c:
 // was FUN_00013b8c -- confirmed by two independent pre-existing comments (uw.c's
 // DAT_000c8ac0-family global-layout note, and src/3d.c's own build_view_matrix-adjacent comment) as
 // a 4x4 (really 4x3-affine, homogeneous) matrix multiply...
-void multiply_matrix4x4(undefined4 *a, undefined4 *b, undefined4 *out)
+void multiply_matrix4x4(uint *a, uint *b, uint *out)
 {
   undefined4 uVar1;
   undefined4 uVar2;
@@ -1372,7 +1372,7 @@ void multiply_matrix4x4(undefined4 *a, undefined4 *b, undefined4 *out)
 // was FUN_0001422c -- confirmed by src/3d.c's own pre-existing comment ("set_identity_matrix4x4's
 // identity-matrix values") as a 4x4 identity matrix setter: zeroes the 16-float (64-byte) buffer,
 // then sets the four diagonal elements to 1.0f.
-void set_identity_matrix4x4(undefined4 *matrix)
+void set_identity_matrix4x4(uint *matrix)
 {
   ce_memset(matrix,0,0x40);
   matrix[0xf] = 0x3f800000;
@@ -1386,7 +1386,7 @@ void set_identity_matrix4x4(undefined4 *matrix)
 /* was FUN_00014258 -- copy a 4x4 matrix param_1 -> param_2. param_1 was `int`, and the body
    computed the source address as `(param_1 - (int)param_2) + (int)puVar1` -- a 32-bit byte delta --
    so on a 64-bit host both the source pointer and the delta truncated... */
-void copy_matrix4x4(undefined4 *source, undefined4 *dest)
+void copy_matrix4x4(uint *source, uint *dest)
 {
   int i;
 
@@ -1401,7 +1401,7 @@ void copy_matrix4x4(undefined4 *source, undefined4 *dest)
 // was FUN_0001dd2c -- builds the renderer's 361-entry (0..360 degrees) per-degree sin/cos tables:
 // for each angle, converts degrees to radians (multiplying by the pi/180 constant folded into the
 // ordfloat_double_mul2 call)...
-void build_trig_tables(void)
+void build_trig_tables()
 {
   undefined4 uVar1;
   int iVar2;
@@ -1429,7 +1429,7 @@ void build_trig_tables(void)
 // was FUN_0005b36c -- loads the dungeon-view texture/shade/door- frame arenas at game/level
 // startup: builds "\DATA\<filename>" paths and calls load_texture_arena four times for the
 // wall/floor texture sets, then load_door_frames.
-void load_dungeon_texture_arenas(void)
+void load_dungeon_texture_arenas()
 {
   char *wptr_42257;
   char *wptr_42265;
@@ -1540,7 +1540,7 @@ void configure_dungeon_viewport(int x, int y, int width, int height)
 // was FUN_0005b828 -- one-time dungeon-view rendering init: resets the viewport, loads the 3D
 // object models, initializes the glyph- width table and draw-command cursor, and builds the initial
 // visibility light grid. Confirmed called once from game.c's startup sequence.
-void init_dungeon_rendering(void)
+void init_dungeon_rendering()
 {
   reset_viewport_to_fullscreen();
   load_3d_object_models();
@@ -1582,7 +1582,7 @@ void init_dungeon_rendering(void)
 // was FUN_0005bac0 -- renders one dungeon-view frame (HUD draw commands + the 3D render pass)
 // within the dungeon viewport's clip rect. Confirmed used both for normal frame rendering and (per
 // an existing comment) to re-render in "pick" mode for mouse-object selection (hud.c).
-void render_dungeon_view_frame(void)
+void render_dungeon_view_frame()
 {
   draw_command_list_rewind();
   emit_hud_draw_commands();
@@ -1671,7 +1671,7 @@ void emit_flat_floor_texture_select(byte *tile_record, uint depth_shade, uint te
 // was FUN_0005dff4 -- flat-shaded (low-detail) texture-select emitter for the "diagonal" surface
 // slot (DAT_00086b38_fnptrs[4]), using a different texture-page range (+0x3a) and fallback shade
 // (0xc0) from its wall/floor siblings.
-void emit_flat_diagonal_texture_select(byte *tile_record, uint depth_shade, undefined4 unused, ushort texture_index)
+void emit_flat_diagonal_texture_select(byte *tile_record, uint depth_shade, int unused, ushort texture_index)
 {
   byte *pbVar1;
 
@@ -1857,7 +1857,7 @@ void emit_diagonal_wall_texture_select(byte *tile_record, uint depth, uint orien
 
 // was FUN_0005d2b0 -- configures the dynamic entries (indices 1/3, DAT_00086b3c/DAT_00086b44) of
 // the tile-surface texture-emit function-pointer table based on the texture detail-level setting...
-void configure_texture_detail_functions(void)
+void configure_texture_detail_functions()
 {
   uint uVar1;
   int iVar2;

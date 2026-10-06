@@ -7,7 +7,7 @@ void *get_scanned_object_class_effect_ptr(void);
 int compute_object_weight(void);
 void request_weapon_swing_graphic(char category);
 void reset_player_derived_state(void);
-undefined4 is_valid_equipment_slot_item(int id, int slot);
+int is_valid_equipment_slot_item(ushort id, short slot);
 undefined4 resolve_object_variant_or_special_link(ushort *o, byte *a, byte *b, int *c);
 void clear_object_pending_special_flag(ushort *o);
 undefined4 apply_equipped_item_effect(int effect, int level, ushort *flags, int slot);

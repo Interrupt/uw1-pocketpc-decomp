@@ -47,7 +47,7 @@ static short DAT_0024cfd8;
 
 
 // was FUN_0003ee90
-void interact_default(void)
+void interact_default()
 {
   int iVar1;
   int iVar2;
@@ -137,7 +137,7 @@ LAB_0003f11c:
 
 
 // was FUN_0003f128
-void interact_talk_npc(void)
+void interact_talk_npc()
 {
   wait_for_click_release(1);
   attempt_talk_interaction(g_interact_target);
@@ -147,7 +147,7 @@ void interact_talk_npc(void)
 
 
 // was FUN_0003f14c
-void interact_look(void)
+void interact_look()
 {
   short sVar1;
   int iVar2;
@@ -198,7 +198,7 @@ void interact_look(void)
 
 
 // was FUN_0003f2c4, briefly named interact_converse by an earlier pass.
-void interact_use(void)
+void interact_use()
 {
   int iVar1;
 
@@ -224,7 +224,7 @@ void interact_use(void)
 
 
 // was FUN_0003f368
-void interact_attack(void)
+void interact_attack()
 {
   short *psVar1;
   short sVar2;
@@ -253,7 +253,7 @@ void interact_attack(void)
 
 // was FUN_0006fed4 -- triggers the "illustrated book/scroll" full- screen picture feature (via
 // record_illustration_discovery_and_display -> display_book_or_scroll_page)...
-void trigger_terrain_discovery_illustration(void)
+void trigger_terrain_discovery_illustration()
 {
   record_illustration_discovery_and_display(0x100,(int)DAT_00201b68);
 }
@@ -281,7 +281,7 @@ void trigger_inscription_illustration(int first_char)
 // was FUN_00072598 -- rolls a skill check (roll_skill_check(param_2,8)) against the first contained
 // item in container param_1, but only if that item's own quality/type field (after resolving
 // through a link when a specific bit is set) is below 3...
-undefined4 roll_container_lockpick_check(char *container, int skill)
+int roll_container_lockpick_check(char *container, int skill)
 {
   byte *pbVar1;
   undefined4 uVar2;
@@ -309,7 +309,7 @@ undefined4 roll_container_lockpick_check(char *container, int skill)
 // was FUN_0007266c -- roll_container_lockpick_check's sibling for the "disarm trap" mechanic: same
 // container-contents/quality-gated setup, but rolls a disarm skill check
 // (roll_skill_check(param_2,8)) and handles all three outcomes -- critical failure...
-undefined4 roll_container_trap_disarm_check(char *container, int skill)
+int roll_container_trap_disarm_check(char *container, int skill)
 {
   char *wptr_53920;
   char *wptr_53945;
@@ -487,7 +487,7 @@ uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort 
    `iVar3`/ resolve_object_link's result, in src/interact.c now)... */
 // was FUN_0007d074 -- thin re-entrancy-guarded wrapper around the trap/link-effect type dispatcher
 // dispatch_trap_type_effect (not yet named, a large switch on the trap/link record's type code).
-undefined4 apply_trap_or_link_effect(char *trigger_object, ushort *trigger_link, ushort *trap_record, int tile_x, int tile_y)
+int apply_trap_or_link_effect(char *trigger_object, ushort *trigger_link, ushort *trap_record, int tile_x, int tile_y)
 {
   if (DAT_0024cff4 == 0) {
     DAT_0024cff0 = trigger_link;
@@ -653,7 +653,7 @@ void finalize_object_pickup(char *object)
    tilemap byte address) were both declared `int`, truncating the 64-bit pointers every caller
    passes... */
 // was FUN_0003e694
-undefined4 target_in_range(short range_squared, char *actor, char *target)
+int target_in_range(short range_squared, char *actor, char *target)
 {
   short sVar1;
   int iVar2;
@@ -719,7 +719,7 @@ uint object_chain_max_barrier(char *tile)
 
 // was FUN_0003e8b0
 /* was int -- truncated g_interact_target; deref'd at param_2+2 */
-undefined4 target_line_of_sight(short target_class, char *target)
+int target_line_of_sight(short target_class, char *target)
 {
   bool bVar1;
   ushort uVar2;

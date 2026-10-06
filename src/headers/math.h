@@ -8,7 +8,7 @@
 
 int integer_sqrt(int value);
 uint rand_below(int limit);
-uint read_realtime_clock_units(void);
+uint read_realtime_clock_units();
 void heading_to_sine_cosine(uint heading_word, short *sine, short *cosine);
 uint pack_angle_byte(uint word, uint new_byte, int into_high_byte);
 void angle_to_screen_delta(uint angle_word, short *out_sine, short *out_cosine);
