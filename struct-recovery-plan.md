@@ -228,17 +228,47 @@ them.
    third operand isn't the field's own prior value (ai.c's
    hazard-spawn site, where it's a separate template word instead);
    display-name scratch buffers that aren't live object records.
-   **Still remaining**: `ypos`/`xpos` writes are NOT yet converted --
-   every site found builds the zpos|heading|ypos|xpos word across
-   several overlapping sequential writes (set zpos first preserving
-   the rest, then OR in position bits in 1-2 more steps), meaningfully
-   more complex than the single-field patterns already proven safe.
-   This class of write caused the one real regression already caught
-   this session (a mis-based pointer cast, unrelated but a reminder
-   of the stakes), so it deserves its own careful session rather than
-   rushing it here. `doors.c:150-165`, `object_actions.c:1470-1485`,
-   `combat.c:910-920`, `objects.c:1805-1815`/`1970-1977`,
-   `item_use.c:325-330` are the known call sites to start from.
+   **`ypos`/`xpos` composite writes are now converted project-wide.**
+   Every site builds the zpos|heading|ypos|xpos word across 2-8
+   overlapping sequential writes (set one field preserving the rest,
+   then OR in another's bits 1-2 more times) -- meaningfully more
+   complex than the single-field patterns, so each one was first
+   derived algebraically then verified against 50,000-300,000
+   randomized trials in Python (covering every input byte/short
+   range the real call site could pass) *before* touching the real
+   code, not just trusted by inspection. Converted: doors.c
+   (spawn_scheduled_door_texture_object, 3-field write), ai.c
+   (sync_object_tile_position, the densest 3-field case, pose-byte
+   derived), object_actions.c (a 2-field spawn-scatter write),
+   combat.c (spawn_blood_splat_object, 3-field), babl.c (two
+   independent 1-field VM-opcode writes plus a branching zpos write
+   whose else-branch derives from a tile's own floor_height),
+   player.c (two sites: a zpos pair and a xpos=3/ypos=3 constant
+   pair plus a third xpos/ypos pair), input.c (the same xpos/ypos
+   pair as player.c's). Also found and converted, while auditing
+   traps.c's floor_tex site named below: two more clean uw_tile_t
+   writes (wall_tex, tile_type) sitting right next to it.
+
+   Left raw, confirmed genuinely NOT xpos/ypos despite superficially
+   matching shift/mask shapes: `place_object_in_world` (objects.c),
+   `find_object_placement`'s sibling write (objects.c), and a
+   throw-fallback insert (item_use.c) all combine the *full* tile_x/
+   tile_y coordinate (masked to 13 bits, not xpos's own 3-bit span)
+   with a sub-tile offset -- the "scaled rebase" pattern already
+   excluded during the original reads pass. Every `& 0xe0`-masked
+   site still remaining project-wide (ai.c, combat.c, game.c,
+   player.c, object_actions.c, objects.c, models.c, hud.c, input.c)
+   is a `heading` write or an NPC-extension-region field
+   (npc_heading/npc_hunger at offset 0x15/0x18/0xc), confirmed via
+   the same `0xfc7f`-mask-clears-heading-bits signature already
+   established -- not xpos/ypos, left untouched.
+
+   Genuinely still open: `heading` writes (not part of this pass's
+   mandate, though a few were converted incidentally alongside
+   is_quant/doordir/invisible in game.c's player-reset function),
+   and the dedicated writes pass has not touched `flags_res`/
+   `enchanted`/`invisible` elsewhere, `npc_*` fields, or anything in
+   `uw_mobile_object_t`'s NPC-extension region.
 5. **comobj.dat property record** (0xd bytes) — next-highest leverage
    after the two now-mostly-done types: well-documented, touches
    gameplay-visible logic (`dispatch_object_action`), bounded call-site
