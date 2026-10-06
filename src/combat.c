@@ -910,20 +910,11 @@ void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
     if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: spawn_new_object FAILED (returned NULL)\n");
     return;
   }
-  uVar3 = *(ushort *)(iVar7 + 2);
-  uVar10 = uVar3 & 0x1fff;
-  bVar1 = (byte)(((*DAT_00202c6c & 7) << 0xd) >> 8);
-  *(char *)(iVar7 + 2) = (char)uVar10;
-  *(byte *)(iVar7 + 3) = (byte)(uVar10 >> 8) | bVar1;
-  uVar10 = uVar3 & 0x3ff;
-  bVar1 = (byte)(uVar10 >> 8) | bVar1 | (byte)(((DAT_00202c6c[2] & 7) << 10) >> 8);
-  bVar2 = (byte)uVar10;
-  *(byte *)(iVar7 + 2) = bVar2;
-  *(byte *)(iVar7 + 3) = bVar1;
+  ((uw_object_hdr_t *)iVar7)->ypos = DAT_00202c6c[2] & 7;
+  ((uw_object_hdr_t *)iVar7)->xpos = *DAT_00202c6c & 7;
   sVar4 = *(short *)DAT_00202c6c;
   sVar5 = *(short *)(DAT_00202c6c + 2);
-  *(byte *)(iVar7 + 2) = (DAT_00202c6c[4] + 8 ^ bVar2) & 0x7f ^ bVar2;
-  *(byte *)(iVar7 + 3) = bVar1;
+  ((uw_object_hdr_t *)iVar7)->zpos = DAT_00202c6c[4] + 8;
   if (DAT_00100610 == 1) {
     play_positional_sound_effect(7,*(undefined2 *)DAT_00202c6c,*(undefined2 *)(DAT_00202c6c + 2),0);
   }

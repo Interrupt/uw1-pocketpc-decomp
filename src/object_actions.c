@@ -1472,14 +1472,8 @@ void cast_summon_or_spawn_effect(uintptr_t caster, char variant)
     iVar8 = check_object_placement_clearance(uVar10,0,(int)(short)local_34,(int)(short)local_32,local_30,1,8);
     if (iVar8 != 0) {
       pObj = (char *)spawn_new_object(uVar10,variant == '\x04');
-      uVar2 = *(ushort *)(pObj + 2);
-      uVar6 = uVar2 & 0x1fff;
-      bVar1 = (byte)(((local_34 & 7) << 0xd) >> 8);
-      *(char *)(pObj + 2) = (char)uVar6;
-      *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1;
-      uVar6 = uVar2 & 0x3ff;
-      *(char *)(pObj + 2) = (char)uVar6;
-      *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
+      ((uw_object_hdr_t *)pObj)->ypos = local_32 & 7;
+      ((uw_object_hdr_t *)pObj)->xpos = local_34 & 7;
       uVar4 = g_scratch_object_ptr;
       if (variant == '\x04') {
         g_scratch_object_ptr = (byte *)pObj;
