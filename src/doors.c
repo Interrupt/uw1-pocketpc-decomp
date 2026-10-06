@@ -122,8 +122,6 @@ void toggle_door_object(char *actor, byte *door)
 // was FUN_00071e20 -- disabled outright on level 9.
 int spawn_scheduled_door_texture_object()
 {
-  ushort tile_word;
-  byte position_high_bits;
   short tile_type;
   undefined4 slot_index;
   ushort *tile;
@@ -153,15 +151,9 @@ int spawn_scheduled_door_texture_object()
     object_word_high_byte = (undefined1)((ushort)object_word_low16 >> 8);
     if (clearance != 0) {
       door_texture = (undefined1 *)spawn_new_object(0x1ca, 0);
-      tile_word = *(ushort *)(door_texture + 2);
-      object_word = (tile_word ^ object_word) & 0x7f ^ (uint)tile_word;
-      door_texture[2] = (char)object_word;
-      door_texture[3] = (char)(tile_word >> 8);
-      position_high_bits = (byte)(((target_x & 7) << 0xd) >> 8);
-      door_texture[2] = (char)(object_word & 0x1fff);
-      door_texture[3] = (byte)((object_word & 0x1fff) >> 8) | position_high_bits;
-      door_texture[2] = (char)(object_word & 0x3ff);
-      door_texture[3] = (byte)((object_word & 0x3ff) >> 8) | position_high_bits | (byte)(((target_y & 7) << 10) >> 8);
+      ((uw_object_hdr_t *)door_texture)->zpos = object_word;
+      ((uw_object_hdr_t *)door_texture)->ypos = target_y & 7;
+      ((uw_object_hdr_t *)door_texture)->xpos = target_x & 7;
       *door_texture = *door_texture;
       door_texture[1] = door_texture[1] | 0x20;
       slot_index = encode_object_slot_index(door_texture);
