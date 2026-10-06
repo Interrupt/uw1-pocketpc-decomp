@@ -8,7 +8,7 @@
 
 int apply_area_terrain_effect(short tile_x, int tile_y, short wall_texture, short height_value, short height_adjust, short floor_texture, short width, short height_extent, short mode);
 int apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, int unused_a, int unused_b);
-int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, int tile_x, int tile_y, ushort action_id, byte argument);
+int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, uintptr_t actor, intptr_t target, ushort action_id, byte argument);
 void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y);
 void try_combine_shrine_markers(int unused, int tile_x, int tile_y);
 void emit_player_noise_alert(byte noise_type);
@@ -32,5 +32,6 @@ int check_object_area_for_spawn_block(ushort *object);
 int is_out_of_player_range(int target_present, short tile_x, short tile_y);
 void process_nearby_background_traps(int target_present);
 void tick_ambient_doors_and_scheduler(int target_present);
+int detect_spawn_blocking_object_callback(int scan_x, int scan_y, char *object);
 
 #endif

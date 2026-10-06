@@ -16,7 +16,7 @@ int apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, int u
 int check_object_area_for_spawn_block(ushort *object);
 void close_door_object(char *actor, ushort *door);
 int dispatch_quest_event_code(char *trap_record, int tile_x, int tile_y);
-int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, int tile_x, int tile_y, ushort action_id, byte argument);
+int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, uintptr_t tile_x, intptr_t tile_y, ushort action_id, byte argument);
 int encode_object_slot_index(char *object);
 void free_object_slot(char *object);
 void object_list_insert_head(byte *link_field, char *object);
@@ -91,7 +91,7 @@ void close_door_object(char *actor, ushort *door) { (void)actor; (void)door; TES
 
 int dispatch_quest_event_code(char *trap_record, int tile_x, int tile_y) { (void)trap_record; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected dispatch_quest_event_code in text trap"); return 0; }
 
-int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, int tile_x, int tile_y, ushort action_id, byte argument) { (void)context_x; (void)context_y; (void)tile_x; (void)tile_y; (void)action_id; (void)argument; TEST_FAIL_MESSAGE("Unexpected dispatch_trap_special_or_tile_action in text trap"); return 0; }
+int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, uintptr_t tile_x, intptr_t tile_y, ushort action_id, byte argument) { (void)context_x; (void)context_y; (void)tile_x; (void)tile_y; (void)action_id; (void)argument; TEST_FAIL_MESSAGE("Unexpected dispatch_trap_special_or_tile_action in text trap"); return 0; }
 
 int encode_object_slot_index(char *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected encode_object_slot_index in text trap"); return 0; }
 

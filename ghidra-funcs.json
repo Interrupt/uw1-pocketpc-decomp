@@ -5338,7 +5338,7 @@
     {
       "name": "repopulate_container_grid_slots",
       "path": "src/containers.c",
-      "line": 232,
+      "line": 235,
       "original_name": "FUN_00042e30",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5349,7 +5349,7 @@
     {
       "name": "open_backpack_container",
       "path": "src/containers.c",
-      "line": 320,
+      "line": 323,
       "original_name": "FUN_00043100",
       "ghidra_origin": true,
       "param_count": 1,
@@ -5360,7 +5360,7 @@
     {
       "name": "scroll_container_grid_up",
       "path": "src/containers.c",
-      "line": 528,
+      "line": 531,
       "original_name": "FUN_00043614",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5371,7 +5371,7 @@
     {
       "name": "scroll_container_grid_down",
       "path": "src/containers.c",
-      "line": 544,
+      "line": 547,
       "original_name": "FUN_0004365c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5382,7 +5382,7 @@
     {
       "name": "auto_place_in_container",
       "path": "src/containers.c",
-      "line": 588,
+      "line": 591,
       "original_name": "FUN_00043734",
       "ghidra_origin": true,
       "param_count": 2,
@@ -5393,7 +5393,7 @@
     {
       "name": "sum_container_weight",
       "path": "src/containers.c",
-      "line": 751,
+      "line": 754,
       "original_name": "FUN_00043d40",
       "ghidra_origin": true,
       "param_count": 2,
@@ -5404,7 +5404,7 @@
     {
       "name": "encode_equipped_item_index",
       "path": "src/containers.c",
-      "line": 779,
+      "line": 782,
       "original_name": "FUN_000441d8",
       "ghidra_origin": true,
       "param_count": 2,
@@ -5415,7 +5415,7 @@
     {
       "name": "decode_equipped_item_index",
       "path": "src/containers.c",
-      "line": 805,
+      "line": 808,
       "original_name": "FUN_000442dc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -5426,7 +5426,7 @@
     {
       "name": "get_equipped_item_at_slot",
       "path": "src/containers.c",
-      "line": 834,
+      "line": 837,
       "original_name": "FUN_00045054",
       "ghidra_origin": true,
       "param_count": 1,
@@ -5437,7 +5437,7 @@
     {
       "name": "empty_container_into_world",
       "path": "src/containers.c",
-      "line": 845,
+      "line": 848,
       "original_name": "FUN_00079144",
       "ghidra_origin": true,
       "param_count": 2,
@@ -5448,7 +5448,7 @@
     {
       "name": "try_empty_container",
       "path": "src/containers.c",
-      "line": 900,
+      "line": 903,
       "original_name": "FUN_0007c84c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -5459,7 +5459,7 @@
     {
       "name": "discard_container_contents",
       "path": "src/containers.c",
-      "line": 938,
+      "line": 941,
       "original_name": "FUN_00037f1c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -5470,7 +5470,7 @@
     {
       "name": "place_rune_in_bag",
       "path": "src/containers.c",
-      "line": 968,
+      "line": 971,
       "original_name": "FUN_0004479c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -5481,7 +5481,7 @@
     {
       "name": "reset_equipment_and_container_state",
       "path": "src/containers.c",
-      "line": 998,
+      "line": 1001,
       "original_name": "FUN_000465c8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6428,7 +6428,7 @@
     {
       "name": "fade_out",
       "path": "src/graphics.c",
-      "line": 541,
+      "line": 540,
       "original_name": "FUN_00012444",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6439,7 +6439,7 @@
     {
       "name": "flush_dungeon_frame",
       "path": "src/graphics.c",
-      "line": 615,
+      "line": 614,
       "original_name": "FUN_0001294c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6450,7 +6450,7 @@
     {
       "name": "render_dungeon_view",
       "path": "src/graphics.c",
-      "line": 624,
+      "line": 623,
       "original_name": "FUN_00012970",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6461,7 +6461,7 @@
     {
       "name": "build_shade_lut",
       "path": "src/graphics.c",
-      "line": 643,
+      "line": 642,
       "original_name": "FUN_00014294",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6472,7 +6472,7 @@
     {
       "name": "get_ambient_bias_reduction",
       "path": "src/graphics.c",
-      "line": 667,
+      "line": 666,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6483,7 +6483,7 @@
     {
       "name": "set_ambient_bias_with_light",
       "path": "src/graphics.c",
-      "line": 680,
+      "line": 679,
       "original_name": "FUN_00014324",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6494,7 +6494,7 @@
     {
       "name": "set_ambient_bias_without_light",
       "path": "src/graphics.c",
-      "line": 690,
+      "line": 689,
       "original_name": "FUN_0001433c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6505,7 +6505,7 @@
     {
       "name": "expand_pals_bytes",
       "path": "src/graphics.c",
-      "line": 703,
+      "line": 702,
       "original_name": "FUN_00022abc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6516,7 +6516,7 @@
     {
       "name": "build_rgb565_palette",
       "path": "src/graphics.c",
-      "line": 742,
+      "line": 741,
       "original_name": "FUN_00022b54",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6527,7 +6527,7 @@
     {
       "name": "palette_cycle_range",
       "path": "src/graphics.c",
-      "line": 884,
+      "line": 883,
       "original_name": "FUN_000259c0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6538,7 +6538,7 @@
     {
       "name": "blit_fullscreen_bitmap_file",
       "path": "src/graphics.c",
-      "line": 934,
+      "line": 933,
       "original_name": "FUN_0006c98c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6549,7 +6549,7 @@
     {
       "name": "blit_framebuffer_to_gx_display",
       "path": "src/graphics.c",
-      "line": 975,
+      "line": 974,
       "original_name": "FUN_000778fc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6560,7 +6560,7 @@
     {
       "name": "reinstall_active_palette",
       "path": "src/graphics.c",
-      "line": 1031,
+      "line": 1030,
       "original_name": "FUN_0007e99c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6571,7 +6571,7 @@
     {
       "name": "plot_pixel",
       "path": "src/graphics.c",
-      "line": 1044,
+      "line": 1043,
       "original_name": "FUN_0007e9c4",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6582,7 +6582,7 @@
     {
       "name": "draw_horizontal_line",
       "path": "src/graphics.c",
-      "line": 1070,
+      "line": 1069,
       "original_name": "FUN_000116dc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6593,7 +6593,7 @@
     {
       "name": "fill_viewport_and_flush",
       "path": "src/graphics.c",
-      "line": 1099,
+      "line": 1098,
       "original_name": "FUN_00011b34",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6604,7 +6604,7 @@
     {
       "name": "blit_bitmap_to_framebuffer_clipped",
       "path": "src/graphics.c",
-      "line": 1137,
+      "line": 1136,
       "original_name": "FUN_000120c8",
       "ghidra_origin": true,
       "param_count": 8,
@@ -6615,7 +6615,7 @@
     {
       "name": "copy_framebuffer_rect",
       "path": "src/graphics.c",
-      "line": 1210,
+      "line": 1209,
       "original_name": "FUN_00012850",
       "ghidra_origin": true,
       "param_count": 6,
@@ -6626,7 +6626,7 @@
     {
       "name": "reset_viewport_to_fullscreen",
       "path": "src/graphics.c",
-      "line": 1262,
+      "line": 1261,
       "original_name": "FUN_00012958",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6637,7 +6637,7 @@
     {
       "name": "compute_view_y_bound",
       "path": "src/graphics.c",
-      "line": 1271,
+      "line": 1270,
       "original_name": "FUN_000129d4",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6648,7 +6648,7 @@
     {
       "name": "end_gx_draw_session",
       "path": "src/graphics.c",
-      "line": 1281,
+      "line": 1280,
       "original_name": "FUN_000232b0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6659,7 +6659,7 @@
     {
       "name": "convert_palette_bgrx_to_rgb",
       "path": "src/graphics.c",
-      "line": 1292,
+      "line": 1291,
       "original_name": "FUN_00035fdc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6670,7 +6670,7 @@
     {
       "name": "tick_book_illustration_palette_cycles",
       "path": "src/graphics.c",
-      "line": 1314,
+      "line": 1313,
       "original_name": "FUN_0003601c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6681,7 +6681,7 @@
     {
       "name": "load_bmp_resource_to_rgb565",
       "path": "src/graphics.c",
-      "line": 1350,
+      "line": 1349,
       "original_name": "FUN_0003af28",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6692,7 +6692,7 @@
     {
       "name": "clear_screen_and_restore_cursor",
       "path": "src/graphics.c",
-      "line": 1423,
+      "line": 1422,
       "original_name": "FUN_00040df0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6703,7 +6703,7 @@
     {
       "name": "apply_palette_buffer",
       "path": "src/graphics.c",
-      "line": 1437,
+      "line": 1436,
       "original_name": "FUN_00040f34",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6714,7 +6714,7 @@
     {
       "name": "fade_active_palette_to_black",
       "path": "src/graphics.c",
-      "line": 1448,
+      "line": 1447,
       "original_name": "FUN_00040f64",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6725,7 +6725,7 @@
     {
       "name": "poll_dungeon_movement_keys",
       "path": "src/gx_stub.c",
-      "line": 153,
+      "line": 156,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6736,7 +6736,7 @@
     {
       "name": "uw_set_present_refresh_rate",
       "path": "src/gx_stub.c",
-      "line": 242,
+      "line": 245,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6747,7 +6747,7 @@
     {
       "name": "uw_reset_frame_pacing",
       "path": "src/gx_stub.c",
-      "line": 258,
+      "line": 261,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6758,7 +6758,7 @@
     {
       "name": "uw_claim_frame",
       "path": "src/gx_stub.c",
-      "line": 270,
+      "line": 273,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -6769,7 +6769,7 @@
     {
       "name": "uw_present_frame_due",
       "path": "src/gx_stub.c",
-      "line": 284,
+      "line": 287,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6780,7 +6780,7 @@
     {
       "name": "uw_record_completed_present",
       "path": "src/gx_stub.c",
-      "line": 301,
+      "line": 304,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6791,7 +6791,7 @@
     {
       "name": "uw_request_cursor_present",
       "path": "src/gx_stub.c",
-      "line": 317,
+      "line": 320,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6802,7 +6802,7 @@
     {
       "name": "uw_service_pending_present",
       "path": "src/gx_stub.c",
-      "line": 322,
+      "line": 325,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6813,7 +6813,7 @@
     {
       "name": "uw_service_game_clock",
       "path": "src/gx_stub.c",
-      "line": 331,
+      "line": 334,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6824,7 +6824,7 @@
     {
       "name": "uw_gx_time_us",
       "path": "src/gx_stub.c",
-      "line": 343,
+      "line": 346,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6835,7 +6835,7 @@
     {
       "name": "uw_update_present_refresh_rate",
       "path": "src/gx_stub.c",
-      "line": 349,
+      "line": 352,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6846,7 +6846,7 @@
     {
       "name": "uw_begin_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1259,
+      "line": 1269,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6857,7 +6857,7 @@
     {
       "name": "uw_end_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1264,
+      "line": 1274,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6868,7 +6868,7 @@
     {
       "name": "gfx_finalizedraw",
       "path": "src/gx_stub.c",
-      "line": 1273,
+      "line": 1283,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6879,7 +6879,7 @@
     {
       "name": "uw_take_completed_frame",
       "path": "src/gx_stub.c",
-      "line": 1287,
+      "line": 1297,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6890,7 +6890,7 @@
     {
       "name": "uw_suspend_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1295,
+      "line": 1305,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6901,7 +6901,7 @@
     {
       "name": "uw_resume_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1300,
+      "line": 1310,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6912,7 +6912,7 @@
     {
       "name": "uw_begin_modal_present",
       "path": "src/gx_stub.c",
-      "line": 1305,
+      "line": 1315,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6923,7 +6923,7 @@
     {
       "name": "uw_end_modal_present",
       "path": "src/gx_stub.c",
-      "line": 1314,
+      "line": 1324,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6934,7 +6934,7 @@
     {
       "name": "uw_defer_present",
       "path": "src/gx_stub.c",
-      "line": 1321,
+      "line": 1331,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -9366,7 +9366,7 @@
     {
       "name": "use_readable_item",
       "path": "src/item_use.c",
-      "line": 1781,
+      "line": 1782,
       "original_name": "FUN_0007baf0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9377,7 +9377,7 @@
     {
       "name": "dispatch_world_object_interaction_by_family",
       "path": "src/item_use.c",
-      "line": 1843,
+      "line": 1844,
       "original_name": "FUN_0007bcdc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9388,7 +9388,7 @@
     {
       "name": "trigger_object_use_babl_script",
       "path": "src/item_use.c",
-      "line": 1928,
+      "line": 1929,
       "original_name": "FUN_0007c1bc",
       "ghidra_origin": true,
       "param_count": 5,
@@ -9399,7 +9399,7 @@
     {
       "name": "trigger_object_trap_or_use_action",
       "path": "src/item_use.c",
-      "line": 1968,
+      "line": 1969,
       "original_name": "FUN_0007c2ec",
       "ghidra_origin": true,
       "param_count": 5,
@@ -9410,7 +9410,7 @@
     {
       "name": "objects_are_combinable",
       "path": "src/item_use.c",
-      "line": 2001,
+      "line": 2002,
       "original_name": "FUN_0002805c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9421,7 +9421,7 @@
     {
       "name": "spawn_combined_object",
       "path": "src/item_use.c",
-      "line": 2058,
+      "line": 2059,
       "original_name": "FUN_0002822c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9432,7 +9432,7 @@
     {
       "name": "is_object_consumed_in_combination",
       "path": "src/item_use.c",
-      "line": 2071,
+      "line": 2072,
       "original_name": "FUN_00028254",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9443,7 +9443,7 @@
     {
       "name": "check_offering_container_puzzle",
       "path": "src/item_use.c",
-      "line": 2089,
+      "line": 2090,
       "original_name": "FUN_000282ac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9454,7 +9454,7 @@
     {
       "name": "try_climb_wall",
       "path": "src/item_use.c",
-      "line": 2161,
+      "line": 2162,
       "original_name": "FUN_00039d78",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9465,7 +9465,7 @@
     {
       "name": "use_lockpick_on_object",
       "path": "src/item_use.c",
-      "line": 2204,
+      "line": 2205,
       "original_name": "FUN_0003ab90",
       "ghidra_origin": true,
       "param_count": 3,
@@ -9476,7 +9476,7 @@
     {
       "name": "place_object_in_equipment_slot",
       "path": "src/item_use.c",
-      "line": 2296,
+      "line": 2297,
       "original_name": "FUN_00043b78",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9487,7 +9487,7 @@
     {
       "name": "redraw_backpack_slot_widget",
       "path": "src/item_use.c",
-      "line": 2365,
+      "line": 2366,
       "original_name": "FUN_0004503c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9498,7 +9498,7 @@
     {
       "name": "objects_can_stack",
       "path": "src/item_use.c",
-      "line": 2377,
+      "line": 2378,
       "original_name": "FUN_00047b38",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9509,7 +9509,7 @@
     {
       "name": "find_equipped_item_by_category",
       "path": "src/item_use.c",
-      "line": 2420,
+      "line": 2421,
       "original_name": "FUN_000452dc",
       "ghidra_origin": true,
       "param_count": 5,
@@ -9520,7 +9520,7 @@
     {
       "name": "find_object_in_link_chain",
       "path": "src/item_use.c",
-      "line": 2493,
+      "line": 2494,
       "original_name": "FUN_00045538",
       "ghidra_origin": true,
       "param_count": 4,
@@ -9531,7 +9531,7 @@
     {
       "name": "resolve_clicked_inventory_item",
       "path": "src/item_use.c",
-      "line": 2552,
+      "line": 2553,
       "original_name": "FUN_00045678",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9542,7 +9542,7 @@
     {
       "name": "get_equipped_item_at_widget_slot",
       "path": "src/item_use.c",
-      "line": 2581,
+      "line": 2582,
       "original_name": "FUN_00045708",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9553,7 +9553,7 @@
     {
       "name": "deplete_object_count",
       "path": "src/item_use.c",
-      "line": 2594,
+      "line": 2595,
       "original_name": "FUN_00045720",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9564,7 +9564,7 @@
     {
       "name": "decrement_object_count",
       "path": "src/item_use.c",
-      "line": 2605,
+      "line": 2606,
       "original_name": "FUN_00045728",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9575,7 +9575,7 @@
     {
       "name": "reduce_object_count",
       "path": "src/item_use.c",
-      "line": 2619,
+      "line": 2620,
       "original_name": "FUN_00045730",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9586,7 +9586,7 @@
     {
       "name": "extract_clicked_backpack_item",
       "path": "src/item_use.c",
-      "line": 2711,
+      "line": 2712,
       "original_name": "FUN_000459d8",
       "ghidra_origin": true,
       "param_count": 4,
@@ -9597,7 +9597,7 @@
     {
       "name": "extract_ammo_and_refresh",
       "path": "src/item_use.c",
-      "line": 2739,
+      "line": 2740,
       "original_name": "FUN_00045a7c",
       "ghidra_origin": true,
       "param_count": 4,
@@ -9608,7 +9608,7 @@
     {
       "name": "extract_and_refresh_slot_item",
       "path": "src/item_use.c",
-      "line": 2754,
+      "line": 2755,
       "original_name": "FUN_00045b20",
       "ghidra_origin": true,
       "param_count": 5,
@@ -9619,7 +9619,7 @@
     {
       "name": "extract_matching_object_from_slot",
       "path": "src/item_use.c",
-      "line": 2774,
+      "line": 2775,
       "original_name": "FUN_00045b48",
       "ghidra_origin": true,
       "param_count": 5,
@@ -9630,7 +9630,7 @@
     {
       "name": "load_armor_overlay_frame",
       "path": "src/item_use.c",
-      "line": 2915,
+      "line": 2916,
       "original_name": "FUN_00046b88",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9641,7 +9641,7 @@
     {
       "name": "redraw_armor_overlay_widgets",
       "path": "src/item_use.c",
-      "line": 2938,
+      "line": 2939,
       "original_name": "FUN_00046bfc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9652,7 +9652,7 @@
     {
       "name": "swap_cursor_and_slot_item",
       "path": "src/item_use.c",
-      "line": 3009,
+      "line": 3010,
       "original_name": "FUN_00046ff4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9663,7 +9663,7 @@
     {
       "name": "prompt_split_object_stack",
       "path": "src/item_use.c",
-      "line": 3056,
+      "line": 3057,
       "original_name": "FUN_000470fc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9674,7 +9674,7 @@
     {
       "name": "place_object_in_backpack_slot",
       "path": "src/item_use.c",
-      "line": 3114,
+      "line": 3115,
       "original_name": "FUN_0004506c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9685,7 +9685,7 @@
     {
       "name": "find_or_assign_object_widget",
       "path": "src/item_use.c",
-      "line": 3191,
+      "line": 3192,
       "original_name": "FUN_000451b0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9696,7 +9696,7 @@
     {
       "name": "check_object_fits_in_slot",
       "path": "src/item_use.c",
-      "line": 3231,
+      "line": 3232,
       "original_name": "FUN_000472c4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9707,7 +9707,7 @@
     {
       "name": "handle_backpack_slot_click",
       "path": "src/item_use.c",
-      "line": 3489,
+      "line": 3490,
       "original_name": "FUN_00047a7c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9718,7 +9718,7 @@
     {
       "name": "place_held_item_in_empty_slot",
       "path": "src/item_use.c",
-      "line": 3513,
+      "line": 3514,
       "original_name": "FUN_00047ae0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9729,7 +9729,7 @@
     {
       "name": "handle_backpack_slot_interact",
       "path": "src/item_use.c",
-      "line": 3557,
+      "line": 3558,
       "original_name": "FUN_00047cfc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -9740,7 +9740,7 @@
     {
       "name": "handle_object_drop_target",
       "path": "src/item_use.c",
-      "line": 3689,
+      "line": 3690,
       "original_name": "FUN_00042870",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9751,7 +9751,7 @@
     {
       "name": "compute_drop_aim_from_cursor",
       "path": "src/item_use.c",
-      "line": 3797,
+      "line": 3798,
       "original_name": "FUN_0004a110",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10797,7 +10797,7 @@
     {
       "name": "for_each_object_of_type",
       "path": "src/object_actions.c",
-      "line": 1432,
+      "line": 1434,
       "original_name": "FUN_00074be8",
       "ghidra_origin": true,
       "param_count": 4,
@@ -10808,7 +10808,7 @@
     {
       "name": "cast_cone_damage_spell",
       "path": "src/object_actions.c",
-      "line": 1468,
+      "line": 1470,
       "original_name": "FUN_00074c64",
       "ghidra_origin": true,
       "param_count": 2,
@@ -10819,7 +10819,7 @@
     {
       "name": "cast_targeted_search_effect",
       "path": "src/object_actions.c",
-      "line": 1486,
+      "line": 1488,
       "original_name": "FUN_00074cc8",
       "ghidra_origin": true,
       "param_count": 2,
@@ -10830,7 +10830,7 @@
     {
       "name": "cast_summon_or_spawn_effect",
       "path": "src/object_actions.c",
-      "line": 1504,
+      "line": 1506,
       "original_name": "FUN_00074d20",
       "ghidra_origin": true,
       "param_count": 2,
@@ -10841,7 +10841,7 @@
     {
       "name": "spawn_random_variant_object_at_tile",
       "path": "src/object_actions.c",
-      "line": 1684,
+      "line": 1686,
       "original_name": "FUN_00075248",
       "ghidra_origin": true,
       "param_count": 2,
@@ -10852,7 +10852,7 @@
     {
       "name": "report_detected_creatures_in_direction",
       "path": "src/object_actions.c",
-      "line": 1730,
+      "line": 1732,
       "original_name": "FUN_000753a0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -10863,7 +10863,7 @@
     {
       "name": "cast_detect_life_spell",
       "path": "src/object_actions.c",
-      "line": 1747,
+      "line": 1749,
       "original_name": "FUN_0007541c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -10874,7 +10874,7 @@
     {
       "name": "complete_pending_player_command_target",
       "path": "src/object_actions.c",
-      "line": 1838,
+      "line": 1840,
       "original_name": "FUN_000756c8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -10885,7 +10885,7 @@
     {
       "name": "dispatch_player_command",
       "path": "src/object_actions.c",
-      "line": 1883,
+      "line": 1885,
       "original_name": "FUN_00075808",
       "ghidra_origin": true,
       "param_count": 3,
@@ -10896,7 +10896,7 @@
     {
       "name": "damage_all_objects_at_tile",
       "path": "src/object_actions.c",
-      "line": 1976,
+      "line": 1978,
       "original_name": "FUN_00075a88",
       "ghidra_origin": true,
       "param_count": 4,
@@ -10907,7 +10907,7 @@
     {
       "name": "build_object_display_name",
       "path": "src/object_actions.c",
-      "line": 2014,
+      "line": 2016,
       "original_name": "FUN_00078b18",
       "ghidra_origin": true,
       "param_count": 4,
@@ -10918,7 +10918,7 @@
     {
       "name": "format_object_display_name",
       "path": "src/object_actions.c",
-      "line": 2061,
+      "line": 2063,
       "original_name": "FUN_00078bfc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -10929,7 +10929,7 @@
     {
       "name": "print_scroll_message_by_id",
       "path": "src/object_actions.c",
-      "line": 2100,
+      "line": 2102,
       "original_name": "FUN_00078c80",
       "ghidra_origin": true,
       "param_count": 1,
@@ -10940,7 +10940,7 @@
     {
       "name": "print_scroll_message_concat",
       "path": "src/object_actions.c",
-      "line": 2115,
+      "line": 2117,
       "original_name": "FUN_00078c94",
       "ghidra_origin": true,
       "param_count": 3,
@@ -10951,7 +10951,7 @@
     {
       "name": "complete_cast_spell_on_target",
       "path": "src/object_actions.c",
-      "line": 2151,
+      "line": 2153,
       "original_name": "FUN_0007ca0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10962,7 +10962,7 @@
     {
       "name": "resolve_object_variant_or_special_link",
       "path": "src/object_actions.c",
-      "line": 2165,
+      "line": 2167,
       "original_name": "FUN_0007ca50",
       "ghidra_origin": true,
       "param_count": 4,
@@ -10973,7 +10973,7 @@
     {
       "name": "clear_object_pending_special_flag",
       "path": "src/object_actions.c",
-      "line": 2234,
+      "line": 2236,
       "original_name": "FUN_0007cc30",
       "ghidra_origin": true,
       "param_count": 1,
@@ -10984,7 +10984,7 @@
     {
       "name": "consume_linked_special_object_charge",
       "path": "src/object_actions.c",
-      "line": 2266,
+      "line": 2268,
       "original_name": "FUN_0007cc78",
       "ghidra_origin": true,
       "param_count": 1,
@@ -10995,7 +10995,7 @@
     {
       "name": "compute_compass_direction",
       "path": "src/object_actions.c",
-      "line": 2303,
+      "line": 2305,
       "original_name": "FUN_0007ec58",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11006,7 +11006,7 @@
     {
       "name": "print_message_with_proximity_qualifier",
       "path": "src/object_actions.c",
-      "line": 2360,
+      "line": 2362,
       "original_name": "FUN_0007ed20",
       "ghidra_origin": true,
       "param_count": 8,
@@ -11017,7 +11017,7 @@
     {
       "name": "spawn_effect_debris_burst",
       "path": "src/object_actions.c",
-      "line": 2412,
+      "line": 2414,
       "original_name": "FUN_00081388",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11028,7 +11028,7 @@
     {
       "name": "init_monster_spawn_defaults",
       "path": "src/object_actions.c",
-      "line": 2527,
+      "line": 2529,
       "original_name": "FUN_0002a35c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11039,7 +11039,7 @@
     {
       "name": "append_object_property_tag",
       "path": "src/object_actions.c",
-      "line": 2634,
+      "line": 2636,
       "original_name": "FUN_00048b6c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11050,7 +11050,7 @@
     {
       "name": "append_object_special_name",
       "path": "src/object_actions.c",
-      "line": 2671,
+      "line": 2673,
       "original_name": "FUN_00048bf0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11061,7 +11061,7 @@
     {
       "name": "look_at_inscribed_object",
       "path": "src/object_actions.c",
-      "line": 2778,
+      "line": 2780,
       "original_name": "FUN_00049008",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11072,7 +11072,7 @@
     {
       "name": "describe_object_owner",
       "path": "src/object_actions.c",
-      "line": 2890,
+      "line": 2892,
       "original_name": "FUN_000492bc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11083,7 +11083,7 @@
     {
       "name": "print_object_flavor_text",
       "path": "src/object_actions.c",
-      "line": 2933,
+      "line": 2935,
       "original_name": "FUN_000493cc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11094,7 +11094,7 @@
     {
       "name": "describe_special_object_property",
       "path": "src/object_actions.c",
-      "line": 2952,
+      "line": 2954,
       "original_name": "FUN_000495d0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11105,7 +11105,7 @@
     {
       "name": "identify_mushroom_type",
       "path": "src/object_actions.c",
-      "line": 2990,
+      "line": 2992,
       "original_name": "FUN_000496b0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11116,7 +11116,7 @@
     {
       "name": "spawn_object_near_actor",
       "path": "src/object_actions.c",
-      "line": 3054,
+      "line": 3056,
       "original_name": "FUN_0004a588",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11127,7 +11127,7 @@
     {
       "name": "check_scheduled_object_location_callback",
       "path": "src/object_actions.c",
-      "line": 3086,
+      "line": 3088,
       "original_name": "FUN_00072268",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11237,7 +11237,7 @@
     {
       "name": "encode_object_slot_index",
       "path": "src/objects.c",
-      "line": 471,
+      "line": 453,
       "original_name": "FUN_0005358c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11248,7 +11248,7 @@
     {
       "name": "spawn_new_object",
       "path": "src/objects.c",
-      "line": 495,
+      "line": 477,
       "original_name": "FUN_00068138",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11259,7 +11259,7 @@
     {
       "name": "reset_burnt_out_item_state",
       "path": "src/objects.c",
-      "line": 542,
+      "line": 524,
       "original_name": "FUN_00037fe8",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11270,7 +11270,7 @@
     {
       "name": "apply_object_destruction_effect",
       "path": "src/objects.c",
-      "line": 564,
+      "line": 546,
       "original_name": "FUN_00038028",
       "ghidra_origin": true,
       "param_count": 5,
@@ -11281,7 +11281,7 @@
     {
       "name": "find_placement_via_tile_flood_fill",
       "path": "src/objects.c",
-      "line": 651,
+      "line": 633,
       "original_name": "FUN_00038d4c",
       "ghidra_origin": true,
       "param_count": 6,
@@ -11292,7 +11292,7 @@
     {
       "name": "clear_object_temp_flag_callback",
       "path": "src/objects.c",
-      "line": 901,
+      "line": 883,
       "original_name": "FUN_0003ae00",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11303,7 +11303,7 @@
     {
       "name": "clear_temp_flags_on_all_objects",
       "path": "src/objects.c",
-      "line": 925,
+      "line": 907,
       "original_name": "FUN_0003aea8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11314,7 +11314,7 @@
     {
       "name": "free_player_inventory_chain",
       "path": "src/objects.c",
-      "line": 958,
+      "line": 940,
       "original_name": "FUN_000444b0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11325,7 +11325,7 @@
     {
       "name": "calculate_object_weight",
       "path": "src/objects.c",
-      "line": 983,
+      "line": 965,
       "original_name": "FUN_00046260",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11336,7 +11336,7 @@
     {
       "name": "load_object_catalog_data",
       "path": "src/objects.c",
-      "line": 1011,
+      "line": 993,
       "original_name": "FUN_00052674",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11347,7 +11347,7 @@
     {
       "name": "get_scanned_object_class_effect_ptr",
       "path": "src/objects.c",
-      "line": 1102,
+      "line": 1084,
       "original_name": "FUN_000528a8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11356,20 +11356,9 @@
       "modernized": true
     },
     {
-      "name": "walk_object_tree",
-      "path": "src/objects.c",
-      "line": 1132,
-      "original_name": "FUN_00052af4",
-      "ghidra_origin": true,
-      "param_count": 2,
-      "description": "generic recursive object-tree walker.",
-      "audited": true,
-      "modernized": true
-    },
-    {
       "name": "object_exceeds_size_threshold",
       "path": "src/objects.c",
-      "line": 1167,
+      "line": 1149,
       "original_name": "FUN_00052bac",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11380,7 +11369,7 @@
     {
       "name": "should_destroy_linked_object",
       "path": "src/objects.c",
-      "line": 1201,
+      "line": 1183,
       "original_name": "FUN_00052d24",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11391,18 +11380,18 @@
     {
       "name": "despawn_objects_outside_radius",
       "path": "src/objects.c",
-      "line": 1216,
+      "line": 1200,
       "original_name": "FUN_00052d68",
       "ghidra_origin": true,
       "param_count": 2,
-      "description": "reclaims object slots by probabilistically destroying objects in tile rows more than (10-param_1) rows from the player's row, up to param_2 destructions.",
+      "description": "reclaims object slots by probabilistically destroying objects whose tile Manhattan distance from the player exceeds (10-keep_rows), up to max_destroyed destructions.",
       "audited": true,
       "modernized": true
     },
     {
       "name": "discard_misplaced_object",
       "path": "src/objects.c",
-      "line": 1277,
+      "line": 1264,
       "original_name": "FUN_00053334",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11413,7 +11402,7 @@
     {
       "name": "get_object_record_by_slot_index",
       "path": "src/objects.c",
-      "line": 1309,
+      "line": 1296,
       "original_name": "FUN_000535fc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11424,7 +11413,7 @@
     {
       "name": "find_object_by_encoded_slot_in_chain",
       "path": "src/objects.c",
-      "line": 1343,
+      "line": 1330,
       "original_name": "FUN_00053644",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11435,7 +11424,7 @@
     {
       "name": "object_ptr_in_arena",
       "path": "src/objects.c",
-      "line": 1373,
+      "line": 1360,
       "original_name": "FUN_00053728",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11446,7 +11435,7 @@
     {
       "name": "active_mobile_list_add",
       "path": "src/objects.c",
-      "line": 1387,
+      "line": 1374,
       "original_name": "FUN_00053750",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11457,7 +11446,7 @@
     {
       "name": "active_mobile_list_remove",
       "path": "src/objects.c",
-      "line": 1397,
+      "line": 1384,
       "original_name": "FUN_00053774",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11468,7 +11457,7 @@
     {
       "name": "find_object_in_chain",
       "path": "src/objects.c",
-      "line": 1423,
+      "line": 1410,
       "original_name": "FUN_000537d0",
       "ghidra_origin": true,
       "param_count": 5,
@@ -11479,7 +11468,7 @@
     {
       "name": "object_or_contents_has_type",
       "path": "src/objects.c",
-      "line": 1462,
+      "line": 1449,
       "original_name": "FUN_00053920",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11490,7 +11479,7 @@
     {
       "name": "find_object_in_world",
       "path": "src/objects.c",
-      "line": 1490,
+      "line": 1477,
       "original_name": "FUN_000539b0",
       "ghidra_origin": true,
       "param_count": 5,
@@ -11501,7 +11490,7 @@
     {
       "name": "randomize_settled_snapshot_position",
       "path": "src/objects.c",
-      "line": 1534,
+      "line": 1521,
       "original_name": "FUN_00055ef8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11512,7 +11501,7 @@
     {
       "name": "settle_dropped_object",
       "path": "src/objects.c",
-      "line": 1562,
+      "line": 1549,
       "original_name": "FUN_00055f98",
       "ghidra_origin": true,
       "param_count": 4,
@@ -11523,7 +11512,7 @@
     {
       "name": "load_class7_variant_effect_table",
       "path": "src/objects.c",
-      "line": 1724,
+      "line": 1711,
       "original_name": "FUN_0001582c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11534,7 +11523,7 @@
     {
       "name": "load_class6_variant_effect_table",
       "path": "src/objects.c",
-      "line": 1729,
+      "line": 1716,
       "original_name": "FUN_0007cd6c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11545,7 +11534,7 @@
     {
       "name": "class6_variant_effect_table_lookup",
       "path": "src/objects.c",
-      "line": 1735,
+      "line": 1722,
       "original_name": "FUN_0007cd7c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11556,7 +11545,7 @@
     {
       "name": "class7_variant_effect_table_lookup",
       "path": "src/objects.c",
-      "line": 1749,
+      "line": 1736,
       "original_name": "FUN_0001583c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11567,7 +11556,7 @@
     {
       "name": "class1_variant_effect_table_lookup",
       "path": "src/objects.c",
-      "line": 1759,
+      "line": 1746,
       "original_name": "FUN_0002a2d8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11578,7 +11567,7 @@
     {
       "name": "class0_variant_effect_table_lookup",
       "path": "src/objects.c",
-      "line": 1777,
+      "line": 1764,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11589,7 +11578,7 @@
     {
       "name": "class2_variant_effect_table_lookup",
       "path": "src/objects.c",
-      "line": 1804,
+      "line": 1791,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11600,7 +11589,7 @@
     {
       "name": "place_object_in_world",
       "path": "src/objects.c",
-      "line": 1830,
+      "line": 1817,
       "original_name": "FUN_000522f0",
       "ghidra_origin": true,
       "param_count": 6,
@@ -11611,7 +11600,7 @@
     {
       "name": "compute_object_placement_fields",
       "path": "src/objects.c",
-      "line": 1856,
+      "line": 1843,
       "original_name": "FUN_0005578c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11622,7 +11611,7 @@
     {
       "name": "reallocate_object_to_arena",
       "path": "src/objects.c",
-      "line": 1905,
+      "line": 1892,
       "original_name": "FUN_00055610",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11633,7 +11622,7 @@
     {
       "name": "find_object_placement",
       "path": "src/objects.c",
-      "line": 1976,
+      "line": 1963,
       "original_name": "FUN_00052450",
       "ghidra_origin": true,
       "param_count": 5,
@@ -11644,7 +11633,7 @@
     {
       "name": "class3_variant_effect_stub",
       "path": "src/objects.c",
-      "line": 2027,
+      "line": 2014,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11655,7 +11644,7 @@
     {
       "name": "class5_variant_effect_stub",
       "path": "src/objects.c",
-      "line": 2035,
+      "line": 2022,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11666,7 +11655,7 @@
     {
       "name": "class4_variant_effect_stub",
       "path": "src/objects.c",
-      "line": 2043,
+      "line": 2030,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -13799,7 +13788,7 @@
     {
       "name": "check_rest_area_unsafe",
       "path": "src/player.c",
-      "line": 3431,
+      "line": 3433,
       "original_name": "FUN_00035340",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13810,7 +13799,7 @@
     {
       "name": "reset_player_for_resurrection",
       "path": "src/player.c",
-      "line": 3443,
+      "line": 3445,
       "original_name": "FUN_0003bee4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13821,7 +13810,7 @@
     {
       "name": "handle_player_death_and_menu_transition",
       "path": "src/player.c",
-      "line": 3485,
+      "line": 3487,
       "original_name": "FUN_0003c038",
       "ghidra_origin": true,
       "param_count": 1,
@@ -13832,7 +13821,7 @@
     {
       "name": "apply_level9_random_hazard_tick",
       "path": "src/player.c",
-      "line": 3544,
+      "line": 3546,
       "original_name": "FUN_0003c6ac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13843,7 +13832,7 @@
     {
       "name": "trigger_player_jump_if_grounded",
       "path": "src/player.c",
-      "line": 3604,
+      "line": 3606,
       "original_name": "FUN_0003dba0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -13854,7 +13843,7 @@
     {
       "name": "force_locomotion_state_refresh",
       "path": "src/player.c",
-      "line": 3621,
+      "line": 3623,
       "original_name": "FUN_0003dbd8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13865,7 +13854,7 @@
     {
       "name": "apply_vertical_launch_impulse",
       "path": "src/player.c",
-      "line": 3632,
+      "line": 3634,
       "original_name": "FUN_0003dc04",
       "ghidra_origin": true,
       "param_count": 1,
@@ -13876,7 +13865,7 @@
     {
       "name": "trigger_quest_stumble_animation",
       "path": "src/player.c",
-      "line": 3664,
+      "line": 3666,
       "original_name": "FUN_0003dc6c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -13887,7 +13876,7 @@
     {
       "name": "apply_quest_vertical_effect",
       "path": "src/player.c",
-      "line": 3677,
+      "line": 3679,
       "original_name": "FUN_0003dc78",
       "ghidra_origin": true,
       "param_count": 2,
@@ -13898,7 +13887,7 @@
     {
       "name": "cycle_active_light_source",
       "path": "src/player.c",
-      "line": 3695,
+      "line": 3697,
       "original_name": "FUN_00053ab0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -13909,7 +13898,7 @@
     {
       "name": "update_player_tick_effects",
       "path": "src/player.c",
-      "line": 3746,
+      "line": 3748,
       "original_name": "FUN_00053c74",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13920,7 +13909,7 @@
     {
       "name": "decay_equipped_light_sources",
       "path": "src/player.c",
-      "line": 3871,
+      "line": 3873,
       "original_name": "FUN_0005404c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -13931,7 +13920,7 @@
     {
       "name": "apply_drowning_hazard",
       "path": "src/player.c",
-      "line": 3937,
+      "line": 3939,
       "original_name": "FUN_000541d0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13942,7 +13931,7 @@
     {
       "name": "dungeon_view_anim_tick",
       "path": "src/player.c",
-      "line": 3971,
+      "line": 3973,
       "original_name": "FUN_0003c194",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15340,7 +15329,7 @@
     {
       "name": "dispatch_trap_type_effect",
       "path": "src/traps.c",
-      "line": 38,
+      "line": 34,
       "original_name": "FUN_0007d0b0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -15351,7 +15340,7 @@
     {
       "name": "reset_object_ui_state_callback",
       "path": "src/traps.c",
-      "line": 436,
+      "line": 432,
       "original_name": "FUN_0007e0d8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -15362,7 +15351,7 @@
     {
       "name": "dispatch_quest_event_code",
       "path": "src/traps.c",
-      "line": 454,
+      "line": 450,
       "original_name": "FUN_0007e12c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -15373,7 +15362,7 @@
     {
       "name": "create_scripted_trap_pair_at_tile",
       "path": "src/traps.c",
-      "line": 511,
+      "line": 507,
       "original_name": "FUN_0007e2dc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -15384,7 +15373,7 @@
     {
       "name": "remove_trap_chain_marker",
       "path": "src/traps.c",
-      "line": 590,
+      "line": 586,
       "original_name": "FUN_0007e558",
       "ghidra_origin": true,
       "param_count": 2,
@@ -15395,7 +15384,7 @@
     {
       "name": "free_trap_class_object",
       "path": "src/traps.c",
-      "line": 619,
+      "line": 615,
       "original_name": "FUN_0007e610",
       "ghidra_origin": true,
       "param_count": 2,
@@ -15404,20 +15393,31 @@
       "modernized": true
     },
     {
+      "name": "detect_spawn_blocking_object_callback",
+      "path": "src/traps.c",
+      "line": 632,
+      "original_name": "FUN_0007e644",
+      "ghidra_origin": true,
+      "param_count": 3,
+      "description": "area-scan callback: another marked NPC blocks the spawn.",
+      "audited": true,
+      "modernized": true
+    },
+    {
       "name": "check_object_area_for_spawn_block",
       "path": "src/traps.c",
-      "line": 635,
+      "line": 644,
       "original_name": "FUN_0007e694",
       "ghidra_origin": true,
       "param_count": 1,
-      "description": "its only confirmed caller is dispatch_trap_type_effect's case 7 (\"spawn trap\"), which aborts the spawn when this returns nonzero for the target object (class 0x40).",
+      "description": "checks the spawn template's surrounding NPCs.",
       "audited": true,
       "modernized": true
     },
     {
       "name": "is_out_of_player_range",
       "path": "src/traps.c",
-      "line": 650,
+      "line": 660,
       "original_name": "FUN_0007e6e0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -15428,7 +15428,7 @@
     {
       "name": "process_nearby_background_traps",
       "path": "src/traps.c",
-      "line": 673,
+      "line": 683,
       "original_name": "FUN_0007e778",
       "ghidra_origin": true,
       "param_count": 1,
@@ -15439,7 +15439,7 @@
     {
       "name": "tick_ambient_doors_and_scheduler",
       "path": "src/traps.c",
-      "line": 718,
+      "line": 728,
       "original_name": "FUN_0007e85c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -15450,7 +15450,7 @@
     {
       "name": "apply_area_terrain_effect",
       "path": "src/traps.c",
-      "line": 763,
+      "line": 773,
       "original_name": "FUN_00039790",
       "ghidra_origin": true,
       "param_count": 9,
@@ -15461,7 +15461,7 @@
     {
       "name": "apply_poison_or_damage_trap_effect",
       "path": "src/traps.c",
-      "line": 889,
+      "line": 899,
       "original_name": "FUN_00039bd8",
       "ghidra_origin": true,
       "param_count": 4,
@@ -15472,7 +15472,7 @@
     {
       "name": "dispatch_trap_special_or_tile_action",
       "path": "src/traps.c",
-      "line": 927,
+      "line": 939,
       "original_name": "FUN_00039d1c",
       "ghidra_origin": true,
       "param_count": 6,
@@ -15483,7 +15483,7 @@
     {
       "name": "handle_level4_maze_puzzle_button",
       "path": "src/traps.c",
-      "line": 943,
+      "line": 955,
       "original_name": "FUN_00039f04",
       "ghidra_origin": true,
       "param_count": 3,
@@ -15494,7 +15494,7 @@
     {
       "name": "try_combine_shrine_markers",
       "path": "src/traps.c",
-      "line": 1016,
+      "line": 1028,
       "original_name": "FUN_0003a0e8",
       "ghidra_origin": true,
       "param_count": 3,
@@ -15505,7 +15505,7 @@
     {
       "name": "emit_player_noise_alert",
       "path": "src/traps.c",
-      "line": 1083,
+      "line": 1095,
       "original_name": "FUN_0003a29c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -15516,7 +15516,7 @@
     {
       "name": "apply_quest_event_numeric_effect",
       "path": "src/traps.c",
-      "line": 1093,
+      "line": 1105,
       "original_name": "FUN_0003a2b0",
       "ghidra_origin": true,
       "param_count": 4,
@@ -15527,7 +15527,7 @@
     {
       "name": "trigger_exploding_book_trap",
       "path": "src/traps.c",
-      "line": 1119,
+      "line": 1131,
       "original_name": "FUN_0003a398",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15538,7 +15538,7 @@
     {
       "name": "trigger_exploding_book_trap_at_tile",
       "path": "src/traps.c",
-      "line": 1147,
+      "line": 1159,
       "original_name": "FUN_0003a4a0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -15549,7 +15549,7 @@
     {
       "name": "trigger_scripted_npc_conversation",
       "path": "src/traps.c",
-      "line": 1175,
+      "line": 1187,
       "original_name": "FUN_0003a57c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15560,7 +15560,7 @@
     {
       "name": "advance_scheduler_and_show_page3",
       "path": "src/traps.c",
-      "line": 1198,
+      "line": 1210,
       "original_name": "FUN_0003a5ec",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15571,7 +15571,7 @@
     {
       "name": "unlink_object_from_tile_callback",
       "path": "src/traps.c",
-      "line": 1208,
+      "line": 1220,
       "original_name": "FUN_0003a604",
       "ghidra_origin": true,
       "param_count": 1,
@@ -15582,7 +15582,7 @@
     {
       "name": "trigger_quest_milestone_cleanup_event",
       "path": "src/traps.c",
-      "line": 1223,
+      "line": 1235,
       "original_name": "FUN_0003a654",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15593,7 +15593,7 @@
     {
       "name": "resolve_lock_difficulty_rating",
       "path": "src/traps.c",
-      "line": 1256,
+      "line": 1268,
       "original_name": "FUN_0003a924",
       "ghidra_origin": true,
       "param_count": 1,
@@ -15604,7 +15604,7 @@
     {
       "name": "attempt_pick_lock",
       "path": "src/traps.c",
-      "line": 1280,
+      "line": 1292,
       "original_name": "FUN_0003a99c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -15615,7 +15615,7 @@
     {
       "name": "spawn_trap_hazard_object",
       "path": "src/traps.c",
-      "line": 1356,
+      "line": 1368,
       "original_name": "FUN_0004ac98",
       "ghidra_origin": true,
       "param_count": 3,
@@ -16077,7 +16077,7 @@
     {
       "name": "weapon_overlay_flash_once",
       "path": "src/weapon_swing.c",
-      "line": 753,
+      "line": 755,
       "original_name": "FUN_000411e0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -16088,7 +16088,7 @@
     {
       "name": "fire_ranged_weapon",
       "path": "src/weapon_swing.c",
-      "line": 767,
+      "line": 769,
       "original_name": "FUN_0004a210",
       "ghidra_origin": true,
       "param_count": 1,

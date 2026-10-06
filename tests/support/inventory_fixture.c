@@ -39,14 +39,14 @@ ushort *DAT_002046b4;
 void *resolve_object_link(ushort *link)
 {
     unsigned slot = *link >> 6;
-    TEST_ASSERT_GREATER_THAN_UINT(0, slot);
+    if (slot == 0) return NULL;
     TEST_ASSERT_LESS_THAN_UINT(5, slot);
     return objects[slot];
 }
 
 int encode_object_slot_index(char *object)
 {
-    TEST_ASSERT_NOT_NULL(object);
+    if (object == NULL) return 0;
     for (int i = 1; i < 5; i++)
         if (object == objects[i]) return i;
     TEST_FAIL_MESSAGE("Lookup must pass the actual object pointer to slot encoding");
@@ -201,8 +201,12 @@ void load_key_from_level_one_sack(void)
     g_current_container_record = (char *)objects[1];
 }
 
+static void reset_container_services(void);
+static int cursor_hide_calls, cursor_show_calls;
+
 void inventory_fixture_reset(void)
 {
+    reset_container_services();
     memset(click_state, 0, sizeof(click_state));
     g_cursor_mode = g_cursor_holding_state = 0;
     g_selected_object = DAT_00202098 = NULL;
@@ -229,4 +233,74 @@ void inventory_fixture_reset(void)
     slots[4] = 1 << 6;
 }
 
-void inventory_fixture_dispose(void) {}
+void inventory_fixture_dispose(void)
+{
+    char *record = g_open_container_list;
+    while (record != NULL) {
+        char *next;
+        memcpy(&next, record + 0xc, sizeof next);
+        free(record);
+        record = next;
+    }
+    g_open_container_list = g_current_container_record = NULL;
+    TEST_ASSERT_EQUAL_INT(cursor_hide_calls, cursor_show_calls);
+}
+
+/* Drawing is a boundary service; the real open/refresh/weight functions run. */
+undefined4 DAT_002028a0_backing[16], DAT_002028e8_backing[32];
+undefined DAT_00202978_backing[8];
+ushort DAT_00202986;
+undefined4 DAT_00202938, DAT_0020299c, DAT_002029a0;
+undefined2 DAT_00201b60;
+undefined1 g_active_hud_panel;
+unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2];
+unsigned char g_backpack_slot_to_widget_backing[0x1c];
+undefined1 DAT_00202c90_backing[8192];
+char *g_open_container_list;
+int container_grid_redraws, container_arrow_redraws;
+
+void decrement_cursor_hide_depth(void) { cursor_hide_calls++; }
+undefined4 cursor_show_idle_tick(void) { cursor_show_calls++; return 0; }
+void redraw_inventory_widget_range(int first, short last)
+{
+    if (first == 12 && last == 19) container_grid_redraws++;
+    else { TEST_ASSERT_EQUAL_INT(20, first); TEST_ASSERT_EQUAL_INT(20, last); }
+}
+void redraw_inventory_widget(int widget)
+{
+    if (widget == 21 || widget == 22) container_arrow_redraws++;
+    else TEST_ASSERT_LESS_THAN_INT(11, widget);
+}
+undefined4 grtile_alloc_registered(int width, int height)
+{ (void)width; (void)height; return 1; }
+undefined4 capture_framebuffer_rect_to_grtile(int tile, int x, int y, int w, int h)
+{ (void)tile; (void)x; (void)y; (void)w; (void)h; return 1; }
+void draw_sprite_by_id(int tile, int x, int y, int w, short h)
+{ (void)tile; (void)x; (void)y; (void)w; (void)h; }
+void set_hud_status_value(int field, int value)
+{ (void)field; (void)value; TEST_FAIL_MESSAGE("Unexpected special container"); }
+void *ce_malloc(unsigned int size)
+{
+    TEST_ASSERT_EQUAL_UINT(0x1c, size);
+    void *record = calloc(1, size);
+    TEST_ASSERT_NOT_NULL(record);
+    return record;
+}
+void close_backpack_container(void) { TEST_FAIL_MESSAGE("Unexpected container close"); }
+void free_open_container_chain(void) { TEST_FAIL_MESSAGE("Unexpected container root switch"); }
+
+static void reset_container_services(void)
+{
+    memset(DAT_002028a0_backing, 0, sizeof DAT_002028a0_backing);
+    memset(DAT_002028e8_backing, 0, sizeof DAT_002028e8_backing);
+    memset(DAT_00202978_backing, 0, sizeof DAT_00202978_backing);
+    memset(DAT_00202c90_backing, 0, sizeof DAT_00202c90_backing);
+    memset(g_inventory_hotspot_table, 0, sizeof g_inventory_hotspot_table);
+    memset(g_backpack_slot_to_widget_backing, 0, sizeof g_backpack_slot_to_widget_backing);
+    DAT_00202986 = DAT_00202938 = DAT_0020299c = DAT_002029a0 = 0;
+    DAT_00201b60 = g_active_hud_panel = 0;
+    g_open_container_list = NULL;
+    g_backpack_widget_to_slot_backing[20] = 19;
+    container_grid_redraws = container_arrow_redraws = 0;
+    cursor_hide_calls = cursor_show_calls = 0;
+}

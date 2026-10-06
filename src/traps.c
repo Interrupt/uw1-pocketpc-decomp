@@ -23,12 +23,8 @@ static undefined DAT_00202807[121];
    "Look, it's a text trap\n". */
 static char s_Look__it_s_a_text_trap_00087918[] = "Look, it's a text trap\n";
 static undefined4 DAT_0024cff8;
-static undefined4 DAT_0024cfd4;
-/* Sizing-audit pass: its ADDRESS is passed as scan_area_ahead_of_ object's callback argument (see
-   the GAP note below) -- a stand-in for an unrecovered callback, never read/written/indexed as
-   data. Shrunk for consistency; down from 8192. */
-static undefined DAT_0007e644_backing[16];
-#define DAT_0007e644 DAT_0007e644_backing[0]
+/* The spawn template's native record address, compared by FUN_0007e644. */
+static char *DAT_0024cfd4;
 
 
 
@@ -630,13 +626,27 @@ void free_trap_class_object(char *link_field, byte *trap_object)
 
 
 
-// was FUN_0007e694 -- its only confirmed caller is dispatch_trap_type_effect's case 7 ("spawn
-// trap"), which aborts the spawn when this returns nonzero for the target object (class 0x40).
+// was FUN_0007e644 -- area-scan callback: another marked NPC blocks the spawn;
+// the template itself and player do not. ARM 0x7e644..0x7e688 tests word +0xd
+// bit 0x100 and compares the record in r2 against those two native addresses.
+int detect_spawn_blocking_object_callback(int scan_x, int scan_y, char *object)
+{
+  if (((*(byte *)(object + 0xe) & 1) != 0) &&
+      (object != DAT_0024cfd4) && (object != (char *)g_player_object)) {
+    DAT_0024cff8 = 1;
+  }
+  return DAT_0024cff8;
+}
+
+
+// was FUN_0007e694 -- checks the spawn template's surrounding NPCs. Called by
+// dispatch_trap_type_effect's case 7, which aborts the spawn on a nonzero result.
 int check_object_area_for_spawn_block(ushort *object)
 {
   DAT_0024cff8 = 0;
   DAT_0024cfd4 = object;
-  scan_area_ahead_of_object(object,1,&DAT_0007e644,0,0,4);
+  /* ARM 0x7e6bc loads code address 0x7e644, not a data buffer. */
+  scan_area_ahead_of_object(object,1,detect_spawn_blocking_object_callback,0,0,4);
   return DAT_0024cff8;
 }
 
@@ -924,15 +934,17 @@ int apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, int u
 // was FUN_00039d1c -- shared special-action dispatch helper: stashes two coordinate/context bytes
 // (param_1/param_2) into DAT_0023c3dc/DAT_0023c3d8, then dispatches by the sign of param_5 (a
 // signed action id): negative runs dispatch_tile_special_action...
-int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, int tile_x, int tile_y, ushort action_id, byte argument)
+/* ARM 0x39d24/0x39d48 keeps the actor address in r2, and r3 carries the target through to
+   dispatch_special_action. These are host addresses. */
+int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, uintptr_t actor, intptr_t target, ushort action_id, byte argument)
 {
   DAT_0023c3d8 = context_y;
   DAT_0023c3dc = context_x;
   if ((short)action_id < 0) {
-    dispatch_tile_special_action(argument,tile_x,tile_y);
+    dispatch_tile_special_action(argument,actor,target);
   }
   else {
-    dispatch_special_action(action_id & 0xff,argument,tile_x,tile_y);  /* 4th arg was dropped: ARM 0x39d50 passes r3 (incoming tile_y) through */
+    dispatch_special_action(action_id & 0xff,argument,actor,target);  /* 4th arg was dropped: ARM 0x39d50 passes r3 (incoming target) through */
   }
   return 2;
 }

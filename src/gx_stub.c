@@ -17,6 +17,9 @@
 
 #define GX_W 320
 #define GX_H 240
+/* Keep the Pocket PC framebuffer/pitches intact; present only the DOS game
+   area unless UW_TOUCHSCREEN enables the extra 40-row touch input strip. */
+static int g_display_height = 200;
 
 /* The game's own screen-flush routines (flush_dirty_rect_to_display/flush_dirty_rect_to_display_240
    in uw.c) always blit by transposing rows<->columns from the software framebuffer into whatever
@@ -524,6 +527,10 @@ void uw_pump_events(void) {
                 float lx, ly;
                 SDL_RenderWindowToLogical(g_ren, win_x, win_y, &lx, &ly);
                 int landscape_x = (int)lx, landscape_y = (int)ly;
+                /* Resized windows can have letterboxing. Keep input within
+                   the displayed area, including button releases outside it. */
+                landscape_x = SDL_clamp(landscape_x, 0, GX_W - 1);
+                landscape_y = SDL_clamp(landscape_y, 0, g_display_height - 1);
                 if (dbgui_visible()) {
                     if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
                         dbgui_feed_mouse_down(landscape_x, landscape_y);
@@ -607,15 +614,18 @@ void uw_pump_events(void) {
 int GXOpenDisplay(void *hwnd, unsigned int flags) {
     (void)hwnd;
     (void)flags;
+    const char *touchscreen = getenv("UW_TOUCHSCREEN");
+    g_display_height = (touchscreen && touchscreen[0] && strcmp(touchscreen, "0") != 0)
+                       ? GX_H : 200;
     uw_reset_frame_pacing();
     fprintf(stderr, "[gx] GXOpenDisplay: opening %dx%d SDL window (game's GAPI display init)\n",
-            GX_W, GX_H);
+            GX_W, g_display_height);
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
         return 0;
     }
     g_win = SDL_CreateWindow("Ultima Underworld", SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED, GX_W * 2, GX_H * 2,
+                              SDL_WINDOWPOS_CENTERED, GX_W * 2, g_display_height * 2,
                               SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (!g_win) {
         fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
@@ -652,9 +662,9 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
         fprintf(stderr, "[gx] renderer=%s vsync=%s\n", info.name,
                 (info.flags & SDL_RENDERER_PRESENTVSYNC) ? "yes" : "no");
     }
-    SDL_RenderSetLogicalSize(g_ren, GX_W, GX_H);
+    SDL_RenderSetLogicalSize(g_ren, GX_W, g_display_height);
     g_tex = SDL_CreateTexture(g_ren, SDL_PIXELFORMAT_RGB565,
-                               SDL_TEXTUREACCESS_STREAMING, GX_W, GX_H);
+                               SDL_TEXTUREACCESS_STREAMING, GX_W, g_display_height);
     memset(g_framebuffer, 0, sizeof(g_framebuffer));
     demomode_init();
     democapture_init();
@@ -1416,7 +1426,7 @@ int GXResume(void) { fprintf(stderr, "[gx] GXResume (window gained focus)\n"); r
 void *GXGetDisplayProperties(void) {
     fprintf(stderr, "[gx] GXGetDisplayProperties: reporting %dx%d 16bpp RGB565 (portrait "
                     "hardware framebuffer; presented rotated to a %dx%d landscape window)\n",
-            HW_W, HW_H, GX_W, GX_H);
+            HW_W, HW_H, GX_W, g_display_height);
     static GxDisplayProps props;
     props.cxWidth = HW_W;
     props.cyHeight = HW_H;

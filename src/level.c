@@ -52,7 +52,7 @@ void enter_dungeon_view()
   unregister_game_view_interact_zones();
   configure_dungeon_viewport(0x34,0x14,0xab,0x70);
   ce_memmove(saved_palette,&DAT_00088d98,0x300);
-  fade_out(g_uw_framebuffer,0,0);
+  fade_out(g_uw_framebuffer,saved_palette,0);
   if (g_new_game_entry_pause_pending) {
     g_new_game_entry_pause_pending = false;
     /* Intentional deviation: hold the black screen for 0.5 seconds after
@@ -85,7 +85,7 @@ void enter_dungeon_view()
   full_dungeon_redraw();
   weapon_overlay_and_full_redraw();
   cursor_show_idle_tick();
-  fade_in(g_uw_framebuffer,0,0);
+  fade_in(g_uw_framebuffer,saved_palette,0);
 }
 
 

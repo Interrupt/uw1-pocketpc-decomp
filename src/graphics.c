@@ -482,8 +482,7 @@ void fade_in(ushort *framebuffer, char *palette, int palette_flag)
   uw_begin_modal_present();
   dirty_rect_union(0,200,0,0x140);
   puVar3 = (ushort *)ce_malloc(0x1f400);
-  /* A null palette keeps the live LUT (e.g. an LPF palette). Every port caller passes null on purpose:
-     the ARM callers' saved palette copy can be stale relative to the live one (see tests/test_transitions.c). */
+  /* A null palette keeps the live LUT (e.g. an LPF palette); the level-entry and dialog fades pass their saved palette. */
   if (palette != 0) apply_palette_buffer(palette,palette_flag);
   ce_memmove(puVar3,framebuffer,0x1f400);
   iVar9 = 1;

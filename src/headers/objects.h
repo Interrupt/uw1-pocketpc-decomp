@@ -106,7 +106,7 @@ int place_object_in_world(uint tile_x, uint tile_y, int height, char *object, sh
 int find_object_placement(ushort *object, uint tile_x, uint tile_y, short height, short radius);
 undefined4 load_object_catalog_data();
 void *get_scanned_object_class_effect_ptr();
-int walk_object_tree(char *object, codeval *callback);
+int walk_object_tree(char *object, int (*callback)());
 int object_exceeds_size_threshold(ushort *object);
 int should_destroy_linked_object(int base_chance, ushort *link_field);
 void despawn_objects_outside_radius(int keep_rows, short max_destroyed);
