@@ -1036,7 +1036,7 @@ int roll_object_destroy_chance(short base_chance, char *object)
     DAT_002046b0 = base_chance;
     iVar2 = object_exceeds_size_threshold(object);
     if (iVar2 == 0) {
-      if ((!((uw_object_hdr_t *)object)->is_quant) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
+      if ((!((uw_object_hdr_t *)object)->is_quant) && (((uw_object_hdr_t *)object)->link != 0)) {
         pcVar3 = (char *)resolve_object_link((ushort *)(object + 6)); /* confirmed via ARM disassembly, 0x52ce8 */
         iVar2 = walk_object_tree(pcVar3,object_exceeds_size_threshold);
         if (iVar2 != 0) {
@@ -3625,13 +3625,13 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
             iVar11 = uVar12 * 7;
             uVar15 = tilemap_lookup((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
             uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
-            for (puVar7 = (ushort *)((char *)uVar15 + 2); (*puVar7 & 0xffc0) != 0; puVar7 = puVar7 + 2)
+            for (puVar7 = (ushort *)((char *)uVar15 + 2); ((uw_chain_word_t *)puVar7)->chain != 0; puVar7 = puVar7 + 2)
             {
               uVar15 = resolve_object_link(puVar7);
               uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
               puVar7 = (ushort *)uVar15;
               if ((((*puVar7 & 0x1c0) == 0x180) && ((*puVar7 & 0x30) == 0x20)) &&
-                 ((puVar7[3] & 0xffc0) != 0)) {
+                 (((uw_object_hdr_t *)puVar7)->link != 0)) {
                 puVar8 = (ushort *)resolve_object_link(puVar7 + 3);
                 uVar9 = (uint)*puVar8;
                 if ((uVar9 & 0x1c0) == 0x180) {
@@ -3831,7 +3831,6 @@ int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc)
 void emit_noise_alert(ushort *source, byte noise_type)
 {
   byte bVar1;
-  uint uVar2;
 
   DAT_0010195c = 0;
   bVar1 = noise_type;
@@ -3844,9 +3843,7 @@ void emit_noise_alert(ushort *source, byte noise_type)
     DAT_00101958 = source;
     scan_area_for_matching_objects(0x14,0,alert_npc_to_noise_callback,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
     if ((source[3] & 0x1f) < 0x1c) {
-      uVar2 = source[3] & 0xffc0;
-      *(char *)(source + 3) = (char)uVar2;
-      *(char *)((char *)source + 7) = (char)(uVar2 >> 8);
+      ((uw_object_hdr_t *)source)->owner = 0;
     }
   }
 }
@@ -4746,19 +4743,19 @@ int tile_pair_los_blocked(byte tile_a_x, byte tile_a_y, byte tile_b_x, byte tile
       return 1;
     }
     uVar11 = 0;
-    uVar2 = puVar7[1];
+    uVar2 = ((uw_chain_word_t *)(puVar7 + 1))->chain;
     /* `resolve_object_link(puVar7 + 1)` was called unchanged on every iteration -- real disassembly
        (0x2bdac @ 0x2c068-0x2c0f8) shows the argument register is only ever set to puVar7+1 ONCE,
        before the loop... */
     puVar10 = puVar7 + 1;
-    while (((uVar2 & 0xffc0) != 0 && (uVar11 == 0))) {
+    while ((uVar2 != 0 && (uVar11 == 0))) {
       puVar9 = (ushort *)resolve_object_link(puVar10);
       iVar13 = ((uw_object_hdr_t *)puVar9)->item_id * 0xd;
       if (((&DAT_00202c93)[iVar13] & 2) != 0) {
         uVar11 = (int)(((uw_object_hdr_t *)puVar9)->zpos + (uint)(byte)(&DAT_00202c90)[iVar13]) >> 3;
       }
       puVar10 = puVar9 + 2;
-      uVar2 = puVar9[2];
+      uVar2 = ((uw_chain_word_t *)(puVar9 + 2))->chain;
     }
     uVar15 = (uint)((uw_tile_t *)puVar7)->floor_height;
     bVar1 = uVar11 <= uVar15;
