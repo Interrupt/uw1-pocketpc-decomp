@@ -37,8 +37,8 @@ void set_player_tile_position(uint x, uint y)
     TEST_ASSERT_EQUAL_INT(open_y, y);
     positions++;
 }
-void set_pending_update_flags(int flags) {}
-void report_fatal_error_and_exit(void) { TEST_FAIL_MESSAGE("Stair transition failed"); }
+void set_pending_update_flags(ushort flags) {}
+void report_fatal_error_and_exit(ushort error_code) { (void)error_code; TEST_FAIL_MESSAGE("Stair transition failed"); }
 void full_dungeon_redraw(void) {}
 void weapon_overlay_flash_hold(int passes) {}
 void weapon_overlay_flash_restore(int passes) {}
@@ -53,7 +53,7 @@ void *tilemap_lookup(short x, short y)
     if (probes++ == 0) { first_x = x; first_y = y; }
     return level_map + (x + y * 64) * 4;
 }
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(char *object)
 {
     TEST_ASSERT_EQUAL_PTR(player, object);
     return 1;
@@ -65,8 +65,8 @@ int check_object_placement_clearance(short type, short slot, short x, short y, s
     return x == open_x * 8 + 3 && y == open_y * 8 + 3;
 }
 void *resolve_object_link(ushort *link) { return NULL; }
-undefined4 object_ptr_in_arena(void *object) { return 0; }
-ushort *discard_misplaced_object(void *head, void *object, int flag) { return NULL; }
+int object_ptr_in_arena(char *object) { return 0; }
+ushort *discard_misplaced_object(char *head, ushort *object, int flag) { return NULL; }
 void tick_weapon_swing_state(short flag) {}
 void set_hud_status_value(int slot, int value) { if (slot == 0) hud_hp = value; }
 void handle_starvation_penalty(void) { deaths++; }
@@ -76,7 +76,7 @@ void update_player_tick_effects(void) {}
 long ce_rand(void) { return 1; }
 void apply_level9_random_hazard_tick(void) {}
 void debug_print(char *format, ...) {}
-ushort *find_object_in_chain(ushort **link, int recursive, int group, int subclass, int type)
+ushort *find_object_in_chain(ushort **link, int recursive, int group, int subclass, short type)
 {
     TEST_ASSERT_EQUAL_INT(7, group);
     TEST_ASSERT_EQUAL_INT(0, subclass);

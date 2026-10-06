@@ -83,7 +83,7 @@ byte get_current_music_track(void) { return music_track; }
 void set_pending_music_track(uint track) { music_track = track; }
 void pick_random_pending_music_track(void) { music_track = 0; }
 void cancel_weapon_swing(void) {}
-void set_pending_update_flags(int flags) {}
+void set_pending_update_flags(ushort flags) {}
 byte load_weapon_swing_sprites(void)
 {
     weapon_sprite_loads++;

@@ -52,7 +52,7 @@ undefined4 place_object_in_backpack_slot(ushort *object, int slot) { return 1; }
 void redraw_container_icon_slot(void) {}
 void redraw_backpack_slot_widget(int slot) {}
 void print_scroll_message_by_id(int id) { message = id; }
-void set_pending_update_flags(int mode) { rebuilds++; }
+void set_pending_update_flags(ushort mode) { rebuilds++; }
 /* Use real platform file I/O, including Windows path translation. */
 int open_file_for_read(const char *path)
 {

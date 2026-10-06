@@ -74,33 +74,33 @@ void *resolve_object_link(ushort *link)
     return !slot ? NULL : slot < 256 ? DAT_002046b8 + slot * 27
         : DAT_002046c4 + (slot - 256) * 8;
 }
-undefined4 object_ptr_in_arena(void) { return 1; }
+int object_ptr_in_arena(char *object) { (void)object; return 1; }
 void record_placement(ushort *object)
 {
     TEST_ASSERT_LESS_THAN_UINT(16, placed);
     types[placed++] = object[0] & 0x1ff;
     TEST_ASSERT_NOT_EQUAL(0x157, object[0] & 0x1ff); /* Shrine */
 }
-ushort *settle_dropped_object(ushort *object, int x, int y, int mode)
+ushort *settle_dropped_object(ushort *object, short x, short y, int mode)
 { record_placement(object); return object; }
 undefined4 drop_object_near_target(void *target, ushort *object, int distance, int mode)
 { record_placement(object); return 1; }
-undefined4 place_object_in_world(int x, int y, int z, ushort *object, int distance, int mode)
+int place_object_in_world(uint x, uint y, int z, char *object, short distance, int mode)
 { record_placement(object); return 1; }
 
-void free_object_slot(void *object) {}
+void free_object_slot(char *object) {}
 undefined4 check_object_drop_height(void *object, void *source) { return 1; }
-int encode_object_slot_index(void) { return 225; }
+int encode_object_slot_index(char *object) { (void)object; return 225; }
 undefined4 play_sound_effect_at_object(int sound, void *object, int mode) { return 1; }
 int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
 undefined4 roll_object_destroy_chance(void) { return 0; }
 void print_scroll_message_by_id(void) {}
-void set_pending_update_flags(void) {}
+void set_pending_update_flags(ushort flags) { (void)flags;}
 void spawn_effect_debris_burst(void) {}
 void scheduler_relink_entry(char *new_object, char *old_object) { (void)new_object; (void)old_object;}
 void set_ambient_bias_without_light(char light_level) { (void)light_level;}
 undefined4 activate_area_hazard_object(void) { return 1; }
-ushort *discard_misplaced_object(void *list, void *object, int release) { return NULL; }
+ushort *discard_misplaced_object(char *list, ushort *object, int release) { return NULL; }
 
 void creatures_fixture_reset(void)
 {

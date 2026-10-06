@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Set "modernized" in ghidra-funcs.json from the code: a function is modernized when its definition
-has a prototype-style parameter list (typed params, or exactly `(void)`), not a K&R `(a,b)`/`()` list.
+has a prototype-style parameter list (typed params) or no parameters at all, i.e. not a K&R `(a,b)` name list.
 usage: mark_modernized.py [--list]   (--list prints the functions still in K&R form, grouped by file)"""
 import re, json, os, sys, collections
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -15,7 +15,8 @@ for f in data['functions']:
         i = next((k for k, l in enumerate(L) if re.match(r'^[A-Za-z_][^;]*\b' + re.escape(f['name']) + r'\s*\(', l)), i)
     m = re.search(r'\b' + re.escape(f['name']) + r'\s*\(([^)]*)\)', L[i])
     params = m.group(1).strip() if m else ''
-    ok = params == 'void' or (params != '' and bool(TYPE.search(params)))
+    # `()` is the preferred spelling for zero-parameter functions, so it counts as modern; K&R is a non-empty list of bare names
+    ok = params in ('', 'void') or bool(TYPE.search(params))
     f['modernized'] = ok
     if not ok: left[f['path']].append(f['name'])
 data['_meta']['modernized_true'] = sum(1 for f in data['functions'] if f['modernized'])

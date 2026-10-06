@@ -155,13 +155,13 @@ undefined s_scroll_newline_0008522c_backing[8192] = "\n";
 ushort babl_items[12][4];
 ushort *babl_dropped[8], *babl_drop_owner[8];
 int babl_drop_count, babl_loot_calls;
-void *get_object_record_by_slot_index(int slot)
+void *get_object_record_by_slot_index(short slot)
 {
     TEST_ASSERT_GREATER_THAN_INT(0, slot);
     TEST_ASSERT_LESS_THAN_INT(12, slot);
     return babl_items[slot];
 }
-int encode_object_slot_index(ushort *object) { return (int)((object - babl_items[0]) / 4); }
+int encode_object_slot_index(char *object) { return (int)((object - (char *)babl_items[0]) / 8); }
 void *resolve_object_link(ushort *link)
 {
     if (link == (ushort *)((char *)DAT_00100674 + 6)) return *link ? babl_items[*link] : NULL;
@@ -170,14 +170,14 @@ void *resolve_object_link(ushort *link)
     TEST_FAIL_MESSAGE("Inventory link must address the NPC byte offset 6 or an object's link word");
     return NULL;
 }
-void object_list_unlink(ushort *head, ushort *object)
+void object_list_unlink(byte *head, byte *object)
 {
     TEST_ASSERT_EQUAL_PTR((char *)DAT_00100674 + 6, head);
     while (*head && babl_items[*head] != object) head = babl_items[*head] + 2;
     TEST_ASSERT_NOT_EQUAL(0, *head);
     *head = object[2]; object[2] = 0;
 }
-void object_list_insert_head(ushort *head, ushort *object)
+void object_list_insert_head(byte *head, char *object)
 {
     TEST_ASSERT_EQUAL_PTR((char *)DAT_00100674 + 6, head);
     object[2] = *head;
@@ -200,7 +200,7 @@ undefined4 DAT_000bbf98_backing[8], DAT_000bbff0_backing[8];
 
 void babl_builtin_say(char *text) { strcpy(babl_speech, text); }
 void draw_hotspot_crosshair_marker(int side, int slot) {}
-void free_object_slot(ushort *object) { memset(object, 0, 8); }
+void free_object_slot(char *object) { memset(object, 0, 8); }
 long ce_srand(uint seed) { return 0; }
 int randomize_value_pct(int value, int low, int high) { return value; }
 void compute_dimension_volume(void) {}

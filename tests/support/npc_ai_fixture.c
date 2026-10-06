@@ -51,8 +51,8 @@ long ce_rand(void)
     /* Alternate deterministic rolls: permit noticing and melee selection. */
     return random_index++ % 2 ? 1 : 0;
 }
-int encode_object_slot_index(void *object) { return object == player ? 1 : 2; }
-void *get_object_record_by_slot_index(int slot) { return slot == 1 ? player : slot == 2 ? npc : NULL; }
+int encode_object_slot_index(char *object) { return object == player ? 1 : 2; }
+void *get_object_record_by_slot_index(short slot) { return slot == 1 ? player : slot == 2 ? npc : NULL; }
 void *tilemap_lookup(short x, short y) { return tile; }
 undefined4 check_fine_line_of_sight(void) { return los_clear; }
 char DAT_00101740_backing[448];
@@ -105,11 +105,11 @@ int build_collision_height_field_for_object(ushort *object) { (void)object; retu
 int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags) { (void)snapshot; (void)sweep_flags; return 0; }
 undefined4 sync_object_tile_position(void) { return 0; }
 undefined4 resolve_unique_npc_special_behavior(void) { return 1; }
-void object_list_unlink(void) {}
+void object_list_unlink(byte *link_field, byte *object) { (void)link_field; (void)object;}
 void spawn_creature_death_loot(void) {}
 void drop_monster_loot(void) {}
 void drop_creature_inventory_on_death(void) {}
-void free_object_slot(void) {}
+void free_object_slot(char *object) { (void)object;}
 int compute_vertical_aim_offset(void) { return 0; }
 void spawn_npc_thrown_weapon(void) { TEST_FAIL_MESSAGE("Unexpected ranged attack"); }
 void dispatch_tile_special_action(void) { TEST_FAIL_MESSAGE("Unexpected special ability"); }

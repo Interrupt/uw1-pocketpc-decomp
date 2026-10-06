@@ -25,12 +25,12 @@ void *alloc_object_slot(int mobile)
     allocations++;
     return thrown;
 }
-void free_object_slot(void *object)
+void free_object_slot(char *object)
 {
     TEST_ASSERT_EQUAL_PTR(held, object);
     freed++;
 }
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(char *object)
 { return ((char *)object - DAT_002046b8) / 27; }
 void *tilemap_lookup(short x, short y)
 {
@@ -56,14 +56,14 @@ void collision_height_envelope(int unused, int mode)
 void collision_build_height_field(uint step_limit) {}
 void sort_collision_candidates(void) { TEST_FAIL_MESSAGE("Empty world has no object contacts"); }
 undefined4 play_sound_effect_at_object(void) { return 1; }
-undefined4 object_ptr_in_arena(void) { return 1; }
-ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
+int object_ptr_in_arena(char *object) { (void)object; return 1; }
+ushort *discard_misplaced_object(char *list, ushort *object, int destroy)
 { return NULL; }
 undefined4 play_sound_effect_with_pan(void) { return 1; }
-ushort *reallocate_object_to_arena(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
-ushort *settle_dropped_object(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
+ushort *reallocate_object_to_arena(ushort *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
+ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int force) { (void)object; (void)tile_x; (void)tile_y; (void)force; TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
 int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; TEST_FAIL_MESSAGE("Unexpected ground drop"); return 0; }
-void object_list_append_tail(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); }
+void object_list_append_tail(byte *link_field, char *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected ground drop"); }
 undefined4 play_positional_sound_effect(void) { return 1; }
 void print_scroll_message_by_id(void) {}
 void set_ambient_bias_without_light(char light_level) { (void)light_level;}

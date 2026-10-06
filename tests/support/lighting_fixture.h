@@ -21,7 +21,7 @@ undefined4 place_object_in_backpack_slot(ushort *object, int slot);
 void redraw_container_icon_slot(void);
 void redraw_backpack_slot_widget(int slot);
 void print_scroll_message_by_id(int id);
-void set_pending_update_flags(int mode);
+void set_pending_update_flags(ushort mode);
 int open_file_for_read(const char *path);
 int read_file_handle(int h, void *buf, unsigned n);
 int seek_file_handle(int h, int offset, int whence);

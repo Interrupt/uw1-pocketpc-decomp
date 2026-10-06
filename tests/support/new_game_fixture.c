@@ -23,12 +23,12 @@ void debug_print_player_position(const char *label);
 void save_or_restore_level_special_state(short restore, short slot);
 void pop_cursor_icon(int state);
 undefined4 cursor_show_idle_tick(void);
-void set_pending_update_flags(int sound);
+void set_pending_update_flags(ushort sound);
 void reset_cursor_confine_rect(void);
-void report_fatal_error_and_exit(void);
+void report_fatal_error_and_exit(ushort error_code);
 void uw_debug_dump_tmap(int level, const unsigned char *data);
 void *tilemap_lookup(short tile_x, short tile_y);
-void *resolve_object_link(void);
+void *resolve_object_link(ushort *link_field);
 
 unsigned char arena[0x7c08], pristine_level[0x7c08];
 
@@ -224,7 +224,7 @@ void pop_cursor_icon(int state) { TEST_ASSERT_EQUAL_INT(3, state); }
 
 undefined4 cursor_show_idle_tick(void) { return 0; }
 
-void set_pending_update_flags(int sound) { TEST_ASSERT_EQUAL_INT(0x7ffe, sound); }
+void set_pending_update_flags(ushort sound) { TEST_ASSERT_EQUAL_INT(0x7ffe, sound); }
 
 void reset_cursor_confine_rect(void)
 {
@@ -232,7 +232,7 @@ void reset_cursor_confine_rect(void)
     cursor_resets++;
 }
 
-void report_fatal_error_and_exit(void)
+void report_fatal_error_and_exit(ushort error_code)
 {
     TEST_FAIL_MESSAGE("New game unexpectedly reached a fatal-error path");
 }
@@ -245,7 +245,7 @@ void uw_debug_dump_tmap(int level, const unsigned char *data)
 
 void *tilemap_lookup(short tile_x, short tile_y) { (void)tile_x; (void)tile_y; return NULL; }
 
-void *resolve_object_link(void) { return NULL; }
+void *resolve_object_link(ushort *link_field) { (void)link_field; return NULL; }
 
 void new_game_fixture_reset(void)
 {

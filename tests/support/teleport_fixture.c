@@ -13,8 +13,8 @@ void pop_cursor_icon(int state);
 int commit_level_to_save_slot(int level);
 int load_level(int level);
 void set_player_tile_position(uint x, uint y);
-void set_pending_update_flags(int flags);
-void report_fatal_error_and_exit(void);
+void set_pending_update_flags(ushort flags);
+void report_fatal_error_and_exit(ushort error_code);
 void full_dungeon_redraw(void);
 void weapon_overlay_flash_hold(int passes);
 void weapon_overlay_flash_restore(int passes);
@@ -141,8 +141,7 @@ int load_level(int level)
     return load_result;
 }
 
-undefined4 find_placement_via_tile_flood_fill(char *object, int x, int y,
-                                           short *out_x, short *out_y, int fallback)
+int find_placement_via_tile_flood_fill(ushort *object, short x, short y, short *out_x, short *out_y, int fallback)
 {
     TEST_ASSERT_EQUAL_PTR(g_player_object, object);
     TEST_ASSERT_EQUAL_INT(resolved_x, x);
@@ -161,13 +160,13 @@ void set_player_tile_position(uint x, uint y)
     positions++;
 }
 
-void set_pending_update_flags(int flags)
+void set_pending_update_flags(ushort flags)
 {
     TEST_ASSERT_TRUE(flags == 0x20 || flags == 0x7ffe);
     notifications++;
 }
 
-void report_fatal_error_and_exit(void)
+void report_fatal_error_and_exit(ushort error_code)
 {
     TEST_FAIL_MESSAGE("Teleport unexpectedly reached a fatal-error path");
 }

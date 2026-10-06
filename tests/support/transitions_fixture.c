@@ -217,7 +217,7 @@ bool select_active_font(char *font_filename) { (void)font_filename; return true;
 bool set_palette_bank(void) { return true; }
 void decrement_cursor_hide_depth(void) {}
 void load_dungeon_texture_arenas(void) {}
-void change_game_mode(void) {}
+void change_game_mode(int mode) { (void)mode;}
 undefined4 cursor_show_idle_tick(void) { return 0; }
 
 int testing_game_tick, input_opens_window;
@@ -398,7 +398,7 @@ uint load_gr_resource_entries(void) { return 1; }
 undefined4 reset_dialogue_speech_state(void) { return 0; }
 void chargen_ui_transition_hook(int is_press) { (void)is_press;}
 void init_new_character_record(int mode) { (void)mode;}
-void report_fatal_error_and_exit(void) { TEST_FAIL_MESSAGE("Screen resources must load"); }
+void report_fatal_error_and_exit(ushort error_code) { (void)error_code; TEST_FAIL_MESSAGE("Screen resources must load"); }
 void set_viewport_clip_rect(short left, short top, short right, short bottom) { (void)left; (void)top; (void)right; (void)bottom;}
 bool read_buffer_from_file(char *path, void *buffer, unsigned int count)
 {

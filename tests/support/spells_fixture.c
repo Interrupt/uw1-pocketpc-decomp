@@ -41,11 +41,11 @@ undefined4 check_object_drop_height(ushort *object, ushort *actor)
     TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
     return spells_fixture.placement_allowed;
 }
-void free_object_slot(ushort *object)
+void free_object_slot(char *object)
 { TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object); spells_fixture.frees++; }
-int encode_object_slot_index(ushort *object)
+int encode_object_slot_index(char *object)
 { TEST_ASSERT_EQUAL_PTR(g_player_object, object); return 1; }
-void object_list_insert_head(void *head, ushort *object)
+void object_list_insert_head(byte *head, char *object)
 {
     TEST_ASSERT_EQUAL_PTR(spells_fixture.map+(32+64*2)*4+2, head);
     TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object);

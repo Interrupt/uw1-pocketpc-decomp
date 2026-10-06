@@ -40,8 +40,8 @@ undefined2 DAT_00201c78;
 undefined4 DAT_000858a0;
 char *DAT_002029cc;
 uint read_realtime_clock_units(void) { return 0; }
-void object_list_unlink(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
-void object_list_insert_head(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void object_list_unlink(byte *link_field, byte *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void object_list_insert_head(byte *link_field, char *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
 void set_locomotion_state(ushort state, int flags) { (void)state; (void)flags; }
 undefined4 roll_skill_check(void) { TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
 int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
@@ -107,7 +107,7 @@ byte DAT_002046dc;
 int DAT_002046e8;
 ushort DAT_002020a0, DAT_002020a4;
 
-void *get_object_record_by_slot_index(int slot)
+void *get_object_record_by_slot_index(short slot)
 {
     if (slot == 1) return movement_fixture.player;
     if (slot == 300) return movement_fixture.door;
@@ -115,7 +115,7 @@ void *get_object_record_by_slot_index(int slot)
 }
 char *DAT_002046c4 = (char *)movement_fixture.object_arena + 0x5b00;
 short DAT_0010144c, DAT_00101454;
-int encode_object_slot_index(ushort *object)
+int encode_object_slot_index(char *object)
 {
     TEST_ASSERT_EQUAL_PTR(movement_fixture.door, object);
     movement_fixture.door_contacts++;

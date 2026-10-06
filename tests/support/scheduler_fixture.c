@@ -4,15 +4,15 @@
 /* Local service declarations; game function bodies link these mocks. */
 void *resolve_object_link(ushort *link);
 void *tilemap_lookup(short x, short y);
-void free_object_slot(void *object);
-void set_pending_update_flags(int flags);
+void free_object_slot(char *object);
+void set_pending_update_flags(ushort flags);
 long ce_rand(void);
-int encode_object_slot_index(void *object);
+int encode_object_slot_index(char *object);
 int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit);
 void adjust_door_close_animation_delay(ushort *object);
 undefined4 play_positional_sound_effect(void);
 int scheduler_advance_effect(short entry_slot, int elapsed);
-void *get_object_record_by_slot_index(int slot);
+void *get_object_record_by_slot_index(short slot);
 void build_object_placement_snapshot(void);
 int build_collision_height_field_for_object(ushort *object);
 int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags);
@@ -28,9 +28,9 @@ byte get_current_music_track(void);
 void set_pending_music_track(void);
 uint read_realtime_clock_units(void);
 int resolve_npc_melee_attack(byte *npc, short tile_x, byte tile_y, short offset_x, short offset_y);
-void *spawn_new_object(int type, int mobile);
-void object_list_insert_head(void *head, void *object);
-ushort *settle_dropped_object(void *object, int x, int y, int mode);
+void *spawn_new_object(uint type, int mobile);
+void object_list_insert_head(byte *head, char *object);
+ushort *settle_dropped_object(ushort *object, short x, short y, int mode);
 undefined4 drop_object_near_target(void);
 
 undefined1 DAT_00250730_backing[128];
@@ -115,18 +115,18 @@ void *tilemap_lookup(short x, short y)
     return tiles[y - 8 + 1];
 }
 
-void free_object_slot(void *object)
+void free_object_slot(char *object)
 {
     int slot = object == objects[1] ? 1 : 2;
     TEST_ASSERT_EQUAL_PTR(objects[slot], object);
     freed[slot]++;
 }
 
-void set_pending_update_flags(int flags) { (void)flags; }
+void set_pending_update_flags(ushort flags) { (void)flags; }
 
 long ce_rand(void) { return 15; }
 
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(char *object)
 {
     if (object == objects[1]) return 1;
     if (object == objects[2]) return 2;
@@ -142,7 +142,7 @@ undefined4 play_positional_sound_effect(void) { return 0; }
 
 int scheduler_advance_effect(short entry_slot, int elapsed) { (void)entry_slot; (void)elapsed; TEST_FAIL_MESSAGE("Unexpected directional effect"); return 0; }
 
-void *get_object_record_by_slot_index(int slot) { TEST_ASSERT_EQUAL_INT(1, slot); return objects[1]; }
+void *get_object_record_by_slot_index(short slot) { TEST_ASSERT_EQUAL_INT(1, slot); return objects[1]; }
 
 void build_object_placement_snapshot(void) {}
 
@@ -174,7 +174,7 @@ uint read_realtime_clock_units(void) { return 0; }
 
 int resolve_npc_melee_attack(byte *npc, short tile_x, byte tile_y, short offset_x, short offset_y) { (void)npc; (void)tile_x; (void)tile_y; (void)offset_x; (void)offset_y; TEST_FAIL_MESSAGE("Unexpected NPC attack"); return 0; }
 
-void *spawn_new_object(int type, int mobile)
+void *spawn_new_object(uint type, int mobile)
 {
     TEST_ASSERT_EQUAL_INT(0, mobile);
     corpses_spawned++;
@@ -183,7 +183,7 @@ void *spawn_new_object(int type, int mobile)
     return corpse;
 }
 
-void object_list_insert_head(void *head, void *object)
+void object_list_insert_head(byte *head, char *object)
 {
     TEST_ASSERT_EQUAL_PTR(tiles[2] + 2, head);
     TEST_ASSERT_EQUAL_PTR(corpse, object);
@@ -191,7 +191,7 @@ void object_list_insert_head(void *head, void *object)
     *(ushort *)head = 3 << 6;
 }
 
-ushort *settle_dropped_object(void *object, int x, int y, int mode)
+ushort *settle_dropped_object(ushort *object, short x, short y, int mode)
 {
     TEST_ASSERT_EQUAL_PTR(corpse, object);
     TEST_ASSERT_EQUAL_INT(12, x);

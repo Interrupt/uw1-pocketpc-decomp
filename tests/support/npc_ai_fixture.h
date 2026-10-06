@@ -4,8 +4,8 @@
 #include "../npc_ai_test_globals.h"
 int read_file_handle(int handle, void *buffer, uint count);
 long ce_rand(void);
-int encode_object_slot_index(void *object);
-void *get_object_record_by_slot_index(int slot);
+int encode_object_slot_index(char *object);
+void *get_object_record_by_slot_index(short slot);
 void *tilemap_lookup(short x, short y);
 undefined4 check_fine_line_of_sight(void);
 undefined4 walk_using_cached_path(void);
@@ -34,11 +34,11 @@ int build_collision_height_field_for_object(ushort *object);
 int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags);
 undefined4 sync_object_tile_position(void);
 undefined4 resolve_unique_npc_special_behavior(void);
-void object_list_unlink(void);
+void object_list_unlink(byte *link_field, byte *object);
 void spawn_creature_death_loot(void);
 void drop_monster_loot(void);
 void drop_creature_inventory_on_death(void);
-void free_object_slot(void);
+void free_object_slot(char *object);
 int compute_vertical_aim_offset(void);
 void spawn_npc_thrown_weapon(void);
 void dispatch_tile_special_action(void);

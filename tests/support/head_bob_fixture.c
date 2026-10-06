@@ -74,7 +74,7 @@ void decode_movement_command(void) {}
 void apply_heading_turn(int elapsed) {}
 void movement_collision_sweep(char *position, char *snapshot) {}
 void commit_player_move(void) {}
-void set_pending_update_flags(int flags) {}
+void set_pending_update_flags(ushort flags) {}
 void tick_mobile_objects(int elapsed) { TEST_FAIL_MESSAGE("Unexpected NPC tick"); }
 void stop_movement_sound_handle(void) {}
 undefined4 play_sound_effect_with_pan(int sound, int pan, int volume) { return 0; }

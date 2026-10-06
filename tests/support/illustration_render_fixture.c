@@ -43,7 +43,7 @@ bool select_active_font(char *font_filename);
 bool set_palette_bank(void);
 void decrement_cursor_hide_depth(void);
 void load_dungeon_texture_arenas(void);
-void change_game_mode(void);
+void change_game_mode(int mode);
 undefined4 cursor_show_idle_tick(void);
 int uw_defer_present(void);
 int uw_take_completed_frame(void);
@@ -306,7 +306,7 @@ void decrement_cursor_hide_depth(void) {}
 
 void load_dungeon_texture_arenas(void) {}
 
-void change_game_mode(void) {}
+void change_game_mode(int mode) { (void)mode;}
 
 undefined4 cursor_show_idle_tick(void) { return 0; }
 

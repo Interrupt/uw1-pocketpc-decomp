@@ -557,7 +557,6 @@ void demomode_pump(void) {
         /* Diagnostic: does ANY tile's object chain (across the whole 64x64 map) ever reach the
            object at the given large-table slot index? If not, it's a real, populated record that's
            simply never linked into the world -- an orphaned object, not a rendering/pick bug. */
-        extern void *resolve_object_link(void *link_field);
         extern char *DAT_002046c4;
         int slot = atoi(p + 8);
         void *target = (void *)((char *)DAT_002046c4 + (slot - 0x100) * 8);
@@ -602,7 +601,6 @@ void demomode_pump(void) {
         /* Diagnostic: object slot 1 is reserved for the player (real UW1 format doc 4.3: "Entry 1
            is partly used to store the player's information"). */
         extern char *DAT_002046b8;
-        extern void *resolve_object_link(void *link_field);
         unsigned char *slot1 = (unsigned char *)DAT_002046b8 + 1 * 0x1b;
         unsigned word0 = slot1[0] | (slot1[1] << 8);
         int is_quant = (word0 >> 15) & 1;
@@ -671,7 +669,6 @@ void demomode_pump(void) {
            tilemap_lookup(row,col)+2 -> resolve_object_link -> +2 shorts -> resolve_object_link ...
            walk object_chain_max_barrier uses) and print each object's raw type/flags words... */
         extern ushort *g_player_object;
-        extern void *resolve_object_link(void *link_field);
         unsigned short *pl = (unsigned short *)g_player_object;
         if (pl) {
             int row = pl[0x16/2] >> 10;

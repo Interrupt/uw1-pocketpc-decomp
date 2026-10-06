@@ -3,7 +3,7 @@
 
 /* Local service declarations; game function bodies link these mocks. */
 void *resolve_object_link(ushort *link);
-int encode_object_slot_index(ushort *object);
+int encode_object_slot_index(char *object);
 undefined4 build_object_display_name(char *text, ushort *object, int a, int b);
 void push_cursor_icon(int type);
 void pop_cursor_icon(int mode);
@@ -44,7 +44,7 @@ void *resolve_object_link(ushort *link)
     return objects[slot];
 }
 
-int encode_object_slot_index(ushort *object)
+int encode_object_slot_index(char *object)
 {
     TEST_ASSERT_NOT_NULL(object);
     for (int i = 1; i < 5; i++)
