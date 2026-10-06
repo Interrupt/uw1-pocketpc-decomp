@@ -104,7 +104,7 @@ void toggle_door_object(char *actor, byte *door) { (void)actor; (void)door; TEST
 UNUSED_VOID(print_message_with_proximity_qualifier)
 uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id) { (void)object; (void)key_item; (void)lock_link; (void)key_id; TEST_FAIL_MESSAGE("Unexpected resolve_skill_gated_unlock_or_use"); return 0; }
 void set_pending_update_flags(ushort flags) { (void)flags; TEST_FAIL_MESSAGE("Unexpected set_pending_update_flags"); }
-char *get_message_string(void) { TEST_FAIL_MESSAGE("Unexpected text trap"); return NULL; }
+char *get_message_string(ushort message_id) { (void)message_id; TEST_FAIL_MESSAGE("Unexpected text trap"); return NULL; }
 int message_scroll_print_wrapped(void) { TEST_FAIL_MESSAGE("Unexpected text trap message"); return 0; }
 #undef UNUSED_VOID
 #undef UNUSED_RESULT

@@ -117,13 +117,13 @@ int read_file_handle(int handle, void *buffer, uint size)
     *(byte *)buffer = saved_key;
     return size;
 }
-int write_xor_scrambled_block(int handle, int key, const void *buffer, int size)
+int write_xor_scrambled_block(int handle, byte key, char *buffer, short size)
 {
     TEST_ASSERT_EQUAL_UINT(sizeof saved_status, size);
     memcpy(saved_status, buffer, size);
     return size;
 }
-short read_xor_scrambled_block(int handle, int key, void *buffer, int size)
+short read_xor_scrambled_block(int handle, byte key, char *buffer, short size)
 {
     TEST_ASSERT_EQUAL_UINT(sizeof saved_status, size);
     memcpy(buffer, saved_status, size);
@@ -137,5 +137,5 @@ int DAT_00086db8_backing[256], DAT_0023bc94;
 undefined4 DAT_0023bc9c, DAT_0023bc98, DAT_002020dc;
 undefined4 DAT_002020d0, DAT_002020d4, DAT_002020d8;
 short DAT_000858c4;
-void reduce_item_quality_on_use(ushort *object) { TEST_FAIL_MESSAGE("Unexpected quality decay"); }
+void reduce_item_quality_on_use(ushort *object, char dice_count) { (void)object; (void)dice_count; TEST_FAIL_MESSAGE("Unexpected quality decay"); }
 uint calculate_object_weight(ushort *object) { return 25; }

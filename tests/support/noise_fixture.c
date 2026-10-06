@@ -52,13 +52,13 @@ void noise_fixture_reset(void)
     memset(noise_printed_message, 0, sizeof noise_printed_message);
 }
 
-undefined4 check_fine_line_of_sight(int x, int y, int z, int sx, int sy, int sz)
+int check_fine_line_of_sight(uint x, uint y, uint z, short sx, short sy, short sz)
 {
     noise_los_checks++;
     return noise_los_clear;
 }
 
-undefined4 build_object_display_name(char *buffer, ushort *object, int article, int mode)
+int build_object_display_name(char *buffer, ushort *object, int article, int mode)
 {
     TEST_ASSERT_EQUAL_PTR(noise_npc, object);
     TEST_ASSERT_EQUAL_INT(1, article);
@@ -67,7 +67,7 @@ undefined4 build_object_display_name(char *buffer, ushort *object, int article, 
     return 1;
 }
 
-char *get_message_string(uint id)
+char *get_message_string(ushort id)
 {
     noise_message_id = id;
     return reaction_message; /* A real host pointer, not a 32-bit value. */
@@ -83,8 +83,8 @@ int message_scroll_print_wrapped(char *message)
 
 /* The area search is a boundary here; use the real noise callback for the
    candidate, as the world scanner does after filtering its object list. */
-void scan_area_for_matching_objects(int budget, int excluded, codeval *callback,
-                                   int filter, int x, int y, int width, int height)
+void scan_area_for_matching_objects(char budget, byte excluded, int (*callback)(),
+                                   char filter, char x, char y, char width, char height)
 {
     TEST_ASSERT_EQUAL_INT(20, budget);
     TEST_ASSERT_EQUAL_INT(0, excluded);

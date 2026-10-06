@@ -648,8 +648,6 @@ void demomode_pump(void) {
            cast_spell_from_rune_combo calls after its mana/skill checks pass) once for each of... */
         extern ushort *g_player_object;
         extern undefined DAT_00087530_backing[212];
-        extern unsigned int dispatch_special_action(unsigned int type, unsigned int param,
-                                                      uintptr_t actor, intptr_t target);
         int i;
         for (i = 0; i < 48; i++) {
             unsigned char byte0 = DAT_00087530_backing[i * 4];

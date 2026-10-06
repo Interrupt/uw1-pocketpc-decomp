@@ -7,7 +7,7 @@ void pop_cursor_icon(int state);
 void save_or_restore_level_special_state(short level, short save);
 int commit_level_to_save_slot(int level);
 int load_level(int level);
-void set_player_tile_position(uint x, uint y);
+void set_player_tile_position(uint x, uint y, int flag);
 void set_pending_update_flags(ushort flags);
 void report_fatal_error_and_exit(ushort error_code);
 void full_dungeon_redraw(void);

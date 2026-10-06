@@ -16,7 +16,7 @@ int resolve_weapon_hit_skill_check(short attacker, int target);
 int roll_dice_sum(int count, short sides);
 undefined4 play_sound_effect_with_pan(void);
 undefined4 play_positional_sound_effect(int sound, int x, int y, int volume);
-void set_movement_animation_timer(void);
+void set_movement_animation_timer(byte timer_id, byte ticks);
 int play_weapon_impact_sound(short result);
 long ce_rand(void);
 void project_position_by_heading(int heading, short distance, short *x, short *y);
@@ -150,9 +150,9 @@ void combat_create_character(void)
 {
     uw_test_create_character((char *)player_stats, character_attributes, object_at(1));
 }
-undefined4 recalculate_player_stats(int refill_mana) { level_stat_recalculations++; return 0; }
+int recalculate_player_stats(int refill_mana) { level_stat_recalculations++; return 0; }
 void refresh_stats_panel_if_active(void) {}
-void print_scroll_message_by_id(int id) { TEST_ASSERT_EQUAL_HEX16(0x93,id); }
+void print_scroll_message_by_id(uint id) { TEST_ASSERT_EQUAL_HEX16(0x93,id); }
 int message_scroll_print_wrapped(char *text)
 {
     snprintf(level_message,sizeof level_message,"%s",text);
@@ -231,7 +231,7 @@ int resolve_weapon_hit_skill_check(short attacker, int target)
 }
 
 int roll_dice_sum(int count, short sides) { return count * sides; }
-undefined4 roll_skill_check(void)
+int roll_skill_check(int skill, int difficulty)
 { TEST_FAIL_MESSAGE("Magic Arrow does not use the ranged weapon skill check"); return 0; }
 
 undefined4 play_sound_effect_with_pan(void) { return 0; }
@@ -239,7 +239,7 @@ undefined4 play_sound_effect_with_pan(void) { return 0; }
 undefined4 play_positional_sound_effect(int sound, int x, int y, int volume)
 { (void)x; (void)y; (void)volume; if (sound == 6) death_sounds++; if (sound == 4) positional_impacts++; return 0; }
 
-void set_movement_animation_timer(void) { TEST_FAIL_MESSAGE("Unexpected player hit animation"); }
+void set_movement_animation_timer(byte timer_id, byte ticks) { (void)timer_id; (void)ticks; TEST_FAIL_MESSAGE("Unexpected player hit animation"); }
 
 int spawn_scheduled_effect_object(ushort *target, int type, int mode, byte intensity, short height, short x, short y)
 {
@@ -279,7 +279,7 @@ undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
 void try_combine_or_stow_object(void) { TEST_FAIL_MESSAGE("Unexpected container combination"); }
 uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected random destruction"); return 0; }
 void try_empty_container(ushort *container, int owned_by_player) { (void)container; (void)owned_by_player; TEST_FAIL_MESSAGE("Unexpected container emptying"); }
-undefined4 roll_object_destroy_chance(void) { TEST_FAIL_MESSAGE("Unexpected destroy chance"); return 0; }
+int roll_object_destroy_chance(short base_chance, char *object) { (void)base_chance; (void)object; TEST_FAIL_MESSAGE("Unexpected destroy chance"); return 0; }
 int reset_burnt_out_item_state(int tile_link, char *object) { (void)tile_link; (void)object; TEST_FAIL_MESSAGE("Unexpected burnt item"); return 0; }
 void free_linked_object_recursive(char *link_field) { (void)link_field; TEST_FAIL_MESSAGE("Unexpected recursive cleanup"); }
 ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int force) { (void)object; (void)tile_x; (void)tile_y; (void)force; TEST_FAIL_MESSAGE("Unexpected settling"); return 0; }

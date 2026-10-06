@@ -103,7 +103,7 @@ void flush_dirty_rect_to_display(int timed)
     if (opcode >= 0 && opcode < 42) babl_coverage[opcode]++;
 }
 void save_npc_conversation_variables(void) { babl_saves++; }
-char *get_message_string(uint id)
+char *get_message_string(ushort id)
 {
     static char *messages[] = {"", "Hello", "Hello", "Goodbye", "Trade", "Leave"};
     TEST_ASSERT_LESS_THAN_UINT(6, id);
@@ -115,8 +115,8 @@ uint *babl_alloc(uint size) { return (uint *)calloc(1, size); }
 undefined4 debug_noop_checkpoint(void) { return 0; }
 void decrement_cursor_hide_depth(void) {}
 undefined4 cursor_show_idle_tick(void) { return 0; }
-undefined4 restore_captured_grtile_backdrop(int key) { return 0; }
-undefined4 invalidate_grtile_by_key(int key) { return 0; }
+int restore_captured_grtile_backdrop(short *key) { return 0; }
+int invalidate_grtile_by_key(int key) { return 0; }
 void select_msg_scroll_mode_2(void) {}
 void select_msg_scroll_mode_normal(void) {}
 void select_msg_scroll_mode_conversation(void) {}
@@ -208,7 +208,7 @@ void compute_dimension_volume(void) {}
 undefined1 DAT_001007d0_backing[3072];
 short DAT_00201b68, DAT_00201c74;
 int babl_awarded_xp;
-void grant_experience_points(int xp) { babl_awarded_xp += xp; }
+void grant_experience_points(short xp) { babl_awarded_xp += xp; }
 void npc_set_goal_for_object(char *object, int goal, int target)
 {
     ushort packed = *(ushort *)(object + 11);
@@ -243,5 +243,5 @@ undefined1 DAT_000845b8_backing[16], DAT_000845ba_backing[16];
 undefined1 DAT_000845d8_backing[16], DAT_000845da_backing[16];
 
 int g_blit_transparent_mode;
-undefined4 grtile_alloc_registered(int width, int height) { return 1; }
-undefined4 capture_framebuffer_rect_to_grtile(int tile, int x, int y, int width, int height) { return 1; }
+int grtile_alloc_registered(uint width, uint height) { return 1; }
+int capture_framebuffer_rect_to_grtile(short *tile, int x, int y, int width, short height) { return 1; }

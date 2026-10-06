@@ -5,9 +5,9 @@
 void wait_for_click_release(int buttons);
 int message_scroll_print_wrapped(const char *message);
 undefined4 play_sound_effect_with_pan(int id, int pan, int mode);
-void print_scroll_message_by_id(int id);
-undefined4 roll_skill_check(int skill, int difficulty);
-undefined4 dispatch_special_action(int type, int param, ushort *caster, ushort *target);
+void print_scroll_message_by_id(uint id);
+int roll_skill_check(int skill, int difficulty);
+int dispatch_special_action(uint type, uint param, uintptr_t caster, intptr_t target);
 void spell_runes_fixture_reset(void);
 void spell_runes_fixture_dispose(void);
 void ready_runes(int first, int second, int third);

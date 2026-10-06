@@ -214,7 +214,7 @@ undefined4 play_numbered_voice_sample(void) { return 0; }
 bool is_voice_sample_finished(void) { return 1; }
 undefined4 play_music_track(void) { return 0; }
 bool select_active_font(char *font_filename) { (void)font_filename; return true; }
-bool set_palette_bank(void) { return true; }
+bool set_palette_bank(int bank) { (void)bank; return true; }
 void decrement_cursor_hide_depth(void) {}
 void load_dungeon_texture_arenas(void) {}
 void change_game_mode(int mode) { (void)mode;}
@@ -356,7 +356,7 @@ void transitions_fixture_dispose(void)
 
 int uw_always_show_cursor(void) { return 0; }
 void clear_ambient_sound_target_thunk(void) { clear_ambient_sound_target(); }
-char *chrbtns_bump_alloc_entry(int size) { TEST_FAIL_MESSAGE("Unexpected chargen allocation callback"); return NULL; }
+void *chrbtns_bump_alloc_entry(int size) { TEST_FAIL_MESSAGE("Unexpected chargen allocation callback"); return NULL; }
 int chrbtns_offset_table_builder(int index, int kind, int entry)
 { TEST_FAIL_MESSAGE("Unexpected chargen resource callback"); return 0; }
 
@@ -394,13 +394,13 @@ char s__DATA_main_byt_000857a8[] = "\\DATA\\main.byt";
 int character_screen_inputs;
 char *LAB_000255b4(void) { return NULL; }
 undefined4 LAB_000255d0(void) { return 0; }
-uint load_gr_resource_entries(void) { return 1; }
+uint load_gr_resource_entries(char *path, int first_entry, short count, void *(*allocator)(), int (*post_process)()) { (void)path; (void)first_entry; (void)count; (void)allocator; (void)post_process; return 1; }
 undefined4 reset_dialogue_speech_state(void) { return 0; }
 void chargen_ui_transition_hook(int is_press) { (void)is_press;}
 void init_new_character_record(int mode) { (void)mode;}
 void report_fatal_error_and_exit(ushort error_code) { (void)error_code; TEST_FAIL_MESSAGE("Screen resources must load"); }
 void set_viewport_clip_rect(short left, short top, short right, short bottom) { (void)left; (void)top; (void)right; (void)bottom;}
-bool read_buffer_from_file(char *path, void *buffer, unsigned int count)
+bool read_buffer_from_file(char *path, void *buffer, int count)
 {
     int handle = uw_file_open_read(path);
     TEST_ASSERT_GREATER_THAN_INT(0, handle);
@@ -408,7 +408,7 @@ bool read_buffer_from_file(char *path, void *buffer, unsigned int count)
     uw_file_close(handle);
     return bytes == count;
 }
-bool load_pals_bank(unsigned int bank, void *buffer)
+bool load_pals_bank(int bank, void *buffer)
 {
     FILE *file = fopen(UW_TEST_DATA_DIR "/DATA/PALS.DAT", "rb");
     TEST_ASSERT_NOT_NULL(file);

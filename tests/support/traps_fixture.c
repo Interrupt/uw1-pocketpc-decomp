@@ -2,7 +2,7 @@
 #include "traps_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-char *get_message_string(uint id);
+char *get_message_string(ushort id);
 int message_scroll_print_wrapped(char *text);
 void debug_print(char *format, ...);
 ushort * find_equipped_item_by_category(void);
@@ -55,7 +55,7 @@ uint message_id;
 
 int lookups, prints;
 
-char *get_message_string(uint id)
+char *get_message_string(ushort id)
 { lookups++; message_id = id; return available_message; }
 
 int message_scroll_print_wrapped(char *text)

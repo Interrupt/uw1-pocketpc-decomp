@@ -47,16 +47,16 @@ void *get_scanned_object_class_effect_ptr(void)
 {
     return torch_effect;
 }
-int compute_object_weight(void) { return 0; }
+int compute_object_weight(ushort *object) { (void)object; return 0; }
 void request_weapon_swing_graphic(char category) {}
 void reset_player_derived_state(void) {}
 void set_ambient_bias_with_light(char strength) {}
 void set_ambient_bias_without_light(char strength) { visibility_ambient_strength = strength; }
 int is_valid_equipment_slot_item(ushort item, short slot) { return 0; }
 undefined4 resolve_object_variant_or_special_link(void *object, void *type, void *level, void *result) { return 0; }
-undefined4 apply_equipped_item_effect(int type, int level, void *effects, int slot) { return 0; }
+int apply_equipped_item_effect(byte type, byte level, ushort *effects, int slot) { return 0; }
 void clear_object_pending_special_flag(void *object) {}
-void apply_equipment_effect_penalties(int effects) {}
+void apply_equipment_effect_penalties(uint effects) {}
 void update_screen_flicker_effect(int flicker) {}
 void force_locomotion_state_refresh(void) {}
 void apply_movement_mode_profile(byte mode) {}

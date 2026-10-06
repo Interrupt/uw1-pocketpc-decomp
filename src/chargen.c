@@ -1476,7 +1476,7 @@ void chargen_ui_transition_hook(int is_press)
 /* r1 = &DAT_000fb858; r2 = *r1 (current cursor); r0 = r2 + param_1; r1 = r0 (advance cursor by
    param_1 bytes); return r2 (the position before* advancing) -- a bump-pointer sub-allocator
    carving fixed- size chunks out of whatever buffer DAT_000fb858 currently points to. */
-char *chrbtns_bump_alloc_entry(int byte_count)
+void *chrbtns_bump_alloc_entry(int byte_count)
 {
   char *old = DAT_000fb858;
   DAT_000fb858 = DAT_000fb858 + byte_count;

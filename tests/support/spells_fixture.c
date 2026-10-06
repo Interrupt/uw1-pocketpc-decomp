@@ -35,7 +35,7 @@ void *alloc_object_slot(int region)
     spells_fixture.allocations++;
     return spells_fixture.allocation_fails ? NULL : spells_fixture.projectile;
 }
-undefined4 check_object_drop_height(ushort *object, ushort *actor)
+int check_object_drop_height(ushort *object, ushort *actor)
 {
     TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object);
     TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
@@ -61,7 +61,7 @@ undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
 }
 
 void configure_texture_detail_functions(void) {}
-undefined4 recalculate_player_stats(int level) { (void)level; return 0; }
+int recalculate_player_stats(int level) { (void)level; return 0; }
 void refresh_player_equipment_effects(void) { spells_fixture.equipment_refreshes++; }
 int roll_dice_sum(count, sides)
 int count;
@@ -78,7 +78,7 @@ short sides;
     return 9;
 }
 void weapon_overlay_flash_once(int frame) { TEST_ASSERT_EQUAL_HEX16(0xa8, frame); }
-undefined4 roll_skill_check(int skill, int difficulty)
+int roll_skill_check(int skill, int difficulty)
 {
     TEST_ASSERT_EQUAL_INT((byte)spells_fixture.character[0x2a] + 5, skill);
     TEST_ASSERT_EQUAL_INT(2, difficulty);
@@ -94,7 +94,7 @@ undefined4 play_sound_effect_with_pan(int sound, int pan, int mode)
     spells_fixture.sound = sound;
     return 0;
 }
-void print_scroll_message_by_id(int id)
+void print_scroll_message_by_id(uint id)
 { spells_fixture.messages++; spells_fixture.message_id = id; }
 void print_not_a_spell_message(void) { TEST_FAIL_MESSAGE("Runes must match the real spell table"); }
 void *tilemap_lookup(short x, short y)
@@ -107,13 +107,13 @@ void *tilemap_lookup(short x, short y)
 /* Fail on unrelated dispatcher branches, rather than substituting its real
    light effect with a success stub and hiding the pointer truncation. */
 #define UNUSED_EFFECT(name) void name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); }
-UNUSED_EFFECT(trigger_player_jump_if_grounded)
-UNUSED_EFFECT(apply_healing_item_effect)
-UNUSED_EFFECT(cast_cone_damage_spell)
-UNUSED_EFFECT(cast_targeted_search_effect)
-UNUSED_EFFECT(cast_summon_or_spawn_effect)
-UNUSED_EFFECT(adjust_level7_hazard_value)
-UNUSED_EFFECT(dispatch_player_command)
+void trigger_player_jump_if_grounded(char *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected trigger_player_jump_if_grounded"); }
+void apply_healing_item_effect(ushort *object, char effect_code) { (void)object; (void)effect_code; TEST_FAIL_MESSAGE("Unexpected apply_healing_item_effect"); }
+void cast_cone_damage_spell(uintptr_t caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_cone_damage_spell"); }
+void cast_targeted_search_effect(uintptr_t caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_targeted_search_effect"); }
+void cast_summon_or_spawn_effect(uintptr_t caster, char variant) { (void)caster; (void)variant; TEST_FAIL_MESSAGE("Unexpected cast_summon_or_spawn_effect"); }
+void adjust_level7_hazard_value(char *object, char delta) { (void)object; (void)delta; TEST_FAIL_MESSAGE("Unexpected adjust_level7_hazard_value"); }
+void dispatch_player_command(char *actor, int unused, char command) { (void)actor; (void)unused; (void)command; TEST_FAIL_MESSAGE("Unexpected dispatch_player_command"); }
 void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y) { (void)button; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected handle_level4_maze_puzzle_button"); }
 UNUSED_EFFECT(display_book_or_scroll_page)
 void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected scheduler_tick"); }

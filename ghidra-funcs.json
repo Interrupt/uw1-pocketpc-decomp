@@ -1,14 +1,14 @@
 {
   "_meta": {
     "description": "Every function definition in src/*.c. Those with ghidra_origin true still carry a \"was FUN_xxxxxxxx\" comment, i.e. were renamed from a Ghidra placeholder; the rest have original_name null. Regenerate with tools/gen_ghidra_funcs.py.",
-    "total_functions": 1469,
-    "with_original_name": 1237,
+    "total_functions": 1465,
+    "with_original_name": 1233,
     "without_original_name": 232,
     "still_unnamed_FUN": 12,
-    "audited_true": 1469,
+    "audited_true": 1465,
     "audited_false": 0,
-    "modernized_true": 871,
-    "modernized_false": 598
+    "modernized_true": 1033,
+    "modernized_false": 432
   },
   "functions": [
     {
@@ -339,23 +339,23 @@
       "param_count": 7,
       "description": "creature find path to tile.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_walk_toward_tile",
       "path": "src/ai.c",
-      "line": 449,
+      "line": 441,
       "original_name": "FUN_0002e58c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "npc walk toward tile.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_ai_tick",
       "path": "src/ai.c",
-      "line": 660,
+      "line": 647,
       "original_name": "FUN_00032d38",
       "ghidra_origin": true,
       "param_count": 0,
@@ -366,205 +366,205 @@
     {
       "name": "tick_mobile_objects",
       "path": "src/ai.c",
-      "line": 917,
+      "line": 904,
       "original_name": "FUN_000349bc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "tick mobile objects.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "build_creature_look_text",
       "path": "src/ai.c",
-      "line": 956,
+      "line": 943,
       "original_name": "FUN_00049404",
       "ghidra_origin": true,
       "param_count": 2,
-      "description": "build creature look text.",
+      "description": "was undefined4 -- the caller's stack description buffer (acStack_7c).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "roll_object_destroy_chance",
       "path": "src/ai.c",
-      "line": 1038,
+      "line": 1022,
       "original_name": "FUN_00052c5c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "disassembly-confirmed real math, not a bug.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sync_object_tile_position",
       "path": "src/ai.c",
-      "line": 1080,
+      "line": 1059,
       "original_name": "FUN_00054f6c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "sync object tile position.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "settle_mobile_to_immobile",
       "path": "src/ai.c",
-      "line": 1244,
+      "line": 1220,
       "original_name": "FUN_0005596c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "settle mobile to immobile.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "drop_creature_inventory_on_death",
       "path": "src/ai.c",
-      "line": 1401,
+      "line": 1375,
       "original_name": "FUN_0007931c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "empties a dead creature's inventory into the world, capping the number of items dropped via a per-monster-class value (DAT_001007d9, indexed by the creature's type, 0x30-byte stride -- see g_monster_max_stats_table's own comment for this same table).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_creature_treasure_drop",
       "path": "src/ai.c",
-      "line": 1415,
+      "line": 1388,
       "original_name": "FUN_00079350",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "rolls a chance (based on g_despawn_creature_ record's own drop-rate byte, offset +0x26, high nibble) to spawn a treasure item on a dying/despawning creature.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_creature_special_item_drop",
       "path": "src/ai.c",
-      "line": 1498,
+      "line": 1467,
       "original_name": "FUN_0007955c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "second creature-death drop roll.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_creature_equipment_drop",
       "path": "src/ai.c",
-      "line": 1523,
+      "line": 1490,
       "original_name": "FUN_000795cc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "third creature-death drop roll.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_creature_misc_item_drop",
       "path": "src/ai.c",
-      "line": 1586,
+      "line": 1551,
       "original_name": "FUN_00079784",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "fourth creature-death drop roll.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_creature_death_loot",
       "path": "src/ai.c",
-      "line": 1645,
+      "line": 1607,
       "original_name": "FUN_000798c4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the creature death-loot orchestrator, gated on a \"already dropped\" flag (param_1[7] bit 0x10, set at the end).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "activate_area_hazard_object",
       "path": "src/ai.c",
-      "line": 1672,
+      "line": 1631,
       "original_name": "FUN_000816e0",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "morphs a trap/hazard object (class id 0x14 or 0x15) into its \"active\" counterpart (0x1c2 or 0x1c5 respectively -- 0x1c2 is the same spell-effect id cast_area_spell_effect spawns), schedules it (type 4, delay 0).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "drop_monster_loot",
       "path": "src/ai.c",
-      "line": 1722,
+      "line": 1676,
       "original_name": "FUN_0002b258",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "drops a dead monster's loot.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reconstruct_path_from_bfs",
       "path": "src/ai.c",
-      "line": 1781,
+      "line": 1730,
       "original_name": "FUN_0002d110",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "reconstructs an NPC's walk path from creature_find_path_to_tile's BFS parent-pointer scratch arrays (&DAT_0023cf08-family), walking backward from the found tile.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "try_direct_line_walk",
       "path": "src/ai.c",
-      "line": 1815,
+      "line": 1759,
       "original_name": "FUN_0002d1e0",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "attempts a direct straight-line walk from tile (param_1,param_2) toward tile (param_3,param_4).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_fine_line_of_sight",
       "path": "src/ai.c",
-      "line": 1944,
+      "line": 1883,
       "original_name": "FUN_0002d4e8",
       "ghidra_origin": true,
       "param_count": 6,
       "description": "checks line-of-sight between two fine-grained (sub-tile) positions, walking a Bresenham-style line and testing each crossed tile boundary via can_step_between_tiles.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "record_line_walk_step",
       "path": "src/ai.c",
-      "line": 2159,
+      "line": 2091,
       "original_name": "FUN_0002d9f4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "records the next waypoint (param_1,param_2) into try_direct_line_walk's own step-array state (DAT_00101740/41), then validates line-of-sight for that step via tile_pair_los_blocked.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "pop_pending_path_cache_slot",
       "path": "src/ai.c",
-      "line": 2205,
+      "line": 2134,
       "original_name": "FUN_0002db4c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "pops the lowest set bit (0-15) from DAT_000853b8, the pending \"path cache slot needs recompute\" bitmask (set per-NPC via `1 << (record's own byte 0xb & 0xf)` slot index), outputting it via *param_1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_npc_path_cache",
       "path": "src/ai.c",
-      "line": 2229,
+      "line": 2156,
       "original_name": "FUN_0002dba4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -575,95 +575,95 @@
     {
       "name": "save_walk_path_to_cache_slot",
       "path": "src/ai.c",
-      "line": 2251,
+      "line": 2178,
       "original_name": "FUN_0002dbf4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "serializes the just-computed walk path (DAT_00101740/41 start, DAT_0010142c step count, and the per-step direction arrays try_direct_line_walk/record_line_walk_step filled) into a compact bitfield cache record at param_1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "advance_cached_path_step",
       "path": "src/ai.c",
-      "line": 2309,
+      "line": 2233,
       "original_name": "FUN_0002dd4c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "advances a cached NPC walk path (the 28-byte per-slot record save_walk_path_to_cache_slot writes, keyed on the current step index at param_1[2]&0x7f vs the total step count at param_1[3]) by one step.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_path_cache_position_match",
       "path": "src/ai.c",
-      "line": 2353,
+      "line": 2275,
       "original_name": "FUN_0002de40",
       "ghidra_origin": true,
       "param_count": 7,
       "description": "checks whether an NPC's current tile position matches its cached path's expected position for this tick.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "walk_using_cached_path",
       "path": "src/ai.c",
-      "line": 2428,
+      "line": 2342,
       "original_name": "FUN_0002df2c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the top-level \"walk via cached path\" driver.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_blocked_cached_path",
       "path": "src/ai.c",
-      "line": 2492,
+      "line": 2404,
       "original_name": "FUN_0002e104",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "handles a blocked/exhausted cached path.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_movement_heading",
       "path": "src/ai.c",
-      "line": 2561,
+      "line": 2470,
       "original_name": "FUN_0002e3b4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "computes an 8-way movement heading (0-7) from a relative (param_1,param_2) delta, used by walk_using_cached_path/ handle_blocked_cached_path to steer an NPC's facing/movement byte 9.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "set_npc_altitude_state",
       "path": "src/ai.c",
-      "line": 2609,
+      "line": 2515,
       "original_name": "FUN_0002ee80",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "sets a flying/levitating NPC's vertical movement/animation state (packed into the top bits of record byte 0x14).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_arrival_interaction",
       "path": "src/ai.c",
-      "line": 2651,
+      "line": 2553,
       "original_name": "FUN_0002efa0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "an NPC's \"arrived at destination tile\" reaction.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_wander_reposition",
       "path": "src/ai.c",
-      "line": 2700,
+      "line": 2599,
       "original_name": "FUN_00030874",
       "ghidra_origin": true,
       "param_count": 3,
@@ -674,7 +674,7 @@
     {
       "name": "npc_react_to_nearby_player",
       "path": "src/ai.c",
-      "line": 2771,
+      "line": 2670,
       "original_name": "FUN_00031dbc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -685,40 +685,40 @@
     {
       "name": "detect_npc_wander_proximity",
       "path": "src/ai.c",
-      "line": 2817,
+      "line": 2716,
       "original_name": "FUN_00032180",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "checks the NPC's proximity to its current wander/goal tile against two stat-template-derived radii (byte 0x1e's two nibbles, each multiplied against a per-monster-class table entry).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_vertical_aim_offset",
       "path": "src/ai.c",
-      "line": 2889,
+      "line": 2785,
       "original_name": "FUN_0003298c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "computes a vertical aim/pitch offset toward the tracked target.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "setup_npc_ai_tick_state",
       "path": "src/ai.c",
-      "line": 2937,
+      "line": 2830,
       "original_name": "FUN_00032aa4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the per-tick NPC AI setup step.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_ai_default_tick",
       "path": "src/ai.c",
-      "line": 2987,
+      "line": 2877,
       "original_name": "FUN_00033880",
       "ghidra_origin": true,
       "param_count": 0,
@@ -729,7 +729,7 @@
     {
       "name": "refresh_npc_target_delta",
       "path": "src/ai.c",
-      "line": 3284,
+      "line": 3174,
       "original_name": "FUN_00034044",
       "ghidra_origin": true,
       "param_count": 0,
@@ -740,18 +740,18 @@
     {
       "name": "check_npc_morale_flee",
       "path": "src/ai.c",
-      "line": 3323,
+      "line": 3213,
       "original_name": "FUN_00034270",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "an NPC morale/flee-shaped check.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_pathfind_search_radius",
       "path": "src/ai.c",
-      "line": 3360,
+      "line": 3245,
       "original_name": "FUN_0003431c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -762,40 +762,40 @@
     {
       "name": "initiate_npc_death",
       "path": "src/ai.c",
-      "line": 3381,
+      "line": 3266,
       "original_name": "FUN_000345b8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "transitions an NPC object into the death state (goal 0xc, the state npc_ai_default_tick's own goal-0xc branch reads to drop loot and free the slot).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_monster_death",
       "path": "src/ai.c",
-      "line": 3410,
+      "line": 3293,
       "original_name": "FUN_00034634",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "wraps initiate_npc_death: bails out early (returns 0) if the NPC is already in goal 0xc (dead) or initiate_npc_death() refuses the transition;.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_set_goal_for_object",
       "path": "src/ai.c",
-      "line": 3433,
+      "line": 3314,
       "original_name": "FUN_00034ac4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "calls npc_set_goal(param_2,param_3) as if param_1 were the \"current NPC\" (DAT_0010190c), temporarily swapping that context pointer in and restoring the caller's own value afterward.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "randomize_active_npc_flags",
       "path": "src/ai.c",
-      "line": 3453,
+      "line": 3329,
       "original_name": "FUN_00034af0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -806,40 +806,40 @@
     {
       "name": "resolve_tile_entry_offset",
       "path": "src/ai.c",
-      "line": 3485,
+      "line": 3361,
       "original_name": "FUN_00034ba8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "looks up a within-tile entry-point offset (written to *param_2/*param_3, x/y in 1/8-tile units) based on the destination tile's type nibble (param_1, from tilemap_lookup's low 4 type bits).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_movement_tick",
       "path": "src/ai.c",
-      "line": 3522,
+      "line": 3394,
       "original_name": "FUN_00034c10",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "per-tick movement/animation step for an active NPC (class 0x40), called by advance_mobile_objects.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "settle_misplaced_mobile_object",
       "path": "src/ai.c",
-      "line": 3616,
+      "line": 3483,
       "original_name": "FUN_00034fa4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "per-tick settle step for a non-NPC active mobile object (thrown/dropped items, projectiles, etc).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "advance_mobile_objects",
       "path": "src/ai.c",
-      "line": 3658,
+      "line": 3523,
       "original_name": "FUN_0003513c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -850,18 +850,18 @@
     {
       "name": "spawn_rest_interrupt_monster_callback",
       "path": "src/ai.c",
-      "line": 3721,
+      "line": 3586,
       "original_name": "FUN_00035394",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "scan_area_ahead_of_object callback used while the player rests.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_rest_interrupted_by_monster",
       "path": "src/ai.c",
-      "line": 3849,
+      "line": 3710,
       "original_name": "FUN_00035894",
       "ghidra_origin": true,
       "param_count": 0,
@@ -872,7 +872,7 @@
     {
       "name": "load_last_attacker_record",
       "path": "src/ai.c",
-      "line": 3861,
+      "line": 3722,
       "original_name": "FUN_000358e8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -883,7 +883,7 @@
     {
       "name": "save_last_attacker_record",
       "path": "src/ai.c",
-      "line": 3877,
+      "line": 3738,
       "original_name": "FUN_00035960",
       "ghidra_origin": true,
       "param_count": 0,
@@ -894,7 +894,7 @@
     {
       "name": "clear_last_attacker_record",
       "path": "src/ai.c",
-      "line": 3899,
+      "line": 3760,
       "original_name": "FUN_000359f4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -905,51 +905,51 @@
     {
       "name": "alert_npc_to_noise_callback",
       "path": "src/ai.c",
-      "line": 3912,
+      "line": 3773,
       "original_name": "FUN_00035a18",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "scan_area_for_matching_objects callback used by emit_noise_alert.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "emit_noise_alert",
       "path": "src/ai.c",
-      "line": 3985,
+      "line": 3842,
       "original_name": "FUN_00035cb0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "makes noise at object param_1 (e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_unique_npc_special_behavior",
       "path": "src/ai.c",
-      "line": 4015,
+      "line": 3868,
       "original_name": "FUN_0003a73c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "special-behavior dispatcher for \"unique\" NPCs, keyed by their own byte 0x1a (a per-record special-event code, 0 meaning \"ordinary, no special handling\").",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_critter_association_tables",
       "path": "src/ai.c",
-      "line": 4098,
+      "line": 3948,
       "original_name": "FUN_00040160",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "called during the bitmap-loading stage of game startup (uw.c, right after every HUD bitmap resource load succeeds) with param_1=1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "flush_pending_critter_resource_slots",
       "path": "src/ai.c",
-      "line": 4223,
+      "line": 4071,
       "original_name": "FUN_00040440",
       "ghidra_origin": true,
       "param_count": 0,
@@ -960,29 +960,29 @@
     {
       "name": "spawn_npc_thrown_weapon",
       "path": "src/ai.c",
-      "line": 4247,
+      "line": 4095,
       "original_name": "FUN_0004a510",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "NPC-side ranged/thrown weapon launch (the counterpart to the player's fire_ranged_weapon).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_set_walk_target",
       "path": "src/ai.c",
-      "line": 4268,
+      "line": 4111,
       "original_name": "FUN_0002e454",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "npc set walk target.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_idle_behavior_tick",
       "path": "src/ai.c",
-      "line": 4303,
+      "line": 4141,
       "original_name": "FUN_0002f124",
       "ghidra_origin": true,
       "param_count": 0,
@@ -993,7 +993,7 @@
     {
       "name": "npc_wander_return_home_tick",
       "path": "src/ai.c",
-      "line": 4498,
+      "line": 4336,
       "original_name": "FUN_0002fba8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1004,7 +1004,7 @@
     {
       "name": "npc_notice_and_idle_tick",
       "path": "src/ai.c",
-      "line": 4538,
+      "line": 4376,
       "original_name": "FUN_0002fcec",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1015,7 +1015,7 @@
     {
       "name": "npc_wander_return_home_exact_tick",
       "path": "src/ai.c",
-      "line": 4666,
+      "line": 4504,
       "original_name": "FUN_00031fa8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1026,18 +1026,18 @@
     {
       "name": "npc_set_goal",
       "path": "src/ai.c",
-      "line": 4744,
+      "line": 4582,
       "original_name": "FUN_000343d8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "npc set goal.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_clear_special_goal",
       "path": "src/ai.c",
-      "line": 4773,
+      "line": 4607,
       "original_name": "FUN_000344a4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1048,18 +1048,18 @@
     {
       "name": "object_tick_is_due",
       "path": "src/ai.c",
-      "line": 4812,
+      "line": 4646,
       "original_name": "FUN_0003495c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "object tick is due.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "tile_pair_los_blocked",
       "path": "src/ai.c",
-      "line": 4835,
+      "line": 4666,
       "original_name": "FUN_0002bdac",
       "ghidra_origin": true,
       "param_count": 11,
@@ -1070,7 +1070,7 @@
     {
       "name": "build_object_placement_snapshot",
       "path": "src/ai.c",
-      "line": 5269,
+      "line": 5100,
       "original_name": "FUN_00054a00",
       "ghidra_origin": true,
       "param_count": 2,
@@ -10538,420 +10538,387 @@
       "param_count": 2,
       "description": "Ghidra rendered the embedded space as an underscore.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decode_critter_sprite_page",
       "path": "src/object_actions.c",
-      "line": 223,
+      "line": 219,
       "original_name": "FUN_000404a0",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "Loads (and page-caches) a \\CRIT\\CRnnPAGE.Nnn sprite page and decodes one frame's glyph into a fresh palette-indexed bitmap.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_critter_sprite_tier",
       "path": "src/object_actions.c",
-      "line": 361,
+      "line": 351,
       "original_name": "FUN_0004083c",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "Called from emit_tile_objects's render-class-1 (camera-facing billboard, used for both critters and doors) branch.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_object_carry_weight",
       "path": "src/object_actions.c",
-      "line": 416,
+      "line": 401,
       "original_name": "FUN_00046358",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "check object carry weight.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_object_action_dup",
       "path": "src/object_actions.c",
-      "line": 434,
+      "line": 417,
       "original_name": "FUN_00048764",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatch object action dup.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_object_drop_height",
       "path": "src/object_actions.c",
-      "line": 567,
+      "line": 546,
       "original_name": "FUN_0004b288",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "validity gate for spawn_object_near_player's freshly-copied object (param_1) placed near param_2's position.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_object_combination",
       "path": "src/object_actions.c",
-      "line": 677,
+      "line": 653,
       "original_name": "FUN_0007bf38",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "check object combination.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_tile_special_action",
       "path": "src/object_actions.c",
-      "line": 746,
+      "line": 718,
       "original_name": "FUN_00073b40",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "looks up tile-type id param_1 (0..0x34) in a per-type 4-byte-stride table (DAT_00087530/DAT_00087533) to get a \"special action\" type/id pair, then forwards to dispatch_special_action with param_2/param_3 as the actor object and an extra parameter.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_special_action",
       "path": "src/object_actions.c",
-      "line": 765,
+      "line": 732,
       "original_name": "FUN_00073b74",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "the general \"SPECIAL\" action dispatcher (see the SPECIAL ILLUSTRATED BOOK/SCROLL comment elsewhere in this file for one example caller shape).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reduce_item_quality_on_use",
       "path": "src/object_actions.c",
-      "line": 875,
+      "line": 837,
       "original_name": "FUN_00074028",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatch_special_action's \"reduce item durability\" handler (its own case 9).",
       "audited": true,
-      "modernized": false,
-      "audit_note": "VERIFIED vs ARM: ARM apply_equipped_item_effect (0x663bc) also passes only r0; r1 is stale there (original quirk, left as-is) (declared 2; e.g. src/player.c:1119 passes 1)"
+      "modernized": true,
+      "audit_note": "VERIFIED vs ARM: ARM apply_equipped_item_effect (0x663bc) also passes only r0; r1 is stale there (original quirk, left as-is)"
     },
     {
       "name": "apply_targeted_spell_effect",
       "path": "src/object_actions.c",
-      "line": 912,
+      "line": 870,
       "original_name": "FUN_000740b0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatch_special_action's case 5 (\"spawn a targeted spell-effect object\") worker.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_and_prime_spell_effect_object",
       "path": "src/object_actions.c",
-      "line": 942,
+      "line": 898,
       "original_name": "FUN_00074150",
       "ghidra_origin": true,
       "param_count": 2,
-      "description": "spawn and prime spell effect object.",
+      "description": "Was `int spawn_and_prime_spell_effect_object(...)` -- returned spawn_new_object's real object pointer through a 32-bit int, truncated on this host.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "force_unlock_target_object",
       "path": "src/object_actions.c",
-      "line": 977,
+      "line": 928,
       "original_name": "FUN_000741f0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "forcibly unlocks a target object.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cast_single_tile_spell_effect",
       "path": "src/object_actions.c",
-      "line": 1003,
+      "line": 950,
       "original_name": "FUN_000742c0",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "casts a single-tile spell effect at tile (param_1,param_2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cast_area_spell_effect",
       "path": "src/object_actions.c",
-      "line": 1039,
+      "line": 980,
       "original_name": "FUN_00074380",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "casts an area spell effect centered on tile (param_1,param_2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_type_flagged_trap_effect",
       "path": "src/object_actions.c",
-      "line": 1075,
+      "line": 1010,
       "original_name": "FUN_00074474",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "gated trap/effect trigger.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_tile_damage_trap_effect",
       "path": "src/object_actions.c",
-      "line": 1098,
+      "line": 1027,
       "original_name": "FUN_000744e0",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "unconditional tile-trap damage effect at tile (param_1,param_2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "morph_tile_object_state",
       "path": "src/object_actions.c",
-      "line": 1127,
+      "line": 1050,
       "original_name": "FUN_0007455c",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "resistance-gated object-state morph.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_permanent_object_state_effect",
       "path": "src/object_actions.c",
-      "line": 1158,
+      "line": 1075,
       "original_name": "FUN_00074614",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "resistance-gated, one-time-effect object-state trigger.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_tile_morph_variant_2",
       "path": "src/object_actions.c",
-      "line": 1183,
+      "line": 1096,
       "original_name": "FUN_000746b0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "thin wrapper: morph_tile_object_state with texture/effect variant 2 and object-state id 1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_tile_morph_variant_6",
       "path": "src/object_actions.c",
-      "line": 1198,
+      "line": 1106,
       "original_name": "FUN_000746d4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "thin wrapper: morph_tile_object_state with texture/effect variant 6 and object-state id -1 (\"no change\" -- this variant only affects the tile's texture/decoration, not the target object's quality/link field).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_tile_morph_variant_7",
       "path": "src/object_actions.c",
-      "line": 1212,
+      "line": 1115,
       "original_name": "FUN_000746f8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "thin wrapper: morph_tile_object_state with texture/effect variant 7 and object-state id 1.",
       "audited": true,
-      "modernized": false
-    },
-    {
-      "name": "scan_area_for_matching_objects",
-      "path": "src/object_actions.c",
-      "line": 1228,
-      "original_name": "FUN_0007471c",
-      "ghidra_origin": true,
-      "param_count": 8,
-      "description": "scans a rectangular tile area (top-left (param_5,param_6), size param_7 x param_8, clamped to the 0-63 tilemap bounds) and invokes the callback param_3.",
-      "audited": true,
-      "modernized": false
-    },
-    {
-      "name": "scan_area_ahead_of_object",
-      "path": "src/object_actions.c",
-      "line": 1389,
-      "original_name": "FUN_00074ad0",
-      "ghidra_origin": true,
-      "param_count": 6,
-      "description": "computes a position projected param_5 tiles ahead of object param_1's facing (project_position_by_heading, using its heading bits at offset+2 and location at offset+0x16).",
-      "audited": true,
-      "modernized": false
-    },
-    {
-      "name": "for_each_object_of_type",
-      "path": "src/object_actions.c",
-      "line": 1434,
-      "original_name": "FUN_00074be8",
-      "ghidra_origin": true,
-      "param_count": 4,
-      "description": "iterates the active-object slot range [DAT_002046c0, DAT_002046c8), and for each object whose type-id byte (offset +0x1a) matches param_1, invokes callback param_4 as (object, param_3).",
-      "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cast_cone_damage_spell",
       "path": "src/object_actions.c",
-      "line": 1470,
+      "line": 1344,
       "original_name": "FUN_00074c64",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatch_special_action's case 6 handler.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cast_targeted_search_effect",
       "path": "src/object_actions.c",
-      "line": 1488,
+      "line": 1358,
       "original_name": "FUN_00074cc8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatch_special_action's case 7 handler, player-only.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cast_summon_or_spawn_effect",
       "path": "src/object_actions.c",
-      "line": 1506,
+      "line": 1372,
       "original_name": "FUN_00074d20",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatch_special_action's case 8 handler.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_random_variant_object_at_tile",
       "path": "src/object_actions.c",
-      "line": 1686,
+      "line": 1548,
       "original_name": "FUN_00075248",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "spawns one of 3 object-id variants (0x154-0x156, chosen at random) centered in tile (param_1,param_2), sets its quality field to 0x6e, and places it in the world (place_object_in_world).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "report_detected_creatures_in_direction",
       "path": "src/object_actions.c",
-      "line": 1732,
+      "line": 1591,
       "original_name": "FUN_000753a0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "prints a \"creatures detected in this direction\" scroll message for cast_detect_life_spell below.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cast_detect_life_spell",
       "path": "src/object_actions.c",
-      "line": 1749,
+      "line": 1604,
       "original_name": "FUN_0007541c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "Detect Life\" spell: walks every active creature (type 0x1c0==0x40) within a square radius param_1 of the player, rolls a skill check.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_pending_player_command_target",
       "path": "src/object_actions.c",
-      "line": 1840,
+      "line": 1691,
       "original_name": "FUN_000756c8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "deferred target-click completion callback for dispatch_player_command's cases 2-5 (stored into the DAT_002020b8 click-target callback slot, distinct from finish_object_use's own DAT_00202098-driven item-use flow).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_player_command",
       "path": "src/object_actions.c",
-      "line": 1885,
+      "line": 1733,
       "original_name": "FUN_00075808",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "dispatch_special_action's case 0xb handler.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "damage_all_objects_at_tile",
       "path": "src/object_actions.c",
-      "line": 1978,
+      "line": 1821,
       "original_name": "FUN_00075a88",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "walks every object on tile (param_1,param_2) (tilemap_lookup + the object linked list) and applies damage to each one via the general damage dispatcher (apply_typed_damage_to_object, not yet named).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "build_object_display_name",
       "path": "src/object_actions.c",
-      "line": 2016,
+      "line": 1853,
       "original_name": "FUN_00078b18",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "builds an object's display name into param_1's buffer.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "format_object_display_name",
       "path": "src/object_actions.c",
-      "line": 2063,
+      "line": 1895,
       "original_name": "FUN_00078bfc",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "format object display name.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "print_scroll_message_by_id",
       "path": "src/object_actions.c",
-      "line": 2102,
+      "line": 1930,
       "original_name": "FUN_00078c80",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "looks up message id param_1 (in the 0x200 message-page range) and prints it to the message scroll.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "print_scroll_message_concat",
       "path": "src/object_actions.c",
-      "line": 2117,
+      "line": 1942,
       "original_name": "FUN_00078c94",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "prints a scroll message built by concatenating up to 3 message ids.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_cast_spell_on_target",
       "path": "src/object_actions.c",
-      "line": 2153,
+      "line": 1973,
       "original_name": "FUN_0007ca0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10962,7 +10929,7 @@
     {
       "name": "resolve_object_variant_or_special_link",
       "path": "src/object_actions.c",
-      "line": 2167,
+      "line": 1987,
       "original_name": "FUN_0007ca50",
       "ghidra_origin": true,
       "param_count": 4,
@@ -10973,7 +10940,7 @@
     {
       "name": "clear_object_pending_special_flag",
       "path": "src/object_actions.c",
-      "line": 2236,
+      "line": 2056,
       "original_name": "FUN_0007cc30",
       "ghidra_origin": true,
       "param_count": 1,
@@ -10984,7 +10951,7 @@
     {
       "name": "consume_linked_special_object_charge",
       "path": "src/object_actions.c",
-      "line": 2268,
+      "line": 2088,
       "original_name": "FUN_0007cc78",
       "ghidra_origin": true,
       "param_count": 1,
@@ -10995,7 +10962,7 @@
     {
       "name": "compute_compass_direction",
       "path": "src/object_actions.c",
-      "line": 2305,
+      "line": 2125,
       "original_name": "FUN_0007ec58",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11006,7 +10973,7 @@
     {
       "name": "print_message_with_proximity_qualifier",
       "path": "src/object_actions.c",
-      "line": 2362,
+      "line": 2182,
       "original_name": "FUN_0007ed20",
       "ghidra_origin": true,
       "param_count": 8,
@@ -11017,7 +10984,7 @@
     {
       "name": "spawn_effect_debris_burst",
       "path": "src/object_actions.c",
-      "line": 2414,
+      "line": 2234,
       "original_name": "FUN_00081388",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11028,7 +10995,7 @@
     {
       "name": "init_monster_spawn_defaults",
       "path": "src/object_actions.c",
-      "line": 2529,
+      "line": 2349,
       "original_name": "FUN_0002a35c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11039,7 +11006,7 @@
     {
       "name": "append_object_property_tag",
       "path": "src/object_actions.c",
-      "line": 2636,
+      "line": 2456,
       "original_name": "FUN_00048b6c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11050,7 +11017,7 @@
     {
       "name": "append_object_special_name",
       "path": "src/object_actions.c",
-      "line": 2673,
+      "line": 2493,
       "original_name": "FUN_00048bf0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11061,7 +11028,7 @@
     {
       "name": "look_at_inscribed_object",
       "path": "src/object_actions.c",
-      "line": 2780,
+      "line": 2600,
       "original_name": "FUN_00049008",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11072,7 +11039,7 @@
     {
       "name": "describe_object_owner",
       "path": "src/object_actions.c",
-      "line": 2892,
+      "line": 2712,
       "original_name": "FUN_000492bc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11083,7 +11050,7 @@
     {
       "name": "print_object_flavor_text",
       "path": "src/object_actions.c",
-      "line": 2935,
+      "line": 2755,
       "original_name": "FUN_000493cc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11094,7 +11061,7 @@
     {
       "name": "describe_special_object_property",
       "path": "src/object_actions.c",
-      "line": 2954,
+      "line": 2774,
       "original_name": "FUN_000495d0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11105,7 +11072,7 @@
     {
       "name": "identify_mushroom_type",
       "path": "src/object_actions.c",
-      "line": 2992,
+      "line": 2812,
       "original_name": "FUN_000496b0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11116,7 +11083,7 @@
     {
       "name": "spawn_object_near_actor",
       "path": "src/object_actions.c",
-      "line": 3056,
+      "line": 2876,
       "original_name": "FUN_0004a588",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11127,7 +11094,7 @@
     {
       "name": "check_scheduled_object_location_callback",
       "path": "src/object_actions.c",
-      "line": 3088,
+      "line": 2908,
       "original_name": "FUN_00072268",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13178,12 +13145,12 @@
       "param_count": 3,
       "description": "Ghidra rendered this as \"and\" (dropped the real leading/trailing spaces).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "debug_print_player_position",
       "path": "src/player.c",
-      "line": 296,
+      "line": 291,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -13194,7 +13161,7 @@
     {
       "name": "commit_player_move",
       "path": "src/player.c",
-      "line": 311,
+      "line": 306,
       "original_name": "FUN_0003d438",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13205,7 +13172,7 @@
     {
       "name": "demo_set_player_pos",
       "path": "src/player.c",
-      "line": 418,
+      "line": 413,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 5,
@@ -13216,7 +13183,7 @@
     {
       "name": "sync_player_stats_to_hud",
       "path": "src/player.c",
-      "line": 452,
+      "line": 447,
       "original_name": "FUN_0003e4cc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13227,40 +13194,40 @@
     {
       "name": "build_player_save_record",
       "path": "src/player.c",
-      "line": 498,
+      "line": 493,
       "original_name": "FUN_00043e20",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "build player save record.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "write_player_save_record",
       "path": "src/player.c",
-      "line": 565,
+      "line": 557,
       "original_name": "FUN_00043fd8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "write player save record.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "restore_player_save_record",
       "path": "src/player.c",
-      "line": 619,
+      "line": 609,
       "original_name": "FUN_00044538",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "restore player save record.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "refresh_player_equipment_effects",
       "path": "src/player.c",
-      "line": 670,
+      "line": 657,
       "original_name": "FUN_000667cc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13271,40 +13238,40 @@
     {
       "name": "adjust_player_hp",
       "path": "src/player.c",
-      "line": 855,
+      "line": 842,
       "original_name": "FUN_00073ec0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "adjust player hp.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "write_player_status_block",
       "path": "src/player.c",
-      "line": 890,
+      "line": 873,
       "original_name": "FUN_00065b90",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "packs live game state (recent equip/attack bytes, world x/y/z/facing, locomotion state) into the 0xd2-byte DAT_00086df8 player-status block, then writes it to file handle param_1 through a length-prefixed.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "read_player_status_block",
       "path": "src/player.c",
-      "line": 937,
+      "line": 917,
       "original_name": "FUN_00065d4c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "read-side counterpart to write_player_status_block.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_player_derived_state",
       "path": "src/player.c",
-      "line": 969,
+      "line": 946,
       "original_name": "FUN_00065eb4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13315,73 +13282,73 @@
     {
       "name": "update_screen_flicker_effect",
       "path": "src/player.c",
-      "line": 1006,
+      "line": 983,
       "original_name": "FUN_000660d4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "toggles a randomized screen flicker effect tracked in DAT_00086db4 (-1=off, 0/1/2 = which of 3 sub-effects).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_equipped_item_effect",
       "path": "src/player.c",
-      "line": 1053,
+      "line": 1027,
       "original_name": "FUN_000661b0",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "applies one \"intrinsic equipment effect\" opcode (param_1, 0-0xd) with magnitude/argument param_2, against scratch state param_3 and an equipment-slot/object index param_4.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_light_source_colors",
       "path": "src/player.c",
-      "line": 1205,
+      "line": 1174,
       "original_name": "FUN_000664bc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "fills param_1[0..2] (default color index 0x15 each) with per-light-source color indices derived from the ambient- light contributions packed at DAT_00086df8+0x3e (same bitfield layout apply_equipped_item_effect's light scan uses).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "update_level7_floor_hazard_state",
       "path": "src/player.c",
-      "line": 1233,
+      "line": 1199,
       "original_name": "FUN_00066594",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "on level 7 only (DAT_00201b68==7), swaps the special floor texture between ids 0xc and 0xe via load_floor_texture_arenas as param_1 toggles on/off, then sets or clears bit 12 of the player status word at DAT_00086df8+0x61/0x62 to record the current state.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_equipment_effect_penalties",
       "path": "src/player.c",
-      "line": 1269,
+      "line": 1232,
       "original_name": "FUN_00066634",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "final step of refresh_player_equipment_effects.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_object_weight",
       "path": "src/player.c",
-      "line": 1330,
+      "line": 1290,
       "original_name": "FUN_0006674c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "ARM 0x6674c calculates armor protection from OBJECTS.DAT and item quality.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_view_transition",
       "path": "src/player.c",
-      "line": 1354,
+      "line": 1312,
       "original_name": "FUN_0006907c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13392,18 +13359,18 @@
     {
       "name": "set_movement_animation_timer",
       "path": "src/player.c",
-      "line": 1465,
+      "line": 1423,
       "original_name": "FUN_00069424",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "sets a movement-animation sub-timer (DAT_0023bf10 for param_1==0x20 \"landing\", DAT_0023bf14 for param_1==0x40 \"jump\") to param_2 and ORs the corresponding bit into the player's landing-state status byte (DAT_00086df8+0xb8).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "update_current_view_from_subject",
       "path": "src/player.c",
-      "line": 1491,
+      "line": 1445,
       "original_name": "FUN_00069470",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13414,7 +13381,7 @@
     {
       "name": "sync_camera_from_player",
       "path": "src/player.c",
-      "line": 1607,
+      "line": 1561,
       "original_name": "FUN_00069938",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13425,29 +13392,29 @@
     {
       "name": "roll_skill_check",
       "path": "src/player.c",
-      "line": 1716,
+      "line": 1670,
       "original_name": "FUN_00069b68",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "the game's general skill-check roll.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "grant_experience_points",
       "path": "src/player.c",
-      "line": 1752,
+      "line": 1703,
       "original_name": "FUN_00069bd0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "add param_1 experience points to the character (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level when the original XP / 500 threshold table is crossed.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "refresh_experience_display",
       "path": "src/player.c",
-      "line": 1825,
+      "line": 1773,
       "original_name": "FUN_00069e30",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13458,95 +13425,95 @@
     {
       "name": "toggle_light_table_flicker",
       "path": "src/player.c",
-      "line": 1857,
+      "line": 1805,
       "original_name": "FUN_00070224",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "update_screen_flicker_effect's \"sub-effect 2\" driver.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "recalculate_player_stats",
       "path": "src/player.c",
-      "line": 1908,
+      "line": 1853,
       "original_name": "FUN_000703a0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "recalculates maximum HP (30 + level * STR / 5), maximum mana ((casting skill + 1) * INT / 8), and carrying capacity (STR * 20, in tenths of a stone).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "advance_character_level",
       "path": "src/player.c",
-      "line": 1942,
+      "line": 1885,
       "original_name": "FUN_00070464",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "raise the character level byte (DAT_00086df8 + 0x3d) by param_1, show the \"attained experience level N\" scroll message, and bump the dependent stat at +0x52.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "classify_skill_training_tier",
       "path": "src/player.c",
-      "line": 1974,
+      "line": 1914,
       "original_name": "FUN_00070524",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "3-way tier classifier (classify skill training tier).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "advance_skill_training",
       "path": "src/player.c",
-      "line": 1997,
+      "line": 1935,
       "original_name": "FUN_00070548",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "advances the skill/combat-category progress byte at DAT_00086df8[param_1+0x21] (one of the per-skill bytes babl.c's own \"play_arms\" variable sums, see its comment) toward its 30 (0x1e) cap.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "roll_skill_use_improvement",
       "path": "src/player.c",
-      "line": 2059,
+      "line": 1994,
       "original_name": "FUN_0007067c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the \"skill improves through use\" roll.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "print_single_skill_improvement_message",
       "path": "src/player.c",
-      "line": 2124,
+      "line": 2057,
       "original_name": "FUN_000707c8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "prints a single skill-improvement message.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "print_skill_improvement_list",
       "path": "src/player.c",
-      "line": 2145,
+      "line": 2074,
       "original_name": "FUN_0007080c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "prints a comma/and-joined list of improved skill names from param_1 (a byte array of skill ids, -1-terminated, up to 4 entries).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_mantra_chant",
       "path": "src/player.c",
-      "line": 2188,
+      "line": 2114,
       "original_name": "FUN_000708bc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13557,7 +13524,7 @@
     {
       "name": "render_endgame_character_stats",
       "path": "src/player.c",
-      "line": 2338,
+      "line": 2264,
       "original_name": "FUN_00070c90",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13568,7 +13535,7 @@
     {
       "name": "apply_rest_status_effects",
       "path": "src/player.c",
-      "line": 2525,
+      "line": 2451,
       "original_name": "FUN_0007141c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13579,29 +13546,29 @@
     {
       "name": "handle_rest_action",
       "path": "src/player.c",
-      "line": 2557,
+      "line": 2483,
       "original_name": "FUN_00071510",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the \"Rest\" command handler, reached either directly (param_1<0) or, for param_1>=0, only after passing preconditions.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "adjust_player_hunger",
       "path": "src/player.c",
-      "line": 2737,
+      "line": 2660,
       "original_name": "FUN_00071b08",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "adjusts the player's hunger byte (DAT_00086df8+0x39) by param_1, clamped to 0..0xff (returns false if it would go >=0x100 without applying anything).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_game_victory_sequence",
       "path": "src/player.c",
-      "line": 2775,
+      "line": 2696,
       "original_name": "FUN_00071b94",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13612,7 +13579,7 @@
     {
       "name": "handle_starvation_penalty",
       "path": "src/player.c",
-      "line": 2867,
+      "line": 2788,
       "original_name": "FUN_00072288",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13623,40 +13590,40 @@
     {
       "name": "adjust_level7_hazard_value",
       "path": "src/player.c",
-      "line": 2953,
+      "line": 2874,
       "original_name": "FUN_00073e14",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "adjusts the level-7 hazard byte (DAT_00086df8+0x37, only when param_1 is the player object).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "restore_stat_capped",
       "path": "src/player.c",
-      "line": 2985,
+      "line": 2902,
       "original_name": "FUN_00073f60",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "restore stat capped.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_healing_item_effect",
       "path": "src/player.c",
-      "line": 3016,
+      "line": 2929,
       "original_name": "FUN_00073fc4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatch_special_action's \"healing item\" handler (its own case 4).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_stats_panel_header",
       "path": "src/player.c",
-      "line": 3043,
+      "line": 2952,
       "original_name": "FUN_00077f30",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13667,18 +13634,18 @@
     {
       "name": "draw_stats_panel_attribute_row",
       "path": "src/player.c",
-      "line": 3089,
+      "line": 2998,
       "original_name": "FUN_0007802c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "draws one row of the stats panel's 3-value attribute display.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_hp_stat_display",
       "path": "src/player.c",
-      "line": 3106,
+      "line": 3012,
       "original_name": "FUN_00078088",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13689,7 +13656,7 @@
     {
       "name": "draw_mana_stat_display",
       "path": "src/player.c",
-      "line": 3127,
+      "line": 3033,
       "original_name": "FUN_00078118",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13700,7 +13667,7 @@
     {
       "name": "draw_experience_points_display",
       "path": "src/player.c",
-      "line": 3149,
+      "line": 3055,
       "original_name": "FUN_000781a0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13711,18 +13678,18 @@
     {
       "name": "draw_stats_panel_skill_row",
       "path": "src/player.c",
-      "line": 3169,
+      "line": 3075,
       "original_name": "FUN_0007821c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "draws one row of the stats panel's skill list.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_stats_panel_content",
       "path": "src/player.c",
-      "line": 3198,
+      "line": 3101,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -13733,7 +13700,7 @@
     {
       "name": "handle_stats_panel_skill_scroll_click",
       "path": "src/player.c",
-      "line": 3249,
+      "line": 3152,
       "original_name": "FUN_00078434",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13744,7 +13711,7 @@
     {
       "name": "refresh_stats_panel_if_active",
       "path": "src/player.c",
-      "line": 3295,
+      "line": 3198,
       "original_name": "FUN_00078550",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13755,40 +13722,40 @@
     {
       "name": "read_xor_scrambled_block",
       "path": "src/player.c",
-      "line": 3308,
+      "line": 3214,
       "original_name": "FUN_0007ee9c",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "confirmed by read_player_status_block (src/player.c) as the low-level \"read and de-scramble\" primitive behind the player.dat status block.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "write_xor_scrambled_block",
       "path": "src/player.c",
-      "line": 3353,
+      "line": 3255,
       "original_name": "FUN_0007ef78",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "write-side mirror of read_xor_scrambled_block, confirmed by write_player_status_block (src/player.c).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "detect_unsafe_rest_object_callback",
       "path": "src/player.c",
-      "line": 3408,
+      "line": 3305,
       "original_name": "FUN_000352d0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "scan_area_ahead_of_object callback.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_rest_area_unsafe",
       "path": "src/player.c",
-      "line": 3433,
+      "line": 3324,
       "original_name": "FUN_00035340",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13799,7 +13766,7 @@
     {
       "name": "reset_player_for_resurrection",
       "path": "src/player.c",
-      "line": 3445,
+      "line": 3336,
       "original_name": "FUN_0003bee4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13810,18 +13777,18 @@
     {
       "name": "handle_player_death_and_menu_transition",
       "path": "src/player.c",
-      "line": 3487,
+      "line": 3378,
       "original_name": "FUN_0003c038",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "exits the current game mode and transitions through the main menu before resuming.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_level9_random_hazard_tick",
       "path": "src/player.c",
-      "line": 3546,
+      "line": 3434,
       "original_name": "FUN_0003c6ac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13832,18 +13799,18 @@
     {
       "name": "trigger_player_jump_if_grounded",
       "path": "src/player.c",
-      "line": 3606,
+      "line": 3494,
       "original_name": "FUN_0003dba0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "dispatch_special_action's case-1 handler for sub-codes 3/5 (uw.c, src/object_actions.c:896).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "force_locomotion_state_refresh",
       "path": "src/player.c",
-      "line": 3623,
+      "line": 3508,
       "original_name": "FUN_0003dbd8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13854,51 +13821,51 @@
     {
       "name": "apply_vertical_launch_impulse",
       "path": "src/player.c",
-      "line": 3634,
+      "line": 3519,
       "original_name": "FUN_0003dc04",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "one of apply_quest_vertical_effect's two sub-effects (bit 2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_quest_stumble_animation",
       "path": "src/player.c",
-      "line": 3666,
+      "line": 3548,
       "original_name": "FUN_0003dc6c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "apply_quest_vertical_effect's other sub-effect (bit 1).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_quest_vertical_effect",
       "path": "src/player.c",
-      "line": 3679,
+      "line": 3558,
       "original_name": "FUN_0003dc78",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatch_quest_event_code's handler for quest codes 0x3c-0x3e (src/traps.c:562, gated on the trap/link record's trigger context being the player), called as apply_quest_vertical_effect(code-0x3b, linkval&0x3f) so param_1 in {1,2,3}.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cycle_active_light_source",
       "path": "src/player.c",
-      "line": 3697,
+      "line": 3572,
       "original_name": "FUN_00053ab0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "manages the player's active-light-source list (a small array at DAT_00086df8+0x3e, count tracked in bits 6-9 of the status word at +0x5f/+0x60).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "update_player_tick_effects",
       "path": "src/player.c",
-      "line": 3748,
+      "line": 3621,
       "original_name": "FUN_00053c74",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13909,18 +13876,18 @@
     {
       "name": "decay_equipped_light_sources",
       "path": "src/player.c",
-      "line": 3873,
+      "line": 3746,
       "original_name": "FUN_0005404c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "burns fuel on the player's equipped light sources (g_light_source_slots, 4 slots).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_drowning_hazard",
       "path": "src/player.c",
-      "line": 3939,
+      "line": 3809,
       "original_name": "FUN_000541d0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -13931,7 +13898,7 @@
     {
       "name": "dungeon_view_anim_tick",
       "path": "src/player.c",
-      "line": 3973,
+      "line": 3843,
       "original_name": "FUN_0003c194",
       "ghidra_origin": true,
       "param_count": 0,
@@ -14069,23 +14036,23 @@
       "param_count": 1,
       "description": "decodes a raw (still-compressed) .GR entry buffer into a real bitmap.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "open_gr_resource_file",
       "path": "src/resources.c",
-      "line": 140,
+      "line": 138,
       "original_name": "FUN_00041304",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "open gr resource file.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_door_frames",
       "path": "src/resources.c",
-      "line": 215,
+      "line": 210,
       "original_name": "FUN_00041db0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -14096,7 +14063,7 @@
     {
       "name": "alloc_flip_grtile_slot",
       "path": "src/resources.c",
-      "line": 252,
+      "line": 247,
       "original_name": "FUN_0004994c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -14107,51 +14074,51 @@
     {
       "name": "resolve_flip_grtile_slot",
       "path": "src/resources.c",
-      "line": 262,
+      "line": 257,
       "original_name": "FUN_00049954",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "resolve flip grtile slot.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "grtile_alloc_registered",
       "path": "src/resources.c",
-      "line": 288,
+      "line": 281,
       "original_name": "FUN_00076a2c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "allocates a param_1 x param_2 raw pixel buffer (real heap pointer, tracked in g_grtile_real_ptrs) and registers it into DAT_0023c3fc's 320-record identity-key table.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "uw_alloc_grtile",
       "path": "src/resources.c",
-      "line": 332,
+      "line": 322,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "uw alloc grtile",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "capture_framebuffer_rect_to_grtile",
       "path": "src/resources.c",
-      "line": 354,
+      "line": 342,
       "original_name": "FUN_00076b8c",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "capture framebuffer rect to grtile.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_grtile_registry",
       "path": "src/resources.c",
-      "line": 492,
+      "line": 474,
       "original_name": "FUN_000769e8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -14162,29 +14129,29 @@
     {
       "name": "invalidate_grtile_by_key",
       "path": "src/resources.c",
-      "line": 509,
+      "line": 491,
       "original_name": "FUN_00076b24",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "searches the grtile registry (DAT_0023c3fc) for a record whose key matches param_1, and if found, zeroes that record's own key field (marking the slot free/invalid).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "restore_captured_grtile_backdrop",
       "path": "src/resources.c",
-      "line": 534,
+      "line": 514,
       "original_name": "FUN_00076e98",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "looks up a grtile registry record by key (param_1) and blits its previously-captured backdrop pixels (tracked via g_grtile_real_ptrs, not the truncated key itself -- see param_1's own comment) back into the real framebuffer at the record's stored rect.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_string_resource_cache",
       "path": "src/resources.c",
-      "line": 599,
+      "line": 577,
       "original_name": "FUN_0007856c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -14195,7 +14162,7 @@
     {
       "name": "close_strings_pak_file_thunk",
       "path": "src/resources.c",
-      "line": 640,
+      "line": 618,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -14206,51 +14173,51 @@
     {
       "name": "get_message_string",
       "path": "src/resources.c",
-      "line": 653,
+      "line": 631,
       "original_name": "FUN_0007863c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the core message-string lookup used throughout this game.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "register_interned_string",
       "path": "src/resources.c",
-      "line": 697,
+      "line": 673,
       "original_name": "FUN_0007873c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "the write-side counterpart to get_message_string.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "overwrite_interned_string",
       "path": "src/resources.c",
-      "line": 780,
+      "line": 753,
       "original_name": "FUN_00078918",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "overwrites an already-interned string in place.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_string_resource_page",
       "path": "src/resources.c",
-      "line": 821,
+      "line": 791,
       "original_name": "FUN_00078a04",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "finds the string-resource cache page matching param_1 and, if found, clears its entire contents.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "open_strings_pak_file",
       "path": "src/resources.c",
-      "line": 868,
+      "line": 835,
       "original_name": "FUN_00078d18",
       "ghidra_origin": true,
       "param_count": 0,
@@ -14261,7 +14228,7 @@
     {
       "name": "close_strings_pak_file",
       "path": "src/resources.c",
-      "line": 912,
+      "line": 879,
       "original_name": "FUN_00078e28",
       "ghidra_origin": true,
       "param_count": 0,
@@ -14272,106 +14239,106 @@
     {
       "name": "decode_strings_pak_entry",
       "path": "src/resources.c",
-      "line": 927,
+      "line": 894,
       "original_name": "FUN_00078e60",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "decodes one string out of STRINGS.PAK.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "walk_strings_pak_huffman_tree",
       "path": "src/resources.c",
-      "line": 997,
+      "line": 961,
       "original_name": "FUN_0007907c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "walks STRINGS.PAK's per-page Huffman-style decode tree (stored in DAT_0024cfa8, 4 bytes/node) one bit at a time (read_strings_pak_bit) starting from tree-node param_2, until reaching a leaf (terminator byte != -1), returning the decoded byte.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "read_strings_pak_bit",
       "path": "src/resources.c",
-      "line": 1033,
+      "line": 994,
       "original_name": "FUN_000790e0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "reads one bit from STRINGS.PAK's compressed bitstream (DAT_0024cfbc, refilled from the file one byte at a time via DAT_000878bc as a bit-position counter).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "read_buffer_from_file",
       "path": "src/resources.c",
-      "line": 1054,
+      "line": 1013,
       "original_name": "FUN_0007ee4c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "the mirror-image \"read\" counterpart to write_buffer_to_file.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "blit_grtile_to_framebuffer",
       "path": "src/resources.c",
-      "line": 1090,
+      "line": 1045,
       "original_name": "FUN_00011c10",
       "ghidra_origin": true,
       "param_count": 8,
       "description": "blits a captured grtile buffer (param_3, a registry key resolved via g_grtile_real_ptrs the same way capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop do) into the framebuffer.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decompress_gr_bitmap",
       "path": "src/resources.c",
-      "line": 1229,
+      "line": 1174,
       "original_name": "FUN_000129f8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "confirmed by decode_gr_entry_bitmap's own comment (\"decompress_gr_bitmap's palette-shifted decompressor\") and extensive investigation logged in object-rendering-findings.txt as the core .GR resource bitmap decompressor.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "merge_byte_into_word",
       "path": "src/resources.c",
-      "line": 1422,
+      "line": 1363,
       "original_name": "FUN_000130e0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "merges param_2's own low byte into either the low half (param_3==0, keeping param_1's high byte) or high half (param_3!=0, keeping param_1's low byte) of param_1's 16-bit value.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "select_gr_bitmap_remap_table",
       "path": "src/resources.c",
-      "line": 1445,
+      "line": 1382,
       "original_name": "FUN_00013108",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "decompress_gr_bitmap's own private setup helper (its only confirmed caller, inside that function's mode-4 branch).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decode_gr_rle_stream",
       "path": "src/resources.c",
-      "line": 1468,
+      "line": 1399,
       "original_name": "FUN_000132c4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "confirmed by decompress_gr_bitmap's own pre-existing comment (\"this function's RLE fill looks its run colours up through DAT_000b4610\") as the RLE-stream decoder behind decompress_gr_bitmap's mode 6/8/0xa branches.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_gr_format3_extra_table",
       "path": "src/resources.c",
-      "line": 1629,
+      "line": 1556,
       "original_name": "FUN_00041260",
       "ghidra_origin": true,
       "param_count": 0,
@@ -14382,7 +14349,7 @@
     {
       "name": "close_gr_resource_file",
       "path": "src/resources.c",
-      "line": 1660,
+      "line": 1587,
       "original_name": "FUN_000414c8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -14393,194 +14360,183 @@
     {
       "name": "read_gr_resource_record",
       "path": "src/resources.c",
-      "line": 1675,
+      "line": 1602,
       "original_name": "FUN_000414f4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "reads one .GR resource record by index (param_1) into param_2, using the offset table open_gr_resource_file loaded to compute the record's file offset and size.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "register_grtile_entry",
       "path": "src/resources.c",
-      "line": 1722,
+      "line": 1646,
       "original_name": "FUN_00041708",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "load_gr_resource_entries's post-process callback for the flasks/compass/etc.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reregister_grtile_entry",
       "path": "src/resources.c",
-      "line": 1744,
+      "line": 1664,
       "original_name": "FUN_00041770",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "register_grtile_entry's \"slot may already be populated\" sibling, used for reload paths (e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_gr_resource_group",
       "path": "src/resources.c",
-      "line": 1766,
+      "line": 1682,
       "original_name": "FUN_00041910",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the generic .GR resource-group loader.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_objects_gr",
       "path": "src/resources.c",
-      "line": 1787,
+      "line": 1701,
       "original_name": "FUN_00041960",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "loads OBJECTS.GR specifically.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_tmflat_gr",
       "path": "src/resources.c",
-      "line": 1797,
+      "line": 1709,
       "original_name": "FUN_00041990",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "load tmflat gr.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_hud_icon_gr",
       "path": "src/resources.c",
-      "line": 1812,
+      "line": 1720,
       "original_name": "FUN_000419c8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "loads a HUD icon .GR resource (flasks, compass, dragons, power, eyes, chains, spells, scroll-edge, etc.) by registering each entry via register_grtile_entry rather than uw_register_gr_entry.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reload_single_grtile_entry",
       "path": "src/resources.c",
-      "line": 1835,
+      "line": 1744,
       "original_name": "FUN_00041a18",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "reloads a SINGLE .GR entry (count=1) into its existing grtile slot via reregister_grtile_entry, temporarily repointing the running cursor DAT_00202744 at the entry's own absolute frame (derived from param_1, a symbolic sprite id >= 0x2000) for the one call.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decode_gr_entry_to_buffer",
       "path": "src/resources.c",
-      "line": 1861,
+      "line": 1762,
       "original_name": "FUN_00041a78",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "decodes a single .GR entry directly into a caller-supplied destination buffer (param_3, stashed in DAT_00202510 and consumed by uw_copy_gr_entry_to_dest) rather than registering it in g_grtile_registry.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_string_resource",
       "path": "src/resources.c",
-      "line": 1878,
+      "line": 1775,
       "original_name": "FUN_0002295c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "a Win32 LoadString-shaped resource-string loader.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_string_resource_large",
       "path": "src/resources.c",
-      "line": 1891,
+      "line": 1786,
       "original_name": "FUN_00022998",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "structurally identical to load_string_resource but via a different ordinal (WideCharToMultiByte, two extra trailing arguments) and a larger buffer (0x260 vs 0xff) -- likely a longer- message variant of the same LoadString-shaped resource loader.",
       "audited": true,
-      "modernized": false
-    },
-    {
-      "name": "load_gr_resource_entries",
-      "path": "src/resources.c",
-      "line": 1901,
-      "original_name": "FUN_000417b4",
-      "ghidra_origin": true,
-      "param_count": 5,
-      "description": "load gr resource entries.",
-      "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_armor_variant_tables",
       "path": "src/resources.c",
-      "line": 1988,
+      "line": 1875,
       "original_name": "FUN_00041e40",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "load armor variant tables.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_pals_bank",
       "path": "src/resources.c",
-      "line": 2010,
+      "line": 1894,
       "original_name": "FUN_00040e24",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "load pals bank.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "set_palette_bank",
       "path": "src/resources.c",
-      "line": 2049,
+      "line": 1930,
       "original_name": "FUN_00040efc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "set palette bank.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_light_food_effect_tables",
       "path": "src/resources.c",
-      "line": 2131,
+      "line": 2010,
       "original_name": "FUN_0004a02c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "load light food effect tables.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "gr_resource_bump_alloc_entry",
       "path": "src/resources.c",
-      "line": 2142,
+      "line": 2018,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "gr resource bump alloc entry",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "uw_register_gr_entry",
       "path": "src/resources.c",
-      "line": 2152,
+      "line": 2026,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -14591,7 +14547,7 @@
     {
       "name": "register_gr_group_entry",
       "path": "src/resources.c",
-      "line": 2159,
+      "line": 2033,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -14602,7 +14558,7 @@
     {
       "name": "register_objects_gr_entry",
       "path": "src/resources.c",
-      "line": 2167,
+      "line": 2041,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -14613,7 +14569,7 @@
     {
       "name": "register_tmflat_gr_entry",
       "path": "src/resources.c",
-      "line": 2177,
+      "line": 2051,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -14624,29 +14580,29 @@
     {
       "name": "hud_icon_gr_bump_alloc_entry",
       "path": "src/resources.c",
-      "line": 2188,
+      "line": 2062,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "hud icon gr bump alloc entry",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decode_gr_entry_bump_alloc_entry",
       "path": "src/resources.c",
-      "line": 2197,
+      "line": 2069,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "decode gr entry bump alloc entry",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "uw_copy_gr_entry_to_dest",
       "path": "src/resources.c",
-      "line": 2206,
+      "line": 2076,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,

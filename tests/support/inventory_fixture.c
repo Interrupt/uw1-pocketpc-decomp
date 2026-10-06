@@ -4,13 +4,13 @@
 /* Local service declarations; game function bodies link these mocks. */
 void *resolve_object_link(ushort *link);
 int encode_object_slot_index(char *object);
-undefined4 build_object_display_name(char *text, ushort *object, int a, int b);
+int build_object_display_name(char *text, ushort *object, int a, int b);
 void push_cursor_icon(int type);
 void pop_cursor_icon(int mode);
 ushort *pick_object_under_cursor(int mode);
 int target_in_range(short actor, char *target, char *range);
 int target_line_of_sight(short actor, char *target);
-undefined4 check_object_combination(char *actor, ushort *target, int key_id);
+int check_object_combination(char *actor, ushort *target, short key_id);
 void handle_game_view_click_hold(void);
 void interact_use(void);
 void describe_picked_terrain(byte mode, short tile);
@@ -18,7 +18,7 @@ void handle_object_drop_target(int slot);
 void complete_cast_spell_on_target(void);
 void wait_for_click_release(int mode);
 void complete_use_reagent_on_player(void);
-char *get_message_string(uint id);
+char *get_message_string(ushort id);
 int message_scroll_print_wrapped(char *text);
 void print_scroll_message_by_id(uint id);
 void describe_object_owner(ushort *object, int mode);
@@ -95,7 +95,7 @@ uint scroll_message;
 
 int target_reachable = 1, target_obstructed;
 
-undefined4 build_object_display_name(char *text, ushort *object, int a, int b)
+int build_object_display_name(char *text, ushort *object, int a, int b)
 {
     TEST_ASSERT_EQUAL_PTR(objects[2], object);
     (void)a; (void)b;
@@ -116,7 +116,7 @@ int target_in_range(short actor, char *target, char *range)
 int target_line_of_sight(short actor, char *target)
 { (void)actor; TEST_ASSERT_EQUAL_PTR(picked_target, target); return target_obstructed; }
 
-undefined4 check_object_combination(char *actor, ushort *target, int key_id)
+int check_object_combination(char *actor, ushort *target, short key_id)
 {
     TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
     TEST_ASSERT_EQUAL_INT(1, key_id);
@@ -139,7 +139,7 @@ void wait_for_click_release(int mode) { TEST_ASSERT_EQUAL_INT(1, mode); released
 
 void complete_use_reagent_on_player(void) { TEST_FAIL_MESSAGE("Unexpected reagent"); }
 
-char *get_message_string(uint id)
+char *get_message_string(ushort id)
 {
     message_lookups++;
     last_message_id = id;
@@ -271,9 +271,9 @@ void redraw_inventory_widget(int widget)
     if (widget == 21 || widget == 22) container_arrow_redraws++;
     else TEST_ASSERT_LESS_THAN_INT(11, widget);
 }
-undefined4 grtile_alloc_registered(int width, int height)
+int grtile_alloc_registered(uint width, uint height)
 { (void)width; (void)height; return 1; }
-undefined4 capture_framebuffer_rect_to_grtile(int tile, int x, int y, int w, int h)
+int capture_framebuffer_rect_to_grtile(short *tile, int x, int y, int w, short h)
 { (void)tile; (void)x; (void)y; (void)w; (void)h; return 1; }
 void draw_sprite_by_id(int tile, int x, int y, int w, short h)
 { (void)tile; (void)x; (void)y; (void)w; (void)h; }

@@ -2,7 +2,7 @@
 
 /* Local service declarations; game function bodies link these mocks. */
 void decode_movement_command(void);
-void tick_mobile_objects(int elapsed);
+void tick_mobile_objects(char elapsed);
 void apply_movement_tick(int elapsed);
 void trigger_view_transition(void);
 void stop_movement_sound_handle(void);
@@ -12,7 +12,7 @@ void cancel_weapon_swing(void);
 void pop_cursor_icon(int state);
 int commit_level_to_save_slot(int level);
 int load_level(int level);
-void set_player_tile_position(uint x, uint y);
+void set_player_tile_position(uint tile_x, uint tile_y, int flag);
 void set_pending_update_flags(ushort flags);
 void report_fatal_error_and_exit(ushort error_code);
 void full_dungeon_redraw(void);
@@ -68,7 +68,7 @@ int destination_ticks;
 
 void decode_movement_command(void) {}
 
-void tick_mobile_objects(int elapsed)
+void tick_mobile_objects(char elapsed)
 {
     TEST_ASSERT_EQUAL_INT(1, elapsed);
     TEST_ASSERT_EQUAL_INT(2, DAT_00201b68);
@@ -153,7 +153,7 @@ int find_placement_via_tile_flood_fill(ushort *object, short x, short y, short *
     return placement_result[fallback];
 }
 
-void set_player_tile_position(uint x, uint y)
+void set_player_tile_position(uint x, uint y, int flag)
 {
     placed_x = x;
     placed_y = y;

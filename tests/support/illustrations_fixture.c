@@ -3,10 +3,10 @@
 
 /* Local service declarations; game function bodies link these mocks. */
 void describe_picked_terrain(byte mode, short texture);
-void print_scroll_message_by_id(void);
-char *get_message_string(void);
+void print_scroll_message_by_id(uint message_id);
+char *get_message_string(ushort message_id);
 void msg_scroll_panel_reset(void);
-undefined1 *format_object_display_name(void);
+byte *format_object_display_name(byte *buffer, int flag_a, int flag_b);
 int message_scroll_print_wrapped(void);
 int open_file_for_read(const char *path);
 int read_file_handle(int handle, void *buffer, uint count);
@@ -43,13 +43,13 @@ char opened_path[260];
 void describe_picked_terrain(byte mode, short texture)
 { TEST_ASSERT_EQUAL_INT(2, mode); TEST_ASSERT_EQUAL_INT(24, texture); descriptions++; }
 
-void print_scroll_message_by_id(void) { TEST_FAIL_MESSAGE("Unexpected scroll message"); }
+void print_scroll_message_by_id(uint message_id) { (void)message_id; TEST_FAIL_MESSAGE("Unexpected scroll message"); }
 
-char *get_message_string(void) { TEST_FAIL_MESSAGE("Unexpected inscription text"); return NULL; }
+char *get_message_string(ushort message_id) { (void)message_id; TEST_FAIL_MESSAGE("Unexpected inscription text"); return NULL; }
 
 void msg_scroll_panel_reset(void) { TEST_FAIL_MESSAGE("Unexpected inscription reset"); }
 
-undefined1 *format_object_display_name(void) { TEST_FAIL_MESSAGE("Unexpected inscription formatting"); return NULL; }
+byte *format_object_display_name(byte *buffer, int flag_a, int flag_b) { (void)buffer; (void)flag_a; (void)flag_b; TEST_FAIL_MESSAGE("Unexpected inscription formatting"); return NULL; }
 
 int message_scroll_print_wrapped(void) { TEST_FAIL_MESSAGE("Unexpected inscription printing"); return 0; }
 

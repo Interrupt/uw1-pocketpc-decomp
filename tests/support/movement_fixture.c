@@ -43,7 +43,7 @@ uint read_realtime_clock_units(void) { return 0; }
 void object_list_unlink(byte *link_field, byte *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
 void object_list_insert_head(byte *link_field, char *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
 void set_locomotion_state(ushort state, int flags) { (void)state; (void)flags; }
-undefined4 roll_skill_check(void) { TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
+int roll_skill_check(int skill, int difficulty) { (void)skill; (void)difficulty; TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
 int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
 undefined4 play_sound_effect_with_pan(void) { TEST_FAIL_MESSAGE("Unexpected landing sound"); return 0; }
 
@@ -121,7 +121,7 @@ int encode_object_slot_index(char *object)
     movement_fixture.door_contacts++;
     return 300;
 }
-undefined4 sync_object_tile_position(ushort *object, byte *snapshot)
+int sync_object_tile_position(ushort *object, ushort *snapshot)
 {
     TEST_ASSERT_EQUAL_PTR(movement_fixture.door, object);
     memcpy(movement_fixture.last_obstacle_snapshot, snapshot, sizeof(movement_fixture.last_obstacle_snapshot));

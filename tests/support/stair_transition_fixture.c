@@ -31,7 +31,7 @@ int load_level(int level)
     loads++;
     return 1;
 }
-void set_player_tile_position(uint x, uint y)
+void set_player_tile_position(uint x, uint y, int flag)
 {
     TEST_ASSERT_EQUAL_INT(open_x, x);
     TEST_ASSERT_EQUAL_INT(open_y, y);

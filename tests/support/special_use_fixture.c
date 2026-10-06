@@ -23,7 +23,7 @@ int roll_dice_sum(int count, short sides)
     return count; /* Deterministic legal minimum for the healing roll. */
 }
 void refresh_experience_display(void) { special_use_fixture.health_refreshes++; }
-void print_scroll_message_by_id(int id)
+void print_scroll_message_by_id(uint id)
 { special_use_fixture.messages++; special_use_fixture.message = id; }
 byte tile_is_no_magic(int x, int y)
 {
@@ -42,7 +42,7 @@ void project_position_by_heading(int heading, short distance, short *x, short *y
     (void)heading; (void)x; (void)y;
 }
 #ifndef UW_TEST_FULL_REST
-void handle_rest_action(int mode)
+void handle_rest_action(short mode)
 {
     /* The rest UI/time advancement is outside these functional tests. Run
        its actual safety check, including the real map scan and callback. */
@@ -54,18 +54,18 @@ void handle_rest_action(int mode)
 
 #define UNUSED_VOID(name) void name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); }
 #define UNUSED_RESULT(name) undefined4 name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); return 0; }
-UNUSED_VOID(trigger_player_jump_if_grounded)
+void trigger_player_jump_if_grounded(char *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected trigger_player_jump_if_grounded"); }
 int add_active_light_source(uint light_id, uint duration, char flag) { (void)light_id; (void)duration; (void)flag; TEST_FAIL_MESSAGE("Unexpected add_active_light_source"); return 0; }
 UNUSED_VOID(push_cursor_icon)
-UNUSED_VOID(apply_targeted_spell_effect)
-UNUSED_VOID(cast_cone_damage_spell)
-UNUSED_VOID(cast_targeted_search_effect)
-UNUSED_VOID(cast_summon_or_spawn_effect)
-UNUSED_VOID(reduce_item_quality_on_use)
+void apply_targeted_spell_effect(ushort *caster, char effect_index) { (void)caster; (void)effect_index; TEST_FAIL_MESSAGE("Unexpected apply_targeted_spell_effect"); }
+void cast_cone_damage_spell(uintptr_t caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_cone_damage_spell"); }
+void cast_targeted_search_effect(uintptr_t caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_targeted_search_effect"); }
+void cast_summon_or_spawn_effect(uintptr_t caster, char variant) { (void)caster; (void)variant; TEST_FAIL_MESSAGE("Unexpected cast_summon_or_spawn_effect"); }
+void reduce_item_quality_on_use(ushort *object, char dice_count) { (void)object; (void)dice_count; TEST_FAIL_MESSAGE("Unexpected reduce_item_quality_on_use"); }
 #ifndef UW_TEST_FULL_REST
-UNUSED_VOID(adjust_level7_hazard_value)
+void adjust_level7_hazard_value(char *object, char delta) { (void)object; (void)delta; TEST_FAIL_MESSAGE("Unexpected adjust_level7_hazard_value"); }
 #endif
-UNUSED_VOID(dispatch_player_command)
+void dispatch_player_command(char *actor, int unused, char command) { (void)actor; (void)unused; (void)command; TEST_FAIL_MESSAGE("Unexpected dispatch_player_command"); }
 void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y) { (void)button; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected handle_level4_maze_puzzle_button"); }
 UNUSED_VOID(display_book_or_scroll_page)
 void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected scheduler_tick"); }

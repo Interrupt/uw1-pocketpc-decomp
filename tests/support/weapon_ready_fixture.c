@@ -91,7 +91,7 @@ byte load_weapon_swing_sprites(void)
     return 1;
 }
 void randomize_weapon_jump_shake(short shake) {}
-char *decode_gr_entry_bitmap(void *frame)
+char *decode_gr_entry_bitmap(char *frame)
 {
     TEST_ASSERT_EQUAL_PTR(raw_frame, frame);
     return &decoded_pixel;

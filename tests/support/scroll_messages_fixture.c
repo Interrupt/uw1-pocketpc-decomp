@@ -90,15 +90,15 @@ void print_scroll_message_by_id(unsigned id)
     TEST_ASSERT_EQUAL_HEX(0x93, id);
     message_scroll_print_wrapped("You have attained experience level");
 }
-undefined4 recalculate_player_stats(int refill) { return 0; }
+int recalculate_player_stats(int refill) { return 0; }
 void refresh_stats_panel_if_active(void) {}
-undefined4 build_object_display_name(char *buffer, ushort *object, int article, int mode)
+int build_object_display_name(char *buffer, ushort *object, int article, int mode)
 {
     strcpy(buffer, (*object & 0x1ff) == 0x80 ? "a sack" :
                    (*object & 0x1ff) == 0x81 ? "a torch" : "iron key");
     return 1;
 }
-char *get_message_string(unsigned id)
+char *get_message_string(ushort id)
 {
     switch (id) {
         case 0xa00: case 0xa60: return NULL; /* No quality adjective. */
@@ -113,7 +113,7 @@ undefined4 append_object_special_name(ushort *object, int mode, char *buffer) { 
 void describe_special_object_property(ushort *object, int mode) {}
 undefined4 identify_mushroom_type(ushort *object, void *properties) { return 0; }
 void look_at_inscribed_object(ushort *object, int mode) { TEST_FAIL_MESSAGE("Unexpected inscription"); }
-undefined1 *format_object_display_name(char *name, int article, int mode)
+byte *format_object_display_name(byte *name, int article, int mode)
 {
     TEST_ASSERT_EQUAL_STRING("goblin", name);
     TEST_ASSERT_EQUAL_INT(1, article);

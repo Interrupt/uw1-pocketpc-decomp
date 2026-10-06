@@ -40,7 +40,7 @@ undefined4 play_numbered_voice_sample(void);
 bool is_voice_sample_finished(void);
 undefined4 play_music_track(void);
 bool select_active_font(char *font_filename);
-bool set_palette_bank(void);
+bool set_palette_bank(int bank);
 void decrement_cursor_hide_depth(void);
 void load_dungeon_texture_arenas(void);
 void change_game_mode(int mode);
@@ -300,7 +300,7 @@ undefined4 play_music_track(void) { return 0; }
 
 bool select_active_font(char *font_filename) { (void)font_filename; return true; }
 
-bool set_palette_bank(void) { return true; }
+bool set_palette_bank(int bank) { (void)bank; return true; }
 
 void decrement_cursor_hide_depth(void) {}
 

@@ -16,14 +16,14 @@ void *get_object_record_by_slot_index(short slot);
 void build_object_placement_snapshot(void);
 int build_collision_height_field_for_object(ushort *object);
 int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags);
-undefined4 sync_object_tile_position(void);
+int sync_object_tile_position(ushort *object, ushort *position);
 void npc_ai_default_tick(void);
-undefined4 resolve_unique_npc_special_behavior(void);
-void spawn_creature_death_loot(void);
-void drop_creature_inventory_on_death(void);
-int compute_vertical_aim_offset(void);
-void spawn_npc_thrown_weapon(void);
-void dispatch_tile_special_action(void);
+int resolve_unique_npc_special_behavior(char *npc, int event_mode);
+void spawn_creature_death_loot(ushort *creature);
+void drop_creature_inventory_on_death(byte *creature);
+int compute_vertical_aim_offset(short has_target, int target);
+void spawn_npc_thrown_weapon(char *attacker, short launch_offset, short launch_flags);
+void dispatch_tile_special_action(uint tile_type, uintptr_t actor, intptr_t target);
 byte get_current_music_track(void);
 void set_pending_music_track(void);
 uint read_realtime_clock_units(void);
@@ -150,21 +150,21 @@ int build_collision_height_field_for_object(ushort *object) { (void)object; retu
 
 int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags) { (void)snapshot; (void)sweep_flags; return 0; }
 
-undefined4 sync_object_tile_position(void) { return 0; }
+int sync_object_tile_position(ushort *object, ushort *position) { (void)object; (void)position; return 0; }
 
 void npc_ai_default_tick(void) { TEST_FAIL_MESSAGE("Unexpected live NPC behavior"); }
 
-undefined4 resolve_unique_npc_special_behavior(void) { return 1; }
+int resolve_unique_npc_special_behavior(char *npc, int event_mode) { (void)npc; (void)event_mode; return 1; }
 
-void spawn_creature_death_loot(void) {}
+void spawn_creature_death_loot(ushort *creature) { (void)creature;}
 
-void drop_creature_inventory_on_death(void) {}
+void drop_creature_inventory_on_death(byte *creature) { (void)creature;}
 
-int compute_vertical_aim_offset(void) { TEST_FAIL_MESSAGE("Unexpected NPC missile"); return 0; }
+int compute_vertical_aim_offset(short has_target, int target) { (void)has_target; (void)target; TEST_FAIL_MESSAGE("Unexpected NPC missile"); return 0; }
 
-void spawn_npc_thrown_weapon(void) { TEST_FAIL_MESSAGE("Unexpected NPC missile"); }
+void spawn_npc_thrown_weapon(char *attacker, short launch_offset, short launch_flags) { (void)attacker; (void)launch_offset; (void)launch_flags; TEST_FAIL_MESSAGE("Unexpected NPC missile"); }
 
-void dispatch_tile_special_action(void) { TEST_FAIL_MESSAGE("Unexpected NPC special action"); }
+void dispatch_tile_special_action(uint tile_type, uintptr_t actor, intptr_t target) { (void)tile_type; (void)actor; (void)target; TEST_FAIL_MESSAGE("Unexpected NPC special action"); }
 
 byte get_current_music_track(void) { return 0; }
 

@@ -204,11 +204,7 @@ static undefined4 DAT_0024af88;
 
 
 // was FUN_0003cff8
-void set_player_tile_position(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-int param_3;
-
+void set_player_tile_position(uint tile_x, uint tile_y, int flag)
 {
   undefined2 uVar1;
   int iVar2;
@@ -228,12 +224,12 @@ int param_3;
   g_vertical_velocity = 0;
   DAT_00204888 = 0;
   DAT_00204886 = 0;
-  DAT_00204880 = (short)((uint)((int)(short)param_1 << 0x18) >> 0x10) + 0x80;
-  DAT_00204882 = (short)((uint)((int)(short)param_2 << 0x18) >> 0x10) + 0x80;
+  DAT_00204880 = (short)((uint)((int)(short)tile_x << 0x18) >> 0x10) + 0x80;
+  DAT_00204882 = (short)((uint)((int)(short)tile_y << 0x18) >> 0x10) + 0x80;
   DAT_002048a7 = 8;
   DAT_002048a3 = 1;
   DAT_002048a4 = 0;
-  iVar2 = param_1 + param_2 * 0x40;
+  iVar2 = tile_x + tile_y * 0x40;
   DAT_00202080 = (short)iVar2;
   iVar2 = iVar2 * 0x10000 >> 0x10;
   DAT_00204884 = *(short *)(&DAT_00085d20 + (uint)(*(byte *)(DAT_002029cc + iVar2 * 4) >> 4) * 2);
@@ -246,8 +242,8 @@ int param_3;
   *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
   uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
   *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 0x17) = (byte)(uVar3 >> 8) | (byte)(((param_1 & 0x3f) << 10) >> 8);
-  uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f | (param_2 & 0x3f) << 4;
+  *(byte *)((char *)g_player_object + 0x17) = (byte)(uVar3 >> 8) | (byte)(((tile_x & 0x3f) << 10) >> 8);
+  uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f | (tile_y & 0x3f) << 4;
   *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
   *(char *)((char *)g_player_object + 0x17) = (char)(uVar3 >> 8);
   uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
@@ -267,11 +263,11 @@ int param_3;
   DAT_00202c6c[10] = (char)uVar1;
   DAT_00202c6c[0xb] = (char)((ushort)uVar1 >> 8);
   DAT_00202c6c[8] = (byte)DAT_00203304 & 7;
-  iVar2 = (((int)(short)param_1 << 0x13) >> 0x10) + 3;
+  iVar2 = (((int)(short)tile_x << 0x13) >> 0x10) + 3;
   DAT_00202c6c[9] = DAT_00203303;
   *DAT_00202c6c = (char)iVar2;
   DAT_00202c6c[1] = (char)((uint)iVar2 >> 8);
-  iVar2 = (((int)(short)param_2 << 0x13) >> 0x10) + 3;
+  iVar2 = (((int)(short)tile_y << 0x13) >> 0x10) + 3;
   DAT_00202c6c[2] = (char)iVar2;
   DAT_00202c6c[3] = (char)((uint)iVar2 >> 8);
   iVar2 = (int)DAT_00204884;
@@ -285,7 +281,6 @@ int param_3;
   trigger_view_transition();
   DAT_000858a0 = 1;
   object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
-  return;
 }
 
 
@@ -495,9 +490,7 @@ void sync_player_stats_to_hud()
 
 
 // was FUN_00043e20
-void build_player_save_record(param_1)
-undefined1 * param_1;
-
+void build_player_save_record(byte *out_record)
 {
   bool bVar1;
   ushort uVar2;
@@ -513,7 +506,7 @@ undefined1 * param_1;
   close_backpack_container();
   puVar4 = g_player_object;
   iVar6 = 0x1b;
-  puVar7 = param_1;
+  puVar7 = out_record;
   do {
     iVar5 = iVar6 + -1;
     *puVar7 = *puVar4;
@@ -522,10 +515,10 @@ undefined1 * param_1;
     iVar6 = iVar5;
     puVar7 = puVar7 + 1;
   } while (iVar5 != 0 && bVar1);
-  param_1[4] = param_1[4] & 0x3f;
-  param_1[5] = 0;
-  g_save_equip_table_ptr = param_1 + 0x23;
-  g_save_record_base_ptr = param_1 + 0x5b;
+  out_record[4] = out_record[4] & 0x3f;
+  out_record[5] = 0;
+  g_save_equip_table_ptr = out_record + 0x23;
+  g_save_record_base_ptr = out_record + 0x5b;
   g_save_record_count = 0;
   iVar6 = 0;
   do {
@@ -538,33 +531,30 @@ undefined1 * param_1;
     pbVar9[1] = 0;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x13);
-  serialize_inventory_link_chain((char *)g_player_object + 6,param_1 + 6);
+  serialize_inventory_link_chain((char *)g_player_object + 6,out_record + 6);
   puVar4 = g_selected_object;
   if (g_cursor_holding_state == 1) {
-    param_1[0x1b] = *g_selected_object;
-    param_1[0x1c] = puVar4[1];
-    param_1[0x1d] = puVar4[2];
-    param_1[0x1e] = puVar4[3];
-    param_1[0x1f] = puVar4[4];
-    param_1[0x20] = puVar4[5];
-    param_1[0x21] = puVar4[6];
-    param_1[0x22] = puVar4[7];
+    out_record[0x1b] = *g_selected_object;
+    out_record[0x1c] = puVar4[1];
+    out_record[0x1d] = puVar4[2];
+    out_record[0x1e] = puVar4[3];
+    out_record[0x1f] = puVar4[4];
+    out_record[0x20] = puVar4[5];
+    out_record[0x21] = puVar4[6];
+    out_record[0x22] = puVar4[7];
     if ((g_selected_object[1] & 0x80) == 0) {
-      serialize_inventory_link_chain(g_selected_object + 6,param_1 + 0x21);
+      serialize_inventory_link_chain(g_selected_object + 6,out_record + 0x21);
     }
     sVar3 = encode_object_slot_index(g_selected_object);
     local_14[0] = local_14[0] & 0x3f | sVar3 << 6;
     free_linked_object_recursive(local_14);
   }
-  return;
 }
 
 
 
 // was FUN_00043fd8
-bool write_player_save_record(param_1)
-char * param_1;
-
+bool write_player_save_record(char *slot_dir)
 {
   char cVar1;
   int iVar2;
@@ -583,12 +573,12 @@ char * param_1;
        write_player_save_record never serializes DAT_0023bca8... */
     ce_memmove(g_save_record_buffer + 0x5b + g_save_record_count * 8,&DAT_0023bca8,220);
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] SAVE appending quest_bits=0x%x at buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
-    if (param_1 != (char *)0x0) {
-      iVar2 = -(int)param_1;
+    if (slot_dir != (char *)0x0) {
+      iVar2 = -(int)slot_dir;
       do {
-        cVar1 = *param_1;
-        param_1[(int)(acStack_114 + iVar2)] = cVar1;
-        param_1 = param_1 + 1;
+        cVar1 = *slot_dir;
+        slot_dir[(int)(acStack_114 + iVar2)] = cVar1;
+        slot_dir = slot_dir + 1;
       } while (cVar1 != '\0');
       ce_strcat(acStack_114,s_player_dat_00085a74);
       iVar2 = open_existing_file_rw(acStack_114);
@@ -616,9 +606,7 @@ char * param_1;
 
 
 // was FUN_00044538
-void restore_player_save_record(param_1)
-undefined1 * param_1;
-
+void restore_player_save_record(byte *record)
 {
   bool bVar1;
   undefined1 *puVar2;
@@ -626,10 +614,10 @@ undefined1 * param_1;
   int iVar4;
   int iVar5;
   
-  g_save_equip_table_ptr = param_1 + 0x23;
-  g_save_record_base_ptr = param_1 + 0x5b;
+  g_save_equip_table_ptr = record + 0x23;
+  g_save_record_base_ptr = record + 0x5b;
   puVar2 = g_player_object;
-  puVar3 = param_1;
+  puVar3 = record;
   iVar4 = 0x1b;
   do {
     iVar5 = iVar4 + -1;
@@ -639,28 +627,27 @@ undefined1 * param_1;
     puVar3 = puVar3 + 1;
     iVar4 = iVar5;
   } while (iVar5 != 0 && bVar1);
-  deserialize_inventory_link_chain((char *)g_player_object + 6,param_1 + 6);
+  deserialize_inventory_link_chain((char *)g_player_object + 6,record + 6);
   if (g_cursor_holding_state == 1) {
     puVar2 = (undefined1 *)alloc_object_slot(0);
     g_selected_object = puVar2;
-    *puVar2 = param_1[0x1b];
-    puVar2[1] = param_1[0x1c];
-    puVar2[2] = param_1[0x1d];
-    puVar2[3] = param_1[0x1e];
-    puVar2[4] = param_1[0x1f];
-    puVar2[5] = param_1[0x20];
-    puVar2[6] = param_1[0x21];
-    puVar2[7] = param_1[0x22];
-    if ((param_1[0x1c] & 0x80) == 0) {
-      deserialize_inventory_link_chain(g_selected_object + 6,param_1 + 0x21);
+    *puVar2 = record[0x1b];
+    puVar2[1] = record[0x1c];
+    puVar2[2] = record[0x1d];
+    puVar2[3] = record[0x1e];
+    puVar2[4] = record[0x1f];
+    puVar2[5] = record[0x20];
+    puVar2[6] = record[0x21];
+    puVar2[7] = record[0x22];
+    if ((record[0x1c] & 0x80) == 0) {
+      deserialize_inventory_link_chain(g_selected_object + 6,record + 0x21);
     }
   }
   /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see write_player_save_record's own
      matching comment: restores DAT_0023bca8 from the same trailing offset that function now appends
      it at. g_save_record_count is already set here... */
-  ce_memmove(&DAT_0023bca8,param_1 + 0x5b + g_save_record_count * 8,220);
+  ce_memmove(&DAT_0023bca8,record + 0x5b + g_save_record_count * 8,220);
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] LOAD restored quest_bits=0x%x from buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
-  return;
 }
 
 
@@ -852,22 +839,19 @@ LAB_000669a8:
 
 
 // was FUN_00073ec0
-void adjust_player_hp(param_1,param_2)
-char *param_1;
-char param_2;
-
+void adjust_player_hp(char *object, char delta)
 {
   ushort uVar1;
   short sVar2;
   
-  if (param_1 == g_player_object) {
-    if (param_2 < '\x01') {
-      sVar2 = (ushort)*(byte *)((char *)g_player_object + 8) - (short)param_2;
+  if (object == g_player_object) {
+    if (delta < '\x01') {
+      sVar2 = (ushort)*(byte *)((char *)g_player_object + 8) - (short)delta;
     }
     else {
       uVar1 = ce_rand();
       sVar2 = (ushort)*(byte *)((char *)g_player_object + 8) +
-              ((short)(((uVar1 & 3) + (short)param_2) * (ushort)*(byte *)(DAT_0023be74 + 4)) >> 4) +
+              ((short)(((uVar1 & 3) + (short)delta) * (ushort)*(byte *)(DAT_0023be74 + 4)) >> 4) +
               1;
     }
     if ((short)(ushort)*(byte *)(DAT_0023be74 + 4) < sVar2) {
@@ -878,7 +862,6 @@ char param_2;
     }
     refresh_experience_display();
   }
-  return;
 }
 
 
@@ -887,9 +870,7 @@ char param_2;
 // was FUN_00065b90 -- packs live game state (recent equip/attack bytes, world x/y/z/facing,
 // locomotion state) into the 0xd2-byte DAT_00086df8 player-status block, then writes it to file
 // handle param_1 through a length-prefixed...
-void write_player_status_block(param_1)
-undefined4 param_1;
-
+void write_player_status_block(int file_handle)
 {
   undefined2 uVar1;
   byte bVar2;
@@ -924,9 +905,8 @@ undefined4 param_1;
   uVar3 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xf807 | (uint)DAT_002048a8 << 3;
   DAT_00086df8[0xb6] = (byte)uVar3;
   DAT_00086df8[0xb7] = (byte)(uVar3 >> 8);
-  write_file_handle(param_1,local_14,1);
-  write_xor_scrambled_block(param_1,local_14[0],DAT_00086df8,0xd2);
-  return;
+  write_file_handle(file_handle,local_14,1);
+  write_xor_scrambled_block(file_handle,local_14[0],DAT_00086df8,0xd2);
 }
 
 
@@ -934,14 +914,12 @@ undefined4 param_1;
 // was FUN_00065d4c -- read-side counterpart to write_player_status_block: reads the 0xd2-byte
 // DAT_00086df8 player- status block from file handle param_1 and unpacks it back into the live
 // game-state globals it was packed from.
-void read_player_status_block(param_1)
-undefined4 param_1;
-
+void read_player_status_block(int file_handle)
 {
   undefined1 local_10 [4];
   
-  read_file_handle(param_1,local_10,1);
-  read_xor_scrambled_block(param_1,local_10[0],DAT_00086df8,0xd2);
+  read_file_handle(file_handle,local_10,1);
+  read_xor_scrambled_block(file_handle,local_10[0],DAT_00086df8,0xd2);
   *(undefined1 *)(DAT_0023be74 + 5) = *(undefined1 *)(DAT_00086df8 + 0x1e);
   *(undefined1 *)(DAT_0023be74 + 6) = *(undefined1 *)(DAT_00086df8 + 0x1f);
   *(undefined1 *)(DAT_0023be74 + 7) = *(undefined1 *)(DAT_00086df8 + 0x20);
@@ -957,7 +935,6 @@ undefined4 param_1;
   set_music_enabled(*(byte *)(DAT_00086df8 + 0xb5) >> 2 & 3);
   configure_texture_detail_functions();
   apply_movement_mode_profile(*(ushort *)(DAT_00086df8 + 0xb6) & 7);
-  return;
 }
 
 
@@ -1003,16 +980,14 @@ void reset_player_derived_state()
 // was FUN_000660d4 -- toggles a randomized screen flicker effect tracked in DAT_00086db4 (-1=off,
 // 0/1/2 = which of 3 sub-effects): param_1==0 cancels any active effect (restoring palette bank 0,
 // or stopping toggle_light_table_flicker's effect)...
-void update_screen_flicker_effect(param_1)
-int param_1;
-
+void update_screen_flicker_effect(int enable)
 {
   int uw_ord2005_rem_125 = 0;
   ushort uVar1;
   undefined4 uVar2;
   char extraout_r1;
   
-  if (param_1 == 0) {
+  if (enable == 0) {
     if (-1 < DAT_00086db4) {
       if (DAT_00086db4 == '\x01') {
         set_palette_bank(0);
@@ -1041,7 +1016,6 @@ int param_1;
       toggle_light_table_flicker(1);
     }
   }
-  return;
 }
 
 
@@ -1050,12 +1024,7 @@ int param_1;
 // was FUN_000661b0 -- applies one "intrinsic equipment effect" opcode (param_1, 0-0xd) with
 // magnitude/argument param_2, against scratch state param_3 and an equipment-slot/object index
 // param_4.
-undefined4 apply_equipped_item_effect(param_1,param_2,param_3,param_4)
-undefined1 param_1;
-byte param_2;
-ushort * param_3;
-int param_4;
-
+int apply_equipped_item_effect(byte opcode, byte magnitude, ushort *scratch, int flags)
 {
   uint uVar1;
   byte *pbVar2;
@@ -1067,26 +1036,26 @@ int param_4;
   ushort uVar8;
   short local_1c [2];
   
-  switch(param_1) {
+  switch(opcode) {
   case 0:
-    if (*(byte *)(DAT_00086df8 + 99) >> 4 < param_2) {
-      *(byte *)(DAT_00086df8 + 99) = param_2 << 4;
+    if (*(byte *)(DAT_00086df8 + 99) >> 4 < magnitude) {
+      *(byte *)(DAT_00086df8 + 99) = magnitude << 4;
     }
     break;
   case 1:
     pbVar2 = &DAT_0020208c;
-    bVar5 = (byte)(1 << (uint)(byte)(param_2 - 1)) | DAT_0020208c;
+    bVar5 = (byte)(1 << (uint)(byte)(magnitude - 1)) | DAT_0020208c;
 LAB_0006636c:
     *pbVar2 = bVar5;
     break;
   case 2:
-    if ((ushort)param_2 <= *param_3 >> 4) {
+    if ((ushort)magnitude <= *scratch >> 4) {
       return 0;
     }
-    uVar8 = (*param_3 & 0xf) + (ushort)param_2 * 0x10;
+    uVar8 = (*scratch & 0xf) + (ushort)magnitude * 0x10;
     goto LAB_00066290;
   case 3:
-    uVar1 = (uint)param_2;
+    uVar1 = (uint)magnitude;
     if (uVar1 == 1) {
       DAT_0010060c = DAT_0010060c + '\x03';
       DAT_0010060d = DAT_0010060d + '\x03';
@@ -1101,9 +1070,9 @@ LAB_0006636c:
       DAT_0020330c = DAT_0020330c | *(byte *)((intptr_t)&DAT_00086db8 + uVar1 + 3);
       return 0;
     }
-    uVar8 = *param_3 | (ushort)(1 << (uVar1 - 1 & 0xff));
+    uVar8 = *scratch | (ushort)(1 << (uVar1 - 1 & 0xff));
 LAB_00066290:
-    *param_3 = uVar8;
+    *scratch = uVar8;
     break;
   case 4:
     break;
@@ -1116,29 +1085,29 @@ LAB_00066290:
   case 8:
     break;
   case 9:
-    reduce_item_quality_on_use(g_player_object);
+    reduce_item_quality_on_use(g_player_object,1);  /* ARM passes only r0 here (r1 is stale); 1 matches the join path's value */
     break;
   case 10:
     break;
   case 0xb:
-    if (param_2 == 0) {
+    if (magnitude == 0) {
       puVar3 = &DAT_002020d0;
     }
-    else if (param_2 == 1) {
+    else if (magnitude == 1) {
       puVar3 = &DAT_002020d8;
     }
     else {
-      if (param_2 != 2) {
-        if (param_2 == 3) {
+      if (magnitude != 2) {
+        if (magnitude == 3) {
           DAT_000858c4 = 0;
           return 0;
         }
-        if (param_2 == 0xe) {
+        if (magnitude == 0xe) {
           pbVar2 = &DAT_002046cc;
           bVar5 = DAT_002046cc | 1;
         }
         else {
-          if (param_2 != 0xf) {
+          if (magnitude != 0xf) {
             return 0;
           }
           pbVar2 = &DAT_002046cc;
@@ -1150,19 +1119,19 @@ LAB_00066290:
     }
     goto LAB_00066398;
   case 0xc:
-    param_4 = param_4 << 0x10;
-    iVar6 = param_4 >> 0x10;
+    flags = flags << 0x10;
+    iVar6 = flags >> 0x10;
     if (-1 < iVar6) {
       if (iVar6 < 5) {
         local_1c[0] = (short)(char)(&DAT_00086da8)[iVar6];
       }
       else {
         local_1c[0] = 0;
-        param_4 = 1;
+        flags = 1;
       }
       local_1c[1] = 0xffff;
       if (4 < iVar6) {
-        local_1c[1] = (short)param_4;
+        local_1c[1] = (short)flags;
       }
       if (local_1c[0] != -1) {
         iVar6 = 0;
@@ -1171,12 +1140,12 @@ LAB_00066290:
             return 0;
           }
           cVar7 = '\0';
-          if ((param_2 & 8) == 0) {
+          if ((magnitude & 8) == 0) {
             (&DAT_0010060c)[local_1c[iVar6]] =
-                 (param_2 & 7) + (&DAT_0010060c)[local_1c[iVar6]] + '\x01';
+                 (magnitude & 7) + (&DAT_0010060c)[local_1c[iVar6]] + '\x01';
           }
           else {
-            cVar7 = (param_2 & 7) + 1;
+            cVar7 = (magnitude & 7) + 1;
           }
           pcVar4 = (char *)(local_1c[0] + DAT_0023be74);
           *pcVar4 = cVar7 + *pcVar4;
@@ -1186,7 +1155,7 @@ LAB_00066290:
     }
     break;
   case 0xd:
-    if (param_2 != 4) {
+    if (magnitude != 4) {
       return 0;
     }
     puVar3 = &DAT_0023bc9c;
@@ -1202,26 +1171,23 @@ LAB_00066398:
 // was FUN_000664bc -- fills param_1[0..2] (default color index 0x15 each) with per-light-source
 // color indices derived from the ambient- light contributions packed at DAT_00086df8+0x3e (same
 // bitfield layout apply_equipped_item_effect's light scan uses)...
-void compute_light_source_colors(param_1)
-undefined1 * param_1;
-
+void compute_light_source_colors(byte *out_colors)
 {
   char cVar1;
   uint uVar2;
 
-  *param_1 = 0x15;
-  param_1[1] = 0x15;
-  param_1[2] = 0x15;
+  *out_colors = 0x15;
+  out_colors[1] = 0x15;
+  out_colors[2] = 0x15;
   if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
     uVar2 = 0;
     do {
       cVar1 = (&DAT_00086dc8)[*(byte *)(DAT_00086df8 + uVar2 * 2 + 0x3e) & 0xf];
-      param_1[uVar2] = cVar1;
-      param_1[uVar2] = (*(byte *)(DAT_00086df8 + uVar2 * 2 + 0x3e) >> 4) + cVar1;
+      out_colors[uVar2] = cVar1;
+      out_colors[uVar2] = (*(byte *)(DAT_00086df8 + uVar2 * 2 + 0x3e) >> 4) + cVar1;
       uVar2 = uVar2 + 1 & 0xff;
     } while (uVar2 < (*(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf));
   }
-  return;
 }
 
 
@@ -1230,16 +1196,14 @@ undefined1 * param_1;
 // was FUN_00066594 -- on level 7 only (DAT_00201b68==7), swaps the special floor texture between
 // ids 0xc and 0xe via load_floor_texture_arenas as param_1 toggles on/off, then sets or clears bit
 // 12 of the player status word at DAT_00086df8+0x61/0x62 to record the current state.
-void update_level7_floor_hazard_state(param_1)
-uint param_1;
-
+void update_level7_floor_hazard_state(uint active)
 {
   char cVar1;
   uint uVar2;
   
   if (DAT_00201b68 == 7) {
     cVar1 = -1;
-    if (param_1 == 0) {
+    if (active == 0) {
       if (DAT_0023adc0 == 0xc) {
         cVar1 = '\x0e';
       }
@@ -1256,8 +1220,7 @@ uint param_1;
   }
   uVar2 = *(ushort *)(DAT_00086df8 + 0x61) & 0xefff;
   *(char *)(DAT_00086df8 + 0x61) = (char)uVar2;
-  *(byte *)(DAT_00086df8 + 0x62) = (byte)(uVar2 >> 8) | (byte)(((param_1 & 1) << 0xc) >> 8);
-  return;
+  *(byte *)(DAT_00086df8 + 0x62) = (byte)(uVar2 >> 8) | (byte)(((active & 1) << 0xc) >> 8);
 }
 
 
@@ -1266,9 +1229,7 @@ uint param_1;
 // was FUN_00066634 -- final step of refresh_player_equipment_effects: param_1 is the effect-flag
 // bitmask accumulated by apply_equipped_item_effect's scan over equipped items (bit 0 unused, bits
 // 1-3 each an independent penalty).
-void apply_equipment_effect_penalties(param_1)
-uint param_1;
-
+void apply_equipment_effect_penalties(uint effect_mask)
 {
   uint uVar1;
   uint uVar2;
@@ -1280,7 +1241,7 @@ uint param_1;
   bVar4 = 0;
   bVar5 = DAT_00086db0;
   do {
-    if ((param_1 & 1) != 0) {
+    if ((effect_mask & 1) != 0) {
       if (bVar4 == 1) {
         bVar3 = bVar5;
         if (0x10 < bVar5) {
@@ -1305,8 +1266,8 @@ uint param_1;
       }
     }
     bVar4 = bVar4 + 1;
-    uVar1 = param_1 & 0xffff;
-    param_1 = uVar1 >> 1;
+    uVar1 = effect_mask & 0xffff;
+    effect_mask = uVar1 >> 1;
   } while (bVar4 < 4);
   uVar2 = 0;
   do {
@@ -1316,7 +1277,6 @@ uint param_1;
   update_level7_floor_hazard_state(DAT_0023bc9c);
   compute_light_source_colors(auStack_c);
   update_light_source_color_icons(auStack_c);
-  return;
 }
 
 
@@ -1327,19 +1287,17 @@ uint param_1;
 // those protection values. Keep the existing function name for its callers.
 
 // was FUN_0006674c
-int compute_object_weight(param_1)
-ushort * param_1;
-
+int compute_object_weight(ushort *object)
 {
   ushort uVar1;
   int iVar2;
   
-  uVar1 = *param_1;
+  uVar1 = *object;
   if (((uVar1 & 0x1c0) == 0) && ((uVar1 & 0x30) < 0x20)) {
     iVar2 = 0;
   }
   else {
-    iVar2 = (((int)((uint)(byte)(&DAT_00202750)[(uVar1 & 0x1ff) * 4 - 0x80] * ((byte)param_1[2] & 0x3f)) >>
+    iVar2 = (((int)((uint)(byte)(&DAT_00202750)[(uVar1 & 0x1ff) * 4 - 0x80] * ((byte)object[2] & 0x3f)) >>
              6) + 1) * 0x10000 >> 0x10;
   }
   return iVar2;
@@ -1462,25 +1420,21 @@ void trigger_view_transition()
 // was FUN_00069424 -- sets a movement-animation sub-timer (DAT_0023bf10 for param_1==0x20
 // "landing", DAT_0023bf14 for param_1==0x40 "jump") to param_2 and ORs the corresponding bit into
 // the player's landing-state status byte (DAT_00086df8+0xb8).
-void set_movement_animation_timer(param_1,param_2)
-byte param_1;
-undefined1 param_2;
-
+void set_movement_animation_timer(byte timer_id, byte ticks)
 {
   undefined1 *puVar1;
   
-  if (param_1 == 0x20) {
+  if (timer_id == 0x20) {
     puVar1 = &DAT_0023bf10;
   }
   else {
-    if (param_1 != 0x40) {
+    if (timer_id != 0x40) {
       return;
     }
     puVar1 = &DAT_0023bf14;
   }
-  *puVar1 = param_2;
-  *(byte *)(DAT_00086df8 + 0xb8) = *(byte *)(DAT_00086df8 + 0xb8) | param_1;
-  return;
+  *puVar1 = ticks;
+  *(byte *)(DAT_00086df8 + 0xb8) = *(byte *)(DAT_00086df8 + 0xb8) | timer_id;
 }
 
 
@@ -1713,10 +1667,7 @@ void sync_camera_from_player()
 // was FUN_00069b68 -- the game's general skill-check roll: rolls a random value mod 31, offsets it
 // by (param_1 - param_2) (typically a skill/stat value minus a difficulty threshold), and buckets
 // the result into -1 (critical failure, <3), 0 (failure, 3-15), 1 (success, 16-28)...
-undefined4 roll_skill_check(param_1,param_2)
-int param_1;
-int param_2;
-
+int roll_skill_check(int skill, int difficulty)
 {
   int uw_ord2005_rem_127 = 0;
   int iVar1;
@@ -1725,7 +1676,7 @@ int param_2;
   
   uVar2 = ce_rand();
   uw_ord2005_rem_127 = ((int)(uVar2)) % (0x1f);
-  iVar1 = ((uw_ord2005_rem_127 - param_2) + param_1) * 0x10000 >> 0x10;
+  iVar1 = ((uw_ord2005_rem_127 - difficulty) + skill) * 0x10000 >> 0x10;
   if (iVar1 < 0x1d) {
     if (iVar1 < 0x10) {
       uVar2 = 0;
@@ -1749,9 +1700,7 @@ int param_2;
 // was FUN_00069bd0 -- add param_1 experience points to the character
 // (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level
 // when the original XP / 500 threshold table is crossed.
-void grant_experience_points(param_1)
-short param_1;
-
+void grant_experience_points(short points)
 {
   byte bVar1;
   uint uVar2;
@@ -1763,7 +1712,7 @@ short param_1;
   char *iVar8;
   
   iVar8 = DAT_00086df8;
-  iVar7 = (int)param_1;
+  iVar7 = (int)points;
   if (iVar7 < 0) {
     uVar2 = *(uint *)(DAT_00086df8 + 0x4e);
     if ((uint)-iVar7 < uVar2 || -uVar2 == iVar7) {
@@ -1782,16 +1731,16 @@ short param_1;
       if (iVar7 < 0) {
         iVar7 = iVar7 + 1;
       }
-      param_1 = (short)(iVar7 >> 1) + 1;
+      points = (short)(iVar7 >> 1) + 1;
     }
-    sVar4 = orduint_divmod(3000,*(uint *)(DAT_00086df8 + 0x4e) + (int)param_1).quot;
+    sVar4 = orduint_divmod(3000,*(uint *)(DAT_00086df8 + 0x4e) + (int)points).quot;
     if ((short)(ushort)*(byte *)(iVar8 + 0x53) < sVar4) {
       *(byte *)(iVar8 + 0x52) = ((char)sVar4 - *(byte *)(iVar8 + 0x53)) + *(char *)(iVar8 + 0x52);
       *(char *)(DAT_00086df8 + 0x53) = (char)sVar4;
       iVar8 = DAT_00086df8;
     }
     uVar2 = *(uint *)(iVar8 + 0x4e);
-    iVar7 = uVar2 + (int)param_1;
+    iVar7 = uVar2 + (int)points;
     *(char *)(iVar8 + 0x4e) = (char)iVar7;
     *(char *)(DAT_00086df8 + 0x4f) = (char)((uint)iVar7 >> 8);
     *(char *)(DAT_00086df8 + 0x50) = (char)((uint)iVar7 >> 0x10);
@@ -1815,7 +1764,6 @@ short param_1;
       refresh_experience_display();
     }
   }
-  return;
 }
 
 
@@ -1854,9 +1802,7 @@ void refresh_experience_display()
 // was FUN_00070224 -- update_screen_flicker_effect's "sub-effect 2" driver: param_1==0 restores the
 // light remap table by reloading LIGHT.DAT/MONO.DAT (mirroring load_light_tables' own load),
 // param_1!=0 zeroes its first 16 entries instead...
-void toggle_light_table_flicker(param_1)
-int param_1;
-
+void toggle_light_table_flicker(int enable)
 {
   char stack0xffdc324c_buf [256];
   char *stack0xffdc324c_ptr;
@@ -1865,7 +1811,7 @@ int param_1;
   char *pcVar3;
   char acStack_10c [260];
   
-  if (param_1 == 0) {
+  if (enable == 0) {
     pcVar3 = &DAT_0023cca8;
     stack0xffdc324c_ptr = stack0xffdc324c_buf;
     do {
@@ -1894,7 +1840,6 @@ int param_1;
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 0x10);
   }
-  return;
 }
 
 
@@ -1905,9 +1850,7 @@ int param_1;
 // was FUN_000703a0 -- recalculates maximum HP (30 + level * STR / 5), maximum mana ((casting skill
 // + 1) * INT / 8), and carrying capacity (STR * 20, in tenths of a stone). Level 7 keeps normal
 // maximum mana at +0xb0 while its special state occupies +0x38.
-undefined4 recalculate_player_stats(param_1)
-int param_1;
-
+int recalculate_player_stats(int refill_mana)
 {
   undefined1 uVar1;
   char cVar2;
@@ -1928,7 +1871,7 @@ int param_1;
   carry_capacity = (uint)*(byte *)(DAT_0023be74 + 5) * 0x14;
   *(char *)(DAT_00086df8 + 0x4c) = (char)carry_capacity;
   *(char *)(DAT_00086df8 + 0x4d) = (char)(carry_capacity >> 8);
-  if (param_1 != 0) {
+  if (refill_mana != 0) {
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
   }
   return 0;
@@ -1939,16 +1882,14 @@ int param_1;
 // was FUN_00070464 -- raise the character level byte (DAT_00086df8 + 0x3d)
 // by param_1, show the "attained experience level N" scroll message, and
 // bump the dependent stat at +0x52.
-void advance_character_level(param_1)
-char param_1;
-
+void advance_character_level(char levels)
 {
   int uw_ord2005_rem_138 = 0;
   char *iVar1;
   char cVar2;
   int extraout_r1;
   
-  *(char *)(DAT_00086df8 + 0x3d) = *(char *)(DAT_00086df8 + 0x3d) + param_1;
+  *(char *)(DAT_00086df8 + 0x3d) = *(char *)(DAT_00086df8 + 0x3d) + levels;
   iVar1 = DAT_00086df8;
   if (*(byte *)(DAT_00086df8 + 0x3d) < 10) {
     DAT_0008730c = ' ';
@@ -1961,28 +1902,25 @@ char param_1;
   DAT_0008730d = (undefined1)((uint)((uw_ord2005_rem_138 + 0x30) * 0x1000000) >> 0x18);
   print_scroll_message_by_id(0x93);
   message_scroll_print_wrapped(&DAT_0008730c);
-  *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + param_1;
+  *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + levels;
   recalculate_player_stats(0);
   refresh_stats_panel_if_active();
-  return;
 }
 
 
 
 // was FUN_00070524 -- 3-way tier classifier: param_1<7 -> tier 0, param_1>9 -> tier 1, otherwise
 // (7..9) -> tier 2.
-undefined4 classify_skill_training_tier(param_1)
-short param_1;
-
+int classify_skill_training_tier(short value)
 {
   undefined4 uVar1;
   
-  if (param_1 < 7) {
+  if (value < 7) {
     uVar1 = 0;
   }
   else {
     uVar1 = 2;
-    if (9 < param_1) {
+    if (9 < value) {
       uVar1 = 1;
     }
   }
@@ -1994,9 +1932,7 @@ short param_1;
 // was FUN_00070548 -- advances the skill/combat-category progress byte at
 // DAT_00086df8[param_1+0x21] (one of the per-skill bytes babl.c's own "play_arms" variable sums,
 // see its comment) toward its 30 (0x1e) cap...
-void advance_skill_training(param_1)
-short param_1;
-
+void advance_skill_training(short skill_index)
 {
   int iVar1;
   undefined1 uVar2;
@@ -2010,7 +1946,7 @@ short param_1;
   undefined2 uVar6;
   short sVar7;
 
-  iVar1 = (int)param_1;
+  iVar1 = (int)skill_index;
   if (*(char *)(iVar1 + DAT_00086df8 + 0x21) == '\0') {
     cVar3 = '\x03';
     uVar6 = 9;
@@ -2024,7 +1960,7 @@ short param_1;
   /* BUG FIX: was `classify_skill_training_tier()` with no argument -- dropped by Ghidra (same "ARM
      register-leftover doesn't survive a literal recompile" idiom as every other dropped-argument
      bug in this file). */
-  sVar4 = classify_skill_training_tier(param_1);
+  sVar4 = classify_skill_training_tier(skill_index);
   uVar2 = *(undefined1 *)(DAT_0023be74 + sVar4 + 5);
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
   pcVar_df8 = DAT_00086df8 + iVar1;
@@ -2043,7 +1979,6 @@ short param_1;
   if (0x1e < *(byte *)(iVar1 + DAT_00086df8 + 0x21)) {
     *(undefined1 *)(iVar1 + DAT_00086df8 + 0x21) = 0x1e;
   }
-  return;
 }
 
 
@@ -2056,9 +1991,7 @@ short param_1;
 // was FUN_0007067c -- the "skill improves through use" roll: on a successful use of skill param_1,
 // fails outright (returns false, no change) if the skill's current progress
 // (DAT_00086df8[param_1+0x21]) already exceeds double its class/tier's base value...
-undefined4 roll_skill_use_improvement(param_1)
-char param_1;
-
+int roll_skill_use_improvement(char skill_index)
 {
   int iVar1;
   undefined1 uVar2;
@@ -2074,10 +2007,10 @@ char param_1;
   undefined4 uVar8;
 
   uVar8 = 1;
-  sVar4 = classify_skill_training_tier((int)param_1);
+  sVar4 = classify_skill_training_tier((int)skill_index);
   iVar7 = (int)sVar4;
   uVar2 = (&DAT_00087308)[iVar7];
-  iVar1 = (int)param_1;
+  iVar1 = (int)skill_index;
   uVar6 = (uint)*(byte *)(iVar7 + DAT_0023be74 + 5);
   bVar3 = *(byte *)(iVar1 + DAT_00086df8 + 0x21);
   if ((uVar6 * 2 < (uint)bVar3) || (0x1d < bVar3)) {
@@ -2121,20 +2054,16 @@ char param_1;
 // was FUN_000707c8 -- prints a single skill-improvement message: param_2==0 shows message 0x1b ("no
 // improvement"), otherwise message 0x1c followed by param_1's skill name (resolved via
 // get_message_string(param_1+0x1f|0x400), the skill-name string-id range).
-void print_single_skill_improvement_message(param_1,param_2)
-int param_1;
-int param_2;
-
+void print_single_skill_improvement_message(int skill_index, int improved)
 {
-  if (param_2 == 0) {
+  if (improved == 0) {
     print_scroll_message_by_id(0x1b);
   }
   else {
     print_scroll_message_by_id(0x1c);
-    message_scroll_print_wrapped(get_message_string(param_1 + 0x1fU | 0x400));
+    message_scroll_print_wrapped(get_message_string(skill_index + 0x1fU | 0x400));
     message_scroll_print_wrapped(&DAT_00084f20);
   }
-  return;
 }
 
 
@@ -2142,19 +2071,17 @@ int param_2;
 // was FUN_0007080c -- prints a comma/and-joined list of improved skill names from param_1 (a byte
 // array of skill ids, -1-terminated, up to 4 entries): message 0x1e if the list is empty
 // (*param_1==-1), else message 0x1d followed by each skill name...
-void print_skill_improvement_list(param_1)
-char * param_1;
-
+void print_skill_improvement_list(char *skill_ids)
 {
   char *pcVar1;
   int iVar2;
   
-  if (*param_1 == -1) {
+  if (*skill_ids == -1) {
     print_scroll_message_by_id(0x1e);
   }
   else {
     print_scroll_message_by_id(0x1d);
-    if (*param_1 != -1) {
+    if (*skill_ids != -1) {
       iVar2 = 0;
       do {
         if (3 < iVar2) break;
@@ -2165,17 +2092,16 @@ LAB_00070874:
           message_scroll_print_wrapped(pcVar1);
         }
         else if (iVar2 != 0) {
-          if (param_1[iVar2 + 1] == -1) goto LAB_00070870;
+          if (skill_ids[iVar2 + 1] == -1) goto LAB_00070870;
           pcVar1 = &DAT_00087318;
           goto LAB_00070874;
         }
-        message_scroll_print_wrapped(get_message_string((byte)param_1[iVar2] + 0x1f | 0x400));
+        message_scroll_print_wrapped(get_message_string((byte)skill_ids[iVar2] + 0x1f | 0x400));
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-      } while (param_1[iVar2] != -1);
+      } while (skill_ids[iVar2] != -1);
     }
     message_scroll_print_wrapped(&DAT_00084f20);
   }
-  return;
 }
 
 
@@ -2554,9 +2480,7 @@ void apply_rest_status_effects()
 
 // was FUN_00071510 -- the "Rest" command handler, reached either directly (param_1<0) or, for
 // param_1>=0, only after passing preconditions...
-void handle_rest_action(param_1)
-short param_1;
-
+void handle_rest_action(short mode)
 {
   int uw_ord2005_rem_145 = 0; int uw_ord2005_rem_146 = 0; int uw_ord2005_rem_147 = 0;
   byte bVar1;
@@ -2572,13 +2496,13 @@ short param_1;
   int iVar8;
   
   bVar2 = true;
-  if (param_1 < 0) {
+  if (mode < 0) {
 LAB_0007158c:
     full_dungeon_redraw();
     set_pending_music_track(0xd);
     update_ingame_music_track();
     weapon_overlay_flash_hold(5);
-    if (-1 < param_1) {
+    if (-1 < mode) {
       print_scroll_message_by_id(0x10);
     }
     tick_ambient_doors_and_scheduler(0);
@@ -2605,7 +2529,7 @@ LAB_0007158c:
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar7;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
     }
-    if (param_1 < 0) {
+    if (mode < 0) {
       apply_rest_status_effects();
     }
     if (*(char *)((char *)g_player_object + 8) == '\0') {
@@ -2630,7 +2554,7 @@ LAB_0007158c:
         *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar8 >> 0x10);
         *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar8 >> 0x18);
         decay_equipped_light_sources(iVar4 * 0xb4,0);
-        if ((*(byte *)(DAT_00086df8 + 0x39) < 0x41) || (iVar4 = 1, param_1 < 1)) {
+        if ((*(byte *)(DAT_00086df8 + 0x39) < 0x41) || (iVar4 = 1, mode < 1)) {
           iVar4 = 0;
         }
         bVar1 = *(byte *)(DAT_00086df8 + 0x3a);
@@ -2660,7 +2584,7 @@ LAB_0007158c:
         }
         *(char *)(DAT_00086df8 + 0x61) = (char)uVar6;
         *(char *)(DAT_00086df8 + 0x62) = (char)(uVar6 >> 8);
-        if (-1 < param_1) {
+        if (-1 < mode) {
           iVar8 = trigger_random_level_special_event(iVar4);
           bVar2 = true;
           if (iVar8 != 0) {
@@ -2724,7 +2648,6 @@ LAB_0007158c:
     }
     print_scroll_message_by_id(uVar5);
   }
-  return;
 }
 
 
@@ -2734,16 +2657,14 @@ LAB_0007158c:
 
 // was FUN_00071b08 -- adjusts the player's hunger byte (DAT_00086df8+0x39) by param_1, clamped to
 // 0..0xff (returns false if it would go >=0x100 without applying anything).
-undefined4 adjust_player_hunger(param_1)
-short param_1;
-
+int adjust_player_hunger(short delta)
 {
   int iVar1;
   int iVar2;
   byte bVar3;
   undefined4 uVar4;
   
-  iVar1 = ((int)param_1 + (uint)*(byte *)(DAT_00086df8 + 0x39)) * 0x10000;
+  iVar1 = ((int)delta + (uint)*(byte *)(DAT_00086df8 + 0x39)) * 0x10000;
   iVar2 = iVar1 >> 0x10;
   if (iVar2 < 0x100) {
     if (iVar2 < 0) {
@@ -2752,7 +2673,7 @@ short param_1;
     else {
       *(char *)(DAT_00086df8 + 0x39) = (char)((uint)iVar1 >> 0x10);
     }
-    if (0 < param_1) {
+    if (0 < delta) {
       bVar3 = *(byte *)(DAT_00086df8 + 0x3b) >> 3;
       if (8 < bVar3) {
         bVar3 = 8;
@@ -2950,30 +2871,26 @@ LAB_00072374:
 // was FUN_00073e14 -- adjusts the level-7 hazard byte (DAT_00086df8+0x37, only when param_1 is the
 // player object): param_2<=0 subtracts it as a delta from the current value; param_2>0 instead adds
 // a randomized amount...
-void adjust_level7_hazard_value(param_1,param_2)
-char *param_1;
-char param_2;
-
+void adjust_level7_hazard_value(char *object, char delta)
 {
   short sVar1;
   
-  if (param_1 == g_player_object) {
-    if (param_2 < '\x01') {
-      param_2 = *(char *)(DAT_00086df8 + 0x37) - param_2;
+  if (object == g_player_object) {
+    if (delta < '\x01') {
+      delta = *(char *)(DAT_00086df8 + 0x37) - delta;
     }
     else {
       sVar1 = ce_rand();
-      param_2 = (char)((int)((((int)sVar1 & 3U) + (int)param_2) *
+      delta = (char)((int)((((int)sVar1 & 3U) + (int)delta) *
                              (uint)*(byte *)(DAT_00086df8 + 0x38) * 0x10000) >> 0x14) +
                 *(char *)(DAT_00086df8 + 0x37) + '\x01';
     }
-    *(char *)(DAT_00086df8 + 0x37) = param_2;
+    *(char *)(DAT_00086df8 + 0x37) = delta;
     if (*(byte *)(DAT_00086df8 + 0x38) < *(byte *)(DAT_00086df8 + 0x37)) {
       *(byte *)(DAT_00086df8 + 0x37) = *(byte *)(DAT_00086df8 + 0x38);
     }
     refresh_experience_display();
   }
-  return;
 }
 
 
@@ -2982,30 +2899,26 @@ char param_2;
 
 
 // was FUN_00073f60
-void restore_stat_capped(param_1,param_2)
-byte * param_1;
-uint param_2;
-
+void restore_stat_capped(byte *object, uint amount)
 {
   uint uVar1;
   byte bVar2;
 
-  uVar1 = (param_2 & 0xff) + (uint)param_1[8];
-  /* Was an unconditional `(&g_monster_max_stats_table)[(*param_1 & 0x3f) * 0x30]` cap -- that table
+  uVar1 = (amount & 0xff) + (uint)object[8];
+  /* Was an unconditional `(&g_monster_max_stats_table)[(*object & 0x3f) * 0x30]` cap -- that table
      is the per-monster-class max-stat table, indexed by the low 6 bits of a monster object's own
      type id (a valid index for any real monster, 0x40-0x7f). */
-  bVar2 = (param_1 == g_player_object) ? *(byte *)(DAT_0023be74 + 4) :
-          (&g_monster_max_stats_table)[(*param_1 & 0x3f) * 0x30];
+  bVar2 = (object == g_player_object) ? *(byte *)(DAT_0023be74 + 4) :
+          (&g_monster_max_stats_table)[(*object & 0x3f) * 0x30];
   if (bVar2 < uVar1) {
-    param_1[8] = bVar2;
+    object[8] = bVar2;
   }
   else {
-    param_1[8] = (byte)uVar1;
+    object[8] = (byte)uVar1;
   }
-  if (param_1 == g_player_object) {
+  if (object == g_player_object) {
     refresh_experience_display();
   }
-  return;
 }
 
 
@@ -3013,25 +2926,21 @@ uint param_2;
 // was FUN_00073fc4 -- dispatch_special_action's "healing item" handler (its own case 4): only
 // applies if the target object's quality bits match 0x40 (a food/potion-shaped flag), then restores
 // HP via restore_stat_capped -- param_2==0xf is a full-heal sentinel (-1)...
-void apply_healing_item_effect(param_1,param_2)
-ushort * param_1;
-char param_2;
-
+void apply_healing_item_effect(ushort *object, char effect_code)
 {
   char cVar1;
   int iVar2;
   
-  if ((*param_1 & 0x1c0) == 0x40) {
-    if (param_2 == '\x0f') {
+  if ((*object & 0x1c0) == 0x40) {
+    if (effect_code == '\x0f') {
       iVar2 = -1;
     }
     else {
-      cVar1 = roll_dice_sum((int)param_2,8);
+      cVar1 = roll_dice_sum((int)effect_code,8);
       iVar2 = (int)cVar1;
     }
-    restore_stat_capped(param_1,iVar2);
+    restore_stat_capped(object,iVar2);
   }
-  return;
 }
 
 
@@ -3086,17 +2995,14 @@ void draw_stats_panel_header()
 // was FUN_0007802c -- draws one row of the stats panel's 3-value attribute display: param_1 selects
 // the row (0-2), reading byte DAT_0023be74+5+row (see character_generator_loop's own init of these
 // 3 bytes via "roll 2d10+10", uw.c ~10097) and right-aligning it at y = row*7+0x1d...
-void draw_stats_panel_attribute_row(param_1)
-uint param_1;
-
+void draw_stats_panel_attribute_row(uint row)
 {
   int iVar1;
   undefined1 auStack_c [4];
   
-  itoa_radix(*(undefined1 *)((param_1 & 0xff) + DAT_0023be74 + 5),auStack_c,10);
+  itoa_radix(*(undefined1 *)((row & 0xff) + DAT_0023be74 + 5),auStack_c,10);
   iVar1 = measure_text_width(auStack_c);
-  draw_text_string(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
-  return;
+  draw_text_string(auStack_c,0x138 - iVar1,(row & 0xff) * 7 + 0x1d);
 }
 
 
@@ -3166,9 +3072,7 @@ void draw_experience_points_display()
 
 // was FUN_0007821c -- draws one row of the stats panel's skill list: param_1 selects the skill
 // index, restores the captured backdrop rect behind that row (blit_grtile_to_framebuffer)...
-void draw_stats_panel_skill_row(param_1)
-uint param_1;
-
+void draw_stats_panel_skill_row(uint skill_index)
 {
   /* Was `undefined4` -- same _strupr pointer-truncation class as
      draw_stats_panel_header's player-title draw. */
@@ -3178,9 +3082,9 @@ uint param_1;
   int iVar4;
   undefined1 auStack_18 [4];
   
-  uVar3 = param_1 & 0xff;
+  uVar3 = skill_index & 0xff;
   itoa_radix(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
-  blit_grtile_to_framebuffer(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
+  blit_grtile_to_framebuffer(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((skill_index & 0xff) + 1) * 7,
                0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
   /* Was `get_message_string(id); uVar1 = _strupr();` -- same dropped- argument bug as
      draw_stats_panel_header's player-title draw above; thread the looked-up skill-name string
@@ -3190,7 +3094,6 @@ uint param_1;
   draw_text_string(uVar1,0xf2,iVar4);
   iVar2 = measure_text_width(auStack_18);
   draw_text_string(auStack_18,0x138 - iVar2,iVar4);
-  return;
 }
 
 
@@ -3305,14 +3208,10 @@ void refresh_stats_panel_if_active()
 // was FUN_0007ee9c -- confirmed by read_player_status_block (src/player.c) as the low-level "read
 // and de-scramble" primitive behind the player.dat status block: reads param_4 bytes from file
 // handle param_1 into param_3, 80 (0x50) bytes at a time...
-short read_xor_scrambled_block(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-byte param_2;
-char *param_3;  /* was `int` -- same DAT_00086df8-pointer truncation bug as its sibling write_xor_scrambled_block
+/* was `int` -- same DAT_00086df8-pointer truncation bug as its sibling write_xor_scrambled_block
    (see that function's comment); this one is reached from the save-slot-copy path
    (read_player_status_block <- load_player_save_record) rather than... */
-short param_4;
-
+short read_xor_scrambled_block(int file_handle, byte key_seed, char *buffer, short byte_count)
 {
   short sVar1;
   int iVar2;
@@ -3323,24 +3222,24 @@ short param_4;
   sVar3 = 0;
   iVar2 = 0;
   do {
-    param_2 = param_2 + 3;
-    local_64[iVar2] = param_2;
+    key_seed = key_seed + 3;
+    local_64[iVar2] = key_seed;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 0x50);
-  for (; iVar2 = (int)param_4, 0 < iVar2; param_4 = param_4 + -0x50) {
+  for (; iVar2 = (int)byte_count, 0 < iVar2; byte_count = byte_count + -0x50) {
     if (0x4f < iVar2) {
       iVar2 = 0x50;
     }
-    sVar1 = read_file_handle(param_1,local_b4,iVar2);
+    sVar1 = read_file_handle(file_handle,local_b4,iVar2);
     if (0 < sVar1) {
       iVar2 = 0;
       do {
-        *(byte *)(iVar2 + param_3) = local_64[iVar2] ^ local_b4[iVar2];
+        *(byte *)(iVar2 + buffer) = local_64[iVar2] ^ local_b4[iVar2];
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
       } while (iVar2 < sVar1);
     }
     sVar3 = sVar1 + sVar3;
-    param_3 = param_3 + 0x50;
+    buffer = buffer + 0x50;
   }
   return sVar3;
 }
@@ -3350,14 +3249,10 @@ short param_4;
 // was FUN_0007ef78 -- write-side mirror of read_xor_scrambled_block, confirmed by
 // write_player_status_block (src/player.c): XOR- scrambles param_4 bytes from param_3 against the
 // same rolling param_2-derived key, 80 bytes at a time, writing each chunk to file handle param_1.
-int write_xor_scrambled_block(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-byte param_2;
-char *param_3;  /* was `int` -- truncated the real DAT_00086df8 pointer write_player_status_block passes in, latent
+/* was `int` -- truncated the real DAT_00086df8 pointer write_player_status_block passes in, latent
    until something (write_player_save_record, the player.dat writer) actually called
    write_player_status_block -- previously only reachable from the Load Game path */
-short param_4;
-
+int write_xor_scrambled_block(int file_handle, byte key_seed, char *buffer, short byte_count)
 {
   int iVar1;
   int iVar2;
@@ -3372,11 +3267,11 @@ short param_4;
   iVar5 = 0;
   iVar1 = 0;
   do {
-    param_2 = param_2 + 3;
-    local_b4[iVar1] = param_2;
+    key_seed = key_seed + 3;
+    local_b4[iVar1] = key_seed;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 0x50);
-  for (; iVar1 = (int)param_4, 0 < iVar1; param_4 = param_4 + -0x50) {
+  for (; iVar1 = (int)byte_count, 0 < iVar1; byte_count = byte_count + -0x50) {
     iVar2 = 0;
     while( true ) {
       iVar4 = iVar1;
@@ -3385,15 +3280,15 @@ short param_4;
       }
       iVar2 = (int)(short)iVar2;
       if (iVar4 <= iVar2) break;
-      local_64[iVar2] = local_b4[iVar2] ^ *(byte *)(iVar2 + param_3);
+      local_64[iVar2] = local_b4[iVar2] ^ *(byte *)(iVar2 + buffer);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     }
     if (0x4f < iVar1) {
       iVar1 = 0x50;
     }
-    uVar3 = write_file_handle(param_1,local_64,iVar1);
+    uVar3 = write_file_handle(file_handle,local_64,iVar1);
     iVar5 = iVar5 + (uVar3 & 0xffff);
-    param_3 = param_3 + 0x50;
+    buffer = buffer + 0x50;
   }
   return iVar5;
 }
@@ -3405,21 +3300,17 @@ short param_4;
 // was FUN_000352d0 -- scan_area_ahead_of_object callback: flags DAT_00101954 if the scanned object
 // (param_3) isn't the player, its class-record quality nibble (byte 0xb) is 4, 5, or 9 (a hostile
 // creature category), and its own alerted/aware flag (byte 0x19, bit 0) is set.
-undefined4 detect_unsafe_rest_object_callback(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-/* ARM 0x352d4 preserves the scanned object from r2 in r4 before reading
-   +0xb/+0x19. Keep that record address intact on a 64-bit host. */
-char *param_3;
-
+/* ARM 0x352d4 preserves the scanned object from r2 in r4 before reading +0xb/+0x19. Keep that
+   record address intact on a 64-bit host. */
+int detect_unsafe_rest_object_callback(int scan_x, int scan_y, char *object)
 {
   byte bVar1;
   short sVar2;
 
-  sVar2 = encode_object_slot_index(param_3);
+  sVar2 = encode_object_slot_index(object);
   if (((sVar2 != 1) &&
-      (((bVar1 = *(byte *)(param_3 + 0xb) & 0xf, bVar1 == 5 || (bVar1 == 4)) || (bVar1 == 9)))) &&
-     ((*(byte *)(param_3 + 0x19) & 1) != 0)) {
+      (((bVar1 = *(byte *)(object + 0xb) & 0xf, bVar1 == 5 || (bVar1 == 4)) || (bVar1 == 9)))) &&
+     ((*(byte *)(object + 0x19) & 1) != 0)) {
     DAT_00101954 = 1;
   }
   return 0;
@@ -3484,9 +3375,7 @@ void reset_player_for_resurrection()
 // was FUN_0003c038 -- exits the current game mode and transitions through the main menu before
 // resuming: for param_1==1 (the player death case), shows the "You died" message, the death
 // illustration page (0x103), and a 2-second pause before continuing.
-void handle_player_death_and_menu_transition(param_1)
-short param_1;
-
+void handle_player_death_and_menu_transition(short reason)
 {
   short sVar1;
   code *pcVar2;
@@ -3495,7 +3384,7 @@ short param_1;
 
   DAT_0023bf0c = 0;
   reset_cursor_confine_rect();
-  if (param_1 == 1) {
+  if (reason == 1) {
     set_hud_status_value(2,0);
     snap_compass_to_heading();
     hud_vitals_threshold_shake(0);
@@ -3525,7 +3414,7 @@ short param_1;
   DAT_00201b60 = 0;
   DAT_00201b64 = 0xffff;
   DAT_00201c98 = 0;
-  if (param_1 == 1) {
+  if (reason == 1) {
     decrement_cursor_hide_depth();
   }
   reset_player_for_resurrection();
@@ -3537,7 +3426,6 @@ short param_1;
   DAT_00201b64 = sVar1;
   /* 0x80, see DAT_00085668's comment. */
   (**(code **)(&DAT_00085668 + sVar1 * 0x80))();
-  return;
 }
 
 
@@ -3603,17 +3491,14 @@ LAB_0003c780:
 
 // was FUN_0003dba0 -- dispatch_special_action's case-1 handler for sub-codes 3/5 (uw.c,
 // src/object_actions.c:896).
-void trigger_player_jump_if_grounded(param_1)
-int param_1;
-
+void trigger_player_jump_if_grounded(char *object)
 {
-  if (param_1 == g_player_object) {
+  if (object == g_player_object) {
     if ((DAT_002048a8 & 0x10) == 0) {
       g_vertical_velocity = 0x8d;
     }
     g_fall_accel = 0;
   }
-  return;
 }
 
 
@@ -3631,16 +3516,14 @@ void force_locomotion_state_refresh()
 
 
 // was FUN_0003dc04 -- one of apply_quest_vertical_effect's two sub-effects (bit 2).
-void apply_vertical_launch_impulse(param_1)
-short param_1;
-
+void apply_vertical_launch_impulse(short strength)
 {
   int iVar1;
 
   if (g_fall_accel != -4) {
     g_fall_accel = -2;
   }
-  iVar1 = param_1 * 0x2f;
+  iVar1 = strength * 0x2f;
   if (iVar1 < 0) {
     iVar1 = iVar1 + 3;
   }
@@ -3655,7 +3538,6 @@ short param_1;
     iVar1 = iVar1 + 1;
   }
   DAT_00204888 = (short)(iVar1 >> 1);
-  return;
 }
 
 
@@ -3663,12 +3545,9 @@ short param_1;
 // was FUN_0003dc6c -- apply_quest_vertical_effect's other sub-effect (bit 1). Always the same
 // fixed-duration animation-timer trigger (set_movement_animation_timer(0x40,0x1e)); reads as a
 // scripted "stumble" animation cue.
-void trigger_quest_stumble_animation(param_1)
-undefined4 param_1;
-
+void trigger_quest_stumble_animation(int unused)
 {
   set_movement_animation_timer(0x40,0x1e);
-  return;
 }
 
 
@@ -3676,27 +3555,21 @@ undefined4 param_1;
 // was FUN_0003dc78 -- dispatch_quest_event_code's handler for quest codes 0x3c-0x3e
 // (src/traps.c:562, gated on the trap/link record's trigger context being the player), called as
 // apply_quest_vertical_effect(code-0x3b, linkval&0x3f) so param_1 in {1,2,3}.
-void apply_quest_vertical_effect(param_1,param_2)
-ushort param_1;
-undefined4 param_2;
-
+void apply_quest_vertical_effect(ushort effect_bits, int unused)
 {
-  if ((param_1 & 1) != 0) {
-    trigger_quest_stumble_animation(param_2);
+  if ((effect_bits & 1) != 0) {
+    trigger_quest_stumble_animation(unused);
   }
-  if ((param_1 & 2) != 0) {
-    apply_vertical_launch_impulse(param_2);
+  if ((effect_bits & 2) != 0) {
+    apply_vertical_launch_impulse(unused);
   }
-  return;
 }
 
 
 // was FUN_00053ab0 -- manages the player's active-light-source list (a small array at
 // DAT_00086df8+0x3e, count tracked in bits 6-9 of the status word at +0x5f/+0x60): confirmed by
 // handle_light_source_click's own comment as "cycle the active light source" on a UI click...
-undefined4 cycle_active_light_source(param_1)
-short * param_1;
-
+int cycle_active_light_source(short *index)
 {
   short sVar1;
   ushort uVar2;
@@ -3705,30 +3578,30 @@ short * param_1;
   uint uVar5;
   int iVar6;
   
-  uVar5 = (uint)*(ushort *)(DAT_00086df8 + *param_1 * 2 + 0x3e);
+  uVar5 = (uint)*(ushort *)(DAT_00086df8 + *index * 2 + 0x3e);
   if (((uVar5 & 0xf) == 1) && (((uVar5 & 0xf0) == 0x30 || ((uVar5 & 0xf0) == 0x50)))) {
     iVar6 = (uVar5 & 0xff00) + 0x21;
-    puVar3 = (undefined1 *)(DAT_00086df8 + (*param_1 + 0x1f) * 2);
+    puVar3 = (undefined1 *)(DAT_00086df8 + (*index + 0x1f) * 2);
     *puVar3 = (char)iVar6;
     puVar3[1] = (char)((uint)iVar6 >> 8);
-    sVar4 = *(byte *)(DAT_00086df8 + *param_1 * 2 + 0x3e) + 0x100;
-    puVar3 = (undefined1 *)(DAT_00086df8 + (*param_1 + 0x1f) * 2);
+    sVar4 = *(byte *)(DAT_00086df8 + *index * 2 + 0x3e) + 0x100;
+    puVar3 = (undefined1 *)(DAT_00086df8 + (*index + 0x1f) * 2);
   }
   else {
     if (((uVar5 & 0xf) == 0xb) && ((uVar5 & 0xf0) == 0x10)) {
       set_view_subject_by_command(1);
     }
-    if ((*(byte *)(DAT_00086df8 + *param_1 * 2 + 0x3e) & 0xf) == 1) {
+    if ((*(byte *)(DAT_00086df8 + *index * 2 + 0x3e) & 0xf) == 1) {
       DAT_000858a0 = 1;
     }
     uVar5 = (uint)*(ushort *)(DAT_00086df8 + 0x5f);
     uVar5 = ((uVar5 & 0xffc0) - 1 ^ uVar5) & 0x3c0 ^ uVar5;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
-    sVar4 = *param_1;
+    sVar4 = *index;
     uVar2 = *(ushort *)(DAT_00086df8 + 0x5f);
     sVar1 = (short)((uint)((sVar4 + -1) * 0x10000) >> 0x10);
-    *param_1 = sVar1;
+    *index = sVar1;
     if ((int)(uVar2 >> 6 & 0xf) <= (int)sVar4) {
       return 1;
     }
@@ -3870,10 +3743,7 @@ void update_player_tick_effects()
 // was FUN_0005404c -- burns fuel on the player's equipped light sources (g_light_source_slots, 4
 // slots): for each equipped item whose type falls in the light-source category and has a valid
 // radius (g_light_radius_table)...
-undefined4 decay_equipped_light_sources(param_1,param_2)
-short param_1;
-undefined1 param_2;
-
+int decay_equipped_light_sources(short elapsed, byte tick_phase)
 {
   char cVar1;
   ushort uVar2;
@@ -3895,14 +3765,14 @@ undefined1 param_2;
       uVar2 = *puVar6;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
           (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
-        /* ARM 0x540d4 uses the tick phase (param_2) for the remainder.
+        /* ARM 0x540d4 uses the tick phase (tick_phase) for the remainder.
            Before the second division, 0x540ec reloads elapsed ticks
-           (param_1) into r1. Sleep needs that distinct bulk dividend. */
-        divmod_result dmr4414 = ordint_divmod(cVar1,param_2);
+           (elapsed) into r1. Sleep needs that distinct bulk dividend. */
+        divmod_result dmr4414 = ordint_divmod(cVar1,tick_phase);
         extraout_r1 = dmr4414.rem;
         uVar8 = (ushort)(extraout_r1 == 0);
-        if (1 < param_1) {
-          sVar5 = ordint_divmod(cVar1,param_1).quot;
+        if (1 < elapsed) {
+          sVar5 = ordint_divmod(cVar1,elapsed).quot;
           uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
         }
         if ((short)uVar8 != 0) {

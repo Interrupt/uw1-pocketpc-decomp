@@ -4,7 +4,7 @@
 /* Local service declarations; game function bodies link these mocks. */
 int character_generator_start(void);
 int ensure_save_directory_exists(char *path);
-bool write_player_save_record(const char *path);
+bool write_player_save_record(char *path);
 undefined *load_string_resource(char *path);
 undefined4 seed_conversation_globals_for_new_game(void);
 bool open_level_archive(undefined1 *handle, char *path);
@@ -18,7 +18,7 @@ void reset_npc_path_cache(void);
 void clear_last_attacker_record(void);
 int load_automap_reveal_from_archive(byte *handle, int level);
 byte close_level_archive(undefined4 *handle);
-void set_player_tile_position(uint x, uint y);
+void set_player_tile_position(uint tile_x, uint tile_y, int flag);
 void debug_print_player_position(const char *label);
 void save_or_restore_level_special_state(short restore, short slot);
 void pop_cursor_icon(int state);
@@ -100,7 +100,7 @@ int ensure_save_directory_exists(char *path)
     return 1;
 }
 
-bool write_player_save_record(const char *path)
+bool write_player_save_record(char *path)
 {
     if (saves == 0) TEST_ASSERT_EQUAL_STRING("\\SAVE0", path);
     else TEST_ASSERT_NULL(path); /* load_level's snapshot */
@@ -197,7 +197,7 @@ byte close_level_archive(undefined4 *handle)
     return 1;
 }
 
-void set_player_tile_position(uint x, uint y)
+void set_player_tile_position(uint x, uint y, int flag)
 {
     TEST_ASSERT_EQUAL_INT(1, closes);
     TEST_ASSERT_EQUAL_INT(1, textures);
