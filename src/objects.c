@@ -428,7 +428,7 @@ void unlink_and_free_object(char *link_field, char *object)
    -- same fix. */
 void *resolve_object_link(ushort *link_field)
 {
-  ushort uVar1;
+  ushort chain;
 
   /* ARM FUN_00053514 accepts any valid link-word address, including
      the stack copy used at 0x52e58. Requiring the word to live inside the
@@ -436,12 +436,12 @@ void *resolve_object_link(ushort *link_field)
      on the object tables, rather than restricting the word's location. */
   if ((link_field != (ushort *)0x0) && (DAT_002046b8 != NULL) &&
       (DAT_002046c4 != NULL)) {
-    uVar1 = *link_field;
-    if ((uVar1 & 0xffc0) != 0) {
-      if (0x3fff < (uVar1 & 0xffc0)) {
-        return DAT_002046c4 + ((uVar1 >> 6) - 0x100) * 8;
+    chain = ((uw_chain_word_t *)link_field)->chain;
+    if (chain != 0) {
+      if (0xff < chain) {
+        return DAT_002046c4 + (chain - 0x100) * 8;
       }
-      return (uint)(uVar1 >> 6) * 0x1b + DAT_002046b8;
+      return (uint)chain * 0x1b + DAT_002046b8;
     }
   }
   return 0;

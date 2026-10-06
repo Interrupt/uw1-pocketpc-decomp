@@ -162,6 +162,21 @@ typedef struct __attribute__((packed)) {
     unsigned short obj_head     : 10; /* bits 6-15: first object slot index on this tile */
 } uw_tile_t;  /* 4 bytes total */
 
+/* Shared 16-bit "chain word" shape used by three different fields across the two record types
+   above: uw_object_hdr_t.next (word 0x04), uw_object_hdr_t.link (word 0x06), and uw_tile_t.obj_head
+   (word 0x02) are all a 6-bit field the caller already knows the meaning of (quality/owner/wall_tex)
+   packed with a 10-bit object-slot-chain index in bits 6-15. object_list_insert_head/
+   object_list_unlink/object_list_append_tail/resolve_object_link (objects.c) all take a raw pointer
+   to one of these three words interchangeably -- that's why they're still byte-pointer/ushort-
+   pointer parameters rather than uw_object_hdr_t-pointer/uw_tile_t-pointer, since a bitfield
+   member has no address to pass. This
+   type lets their own internal bit math read as a named field instead, without changing any call
+   site's pointer arithmetic (object+4, object+6, tile_ptr+1, ... all stay exactly as they are). */
+typedef struct __attribute__((packed)) {
+    unsigned short low6  : 6;  /* preserved field: quality / owner / wall_tex, meaning depends on which word this is */
+    unsigned short chain : 10; /* bits 6-15: next/link/obj_head object-slot-chain index */
+} uw_chain_word_t;
+
 /* 0xd (13)-byte comobj.dat per-object-type property record. DAT_00202c90_backing is the flat array
    (base DAT_00202c90, stride 0xd), indexed by an object's type id (obj_hdr.item_id & 0x1ff). */
 typedef struct __attribute__((packed)) {
