@@ -119,6 +119,66 @@ static void test_key_from_sack_can_target_door_at_22_5(void)
     TEST_ASSERT_EQUAL_INT(1, released_clicks);
 }
 
+/* Exercise opening and refreshing the real level-one sack, rather than only
+   asking which inventory widget owns its contents. */
+static void test_open_level_one_sack_populates_container_view(void)
+{
+    load_key_from_level_one_sack();
+    g_current_container_record = NULL;
+    open_backpack_container(4);
+    TEST_ASSERT_NOT_NULL(g_open_container_list);
+    TEST_ASSERT_EQUAL_HEX16(1 << 6, g_current_container_link);
+    TEST_ASSERT_EQUAL_HEX16(1 << 6, slots[19]);
+    TEST_ASSERT_EQUAL_HEX16(2 << 6, slots[20]);
+    for (int slot = 21; slot < 28; slot++) TEST_ASSERT_EQUAL_HEX16(0, slots[slot]);
+    TEST_ASSERT_EQUAL_HEX16(0x83, objects[1][0] & 0x1ff);
+    TEST_ASSERT_EQUAL_INT(2, container_grid_redraws);
+    TEST_ASSERT_EQUAL_INT(2, container_arrow_redraws);
+    for (int widget = 12; widget < 20; widget++)
+        TEST_ASSERT_EQUAL_INT(widget + 8, g_backpack_widget_to_slot_backing[widget]);
+}
+
+static void test_open_empty_sack_refreshes_without_contents(void)
+{
+    objects[1][0] = 0x82;
+    objects[1][3] = 0;
+    open_backpack_container(4);
+    for (int slot = 20; slot < 28; slot++) TEST_ASSERT_EQUAL_HEX16(0, slots[slot]);
+    TEST_ASSERT_EQUAL_UINT(0, DAT_002029a0);
+    TEST_ASSERT_EQUAL_UINT(0, DAT_0020299c);
+    TEST_ASSERT_EQUAL_INT(2, container_arrow_redraws);
+}
+
+static void test_open_sack_skips_hidden_contents_when_refreshing(void)
+{
+    objects[1][0] = 0x82;
+    objects[2][0] = 0x4000 | 0x106;
+    objects[2][2] = 3 << 6;
+    objects[3][0] = 0x106;
+    open_backpack_container(4);
+    TEST_ASSERT_EQUAL_HEX16(3 << 6, slots[20]);
+    TEST_ASSERT_EQUAL_HEX16(0, slots[21]);
+    /* Refresh traverses the hidden head's sibling link (+4), not contents (+6). */
+    _DAT_00202978 = 3 << 6;
+    refresh_container_view();
+    TEST_ASSERT_EQUAL_UINT(0, DAT_002029a0);
+}
+
+static void test_open_nested_sack_refreshes_inner_contents(void)
+{
+    objects[1][0] = objects[2][0] = 0x82;
+    objects[2][3] = 3 << 6;
+    objects[3][0] = 0x106;
+    open_backpack_container(4);
+    char *parent = g_current_container_record;
+    open_backpack_container(20);
+    TEST_ASSERT_NOT_EQUAL(parent, g_current_container_record);
+    TEST_ASSERT_EQUAL_HEX16(2 << 6, g_current_container_link);
+    TEST_ASSERT_EQUAL_HEX16(3 << 6, slots[20]);
+    TEST_ASSERT_EQUAL_HEX16(2 << 6, slots[19]);
+    TEST_ASSERT_EQUAL_INT(4, container_arrow_redraws);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -135,5 +195,9 @@ int main(void)
     RUN_TEST(test_key_action_with_missing_message_does_not_print);
     RUN_TEST(test_action_dispatch_forwards_object_and_mode_to_related_helpers);
     RUN_TEST(test_key_from_sack_can_target_door_at_22_5);
+    RUN_TEST(test_open_level_one_sack_populates_container_view);
+    RUN_TEST(test_open_empty_sack_refreshes_without_contents);
+    RUN_TEST(test_open_sack_skips_hidden_contents_when_refreshing);
+    RUN_TEST(test_open_nested_sack_refreshes_inner_contents);
     return UNITY_END();
 }

@@ -62,6 +62,10 @@ these domain fixtures:
 
 Fixture map loading uses native file reads, so inventory, trap, illustration,
 and new-game suites can keep their own observed or failing file-service mocks.
+The inventory suite runs the real container open, refresh and weight traversal
+with controlled object slots and drawing services. Cases open the real sack
+from level 1 tile 23,6, empty sacks and nested sacks, and follow hidden contents'
+sibling links. Its fixture frees container tracking records after each case.
 The new-game suite still exercises the actual `read_archive_entry` and level
 loader. The character initializer and archive reader have separate compiled
 libraries, avoiding dependencies on unrelated services when only one is used.
