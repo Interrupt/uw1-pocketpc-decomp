@@ -253,11 +253,8 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
   *(char *)((char *)g_player_object + 2) = (char)uVar3;
   *(byte *)((char *)g_player_object + 3) = (byte)(uVar3 >> 8) | 0xc;
   *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
-  uVar3 = *(ushort *)((char *)g_player_object + 4) & 0xffc0;
-  *(char *)((char *)g_player_object + 4) = (char)uVar3;
-  *(char *)((char *)g_player_object + 5) = (char)(uVar3 >> 8);
-  *(byte *)((char *)g_player_object + 4) = *(byte *)((char *)g_player_object + 4) & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 5) = 0;
+  ((uw_object_hdr_t *)g_player_object)->quality = 0;
+  ((uw_object_hdr_t *)g_player_object)->next = 0;
   DAT_00202c6c = local_3c;
   uVar1 = encode_object_slot_index(g_player_object);
   DAT_00202c6c[10] = (char)uVar1;
@@ -493,14 +490,12 @@ void sync_player_stats_to_hud()
 void build_player_save_record(byte *out_record)
 {
   bool bVar1;
-  ushort uVar2;
   short sVar3;
   undefined1 *puVar4;
   int iVar5;
   int iVar6;
   undefined1 *puVar7;
   ushort *puVar8;
-  byte *pbVar9;
   ushort local_14 [2];
   
   close_backpack_container();
@@ -515,20 +510,14 @@ void build_player_save_record(byte *out_record)
     iVar6 = iVar5;
     puVar7 = puVar7 + 1;
   } while (iVar5 != 0 && bVar1);
-  out_record[4] = out_record[4] & 0x3f;
-  out_record[5] = 0;
+  ((uw_object_hdr_t *)out_record)->next = 0;
   g_save_equip_table_ptr = out_record + 0x23;
   g_save_record_base_ptr = out_record + 0x5b;
   g_save_record_count = 0;
   iVar6 = 0;
   do {
     puVar8 = (ushort *)(g_save_equip_table_ptr + iVar6 * 2);
-    uVar2 = *puVar8;
-    *(char *)puVar8 = (char)(uVar2 & 0xffc0);
-    *(char *)((char *)puVar8 + 1) = (char)((uVar2 & 0xffc0) >> 8);
-    pbVar9 = g_save_equip_table_ptr + iVar6 * 2;
-    *pbVar9 = *pbVar9 & 0x3f;
-    pbVar9[1] = 0;
+    *puVar8 = 0;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x13);
   serialize_inventory_link_chain((char *)g_player_object + 6,out_record + 6);
@@ -3778,14 +3767,10 @@ int decay_equipped_light_sources(short elapsed, byte tick_phase)
         if ((short)uVar8 != 0) {
           uVar3 = puVar6[2];
           if ((int)(short)uVar8 < (int)(uVar3 & 0x3f)) {
-            bVar4 = (byte)uVar3;
-            *(byte *)(puVar6 + 2) = (bVar4 - (char)uVar8 ^ bVar4) & 0x3f ^ bVar4;
-            *(byte *)((char *)puVar6 + 5) = (byte)(uVar3 >> 8);
+            ((uw_object_hdr_t *)puVar6)->quality = ((uw_object_hdr_t *)puVar6)->quality - uVar8;
           }
           else {
-            uVar7 = uVar3 & 0xffc0;
-            *(byte *)(puVar6 + 2) = (byte)uVar7;
-            *(byte *)((char *)puVar6 + 5) = (byte)(uVar7 >> 8);
+            ((uw_object_hdr_t *)puVar6)->quality = 0;
             bVar4 = (byte)uVar2;
             *(byte *)puVar6 = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
             *(byte *)((char *)puVar6 + 1) = (byte)(uVar2 >> 8);
