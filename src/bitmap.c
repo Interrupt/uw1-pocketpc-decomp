@@ -54,18 +54,9 @@ static short DAT_0023c3f4;
 
 // was FUN_000125a8 -- lowest-level raw (already-decoded, uncompressed) sprite blit primitive: draws
 // a pre-decoded pixel buffer...
-void blit_raw_sprite_clipped(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
-short param_1;
-short param_2;
 /* Source-bitmap pointer -- was `int`, truncating the real `char *` the caller
    (blit_object_sprite_by_frame) already reconstructed (iVar4 + 5). */
-char *param_3;
-short param_4;
-short param_5;
-short param_6;
-short param_7;
-undefined4 param_8;
-
+void blit_raw_sprite_clipped(short x, short y, char *pixels, short height, short width, short src_x, short src_y, undefined4 transparent)
 {
   short sVar1;
   int iVar2;
@@ -85,38 +76,38 @@ undefined4 param_8;
   short local_38;
   short local_34;
   
-  iVar13 = (int)param_6;
-  sVar1 = (short)((uint)((param_5 - iVar13) * 0x10000) >> 0x10);
+  iVar13 = (int)src_x;
+  sVar1 = (short)((uint)((width - iVar13) * 0x10000) >> 0x10);
   local_38 = 0;
   sVar12 = 0;
   local_3c = 0;
-  iVar14 = (int)param_1;
+  iVar14 = (int)x;
   if (iVar14 < 0) {
     local_38 = (short)((uint)(iVar14 * -0x10000) >> 0x10);
   }
-  iVar6 = (int)param_2;
+  iVar6 = (int)y;
   if (iVar6 < 0) {
     local_3c = (short)((uint)(iVar6 * -0x10000) >> 0x10);
   }
   iVar2 = (int)sVar1;
   if (0x140 < iVar14 + iVar2) {
-    sVar12 = param_1 + sVar1 + -0x140;
+    sVar12 = x + sVar1 + -0x140;
   }
-  sVar1 = (short)((uint)(((int)param_4 - (int)param_7) * 0x10000) >> 0x10);
+  sVar1 = (short)((uint)(((int)height - (int)src_y) * 0x10000) >> 0x10);
   iVar3 = (int)sVar1;
   if (iVar6 + iVar3 < 0xc9) {
     local_34 = 0;
   }
   else {
-    local_34 = param_2 + sVar1 + -200;
+    local_34 = y + sVar1 + -200;
   }
-  param_3 = param_7 * iVar2 + iVar13 + param_3;
+  pixels = src_y * iVar2 + iVar13 + pixels;
   /* Same missing-4th-argument K&R-call bug as bitmap_blit_to_framebuffer's own dirty_rect_union
      call (see graphics.c's fix comment) -- this is the more directly relevant instance for
      inventory icons specifically... */
   if (getenv("UW_DEBUG_BLITRAW")) {
     fprintf(stderr, "[blitraw] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
-            (int)param_1, (int)param_2, (int)iVar2, (int)iVar3,
+            (int)x, (int)y, (int)iVar2, (int)iVar3,
             iVar6, iVar6 + iVar3, iVar14, iVar14 + iVar2);
   }
   dirty_rect_union(iVar6,iVar6 + iVar3,iVar14,iVar14 + iVar2);
@@ -134,7 +125,7 @@ undefined4 param_8;
           iVar10 = iVar7;
           do {
             *(undefined2 *)(iVar6 + (g_uw_framebuffer)) =
-                 (&g_palette_rgb565)[*(byte *)(iVar5 + param_3)];
+                 (&g_palette_rgb565)[*(byte *)(iVar5 + pixels)];
             if (iVar3 * iVar2 + -5 < iVar5) {
               return;
             }
@@ -145,7 +136,7 @@ undefined4 param_8;
         }
         iVar11 = iVar11 + 1;
         iVar14 = iVar14 + 0x140;
-        param_3 = iVar13 + param_3;
+        pixels = iVar13 + pixels;
         iVar8 = iVar2 + iVar8;
       } while (iVar11 < iVar4);
     }
@@ -162,7 +153,7 @@ undefined4 param_8;
           iVar10 = iVar7 + iVar8;
           iVar6 = iVar8;
           do {
-            uVar9 = (uint)*(byte *)(iVar2 * iVar4 + param_3 + iVar6);
+            uVar9 = (uint)*(byte *)(iVar2 * iVar4 + pixels + iVar6);
             if (uVar9 != 0) {
               *(undefined2 *)((g_uw_framebuffer) + (iVar14 + iVar6) * 2)
                    = (&g_palette_rgb565)[uVar9];
@@ -176,37 +167,31 @@ undefined4 param_8;
         }
         iVar4 = iVar4 + 1;
         iVar7 = iVar2 + iVar7;
-        param_3 = iVar13 + param_3;
+        pixels = iVar13 + pixels;
         iVar14 = iVar14 + 0x140;
       } while (iVar4 < iVar11);
     }
   }
   debug_framebuffer_dump("blit_raw_sprite_clipped");
-  return;
 }
 
 
 
 
 // was FUN_00013170
-void blit_sprite_row_remapped(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-uint param_2;
-uint param_3;
-uint param_4;
-
+void blit_sprite_row_remapped(undefined4 unused, uint pixel, uint remap_index, uint shade)
 {
   byte bVar1;
   uint uVar2;
   uint uVar3;
   int iVar4;
   
-  uVar3 = (param_4 & 0xffff) >> 8;
+  uVar3 = (shade & 0xffff) >> 8;
   DAT_000b461c = DAT_000842ac;
   DAT_000b4628 = DAT_000842ac;
   if (uVar3 == 0xff) {
-    uVar3 = (param_3 & 0xfff) * 0x10;
-    uVar2 = param_3 & 0xfff;
+    uVar3 = (remap_index & 0xfff) * 0x10;
+    uVar2 = remap_index & 0xfff;
     while (uVar2 != 0) {
       *DAT_000b461c = *DAT_000b5630;
       DAT_000b461c = DAT_000b461c + 1;
@@ -216,9 +201,9 @@ uint param_4;
     }
   }
   else {
-    uVar3 = merge_byte_into_word(param_2 & 0xff | uVar3 << 8,0,0);
+    uVar3 = merge_byte_into_word(pixel & 0xff | uVar3 << 8,0,0);
     DAT_000b4610 = (byte *)(DAT_000b4614 + (uVar3 & 0xffff));
-    for (param_3 = param_3 & 0xffff; param_3 != 0; param_3 = param_3 - 1) {
+    for (remap_index = remap_index & 0xffff; remap_index != 0; remap_index = remap_index - 1) {
       iVar4 = 0x10;
       do {
         iVar4 = iVar4 + -1;
@@ -230,20 +215,13 @@ uint param_4;
     }
   }
   DAT_000b4610 = DAT_000842ac;
-  return;
 }
 
 
 
 
 // was FUN_00040918
-void blit_object_sprite_by_frame(param_1,param_2,param_3,param_4,param_5)
-short param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-undefined4 param_5;
-
+void blit_object_sprite_by_frame(short frame, int x, int y, int width, int height)
 {
   char cVar1;
   char cVar2;
@@ -253,26 +231,26 @@ undefined4 param_5;
   /* g_grtile_registry is a flat pointer array -- see its declaration comment; iVar4 is dereferenced
      as a pointer below (iVar4+5, matching the pcVar3+5 idiom in the branch right above it), so it's
      retyped from int to char* rather than truncated through a 4-byte read. */
-  iVar4 = (char *)g_grtile_registry[param_1];
+  iVar4 = (char *)g_grtile_registry[frame];
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] blit_object_sprite_by_frame: resolved_frame=%d DAT_00202738=%d slot_ptr=%p branch=%s\n",
-            (int)param_1, (int)(uint)DAT_00202738, (void *)iVar4,
-            (int)param_1 < (int)(uint)DAT_00202738 ? "registered-resource(lookup_grtile_by_id)" : "absolute-frame-table(g_grtile_registry)");
+            (int)frame, (int)(uint)DAT_00202738, (void *)iVar4,
+            (int)frame < (int)(uint)DAT_00202738 ? "registered-resource(lookup_grtile_by_id)" : "absolute-frame-table(g_grtile_registry)");
   if (iVar4 == (char *)0x0) {
     /* Table slot never populated. */
     static char dummy_sprite[8];
     iVar4 = dummy_sprite;
   }
-  if ((int)param_1 < (int)(uint)DAT_00202738) {
-    /* argument dropped by Ghidra here; param_1 matches the lookup right above */
-    pcVar3 = (char *)lookup_grtile_by_id(param_1);
+  if ((int)frame < (int)(uint)DAT_00202738) {
+    /* argument dropped by Ghidra here; frame matches the lookup right above */
+    pcVar3 = (char *)lookup_grtile_by_id(frame);
     if (pcVar3 != (char *)0x0) {
       cVar1 = pcVar3[1];
       cVar2 = pcVar3[2];
       if (getenv("UW_DEBUG_INV"))
         fprintf(stderr, "[inv] blit_object_sprite_by_frame real sprite size: frame=%d w(cVar2)=%d h(cVar1)=%d at x=%d y=%d\n",
-                (int)param_1, (int)(unsigned char)cVar2, (int)(unsigned char)cVar1,
-                (int)(short)(intptr_t)param_2, (int)(short)(intptr_t)param_3);
+                (int)frame, (int)(unsigned char)cVar2, (int)(unsigned char)cVar1,
+                (int)(short)(intptr_t)x, (int)(short)(intptr_t)y);
       if (*pcVar3 == '\x04') {
         pcVar3 = pcVar3 + 5;
       }
@@ -282,46 +260,38 @@ undefined4 param_5;
            object-rendering-findings.txt's "MILESTONE: objects render" section) -- without it... */
         pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
       }
-      bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,0);
+      bitmap_blit_to_framebuffer(x,y,pcVar3,cVar2,cVar1,0,0,0);
     }
   }
   else {
-    blit_raw_sprite_clipped(param_2,param_3,iVar4 + 5,*(undefined1 *)(iVar4 + 2),*(undefined1 *)(iVar4 + 1),0,0
+    blit_raw_sprite_clipped(x,y,iVar4 + 5,*(undefined1 *)(iVar4 + 2),*(undefined1 *)(iVar4 + 1),0,0
                  ,0);
   }
-  return;
 }
 
 
 
 
 // was FUN_00040b0c
-void draw_sprite_by_id(param_1,param_2,param_3,param_4,param_5)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-short param_5;
-
+void draw_sprite_by_id(int sprite_id, int x, int y, int width, short height)
 {
   bool bVar1;
   undefined4 uVar2;
   
-  dirty_rect_union((int)(short)param_3,(int)(short)param_3 + (int)(short)param_4,(int)(short)param_2,
-               (int)(short)param_2 + (int)param_5);
-  if (((short)param_1 < 0x101b) || (0x101e < (short)param_1)) {
+  dirty_rect_union((int)(short)y,(int)(short)y + (int)(short)width,(int)(short)x,
+               (int)(short)x + (int)height);
+  if (((short)sprite_id < 0x101b) || (0x101e < (short)sprite_id)) {
     bVar1 = false;
   }
   else {
     bVar1 = true;
     g_blit_transparent_mode = 1;
   }
-  uVar2 = resolve_sprite_id_to_frame(param_1);
-  blit_object_sprite_by_frame(uVar2,param_2,param_3,param_4,param_5);
+  uVar2 = resolve_sprite_id_to_frame(sprite_id);
+  blit_object_sprite_by_frame(uVar2,x,y,width,height);
   if (bVar1) {
     g_blit_transparent_mode = 0;
   }
-  return;
 }
 
 
@@ -330,45 +300,30 @@ short param_5;
 // was FUN_00040be0 -- the sprite-list compositor flush loop's second draw path ("path=FUN_00040be0"
 // in UW_DIAG_SPRLIST output, taken for entries with puVar4[5]!=0), a sibling of
 // draw_sprite_by_id...
-void sprite_list_flush_blit_raw(param_1,param_2,param_3,param_4,param_5,param_6)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-short param_4;
-undefined2 param_5;
-short param_6;
-
+void sprite_list_flush_blit_raw(int sprite_id, int x, int y, short clip_top, short width, short clip_rows)
 {
   short sVar1;
 
   /* Dropped argument (confirmed via disassembly of 0x40be0: `bl 0x40aa8` executes before this
-     function's prologue ever touches r0, so the real ARM code passes this function's own param_1
+     function's prologue ever touches r0, so the real ARM code passes this function's own sprite_id
      through to resolve_sprite_id_to_frame via register reuse)... */
-  sVar1 = resolve_sprite_id_to_frame(param_1);
+  sVar1 = resolve_sprite_id_to_frame(sprite_id);
   /* g_grtile_registry is a flat pointer array -- see its declaration
      comment; mirrors the iVar4+5 idiom in blit_object_sprite_by_frame. */
   {
     static char dummy_sprite[8];
     char *spr = (char *)g_grtile_registry[sVar1];
     if (spr == (char *)0x0) spr = dummy_sprite;  /* unregistered slot -- see blit_object_sprite_by_frame */
-    blit_raw_sprite_clipped(param_2,param_3,spr + 5,
-                 ((int)param_4 + (int)param_6) * 0x10000 >> 0x10,param_5,0,param_6,1);
+    blit_raw_sprite_clipped(x,y,spr + 5,
+                 ((int)clip_top + (int)clip_rows) * 0x10000 >> 0x10,width,0,clip_rows,1);
   }
-  return;
 }
 
 
 
 
 // was FUN_00064f10
-void sprite_partition_step(param_1,param_2,param_3,param_4,param_5,param_6)
-int param_1;
-short * param_2;
-short param_3;
-short param_4;
-short param_5;
-short param_6;
-
+void sprite_partition_step(int condition, short *out_index, short entry_value, short low, short high, short phase)
 {
   int iVar1;
   ushort uVar2;
@@ -377,9 +332,9 @@ short param_6;
   int iVar5;
   short local_34 [4];
   
-  if (param_1 == 0) {
+  if (condition == 0) {
     local_34[2] = 1;
-    local_34[1] = param_4 + -1;
+    local_34[1] = low + -1;
     sVar4 = 0;
     local_34[3] = 0xffff;
   }
@@ -387,64 +342,56 @@ short param_6;
     local_34[2] = 0xffff;
     local_34[1] = 0;
     local_34[3] = 1;
-    sVar4 = param_4 + -1;
+    sVar4 = low + -1;
   }
   local_34[0] = sVar4;
   iVar5 = 0;
-  if (0 < param_4) {
+  if (0 < low) {
     do {
       iVar1 = (int)(short)iVar5;
-      if (iVar1 != param_3) {
-        if (param_6 == 0) {
+      if (iVar1 != entry_value) {
+        if (phase == 0) {
           char *_o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[iVar1]);
           uVar2 = *(byte *)(_o + 2) & 0x7f;   /* was `int iVar3` -- truncated the object pointer */
         }
         else {
-          uVar2 = (ushort)(char)(&DAT_0023bb98)[(int)param_6 + iVar1 * 4];
+          uVar2 = (ushort)(char)(&DAT_0023bb98)[(int)phase + iVar1 * 4];
         }
-        sVar4 = local_34[(short)(ushort)(param_5 < (short)uVar2)];
+        sVar4 = local_34[(short)(ushort)(high < (short)uVar2)];
         (&DAT_0023b8c8)[sVar4] = (char)iVar5;
-        local_34[(short)(ushort)(param_5 < (short)uVar2)] =
-             local_34[(short)(ushort)(param_5 < (short)uVar2) + 2] + sVar4;
+        local_34[(short)(ushort)(high < (short)uVar2)] =
+             local_34[(short)(ushort)(high < (short)uVar2) + 2] + sVar4;
         sVar4 = local_34[0];
       }
       iVar1 = (iVar1 + 1) * 0x10000;
       iVar5 = iVar1 >> 0x10;
-    } while ((short)((uint)iVar1 >> 0x10) < param_4);
+    } while ((short)((uint)iVar1 >> 0x10) < low);
   }
   if ((int)sVar4 == (int)local_34[1]) {
-    *param_2 = sVar4;
-    (&DAT_0023b8c8)[sVar4] = (char)param_3;
+    *out_index = sVar4;
+    (&DAT_0023b8c8)[sVar4] = (char)entry_value;
   }
-  return;
 }
 
 
 
 // was FUN_0006508c
-void sprite_partition_tmap(param_1,param_2,param_3)
-undefined4 param_1;
-short *param_2;   /* was undefined4 -- sprite_partition_step writes through it (*param_2 = ...) */
-undefined4 param_3;
-
+/* was undefined4 -- sprite_partition_step writes through it (*param_2 = ...) */
+void sprite_partition_tmap(undefined4 entry_index, short *out_index, int extra)
 {
   char *_o;
   byte bVar2;
 
-  _o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[(short)param_1]);  /* was `int iVar1` */
+  _o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[(short)entry_index]);  /* was `int iVar1` */
   bVar2 = *(byte *)(_o + 2) & 0x7f;
-  sprite_partition_step((*(byte *)((char *)g_player_object + 2) & 0x7f) < bVar2,param_2,param_1,param_3,bVar2,0);
-  return;
+  sprite_partition_step((*(byte *)((char *)g_player_object + 2) & 0x7f) < bVar2,out_index,entry_index,extra,bVar2,0);
 }
 
 
 
 // was FUN_00065128
-void sprite_partition_by_depth(param_1,param_2,param_3)
-undefined4 param_1;
-short *param_2;   /* was undefined4 -- sprite_partition_step dereferences it (*param_2 = ...) */
-undefined4 param_3;
-
+/* was undefined4 -- sprite_partition_step dereferences it (*param_2 = ...) */
+void sprite_partition_by_depth(undefined4 entry_index, short *out_index, int extra)
 {
   int iVar1;
   char cVar2;
@@ -455,8 +402,8 @@ undefined4 param_3;
   short sVar7;
   undefined2 uVar8;
 
-  _o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[(short)param_1]);
-  iVar1 = (short)param_1 * 4;
+  _o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[(short)entry_index]);
+  iVar1 = (short)entry_index * 4;
   if (((*(ushort *)(_o + 2) >> 7) + DAT_0023b4a0 * -2 & 3) == 0) {
     uVar3 = 2;
     sVar4 = (short)(char)(&DAT_0023bb9a)[iVar1];
@@ -479,8 +426,7 @@ LAB_000651b0:
     uVar6 = 0;
   }
 LAB_000651ec:
-  sprite_partition_step(uVar6,param_2,param_1,param_3,sVar7,uVar8);
-  return;
+  sprite_partition_step(uVar6,out_index,entry_index,extra,sVar7,uVar8);
 }
 
 
@@ -489,9 +435,7 @@ LAB_000651ec:
 // was FUN_00075cb8 -- part of the sprite-list compositor family (alongside
 // sprite_list_set_rect/set_position/set_frame_id* and sprite_list_set_lifetime, all indexing the
 // same DAT_0023c3e8 slot- record array).
-void sprite_list_queue_slot_redraw(param_1)
-ushort param_1;
-
+void sprite_list_queue_slot_redraw(ushort slot)
 {
   uint uVar1;
   ushort *puVar2;
@@ -507,7 +451,7 @@ ushort param_1;
   short sVar9;
   uint uVar10;
   
-  uVar1 = (uint)param_1;
+  uVar1 = (uint)slot;
   DAT_0023c41c = 1;
   puVar5 = (ushort *)(uVar1 * 0x14 + DAT_0023c3e8);
   puVar2 = (ushort *)(DAT_0023c40c + (uint)puVar5[6] * 0x40);
@@ -516,7 +460,7 @@ ushort param_1;
     if (*puVar7 == uVar1) goto LAB_00075d78;
   }
   *puVar2 = *puVar2 + 1;
-  *puVar7 = param_1;
+  *puVar7 = slot;
 LAB_00075d78:
   puVar2 = (ushort *)(DAT_0023c3e4 + (uint)puVar5[6] * 0x40);
   uVar6 = *puVar2;
@@ -527,7 +471,7 @@ LAB_00075d78:
     if (uVar10 >> 0x10 == 0) {
       if ((*puVar5 & DAT_0008763c) != 0) {
         *puVar2 = uVar6 + 1;
-        *puVar8 = param_1;
+        *puVar8 = slot;
       }
 LAB_00075e04:
       uVar10 = (puVar5[6] + 1) * 0x20;
@@ -554,7 +498,7 @@ LAB_00075e04:
                   if (*puVar7 == uVar1) goto LAB_00076038;
                 }
                 *puVar2 = *puVar2 + 1;
-                *puVar7 = param_1;
+                *puVar7 = slot;
                 uVar10 = (uint)DAT_0023c400;
               }
             }
@@ -589,9 +533,7 @@ LAB_00076038:
 // was FUN_00076078 -- allocates a new sprite-list compositor slot (linear scan of DAT_0023c3e8's
 // fixed 0x40-entry array for a free record, matching sprite_list_set_rect/set_position's own
 // `param_1 < 0x40` bound), stores param_1 as the slot's resource/frame id...
-int sprite_list_alloc_entry(param_1)
-undefined4 param_1;
-
+int sprite_list_alloc_entry(int resource_id)
 {
   ushort uVar1;
   uint uVar2;
@@ -618,12 +560,12 @@ undefined4 param_1;
     uVar5 = (uint)DAT_00087648;
     uVar2 = (uint)uVar1;
   }
-  *(char *)(puVar4 + 6) = (char)param_1;
+  *(char *)(puVar4 + 6) = (char)resource_id;
   if (bVar6) {
     *(char *)puVar4 = (char)(uVar2 | uVar5);
     *(char *)((char *)puVar4 + 1) = (char)((uVar2 | uVar5) >> 8);
   }
-  *(char *)((char *)puVar4 + 0xd) = (char)((uint)param_1 >> 8);
+  *(char *)((char *)puVar4 + 0xd) = (char)((uint)resource_id >> 8);
   *(undefined1 *)(puVar4 + 8) = 0;
   *(undefined1 *)((char *)puVar4 + 0x11) = 0;
   *(undefined1 *)(puVar4 + 9) = 0;
@@ -638,11 +580,7 @@ undefined4 param_1;
 
 // was FUN_00076194 -- sibling of sprite_list_alloc_entry: allocates a new compositor slot the same
 // way, but also allocates a fresh raw pixel buffer for it...
-int sprite_list_alloc_raw_entry(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-int param_3;
-
+int sprite_list_alloc_raw_entry(int resource_id, int alloc_arg, int pixel_count)
 {
   ushort uVar1;
   short sVar2;
@@ -671,14 +609,14 @@ int param_3;
   if (bVar6) {
     *(undefined1 *)((char *)puVar5 + 1) = uVar4;
   }
-  iVar3 = grtile_alloc_registered(param_2,param_3 << 1);
+  iVar3 = grtile_alloc_registered(alloc_arg,pixel_count << 1);
   if (iVar3 == 0) {
     return -1;
   }
   *(char *)(puVar5 + 8) = (char)iVar3;
-  *(char *)((char *)puVar5 + 0xd) = (char)((uint)param_1 >> 8);
+  *(char *)((char *)puVar5 + 0xd) = (char)((uint)resource_id >> 8);
   *(char *)((char *)puVar5 + 0x11) = (char)((uint)iVar3 >> 8);
-  *(char *)(puVar5 + 6) = (char)param_1;
+  *(char *)(puVar5 + 6) = (char)resource_id;
   *(char *)(puVar5 + 9) = (char)((uint)iVar3 >> 0x10);
   *(char *)((char *)puVar5 + 0x13) = (char)((uint)iVar3 >> 0x18);
   *(undefined1 *)(puVar5 + 5) = 0;
@@ -692,13 +630,7 @@ int param_3;
 // was FUN_000762c4 -- sets a compositor slot's full geometry (x, y, w, h) in one call, used at
 // creation time (redraw_hud_panels calls this right after allocating each
 // dragon/compass/status-icon slot to establish its rect).
-undefined4 sprite_list_set_rect(param_1,param_2,param_3,param_4,param_5)
-short param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-undefined2 param_5;
-
+undefined4 sprite_list_set_rect(short slot, int x, int y, int width, short height)
 {
   undefined4 uVar1;
   /* Was `int`, truncating the real DAT_0023c3e8 slot-record pointer
@@ -706,21 +638,21 @@ undefined2 param_5;
      sprite_list_set_lifetime below, which compute the identical expression). */
   char * iVar2;
 
-  if (param_1 < 0x40) {
-    iVar2 = param_1 * 0x14 + DAT_0023c3e8;
+  if (slot < 0x40) {
+    iVar2 = slot * 0x14 + DAT_0023c3e8;
     if (getenv("UW_DEBUG_SPRPOS")) {
       fprintf(stderr, "[sprpos] sprite_list_set_rect create: slot=%d x=%d y=%d w=%d h=%d\n",
-              (int)param_1, (int)param_2, (int)param_3, (int)param_4, (int)param_5);
+              (int)slot, (int)x, (int)y, (int)width, (int)height);
     }
-    *(char *)(iVar2 + 6) = (char)param_4;
-    *(char *)(iVar2 + 7) = (char)((uint)param_4 >> 8);
-    *(char *)(iVar2 + 2) = (char)param_2;
-    *(char *)(iVar2 + 8) = (char)param_5;
-    *(char *)(iVar2 + 4) = (char)param_3;
-    *(char *)(iVar2 + 3) = (char)((uint)param_2 >> 8);
-    *(char *)(iVar2 + 5) = (char)((uint)param_3 >> 8);
-    *(char *)(iVar2 + 9) = (char)((ushort)param_5 >> 8);
-    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    *(char *)(iVar2 + 6) = (char)width;
+    *(char *)(iVar2 + 7) = (char)((uint)width >> 8);
+    *(char *)(iVar2 + 2) = (char)x;
+    *(char *)(iVar2 + 8) = (char)height;
+    *(char *)(iVar2 + 4) = (char)y;
+    *(char *)(iVar2 + 3) = (char)((uint)x >> 8);
+    *(char *)(iVar2 + 5) = (char)((uint)y >> 8);
+    *(char *)(iVar2 + 9) = (char)((ushort)height >> 8);
+    sprite_list_queue_slot_redraw((ushort)slot);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -734,25 +666,21 @@ undefined2 param_5;
 // was FUN_00076338 -- updates an already-allocated compositor slot's x/y position only (its
 // width/height, set once by sprite_list_set_rect, are left alone). Called every tick by
 // hud_compass_needle_tick to move the needle sprite through its 16-heading ellipse.
-undefined4 sprite_list_set_position(param_1,param_2,param_3)
-short param_1;
-undefined4 param_2;
-undefined4 param_3;
-
+undefined4 sprite_list_set_position(short slot, int x, int y)
 {
   undefined4 uVar1;
   char * iVar2;
 
-  if (param_1 < 0x40) {
-    iVar2 = param_1 * 0x14 + DAT_0023c3e8;
+  if (slot < 0x40) {
+    iVar2 = slot * 0x14 + DAT_0023c3e8;
     if (getenv("UW_DEBUG_SPRPOS")) {
-      fprintf(stderr, "[sprpos] sprite_list_set_position slot=%d x=%d y=%d\n", (int)param_1, (int)param_2, (int)param_3);
+      fprintf(stderr, "[sprpos] sprite_list_set_position slot=%d x=%d y=%d\n", (int)slot, (int)x, (int)y);
     }
-    *(char *)(iVar2 + 2) = (char)param_2;
-    *(char *)(iVar2 + 4) = (char)param_3;
-    *(char *)(iVar2 + 3) = (char)((uint)param_2 >> 8);
-    *(char *)(iVar2 + 5) = (char)((uint)param_3 >> 8);
-    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    *(char *)(iVar2 + 2) = (char)x;
+    *(char *)(iVar2 + 4) = (char)y;
+    *(char *)(iVar2 + 3) = (char)((uint)x >> 8);
+    *(char *)(iVar2 + 5) = (char)((uint)y >> 8);
+    sprite_list_queue_slot_redraw((ushort)slot);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -766,23 +694,20 @@ undefined4 param_3;
 // was FUN_00076390 -- updates an already-allocated compositor slot's displayed sprite/frame id
 // (offset+7/+0xf, separate from whatever resource id sprite_list_alloc_entry stored at creation)
 // and ORs DAT_0008763c into the slot's flags word to mark it dirty.
-undefined4 sprite_list_set_frame_id(param_1,param_2)
-short param_1;
-undefined4 param_2;
-
+undefined4 sprite_list_set_frame_id(short slot, int frame_id)
 {
   ushort uVar1;
   undefined4 uVar2;
   ushort *puVar3;
 
-  if (param_1 < 0x40) {
-    puVar3 = (ushort *)(param_1 * 0x14 + DAT_0023c3e8);
-    *(char *)(puVar3 + 7) = (char)param_2;
-    *(char *)((char *)puVar3 + 0xf) = (char)((uint)param_2 >> 8);
+  if (slot < 0x40) {
+    puVar3 = (ushort *)(slot * 0x14 + DAT_0023c3e8);
+    *(char *)(puVar3 + 7) = (char)frame_id;
+    *(char *)((char *)puVar3 + 0xf) = (char)((uint)frame_id >> 8);
     uVar1 = *puVar3 | DAT_0008763c;
     *(char *)puVar3 = (char)uVar1;
     *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
-    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)slot);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar2 = 0;
   }
   else {
@@ -795,23 +720,20 @@ undefined4 param_2;
 
 // was FUN_00076404 -- sprite_list_set_frame_id's transparent-blit
 // sibling; see that function's own comment.
-undefined4 sprite_list_set_frame_id_transparent(param_1,param_2)
-short param_1;
-undefined4 param_2;
-
+undefined4 sprite_list_set_frame_id_transparent(short slot, int frame_id)
 {
   ushort uVar1;
   undefined4 uVar2;
   ushort *puVar3;
 
-  if (param_1 < 0x40) {
-    puVar3 = (ushort *)(param_1 * 0x14 + DAT_0023c3e8);
-    *(char *)(puVar3 + 7) = (char)param_2;
-    *(char *)((char *)puVar3 + 0xf) = (char)((uint)param_2 >> 8);
+  if (slot < 0x40) {
+    puVar3 = (ushort *)(slot * 0x14 + DAT_0023c3e8);
+    *(char *)(puVar3 + 7) = (char)frame_id;
+    *(char *)((char *)puVar3 + 0xf) = (char)((uint)frame_id >> 8);
     uVar1 = *puVar3 | DAT_00087648 | DAT_0008763c;
     *(char *)puVar3 = (char)uVar1;
     *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
-    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)slot);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar2 = 0;
   }
   else {
@@ -824,19 +746,16 @@ undefined4 param_2;
 
 
 // was FUN_0007699c
-undefined4 sprite_list_set_lifetime(param_1,param_2)
-short param_1;
-undefined4 param_2;
-
+undefined4 sprite_list_set_lifetime(short slot, int lifetime)
 {
   undefined4 uVar1;
   char * iVar2;
   
-  if (param_1 < 0x40) {
-    iVar2 = param_1 * 0x14 + DAT_0023c3e8;
-    *(char *)(iVar2 + 10) = (char)param_2;
-    *(char *)(iVar2 + 0xb) = (char)((uint)param_2 >> 8);
-    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+  if (slot < 0x40) {
+    iVar2 = slot * 0x14 + DAT_0023c3e8;
+    *(char *)(iVar2 + 10) = (char)lifetime;
+    *(char *)(iVar2 + 0xb) = (char)((uint)lifetime >> 8);
+    sprite_list_queue_slot_redraw((ushort)slot);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -851,10 +770,7 @@ undefined4 param_2;
    emit_tile_objects call site AND on the resolve_sprite_id_to_frame / lookup_grtile_by_id calls
    below... */
 // was FUN_00040770
-undefined4 decode_tile_object_billboard_texture(param_1,param_2)
-short param_1;
-uint param_2;
-
+undefined4 decode_tile_object_billboard_texture(short frame, uint unused)
 {
   byte bVar1;
   byte bVar2;
@@ -863,20 +779,20 @@ uint param_2;
   int iVar5;
   int resolved;
 
-  (void)param_2;
-  if (param_1 < 0) {
-    /* Escape hatch: a negative param_1 names an ABSOLUTE frame directly (-param_1), bypassing
+  (void)unused;
+  if (frame < 0) {
+    /* Escape hatch: a negative frame names an ABSOLUTE frame directly (-frame), bypassing
        resolve_sprite_id_to_frame's id-range resolution entirely. */
-    resolved = -(int)param_1;
+    resolved = -(int)frame;
   } else {
-    resolved = resolve_sprite_id_to_frame(param_1);
+    resolved = resolve_sprite_id_to_frame(frame);
   }
   pcVar3 = (char *)lookup_grtile_by_id(resolved);
   bVar1 = pcVar3[1];
   bVar2 = pcVar3[2];
-  if (getenv("UW_DEBUG_THROW") && param_1 == 0x80)
-    fprintf(stderr, "[throw-sprite] param_1(type)=0x%x resolved_frame=%d w=%d h=%d compressed_flag=%d\n",
-            (unsigned)param_1, resolved, (int)bVar1, (int)bVar2, (int)*pcVar3);
+  if (getenv("UW_DEBUG_THROW") && frame == 0x80)
+    fprintf(stderr, "[throw-sprite] frame(type)=0x%x resolved_frame=%d w=%d h=%d compressed_flag=%d\n",
+            (unsigned)frame, resolved, (int)bVar1, (int)bVar2, (int)*pcVar3);
   if (*pcVar3 == '\x04') {
     pcVar3 = pcVar3 + 5;
   }
@@ -910,24 +826,22 @@ uint param_2;
 
 
 // was FUN_000408fc
-void *lookup_grtile_by_id(param_1)
-short param_1;
-
+void *lookup_grtile_by_id(short grtile_id)
 {
-  /* Glyph/font-resource-by-id lookup (g_grtile_registry is indexed by param_1). */
+  /* Glyph/font-resource-by-id lookup (g_grtile_registry is indexed by grtile_id). */
   static undefined1 dummy_glyph[16];
   void *uVar1;
 
-  if (param_1 == 0) {
+  if (grtile_id == 0) {
     uVar1 = dummy_glyph;
   }
   else {
     /* Fixed: g_grtile_registry is a real pointer array (see its
        declaration comment); this used to be a 4-byte truncated read. */
-    uVar1 = g_grtile_registry[param_1];
+    uVar1 = g_grtile_registry[grtile_id];
     if (uVar1 == 0) {
       /* Table slot never populated (the resource that would have filled it, e.g. a missing/failed
-         auxiliary .SYS load) -- same safe fallback as param_1==0 rather than handing callers a NULL
+         auxiliary .SYS load) -- same safe fallback as grtile_id==0 rather than handing callers a NULL
          they don't check. */
       uVar1 = dummy_glyph;
     }
@@ -939,27 +853,25 @@ short param_1;
 // was FUN_00040aa8 -- the central symbolic-id -> absolute-frame resolver used throughout the
 // HUD/object draw paths: id<0x1000 is already an absolute OBJECTS.GR frame, 0x1000<=id<0x2000
 // resolves via DAT_00202730 (BUTTONS.GR's base), id>=0x2000 resolves via DAT_00202738...
-uint resolve_sprite_id_to_frame(param_1)
-int param_1;
-
+uint resolve_sprite_id_to_frame(int sprite_id)
 {
   int iVar1;
   uint uVar2;
   
-  iVar1 = (int)(short)param_1;
+  iVar1 = (int)(short)sprite_id;
   if (iVar1 < 0x2000) {
     if (iVar1 < 0x1000) {
       /* DAT_0024d090 (an object-type -> OBJECTS.GR frame remap) is never
          populated in this decompile. OBJECTS.GR is now registered at
          absolute frame indices (register_objects_gr_entry), so the id IS the frame. */
-      uVar2 = (uint)(ushort)param_1;
+      uVar2 = (uint)(ushort)sprite_id;
     }
     else {
-      uVar2 = ((uint)DAT_00202730 + param_1) - 0x1000;
+      uVar2 = ((uint)DAT_00202730 + sprite_id) - 0x1000;
     }
   }
   else {
-    uVar2 = ((uint)DAT_00202738 + param_1) - 0x2000;
+    uVar2 = ((uint)DAT_00202738 + sprite_id) - 0x2000;
   }
   return uVar2;
 }

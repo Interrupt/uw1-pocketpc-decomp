@@ -24,13 +24,13 @@ ushort lights[4][4], *slots[11];
 byte light_records[32];
 int rebuilds, message;
 int g_ambient_bias_reduction;
-void *get_equipped_item_at_slot(int slot) { return slots[slot]; }
+void *get_equipped_item_at_slot(short slot) { return slots[slot]; }
 void *get_scanned_object_class_effect_ptr(void)
 {
     return light_records + (*(ushort *)g_scratch_object_ptr & 15) * 2;
 }
 int compute_object_weight(void) { return 0; }
-void request_weapon_swing_graphic(int category) {}
+void request_weapon_swing_graphic(char category) {}
 void reset_player_derived_state(void) {}
 undefined4 is_valid_equipment_slot_item(int id, int slot) { return 0; }
 undefined4 resolve_object_variant_or_special_link(ushort *o, byte *a, byte *b, int *c) { return 0; }

@@ -6,12 +6,12 @@ int encode_object_slot_index(ushort *object);
 void refresh_experience_display(void);
 void set_pending_music_track(uint track);
 uint read_realtime_clock_units(void);
-void attempt_talk_interaction(char *object);
+void attempt_talk_interaction(ushort *object);
 void cancel_weapon_swing(void);
 void trigger_quest_milestone_cleanup_event(void);
 void other_panel_tick(int index);
 void flush_sprite_list_compositor(void);
-undefined4 sprite_list_set_frame_id(int slot, uint frame);
+undefined4 sprite_list_set_frame_id(short slot, int frame);
 int resolve_weapon_hit_skill_check(int attacker, int target);
 int roll_dice_sum(int count, short sides);
 undefined4 play_sound_effect_with_pan(void);
@@ -161,7 +161,7 @@ int message_scroll_print_wrapped(char *text)
 void configure_texture_detail_functions(void) {}
 void refresh_player_equipment_effects(void) {}
 
-void attempt_talk_interaction(char *object)
+void attempt_talk_interaction(ushort *object)
 { TEST_ASSERT_EQUAL_PTR(mobile_objects + 2 * 27, object); talks++; }
 
 void cancel_weapon_swing(void) {}
@@ -214,7 +214,7 @@ void (*const g_hud_panel_handlers_table[13])(void) = {
 
 void flush_sprite_list_compositor(void) { hud_flushes++; }
 
-undefined4 sprite_list_set_frame_id(int slot, uint frame)
+undefined4 sprite_list_set_frame_id(short slot, int frame)
 {
     TEST_ASSERT_EQUAL_INT(7, slot);
     TEST_ASSERT_LESS_THAN_INT(32, wipe_frames);
@@ -279,7 +279,7 @@ undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
 /* Other destruction branches must not run for a door. */
 void try_combine_or_stow_object(void) { TEST_FAIL_MESSAGE("Unexpected container combination"); }
 uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected random destruction"); return 0; }
-void try_empty_container(void) { TEST_FAIL_MESSAGE("Unexpected container emptying"); }
+void try_empty_container(ushort *container, int owned_by_player) { (void)container; (void)owned_by_player; TEST_FAIL_MESSAGE("Unexpected container emptying"); }
 undefined4 roll_object_destroy_chance(void) { TEST_FAIL_MESSAGE("Unexpected destroy chance"); return 0; }
 undefined4 reset_burnt_out_item_state(void) { TEST_FAIL_MESSAGE("Unexpected burnt item"); return 0; }
 void free_linked_object_recursive(void) { TEST_FAIL_MESSAGE("Unexpected recursive cleanup"); }

@@ -61,11 +61,7 @@ static char s_chrbtns_00084ef8[] = "chrbtns";
 
 // The main character-generation state machine: steps through portrait/gender/skills/stats/name/confirm, one screen per state.
 // was FUN_00024e24
-undefined4 character_generator_loop(param_1,param_2,param_3)
-char *param_1;
-char *param_2;
-char *param_3;
-
+undefined4 character_generator_loop(char *tree_data, char *scratch_data, char *field_records)
 {
   uint uVar1;
   byte bVar2;
@@ -76,7 +72,7 @@ char *param_3;
      draw_chargen_field_value's matching read-site comments) early in each state... */
   char *pcVar_name;
   char *pcVar5;
-  /* iVar13 doubles as a "current character record" pointer (0x14-byte stride into param_3, computed
+  /* iVar13 doubles as a "current character record" pointer (0x14-byte stride into field_records, computed
      fresh at the top of each state-machine iteration and consumed by
      draw_chargen_field_value/draw_chargen_field_options/wait_for_chargen_field_input)... */
   char *pcVar_rec;
@@ -108,12 +104,12 @@ char *param_3;
   sVar8 = 0;
   uVar15 = grtile_alloc_registered(0x5f,0x6e);
   local_60 = (undefined4)uVar15;
-  pcVar_p2off = param_2 + 0x20;
+  pcVar_p2off = scratch_data + 0x20;
   memset(local_5c_buf + 4, 0x14, 6);
   /* Was 4 separate byte writes reconstructing a 32-bit address, then (in an earlier, incorrect fix
      attempt) a direct 8-byte pointer store -- see g_chargen_textfield_buf's comment above for why
      that's wrong. */
-  *(int *)(param_3 + 0x7a) = 1;
+  *(int *)(field_records + 0x7a) = 1;
   g_chargen_textfield_buf = auStack_4c;
   do {
     iVar12 = (int)sVar8;
@@ -121,7 +117,7 @@ char *param_3;
     // are states 0-7, in that order) -- state is whatever the previous iteration's switch-case just
     // advanced sVar8 to (or reset it to 0 for, on a "back"/cancel).
     DEBUG(TRACE, "[chargen] screen advancing to state=%d", iVar12);
-    pcVar_rec = param_3 + iVar12 * 0x14;
+    pcVar_rec = field_records + iVar12 * 0x14;
     iVar4 = *(int *)(pcVar_rec + 6);
     pcVar_name = (char *)&DAT_000fb8f0 + iVar4;
     screen_backup_save();  /* takes no args (ARM 0x11478 never reads r0-r3); the old args were the halves of the previous call's 64-bit return */
@@ -170,8 +166,8 @@ LAB_00025468:
         if (uVar1 == 0) {
           uVar7 = 7;
         }
-        /* Was a write through CONCAT13(param_3+0x59, param_3+0x56) -- reconstructing a pointer
-           split across those 4 bytes the same way param_3+0x7a's pointer field was (see that fix
+        /* Was a write through CONCAT13(field_records+0x59, field_records+0x56) -- reconstructing a pointer
+           split across those 4 bytes the same way field_records+0x7a's pointer field was (see that fix
            above). */
         *(byte *)(DAT_00086df8 + 100) =
              *(byte *)(DAT_00086df8 + 100) & 0xfd | (byte)((uVar9 & 1) << 1);
@@ -191,7 +187,7 @@ LAB_00025468:
         *(byte *)(DAT_00086df8 + 100) =
              (byte)((uVar1 & 7) << 5) | *(byte *)(DAT_00086df8 + 100) & 0x1f;
         reroll_attributes_for_class_race();
-        iVar12 = advance_skill_tree_node(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
+        iVar12 = advance_skill_tree_node(local_64,local_5c_buf + 4,field_records + 0x3c,pcVar_p2off);
         if (iVar12 == 0) {
           sVar8 = 3;
         }
@@ -206,7 +202,7 @@ LAB_00025468:
         sVar8 = sVar8 + 1;
         break;
       case 3:
-        /* (int)&local_5c truncated a real stack address; and (int*)(param_3+0x42) is the same
+        /* (int)&local_5c truncated a real stack address; and (int*)(field_records+0x42) is the same
            never-written, never-zeroed record field skipped in advance_skill_tree_node above --
            always take the fallback instead of reading through arbitrary heap garbage. */
         local_5c_buf[local_64[0] + 3] = 0;
@@ -215,7 +211,7 @@ LAB_00025468:
         restore_captured_grtile_backdrop(local_60);
         draw_selected_skills_list();
         cursor_show_idle_tick();
-        uVar15 = advance_skill_tree_node(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
+        uVar15 = advance_skill_tree_node(local_64,local_5c_buf + 4,field_records + 0x3c,pcVar_p2off);
         if ((int)uVar15 == 0) {
           sVar8 = 4;
         }
@@ -233,8 +229,8 @@ LAB_00025468:
           bVar2 = 0;
           bVar3 = 0;
         } else {
-          bVar2 = *(byte *)(iVar14 + param_1 + -4);
-          bVar3 = *(byte *)(iVar14 + param_1 + -3);
+          bVar2 = *(byte *)(iVar14 + tree_data + -4);
+          bVar3 = *(byte *)(iVar14 + tree_data + -3);
         }
         decrement_cursor_hide_depth();
         iVar12 = -(int)(short)(ushort)bVar3;
@@ -247,7 +243,7 @@ LAB_00025468:
         if (iVar13 < 0) {
           iVar13 = iVar4 + 0x39;
         }
-        bitmap_blit_to_framebuffer((short)(iVar13 >> 1) + 0x10,(short)(iVar11 >> 1) + 0x2b,iVar14 + param_1,bVar3,
+        bitmap_blit_to_framebuffer((short)(iVar13 >> 1) + 0x10,(short)(iVar11 >> 1) + 0x2b,iVar14 + tree_data,bVar3,
                      bVar2,0,0,1);
         cursor_show_idle_tick();
         uVar15 = CONCAT44(extraout_r1,DAT_00086df8);
@@ -335,8 +331,7 @@ LAB_00025468:
 
 // Loads CHRGEN.DAT/CHARGEN.BYT/fonts/palette, builds the per-field record array, and drives character_generator_loop's state machine.
 // was FUN_00025608
-int run_character_generator()
-
+int run_character_generator(void)
 {
   char stack0xffdc3230_buf [256];
   char *stack0xffdc3230_ptr;
@@ -484,8 +479,7 @@ int run_character_generator()
 
 // Thin wrapper that enters/exits a critical section around run_character_generator.
 // was FUN_000259a0
-undefined4 character_generator_start()
-
+undefined4 character_generator_start(void)
 {
   undefined4 uVar1;
 
@@ -501,9 +495,7 @@ undefined4 character_generator_start()
 // was FUN_000232ec -- resets the player record (DAT_00086df8, base &DAT_0023bca8 set by
 // reset_player_object_record) to new-character defaults: zeroes/reinitializes combat flags,
 // equipment slots, and misc stat fields...
-void init_new_character_record(param_1)
-int param_1;
-
+void init_new_character_record(int mode)
 {
   int uw_ord2005_rem_0 = 0; int uw_ord2005_rem_1 = 0;
   byte bVar1;
@@ -611,7 +603,7 @@ int param_1;
   iVar6 = 0;
   *(byte *)(DAT_00086df8 + 100) = *(byte *)(DAT_00086df8 + 100) & 0xfd | (bVar1 & 1) << 1;
   do {
-    if (param_1 == 0) {
+    if (mode == 0) {
       uVar2 = roll_dice_sum(3,4);
     }
     else {
@@ -622,7 +614,7 @@ int param_1;
   } while (iVar6 < 0x14);
   iVar6 = 0;
   do {
-    if (param_1 == 0) {
+    if (mode == 0) {
       cVar3 = roll_dice_sum(2,10);
       cVar3 = cVar3 + '\n';
     }
@@ -640,19 +632,13 @@ int param_1;
   *(char *)((char *)g_player_object + 8) = (-6 - uw_ord2005_rem_1) + *(char *)(DAT_0023be74 + 4);
   DAT_00201b68 = 1;
   refresh_player_equipment_effects();
-  return;
 }
 
 
 // was FUN_000238b4 -- walks the character-generator skill tree (param_4, a compact
 // [count][id0][id1]...-encoded tree) starting from the cursor index *param_1: for each leaf skill
 // entry, records its id into the output array param_2 (up to 5 entries) and advances the cursor...
-undefined4 advance_skill_tree_node(param_1,param_2,param_3,param_4)
-byte * param_1;
-char *param_2;
-char *param_3;
-char *param_4;
-
+undefined4 advance_skill_tree_node(byte *cursor, char *picked_skills, char *record, char *tree)
 {
   byte bVar1;
   short sVar2;
@@ -661,43 +647,43 @@ char *param_4;
   int iVar5;
   
   sVar2 = 0;
-  iVar3 = (uint)(*(byte *)(DAT_00086df8 + 100) >> 5) * 5 + (uint)*param_1;
+  iVar3 = (uint)(*(byte *)(DAT_00086df8 + 100) >> 5) * 5 + (uint)*cursor;
   if (iVar3 != 0) {
     iVar5 = 0;
     do {
-      sVar2 = (ushort)*(byte *)(param_4 + sVar2) + sVar2 + 1;
+      sVar2 = (ushort)*(byte *)(tree + sVar2) + sVar2 + 1;
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < iVar3);
   }
-  if (*param_1 < 5) {
+  if (*cursor < 5) {
     do {
-      pbVar4 = (byte *)(param_4 + sVar2);
+      pbVar4 = (byte *)(tree + sVar2);
       if (*pbVar4 == 0) {
-        *(undefined1 *)(param_2 + (uint)*param_1) = 0x14;
+        *(undefined1 *)(picked_skills + (uint)*cursor) = 0x14;
       }
       else {
         if (*pbVar4 != 1) {
           iVar3 = (int)sVar2;
           /* Branch node in the skill tree: [count][id0][id1]... */
-          *(undefined1 *)(param_3 + 10) = *(undefined1 *)(iVar3 + param_4);
-          *(undefined1 *)(param_3 + 0xb) = 0;
-          /* param_3+6 is the skill record's string-list field. */
+          *(undefined1 *)(record + 10) = *(undefined1 *)(iVar3 + tree);
+          *(undefined1 *)(record + 0xb) = 0;
+          /* record+6 is the skill record's string-list field. */
           {
-            char *list = (char *)&DAT_000fb8f0 + *(int *)(param_3 + 6);
+            char *list = (char *)&DAT_000fb8f0 + *(int *)(record + 6);
             iVar5 = 0;
             do {
-              list[iVar5 * 2] = *(char *)(iVar5 + iVar3 + param_4 + 1) + '\x1f';
+              list[iVar5 * 2] = *(char *)(iVar5 + iVar3 + tree + 1) + '\x1f';
               iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
-            } while (iVar5 < (int)(uint)*(byte *)(iVar3 + param_4));
+            } while (iVar5 < (int)(uint)*(byte *)(iVar3 + tree));
           }
-          *param_1 = *param_1 + 1;
+          *cursor = *cursor + 1;
           return 1;
         }
-        *(byte *)(param_2 + (uint)*param_1) = pbVar4[1];
+        *(byte *)(picked_skills + (uint)*cursor) = pbVar4[1];
         sVar2 = (ushort)*pbVar4 + sVar2 + 1;
       }
-      bVar1 = *param_1;
-      *param_1 = bVar1 + 1;
+      bVar1 = *cursor;
+      *cursor = bVar1 + 1;
     } while ((byte)(bVar1 + 1) < 5);
   }
   return 0;
@@ -706,8 +692,7 @@ char *param_4;
 
 // was FUN_00023a00 -- draws the chargen stat screen's 4 attribute values (DAT_0023be74 offsets
 // +5/+6/+7 -- the 3 rolled 2d10+10 attributes set by init_new_character_record -- and +4)...
-void draw_chargen_attribute_summary()
-
+void draw_chargen_attribute_summary(void)
 {
   int iVar1;
   undefined1 auStack_14 [12];
@@ -731,7 +716,6 @@ void draw_chargen_attribute_summary()
   draw_text_string(&DAT_00084e40,0x5d,0x68);
   iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x68);
-  return;
 }
 
 
@@ -739,8 +723,7 @@ void draw_chargen_attribute_summary()
 // was FUN_00023b38 -- draws the chargen skill-selection screen: blits a backdrop bitmap, then lists
 // up to 6 of the player's currently-selected skills (nonzero entries in DAT_00086df8+0x21, up to 20
 // slots) with each skill's name (get_message_string) and its point value (itoa_radix)...
-void draw_selected_skills_list()
-
+void draw_selected_skills_list(void)
 {
   int iVar1;
   int iVar2;
@@ -776,7 +759,6 @@ void draw_selected_skills_list()
     iVar2 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 0x14);
   screen_backup_restore();
-  return;
 }
 
 
@@ -784,28 +766,24 @@ void draw_selected_skills_list()
 // was FUN_00023c90 -- walks param_2 (the skill-id array advance_skill_tree_node fills) from index
 // param_1 up to 6, calling advance_skill_training on each valid skill id (<0x14) to actually apply
 // it to the player record, and returns the updated count.
-int apply_confirmed_skill_picks(param_1,param_2)
-int param_1;
-char *param_2;
-
+int apply_confirmed_skill_picks(int first_index, char *picked_skills)
 {
   int iVar1;
 
-  for (iVar1 = param_1 << 0x10; iVar1 = iVar1 >> 0x10, iVar1 < 6; iVar1 = (iVar1 + 1) * 0x10000) {
-    if (*(byte *)(iVar1 + param_2) < 0x14) {
-      advance_skill_training(*(byte *)(iVar1 + param_2));
-      param_1 = param_1 + 1;
+  for (iVar1 = first_index << 0x10; iVar1 = iVar1 >> 0x10, iVar1 < 6; iVar1 = (iVar1 + 1) * 0x10000) {
+    if (*(byte *)(iVar1 + picked_skills) < 0x14) {
+      advance_skill_training(*(byte *)(iVar1 + picked_skills));
+      first_index = first_index + 1;
     }
   }
-  return param_1;
+  return first_index;
 }
 
 
 // was FUN_00023cdc -- applies the just-chosen class/race's attribute bonuses (looked up from
 // &DAT_000fb860 by a class/race-derived index) to the 3 rolled attributes (DAT_0023be74+5/6/7),
 // clears the skill array (DAT_00086df8+0x21, 20 slots) for a fresh pick...
-void reroll_attributes_for_class_race()
-
+void reroll_attributes_for_class_race(void)
 {
   int uw_ord2005_rem_2 = 0;
   byte bVar1;
@@ -852,7 +830,6 @@ void reroll_attributes_for_class_race()
   }
   recalculate_player_stats(1);
   *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_0023be74 + 4);
-  return;
 }
 
 
@@ -865,9 +842,7 @@ char *g_chargen_textfield_buf;
 // was FUN_00023de8 -- draws the current chargen field's label and
 // current value/text (and, for the name field, the "Enter your
 // name..." prompt).
-void draw_chargen_field_value(param_1)
-short * param_1;
-
+void draw_chargen_field_value(short *field)
 {
   byte bVar1;
   byte bVar2;
@@ -899,18 +874,18 @@ short * param_1;
   ushort local_2c;
   int local_28;
 
-  if (*(int *)(param_1 + 3) == 0) {
+  if (*(int *)(field + 3) == 0) {
     uVar12 = (uint)(short)local_2c;
     iVar10 = 9;
     uVar13 = (uint)(short)local_2c;
   }
   else {
-    pcVar_off = DAT_000fb858 + (&DAT_000fb880)[param_1[6]];
-    sVar7 = *param_1;
+    pcVar_off = DAT_000fb858 + (&DAT_000fb880)[field[6]];
+    sVar7 = *field;
     chargen_ui_transition_hook(0);
     DAT_000fb858 = DAT_001005c4;
     iVar10 = 0x14;
-    /* DAT_000fb880 (indexed by param_1[6], a race/portrait-style selector) is never written
+    /* DAT_000fb880 (indexed by field[6], a race/portrait-style selector) is never written
        anywhere in this decompile -- no call site populates it, so it's permanently all-zero. */
     if (pcVar_off - DAT_000fb858 < 4) {
       bVar1 = 0;
@@ -924,19 +899,19 @@ short * param_1;
       iVar10 = 0;
     }
     uVar12 = (uint)bVar2;
-    sVar5 = param_1[5];
+    sVar5 = field[5];
     local_2c = (ushort)bVar1;
     sVar4 = ordint_divmod(0xc4 - iVar10,(int)sVar5 * ((short)(ushort)bVar1 + 4) + -4).quot;
     iVar10 = sVar4 + 1;
-    *(char *)(param_1 + 8) = (char)iVar10;
-    *(char *)((char *)param_1 + 0x11) = (char)((uint)iVar10 >> 8);
+    *(char *)(field + 8) = (char)iVar10;
+    *(char *)((char *)field + 0x11) = (char)((uint)iVar10 >> 8);
     iVar10 = iVar10 * 0x10000 >> 0x10;
     sVar5 = ordint_divmod(iVar10,iVar10 + sVar5 + -1).quot;
-    *(char *)(param_1 + 7) = (char)sVar5;
-    *(char *)((char *)param_1 + 0xf) = (char)((ushort)sVar5 >> 8);
+    *(char *)(field + 7) = (char)sVar5;
+    *(char *)((char *)field + 0xf) = (char)((ushort)sVar5 >> 8);
     uVar6 = ordint_divmod(iVar10 + 1,0xa0 - (short)(ushort)bVar2 * iVar10).quot;
-    *(char *)(param_1 + 9) = (char)uVar6;
-    *(char *)((char *)param_1 + 0x13) = (char)((ushort)uVar6 >> 8);
+    *(char *)(field + 9) = (char)uVar6;
+    *(char *)((char *)field + 0x13) = (char)((ushort)uVar6 >> 8);
     iVar10 = -(((int)(sVar7 != 0) + (int)sVar5) * ((short)(ushort)bVar1 + 4));
     iVar11 = iVar10 + 200;
     if (iVar11 < 0) {
@@ -944,17 +919,17 @@ short * param_1;
     }
     iVar10 = (short)(iVar11 >> 1) + 3;
   }
-  if (*param_1 == 0) {
+  if (*field == 0) {
     iVar11 = (int)(short)local_2c;
     iVar10 = (iVar10 - uVar13) + -4;
   }
   else {
-    uVar8 = get_message_string((int)*param_1 | 0x400);
+    uVar8 = get_message_string((int)*field | 0x400);
     iVar11 = 0xa4;
     /* This field is a plain 4-byte nonzero marker ("is this a text- entry field") for whichever
        record is currently being processed -- see g_chargen_textfield_buf's comment near
        character_generator_loop for why it must stay a narrow 4-byte read... */
-    if (*(int *)(param_1 + 1) == 0) {
+    if (*(int *)(field + 1) == 0) {
       sVar7 = measure_text_width(uVar8);
       iVar9 = -(int)sVar7 + 0x91;
       if (iVar9 < 0) {
@@ -968,21 +943,21 @@ short * param_1;
       iVar9 = 0xa8;
     }
     draw_text_string(uVar8,iVar9,iVar10 + 3);
-    if (*param_1 == 7) {
+    if (*field == 7) {
       draw_text_string(s_Enter_your_name_and_00084e88,0xaa,0x3c);
       draw_text_string(s_then_press_the_Enter_00084e70,0xaa,0x46);
       draw_text_string(s_key_to_continue_00084e60,0xb9,0x50);
     }
   }
-  if (*(int *)(param_1 + 3) != 0) {
+  if (*(int *)(field + 3) != 0) {
     g_blit_transparent_mode = 0;
     chargen_ui_transition_hook(0);
     DAT_000fb858 = DAT_001005c4;
-    if (0 < param_1[5]) {
+    if (0 < field[5]) {
       local_28 = 0;
       do {
         iVar3 = DAT_000fb858;
-        iVar_rem = ordint_divmod((int)param_1[8],local_28).rem;
+        iVar_rem = ordint_divmod((int)field[8],local_28).rem;
         iVar9 = iVar_rem;
         if (iVar_rem == 0) {
           iVar9 = (int)(short)local_2c;
@@ -992,16 +967,16 @@ short * param_1;
           iVar10 = iVar10 + iVar9 + 4;
         }
         sVar7 = (short)uVar12;
-        iVar11 = CONCAT11(*(undefined1 *)((char *)param_1 + 0x13),(char)param_1[9]) + iVar11 + uVar12;
+        iVar11 = CONCAT11(*(undefined1 *)((char *)field + 0x13),(char)field[9]) + iVar11 + uVar12;
         /* Investigated as a possible "missing button outline" source this session -- ruled out. */
         bitmap_blit_to_framebuffer(iVar11,iVar10,
-                     (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)param_1 + 0xd),(char)param_1[6])]
+                     (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)field + 0xd),(char)field[6])]
                      + iVar3,(int)(short)local_2c,sVar7,0,0,0);
-        if (param_1[6] == 0) {
-          /* param_1+3 (byte offset +6 in the record) holds a relative
+        if (field[6] == 0) {
+          /* field+3 (byte offset +6 in the record) holds a relative
              offset from &DAT_000fb8f0, not an absolute pointer -- see
              the write site in run_character_generator. Reconstruct before use. */
-          uVar8 = get_message_string(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + local_28 * 2) | 0x400);
+          uVar8 = get_message_string(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(field + 3)) + local_28 * 2) | 0x400);
           sVar5 = measure_text_width(uVar8);
           iVar9 = (int)sVar7 - (int)sVar5;
           if (iVar9 < 0) {
@@ -1009,7 +984,7 @@ short * param_1;
           }
           draw_text_string(uVar8,iVar11 + (short)(iVar9 >> 1),iVar10 + 3);
         }
-        else if (param_1[6] == 3) {
+        else if (field[6] == 3) {
           /* Portrait/head selector (chargen state 4). */
           {
             int head_idx = 7 + ((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 5) + local_28;
@@ -1021,20 +996,15 @@ short * param_1;
           }
         }
         local_28 = (local_28 + 1) * 0x10000 >> 0x10;
-      } while (local_28 < param_1[5]);
+      } while (local_28 < field[5]);
     }
   }
-  return;
 }
 
 
 // was FUN_0002431c -- draws up to two selectable option icons/portraits
 // (e.g. prev/next choice) for the current chargen field.
-undefined4 draw_chargen_field_options(param_1,param_2,param_3)
-short * param_1;
-byte param_2;
-byte param_3;
-
+undefined4 draw_chargen_field_options(short *field, byte option_a, byte option_b)
 {
   byte bVar1;
   byte bVar2;
@@ -1059,24 +1029,24 @@ byte param_3;
   short local_28;
   
   sVar4 = -1;
-  if (*param_1 == 0) {
+  if (*field == 0) {
     sVar4 = 0;
   }
-  if (param_2 != param_3) {
-    local_2c[0] = param_3;
-    local_2c[1] = param_2;
+  if (option_a != option_b) {
+    local_2c[0] = option_b;
+    local_2c[1] = option_a;
     iVar9 = 0;
     /* Same DAT_000fb880-is-never-written underflow guard as
        draw_chargen_field_value above -- see its comment. */
-    if ((&DAT_000fb880)[param_1[6]] < 4) {
+    if ((&DAT_000fb880)[field[6]] < 4) {
       bVar1 = 0;
       bVar2 = 0;
     } else {
-      bVar1 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -3);
-      bVar2 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -4);
+      bVar1 = *(byte *)((&DAT_000fb880)[field[6]] + DAT_000fb858 + -3);
+      bVar2 = *(byte *)((&DAT_000fb880)[field[6]] + DAT_000fb858 + -4);
     }
-    local_28 = param_1[9] + 0xa0;
-    iVar10 = -(((int)param_1[7] + (int)sVar4) * ((short)(ushort)bVar1 + 4));
+    local_28 = field[9] + 0xa0;
+    iVar10 = -(((int)field[7] + (int)sVar4) * ((short)(ushort)bVar1 + 4));
     iVar5 = iVar10 + 200;
     if (iVar5 < 0) {
       iVar5 = iVar10 + 0xc9;
@@ -1085,14 +1055,14 @@ byte param_3;
     pcVar_fb858 = DAT_000fb858;
     do {
       uVar8 = (uint)local_2c[iVar9];
-      if ((int)uVar8 < (int)param_1[5]) {
-        sVar4 = param_1[8];
+      if ((int)uVar8 < (int)field[5]) {
+        sVar4 = field[8];
         sVar3 = ordint_divmod((int)sVar4,uVar8).quot;
         sVar_rem = (sVar4 == 0) ? 0 : (short)((int)uVar8 % (int)sVar4);
         iVar5 = (int)local_2a;
-        sVar4 = param_1[9];
+        sVar4 = field[9];
         iVar6 = (int)local_28;
-        iVar7 = *(int *)(&DAT_000fb884 + (iVar9 + param_1[6]) * 4);
+        iVar7 = *(int *)(&DAT_000fb884 + (iVar9 + field[6]) * 4);
         decrement_cursor_hide_depth();
         chargen_ui_transition_hook(0);
         DAT_000fb858 = DAT_001005c4;
@@ -1113,10 +1083,7 @@ byte param_3;
 
 // Translates a touch/shortcut-key position into a selected item index for the current chargen field.
 // was FUN_0002454c
-uint character_generator_touch_select(param_1,param_2)
-short * param_1;
-uint param_2;
-
+uint character_generator_touch_select(short *field, uint position)
 {
   int iVar1;
   byte bVar2;
@@ -1140,17 +1107,17 @@ uint param_2;
   int local_30;
   uint local_4;
 
-  sVar4 = *param_1;
+  sVar4 = *field;
   /* Same DAT_000fb880-is-never-written underflow guard as
      draw_chargen_field_value above -- see its comment. */
-  if ((&DAT_000fb880)[param_1[6]] < 4) {
+  if ((&DAT_000fb880)[field[6]] < 4) {
     bVar2 = 0;
     bVar3 = 0;
   } else {
-    bVar2 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -4);
-    bVar3 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -3);
+    bVar2 = *(byte *)((&DAT_000fb880)[field[6]] + DAT_000fb858 + -4);
+    bVar3 = *(byte *)((&DAT_000fb880)[field[6]] + DAT_000fb858 + -3);
   }
-  sVar5 = param_1[9];
+  sVar5 = field[9];
   local_3c = (ushort)bVar2;
   iVar10 = bVar3 + 4;
   sVar7 = 0;
@@ -1162,20 +1129,20 @@ uint param_2;
     sVar7 = 0;
   }
   iVar1 = -(((uint)(sVar4 != 0) +
-            (int)CONCAT11(*(undefined1 *)((char *)param_1 + 0xf),(char)param_1[7])) * (local_30 + 4));
+            (int)CONCAT11(*(undefined1 *)((char *)field + 0xf),(char)field[7])) * (local_30 + 4));
   iVar9 = iVar1 + 200;
   if (iVar9 < 0) {
     iVar9 = iVar1 + 0xc9;
   }
   sVar4 = next_input_event();
-  uVar13 = param_2;
+  uVar13 = position;
   if (0 < sVar4) {
     local_38 = (int)(((int)sVar5 + (uint)bVar2) * 0x10000) >> 0x10;
     iVar1 = (sVar5 + 0xa0) * 0x10000 >> 0x10;
     local_34 = iVar10 * 0x10000 >> 0x10;
     iVar10 = ((int)(short)(iVar9 >> 1) + (int)sVar7 + 3) * 0x10000;
     iVar9 = iVar10 >> 0x10;
-    local_4 = param_2;
+    local_4 = position;
     do {
       /* HACK: DAT_0023c63c (our click-hold flag -- see handle_mouse_message's HACK comment) blocks
          flush_dirty_rect_to_display's actual screen flush the whole time a button is held, unless
@@ -1183,23 +1150,23 @@ uint param_2;
       g_force_flush = 1;
       flush_dirty_rect_to_display(1);
       g_force_flush = 0;
-      if (((short)uVar13 != (short)param_2) && ((short)uVar13 != -1)) {
+      if (((short)uVar13 != (short)position) && ((short)uVar13 != -1)) {
         decrement_cursor_hide_depth();
-        draw_chargen_field_options(param_1,uVar13 & 0xff,param_2 & 0xff);
+        draw_chargen_field_options(field,uVar13 & 0xff,position & 0xff);
         cursor_show_idle_tick();
         local_4 = uVar13 & 0xffff;
       }
       // Click/touch detection: reads the current pointer position, then the math below maps it to a list-item index.
       get_mouse_position(&local_40,&local_3e);
       sVar4 = local_40;
-      sVar7 = param_1[8];
+      sVar7 = field[8];
       iVar11 = (int)local_3e;
       iVar12 = (int)local_40;
       sVar5 = ordint_divmod(local_34,iVar11 - iVar9).quot;
       sVar6 = ordint_divmod(local_38,iVar12 - iVar1).quot;
       uVar13 = (int)sVar5 * (int)sVar7 + (int)sVar6;
       iVar8 = (int)(uVar13 * 0x10000) >> 0x10;
-      if ((((iVar8 < 0) || (param_1[5] <= iVar8)) || (iVar11 < iVar9)) || (iVar12 < iVar1)) {
+      if ((((iVar8 < 0) || (field[5] <= iVar8)) || (iVar11 < iVar9)) || (iVar12 < iVar1)) {
 LAB_000247f8:
         uVar13 = 0xffffffff;
       }
@@ -1220,11 +1187,11 @@ LAB_000247f8:
            (local_30 <= iVar8 * 0x10000 >> 0x10)) goto LAB_000247f8;
       }
       sVar7 = next_input_event();
-      param_2 = (uint)(short)local_4;
+      position = (uint)(short)local_4;
     } while (0 < sVar7);
   }
   if ((short)uVar13 == -1) {
-    uVar13 = -param_2 - 1;
+    uVar13 = -position - 1;
   }
   return uVar13;
 }
@@ -1234,9 +1201,7 @@ LAB_000247f8:
 // was FUN_00024840 -- waits for input on the current chargen field:
 // navigates/selects a list, or (for the name field) runs the
 // text-entry loop.
-uint wait_for_chargen_field_input(param_1)
-short * param_1;
-
+uint wait_for_chargen_field_input(short *field)
 {
   undefined4 param_2;  /* was a 2nd parameter: only ever assigned the high half of a 64-bit return; ARM 0x24840 reads r0 only */
   byte bVar1;
@@ -1267,11 +1232,11 @@ short * param_1;
   local_28 = 1;
   uVar10 = 0;
   uVar12 = 0;
-  uVar6 = (uint)*param_1;
+  uVar6 = (uint)*field;
   uVar13 = 0;
   /* Plain 4-byte nonzero marker -- see draw_chargen_field_value's matching comment
      and g_chargen_textfield_buf's comment near character_generator_loop. */
-  if ((*param_1 == 0) || (*(int *)(param_1 + 1) == 0)) {
+  if ((*field == 0) || (*(int *)(field + 1) == 0)) {
     do {
       do {
         advance_menu_music_track();
@@ -1302,7 +1267,7 @@ short * param_1;
         if (uVar6 == 0x8f) goto LAB_00024d54;
         if (0 < (int)uVar6) {
           if ((int)uVar6 < 4) {
-            uVar10 = character_generator_touch_select(param_1,uVar10);
+            uVar10 = character_generator_touch_select(field,uVar10);
             uVar6 = (uint)(short)uVar10;
             uVar13 = (uint)(uVar6 < 0x80000000);
             uVar12 = uVar10;
@@ -1331,11 +1296,11 @@ LAB_00024c88:
       if (0x166 < (int)uVar6) {
         if (uVar6 == 0x16e) {
 LAB_00024dc4:
-          uVar10 = (int)param_1[8] + uVar10;
+          uVar10 = (int)field[8] + uVar10;
         }
         else if (uVar6 == 0x170) {
 LAB_00024cfc:
-          uVar10 = uVar10 - (int)param_1[8];
+          uVar10 = uVar10 - (int)field[8];
         }
         else {
           if (uVar6 == 0x23c) goto LAB_00024c88;
@@ -1364,7 +1329,7 @@ LAB_00024d54:
           }
         }
 LAB_00024db0:
-        uVar10 = (int)param_1[5] - 1;
+        uVar10 = (int)field[5] - 1;
       }
 LAB_00024dd4:
       iVar7 = (int)(short)uVar10;
@@ -1373,13 +1338,13 @@ LAB_00024dd4:
         uVar10 = 0;
       }
       else {
-        sVar5 = param_1[5];
+        sVar5 = field[5];
         uVar14 = CONCAT44(iVar7,(int)sVar5);
         if (iVar7 < sVar5) {
           if (getenv("UW_DIAG_TEXT")) {
             fprintf(stderr, "[diagnav] key=0x%x uVar10(new)=%u uVar12(old)=%u itemcount=%d\n", uVar6, uVar10, uVar12, sVar5);
           }
-          uVar14 = draw_chargen_field_options(param_1,uVar10 & 0xff,uVar12 & 0xff);
+          uVar14 = draw_chargen_field_options(field,uVar10 & 0xff,uVar12 & 0xff);
         }
         else {
           uVar10 = (int)sVar5 - 1;
@@ -1390,13 +1355,13 @@ LAB_00024dd4:
       uVar12 = uVar10;
     } while (uVar13 == 0);
     /* Log every confirmed chargen button selection (arrow-key/ENTER confirm or a click), so it's
-       always visible which one fired -- see debug.h. param_1[6]==0 fields... */
+       always visible which one fired -- see debug.h. field[6]==0 fields... */
     {
       char *item_text = "";
-      if ((param_1[6] == 0) && (*(int *)(param_1 + 3) != 0)) {
-        item_text = get_message_string(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + uVar10 * 2) | 0x400);
+      if ((field[6] == 0) && (*(int *)(field + 3) != 0)) {
+        item_text = get_message_string(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(field + 3)) + uVar10 * 2) | 0x400);
       }
-      char *field_label = (*param_1 != 0) ? get_message_string((int)*param_1 | 0x400) : "";
+      char *field_label = (*field != 0) ? get_message_string((int)*field | 0x400) : "";
       DEBUG(TRACE, "[chargen] button selected: index=%u text=\"%s\" label=\"%s\"", uVar10, item_text, field_label);
     }
   }
@@ -1410,12 +1375,12 @@ LAB_00024dd4:
       iVar7 = 0x40;
     }
     iVar7 = iVar7 + 0xa8;
-    if (*(int *)(param_1 + 3) == 0) {
+    if (*(int *)(field + 3) == 0) {
       iVar9 = (int)(short)local_2c[0];
     }
     else {
-      pcVar_off = (&DAT_000fb880)[param_1[6]] + DAT_000fb858;
-      sVar5 = *param_1;
+      pcVar_off = (&DAT_000fb880)[field[6]] + DAT_000fb858;
+      sVar5 = *field;
       chargen_ui_transition_hook(0);
       iVar9 = 0x14;
       if ((sVar5 != 0) == 0) {
@@ -1431,18 +1396,18 @@ LAB_00024dd4:
         iVar11 = (short)(ushort)*(byte *)(pcVar_off + -3) + 4;
       }
       DAT_000fb858 = DAT_001005c4;
-      sVar3 = param_1[5];
+      sVar3 = field[5];
       sVar2 = ordint_divmod(0xc4 - iVar9,sVar3 * iVar11 + -4).quot;
       iVar9 = sVar2 + 1;
-      *(char *)(param_1 + 8) = (char)iVar9;
-      *(char *)((char *)param_1 + 0x11) = (char)((uint)iVar9 >> 8);
+      *(char *)(field + 8) = (char)iVar9;
+      *(char *)((char *)field + 0x11) = (char)((uint)iVar9 >> 8);
       iVar9 = iVar9 * 0x10000 >> 0x10;
       sVar3 = ordint_divmod(iVar9,iVar9 + sVar3 + -1).quot;
-      *(char *)(param_1 + 7) = (char)sVar3;
-      *(char *)((char *)param_1 + 0xf) = (char)((ushort)sVar3 >> 8);
+      *(char *)(field + 7) = (char)sVar3;
+      *(char *)((char *)field + 0xf) = (char)((ushort)sVar3 >> 8);
       uVar4 = ordint_divmod(iVar9 + 1,0xa0 - (short)(ushort)bVar1 * iVar9).quot;
-      *(char *)(param_1 + 9) = (char)uVar4;
-      *(char *)((char *)param_1 + 0x13) = (char)((ushort)uVar4 >> 8);
+      *(char *)(field + 9) = (char)uVar4;
+      *(char *)((char *)field + 0x13) = (char)((ushort)uVar4 >> 8);
       iVar9 = -(((int)(sVar5 != 0) + (int)sVar3) * iVar11);
       iVar11 = iVar9 + 200;
       if (iVar11 < 0) {
@@ -1499,11 +1464,8 @@ LAB_00024dd4:
 // was FUN_00035df8 -- takes no parameters and its decompiled body takes no action, yet every call
 // site in src/chargen.c passes a 0/1 flag at UI-transition points (screen changes, button
 // presses/releases).
-void chargen_ui_transition_hook(param_1)
-undefined4 param_1;
-
+void chargen_ui_transition_hook(undefined4 is_press)
 {
-  return;
 }
 
 
@@ -1514,27 +1476,23 @@ undefined4 param_1;
 /* r1 = &DAT_000fb858; r2 = *r1 (current cursor); r0 = r2 + param_1; r1 = r0 (advance cursor by
    param_1 bytes); return r2 (the position before* advancing) -- a bump-pointer sub-allocator
    carving fixed- size chunks out of whatever buffer DAT_000fb858 currently points to. */
-char *chrbtns_bump_alloc_entry(param_1)
-int param_1;
+char *chrbtns_bump_alloc_entry(int byte_count)
 {
   char *old = DAT_000fb858;
-  DAT_000fb858 = DAT_000fb858 + param_1;
+  DAT_000fb858 = DAT_000fb858 + byte_count;
   return old;
 }
 
 /* r0 is loaded fresh from a literal (&DAT_000fb880), discarding whatever was passed in that
    register -- this callback's real parameters are param_2 (r1) and param_3 (r2, only its low 16
    bits used, sign-extended, as a table index). */
-undefined4 chrbtns_offset_table_builder(param_1,param_2,param_3)
-int param_1;
-int param_2;
-int param_3;
+undefined4 chrbtns_offset_table_builder(int unused, int entry_size, int index)
 {
-  int idx = (short)(param_3 & 0xffff);
+  int idx = (short)(index & 0xffff);
   if (idx == 0) {
     DAT_000fb880_backing[0] = 5;
   }
   int old = DAT_000fb880_backing[idx];
-  DAT_000fb880_backing[idx + 1] = old + param_2;
-  return (param_2 == 0) ? 0 : 1;
+  DAT_000fb880_backing[idx + 1] = old + entry_size;
+  return (entry_size == 0) ? 0 : 1;
 }

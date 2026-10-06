@@ -40,8 +40,8 @@ void set_player_tile_position(uint x, uint y)
 void set_pending_update_flags(int flags) {}
 void report_fatal_error_and_exit(void) { TEST_FAIL_MESSAGE("Stair transition failed"); }
 void full_dungeon_redraw(void) {}
-void weapon_overlay_flash_hold(int passes) {}
-void weapon_overlay_flash_restore(int passes) {}
+void weapon_overlay_flash_hold(undefined4 passes) {}
+void weapon_overlay_flash_restore(undefined4 passes) {}
 void *ce_memset(void *buffer, int value, unsigned size)
 { return memset(buffer, value, size); }
 void *tilemap_lookup(short x, short y)
@@ -67,7 +67,7 @@ undefined4 check_object_placement_clearance(short type, short slot, undefined2 x
 void *resolve_object_link(ushort *link) { return NULL; }
 undefined4 object_ptr_in_arena(void *object) { return 0; }
 ushort *discard_misplaced_object(void *head, void *object, int flag) { return NULL; }
-void tick_weapon_swing_state(int flag) {}
+void tick_weapon_swing_state(short flag) {}
 void set_hud_status_value(int slot, int value) { if (slot == 0) hud_hp = value; }
 void handle_starvation_penalty(void) { deaths++; }
 uint read_realtime_clock_units(void) { return clock_units; }

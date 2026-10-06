@@ -128,7 +128,7 @@ undefined4 sync_object_tile_position(ushort *object, byte *snapshot)
     movement_fixture.obstacle_syncs++;
     return 1;
 }
-undefined4 resolve_skill_gated_unlock_or_use(void)
+uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id)
 { TEST_FAIL_MESSAGE("Unexpected unlock trigger"); return 0; }
 ushort *use_object_on_target(void)
 { TEST_FAIL_MESSAGE("Unexpected use trigger"); return 0; }

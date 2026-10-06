@@ -8,12 +8,12 @@ undefined4 build_object_display_name(char *text, ushort *object, int a, int b);
 void push_cursor_icon(int type);
 void pop_cursor_icon(int mode);
 ushort *pick_object_under_cursor(int mode);
-undefined4 target_in_range(int actor, ushort *target, char *range);
-undefined4 target_line_of_sight(int actor, ushort *target);
+undefined4 target_in_range(short actor, char *target, char *range);
+undefined4 target_line_of_sight(short actor, char *target);
 undefined4 check_object_combination(char *actor, ushort *target, int key_id);
 void handle_game_view_click_hold(void);
 void interact_use(void);
-void describe_picked_terrain(int mode, int tile);
+void describe_picked_terrain(byte mode, short tile);
 void handle_object_drop_target(int slot);
 void complete_cast_spell_on_target(void);
 void wait_for_click_release(int mode);
@@ -110,10 +110,10 @@ void pop_cursor_icon(int mode) { TEST_ASSERT_EQUAL_INT(3, mode); reset_cursor++;
 ushort *pick_object_under_cursor(int mode)
 { TEST_ASSERT_EQUAL_INT(2, mode); return picked_target; }
 
-undefined4 target_in_range(int actor, ushort *target, char *range)
+undefined4 target_in_range(short actor, char *target, char *range)
 { (void)actor; (void)range; TEST_ASSERT_EQUAL_PTR(picked_target, target); return target_reachable; }
 
-undefined4 target_line_of_sight(int actor, ushort *target)
+undefined4 target_line_of_sight(short actor, char *target)
 { (void)actor; TEST_ASSERT_EQUAL_PTR(picked_target, target); return target_obstructed; }
 
 undefined4 check_object_combination(char *actor, ushort *target, int key_id)
@@ -129,7 +129,7 @@ void handle_game_view_click_hold(void) { TEST_FAIL_MESSAGE("Unexpected held clic
 
 void interact_use(void) { TEST_FAIL_MESSAGE("Unexpected direct use"); }
 
-void describe_picked_terrain(int mode, int tile) { (void)mode; (void)tile; TEST_FAIL_MESSAGE("Unexpected terrain action"); }
+void describe_picked_terrain(byte mode, short tile) { (void)mode; (void)tile; TEST_FAIL_MESSAGE("Unexpected terrain action"); }
 
 void handle_object_drop_target(int slot) { (void)slot; TEST_FAIL_MESSAGE("Unexpected drop"); }
 

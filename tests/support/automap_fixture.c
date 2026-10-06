@@ -21,7 +21,7 @@ long ce_rand(void)
     return call < 128 ? automap_random[call] : 0;
 }
 undefined4 rand_below(int limit) { return ce_rand() % limit; }
-void draw_automap_door_edge(int tx, int ty, int x, int y) {}
+void draw_automap_door_edge(short tx, short ty, int x, int y) {}
 void plot_pixel(int x, int y, int index)
 {
     automap_pixels[y*320+x] = g_palette_rgb565_backing[index];

@@ -2,7 +2,7 @@
 #include "illustrations_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-void describe_picked_terrain(int mode, int texture);
+void describe_picked_terrain(byte mode, short texture);
 void print_scroll_message_by_id(void);
 char *get_message_string(void);
 void msg_scroll_panel_reset(void);
@@ -40,7 +40,7 @@ uint displayed_page;
 
 char opened_path[260];
 
-void describe_picked_terrain(int mode, int texture)
+void describe_picked_terrain(byte mode, short texture)
 { TEST_ASSERT_EQUAL_INT(2, mode); TEST_ASSERT_EQUAL_INT(24, texture); descriptions++; }
 
 void print_scroll_message_by_id(void) { TEST_FAIL_MESSAGE("Unexpected scroll message"); }

@@ -2,10 +2,10 @@
 #define UW_TEST_LIGHTING_FIXTURE_H
 #include "unity.h"
 #include "../lighting_test_globals.h"
-void *get_equipped_item_at_slot(int slot);
+void *get_equipped_item_at_slot(short slot);
 void *get_scanned_object_class_effect_ptr(void);
 int compute_object_weight(void);
-void request_weapon_swing_graphic(int category);
+void request_weapon_swing_graphic(char category);
 void reset_player_derived_state(void);
 undefined4 is_valid_equipment_slot_item(int id, int slot);
 undefined4 resolve_object_variant_or_special_link(ushort *o, byte *a, byte *b, int *c);

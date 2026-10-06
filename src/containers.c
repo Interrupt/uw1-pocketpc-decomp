@@ -39,23 +39,20 @@ static char s_is_empty__0008790c[] = " is empty.\n";
 
 
 // was FUN_00042a44
-void release_container_reference(param_1)
 /* Was `int param_1` -- every call site passes g_current_container_record, a real 64-bit pointer,
    which this narrower type truncates to 32 bits -- same class as several other fixes this session
    (search "narrow local/parameter for a pointer"). */
-char *param_1;
-
+void release_container_reference(char *container_link)
 {
   ushort uVar1;
   ushort *puVar2;
 
-  puVar2 = (ushort *)get_object_record_by_slot_index(*(ushort *)(param_1 + 8) >> 6);
+  puVar2 = (ushort *)get_object_record_by_slot_index(*(ushort *)(container_link + 8) >> 6);
   uVar1 = *puVar2;
   if (((uVar1 & 0xf) < 0xc) && ((uVar1 & 1) != 0)) {
     *(byte *)puVar2 = ((char)(uVar1 & 0xf) - 1U ^ (byte)uVar1) & 0xf ^ (byte)uVar1;
     *(byte *)((char *)puVar2 + 1) = (byte)(uVar1 >> 8);
   }
-  return;
 }
 
 
@@ -64,8 +61,7 @@ char *param_1;
    this file): the body below reads/writes through the literal `iVar1*4 + 0x202870`/`iVar10*4 +
    0x202870` -- a hardcoded original-binary address... */
 // was FUN_00042aa8
-void free_open_container_chain()
-
+void free_open_container_chain(void)
 {
   char *_prev;
 
@@ -88,15 +84,13 @@ void free_open_container_chain()
     LocalFree(g_current_container_record);
     g_current_container_record = 0;
   }
-  return;
 }
 
 
 
 
 // was FUN_00042b38
-void close_backpack_container()
-
+void close_backpack_container(void)
 {
   int iVar1;
   undefined4 uVar2;
@@ -145,7 +139,6 @@ void close_backpack_container()
     redraw_inventory_widget(0x15);
     redraw_inventory_widget(0x16);
   }
-  return;
 }
 
 
@@ -153,8 +146,7 @@ void close_backpack_container()
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00042c5c
-void leave_nested_container_level()
-
+void leave_nested_container_level(void)
 {
   /* Was `int iVar1;` -- resolve_object_link returns a real 64-bit pointer, truncated to 32 bits by
      this narrower type (same class as dozens of other fixes this session), then immediately
@@ -207,7 +199,6 @@ void leave_nested_container_level()
       redraw_inventory_widget_range(0x14,0x14);
     }
   }
-  return;
 }
 
 
@@ -215,8 +206,7 @@ void leave_nested_container_level()
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00042d70
-void refresh_container_view()
-
+void refresh_container_view(void)
 {
   short sVar1;
   int iVar2;
@@ -234,14 +224,12 @@ void refresh_container_view()
   redraw_inventory_widget(0x15);
   redraw_inventory_widget(0x16);
   cursor_show_idle_tick();
-  return;
 }
 
 
 
 // was FUN_00042e30
-void repopulate_container_grid_slots()
-
+void repopulate_container_grid_slots(void)
 {
   undefined2 uVar1;
   byte bVar2;
@@ -324,15 +312,12 @@ void repopulate_container_grid_slots()
       }
     }
   }
-  return;
 }
 
 
 
 // was FUN_00043100
-void open_backpack_container(param_1)
-short param_1;
-
+void open_backpack_container(short container_slot)
 {
   int iVar1;
   int iVar2;
@@ -353,10 +338,10 @@ short param_1;
   ushort *puVar14;
   ushort *puVar15;
   
-  iVar1 = (int)param_1;
+  iVar1 = (int)container_slot;
   puVar13 = (ushort *)(&g_equipped_items + iVar1 * 2);
   if (getenv("UW_DEBUG_INV"))
-    fprintf(stderr, "[inv] open_backpack_container entry: param_1=%d puVar13=%p\n", (int)param_1, (void *)puVar13);
+    fprintf(stderr, "[inv] open_backpack_container entry: container_slot=%d puVar13=%p\n", (int)container_slot, (void *)puVar13);
   puVar7 = (ushort *)resolve_object_link(puVar13);
   if (getenv("UW_DEBUG_INV"))
     fprintf(stderr, "[inv] open_backpack_container: resolve_object_link -> puVar7=%p\n", (void *)puVar7);
@@ -532,7 +517,6 @@ short param_1;
       }
     }
   }
-  return;
 }
 
 
@@ -541,15 +525,13 @@ short param_1;
 
 // was FUN_00043614 -- container-grid scroll up, dispatched from handle_object_drop_target's
 // `iVar2==0x15` case (widget 21's own real click rect, see g_inventory_hotspot_table's comment)...
-void scroll_container_grid_up()
-
+void scroll_container_grid_up(void)
 {
   if ((g_open_container_list != 0) && (DAT_0020299c != 0)) {
     _DAT_00202978 = DAT_00202980;
     repopulate_container_grid_slots();
     refresh_container_view();
   }
-  return;
 }
 
 
@@ -559,8 +541,7 @@ void scroll_container_grid_up()
 // was FUN_0004365c -- container-grid scroll down, the DAT_002029a0
 // ("can scroll down") counterpart to scroll_container_grid_up, same
 // dispatch/redraw pattern via widget 22.
-void scroll_container_grid_down()
-
+void scroll_container_grid_down(void)
 {
   short sVar1;
   char *iVar2;
@@ -597,7 +578,6 @@ LAB_00043700:
     repopulate_container_grid_slots();
     refresh_container_view();
   }
-  return;
 }
 
 
@@ -605,10 +585,7 @@ LAB_00043700:
 // WARNING: Removing unreachable block (ram,0x00043adc)
 
 // was FUN_00043734
-undefined4 auto_place_in_container(param_1,param_2)
-ushort * param_1;
-short param_2;
-
+undefined4 auto_place_in_container(ushort *object, short slot)
 {
   byte bVar1;
   ushort uVar2;
@@ -627,13 +604,13 @@ short param_2;
   bVar11 = false;
   /* Dropped arguments -- same bare call as place_object_in_backpack_slot's identical
      fix just above (search "check_object_fits_in_slot's declared signature"). */
-  sVar3 = check_object_fits_in_slot(param_1, param_2);
+  sVar3 = check_object_fits_in_slot(object, slot);
   if (sVar3 == 0) {
 LAB_000438ac:
     uVar5 = 0;
   }
   else {
-    iVar10 = (int)param_2;
+    iVar10 = (int)slot;
     /* Both `g_current_container_record + 4` reads below were the legacy 4-byte "prev" field -- only
        ever a truncated half of a real 64-bit pointer (see open_backpack_container's record-widening
        comment); walk the real +0x14 pointer instead. */
@@ -677,14 +654,14 @@ LAB_0004386c:
       /* Real ARM binary calls place_rune_in_bag() with 0 args here too (confirmed via Ghidra
          decompile of the real auto_place_in_container at 0x43734) -- same "leftover register"
          reliance already found 3 times this session... */
-      iVar10 = place_rune_in_bag(param_1);
+      iVar10 = place_rune_in_bag(object);
       if (iVar10 == 0) {
         print_scroll_message_by_id(0xf7);
         goto LAB_000438ac;
       }
     }
     else {
-      iVar10 = calculate_object_weight(param_1);
+      iVar10 = calculate_object_weight(object);
       g_player_carry_weight = g_player_carry_weight + (short)iVar10;
       /* Legacy truncated "prev" walk -- same fix as place_object_in_backpack_slot's sibling copy
          (search "still broken for genuine container nesting"). */
@@ -695,7 +672,7 @@ LAB_0004386c:
       }
       puVar6 = puVar4 + 3;
       while (puVar6 = (ushort *)resolve_object_link(puVar6), puVar6 != (ushort *)0x0) {
-        iVar10 = objects_can_stack(param_1,puVar6);
+        iVar10 = objects_can_stack(object,puVar6);
         if (iVar10 != 0) {
           uVar2 = *puVar6;
           if ((uVar2 & 0x8000) == 0) {
@@ -704,14 +681,14 @@ LAB_0004386c:
             *(byte *)(puVar6 + 3) = (byte)puVar6[3] & 0x3f | 0x40;
             *(undefined1 *)((char *)puVar6 + 7) = 0;
           }
-          bVar1 = (byte)*param_1;
-          bVar11 = (*param_1 & 0x8000) != 0;
+          bVar1 = (byte)*object;
+          bVar11 = (*object & 0x8000) != 0;
           if (bVar11) {
-            bVar1 = (byte)param_1[3];
+            bVar1 = (byte)object[3];
           }
           uVar7 = (uint)bVar1;
           if (bVar11) {
-            uVar7 = (uint)(ushort)(CONCAT11(*(byte *)((char *)param_1 + 7),bVar1) >> 6);
+            uVar7 = (uint)(ushort)(CONCAT11(*(byte *)((char *)object + 7),bVar1) >> 6);
           }
           if (!bVar11) {
             uVar7 = 1;
@@ -722,18 +699,18 @@ LAB_0004386c:
           *(byte *)(puVar6 + 3) = (byte)iVar10 ^ (byte)puVar6[3] & 0x3f;
           *(char *)((char *)puVar6 + 7) = (char)((uint)iVar10 >> 8);
           *(byte *)(puVar6 + 2) =
-               (bVar1 ^ (byte)((int)(((byte)param_1[2] & 0x3f) +
+               (bVar1 ^ (byte)((int)(((byte)object[2] & 0x3f) +
                                     (CONCAT11(*(undefined1 *)((char *)puVar6 + 5),bVar1) & 0x3f)) >> 1)
                ) & 0x3f ^ bVar1;
           *(undefined1 *)((char *)puVar6 + 5) = *(undefined1 *)((char *)puVar6 + 5);
-          free_object_slot(param_1);
+          free_object_slot(object);
           goto LAB_000439a0;
         }
         puVar6 = puVar6 + 2;
       }
-      object_list_append_tail(puVar4 + 3,param_1);
+      object_list_append_tail(puVar4 + 3,object);
       if (bVar11) {
-        uVar7 = encode_object_slot_index(param_1);
+        uVar7 = encode_object_slot_index(object);
         iVar10 = (int)local_28;
         (&g_equipped_items)[iVar10 * 2] =
              (&g_equipped_items)[iVar10 * 2] & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
@@ -751,11 +728,11 @@ LAB_000439a0:
         repopulate_container_grid_slots();
         redraw_inventory_widget_range(0xc,0x13);
       }
-      uVar2 = *param_1;
+      uVar2 = *object;
       if ((0x93 < (uVar2 & 0x1ff)) && ((uVar2 & 0x1ff) < 0x98)) {
         bVar1 = (byte)uVar2;
-        *(byte *)param_1 = (bVar1 - 4 ^ bVar1) & 0xf ^ bVar1;
-        *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
+        *(byte *)object = (bVar1 - 4 ^ bVar1) & 0xf ^ bVar1;
+        *(byte *)((char *)object + 1) = (byte)(uVar2 >> 8);
         set_ambient_bias_without_light(0);
       }
     }
@@ -768,17 +745,15 @@ LAB_000439a0:
 
 
 // was FUN_00043d40
-void sum_container_weight(param_1,param_2)
-ushort *param_1;  /* was `undefined4` -- truncated the real object-record pointer (passed straight to
+/* was `undefined4` -- truncated the real object-record pointer (passed straight to
    resolve_object_link, and to itself recursively as `puVar2+2`), latent until that call started
    actually using its argument */
-short * param_2;
-
+void sum_container_weight(ushort *link_field, short *total_weight)
 {
   ushort uVar1;
   ushort *puVar2;
   
-  puVar2 = (ushort *)resolve_object_link(param_1);
+  puVar2 = (ushort *)resolve_object_link(link_field);
   while( true ) {
     if (puVar2 == (ushort *)0x0) {
       return;
@@ -789,12 +764,11 @@ short * param_2;
     else {
       uVar1 = puVar2[3] >> 6;
     }
-    *param_2 = (*(ushort *)(&DAT_00202c91 + (*puVar2 & 0x1ff) * 0xd) >> 4) * uVar1 + *param_2;
-    sum_container_weight(puVar2 + 2,param_2);
+    *total_weight = (*(ushort *)(&DAT_00202c91 + (*puVar2 & 0x1ff) * 0xd) >> 4) * uVar1 + *total_weight;
+    sum_container_weight(puVar2 + 2,total_weight);
     if ((*puVar2 & 0x8000) != 0) break;
     puVar2 = (ushort *)resolve_object_link(puVar2 + 3);
   }
-  return;
 }
 
 
@@ -802,10 +776,7 @@ short * param_2;
 /* Same pointer-truncation bug class as alloc_save_record_slot/save_record_slot_from_index just
    below (their own comment has the full writeup) -- iVar4 was `int`... */
 // was FUN_000441d8
-void encode_equipped_item_index(param_1,param_2)
-ushort * param_1;
-undefined2 * param_2;
-
+void encode_equipped_item_index(ushort *item_link, undefined2 *out_index)
 {
   int iVar1;
   undefined2 uVar2;
@@ -816,8 +787,8 @@ undefined2 * param_2;
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
-    if (((*(ushort *)(&g_equipped_items + iVar1) ^ *param_1) & 0xffc0) == 0) {
-      uVar2 = *param_2;
+    if (((*(ushort *)(&g_equipped_items + iVar1) ^ *item_link) & 0xffc0) == 0) {
+      uVar2 = *out_index;
       iVar4 = iVar1 + g_save_equip_table_ptr;
       bVar3 = (byte)uVar2;
       *(byte *)(iVar1 + g_save_equip_table_ptr) = (*(byte *)(iVar1 + g_save_equip_table_ptr) ^ bVar3) & 0x3f ^ bVar3;
@@ -825,17 +796,13 @@ undefined2 * param_2;
     }
     iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
   } while (iVar5 < 0x13);
-  return;
 }
 
 
 
 
 // was FUN_000442dc
-void decode_equipped_item_index(param_1,param_2)
-undefined2 * param_1;
-ushort * param_2;
-
+void decode_equipped_item_index(undefined2 *saved_index, ushort *out_link)
 {
   int iVar1;
   undefined2 uVar2;
@@ -847,15 +814,14 @@ ushort * param_2;
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
-    if (((*(ushort *)(iVar1 + iVar4) ^ *param_2) & 0xffc0) == 0) {
-      uVar2 = *param_1;
+    if (((*(ushort *)(iVar1 + iVar4) ^ *out_link) & 0xffc0) == 0) {
+      uVar2 = *saved_index;
       bVar3 = (byte)uVar2;
       (&g_equipped_items)[iVar1] = ((&g_equipped_items)[iVar1] ^ bVar3) & 0x3f ^ bVar3;
       (&DAT_00202951)[iVar1] = (char)((ushort)uVar2 >> 8);
     }
     iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
   } while (iVar5 < 0x13);
-  return;
 }
 
 
@@ -865,11 +831,9 @@ ushort * param_2;
    discarding it in favor of a hardcoded 0, same "dropped return value" idiom already fixed for
    next_input_event elsewhere in this file. */
 // was FUN_00045054
-void *get_equipped_item_at_slot(param_1)
-short param_1;
-
+void *get_equipped_item_at_slot(short slot)
 {
-  return resolve_object_link(&g_equipped_items + param_1 * 2);
+  return resolve_object_link(&g_equipped_items + slot * 2);
 }
 
 
@@ -878,10 +842,7 @@ short param_1;
 // was FUN_00079144 -- walks a container's (param_1) contents link chain and places each item into
 // the world near the container's own position (via place_object_in_world), clearing param_1's own
 // contents-head link as it goes. param_2, when non-zero...
-undefined4 empty_container_into_world(param_1,param_2)
-ushort * param_1;
-short param_2;
-
+undefined4 empty_container_into_world(ushort *container, short clear_flag)
 {
   ushort uVar1;
   ushort uVar2;
@@ -896,30 +857,30 @@ short param_2;
   uint uVar8;
   char *pNextLink;
 
-  if ((param_1[3] & 0xffc0) == 0) {
+  if ((container[3] & 0xffc0) == 0) {
     uVar6 = 0;
   }
   else {
-    iVar4 = resolve_object_link(param_1 + 3);
-    *(byte *)(param_1 + 3) = (byte)param_1[3] & 0x3f;
-    *(undefined1 *)((char *)param_1 + 7) = 0;
-    iVar5 = object_ptr_in_arena(param_1);
+    iVar4 = resolve_object_link(container + 3);
+    *(byte *)(container + 3) = (byte)container[3] & 0x3f;
+    *(undefined1 *)((char *)container + 7) = 0;
+    iVar5 = object_ptr_in_arena(container);
     if (iVar5 == 0) {
       uVar7 = (uint)DAT_002020a0;
       uVar8 = (uint)DAT_002020a4;
     }
     else {
-      uVar7 = (uint)(param_1[0xb] >> 10);
-      uVar8 = (param_1[0xb] & 0x3f0) >> 4;
+      uVar7 = (uint)(container[0xb] >> 10);
+      uVar8 = (container[0xb] & 0x3f0) >> 4;
     }
-    uVar1 = param_1[1];
+    uVar1 = container[1];
     while (iVar4 != 0) {
       pNextLink = resolve_object_link(iVar4 + 4);
-      if ((param_2 != 0) && (g_object_type_props[*param_1 & 0x1ff].is_container)) {
-        uVar2 = param_1[3];
+      if ((clear_flag != 0) && (g_object_type_props[*container & 0x1ff].is_container)) {
+        uVar2 = container[3];
         bVar3 = (byte)uVar2;
-        *(byte *)(param_1 + 3) = (bVar3 ^ (byte)param_2) & 0x3f ^ bVar3;
-        *(char *)((char *)param_1 + 7) = (char)(uVar2 >> 8);
+        *(byte *)(container + 3) = (bVar3 ^ (byte)clear_flag) & 0x3f ^ bVar3;
+        *(char *)((char *)container + 7) = (char)(uVar2 >> 8);
       }
       place_object_in_world((uint)(uVar1 >> 0xd) + uVar7 * 8,((uVar1 & 0x1c00) >> 10) + uVar8 * 8,
                    uVar1 & 0x7f,iVar4,6,0);
@@ -936,10 +897,7 @@ short param_2;
 // was FUN_0007c84c -- thin wrapper around empty_container_into_world: empties param_1's contents,
 // and if it turns out param_1 had nothing to empty (return 0) and param_2 is non-zero (callers pass
 // whether the container belongs to the player)...
-void try_empty_container(param_1,param_2)
-ushort * param_1;
-int param_2;
-
+void try_empty_container(ushort *container, int owned_by_player)
 {
   char *wptr_60040;
   char cVar1;
@@ -950,11 +908,11 @@ int param_2;
   char acStack_5c [80];
   
   bVar4 = 0;
-  if (g_object_type_props[*param_1 & 0x1ff].is_container) {
-    bVar4 = (byte)param_1[3] & 0x3f;
+  if (g_object_type_props[*container & 0x1ff].is_container) {
+    bVar4 = (byte)container[3] & 0x3f;
   }
-  iVar2 = empty_container_into_world(param_1,bVar4);
-  if ((iVar2 == 0) && (param_2 != 0)) {
+  iVar2 = empty_container_into_world(container,bVar4);
+  if ((iVar2 == 0) && (owned_by_player != 0)) {
     pcVar3 = &DAT_00085c88;
     wptr_60040 = acStack_85ce4;
     do {
@@ -963,12 +921,11 @@ int param_2;
       pcVar3 = pcVar3 + 1;
     } while (cVar1 != '\0');
     iVar2 = ce_strlen(acStack_5c);
-    build_object_display_name(acStack_5c + iVar2,param_1,0,0);
+    build_object_display_name(acStack_5c + iVar2,container,0,0);
     ce_strcat(acStack_5c,s_is_empty__0008790c);
     message_scroll_print_wrapped(acStack_5c);
   }
   set_pending_update_flags(2);
-  return;
 }
 
 
@@ -978,23 +935,20 @@ int param_2;
 // one at a time via find_object_in_chain's scan; if param_2 is 0...
 /* The object and matching chain entries are addresses, not 32-bit ints.
    ARM 0x37f48 adds six bytes to the object to reach its contents link. */
-undefined4 discard_container_contents(param_1,param_2)
-ushort *param_1;
-int param_2;
-
+undefined4 discard_container_contents(ushort *container, int remove_all)
 {
   ushort *puVar1; /* ARM 0x37fcc keeps the found object address in r4. */
   undefined4 uVar2;
   ushort *local_18;
 
   uVar2 = 0;
-  if (((*((byte *)param_1 + 1) & 0x80) == 0) &&
-     (local_18 = param_1 + 3, (*local_18 & 0xffc0) != 0)) {
+  if (((*((byte *)container + 1) & 0x80) == 0) &&
+     (local_18 = container + 3, (*local_18 & 0xffc0) != 0)) {
     puVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
     while (puVar1 != 0) {
       object_list_unlink(local_18,puVar1);
       free_object_slot(puVar1);
-      if (param_2 == 0) {
+      if (remove_all == 0) {
         return uVar2;
       }
       uVar2 = 1;
@@ -1011,16 +965,14 @@ int param_2;
 // was FUN_0004479c -- called from auto_place_in_container (src/containers.c:942) when dropping an
 // item onto the rune bag (item id 0x8f): rejects anything outside the rune id range
 // (0xe8..0xe8+0x18)...
-undefined4 place_rune_in_bag(param_1)
-short * param_1;
-
+undefined4 place_rune_in_bag(short *rune_object)
 {
   uint uVar1;
   int iVar2;
   undefined4 uVar3;
   byte *pbVar4;   /* was folded into iVar2 (a 32-bit int) -- see below */
 
-  iVar2 = (((int)*param_1 & 0x1ffU) - 0xe8) * 0x10000;
+  iVar2 = (((int)*rune_object & 0x1ffU) - 0xe8) * 0x10000;
   uVar1 = iVar2 >> 0x10;
   if (((int)uVar1 < 0) || (0x18 < (int)uVar1)) {
     uVar3 = 0;
@@ -1028,7 +980,7 @@ short * param_1;
   else {
     /* Was called with 0 args -- real ARM binary does the same bare call (confirmed via Ghidra:
        FUN_00053004(), free_object_slot's real address, at this exact spot)... */
-    free_object_slot(param_1);
+    free_object_slot(rune_object);
     /* Was `iVar2 = DAT_00086df8 + (iVar2 >> 0x13); *(byte *)(iVar2 + 0x44) = ...` -- DAT_00086df8
        is a real 64-bit char* (the player stats/quest-flags struct, DAT_0023bca8) on this host, but
        `iVar2` is a 32-bit int... */
@@ -1043,8 +995,7 @@ short * param_1;
 // was FUN_000465c8 -- called from close_panels_before_level_change (right after
 // free_player_inventory_chain) and from load_level: clears the equipped-items slot-index encoding
 // and overlay-offset array...
-void reset_equipment_and_container_state()
-
+void reset_equipment_and_container_state(void)
 {
   int iVar1;
 
@@ -1065,5 +1016,4 @@ void reset_equipment_and_container_state()
   DAT_0020299c = 0;
   g_selected_object = 0;
   DAT_00085c50 = 0xffff;
-  return;
 }

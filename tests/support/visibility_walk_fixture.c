@@ -39,7 +39,7 @@ undefined4 DAT_002020d8, DAT_0023bc98;
 undefined1 DAT_00086da8_backing[256], DAT_00202800_backing[256];
 unsigned char DAT_00085ac8_backing[16] = {5,6,7,8};
 int visibility_light_config_record, visibility_ambient_strength;
-void *get_equipped_item_at_slot(int slot)
+void *get_equipped_item_at_slot(short slot)
 {
     return torch_equipped && slot == 5 ? torch : NULL;
 }
@@ -48,7 +48,7 @@ void *get_scanned_object_class_effect_ptr(void)
     return torch_effect;
 }
 int compute_object_weight(void) { return 0; }
-void request_weapon_swing_graphic(int category) {}
+void request_weapon_swing_graphic(char category) {}
 void reset_player_derived_state(void) {}
 void set_ambient_bias_with_light(int strength) {}
 void set_ambient_bias_without_light(int strength) { visibility_ambient_strength = strength; }

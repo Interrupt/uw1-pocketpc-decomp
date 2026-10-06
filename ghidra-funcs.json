@@ -7,8 +7,8 @@
     "still_unnamed_FUN": 12,
     "audited_true": 1469,
     "audited_false": 0,
-    "modernized_true": 191,
-    "modernized_false": 1278
+    "modernized_true": 302,
+    "modernized_false": 1167
   },
   "functions": [
     {
@@ -2330,78 +2330,78 @@
       "param_count": 0,
       "description": "enter automap screen.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "exit_automap_screen",
       "path": "src/automap.c",
-      "line": 103,
+      "line": 101,
       "original_name": "FUN_0001651c",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "exit automap screen.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_automap_tiles",
       "path": "src/automap.c",
-      "line": 130,
+      "line": 126,
       "original_name": "FUN_000165d0",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "draw automap tiles.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_automap_cell_edge",
       "path": "src/automap.c",
-      "line": 188,
+      "line": 182,
       "original_name": "FUN_000167d4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "draw automap cell edge.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_automap_cell",
       "path": "src/automap.c",
-      "line": 262,
+      "line": 252,
       "original_name": "FUN_00016948",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "draw automap cell.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_automap_door_edge",
       "path": "src/automap.c",
-      "line": 378,
+      "line": 363,
       "original_name": "FUN_00016c70",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "draw automap door edge.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_automap_screen",
       "path": "src/automap.c",
-      "line": 420,
+      "line": 399,
       "original_name": "FUN_00017908",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "uVar3 was `undefined4` (4 bytes), truncating ce_malloc's real 64-bit malloc'd pointer on this host -- same pointer-truncation pattern fixed repeatedly this session.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "automap_reveal_all_tiles",
       "path": "src/automap.c",
-      "line": 489,
+      "line": 465,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -2412,128 +2412,128 @@
     {
       "name": "darken_pixel",
       "path": "src/automap.c",
-      "line": 517,
+      "line": 493,
       "original_name": "FUN_00016940",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "darken pixel.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "save_automap_reveal_to_archive",
       "path": "src/automap.c",
-      "line": 552,
+      "line": 522,
       "original_name": "FUN_00016434",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "writes the DAT_000b99d0 automap-reveal buffer (64x64 grid, one nibble/byte per tile -- see automap.c's readers) to archive entry param_2+0x1a.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_automap_reveal_from_archive",
       "path": "src/automap.c",
-      "line": 611,
+      "line": 579,
       "original_name": "FUN_000164e4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "reads archive entry param_2+0x1a back into the DAT_000b99d0 automap-reveal buffer (the read-side counterpart to save_automap_reveal_to_archive).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "clear_automap_reveal_buffer",
       "path": "src/automap.c",
-      "line": 631,
+      "line": 594,
       "original_name": "FUN_000165bc",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "clear automap reveal buffer.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "pick_closer_note_label",
       "path": "src/automap.c",
-      "line": 644,
+      "line": 605,
       "original_name": "FUN_00016d7c",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "given two note-button label records (param_1, param_2) and a click point (param_3,param_4), measures each label's rendered text-box distance to the click and returns whichever pointer is closer (used by handle_automap_note_click's hit-testing).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_automap_note_click",
       "path": "src/automap.c",
-      "line": 712,
+      "line": 668,
       "original_name": "FUN_00016ef8",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "automap \"add/edit note\" click handler.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_automap_notes",
       "path": "src/automap.c",
-      "line": 953,
+      "line": 908,
       "original_name": "FUN_0001765c",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "redraws every stored automap note (DAT_000bbef0 count of DAT_000ba9d8 records) as text at its saved screen position.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "save_automap_notes_to_archive",
       "path": "src/automap.c",
-      "line": 1006,
+      "line": 959,
       "original_name": "FUN_00017768",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "compacts out any deleted (negative-length) note records, then writes the remaining DAT_000ba9d8 note array to archive entry param_1+0x23.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_automap_notes_from_archive",
       "path": "src/automap.c",
-      "line": 1053,
+      "line": 1003,
       "original_name": "FUN_0001786c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "reads archive entry param_1+0x23 back into the DAT_000ba9d8 note array (the read-side counterpart to save_automap_notes_to_archive), then redraws them.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "switch_automap_level_display",
       "path": "src/automap.c",
-      "line": 1079,
+      "line": 1026,
       "original_name": "FUN_00017b38",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "switches which level's automap page is on screen.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "debug_noop_overflow_hook",
       "path": "src/automap.c",
-      "line": 1102,
+      "line": 1046,
       "original_name": "FUN_0007edec",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "always returns 0 and does nothing else.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "automap_reveal_byte",
       "path": "src/automap.c",
-      "line": 1116,
+      "line": 1057,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -4348,211 +4348,211 @@
     {
       "name": "blit_raw_sprite_clipped",
       "path": "src/bitmap.c",
-      "line": 57,
+      "line": 59,
       "original_name": "FUN_000125a8",
       "ghidra_origin": true,
       "param_count": 8,
       "description": "lowest-level raw (already-decoded, uncompressed) sprite blit primitive.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "blit_sprite_row_remapped",
       "path": "src/bitmap.c",
-      "line": 192,
+      "line": 182,
       "original_name": "FUN_00013170",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "blit sprite row remapped.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "blit_object_sprite_by_frame",
       "path": "src/bitmap.c",
-      "line": 240,
+      "line": 224,
       "original_name": "FUN_00040918",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "blit object sprite by frame.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_sprite_by_id",
       "path": "src/bitmap.c",
-      "line": 299,
+      "line": 276,
       "original_name": "FUN_00040b0c",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "draw sprite by id.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_list_flush_blit_raw",
       "path": "src/bitmap.c",
-      "line": 333,
+      "line": 303,
       "original_name": "FUN_00040be0",
       "ghidra_origin": true,
       "param_count": 6,
       "description": "the sprite-list compositor flush loop's second draw path (\"path=FUN_00040be0\" in UW_DIAG_SPRLIST output, taken for entries with puVar4[5]!=0), a sibling of draw_sprite_by_id.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_partition_step",
       "path": "src/bitmap.c",
-      "line": 364,
+      "line": 326,
       "original_name": "FUN_00064f10",
       "ghidra_origin": true,
       "param_count": 6,
       "description": "sprite partition step.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_partition_tmap",
       "path": "src/bitmap.c",
-      "line": 425,
+      "line": 380,
       "original_name": "FUN_0006508c",
       "ghidra_origin": true,
       "param_count": 3,
-      "description": "sprite partition tmap.",
+      "description": "was undefined4 -- sprite_partition_step writes through it (*param_2 = ...).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_partition_by_depth",
       "path": "src/bitmap.c",
-      "line": 443,
+      "line": 394,
       "original_name": "FUN_00065128",
       "ghidra_origin": true,
       "param_count": 3,
-      "description": "sprite partition by depth.",
+      "description": "was undefined4 -- sprite_partition_step dereferences it (*param_2 = ...).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_list_queue_slot_redraw",
       "path": "src/bitmap.c",
-      "line": 492,
+      "line": 438,
       "original_name": "FUN_00075cb8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "part of the sprite-list compositor family (alongside sprite_list_set_rect/set_position/set_frame_id* and sprite_list_set_lifetime, all indexing the same DAT_0023c3e8 slot- record array).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_list_alloc_entry",
       "path": "src/bitmap.c",
-      "line": 592,
+      "line": 536,
       "original_name": "FUN_00076078",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "allocates a new sprite-list compositor slot (linear scan of DAT_0023c3e8's fixed 0x40-entry array for a free record, matching sprite_list_set_rect/set_position's own `param_1 < 0x40` bound), stores param_1 as the slot's resource/frame id.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_list_alloc_raw_entry",
       "path": "src/bitmap.c",
-      "line": 641,
+      "line": 583,
       "original_name": "FUN_00076194",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "sibling of sprite_list_alloc_entry.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_list_set_rect",
       "path": "src/bitmap.c",
-      "line": 695,
+      "line": 633,
       "original_name": "FUN_000762c4",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "sets a compositor slot's full geometry (x, y, w, h) in one call, used at creation time (redraw_hud_panels calls this right after allocating each dragon/compass/status-icon slot to establish its rect).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_list_set_position",
       "path": "src/bitmap.c",
-      "line": 737,
+      "line": 669,
       "original_name": "FUN_00076338",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "updates an already-allocated compositor slot's x/y position only (its width/height, set once by sprite_list_set_rect, are left alone).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_list_set_frame_id",
       "path": "src/bitmap.c",
-      "line": 769,
+      "line": 697,
       "original_name": "FUN_00076390",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "updates an already-allocated compositor slot's displayed sprite/frame id (offset+7/+0xf, separate from whatever resource id sprite_list_alloc_entry stored at creation) and ORs DAT_0008763c into the slot's flags word to mark it dirty.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_list_set_frame_id_transparent",
       "path": "src/bitmap.c",
-      "line": 798,
+      "line": 723,
       "original_name": "FUN_00076404",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "sprite_list_set_frame_id's transparent-blit sibling.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sprite_list_set_lifetime",
       "path": "src/bitmap.c",
-      "line": 827,
+      "line": 749,
       "original_name": "FUN_0007699c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "sprite list set lifetime.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decode_tile_object_billboard_texture",
       "path": "src/bitmap.c",
-      "line": 854,
+      "line": 773,
       "original_name": "FUN_00040770",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "param_1 = object sprite id, param_2 = shade -- both were dropped by Ghidra at the emit_tile_objects call site AND on the resolve_sprite_id_to_frame / lookup_grtile_by_id calls below.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "lookup_grtile_by_id",
       "path": "src/bitmap.c",
-      "line": 913,
+      "line": 829,
       "original_name": "FUN_000408fc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "lookup grtile by id.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_sprite_id_to_frame",
       "path": "src/bitmap.c",
-      "line": 942,
+      "line": 856,
       "original_name": "FUN_00040aa8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the central symbolic-id -> absolute-frame resolver used throughout the HUD/object draw paths.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "character_generator_loop",
@@ -4563,172 +4563,172 @@
       "param_count": 3,
       "description": "Was `undefined4` (4 bytes), but assigned real char* pointers (DAT_001005c4/DAT_001005c8) throughout the character-generation/ font-drawing subsystem and passed directly as bitmap_blit_to_framebuffer's char* source-bitmap param.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "run_character_generator",
       "path": "src/chargen.c",
-      "line": 338,
+      "line": 334,
       "original_name": "FUN_00025608",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "run character generator.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "character_generator_start",
       "path": "src/chargen.c",
-      "line": 487,
+      "line": 482,
       "original_name": "FUN_000259a0",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "character generator start.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_new_character_record",
       "path": "src/chargen.c",
-      "line": 504,
+      "line": 498,
       "original_name": "FUN_000232ec",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "resets the player record (DAT_00086df8, base &DAT_0023bca8 set by reset_player_object_record) to new-character defaults.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "advance_skill_tree_node",
       "path": "src/chargen.c",
-      "line": 650,
+      "line": 641,
       "original_name": "FUN_000238b4",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "walks the character-generator skill tree (param_4, a compact [count][id0][id1]...-encoded tree) starting from the cursor index *param_1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_chargen_attribute_summary",
       "path": "src/chargen.c",
-      "line": 709,
+      "line": 695,
       "original_name": "FUN_00023a00",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "draws the chargen stat screen's 4 attribute values (DAT_0023be74 offsets +5/+6/+7 -- the 3 rolled 2d10+10 attributes set by init_new_character_record -- and +4).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_selected_skills_list",
       "path": "src/chargen.c",
-      "line": 742,
+      "line": 726,
       "original_name": "FUN_00023b38",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "draws the chargen skill-selection screen.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_confirmed_skill_picks",
       "path": "src/chargen.c",
-      "line": 787,
+      "line": 769,
       "original_name": "FUN_00023c90",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "walks param_2 (the skill-id array advance_skill_tree_node fills) from index param_1 up to 6, calling advance_skill_training on each valid skill id (<0x14) to actually apply it to the player record, and returns the updated count.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reroll_attributes_for_class_race",
       "path": "src/chargen.c",
-      "line": 807,
+      "line": 786,
       "original_name": "FUN_00023cdc",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "applies the just-chosen class/race's attribute bonuses (looked up from &DAT_000fb860 by a class/race-derived index) to the 3 rolled attributes (DAT_0023be74+5/6/7), clears the skill array (DAT_00086df8+0x21, 20 slots) for a fresh pick.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_chargen_field_value",
       "path": "src/chargen.c",
-      "line": 868,
+      "line": 845,
       "original_name": "FUN_00023de8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "draws the current chargen field's label and current value/text (and, for the name field, the \"Enter your name...\" prompt).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_chargen_field_options",
       "path": "src/chargen.c",
-      "line": 1033,
+      "line": 1007,
       "original_name": "FUN_0002431c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "draws up to two selectable option icons/portraits (e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "character_generator_touch_select",
       "path": "src/chargen.c",
-      "line": 1116,
+      "line": 1086,
       "original_name": "FUN_0002454c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "character generator touch select.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "wait_for_chargen_field_input",
       "path": "src/chargen.c",
-      "line": 1237,
+      "line": 1204,
       "original_name": "FUN_00024840",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "waits for input on the current chargen field.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "chargen_ui_transition_hook",
       "path": "src/chargen.c",
-      "line": 1502,
+      "line": 1467,
       "original_name": "FUN_00035df8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "takes no parameters and its decompiled body takes no action, yet every call site in src/chargen.c passes a 0/1 flag at UI-transition points (screen changes, button presses/releases).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "chrbtns_bump_alloc_entry",
       "path": "src/chargen.c",
-      "line": 1517,
+      "line": 1479,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Ghidra's auto-analysis never recognized chrbtns_bump_alloc_entry/chrbtns_offset_table_builder as real functions -- they're only reached indirectly (passed as callback pointers to load_gr_resource_entries at run_character_generator's call site below).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "chrbtns_offset_table_builder",
       "path": "src/chargen.c",
-      "line": 1528,
+      "line": 1489,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "r0 is loaded fresh from a literal (&DAT_000fb880), discarding whatever was passed in that register -- this callback's real parameters are param_2 (r1) and param_3 (r2, only its low 16 bits used, sign-extended, as a table index).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "build_collision_height_field_for_object",
@@ -5283,211 +5283,211 @@
     {
       "name": "release_container_reference",
       "path": "src/containers.c",
-      "line": 42,
+      "line": 45,
       "original_name": "FUN_00042a44",
       "ghidra_origin": true,
       "param_count": 1,
-      "description": "Sizing pass: its only use (empty_container_into_world's caller) is a read-only copy-until-NUL into a local scratch buffer -- a short message-prefix string, not indexed.",
+      "description": "Was `int param_1` -- every call site passes g_current_container_record, a real 64-bit pointer, which this narrower type truncates to 32 bits -- same class as several other fixes this session (search \"narrow local/parameter for a pointer\").",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "free_open_container_chain",
       "path": "src/containers.c",
-      "line": 67,
+      "line": 64,
       "original_name": "FUN_00042aa8",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "NOT YET FIXED (not on the crash path reached so far, but the same bug class as everywhere else in this file): the body below reads/writes through the literal `iVar1*4 + 0x202870`/`iVar10*4 + 0x202870` -- a hardcoded original-binary address.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "close_backpack_container",
       "path": "src/containers.c",
-      "line": 98,
+      "line": 93,
       "original_name": "FUN_00042b38",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "close backpack container.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "leave_nested_container_level",
       "path": "src/containers.c",
-      "line": 156,
+      "line": 149,
       "original_name": "FUN_00042c5c",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "leave nested container level.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "refresh_container_view",
       "path": "src/containers.c",
-      "line": 218,
+      "line": 209,
       "original_name": "FUN_00042d70",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "refresh container view.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "repopulate_container_grid_slots",
       "path": "src/containers.c",
-      "line": 243,
+      "line": 232,
       "original_name": "FUN_00042e30",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "repopulate container grid slots.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "open_backpack_container",
       "path": "src/containers.c",
-      "line": 333,
+      "line": 320,
       "original_name": "FUN_00043100",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "open backpack container.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scroll_container_grid_up",
       "path": "src/containers.c",
-      "line": 544,
+      "line": 528,
       "original_name": "FUN_00043614",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "container-grid scroll up, dispatched from handle_object_drop_target's `iVar2==0x15` case (widget 21's own real click rect, see g_inventory_hotspot_table's comment).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scroll_container_grid_down",
       "path": "src/containers.c",
-      "line": 562,
+      "line": 544,
       "original_name": "FUN_0004365c",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "container-grid scroll down, the DAT_002029a0 (\"can scroll down\") counterpart to scroll_container_grid_up, same dispatch/redraw pattern via widget 22.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "auto_place_in_container",
       "path": "src/containers.c",
-      "line": 608,
+      "line": 588,
       "original_name": "FUN_00043734",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "auto place in container.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sum_container_weight",
       "path": "src/containers.c",
-      "line": 771,
+      "line": 751,
       "original_name": "FUN_00043d40",
       "ghidra_origin": true,
       "param_count": 2,
-      "description": "sum container weight.",
+      "description": "was `undefined4` -- truncated the real object-record pointer (passed straight to resolve_object_link, and to itself recursively as `puVar2+2`), latent until that call started actually using its argume.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "encode_equipped_item_index",
       "path": "src/containers.c",
-      "line": 805,
+      "line": 779,
       "original_name": "FUN_000441d8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "Same pointer-truncation bug class as alloc_save_record_slot/save_record_slot_from_index just below (their own comment has the full writeup) -- iVar4 was `int`.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decode_equipped_item_index",
       "path": "src/containers.c",
-      "line": 835,
+      "line": 805,
       "original_name": "FUN_000442dc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "decode equipped item index.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "get_equipped_item_at_slot",
       "path": "src/containers.c",
-      "line": 868,
+      "line": 834,
       "original_name": "FUN_00045054",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "Was `resolve_object_link(...);.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "empty_container_into_world",
       "path": "src/containers.c",
-      "line": 881,
+      "line": 845,
       "original_name": "FUN_00079144",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "walks a container's (param_1) contents link chain and places each item into the world near the container's own position (via place_object_in_world), clearing param_1's own contents-head link as it goes.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "try_empty_container",
       "path": "src/containers.c",
-      "line": 939,
+      "line": 900,
       "original_name": "FUN_0007c84c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "thin wrapper around empty_container_into_world.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "discard_container_contents",
       "path": "src/containers.c",
-      "line": 981,
+      "line": 938,
       "original_name": "FUN_00037f1c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "for a container-like object param_1 (skipped if its class-flag byte's top bit is set) with a nonempty contents chain (offset 6), unlinks and frees matching contained objects one at a time via find_object_in_chain's scan.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "place_rune_in_bag",
       "path": "src/containers.c",
-      "line": 1014,
+      "line": 968,
       "original_name": "FUN_0004479c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "called from auto_place_in_container (src/containers.c:942) when dropping an item onto the rune bag (item id 0x8f).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_equipment_and_container_state",
       "path": "src/containers.c",
-      "line": 1046,
+      "line": 998,
       "original_name": "FUN_000465c8",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "called from close_panels_before_level_change (right after free_player_inventory_chain) and from load_level.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dbgui_save_backing",
@@ -6974,7 +6974,7 @@
       "description": "flush dirty rect to display.",
       "audited": true,
       "modernized": false,
-      "audit_note": "VERIFIED vs ARM: callee reads no argument at all; callers (ARM mov r0,#1) pass an unused literal 1, as the original unprototyped source did (declared 0; e.g. src/audio.c:665 passes 1, src/automap.c:919 passes 1, src/automap.c:937 passes 1, ...)"
+      "audit_note": "VERIFIED vs ARM: callee reads no argument at all; callers (ARM mov r0,#1) pass an unused literal 1, as the original unprototyped source did (declared 0; e.g. src/audio.c:665 passes 1, src/automap.c:874 passes 1, src/automap.c:892 passes 1, ...)"
     },
     {
       "name": "flush_dirty_rect_to_display_240",
@@ -8701,216 +8701,216 @@
       "param_count": 0,
       "description": "These four were all mangled by Ghidra the same way: embedded spaces rendered as underscores, and in s_Your_bumbling_attempts_have_set_o's case the tail of the string (\"ff the \", plus a trailing space) was dropped entirely.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "interact_talk_npc",
       "path": "src/interact.c",
-      "line": 142,
+      "line": 140,
       "original_name": "FUN_0003f128",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "interact talk npc.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "interact_look",
       "path": "src/interact.c",
-      "line": 154,
+      "line": 150,
       "original_name": "FUN_0003f14c",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "interact look.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "interact_use",
       "path": "src/interact.c",
-      "line": 207,
+      "line": 201,
       "original_name": "FUN_0003f2c4",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "briefly named interact_converse by an earlier pass.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "interact_attack",
       "path": "src/interact.c",
-      "line": 235,
+      "line": 227,
       "original_name": "FUN_0003f368",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "interact attack.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_terrain_discovery_illustration",
       "path": "src/interact.c",
-      "line": 266,
+      "line": 256,
       "original_name": "FUN_0006fed4",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "triggers the \"illustrated book/scroll\" full- screen picture feature (via record_illustration_discovery_and_display -> display_book_or_scroll_page).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_inscription_illustration",
       "path": "src/interact.c",
-      "line": 281,
+      "line": 269,
       "original_name": "FUN_0006fee8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "trigger_terrain_discovery_illustration's sibling, illustration index 0x101.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "roll_container_lockpick_check",
       "path": "src/interact.c",
-      "line": 299,
+      "line": 284,
       "original_name": "FUN_00072598",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "rolls a skill check (roll_skill_check(param_2,8)) against the first contained item in container param_1, but only if that item's own quality/type field (after resolving through a link when a specific bit is set) is below 3.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "roll_container_trap_disarm_check",
       "path": "src/interact.c",
-      "line": 330,
+      "line": 312,
       "original_name": "FUN_0007266c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "roll_container_lockpick_check's sibling for the \"disarm trap\" mechanic.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_skill_gated_unlock_or_use",
       "path": "src/interact.c",
-      "line": 432,
+      "line": 411,
       "original_name": "FUN_0007cdbc",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "confirmed by its callers as the general skill-gated \"use item on object\" resolver behind force_unlock_target_object.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_trap_or_link_effect",
       "path": "src/interact.c",
-      "line": 516,
+      "line": 490,
       "original_name": "FUN_0007d074",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "thin re-entrancy-guarded wrapper around the trap/link-effect type dispatcher dispatch_trap_type_effect (not yet named, a large switch on the trap/link record's type code).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "purge_tagged_objects_from_chain",
       "path": "src/interact.c",
-      "line": 540,
+      "line": 511,
       "original_name": "FUN_0007deec",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "recursive helper for refresh_object_link_chain.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "refresh_object_link_chain",
       "path": "src/interact.c",
-      "line": 569,
+      "line": 535,
       "original_name": "FUN_0007dfd8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "confirmed by callers' own comments (resolve_skill_gated_unlock_or_use, trigger_object_trap_or_use_action) as the \"refresh\" step run after a lock/link record's own use/pull action.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "attempt_talk_interaction",
       "path": "src/interact.c",
-      "line": 607,
+      "line": 569,
       "original_name": "FUN_00028488",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the actual talk-interaction worker.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "finalize_object_pickup",
       "path": "src/interact.c",
-      "line": 682,
+      "line": 641,
       "original_name": "FUN_0003ee10",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "called from interact_default (src/interact.c:90) right before a grabbed object is attached to the cursor.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "target_in_range",
       "path": "src/interact.c",
-      "line": 700,
+      "line": 656,
       "original_name": "FUN_0003e694",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "param_2 (the picked object, g_interact_target -- a real ushort*) and param_3 (DAT_002020b0 -- a tilemap byte address) were both declared `int`, truncating the 64-bit pointers every caller passes.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "object_chain_max_barrier",
       "path": "src/interact.c",
-      "line": 747,
+      "line": 700,
       "original_name": "FUN_0003e83c",
       "ghidra_origin": true,
       "param_count": 1,
-      "description": "object chain max barrier.",
+      "description": "was int -- truncated the tile-record pointer target_line_of_sight passes.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "target_line_of_sight",
       "path": "src/interact.c",
-      "line": 770,
+      "line": 722,
       "original_name": "FUN_0003e8b0",
       "ghidra_origin": true,
       "param_count": 2,
-      "description": "target line of sight.",
+      "description": "was int -- truncated g_interact_target.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "pick_object_under_cursor",
       "path": "src/interact.c",
-      "line": 873,
+      "line": 822,
       "original_name": "FUN_0003ec00",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "pick object under cursor.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "describe_picked_terrain",
       "path": "src/interact.c",
-      "line": 948,
+      "line": 895,
       "original_name": "FUN_0003ed6c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "describe picked terrain.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_inventory_panel_normal_click",
@@ -15896,205 +15896,205 @@
       "param_count": 1,
       "description": "was LAB_0006e2f4 -- load_weapon_swing_sprites's (weapons.GR loader, called when the player's weapon-hand contents change -- including empty-handed, which resolves to category 3/\"fist\") allocator callback (param_4).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "request_weapon_swing_graphic",
       "path": "src/weapon_swing.c",
-      "line": 76,
+      "line": 74,
       "original_name": "FUN_0006e360",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "sets the weapon-swing animation \"category\" to load (0-3, from the weapon-hand item's melee-weapon-stats byte 6, or 3 for empty-handed/fist).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_weapon_swing_sprites",
       "path": "src/weapon_swing.c",
-      "line": 95,
+      "line": 90,
       "original_name": "FUN_0006e3ac",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "loads WEAPONS.GR's 28-frame swing-animation sprite set for the requested weapon-swing category (DAT_000870d8, set by request_weapon_swing_graphic) plus its matching 28-byte timing/hit-data rows from WEAPONS.DAT.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "weapon_swing_draw_tick",
       "path": "src/weapon_swing.c",
-      "line": 165,
+      "line": 159,
       "original_name": "FUN_0006fcb0",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "draws the weapon-swing sprite over the 3D viewport for the current frame of advance_action_animation_frame's state machine, gated on g_dungeon_view_active/g_weapon_overlay_enabled.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "weapon_overlay_and_full_redraw",
       "path": "src/weapon_swing.c",
-      "line": 227,
+      "line": 219,
       "original_name": "FUN_0006fea4",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "full-screen \"hard refresh\" utility.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "randomize_weapon_jump_shake",
       "path": "src/weapon_swing.c",
-      "line": 246,
+      "line": 236,
       "original_name": "FUN_0006e554",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "sets DAT_0023c1ec (the weapon-swing sprite's horizontal jitter offset, applied in src/weapon_swing.c's blit) from param_1's shake intensity.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "advance_action_animation_frame",
       "path": "src/weapon_swing.c",
-      "line": 301,
+      "line": 288,
       "original_name": "FUN_0006e648",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "shared player-action animation state machine (weapon raise/ready, among others).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_weapon_combat_maneuver_data",
       "path": "src/weapon_swing.c",
-      "line": 413,
+      "line": 398,
       "original_name": "FUN_0006e89c",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "loads a 16-byte weapon combat-maneuver record from \\DATA\\weapons.cm into DAT_00202700, seeking to offset 0x10 or 0 depending on a flag at DAT_00086df8+100 (bits 0x1c == 4, an unidentified player/class condition).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "debug_noop_frame_hook",
       "path": "src/weapon_swing.c",
-      "line": 456,
+      "line": 440,
       "original_name": "FUN_00012948",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "always returns immediately and does nothing else.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "find_and_consume_ammo",
       "path": "src/weapon_swing.c",
-      "line": 466,
+      "line": 447,
       "original_name": "FUN_000271dc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "finds/consumes the ammunition item required for weapon type param_1 (looked up from &DAT_002027d2), returning its inventory slot.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_weapon_swing_state",
       "path": "src/weapon_swing.c",
-      "line": 512,
+      "line": 491,
       "original_name": "FUN_000275e0",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "resets the weapon-swing state machine after a completed swing.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "update_weapon_ready_hud_icon",
       "path": "src/weapon_swing.c",
-      "line": 530,
+      "line": 507,
       "original_name": "FUN_0002764c",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "sets the HUD's weapon-ready status icon (a different icon depending on a flag bit at DAT_00086df8+0x5f) and clears the swing-charge status icon.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cancel_weapon_swing",
       "path": "src/weapon_swing.c",
-      "line": 549,
+      "line": 524,
       "original_name": "FUN_00027694",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "fully cancels an in-progress weapon swing (charging or mid-animation).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "tick_weapon_swing_state",
       "path": "src/weapon_swing.c",
-      "line": 568,
+      "line": 541,
       "original_name": "FUN_00027708",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "per-frame weapon-swing state machine.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_hud_icon_sprite",
       "path": "src/weapon_swing.c",
-      "line": 705,
+      "line": 675,
       "original_name": "FUN_00040bc0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "resolves a sprite id to its .GR frame, decodes it, and blits it at (param_2,param_3).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "weapon_overlay_flash_hold",
       "path": "src/weapon_swing.c",
-      "line": 741,
+      "line": 706,
       "original_name": "FUN_000411b8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "generic \"flash and hold\" weapon-overlay transition.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "weapon_overlay_flash_restore",
       "path": "src/weapon_swing.c",
-      "line": 767,
+      "line": 729,
       "original_name": "FUN_000411cc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "sibling to weapon_overlay_flash_hold.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "weapon_overlay_flash_once",
       "path": "src/weapon_swing.c",
-      "line": 794,
+      "line": 753,
       "original_name": "FUN_000411e0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the simplest of the three.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "fire_ranged_weapon",
       "path": "src/weapon_swing.c",
-      "line": 811,
+      "line": 767,
       "original_name": "FUN_0004a210",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "fires a ranged weapon (param_1, a weapon type).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "win_file_exists",

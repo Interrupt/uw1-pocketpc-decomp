@@ -357,7 +357,7 @@ void transitions_fixture_dispose(void)
 int uw_always_show_cursor(void) { return 0; }
 void clear_ambient_sound_target_thunk(void) { clear_ambient_sound_target(); }
 char *chrbtns_bump_alloc_entry(int size) { TEST_FAIL_MESSAGE("Unexpected chargen allocation callback"); return NULL; }
-undefined4 chrbtns_offset_table_builder(int index, int kind, void *entry)
+undefined4 chrbtns_offset_table_builder(int index, int kind, int entry)
 { TEST_FAIL_MESSAGE("Unexpected chargen resource callback"); return 0; }
 
 
@@ -396,8 +396,8 @@ char *LAB_000255b4(void) { return NULL; }
 undefined4 LAB_000255d0(void) { return 0; }
 uint load_gr_resource_entries(void) { return 1; }
 undefined4 reset_dialogue_speech_state(void) { return 0; }
-void chargen_ui_transition_hook(void) {}
-void init_new_character_record(void) {}
+void chargen_ui_transition_hook(undefined4 is_press) { (void)is_press;}
+void init_new_character_record(int mode) { (void)mode;}
 void report_fatal_error_and_exit(void) { TEST_FAIL_MESSAGE("Screen resources must load"); }
 void set_viewport_clip_rect(void) {}
 bool read_buffer_from_file(char *path, void *buffer, unsigned int count)
@@ -420,7 +420,7 @@ bool load_pals_bank(unsigned int bank, void *buffer)
     build_rgb565_palette(rgb, bank);
     return true;
 }
-undefined4 character_generator_loop(void)
+undefined4 character_generator_loop(char *tree_data, char *scratch_data, char *field_records)
 {
     character_screen_inputs++;
     TEST_ASSERT_EQUAL_UINT(9, fade_samples);
@@ -471,7 +471,7 @@ void rect_fill_or_save_restore(void) {}
 void uw_debug_dump_sprite_frames_once(void) {}
 void uw_debug_dump_critter_sheet_once(void) {}
 void uw_debug_force_item_id_once(void) {}
-void tick_weapon_swing_state(void) {}
+void tick_weapon_swing_state(short attack_direction) { (void)attack_direction;}
 void poll_input_bindings(void)
 {
     if (input_opens_prompt) {

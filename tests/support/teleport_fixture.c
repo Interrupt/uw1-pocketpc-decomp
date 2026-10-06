@@ -16,8 +16,8 @@ void set_player_tile_position(uint x, uint y);
 void set_pending_update_flags(int flags);
 void report_fatal_error_and_exit(void);
 void full_dungeon_redraw(void);
-void weapon_overlay_flash_hold(int passes);
-void weapon_overlay_flash_restore(int passes);
+void weapon_overlay_flash_hold(undefined4 passes);
+void weapon_overlay_flash_restore(undefined4 passes);
 
 ushort player[16], other_object[16];
 
@@ -174,13 +174,13 @@ void report_fatal_error_and_exit(void)
 
 void full_dungeon_redraw(void) { redraws++; }
 
-void weapon_overlay_flash_hold(int passes)
+void weapon_overlay_flash_hold(undefined4 passes)
 {
     TEST_ASSERT_EQUAL_INT(g_visibility_max_ring_passes, passes);
     overlay_holds++;
 }
 
-void weapon_overlay_flash_restore(int passes)
+void weapon_overlay_flash_restore(undefined4 passes)
 {
     TEST_ASSERT_EQUAL_INT(g_visibility_max_ring_passes, passes);
     overlay_restores++;

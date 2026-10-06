@@ -90,7 +90,7 @@ byte load_weapon_swing_sprites(void)
     DAT_000870dc = DAT_000870d8;
     return 1;
 }
-void randomize_weapon_jump_shake(int shake) {}
+void randomize_weapon_jump_shake(short shake) {}
 char *decode_gr_entry_bitmap(void *frame)
 {
     TEST_ASSERT_EQUAL_PTR(raw_frame, frame);

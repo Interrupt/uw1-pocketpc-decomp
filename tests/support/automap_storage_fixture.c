@@ -45,7 +45,7 @@ void draw_text_string(char *text, short x, short y)
 int uw_always_show_cursor(void) { return 0; }
 void flush_dirty_rect_to_display(int mode) {}
 void dirty_rect_union(int top,int bottom,int left,int right) {}
-void draw_sprite_by_id(int id,int x,int y,int height,int width)
+void draw_sprite_by_id(int id, int x, int y, int height, short width)
 {
     for(int row=y;row<y+height;++row)
         for(int col=x;col<x+width;++col)
@@ -56,8 +56,8 @@ int register_key_binding(int key,int mode,int flags,void *callback) { return 1; 
 void change_game_mode(int mode) {}
 void set_pending_music_track(int track) {}
 void update_ingame_music_track(void) {}
-undefined4 save_automap_reveal_to_archive(void *archive,int level) { return 1; }
-undefined4 load_automap_reveal_from_archive(void *archive,int level) { return 1; }
+undefined4 save_automap_reveal_to_archive(undefined1 *archive, int level) { return 1; }
+undefined4 load_automap_reveal_from_archive(undefined1 *archive, int level) { return 1; }
 void draw_automap_screen(int level)
 {
     DAT_000ba9d0=level;

@@ -61,11 +61,9 @@ undefined4 weapon_swing_frame_loaded(void *buf, unsigned size, int idx)
 // was LAB_0006e2f4 -- load_weapon_swing_sprites's (weapons.GR loader, called when the player's
 // weapon-hand contents change -- including empty-handed, which resolves to category 3/"fist")
 // allocator callback (param_4).
-void *weapon_swing_frame_alloc(param_1)
-unsigned int param_1;
-
+void *weapon_swing_frame_alloc(unsigned int byte_count)
 {
-  return ce_malloc(param_1);
+  return ce_malloc(byte_count);
 }
 
 
@@ -73,18 +71,15 @@ unsigned int param_1;
 
 // was FUN_0006e360 -- sets the weapon-swing animation "category" to load (0-3, from the weapon-hand
 // item's melee-weapon-stats byte 6, or 3 for empty-handed/fist)...
-void request_weapon_swing_graphic(param_1)
-char param_1;
-
+void request_weapon_swing_graphic(char category)
 {
   if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[weapon-gfx] request_weapon_swing_graphic(param_1=%d) DAT_000870dc(loaded)=%d\n", (int)param_1, (int)DAT_000870dc);
+    fprintf(stderr, "[weapon-gfx] request_weapon_swing_graphic(category=%d) DAT_000870dc(loaded)=%d\n", (int)category, (int)DAT_000870dc);
   }
-  DAT_000870d8 = param_1;
-  if (((-1 < param_1) && (param_1 < '\x04')) || (DAT_000870dc != param_1)) {
+  DAT_000870d8 = category;
+  if (((-1 < category) && (category < '\x04')) || (DAT_000870dc != category)) {
     DAT_0023c1dc = DAT_0023c1dc | 0x100;
   }
-  return;
 }
 
 
@@ -92,8 +87,7 @@ char param_1;
 // was FUN_0006e3ac -- loads WEAPONS.GR's 28-frame swing-animation sprite set for the requested
 // weapon-swing category (DAT_000870d8, set by request_weapon_swing_graphic) plus its matching
 // 28-byte timing/hit-data rows from WEAPONS.DAT...
-byte load_weapon_swing_sprites()
-
+byte load_weapon_swing_sprites(void)
 {
   char stack0xffdc3240_buf [256];
   char *stack0xffdc3240_ptr;
@@ -162,8 +156,7 @@ byte load_weapon_swing_sprites()
 // was FUN_0006fcb0 -- draws the weapon-swing sprite over the 3D viewport for the current frame of
 // advance_action_animation_frame's state machine, gated on
 // g_dungeon_view_active/g_weapon_overlay_enabled.
-void weapon_swing_draw_tick()
-
+void weapon_swing_draw_tick(void)
 {
   short sVar1;
   /* Was `undefined4` -- decode_gr_entry_bitmap returns a real 64-bit bitmap pointer, truncated on
@@ -217,21 +210,18 @@ void weapon_swing_draw_tick()
   draw_hud_icon_sprite(0x1080,0,0xd);
   draw_hud_icon_sprite(0x1081,0xab,0xd);
   g_blit_transparent_mode = 0;
-  return;
 }
 
 
 
 // was FUN_0006fea4 -- full-screen "hard refresh" utility: draws the weapon-swing overlay (if the
 // dungeon view is active) then marks the entire screen dirty.
-void weapon_overlay_and_full_redraw()
-
+void weapon_overlay_and_full_redraw(void)
 {
   if (g_dungeon_view_active != 0) {
     weapon_swing_draw_tick();
   }
   dirty_rect_union(0,200,0,0x140);
-  return;
 }
 
 
@@ -243,9 +233,7 @@ void weapon_overlay_and_full_redraw()
 // was FUN_0006e554 -- sets DAT_0023c1ec (the weapon-swing sprite's horizontal jitter offset,
 // applied in src/weapon_swing.c's blit) from param_1's shake intensity: 0 clears it, 1 picks a
 // small random value (-4..4, via ce_rand mod 5), 2 a larger one (-9..9, mod 10).
-void randomize_weapon_jump_shake(param_1)
-short param_1;
-
+void randomize_weapon_jump_shake(short intensity)
 {
   int uw_ord2005_rem_134 = 0; int uw_ord2005_rem_135 = 0; int uw_ord2005_rem_136 = 0; int uw_ord2005_rem_137 = 0;
   undefined4 uVar1;
@@ -255,10 +243,10 @@ short param_1;
   undefined2 extraout_r1_01;
   undefined2 extraout_r1_02;
   
-  if (param_1 == 0) {
+  if (intensity == 0) {
     DAT_0023c1ec = 0;
   }
-  else if (param_1 == 1) {
+  else if (intensity == 1) {
     if (DAT_0023c1ec < 1) {
       iVar2 = ce_rand();
       uw_ord2005_rem_134 = ((int)(-iVar2)) % (5);
@@ -271,7 +259,7 @@ short param_1;
     }
   }
   else {
-    if (param_1 != 2) {
+    if (intensity != 2) {
       return;
     }
     if (DAT_0023c1ec < 1) {
@@ -287,7 +275,6 @@ short param_1;
     ce_rand();
   }
   DAT_000870e8 = 1;
-  return;
 }
 
 
@@ -298,8 +285,7 @@ short param_1;
 // was FUN_0006e648 -- shared player-action animation state machine (weapon raise/ready, among
 // others): reads the requested action type (DAT_0023c120, set via set_hud_status_value(8,N)),
 // drives the current-action state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4)...
-void advance_action_animation_frame()
-
+void advance_action_animation_frame(void)
 {
   byte bVar1;
   int iVar2;
@@ -399,7 +385,6 @@ LAB_0006e704:
   DAT_000870e4 = -1;
 LAB_0006e7d0:
   DAT_0023c1dc = DAT_0023c1dc & 0xfeff;
-  return;
 }
 
 
@@ -410,8 +395,7 @@ LAB_0006e7d0:
 // was FUN_0006e89c -- loads a 16-byte weapon combat-maneuver record from \DATA\weapons.cm into
 // DAT_00202700, seeking to offset 0x10 or 0 depending on a flag at DAT_00086df8+100 (bits 0x1c ==
 // 4, an unidentified player/class condition).
-bool load_weapon_combat_maneuver_data()
-
+bool load_weapon_combat_maneuver_data(void)
 {
   char stack0xffdc3248_buf [256];
   char *stack0xffdc3248_ptr;
@@ -453,19 +437,14 @@ bool load_weapon_combat_maneuver_data()
 // was FUN_00012948 -- always returns immediately and does nothing else; confirmed used two ways at
 // its real call sites (uw.c): once inside a 13-iteration animation loop (weapon_overlay_flash_hold)
 // alongside weapon_overlay_and_full_redraw...
-void debug_noop_frame_hook(param_1)
-undefined4 param_1;
-
+void debug_noop_frame_hook(undefined4 frame)
 {
-  return;
 }
 
 
 // was FUN_000271dc -- finds/consumes the ammunition item required for weapon type param_1 (looked
 // up from &DAT_002027d2), returning its inventory slot; on failure (none found), prints a "Sorry...
-int find_and_consume_ammo(param_1)
-short param_1;
-
+int find_and_consume_ammo(short weapon_type)
 {
   char *wptr_14062;
   char cVar1;
@@ -480,7 +459,7 @@ short param_1;
   ushort local_44 [4];
   char acStack_3c [52];
   
-  cVar1 = (&DAT_002027d2)[param_1 * 3];
+  cVar1 = (&DAT_002027d2)[weapon_type * 3];
   iVar3 = find_equipped_item_by_category(0,1,(int)cVar1,4,local_4c);
   if (iVar3 == 0) {
     local_44[0] = ((short)cVar1 + 0x10U ^ local_44[0]) & 0x1ff ^ local_44[0];
@@ -509,8 +488,7 @@ short param_1;
 // was FUN_000275e0 -- resets the weapon-swing state machine after a completed swing: sets
 // DAT_0010062c to a cooldown value, clears the "swing charging" cursor-holding flags, and resets
 // the HUD status icons. Called from tick_weapon_swing_state's own swing-completion path.
-void reset_weapon_swing_state()
-
+void reset_weapon_swing_state(void)
 {
   DAT_0010062c = 0xfff6;
   DAT_00084f10 = 0xffff;
@@ -519,7 +497,6 @@ void reset_weapon_swing_state()
   pop_cursor_icon(3);
   set_hud_status_value(8,4);
   DAT_001005ec = 0;
-  return;
 }
 
 
@@ -527,8 +504,7 @@ void reset_weapon_swing_state()
 // was FUN_0002764c -- sets the HUD's weapon-ready status icon (a
 // different icon depending on a flag bit at DAT_00086df8+0x5f) and
 // clears the swing-charge status icon.
-void update_weapon_ready_hud_icon()
-
+void update_weapon_ready_hud_icon(void)
 {
   undefined4 uVar1;
   
@@ -538,7 +514,6 @@ void update_weapon_ready_hud_icon()
   }
   set_hud_status_value(8,uVar1);
   set_hud_status_value(3,0);
-  return;
 }
 
 
@@ -546,8 +521,7 @@ void update_weapon_ready_hud_icon()
 // was FUN_00027694 -- fully cancels an in-progress weapon swing (charging or mid-animation):
 // releases any held swing-charge cursor state, updates the HUD icons, and resets the swing phase
 // counter (DAT_0010062c), pending-swing marker (DAT_00084f10)...
-void cancel_weapon_swing()
-
+void cancel_weapon_swing(void)
 {
   if ((DAT_001005ec != 0) && (DAT_00100618 == 0)) {
     g_cursor_holding_state = g_cursor_holding_state + -4;
@@ -557,7 +531,6 @@ void cancel_weapon_swing()
   DAT_0010062c = 0;
   DAT_00084f10 = 0xffff;
   DAT_00100610 = 0xffff;
-  return;
 }
 
 
@@ -565,9 +538,7 @@ void cancel_weapon_swing()
 // was FUN_00027708 -- per-frame weapon-swing state machine: param_1 is the requested attack
 // direction/type (0=none, from interact_attack's screen-position-to-3x3-grid mapping), and
 // DAT_0010062c is the swing phase counter (negative while charging/swinging).
-void tick_weapon_swing_state(param_1)
-short param_1;
-
+void tick_weapon_swing_state(short attack_direction)
 {
   byte bVar1;
   bool bVar2;
@@ -589,9 +560,9 @@ short param_1;
   bVar2 = true;
 LAB_00027754:
   pRecord = DAT_001005e4;
-  if (getenv("UW_DEBUG_COMBAT") && (param_1 != 0 || DAT_000870e4 != -1 || DAT_0010062c != 0)) {
-    fprintf(stderr, "[swing] param_1=%d flags5f=0x%x DAT_000870e4=%d DAT_0010062c=%d bVar2=%d pRecord=%p DAT_00100618=%d DAT_001005ec=%u DAT_001005e8=%d\n",
-            (int)param_1, (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)DAT_000870e4,
+  if (getenv("UW_DEBUG_COMBAT") && (attack_direction != 0 || DAT_000870e4 != -1 || DAT_0010062c != 0)) {
+    fprintf(stderr, "[swing] attack_direction=%d flags5f=0x%x DAT_000870e4=%d DAT_0010062c=%d bVar2=%d pRecord=%p DAT_00100618=%d DAT_001005ec=%u DAT_001005e8=%d\n",
+            (int)attack_direction, (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)DAT_000870e4,
             (int)DAT_0010062c, (int)bVar2, (void *)pRecord, (int)DAT_00100618, DAT_001005ec, (int)DAT_001005e8);
   }
   if (DAT_0010062c < 1) {
@@ -678,9 +649,9 @@ LAB_00027754:
       DAT_0010062c = 0;
       DAT_00084f10 = 0xffff;
     }
-    else if (((((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) && (iVar5 = (int)param_1, iVar5 != 0)) &&
+    else if (((((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) && (iVar5 = (int)attack_direction, iVar5 != 0)) &&
              (DAT_000870e4 == -1)) &&
-            (DAT_00100618 = param_1, sVar4 = resolve_equipped_weapon_attack(&DAT_001005e4,&DAT_001005e0), -1 < sVar4))
+            (DAT_00100618 = attack_direction, sVar4 = resolve_equipped_weapon_attack(&DAT_001005e4,&DAT_001005e0), -1 < sVar4))
     {
       if (sVar4 == 0) {
         DAT_00100618 = -1;
@@ -696,17 +667,12 @@ LAB_00027754:
       DAT_00100614 = 0;
     }
   }
-  return;
 }
 
 
 // was FUN_00040bc0 -- resolves a sprite id to its .GR frame, decodes it, and blits it at
 // (param_2,param_3).
-void draw_hud_icon_sprite(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-
+void draw_hud_icon_sprite(int sprite_id, int x, int y)
 {
   char cVar1;
   char cVar2;
@@ -716,9 +682,9 @@ undefined4 param_3;
   uint resolved;
 
   /* Dropped arguments (2 calls) -- same idiom as the identical `resolved =
-     resolve_sprite_id_to_frame(param_1); lookup_grtile_by_id(resolved);` pair used correctly
+     resolve_sprite_id_to_frame(sprite_id); lookup_grtile_by_id(resolved);` pair used correctly
      elsewhere in this file (see e.g. the call site right above this function). */
-  resolved = resolve_sprite_id_to_frame(param_1);
+  resolved = resolve_sprite_id_to_frame(sprite_id);
   pcVar3 = (char *)lookup_grtile_by_id(resolved);
   cVar1 = pcVar3[1];
   cVar2 = pcVar3[2];
@@ -731,16 +697,13 @@ undefined4 param_3;
        decompress_gr_bitmap call shape... */
     pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
   }
-  bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1);
-  return;
+  bitmap_blit_to_framebuffer(x,y,pcVar3,cVar2,cVar1,0,0,1);
 }
 
 
 // was FUN_000411b8 -- generic "flash and hold" weapon-overlay transition: hides the cursor,
 // disables the weapon overlay, redraws ~13 blank frames with it hidden...
-void weapon_overlay_flash_hold(param_1)
-undefined4 param_1;
-
+void weapon_overlay_flash_hold(undefined4 unused_code)
 {
   int iVar1;
 
@@ -756,7 +719,6 @@ undefined4 param_1;
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
   cursor_show_idle_tick();
-  return;
 }
 
 
@@ -764,9 +726,7 @@ undefined4 param_1;
 // was FUN_000411cc -- sibling to weapon_overlay_flash_hold: instead of blank redraws, snapshots the
 // live screen region (DAT_00248410) and repeatedly restores it over the overlay-disabled redraw
 // loop, holding a frozen frame while the overlay stays hidden.
-void weapon_overlay_flash_restore(param_1)
-undefined4 param_1;
-
+void weapon_overlay_flash_restore(undefined4 unused_code)
 {
   undefined4 uVar1;
   int iVar2;
@@ -783,7 +743,6 @@ undefined4 param_1;
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
   cursor_show_idle_tick();
-  return;
 }
 
 
@@ -791,9 +750,7 @@ undefined4 param_1;
 // was FUN_000411e0 -- the simplest of the three: a single disable-redraw-reenable cycle, used as a
 // quick screen flash cue for damage/hazard events (src/combat.c, src/player.c, src/object_actions.c
 // call it with various scroll-message-like codes, all ignored since it takes no parameters).
-void weapon_overlay_flash_once(param_1)
-undefined4 param_1;
-
+void weapon_overlay_flash_once(undefined4 unused_code)
 {
   show_error_dialog_stub_thunk();
   decrement_cursor_hide_depth();
@@ -801,16 +758,13 @@ undefined4 param_1;
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
   cursor_show_idle_tick();
-  return;
 }
 
 
 // was FUN_0004a210 -- fires a ranged weapon (param_1, a weapon type): finds and consumes a matching
 // ammo item (find_and_consume_ammo), sets up the throw/aim state and spawns a projectile object
 // near the player...
-void fire_ranged_weapon(param_1)
-short param_1;
-
+void fire_ranged_weapon(short weapon_type)
 {
   int iVar1;
   byte bVar2;
@@ -821,12 +775,12 @@ short param_1;
   ushort *puVar7;
   uint uVar8;
   
-  /* Was a dropped argument -- find_and_consume_ammo's own param_1 (weapon type). The very next line
-     re-derives the identical `(&DAT_002027d2)[param_1*3]` table lookup find_and_consume_ammo's own
-     body performs internally, confirming this caller's param_1 is the value that belongs here. */
-  uVar5 = find_and_consume_ammo(param_1);
+  /* Was a dropped argument -- find_and_consume_ammo's own weapon_type (weapon type). The very next line
+     re-derives the identical `(&DAT_002027d2)[weapon_type*3]` table lookup find_and_consume_ammo's own
+     body performs internally, confirming this caller's weapon_type is the value that belongs here. */
+  uVar5 = find_and_consume_ammo(weapon_type);
   if (-1 < (short)uVar5) {
-    iVar1 = (int)param_1;
+    iVar1 = (int)weapon_type;
     cVar3 = (&DAT_002027d2)[iVar1 * 3];
     DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[(short)cVar3 * 3];
     DAT_00202a38 = cVar3 + 0x10;
@@ -864,7 +818,7 @@ short param_1;
           *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;
         }
       }
-      /* Was a dropped argument -- free_object_slot(param_1) always takes the object pointer to free
+      /* Was a dropped argument -- free_object_slot(weapon_type) always takes the object pointer to free
          (every other call site in the codebase, e.g. src/objects.c, src/traps.c, src/babl.c, passes
          one)... */
       free_object_slot(puVar7);
@@ -873,5 +827,4 @@ short param_1;
       play_sound_effect_with_pan(9,0x40,0);
     }
   }
-  return;
 }

@@ -27,7 +27,7 @@ undefined4 place_object_in_world(void);
 void print_message_with_proximity_qualifier(void);
 uint rand_below(int limit);
 void * resolve_object_link(void);
-uint resolve_skill_gated_unlock_or_use(void);
+uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id);
 uint scheduler_add_entry(uint object_link, undefined4 delay, undefined1 animation_offset, undefined1 tile_x, undefined1 tile_y);
 undefined4 teleport_object_to_level_tile(char *object, int tile_x, int tile_y, short level_number);
 void *tilemap_lookup(short tile_x, short tile_y);
@@ -113,7 +113,7 @@ uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected rand_bel
 
 void * resolve_object_link(void) { TEST_FAIL_MESSAGE("Unexpected resolve_object_link in text trap"); return 0; }
 
-uint resolve_skill_gated_unlock_or_use(void) { TEST_FAIL_MESSAGE("Unexpected resolve_skill_gated_unlock_or_use in text trap"); return 0; }
+uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id) { (void)object; (void)key_item; (void)lock_link; (void)key_id; TEST_FAIL_MESSAGE("Unexpected resolve_skill_gated_unlock_or_use in text trap"); return 0; }
 
 uint scheduler_add_entry(uint object_link, undefined4 delay, undefined1 animation_offset, undefined1 tile_x, undefined1 tile_y) { (void)object_link; (void)delay; (void)animation_offset; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected scheduler_add_entry in text trap"); return 0; }
 
