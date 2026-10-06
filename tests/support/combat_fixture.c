@@ -6,7 +6,6 @@ int encode_object_slot_index(ushort *object);
 void refresh_experience_display(void);
 void set_pending_music_track(uint track);
 uint read_realtime_clock_units(void);
-void grant_experience_points(int amount);
 void attempt_talk_interaction(char *object);
 void cancel_weapon_swing(void);
 void trigger_quest_milestone_cleanup_event(void);
@@ -90,7 +89,12 @@ int skill_result, skill_checks, effects, impact_sounds;
 
 int effect_types[2], effect_heights[2];
 
-int experience, experience_awards, talks, death_sounds, positional_impacts;
+int talks, death_sounds, positional_impacts;
+int level_stat_recalculations;
+char level_message[16];
+short DAT_00201b68;
+bool uw_test_creating_character;
+static char character_attributes[256];
 
 ushort *expected_effect_target;
 
@@ -131,7 +135,31 @@ uint clock_units;
 
 uint read_realtime_clock_units(void) { return clock_units; }
 
-void grant_experience_points(int amount) { experience += amount; experience_awards++; }
+uint combat_player_experience(void)
+{
+    uint xp;
+    memcpy(&xp, player_stats + 0x4e, sizeof xp);
+    return xp;
+}
+void combat_set_player_experience(uint xp, byte level)
+{
+    memcpy(player_stats + 0x4e, &xp, sizeof xp);
+    player_stats[0x3d] = level;
+}
+void combat_create_character(void)
+{
+    uw_test_create_character((char *)player_stats, character_attributes, object_at(1));
+}
+undefined4 recalculate_player_stats(int refill_mana) { level_stat_recalculations++; return 0; }
+void refresh_stats_panel_if_active(void) {}
+void print_scroll_message_by_id(int id) { TEST_ASSERT_EQUAL_HEX16(0x93,id); }
+int message_scroll_print_wrapped(char *text)
+{
+    snprintf(level_message,sizeof level_message,"%s",text);
+    return 0;
+}
+void configure_texture_detail_functions(void) {}
+void refresh_player_equipment_effects(void) {}
 
 void attempt_talk_interaction(char *object)
 { TEST_ASSERT_EQUAL_PTR(mobile_objects + 2 * 27, object); talks++; }
@@ -409,7 +437,12 @@ void combat_fixture_reset(void)
     DAT_00100628 = DAT_001005fc = DAT_001005d8 = 0;
     DAT_0010061c = 6;
     skill_result = skill_checks = effects = impact_sounds = 0;
-    experience = experience_awards = talks = death_sounds = positional_impacts = 0;
+    talks = death_sounds = positional_impacts = 0;
+    memset(player_stats,0,sizeof player_stats);
+    player_stats[0x3d] = 1;
+    DAT_00201b68 = 1;
+    level_stat_recalculations = 0;
+    level_message[0] = 0;
     music_track = 0;
     clock_units = 0;
     hud_flushes = wipe_frames = 0;

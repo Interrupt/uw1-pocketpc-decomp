@@ -124,9 +124,61 @@ static void test_lethal_player_swing_marks_critter_dead_and_awards_experience(vo
     TEST_ASSERT_EQUAL_UINT(1, process_melee_attack_swing());
     TEST_ASSERT_EQUAL_UINT8(0, (byte)object_at(2)[4]);
     TEST_ASSERT_EQUAL_UINT8(0xc, mobile_objects[2 * 27 + 0x15] & 0x3f);
-    TEST_ASSERT_EQUAL_INT(1, experience_awards);
-    TEST_ASSERT_EQUAL_INT(60, experience);
+    TEST_ASSERT_EQUAL_UINT32(60, combat_player_experience());
+    TEST_ASSERT_EQUAL_UINT8(1, player_stats[0x3d]);
     TEST_ASSERT_EQUAL_UINT(9, music_track);
+}
+
+static void test_killing_a_real_rat_grants_xp_once_without_leveling_new_character(void)
+{
+    combat_create_character();
+    load_real_monster_data();
+    ushort *rat=object_at(2);
+    rat[0]=0x40;
+    rat[4]=1;
+    TEST_ASSERT_EQUAL_UINT8(1,player_stats[0x3d]);
+    TEST_ASSERT_EQUAL_UINT32(0,combat_player_experience());
+    TEST_ASSERT_EQUAL_UINT(1,apply_damage_to_object(rat,100,object_at(1)));
+    /* OBJECTS.DAT rat XP stat is 6: 4*6 + 2d6, fixture dice roll 12. */
+    TEST_ASSERT_EQUAL_UINT32(36,combat_player_experience());
+    TEST_ASSERT_EQUAL_UINT8(1,player_stats[0x3d]);
+    TEST_ASSERT_EQUAL_UINT(0,apply_damage_to_object(rat,100,object_at(1)));
+    TEST_ASSERT_EQUAL_UINT32(36,combat_player_experience());
+    TEST_ASSERT_EQUAL_UINT8(1,player_stats[0x3d]);
+}
+static void test_each_original_experience_threshold_advances_exactly_one_level(void)
+{
+    static const uint thresholds[]={500,1000,1500,2000,3000,4000,6000,
+        8000,12000,16000,24000,32000,48000,64000,96000};
+    DAT_00201b68=9; /* Prevent the original shallow-dungeon XP reduction. */
+    for (unsigned i=0;i<sizeof thresholds/sizeof thresholds[0];i++) {
+        combat_set_player_experience(thresholds[i]-1,i+1);
+        grant_experience_points(0);
+        TEST_ASSERT_EQUAL_UINT8(i+1,player_stats[0x3d]);
+        grant_experience_points(1);
+        TEST_ASSERT_EQUAL_UINT32(thresholds[i],combat_player_experience());
+        TEST_ASSERT_EQUAL_UINT8(i+2,player_stats[0x3d]);
+        char expected[16];
+        snprintf(expected,sizeof expected,"%2u\n",i+2);
+        TEST_ASSERT_EQUAL_STRING(expected,level_message);
+    }
+    grant_experience_points(0);
+    TEST_ASSERT_EQUAL_UINT8(16,player_stats[0x3d]);
+}
+static void test_large_experience_award_only_crosses_earned_thresholds(void)
+{
+    combat_set_player_experience(499,1);
+    grant_experience_points(1001);
+    TEST_ASSERT_EQUAL_UINT32(1500,combat_player_experience());
+    TEST_ASSERT_EQUAL_UINT8(4,player_stats[0x3d]);
+    TEST_ASSERT_EQUAL_INT(1,level_stat_recalculations);
+}
+static void test_experience_loss_clamps_to_zero_without_removing_levels(void)
+{
+    combat_set_player_experience(500,2);
+    grant_experience_points(-501);
+    TEST_ASSERT_EQUAL_UINT32(0,combat_player_experience());
+    TEST_ASSERT_EQUAL_UINT8(2,player_stats[0x3d]);
 }
 
 static void test_already_dead_critter_does_not_award_experience_again(void)
@@ -134,7 +186,7 @@ static void test_already_dead_critter_does_not_award_experience_again(void)
     mobile_objects[2 * 27 + 0x15] = 0xc;
     object_at(2)[4] = 0;
     TEST_ASSERT_EQUAL_UINT(0, apply_damage_to_object(object_at(2), 4, object_at(1)));
-    TEST_ASSERT_EQUAL_INT(0, experience_awards);
+    TEST_ASSERT_EQUAL_UINT32(0, combat_player_experience());
     TEST_ASSERT_EQUAL_INT(0, death_sounds);
 }
 
@@ -145,7 +197,7 @@ static void test_scripted_critter_can_refuse_death(void)
     TEST_ASSERT_EQUAL_UINT(0, apply_damage_to_object(object_at(2), 4, object_at(1)));
     TEST_ASSERT_EQUAL_UINT8(60, (byte)object_at(2)[4]);
     TEST_ASSERT_EQUAL_INT(1, talks);
-    TEST_ASSERT_EQUAL_INT(0, experience_awards);
+    TEST_ASSERT_EQUAL_UINT32(0, combat_player_experience());
     TEST_ASSERT_NOT_EQUAL_UINT8(0xc, mobile_objects[2 * 27 + 0x15] & 0x3f);
 }
 
@@ -155,7 +207,7 @@ static void test_critter_kill_does_not_award_player_experience(void)
     TEST_ASSERT_EQUAL_UINT(1, apply_damage_to_object(object_at(2), 4, object_at(3)));
     TEST_ASSERT_EQUAL_UINT8(0, (byte)object_at(2)[4]);
     TEST_ASSERT_EQUAL_UINT8(0xc, mobile_objects[2 * 27 + 0x15] & 0x3f);
-    TEST_ASSERT_EQUAL_INT(0, experience_awards);
+    TEST_ASSERT_EQUAL_UINT32(0, combat_player_experience());
 }
 
 static void test_successful_critter_hit_redraws_hud_wipe(void)
@@ -349,6 +401,10 @@ int main(void)
     RUN_TEST(test_critter_swing_at_same_faction_skips_damage);
     RUN_TEST(test_critter_swing_at_opposing_faction_preserves_pointers);
     RUN_TEST(test_lethal_player_swing_marks_critter_dead_and_awards_experience);
+    RUN_TEST(test_killing_a_real_rat_grants_xp_once_without_leveling_new_character);
+    RUN_TEST(test_each_original_experience_threshold_advances_exactly_one_level);
+    RUN_TEST(test_large_experience_award_only_crosses_earned_thresholds);
+    RUN_TEST(test_experience_loss_clamps_to_zero_without_removing_levels);
     RUN_TEST(test_already_dead_critter_does_not_award_experience_again);
     RUN_TEST(test_scripted_critter_can_refuse_death);
     RUN_TEST(test_critter_kill_does_not_award_player_experience);

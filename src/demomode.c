@@ -443,7 +443,7 @@ void demomode_pump(void) {
             return;
         }
         fprintf(stderr, "[demo] teleporting to tile (%d,%d)\n", tx, ty);
-        set_player_tile_position(tx, ty);
+        set_player_tile_position(tx, ty, 1);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

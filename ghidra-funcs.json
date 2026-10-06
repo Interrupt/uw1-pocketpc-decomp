@@ -2312,7 +2312,7 @@
     {
       "name": "babl_builtin_set_attitude_apply",
       "path": "src/babl.c",
-      "line": 339,
+      "line": 332,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -2322,7 +2322,7 @@
     {
       "name": "babl_builtin_length",
       "path": "src/babl.c",
-      "line": 355,
+      "line": 348,
       "original_name": "FUN_00019a60",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2332,7 +2332,7 @@
     {
       "name": "babl_builtin_sex",
       "path": "src/babl.c",
-      "line": 370,
+      "line": 363,
       "original_name": "FUN_0001840c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2342,7 +2342,7 @@
     {
       "name": "babl_builtin_do_decline",
       "path": "src/babl.c",
-      "line": 382,
+      "line": 375,
       "original_name": "FUN_0001cd34",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2352,7 +2352,7 @@
     {
       "name": "babl_builtin_take_from_npc",
       "path": "src/babl.c",
-      "line": 390,
+      "line": 383,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -2362,7 +2362,7 @@
     {
       "name": "babl_builtin_take_id_from_npc",
       "path": "src/babl.c",
-      "line": 475,
+      "line": 468,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -2372,7 +2372,7 @@
     {
       "name": "babl_builtin_do_inv_create",
       "path": "src/babl.c",
-      "line": 543,
+      "line": 536,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -2382,7 +2382,7 @@
     {
       "name": "babl_builtin_set_attitude",
       "path": "src/babl.c",
-      "line": 589,
+      "line": 582,
       "original_name": "FUN_00017be8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2392,7 +2392,7 @@
     {
       "name": "babl_builtin_set_race_attitude",
       "path": "src/babl.c",
-      "line": 604,
+      "line": 597,
       "original_name": "FUN_00017c1c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2402,7 +2402,7 @@
     {
       "name": "babl_builtin_x_skills",
       "path": "src/babl.c",
-      "line": 681,
+      "line": 674,
       "original_name": "FUN_00017e10",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2412,7 +2412,7 @@
     {
       "name": "babl_builtin_x_traps",
       "path": "src/babl.c",
-      "line": 701,
+      "line": 694,
       "original_name": "FUN_00017e90",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2422,7 +2422,7 @@
     {
       "name": "babl_builtin_place_object",
       "path": "src/babl.c",
-      "line": 718,
+      "line": 711,
       "original_name": "FUN_00017eec",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2432,7 +2432,7 @@
     {
       "name": "babl_builtin_take_from_npc_inv",
       "path": "src/babl.c",
-      "line": 785,
+      "line": 778,
       "original_name": "FUN_000181a4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2442,7 +2442,7 @@
     {
       "name": "babl_builtin_add_to_npc_inv",
       "path": "src/babl.c",
-      "line": 810,
+      "line": 803,
       "original_name": "FUN_00018230",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2452,7 +2452,7 @@
     {
       "name": "babl_builtin_set_quest",
       "path": "src/babl.c",
-      "line": 824,
+      "line": 817,
       "original_name": "FUN_000182b4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2462,7 +2462,7 @@
     {
       "name": "babl_builtin_get_quest",
       "path": "src/babl.c",
-      "line": 858,
+      "line": 851,
       "original_name": "FUN_00018370",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2472,7 +2472,7 @@
     {
       "name": "babl_builtin_gronk_door",
       "path": "src/babl.c",
-      "line": 888,
+      "line": 881,
       "original_name": "FUN_00018430",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2482,7 +2482,7 @@
     {
       "name": "babl_builtin_x_obj_stuff",
       "path": "src/babl.c",
-      "line": 937,
+      "line": 930,
       "original_name": "FUN_0001853c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2492,7 +2492,7 @@
     {
       "name": "babl_builtin_x_obj_pos",
       "path": "src/babl.c",
-      "line": 1038,
+      "line": 1031,
       "original_name": "FUN_000188fc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2502,7 +2502,7 @@
     {
       "name": "babl_alloc",
       "path": "src/babl.c",
-      "line": 1098,
+      "line": 1091,
       "original_name": "FUN_00018ac8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2512,7 +2512,7 @@
     {
       "name": "babl_free",
       "path": "src/babl.c",
-      "line": 1110,
+      "line": 1103,
       "original_name": "FUN_00018ccc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2522,7 +2522,7 @@
     {
       "name": "babl_resize",
       "path": "src/babl.c",
-      "line": 1124,
+      "line": 1117,
       "original_name": "FUN_00018f34",
       "ghidra_origin": true,
       "param_count": 2,
@@ -2532,7 +2532,7 @@
     {
       "name": "load_npc_conversation_variables",
       "path": "src/babl.c",
-      "line": 1138,
+      "line": 1131,
       "original_name": "FUN_0001927c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -2542,7 +2542,7 @@
     {
       "name": "babl_builtin_random",
       "path": "src/babl.c",
-      "line": 1204,
+      "line": 1197,
       "original_name": "FUN_000196c0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2552,7 +2552,7 @@
     {
       "name": "babl_builtin_compare",
       "path": "src/babl.c",
-      "line": 1217,
+      "line": 1210,
       "original_name": "FUN_000196e8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2562,7 +2562,7 @@
     {
       "name": "babl_builtin_plural",
       "path": "src/babl.c",
-      "line": 1267,
+      "line": 1260,
       "original_name": "FUN_000197c0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2572,7 +2572,7 @@
     {
       "name": "babl_builtin_contains",
       "path": "src/babl.c",
-      "line": 1286,
+      "line": 1279,
       "original_name": "FUN_000197fc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2582,7 +2582,7 @@
     {
       "name": "babl_builtin_append",
       "path": "src/babl.c",
-      "line": 1333,
+      "line": 1326,
       "original_name": "FUN_000198e8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2592,7 +2592,7 @@
     {
       "name": "babl_builtin_copy",
       "path": "src/babl.c",
-      "line": 1372,
+      "line": 1365,
       "original_name": "FUN_0001998c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2602,7 +2602,7 @@
     {
       "name": "babl_builtin_find",
       "path": "src/babl.c",
-      "line": 1399,
+      "line": 1392,
       "original_name": "FUN_000199d4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2612,7 +2612,7 @@
     {
       "name": "babl_builtin_val",
       "path": "src/babl.c",
-      "line": 1427,
+      "line": 1420,
       "original_name": "FUN_00019a80",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2622,7 +2622,7 @@
     {
       "name": "babl_expand_string_refs",
       "path": "src/babl.c",
-      "line": 1445,
+      "line": 1438,
       "original_name": "FUN_00019aa0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2632,7 +2632,7 @@
     {
       "name": "build_babl_symbol_table",
       "path": "src/babl.c",
-      "line": 1580,
+      "line": 1573,
       "original_name": "FUN_00019e58",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2642,7 +2642,7 @@
     {
       "name": "run_babl_bytecode_interpreter",
       "path": "src/babl.c",
-      "line": 1688,
+      "line": 1681,
       "original_name": "FUN_0001a1c8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2652,7 +2652,7 @@
     {
       "name": "babl_register_builtin",
       "path": "src/babl.c",
-      "line": 1878,
+      "line": 1871,
       "original_name": "FUN_0001ae28",
       "ghidra_origin": true,
       "param_count": 2,
@@ -2662,7 +2662,7 @@
     {
       "name": "babl_set_variable",
       "path": "src/babl.c",
-      "line": 1912,
+      "line": 1905,
       "original_name": "FUN_0001aebc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -2672,7 +2672,7 @@
     {
       "name": "babl_get_variable",
       "path": "src/babl.c",
-      "line": 1976,
+      "line": 1969,
       "original_name": "FUN_0001afe4",
       "ghidra_origin": true,
       "param_count": 3,
@@ -2682,7 +2682,7 @@
     {
       "name": "babl_builtin_do_offer",
       "path": "src/babl.c",
-      "line": 2018,
+      "line": 2011,
       "original_name": "FUN_0001c57c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2692,7 +2692,7 @@
     {
       "name": "babl_builtin_do_demand",
       "path": "src/babl.c",
-      "line": 2117,
+      "line": 2110,
       "original_name": "FUN_0001ca78",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2702,7 +2702,7 @@
     {
       "name": "babl_builtin_set_likes_dislikes",
       "path": "src/babl.c",
-      "line": 2205,
+      "line": 2198,
       "original_name": "FUN_0001da88",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2712,7 +2712,7 @@
     {
       "name": "enter_conversation_mode_screen",
       "path": "src/babl.c",
-      "line": 2218,
+      "line": 2211,
       "original_name": "FUN_000286cc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2722,7 +2722,7 @@
     {
       "name": "start_npc_conversation",
       "path": "src/babl.c",
-      "line": 2326,
+      "line": 2319,
       "original_name": "FUN_00028c00",
       "ghidra_origin": true,
       "param_count": 2,
@@ -2732,7 +2732,7 @@
     {
       "name": "babl_menu",
       "path": "src/babl.c",
-      "line": 2444,
+      "line": 2437,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -2742,7 +2742,7 @@
     {
       "name": "babl_builtin_pause",
       "path": "src/babl.c",
-      "line": 2572,
+      "line": 2565,
       "original_name": "FUN_000298d8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2752,7 +2752,7 @@
     {
       "name": "babl_builtin_show_inv",
       "path": "src/babl.c",
-      "line": 2587,
+      "line": 2580,
       "original_name": "FUN_000299b0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2762,7 +2762,7 @@
     {
       "name": "babl_builtin_find_barter",
       "path": "src/babl.c",
-      "line": 2621,
+      "line": 2614,
       "original_name": "FUN_00029a58",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2772,7 +2772,7 @@
     {
       "name": "babl_builtin_find_barter_total",
       "path": "src/babl.c",
-      "line": 2667,
+      "line": 2660,
       "original_name": "FUN_00029b60",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2782,7 +2782,7 @@
     {
       "name": "babl_builtin_give_to_npc",
       "path": "src/babl.c",
-      "line": 2717,
+      "line": 2710,
       "original_name": "FUN_00029cc8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2792,7 +2792,7 @@
     {
       "name": "babl_builtin_give_ptr_npc",
       "path": "src/babl.c",
-      "line": 2785,
+      "line": 2778,
       "original_name": "FUN_00029e34",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2802,7 +2802,7 @@
     {
       "name": "babl_builtin_do_inv_delete",
       "path": "src/babl.c",
-      "line": 2831,
+      "line": 2824,
       "original_name": "FUN_00029f38",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2812,7 +2812,7 @@
     {
       "name": "babl_builtin_find_inv",
       "path": "src/babl.c",
-      "line": 2841,
+      "line": 2834,
       "original_name": "FUN_00029f4c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2822,7 +2822,7 @@
     {
       "name": "babl_builtin_identify_inv",
       "path": "src/babl.c",
-      "line": 2876,
+      "line": 2869,
       "original_name": "FUN_00029fb0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2832,7 +2832,7 @@
     {
       "name": "babl_builtin_count_inv",
       "path": "src/babl.c",
-      "line": 2963,
+      "line": 2956,
       "original_name": "FUN_0002a1fc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2842,7 +2842,7 @@
     {
       "name": "babl_builtin_check_inv_quality",
       "path": "src/babl.c",
-      "line": 2982,
+      "line": 2975,
       "original_name": "FUN_0002a258",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2852,7 +2852,7 @@
     {
       "name": "babl_builtin_set_inv_quality",
       "path": "src/babl.c",
-      "line": 2994,
+      "line": 2987,
       "original_name": "FUN_0002a27c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2862,7 +2862,7 @@
     {
       "name": "sync_conv_vars_from_npc",
       "path": "src/babl.c",
-      "line": 3017,
+      "line": 3010,
       "original_name": "FUN_0002a8e0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2872,7 +2872,7 @@
     {
       "name": "sync_conv_vars_to_npc",
       "path": "src/babl.c",
-      "line": 3136,
+      "line": 3129,
       "original_name": "FUN_0002af88",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2882,7 +2882,7 @@
     {
       "name": "load_npc_conversation_record",
       "path": "src/babl.c",
-      "line": 3208,
+      "line": 3201,
       "original_name": "FUN_00019470",
       "ghidra_origin": true,
       "param_count": 2,
@@ -2892,7 +2892,7 @@
     {
       "name": "save_npc_conversation_variables",
       "path": "src/babl.c",
-      "line": 3276,
+      "line": 3269,
       "original_name": "FUN_0001a5bc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2902,7 +2902,7 @@
     {
       "name": "babl_builtin_remove_talker",
       "path": "src/babl.c",
-      "line": 3343,
+      "line": 3336,
       "original_name": "FUN_0001825c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2912,7 +2912,7 @@
     {
       "name": "seed_conversation_globals_for_new_game",
       "path": "src/babl.c",
-      "line": 3359,
+      "line": 3352,
       "original_name": "FUN_00019120",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2922,7 +2922,7 @@
     {
       "name": "init_conv_var_terminator_record",
       "path": "src/babl.c",
-      "line": 3433,
+      "line": 3426,
       "original_name": "FUN_00019660",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2932,7 +2932,7 @@
     {
       "name": "parse_babl_string_ref_expr",
       "path": "src/babl.c",
-      "line": 3454,
+      "line": 3447,
       "original_name": "FUN_00019d00",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2942,7 +2942,7 @@
     {
       "name": "babl_var_word_addr",
       "path": "src/babl.c",
-      "line": 3520,
+      "line": 3513,
       "original_name": "FUN_0001ada8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2952,7 +2952,7 @@
     {
       "name": "babl_read_var_word",
       "path": "src/babl.c",
-      "line": 3531,
+      "line": 3524,
       "original_name": "FUN_0001adc4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2962,7 +2962,7 @@
     {
       "name": "babl_write_var_word",
       "path": "src/babl.c",
-      "line": 3543,
+      "line": 3536,
       "original_name": "FUN_0001ade4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -2972,7 +2972,7 @@
     {
       "name": "babl_read_frame_word",
       "path": "src/babl.c",
-      "line": 3557,
+      "line": 3550,
       "original_name": "FUN_0001ae04",
       "ghidra_origin": true,
       "param_count": 1,
@@ -2982,7 +2982,7 @@
     {
       "name": "init_babl_variable_defaults",
       "path": "src/babl.c",
-      "line": 3570,
+      "line": 3563,
       "original_name": "FUN_0001b0a4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2992,7 +2992,7 @@
     {
       "name": "babl_builtin_setup_to_barter",
       "path": "src/babl.c",
-      "line": 3623,
+      "line": 3616,
       "original_name": "FUN_0001b288",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3002,7 +3002,7 @@
     {
       "name": "init_barter_ui",
       "path": "src/babl.c",
-      "line": 3697,
+      "line": 3691,
       "original_name": "FUN_0001b474",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3012,7 +3012,7 @@
     {
       "name": "end_barter_ui",
       "path": "src/babl.c",
-      "line": 3778,
+      "line": 3772,
       "original_name": "FUN_0001b7c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3022,7 +3022,7 @@
     {
       "name": "handle_barter_player_panel_click",
       "path": "src/babl.c",
-      "line": 3815,
+      "line": 3809,
       "original_name": "FUN_0001b89c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3032,7 +3032,7 @@
     {
       "name": "hit_test_barter_player_slot",
       "path": "src/babl.c",
-      "line": 3833,
+      "line": 3827,
       "original_name": "FUN_0001b900",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3042,7 +3042,7 @@
     {
       "name": "hit_test_barter_npc_slot",
       "path": "src/babl.c",
-      "line": 3860,
+      "line": 3854,
       "original_name": "FUN_0001b9a4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3052,7 +3052,7 @@
     {
       "name": "handle_barter_player_slot_drop",
       "path": "src/babl.c",
-      "line": 3888,
+      "line": 3882,
       "original_name": "FUN_0001ba48",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3062,7 +3062,7 @@
     {
       "name": "handle_barter_npc_panel_click",
       "path": "src/babl.c",
-      "line": 3908,
+      "line": 3902,
       "original_name": "FUN_0001baa0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3072,7 +3072,7 @@
     {
       "name": "handle_barter_slot_click",
       "path": "src/babl.c",
-      "line": 3926,
+      "line": 3920,
       "original_name": "FUN_0001bb04",
       "ghidra_origin": true,
       "param_count": 4,
@@ -3082,7 +3082,7 @@
     {
       "name": "resolve_barter_slot_at_point",
       "path": "src/babl.c",
-      "line": 4062,
+      "line": 4056,
       "original_name": "FUN_0001bef4",
       "ghidra_origin": true,
       "param_count": 6,
@@ -3092,7 +3092,7 @@
     {
       "name": "redraw_barter_slot_icon",
       "path": "src/babl.c",
-      "line": 4100,
+      "line": 4094,
       "original_name": "FUN_0001bf9c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3102,7 +3102,7 @@
     {
       "name": "pick_up_barter_slot_item",
       "path": "src/babl.c",
-      "line": 4183,
+      "line": 4177,
       "original_name": "FUN_0001c1c8",
       "ghidra_origin": true,
       "param_count": 3,
@@ -3112,7 +3112,7 @@
     {
       "name": "place_item_in_barter_slot",
       "path": "src/babl.c",
-      "line": 4221,
+      "line": 4215,
       "original_name": "FUN_0001c268",
       "ghidra_origin": true,
       "param_count": 3,
@@ -3122,7 +3122,7 @@
     {
       "name": "merge_or_swap_barter_slot_item",
       "path": "src/babl.c",
-      "line": 4251,
+      "line": 4245,
       "original_name": "FUN_0001c2c4",
       "ghidra_origin": true,
       "param_count": 4,
@@ -3132,7 +3132,7 @@
     {
       "name": "draw_hotspot_crosshair_marker",
       "path": "src/babl.c",
-      "line": 4304,
+      "line": 4298,
       "original_name": "FUN_0001c420",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3142,7 +3142,7 @@
     {
       "name": "barter_offer_is_empty",
       "path": "src/babl.c",
-      "line": 4347,
+      "line": 4341,
       "original_name": "FUN_0001c538",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3152,7 +3152,7 @@
     {
       "name": "finalize_npc_barter_items",
       "path": "src/babl.c",
-      "line": 4369,
+      "line": 4363,
       "original_name": "FUN_0001c79c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3162,7 +3162,7 @@
     {
       "name": "finalize_player_barter_items",
       "path": "src/babl.c",
-      "line": 4399,
+      "line": 4393,
       "original_name": "FUN_0001c85c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3172,7 +3172,7 @@
     {
       "name": "babl_builtin_do_judgement",
       "path": "src/babl.c",
-      "line": 4463,
+      "line": 4457,
       "original_name": "FUN_0001cd3c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3182,7 +3182,7 @@
     {
       "name": "sum_barter_offer_value",
       "path": "src/babl.c",
-      "line": 4563,
+      "line": 4557,
       "original_name": "FUN_0001cf20",
       "ghidra_origin": true,
       "param_count": 5,
@@ -3192,7 +3192,7 @@
     {
       "name": "compute_barter_item_value",
       "path": "src/babl.c",
-      "line": 4601,
+      "line": 4595,
       "original_name": "FUN_0001cfa8",
       "ghidra_origin": true,
       "param_count": 3,
@@ -3202,7 +3202,7 @@
     {
       "name": "randomize_value_pct",
       "path": "src/babl.c",
-      "line": 4662,
+      "line": 4656,
       "original_name": "FUN_0001d170",
       "ghidra_origin": true,
       "param_count": 3,
@@ -3212,7 +3212,7 @@
     {
       "name": "collect_included_player_barter_items",
       "path": "src/babl.c",
-      "line": 4681,
+      "line": 4675,
       "original_name": "FUN_0001d1c0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3222,7 +3222,7 @@
     {
       "name": "add_item_to_npc_inventory",
       "path": "src/babl.c",
-      "line": 4710,
+      "line": 4704,
       "original_name": "FUN_0001d258",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3232,7 +3232,7 @@
     {
       "name": "give_barter_item_by_item_id",
       "path": "src/babl.c",
-      "line": 4745,
+      "line": 4739,
       "original_name": "FUN_0001d3ac",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3242,7 +3242,7 @@
     {
       "name": "remove_item_from_npc_inventory_by_id",
       "path": "src/babl.c",
-      "line": 4775,
+      "line": 4769,
       "original_name": "FUN_0001da00",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3252,7 +3252,7 @@
     {
       "name": "check_npc_item_preference",
       "path": "src/babl.c",
-      "line": 4803,
+      "line": 4797,
       "original_name": "FUN_0001dab8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3262,7 +3262,7 @@
     {
       "name": "debug_noop_checkpoint",
       "path": "src/babl.c",
-      "line": 4860,
+      "line": 4854,
       "original_name": "FUN_0007ec50",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3272,7 +3272,7 @@
     {
       "name": "babl_vm_load_script",
       "path": "src/babl.c",
-      "line": 4873,
+      "line": 4867,
       "original_name": "FUN_0001a1a4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3282,7 +3282,7 @@
     {
       "name": "babl_op_add",
       "path": "src/babl.c",
-      "line": 4885,
+      "line": 4879,
       "original_name": "FUN_0001a5e0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3292,7 +3292,7 @@
     {
       "name": "babl_op_negate",
       "path": "src/babl.c",
-      "line": 4902,
+      "line": 4896,
       "original_name": "FUN_0001a628",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3302,7 +3302,7 @@
     {
       "name": "babl_op_mul",
       "path": "src/babl.c",
-      "line": 4916,
+      "line": 4910,
       "original_name": "FUN_0001a654",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3312,7 +3312,7 @@
     {
       "name": "babl_op_sub",
       "path": "src/babl.c",
-      "line": 4933,
+      "line": 4927,
       "original_name": "FUN_0001a69c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3322,7 +3322,7 @@
     {
       "name": "babl_op_div",
       "path": "src/babl.c",
-      "line": 4951,
+      "line": 4945,
       "original_name": "FUN_0001a6e4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3332,7 +3332,7 @@
     {
       "name": "babl_op_mod",
       "path": "src/babl.c",
-      "line": 4981,
+      "line": 4975,
       "original_name": "FUN_0001a74c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3342,7 +3342,7 @@
     {
       "name": "babl_op_or",
       "path": "src/babl.c",
-      "line": 5013,
+      "line": 5007,
       "original_name": "FUN_0001a7b4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3352,7 +3352,7 @@
     {
       "name": "babl_op_and",
       "path": "src/babl.c",
-      "line": 5034,
+      "line": 5028,
       "original_name": "FUN_0001a808",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3362,7 +3362,7 @@
     {
       "name": "babl_op_gt",
       "path": "src/babl.c",
-      "line": 5055,
+      "line": 5049,
       "original_name": "FUN_0001a85c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3372,7 +3372,7 @@
     {
       "name": "babl_op_ge",
       "path": "src/babl.c",
-      "line": 5072,
+      "line": 5066,
       "original_name": "FUN_0001a8a4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3382,7 +3382,7 @@
     {
       "name": "babl_op_lt",
       "path": "src/babl.c",
-      "line": 5089,
+      "line": 5083,
       "original_name": "FUN_0001a8ec",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3392,7 +3392,7 @@
     {
       "name": "babl_op_le",
       "path": "src/babl.c",
-      "line": 5106,
+      "line": 5100,
       "original_name": "FUN_0001a934",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3402,7 +3402,7 @@
     {
       "name": "babl_op_eq",
       "path": "src/babl.c",
-      "line": 5123,
+      "line": 5117,
       "original_name": "FUN_0001a97c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3412,7 +3412,7 @@
     {
       "name": "babl_op_ne",
       "path": "src/babl.c",
-      "line": 5140,
+      "line": 5134,
       "original_name": "FUN_0001a9c4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3422,7 +3422,7 @@
     {
       "name": "babl_op_call",
       "path": "src/babl.c",
-      "line": 5158,
+      "line": 5152,
       "original_name": "FUN_0001aa0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3432,7 +3432,7 @@
     {
       "name": "babl_op_return",
       "path": "src/babl.c",
-      "line": 5172,
+      "line": 5166,
       "original_name": "FUN_0001aa54",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3442,7 +3442,7 @@
     {
       "name": "babl_op_push_var_raw",
       "path": "src/babl.c",
-      "line": 5189,
+      "line": 5183,
       "original_name": "FUN_0001aa88",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3452,7 +3452,7 @@
     {
       "name": "babl_op_combine_index",
       "path": "src/babl.c",
-      "line": 5207,
+      "line": 5201,
       "original_name": "FUN_0001aab4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3462,7 +3462,7 @@
     {
       "name": "babl_op_set_var",
       "path": "src/babl.c",
-      "line": 5225,
+      "line": 5219,
       "original_name": "FUN_0001aaf8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3472,7 +3472,7 @@
     {
       "name": "babl_op_call_builtin",
       "path": "src/babl.c",
-      "line": 5241,
+      "line": 5235,
       "original_name": "FUN_0001ab30",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3482,7 +3482,7 @@
     {
       "name": "babl_op_string_eq",
       "path": "src/babl.c",
-      "line": 5260,
+      "line": 5254,
       "original_name": "FUN_0001aba0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3492,7 +3492,7 @@
     {
       "name": "babl_op_say",
       "path": "src/babl.c",
-      "line": 5296,
+      "line": 5290,
       "original_name": "FUN_0001ac48",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3502,7 +3502,7 @@
     {
       "name": "babl_op_respond",
       "path": "src/babl.c",
-      "line": 5341,
+      "line": 5335,
       "original_name": "FUN_0001acf8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3512,7 +3512,7 @@
     {
       "name": "exit_talk_mode",
       "path": "src/babl.c",
-      "line": 5383,
+      "line": 5377,
       "original_name": "FUN_00028bac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3522,7 +3522,7 @@
     {
       "name": "run_babl_menu_wait_loop",
       "path": "src/babl.c",
-      "line": 5404,
+      "line": 5398,
       "original_name": "FUN_00028ffc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3532,7 +3532,7 @@
     {
       "name": "babl_fmenu",
       "path": "src/babl.c",
-      "line": 5457,
+      "line": 5451,
       "original_name": "FUN_00029358",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3542,7 +3542,7 @@
     {
       "name": "select_babl_menu_response",
       "path": "src/babl.c",
-      "line": 5564,
+      "line": 5558,
       "original_name": "FUN_000295b4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3552,7 +3552,7 @@
     {
       "name": "babl_builtin_say",
       "path": "src/babl.c",
-      "line": 5614,
+      "line": 5608,
       "original_name": "FUN_00029708",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3562,7 +3562,7 @@
     {
       "name": "babl_builtin_respond",
       "path": "src/babl.c",
-      "line": 5656,
+      "line": 5650,
       "original_name": "FUN_0002977c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3572,7 +3572,7 @@
     {
       "name": "echo_selected_conversation_choice",
       "path": "src/babl.c",
-      "line": 5684,
+      "line": 5678,
       "original_name": "FUN_000297dc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3582,7 +3582,7 @@
     {
       "name": "babl_builtin_print",
       "path": "src/babl.c",
-      "line": 5718,
+      "line": 5712,
       "original_name": "FUN_00029850",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3592,7 +3592,7 @@
     {
       "name": "babl_builtin_ask",
       "path": "src/babl.c",
-      "line": 5759,
+      "line": 5753,
       "original_name": "FUN_0002990c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3602,7 +3602,7 @@
     {
       "name": "bubble_sort_indices_by_key_table",
       "path": "src/babl.c",
-      "line": 5799,
+      "line": 5793,
       "original_name": "FUN_00035e00",
       "ghidra_origin": true,
       "param_count": 3,
@@ -3612,7 +3612,7 @@
     {
       "name": "FUN_000362e8",
       "path": "src/babl.c",
-      "line": 5850,
+      "line": 5844,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3622,7 +3622,7 @@
     {
       "name": "FUN_00036300",
       "path": "src/babl.c",
-      "line": 5859,
+      "line": 5853,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3632,7 +3632,7 @@
     {
       "name": "FUN_00036308",
       "path": "src/babl.c",
-      "line": 5867,
+      "line": 5861,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3642,7 +3642,7 @@
     {
       "name": "FUN_00036344",
       "path": "src/babl.c",
-      "line": 5880,
+      "line": 5874,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3652,7 +3652,7 @@
     {
       "name": "FUN_00036394",
       "path": "src/babl.c",
-      "line": 5895,
+      "line": 5889,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3662,7 +3662,7 @@
     {
       "name": "FUN_000363f0",
       "path": "src/babl.c",
-      "line": 5912,
+      "line": 5906,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3672,7 +3672,7 @@
     {
       "name": "FUN_00036404",
       "path": "src/babl.c",
-      "line": 5921,
+      "line": 5915,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3682,7 +3682,7 @@
     {
       "name": "FUN_00036418",
       "path": "src/babl.c",
-      "line": 5930,
+      "line": 5924,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3692,7 +3692,7 @@
     {
       "name": "FUN_000365bc",
       "path": "src/babl.c",
-      "line": 5942,
+      "line": 5936,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3702,7 +3702,7 @@
     {
       "name": "FUN_000365fc",
       "path": "src/babl.c",
-      "line": 5952,
+      "line": 5946,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3712,7 +3712,7 @@
     {
       "name": "FUN_0003663c",
       "path": "src/babl.c",
-      "line": 5962,
+      "line": 5956,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3722,7 +3722,7 @@
     {
       "name": "FUN_00036698",
       "path": "src/babl.c",
-      "line": 5976,
+      "line": 5970,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -3732,7 +3732,7 @@
     {
       "name": "babl_render_op_wrap_message",
       "path": "src/babl.c",
-      "line": 5987,
+      "line": 5981,
       "original_name": "FUN_000360f4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3742,7 +3742,7 @@
     {
       "name": "babl_render_op_show_code",
       "path": "src/babl.c",
-      "line": 6091,
+      "line": 6085,
       "original_name": "FUN_00036460",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3752,7 +3752,7 @@
     {
       "name": "babl_render_op_say",
       "path": "src/babl.c",
-      "line": 6124,
+      "line": 6118,
       "original_name": "FUN_0003651c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3762,7 +3762,7 @@
     {
       "name": "babl_render_op_play_sound",
       "path": "src/babl.c",
-      "line": 6155,
+      "line": 6149,
       "original_name": "FUN_000366a0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3772,7 +3772,7 @@
     {
       "name": "babl_render_tick",
       "path": "src/babl.c",
-      "line": 6167,
+      "line": 6161,
       "original_name": "FUN_000366bc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3782,7 +3782,7 @@
     {
       "name": "render_babl_dialog_window",
       "path": "src/babl.c",
-      "line": 6191,
+      "line": 6185,
       "original_name": "FUN_0003671c",
       "ghidra_origin": true,
       "param_count": 5,
@@ -3792,7 +3792,7 @@
     {
       "name": "display_book_or_scroll_page",
       "path": "src/babl.c",
-      "line": 6844,
+      "line": 6838,
       "original_name": "FUN_00037c14",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3802,7 +3802,7 @@
     {
       "name": "record_illustration_discovery_and_display",
       "path": "src/babl.c",
-      "line": 6920,
+      "line": 6914,
       "original_name": "FUN_00037d6c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3812,7 +3812,7 @@
     {
       "name": "decompress_rle_stream",
       "path": "src/babl.c",
-      "line": 6983,
+      "line": 6977,
       "original_name": "FUN_0003b0e4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3822,7 +3822,7 @@
     {
       "name": "pack_byte_into_word",
       "path": "src/babl.c",
-      "line": 7057,
+      "line": 7051,
       "original_name": "FUN_0003b31c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -3832,7 +3832,7 @@
     {
       "name": "read_rle_op_code",
       "path": "src/babl.c",
-      "line": 7078,
+      "line": 7072,
       "original_name": "FUN_0003b344",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3842,7 +3842,7 @@
     {
       "name": "rle_op_handle_short_run",
       "path": "src/babl.c",
-      "line": 7107,
+      "line": 7101,
       "original_name": "FUN_0003b3a8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3852,7 +3852,7 @@
     {
       "name": "rle_op_copy_pairs_even",
       "path": "src/babl.c",
-      "line": 7144,
+      "line": 7138,
       "original_name": "FUN_0003b48c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3862,7 +3862,7 @@
     {
       "name": "rle_op_copy_pairs_odd",
       "path": "src/babl.c",
-      "line": 7179,
+      "line": 7173,
       "original_name": "FUN_0003b54c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3872,7 +3872,7 @@
     {
       "name": "rle_op_fill_doubled_byte_even",
       "path": "src/babl.c",
-      "line": 7210,
+      "line": 7204,
       "original_name": "FUN_0003b608",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3882,7 +3882,7 @@
     {
       "name": "rle_op_fill_doubled_byte_odd",
       "path": "src/babl.c",
-      "line": 7257,
+      "line": 7251,
       "original_name": "FUN_0003b770",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3892,7 +3892,7 @@
     {
       "name": "rle_op_finalize_length",
       "path": "src/babl.c",
-      "line": 7283,
+      "line": 7277,
       "original_name": "FUN_0003b7f4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3902,7 +3902,7 @@
     {
       "name": "rle_op_mark_stream_done",
       "path": "src/babl.c",
-      "line": 7293,
+      "line": 7287,
       "original_name": "FUN_0003b80c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3912,7 +3912,7 @@
     {
       "name": "read_object_text",
       "path": "src/babl.c",
-      "line": 7304,
+      "line": 7298,
       "original_name": "FUN_00048e8c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3922,7 +3922,7 @@
     {
       "name": "converse_res_bump_alloc_entry",
       "path": "src/babl.c",
-      "line": 7362,
+      "line": 7356,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -3932,7 +3932,7 @@
     {
       "name": "converse_res_slot_store_callback",
       "path": "src/babl.c",
-      "line": 7372,
+      "line": 7366,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -3942,7 +3942,7 @@
     {
       "name": "babl_builtin_default_handler",
       "path": "src/babl.c",
-      "line": 7385,
+      "line": 7379,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -5850,7 +5850,7 @@
       "param_count": 3,
       "description": "fade out.",
       "audited": true,
-      "audit_note": "VERIFIED vs ARM: port reimplementation takes (x,y,buf); real function takes 10 args (ARM main_menu_loop/enter_dungeon_view/level load all push 6 stack args); game.c's 4-arg calls are Ghidra truncation of the same 10-arg ARM call (declared 3; e.g. src/babl.c:6348 passes 10, src/babl.c:6765 passes 10, src/game.c:472 passes 4, ...)"
+      "audit_note": "VERIFIED vs ARM: port reimplementation takes (x,y,buf); real function takes 10 args (ARM main_menu_loop/enter_dungeon_view/level load all push 6 stack args); game.c's 4-arg calls are Ghidra truncation of the same 10-arg ARM call (declared 3; e.g. src/babl.c:6342 passes 10, src/babl.c:6759 passes 10, src/game.c:472 passes 4, ...)"
     },
     {
       "name": "flush_dungeon_frame",
@@ -9622,7 +9622,7 @@
       "param_count": 2,
       "description": "dispatch_special_action's \"reduce item durability\" handler (its own case 9).",
       "audited": true,
-      "audit_note": "VERIFIED vs ARM: ARM apply_equipped_item_effect (0x663bc) also passes only r0; r1 is stale there (original quirk, left as-is) (declared 2; e.g. src/player.c:1115 passes 1)"
+      "audit_note": "VERIFIED vs ARM: ARM apply_equipped_item_effect (0x663bc) also passes only r0; r1 is stale there (original quirk, left as-is) (declared 2; e.g. src/player.c:1118 passes 1)"
     },
     {
       "name": "apply_targeted_spell_effect",
@@ -11937,17 +11937,17 @@
     {
       "name": "set_player_tile_position",
       "path": "src/player.c",
-      "line": 205,
+      "line": 207,
       "original_name": "FUN_0003cff8",
       "ghidra_origin": true,
-      "param_count": 2,
+      "param_count": 3,
       "description": "Ghidra rendered this as \"and\" (dropped the real leading/trailing spaces).",
       "audited": true
     },
     {
       "name": "debug_print_player_position",
       "path": "src/player.c",
-      "line": 293,
+      "line": 296,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11957,7 +11957,7 @@
     {
       "name": "commit_player_move",
       "path": "src/player.c",
-      "line": 308,
+      "line": 311,
       "original_name": "FUN_0003d438",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11967,7 +11967,7 @@
     {
       "name": "demo_set_player_pos",
       "path": "src/player.c",
-      "line": 415,
+      "line": 418,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 5,
@@ -11977,7 +11977,7 @@
     {
       "name": "sync_player_stats_to_hud",
       "path": "src/player.c",
-      "line": 449,
+      "line": 452,
       "original_name": "FUN_0003e4cc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11987,7 +11987,7 @@
     {
       "name": "build_player_save_record",
       "path": "src/player.c",
-      "line": 495,
+      "line": 498,
       "original_name": "FUN_00043e20",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11997,7 +11997,7 @@
     {
       "name": "write_player_save_record",
       "path": "src/player.c",
-      "line": 562,
+      "line": 565,
       "original_name": "FUN_00043fd8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12007,7 +12007,7 @@
     {
       "name": "restore_player_save_record",
       "path": "src/player.c",
-      "line": 616,
+      "line": 619,
       "original_name": "FUN_00044538",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12017,7 +12017,7 @@
     {
       "name": "refresh_player_equipment_effects",
       "path": "src/player.c",
-      "line": 667,
+      "line": 670,
       "original_name": "FUN_000667cc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12027,7 +12027,7 @@
     {
       "name": "adjust_player_hp",
       "path": "src/player.c",
-      "line": 851,
+      "line": 854,
       "original_name": "FUN_00073ec0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12037,7 +12037,7 @@
     {
       "name": "write_player_status_block",
       "path": "src/player.c",
-      "line": 886,
+      "line": 889,
       "original_name": "FUN_00065b90",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12047,7 +12047,7 @@
     {
       "name": "read_player_status_block",
       "path": "src/player.c",
-      "line": 933,
+      "line": 936,
       "original_name": "FUN_00065d4c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12057,7 +12057,7 @@
     {
       "name": "reset_player_derived_state",
       "path": "src/player.c",
-      "line": 965,
+      "line": 968,
       "original_name": "FUN_00065eb4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12067,7 +12067,7 @@
     {
       "name": "update_screen_flicker_effect",
       "path": "src/player.c",
-      "line": 1002,
+      "line": 1005,
       "original_name": "FUN_000660d4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12077,7 +12077,7 @@
     {
       "name": "apply_equipped_item_effect",
       "path": "src/player.c",
-      "line": 1049,
+      "line": 1052,
       "original_name": "FUN_000661b0",
       "ghidra_origin": true,
       "param_count": 4,
@@ -12087,7 +12087,7 @@
     {
       "name": "compute_light_source_colors",
       "path": "src/player.c",
-      "line": 1201,
+      "line": 1204,
       "original_name": "FUN_000664bc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12097,7 +12097,7 @@
     {
       "name": "update_level7_floor_hazard_state",
       "path": "src/player.c",
-      "line": 1229,
+      "line": 1232,
       "original_name": "FUN_00066594",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12107,7 +12107,7 @@
     {
       "name": "apply_equipment_effect_penalties",
       "path": "src/player.c",
-      "line": 1265,
+      "line": 1268,
       "original_name": "FUN_00066634",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12117,7 +12117,7 @@
     {
       "name": "compute_object_weight",
       "path": "src/player.c",
-      "line": 1326,
+      "line": 1329,
       "original_name": "FUN_0006674c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12127,7 +12127,7 @@
     {
       "name": "trigger_view_transition",
       "path": "src/player.c",
-      "line": 1350,
+      "line": 1353,
       "original_name": "FUN_0006907c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12137,7 +12137,7 @@
     {
       "name": "set_movement_animation_timer",
       "path": "src/player.c",
-      "line": 1461,
+      "line": 1464,
       "original_name": "FUN_00069424",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12147,7 +12147,7 @@
     {
       "name": "update_current_view_from_subject",
       "path": "src/player.c",
-      "line": 1487,
+      "line": 1490,
       "original_name": "FUN_00069470",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12157,7 +12157,7 @@
     {
       "name": "sync_camera_from_player",
       "path": "src/player.c",
-      "line": 1603,
+      "line": 1606,
       "original_name": "FUN_00069938",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12167,7 +12167,7 @@
     {
       "name": "roll_skill_check",
       "path": "src/player.c",
-      "line": 1712,
+      "line": 1715,
       "original_name": "FUN_00069b68",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12177,17 +12177,17 @@
     {
       "name": "grant_experience_points",
       "path": "src/player.c",
-      "line": 1748,
+      "line": 1751,
       "original_name": "FUN_00069bd0",
       "ghidra_origin": true,
       "param_count": 1,
-      "description": "add param_1 experience points to the character (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level when the orduint_divmod(500) threshold is crossed.",
+      "description": "add param_1 experience points to the character (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level when the original XP / 500 threshold table is crossed.",
       "audited": true
     },
     {
       "name": "refresh_experience_display",
       "path": "src/player.c",
-      "line": 1821,
+      "line": 1824,
       "original_name": "FUN_00069e30",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12197,7 +12197,7 @@
     {
       "name": "toggle_light_table_flicker",
       "path": "src/player.c",
-      "line": 1853,
+      "line": 1856,
       "original_name": "FUN_00070224",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12207,7 +12207,7 @@
     {
       "name": "recalculate_player_stats",
       "path": "src/player.c",
-      "line": 1904,
+      "line": 1907,
       "original_name": "FUN_000703a0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12217,7 +12217,7 @@
     {
       "name": "advance_character_level",
       "path": "src/player.c",
-      "line": 1938,
+      "line": 1941,
       "original_name": "FUN_00070464",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12227,7 +12227,7 @@
     {
       "name": "classify_skill_training_tier",
       "path": "src/player.c",
-      "line": 1970,
+      "line": 1973,
       "original_name": "FUN_00070524",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12237,7 +12237,7 @@
     {
       "name": "advance_skill_training",
       "path": "src/player.c",
-      "line": 1993,
+      "line": 1996,
       "original_name": "FUN_00070548",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12247,7 +12247,7 @@
     {
       "name": "roll_skill_use_improvement",
       "path": "src/player.c",
-      "line": 2055,
+      "line": 2058,
       "original_name": "FUN_0007067c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12257,7 +12257,7 @@
     {
       "name": "print_single_skill_improvement_message",
       "path": "src/player.c",
-      "line": 2120,
+      "line": 2123,
       "original_name": "FUN_000707c8",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12267,7 +12267,7 @@
     {
       "name": "print_skill_improvement_list",
       "path": "src/player.c",
-      "line": 2141,
+      "line": 2144,
       "original_name": "FUN_0007080c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12277,7 +12277,7 @@
     {
       "name": "handle_mantra_chant",
       "path": "src/player.c",
-      "line": 2184,
+      "line": 2187,
       "original_name": "FUN_000708bc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12287,7 +12287,7 @@
     {
       "name": "render_endgame_character_stats",
       "path": "src/player.c",
-      "line": 2334,
+      "line": 2337,
       "original_name": "FUN_00070c90",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12297,7 +12297,7 @@
     {
       "name": "apply_rest_status_effects",
       "path": "src/player.c",
-      "line": 2521,
+      "line": 2524,
       "original_name": "FUN_0007141c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12307,7 +12307,7 @@
     {
       "name": "handle_rest_action",
       "path": "src/player.c",
-      "line": 2553,
+      "line": 2556,
       "original_name": "FUN_00071510",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12317,7 +12317,7 @@
     {
       "name": "adjust_player_hunger",
       "path": "src/player.c",
-      "line": 2733,
+      "line": 2736,
       "original_name": "FUN_00071b08",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12327,7 +12327,7 @@
     {
       "name": "handle_game_victory_sequence",
       "path": "src/player.c",
-      "line": 2771,
+      "line": 2774,
       "original_name": "FUN_00071b94",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12337,7 +12337,7 @@
     {
       "name": "handle_starvation_penalty",
       "path": "src/player.c",
-      "line": 2863,
+      "line": 2866,
       "original_name": "FUN_00072288",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12347,7 +12347,7 @@
     {
       "name": "adjust_level7_hazard_value",
       "path": "src/player.c",
-      "line": 2949,
+      "line": 2952,
       "original_name": "FUN_00073e14",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12357,7 +12357,7 @@
     {
       "name": "restore_stat_capped",
       "path": "src/player.c",
-      "line": 2981,
+      "line": 2984,
       "original_name": "FUN_00073f60",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12367,7 +12367,7 @@
     {
       "name": "apply_healing_item_effect",
       "path": "src/player.c",
-      "line": 3012,
+      "line": 3015,
       "original_name": "FUN_00073fc4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12377,7 +12377,7 @@
     {
       "name": "draw_stats_panel_header",
       "path": "src/player.c",
-      "line": 3039,
+      "line": 3042,
       "original_name": "FUN_00077f30",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12387,7 +12387,7 @@
     {
       "name": "draw_stats_panel_attribute_row",
       "path": "src/player.c",
-      "line": 3085,
+      "line": 3088,
       "original_name": "FUN_0007802c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12397,7 +12397,7 @@
     {
       "name": "draw_hp_stat_display",
       "path": "src/player.c",
-      "line": 3102,
+      "line": 3105,
       "original_name": "FUN_00078088",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12407,7 +12407,7 @@
     {
       "name": "draw_mana_stat_display",
       "path": "src/player.c",
-      "line": 3123,
+      "line": 3126,
       "original_name": "FUN_00078118",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12417,7 +12417,7 @@
     {
       "name": "draw_experience_points_display",
       "path": "src/player.c",
-      "line": 3145,
+      "line": 3148,
       "original_name": "FUN_000781a0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12427,7 +12427,7 @@
     {
       "name": "draw_stats_panel_skill_row",
       "path": "src/player.c",
-      "line": 3165,
+      "line": 3168,
       "original_name": "FUN_0007821c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12437,7 +12437,7 @@
     {
       "name": "draw_stats_panel_content",
       "path": "src/player.c",
-      "line": 3194,
+      "line": 3197,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12447,7 +12447,7 @@
     {
       "name": "handle_stats_panel_skill_scroll_click",
       "path": "src/player.c",
-      "line": 3245,
+      "line": 3248,
       "original_name": "FUN_00078434",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12457,7 +12457,7 @@
     {
       "name": "refresh_stats_panel_if_active",
       "path": "src/player.c",
-      "line": 3291,
+      "line": 3294,
       "original_name": "FUN_00078550",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12467,7 +12467,7 @@
     {
       "name": "read_xor_scrambled_block",
       "path": "src/player.c",
-      "line": 3304,
+      "line": 3307,
       "original_name": "FUN_0007ee9c",
       "ghidra_origin": true,
       "param_count": 4,
@@ -12477,7 +12477,7 @@
     {
       "name": "write_xor_scrambled_block",
       "path": "src/player.c",
-      "line": 3349,
+      "line": 3352,
       "original_name": "FUN_0007ef78",
       "ghidra_origin": true,
       "param_count": 4,
@@ -12487,7 +12487,7 @@
     {
       "name": "detect_unsafe_rest_object_callback",
       "path": "src/player.c",
-      "line": 3404,
+      "line": 3407,
       "original_name": "FUN_000352d0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -12497,7 +12497,7 @@
     {
       "name": "check_rest_area_unsafe",
       "path": "src/player.c",
-      "line": 3427,
+      "line": 3430,
       "original_name": "FUN_00035340",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12507,7 +12507,7 @@
     {
       "name": "reset_player_for_resurrection",
       "path": "src/player.c",
-      "line": 3439,
+      "line": 3442,
       "original_name": "FUN_0003bee4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12517,7 +12517,7 @@
     {
       "name": "handle_player_death_and_menu_transition",
       "path": "src/player.c",
-      "line": 3481,
+      "line": 3484,
       "original_name": "FUN_0003c038",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12527,7 +12527,7 @@
     {
       "name": "apply_level9_random_hazard_tick",
       "path": "src/player.c",
-      "line": 3540,
+      "line": 3543,
       "original_name": "FUN_0003c6ac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12537,7 +12537,7 @@
     {
       "name": "trigger_player_jump_if_grounded",
       "path": "src/player.c",
-      "line": 3600,
+      "line": 3603,
       "original_name": "FUN_0003dba0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12547,7 +12547,7 @@
     {
       "name": "force_locomotion_state_refresh",
       "path": "src/player.c",
-      "line": 3617,
+      "line": 3620,
       "original_name": "FUN_0003dbd8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12557,7 +12557,7 @@
     {
       "name": "apply_vertical_launch_impulse",
       "path": "src/player.c",
-      "line": 3628,
+      "line": 3631,
       "original_name": "FUN_0003dc04",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12567,7 +12567,7 @@
     {
       "name": "trigger_quest_stumble_animation",
       "path": "src/player.c",
-      "line": 3660,
+      "line": 3663,
       "original_name": "FUN_0003dc6c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12577,7 +12577,7 @@
     {
       "name": "apply_quest_vertical_effect",
       "path": "src/player.c",
-      "line": 3673,
+      "line": 3676,
       "original_name": "FUN_0003dc78",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12587,7 +12587,7 @@
     {
       "name": "cycle_active_light_source",
       "path": "src/player.c",
-      "line": 3691,
+      "line": 3694,
       "original_name": "FUN_00053ab0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12597,7 +12597,7 @@
     {
       "name": "update_player_tick_effects",
       "path": "src/player.c",
-      "line": 3742,
+      "line": 3745,
       "original_name": "FUN_00053c74",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12607,7 +12607,7 @@
     {
       "name": "decay_equipped_light_sources",
       "path": "src/player.c",
-      "line": 3867,
+      "line": 3870,
       "original_name": "FUN_0005404c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12617,7 +12617,7 @@
     {
       "name": "apply_drowning_hazard",
       "path": "src/player.c",
-      "line": 3933,
+      "line": 3936,
       "original_name": "FUN_000541d0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12627,7 +12627,7 @@
     {
       "name": "dungeon_view_anim_tick",
       "path": "src/player.c",
-      "line": 3967,
+      "line": 3970,
       "original_name": "FUN_0003c194",
       "ghidra_origin": true,
       "param_count": 0,

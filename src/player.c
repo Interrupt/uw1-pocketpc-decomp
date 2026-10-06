@@ -154,10 +154,12 @@ static short DAT_0023bf34;
 static short DAT_0023bf38;
 static short DAT_0023bf3c;
 static short DAT_0023bf40;
-/* Was a lone `undefined` scalar, but grant_experience_points indexes it as a per-character-level
-   XP-threshold table (`(&DAT_00086e87)[level]`), with the loop's own upper bound (0x10 = 16)
-   confirming at least 17 entries (0-16) are live; the very first access... */
-static undefined DAT_00086e87_backing[64];
+/* ARM .data 0x86e87..0x86e97: level thresholds measured in units of 500 XP. Index by the current
+   character level; entry 16 is the terminal sentinel because grant_experience_points stops
+   advancing at level 16. A zero-filled replacement made ordinary kills cross every threshold. */
+static const byte DAT_00086e87_backing[17] = {
+  0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 0
+};
 #define DAT_00086e87 DAT_00086e87_backing[0]
 static int DAT_0024af8c;
 static char s_font5x6i_sys_00086e98[] = "font5x6i.sys";
@@ -202,9 +204,10 @@ static undefined4 DAT_0024af88;
 
 
 // was FUN_0003cff8
-void set_player_tile_position(param_1,param_2)
+void set_player_tile_position(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
+int param_3;
 
 {
   undefined2 uVar1;
@@ -414,7 +417,7 @@ void commit_player_move()
 // command.
 void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg)
 {
-  set_player_tile_position((int)floor(x), (int)floor(y));
+  set_player_tile_position((int)floor(x), (int)floor(y), 1);
   if (getenv("UW_DEBUG_FLOORZ")) {
     fprintf(stderr, "[floorz] tile=(%d,%d) natural z (from set_player_tile_position) = %d, overriding to %g\n",
             (int)floor(x), (int)floor(y), (int)DAT_00204884, z);
@@ -1744,7 +1747,7 @@ int param_2;
 
 // was FUN_00069bd0 -- add param_1 experience points to the character
 // (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level
-// when the orduint_divmod(500) threshold is crossed.
+// when the original XP / 500 threshold table is crossed.
 void grant_experience_points(param_1)
 short param_1;
 
@@ -1950,7 +1953,7 @@ char param_1;
     DAT_0008730c = ' ';
   }
   else {
-    cVar2 = ordint_divmod(10,*(byte *)(DAT_00086df8 + 0x3d)).quot;  /* dividend dropped; ARM 0x704a4 */
+    cVar2 = ordint_divmod(10,(uint)*(byte *)(iVar1 + 0x3d)).quot;
     DAT_0008730c = cVar2 + '0';
   }
   uw_ord2005_rem_138 = ((int)(*(undefined1 *)(iVar1 + 0x3d))) % (10);
@@ -3996,7 +3999,7 @@ undefined4 dungeon_view_anim_tick()
     }
     DAT_00201c90 = local_20;
     DAT_00201c8c = local_1e;
-    set_player_tile_position((int)local_20,(int)local_1e);
+    set_player_tile_position((int)local_20,(int)local_1e,1);
     if ((DAT_00085730 & 2) != 0) {
       full_dungeon_redraw();
       weapon_overlay_flash_restore((int)g_visibility_max_ring_passes);
