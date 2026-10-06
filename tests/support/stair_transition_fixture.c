@@ -23,7 +23,7 @@ int scan_calls;
 
 void cancel_weapon_swing(void) {}
 void pop_cursor_icon(int state) {}
-void save_or_restore_level_special_state(int level, int save) {}
+void save_or_restore_level_special_state(short level, short save) {}
 undefined4 commit_level_to_save_slot(int level) { return 1; }
 int load_level(int level)
 {
@@ -58,7 +58,7 @@ int encode_object_slot_index(void *object)
     TEST_ASSERT_EQUAL_PTR(player, object);
     return 1;
 }
-undefined4 check_object_placement_clearance(int type, int slot, int x, int y, int z, int flag, int radius)
+undefined4 check_object_placement_clearance(short type, short slot, undefined2 x, undefined2 y, short z, int flag, byte radius)
 {
     TEST_ASSERT_EQUAL_INT(0x7f, type);
     TEST_ASSERT_EQUAL_INT(1, slot);

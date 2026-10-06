@@ -23,16 +23,16 @@ extern short DAT_00201c7c;
 /* Port-only timing flag consumed by the first entry after character creation. */
 extern bool g_new_game_entry_pause_pending;
 
-undefined4 teleport_object_to_level_tile();
-void reset_level_arena_and_invalidate();
-void enter_dungeon_view();
-undefined4 init_level_object_arena();
-void free_level_tile_arena();
-int load_level_object_table();
-void reset_level_object_arena();
-int load_level();
-int transition_to_level();
-void save_or_restore_level_special_state();
-undefined4 trigger_random_level_special_event();
+undefined4 teleport_object_to_level_tile(char *object, int tile_x, int tile_y, short level_number);
+void reset_level_arena_and_invalidate(undefined4 reserved);
+void enter_dungeon_view(void);
+undefined4 init_level_object_arena(void);
+void free_level_tile_arena(void);
+int load_level_object_table(undefined1 *archive_handle, int level_number);
+void reset_level_object_arena(void);
+int load_level(int level_number);
+int transition_to_level(int from_level, int to_level);
+void save_or_restore_level_special_state(short level_number, short mode);
+undefined4 trigger_random_level_special_event(short chance_scale);
 
 #endif

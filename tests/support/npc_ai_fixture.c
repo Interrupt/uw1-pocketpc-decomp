@@ -39,7 +39,7 @@ FILE *monster_data;
 int chase_steps, attacks, last_chase_x, last_chase_y, los_clear;
 unsigned random_index;
 
-undefined4 read_file_handle(int handle, void *buffer, uint count)
+int read_file_handle(int handle, void *buffer, uint count)
 {
     TEST_ASSERT_NOT_NULL(monster_data);
     unsigned n = fread(buffer, 1, count, monster_data);
@@ -101,8 +101,8 @@ undefined4 try_npc_special_ability_alt(void) { return 0; }
 undefined4 try_npc_special_ability_no_los(void) { return 0; }
 undefined4 try_npc_special_ability_ranged(void) { return 0; }
 void build_object_placement_snapshot(void) {}
-int build_collision_height_field_for_object(void) { return 0; }
-undefined4 apply_placement_collision_sweep(void) { return 0; }
+int build_collision_height_field_for_object(ushort *object) { (void)object; return 0; }
+undefined4 apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags) { (void)snapshot; (void)sweep_flags; return 0; }
 undefined4 sync_object_tile_position(void) { return 0; }
 undefined4 resolve_unique_npc_special_behavior(void) { return 1; }
 void object_list_unlink(void) {}

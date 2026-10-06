@@ -5,10 +5,10 @@
     "with_original_name": 1237,
     "without_original_name": 232,
     "still_unnamed_FUN": 12,
-    "modernized_true": 110,
-    "modernized_false": 1359,
-    "audited_true": 1466,
-    "audited_false": 3
+    "audited_true": 1469,
+    "audited_false": 0,
+    "modernized_true": 144,
+    "modernized_false": 1325
   },
   "functions": [
     {
@@ -4739,129 +4739,128 @@
       "param_count": 1,
       "description": "Builds the collision_build_height_field scratch buffer (DAT_00202c6c, a local 24-byte struct) for param_1, then returns a combined height/step-limit field.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_placement_collision_sweep",
       "path": "src/collision.c",
-      "line": 69,
+      "line": 67,
       "original_name": "FUN_0002bd70",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "Writes a small field into the object-placement snapshot buffer (param_1, one of DAT_00204920/DAT_0010172c's chosen targets) then runs movement_collision_sweep.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collision_corner_flags",
       "path": "src/collision.c",
-      "line": 88,
+      "line": 83,
       "original_name": "FUN_00050c18",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "per-corner slope/blocked flag word from the packed tile height DAT_00202c78.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collision_build_height_field",
       "path": "src/collision.c",
-      "line": 136,
+      "line": 129,
       "original_name": "FUN_00050d78",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "build the per-corner tile height field the sweep collides against.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collision_height_envelope",
       "path": "src/collision.c",
-      "line": 304,
+      "line": 294,
       "original_name": "FUN_000518c0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "reduce the height field to floor/ceiling envelope + block flags.",
-      "audited": false,
-      "modernized": false,
-      "audit_note": "unresolved call-site mismatch (declared 2; e.g. tests/test_throw.c:148 passes 0)"
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "compute_floor_height_at_position",
       "path": "src/collision.c",
-      "line": 458,
+      "line": 444,
       "original_name": "FUN_00050aa8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "computes the floor height at a specific sub-tile X/Y position (param_1/param_2, each 0..255 within the tile), using the tile shape's wall-type nibble (DAT_00202c78) and diagonal interpolation for shapes 6/7/8/9.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collision_classify_corner_wall",
       "path": "src/collision.c",
-      "line": 490,
+      "line": 473,
       "original_name": "FUN_00050b30",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "classifies one corner (param_1) of the collision height-field during collision_build_height_field.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collision_add_candidate_object",
       "path": "src/collision.c",
-      "line": 532,
+      "line": 512,
       "original_name": "FUN_00051658",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "appends object param_1 to the small (max 9) collision candidate list at DAT_00202c38 if its bounding box.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "swap_collision_candidates",
       "path": "src/collision.c",
-      "line": 627,
+      "line": 600,
       "original_name": "FUN_00051cf8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "swaps the 6-byte collision-candidate records at index param_1 and param_1+1 across all six parallel arrays (DAT_00202c38..3d).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sort_collision_candidates",
       "path": "src/collision.c",
-      "line": 668,
+      "line": 638,
       "original_name": "FUN_00051dd0",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "insertion-sorts collision_add_candidate_object's candidate list (up to the count at DAT_00202c6c+0x14) by X position then Y position, each pass swapping out-of-order pairs via swap_collision_candidates.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_object_placement_clearance",
       "path": "src/collision.c",
-      "line": 739,
+      "line": 707,
       "original_name": "FUN_00051fa0",
       "ghidra_origin": true,
       "param_count": 7,
       "description": "checks whether an object of catalog type param_1 could occupy tile position (param_3,param_4) at candidate height param_5 without being blocked by the current collision- candidate list.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collision_sample_floor_height",
       "path": "src/collision.c",
-      "line": 906,
+      "line": 866,
       "original_name": "FUN_00050984",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "sample the floor height at one tile corner (type 0 solid -> 0x80) PHYSICS.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_combat_approach_tick",
@@ -6379,9 +6378,8 @@
       "ghidra_origin": true,
       "param_count": 8,
       "description": "bitmap blit to framebuffer.",
-      "audited": false,
-      "modernized": false,
-      "audit_note": "unresolved call-site mismatch (declared 8; e.g. tests/test_transitions.c:14 passes 7)"
+      "audited": true,
+      "modernized": false
     },
     {
       "name": "screen_backup_save",
@@ -9770,117 +9768,117 @@
       "param_count": 0,
       "description": "Sizing-audit pass: both ce_memmove sites copy exactly 0x300 (768) bytes, bidirectionally -- HARD exact bound (256-entry VGA palette, 3 bytes/entry).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_level_object_arena",
       "path": "src/level.c",
-      "line": 97,
+      "line": 95,
       "original_name": "FUN_00049960",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "init level object arena.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_level_object_table",
       "path": "src/level.c",
-      "line": 117,
+      "line": 114,
       "original_name": "FUN_000499c0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "load level object table.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_level_object_arena",
       "path": "src/level.c",
-      "line": 197,
+      "line": 191,
       "original_name": "FUN_00052960",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "reset level object arena.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_level",
       "path": "src/level.c",
-      "line": 250,
+      "line": 240,
       "original_name": "FUN_0006bc28",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "load level.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "transition_to_level",
       "path": "src/level.c",
-      "line": 293,
+      "line": 276,
       "original_name": "FUN_0006c79c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "level-transition entry point.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "save_or_restore_level_special_state",
       "path": "src/level.c",
-      "line": 332,
+      "line": 307,
       "original_name": "FUN_0006c834",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "saves (param_2==1) or restores (param_2==0) a leaving/entering level's special transient per-level state, called from transition_to_level around commit_level_to_save_slot/load_level.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_random_level_special_event",
       "path": "src/level.c",
-      "line": 384,
+      "line": 355,
       "original_name": "FUN_0007129c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "rolls for and triggers one of several as-yet- untriggered special per-level dialog/effect ids (tracked as bits in the 16-bit DAT_00086df8+0x6e mask).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "teleport_object_to_level_tile",
       "path": "src/level.c",
-      "line": 446,
+      "line": 411,
       "original_name": "FUN_000396a0",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "teleports object param_1 to tile (param_2,param_3) on level param_4.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_level_arena_and_invalidate",
       "path": "src/level.c",
-      "line": 487,
+      "line": 443,
       "original_name": "FUN_0003bc1c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "hard-resets the level object arena (reset_level_object_arena), flushes a redraw, and invalidates DAT_00202080 (a loaded-level data marker).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "free_level_tile_arena",
       "path": "src/level.c",
-      "line": 501,
+      "line": 454,
       "original_name": "FUN_000499a4",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "frees g_level_tiles (DAT_002029cc) if currently allocated, without clearing the pointer itself (callers are expected to overwrite it right after, e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "entry",
@@ -10198,9 +10196,8 @@
       "ghidra_origin": true,
       "param_count": 1,
       "description": "pick the object under the view reticle (-> DAT_00086998 slot, DAT_00086999/9a tile x/y).",
-      "audited": false,
-      "modernized": false,
-      "audit_note": "unresolved call-site mismatch (declared 1; e.g. tests/test_throw.c:149 passes 0)"
+      "audited": true,
+      "modernized": false
     },
     {
       "name": "movement_sweep_setup",
@@ -13962,117 +13959,117 @@
       "param_count": 1,
       "description": "codewheel character-table lookup.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "codewheel_index_of_letter",
       "path": "src/registration.c",
-      "line": 48,
+      "line": 41,
       "original_name": "FUN_0006b408",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "reverse lookup into the same codewheel character table as codewheel_letter_at_index.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "validate_codewheel_word",
       "path": "src/registration.c",
-      "line": 71,
+      "line": 60,
       "original_name": "FUN_0006b448",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "the code-wheel registration-word checksum.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_registration_key_saved",
       "path": "src/registration.c",
-      "line": 140,
+      "line": 123,
       "original_name": "FUN_0006b718",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "checks the registry (HKLM\\Software\\ZIO_Interactive_ Ultima_U\\BuildNo) for the sentinel value 0xc0f this port's registration flow writes via save_registration_key_validated once the product's been validated.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "save_registration_key_validated",
       "path": "src/registration.c",
-      "line": 178,
+      "line": 156,
       "original_name": "FUN_0006b838",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "writes the registry sentinel (0xc0f) check_registration_key_saved looks for, marking the product as validated/registered.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "set_power_status_flag_bit",
       "path": "src/registration.c",
-      "line": 196,
+      "line": 172,
       "original_name": "FUN_0006b8c0",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "set power status flag bit.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "clear_power_status_flag_bit",
       "path": "src/registration.c",
-      "line": 218,
+      "line": 192,
       "original_name": "FUN_0006b920",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "clear power status flag bit.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_registration_key_dialog",
       "path": "src/registration.c",
-      "line": 240,
+      "line": 212,
       "original_name": "FUN_0006b980",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "check registration key dialog.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "registration_key_dialog_proc",
       "path": "src/registration.c",
-      "line": 259,
+      "line": 228,
       "original_name": "FUN_0006ba54",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "window proc for the (never actually shown, see check_registration_key_dialog) \"enter your registration key\" dialog.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "is_product_registered",
       "path": "src/registration.c",
-      "line": 290,
+      "line": 255,
       "original_name": "FUN_0006baf8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "top-level registration check.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_save_disk_space",
       "path": "src/registration.c",
-      "line": 314,
+      "line": 276,
       "original_name": "FUN_0006bb64",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "startup disk-space check (its only caller checks it right after init_gameplay_session and shows \"Not enough disk space for save game\" on failure).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decode_gr_entry_bitmap",

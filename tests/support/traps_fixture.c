@@ -29,7 +29,7 @@ uint rand_below(int limit);
 void * resolve_object_link(void);
 uint resolve_skill_gated_unlock_or_use(void);
 uint scheduler_add_entry(void);
-undefined4 teleport_object_to_level_tile(void);
+undefined4 teleport_object_to_level_tile(char *object, int tile_x, int tile_y, short level_number);
 void * tilemap_lookup(void);
 void toggle_door_object(char *actor, byte *door);
 void unlink_and_free_object(void);
@@ -117,7 +117,7 @@ uint resolve_skill_gated_unlock_or_use(void) { TEST_FAIL_MESSAGE("Unexpected res
 
 uint scheduler_add_entry(void) { TEST_FAIL_MESSAGE("Unexpected scheduler_add_entry in text trap"); return 0; }
 
-undefined4 teleport_object_to_level_tile(void) { TEST_FAIL_MESSAGE("Unexpected teleport_object_to_level_tile in text trap"); return 0; }
+undefined4 teleport_object_to_level_tile(char *object, int tile_x, int tile_y, short level_number) { (void)object; (void)tile_x; (void)tile_y; (void)level_number; TEST_FAIL_MESSAGE("Unexpected teleport_object_to_level_tile in text trap"); return 0; }
 
 void * tilemap_lookup(void) { TEST_FAIL_MESSAGE("Unexpected tilemap_lookup in text trap"); return 0; }
 

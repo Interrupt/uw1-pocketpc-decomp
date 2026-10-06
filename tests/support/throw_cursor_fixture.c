@@ -53,7 +53,7 @@ void collision_height_envelope(int unused, int mode)
     TEST_ASSERT_EQUAL_UINT(DAT_00202c90_backing[0x80 * 13 + 1] & 7, DAT_00202c6c[8]);
     memset(DAT_00202c6c + 12, 0, 12);
 }
-void collision_build_height_field(int mode) {}
+void collision_build_height_field(uint step_limit) {}
 void sort_collision_candidates(void) { TEST_FAIL_MESSAGE("Empty world has no object contacts"); }
 undefined4 play_sound_effect_at_object(void) { return 1; }
 undefined4 object_ptr_in_arena(void) { return 1; }
@@ -62,7 +62,7 @@ ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
 undefined4 play_sound_effect_with_pan(void) { return 1; }
 ushort *reallocate_object_to_arena(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
 ushort *settle_dropped_object(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
-undefined4 check_object_placement_clearance(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return 0; }
+undefined4 check_object_placement_clearance(short catalog_type, short ignore_slot, undefined2 position_x, undefined2 position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; TEST_FAIL_MESSAGE("Unexpected ground drop"); return 0; }
 void object_list_append_tail(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); }
 undefined4 play_positional_sound_effect(void) { return 1; }
 void print_scroll_message_by_id(void) {}

@@ -8,8 +8,8 @@ bool write_player_save_record(const char *path);
 undefined *load_string_resource(char *path);
 undefined4 seed_conversation_globals_for_new_game(void);
 bool open_level_archive(byte *handle, const char *path);
-undefined4 seek_file_handle(int handle, int offset, int method);
-undefined4 read_file_handle(int handle, void *destination, uint size);
+int seek_file_handle(int handle, int offset, int method);
+int read_file_handle(int handle, void *destination, uint size);
 undefined4 scheduler_load(byte *handle, int level);
 undefined4 load_player_save_record(const char *path);
 bool load_level_texture_ids(byte *handle, int level);
@@ -20,7 +20,7 @@ undefined4 load_automap_reveal_from_archive(byte *handle, int level);
 byte close_level_archive(byte *handle);
 void set_player_tile_position(uint x, uint y);
 void debug_print_player_position(const char *label);
-void save_or_restore_level_special_state(int restore, int slot);
+void save_or_restore_level_special_state(short restore, short slot);
 void pop_cursor_icon(int state);
 undefined4 cursor_show_idle_tick(void);
 void set_pending_update_flags(int sound);
@@ -140,10 +140,10 @@ bool open_level_archive(byte *handle, const char *path)
     return true;
 }
 
-undefined4 seek_file_handle(int handle, int offset, int method)
+int seek_file_handle(int handle, int offset, int method)
 { return uw_file_seek(handle, offset, method); }
 
-undefined4 read_file_handle(int handle, void *destination, uint size)
+int read_file_handle(int handle, void *destination, uint size)
 { return uw_file_read(handle, destination, size); }
 
 undefined4 scheduler_load(byte *handle, int level)
@@ -212,7 +212,7 @@ void debug_print_player_position(const char *label)
     TEST_ASSERT_EQUAL_STRING("chargen-spawn", label);
 }
 
-void save_or_restore_level_special_state(int restore, int slot)
+void save_or_restore_level_special_state(short restore, short slot)
 {
     TEST_ASSERT_EQUAL_INT(1, spawn_calls);
     TEST_ASSERT_EQUAL_INT(1, restore);

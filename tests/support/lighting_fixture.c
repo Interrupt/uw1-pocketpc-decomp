@@ -54,14 +54,14 @@ void redraw_backpack_slot_widget(int slot) {}
 void print_scroll_message_by_id(int id) { message = id; }
 void set_pending_update_flags(int mode) { rebuilds++; }
 /* Use real platform file I/O, including Windows path translation. */
-undefined4 open_file_for_read(const char *path)
+int open_file_for_read(const char *path)
 {
     const char *prefix = (char *)DAT_0023cca8_backing;
     if (*prefix) TEST_ASSERT_EQUAL_MEMORY(prefix, path, strlen(prefix));
     return uw_file_open_read(path);
 }
-undefined4 read_file_handle(int h, void *buf, unsigned n) { return uw_file_read(h, buf, n); }
-undefined4 seek_file_handle(int h, int offset, int whence) { return uw_file_seek(h, offset, whence); }
+int read_file_handle(int h, void *buf, unsigned n) { return uw_file_read(h, buf, n); }
+int seek_file_handle(int h, int offset, int whence) { return uw_file_seek(h, offset, whence); }
 long CloseHandle(int h) { return uw_file_close(h); }
 void *ce_memset(void *p, int value, unsigned n) { return memset(p, value, n); }
 char *ce_strcat(char *p, const char *s) { return strcat(p, s); }

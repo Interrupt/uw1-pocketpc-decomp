@@ -4,7 +4,7 @@
 #include "../stair_transition_test_globals.h"
 void cancel_weapon_swing(void);
 void pop_cursor_icon(int state);
-void save_or_restore_level_special_state(int level, int save);
+void save_or_restore_level_special_state(short level, short save);
 undefined4 commit_level_to_save_slot(int level);
 int load_level(int level);
 void set_player_tile_position(uint x, uint y);
@@ -16,7 +16,7 @@ void weapon_overlay_flash_restore(int passes);
 void *ce_memset(void *buffer, int value, unsigned size);
 void *tilemap_lookup(int x, int y);
 int encode_object_slot_index(void *object);
-undefined4 check_object_placement_clearance(int type, int slot, int x, int y, int z, int flag, int radius);
+undefined4 check_object_placement_clearance(short type, short slot, undefined2 x, undefined2 y, short z, int flag, byte radius);
 void *resolve_object_link(ushort *link);
 undefined4 object_ptr_in_arena(void *object);
 ushort *discard_misplaced_object(void *head, void *object, int flag);

@@ -12,9 +12,9 @@ void apply_palette_buffer(void *palette, void *unused);
 void LocalFree(void *p);
 long GetTickCount(void);
 long Sleep(unsigned int ms);
-undefined4 open_file_for_read(const char *path);
-undefined4 read_file_handle(int handle, void *p, unsigned int count);
-undefined4 seek_file_handle(int handle, int offset, int origin);
+int open_file_for_read(const char *path);
+int read_file_handle(int handle, void *p, unsigned int count);
+int seek_file_handle(int handle, int offset, int origin);
 uint read_realtime_clock_units(void);
 long TranslateMessage(void);
 long DispatchMessageW(void);
@@ -147,7 +147,7 @@ long GetTickCount(void) { return fake_tick_ms; }
 
 long Sleep(unsigned int ms) { fake_tick_ms += ms; return 0; }
 
-undefined4 open_file_for_read(const char *path)
+int open_file_for_read(const char *path)
 {
     TEST_ASSERT_LESS_THAN_INT(4, opens);
     int slot = opens++;
@@ -159,7 +159,7 @@ undefined4 open_file_for_read(const char *path)
     return handle;
 }
 
-undefined4 read_file_handle(int handle, void *p, unsigned int count)
+int read_file_handle(int handle, void *p, unsigned int count)
 {
     unsigned int bytes = uw_file_read(handle, p, count);
     /* Emulate the discovery handler's three script patches in memory. */
@@ -167,7 +167,7 @@ undefined4 read_file_handle(int handle, void *p, unsigned int count)
     return bytes;
 }
 
-undefined4 seek_file_handle(int handle, int offset, int origin) { return uw_file_seek(handle, offset, origin); }
+int seek_file_handle(int handle, int offset, int origin) { return uw_file_seek(handle, offset, origin); }
 
 uint read_realtime_clock_units(void) { clock_units += 0x100; return clock_units; }
 

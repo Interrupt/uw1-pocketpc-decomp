@@ -50,12 +50,14 @@ void angle_to_screen_delta(uint heading, short *x, short *y)
     default: TEST_FAIL_MESSAGE("Unexpected non-cardinal heading");
     }
 }
-void collision_build_height_field(int step)
+void collision_build_height_field(uint step_limit)
 {
     DAT_002049d4 = wall && g_sweep_foot_pos[1]>=88 ? 0 : 4;
 }
-void collision_height_envelope(void)
+void collision_height_envelope(int mode, int collision)
 {
+    (void)mode;
+    (void)collision;
     DAT_002049d6=0;
     DAT_002049d8=DAT_002049d9=wall && g_sweep_foot_pos[1]>=88 ? 128 : 0;
     DAT_002049dc=DAT_002049dd=DAT_002049de=0;
@@ -97,9 +99,9 @@ ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
 ushort *settle_dropped_object(ushort *object, int x, int y, int mode) { return object; }
 ushort *reallocate_object_to_arena(void) { TEST_FAIL_MESSAGE("Unexpected reallocation during flight"); return NULL; }
 void project_position_by_heading(int heading, short distance, short *x, short *y) { (void)heading; (void)distance; (void)x; (void)y; TEST_FAIL_MESSAGE("Throw took the ground-drop path"); }
-undefined4 check_object_placement_clearance(void) { return 1; }
+undefined4 check_object_placement_clearance(short catalog_type, short ignore_slot, undefined2 position_x, undefined2 position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; return 1; }
 
-int compute_floor_height_at_position(void) { return 0; }
+int compute_floor_height_at_position(ushort x_in_tile, ushort y_in_tile) { return 0; }
 undefined4 resolve_collision_candidate_interaction(int contact, int slot)
 {
     if(bridge_fixture && contact>=0) TEST_ASSERT_LESS_THAN_INT(bridge_count,contact);

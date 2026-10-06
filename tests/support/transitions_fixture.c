@@ -73,7 +73,7 @@ long Sleep(unsigned int ms)
     if (testing_fade) fade_clock_ms += ms;
     return 0;
 }
-undefined4 open_file_for_read(const char *path)
+int open_file_for_read(const char *path)
 {
     TEST_ASSERT_LESS_THAN_INT(4, opens);
     int slot = opens++;
@@ -84,14 +84,14 @@ undefined4 open_file_for_read(const char *path)
     if (handle > 0) file_handles[slot] = handle;
     return handle;
 }
-undefined4 read_file_handle(int handle, void *p, unsigned int count)
+int read_file_handle(int handle, void *p, unsigned int count)
 {
     unsigned int bytes = uw_file_read(handle, p, count);
     /* Emulate the discovery handler's three script patches in memory. */
     if (bytes == 16) { ((ushort *)p)[2] = 1; ((ushort *)p)[3] = 1; ((ushort *)p)[6] = 1; }
     return bytes;
 }
-undefined4 seek_file_handle(int handle, int offset, int origin) { return uw_file_seek(handle, offset, origin); }
+int seek_file_handle(int handle, int offset, int origin) { return uw_file_seek(handle, offset, origin); }
 uint read_realtime_clock_units(void)
 {
     if (testing_fade) return fade_clock_ms++ >> 2;

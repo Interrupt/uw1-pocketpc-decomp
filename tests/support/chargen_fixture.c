@@ -105,13 +105,13 @@ undefined4 is_music_playing(void) { return 0; }
 void set_sound_effects_enabled(int enabled) {}
 void set_music_enabled(int enabled) {}
 void apply_movement_mode_profile(int mode) {}
-undefined4 write_file_handle(int handle, const void *buffer, uint size)
+int write_file_handle(int handle, const void *buffer, uint size)
 {
     TEST_ASSERT_EQUAL_UINT(1, size);
     saved_key = *(const byte *)buffer;
     return size;
 }
-undefined4 read_file_handle(int handle, void *buffer, uint size)
+int read_file_handle(int handle, void *buffer, uint size)
 {
     TEST_ASSERT_EQUAL_UINT(1, size);
     *(byte *)buffer = saved_key;

@@ -21,7 +21,7 @@ undefined4 play_weapon_impact_sound(int result);
 long ce_rand(void);
 void project_position_by_heading(int heading, short distance, short *x, short *y);
 void collision_height_envelope(int mode, int collision);
-void collision_build_height_field(int mode);
+void collision_build_height_field(uint step_limit);
 void sort_collision_candidates(void);
 void *get_object_record_by_slot_index(int slot);
 undefined4 object_ptr_in_arena(ushort *object);
@@ -30,7 +30,7 @@ uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y);
 void *tilemap_lookup(int x, int y);
 void object_list_append_tail(void *head, void *object);
 void free_object_slot(ushort *object);
-undefined4 read_file_handle(int handle, void *destination, uint count);
+int read_file_handle(int handle, void *destination, uint count);
 
 byte mobile_objects[256 * 27];
 undefined1 DAT_002027d0_backing[48];
@@ -313,9 +313,9 @@ void collision_height_envelope(int mode, int collision)
     DAT_00202c6c[0x14] = candidate_count;
 }
 
-void collision_build_height_field(int mode)
+void collision_build_height_field(uint step_limit)
 {
-    TEST_ASSERT_EQUAL_INT(0, mode);
+    TEST_ASSERT_EQUAL_INT(0, step_limit);
     if (wall_in_front) {
         ushort flags = 0x100;
         memcpy(DAT_00202c6c + 0xc, &flags, sizeof flags);
@@ -381,7 +381,7 @@ void free_object_slot(ushort *object)
 
 FILE *monster_data;
 
-undefined4 read_file_handle(int handle, void *destination, uint count)
+int read_file_handle(int handle, void *destination, uint count)
 {
     TEST_ASSERT_EQUAL_INT(1, handle);
     TEST_ASSERT_NOT_NULL(monster_data);

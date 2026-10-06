@@ -145,8 +145,8 @@ static void test_falling_selects_the_highest_bridge_below_the_player(void)
     DAT_00204874=(char *)movement;
     g_sweep_velocity=(short *)(movement+6);
     sweep_init_position();
-    collision_height_envelope();
-    reticle_object_pick();
+    collision_height_envelope(0, 0);
+    reticle_object_pick(0);
     TEST_ASSERT_EQUAL_UINT16(32,_DAT_0008699b);
     TEST_ASSERT_EQUAL_INT(1,DAT_00086998); /* after sorting 24,32,64 */
 }

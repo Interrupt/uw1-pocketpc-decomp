@@ -25,19 +25,12 @@ static undefined DAT_0023bf78_backing[360];
 
 // was FUN_0006b3dc -- codewheel character-table lookup: returns the short value at index param_1
 // (0..0x23/35) of the table DAT_00086f0c points at, or 0 if out of range.
-undefined2 codewheel_letter_at_index(param_1)
-int param_1;
-
+undefined2 codewheel_letter_at_index(int index)
 {
-  undefined2 uVar1;
-
-  if ((param_1 < 0) || (0x23 < param_1)) {
-    uVar1 = 0;
+  if ((index < 0) || (0x23 < index)) {
+    return 0;
   }
-  else {
-    uVar1 = *(undefined2 *)(DAT_00086f0c + param_1 * 2);
-  }
-  return uVar1;
+  return *(undefined2 *)(DAT_00086f0c + index * 2);
 }
 
 
@@ -45,22 +38,18 @@ int param_1;
 // was FUN_0006b408 -- reverse lookup into the same codewheel character
 // table as codewheel_letter_at_index: returns the index of the first
 // entry equal to param_1, or -1 if not found. Same dead-code status.
-int codewheel_index_of_letter(param_1)
-short param_1;
-
+int codewheel_index_of_letter(short letter)
 {
-  int iVar1;
-  short *psVar2;
+  int index = 0;
+  short *table_entry = DAT_00086f0c;
 
-  iVar1 = 0;
-  psVar2 = DAT_00086f0c;
   do {
-    if (*psVar2 == param_1) {
-      return iVar1;
+    if (*table_entry == letter) {
+      return index;
     }
-    iVar1 = iVar1 + 1;
-    psVar2 = psVar2 + 1;
-  } while (iVar1 < 0x24);
+    index = index + 1;
+    table_entry = table_entry + 1;
+  } while (index < 0x24);
   return -1;
 }
 
@@ -68,61 +57,55 @@ short param_1;
 
 // was FUN_0006b448 -- the code-wheel registration-word checksum: param_2 is a 12-char answer word
 // (uppercased in-place into local_48), param_1 a 4-entry ushort key.
-undefined4 validate_codewheel_word(param_1,param_2)
-ushort * param_1;
-int param_2;
-
+undefined4 validate_codewheel_word(ushort *key, int answer_address)
 {
   int uw_ord2005_rem_128 = 0; int uw_ord2005_rem_129 = 0; int uw_ord2005_rem_130 = 0; int uw_ord2005_rem_131 = 0; int uw_ord2005_rem_132 = 0; int uw_ord2005_rem_133 = 0;
-  short sVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  int iVar5;
-  int iVar6;
-  int iVar7;
-  int iVar8;
-  int extraout_r1;
-  int extraout_r1_00;
-  int extraout_r1_01;
-  int extraout_r1_02;
-  int extraout_r1_03;
-  int extraout_r1_04;
-  ushort uVar9;
-  int iVar10;
-  ushort local_48 [14];
-  
-  iVar10 = 0;
+  short expected_letter;
+  int next_index;
+  int letter_index_0;
+  int letter_index_3;
+  int letter_index_6;
+  int letter_index_9;
+  int letter_index_1;
+  int letter_index_4;
+  int letter_index_7;
+  int letter_index_10;
+  ushort character;
+  int i;
+  ushort answer[14];
+
+  /* Uppercase the 12-character answer into answer[]. */
+  i = 0;
   do {
-    uVar9 = *(ushort *)(iVar10 * 2 + param_2);
-    if ((uVar9 < 0x7b) && (0x60 < uVar9)) {
-      uVar9 = uVar9 - 0x20;
+    character = *(ushort *)(i * 2 + answer_address);
+    if ((character < 0x7b) && (0x60 < character)) {
+      character = character - 0x20;
     }
-    iVar2 = (iVar10 + 1) * 0x10000;
-    local_48[iVar10] = uVar9;
-    iVar10 = iVar2 >> 0x10;
-  } while (iVar10 < 0xc);
-  local_48[(short)((uint)iVar2 >> 0x10)] = 0;
-  iVar10 = codewheel_index_of_letter(local_48[0]);
-  iVar2 = codewheel_index_of_letter(local_48[3]);
-  iVar3 = codewheel_index_of_letter(local_48[6]);
-  iVar4 = codewheel_index_of_letter(local_48[9]);
-  iVar5 = codewheel_index_of_letter(local_48[1]);
-  iVar6 = codewheel_index_of_letter(local_48[4]);
-  iVar7 = codewheel_index_of_letter(local_48[7]);
-  iVar8 = codewheel_index_of_letter(local_48[10]);
-  uw_ord2005_rem_128 = ((int)(iVar4 + iVar3 + iVar2 + iVar10)) % (0x24);
-  uw_ord2005_rem_129 = ((int)(iVar8 + iVar7 + iVar6 + iVar5)) % (0x24);
-  uw_ord2005_rem_130 = ((int)(iVar4 * iVar3 * iVar2 * iVar10)) % (0x24);
-  uw_ord2005_rem_131 = ((int)(iVar8 * iVar7 * iVar6 * iVar5)) % (0x24);
-  sVar1 = codewheel_letter_at_index(uw_ord2005_rem_128);
-  if ((sVar1 == local_48[2]) && (sVar1 = codewheel_letter_at_index(uw_ord2005_rem_129), sVar1 == local_48[5])) {
-    uw_ord2005_rem_132 = ((int)(((uint)*param_1 + (uint)param_1[1]) * uw_ord2005_rem_130)) % (0x24);
-    uw_ord2005_rem_133 = ((int)(((uint)param_1[2] + (uint)param_1[3]) * uw_ord2005_rem_131)) % (0x24);
-    sVar1 = codewheel_letter_at_index(uw_ord2005_rem_132);
-    if (((sVar1 == local_48[8]) && (sVar1 = codewheel_letter_at_index(uw_ord2005_rem_133), sVar1 == local_48[0xb]))
-       && (((((iVar10 != 0 || (iVar2 != 0)) || (iVar3 != 0)) ||
-            ((((iVar4 != 0 || (iVar5 != 0)) || (iVar6 != 0)) || ((iVar7 != 0 || (iVar8 != 0)))))) ||
+    next_index = (i + 1) * 0x10000;
+    answer[i] = character;
+    i = next_index >> 0x10;
+  } while (i < 0xc);
+  answer[(short)((uint)next_index >> 0x10)] = 0;
+  letter_index_0 = codewheel_index_of_letter(answer[0]);
+  letter_index_3 = codewheel_index_of_letter(answer[3]);
+  letter_index_6 = codewheel_index_of_letter(answer[6]);
+  letter_index_9 = codewheel_index_of_letter(answer[9]);
+  letter_index_1 = codewheel_index_of_letter(answer[1]);
+  letter_index_4 = codewheel_index_of_letter(answer[4]);
+  letter_index_7 = codewheel_index_of_letter(answer[7]);
+  letter_index_10 = codewheel_index_of_letter(answer[10]);
+  uw_ord2005_rem_128 = ((int)(letter_index_9 + letter_index_6 + letter_index_3 + letter_index_0)) % (0x24);
+  uw_ord2005_rem_129 = ((int)(letter_index_10 + letter_index_7 + letter_index_4 + letter_index_1)) % (0x24);
+  uw_ord2005_rem_130 = ((int)(letter_index_9 * letter_index_6 * letter_index_3 * letter_index_0)) % (0x24);
+  uw_ord2005_rem_131 = ((int)(letter_index_10 * letter_index_7 * letter_index_4 * letter_index_1)) % (0x24);
+  expected_letter = codewheel_letter_at_index(uw_ord2005_rem_128);
+  if ((expected_letter == answer[2]) && (expected_letter = codewheel_letter_at_index(uw_ord2005_rem_129), expected_letter == answer[5])) {
+    uw_ord2005_rem_132 = ((int)(((uint)*key + (uint)key[1]) * uw_ord2005_rem_130)) % (0x24);
+    uw_ord2005_rem_133 = ((int)(((uint)key[2] + (uint)key[3]) * uw_ord2005_rem_131)) % (0x24);
+    expected_letter = codewheel_letter_at_index(uw_ord2005_rem_132);
+    if (((expected_letter == answer[8]) && (expected_letter = codewheel_letter_at_index(uw_ord2005_rem_133), expected_letter == answer[0xb]))
+       && (((((letter_index_0 != 0 || (letter_index_3 != 0)) || (letter_index_6 != 0)) ||
+            ((((letter_index_9 != 0 || (letter_index_1 != 0)) || (letter_index_4 != 0)) || ((letter_index_7 != 0 || (letter_index_10 != 0)))))) ||
            ((uw_ord2005_rem_130 != 0 ||
             ((((uw_ord2005_rem_131 != 0 || (uw_ord2005_rem_128 != 0)) || (uw_ord2005_rem_129 != 0)) ||
              ((uw_ord2005_rem_132 != 0 || (uw_ord2005_rem_133 != 0)))))))))) {
@@ -137,115 +120,101 @@ int param_2;
 // was FUN_0006b718 -- checks the registry (HKLM\Software\ZIO_Interactive_ Ultima_U\BuildNo) for the
 // sentinel value 0xc0f this port's registration flow writes via save_registration_key_validated
 // once the product's been validated...
-undefined4 check_registration_key_saved()
-
+undefined4 check_registration_key_saved(void)
 {
-  int iVar1;
-  undefined4 uVar2;
-  int extraout_r1;
-  undefined4 uVar3;
-  int local_1c;
-  undefined4 local_18;
-  undefined4 local_14;
-  undefined4 local_10;
-  undefined1 auStack_c [4];
-  
-  local_10 = 4;
-  local_14 = 4;
-  uVar3 = 0;
-  RegCreateKeyExW(0x80000001,u_Software_ZIO_Interactive_Ultima_U_00086f6c,0,0,0,0,0,&local_18,auStack_c)
+  int query_result;
+  undefined4 random_value;
+  undefined4 is_registered = 0;
+  int build_number;
+  undefined4 registry_key;
+  undefined4 value_size = 4;
+  undefined4 value_type = 4;
+  undefined1 disposition[4];
+
+  RegCreateKeyExW(0x80000001,u_Software_ZIO_Interactive_Ultima_U_00086f6c,0,0,0,0,0,&registry_key,disposition)
   ;
-  iVar1 = RegQueryValueExW(local_18,u_BuildNo_00086f5c,0,&local_10,&local_1c,&local_14);
-  if (iVar1 == 0) {
-    RegQueryValueExW(local_18,u_BuildNo_00086f5c,0,&local_10,&local_1c,&local_14);
-    if (local_1c == 0xc0f) {
-      uVar3 = 1;
+  query_result = RegQueryValueExW(registry_key,u_BuildNo_00086f5c,0,&value_type,&build_number,&value_size);
+  if (query_result == 0) {
+    RegQueryValueExW(registry_key,u_BuildNo_00086f5c,0,&value_type,&build_number,&value_size);
+    if (build_number == 0xc0f) {
+      is_registered = 1;
     }
   }
   else {
-    uVar2 = Random();
-    local_1c = orduint_divmod(10000,uVar2).rem + 1;
-    RegSetValueExW(local_18,u_BuildNo_00086f5c,0,local_10,&local_1c,local_14);
+    random_value = Random();
+    build_number = orduint_divmod(10000,random_value).rem + 1;
+    RegSetValueExW(registry_key,u_BuildNo_00086f5c,0,value_type,&build_number,value_size);
   }
-  RegCloseKey(local_18);
-  return uVar3;
+  RegCloseKey(registry_key);
+  return is_registered;
 }
 
 
 
 // was FUN_0006b838 -- writes the registry sentinel (0xc0f) check_registration_key_saved
 // looks for, marking the product as validated/registered.
-void save_registration_key_validated()
-
+void save_registration_key_validated(void)
 {
-  undefined4 local_10;
-  undefined4 local_c;
-  undefined1 auStack_8 [4];
-  
-  RegCreateKeyExW(0x80000001,u_Software_ZIO_Interactive_Ultima_U_00086f6c,0,0,0,0,0,&local_10,auStack_8)
+  undefined4 registry_key;
+  undefined4 validated_sentinel;
+  undefined1 disposition[4];
+
+  RegCreateKeyExW(0x80000001,u_Software_ZIO_Interactive_Ultima_U_00086f6c,0,0,0,0,0,&registry_key,disposition)
   ;
-  local_c = 0xc0f;
-  RegSetValueExW(local_10,u_BuildNo_00086f5c,0,4,&local_c,4);
-  RegCloseKey(local_10);
-  return;
+  validated_sentinel = 0xc0f;
+  RegSetValueExW(registry_key,u_BuildNo_00086f5c,0,4,&validated_sentinel,4);
+  RegCloseKey(registry_key);
 }
 
 
 
 // was FUN_0006b8c0
-void set_power_status_flag_bit()
-
+void set_power_status_flag_bit(void)
 {
   /* Looks like a GetSystemPowerStatus/GetVersionEx-shaped call: a struct starting with a 4-byte
      "cbSize" field is zeroed, sized, and passed to EnterCriticalSection (unidentified coredll
      query, currently a no-op stub that always reports "unsupported"/0)... */
-  int iVar1;
-  undefined1 local_34 [0x30];
-  
-  ce_memset(local_34,0,0x30);
-  *(undefined4 *)local_34 = 0x30;
-  iVar1 = EnterCriticalSection(0xe1,0,local_34,0);
-  if (iVar1 != 0) {
-    *(uint *)(local_34 + 4) = *(uint *)(local_34 + 4) | 1;
-    EnterCriticalSection(0xe0,0,local_34,0);
+  int query_result;
+  undefined1 status_struct[0x30];
+
+  ce_memset(status_struct,0,0x30);
+  *(undefined4 *)status_struct = 0x30;
+  query_result = EnterCriticalSection(0xe1,0,status_struct,0);
+  if (query_result != 0) {
+    *(uint *)(status_struct + 4) = *(uint *)(status_struct + 4) | 1;
+    EnterCriticalSection(0xe0,0,status_struct,0);
   }
-  return;
 }
 
 
 
 // was FUN_0006b920
-void clear_power_status_flag_bit()
-
+void clear_power_status_flag_bit(void)
 {
   /* Counterpart of set_power_status_flag_bit (see comment there): same struct shape,
      clears instead of sets the flag bit. Also dead under the current
      EnterCriticalSection stub. */
-  int iVar1;
-  undefined1 local_34 [0x30];
-  
-  ce_memset(local_34,0,0x30);
-  *(undefined4 *)local_34 = 0x30;
-  iVar1 = EnterCriticalSection(0xe1,0,local_34,0);
-  if (iVar1 != 0) {
-    *(uint *)(local_34 + 4) = *(uint *)(local_34 + 4) & 0xfffffffe;
-    EnterCriticalSection(0xe0,0,local_34,0);
+  int query_result;
+  undefined1 status_struct[0x30];
+
+  ce_memset(status_struct,0,0x30);
+  *(undefined4 *)status_struct = 0x30;
+  query_result = EnterCriticalSection(0xe1,0,status_struct,0);
+  if (query_result != 0) {
+    *(uint *)(status_struct + 4) = *(uint *)(status_struct + 4) & 0xfffffffe;
+    EnterCriticalSection(0xe0,0,status_struct,0);
   }
-  return;
 }
 
 
 
 // was FUN_0006b980
-undefined4 check_registration_key_dialog(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
+undefined4 check_registration_key_dialog(undefined4 window, undefined4 instance)
 {
   /* This is the "enter your registration key" modal dialog gate (see the "Invalid Registration Key
      Code!!" string and the registration_key_dialog_proc dialog proc it registers via
      DialogBoxIndirectParamW, a CreateDialogParam-shaped call). */
-  (void)param_1; (void)param_2;
+  (void)window; (void)instance;
   fprintf(stderr, "[stub] check_registration_key_dialog: bypassing registration-key dialog, "
                   "treating as already registered\n");
   return 1;
@@ -256,26 +225,22 @@ undefined4 param_2;
 // was FUN_0006ba54 -- window proc for the (never actually shown, see check_registration_key_dialog)
 // "enter your registration key" dialog: WM_INITDIALOG-shaped (0x110)... but that message id is
 // never checked here...
-undefined4 registration_key_dialog_proc(param_1,param_2,param_3)
-undefined4 param_1;
-int param_2;
-short param_3;
-
+undefined4 registration_key_dialog_proc(undefined4 dialog, int message, short control_id)
 {
-  if (param_2 != 0x110) {
-    if (param_2 != 0x111) {
+  if (message != 0x110) {
+    if (message != 0x111) {
       return 0;
     }
-    if ((param_3 == 1) || (param_3 == 2)) {
-      EndDialog(param_1,param_3);  /* ARM 0x6bad8-0x6badc: r1 still holds the compared wParam (1 or 2) */
+    if ((control_id == 1) || (control_id == 2)) {
+      EndDialog(dialog,control_id);  /* ARM 0x6bad8-0x6badc: r1 still holds the compared wParam (1 or 2) */
       DAT_0023c108 = 0;
     }
     else {
-      if (param_3 != 0x3ea) {
+      if (control_id != 0x3ea) {
         return 0;
       }
-      GetDlgItemTextW(param_1,0x3e9,&DAT_0023bf78,0xb4);
-      EndDialog(param_1,0x3ea);
+      GetDlgItemTextW(dialog,0x3e9,&DAT_0023bf78,0xb4);
+      EndDialog(dialog,0x3ea);
       DAT_0023c108 = 1;
     }
   }
@@ -287,21 +252,18 @@ short param_3;
 // was FUN_0006baf8 -- top-level registration check: true if the registry sentinel is already set
 // (check_registration_key_saved) or the (bypassed, always-succeeding) registration dialog gate
 // (check_registration_key_dialog) reports success.
-undefined4 is_product_registered(param_1,param_2)
-char *param_1;
-undefined4 param_2;
-
+undefined4 is_product_registered(char *window, undefined4 instance)
 {
-  int iVar1;
-  undefined1 auStack_1c [10];
-  ushort local_12;
-  ushort local_10;
-  ushort local_e;
+  int result;
+  undefined1 system_time_header[10];
+  ushort system_time_seconds;
+  ushort system_time_minutes;
+  ushort system_time_hours;
 
-  GetSystemTime(auStack_1c);
-  ce_srand((local_e + 1) * (local_10 + 1) * (local_12 + 1));
-  iVar1 = check_registration_key_saved();
-  if ((iVar1 == 0) && (iVar1 = check_registration_key_dialog(param_1,param_2), iVar1 == 0)) {
+  GetSystemTime(system_time_header);
+  ce_srand((system_time_hours + 1) * (system_time_minutes + 1) * (system_time_seconds + 1));
+  result = check_registration_key_saved();
+  if ((result == 0) && (result = check_registration_key_dialog(window,instance), result == 0)) {
     return 0;
   }
   return 1;
@@ -311,48 +273,44 @@ undefined4 param_2;
 
 // was FUN_0006bb64 -- startup disk-space check (its only caller checks it right after
 // init_gameplay_session and shows "Not enough disk space for save game" on failure)...
-undefined4 check_save_disk_space()
-
+undefined4 check_save_disk_space(void)
 {
-  char stack0xffdc3250_buf [256];
-  char *stack0xffdc3250_ptr;
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating
-     load_string_resource's real pointer -- same class as that
-     function's own fix. */
-  char *uVar4;
-  uint local_118;
-  int local_114;
-  undefined1 auStack_110 [7];
-  char acStack_109 [261];
-  
-  pcVar2 = &DAT_0023cca8;
-    stack0xffdc3250_ptr = stack0xffdc3250_buf;
+  char install_path_copy[256];
+  char *path_cursor;
+  char path_char;
+  char *install_dir;
+  int path_length;
+  /* BUG FIX (unit-testing-framework merge): the converted path was held in an `undefined4`,
+     truncating load_string_resource's real pointer -- same class as that function's own fix. */
+  char *converted_path;
+  uint free_bytes_low;
+  int free_bytes_high;
+  undefined1 total_bytes_buffer[7];
+  char save_path_buffer[261];
+
+  install_dir = &DAT_0023cca8;
+  path_cursor = install_path_copy;
   do {
-    cVar1 = *pcVar2;
-    *stack0xffdc3250_ptr = cVar1; stack0xffdc3250_ptr = stack0xffdc3250_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  ce_strcat(acStack_109 + 1,&DAT_000857a0);
-  iVar3 = ce_strlen(acStack_109 + 1);
-  acStack_109[iVar3] = '\0';
-  uVar4 = load_string_resource(acStack_109 + 1);
-  CreateDirectoryW(uVar4,0);
-  ensure_save_directory_exists(acStack_109 + 1);
-  uVar4 = load_string_resource(acStack_109 + 1);
+    path_char = *install_dir;
+    *path_cursor = path_char;
+    path_cursor = path_cursor + 1;
+    install_dir = install_dir + 1;
+  } while (path_char != '\0');
+  ce_strcat(save_path_buffer + 1,&DAT_000857a0);
+  path_length = ce_strlen(save_path_buffer + 1);
+  save_path_buffer[path_length] = '\0';
+  converted_path = load_string_resource(save_path_buffer + 1);
+  CreateDirectoryW(converted_path,0);
+  ensure_save_directory_exists(save_path_buffer + 1);
+  converted_path = load_string_resource(save_path_buffer + 1);
   /* local_114 is never actually passed to GetDiskFreeSpaceExW (only auStack_110 and &local_118 are)
      -- in the original 32-bit binary this local apparently sat immediately after auStack_110 on the
      stack and got written incidentally by a GetDiskFreeSpace-shaped call writing a wider... */
-  local_114 = 0;
-  iVar3 = GetDiskFreeSpaceExW(uVar4,0,auStack_110,&local_118);
-  if ((iVar3 == 0) || ((local_114 == 0 && (local_118 < 0x9b0a0)))) {
-    uVar4 = 0;
+  free_bytes_high = 0;
+  path_length = GetDiskFreeSpaceExW(converted_path,0,total_bytes_buffer,&free_bytes_low);
+  if ((path_length == 0) || ((free_bytes_high == 0 && (free_bytes_low < 0x9b0a0)))) {
+    return 0;
   }
-  else {
-    uVar4 = 1;
-  }
-  return uVar4;
+  return 1;
 }
 

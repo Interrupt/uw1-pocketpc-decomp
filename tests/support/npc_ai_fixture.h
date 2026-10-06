@@ -2,7 +2,7 @@
 #define UW_TEST_NPC_AI_FIXTURE_H
 #include "unity.h"
 #include "../npc_ai_test_globals.h"
-undefined4 read_file_handle(int handle, void *buffer, uint count);
+int read_file_handle(int handle, void *buffer, uint count);
 long ce_rand(void);
 int encode_object_slot_index(void *object);
 void *get_object_record_by_slot_index(int slot);
@@ -30,8 +30,8 @@ undefined4 try_npc_special_ability_alt(void);
 undefined4 try_npc_special_ability_no_los(void);
 undefined4 try_npc_special_ability_ranged(void);
 void build_object_placement_snapshot(void);
-int build_collision_height_field_for_object(void);
-undefined4 apply_placement_collision_sweep(void);
+int build_collision_height_field_for_object(ushort *object);
+undefined4 apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags);
 undefined4 sync_object_tile_position(void);
 undefined4 resolve_unique_npc_special_behavior(void);
 void object_list_unlink(void);

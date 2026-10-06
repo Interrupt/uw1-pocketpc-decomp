@@ -8,14 +8,14 @@ void free_object_slot(void *object);
 void set_pending_update_flags(int flags);
 long ce_rand(void);
 int encode_object_slot_index(void *object);
-undefined4 check_object_placement_clearance(void);
+undefined4 check_object_placement_clearance(short catalog_type, short ignore_slot, undefined2 position_x, undefined2 position_y, short height, int check_mode, byte step_limit);
 void adjust_door_close_animation_delay(ushort *object);
 undefined4 play_positional_sound_effect(void);
 undefined4 scheduler_advance_effect(void);
 void *get_object_record_by_slot_index(int slot);
 void build_object_placement_snapshot(void);
-int build_collision_height_field_for_object(void);
-undefined4 apply_placement_collision_sweep(void);
+int build_collision_height_field_for_object(ushort *object);
+undefined4 apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags);
 undefined4 sync_object_tile_position(void);
 void npc_ai_default_tick(void);
 undefined4 resolve_unique_npc_special_behavior(void);
@@ -134,7 +134,7 @@ int encode_object_slot_index(void *object)
     return 3;
 }
 
-undefined4 check_object_placement_clearance(void) { TEST_FAIL_MESSAGE("Unexpected door sweep"); return 0; }
+undefined4 check_object_placement_clearance(short catalog_type, short ignore_slot, undefined2 position_x, undefined2 position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; TEST_FAIL_MESSAGE("Unexpected door sweep"); return 0; }
 
 void adjust_door_close_animation_delay(ushort *object) { (void)object; }
 
@@ -146,9 +146,9 @@ void *get_object_record_by_slot_index(int slot) { TEST_ASSERT_EQUAL_INT(1, slot)
 
 void build_object_placement_snapshot(void) {}
 
-int build_collision_height_field_for_object(void) { return 0; }
+int build_collision_height_field_for_object(ushort *object) { (void)object; return 0; }
 
-undefined4 apply_placement_collision_sweep(void) { return 0; }
+undefined4 apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags) { (void)snapshot; (void)sweep_flags; return 0; }
 
 undefined4 sync_object_tile_position(void) { return 0; }
 

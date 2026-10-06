@@ -67,13 +67,13 @@ void *tilemap_lookup(int tile_x, int tile_y)
     movement_fixture.sampled_tiles++;
     return &movement_fixture.destination_floor;
 }
-uint collision_sample_floor_height(int sample, int *status)
+uint collision_sample_floor_height(uint sample, undefined4 *status)
 {
     TEST_ASSERT_EQUAL_INT(4, sample);
     *status = 0;
     return movement_fixture.destination_floor;
 }
-void collision_build_height_field(int step_limit)
+void collision_build_height_field(uint step_limit)
 {
     if (movement_fixture.setup_fixture) movement_fixture.destination_floor = DAT_002049c8 == 16 ? 128 : 0;
     if (movement_fixture.stair_fixture) {
@@ -83,7 +83,7 @@ void collision_build_height_field(int step_limit)
         DAT_002049d4 = movement_fixture.wall_flags;
     }
 }
-void collision_height_envelope(void)
+void collision_height_envelope(int mode, int collision)
 {
     DAT_002049d6 = movement_fixture.envelope_flags;
     DAT_002049d8 = DAT_002049d9 = movement_fixture.destination_floor;
