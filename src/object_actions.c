@@ -166,7 +166,7 @@ void dispatch_object_action(ushort *object, int mode)
     mode = (int)(short)mode;
   }
   if (((!((uw_object_hdr_t *)object)->is_quant) || (uVar3 = object[3], (uVar3 & 0x8000) != 0)) ||
-     ((uVar3 & 0xffc0) < 0x41)) {
+     (((uw_object_hdr_t *)object)->link < 2)) {
     if ((cVar10 != '\0') && (((&DAT_00202c9b)[iVar9] & 0xf) != 0xd)) {
       if (((cVar10 == 'a') || ((cVar10 == 'e' || (cVar10 == 'i')))) ||
          (cVar10 == 'o' || cVar10 == 'u')) {
@@ -490,7 +490,7 @@ void dispatch_object_action_dup(ushort *object, int mode)
     mode = (int)(short)mode;
   }
   if (((!((uw_object_hdr_t *)object)->is_quant) || (uVar3 = object[3], (uVar3 & 0x8000) != 0)) ||
-     ((uVar3 & 0xffc0) < 0x41)) {
+     (((uw_object_hdr_t *)object)->link < 2)) {
     if ((cVar10 != '\0') && (((&DAT_00202c9b)[iVar9] & 0xf) != 0xd)) {
       if (((cVar10 == 'a') || ((cVar10 == 'e' || (cVar10 == 'i')))) ||
          (cVar10 == 'o' || cVar10 == 'u')) {
@@ -660,7 +660,7 @@ int check_object_combination(char *actor, ushort *object, short count)
   uint uVar6;
   ushort *local_18;
   
-  if (((((uw_object_hdr_t *)object)->is_quant) || (local_18 = object + 3, (*local_18 & 0xffc0) == 0)) ||
+  if (((((uw_object_hdr_t *)object)->is_quant) || (local_18 = object + 3, ((uw_object_hdr_t *)object)->link == 0)) ||
      (puVar4 = (ushort *)find_object_in_chain(&local_18,0,4,0,0xf), puVar4 == (ushort *)0x0)) {
     return 1;
   }
@@ -931,7 +931,7 @@ int force_unlock_target_object(int unused_a, int unused_b, ushort *object)
   int iVar2;
   ushort *local_14;
   
-  if ((((!((uw_object_hdr_t *)object)->is_quant) && (local_14 = object + 3, (*local_14 & 0xffc0) != 0)) &&
+  if ((((!((uw_object_hdr_t *)object)->is_quant) && (local_14 = object + 3, ((uw_object_hdr_t *)object)->link != 0)) &&
       ((*object & 0x1c0) != 0x180)) && (iVar2 = find_object_in_chain(&local_14,0,6,2,3), iVar2 != 0)) {
     uVar1 = *(undefined1 *)(DAT_00086df8 + 0x2c);
     *(undefined1 *)(DAT_00086df8 + 0x2c) = 0x2d;
@@ -1995,7 +1995,7 @@ int resolve_object_variant_or_special_link(ushort *object, ushort *out_class, us
   
   uVar2 = *object;
   if ((uVar2 & 0x1c0) != 0x180) {
-    if ((!((uw_object_hdr_t *)object)->is_quant) && (local_20 = object + 3, (*local_20 & 0xffc0) != 0)) {
+    if ((!((uw_object_hdr_t *)object)->is_quant) && (local_20 = object + 3, ((uw_object_hdr_t *)object)->link != 0)) {
       object = (ushort *)find_object_in_chain(&local_20,0,4,2,0);
       if (object == (ushort *)0x0) {
         return 0;
@@ -2086,7 +2086,7 @@ void consume_linked_special_object_charge(char *object)
   ushort *local_c;
   
   if ((((!((uw_object_hdr_t *)object)->is_quant) &&
-       (local_c = (ushort *)(object + 6), (*local_c & 0xffc0) != 0)) &&
+       (local_c = (ushort *)(object + 6), ((uw_object_hdr_t *)object)->link != 0)) &&
       (iVar3 = find_object_in_chain(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
     uVar1 = *(ushort *)(iVar3 + 4);
     if ((uVar1 & 0x3f) == 0) {
@@ -2332,12 +2332,8 @@ int init_monster_spawn_defaults()
   uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
   g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0xfe0f);
   g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0xfe0f) >> 8) | 2;
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 4);
-  g_scratch_object_ptr[4] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  g_scratch_object_ptr[5] = (byte)((uVar1 & 0xffc0) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 6);
-  g_scratch_object_ptr[6] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  g_scratch_object_ptr[7] = (byte)((uVar1 & 0xffc0) >> 8);
+  ((uw_object_hdr_t *)g_scratch_object_ptr)->quality = 0x20;
+  ((uw_object_hdr_t *)g_scratch_object_ptr)->owner = 0x20;
   DAT_001007c8 = &DAT_001007d0 + (*g_scratch_object_ptr & 0x3f) * 0x30;
   uVar2 = ce_rand();
   uw_ord2005_rem_11 = ((int)(uVar2)) % (0x18);
@@ -2686,7 +2682,7 @@ void describe_object_owner(ushort *object, short mode)
     uVar1 = uVar2 & 0x3f;
     if ((((uVar2 & 0x3f) != 0) && (uVar1 != 0x28)) && ((uVar1 < 0x3c || (uVar1 == 0x3f)))) {
       uVar3 = 0x16;
-      if ((((uw_object_hdr_t *)object)->item_id == 0xc6) || (0x40 < (uVar2 & 0xffc0))) {
+      if ((((uw_object_hdr_t *)object)->item_id == 0xc6) || (1 < ((uw_object_hdr_t *)object)->link)) {
         uVar3 = 0x17;
       }
       print_scroll_message_by_id(uVar3);
