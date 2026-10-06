@@ -297,7 +297,7 @@ LAB_0007dce4:
     if (iVar11 == 0) {
       return 2;
     }
-    if (((((((uw_object_hdr_t *)trap_record)->zpos) != 0) && ((*(byte *)(iVar11 + 1) & 0x80) != 0)) &&
+    if (((((((uw_object_hdr_t *)trap_record)->zpos) != 0) && (((uw_object_hdr_t *)iVar11)->is_quant)) &&
         ((*(ushort *)(iVar11 + 6) & 0x8000) == 0)) &&
        (*(ushort *)(iVar11 + 6) >> 6 < ((uw_object_hdr_t *)trap_record)->zpos)) {
       return 2;

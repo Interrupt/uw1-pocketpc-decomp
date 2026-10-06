@@ -411,7 +411,7 @@ void unlink_and_free_object(char *link_field, char *object)
   /* Dropped argument: free_linked_object_recursive takes the address of a link field to recursively
      free (its own declared link_field) -- here that's object's own "contains" field (+6, this file's
      standard container-contents offset) -- but it was called bare... */
-  if (((*(byte *)(object + 1) & 0x80) == 0) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
+  if ((!((uw_object_hdr_t *)object)->is_quant) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
     free_linked_object_recursive(object + 6);
   }
   if (link_field != 0) {
@@ -945,7 +945,7 @@ void free_player_inventory_chain(char *link_field)
 
   iVar1 = resolve_object_link(link_field);
   if (iVar1 != 0) {
-    if ((*(byte *)(iVar1 + 1) & 0x80) == 0) {
+    if (!((uw_object_hdr_t *)iVar1)->is_quant) {
       if ((*(ushort *)(iVar1 + 6) & 0xffc0) != 0) {
         free_player_inventory_chain(iVar1 + 6); /* was called with no argument; confirmed via ARM disassembly, 0x44500 */
       }
@@ -1124,7 +1124,7 @@ int walk_object_tree(char *object, int (*callback)())
     if (iVar1 != 0) {
       return 1;
     }
-    if (((*(byte *)(object + 1) & 0x80) == 0) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
+    if ((!((uw_object_hdr_t *)object)->is_quant) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
       /* Was `undefined4 uVar2` -- truncated resolve_object_link's real
          pointer return before forwarding it into the recursive call
          just below, same class as object itself above. */
@@ -1343,7 +1343,7 @@ LAB_00053720:
     DAT_002046b4 = link_field;
     iVar3 = resolve_object_link(link_field);
     while ((sVar2 = encode_object_slot_index(iVar3), iVar4 = (ushort *)iVar3, puVar1 = link_field, sVar2 != (short)slot &&
-           ((((*(byte *)(iVar3 + 1) & 0x80) != 0 || ((*(ushort *)(iVar3 + 6) & 0xffc0) == 0)) ||
+           ((((((uw_object_hdr_t *)iVar3)->is_quant) || ((*(ushort *)(iVar3 + 6) & 0xffc0) == 0)) ||
             (iVar4 = find_object_by_encoded_slot_in_chain((ushort *)(iVar3 + 6),recurse,slot), puVar1 = DAT_002046b4,
             iVar4 == 0))))) {
       if ((*(ushort *)(iVar3 + 4) & 0xffc0) == 0) goto LAB_00053720;

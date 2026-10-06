@@ -2085,7 +2085,7 @@ void consume_linked_special_object_charge(char *object)
   int iVar4;
   ushort *local_c;
   
-  if (((((*(byte *)(object + 1) & 0x80) == 0) &&
+  if ((((!((uw_object_hdr_t *)object)->is_quant) &&
        (local_c = (ushort *)(object + 6), (*local_c & 0xffc0) != 0)) &&
       (iVar3 = find_object_in_chain(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
     uVar1 = *(ushort *)(iVar3 + 4);

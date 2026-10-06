@@ -945,7 +945,7 @@ int discard_container_contents(ushort *container, int remove_all)
   ushort *local_18;
 
   uVar2 = 0;
-  if (((*((byte *)container + 1) & 0x80) == 0) &&
+  if ((!((uw_object_hdr_t *)container)->is_quant) &&
      (local_18 = container + 3, (*local_18 & 0xffc0) != 0)) {
     puVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
     while (puVar1 != 0) {

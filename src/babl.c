@@ -2605,7 +2605,7 @@ bool babl_builtin_find_barter_total(char *args)
       if (local_4c[iVar5] == sVar1) {
         iVar3 = get_object_record_by_slot_index((int)local_3c[iVar5]);
         local_2c[(short)iVar4] = local_3c[iVar5];
-        if (((*(byte *)(iVar3 + 1) & 0x80) == 0) || ((*(ushort *)(iVar3 + 6) & 0x8000) != 0)) {
+        if ((!((uw_object_hdr_t *)iVar3)->is_quant) || ((*(ushort *)(iVar3 + 6) & 0x8000) != 0)) {
           iVar6 = iVar6 + 1;
         }
         else {
@@ -2722,7 +2722,7 @@ int babl_builtin_give_ptr_npc(char *args)
   uVar3 = babl_read_var_word((int)*(short *)(args + -2));
   iVar2 = get_object_record_by_slot_index(uVar1);
   if (-1 < (short)uVar3) {
-    if ((*(byte *)(iVar2 + 1) & 0x80) != 0) {
+    if (((uw_object_hdr_t *)iVar2)->is_quant) {
       if ((*(byte *)(iVar2 + 7) & 0x80) == 0) goto LAB_00029efc;
     }
   }
@@ -2808,7 +2808,7 @@ int babl_builtin_identify_inv(char *args)
   uVar3 = babl_read_var_word((int)*(short *)(args + -2));
   uVar4 = compute_barter_item_value(1,uVar2,(int)DAT_000bbfbc);
   iVar5 = get_object_record_by_slot_index(uVar2);
-  if (((*(byte *)(iVar5 + 1) & 0x80) == 0) || ((*(ushort *)(iVar5 + 6) & 0x8000) != 0)) {
+  if ((!((uw_object_hdr_t *)iVar5)->is_quant) || ((*(ushort *)(iVar5 + 6) & 0x8000) != 0)) {
     uVar9 = 1;
   }
   else {
@@ -2876,7 +2876,7 @@ ushort babl_builtin_count_inv(char *args)
   int iVar2;
 
   iVar2 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -2)));  /* r0 passthrough */
-  if (((*(byte *)(iVar2 + 1) & 0x80) == 0) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {
+  if ((!((uw_object_hdr_t *)iVar2)->is_quant) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {
     uVar1 = 1;
   }
   else {
@@ -3834,7 +3834,7 @@ void handle_barter_slot_click(int is_player_side, int slot, int counts, int valu
         return;
       }
       iVar2 = get_object_record_by_slot_index((int)*(short *)(local_8 + (short)local_c * 2));
-      if (((((*(byte *)(iVar2 + 1) & 0x80) != 0) && ((*(ushort *)(iVar2 + 6) & 0x8000) == 0)) &&
+      if (((((((uw_object_hdr_t *)iVar2)->is_quant)) && ((*(ushort *)(iVar2 + 6) & 0x8000) == 0)) &&
           ((*(ushort *)(iVar2 + 6) & 0xffc0) != 0x40)) && (iVar6 = prompt_split_object_stack(iVar2), iVar6 == 0))
       {
         return;

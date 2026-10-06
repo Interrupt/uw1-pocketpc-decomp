@@ -1848,7 +1848,7 @@ void trigger_object_trap_or_use_action(char *actor, char *object, int action, in
   ushort *puVar1;
   ushort *local_1c;
   
-  if (((object != 0) && ((*(byte *)(object + 1) & 0x80) == 0)) &&
+  if (((object != 0) && (!((uw_object_hdr_t *)object)->is_quant)) &&
      (local_1c = (ushort *)(object + 6), (*local_1c & 0xffc0) != 0)) {
     puVar1 = (ushort *)find_object_in_chain(&local_1c,0,6,0xffffffff,0xffff);
     if (puVar1 != (ushort *)0x0) {
@@ -2311,7 +2311,7 @@ ushort *find_equipped_item_by_category(int category, int subcategory, int qualit
       do {
         uVar6 = (undefined2)iVar7;
         iVar5 = local_6c[iVar7];
-        if ((iVar5 != 0) && ((*(byte *)(iVar5 + 1) & 0x80) == 0)) {
+        if ((iVar5 != 0) && (!((uw_object_hdr_t *)iVar5)->is_quant)) {
           local_74[0] = resolve_object_link(iVar5 + 6);
           puVar4 = (ushort *)find_object_in_link_chain(category,subcategory,quality,local_74);
           local_6c[iVar7] = (int)puVar4;
@@ -3415,8 +3415,8 @@ int handle_backpack_slot_interact(ushort *object, uint slot)
     if (sVar3 != 1) {
       return 0;
     }
-    uVar9 = (*(byte *)((char *)object + 1) & 0x80) << 8;
-    bVar12 = (*(byte *)((char *)object + 1) & 0x80) != 0;
+    uVar9 = ((uw_object_hdr_t *)object)->is_quant << 0xf;
+    bVar12 = ((uw_object_hdr_t *)object)->is_quant;
     if (bVar12) {
       uVar9 = (uint)object[3];
     }
@@ -3426,7 +3426,7 @@ int handle_backpack_slot_interact(ushort *object, uint slot)
     if (!bVar12) {
       slot = 1;
     }
-    if ((*(byte *)((char *)puVar4 + 1) & 0x80) == 0) {
+    if (!((uw_object_hdr_t *)puVar4)->is_quant) {
       *(char *)puVar4 = (char)*puVar4;
       *(byte *)((char *)puVar4 + 1) = *(byte *)((char *)puVar4 + 1) | 0x80;
       *(byte *)(puVar4 + 3) = (byte)puVar4[3] & 0x3f | 0x40;

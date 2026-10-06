@@ -287,7 +287,7 @@ int roll_container_lockpick_check(char *container, int skill)
   undefined4 uVar2;
   ushort *local_c;
   
-  if ((((*(byte *)(container + 1) & 0x80) == 0) &&
+  if (((!((uw_object_hdr_t *)container)->is_quant) &&
       (local_c = (ushort *)(container + 6), (*local_c & 0xffc0) != 0)) &&
      (pbVar1 = (byte *)find_object_in_chain(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
     if (0x1f < (*pbVar1 & 0x30)) {
@@ -327,7 +327,7 @@ int roll_container_trap_disarm_check(char *container, int skill)
   char acStack_2c [20];
   
   uVar8 = 0;
-  if (((*(byte *)(container + 1) & 0x80) == 0) &&
+  if ((!((uw_object_hdr_t *)container)->is_quant) &&
      (local_34[0] = (ushort *)(container + 6), (*local_34[0] & 0xffc0) != 0)) {
     pbVar3 = (byte *)find_object_in_chain(local_34,0,6,0xffffffff,0xffff);
     if (pbVar3 != (byte *)0x0) {

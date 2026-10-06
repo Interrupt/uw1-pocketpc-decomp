@@ -1036,7 +1036,7 @@ int roll_object_destroy_chance(short base_chance, char *object)
     DAT_002046b0 = base_chance;
     iVar2 = object_exceeds_size_threshold(object);
     if (iVar2 == 0) {
-      if (((*(byte *)(object + 1) & 0x80) == 0) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
+      if ((!((uw_object_hdr_t *)object)->is_quant) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
         pcVar3 = (char *)resolve_object_link((ushort *)(object + 6)); /* confirmed via ARM disassembly, 0x52ce8 */
         iVar2 = walk_object_tree(pcVar3,object_exceeds_size_threshold);
         if (iVar2 != 0) {
