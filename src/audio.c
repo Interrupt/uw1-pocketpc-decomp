@@ -67,11 +67,34 @@ static undefined1 DAT_00086810_backing[32];
    says it -- "16 hardware sound-channel slots (0x1a/26-byte
    records)" -- 16*26=416 bytes real need. */
 static undefined1 DAT_00202a58_backing[512];
-/* Sizing pass: per-music-track duration table, indexed by the current
-   track byte (DAT_0023c3a8) at a 4-byte stride; real shipped tracks
-   (data/SOUND/UW*.MOD) top out at track 15. Sibling of DAT_000873e0
-   below, same bound. */
-static undefined1 DAT_00087414_backing[256];
+/* Per-music-track duration table, indexed by the current track byte
+   (DAT_0023c3a8) at a 4-byte stride; real shipped tracks (data/SOUND/
+   UW*.MOD) top out at track 15. Sibling of DAT_000873e0 below, same
+   bound.
+
+   REAL DATA (not a "never recovered" table -- confirmed live via a
+   Ghidra headless read of UU.exe's own initialized .data at this
+   address, /Users/ccuddigan/Projects/UW1/decomp/UW.gpr): each 4-byte
+   entry is a track's elapsed-time budget, consumed as
+   `DAT_0023c330 * 0x100 + 3` in advance_menu_music_track_elapsed's
+   `read_realtime_clock_units() - DAT_0023c280` comparison (each unit
+   is 4ms -- see read_realtime_clock_units' own comment in math.c).
+   track 1 (the title theme) = 126 -> (126*256+3)*4ms =~ 129s; track 11
+   (one of the "track 9/0xb" tracks update_ingame_music_track special-
+   cases as short, not a looping bed) = 7 -> ~7.2s. Before this fix the
+   backing array defaulted to all-zero, so every track's budget was
+   just 3 units (12ms) -- play_music_track's own DAT_0023c330 write
+   happens, but advance_menu_music_track_elapsed then reports "elapsed"
+   on the very next tick, which is the real cause of music restarting
+   on a new random track every few seconds in actual gameplay. Indices
+   past 15 are never reached by real gameplay and stay zero-initialized
+   padding, same defensive sizing as before this fix. */
+static undefined1 DAT_00087414_backing[256] = {
+  1,0,0,0, 126,0,0,0, 121,0,0,0, 126,0,0,0,
+  136,0,0,0, 45,0,0,0, 38,0,0,0, 33,0,0,0,
+  48,0,0,0, 16,0,0,0, 43,0,0,0, 7,0,0,0,
+  72,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0
+};
 #define DAT_00087414 DAT_00087414_backing[0]
 static char s__SOUND__0008750c[] = "\\SOUND\\";
 static char s_uw00_mod_00087514[] = "uw00.mod";
@@ -164,10 +187,23 @@ static undefined DAT_0023c3d4_backing[128];
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
 static int DAT_0023c3bc;
 static int DAT_0023c378;
-/* Sizing pass: sibling of DAT_00087414 above -- same per-track,
-   4-byte-stride indexing by DAT_0023c3a8, same real bound (max
-   shipped track 15). */
-static undefined1 DAT_000873e0_backing[256];
+/* Sibling of DAT_00087414 above -- same per-track, 4-byte-stride
+   indexing by DAT_0023c3a8, same real bound (max shipped track 15).
+
+   REAL DATA (same Ghidra headless read as DAT_00087414 above): this
+   table and DAT_00087414 are contiguous in UU.exe's real .data (this
+   one sits 0x34/52 bytes before it, so its own indices 13-15 are
+   literally DAT_00087414's indices 0-2), used in
+   update_ingame_music_track as a per-track "is this an ambient-cycling
+   track" flag (`*(int*)(&DAT_000873e0 + track*4) == 0`). Before this
+   fix it defaulted to all-zero -- i.e. "yes, every track is ambient,
+   always reselect" -- compounding the same DAT_00087414 bug above. */
+static undefined1 DAT_000873e0_backing[256] = {
+  0,0,0,0, 0,0,0,0, 1,0,0,0, 1,0,0,0,
+  1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0,
+  1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+  1,0,0,0, 1,0,0,0, 126,0,0,0, 121,0,0,0
+};
 #define DAT_000873e0 DAT_000873e0_backing[0]
 static undefined4 DAT_00087458;
 /* Sizing pass: read-only (`pcVar4 = &DAT_00087520;`), a base-directory
