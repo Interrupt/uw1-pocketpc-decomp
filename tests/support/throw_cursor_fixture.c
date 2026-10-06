@@ -32,7 +32,7 @@ void free_object_slot(void *object)
 }
 int encode_object_slot_index(void *object)
 { return ((char *)object - DAT_002046b8) / 27; }
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_TRUE(x >= 0 && x < 64 && y >= 0 && y < 64);
     return (byte *)arena + (y * 64 + x) * 4;

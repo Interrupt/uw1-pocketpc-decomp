@@ -26,8 +26,8 @@ void sort_collision_candidates(void);
 void *get_object_record_by_slot_index(int slot);
 undefined4 object_ptr_in_arena(ushort *object);
 void *spawn_new_object(int type, int mobile);
-uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y);
-void *tilemap_lookup(int x, int y);
+uint scheduler_add_entry(uint slot, undefined4 delay, undefined1 frame, undefined1 x, undefined1 y);
+void *tilemap_lookup(short x, short y);
 void object_list_append_tail(void *head, void *object);
 void free_object_slot(ushort *object);
 int read_file_handle(int handle, void *destination, uint count);
@@ -241,8 +241,8 @@ undefined4 play_positional_sound_effect(int sound, int x, int y, int volume)
 
 void set_movement_animation_timer(void) { TEST_FAIL_MESSAGE("Unexpected player hit animation"); }
 
-undefined4 spawn_scheduled_effect_object(ushort *target, int type, int mode, int intensity,
-                                        int height, int x, int y)
+undefined4 spawn_scheduled_effect_object(ushort *target, int type, undefined4 mode, undefined1 intensity,
+                                        short height, short x, short y)
 {
     TEST_ASSERT_EQUAL_PTR(expected_effect_target, target);
     TEST_ASSERT_LESS_THAN_INT(2, effects);
@@ -349,7 +349,7 @@ void *spawn_new_object(int type, int mobile)
     return wall_effect;
 }
 
-uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y)
+uint scheduler_add_entry(uint slot, undefined4 delay, undefined1 frame, undefined1 x, undefined1 y)
 {
     TEST_ASSERT_EQUAL_UINT(0x100, slot);
     if ((wall_effect[0] & 0x1ff) == 0x1cf) {
@@ -362,7 +362,7 @@ uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y)
     return 1;
 }
 
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_EQUAL_INT(10, x);
     TEST_ASSERT_EQUAL_INT(10, y);

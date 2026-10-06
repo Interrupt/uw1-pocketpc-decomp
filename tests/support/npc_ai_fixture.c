@@ -53,7 +53,7 @@ long ce_rand(void)
 }
 int encode_object_slot_index(void *object) { return object == player ? 1 : 2; }
 void *get_object_record_by_slot_index(int slot) { return slot == 1 ? player : slot == 2 ? npc : NULL; }
-void *tilemap_lookup(int x, int y) { return tile; }
+void *tilemap_lookup(short x, short y) { return tile; }
 undefined4 check_fine_line_of_sight(void) { return los_clear; }
 char DAT_00101740_backing[448];
 undefined1 DAT_00101739, DAT_0010173a;
@@ -96,7 +96,7 @@ void npc_combat_disengage_tick(void) {}
 void npc_clear_special_goal(void) {}
 undefined4 check_npc_morale_flee(void) { return 0; }
 undefined4 check_npc_target_alignment(void) { return 1; }
-byte tile_is_no_magic(void) { return 0; }
+byte tile_is_no_magic(int tile_x, int tile_y) { (void)tile_x; (void)tile_y; return 0; }
 undefined4 try_npc_special_ability_alt(void) { return 0; }
 undefined4 try_npc_special_ability_no_los(void) { return 0; }
 undefined4 try_npc_special_ability_ranged(void) { return 0; }

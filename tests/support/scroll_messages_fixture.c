@@ -65,8 +65,8 @@ const char *scroll_messages_fixture_line(unsigned line)
 
 /* Exercise the actual scroll parser/wrapper and cursor state. Only font
    measurement and drawing are replaced by a one-cell character canvas. */
-int measure_text_width(const char *text) { return strlen(text); }
-void draw_text_string(const char *text, int x, int y)
+int measure_text_width(char *text) { return strlen(text); }
+void draw_text_string(char *text, short x, short y)
 {
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, x);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, y);

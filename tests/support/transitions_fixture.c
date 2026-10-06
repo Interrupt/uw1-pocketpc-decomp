@@ -206,14 +206,14 @@ void advance_menu_music_track(void) {}
 void stop_voice_sample(void) {}
 void clear_screen_and_restore_cursor(void) {}
 void thunk_FUN_0007ec1c(void) {}
-void draw_text_string(void) { if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); }
-int measure_text_width(const char *text) { if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); return strlen(text) * 6; }
+void draw_text_string(char *text, short x, short y) { (void)text; (void)x; (void)y; if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); }
+int measure_text_width(char *text) { if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); return strlen(text) * 6; }
 static void assert_visible_picture(void);
 undefined4 get_audio_subsystem_flag(void) { return 0; }
 undefined4 play_numbered_voice_sample(void) { return 0; }
 bool is_voice_sample_finished(void) { return 1; }
 undefined4 play_music_track(void) { return 0; }
-bool select_active_font(void) { return true; }
+bool select_active_font(char *font_filename) { (void)font_filename; return true; }
 bool set_palette_bank(void) { return true; }
 void decrement_cursor_hide_depth(void) {}
 void load_dungeon_texture_arenas(void) {}

@@ -97,7 +97,7 @@ undefined4 play_sound_effect_with_pan(int sound, int pan, int mode)
 void print_scroll_message_by_id(int id)
 { spells_fixture.messages++; spells_fixture.message_id = id; }
 void print_not_a_spell_message(void) { TEST_FAIL_MESSAGE("Runes must match the real spell table"); }
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_EQUAL_INT(32, x);
     TEST_ASSERT_EQUAL_INT(2, y);
@@ -116,7 +116,7 @@ UNUSED_EFFECT(adjust_level7_hazard_value)
 UNUSED_EFFECT(dispatch_player_command)
 UNUSED_EFFECT(handle_level4_maze_puzzle_button)
 UNUSED_EFFECT(display_book_or_scroll_page)
-UNUSED_EFFECT(scheduler_tick)
+void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected scheduler_tick"); }
 UNUSED_EFFECT(handle_game_view_click_hold)
 UNUSED_EFFECT(interact_use)
 UNUSED_EFFECT(describe_picked_terrain)

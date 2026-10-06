@@ -42,7 +42,7 @@ void movement_tick(uint elapsed, uint bob, int mode)
     TEST_ASSERT_GREATER_THAN_UINT(0, elapsed);
     movement_ticks++;
 }
-void scheduler_tick(uint elapsed)
+void scheduler_tick(int elapsed)
 {
     TEST_ASSERT_NOT_NULL(g_selected_object);
     scheduler_steps += elapsed;
@@ -58,7 +58,7 @@ int GXEndDraw(void)
 
 void push_cursor_icon(int type) { TEST_ASSERT_EQUAL_HEX16(0x82, type); }
 void get_mouse_position(short *x, short *y) { *x = g_mouse_x; *y = g_mouse_y; }
-int hit_test_inventory_widget(int x, int y)
+int hit_test_inventory_widget(short x, short y)
 {
     TEST_ASSERT_EQUAL_INT(release_poll, polls);
     TEST_ASSERT_EQUAL_INT(100 + release_poll, x);

@@ -28,12 +28,12 @@ extern undefined1 DAT_00202520_backing[1024];
 extern char * DAT_00110fc0;
 
 
-void parse_e_model_file();
-void *tick_anim_record();
-void apply_model_position_offset();
-void scale_model_part_offsets();
+void parse_e_model_file(char *path, undefined1 *out_buffer, int flip_winding);
+void *tick_anim_record(short catalog);
+void apply_model_position_offset(char *model, undefined4 offset_x, undefined4 offset_y, undefined4 offset_z);
+void scale_model_part_offsets(int *model_block, undefined4 scale_x, undefined4 scale_y, undefined4 scale_z);
 void load_3d_object_models();
-void emit_catalog_object();
-void emit_anim_object_frames();
+void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_texid);
+void emit_anim_object_frames(uint door_type, ushort *obj);
 
 #endif

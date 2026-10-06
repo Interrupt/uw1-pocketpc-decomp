@@ -67,8 +67,8 @@ extern undefined1 DAT_0023c1f0_backing[64], DAT_0023c1f8_backing[64];
 extern int hud_flushes, wipe_frames;
 extern uint frames[32];
 extern void (*const g_hud_panel_handlers_table[13])(void);
-undefined4 spawn_scheduled_effect_object(ushort *target, int type, int mode, int intensity,
-                                        int height, int x, int y);
+undefined4 spawn_scheduled_effect_object(ushort *target, int type, undefined4 mode, undefined1 intensity,
+                                        short height, short x, short y);
 extern FILE *monster_data;
 void load_real_monster_data(void);
 ushort *object_at(unsigned slot);

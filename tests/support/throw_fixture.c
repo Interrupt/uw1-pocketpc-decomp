@@ -28,7 +28,7 @@ int encode_object_slot_index(void *object)
     return (char *)object < DAT_002046c4 ? ((char *)object-DAT_002046b8)/27
         : 256+((char *)object-DAT_002046c4)/8;
 }
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 { TEST_ASSERT_TRUE(x>=0 && x<64 && y>=0 && y<64); return (byte *)arena + (y*64+x)*4; }
 void *resolve_object_link(ushort *head)
 {
@@ -82,11 +82,11 @@ undefined4 play_sound_effect_at_object(void) { return 0; }
 undefined4 play_sound_effect_with_pan(void) { return 0; }
 undefined4 apply_typed_damage_to_object(void) { return 0; }
 undefined4 roll_object_destroy_chance(void) { return 0; }
-undefined4 spawn_scheduled_effect_object(void) { return 0; }
+undefined4 spawn_scheduled_effect_object(ushort *source_object, int effect_group, undefined4 delay, undefined1 animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
 void print_scroll_message_by_id(void) {}
 void set_pending_update_flags(void) {}
 void spawn_effect_debris_burst(void) {}
-void scheduler_relink_entry(void) {}
+void scheduler_relink_entry(char *new_object, char *old_object) { (void)new_object; (void)old_object;}
 void set_ambient_bias_without_light(void) {}
 undefined4 activate_area_hazard_object(void) { return 1; }
 ushort *discard_misplaced_object(void *list, ushort *object, int destroy)

@@ -2499,7 +2499,7 @@ undefined4 param_3;
     uVar13 = (undefined1)uw_ord2005_rem_173;
     uw_ord2005_rem_174 = ((int)(uVar6)) % (3);
     sVar5 = scheduler_add_entry(uVar11,((int)uw_ord2005_rem_174 - (int)uw_ord2005_rem_173) + 2,(int)uw_ord2005_rem_173,
-                         param_2 & 0xff,uVar12,uVar13);
+                         param_2 & 0xff,uVar12);  /* a 6th arg (uVar13) was Ghidra noise: ARM scheduler_add_entry takes 5 */
     if (sVar5 == -1) {
       /* was folded into `int iVar7` (this function's loop counter) --
          truncated tilemap_lookup's real `void *` return */

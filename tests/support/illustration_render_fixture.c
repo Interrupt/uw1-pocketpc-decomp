@@ -32,14 +32,14 @@ void advance_menu_music_track(void);
 void stop_voice_sample(void);
 void clear_screen_and_restore_cursor(void);
 void clear_ambient_sound_target_thunk(void);
-void draw_text_string(void);
-int measure_text_width(void);
+void draw_text_string(char *text, short x, short y);
+int measure_text_width(char *text);
 void assert_visible_picture(void);
 undefined4 get_audio_subsystem_flag(void);
 undefined4 play_numbered_voice_sample(void);
 bool is_voice_sample_finished(void);
 undefined4 play_music_track(void);
-bool select_active_font(void);
+bool select_active_font(char *font_filename);
 bool set_palette_bank(void);
 void decrement_cursor_hide_depth(void);
 void load_dungeon_texture_arenas(void);
@@ -286,9 +286,9 @@ void clear_screen_and_restore_cursor(void) {}
 
 void clear_ambient_sound_target_thunk(void) {}
 
-void draw_text_string(void) { TEST_FAIL_MESSAGE("Unexpected window text"); }
+void draw_text_string(char *text, short x, short y) { (void)text; (void)x; (void)y; TEST_FAIL_MESSAGE("Unexpected window text"); }
 
-int measure_text_width(void) { TEST_FAIL_MESSAGE("Unexpected window text"); return 0; }
+int measure_text_width(char *text) { (void)text; TEST_FAIL_MESSAGE("Unexpected window text"); return 0; }
 
 undefined4 get_audio_subsystem_flag(void) { return 0; }
 
@@ -298,7 +298,7 @@ bool is_voice_sample_finished(void) { return 1; }
 
 undefined4 play_music_track(void) { return 0; }
 
-bool select_active_font(void) { return true; }
+bool select_active_font(char *font_filename) { (void)font_filename; return true; }
 
 bool set_palette_bank(void) { return true; }
 

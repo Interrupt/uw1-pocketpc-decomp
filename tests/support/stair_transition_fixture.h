@@ -14,7 +14,7 @@ void full_dungeon_redraw(void);
 void weapon_overlay_flash_hold(int passes);
 void weapon_overlay_flash_restore(int passes);
 void *ce_memset(void *buffer, int value, unsigned size);
-void *tilemap_lookup(int x, int y);
+void *tilemap_lookup(short x, short y);
 int encode_object_slot_index(void *object);
 undefined4 check_object_placement_clearance(short type, short slot, undefined2 x, undefined2 y, short z, int flag, byte radius);
 void *resolve_object_link(ushort *link);

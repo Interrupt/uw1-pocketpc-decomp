@@ -62,13 +62,13 @@ void perform_object_search_check();
 void handle_inventory_panel_normal_click();
 void inventory_panel_click_region();
 void toggle_weapon_ready();
-void serialize_inventory_link_chain();
+void serialize_inventory_link_chain(undefined1 *link_chain, byte *out_link);
 void *alloc_save_record_slot();
-void *save_record_slot_from_index();
-void deserialize_inventory_link_chain();
-void handle_inventory_panel_click();
-void redraw_inventory_widget();
-void redraw_inventory_widget_range();
-int hit_test_inventory_widget();
+void *save_record_slot_from_index(short slot_index);
+void deserialize_inventory_link_chain(byte *link_field, ushort *saved_link);
+void handle_inventory_panel_click(short slot);
+void redraw_inventory_widget(int widget_id);
+void redraw_inventory_widget_range(int first_widget, short last_widget);
+int hit_test_inventory_widget(short x, short y);
 
 #endif

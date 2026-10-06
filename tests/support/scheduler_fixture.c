@@ -3,7 +3,7 @@
 
 /* Local service declarations; game function bodies link these mocks. */
 void *resolve_object_link(ushort *link);
-void *tilemap_lookup(int x, int y);
+void *tilemap_lookup(short x, short y);
 void free_object_slot(void *object);
 void set_pending_update_flags(int flags);
 long ce_rand(void);
@@ -11,7 +11,7 @@ int encode_object_slot_index(void *object);
 undefined4 check_object_placement_clearance(short catalog_type, short ignore_slot, undefined2 position_x, undefined2 position_y, short height, int check_mode, byte step_limit);
 void adjust_door_close_animation_delay(ushort *object);
 undefined4 play_positional_sound_effect(void);
-undefined4 scheduler_advance_effect(void);
+undefined4 scheduler_advance_effect(short entry_slot, int elapsed);
 void *get_object_record_by_slot_index(int slot);
 void build_object_placement_snapshot(void);
 int build_collision_height_field_for_object(ushort *object);
@@ -108,7 +108,7 @@ void *resolve_object_link(ushort *link)
     return slot < 3 && slot > 0 && !freed[slot] ? objects[slot] : NULL;
 }
 
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_EQUAL_INT(12, x);
     TEST_ASSERT_TRUE_MESSAGE(y == 8 || y == 9, "scheduler used an unexpected tile y");
@@ -140,7 +140,7 @@ void adjust_door_close_animation_delay(ushort *object) { (void)object; }
 
 undefined4 play_positional_sound_effect(void) { return 0; }
 
-undefined4 scheduler_advance_effect(void) { TEST_FAIL_MESSAGE("Unexpected directional effect"); return 0; }
+undefined4 scheduler_advance_effect(short entry_slot, int elapsed) { (void)entry_slot; (void)elapsed; TEST_FAIL_MESSAGE("Unexpected directional effect"); return 0; }
 
 void *get_object_record_by_slot_index(int slot) { TEST_ASSERT_EQUAL_INT(1, slot); return objects[1]; }
 

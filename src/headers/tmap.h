@@ -187,18 +187,18 @@ extern undefined2 DAT_0023bc8c;
 
 
 void render_visible_tile_list();
-void *get_texture_page();
+void *get_texture_page(short page_index);
 void walk_visible_tiles();
-void process_visible_tile_cell();
-void emit_tile_objects();
-void update_wall_partition_phase();
-void sort_feature_pairs_by_depth();
-void init_feature_sort_order();
-void resolve_billboard_corner_offset();
-void compute_feature_depth_key();
+void process_visible_tile_cell(byte *cell);
+void emit_tile_objects(ushort *tile);
+void update_wall_partition_phase(char phase);
+void sort_feature_pairs_by_depth(short first, int last);
+void init_feature_sort_order(short count);
+void resolve_billboard_corner_offset(byte *corner, byte *feature);
+void compute_feature_depth_key(char *feature);
 void flush_pending_tile_features();
-void emit_tile_features();
-void *tilemap_lookup();
-byte tile_is_no_magic();
+void emit_tile_features(ushort *tile);
+void *tilemap_lookup(short tile_x, short tile_y);
+byte tile_is_no_magic(int tile_x, int tile_y);
 
 #endif

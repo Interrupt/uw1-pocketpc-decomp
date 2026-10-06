@@ -27,7 +27,7 @@ void set_pending_update_flags(int sound);
 void reset_cursor_confine_rect(void);
 void report_fatal_error_and_exit(void);
 void uw_debug_dump_tmap(int level, const unsigned char *data);
-void *tilemap_lookup(void);
+void *tilemap_lookup(short tile_x, short tile_y);
 void *resolve_object_link(void);
 
 unsigned char arena[0x7c08], pristine_level[0x7c08];
@@ -243,7 +243,7 @@ void uw_debug_dump_tmap(int level, const unsigned char *data)
     TEST_ASSERT_EQUAL_PTR(arena, data);
 }
 
-void *tilemap_lookup(void) { return NULL; }
+void *tilemap_lookup(short tile_x, short tile_y) { (void)tile_x; (void)tile_y; return NULL; }
 
 void *resolve_object_link(void) { return NULL; }
 

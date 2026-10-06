@@ -44,7 +44,7 @@ void weapon_overlay_flash_hold(int passes) {}
 void weapon_overlay_flash_restore(int passes) {}
 void *ce_memset(void *buffer, int value, unsigned size)
 { return memset(buffer, value, size); }
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, x);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, y);

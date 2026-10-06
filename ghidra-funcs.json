@@ -7,8 +7,8 @@
     "still_unnamed_FUN": 12,
     "audited_true": 1469,
     "audited_false": 0,
-    "modernized_true": 144,
-    "modernized_false": 1325
+    "modernized_true": 191,
+    "modernized_false": 1278
   },
   "functions": [
     {
@@ -8943,67 +8943,67 @@
       "param_count": 2,
       "description": "serialize inventory link chain.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "deserialize_inventory_link_chain",
       "path": "src/inventory.c",
-      "line": 254,
+      "line": 250,
       "original_name": "FUN_00044398",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "deserialize inventory link chain.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_inventory_panel_click",
       "path": "src/inventory.c",
-      "line": 293,
+      "line": 285,
       "original_name": "FUN_00046698",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "handle inventory panel click.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "redraw_inventory_widget",
       "path": "src/inventory.c",
-      "line": 460,
+      "line": 449,
       "original_name": "FUN_00046eec",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "redraw inventory widget.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "redraw_inventory_widget_range",
       "path": "src/inventory.c",
-      "line": 504,
+      "line": 490,
       "original_name": "FUN_00048198",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "redraw inventory widget range.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "hit_test_inventory_widget",
       "path": "src/inventory.c",
-      "line": 628,
+      "line": 611,
       "original_name": "FUN_000485f4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "hit test inventory widget.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "perform_object_search_check",
       "path": "src/inventory.c",
-      "line": 669,
+      "line": 649,
       "original_name": "FUN_0003f648",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9014,7 +9014,7 @@
     {
       "name": "toggle_weapon_ready",
       "path": "src/inventory.c",
-      "line": 718,
+      "line": 698,
       "original_name": "FUN_000400a0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9025,7 +9025,7 @@
     {
       "name": "alloc_save_record_slot",
       "path": "src/inventory.c",
-      "line": 739,
+      "line": 719,
       "original_name": "FUN_00044294",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9036,13 +9036,13 @@
     {
       "name": "save_record_slot_from_index",
       "path": "src/inventory.c",
-      "line": 751,
+      "line": 731,
       "original_name": "FUN_000442bc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "Same truncated-pointer-return bug as alloc_save_record_slot just above, same fix.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ready_weapon",
@@ -10098,7 +10098,7 @@
       "param_count": 1,
       "description": "Ghidra lost the return value (literal `return 0`), so the sole caller (emit_catalog_object) dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the moment an animated tile object (door, etc.) came into view.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "emit_catalog_object",
@@ -10107,47 +10107,47 @@
       "original_name": "FUN_00061e60",
       "ghidra_origin": true,
       "param_count": 4,
-      "description": "emit catalog object.",
+      "description": "Object-record pointer -- was `uint`, truncating it (same class as object_list_insert_head above).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "emit_anim_object_frames",
       "path": "src/models.c",
-      "line": 1626,
+      "line": 1618,
       "original_name": "FUN_00064384",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "emit anim object frames.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_model_position_offset",
       "path": "src/models.c",
-      "line": 1876,
+      "line": 1866,
       "original_name": "FUN_0001e594",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "adds a per-axis float offset (param_2/3/4, each an int converted to float via ordfloat_int_to_float2) to the model animation block's own stored position floats at offsets 0xc08/0xc0c/0xc10 (x/y/z).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scale_model_part_offsets",
       "path": "src/models.c",
-      "line": 1912,
+      "line": 1895,
       "original_name": "FUN_0001e6f0",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "multiplies (ordfloat_mul, float MULTIPLY) a model animation block's own position floats by per-axis scale factors (param_2/3/4).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_3d_object_models",
       "path": "src/models.c",
-      "line": 1959,
+      "line": 1936,
       "original_name": "FUN_00038680",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10158,13 +10158,13 @@
     {
       "name": "parse_e_model_file",
       "path": "src/models.c",
-      "line": 2027,
+      "line": 2007,
       "original_name": "FUN_00020a74",
       "ghidra_origin": true,
       "param_count": 3,
-      "description": "parse e model file.",
+      "description": "HACK: not part of the original recovered signature -- see its own use site (the \"HACK.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "movement_collision_sweep",
@@ -12746,7 +12746,7 @@
       "description": "NKDbgPrintfW",
       "audited": true,
       "modernized": true,
-      "audit_note": "VERIFIED vs ARM: variadic printf-style (callee homes r0-r3); arities legitimately vary (declared 2; e.g. src/game.c:2168 passes 1, src/models.c:2141 passes 1, src/models.c:2186 passes 3, ...)"
+      "audit_note": "VERIFIED vs ARM: variadic printf-style (callee homes r0-r3); arities legitimately vary (declared 2; e.g. src/game.c:2168 passes 1, src/models.c:2115 passes 1, src/models.c:2160 passes 3, ...)"
     },
     {
       "name": "ce_fopen",
@@ -12769,7 +12769,7 @@
       "description": "ce fscanf",
       "audited": true,
       "modernized": true,
-      "audit_note": "VERIFIED vs ARM: variadic scanf-style; arities legitimately vary (declared 3; e.g. src/models.c:2146 passes 5, src/models.c:2168 passes 5, src/models.c:2201 passes 5, ...)"
+      "audit_note": "VERIFIED vs ARM: variadic scanf-style; arities legitimately vary (declared 3; e.g. src/models.c:2120 passes 5, src/models.c:2142 passes 5, src/models.c:2175 passes 5, ...)"
     },
     {
       "name": "ce_fclose",
@@ -14894,151 +14894,151 @@
       "param_count": 1,
       "description": "removes a scheduler entry's own world object (tile unlink + free_object_slot) -- named to match System Shock's own term for this shared timed-effects system.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_remove_entry",
       "path": "src/scheduler.c",
-      "line": 51,
+      "line": 48,
       "original_name": "FUN_000809cc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "finds the scheduler entry whose encoded object link matches param_1 and removes it (swap-with-last, decrement count).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_finish_entry",
       "path": "src/scheduler.c",
-      "line": 94,
+      "line": 88,
       "original_name": "FUN_00080a98",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "scheduler_tick's finalize step, run once an entry's delay has expired -- one last scheduler_step_entry catch-up, then (for class 0xf, doors) the actual final open/close quality flip.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_relink_entry",
       "path": "src/scheduler.c",
-      "line": 216,
+      "line": 207,
       "original_name": "FUN_00080e00",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "finds the scheduler entry currently linked to param_2 (an \"old\" object) and re-links it to point at param_1(a \"new\" object) instead, matching by each entry's encoded object-link field.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_add_entry",
       "path": "src/scheduler.c",
-      "line": 247,
+      "line": 234,
       "original_name": "FUN_00080ed4",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "pushes a new entry onto the scheduler -- an encoded object link (param_1), delay (param_2), initial animation offset (param_3), and tile position (param_4/param_5).",
       "audited": true,
-      "modernized": false,
-      "audit_note": "VERIFIED vs ARM: ARM spawn_effect_debris_burst (0x81680) also pushes a 6th stack arg that the callee never reads (declared 5; e.g. src/object_actions.c:2501 passes 6)"
+      "modernized": true,
+      "audit_note": "VERIFIED vs ARM: ARM spawn_effect_debris_burst (0x81680) also pushes a 6th stack arg that the callee never reads"
     },
     {
       "name": "scheduler_step_entry",
       "path": "src/scheduler.c",
-      "line": 306,
+      "line": 287,
       "original_name": "FUN_00081034",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "scheduler_tick's per-tick step for one still-pending entry -- per-class behavior-flag bits select a gradual quality step toward a target (bit 0, e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_tick",
       "path": "src/scheduler.c",
-      "line": 406,
+      "line": 383,
       "original_name": "FUN_0008128c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "walks every live scheduler entry, called from ordinary gameplay's own per-tick pacing (move_key_directional_step and its per-frame sibling, gated by DAT_000879ac -- see init_gameplay_session's own comment) with param_1 = elapsed ticks.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_scheduled_effect_object",
       "path": "src/scheduler.c",
-      "line": 463,
+      "line": 437,
       "original_name": "FUN_00081814",
       "ghidra_origin": true,
       "param_count": 7,
       "description": "general \"spawn a scheduled effect object\" primitive.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_find_entry",
       "path": "src/scheduler.c",
-      "line": 530,
+      "line": 498,
       "original_name": "FUN_000819f0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "linear-searches the scheduler for the entry whose encoded link matches encode_object_slot_index()'s last result.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_get_delay",
       "path": "src/scheduler.c",
-      "line": 558,
+      "line": 524,
       "original_name": "FUN_00081a84",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "reads scheduler_find_entry's result's delay field.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_set_delay",
       "path": "src/scheduler.c",
-      "line": 578,
+      "line": 542,
       "original_name": "FUN_00081abc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "re-arms scheduler_find_entry's result's delay field.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_advance_effect",
       "path": "src/scheduler.c",
-      "line": 599,
+      "line": 559,
       "original_name": "FUN_00081af4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "scheduler_step_entry's bit-2 sub-handler, called for entries whose per-class behavior flags select a positional/ directional step each tick.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_load",
       "path": "src/scheduler.c",
-      "line": 684,
+      "line": 643,
       "original_name": "FUN_00081ce4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "loads the whole scheduler table (g_scheduler_table, 0x180 bytes = 64 entries * 6) from a save file, then recomputes g_scheduler_count by re-scanning for the first empty entry.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "scheduler_save",
       "path": "src/scheduler.c",
-      "line": 721,
+      "line": 678,
       "original_name": "FUN_00081d74",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "saves the whole scheduler table (g_scheduler_table, 0x180 bytes) to a save file, and (if g_scheduler_count < 0x40) blanks out one trailing empty entry first so a stale leftover doesn't get misread as real data on the next scheduler_load.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_text_string",
@@ -15049,34 +15049,34 @@
       "param_count": 3,
       "description": "was DAT_0008909c. Line height (pixels) of the currently-active font, read from its header by load_font_metrics;.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "measure_text_width",
       "path": "src/text.c",
-      "line": 180,
+      "line": 175,
       "original_name": "FUN_000112a0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "measure text width.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "unpack_glyph_bitmap",
       "path": "src/text.c",
-      "line": 204,
+      "line": 197,
       "original_name": "FUN_000112fc",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "unpack glyph bitmap.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_font_metrics",
       "path": "src/text.c",
-      "line": 254,
+      "line": 243,
       "original_name": "FUN_000113b4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15087,40 +15087,40 @@
     {
       "name": "select_active_font",
       "path": "src/text.c",
-      "line": 286,
+      "line": 275,
       "original_name": "FUN_00040d00",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "select active font.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "pack_word_byte",
       "path": "src/text.c",
-      "line": 325,
+      "line": 312,
       "original_name": "FUN_000228ac",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "sets one byte of a 16-bit word, keeping the other byte from param_1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "itoa_radix",
       "path": "src/text.c",
-      "line": 350,
+      "line": 333,
       "original_name": "FUN_000229e0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "itoa-style integer-to-string helper.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_glyph_width_table",
       "path": "src/text.c",
-      "line": 420,
+      "line": 398,
       "original_name": "FUN_0003894c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15131,18 +15131,18 @@
     {
       "name": "get_catalog_sprite_width",
       "path": "src/text.c",
-      "line": 477,
+      "line": 455,
       "original_name": "FUN_00038a8c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "computes a catalog sprite/texture id's stored width value from the glyph/sprite data table (DAT_00110fc8).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "save_draw_command_cursor",
       "path": "src/text.c",
-      "line": 488,
+      "line": 464,
       "original_name": "FUN_00038ab0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15153,7 +15153,7 @@
     {
       "name": "init_draw_command_cursor",
       "path": "src/text.c",
-      "line": 499,
+      "line": 475,
       "original_name": "FUN_00038acc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15164,24 +15164,24 @@
     {
       "name": "emit_glyph_draw_command",
       "path": "src/text.c",
-      "line": 510,
+      "line": 486,
       "original_name": "FUN_00038ae8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "emits a glyph/sprite reference (param_1, a catalog id.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "finalize_glyph_draw_command",
       "path": "src/text.c",
-      "line": 552,
+      "line": 524,
       "original_name": "FUN_00038c14",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "finalizes a glyph/sprite id's draw-command entry (param_1).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "render_visible_tile_list",
@@ -15214,78 +15214,78 @@
       "param_count": 1,
       "description": "process visible tile cell.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "tilemap_lookup",
       "path": "src/tmap.c",
-      "line": 1514,
+      "line": 1511,
       "original_name": "FUN_00068100",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "tileX,tileY) -> 4-byte tile record ptr in the level map, NULL if either coord is outside 0..63.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "update_wall_partition_phase",
       "path": "src/tmap.c",
-      "line": 1540,
+      "line": 1534,
       "original_name": "FUN_00064d34",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "tracks which phase of the per-ring wall/tile scan is current (recorded in DAT_0023bb94, read back by bitmap.c's sprite-vs-wall depth-partition dispatch) and maintains a rolling window of up to 8 recen.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sort_feature_pairs_by_depth",
       "path": "src/tmap.c",
-      "line": 1590,
+      "line": 1581,
       "original_name": "FUN_00064e3c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "bubble-sorts adjacent-index pairs in DAT_0023b8c8/DAT_0023b8c9 (see the array-layout comment on their declaration) over [param_1, param_2) by each entry's depth key (compute_feature_depth_key's output, cached in DAT_0023bb98).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_feature_sort_order",
       "path": "src/tmap.c",
-      "line": 1630,
+      "line": 1617,
       "original_name": "FUN_00064ec8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "initializes DAT_0023b8c8[0..param_1) to the identity order (0,1,2,...) before sort_feature_pairs_by_depth reorders it.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_billboard_corner_offset",
       "path": "src/tmap.c",
-      "line": 1653,
+      "line": 1637,
       "original_name": "FUN_00065210",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "computes a rotated-quad corner's screen X/Y offset (param_1[1]/[2]) from a source feature record's facing byte (param_2[3]) via the DAT_00086d68/DAT_00086d69 per-view-facing corner-index remap table.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_feature_depth_key",
       "path": "src/tmap.c",
-      "line": 1673,
+      "line": 1653,
       "original_name": "FUN_000652e8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "computes a feature's draw-order depth key (written to param_1[0]) from its X/Y offsets (param_1[1]/[2]), combined differently depending on which ring-scan phase is current (DAT_0023bb94, see update_wall_partition_phase).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "flush_pending_tile_features",
       "path": "src/tmap.c",
-      "line": 1700,
+      "line": 1677,
       "original_name": "FUN_00065348",
       "ghidra_origin": true,
       "param_count": 0,
@@ -15296,46 +15296,46 @@
     {
       "name": "emit_tile_features",
       "path": "src/tmap.c",
-      "line": 1715,
+      "line": 1692,
       "original_name": "FUN_00065394",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "emit tile features.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "tile_is_no_magic",
       "path": "src/tmap.c",
-      "line": 2010,
+      "line": 1985,
       "original_name": "FUN_00073b18",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "struct-recovery-plan.md: converts a uw_tile_t.no_magic read (was `*(byte*)(tile+1) >> 6 & 1`, bit 6 of byte 1 = overall bit 14 = no_magic per uw_tile_t's own field- confirmed layout) to the real struct field.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "get_texture_page",
       "path": "src/tmap.c",
-      "line": 2023,
+      "line": 1995,
       "original_name": "FUN_00040c5c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "Return type was `int`, truncating the real 64-bit pointer every caller casts back to (byte *) and dereferences.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "emit_tile_objects",
       "path": "src/tmap.c",
-      "line": 2053,
+      "line": 2023,
       "original_name": "FUN_00060aa0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "emit tile objects.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_trap_type_effect",

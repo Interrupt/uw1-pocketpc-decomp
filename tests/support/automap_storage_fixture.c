@@ -35,7 +35,7 @@ short *DAT_00085a6c=click_position;
 static const char *note_input;
 
 bool select_active_font(char *font) { return true; }
-void draw_text_string(char *text,int x,int y)
+void draw_text_string(char *text, short x, short y)
 {
     TEST_ASSERT_LESS_THAN_INT(100,automap_text_draws);
     snprintf(automap_drawn_text[automap_text_draws],52,"%s",text);

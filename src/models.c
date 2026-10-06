@@ -613,9 +613,7 @@ static short DAT_00189576;
    dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the moment an animated tile object (door,
    etc.) came into view. */
 // was FUN_0001dc04
-void *tick_anim_record(catalog)
-short catalog;
-
+void *tick_anim_record(short catalog)
 {
   undefined4 uVar1;
   int *piVar2;
@@ -673,14 +671,9 @@ short catalog;
 // WARNING: Removing unreachable block (ram,0x00064024)
 
 // was FUN_00061e60
-void emit_catalog_object(catalog,obj,heading,frame_or_texid)
-byte catalog;
-/* Object-record pointer -- was `uint`, truncating it (same class as
-   object_list_insert_head above). */
-char *obj;
-char heading;
-short frame_or_texid;
-
+/* Object-record pointer -- was `uint`, truncating it (same class as object_list_insert_head
+   above). */
+void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_texid)
 {
   int uw_ord2005_rem_123 = 0; int uw_ord2005_rem_124 = 0;
   int iVar1;
@@ -1615,7 +1608,6 @@ LAB_000640ec:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  return;
 }
 
 
@@ -1623,10 +1615,7 @@ LAB_000640ec:
 // WARNING: Removing unreachable block (ram,0x000647ac)
 
 // was FUN_00064384
-void emit_anim_object_frames(door_type,obj)
-uint door_type;
-ushort * obj;
-
+void emit_anim_object_frames(uint door_type, ushort *obj)
 {
   short sVar1;
   int iVar3;
@@ -1865,7 +1854,6 @@ LAB_00064cdc:
       uVar10 = ((int)local_37 + (int)local_30) * 0x1000000 >> 0x18;
     } while ((int)uVar10 < 2);
   }
-  return;
 }
 
 
@@ -1873,35 +1861,30 @@ LAB_00064cdc:
 // was FUN_0001e594 -- adds a per-axis float offset (param_2/3/4, each an int converted to float via
 // ordfloat_int_to_float2) to the model animation block's own stored position floats at offsets
 // 0xc08/0xc0c/0xc10 (x/y/z).
-void apply_model_position_offset(param_1,param_2,param_3,param_4)
-char *param_1;  /* was `int` -- truncated the real _anim pointer emit_catalog_object passes in, latent until the
+/* was `int` -- truncated the real _anim pointer emit_catalog_object passes in, latent until the
    DAT_00202c9X object-property fix let real property data reach a nonzero case here */
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-
+void apply_model_position_offset(char *model, undefined4 offset_x, undefined4 offset_y, undefined4 offset_z)
 {
   undefined4 uVar1;
   
-  uVar1 = ordfloat_int_to_float2(param_2);
-  uVar1 = ordfloat_add(*(undefined4 *)(param_1 + 0xc08),uVar1);
-  *(char *)(param_1 + 0xc08) = (char)uVar1;
-  *(char *)(param_1 + 0xc09) = (char)((uint)uVar1 >> 8);
-  *(char *)(param_1 + 0xc0a) = (char)((uint)uVar1 >> 0x10);
-  *(char *)(param_1 + 0xc0b) = (char)((uint)uVar1 >> 0x18);
-  uVar1 = ordfloat_int_to_float2(param_3);
-  uVar1 = ordfloat_add(*(undefined4 *)(param_1 + 0xc0c),uVar1);
-  *(char *)(param_1 + 0xc0c) = (char)uVar1;
-  *(char *)(param_1 + 0xc0d) = (char)((uint)uVar1 >> 8);
-  *(char *)(param_1 + 0xc0e) = (char)((uint)uVar1 >> 0x10);
-  *(char *)(param_1 + 0xc0f) = (char)((uint)uVar1 >> 0x18);
-  uVar1 = ordfloat_int_to_float2(param_4);
-  uVar1 = ordfloat_add(*(undefined4 *)(param_1 + 0xc10),uVar1);
-  *(char *)(param_1 + 0xc10) = (char)uVar1;
-  *(char *)(param_1 + 0xc11) = (char)((uint)uVar1 >> 8);
-  *(char *)(param_1 + 0xc12) = (char)((uint)uVar1 >> 0x10);
-  *(char *)(param_1 + 0xc13) = (char)((uint)uVar1 >> 0x18);
-  return;
+  uVar1 = ordfloat_int_to_float2(offset_x);
+  uVar1 = ordfloat_add(*(undefined4 *)(model + 0xc08),uVar1);
+  *(char *)(model + 0xc08) = (char)uVar1;
+  *(char *)(model + 0xc09) = (char)((uint)uVar1 >> 8);
+  *(char *)(model + 0xc0a) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(model + 0xc0b) = (char)((uint)uVar1 >> 0x18);
+  uVar1 = ordfloat_int_to_float2(offset_y);
+  uVar1 = ordfloat_add(*(undefined4 *)(model + 0xc0c),uVar1);
+  *(char *)(model + 0xc0c) = (char)uVar1;
+  *(char *)(model + 0xc0d) = (char)((uint)uVar1 >> 8);
+  *(char *)(model + 0xc0e) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(model + 0xc0f) = (char)((uint)uVar1 >> 0x18);
+  uVar1 = ordfloat_int_to_float2(offset_z);
+  uVar1 = ordfloat_add(*(undefined4 *)(model + 0xc10),uVar1);
+  *(char *)(model + 0xc10) = (char)uVar1;
+  *(char *)(model + 0xc11) = (char)((uint)uVar1 >> 8);
+  *(char *)(model + 0xc12) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(model + 0xc13) = (char)((uint)uVar1 >> 0x18);
 }
 
 
@@ -1909,47 +1892,41 @@ undefined4 param_4;
 // was FUN_0001e6f0 -- multiplies (ordfloat_mul, float MULTIPLY) a model animation block's own
 // position floats by per-axis scale factors (param_2/3/4). param_1[0] is read as a sub-part
 // count...
-void scale_model_part_offsets(param_1,param_2,param_3,param_4)
-int * param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-
+void scale_model_part_offsets(int *model_block, undefined4 scale_x, undefined4 scale_y, undefined4 scale_z)
 {
   undefined4 uVar1;
-  int *piVar2;
+  int *part;
   int iVar3;
   
   iVar3 = 0;
-  piVar2 = param_1;
-  if (0 < *param_1) {
+  part = model_block;
+  if (0 < *model_block) {
     do {
-      uVar1 = ordfloat_mul(piVar2[2],param_2);
-      *(char *)(piVar2 + 2) = (char)uVar1;
-      *(char *)((char *)piVar2 + 9) = (char)((uint)uVar1 >> 8);
-      *(char *)((char *)piVar2 + 10) = (char)((uint)uVar1 >> 0x10);
-      *(char *)((char *)piVar2 + 0xb) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)piVar2 + 0xf),
-                                    CONCAT12(*(undefined1 *)((char *)piVar2 + 0xe),
-                                             CONCAT11(*(undefined1 *)((char *)piVar2 + 0xd),
-                                                      (char)piVar2[3]))),param_3);
-      *(char *)(piVar2 + 3) = (char)uVar1;
-      *(char *)((char *)piVar2 + 0xd) = (char)((uint)uVar1 >> 8);
-      *(char *)((char *)piVar2 + 0xe) = (char)((uint)uVar1 >> 0x10);
-      *(char *)((char *)piVar2 + 0xf) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)piVar2 + 0x13),
-                                    CONCAT12(*(undefined1 *)((char *)piVar2 + 0x12),
-                                             CONCAT11(*(undefined1 *)((char *)piVar2 + 0x11),
-                                                      (char)piVar2[4]))),param_4);
-      *(char *)(piVar2 + 4) = (char)uVar1;
+      uVar1 = ordfloat_mul(part[2],scale_x);
+      *(char *)(part + 2) = (char)uVar1;
+      *(char *)((char *)part + 9) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)part + 10) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)part + 0xb) = (char)((uint)uVar1 >> 0x18);
+      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)part + 0xf),
+                                    CONCAT12(*(undefined1 *)((char *)part + 0xe),
+                                             CONCAT11(*(undefined1 *)((char *)part + 0xd),
+                                                      (char)part[3]))),scale_y);
+      *(char *)(part + 3) = (char)uVar1;
+      *(char *)((char *)part + 0xd) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)part + 0xe) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)part + 0xf) = (char)((uint)uVar1 >> 0x18);
+      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)part + 0x13),
+                                    CONCAT12(*(undefined1 *)((char *)part + 0x12),
+                                             CONCAT11(*(undefined1 *)((char *)part + 0x11),
+                                                      (char)part[4]))),scale_z);
+      *(char *)(part + 4) = (char)uVar1;
       iVar3 = iVar3 + 1;
-      *(char *)((char *)piVar2 + 0x11) = (char)((uint)uVar1 >> 8);
-      *(char *)((char *)piVar2 + 0x12) = (char)((uint)uVar1 >> 0x10);
-      *(char *)((char *)piVar2 + 0x13) = (char)((uint)uVar1 >> 0x18);
-      piVar2 = piVar2 + 3;
-    } while (iVar3 < *param_1);
+      *(char *)((char *)part + 0x11) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)part + 0x12) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)part + 0x13) = (char)((uint)uVar1 >> 0x18);
+      part = part + 3;
+    } while (iVar3 < *model_block);
   }
-  return;
 }
 
 
@@ -2024,13 +2001,10 @@ static void *uw_e_model_strip_cr(void *raw_fh) {
   return clean ? clean : f;
 }
 
-void parse_e_model_file(param_1,param_2,flip_winding)
-char *param_1;
-undefined1 * param_2;
-int flip_winding; /* HACK: not part of the original recovered signature -- see its own use site (the "HACK:
+/* HACK: not part of the original recovered signature -- see its own use site (the "HACK:
    flip_winding" comment, right before the PARTS block's per-face vertex-reversal) for the full
    rationale. */
-
+void parse_e_model_file(char *path, undefined1 *out_buffer, int flip_winding)
 {
   char stack0xffdc3228_buf [256];
   char *stack0xffdc3228_ptr;
@@ -2113,7 +2087,7 @@ int flip_winding; /* HACK: not part of the original recovered signature -- see i
     *stack0xffdc3228_ptr = cVar18; stack0xffdc3228_ptr = stack0xffdc3228_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar18 != '\0');
-  ce_strcat(acStack_130,param_1);
+  ce_strcat(acStack_130,path);
   pvVar_fh = ce_fopen(acStack_130,&DAT_00084a24);
   pvVar_fh = uw_e_model_strip_cr(pvVar_fh);
   local_25c = pvVar_fh;
@@ -2123,18 +2097,18 @@ int flip_winding; /* HACK: not part of the original recovered signature -- see i
   if (pvVar_fh == 0) {
     goto LAB_0002263c;
   }
-  param_2[0xc08] = 0;
-  param_2[0xc09] = 0;
-  param_2[0xc0a] = 0;
-  param_2[0xc0b] = 0;
-  param_2[0xc0c] = 0;
-  param_2[0xc0d] = 0;
-  param_2[0xc0e] = 0;
-  param_2[0xc0f] = 0;
-  param_2[0xc10] = 0;
-  param_2[0xc11] = 0;
-  param_2[0xc12] = 0;
-  param_2[0xc13] = 0;
+  out_buffer[0xc08] = 0;
+  out_buffer[0xc09] = 0;
+  out_buffer[0xc0a] = 0;
+  out_buffer[0xc0b] = 0;
+  out_buffer[0xc0c] = 0;
+  out_buffer[0xc0d] = 0;
+  out_buffer[0xc0e] = 0;
+  out_buffer[0xc0f] = 0;
+  out_buffer[0xc10] = 0;
+  out_buffer[0xc11] = 0;
+  out_buffer[0xc12] = 0;
+  out_buffer[0xc13] = 0;
   ce_fscanf(pvVar_fh,s__100s_00084a1c,auStack_1c8);
   iVar4 = ce_strcmp(auStack_1c8,s_BEGIN_00084a14);
   if (iVar4 != 0) {
@@ -2177,7 +2151,7 @@ int flip_winding; /* HACK: not part of the original recovered signature -- see i
       }
     }
     if (getenv("UW_DEBUG_MODEL_TOKENS"))
-      fprintf(stderr, "[model-token] file=%s iVar4=%d token='%s' delim='%c'\n", param_1, iVar4, auStack_1c8, local_260[0]);
+      fprintf(stderr, "[model-token] file=%s iVar4=%d token='%s' delim='%c'\n", path, iVar4, auStack_1c8, local_260[0]);
     if (((iVar4 == -1) && (iVar5 = ce_strncmp(auStack_1c8,&DAT_000849c8,3), iVar5 == 0)) ||
        ((iVar4 != 0 && (iVar5 = ce_strcmp(auStack_1c8,&DAT_000849c8), iVar5 == 0))))
     goto LAB_0002263c;
@@ -2267,22 +2241,22 @@ LAB_00022604:
                conversions right below it (Y=local_224, Z=local_214) both pass their value
                explicitly; this one, the X coordinate, did not. */
             uVar7 = ordfloat_int_to_float2(local_204);
-            param_2[iVar19 * 0xc + 8] = (char)uVar7;
-            param_2[iVar19 * 0xc + 9] = (char)((uint)uVar7 >> 8);
-            param_2[iVar19 * 0xc + 10] = (char)((uint)uVar7 >> 0x10);
-            param_2[iVar19 * 0xc + 0xb] = (char)((uint)uVar7 >> 0x18);
+            out_buffer[iVar19 * 0xc + 8] = (char)uVar7;
+            out_buffer[iVar19 * 0xc + 9] = (char)((uint)uVar7 >> 8);
+            out_buffer[iVar19 * 0xc + 10] = (char)((uint)uVar7 >> 0x10);
+            out_buffer[iVar19 * 0xc + 0xb] = (char)((uint)uVar7 >> 0x18);
             uVar7 = ordfloat_int_to_float2(local_224);
-            puVar13 = param_2 + (g_model_parse_point_count + 1) * 0xc;
+            puVar13 = out_buffer + (g_model_parse_point_count + 1) * 0xc;
             *puVar13 = (char)uVar7;
             puVar13[1] = (char)((uint)uVar7 >> 8);
             puVar13[2] = (char)((uint)uVar7 >> 0x10);
             puVar13[3] = (char)((uint)uVar7 >> 0x18);
             uVar7 = ordfloat_int_to_float2(local_214);
             iVar19 = g_model_parse_point_count;
-            param_2[g_model_parse_point_count * 0xc + 0x10] = (char)uVar7;
-            param_2[iVar19 * 0xc + 0x11] = (char)((uint)uVar7 >> 8);
-            param_2[iVar19 * 0xc + 0x12] = (char)((uint)uVar7 >> 0x10);
-            param_2[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
+            out_buffer[g_model_parse_point_count * 0xc + 0x10] = (char)uVar7;
+            out_buffer[iVar19 * 0xc + 0x11] = (char)((uint)uVar7 >> 8);
+            out_buffer[iVar19 * 0xc + 0x12] = (char)((uint)uVar7 >> 0x10);
+            out_buffer[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
             g_model_parse_point_count = g_model_parse_point_count + 1;
             if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
               static int hwm_points = -1;
@@ -2297,31 +2271,31 @@ LAB_00022604:
             }
           }
           DAT_000db4fc = g_model_parse_point_count;
-          param_2[1] = (char)((uint)g_model_parse_point_count >> 8);
-          *param_2 = (char)iVar19;
-          param_2[2] = (char)((uint)iVar19 >> 0x10);
-          param_2[3] = (char)((uint)iVar19 >> 0x18);
+          out_buffer[1] = (char)((uint)g_model_parse_point_count >> 8);
+          *out_buffer = (char)iVar19;
+          out_buffer[2] = (char)((uint)iVar19 >> 0x10);
+          out_buffer[3] = (char)((uint)iVar19 >> 0x18);
           uVar7 = ordfloat_int_to_float2(iVar4);
-          param_2[0x3c1c] = (char)uVar7;
-          param_2[0x3c1d] = (char)((uint)uVar7 >> 8);
-          param_2[0x3c1e] = (char)((uint)uVar7 >> 0x10);
-          param_2[0x3c1f] = (char)((uint)uVar7 >> 0x18);
+          out_buffer[0x3c1c] = (char)uVar7;
+          out_buffer[0x3c1d] = (char)((uint)uVar7 >> 8);
+          out_buffer[0x3c1e] = (char)((uint)uVar7 >> 0x10);
+          out_buffer[0x3c1f] = (char)((uint)uVar7 >> 0x18);
           uVar7 = ordfloat_int_to_float2(iVar10 - iVar4);
-          param_2[0x3c20] = (char)uVar7;
-          param_2[0x3c21] = (char)((uint)uVar7 >> 8);
-          param_2[0x3c22] = (char)((uint)uVar7 >> 0x10);
-          param_2[0x3c23] = (char)((uint)uVar7 >> 0x18);
+          out_buffer[0x3c20] = (char)uVar7;
+          out_buffer[0x3c21] = (char)((uint)uVar7 >> 8);
+          out_buffer[0x3c22] = (char)((uint)uVar7 >> 0x10);
+          out_buffer[0x3c23] = (char)((uint)uVar7 >> 0x18);
           uVar7 = ordfloat_int_to_float2(iVar3);
-          param_2[0x3c24] = (char)uVar7;
-          param_2[0x3c25] = (char)((uint)uVar7 >> 8);
-          param_2[0x3c26] = (char)((uint)uVar7 >> 0x10);
-          param_2[0x3c27] = (char)((uint)uVar7 >> 0x18);
+          out_buffer[0x3c24] = (char)uVar7;
+          out_buffer[0x3c25] = (char)((uint)uVar7 >> 8);
+          out_buffer[0x3c26] = (char)((uint)uVar7 >> 0x10);
+          out_buffer[0x3c27] = (char)((uint)uVar7 >> 0x18);
           uVar7 = ordfloat_int_to_float2(iVar5 - iVar3);
           pcVar2 = &DAT_000849a8;
-          param_2[0x3c28] = (char)uVar7;
-          param_2[0x3c29] = (char)((uint)uVar7 >> 8);
-          param_2[0x3c2a] = (char)((uint)uVar7 >> 0x10);
-          param_2[0x3c2b] = (char)((uint)uVar7 >> 0x18);
+          out_buffer[0x3c28] = (char)uVar7;
+          out_buffer[0x3c29] = (char)((uint)uVar7 >> 8);
+          out_buffer[0x3c2a] = (char)((uint)uVar7 >> 0x10);
+          out_buffer[0x3c2b] = (char)((uint)uVar7 >> 0x18);
           pvVar_fh = local_25c;
           goto LAB_00022604;
         }
@@ -2356,11 +2330,11 @@ LAB_00022604:
               (&DAT_000c9e34)[iVar5] = 0xff;
               (&DAT_000c9e35)[iVar5] = 0xff;
               (&DAT_000c9e36)[iVar5] = 0xff;
-              param_2[iVar4 * 0x60 + 0xc6c] = 1;
-              param_2[iVar4 * 0x60 + 0xc6d] = 0;
-              param_2[iVar4 * 0x60 + 0xc6e] = 0;
-              param_2[iVar4 * 0x60 + 0xc6f] = 0;
-              puVar14 = param_2 + (g_model_parse_part_count + 0x21) * 0x60;
+              out_buffer[iVar4 * 0x60 + 0xc6c] = 1;
+              out_buffer[iVar4 * 0x60 + 0xc6d] = 0;
+              out_buffer[iVar4 * 0x60 + 0xc6e] = 0;
+              out_buffer[iVar4 * 0x60 + 0xc6f] = 0;
+              puVar14 = out_buffer + (g_model_parse_part_count + 0x21) * 0x60;
               *puVar14 = 0xe0;
               puVar14[1] = 0;
               puVar14[2] = 0;
@@ -2433,25 +2407,25 @@ LAB_000218b8:
                   DAT_000c8b00 = DAT_000c8b00 + 1;
                   iVar10 = g_model_parse_part_count * 0x18 + iVar5;
                   iVar5 = iVar5 + 1;
-                  puVar13 = param_2 + (iVar10 + 0x306) * 4;
+                  puVar13 = out_buffer + (iVar10 + 0x306) * 4;
                   *puVar13 = (char)local_210;
                   puVar13[1] = (char)((uint)local_210 >> 8);
                   puVar13[2] = (char)((uint)local_210 >> 0x10);
                   puVar13[3] = (char)((uint)local_210 >> 0x18);
                   iVar10 = g_model_parse_part_count;
                 } while (local_260[0] == ',');
-                param_2[g_model_parse_part_count * 0x60 + 0xc14] = (char)iVar5;
-                param_2[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
-                param_2[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
-                param_2[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
+                out_buffer[g_model_parse_part_count * 0x60 + 0xc14] = (char)iVar5;
+                out_buffer[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
+                out_buffer[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
+                out_buffer[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
                 /* HACK: flip_winding (new parameter, not part of the original recovered signature)
                    -- caller-supplied, per-model opt-in to reverse every face's just-read vertex
                    list. */
                 if (flip_winding && 1 < iVar3) {
                   int _flip_lo = 0, _flip_hi = iVar3 - 1;
                   while (_flip_lo < _flip_hi) {
-                    int *_flip_pa = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_lo + 0x306) * 4);
-                    int *_flip_pb = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_hi + 0x306) * 4);
+                    int *_flip_pa = (int *)(out_buffer + (g_model_parse_part_count * 0x18 + _flip_lo + 0x306) * 4);
+                    int *_flip_pb = (int *)(out_buffer + (g_model_parse_part_count * 0x18 + _flip_hi + 0x306) * 4);
                     int _flip_tmp = *_flip_pa;
                     *_flip_pa = *_flip_pb;
                     *_flip_pb = _flip_tmp;
@@ -2459,13 +2433,13 @@ LAB_000218b8:
                   }
                 }
                 if (getenv("UW_DEBUG_EPARSE"))
-                  fprintf(stderr, "[eparse] %s part=%d vertcount=%d\n", param_1, g_model_parse_part_count, iVar5);
-                iVar5 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc18);
-                iVar10 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc20);
-                vec3_sub(param_2 + iVar5 * 0xc + 8,
-                             param_2 + *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc1c) * 0xc + 8,
+                  fprintf(stderr, "[eparse] %s part=%d vertcount=%d\n", path, g_model_parse_part_count, iVar5);
+                iVar5 = *(int *)(out_buffer + g_model_parse_part_count * 0x60 + 0xc18);
+                iVar10 = *(int *)(out_buffer + g_model_parse_part_count * 0x60 + 0xc20);
+                vec3_sub(out_buffer + iVar5 * 0xc + 8,
+                             out_buffer + *(int *)(out_buffer + g_model_parse_part_count * 0x60 + 0xc1c) * 0xc + 8,
                              auStack_150);
-                vec3_sub(param_2 + iVar5 * 0xc + 8,param_2 + iVar10 * 0xc + 8,auStack_160);
+                vec3_sub(out_buffer + iVar5 * 0xc + 8,out_buffer + iVar10 * 0xc + 8,auStack_160);
                 vec3_cross(auStack_160,auStack_150,auStack_140);
                 if ((local_23c == 4) && (iVar3 != 4)) {
                   NKDbgPrintfW(s_Error__polygon__d__bitmap_must_h_00084898,g_model_parse_part_count);
@@ -2684,10 +2658,10 @@ LAB_00021bec:
             iVar5 = g_model_parse_part_count;
           } while (local_260[0] == ';');
           iVar10 = 0;
-          param_2[5] = (char)((uint)g_model_parse_part_count >> 8);
-          param_2[4] = (char)iVar5;
-          param_2[6] = (char)((uint)iVar5 >> 0x10);
-          param_2[7] = (char)((uint)iVar5 >> 0x18);
+          out_buffer[5] = (char)((uint)g_model_parse_part_count >> 8);
+          out_buffer[4] = (char)iVar5;
+          out_buffer[6] = (char)((uint)iVar5 >> 0x10);
+          out_buffer[7] = (char)((uint)iVar5 >> 0x18);
           iVar3 = g_model_parse_part_count;
           iVar5 = g_model_parse_part_count;
           piVar17 = piVar20;
@@ -3034,5 +3008,4 @@ LAB_0002263c:
       piVar20 = (int *)((char *)piVar20 + 0x67);
     } while (iVar4 < iVar3);
   }
-  return;
 }

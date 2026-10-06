@@ -8,7 +8,7 @@ short fine(ushort *object, int offset);
 void *alloc_object_slot(int mobile);
 void free_object_slot(void *object);
 int encode_object_slot_index(void *object);
-void *tilemap_lookup(int x, int y);
+void *tilemap_lookup(short x, short y);
 void *resolve_object_link(ushort *head);
 void heading_to_sine_cosine(uint heading, short *sine, short *cosine);
 void collision_height_envelope(int unused, int mode);

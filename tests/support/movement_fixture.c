@@ -58,7 +58,7 @@ void movement_fixture_write_short(int offset, short value)
     memcpy(movement + offset, &value, sizeof(value));
 }
 
-void *tilemap_lookup(int tile_x, int tile_y)
+void *tilemap_lookup(short tile_x, short tile_y)
 {
     if (!movement_fixture.setup_fixture) {
         TEST_ASSERT_EQUAL_INT(1, tile_x);
