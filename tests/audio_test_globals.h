@@ -15,6 +15,15 @@ extern int DAT_0023c378;
 extern undefined4 *DAT_0023c3b8;
 extern char s__SOUND__0008750c[], s_uw00_mod_00087514[];
 
+/* Sound-effects-subsystem twins of DAT_00087454/DAT_00087448 (both
+   non-static in audio.c now -- see their own comment there), and
+   allocate_and_play_sound_channel's own private channel-slot
+   bookkeeping it indexes directly -- storage in audio_fixture.c. */
+extern int DAT_00087450, DAT_0008744c;
+extern byte g_sound_channel_state[5];
+extern ushort g_sound_channel_group[5];
+extern byte DAT_0023c39c;
+
 /* trigger_sound_sample_note's own private globals, same shape as
    audio.c's own declarations -- only ever touched on the dead
    DAT_0023c3b8!=0 path (never true in this fixture, see

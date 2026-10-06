@@ -10,6 +10,7 @@
  * looking at.
  */
 #include "headers/platform_sfx.h"
+#include "headers/audio.h"
 #include "headers/debug.h"
 #include "headers/file_io.h"
 #include <SDL.h>
@@ -546,6 +547,26 @@ void platform_sfx_init(void)
 
   DEBUG(INFO, "[audio] sfx playback ready: %dHz %dch %d samples/buffer, %d voices\n",
         have.freq, have.channels, have.samples, SFX_MAX_VOICES);
+
+  /* BUG FIX (real SFX playback, root cause): DAT_00087450 ("sfx subsys
+   * initialized") and DAT_0008744c ("sfx enabled") -- audio.c's gate
+   * flags for play_positional_sound_effect/play_sound_effect_with_pan/
+   * play_sound_effect_at_object -- were stuck at their default of 0
+   * (same lost-nonzero-initial-value bug class as DAT_00087454/
+   * DAT_00087448 before platform_music_init, confirmed the same way
+   * via a live Ghidra memory dump of UU.exe's own .data: both real
+   * initial values are 1), so every one of those three real call
+   * sites took its early-out `return 0xff` branch unconditionally,
+   * never reaching allocate_and_play_sound_channel at all -- this, not
+   * that function's own id-whitelist gate, was the actual first-order
+   * reason no positional/panned sound effect ever played. Set both to
+   * 1 here, exactly mirroring platform_music_init's own
+   * DAT_00087454/DAT_00087448 fix, only once this device has actually
+   * opened -- left at 0 otherwise (no audio hardware), falling back to
+   * the original silent behavior. */
+  DAT_00087450 = 1;
+  DAT_0008744c = 1;
+
   SDL_PauseAudioDevice(g_sfx_audiodev, 0);
 }
 

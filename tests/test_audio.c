@@ -115,6 +115,68 @@ static void test_stop_voice_sample_stops_the_real_backend(void)
     TEST_ASSERT_EQUAL_INT(1, audio_fixture_voice_stop_call_count());
 }
 
+/* allocate_and_play_sound_channel's id-whitelist (see its own
+   "INVESTIGATED" comment in audio.c, confirmed via a live Ghidra
+   decompile of the real FUN_00073064): only ids {3,4,7,8,0x10,0x15,
+   0x16} ever reach trigger_sound_sample_note/platform_sfx_play --
+   everything else returns 0xff without ever triggering a sample. */
+static void test_allocate_and_play_sound_channel_id_whitelist(void)
+{
+    /* A valid id reaches platform_sfx_play with resource id+800. */
+    uint result = allocate_and_play_sound_channel(3, 0, 0, 0x40, 0, 0);
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(803, audio_fixture_last_sfx_resource_id());
+    TEST_ASSERT_NOT_EQUAL(0xff, result);
+
+    /* An id below the whitelist's floor (e.g. a footstep id, 0 or 2 --
+       see movement.c's own play_sound_effect_with_pan(0/2,...) calls)
+       fails outright and never reaches platform_sfx_play. */
+    result = allocate_and_play_sound_channel(2, 0, 0, 0x40, 0, 0);
+    TEST_ASSERT_EQUAL_UINT(0xff, result);
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count()); /* unchanged */
+
+    /* An id above the whitelist with no special-case match (e.g. a
+       door id, 0xb/0x14 -- see doors.c) also fails outright. */
+    result = allocate_and_play_sound_channel(0x14, 0, 0, 0x40, 0, 0);
+    TEST_ASSERT_EQUAL_UINT(0xff, result);
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count()); /* unchanged */
+}
+
+/* Sizing-audit regression: g_sound_channel_state/g_sound_channel_group
+   (see their own declaration comment in audio.c) are 5 entries wide
+   specifically because DAT_0023c39c's bits are never cleared anywhere
+   in this decompile -- allocate_and_play_sound_channel's own bit-scan
+   loop runs out of free slots after 4 distinct successful calls and
+   writes index 4 on every call after that. Driving all 7 whitelisted
+   ids through in a row exercises exactly that boundary (calls 5-7
+   each land on index 4) -- this must not crash (and, pre-fix, would
+   have been a 1-byte/2-byte out-of-bounds write on 4-entry arrays). */
+static void test_allocate_and_play_sound_channel_survives_channel_exhaustion(void)
+{
+    static const int valid_ids[] = {3, 4, 7, 8, 0x10, 0x15, 0x16};
+    for (size_t i = 0; i < sizeof valid_ids / sizeof valid_ids[0]; i++) {
+        uint result = allocate_and_play_sound_channel(valid_ids[i], 0, 0, 0x40, 0, 0);
+        TEST_ASSERT_NOT_EQUAL(0xff, result);
+    }
+    TEST_ASSERT_EQUAL_INT(7, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(0x16 + 800, audio_fixture_last_sfx_resource_id());
+}
+
+/* BUG FIX regression (real crash, confirmed live -- see
+   stop_current_audio_handle_dup's own comment in audio.c):
+   stop_current_audio_handle_dup must NOT call stop_mod_player_playback
+   when DAT_0023c3b8 is NULL, even once DAT_00087454/DAT_00087448 are
+   both set (which platform_music_init now genuinely does on a real
+   machine) -- audio_fixture.c's stop_mod_player_playback stub hard-
+   fails the test if it's ever called at all, so this test fails loudly
+   if the missing NULL guard regresses. */
+static void test_stop_current_audio_handle_dup_does_not_crash_on_null_handle(void)
+{
+    DAT_0023c3b8 = 0; /* dead MOD engine handle -- always NULL by design */
+    stop_current_audio_handle_dup(); /* must not call stop_mod_player_playback */
+    TEST_PASS();
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -124,5 +186,8 @@ int main(void)
     RUN_TEST(test_play_numbered_voice_sample_plays_the_given_id);
     RUN_TEST(test_is_voice_sample_finished_reflects_the_real_backend);
     RUN_TEST(test_stop_voice_sample_stops_the_real_backend);
+    RUN_TEST(test_allocate_and_play_sound_channel_id_whitelist);
+    RUN_TEST(test_allocate_and_play_sound_channel_survives_channel_exhaustion);
+    RUN_TEST(test_stop_current_audio_handle_dup_does_not_crash_on_null_handle);
     return UNITY_END();
 }

@@ -6,6 +6,10 @@
    exact function bodies extracted below, so each one needs real
    storage here instead. */
 int DAT_00087454, DAT_00087448;
+int DAT_00087450, DAT_0008744c;
+byte g_sound_channel_state[5];
+ushort g_sound_channel_group[5];
+byte DAT_0023c39c;
 byte DAT_0023c3a8;
 undefined1 DAT_0023c384;
 undefined4 DAT_0023c280, DAT_0023c330;
@@ -49,6 +53,11 @@ void audio_fixture_reset(void)
 {
     DAT_00087454 = 1;
     DAT_00087448 = 1;
+    DAT_00087450 = 1;
+    DAT_0008744c = 1;
+    memset(g_sound_channel_state, 0, sizeof g_sound_channel_state);
+    memset(g_sound_channel_group, 0, sizeof g_sound_channel_group);
+    DAT_0023c39c = 0;
     DAT_0023c3a8 = 0;
     DAT_0023c384 = 0;
     DAT_0023c280 = 0;

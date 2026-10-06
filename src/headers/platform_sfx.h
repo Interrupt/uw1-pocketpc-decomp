@@ -30,7 +30,34 @@ void platform_sfx_init(void);
  * see platform_sfx.c). Lazily loads+caches the resource's extracted
  * data/SOUND/SFX/<id>.wav the first time it's requested. A no-op (with
  * a DEBUG warning, logged only once per resource) if the id is out of
- * range, the file was never extracted, or no audio device is open. */
+ * range, the file was never extracted, or no audio device is open.
+ *
+ * DECIDED (no volume/pan parameter, no handle-based stop -- real
+ * investigation, not a shortcut): the real call-site cluster above
+ * trigger_sound_sample_note (play_positional_sound_effect/
+ * play_sound_effect_with_pan/play_sound_effect_at_object/
+ * allocate_and_play_sound_channel, and the "stop a sound early"
+ * functions stop_movement_sound_handle/stop_current_audio_handle(_dup)/
+ * start_ambient_sound_effect/stop_ambient_sound_effect) was audited
+ * function-by-function against a live Ghidra decompile of the real
+ * UU.exe (see each function's own comment in audio.c for the specific
+ * evidence). Conclusion: there is no real plumbing anywhere in this
+ * decompile that ever applies positional volume/pan to actual sample
+ * playback (it's computed, then provably discarded one or two call
+ * levels down -- confirmed via real parameter counts, not inferred
+ * from "mono WAVs probably don't need it"), and no real mechanism
+ * that ever stops a specific currently-playing one-shot SFX voice
+ * early (stop_movement_sound_handle is a genuine empty no-op in the
+ * original binary; stop_current_audio_handle(_dup) only ever
+ * targeted the unrelated dead MOD-engine COM handle, not a one-shot
+ * voice; start_ambient_sound_effect/stop_ambient_sound_effect are a
+ * separate, never-fully-decompiled subsystem with no WAVE resource id
+ * anywhere in their own chain to tie to this engine). So this
+ * interface deliberately stays exactly this simple -- a fire-and-
+ * forget `(resource_id)` -- rather than growing a handle/volume/pan
+ * API nothing real would ever call. If a genuinely new real call site
+ * needing one of those is found later, extend this interface then,
+ * backed by that site's own evidence. */
 void platform_sfx_play(int resource_id);
 
 /* Closes the audio device and releases every cached sample buffer, for

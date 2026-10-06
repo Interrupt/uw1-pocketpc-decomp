@@ -148,8 +148,39 @@ static undefined1 DAT_0023c384;
 static undefined4 DAT_0023c280;
 static undefined4 DAT_0023c330;
 static short DAT_0023c32c;
-static int DAT_00087450;
-static undefined4 DAT_0008744c;
+/* "Is the sound-effects subsystem initialized" -- the exact same
+ * "lost nonzero initial static value" bug class as DAT_00087454/
+ * DAT_00087448 above (its music-subsystem twin), confirmed the same
+ * way: a live Ghidra memory dump of UU.exe's own initialized .data at
+ * this address reads 01 00 00 00 (1), not 0, and every one of this
+ * file's ~6 read sites (play_positional_sound_effect,
+ * play_sound_effect_with_pan, play_sound_effect_at_object,
+ * set_sound_effects_enabled, is_sound_effects_enabled) only ever
+ * compares it, never assigns it. Before this fix it defaulted to 0,
+ * so all three of this cluster's real positional/pan SFX call sites
+ * took their early-out `return 0xff` branch on every single call --
+ * allocate_and_play_sound_channel (and therefore
+ * trigger_sound_sample_note/platform_sfx_play) could never be reached
+ * through any of them, regardless of allocate_and_play_sound_channel's
+ * own id-whitelist gate (see that function's own comment) or the sfx
+ * engine itself being real. This, not the id-whitelist, was the actual
+ * first-order reason no positional sound effect ever played.
+ *
+ * UPDATE (real SFX playback): now genuinely set to 1 by
+ * platform_sfx_init (in its own translation unit, platform_sfx.c) once
+ * that backend actually succeeds in opening a real audio device --
+ * exactly mirroring DAT_00087454/platform_music_init -- and left at
+ * this original default of 0 otherwise (no audio hardware), which
+ * still falls back cleanly to this gate's original silent behavior.
+ * Not static, for the same reason as DAT_00087454: platform_sfx.c sets
+ * it directly -- see headers/audio.h's extern declaration. */
+int DAT_00087450;
+/* "Are sound effects currently enabled" -- DAT_0008744c's own twin of
+ * DAT_00087448 ("is music enabled"), same lost-initial-value bug,
+ * same live-memory-dump confirmation (01 00 00 00), same fix: set to 1
+ * alongside DAT_00087450 by platform_sfx_init on success. Not static,
+ * for the same reason. */
+int DAT_0008744c;
 /* Sizing-audit pass: max real index is 0xff*5+4=1279 (confirmed by
    the comment below, an 8-bit id field * 5-byte stride) -- a HARD
    bound. Sized all 4 siblings to 1280; down from 8192. */
@@ -179,9 +210,32 @@ static byte DAT_0023c39c;
    in the process's own address space -- unmapped, so a guaranteed
    SIGSEGV the first time a sound effect played. Declared as the real
    4-entry (one per sound channel) per-channel state/group arrays this
-   indexing implies and rewritten to index them properly. */
-static byte g_sound_channel_state[4];
-static ushort g_sound_channel_group[4];
+   indexing implies and rewritten to index them properly.
+
+   Sizing-audit pass (real, reachable OOB write, not hypothetical):
+   allocate_and_play_sound_channel's own bit-scan loop over
+   DAT_0023c39c is bounded to `uVar2 < 4`, but DAT_0023c39c's bits are
+   only ever OR'd in (`DAT_0023c39c = DAT_0023c39c | bVar1`) and never
+   cleared anywhere in this whole decompile -- confirmed by grepping
+   every reference to DAT_0023c39c/g_sound_channel_state/
+   g_sound_channel_group project-wide: both arrays are write-only (no
+   code anywhere ever reads them back to free a slot), and nothing
+   clears the bitmask. So once 4 distinct successful calls have each
+   claimed one of the 4 bits (entirely plausible: the id-whitelist
+   below allows 7 distinct ids, and nothing ever resets this), the
+   bit-scan loop runs out all 4 iterations and exits with uVar2==4 --
+   one past the end of both 4-entry arrays. Confirmed via a live
+   Ghidra decompile of the real FUN_00073064 that this is the real
+   original binary's own behavior (identical loop/bound), not a
+   decompile-introduced bug. Widened both arrays by one defensive slot
+   purely for memory safety (same "pad for a confirmed-reachable
+   out-of-bounds index" class as this project's other backing-array
+   sizing fixes) -- not a behavior change: index 4 is still never
+   read by anything, so the extra slot just gives the write somewhere
+   safe to land instead of corrupting whatever static happens to sit
+   next in memory. */
+static byte g_sound_channel_state[5];
+static ushort g_sound_channel_group[5];
 /* Sizing-audit pass: 0 writers, used only as a path-string argument
    (audio.c's SetFileTime-named ordinal stub), content unrecovered.
    Sized to 128 for headroom as a path-text fragment; down from 8192. */
@@ -466,6 +520,7 @@ void set_sound_effects_enabled(param_1)
 int param_1;
 
 {
+  DEBUG(TRACE, "[audio] set_sound_effects_enabled(param_1=%d) subsys=%d enabled=%d", param_1, DAT_00087450, DAT_0008744c);
   if (DAT_00087450 != 0) {
     if (param_1 == 0) {
       DAT_0008744c = 0;
@@ -490,10 +545,35 @@ int param_1;
 // DAT_00087448 (elsewhere in this file a plain int on/off flag, e.g.
 // is_music_playing) as if it were a pointer value, which only makes
 // sense as a mis-inferred type from this one call site -- left as
-// literally decompiled (not "fixed" to a guessed real condition) since
-// the practical effect (stop the handle whenever DAT_00087454 and
-// DAT_00087448 are both nonzero) matches every other gate in this
-// cluster and no live bug has been observed from it.
+// literally decompiled (not "fixed" to a guessed real condition).
+//
+// BUG FIX (real crash, confirmed live): the gate above was PREVIOUSLY
+// believed harmless ("no live bug has been observed from it") because
+// DAT_00087454/DAT_00087448 used to be permanently stuck at 0 (see
+// their own comment) -- but platform_music_init now genuinely sets
+// both to 1 once a real audio device opens, so on any machine with
+// working audio this gate now evaluates true and calls
+// stop_mod_player_playback(DAT_0023c3b8) unconditionally, with
+// DAT_0023c3b8 always NULL (deliberately never assigned -- see
+// platform_music.c's block comment). stop_mod_player_playback's own
+// body (its "shutdown counterpart to start_mod_player_playback" --
+// see that function's comment) writes through param_1+0x10554 with no
+// null check of its own, i.e. a guaranteed NULL-pointer write/crash.
+// Every *other* stop_mod_player_playback call site in this file
+// (play_music_track, set_music_enabled, the dead body of
+// trigger_sound_sample_note, etc.) already guards it behind an
+// explicit `DAT_0023c3b8 != 0` check first -- this function and its
+// stop_current_audio_handle_dup twin were simply missing that same
+// guard, decompiled as literally as the rest of the gate was. Two real
+// call sites reach this live: handle_starvation_penalty (player.c,
+// fires whenever the player starves) and set_sound_effects_enabled
+// (hud.c's sound-effects toggle UI / player.c's settings load), both
+// via stop_current_audio_handle_dup -- so this is a real, reachable
+// crash during ordinary gameplay, not a hypothetical. Adding the same
+// NULL guard every sibling call site already has fixes it while
+// leaving this function's own decompiled shape/intent completely
+// unchanged -- it was always meant to be a safe no-op while
+// DAT_0023c3b8 stays NULL, it just wasn't actually safe before.
 void stop_current_audio_handle()
 
 {
@@ -503,7 +583,7 @@ void stop_current_audio_handle()
   if (DAT_00087454 != 0) {
     puVar1 = DAT_00087448;
   }
-  if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
+  if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0 && DAT_0023c3b8 != (undefined4 *)0x0) {
     stop_mod_player_playback(DAT_0023c3b8);
   }
   return;
@@ -524,6 +604,18 @@ void stop_current_audio_handle()
 // per-sound-effect-id parameter table entries (DAT_0023c2b0/b1/b2/b3,
 // 5-byte stride per id). Fails (returns 0xff) if the sound-effects
 // subsystem is disabled or the sound is out of range.
+//
+// BUG FIX (real SFX playback, root cause): "the sound-effects
+// subsystem is disabled" was NOT a real runtime condition before this
+// fix -- DAT_00087450 was permanently stuck at 0 (see its own comment
+// above), so this early-out fired on literally every call, for every
+// caller, always. Now that platform_sfx_init sets it (and
+// DAT_0008744c) to 1 on success, this function's own body -- already
+// correct, matches a live Ghidra decompile of the real FUN_00072c74
+// exactly, no dropped arguments -- genuinely runs and reaches
+// allocate_and_play_sound_channel/trigger_sound_sample_note/
+// platform_sfx_play for the first time. No change was needed here
+// beyond the global's own default-value fix.
 undefined4 play_positional_sound_effect(param_1,param_2,param_3,param_4)
 uint param_1;
 short param_2;
@@ -543,7 +635,9 @@ uint param_4;
   int iVar10;
   short local_28;
   short local_26;
-  
+
+  DEBUG(TRACE, "[audio] play_positional_sound_effect(id=%u) gate: subsys=%d enabled=%d",
+        param_1 & 0xff, DAT_00087450, DAT_0008744c);
   if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
 LAB_00072f24:
     uVar4 = 0xff;
@@ -632,6 +726,11 @@ LAB_00072f24:
 // passed straight through) and a volume boost (param_3, added to the
 // per-id base volume DAT_0023c2b2[id] and clamped to 0..0x7f) rather
 // than deriving pan/volume from a world position.
+//
+// BUG FIX (real SFX playback, root cause): same DAT_00087450/
+// DAT_0008744c default-value fix as play_positional_sound_effect
+// above unlocks this function too -- see that function's own "BUG
+// FIX" comment. No change needed in this function's own body.
 undefined4 play_sound_effect_with_pan(param_1,param_2,param_3)
 uint param_1;
 undefined1 param_2;
@@ -668,6 +767,11 @@ uint param_3;
 // wrapper taking an object pointer (param_2) instead of raw
 // coordinates: extracts the object's world position and forwards to
 // play_positional_sound_effect.
+//
+// BUG FIX (real SFX playback, root cause): same DAT_00087450/
+// DAT_0008744c default-value fix unlocks this wrapper too -- see
+// play_positional_sound_effect's own "BUG FIX" comment. No change
+// needed in this function's own body.
 undefined4 play_sound_effect_at_object(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
@@ -698,6 +802,19 @@ undefined4 param_3;
 // footstep/jump sound handling, call it right before resetting
 // DAT_00086e84 (a sound-handle-in-progress marker) to -1, so this was
 // most plausibly meant to stop that in-progress movement sound.
+//
+// INVESTIGATED (positional SFX cluster): re-confirmed via a live
+// Ghidra decompile of the real FUN_0007305c -- it genuinely is an
+// empty function in the original compiled binary (no instructions at
+// all beyond the return), not a Ghidra lost-body case. There is
+// nothing real to wire up here: the movement-sound "handle"
+// (DAT_00086e84) it's named after is itself just the *return value*
+// of play_sound_effect_with_pan(0,...) (see movement.c), and that id
+// (0) is below allocate_and_play_sound_channel's own id-whitelist
+// floor (see that function's comment) -- footstep sounds never
+// actually reach trigger_sound_sample_note/platform_sfx_play in the
+// real game at all, confirmed, so there is no real in-progress voice
+// for this function to ever stop. Left exactly as decompiled.
 void stop_movement_sound_handle()
 
 {
@@ -711,6 +828,15 @@ void stop_movement_sound_handle()
 // naming-collision bug class -- see that function's own comment; kept
 // as a separately-named/addressed function per this project's
 // convention of preserving what Ghidra recovered).
+//
+// BUG FIX (real crash, confirmed live): same missing
+// `DAT_0023c3b8 != 0` guard as stop_current_audio_handle -- see that
+// function's own "BUG FIX (real crash, confirmed live)" comment for
+// the full root-cause writeup. This is the twin that's actually
+// called from real gameplay: handle_starvation_penalty (player.c)
+// calls it directly, and set_sound_effects_enabled (this file, driven
+// live by hud.c's sound-toggle click handler and player.c's settings
+// load) calls it whenever sound effects are turned off.
 void stop_current_audio_handle_dup()
 
 {
@@ -720,7 +846,7 @@ void stop_current_audio_handle_dup()
   if (DAT_00087454 != 0) {
     puVar1 = DAT_00087448;
   }
-  if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
+  if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0 && DAT_0023c3b8 != (undefined4 *)0x0) {
     stop_mod_player_playback(DAT_0023c3b8);
   }
   return;
@@ -740,6 +866,34 @@ void stop_current_audio_handle_dup()
 // then dispatches the actual sample trigger via trigger_sound_sample_note.
 // Called by play_positional_sound_effect and siblings as their final
 // low-level step.
+//
+// INVESTIGATED (positional SFX cluster): the id-whitelist above is
+// confirmed via a live Ghidra decompile of the real FUN_00073064 to be
+// genuine original behavior, not a decompile artifact -- only ids
+// {3,4,7,8,0x10,0x15,0x16} ever succeed; every other id (including the
+// footstep ids play_sound_effect_with_pan(0/2,...) uses in movement.c,
+// and the door-open/close ids play_positional_sound_effect(0xb/0x14,...)
+// uses in doors.c) returns 0xff here and never reaches
+// trigger_sound_sample_note -- footsteps and door sounds are genuinely
+// silent via this path in the real game, not a bug introduced here.
+//
+// INVESTIGATED (param_2/param_3/param_5/param_6 are real but unused):
+// the raw Ghidra signature for FUN_00073064 has only 4 formal
+// parameters (param_1..param_4); param_2/param_3 (the per-id table
+// bytes DAT_0023c2b0/b1) are never read anywhere in its body, and
+// there is no code reading a 5th/6th stack argument either -- i.e.
+// play_positional_sound_effect's carefully distance-attenuated volume
+// (param_4, which DOES get forwarded to trigger_sound_sample_note
+// below and IS used) survives, but its equally carefully computed
+// stereo pan (the would-be param_5) and the per-id group table value
+// (the would-be param_6) are discarded right here, never reaching
+// real playback, in the real original compiled game -- see
+// trigger_sound_sample_note's own comment for where volume itself
+// then also gets dropped one layer further down. This K&R-style
+// declaration keeps all 6 parameters (matching every real call site's
+// own argument count) rather than trimming it to Ghidra's bare 4,
+// per this project's convention of preserving what a caller actually
+// passes even when the callee provably ignores some of it.
 uint allocate_and_play_sound_channel(param_1,param_2,param_3,param_4,param_5,param_6)
 byte param_1;
 undefined4 param_2;
@@ -753,7 +907,8 @@ undefined4 param_6;
   uint uVar2;
   undefined2 uVar3;
   byte bVar4;
-  
+
+  DEBUG(TRACE, "[audio] allocate_and_play_sound_channel(id=%u, volume=%u)", param_1, param_4);
   bVar1 = 1;
   bVar4 = DAT_0023c39c & 1;
   for (uVar2 = 0; (bVar4 != 0 && (uVar2 < 4)); uVar2 = uVar2 + 1 & 0xff) {
@@ -819,6 +974,25 @@ LAB_00073108:
 // its dead construct_and_load_mod_player chain. The original body is
 // left completely untouched/still unreachable underneath, exactly like
 // the MOD engine's own dead code.
+//
+// INVESTIGATED (no volume/pan parameter to forward): param_2 here is
+// the volume allocate_and_play_sound_channel forwards on from
+// play_positional_sound_effect/play_sound_effect_with_pan's own
+// distance/pan math (see allocate_and_play_sound_channel's own
+// comment) -- but a live Ghidra decompile of the real FUN_00073140
+// shows only ONE formal parameter (param_1); its body never reads a
+// second argument at all. So in the real original compiled game,
+// volume was computed, forwarded this far, and then genuinely
+// dropped -- never reaching the actual sample trigger. platform_sfx_play
+// below is deliberately a plain `(resource_id)` call for the same
+// reason: there's no real volume value from this call chain worth
+// forwarding, and the 36 extracted WAVE resources are themselves mono
+// PCM with no stereo image to pan in the first place. This is a
+// confirmed fact about the original binary (not a guess from "mono
+// WAVs probably didn't need panning"), so no volume/pan parameter was
+// added to platform_sfx_play's own interface -- see platform_sfx.h's
+// own comment for where that conclusion is recorded for the backend
+// side too.
 void trigger_sound_sample_note(param_1,param_2)
 int param_1;
 undefined4 param_2;
@@ -1431,6 +1605,21 @@ void voice_sample_cluster_stub_2()
 // reporting a third fatal-error code (0x1007) if that allocation
 // fails too -- this second half's exact purpose (distinct from the
 // ambient-sound roll above it) isn't confirmed.
+//
+// INVESTIGATED (positional SFX cluster): this entire mechanism is a
+// separate, never-fully-decompiled subsystem that does NOT go through
+// trigger_sound_sample_note/DAT_0023c3b8 or any WAVE resource id at
+// all -- it operates purely on acquire_sound_resource_slot/
+// release_sound_resource_slot (ce_rand-driven "resource slot" counts,
+// not sample ids) and opaque ce_malloc/LocalFree buffer handles.
+// acquire_sound_resource_slot's own body always returns the fixed
+// value 0x28 regardless of its real parameters (same "lost body"
+// class as several LAB_ stub functions elsewhere), and
+// release_sound_resource_slot is itself an empty no-op. With no real
+// resource id anywhere in this chain to map onto platform_sfx's
+// WAVE-resource engine, there is nothing concrete here to wire up --
+// forcing a platform_sfx_play call in here would be inventing new
+// behavior with no decompiled evidence behind it. Left untouched.
 void start_ambient_sound_effect(param_1)
 undefined4 param_1;
 
@@ -1481,6 +1670,11 @@ undefined4 param_1;
 // (DAT_002506ec != 0), clearing that handle afterward. Its only
 // confirmed caller runs during game shutdown, paired with
 // start_ambient_sound_effect(2)'s own call during game init.
+//
+// INVESTIGATED (positional SFX cluster): see start_ambient_sound_effect's
+// own "INVESTIGATED" comment -- same separate, resource-id-less
+// subsystem, nothing here to connect to platform_sfx either. Left
+// untouched.
 void stop_ambient_sound_effect()
 
 {
@@ -3934,6 +4128,23 @@ int param_2;
 // sound-channel slot pool: initializes all 16 slots now
 // (init_all_sound_channel_slots) and registers their teardown to run
 // automatically at exit.
+//
+// INVESTIGATED (positional SFX cluster): this function -- and
+// therefore init_all_sound_channel_slots/release_all_sound_channel_slots
+// below it -- has ZERO call sites anywhere in this project (confirmed
+// by grepping every src/*.c and header for its name, and for the raw
+// FUN_0004f7e0 in case it survives un-renamed somewhere not yet
+// extracted: no hits at all). This whole 16-"hardware slot" pool is
+// completely orphaned dead code in the current decompile, independent
+// of DAT_0023c3b8/DAT_00087450 ever being real -- the same
+// "intentionally dead, nothing calls it" category as DAT_0023c3b8
+// itself staying NULL by design. It is NOT the same pool as
+// platform_sfx.c's own internal 16-voice mixer array (that one is a
+// private implementation detail of the real backend; this one is
+// unused decompiled bookkeeping for the 0x1a-byte slot records at
+// DAT_00202a58) -- don't conflate them. Left completely untouched: no
+// live caller depends on it being correct, so there's nothing to wire
+// into platform_sfx here.
 void register_sound_channel_pool_cleanup()
 
 {
