@@ -538,10 +538,10 @@ joined_r0x00048308:
               if (puVar7 == 0) goto skip_slot_draw_iVar6;
               if (getenv("UW_DEBUG_INV"))
                 fprintf(stderr, "[inv] slot widget_id=%d slot_arr_idx=%d objid=0x%03x draw_x=%d draw_y=%d w=%d h=%d\n",
-                        iVar6, (char)(&g_backpack_widget_to_slot)[iVar6], *puVar7 & 0x1ff,
+                        iVar6, (char)(&g_backpack_widget_to_slot)[iVar6], ((uw_object_hdr_t *)puVar7)->item_id,
                         (int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7], (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
                         (int)(&g_inv_hotspot_dirty_h)[iVar6 * 0xe], (int)(&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
-              draw_sprite_by_id(*puVar7 & 0x1ff,(int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7],
+              draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->item_id,(int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7],
                            (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],(&g_inv_hotspot_dirty_h)[iVar6 * 0xe],
                            (&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
               if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
@@ -589,8 +589,8 @@ joined_r0x00048308:
       if ((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0) {
         puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + DAT_00085c4c * 2));
         if (getenv("UW_DEBUG_W20"))
-          fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7, puVar7 ? (unsigned)(*puVar7 & 0x1ff) : 0u);
-        draw_sprite_by_id(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
+          fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7, puVar7 ? (unsigned)(((uw_object_hdr_t *)puVar7)->item_id) : 0u);
+        draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->item_id,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                      DAT_00085bf5,DAT_00085bf4);
         if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
            (uVar4 = puVar7[3] >> 6, 1 < uVar4)) {
@@ -662,7 +662,7 @@ void perform_object_search_check()
 LAB_0003f69c:
     uVar3 = *g_interact_target & 0x1c0;
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
-       (((&DAT_00202c9a)[(*g_interact_target & 0x1ff) * 0xd] & 3) != 2)) {
+       (((&DAT_00202c9a)[((uw_object_hdr_t *)g_interact_target)->item_id * 0xd] & 3) != 2)) {
       uVar3 = (g_interact_target[1] & 0x380) >> 7;
       if ((uVar3 & 4) == 0) {
         iVar1 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x29),10);

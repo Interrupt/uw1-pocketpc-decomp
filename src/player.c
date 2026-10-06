@@ -754,7 +754,7 @@ LAB_000669a8:
     g_scratch_object_ptr = puVar6;
     if (getenv("UW_DEBUG_AMBIENT"))
       fprintf(stderr, "[ambient] light-scan slot=%d puVar6=%p id=0x%03x nibble=0x%x\n",
-              (int)iVar4, (void *)puVar6, puVar6 ? (unsigned)(*puVar6 & 0x1ff) : 0u,
+              (int)iVar4, (void *)puVar6, puVar6 ? (unsigned)(((uw_object_hdr_t *)puVar6)->item_id) : 0u,
               puVar6 ? (unsigned)(*puVar6 & 0xf) : 0u);
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
         (uVar11 = *puVar6 & 0xf, 3 < uVar11)) && (uVar11 < 8)) {
@@ -780,7 +780,7 @@ LAB_000669a8:
     for (_s = 0; _s < 11; _s++) {
       ushort *_o = (ushort *)get_equipped_item_at_slot(_s);
       fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
-              _o ? (unsigned)(*_o & 0x1ff) : 0u, _o ? (unsigned)(*_o & 0xf) : 0u);
+              _o ? (unsigned)(((uw_object_hdr_t *)_o)->item_id) : 0u, _o ? (unsigned)(*_o & 0xf) : 0u);
     }
   }
   if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
@@ -795,10 +795,10 @@ LAB_000669a8:
   do {
     g_scratch_object_ptr = (ushort *)get_equipped_item_at_slot(iVar4);
     if ((g_scratch_object_ptr != (ushort *)0x0) &&
-       (iVar5 = is_valid_equipment_slot_item(*g_scratch_object_ptr & 0x1ff,iVar4), iVar5 != 0)) {
+       (iVar5 = is_valid_equipment_slot_item(((uw_object_hdr_t *)g_scratch_object_ptr)->item_id,iVar4), iVar5 != 0)) {
       iVar5 = resolve_object_variant_or_special_link(g_scratch_object_ptr,local_2c,local_2e,&local_28);
       if ((iVar5 == 0) || (local_28 != 0)) {
-        if ((*g_scratch_object_ptr & 0x1ff) == 0x2f) {
+        if (((uw_object_hdr_t *)g_scratch_object_ptr)->item_id == 0x2f) {
           DAT_0023bc98 = 1;
         }
       }
@@ -1297,7 +1297,7 @@ int compute_object_weight(ushort *object)
     iVar2 = 0;
   }
   else {
-    iVar2 = (((int)((uint)(byte)(&DAT_00202750)[(uVar1 & 0x1ff) * 4 - 0x80] * ((byte)object[2] & 0x3f)) >>
+    iVar2 = (((int)((uint)(byte)(&DAT_00202750)[((uw_object_hdr_t *)object)->item_id * 4 - 0x80] * ((byte)object[2] & 0x3f)) >>
              6) + 1) * 0x10000 >> 0x10;
   }
   return iVar2;

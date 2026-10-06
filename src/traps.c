@@ -1254,7 +1254,7 @@ void trigger_quest_milestone_cleanup_event()
   puVar3 = (ushort *)resolve_object_link(iVar4 + 2);
   while (puVar2 = puVar3, puVar2 != (ushort *)0x0) {
     puVar3 = (ushort *)resolve_object_link(puVar2 + 2);
-    if ((*puVar2 & 0x1ff) == 0x1a0) {
+    if (((uw_object_hdr_t *)puVar2)->item_id == 0x1a0) {
       object_list_unlink(iVar4 + 2,puVar2);
       free_object_slot(puVar2);
     }

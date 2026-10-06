@@ -305,7 +305,7 @@ void reticle_object_pick(int mode)
           /* get_object_record_by_slot_index returns NULL for an empty slot (id bits clear).
              Ghidra dropped the guard; with forward movement now working this
              loop runs (via sweep_collision_flags) and hit the NULL deref. */
-          if (puVar2 != (ushort *)0x0 && ((&DAT_00202c97)[(*puVar2 & 0x1ff) * 0xd] & 1) != 0) {
+          if (puVar2 != (ushort *)0x0 && ((&DAT_00202c97)[((uw_object_hdr_t *)puVar2)->item_id * 0xd] & 1) != 0) {
             if (iVar4 < (char)DAT_002049de) {
               if ((bVar7) &&
                  (bVar1 = (&DAT_00202c38)[iVar6], (short)_DAT_0008699b <= (short)(ushort)bVar1)) {
@@ -917,7 +917,7 @@ void sweep_land_on_surface()
   /* The decompile uses a short-pointer view of the movement record.
      Keep word indexing and raw byte offsets distinct (ARM 0x59d20..0x5a33c). */
   puVar7 = (ushort *)get_object_record_by_slot_index((int)DAT_002049d2);
-  uVar2 = *(ushort *)(&DAT_00202c91 + (*puVar7 & 0x1ff) * 0xd);
+  uVar2 = *(ushort *)(&DAT_00202c91 + ((uw_object_hdr_t *)puVar7)->item_id * 0xd);
   iVar12 = (int)_DAT_000869a1;
   if (iVar12 < 5) {
     sVar4 = 0;
@@ -1633,8 +1633,8 @@ void apply_movement_tick(int elapsed)
   char cVar3;
   short sVar4;
 
-  DAT_002048a5 = (&DAT_00202c91)[(*g_player_object & 0x1ff) * 0xd] & 7;
-  DAT_002048a6 = (&DAT_00202c90)[(*g_player_object & 0x1ff) * 0xd];
+  DAT_002048a5 = (&DAT_00202c91)[((uw_object_hdr_t *)g_player_object)->item_id * 0xd] & 7;
+  DAT_002048a6 = (&DAT_00202c90)[((uw_object_hdr_t *)g_player_object)->item_id * 0xd];
   DAT_0023be9e = 0;
   DAT_0023be9c = 0;
   DAT_0023be9a = 0;
