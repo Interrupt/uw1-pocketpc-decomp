@@ -71,7 +71,7 @@ void interact_default()
       interact_use();
       return;
     }
-    if ((*g_interact_target & 0x1ff) == 0x1ca) {
+    if ((((uw_object_hdr_t *)g_interact_target)->item_id) == 0x1ca) {
       if ((iVar1 != 0) && (iVar2 == 0)) {
         use_object_on_target(g_player_object,g_interact_target,0);
       }
@@ -83,24 +83,24 @@ void interact_default()
     if ((iVar1 != 0) && (iVar2 == 0)) {
       if (getenv("UW_DEBUG_THROW"))
         fprintf(stderr, "[grab] target=%p type=0x%x bit8000=%d target3=0x%x target3_bit8000=%d target3_qty=0x%x in_arena=%d\n",
-                (void *)g_interact_target, (unsigned)(*g_interact_target & 0x1ff),
+                (void *)g_interact_target, (unsigned)(((uw_object_hdr_t *)g_interact_target)->item_id),
                 (int)((*g_interact_target & 0x8000) != 0), (unsigned)g_interact_target[3],
                 (int)((g_interact_target[3] & 0x8000) != 0), (unsigned)(g_interact_target[3] & 0xffc0),
                 (int)object_ptr_in_arena((char *)g_interact_target));
       if (((*g_interact_target & 0x8000) != 0) &&
          (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
-        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
+        if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)g_interact_target)->item_id) == 0x80)
           fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling prompt_split_object_stack\n");
         /* BUG FIX: was `FUN_000470fc();` -- dropped its only argument. g_interact_target (the
            object this whole "grab" handler is operating on throughout this function) is the obvious
            intended argument -- same dropped-argument idiom fixed repeatedly elsewhere this session. */
         puVar3 = (ushort *)prompt_split_object_stack((undefined1 *)g_interact_target);
         if (puVar3 == (ushort *)0x0) {
-          if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
+          if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)g_interact_target)->item_id) == 0x80)
             fprintf(stderr, "[grab] prompt_split_object_stack returned NULL, bailing\n");
           return;
         }
-        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
+        if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)g_interact_target)->item_id) == 0x80)
           fprintf(stderr, "[grab] prompt_split_object_stack returned puVar3=%p (target=%p)\n", (void *)puVar3, (void *)g_interact_target);
         if (puVar3 != g_interact_target) {
           object_list_insert_head(g_interact_target + 2,puVar3);
@@ -430,7 +430,7 @@ uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort 
         return 2;
       }
       if (object != (ushort *)0x0) {
-        if ((*object & 0x1ff) == 0x7f) {
+        if ((((uw_object_hdr_t *)object)->item_id) == 0x7f) {
           if ((*lock_link & 0x800) == 0) {
             return 2;
           }
@@ -578,7 +578,7 @@ void attempt_talk_interaction(ushort *target)
   ushort uVar6;
   char acStack_114 [260];
   
-  uVar6 = *target & 0x1ff;
+  uVar6 = ((uw_object_hdr_t *)target)->item_id;
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction entry: target=%p uVar6(itemid)=0x%x raw=0x%x classcheck=0x%x\n", (void *)target, (unsigned)uVar6, (unsigned)*target, (unsigned)(*target & 0x1c0));
   if (uVar6 == 0x157) {
     handle_mantra_chant();
@@ -705,7 +705,7 @@ uint object_chain_max_barrier(char *tile)
   uVar2 = 0xffffffff;
   puVar1 = (ushort *)(tile + 2);
   while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
-    if ((*puVar1 & 0x1ff) == 0x164) {
+    if ((((uw_object_hdr_t *)puVar1)->item_id) == 0x164) {
       if ((short)uVar2 < (short)(puVar1[1] & 0x7f)) {
         uVar2 = (int)(short)puVar1[1] & 0x7f;
       }
@@ -865,21 +865,21 @@ ushort *pick_object_under_cursor(int mode)
     puVar3 = (ushort *)get_object_record_by_slot_index(iVar2);
 
     if(puVar3) {
-      DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(*puVar3 & 0x1ff));
+      DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(((uw_object_hdr_t *)puVar3)->item_id));
       if (_pick_diag)
-        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x ptr=%p\n", uVar4, (unsigned)(*puVar3 & 0x1ff), (void *)puVar3);
+        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x ptr=%p\n", uVar4, (unsigned)(((uw_object_hdr_t *)puVar3)->item_id), (void *)puVar3);
     }
 
     DAT_002020a8 = DAT_002020b0 + 2;
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d off10=0x%x off13=0x%x off14=0x%x off15=0x%x off4000=%d\n",
-              (void *)puVar3, (unsigned)(*puVar3 & 0x1ff),
-              (int)((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20),
+              (void *)puVar3, (unsigned)(((uw_object_hdr_t *)puVar3)->item_id),
+              (int)((&DAT_00202c98)[(((uw_object_hdr_t *)puVar3)->item_id) * 0xd] & 0x20),
               (int)object_ptr_in_arena((char *)puVar3),
               (unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),
               (unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),
               (int)((*puVar3 & 0x4000) != 0));
-    if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
+    if ((((&DAT_00202c98)[(((uw_object_hdr_t *)puVar3)->item_id) * 0xd] & 0x20) != 0) &&
        (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;
       return puVar3;

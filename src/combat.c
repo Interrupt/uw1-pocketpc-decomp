@@ -972,7 +972,7 @@ int resolve_melee_swing_hit()
   local_33 = (char)((uVar7 & 0xff) << 3) + '\x04';
   iVar5 = (int)DAT_00100610;
   puVar6 = (ushort *)(iVar5 * 0x1b + DAT_002046b8);
-  bVar1 = (&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd];
+  bVar1 = (&DAT_00202c90)[((uw_object_hdr_t *)puVar6)->item_id * 0xd];
   iVar4 = ordint_divmod(3,(int)DAT_001005f8).quot;
   sVar3 = ordint_divmod(3,(uint)bVar1 * iVar4).quot;
   sVar3 = ((byte)puVar6[1] & 0x7f) + sVar3;
@@ -986,7 +986,7 @@ int resolve_melee_swing_hit()
     sVar3 = sVar3 - (short)(iVar5 >> 9);
   }
   local_38 = sVar3;
-  cVar2 = ordint_divmod(6,(&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd]).quot;
+  cVar2 = ordint_divmod(6,(&DAT_00202c90)[((uw_object_hdr_t *)puVar6)->item_id * 0xd]).quot;
   DAT_001005dc = cVar2 + (char)sVar3;
   local_3c = (short)((puVar6[0xb] & 0xfc00) >> 7) + (ushort)(*(byte *)((char *)puVar6 + 3) >> 5);
   local_3a = (short)((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
@@ -1160,7 +1160,7 @@ void apply_melee_damage(byte hit_type)
   }
   uVar8 = DAT_00100624;
   sVar2 = DAT_00100620;
-  uVar1 = (uint)(short)(uVar5 & 0x1ff);
+  uVar1 = (uint)(short)((uw_object_hdr_t *)puVar6)->item_id;
   uVar5 = uVar5 & 0x1c0;
   if (uVar5 == 0x40) {
     iVar11 = (uVar1 & 0x3f) * 0x30;
@@ -1278,7 +1278,7 @@ int play_weapon_impact_sound(short result)
     goto LAB_0002701c;
   }
   puVar6 = (ushort *)get_object_record_by_slot_index((int)(short)DAT_00100610);
-  DAT_00100610 = *puVar6 & 0x1ff;
+  DAT_00100610 = ((uw_object_hdr_t *)puVar6)->item_id;
   uVar1 = (uint)(short)DAT_00100610;
   if ((uVar1 == 1) || (0xff < uVar1)) {
     bVar7 = 1;
@@ -1288,7 +1288,7 @@ int play_weapon_impact_sound(short result)
   }
   if (DAT_00100620 == 1) {
     puVar6 = (ushort *)get_equipped_item_at_slot((char)DAT_00100624 + 1U & 3);
-    if (((((puVar6 == (ushort *)0x0) || (uVar3 = *puVar6 & 0x1ff, uVar3 == 0x20)) || (uVar3 == 0x23)
+    if (((((puVar6 == (ushort *)0x0) || (uVar3 = ((uw_object_hdr_t *)puVar6)->item_id, uVar3 == 0x20)) || (uVar3 == 0x23)
          ) || ((uVar3 == 0x26 || (uVar3 == 0x29)))) || (uVar3 == 0x2c)) {
 LAB_00026fe8:
       bVar2 = 0;
@@ -1398,7 +1398,7 @@ int resolve_equipped_weapon_attack(char * *out_attack_data, char * *out_weapon_o
   *out_weapon_object = (char *)puVar4;
   if (puVar4 != (ushort *)0x0) {
     uVar2 = *puVar4;
-    uVar1 = (uint)(short)(uVar2 & 0x1ff);
+    uVar1 = (uint)(short)((uw_object_hdr_t *)puVar4)->item_id;
     if ((uVar2 & 0x1f0) == 0x10) {
       iVar5 = (uVar1 & 0xf) * 3;
       if ((-1 < (char)(&DAT_002027d2)[iVar5]) && ((char)(&DAT_002027d2)[iVar5] < '\x10')) {
@@ -1489,15 +1489,15 @@ void apply_direct_object_hit(short hit_flag, ushort *attacker, ushort *target, s
   DAT_00100604 = tile_y;
   DAT_001005d8 = 0;
   DAT_00100628 = 0;
-  DAT_001005dc = ((byte)attacker[1] & 0x7f) + ((byte)(&DAT_00202c90)[(*attacker & 0x1ff) * 0xd] >> 1);
+  DAT_001005dc = ((byte)attacker[1] & 0x7f) + ((byte)(&DAT_00202c90)[((uw_object_hdr_t *)attacker)->item_id * 0xd] >> 1);
   DAT_001005fc = 0x80;
   DAT_00100600 = tile_x;
   DAT_00100610 = hit_flag;
   DAT_00100620 = encode_object_slot_index(target);
   uVar4 = (byte)attacker[1] & 0x7f;
   uVar2 = (byte)target[1] & 0x7f;
-  sVar1 = resolve_combat_hit_zone(uVar2,(byte)(&DAT_00202c90)[(*target & 0x1ff) * 0xd] + uVar2,uVar4,
-                       (byte)(&DAT_00202c90)[(*attacker & 0x1ff) * 0xd] + uVar4);
+  sVar1 = resolve_combat_hit_zone(uVar2,(byte)(&DAT_00202c90)[((uw_object_hdr_t *)target)->item_id * 0xd] + uVar2,uVar4,
+                       (byte)(&DAT_00202c90)[((uw_object_hdr_t *)attacker)->item_id * 0xd] + uVar4);
   DAT_00100624 = sVar1 + 4;
   DAT_0010061c = damage_dice;
   if (target == g_player_object) {
@@ -1695,7 +1695,7 @@ int try_npc_special_ability_ranged()
         (*(char *)(DAT_00101404 + 9) != '\x13')))) &&
       (((DAT_00101900 < 0x40 && (iVar3 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar3 == 0)) &&
        (iVar3 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
-                             (uint)(byte)(&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd] +
+                             (uint)(byte)(&DAT_00202c90)[((uw_object_hdr_t *)DAT_0010190c)->item_id * 0xd] +
                              ((byte)DAT_0010190c[1] & 0x7f),DAT_00101908,DAT_00101418,
                              (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
                              ((byte)DAT_00101400[1] & 0x7f)), iVar3 != 0)))) &&
@@ -1738,7 +1738,7 @@ int try_npc_special_ability_alt()
   
   if (((DAT_00101900 < 0x10) &&
       (iVar2 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
-                            (uint)(byte)(&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd] +
+                            (uint)(byte)(&DAT_00202c90)[((uw_object_hdr_t *)DAT_0010190c)->item_id * 0xd] +
                             ((byte)DAT_0010190c[1] & 0x7f),DAT_00101908,DAT_00101418,
                             (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
                             ((byte)DAT_00101400[1] & 0x7f)), iVar2 != 0)) &&
@@ -2030,7 +2030,7 @@ int resolve_damage_type_resistance(ushort *object, int damage, uint damage_type_
   int extraout_r1;
   uint uVar2;
 
-  uVar2 = (uint)(byte)(&DAT_00202c99)[(*object & 0x1ff) * 0xd];
+  uVar2 = (uint)(byte)(&DAT_00202c99)[((uw_object_hdr_t *)object)->item_id * 0xd];
   if ((uVar2 & damage_type_mask & 0xff) != 0) {
     if ((damage_type_mask & 3) != 0) {
       uVar1 = ce_rand();
@@ -2089,11 +2089,11 @@ bool apply_object_durability_damage(ushort *object, ushort *attacker, short dama
   uint uVar6;
   
   if ((((*object & 0x2000) == 0) &&
-      (uVar6 = ((byte)(&DAT_00202c97)[(*object & 0x1ff) * 0xd] & 0xc) >> 2, (short)uVar6 != 3)) &&
+      (uVar6 = ((byte)(&DAT_00202c97)[((uw_object_hdr_t *)object)->item_id * 0xd] & 0xc) >> 2, (short)uVar6 != 3)) &&
      (iVar5 = (int)damage >> uVar6, 0 < (short)iVar5)) {
     iVar4 = object_ptr_in_arena(object);
     if (iVar4 == 0) {
-      if ((0x13f < (*object & 0x1ff)) && ((*object & 0x1ff) < 0x148)) {
+      if ((0x13f < ((uw_object_hdr_t *)object)->item_id) && (((uw_object_hdr_t *)object)->item_id < 0x148)) {
         uVar2 = object[3];
         if (((uVar2 & 1) != 0) && ((uVar2 & 0x3e) != 0)) {
           uVar6 = (uVar2 >> 1 & 0x1f) - iVar5;
@@ -2183,12 +2183,12 @@ int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short 
   }
   if (reaction_mode != 2) {
     if (reaction_mode == 0) {
-      if ((CONCAT11(*(undefined1 *)((char *)puVar5 + 1),*(undefined1 *)puVar5) & 0x1f0) != 0) {
+      if ((((uw_object_hdr_t *)puVar5)->item_id & 0x1f0) != 0) {
         return 0xfffffffe;
       }
     }
     else {
-      iVar6 = is_valid_equipment_slot_item(CONCAT11(*(undefined1 *)((char *)puVar5 + 1),*(undefined1 *)puVar5) & 0x1ff,
+      iVar6 = is_valid_equipment_slot_item(((uw_object_hdr_t *)puVar5)->item_id,
                            slot);
       if (iVar6 == 0) {
         return 0xfffffffe;
@@ -2450,7 +2450,7 @@ int resolve_collision_candidate_interaction(short candidate_index, int mover_slo
       iVar10 = iVar10 + 0x3f;
     }
     DAT_002046dc = (char)(iVar10 >> 6) + DAT_002046e4 & 0x3f;
-    uVar8 = *puVar5 & 0x1ff;
+    uVar8 = ((uw_object_hdr_t *)puVar5)->item_id;
     bVar9 = (&DAT_00202c97)[(short)uVar8 * 0xd] & 1;
     if ((0xff < (short)mover_slot) || (0x3fff < (puVar11[iVar1 * 3 + 1] & 0xffc0))) goto LAB_000548b8;
     if (((uVar2 & 0x1c0) != 0x40) && ((*(byte *)((char *)puVar4 + 0x15) & 0x80) != 0)) {
@@ -2477,7 +2477,7 @@ LAB_000548b8:
   if (bVar9 == 0) {
     return 2;
   }
-  if (((&DAT_00202c97)[(short)(uVar2 & 0x1ff) * 0xd] & 2) != 0) {
+  if (((&DAT_00202c97)[(short)((uw_object_hdr_t *)puVar4)->item_id * 0xd] & 2) != 0) {
     DAT_002020a0 = (ushort)DAT_002046e0;
     DAT_002020a4 = (ushort)DAT_002046e4;
     DAT_002046e8 = 1;
