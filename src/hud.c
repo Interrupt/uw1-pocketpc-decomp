@@ -6210,7 +6210,7 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
   done = 1;
   int newid = (int)strtol(idstr, NULL, 16);
   ushort old = *obj;
-  *obj = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
+  ((uw_object_hdr_t *)obj)->item_id = newid & 0x1ff;
   fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff, ((uw_object_hdr_t *)obj)->item_id);
 }
 

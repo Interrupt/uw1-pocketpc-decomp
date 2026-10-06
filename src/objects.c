@@ -108,9 +108,7 @@ LAB_0004b06c:
     *(char *)((char *)puVar6 + 1) = (char)(uVar7 >> 8);
     *(byte *)(puVar6 + 3) = (byte)puVar6[3] & 0x3f | 0x40;
     *(undefined1 *)((char *)puVar6 + 7) = 0;
-    uVar7 = (uVar7 ^ (int)DAT_00202a38) & 0x1ff ^ uVar7;
-    *(char *)puVar6 = (char)uVar7;
-    *(char *)((char *)puVar6 + 1) = (char)(uVar7 >> 8);
+    ((uw_object_hdr_t *)puVar6)->item_id = DAT_00202a38;
     uVar9 = 0;
     if (DAT_00202a54 != 0) {
       uVar9 = (byte)DAT_00202a44[0xc] & 0x1f;
@@ -594,9 +592,7 @@ LAB_00038100:
       uVar6 = (int)sVar2 + 0xd5;
     }
     if (-1 < (short)uVar6) {
-      uVar5 = (*object ^ uVar6) & 0x1ff ^ (uint)*object;
-      *(char *)object = (char)uVar5;
-      *(char *)((char *)object + 1) = (char)(uVar5 >> 8);
+      ((uw_object_hdr_t *)object)->item_id = uVar6;
       if ((DAT_002046c4 <= object) &&
          (iVar3 = settle_dropped_object(object,tile_x,(int)tile_y,1), iVar3 == 0)) goto LAB_000382ac;
     }

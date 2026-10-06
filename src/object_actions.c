@@ -2244,10 +2244,7 @@ void spawn_effect_debris_burst(byte *template, uint tile_x, int tile_y)
     *(undefined1 *)(puVar8 + 3) = template[6];
     *(undefined1 *)((char *)puVar8 + 7) = template[7];
     uVar9 = ce_rand();
-    uVar10 = (uint)*puVar8;
-    uVar10 = ((uVar9 & 1) + uVar10 + 1 ^ uVar10) & 0x1ff ^ uVar10;
-    *(char *)puVar8 = (char)uVar10;
-    *(char *)((char *)puVar8 + 1) = (char)(uVar10 >> 8);
+    ((uw_object_hdr_t *)puVar8)->item_id = ((uw_object_hdr_t *)puVar8)->item_id + (uVar9 & 1) + 1;
     bVar3 = *(byte *)((char *)puVar8 + 3) >> 5;
     do {
       do {

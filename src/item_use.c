@@ -1426,14 +1426,9 @@ void complete_use_item_scatter_spawn(short *target, int clicked, int confirmed)
           if (0x156 < (int)(uVar9 * 0x10000) >> 0x10) {
             uVar9 = 0x10;
           }
-          uVar10 = (*puVar8 ^ uVar9) & 0x1ff ^ (uint)*puVar8;
-          uVar1 = (undefined1)uVar10;
-          *(undefined1 *)puVar8 = uVar1;
-          bVar2 = (byte)(uVar10 >> 8);
-          *(byte *)((char *)puVar8 + 1) = bVar2;
+          ((uw_object_hdr_t *)puVar8)->item_id = uVar9;
           if ((short)uVar9 == 0x10) {
-            *(undefined1 *)puVar8 = uVar1;
-            *(byte *)((char *)puVar8 + 1) = bVar2 | 0x80;
+            ((uw_object_hdr_t *)puVar8)->is_quant = 1;
             uVar5 = ce_rand();
             uw_ord2005_rem_168 = ((int)(uVar5)) % (6);
             uVar9 = (uw_ord2005_rem_168 & 0xffff) + 3;
