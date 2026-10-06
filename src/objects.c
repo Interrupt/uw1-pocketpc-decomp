@@ -173,7 +173,7 @@ LAB_0004b06c:
       iVar8 = (*(byte *)((char *)puVar6 + 3) & 0x1c) * 8 + (puVar6[0xb] & 0x3f0) * 0x10 + 0xf;
       *(char *)((char *)puVar6 + 0xd) = (char)iVar8;
       *(char *)(puVar6 + 7) = (char)((uint)iVar8 >> 8);
-      iVar8 = ((byte)puVar6[1] & 0x7f) << 3;
+      iVar8 = ((uw_object_hdr_t *)puVar6)->zpos << 3;
       *(char *)((char *)puVar6 + 0xf) = (char)iVar8;
       *(char *)(puVar6 + 8) = (char)((uint)iVar8 >> 8);
       if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(DAT_00202a44), 0xff < sVar5)) {
@@ -1588,7 +1588,7 @@ ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int fo
     }
     DAT_00202c6c[8] = (&DAT_00202c91)[iVar12] & 7;
     DAT_00202c6c[9] = (&DAT_00202c90)[iVar12];
-    DAT_00202c6c[4] = (byte)object[1] & 0x7f;
+    DAT_00202c6c[4] = ((uw_object_hdr_t *)object)->zpos;
     DAT_00202c6c[5] = 0;
     iVar12 = tile_x * 8 + (uint)(*(byte *)((char *)object + 3) >> 5);
     *DAT_00202c6c = (char)iVar12;

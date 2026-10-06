@@ -434,8 +434,8 @@ uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort 
           if ((*lock_link & 0x800) == 0) {
             return 2;
           }
-          if (((key_id == 5) && (((byte)lock_link[1] & 0x7f) != 0)) &&
-             (sVar2 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x2c),(byte)lock_link[1] & 0x7f),
+          if (((key_id == 5) && (((uw_object_hdr_t *)lock_link)->zpos != 0)) &&
+             (sVar2 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x2c),((uw_object_hdr_t *)lock_link)->zpos),
              sVar2 < 1)) {
             return 2;
           }
@@ -706,8 +706,8 @@ uint object_chain_max_barrier(char *tile)
   puVar1 = (ushort *)(tile + 2);
   while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
     if ((((uw_object_hdr_t *)puVar1)->item_id) == 0x164) {
-      if ((short)uVar2 < (short)(puVar1[1] & 0x7f)) {
-        uVar2 = (int)(short)puVar1[1] & 0x7f;
+      if ((short)uVar2 < (short)((uw_object_hdr_t *)puVar1)->zpos) {
+        uVar2 = ((uw_object_hdr_t *)puVar1)->zpos;
       }
     }
     puVar1 = puVar1 + 2;

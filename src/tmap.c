@@ -1830,7 +1830,7 @@ void emit_tile_features(ushort *tile)
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e8 << 0x13) >> 0x10)) * 0x20 + 0x10;
           if (((*puVar5 & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
-            DAT_0023b91c = ((byte)puVar5[1] & 0x7f) << 3;
+            DAT_0023b91c = ((uw_object_hdr_t *)puVar5)->zpos << 3;
           }
           else {
             DAT_0023b91c = *(short *)((char *)puVar5 + 0xf);

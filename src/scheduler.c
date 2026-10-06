@@ -127,7 +127,7 @@ void scheduler_finish_entry(int entry_slot)
   if (uVar5 == 0xf) {
     uVar10 = (byte)((byte)puVar4[3] >> 4) & 3;
     uVar5 = (byte)puVar4[3] & 0xf;
-    uVar8 = (byte)puVar4[1] & 0x7f;
+    uVar8 = ((uw_object_hdr_t *)puVar4)->zpos;
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] scheduler_finish_entry: FINALIZE class0xf obj0=0x%04x quality_low4=%d opening=%d\n",
               (unsigned)*puVar4, (int)uVar5, (int)((*puVar4 & 0x1000) == 0));
@@ -581,7 +581,7 @@ int scheduler_advance_effect(short entry_slot, int elapsed)
   }
   uVar7 = (ushort)(byte)puVar2[3];
   DAT_0010144c = (ushort)(byte)(&DAT_0025077c)[iVar8];
-  uVar9 = (byte)puVar2[1] & 0x7f;
+  uVar9 = ((uw_object_hdr_t *)puVar2)->zpos;
   DAT_00101454 = (ushort)(byte)(&DAT_0025077d)[iVar8];
   if ((uVar7 & 7) != 6) {
     uVar9 = uVar9 - 0x18;

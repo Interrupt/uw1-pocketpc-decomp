@@ -283,7 +283,7 @@ int drop_held_object_near_player(ushort *held_object, int force)
       fprintf(stderr, "[throw-heading] after 1st project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
               (int)local_28, (int)local_26);
     iVar4 = check_object_placement_clearance(((uw_object_hdr_t *)held_object)->item_id,0,(int)(short)local_28,(int)(short)local_26,
-                         (byte)g_player_object[1] & 0x7f,1,cVar9);
+                         ((uw_object_hdr_t *)g_player_object)->zpos,1,cVar9);
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] 1st check_object_placement_clearance iVar4=%d\n", iVar4);
     if (iVar4 == 0) {
@@ -296,7 +296,7 @@ int drop_held_object_near_player(ushort *held_object, int force)
         fprintf(stderr, "[throw-heading] after 2nd(retry) project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
                 (int)local_28, (int)local_26);
       iVar4 = check_object_placement_clearance(((uw_object_hdr_t *)held_object)->item_id,0,(int)(short)local_28,(int)(short)local_26,
-                           (byte)g_player_object[1] & 0x7f,1,cVar9);
+                           ((uw_object_hdr_t *)g_player_object)->zpos,1,cVar9);
       if (getenv("UW_DEBUG_THROW"))
         fprintf(stderr, "[throw-heading] 2nd check_object_placement_clearance iVar4=%d\n", iVar4);
       bVar3 = true;

@@ -49,7 +49,7 @@ int build_collision_height_field_for_object(ushort *object)
   field = ((*(byte *)((char *)object + 3) & 0x1c) >> 2) + ((object[0xb] & 0x3f0) >> 1);
   DAT_00202c6c[2] = (char)field;
   DAT_00202c6c[3] = (char)((uint)field >> 8);
-  DAT_00202c6c[4] = (byte)object[1] & 0x7f;
+  DAT_00202c6c[4] = ((uw_object_hdr_t *)object)->zpos;
   DAT_00202c6c[5] = 0;
   collision_build_height_field(8);
   return (int)(short)(*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc));
@@ -567,7 +567,7 @@ void collision_add_candidate_object(ushort *object, ushort slot_index, char tile
        ((DAT_00202c24 <= cVar12 && (cVar9 <= DAT_00202c2c)))) {
       copy_count = (uint)candidate_count * 6;
       *(byte *)(DAT_00202c6c + 0x14) = candidate_count + 1;
-      candidate_count = (byte)object[1] & 0x7f;
+      candidate_count = ((uw_object_hdr_t *)object)->zpos;
       (&DAT_00202c39)[copy_count] = candidate_count;
       flag = class_props[0] == '\0';
       cVar5 = candidate_count + class_props[0];

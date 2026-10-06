@@ -975,7 +975,7 @@ int resolve_melee_swing_hit()
   bVar1 = (&DAT_00202c90)[((uw_object_hdr_t *)puVar6)->item_id * 0xd];
   iVar4 = ordint_divmod(3,(int)DAT_001005f8).quot;
   sVar3 = ordint_divmod(3,(uint)bVar1 * iVar4).quot;
-  sVar3 = ((byte)puVar6[1] & 0x7f) + sVar3;
+  sVar3 = ((uw_object_hdr_t *)puVar6)->zpos + sVar3;
   if (iVar5 == 1) {
     iVar5 = (int)DAT_0023beb4;
     if (iVar5 < 0) {
@@ -1244,8 +1244,8 @@ void apply_melee_damage(byte hit_type)
         puVar6 = (ushort *)0x0;
       }
       if (((uVar1 & 0x1f0) == 0x140) || (uVar1 == 0x1cf)) {
-        if ((int)cVar10 < (int)(puVar6[1] & 0x7f)) {
-          cVar10 = ((byte)puVar6[1] & 0x7f) + 2;
+        if ((int)cVar10 < (int)((uw_object_hdr_t *)puVar6)->zpos) {
+          cVar10 = ((uw_object_hdr_t *)puVar6)->zpos + 2;
           DAT_001005dc = cVar10;
         }
         spawn_scheduled_effect_object(puVar6,0xb,1,(int)local_38,-(short)cVar10,DAT_00100600,DAT_00100604);
@@ -1489,13 +1489,13 @@ void apply_direct_object_hit(short hit_flag, ushort *attacker, ushort *target, s
   DAT_00100604 = tile_y;
   DAT_001005d8 = 0;
   DAT_00100628 = 0;
-  DAT_001005dc = ((byte)attacker[1] & 0x7f) + ((byte)(&DAT_00202c90)[((uw_object_hdr_t *)attacker)->item_id * 0xd] >> 1);
+  DAT_001005dc = ((uw_object_hdr_t *)attacker)->zpos + ((byte)(&DAT_00202c90)[((uw_object_hdr_t *)attacker)->item_id * 0xd] >> 1);
   DAT_001005fc = 0x80;
   DAT_00100600 = tile_x;
   DAT_00100610 = hit_flag;
   DAT_00100620 = encode_object_slot_index(target);
-  uVar4 = (byte)attacker[1] & 0x7f;
-  uVar2 = (byte)target[1] & 0x7f;
+  uVar4 = ((uw_object_hdr_t *)attacker)->zpos;
+  uVar2 = ((uw_object_hdr_t *)target)->zpos;
   sVar1 = resolve_combat_hit_zone(uVar2,(byte)(&DAT_00202c90)[((uw_object_hdr_t *)target)->item_id * 0xd] + uVar2,uVar4,
                        (byte)(&DAT_00202c90)[((uw_object_hdr_t *)attacker)->item_id * 0xd] + uVar4);
   DAT_00100624 = sVar1 + 4;
@@ -1696,7 +1696,7 @@ int try_npc_special_ability_ranged()
       (((DAT_00101900 < 0x40 && (iVar3 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar3 == 0)) &&
        (iVar3 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
                              (uint)(byte)(&DAT_00202c90)[((uw_object_hdr_t *)DAT_0010190c)->item_id * 0xd] +
-                             ((byte)DAT_0010190c[1] & 0x7f),DAT_00101908,DAT_00101418,
+                             ((uw_object_hdr_t *)DAT_0010190c)->zpos,DAT_00101908,DAT_00101418,
                              (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
                              ((byte)DAT_00101400[1] & 0x7f)), iVar3 != 0)))) &&
      (iVar3 = check_npc_target_alignment(1), iVar3 != 0)) {
@@ -1739,7 +1739,7 @@ int try_npc_special_ability_alt()
   if (((DAT_00101900 < 0x10) &&
       (iVar2 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
                             (uint)(byte)(&DAT_00202c90)[((uw_object_hdr_t *)DAT_0010190c)->item_id * 0xd] +
-                            ((byte)DAT_0010190c[1] & 0x7f),DAT_00101908,DAT_00101418,
+                            ((uw_object_hdr_t *)DAT_0010190c)->zpos,DAT_00101908,DAT_00101418,
                             (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
                             ((byte)DAT_00101400[1] & 0x7f)), iVar2 != 0)) &&
      (iVar2 = check_npc_target_alignment(1), iVar2 != 0)) {

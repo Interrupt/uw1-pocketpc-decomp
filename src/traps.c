@@ -86,7 +86,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
     break;
   case 1:
     iVar16 = teleport_object_to_level_tile(DAT_0024cff4,(byte)trap_record[2] & 0x3f,(byte)trap_record[3] & 0x3f,
-                          (byte)trap_record[1] & 0x7f);
+                          ((uw_object_hdr_t *)trap_record)->zpos);
     break;
   case 2:
     spawn_trap_hazard_object(trap_record,tile_x,tile_y);
@@ -297,9 +297,9 @@ LAB_0007dce4:
     if (iVar11 == 0) {
       return 2;
     }
-    if ((((((byte)trap_record[1] & 0x7f) != 0) && ((*(byte *)(iVar11 + 1) & 0x80) != 0)) &&
+    if (((((((uw_object_hdr_t *)trap_record)->zpos) != 0) && ((*(byte *)(iVar11 + 1) & 0x80) != 0)) &&
         ((*(ushort *)(iVar11 + 6) & 0x8000) == 0)) &&
-       (*(ushort *)(iVar11 + 6) >> 6 < ((byte)trap_record[1] & 0x7f))) {
+       (*(ushort *)(iVar11 + 6) >> 6 < ((uw_object_hdr_t *)trap_record)->zpos)) {
       return 2;
     }
     break;
@@ -819,7 +819,7 @@ LAB_0003987c:
           if (uVar3 < uVar11) {
             for (puVar8 = puVar7 + 1; (*puVar8 & 0xffc0) != 0; puVar8 = puVar8 + 2) {
               puVar8 = (ushort *)resolve_object_link(puVar8);
-              if (((*puVar8 & 0x1c0) != 0x180) && ((int)(puVar8[1] & 0x7f) < iVar12 * 8)) {
+              if (((*puVar8 & 0x1c0) != 0x180) && ((int)((uw_object_hdr_t *)puVar8)->zpos < iVar12 * 8)) {
                 uVar10 = puVar8[1] & 0xff80;
                 *(byte *)(puVar8 + 1) = (byte)uVar10 | (byte)((uVar13 & 0xf) << 3);
                 *(char *)((char *)puVar8 + 3) = (char)(uVar10 >> 8);
@@ -841,7 +841,7 @@ LAB_0003987c:
               uVar14 = resolve_object_link(puVar8);
               uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
               puVar8 = (ushort *)uVar14;
-              if (((*puVar8 & 0x1c0) != 0x180) && ((puVar8[1] & 0x7f) == uVar3 * 8)) {
+              if (((*puVar8 & 0x1c0) != 0x180) && (((uw_object_hdr_t *)puVar8)->zpos == uVar3 * 8)) {
                 uVar10 = puVar8[1] & 0xff80;
                 *(byte *)(puVar8 + 1) = (byte)uVar10 | (byte)((uVar13 & 0xf) << 3);
                 *(char *)((char *)puVar8 + 3) = (char)(uVar10 >> 8);

@@ -4761,7 +4761,7 @@ int tile_pair_los_blocked(byte tile_a_x, byte tile_a_y, byte tile_b_x, byte tile
       puVar9 = (ushort *)resolve_object_link(puVar10);
       iVar13 = ((uw_object_hdr_t *)puVar9)->item_id * 0xd;
       if (((&DAT_00202c93)[iVar13] & 2) != 0) {
-        uVar11 = (int)(((byte)puVar9[1] & 0x7f) + (uint)(byte)(&DAT_00202c90)[iVar13]) >> 3;
+        uVar11 = (int)(((uw_object_hdr_t *)puVar9)->zpos + (uint)(byte)(&DAT_00202c90)[iVar13]) >> 3;
       }
       puVar10 = puVar9 + 2;
       uVar2 = puVar9[2];
@@ -4845,7 +4845,7 @@ LAB_0002c220:
     iVar13 = ((uw_object_hdr_t *)puVar10)->item_id * 0xd;
     if (((uVar19 & 0x1c0) != 0x140) || (((*puVar10 & 0x30) != 0 || (7 < (uVar19 & 0xf))))) {
       if (((&DAT_00202c93)[iVar13] & 2) != 0) {
-        local_50 = (byte)((int)(((byte)puVar10[1] & 0x7f) + (uint)(byte)(&DAT_00202c90)[iVar13]) >>
+        local_50 = (byte)((int)(((uw_object_hdr_t *)puVar10)->zpos + (uint)(byte)(&DAT_00202c90)[iVar13]) >>
                          3);
       }
       goto switchD_0002c458_default;
@@ -5117,7 +5117,7 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
   snapshot[1] = 0;
   snapshot[2] = (byte)((*(byte *)((char *)object + 3) & 0x1c) >> 2);
   snapshot[3] = 0;
-  snapshot[4] = (byte)object[1] & 0x7f;
+  snapshot[4] = ((uw_object_hdr_t *)object)->zpos;
   snapshot[5] = 0;
   if (object < DAT_002046c4) {
     iVar7 = (int)*(short *)snapshot + ((object[0xb] & 0xfc00) >> 7);

@@ -595,7 +595,7 @@ int check_object_drop_height(ushort *object, ushort *reference)
   /* Was `DAT_00202c6c + 2` -- disassembly-confirmed (0x4b288 @ 0x4b474: `strb r3,[r0,#0x4]`) the
      real target is offset+4/+5 (the same "Z" field this function's own later collision calls read
      via `*(short *)(DAT_00202c6c + 4)`), not offset+2... */
-  *(byte *)((char *)DAT_00202c6c + 4) = (byte)object[1] & 0x7f;
+  *(byte *)((char *)DAT_00202c6c + 4) = ((uw_object_hdr_t *)object)->zpos;
   *(byte *)((char *)DAT_00202c6c + 5) = 0;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] pre-collision local_38[0..5]=%d,%d,%d,%d,%d,%d offset4(Z)=%d\n",
@@ -682,10 +682,10 @@ int check_object_combination(char *actor, ushort *object, short count)
   }
   uVar6 = (uint)count;
   if ((int)uVar6 < 0) {
-    uVar5 = (byte)puVar4[1] & 0x7f;
+    uVar5 = ((uw_object_hdr_t *)puVar4)->zpos;
     if (((uVar5 != 0xe) || (0x1e < (int)-uVar6)) &&
        ((uVar5 != 0xf &&
-        (sVar3 = roll_skill_check((int)(uVar6 * -0x10000) >> 0x10,((byte)puVar4[1] & 0x7f) * 3),
+        (sVar3 = roll_skill_check((int)(uVar6 * -0x10000) >> 0x10,((uw_object_hdr_t *)puVar4)->zpos * 3),
         0 < sVar3)))) {
 LAB_0007c130:
       trigger_object_trap_or_use_action(actor,object,6,(int)DAT_002020a0,DAT_002020a4);
