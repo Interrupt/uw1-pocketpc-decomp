@@ -173,8 +173,9 @@ void collision_build_height_field(uint step_limit)
   DAT_00202c0e = (undefined1)(corner_c & 7);
   if (DAT_00202c78 == 0x1111) {
     tile_word = *_DAT_00202c34;
-    DAT_00202c78 = (tile_word & 0xf) +
-                   (((&DAT_0023ae40)[tile_word >> 10 & 0xf] & 0xff) + (tile_word >> 4 & 0xf)) * 0x10;
+    DAT_00202c78 = ((uw_tile_t *)_DAT_00202c34)->tile_type +
+                   (((&DAT_0023ae40)[((uw_tile_t *)_DAT_00202c34)->floor_tex] & 0xff) +
+                    ((uw_tile_t *)_DAT_00202c34)->floor_height) * 0x10;
   }
   collision_corner_flags(step_limit);
   flags_ptr = DAT_00202c6c + 0xc;

@@ -3031,7 +3031,7 @@ LAB_00033d18:
     goto LAB_00033e9c;
   case 1:
     puVar8 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
-    npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,*puVar8 >> 4 & 0xf);
+    npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,((uw_tile_t *)puVar8)->floor_height);
     break;
   case 2:
     npc_idle_behavior_tick();
@@ -3445,12 +3445,12 @@ LAB_00034db4:
   uVar8 = npc_object[3] & 0x3f;
   puVar4 = (ushort *)tilemap_lookup(uVar10,uVar8);
   if (((uVar9 != uVar10) || (uVar11 != uVar8)) &&
-     (iVar5 = resolve_tile_entry_offset(*puVar4 & 0xf,&local_2c,local_2b), iVar5 != 0)) {
+     (iVar5 = resolve_tile_entry_offset(((uw_tile_t *)puVar4)->tile_type,&local_2c,local_2b), iVar5 != 0)) {
     if (((&DAT_001007da)[iVar6] & 0x80) == 0) {
-      uVar9 = (uint)(byte)((byte)*puVar4 >> 4) << 3;
+      uVar9 = (uint)((uw_tile_t *)puVar4)->floor_height << 3;
     }
     else {
-      uVar9 = (int)(((byte)((byte)*puVar4 >> 4) + 0x10) * 8) >> 1;
+      uVar9 = (int)((((uw_tile_t *)puVar4)->floor_height + 0x10) * 8) >> 1;
     }
     uVar2 = encode_object_slot_index(npc_object);
     iVar6 = check_object_placement_clearance(*npc_object & 0x1ff,uVar2,
@@ -3660,7 +3660,7 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
         bVar1 = (&DAT_00101740)[uVar9 * 7 - 13];
         bVar2 = (&DAT_00101740)[uVar9 * 7 - 14];
         puVar7 = (ushort *)tilemap_lookup((uint)bVar2,(uint)bVar1);
-        iVar11 = resolve_tile_entry_offset(*puVar7 & 0xf,&local_28,local_27);
+        iVar11 = resolve_tile_entry_offset(((uw_tile_t *)puVar7)->tile_type,&local_28,local_27);
         if (iVar11 != 0) {
           bVar3 = (&DAT_0023cf0a)[((int)(short)(ushort)bVar1 + (short)(ushort)bVar2 * 0x40) * 5];
           uVar6 = encode_object_slot_index(object);
@@ -4355,7 +4355,7 @@ void npc_wander_return_home_tick()
               iVar2*iVar2+iVar3*iVar3, (int)(uVar1*uVar1) < iVar2*iVar2+iVar3*iVar3 ? "WALK" : "idle");
     if ((int)(uVar1 * uVar1) < iVar2 * iVar2 + iVar3 * iVar3) {
       puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
-      npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
+      npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,((uw_tile_t *)puVar4)->floor_height);
     }
     else {
       npc_idle_behavior_tick();
@@ -4531,7 +4531,7 @@ void npc_wander_return_home_exact_tick()
     }
     else {
       puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
-      npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
+      npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,((uw_tile_t *)puVar4)->floor_height);
     }
   }
   return;

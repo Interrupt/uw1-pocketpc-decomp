@@ -2036,9 +2036,9 @@ int try_climb_wall()
   local_8 = DAT_00204882 >> 5;
   project_position_by_heading((int)DAT_00201c70 >> 8,0xb,&local_6,&local_8);
   puVar2 = (ushort *)tilemap_lookup((int)local_6 >> 3,(int)local_8 >> 3);
-  uVar1 = *puVar2;
-  if ((((uVar1 & 0xf) == 0) || (((&DAT_0023ae40)[uVar1 >> 10 & 0xf] & 0xfff0) != 0x10)) ||
-     ((int)(*(byte *)((char *)g_player_object + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
+  if ((((uw_tile_t *)puVar2)->tile_type == 0) ||
+      (((&DAT_0023ae40)[((uw_tile_t *)puVar2)->floor_tex] & 0xfff0) != 0x10) ||
+     ((int)(*(byte *)((char *)g_player_object + 2) >> 3 & 0xf) <= (int)(((uw_tile_t *)puVar2)->floor_height - 1))) {
     uVar3 = 0x65;
   }
   else {

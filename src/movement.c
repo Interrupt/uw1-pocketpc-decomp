@@ -1870,8 +1870,8 @@ int can_step_between_tiles(byte ignore_x, byte ignore_y, byte from_x, byte from_
   
   pbVar2 = (byte *)tilemap_lookup(from_x,from_y);
   puVar3 = (ushort *)tilemap_lookup(to_x,to_y);
-  uVar5 = *pbVar2 & 0xf;
-  uVar4 = *puVar3 & 0xf;
+  uVar5 = ((uw_tile_t *)pbVar2)->tile_type;
+  uVar4 = ((uw_tile_t *)puVar3)->tile_type;
   if ((ignore_x == 0) || ((ignore_x == from_x && (ignore_y == from_y)))) {
     if ((from_x < to_x) && (((&DAT_000878d0)[uVar4] & 2) != 0)) {
       return 0;
@@ -1914,7 +1914,7 @@ LAB_0002caa4:
   if ((((from_x <= to_x) || (((&DAT_000878d0)[uVar5] & 2) == 0)) &&
       ((to_y <= from_y || (((&DAT_000878d0)[uVar5] & 0x10) == 0)))) &&
      ((from_y <= to_y || (((&DAT_000878d0)[uVar5] & 8) == 0)))) {
-    if ((*puVar3 >> 1 & 0x78) <= (step_height & 0xfff8)) {
+    if ((((uw_tile_t *)puVar3)->floor_height << 3) <= (step_height & 0xfff8)) {
       return 1;
     }
     return 0;

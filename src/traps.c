@@ -800,7 +800,7 @@ int apply_area_terrain_effect(short tile_x, int tile_y, short wall_texture, shor
         iVar12 = (int)(short)uVar13;
         do {
           puVar7 = (ushort *)tilemap_lookup((int)local_44,tile_y);
-          uVar10 = *puVar7 >> 4 & 0xf;
+          uVar10 = ((uw_tile_t *)puVar7)->floor_height;
           if ((mode == 1) || (mode == 3)) {
             uVar13 = (uVar10 - (int)mode) + 2;
             iVar12 = (int)(uVar13 * 0x10000) >> 0x10;

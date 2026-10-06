@@ -146,12 +146,11 @@ int spawn_scheduled_door_texture_object()
   target_y = DAT_00204882 >> 5;
   project_position_by_heading((int)DAT_00201c70 >> 8, 0xb, &target_x, &target_y);
   tile = (ushort *)tilemap_lookup((int)(short)target_x >> 3, (int)(short)target_y >> 3);
-  tile_word = *tile;
-  if (((tile_word & 0xf) == 1) &&
-     (((((tile_type = (&DAT_0023adb8)[tile_word >> 10 & 0xf], 4 < tile_type && (tile_type < 0xc)) ||
+  if ((((uw_tile_t *)tile)->tile_type == 1) &&
+     (((((tile_type = (&DAT_0023adb8)[((uw_tile_t *)tile)->floor_tex], 4 < tile_type && (tile_type < 0xc)) ||
         ((0x11 < tile_type && (tile_type < 0x17)))) || ((0x1a < tile_type && (tile_type < 0x20)))) ||
       ((0x22 < tile_type && (tile_type < 0x29)))))) {
-    object_word = (tile_word >> 4 & 0xf) << 3;
+    object_word = ((uw_tile_t *)tile)->floor_height << 3;
     object_word_low16 = (undefined2)object_word;
     clearance = check_object_placement_clearance(0x1ca, 0, (int)(short)target_x, (int)(short)target_y,
                                                  object_word_low16, 0, 0);

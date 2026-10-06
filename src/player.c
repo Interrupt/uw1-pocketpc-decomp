@@ -232,8 +232,8 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
   iVar2 = tile_x + tile_y * 0x40;
   DAT_00202080 = (short)iVar2;
   iVar2 = iVar2 * 0x10000 >> 0x10;
-  DAT_00204884 = *(short *)(&DAT_00085d20 + (uint)(*(byte *)(DAT_002029cc + iVar2 * 4) >> 4) * 2);
-  if (((&DAT_000878d0)[*(byte *)(DAT_002029cc + iVar2 * 4) & 0xf] & 0x20) != 0) {
+  DAT_00204884 = *(short *)(&DAT_00085d20 + (uint)((uw_tile_t *)(DAT_002029cc + iVar2 * 4))->floor_height * 2);
+  if (((&DAT_000878d0)[((uw_tile_t *)(DAT_002029cc + iVar2 * 4))->tile_type] & 0x20) != 0) {
     DAT_00204884 = DAT_00204884 + 0x20;
   }
   uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xff80;
