@@ -219,7 +219,10 @@ void refresh_container_view()
 
 {
   short sVar1;
-  int iVar2;
+  /* ARM FUN_00042d70 keeps this object/link address in r0 while following
+     contents (+6) and hidden objects' sibling links (+4). Ghidra's int
+     truncates the pointer on 64-bit hosts; keep the original traversal. */
+  char *iVar2;
   
   decrement_cursor_hide_depth();
   redraw_inventory_widget_range(0xc,0x13);

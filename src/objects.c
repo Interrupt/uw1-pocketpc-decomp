@@ -456,30 +456,12 @@ ushort * param_1;
 {
   ushort uVar1;
 
-  /* The original FUN_00053514 also accepts copied link words in the
-     six-byte collision candidate array (see FUN_0005898c and FUN_0005aea0).
-     Keep the port's arena guard, but allow that original call contract. */
-  if (param_1 != (ushort *)0x0) {
-    char *_lo = DAT_002046b8 - 0x4000;
-    /* (DAT_002046b8-0x4000) is this arena buffer's own base (aliased as _lo just above);
-       +0x7c08+0x3a+0x180 is its new true end, covering g_backpack_slot_table's reservation there... */
-    char *_hi = (DAT_002046b8 - 0x4000) + 0x7c08 + 0x3a + 0x180;
-    uintptr_t link_address = (uintptr_t)param_1;
-    uintptr_t candidates = (uintptr_t)DAT_00202c38_backing;
-    bool candidate_link = link_address >= candidates + 2 &&
-                          link_address < candidates + 9 * 6 &&
-                          (link_address - candidates - 2) % 6 == 0;
-    if (!candidate_link && ((char *)param_1 < _lo || (char *)param_1 >= _hi)) {
-      /* Throttled: this guard also fires every idle tick before any level is loaded
-         (DAT_002046b8/DAT_002046c4 aren't set up yet, so everything looks "out of range")... */
-      static unsigned _warn_count = 0;
-      _warn_count++;
-      if (_warn_count == 1 || (_warn_count % 500) == 0) {
-        DEBUG(ERR, "[resolve_object_link] param_1=%p out of expected range [%p,%p), returning NULL (x%u so far)\n",
-              (void *)param_1, (void *)_lo, (void *)_hi, _warn_count);
-      }
-      return 0;
-    }
+  /* ARM FUN_00053514 accepts any valid link-word address, including
+     the stack copy used at 0x52e58. Requiring the word to live inside the
+     level arena rejected that original contract. Keep the pre-load check
+     on the object tables, rather than restricting the word's location. */
+  if ((param_1 != (ushort *)0x0) && (DAT_002046b8 != NULL) &&
+      (DAT_002046c4 != NULL)) {
     uVar1 = *param_1;
     if ((uVar1 & 0xffc0) != 0) {
       if (0x3fff < (uVar1 & 0xffc0)) {
@@ -1259,19 +1241,21 @@ undefined4 param_1;
 ushort * param_2;
 
 {
-  undefined4 uVar1;
+  char *pcVar1;
 
   if ((*param_2 & 0xffc0) != 0) {
-    uVar1 = resolve_object_link(param_2);
-    roll_object_destroy_chance(param_1,uVar1);
+    /* ARM 0x52d54..0x52d64 forwards the object address in r1
+       and leaves the destruction result in r0 for its caller. */
+    pcVar1 = resolve_object_link(param_2);
+    return roll_object_destroy_chance(param_1,pcVar1);
   }
   return 0;
 }
 
 
 
-// was FUN_00052d68 -- reclaims object slots by probabilistically destroying objects in tile rows
-// more than (10-param_1) rows from the player's row, up to param_2 destructions.
+// was FUN_00052d68 -- reclaims object slots by probabilistically destroying objects whose
+// tile Manhattan distance from the player exceeds (10-param_1), up to param_2 destructions.
 void despawn_objects_outside_radius(param_1,param_2)
 undefined4 param_1;
 short param_2;
@@ -1281,7 +1265,8 @@ short param_2;
   ushort uVar2;
   ushort uVar3;
   int iVar4;
-  undefined4 uVar5;
+  char *pcVar4;
+  void *pvVar5;
   uint uVar6;
   int iVar7;
   int iVar8;
@@ -1308,12 +1293,14 @@ short param_2;
       if (local_30 < (int)(local_34 + ((local_38 - iVar8 ^ uVar1) - uVar1))) {
         for (local_3c[0] = *(ushort *)(iVar9 + 2); (local_3c[0] & 0xffc0) != 0;
             local_3c[0] = local_3c[0] & 0x3f | uVar3 & 0xffc0) {
-          iVar4 = resolve_object_link(local_3c);
-          uVar3 = *(ushort *)(iVar4 + 4);
+          /* ARM 0x52e5c..0x52e68 reads +4/+5 from the resolved
+             record address. Preserve the native pointer here. */
+          pcVar4 = resolve_object_link(local_3c);
+          uVar3 = *(ushort *)(pcVar4 + 4);
           iVar4 = should_destroy_linked_object(param_1,local_3c);
           if (iVar4 != 0) {
-            uVar5 = get_object_record_by_slot_index(local_3c[0] >> 6);
-            unlink_and_free_object((ushort *)(iVar9 + 2),uVar5);
+            pvVar5 = get_object_record_by_slot_index(local_3c[0] >> 6);
+            unlink_and_free_object((ushort *)(iVar9 + 2),pvVar5);
             iVar10 = iVar10 + 1;
             if ((int)param_2 <= iVar10 * 0x10000 >> 0x10) {
               return;

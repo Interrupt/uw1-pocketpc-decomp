@@ -1622,7 +1622,9 @@ int param_3;
 // 0x121-0x12f and 299/300, covering: resting in a bed (0x121, gated on the current UI state);
 // door-texture scheduling (0x122); playing one of 2 musical instruments (0x123/0x124)...
 void dispatch_use_special_item_by_type(param_1,param_2,param_3)
-int param_1;
+/* The actor is an object address, forwarded in r3 to the fountain's
+   special-action dispatcher (ARM 0x7b99c). */
+ushort *param_1;
 ushort * param_2;
 int param_3;
 
@@ -1633,14 +1635,12 @@ int param_3;
   ushort *puVar4;
   code *pcVar5;
   uint uVar6;
-  undefined4 in_stack_ffffffd4;
   undefined2 uVar7;
   short local_24;
   short local_22;
   short local_20 [2];
   undefined1 auStack_1c [4];
   
-  uVar7 = (undefined2)((uint)in_stack_ffffffd4 >> 0x10);
   if (param_3 == 0) {
     uVar1 = *param_2 & 0x1ff;
     if (uVar1 == 0x129) {
@@ -1687,7 +1687,7 @@ int param_3;
     if (uVar1 == 0x12e) {
       iVar3 = resolve_object_variant_or_special_link(param_2,&local_24,local_20,auStack_1c);
       if (iVar3 != 0) {
-        dispatch_trap_special_or_tile_action((int)DAT_002020a0,(int)DAT_002020a4,param_2,param_1,CONCAT22(uVar7,local_24),
+        dispatch_trap_special_or_tile_action((int)DAT_002020a0,(int)DAT_002020a4,param_2,param_1,local_24,
                      local_20[0]);
         iVar3 = 0xf9;
         if (local_24 == 4) goto LAB_0007b9b8;
@@ -1704,7 +1704,8 @@ int param_3;
   }
   switch(*param_2 & 0x1ff) {
   case 0x121:
-    if (*(short *)(DAT_00085a6c + 8) == 1) {
+    /* ARM 0x7b7b8..0x7b7c0 reads the mode at byte offset 8. */
+    if (*(short *)((char *)DAT_00085a6c + 8) == 1) {
       handle_rest_action(1);
     }
     break;

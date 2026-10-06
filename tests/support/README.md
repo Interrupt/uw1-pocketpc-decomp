@@ -62,6 +62,10 @@ these domain fixtures:
 
 Fixture map loading uses native file reads, so inventory, trap, illustration,
 and new-game suites can keep their own observed or failing file-service mocks.
+The inventory suite runs the real container open, refresh and weight traversal
+with controlled object slots and drawing services. Cases open the real sack
+from level 1 tile 23,6, empty sacks and nested sacks, and follow hidden contents'
+sibling links. Its fixture frees container tracking records after each case.
 The new-game suite still exercises the actual `read_archive_entry` and level
 loader. The character initializer and archive reader have separate compiled
 libraries, avoiding dependencies on unrelated services when only one is used.
@@ -117,3 +121,27 @@ ordinal and quotient/remainder return convention.
 
 The original commits and their already-ported source fixes are listed in
 [the recovery audit](../fixtures/legacy-test-recovery.md).
+
+`uw_test_special_use` loads the real level 1 fountain and bedroll records.
+`special_use_fixture_reset` creates the player and installs the map arenas;
+`special_use_empty_area` and `special_use_npc` arrange rest safety scenarios.
+The real special-action dispatch, healing, area scan and safety callback run;
+only the rest UI/time advancement and output services are controlled.
+
+`uw_test_sleep` runs the actual bedroll dispatcher and `handle_rest_action`
+through waking up, with the player at level 1 tile 18,5. It loads the original
+map/object lists, object properties and light fuel records. The shared special
+item fixture builds with `UW_TEST_FULL_REST` to leave the rest handler, stat
+adjustments and fuel decay to the real game functions. Cases cover
+complete and interrupted sleep, repeated use, hostile rejection, cleanup
+limits/chain preservation, stack link words and torch exhaustion. The suite
+also runs the real background trap search/dispatch, spawn-area scan/callback,
+and weapon overlay hold/restore functions, including the reported level 1
+tile 18,4. Fourteen cases check blocked/unblocked spawn scans, ignored template
+and player records, resetting the scan result, and native snapshot pointers
+and full-region copies. Real scans check whether starting rest is unsafe;
+the interruption outcome and subsequent NPC movement remain controlled world
+services. Spawn allocation is an exhausted-pool fixture, so successful NPC
+placement is outside these cases. Drawing, sound, resource cleanup, inventory
+light lookup, allocation/copy services, RNG and the clock are controlled so
+the tests do not need interactive input or rendering.
