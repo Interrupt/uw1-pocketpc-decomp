@@ -279,24 +279,19 @@ void free_object_slot(char *object)
    the level). */
 void object_list_insert_head(byte *link_field, char *object)
 {
-  undefined2 uVar1;
-  byte bVar2;
+  ushort old_head_chain;
   short sVar3;
-  ushort uVar4;
 
-  uVar1 = *(undefined2 *)link_field;
-  bVar2 = (byte)uVar1;
-  *(byte *)(object + 4) = (*(byte *)(object + 4) ^ bVar2) & 0x3f ^ bVar2;
-  *(char *)(object + 5) = (char)((ushort)uVar1 >> 8);
+  /* object becomes the new head: its own next chains to whatever the old head was. */
+  old_head_chain = ((uw_chain_word_t *)link_field)->chain;
+  ((uw_object_hdr_t *)object)->next = old_head_chain;
   if (object < DAT_002046c4) {
     sVar3 = ordint_divmod(0x1b,object - DAT_002046b8).quot;
-    uVar4 = *link_field & 0x3f | sVar3 << 6;
   }
   else {
-    uVar4 = *link_field & 0x3f ^ ((short)((int)(object - DAT_002046c4) >> 3) + 0x100) * 0x40;
+    sVar3 = (short)((int)(object - DAT_002046c4) >> 3) + 0x100;
   }
-  *link_field = (byte)uVar4;
-  link_field[1] = (byte)(uVar4 >> 8);
+  ((uw_chain_word_t *)link_field)->chain = sVar3;
 }
 
 
@@ -308,7 +303,6 @@ void object_list_append_tail(byte *link_field, char *object)
 {
   short sVar1;
   byte *pbVar2;
-  ushort uVar3;
 
   /* iVar2 was `int`, truncating resolve_object_link's real pointer return -- same
      tile/object-chain-walk bug as object_list_unlink (see there), just never exercised yet (this
@@ -316,17 +310,15 @@ void object_list_append_tail(byte *link_field, char *object)
   while (pbVar2 = (byte *)resolve_object_link(link_field), pbVar2 != 0) {
     link_field = pbVar2 + 4;
   }
-  *(byte *)(object + 4) = *(byte *)(object + 4) & 0x3f;
-  *(undefined1 *)(object + 5) = 0;
+  /* object becomes the new tail: its own next terminates the chain. */
+  ((uw_object_hdr_t *)object)->next = 0;
   if (object < DAT_002046c4) {
     sVar1 = ordint_divmod(0x1b,object - DAT_002046b8).quot;
-    uVar3 = *link_field & 0x3f | sVar1 << 6;
   }
   else {
-    uVar3 = *link_field & 0x3f ^ ((short)((int)(object - DAT_002046c4) >> 3) + 0x100) * 0x40;
+    sVar1 = (short)((int)(object - DAT_002046c4) >> 3) + 0x100;
   }
-  *link_field = (byte)uVar3;
-  link_field[1] = (byte)(uVar3 >> 8);
+  ((uw_chain_word_t *)link_field)->chain = sVar1;
 }
 
 
@@ -337,8 +329,6 @@ void object_list_append_tail(byte *link_field, char *object)
 void object_list_unlink(byte *link_field, byte *object)
 {
   short sVar1;
-  undefined2 uVar2;
-  byte bVar3;
   byte *pbVar4;
   int iVar5;
 
@@ -357,12 +347,9 @@ void object_list_unlink(byte *link_field, byte *object)
       if (pbVar4 == object) break;
       link_field = pbVar4 + 4;
     }
-    uVar2 = *(undefined2 *)(object + 4);
-    bVar3 = (byte)uVar2;
-    *link_field = (*link_field ^ bVar3) & 0x3f ^ bVar3;
-    link_field[1] = (byte)((ushort)uVar2 >> 8);
-    *(byte *)(object + 4) = *(byte *)(object + 4) & 0x3f;
-    *(undefined1 *)(object + 5) = 0;
+    /* splice object out: the previous link takes over object's own next, pointing past it. */
+    ((uw_chain_word_t *)link_field)->chain = ((uw_object_hdr_t *)object)->next;
+    ((uw_object_hdr_t *)object)->next = 0;
   }
 }
 
