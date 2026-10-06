@@ -88,7 +88,7 @@ void interact_default()
                 (int)((g_interact_target[3] & 0x8000) != 0), (unsigned)(g_interact_target[3] & 0xffc0),
                 (int)object_ptr_in_arena((char *)g_interact_target));
       if ((((uw_object_hdr_t *)g_interact_target)->is_quant) &&
-         (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
+         (((g_interact_target[3] & 0x8000) == 0 && (((uw_object_hdr_t *)g_interact_target)->link != 1)))) {
         if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)g_interact_target)->item_id) == 0x80)
           fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling prompt_split_object_stack\n");
         /* BUG FIX: was `FUN_000470fc();` -- dropped its only argument. g_interact_target (the
@@ -109,9 +109,7 @@ void interact_default()
       iVar1 = check_object_carry_weight(g_interact_target);
       if (iVar1 == 0) {
         if ((puVar3 != (ushort *)0x0) && (puVar3 != g_interact_target)) {
-          iVar1 = (g_interact_target[3] & 0xffc0) + (puVar3[3] & 0xffc0);
-          *(byte *)(g_interact_target + 3) = (byte)iVar1 ^ (byte)g_interact_target[3] & 0x3f;
-          *(char *)((char *)g_interact_target + 7) = (char)((uint)iVar1 >> 8);
+          ((uw_object_hdr_t *)g_interact_target)->link = ((uw_object_hdr_t *)g_interact_target)->link + ((uw_object_hdr_t *)puVar3)->link;
           object_list_unlink(g_interact_target + 2,puVar3);
         }
         print_scroll_message_by_id(0x5f);
@@ -288,7 +286,7 @@ int roll_container_lockpick_check(char *container, int skill)
   ushort *local_c;
   
   if (((!((uw_object_hdr_t *)container)->is_quant) &&
-      (local_c = (ushort *)(container + 6), (*local_c & 0xffc0) != 0)) &&
+      (local_c = (ushort *)(container + 6), ((uw_object_hdr_t *)container)->link != 0)) &&
      (pbVar1 = (byte *)find_object_in_chain(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
     if (0x1f < (*pbVar1 & 0x30)) {
       pbVar1 = (byte *)resolve_object_link((ushort *)(pbVar1 + 6)); /* confirmed via ARM disassembly, 0x72628 */
@@ -328,7 +326,7 @@ int roll_container_trap_disarm_check(char *container, int skill)
   
   uVar8 = 0;
   if ((!((uw_object_hdr_t *)container)->is_quant) &&
-     (local_34[0] = (ushort *)(container + 6), (*local_34[0] & 0xffc0) != 0)) {
+     (local_34[0] = (ushort *)(container + 6), ((uw_object_hdr_t *)container)->link != 0)) {
     pbVar3 = (byte *)find_object_in_chain(local_34,0,6,0xffffffff,0xffff);
     if (pbVar3 != (byte *)0x0) {
       if ((*pbVar3 & 0x30) < 0x20) {
@@ -425,7 +423,7 @@ uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort 
     }
     if ((short)key_id < 0) break;
     if ((((key_item == (ushort *)0x0) || ((*key_item & 0x1f0) != 0x170)) || ((*key_item & 0xf) < 8)) ||
-       ((lock_link[2] & 0xffc0) == 0)) {
+       (((uw_object_hdr_t *)lock_link)->next == 0)) {
       if ((byte)(&DAT_0024cfe0)[(short)(bVar6 & 0xf)] != key_id) {
         return 2;
       }
@@ -468,7 +466,7 @@ uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort 
   }
   uVar4 = apply_trap_or_link_effect(object,key_item,iVar3,bVar6,bVar7);
   if ((*lock_link & 0x400) == 0) {
-    if ((lock_link[3] & 0xffc0) != 0) {
+    if (((uw_object_hdr_t *)lock_link)->link != 0) {
       iVar5 = (char *)tilemap_lookup(bVar6,bVar7);
       refresh_object_link_chain(iVar5 + 2,iVar3);
       return uVar4 | 0x20;
@@ -521,7 +519,7 @@ void purge_tagged_objects_from_chain(ushort *link_field)
       *(undefined1 *)((char *)puVar1 + 7) = 0;
       DAT_0024cfd8 = DAT_0024cfd8 + -1;
     }
-    if ((!((uw_object_hdr_t *)puVar1)->is_quant) && ((puVar1[3] & 0xffc0) != 0)) {
+    if ((!((uw_object_hdr_t *)puVar1)->is_quant) && (((uw_object_hdr_t *)puVar1)->link != 0)) {
       purge_tagged_objects_from_chain(puVar1 + 3); /* was called with no argument; confirmed via ARM disassembly, 0x7dfbc */
     }
   }
@@ -545,7 +543,7 @@ void refresh_object_link_chain(char *chain_link, char *object)
     iVar2 = DAT_002029cc;
     sVar3 = DAT_0024cfd8;
     for (uVar4 = 0; (0 < sVar3 && (uVar4 < 0x1000)); uVar4 = uVar4 + 1) {
-      if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
+      if (((uw_tile_t *)iVar2)->obj_head != 0) {
         purge_tagged_objects_from_chain(iVar2 + 2); /* was called with no argument, same bug class as resolve_object_link's */
         sVar3 = DAT_0024cfd8;
       }
