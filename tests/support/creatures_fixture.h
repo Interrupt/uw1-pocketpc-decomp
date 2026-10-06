@@ -20,7 +20,7 @@ int place_object_in_world(uint x, uint y, int z, char *object, short distance, i
 void free_object_slot(char *object);
 int check_object_drop_height(ushort *object, ushort *source);
 int encode_object_slot_index(char *object);
-undefined4 play_sound_effect_at_object(int sound, void *object, int mode);
+int play_sound_effect_at_object(int sound, ushort *object, int mode);
 int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y);
 int roll_object_destroy_chance(short base_chance, char *object);
 void print_scroll_message_by_id(uint message_id);

@@ -75,7 +75,7 @@ void redraw_backpack_slot_widget(short slot) { (void)slot; TEST_FAIL_MESSAGE("Un
 UNUSED_VOID(refresh_container_view)
 bool finish_object_use(ushort *used_object, int consume, int force_discard) { (void)used_object; (void)consume; (void)force_discard; TEST_FAIL_MESSAGE("Unexpected finish_object_use"); return false; }
 int spawn_scheduled_door_texture_object(void) {  TEST_FAIL_MESSAGE("Unexpected spawn_scheduled_door_texture_object"); return 0; }
-UNUSED_VOID(play_musical_instrument)
+void play_musical_instrument(short instrument) { (void)instrument; TEST_FAIL_MESSAGE("Unexpected play_musical_instrument"); }
 void arm_use_item_on_special_target_prompt(ushort *item, int confirmed) { (void)item; (void)confirmed; TEST_FAIL_MESSAGE("Unexpected arm_use_item_on_special_target_prompt"); }
 UNUSED_RESULT(try_climb_wall)
 short *begin_holding_object_on_cursor(short *object, uint object_type) { (void)object; (void)object_type; TEST_FAIL_MESSAGE("Unexpected cursor pickup"); return NULL; }

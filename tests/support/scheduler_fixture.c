@@ -10,7 +10,7 @@ long ce_rand(void);
 int encode_object_slot_index(char *object);
 int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit);
 void adjust_door_close_animation_delay(ushort *object);
-undefined4 play_positional_sound_effect(void);
+int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias);
 int scheduler_advance_effect(short entry_slot, int elapsed);
 void *get_object_record_by_slot_index(short slot);
 void build_object_placement_snapshot(void);
@@ -25,7 +25,7 @@ int compute_vertical_aim_offset(short has_target, int target);
 void spawn_npc_thrown_weapon(char *attacker, short launch_offset, short launch_flags);
 void dispatch_tile_special_action(uint tile_type, uintptr_t actor, intptr_t target);
 byte get_current_music_track(void);
-void set_pending_music_track(void);
+void set_pending_music_track(byte track);
 uint read_realtime_clock_units(void);
 int resolve_npc_melee_attack(byte *npc, short tile_x, byte tile_y, short offset_x, short offset_y);
 void *spawn_new_object(uint type, int mobile);
@@ -138,7 +138,7 @@ int check_object_placement_clearance(short catalog_type, short ignore_slot, shor
 
 void adjust_door_close_animation_delay(ushort *object) { (void)object; }
 
-undefined4 play_positional_sound_effect(void) { return 0; }
+int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias) { (void)sound_id; (void)world_x; (void)world_y; (void)volume_bias; return 0; }
 
 int scheduler_advance_effect(short entry_slot, int elapsed) { (void)entry_slot; (void)elapsed; TEST_FAIL_MESSAGE("Unexpected directional effect"); return 0; }
 
@@ -168,7 +168,7 @@ void dispatch_tile_special_action(uint tile_type, uintptr_t actor, intptr_t targ
 
 byte get_current_music_track(void) { return 0; }
 
-void set_pending_music_track(void) {}
+void set_pending_music_track(byte track) { (void)track;}
 
 uint read_realtime_clock_units(void) { return 0; }
 

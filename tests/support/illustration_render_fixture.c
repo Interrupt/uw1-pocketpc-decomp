@@ -36,9 +36,9 @@ void draw_text_string(char *text, short x, short y);
 int measure_text_width(char *text);
 void assert_visible_picture(void);
 undefined4 get_audio_subsystem_flag(void);
-undefined4 play_numbered_voice_sample(void);
+int play_numbered_voice_sample(short sample_number);
 bool is_voice_sample_finished(void);
-undefined4 play_music_track(void);
+int play_music_track(byte track_number, int flags);
 bool select_active_font(char *font_filename);
 bool set_palette_bank(int bank);
 void decrement_cursor_hide_depth(void);
@@ -292,11 +292,11 @@ int measure_text_width(char *text) { (void)text; TEST_FAIL_MESSAGE("Unexpected w
 
 undefined4 get_audio_subsystem_flag(void) { return 0; }
 
-undefined4 play_numbered_voice_sample(void) { return 0; }
+int play_numbered_voice_sample(short sample_number) { (void)sample_number; return 0; }
 
 bool is_voice_sample_finished(void) { return 1; }
 
-undefined4 play_music_track(void) { return 0; }
+int play_music_track(byte track_number, int flags) { (void)track_number; (void)flags; return 0; }
 
 bool select_active_font(char *font_filename) { (void)font_filename; return true; }
 

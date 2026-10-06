@@ -7,7 +7,7 @@ void apply_movement_tick(int elapsed);
 void trigger_view_transition(void);
 void stop_movement_sound_handle(void);
 uint read_realtime_clock_units(void);
-undefined4 play_sound_effect_with_pan(void);
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias);
 void cancel_weapon_swing(void);
 void pop_cursor_icon(ushort state);
 int commit_level_to_save_slot(int level);
@@ -98,7 +98,7 @@ divmod_result ordint_divmod(void)
     return result;
 }
 
-undefined4 play_sound_effect_with_pan(void)
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias)
 {
     TEST_FAIL_MESSAGE("Stationary tick unexpectedly played a movement sound");
     return 0;

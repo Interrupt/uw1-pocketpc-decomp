@@ -77,7 +77,7 @@ void commit_player_move(void) {}
 void set_pending_update_flags(ushort flags) {}
 void tick_mobile_objects(char elapsed) { TEST_FAIL_MESSAGE("Unexpected NPC tick"); }
 void stop_movement_sound_handle(void) {}
-undefined4 play_sound_effect_with_pan(int sound, int pan, int volume) { return 0; }
+int play_sound_effect_with_pan(uint sound, byte pan, uint volume) { return 0; }
 uint read_realtime_clock_units(void) { return 0; }
 unsigned int uw_frame_clock_ms(void) { return g_uw_frame_clock_units; }
 long ce_rand(void) { return random_value; }

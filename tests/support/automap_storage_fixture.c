@@ -54,7 +54,7 @@ void draw_sprite_by_id(int id, int x, int y, int height, short width)
 /* Lifecycle UI services: keep actual close/save and open/load paths. */
 int register_key_binding(int key,int mode,int flags,void *callback) { return 1; }
 void change_game_mode(int mode) {}
-void set_pending_music_track(int track) {}
+void set_pending_music_track(byte track) {}
 void update_ingame_music_track(void) {}
 int save_automap_reveal_to_archive(byte *archive, int level) { return 1; }
 int load_automap_reveal_from_archive(byte *archive, int level) { return 1; }

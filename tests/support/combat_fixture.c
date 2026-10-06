@@ -4,7 +4,7 @@
 /* Local service declarations; game function bodies link these mocks. */
 int encode_object_slot_index(char *object);
 void refresh_experience_display(void);
-void set_pending_music_track(uint track);
+void set_pending_music_track(byte track);
 uint read_realtime_clock_units(void);
 void attempt_talk_interaction(ushort *object);
 void cancel_weapon_swing(void);
@@ -14,8 +14,8 @@ void flush_sprite_list_compositor(void);
 int sprite_list_set_frame_id(short slot, int frame);
 int resolve_weapon_hit_skill_check(short attacker, int target);
 int roll_dice_sum(int count, short sides);
-undefined4 play_sound_effect_with_pan(void);
-undefined4 play_positional_sound_effect(int sound, int x, int y, int volume);
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias);
+int play_positional_sound_effect(uint sound, short x, short y, uint volume);
 void set_movement_animation_timer(byte timer_id, byte ticks);
 int play_weapon_impact_sound(short result);
 long ce_rand(void);
@@ -129,7 +129,7 @@ int encode_object_slot_index(char *object)
 
 void refresh_experience_display(void) {}
 
-void set_pending_music_track(uint track) { music_track = track; }
+void set_pending_music_track(byte track) { music_track = track; }
 
 uint clock_units;
 
@@ -234,9 +234,9 @@ int roll_dice_sum(int count, short sides) { return count * sides; }
 int roll_skill_check(int skill, int difficulty)
 { TEST_FAIL_MESSAGE("Magic Arrow does not use the ranged weapon skill check"); return 0; }
 
-undefined4 play_sound_effect_with_pan(void) { return 0; }
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias) { (void)sound_id; (void)pan; (void)volume_bias; return 0; }
 
-undefined4 play_positional_sound_effect(int sound, int x, int y, int volume)
+int play_positional_sound_effect(uint sound, short x, short y, uint volume)
 { (void)x; (void)y; (void)volume; if (sound == 6) death_sounds++; if (sound == 4) positional_impacts++; return 0; }
 
 void set_movement_animation_timer(byte timer_id, byte ticks) { (void)timer_id; (void)ticks; TEST_FAIL_MESSAGE("Unexpected player hit animation"); }
@@ -266,7 +266,7 @@ void trigger_object_trap_or_use_action(char *actor, char *target, int action, in
     TEST_ASSERT_EQUAL_INT(10, y);
     door_triggers++;
 }
-undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
+int play_sound_effect_at_object(int sound, ushort *object, int mode)
 {
     TEST_ASSERT_EQUAL_INT(4, sound);
     TEST_ASSERT_EQUAL_PTR(wall_effect, object);

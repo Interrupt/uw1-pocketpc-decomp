@@ -91,7 +91,7 @@ int place_object_in_world(uint x, uint y, int z, char *object, short distance, i
 void free_object_slot(char *object) {}
 int check_object_drop_height(ushort *object, ushort *source) { return 1; }
 int encode_object_slot_index(char *object) { (void)object; return 225; }
-undefined4 play_sound_effect_at_object(int sound, void *object, int mode) { return 1; }
+int play_sound_effect_at_object(int sound, ushort *object, int mode) { return 1; }
 int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
 int roll_object_destroy_chance(short base_chance, char *object) { (void)base_chance; (void)object; return 0; }
 void print_scroll_message_by_id(uint message_id) { (void)message_id;}

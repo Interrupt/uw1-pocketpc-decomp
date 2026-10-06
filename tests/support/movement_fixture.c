@@ -45,7 +45,7 @@ void object_list_insert_head(byte *link_field, char *object) { (void)link_field;
 void set_locomotion_state(ushort state, int flags) { (void)state; (void)flags; }
 int roll_skill_check(int skill, int difficulty) { (void)skill; (void)difficulty; TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
 int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
-undefined4 play_sound_effect_with_pan(void) { TEST_FAIL_MESSAGE("Unexpected landing sound"); return 0; }
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias) { (void)sound_id; (void)pan; (void)volume_bias; TEST_FAIL_MESSAGE("Unexpected landing sound"); return 0; }
 
 short movement_fixture_read_short(int offset)
 {

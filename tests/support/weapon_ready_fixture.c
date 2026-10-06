@@ -80,7 +80,7 @@ void wait_for_click_release(int mode)
 void handle_pause_menu_region_click(int x, short y) { TEST_FAIL_MESSAGE("Unexpected pause click"); }
 void run_pause_menu_modal_loop(short mode) { TEST_FAIL_MESSAGE("Unexpected pause menu"); }
 byte get_current_music_track(void) { return music_track; }
-void set_pending_music_track(uint track) { music_track = track; }
+void set_pending_music_track(byte track) { music_track = track; }
 void pick_random_pending_music_track(void) { music_track = 0; }
 void cancel_weapon_swing(void) {}
 void set_pending_update_flags(ushort flags) {}

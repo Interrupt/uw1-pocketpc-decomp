@@ -17,7 +17,7 @@ char s_Look__it_s_a_text_trap_00087918[] = "Look, it's a text trap\n";
 long ce_rand(void) { return 0; }
 undefined4 rand_below(int max) { return sleep_fixture.random_low ? 0 : max - 1; }
 void full_dungeon_redraw(void) { sleep_fixture.redraws++; }
-void set_pending_music_track(int track) { TEST_ASSERT_EQUAL_INT(0xd, track); }
+void set_pending_music_track(byte track) { TEST_ASSERT_EQUAL_INT(0xd, track); }
 void update_ingame_music_track(void) {}
 void pick_random_pending_music_track(void) { sleep_fixture.music_restores++; }
 void weapon_overlay_and_full_redraw(void) { sleep_fixture.overlay_redraws++; }

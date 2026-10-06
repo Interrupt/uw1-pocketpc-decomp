@@ -78,8 +78,8 @@ void collision_height_envelope(int mode, int collision)
 void resolve_wall_slide_corner(void) { DAT_002049da=9; }
 int check_object_drop_height(ushort *object, ushort *reference) { (void)object; (void)reference; return 1; }
 int object_ptr_in_arena(char *object) { (void)object; return 1; }
-undefined4 play_sound_effect_at_object(void) { return 0; }
-undefined4 play_sound_effect_with_pan(void) { return 0; }
+int play_sound_effect_at_object(int sound_id, ushort *object, int volume_bias) { (void)sound_id; (void)object; (void)volume_bias; return 0; }
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias) { (void)sound_id; (void)pan; (void)volume_bias; return 0; }
 int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; return 0; }
 int roll_object_destroy_chance(short base_chance, char *object) { (void)base_chance; (void)object; return 0; }
 int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
@@ -111,7 +111,7 @@ int resolve_collision_candidate_interaction(short contact, int slot)
 }
 void randomize_settled_snapshot_position(char *snapshot) { (void)snapshot;}
 void object_list_append_tail(byte *link_field, char *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Throw took the ground-drop path"); }
-undefined4 play_positional_sound_effect(void) { return 0; }
+int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias) { (void)sound_id; (void)world_x; (void)world_y; (void)volume_bias; return 0; }
 
 bool apply_swim_wade_pose(ushort collision_mask) { (void)collision_mask; TEST_FAIL_MESSAGE("Unexpected water"); return false; }
 

@@ -51,7 +51,7 @@ void object_list_insert_head(byte *head, char *object)
     TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object);
     spells_fixture.links++;
 }
-undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
+int play_sound_effect_at_object(int sound, ushort *object, int mode)
 {
     TEST_ASSERT_EQUAL_INT(10, sound);
     TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object);
@@ -87,7 +87,7 @@ int roll_skill_check(int skill, int difficulty)
 }
 void wait_for_click_release(int mode)
 { TEST_ASSERT_EQUAL_INT(1, mode); spells_fixture.click_releases++; }
-undefined4 play_sound_effect_with_pan(int sound, int pan, int mode)
+int play_sound_effect_with_pan(uint sound, byte pan, uint mode)
 {
     TEST_ASSERT_EQUAL_INT(0x40, pan);
     TEST_ASSERT_EQUAL_INT(0, mode);

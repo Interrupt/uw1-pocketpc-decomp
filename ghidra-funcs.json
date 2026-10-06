@@ -7,8 +7,8 @@
     "still_unnamed_FUN": 12,
     "audited_true": 1464,
     "audited_false": 0,
-    "modernized_true": 1157,
-    "modernized_false": 307
+    "modernized_true": 1241,
+    "modernized_false": 223
   },
   "functions": [
     {
@@ -1087,12 +1087,12 @@
       "param_count": 2,
       "description": "plays background music track param_1 (patched into the \"uw%02d.mod\" filename template, played from \\SOUND\\).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resume_music_playback",
       "path": "src/audio.c",
-      "line": 188,
+      "line": 185,
       "original_name": "FUN_00072aac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1103,7 +1103,7 @@
     {
       "name": "get_current_music_track",
       "path": "src/audio.c",
-      "line": 205,
+      "line": 202,
       "original_name": "FUN_00072b2c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1114,7 +1114,7 @@
     {
       "name": "is_music_playing",
       "path": "src/audio.c",
-      "line": 215,
+      "line": 212,
       "original_name": "FUN_00072b3c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1125,7 +1125,7 @@
     {
       "name": "is_sound_effects_enabled",
       "path": "src/audio.c",
-      "line": 231,
+      "line": 228,
       "original_name": "FUN_00072b58",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1136,29 +1136,29 @@
     {
       "name": "set_music_enabled",
       "path": "src/audio.c",
-      "line": 248,
+      "line": 245,
       "original_name": "FUN_00072b74",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "enables (param_1!=0: resumes playing DAT_0023c384, the current/pending track) or disables (param_1==0.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "set_sound_effects_enabled",
       "path": "src/audio.c",
-      "line": 282,
+      "line": 276,
       "original_name": "FUN_00072c10",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "set_music_enabled's counterpart for the sound- effects subsystem.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "stop_current_audio_handle",
       "path": "src/audio.c",
-      "line": 305,
+      "line": 296,
       "original_name": "FUN_00072c44",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1169,40 +1169,40 @@
     {
       "name": "play_positional_sound_effect",
       "path": "src/audio.c",
-      "line": 328,
+      "line": 319,
       "original_name": "FUN_00072c74",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "plays sound effect param_1 positioned at world coordinates (param_2,param_3), with a base volume/id-derived parameter block param_4.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "play_sound_effect_with_pan",
       "path": "src/audio.c",
-      "line": 433,
+      "line": 419,
       "original_name": "FUN_00072f30",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "play_positional_sound_effect's non-positional sibling.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "play_sound_effect_at_object",
       "path": "src/audio.c",
-      "line": 468,
+      "line": 450,
       "original_name": "FUN_00072fc8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "play_positional_sound_effect's convenience wrapper taking an object pointer (param_2) instead of raw coordinates.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "stop_movement_sound_handle",
       "path": "src/audio.c",
-      "line": 494,
+      "line": 472,
       "original_name": "FUN_0007305c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1213,7 +1213,7 @@
     {
       "name": "stop_current_audio_handle_dup",
       "path": "src/audio.c",
-      "line": 505,
+      "line": 483,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -1224,51 +1224,51 @@
     {
       "name": "allocate_and_play_sound_channel",
       "path": "src/audio.c",
-      "line": 527,
+      "line": 505,
       "original_name": "FUN_00073064",
       "ghidra_origin": true,
       "param_count": 6,
       "description": "allocates a free sound channel slot (bit-scanned from DAT_0023c39c, 4 channels) and maps sound-effect id param_1 to a \"sound group\" value.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_sound_sample_note",
       "path": "src/audio.c",
-      "line": 584,
+      "line": 555,
       "original_name": "FUN_00073140",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "the low-level sound-sample trigger.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "play_musical_instrument",
       "path": "src/audio.c",
-      "line": 642,
+      "line": 609,
       "original_name": "FUN_0007328c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "a playable musical instrument (param_1 selects which of two instruments/octave ranges, offsetting the sound-sample ids played).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_secret_tune_match",
       "path": "src/audio.c",
-      "line": 708,
+      "line": 672,
       "original_name": "FUN_00073474",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "compares the 9 notes at param_1 against the hardcoded secret tune \"@CA>@GHGC\".",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "shutdown_sound_effects",
       "path": "src/audio.c",
-      "line": 746,
+      "line": 708,
       "original_name": "FUN_0007355c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1279,7 +1279,7 @@
     {
       "name": "shutdown_music_module",
       "path": "src/audio.c",
-      "line": 757,
+      "line": 719,
       "original_name": "FUN_00073560",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1290,18 +1290,18 @@
     {
       "name": "set_pending_music_track",
       "path": "src/audio.c",
-      "line": 776,
+      "line": 738,
       "original_name": "FUN_000735b0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "sets the pending/current music track number (DAT_0023c384, the value set_music_enabled resumes playing when re-enabled).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "pick_random_pending_music_track",
       "path": "src/audio.c",
-      "line": 791,
+      "line": 750,
       "original_name": "FUN_000735c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1312,7 +1312,7 @@
     {
       "name": "advance_menu_music_track",
       "path": "src/audio.c",
-      "line": 809,
+      "line": 768,
       "original_name": "FUN_000735fc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1323,7 +1323,7 @@
     {
       "name": "update_ingame_music_track",
       "path": "src/audio.c",
-      "line": 834,
+      "line": 793,
       "original_name": "FUN_00073634",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1334,7 +1334,7 @@
     {
       "name": "advance_menu_music_track_elapsed",
       "path": "src/audio.c",
-      "line": 910,
+      "line": 869,
       "original_name": "FUN_00073870",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1345,7 +1345,7 @@
     {
       "name": "get_audio_subsystem_flag",
       "path": "src/audio.c",
-      "line": 927,
+      "line": 886,
       "original_name": "FUN_000738ac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1356,7 +1356,7 @@
     {
       "name": "audio_always_true_stub",
       "path": "src/audio.c",
-      "line": 937,
+      "line": 896,
       "original_name": "FUN_000738bc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1367,18 +1367,18 @@
     {
       "name": "play_numbered_voice_sample",
       "path": "src/audio.c",
-      "line": 948,
+      "line": 907,
       "original_name": "FUN_000738c4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "plays a numbered voice/speech sample.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "voice_sample_cluster_stub_1",
       "path": "src/audio.c",
-      "line": 1044,
+      "line": 1001,
       "original_name": "FUN_00073ac0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1389,7 +1389,7 @@
     {
       "name": "is_voice_sample_finished",
       "path": "src/audio.c",
-      "line": 1054,
+      "line": 1011,
       "original_name": "FUN_00073ac4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1400,7 +1400,7 @@
     {
       "name": "stop_voice_sample",
       "path": "src/audio.c",
-      "line": 1067,
+      "line": 1024,
       "original_name": "FUN_00073aec",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1411,7 +1411,7 @@
     {
       "name": "voice_sample_cluster_stub_2",
       "path": "src/audio.c",
-      "line": 1080,
+      "line": 1037,
       "original_name": "FUN_00073b0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1422,18 +1422,18 @@
     {
       "name": "start_ambient_sound_effect",
       "path": "src/audio.c",
-      "line": 1089,
+      "line": 1046,
       "original_name": "FUN_0007ea44",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "probabilistically starts an ambient looping sound effect.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "stop_ambient_sound_effect",
       "path": "src/audio.c",
-      "line": 1135,
+      "line": 1089,
       "original_name": "FUN_0007eb34",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1444,18 +1444,18 @@
     {
       "name": "init_ambient_sound_timing",
       "path": "src/audio.c",
-      "line": 1153,
+      "line": 1107,
       "original_name": "FUN_0007eb70",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "initializes a 9-field ambient-sound-effect state block (the DAT_0024d0xx/DAT_0024faxx globals.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "clear_ambient_sound_target",
       "path": "src/audio.c",
-      "line": 1173,
+      "line": 1124,
       "original_name": "FUN_0007ec1c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1466,7 +1466,7 @@
     {
       "name": "reset_dialogue_speech_state",
       "path": "src/audio.c",
-      "line": 1189,
+      "line": 1140,
       "original_name": "FUN_00035dd8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1477,29 +1477,29 @@
     {
       "name": "load_voice_sample_page",
       "path": "src/audio.c",
-      "line": 1201,
+      "line": 1152,
       "original_name": "FUN_00035ec4",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "fully loads one voice-sample page (param_2, indexing into the resource at param_1) into the caller's buffer (param_4, a freshly-allocated 0x10000-byte block at its only known call site) in a single ce.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "read_voice_sample_page_chunk",
       "path": "src/audio.c",
-      "line": 1223,
+      "line": 1169,
       "original_name": "FUN_00035f24",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "incremental/streaming counterpart to load_voice_sample_page.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cache_ambient_sound_handle",
       "path": "src/audio.c",
-      "line": 1262,
+      "line": 1202,
       "original_name": "FUN_00037d50",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1510,7 +1510,7 @@
     {
       "name": "release_sound_resource_slot",
       "path": "src/audio.c",
-      "line": 1273,
+      "line": 1213,
       "original_name": "FUN_00049948",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1521,7 +1521,7 @@
     {
       "name": "acquire_sound_resource_slot",
       "path": "src/audio.c",
-      "line": 1283,
+      "line": 1223,
       "original_name": "FUN_00049940",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1532,271 +1532,271 @@
     {
       "name": "init_sound_channel_slot",
       "path": "src/audio.c",
-      "line": 1293,
+      "line": 1233,
       "original_name": "FUN_0004b600",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "initializes one 0x1a-byte sound-channel slot (zeroing its +0x12..+0x19 playback-state fields).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "release_sound_channel_slot",
       "path": "src/audio.c",
-      "line": 1313,
+      "line": 1251,
       "original_name": "FUN_0004b644",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the shutdown counterpart to init_sound_channel_slot.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_and_resample_wave_sample",
       "path": "src/audio.c",
-      "line": 1327,
+      "line": 1262,
       "original_name": "FUN_0004b66c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "loads a WAVE resource (param_2=module, param_3=resource id) into the given sound-channel slot (param_1), resampling it to the output rate DAT_00086368 if the resource's own rate is a recognized standard one.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_and_resample_wave_file",
       "path": "src/audio.c",
-      "line": 1453,
+      "line": 1384,
       "original_name": "FUN_0004b948",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "load_and_resample_wave_sample's file-based counterpart.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "construct_and_load_mod_player",
       "path": "src/audio.c",
-      "line": 1593,
+      "line": 1520,
       "original_name": "FUN_0004bc94",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "constructs a MOD-player engine object in-place at param_1 (its counterpart is the very next function, destroy_mod_player).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_player",
       "path": "src/audio.c",
-      "line": 1955,
+      "line": 1879,
       "original_name": "FUN_0004c958",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "destroys a MOD-player engine object.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_mod_player_state",
       "path": "src/audio.c",
-      "line": 1972,
+      "line": 1893,
       "original_name": "FUN_0004c97c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "resets a MOD-player engine object's full internal state (the large structure this whole cluster operates on, 0x10554+ bytes.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "start_mod_player_playback",
       "path": "src/audio.c",
-      "line": 1998,
+      "line": 1916,
       "original_name": "FUN_0004ca50",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "starts MOD-player playback (no-op if already playing, per the +0x10554 \"is playing\" flag).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "stop_mod_player_playback",
       "path": "src/audio.c",
-      "line": 2166,
+      "line": 2082,
       "original_name": "FUN_0004cfc8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "stops MOD-player playback.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "queue_mod_audio_buffer",
       "path": "src/audio.c",
-      "line": 2185,
+      "line": 2099,
       "original_name": "FUN_0004d050",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "prepares and queues the next audio buffer for MOD playback (called twice from start_mod_player_playback for double-buffering).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "process_mod_tracker_row",
       "path": "src/audio.c",
-      "line": 2406,
+      "line": 2318,
       "original_name": "FUN_0004d79c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the MOD-tracker engine's \"process one pattern row\" routine, called from queue_mod_audio_buffer at each row boundary.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "mix_mod_channels_to_buffer",
       "path": "src/audio.c",
-      "line": 2761,
+      "line": 2670,
       "original_name": "FUN_0004e324",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "the MOD-tracker engine's core sample mixer.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_mod_tracker_tick_effects",
       "path": "src/audio.c",
-      "line": 2873,
+      "line": 2777,
       "original_name": "FUN_0004e6e0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the MOD-tracker engine's per-tick effect processor (as opposed to process_mod_tracker_row's per-row setup).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "mod_player_wave_out_callback",
       "path": "src/audio.c",
-      "line": 3028,
+      "line": 2929,
       "original_name": "FUN_0004ecd4",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "the waveOutProc-shaped callback passed to waveOutOpen (waveOutOpen) in start_mod_player_playback.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "adjust_mod_channel_volume",
       "path": "src/audio.c",
-      "line": 3064,
+      "line": 2959,
       "original_name": "FUN_0004edf8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "adjusts channel param_2's volume field by delta param_3, clamped to the MOD volume range [0,0x40].",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_mod_tone_portamento",
       "path": "src/audio.c",
-      "line": 3103,
+      "line": 2993,
       "original_name": "FUN_0004ee60",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "applies the MOD tracker's \"tone portamento\" effect to channel param_2.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_mod_vibrato_effect",
       "path": "src/audio.c",
-      "line": 3160,
+      "line": 3046,
       "original_name": "FUN_0004f0ac",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "applies the MOD tracker's \"vibrato\" effect to channel param_2.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_mod_tremolo_effect",
       "path": "src/audio.c",
-      "line": 3220,
+      "line": 3102,
       "original_name": "FUN_0004f2f0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "applies the MOD tracker's \"tremolo\" effect to channel param_2.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "build_mod_volume_sample_table",
       "path": "src/audio.c",
-      "line": 3279,
+      "line": 3157,
       "original_name": "FUN_0004f4ec",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "builds a 65-row (volume 0..0x40) x 256-column (signed sample byte) lookup table of pre-scaled int32 mix contributions.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "is_sfx_trigger_slot_active",
       "path": "src/audio.c",
-      "line": 3319,
+      "line": 3193,
       "original_name": "FUN_0004f858",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "queries whether SFX trigger slot param_2 is currently playing (reads its \"playing\" flag at +0x10410 directly, same field start_sfx_trigger_slot sets and stop_sfx_trigger_slot clears).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "read_mod_word_length_field",
       "path": "src/audio.c",
-      "line": 3331,
+      "line": 3202,
       "original_name": "FUN_0004f560",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "reads a big-endian 16-bit word count from the MOD file buffer (param_2+4) at the cursor position *param_3, advances the cursor by 2, and returns the count doubled to a byte count.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "arm_sfx_trigger_slot",
       "path": "src/audio.c",
-      "line": 3352,
+      "line": 3219,
       "original_name": "FUN_0004f594",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "arms one-shot SFX trigger slot param_3 (of 16, each a 13-byte record at player+0x10404+slot*0xd) with the sample data pointer+length from loaded wave handle param_2's fields +0x12/+0x16.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "start_sfx_trigger_slot",
       "path": "src/audio.c",
-      "line": 3392,
+      "line": 3255,
       "original_name": "FUN_0004f6b0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "starts SFX trigger slot param_2 playing.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "stop_sfx_trigger_slot",
       "path": "src/audio.c",
-      "line": 3419,
+      "line": 3279,
       "original_name": "FUN_0004f748",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "stops SFX trigger slot param_2.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "register_sound_channel_pool_cleanup",
       "path": "src/audio.c",
-      "line": 3445,
+      "line": 3302,
       "original_name": "FUN_0004f7e0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1807,7 +1807,7 @@
     {
       "name": "init_all_sound_channel_slots",
       "path": "src/audio.c",
-      "line": 3458,
+      "line": 3315,
       "original_name": "FUN_0004f7f0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1818,7 +1818,7 @@
     {
       "name": "release_all_sound_channel_slots",
       "path": "src/audio.c",
-      "line": 3478,
+      "line": 3335,
       "original_name": "FUN_0004f828",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1829,491 +1829,491 @@
     {
       "name": "resize_mod_event_row_array",
       "path": "src/audio.c",
-      "line": 3502,
+      "line": 3359,
       "original_name": "FUN_0004f874",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "generic growable-array resize for 16-byte, zero-initializable elements (grows via cpp_operator_new/realloc-style copy, zero-fills new slots via construct_mod_event_array_range's ce_memset memset).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resize_mod_pattern_row_array",
       "path": "src/audio.c",
-      "line": 3585,
+      "line": 3437,
       "original_name": "FUN_0004f9a0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "generic growable-array resize for 20-byte elements with real construct/destruct lifecycle (construct_mod_row_array_range on grow, destroy_mod_row_array_range on shrink/clear).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_mod_dynamic_array",
       "path": "src/audio.c",
-      "line": 3674,
+      "line": 3521,
       "original_name": "FUN_0004faf4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "default-constructs one empty dynamic-array instance in place.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resize_mod_int_array",
       "path": "src/audio.c",
-      "line": 3694,
+      "line": 3538,
       "original_name": "FUN_0004fb38",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "generic growable-array resize for plain 4-byte (int) elements.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_dynamic_array",
       "path": "src/audio.c",
-      "line": 3776,
+      "line": 3615,
       "original_name": "FUN_0004fc64",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "destroys one dynamic-array instance.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reset_mod_dynamic_array_and_maybe_free",
       "path": "src/audio.c",
-      "line": 3798,
+      "line": 3634,
       "original_name": "FUN_0004fcd4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "resets a dynamic-array instance to its empty/ closed tag state (without touching/freeing its data buffer) and, if param_2's low bit is set, frees the struct itself.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "serialize_mod_int_array",
       "path": "src/audio.c",
-      "line": 3817,
+      "line": 3650,
       "original_name": "FUN_0004fd18",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "MFC CArchive-style serialize for a resize_mod_int_array-managed array.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_mod_pattern_array",
       "path": "src/audio.c",
-      "line": 3847,
+      "line": 3676,
       "original_name": "FUN_0004fd68",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "constructs the top-level \"array of patterns\" header in place (tag 0x38, zeroed count/capacity/growth-hint).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resize_mod_pattern_array",
       "path": "src/audio.c",
-      "line": 3866,
+      "line": 3692,
       "original_name": "FUN_0004fda4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "resizes the top-level \"array of patterns\".",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_pattern_array",
       "path": "src/audio.c",
-      "line": 3954,
+      "line": 3775,
       "original_name": "FUN_0004fef8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "destroys the top-level \"array of patterns\" in place.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "serialize_mod_pattern_array",
       "path": "src/audio.c",
-      "line": 3977,
+      "line": 3795,
       "original_name": "FUN_0004ff68",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "MFC CArchive-style serialize for the top-level \"array of patterns\" (loading resizes via resize_mod_pattern_array, storing writes via still-unnamed write_mod_pattern_array).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_mod_instrument_array",
       "path": "src/audio.c",
-      "line": 3999,
+      "line": 3813,
       "original_name": "FUN_0004ffb8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "constructs the MOD instrument/sample-descriptor array header in place (tag 0x50).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resize_mod_instrument_array",
       "path": "src/audio.c",
-      "line": 4019,
+      "line": 3830,
       "original_name": "FUN_0004fff4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "resizes the MOD instrument/sample-descriptor array (48-byte elements, construct/destruct via construct_mod_instrument_array_range/ destroy_mod_instrument_array_range).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_instrument_array",
       "path": "src/audio.c",
-      "line": 4108,
+      "line": 3914,
       "original_name": "FUN_00050148",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "destroys the MOD instrument/sample-descriptor array in place.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "serialize_mod_instrument_array",
       "path": "src/audio.c",
-      "line": 4132,
+      "line": 3935,
       "original_name": "FUN_000501b8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "MFC CArchive-style serialize for the MOD instrument/sample-descriptor array (loading resizes via resize_mod_instrument_array, storing writes via still-unnamed write_mod_instrument_array).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_mod_channel_state_array",
       "path": "src/audio.c",
-      "line": 4153,
+      "line": 3952,
       "original_name": "FUN_00050208",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "constructs the MOD channel runtime-state array header in place (tag 0x68).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resize_mod_channel_state_array",
       "path": "src/audio.c",
-      "line": 4173,
+      "line": 3969,
       "original_name": "FUN_00050244",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "resizes the MOD channel runtime-state array (64-byte elements, no element construct/destruct -- new slots are just zero-filled via construct_mod_channel_state_array_range).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_channel_state_array",
       "path": "src/audio.c",
-      "line": 4257,
+      "line": 4048,
       "original_name": "FUN_00050370",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "destroys the MOD channel runtime-state array in place.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "serialize_mod_channel_state_array",
       "path": "src/audio.c",
-      "line": 4280,
+      "line": 4068,
       "original_name": "FUN_000503e0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "MFC CArchive-style serialize for the MOD channel runtime-state array (loading resizes via resize_mod_channel_state_array, storing writes the raw 64-byte elements directly via ordaudio_op_2135).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_dynamic_array_and_maybe_free",
       "path": "src/audio.c",
-      "line": 4311,
+      "line": 4095,
       "original_name": "FUN_00050430",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "MSVC-style \"scalar deleting destructor\" for the int-array type.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_pattern_array_and_maybe_free",
       "path": "src/audio.c",
-      "line": 4328,
+      "line": 4109,
       "original_name": "FUN_00050454",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "scalar deleting destructor\" for the top-level pattern-array type (see destroy_mod_dynamic_array_and_maybe_free).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_instrument_array_and_maybe_free",
       "path": "src/audio.c",
-      "line": 4344,
+      "line": 4122,
       "original_name": "FUN_00050478",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "scalar deleting destructor\" for the MOD instrument/sample-descriptor array type (see destroy_mod_dynamic_array_and_maybe_free).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_channel_state_array_and_maybe_free",
       "path": "src/audio.c",
-      "line": 4361,
+      "line": 4136,
       "original_name": "FUN_0005049c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "scalar deleting destructor\" for the MOD channel runtime-state array type (see destroy_mod_dynamic_array_and_maybe_free).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "construct_mod_event_array_range",
       "path": "src/audio.c",
-      "line": 4377,
+      "line": 4149,
       "original_name": "FUN_000504c0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "zero-fills param_2 16-byte \"event\" elements in one memset.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_row_array_range",
       "path": "src/audio.c",
-      "line": 4390,
+      "line": 4158,
       "original_name": "FUN_000504cc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "destroys param_2 20-byte \"row\" elements (each a nested event-array header, destroyed via destroy_mod_row_array_elem).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_row_array_elem",
       "path": "src/audio.c",
-      "line": 4407,
+      "line": 4171,
       "original_name": "FUN_000504fc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "destroys one \"row\" element in place.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "serialize_mod_event_row_array",
       "path": "src/audio.c",
-      "line": 4430,
+      "line": 4191,
       "original_name": "FUN_0005056c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "MFC CArchive-style serialize for the event-row array (16-byte elements, one row's channel events).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_row_array_elem_and_maybe_free",
       "path": "src/audio.c",
-      "line": 4452,
+      "line": 4209,
       "original_name": "FUN_000505bc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "scalar deleting destructor\" for the \"row\" element type (see destroy_mod_dynamic_array_and_maybe_free).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "write_mod_event_array",
       "path": "src/audio.c",
-      "line": 4469,
+      "line": 4223,
       "original_name": "FUN_000505e0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "MFC CArchive write helper for the event-array (16-byte elements).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "construct_mod_row_array_range",
       "path": "src/audio.c",
-      "line": 4489,
+      "line": 4238,
       "original_name": "FUN_00050604",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "zero-fills param_2 20-byte \"row\" elements then default-constructs each one (construct_mod_row_array_elem).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "construct_mod_int_array_range",
       "path": "src/audio.c",
-      "line": 4509,
+      "line": 4254,
       "original_name": "FUN_00050648",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "zero-fills param_2 plain int elements in one memset.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_pattern_array_range",
       "path": "src/audio.c",
-      "line": 4522,
+      "line": 4263,
       "original_name": "FUN_00050678",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "destroys param_2 20-byte \"pattern\" elements (each a nested row-array header, destroyed via destroy_mod_pattern_array_elem).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_pattern_array_elem",
       "path": "src/audio.c",
-      "line": 4539,
+      "line": 4276,
       "original_name": "FUN_000506a8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "destroys one \"pattern\" element in place.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "serialize_mod_pattern_row_array",
       "path": "src/audio.c",
-      "line": 4563,
+      "line": 4297,
       "original_name": "FUN_00050718",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "MFC CArchive-style serialize for the per-pattern row array (20-byte elements, one pattern's rows).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_pattern_array_elem_and_maybe_free",
       "path": "src/audio.c",
-      "line": 4585,
+      "line": 4315,
       "original_name": "FUN_00050768",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "scalar deleting destructor\" for the \"pattern\" element type (see destroy_mod_dynamic_array_and_maybe_free).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "write_mod_pattern_row_array",
       "path": "src/audio.c",
-      "line": 4601,
+      "line": 4328,
       "original_name": "FUN_0005078c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "MFC CArchive write helper for the per-pattern row array (20-byte elements).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "construct_mod_pattern_array_range",
       "path": "src/audio.c",
-      "line": 4621,
+      "line": 4343,
       "original_name": "FUN_000507b8",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "zero-fills param_2 20-byte \"pattern\" elements then default-constructs each one (construct_mod_pattern_array_elem).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "write_mod_pattern_array",
       "path": "src/audio.c",
-      "line": 4640,
+      "line": 4358,
       "original_name": "FUN_000507fc",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "MFC CArchive write helper for the top-level pattern array (20-byte elements) -- used by serialize_mod_pattern_array.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "destroy_mod_instrument_array_range",
       "path": "src/audio.c",
-      "line": 4660,
+      "line": 4373,
       "original_name": "FUN_00050828",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "destroys param_2 48-byte instrument elements.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "construct_mod_instrument_array_range",
       "path": "src/audio.c",
-      "line": 4678,
+      "line": 4387,
       "original_name": "FUN_00050860",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "zero-fills param_2 48-byte instrument elements then default-constructs each one's embedded object (FindNextFileW/ HeapReAlloc, the construct counterpart to destroy_mod_instrument_array_range's BatteryDrvrGetLevels/FoldStringW).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "write_mod_instrument_array",
       "path": "src/audio.c",
-      "line": 4698,
+      "line": 4403,
       "original_name": "FUN_000508b0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "MFC CArchive write helper for the instrument array (48-byte elements) -- used by serialize_mod_instrument_array.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "construct_mod_channel_state_array_range",
       "path": "src/audio.c",
-      "line": 4718,
+      "line": 4418,
       "original_name": "FUN_000508dc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "zero-fills param_2 64-byte channel-state elements in one memset.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "construct_mod_row_array_elem",
       "path": "src/audio.c",
-      "line": 4732,
+      "line": 4428,
       "original_name": "FUN_0005090c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "default-constructs one \"row\" element in place (tag 0x80, zeroed nested event-array header).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "construct_mod_pattern_array_elem",
       "path": "src/audio.c",
-      "line": 4752,
+      "line": 4445,
       "original_name": "FUN_00050948",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "default-constructs one \"pattern\" element in place (tag 0x98, zeroed nested row-array header).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "clear_ambient_sound_target_thunk",
       "path": "src/audio.c",
-      "line": 4771,
+      "line": 4461,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6974,7 +6974,7 @@
       "description": "flush dirty rect to display.",
       "audited": true,
       "modernized": true,
-      "audit_note": "VERIFIED vs ARM: callee reads no argument at all; callers (ARM mov r0,#1) pass an unused literal 1, as the original unprototyped source did (declared 0; e.g. src/audio.c:665 passes 1, src/automap.c:874 passes 1, src/automap.c:892 passes 1, ...)"
+      "audit_note": "VERIFIED vs ARM: callee reads no argument at all; callers (ARM mov r0,#1) pass an unused literal 1, as the original unprototyped source did (declared 0; e.g. src/audio.c:630 passes 1, src/automap.c:874 passes 1, src/automap.c:892 passes 1, ...)"
     },
     {
       "name": "flush_dirty_rect_to_display_240",
@@ -11916,7 +11916,7 @@
       "description": "FindNextFileW",
       "audited": true,
       "modernized": true,
-      "audit_note": "VERIFIED vs ARM: ordinal 181 sites in the ARM mod-player code pass 1 data pointer; the Win32 name is a guess for a no-op stub; saveload.c passes the true (handle,data) pair (declared 0; e.g. src/audio.c:1641 passes 1, src/audio.c:4686 passes 1, src/saveload.c:1077 passes 2)"
+      "audit_note": "VERIFIED vs ARM: ordinal 181 sites in the ARM mod-player code pass 1 data pointer; the Win32 name is a guess for a no-op stub; saveload.c passes the true (handle,data) pair (declared 0; e.g. src/audio.c:1565 passes 1, src/audio.c:4392 passes 1, src/saveload.c:1077 passes 2)"
     },
     {
       "name": "GetDiskFreeSpaceExW",
@@ -12082,7 +12082,7 @@
       "description": "waveOutClose",
       "audited": true,
       "modernized": true,
-      "audit_note": "VERIFIED vs ARM: ARM passes only the handle (1 arg); stub declared `()` (declared 0; e.g. src/audio.c:2176 passes 1)"
+      "audit_note": "VERIFIED vs ARM: ARM passes only the handle (1 arg); stub declared `()` (declared 0; e.g. src/audio.c:2090 passes 1)"
     },
     {
       "name": "waveOutPrepareHeader",
@@ -12470,7 +12470,7 @@
       "description": "ordfloat log",
       "audited": true,
       "modernized": true,
-      "audit_note": "VERIFIED vs ARM: ordinal 1033 helper taking a double as 2 words (lo,hi); both sites pass 2 regs (declared 0; e.g. src/audio.c:1865 passes 2, src/audio.c:1870 passes 2)"
+      "audit_note": "VERIFIED vs ARM: ordinal 1033 helper taking a double as 2 words (lo,hi); both sites pass 2 regs (declared 0; e.g. src/audio.c:1789 passes 2, src/audio.c:1794 passes 2)"
     },
     {
       "name": "_ltoa",
@@ -13068,7 +13068,7 @@
       "description": "ordaudio op 2135",
       "audited": true,
       "modernized": true,
-      "audit_note": "VERIFIED vs ARM: stub of a memcpy-like ordinal; 2 source sites carry a junk 5th arg (unaff_lr) from Ghidra, ARM sites set 3-4 regs (declared 0; e.g. src/audio.c:1682 passes 3, src/audio.c:3838 passes 5, src/audio.c:4301 passes 5, ...)"
+      "audit_note": "VERIFIED vs ARM: stub of a memcpy-like ordinal; 2 source sites carry a junk 5th arg (unaff_lr) from Ghidra, ARM sites set 3-4 regs (declared 0; e.g. src/audio.c:1606 passes 3, src/audio.c:3668 passes 5, src/audio.c:4086 passes 5, ...)"
     },
     {
       "name": "ordaudio_op_2142",

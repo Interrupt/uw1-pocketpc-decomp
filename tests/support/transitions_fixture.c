@@ -210,9 +210,9 @@ void draw_text_string(char *text, short x, short y) { (void)text; (void)x; (void
 int measure_text_width(char *text) { if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); return strlen(text) * 6; }
 static void assert_visible_picture(void);
 undefined4 get_audio_subsystem_flag(void) { return 0; }
-undefined4 play_numbered_voice_sample(void) { return 0; }
+int play_numbered_voice_sample(short sample_number) { (void)sample_number; return 0; }
 bool is_voice_sample_finished(void) { return 1; }
-undefined4 play_music_track(void) { return 0; }
+int play_music_track(byte track_number, int flags) { (void)track_number; (void)flags; return 0; }
 bool select_active_font(char *font_filename) { (void)font_filename; return true; }
 bool set_palette_bank(int bank) { (void)bank; return true; }
 void decrement_cursor_hide_depth(void) {}

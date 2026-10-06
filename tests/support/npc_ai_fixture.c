@@ -114,9 +114,9 @@ int compute_vertical_aim_offset(short has_target, int target) { (void)has_target
 void spawn_npc_thrown_weapon(char *attacker, short launch_offset, short launch_flags) { (void)attacker; (void)launch_offset; (void)launch_flags; TEST_FAIL_MESSAGE("Unexpected ranged attack"); }
 void dispatch_tile_special_action(uint tile_type, uintptr_t actor, intptr_t target) { (void)tile_type; (void)actor; (void)target; TEST_FAIL_MESSAGE("Unexpected special ability"); }
 byte get_current_music_track(void) { return 6; }
-void set_pending_music_track(void) {}
+void set_pending_music_track(byte track) { (void)track;}
 uint read_realtime_clock_units(void) { return 0; }
-undefined4 play_positional_sound_effect(void) { return 0; }
+int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias) { (void)sound_id; (void)world_x; (void)world_y; (void)volume_bias; return 0; }
 int resolve_npc_melee_attack(byte *actor, short swing, byte direction, short style, short skill)
 {
     TEST_ASSERT_EQUAL_PTR(npc, actor);
