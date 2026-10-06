@@ -35,6 +35,12 @@ purpose — see "Architecture notes" below.
 For crash hunting, add `-fsanitize=address` (catches bad memory accesses
 precisely) — the two are not mutually exclusive with the flags above.
 
+The persistent desktop cursor is enabled by default.
+The game cursor (including held items and targeting icons) is drawn over each
+presented frame without the Pocket PC stylus hiding rules. It stays out of the
+game framebuffer, so moving it does not leave trails or enter screen backups.
+Set `UW_ALWAYS_SHOW_CURSOR=0` to restore the original stylus behavior.
+
 ## Unit tests
 
 The C unit tests use [Unity](https://github.com/ThrowTheSwitch/Unity),

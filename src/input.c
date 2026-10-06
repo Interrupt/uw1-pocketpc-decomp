@@ -1324,10 +1324,8 @@ int param_4;
   // every message this handler sees (WM_MOUSEMOVE included) so plain
   // hover/movement -- not just a click -- makes the game trust and
   // track the real cursor position from the very first frame, but only
-  // under UW_ALWAYS_SHOW_CURSOR=1: drawing the cursor every idle frame
-  // forces a display flush every frame too, which measurably slowed
-  // the game down when this was unconditional, so it's opt-in (see
-  // uw_always_show_cursor's own comment).
+  // under UW_ALWAYS_SHOW_CURSOR=1. GX composites the cursor at presentation,
+  // so tracking hover positions does not force extra screen flushes.
   if (uw_always_show_cursor()) {
     *DAT_000876c4 = 1;
   }

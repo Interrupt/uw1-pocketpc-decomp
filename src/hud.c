@@ -918,13 +918,15 @@ void flush_dirty_rect_to_display()
   iVar10 = 0x140 - DAT_00088958;
   iVar11 = 0x140 - DAT_00088950;
   if (getenv("UW_DEBUG_FLUSHGATE")) {
-    int willflush = ((0 < DAT_00084f10) ||
+    int willflush = ((uw_always_show_cursor() || 0 < DAT_00084f10) ||
       (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0))))));
     fprintf(stderr, "[flushgate] willflush=%d selected=%p force=%d rect=(%d,%d,%d,%d)\n",
             willflush, (void *)g_selected_object, (int)g_force_flush,
             (int)DAT_00088954, (int)DAT_0008895c, (int)DAT_00088950, (int)DAT_00088958);
   }
-  if (((0 < DAT_00084f10) ||
+  /* Desktop overlay never needs the stylus gate protecting saved pixels.
+     GX still batches and throttles these flushes to the display cadence. */
+  if (((uw_always_show_cursor() || 0 < DAT_00084f10) ||
       (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0)))))
       ) && ((DAT_0023cdc0 == 0x10 && (DAT_0023c430 = GXBeginDraw(), DAT_0023c430 != (void *)0x0))))
   {
@@ -6668,6 +6670,8 @@ undefined4 init_cursor_subsystem()
 int erase_cursor_icon()
 
 {
+  /* Preserve the caller's click-state convention without restoring pixels. */
+  if (uw_always_show_cursor()) return DAT_00204844;
   int iVar1;
 
   iVar1 = 0;
@@ -6766,17 +6770,46 @@ int erase_cursor_icon()
 
 
 
-/* Desktop deviation: opt in to a persistent cursor with
-   UW_ALWAYS_SHOW_CURSOR=1. Keep the original touchscreen visibility
-   gates by default while the desktop cursor still has known bugs. */
+/* Desktop deviation: present the game cursor as an overlay by default.
+   UW_ALWAYS_SHOW_CURSOR=0 restores the Pocket PC stylus visibility rules. */
 int uw_always_show_cursor(void)
 {
   static int cached = -1;
   if (cached < 0) {
     const char *setting = getenv("UW_ALWAYS_SHOW_CURSOR");
-    cached = setting != NULL && strcmp(setting, "1") == 0;
+    cached = setting == NULL || strcmp(setting, "0") != 0;
   }
   return cached;
+}
+
+
+/* Desktop deviation: draw last, on GX's presentation copy. Never save or
+   restore cursor pixels in the game framebuffer: animated views and HUD
+   captures must remain cursor-free. Stylus hide depths and mode restrictions
+   do not control this overlay. Reuse the real sprite decoder and palette. */
+void uw_composite_desktop_cursor(void *present_buffer)
+{
+  if (!uw_always_show_cursor() || present_buffer == NULL ||
+      DAT_00204784 <= 0 || DAT_002047a4 <= 0) return;
+
+  void *game_buffer = g_uw_framebuffer;
+  int transparent = g_blit_transparent_mode;
+  undefined2 left = DAT_000a85c4, top = DAT_000a85c8;
+  undefined2 right = DAT_000842a4, bottom = DAT_000842a8;
+  int dirty_top = DAT_00088954, dirty_bottom = DAT_0008895c;
+  int dirty_left = DAT_00088950, dirty_right = DAT_00088958;
+
+  g_uw_framebuffer = present_buffer;
+  g_blit_transparent_mode = 1;
+  set_viewport_clip_rect(0,0,319,199);
+  draw_sprite_by_id((int)DAT_00204788,
+                   (int)g_mouse_x - (int)DAT_0020471c,
+                   (int)g_mouse_y - (int)DAT_00204748,
+                   (int)DAT_002047a4,(int)DAT_00204784);
+  g_uw_framebuffer = game_buffer;
+  g_blit_transparent_mode = transparent;
+  set_viewport_clip_rect(left,top,right,bottom);
+  dirty_rect_set(dirty_top,dirty_bottom,dirty_left,dirty_right);
 }
 
 
@@ -6789,18 +6822,7 @@ undefined4 cursor_show_idle_tick()
   
   iVar1 = (int)DAT_00204840;
   DAT_00204840 = (short)(iVar1 + 1);
-  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, same as
-     draw_idle_mouse_cursor's own deviation comment): 0x106c is the real,
-     validly-loadable "default/no specific hotspot" cursor sprite (see
-     set_cursor_sprite_id), and the real binary deliberately suppresses drawing
-     THIS SPECIFIC sprite -- i.e. no persistent cursor over the plain
-     3D viewport/background, only over registered UI hotspots that set
-     their own distinct icon -- a touchscreen-native choice (no need to
-     draw your own finger/stylus a cursor). Skips the exclusion so the
-     desktop mouse cursor stays visible everywhere, including over the
-     main view, only when UW_ALWAYS_SHOW_CURSOR=1 (see
-     uw_always_show_cursor's own comment -- off by default, this forces
-     a display flush every idle frame). */
+  /* Desktop drawing happens at presentation, independently of this depth. */
   if ((iVar1 + 1) * 0x10000 >> 0x10 == 1) {
     if ((DAT_00204788 != 0x106c) || uw_always_show_cursor()) {
       draw_idle_mouse_cursor();
@@ -7410,10 +7432,20 @@ undefined4 param_1;
   DAT_00204704 = (undefined2)param_1;
   DAT_0020471c = ((short)(ushort)*(byte *)(iVar1 + 1) >> 1) + -1;
   DAT_00204748 = (short)(ushort)*(byte *)(iVar1 + 2) >> 1;
+  /* Desktop deviation: ARM centers every icon (FUN_00057dc0), but the
+     wide automap pointer (CURSORS.GR frame 12) uses its lower-left pixel
+     as the mouse's map position. Keep item and targeting icons centered,
+     and retain ARM's hotspot in stylus mode. */
+  if (uw_always_show_cursor() && param_1 == 0x1078) {
+    DAT_0020471c = 0;
+    DAT_00204748 = DAT_002047a4 > 0 ? DAT_002047a4 - 1 : 0;
+  }
   DAT_00204788 = DAT_00204704;
   if (DAT_00204844 != 0) {
     save_cursor_background();
   }
+  /* Desktop overlay must update during modal waits without mouse/text input. */
+  if (uw_always_show_cursor()) uw_request_cursor_present();
   return;
 }
 
@@ -7505,6 +7537,7 @@ short param_1;
 void save_cursor_background()
 
 {
+  if (uw_always_show_cursor()) return;
   if (getenv("UW_DEBUG_CURSORSHOW")) {
     fprintf(stderr, "[cursorsave] entry DAT_00204844=%d sprite=%d mouse=(%d,%d) size=(%d,%d)\n",
             (int)DAT_00204844, (int)DAT_00204788, (int)g_mouse_x, (int)g_mouse_y,
@@ -7525,6 +7558,8 @@ void save_cursor_background()
 void draw_idle_mouse_cursor()
 
 {
+  /* The desktop overlay is drawn by GXEndDraw, outside game storage. */
+  if (uw_always_show_cursor()) return;
   int _dbg_show = getenv("UW_DEBUG_CURSORSHOW") != NULL;
   if (_dbg_show) {
     fprintf(stderr, "[cursorshow] entry selected=%p mode=%d holdstate=%d DAT_00204844=%d depth=%d mouse=(%d,%d)\n",
@@ -7532,25 +7567,8 @@ void draw_idle_mouse_cursor()
             (int)DAT_00204844, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
   if (g_selected_object == 0) {
-    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real
-       Pocket PC binary only shows this idle cursor sprite while
-       DAT_0023c63c (the left-button-currently-held flag, see
-       handle_mouse_message's own comment) is set, or DAT_000bbef4 overrides it
-       (draw_automap_screen/the note editor force it to 1) -- a
-       stylus/touchscreen design where there's no persistent hover
-       cursor, only a transient indicator while actively touching the
-       screen. On a real mouse-driven desktop port the cursor should
-       always be visible while hovering, not just while a button is
-       held, so this gate is skipped when UW_ALWAYS_SHOW_CURSOR=1 rather
-       than ported as-is (off by default -- see uw_always_show_cursor's
-       own comment on the frame-rate cost of drawing every idle frame).
-       Confirmed via live tracing (UW_DEBUG_CURSORSHOW) that this WAS
-       the reason plain mouse movement showed no cursor at all outside
-       automap (where DAT_000bbef4 happened to already force it) --
-       this is the second, deliberate half of that same investigation;
-       DAT_000868dc's own missing initializer (see its own fix comment
-       just below) was the other, genuine bug half. */
-    if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0) && !uw_always_show_cursor()) {
+    /* Original stylus visibility gates; desktop mode returns above. */
+    if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0)) {
       if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (no button/mode)\n");
       return;
     }
@@ -7566,59 +7584,7 @@ void draw_idle_mouse_cursor()
       if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit2+button)\n");
       return;
     }
-    /* DEVIATION FROM AUTHENTIC BEHAVIOR (4th of this round, see the matching
-       comments above and in cursor_show_idle_tick/update_mouse_state's own tail):
-       the original confines the drawn cursor to a specific UI-mode rectangle
-       (DAT_00204838/DAT_0020483c/DAT_002047dc/DAT_002047d8, only enforced
-       when DAT_00201b60's bits 0,3,6,7 are set) rather than the full screen
-       -- built for a specific Pocket PC touchscreen panel's own valid-tap
-       area, not a general on-screen-bounds safety check: g_mouse_x/g_mouse_y
-       are already separately clamped to the real screen bounds elsewhere in
-       update_mouse_state (DAT_0020470c/DAT_00204830 and DAT_00204710/
-       DAT_00204834), so skipping this narrower confinement cannot draw the
-       cursor off-screen. Confirmed via live tracing (UW_DEBUG_CURSORSHOW)
-       that this rectangle also drifts from what reset_cursor_confine_rect last set it to
-       (e.g. (52,18)-(224,135) right after chargen, silently becoming
-       (52,18)-(109,109) by the first real mouse move with no traced call to
-       either bound-setter in between) -- a pre-existing, unrelated wild-write
-       bug elsewhere (init_cursor_subsystem's own `(&DAT_002047b0)[iVar2] = 10000` loop
-       treats a lone scalar as a 20-entry array, the same "lone scalar treated
-       as a real array" bug class fixed repeatedly elsewhere in this project)
-       corrupts this rectangle in a way that made the cursor disappear
-       entirely during plain dungeon-view mouse movement on a real desktop
-       mouse. Skipped only when UW_ALWAYS_SHOW_CURSOR=1, since a
-       Pocket-PC-panel-specific tap-area clamp isn't meaningful on a desktop
-       port anyway; left enforced by default rather than chasing the
-       separate corruption bug.
-
-       FOLLOW-UP (bug-list: "'Use key / combine' cursor not drawing over 3d
-       view"): the wild-write bug named above is already fixed --
-       DAT_002047b0 is a real 20-element array (DAT_002047b0_backing[20])
-       as of the code-cleanup-pass-2 merge (commit e0e419e), so
-       init_cursor_subsystem's `(&DAT_002047b0)[iVar2] = 10000` loop can no
-       longer bleed into this rectangle's globals. Re-verified live
-       (UW_DEBUG_CURSORSHOW + UW_DEBUG_MODEBTN): selected a mode cursor
-       (g_cursor_mode=3, icon 0x1077) and held/hovered at mouse x=131 --
-       past the old corrupted bound's x2=109 -- and the cursor drew every
-       tick with no "out of bounds" early-return, both with a held button
-       (default visibility rule) and under UW_ALWAYS_SHOW_CURSOR=1; this
-       confine-rect enforcement itself is fine as-is.
-
-       The actual remaining cause of the bug-list symptom was a separate,
-       general issue, not specific to this rectangle or to the 3D view:
-       main_loop_hud_flush's forced per-tick 3D redraw (see that
-       function's own "HACK: redraw the 3D dungeon view" comment) repaints
-       the whole viewport every tick, painting over wherever the cursor
-       was last drawn, while this function is only reached reactively
-       through update_mouse_state() -- itself only called when a real OS
-       mouse message happens to arrive that tick. A motionless cursor
-       hovering the 3D view got erased by the next forced redraw and
-       stayed invisible until the next real mouse-move message. Fixed by
-       bug-list item "Cursors not drawing always" (commit 05e8727):
-       main_loop_hud_flush now also calls update_mouse_state()
-       unconditionally every tick, see the hack comment just below the
-       forced-3D-redraw block above. */
-    if ((((ushort)DAT_00201b60 & 0xc9) != 0) && !uw_always_show_cursor()) {
+    if ((((ushort)DAT_00201b60 & 0xc9) != 0)) {
       if (g_mouse_x < DAT_00204838) {
         if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");
         return;

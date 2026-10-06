@@ -54,6 +54,7 @@ extern char s_FONTBIG_SYS_00085454[];
 extern char s_font5x6p_sys_0008430c[];
 extern ushort framebuffer[320 * 200], hardware_framebuffer[240 * 320];
 extern int presents, testing_game_tick, input_opens_window;
+extern int desktop_cursor;
 extern int g_force_flush, g_force_redraw_no_xp;
 extern unsigned int g_uw_frame_clock_units;
 extern char *g_selected_object;

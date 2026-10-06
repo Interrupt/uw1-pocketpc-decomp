@@ -180,6 +180,21 @@ static void test_unbatched_animation_frames_present_immediately(void)
     TEST_ASSERT_EQUAL_INT(2, presents);
 }
 
+static void test_desktop_cursor_allows_frames_while_dragging(void)
+{
+    testing_game_tick=1;
+    g_selected_object=(char *)framebuffer;
+    DAT_0023c63c=1;
+    dirty_rect_set(0,200,0,320);
+    flush_dirty_rect_to_display(1);
+    TEST_ASSERT_EQUAL_INT(0,presents); /* Original stylus gate. */
+    desktop_cursor=1;
+    dirty_rect_set(0,200,0,320);
+    flush_dirty_rect_to_display(1);
+    TEST_ASSERT_EQUAL_INT(1,presents);
+    TEST_ASSERT_EQUAL_INT(0,g_force_flush);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -198,5 +213,6 @@ int main(void)
     RUN_TEST(test_nested_batches_wait_for_outer_tick_to_finish);
     RUN_TEST(test_modal_restores_batching_and_previous_flush_gate);
     RUN_TEST(test_unbatched_animation_frames_present_immediately);
+    RUN_TEST(test_desktop_cursor_allows_frames_while_dragging);
     return UNITY_END();
 }

@@ -922,13 +922,9 @@ LAB_000170bc:
         local_58[0] = '\0';
         iVar8 = *(short *)(&DAT_000baa0a + iVar7) + -1;
         warp_mouse_cursor(*(short *)(&DAT_000baa0a + iVar7) + 9,local_60 + -0x12);
-        /* Same raw-text-field flag scroll_text_entry_prompt (hud.c) sets while
-           it owns the keyboard -- see handle_keyboard_message's own
-           g_text_input_active comment (input.c) for why this matters: without
-           it, this loop's typed characters got silently uppercased by
-           the session's stuck "command mode" flag the same way every
-           other text field did before that fix. Cleared at this loop's
-           one exit point, LAB_0001739c below. */
+        /* Keep command bindings out of the raw text field. This editor
+           uppercases each printable character itself through ce_toupper
+           below, matching the automap font's available glyphs. */
         g_text_input_active = 1;
 LAB_000171bc:
         sVar2 = poll_input_event(0);

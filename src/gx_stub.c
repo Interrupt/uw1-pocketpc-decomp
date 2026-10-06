@@ -412,6 +412,14 @@ int uw_present_frame_due(uint64_t now_us)
     return 1;
 }
 
+/* Cursor-only changes need a presentation even in a blocking input wait.
+   Reuse the pacing queue so the next event poll shows the latest icon and
+   position without copying cursor pixels into the hardware framebuffer. */
+void uw_request_cursor_present(void)
+{
+    g_display_pacing.pending = 1;
+}
+
 void uw_service_pending_present(uint64_t now_us)
 {
     /* A last flush may be followed only by a blocking input wait.
@@ -728,6 +736,10 @@ void uw_pump_events(void) {
                     ev.button.button != SDL_BUTTON_RIGHT) {
                     break;
                 }
+                /* Hovering a static menu still needs a cursor presentation.
+                   Queue the existing GX pacing service, without flushing or
+                   changing the game's saved framebuffer. */
+                if (uw_always_show_cursor()) uw_request_cursor_present();
                 if (is_right) {
                     /* Right-click = interact (handle_game_view_click's right-button
                        branch). Dispatch down and up straight through --
@@ -830,6 +842,8 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
                     i, bounds.x, bounds.y, bounds.w, bounds.h, ddpi, hdpi, vdpi);
         }
     }
+    /* The game sprite replaces the native pointer in desktop cursor mode. */
+    if (uw_always_show_cursor()) SDL_ShowCursor(SDL_DISABLE);
     SDL_StartTextInput();
     /* VSYNC matters beyond just avoiding tearing here: several original
      * routines (e.g. fade_in's fade-in-from-black transition) pace
@@ -1491,6 +1505,7 @@ const char *uw_debug_3d_frame_dump_last_dir(void) {
 
 int GXCloseDisplay(void) {
     fprintf(stderr, "[gx] GXCloseDisplay\n");
+    if (uw_always_show_cursor()) SDL_ShowCursor(SDL_ENABLE);
     if (g_tex) { SDL_DestroyTexture(g_tex); g_tex = NULL; }
     if (g_ren) { SDL_DestroyRenderer(g_ren); g_ren = NULL; }
     if (g_win) { SDL_DestroyWindow(g_win); g_win = NULL; }
@@ -1591,6 +1606,7 @@ int GXEndDraw(void) {
             g_display_buf[y * GX_W + x] = g_framebuffer[(HW_H - 1 - x) * HW_W + y];
         }
     }
+    uw_composite_desktop_cursor(g_display_buf);
     SDL_UpdateTexture(g_tex, NULL, g_display_buf, GX_W * sizeof(unsigned short));
     SDL_RenderClear(g_ren);
     SDL_RenderCopy(g_ren, g_tex, NULL, NULL);
