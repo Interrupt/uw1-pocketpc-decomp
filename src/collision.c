@@ -391,15 +391,15 @@ void collision_height_envelope(int mode, int collision)
             uVar3 = 0;
           } else {
             puVar6 = (ushort *)((char *)_ntile + 2);
-            uVar3 = *puVar6;
+            uVar3 = ((uw_chain_word_t *)puVar6)->chain;
           }
-          while ((uVar3 & 0xffc0) != 0) {
+          while (uVar3 != 0) {
             sVar8 = (short)iVar10;
             if (0x3f < sVar8) break;
-            if ((uint)(uVar3 >> 6) != (int)*(short *)(pbVar13 + 10)) {
+            if ((uint)uVar3 != (int)*(short *)(pbVar13 + 10)) {
               puVar7 = (ushort *)resolve_object_link(puVar6);
               /* resolve_object_link can now return NULL for an out-of-range link (see its own
-                 comment) where this loop's `while ((uVar3 & 0xffc0) != 0)` condition alone used to
+                 comment) where this loop's `while (uVar3 != 0)` condition alone used to
                  guarantee success... */
               if (puVar7 == (ushort *)0x0) break;
               iVar10 = ((uw_object_hdr_t *)puVar7)->item_id * 0xd;
@@ -408,7 +408,7 @@ void collision_height_envelope(int mode, int collision)
                  ((((DAT_002046c4 <= puVar7 || ((*puVar7 & 0x1c0) == 0x40)) ||
                    ((*(byte *)((char *)puVar7 + 0x15) & 0x80) == 0)) &&
                   ((collision == 0 || (((&DAT_00202c97)[iVar10] & 1) != 0)))))) {
-                collision_add_candidate_object(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
+                collision_add_candidate_object(puVar7,((uw_chain_word_t *)puVar6)->chain,iVar12,iVar14,local_3c);
               }
             }
             /* was `iVar10 = resolve_object_link(...); puVar6 = (ushort )(iVar10 + 4);` -- iVar10 is
@@ -424,7 +424,7 @@ void collision_height_envelope(int mode, int collision)
             iVar10 = iVar2 >> 0x10;
             sVar8 = (short)((uint)iVar2 >> 0x10);
             pbVar13 = DAT_00202c6c;
-            uVar3 = *puVar6;
+            uVar3 = ((uw_chain_word_t *)puVar6)->chain;
           }
           if (sVar8 == 0x40) {
             return;
