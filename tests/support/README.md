@@ -86,3 +86,19 @@ critical failures and no-magic tiles using the full player address.
 Generated function units are build artifacts. CMake regenerates them from the
 source files when those files change. Game implementations remain in their
 original files; no implementation copies are checked into tests.
+
+`uw_test_babl_vm` compiles the real conversation dispatcher, all opcode handlers,
+menu wait/selection, NPC variable bridge, quest access and barter rules. Use
+`babl_fixture_reset`, `babl_symbol` and `babl_run` to construct short bytecode
+programs against controlled VM storage. `test_babl_vm.c` covers all 42
+conversation opcodes (0x00..0x29), including signed arithmetic, branch outcomes,
+nested calls, stack frames, variable writes, native dispatch and text output.
+Its final coverage assertion checks that every opcode actually executed.
+
+Input selects controlled menu responses through the real wait loop. Storage,
+string expansion, drawing, RNG and inventory-list services are controlled at
+fixture boundaries; these tests do not run complete CNV.ARK conversations or
+cover every native builtin. Additional cases exercise quest-dependent dialogue,
+NPC state on reentry, accepted/rejected/declined trades, 16-bit preferences and
+barter cache initialization/invalidation. A tick budget makes endless dialogue
+or input waits fail instead of hanging the test process.

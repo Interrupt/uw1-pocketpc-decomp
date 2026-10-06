@@ -110,7 +110,7 @@ void babl_op_call_builtin();
 void babl_op_string_eq();
 void babl_op_say();
 void babl_op_respond();
-int babl_var_word_addr();
+intptr_t babl_var_word_addr();
 int babl_read_var_word();
 void babl_write_var_word();
 int babl_read_frame_word();
