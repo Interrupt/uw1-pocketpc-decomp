@@ -653,7 +653,7 @@ LAB_0004386c:
       }
       local_28 = 0;
     }
-    if ((*puVar4 & 0x1ff) == 0x8f) {
+    if (((uw_object_hdr_t *)puVar4)->item_id == 0x8f) {
       /* Real ARM binary calls place_rune_in_bag() with 0 args here too (confirmed via Ghidra
          decompile of the real auto_place_in_container at 0x43734) -- same "leftover register"
          reliance already found 3 times this session... */
@@ -767,7 +767,7 @@ void sum_container_weight(ushort *link_field, short *total_weight)
     else {
       uVar1 = puVar2[3] >> 6;
     }
-    *total_weight = (*(ushort *)(&DAT_00202c91 + (*puVar2 & 0x1ff) * 0xd) >> 4) * uVar1 + *total_weight;
+    *total_weight = (*(ushort *)(&DAT_00202c91 + ((uw_object_hdr_t *)puVar2)->item_id * 0xd) >> 4) * uVar1 + *total_weight;
     sum_container_weight(puVar2 + 2,total_weight);
     if ((*puVar2 & 0x8000) != 0) break;
     puVar2 = (ushort *)resolve_object_link(puVar2 + 3);
@@ -879,7 +879,7 @@ int empty_container_into_world(ushort *container, short clear_flag)
     uVar1 = container[1];
     while (iVar4 != 0) {
       pNextLink = resolve_object_link(iVar4 + 4);
-      if ((clear_flag != 0) && (g_object_type_props[*container & 0x1ff].is_container)) {
+      if ((clear_flag != 0) && (g_object_type_props[((uw_object_hdr_t *)container)->item_id].is_container)) {
         uVar2 = container[3];
         bVar3 = (byte)uVar2;
         *(byte *)(container + 3) = (bVar3 ^ (byte)clear_flag) & 0x3f ^ bVar3;
@@ -911,7 +911,7 @@ void try_empty_container(ushort *container, int owned_by_player)
   char acStack_5c [80];
   
   bVar4 = 0;
-  if (g_object_type_props[*container & 0x1ff].is_container) {
+  if (g_object_type_props[((uw_object_hdr_t *)container)->item_id].is_container) {
     bVar4 = (byte)container[3] & 0x3f;
   }
   iVar2 = empty_container_into_world(container,bVar4);
