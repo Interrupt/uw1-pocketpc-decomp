@@ -161,7 +161,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
                               CONCAT22(uVar20,4),0);
       DAT_00202c84 = 0;
       if (local_30 != 0) {
-        if (((!((uw_object_hdr_t *)puVar8)->is_quant) && ((puVar8[3] & 0xffc0) != 0)) &&
+        if (((!((uw_object_hdr_t *)puVar8)->is_quant) && (((uw_object_hdr_t *)puVar8)->link != 0)) &&
            (puVar9 = (undefined1 *)alloc_object_slot(0), puVar9 != (undefined1 *)0x0)) {
           puVar10 = (undefined1 *)get_object_record_by_slot_index(puVar8[3] >> 6);
           *puVar9 = *puVar10;
@@ -175,13 +175,11 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
           uVar14 = encode_object_slot_index(puVar9);
           *(byte *)(puVar8 + 3) = (byte)puVar8[3] & 0x3f | (byte)((uVar14 & 0x3ff) << 6);
           *(char *)((char *)puVar8 + 7) = (char)((uVar14 << 0x16) >> 0x18);
-          if ((*(ushort *)(puVar9 + 4) & 0xffc0) != 0) {
-            puVar9[5] = 0;
-            puVar9[4] = (byte)*(ushort *)(puVar9 + 4) & 0x3f;
+          if (((uw_object_hdr_t *)puVar9)->next != 0) {
+            ((uw_object_hdr_t *)puVar9)->next = 0;
           }
-          if (((puVar9[1] & 0x80) == 0) && ((*(ushort *)(puVar9 + 6) & 0xffc0) != 0)) {
-            puVar9[6] = (byte)*(ushort *)(puVar9 + 6) & 0x3f;
-            puVar9[7] = 0;
+          if (((puVar9[1] & 0x80) == 0) && (((uw_object_hdr_t *)puVar9)->link != 0)) {
+            ((uw_object_hdr_t *)puVar9)->link = 0;
           }
         }
         if ((*puVar8 & 0x1c0) == 0x1c0) {
@@ -226,7 +224,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
         object_list_unlink(local_34,_case8_p2);
         free_object_slot(_case8_p2);
       }
-      if ((!((uw_object_hdr_t *)trap_record)->is_quant) && ((trap_record[3] & 0xffc0) != 0)) {
+      if ((!((uw_object_hdr_t *)trap_record)->is_quant) && (((uw_object_hdr_t *)trap_record)->link != 0)) {
         puVar9 = (undefined1 *)resolve_object_link(trap_record + 3);
         puVar10 = (undefined1 *)alloc_object_slot(0);
         if (puVar10 != (undefined1 *)0x0) {
@@ -387,9 +385,9 @@ LAB_0007d460:
     }
     if (((ushort)uVar14 !=
          (ushort)(((uw_object_hdr_t *)trap_record)->ypos | (((uw_object_hdr_t *)trap_record)->owner | ((uw_object_hdr_t *)trap_record)->quality << 5) << 3)) &&
-       ((trap_record[3] & 0xffc0) != 0)) {
+       (((uw_object_hdr_t *)trap_record)->link != 0)) {
       iVar16 = resolve_object_link(trap_record + 3);
-      if ((*(ushort *)(iVar16 + 4) & 0xffc0) == 0) {
+      if (((uw_object_hdr_t *)iVar16)->next == 0) {
         return 2;
       }
       uVar6 = resolve_object_link((ushort *)(iVar16 + 4));
@@ -407,7 +405,7 @@ LAB_0007d460:
       message_scroll_print_wrapped(pcMessage);
     }
   }
-  if ((trap_record[3] & 0xffc0) != 0) {
+  if (((uw_object_hdr_t *)trap_record)->link != 0) {
     puVar12 = (ushort *)resolve_object_link(trap_record + 3);
     if ((*puVar12 & 0x1c0) == 0x180) {
       if ((*puVar12 & 0x30) < 0x20) {
@@ -817,7 +815,7 @@ LAB_0003987c:
           uVar11 = (uint)(byte)((byte)*puVar7 >> 4);
           uVar3 = (uint)(short)uVar10;
           if (uVar3 < uVar11) {
-            for (puVar8 = puVar7 + 1; (*puVar8 & 0xffc0) != 0; puVar8 = puVar8 + 2) {
+            for (puVar8 = puVar7 + 1; ((uw_chain_word_t *)puVar8)->chain != 0; puVar8 = puVar8 + 2) {
               puVar8 = (ushort *)resolve_object_link(puVar8);
               if (((*puVar8 & 0x1c0) != 0x180) && ((int)((uw_object_hdr_t *)puVar8)->zpos < iVar12 * 8)) {
                 uVar10 = puVar8[1] & 0xff80;
@@ -837,7 +835,7 @@ LAB_0003987c:
             }
           }
           else if (uVar11 < uVar3) {
-            for (puVar8 = puVar7 + 1; (*puVar8 & 0xffc0) != 0; puVar8 = puVar8 + 2) {
+            for (puVar8 = puVar7 + 1; ((uw_chain_word_t *)puVar8)->chain != 0; puVar8 = puVar8 + 2) {
               uVar14 = resolve_object_link(puVar8);
               uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
               puVar8 = (ushort *)uVar14;
