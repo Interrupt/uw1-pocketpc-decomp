@@ -550,10 +550,8 @@ int babl_builtin_do_inv_create(char *args)
     while (puVar4 = (ushort *)resolve_object_link(puVar4), puVar4 != (ushort *)0x0) {
       if (((((((uw_object_hdr_t *)puVar3)->is_quant)) && (((uw_object_hdr_t *)puVar4)->is_quant)) && ((puVar3[3] & 0x8000) == 0))
          && ((((puVar4[3] & 0x8000) == 0 && (((uw_object_hdr_t *)puVar4)->item_id == ((uw_object_hdr_t *)puVar3)->item_id)) &&
-             ((ushort)((puVar4[3] >> 6) + (puVar3[3] >> 6)) < 999)))) {
-        iVar6 = (puVar4[3] & 0xffc0) + (puVar3[3] & 0xffc0);
-        *(byte *)(puVar4 + 3) = (byte)iVar6 ^ (byte)puVar4[3] & 0x3f;
-        *(char *)((char *)puVar4 + 7) = (char)((uint)iVar6 >> 8);
+             ((ushort)(((uw_object_hdr_t *)puVar4)->link + ((uw_object_hdr_t *)puVar3)->link) < 999)))) {
+        ((uw_object_hdr_t *)puVar4)->link = ((uw_object_hdr_t *)puVar4)->link + ((uw_object_hdr_t *)puVar3)->link;
         free_object_slot(puVar3);
         puVar3 = (ushort *)0x0;
         break;
@@ -712,19 +710,19 @@ int babl_builtin_place_object(char *args)
   uVar5 = babl_read_var_word((int)*(short *)(args + -4));
   uVar6 = babl_read_var_word((int)*(short *)(args + -2));
   puVar7 = (ushort *)(DAT_00100674 + 6);
-  uVar2 = *puVar7;
-  if ((uVar2 & 0xffc0) != 0) {
+  uVar2 = ((uw_chain_word_t *)puVar7)->chain;
+  if (uVar2 != 0) {
     do {
-      if ((uint)(uVar2 >> 6) == (int)(short)uVar3) break;
+      if ((uint)uVar2 == (int)(short)uVar3) break;
       /* Was called with no argument (also true at ~30 other call sites throughout this file) --
          verified against real ARM disassembly (Ghidra, UU.exe) that every one of them DOES set up a
          real r0 argument in the compiled binary; Ghidra's decompiler just failed to show it... */
       iVar8 = resolve_object_link(puVar7);
       puVar7 = (ushort *)(iVar8 + 4);
-      uVar2 = *puVar7;
-    } while ((uVar2 & 0xffc0) != 0);
+      uVar2 = ((uw_chain_word_t *)puVar7)->chain;
+    } while (uVar2 != 0);
   }
-  if ((*puVar7 & 0xffc0) != 0) {
+  if (((uw_chain_word_t *)puVar7)->chain != 0) {
     object_list_unlink(DAT_00100674 + 6,puVar4);
   }
   iVar8 = (int)(short)uVar5;
@@ -773,13 +771,13 @@ ushort babl_builtin_take_from_npc_inv(char *args)
   puVar2 = (ushort *)(DAT_00100674 + 6);
   if (0 < sVar1) {
     do {
-      if ((*puVar2 & 0xffc0) == 0) break;
+      if (((uw_chain_word_t *)puVar2)->chain == 0) break;
       iVar3 = resolve_object_link(puVar2);
       iVar4 = iVar4 + 1;
       puVar2 = (ushort *)(iVar3 + 4);
     } while (iVar4 * 0x10000 >> 0x10 < (int)sVar1);
   }
-  return *puVar2 >> 6;
+  return ((uw_chain_word_t *)puVar2)->chain;
 }
 
 
@@ -3835,16 +3833,14 @@ void handle_barter_slot_click(int is_player_side, int slot, int counts, int valu
       }
       iVar2 = get_object_record_by_slot_index((int)*(short *)(local_8 + (short)local_c * 2));
       if (((((((uw_object_hdr_t *)iVar2)->is_quant)) && ((*(ushort *)(iVar2 + 6) & 0x8000) == 0)) &&
-          ((*(ushort *)(iVar2 + 6) & 0xffc0) != 0x40)) && (iVar6 = prompt_split_object_stack(iVar2), iVar6 == 0))
+          (((uw_object_hdr_t *)iVar2)->link != 1)) && (iVar6 = prompt_split_object_stack(iVar2), iVar6 == 0))
       {
         return;
       }
       iVar3 = check_object_carry_weight(iVar2);
       if (iVar3 == 0) {
         if ((iVar6 != 0) && (iVar6 != iVar2)) {
-          iVar3 = (*(ushort *)(iVar2 + 6) & 0xffc0) + (*(ushort *)(iVar6 + 6) & 0xffc0);
-          *(byte *)(iVar2 + 6) = (byte)iVar3 ^ (byte)*(ushort *)(iVar2 + 6) & 0x3f;
-          *(char *)(iVar2 + 7) = (char)((uint)iVar3 >> 8);
+          ((uw_object_hdr_t *)iVar2)->link = ((uw_object_hdr_t *)iVar2)->link + ((uw_object_hdr_t *)iVar6)->link;
           object_list_unlink(iVar2 + 4,iVar6);
           free_object_slot(iVar6);
         }
@@ -4123,10 +4119,8 @@ int merge_or_swap_barter_slot_item(ushort *held_object, int side, int slot, int 
     if ((uVar2 & 0x8000) == 0) {
       uVar3 = puVar5[3];
       if ((((uVar3 & 0x8000) == 0) && (((uw_object_hdr_t *)held_object)->item_id == ((uw_object_hdr_t *)puVar5)->item_id)) &&
-         ((ushort)((uVar3 >> 6) + (uVar2 >> 6)) < 999)) {
-        iVar6 = (uVar3 & 0xffc0) + (uVar2 & 0xffc0);
-        *(byte *)(puVar5 + 3) = (byte)iVar6 ^ (byte)uVar3 & 0x3f;
-        *(char *)((char *)puVar5 + 7) = (char)((uint)iVar6 >> 8);
+         ((ushort)(((uw_object_hdr_t *)puVar5)->link + ((uw_object_hdr_t *)held_object)->link) < 999)) {
+        ((uw_object_hdr_t *)puVar5)->link = ((uw_object_hdr_t *)puVar5)->link + ((uw_object_hdr_t *)held_object)->link;
         free_object_slot(held_object);
         uVar8 = 1;
         goto LAB_0001c404;
@@ -4259,10 +4253,8 @@ void finalize_player_barter_items()
             if (((((((uw_object_hdr_t *)puVar2)->is_quant)) && (((uw_object_hdr_t *)puVar3)->is_quant)) &&
                 ((puVar2[3] & 0x8000) == 0)) &&
                ((((puVar3[3] & 0x8000) == 0 && (((uw_object_hdr_t *)puVar3)->item_id == ((uw_object_hdr_t *)puVar2)->item_id)) &&
-                ((ushort)((puVar3[3] >> 6) + (puVar2[3] >> 6)) < 999)))) {
-              iVar4 = (puVar3[3] & 0xffc0) + (puVar2[3] & 0xffc0);
-              *(byte *)(puVar3 + 3) = (byte)iVar4 ^ (byte)puVar3[3] & 0x3f;
-              *(char *)((char *)puVar3 + 7) = (char)((uint)iVar4 >> 8);
+                ((ushort)(((uw_object_hdr_t *)puVar3)->link + ((uw_object_hdr_t *)puVar2)->link) < 999)))) {
+              ((uw_object_hdr_t *)puVar3)->link = ((uw_object_hdr_t *)puVar3)->link + ((uw_object_hdr_t *)puVar2)->link;
               free_object_slot(puVar2);
               puVar2 = (ushort *)0x0;
               break;
@@ -4535,10 +4527,8 @@ void add_item_to_npc_inventory(ushort *object)
     while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
       if (((((((uw_object_hdr_t *)object)->is_quant)) && (((uw_object_hdr_t *)puVar1)->is_quant)) && ((object[3] & 0x8000) == 0)
           ) && ((((puVar1[3] & 0x8000) == 0 && (((uw_object_hdr_t *)puVar1)->item_id == ((uw_object_hdr_t *)object)->item_id)) &&
-                ((ushort)((puVar1[3] >> 6) + (object[3] >> 6)) < 999)))) {
-        iVar2 = (puVar1[3] & 0xffc0) + (object[3] & 0xffc0);
-        *(byte *)(puVar1 + 3) = (byte)iVar2 ^ (byte)puVar1[3] & 0x3f;
-        *(char *)((char *)puVar1 + 7) = (char)((uint)iVar2 >> 8);
+                ((ushort)(((uw_object_hdr_t *)puVar1)->link + ((uw_object_hdr_t *)object)->link) < 999)))) {
+        ((uw_object_hdr_t *)puVar1)->link = ((uw_object_hdr_t *)puVar1)->link + ((uw_object_hdr_t *)object)->link;
         free_object_slot(object);
         object = (ushort *)0x0;
         break;
