@@ -548,7 +548,7 @@ int babl_builtin_do_inv_create(char *args)
     *(char *)((char *)puVar3 + 5) = (char)(uVar1 >> 8);
     puVar4 = (ushort *)(*piVar2 + 6);
     while (puVar4 = (ushort *)resolve_object_link(puVar4), puVar4 != (ushort *)0x0) {
-      if (((((*puVar3 & 0x8000) != 0) && ((*puVar4 & 0x8000) != 0)) && ((puVar3[3] & 0x8000) == 0))
+      if (((((((uw_object_hdr_t *)puVar3)->is_quant)) && (((uw_object_hdr_t *)puVar4)->is_quant)) && ((puVar3[3] & 0x8000) == 0))
          && ((((puVar4[3] & 0x8000) == 0 && (((uw_object_hdr_t *)puVar4)->item_id == ((uw_object_hdr_t *)puVar3)->item_id)) &&
              ((ushort)((puVar4[3] >> 6) + (puVar3[3] >> 6)) < 999)))) {
         iVar6 = (puVar4[3] & 0xffc0) + (puVar3[3] & 0xffc0);
@@ -4118,7 +4118,7 @@ int merge_or_swap_barter_slot_item(ushort *held_object, int side, int slot, int 
   if ((uVar1 & 0x1c0) == 0x80 && (uVar1 & 0x30) == 0) {
     return 0;
   }
-  if (((*held_object & 0x8000) != 0) && ((uVar1 & 0x8000) != 0)) {
+  if ((((uw_object_hdr_t *)held_object)->is_quant) && (((uw_object_hdr_t *)puVar5)->is_quant)) {
     uVar2 = held_object[3];
     if ((uVar2 & 0x8000) == 0) {
       uVar3 = puVar5[3];
@@ -4256,7 +4256,7 @@ void finalize_player_barter_items()
         puVar3 = (ushort *)resolve_object_link((char *)DAT_00100674 + 6);
         if (((uw_object_hdr_t *)puVar2)->item_id == 0xa1) {
           for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)resolve_object_link(puVar3 + 2)) {
-            if (((((*puVar2 & 0x8000) != 0) && ((*puVar3 & 0x8000) != 0)) &&
+            if (((((((uw_object_hdr_t *)puVar2)->is_quant)) && (((uw_object_hdr_t *)puVar3)->is_quant)) &&
                 ((puVar2[3] & 0x8000) == 0)) &&
                ((((puVar3[3] & 0x8000) == 0 && (((uw_object_hdr_t *)puVar3)->item_id == ((uw_object_hdr_t *)puVar2)->item_id)) &&
                 ((ushort)((puVar3[3] >> 6) + (puVar2[3] >> 6)) < 999)))) {
@@ -4454,7 +4454,7 @@ int compute_barter_item_value(short is_player_side, int item_id, int mode)
       sVar6 = (short)(sVar6 * 3 >> 1);
     }
   }
-  if (((uVar7 & 0x8000) == 0) || ((puVar4[3] & 0x8000) != 0)) {
+  if ((!((uw_object_hdr_t *)puVar4)->is_quant) || ((puVar4[3] & 0x8000) != 0)) {
     uVar3 = 1;
   }
   else {
@@ -4533,7 +4533,7 @@ void add_item_to_npc_inventory(ushort *object)
   if (((uw_object_hdr_t *)object)->item_id == 0xa1) {
     puVar1 = (ushort *)(DAT_00100674 + 6);
     while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
-      if (((((*object & 0x8000) != 0) && ((*puVar1 & 0x8000) != 0)) && ((object[3] & 0x8000) == 0)
+      if (((((((uw_object_hdr_t *)object)->is_quant)) && (((uw_object_hdr_t *)puVar1)->is_quant)) && ((object[3] & 0x8000) == 0)
           ) && ((((puVar1[3] & 0x8000) == 0 && (((uw_object_hdr_t *)puVar1)->item_id == ((uw_object_hdr_t *)object)->item_id)) &&
                 ((ushort)((puVar1[3] >> 6) + (object[3] >> 6)) < 999)))) {
         iVar2 = (puVar1[3] & 0xffc0) + (object[3] & 0xffc0);

@@ -386,7 +386,7 @@ void use_light_source(ushort *object, int turn_on)
   int iVar9;
   ushort uVar10;
   
-  if (((*object & 0x8000) == 0) || ((object[3] & 0x8000) != 0)) {
+  if ((!((uw_object_hdr_t *)object)->is_quant) || ((object[3] & 0x8000) != 0)) {
     uVar10 = 1;
   }
   else {
@@ -476,7 +476,7 @@ int use_food_item(char *actor, ushort *object, int consume)
   iVar11 = 0;
   iVar12 = 0xff;
   uVar8 = (uint)*object;
-  if (((*object & 0x8000) == 0) || ((object[3] & 0x8000) != 0)) {
+  if ((!((uw_object_hdr_t *)object)->is_quant) || ((object[3] & 0x8000) != 0)) {
     uVar9 = 1;
   }
   else {
@@ -1097,7 +1097,7 @@ void complete_use_item_on_quest_target(ushort *target, int consume)
   g_cursor_holding_state = 0;
   if ((((uw_object_hdr_t *)target)->item_id) == 0x165) {
     if ((*(byte *)(DAT_00202098 + 6) & 0x3f) == 0x3e) {
-      if ((((*target & 0x8000) == 0) || ((target[3] & 0x8000) == 0)) ||
+      if (((!((uw_object_hdr_t *)target)->is_quant) || ((target[3] & 0x8000) == 0)) ||
          ((target[3] & 0x7fc0) != 0x840)) {
         uVar3 = 0x103;
         goto LAB_0007a38c;
@@ -1776,7 +1776,7 @@ void dispatch_world_object_interaction_by_family(ushort *actor, ushort *object)
     if (uVar4 == 7) {
       handle_mantra_chant();
     }
-    else if (((uVar4 == 0xb) || (uVar4 == 0xd)) && ((uVar5 & 0x8000) == 0)) {
+    else if (((uVar4 == 0xb) || (uVar4 == 0xd)) && (!((uw_object_hdr_t *)object)->is_quant)) {
       try_combine_or_stow_object(actor,object,0);
     }
   }
@@ -1881,11 +1881,11 @@ int objects_are_combinable(ushort *object_a, ushort *object_b)
   int iVar8;
   
   uVar2 = *object_a;
-  if ((((uVar2 & 0x8000) == 0) || ((object_a[3] & 0xffc0) < 0x41)) &&
-     (((uVar2 & 0x8000) != 0 || ((object_a[3] & 0xffc0) == 0)))) {
+  if (((!((uw_object_hdr_t *)object_a)->is_quant) || ((object_a[3] & 0xffc0) < 0x41)) &&
+     ((((uw_object_hdr_t *)object_a)->is_quant) || ((object_a[3] & 0xffc0) == 0))) {
     uVar1 = *object_b;
-    if ((((uVar1 & 0x8000) == 0) || ((object_b[3] & 0xffc0) < 0x41)) &&
-       (((uVar1 & 0x8000) != 0 || ((object_b[3] & 0xffc0) == 0)))) {
+    if (((!((uw_object_hdr_t *)object_b)->is_quant) || ((object_b[3] & 0xffc0) < 0x41)) &&
+       ((((uw_object_hdr_t *)object_b)->is_quant) || ((object_b[3] & 0xffc0) == 0))) {
       uVar1 = ((uw_object_hdr_t *)object_b)->item_id;
       uVar2 = ((uw_object_hdr_t *)object_a)->item_id;
       debug_print(s_checking_if__d_and__d_are_combin_00084f90,uVar2,uVar1);
@@ -2237,8 +2237,8 @@ int objects_can_stack(ushort *object_a, ushort *object_b)
   
   uVar3 = *object_a;
   if (((((((uw_object_hdr_t *)object_b)->item_id == ((uw_object_hdr_t *)object_a)->item_id)) &&
-       (((uVar3 & 0x8000) != 0 || ((object_a[3] & 0xffc0) == 0)))) &&
-      (((*object_b & 0x8000) != 0 || ((object_b[3] & 0xffc0) == 0)))) &&
+       (((((uw_object_hdr_t *)object_a)->is_quant) || ((object_a[3] & 0xffc0) == 0)))) &&
+      (((((uw_object_hdr_t *)object_b)->is_quant) || ((object_b[3] & 0xffc0) == 0)))) &&
      ((uVar4 = object_a[3], (uVar4 & 0x8000) == 0 && (uVar5 = object_b[3], (uVar5 & 0x8000) == 0)))) {
     uVar6 = ((uw_object_hdr_t *)object_a)->item_id;
     if (((((&DAT_00202c93)[uVar6 * 0xd] & 0xc0) != 0x40) &&
@@ -2368,7 +2368,7 @@ LAB_00045668:
         if ((*puVar1 >> 6 & 7) == (int)(short)category) goto LAB_00045594;
       }
 LAB_000455f8:
-      if ((((uVar3 & 0x8000) == 0) && (local_1c = resolve_object_link(puVar1 + 3), local_1c != 0)) &&
+      if (((!((uw_object_hdr_t *)puVar1)->is_quant) && (local_1c = resolve_object_link(puVar1 + 3), local_1c != 0)) &&
          (iVar2 = find_object_in_link_chain(category,subcategory,quality,&local_1c), iVar2 != 0)) {
         if (local_1c == 0) {
           return iVar2;
@@ -2496,7 +2496,7 @@ int reduce_object_count(ushort *stack_object, uint amount)
     if (puVar5 == (undefined1 *)0x0) {
       return 0;
     }
-    if (((0 < sVar1) && ((puVar5[1] & 0x80) != 0)) && ((*(ushort *)(puVar5 + 6) & 0x8000) == 0)) {
+    if (((0 < sVar1) && (((uw_object_hdr_t *)puVar5)->is_quant)) && ((*(ushort *)(puVar5 + 6) & 0x8000) == 0)) {
       uVar2 = *(ushort *)(puVar5 + 6) >> 6;
       if ((1 < uVar2) && (sVar1 < (short)uVar2)) {
         puVar6 = (undefined1 *)alloc_object_slot(0);
@@ -2619,7 +2619,7 @@ ushort *extract_matching_object_from_slot(int category, int subcategory, int qua
          (((short)uVar1 < 0 || (((byte)*puVar3 & 0xf) == uVar1)))))) ||
        (puVar3 = (ushort *)find_object_in_link_chain(category,subcategory,quality,&local_28), puVar3 != (ushort *)0x0)
        ) {
-      if (((flag != 0) && ((*puVar3 & 0x8000) != 0)) && ((puVar3[3] & 0x8000) == 0)) {
+      if (((flag != 0) && (((uw_object_hdr_t *)puVar3)->is_quant)) && ((puVar3[3] & 0x8000) == 0)) {
         uVar7 = puVar3[3] >> 6;
         if ((1 < uVar7) && ((short)flag < (short)uVar7)) {
           pbVar10 = (byte *)alloc_object_slot(0);
@@ -2999,8 +2999,8 @@ int find_or_assign_object_widget(ushort *object)
         return (int)cVar1;
       }
       puVar3 = (ushort *)resolve_object_link(puVar5);
-      if (((((*puVar3 & 0x8000) == 0) && (g_current_container_record == 0)) ||
-          (((*puVar3 & 0x8000) == 0 && (((*(ushort *)(g_current_container_record + 8) ^ *puVar5) & 0xffc0) != 0)))
+      if ((((!((uw_object_hdr_t *)puVar3)->is_quant) && (g_current_container_record == 0)) ||
+          ((!((uw_object_hdr_t *)puVar3)->is_quant) && (((*(ushort *)(g_current_container_record + 8) ^ *puVar5) & 0xffc0) != 0))
           ) && (iVar4 = find_object_by_encoded_slot_in_chain(puVar3 + 3,1,uVar2), iVar4 != 0)) {
         return (short)cVar1 * -0x10000 >> 0x10;
       }
@@ -3149,7 +3149,7 @@ LAB_00047a68:
     if ((puVar11 != (ushort *)0x0) && (((uw_object_hdr_t *)puVar11)->item_id == local_4c)) {
       return 0;
     }
-    if ((((*object & 0x8000) != 0) && ((object[3] & 0x8000) == 0)) &&
+    if (((((uw_object_hdr_t *)object)->is_quant) && ((object[3] & 0x8000) == 0)) &&
        (0x40 < (object[3] & 0xffc0))) {
       return 0;
     }

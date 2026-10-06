@@ -165,7 +165,7 @@ void dispatch_object_action(ushort *object, int mode)
     }
     mode = (int)(short)mode;
   }
-  if ((((*object & 0x8000) == 0) || (uVar3 = object[3], (uVar3 & 0x8000) != 0)) ||
+  if (((!((uw_object_hdr_t *)object)->is_quant) || (uVar3 = object[3], (uVar3 & 0x8000) != 0)) ||
      ((uVar3 & 0xffc0) < 0x41)) {
     if ((cVar10 != '\0') && (((&DAT_00202c9b)[iVar9] & 0xf) != 0xd)) {
       if (((cVar10 == 'a') || ((cVar10 == 'e' || (cVar10 == 'i')))) ||
@@ -489,7 +489,7 @@ void dispatch_object_action_dup(ushort *object, int mode)
     }
     mode = (int)(short)mode;
   }
-  if ((((*object & 0x8000) == 0) || (uVar3 = object[3], (uVar3 & 0x8000) != 0)) ||
+  if (((!((uw_object_hdr_t *)object)->is_quant) || (uVar3 = object[3], (uVar3 & 0x8000) != 0)) ||
      ((uVar3 & 0xffc0) < 0x41)) {
     if ((cVar10 != '\0') && (((&DAT_00202c9b)[iVar9] & 0xf) != 0xd)) {
       if (((cVar10 == 'a') || ((cVar10 == 'e' || (cVar10 == 'i')))) ||
@@ -660,7 +660,7 @@ int check_object_combination(char *actor, ushort *object, short count)
   uint uVar6;
   ushort *local_18;
   
-  if ((((*object & 0x8000) != 0) || (local_18 = object + 3, (*local_18 & 0xffc0) == 0)) ||
+  if (((((uw_object_hdr_t *)object)->is_quant) || (local_18 = object + 3, (*local_18 & 0xffc0) == 0)) ||
      (puVar4 = (ushort *)find_object_in_chain(&local_18,0,4,0,0xf), puVar4 == (ushort *)0x0)) {
     return 1;
   }
@@ -931,7 +931,7 @@ int force_unlock_target_object(int unused_a, int unused_b, ushort *object)
   int iVar2;
   ushort *local_14;
   
-  if (((((*object & 0x8000) == 0) && (local_14 = object + 3, (*local_14 & 0xffc0) != 0)) &&
+  if ((((!((uw_object_hdr_t *)object)->is_quant) && (local_14 = object + 3, (*local_14 & 0xffc0) != 0)) &&
       ((*object & 0x1c0) != 0x180)) && (iVar2 = find_object_in_chain(&local_14,0,6,2,3), iVar2 != 0)) {
     uVar1 = *(undefined1 *)(DAT_00086df8 + 0x2c);
     *(undefined1 *)(DAT_00086df8 + 0x2c) = 0x2d;
@@ -1995,7 +1995,7 @@ int resolve_object_variant_or_special_link(ushort *object, ushort *out_class, us
   
   uVar2 = *object;
   if ((uVar2 & 0x1c0) != 0x180) {
-    if (((uVar2 & 0x8000) == 0) && (local_20 = object + 3, (*local_20 & 0xffc0) != 0)) {
+    if ((!((uw_object_hdr_t *)object)->is_quant) && (local_20 = object + 3, (*local_20 & 0xffc0) != 0)) {
       object = (ushort *)find_object_in_chain(&local_20,0,4,2,0);
       if (object == (ushort *)0x0) {
         return 0;
@@ -2006,7 +2006,7 @@ int resolve_object_variant_or_special_link(ushort *object, ushort *out_class, us
       }
     }
     else {
-      if ((uVar2 & 0x8000) == 0) {
+      if (!((uw_object_hdr_t *)object)->is_quant) {
         return 0;
       }
       if ((uVar2 & 0x1000) == 0) {
@@ -2058,7 +2058,7 @@ void clear_object_pending_special_flag(ushort *object)
   
   uVar1 = *object;
   uVar3 = (uint)uVar1;
-  if ((uVar1 & 0x8000) != 0) {
+  if (((uw_object_hdr_t *)object)->is_quant) {
     uVar4 = uVar3 & 0x1000;
     bVar5 = (uVar1 & 0x1000) != 0;
     uVar2 = uVar3;
@@ -2621,7 +2621,7 @@ void look_at_inscribed_object(ushort *inscribed_object, short look_mode)
       }
       sVar10 = 0x170;
     }
-    if ((uVar2 & 0x8000) == 0) {
+    if (!((uw_object_hdr_t *)inscribed_object)->is_quant) {
       uVar9 = (byte)inscribed_object[3] & 0x3f;
     }
     else {
