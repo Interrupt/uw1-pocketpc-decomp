@@ -119,8 +119,8 @@ void dispatch_object_action(ushort *object, int mode)
   if (object == (ushort *)0x0) {
     return;
   }
-  iVar9 = (*object & 0x1ff) * 0xd;
-  if (!g_object_type_props[*object & 0x1ff].has_look_description) {
+  iVar9 = ((uw_object_hdr_t *)object)->item_id * 0xd;
+  if (!g_object_type_props[((uw_object_hdr_t *)object)->item_id].has_look_description) {
     if ((*object & 0x1f0) == 0x160) {
       look_at_inscribed_object(object,mode);
     }
@@ -197,7 +197,7 @@ LAB_000489fc:
   iVar9 = ce_strlen(acStack_7c);
   build_object_display_name(acStack_7c + iVar9,object,cVar10 == '\0',uVar11);
   append_object_special_name(object,mode,acStack_7c);
-  if (((g_object_type_props[*object & 0x1ff].is_container) &&
+  if (((g_object_type_props[((uw_object_hdr_t *)object)->item_id].is_container) &&
       (bVar1 = (byte)object[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     ce_strcat(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's char* to it
@@ -405,7 +405,7 @@ bool check_object_carry_weight(ushort *object)
   sVar1 = calculate_object_weight(object);
   if (getenv("UW_DEBUG_WEIGHT"))
     fprintf(stderr, "[weight] objid=0x%03x item_weight=%d current_load=%u max_capacity=%u fits=%d\n",
-            (int)(*object & 0x1ff), (int)sVar1, (unsigned)g_player_carry_weight, (unsigned)g_player_max_carry_weight,
+            (int)(((uw_object_hdr_t *)object)->item_id), (int)sVar1, (unsigned)g_player_carry_weight, (unsigned)g_player_max_carry_weight,
             (int)sVar1 + (uint)g_player_carry_weight <= (uint)g_player_max_carry_weight);
   return (int)((int)sVar1 + (uint)g_player_carry_weight) <= (int)(uint)g_player_max_carry_weight;
 }
@@ -440,8 +440,8 @@ void dispatch_object_action_dup(ushort *object, int mode)
   if (object == (ushort *)0x0) {
     return;
   }
-  iVar9 = (*object & 0x1ff) * 0xd;
-  if (!g_object_type_props[*object & 0x1ff].has_look_description) {
+  iVar9 = ((uw_object_hdr_t *)object)->item_id * 0xd;
+  if (!g_object_type_props[((uw_object_hdr_t *)object)->item_id].has_look_description) {
     if ((*object & 0x1f0) == 0x160) {
       look_at_inscribed_object(object,mode);
     }
@@ -521,7 +521,7 @@ LAB_000489fc:
   iVar9 = ce_strlen(acStack_7c);
   build_object_display_name(acStack_7c + iVar9,object,cVar10 == '\0',uVar11);
   append_object_special_name(object,mode,acStack_7c);
-  if (((g_object_type_props[*object & 0x1ff].is_container) &&
+  if (((g_object_type_props[((uw_object_hdr_t *)object)->item_id].is_container) &&
       (bVar1 = (byte)object[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     ce_strcat(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's char* to it
@@ -567,7 +567,7 @@ int check_object_drop_height(ushort *object, ushort *reference)
      DAT_00202c6c is a byte pointer; Ghidra's word indices need scaling. */
   *(byte *)(DAT_00202c6c + 10) = (byte)uVar3;
   *(byte *)((char *)DAT_00202c6c + 0xb) = (byte)((ushort)uVar3 >> 8);
-  iVar5 = (short)(uVar2 & 0x1ff) * 0xd;
+  iVar5 = (short)((uw_object_hdr_t *)object)->item_id * 0xd;
   *(byte *)(DAT_00202c6c + 8) = (&DAT_00202c91)[iVar5] & 7;
   *(undefined *)((char *)DAT_00202c6c + 9) = (&DAT_00202c90)[iVar5];
   if (getenv("UW_DEBUG_THROW"))
@@ -589,8 +589,8 @@ int check_object_drop_height(ushort *object, ushort *reference)
      match the real Y storage (offset+2/+3, see the fix just above); `+1` is X's own high byte.
      Disassembly- confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
   project_position_by_heading(((byte)object[0xc] & 0x1f) + ((object[1] & 0x380) >> 2),
-               ((&DAT_00202c91)[(*object & 0x1ff) * 0xd] & 7) +
-               ((&DAT_00202c91)[(*reference & 0x1ff) * 0xd] & 7) + '\x04',DAT_00202c6c,
+               ((&DAT_00202c91)[((uw_object_hdr_t *)object)->item_id * 0xd] & 7) +
+               ((&DAT_00202c91)[((uw_object_hdr_t *)reference)->item_id * 0xd] & 7) + '\x04',DAT_00202c6c,
                DAT_00202c6c + 2);
   /* Was `DAT_00202c6c + 2` -- disassembly-confirmed (0x4b288 @ 0x4b474: `strb r3,[r0,#0x4]`) the
      real target is offset+4/+5 (the same "Z" field this function's own later collision calls read
@@ -1705,7 +1705,7 @@ void complete_pending_player_command_target(ushort *target)
     dispatch_object_action_dup(target,3);
     uVar4 = *target & 0x1c0;
     if (((uVar4 != 0x140) && (uVar4 != 0x40)) &&
-       (((&DAT_00202c9a)[(*target & 0x1ff) * 0xd] & 3) != 2)) {
+       (((&DAT_00202c9a)[((uw_object_hdr_t *)target)->item_id * 0xd] & 3) != 2)) {
       uVar1 = target[1];
       *(char *)(target + 1) = (char)(uVar1 | 0x380);
       *(char *)((char *)target + 3) = (char)((uVar1 | 0x380) >> 8);
@@ -1871,7 +1871,7 @@ int build_object_display_name(char *out_text, ushort *object, int flag_a, int fl
     } while (cVar1 != '\0');
   }
   else {
-    pcVar3 = (char *)get_message_string(*object & 0x1ff | 0x800);
+    pcVar3 = (char *)get_message_string(((uw_object_hdr_t *)object)->item_id | 0x800);
     if (pcVar3 == (char *)0x0) {
       return 0;
     }
@@ -2686,7 +2686,7 @@ void describe_object_owner(ushort *object, short mode)
     uVar1 = uVar2 & 0x3f;
     if ((((uVar2 & 0x3f) != 0) && (uVar1 != 0x28)) && ((uVar1 < 0x3c || (uVar1 == 0x3f)))) {
       uVar3 = 0x16;
-      if (((*object & 0x1ff) == 0xc6) || (0x40 < (uVar2 & 0xffc0))) {
+      if ((((uw_object_hdr_t *)object)->item_id == 0xc6) || (0x40 < (uVar2 & 0xffc0))) {
         uVar3 = 0x17;
       }
       print_scroll_message_by_id(uVar3);
@@ -2736,7 +2736,7 @@ void describe_special_object_property(ushort *object, short mode)
   uVar2 = uVar1 >> 6 & 7;
   if (uVar2 == 3) {
     if (uVar3 == 0) {
-      if ((0xc1 < (uVar1 & 0x1ff)) && ((uVar1 & 0x1ff) < 199)) {
+      if ((0xc1 < ((uw_object_hdr_t *)object)->item_id) && (((uw_object_hdr_t *)object)->item_id < 199)) {
         describe_object_owner(object,mode);
       }
     }
@@ -2768,7 +2768,7 @@ int identify_mushroom_type(ushort *object, char *tile)
   if ((*(byte *)(tile + 8) & 0x1e) != 0x14) {
     return 0;
   }
-  uVar1 = *object & 0x1ff;
+  uVar1 = ((uw_object_hdr_t *)object)->item_id;
   if (uVar1 < 0x98) {
     if (uVar1 == 0x97) {
       iVar2 = 2;
