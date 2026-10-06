@@ -1,21 +1,12 @@
-/* The automap screen: entering/exiting automap mode, and drawing the
- * revealed tile grid (cell walls/doors, edges) into the automap view.
- * Split out of uw.c (the original monolithic decompile) once these
- * functions' real roles were confirmed.
- */
+/* The automap screen: entering/exiting automap mode, and drawing the revealed tile grid (cell
+   walls/doors, edges) into the automap view. Split out of uw.c (the original monolithic decompile)
+   once these functions' real roles were confirmed. */
 #include "headers/automap.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-/* scroll_text_entry_prompt (hud.c)'s "a raw text field is actively reading
- * keystrokes right now" flag -- see its own extern/comment in gx_stub.c,
- * its set/clear in hud.c, and handle_keyboard_message's matching comment
- * in input.c (the one place that reads it to suppress a stuck uppercase
- * fold during text entry). handle_automap_note_click's note-typing loop
- * below is the ONE raw-keystroke text-entry loop in the whole game that
- * does NOT go through scroll_text_entry_prompt (it polls poll_input_event
- * directly instead), so it is the one place that must set/clear this
- * flag itself rather than getting it for free. */
+/* scroll_text_entry_prompt (hud.c)'s "a raw text field is actively reading keystrokes right now"
+   flag -- see its own extern/comment in gx_stub.c, its set/clear in hud.c... */
 extern int g_text_input_active;
 
 static int DAT_000bbefc;
@@ -31,45 +22,20 @@ static undefined4 DAT_000b99c4;
  undefined1 DAT_000b99d0_backing[4096];
 static short DAT_000ba9d0;
 undefined4 DAT_000bbef4;
-/* Was a lone `undefined` scalar; draw_automap_tiles indexes it as
-   `(&DAT_000842f0)[shape - 2]` (shape 2-5, the diagonal tile types)
-   to pick the base wall-edge direction for a diagonal cell. Real 4
-   bytes from UU.exe .data at 0x842f0. Its two neighbours DAT_000842f4
-   / DAT_000842f8 (per-direction dx / dy deltas, signed) had the same
-   lone-scalar bug and are fixed just below. */
+/* Was a lone `undefined` scalar; draw_automap_tiles indexes it as `(&DAT_000842f0)[shape - 2]`
+   (shape 2-5, the diagonal tile types) to pick the base wall-edge direction for a diagonal cell.
+   Real 4 bytes from UU.exe .data at 0x842f0. */
 static const unsigned char DAT_000842f0_real_table[4] = { 0x01, 0x02, 0x00, 0x03 };
 #define DAT_000842f0 (*(undefined1 *)DAT_000842f0_real_table)
-/* Was a lone 1-byte scalar, but indexed throughout this file as a
-   tile-type-flags lookup table (nibble-masked indices in most call sites,
-   but some -- e.g. advance_visibility_ray -- index it with an unmasked byte value
-   read from another table). The prior fix widened it to 256 bytes but
-   never filled it -- so it read all-zero, and in particular
-   draw_automap_tiles' `DAT_000878d0[shape] & 1` was always false,
-   forcing every tile (diagonals included) down the 4-way wall-edge
-   path instead of the 2-way diagonal path -- walls didn't follow the
-   diagonal floor shape. Real 16 bytes from UU.exe .data at 0x878d0
-   (bit 0 = "is a diagonal, use the 2-way edge path"; bits 1-4 =
-   per-direction wall-present flags used by LOS/pathfinding elsewhere;
-   0x20 on the slope types). Entry 16 onward is a string literal, so
-   there are exactly 16 real entries; kept oversized for the unmasked-
-   index call sites. */
+/* Was a lone 1-byte scalar, but indexed throughout this file as a tile-type-flags lookup table
+   (nibble-masked indices in most call sites, but some -- e.g. advance_visibility_ray -- index it
+   with an unmasked byte value read from another table). */
  undefined1 DAT_000878d0_backing[256] = {
   0x1e, 0x00, 0x13, 0x15, 0x0b, 0x0d, 0x20, 0x20,
   0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1e,
 };
-/* Was a lone `undefined1` scalar, but draw_automap_cell indexes it as a real
-   5x3x3 (45-entry) shape-pattern table:
-   `(&DAT_000842c0)[((shape-1)*3+row)*3+col]`, shape=1-5, comparing each
-   entry against 1 or 2 to decide whether to darken a corner pixel when
-   drawing an automap wall/floor cell. Unlike DAT_00086bf0/DAT_00085668/
-   etc earlier this session, this one is NOT silently zero -- a Ghidra
-   reference search confirms real, varied 0/1/2 data already sitting at
-   this address in UU.exe's .data (nothing writes it, it's genuinely
-   read-only). The bug here is purely the lone-scalar-instead-of-a-real-
-   array declaration: any index past byte 0 was reading whatever the
-   compiler placed adjacent in memory on this port, not this real table.
-   Real bytes recovered directly from UU.exe (45 real entries; sized
-   larger for a safety margin past the last byte any index reaches). */
+/* Was a lone `undefined1` scalar, but draw_automap_cell indexes it as a real 5x3x3 (45-entry)
+   shape-pattern table: `(&DAT_000842c0)[((shape-1)*3+row)*3+col]`, shape=1-5... */
 static const unsigned char DAT_000842c0_real_table[64] = {
   1, 1, 1, 1, 1, 1, 1, 1, 1,
   2, 1, 1, 0, 2, 1, 0, 0, 2,
@@ -79,47 +45,22 @@ static const unsigned char DAT_000842c0_real_table[64] = {
 };
 #define DAT_000842c0 (*(undefined1 *)DAT_000842c0_real_table)
 static char DAT_000ba9d4;
-/* Lone-scalar-used-as-4-entry-array, same as DAT_000842f0 above.
-   draw_automap_door_edge indexes `(&DAT_000842f4)[dir]` / same for f8
-   as signed-char dx / dy deltas per direction. Real bytes from UU.exe
-   .data at 0x842f4 / 0x842f8. */
+/* Lone-scalar-used-as-4-entry-array, same as DAT_000842f0 above. draw_automap_door_edge indexes
+   `(&DAT_000842f4)[dir]` / same for f8 as signed-char dx / dy deltas per direction. Real bytes from
+   UU.exe .data at 0x842f4 / 0x842f8. */
 static const signed char DAT_000842f4_real_table[4] = { -1, 0, -1, 1 };
 #define DAT_000842f4 (*(undefined1 *)DAT_000842f4_real_table)
 static const signed char DAT_000842f8_real_table[4] = { 0, -1, -1, -1 };
 #define DAT_000842f8 (*(undefined1 *)DAT_000842f8_real_table)
 static short DAT_000bbef0;
 char s_font4x5p_sys_0008431c[] = "font4x5p.sys";
-/* Sizing pass: hard-capped at 100 records (`if (DAT_000bbef0 != 100)`
-   guard) with a 0x36 (54)-byte stride, and the literal 0x1518
-   (5400 = 100*54) total is baked directly into a ce_memmove call on
+/* Sizing pass: hard-capped at 100 records (`if (DAT_000bbef0 != 100)` guard) with a 0x36 (54)-byte
+   stride, and the literal 0x1518 (5400 = 100*54) total is baked directly into a ce_memmove call on
    this array -- an airtight, exact real size. */
 static undefined1 DAT_000ba9d8_backing[5400];
 #define DAT_000ba9d8 DAT_000ba9d8_backing[0]
-/* DAT_000baa0a/b (and the parallel DAT_000baa0c/d pair below) are a
-   note label's X (resp. Y) screen position, written as separate low/high
-   bytes at the same index (`(&DAT_000baa0a)[i] = low; (&DAT_000baa0b)[i]
-   = high;`) and read back as one packed short via `*(short
-   *)(&DAT_000baa0a + i)`.
-
-   PERSISTENCE BUG (found investigating a user report that automap
-   notes vanish on map close/reopen): their real ARM addresses are
-   0xbaa0a/0xbaa0c -- 0x32 (50) and 0x34 (52) bytes past DAT_000ba9d8
-   (0xba9d8), i.e. the LAST 4 bytes of DAT_000ba9d8's own 0x36
-   (54)-byte per-note record (bytes 50-53 of 0-53), not a separate
-   table at all. Confirmed independently by the indexing itself:
-   `(&DAT_000baa0a)[iVar7]` with `iVar7 = DAT_000bbef0*0x36` is the
-   exact same per-record base as DAT_000ba9d8's own accesses, and by
-   the save path's own byte count --
-   `write_archive_entry(...,&DAT_000ba9d8,count*0x36)` already writes
-   the full 54-byte stride per note, which only actually covers this
-   X/Y data if it lives inside DAT_000ba9d8_backing itself. A prior
-   pass (code-cleanup-pass-2) gave these their own independent
-   backing arrays instead of aliasing them in -- fixing the immediate
-   low/high-byte adjacency bug but leaving them outside the save/load
-   path entirely, so every note's screen position was lost on every
-   level save/reload (the note text itself, elsewhere in the same
-   record, did survive). Aliased into DAT_000ba9d8_backing at their
-   real offsets so save/load now covers them too. */
+/* DAT_000baa0a/b (and the parallel DAT_000baa0c/d pair below) are a note label's X (resp. Y) screen
+   position, written as separate low/high bytes at the same index... */
 #define DAT_000baa0a DAT_000ba9d8_backing[50]
 #define DAT_000baa0b DAT_000ba9d8_backing[51]
 #define DAT_000baa0c DAT_000ba9d8_backing[52]
@@ -363,11 +304,8 @@ int param_3;
             goto LAB_00016acc;
           }
           if (bVar1 == 1) {
-            /* Water fill: (rand % 2) + 0xb1 -> a 2-tone dither between
-               palette 0xb1/0xb2, not a flat 0xb1. The original reads
-               the modulo from ordint_divmod's r1 (remainder) leftover;
-               Ghidra lost that into an uninitialised `extraout_r1`, so
-               get it by name off ordint_divmod's own divmod_result. */
+            /* Water fill: (rand % 2) + 0xb1 -> a 2-tone dither between palette 0xb1/0xb2, not a
+               flat 0xb1. */
             iVar5 = ordint_divmod(2,(int)ce_rand()).rem + 0xb1;
           }
           else {
@@ -477,13 +415,8 @@ int param_4;
 
 
 // was FUN_00017908
-/* uVar3 was `undefined4` (4 bytes), truncating ce_malloc's real
-   64-bit malloc'd pointer on this host -- same pointer-truncation
-   pattern fixed repeatedly this session. Confirmed via lldb: this is
-   why the automap screen loaded blnkmap.byt's file handle successfully
-   but read_buffer_from_file (the actual read-into-buffer call) still failed --
-   it was reading 64000 real bytes into a wild, truncated destination
-   address instead of the buffer ce_malloc actually allocated. */
+/* uVar3 was `undefined4` (4 bytes), truncating ce_malloc's real 64-bit malloc'd pointer on this
+   host -- same pointer-truncation pattern fixed repeatedly this session. */
 void draw_automap_screen(param_1)
 undefined4 param_1;
 
@@ -551,12 +484,8 @@ undefined4 param_1;
 }
 
 
-/* Reveal every walkable tile of the current level's automap in a single
-   pass -- no ring-walk, no dungeon redraw. Not part of the original
-   game; demomode's REVEALALL uses it to fill the whole map at once
-   (the per-tile TELEPORT+REVEAL sweep in demo_automap.txt exists only
-   because ordinary movement never reconnects to the reveal ring-walk).
-   Uses the same reveal-byte encoding as the ring-walk. */
+/* Reveal every walkable tile of the current level's automap in a single pass -- no ring-walk, no
+   dungeon redraw. */
 void automap_reveal_all_tiles(void)
 {
   int x;
@@ -597,10 +526,9 @@ int param_4;
   puVar1 = (ushort *)
            ((g_uw_framebuffer) +
            ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
-  /* Restore the DOS palette tint using the shade arguments still passed
-     by ARM callers; ARM replaced this with fixed RGB565 halving. The
-     original takes two random draws, discarding the first result.
-     ce_rand uses host rand(), so mask to DOS/WinCE's 15-bit range. */
+  /* Restore the DOS palette tint using the shade arguments still passed by ARM callers; ARM
+     replaced this with fixed RGB565 halving. The original takes two random draws, discarding the
+     first result. ce_rand uses host rand(), so mask to DOS/WinCE's 15-bit range. */
   int step = 0x7fff / param_4;
   (void)ce_rand();
   int roll = (ce_rand() & 0x7fff) / step;
@@ -619,12 +547,8 @@ int param_4;
 
 
 
-// was FUN_00016434 -- writes the DAT_000b99d0 automap-reveal buffer
-// (64x64 grid, one nibble/byte per tile -- see automap.c's readers) to
-// archive entry param_2+0x1a. If param_1 is NULL, opens/closes
-// \SAVE0\lev.ark itself via open_level_archive/close_level_archive;
-// otherwise param_1 is a caller-owned 16-byte archive-handle struct
-// (copied in/out here) and the caller manages its lifetime.
+// was FUN_00016434 -- writes the DAT_000b99d0 automap-reveal buffer (64x64 grid, one nibble/byte
+// per tile -- see automap.c's readers) to archive entry param_2+0x1a.
 undefined4 save_automap_reveal_to_archive(param_1,param_2)
 undefined1 * param_1;
 int param_2;
@@ -714,10 +638,9 @@ void clear_automap_reveal_buffer()
 
 
 
-// was FUN_00016d7c -- given two note-button label records (param_1,
-// param_2) and a click point (param_3,param_4), measures each label's
-// rendered text-box distance to the click and returns whichever
-// pointer is closer (used by handle_automap_note_click's hit-testing).
+// was FUN_00016d7c -- given two note-button label records (param_1, param_2) and a click point
+// (param_3,param_4), measures each label's rendered text-box distance to the click and returns
+// whichever pointer is closer (used by handle_automap_note_click's hit-testing).
 char *pick_closer_note_label(param_1,param_2,param_3,param_4)
 char * param_1;
 char * param_2;
@@ -783,10 +706,9 @@ short param_4;
 
 
 
-// was FUN_00016ef8 -- automap "add/edit note" click handler: resolves
-// where the player clicked (map area vs. UI chrome), places, edits, or
-// removes a note into the DAT_000ba9d8 note-text array, and can invoke
-// switch_automap_level_display for the level-page navigation arrows.
+// was FUN_00016ef8 -- automap "add/edit note" click handler: resolves where the player clicked (map
+// area vs. UI chrome), places, edits, or removes a note into the DAT_000ba9d8 note-text array, and
+// can invoke switch_automap_level_display for the level-page navigation arrows.
 void handle_automap_note_click()
 
 {
@@ -922,13 +844,9 @@ LAB_000170bc:
         local_58[0] = '\0';
         iVar8 = *(short *)(&DAT_000baa0a + iVar7) + -1;
         warp_mouse_cursor(*(short *)(&DAT_000baa0a + iVar7) + 9,local_60 + -0x12);
-        /* Same raw-text-field flag scroll_text_entry_prompt (hud.c) sets while
-           it owns the keyboard -- see handle_keyboard_message's own
-           g_text_input_active comment (input.c) for why this matters: without
-           it, this loop's typed characters got silently uppercased by
-           the session's stuck "command mode" flag the same way every
-           other text field did before that fix. Cleared at this loop's
-           one exit point, LAB_0001739c below. */
+        /* Same raw-text-field flag scroll_text_entry_prompt (hud.c) sets while it owns the keyboard
+           -- see handle_keyboard_message's own g_text_input_active comment (input.c) for why this
+           matters: without it... */
         g_text_input_active = 1;
 LAB_000171bc:
         sVar2 = poll_input_event(0);
@@ -1155,10 +1073,9 @@ int param_1;
 
 
 
-// was FUN_00017b38 -- switches which level's automap page is on screen:
-// saves the current level's notes, clears the reveal buffer, loads the
-// new level's reveal state (if a real dungeon level, param_1<9), then
-// draws it.
+// was FUN_00017b38 -- switches which level's automap page is on screen: saves the current level's
+// notes, clears the reveal buffer, loads the new level's reveal state (if a real dungeon level,
+// param_1<9), then draws it.
 void switch_automap_level_display(param_1)
 undefined4 param_1;
 
@@ -1179,16 +1096,9 @@ undefined4 param_1;
 
 
 
-// was FUN_0007edec -- always returns 0 and does nothing else; both
-// confirmed callers (src/automap.c's note-text composition, when the
-// wrapped line buffer overflows its 46-char limit or a word doesn't
-// fit) pass literal args (300,10) that this decompiled signature
-// takes no parameters for and can't use. Matches the same "dead/
-// stripped debug hook" pattern already confirmed for debug_print_init,
-// debug_print, and debug_noop_checkpoint elsewhere in this file --
-// likely a stripped-out warning/beep for "automap note text
-// truncated", though not individually re-checked against the real
-// disassembly to confirm.
+// was FUN_0007edec -- always returns 0 and does nothing else; both confirmed callers
+// (src/automap.c's note-text composition, when the wrapped line buffer overflows its 46-char limit
+// or a word doesn't fit) pass literal args (300,10) that this decompiled signature takes no...
 undefined4 debug_noop_overflow_hook(param_1,param_2)
 undefined4 param_1;
 undefined4 param_2;
@@ -1201,23 +1111,8 @@ undefined4 param_2;
 
 
 
-/* Compute the automap reveal byte for a just-explored tile.
-
-   tile_rec points at this tile's 4-byte record. Bits:
-     0-3  shape nibble  (tile type: 0 solid, 1 open, 2-5 diag, 6-9 slope)
-     4-5  fill style, consumed by draw_automap_cell:
-            0 = shaded "explored" floor
-            1/2 = blue water dither
-            3 = leave parchment (floor not painted at all)
-
-   Built as DAT_0023ae40[floor_tex_index] | shape, matching the
-   Pocket-PC disasm.  DAT_0023ae40 is the per-level floor-texture
-   property table (loaded from the .ark): water textures read 0x10
-   there (-> fill style 1 -> blue), everything else reads 0 (-> fill
-   style 0 -> shaded floor).  floor-tex index is tile-record byte 1
-   bits 2-5.  The simple ring-walk was instead using DAT_00086bf0[type],
-   which has no floor-texture info and so couldn't tell water from
-   normal floor. */
+/* Compute the automap reveal byte for a just-explored tile. tile_rec points at this tile's 4-byte
+   record. */
 byte automap_reveal_byte(byte *tile_rec)
 {
   if (getenv("UW_DEBUG_AUTOMAP_REVEAL")) {

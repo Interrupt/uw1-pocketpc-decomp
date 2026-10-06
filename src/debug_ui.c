@@ -1,15 +1,4 @@
-/* Minimal immediate-mode debug GUI -- see headers/debug_ui.h for the
- * usage contract. Draws with this project's own recovered UW1
- * primitives (rect_fill_or_save_restore/set_draw_color/draw_text_string,
- * declared in uw.h), in the same 320x240 landscape logical space they
- * already use, so it composites directly into the game's normal
- * software framebuffer -- no separate overlay surface or blit step.
- *
- * Genuinely immediate-mode: dbgui_field_double/int are called fresh
- * every frame and just append to a small array that's overwritten each
- * dbgui_begin(). Only the selection/edit state below survives between
- * frames.
- */
+/* Minimal immediate-mode debug GUI -- see headers/debug_ui.h for the usage contract. */
 #include "headers/debug_ui.h"
 #include "headers/uw.h"
 #include <stdio.h>
@@ -52,21 +41,8 @@ static int g_editing = 0;
 static char g_edit_buf[32];
 static int g_edit_len = 0;
 
-/* Real pixel save/restore for the panel's own screen region, so closing
-   it doesn't leave stale pixels behind -- see dbgui_toggle()'s own
-   comment for why dirty_rect_union alone isn't enough (the panel sits
-   in the static golden-border UI chrome at the screen's top-left
-   corner, outside the 3D viewport, which nothing else ever redraws;
-   marking that region "dirty" just re-presents whatever's still sitting
-   in the framebuffer there -- the stale panel pixels -- unless
-   something first puts the REAL content back). g_uw_framebuffer is a
-   320-wide (DBGUI_FB_STRIDE, confirmed via rect_fill_or_save_restore's
-   own `0x140` stride in graphics.c) array of RGB565 pixels, same
-   320x240 landscape logical space this whole module already draws in.
-   Sized for a generous field count (12 rows), independent of
-   DBGUI_MAX_FIELDS (that one's just an array-safety cap, not a
-   realistic real-world panel height -- this tool has never shown more
-   than 3 fields). */
+/* Real pixel save/restore for the panel's own screen region, so closing it doesn't leave stale
+   pixels behind -- see dbgui_toggle()'s own comment for why dirty_rect_union alone isn't enough... */
 #define DBGUI_FB_STRIDE 320
 #define DBGUI_FB_HEIGHT 240
 #define DBGUI_SAVE_ROWS 12
@@ -191,11 +167,8 @@ static void dbgui_field_set(DbgField *f, double v)
 
 void dbgui_end(void)
 {
-  /* Deliberately does NOT draw -- see dbgui_draw()'s own comment for
-     why drawing has to happen later in the frame than this is called.
-     Just finalizes the field list/selection state; g_fields/g_title
-     stay valid (this module's own statics) until the next dbgui_begin
-     overwrites them next frame. */
+  /* Deliberately does NOT draw -- see dbgui_draw()'s own comment for why drawing has to happen
+     later in the frame than this is called. */
   if (g_field_count == 0) return;
   if (g_selected >= g_field_count) g_selected = g_field_count - 1;
   if (g_selected < 0) g_selected = 0;
@@ -203,47 +176,24 @@ void dbgui_end(void)
 
 void dbgui_draw(void)
 {
-  /* Called once per frame from app_main_loop, AFTER main_loop_hud_flush()
-     -- i.e. after the 3D view and every other HUD element for this
-     frame have already drawn into the shared software framebuffer.
-     Drawing from inside the model-dispatch code itself (dbgui_end's
-     first version) drew too EARLY: later per-object/HUD draws in the
-     same frame simply painted over the panel, and if the player wasn't
-     looking at a tunable object that frame, nothing drew the panel at
-     all. Reading g_fields/g_title here relies on them surviving from
-     whatever dbgui_begin/dbgui_field_.../dbgui_end calls happened
-     earlier this same frame (this module's own statics, untouched in between) -- if
-     nothing called dbgui_begin this frame, g_field_count is just
-     whatever it was last frame, which still draws correctly (the panel
-     doesn't blank out for one frame just because this particular frame
-     didn't walk the tunable object's own code path). */
+  /* Called once per frame from app_main_loop, AFTER main_loop_hud_flush() -- i.e. after the 3D view
+     and every other HUD element for this frame have already drawn into the shared software
+     framebuffer. */
   if (!g_visible || g_field_count == 0) return;
 
   int panel_h = DBGUI_ROW_H * (g_field_count + 1) + 4;
   int x0 = DBGUI_PANEL_X, y0 = DBGUI_PANEL_Y;
   int x1 = x0 + DBGUI_PANEL_W, y1 = y0 + panel_h;
 
-  /* Text color: draw_text_string does NOT use set_draw_color's palette
-     index (confirmed by reading its own body, uw.c ~5826-5834) -- it
-     honours g_text_flat_color (a direct RGB565 value) unless a caller
-     separately sets g_text_use_palette_color=1 AND *g_draw_color_index.
-     Both default to 0/unset, which is exactly why unselected rows drew
-     as invisible black-on-black: set_draw_color(0x0f) before those
-     draw_text_string calls did nothing to the text itself. Force a
-     direct white RGB565 value instead of hunting for the right palette
-     index -- reliable regardless of what this build's real palette
-     layout turns out to be. */
+  /* Text color: draw_text_string does NOT use set_draw_color's palette index (confirmed by reading
+     its own body, uw.c ~5826-5834) -- it honours g_text_flat_color (a direct RGB565 value) unless a
+     caller separately sets g_text_use_palette_color=1 AND *g_draw_color_index. */
   g_text_use_palette_color = 0;
   g_text_flat_color = (unsigned short)0xffff;
 
-  /* Panel/row fill colors ARE real palette indices (rect_fill_or_save_
-     restore's FILL path reads g_palette_rgb565[DAT_000a85c0] directly,
-     graphics.c ~170-176) -- 0x1a is confirmed elsewhere in this file as
-     a real, already-used UI panel background (chargen's own panels);
-     0x60 is confirmed elsewhere as a real, legible highlighted-text
-     color (multiple *g_draw_color_index = 0x60 call sites). Avoid
-     0x14/0x15 -- reserved cursor save/restore codes, not real colors
-     (see rect_fill_or_save_restore's own comment). */
+  /* Panel/row fill colors ARE real palette indices (rect_fill_or_save_ restore's FILL path reads
+     g_palette_rgb565[DAT_000a85c0] directly, graphics.c ~170-176) -- 0x1a is confirmed elsewhere in
+     this file as a real, already-used UI panel background (chargen's own panels)... */
   set_draw_color(0x1a);
   rect_fill_or_save_restore(x0, y0, x1, y1);
   draw_text_string(g_title, x0 + 3, y0 + 2);
@@ -255,9 +205,8 @@ void dbgui_draw(void)
     f->row_y = ry;
     if (i == g_selected) {
       /* Palette index 0 -- confirmed real black elsewhere in this file
-         (g_transparent_screen_color's own comment: "framebuffer pixel
-         value 0x0000, pure black"), unlike 0x1a/0x60 which are real but
-         unconfirmed-by-eye colors this session was guessing at. */
+         (g_transparent_screen_color's own comment: "framebuffer pixel value 0x0000, pure black"),
+         unlike 0x1a/0x60 which are real but unconfirmed-by-eye colors this session was guessing at. */
       set_draw_color(0);
       rect_fill_or_save_restore(x0 + 1, ry - 1, x1 - 1, ry + DBGUI_ROW_H - 2);
     }
@@ -282,18 +231,9 @@ void dbgui_toggle(void)
   int was_visible = g_visible;
   g_visible = !g_visible;
   g_editing = 0;
-  /* Closing the panel stops it from drawing (dbgui_draw's own
-     `if (!g_visible ...) return`), but the panel sits in the static
-     golden-border UI chrome at the screen's top-left corner, outside
-     the 3D viewport -- nothing else ever redraws that region, so once
-     the panel itself stops painting it, its last real pixels just sit
-     in the framebuffer as stale leftovers forever (marking the region
-     "dirty" alone isn't enough: that only controls whether the PRESENT
-     step includes it, and re-presenting stale framebuffer content
-     changes nothing on screen). Real save/restore instead: capture
-     what's actually there the moment the panel opens (before it draws
-     over anything), put it back the moment it closes, then mark that
-     region dirty so the restored pixels actually reach the display. */
+  /* Closing the panel stops it from drawing (dbgui_draw's own `if (!g_visible ...) return`), but
+     the panel sits in the static golden-border UI chrome at the screen's top-left corner, outside
+     the 3D viewport -- nothing else ever redraws that region... */
   if (g_visible && !was_visible) {
     dbgui_save_backing();
   } else if (!g_visible && was_visible) {

@@ -1,9 +1,6 @@
-/* Input: key-binding registration/dispatch, movement command
- * handling (locomotion state, move vectors, directional step, analog
- * turn), mouse state, and click/event waiting. Split out of uw.c (the
- * original monolithic decompile) once these functions' real roles
- * were confirmed.
- */
+/* Input: key-binding registration/dispatch, movement command handling (locomotion state, move
+   vectors, directional step, analog turn), mouse state, and click/event waiting. Split out of uw.c
+   (the original monolithic decompile) once these functions' real roles were confirmed. */
 #include "headers/input.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -25,52 +22,19 @@ short g_mouse_x;
 short DAT_00204840;
 static char *DAT_00202890;
 static char *DAT_0020289c;
-/* Real-pointer side table for the keybinding records' handler field. Each
-   DAT_0020289c record packs its handler as 4 raw bytes (offset 8-0xb) --
-   fine on the original 32-bit target, a truncated / uncallable pointer on
-   this 64-bit host. register_key_binding writes the real 64-bit handler here
-   keyed by record position (== registration order, and also 0xffff minus
-   the record's own id byte); dispatch_key_binding calls it from here; unregister_key_binding
-   keeps it in sync when it compacts the table. Nothing ever matched a
-   keybinding before (the mode gate was reading the wrong byte -- see
-   set_game_mode), so the truncated call had simply never been reached. */
+/* Real-pointer side table for the keybinding records' handler field. */
 static void (*g_keybind_handler[512])(int);
 static int g_keybind_handler_n;
-/* Same 64-bit-truncation problem for the mouse-click-region table
-   (register_click_region stored param_7 -- the handler -- in a 4-byte
-   field of an 0x12-byte record, and poll_input_bindings called through
-   that truncated pointer -> EXC_BAD_ACCESS the first time a click landed
-   in a registered region, e.g. the 3D viewport's walk region). Keep the
-   real 64-bit handler here, keyed by record position, exactly like
-   g_keybind_handler; unregister_key_binding keeps it in sync. */
+/* Same 64-bit-truncation problem for the mouse-click-region table (register_click_region stored
+   param_7 -- the handler -- in a 4-byte field of an 0x12-byte record)... */
 static void (*g_click_region_handler[128])(int);
 static int g_click_region_handler_n;
 static undefined2 DAT_00202898;
 static undefined2 DAT_0020288c;
 static undefined2 DAT_00202894;
 static undefined2 DAT_00085a70;
-/* Per-mode "sticky redraw bits" mask read by dispatch_sticky_mode_handlers right after it
-   finishes dispatching DAT_00201c84's currently-set bits through
-   DAT_00085668: `DAT_00201c84 = DAT_00085728[mode] | DAT_00201c84;` re-arms
-   whichever bits this mode always wants re-triggered next idle tick, which
-   is how a mode's per-frame handlers (as opposed to one-shot event
-   handlers) keep firing forever instead of running once and going quiet.
-   Same "link-time-initialized data, nothing in this decompile ever writes
-   it" situation as DAT_00085668 (see its own comment) -- left zero-filled,
-   NO mode's dispatch bits were ever re-armed after the first pass, so
-   every DAT_00085668 handler (this file's HUD-panel/button-state/sound-
-   timer updates, mode 0's bits 11-13) ran exactly once at mode-entry and
-   then silently stopped, no matter how many frames/inputs followed.
-   Recovered the same way: read UU.exe's real .data bytes at 0x85728
-   directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
-   movement_pacing_handler/sync_player_stats_to_hud/hud_panel_redraw_dispatch; mode 1 = 0x1000 = bit 12 =
-   exit_automap_screen; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
-   mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
-   bytes immediately after are the next struct over (a `\DATA\lev.ark`
-   string literal), so this backing array is oversized like its siblings
-   only to satisfy the >0-bytes-past-any-real-index habit the rest of this
-   file uses for recovered fixed-size tables; only index 0-2 are ever
-   read (mode is always 0-2, see DAT_00085668's comment). */
+/* Per-mode "sticky redraw bits" mask read by dispatch_sticky_mode_handlers right after it finishes
+   dispatching DAT_00201c84's currently-set bits through DAT_00085668... */
 static const unsigned short DAT_00085728_real_table[3] = { 0x3800, 0x1000, 0x0000 };
 #define DAT_00085728 (*(undefined1 *)DAT_00085728_real_table)
 undefined2 DAT_00204710;
@@ -85,13 +49,8 @@ short DAT_00086968;
 short DAT_00204850;
 short DAT_0008696e;
 static undefined4 DAT_00204868;
-/* Real static lookup table (.data, read-only in practice) recovered
-   byte-for-byte from UU.exe -- the stylus-tap hit grid for the chargen
-   name-entry on-screen keyboard. Indexed by lookup_onscreen_keyboard_key_hit as
-   [row + column*20], row = (touch-Y)>>4 (16px-tall rows spanning the full
-   320px portrait screen height), column = (touch-X-200)/20 (two 20px-wide
-   columns in the 200..240 strip). Column 0 = digits 0-9 then 'a'-'j';
-   column 1 = 'k'-'z' then backspace(8)/enter(13)/space(32)/0x14. */
+/* Real static lookup table (.data, read-only in practice) recovered byte-for-byte from UU.exe --
+   the stylus-tap hit grid for the chargen name-entry on-screen keyboard. */
 undefined1 DAT_00087650_backing[40] = {
   '0','1','2','3','4','5','6','7','8','9',
   'a','b','c','d','e','f','g','h','i','j',
@@ -133,12 +92,8 @@ HWND__ *DAT_0023c548;
 
 
 
-// was FUN_0003c524 -- set the player's locomotion state from a collision-state
-// mask (param_1): when it changes, pick the movement mode (walk / swim / fly /
-// fall) via apply_movement_mode_profile. While the airborne bit (0x10) is set it also keeps the
-// gravity fall armed each tick (g_fall_accel = -4) and clamps the fall velocity
-// (g_vertical_velocity) to terminal when DAT_0020208c & 2. Called every tick from
-// commit_player_move with the current state byte DAT_002048a8.
+// was FUN_0003c524 -- set the player's locomotion state from a collision-state mask (param_1): when
+// it changes, pick the movement mode (walk / swim / fly / fall) via apply_movement_mode_profile.
 void set_locomotion_state(param_1,param_2)
 ushort param_1;
 int param_2;
@@ -180,19 +135,8 @@ int param_2;
       }
     }
     else if ((DAT_0020208c & 8) == 0) {
-      /* Was `apply_swim_wade_pose()` with no argument -- apply_swim_wade_pose reads its
-         `param_1 & 2` to decide between the two swim/wade sub-states
-         (byte DAT_00086df8+0xb9 = 0x10 vs 0x60, the latter also firing
-         unready_weapon -- almost certainly the wading/swim splash sound or
-         pose). The dropped argument is the same collision-state mask
-         `param_1` this whole function was just called with (the only
-         value in scope that plausibly belongs here, matching the pattern
-         of every other dropped-argument bug fixed this session), so
-         "swim vs wade" was being decided from whatever garbage happened
-         to be sitting in a register rather than the real mask -- likely
-         why water/wading looked broken (undefined behavior, not
-         necessarily changed by any particular commit). Pass it
-         explicitly. */
+      /* Was `apply_swim_wade_pose()` with no argument -- apply_swim_wade_pose reads its `param_1 &
+         2` to decide between the two swim/wade sub-states... */
       iVar3 = apply_swim_wade_pose(param_1);
       uVar2 = 1;
     }
@@ -240,12 +184,9 @@ int param_2;
 
 
 
-// was FUN_0003d94c -- resolve a movement mode (param_1 = g_movement_mode) into
-// a travel direction (DAT_00201c78) + step magnitude (*param_3):
-//   0   stop            1     analog move/turn (DAT_0023bf48/4c rates)
-//   6/7 jump            8     move + face 180
-//   9   sidestep left   10    sidestep right  (heading -/+ 0x4000, face kept)
-//   0xc/0xd  fly up / down (g_vertical_velocity vertical velocity)
+// was FUN_0003d94c -- resolve a movement mode (param_1 = g_movement_mode) into a travel direction
+// (DAT_00201c78) + step magnitude (*param_3): 0 stop 1 analog move/turn (DAT_0023bf48/4c rates) 6/7
+// jump 8 move + face 180 9 sidestep left 10 sidestep right...
 void resolve_move_vector(param_1,param_2,param_3)
 undefined2 param_1;
 short param_2;
@@ -383,10 +324,9 @@ int register_key_binding(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
-void *param_4;   /* was undefined4 -- the handler function pointer; 32-bit
-                    truncated every real 64-bit callee address at the call
-                    site (move_key_directional_step etc.), so the side-table entry was
-                    an uncallable low-32-bits value. */
+void *param_4;   /* was undefined4 -- the handler function pointer; 32-bit truncated every real 64-bit callee address
+   at the call site (move_key_directional_step etc.), so the side-table entry was an uncallable
+   low-32-bits value. */
 
 {
   short sVar1;
@@ -469,10 +409,9 @@ short param_1;
       return;
     }
     if (sVar6 < iVar5) {
-      /* the byte copy below moves the LAST record over the removed one;
-         mirror that move in the real-handler side table (found 0-based =
-         sVar6-1, last 0-based = iVar5-1, before iVar5 is reused as the
-         copy counter). */
+      /* the byte copy below moves the LAST record over the removed one; mirror that move in the
+         real-handler side table (found 0-based = sVar6-1, last 0-based = iVar5-1, before iVar5 is
+         reused as the copy counter). */
       if ((uint)(sVar6 - 1) < 512 && (uint)(iVar5 - 1) < 512) {
         g_keybind_handler[sVar6 - 1] = g_keybind_handler[iVar5 - 1];
       }
@@ -578,17 +517,9 @@ undefined1 * param_1;
 
 {
   undefined4 uVar1;
-  /* Was `int`, truncating the real DAT_00202890 pointer arithmetic result
-     below -- same pointer-truncation pattern already fixed in this
-     function's own sibling dispatch_key_binding (see its comment): DAT_00202890
-     is a genuine malloc'd 64-bit pointer (registered mouse-click-region
-     records, register_click_region's array), and this variable held one record's
-     address, not a plain offset. Confirmed crashing (EXC_BAD_ACCESS) the
-     first time this function's match-loop ever actually ran on this
-     recompile -- handle_game_view_click (the 3D-viewport's own click-and-hold-to-
-     walk region, registered by register_game_view_interact_zones) is only reachable through
-     here, and nothing in this whole project's testing had ever clicked
-     inside the viewport before. */
+  /* Was `int`, truncating the real DAT_00202890 pointer arithmetic result below -- same
+     pointer-truncation pattern already fixed in this function's own sibling dispatch_key_binding
+     (see its comment)... */
   char *pcVar2;
   int iVar3;
   int iVar4;
@@ -603,14 +534,9 @@ undefined1 * param_1;
       get_click_position(&local_28,&local_26);
       param_1[6] = (char)uVar1;
       param_1[7] = (char)((uint)uVar1 >> 8);
-      /* The mouse-button-state field of the DAT_00085a6c struct is at
-         BYTE offset 12: every reader (handle_game_view_click's click-and-hold walk,
-         spawn_new_object, ...) does `*(ushort *)(DAT_00085a6c + 6)`, which is
-         byte 12 because DAT_00085a6c is typed `short *`, and the reset
-         (input_bindings_init) clears byte 12 too. param_1 here is a plain
-         byte pointer, so param_1[6] above wrote byte 6 -- a dead field no
-         one reads, which is why a click in the 3D viewport reached
-         handle_game_view_click but never walked. Write byte 12 as well. */
+      /* The mouse-button-state field of the DAT_00085a6c struct is at BYTE offset 12: every reader
+         (handle_game_view_click's click-and-hold walk, spawn_new_object, ...) does `*(ushort
+         *)(DAT_00085a6c + 6)`, which is byte 12 because DAT_00085a6c is typed `short *`... */
       param_1[12] = (char)uVar1;
       param_1[13] = (char)((uint)uVar1 >> 8);
       get_click_position(&local_28,&local_26);
@@ -711,13 +637,8 @@ int param_1;
 undefined4 next_input_event()
 
 {
-  /* Was `poll_input_event(0); return 0;` -- computing the real event code and
-     then discarding it in favor of a hardcoded 0. Every caller treats this
-     return value as a signed event/key code (`sVar2 < 0` == no event yet,
-     specific positive values == button/key IDs), so always returning 0
-     made every caller believe "event 0" arrived on the very first poll,
-     short-circuiting input-wait loops instantly instead of actually
-     waiting for input. */
+  /* Was `poll_input_event(0); return 0;` -- computing the real event code and then discarding it in
+     favor of a hardcoded 0. */
   return poll_input_event(0);
 }
 
@@ -849,11 +770,9 @@ void update_mouse_state()
       DAT_00086974 = -1;
     }
     update_hotspot_cursor_icon();
-    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
-       cursor_show_idle_tick's own matching comment just above: skips the
-       `DAT_00204788 != 0x106c` exclusion so the desktop cursor stays
-       visible over the plain 3D viewport too, not just registered UI
-       hotspots, only when UW_ALWAYS_SHOW_CURSOR=1. */
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see cursor_show_idle_tick's own
+       matching comment just above: skips the `DAT_00204788 != 0x106c` exclusion so the desktop
+       cursor stays visible over the plain 3D viewport too, not just registered UI hotspots... */
     if ((0 < DAT_00204840) && ((DAT_00204788 != 0x106c) || uw_always_show_cursor())) {
       draw_idle_mouse_cursor();
     }
@@ -867,10 +786,9 @@ void update_mouse_state()
 
 
 
-// was FUN_000682f0 -- discrete movement-command handler: keyboard Z/C
-// (strafe left/right), the 4 GAPI hardware buttons (0x8d/0x8f/0x91/0x93),
-// and the mouse click-and-hold walk (param_1 < 0). Routes via
-// decode_movement_command.
+// was FUN_000682f0 -- discrete movement-command handler: keyboard Z/C (strafe left/right), the 4
+// GAPI hardware buttons (0x8d/0x8f/0x91/0x93), and the mouse click-and-hold walk (param_1 < 0).
+// Routes via decode_movement_command.
 void move_command_dispatch(param_1)
 short param_1;
 
@@ -953,22 +871,9 @@ short param_1;
 
 
 
-/* Sets DAT_0023bf48 (forward rate, same 0x500000 scale
-   decode_movement_command's own forward code 0x8d uses) and DAT_0023bf4c
-   (turn rate, via uw_turn_rate_accel()) together in one call, then
-   g_movement_mode = 1 -- resolve_move_vector's mode-1 case already
-   applies both every tick (it always has; decode_movement_command's own
-   single DAT_0023c448 code just never let both be nonzero at once).
-   Called from gx_stub.c's poll_dungeon_movement_keys when a forward key
-   (W/S) and a turn key (A/D) are held simultaneously, so keyboard
-   free-look can move and turn at the same time -- neither DOS UW1 nor
-   this port's own DAT_0023c448 latch could ever represent that
-   (confirmed via the real decompiled handle_keyboard_message: it's a
-   single code too), so this is a deliberate enhancement over strict
-   original-input-model parity, not a decompiled fix. turn_dir: -1 left,
-   +1 right, 0 none. Backward (X) diagonal isn't included -- it's
-   g_movement_mode 8 ("move + face 180"), a different system entirely,
-   not mode 1's forward/turn blend. */
+/* Sets DAT_0023bf48 (forward rate, same 0x500000 scale decode_movement_command's own forward code
+   0x8d uses) and DAT_0023bf4c (turn rate, via uw_turn_rate_accel()) together in one call, then
+   g_movement_mode = 1... */
 void uw_set_analog_move_turn(int fwd_held, int turn_dir) {
   DAT_0023bf48 = fwd_held ? ordint_divmod(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10)).quot : 0;
   if (turn_dir < 0) {
@@ -1019,25 +924,9 @@ undefined4 param_1;
       uVar3 = (short)uVar3 >> 1;
     }
     movement_tick(0x40,uVar3,1);
-    /* movement_tick can come out of that one call with DAT_0023bea8=1 (a
-       "climbing a step" eye-height bob in progress -- see
-       update_current_view_from_subject's own comment on
-       DAT_0023bea8/be98) if g_movement_mode happened to read as one of the
-       climb-triggering values on this tick. For continuous analog
-       movement (holding a movement letter) that's fine: movement_tick
-       runs again every subsequent tick and naturally settles it back to
-       0 as the climb finishes. A discrete SHIFT+<dir> step calls
-       movement_tick exactly this one time then stops -- nothing ever
-       ticks the bob back down again, so the camera keeps rendering
-       DAT_00204884 + 0xa4 + that stale delta forever after, even though
-       DAT_00204884 (the real height) is already correct. Confirmed live
-       and via a direct before/after screenshot comparison: standing
-       still (bea8=0) shows a normal floor-level view; after a few
-       SHIFT+W steps (bea8 stuck at 1) the exact same spot renders as if
-       the camera were pressed up near the ceiling -- matching the
-       reported "shift+w puts you at the ceiling a lot, plain w
-       doesn't". Clear it here so a discrete step never leaves a stale
-       bob applied once it's done. */
+    /* movement_tick can come out of that one call with DAT_0023bea8=1 (a "climbing a step"
+       eye-height bob in progress -- see update_current_view_from_subject's own comment on
+       DAT_0023bea8/be98) if g_movement_mode happened to read as one of the climb-triggering... */
     DAT_0023bea8 = 0;
     DAT_0023be98 = 0;
     set_pending_update_flags(10);
@@ -1052,13 +941,9 @@ undefined4 param_1;
 
 
 
-// was FUN_0006764c -- divides the game viewport rect (param_1=x,
-// param_2=y, param_3=width, param_4=height) into 8 click regions, all
-// sharing the same handler (handle_game_view_click, the "3D-viewport's own
-// click-and-hold-to-walk region" per input.c's own comment), plus a
-// single key binding covering the whole rect. Records the rect and
-// each region's handle for unregister_game_view_interact_zones' own
-// teardown.
+// was FUN_0006764c -- divides the game viewport rect (param_1=x, param_2=y, param_3=width,
+// param_4=height) into 8 click regions, all sharing the same handler (handle_game_view_click, the
+// "3D-viewport's own click-and-hold-to-walk region" per input.c's own comment)...
 void register_game_view_interact_zones(param_1,param_2,param_3,param_4)
 int param_1;
 int param_2;
@@ -1132,15 +1017,9 @@ void unregister_game_view_interact_zones()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-/* scroll_text_entry_prompt (hud.c)'s "a raw text field is actively reading
- * keystrokes right now" flag -- see its own extern/comment in gx_stub.c and
- * its set/clear in hud.c, and the matching comment on its use just below.
- * This is NOT a per-call-site patch: it is the one generic signal every
- * raw-keystroke text-entry path in the game already either sets directly
- * (scroll_text_entry_prompt itself, so save-name/"Move how many"/"Chant the
- * mantra" all get this for free) or must set around its own loop if it
- * rolls its own raw polling loop instead of going through that shared
- * primitive (automap notes -- see handle_automap_note_click in automap.c). */
+/* scroll_text_entry_prompt (hud.c)'s "a raw text field is actively reading keystrokes right now"
+   flag -- see its own extern/comment in gx_stub.c and its set/clear in hud.c, and the matching
+   comment on its use just below. */
 extern int g_text_input_active;
 
 // was FUN_00077b2c
@@ -1174,19 +1053,7 @@ uint param_3;
     if (param_2 != 0x102) {
       return 0;
     }
-    /* No case-folding here any more. This used to force a WM_CHAR
-     * lowercase letter to uppercase whenever DAT_0024af60 ("command-input
-     * mode" / Caps Lock, see init_gameplay_session's comment at game.c
-     * ~862) was set, so lowercase W/S/X/A/D keypresses would match the
-     * movement key bindings' uppercase VK codes -- but DAT_0024af60 was
-     * latched on at session start and never cleared again in practice,
-     * so this also uppercased every OTHER raw-text field's input for the
-     * rest of the session (automap notes, save-name entry, "Move how
-     * many", "Chant the mantra" -- the reported "can't enter lower case
-     * text" bug). Fixed at the root in game.c instead: W/S/X/A/D/Z/C are
-     * now registered under BOTH their uppercase and lowercase VK codes,
-     * so movement no longer needs any case-folding to match, and raw
-     * text entry now always sees exactly what was typed. */
+    /* No case-folding here any more. */
     DAT_0023c448 = DAT_0023c448 | uVar1;
     return 0;
   }
@@ -1268,31 +1135,9 @@ LAB_00077d70:
 
 
 
-/* Recovered from a message-dispatch table baked into the original binary's
-   .rdata (0x830e4-0x83144) that routes WM_MOUSEMOVE/WM_LBUTTONDOWN/
-   WM_LBUTTONUP/WM_RBUTTONDOWN/WM_RBUTTONUP (msg 0x200/0x201/0x202/0x204/
-   0x205) to this handler -- entirely separate from handle_keyboard_message's table
-   entries (msg 0x100-0x107, keyboard only). Ghidra never resolved this
-   address into a named function since it's only ever reached through that
-   table, never a direct call -- same "orphaned callback" pattern as
-   chrbtns_bump_alloc_entry/d0 and converse_res_bump_alloc_entry/a4 above. Recovered by hand from the
-   real ARM disassembly of UU.exe (function body 0x77dd0-0x77f18).
-
-   param_2 = message code; param_4 = lParam, the tap/cursor position packed
-   as (y<<16)|x in the portrait "hardware" framebuffer's own 240x320
-   coordinate space (see gx_stub.c's HW_W/HW_H comment) -- x is untouched,
-   y is stored flipped (320-y) to match whatever coordinate origin the
-   rest of the game's mouse-position consumers expect (already visible in
-   the existing *DAT_000876bc/*DAT_000876c0 reset-to-0 pattern elsewhere
-   in this file). Every message type updates the tracked cursor position;
-   WM_LBUTTONDOWN additionally hit-tests taps landing in the x:200-240
-   strip (the chargen name-entry on-screen keyboard, see DAT_00087650's
-   comment) via lookup_onscreen_keyboard_key_hit and re-dispatches the resulting button ID as
-   a synthetic WM_CHAR (letters/digits) or WM_KEYDOWN (backspace/enter/
-   space/0x14) through PostMessageW (PostMessage) -> handle_keyboard_message, the same
-   path real keyboard input already uses. Taps outside that strip instead
-   set DAT_00204844, a general click-pending flag consumed elsewhere
-   (main game world / inventory click handling, not chargen). */
+/* Recovered from a message-dispatch table baked into the original binary's .rdata (0x830e4-0x83144)
+   that routes WM_MOUSEMOVE/WM_LBUTTONDOWN/ WM_LBUTTONUP/WM_RBUTTONDOWN/WM_RBUTTONUP (msg
+   0x200/0x201/0x202/0x204/ 0x205) to this handler... */
 // was FUN_00077dd0
 undefined4 handle_mouse_message(param_1,param_2,param_3,param_4)
 undefined4 param_1;
@@ -1310,24 +1155,9 @@ int param_4;
   x = (short)param_4;
   *DAT_000876c0 = x;
 
-  // HACK (extended): DAT_000876c4 has zero writers anywhere in the real
-  // binary (confirmed via Ghidra xrefs), so update_mouse_state() would
-  // never trust *DAT_000876bc/*DAT_000876c0 and g_mouse_x/g_mouse_y
-  // would never update from real mouse input at all -- this whole
-  // plumbing is genuinely dead in the shipped binary, which drove its
-  // own cursor entirely via the D-pad/joystick spring-back emulation
-  // (DAT_00086974) instead. Set only on WM_LBUTTONDOWN by default (a
-  // deliberate per-click deviation from an earlier session, kept
-  // below); per user request ("we should always display the cursor" on
-  // desktop, tracking real mouse movement, not just clicks -- see
-  // draw_idle_mouse_cursor's own matching deviation comment) extended to fire on
-  // every message this handler sees (WM_MOUSEMOVE included) so plain
-  // hover/movement -- not just a click -- makes the game trust and
-  // track the real cursor position from the very first frame, but only
-  // under UW_ALWAYS_SHOW_CURSOR=1: drawing the cursor every idle frame
-  // forces a display flush every frame too, which measurably slowed
-  // the game down when this was unconditional, so it's opt-in (see
-  // uw_always_show_cursor's own comment).
+// HACK (extended): DAT_000876c4 has zero writers anywhere in the real binary (confirmed via
+  // Ghidra xrefs), so update_mouse_state() would never trust *DAT_000876bc/*DAT_000876c0 and
+  // g_mouse_x/g_mouse_y would never update from real mouse input at all...
   if (uw_always_show_cursor()) {
     *DAT_000876c4 = 1;
   }
@@ -1354,39 +1184,15 @@ int param_4;
       if ((g_cursor_mode != 0) || (g_cursor_holding_state != 0)) {
         DAT_00204844 = 2;
       }
-      // HACK: same dead-plumbing story as DAT_000876c4 above -- poll_mouse_button_flags
-      // (the source of chargen's touch-select event codes 1-3) only ever
-      // returns nonzero via DAT_0023c63c or DAT_002506aa/ab, and all three
-      // are confirmed via Ghidra xrefs to have zero writers anywhere in the
-      // real binary, so character_generator_touch_select is unreachable
-      // there regardless of cursor tracking. Setting it here (outside the
-      // on-screen-keyboard strip, so it doesn't interfere with WM_CHAR
-      // dispatch during name entry) is what actually lets a click on a
-      // chargen list button register; not original behavior.
+// HACK: same dead-plumbing story as DAT_000876c4 above -- poll_mouse_button_flags (the source
+      // of chargen's touch-select event codes 1-3) only ever returns nonzero via DAT_0023c63c or
+      // DAT_002506aa/ab...
       DAT_0023c63c = 1;
     }
   }
   if (param_2 == 0x202) {
-    /* An EARLIER attempt at this exact fix (erase before clearing
-       DAT_00204844) was reverted as "no measurable effect" -- that test
-       apparently didn't hit the actual failure window. Confirmed live via
-       UW_DEBUG_CURSORCLICK + UW_DEBUG_CURSORERASE on a real right-drag
-       pickup followed by a LEFT click while still holding (this
-       project's drag convention is normally right-button, but nothing
-       stops a real player from also left-clicking mid-hold, and
-       bug-inventory-stamp-demo.txt is a recorded repro of exactly that):
-       DAT_00204844 was 1 (an icon genuinely shown, not yet erased) at
-       the moment WM_LBUTTONUP fired; the unconditional `DAT_00204844 = 0`
-       below then made the NEXT erase attempt see DAT_00204844 == 0 and
-       skip entirely (`will_erase=0`) -- so the icon painted at that
-       position is never restored, a permanent stamp. update_mouse_state's
-       own protocol is always erase-THEN-clear; this handler cleared
-       without erasing. Calling the real erase function first (a no-op
-       if there was nothing to erase) matches that protocol and fixes the
-       stamp without touching the continuous per-frame hide/show path
-       that the earlier g_force_flush attempt regressed (see
-       erase_cursor_icon's own comment) -- this only runs once per actual
-       left-button release, not every frame. */
+    /* An EARLIER attempt at this exact fix (erase before clearing DAT_00204844) was reverted as "no
+       measurable effect" -- that test apparently didn't hit the actual failure window. */
     erase_cursor_icon();
     if (getenv("UW_DEBUG_CURSORCLICK")) {
       fprintf(stderr, "[cursorclick] WM_LBUTTONUP before DAT_00204844=%d selected=%p mouse=(%d,%d)\n",
@@ -1400,13 +1206,7 @@ int param_4;
     *DAT_000876c0 = 0;
     DAT_0023c63c = 0;
   }
-  /* Right button (WM_RBUTTONDOWN/UP). The real binary's dispatch table
-     routes these here too, but the hand-recovered body only did the left
-     button. poll_mouse_button_flags reports the right button as bit 1 (value 2) of
-     the mouse state via DAT_002506ab -- which nothing else ever writes --
-     and poll_input_bindings then feeds code 2 to the viewport click
-     region, whose handler handle_game_view_click runs its interact branch on
-     `state & 2`. Cursor position was already stored at the top. */
+  /* Right button (WM_RBUTTONDOWN/UP). */
   if (param_2 == 0x204) {
     *DAT_000876c4 = 1;
     DAT_002506ab = 1;
@@ -1420,20 +1220,9 @@ int param_4;
 }
 
 
-// was FUN_0003dca4 -- called from set_locomotion_state (src/input.c:83)
-// with an "anim mode" code (0=walk,1=swim,2=fly-ish,4/5/6=fall variants;
-// see that function's own comment) whenever the locomotion state
-// changes, and with the -1 sentinel (re-derive the current mode from
-// the player record) from force_locomotion_state_refresh and on
-// save-load. For a real mode code: writes the new mode into the
-// player record's anim-mode/facing fields (+0xb6..+0xb8) via the
-// local_24 per-mode bit table, then uses the local_1c per-mode
-// magnitude table (indexed by mode) to scale the per-facing-direction
-// speed constants DAT_0008589c/85898/85894/86e68 into
-// DAT_00202078/7a/7c/74 -- the forward/turn/strafe speed and jump
-// duration-ish constants resolve_move_vector and the jump-arc code in
-// src/movement.c and src/player.c read back. Reads as "apply the
-// current locomotion mode's movement-speed profile".
+// was FUN_0003dca4 -- called from set_locomotion_state (src/input.c:83) with an "anim mode" code
+// (0=walk,1=swim,2=fly-ish,4/5/6=fall variants; see that function's own comment) whenever the
+// locomotion state changes...
 void apply_movement_mode_profile(param_1)
 byte param_1;
 
@@ -1456,16 +1245,9 @@ byte param_1;
   local_1c[6] = 2;
   iVar1 = (int)(char)param_1;
   local_1c[5] = 7;
-  /* Was `piVar6 = (int *)&DAT_00086df8;` (address of the global itself)
-     with every subsequent `*piVar6` in this branch meant to read
-     DAT_00086df8's real value back out -- but piVar6 was typed `int *`,
-     so each of those dereferences only read the first 4 of
-     DAT_00086df8's 8 bytes, truncating it (this is what fed a garbage
-     record pointer into the rest of the function, further down, and
-     eventually segfaulted). Both branches want the same thing (the
-     record pointer's real value); use DAT_00086df8 directly instead of
-     this indirection, which sidesteps the truncation instead of trying
-     to preserve the double-indirect shape with a wider type. */
+  /* Was `piVar6 = (int *)&DAT_00086df8;` (address of the global itself) with every subsequent
+     `*piVar6` in this branch meant to read DAT_00086df8's real value back out -- but piVar6 was
+     typed `int *`, so each of those dereferences only read the first 4 of DAT_00086df8's 8 bytes... */
   piVar6 = (int *)DAT_00086df8;
   local_24[0] = '\0';
   local_24[6] = 0;
@@ -1501,17 +1283,7 @@ byte param_1;
 }
 
 
-// was FUN_000578fc -- always returns 0. Called from
-// process_pending_keyboard_scan_code whenever param_1 is set, which
-// is every real call site found (all pass literal 1) -- meaning that
-// function's entire scan-code translation path (ce_tolower/1091)
-// is currently unreachable given how it's called. Left unclaimed
-// rather than "fixed": unlike this session's confirmed discarded-
-// return-value bugs, there's no computation being discarded inside
-// this function's own body to point to -- it may simply be a stub
-// for a hardware-keyboard scan-code source the touchscreen port
-// never wired up, which would make this correct original behavior,
-// not a decompiler artifact.
+// was FUN_000578fc -- always returns 0.
 undefined4 get_alternate_keyboard_scan_code()
 
 {
@@ -1520,13 +1292,9 @@ undefined4 get_alternate_keyboard_scan_code()
 
 
 
-// was FUN_00057904 -- translates the pending keyboard event
-// (DAT_0023c448, or get_alternate_keyboard_scan_code's result when
-// param_1 is set) into an international-charset-mapped scan code via
-// ce_tolower/1091, or 0xffffffff if none is pending. See
-// get_alternate_keyboard_scan_code's own comment -- every real call
-// site passes param_1=1, which currently makes this translation path
-// unreachable.
+// was FUN_00057904 -- translates the pending keyboard event (DAT_0023c448, or
+// get_alternate_keyboard_scan_code's result when param_1 is set) into an
+// international-charset-mapped scan code via ce_tolower/1091, or 0xffffffff if none is pending.
 uint process_pending_keyboard_scan_code(param_1)
 int param_1;
 
@@ -1576,11 +1344,9 @@ int param_1;
 
 
 
-// was FUN_000579e4 -- pump input, then return the pending event code:
-// the keyboard code latched in DAT_0023c448 (set by handle_keyboard_message),
-// or a poll_mouse_event() code, or 0xffffffff if nothing is pending.
-// param_1 == 0 clears DAT_0023c448 first (consume); != 0 leaves it (peek),
-// which is what makes a held key repeat every frame.
+// was FUN_000579e4 -- pump input, then return the pending event code: the keyboard code latched in
+// DAT_0023c448 (set by handle_keyboard_message), or a poll_mouse_event() code, or 0xffffffff if
+// nothing is pending. param_1 == 0 clears DAT_0023c448 first (consume); != 0 leaves it (peek)...
 uint poll_input_event(param_1)
 int param_1;
 
@@ -1632,12 +1398,9 @@ undefined4 peek_input_event()
 }
 
 
-// was FUN_0003c4dc -- set the player's swim/wade sub-pose byte
-// (DAT_00086df8+0xb9) from the collision-state mask's "in liquid, how deep"
-// bit (0x2): shallow (0x10) vs deep/wading (0x60, also force-leaving
-// combat stance via unready_weapon -- can't hold a weapon ready while
-// swimming). Returns true for the deep case. Only ever called from
-// set_locomotion_state's swim branch.
+// was FUN_0003c4dc -- set the player's swim/wade sub-pose byte (DAT_00086df8+0xb9) from the
+// collision-state mask's "in liquid, how deep" bit (0x2): shallow (0x10) vs deep/wading (0x60, also
+// force-leaving combat stance via unready_weapon -- can't hold a weapon ready while swimming).
 bool apply_swim_wade_pose(param_1)
 ushort param_1;
 
@@ -1682,19 +1445,8 @@ short param_1;
   ushort local_42;
   uint local_40;
   /* DAT_00202c6c points at this scratch record for the
-     collision_height_envelope/sort_collision_candidates/
-     collision_add_candidate_object call sequence below. It's a real
-     24-byte struct everywhere else it's used (see collision.c's own
-     "local_24"/"a local 24-byte struct" comments) --
-     collision_add_candidate_object writes its candidate-count/list
-     fields as far as offset 0x15 (21) into it. This call site only ever
-     named the first 10 bytes of it (as separate local_3c/3a/38/34/33/32
-     scalars), so those writes landed past this function's own stack
-     frame into whatever happened to follow -- harmless by luck until
-     this cleanup pass's global reorganization shifted what that was.
-     Real, correctly-sized storage instead, with the original scalar
-     names kept as offsets into it so the rest of this function reads
-     unchanged. */
+     collision_height_envelope/sort_collision_candidates/ collision_add_candidate_object call
+     sequence below. */
   char local_24[24];
 #define local_3c (*(undefined2 *)(local_24 + 0))
 #define local_3a (*(undefined2 *)(local_24 + 2))
@@ -1808,37 +1560,14 @@ LAB_0003c940:
       if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
         do {
           uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6);
-          /* Was `iVar8 = (int)((ulonglong)uVar11 >> 0x20);` -- a leftover
-             from the original 32-bit ARM ABI, where resolve_object_link's
-             caller apparently re-read some other value out of r1 right
-             after the call (Ghidra folded it into a fake 64-bit return
-             value, r0:r1). On this 64-bit recompile resolve_object_link
-             returns a real, single 64-bit pointer with no second value
-             riding along in its "upper half" -- (ulonglong)uVar11 >> 0x20
-             was just the pointer's own high address bits, reinterpreted
-             as iVar8 and clobbering this loop's own bound (iVar8 is the
-             loop's own upper limit, from DAT_00202c6c+0xb/0x15) with
-             garbage every single iteration after the first. That let
-             iVar7 walk arbitrarily far past the real candidate range,
-             feeding wild indices into resolve_object_link on later
-             iterations -- confirmed via the very "negative slot"/"exceeds
-             0x3ff" get_object_record_by_slot_index warnings logged just before this crash.
-             Also add the missing NULL guard resolve_object_link's other
-             call sites already needed: an out-of-range link now returns
-             NULL, and this dereferenced it unconditionally (confirmed via
-             lldb, EXC_BAD_ACCESS at address 0). */
+          /* Was `iVar8 = (int)((ulonglong)uVar11 >> 0x20);` -- a leftover from the original 32-bit
+             ARM ABI, where resolve_object_link's caller apparently re-read some other value out of
+             r1 right after the call (Ghidra folded it into a fake 64-bit return value, r0:r1). */
           if (uVar11 == 0) break;
           if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
-            /* Was followed by `iVar8 = extraout_r1;` -- same bug as the
-               sibling fix just above in this function (resolve_object_link's
-               own high-bits carry), but via a different, unrelated
-               callee: resolve_skill_gated_unlock_or_use returns a single
-               uint with no second value riding along, so that read was
-               pure garbage. iVar8 is this loop's own resolve_object_link
-               "carry" argument (used at the top of this do-loop's next
-               iteration) -- clobbering it there risked exactly the same
-               wild-index crash the sibling fix's comment describes.
-               Left it untouched instead. */
+            /* Was followed by `iVar8 = extraout_r1;` -- same bug as the sibling fix just above in
+               this function (resolve_object_link's own high-bits carry), but via a different,
+               unrelated callee... */
             resolve_skill_gated_unlock_or_use(g_player_object,0,(ushort *)uVar11,0);
           }
           iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
@@ -1950,12 +1679,9 @@ void *param_7;   /* was undefined4 -- handler fn pointer; see g_click_region_han
     g_click_region_handler[iVar2] = (void (*)(int))param_7;
     if (iVar2 + 1 > g_click_region_handler_n) g_click_region_handler_n = iVar2 + 1;
   }
-  /* ce_realloc is realloc-shaped and now returns a real pointer;
-     iVar2 was reused here for that result even though it's declared
-     int, truncating it (and iVar3, derived from it, and DAT_00202890,
-     assigned from it) on this 64-bit host. Split into a dedicated
-     pointer variable rather than retyping iVar2 (used as a plain int
-     counter just above). */
+  /* ce_realloc is realloc-shaped and now returns a real pointer; iVar2 was reused here for that
+     result even though it's declared int, truncating it (and iVar3, derived from it, and
+     DAT_00202890, assigned from it) on this 64-bit host. */
   pvVar4 = ce_realloc(DAT_00202890,((iVar2 + 1) * 0x10000 >> 0x10) * 0x12);
   if (pvVar4 == 0) {
     report_fatal_error_and_exit(0x1005);
@@ -1999,11 +1725,9 @@ char *param_1;
 short param_2;
 
 {
-  /* Was `int`; both double as a plain loop index (iVar2 only) and a real
-     pointer into the DAT_0020289c keybinding table (iVar1 always, iVar2
-     once more on the match path just before it returns) -- truncating
-     that pointer since DAT_0020289c is a genuine malloc'd 64-bit pointer.
-     Dedicated pointer variable for the record-address role. */
+  /* Was `int`; both double as a plain loop index (iVar2 only) and a real pointer into the
+     DAT_0020289c keybinding table (iVar1 always, iVar2 once more on the match path just before it
+     returns) -- truncating that pointer since DAT_0020289c is a genuine malloc'd 64-bit pointer. */
   char *pcVar1;
   int iVar2;
 
@@ -2025,15 +1749,9 @@ short param_2;
 }
 
 
-// was FUN_00049818 -- dispatches DAT_00201c84's currently-set "sticky
-// redraw/per-frame" bits through the DAT_00085668 per-mode handler table
-// (movement_pacing_handler is mode 0's bit 12, see DAT_00085728's own
-// comment), then re-arms whichever bits DAT_00085728[current mode] always
-// wants re-triggered -- this re-arm is what makes a mode's per-frame
-// handlers keep firing every call instead of running once and going
-// quiet. Called from the outer game loop and the original input waits.
-// GX input polling services the shared movement clock in both contexts;
-// repeated dispatches within the same clock interval have zero delta.
+// was FUN_00049818 -- dispatches DAT_00201c84's currently-set "sticky redraw/per-frame" bits
+// through the DAT_00085668 per-mode handler table (movement_pacing_handler is mode 0's bit 12, see
+// DAT_00085728's own comment)...
 void dispatch_sticky_mode_handlers()
 
 {

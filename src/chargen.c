@@ -1,8 +1,6 @@
-/* Character creation: the field-by-field state machine (choose sex,
- * handedness, class, skills, portrait, difficulty, name, confirm), its
- * resource-loading setup, and the critical-section entry wrapper. Split
- * out of uw.c (the original monolithic decompile) once these functions'
- * real roles were confirmed. */
+/* Character creation: the field-by-field state machine (choose sex, handedness, class, skills,
+   portrait, difficulty, name, confirm), its resource-loading setup, and the critical-section entry
+   wrapper. */
 #include "headers/chargen.h"
 #include "headers/debug.h"
 
@@ -10,20 +8,9 @@
 #define DAT_000fb863 DAT_000fb860_backing[3]
 #define DAT_000fb8f0 DAT_000fb8f0_backing[0]
 char *DAT_00086df8;
-/* These 4 were zero-initialized "backing" buffers standing in for
-   unrecovered string constants, passed straight into draw_text_string
-   by draw_chargen_attribute_summary as the row labels for the 4
-   values it draws. With no initializer they read as empty strings, so
-   the label half of each row silently drew nothing -- the "stat names
-   not displaying" bug: numbers appeared, labels didn't. Real bytes
-   confirmed via a direct Ghidra memory export of UU.exe (see
-   tests/fixtures/static_strings.json's provenance) -- an earlier
-   best-effort guess here ("Hp"/"Int"/"Dex"/"Str", no colons) turned
-   out wrong on both counts once the real binary was actually read:
-   it's "Vit:" (Vitality, not Hp) and all four carry a trailing colon.
-   Sizing-audit pass: each is used exactly once via draw_text_string, 0
-   writers -- 4 short UI label strings (8 bytes apart in the original
-   address space). Sized to 16 each for headroom; down from 8192. */
+/* These 4 were zero-initialized "backing" buffers standing in for unrecovered string constants,
+   passed straight into draw_text_string by draw_chargen_attribute_summary as the row labels for the
+   4 values it draws. */
 static undefined DAT_00084e40_backing[16] = "Vit:";
 #define DAT_00084e40 DAT_00084e40_backing[0]
 static undefined DAT_00084e48_backing[16] = "Int:";
@@ -33,11 +20,9 @@ static undefined DAT_00084e50_backing[16] = "Dex:";
 static undefined DAT_00084e58_backing[16] = "Str:";
 #define DAT_00084e58 DAT_00084e58_backing[0]
 char *DAT_001005c8;
-/* Was `undefined4` (4 bytes), but assigned real char* pointers
-   (DAT_001005c4/DAT_001005c8) throughout the character-generation/
-   font-drawing subsystem and passed directly as bitmap_blit_to_framebuffer's char*
-   source-bitmap param -- truncated every one of those pointers on this
-   64-bit host. */
+/* Was `undefined4` (4 bytes), but assigned real char* pointers (DAT_001005c4/DAT_001005c8)
+   throughout the character-generation/ font-drawing subsystem and passed directly as
+   bitmap_blit_to_framebuffer's char* source-bitmap param... */
 static char *DAT_000fb858;
 static char *DAT_001005c4;
 /* Not `static` -- also used by chargen.c; see the extern declaration and
@@ -46,71 +31,30 @@ static char *DAT_001005c4;
    -- exact 32-byte real need. Down from 256. */
 static undefined1 DAT_000fb860_backing[32];
 /* DAT_000fb863 aliases the bonus-pool byte in DAT_000fb860_backing. */
-/* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]`
-   (4-byte stride) with idx up to a CONCAT11 of two record byte fields
-   (draw_chargen_field_value). Real populator recovered this session: chrbtns_offset_table_builder
-   (a callback Ghidra never resolved into a named function -- see its
-   own comment near its definition) builds this as a cumulative per-
-   entry byte-size table when the "chrbtns" resource loads.
-   Not `static` -- chargen.c reaches it through the DAT_000fb8c4 alias
-   in uw.h (case 4's body-figure offset lookup). */
-/* Sizing-audit pass: chrbtns_offset_table_builder (the real
-   populator) only ever writes idx 0..26 (10 body-figure entries at
-   17-26, per DAT_000fb8c4's own comment below). One reader
-   (draw_chargen_field_value) indexes it via a CONCAT11 of two record
-   byte fields rather than the plain param_1[6] index used elsewhere,
-   but that site's own comment confirms the value stays within the
-   same legitimate per-field range in practice (investigated and
-   ruled out as a bug source this session), not a genuinely wider
-   index. Sized to 64 elements (256 bytes) for extra headroom given
-   that residual ambiguity; down from 4096. */
+/* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]` (4-byte stride) with idx up
+   to a CONCAT11 of two record byte fields (draw_chargen_field_value). */
+/* Sizing-audit pass: chrbtns_offset_table_builder (the real populator) only ever writes idx 0..26
+   (10 body-figure entries at 17-26, per DAT_000fb8c4's own comment below). */
 undefined4 DAT_000fb880_backing[64];
-/* These three were all mangled the same way: Ghidra rendered the
-   embedded spaces as underscores. Real bytes confirmed against the
-   ARM UU.exe .data section; none of the three actually carries a
-   trailing space or newline (each is null-terminated right after the
-   last visible character), so only the underscores-for-spaces need
-   fixing here. */
+/* These three were all mangled the same way: Ghidra rendered the embedded spaces as underscores. */
 static char s_key_to_continue_00084e60[] = "key to continue";
 static char s_then_press_the_Enter_00084e70[] = "then press the Enter";
 static char s_Enter_your_name_and_00084e88[] = "Enter your name and";
 static short DAT_001005c0;
-/* DAT_000fb8c4's address (0xfb8c4) is 0x44 bytes = 17 elements past
-   DAT_000fb880's (0xfb880) -- like DAT_000fb884, not a separate table but
-   an alias into the SAME cumulative per-entry offset array chrbtns_offset_table_builder
-   builds for chrbtns.gr, viewed starting at element 17. Elements 17..26
-   are the offsets of chrbtns entries 17-26 (the ten full-body figures,
-   five male + five female); character_generator_loop's case 4 reads
-   `table[17 + sexbit*5 + portraitIdx]` to blit the chosen body. Declaring
-   it as an independent zero array (as an earlier pass did, before
-   chrbtns_offset_table_builder's role was known) split it from the real data and left it
-   permanently zero -- so no body was ever drawn. Aliased onto the real
-   array instead. See uw.h. */
-/* Sizing-audit pass: investigated, NOT shrunk -- SKILLS.DAT+CHRGEN.DAT
-   (the real shipped assets) only need 441 bytes together, which made
-   a smaller size look safe, but tests/test_chargen.c:128-130 asserts
-   against DAT_000fb8f0_backing[1000]/[1002], proving some exercised
-   path (character_generator_loop's record-table writes, stride 0x14)
-   needs far more than the real asset files alone would suggest.
-   Left at 1680 rather than break that real, already-passing coverage. */
+/* DAT_000fb8c4's address (0xfb8c4) is 0x44 bytes = 17 elements past DAT_000fb880's (0xfb880) --
+   like DAT_000fb884, not a separate table but an alias into the SAME cumulative per-entry offset
+   array chrbtns_offset_table_builder builds for chrbtns.gr, viewed starting at element 17. */
+/* Sizing-audit pass: investigated, NOT shrunk -- SKILLS.DAT+CHRGEN.DAT (the real shipped assets)
+   only need 441 bytes together, which made a smaller size look safe, but
+   tests/test_chargen.c:128-130 asserts against DAT_000fb8f0_backing[1000]/[1002]... */
 static undefined1 DAT_000fb8f0_backing[1680];
 char s_FONT5X6P_SYS_00084e9c[] = "FONT5X6P.SYS";
 static char s__DATA_CHARGEN_BYT_00084eac[] = "\\DATA\\CHARGEN.BYT";
 static char s_FONTCHAR_SYS_00084ec0[] = "FONTCHAR.SYS";
 static char s__DATA_chrgen_dat_00084ed0[] = "\\DATA\\chrgen.dat";
 static char s__DATA_skills_dat_00084ee4[] = "\\DATA\\skills.dat";
-/* Was a zero-initialized array standing in for an unrecovered string
-   constant (Ghidra had no content at this address, just a dangling
-   reference -- see load_gr_resource_entries's comment). Recovered by dumping the
-   real bytes at this address directly from the original UU.exe via
-   Ghidra's headless analyzer: the string "chrbtns" (character-gen
-   button/portrait graphics, matching its neighboring resource-name
-   constants here). Leaving this as an all-zero buffer made
-   load_gr_resource_entries's `param_1[0] == '\0'` empty-name check always true, so
-   it always took the "nothing to load" early-return path and never
-   invoked its per-item callbacks (chrbtns_bump_alloc_entry/chrbtns_offset_table_builder) at all --
-   the real root cause of DAT_000fb880 staying empty despite those
-   callbacks now being correctly implemented. */
+/* Was a zero-initialized array standing in for an unrecovered string constant (Ghidra had no
+   content at this address, just a dangling reference -- see load_gr_resource_entries's comment). */
 static char s_chrbtns_00084ef8[] = "chrbtns";
 
 
@@ -127,26 +71,14 @@ char *param_3;
   byte bVar2;
   byte bVar3;
   int iVar4;
-  /* iVar4 doubles as the character record's name-string pointer field
-     (read from pcVar_rec+6, a relative offset from &DAT_000fb8f0 --
-     see the write site in run_character_generator and draw_chargen_field_value's matching
-     read-site comments) early in each state, and a plain screen-
-     coordinate int in case 4 later -- mutually exclusive, but the
-     pointer role can't just reuse `iVar4 + base` arithmetic since it's
-     a *relative* offset needing reconstruction against &DAT_000fb8f0,
-     not a raw pointer. Dedicated variable for the pointer role. */
+  /* iVar4 doubles as the character record's name-string pointer field (read from pcVar_rec+6, a
+     relative offset from &DAT_000fb8f0 -- see the write site in run_character_generator and
+     draw_chargen_field_value's matching read-site comments) early in each state... */
   char *pcVar_name;
   char *pcVar5;
-  /* iVar13 doubles as a "current character record" pointer (0x14-byte
-     stride into param_3, computed fresh at the top of each state-machine
-     iteration and consumed by draw_chargen_field_value/draw_chargen_field_options/wait_for_chargen_field_input,
-     all of which take a real `short *`) and, later in the SAME
-     iteration inside case 4, a plain screen-coordinate int -- mutually
-     exclusive in practice (the pointer role is only read before the
-     switch), but both squeezed into one `int` `iVar13`, truncating the
-     pointer role now that param_3 is a real 64-bit pointer. Given a
-     dedicated variable for the pointer role only; iVar13 keeps its
-     case-4 int role untouched. */
+  /* iVar13 doubles as a "current character record" pointer (0x14-byte stride into param_3, computed
+     fresh at the top of each state-machine iteration and consumed by
+     draw_chargen_field_value/draw_chargen_field_options/wait_for_chargen_field_input)... */
   char *pcVar_rec;
   ulonglong uVar6;
   undefined1 uVar7;
@@ -166,18 +98,9 @@ char *param_3;
   byte local_64 [4];
   undefined4 local_60;
   char *pcVar_p2off;
-  /* local_5c and local_58 were separate Ghidra locals (`undefined4
-     local_5c` + 6 more `undefined1 local_58/57/56/55/54/53` scalars),
-     but their names encode adjacent stack offsets (-0x5c then -0x58,
-     4 bytes apart) and the code writes across both as one flowing
-     buffer -- `&local_5c + local_64[0] + 3` walks from local_5c's last
-     byte straight into local_58's first bytes as local_64[0] grows.
-     Classic "separate locals relied on being contiguous" artifact
-     (see the README). Merged into one 10-byte array: local_5c's old 4
-     bytes are index [0,4), local_58's old 6 bytes are index [4,10).
-     local_5c's own VALUE was never read anywhere (only its address),
-     so its old write is dropped; advance_skill_tree_node/apply_confirmed_skill_picks get
-     `local_5c_buf + 4` where they used to get `local_58`. */
+  /* local_5c and local_58 were separate Ghidra locals (`undefined4 local_5c` + 6 more `undefined1
+     local_58/57/56/55/54/53` scalars), but their names encode adjacent stack offsets (-0x5c then
+     -0x58, 4 bytes apart) and the code writes across both as one flowing buffer... */
   undefined1 local_5c_buf [10];
   undefined1 auStack_4c [32];
 
@@ -187,20 +110,16 @@ char *param_3;
   local_60 = (undefined4)uVar15;
   pcVar_p2off = param_2 + 0x20;
   memset(local_5c_buf + 4, 0x14, 6);
-  /* Was 4 separate byte writes reconstructing a 32-bit address, then
-     (in an earlier, incorrect fix attempt) a direct 8-byte pointer
-     store -- see g_chargen_textfield_buf's comment above for why
-     that's wrong. Keep this field a plain nonzero marker (its exact
-     bits were never meaningful) and route the real pointer through the
-     dedicated global instead. */
+  /* Was 4 separate byte writes reconstructing a 32-bit address, then (in an earlier, incorrect fix
+     attempt) a direct 8-byte pointer store -- see g_chargen_textfield_buf's comment above for why
+     that's wrong. */
   *(int *)(param_3 + 0x7a) = 1;
   g_chargen_textfield_buf = auStack_4c;
   do {
     iVar12 = (int)sVar8;
-    // Fires once per chargen screen (sex/handedness/class/skill/portrait/
-    // difficulty/name/confirm are states 0-7, in that order) -- state is
-    // whatever the previous iteration's switch-case just advanced sVar8
-    // to (or reset it to 0 for, on a "back"/cancel).
+// Fires once per chargen screen (sex/handedness/class/skill/portrait/ difficulty/name/confirm
+    // are states 0-7, in that order) -- state is whatever the previous iteration's switch-case just
+    // advanced sVar8 to (or reset it to 0 for, on a "back"/cancel).
     DEBUG(TRACE, "[chargen] screen advancing to state=%d", iVar12);
     pcVar_rec = param_3 + iVar12 * 0x14;
     iVar4 = *(int *)(pcVar_rec + 6);
@@ -251,15 +170,9 @@ LAB_00025468:
         if (uVar1 == 0) {
           uVar7 = 7;
         }
-        /* Was a write through CONCAT13(param_3+0x59, param_3+0x56) --
-           reconstructing a pointer split across those 4 bytes the same
-           way param_3+0x7a's pointer field was (see that fix above).
-           But nothing anywhere in this file ever WRITES a real value
-           into param_3+0x56/0x59 in the first place (confirmed by
-           search), so the "pointer" being reconstructed here was
-           always garbage/zero -- and nothing ever READS this field
-           back either, so the write itself is dead regardless. Skipped
-           rather than writing through reconstructed garbage. */
+        /* Was a write through CONCAT13(param_3+0x59, param_3+0x56) -- reconstructing a pointer
+           split across those 4 bytes the same way param_3+0x7a's pointer field was (see that fix
+           above). */
         *(byte *)(DAT_00086df8 + 100) =
              *(byte *)(DAT_00086df8 + 100) & 0xfd | (byte)((uVar9 & 1) << 1);
         decrement_cursor_hide_depth();
@@ -293,10 +206,9 @@ LAB_00025468:
         sVar8 = sVar8 + 1;
         break;
       case 3:
-        /* (int)&local_5c truncated a real stack address; and
-           *(int*)(param_3+0x42) is the same never-written, never-zeroed
-           record field skipped in advance_skill_tree_node above -- always take the
-           fallback instead of reading through arbitrary heap garbage. */
+        /* (int)&local_5c truncated a real stack address; and (int*)(param_3+0x42) is the same
+           never-written, never-zeroed record field skipped in advance_skill_tree_node above --
+           always take the fallback instead of reading through arbitrary heap garbage. */
         local_5c_buf[local_64[0] + 3] = 0;
         DAT_001005c0 = apply_confirmed_skill_picks((int)DAT_001005c0,local_5c_buf + 4);
         decrement_cursor_hide_depth();
@@ -314,11 +226,9 @@ LAB_00025468:
                          );
         chargen_ui_transition_hook(0);
         DAT_000fb858 = DAT_001005c4;
-        /* iVar14 is chrbtns.gr's cumulative offset for the chosen body
-           figure (entry 17 + sexbit*5 + portraitIdx) -- now that
-           DAT_000fb8c4 aliases the real chrbtns_offset_table_builder table (see uw.h),
-           this is a genuine nonzero offset. Keep the <4 guard as a
-           defensive floor against a still-empty table. */
+        /* iVar14 is chrbtns.gr's cumulative offset for the chosen body figure (entry 17 + sexbit*5
+           + portraitIdx) -- now that DAT_000fb8c4 aliases the real chrbtns_offset_table_builder
+           table (see uw.h), this is a genuine nonzero offset. */
         if (iVar14 < 4) {
           bVar2 = 0;
           bVar3 = 0;
@@ -363,12 +273,8 @@ LAB_00025468:
         cursor_show_idle_tick();
         uVar10 = extraout_r1_00;
         if (*pcVar5 != '\0') {
-          /* Regression-verification hook only (see bugfix/lowercase-text-
-             universal): no other UW_DEBUG_* trace in this file surfaces the
-             committed name-entry text, which is the one piece of chargen
-             state a lowercase-text-entry regression test needs to check
-             without screenshot-diffing. Zero cost unless UW_DEBUG_LEVEL=
-             TRACE is set. */
+          /* Regression-verification hook only (see bugfix/lowercase-text- universal): no other
+             UW_DEBUG_* trace in this file surfaces the committed name-entry text... */
           DEBUG(TRACE, "[chargen] name field committed: \"%s\"", pcVar5);
           ce_strncpy(DAT_00086df8,pcVar5,0x1d);
           uVar10 = extraout_r1_01;
@@ -436,11 +342,9 @@ int run_character_generator()
   char *stack0xffdc3230_ptr;
   char cVar1;
   int iVar2;
-  /* iVar2 doubles as a plain int return-code check early in this
-     function and a real pointer (`DAT_001005c8 + 64000`, a palette
-     load destination) later on -- mutually exclusive, but iVar2 stayed
-     `int` either way, truncating the pointer. Given its own dedicated
-     variable for the pointer-holding span only. */
+  /* iVar2 doubles as a plain int return-code check early in this function and a real pointer
+     (`DAT_001005c8 + 64000`, a palette load destination) later on -- mutually exclusive, but iVar2
+     stayed `int` either way, truncating the pointer. */
   char *pcVar_palbuf;
   char *pcVar3;
   char *iVar4;
@@ -492,27 +396,15 @@ int run_character_generator()
           puVar8 = &DAT_000fb8f0 + uVar5;
           read_file_handle(iVar4,puVar8,10000);
           CloseHandle(iVar4);
-          /* Was `(char *)(uVar5 + 0xfb990)` -- a literal original-binary
-             address (0xfb990 = &DAT_000fb990's address there) added to
-             an int, instead of real pointer arithmetic against the
-             actual (relocated) buffer. 0xfb990 - 0xfb8f0 = 0xa0, so this
-             is really `puVar8 + 0xa0` (a fixed offset past the point
-             puVar8 already starts at, within the same DAT_000fb8f0
-             buffer). Same "hardcoded original-binary address" bug class
-             as probe_save_slots's `-0x87020` fix earlier this session. */
+          /* Was `(char *)(uVar5 + 0xfb990)` -- a literal original-binary address (0xfb990 =
+             &DAT_000fb990's address there) added to an int, instead of real pointer arithmetic
+             against the actual (relocated) buffer. 0xfb990 - 0xfb8f0 = 0xa0... */
           pcVar3 = (char *)puVar8 + 0xa0;
           iVar4 = 0;
           do {
-            /* Was a 4-byte split of the absolute pointer `pcVar3`
-               ((char)pcVar3, >>8, >>0x10, >>0x18) -- correct for a
-               32-bit binary, but only ever captured pcVar3's low 32
-               bits here, and the read sites (draw_chargen_field_value etc.) treat
-               those 4 bytes as the whole pointer. Since pcVar3 always
-               points within DAT_000fb8f0's small fixed-address buffer,
-               store a relative offset from &DAT_000fb8f0 instead -- it
-               fits safely in the existing 4-byte field, and the read
-               sites reconstruct the real pointer via &DAT_000fb8f0 +
-               offset instead of using the stored value directly. */
+            /* Was a 4-byte split of the absolute pointer `pcVar3` ((char)pcVar3, >>8, >>0x10,
+               >>0x18) -- correct for a 32-bit binary, but only ever captured pcVar3's low 32 bits
+               here... */
             *(int *)(puVar8 + (int)(iVar4) * 0x14 + 6) = (int)(pcVar3 - (char *)&DAT_000fb8f0);
             do {
               pcVar6 = pcVar3;
@@ -606,17 +498,9 @@ undefined4 character_generator_start()
 }
 
 
-// was FUN_000232ec -- resets the player record (DAT_00086df8, base
-// &DAT_0023bca8 set by reset_player_object_record) to new-character
-// defaults: zeroes/reinitializes combat flags, equipment slots, and
-// misc stat fields, then rolls the starting attribute/skill-point
-// arrays. param_1 selects which of the two real call sites this is:
-// character_generator_start passes 1 (reset-only, all rolled fields
-// zeroed, called before the interactive chargen UI runs so the player
-// starts from a blank sheet), while run_character_generator's own tail
-// (chargen.c) and the uw.c ~18695 call site pass 0 (actually roll
-// random starting stats via roll_dice_sum, called once chargen/a new
-// game is finalizing).
+// was FUN_000232ec -- resets the player record (DAT_00086df8, base &DAT_0023bca8 set by
+// reset_player_object_record) to new-character defaults: zeroes/reinitializes combat flags,
+// equipment slots, and misc stat fields...
 void init_new_character_record(param_1)
 int param_1;
 
@@ -760,16 +644,9 @@ int param_1;
 }
 
 
-// was FUN_000238b4 -- walks the character-generator skill tree (param_4,
-// a compact [count][id0][id1]...-encoded tree) starting from the cursor
-// index *param_1: for each leaf skill entry, records its id into the
-// output array param_2 (up to 5 entries) and advances the cursor,
-// returning 0 once done (or the array is full) so character_generator_loop
-// moves to its next state; on hitting a branch/submenu node instead,
-// populates the skill record param_3 with that submenu's choice count
-// and string-id list and returns 1, so the caller re-enters this same
-// state to show the sub-menu. See its own long-standing internal
-// comments for the specific field-layout evidence.
+// was FUN_000238b4 -- walks the character-generator skill tree (param_4, a compact
+// [count][id0][id1]...-encoded tree) starting from the cursor index *param_1: for each leaf skill
+// entry, records its id into the output array param_2 (up to 5 entries) and advances the cursor...
 undefined4 advance_skill_tree_node(param_1,param_2,param_3,param_4)
 byte * param_1;
 char *param_2;
@@ -801,21 +678,10 @@ char *param_4;
       else {
         if (*pbVar4 != 1) {
           iVar3 = (int)sVar2;
-          /* Branch node in the skill tree: [count][id0][id1]...  Set the
-             skill record's on-screen item count to this sub-menu's choice
-             count and populate its string-id list with the choice names
-             (skill id + 0x1f = its string number in block 4), then return
-             1 so character_generator_loop keeps state 3 and shows the
-             sub-menu drawn from that list. */
+          /* Branch node in the skill tree: [count][id0][id1]... */
           *(undefined1 *)(param_3 + 10) = *(undefined1 *)(iVar3 + param_4);
           *(undefined1 *)(param_3 + 0xb) = 0;
-          /* param_3+6 is the skill record's string-list field. Ghidra had
-             this as a bare absolute pointer (correct for the 32-bit
-             binary) and an earlier pass disabled the whole loop believing
-             the field was never populated -- but run_character_generator
-             (chargen.c) DOES write it, as a relative offset from
-             &DAT_000fb8f0 (same convention draw_chargen_field_value's read site uses).
-             Reconstruct the real pointer that way instead of skipping. */
+          /* param_3+6 is the skill record's string-list field. */
           {
             char *list = (char *)&DAT_000fb8f0 + *(int *)(param_3 + 6);
             iVar5 = 0;
@@ -838,13 +704,8 @@ char *param_4;
 }
 
 
-// was FUN_00023a00 -- draws the chargen stat screen's 4 attribute values
-// (DAT_0023be74 offsets +5/+6/+7 -- the 3 rolled 2d10+10 attributes set
-// by init_new_character_record -- and +4, a 4th value read rather than
-// rolled there) as right-aligned numbers next to their Str/Dex/Int/Hp
-// labels (see the DAT_00084e40/48/50/58_backing initializers above for
-// why those were empty and how the real roles were confirmed -- this
-// was the "main menu stat names not displaying" bug).
+// was FUN_00023a00 -- draws the chargen stat screen's 4 attribute values (DAT_0023be74 offsets
+// +5/+6/+7 -- the 3 rolled 2d10+10 attributes set by init_new_character_record -- and +4)...
 void draw_chargen_attribute_summary()
 
 {
@@ -875,11 +736,9 @@ void draw_chargen_attribute_summary()
 
 
 
-// was FUN_00023b38 -- draws the chargen skill-selection screen: blits a
-// backdrop bitmap, then lists up to 6 of the player's currently-selected
-// skills (nonzero entries in DAT_00086df8+0x21, up to 20 slots) with
-// each skill's name (get_message_string) and its point value
-// (itoa_radix), right-aligned.
+// was FUN_00023b38 -- draws the chargen skill-selection screen: blits a backdrop bitmap, then lists
+// up to 6 of the player's currently-selected skills (nonzero entries in DAT_00086df8+0x21, up to 20
+// slots) with each skill's name (get_message_string) and its point value (itoa_radix)...
 void draw_selected_skills_list()
 
 {
@@ -922,13 +781,9 @@ void draw_selected_skills_list()
 
 
 
-// was FUN_00023c90 -- walks param_2 (the skill-id array
-// advance_skill_tree_node fills) from index param_1 up to 6, calling
-// advance_skill_training on each valid skill id (<0x14) to actually
-// apply it to the player record, and returns the updated count. Called
-// from character_generator_loop each time a new skill choice is
-// confirmed, with param_1 tracking how many entries have already been
-// applied across calls.
+// was FUN_00023c90 -- walks param_2 (the skill-id array advance_skill_tree_node fills) from index
+// param_1 up to 6, calling advance_skill_training on each valid skill id (<0x14) to actually apply
+// it to the player record, and returns the updated count.
 int apply_confirmed_skill_picks(param_1,param_2)
 int param_1;
 char *param_2;
@@ -946,14 +801,9 @@ char *param_2;
 }
 
 
-// was FUN_00023cdc -- applies the just-chosen class/race's attribute
-// bonuses (looked up from &DAT_000fb860 by a class/race-derived index)
-// to the 3 rolled attributes (DAT_0023be74+5/6/7), clears the skill
-// array (DAT_00086df8+0x21, 20 slots) for a fresh pick, then randomly
-// distributes a class/race-specific bonus-point pool (&DAT_000fb863)
-// across the 3 attributes in 1-4 point increments, capped at 0x1e (30)
-// each. Called by character_generator_loop when the player confirms a
-// class/race choice, transitioning into skill selection.
+// was FUN_00023cdc -- applies the just-chosen class/race's attribute bonuses (looked up from
+// &DAT_000fb860 by a class/race-derived index) to the 3 rolled attributes (DAT_0023be74+5/6/7),
+// clears the skill array (DAT_00086df8+0x21, 20 slots) for a fresh pick...
 void reroll_attributes_for_class_race()
 
 {
@@ -965,9 +815,8 @@ void reroll_attributes_for_class_race()
   int extraout_r1;
   /* Was `int`, truncating the real char* pointer DAT_0023be74. */
   char *iVar5;
-  /* iVar6 doubles as a plain int index (into &DAT_000fb860) in the
-     first loop and a real pointer (DAT_00086df8 + iVar2) in the
-     second -- mutually exclusive, but both squeezed into `int`,
+  /* iVar6 doubles as a plain int index (into &DAT_000fb860) in the first loop and a real pointer
+     (DAT_00086df8 + iVar2) in the second -- mutually exclusive, but both squeezed into `int`,
      truncating the pointer role. Dedicated variable for that role. */
   int iVar6;
   char *pcVar_df8;
@@ -1008,28 +857,9 @@ void reroll_attributes_for_class_race()
 
 
 
-/* character_generator_loop's per-record array is raw CHRGEN.DAT file data laid out
-   as 8 contiguous 0x14-byte records; the name-entry text field (record
-   6) is the only one that needs a *real* buffer pointer, stored at
-   record6_base+2 (aka `param_1+1` in draw_chargen_field_value/draw_chargen_field_options/
-   wait_for_chargen_field_input's short-indexed reads, aka `param_3+0x7a`). In the
-   original 32-bit binary that field is only 4 bytes wide -- the low 32
-   bits of the buffer's address, just used as a "is this a text field"
-   nonzero check, never dereferenced as a real pointer directly by that
-   struct field's own storage. Widening it to an 8-byte pointer store/
-   load (an earlier fix attempt) corrupts the 4 bytes immediately after
-   it (record 6's own name-offset field at record6_base+6) and, worse,
-   for every OTHER record the same 8-byte-wide read pulls in whatever
-   raw file bytes follow their own (unrelated, genuinely 4-byte) low
-   bytes, misfiring as "nonzero" and sending every record into text-
-   entry mode with a garbage buffer pointer (confirmed via ASAN: BUS
-   error dereferencing 0x15b00000000-style nonsense for record 0).
-   Keep the field's ORIGINAL 4-byte marker semantics (any nonzero value
-   -- the exact bits never mattered) and stash the one real buffer
-   pointer here instead; only ever one text-entry field is active at a
-   time (character creation's name field), so a single global is
-   sufficient. Not `static` -- also used by chargen.c; see the extern
-   declaration in uw.h. */
+/* character_generator_loop's per-record array is raw CHRGEN.DAT file data laid out as 8 contiguous
+   0x14-byte records; the name-entry text field (record 6) is the only one that needs a *real*
+   buffer pointer... */
 char *g_chargen_textfield_buf;
 
 // was FUN_00023de8 -- draws the current chargen field's label and
@@ -1056,24 +886,13 @@ short * param_1;
   int iVar9;
   int iVar10;
   int iVar11;
-  /* iVar11 doubles as a real pointer (DAT_000fb858 + a small table
-     offset, read from right after) early on, and a plain int for
-     screen-coordinate math for the rest of the function -- mutually
-     exclusive, but both squeezed into `int iVar11`, truncating the
-     pointer since DAT_000fb858 is a real 64-bit pointer. Dedicated
-     variable for the pointer role only. */
+  /* iVar11 doubles as a real pointer (DAT_000fb858 + a small table offset, read from right after)
+     early on, and a plain int for screen-coordinate math for the rest of the function -- mutually
+     exclusive, but both squeezed into `int iVar11`... */
   char *pcVar_off;
-  /* Was `extraout_r1` -- the classic "call ordint_divmod, discard its
-     return, read the remainder via a register-leftover" idiom (same
-     class as draw_chargen_field_options's sVar_rem fix earlier this session), but
-     here that register was never even assigned in our C translation
-     -- genuinely uninitialized. This value is the column-within-row
-     remainder of `local_28 / param_1[8]` (items-per-row), gating both
-     whether the draw cursor wraps to a new row (Y advance) and where
-     X resets to for that new row. With it always uninitialized-
-     nonzero, Y never advanced and X grew unbounded every item --
-     confirmed via a caller-tagged diagnostic: all 8 class names drew
-     on the same row, X running from 288 to 1072 (screen is 320 wide). */
+  /* Was `extraout_r1` -- the classic "call ordint_divmod, discard its return, read the remainder
+     via a register-leftover" idiom (same class as draw_chargen_field_options's sVar_rem fix earlier
+     this session), but here that register was never even assigned in our C translation... */
   int iVar_rem;
   uint uVar12;
   uint uVar13;
@@ -1091,15 +910,8 @@ short * param_1;
     chargen_ui_transition_hook(0);
     DAT_000fb858 = DAT_001005c4;
     iVar10 = 0x14;
-    /* DAT_000fb880 (indexed by param_1[6], a race/portrait-style
-       selector) is never written anywhere in this decompile -- no call
-       site populates it, so it's permanently all-zero. With a zero
-       table entry, pcVar_off lands exactly at DAT_000fb858's buffer
-       start and `pcVar_off + -3/-4` reads before the allocation
-       (heap-buffer-overflow). Since there's no real data to read here
-       (this table's real populator is unrecovered, same class as the
-       already-documented non-functional glyph-width/texture-LUT
-       subsystems), fall back to 0 instead of underrunning the buffer. */
+    /* DAT_000fb880 (indexed by param_1[6], a race/portrait-style selector) is never written
+       anywhere in this decompile -- no call site populates it, so it's permanently all-zero. */
     if (pcVar_off - DAT_000fb858 < 4) {
       bVar1 = 0;
       bVar2 = 0;
@@ -1139,11 +951,9 @@ short * param_1;
   else {
     uVar8 = get_message_string((int)*param_1 | 0x400);
     iVar11 = 0xa4;
-    /* This field is a plain 4-byte nonzero marker ("is this a text-
-       entry field") for whichever record is currently being processed
-       -- see g_chargen_textfield_buf's comment near character_generator_loop for
-       why it must stay a narrow 4-byte read (widening it to 8 bytes
-       pulls in unrelated file data from other records and misfires). */
+    /* This field is a plain 4-byte nonzero marker ("is this a text- entry field") for whichever
+       record is currently being processed -- see g_chargen_textfield_buf's comment near
+       character_generator_loop for why it must stay a narrow 4-byte read... */
     if (*(int *)(param_1 + 1) == 0) {
       sVar7 = measure_text_width(uVar8);
       iVar9 = -(int)sVar7 + 0x91;
@@ -1183,14 +993,7 @@ short * param_1;
         }
         sVar7 = (short)uVar12;
         iVar11 = CONCAT11(*(undefined1 *)((char *)param_1 + 0x13),(char)param_1[9]) + iVar11 + uVar12;
-        /* Investigated as a possible "missing button outline" source this
-           session -- ruled out. DAT_000fb880[idx] here is constant across
-           every item in the list (idx is derived from the field's own
-           record, not per item), and its real CHRBTNS.GR pixel data is the
-           ornate gold bracket decoration running down the left page, not a
-           per-button border (confirmed by rendering it and by direct
-           inspection of the source .GR file's bytes). The actual button
-           outlines render correctly elsewhere in this same screen. */
+        /* Investigated as a possible "missing button outline" source this session -- ruled out. */
         bitmap_blit_to_framebuffer(iVar11,iVar10,
                      (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)param_1 + 0xd),(char)param_1[6])]
                      + iVar3,(int)(short)local_2c,sVar7,0,0,0);
@@ -1207,16 +1010,7 @@ short * param_1;
           draw_text_string(uVar8,iVar11 + (short)(iVar9 >> 1),iVar10 + 3);
         }
         else if (param_1[6] == 3) {
-          /* Portrait/head selector (chargen state 4). The DAT_000fb880
-             index Ghidra reconstructed here -- list[0] + sext(list[1]) +
-             local_28 -- evaluates to 1 + local_28 for this build's
-             CHRGEN.DAT (record 4's list is just {1}), which lands on
-             chrbtns entries 1-5 (button plates / armour tiles), not the
-             heads, and it has no sex term at all. chrbtns entries 7-16
-             are the ten head graphics (five male then five female);
-             character_generator_loop case 4 already indexes the matching
-             body figures as `17 + sexbit*5 + idx`. Use the same shape for
-             the heads: `7 + sexbit*5 + local_28`. */
+          /* Portrait/head selector (chargen state 4). */
           {
             int head_idx = 7 + ((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 5) + local_28;
             g_blit_transparent_mode = 1;
@@ -1245,16 +1039,9 @@ byte param_3;
   byte bVar1;
   byte bVar2;
   short sVar3;
-  /* Was `short extraout_r1` -- the classic "call ordint_divmod once for
-     the quotient, call it again with identical args purely to grab the
-     remainder via the register-leftover idiom" pattern already fixed
-     elsewhere this session (see itoa_radix), except here the second
-     call's return was silently dropped without ever assigning
-     extraout_r1 at all -- it was genuinely uninitialized garbage,
-     multiplied straight into the button/portrait X draw coordinate
-     below (confirmed: buttons drew far off to the screen's right edge
-     instead of centered in the right half once DAT_000fb880 started
-     returning real nonzero sizes). Computed directly instead. */
+  /* Was `short extraout_r1` -- the classic "call ordint_divmod once for the quotient, call it again
+     with identical args purely to grab the remainder via the register-leftover idiom" pattern
+     already fixed elsewhere this session (see itoa_radix)... */
   short sVar_rem;
   short sVar4;
   int iVar5;
@@ -1263,10 +1050,9 @@ byte param_3;
   uint uVar8;
   int iVar9;
   int iVar10;
-  /* iVar10 doubles as a plain int (screen-coordinate math, early on) and
-     a real pointer (DAT_000fb858, used as bitmap_blit_to_framebuffer's source-bitmap
-     arg) later -- mutually exclusive, but both squeezed into one `int`,
-     truncating the pointer. Dedicated variable for the pointer role. */
+  /* iVar10 doubles as a plain int (screen-coordinate math, early on) and a real pointer
+     (DAT_000fb858, used as bitmap_blit_to_framebuffer's source-bitmap arg) later -- mutually
+     exclusive, but both squeezed into one `int`, truncating the pointer. */
   char *pcVar_fb858;
   byte local_2c [2];
   short local_2a;
@@ -1391,16 +1177,9 @@ uint param_2;
     iVar9 = iVar10 >> 0x10;
     local_4 = param_2;
     do {
-      /* HACK: DAT_0023c63c (our click-hold flag -- see handle_mouse_message's
-         HACK comment) blocks flush_dirty_rect_to_display's actual screen flush the
-         whole time a button is held, unless g_force_flush is set (see
-         its gate at flush_dirty_rect_to_display's top, and draw_idle_mouse_cursor's matching
-         use of g_force_flush around its own single draw). Without this,
-         every per-iteration redraw here updated the software
-         framebuffer but the screen never actually presented it until
-         release -- confirmed via testing (drag/hover highlight updates
-         were invisible until mouse-up). Force the flush the same way
-         draw_idle_mouse_cursor does. */
+      /* HACK: DAT_0023c63c (our click-hold flag -- see handle_mouse_message's HACK comment) blocks
+         flush_dirty_rect_to_display's actual screen flush the whole time a button is held, unless
+         g_force_flush is set... */
       g_force_flush = 1;
       flush_dirty_rect_to_display(1);
       g_force_flush = 0;
@@ -1425,12 +1204,9 @@ LAB_000247f8:
         uVar13 = 0xffffffff;
       }
       else {
-        /* X uses this division's remainder, Y uses its quotient -- one
-           real ARM idivmod call in the original, split by Ghidra into
-           two separate ordint_divmod calls (one for each half) with
-           the remainder-wanting one reading an extraout_r1 that was
-           never populated. One real call now, both halves named off
-           its divmod_result. */
+        /* X uses this division's remainder, Y uses its quotient -- one real ARM idivmod call in the
+           original, split by Ghidra into two separate ordint_divmod calls (one for each half) with
+           the remainder-wanting one reading an extraout_r1 that was never populated. */
         divmod_result dmr1118 = ordint_divmod((int)sVar7,iVar8);
         extraout_r1 = dmr1118.rem;
         iVar12 = ((iVar1 * -0x10000 >> 0x10) - (extraout_r1 * local_38 * 0x10000 >> 0x10)) +
@@ -1469,26 +1245,18 @@ short * param_1;
   undefined2 uVar4;
   short sVar5;
   uint uVar6;
-  /* get_message_string's return (the label string for this field) was
-     discarded here, with the very next line calling measure_text_width() with
-     no argument -- relying on register leftovers to still hold that
-     same return value (the "dropped argument" idiom, same root bug as
-     draw_text_string/measure_text_width's own ce_strlen() fixes above). That
-     register doesn't reliably survive here either (confirmed: with it
-     broken, the name-entry field's _isctype gate always fell
-     through to the "buffer full" branch regardless of the typed key,
-     since iVar7's garbage value made every character comparison see an
-     always-too-large field). Capture and pass it explicitly. */
+  /* get_message_string's return (the label string for this field) was discarded here, with the very
+     next line calling measure_text_width() with no argument -- relying on register leftovers to
+     still hold that same return value... */
   char *pcVar_str;
   int iVar7;
   int iVar8;
   int iVar9;
   uint uVar10; // Selection index -- the currently-highlighted item in the field's list.
   int iVar11;
-  /* iVar11 doubles as a real pointer (DAT_000fb858 + a table offset,
-     read from right after) and then a plain int for the rest of the
-     function -- same pattern already fixed in draw_chargen_field_value/
-     draw_chargen_field_options above. Dedicated variable for the pointer role. */
+  /* iVar11 doubles as a real pointer (DAT_000fb858 + a table offset, read from right after) and
+     then a plain int for the rest of the function -- same pattern already fixed in
+     draw_chargen_field_value/ draw_chargen_field_options above. */
   char *pcVar_off;
   uint uVar12;
   uint uVar13;
@@ -1621,14 +1389,8 @@ LAB_00024dd4:
       uVar6 = (uint)uVar14;
       uVar12 = uVar10;
     } while (uVar13 == 0);
-    /* Log every confirmed chargen button selection (arrow-key/ENTER
-       confirm or a click), so it's always visible which one fired --
-       see debug.h. param_1[6]==0 fields (plain text lists, e.g. sex/
-       class selection) carry their per-item label strings in the
-       DAT_000fb8f0 table indexed by selection; other field kinds
-       (icon/portrait lists) don't have a per-item text label, so just
-       report the index for those. *param_1 is the field's own overall
-       prompt label id (see draw_chargen_field_value's matching lookup). */
+    /* Log every confirmed chargen button selection (arrow-key/ENTER confirm or a click), so it's
+       always visible which one fired -- see debug.h. param_1[6]==0 fields... */
     {
       char *item_text = "";
       if ((param_1[6] == 0) && (*(int *)(param_1 + 3) != 0)) {
@@ -1642,20 +1404,8 @@ LAB_00024dd4:
     pcVar_str = get_message_string(uVar6 | 0x400);
     iVar7 = measure_text_width(pcVar_str);
     /* get_message_string's compressed-string decoder (walk_strings_pak_huffman_tree and its
-       tree-walk helpers) has a separate, deeper bug -- confirmed via
-       diagnostics that this field's label lookup returns a fragment of
-       an unrelated, much longer string instead of the short intended
-       label, giving measure_text_width a huge nonsensical pixel width
-       (observed: 1743, vs. a real short label's ~10-60). That fed
-       straight into this text-entry loop's "does the cursor still fit
-       in the field" bounds check below (`0x12d < sVar3`), which starts
-       failing before a single character is even typed, permanently
-       blocking every keystroke (confirmed as the cause of character
-       creation hanging at "Enter your name" indefinitely). Until the
-       decoder bug is fixed, clamp the measured label width so the
-       field's cursor math stays sane and typing/confirming a name
-       works correctly -- the label text itself may still render wrong,
-       which is the already-documented separate cosmetic issue. */
+       tree-walk helpers) has a separate, deeper bug -- confirmed via diagnostics that this field's
+       label lookup returns a fragment of an unrelated... */
     if (0x40 < iVar7) {
       iVar7 = 0x40;
     }
@@ -1746,14 +1496,9 @@ LAB_00024dd4:
 }
 
 
-// was FUN_00035df8 -- takes no parameters and its decompiled body
-// takes no action, yet every call site in src/chargen.c passes a 0/1
-// flag at UI-transition points (screen changes, button
-// presses/releases). Left un-asserted whether this is a genuine
-// no-op in the real binary (e.g. an instrumentation hook compiled out
-// of this build) or a decompilation gap -- not confirmed via
-// disassembly. Kept as-is, matching its real (argument-less) decompiled
-// signature.
+// was FUN_00035df8 -- takes no parameters and its decompiled body takes no action, yet every call
+// site in src/chargen.c passes a 0/1 flag at UI-transition points (screen changes, button
+// presses/releases).
 void chargen_ui_transition_hook(param_1)
 undefined4 param_1;
 
@@ -1763,23 +1508,12 @@ undefined4 param_1;
 
 
 /* Ghidra's auto-analysis never recognized chrbtns_bump_alloc_entry/chrbtns_offset_table_builder as
-   real functions -- they're only reached indirectly (passed as callback
-   pointers to load_gr_resource_entries at run_character_generator's call site below), so no
-   `bl` ever pointed at them for the analyzer to follow, and they were
-   left as raw undecompiled ARM code, previously stubbed here as no-ops.
-   That silently made DAT_000fb858/DAT_000fb880 stay permanently
-   uninitialized, which is the real root cause behind this session's
-   "DAT_000fb880 is never written anywhere in this decompile" findings
-   throughout draw_chargen_field_value/draw_chargen_field_options/wait_for_chargen_field_input/etc. -- their
-   fallback-to-0 guards were masking a genuine missing-callback bug, not
-   a genuine data-recovery gap. Recovered by disassembling this address
-   range directly (via Ghidra's headless analyzer against the original
-   UU.exe): both are real, small functions with real logic. */
+   real functions -- they're only reached indirectly (passed as callback pointers to
+   load_gr_resource_entries at run_character_generator's call site below)... */
 
-/* r1 = &DAT_000fb858; r2 = *r1 (current cursor); r0 = r2 + param_1;
-   *r1 = r0 (advance cursor by param_1 bytes); return r2 (the position
-   *before* advancing) -- a bump-pointer sub-allocator carving fixed-
-   size chunks out of whatever buffer DAT_000fb858 currently points to. */
+/* r1 = &DAT_000fb858; r2 = *r1 (current cursor); r0 = r2 + param_1; r1 = r0 (advance cursor by
+   param_1 bytes); return r2 (the position before* advancing) -- a bump-pointer sub-allocator
+   carving fixed- size chunks out of whatever buffer DAT_000fb858 currently points to. */
 char *chrbtns_bump_alloc_entry(param_1)
 int param_1;
 {
@@ -1788,16 +1522,9 @@ int param_1;
   return old;
 }
 
-/* r0 is loaded fresh from a literal (&DAT_000fb880), discarding
-   whatever was passed in that register -- this callback's real
-   parameters are param_2 (r1) and param_3 (r2, only its low 16 bits
-   used, sign-extended, as a table index). Builds DAT_000fb880 as a
-   running total: table[0] seeded to 5 the first time idx==0 is seen,
-   then table[idx+1] = table[idx] + param_2 each call -- a cumulative
-   per-entry byte-offset table (matches every read site indexing it by
-   a record's portrait/race selector). Returns 0 when param_2==0
-   (signals "empty entry"/no more data to the load_gr_resource_entries driver),
-   else 1. */
+/* r0 is loaded fresh from a literal (&DAT_000fb880), discarding whatever was passed in that
+   register -- this callback's real parameters are param_2 (r1) and param_3 (r2, only its low 16
+   bits used, sign-extended, as a table index). */
 undefined4 chrbtns_offset_table_builder(param_1,param_2,param_3)
 int param_1;
 int param_2;

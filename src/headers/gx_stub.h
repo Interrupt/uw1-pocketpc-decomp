@@ -1,18 +1,12 @@
 #ifndef GX_STUB_H
 #define GX_STUB_H
 
-/* SDL_Event.*.which value tagging a click injected by uw_inject_mouse_* so
-   uw_pump_events takes the event's own coords (the GetGlobalMouseState
-   warp is a no-op under the dummy video driver). Also used by
-   democapture.c to recognize and skip a demo script's own injected
-   clicks, so replaying a demo file doesn't get recorded back into a new
-   one. */
+/* SDL_Event.*.which value tagging a click injected by uw_inject_mouse_* so uw_pump_events takes the
+   event's own coords (the GetGlobalMouseState warp is a no-op under the dummy video driver). */
 #define UW_SYNTH_MOUSE 0x55570001u
-/* Stamped into keysym.unused (a spare Uint32 that survives SDL's event
-   queue memcpy) on keydown/keyup events pushed by uw_inject_key_* so the
-   physical-ESC "abort the running demo" check can tell a real keypress
-   from a demo's own SDLHOLD injection. Also used by democapture.c, same
-   reason as UW_SYNTH_MOUSE above. */
+/* Stamped into keysym.unused (a spare Uint32 that survives SDL's event queue memcpy) on
+   keydown/keyup events pushed by uw_inject_key_* so the physical-ESC "abort the running demo" check
+   can tell a real keypress from a demo's own SDLHOLD injection. */
 #define UW_SYNTH_KEY 0x55570002u
 
 int GXOpenDisplay(void *hwnd, unsigned int flags);
@@ -36,133 +30,59 @@ void *GXGetDisplayProperties(void);
 int GXSuspend(void);
 int GXResume(void);
 
-/* Saves the current window contents (post-rotation, what's actually on
-   screen) as a BMP. Returns 1 on success, 0 on failure (no window yet, or
-   the write failed). Meant for demomode's SCREENSHOT command -- lets
-   scripted test runs (and Claude) capture what a screen looks like
-   without a human manually taking one. */
+/* Saves the current window contents (post-rotation, what's actually on screen) as a BMP. Returns 1
+   on success, 0 on failure (no window yet, or the write failed). */
 int uw_save_screenshot(const char *path);
 
-/* Debug tool: if UW_DEBUG_DUMP_GR is set (and not "0"), dumps every
-   .GR resource entry loaded through FUN_000417b4 to a BMP under
-   debug/gr/<resource-name>/<entry-index>.bmp, colored with the currently
-   installed game palette. No-op (cheap check) when the env var is unset.
-   entry_data/entry_size are the raw bytes for one entry as loaded from
-   the file (5-byte header: format, width, height, 2 unknown bytes,
-   followed by width*height raw palette-index pixel bytes -- confirmed
-   against CHRBTNS.GR's real file layout and bitmap_blit_to_framebuffer's
-   param semantics this session). */
+/* Debug tool: if UW_DEBUG_DUMP_GR is set (and not "0"), dumps every .GR resource entry loaded
+   through FUN_000417b4 to a BMP under debug/gr/<resource-name>/<entry-index>.bmp, colored with the
+   currently installed game palette. */
 void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
                              const unsigned char *entry_data, int entry_size);
 
-/* Debug tool: if UW_DEBUG_DUMP_CRIT is set (and not "0"), dumps every
-   critter/NPC sprite frame decode_critter_sprite_page produces to a BMP
-   under debug/crit/type<N>/tier<T>/dir<D>_frame<F>.bmp, colored with the
-   currently-installed game palette (decode happens mid-level, so the
-   right CRIT palette is already live the same way most .GR dumps are).
-   Meant to inspect how many of a given creature's 8 relative-viewing-
-   angle directions actually have distinct art in the real game data,
-   the same way UW_DEBUG_DUMP_GR is used to inspect .GR sprite sheets.
-   pixels is a plain type_width*type_height palette-index buffer (no
-   header, unlike a .GR entry). No-op (cheap check) when the env var is
-   unset.
-
-   UW_DEBUG_DUMP_CRIT_ALL (any value) disables the dedupe-by-
-   (type,tier,direction,frame) so every decode gets written instead of
-   just the first one seen.
-
-   width/height MUST be passed as (DAT_00202508, DAT_002022f8) in that
-   order -- DAT_00202508 is the real width, DAT_002022f8 the real height
-   (confirmed against the class-0 item decoder's identical header read:
-   `bVar1 = pcVar3[1]` = the .GR format's documented "byte1=width",
-   assigned to this same DAT_00202508). An earlier version of the caller
-   had these backwards, which doesn't affect the real on-screen renderer
-   (only ever used as a w*h product, or correctly by role in
-   emit_tile_objects's own quad math) but silently fed this dump tool a
-   swapped width/height, so every dumped BMP read each row at the wrong
-   stride and came out as scrambled noise -- initially mistaken for
-   real in-game dithering (a cropped real screenshot looked similarly
-   noisy at 1:1 scale, which seemed to confirm it) until the user
-   correctly flagged the dump tool's own pixel pitch as the real
-   suspect. Fixed; a correctly-oriented sprite comes out clean. */
+/* Debug tool: if UW_DEBUG_DUMP_CRIT is set (and not "0"), dumps every critter/NPC sprite frame
+   decode_critter_sprite_page produces to a BMP under
+   debug/crit/type<N>/tier<T>/dir<D>_frame<F>.bmp... */
 void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
                                    const unsigned char *pixels, int width, int height);
 
-/* Debug tool: if UW_DEBUG_DRAW is set (and not "0"), dumps the internal
-   320x240 RGB565 software framebuffer (g_uw_framebuffer) to a BMP after
-   every draw call that goes through graphics.c's rect_fill_or_save_restore
-   or bitmap_blit_to_framebuffer, so a whole run's sequence of draws can be
-   played back frame-by-frame afterward. All dumps from one run land under
-   one directory named for that run's start time, debug/drawdumps/<ts>/,
-   each file numbered by an increasing draw-call counter and tagged with
-   which function produced it. No-op (cheap check) when the env var is
-   unset. `tag` should be a short caller name, e.g. "blit" or "rect_fill".
-   UW_DEBUG_DRAW_EVERY=N thins the output to every Nth call (for very
-   long sequences like a full-level automap fill). */
+/* Debug tool: if UW_DEBUG_DRAW is set (and not "0"), dumps the internal 320x240 RGB565 software
+   framebuffer (g_uw_framebuffer) to a BMP after every draw call that goes through graphics.c's
+   rect_fill_or_save_restore or bitmap_blit_to_framebuffer... */
 void debug_framebuffer_dump(const char *tag);
 
-/* Debug tool: one-shot capture of every individual 3D face draw for the
-   next 3D render pass, armed live from the UW_MODEL_TUNER debug panel's
-   "dump_3d_frame" button rather than an env var. uw_debug_request_3d_
-   frame_dump() arms it; uw_debug_dump_3d_face(tag) (called from uw.c's
-   render_visible_tile_list, right after each raster_triangle call) is
-   the no-op-when-disarmed capture; uw_debug_3d_frame_dump_finish()
-   disarms it once that render pass is done. Files land under
-   debug/facedumps/<ts>_<n>/ -- a fresh, separately-numbered folder per
-   press, not one growing folder per process -- one BMP per face,
-   numbered in actual paint order -- lets a single frame's full 3D draw
-   sequence be inspected (which face painted over which, in what order)
-   the way UW_DEBUG_DRAW already does for 2D primitives. */
+/* Debug tool: one-shot capture of every individual 3D face draw for the next 3D render pass, armed
+   live from the UW_MODEL_TUNER debug panel's "dump_3d_frame" button rather than an env var.
+   uw_debug_request_3d_ frame_dump() arms it... */
 void uw_debug_request_3d_frame_dump(void);
 void uw_debug_dump_3d_face(const char *tag);
-/* Returns -1 if no capture was pending (the common case -- called
-   unconditionally every render_visible_tile_list pass), otherwise the
-   number of faces just captured. The caller (uw.c, right after this
-   call) uses a non-negative return to print a confirmation to the
-   in-game message scroll (message_scroll_print_wrapped) -- the capture
-   itself only writes files, nothing on screen, so without this a
-   button press looks identical whether it wrote 90 files or zero. */
+/* Returns -1 if no capture was pending (the common case -- called unconditionally every
+   render_visible_tile_list pass), otherwise the number of faces just captured. */
 int uw_debug_3d_frame_dump_finish(void);
 /* Directory the most recent (or in-progress) 3D face capture wrote
    into, e.g. "debug/facedumps/20260927_161447". Valid once the first
    capture this process has started. */
 const char *uw_debug_3d_frame_dump_last_dir(void);
 
-/* Debug tool: if UW_DEBUG_DUMP_TMAP is set (and not "0"), dumps a level's
-   64x64 tile map to a BMP right after it's loaded from the .ark file --
-   solid tiles (tile type 0, the classic UW "rock/no floor" type) as black,
-   every other tile type (open floor and its diagonal/slope variants) as
-   white. One 64x64-pixel BMP per load under debug/tmap/<ts>/, named by an
-   increasing counter and the level number, so a new game (and any level
-   transition) each gets their own file. tile_data is the raw 4-bytes-per-
-   tile array as loaded (DAT_002029cc in uw.c); only byte 0's low nibble of
-   each 4-byte entry is read. No-op (cheap check) when the env var is
-   unset. */
+/* Debug tool: if UW_DEBUG_DUMP_TMAP is set (and not "0"), dumps a level's 64x64 tile map to a BMP
+   right after it's loaded from the .ark file -- solid tiles (tile type 0, the classic UW "rock/no
+   floor" type) as black... */
 void uw_debug_dump_tmap(int level, const unsigned char *tile_data);
 
-/* Debug tool: if UW_DEBUG_DUMP_REVEALMAP is set (and not "0"), dumps the
-   current level's 64x64 automap-reveal byte array (DAT_000b99d0 in uw.c,
-   one byte per tile, nonzero = revealed) to a BMP -- unrevealed black,
-   revealed white -- every time it's called. Meant to be called once from
-   draw_automap_screen so opening the map (OPENMAP in a demo script)
-   produces a BMP directly comparable to uw_debug_dump_tmap's solid/open
-   layout, to check the reveal logic against the real level geometry. */
+/* Debug tool: if UW_DEBUG_DUMP_REVEALMAP is set (and not "0"), dumps the current level's 64x64
+   automap-reveal byte array (DAT_000b99d0 in uw.c, one byte per tile, nonzero = revealed) to a BMP
+   -- unrevealed black, revealed white -- every time it's called. */
 void uw_debug_dump_revealmap(const unsigned char *reveal_data);
 
-/* Returns 1 and clears the flag if a mouse event (move/click) was
-   processed since the last call, 0 otherwise. One-shot "was there a
-   pending mouse message" signal for PeekMessageW (PeekMessage) -- see its
-   comment in ordinal_stubs.c for why this is needed alongside
-   DAT_0023c448. */
+/* Returns 1 and clears the flag if a mouse event (move/click) was processed since the last call, 0
+   otherwise. One-shot "was there a pending mouse message" signal for PeekMessageW (PeekMessage) --
+   see its comment in ordinal_stubs.c for why this is needed alongside DAT_0023c448. */
 int uw_take_mouse_event_pending(void);
 
 
-/* For scripted/unattended testing: warps the real cursor to (window_x,
-   window_y) (SDL window points) and pushes genuine SDL_MOUSEBUTTONDOWN/UP
-   events, so the click flows through the exact same path a real mouse
-   click does (unlike demomode's CLICK command, which bypasses
-   uw_pump_events entirely). Returns 1 on success, 0 if there's no window
-   yet. */
+/* For scripted/unattended testing: warps the real cursor to (window_x, window_y) (SDL window
+   points) and pushes genuine SDL_MOUSEBUTTONDOWN/UP events, so the click flows through the exact
+   same path a real mouse click does... */
 int uw_inject_mouse_click(int window_x, int window_y);
 
 /* Right-button click (interact). Down+up queued together. */
@@ -174,26 +94,18 @@ int uw_inject_mouse_rclick(int window_x, int window_y);
 int uw_inject_mouse_down(int window_x, int window_y);
 int uw_inject_mouse_up(int window_x, int window_y);
 
-/* Right-button split halves of uw_inject_mouse_rclick, for testing a real
-   right-button DRAG (down over one object, hold across a real multi-poll
-   gap, move, then release somewhere else -- e.g. grabbing a world object
-   and dragging it onto the inventory HUD) rather than an instantaneous
-   click. */
+/* Right-button split halves of uw_inject_mouse_rclick, for testing a real right-button DRAG (down
+   over one object, hold across a real multi-poll gap, move, then release somewhere else)... */
 int uw_inject_mouse_rdown(int window_x, int window_y);
 int uw_inject_mouse_rup(int window_x, int window_y);
 
-/* Warp the cursor and push a genuine SDL_MOUSEMOTION event with no button
-   state change -- the "move while held" middle of a drag. Warping alone
-   may or may not synthesize a motion event depending on the video
-   backend, so this pushes one explicitly for tests that need the game to
-   actually see intermediate movement (not just a teleported cursor)
-   while a button is held down. */
+/* Warp the cursor and push a genuine SDL_MOUSEMOTION event with no button state change -- the "move
+   while held" middle of a drag. */
 int uw_inject_mouse_motion(int window_x, int window_y);
 
-/* Push a genuine SDL_KEYDOWN (+ SDL_TEXTINPUT for a printable key) / SDL_KEYUP
-   for the given SDL_Keycode, so scripted tests exercise uw_pump_events()'s
-   real keyboard path (demomode's SDLHOLD command). Returns 1, or 0 if
-   there's no window yet. */
+/* Push a genuine SDL_KEYDOWN (+ SDL_TEXTINPUT for a printable key) / SDL_KEYUP for the given
+   SDL_Keycode, so scripted tests exercise uw_pump_events()'s real keyboard path (demomode's SDLHOLD
+   command). Returns 1, or 0 if there's no window yet. */
 int uw_inject_key_down(int sdl_keycode);
 int uw_inject_key_up(int sdl_keycode);
 void uw_clear_synth_scancode(int sdl_keycode);

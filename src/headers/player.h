@@ -113,14 +113,9 @@ extern short DAT_00201b64;
 extern code *DAT_00201c9c;
 
 
-/* The travel-direction stash the movement sweep compares against
-   DAT_00201c78: apply_heading_turn writes it as two bytes (DAT_002048a1
-   low, DAT_002048a2 high) of that 16-bit angle, so read it back as a
-   signed 16-bit -- not a 32-bit word that also pulls in DAT_002048a3/a4
-   (junk here) and, with the sign mismatch vs the short DAT_00201c78, made
-   the "!=" test fire every frame. That spurious mismatch ran the
-   auto-straighten branch on sidestep release and nudged the facing by
-   +/-0x400 (the "tiny rotation on strafe release"). */
+/* The travel-direction stash the movement sweep compares against DAT_00201c78: apply_heading_turn
+   writes it as two bytes (DAT_002048a1 low, DAT_002048a2 high) of that 16-bit angle, so read it
+   back as a signed 16-bit... */
 #define _DAT_002048a1 (*(short*)&DAT_002048a1)
 #define _DAT_002048a9 (*(uint*)&DAT_002048a9)
 

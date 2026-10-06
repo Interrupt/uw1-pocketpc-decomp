@@ -1,8 +1,6 @@
-/* Weapon swing animation: frame loading/allocation, the request/draw
- * tick, and the weapon overlay redraw. Split out of uw.c (the
- * original monolithic decompile) once these functions' real roles
- * were confirmed.
- */
+/* Weapon swing animation: frame loading/allocation, the request/draw tick, and the weapon overlay
+   redraw. Split out of uw.c (the original monolithic decompile) once these functions' real roles
+   were confirmed. */
 #include "headers/weapon_swing.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -19,12 +17,9 @@ short DAT_000870e4 = -1;
 static short DAT_001005e8;
 static undefined DAT_001005f0;
 static byte DAT_00100614;
-/* Was a lone `undefined` scalar, same bug as DAT_00084eff just above --
-   tick_weapon_swing_state indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 =
-   attack-type/3 (0-3), selecting which of a small set of swing
-   animations (`DAT_00084f10`) to play. Recovered via Ghidra headless
-   (0x84f0b, 5 bytes -- DAT_00084f10, the next real symbol, starts
-   exactly 5 bytes later): 00 34 27 19 00. */
+/* Was a lone `undefined` scalar, same bug as DAT_00084eff just above -- tick_weapon_swing_state
+   indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 = attack-type/3 (0-3), selecting which of a
+   small set of swing animations (`DAT_00084f10`) to play. */
 static unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
 #define DAT_00084f0b DAT_00084f0b_backing[0]
 // After a sprite-category load, restore idle (6), not swing action 0.
@@ -32,11 +27,8 @@ undefined1 DAT_000870e0 = 6;
 static void *g_weapon_swing_raw_frames[UW_WEAPON_SWING_FRAME_COUNT];
 static char s__DATA_weapons_dat_00087268[] = "\\DATA\\weapons.dat";
 static char s_weapons_0008727c[] = "weapons";
-// was DAT_0023c198/DAT_0023c1b8 (.data 0x87198/0x871b8) -- per-frame
-// Y/X screen-offset tables (one signed byte per frame, 28 frames) for
-// the weapon-swing sprite set, read straight from weapons.dat by
-// load_weapon_swing_sprites and consumed by weapon_swing_draw_tick to
-// position each frame relative to the 3D viewport.
+// was DAT_0023c198/DAT_0023c1b8 (.data 0x87198/0x871b8) -- per-frame Y/X screen-offset tables (one
+// signed byte per frame, 28 frames) for the weapon-swing sprite set...
 static undefined1 g_weapon_swing_frame_y_offset_backing[256];
 #define g_weapon_swing_frame_y_offset g_weapon_swing_frame_y_offset_backing[0]
 static undefined1 g_weapon_swing_frame_x_offset_backing[256];
@@ -53,21 +45,9 @@ static undefined1 DAT_00202700_backing[16];
 
 
 
-// was LAB_0006e324 -- load_weapon_swing_sprites's (weapons.GR loader)
-// registrar callback (param_5), called once per loaded weapon-swing
-// sprite frame with its raw (still-compressed) entry buffer, byte
-// size, and 0-27 frame index. Ghidra couldn't resolve this address
-// into a proper function (an indirect-jump/jumptable target it gave
-// up on) and it was stubbed as a bare `return 0;` -- same wrong
-// assumption already corrected once for alloc_door_frame_buffer (see
-// its own comment). A no-op here made load_gr_resource_entries's
-// overall result always fail even after the allocator below was
-// fixed, AND meant nothing ever stored the loaded frames anywhere:
-// weapon_swing_draw_tick (was FUN_0006fcb0) needs exactly this raw
-// buffer per frame to decode and blit during a swing (see
-// g_weapon_swing_raw_frames), matching doors' equivalent
-// g_grtile_registry[] table one-for-one. Register it there instead of
-// discarding it.
+// was LAB_0006e324 -- load_weapon_swing_sprites's (weapons.GR loader) registrar callback (param_5),
+// called once per loaded weapon-swing sprite frame with its raw (still-compressed) entry buffer,
+// byte size, and 0-27 frame index.
 undefined4 weapon_swing_frame_loaded(void *buf, unsigned size, int idx)
 
 {
@@ -78,19 +58,9 @@ undefined4 weapon_swing_frame_loaded(void *buf, unsigned size, int idx)
   return 1;
 }
 
-// was LAB_0006e2f4 -- load_weapon_swing_sprites's (weapons.GR loader,
-// called when the player's weapon-hand contents change -- including
-// empty-handed, which resolves to category 3/"fist") allocator
-// callback (param_4). Ghidra couldn't resolve this address into a
-// proper function (an indirect-jump/jumptable target it gave up on),
-// the exact same wrong assumption already found and fixed once in
-// this file for alloc_door_frame_buffer (see its own comment).
-// Confirmed live via UW_DEBUG_COMBAT: weapons.GR's header and every
-// requested frame's directory entry read fine (real, valid, non-zero
-// sizes for all 28 frames of every category including the unarmed
-// one), but load_gr_resource_entries failed immediately at the
-// allocate-a-destination-buffer step on the very first frame, because
-// this stub always returned NULL. Real allocator like its sibling.
+// was LAB_0006e2f4 -- load_weapon_swing_sprites's (weapons.GR loader, called when the player's
+// weapon-hand contents change -- including empty-handed, which resolves to category 3/"fist")
+// allocator callback (param_4).
 void *weapon_swing_frame_alloc(param_1)
 unsigned int param_1;
 
@@ -101,12 +71,8 @@ unsigned int param_1;
 
 
 
-// was FUN_0006e360 -- sets the weapon-swing animation "category" to
-// load (0-3, from the weapon-hand item's melee-weapon-stats byte 6, or
-// 3 for empty-handed/fist -- see request_weapon_swing_graphic's own
-// caller in refresh_player_equipment_effects) and marks the redraw-dirty bit that
-// hud_panel_redraw_dispatch/advance_action_animation_frame eventually
-// act on to actually load the sprite set (load_weapon_swing_sprites).
+// was FUN_0006e360 -- sets the weapon-swing animation "category" to load (0-3, from the weapon-hand
+// item's melee-weapon-stats byte 6, or 3 for empty-handed/fist)...
 void request_weapon_swing_graphic(param_1)
 char param_1;
 
@@ -123,13 +89,9 @@ char param_1;
 
 
 
-// was FUN_0006e3ac -- loads WEAPONS.GR's 28-frame swing-animation
-// sprite set for the requested weapon-swing category (DAT_000870d8,
-// set by request_weapon_swing_graphic) plus its matching 28-byte
-// timing/hit-data rows from WEAPONS.DAT, short-circuiting to success
-// if that category is already loaded. Called from
-// advance_action_animation_frame whenever the requested category
-// changes.
+// was FUN_0006e3ac -- loads WEAPONS.GR's 28-frame swing-animation sprite set for the requested
+// weapon-swing category (DAT_000870d8, set by request_weapon_swing_graphic) plus its matching
+// 28-byte timing/hit-data rows from WEAPONS.DAT...
 byte load_weapon_swing_sprites()
 
 {
@@ -173,15 +135,9 @@ byte load_weapon_swing_sprites()
       iVar6 = open_file_for_read(acStack_118);
       bVar2 = bVar2 & iVar6 != -1;
       if (iVar6 != -1) {
-        /* Was `bVar3 = seek_file_handle(...)` truncated straight to a byte
-           and then bitwise-&'d into bVar2's overall success flag below --
-           seek_file_handle (SetFilePointer-shaped, see uw_file_seek) returns
-           the real new file offset on success (fits fine in a byte here,
-           but is not itself a 0/1 boolean) or -1 on failure, so `& 1`
-           against an arbitrary offset like 136 (0x88, bit 0 clear) zeroed
-           the whole AND chain even on a successful seek. Normalize to a
-           real boolean first, matching every other success flag in this
-           expression. */
+        /* Was `bVar3 = seek_file_handle(...)` truncated straight to a byte and then bitwise-&'d
+           into bVar2's overall success flag below -- seek_file_handle (SetFilePointer-shaped, see
+           uw_file_seek) returns the real new file offset on success... */
         iSeekResult = seek_file_handle(iVar6,(int)((iVar8 + (bVar3 & 1) * -4 + 4) * 0x380000) >> 0x10,0);
         bVar3 = iSeekResult != -1;
         iVar8 = read_file_handle(iVar6,&g_weapon_swing_frame_x_offset,0x1c);
@@ -203,25 +159,15 @@ byte load_weapon_swing_sprites()
 
 
 
-// was FUN_0006fcb0 -- draws the weapon-swing sprite over the 3D
-// viewport for the current frame of advance_action_animation_frame's
-// state machine, gated on g_dungeon_view_active/g_weapon_overlay_enabled.
-// Called from render_dungeon_frame_timed, right after
-// render_dungeon_view() itself; render_dungeon_frame_timed is now
-// wired into the normal per-tick render path too (see
-// main_loop_hud_flush's forced-redraw hack).
+// was FUN_0006fcb0 -- draws the weapon-swing sprite over the 3D viewport for the current frame of
+// advance_action_animation_frame's state machine, gated on
+// g_dungeon_view_active/g_weapon_overlay_enabled.
 void weapon_swing_draw_tick()
 
 {
   short sVar1;
-  /* Was `undefined4` -- decode_gr_entry_bitmap returns a real 64-bit
-     bitmap pointer, truncated on this 64-bit host before being passed
-     on to bitmap_blit_to_framebuffer. Same pointer-truncation class as
-     nearly every other bug in this project; confirmed live (crashed
-     inside bitmap_blit_to_framebuffer on the truncated address the
-     moment the two bugs upstream -- the missing frame storage and the
-     dropped decode argument -- were both fixed and a real decode
-     finally succeeded). */
+  /* Was `undefined4` -- decode_gr_entry_bitmap returns a real 64-bit bitmap pointer, truncated on
+     this 64-bit host before being passed on to bitmap_blit_to_framebuffer. */
   char *uVar2;
 
   g_blit_transparent_mode = 1;
@@ -249,11 +195,9 @@ void weapon_swing_draw_tick()
        g_weapon_swing_current_frame's own comment. */
     g_weapon_swing_current_frame = ((unsigned)(ushort)sVar1 < UW_WEAPON_SWING_FRAME_COUNT) ?
                    g_weapon_swing_raw_frames[sVar1] : 0;
-    /* Was `FUN_000409f8()` -- dropped argument (same "ARM register-
-       leftover doesn't survive a literal recompile" idiom as every
-       other dropped-argument bug in this file). decode_gr_entry_bitmap
-       needs the raw entry buffer just resolved above; without it, it
-       dereferenced whatever register happened to be lying around. */
+    /* Was `FUN_000409f8()` -- dropped argument (same "ARM register- leftover doesn't survive a
+       literal recompile" idiom as every other dropped-argument bug in this file).
+       decode_gr_entry_bitmap needs the raw entry buffer just resolved above; without it... */
     uVar2 = (g_weapon_swing_current_frame == 0) ? 0 : decode_gr_entry_bitmap(g_weapon_swing_current_frame);
     if (getenv("UW_DEBUG_COMBAT")) {
       fprintf(stderr, "[wswing] DAT_0023c130=%d DAT_000870e4=%d sVar1=%d frame=%p drawn=%d\n",
@@ -278,11 +222,8 @@ void weapon_swing_draw_tick()
 
 
 
-// was FUN_0006fea4 -- full-screen "hard refresh" utility: draws the
-// weapon-swing overlay (if the dungeon view is active) then marks the
-// entire screen dirty. Called after level loads/respawns/full
-// redraws, not from the normal per-frame render path (that's
-// render_dungeon_frame_timed calling weapon_swing_draw_tick directly).
+// was FUN_0006fea4 -- full-screen "hard refresh" utility: draws the weapon-swing overlay (if the
+// dungeon view is active) then marks the entire screen dirty.
 void weapon_overlay_and_full_redraw()
 
 {
@@ -299,12 +240,9 @@ void weapon_overlay_and_full_redraw()
 
 
 
-// was FUN_0006e554 -- sets DAT_0023c1ec (the weapon-swing sprite's
-// horizontal jitter offset, applied in src/weapon_swing.c's blit) from
-// param_1's shake intensity: 0 clears it, 1 picks a small random value
-// (-4..4, via ce_rand mod 5), 2 a larger one (-9..9, mod 10).
-// Its one caller derives param_1 from g_jump_ascent_timer, so this is
-// the weapon-bob jitter while the player is airborne from a jump.
+// was FUN_0006e554 -- sets DAT_0023c1ec (the weapon-swing sprite's horizontal jitter offset,
+// applied in src/weapon_swing.c's blit) from param_1's shake intensity: 0 clears it, 1 picks a
+// small random value (-4..4, via ce_rand mod 5), 2 a larger one (-9..9, mod 10).
 void randomize_weapon_jump_shake(param_1)
 short param_1;
 
@@ -357,19 +295,9 @@ short param_1;
 
 
 
-// was FUN_0006e648 -- shared player-action animation state machine
-// (weapon raise/ready, among others): reads the requested action type
-// (DAT_0023c120, set via set_hud_status_value(8,N)), drives the current-action
-// state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4),
-// and calls load_weapon_swing_sprites once a weapon-category change
-// needs new sprites. Only reachable via hud_panel_redraw_dispatch's
-// dirty-bit-gated dispatch table (g_hud_panel_handlers_table[12]), which
-// IS wired into the real per-frame dispatch (DAT_00085668, mode 0) --
-// confirmed live via UW_DEBUG_COMBAT that this runs continuously during
-// normal play, not dead code. DAT_000870e4 is also read (separately,
-// for different meaning) by the attack-swing state machine
-// (tick_weapon_swing_state) once armed -- the exact interaction between the two
-// during a live swing is still not fully understood (see memory.md).
+// was FUN_0006e648 -- shared player-action animation state machine (weapon raise/ready, among
+// others): reads the requested action type (DAT_0023c120, set via set_hud_status_value(8,N)),
+// drives the current-action state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4)...
 void advance_action_animation_frame()
 
 {
@@ -479,12 +407,9 @@ LAB_0006e7d0:
 
 
 
-// was FUN_0006e89c -- loads a 16-byte weapon combat-maneuver record
-// from \DATA\weapons.cm into DAT_00202700, seeking to offset 0x10 or 0
-// depending on a flag at DAT_00086df8+100 (bits 0x1c == 4, an
-// unidentified player/class condition). Called after character
-// generation and after a successful game load to (re)load the current
-// weapon's swing-animation data.
+// was FUN_0006e89c -- loads a 16-byte weapon combat-maneuver record from \DATA\weapons.cm into
+// DAT_00202700, seeking to offset 0x10 or 0 depending on a flag at DAT_00086df8+100 (bits 0x1c ==
+// 4, an unidentified player/class condition).
 bool load_weapon_combat_maneuver_data()
 
 {
@@ -525,14 +450,9 @@ bool load_weapon_combat_maneuver_data()
 }
 
 
-// was FUN_00012948 -- always returns immediately and does nothing
-// else; confirmed used two ways at its real call sites (uw.c): once
-// inside a 13-iteration animation loop (weapon_overlay_flash_hold) alongside
-// weapon_overlay_and_full_redraw, and once passed BY ADDRESS as a
-// callback argument to decrement_cursor_hide_depth (the same helper
-// wait_for_click_to_continue calls). Matches the same "dead/stripped
-// debug hook" pattern already confirmed for debug_print_init,
-// debug_print, and debug_noop_checkpoint elsewhere in this file.
+// was FUN_00012948 -- always returns immediately and does nothing else; confirmed used two ways at
+// its real call sites (uw.c): once inside a 13-iteration animation loop (weapon_overlay_flash_hold)
+// alongside weapon_overlay_and_full_redraw...
 void debug_noop_frame_hook(param_1)
 undefined4 param_1;
 
@@ -541,11 +461,8 @@ undefined4 param_1;
 }
 
 
-// was FUN_000271dc -- finds/consumes the ammunition item required for
-// weapon type param_1 (looked up from &DAT_002027d2), returning its
-// inventory slot; on failure (none found), prints a "Sorry, you have
-// no <item>" message to the scroll (with a fallback "UNNAMED" name if
-// the display-name build fails) and returns -1.
+// was FUN_000271dc -- finds/consumes the ammunition item required for weapon type param_1 (looked
+// up from &DAT_002027d2), returning its inventory slot; on failure (none found), prints a "Sorry...
 int find_and_consume_ammo(param_1)
 short param_1;
 
@@ -555,14 +472,9 @@ short param_1;
   short sVar2;
   int iVar3;
   char *pcVar4;
-  /* Was 544528 bytes -- same Ghidra stack-frame-size-miscalculation
-     artifact already fixed elsewhere this session (check_object_fits_in_slot,
-     dispatch_object_action, try_combine_or_stow_object): a scratch copy of
-     the short "UNNAMED" string that's never read back afterward (the
-     actual display-name buffer printed below is acStack_3c, not this
-     one). Left at its bogus size this reserved ~532KB of stack on every
-     single ranged-weapon-attack-with-no-ammo check -- on the hot combat
-     path, unlike the other three (UI-only) call sites. */
+  /* Was 544528 bytes -- same Ghidra stack-frame-size-miscalculation artifact already fixed
+     elsewhere this session (check_object_fits_in_slot, dispatch_object_action,
+     try_combine_or_stow_object)... */
   char acStackY_84f60 [64];
   short local_4c [4];
   ushort local_44 [4];
@@ -594,11 +506,9 @@ short param_1;
 }
 
 
-// was FUN_000275e0 -- resets the weapon-swing state machine after a
-// completed swing: sets DAT_0010062c to a cooldown value, clears the
-// "swing charging" cursor-holding flags, and resets the HUD status
-// icons. Called from tick_weapon_swing_state's own swing-completion
-// path.
+// was FUN_000275e0 -- resets the weapon-swing state machine after a completed swing: sets
+// DAT_0010062c to a cooldown value, clears the "swing charging" cursor-holding flags, and resets
+// the HUD status icons. Called from tick_weapon_swing_state's own swing-completion path.
 void reset_weapon_swing_state()
 
 {
@@ -633,13 +543,9 @@ void update_weapon_ready_hud_icon()
 
 
 
-// was FUN_00027694 -- fully cancels an in-progress weapon swing
-// (charging or mid-animation): releases any held swing-charge cursor
-// state, updates the HUD icons, and resets the swing phase counter
-// (DAT_0010062c), pending-swing marker (DAT_00084f10), and attacker
-// marker (DAT_00100610) to their idle values. Called whenever gameplay
-// interrupts a swing in progress (opening inventory, changing level,
-// using an item).
+// was FUN_00027694 -- fully cancels an in-progress weapon swing (charging or mid-animation):
+// releases any held swing-charge cursor state, updates the HUD icons, and resets the swing phase
+// counter (DAT_0010062c), pending-swing marker (DAT_00084f10)...
 void cancel_weapon_swing()
 
 {
@@ -656,17 +562,9 @@ void cancel_weapon_swing()
 
 
 
-// was FUN_00027708 -- per-frame weapon-swing state machine: param_1 is
-// the requested attack direction/type (0=none, from interact_attack's
-// screen-position-to-3x3-grid mapping), and DAT_0010062c is the swing
-// phase counter (negative while charging/swinging). If no swing is in
-// progress and a direction is requested, resolves the equipped weapon
-// (resolve_equipped_weapon_attack) and starts charging; while charging,
-// tracks elapsed real time (read_realtime_clock_units) into a charge
-// percentage (DAT_00100614) shown on the HUD; once the charge/swing
-// countdown completes, calls compute_player_weapon_attack_stats and
-// process_melee_attack_swing to actually resolve the attack, then
-// resets state via reset_weapon_swing_state. Own "[swing]" debug trace.
+// was FUN_00027708 -- per-frame weapon-swing state machine: param_1 is the requested attack
+// direction/type (0=none, from interact_attack's screen-position-to-3x3-grid mapping), and
+// DAT_0010062c is the swing phase counter (negative while charging/swinging).
 void tick_weapon_swing_state(param_1)
 short param_1;
 
@@ -678,13 +576,9 @@ short param_1;
   int iVar5;
   int iVar6;
   undefined2 local_20 [2];
-  /* Was folded into `iVar5` (int) -- the pointer DAT_001005e4 now
-     carries (see its own fix) needs to stay a real 64-bit pointer
-     across this function's two dereference sites below (~17130 and
-     ~17180). iVar5 itself keeps its OTHER, disjoint int uses further
-     down (is_mouse_within_tracked_hotspot's result, and the whole "start a new swing"
-     else-if branch) -- those never run in the same call as these
-     dereferences, so they're left as plain int. */
+  /* Was folded into `iVar5` (int) -- the pointer DAT_001005e4 now carries (see its own fix) needs
+     to stay a real 64-bit pointer across this function's two dereference sites below (~17130 and
+     ~17180). iVar5 itself keeps its OTHER... */
   char *pRecord;
 
   if (((short)DAT_00084f10 < 1) || ((&DAT_00250658)[(short)DAT_00084f10] == '\0')) {
@@ -806,11 +700,8 @@ LAB_00027754:
 }
 
 
-// was FUN_00040bc0 -- resolves a sprite id to its .GR frame, decodes
-// it, and blits it at (param_2,param_3). Only known caller is
-// src/weapon_swing.c's weapon-swing HUD icon draw (ids
-// 0x107f/0x1080/0x1081, drawn back-to-back every frame), but the body
-// is a generic "draw this icon sprite" helper, not swing-specific.
+// was FUN_00040bc0 -- resolves a sprite id to its .GR frame, decodes it, and blits it at
+// (param_2,param_3).
 void draw_hud_icon_sprite(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
@@ -824,19 +715,9 @@ undefined4 param_3;
   undefined4 unaff_r5;
   uint resolved;
 
-  /* Dropped arguments (2 calls) -- same idiom as the identical
-     `resolved = resolve_sprite_id_to_frame(param_1); lookup_grtile_by_id(resolved);` pair
-     used correctly elsewhere in this file (see e.g. the call site
-     right above this function). Both calls here ran bare, so the
-     resolved icon graphic came from whatever register happened to be
-     left over from the PREVIOUS call instead of this call's own
-     param_1 -- three icon draws happen back-to-back every single
-     frame from weapon_swing_draw_tick (ids 0x107f/0x1080/0x1081), so
-     with this bug each one actually drew whatever the icon 2 calls
-     earlier resolved to, and the leftover register value alternated
-     between two stale states frame to frame. Confirmed live: this
-     produced a real 2-frame-period flicker in exactly that HUD icon
-     area during a held wind-up. */
+  /* Dropped arguments (2 calls) -- same idiom as the identical `resolved =
+     resolve_sprite_id_to_frame(param_1); lookup_grtile_by_id(resolved);` pair used correctly
+     elsewhere in this file (see e.g. the call site right above this function). */
   resolved = resolve_sprite_id_to_frame(param_1);
   pcVar3 = (char *)lookup_grtile_by_id(resolved);
   cVar1 = pcVar3[1];
@@ -845,14 +726,9 @@ undefined4 param_3;
     pcVar3 = pcVar3 + 5;
   }
   else {
-    /* HACK: dropped 3rd argument (the .GR entry's own compression-mode
-       byte, *pcVar3) -- the same bug already found and fixed twice
-       elsewhere in this file for this identical decompress_gr_bitmap
-       call shape (decode_gr_entry_bitmap and the call site ~130 lines
-       above this one; see object-rendering-findings.txt's "MILESTONE:
-       objects render" entry). Without it, decompress_gr_bitmap took
-       its param_3==0 path and returned NULL for this icon's real
-       .GR entries. */
+    /* HACK: dropped 3rd argument (the .GR entry's own compression-mode byte, *pcVar3) -- the same
+       bug already found and fixed twice elsewhere in this file for this identical
+       decompress_gr_bitmap call shape... */
     pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
   }
   bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1);
@@ -860,15 +736,8 @@ undefined4 param_3;
 }
 
 
-// was FUN_000411b8 -- generic "flash and hold" weapon-overlay
-// transition: hides the cursor, disables the weapon overlay, redraws
-// ~13 blank frames with it hidden (the no-op show_error_dialog_stub_thunk call
-// is dead weight -- same empty-body stub as show_error_dialog_stub),
-// redraws once more, then re-enables the overlay and shows the idle
-// cursor. Called with various (ignored, the function takes no
-// parameters) codes across combat/player/object-action damage and
-// hazard events, and paired with weapon_overlay_flash_restore in
-// play_view_restore_transition below.
+// was FUN_000411b8 -- generic "flash and hold" weapon-overlay transition: hides the cursor,
+// disables the weapon overlay, redraws ~13 blank frames with it hidden...
 void weapon_overlay_flash_hold(param_1)
 undefined4 param_1;
 
@@ -892,10 +761,9 @@ undefined4 param_1;
 
 
 
-// was FUN_000411cc -- sibling to weapon_overlay_flash_hold: instead of
-// blank redraws, snapshots the live screen region (DAT_00248410) and
-// repeatedly restores it over the overlay-disabled redraw loop,
-// holding a frozen frame while the overlay stays hidden.
+// was FUN_000411cc -- sibling to weapon_overlay_flash_hold: instead of blank redraws, snapshots the
+// live screen region (DAT_00248410) and repeatedly restores it over the overlay-disabled redraw
+// loop, holding a frozen frame while the overlay stays hidden.
 void weapon_overlay_flash_restore(param_1)
 undefined4 param_1;
 
@@ -920,11 +788,9 @@ undefined4 param_1;
 
 
 
-// was FUN_000411e0 -- the simplest of the three: a single
-// disable-redraw-reenable cycle, used as a quick screen flash cue for
-// damage/hazard events (src/combat.c, src/player.c, src/object_actions.c
-// call it with various scroll-message-like codes, all ignored since it
-// takes no parameters).
+// was FUN_000411e0 -- the simplest of the three: a single disable-redraw-reenable cycle, used as a
+// quick screen flash cue for damage/hazard events (src/combat.c, src/player.c, src/object_actions.c
+// call it with various scroll-message-like codes, all ignored since it takes no parameters).
 void weapon_overlay_flash_once(param_1)
 undefined4 param_1;
 
@@ -939,13 +805,9 @@ undefined4 param_1;
 }
 
 
-// was FUN_0004a210 -- fires a ranged weapon (param_1, a weapon type):
-// finds and consumes a matching ammo item (find_and_consume_ammo),
-// sets up the throw/aim state and spawns a projectile object near the
-// player, copies damage-type/quality/charge fields from the consumed
-// ammo's own template (extract_ammo_and_refresh) onto the new projectile, frees
-// the consumed ammo's object slot, and plays the bow/sling release
-// sound for weapon types 9/10.
+// was FUN_0004a210 -- fires a ranged weapon (param_1, a weapon type): finds and consumes a matching
+// ammo item (find_and_consume_ammo), sets up the throw/aim state and spawns a projectile object
+// near the player...
 void fire_ranged_weapon(param_1)
 short param_1;
 
@@ -959,11 +821,9 @@ short param_1;
   ushort *puVar7;
   uint uVar8;
   
-  /* Was a dropped argument -- find_and_consume_ammo's own param_1 (weapon
-     type). The very next line re-derives the identical
-     `(&DAT_002027d2)[param_1*3]` table lookup find_and_consume_ammo's own
-     body performs internally, confirming this caller's param_1 is the
-     value that belongs here. */
+  /* Was a dropped argument -- find_and_consume_ammo's own param_1 (weapon type). The very next line
+     re-derives the identical `(&DAT_002027d2)[param_1*3]` table lookup find_and_consume_ammo's own
+     body performs internally, confirming this caller's param_1 is the value that belongs here. */
   uVar5 = find_and_consume_ammo(param_1);
   if (-1 < (short)uVar5) {
     iVar1 = (int)param_1;
@@ -1004,19 +864,9 @@ short param_1;
           *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;
         }
       }
-      /* Was a dropped argument -- free_object_slot(param_1) always takes
-         the object pointer to free (every other call site in the
-         codebase, e.g. src/objects.c, src/traps.c, src/babl.c, passes
-         one); called bare here it freed whatever pointer happened to be
-         left over in the argument register from an earlier call/
-         computation instead of the ammo object this function just
-         consumed (puVar7, extracted above via extract_ammo_and_refresh).
-         free_object_slot() then used that garbage pointer to compute a
-         free-list slot index and fed it straight into
-         active_mobile_list_remove (and possibly enter_free_camera_mode),
-         corrupting the free-object-slot list and active-mobile list on
-         every single ranged-weapon shot -- the "crash when using a
-         ranged weapon" bug. */
+      /* Was a dropped argument -- free_object_slot(param_1) always takes the object pointer to free
+         (every other call site in the codebase, e.g. src/objects.c, src/traps.c, src/babl.c, passes
+         one)... */
       free_object_slot(puVar7);
     }
     if ((iVar1 == 9) || (iVar1 == 10)) {

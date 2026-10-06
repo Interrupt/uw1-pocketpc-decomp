@@ -1,16 +1,14 @@
 #ifndef HEADERS_OBJECT_ACTIONS_H
 #define HEADERS_OBJECT_ACTIONS_H
 
-/* Declarations for object_actions.c: object action dispatch, critter
- * sprite tier/page resolution, and placement/combination checks.
- * Pulls in uw.h itself so this header is self-contained for any
- * caller. */
+/* Declarations for object_actions.c: object action dispatch, critter sprite tier/page resolution,
+   and placement/combination checks. Pulls in uw.h itself so this header is self-contained for any
+   caller. */
 #include "uw.h"
 
-/* Globals defined in uw.c but also used by functions that now live in
-   object_actions.c (object action dispatch, critter sprite tier/page,
-   placement/combination checks) -- extern'd here so both translation
-   units see the same storage. */
+/* Globals defined in uw.c but also used by functions that now live in object_actions.c (object
+   action dispatch, critter sprite tier/page, placement/combination checks) -- extern'd here so both
+   translation units see the same storage. */
 extern ushort DAT_002022f8;
 extern int DAT_002022fc;
 extern ushort DAT_00202508;

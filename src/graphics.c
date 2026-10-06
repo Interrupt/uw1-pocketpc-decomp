@@ -1,50 +1,22 @@
-/* Low-level pixel-primitive functions: color state, rect fill/save/
- * restore, paletted-bitmap blitting into the game's internal software
- * framebuffer, the whole-screen backup/restore save state used by
- * transient panels, palette fade in/out, and the per-frame dungeon-view
- * driver/flush, and palette conversion/rotation (PALS.DAT byte
- * expansion, RGB565 LUT rebuild, palette-range cycling). Split out of
- * uw.c (the original monolithic decompile) once these functions' real
- * roles were confirmed. */
+/* Low-level pixel-primitive functions: color state, rect fill/save/ restore, paletted-bitmap
+   blitting into the game's internal software framebuffer, the whole-screen backup/restore save
+   state used by transient panels, palette fade in/out... */
 #include "headers/graphics.h"
 #include "headers/gx_stub.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Ghidra modeled a single 32-bit pointer, stored straddling the byte
-   ranges of two separately-declared globals (_DAT_0023c5ac's upper 16
-   bits + DAT_0023c5b0's lower 16 bits -- see the CONCAT22 write site in
-   app_main_loop and every read site's "_DAT_0023c5ac >> 0x10 |
-   DAT_0023c5b0 << 0x10" reconstruction), because that's how the packed
-   bytes landed in the original 32-bit binary's fixed memory layout.
-   Neither underlying global has any other independent use in this
-   decompile, so replace the whole packed-halves dance with one real
-   pointer: it was truncating the buffer's address to its low 32 bits on
-   this 64-bit host and segfaulting the first time ce_memmove actually
-   did real memmove work. */
+/* Ghidra modeled a single 32-bit pointer, stored straddling the byte ranges of two
+   separately-declared globals (_DAT_0023c5ac's upper 16 bits + DAT_0023c5b0's lower 16 bits)... */
 void *g_uw_framebuffer;
 /* Not `static` -- referenced from graphics.c (bitmap_blit_to_framebuffer,
-   rect_fill_or_save_restore) as well as here; the extern declaration and
-   g_palette_rgb565 macro alias both live in uw.h now so both files see the
-   same thing. */
+   rect_fill_or_save_restore) as well as here; the extern declaration and g_palette_rgb565 macro
+   alias both live in uw.h now so both files see the same thing. */
 undefined2 g_palette_rgb565_backing[32768];
-/* Was a lone `undefined2` scalar, but used as a full-screen shadow/
-   backup buffer the same size as g_uw_framebuffer (screen_backup_save saves
-   aside every non-transparent pixel across the whole 320x200 framebuffer
-   into it; screen_backup_restore/screen_backup_restore_rect restore from it
-   later) -- classic
-   "undersized global used as a large table" bug. Was widened to match
-   g_uw_framebuffer's exact size (0x25800 bytes = 76800 shorts), but
-   that's the full real 240x320 portrait hardware framebuffer -- this
-   buffer only ever covers the specific 320x200 region
-   screen_backup_save/restore/restore_rect actually touch, confirmed
-   by three independent hardcoded bounds: screen_backup_save's own
-   200/0x140 (320) loop counts, screen_backup_restore's `iVar1 <
-   0x1f400` (128000 bytes), and screen_backup_restore_rect's `63999 <
-   iVar4` (element index) guard -- all three agree on exactly 64000
-   shorts (320*200), not 76800. Sizing pass: shrunk to that confirmed
-   real need. */
+/* Was a lone `undefined2` scalar, but used as a full-screen shadow/ backup buffer the same size as
+   g_uw_framebuffer (screen_backup_save saves aside every non-transparent pixel across the whole
+   320x200 framebuffer into it)... */
 static undefined2 DAT_000891b0_backing[64000];
 #define DAT_000891b0 DAT_000891b0_backing[0]
 undefined2 DAT_000a85c0;
@@ -53,21 +25,9 @@ undefined2 DAT_000a85c8;
 undefined2 DAT_000842a4;
 undefined2 DAT_000842a8;
 int DAT_00204848;
-// was DAT_00088960 -- global toggle every sprite/bitmap-blit primitive in
-// this file (bitmap_blit_to_framebuffer in graphics.c, and this file's
-// own sibling blit routines, e.g. ~uw.c:5244/5591/62096) reads instead of
-// taking a real "transparent mode" parameter: 0 draws every source pixel
-// opaquely through the palette (so a transparent-keyed pixel, byte value
-// 0, paints as palette index 0 -- typically black), nonzero skips
-// byte==0 pixels for real transparency. Callers that want a transparent
-// blit set this to 1 immediately before the call and reset it to 0
-// right after (draw_sprite_by_id, mode_icon_highlight_on/mode_icon_highlight_off, etc). Named
-// after root-causing the inventory-panel "black box" bug: redraw_hud_panels's
-// panels.GR background blit had a trailing literal `1` argument that
-// clearly intended transparency but never actually set this global,
-// so it silently ran opaque -- see that fix's own comment for the full
-// story (uw.c, redraw_hud_panels, search "DAT_00088960" in git history/
-// memory.md for the writeup predating this rename).
+// was DAT_00088960 -- global toggle every sprite/bitmap-blit primitive in this file
+// (bitmap_blit_to_framebuffer in graphics.c, and this file's own sibling blit routines, e.g.
+// ~uw.c:5244/5591/62096) reads instead of taking a real "transparent mode" parameter...
 int g_blit_transparent_mode;
 int DAT_0024af70;
 void *DAT_0023c430;
@@ -76,26 +36,12 @@ void *DAT_0023c430;
    g_palette_rgb565 -- exactly 256*4 = 1024 real bytes. */
 static undefined1 DAT_00084a40_backing[1024];
 #define DAT_00084a40 DAT_00084a40_backing[0]
-/* Sizing-audit pass: units trap too -- element type is undefined2 (2
-   bytes), so [32768] was really 65536 bytes, not 32768. Its one real
-   consumer (the GAPI blit a few hundred lines down, `iVar8=0x28` rows
-   * `iVar10=0x140` cols, stride `0x28`) reads this buffer with fully
-   hardcoded literals: max offset is 39 (last row) + 319*40 (last col
-   step) = 12799, i.e. exactly 12800 elements (a 320x40 bitmap row-major
-   buffer) -- a HARD bound from fixed blit geometry, matching what
-   load_bmp_resource_to_rgb565 loads resource 0x94 into. Down from
-   32768 elements (65536 bytes) to 12800 elements (25600 bytes). */
+/* Sizing-audit pass: units trap too -- element type is undefined2 (2 bytes), so [32768] was really
+   65536 bytes, not 32768. */
 undefined2 DAT_00242010_backing[12800];
-/* Was a lone `undefined2` scalar, but build_rgb565_palette uses it as the base of a
-   20-level x 256-entry faded-palette table (`(ushort*)(&DAT_00248418 +
-   iVar21) + level*0x100`, iVar21 stepping by 2 per palette entry, 20 levels
-   stepped by 0x100 ushorts/level) -- a real ~10KB out-of-bounds write on
-   every single palette install. Root-caused via an lldb watchpoint on
-   DAT_0024cfc0 (a totally unrelated string-page counter ~26KB away) that
-   showed this exact write clobbering it into a huge garbage value, which
-   then produced a wild out-of-bounds array read/UAF-style crash much later
-   in get_message_string's string lookup. Same lone-scalar-used-as-array pattern
-   fixed repeatedly this session (DAT_002028e8, g_visibility_ray_table, etc). */
+/* Was a lone `undefined2` scalar, but build_rgb565_palette uses it as the base of a 20-level x
+   256-entry faded-palette table (`(ushort*)(&DAT_00248418 + iVar21) + level*0x100`, iVar21 stepping
+   by 2 per palette entry, 20 levels stepped by 0x100 ushorts/level)... */
 undefined2 DAT_00248418_backing[20 * 256];
 static undefined4 DAT_0023c638;
 static undefined1 DAT_001005cc;
@@ -110,17 +56,9 @@ static undefined DAT_00088640_backing[768];
 // UW_AMBIENT_BIAS_REDUCTION=0 retains the ARM formulas.
 static int g_ambient_bias_reduction = 64;
 
-/* Scratch buffer for rect_fill_or_save_restore's save/restore modes --
- * only ever used within this function, so it stays local to this file
- * (unlike g_palette_rgb565_backing, which uw.c also needs and is extern'd in
- * uw.h instead).
- * Sizing pass: live instrumentation (UW_DEBUG_CURSORSHOW) across the
- * full 19-script regression suite showed a real high-water mark of
- * 340 pixels (elements) copied per save/restore call, far below the
- * theoretical 320*200=64000-pixel worst case this clipped loop could
- * reach. Sized to 4096 elements (~12x that observed HWM) rather than
- * the clip-bound theoretical max, since real cursor sprites are small
- * and the prior 32768-element size was never actually exercised. */
+/* Scratch buffer for rect_fill_or_save_restore's save/restore modes -- only ever used within this
+   function, so it stays local to this file (unlike g_palette_rgb565_backing, which uw.c also needs
+   and is extern'd in uw.h instead). */
 static undefined2 DAT_000879b8_backing[4096];
 #define DAT_000879b8 DAT_000879b8_backing[0]
 
@@ -223,12 +161,9 @@ short param_4;
               pvVar_buf25800 = g_uw_framebuffer;
               do {
                 if (63999 < iVar15) {
-                  /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION):
-                     reusing hud.c's save_cursor_background env var -- logs
-                     the real pixel count (= elements of DAT_000879b8)
-                     written this call, to find a true high-water mark
-                     instead of guessing against the theoretical 320*200
-                     worst case. */
+                  /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION): reusing hud.c's
+                     save_cursor_background env var -- logs the real pixel count (= elements of
+                     DAT_000879b8) written this call... */
                   if (getenv("UW_DEBUG_CURSORSHOW")) {
                     fprintf(stderr, "[cursorshow] DAT_000879b8 pixels_written=%d\n", iVar13);
                   }
@@ -343,11 +278,9 @@ undefined1 param_8;
   short sVar13;
   short sVar14;
   short sVar15;
-  /* param_3 is the source-bitmap pointer (was `int`, truncating it on
-     this 64-bit host -- every caller passes a real malloc'd/global
-     pixel-data pointer, e.g. blit_fullscreen_bitmap_file's OPSCR.BYT load buffer). This
-     accumulator reconstructs a moving source-row address from it each
-     iteration, so it needs to stay a full-width pointer-sized value. */
+  /* param_3 is the source-bitmap pointer (was `int`, truncating it on this 64-bit host -- every
+     caller passes a real malloc'd/global pixel-data pointer, e.g. blit_fullscreen_bitmap_file's
+     OPSCR.BYT load buffer). */
   intptr_t local_34;
   
   DEBUG(TRACE, "[graphics] bitmap_blit_to_framebuffer(%u,%u,%p,%u,%u,%u,%u)", param_1, param_2, (void *)param_3, param_4, param_5, param_6, param_7);
@@ -383,19 +316,8 @@ undefined1 param_8;
   if (200 < iVar7 + iVar2) {
     sVar12 = param_2 + sVar1 + -200;
   }
-  /* Was a 3-argument call to a K&R-style `dirty_rect_union()` (no
-     prototype, so this compiles without error) -- missing its 4th
-     ("right" bound) argument entirely. On real ARM32 hardware this
-     genuinely forwarded whatever the caller's own incoming register
-     held (same bug class already fixed in extract_and_refresh_slot_item,
-     see uw.c's own writeup); on this 64-bit host the callee instead
-     reads garbage, so the accumulated dirty rect's right edge doesn't
-     reliably extend to cover this blit's actual width. Confirmed live:
-     this is the cause of "redraw areas don't match the actual inventory
-     button sizes" (both a freshly-placed item's icon and
-     close_backpack_container's own panel-background repaint go through
-     this call) -- sibling call draw_sprite_by_id already passes all 4
-     bounds correctly and was the reference for this fix. */
+  /* Was a 3-argument call to a K&R-style `dirty_rect_union()` (no prototype, so this compiles
+     without error) -- missing its 4th ("right" bound) argument entirely. */
   if (getenv("UW_DEBUG_BLITRAW")) {
     fprintf(stderr, "[blitfb] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
             (int)param_1, (int)param_2, (int)iVar9, (int)iVar2,
@@ -452,12 +374,8 @@ undefined1 param_8;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// Snapshots the current 320x200 framebuffer into the DAT_000891b0 backup
-// buffer, skipping any pixel already equal to g_transparent_screen_color.
-// First half of the transient-panel idiom: a caller saves a clean
-// background here, draws a panel over it leaving untouched areas in the
-// transparent key color, then calls screen_backup_restore[_rect] to pour
-// the saved pixels back into those gaps.
+// Snapshots the current 320x200 framebuffer into the DAT_000891b0 backup buffer, skipping any pixel
+// already equal to g_transparent_screen_color.
 // was FUN_00011478
 undefined4 screen_backup_save()
 
@@ -477,17 +395,9 @@ undefined4 screen_backup_save()
     do {
       iVar4 = iVar4 + -1;
       if (*psVar2 != sVar1) {
-        /* `(intptr_t)&DAT_000891b0` fixed globally across the file (17
-           sites) -- taking a global's address then truncating it through
-           `(int)` before pointer arithmetic, same bug class as the
-           `(TYPE *)((int)VAR + offset)` pattern fixed much earlier, just
-           differently shaped so the original regex-based pass missed it.
-           `(int)psVar3`/`(int)psVar2` right here are a related but
-           distinct case (casting pointer *variables*, not `&global`, to
-           int) not swept up by that fix; left alone since psVar2/psVar3
-           are both short-array cursors into the same nearby buffers in
-           practice and this hasn't been observed to crash, but worth
-           revisiting if it does. */
+        /* `(intptr_t)&DAT_000891b0` fixed globally across the file (17 sites) -- taking a global's
+           address then truncating it through `(int)` before pointer arithmetic, same bug class as
+           the `(TYPE *)((int)VAR + offset)` pattern fixed much earlier... */
         *(short *)(((intptr_t)&DAT_000891b0 - (int)psVar3) + (int)psVar2) = *psVar2;
       }
       psVar2 = psVar2 + 1;
@@ -501,9 +411,8 @@ undefined4 screen_backup_save()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// Whole-screen composite: every framebuffer pixel still equal to
-// g_transparent_screen_color is refilled from the screen_backup_save
-// snapshot (DAT_000891b0), then the frame is presented.
+// Whole-screen composite: every framebuffer pixel still equal to g_transparent_screen_color is
+// refilled from the screen_backup_save snapshot (DAT_000891b0), then the frame is presented.
 // was FUN_000114e4
 void screen_backup_restore()
 
@@ -591,22 +500,13 @@ ushort *param_3;
   int iVar5;
   ushort *puVar6;
   int iVar7;
-  /* iVar8 held a `param_3 - puVar3` relative offset then re-added to
-     puVar6 to reconstruct a destination pointer -- correct as pointer
-     *difference* arithmetic, but iVar8/`(int)puVar6` truncated both
-     the difference and the re-addition to 32 bits on this 64-bit host
-     now that param_3 is a real (not truncated) pointer. Kept as the
-     same relative-offset idiom, just computed/applied via intptr_t. */
+  /* iVar8 held a `param_3 - puVar3` relative offset then re-added to puVar6 to reconstruct a
+     destination pointer -- correct as pointer difference* arithmetic... */
   intptr_t iVar8;
   int iVar9;
-  /* in_stack_0000000c/in_stack_00000014 were declared as fresh locals
-     but never assigned anywhere -- reading them was reading
-     uninitialized memory. param_1/param_2 are, symmetrically, declared
-     but never otherwise used in this function. Classic Ghidra artifact
-     where the same two incoming arguments got modeled twice (once as
-     real parameters, once as phantom "leftover on the stack" locals)
-     due to a calling-convention mismatch; param_1/param_2 are what
-     apply_palette_buffer actually needs here. */
+  /* in_stack_0000000c/in_stack_00000014 were declared as fresh locals but never assigned anywhere
+     -- reading them was reading uninitialized memory. param_1/param_2 are, symmetrically, declared
+     but never otherwise used in this function. */
 
   /* A fade must present every step even inside a batched gameplay tick
      or while the click that started the transition is still held. */
@@ -856,14 +756,8 @@ int param_3;
   char *pcVar2;
   int iVar3;
 
-  /* param_1 was declared `int` despite every caller passing a real
-     pointer (e.g. load_pals_bank: `expand_pals_bytes(auStack_318,param_2,0);`)
-     -- truncating it on this 64-bit host. The `param_1 - (int)param_2`
-     / `param_2 + param_1` dance below reconstructs param_1 as a
-     relative *offset* from param_2 so the loop can address both
-     buffers through param_2-relative arithmetic; that only works if the
-     subtraction/re-addition isn't itself truncating, so param_1 is kept
-     a real pointer and the offset computed via intptr_t instead. */
+  /* param_1 was declared `int` despite every caller passing a real pointer (e.g. load_pals_bank:
+     `expand_pals_bytes(auStack_318,param_2,0);`) -- truncating it on this 64-bit host. */
   intptr_t offset = (intptr_t)param_1 - (intptr_t)param_2;
   iVar3 = 0;
   if (param_3 == 0) {
@@ -1005,11 +899,9 @@ short param_2;
     if (DAT_0023cdbc < 0) {
       iVar9 = DAT_0023cdbc + 1;
     }
-    /* DAT_0023c430 is the real framebuffer pointer from GXBeginDraw();
-       `(int)` here truncated it on this 64-bit host (missed by the
-       earlier project-wide `(int)VAR + offset` sweep since here the
-       pointer is the second operand, "offset + (int)VAR", not the
-       first). First bug actually reached during real frame rendering. */
+    /* DAT_0023c430 is the real framebuffer pointer from GXBeginDraw(); `(int)` here truncated it on
+       this 64-bit host (missed by the earlier project-wide `(int)VAR + offset` sweep since here the
+       pointer is the second operand, "offset + (int)VAR", not the first). */
     puVar18 = (undefined2 *)((iVar21 >> 1) * 400 + (intptr_t)DAT_0023c430);
     do {
       iVar10 = 0x140;
@@ -1018,13 +910,9 @@ short param_2;
       do {
         puVar16 = puVar16 + (iVar9 >> 1);
         iVar10 = iVar10 + -1;
-        /* Bounds-guard: this loop's hardcoded `400` initial offset and
-           320-iteration span don't fit within the real GAPI hardware
-           framebuffer's actual size (240x320 RGB565 = 153600 bytes) for
-           every geometry this ends up running under, and the original
-           intent behind the literal 400 hasn't been identified -- write
-           only if it lands inside the buffer GXBeginDraw() returned,
-           rather than risk corrupting unrelated heap memory. */
+        /* Bounds-guard: this loop's hardcoded `400` initial offset and 320-iteration span don't fit
+           within the real GAPI hardware framebuffer's actual size (240x320 RGB565 = 153600 bytes)
+           for every geometry this ends up running under... */
         if ((char *)puVar16 >= (char *)DAT_0023c430 &&
             (char *)(puVar16 + 1) <= (char *)DAT_0023c430 + 153600) {
           *puVar16 = *puVar19;
@@ -1046,15 +934,7 @@ short param_2;
 
 
 
-// was palette_cycle_range -- rotate a contiguous run of DAT_00088d98 palette entries by
-// one. Confirmed real callers so far: the title screen's own gold-gradient
-// animation (0x40-0x7f), tick_book_illustration_palette_cycles's special-illustrated-book/scroll
-// view feature (see its own comment -- NOT ordinary lava/water/torch tile
-// shimmer, ruled out live), and the equipped-lit-torch HUD icon flicker
-// this project added (range 16-23, the confirmed fire gradient in PALS.DAT
-// bank 0 -- see mode-icon-and-hud-icon-flicker-fixes memory). Whatever
-// drives ordinary per-tile water/lava/wall-torch animation during normal
-// walking, if the original game has one at all, is still unfound.
+// was palette_cycle_range -- rotate a contiguous run of DAT_00088d98 palette entries by one.
 // was FUN_000259c0
 void palette_cycle_range(param_1,param_2,param_3)
 uint param_1;
@@ -1075,16 +955,9 @@ int param_3;
     sVar3 = -3;
   }
   else {
-    /* Was `(undefined *)(... + 0x88d95)` -- a literal original-binary
-       address (0x88d95 = &DAT_00088d98's real address there, minus 3)
-       instead of real pointer arithmetic against the actual (relocated)
-       global -- same bug class as probe_save_slots's `-0x87020` fix and
-       run_character_generator's pcVar3 fix elsewhere this session.
-       Never exercised until GetTickCount (GetTickCount) stopped being a
-       hardcoded 0 (see its comment): this branch (param_3!=0) is only
-       reached from animate_title_palette_cycle's periodic timer, which always saw
-       "0ms elapsed" and never fired before that fix. Confirmed via
-       ASan SEGV the moment it first ran for real. */
+    /* Was `(undefined *)(... + 0x88d95)` -- a literal original-binary address (0x88d95 =
+       &DAT_00088d98's real address there, minus 3) instead of real pointer arithmetic against the
+       actual (relocated) global... */
     puVar1 = &DAT_00088d98 + (-3 + (param_2 & 0xff) * 3 + iVar5);
   }
   DAT_001005cc = *puVar1;
@@ -1115,21 +988,18 @@ int param_3;
 
 
 
-// was FUN_0006c98c -- loads and displays a raw 320x200 (64000-byte)
-// full-screen bitmap file (param_2, a path): optionally selects a
-// palette bank first (param_1, skipped if negative -- used for e.g.
-// the copyright screen), blits it to the framebuffer, and optionally
-// flushes it to the display immediately (param_3).
+// was FUN_0006c98c -- loads and displays a raw 320x200 (64000-byte) full-screen bitmap file
+// (param_2, a path): optionally selects a palette bank first (param_1, skipped if negative -- used
+// for e.g. the copyright screen), blits it to the framebuffer...
 undefined4 blit_fullscreen_bitmap_file(param_1,param_2,param_3)
 undefined4 param_1;
 char *param_2;
 int param_3;
 
 {
-  /* iVar1 was `int`, truncating the ce_malloc (malloc) heap pointer
-     it holds -- it's used both as the fread-destination buffer and as
-     the source pointer handed to bitmap_blit_to_framebuffer (which now takes a real
-     char*). */
+  /* iVar1 was `int`, truncating the ce_malloc (malloc) heap pointer it holds -- it's used both as
+     the fread-destination buffer and as the source pointer handed to bitmap_blit_to_framebuffer
+     (which now takes a real char*). */
   char *iVar1;
   int iVar2;
   undefined4 uVar3;
@@ -1163,18 +1033,9 @@ int param_3;
 
 
 
-// was FUN_000778fc -- gated on DAT_0024af70 (likely "GAPI display
-// active"): opens a direct hardware framebuffer via GXBeginDraw,
-// blits the DAT_00242010 buffer (the same one
-// store_window_extra_data_ptr stashes into the window's extra-data
-// slot) onto it row by row honoring the display's real pitch
-// (DAT_0023cdb8/DAT_0023cdbc from GXGetDisplayProperties) with the
-// same bounds-guard as build_rgb565_palette (see its own comment),
-// then GXEndDraw. Always marks the full screen dirty
-// (dirty_rect_union) regardless of whether the GAPI path ran. This
-// is the original WinCE GAPI hardware-present path, distinct from
-// (and likely superseded by) flush_dirty_rect_to_display_240's
-// SDL-based blit on this host port.
+// was FUN_000778fc -- gated on DAT_0024af70 (likely "GAPI display active"): opens a direct hardware
+// framebuffer via GXBeginDraw, blits the DAT_00242010 buffer (the same one
+// store_window_extra_data_ptr stashes into the window's extra-data slot) onto it row by row...
 undefined4 blit_framebuffer_to_gx_display()
 
 {
@@ -1238,24 +1099,8 @@ undefined4 param_2;
 undefined4 param_3;
 
 {
-  /* expand_pals_bytes's 3rd argument was dropped here -- confirmed via real
-     ARM disassembly: this call site (`bl expand_pals_bytes` right after
-     loading only r0/r1) never sets r2 itself, so it silently used
-     whatever was left over in that register from the caller's own
-     context. expand_pals_bytes's param_3 controls whether it scales each
-     raw palette byte up from PALS.DAT's 6-bit-per-channel storage
-     (param_3==0, `<<2`) or copies it unscaled (param_3!=0) -- and
-     DAT_00088d98 (the source here) always holds the RAW, unscaled bytes
-     load_pals_bank loaded (it only produces the *scaled* version in its
-     own local stack buffer, which doesn't survive past that call). With
-     a leftover-nonzero r2, this installed the unscaled (very dark)
-     values into g_palette_rgb565 instead of the real palette -- confirmed:
-     this is what made the whole screen go dark after wiring
-     main_menu_loop through set_palette_bank (which calls this function on
-     every palette load, unlike the rarer hover-timer-only path this
-     bug previously hid behind). Pass 0 explicitly, matching
-     load_pals_bank's own established convention for this exact source
-     format. */
+  /* expand_pals_bytes's 3rd argument was dropped here -- confirmed via real ARM disassembly: this
+     call site (`bl expand_pals_bytes` right after loading only r0/r1) never sets r2 itself... */
   expand_pals_bytes(&DAT_00088640,&DAT_00088d98,0);
   build_rgb565_palette(&DAT_00088640,0xffffffff);
   return;
@@ -1275,15 +1120,8 @@ short param_3;
   int iVar1;
 
   iVar1 = (int)param_2;
-  /* No bounds check on (param_1, iVar1) against the real 320x240
-     framebuffer (GX_W/GX_H, gx_stub.c) before this raw write -- callers
-     that plot a small crosshair/cursor around a point (e.g. draw_hotspot_crosshair_marker,
-     +-1 in x or y around a stored coordinate) can walk one pixel outside
-     the screen near an edge with nothing stopping them. Confirmed live:
-     ASan-caught heap-buffer-overflow WRITE here reached via ordinary
-     Talk-mode interaction. Same defensive "skip instead of touching
-     memory outside the real buffer" posture as resolve_object_link's
-     own out-of-range guard elsewhere in this file. */
+  /* No bounds check on (param_1, iVar1) against the real 320x240 framebuffer (GX_W/GX_H, gx_stub.c)
+     before this raw write -- callers that plot a small crosshair/cursor around a point... */
   if ((param_1 < 0) || (0x140 <= param_1) || (iVar1 < 0) || (0xf0 <= iVar1)) {
     return;
   }
@@ -1301,12 +1139,9 @@ short param_3;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_000116dc -- draws a horizontal line of pixels at row
-// param_2 from column param_1 to param_3, using the current color
-// index (DAT_000a85c0) into g_palette_rgb565, and unions the drawn
-// span into the dirty-rect tracker. Confirmed live caller
-// (src/babl.c) draws a fixed-position line for the barter/talk
-// window's own layout.
+// was FUN_000116dc -- draws a horizontal line of pixels at row param_2 from column param_1 to
+// param_3, using the current color index (DAT_000a85c0) into g_palette_rgb565, and unions the drawn
+// span into the dirty-rect tracker.
 void draw_horizontal_line(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
@@ -1339,12 +1174,8 @@ uint param_3;
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00011b34 -- fills the current viewport/clip rect (the
-// DAT_000842a8/DAT_000842a4/DAT_000a85c4/DAT_000a85c8 bounds
-// set_viewport_clip_rect establishes) with the current draw color
-// index into g_palette_rgb565, then immediately flushes the dirty
-// rect to the display. Confirmed live caller sets the clip rect to
-// full-screen and the draw color to black right before calling this,
-// matching a "clear the screen" step.
+// DAT_000842a8/DAT_000842a4/DAT_000a85c4/DAT_000a85c8 bounds set_viewport_clip_rect establishes)
+// with the current draw color index into g_palette_rgb565...
 void fill_viewport_and_flush()
 
 {
@@ -1380,15 +1211,9 @@ void fill_viewport_and_flush()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_000120c8 -- a clipped variant of bitmap_blit_to_framebuffer
-// (its own comment already cross-references it): blits an 8bpp
-// paletted source bitmap into the framebuffer at (param_1,param_2),
-// clamping the drawn rect against the current viewport/clip bounds
-// (DAT_000a85c4/DAT_000842a4/DAT_000a85c8/DAT_000842a8, the same
-// fields fill_viewport_and_flush uses), skipping pixels that come out
-// entirely clipped away. Honors g_blit_transparent_mode (palette
-// index 0 is treated as transparent in that mode). param_8 controls
-// whether to flush the dirty rect to the display immediately.
+// was FUN_000120c8 -- a clipped variant of bitmap_blit_to_framebuffer (its own comment already
+// cross-references it): blits an 8bpp paletted source bitmap into the framebuffer at
+// (param_1,param_2)...
 void blit_bitmap_to_framebuffer_clipped(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 short param_1;
 short param_2;
@@ -1471,17 +1296,9 @@ int param_8;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_00012850 -- copies a param_3-wide by param_4-tall rect
-// within the framebuffer from (param_5,param_6) to (param_1,param_2),
-// unioning the destination into the dirty-rect tracker and always
-// flushing to the display afterward. Only proceeds when param_6 <
-// param_2 (source row above destination row) -- this row-by-row
-// forward copy would corrupt overlapping regions in the other
-// direction, so this guard likely exists to keep the implementation
-// simple rather than handle both directions safely. Confirmed live
-// caller: msg_scroll_scroll_up_line (src/hud.c) uses this to shift
-// the message-scroll panel's existing text up by one line height
-// instead of doing a full redraw.
+// was FUN_00012850 -- copies a param_3-wide by param_4-tall rect within the framebuffer from
+// (param_5,param_6) to (param_1,param_2), unioning the destination into the dirty-rect tracker and
+// always flushing to the display afterward.
 void copy_framebuffer_rect(param_1,param_2,param_3,param_4,param_5,param_6)
 short param_1;
 short param_2;
@@ -1551,18 +1368,8 @@ void reset_viewport_to_fullscreen()
 
 
 
-// was FUN_000129d4 -- computes `((param_1 << 16) >> 18) - param_2 +
-// 199` (a Y-coordinate-ish transform; 199 matches the full-screen
-// clip rect's bottom edge used elsewhere, e.g.
-// reset_viewport_to_fullscreen) and returns it packed with param_3
-// unchanged in the CONCAT44 upper half -- the classic Ghidra
-// representation of an ARM function that returns two values in r0:r1.
-// Its only confirmed caller discards the return value entirely (see
-// the HACK comment on that call site), and this function has no
-// other observable side effects, so this computation currently has no
-// effect on program behavior either way -- left as an honest gap
-// rather than guessing at what consumer this fed before whatever
-// change made its result unused.
+// was FUN_000129d4 -- computes `((param_1 << 16) >> 18) - param_2 + 199` (a Y-coordinate-ish
+// transform; 199 matches the full-screen clip rect's bottom edge used elsewhere)...
 undefined8 compute_view_y_bound(param_1,param_2,param_3)
 int param_1;
 int param_2;
@@ -1574,12 +1381,9 @@ undefined4 param_3;
 
 
 
-// was FUN_000232b0 -- ends the active GAPI/GX draw session
-// (GXEndDraw, guarded by DAT_0023c430 tracking whether one is open) and
-// releases DAT_0023c638 (an offscreen/back-buffer pointer -- LocalFree
-// is a deliberate no-op/leak stub, see its own comment). Called by
-// shutdown_game_resources right before the rest of that function tears
-// down the display and input devices.
+// was FUN_000232b0 -- ends the active GAPI/GX draw session (GXEndDraw, guarded by DAT_0023c430
+// tracking whether one is open) and releases DAT_0023c638 (an offscreen/back-buffer pointer --
+// LocalFree is a deliberate no-op/leak stub, see its own comment).
 void end_gx_draw_session()
 
 {
@@ -1591,11 +1395,8 @@ void end_gx_draw_session()
 }
 
 
-// was FUN_00035fdc -- converts a 256-entry, 4-bytes-per-entry
-// BGRX/RGBQUAD-style palette (param_1) into a packed 3-bytes-per-entry
-// RGB buffer (param_2), reversing each entry's first 3 bytes. Its only
-// call site feeds the output straight into build_rgb565_palette,
-// confirming the RGB byte order.
+// was FUN_00035fdc -- converts a 256-entry, 4-bytes-per-entry BGRX/RGBQUAD-style palette (param_1)
+// into a packed 3-bytes-per-entry RGB buffer (param_2), reversing each entry's first 3 bytes.
 void convert_palette_bgrx_to_rgb(param_1,param_2)
 undefined1 * param_1;
 undefined1 * param_2;
@@ -1619,28 +1420,9 @@ undefined1 * param_2;
 
 
 // was FUN_0003601c
-/* NOT a per-tile lava/water/torch tile-shimmer driver, despite looking
-   like one -- traced both of its two real call sites (uw.c ~37381 and
-   ~68657) and they're gated on a special object flag right where the
-   game prints "You read the..." and dispatches to
-   display_book_or_scroll_page((param_1[3]>>6&0x1ff)+0x100): this is the SPECIAL
-   ILLUSTRATED BOOK/SCROLL full-screen view feature (a rare object
-   class that shows a picture, with a few small animated palette-cycled
-   details, when read -- distinct from an ordinary scroll's text
-   popup). Confirmed unreachable from normal per-tick gameplay
-   rendering: a live UW_DEBUG_PALCYCLE_RECORDS trace never fired once
-   across several walking demos nor 60 real ticks standing directly on
-   the known water tile from [[water-wading-and-wall-slide-findings]]
-   (SETPLAYERPOS 6.58 4.92 0 191 0) -- ruling this specific function
-   out as the mechanism for ordinary water/lava/wall-torch shimmer
-   during play, if the original game has one at all. Iterates a
-   16-slot table of 8-byte records (last-update clock, a rate value
-   ordint_divmod'd against 0x38e, then a start/end palette-index byte
-   pair) -- genuinely reusable for animating multiple independent
-   palette ranges, but nothing in its enclosing function
-   (render_babl_dialog_window) was found writing real per-object data into that
-   table; it may be uninitialized/link-time data this decompile never
-   recovered, same class of gap as other tables in this file. */
+/* NOT a per-tile lava/water/torch tile-shimmer driver, despite looking like one -- traced both of
+   its two real call sites (uw.c ~37381 and ~68657) and they're gated on a special object flag right
+   where the game prints "You read the..." and dispatches to... */
 void tick_book_illustration_palette_cycles(param_1)
 ushort * param_1;
 
@@ -1677,14 +1459,8 @@ ushort * param_1;
 
 
 // was FUN_0003af28 -- loads an embedded BMP resource (param_1/param_2:
-// FindResourceW/FindResource-style module+name lookup) and decodes it
-// into an RGB565 buffer (param_3): reads the 0x28-byte BITMAPINFOHEADER
-// and 0x400-byte (256-entry RGBQUAD) palette, builds an RGB565 LUT
-// from that palette, then reads the bottom-up DIB row data (flipping
-// to top-down) and remaps each pixel's palette index through the LUT.
-// Returns 1 on success, 0 if the resource couldn't be found/loaded.
-//
-// WARNING: Restarted to delay deadcode elimination for space: stack
+// FindResourceW/FindResource-style module+name lookup) and decodes it into an RGB565 buffer
+// (param_3): reads the 0x28-byte BITMAPINFOHEADER and 0x400-byte (256-entry RGBQUAD) palette...
 
 undefined4 load_bmp_resource_to_rgb565(param_1,param_2,param_3)
 undefined4 param_1;
@@ -1760,12 +1536,9 @@ ushort * param_3;
 }
 
 
-// was FUN_00040df0 -- called from several full-screen UI close paths
-// (automap, babl dialog, chargen, graphics, player rest) to tear down
-// the overlay: decrements the cursor hide/show nesting depth
-// (decrement_cursor_hide_depth, not yet named), clears the whole viewport to black,
-// and ticks the idle cursor back on. Reads as "clear the screen and
-// restore the cursor" after a full-screen view closes.
+// was FUN_00040df0 -- called from several full-screen UI close paths (automap, babl dialog,
+// chargen, graphics, player rest) to tear down the overlay: decrements the cursor hide/show nesting
+// depth (decrement_cursor_hide_depth, not yet named), clears the whole viewport to black...
 void clear_screen_and_restore_cursor()
 
 {
@@ -1778,11 +1551,9 @@ void clear_screen_and_restore_cursor()
 }
 
 
-// was FUN_00040f34 -- generic "install this 768-byte palette buffer as
-// the active palette" helper, shared by set_palette_bank (a specific
-// PALS.DAT bank) and the fade_in/fade_out RGB framebuffer crossfades
-// (src/graphics.c), which also keep the indexed palette in step with
-// their own RGB565 interpolation.
+// was FUN_00040f34 -- generic "install this 768-byte palette buffer as the active palette" helper,
+// shared by set_palette_bank (a specific PALS.DAT bank) and the fade_in/fade_out RGB framebuffer
+// crossfades (src/graphics.c)...
 void apply_palette_buffer(param_1,param_2)
 undefined4 param_1;
 undefined4 param_2;
@@ -1795,14 +1566,9 @@ undefined4 param_2;
 
 
 
-// was FUN_00040f64 -- fades the active palette down to black over
-// param_2 steps (frame-paced via read_realtime_clock_units, at least 10
-// clock units apart), re-applying the dimmed palette via
-// apply_palette_buffer each step; param_2==0 instead snaps straight to
-// black. Only known caller (src/player.c:3716, after
-// reset_player_for_resurrection) captures the current palette into
-// param_1 first and fades it out over 2 steps before the death
-// main-menu transition.
+// was FUN_00040f64 -- fades the active palette down to black over param_2 steps (frame-paced via
+// read_realtime_clock_units, at least 10 clock units apart), re-applying the dimmed palette via
+// apply_palette_buffer each step; param_2==0 instead snaps straight to black.
 void fade_active_palette_to_black(param_1,param_2)
 int param_1;
 short param_2;

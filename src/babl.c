@@ -1,14 +1,6 @@
-/* The "babl" conversation/dialogue scripting VM: bytecode interpreter,
- * script-callable native intrinsics (babl_builtin_*), the named
- * script-variable bridge (babl_register_builtin/babl_set_variable/
- * babl_get_variable), the NPC<->object-record sync functions
- * (sync_conv_vars_from_npc/to_npc), and conversation UI setup
- * (enter_conversation_mode_screen/start_npc_conversation). Split out of uw.c (the
- * original monolithic decompile) once these functions' real roles were
- * confirmed -- see mysteries.md and the git history around the
- * "babl conversation-variable bridge" naming pass for the investigation
- * trail.
- */
+/* The "babl" conversation/dialogue scripting VM: bytecode interpreter, script-callable native
+   intrinsics (babl_builtin_*), the named script-variable bridge
+   (babl_register_builtin/babl_set_variable/ babl_get_variable)... */
 #include "headers/babl.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,23 +16,14 @@ static undefined1 DAT_000bbf30;
 static undefined4 DAT_000bbf20;
 static char *DAT_000bbf18;
 static short DAT_000bbf7c;
-/* Was `int` -- a real 64-bit heap pointer (babl_alloc, i.e. malloc)
-   truncated through a 32-bit int, same bug class as DAT_000bbf70/
-   DAT_000bbf00 below (see their own comment) -- widened to intptr_t so
-   the existing integer arithmetic throughout build_babl_symbol_table/init_babl_variable_defaults/
-   etc. keeps compiling unchanged (intptr_t participates in ordinary
-   integer arithmetic; a real pointer type would need every site
-   recast). */
+/* Was `int` -- a real 64-bit heap pointer (babl_alloc, i.e. malloc) truncated through a 32-bit int,
+   same bug class as DAT_000bbf70/ DAT_000bbf00 below (see their own comment)... */
 static intptr_t DAT_000bbf14;
 static short DAT_000bbf84;
 static intptr_t DAT_000bbf0c; // was `int`, same DAT_000bbf14-derived-pointer truncation
 static undefined2 DAT_000bbf88;
-/* Was zero-initialized 8192-byte placeholders -- same "zero-init
-   global missing real .data content" class as this file's many other
-   string recoveries (e.g. s_sex_000851f8's own comment). Confirmed
-   real content via a Ghidra headless memory dump at 0x84560/6c/74:
-   "val" (registered with babl_builtin_val), "find" (babl_builtin_find), "copy"
-   (babl_builtin_copy) -- 3 more babl builtin names alongside "length". */
+/* Was zero-initialized 8192-byte placeholders -- same "zero-init global missing real .data content"
+   class as this file's many other string recoveries (e.g. s_sex_000851f8's own comment). */
 static char s_val_00084560[] = "val";
 static char s_length_00084564[] = "length";
 static char s_find_0008456c[] = "find";
@@ -55,22 +38,8 @@ static char *DAT_000bbf80;
 static undefined2 DAT_000bbf8c;
 undefined2 DAT_0024cfac;
 static short DAT_000bbf24;
-/* Was `int` -- build_babl_symbol_table assigns it a real 64-bit heap pointer
-   (`DAT_000bbf70 = babl_alloc((iVar11+1)*0x20)`) and every reader
-   throughout this whole babl-symbol-table cluster (babl_register_builtin/
-   babl_op_say/babl_op_respond/babl_set_variable/babl_get_variable/init_babl_variable_defaults/
-   build_babl_symbol_table itself) does plain `int`-width pointer arithmetic on
-   it. Truncating this on a 64-bit host is the crash one step past the
-   read_archive_entry dropped-argument fix (uw.c ~10984's comment):
-   with that fixed, Bragit's conversation record genuinely loads for
-   the first time this whole session, and THIS truncation is what
-   build_babl_symbol_table immediately crashes on building its symbol table
-   (`*pcVar9 = cVar4` wild write, confirmed live via lldb -- this
-   whole cluster was apparently never exercised by any prior fix or
-   test, since no conversation had ever successfully loaded before).
-   Widened to intptr_t rather than a real pointer type for the same
-   reason as DAT_000bbf14 above -- keeps the existing int-arithmetic
-   call sites compiling as-is. */
+/* Was `int` -- build_babl_symbol_table assigns it a real 64-bit heap pointer (`DAT_000bbf70 =
+   babl_alloc((iVar11+1)*0x20)`) and every reader throughout this whole babl-symbol-table cluster... */
 static intptr_t DAT_000bbf70;
 static intptr_t DAT_000bbf00; // was `int` -- babl_alloc'd function-pointer-table base, same bug
 static short DAT_000bbf78;
@@ -78,24 +47,9 @@ static short DAT_000bbf2c;
 static short DAT_000bbf74;
 static short DAT_000bbf1c;
 static short DAT_000bbf08;
-/* Was a zero-initialized 8192-byte backing array -- same "real
-   nonzero .data content missing from this port's build" bug class as
-   several earlier-session fixes (message-scroll control codes,
-   save-slot list text, etc). Confirmed via the real ARM binary
-   (/Users/ccuddigan/Projects/UW1/uw-arm/UU.exe, address 0x845a8): the
-   real bytes are the NUL-terminated string "say", immediately
-   followed in memory by s_respond_000845ac's own "respond" (which
-   this port's decompile already got right as a separate symbol at
-   +4). Every one of DAT_000845a8's 3 use sites treats it purely as a
-   read-only C string (babl_op_say's own symbol-name lookup, and its
-   own babl_register_builtin call) -- there is no numeric/indexed use
-   that would need the backing-array treatment, unlike this file's
-   other DAT_..._backing arrays. Was empty, so babl_op_say could never
-   match Bragit's real "say" symbol and register_builtin's own
-   registration for it silently no-opped too -- this is why the NPC's
-   own spoken lines never printed even after babl_menu started working
-   (only the player's own numbered response list did, via a totally
-   separate mechanism). */
+/* Was a zero-initialized 8192-byte backing array -- same "real nonzero .data content missing from
+   this port's build" bug class as several earlier-session fixes (message-scroll control codes,
+   save-slot list text, etc). */
 static char DAT_000845a8[] = "say";
 static char s_respond_000845ac[] = "respond";
 /* Sizing-audit pass: sum_barter_offer_value's own `iVar4<4` loop
@@ -141,14 +95,8 @@ static undefined2 DAT_000bbfc0_backing[8];
 static undefined2 DAT_000bbfd0_backing[8];
 #define DAT_000bbfd0 DAT_000bbfd0_backing[0]
 /* New this round -- referenced only via literal-pool constants inside
-   babl_builtin_take_from_npc/take_id_from_npc (both still-unrecovered
-   stubs at the time this was added). Ghidra never named either: a
-   real-object scratch pointer read/written by both functions (checked
-   for "is a specific target object already selected" before falling
-   back to the current NPC, DAT_00100674) and what looks like a
-   related small mode/count flag read alongside it. Left undescribed
-   beyond that -- neither is exercised by any known conversation
-   script yet, so their exact semantics haven't been confirmed live. */
+   babl_builtin_take_from_npc/take_id_from_npc (both still-unrecovered stubs at the time this was
+   added). */
 static intptr_t DAT_00202948; // was `int` in the raw decompile -- holds a real object pointer, same truncation bug class as every other pointer-holding global in this cluster
 static short DAT_002020c4;
 /* Sizing-audit pass: same bound as DAT_000bbf98 (sum_barter_offer_
@@ -161,53 +109,37 @@ static undefined4 DAT_000bc010_backing[4];
 #define DAT_000bc010 DAT_000bc010_backing[0]
 static undefined4 DAT_000bc028_backing[4];
 #define DAT_000bc028 DAT_000bc028_backing[0]
-/* Sizing-audit pass: `iVar6 = (*DAT_00100674 & 0x3f) * 0x30` -- same
-   &0x3f mask * 0x30 stride as ai.c's DAT_001007d0 (same monster-class
-   table shape, independently duplicated here). HARD: 63*48+48=3072.
-   Down from 8192. */
+/* Sizing-audit pass: `iVar6 = (*DAT_00100674 & 0x3f) * 0x30` -- same &0x3f mask * 0x30 stride as
+   ai.c's DAT_001007d0 (same monster-class table shape, independently duplicated here). HARD:
+   63*48+48=3072. Down from 8192. */
 static undefined DAT_001007de_backing[3072];
 #define DAT_001007de DAT_001007de_backing[0]
-/* Was a lone scalar pointer slot -- its only use is `&PTR_DAT_000845c8 +
-   iVar2*4` (a 4-byte-stride coordinate table, same convention as the
-   sibling DAT_000845b8/DAT_000845d8/DAT_000845e8 tables right around
-   it in the original .data layout), so draw_hotspot_crosshair_marker's
-   worn-slot branch (param_1 != 0, up to 4 slots per init_barter_ui's
-   own loop) walked straight off the end of this single 8-byte slot on
-   this 64-bit host -- confirmed live via an ASan global-buffer-overflow
-   reached through ordinary Talk-mode/barter interaction. Given the same
-   256-byte safety margin as those sibling tables. */
+/* Was a lone scalar pointer slot -- its only use is `&PTR_DAT_000845c8 + iVar2*4` (a 4-byte-stride
+   coordinate table, same convention as the sibling DAT_000845b8/DAT_000845d8/DAT_000845e8 tables
+   right around it in the original .data layout)... */
 static undefined1 PTR_DAT_000845c8_backing[256];
 #define PTR_DAT_000845c8 PTR_DAT_000845c8_backing[0]
-/* Sizing pass: sibling of PTR_DAT_000845c8 right above in
-   draw_hotspot_crosshair_marker's worn-slot branch (`&DAT_000845e8 +
-   iVar2*4`, iVar2 up to 4 slots per init_barter_ui's own loop) --
-   same bound, given the same 256-byte margin. */
+/* Sizing pass: sibling of PTR_DAT_000845c8 right above in draw_hotspot_crosshair_marker's worn-slot
+   branch (`&DAT_000845e8 + iVar2*4`, iVar2 up to 4 slots per init_barter_ui's own loop) -- same
+   bound, given the same 256-byte margin. */
 static undefined1 DAT_000845e8_backing[256];
 #define DAT_000845e8 DAT_000845e8_backing[0]
-/* Sizing-audit pass: both are a sum_barter_offer_value param_4 cache
-   (`psVar3 = (short*)(iVar4*2+param_4)`), and that function's own loop
-   bound is `iVar4 < 4` -- exact max offset 3*2=6 (4 shorts, 8 bytes),
-   a HARD bound. Sized to 16 elements (32 bytes) for headroom; down
-   from 8192. */
+/* Sizing-audit pass: both are a sum_barter_offer_value param_4 cache (`psVar3 =
+   (short*)(iVar4*2+param_4)`), and that function's own loop bound is `iVar4 < 4` -- exact max
+   offset 3*2=6 (4 shorts, 8 bytes), a HARD bound. */
 static undefined2 DAT_000bbfc8_backing[16];
 #define DAT_000bbfc8 DAT_000bbfc8_backing[0]
 static undefined2 DAT_000bbfb0_backing[16];
 #define DAT_000bbfb0 DAT_000bbfb0_backing[0]
 static char s_npc_attitude_000845f8[] = "npc_attitude";
 static char *DAT_00100784;
-/* Was `undefined4`, truncating the real char* buffer pointer (DAT_00100784)
-   assigned to it before every "heads"/"converse"/"genhead"/"charhead"
-   resource load -- it's the bump-allocator cursor converse_res_bump_alloc_entry advances
-   (see that function's comment). */
+/* Was `undefined4`, truncating the real char* buffer pointer (DAT_00100784) assigned to it before
+   every "heads"/"converse"/"genhead"/"charhead" resource load -- it's the bump-allocator cursor
+   converse_res_bump_alloc_entry advances (see that function's comment). */
 static char *DAT_00100670;
-/* Was a lone `undefined4` scalar, but converse_res_slot_store_callback writes real pointers
-   into it as an array (`DAT_00100728[idx] = allocated_buffer + 5`, one
-   entry per loaded head/portrait) -- same "array Ghidra saw as a single
-   scalar" bug class as DAT_000fb880. Only index 0 is read directly by
-   this file's existing call sites (single-item head loads all pass a
-   count of 1), but the array still needs real backing storage so
-   multi-item loads (the full "heads" resource) don't write out of
-   bounds past a 4-byte scalar. */
+/* Was a lone `undefined4` scalar, but converse_res_slot_store_callback writes real pointers into it
+   as an array (`DAT_00100728[idx] = allocated_buffer + 5`, one entry per loaded head/portrait) --
+   same "array Ghidra saw as a single scalar" bug class as DAT_000fb880. */
 static char *DAT_00100728_backing[256];
 #define DAT_00100728 DAT_00100728_backing[0]
 #define DAT_0010072c DAT_00100728_backing[1]
@@ -230,12 +162,8 @@ static char s_give_to_npc_000851cc[] = "give_to_npc";
 static char s_show_inv_000851d8[] = "show_inv";
 static char s_print_000851e4[] = "print";
 static char s_babl_ask_000851ec[] = "babl_ask";
-/* Was a zero-initialized 8192-byte placeholder -- same "zero-init
-   global missing real .data content" class as this file's many other
-   string recoveries. Confirmed real content via a Ghidra headless
-   memory dump at 0x851f8: "sex" (the babl builtin name registered a
-   few lines below at start_npc_conversation, alongside its own
-   still-a-no-op-stub implementation -- see LAB_0001840c's comment). */
+/* Was a zero-initialized 8192-byte placeholder -- same "zero-init global missing real .data
+   content" class as this file's many other string recoveries. */
 static char s_sex_000851f8[] = "sex";
 static char s_set_quest_000851fc[] = "set_quest";
 static char s_get_quest_00085208[] = "get_quest";
@@ -276,16 +204,8 @@ static char s_do_offer_00085180[] = "do_offer";
 static char s_identify_inv_0008518c[] = "identify_inv";
 static short DAT_0010078c;
 static short DAT_00100794;
-/* Sizing-audit pass: no code-level cap exists -- indexed by DAT_00100794,
-   a count of consecutive non-zero babl-script words read until a 0
-   sentinel (babl_menu/babl_fmenu). The only real ceiling is CONV.BYT
-   itself (data/DATA/CONV.BYT is exactly 64000 bytes for EVERY NPC's
-   compiled conversation script combined), which strongly implies any
-   single menu's item count is small (tens, not thousands). Sized to
-   1024 items (8 bytes/item pointer stride = 8192 bytes) for generous
-   headroom against that budget rather than a derived exact number --
-   flagging as a judgment call, not a hard-proven bound. Down from
-   65536. */
+/* Sizing-audit pass: no code-level cap exists -- indexed by DAT_00100794, a count of consecutive
+   non-zero babl-script words read until a 0 sentinel (babl_menu/babl_fmenu). */
 static undefined1 DAT_00100680_backing[8192];
 #define DAT_00100680 DAT_00100680_backing[0]
 static undefined2 DAT_00100790;
@@ -295,28 +215,12 @@ static short DAT_00100788;
    see that array's own comment. Down from 65536. */
 static undefined1 DAT_001006d8_backing[8192];
 #define DAT_001006d8 DAT_001006d8_backing[0]
-/* Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/select_babl_menu_response
-   all index it as a real array -- `(&DAT_00100770)[idx]` for idx up to
-   9 (a fixed "10 visible scroll lines" loop bound) and up to whatever
-   message_scroll_print_wrapped's own wrapped-line-count returns, which
-   can exceed 10 for long menu text. Confirmed live via lldb: this
-   silently corrupted whatever real global the compiler happened to
-   place next to a single 2-byte scalar (DAT_00100794, the menu's own
-   item count, got stomped from a real small count to -1/0xffff right
-   after the `(&DAT_00100770)[iVar12]=0xffff` init loop), which then
-   made babl_menu's own `if (1 < DAT_00100794)` print-loop check fail
-   even though real menu items had just been resolved -- this is why
-   Bragit's dialogue never appeared despite babl_menu itself running
-   correctly. Same "array Ghidra/this port declared as a bare scalar"
-   bug class as DAT_00100728 and this array's own sibling DAT_001007a0
-   (already fixed with a real backing array). Sized to match. */
-/* Sizing-audit pass: indexed by wrapped-line position, bounded by the
-   same CONV.BYT-budget judgment call as its siblings DAT_00100680/
-   001006d8/001007a0 (see DAT_00100680's own comment) -- a long menu
-   message could wrap past the fixed "10 visible lines" bound, but
-   the total text driving it still comes from the same tiny per-NPC
-   script budget. Sized to 1024 for consistency with those siblings;
-   down from 32768. */
+/* Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/select_babl_menu_response all index it
+   as a real array -- `(&DAT_00100770)[idx]` for idx up to 9 (a fixed "10 visible scroll lines" loop
+   bound) and up to whatever message_scroll_print_wrapped's own wrapped-line-count returns... */
+/* Sizing-audit pass: indexed by wrapped-line position, bounded by the same CONV.BYT-budget judgment
+   call as its siblings DAT_00100680/ 001006d8/001007a0 (see DAT_00100680's own comment) -- a long
+   menu message could wrap past the fixed "10 visible lines" bound... */
 static short DAT_00100770_backing[1024];
 #define DAT_00100770 DAT_00100770_backing[0]
 /* Sizing-audit pass: same index/cap reasoning as DAT_00100680 above,
@@ -324,23 +228,9 @@ static short DAT_00100770_backing[1024];
    Down from 65536. */
 static undefined1 DAT_001007a0_backing[2048];
 #define DAT_001007a0 DAT_001007a0_backing[0]
-/* DAT_00085230/34/38/3c are 4 tiny (<=3-char) control-code constants,
-   packed 4 bytes apart in the original binary -- confirmed via a real
-   Ghidra memory dump at 0x85230 rather than guessed: "\P\0" (0x5c 0x50
-   0x00), "\0\n" (0x5c 0x30 0x0a 0x00), "\1\0" (0x5c 0x31 0x00) and
-   "\2\0" (0x5c 0x32 0x00) respectively -- "\0"/"\1"/"\2" are all the
-   SAME "reset to default draw color" code (see msg_scroll_draw_wrapped_span's
-   own '0'/'1' handling), "\P" is the pause/wait code, and DAT_00085234
-   uniquely also carries a trailing real newline byte. Same "zero-
-   initialized global missing real .data content" bug class as the
-   scroll's \6-header/color-code fixes elsewhere in this file: all 4
-   were plain zero-filled backing arrays (silently printing nothing),
-   confirmed live as the cause of a real, visible bug -- echo_selected_conversation_choice/
-   babl_builtin_print (echoing the player's selected conversation choice
-   before the NPC's reply) append DAT_00085234 as a trailing separator,
-   expecting it to insert a newline after the echoed choice; with it
-   empty, the echoed text ran straight into the NPC's next line with
-   no break at all (e.g. "...the Abyss.Exploring, eh?..."). */
+/* DAT_00085230/34/38/3c are 4 tiny (<=3-char) control-code constants, packed 4 bytes apart in the
+   original binary -- confirmed via a real Ghidra memory dump at 0x85230 rather than guessed: "\P\0"
+   (0x5c 0x50 0x00), "\0\n" (0x5c 0x30 0x0a 0x00)... */
 /* Sizing pass: these are 3-4-byte control-code constants (confirmed by
    a real Ghidra memory dump, see above); no indexing, nothing depends
    on a larger extent. */
@@ -351,17 +241,9 @@ static undefined DAT_00085234_backing[16] = { 0x5c,0x30,0x0a,0x00 };
 static undefined1 DAT_0008523c_backing[16] = { 0x5c,0x32,0x00 };
 #define DAT_0008523c DAT_0008523c_backing[0]
 static short DAT_001007bc;
-/* DAT_00085240/44/48 are the look-text word-separator/article
-   constants (" ", "a ", "an ") used by dispatch_object_action/dispatch_object_action_dup
-   and build_creature_look_text to glue "a"/"an" + adjective + noun [+ "named" +
-   proper name] together -- none had a writer anywhere in this decompile
-   (same "orphaned data" class as DAT_00086cc0 etc.), so every look-text
-   sentence silently ran its words together with no article at all, e.g.
-   "You see mellowoutcastnamedBragit" instead of "You see a mellow
-   outcast named Bragit" (found investigating a creature-look crash).
-   The real recovered string is lost like several others this session,
-   but the correct content is unambiguous from every call site's usage
-   -- give them real values instead of leaving them silently empty. */
+/* DAT_00085240/44/48 are the look-text word-separator/article constants (" ", "a ", "an ") used by
+   dispatch_object_action/dispatch_object_action_dup and build_creature_look_text to glue "a"/"an" +
+   adjective + noun [+ "named" + proper name] together... */
  char DAT_00085240_backing[16] = " ";
 /* Selected when the following word starts with a vowel (see the callers'
    own vowel checks) -- so this one is "an ", not "a ".
@@ -377,12 +259,9 @@ static char s_npc_hp_00085380[] = "npc_hp";
 static char s_npc_health_00085388[] = "npc_health";
 static char s_npc_hunger_00085394[] = "npc_hunger";
 static char s_npc_whoami_000853a0[] = "npc_whoami";
-/* Sizing-audit pass: DAT_001007e3/DAT_001007fd (used just below in
-   sync_conv_vars_from_npc) were independent 256-byte arrays, but
-   every use indexes them by the same per-class record base as
-   g_monster_max_stats_table/DAT_001007d5 in this same function --
-   aliased into DAT_001007d0_backing in ai.h instead (see that
-   header's own comment). */
+/* Sizing-audit pass: DAT_001007e3/DAT_001007fd (used just below in sync_conv_vars_from_npc) were
+   independent 256-byte arrays, but every use indexes them by the same per-class record base as
+   g_monster_max_stats_table/DAT_001007d5 in this same function... */
 static char s_play_name_0008524c[] = "play_name";
 static char s_play_drawn_00085258[] = "play_drawn";
 static char s_play_poison_00085264[] = "play_poison";
@@ -409,27 +288,16 @@ ushort DAT_000853fc;
    `ce_memset(&DAT_00101968,0,0x104)` right before use -- exact HARD
    bound, 260 bytes (MAX_PATH-style). Down from 8192. */
 static undefined1 DAT_00101968_backing[260];
-/* Sizing pass: this is the "CUTS"-directory override path string
-   (cleared via ce_memset(&DAT_0023c698,0,0x104) in game.c, i.e. a
-   Windows MAX_PATH=260-byte buffer by design). Its one real writer
-   (game.c's registry-install-dir read, right next to its sibling
-   DAT_0023cca8's own identical pattern) copies a null-terminated
-   string out of a 520-byte scratch buffer with no further length
-   check, so the real structural ceiling is that buffer's own 520
-   bytes, not just the 260-byte memset -- sized to 1024 for headroom
-   above that, well short of the previous 32768. */
+/* Sizing pass: this is the "CUTS"-directory override path string (cleared via
+   ce_memset(&DAT_0023c698,0,0x104) in game.c, i.e. a Windows MAX_PATH=260-byte buffer by design). */
 undefined1 DAT_0023c698_backing[1024];
 static ushort DAT_00101a6c;
 /* Bitmap workspace supplied by cache_ambient_sound_handle; retain the full
    allocation address on 64-bit hosts. */
 uintptr_t DAT_00101a70;
-/* Dispatch table of babl conversation-text render-time opcode handlers
-   (distinct from the babl_builtin_* script-language builtins): a raw
-   compiled dialogue-text stream can embed a byte < 0x10 that indexes
-   this table, each entry a (script_arg_ptr, render_state_ptr) ->
-   words-consumed handler, called from the conversation-rendering loop
-   at its three known call sites. Restored all 16 entries from the original
-   ARM table at 0x85408, including window timing and dismissal opcodes. */
+/* Dispatch table of babl conversation-text render-time opcode handlers (distinct from the
+   babl_builtin_* script-language builtins): a raw compiled dialogue-text stream can embed a byte <
+   0x10 that indexes this table, each entry a... */
 static codeval *const PTR_FUN_00085408[16] = {
   babl_render_op_wrap_message,
   FUN_000362e8,
@@ -451,9 +319,8 @@ static codeval *const PTR_FUN_00085408[16] = {
 static undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
 char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 static undefined1 DAT_00085460_backing[11] = "\\CSXXX.N00";
-/* decompress_rle_stream's own shared codec state (output/input
-   cursors, byte counts, and the current/pending op-code value),
-   threaded through its several sibling op-code handler functions
+/* decompress_rle_stream's own shared codec state (output/input cursors, byte counts, and the
+   current/pending op-code value), threaded through its several sibling op-code handler functions
    (read_rle_op_code and others still unnamed below it). */
 static undefined1 *DAT_00201b40; // output cursor
 static int DAT_00201b54; // input bytes consumed so far
@@ -466,16 +333,9 @@ static int DAT_00201b3c; // current op code
 
 
 
-/* Was a no-op stub -- the real function was never decompiled, so
-   babl_builtin_set_attitude's own for_each_object_of_type iteration (invoked once
-   per matching-race object it walks) silently never wrote the new
-   attitude value into any of them. Recovered from the real ARM binary
-   (Ghidra headless): writes the babl script's requested attitude
-   value into the object's own attitude bits (byte offset 0xd/0xe,
-   masked to the low 14 bits, same field babl_builtin_set_race_attitude
-   writes more directly a few functions up). Callback signature
-   confirmed from for_each_object_of_type's own call site: `(*param_4)(iVar1,param_3)`
-   with iVar1 a real object pointer and param_3 the attitude value. */
+/* Was a no-op stub -- the real function was never decompiled, so babl_builtin_set_attitude's own
+   for_each_object_of_type iteration (invoked once per matching-race object it walks) silently never
+   wrote the new attitude value into any of them. */
 int babl_builtin_set_attitude_apply(param_1,param_2)
 intptr_t param_1;
 uint param_2;
@@ -488,15 +348,9 @@ uint param_2;
   return 0;
 }
 
-/* Was a no-op stub here -- the real function was never decompiled, so
-   the "length" babl builtin (registered a few hundred lines below)
-   silently returned 0 (an empty-string length) whenever a script
-   asked for a string's length, same bug class as babl_menu before its
-   own recovery. Recovered from the real ARM binary (Ghidra headless);
-   it dropped 2 register-forwarding args in the same shape as every
-   other sibling in this cluster (get_message_string/ce_strlen called
-   with no args in the raw decompile, relying on the value already
-   sitting in r0 from the previous call -- chained explicitly here). */
+/* Was a no-op stub here -- the real function was never decompiled, so the "length" babl builtin
+   (registered a few hundred lines below) silently returned 0 (an empty-string length) whenever a
+   script asked for a string's length, same bug class as babl_menu before its own recovery. */
 // was FUN_00019a60
 undefined2 babl_builtin_length(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix
@@ -509,43 +363,21 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   return ce_strlen(pcVar2);
 }
 
-/* Was a no-op stub here ("Ghidra couldn't resolve this address...
-   safe no-op stub") -- the real function was never decompiled, so the
-   "sex" babl builtin (registered under that exact script name, see
-   start_npc_conversation) silently did nothing, same bug class as
-   babl_menu before its own recovery. Recovered from the real ARM
-   binary (Ghidra headless). Picks between two babl script-supplied
-   msgids (the two shorts just below the stack-arg pointer, matching
-   every sibling babl builtin's own `param_1 - N` stack-arg convention)
-   based on the player's own gender bit -- byte offset 0x64 (100) of
-   the player-stats struct at DAT_00086df8, bit 1. The original reads
-   this via a literal-pool constant (DAT_0001842c) that just holds
-   &DAT_00086df8's own real address; substituted the real global
-   directly instead of porting a second alias for the same pointer. */
+/* Was a no-op stub here ("Ghidra couldn't resolve this address... safe no-op stub") -- the real
+   function was never decompiled, so the "sex" babl builtin (registered under that exact script
+   name, see start_npc_conversation) silently did nothing... */
 // was FUN_0001840c
 undefined4 babl_builtin_sex(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix
 {
-  /* Ghidra's own decompile of this one shows `void`, discarding
-     babl_read_var_word's return value -- but on real ARM calling convention
-     a tail call like this naturally leaves its callee's return value
-     in r0 for the caller (the babl VM's generic builtin dispatcher,
-     which DOES read every builtin's return value uniformly, same as
-     every other babl_register_builtin entry in this file), so
-     returning it explicitly here matches actual runtime behavior
-     rather than Ghidra's weaker "nothing in THIS function reads r0
-     afterward" signature inference. */
+  /* Ghidra's own decompile of this one shows `void`, discarding babl_read_var_word's return value
+     -- but on real ARM calling convention a tail call like this naturally leaves its callee's
+     return value in r0 for the caller... */
   return babl_read_var_word((int)*(short *)(param_1 + (intptr_t)((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 2) + -4));
 }
-/* Was a no-op stub here -- the real function was never decompiled, so
-   the "do_decline" babl builtin (registered under that exact script
-   name, see start_npc_conversation) silently did nothing whenever an
-   NPC's barter script declined an offer, same bug class as babl_menu
-   before its own recovery. Recovered from the real ARM binary (Ghidra
-   headless): it's a thin wrapper handing back every item currently
-   staged on the barter table (param_1=0 to finalize_npc_barter_items, matching
-   that function's own "give everything back" branch) -- genuinely
-   void, finalize_npc_barter_items itself returns nothing meaningful either. */
+/* Was a no-op stub here -- the real function was never decompiled, so the "do_decline" babl builtin
+   (registered under that exact script name, see start_npc_conversation) silently did nothing
+   whenever an NPC's barter script declined an offer... */
 // was FUN_0001cd34
 void babl_builtin_do_decline()
 
@@ -553,31 +385,8 @@ void babl_builtin_do_decline()
   finalize_npc_barter_items(0);
   return;
 }
-/* Was a no-op stub here ("Ghidra couldn't resolve this address...
-   safe no-op stub") -- the real function was never decompiled, so the
-   "take_from_npc" babl builtin (registered under that exact script
-   name, see start_npc_conversation) silently did nothing whenever an
-   NPC's script tried to hand the player an item, same bug class as
-   babl_menu before its own recovery. Recovered from the real ARM
-   binary (Ghidra headless); every helper it calls (resolve_object_link,
-   object_list_unlink, check_object_carry_weight, drop_object_near_target,
-   encode_object_slot_index) already has a real implementation and a
-   uw.h forward declaration elsewhere in this file, so it can stay
-   here rather than needing to move (unlike babl_menu's own case).
-
-   Logic: looks up the babl script's requested item (a plain object id
-   under 1000, or a "1000 + category" encoding for an item CLASS) in
-   the current NPC's own inventory chain (or an already-selected
-   override object at DAT_00202948, if one is set), unlinks it from
-   the NPC once found, then either hands it straight to the player
-   (if check_object_carry_weight says it fits -- opens a brief item-
-   view popup via push_cursor_icon) or, if it doesn't fit, stages it in
-   one of the 4 player-side barter-table slots (DAT_000bbfd0/bbfa8/
-   bbf98/bbfc0, the same table sprite_list/init_barter_ui sets up)
-   instead of dropping it. DAT_00202948/DAT_002020c4's own exact
-   semantics aren't independently confirmed (see their own comment) --
-   this is a faithful 1:1 port of the real disassembly, not yet
-   exercised live by any known conversation script. */
+/* Was a no-op stub here ("Ghidra couldn't resolve this address... safe no-op stub") -- the real
+   function was never decompiled, so the "take_from_npc" babl builtin... */
 undefined4 babl_builtin_take_from_npc(param_1)
 intptr_t param_1;
 {
@@ -600,25 +409,9 @@ intptr_t param_1;
   if (DAT_00202948 == 0) {
     iVar8 = DAT_00100674;
     if ((*(byte *)(iVar8 + 0xe) & 0x10) == 0) {
-      /* Was a dropped argument -- spawn_creature_death_loot's own K&R
-         declaration (`void spawn_creature_death_loot(param_1)`) takes
-         the creature object pointer, but every one of this file's 4
-         call sites invoked it with empty parens, leaving param_1 to
-         whatever garbage happened to be sitting in the argument
-         register/slot. spawn_creature_death_loot dereferences that
-         pointer directly (`param_1[7]`, `*param_1`) and then has each
-         of its 4 sub-rolls object_list_insert_head a freshly spawned
-         item into `param_1 + 6` -- a wild write through garbage when
-         param_1 isn't the real creature. The intended argument is
-         plainly DAT_00100674 (the current conversation partner --
-         every other statement around this call reads/writes it, and
-         every sibling call site below re-reads it right after this
-         same call). Confirmed as (at least a) real contributor to the
-         "critters dropping shrines" bug report: a wild
-         object_list_insert_head here can corrupt an unrelated object's
-         own link chain (e.g. a nearby shrine fixture's), making it
-         look like that object got spliced into a dead creature's
-         drop/inventory list. */
+      /* Was a dropped argument -- spawn_creature_death_loot's own K&R declaration (`void
+         spawn_creature_death_loot(param_1)`) takes the creature object pointer, but every one of
+         this file's 4 call sites invoked it with empty parens... */
       spawn_creature_death_loot(DAT_00100674);
       iVar8 = *piVar3;
     }
@@ -677,13 +470,8 @@ intptr_t param_1;
   }
   return 0;
 }
-/* Was a no-op stub -- same bug and same recovery as
-   babl_builtin_take_from_npc just above (see its own comment for the
-   full story and the helper/global mapping both share). The only real
-   difference: this one matches by exact encoded slot index
-   (encode_object_slot_index(puVar9)==sVar7, "take THIS SPECIFIC
-   item") instead of by object id/category ("take any item of this
-   kind"). Not yet exercised live by any known conversation script. */
+/* Was a no-op stub -- same bug and same recovery as babl_builtin_take_from_npc just above (see its
+   own comment for the full story and the helper/global mapping both share). */
 undefined4 babl_builtin_take_id_from_npc(param_1)
 intptr_t param_1;
 {
@@ -750,17 +538,8 @@ intptr_t param_1;
   }
   return 0;
 }
-/* Was a no-op stub -- same bug and same recovery as the two
-   babl_builtin_take_from_npc / babl_builtin_take_id_from_npc functions
-   above. Spawns a brand-new object of the babl script's requested id
-   (spawn_new_object), tries to merge it into an existing stack of the
-   same kind in the current NPC's inventory (freeing the freshly-
-   spawned one and growing the existing stack's count instead, if a
-   compatible stack is found -- mirrors the same stacking rule this
-   file's other stack-merge sites use: same object id, both stackable,
-   neither already at the 999 cap), otherwise inserts the new object
-   at the head of the NPC's inventory outright. Not yet exercised live
-   by any known conversation script. */
+/* Was a no-op stub -- same bug and same recovery as the two babl_builtin_take_from_npc /
+   babl_builtin_take_id_from_npc functions above. */
 undefined4 babl_builtin_do_inv_create(param_1)
 intptr_t param_1;
 {
@@ -958,19 +737,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   if ((uVar2 & 0xffc0) != 0) {
     do {
       if ((uint)(uVar2 >> 6) == (int)(short)uVar3) break;
-      /* Was called with no argument (also true at ~30 other call sites
-         throughout this file) -- verified against real ARM disassembly
-         (Ghidra, UU.exe) that every one of them DOES set up a real r0
-         argument in the compiled binary; Ghidra's decompiler just failed
-         to show it, most likely because resolve_object_link's own
-         inferred prototype has 0 params. The argument is always the same
-         ushort* whose `& 0xffc0` link-bits were just tested (or, for a
-         loop's very first iteration, the enclosing function's own object-
-         pointer parameter) -- confirmed individually via disassembly for
-         a representative sample of these sites (this one, walk_object_tree,
-         roll_object_destroy_chance, sum_container_weight, serialize_inventory_link_chain, roll_container_lockpick_check,
-         purge_tagged_objects_from_chain, scheduler_add_entry, babl_builtin_take_from_npc_inv), and applied by the
-         same pattern to the rest. */
+      /* Was called with no argument (also true at ~30 other call sites throughout this file) --
+         verified against real ARM disassembly (Ghidra, UU.exe) that every one of them DOES set up a
+         real r0 argument in the compiled binary; Ghidra's decompiler just failed to show it... */
       iVar8 = resolve_object_link(puVar7);
       puVar7 = (ushort *)(iVar8 + 4);
       uVar2 = *puVar7;
@@ -1124,14 +893,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short sVar3;
   undefined4 uVar4;
   undefined4 uVar5;
-  /* HACK: was plain `int iVar6` -- truncated find_object_in_chain's real
-     `ushort *` return (same bug class as its own signature comment)
-     on this 64-bit host. Confirmed live (UW_DEBUG_DOOR) chasing a
-     pull-chain-vs-direct-click door toggle report: this is the real
-     script-triggered door action (open/close/toggle, sVar3==0/1/2),
-     reached from level scripts like a pull chain's own "use" effect --
-     passed straight through to close_door_object/open_door_object/
-     toggle_door_object below, all of which expect a real pointer. */
+  /* HACK: was plain `int iVar6` -- truncated find_object_in_chain's real `ushort *` return (same
+     bug class as its own signature comment) on this 64-bit host. */
   ushort *iVar6;
   ushort *local_24;   /* was int -- holds tilemap_lookup()+2, a 64-bit ptr */
 
@@ -1335,26 +1098,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 uint *babl_alloc(param_1)
 int param_1;
 
-/* HACK: this whole function was a hand-rolled, fixed-pool free-list
-   allocator whose "next free block" links are packed as 4 INDIVIDUAL
-   BYTES within the block header (see the CONCAT13/CONCAT12/CONCAT11
-   reconstructions the original body did, and the matching byte-at-a-
-   time writes in babl_free/babl_resize) -- a 32-bit-pointer-only
-   design baked into the original 32-bit ARM binary's own memory
-   layout. There is no width to widen here the way DAT_000bbf70 and
-   friends were fixed elsewhere in this same babl-VM cluster: a real
-   64-bit pointer simply does not fit in the 4 bytes this format
-   allocates for one. This whole subsystem was apparently never
-   exercised end-to-end before (no NPC's conversation had ever
-   successfully loaded in this port until the read_archive_entry
-   dropped-argument fix a few commits up), so nothing depended on its
-   exact original behavior surviving intact. Replaced with the host's
-   real allocator -- see babl_free/babl_resize's own comments for
-   the matching free()/no-op halves. DAT_000bbf04 (the original
-   allocator's free-list head) is now unused by this trio; left
-   declared since init_conv_var_terminator_record (uw.c ~11090, an unrelated scratch-
-   buffer setup that happens to reuse the same global address in the
-   original binary) still writes to it. */
+/* HACK: this whole function was a hand-rolled, fixed-pool free-list allocator whose "next free
+   block" links are packed as 4 INDIVIDUAL BYTES within the block header... */
 {
   return (uint *)malloc((size_t)param_1);
 }
@@ -1364,18 +1109,7 @@ int param_1;
 // was FUN_00018ccc
 void babl_free(param_1)
 intptr_t param_1;
-/* HACK: matching replacement for babl_alloc -- see its own comment.
-   The original body validated a packed 32-bit-only free-list header
-   (`puVar2[(*(ushort*)puVar2>>2)-1]==puVar2 && *(uint**)(param_1-4)
-   ==puVar2`) before touching anything, which doubled as a "is this
-   really one of my blocks" sanity check; real free() has no equivalent
-   for a non-malloc'd pointer, so every caller of this function needs
-   to actually pass a real babl_alloc()/malloc() pointer now (true
-   for every site fixed as part of this same investigation -- see
-   load_npc_conversation_record's `local_28` and this file's other babl-VM pointer-
-   width fixes). param_1==0 is the one case the original's own
-   validation would always reject (NULL fails the header check), so
-   guard it the same way here. */
+/* HACK: matching replacement for babl_alloc -- see its own comment. */
 
 {
   if (param_1 != 0) {
@@ -1391,22 +1125,7 @@ intptr_t babl_resize(param_1,param_2)
 intptr_t param_1;
 int param_2;
 
-/* HACK: matching replacement for babl_alloc/babl_free -- see
-   their own comments. The original body was a "shrink this block in
-   place, splitting the freed tail back into the free list (or grow it
-   via a fresh alloc+free if it doesn't fit)" optimization, reading/
-   writing the same packed 32-bit-only free-list header format at a
-   fixed offset behind param_1 -- meaningless (reads whatever real
-   malloc's own private bookkeeping or adjacent heap bytes happen to
-   be there) once babl_alloc hands out a real malloc() pointer with
-   no such header. Its own only call site (uw.c, babl string-buffer
-   trimming) ignores the return value entirely and keeps using its own
-   already-held pointer afterward, so shrinking was purely a "return
-   the excess memory to the pool" optimization, not something the
-   caller's correctness depends on -- a real `realloc()` here would
-   risk moving the block out from under that caller's still-live
-   pointer for no benefit. No-op: leave the allocation exactly as it
-   is and report its address unchanged, safe either way. */
+/* HACK: matching replacement for babl_alloc/babl_free -- see their own comments. */
 {
   (void)param_2;
   return param_1;
@@ -1429,12 +1148,8 @@ short param_2;
   int iVar4;
   uint uVar5;
   /* Same "two separate stack locals read as one 4-byte record" bug as
-     save_npc_conversation_variables's own matching comment (its save-side mirror) -- see
-     there for the full explanation. This is the load side: local_122
-     (the record's LENGTH) was silently corrupted by whatever this
-     compiler's own stack layout happens to place after local_124 (the
-     ID), feeding a garbage skip-distance into seek_file_handle's seek and
-     misaligning every subsequent scan iteration. */
+     save_npc_conversation_variables's own matching comment (its save-side mirror) -- see there for
+     the full explanation. */
   undefined1 local_124_backing[4];
   #define local_124 (*(short *)(local_124_backing + 0))
   #define local_122 (*(short *)(local_124_backing + 2))
@@ -1513,15 +1228,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   char acStack_218 [256];
   char acStack_118 [256];
 
-  /* Was 4 dropped register-forwarding args (Ghidra faithfully preserved
-     the original ARM code relying on a value staying in r0 across
-     back-to-back `bl`s with no reload -- confirmed real elsewhere this
-     session, e.g. FUN_00019470's own comment) -- but this whole babl
-     conversation-VM cluster was never exercised until this session's
-     other fixes let it actually run, and a recompiled-for-this-host
-     call written as `()` in C loads no argument at all, so each of
-     these read whatever garbage happened to be in the register instead.
-     Chained explicitly. */
+  /* Was 4 dropped register-forwarding args (Ghidra faithfully preserved the original ARM code
+     relying on a value staying in r0 across back-to-back `bl`s with no reload -- confirmed real
+     elsewhere this session, e.g. FUN_00019470's own comment)... */
   iVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar3 = (char *)get_message_string(iVar1);
   pcVar4 = (char *)babl_expand_string_refs(pcVar3);
@@ -1577,13 +1286,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 undefined4 babl_builtin_contains(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "contains" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
-  /* uVar1/iVar2/uVar3/uVar4/iVar5/iVar7 were `undefined4`/`int` (4 bytes)
-     but hold real string pointers from get_message_string/babl_expand_string_refs/
-     ce_strstr (iVar5 doubly so -- reused below as `iVar5 = iVar2`
-     then in pointer arithmetic `iVar5 = iVar5 + iVar7`) -- truncated a
-     real 64-bit pointer on assignment even with each call's own
-     argument now fixed. Widened to intptr_t; see DAT_000bbf70's own
-     comment for the same fix elsewhere in this cluster. */
+  /* uVar1/iVar2/uVar3/uVar4/iVar5/iVar7 were `undefined4`/`int` (4 bytes) but hold real string
+     pointers from get_message_string/babl_expand_string_refs/ ce_strstr (iVar5 doubly so -- reused
+     below as `iVar5 = iVar2` then in pointer arithmetic `iVar5 = iVar5 + iVar7`)... */
   intptr_t uVar1;
   intptr_t iVar2;
   intptr_t uVar3;
@@ -1636,11 +1341,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar6;
   int iVar7;
   
-  /* Was 4 dropped register-forwarding args (2x get_message_string, 2x
-     ce_strlen) -- same class as babl_builtin_compare's own comment
-     (uw.c ~10977). Chained explicitly: the first ce_strlen() forwards
-     pcVar3 (the string just resolved right above it), matching the
-     very next line's own explicit `ce_strlen(pcVar2)` call. */
+  /* Was 4 dropped register-forwarding args (2x get_message_string, 2x ce_strlen) -- same class as
+     babl_builtin_compare's own comment (uw.c ~10977). */
   iVar6 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar2 = (char *)get_message_string(iVar6);
   iVar6 = babl_read_var_word((int)*(short *)(param_1 + -4));
@@ -1758,19 +1460,8 @@ char * param_1;
   char cVar12;
   char *local_38 [2];
   char local_30 [20];
-  /* Was `undefined4 babl_expand_string_refs` with a single `return 0;` at the very
-     end -- always NULL regardless of what this function actually
-     computed. Every one of its ~15 callers throughout this file treats
-     the return as the resolved (possibly newly babl_alloc'd) string
-     pointer, e.g. comparing it against their own input pointer to
-     decide whether to babl_free it -- this is the null-deref crash in
-     bug-critter-talk.txt (a real conversation with an "@SS1"-style
-     template substitution, confirmed live via lldb: param_1 was
-     Bragit's actual greeting text). Retyped to `char *` and given a
-     real return: the substituted buffer (pcVar7) when ce_strchr
-     found a '@' to expand, else param_1 unchanged -- the same
-     "same pointer back = nothing to free" contract already assumed at
-     every call site. */
+  /* Was `undefined4 babl_expand_string_refs` with a single `return 0;` at the very end -- always
+     NULL regardless of what this function actually computed. */
   char *pcVar_result;
 
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] expand_string_refs(\"%s\")\n", param_1 ? param_1 : "(null)");
@@ -1830,21 +1521,8 @@ LAB_00019bc8:
           }
         }
         if (cVar12 == 'I') {
-          /* Was `pcVar9[(int)pcVar11 - (int)local_30] = cVar1;` --
-             Ghidra swapped which pointer is the array base and which
-             is the index, AND truncated the pointer difference to 32
-             bits. The real intent (confirmed by the
-             `pcVar11 = pcVar7 + ce_strlen(pcVar7)` recompute right
-             after this whole if/else -- a strlen-based cursor resync
-             that only makes sense if this loop just appended into
-             pcVar7) is to APPEND the formatted number into the output
-             buffer at the current pcVar11 cursor, copying from
-             local_30: write pcVar11[pcVar9-local_30], not
-             pcVar9[pcVar11-local_30]. Same bug class as this whole
-             session's other truncated-pointer-arithmetic fixes; see
-             the identical sibling case a few lines below (the
-             get_message_string/babl_expand_string_refs branch) for the
-             same fix. */
+          /* Was `pcVar9[(int)pcVar11 - (int)local_30] = cVar1;` -- Ghidra swapped which pointer is
+             the array base and which is the index, AND truncated the pointer difference to 32 bits. */
           itoa_radix((int)sVar3,local_30,10);
           pcVar9 = local_30;
           do {
@@ -1854,52 +1532,24 @@ LAB_00019bc8:
           } while (cVar1 != '\0');
         }
         else {
-          /* Was a dropped argument -- Ghidra's own P-code analysis of
-             the real binary shows no register load before this `bl`
-             either, confirming it's genuine register-forwarding, not
-             just this file's own decompile simplifying it away. sVar3
-             (just resolved by the babl_read_var_word/babl_read_frame_word calls
-             immediately above, for the 'G'/'P'/'S' cases this branch
-             handles) is the only value left sitting in r0 at this
-             point, and get_message_string's signature elsewhere (a message/
-             string-table-index -> char* resolver, e.g. its 0xe01 "You
-             get no response" callers) matches passing exactly that. */
+          /* Was a dropped argument -- Ghidra's own P-code analysis of the real binary shows no
+             register load before this `bl` either, confirming it's genuine register-forwarding... */
           pcVar9 = (char *)get_message_string(sVar3);
           if (pcVar9 != (char *)0x0) {
             pcVar8 = (char *)babl_expand_string_refs(pcVar9);
             pcVar10 = pcVar8;
-            /* BUG FIX: was `pcVar10[(int)pcVar11 - (int)pcVar8] =
-               cVar1;` -- same swapped-base/truncated-pointer-difference
-               bug as the 'I' branch above (see its comment): writes
-               into pcVar10's own buffer at a 32-bit-truncated offset
-               instead of appending into pcVar11's (pcVar7's) output
-               cursor. On this 64-bit host, pcVar8/pcVar11 routinely
-               differ in their high 32 bits (separate babl_alloc
-               allocations), so the truncated difference used as an
-               index into pcVar10 is frequently huge/garbage --
-               confirmed live via lldb: SIGSEGV writing through a wild
-               pointer inside this exact loop
-               (EXC_BAD_ACCESS at babl.c, address far outside any valid
-               allocation) the first time a real NPC conversation line
-               reached this branch under realistic (100ms demo-delay)
-               pacing. Write through pcVar11 instead, offset by how far
-               pcVar10 has advanced past its own base pcVar8. */
+            /* BUG FIX: was `pcVar10[(int)pcVar11 - (int)pcVar8] = cVar1;` -- same
+               swapped-base/truncated-pointer-difference bug as the 'I' branch above (see its
+               comment)... */
             do {
               cVar1 = *pcVar10;
               pcVar11[(intptr_t)pcVar10 - (intptr_t)pcVar8] = cVar1;
               pcVar10 = pcVar10 + 1;
             } while (cVar1 != '\0');
             if (pcVar9 != pcVar8) {
-              /* Was a dropped argument (K&R register-forwarding) --
-                 now that babl_free is a real free() (see its own
-                 comment), passing whatever happened to be left in the
-                 argument register is far riskier than under the old
-                 hand-rolled allocator's own header-validated free.
-                 pcVar9 is unambiguously the intended argument: it's
-                 the just-allocated buffer being discarded once its
-                 content was copied into the caller's real destination
-                 (pcVar8), matching every other "if (x != cached) free
-                 x" sibling in this same file. */
+              /* Was a dropped argument (K&R register-forwarding) -- now that babl_free is a real
+                 free() (see its own comment), passing whatever happened to be left in the argument
+                 register is far riskier than under the old hand-rolled allocator's own... */
               babl_free(pcVar9);
             }
           }
@@ -1930,19 +1580,9 @@ LAB_00019cc0:
 undefined4 build_babl_symbol_table()
 
 {
-  /* iVar1/iVar2/iVar3/iVar5/iVar6/iVar7/iVar10/iVar11 were all plain
-     `int` -- fine for the small byte-offset/value uses, but iVar10 and
-     iVar7 (mid-loop) and iVar5/iVar11 (after the loop) also get
-     assigned straight from DAT_000bbf70 (now intptr_t, a real 64-bit
-     heap pointer -- see its own comment) or `<offset> + DAT_000bbf70`,
-     and were re-truncating it right back down to 32 bits on every one
-     of those assignments even after DAT_000bbf70 itself was widened.
-     Confirmed live via lldb: the wild write address was exactly
-     DAT_000bbf70's real value with its top byte dropped. Widened the
-     whole set to intptr_t rather than picking apart which specific
-     reuse of each variable is a pointer and which is a plain value --
-     intptr_t is exact for the small-value uses too, so this is a safe
-     blanket fix for this one function. */
+  /* iVar1/iVar2/iVar3/iVar5/iVar6/iVar7/iVar10/iVar11 were all plain `int` -- fine for the small
+     byte-offset/value uses, but iVar10 and iVar7 (mid-loop) and iVar5/iVar11 (after the loop) also
+     get assigned straight from DAT_000bbf70... */
   intptr_t iVar1;
   intptr_t iVar2;
   intptr_t iVar3;
@@ -2023,18 +1663,9 @@ undefined4 build_babl_symbol_table()
   iVar5 = iVar5 + DAT_000bbf70;
   *(undefined1 *)(iVar5 + 0x1a) = 0;
   *(undefined1 *)(iVar5 + 0x1b) = 0;
-  /* DAT_000bbf00's slot stride was `* 4` (idx << 2 for the allocation,
-     idx * 4 at every reader/writer below) -- a 32-bit-pointer-only design
-     baked into the original binary, same bug class as change_game_mode's
-     own DAT_00085668/DAT_000856a4 table (see its "0x80, was 0x40" fix).
-     Every slot actually holds a real function pointer (8 bytes on this
-     port) -- babl_register_builtin's own `*(undefined4*)` store below
-     only wrote the low 4 bytes of it, and every other slot's write
-     clobbered its next-door neighbor's high 4 bytes. Confirmed live via
-     lldb: babl_op_call_builtin's builtin-call opcode (uw.c ~12057) read back a
-     wild, clearly-not-a-code-address function pointer and crashed --
-     this is the reported "any input after Talk opens crashes" bug.
-     Widened to `* 8` throughout (allocation and all 5 index sites). */
+  /* DAT_000bbf00's slot stride was `* 4` (idx << 2 for the allocation, idx * 4 at every
+     reader/writer below) -- a 32-bit-pointer-only design baked into the original binary, same bug
+     class as change_game_mode's own DAT_00085668/DAT_000856a4 table (see its "0x80, was 0x40" fix). */
   if (0 < DAT_000bbf24) {
     DAT_000bbf00 = babl_alloc((int)DAT_000bbf24 << 3);
   }
@@ -2051,14 +1682,9 @@ undefined4 build_babl_symbol_table()
 
 
 
-// was FUN_0001a1c8 -- the babl dialogue VM's main opcode dispatch loop:
-// reads the current conversation bytecode buffer (DAT_000bbf80) word by
-// word at instruction pointer DAT_000bbf74, dispatching each opcode to
-// its babl_op_* handler (arithmetic/comparison/stack ops, calls, string
-// printing, menu display via run_babl_menu_wait_loop, etc.) until opcode 0
-// ends the conversation. Confirmed as the interpreter entry point by
-// start_npc_conversation calling it to run a loaded CNV.ARK record, and by
-// repeated comments elsewhere in this file referring to it by name.
+// was FUN_0001a1c8 -- the babl dialogue VM's main opcode dispatch loop: reads the current
+// conversation bytecode buffer (DAT_000bbf80) word by word at instruction pointer DAT_000bbf74,
+// dispatching each opcode to its babl_op_* handler...
 undefined4 run_babl_bytecode_interpreter()
 
 {
@@ -2078,26 +1704,8 @@ undefined4 run_babl_bytecode_interpreter()
     sVar2 = 1;
     do {
       flush_dirty_rect_to_display(1);
-      /* Was `DAT_000bbf80 + DAT_000bbf74` (byte offset) -- DAT_000bbf74 is
-         the babl VM's own instruction pointer, counted in 16-bit WORDS
-         (every other reader of it against this same DAT_000bbf80 buffer --
-         babl_op_call/babl_op_call_builtin, uw.c ~11971/12037 -- does
-         `DAT_000bbf80 + DAT_000bbf74 * 2 [+ 2]`). Confirmed live via lldb:
-         iteration 0 (DAT_000bbf74==0) happens to read the right word either
-         way, but iteration 1 read byte offset 1 instead of word offset 1,
-         landing mid-word (value 6656/0x1a00, matching neither operand nor
-         any real opcode) and falling into the switch's `default:` (case
-         0x26, uw.c ~11650), which sets sVar2=0 and ends the whole VM loop
-         immediately -- this is why every NPC conversation this session
-         (bug-critter-talk.txt's Bragit, with a real CNV.ARK record) never
-         printed a line or showed a menu: the interpreter always aborted
-         after its first real instruction, before run_babl_menu_wait_loop's menu loop
-         or any print builtin ever ran, so control fell straight back to
-         change_game_mode(1) (dungeon view) while the conversation frame
-         was still on screen -- the reported "dialog area not rendered,
-         3D view shown instead" and the crash/black-screen on the next
-         click (now routed to ordinary 3D-view input while still in the
-         leftover conversation UI). */
+      /* Was `DAT_000bbf80 + DAT_000bbf74` (byte offset) -- DAT_000bbf74 is the babl VM's own
+         instruction pointer, counted in 16-bit WORDS... */
       psVar7 = (short *)(DAT_000bbf80 + DAT_000bbf74 * 2);
       if (getenv("UW_DEBUG_OPCODE_TRACE")) fprintf(stderr, "[babl-op] ip=%d opcode=%d operand=%d stack_depth=%d top=%d\n", (int)DAT_000bbf74, (int)*psVar7, (int)psVar7[1], (int)DAT_000bbf78, (int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
       switch(*psVar7) {
@@ -2265,12 +1873,8 @@ LAB_0001a5a4:
 
 
 
-/* was FUN_0001ae28 -- binds a name (param_1) to a native function pointer
-   (param_2) callable from conversation ("babl") scripts. Called ~52
-   times, all from conversation-setup functions like enter_conversation_mode_screen (see
-   sync_conv_vars_from_npc's own comment below), registering intrinsics
-   such as "do_judgement", "set_attitude", "take_from_npc_inv",
-   "place_object" -- the native-code side of babl's script language. */
+/* was FUN_0001ae28 -- binds a name (param_1) to a native function pointer (param_2) callable from
+   conversation ("babl") scripts. */
 void babl_register_builtin(param_1,param_2)
 char * param_1;
 intptr_t param_2; // was `undefined4` -- every real caller passes a code address (e.g. `&LAB_0002912c`), truncated on 64-bit before it's even stored into DAT_000bbf00 below
@@ -2281,32 +1885,9 @@ intptr_t param_2; // was `undefined4` -- every real caller passes a code address
   int iVar3;
   char *pcVar4;
 
-  /* HACK: added `DAT_000bbf70 != 0` -- this whole babl-symbol-table
-     cluster (babl_register_builtin/babl_op_say/etc.) uniformly assumes
-     DAT_000bbf70 already points at a real, build_babl_symbol_table()-initialized
-     record array before touching it. It's declared `int` (not even a
-     pointer) and starts at 0; load_npc_conversation_record's own "no CNV.ARK record
-     for this NPC" early-return path (uw.c ~10986, itself already
-     fixed twice this session -- a dropped message_scroll_print_
-     wrapped() argument, then a hardcoded `return 1` that should have
-     been that call's own return value) skips the build_babl_symbol_table() call
-     that would set it, yet start_npc_conversation's caller-side `sVar1 < 0`
-     check (matching real disassembly at 0x28c1c-0x28c20, `bpl` = branch
-     on non-negative) still takes its "record found" success branch and
-     calls into here regardless -- this is the exact Talk-mode crash in
-     bug-critter-talk.txt (talking to an NPC with no conversation,
-     EXC_BAD_ACCESS at DAT_000bbf70+0x18 while DAT_000bbf70==0).
-     UNRESOLVED: why the real game's equivalent tail read (message_
-     scroll_print_wrapped's own return -- see its comment -- ultimately
-     `*(short*)(DAT_00250704+0x14)`) would come back genuinely negative
-     in the same scenario on real hardware, letting start_npc_conversation's own
-     check correctly reject it without this guard, is still an open
-     question (this port's own scroll-state field reads back 0 here,
-     confirmed live via lldb) -- flagged as a follow-up, not chased
-     further. This guard matches what every sibling reader of
-     DAT_000bbf70 already assumes ("nonzero == initialized") and is
-     the narrowest fix that stops the crash without guessing at that
-     deeper field's real semantics. */
+  /* HACK: added `DAT_000bbf70 != 0` -- this whole babl-symbol-table cluster
+     (babl_register_builtin/babl_op_say/etc.) uniformly assumes DAT_000bbf70 already points at a
+     real, build_babl_symbol_table()-initialized record array before touching it. */
   if (DAT_000bbf70 != 0 && *(short *)(DAT_000bbf70 + 0x18) != 0) {
     cVar2 = *param_1;
     pcVar4 = DAT_000bbf70;
@@ -2325,14 +1906,9 @@ intptr_t param_2; // was `undefined4` -- every real caller passes a code address
 
 
 
-/* was FUN_0001aebc -- looks up a named babl script variable (param_1,
-   e.g. "npc_hp") in the variable table at DAT_000bbf70 (0x20-byte
-   stride records) and copies param_3 16-bit values from param_2 INTO
-   its backing storage (DAT_000bbf14) -- i.e. native code publishing a
-   value for the conversation script to read. Called 32 times, always
-   right after computing a real object-record field (see
-   sync_conv_vars_from_npc). Paired with babl_get_variable for the reverse
-   direction. */
+/* was FUN_0001aebc -- looks up a named babl script variable (param_1, e.g. "npc_hp") in the
+   variable table at DAT_000bbf70 (0x20-byte stride records) and copies param_3 16-bit values from
+   param_2 INTO its backing storage (DAT_000bbf14)... */
 void babl_set_variable(param_1,param_2,param_3)
 char *param_1;
 intptr_t param_2; // was `int` -- every real caller passes a stack pointer (e.g. sync_conv_vars_from_npc's `local_20`), truncated on 64-bit; same bug class as DAT_000bbf70 (crashes at param_2's own dereference, uw.c ~12283)
@@ -2365,11 +1941,8 @@ short param_3;
   local_34[sVar6] = 0;
   iVar2 = DAT_000bbf70;
   while( true ) {
-    /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
-       comment (uw.c ~12260) -- this is the Talk-crash's own next
-       crash site once that one's fixed (sync_conv_vars_from_npc's npc_whoami
-       lookup, called unconditionally from start_npc_conversation same as the
-       babl_menu registrations). */
+    /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own comment (uw.c ~12260) --
+       this is the Talk-crash's own next crash site once that one's fixed... */
     if (iVar2 == 0 || *(short *)(iVar2 + 0x18) == 0) {
       return;
     }
@@ -2397,12 +1970,9 @@ short param_3;
 
 
 
-/* was FUN_0001afe4 -- the mirror of babl_set_variable: looks up a named babl
-   script variable in the same DAT_000bbf70 table and copies its current
-   value OUT of DAT_000bbf14 into param_2 -- native code reading back
-   whatever value the conversation script itself set. Called 14 times,
-   always right before writing the result into a real object-record
-   field (see sync_conv_vars_to_npc). */
+/* was FUN_0001afe4 -- the mirror of babl_set_variable: looks up a named babl script variable in the
+   same DAT_000bbf70 table and copies its current value OUT of DAT_000bbf14 into param_2 -- native
+   code reading back whatever value the conversation script itself set. */
 void babl_get_variable(param_1,param_2,param_3)
 char *param_1;
 intptr_t param_2; // was `int` -- same pointer-truncation bug as babl_set_variable's own param_2 (every real caller passes a stack pointer, e.g. `&local_10`)
@@ -2643,13 +2213,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
 
 
-// was FUN_000286cc -- the "enter conversation" game-mode handler
-// (registered in change_game_mode's mode-dispatch table, uw.c). Draws the
-// conversation screen: background panel, portrait bitmap (generic or a
-// specific NPC head), the NPC's name text, switches the message-scroll
-// panel into conversation mode, and -- once the portrait/name are in
-// place -- calls start_npc_conversation (which loads the CNV.ARK record
-// and runs the babl bytecode interpreter, run_babl_bytecode_interpreter).
+// was FUN_000286cc -- the "enter conversation" game-mode handler (registered in change_game_mode's
+// mode-dispatch table, uw.c).
 void enter_conversation_mode_screen()
 
 {
@@ -2768,42 +2333,12 @@ undefined4 param_2;
   undefined4 uVar3;
   
   sVar1 = load_npc_conversation_record(s__DATA_cnv_ark_00084fc8,DAT_00100784 + 0x400);
-  /* Was `if (sVar1 < 0)` alone, matching real disassembly at 0x28c1c-
-     0x28c20 (`bpl` = branch to the success/registration branch below
-     on sVar1 >= 0) -- but that disassembly-confirmed check isn't
-     enough on its own for the Talk-mode crash in bug-critter-talk.txt
-     (Bragit has no CNV.ARK conversation record): load_npc_conversation_record's own
-     "no record" branch (uw.c ~10986) returns message_scroll_print_
-     wrapped()'s own return value (also disassembly-confirmed, no
-     `mov r0,#1` before that branch's return), and in THIS port that
-     value came back 0 -- non-negative, so `sVar1 < 0` alone still
-     takes the success branch below. Chased this two ways before
-     landing here: (1) hardcoding a hopeful `return -1` in load_npc_conversation_record
-     instead would contradict what the disassembly actually shows, and
-     (2) individually NULL-guarding every DAT_000bbf70/DAT_000bbf80-
-     reading function this success branch calls into turned into an
-     unbounded chase (fixed 5 separate crash sites this way -- see
-     babl_register_builtin/babl_op_say/babl_op_respond/babl_set_variable/babl_get_variable/
-     init_babl_variable_defaults's own comments -- before finding a 6th at
-     run_babl_bytecode_interpreter's DAT_000bbf80 dereference). Whether the real 32-bit
-     binary's equivalent register value is reliably negative here (real
-     memory garbage that happens to differ from this port's freshly-
-     zeroed scratch buffer) is unresolved and flagged as a follow-up,
-     not chased further. Gating on DAT_000bbf70 too is the actual fix:
-     it's the one flag every function in this success branch already
-     agrees means "a real record's symbol table is loaded" (see
-     build_babl_symbol_table, only ever called -- and only place that sets it --
-     on the genuine record-found path), so checking it here stops the
-     whole cluster's crash at its one shared root instead of chasing
-     individual dereferences further. */
+  /* Was `if (sVar1 < 0)` alone, matching real disassembly at 0x28c1c- 0x28c20 (`bpl` = branch to
+     the success/registration branch below on sVar1 >= 0)... */
   if (sVar1 < 0 || DAT_000bbf70 == 0) {
-    /* Was two separate calls with message_scroll_print_wrapped()'s arg
-       dropped -- same pattern already fixed at load_npc_conversation_record's own
-       sVar1<0 branch (uw.c ~10987) and at attempt_talk_interaction's tail
-       (uw.c ~19070). This is the specific crash in bug-critter-talk.txt:
-       Bragit has no CNV.ARK conversation record (sVar1<0 here is the
-       real, correct "You get no response" case, not a bug), but
-       printing that message crashed on the dropped argument. */
+    /* Was two separate calls with message_scroll_print_wrapped()'s arg dropped -- same pattern
+       already fixed at load_npc_conversation_record's own sVar1<0 branch (uw.c ~10987) and at
+       attempt_talk_interaction's tail (uw.c ~19070). */
     message_scroll_print_wrapped(get_message_string(0xe01));
   }
   else {
@@ -2856,11 +2391,8 @@ undefined4 param_2;
          call for the full explanation; intended arg is DAT_00100674. */
       spawn_creature_death_loot(DAT_00100674);
     }
-    /* Debug-only static dump of every string in this NPC's own compiled
-       conversation, independent of which branches a live playthrough
-       happens to reach -- see bragit-talk-again-investigation. Message
-       ids are (page<<9)|subindex (get_message_string's own comment); page 0
-       is this just-loaded conversation's own string table. */
+    /* Debug-only static dump of every string in this NPC's own compiled conversation, independent
+       of which branches a live playthrough happens to reach -- see bragit-talk-again-investigation. */
     if (getenv("UW_DEBUG_DUMP_CONV_STRINGS")) {
       int _dump_i;
       for (_dump_i = 0; _dump_i < 0x200; _dump_i++) {
@@ -2878,26 +2410,16 @@ undefined4 param_2;
     if ((iVar2 != 0) || (DAT_001007b4 == '\0')) {
       uVar3 = 0;
     }
-    /* Debug-only re-seed, no UI involved: directly proves out the
-       npc_talkedto persistence fix (bglobals-dat-readonly-handle-fix)
-       end-to-end without needing to click the NPC a second time through
-       a fragile, animation-position-dependent screen coordinate. Safe
-       to call standalone -- sync_conv_vars_from_npc just re-reads the object's
-       current fields and re-sets babl variables from them. */
+    /* Debug-only re-seed, no UI involved: directly proves out the npc_talkedto persistence fix
+       (bglobals-dat-readonly-handle-fix) end-to-end without needing to click the NPC a second time
+       through a fragile, animation-position-dependent screen coordinate. */
     if (getenv("UW_DEBUG_TALK_TWICE")) {
       fprintf(stderr, "[babl] UW_DEBUG_TALK_TWICE: re-seeding from the same object right after natural conversation end\n");
       sync_conv_vars_from_npc(DAT_00100674);
     }
-    /* Debug-only: re-runs the exact same object-pick the mouse position
-       already used to start this conversation would produce, RIGHT as
-       the conversation ends -- same frame, same g_mouse_x/g_mouse_y, no
-       real click or screen coordinate involved at all. Directly tests
-       whether the pick/stencil table's slot-to-object mapping is still
-       consistent immediately after returning from conversation mode,
-       sidestepping both "Bragit wandered" and "click landed mid-
-       conversation" timing problems entirely. See QA report: "leaving a
-       conversation causes 3d-view object-picking to give incorrect
-       results". */
+    /* Debug-only: re-runs the exact same object-pick the mouse position already used to start this
+       conversation would produce, RIGHT as the conversation ends -- same frame, same
+       g_mouse_x/g_mouse_y, no real click or screen coordinate involved at all. */
     if (getenv("UW_DEBUG_PICK_TWICE")) {
       ushort *_pick2 = pick_object_under_cursor(2);
       if (_pick2) {
@@ -2916,29 +2438,9 @@ undefined4 param_2;
 
 
 
-/* Was a no-op stub (LAB_0002912c, uw.c ~1693's own comment) -- Ghidra
-   never resolved this address into a proper function on this port's
-   own earlier decompile pass, so babl_menu (registered under that
-   exact script name in start_npc_conversation) silently did nothing.
-   Bragit's conversation calls this as its very first action, so no
-   dialogue text or menu ever appeared even after the babl VM crash
-   fixes made the VM itself run correctly end to end (see
-   [[npc-talk-crash-babl-vm-resolved]]).
-
-   Recovered from the real ARM binary
-   (/Users/ccuddigan/Projects/UW1/uw-arm/UU.exe, image base 0x10000,
-   function at 0x2912c) via Ghidra headless disassembly + decompile --
-   it's structurally identical to babl_fmenu just below (already
-   correctly ported) with the second (filter-list) parameter
-   and its `if (sVar4 != 0)` gate removed: babl_menu shows every item
-   in its list unconditionally, where babl_fmenu only shows the ones
-   whose parallel filter-list entry is nonzero. Confirmed line-for-line
-   against the real disassembly; every global/helper this calls
-   (DAT_00100790/794/78c/788, DAT_001006d8/100680/1007a0/100770,
-   babl_alloc, babl_expand_string_refs, message_scroll_print_wrapped,
-   run_babl_menu_wait_loop, etc.) is the exact same shared struct/state babl_fmenu
-   already uses successfully -- placed here, after babl_fmenu, so those
-   are already declared. */
+/* Was a no-op stub (LAB_0002912c, uw.c ~1693's own comment) -- Ghidra never resolved this address
+   into a proper function on this port's own earlier decompile pass, so babl_menu (registered under
+   that exact script name in start_npc_conversation) silently did nothing. */
 int babl_menu(param_1)
 intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builtin-call opcode) passes a full 64-bit stack pointer (DAT_000bbf0c + DAT_000bbf78*2), truncated on 64-bit before this function's own `param_1 + -2` dereference; same bug class as babl_set_variable/babl_register_builtin elsewhere in this cluster
 
@@ -2947,16 +2449,8 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
   short sVar2;
   short sVar5;
   undefined4 uVar6;
-  /* uVar7/iVar8/iVar9 were `undefined4`/`int` (4 bytes) but hold real
-     string pointers from get_message_string/babl_expand_string_refs/
-     ce_strlen -- and DAT_001006d8/DAT_00100680 (the per-item raw-
-     string / expanded-string caches, both raw byte-array backings
-     manually indexed) were stored/read with a `* 4` stride sized for
-     32-bit pointers, same bug class as DAT_000bbf00's own fix earlier
-     in this cluster. Confirmed live via lldb: this is the crash one
-     step past babl_menu's own `param_1` truncation fix. Widened to
-     intptr_t and `* 8` throughout (also fixed in babl_fmenu just below
-     and its two other readers, run_babl_menu_wait_loop/select_babl_menu_response). */
+  /* uVar7/iVar8/iVar9 were `undefined4`/`int` (4 bytes) but hold real string pointers from
+     get_message_string/babl_expand_string_refs/ ce_strlen -- and DAT_001006d8/DAT_00100680... */
   intptr_t uVar7;
   intptr_t iVar8;
   intptr_t iVar9;
@@ -2964,20 +2458,9 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
   char *pcVar11;
   int iVar12;
   short sVar13;
-  /* Was 4 separate stack locals (`local_c4`, `local_c3`, `local_c2`,
-     `acStack_c1[157]`) that the print loop below relies on being laid
-     out contiguously in memory (writing local_c3/local_c2 then reading
-     the whole thing back starting from `&local_c4`) -- a real
-     assumption about THIS FUNCTION's specific stack frame in the
-     original 32-bit ARM binary that no C compiler guarantees to
-     reproduce (and this one doesn't: confirmed live, the "assembled"
-     string read back as just the 1-byte index digit followed
-     immediately by a stray NUL, silently dropping the ". " and the
-     actual dialogue text -- this is why menu options rendered as bare
-     "1"/"2" with no text). Same bug class as this file's many
-     "Ghidra split one real buffer into separate globals" fixes, just
-     on the stack instead of at file scope. Merged into one real
-     160-byte buffer (1 digit + ". " + up to 157 bytes of text). */
+  /* Was 4 separate stack locals (`local_c4`, `local_c3`, `local_c2`, `acStack_c1[157]`) that the
+     print loop below relies on being laid out contiguously in memory (writing local_c3/local_c2
+     then reading the whole thing back starting from `&local_c4`)... */
   char local_c4 [160];
 
   sVar13 = 0;
@@ -3049,25 +2532,15 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
       sVar13 = sVar5 + 1;
     } while (iVar12 < DAT_00100794);
   }
-  /* Debug-only regression-test aid: end-to-end verifying npc_talkedto
-     persistence (see bglobals-dat-readonly-handle-fix) needs driving a
-     conversation all the way to a real "Farewell"/"Bye" exit, but which
-     numbered topic reaches one varies conversation to conversation and
-     is sometimes randomized turn to turn (confirmed live: the same
-     first answer led down different branches on different runs), so
-     scripting a fixed key sequence in a demo file is not reliable.
-     When set, auto-selects the first item whose text looks like a
-     farewell, exactly as if the player had picked it, instead of
-     blocking on real input -- lets a demo script reach a natural
-     conversation end deterministically for testing. */
+  /* Debug-only regression-test aid: end-to-end verifying npc_talkedto persistence (see
+     bglobals-dat-readonly-handle-fix) needs driving a conversation all the way to a real
+     "Farewell"/"Bye" exit... */
   if (getenv("UW_DEBUG_AUTO_FAREWELL") && (1 < DAT_00100794)) {
     int _far_i;
     int _far_pick = 1; /* no farewell offered this turn -- keep the conversation moving */
-    /* UW_DEBUG_AUTO_PICK=N overrides the "no farewell offered" default
-       away from item 1, to explore branches a rigid "always pick 1"
-       playthrough never reaches (e.g. hunting for where a script might
-       call get_quest/set_quest) -- clamped into range, never overrides
-       an actual farewell match below. */
+    /* UW_DEBUG_AUTO_PICK=N overrides the "no farewell offered" default away from item 1, to explore
+       branches a rigid "always pick 1" playthrough never reaches (e.g. hunting for where a script
+       might call get_quest/set_quest) -- clamped into range... */
     { const char *_pick_env = getenv("UW_DEBUG_AUTO_PICK");
       if (_pick_env) {
         int _pick_n = atoi(_pick_env);
@@ -3293,14 +2766,8 @@ LAB_00029e2c:
       if (0 < iVar1) {
         iVar5 = 0;
         do {
-          /* BUG FIX: was `babl_read_var_word(...); give_barter_item_by_item_id();`
-             -- the read result was discarded and the call made with zero
-             visible arguments, relying on the leftover register the
-             real ARM binary left it in (same dropped-argument bug class
-             documented throughout this project). Pass the read value
-             through explicitly, matching give_barter_item_by_item_id's
-             other call site (babl_builtin_give_ptr_npc) which already
-             does this correctly. */
+          /* BUG FIX: was `babl_read_var_word(...); give_barter_item_by_item_id();` -- the read
+             result was discarded and the call made with zero visible arguments... */
           sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2) + (int)(short)iVar5);
           give_barter_item_by_item_id(sVar2);
           iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
@@ -3544,27 +3011,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
 
 
-/* was sync_conv_vars_from_npc -- NOT a debug/cheat tool (an earlier pass through
-   this file mislabeled it that way from its shape alone; tracing its
-   real caller corrects that). Called exactly once, from enter_conversation_mode_screen
-   (uw.c ~19025 -- loads the NPC's head portrait via "genhead",
-   draws the conversation UI, then calls change_game_mode(1): this is
-   real conversation-open setup, unconditional on every "talk to NPC",
-   not gated behind any debug/cheat flag), as
-   `sync_conv_vars_from_npc(DAT_00100674)` where DAT_00100674 is the NPC
-   just talked to (assigned in attempt_talk_interaction's own
-   interact-with-object path). Publishes every field babl conversation
-   scripts can read --
-   npc_xhome/npc_yhome/npc_goal/npc_gtarg/npc_talkedto/npc_level/
-   npc_attitude/npc_hp/npc_health/npc_arms/npc_power/npc_hunger/
-   npc_whoami/npc_name, plus the PLAYER's own play_health/play_hp/
-   play_hunger/play_mana/play_power/play_arms/play_level/play_sex/
-   play_poison/play_drawn/play_name, plus dungeon_level/game_time/
-   game_mins/game_days -- via babl_set_variable, immediately before the
-   conversation bytecode interpreter (run_babl_bytecode_interpreter) actually runs. This
-   is the real object-record/console-variable binding the "npc_xhome"/
-   "npc_yhome" evidence for uw_object_hdr_t's quality/owner fields (see
-   struct-recovery-plan.md) came from. */
+/* was sync_conv_vars_from_npc -- NOT a debug/cheat tool (an earlier pass through this file
+   mislabeled it that way from its shape alone; tracing its real caller corrects that). */
 // was FUN_0002a8e0
 void sync_conv_vars_from_npc(param_1)
 ushort * param_1;
@@ -3641,24 +3089,8 @@ ushort * param_1;
     local_20[0] = 0x80;
   }
   else {
-    /* Was `g_player_object[8]` -- g_player_object is `ushort *`, so the
-       plain-index form reads byte offset 16 (8*2), not byte offset 8
-       where the player's real HP byte lives (matches every other real
-       reader of this field elsewhere in the file, e.g.
-       `*(char*)((char*)g_player_object+8)` in sync_conv_vars_to_npc's own sync-
-       back a few lines below and in sync_player_stats_to_hud). Same
-       ushort/byte pointer-scaling bug class as the NPC-AI cluster
-       fixed earlier this project. Confirmed against the real ARM
-       disassembly: both this "play_health" calc and the "play_hp" set
-       just below load `ldrb r3,[r4,#0x8]` -- a byte-sized load at
-       offset 8, not 16. Confirmed live: this fed a stale/wrong
-       "play_hp" babl variable (default 0 for a fresh character) at
-       conversation start, and sync_conv_vars_to_npc's own sync-back at
-       conversation end then faithfully wrote that 0 into the REAL
-       player HP byte, zeroing it and triggering
-       sync_player_stats_to_hud's death-sequence branch, which then hit
-       a separate missing-NULL-guard crash in handle_player_death_and_menu_transition (fixed
-       there to match change_game_mode's own existing guard). */
+    /* Was `g_player_object[8]` -- g_player_object is `ushort *`, so the plain-index form reads byte
+       offset 16 (8*2), not byte offset 8 where the player's real HP byte lives... */
     local_20[0] = ordint_divmod((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)*(byte *)((char *)g_player_object + 8) << 8).quot;
   }
   babl_set_variable(s_play_health_000852f8,local_20,1);
@@ -3697,20 +3129,9 @@ ushort * param_1;
 
 
 
-/* was sync_conv_vars_to_npc -- the write-back mirror of sync_conv_vars_from_npc,
-   called once from the same enter_conversation_mode_screen, right after the conversation
-   bytecode interpreter (run_babl_bytecode_interpreter) runs. Reads back whatever the
-   script itself set via babl_get_variable and applies it to the real object
-   record: npc_xhome/npc_yhome/npc_goal/npc_gtarg/npc_talkedto/
-   npc_attitude/npc_hunger(as a derived "is starving" flag, not a raw
-   counter)/npc_hp, plus the player's play_hunger/play_hp/play_mana/
-   play_poison, plus granting new_player_exp if the script set it
-   nonzero. This is how a conversation script changes an NPC's
-   disposition toward the player, or rewards experience for a correct
-   answer -- real gameplay effects of dialogue choices, not a debug
-   tool. Return value reflects whether npc_attitude ended up 0 after the
-   script ran; the caller uses it (OR'd with DAT_001007b4) to decide
-   whether to skip a post-conversation delay. */
+/* was sync_conv_vars_to_npc -- the write-back mirror of sync_conv_vars_from_npc, called once from
+   the same enter_conversation_mode_screen, right after the conversation bytecode interpreter
+   (run_babl_bytecode_interpreter) runs. */
 // was FUN_0002af88
 bool sync_conv_vars_to_npc(param_1)
 char *param_1;
@@ -3795,14 +3216,9 @@ undefined1 *param_2;
   char *local_28;
   undefined1 auStack_20 [16];
 
-  /* Was `undefined4 param_2` (32-bit) -- truncated the real 64-bit
-     buffer pointer (DAT_00100784 + 0x400, passed in from start_npc_conversation)
-     before it ever reached init_conv_var_terminator_record's own `*param_1 = 0xff` write,
-     the Talk-mode crash in bug-critter-talk.txt (EXC_BAD_ACCESS at the
-     truncated 32-bit address, confirmed live via lldb: param_2 came in
-     as 0x58270400, the real 0x158270400 buffer address with its high
-     32 bits dropped). Same truncation-bug class as the tilemap_lookup
-     pointer-truncation sweep earlier this session. */
+  /* Was `undefined4 param_2` (32-bit) -- truncated the real 64-bit buffer pointer (DAT_00100784 +
+     0x400, passed in from start_npc_conversation) before it ever reached
+     init_conv_var_terminator_record's own `*param_1 = 0xff` write... */
   init_conv_var_terminator_record(param_2);
   DAT_000bbf30 = 0;
   DAT_000bbf20 = param_1;
@@ -3816,46 +3232,14 @@ undefined1 *param_2;
       report_fatal_error_and_exit(4);
     }
     local_28 = DAT_000bbf18;
-    /* Was `read_archive_entry(auStack_20,DAT_001007c4)` -- a dropped 3rd
-       argument. read_archive_entry's real signature takes a destination
-       buffer (its own `param_3`, see its comment); the real ARM code
-       (0x194d0-0x194dc: `cpy r5,r2` then `bl 0x1613c` with NO reload of
-       r2 in between) relies on r2 still holding local_28 from several
-       instructions earlier -- a register-forwarding trick this host's
-       own C codegen has no reason to reproduce for a call site that's
-       only ever told about 2 arguments. Confirmed via lldb this was the
-       real reason EVERY NPC's Talk (not just Bragit's) failed with "You
-       get no response": Bragit's own directory-table slot (record 67)
-       is genuinely non-empty (199494, confirmed live) -- read_archive_
-       entry's early "empty slot" check was never the problem, the
-       actual read_file_handle(fd,param_3,len) read was silently failing on
-       whatever garbage this host happened to leave in the argument
-       register. */
+    /* Was `read_archive_entry(auStack_20,DAT_001007c4)` -- a dropped 3rd argument.
+       read_archive_entry's real signature takes a destination buffer (its own `param_3`, see its
+       comment); the real ARM code... */
     sVar1 = read_archive_entry(auStack_20,DAT_001007c4,local_28);
     close_level_archive(auStack_20);
     if (sVar1 < 1) {
-      /* Was `message_scroll_print_wrapped(...); return 1;` -- a second,
-         separate bug on top of the already-fixed dropped-argument one
-         (see the surviving half of this comment below): the real
-         disassembly (0x194fc-0x1950c) falls straight through to this
-         function's shared epilogue after the two `bl`s with NO `mov
-         r0,#1` of its own, so the real return value here is whatever
-         message_scroll_print_wrapped() itself returns, not a hardcoded
-         1. Hardcoding 1 (a non-negative "success") made start_npc_conversation's
-         own `if (sVar1 < 0)` caller-side check always take its SUCCESS
-         branch even on this "no CNV record for this NPC" path -- which
-         then read never-initialized DAT_000bbf70 (still 0 from this
-         run, since the real per-record setup in build_babl_symbol_table() below
-         never got a chance to run) as a base pointer inside
-         babl_register_builtin, crashing at DAT_000bbf70+0x18. This is the exact
-         crash in bug-critter-talk.txt: Bragit has no real conversation
-         record, so this early-return path is supposed to be the one
-         taken. Was: message_scroll_print_wrapped(get_message_string(0xe01));
-         return 1; -- two separate calls with message_scroll_print_
-         wrapped()'s arg dropped; fresh Ghidra disassembly (0x44c90-
-         0x44c94) shows no register load between the two `bl`s --
-         get_message_string's return (char *) flows straight into
-         message_scroll_print_wrapped as its argument. */
+      /* Was `message_scroll_print_wrapped(...); return 1;` -- a second, separate bug on top of the
+         already-fixed dropped-argument one (see the surviving half of this comment below)... */
       return message_scroll_print_wrapped(get_message_string(0xe01));
     }
   }
@@ -3901,25 +3285,9 @@ void save_npc_conversation_variables()
   int iVar5;
   uint uVar6;
   uint uVar7;
-  /* Was two separate stack locals (`short local_120; short local_11e;`)
-     read as ONE 4-byte record via `&local_120,4` -- the same "Ghidra
-     split one real contiguous buffer into separate stack locals" bug
-     class fixed dozens of times elsewhere in this file, just never
-     caught here since it doesn't crash, it just silently corrupts
-     local_11e (the record's LENGTH) with whatever garbage byte this
-     compiler's own stack layout happens to place after local_120 (the
-     record's ID) -- nothing forces the two to stay adjacent once
-     recompiled. Confirmed via the real ARM disassembly that both reads
-     genuinely are meant to be one 4-byte record (matching
-     load_npc_conversation_variables's own identical pattern, its own load-side mirror).
-     The corrupted length then feeds seek_file_handle's own seek-forward-
-     to-next-record call, misaligning every subsequent scan iteration
-     -- this is the actual root cause of "talking to Bragit again
-     starts fresh": his own script-local conversation state (a SEPARATE
-     persistence path from the engine-level npc_talkedto bit, which
-     was already confirmed working) never successfully finds or
-     updates its own saved record, because the scan wanders off into
-     garbage after the very first skipped-record seek. */
+  /* Was two separate stack locals (`short local_120; short local_11e;`) read as ONE 4-byte record
+     via `&local_120,4` -- the same "Ghidra split one real contiguous buffer into separate stack
+     locals" bug class fixed dozens of times elsewhere in this file... */
   undefined1 local_120_backing[4];
   #define local_120 (*(short *)(local_120_backing + 0))
   #define local_11e (*(short *)(local_120_backing + 2))
@@ -3969,10 +3337,9 @@ LAB_00019460:
 
 
 
-// was FUN_0001825c -- babl builtin "remove_talker": looks up the tile
-// the current conversation partner (DAT_00100674) is standing on (its
-// packed tile coords at offset 0x16) and discards it from that tile's
-// object list as misplaced.
+// was FUN_0001825c -- babl builtin "remove_talker": looks up the tile the current conversation
+// partner (DAT_00100674) is standing on (its packed tile coords at offset 0x16) and discards it
+// from that tile's object list as misplaced.
 void babl_builtin_remove_talker()
 
 {
@@ -3987,13 +3354,8 @@ void babl_builtin_remove_talker()
 
 
 
-// was FUN_00019120 -- copies the default conversation-globals template
-// (\DATA\babglobs.dat) into the active save's own copy
-// (\SAVE0\bglobals.dat), one variable-length record at a time. Called
-// during new-game/world-seeding, right after the lev.ark template copy
-// (see its two call sites' own comments). Returns 0 on success,
-// 0x3007 if the template can't be opened, 0x4001 on any read/write
-// failure against the destination.
+// was FUN_00019120 -- copies the default conversation-globals template (\DATA\babglobs.dat) into
+// the active save's own copy (\SAVE0\bglobals.dat), one variable-length record at a time.
 undefined4 seed_conversation_globals_for_new_game()
 
 {
@@ -4007,21 +3369,9 @@ undefined4 seed_conversation_globals_for_new_game()
   int iVar6;
   int iVar7;
   char *pcVar8;
-  /* Was `undefined1 auStack_124[4]; short local_122;` -- a previous fix
-     widened auStack_124 to the 4 bytes read_file_handle/write_file_handle read
-     and write as one blob, but left local_122 as its own, separately-
-     declared local that's never actually assigned anywhere in this
-     function (only ever read, at `local_122 * 2` / `(int)local_122<<1`
-     below) -- genuinely uninitialized stack garbage, which is exactly
-     the "size" that overflowed file_io.c's write-size guard and, before
-     that guard existed, silently corrupted the heap (confirmed via ASAN/
-     a malloc-guard abort on an unrelated thread). The sibling function
-     right below this one (load_npc_conversation_variables) declares the equivalent pair as
-     two contiguous shorts (`short local_124; short local_122;`), which
-     is what this record header actually is: two 16-bit fields read by
-     one 4-byte call, the second being the following record's real
-     length. Restored that shape as a real 2-element array so the write-
-     through and the length read see the same bytes. */
+  /* Was `undefined1 auStack_124[4]; short local_122;` -- a previous fix widened auStack_124 to the
+     4 bytes read_file_handle/write_file_handle read and write as one blob, but left local_122 as
+     its own... */
   short auStack_124 [2];
 #define local_122 auStack_124[1]
   char acStack_11c [260];
@@ -4077,29 +3427,9 @@ LAB_00019240:
 
 
 
-// was FUN_00019660 -- writes an 8-byte "terminator" record (id/marker
-// bytes 0xffffffff, value bytes 0) at the head of the conversation-
-// globals destination buffer, ahead of load_npc_conversation_record's
-// real archive read, so a variable-list scan sees an immediate
-// terminator if no real records ever get filled in. Also stashes
-// param_1 into DAT_000bbf04 -- the original babl allocator's free-list
-// head, now unused by babl_alloc/babl_free/babl_resize (see
-// babl_alloc's own comment); this write is vestigial but harmless.
-//
-// BUG FIX: the original decompile wrote the trailing 4 zero bytes as
-// `DAT_000bbf04[4..7]`, but DAT_000bbf04 is declared `uint *` (4-byte
-// stride), so that indexed 16 bytes past the record start (offset
-// 16-19), not the intended byte offsets 4-7 -- a wild write 12 bytes
-// beyond the real 8-byte record, using whatever memory happens to sit
-// there. This was a real bug in the original decompile, just never
-// observed to matter until moving this function out of uw.c changed
-// static layout enough to put something load-bearing at that offset
-// (confirmed live: SIGSEGV deep in the renderer, reproducibly, only
-// after this extraction -- moving it back and bisecting isolated it to
-// this exact write). Use param_1 (the correctly byte-typed pointer,
-// already in scope, same address DAT_000bbf04 was just set to) for
-// the byte-offset writes instead, matching the pattern the leading
-// 4 bytes already use.
+// was FUN_00019660 -- writes an 8-byte "terminator" record (id/marker bytes 0xffffffff, value bytes
+// 0) at the head of the conversation- globals destination buffer, ahead of
+// load_npc_conversation_record's real archive read...
 void init_conv_var_terminator_record(param_1)
 undefined1 * param_1;
 
@@ -4119,11 +3449,8 @@ undefined1 * param_1;
 
 
 
-// was FUN_00019d00 -- recursive parser for one "@X..." embedded
-// reference inside a babl display string (expand_string_refs's own
-// sub-parser for compound G/S/P/C-chained expressions; see that
-// function's matching inline copy of this same character-class logic).
-// param_1 is an in/out cursor pointer into the string being scanned.
+// was FUN_00019d00 -- recursive parser for one "@X..." embedded reference inside a babl display
+// string (expand_string_refs's own sub-parser for compound G/S/P/C-chained expressions)...
 int parse_babl_string_ref_expr(param_1)
 int * param_1;
 
@@ -4187,10 +3514,9 @@ int * param_1;
 
 
 
-// was FUN_0001ada8 -- address-of counterpart to babl_read_var_word:
-// returns a pointer to word index param_1 in the conversation-variable
-// segment, for intrinsics that need to pass a variable by reference
-// (e.g. an out-parameter) rather than read its value.
+// was FUN_0001ada8 -- address-of counterpart to babl_read_var_word: returns a pointer to word index
+// param_1 in the conversation-variable segment, for intrinsics that need to pass a variable by
+// reference (e.g. an out-parameter) rather than read its value.
 int babl_var_word_addr(param_1)
 short param_1;
 
@@ -4200,11 +3526,8 @@ short param_1;
 
 
 
-// was FUN_0001adc4 -- reads word param_1 (a signed index, negative for
-// the common "stack operand a few slots back" caller pattern) from the
-// babl VM's conversation-variable segment (DAT_000bbf14). The single
-// most-called babl VM primitive in this file -- every babl_builtin_*
-// intrinsic uses it to decode its operands.
+// was FUN_0001adc4 -- reads word param_1 (a signed index, negative for the common "stack operand a
+// few slots back" caller pattern) from the babl VM's conversation-variable segment (DAT_000bbf14).
 int babl_read_var_word(param_1)
 short param_1;
 
@@ -4228,12 +3551,9 @@ undefined2 param_2;
 
 
 
-// was FUN_0001ae04 -- reads word param_1, relative to the current call
-// frame base (DAT_000bbf2c), from the babl VM's stack segment
-// (DAT_000bbf0c, which sits immediately after DAT_000bbf14's variable
-// segment in the same allocation -- see the interpreter loop's own
-// setup). The stack-frame-relative counterpart to babl_read_var_word's
-// global-variable-segment read.
+// was FUN_0001ae04 -- reads word param_1, relative to the current call frame base (DAT_000bbf2c),
+// from the babl VM's stack segment (DAT_000bbf0c, which sits immediately after DAT_000bbf14's
+// variable segment in the same allocation -- see the interpreter loop's own setup).
 int babl_read_frame_word(param_1)
 short param_1;
 
@@ -4244,13 +3564,9 @@ short param_1;
 
 
 
-// was FUN_0001b0a4 -- walks the babl symbol table (DAT_000bbf70, 0x20-
-// byte records) once at VM startup and initializes each variable's
-// default value by its declared type (offset 0x1c): string-typed
-// variables (0x128 scalar, 0x12a array) get the shared empty-string
-// handle DAT_000bbf88, integer-typed ones (0x126 scalar, 299 array)
-// get zeroed. Symbols of any other type (bound-function names, etc.)
-// are left untouched.
+// was FUN_0001b0a4 -- walks the babl symbol table (DAT_000bbf70, 0x20- byte records) once at VM
+// startup and initializes each variable's default value by its declared type (offset 0x1c):
+// string-typed variables...
 void init_babl_variable_defaults()
 
 {
@@ -4259,10 +3575,9 @@ void init_babl_variable_defaults()
   short *psVar3;
   int iVar4;
 
-  /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
-     comment (uw.c ~12260) -- unlike its siblings this one dereferences
-     unconditionally before any loop check, so guard the read itself
-     rather than the loop condition. */
+  /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own comment (uw.c ~12260) --
+     unlike its siblings this one dereferences unconditionally before any loop check, so guard the
+     read itself rather than the loop condition. */
   psVar3 = (short *)(DAT_000bbf70 + 0x18);
   sVar1 = (DAT_000bbf70 == 0) ? 0 : *(short *)(DAT_000bbf70 + 0x18);
   iVar2 = DAT_000bbf70;
@@ -4302,15 +3617,9 @@ void init_babl_variable_defaults()
 
 
 
-// was FUN_0001b288 -- babl builtin "setup_to_barter": walks the current
-// conversation partner's (DAT_00100674) inventory list, culling items
-// that fail a comobj.dat property check or lose a random roll (once 4
-// items have already been kept, via DAT_000bbfe8's rotating 4-slot
-// pool), unlinking the losers from the NPC and re-linking a
-// previously-culled item back in their place. Bounded to the first 40
-// (0x28) items walked. Net effect: the barter/trade view shows a
-// rotating subset of the NPC's full inventory rather than everything
-// at once.
+// was FUN_0001b288 -- babl builtin "setup_to_barter": walks the current conversation partner's
+// (DAT_00100674) inventory list, culling items that fail a comobj.dat property check or lose a
+// random roll (once 4 items have already been kept, via DAT_000bbfe8's rotating 4-slot pool)...
 void babl_builtin_setup_to_barter()
 
 {
@@ -4382,15 +3691,9 @@ void babl_builtin_setup_to_barter()
 
 
 
-// was FUN_0001b474 -- initializes the barter/trade UI: allocates the
-// 4-slot left/right item-icon grtile pools (DAT_000bc028/DAT_000bc010),
-// captures the trade-scale panel background under them from the
-// framebuffer, resets the barter-slot state arrays and hotspot
-// crosshair markers (4 slots each, matching
-// babl_builtin_setup_to_barter's own rotating pool), and computes the
-// NPC's starting haggle/scale values from their comobj.dat-style
-// personality row (indexed by NPC class at DAT_001007de+iVar6).
-// Called right before start_npc_conversation when entering barter mode.
+// was FUN_0001b474 -- initializes the barter/trade UI: allocates the 4-slot left/right item-icon
+// grtile pools (DAT_000bc028/DAT_000bc010), captures the trade-scale panel background under them
+// from the framebuffer...
 void init_barter_ui()
 
 {
@@ -4469,13 +3772,9 @@ void init_barter_ui()
 
 
 
-// was FUN_0001b7c0 -- teardown counterpart to init_barter_ui: for
-// each of the 4 barter slots, if the player or NPC still has an
-// uncommitted offered item pending (DAT_000bbfd0/DAT_000bbfe8 > 0),
-// drops it back near its owner rather than letting it vanish, then
-// frees both slot pools' grtile icons. Called when leaving barter
-// mode (from the general end-of-conversation cleanup, guarded by
-// DAT_001006d0 -- "was barter active").
+// was FUN_0001b7c0 -- teardown counterpart to init_barter_ui: for each of the 4 barter slots, if
+// the player or NPC still has an uncommitted offered item pending (DAT_000bbfd0/DAT_000bbfe8 > 0),
+// drops it back near its owner rather than letting it vanish...
 void end_barter_ui()
 
 {
@@ -4510,10 +3809,9 @@ void end_barter_ui()
 
 
 
-// was FUN_0001b89c -- click-region callback registered over the fixed
-// player-side barter panel (see register_click_region's own call
-// site): hit-tests the click against the 4 player slots and dispatches
-// to handle_barter_slot_click for the one hit.
+// was FUN_0001b89c -- click-region callback registered over the fixed player-side barter panel (see
+// register_click_region's own call site): hit-tests the click against the 4 player slots and
+// dispatches to handle_barter_slot_click for the one hit.
 void handle_barter_player_panel_click()
 
 {
@@ -4584,10 +3882,9 @@ short param_2;
 
 
 
-// was FUN_0001ba48 -- like handle_barter_player_panel_click, but reads
-// the click point from the live cursor position rather than a fixed
-// panel-relative one; used for the "drop the item you're holding onto
-// a player slot" path.
+// was FUN_0001ba48 -- like handle_barter_player_panel_click, but reads the click point from the
+// live cursor position rather than a fixed panel-relative one; used for the "drop the item you're
+// holding onto a player slot" path.
 void handle_barter_player_slot_drop()
 
 {
@@ -4623,15 +3920,9 @@ void handle_barter_npc_panel_click()
 
 
 
-// was FUN_0001bb04 -- shared core logic for a barter slot click:
-// param_1 selects which side (1=player, 0=NPC), param_2 the slot
-// index, param_3/param_4 that side's paired state arrays (offered-item
-// slot array / "included in trade" flag array). If the player is
-// holding a selected object via the cursor, places it into the slot
-// (checking weight/carry limits and item-stacking first); otherwise
-// toggles the slot's "included in trade" flag, or -- if nothing is
-// selected and the slot is empty -- falls through to a right-click-
-// style dispatch_object_action on whatever's already in it.
+// was FUN_0001bb04 -- shared core logic for a barter slot click: param_1 selects which side
+// (1=player, 0=NPC), param_2 the slot index, param_3/param_4 that side's paired state arrays
+// (offered-item slot array / "included in trade" flag array).
 void handle_barter_slot_click(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
@@ -4698,23 +3989,9 @@ int param_4;
       *(undefined4 *)(local_4 + (short)local_c * 4) = 0;
       (&DAT_000bbfa8)[(short)local_c] = 0xffff;
       (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
-      /* Real ARM binary also calls this with only 1 arg (confirmed via
-         Ghidra decompile of the real handle_barter_slot_click) -- same "leftover
-         register" reliance as blit_sprite_row_remapped's dropped 4th
-         arg, not a decompile mistake: the original code never reloads
-         r1 here because it already holds the right value from earlier
-         in this same block. draw_hotspot_crosshair_marker's 2nd param is read as
-         `(short)param_2` and used purely as a small array/table index
-         (see its own body) -- local_c is exactly that same value, still
-         live and unchanged since being used on the previous 4 lines, so
-         it's what's actually sitting in that register at this point.
-         Passed explicitly since a C recompile has no equivalent
-         "whatever's left in the register" state (the uninitialized
-         param_2 this crashed on before being declared `undefined **`
-         let it be silently read as a wild pointer instead of the small
-         integer draw_hotspot_crosshair_marker actually expects -- ASan-confirmed
-         heap-buffer-overflow in plot_pixel, reached via this exact call
-         with a garbage index). */
+      /* Real ARM binary also calls this with only 1 arg (confirmed via Ghidra decompile of the real
+         handle_barter_slot_click) -- same "leftover register" reliance as
+         blit_sprite_row_remapped's dropped 4th arg, not a decompile mistake... */
       draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
       if (g_selected_object == 0) {
         return;
@@ -4779,12 +4056,9 @@ LAB_0001bec8:
 
 
 
-// was FUN_0001bef4 -- hit-tests a point against both barter panels
-// (player first, then NPC) and, on a hit, fills in the out-parameters
-// with which side (1=player/0=npc, *param_3), slot index (*param_4),
-// and that side's paired state-array pointers (*param_5/*param_6).
-// Returns 1 on a hit, 0 otherwise. Used by handle_barter_slot_click to
-// re-resolve where the cursor ended up after a click-and-drag.
+// was FUN_0001bef4 -- hit-tests a point against both barter panels (player first, then NPC) and, on
+// a hit, fills in the out-parameters with which side (1=player/0=npc, *param_3), slot index
+// (*param_4), and that side's paired state-array pointers (*param_5/*param_6).
 undefined4 resolve_barter_slot_at_point(param_1,param_2,param_3,param_4,param_5,param_6)
 undefined4 param_1;
 undefined4 param_2;
@@ -4820,11 +4094,9 @@ undefined4 * param_6;
 
 
 
-// was FUN_0001bf9c -- redraws one barter slot's icon: frees the old
-// grtile capture, redraws the trade-scale panel background if the slot
-// is now empty, otherwise draws the item's sprite (plus a small stack-
-// count label when quantity > 1). param_1 selects the side (0=NPC,
-// nonzero=player), param_2 the slot index.
+// was FUN_0001bf9c -- redraws one barter slot's icon: frees the old grtile capture, redraws the
+// trade-scale panel background if the slot is now empty, otherwise draws the item's sprite (plus a
+// small stack- count label when quantity > 1). param_1 selects the side (0=NPC, nonzero=player)...
 void redraw_barter_slot_icon(param_1,param_2)
 short param_1;
 short param_2;
@@ -4906,11 +4178,8 @@ LAB_0001c1b4:
 
 
 
-// was FUN_0001c1c8 -- removes the item from barter slot param_1
-// (offset param_2 into the side's state array) into g_selected_object
-// (the cursor's held item), clearing the slot. If param_3 is set,
-// re-links the picked-up object back into its owner's inventory list
-// first (so it's not orphaned while held).
+// was FUN_0001c1c8 -- removes the item from barter slot param_1 (offset param_2 into the side's
+// state array) into g_selected_object (the cursor's held item), clearing the slot.
 void pick_up_barter_slot_item(param_1,param_2,param_3)
 short param_1;
 int param_2;
@@ -4946,10 +4215,9 @@ int param_3;
 
 
 
-// was FUN_0001c268 -- drops g_selected_object (the cursor's held item)
-// into a barter slot: if the slot is empty, places it directly;
-// otherwise defers to merge_or_swap_barter_slot_item to stack or swap
-// against the existing occupant.
+// was FUN_0001c268 -- drops g_selected_object (the cursor's held item) into a barter slot: if the
+// slot is empty, places it directly; otherwise defers to merge_or_swap_barter_slot_item to stack or
+// swap against the existing occupant.
 void place_item_in_barter_slot(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
@@ -4977,13 +4245,9 @@ int param_3;
 
 
 
-// was FUN_0001c2c4 -- called when dropping the cursor's held item onto
-// an already-occupied barter slot: if both items are the same
-// stackable item-id (weightless/quantity-bit set) and combining
-// wouldn't exceed 999, merges the quantities and frees the held
-// object's slot; otherwise swaps the held item for the slot's current
-// occupant (picking the old one up via pick_up_barter_slot_item first).
-// Redraws the slot's icon either way.
+// was FUN_0001c2c4 -- called when dropping the cursor's held item onto an already-occupied barter
+// slot: if both items are the same stackable item-id (weightless/quantity-bit set) and combining
+// wouldn't exceed 999, merges the quantities and frees the held object's slot...
 undefined4 merge_or_swap_barter_slot_item(param_1,param_2,param_3,param_4)
 ushort * param_1;
 undefined4 param_2;
@@ -5034,14 +4298,9 @@ LAB_0001c404:
 
 
 
-// was FUN_0001c420 -- draws a 5-pixel plot_pixel crosshair (center + one
-// pixel each direction) at a coordinate pair looked up by index from one
-// of two tables selected by param_1 (worn-item slots vs backpack slots),
-// colored by whether a parallel "valid"/"used" table says that slot is
-// occupied. Found fixing a real ASan-caught crash: one caller
-// (handle_barter_slot_click) passed only 1 of the 2 real arguments here, matching
-// the real ARM binary's own reliance on a leftover register value --
-// see that call site's own comment.
+// was FUN_0001c420 -- draws a 5-pixel plot_pixel crosshair (center + one pixel each direction) at a
+// coordinate pair looked up by index from one of two tables selected by param_1 (worn-item slots vs
+// backpack slots), colored by whether a parallel "valid"/"used" table says that slot is occupied.
 void draw_hotspot_crosshair_marker(param_1,param_2)
 short param_1;
 undefined ** param_2;
@@ -5082,10 +4341,9 @@ undefined ** param_2;
 
 
 
-// was FUN_0001c538 -- checks whether ANY of the 4 barter slots has a
-// valid paired (count > 0, value > 0) entry across param_1 (a short
-// count array) and param_2 (an int value array). Returns 1 if none do
-// (the offer is effectively empty), 0 if at least one slot qualifies.
+// was FUN_0001c538 -- checks whether ANY of the 4 barter slots has a valid paired (count > 0, value
+// > 0) entry across param_1 (a short count array) and param_2 (an int value array). Returns 1 if
+// none do (the offer is effectively empty), 0 if at least one slot qualifies.
 undefined4 barter_offer_is_empty(param_1,param_2)
 int param_1;
 int param_2;
@@ -5105,11 +4363,9 @@ int param_2;
 
 
 
-// was FUN_0001c79c -- for each occupied NPC-side barter slot where
-// param_1==0 or the slot isn't marked "included in trade"
-// (DAT_000bbff0), links its item back into the NPC's own inventory
-// list and clears the slot's icon/state. Effectively returns whatever
-// wasn't actually part of the accepted deal.
+// was FUN_0001c79c -- for each occupied NPC-side barter slot where param_1==0 or the slot isn't
+// marked "included in trade" (DAT_000bbff0), links its item back into the NPC's own inventory list
+// and clears the slot's icon/state.
 void finalize_npc_barter_items(param_1)
 short param_1;
 
@@ -5137,13 +4393,9 @@ short param_1;
 
 
 
-// was FUN_0001c85c -- commits the player's accepted-for-trade items
-// (the mirror image of finalize_npc_barter_items's condition: this one
-// processes slots WHERE DAT_000bbf98's "included in trade" flag IS
-// set, i.e. actually completes the deal for that item rather than
-// returning it): links each such item into the NPC's inventory,
-// merging its quantity into a matching existing stackable item there
-// first if one exists, then clears the slot's icon/state.
+// was FUN_0001c85c -- commits the player's accepted-for-trade items (the mirror image of
+// finalize_npc_barter_items's condition: this one processes slots WHERE DAT_000bbf98's "included in
+// trade" flag IS set, i.e. actually completes the deal for that item rather than returning it)...
 void finalize_player_barter_items()
 
 {
@@ -5161,12 +4413,9 @@ void finalize_player_barter_items()
   do {
     psVar5 = &DAT_000bbfd0 + local_28;
     if (0 < *psVar5) {
-      /* BUG FIX: was `check_npc_item_preference()` with no arguments,
-         relying on leftover register state (same dropped-argument bug
-         class documented throughout this project) -- *psVar5 (the
-         slot's item-value, already used the very next line) is the
-         value that belongs here; see check_npc_item_preference's own
-         comment. */
+      /* BUG FIX: was `check_npc_item_preference()` with no arguments, relying on leftover register
+         state (same dropped-argument bug class documented throughout this project) -- *psVar5 (the
+         slot's item-value, already used the very next line) is the value that belongs here... */
       if (((&DAT_000bbf98)[local_28] != 0) && (sVar1 = check_npc_item_preference(*psVar5), sVar1 != -1)) {
         puVar2 = (ushort *)get_object_record_by_slot_index((int)*psVar5);
         puVar3 = (ushort *)resolve_object_link(DAT_00100674 + 6);
@@ -5208,13 +4457,9 @@ void finalize_player_barter_items()
 
 
 
-// was FUN_0001cd3c -- babl builtin "do_judgement": sums each side's
-// total offer value (sum_barter_offer_value, item values cached via
-// compute_barter_item_value), computes the offered-vs-asked
-// percentage difference, buckets it into 9 fairness tiers and the
-// NPC's haggle-skill (DAT_00086df8+0x33) into 5 tiers, then builds and
-// prints a reaction message from string-table fragments selected by
-// both tiers.
+// was FUN_0001cd3c -- babl builtin "do_judgement": sums each side's total offer value
+// (sum_barter_offer_value, item values cached via compute_barter_item_value), computes the
+// offered-vs-asked percentage difference...
 void babl_builtin_do_judgement()
 
 {
@@ -5312,11 +4557,9 @@ void babl_builtin_do_judgement()
 
 
 
-// was FUN_0001cf20 -- sums the total value of one side's barter offer:
-// for each of the 4 slots with a positive count (param_3) and item
-// index (param_2), computes (and caches into param_4, a per-slot
-// value array initialized to -1) that item's value via
-// compute_barter_item_value, then adds it to the running total.
+// was FUN_0001cf20 -- sums the total value of one side's barter offer: for each of the 4 slots with
+// a positive count (param_3) and item index (param_2), computes (and caches into param_4, a
+// per-slot value array initialized to -1) that item's value via compute_barter_item_value...
 int sum_barter_offer_value(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 int param_2;
@@ -5352,11 +4595,9 @@ short param_5;
 
 
 
-// was FUN_0001cfa8 -- computes one item's barter value: base value
-// from its comobj.dat property row (doubled if magic, when param_1
-// gates that check), times quantity (or 1 for non-stackable items),
-// scaled by its condition/durability (out of 0x3f), then randomized
-// by +/-param_3 percent via randomize_value_pct.
+// was FUN_0001cfa8 -- computes one item's barter value: base value from its comobj.dat property row
+// (doubled if magic, when param_1 gates that check), times quantity (or 1 for non-stackable items),
+// scaled by its condition/durability (out of 0x3f)...
 undefined4 compute_barter_item_value(param_1,param_2,param_3)
 short param_1;
 undefined4 param_2;
@@ -5434,11 +4675,9 @@ short param_3;
 
 
 
-// was FUN_0001d1c0 -- collects the player's barter slots marked
-// "included in trade" (DAT_000bbf98) into two parallel out-arrays
-// (param_2 = slot indices, param_1 = item ids) and returns how many
-// were found. Used by several babl builtins (e.g. "show_inv") that
-// need to enumerate what the player has offered.
+// was FUN_0001d1c0 -- collects the player's barter slots marked "included in trade" (DAT_000bbf98)
+// into two parallel out-arrays (param_2 = slot indices, param_1 = item ids) and returns how many
+// were found.
 int collect_included_player_barter_items(param_1,param_2)
 int param_1;
 int param_2;
@@ -5465,13 +4704,9 @@ int param_2;
 
 
 
-// was FUN_0001d258 -- gives an item to the current conversation
-// partner's (DAT_00100674) inventory: if it's item-id 0xa1 (gold) and
-// both it and an existing stack in the NPC's inventory are stackable
-// (weightless bit set) with matching item-id and combined quantity
-// under 999, merges into that stack and frees the incoming object's
-// slot instead of inserting a duplicate. Otherwise (or for any other
-// item-id) just links it into the NPC's inventory list directly.
+// was FUN_0001d258 -- gives an item to the current conversation partner's (DAT_00100674) inventory:
+// if it's item-id 0xa1 (gold) and both it and an existing stack in the NPC's inventory are
+// stackable (weightless bit set) with matching item-id and combined quantity under 999...
 void add_item_to_npc_inventory(param_1)
 ushort * param_1;
 
@@ -5504,22 +4739,9 @@ ushort * param_1;
 
 
 
-// was FUN_0001d3ac -- resolves param_1 (an item-value, per this
-// function's own comparison below and its caller
-// babl_builtin_give_ptr_npc) to an object and gives it to the NPC via
-// add_item_to_npc_inventory, then clears every player barter slot
-// whose item-value equals param_1 and redraws it.
-//
-// BUG FIX: the original decompile called both get_object_record_by_slot_index() and
-// add_item_to_npc_inventory() with zero visible arguments, relying on
-// leftover register state the way the real ARM binary does (same
-// dropped-argument bug class documented throughout this project) --
-// but get_object_record_by_slot_index(short) resolves exactly the kind of item-value/slot
-// index param_1 already is, and its return value (previously
-// discarded entirely, not even captured into a local) is exactly what
-// add_item_to_npc_inventory needs. Pass param_1 explicitly and capture
-// the resolved pointer instead of relying on implicit register
-// leftovers, which a C recompile has no equivalent for.
+// was FUN_0001d3ac -- resolves param_1 (an item-value, per this function's own comparison below and
+// its caller babl_builtin_give_ptr_npc) to an object and gives it to the NPC via
+// add_item_to_npc_inventory...
 void give_barter_item_by_item_id(param_1)
 short param_1;
 
@@ -5547,10 +4769,9 @@ short param_1;
 
 
 
-// was FUN_0001da00 -- searches the current conversation partner's
-// (DAT_00100674) inventory list for an item matching item-id param_1;
-// if found, unlinks and frees it and returns 1, else returns 0. Used
-// by babl_builtin_do_inv_delete.
+// was FUN_0001da00 -- searches the current conversation partner's (DAT_00100674) inventory list for
+// an item matching item-id param_1; if found, unlinks and frees it and returns 1, else returns 0.
+// Used by babl_builtin_do_inv_delete.
 undefined4 remove_item_from_npc_inventory_by_id(param_1)
 short param_1;
 
@@ -5576,23 +4797,9 @@ short param_1;
 
 
 
-// was FUN_0001dab8 -- checks an item's slot-value against the NPC's
-// "wanted" (DAT_000bc020) and "refused" (DAT_000bc000) item-id/item-
-// class preference lists: returns 1 if specifically wanted (or an
-// item-id hit in the wanted list), -1 if specifically refused (an
-// item-id hit in the refused list, or if the item's comobj.dat value
-// is 0 -- worthless), 0 if neutral. Used by compute_barter_item_value
-// (refused items are worth nothing; wanted items get a value bonus)
-// and finalize_player_barter_items (refused items skip the special
-// gold-stacking merge path).
-//
-// BUG FIX: was called with zero visible arguments (both here, calling
-// get_object_record_by_slot_index(), and at its own call site in
-// finalize_player_barter_items), relying on leftover register state --
-// the real slot-value argument (this function's own param_1) flows
-// through fine at its OTHER call site (compute_barter_item_value,
-// already correct), confirming the intended signature. Added the
-// missing param_1 and threaded it through explicitly.
+// was FUN_0001dab8 -- checks an item's slot-value against the NPC's "wanted" (DAT_000bc020) and
+// "refused" (DAT_000bc000) item-id/item- class preference lists: returns 1 if specifically wanted
+// (or an item-id hit in the wanted list)...
 undefined4 check_npc_item_preference(param_1)
 short param_1;
 
@@ -5647,15 +4854,9 @@ LAB_0001dbcc:
 
 
 
-// was FUN_0007ec50 -- always returns 0 and does nothing else; called
-// from ~24 scattered locations across the babl dialogue-VM code
-// (src/babl.c) and some object-combination logic (uw.c), none of
-// which ever use its return value. Matches the same "dead/stripped
-// debug hook" pattern already confirmed for debug_print_init and
-// debug_print nearby in the original binary, though this one's own
-// disassembly wasn't individually re-checked to confirm it's
-// genuinely a `cpy pc,lr`-style stub rather than something with a
-// real (just currently-unused-by-every-caller) effect.
+// was FUN_0007ec50 -- always returns 0 and does nothing else; called from ~24 scattered locations
+// across the babl dialogue-VM code (src/babl.c) and some object-combination logic (uw.c), none of
+// which ever use its return value.
 undefined4 debug_noop_checkpoint()
 
 {
@@ -5666,18 +4867,9 @@ undefined4 debug_noop_checkpoint()
 
 
 
-// was FUN_0001a1a4 -- the babl VM's own "load bytecode into the run buffer"
-// step: an `ce_memmove` (memcpy-shaped) copy of the parsed script's
-// bytecode (DAT_000bbf18, word count DAT_000bbf10) into the VM's live
-// opcode buffer (DAT_000bbf80), run once by start_npc_conversation right
-// after build_babl_symbol_table() succeeds, before any opcode dispatch.
-// param_1: was declared with zero params, but its one real call site
-// (start_npc_conversation, src/babl.c) passes build_babl_symbol_table()'s
-// own return value explicitly (`babl_vm_load_script(iVar2)`) despite the
-// K&R signature declaring none -- same "real call site outranks the K&R
-// signature" evidence as register_default_atexit_handler's own fix. Added
-// the parameter to match; the body itself doesn't read it, matching what
-// looks like a genuinely-unused/ignored register argument in the real code.
+// was FUN_0001a1a4 -- the babl VM's own "load bytecode into the run buffer" step: an `ce_memmove`
+// (memcpy-shaped) copy of the parsed script's bytecode (DAT_000bbf18, word count DAT_000bbf10) into
+// the VM's live opcode buffer (DAT_000bbf80)...
 void babl_vm_load_script(param_1)
 int param_1;
 
@@ -5753,10 +4945,9 @@ void babl_op_sub()
 
 
 
-// was FUN_0001a6e4 -- babl VM opcode 4 (DIVIDE): pops the top two stack
-// slots (a=dividend=second-from-top, b=divisor=top), pushes a/b via
-// ordint_divmod (ARM soft-division, quotient in the primary return); pushes
-// 0xffff as a divide-by-zero sentinel instead of dividing when b==0.
+// was FUN_0001a6e4 -- babl VM opcode 4 (DIVIDE): pops the top two stack slots
+// (a=dividend=second-from-top, b=divisor=top), pushes a/b via ordint_divmod (ARM soft-division,
+// quotient in the primary return)...
 void babl_op_div()
 
 {
@@ -5784,10 +4975,9 @@ void babl_op_div()
 
 
 
-// was FUN_0001a74c -- babl VM opcode 5 (MODULO): identical setup to
-// babl_op_div's own DIVIDE, but wants the remainder (the ARM soft-division
-// routine's r1) instead of ordint_divmod's own quotient return -- same
-// divide-by-zero 0xffff sentinel as DIVIDE.
+// was FUN_0001a74c -- babl VM opcode 5 (MODULO): identical setup to babl_op_div's own DIVIDE, but
+// wants the remainder (the ARM soft-division routine's r1) instead of ordint_divmod's own quotient
+// return -- same divide-by-zero 0xffff sentinel as DIVIDE.
 void babl_op_mod()
 
 {
@@ -5805,12 +4995,9 @@ void babl_op_mod()
     uVar2 = 0xffff;
   }
   else {
-    /* Dropped-remainder bug (same class as this session's other
-       ordint_divmod/extraout_r1 fixes), but live here: this is the babl
-       VM's own MODULO bytecode opcode, so every in-game script/
-       conversation use of "%" silently got uninitialized garbage
-       instead of a real result. Gets it by name off ordint_divmod's
-       own divmod_result now. */
+    /* Dropped-remainder bug (same class as this session's other ordint_divmod/extraout_r1 fixes),
+       but live here: this is the babl VM's own MODULO bytecode opcode, so every in-game script/
+       conversation use of "%" silently got uninitialized garbage instead of a real result. */
     uVar2 = ordint_divmod(iVar4,(int)psVar3[-1]).rem;
   }
   iVar4 = (iVar5 + -1) * 0x10000;
@@ -5979,10 +5166,9 @@ void babl_op_call()
 
 
 
-// was FUN_0001aa54 -- babl VM opcode 0x15 (RETURN): if the call stack is
-// non-empty, pops a return address into ip and returns true (continue
-// running); if empty (top-level script with no open call frame), returns
-// false, which the dispatch loop treats as "end of script" and stops.
+// was FUN_0001aa54 -- babl VM opcode 0x15 (RETURN): if the call stack is non-empty, pops a return
+// address into ip and returns true (continue running); if empty (top-level script with no open call
+// frame), returns false, which the dispatch loop treats as "end of script" and stops.
 bool babl_op_return()
 
 {
@@ -6006,12 +5192,9 @@ void babl_op_push_var_raw()
   short *psVar1;
 
   psVar1 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
-  /* Raw "push variable value" VM opcode: indexes DAT_000bbf14 directly by
-     the symbol's compiled-in slot number, bypassing babl_get_variable's
-     name-based lookup entirely -- this is the actual path a script's own
-     `if npc_talkedto ...` check would read through, and babl_get_variable's
-     own npc_talkedto watch (see its own comment) is blind to it. See
-     bragit-talk-again-investigation. */
+  /* Raw "push variable value" VM opcode: indexes DAT_000bbf14 directly by the symbol's compiled-in
+     slot number, bypassing babl_get_variable's name-based lookup entirely -- this is the actual
+     path a script's own `if npc_talkedto ...` check would read through... */
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] push-var (raw opcode): slot=%d value=%d\n", (int)*psVar1, (int)*(short *)(DAT_000bbf14 + *psVar1 * 2));
   *psVar1 = *(short *)(DAT_000bbf14 + *psVar1 * 2);
   return;
@@ -6019,15 +5202,8 @@ void babl_op_push_var_raw()
 
 
 
-// was FUN_0001aab4 -- babl VM opcode 0x21: pops the top two stack slots
-// (a=second-from-top, b=top), pushes a+b-1. Same pop-two/push-one shape as
-// the arithmetic opcodes, but the "-1" adjustment doesn't match any of
-// ADD/SUB/MUL/DIV/MOD above -- sits between the raw variable-slot opcodes
-// PUSH_VAR (0x1f) and SET_VAR (0x20), so this is likely a 1-based-index
-// combining step for array-style variable access (base+index-1 ->
-// 0-based slot), but that's inference, not confirmed against a real
-// caller or named cross-reference. Named generically pending stronger
-// evidence.
+// was FUN_0001aab4 -- babl VM opcode 0x21: pops the top two stack slots (a=second-from-top, b=top),
+// pushes a+b-1.
 void babl_op_combine_index()
 
 {
@@ -6043,10 +5219,9 @@ void babl_op_combine_index()
 
 
 
-// was FUN_0001aaf8 -- babl VM opcode 0x20 (SET_VAR): pops a value (top)
-// and a slot index (second-from-top), stores the value into DAT_000bbf14
-// at that slot (the same raw variable-slot array babl_op_push_var_raw
-// reads).
+// was FUN_0001aaf8 -- babl VM opcode 0x20 (SET_VAR): pops a value (top) and a slot index
+// (second-from-top), stores the value into DAT_000bbf14 at that slot (the same raw variable-slot
+// array babl_op_push_var_raw reads).
 void babl_op_set_var()
 
 {
@@ -6060,12 +5235,9 @@ void babl_op_set_var()
 
 
 
-// was FUN_0001ab30 -- babl VM opcode 0x14 (CALL_BUILTIN): reads a builtin
-// index from the bytecode operand, invokes the matching native function
-// pointer out of the DAT_000bbf00 table (registered by
-// babl_register_builtin/babl_op_say/babl_op_respond) passing the current
-// stack top as its argument slot, and pushes the builtin's own return
-// value back onto the stack.
+// was FUN_0001ab30 -- babl VM opcode 0x14 (CALL_BUILTIN): reads a builtin index from the bytecode
+// operand, invokes the matching native function pointer out of the DAT_000bbf00 table (registered
+// by babl_register_builtin/babl_op_say/babl_op_respond) passing the current stack top as its...
 void babl_op_call_builtin()
 
 {
@@ -6082,28 +5254,24 @@ void babl_op_call_builtin()
 
 
 
-// was FUN_0001aba0 -- babl VM opcode 0x25 (STRING_EQUAL): pops two
-// message-id operands, resolves each through get_message_string +
-// babl_expand_string_refs, compares the expanded text with ce_strcmp
-// (strcmp-shaped), and pushes 1 if equal else 0.
+// was FUN_0001aba0 -- babl VM opcode 0x25 (STRING_EQUAL): pops two message-id operands, resolves
+// each through get_message_string + babl_expand_string_refs, compares the expanded text with
+// ce_strcmp (strcmp-shaped), and pushes 1 if equal else 0.
 void babl_op_string_eq()
 
 {
   short sVar1;
   /* iVar2-iVar5 were `int` but hold real string pointers from
-     get_message_string/babl_expand_string_refs -- truncated a real 64-bit pointer on
-     assignment even with each call's own dropped argument now fixed
-     (this function's own next crash site, uw.c ~70085's comment).
-     Widened to intptr_t. */
+     get_message_string/babl_expand_string_refs -- truncated a real 64-bit pointer on assignment
+     even with each call's own dropped argument now fixed... */
   intptr_t iVar2;
   intptr_t iVar3;
   intptr_t iVar4;
   intptr_t iVar5;
 
-  /* Was 2 dropped register-forwarding args -- same class as
-     babl_builtin_compare's own comment (uw.c ~10977), now confirmed reachable
-     live (bug-critter-talk.txt) since this whole babl-VM cluster
-     started actually running this session. */
+  /* Was 2 dropped register-forwarding args -- same class as babl_builtin_compare's own comment
+     (uw.c ~10977), now confirmed reachable live (bug-critter-talk.txt) since this whole babl-VM
+     cluster started actually running this session. */
   iVar2 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
   iVar4 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2 + -2));
@@ -6123,28 +5291,22 @@ void babl_op_string_eq()
 
 
 
-// was FUN_0001ac48 -- babl VM opcode 0x27 (SAY): resolves and expands the
-// top-of-stack message-id operand into text, then looks that text up
-// against the "say" symbol in the babl symbol table (DAT_000845a8, see
-// its own comment above) and invokes the matching registered builtin with
-// the expanded string -- the babl script "say" keyword.
+// was FUN_0001ac48 -- babl VM opcode 0x27 (SAY): resolves and expands the top-of-stack message-id
+// operand into text, then looks that text up against the "say" symbol in the babl symbol table...
 void babl_op_say()
 
 {
   /* iVar1/iVar2 were `int` but hold a real string pointer from
-     get_message_string/babl_expand_string_refs -- truncated even with the dropped
-     argument below now fixed (uw.c ~70085's comment). Widened to
-     intptr_t. */
+     get_message_string/babl_expand_string_refs -- truncated even with the dropped argument below
+     now fixed (uw.c ~70085's comment). Widened to intptr_t. */
   intptr_t iVar1;
   intptr_t iVar2;
   int iVar3;
   intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as init_babl_variable_defaults's own fix
 
-  /* Was a dropped register-forwarding arg -- same class as
-     babl_builtin_compare's own comment (uw.c ~10977); this is the crash in
-     bug-critter-talk.txt one step past the DAT_000bbf70-width fix
-     below (babl_expand_string_refs read whatever garbage register instead of the
-     just-resolved string, then dereferenced it inside ce_strchr). */
+  /* Was a dropped register-forwarding arg -- same class as babl_builtin_compare's own comment (uw.c
+     ~10977); this is the crash in bug-critter-talk.txt one step past the DAT_000bbf70-width fix
+     below... */
   iVar1 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
@@ -6174,10 +5336,8 @@ LAB_0001ace8:
 
 
 
-// was FUN_0001acf8 -- babl VM opcode 0x28 (RESPOND): identical to
-// babl_op_say, but hardcoded to the "respond" symbol
-// (s_respond_000845ac) instead of "say" -- the babl script "respond"
-// keyword.
+// was FUN_0001acf8 -- babl VM opcode 0x28 (RESPOND): identical to babl_op_say, but hardcoded to the
+// "respond" symbol (s_respond_000845ac) instead of "say" -- the babl script "respond" keyword.
 void babl_op_respond()
 
 {
@@ -6217,12 +5377,9 @@ LAB_0001ad98:
 }
 
 
-// was FUN_00028bac -- the game-mode dispatch table's mode-exit handler
-// for mode 2 (Talk/conversation, see the table entry at uw.c ~2595):
-// frees a conditionally-held resource, ends barter UI if one was open,
-// restores the HUD panel, resumes ambient music selection, and resets
-// the message scroll mode -- the cleanup that runs on leaving a
-// conversation.
+// was FUN_00028bac -- the game-mode dispatch table's mode-exit handler for mode 2
+// (Talk/conversation, see the table entry at uw.c ~2595): frees a conditionally-held resource, ends
+// barter UI if one was open, restores the HUD panel, resumes ambient music selection...
 void exit_talk_mode()
 
 {
@@ -6241,11 +5398,9 @@ void exit_talk_mode()
 
 
 
-// was FUN_00028ffc -- the babl conversation menu's idle-tick wait loop:
-// re-runs the same numbered-choice-list redraw babl_menu itself builds
-// (same "4 contiguous stack locals" layout, per its own comment) every
-// idle tick while waiting for the player to click a response, pumping
-// music/sticky-mode handlers and input in between.
+// was FUN_00028ffc -- the babl conversation menu's idle-tick wait loop: re-runs the same
+// numbered-choice-list redraw babl_menu itself builds (same "4 contiguous stack locals" layout, per
+// its own comment) every idle tick while waiting for the player to click a response...
 void run_babl_menu_wait_loop()
 
 {
@@ -6253,10 +5408,9 @@ void run_babl_menu_wait_loop()
   char *pcVar3;
   char *pcVar5;
   int iVar4;
-  /* Same "4 separate stack locals relied on being one contiguous
-     buffer" fix as babl_menu's own comment (uw.c ~19505) -- this is
-     the SAME menu redraw, just re-run every idle tick while waiting
-     for the player's click, so it has the identical bug. */
+  /* Same "4 separate stack locals relied on being one contiguous buffer" fix as babl_menu's own
+     comment (uw.c ~19505) -- this is the SAME menu redraw, just re-run every idle tick while
+     waiting for the player's click, so it has the identical bug. */
   char local_bc [160];
 
   while (DAT_0010078c != 0) {
@@ -6297,13 +5451,9 @@ void run_babl_menu_wait_loop()
 }
 
 
-// was FUN_00029358 -- babl_fmenu: the "filtered menu" babl script
-// builtin, structurally identical to babl_menu (registered under
-// s_babl_fmenu_00085214) but reading two parallel variable-slot
-// indices via babl_read_var_word and only showing a choice when its
-// second ("filter") value is nonzero, where babl_menu shows every item
-// unconditionally. Confirmed via uw.h's own pre-existing cross-reference
-// and babl_menu's own comment naming this exact function.
+// was FUN_00029358 -- babl_fmenu: the "filtered menu" babl script builtin, structurally identical
+// to babl_menu (registered under s_babl_fmenu_00085214) but reading two parallel variable-slot
+// indices via babl_read_var_word and only showing a choice when its second ("filter") value is...
 int babl_fmenu(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own fix just above (this function's identical caller convention was simply never exercised deep enough to crash yet)
 
@@ -6408,27 +5558,17 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
 }
 
 
-// was FUN_000295b4 -- selects a babl_menu/babl_fmenu response: registered
-// as the click/key handler for the numbered response hotkeys and the
-// response-list click region (src/game.c). param_1==0 means "resolve
-// from a click position" via DAT_00100770 (the line->item map
-// babl_fmenu/babl_menu built); otherwise param_1 is the response
-// number directly. On a valid selection, echoes the chosen text
-// (echo_selected_conversation_choice), frees the per-choice string
-// buffers, and stores the choice index in DAT_00100788 (babl_fmenu's
-// own return value).
+// was FUN_000295b4 -- selects a babl_menu/babl_fmenu response: registered as the click/key handler
+// for the numbered response hotkeys and the response-list click region (src/game.c). param_1==0
+// means "resolve from a click position" via DAT_00100770...
 void select_babl_menu_response(param_1)
 short param_1;
 
 {
   int iVar1;
   short sVar2;
-  /* Was `int` -- same DAT_00100680/DAT_001006d8 `* 8` stride / pointer-
-     width fix as babl_menu's own comment. Also fixed a dropped
-     babl_free() argument below -- it must free the DAT_00100680-side
-     (expanded) copy when it differs from the DAT_001006d8-side (raw)
-     one, matching every other "if (x != cached) free x" sibling in
-     this file. */
+  /* Was `int` -- same DAT_00100680/DAT_001006d8 `* 8` stride / pointer- width fix as babl_menu's
+     own comment. */
   intptr_t iVar3;
 
   if (DAT_00100790 != 0) {
@@ -6468,10 +5608,9 @@ short param_1;
 
 
 
-// was FUN_00029708 -- babl_builtin_say: the "say" babl script builtin
-// (registered via babl_register_builtin(DAT_000845a8="say", ...)),
-// prints the NPC's spoken line to the conversation scroll in its
-// dark-brown speech color.
+// was FUN_00029708 -- babl_builtin_say: the "say" babl script builtin (registered via
+// babl_register_builtin(DAT_000845a8="say", ...)), prints the NPC's spoken line to the conversation
+// scroll in its dark-brown speech color.
 void babl_builtin_say(param_1)
 char *param_1; // was `undefined4` -- babl_op_say passes a real (possibly babl_alloc'd) string pointer, truncated on 64-bit; same bug class as babl_builtin_respond/echo_selected_conversation_choice's own fixes
 
@@ -6491,27 +5630,9 @@ char *param_1; // was `undefined4` -- babl_op_say passes a real (possibly babl_a
   ce_strcat(DAT_001007c0,param_1);
   ce_strcat(DAT_001007c0,&s_scroll_newline_0008522c);
   select_msg_scroll_mode_conversation();
-  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, confirmed via an
-     exhaustive real-binary reference search that this PocketPC port's
-     conversation text never used the palette-indexed color path at
-     all -- every reference to g_text_use_palette_color across the
-     whole ARM binary was enumerated and none are near this code, so
-     flat black is genuinely what this port always drew here). The PC
-     original renders NPC speech in a dark brown; palette index 0x2e
-     (confirmed a real warm dark-brown entry, RGB ~(88,60,48), via a
-     live palette dump) already happens to be this conversation's own
-     ambient default color for unrelated reasons, so reusing it here
-     gives the same look intentionally instead of by accident.
-
-     Setting *g_draw_color_index directly here does nothing:
-     message_scroll_print_wrapped's own entry unconditionally
-     overwrites it from *(DAT_00250704+0x16) -- the panel's own
-     PERSISTED color, left over from whatever last printed into this
-     same panel struct (see its own read at uw.c ~74875) -- before a
-     single glyph is measured or drawn. Confirmed live via lldb (the
-     explicit 0x2e was already gone, replaced by 0x60, by the time
-     draw_text_string saw it). Set the persisted field itself, on the
-     struct select_msg_scroll_mode_conversation just pointed DAT_00250704 at, instead. */
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, confirmed via an exhaustive real-binary
+     reference search that this PocketPC port's conversation text never used the palette-indexed
+     color path at all)... */
   {
     int _saved_use_pal = g_text_use_palette_color;
     byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
@@ -6529,10 +5650,9 @@ char *param_1; // was `undefined4` -- babl_op_say passes a real (possibly babl_a
 
 
 
-// was FUN_0002977c -- babl_builtin_respond: the "respond" babl script
-// builtin (registered via babl_register_builtin(s_respond_000845ac,
-// ...)), prints text to the conversation scroll in the default (non
-// speech-colored) mode.
+// was FUN_0002977c -- babl_builtin_respond: the "respond" babl script builtin (registered via
+// babl_register_builtin(s_respond_000845ac, ...)), prints text to the conversation scroll in the
+// default (non speech-colored) mode.
 void babl_builtin_respond(param_1)
 char * param_1;
 
@@ -6558,10 +5678,9 @@ char * param_1;
 
 
 
-// was FUN_000297dc -- echoes the player's selected conversation-menu
-// choice text to the scroll, highlighted in white (rather than the
-// NPC's dark-brown speech color babl_builtin_say uses). Called from
-// select_babl_menu_response on a valid selection.
+// was FUN_000297dc -- echoes the player's selected conversation-menu choice text to the scroll,
+// highlighted in white (rather than the NPC's dark-brown speech color babl_builtin_say uses).
+// Called from select_babl_menu_response on a valid selection.
 void echo_selected_conversation_choice(param_1)
 char *param_1; // was `undefined4` -- select_babl_menu_response passes a real (possibly babl_alloc'd) string pointer, truncated on 64-bit; same bug class as babl_menu's own fix
 
@@ -6574,35 +5693,8 @@ char *param_1; // was `undefined4` -- select_babl_menu_response passes a real (p
   ce_strcat(DAT_001007c0,param_1);
   ce_strcat(DAT_001007c0,&DAT_00085234);
   select_msg_scroll_mode_conversation();
-  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
-     babl_builtin_say's own comment on this same pattern. The PC original
-     highlights the player's own echoed choice in a color distinct from
-     the NPC's dark-brown speech; per the user's own preference this
-     is plain white here. Palette index 0x60 is a real, live-confirmed
-     pure white (RGB (255,255,255)) -- also, coincidentally, this
-     printed string's own original "\1" prefix byte's real mapping (see
-     below), so this happens to match what a naive reading of that
-     escape code would already produce, just applied reliably instead
-     of being silently overridden. Two earlier tries at a more orange
-     highlight (0x29, then 0x2b, then a genuinely vivid 0x06) were
-     tried and reverted per user feedback.
-
-     Two things had to be fixed before ANY explicit color choice here
-     actually rendered: (1) DAT_001007c0 originally started with the
-     "\1" control code (from DAT_00085238) which msg_scroll_draw_wrapped_span
-     re-parses on its own, resetting the color to "\1"'s real mapping
-     (0x60) -- stripped that leading escape above so nothing re-parses
-     over this bracket's own color (moot now that the target color IS
-     0x60 again, but left stripped since relying on the embedded escape
-     code instead of this explicit bracket would silently break again
-     the next time this color is changed). (2) setting
-     *g_draw_color_index directly here was ALSO a no-op regardless:
-     message_scroll_print_wrapped's own entry unconditionally
-     overwrites it from the panel's persisted *(DAT_00250704+0x16)
-     field (see babl_builtin_say's own comment on this, uw.c ~74875) before
-     anything is drawn -- confirmed live via lldb. Set that persisted
-     field instead, on the struct select_msg_scroll_mode_conversation just pointed
-     DAT_00250704 at. */
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see babl_builtin_say's own comment on
+     this same pattern. */
   {
     int _saved_use_pal = g_text_use_palette_color;
     byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
@@ -6620,21 +5712,16 @@ char *param_1; // was `undefined4` -- select_babl_menu_response passes a real (p
 
 
 
-// was FUN_00029850 -- babl_builtin_print: the "print" babl script
-// builtin (registered via babl_register_builtin(s_print_000851e4,
-// ...)), resolves a message-id operand read from the bytecode
-// (babl_read_var_word) into text and prints it to the conversation
-// scroll.
+// was FUN_00029850 -- babl_builtin_print: the "print" babl script builtin (registered via
+// babl_register_builtin(s_print_000851e4, ...)), resolves a message-id operand read from the
+// bytecode (babl_read_var_word) into text and prints it to the conversation scroll.
 void babl_builtin_print(param_1)
 int param_1;
 
 {
   char cVar1;
-  /* Was `int` -- reassigned to a real string pointer (get_message_string/
-     babl_expand_string_refs) right after the small babl_read_var_word use,
-     same bug class as DAT_001007c0's own fix above; never crashed
-     before because this "print" builtin (idx 2) was never actually
-     reached until babl_menu could run correctly. */
+  /* Was `int` -- reassigned to a real string pointer (get_message_string/ babl_expand_string_refs)
+     right after the small babl_read_var_word use, same bug class as DAT_001007c0's own fix above... */
   intptr_t iVar2;
   intptr_t iVar3;
   char *pcVar4;
@@ -6666,12 +5753,9 @@ int param_1;
 }
 
 
-// was FUN_0002990c -- babl_builtin_ask: the "ask" babl script builtin
-// (registered via babl_register_builtin(s_babl_ask_000851ec, ...)),
-// prompts the player for freeform text input via
-// scroll_text_entry_prompt, then interns the typed text (registering a
-// new interned string, or overwriting the existing one if it no longer
-// resolves), returning its interned-string id.
+// was FUN_0002990c -- babl_builtin_ask: the "ask" babl script builtin (registered via
+// babl_register_builtin(s_babl_ask_000851ec, ...)), prompts the player for freeform text input via
+// scroll_text_entry_prompt, then interns the typed text...
 int babl_builtin_ask()
 
 {
@@ -6709,12 +5793,9 @@ int babl_builtin_ask()
 }
 
 
-// was FUN_00035e00 -- in-place bubble sort of param_2 byte-index
-// entries in the buffer param_3 (initialized here to 0..param_2-1
-// before sorting), ordered by an unsigned 16-bit key looked up as
-// *(ushort*)(param_1 + entry*6) for each entry. Only known caller is
-// the babl conversation-rendering loop, sorting subtitle/voice-timing
-// entries into playback order.
+// was FUN_00035e00 -- in-place bubble sort of param_2 byte-index entries in the buffer param_3
+// (initialized here to 0..param_2-1 before sorting), ordered by an unsigned 16-bit key looked up as
+// *(ushort*)(param_1 + entry*6) for each entry.
 void bubble_sort_indices_by_key_table(param_1,param_2,param_3)
 intptr_t param_1;
 uint param_2;
@@ -6900,14 +5981,9 @@ intptr_t param_2;
   return 1;
 }
 
-// was FUN_000360f4 -- babl conversation-text render opcode handler
-// (see PTR_FUN_00085408's own comment): if the render state's flag
-// byte (param_2+0x45) has bit 0 set, looks up a message string keyed
-// by param_1's own 16-bit id field, splits it on newlines into up to
-// 6 paragraphs, then word-wraps each paragraph at the 0x140-pixel
-// (320px) viewport width via measure_text_width, storing up to 6
-// resulting line-start pointers into the render state's native line table.
-// Returns 2 (opcode word-count consumed by the script-stream cursor).
+// was FUN_000360f4 -- babl conversation-text render opcode handler (see PTR_FUN_00085408's own
+// comment): if the render state's flag byte (param_2+0x45) has bit 0 set, looks up a message string
+// keyed by param_1's own 16-bit id field, splits it on newlines into up to 6 paragraphs...
 undefined4 babl_render_op_wrap_message(param_1,param_2)
 undefined1 * param_1;
 intptr_t param_2;
@@ -7009,14 +6085,9 @@ intptr_t param_2;
 
 
 
-// was FUN_00036460 -- babl conversation-text render opcode handler
-// (see PTR_FUN_00085408's own comment): unpacks 5 octal digits (0-7,
-// three 3-bit fields from param_1's first word, two more from its
-// second) into a "DDD-DD"-shaped scratch message buffer at fixed
-// positions, selects the next cutscene LPF section. The two words
-// encode its CSxxx.nxx name in octal; rebuilds DAT_00101968 with the
-// cutscene directory for the viewer's next open. Returns 2 consumed
-// words. Introduction uses this to chain its scenes.
+// was FUN_00036460 -- babl conversation-text render opcode handler (see PTR_FUN_00085408's own
+// comment): unpacks 5 octal digits (0-7, three 3-bit fields from param_1's first word, two more
+// from its second) into a "DDD-DD"-shaped scratch message buffer at fixed positions...
 undefined4 babl_render_op_show_code(param_1,param_2)
 ushort * param_1;
 intptr_t param_2;
@@ -7031,10 +6102,9 @@ intptr_t param_2;
   *(byte *)(param_2 + 8) = ((byte)(param_1[1] >> 3) & 7) + 0x30;
   *(byte *)(param_2 + 9) = ((byte)param_1[1] & 7) + 0x30;
   ce_memset(&DAT_00101968,0,0x104);
-  /* strcpy(&DAT_00101968, &DAT_0023c698). Ghidra baked the delta between
-     the two globals as -0x13ad30, which only resolves in the original
-     0x00xx_xxxx address space -- in the recompile pcVar2[-0x13ad30] is a
-     wild pointer (ASan: global-buffer-overflow). Bounded indexed copy. */
+  /* strcpy(&DAT_00101968, &DAT_0023c698). Ghidra baked the delta between the two globals as
+     -0x13ad30, which only resolves in the original 0x00xx_xxxx address space -- in the recompile
+     pcVar2[-0x13ad30] is a wild pointer (ASan: global-buffer-overflow). Bounded indexed copy. */
   {
     int _i = 0;
     while (_i < 0x103 && pcVar2[_i] != '\0') {
@@ -7048,15 +6118,9 @@ intptr_t param_2;
 
 
 
-// was FUN_0003651c -- babl conversation-text render opcode handler
-// (see PTR_FUN_00085408's own comment) for a "say" directive: if the
-// render state's flag byte has bit 0x20 set (voice available for this
-// line) and either bit 0x40 (voice already forced on) or
-// audio_always_true_stub allows it, stashes the voice-sample id
-// (param_1+4) into the render state and delegates to
-// babl_render_op_wrap_message for the text; otherwise clears the
-// voice-sample id (0xffff, "none") and the 0x20 flag before still
-// delegating to babl_render_op_wrap_message. Returns 3.
+// was FUN_0003651c -- babl conversation-text render opcode handler (see PTR_FUN_00085408's own
+// comment) for a "say" directive: if the render state's flag byte has bit 0x20 set (voice available
+// for this line) and either bit 0x40 (voice already forced on) or audio_always_true_stub allows...
 undefined4 babl_render_op_say(param_1,param_2)
 intptr_t param_1;
 intptr_t param_2;
@@ -7087,13 +6151,7 @@ intptr_t param_2;
 }
 
 
-// was FUN_000366a0 -- plays a fixed sound effect (id 0x11, centered
-// pan) and returns 0. No confirmed caller in the current decompile
-// (not called by name anywhere); plausibly another entry in the babl
-// conversation-text render opcode table (see PTR_FUN_00085408's own
-// comment), matching that family's (no visible args here, but a
-// 0-consumed-words-style return) shape more than any other known
-// caller pattern.
+// was FUN_000366a0 -- plays a fixed sound effect (id 0x11, centered pan) and returns 0.
 undefined4 babl_render_op_play_sound()
 
 {
@@ -7103,11 +6161,9 @@ undefined4 babl_render_op_play_sound()
 
 
 
-// was FUN_000366bc -- per-tick housekeeping for the babl conversation
-// render state (param_1): advances the menu music track, and if a
-// voice sample is currently playing (flag 0x40 set, sample id != -1)
-// and has finished (is_voice_sample_finished), clears the voice
-// fields back to "none".
+// was FUN_000366bc -- per-tick housekeeping for the babl conversation render state (param_1):
+// advances the menu music track, and if a voice sample is currently playing (flag 0x40 set, sample
+// id != -1) and has finished (is_voice_sample_finished), clears the voice fields back to "none".
 void babl_render_tick(param_1)
 intptr_t param_1;
 
@@ -7130,23 +6186,8 @@ intptr_t param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_0003671c -- the main babl conversation/book-viewer window
-// renderer, shared by ordinary NPC dialogue AND the special
-// illustrated-book/scroll full-screen viewer (its only known caller,
-// display_book_or_scroll_page, picks param_2..param_5 -- a style flag plus window
-// geometry -- based on whether the requested display id is a regular
-// text page (<0x100) or a picture page (>=0x100)). Runs its own
-// modal input-handling loop (next_input_event/read_realtime_clock_units
-// polling) while interpreting the compiled dialogue-text stream,
-// dispatching embedded opcode bytes < 0x10 through the
-// PTR_FUN_00085408 table (babl_render_op_wrap_message,
-// babl_render_op_say, babl_render_op_show_code,
-// babl_render_op_play_sound), streaming voice-sample audio via
-// load_voice_sample_page/read_voice_sample_page_chunk, driving
-// portrait/illustration palette-cycle animation via
-// tick_book_illustration_palette_cycles, and per-tick housekeeping
-// via babl_render_tick. See the individual opcode handlers and
-// PTR_FUN_00085408's own comment for the dispatch table itself.
+// was FUN_0003671c -- the main babl conversation/book-viewer window renderer, shared by ordinary
+// NPC dialogue AND the special illustrated-book/scroll full-screen viewer...
 void render_babl_dialog_window(param_1,param_2,param_3,param_4,param_5)
 short param_1;
 short param_2;
@@ -7798,14 +6839,8 @@ LAB_00037a8c:
 
 
 
-// was FUN_00037c14 -- the general-purpose "display a numbered
-// text/scroll/picture page" entry point: for page ids under 0x100
-// (ordinary scroll/book text, or a few reserved control ids like 0
-// for greying out a main-menu item) picks fullscreen-ish window
-// geometry and plays a music cue for ids 1-3; for ids >= 0x100
-// (illustrated pictures) picks the smaller inset window geometry
-// instead. Sets g_text_use_palette_color for the duration of the draw
-// and delegates the actual rendering to render_babl_dialog_window.
+// was FUN_00037c14 -- the general-purpose "display a numbered text/scroll/picture page" entry
+// point: for page ids under 0x100...
 void display_book_or_scroll_page(param_1)
 uint param_1;
 
@@ -7877,16 +6912,9 @@ LAB_00037d3c:
 }
 
 
-// was FUN_00037d6c -- for illustration page param_1, opens its
-// cutscene script (its name built from
-// param_1's octal digits via the same template as
-// babl_render_op_show_code), and only if every file operation
-// succeeds, shows the page via display_book_or_scroll_page. Confirmed
-// caller: trigger_terrain_discovery_illustration's "you've found
-// something" discovery moment (passing only param_1/param_2, the
-// current level).
-// ARM 0x37e64/0x37e88/0x37ecc confirms all three writes use param_2's
-// stack slot. They intentionally update the script with the same value.
+// was FUN_00037d6c -- for illustration page param_1, opens its cutscene script (its name built from
+// param_1's octal digits via the same template as babl_render_op_show_code), and only if every file
+// operation succeeds, shows the page via display_book_or_scroll_page.
 /* Real arity is 2: ARM 0x6fed4-0x6fee0 and 0x6feec-0x6ff00 (both call sites) set only r0/r1, and
    Ghidra's param_3/param_4 were just the unwritten r2/r3 spilled into stack slots that nothing read. */
 void record_illustration_discovery_and_display(param_1,param_2)
@@ -7949,18 +6977,9 @@ undefined4 param_2;
 }
 
 
-// was FUN_0003b0e4 -- a run-length-style stream decompressor: reads
-// successive op codes from the compressed input (read_rle_op_code, not
-// yet named) and drives the output (param_1) from the input
-// (param_2). Code 1000 is a byte-fill run (length + fill byte from
-// the input, repeated into the output via pack_byte_into_word's
-// shared low/high-byte accumulators); code 0x3e9 is a shorter
-// run/skip variant (terminating the stream via rle_op_handle_short_run when its
-// computed length hits zero); code 0x3ea is a raw byte-for-byte copy
-// (ce_memmove) of a given length. Loops until the "done" flag
-// (DAT_00201b58) is set. Confirmed caller: render_babl_dialog_window
-// uses it to decompress illustrated-book/scroll picture data into the
-// DAT_00101a70 bitmap buffer before display.
+// was FUN_0003b0e4 -- a run-length-style stream decompressor: reads successive op codes from the
+// compressed input (read_rle_op_code, not yet named) and drives the output (param_1) from the input
+// (param_2).
 void decompress_rle_stream(param_1,param_2)
 undefined1 * param_1;
 undefined1 * param_2;
@@ -8032,11 +7051,9 @@ undefined1 * param_2;
 
 
 
-// was FUN_0003b31c -- merges a byte into one half of a 16-bit value:
-// param_3==0 replaces the low byte of param_1 with param_2's low
-// byte (keeping param_1's high byte); nonzero replaces the high byte
-// instead. Used by decompress_rle_stream to assemble multi-byte
-// values a byte at a time from its input stream.
+// was FUN_0003b31c -- merges a byte into one half of a 16-bit value: param_3==0 replaces the low
+// byte of param_1 with param_2's low byte (keeping param_1's high byte); nonzero replaces the high
+// byte instead.
 uint pack_byte_into_word(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
@@ -8055,11 +7072,9 @@ int param_3;
 }
 
 
-// was FUN_0003b344 -- reads the next op code from
-// decompress_rle_stream's input stream: a zero byte maps to op 1000
-// (byte-fill run); a nonzero byte with its top bit set maps to op
-// 0x3e9; otherwise op 0x3ea. See decompress_rle_stream's own comment
-// for what each op does.
+// was FUN_0003b344 -- reads the next op code from decompress_rle_stream's input stream: a zero byte
+// maps to op 1000 (byte-fill run); a nonzero byte with its top bit set maps to op 0x3e9; otherwise
+// op 0x3ea. See decompress_rle_stream's own comment for what each op does.
 uint read_rle_op_code()
 
 {
@@ -8086,13 +7101,9 @@ uint read_rle_op_code()
 }
 
 
-// was FUN_0003b3a8 -- decompress_rle_stream's op-0x3e9 handler (a
-// "short run" variant): if the accumulated fill value (DAT_00201b44)
-// is 0, marks the stream done (rle_op_mark_stream_done); otherwise
-// recomputes the run length and, for shorter runs (<0x40), optionally
-// emits one literal byte before continuing into
-// rle_op_copy_pairs_even, or for longer runs delegates to
-// rle_op_fill_doubled_byte_even.
+// was FUN_0003b3a8 -- decompress_rle_stream's op-0x3e9 handler (a "short run" variant): if the
+// accumulated fill value (DAT_00201b44) is 0, marks the stream done (rle_op_mark_stream_done);
+// otherwise recomputes the run length and, for shorter runs (<0x40)...
 void rle_op_handle_short_run()
 
 {
@@ -8127,10 +7138,9 @@ void rle_op_handle_short_run()
 
 
 
-// was FUN_0003b48c -- copies DAT_00201b48/2 byte-pairs from input to
-// output (direct copy, not a fill); if the run length's low bit is
-// set, delegates to rle_op_copy_pairs_odd for one extra trailing
-// byte, otherwise finalizes via rle_op_finalize_length.
+// was FUN_0003b48c -- copies DAT_00201b48/2 byte-pairs from input to output (direct copy, not a
+// fill); if the run length's low bit is set, delegates to rle_op_copy_pairs_odd for one extra
+// trailing byte, otherwise finalizes via rle_op_finalize_length.
 void rle_op_copy_pairs_even()
 
 {
@@ -8194,11 +7204,9 @@ void rle_op_copy_pairs_odd()
 
 
 
-// was FUN_0003b608 -- fills output with a doubled byte value (read
-// once from input, replicated into both halves of DAT_00201b44) in
-// byte-pairs; if the run length's low bit is set, delegates to
-// rle_op_fill_doubled_byte_odd for one extra trailing byte, otherwise
-// finalizes via rle_op_finalize_length.
+// was FUN_0003b608 -- fills output with a doubled byte value (read once from input, replicated into
+// both halves of DAT_00201b44) in byte-pairs; if the run length's low bit is set, delegates to
+// rle_op_fill_doubled_byte_odd for one extra trailing byte...
 void rle_op_fill_doubled_byte_even()
 
 {
@@ -8290,13 +7298,9 @@ void rle_op_mark_stream_done()
 }
 
 
-// was FUN_00048e8c -- handles "read" on a sign/book/scroll object:
-// prints a fixed scroll message for sign class 0x13b; for an
-// illustrated book/scroll (quality bit 0x400) opens the picture page
-// via display_book_or_scroll_page; otherwise prints "You read the
-// <name>." followed by the plain-text page content
-// (get_message_string/message_scroll_print_wrapped), using a
-// different lookup range once the quality field crosses 0x3fc1.
+// was FUN_00048e8c -- handles "read" on a sign/book/scroll object: prints a fixed scroll message
+// for sign class 0x13b; for an illustrated book/scroll (quality bit 0x400) opens the picture page
+// via display_book_or_scroll_page...
 void read_object_text(param_1,param_2)
 ushort * param_1;
 short param_2;
@@ -8354,10 +7358,7 @@ short param_2;
 
 
 /* Recovered by disassembling the original UU.exe (same method as
-   chrbtns_bump_alloc_entry/chrbtns_offset_table_builder -- see their comment): load_gr_resource_entries's
-   allocator callback for the "heads"/"converse"/"genhead"/"charhead"
-   resource loads. Bumps DAT_00100670 (the cursor into the DAT_00100784
-   buffer) by param_1 bytes and returns the pre-advance position. */
+   chrbtns_bump_alloc_entry/chrbtns_offset_table_builder -- see their comment)... */
 char *converse_res_bump_alloc_entry(param_1)
 int param_1;
 {
@@ -8366,12 +7367,8 @@ int param_1;
   return old;
 }
 
-/* Recovered the same way: load_gr_resource_entries's post-process callback for the
-   same resource loads. Stores the allocated buffer pointer (skipping a
-   5-byte per-item header) into DAT_00100728[idx], where idx is
-   param_3's low 16 bits sign-extended (the item index, matching
-   load_gr_resource_entries's `(*param_5)(pvVar_buf,iVar4,iVar5)` call shape).
-   Returns 0 when param_2 (item byte size) == 0, else 1. */
+/* Recovered the same way: load_gr_resource_entries's post-process callback for the same resource
+   loads. */
 undefined4 converse_res_slot_store_callback(param_1,param_2,param_3)
 char *param_1;
 int param_2;
@@ -8388,14 +7385,7 @@ int param_3;
 undefined4 babl_builtin_default_handler()
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on). Recovered via
-     Ghidra headless: the real body is a linked-list scan (walking a
-     chain off *(int*)(DAT_0001a18c+0x34), stepping +0x20 per node,
-     terminated by a zero short at +0x38) that unconditionally
-     `return 0;` on every path -- whether or not it finds a match, it
-     never returns anything else and has no side effects. Confirmed
-     behaviorally equivalent to this stub, so left as-is rather than
-     porting the dead search loop verbatim. */
+  /* Ghidra couldn't resolve this address into a proper function (an indirect-jump/jumptable target
+     it gave up on). */
   return 0;
 }

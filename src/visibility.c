@@ -1,9 +1,5 @@
-/* Dungeon-view visibility and per-frame draw-list build: texture-id
- * list loading, the visibility light grid/ray flood-fill, and the
- * top-level per-frame redraw dispatch (full/timed/rebuild). Split out
- * of uw.c (the original monolithic decompile) once these functions'
- * real roles were confirmed.
- */
+/* Dungeon-view visibility and per-frame draw-list build: texture-id list loading, the visibility
+   light grid/ray flood-fill, and the top-level per-frame redraw dispatch (full/timed/rebuild). */
 #include "headers/visibility.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -15,20 +11,13 @@
 // was DAT_0023bca0 -- shading distance loaded from SHADES.DAT field 3.
 // Keep the historical name; the ARM ray flood has its own fixed 16-row bound.
 short g_visibility_max_ring_passes;
-/* Sizing-audit pass: wall-tmap-id list. Loader fills 48 entries
-   (`while(iVar4<0x30)`) and interact.c's own reader guards
-   `if(iVar1<0x30)` before indexing -- both bounds agree exactly.
+/* Sizing-audit pass: wall-tmap-id list. Loader fills 48 entries (`while(iVar4<0x30)`) and
+   interact.c's own reader guards `if(iVar1<0x30)` before indexing -- both bounds agree exactly.
    HARD: 48 elements (96 bytes). Down from 8192. */
  undefined2 DAT_0023ae58_backing[48];
-/* Both real 0x80-element pointer-cache arrays (per free_frame_geometry_buffers's
-   own comment -- "DAT_0023c7a0[0x140], DAT_002020f8[0x80]" -- and
-   shutdown_game_resources's matching 0x80-iteration cleanup loop for DAT_00202308),
-   same "lone undefined4 scalar indexed as an array" bug as DAT_0023c7a0
-   right above (already fixed): each slot holds a real malloc'd buffer
-   pointer (decode_critter_sprite_page/emit_catalog_object's per-page glyph decode),
-   so a 4-byte-stride int[] truncates/corrupts every other slot's pointer
-   on this 64-bit host. Sized generously past the documented 0x80 like
-   this file's other such tables. */
+/* Both real 0x80-element pointer-cache arrays (per free_frame_geometry_buffers's own comment --
+   "DAT_0023c7a0[0x140], DAT_002020f8[0x80]" -- and shutdown_game_resources's matching
+   0x80-iteration cleanup loop for DAT_00202308)... */
 void *DAT_002020f8_arr[256];
 char *DAT_0023ae34;
 char *DAT_0023ae30;
@@ -41,71 +30,31 @@ undefined2 DAT_0023adb0;
    address into load_texture_arena purely as a `short*` count output,
    never indexed. Down from 8192 elements. */
  undefined2 DAT_0023aeb8_backing[4];
-/* Was a lone `undefined2` scalar, but it is the per-level floor/ceiling
-   texture-id list -- reset_texture_id_lists / load_level_texture_ids write (&DAT_0023adb8)[0..9]
-   and load_texture_arena reads them to pick which F32.TR / W16.TR entries to load
-   into the 10-slot arena. As a scalar only slot 0 was coherent; slots 1..9
-   aliased whatever globals the linker placed next, so load_texture_arena hit a
-   garbage/negative id after ~2 entries and DAT_0023aeb8 (the loaded count)
-   came out 2. get_texture_page(0x39) (the ceiling = arena slot 9) then read
-   far past the 2-texture arena into the W16/colour-light memory -> wrong
-   ceiling texture. Sibling lists DAT_0023ae58 / DAT_0023add0 / DAT_0023b840
-   already have backing arrays; this one was missed. */
-/* Sizing-audit pass: floor-tmap-id list. Loader fills only 10
-   entries, but doors.c's own reader indexes it with an explicit
-   `&0xf` mask (0-15) -- the wider read-side bound governs. HARD: 16
+/* Was a lone `undefined2` scalar, but it is the per-level floor/ceiling texture-id list --
+   reset_texture_id_lists / load_level_texture_ids write (&DAT_0023adb8)[0..9] and
+   load_texture_arena reads them to pick which F32.TR / W16.TR entries to load into the 10-slot... */
+/* Sizing-audit pass: floor-tmap-id list. Loader fills only 10 entries, but doors.c's own reader
+   indexes it with an explicit `&0xf` mask (0-15) -- the wider read-side bound governs. HARD: 16
    elements (32 bytes). Down from 8192. */
  undefined2 DAT_0023adb8_backing[16];
-/* Really a 58 (0x3a)-entry byte array, paired with the parallel
-   DAT_0024f0ca array right below -- reset_texture_id_lists's own loop
-   proves the bound (`for (iVar3 = ...; iVar3 < 0x3a; ...)` zeroing both
-   `(&DAT_0024f090)[iVar3]` and `(&DAT_0024f0ca)[iVar3]`). Was a lone
-   scalar relying on DAT_0024f0ca happening to sit exactly 0x3a bytes
-   later in memory (an earlier loop in the same function reached it via
-   `puVar4[0x3a]` off a `&DAT_0024f090 + iVar3` base) -- that adjacency
-   was never guaranteed and broke once this cleanup pass's global
-   reorganization moved other variables in between. Given real backing
-   storage here and the offset hack rewritten to address DAT_0024f0ca by
-   name instead (see reset_texture_id_lists). */
+/* Really a 58 (0x3a)-entry byte array, paired with the parallel DAT_0024f0ca array right below --
+   reset_texture_id_lists's own loop proves the bound (`for (iVar3 = ...; iVar3 < 0x3a; ...)`
+   zeroing both `(&DAT_0024f090)[iVar3]` and `(&DAT_0024f0ca)[iVar3]`). */
 static undefined1 DAT_0024f090_backing[64];
 #define DAT_0024f090 DAT_0024f090_backing[0]
 static char s_bad_tmap_ids_size_000869b7[] = " bad tmap ids size\n";
-/* High byte of DAT_0023b840's packed short (write pattern: `(&DAT_0023b840)[i]
-   = low; (&DAT_0023b841)[i] = high;`, read back combined via CONCAT11 and
-   via `*(short*)(&DAT_0023b840 + offset)` in saveload.c/resources.c) --
-   needs to sit exactly 1 byte after DAT_0023b840's own real storage
-   (DAT_0023b840_backing, resources.c), not its own independent array.
-   An earlier widening pass (code-cleanup-pass-2) gave it one anyway,
-   silently breaking that combined-read (same failure class as
-   DAT_00086980/82/84's fix in movement.c). */
+/* High byte of DAT_0023b840's packed short (write pattern: `(&DAT_0023b840)[i] = low;
+   (&DAT_0023b841)[i] = high;`, read back combined via CONCAT11 and via `*(short*)(&DAT_0023b840 +
+   offset)` in saveload.c/resources.c)... */
 #define DAT_0023b841 DAT_0023b840_backing[1]
-/* Was a lone `undefined` scalar. It is the base of the texture / shade /
-   colour-light table arena: load_dungeon_texture_arenas sets
-   DAT_0023ae38 = &DAT_002049e0 and loads several .tr/.dat files into
-   it, then get_texture_page hands out `&DAT_002049e0 + page*stride`
-   pointers. Needs real backing storage.
-
-   Sizing pass: "1 MB is comfortably more than UW1's texture set" was
-   never derived from anything -- the real bound is exact and provable
-   from the level file format itself, not an estimate. load_level_
-   texture_ids's own header comment: "read the level's 0x7a-byte
-   tmap-id block (48 wall + 10 floor + 3) from the .ark" -- the format
-   has exactly 48 wall-texture and 10 floor-texture id slots, full
-   stop, no level can ever have more. load_dungeon_texture_arenas
-   loads 4 fixed real files against those two counts: w64.tr (48 x
-   64x64 = 4096B), f32.tr (10 x 32x32 = 1024B), w16.tr (48 x 16x16 =
-   256B), f16.tr (10 x 16x16 = 256B) -- exact max 48*4096 + 10*1024 +
-   48*256 + 10*256 = 221696 bytes. Verified live too
-   (UW_DEBUG_TEXTURE_ARENA=1, full 19-script regression suite): real
-   usage is exactly 221696 bytes every time (both counts always fully
-   populated), matching the theoretical max exactly. Sized to 0x40000
-   (262144) for headroom, down from 0x100000 (1048576). */
+/* Was a lone `undefined` scalar. It is the base of the texture / shade / colour-light table arena:
+   load_dungeon_texture_arenas sets DAT_0023ae38 = &DAT_002049e0 and loads several .tr/.dat files
+   into it, then get_texture_page hands out `&DAT_002049e0 + page*stride` pointers. */
 undefined1 DAT_002049e0_backing[0x40000];
 static char s__DATA_terrain_dat_000869ec[] = "\\DATA\\terrain.dat";
-// was DAT_0023b01c -- set by the 3D-viewport setup function
-// (configure_dungeon_viewport) whenever the real in-game dungeon-view mode (game
-// mode bit 0, not a menu/conversation overlay) is active; gates
-// weapon_overlay_and_full_redraw's weapon-overlay draw.
+// was DAT_0023b01c -- set by the 3D-viewport setup function (configure_dungeon_viewport) whenever
+// the real in-game dungeon-view mode (game mode bit 0, not a menu/conversation overlay) is active;
+// gates weapon_overlay_and_full_redraw's weapon-overlay draw.
 undefined4 g_dungeon_view_active;
 undefined2 DAT_0023b020;
 undefined2 DAT_0023aed4;
@@ -120,50 +69,22 @@ static int DAT_0023aec8;
 static ushort DAT_0023b4c8;
 static undefined1 DAT_0023b028;
 static undefined *DAT_0023b02c;
-/* Original 0x23b039 is the light byte immediately after the visibility
-   byte at 0x23b038. Both are fields of the same 0x42-byte-stride grid.
-   A separate backing array disconnected the lighting writer from the
-   ray flood and automap readers, making every tile appear fully lit.
-   (My own earlier sizing-audit pass gave this its own 4096/1152-byte
-   backing array based purely on its index math, without realizing it
-   should have been aliased into this existing struct -- superseded
-   by this fix.) */
+/* Original 0x23b039 is the light byte immediately after the visibility byte at 0x23b038. Both are
+   fields of the same 0x42-byte-stride grid. A separate backing array disconnected the lighting
+   writer from the ray flood and automap readers, making every tile appear fully lit. */
 #define DAT_0023b039 g_visibility_ring_buffer_backing[1]
 static undefined1 g_visibility_ring_done;
-/* g_visibility_ray_table-family: ~20 separately-declared globals that are really
-   one 16-entry x 0x15(21)-byte per-ray record array for the dungeon's
-   geometric beam-trace visibility flood (NOT a creature-reaction/sound-cue
-   queue -- that was this subsystem's original, later-disproven name; see
-   extend_visibility_ray_row's and run_visibility_flood's own comments)
-   (seed_visibility_queue/advance_visibility_ray/merge_adjacent_visibility_rays/run_visibility_flood index it via
-   `&g_visibility_ray_table + entry*0x15`). As lone scalars, out-of-bounds record
-   writes/reads walked off into whatever memory happened to follow in
-   declaration order -- confirmed: g_visibility_ring_done (declared right after,
-   and genuinely 0x150=336=16*21 bytes past g_visibility_ray_table in the real
-   address map) was getting corrupted by exactly this, which is why the
-   queue never looked empty. This subsystem also computes g_visibility_ring_depth,
-   which turns out to double as the tile-visibility scan radius consumed
-   by walk_visible_tiles's dungeon-geometry walk -- NOT optional creature/object
-   bookkeeping as first assessed (see run_visibility_flood's since-removed
-   `// Hack - Disabled`); skipping it left the 3D viewport permanently
-   empty. Real backing array + aliases at each element's correct offset,
-   generous margin past the 16*21=336-byte minimum. */
+/* g_visibility_ray_table-family: ~20 separately-declared globals that are really one 16-entry x
+   0x15(21)-byte per-ray record array for the dungeon's geometric beam-trace visibility flood... */
 static undefined1 g_visibility_ray_table_backing[1024];
 #define g_visibility_ray_table g_visibility_ray_table_backing[0]
-/* Real-pointer side table for this record array's "back pointer" field
-   (offsets 9/0xa-0xb/0xc), which the original 32-bit binary packed as raw
-   bytes -- see advance_visibility_ray's comment on why that can't be reassembled
-   into a real 64-bit pointer on this port. Only entry 0 (the player's own
-   visibility-ray slot, the only one seed_visibility_queue ever populates in a
-   monster-free dungeon) is written; other entries stay NULL, matching
-   the "unpopulated" state advance_visibility_ray's own `(*param_1 & 0x80) == uVar1`
-   guard already treats as "nothing to look up" for a zeroed record. */
+/* Real-pointer side table for this record array's "back pointer" field (offsets 9/0xa-0xb/0xc),
+   which the original 32-bit binary packed as raw bytes -- see advance_visibility_ray's comment on
+   why that can't be reassembled into a real 64-bit pointer on this port. */
 static char *g_visibility_ray_realptr[24];
-/* Packed offset 0xd is the moving visibility-grid cursor. Offset 0x11
-   is a snapshot taken by advance_visibility_ray before/after advancing,
-   depending on the ray direction. The flood clears up to that snapshot,
-   not the moving cursor (ARM FUN_0005d13c reads bytes 0x11..0x14).
-   Keep both pointers separate when widening them for the host. */
+/* Packed offset 0xd is the moving visibility-grid cursor. Offset 0x11 is a snapshot taken by
+   advance_visibility_ray before/after advancing, depending on the ray direction. The flood clears
+   up to that snapshot, not the moving cursor (ARM FUN_0005d13c reads bytes 0x11..0x14). */
 static char *g_visibility_ray_realptr2[24];
 static char *g_visibility_ray_clearptr[24];
 #define DAT_0023aee1 g_visibility_ray_table_backing[1]
@@ -193,19 +114,9 @@ static char *g_visibility_ray_clearptr[24];
    Was a silently-zero undefined4. */
 static const undefined1 DAT_00086af0_arr[4] = { 0x10, 0x00, 0x00, 0x00 };
 #define DAT_00086af0 (*(undefined1 *)DAT_00086af0_arr)
-/* Recovered from UU.exe .data at 0x86af8 (12 bytes = 6 int16). Was two
-   separate silently-zero 64KB Ghidra arrays (DAT_00086af8, DAT_00086b00)
-   plus a bare literal `0x86afc` deref in advance_visibility_ray. These
-   are the per-view-orientation constants that function's visibility
-   flood-fill uses to decide whether a neighbour tile occludes the view;
-   with them all zero the fill's expansion tests (uw.c ~44965, ~44978,
-   ~45001) never fire, so run_visibility_flood drains after ~2 entries
-   and marks NO tile visible -> process_visible_tile_cell only ever takes its
-   un-gated automap-reveal path and never emits 3D tile geometry (black
-   viewport). Indexed [orient] with orient in {0,1}:
-     +0x00  DAT_00086af8 = {2, 4}    wall-edge bitmask (AND'd with DAT_000878d0[shape])
-     +0x04  DAT_00086afc = {2, 3}    expected shape id for the "aligned" case
-     +0x08  DAT_00086b00 = {-1, 1}   neighbour step sign */
+/* Recovered from UU.exe .data at 0x86af8 (12 bytes = 6 int16). Was two separate silently-zero 64KB
+   Ghidra arrays (DAT_00086af8, DAT_00086b00) plus a bare literal `0x86afc` deref in
+   advance_visibility_ray. */
 static const undefined1 DAT_00086af8_region[12] = {
   0x02,0x00, 0x04,0x00, 0x02,0x00, 0x03,0x00, 0xff,0xff, 0x01,0x00,
 };
@@ -214,9 +125,8 @@ static const undefined1 DAT_00086af8_region[12] = {
 #define DAT_00086b00 (*(undefined1 *)(DAT_00086af8_region + 8))
 short g_visibility_ring_depth;
 undefined1 g_visibility_ring_buffer_backing[32768];
-/* Was silently zero -- read into a draw-command opcode and into
-   DAT_00189578 (both widened casts of this one byte). Confirmed via a
-   Ghidra memory dump of the real UU.exe that its actual value is 1,
+/* Was silently zero -- read into a draw-command opcode and into DAT_00189578 (both widened casts of
+   this one byte). Confirmed via a Ghidra memory dump of the real UU.exe that its actual value is 1,
    not zero; no writer anywhere in this decompile. */
 static undefined DAT_00086b34 = 1;
 undefined2 DAT_00189578;
@@ -238,26 +148,15 @@ static char s_cLightTabs_allocation_error_____000872e8[] = "cLightTabs allocatio
 static undefined1 DAT_0024fa38_backing[1536];
 #define DAT_0024fa38 DAT_0024fa38_backing[0]
 
-/* Only entries 0 and 1 (the player's own visibility-ray slot, always populated
-   by seed_visibility_queue) are ever given a real pointer -- a monster-free
-   dungeon has nothing to populate the other 14 with. But this queue's
-   chain-walk can still legitimately reach an unpopulated entry (its
-   "next" link byte isn't reliably reset to the 0xf end-of-chain sentinel
-   between frames), which would otherwise be a NULL-pointer crash. Route
-   an unset (NULL) table entry to this shared zeroed scratch record
-   instead of dereferencing NULL -- keeps the walk/arithmetic in this
-   subsystem well-defined without having to fully model every field an
-   empty slot could still be read through. */
+/* Only entries 0 and 1 (the player's own visibility-ray slot, always populated by
+   seed_visibility_queue) are ever given a real pointer -- a monster-free dungeon has nothing to
+   populate the other 14 with. */
 static char g_visibility_ray_fallback[64];
 #define VISIBILITY_RAY_REALPTR(table, idx) \
     ((table)[(idx)] != 0 ? (table)[(idx)] : g_visibility_ray_fallback)
-/* Slot 16 (past the 0..15 nibble-addressable real entries) is a scratch
-   slot for merge_adjacent_visibility_rays's acStack_28 -- a stack-local COPY of
-   a real entry that the un-stubbed extend_visibility_ray_row / the spreading
-   branch walk in place. Its `(ptr - g_visibility_ray_table_backing) / 0x15` index
-   would be a wild value, so visibility_ray_idx() folds any pointer
-   outside the backing array to this slot; merge_adjacent_visibility_rays seeds
-   the slot from the source entry's real pointers right before the copy. */
+/* Slot 16 (past the 0..15 nibble-addressable real entries) is a scratch slot for
+   merge_adjacent_visibility_rays's acStack_28 -- a stack-local COPY of a real entry that the
+   un-stubbed extend_visibility_ray_row / the spreading branch walk in place. */
 #define VISIBILITY_RAY_SCRATCH_IDX 16
 static int visibility_ray_idx(const void *p) {
     intptr_t off = (intptr_t)p - (intptr_t)g_visibility_ray_table_backing;
@@ -299,11 +198,9 @@ undefined4 reset_texture_id_lists()
   DAT_0023adb0 = 0x30;
   DAT_0023aeb8 = 10;
   load_dungeon_texture_arenas();
-  /* Was `puVar4 = &DAT_0024f090 + iVar3; *puVar4 = 0; puVar4[0x3a] = 0;`
-     -- the `[0x3a]` reached for DAT_0024f0ca by relying on it sitting
-     exactly 0x3a bytes after DAT_0024f090 in memory (see both arrays'
-     own comment). Addressed by name directly instead, now that each has
-     its own real backing storage. */
+  /* Was `puVar4 = &DAT_0024f090 + iVar3; *puVar4 = 0; puVar4[0x3a] = 0;` -- the `[0x3a]` reached
+     for DAT_0024f0ca by relying on it sitting exactly 0x3a bytes after DAT_0024f090 in memory (see
+     both arrays' own comment). */
   iVar3 = 0;
   do {
     iVar1 = (iVar3 + 1) * 0x10000;
@@ -336,14 +233,9 @@ int param_2;
   undefined2 uVar2;
   short sVar3;
   int iVar4;
-  /* local_90[48] / local_30[10] / local_1c[6] were separate Ghidra
-     locals whose names encode adjacent stack offsets (-0x90, -0x30,
-     -0x1c) -- one contiguous 128-byte / 64-short region. read_archive_entry
-     reads exactly 0x7a = 122 bytes into it (96 + 20 + 6), overflowing
-     local_90 into the other two by design. As separate arrays with a
-     stack canary between them that read smashed the canary (SIGABRT).
-     Merged: local_90[i] -> [i], local_30[i] -> [48+i], local_1c[i] ->
-     [58+i]. */
+  /* local_90[48] / local_30[10] / local_1c[6] were separate Ghidra locals whose names encode
+     adjacent stack offsets (-0x90, -0x30, -0x1c) -- one contiguous 128-byte / 64-short region.
+     read_archive_entry reads exactly 0x7a = 122 bytes into it (96 + 20 + 6)... */
   undefined2 local_tmap_buf [64];
 
   sVar3 = read_archive_entry(param_1,param_2 + 0x11,local_tmap_buf);
@@ -387,11 +279,9 @@ int param_2;
 
 
 
-/* param_2 (a short* remap/index table) and param_4 (the destination
-   arena region) were `int`, truncating the real pointers -- fread'ing
-   texture data through a chopped &DAT_002049e0 segfaulted the moment
-   the .tr files actually opened. Three of the four call sites also had
-   param_4 dropped by Ghidra (stale-register reuse); restored. */
+/* param_2 (a short* remap/index table) and param_4 (the destination arena region) were `int`,
+   truncating the real pointers -- fread'ing texture data through a chopped &DAT_002049e0 segfaulted
+   the moment the .tr files actually opened. */
 // was FUN_0005b514 -- load selected entries of a .tr texture file (ids in list param_2) into an arena
 void load_texture_arena(param_1,param_2,param_3,param_4)
 char *param_1;
@@ -410,16 +300,8 @@ char *param_4;
 
   iVar1 = open_file_for_read(param_1);
   if (iVar1 == -1) {
-    /* param_1 is built from "\DATA\" (s__DATA__00085970) with no filename
-       ever appended -- Ghidra dropped whatever ce_strcat call(s) would
-       have added the actual texture-LUT filename (same unrecoverable-
-       string-reference class as the .GR extension fix in open_gr_resource_file,
-       but here the reference vanished entirely rather than resolving to
-       a wrong guess, and none of the candidate DATA files match the
-       expected "byte 0 == 2" format header, so there's nothing to guess
-       from). Skip this texture-LUT load instead of the original fatal
-       error -- textures loaded through this path will be missing/blank
-       rather than crashing the whole game. */
+    /* param_1 is built from "\DATA\" (s__DATA__00085970) with no filename ever appended -- Ghidra
+       dropped whatever ce_strcat call(s) would have added the actual texture-LUT filename... */
     *param_3 = 0;
     return;
   }
@@ -441,13 +323,9 @@ char *param_4;
     if (0 < *param_3) {
       iVar3 = 0;
       do {
-        /* Ghidra kept a byte *2 scale from the original `*(short*)((char*)base
-           + i*2)` but also retyped param_2 as short* -- the two compound, so
-           this read every OTHER id (idlist[0], idlist[2], idlist[4]...). That
-           loaded F32.TR[7,42,5,29,16,0,0,0,0,0] into the 10-slot arena instead
-           of F32.TR[7,4,42,1,5,0,29,12,16,15], so floor slot 9 (= the ceiling,
-           get_texture_page(0x39)) came out F32.TR[0] (cobblestone) rather than
-           the level's real ceiling id 15. Read ids consecutively. */
+        /* Ghidra kept a byte *2 scale from the original `*(short*)((char*)base + i*2)` but also
+           retyped param_2 as short* -- the two compound, so this read every OTHER id (idlist[0],
+           idlist[2], idlist[4]...). */
         iVar4 = (int)param_2[iVar3];
         if (iVar4 < 0) break;
         seek_file_handle(iVar1,*(undefined4 *)(iVar2 + iVar4 * 4),0);
@@ -470,11 +348,9 @@ char *param_4;
 
 // was FUN_0005b660 -- load TERRAIN.DAT texture-property words -> DAT_0023add0 (wall) / DAT_0023ae40 (floor)
 void load_terrain_texture_props(param_1,param_2)
-/* Both are bases into the tmap-id arrays load_level_texture_ids fills
-   (&DAT_0023ae58 and &DAT_0023adb8) -- Ghidra dropped both args at the
-   lone call site and typed them `int`, so the reads below hit a bogus
-   address and segfaulted level init. Kept as byte-addressed pointers so
-   the existing `iVar4 * 2 + paramN` arithmetic stays correct. */
+/* Both are bases into the tmap-id arrays load_level_texture_ids fills (&DAT_0023ae58 and
+   &DAT_0023adb8) -- Ghidra dropped both args at the lone call site and typed them `int`, so the
+   reads below hit a bogus address and segfaulted level init. */
 char *param_1;
 char *param_2;
 
@@ -534,11 +410,8 @@ void free_frame_geometry_buffers()
   void **piVar1;
   int iVar2;
 
-  /* DAT_0023c7a0 is now a real void*[] (see its declaration); walk it as
-     one so whole 8-byte slots clear (the old int* stride freed/zeroed only
-     the low half of each pointer). Same fix applied to DAT_002020f8
-     below (was still `int *piVar1`, missed when DAT_0023c7a0 got this
-     treatment -- both are real void*[] now, see their declarations). */
+  /* DAT_0023c7a0 is now a real void*[] (see its declaration); walk it as one so whole 8-byte slots
+     clear (the old int* stride freed/zeroed only the low half of each pointer). */
   {
     int _i;
     for (_i = 0; _i < 0x140; _i++) {
@@ -656,13 +529,7 @@ undefined4 build_frame_draw_list()
   DAT_0023aecc = tilemap_lookup(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
   bVar3 = (byte)((short)(g_current_view->view_facing >> 0xd) + 1 >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
-  /* Dropped-remainder bug, same class fixed elsewhere this session.
-     Dropped-dividend too (originally a single-arg call): the real ARM
-     code's second register still held bVar3 here, so reconstructed as
-     bVar3 % 2 (quadrant parity, now via ordint_divmod's own
-     divmod_result) -- but DAT_0023b028 has no reader anywhere else in
-     this decompile, so this is a dead store either way and the
-     reconstruction is unverified against any observable behavior. */
+  /* Dropped-remainder bug, same class fixed elsewhere this session. */
   extraout_r1 = (char)ordint_divmod(2,bVar3).rem;
   DAT_0023b028 = extraout_r1;
   DAT_0023b4a0 = bVar3;
@@ -755,11 +622,8 @@ short param_1;
 void seed_visibility_queue()
 
 {
-  /* DAT_0023aecc is the player's current tile record; it is NULL when the
-     player position is outside the 64x64 map. That should not happen (the
-     collision sweep is meant to keep the player in bounds) but a residual
-     movement bug can still push them off the edge -- skip the visibility
-     seed rather than segfaulting the whole game. */
+  /* DAT_0023aecc is the player's current tile record; it is NULL when the player position is
+     outside the 64x64 map. */
   if (DAT_0023aecc == (char *)0x0) {
     g_visibility_ring_done = 0xf;
     return;
@@ -794,17 +658,9 @@ void seed_visibility_queue()
     g_visibility_ray_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
     angle_to_screen_delta(g_current_view->view_facing + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
     angle_to_screen_delta(g_current_view->view_facing + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
-    /* angle_to_screen_delta writes a 2-byte X delta at DAT_0023aee1 and a
-       2-byte Y delta at DAT_0023aee3, and every downstream reader
-       (advance_visibility_ray's `*(short *)(param_1 + 1)` / `+ 3`) treats
-       them as separate signed shorts -- exactly like the DAT_0023aef6 /
-       aef8 pair two lines down. Ghidra had `DAT_0023aee1` as a lone byte
-       so an earlier fix pass widened the `>>4` to `_DAT_0023aee1`, a
-       4-byte view spanning BOTH deltas (bytes 1..4): the shift then bled
-       the Y delta's low nibble into the X delta's high bits and dropped
-       X's low 4 bits, so the left frustum edge came out garbage
-       (X ~= 31338 vs the right edge's ~1465) and the beam-trace only
-       ever marked one tile visible. Shift each 16-bit delta on its own. */
+    /* angle_to_screen_delta writes a 2-byte X delta at DAT_0023aee1 and a 2-byte Y delta at
+       DAT_0023aee3, and every downstream reader (advance_visibility_ray's `*(short *)(param_1 + 1)`
+       / `+ 3`) treats them as separate signed shorts... */
     *(short *)&g_visibility_ray_table_backing[1] = (short)(*(short *)&g_visibility_ray_table_backing[1] >> 4);
     *(short *)&g_visibility_ray_table_backing[3] = (short)(*(short *)&g_visibility_ray_table_backing[3] >> 4);
     /* The right edge uses signed deltas too (ARM FUN_0005bf40).
@@ -850,16 +706,8 @@ intptr_t param_1;
 
 
 
-/* Was FUN_0005c16c. param_1 was `int`, truncating the real record pointer (same fix as its
-   siblings advance_visibility_ray/compute_visibility_ray_offset). This function does pointer
-   ARITHMETIC on the two packed-pointer fields (advance-to-neighbor-tile
-   at offset 9, step-back-2 at offset 0xd) by reading their packed bytes
-   as a plain 32-bit value, adjusting, and writing the bytes back --
-   which only ever worked because the original pointers were genuinely
-   32-bit. Do the same arithmetic on the real 64-bit pointers in the two
-   side tables instead; the packed-byte writes are left in place as
-   harmless dead state (nothing safely reads a pointer back out of them
-   any more -- see g_visibility_ray_realptr's comment). */
+/* Was FUN_0005c16c. param_1 was `int`, truncating the real record pointer (same fix as its siblings
+   advance_visibility_ray/compute_visibility_ray_offset). */
 // was FUN_0005c16c
 void visibility_ray_step_backward(param_1)
 intptr_t param_1;
@@ -891,10 +739,8 @@ intptr_t param_1;
 
 
 
-/* Was FUN_0005c214. param_1 was `int`, truncating the real record pointer every caller
-   passes -- same fix as advance_visibility_ray. Its two packed-pointer field reads
-   (offsets 0xd and 9) go through the same real-pointer side tables that
-   function uses too, for the same reason (see their comments). */
+/* Was FUN_0005c214. param_1 was `int`, truncating the real record pointer every caller passes --
+   same fix as advance_visibility_ray. */
 // was FUN_0005c214
 undefined4 compute_visibility_ray_offset(param_1,param_2,param_3)
 intptr_t param_1;
@@ -1026,25 +872,8 @@ char param_3;
 
 
 
-/* Was FUN_0005c70c, and was mis-named `reactions_should_merge` until the
-   un-stub below showed what it does. Un-stubbed 2026-09-05: this is NOT a
-   "should these merge" predicate -- it is the row-advance / cone-
-   continuation step that keeps the beam-trace visibility flood alive past
-   row 0. Each call bumps
-   the entry's per-pass counter (offset 7), and while that stays under 16
-   AND the entry's visibility-grid cursor hasn't hit an end-of-chain
-   nibble, it steps the entry ONE ROW forward -- the tile-data cursor by
-   DAT_00086a02[facing]*4, the visibility-grid cursor by 0x42 -- re-walks
-   that row via visibility_ray_step_forward / compute_visibility_ray_offset, and
-   returns 1. merge_adjacent_visibility_rays's `iVar3 != 0` branch then keeps
-   the queue head off the 0xf sentinel, so run_visibility_flood makes
-   another pass and g_visibility_ring_depth (== view depth) grows. Stubbing it to
-   `return 0` (done in a much earlier session while the whole viewport
-   was still black) is why only row 0 was ever flooded -> only 1-2 tiles
-   visible. The two packed 32-bit pointer fields (offsets 9 and 0xd) are
-   carried in g_visibility_ray_realptr / _realptr2 on this 64-bit port; the
-   original's byte-packed writes are kept as harmless dead state. Verified
-   against the 0x5c70c disasm. */
+/* Was FUN_0005c70c, and was mis-named `reactions_should_merge` until the un-stub below showed what
+   it does. */
 // was FUN_0005c70c
 undefined4 extend_visibility_ray_row(param_1,param_2)
 byte * param_1;
@@ -1069,10 +898,9 @@ byte * param_2;
 
   iVar5 = *(char *)(param_1 + 7) + 1;
   *(char *)(param_1 + 7) = (char)iVar5;
-  /* ARM FUN_0005c70c compares this row counter with the literal 0x11.
-     The shading distance (historically named g_visibility_max_ring_passes)
-     is not this bound. Substituting it stops on a partially filled row:
-     level 1's value 3 makes tile (26,5) disappear at some headings. */
+  /* ARM FUN_0005c70c compares this row counter with the literal 0x11. The shading distance
+     (historically named g_visibility_max_ring_passes) is not this bound. Substituting it stops on a
+     partially filled row: level 1's value 3 makes tile (26,5) disappear at some headings. */
   if (iVar5 * 0x1000000 >> 0x18 < 0x11) {
     do {
       if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx1)[0x43] & 0xf) != 0xf) {
@@ -1189,13 +1017,9 @@ byte * param_1;
        (int)((0x100 - (uint)param_1[8]) * (int)*(short *)(&DAT_00086b00 + iVar3 * 2) * iVar2))))) {
     do {
       iVar11 = (int)DAT_0023b4a0;
-      /* Was `*(byte **)(param_1 + 9)` -- reassembling a pointer from raw
-         bytes the original 32-bit binary packed at this offset (see
-         seed_visibility_queue's DAT_0023aee9/aeea/aeec writes), which only ever
-         captured the low 32 bits even before this port's 64-bit
-         truncation, and the 8-byte-wide read here also swallows 4 bytes
-         of the next field. Real pointer tracked separately instead --
-         see g_visibility_ray_realptr's comment. */
+      /* Was `*(byte **)(param_1 + 9)` -- reassembling a pointer from raw bytes the original 32-bit
+         binary packed at this offset (see seed_visibility_queue's DAT_0023aee9/aeea/aeec writes),
+         which only ever captured the low 32 bits even before this port's 64-bit truncation... */
       pbVar8 = (byte *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, visibility_ray_idx(param_1));
       iVar2 = iVar11 * 0x10;
       cVar9 = (&DAT_00086a20)[(*pbVar8 & 0xf) + iVar2];
@@ -1205,12 +1029,9 @@ LAB_0005cf04:
         if ((((ushort)(byte)(&DAT_000878d0)[cVar9] & *(ushort *)(&DAT_00086af8 + iVar3 * 2)) ==
              *(ushort *)(&DAT_00086af8 + iVar3 * 2)) &&
            ((int)cVar9 == (int)*(short *)((char *)&DAT_00086afc + iVar3 * 2))) {
-          /* Was reading the division helper's remainder back via the
-             extraout_r1 register-leftover trick (see ordint_divmod's
-             comment) -- gets it by name off ordint_divmod's own
-             divmod_result now, same fix as itoa_radix's identical
-             pattern. The quotient this call also produces isn't
-             used here. */
+          /* Was reading the division helper's remainder back via the extraout_r1 register-leftover
+             trick (see ordint_divmod's comment) -- gets it by name off ordint_divmod's own
+             divmod_result now, same fix as itoa_radix's identical pattern. */
           cVar12 = (char)ordint_divmod(2,iVar3 + 1).rem;
         }
         param_1[6] = -cVar12;
@@ -1227,30 +1048,8 @@ LAB_0005cf04:
                         [(byte)(&DAT_00086a20)
                                [(pbVar8[(int)*(short *)(&DAT_00086a00 + iVar11 * 6) * (int)sVar6 * 4
                                        ] & 0xf) + iVar2]]) != 0) goto LAB_0005cf04;
-      /* Was `cVar9 = ordint_divmod(...); param_1[8] = cVar9 + param_1[8];`
-         -- param_1[8] is a 0-255 accumulated light-attenuation counter
-         (saturates the ring-walk's expansion once it hits 0xff -- see
-         the `param_1[8] = 0xff` "hit a wall" sets above and the
-         `(0x100 - param_1[8])` remaining-light checks below), but the
-         per-step increment was routed through a SIGNED 8-bit `cVar9`.
-         For a nearby/strong ray the real quotient legitimately exceeds
-         127 (confirmed live via a UW_DEBUG_INV trace: divisor=134
-         dividend=32512 -> true quotient 242), which wrapped to a
-         NEGATIVE char (-14) instead of correctly saturating hard for
-         that close-range step. Real, verified overflow bug -- but NOT
-         the cause of the automap's over-reveal-at-spawn report: checked
-         with lldb (breakpoint on run_visibility_flood's exit) that
-         g_visibility_ring_depth (the ring-walk depth) and the dumped reveal bitmap
-         are BOTH byte-for-byte identical before and after this fix for
-         that repro, because the flood there terminates on real walls
-         well before this accumulator ever nears saturation. Left fixed
-         since it's a genuine bug (matters for any long open, wall-less
-         span longer than a few tiles), but the actual over-reveal cause
-         is elsewhere (doorway tiles read as plain open floor regardless
-         of the door object's open/closed state -- see memory.md).
-         Compute and accumulate in a wide int and clamp to the byte's
-         real 0-255 range instead of truncating through a signed 8-bit
-         type. */
+      /* Was `cVar9 = ordint_divmod(...); param_1[8] = cVar9 + param_1[8];` -- param_1[8] is a 0-255
+         accumulated light-attenuation counter... */
       local_atten_step = (int)ordint_divmod((int)*(short *)(param_1 + 1) * (int)sVar6,
                                             (short)local_32 * local_30).quot;
       local_atten_step = local_atten_step + (int)(byte)param_1[8];
@@ -1315,12 +1114,9 @@ LAB_0005ce60:
 
 
 
-/* Was FUN_0005cf74. param_1/param_2 were `undefined4 *`/`int *`, truncating the real
-   pointers run_visibility_flood always calls this with (`&local_20`/`&local_24`,
-   both real `byte*`/`undefined1*` locals) -- same fix as this record
-   array's other consumers. `*param_2`'s assignment below is this same
-   record's saved offset-0x11 cursor, kept separate from its moving
-   offset-0xd cursor on the host. */
+/* Was FUN_0005cf74. param_1/param_2 were `undefined4 *`/`int *`, truncating the real pointers
+   run_visibility_flood always calls this with (`&local_20`/`&local_24`, both real
+   `byte*`/`undefined1*` locals)... */
 // was FUN_0005cf74
 void merge_adjacent_visibility_rays(param_1,param_2)
 byte ** param_1;
@@ -1336,18 +1132,9 @@ undefined1 ** param_2;
   char *pcVar7;
   byte *pbVar8;
   char *pcVar9;
-  /* acStack_28/local_23 were separate locals sized 5+1=6 bytes, but the
-     copy loop just below writes a full 0x15(21)-byte record into
-     acStack_28 (`iVar3 = 0x15; ... *pcVar7 = *pcVar6; ...`) -- a genuine
-     stack-buffer overflow (confirmed crashing, EXC_BAD_ACCESS with a
-     corrupted pcVar9, the classic signature of a stack smash landing on
-     an adjacent local) every single time this function runs, regardless
-     of which branch follows. Same "locals declared as whatever fragment
-     Ghidra individually named instead of the real buffer a copy/init
-     needs" bug as build_view_matrix's matrices earlier this session, just for
-     a stack array instead of a global one. local_23 was the record's own
-     byte offset+5 (0x28-0x23=5) -- folded into the real-sized array as
-     acStack_28[5], its declaration removed. */
+  /* acStack_28/local_23 were separate locals sized 5+1=6 bytes, but the copy loop just below writes
+     a full 0x15(21)-byte record into acStack_28 (`iVar3 = 0x15; ... *pcVar7 = *pcVar6; ...`) -- a
+     genuine stack-buffer overflow... */
   char acStack_28 [0x15];
   int iVar10;
 
@@ -1379,11 +1166,9 @@ undefined1 ** param_2;
     pcVar6 = pcVar6 + 1;
     pcVar7 = pcVar7 + 1;
   } while (iVar4 != 0 && bVar1);
-  /* acStack_28 is a byte-copy of entry pcVar9; seed the scratch
-     real-pointer slot (16) from that entry so visibility_ray_step_forward /
-     compute_visibility_ray_offset on acStack_28 -- whose in-backing-array index
-     would be a wild value -- resolve through visibility_ray_idx() to a
-     valid grid cursor instead of indexing the side table out of bounds. */
+  /* acStack_28 is a byte-copy of entry pcVar9; seed the scratch real-pointer slot (16) from that
+     entry so visibility_ray_step_forward / compute_visibility_ray_offset on acStack_28 -- whose
+     in-backing-array index would be a wild value... */
   g_visibility_ray_realptr[VISIBILITY_RAY_SCRATCH_IDX]  =
       VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, iVar10 / 0x15);
   g_visibility_ray_realptr2[VISIBILITY_RAY_SCRATCH_IDX] =
@@ -1397,10 +1182,9 @@ LAB_0005d064:
     *pbVar8 = 0;
   }
   else {
-    /* extend_visibility_ray_row returned "keep spreading". The walk below
-       operates on acStack_28 (the stack copy) and marks tiles via
-       compute_visibility_ray_offset; its side-table pointers live in the
-       scratch slot seeded just above. */
+    /* extend_visibility_ray_row returned "keep spreading". The walk below operates on acStack_28
+       (the stack copy) and marks tiles via compute_visibility_ray_offset; its side-table pointers
+       live in the scratch slot seeded just above. */
     *param_1 = pbVar8;
     if ((&DAT_0023aee5)[iVar10] != (&DAT_0023aee5)[iVar5]) {
       do {
@@ -1440,10 +1224,9 @@ void run_visibility_flood()
   undefined1 *local_24;
   byte *local_20;
   
-  /* Visibility bits belong to this frame. A flood that stops at the view
-     distance limit can leave the interior of its final row unwritten;
-     retaining those bits draws walls from an earlier camera position.
-     Reset only visibility bytes, keeping the adjacent light/edge bytes. */
+  /* Visibility bits belong to this frame. A flood that stops at the view distance limit can leave
+     the interior of its final row unwritten; retaining those bits draws walls from an earlier
+     camera position. Reset only visibility bytes, keeping the adjacent light/edge bytes. */
   for (int cell = 0; cell < 17 * 33; ++cell)
     g_visibility_ring_buffer_backing[cell * 2] = 0;
 
@@ -1488,19 +1271,9 @@ void run_visibility_flood()
     fprintf(stderr, "[visibility-flood] g_visibility_ring_depth=%d g_visibility_max_ring_passes=%d\n",
             (int)g_visibility_ring_depth, (int)g_visibility_max_ring_passes);
 
-  /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): g_visibility_ring_depth is the
-     row depth of walk_visible_tiles's reveal/visibility walk -- it starts at
-     row &g_visibility_ring_buffer + g_visibility_ring_depth*0x42 and sweeps back to row 0, and
-     equals (visibility-flood passes made) - 1. With a small visible set it
-     comes out 0, so a demomode TELEPORT+REVEAL only marks a thin strip.
-     Forcing it larger widens the automap reveal fan for testing, BUT it
-     also decouples the walk from run_visibility_flood's real output
-     rows (which now genuinely carry visibility bits -- see the table
-     recoveries this session), so it is opt-in and off by default. When
-     enabled, the upper rows are zeroed first so process_visible_tile_cell reads them
-     as "not visible" and takes the plain automap-reveal path rather than
-     stale bytes. g_visibility_ring_buffer_backing is 32768 bytes (0x42 stride) so 8
-     rows is well in bounds. */
+  /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): g_visibility_ring_depth is the row depth of
+     walk_visible_tiles's reveal/visibility walk -- it starts at row &g_visibility_ring_buffer +
+     g_visibility_ring_depth*0x42 and sweeps back to row 0... */
   if (getenv("UW_HACK_REVEAL_DEPTH")) {
     if (getenv("UW_HACK_REVEAL_DEPTH_ZERO")) {
       int hack_row;
@@ -1529,20 +1302,8 @@ void rebuild_dungeon_view()
   bool bVar5;
   
   seed_visibility_queue();
-  /* Re-enabled again: g_visibility_ring_buffer (the buffer walk_visible_tiles's ring-walk
-     reads per-tile visibility/occlusion data from via process_visible_tile_cell,
-     offset DAT_0023b820) is the SAME 0x42-byte-stride buffer this
-     function builds its creature-reaction display list into
-     (`&g_visibility_ring_buffer`, confirmed same base address, same stride) -- a
-     whole-binary Ghidra reference search found NO OTHER writer of this
-     memory anywhere, so an earlier attempt that hardcoded g_visibility_ring_depth
-     while skipping this call was also skipping its only real populator.
-     Finishing the retrofit properly instead of hardcoding around it.
-     NOTE: g_visibility_ring_depth (this function's own loop counter) legitimately
-     computes to 0 with no creatures present -- see memory.md's tmap-
-     tiles section for why that rules out "g_visibility_ring_depth is a general
-     tile-scan radius" as the explanation for the still-black viewport;
-     the real renderer is still being searched for. */
+  /* Re-enabled again: g_visibility_ring_buffer (the buffer walk_visible_tiles's ring-walk reads
+     per-tile visibility/occlusion data from via process_visible_tile_cell)... */
   run_visibility_flood();
   handle_mouse_button_message(0);
   uVar1 = DAT_00086b30;
@@ -1632,21 +1393,8 @@ void rebuild_dungeon_view()
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
       (DAT_00201b68 != 9)) &&
      (sVar3 = ordint_divmod(10,(int)DAT_0023b810 * (int)DAT_00201b68).quot, sVar3 != 0)) {
-    /* Was disabled: Ghidra dropped this call's argument entirely, so it
-       ran with garbage and crashed (walked into the level-up message
-       path with a nonsensical XP amount). Real ARM disassembly at this
-       call site (0x5d6e4, `blne 0x69bd0`) shows r0 is simply left
-       untouched from the division just above -- the argument is sVar3
-       itself, the exact quotient already computed on this same line.
-       This is UW1's passive exploration-XP trickle: DAT_0023b810 (reset
-       to 0 above, accumulated by walk_visible_tiles) counts only tiles
-       whose automap-reveal byte flips from unrevealed to revealed this
-       call -- that flag is sticky and never un-sets, so no amount of
-       extra rebuild_dungeon_view calls (this port's forced-3D-redraw
-       hack included) can double-count the same tile or over-grant XP;
-       each newly-explored tile is counted toward this exactly once,
-       whichever call happens to be the one that reveals it. No
-       frequency guard needed -- the real binary has none either. */
+    /* Was disabled: Ghidra dropped this call's argument entirely, so it ran with garbage and
+       crashed (walked into the level-up message path with a nonsensical XP amount). */
     grant_experience_points(sVar3);
   }
   if (DAT_00201b68 == 9) {
@@ -1668,12 +1416,9 @@ undefined4 param_1;
 
 
 
-// was FUN_00065ff0 -- (re)loads the f32.tr/f16.tr floor-texture arenas
-// (the two floor-texture resolutions), optionally updating the active
-// "special floor" texture id (DAT_0023adc0) first unless param_1 is
-// the sentinel 0xff (keep current). Its one caller
-// (update_level7_floor_hazard_state, level-7 lava/moonstone floor-texture swap) has a
-// dropped-argument bug of its own -- see that call site's own comment.
+// was FUN_00065ff0 -- (re)loads the f32.tr/f16.tr floor-texture arenas (the two floor-texture
+// resolutions), optionally updating the active "special floor" texture id (DAT_0023adc0) first
+// unless param_1 is the sentinel 0xff (keep current).
 void load_floor_texture_arenas(param_1)
 byte param_1;
 
@@ -1717,14 +1462,9 @@ byte param_1;
 
 
 
-// was FUN_0006ff08 -- loads a shading-level configuration (early-outs
-// if param_1 already matches the currently-loaded DAT_000872a0):
-// swaps in LIGHT.DAT or MONO.DAT (special-cased around shading level 5)
-// into DAT_0024fa2c, then seeks SHADES.DAT to param_1's 12-byte record
-// and unpacks it into DAT_0025063c/DAT_0025064c/DAT_002506dc/
-// g_visibility_max_ring_passes/DAT_00086b28/DAT_00086b24 (the texture-
-// LOD distance threshold), rebuilding the visibility light grid
-// afterward.
+// was FUN_0006ff08 -- loads a shading-level configuration (early-outs if param_1 already matches
+// the currently-loaded DAT_000872a0): swaps in LIGHT.DAT or MONO.DAT (special-cased around shading
+// level 5) into DAT_0024fa2c...
 void load_shading_level_config(param_1)
 char param_1;
 
@@ -1737,14 +1477,9 @@ char param_1;
   if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
     fprintf(stderr, "[load_shading_level_config] called param_1=%d DAT_000872a0=%d DAT_00201b68=%d\n",
             (int)param_1, (int)DAT_000872a0, (int)DAT_00201b68);
-  /* Ghidra modelled the 12-byte SHADES.DAT per-level header as six
-     separate `short` locals that read_file_handle(&local_12c, 0xc) reads
-     into as one contiguous block -- but the C compiler is free to lay
-     them out non-contiguously / reorder them, so only local_12c landed
-     where the read wrote and local_12a..local_122 read stack garbage
-     (observed: DAT_00086b24, the texture-LOD distance threshold, came
-     out 0 instead of the file's 16 -> every visible tile fell to the
-     16x16 low-detail texture, walls included). Real 6-short array. */
+  /* Ghidra modelled the 12-byte SHADES.DAT per-level header as six separate `short` locals that
+     read_file_handle(&local_12c, 0xc) reads into as one contiguous block -- but the C compiler is
+     free to lay them out non-contiguously / reorder them... */
   short _shades_hdr[6];
 #define local_12c (_shades_hdr[0])
 #define local_12a (_shades_hdr[1])
