@@ -50,10 +50,29 @@ static void test_ambient_track_advances_once_its_real_duration_elapses(void)
     TEST_ASSERT_EQUAL_STRING("\\SOUND\\uw03.mod", audio_fixture_last_loaded_track());
 }
 
+/* trigger_sound_sample_note (was FUN_00073140) triggers resource id
+   param_1+800 as a one-shot WAVE sample -- see its own "BUG FIX (real
+   SFX playback)" comment in audio.c. This is a pure logic-level check
+   that the real interception calls platform_sfx_play with exactly
+   that id, independent of the dead DAT_0023c3b8-gated body underneath
+   it (which stays unreached here, same as every other scenario this
+   suite drives -- see audio_fixture_reset). */
+static void test_trigger_sound_sample_note_plays_resource_id_plus_800(void)
+{
+    trigger_sound_sample_note(1, 0);
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(801, audio_fixture_last_sfx_resource_id());
+
+    trigger_sound_sample_note(59, 0);
+    TEST_ASSERT_EQUAL_INT(2, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(859, audio_fixture_last_sfx_resource_id());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_ambient_track_stays_stable_well_within_its_real_duration);
     RUN_TEST(test_ambient_track_advances_once_its_real_duration_elapses);
+    RUN_TEST(test_trigger_sound_sample_note_plays_resource_id_plus_800);
     return UNITY_END();
 }

@@ -5,6 +5,7 @@
  */
 #include "headers/audio.h"
 #include "headers/platform_music.h"
+#include "headers/platform_sfx.h"
 #include "headers/debug.h"
 #include "headers/file_io.h"
 #include <stdio.h>
@@ -781,6 +782,24 @@ LAB_00073108:
 // as a one-shot note into the module player (load_and_resample_wave_sample/
 // arm_sfx_trigger_slot/start_sfx_trigger_slot), all through the audio interface
 // DAT_0023c3b8.
+//
+// BUG FIX (real SFX playback): the body below (gated by
+// `DAT_0023c3b8 != 0`) has never once executed -- DAT_0023c3b8 is the
+// dead decompiled MOD engine's COM-style handle, deliberately never
+// assigned a value anywhere in this codebase (see platform_music.c's
+// block comment) -- and even if it somehow were non-NULL,
+// load_and_resample_wave_sample's own FindResourceW/LoadResource calls
+// are hardcoded-0 stubs (ordinal_stubs.c) feeding a struct-packing
+// scheme that's the same 64-bit-unsafe disease as the MOD engine's
+// (see platform_sfx.c's own block comment for the full chain). Resource
+// id param_1+800 really is a genuine "WAVE"-type PE resource embedded
+// in data/UU.exe (36 of them, ids 801-859 with gaps -- confirmed via
+// direct PE parsing), so play it through the real platform_sfx backend
+// instead, ahead of the dead gate below rather than inside it -- same
+// shape as play_music_track's own real interception sitting ahead of
+// its dead construct_and_load_mod_player chain. The original body is
+// left completely untouched/still unreachable underneath, exactly like
+// the MOD engine's own dead code.
 void trigger_sound_sample_note(param_1,param_2)
 int param_1;
 undefined4 param_2;
@@ -789,7 +808,9 @@ undefined4 param_2;
   char cVar1;
   int iVar2;
   undefined4 local_18;
-  
+
+  platform_sfx_play(param_1 + 800);
+
   if (DAT_0023c3b8 != (undefined4 *)0x0) {
     if (DAT_00087448 == 0) {
       stop_mod_player_playback(DAT_0023c3b8);

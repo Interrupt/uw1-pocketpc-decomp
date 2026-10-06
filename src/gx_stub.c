@@ -8,6 +8,7 @@
 #include "headers/debug_ui.h"
 #include "headers/audio.h"
 #include "headers/platform_music.h"
+#include "headers/platform_sfx.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -829,12 +830,18 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
      * ignored, not fatal. platform_music_init() itself handles
      * "no audio device" (SDL_GetNumAudioDevices()==0) and
      * SDL_OpenAudioDevice failure the same way, leaving the music gate
-     * flags at their safe "subsystem not initialized" default. */
+     * flags at their safe "subsystem not initialized" default.
+     *
+     * platform_sfx_init() (real one-shot SFX playback, see
+     * platform_sfx.c's own block comment) rides the same SDL_INIT_AUDIO
+     * subsystem and fails exactly as softly -- no audio device just
+     * means SFX stay silent, same as music above. */
     if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
-        fprintf(stderr, "[gx] SDL_InitSubSystem(SDL_INIT_AUDIO) failed: %s -- music playback disabled\n",
+        fprintf(stderr, "[gx] SDL_InitSubSystem(SDL_INIT_AUDIO) failed: %s -- music/sfx playback disabled\n",
                 SDL_GetError());
     } else {
         platform_music_init();
+        platform_sfx_init();
     }
     g_win = SDL_CreateWindow("Ultima Underworld", SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED, GX_W * 2, GX_H * 2,

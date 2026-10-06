@@ -106,7 +106,7 @@ add_fixture_game_unit_test(teleport
 add_fixture_game_unit_test(audio
   src/audio.c:@DAT_00087414_backing src/audio.c:@DAT_000873e0_backing
   src/audio.c:play_music_track src/audio.c:advance_menu_music_track_elapsed
-  src/audio.c:update_ingame_music_track
+  src/audio.c:update_ingame_music_track src/audio.c:trigger_sound_sample_note
   src/ordinal_stubs.c:ce_memmove)
 add_game_test_library(uw_test_movement
   src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading
