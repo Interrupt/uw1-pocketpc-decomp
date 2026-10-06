@@ -1403,8 +1403,8 @@ void cast_summon_or_spawn_effect(uintptr_t caster, char variant)
   bVar1 = *(byte *)(caster + 0x18);
   uw_ord2005_rem_154 = ((int)(uVar4)) % (0x1b);
   uw_ord2005_rem_155 = ((int)((bVar1 & 0x1f) + (uVar2 >> 2 & 0xe0) + uw_ord2005_rem_154 + -0xd)) % (0xff);
-  local_34 = (*(ushort *)(caster + 0x16) >> 7 & 0x1f8) + (uVar2 >> 0xd);
-  local_32 = (*(ushort *)(caster + 0x16) >> 1 & 0x1f8) + (uVar2 >> 10 & 7);
+  local_34 = (*(ushort *)(caster + 0x16) >> 7 & 0x1f8) + ((uw_object_hdr_t *)caster)->xpos;
+  local_32 = (*(ushort *)(caster + 0x16) >> 1 & 0x1f8) + ((uw_object_hdr_t *)caster)->ypos;
   uVar7 = 0xc;
   if (variant != '\x04') {
     uVar7 = 9;

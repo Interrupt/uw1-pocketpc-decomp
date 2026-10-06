@@ -105,7 +105,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
     }
     iVar16 = apply_area_terrain_effect(tile_x,tile_y,(byte)trap_record[3] & 0x3f,((byte)trap_record[2] & 0x3e) >> 1,
                           CONCAT22(uVar20,uVar4 >> 3) & 0xffff000f,CONCAT22(uVar21,uVar13),
-                          uVar4 >> 0xd,uVar4 >> 10 & 7,0);
+                          ((uw_object_hdr_t *)trap_record)->xpos,((uw_object_hdr_t *)trap_record)->ypos,0);
     break;
   case 6:
     iVar16 = dispatch_trap_special_or_tile_action(tile_x,tile_y,trap_record,DAT_0024cff4,
@@ -156,8 +156,8 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
       }
       DAT_00202c84 = 1;
       uVar4 = puVar8[1];
-      local_30 = place_object_in_world((uint)(uVar4 >> 0xd) + tile_x * 8,
-                              ((uVar4 & 0x1c00) >> 10) + tile_y * 8,uVar4 & 0x7f,puVar8,
+      local_30 = place_object_in_world((uint)((uw_object_hdr_t *)puVar8)->xpos + tile_x * 8,
+                              ((uw_object_hdr_t *)puVar8)->ypos + tile_y * 8,((uw_object_hdr_t *)puVar8)->zpos,puVar8,
                               CONCAT22(uVar20,4),0);
       DAT_00202c84 = 0;
       if (local_30 != 0) {
@@ -361,7 +361,7 @@ LAB_0007d460:
     break;
   case 0xe:
     uVar4 = trap_record[1];
-    uVar5 = (uint)(short)((int)(short)uVar4 & 0x7fU);
+    uVar5 = ((uw_object_hdr_t *)trap_record)->zpos;
     uVar18 = (int)(((uVar4 >> 7 & 7) + ((int)(short)uVar4 & 0x7fU)) * 0x10000) >> 0x10;
     uVar14 = 0;
     if (uVar5 <= uVar18) {
@@ -386,7 +386,7 @@ LAB_0007d460:
       tile_y = (uint)sVar3;
     }
     if (((ushort)uVar14 !=
-         (ushort)(uVar4 >> 10 & 7 | (trap_record[3] & 0x3f | ((byte)trap_record[2] & 0x3f) << 5) << 3)) &&
+         (ushort)(((uw_object_hdr_t *)trap_record)->ypos | (trap_record[3] & 0x3f | ((byte)trap_record[2] & 0x3f) << 5) << 3)) &&
        ((trap_record[3] & 0xffc0) != 0)) {
       iVar16 = resolve_object_link(trap_record + 3);
       if ((*(ushort *)(iVar16 + 4) & 0xffc0) == 0) {

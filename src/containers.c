@@ -885,8 +885,8 @@ int empty_container_into_world(ushort *container, short clear_flag)
         *(byte *)(container + 3) = (bVar3 ^ (byte)clear_flag) & 0x3f ^ bVar3;
         *(char *)((char *)container + 7) = (char)(uVar2 >> 8);
       }
-      place_object_in_world((uint)(uVar1 >> 0xd) + uVar7 * 8,((uVar1 & 0x1c00) >> 10) + uVar8 * 8,
-                   uVar1 & 0x7f,iVar4,6,0);
+      place_object_in_world((uint)((uw_object_hdr_t *)container)->xpos + uVar7 * 8,((uw_object_hdr_t *)container)->ypos + uVar8 * 8,
+                   ((uw_object_hdr_t *)container)->zpos,iVar4,6,0);
       iVar4 = pNextLink;
     }
     uVar6 = 1;

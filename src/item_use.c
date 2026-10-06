@@ -363,8 +363,8 @@ int drop_object_near_target(char *actor, char *object, short mode, uint flags)
   ushort uVar1;
 
   uVar1 = *(ushort *)(actor + 2);
-  return place_object_in_world((*(ushort *)(actor + 0x16) >> 7 & 0x1f8) + (uVar1 >> 0xd),
-               (*(ushort *)(actor + 0x16) >> 1 & 0x1f8) + ((uVar1 & 0x1c00) >> 10),uVar1 & 0x7f,
+  return place_object_in_world((*(ushort *)(actor + 0x16) >> 7 & 0x1f8) + ((uw_object_hdr_t *)actor)->xpos,
+               (*(ushort *)(actor + 0x16) >> 1 & 0x1f8) + ((uw_object_hdr_t *)actor)->ypos,((uw_object_hdr_t *)actor)->zpos,
                object,mode,flags);
 }
 
@@ -1441,8 +1441,8 @@ void complete_use_item_scatter_spawn(short *target, int clicked, int confirmed)
             *(char *)((char *)puVar8 + 7) = (char)(uVar9 >> 2);
           }
           uVar3 = target[1];
-          place_object_in_world((uint)(uVar3 >> 0xd) + DAT_002020a0 * 8,
-                       ((uVar3 & 0x1c00) >> 10) + DAT_002020a4 * 8,uVar3 & 0x7f,puVar8,6,0);
+          place_object_in_world((uint)((uw_object_hdr_t *)target)->xpos + DAT_002020a0 * 8,
+                       ((uw_object_hdr_t *)target)->ypos + DAT_002020a4 * 8,((uw_object_hdr_t *)target)->zpos,puVar8,6,0);
           iVar6 = iVar6 + -1;
         }
         discard_misplaced_object(iVar7 + 2,target,1);

@@ -3789,11 +3789,11 @@ int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc)
       ((DAT_0010195c != 0x20 || ((npc[5] & 0x80) != 0)))) &&
      ((DAT_0010195c != 0xd || (*(byte *)(DAT_00086df8 + 0x69) < 3)))) {
     uVar1 = npc[1];
-    iVar3 = (uint)(uVar1 >> 0xd) + scan_x * 8;
-    iVar5 = ((uVar1 & 0x1c00) >> 10) + scan_y * 8;
+    iVar3 = (uint)((uw_object_hdr_t *)npc)->xpos + scan_x * 8;
+    iVar5 = ((uw_object_hdr_t *)npc)->ypos + scan_y * 8;
     uVar2 = DAT_00101958[1];
-    iVar7 = (uint)(uVar2 >> 0xd) + DAT_002020a0 * 8;
-    iVar9 = ((uVar2 & 0x1c00) >> 10) + DAT_002020a4 * 8;
+    iVar7 = (uint)((uw_object_hdr_t *)DAT_00101958)->xpos + DAT_002020a0 * 8;
+    iVar9 = ((uw_object_hdr_t *)DAT_00101958)->ypos + DAT_002020a4 * 8;
     iVar11 = (iVar3 * 0x10000 >> 0x10) - (iVar7 * 0x10000 >> 0x10);
     if (iVar11 < 0) {
       iVar11 = iVar11 + 7;
@@ -3808,10 +3808,10 @@ int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc)
          (int)((uint)((byte)(&DAT_001007ee)[iVar10] >> 4) *
               (uint)((byte)(&DAT_001007ee)[iVar10] >> 4))) &&
        (iVar10 = check_fine_line_of_sight(iVar3,iVar5,
-                              (uint)(byte)(&DAT_00202c90)[((uw_object_hdr_t *)npc)->item_id * 0xd] + (uVar1 & 0x7f)
+                              (uint)(byte)(&DAT_00202c90)[((uw_object_hdr_t *)npc)->item_id * 0xd] + ((uw_object_hdr_t *)npc)->zpos
                               ,iVar7,(short)iVar9,
                               (ushort)(byte)(&DAT_00202c90)[((uw_object_hdr_t *)DAT_00101958)->item_id * 0xd] +
-                              (uVar2 & 0x7f) + 0xc), iVar10 != 0)) {
+                              ((uw_object_hdr_t *)DAT_00101958)->zpos + 0xc), iVar10 != 0)) {
       uVar8 = (*(ushort *)((char *)npc + 0xd) >> 0xe) - 1;
       if ((int)(uVar8 * 0x10000) >> 0x10 < 0) {
         uVar8 = 0;
@@ -4852,9 +4852,9 @@ LAB_0002c220:
     }
     uVar14 = puVar10[1];
     uw_ord2005_rem_13 = ((int)(uVar14 >> 7 & 7)) % (4);
-    uVar5 = uVar14 >> 0xd;
+    uVar5 = ((uw_object_hdr_t *)puVar10)->xpos;
     uVar19 = uw_ord2005_rem_13 & 0xff;
-    uVar14 = uVar14 >> 10 & 7;
+    uVar14 = ((uw_object_hdr_t *)puVar10)->ypos;
     if (!bVar1) {
       if (uVar15 < uVar20) {
         if (tile_b_y < tile_c_y) {

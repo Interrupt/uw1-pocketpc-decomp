@@ -675,16 +675,16 @@ int target_in_range(short range_squared, char *actor, char *target)
   else {
     uVar5 = *(ushort *)((char *)g_player_object + 2);
     uVar6 = *(ushort *)(actor + 2);
-    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(*(ushort *)((char *)g_player_object + 0x16) >> 10) * -8) -
-             (uint)(uVar5 >> 0xd)) + uVar8 * 8) * 0x10000;
+    iVar2 = ((((uint)((uw_object_hdr_t *)actor)->xpos + (uint)(*(ushort *)((char *)g_player_object + 0x16) >> 10) * -8) -
+             (uint)((uw_object_hdr_t *)g_player_object)->xpos) + uVar8 * 8) * 0x10000;
     uVar8 = iVar2 >> 0x1f;
-    iVar3 = (((((uVar6 & 0x1c00) >> 10) + ((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) * -8) -
-             ((uVar5 & 0x1c00) >> 10)) + iVar3 * 8) * 0x10000;
+    iVar3 = ((((((uw_object_hdr_t *)actor)->ypos) + ((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) * -8) -
+             (((uw_object_hdr_t *)g_player_object)->ypos)) + iVar3 * 8) * 0x10000;
     uVar4 = iVar3 >> 0x1f;
     iVar2 = (int)(((iVar2 >> 0x10 ^ uVar8) - uVar8) * 0x10000) >> 0x10;
     iVar3 = (int)(((iVar3 >> 0x10 ^ uVar4) - uVar4) * 0x10000) >> 0x10;
     if (((iVar2 * iVar2 + iVar3 * iVar3 <= (int)range_squared) &&
-        (iVar3 = (int)(((uVar5 & 0x7f) - (uVar6 & 0x7f)) * 0x10000) >> 0x10,
+        (iVar3 = (int)((((uw_object_hdr_t *)g_player_object)->zpos - ((uw_object_hdr_t *)actor)->zpos) * 0x10000) >> 0x10,
         iVar3 <= (DAT_0023bc94 + 1) * 0xc)) && ((-1 - DAT_0023bc94) * 0x18 <= iVar3)) {
       return 1;
     }
