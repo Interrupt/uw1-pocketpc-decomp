@@ -120,7 +120,7 @@ void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected 
 UNUSED_EFFECT(handle_game_view_click_hold)
 UNUSED_EFFECT(interact_use)
 void describe_picked_terrain(byte terrain_kind, short step_count) { (void)terrain_kind; (void)step_count; TEST_FAIL_MESSAGE("Unexpected describe_picked_terrain"); }
-UNUSED_EFFECT(handle_object_drop_target)
+void handle_object_drop_target(short widget) { (void)widget; TEST_FAIL_MESSAGE("Unexpected handle_object_drop_target"); }
 #undef UNUSED_EFFECT
 ushort *pick_object_under_cursor(int mode)
 { (void)mode; TEST_FAIL_MESSAGE("Magic Arrow must not require picking a target"); return NULL; }

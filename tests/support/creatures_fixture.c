@@ -83,7 +83,7 @@ void record_placement(ushort *object)
 }
 ushort *settle_dropped_object(ushort *object, short x, short y, int mode)
 { record_placement(object); return object; }
-undefined4 drop_object_near_target(void *target, ushort *object, int distance, int mode)
+int drop_object_near_target(char *target, char *object, short distance, uint mode)
 { record_placement(object); return 1; }
 int place_object_in_world(uint x, uint y, int z, char *object, short distance, int mode)
 { record_placement(object); return 1; }

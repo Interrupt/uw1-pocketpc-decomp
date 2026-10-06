@@ -113,5 +113,5 @@ int poll_keyboard_char_input(short *buttons) { *buttons = 2; return 2; }
 void get_mouse_position(short *x, short *y) { *x = *y = 0; }
 int hit_test_inventory_widget(short x, short y) { return 0; }
 int erase_cursor_icon(void) { return 0; }
-void handle_backpack_slot_click(int slot) { TEST_FAIL_MESSAGE("Unexpected slot drop"); }
-void handle_object_drop_target(int widget) { TEST_FAIL_MESSAGE("Unexpected object drop"); }
+void handle_backpack_slot_click(short slot) { TEST_FAIL_MESSAGE("Unexpected slot drop"); }
+void handle_object_drop_target(short widget) { TEST_FAIL_MESSAGE("Unexpected object drop"); }

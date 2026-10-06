@@ -15,7 +15,7 @@ void *resolve_object_link(ushort *link);
 int object_ptr_in_arena(char *object);
 void record_placement(ushort *object);
 ushort *settle_dropped_object(ushort *object, short x, short y, int mode);
-undefined4 drop_object_near_target(void *target, ushort *object, int distance, int mode);
+int drop_object_near_target(char *target, char *object, short distance, uint mode);
 int place_object_in_world(uint x, uint y, int z, char *object, short distance, int mode);
 void free_object_slot(char *object);
 int check_object_drop_height(ushort *object, ushort *source);

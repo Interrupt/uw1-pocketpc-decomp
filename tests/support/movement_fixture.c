@@ -130,7 +130,7 @@ int sync_object_tile_position(ushort *object, ushort *snapshot)
 }
 uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id)
 { TEST_FAIL_MESSAGE("Unexpected unlock trigger"); return 0; }
-ushort *use_object_on_target(void)
+ushort *use_object_on_target(ushort *actor, ushort *used_object, int flag)
 { TEST_FAIL_MESSAGE("Unexpected use trigger"); return 0; }
 void angle_to_screen_delta(uint heading, short *dx, short *dy)
 {

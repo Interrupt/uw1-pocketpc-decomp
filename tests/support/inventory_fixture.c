@@ -14,10 +14,10 @@ int check_object_combination(char *actor, ushort *target, short key_id);
 void handle_game_view_click_hold(void);
 void interact_use(void);
 void describe_picked_terrain(byte mode, short tile);
-void handle_object_drop_target(int slot);
+void handle_object_drop_target(short slot);
 void complete_cast_spell_on_target(void);
 void wait_for_click_release(int mode);
-void complete_use_reagent_on_player(void);
+void complete_use_reagent_on_player(ushort *target, int clicked);
 char *get_message_string(ushort id);
 int message_scroll_print_wrapped(char *text);
 void print_scroll_message_by_id(uint id);
@@ -131,13 +131,13 @@ void interact_use(void) { TEST_FAIL_MESSAGE("Unexpected direct use"); }
 
 void describe_picked_terrain(byte mode, short tile) { (void)mode; (void)tile; TEST_FAIL_MESSAGE("Unexpected terrain action"); }
 
-void handle_object_drop_target(int slot) { (void)slot; TEST_FAIL_MESSAGE("Unexpected drop"); }
+void handle_object_drop_target(short slot) { (void)slot; TEST_FAIL_MESSAGE("Unexpected drop"); }
 
 void complete_cast_spell_on_target(void) { TEST_FAIL_MESSAGE("Unexpected spell"); }
 
 void wait_for_click_release(int mode) { TEST_ASSERT_EQUAL_INT(1, mode); released_clicks++; }
 
-void complete_use_reagent_on_player(void) { TEST_FAIL_MESSAGE("Unexpected reagent"); }
+void complete_use_reagent_on_player(ushort *target, int clicked) { (void)target; (void)clicked; TEST_FAIL_MESSAGE("Unexpected reagent"); }
 
 char *get_message_string(ushort id)
 {

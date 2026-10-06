@@ -1,14 +1,14 @@
 {
   "_meta": {
     "description": "Every function definition in src/*.c. Those with ghidra_origin true still carry a \"was FUN_xxxxxxxx\" comment, i.e. were renamed from a Ghidra placeholder; the rest have original_name null. Regenerate with tools/gen_ghidra_funcs.py.",
-    "total_functions": 1465,
-    "with_original_name": 1233,
+    "total_functions": 1464,
+    "with_original_name": 1232,
     "without_original_name": 232,
     "still_unnamed_FUN": 12,
-    "audited_true": 1465,
+    "audited_true": 1464,
     "audited_false": 0,
-    "modernized_true": 1033,
-    "modernized_false": 432
+    "modernized_true": 1091,
+    "modernized_false": 373
   },
   "functions": [
     {
@@ -9075,375 +9075,364 @@
       "param_count": 1,
       "description": "attach picked up object to cursor.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "drop_held_object_near_player",
       "path": "src/item_use.c",
-      "line": 211,
+      "line": 208,
       "original_name": "FUN_0004a69c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "drop held object near player.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "drop_object_near_target",
       "path": "src/item_use.c",
-      "line": 365,
+      "line": 361,
       "original_name": "FUN_000523d0",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "Was `void`, discarding place_object_in_world's own tail-call return value (a real 0/1 \"did it place\" result -- see that function's own comment) -- real ARM calling convention leaves a leaf tail call's return value in r0 for THIS function's own caller.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "use_light_source",
       "path": "src/item_use.c",
-      "line": 386,
+      "line": 375,
       "original_name": "FUN_0007a990",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "use light source.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "use_food_item",
       "path": "src/item_use.c",
-      "line": 472,
+      "line": 457,
       "original_name": "FUN_0007acd4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "use food item.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "try_combine_or_stow_object",
       "path": "src/item_use.c",
-      "line": 703,
+      "line": 687,
       "original_name": "FUN_0007c93c",
       "ghidra_origin": true,
       "param_count": 3,
-      "description": "try combine or stow object.",
+      "description": "Was `int param_1; undefined4 param_2;` -- both real object pointers (matching check_object_combination's own param_1/param_2 types, forwarded to it unchanged just below), truncated to 32 bits on this 64-bit host.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "use_object_on_target",
       "path": "src/item_use.c",
-      "line": 762,
+      "line": 741,
       "original_name": "FUN_00079984",
       "ghidra_origin": true,
       "param_count": 3,
-      "description": "use object on target.",
+      "description": "Was `int param_1` -- every call site passes a real object pointer (g_player_object, the player object, at most sites), truncating it to 32 bits on this 64-bit host.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "finish_object_use",
       "path": "src/item_use.c",
-      "line": 892,
+      "line": 867,
       "original_name": "FUN_00079d08",
       "ghidra_origin": true,
       "param_count": 3,
-      "description": "finish object use.",
+      "description": "Was `undefined4 param_1` -- a real object-record pointer (forwarded to decrement_object_count/discard_misplaced_object, which both dereference it), truncated to 32 bits on this host -- same class as many other fixes this session.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "begin_holding_object_on_cursor",
       "path": "src/item_use.c",
-      "line": 940,
+      "line": 908,
       "original_name": "FUN_00079dec",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "begins holding an object on the cursor for a deferred \"use on target\" interaction, but only if nothing is already selected (g_selected_object == 0.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_reagent_on_player",
       "path": "src/item_use.c",
-      "line": 969,
+      "line": 934,
       "original_name": "FUN_00079e64",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "deferred-target-click completion callback for item type 0x101 specifically (armed by arm_use_item_on_player_ prompt below).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_item_on_player",
       "path": "src/item_use.c",
-      "line": 1006,
+      "line": 967,
       "original_name": "FUN_00079f1c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "deferred-target-click completion callback for item types 0x102-0x10e (armed by arm_use_item_on_player_prompt below).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "arm_use_item_on_player_prompt",
       "path": "src/item_use.c",
-      "line": 1028,
+      "line": 985,
       "original_name": "FUN_00079f90",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "arms the \"use item on target\" prompt for a held item whose type falls in 0x101-0x10e.",
       "audited": true,
-      "modernized": false
-    },
-    {
-      "name": "prompt_use_item_on_target",
-      "path": "src/item_use.c",
-      "line": 1055,
-      "original_name": "FUN_00079ff0",
-      "ghidra_origin": true,
-      "param_count": 2,
-      "description": "the general \"use item on target\" prompt setup.",
-      "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_item_on_special_target",
       "path": "src/item_use.c",
-      "line": 1097,
+      "line": 1046,
       "original_name": "FUN_0007a0cc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "deferred-target-click completion callback for a use-item interaction restricted to target types 0x140-0x147.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "arm_use_item_on_special_target_prompt",
       "path": "src/item_use.c",
-      "line": 1124,
+      "line": 1070,
       "original_name": "FUN_0007a180",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "arms the \"use item on target\" prompt with complete_use_item_on_special_target as the completion callback.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_item_on_quest_target",
       "path": "src/item_use.c",
-      "line": 1142,
+      "line": 1084,
       "original_name": "FUN_0007a198",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "deferred-target-click completion callback for a single specific quest interaction.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_item_on_container",
       "path": "src/item_use.c",
-      "line": 1205,
+      "line": 1143,
       "original_name": "FUN_0007a3a8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "deferred-target-click completion callback.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_item_skill_check",
       "path": "src/item_use.c",
-      "line": 1227,
+      "line": 1162,
       "original_name": "FUN_0007a418",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "deferred-target-click completion callback, gated on both param_2 and param_3 being nonzero.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "arm_use_item_on_target_prompt",
       "path": "src/item_use.c",
-      "line": 1249,
+      "line": 1179,
       "original_name": "FUN_0007a478",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "item-type dispatcher for use_object_on_target's class-3 branch.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "apply_random_roll_to_matched_object",
       "path": "src/item_use.c",
-      "line": 1295,
+      "line": 1221,
       "original_name": "FUN_0007a53c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "for_each_object_of_type callback (see that function's own callback contract).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_item_special_quest_event",
       "path": "src/item_use.c",
-      "line": 1313,
+      "line": 1236,
       "original_name": "FUN_0007a598",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "deferred-target-click completion callback for a single, major scripted quest event.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_item_on_flagged_tile",
       "path": "src/item_use.c",
-      "line": 1356,
+      "line": 1274,
       "original_name": "FUN_0007a704",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "deferred-target-click completion callback.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_use_held_item_by_type",
       "path": "src/item_use.c",
-      "line": 1377,
+      "line": 1291,
       "original_name": "FUN_0007a7fc",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "dispatches by the HELD item's own type (not the target's).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "refuel_light_source_item",
       "path": "src/item_use.c",
-      "line": 1440,
+      "line": 1349,
       "original_name": "FUN_0007abbc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "refuels a light source item (torch/lamp).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_item_scatter_spawn",
       "path": "src/item_use.c",
-      "line": 1476,
+      "line": 1381,
       "original_name": "FUN_0007b2f0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "deferred-target-click completion callback, gated on param_2 != 0 && param_3 == 0 and the used item not already being held by the player.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "complete_use_item_fill_flask",
       "path": "src/item_use.c",
-      "line": 1562,
+      "line": 1462,
       "original_name": "FUN_0007b5a4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "deferred-target-click completion callback, gated on both param_2 and param_3 nonzero.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_use_special_item_by_type",
       "path": "src/item_use.c",
-      "line": 1624,
+      "line": 1521,
       "original_name": "FUN_0007b72c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "the central \"use this special/unique item directly\" dispatcher for item types 0x121-0x12f and 299/300, covering.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "use_readable_item",
       "path": "src/item_use.c",
-      "line": 1782,
+      "line": 1672,
       "original_name": "FUN_0007baf0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "read\" a book/sign/scroll-like item.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "dispatch_world_object_interaction_by_family",
       "path": "src/item_use.c",
-      "line": 1844,
+      "line": 1730,
       "original_name": "FUN_0007bcdc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatches an interaction with a world object by its own type-id \"family\" bits (bits 4-5).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_object_use_babl_script",
       "path": "src/item_use.c",
-      "line": 1929,
+      "line": 1811,
       "original_name": "FUN_0007c1bc",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "a shared \"finalize object use\" step called at the end of virtually every use-object interaction path (use_object_on_target, use_readable_item, dispatch_world_object_ interaction_by_family).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "trigger_object_trap_or_use_action",
       "path": "src/item_use.c",
-      "line": 1969,
+      "line": 1846,
       "original_name": "FUN_0007c2ec",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "another shared \"finalize object use/trap check\" step, called alongside trigger_object_use_babl_script throughout the use-object interaction paths.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "objects_are_combinable",
       "path": "src/item_use.c",
-      "line": 2002,
+      "line": 1872,
       "original_name": "FUN_0002805c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "checks if two objects are combinable.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_combined_object",
       "path": "src/item_use.c",
-      "line": 2059,
+      "line": 1926,
       "original_name": "FUN_0002822c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "spawns the resulting object for combination index param_1 (the id looked up from &DAT_00100634, the same combination-table stride objects_are_combinable searches).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "is_object_consumed_in_combination",
       "path": "src/item_use.c",
-      "line": 2072,
+      "line": 1937,
       "original_name": "FUN_00028254",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "checks whether object param_1 is the \"consumed\" ingredient half of combination index param_2.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_offering_container_puzzle",
       "path": "src/item_use.c",
-      "line": 2090,
+      "line": 1952,
       "original_name": "FUN_000282ac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9454,7 +9443,7 @@
     {
       "name": "try_climb_wall",
       "path": "src/item_use.c",
-      "line": 2162,
+      "line": 2024,
       "original_name": "FUN_00039d78",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9465,183 +9454,183 @@
     {
       "name": "use_lockpick_on_object",
       "path": "src/item_use.c",
-      "line": 2205,
+      "line": 2067,
       "original_name": "FUN_0003ab90",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "the \"use lockpick on this lock\" item-use handler.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "place_object_in_equipment_slot",
       "path": "src/item_use.c",
-      "line": 2297,
+      "line": 2154,
       "original_name": "FUN_00043b78",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "place_object_in_backpack_slot's sibling for equipment slots (g_equipped_items, indexed by param_2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "redraw_backpack_slot_widget",
       "path": "src/item_use.c",
-      "line": 2366,
+      "line": 2220,
       "original_name": "FUN_0004503c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "redraws the inventory widget for backpack slot param_1, via the slot-to-widget-index lookup table.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "objects_can_stack",
       "path": "src/item_use.c",
-      "line": 2378,
+      "line": 2229,
       "original_name": "FUN_00047b38",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "checks whether two objects can be merged into one stack.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "find_equipped_item_by_category",
       "path": "src/item_use.c",
-      "line": 2421,
+      "line": 2269,
       "original_name": "FUN_000452dc",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "searches equipped items (g_equipped_items, slots 0-0xa quickly, 0-0x12 if param_4 isn't 1) for the first one matching category/subcategory/quality filters param_1/param_2/ param_3 (each <0 = any), returning its slot index via param_5.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "find_object_in_link_chain",
       "path": "src/item_use.c",
-      "line": 2494,
+      "line": 2339,
       "original_name": "FUN_00045538",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "recursively walks an object's contents link chain (descending into nested containers) looking for the first object matching the category/subcategory/quality filters in param_1/param_2/ param_3 (each <0 means \"any\").",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_clicked_inventory_item",
       "path": "src/item_use.c",
-      "line": 2553,
+      "line": 2390,
       "original_name": "FUN_00045678",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "resolves the inventory item under the current click position.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "get_equipped_item_at_widget_slot",
       "path": "src/item_use.c",
-      "line": 2582,
+      "line": 2417,
       "original_name": "FUN_00045708",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "resolves the equipped-item link for slot param_1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "deplete_object_count",
       "path": "src/item_use.c",
-      "line": 2595,
+      "line": 2428,
       "original_name": "FUN_00045720",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "deplete object count.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decrement_object_count",
       "path": "src/item_use.c",
-      "line": 2606,
+      "line": 2440,
       "original_name": "FUN_00045728",
       "ghidra_origin": true,
       "param_count": 1,
-      "description": "decrement object count.",
+      "description": "Was `undefined4 param_1` -- a real object-record pointer (forwarded straight to reduce_object_count, which dereferences it via encode_object_slot_index/calculate_object_weight), truncated to 32 bits on this host -- same class as many other fixes this session.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "reduce_object_count",
       "path": "src/item_use.c",
-      "line": 2620,
+      "line": 2450,
       "original_name": "FUN_00045730",
       "ghidra_origin": true,
       "param_count": 2,
-      "description": "reduce object count.",
+      "description": "Was `undefined4 param_1` -- same truncated-object-pointer bug as decrement_object_count's own fix just above it (its only caller here).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "extract_clicked_backpack_item",
       "path": "src/item_use.c",
-      "line": 2712,
+      "line": 2539,
       "original_name": "FUN_000459d8",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "extracts and refreshes the item in slot param_4 via extract_and_refresh_slot_item, then updates either the container view or the inventory widget depending on what the extracted slot held.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "extract_ammo_and_refresh",
       "path": "src/item_use.c",
-      "line": 2740,
+      "line": 2560,
       "original_name": "FUN_00045a7c",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "byte-for-byte identical to extract_clicked_backpack_item (see its own comment on the shared bug).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "extract_and_refresh_slot_item",
       "path": "src/item_use.c",
-      "line": 2755,
+      "line": 2570,
       "original_name": "FUN_00045b20",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "thin wrapper: extracts the object matching param_1/param_2/param_3 (category/subcategory/quality, <0 = any) from slot param_4 via extract_matching_object_from_slot, then refreshes carry-weight/UI state via refresh_player_equipment_effects().",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "extract_matching_object_from_slot",
       "path": "src/item_use.c",
-      "line": 2775,
+      "line": 2584,
       "original_name": "FUN_00045b48",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "finds the first object matching the category/ subcategory/quality filters (param_1/param_2/param_3, <0 = any) in inventory slot param_4 (searched directly, or via find_object_in_link_chain for nested containers).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_armor_overlay_frame",
       "path": "src/item_use.c",
-      "line": 2916,
+      "line": 2719,
       "original_name": "FUN_00046b88",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "Was copying \"armor_f\" into acStack_85c88, a 547936-byte buffer Ghidra misattributed here (the same stack-frame-size-miscalculation artifact already fixed in dispatch_object_action's acStack_85978 and check_object_fits_in_slot's acStack_84f64).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "redraw_armor_overlay_widgets",
       "path": "src/item_use.c",
-      "line": 2939,
+      "line": 2739,
       "original_name": "FUN_00046bfc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9652,106 +9641,106 @@
     {
       "name": "swap_cursor_and_slot_item",
       "path": "src/item_use.c",
-      "line": 3010,
+      "line": 2810,
       "original_name": "FUN_00046ff4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "swap cursor and slot item.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "prompt_split_object_stack",
       "path": "src/item_use.c",
-      "line": 3057,
+      "line": 2853,
       "original_name": "FUN_000470fc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "prompts \"Move how many?\" (s_Move_how_many__00085c68) for splitting a stacked object (param_1).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "place_object_in_backpack_slot",
       "path": "src/item_use.c",
-      "line": 3115,
+      "line": 2912,
       "original_name": "FUN_0004506c",
       "ghidra_origin": true,
       "param_count": 2,
-      "description": "place object in backpack slot.",
+      "description": "Was `undefined4 param_1` -- same 64-bit-pointer-truncated-through-a- 32-bit-typedef-parameter bug as place_held_item_in_empty_slot's identical fix just above (and sum_container_weight's, elsewhere in this file).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "find_or_assign_object_widget",
       "path": "src/item_use.c",
-      "line": 3192,
+      "line": 2983,
       "original_name": "FUN_000451b0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "given an object, find which currently-displayed backpack-grid widget shows it (or allocate it one if it isn't shown yet).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_object_fits_in_slot",
       "path": "src/item_use.c",
-      "line": 3232,
+      "line": 3021,
       "original_name": "FUN_000472c4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "check object fits in slot.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_backpack_slot_click",
       "path": "src/item_use.c",
-      "line": 3490,
+      "line": 3276,
       "original_name": "FUN_00047a7c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "handle backpack slot click.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "place_held_item_in_empty_slot",
       "path": "src/item_use.c",
-      "line": 3514,
+      "line": 3300,
       "original_name": "FUN_00047ae0",
       "ghidra_origin": true,
       "param_count": 2,
-      "description": "place held item in empty slot.",
+      "description": "Was `undefined4 param_1` -- a 64-bit pointer truncates to its low 32 bits the moment a caller passes it to a function whose own signature declares this narrower type (matches sum_container_weight's identical fix elsewhere in this file).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_backpack_slot_interact",
       "path": "src/item_use.c",
-      "line": 3558,
+      "line": 3338,
       "original_name": "FUN_00047cfc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "handle backpack slot interact.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_object_drop_target",
       "path": "src/item_use.c",
-      "line": 3690,
+      "line": 3467,
       "original_name": "FUN_00042870",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "handle object drop target.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_drop_aim_from_cursor",
       "path": "src/item_use.c",
-      "line": 3798,
+      "line": 3572,
       "original_name": "FUN_0004a110",
       "ghidra_origin": true,
       "param_count": 0,

@@ -257,7 +257,7 @@ int play_weapon_impact_sound(short result) { impact_sounds++; return result; }
 int door_triggers, door_scheduled, discarded_links;
 undefined2 DAT_002020a0, DAT_002020a4;
 char *DAT_002046c4;
-void trigger_object_trap_or_use_action(ushort *actor, ushort *target, int action, int x, int y)
+void trigger_object_trap_or_use_action(char *actor, char *target, int action, int x, short y)
 {
     TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
     TEST_ASSERT_EQUAL_PTR(wall_effect, target);
@@ -276,7 +276,7 @@ undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
 }
 
 /* Other destruction branches must not run for a door. */
-void try_combine_or_stow_object(void) { TEST_FAIL_MESSAGE("Unexpected container combination"); }
+void try_combine_or_stow_object(char *actor, ushort *object, int stow) { (void)actor; (void)object; (void)stow; TEST_FAIL_MESSAGE("Unexpected container combination"); }
 uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected random destruction"); return 0; }
 void try_empty_container(ushort *container, int owned_by_player) { (void)container; (void)owned_by_player; TEST_FAIL_MESSAGE("Unexpected container emptying"); }
 int roll_object_destroy_chance(short base_chance, char *object) { (void)base_chance; (void)object; TEST_FAIL_MESSAGE("Unexpected destroy chance"); return 0; }

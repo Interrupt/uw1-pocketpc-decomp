@@ -70,23 +70,23 @@ void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y) { (v
 UNUSED_VOID(display_book_or_scroll_page)
 void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected scheduler_tick"); }
 #ifndef UW_TEST_FULL_REST
-UNUSED_VOID(redraw_backpack_slot_widget)
+void redraw_backpack_slot_widget(short slot) { (void)slot; TEST_FAIL_MESSAGE("Unexpected redraw_backpack_slot_widget"); }
 #endif
 UNUSED_VOID(refresh_container_view)
-bool finish_object_use(void) { TEST_FAIL_MESSAGE("Unexpected finish_object_use"); return false; }
+bool finish_object_use(ushort *used_object, int consume, int force_discard) { (void)used_object; (void)consume; (void)force_discard; TEST_FAIL_MESSAGE("Unexpected finish_object_use"); return false; }
 int spawn_scheduled_door_texture_object(void) {  TEST_FAIL_MESSAGE("Unexpected spawn_scheduled_door_texture_object"); return 0; }
 UNUSED_VOID(play_musical_instrument)
-UNUSED_VOID(arm_use_item_on_special_target_prompt)
+void arm_use_item_on_special_target_prompt(ushort *item, int confirmed) { (void)item; (void)confirmed; TEST_FAIL_MESSAGE("Unexpected arm_use_item_on_special_target_prompt"); }
 UNUSED_RESULT(try_climb_wall)
-short *begin_holding_object_on_cursor(void) { TEST_FAIL_MESSAGE("Unexpected cursor pickup"); return NULL; }
+short *begin_holding_object_on_cursor(short *object, uint object_type) { (void)object; (void)object_type; TEST_FAIL_MESSAGE("Unexpected cursor pickup"); return NULL; }
 void wait_for_click_release(int mode) { (void)mode; TEST_FAIL_MESSAGE("Unexpected wait_for_click_release"); }
 void prompt_use_item_on_target(ushort *object, code *callback) { TEST_FAIL_MESSAGE("Unexpected target prompt"); }
-UNUSED_VOID(complete_use_item_scatter_spawn)
-UNUSED_VOID(complete_use_item_fill_flask)
+void complete_use_item_scatter_spawn(short *target, int clicked, int confirmed) { (void)target; (void)clicked; (void)confirmed; TEST_FAIL_MESSAGE("Unexpected complete_use_item_scatter_spawn"); }
+void complete_use_item_fill_flask(ushort *target, int clicked, int confirmed) { (void)target; (void)clicked; (void)confirmed; TEST_FAIL_MESSAGE("Unexpected complete_use_item_fill_flask"); }
 UNUSED_VOID(complete_use_item_repair_object)
 #undef UNUSED_VOID
 #undef UNUSED_RESULT
-ushort *find_equipped_item_by_category(void)
+ushort *find_equipped_item_by_category(int category, int subcategory, int quality, short full_scan, ushort *out_slot)
 { TEST_FAIL_MESSAGE("Unexpected equipment search"); return NULL; }
 
 ushort *special_use_object(unsigned slot)

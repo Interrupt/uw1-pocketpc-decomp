@@ -183,7 +183,7 @@ void object_list_insert_head(byte *head, char *object)
     object[2] = *head;
     *head = encode_object_slot_index(object);
 }
-undefined4 drop_object_near_target(ushort *owner, ushort *object, int radius, int flags)
+int drop_object_near_target(char *owner, char *object, short radius, uint flags)
 {
     TEST_ASSERT_EQUAL_INT(5, radius);
     TEST_ASSERT_EQUAL_INT(0, flags);

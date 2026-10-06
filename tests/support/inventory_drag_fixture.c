@@ -67,7 +67,7 @@ int hit_test_inventory_widget(short x, short y)
 }
 int erase_cursor_icon(void) { return 1; }
 void pop_cursor_icon(int mode) { TEST_ASSERT_EQUAL_INT(3, mode); }
-void handle_object_drop_target(int widget)
+void handle_object_drop_target(short widget)
 {
     TEST_ASSERT_EQUAL_INT(0x17, widget);
     TEST_ASSERT_EQUAL_INT(release_poll, polls);
@@ -76,7 +76,7 @@ void handle_object_drop_target(int widget)
     g_selected_object = NULL;
     g_cursor_holding_state = 0;
 }
-void handle_backpack_slot_click(int slot)
+void handle_backpack_slot_click(short slot)
 {
     TEST_ASSERT_EQUAL_INT(4, slot);
     TEST_ASSERT_EQUAL_INT(release_poll, polls);

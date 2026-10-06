@@ -69,7 +69,7 @@ uint read_realtime_clock_units(void)
 }
 void *get_equipped_item_at_slot(short slot)
 { return slot == 5 && sleep_fixture.torch[0] ? sleep_fixture.torch : NULL; }
-void redraw_backpack_slot_widget(int slot)
+void redraw_backpack_slot_widget(short slot)
 { TEST_ASSERT_EQUAL_INT(5, slot); sleep_fixture.light_slot_redraws++; }
 void set_ambient_bias_without_light(char strength) { sleep_fixture.light_updates++; }
 void active_mobile_list_remove(char slot) {}

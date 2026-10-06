@@ -31,7 +31,7 @@ int resolve_npc_melee_attack(byte *npc, short tile_x, byte tile_y, short offset_
 void *spawn_new_object(uint type, int mobile);
 void object_list_insert_head(byte *head, char *object);
 ushort *settle_dropped_object(ushort *object, short x, short y, int mode);
-undefined4 drop_object_near_target(void);
+int drop_object_near_target(char *actor, char *object, short mode, uint flags);
 
 undefined1 DAT_00250730_backing[128];
 
@@ -201,7 +201,7 @@ ushort *settle_dropped_object(ushort *object, short x, short y, int mode)
     return object;
 }
 
-undefined4 drop_object_near_target(void) { TEST_FAIL_MESSAGE("Unexpected random treasure"); return 0; }
+int drop_object_near_target(char *actor, char *object, short mode, uint flags) { (void)actor; (void)object; (void)mode; (void)flags; TEST_FAIL_MESSAGE("Unexpected random treasure"); return 0; }
 
 void scheduler_fixture_reset(void)
 {
