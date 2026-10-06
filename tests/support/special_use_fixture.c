@@ -53,7 +53,7 @@ void handle_rest_action(short mode)
 #endif
 
 #define UNUSED_VOID(name) void name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); }
-#define UNUSED_RESULT(name) undefined4 name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); return 0; }
+#define UNUSED_RESULT(name) int name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); return 0; }
 void trigger_player_jump_if_grounded(char *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected trigger_player_jump_if_grounded"); }
 int add_active_light_source(uint light_id, uint duration, char flag) { (void)light_id; (void)duration; (void)flag; TEST_FAIL_MESSAGE("Unexpected add_active_light_source"); return 0; }
 void push_cursor_icon(int icon) { (void)icon; TEST_FAIL_MESSAGE("Unexpected push_cursor_icon"); }
@@ -67,7 +67,7 @@ void adjust_level7_hazard_value(char *object, char delta) { (void)object; (void)
 #endif
 void dispatch_player_command(char *actor, int unused, char command) { (void)actor; (void)unused; (void)command; TEST_FAIL_MESSAGE("Unexpected dispatch_player_command"); }
 void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y) { (void)button; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected handle_level4_maze_puzzle_button"); }
-UNUSED_VOID(display_book_or_scroll_page)
+void display_book_or_scroll_page(uint page_id) { (void)page_id; TEST_FAIL_MESSAGE("Unexpected display_book_or_scroll_page"); }
 void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected scheduler_tick"); }
 #ifndef UW_TEST_FULL_REST
 void redraw_backpack_slot_widget(short slot) { (void)slot; TEST_FAIL_MESSAGE("Unexpected redraw_backpack_slot_widget"); }

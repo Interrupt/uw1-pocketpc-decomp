@@ -100,8 +100,8 @@ void prepare_initial_randomness(void)
 undefined1 DAT_00204880_backing[128], DAT_00202750_backing[128];
 short DAT_00201c70;
 static byte saved_status[0xd2], saved_key;
-undefined4 is_sound_effects_enabled(void) { return 0; }
-undefined4 is_music_playing(void) { return 0; }
+int is_sound_effects_enabled(void) { return 0; }
+int is_music_playing(void) { return 0; }
 void set_sound_effects_enabled(int enabled) {}
 void set_music_enabled(int enabled) {}
 void apply_movement_mode_profile(byte mode) {}

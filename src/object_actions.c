@@ -2317,7 +2317,7 @@ void spawn_effect_debris_burst(byte *template, uint tile_x, int tile_y)
 // was FUN_0002a35c -- initializes a newly-spawned creature's default stat/flag fields on
 // g_scratch_object_ptr: clears combat/status bitfields (poison, paralysis, sleep, etc.), rolls a
 // randomized field (byte 8) from the monster combat-stat table...
-undefined4 init_monster_spawn_defaults()
+int init_monster_spawn_defaults()
 
 {
   int uw_ord2005_rem_11 = 0;

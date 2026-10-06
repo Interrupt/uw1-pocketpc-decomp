@@ -2,12 +2,12 @@
 #include "illustration_render_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-undefined4 babl_render_op_wrap_message(void);
-undefined4 babl_render_op_say(void);
-undefined4 babl_render_op_play_sound(void);
+int babl_render_op_wrap_message(byte *op_args, intptr_t render_state);
+int babl_render_op_say(intptr_t op_args, intptr_t render_state);
+int babl_render_op_play_sound(void);
 void *ce_malloc(unsigned int count);
 void *ce_calloc(unsigned int count, unsigned int size);
-void *ce_memmove(void *p, const void *source, unsigned int count);
+void *ce_memmove(void *p, void *source, unsigned int count);
 void apply_palette_buffer(void *palette, int unused);
 void LocalFree(void *p);
 long GetTickCount(void);
@@ -16,11 +16,11 @@ int open_file_for_read(const char *path);
 int read_file_handle(int handle, void *p, unsigned int count);
 int seek_file_handle(int handle, int offset, int origin);
 uint read_realtime_clock_units(void);
-long TranslateMessage(void);
-long DispatchMessageW(void);
-long _isctype(void);
-long ce_tolower(int key);
-long ce_toupper(int key);
+long TranslateMessage(long message);
+long DispatchMessageW(long message);
+long _isctype(int c, int mask);
+long ce_tolower(long key);
+long ce_toupper(long key);
 void noop_key_handler(void);
 void update_mouse_state(void);
 void debug_framebuffer_dump(const char *tag);
@@ -35,7 +35,7 @@ void clear_ambient_sound_target_thunk(void);
 void draw_text_string(char *text, short x, short y);
 int measure_text_width(char *text);
 void assert_visible_picture(void);
-undefined4 get_audio_subsystem_flag(void);
+int get_audio_subsystem_flag(void);
 int play_numbered_voice_sample(short sample_number);
 bool is_voice_sample_finished(void);
 int play_music_track(byte track_number, int flags);
@@ -44,14 +44,14 @@ bool set_palette_bank(int bank);
 void decrement_cursor_hide_depth(void);
 void load_dungeon_texture_arenas(void);
 void change_game_mode(int mode);
-undefined4 cursor_show_idle_tick(void);
+int cursor_show_idle_tick(void);
 int uw_defer_present(void);
 int uw_take_completed_frame(void);
 void *GXBeginDraw(void);
 void assert_visible_picture(void);
 void render_dungeon_frame_timed(void);
 void enter_dungeon_view(void);
-undefined4 dungeon_view_anim_tick(void);
+int dungeon_view_anim_tick(void);
 void refresh_equipment_display_if_visible(void);
 void handle_game_victory_sequence(void);
 void movement_pacing_handler(void);
@@ -99,18 +99,18 @@ ushort gameplay_palette[256];
 
 char opened[4][260];
 
-codeval *const PTR_FUN_00085408[16] = {
+int (*const PTR_FUN_00085408[16])() = {
     babl_render_op_wrap_message, FUN_000362e8, FUN_00036300, FUN_00036308,
     FUN_00036394, FUN_000363f0, FUN_00036404, FUN_00036418,
     babl_render_op_show_code, FUN_000365bc, FUN_000365fc, FUN_0003663c,
     FUN_00036698, babl_render_op_say, FUN_00036344, babl_render_op_play_sound
 };
 
-undefined4 babl_render_op_wrap_message(void) { TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
+int babl_render_op_wrap_message(byte *op_args, intptr_t render_state) { (void)op_args; (void)render_state; TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
 
-undefined4 babl_render_op_say(void) { TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
+int babl_render_op_say(intptr_t op_args, intptr_t render_state) { (void)op_args; (void)render_state; TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
 
-undefined4 babl_render_op_play_sound(void) { return 0; }
+int babl_render_op_play_sound(void) { return 0; }
 
 void *ce_malloc(unsigned int count)
 {
@@ -123,7 +123,7 @@ void *ce_malloc(unsigned int count)
 
 void *ce_calloc(unsigned int count, unsigned int size) { return ce_malloc(count * size); }
 
-void *ce_memmove(void *p, const void *source, unsigned int count) { return memcpy(p, source, count); }
+void *ce_memmove(void *p, void *source, unsigned int count) { return memcpy(p, source, count); }
 
 void apply_palette_buffer(void *palette, int unused) { (void)palette; (void)unused; }
 
@@ -197,15 +197,15 @@ char *DAT_0008794c = &keyboard_case;
 
 int opening_hold_polls, idle_polls, dismissal_sent;
 
-long TranslateMessage(void) { return 0; }
+long TranslateMessage(long message) { (void)message; return 0; }
 
-long DispatchMessageW(void) { return 0; }
+long DispatchMessageW(long message) { (void)message; return 0; }
 
-long _isctype(void) { return 0; }
+long _isctype(int c, int mask) { (void)c; (void)mask; return 0; }
 
-long ce_tolower(int key) { return key; }
+long ce_tolower(long key) { return key; }
 
-long ce_toupper(int key) { return key; }
+long ce_toupper(long key) { return key; }
 
 int PeekMessageW(void *msg, void *hwnd, unsigned int low,
                 unsigned int high, unsigned int remove)
@@ -290,7 +290,7 @@ void draw_text_string(char *text, short x, short y) { (void)text; (void)x; (void
 
 int measure_text_width(char *text) { (void)text; TEST_FAIL_MESSAGE("Unexpected window text"); return 0; }
 
-undefined4 get_audio_subsystem_flag(void) { return 0; }
+int get_audio_subsystem_flag(void) { return 0; }
 
 int play_numbered_voice_sample(short sample_number) { (void)sample_number; return 0; }
 
@@ -308,7 +308,7 @@ void load_dungeon_texture_arenas(void) {}
 
 void change_game_mode(int mode) { (void)mode;}
 
-undefined4 cursor_show_idle_tick(void) { return 0; }
+int cursor_show_idle_tick(void) { return 0; }
 
 ushort framebuffer[320 * 200], hardware_framebuffer[240 * 320];
 
@@ -383,7 +383,7 @@ void render_dungeon_frame_timed(void)
 
 void enter_dungeon_view(void) { TEST_FAIL_MESSAGE("Unexpected enter_dungeon_view during picture dismissal"); }
 
-undefined4 dungeon_view_anim_tick(void) { TEST_FAIL_MESSAGE("Unexpected dungeon_view_anim_tick during picture dismissal"); return 0; }
+int dungeon_view_anim_tick(void) { TEST_FAIL_MESSAGE("Unexpected dungeon_view_anim_tick during picture dismissal"); return 0; }
 
 void refresh_equipment_display_if_visible(void) { TEST_FAIL_MESSAGE("Unexpected refresh_equipment_display_if_visible during picture dismissal"); }
 

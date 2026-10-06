@@ -91,7 +91,7 @@ void stop_movement_sound_handle(void) {}
 
 uint read_realtime_clock_units(void) { return 0; }
 
-divmod_result ordint_divmod(void)
+divmod_result ordint_divmod(int divisor, int dividend)
 {
     TEST_FAIL_MESSAGE("Stationary tick unexpectedly needed jump timing");
     divmod_result result = {0, 0};

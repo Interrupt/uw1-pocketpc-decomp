@@ -27,7 +27,7 @@ extern undefined *PTR_FUN_00087614_backing[64];
 
 int decode_critter_sprite_page(int page_base, int page_index, short column, short row, short frame);
 int resolve_critter_sprite_tier(short type_idx, int direction, short frame, uint shade);
-undefined4 init_monster_spawn_defaults();
+int init_monster_spawn_defaults();
 void dispatch_object_action(ushort *object, int mode);
 bool check_object_carry_weight(ushort *object);
 void dispatch_object_action_dup(ushort *object, int mode);

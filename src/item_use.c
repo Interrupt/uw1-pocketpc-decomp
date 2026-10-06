@@ -1949,7 +1949,7 @@ bool is_object_consumed_in_combination(ushort *object, short combination_index)
 // was FUN_000282ac -- a specific puzzle/quest handler triggered by "reading" a special item (its
 // own caller only reaches here for a message-id field in a reserved high range, not a normal
 // book/sign text)...
-undefined4 check_offering_container_puzzle()
+int check_offering_container_puzzle()
 
 {
   short *psVar1;
@@ -2021,7 +2021,7 @@ LAB_000283ec:
 // along their current heading, checks the tile there is a climbable wall/door of a height the
 // player's own stat allows (else message 0x65, "can't climb here")...
 
-undefined4 try_climb_wall()
+int try_climb_wall()
 
 {
   int uw_ord2005_rem_103 = 0;

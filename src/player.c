@@ -3321,7 +3321,7 @@ int detect_unsafe_rest_object_callback(int scan_x, int scan_y, char *object)
 // was FUN_00035340 -- scans a radius (0x7f) around the player for an alerted hostile creature
 // (detect_unsafe_rest_object_callback) and returns whether one was found. handle_rest_action's
 // non-negative path reads this to decide whether resting is safe here.
-undefined4 check_rest_area_unsafe()
+int check_rest_area_unsafe()
 
 {
   DAT_00101954 = 0;
@@ -3840,7 +3840,7 @@ void apply_drowning_hazard()
 // was FUN_0003c194 -- mode-0 dirty-bit-3 handler: advance the in-progress step/turn view animation
 // one tick (interpolate the player tile position via find_placement_via_tile_flood_fill) and redraw
 // the dungeon view around it. Does nothing unless an animation is queued (0 < DAT_00201c90).
-undefined4 dungeon_view_anim_tick()
+int dungeon_view_anim_tick()
 
 {
   int iVar1;

@@ -110,11 +110,11 @@ char *get_message_string(ushort id)
     return messages[id];
 }
 char *babl_expand_string_refs(char *text) { return babl_expand_owned ? strdup(text) : text; }
-void babl_free(intptr_t ptr) { babl_frees++; free((void *)ptr); }
-uint *babl_alloc(uint size) { return (uint *)calloc(1, size); }
-undefined4 debug_noop_checkpoint(void) { return 0; }
+void babl_free(void *ptr) { babl_frees++; free((void *)ptr); }
+uint *babl_alloc(int size) { return (uint *)calloc(1, size); }
+int debug_noop_checkpoint(void) { return 0; }
 void decrement_cursor_hide_depth(void) {}
-undefined4 cursor_show_idle_tick(void) { return 0; }
+int cursor_show_idle_tick(void) { return 0; }
 int restore_captured_grtile_backdrop(short *key) { return 0; }
 int invalidate_grtile_by_key(int key) { return 0; }
 void select_msg_scroll_mode_2(void) {}
@@ -141,7 +141,7 @@ void poll_input_bindings(undefined1 *input)
         printed_lines = 0;
     }
 }
-void redraw_barter_slot_icon(int side, int slot) {}
+void redraw_barter_slot_icon(short side, short slot) {}
 void spawn_creature_death_loot(ushort *object)
 {
     TEST_ASSERT_EQUAL_PTR(DAT_00100674, object);
@@ -199,10 +199,10 @@ undefined1 DAT_000bc008;
 undefined4 DAT_000bbf98_backing[8], DAT_000bbff0_backing[8];
 
 void babl_builtin_say(char *text) { strcpy(babl_speech, text); }
-void draw_hotspot_crosshair_marker(int side, int slot) {}
+void draw_hotspot_crosshair_marker(short side, short slot) {}
 void free_object_slot(char *object) { memset(object, 0, 8); }
-long ce_srand(uint seed) { return 0; }
-int randomize_value_pct(int value, int low, int high) { return value; }
+long ce_srand(long seed) { return 0; }
+int randomize_value_pct(short value, short low, short high) { return value; }
 void compute_dimension_volume(void) {}
 
 undefined1 DAT_001007d0_backing[3072];

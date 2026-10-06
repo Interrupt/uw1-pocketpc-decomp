@@ -22,7 +22,7 @@ void update_ingame_music_track(void) {}
 void pick_random_pending_music_track(void) { sleep_fixture.music_restores++; }
 void weapon_overlay_and_full_redraw(void) { sleep_fixture.overlay_redraws++; }
 void decrement_cursor_hide_depth(void) { sleep_fixture.cursor_hides++; }
-undefined4 cursor_show_idle_tick(void)
+int cursor_show_idle_tick(void)
 {
     sleep_fixture.cursor_shows++;
     if (sleep_fixture.cursor_shows & 1) sleep_fixture.sleeps++;
@@ -56,7 +56,7 @@ void *ce_memmove(void *destination, void *source, unsigned int count)
 }
 void tick_ambient_doors_and_scheduler(int mode)
 { TEST_ASSERT_EQUAL_INT(0, mode); sleep_fixture.ambient_ticks++; }
-undefined4 check_rest_interrupted_by_monster(void)
+int check_rest_interrupted_by_monster(void)
 { sleep_fixture.interruption_checks++; return sleep_fixture.interrupted; }
 void advance_mobile_objects(void) { sleep_fixture.mobile_ticks++; }
 void flush_pending_critter_resource_slots(void) { sleep_fixture.resources_flushed++; }

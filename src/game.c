@@ -1681,7 +1681,7 @@ void dispatch_window_message(int window, int message)
 // was FUN_00077a38 -- shutdown/cleanup routine: calls end_gx_draw_session, frees several
 // conditionally-allocated resources (LocalFree, likely LocalFree/free) and a 0x80-entry pointer
 // array (&DAT_00202308)...
-undefined4 shutdown_game_resources()
+int shutdown_game_resources()
 
 {
   int iVar1;
@@ -2279,7 +2279,7 @@ LAB_0003f584:
 // was FUN_00040cd4 -- called once from run_game_startup_sequence (see
 // src/game.c:2132) to load/select the game's default HUD font
 // (FONT5X6P.SYS).
-undefined4 select_default_hud_font()
+int select_default_hud_font()
 
 {
   /* Ghidra dropped select_active_font's return value here and always returned 0 (failure)
@@ -2313,7 +2313,7 @@ void play_view_restore_transition()
 // was FUN_00041aac -- called once during game startup (src/game.c:2163, inside
 // run_game_startup_sequence, right after the second splash screen); a report_fatal_error_and_exit
 // failure here is fatal.
-undefined4 load_startup_gr_resources()
+int load_startup_gr_resources()
 
 {
   char stack0xffdc3230_buf [256];

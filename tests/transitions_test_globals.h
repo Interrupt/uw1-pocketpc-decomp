@@ -26,7 +26,7 @@ extern char prompt_answer[4];
 extern ushort framebuffer[320 * 200], hardware_framebuffer[240 * 320];
 extern ushort gameplay_palette[256];
 extern char opened[4][260];
-extern codeval *const PTR_FUN_00085408[16];
+extern int (*const PTR_FUN_00085408[16])();
 extern short DAT_00086968, DAT_0008696e, DAT_00204850;
 extern undefined2 DAT_0008696a, DAT_0008696c;
 extern short g_mouse_x, g_mouse_y;

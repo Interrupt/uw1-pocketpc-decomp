@@ -990,7 +990,7 @@ uint calculate_object_weight(ushort *object)
 
 // was FUN_00052674 -- boot-time loader for the game's core object definition data: opens
 // "objects.dat" and dispatches to 8 per-class variant/effect table loaders...
-undefined4 load_object_catalog_data()
+int load_object_catalog_data()
 
 {
   char stack0xffdc323c_buf [256];
@@ -2011,7 +2011,7 @@ int find_object_placement(ushort *object, uint tile_x, uint tile_y, short height
 }
 
 
-undefined4 class3_variant_effect_stub()
+int class3_variant_effect_stub()
 
 {
   /* Confirmed via a direct Ghidra headless lookup by address (0x7913c): `undefined4
@@ -2019,7 +2019,7 @@ undefined4 class3_variant_effect_stub()
      "Ghidra gave up" placeholder. Kept as-is; not a bug. */
   return 0;
 }
-undefined4 class5_variant_effect_stub()
+int class5_variant_effect_stub()
 
 {
   /* Confirmed via a direct Ghidra headless lookup by address (0x6b3d4): `undefined4
@@ -2027,7 +2027,7 @@ undefined4 class5_variant_effect_stub()
      "Ghidra gave up" placeholder. Kept as-is; not a bug. */
   return 0;
 }
-undefined4 class4_variant_effect_stub()
+int class4_variant_effect_stub()
 
 {
   /* Confirmed via a direct Ghidra headless lookup by address (0x73b10): `undefined4

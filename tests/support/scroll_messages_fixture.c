@@ -78,7 +78,7 @@ void draw_text_string(char *text, short x, short y)
 }
 void check_mouse_over_msg_scroll_panel(int mode) {}
 void decrement_cursor_hide_depth(void) { TEST_FAIL_MESSAGE("Unexpected cursor hide"); }
-undefined4 cursor_show_idle_tick(void) { TEST_FAIL_MESSAGE("Unexpected cursor show"); return 0; }
+int cursor_show_idle_tick(void) { TEST_FAIL_MESSAGE("Unexpected cursor show"); return 0; }
 void msg_scroll_panel_reset(int mode) { TEST_FAIL_MESSAGE("Unexpected scroll reset"); }
 void msg_scroll_more_prompt(void) { TEST_FAIL_MESSAGE("Unexpected MORE prompt"); }
 void msg_scroll_scroll_up_line(int bottom) { TEST_FAIL_MESSAGE("Unexpected scrolling"); }
@@ -120,4 +120,4 @@ byte *format_object_display_name(byte *name, int article, int mode)
     return (undefined1 *)"a goblin";
 }
 long _isctype(int value, int flags) { TEST_FAIL_MESSAGE("Unexpected named creature"); return 0; }
-long _itoa(int value, char *buffer, int radix) { TEST_FAIL_MESSAGE("Unexpected quantity"); return (long)buffer; }
+long _itoa(long value, long buffer, long radix) { TEST_FAIL_MESSAGE("Unexpected quantity"); return (long)buffer; }

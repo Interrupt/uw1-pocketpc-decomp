@@ -31,15 +31,15 @@ char prompt_answer[4];
 ushort framebuffer[320 * 200], hardware_framebuffer[240 * 320];
 ushort gameplay_palette[256];
 char opened[4][260];
-codeval *const PTR_FUN_00085408[16] = {
+int (*const PTR_FUN_00085408[16])() = {
     babl_render_op_wrap_message, FUN_000362e8, FUN_00036300, FUN_00036308,
     FUN_00036394, FUN_000363f0, FUN_00036404, FUN_00036418,
     babl_render_op_show_code, FUN_000365bc, FUN_000365fc, FUN_0003663c,
     FUN_00036698, babl_render_op_say, FUN_00036344, babl_render_op_play_sound
 };
-undefined4 babl_render_op_wrap_message(void) { if (intro_fade_test) return 2; TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
-undefined4 babl_render_op_say(void) { if (intro_fade_test) return 3; TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
-undefined4 babl_render_op_play_sound(void) { return 0; }
+int babl_render_op_wrap_message(byte *op_args, intptr_t render_state) { (void)op_args; (void)render_state; if (intro_fade_test) return 2; TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
+int babl_render_op_say(intptr_t op_args, intptr_t render_state) { (void)op_args; (void)render_state; if (intro_fade_test) return 3; TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
+int babl_render_op_play_sound(void) { return 0; }
 void *ce_malloc(unsigned int count)
 {
     TEST_ASSERT_LESS_THAN_INT(64, alloc_count);
@@ -50,8 +50,8 @@ void *ce_malloc(unsigned int count)
 }
 void *ce_calloc(unsigned int count, unsigned int size) { return ce_malloc(count * size); }
 void *ce_memset(void *p, int value, unsigned int count) { return memset(p, value, count); }
-void *ce_memmove(void *p, const void *source, unsigned int count) { return memcpy(p, source, count); }
-char *ce_strcat(char *p, const char *source) { return strcat(p, source); }
+void *ce_memmove(void *p, void *source, unsigned int count) { return memcpy(p, source, count); }
+char *ce_strcat(char *p, char *source) { return strcat(p, source); }
 void LocalFree(void *p)
 {
     for (int i = 0; i < alloc_count; i++) if (allocations[i] == p) {
@@ -120,11 +120,11 @@ short *DAT_000876c4 = &mouse_driver;
 char keyboard_case;
 char *DAT_0008794c = &keyboard_case;
 int opening_hold_polls, idle_polls, dismissal_sent;
-long TranslateMessage(void) { return 0; }
-long DispatchMessageW(void) { return 0; }
+long TranslateMessage(long message) { (void)message; return 0; }
+long DispatchMessageW(long message) { (void)message; return 0; }
 long _isctype(int key, int mask) { return input_opens_prompt && key >= '0' && key <= '9'; }
-long ce_tolower(int key) { return key; }
-long ce_toupper(int key) { return key; }
+long ce_tolower(long key) { return key; }
+long ce_toupper(long key) { return key; }
 int PeekMessageW(void *msg, void *hwnd, unsigned int low,
                 unsigned int high, unsigned int remove)
 {
@@ -209,7 +209,7 @@ void thunk_FUN_0007ec1c(void) {}
 void draw_text_string(char *text, short x, short y) { (void)text; (void)x; (void)y; if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); }
 int measure_text_width(char *text) { if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); return strlen(text) * 6; }
 static void assert_visible_picture(void);
-undefined4 get_audio_subsystem_flag(void) { return 0; }
+int get_audio_subsystem_flag(void) { return 0; }
 int play_numbered_voice_sample(short sample_number) { (void)sample_number; return 0; }
 bool is_voice_sample_finished(void) { return 1; }
 int play_music_track(byte track_number, int flags) { (void)track_number; (void)flags; return 0; }
@@ -218,7 +218,7 @@ bool set_palette_bank(int bank) { (void)bank; return true; }
 void decrement_cursor_hide_depth(void) {}
 void load_dungeon_texture_arenas(void) {}
 void change_game_mode(int mode) { (void)mode;}
-undefined4 cursor_show_idle_tick(void) { return 0; }
+int cursor_show_idle_tick(void) { return 0; }
 
 int testing_game_tick, input_opens_window;
 int g_force_flush, g_force_redraw_no_xp;
@@ -284,7 +284,7 @@ void render_dungeon_frame_timed(void)
     }
     if (testing_game_tick) flush_dungeon_frame();
 }
-undefined4 dungeon_view_anim_tick(void) { TEST_FAIL_MESSAGE("Unexpected dungeon_view_anim_tick during picture dismissal"); return 0; }
+int dungeon_view_anim_tick(void) { TEST_FAIL_MESSAGE("Unexpected dungeon_view_anim_tick during picture dismissal"); return 0; }
 void refresh_equipment_display_if_visible(void) { TEST_FAIL_MESSAGE("Unexpected refresh_equipment_display_if_visible during picture dismissal"); }
 void handle_game_victory_sequence(void) { TEST_FAIL_MESSAGE("Unexpected handle_game_victory_sequence during picture dismissal"); }
 void movement_pacing_handler(void) { TEST_FAIL_MESSAGE("Unexpected movement_pacing_handler during picture dismissal"); }
@@ -395,7 +395,7 @@ int character_screen_inputs;
 char *LAB_000255b4(void) { return NULL; }
 undefined4 LAB_000255d0(void) { return 0; }
 uint load_gr_resource_entries(char *path, int first_entry, short count, void *(*allocator)(), int (*post_process)()) { (void)path; (void)first_entry; (void)count; (void)allocator; (void)post_process; return 1; }
-undefined4 reset_dialogue_speech_state(void) { return 0; }
+int reset_dialogue_speech_state(void) { return 0; }
 void chargen_ui_transition_hook(int is_press) { (void)is_press;}
 void init_new_character_record(int mode) { (void)mode;}
 void report_fatal_error_and_exit(ushort error_code) { (void)error_code; TEST_FAIL_MESSAGE("Screen resources must load"); }

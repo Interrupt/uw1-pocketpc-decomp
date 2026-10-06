@@ -30,7 +30,7 @@ int read_file_handle(int handle, void *buf, unsigned int size)
 int seek_file_handle(int handle, int offset, int method)
 { return uw_file_seek(handle, offset, method); }
 unsigned int ce_strlen(const char *s) { return (unsigned int)strlen(s); }
-undefined4 audio_always_true_stub(void) { return voice_enabled; }
+int audio_always_true_stub(void) { return voice_enabled; }
 
 void introduction_fixture_reset(void)
 {

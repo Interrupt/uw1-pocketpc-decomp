@@ -244,7 +244,7 @@ void load_door_frames()
    no-ops in the pristine binary (disassembly- verified at both real addresses, 0x4994c and 0x49954
    -- not a decompilation artifact). */
 // was FUN_0004994c
-undefined4 alloc_flip_grtile_slot()
+int alloc_flip_grtile_slot()
 
 {
   /* Not decompiled (see above). */
@@ -574,7 +574,7 @@ int restore_captured_grtile_backdrop(short *key)
 
 // was FUN_0007856c -- initializes the string-resource page cache (DAT_0024bfa0-family, see that
 // global's own comment): clears the first 2 cache-record slots...
-undefined4 init_string_resource_cache()
+int init_string_resource_cache()
 
 {
   int iVar1;
@@ -832,7 +832,7 @@ void reset_string_resource_page(int page)
 // was FUN_00078d18 -- opens STRINGS.PAK (built from the install dir + "\DATA\strings.pak"): reads
 // its 2-byte item count into DAT_0024cfb8, allocates and reads the offset-index table into
 // DAT_0024cfa8...
-undefined4 open_strings_pak_file()
+int open_strings_pak_file()
 
 {
   /* Ghidra couldn't correlate this copy loop's destination with a real stack slot (see
@@ -1553,7 +1553,7 @@ LAB_00013530:
 // was FUN_00041260 -- called from open_gr_resource_file (src/resources.c:110) only for
 // format-type-3 .GR files, right after the frame count (DAT_00202728) is read and before the main
 // offset table...
-undefined4 load_gr_format3_extra_table()
+int load_gr_format3_extra_table()
 
 {
   int iVar1;
@@ -1772,7 +1772,7 @@ int decode_gr_entry_to_buffer(char *path, int entry_index, void *dest)
 // was FUN_0002295c -- a Win32 LoadString-shaped resource-string loader: loads string resource
 // param_1 into a fixed static buffer and returns its address. Confirmed as "LoadString-shaped" by
 // an existing comment on win_file_exists, one of its callers.
-undefined *load_string_resource(char *text)
+byte *load_string_resource(char *text)
 {
   MultiByteToWideChar(0,2,text,0xffffffff,&DAT_000fb650,0xff);
   return &DAT_000fb650;
@@ -1783,7 +1783,7 @@ undefined *load_string_resource(char *text)
 // was FUN_00022998 -- structurally identical to load_string_resource but via a different ordinal
 // (WideCharToMultiByte, two extra trailing arguments) and a larger buffer (0x260 vs 0xff) -- likely
 // a longer- message variant of the same LoadString-shaped resource loader.
-undefined *load_string_resource_large(char *text)
+byte *load_string_resource_large(char *text)
 {
   WideCharToMultiByte(0,0x260,text,0xffffffff,&DAT_000fb550,0xff,0,0);
   return &DAT_000fb550;

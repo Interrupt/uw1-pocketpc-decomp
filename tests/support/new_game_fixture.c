@@ -5,8 +5,8 @@
 int character_generator_start(void);
 int ensure_save_directory_exists(char *path);
 bool write_player_save_record(char *path);
-undefined *load_string_resource(char *path);
-undefined4 seed_conversation_globals_for_new_game(void);
+byte *load_string_resource(char *path);
+int seed_conversation_globals_for_new_game(void);
 bool open_level_archive(undefined1 *handle, char *path);
 int seek_file_handle(int handle, int offset, int method);
 int read_file_handle(int handle, void *destination, uint size);
@@ -22,7 +22,7 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag);
 void debug_print_player_position(const char *label);
 void save_or_restore_level_special_state(short restore, short slot);
 void pop_cursor_icon(ushort state);
-undefined4 cursor_show_idle_tick(void);
+int cursor_show_idle_tick(void);
 void set_pending_update_flags(ushort sound);
 void reset_cursor_confine_rect(void);
 void report_fatal_error_and_exit(ushort error_code);
@@ -109,14 +109,14 @@ bool write_player_save_record(char *path)
     return true;
 }
 
-undefined *load_string_resource(char *path)
+byte *load_string_resource(char *path)
 {
     static char converted[520];
     MultiByteToWideChar(0, 2, path, -1, converted, 255);
     return (undefined *)converted;
 }
 
-undefined4 seed_conversation_globals_for_new_game(void)
+int seed_conversation_globals_for_new_game(void)
 {
     seeds++;
     return 0;
@@ -222,7 +222,7 @@ void save_or_restore_level_special_state(short restore, short slot)
 
 void pop_cursor_icon(ushort state) { TEST_ASSERT_EQUAL_INT(3, state); }
 
-undefined4 cursor_show_idle_tick(void) { return 0; }
+int cursor_show_idle_tick(void) { return 0; }
 
 void set_pending_update_flags(ushort sound) { TEST_ASSERT_EQUAL_INT(0x7ffe, sound); }
 

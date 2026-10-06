@@ -1896,7 +1896,7 @@ void redraw_active_hud_panel()
 
 
 // was FUN_0007f208
-undefined4 msg_scroll_draw_edges()
+int msg_scroll_draw_edges()
 
 {
   int iVar1;
@@ -3208,7 +3208,7 @@ void copy_hud_panel_flip_column(byte *src, byte *dst)
 
 // was FUN_00075be0 -- allocates and zero-initializes the HUD sprite- list compositor's 3 backing
 // buffers: DAT_0023c3e8...
-undefined4 init_sprite_list_buffers()
+int init_sprite_list_buffers()
 
 {
   DAT_0023c3e8 = ce_malloc(0x514);
@@ -3544,7 +3544,7 @@ void wait_for_click_to_continue(short use_timeout, uint timeout_units)
 // was FUN_0007f290 -- the conversation-mode counterpart to msg_scroll_draw_edges (src/hud.c calls
 // this one specifically when DAT_00250704 does NOT point at g_msg_scroll_panel_state, i.e. the
 // panel is in conversation/mode-2, not normal mode).
-undefined4 draw_conversation_window_decoration()
+int draw_conversation_window_decoration()
 
 {
   int iVar1;
@@ -3671,7 +3671,7 @@ void echo_yes_no_to_scroll(int is_yes)
 
 
 // was FUN_0007ffa8
-int scroll_text_entry_prompt(undefined *prompt, char *buffer, intptr_t buffer_end, int allow_all_chars, short max_length)
+int scroll_text_entry_prompt(char *prompt, char *buffer, intptr_t buffer_end, int allow_all_chars, short max_length)
 {
   char cVar1;
   short sVar2;
@@ -3696,7 +3696,7 @@ int scroll_text_entry_prompt(undefined *prompt, char *buffer, intptr_t buffer_en
   }
   select_msg_scroll_mode_normal();
   *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
-  if (prompt == (undefined *)0x0) {
+  if (prompt == (char *)0x0) {
     sVar3 = measure_text_width(&s_scroll_prompt_arrow_000879a8);
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
     prompt = &s_scroll_prompt_arrow_000879a8;
@@ -5210,7 +5210,7 @@ void open_pause_menu_via_hotkey(short key_code)
 
 
 // was FUN_00056f28
-undefined4 init_cursor_subsystem()
+int init_cursor_subsystem()
 
 {
   undefined4 uVar1;
@@ -5324,7 +5324,7 @@ void uw_composite_desktop_cursor(void *present_buffer)
 
 
 // was FUN_000570b4
-undefined4 cursor_show_idle_tick()
+int cursor_show_idle_tick()
 
 {
   int iVar1;
@@ -5394,7 +5394,7 @@ void set_tracked_hotspot_rect(short x, short y, short width, short height)
 
 // was FUN_000571c0 -- tests whether the mouse is within the tracked hotspot rect (via
 // is_position_within_rect's cursor-margin-aware hit test).
-undefined4 is_mouse_within_tracked_hotspot()
+int is_mouse_within_tracked_hotspot()
 
 {
   undefined4 uVar1;

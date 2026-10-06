@@ -644,7 +644,7 @@ LAB_0002ee74:
 
 // was FUN_00032d38. Per-object per-tick AI/movement processor for class-0x40 (NPC/monster) objects,
 // dispatched from tick_mobile_objects.
-undefined4 npc_ai_tick()
+int npc_ai_tick()
 
 {
   undefined1 uVar1;
@@ -3166,7 +3166,7 @@ LAB_00032690:
 // was FUN_00034044 -- refreshes the whole "delta to tracked target" state every function in this
 // NPC AI cluster reads: looks up the target object from the NPC's own goal-target slot (byte 0xb's
 // high nibble), and if it's valid and alive...
-undefined4 refresh_npc_target_delta()
+int refresh_npc_target_delta()
 
 {
   undefined4 uVar1;
@@ -3702,7 +3702,7 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
 // was FUN_00035894 -- scans nearby NPCs via spawn_rest_interrupt_monster_callback and reports
 // whether one teleported in to interrupt the player's rest. handle_rest_action checks this once
 // resting begins to decide whether to run the "peaceful rest" or "interrupted rest" branch.
-undefined4 check_rest_interrupted_by_monster()
+int check_rest_interrupted_by_monster()
 
 {
   DAT_00101950 = 0;

@@ -27,7 +27,7 @@ int read_file_handle(int h, void *buf, unsigned n);
 int seek_file_handle(int h, int offset, int whence);
 long CloseHandle(int h);
 void *ce_memset(void *p, int value, unsigned n);
-char *ce_strcat(char *p, const char *s);
+char *ce_strcat(char *p, char *s);
 void lighting_fixture_reset(void);
 void lighting_fixture_dispose(void);
 ushort lighting_draw_texel(int reciprocal_w, int x, int y);

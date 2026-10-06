@@ -96,7 +96,7 @@ int detect_npc_wander_proximity(char *out_near, char *out_far);
 int compute_vertical_aim_offset(short has_target, int target);
 void setup_npc_ai_tick_state(ushort *npc);
 void npc_ai_default_tick();
-undefined4 refresh_npc_target_delta();
+int refresh_npc_target_delta();
 int check_npc_morale_flee(uint morale_stat, uint current_hp, uint hp_margin, uint flee_threshold);
 int compute_pathfind_search_radius();
 void npc_set_goal(byte goal, uint goal_target);
@@ -110,7 +110,7 @@ void npc_movement_tick(ushort *npc_object, char *scratch);
 int settle_misplaced_mobile_object(char *object);
 void advance_mobile_objects();
 int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object);
-undefined4 check_rest_interrupted_by_monster();
+int check_rest_interrupted_by_monster();
 void load_last_attacker_record();
 void save_last_attacker_record();
 void clear_last_attacker_record();
@@ -130,7 +130,7 @@ void spawn_creature_misc_item_drop(char *creature);
 void spawn_creature_death_loot(ushort *creature);
 int activate_area_hazard_object(ushort *hazard, uint tile_x, int tile_y, int damage);
 int mobile_object_tick(); // was FUN_0002b47c
-undefined4 npc_ai_tick(); // was FUN_00032d38
+int npc_ai_tick(); // was FUN_00032d38
 int object_tick_is_due(short period, int phase); // was FUN_0003495c
 void tick_mobile_objects(char elapsed); // was FUN_000349bc
 void build_object_placement_snapshot(ushort *object, byte *snapshot); // was FUN_00054a00

@@ -17,7 +17,7 @@ extern uint clock_units;
 extern int dismiss_event, missing_resource, opening_click_pending, releases;
 extern ushort gameplay_palette[256];
 extern char opened[4][260];
-extern codeval *const PTR_FUN_00085408[16];
+extern int (*const PTR_FUN_00085408[16])();
 long CloseHandle(int handle);
 extern uint fake_tick_ms;
 extern short DAT_00086968, DAT_0008696e, DAT_00204850;

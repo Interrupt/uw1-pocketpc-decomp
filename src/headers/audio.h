@@ -6,12 +6,12 @@
  * this header is self-contained for any caller. */
 #include "uw.h"
 
-undefined4 reset_dialogue_speech_state();
+int reset_dialogue_speech_state();
 void clear_ambient_sound_target_thunk();
 short load_voice_sample_page(char *resource, int page_index, char *header, void *out_buffer);
 uint read_voice_sample_page_chunk(char *resource, ushort page_index, char *header, uint byte_count, void *out_buffer);
 void cache_ambient_sound_handle();
-undefined4 acquire_sound_resource_slot();
+int acquire_sound_resource_slot();
 void release_sound_resource_slot();
 int init_sound_channel_slot(char *slot);
 void release_sound_channel_slot(char *slot);
@@ -86,9 +86,9 @@ void construct_mod_row_array_elem(byte *element);
 void construct_mod_pattern_array_elem(byte *element);
 int play_music_track(byte track_number, int flags);
 void resume_music_playback();
-undefined1 get_current_music_track();
-undefined4 is_music_playing();
-undefined4 is_sound_effects_enabled();
+byte get_current_music_track();
+int is_music_playing();
+int is_sound_effects_enabled();
 void set_music_enabled(int enable);
 void set_sound_effects_enabled(int enabled);
 void stop_current_audio_handle();
@@ -108,8 +108,8 @@ void pick_random_pending_music_track();
 void advance_menu_music_track();
 void update_ingame_music_track();
 bool advance_menu_music_track_elapsed();
-undefined4 get_audio_subsystem_flag();
-undefined4 audio_always_true_stub();
+int get_audio_subsystem_flag();
+int audio_always_true_stub();
 int play_numbered_voice_sample(short sample_number);
 void voice_sample_cluster_stub_1();
 bool is_voice_sample_finished();

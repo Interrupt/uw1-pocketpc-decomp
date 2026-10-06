@@ -7,8 +7,8 @@
     "still_unnamed_FUN": 12,
     "audited_true": 1464,
     "audited_false": 0,
-    "modernized_true": 1258,
-    "modernized_false": 206
+    "modernized_true": 1464,
+    "modernized_false": 0
   },
   "functions": [
     {
@@ -2550,34 +2550,34 @@
       "param_count": 2,
       "description": "Was a no-op stub -- the real function was never decompiled, so babl_builtin_set_attitude's own for_each_object_of_type iteration (invoked once per matching-race object it walks) silently never wrote the new attitude value into any of them.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_length",
       "path": "src/babl.c",
-      "line": 348,
+      "line": 346,
       "original_name": "FUN_00019a60",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin length.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_sex",
       "path": "src/babl.c",
-      "line": 363,
+      "line": 360,
       "original_name": "FUN_0001840c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "Was a no-op stub here (\"Ghidra couldn't resolve this address.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_do_decline",
       "path": "src/babl.c",
-      "line": 375,
+      "line": 371,
       "original_name": "FUN_0001cd34",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2588,315 +2588,315 @@
     {
       "name": "babl_builtin_take_from_npc",
       "path": "src/babl.c",
-      "line": 383,
+      "line": 379,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Was a no-op stub here (\"Ghidra couldn't resolve this address.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_take_id_from_npc",
       "path": "src/babl.c",
-      "line": 468,
+      "line": 463,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Was a no-op stub -- same bug and same recovery as babl_builtin_take_from_npc just above (see its own comment for the full story and the helper/global mapping both share).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_do_inv_create",
       "path": "src/babl.c",
-      "line": 536,
+      "line": 530,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Was a no-op stub -- same bug and same recovery as the two babl_builtin_take_from_npc / babl_builtin_take_id_from_npc functions above.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_set_attitude",
       "path": "src/babl.c",
-      "line": 582,
+      "line": 575,
       "original_name": "FUN_00017be8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin set attitude.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_set_race_attitude",
       "path": "src/babl.c",
-      "line": 597,
+      "line": 588,
       "original_name": "FUN_00017c1c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin set race attitude.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_x_skills",
       "path": "src/babl.c",
-      "line": 674,
+      "line": 663,
       "original_name": "FUN_00017e10",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin x skills.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_x_traps",
       "path": "src/babl.c",
-      "line": 694,
+      "line": 682,
       "original_name": "FUN_00017e90",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin x traps.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_place_object",
       "path": "src/babl.c",
-      "line": 711,
+      "line": 698,
       "original_name": "FUN_00017eec",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin place object.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_take_from_npc_inv",
       "path": "src/babl.c",
-      "line": 778,
+      "line": 764,
       "original_name": "FUN_000181a4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin take from npc inv.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_add_to_npc_inv",
       "path": "src/babl.c",
-      "line": 803,
+      "line": 788,
       "original_name": "FUN_00018230",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin add to npc inv.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_set_quest",
       "path": "src/babl.c",
-      "line": 817,
+      "line": 800,
       "original_name": "FUN_000182b4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin set quest.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_get_quest",
       "path": "src/babl.c",
-      "line": 851,
+      "line": 832,
       "original_name": "FUN_00018370",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin get quest.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_gronk_door",
       "path": "src/babl.c",
-      "line": 881,
+      "line": 861,
       "original_name": "FUN_00018430",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin gronk door.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_x_obj_stuff",
       "path": "src/babl.c",
-      "line": 930,
+      "line": 909,
       "original_name": "FUN_0001853c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin x obj stuff.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_x_obj_pos",
       "path": "src/babl.c",
-      "line": 1031,
+      "line": 1008,
       "original_name": "FUN_000188fc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin x obj pos.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_alloc",
       "path": "src/babl.c",
-      "line": 1091,
+      "line": 1068,
       "original_name": "FUN_00018ac8",
       "ghidra_origin": true,
       "param_count": 1,
-      "description": "babl alloc.",
+      "description": "HACK: this whole function was a hand-rolled, fixed-pool free-list allocator whose \"next free block\" links are packed as 4 INDIVIDUAL BYTES within the block header.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_free",
       "path": "src/babl.c",
-      "line": 1103,
+      "line": 1077,
       "original_name": "FUN_00018ccc",
       "ghidra_origin": true,
       "param_count": 1,
-      "description": "babl free.",
+      "description": "HACK: matching replacement for babl_alloc -- see its own comment.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_resize",
       "path": "src/babl.c",
-      "line": 1117,
+      "line": 1088,
       "original_name": "FUN_00018f34",
       "ghidra_origin": true,
       "param_count": 2,
-      "description": "babl resize.",
+      "description": "HACK: matching replacement for babl_alloc/babl_free -- see their own comments.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_npc_conversation_variables",
       "path": "src/babl.c",
-      "line": 1131,
+      "line": 1098,
       "original_name": "FUN_0001927c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "load npc conversation variables.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_random",
       "path": "src/babl.c",
-      "line": 1197,
+      "line": 1160,
       "original_name": "FUN_000196c0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin random.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_compare",
       "path": "src/babl.c",
-      "line": 1210,
+      "line": 1172,
       "original_name": "FUN_000196e8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin compare.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_plural",
       "path": "src/babl.c",
-      "line": 1260,
+      "line": 1221,
       "original_name": "FUN_000197c0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin plural.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_contains",
       "path": "src/babl.c",
-      "line": 1279,
+      "line": 1239,
       "original_name": "FUN_000197fc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin contains.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_append",
       "path": "src/babl.c",
-      "line": 1326,
+      "line": 1285,
       "original_name": "FUN_000198e8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin append.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_copy",
       "path": "src/babl.c",
-      "line": 1365,
+      "line": 1322,
       "original_name": "FUN_0001998c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin copy.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_find",
       "path": "src/babl.c",
-      "line": 1392,
+      "line": 1347,
       "original_name": "FUN_000199d4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin find.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_val",
       "path": "src/babl.c",
-      "line": 1420,
+      "line": 1374,
       "original_name": "FUN_00019a80",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin val.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_expand_string_refs",
       "path": "src/babl.c",
-      "line": 1438,
+      "line": 1391,
       "original_name": "FUN_00019aa0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl expand string refs.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "build_babl_symbol_table",
       "path": "src/babl.c",
-      "line": 1573,
+      "line": 1524,
       "original_name": "FUN_00019e58",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2907,7 +2907,7 @@
     {
       "name": "run_babl_bytecode_interpreter",
       "path": "src/babl.c",
-      "line": 1681,
+      "line": 1632,
       "original_name": "FUN_0001a1c8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2918,73 +2918,73 @@
     {
       "name": "babl_register_builtin",
       "path": "src/babl.c",
-      "line": 1871,
+      "line": 1822,
       "original_name": "FUN_0001ae28",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "binds a name (param_1) to a native function pointer (param_2) callable from conversation (\"babl\") scripts.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_set_variable",
       "path": "src/babl.c",
-      "line": 1905,
+      "line": 1852,
       "original_name": "FUN_0001aebc",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "looks up a named babl script variable (param_1, e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_get_variable",
       "path": "src/babl.c",
-      "line": 1969,
+      "line": 1911,
       "original_name": "FUN_0001afe4",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "the mirror of babl_set_variable.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_do_offer",
       "path": "src/babl.c",
-      "line": 2011,
+      "line": 1948,
       "original_name": "FUN_0001c57c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin do offer.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_do_demand",
       "path": "src/babl.c",
-      "line": 2110,
+      "line": 2046,
       "original_name": "FUN_0001ca78",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin do demand.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_set_likes_dislikes",
       "path": "src/babl.c",
-      "line": 2198,
+      "line": 2133,
       "original_name": "FUN_0001da88",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin set likes dislikes.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "enter_conversation_mode_screen",
       "path": "src/babl.c",
-      "line": 2211,
+      "line": 2145,
       "original_name": "FUN_000286cc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -2995,194 +2995,194 @@
     {
       "name": "start_npc_conversation",
       "path": "src/babl.c",
-      "line": 2319,
+      "line": 2253,
       "original_name": "FUN_00028c00",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "start npc conversation.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_menu",
       "path": "src/babl.c",
-      "line": 2437,
+      "line": 2367,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "babl menu",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_pause",
       "path": "src/babl.c",
-      "line": 2565,
+      "line": 2493,
       "original_name": "FUN_000298d8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin pause.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_show_inv",
       "path": "src/babl.c",
-      "line": 2580,
+      "line": 2507,
       "original_name": "FUN_000299b0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin show inv.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_find_barter",
       "path": "src/babl.c",
-      "line": 2614,
+      "line": 2540,
       "original_name": "FUN_00029a58",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin find barter.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_find_barter_total",
       "path": "src/babl.c",
-      "line": 2660,
+      "line": 2585,
       "original_name": "FUN_00029b60",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin find barter total.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_give_to_npc",
       "path": "src/babl.c",
-      "line": 2710,
+      "line": 2634,
       "original_name": "FUN_00029cc8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin give to npc.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_give_ptr_npc",
       "path": "src/babl.c",
-      "line": 2778,
+      "line": 2701,
       "original_name": "FUN_00029e34",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin give ptr npc.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_do_inv_delete",
       "path": "src/babl.c",
-      "line": 2824,
+      "line": 2746,
       "original_name": "FUN_00029f38",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin do inv delete.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_find_inv",
       "path": "src/babl.c",
-      "line": 2834,
+      "line": 2754,
       "original_name": "FUN_00029f4c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin find inv.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_identify_inv",
       "path": "src/babl.c",
-      "line": 2869,
+      "line": 2787,
       "original_name": "FUN_00029fb0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin identify inv.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_count_inv",
       "path": "src/babl.c",
-      "line": 2956,
+      "line": 2873,
       "original_name": "FUN_0002a1fc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin count inv.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_check_inv_quality",
       "path": "src/babl.c",
-      "line": 2975,
+      "line": 2891,
       "original_name": "FUN_0002a258",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin check inv quality.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_set_inv_quality",
       "path": "src/babl.c",
-      "line": 2987,
+      "line": 2902,
       "original_name": "FUN_0002a27c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl builtin set inv quality.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sync_conv_vars_from_npc",
       "path": "src/babl.c",
-      "line": 3010,
+      "line": 2924,
       "original_name": "FUN_0002a8e0",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "was sync_conv_vars_from_npc -- NOT a debug/cheat tool (an earlier pass through this file mislabeled it that way from its shape alone;.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "sync_conv_vars_to_npc",
       "path": "src/babl.c",
-      "line": 3129,
+      "line": 3040,
       "original_name": "FUN_0002af88",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "was sync_conv_vars_to_npc -- the write-back mirror of sync_conv_vars_from_npc, called once from the same enter_conversation_mode_screen, right after the conversation bytecode interpreter (run_babl_bytecode_interpreter) runs.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "load_npc_conversation_record",
       "path": "src/babl.c",
-      "line": 3201,
+      "line": 3110,
       "original_name": "FUN_00019470",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "load npc conversation record.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "save_npc_conversation_variables",
       "path": "src/babl.c",
-      "line": 3269,
+      "line": 3175,
       "original_name": "FUN_0001a5bc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3193,7 +3193,7 @@
     {
       "name": "babl_builtin_remove_talker",
       "path": "src/babl.c",
-      "line": 3336,
+      "line": 3242,
       "original_name": "FUN_0001825c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3204,7 +3204,7 @@
     {
       "name": "seed_conversation_globals_for_new_game",
       "path": "src/babl.c",
-      "line": 3352,
+      "line": 3258,
       "original_name": "FUN_00019120",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3215,73 +3215,73 @@
     {
       "name": "init_conv_var_terminator_record",
       "path": "src/babl.c",
-      "line": 3426,
+      "line": 3332,
       "original_name": "FUN_00019660",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "writes an 8-byte \"terminator\" record (id/marker bytes 0xffffffff, value bytes 0) at the head of the conversation- globals destination buffer, ahead of load_npc_conversation_record's real archive read.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "parse_babl_string_ref_expr",
       "path": "src/babl.c",
-      "line": 3447,
+      "line": 3350,
       "original_name": "FUN_00019d00",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "recursive parser for one \"@X...\" embedded reference inside a babl display string (expand_string_refs's own sub-parser for compound G/S/P/C-chained expressions).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_var_word_addr",
       "path": "src/babl.c",
-      "line": 3513,
+      "line": 3414,
       "original_name": "FUN_0001ada8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "address-of counterpart to babl_read_var_word.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_read_var_word",
       "path": "src/babl.c",
-      "line": 3524,
+      "line": 3423,
       "original_name": "FUN_0001adc4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "reads word param_1 (a signed index, negative for the common \"stack operand a few slots back\" caller pattern) from the babl VM's conversation-variable segment (DAT_000bbf14).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_write_var_word",
       "path": "src/babl.c",
-      "line": 3536,
+      "line": 3433,
       "original_name": "FUN_0001ade4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "write-side counterpart to babl_read_var_word.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_read_frame_word",
       "path": "src/babl.c",
-      "line": 3550,
+      "line": 3443,
       "original_name": "FUN_0001ae04",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "reads word param_1, relative to the current call frame base (DAT_000bbf2c), from the babl VM's stack segment (DAT_000bbf0c, which sits immediately after DAT_000bbf14's variable segment in the same allocation -- see the interpreter loop's own setup).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_babl_variable_defaults",
       "path": "src/babl.c",
-      "line": 3563,
+      "line": 3454,
       "original_name": "FUN_0001b0a4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3292,7 +3292,7 @@
     {
       "name": "babl_builtin_setup_to_barter",
       "path": "src/babl.c",
-      "line": 3616,
+      "line": 3507,
       "original_name": "FUN_0001b288",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3303,7 +3303,7 @@
     {
       "name": "init_barter_ui",
       "path": "src/babl.c",
-      "line": 3691,
+      "line": 3582,
       "original_name": "FUN_0001b474",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3314,7 +3314,7 @@
     {
       "name": "end_barter_ui",
       "path": "src/babl.c",
-      "line": 3772,
+      "line": 3663,
       "original_name": "FUN_0001b7c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3325,7 +3325,7 @@
     {
       "name": "handle_barter_player_panel_click",
       "path": "src/babl.c",
-      "line": 3809,
+      "line": 3700,
       "original_name": "FUN_0001b89c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3336,29 +3336,29 @@
     {
       "name": "hit_test_barter_player_slot",
       "path": "src/babl.c",
-      "line": 3827,
+      "line": 3718,
       "original_name": "FUN_0001b900",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "hit-tests a point against the 4 player-side barter icon slots (DAT_000845b8/DAT_000845ba coordinate table, each a 0x10x0x10 box).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "hit_test_barter_npc_slot",
       "path": "src/babl.c",
-      "line": 3854,
+      "line": 3742,
       "original_name": "FUN_0001b9a4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "NPC-side counterpart to hit_test_barter_player_slot, against the DAT_000845d8/DAT_000845da coordinate table.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "handle_barter_player_slot_drop",
       "path": "src/babl.c",
-      "line": 3882,
+      "line": 3767,
       "original_name": "FUN_0001ba48",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3369,7 +3369,7 @@
     {
       "name": "handle_barter_npc_panel_click",
       "path": "src/babl.c",
-      "line": 3902,
+      "line": 3787,
       "original_name": "FUN_0001baa0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3380,106 +3380,106 @@
     {
       "name": "handle_barter_slot_click",
       "path": "src/babl.c",
-      "line": 3920,
+      "line": 3805,
       "original_name": "FUN_0001bb04",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "shared core logic for a barter slot click.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "resolve_barter_slot_at_point",
       "path": "src/babl.c",
-      "line": 4056,
+      "line": 3935,
       "original_name": "FUN_0001bef4",
       "ghidra_origin": true,
       "param_count": 6,
       "description": "hit-tests a point against both barter panels (player first, then NPC) and, on a hit, fills in the out-parameters with which side (1=player/0=npc, *param_3), slot index (*param_4), and that side's paired state-array pointers (*param_5/*param_6).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "redraw_barter_slot_icon",
       "path": "src/babl.c",
-      "line": 4094,
+      "line": 3966,
       "original_name": "FUN_0001bf9c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "redraws one barter slot's icon.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "pick_up_barter_slot_item",
       "path": "src/babl.c",
-      "line": 4177,
+      "line": 4045,
       "original_name": "FUN_0001c1c8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "removes the item from barter slot param_1 (offset param_2 into the side's state array) into g_selected_object (the cursor's held item), clearing the slot.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "place_item_in_barter_slot",
       "path": "src/babl.c",
-      "line": 4215,
+      "line": 4078,
       "original_name": "FUN_0001c268",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "drops g_selected_object (the cursor's held item) into a barter slot.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "merge_or_swap_barter_slot_item",
       "path": "src/babl.c",
-      "line": 4245,
+      "line": 4103,
       "original_name": "FUN_0001c2c4",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "called when dropping the cursor's held item onto an already-occupied barter slot.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "draw_hotspot_crosshair_marker",
       "path": "src/babl.c",
-      "line": 4298,
+      "line": 4151,
       "original_name": "FUN_0001c420",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "draws a 5-pixel plot_pixel crosshair (center + one pixel each direction) at a coordinate pair looked up by index from one of two tables selected by param_1 (worn-item slots vs backpack slots), colored.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "barter_offer_is_empty",
       "path": "src/babl.c",
-      "line": 4341,
+      "line": 4188,
       "original_name": "FUN_0001c538",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "checks whether ANY of the 4 barter slots has a valid paired (count > 0, value > 0) entry across param_1 (a short count array) and param_2 (an int value array).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "finalize_npc_barter_items",
       "path": "src/babl.c",
-      "line": 4363,
+      "line": 4207,
       "original_name": "FUN_0001c79c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "for each occupied NPC-side barter slot where param_1==0 or the slot isn't marked \"included in trade\" (DAT_000bbff0), links its item back into the NPC's own inventory list and clears the slot's icon/state.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "finalize_player_barter_items",
       "path": "src/babl.c",
-      "line": 4393,
+      "line": 4234,
       "original_name": "FUN_0001c85c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3490,7 +3490,7 @@
     {
       "name": "babl_builtin_do_judgement",
       "path": "src/babl.c",
-      "line": 4457,
+      "line": 4298,
       "original_name": "FUN_0001cd3c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3501,95 +3501,95 @@
     {
       "name": "sum_barter_offer_value",
       "path": "src/babl.c",
-      "line": 4557,
+      "line": 4398,
       "original_name": "FUN_0001cf20",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "sums the total value of one side's barter offer.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_barter_item_value",
       "path": "src/babl.c",
-      "line": 4595,
+      "line": 4430,
       "original_name": "FUN_0001cfa8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "computes one item's barter value.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "randomize_value_pct",
       "path": "src/babl.c",
-      "line": 4656,
+      "line": 4487,
       "original_name": "FUN_0001d170",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "randomizes param_1 by a random percentage in [param_2, param_3), used throughout the barter UI for haggle-value jitter.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "collect_included_player_barter_items",
       "path": "src/babl.c",
-      "line": 4675,
+      "line": 4502,
       "original_name": "FUN_0001d1c0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "collects the player's barter slots marked \"included in trade\" (DAT_000bbf98) into two parallel out-arrays (param_2 = slot indices, param_1 = item ids) and returns how many were found.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "add_item_to_npc_inventory",
       "path": "src/babl.c",
-      "line": 4704,
+      "line": 4528,
       "original_name": "FUN_0001d258",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "gives an item to the current conversation partner's (DAT_00100674) inventory.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "give_barter_item_by_item_id",
       "path": "src/babl.c",
-      "line": 4739,
+      "line": 4560,
       "original_name": "FUN_0001d3ac",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "resolves param_1 (an item-value, per this function's own comparison below and its caller babl_builtin_give_ptr_npc) to an object and gives it to the NPC via add_item_to_npc_inventory.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "remove_item_from_npc_inventory_by_id",
       "path": "src/babl.c",
-      "line": 4769,
+      "line": 4587,
       "original_name": "FUN_0001da00",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "searches the current conversation partner's (DAT_00100674) inventory list for an item matching item-id param_1.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_npc_item_preference",
       "path": "src/babl.c",
-      "line": 4797,
+      "line": 4613,
       "original_name": "FUN_0001dab8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "checks an item's slot-value against the NPC's \"wanted\" (DAT_000bc020) and \"refused\" (DAT_000bc000) item-id/item- class preference lists.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "debug_noop_checkpoint",
       "path": "src/babl.c",
-      "line": 4854,
+      "line": 4668,
       "original_name": "FUN_0007ec50",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3600,18 +3600,18 @@
     {
       "name": "babl_vm_load_script",
       "path": "src/babl.c",
-      "line": 4867,
+      "line": 4681,
       "original_name": "FUN_0001a1a4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the babl VM's own \"load bytecode into the run buffer\" step.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_op_add",
       "path": "src/babl.c",
-      "line": 4879,
+      "line": 4690,
       "original_name": "FUN_0001a5e0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3622,7 +3622,7 @@
     {
       "name": "babl_op_negate",
       "path": "src/babl.c",
-      "line": 4896,
+      "line": 4707,
       "original_name": "FUN_0001a628",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3633,7 +3633,7 @@
     {
       "name": "babl_op_mul",
       "path": "src/babl.c",
-      "line": 4910,
+      "line": 4721,
       "original_name": "FUN_0001a654",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3644,7 +3644,7 @@
     {
       "name": "babl_op_sub",
       "path": "src/babl.c",
-      "line": 4927,
+      "line": 4738,
       "original_name": "FUN_0001a69c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3655,7 +3655,7 @@
     {
       "name": "babl_op_div",
       "path": "src/babl.c",
-      "line": 4945,
+      "line": 4756,
       "original_name": "FUN_0001a6e4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3666,7 +3666,7 @@
     {
       "name": "babl_op_mod",
       "path": "src/babl.c",
-      "line": 4975,
+      "line": 4786,
       "original_name": "FUN_0001a74c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3677,7 +3677,7 @@
     {
       "name": "babl_op_or",
       "path": "src/babl.c",
-      "line": 5007,
+      "line": 4818,
       "original_name": "FUN_0001a7b4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3688,7 +3688,7 @@
     {
       "name": "babl_op_and",
       "path": "src/babl.c",
-      "line": 5028,
+      "line": 4839,
       "original_name": "FUN_0001a808",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3699,7 +3699,7 @@
     {
       "name": "babl_op_gt",
       "path": "src/babl.c",
-      "line": 5049,
+      "line": 4860,
       "original_name": "FUN_0001a85c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3710,7 +3710,7 @@
     {
       "name": "babl_op_ge",
       "path": "src/babl.c",
-      "line": 5066,
+      "line": 4877,
       "original_name": "FUN_0001a8a4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3721,7 +3721,7 @@
     {
       "name": "babl_op_lt",
       "path": "src/babl.c",
-      "line": 5083,
+      "line": 4894,
       "original_name": "FUN_0001a8ec",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3732,7 +3732,7 @@
     {
       "name": "babl_op_le",
       "path": "src/babl.c",
-      "line": 5100,
+      "line": 4911,
       "original_name": "FUN_0001a934",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3743,7 +3743,7 @@
     {
       "name": "babl_op_eq",
       "path": "src/babl.c",
-      "line": 5117,
+      "line": 4928,
       "original_name": "FUN_0001a97c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3754,7 +3754,7 @@
     {
       "name": "babl_op_ne",
       "path": "src/babl.c",
-      "line": 5134,
+      "line": 4945,
       "original_name": "FUN_0001a9c4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3765,7 +3765,7 @@
     {
       "name": "babl_op_call",
       "path": "src/babl.c",
-      "line": 5152,
+      "line": 4963,
       "original_name": "FUN_0001aa0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3776,7 +3776,7 @@
     {
       "name": "babl_op_return",
       "path": "src/babl.c",
-      "line": 5166,
+      "line": 4977,
       "original_name": "FUN_0001aa54",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3787,7 +3787,7 @@
     {
       "name": "babl_op_push_var_raw",
       "path": "src/babl.c",
-      "line": 5183,
+      "line": 4994,
       "original_name": "FUN_0001aa88",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3798,7 +3798,7 @@
     {
       "name": "babl_op_combine_index",
       "path": "src/babl.c",
-      "line": 5201,
+      "line": 5012,
       "original_name": "FUN_0001aab4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3809,7 +3809,7 @@
     {
       "name": "babl_op_set_var",
       "path": "src/babl.c",
-      "line": 5219,
+      "line": 5030,
       "original_name": "FUN_0001aaf8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3820,7 +3820,7 @@
     {
       "name": "babl_op_call_builtin",
       "path": "src/babl.c",
-      "line": 5235,
+      "line": 5046,
       "original_name": "FUN_0001ab30",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3831,7 +3831,7 @@
     {
       "name": "babl_op_string_eq",
       "path": "src/babl.c",
-      "line": 5254,
+      "line": 5065,
       "original_name": "FUN_0001aba0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3842,7 +3842,7 @@
     {
       "name": "babl_op_say",
       "path": "src/babl.c",
-      "line": 5290,
+      "line": 5101,
       "original_name": "FUN_0001ac48",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3853,7 +3853,7 @@
     {
       "name": "babl_op_respond",
       "path": "src/babl.c",
-      "line": 5335,
+      "line": 5146,
       "original_name": "FUN_0001acf8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3864,7 +3864,7 @@
     {
       "name": "exit_talk_mode",
       "path": "src/babl.c",
-      "line": 5377,
+      "line": 5188,
       "original_name": "FUN_00028bac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3875,7 +3875,7 @@
     {
       "name": "run_babl_menu_wait_loop",
       "path": "src/babl.c",
-      "line": 5398,
+      "line": 5209,
       "original_name": "FUN_00028ffc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3886,73 +3886,73 @@
     {
       "name": "babl_fmenu",
       "path": "src/babl.c",
-      "line": 5451,
+      "line": 5262,
       "original_name": "FUN_00029358",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl_fmenu: the \"filtered menu\" babl script builtin, structurally identical to babl_menu (registered under s_babl_fmenu_00085214) but reading two parallel variable-slot indices via babl_read_var_word.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "select_babl_menu_response",
       "path": "src/babl.c",
-      "line": 5558,
+      "line": 5367,
       "original_name": "FUN_000295b4",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "selects a babl_menu/babl_fmenu response.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_say",
       "path": "src/babl.c",
-      "line": 5608,
+      "line": 5414,
       "original_name": "FUN_00029708",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl_builtin_say: the \"say\" babl script builtin (registered via babl_register_builtin(DAT_000845a8=\"say\", ...)), prints the NPC's spoken line to the conversation scroll in its dark-brown speech color.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_respond",
       "path": "src/babl.c",
-      "line": 5650,
+      "line": 5453,
       "original_name": "FUN_0002977c",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl_builtin_respond (babl builtin respond).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "echo_selected_conversation_choice",
       "path": "src/babl.c",
-      "line": 5678,
+      "line": 5478,
       "original_name": "FUN_000297dc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "echoes the player's selected conversation-menu choice text to the scroll, highlighted in white (rather than the NPC's dark-brown speech color babl_builtin_say uses).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_print",
       "path": "src/babl.c",
-      "line": 5712,
+      "line": 5509,
       "original_name": "FUN_00029850",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "babl_builtin_print: the \"print\" babl script builtin (registered via babl_register_builtin(s_print_000851e4, ...)), resolves a message-id operand read from the bytecode (babl_read_var_word) into text and prints it to the conversation scroll.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_ask",
       "path": "src/babl.c",
-      "line": 5753,
+      "line": 5547,
       "original_name": "FUN_0002990c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3963,183 +3963,183 @@
     {
       "name": "bubble_sort_indices_by_key_table",
       "path": "src/babl.c",
-      "line": 5793,
+      "line": 5587,
       "original_name": "FUN_00035e00",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "in-place bubble sort of param_2 byte-index entries in the buffer param_3 (initialized here to 0..param_2-1 before sorting), ordered by an unsigned 16-bit key looked up as *(ushort*)(param_1 + entry*6) for each entry.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_000362e8",
       "path": "src/babl.c",
-      "line": 5844,
+      "line": 5633,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Missing render opcodes recovered directly from the ARM functions at their named addresses.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_00036300",
       "path": "src/babl.c",
-      "line": 5853,
+      "line": 5639,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 00036300",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_00036308",
       "path": "src/babl.c",
-      "line": 5861,
+      "line": 5644,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 00036308",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_00036344",
       "path": "src/babl.c",
-      "line": 5874,
+      "line": 5654,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 00036344",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_00036394",
       "path": "src/babl.c",
-      "line": 5889,
+      "line": 5666,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 00036394",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_000363f0",
       "path": "src/babl.c",
-      "line": 5906,
+      "line": 5680,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 000363f0",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_00036404",
       "path": "src/babl.c",
-      "line": 5915,
+      "line": 5686,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 00036404",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_00036418",
       "path": "src/babl.c",
-      "line": 5924,
+      "line": 5692,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 00036418",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_000365bc",
       "path": "src/babl.c",
-      "line": 5936,
+      "line": 5701,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 000365bc",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_000365fc",
       "path": "src/babl.c",
-      "line": 5946,
+      "line": 5708,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 000365fc",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_0003663c",
       "path": "src/babl.c",
-      "line": 5956,
+      "line": 5715,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 0003663c",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FUN_00036698",
       "path": "src/babl.c",
-      "line": 5970,
+      "line": 5726,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "FUN 00036698",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_render_op_wrap_message",
       "path": "src/babl.c",
-      "line": 5981,
+      "line": 5734,
       "original_name": "FUN_000360f4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "babl conversation-text render opcode handler (see PTR_FUN_00085408's own comment).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_render_op_show_code",
       "path": "src/babl.c",
-      "line": 6085,
+      "line": 5835,
       "original_name": "FUN_00036460",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "babl conversation-text render opcode handler (see PTR_FUN_00085408's own comment).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_render_op_say",
       "path": "src/babl.c",
-      "line": 6118,
+      "line": 5865,
       "original_name": "FUN_0003651c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "babl conversation-text render opcode handler (see PTR_FUN_00085408's own comment) for a \"say\" directive.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_render_op_play_sound",
       "path": "src/babl.c",
-      "line": 6149,
+      "line": 5893,
       "original_name": "FUN_000366a0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4150,73 +4150,73 @@
     {
       "name": "babl_render_tick",
       "path": "src/babl.c",
-      "line": 6161,
+      "line": 5905,
       "original_name": "FUN_000366bc",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "per-tick housekeeping for the babl conversation render state (param_1).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "render_babl_dialog_window",
       "path": "src/babl.c",
-      "line": 6185,
+      "line": 5926,
       "original_name": "FUN_0003671c",
       "ghidra_origin": true,
       "param_count": 5,
       "description": "the main babl conversation/book-viewer window renderer, shared by ordinary NPC dialogue AND the special illustrated-book/scroll full-screen viewer.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "display_book_or_scroll_page",
       "path": "src/babl.c",
-      "line": 6835,
+      "line": 6570,
       "original_name": "FUN_00037c14",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "the general-purpose \"display a numbered text/scroll/picture page\" entry point.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "record_illustration_discovery_and_display",
       "path": "src/babl.c",
-      "line": 6911,
+      "line": 6643,
       "original_name": "FUN_00037d6c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "for illustration page param_1, opens its cutscene script (its name built from param_1's octal digits via the same template as babl_render_op_show_code), and only if every file operation succeeds, shows the page via display_book_or_scroll_page.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "decompress_rle_stream",
       "path": "src/babl.c",
-      "line": 6974,
+      "line": 6702,
       "original_name": "FUN_0003b0e4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "a run-length-style stream decompressor.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "pack_byte_into_word",
       "path": "src/babl.c",
-      "line": 7048,
+      "line": 6772,
       "original_name": "FUN_0003b31c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "merges a byte into one half of a 16-bit value.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "read_rle_op_code",
       "path": "src/babl.c",
-      "line": 7069,
+      "line": 6789,
       "original_name": "FUN_0003b344",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4227,7 +4227,7 @@
     {
       "name": "rle_op_handle_short_run",
       "path": "src/babl.c",
-      "line": 7098,
+      "line": 6818,
       "original_name": "FUN_0003b3a8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4238,7 +4238,7 @@
     {
       "name": "rle_op_copy_pairs_even",
       "path": "src/babl.c",
-      "line": 7135,
+      "line": 6855,
       "original_name": "FUN_0003b48c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4249,7 +4249,7 @@
     {
       "name": "rle_op_copy_pairs_odd",
       "path": "src/babl.c",
-      "line": 7170,
+      "line": 6890,
       "original_name": "FUN_0003b54c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4260,7 +4260,7 @@
     {
       "name": "rle_op_fill_doubled_byte_even",
       "path": "src/babl.c",
-      "line": 7201,
+      "line": 6921,
       "original_name": "FUN_0003b608",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4271,7 +4271,7 @@
     {
       "name": "rle_op_fill_doubled_byte_odd",
       "path": "src/babl.c",
-      "line": 7248,
+      "line": 6968,
       "original_name": "FUN_0003b770",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4282,7 +4282,7 @@
     {
       "name": "rle_op_finalize_length",
       "path": "src/babl.c",
-      "line": 7274,
+      "line": 6994,
       "original_name": "FUN_0003b7f4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4293,7 +4293,7 @@
     {
       "name": "rle_op_mark_stream_done",
       "path": "src/babl.c",
-      "line": 7284,
+      "line": 7004,
       "original_name": "FUN_0003b80c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -4304,40 +4304,40 @@
     {
       "name": "read_object_text",
       "path": "src/babl.c",
-      "line": 7295,
+      "line": 7015,
       "original_name": "FUN_00048e8c",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "handles \"read\" on a sign/book/scroll object.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "converse_res_bump_alloc_entry",
       "path": "src/babl.c",
-      "line": 7353,
+      "line": 7069,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Recovered by disassembling the original UU.exe (same method as chrbtns_bump_alloc_entry/chrbtns_offset_table_builder -- see their comment).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "converse_res_slot_store_callback",
       "path": "src/babl.c",
-      "line": 7363,
+      "line": 7078,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "Recovered the same way: load_gr_resource_entries's post-process callback for the same resource loads.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "babl_builtin_default_handler",
       "path": "src/babl.c",
-      "line": 7376,
+      "line": 7088,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11628,79 +11628,79 @@
       "param_count": 4,
       "description": "EnterCriticalSection",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "GetSystemTime",
       "path": "src/ordinal_stubs.c",
-      "line": 27,
+      "line": 23,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "GetSystemTime",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "LocalAlloc",
       "path": "src/ordinal_stubs.c",
-      "line": 33,
+      "line": 28,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "LocalAlloc",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "LocalReAlloc",
       "path": "src/ordinal_stubs.c",
-      "line": 40,
+      "line": 33,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "LocalReAlloc",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "LocalSize",
       "path": "src/ordinal_stubs.c",
-      "line": 48,
+      "line": 38,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "LocalSize",
       "audited": true,
-      "modernized": false,
+      "modernized": true,
       "audit_note": "stub; second main.c site fixed from ARM trace (arg DAT_0025090c); remaining mismatch is the stub's declared 0 vs 1"
     },
     {
       "name": "RemoteLocalReAlloc",
       "path": "src/ordinal_stubs.c",
-      "line": 54,
+      "line": 43,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 5,
       "description": "RemoteLocalReAlloc",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "HeapReAlloc",
       "path": "src/ordinal_stubs.c",
-      "line": 64,
+      "line": 48,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "HeapReAlloc",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_wcscat",
       "path": "src/ordinal_stubs.c",
-      "line": 70,
+      "line": 53,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11711,18 +11711,18 @@
     {
       "name": "ce_wcscpy",
       "path": "src/ordinal_stubs.c",
-      "line": 78,
+      "line": 61,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Wide-string copy-shaped call (identity inferred from call sites).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_wcslen",
       "path": "src/ordinal_stubs.c",
-      "line": 87,
+      "line": 68,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11733,7 +11733,7 @@
     {
       "name": "Random",
       "path": "src/ordinal_stubs.c",
-      "line": 92,
+      "line": 73,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11744,51 +11744,51 @@
     {
       "name": "SystemParametersInfoW",
       "path": "src/ordinal_stubs.c",
-      "line": 102,
+      "line": 83,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
       "description": "SystemParametersInfoW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "RegisterClassW",
       "path": "src/ordinal_stubs.c",
-      "line": 115,
+      "line": 92,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "RegisterClassW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "CopyRect",
       "path": "src/ordinal_stubs.c",
-      "line": 121,
+      "line": 97,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "CopyRect",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "CreateDirectoryW",
       "path": "src/ordinal_stubs.c",
-      "line": 127,
+      "line": 102,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "CreateDirectoryW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "RemoveDirectoryW",
       "path": "src/ordinal_stubs.c",
-      "line": 134,
+      "line": 107,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11799,18 +11799,18 @@
     {
       "name": "CopyFileW",
       "path": "src/ordinal_stubs.c",
-      "line": 142,
+      "line": 115,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "CopyFileW-shaped call (source path, destination path, fail-if-exists).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "looks_like_real_pointer",
       "path": "src/ordinal_stubs.c",
-      "line": 161,
+      "line": 131,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11821,7 +11821,7 @@
     {
       "name": "create_directory_path",
       "path": "src/ordinal_stubs.c",
-      "line": 167,
+      "line": 137,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11832,7 +11832,7 @@
     {
       "name": "FindFirstFileW",
       "path": "src/ordinal_stubs.c",
-      "line": 174,
+      "line": 144,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11843,29 +11843,29 @@
     {
       "name": "CreateFileW",
       "path": "src/ordinal_stubs.c",
-      "line": 190,
+      "line": 160,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 7,
       "description": "CreateFileW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ReadFile",
       "path": "src/ordinal_stubs.c",
-      "line": 202,
+      "line": 165,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 5,
       "description": "ReadFile",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "WriteFile",
       "path": "src/ordinal_stubs.c",
-      "line": 212,
+      "line": 170,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11876,7 +11876,7 @@
     {
       "name": "GetFileSize",
       "path": "src/ordinal_stubs.c",
-      "line": 219,
+      "line": 177,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11887,7 +11887,7 @@
     {
       "name": "SetFilePointer",
       "path": "src/ordinal_stubs.c",
-      "line": 224,
+      "line": 182,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11898,18 +11898,18 @@
     {
       "name": "SetFileTime",
       "path": "src/ordinal_stubs.c",
-      "line": 229,
+      "line": 187,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "SetFileTime",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FindNextFileW",
       "path": "src/ordinal_stubs.c",
-      "line": 236,
+      "line": 192,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11921,7 +11921,7 @@
     {
       "name": "GetDiskFreeSpaceExW",
       "path": "src/ordinal_stubs.c",
-      "line": 241,
+      "line": 197,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
@@ -11932,73 +11932,73 @@
     {
       "name": "MultiByteToWideChar",
       "path": "src/ordinal_stubs.c",
-      "line": 251,
+      "line": 207,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 6,
       "description": "MultiByteToWideChar-shaped call (API identity inferred from arguments).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "WideCharToMultiByte",
       "path": "src/ordinal_stubs.c",
-      "line": 270,
+      "line": 220,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 8,
       "description": "WideCharToMultiByte",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "GetUserDefaultLangID",
       "path": "src/ordinal_stubs.c",
-      "line": 283,
+      "line": 225,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "GetUserDefaultLangID",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FoldStringW",
       "path": "src/ordinal_stubs.c",
-      "line": 289,
+      "line": 230,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "FoldStringW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "_wcsicmp",
       "path": "src/ordinal_stubs.c",
-      "line": 298,
+      "line": 238,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "UTF-16 string-equality check.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "CloseAllFileHandles",
       "path": "src/ordinal_stubs.c",
-      "line": 306,
+      "line": 244,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "CloseAllFileHandles",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "CreateWindowExW",
       "path": "src/ordinal_stubs.c",
-      "line": 312,
+      "line": 249,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
@@ -12009,7 +12009,7 @@
     {
       "name": "DefWindowProcW",
       "path": "src/ordinal_stubs.c",
-      "line": 319,
+      "line": 256,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12020,29 +12020,29 @@
     {
       "name": "ShowWindow",
       "path": "src/ordinal_stubs.c",
-      "line": 324,
+      "line": 261,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "ShowWindow",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "UpdateWindow",
       "path": "src/ordinal_stubs.c",
-      "line": 331,
+      "line": 266,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "UpdateWindow",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "FindWindowW",
       "path": "src/ordinal_stubs.c",
-      "line": 337,
+      "line": 271,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -12053,29 +12053,29 @@
     {
       "name": "BatteryDrvrGetLevels",
       "path": "src/ordinal_stubs.c",
-      "line": 344,
+      "line": 278,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "BatteryDrvrGetLevels",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "CeReadRecordProps",
       "path": "src/ordinal_stubs.c",
-      "line": 350,
+      "line": 283,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "CeReadRecordProps",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "waveOutClose",
       "path": "src/ordinal_stubs.c",
-      "line": 357,
+      "line": 288,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12087,40 +12087,40 @@
     {
       "name": "waveOutPrepareHeader",
       "path": "src/ordinal_stubs.c",
-      "line": 362,
+      "line": 293,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "waveOutPrepareHeader",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "waveOutUnprepareHeader",
       "path": "src/ordinal_stubs.c",
-      "line": 370,
+      "line": 298,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "waveOutUnprepareHeader",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "waveOutWrite",
       "path": "src/ordinal_stubs.c",
-      "line": 378,
+      "line": 303,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "waveOutWrite",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "waveOutReset",
       "path": "src/ordinal_stubs.c",
-      "line": 386,
+      "line": 308,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12131,40 +12131,40 @@
     {
       "name": "waveOutOpen",
       "path": "src/ordinal_stubs.c",
-      "line": 391,
+      "line": 313,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 6,
       "description": "waveOutOpen",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "RegCloseKey",
       "path": "src/ordinal_stubs.c",
-      "line": 402,
+      "line": 318,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "RegCloseKey",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "RegCreateKeyExW",
       "path": "src/ordinal_stubs.c",
-      "line": 408,
+      "line": 323,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 9,
       "description": "RegCreateKeyExW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "RegOpenKeyExW",
       "path": "src/ordinal_stubs.c",
-      "line": 422,
+      "line": 328,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
@@ -12175,29 +12175,29 @@
     {
       "name": "RegQueryValueExW",
       "path": "src/ordinal_stubs.c",
-      "line": 429,
+      "line": 335,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 6,
       "description": "RegQueryValueExW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "RegSetValueExW",
       "path": "src/ordinal_stubs.c",
-      "line": 440,
+      "line": 340,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 6,
       "description": "RegSetValueExW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "Sleep",
       "path": "src/ordinal_stubs.c",
-      "line": 454,
+      "line": 348,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -12208,7 +12208,7 @@
     {
       "name": "GetLastError",
       "path": "src/ordinal_stubs.c",
-      "line": 482,
+      "line": 376,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12219,29 +12219,29 @@
     {
       "name": "FindResourceW",
       "path": "src/ordinal_stubs.c",
-      "line": 487,
+      "line": 381,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "FindResourceW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "LoadResource",
       "path": "src/ordinal_stubs.c",
-      "line": 495,
+      "line": 386,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "LoadResource",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "GetTickCount",
       "path": "src/ordinal_stubs.c",
-      "line": 502,
+      "line": 392,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12252,29 +12252,29 @@
     {
       "name": "CloseHandle",
       "path": "src/ordinal_stubs.c",
-      "line": 509,
+      "line": 399,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "CloseHandle-shaped file-close, used ~49 times across uw.c (e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "GetDlgItemTextW",
       "path": "src/ordinal_stubs.c",
-      "line": 515,
+      "line": 404,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
       "description": "GetDlgItemTextW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "DialogBoxIndirectParamW",
       "path": "src/ordinal_stubs.c",
-      "line": 524,
+      "line": 409,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12285,30 +12285,30 @@
     {
       "name": "EndDialog",
       "path": "src/ordinal_stubs.c",
-      "line": 529,
+      "line": 414,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "EndDialog",
       "audited": true,
-      "modernized": false,
+      "modernized": true,
       "audit_note": "fixed from ARM trace"
     },
     {
       "name": "SetForegroundWindow",
       "path": "src/ordinal_stubs.c",
-      "line": 536,
+      "line": 419,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "SetForegroundWindow",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_sprintf",
       "path": "src/ordinal_stubs.c",
-      "line": 542,
+      "line": 424,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12320,29 +12320,29 @@
     {
       "name": "MessageBoxW",
       "path": "src/ordinal_stubs.c",
-      "line": 547,
+      "line": 429,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "MessageBoxW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "DispatchMessageW",
       "path": "src/ordinal_stubs.c",
-      "line": 554,
+      "line": 434,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "DispatchMessageW",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "PeekMessageW",
       "path": "src/ordinal_stubs.c",
-      "line": 565,
+      "line": 444,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 5,
@@ -12353,18 +12353,18 @@
     {
       "name": "PostQuitMessage",
       "path": "src/ordinal_stubs.c",
-      "line": 575,
+      "line": 454,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "PostQuitMessage",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "PostMessageW",
       "path": "src/ordinal_stubs.c",
-      "line": 582,
+      "line": 460,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
@@ -12375,95 +12375,95 @@
     {
       "name": "TranslateMessage",
       "path": "src/ordinal_stubs.c",
-      "line": 587,
+      "line": 465,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "TranslateMessage",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "GetSystemMetrics",
       "path": "src/ordinal_stubs.c",
-      "line": 593,
+      "line": 470,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "GetSystemMetrics",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "DeleteObject",
       "path": "src/ordinal_stubs.c",
-      "line": 599,
+      "line": 475,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "DeleteObject",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "GetStockObject",
       "path": "src/ordinal_stubs.c",
-      "line": 605,
+      "line": 480,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "GetStockObject",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_atoi",
       "path": "src/ordinal_stubs.c",
-      "line": 611,
+      "line": 485,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "ce atoi",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_cos",
       "path": "src/ordinal_stubs.c",
-      "line": 620,
+      "line": 493,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "cos(x): x is a double bit-pattern arriving in the return/first-arg register (chained from ordfloat_float_to_double in build_trig_tables, which builds the renderer's per-degree cos table DAT_000d9ed8).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "LocalFree",
       "path": "src/ordinal_stubs.c",
-      "line": 630,
+      "line": 502,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "LocalFree",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "_itoa",
       "path": "src/ordinal_stubs.c",
-      "line": 639,
+      "line": 510,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": " itoa",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_log",
       "path": "src/ordinal_stubs.c",
-      "line": 647,
+      "line": 515,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12475,40 +12475,40 @@
     {
       "name": "_ltoa",
       "path": "src/ordinal_stubs.c",
-      "line": 652,
+      "line": 520,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": " ltoa",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_malloc",
       "path": "src/ordinal_stubs.c",
-      "line": 660,
+      "line": 525,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "ce malloc",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_memmove",
       "path": "src/ordinal_stubs.c",
-      "line": 670,
+      "line": 534,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "ce memmove",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_memset",
       "path": "src/ordinal_stubs.c",
-      "line": 683,
+      "line": 544,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -12519,7 +12519,7 @@
     {
       "name": "ce_rand",
       "path": "src/ordinal_stubs.c",
-      "line": 692,
+      "line": 553,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12530,7 +12530,7 @@
     {
       "name": "ce_realloc",
       "path": "src/ordinal_stubs.c",
-      "line": 697,
+      "line": 558,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -12541,40 +12541,40 @@
     {
       "name": "ordfloat_sin",
       "path": "src/ordinal_stubs.c",
-      "line": 705,
+      "line": 566,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "sin(x): x is a double bit-pattern split across the first two arg registers (build_trig_tables passes it as two ints).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_srand",
       "path": "src/ordinal_stubs.c",
-      "line": 717,
+      "line": 576,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "ce srand",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_strcat",
       "path": "src/ordinal_stubs.c",
-      "line": 726,
+      "line": 584,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "strcat: appends src to the NUL-terminated string in dest and returns dest.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_strchr",
       "path": "src/ordinal_stubs.c",
-      "line": 734,
+      "line": 590,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -12585,7 +12585,7 @@
     {
       "name": "ce_strcmp",
       "path": "src/ordinal_stubs.c",
-      "line": 740,
+      "line": 596,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -12596,18 +12596,18 @@
     {
       "name": "ce_strlen",
       "path": "src/ordinal_stubs.c",
-      "line": 746,
+      "line": 602,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "ce strlen",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_strncmp",
       "path": "src/ordinal_stubs.c",
-      "line": 753,
+      "line": 608,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -12618,73 +12618,73 @@
     {
       "name": "ce_strncpy",
       "path": "src/ordinal_stubs.c",
-      "line": 761,
+      "line": 616,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "MSVCRT `strncpy(dest, src, n)` -- sits right after strcmp(1065)/ strlen(1068)/strncmp(1070) in the ordinal table, matching that sequential string-function grouping.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_strstr",
       "path": "src/ordinal_stubs.c",
-      "line": 775,
+      "line": 627,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "ce strstr",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_tolower",
       "path": "src/ordinal_stubs.c",
-      "line": 784,
+      "line": 634,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Windows CE keyboard-translation ordinal (likely a VK-code-to-character case transform, given its sibling ce_toupper and their shared call site at uw.c ~50479).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_toupper",
       "path": "src/ordinal_stubs.c",
-      "line": 794,
+      "line": 643,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Windows CE toupper import: the automap note editor uses this to map lowercase input to the uppercase-only FONT4X5P.SYS glyphs.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cpp_operator_delete",
       "path": "src/ordinal_stubs.c",
-      "line": 803,
+      "line": 651,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Was, and stays, a hardcoded no-op always returning 0 (NULL) -- every single call site (the MOD-tracker music engine's buffer/pattern/ instrument allocators in audio.c).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "cpp_operator_new",
       "path": "src/ordinal_stubs.c",
-      "line": 809,
+      "line": 656,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "cpp operator new",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "NKDbgPrintfW",
       "path": "src/ordinal_stubs.c",
-      "line": 815,
+      "line": 661,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -12696,7 +12696,7 @@
     {
       "name": "ce_fopen",
       "path": "src/ordinal_stubs.c",
-      "line": 826,
+      "line": 672,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -12707,7 +12707,7 @@
     {
       "name": "ce_fscanf",
       "path": "src/ordinal_stubs.c",
-      "line": 831,
+      "line": 677,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -12719,7 +12719,7 @@
     {
       "name": "ce_fclose",
       "path": "src/ordinal_stubs.c",
-      "line": 841,
+      "line": 687,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -12730,107 +12730,107 @@
     {
       "name": "ce_calloc",
       "path": "src/ordinal_stubs.c",
-      "line": 850,
+      "line": 696,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Zeroing allocator, called as ce_calloc(elem_size, count) at every site (e.g.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ce_strrchr",
       "path": "src/ordinal_stubs.c",
-      "line": 861,
+      "line": 705,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "MSVCRT `strrchr(str, c)` -- find the LAST occurrence of character `c` in `str`, or NULL if absent.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "_strlwr",
       "path": "src/ordinal_stubs.c",
-      "line": 875,
+      "line": 717,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": " strlwr",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "_strupr",
       "path": "src/ordinal_stubs.c",
-      "line": 883,
+      "line": 724,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "MSVCRT `_strupr(str)` -- uppercase a string in place, return the same pointer.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "_isctype",
       "path": "src/ordinal_stubs.c",
-      "line": 896,
+      "line": 736,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "MSVCRT-style `_isctype(c, mask)` character classification helper -- every call site ORs together the standard CRT _ctype.h bit values as its mask.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordint_divmod",
       "path": "src/ordinal_stubs.c",
-      "line": 917,
+      "line": 755,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "ARM has no hardware integer divide, so the original WinCE/ARM compiler routed every `/` and `%` in the whole game through this shared runtime division helper -- it's called ~250 places across uw.c.",
       "audited": true,
-      "modernized": false,
+      "modernized": true,
       "audit_note": "VERIFIED vs ARM: remaining sites are fixed; counts reflect the decl of 2 vs a few sites ARM-verified earlier"
     },
     {
       "name": "orduint_divmod",
       "path": "src/ordinal_stubs.c",
-      "line": 935,
+      "line": 771,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Unsigned sibling of ordint_divmod (Ordinal_2005) -- this is Ordinal_2008, misidentified in an earlier pass as \"ordfloat_double_mul\" (float multiply) from thin, as it turns out nonexistent, audio.c-adjacent evidence.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_sub",
       "path": "src/ordinal_stubs.c",
-      "line": 956,
+      "line": 790,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Softfloat single-precision SUBTRACT: a - b (IEEE-754 bit patterns in, bit pattern out).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_double_binop",
       "path": "src/ordinal_stubs.c",
-      "line": 963,
+      "line": 795,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
       "description": "ordfloat double binop",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_bits_to_float",
       "path": "src/ordinal_stubs.c",
-      "line": 975,
+      "line": 803,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -12841,7 +12841,7 @@
     {
       "name": "ordfloat_float_to_bits",
       "path": "src/ordinal_stubs.c",
-      "line": 982,
+      "line": 810,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -12852,150 +12852,150 @@
     {
       "name": "ordfloat_int_to_float",
       "path": "src/ordinal_stubs.c",
-      "line": 992,
+      "line": 820,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Called with NO explicit argument at every use site in uw.c -- Ghidra dropped the parameter because it's just the return-register value chained straight from the preceding ordfloat_mul/2032 call.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_uint_to_float",
       "path": "src/ordinal_stubs.c",
-      "line": 998,
+      "line": 825,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "ordfloat uint to float",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_float_to_double",
       "path": "src/ordinal_stubs.c",
-      "line": 1007,
+      "line": 833,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Softfloat float -> double: single-precision bit pattern in the first-arg register (chained), returns the double bit pattern.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_negate",
       "path": "src/ordinal_stubs.c",
-      "line": 1022,
+      "line": 847,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Softfloat single-precision NEGATE: -x.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_mul",
       "path": "src/ordinal_stubs.c",
-      "line": 1032,
+      "line": 856,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "ordfloat mul",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_double_mul2",
       "path": "src/ordinal_stubs.c",
-      "line": 1042,
+      "line": 864,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
       "description": "Softfloat double MULTIPLY: a * b, each passed as a lo/hi int pair.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_lt",
       "path": "src/ordinal_stubs.c",
-      "line": 1061,
+      "line": 879,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Softfloat single-precision COMPARE: returns 1 when a < b, else 0.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_le",
       "path": "src/ordinal_stubs.c",
-      "line": 1069,
+      "line": 885,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Softfloat single-precision COMPARE: returns 1 when a <= b, else 0.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_int_to_float2",
       "path": "src/ordinal_stubs.c",
-      "line": 1076,
+      "line": 890,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "ordfloat int to float2",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_double_from_int",
       "path": "src/ordinal_stubs.c",
-      "line": 1082,
+      "line": 895,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "ordfloat double from int",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_gt",
       "path": "src/ordinal_stubs.c",
-      "line": 1089,
+      "line": 901,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Softfloat single-precision COMPARE: returns 1 when a > b, else 0.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_ge",
       "path": "src/ordinal_stubs.c",
-      "line": 1098,
+      "line": 908,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Softfloat single-precision COMPARE for the 3D near-plane clip test: returns 1 when a >= b, else 0.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_double_to_float",
       "path": "src/ordinal_stubs.c",
-      "line": 1108,
+      "line": 916,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "Softfloat double -> float: double bit pattern in the first-arg register (chained), returns the single-precision bit pattern.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_double_result",
       "path": "src/ordinal_stubs.c",
-      "line": 1120,
+      "line": 927,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -13006,62 +13006,62 @@
     {
       "name": "ordfloat_div",
       "path": "src/ordinal_stubs.c",
-      "line": 1128,
+      "line": 935,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Softfloat single-precision DIVIDE: a / b.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_double_binop2",
       "path": "src/ordinal_stubs.c",
-      "line": 1137,
+      "line": 942,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
       "description": "ordfloat double binop2",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_add",
       "path": "src/ordinal_stubs.c",
-      "line": 1149,
+      "line": 950,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "Softfloat single-precision ADD: a + b.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordfloat_double_op3",
       "path": "src/ordinal_stubs.c",
-      "line": 1156,
+      "line": 955,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
       "description": "ordfloat double op3",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordaudio_op_2063",
       "path": "src/ordinal_stubs.c",
-      "line": 1165,
+      "line": 960,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
       "description": "ordaudio op 2063",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordaudio_op_2135",
       "path": "src/ordinal_stubs.c",
-      "line": 1174,
+      "line": 965,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -13073,40 +13073,40 @@
     {
       "name": "ordaudio_op_2142",
       "path": "src/ordinal_stubs.c",
-      "line": 1179,
+      "line": 970,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
       "description": "ordaudio op 2142",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordaudio_op_2304",
       "path": "src/ordinal_stubs.c",
-      "line": 1185,
+      "line": 975,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "ordaudio op 2304",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordaudio_op_2413",
       "path": "src/ordinal_stubs.c",
-      "line": 1193,
+      "line": 980,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
       "description": "ordaudio op 2413",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "ordaudio_op_2582",
       "path": "src/ordinal_stubs.c",
-      "line": 1201,
+      "line": 985,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -13117,13 +13117,13 @@
     {
       "name": "ordaudio_op_2588",
       "path": "src/ordinal_stubs.c",
-      "line": 1206,
+      "line": 990,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
       "description": "ordaudio op 2588",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "set_player_tile_position",

@@ -120,10 +120,10 @@ extern code *DAT_00201c9c;
 #define _DAT_002048a9 (*(uint*)&DAT_002048a9)
 
 int detect_unsafe_rest_object_callback(int scan_x, int scan_y, char *object);
-undefined4 check_rest_area_unsafe();
+int check_rest_area_unsafe();
 void reset_player_for_resurrection();
 void handle_player_death_and_menu_transition(short reason);
-undefined4 dungeon_view_anim_tick();
+int dungeon_view_anim_tick();
 void apply_level9_random_hazard_tick();
 void set_player_tile_position(uint tile_x, uint tile_y, int flag);
 void commit_player_move();

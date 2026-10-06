@@ -199,7 +199,7 @@ void resume_music_playback()
 
 
 // was FUN_00072b2c -- returns the currently-playing music track number.
-undefined1 get_current_music_track()
+byte get_current_music_track()
 
 {
   return DAT_0023c3a8;
@@ -209,7 +209,7 @@ undefined1 get_current_music_track()
 
 // was FUN_00072b3c -- returns whether music is currently playing
 // (false if the audio subsystem isn't initialized).
-undefined4 is_music_playing()
+int is_music_playing()
 
 {
   undefined4 uVar1;
@@ -225,7 +225,7 @@ undefined4 is_music_playing()
 
 // was FUN_00072b58 -- is_music_playing's counterpart for the sound-
 // effects subsystem (DAT_0008744c/DAT_00087450).
-undefined4 is_sound_effects_enabled()
+int is_sound_effects_enabled()
 
 {
   undefined4 uVar1;
@@ -883,7 +883,7 @@ bool advance_menu_music_track_elapsed()
 // was FUN_000738ac -- returns DAT_00087458, an audio-subsystem-related
 // flag not otherwise written anywhere in this decompile (always its
 // zero-initialized default in this build).
-undefined4 get_audio_subsystem_flag()
+int get_audio_subsystem_flag()
 
 {
   return DAT_00087458;
@@ -893,7 +893,7 @@ undefined4 get_audio_subsystem_flag()
 
 // was FUN_000738bc -- always returns true; a trivial stub/constant
 // getter, audio-cluster sibling of get_audio_subsystem_flag.
-undefined4 audio_always_true_stub()
+int audio_always_true_stub()
 
 {
   return 1;
@@ -1137,7 +1137,7 @@ void clear_ambient_sound_target()
 // was FUN_00035dd8 -- clears the current ambient sound target and resets DAT_00101960 (the
 // talking-portrait mouth-frame cycle count, confirmed via its use a few thousand lines below in the
 // babl conversation-rendering loop, which wraps a frame counter at this value) to its default of 3.
-undefined4 reset_dialogue_speech_state()
+int reset_dialogue_speech_state()
 
 {
   clear_ambient_sound_target();
@@ -1220,7 +1220,7 @@ void release_sound_resource_slot()
 // was FUN_00049940 -- per start_ambient_sound_effect's own comment, reads as "get a free slot/count
 // for class 0x1e" (its only known caller passes 0x1e, and in the retry path a second argument
 // too)...
-undefined4 acquire_sound_resource_slot()
+int acquire_sound_resource_slot()
 
 {
   return 0x28;

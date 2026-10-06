@@ -115,7 +115,7 @@ void cast_summon_or_spawn_effect(uintptr_t caster, char variant) { (void)caster;
 void adjust_level7_hazard_value(char *object, char delta) { (void)object; (void)delta; TEST_FAIL_MESSAGE("Unexpected adjust_level7_hazard_value"); }
 void dispatch_player_command(char *actor, int unused, char command) { (void)actor; (void)unused; (void)command; TEST_FAIL_MESSAGE("Unexpected dispatch_player_command"); }
 void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y) { (void)button; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected handle_level4_maze_puzzle_button"); }
-UNUSED_EFFECT(display_book_or_scroll_page)
+void display_book_or_scroll_page(uint page_id) { (void)page_id; TEST_FAIL_MESSAGE("Unexpected display_book_or_scroll_page"); }
 void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected scheduler_tick"); }
 UNUSED_EFFECT(handle_game_view_click_hold)
 UNUSED_EFFECT(interact_use)

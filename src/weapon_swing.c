@@ -48,7 +48,7 @@ static undefined1 DAT_00202700_backing[16];
 // was LAB_0006e324 -- load_weapon_swing_sprites's (weapons.GR loader) registrar callback (param_5),
 // called once per loaded weapon-swing sprite frame with its raw (still-compressed) entry buffer,
 // byte size, and 0-27 frame index.
-undefined4 weapon_swing_frame_loaded(void *buf, unsigned size, int idx)
+int weapon_swing_frame_loaded(void *buf, unsigned size, int idx)
 
 {
   (void)size;

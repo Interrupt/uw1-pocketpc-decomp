@@ -64,7 +64,7 @@ int read_file_handle(int h, void *buf, unsigned n) { return uw_file_read(h, buf,
 int seek_file_handle(int h, int offset, int whence) { return uw_file_seek(h, offset, whence); }
 long CloseHandle(int h) { return uw_file_close(h); }
 void *ce_memset(void *p, int value, unsigned n) { return memset(p, value, n); }
-char *ce_strcat(char *p, const char *s) { return strcat(p, s); }
+char *ce_strcat(char *p, char *s) { return strcat(p, s); }
 void lighting_fixture_reset(void)
 {
     setenv("UW_DATA_DIR", UW_TEST_DATA_DIR, 1);

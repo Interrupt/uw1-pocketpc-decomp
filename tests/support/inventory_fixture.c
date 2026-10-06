@@ -22,7 +22,7 @@ char *get_message_string(ushort id);
 int message_scroll_print_wrapped(char *text);
 void print_scroll_message_by_id(uint id);
 void describe_object_owner(ushort *object, short mode);
-void read_object_text(ushort *object, int mode);
+void read_object_text(ushort *object, short mode);
 
 ushort objects[5][4];
 
@@ -165,7 +165,7 @@ void print_scroll_message_by_id(uint id)
 void describe_object_owner(ushort *object, short mode)
 { last_action_object = object; last_action_mode = mode; other_actions++; }
 
-void read_object_text(ushort *object, int mode)
+void read_object_text(ushort *object, short mode)
 { last_action_object = object; last_action_mode = mode; other_actions++; }
 
 byte level_one[0x7c08];
@@ -260,7 +260,7 @@ char *g_open_container_list;
 int container_grid_redraws, container_arrow_redraws;
 
 void decrement_cursor_hide_depth(void) { cursor_hide_calls++; }
-undefined4 cursor_show_idle_tick(void) { cursor_show_calls++; return 0; }
+int cursor_show_idle_tick(void) { cursor_show_calls++; return 0; }
 void redraw_inventory_widget_range(int first, short last)
 {
     if (first == 12 && last == 19) container_grid_redraws++;

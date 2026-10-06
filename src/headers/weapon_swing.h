@@ -13,7 +13,7 @@ extern short DAT_000870e4;
 
 
 void debug_noop_frame_hook(int frame);
-undefined4 weapon_swing_frame_loaded(void *buf, unsigned size, int idx);
+int weapon_swing_frame_loaded(void *buf, unsigned size, int idx);
 void *weapon_swing_frame_alloc(unsigned int byte_count);
 int find_and_consume_ammo(short weapon_type);
 void reset_weapon_swing_state();
