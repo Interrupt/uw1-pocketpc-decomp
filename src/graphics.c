@@ -487,10 +487,10 @@ uint param_4;
 
 
 // was FUN_000122d4
-void fade_in(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-ushort *param_3;
+void fade_in(framebuffer,palette,palette_flag)
+ushort *framebuffer;
+char *palette;  /* 768-byte palette buffer to install first, or 0 to keep the current palette */
+int palette_flag;  /* passed through to apply_palette_buffer/reinstall_active_palette */
 
 {
   int iVar1;
@@ -500,13 +500,12 @@ ushort *param_3;
   int iVar5;
   ushort *puVar6;
   int iVar7;
-  /* iVar8 held a `param_3 - puVar3` relative offset then re-added to puVar6 to reconstruct a
+  /* iVar8 held a `framebuffer - puVar3` relative offset then re-added to puVar6 to reconstruct a
      destination pointer -- correct as pointer difference* arithmetic... */
   intptr_t iVar8;
   int iVar9;
-  /* in_stack_0000000c/in_stack_00000014 were declared as fresh locals but never assigned anywhere
-     -- reading them was reading uninitialized memory. param_1/param_2 are, symmetrically, declared
-     but never otherwise used in this function. */
+  /* The original takes 10 args (x,y,buf,h,w,0,0,palette,2,flag) but ARM reads only buf (arg 2), palette
+     (arg 7) and flag (arg 9); the rest are dead, so this keeps just those three. */
 
   /* A fade must present every step even inside a batched gameplay tick
      or while the click that started the transition is still held. */
@@ -514,8 +513,8 @@ ushort *param_3;
   dirty_rect_union(0,200,0,0x140);
   puVar3 = (ushort *)ce_malloc(0x1f400);
   /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
-  if (param_1 != 0) apply_palette_buffer(param_1,param_2);
-  ce_memmove(puVar3,param_3,0x1f400);
+  if (palette != 0) apply_palette_buffer(palette,palette_flag);
+  ce_memmove(puVar3,framebuffer,0x1f400);
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = read_realtime_clock_units();
@@ -529,7 +528,7 @@ ushort *param_3;
     uVar4 = ordfloat_mul(uVar4,0x45800000);
     /* Ghidra omitted the soft-float result passed to the conversion. */
     iVar5 = ordfloat_uint_to_float(uVar4);
-    iVar8 = (intptr_t)param_3 - (intptr_t)puVar3;
+    iVar8 = (intptr_t)framebuffer - (intptr_t)puVar3;
     iVar7 = 64000;
     puVar6 = puVar3;
     do {
@@ -553,7 +552,7 @@ ushort *param_3;
   puVar6 = puVar3;
   do {
     iVar9 = iVar9 + -1;
-    *(ushort *)(((intptr_t)param_3 - (intptr_t)puVar3) + (intptr_t)puVar6) = *puVar6;
+    *(ushort *)(((intptr_t)framebuffer - (intptr_t)puVar3) + (intptr_t)puVar6) = *puVar6;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   flush_dirty_rect_to_display(1);
@@ -567,10 +566,10 @@ ushort *param_3;
 
 
 // was FUN_00012444
-void fade_out(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-undefined2 * param_3;
+void fade_out(framebuffer,palette,palette_flag)
+undefined2 * framebuffer;
+char *palette;  /* 768-byte palette buffer to install first, or 0 to keep the current palette */
+int palette_flag;  /* passed through to apply_palette_buffer/reinstall_active_palette */
 
 {
   int iVar1;
@@ -584,16 +583,15 @@ undefined2 * param_3;
   int iVar9;
   int iVar10;
   int iVar11;
-  /* Same phantom in_stack_/unused-param_1,2 artifact as fade_in
-     right above -- see its comment. */
+  /* Same 3 live args as fade_in (framebuffer, palette, palette_flag); see its comment. */
 
   /* Use the same presentation scope as fade_in. */
   uw_begin_modal_present();
   dirty_rect_union(0,200,0,0x140);
   puVar4 = (ushort *)ce_malloc(0x1f400);
   /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
-  if (param_1 != 0) apply_palette_buffer(param_1,param_2);
-  ce_memmove(puVar4,param_3,0x1f400);
+  if (palette != 0) apply_palette_buffer(palette,palette_flag);
+  ce_memmove(puVar4,framebuffer,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
@@ -613,9 +611,9 @@ undefined2 * param_3;
     do {
       iVar9 = iVar9 + -1;
       iVar1 = ((int)((*puVar7 & 0xf800) << 1) >> 6) * iVar6 >> 0x12;
-      /* Same param_3/puVar4/puVar7 offset-reconstruction truncation as
+      /* Same framebuffer/puVar4/puVar7 offset-reconstruction truncation as
          fade_in right above -- see its comment. */
-      puVar8 = (ushort *)(((intptr_t)param_3 - (intptr_t)puVar4) + (intptr_t)puVar7);
+      puVar8 = (ushort *)(((intptr_t)framebuffer - (intptr_t)puVar4) + (intptr_t)puVar7);
       *puVar8 = (ushort)((uint)(iVar1 << 0x1b) >> 0x10);
       uVar3 = (ushort)(iVar1 << 0xb) |
               (ushort)((((int)((*puVar7 & 0x7e0) << 7) >> 6) * iVar6 >> 0x12) << 5);
@@ -631,8 +629,8 @@ undefined2 * param_3;
     iVar11 = iVar11 + -1;
   } while (0 < iVar11);
   while (iVar10 = iVar10 + -1, -1 < iVar10) {
-    *param_3 = 0;
-    param_3 = param_3 + 1;
+    *framebuffer = 0;
+    framebuffer = framebuffer + 1;
   }
   flush_dirty_rect_to_display(1);
   while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 40)
@@ -1555,7 +1553,7 @@ void clear_screen_and_restore_cursor()
 // shared by set_palette_bank (a specific PALS.DAT bank) and the fade_in/fade_out RGB framebuffer
 // crossfades (src/graphics.c)...
 void apply_palette_buffer(param_1,param_2)
-undefined4 param_1;
+void *param_1;  /* was undefined4: truncated the real buffer pointer on this 64-bit host */
 undefined4 param_2;
 
 {

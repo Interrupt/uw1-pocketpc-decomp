@@ -3792,7 +3792,7 @@
     {
       "name": "display_book_or_scroll_page",
       "path": "src/babl.c",
-      "line": 6838,
+      "line": 6835,
       "original_name": "FUN_00037c14",
       "ghidra_origin": true,
       "param_count": 1,
@@ -3802,7 +3802,7 @@
     {
       "name": "record_illustration_discovery_and_display",
       "path": "src/babl.c",
-      "line": 6914,
+      "line": 6911,
       "original_name": "FUN_00037d6c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3812,7 +3812,7 @@
     {
       "name": "decompress_rle_stream",
       "path": "src/babl.c",
-      "line": 6977,
+      "line": 6974,
       "original_name": "FUN_0003b0e4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3822,7 +3822,7 @@
     {
       "name": "pack_byte_into_word",
       "path": "src/babl.c",
-      "line": 7051,
+      "line": 7048,
       "original_name": "FUN_0003b31c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -3832,7 +3832,7 @@
     {
       "name": "read_rle_op_code",
       "path": "src/babl.c",
-      "line": 7072,
+      "line": 7069,
       "original_name": "FUN_0003b344",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3842,7 +3842,7 @@
     {
       "name": "rle_op_handle_short_run",
       "path": "src/babl.c",
-      "line": 7101,
+      "line": 7098,
       "original_name": "FUN_0003b3a8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3852,7 +3852,7 @@
     {
       "name": "rle_op_copy_pairs_even",
       "path": "src/babl.c",
-      "line": 7138,
+      "line": 7135,
       "original_name": "FUN_0003b48c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3862,7 +3862,7 @@
     {
       "name": "rle_op_copy_pairs_odd",
       "path": "src/babl.c",
-      "line": 7173,
+      "line": 7170,
       "original_name": "FUN_0003b54c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3872,7 +3872,7 @@
     {
       "name": "rle_op_fill_doubled_byte_even",
       "path": "src/babl.c",
-      "line": 7204,
+      "line": 7201,
       "original_name": "FUN_0003b608",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3882,7 +3882,7 @@
     {
       "name": "rle_op_fill_doubled_byte_odd",
       "path": "src/babl.c",
-      "line": 7251,
+      "line": 7248,
       "original_name": "FUN_0003b770",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3892,7 +3892,7 @@
     {
       "name": "rle_op_finalize_length",
       "path": "src/babl.c",
-      "line": 7277,
+      "line": 7274,
       "original_name": "FUN_0003b7f4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3902,7 +3902,7 @@
     {
       "name": "rle_op_mark_stream_done",
       "path": "src/babl.c",
-      "line": 7287,
+      "line": 7284,
       "original_name": "FUN_0003b80c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -3912,7 +3912,7 @@
     {
       "name": "read_object_text",
       "path": "src/babl.c",
-      "line": 7298,
+      "line": 7295,
       "original_name": "FUN_00048e8c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -3922,7 +3922,7 @@
     {
       "name": "converse_res_bump_alloc_entry",
       "path": "src/babl.c",
-      "line": 7356,
+      "line": 7353,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -3932,7 +3932,7 @@
     {
       "name": "converse_res_slot_store_callback",
       "path": "src/babl.c",
-      "line": 7366,
+      "line": 7363,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -3942,7 +3942,7 @@
     {
       "name": "babl_builtin_default_handler",
       "path": "src/babl.c",
-      "line": 7379,
+      "line": 7376,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -5838,24 +5838,22 @@
       "ghidra_origin": true,
       "param_count": 3,
       "description": "fade in.",
-      "audited": true,
-      "audit_note": "VERIFIED vs ARM: port reimplementation takes (x,y,buf); real function takes 10 args (ARM main_menu_loop/enter_dungeon_view/level load all push 6 stack args); game.c's 4-arg calls are Ghidra truncation of the same 10-arg ARM call (declared 3; e.g. src/game.c:457 passes 4, src/level.c:89 passes 10)"
+      "audited": true
     },
     {
       "name": "fade_out",
       "path": "src/graphics.c",
-      "line": 570,
+      "line": 569,
       "original_name": "FUN_00012444",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "fade out.",
-      "audited": true,
-      "audit_note": "VERIFIED vs ARM: port reimplementation takes (x,y,buf); real function takes 10 args (ARM main_menu_loop/enter_dungeon_view/level load all push 6 stack args); game.c's 4-arg calls are Ghidra truncation of the same 10-arg ARM call (declared 3; e.g. src/babl.c:6342 passes 10, src/babl.c:6759 passes 10, src/game.c:472 passes 4, ...)"
+      "audited": true
     },
     {
       "name": "flush_dungeon_frame",
       "path": "src/graphics.c",
-      "line": 650,
+      "line": 648,
       "original_name": "FUN_0001294c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5865,7 +5863,7 @@
     {
       "name": "render_dungeon_view",
       "path": "src/graphics.c",
-      "line": 661,
+      "line": 659,
       "original_name": "FUN_00012970",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5875,7 +5873,7 @@
     {
       "name": "build_shade_lut",
       "path": "src/graphics.c",
-      "line": 681,
+      "line": 679,
       "original_name": "FUN_00014294",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5885,7 +5883,7 @@
     {
       "name": "get_ambient_bias_reduction",
       "path": "src/graphics.c",
-      "line": 707,
+      "line": 705,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -5895,7 +5893,7 @@
     {
       "name": "set_ambient_bias_with_light",
       "path": "src/graphics.c",
-      "line": 720,
+      "line": 718,
       "original_name": "FUN_00014324",
       "ghidra_origin": true,
       "param_count": 1,
@@ -5905,7 +5903,7 @@
     {
       "name": "set_ambient_bias_without_light",
       "path": "src/graphics.c",
-      "line": 733,
+      "line": 731,
       "original_name": "FUN_0001433c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -5915,7 +5913,7 @@
     {
       "name": "expand_pals_bytes",
       "path": "src/graphics.c",
-      "line": 749,
+      "line": 747,
       "original_name": "FUN_00022abc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5925,7 +5923,7 @@
     {
       "name": "build_rgb565_palette",
       "path": "src/graphics.c",
-      "line": 793,
+      "line": 791,
       "original_name": "FUN_00022b54",
       "ghidra_origin": true,
       "param_count": 2,
@@ -5935,7 +5933,7 @@
     {
       "name": "palette_cycle_range",
       "path": "src/graphics.c",
-      "line": 939,
+      "line": 937,
       "original_name": "FUN_000259c0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5945,7 +5943,7 @@
     {
       "name": "blit_fullscreen_bitmap_file",
       "path": "src/graphics.c",
-      "line": 994,
+      "line": 992,
       "original_name": "FUN_0006c98c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5955,7 +5953,7 @@
     {
       "name": "blit_framebuffer_to_gx_display",
       "path": "src/graphics.c",
-      "line": 1039,
+      "line": 1037,
       "original_name": "FUN_000778fc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5965,7 +5963,7 @@
     {
       "name": "reinstall_active_palette",
       "path": "src/graphics.c",
-      "line": 1096,
+      "line": 1094,
       "original_name": "FUN_0007e99c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5975,7 +5973,7 @@
     {
       "name": "plot_pixel",
       "path": "src/graphics.c",
-      "line": 1114,
+      "line": 1112,
       "original_name": "FUN_0007e9c4",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5985,7 +5983,7 @@
     {
       "name": "draw_horizontal_line",
       "path": "src/graphics.c",
-      "line": 1145,
+      "line": 1143,
       "original_name": "FUN_000116dc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5995,7 +5993,7 @@
     {
       "name": "fill_viewport_and_flush",
       "path": "src/graphics.c",
-      "line": 1179,
+      "line": 1177,
       "original_name": "FUN_00011b34",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6005,7 +6003,7 @@
     {
       "name": "blit_bitmap_to_framebuffer_clipped",
       "path": "src/graphics.c",
-      "line": 1217,
+      "line": 1215,
       "original_name": "FUN_000120c8",
       "ghidra_origin": true,
       "param_count": 8,
@@ -6015,7 +6013,7 @@
     {
       "name": "copy_framebuffer_rect",
       "path": "src/graphics.c",
-      "line": 1302,
+      "line": 1300,
       "original_name": "FUN_00012850",
       "ghidra_origin": true,
       "param_count": 6,
@@ -6025,7 +6023,7 @@
     {
       "name": "reset_viewport_to_fullscreen",
       "path": "src/graphics.c",
-      "line": 1362,
+      "line": 1360,
       "original_name": "FUN_00012958",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6035,7 +6033,7 @@
     {
       "name": "compute_view_y_bound",
       "path": "src/graphics.c",
-      "line": 1373,
+      "line": 1371,
       "original_name": "FUN_000129d4",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6045,7 +6043,7 @@
     {
       "name": "end_gx_draw_session",
       "path": "src/graphics.c",
-      "line": 1387,
+      "line": 1385,
       "original_name": "FUN_000232b0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6055,7 +6053,7 @@
     {
       "name": "convert_palette_bgrx_to_rgb",
       "path": "src/graphics.c",
-      "line": 1400,
+      "line": 1398,
       "original_name": "FUN_00035fdc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6065,7 +6063,7 @@
     {
       "name": "tick_book_illustration_palette_cycles",
       "path": "src/graphics.c",
-      "line": 1426,
+      "line": 1424,
       "original_name": "FUN_0003601c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6075,7 +6073,7 @@
     {
       "name": "load_bmp_resource_to_rgb565",
       "path": "src/graphics.c",
-      "line": 1465,
+      "line": 1463,
       "original_name": "FUN_0003af28",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6085,7 +6083,7 @@
     {
       "name": "clear_screen_and_restore_cursor",
       "path": "src/graphics.c",
-      "line": 1542,
+      "line": 1540,
       "original_name": "FUN_00040df0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6095,7 +6093,7 @@
     {
       "name": "apply_palette_buffer",
       "path": "src/graphics.c",
-      "line": 1557,
+      "line": 1555,
       "original_name": "FUN_00040f34",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6105,7 +6103,7 @@
     {
       "name": "fade_active_palette_to_black",
       "path": "src/graphics.c",
-      "line": 1572,
+      "line": 1570,
       "original_name": "FUN_00040f64",
       "ghidra_origin": true,
       "param_count": 2,

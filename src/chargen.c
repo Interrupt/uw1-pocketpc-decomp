@@ -433,7 +433,7 @@ int run_character_generator()
             bitmap_blit_to_framebuffer(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
             /* The PocketPC path drew this screen at full brightness.
                Fade in its loaded background before accepting choices. */
-            fade_in(0,0,g_uw_framebuffer);
+            fade_in(g_uw_framebuffer,0,0);
             iVar4 = character_generator_loop(DAT_000fb858,&DAT_000fb8f0,puVar8);
             select_active_font(s_FONT5X6P_SYS_00084e9c);
             if (DAT_00201c98 != 0) {

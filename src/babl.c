@@ -6338,9 +6338,7 @@ LAB_00036858:
       local_84 = puVar11;
       ce_memmove(local_b8,&DAT_00088d98,0x300);
       if (local_b9 == '\0') {
-        in_stack_ffffff10 = CONCAT22((short)((uint)in_stack_ffffff10 >> 0x10),0x140);
-        fade_out(0,0,g_uw_framebuffer,200,in_stack_ffffff10,0,0,
-                     local_b8,2,0);
+        fade_out(g_uw_framebuffer,local_b8,0);
       }
       iVar10 = (int)acStack_d0[9];
       acStack_d0[9] = (char)(iVar10 + 1);
@@ -6617,7 +6615,7 @@ LAB_00036ca4:
                 if (-1 < local_8f) {
                   /* Opcode 10 requests a fade; the PocketPC player only
                      cleared this marker, leaving the transition invisible. */
-                  fade_in(0,0,g_uw_framebuffer);
+                  fade_in(g_uw_framebuffer,0,0);
                   local_8f = -2;
                   local_8d = -1;
                 }
@@ -6709,7 +6707,7 @@ LAB_00036ca4:
                 } while (DAT_00101a6c == local_97);
               }
               if (-1 < local_8d) {
-                fade_out(0,0,g_uw_framebuffer);
+                fade_out(g_uw_framebuffer,0,0);
                 local_8d = -2;
                 local_8f = -1;
               }
@@ -6756,8 +6754,7 @@ LAB_00037a94:
       }
       if (local_b9 == '\0') {
         if (local_8d != -2) {
-          fade_out(0,0,g_uw_framebuffer,200,CONCAT22(uVar24,0x140),0
-                       ,0,local_b8,2,1);
+          fade_out(g_uw_framebuffer,local_b8,1);
         }
         clear_screen_and_restore_cursor();
       }

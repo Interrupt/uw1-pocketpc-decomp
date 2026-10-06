@@ -454,7 +454,7 @@ undefined4 param_1;
         // HACK: same DAT_00088d98-sync deviation as this function's other
         // palette-load point above -- see that comment.
         set_palette_bank(2);
-        fade_in(0,0,g_uw_framebuffer,200);
+        fade_in(g_uw_framebuffer,0,0);
       }
     }
     sVar3 = menu_button_list_navigate(uVar8,DAT_0023bf6c,0,uVar2);
@@ -469,7 +469,7 @@ undefined4 param_1;
     }
     else if (local_838 == 1) {
       g_text_use_palette_color = 1;
-      fade_out(0,0,g_uw_framebuffer,200);
+      fade_out(g_uw_framebuffer,0,0);
       /* Extracted (unit-testing-framework merge) into prepare_new_game,
          src/game.c -- see its own comment; this used to be the entire
          chargen->\SAVE0\lev.ark-seeding sequence inlined here. */
