@@ -1447,16 +1447,8 @@ LAB_0003c940:
         *(char *)((char *)g_player_object + 0x17) = (char)(uVar5 >> 8);
         uVar5 = local_40;
       }
-      uVar6 = DAT_00204880 & 0xe0;
-      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
-      *(char *)((char *)g_player_object + 2) = (char)uVar3;
-      *(byte *)((char *)g_player_object + 3) =
-           (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 0xd) >> 8);
-      uVar6 = DAT_00204882 & 0xe0;
-      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xe3ff;
-      *(char *)((char *)g_player_object + 2) = (char)uVar3;
-      *(byte *)((char *)g_player_object + 3) =
-           (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 10) >> 8);
+      ((uw_object_hdr_t *)g_player_object)->xpos = (short)(DAT_00204880 & 0xe0) >> 5;
+      ((uw_object_hdr_t *)g_player_object)->ypos = (short)(DAT_00204882 & 0xe0) >> 5;
       if (getenv("UW_DEBUG_STEPHEIGHT"))
         fprintf(stderr, "[stepsnap] uVar10=%u uVar5=%u cur_z=%d DAT_00202c30=%d snap=%d\n",
                 uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,

@@ -861,22 +861,13 @@ LAB_0003987c:
             }
           }
           if (height_value < 0xb) {
-            uVar5 = *puVar7;
-            *(byte *)puVar7 = (byte)(uVar5 & 0xc3ff);
-            *(byte *)((char *)puVar7 + 1) =
-                 (byte)((uVar5 & 0xc3ff) >> 8) | (byte)((((int)height_value & 0xfU) << 10) >> 8);
+            ((uw_tile_t *)puVar7)->floor_tex = height_value & 0xf;
           }
           if (wall_texture < 0x30) {
-            uVar5 = puVar7[1];
-            bVar6 = (byte)uVar5;
-            *(byte *)(puVar7 + 1) = (bVar6 ^ (byte)wall_texture) & 0x3f ^ bVar6;
-            *(byte *)((char *)puVar7 + 3) = (byte)(uVar5 >> 8);
+            ((uw_tile_t *)puVar7)->wall_tex = wall_texture;
           }
           if (floor_texture < 10) {
-            uVar5 = *puVar7;
-            bVar6 = (byte)uVar5;
-            *(byte *)puVar7 = (bVar6 ^ (byte)floor_texture) & 0xf ^ bVar6;
-            *(byte *)((char *)puVar7 + 1) = (byte)(uVar5 >> 8);
+            ((uw_tile_t *)puVar7)->tile_type = floor_texture;
           }
           tile_y = tile_y + 1;
         } while (tile_y * 0x10000 >> 0x10 <= iVar2);
