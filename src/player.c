@@ -3895,14 +3895,14 @@ undefined1 param_2;
       uVar2 = *puVar6;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
           (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
-        /* Was two separate ordint_divmod calls on the same (cVar1, param_2) pair -- one bare
-           (wanting the remainder via a never-populated extraout_r1), one capturing the quotient via
-           a dropped-dividend second call. */
+        /* ARM 0x540d4 uses the tick phase (param_2) for the remainder.
+           Before the second division, 0x540ec reloads elapsed ticks
+           (param_1) into r1. Sleep needs that distinct bulk dividend. */
         divmod_result dmr4414 = ordint_divmod(cVar1,param_2);
         extraout_r1 = dmr4414.rem;
         uVar8 = (ushort)(extraout_r1 == 0);
         if (1 < param_1) {
-          sVar5 = dmr4414.quot;
+          sVar5 = ordint_divmod(cVar1,param_1).quot;
           uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
         }
         if ((short)uVar8 != 0) {

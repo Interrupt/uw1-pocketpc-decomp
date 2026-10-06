@@ -31,14 +31,17 @@ byte tile_is_no_magic(int x, int y)
     TEST_ASSERT_EQUAL_INT(DAT_002020a4, y);
     return 0;
 }
+#ifndef UW_TEST_FULL_REST
 undefined4 rand_below(int max) { return max - 1; }
 long ce_rand(void) { return 0; }
+#endif
 void project_position_by_heading(int heading, int distance, short *x, short *y)
 {
     /* Rest scans at the actor's position: projection distance is zero. */
     TEST_ASSERT_EQUAL_INT(0, distance);
     (void)heading; (void)x; (void)y;
 }
+#ifndef UW_TEST_FULL_REST
 void handle_rest_action(int mode)
 {
     /* The rest UI/time advancement is outside these functional tests. Run
@@ -47,6 +50,7 @@ void handle_rest_action(int mode)
     special_use_fixture.rest_checks++;
     special_use_fixture.rest_unsafe = check_rest_area_unsafe();
 }
+#endif
 
 #define UNUSED_VOID(name) void name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); }
 #define UNUSED_RESULT(name) undefined4 name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); return 0; }
@@ -58,12 +62,16 @@ UNUSED_VOID(cast_cone_damage_spell)
 UNUSED_VOID(cast_targeted_search_effect)
 UNUSED_VOID(cast_summon_or_spawn_effect)
 UNUSED_VOID(reduce_item_quality_on_use)
+#ifndef UW_TEST_FULL_REST
 UNUSED_VOID(adjust_level7_hazard_value)
+#endif
 UNUSED_VOID(dispatch_player_command)
 UNUSED_VOID(handle_level4_maze_puzzle_button)
 UNUSED_VOID(display_book_or_scroll_page)
 UNUSED_VOID(scheduler_tick)
+#ifndef UW_TEST_FULL_REST
 UNUSED_VOID(redraw_backpack_slot_widget)
+#endif
 UNUSED_VOID(refresh_container_view)
 bool finish_object_use(void) { TEST_FAIL_MESSAGE("Unexpected finish_object_use"); return false; }
 UNUSED_RESULT(spawn_scheduled_door_texture_object)

@@ -23,12 +23,8 @@ static undefined DAT_00202807[121];
    "Look, it's a text trap\n". */
 static char s_Look__it_s_a_text_trap_00087918[] = "Look, it's a text trap\n";
 static undefined4 DAT_0024cff8;
-static undefined4 DAT_0024cfd4;
-/* Sizing-audit pass: its ADDRESS is passed as scan_area_ahead_of_ object's callback argument (see
-   the GAP note below) -- a stand-in for an unrecovered callback, never read/written/indexed as
-   data. Shrunk for consistency; down from 8192. */
-static undefined DAT_0007e644_backing[16];
-#define DAT_0007e644 DAT_0007e644_backing[0]
+/* The spawn template's native record address, compared by FUN_0007e644. */
+static char *DAT_0024cfd4;
 
 
 
@@ -652,15 +648,33 @@ byte * param_2;
 
 
 
-// was FUN_0007e694 -- its only confirmed caller is dispatch_trap_type_effect's case 7 ("spawn
-// trap"), which aborts the spawn when this returns nonzero for the target object (class 0x40).
-undefined4 check_object_area_for_spawn_block(param_1)
+// was FUN_0007e644 -- area-scan callback: another marked NPC blocks the spawn;
+// the template itself and player do not. ARM 0x7e644..0x7e688 tests word +0xd
+// bit 0x100 and compares the record in r2 against those two native addresses.
+undefined4 detect_spawn_blocking_object_callback(param_1,param_2,param_3)
 undefined4 param_1;
+undefined4 param_2;
+char *param_3;
+
+{
+  if (((*(byte *)(param_3 + 0xe) & 1) != 0) &&
+      (param_3 != DAT_0024cfd4) && (param_3 != (char *)g_player_object)) {
+    DAT_0024cff8 = 1;
+  }
+  return DAT_0024cff8;
+}
+
+
+// was FUN_0007e694 -- checks the spawn template's surrounding NPCs. Called by
+// dispatch_trap_type_effect's case 7, which aborts the spawn on a nonzero result.
+undefined4 check_object_area_for_spawn_block(param_1)
+char *param_1;
 
 {
   DAT_0024cff8 = 0;
   DAT_0024cfd4 = param_1;
-  scan_area_ahead_of_object(param_1,1,&DAT_0007e644,0,0,4);
+  /* ARM 0x7e6bc loads code address 0x7e644, not a data buffer. */
+  scan_area_ahead_of_object(param_1,1,detect_spawn_blocking_object_callback,0,0,4);
   return DAT_0024cff8;
 }
 

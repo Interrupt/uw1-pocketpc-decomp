@@ -832,3 +832,33 @@ add_fixture_game_unit_test(special_use
   src/player.c:apply_healing_item_effect
   src/player.c:restore_stat_capped
   src/tmap.c:tilemap_lookup)
+
+add_fixture_game_unit_test(sleep
+  src/item_use.c:dispatch_use_special_item_by_type
+  src/player.c:handle_rest_action src/player.c:check_rest_area_unsafe
+  src/player.c:detect_unsafe_rest_object_callback
+  src/player.c:adjust_player_hp src/player.c:adjust_level7_hazard_value
+  src/player.c:adjust_player_hunger src/player.c:restore_stat_capped
+  src/player.c:decay_equipped_light_sources
+  src/level.c:trigger_random_level_special_event
+  src/weapon_swing.c:weapon_overlay_flash_hold
+  src/weapon_swing.c:weapon_overlay_flash_restore
+  src/traps.c:process_nearby_background_traps
+  src/traps.c:is_out_of_player_range
+  src/traps.c:dispatch_trap_type_effect
+  src/traps.c:check_object_area_for_spawn_block
+  src/traps.c:detect_spawn_blocking_object_callback
+  src/objects.c:find_object_in_world src/objects.c:find_object_in_chain
+  src/objects.c:object_ptr_in_arena
+  src/objects.c:despawn_objects_outside_radius
+  src/objects.c:should_destroy_linked_object src/ai.c:roll_object_destroy_chance
+  src/objects.c:walk_object_tree src/objects.c:object_exceeds_size_threshold
+  src/objects.c:resolve_object_link src/objects.c:get_object_record_by_slot_index
+  src/objects.c:encode_object_slot_index src/objects.c:object_list_insert_head
+  src/objects.c:object_list_unlink src/objects.c:unlink_and_free_object
+  src/objects.c:free_object_slot src/objects.c:free_linked_object_recursive
+  src/object_actions.c:scan_area_for_matching_objects
+  src/object_actions.c:scan_area_ahead_of_object
+  src/tmap.c:tilemap_lookup)
+target_sources(uw_test_sleep PRIVATE support/special_use_fixture.c)
+target_compile_definitions(uw_test_sleep PRIVATE UW_TEST_FULL_REST)
