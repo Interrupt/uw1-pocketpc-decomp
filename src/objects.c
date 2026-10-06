@@ -387,7 +387,7 @@ void free_linked_object_recursive(char *link_field)
       if ((puVar1[2] & 0xffc0) != 0) {
         free_linked_object_recursive((char *)(puVar1 + 2));  /* ARM 0x5342c: add r0,r4,#4 */
       }
-      if ((*puVar1 & 0x8000) == 0) {
+      if (!((uw_object_hdr_t *)puVar1)->is_quant) {
         if ((puVar1[3] & 0xffc0) != 0) {
           free_linked_object_recursive((char *)(puVar1 + 3));  /* ARM 0x53470: add r0,r4,#6 */
         }
@@ -602,7 +602,7 @@ LAB_00038100:
           }
         }
       }
-      if (((*object & 0x8000) == 0) && ((object[3] & 0xffc0) != 0)) {
+      if ((!((uw_object_hdr_t *)object)->is_quant) && ((object[3] & 0xffc0) != 0)) {
         free_linked_object_recursive(object + 3);
       }
     }
@@ -971,10 +971,10 @@ uint calculate_object_weight(ushort *object)
 
   uVar1 = *object;
   iVar3 = (((uw_object_hdr_t *)object)->item_id) * 0xd;
-  if (((uVar1 & 0x8000) == 0) || ((object[3] & 0x8000) != 0)) {
+  if ((!((uw_object_hdr_t *)object)->is_quant) || ((object[3] & 0x8000) != 0)) {
     local_8[0] = *(ushort *)(&DAT_00202c91 + iVar3) >> 4;
     uVar2 = (uint)local_8[0];
-    if ((uVar1 & 0x8000) == 0) {
+    if (!((uw_object_hdr_t *)object)->is_quant) {
       if ((object[3] & 0xffc0) != 0) {
         sum_container_weight(object + 3,local_8);
         uVar2 = (uint)(short)local_8[0];
@@ -1155,7 +1155,7 @@ int object_exceeds_size_threshold(ushort *object)
   
   uVar1 = *object;
   if ((uVar1 & 0x2000) == 0) {
-    if (((uVar1 & 0x8000) == 0) || ((object[3] & 0x8000) != 0)) {
+    if ((!((uw_object_hdr_t *)object)->is_quant) || ((object[3] & 0x8000) != 0)) {
       sVar3 = 0;
     }
     else {
@@ -1429,7 +1429,7 @@ ushort *find_object_in_chain(ushort **link_cursor, int recurse, int object_class
           return puVar1;
         }
       }
-      if ((((recurse != 0) && ((uVar3 & 0x8000) == 0)) && ((puVar1[3] & 0xffc0) != 0)) &&
+      if ((((recurse != 0) && (!((uw_object_hdr_t *)puVar1)->is_quant)) && ((puVar1[3] & 0xffc0) != 0)) &&
          (local_28 = puVar1 + 3,
          puVar2 = (ushort *)find_object_in_chain(&local_28,recurse,object_class,subclass,quality),
          puVar2 != (ushort *)0x0)) {
@@ -1456,7 +1456,7 @@ int object_or_contents_has_type(ushort *object, ushort type_id)
     uVar1 = 1;
   }
   else {
-    if ((*object & 0x8000) == 0) {
+    if (!((uw_object_hdr_t *)object)->is_quant) {
       local_8 = object + 3;
       iVar2 = find_object_in_chain(&local_8,1,(int)(short)type_id >> 6,(short)type_id >> 4 & 3,type_id & 0xf
                           );

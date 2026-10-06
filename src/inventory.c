@@ -332,7 +332,7 @@ void handle_inventory_panel_click(short slot)
       if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = wait_for_key_or_mouse_move(1), iVar6 != 0)) {
         puVar7 = (ushort *)resolve_object_link(&g_equipped_items + iVar9 * 2);
         uVar3 = *puVar7;
-        if (((uVar3 & 0x8000) == 0) || ((puVar7[3] & 0x8000) != 0)) {
+        if ((!((uw_object_hdr_t *)puVar7)->is_quant) || ((puVar7[3] & 0x8000) != 0)) {
           if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
             puVar4 = g_open_container_list;
             if ((DAT_00085a6c[4] == 4) && ((uVar3 & 0xf) != 0xf)) {
@@ -544,7 +544,7 @@ joined_r0x00048308:
               draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->item_id,(int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7],
                            (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],(&g_inv_hotspot_dirty_h)[iVar6 * 0xe],
                            (&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
-              if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
+              if (((((uw_object_hdr_t *)puVar7)->is_quant) && ((puVar7[3] & 0x8000) == 0)) &&
                  (uVar4 = puVar7[3] >> 6, 1 < uVar4)) {
                 auStack_54[iVar6] = uVar4;
                 bVar5 = true;
@@ -592,7 +592,7 @@ joined_r0x00048308:
           fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7, puVar7 ? (unsigned)(((uw_object_hdr_t *)puVar7)->item_id) : 0u);
         draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->item_id,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                      DAT_00085bf5,DAT_00085bf4);
-        if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
+        if (((((uw_object_hdr_t *)puVar7)->is_quant) && ((puVar7[3] & 0x8000) == 0)) &&
            (uVar4 = puVar7[3] >> 6, 1 < uVar4)) {
           bVar5 = true;
           local_2c = uVar4;

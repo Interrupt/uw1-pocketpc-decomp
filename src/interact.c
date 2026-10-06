@@ -84,10 +84,10 @@ void interact_default()
       if (getenv("UW_DEBUG_THROW"))
         fprintf(stderr, "[grab] target=%p type=0x%x bit8000=%d target3=0x%x target3_bit8000=%d target3_qty=0x%x in_arena=%d\n",
                 (void *)g_interact_target, (unsigned)(((uw_object_hdr_t *)g_interact_target)->item_id),
-                (int)((*g_interact_target & 0x8000) != 0), (unsigned)g_interact_target[3],
+                (int)(((uw_object_hdr_t *)g_interact_target)->is_quant), (unsigned)g_interact_target[3],
                 (int)((g_interact_target[3] & 0x8000) != 0), (unsigned)(g_interact_target[3] & 0xffc0),
                 (int)object_ptr_in_arena((char *)g_interact_target));
-      if (((*g_interact_target & 0x8000) != 0) &&
+      if ((((uw_object_hdr_t *)g_interact_target)->is_quant) &&
          (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
         if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)g_interact_target)->item_id) == 0x80)
           fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling prompt_split_object_stack\n");
@@ -521,7 +521,7 @@ void purge_tagged_objects_from_chain(ushort *link_field)
       *(undefined1 *)((char *)puVar1 + 7) = 0;
       DAT_0024cfd8 = DAT_0024cfd8 + -1;
     }
-    if (((*puVar1 & 0x8000) == 0) && ((puVar1[3] & 0xffc0) != 0)) {
+    if ((!((uw_object_hdr_t *)puVar1)->is_quant) && ((puVar1[3] & 0xffc0) != 0)) {
       purge_tagged_objects_from_chain(puVar1 + 3); /* was called with no argument; confirmed via ARM disassembly, 0x7dfbc */
     }
   }

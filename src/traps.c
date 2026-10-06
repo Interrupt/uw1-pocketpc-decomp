@@ -117,7 +117,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
     if (iVar16 < (int)((byte)trap_record[2] & 0x3f)) {
       return 2;
     }
-    if ((*trap_record & 0x8000) != 0) {
+    if (((uw_object_hdr_t *)trap_record)->is_quant) {
       return 2;
     }
     puVar12 = (ushort *)resolve_object_link(trap_record + 3);
@@ -161,7 +161,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
                               CONCAT22(uVar20,4),0);
       DAT_00202c84 = 0;
       if (local_30 != 0) {
-        if ((((*puVar8 & 0x8000) == 0) && ((puVar8[3] & 0xffc0) != 0)) &&
+        if (((!((uw_object_hdr_t *)puVar8)->is_quant) && ((puVar8[3] & 0xffc0) != 0)) &&
            (puVar9 = (undefined1 *)alloc_object_slot(0), puVar9 != (undefined1 *)0x0)) {
           puVar10 = (undefined1 *)get_object_record_by_slot_index(puVar8[3] >> 6);
           *puVar9 = *puVar10;
@@ -226,7 +226,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
         object_list_unlink(local_34,_case8_p2);
         free_object_slot(_case8_p2);
       }
-      if (((*trap_record & 0x8000) == 0) && ((trap_record[3] & 0xffc0) != 0)) {
+      if ((!((uw_object_hdr_t *)trap_record)->is_quant) && ((trap_record[3] & 0xffc0) != 0)) {
         puVar9 = (undefined1 *)resolve_object_link(trap_record + 3);
         puVar10 = (undefined1 *)alloc_object_slot(0);
         if (puVar10 != (undefined1 *)0x0) {

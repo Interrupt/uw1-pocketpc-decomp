@@ -678,14 +678,14 @@ LAB_0004386c:
         iVar10 = objects_can_stack(object,puVar6);
         if (iVar10 != 0) {
           uVar2 = *puVar6;
-          if ((uVar2 & 0x8000) == 0) {
+          if (!((uw_object_hdr_t *)puVar6)->is_quant) {
             *(char *)puVar6 = (char)uVar2;
             *(byte *)((char *)puVar6 + 1) = (byte)(uVar2 >> 8) | 0x80;
             *(byte *)(puVar6 + 3) = (byte)puVar6[3] & 0x3f | 0x40;
             *(undefined1 *)((char *)puVar6 + 7) = 0;
           }
           bVar1 = (byte)*object;
-          bVar11 = (*object & 0x8000) != 0;
+          bVar11 = ((uw_object_hdr_t *)object)->is_quant;
           if (bVar11) {
             bVar1 = (byte)object[3];
           }
@@ -761,7 +761,7 @@ void sum_container_weight(ushort *link_field, short *total_weight)
     if (puVar2 == (ushort *)0x0) {
       return;
     }
-    if (((*puVar2 & 0x8000) == 0) || ((puVar2[3] & 0x8000) != 0)) {
+    if ((!((uw_object_hdr_t *)puVar2)->is_quant) || ((puVar2[3] & 0x8000) != 0)) {
       uVar1 = 1;
     }
     else {
@@ -769,7 +769,7 @@ void sum_container_weight(ushort *link_field, short *total_weight)
     }
     *total_weight = (*(ushort *)(&DAT_00202c91 + ((uw_object_hdr_t *)puVar2)->item_id * 0xd) >> 4) * uVar1 + *total_weight;
     sum_container_weight(puVar2 + 2,total_weight);
-    if ((*puVar2 & 0x8000) != 0) break;
+    if (((uw_object_hdr_t *)puVar2)->is_quant) break;
     puVar2 = (ushort *)resolve_object_link(puVar2 + 3);
   }
 }
