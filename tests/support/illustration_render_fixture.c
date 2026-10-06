@@ -71,7 +71,7 @@ void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_dump_critter_sheet_once(void);
 void uw_debug_force_item_id_once(void);
 void tick_weapon_swing_state(short attack_direction);
-void poll_input_bindings(void);
+void poll_input_bindings(undefined1 *input_state);
 
 undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
 
@@ -477,7 +477,7 @@ void uw_debug_force_item_id_once(void) {}
 
 void tick_weapon_swing_state(short attack_direction) { (void)attack_direction;}
 
-void poll_input_bindings(void)
+void poll_input_bindings(undefined1 *input_state)
 {
     if (input_opens_window) {
         int saved_presents = presents;

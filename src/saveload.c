@@ -92,8 +92,7 @@ static undefined DAT_000870c8_backing[16] = "\\*.*";
 
 
 // was FUN_000567ec
-void draw_save_load_slot_list()
-
+void draw_save_load_slot_list(void)
 {
   int iVar1;
   undefined1 auStack_c4 [8];
@@ -129,15 +128,13 @@ void draw_save_load_slot_list()
   g_scroll_control_codes_enabled = 1;
   message_scroll_print_wrapped(&s_scroll_color_reset_00087038);
   g_text_use_palette_color = _saved_text_palette_color;
-  return;
 }
 
 
 
 
 // was FUN_0006b178.
-undefined4 journey_onward_load_slot_menu()
-
+undefined4 journey_onward_load_slot_menu(void)
 {
   char stack0xffdc3198_buf [256];
   char *stack0xffdc3198_ptr;
@@ -272,10 +269,7 @@ undefined4 journey_onward_load_slot_menu()
 // was FUN_0006bde0. Fills param_1 with 4 fixed-width 0x28-byte records
 // (each slot's "desc" file text, space-padded, or a "not used yet"
 // placeholder) and *param_2 with a bitmask of which slots are real.
-void probe_save_slots(param_1,param_2)
-char *param_1;
-ushort * param_2;
-
+void probe_save_slots(char *slot_descriptions, ushort *used_mask)
 {
   char stack0xffdc3230_buf [256];
   char *stack0xffdc3230_ptr;
@@ -296,7 +290,7 @@ ushort * param_2;
   ce_strcat(acStack_128,&DAT_000857a0);
   puVar3 = (undefined1 *)ce_strchr(acStack_128,0x30);
   ce_strcat(acStack_128,&DAT_00087030);
-  *param_2 = 0;
+  *used_mask = 0;
   uVar5 = 0;
   do {
     /* DAT_000857a0/DAT_00087030 are both unrecoverable string constants (no content Ghidra could
@@ -309,33 +303,30 @@ ushort * param_2;
       /* Pad the record with spaces before reading the real "desc" file text over the front of it --
          journey_onward_load_slot_menu's caller trims trailing spaces off this record to find where
          the real text ends... */
-      ce_memset(uVar5 * 0x28 + param_1,0x20,0x28);
-      read_file_handle(iVar4,uVar5 * 0x28 + param_1,0x27);
-      *param_2 = *param_2 | (ushort)(1 << (uVar5 & 0xff));
+      ce_memset(uVar5 * 0x28 + slot_descriptions,0x20,0x28);
+      read_file_handle(iVar4,uVar5 * 0x28 + slot_descriptions,0x27);
+      *used_mask = *used_mask | (ushort)(1 << (uVar5 & 0xff));
       CloseHandle(iVar4);
     }
-    if (((int)(short)*param_2 & 1 << (uVar5 & 0xff)) == 0) {
+    if (((int)(short)*used_mask & 1 << (uVar5 & 0xff)) == 0) {
       pcVar2 = s__not_used_yet__00087020;
       do {
         cVar1 = *pcVar2;
-        /* Was `pcVar2[uVar5*0x28 + -0x87020 + param_1]` -- `-0x87020` hardcoded
+        /* Was `pcVar2[uVar5*0x28 + -0x87020 + slot_descriptions]` -- `-0x87020` hardcoded
            s__not_used_yet__00087020's address in the ORIGINAL 32-bit binary's fixed layout... */
-        param_1[uVar5 * 0x28 + (pcVar2 - s__not_used_yet__00087020)] = cVar1;
+        slot_descriptions[uVar5 * 0x28 + (pcVar2 - s__not_used_yet__00087020)] = cVar1;
         pcVar2 = pcVar2 + 1;
       } while (cVar1 != '\0');
     }
     uVar5 = (int)((uVar5 + 1) * 0x10000) >> 0x10;
   } while ((int)uVar5 < 4);
-  return;
 }
 
 
 
 
 // was FUN_0006c0c0
-undefined4 load_game_from_slot(param_1)
-char param_1;
-
+undefined4 load_game_from_slot(char slot_digit)
 {
   char *wptr_50330;
   char stack0xffdc2d28_buf [256];
@@ -382,7 +373,7 @@ char param_1;
      the digit is a save-slot number (SAVE0, SAVE1, ...), so a NULL means this path build silently
      keeps whatever acStack_650 already had instead of crashing. */
   if (pcVar6 != (char *)0x0) {
-  *pcVar6 = param_1 + '0';
+  *pcVar6 = slot_digit + '0';
   }
   pcVar6 = pcVar5;
     stack0xffdc2d28_ptr = acStack_630;
@@ -441,12 +432,9 @@ char param_1;
 
 
 // was FUN_0006c264
-undefined4 save_game_to_slot(param_1,param_2)
-char param_1;
 /* Was `undefined4` -- truncates the real 64-bit buffer pointer handle_save_load_menu_action passes
    in (a pointer into its own auStack_ac local, see that function's comment). */
-char *param_2;
-
+undefined4 save_game_to_slot(char slot_digit, char *description)
 {
   char stack0xffdc2d20_buf [256];
   char *stack0xffdc2d20_ptr;
@@ -482,14 +470,14 @@ char *param_2;
   pcVar3 = (char *)ce_strchr(local_530,0x30);
   /* Same DAT_000857a0-is-unrecoverable NULL risk as probe_save_slots above. */
   if (pcVar3 != (char *)0x0) {
-  *pcVar3 = param_1 + '0';
+  *pcVar3 = slot_digit + '0';
   pcVar3[1] = '\0';
   }
   msg_scroll_panel_reset(1);
   message_scroll_print_wrapped(s_Please_enter_a_Save_Game_file_an_00087094);
   /* Dropped 5th argument (max name length) -- confirmed via real ARM disassembly (0x6c2f8-0x6c30c:
      `mov r3,#0x1e; strh r3,[sp,#0]` pushes 0x1e as the 5th/stack arg immediately before the call). */
-  sVar2 = scroll_text_entry_prompt(0,param_2,param_2,1,0x1e);
+  sVar2 = scroll_text_entry_prompt(0,description,description,1,0x1e);
   if (((sVar2 != 0x1b) && (sVar2 != 1)) && (sVar2 != 2)) {
     message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     print_scroll_message_by_id(0xa7);
@@ -520,8 +508,8 @@ char *param_2;
         pcVar6 = pcVar6 + 1;
       } while (cVar1 != '\0');
       ce_strcat(local_638,s__SAVE0_desc_00087078);
-      uVar7 = ce_strlen(param_2);
-      iVar4 = write_buffer_to_file(param_2,local_638,(uVar7 & 0xffff) + 1);
+      uVar7 = ce_strlen(description);
+      iVar4 = write_buffer_to_file(description,local_638,(uVar7 & 0xffff) + 1);
       if (iVar4 != 0) {
         pcVar3[2] = '\0';
         print_scroll_message_by_id(0xaa);
@@ -568,10 +556,7 @@ LAB_0006c544:
 /* param_2 was dropped entirely -- declared with only 1 parameter but every caller passes 2 (the
    filename to open, e.g. s__SAVE0_lev_ark_000842fc). `ce_strcat(local_120);` (a strcat- shaped
    Ordinal used with an explicit 2-arg form everywhere else in this file) was being called with... */
-bool open_level_archive(param_1,param_2)
-undefined1 * param_1;
-char * param_2;
-
+bool open_level_archive(undefined1 *archive, char *path)
 {
   char cVar1;
   char *pcVar2;
@@ -590,7 +575,7 @@ char * param_2;
   char local_228 [264];
   char local_120 [260];
 
-  pcVar2 = param_2;
+  pcVar2 = path;
   pcVar9 = local_120;
   do {
     cVar1 = *pcVar2;
@@ -621,25 +606,25 @@ char * param_2;
     iVar5 = read_file_handle(iVar3,&DAT_000b78b8,(uint)local_230[0] << 2);
     uVar7 = (uint)local_230[0];
     iVar6 = open_existing_file_rw(local_228);
-    *param_1 = (char)iVar3;
-    param_1[1] = (char)((uint)iVar3 >> 8);
-    param_1[4] = (char)iVar6;
-    param_1[10] = 0xb8;
-    param_1[2] = (char)((uint)iVar3 >> 0x10);
-    param_1[0xe] = 0;
+    *archive = (char)iVar3;
+    archive[1] = (char)((uint)iVar3 >> 8);
+    archive[4] = (char)iVar6;
+    archive[10] = 0xb8;
+    archive[2] = (char)((uint)iVar3 >> 0x10);
+    archive[0xe] = 0;
     bVar8 = (iVar4 == 2 && iVar5 == uVar7 * 4) && iVar6 != -1;
     if (getenv("UW_DEBUG_INPUTEVENT"))
       fprintf(stderr, "[archive] iVar4=%d iVar5=%d uVar7=%u iVar6=%d bVar8=%d\n", iVar4, iVar5, uVar7, iVar6, (int)bVar8);
-    param_1[3] = (char)((uint)iVar3 >> 0x18);
-    param_1[5] = (char)((uint)iVar6 >> 8);
+    archive[3] = (char)((uint)iVar3 >> 0x18);
+    archive[5] = (char)((uint)iVar6 >> 8);
     iVar3 = 0;
-    param_1[6] = (char)((uint)iVar6 >> 0x10);
-    param_1[7] = (char)((uint)iVar6 >> 0x18);
-    param_1[8] = (char)local_230[0];
-    param_1[9] = (char)(local_230[0] >> 8);
-    param_1[0xb] = 0x78;
-    param_1[0xc] = 0xb;
-    param_1[0xd] = 0;
+    archive[6] = (char)((uint)iVar6 >> 0x10);
+    archive[7] = (char)((uint)iVar6 >> 0x18);
+    archive[8] = (char)local_230[0];
+    archive[9] = (char)(local_230[0] >> 8);
+    archive[0xb] = 0x78;
+    archive[0xc] = 0xb;
+    archive[0xd] = 0;
     do {
       cVar1 = local_120[iVar3];
       (&DAT_000b98b8)[iVar3] = cVar1;
@@ -661,9 +646,7 @@ char * param_2;
 // was FUN_00015a58 -- finalizes and closes an open_level_archive handle: rewrites the entry-offset
 // table header if the dirty flag (param_1+0xe) is set, closes both file handles, and commits the
 // tmp-file rename back over the real archive name.
-byte close_level_archive(param_1)
-undefined4 * param_1;
-
+byte close_level_archive(undefined4 *archive)
 {
   char cVar1;
   ushort uVar2;
@@ -674,14 +657,14 @@ undefined4 * param_1;
   char acStack_118 [260];
   
   bVar6 = true;
-  uVar2 = *(ushort *)(param_1 + 2);
-  if (*(char *)((char *)param_1 + 0xe) != '\0') {
-    iVar3 = seek_file_handle(*param_1,2,0);
-    iVar4 = write_file_handle(*param_1,&DAT_000b78b8,(uVar2 & 0x3fff) << 2);
+  uVar2 = *(ushort *)(archive + 2);
+  if (*(char *)((char *)archive + 0xe) != '\0') {
+    iVar3 = seek_file_handle(*archive,2,0);
+    iVar4 = write_file_handle(*archive,&DAT_000b78b8,(uVar2 & 0x3fff) << 2);
     bVar6 = iVar3 == 2 && iVar4 == (uVar2 & 0x3fff) * 4;
   }
-  iVar4 = CloseHandle(*param_1);
-  CloseHandle(CONCAT13(*(undefined1 *)((char *)param_1 + 7),*(undefined3 *)(param_1 + 1)));
+  iVar4 = CloseHandle(*archive);
+  CloseHandle(CONCAT13(*(undefined1 *)((char *)archive + 7),*(undefined3 *)(archive + 1)));
   iVar3 = ce_strlen(&DAT_000b98b8);
   pcVar5 = &DAT_000b98b9 + iVar3;
   char *path_start = pcVar5;
@@ -699,14 +682,9 @@ undefined4 * param_1;
 // was FUN_00015b94 -- write_archive_entry(handle, entry_index, src_buf, len): the write-side
 // counterpart to read_archive_entry, resizing the archive's entry table when the new length doesn't
 // fit the existing slot.
-bool write_archive_entry(param_1,param_2,param_3,param_4)
-undefined4 * param_1;
-uint param_2;
 /* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live object arena) pointer
    write_level_tilemap_to_archive passes in as the source buffer for the archive-entry write. */
-void *param_3;
-uint param_4;
-
+bool write_archive_entry(undefined4 *archive, uint entry_index, void *data, uint byte_count)
 {
   char cVar1;
   undefined2 uVar2;
@@ -729,31 +707,31 @@ uint param_4;
   char acStack_230 [263];
   char acStack_129 [261];
   
-  iVar8 = (param_2 & 0xffff) * 4;
+  iVar8 = (entry_index & 0xffff) * 4;
   uVar16 = 0;
-  /* param_1+0xa..0xd held the literal 0x000b78b8 (&DAT_000b78b8's address in the original 32-bit
+  /* archive+0xa..0xd held the literal 0x000b78b8 (&DAT_000b78b8's address in the original 32-bit
      binary) as the .ark entry-offset table pointer -- see read_archive_entry's matching comment.
      The table is a fixed global; use its real address. */
   uVar15 = *(uint *)((char *)&DAT_000b78b8 + iVar8);
   if (getenv("UW_DEBUG_INPUTEVENT"))
-    fprintf(stderr, "[15b94] param_2=%u entrycount=%u uVar15=%u param_4=%u handle1=%d handle2=%d\n",
-            param_2, (uint)*(ushort *)(param_1 + 2), uVar15, param_4, (int)*param_1, (int)param_1[1]);
-  if ((param_2 & 0xffff) <= (uint)*(ushort *)(param_1 + 2)) {
+    fprintf(stderr, "[15b94] entry_index=%u entrycount=%u uVar15=%u byte_count=%u handle1=%d handle2=%d\n",
+            entry_index, (uint)*(ushort *)(archive + 2), uVar15, byte_count, (int)*archive, (int)archive[1]);
+  if ((entry_index & 0xffff) <= (uint)*(ushort *)(archive + 2)) {
     if (uVar15 == 0) {
       /* Zero offsets represent empty entries. An EOF offset for an
          empty note page would alias the next entry appended there. */
-      if ((param_4 & 0xffff) == 0) return true;
-      uVar4 = seek_file_handle(*param_1,0,2);
-      uVar15 = write_file_handle(*param_1,param_3,param_4 & 0xffff);
+      if ((byte_count & 0xffff) == 0) return true;
+      uVar4 = seek_file_handle(*archive,0,2);
+      uVar15 = write_file_handle(*archive,data,byte_count & 0xffff);
       if (getenv("UW_DEBUG_INPUTEVENT"))
-        fprintf(stderr, "[15b94] fast-path seek=%d write_wrote=%u want=%u\n", (int)uVar4, uVar15, param_4 & 0xffff);
-      *(undefined1 *)((char *)param_1 + 0xe) = 1;
+        fprintf(stderr, "[15b94] fast-path seek=%d write_wrote=%u want=%u\n", (int)uVar4, uVar15, byte_count & 0xffff);
+      *(undefined1 *)((char *)archive + 0xe) = 1;
       *(undefined4 *)((char *)&DAT_000b78b8 + iVar8) = uVar4;
-      return uVar15 == (param_4 & 0xffff);
+      return uVar15 == (byte_count & 0xffff);
     }
-    iVar5 = seek_file_handle(*param_1,0,2);
+    iVar5 = seek_file_handle(*archive,0,2);
     uVar17 = iVar5 - *(int *)((char *)&DAT_000b78b8 + iVar8);
-    if (*(ushort *)(param_1 + 2) != 0) {
+    if (*(ushort *)(archive + 2) != 0) {
       uVar12 = 0;
       do {
         uVar6 = *(uint *)((char *)&DAT_000b78b8 + uVar12 * 4);
@@ -762,37 +740,37 @@ uint param_4;
           uVar17 = uVar13;
         }
         uVar12 = uVar12 + 1 & 0xffff;
-      } while (uVar12 < *(ushort *)(param_1 + 2));
+      } while (uVar12 < *(ushort *)(archive + 2));
     }
-    param_4 = param_4 & 0xffff;
-    if (uVar17 != param_4) {
-      *(undefined1 *)((char *)param_1 + 0xe) = 1;
-      seek_file_handle(CONCAT13(*(undefined1 *)((char *)param_1 + 3),
-                            CONCAT12(*(undefined1 *)((char *)param_1 + 2),
-                                     CONCAT11(*(undefined1 *)((char *)param_1 + 1),
-                                              *(undefined1 *)param_1))),0,0);
-      seek_file_handle(param_1[1],0,0);
+    byte_count = byte_count & 0xffff;
+    if (uVar17 != byte_count) {
+      *(undefined1 *)((char *)archive + 0xe) = 1;
+      seek_file_handle(CONCAT13(*(undefined1 *)((char *)archive + 3),
+                            CONCAT12(*(undefined1 *)((char *)archive + 2),
+                                     CONCAT11(*(undefined1 *)((char *)archive + 1),
+                                              *(undefined1 *)archive))),0,0);
+      seek_file_handle(archive[1],0,0);
       if (uVar15 != 0) {
         do {
           uVar12 = uVar15 - uVar16;
           if (0x2000 < uVar12) {
             uVar12 = 0x2000;
           }
-          uVar2 = read_file_handle(*param_1,&DAT_000b58b8,uVar12 & 0xffff);
-          iVar5 = write_file_handle(param_1[1],&DAT_000b58b8,uVar2);
+          uVar2 = read_file_handle(*archive,&DAT_000b58b8,uVar12 & 0xffff);
+          iVar5 = write_file_handle(archive[1],&DAT_000b58b8,uVar2);
           uVar16 = uVar16 + iVar5;
         } while (uVar16 < uVar15);
       }
-      seek_file_handle(*param_1,uVar17,1);
+      seek_file_handle(*archive,uVar17,1);
       while( true ) {
-        sVar3 = read_file_handle(*param_1,&DAT_000b58b8,0x2000);
+        sVar3 = read_file_handle(*archive,&DAT_000b58b8,0x2000);
         if (sVar3 == 0) break;
         /* ARM 0x15ebc retains the byte count in r2 for this write. */
-        iVar5 = write_file_handle(param_1[1],&DAT_000b58b8,(ushort)sVar3);
+        iVar5 = write_file_handle(archive[1],&DAT_000b58b8,(ushort)sVar3);
         uVar16 = uVar16 + iVar5;
       }
-      write_file_handle(param_1[1],param_3,param_4);
-      if (*(short *)(param_1 + 2) != 0) {
+      write_file_handle(archive[1],data,byte_count);
+      if (*(short *)(archive + 2) != 0) {
         uVar12 = 0;
         do {
           puVar7 = (uint *)((char *)&DAT_000b78b8 + uVar12 * 4);
@@ -801,10 +779,10 @@ uint param_4;
             *puVar7 = uVar6 - (uVar17 & 0xffff);
           }
           uVar12 = uVar12 + 1 & 0xffff;
-        } while (uVar12 < *(ushort *)(param_1 + 2));
+        } while (uVar12 < *(ushort *)(archive + 2));
       }
       pcVar14 = &DAT_000b98b8;
-      *(uint *)((char *)&DAT_000b78b8 + iVar8) = param_4 == 0 ? 0 : uVar16;
+      *(uint *)((char *)&DAT_000b78b8 + iVar8) = byte_count == 0 ? 0 : uVar16;
       do {
         cVar1 = *pcVar14;
         /* ARM 0x15f94 uses sp+0x108: the archive-name buffer. */
@@ -827,8 +805,8 @@ uint param_4;
       } while (cVar1 != '\0');
       iVar8 = ce_strlen(local_338);
       acStack_129[iVar8] = '_';
-      CloseHandle(*param_1);
-      CloseHandle(param_1[1]);
+      CloseHandle(*archive);
+      CloseHandle(archive[1]);
       close_file_handle(acStack_230);
       uVar4 = open_file_for_read(local_338);
       uVar9 = open_existing_file_rw(acStack_230);
@@ -843,25 +821,25 @@ uint param_4;
       close_file_handle(local_338);
       /* close_level_archive still needs to write the offset table. */
       uVar4 = open_existing_file_rw(acStack_230);
-      *(char *)param_1 = (char)uVar4;
-      *(char *)((char *)param_1 + 1) = (char)((uint)uVar4 >> 8);
-      *(char *)((char *)param_1 + 2) = (char)((uint)uVar4 >> 0x10);
-      *(char *)((char *)param_1 + 3) = (char)((uint)uVar4 >> 0x18);
+      *(char *)archive = (char)uVar4;
+      *(char *)((char *)archive + 1) = (char)((uint)uVar4 >> 8);
+      *(char *)((char *)archive + 2) = (char)((uint)uVar4 >> 0x10);
+      *(char *)((char *)archive + 3) = (char)((uint)uVar4 >> 0x18);
       uVar4 = open_existing_file_rw(local_338);
-      *(char *)(param_1 + 1) = (char)uVar4;
-      *(char *)((char *)param_1 + 5) = (char)((uint)uVar4 >> 8);
-      *(char *)((char *)param_1 + 6) = (char)((uint)uVar4 >> 0x10);
-      *(char *)((char *)param_1 + 7) = (char)((uint)uVar4 >> 0x18);
+      *(char *)(archive + 1) = (char)uVar4;
+      *(char *)((char *)archive + 5) = (char)((uint)uVar4 >> 8);
+      *(char *)((char *)archive + 6) = (char)((uint)uVar4 >> 0x10);
+      *(char *)((char *)archive + 7) = (char)((uint)uVar4 >> 0x18);
       return true;
     }
-    seek_file_handle(CONCAT13(*(undefined1 *)((char *)param_1 + 3),
-                          CONCAT12(*(undefined1 *)((char *)param_1 + 2),
-                                   CONCAT11(*(undefined1 *)((char *)param_1 + 1),*(undefined1 *)param_1
+    seek_file_handle(CONCAT13(*(undefined1 *)((char *)archive + 3),
+                          CONCAT12(*(undefined1 *)((char *)archive + 2),
+                                   CONCAT11(*(undefined1 *)((char *)archive + 1),*(undefined1 *)archive
                                            ))),uVar15,0);
-    uVar15 = write_file_handle(*param_1,param_3,param_4);
+    uVar15 = write_file_handle(*archive,data,byte_count);
     if (getenv("UW_DEBUG_INPUTEVENT"))
-      fprintf(stderr, "[15b94] exact-fit path: handle1=%d wrote=%u want=%u\n", (int)*param_1, uVar15, param_4);
-    if (uVar15 == param_4) {
+      fprintf(stderr, "[15b94] exact-fit path: handle1=%d wrote=%u want=%u\n", (int)*archive, uVar15, byte_count);
+    if (uVar15 == byte_count) {
       return true;
     }
   }
@@ -871,14 +849,10 @@ uint param_4;
 
 
 // was FUN_0001613c
-undefined2 read_archive_entry(param_1,param_2,param_3)
-undefined4 * param_1;
-uint param_2;
 /* Was `undefined4`, truncating the real destination buffer pointer the callers pass
    (load_level_object_table: the malloc'd DAT_002029cc workspace; load_automap_reveal_from_archive:
    &DAT_000b99d0). */
-void *param_3;
-
+undefined2 read_archive_entry(undefined4 *archive, uint entry_index, void *buffer)
 {
   undefined2 uVar1;
   int iVar2;
@@ -888,17 +862,17 @@ void *param_3;
   uint uVar6;
   uint uVar7;
   
-  /* param_1+10 (bytes 0xa..0xd) held the literal address 0x000b78b8 -- &DAT_000b78b8's location in
+  /* archive+10 (bytes 0xa..0xd) held the literal address 0x000b78b8 -- &DAT_000b78b8's location in
      the ORIGINAL 32-bit binary -- baked in by open_level_archive as the .ark entry-offset table
      pointer. */
-  if (((uint)*(ushort *)(param_1 + 2) < (param_2 & 0xffff)) ||
-     (uVar6 = *(uint *)((char *)&DAT_000b78b8 + (param_2 & 0xffff) * 4), uVar6 == 0)) {
+  if (((uint)*(ushort *)(archive + 2) < (entry_index & 0xffff)) ||
+     (uVar6 = *(uint *)((char *)&DAT_000b78b8 + (entry_index & 0xffff) * 4), uVar6 == 0)) {
     uVar1 = 0;
   }
   else {
-    iVar2 = seek_file_handle(*param_1,0,2);
+    iVar2 = seek_file_handle(*archive,0,2);
     uVar7 = iVar2 - uVar6;
-    if (*(ushort *)(param_1 + 2) != 0) {
+    if (*(ushort *)(archive + 2) != 0) {
       uVar5 = 0;
       do {
         uVar3 = *(uint *)((char *)&DAT_000b78b8 + uVar5 * 4);
@@ -910,10 +884,10 @@ void *param_3;
           uVar7 = uVar4;
         }
         uVar5 = uVar5 + 1 & 0xffff;
-      } while (uVar5 < *(ushort *)(param_1 + 2));
+      } while (uVar5 < *(ushort *)(archive + 2));
     }
-    seek_file_handle(*param_1,uVar6,0);
-    uVar1 = read_file_handle(*param_1,param_3,uVar7 & 0xffff);
+    seek_file_handle(*archive,uVar6,0);
+    uVar1 = read_file_handle(*archive,buffer,uVar7 & 0xffff);
   }
   return uVar1;
 }
@@ -924,10 +898,7 @@ void *param_3;
 // was FUN_0001629c -- opens the archive at win path param_1 directly (bypassing
 // open_level_archive/close_level_archive), seeks to entry param_2's slot in the entry-offset table,
 // and reports whether it has a nonzero offset (1 = has data, 0 = empty slot, -1 = I/O error).
-int probe_archive_entry_exists(param_1,param_2)
-char *param_1;
-uint param_2;
-
+int probe_archive_entry_exists(char *path, uint entry_index)
 {
   short sVar1;
   int iVar2;
@@ -936,12 +907,12 @@ uint param_2;
   int iVar5;
   int local_14;
 
-  iVar2 = open_file_for_read(param_1);
+  iVar2 = open_file_for_read(path);
   if (iVar2 == -1) {
     iVar2 = -1;
   }
   else {
-    iVar5 = (param_2 & 0xffff) * 4 + 2;
+    iVar5 = (entry_index & 0xffff) * 4 + 2;
     iVar3 = seek_file_handle(iVar2,iVar5,0);
     iVar4 = read_file_handle(iVar2,&local_14,4);
     iVar2 = CloseHandle(iVar2);
@@ -970,9 +941,7 @@ uint param_2;
 // was FUN_0006bcd4 -- flushes the player's carried-inventory chain (freeing the live objects, since
 // write_player_save_record just above already serialized them into the save buffer), then writes
 // the current level's live tilemap+object arena to its on-disk archive.
-undefined4 commit_level_to_save_slot(param_1)
-undefined4 param_1;
-
+undefined4 commit_level_to_save_slot(int level_number)
 {
   ushort uVar1;
   int iVar2;
@@ -996,11 +965,11 @@ undefined4 param_1;
     fprintf(stderr, "[0006bcd4] open_level_archive=%d\n", iVar2);
   uVar3 = 0;
   if (iVar2 != 0) {
-    iVar2 = write_level_tilemap_to_archive(auStack_20,param_1);
+    iVar2 = write_level_tilemap_to_archive(auStack_20,level_number);
     if (getenv("UW_DEBUG_INPUTEVENT"))
       fprintf(stderr, "[0006bcd4] write_level_tilemap_to_archive=%d\n", iVar2);
-    if (((iVar2 != 0) && (iVar2 = write_level_quest_flags_to_archive(auStack_20,param_1), iVar2 != 0)) &&
-       (iVar2 = save_automap_reveal_to_archive(auStack_20,param_1), iVar2 != 0)) {
+    if (((iVar2 != 0) && (iVar2 = write_level_quest_flags_to_archive(auStack_20,level_number), iVar2 != 0)) &&
+       (iVar2 = save_automap_reveal_to_archive(auStack_20,level_number), iVar2 != 0)) {
       iVar2 = close_level_archive(auStack_20);
       uVar3 = 1;
       if (getenv("UW_DEBUG_INPUTEVENT"))
@@ -1022,10 +991,7 @@ LAB_0006bdbc:
 // param_2 (save_game_to_slot), otherwise loads from it (load_game_from_slot; the middle
 // "already-occupied slot" gate is disabled dead code -- see its own comment).
 // was FUN_0006bfec
-void handle_save_load_menu_action(param_1,param_2)
-short param_1;
-undefined4 param_2;
-
+void handle_save_load_menu_action(short action, int slot)
 {
   int iVar1;
   int iVar2;
@@ -1033,11 +999,11 @@ undefined4 param_2;
   undefined1 auStack_ac [160];
 
   probe_save_slots(auStack_ac,local_b4);
-  if (param_1 == 0) {
-    /* Was `auStack_d4 + (short)param_2 * 0x28` into a phantom, separately -declared 32-byte
+  if (action == 0) {
+    /* Was `auStack_d4 + (short)slot * 0x28` into a phantom, separately -declared 32-byte
        `auStack_d4` local -- confirmed via real ARM disassembly (0x6c088-0x6c098) that no such
        buffer exists: the real code computes sp+8 + (slot-1)*0x28... */
-    iVar1 = save_game_to_slot(param_2,auStack_ac + ((short)param_2 - 1) * 0x28);
+    iVar1 = save_game_to_slot(slot,auStack_ac + ((short)slot - 1) * 0x28);
     iVar2 = 4;
     if (iVar1 != 0) {
       iVar2 = 5;
@@ -1047,13 +1013,13 @@ undefined4 param_2;
     }
   }
   else if (false) {
-    /* Was `(1 << (param_2-1) & local_b4[0]) == 0` -- local_b4[0] is the bitmask probe_save_slots
+    /* Was `(1 << (slot-1) & local_b4[0]) == 0` -- local_b4[0] is the bitmask probe_save_slots
        just built of which of the 4 numbered slots already HAVE a save (bit set = a real
        "\SAVEn\desc" was found on disk)... */
     iVar2 = 1;
   }
   else {
-    iVar1 = load_game_from_slot(param_2);
+    iVar1 = load_game_from_slot(slot);
     if (iVar1 == 0) {
       iVar2 = 3;
     }
@@ -1068,7 +1034,6 @@ undefined4 param_2;
     }
   }
   print_scroll_message_by_id(iVar2 + 0xa0);
-  return;
 }
 
 
@@ -1077,9 +1042,7 @@ undefined4 param_2;
 // FindFirstFileW/181 FindFirstFile/FindNextFile-shaped ordinals (appending DAT_000870c8's "\*.*"
 // wildcard) and, if that scan finds nothing (directory missing or empty)...
 // was FUN_0006c560
-undefined4 ensure_save_directory_exists(param_1)
-char * param_1;
-
+undefined4 ensure_save_directory_exists(char *path)
 {
   char cVar1;
   short sVar2;
@@ -1098,11 +1061,11 @@ char * param_1;
   undefined1 auStack_218 [520];
 
   bVar9 = true;
-  iVar3 = -(int)param_1;
+  iVar3 = -(int)path;
   do {
-    cVar1 = *param_1;
-    param_1[(int)(acStack_348 + iVar3)] = cVar1;
-    param_1 = param_1 + 1;
+    cVar1 = *path;
+    path[(int)(acStack_348 + iVar3)] = cVar1;
+    path = path + 1;
   } while (cVar1 != '\0');
   iVar3 = ce_strlen(acStack_348);
   ce_strcat(acStack_348,&DAT_000870c8);
@@ -1138,10 +1101,8 @@ LAB_0006c5f8:
    CopyFileW/FindFirstFileW/FindNextFileW (CopyFileW/167/181) via wide-string paths built through
    ce_wcscat/61/63... */
 // was FUN_0006c670
-undefined4 copy_save_slot_files(param_1,param_2)
-char *param_1;  /* destination directory, e.g. "\SAVE3" */
-char *param_2;  /* source directory, e.g. "\SAVE0" */
-
+/* destination directory, e.g. "\SAVE3" source directory, e.g. "\SAVE0" */
+undefined4 copy_save_slot_files(char *dest_dir, char *source_dir)
 {
   /* Was a hardcoded 3-entry list missing "player.dat" entirely -- real ARM disassembly of this
      function (0x6c670) shows it's genuinely NOT a fixed-file-list copier at all: it calls what are
@@ -1154,8 +1115,8 @@ char *param_2;  /* source directory, e.g. "\SAVE0" */
 
   ok = 1;
   for (i = 0; i < sizeof(file_suffixes) / sizeof(file_suffixes[0]); i++) {
-    snprintf(src, sizeof(src), "%s%s", param_2, file_suffixes[i]);
-    snprintf(dst, sizeof(dst), "%s%s", param_1, file_suffixes[i]);
+    snprintf(src, sizeof(src), "%s%s", source_dir, file_suffixes[i]);
+    snprintf(dst, sizeof(dst), "%s%s", dest_dir, file_suffixes[i]);
     /* desc is optional (a brand new character who has never saved/loaded
        before has no \SAVE0\desc yet) -- lev.ark/bglobals.dat/player.dat
        are not. */
@@ -1170,29 +1131,25 @@ char *param_2;  /* source directory, e.g. "\SAVE0" */
 // was FUN_0007edf4 -- writes param_3 bytes from param_1 into the file named by param_2, always
 // creating/truncating (via uw_file_open_write(param_2, 1)) rather than preserving existing
 // content...
-bool write_buffer_to_file(param_1,param_2,param_3)
-void *param_1;  /* was `undefined4` -- truncated the real data-buffer pointer (save_game_to_slot passes its own
-   param_2, a real description-text buffer; the new save-description write above passes a real stack
-   buffer too) */
-char *param_2;  /* was `undefined4` -- same truncation, for the real
-                   path-string pointer */
-ushort param_3;
-
+/* was `undefined4` -- truncated the real data-buffer pointer (save_game_to_slot passes its own
+   param_2, a real description-text buffer; the new save-description write above passes a real
+   stack buffer too) was `undefined4` -- same truncation, for the real path-string pointer */
+bool write_buffer_to_file(void *buffer, char *filename, ushort byte_count)
 {
   int iVar1;
   uint uVar2;
   bool bVar3;
 
-  /* Was `open_existing_file_rw(param_2)` (== uw_file_open_write(param_2, 0), our port's "rb+",
+  /* Was `open_existing_file_rw(filename)` (== uw_file_open_write(filename, 0), our port's "rb+",
      no-truncate" mode) -- real ARM disassembly of open_existing_file_rw (0x2273c) shows the
      original game's own write-open helper always ends up starting from an empty file... */
-  iVar1 = uw_file_open_write(param_2, 1);
+  iVar1 = uw_file_open_write(filename, 1);
   if (iVar1 == -1) {
     bVar3 = false;
   }
   else {
-    uVar2 = write_file_handle(iVar1,param_1,param_3);
-    bVar3 = uVar2 == param_3;
+    uVar2 = write_file_handle(iVar1,buffer,byte_count);
+    bVar3 = uVar2 == byte_count;
     CloseHandle(iVar1);
   }
   return bVar3;
@@ -1205,8 +1162,7 @@ ushort param_3;
 // was FUN_000400dc -- gates save_game_to_slot's "can save now" check (confirmed via
 // src/saveload.c's own comment on save_game_to_slot): refuses (printing a scroll warning) while the
 // cursor is holding an object, or while on level 9 (the final/Abyss level)...
-bool check_can_save_game()
-
+bool check_can_save_game(void)
 {
   short sVar1;
 
@@ -1228,8 +1184,7 @@ bool check_can_save_game()
 // was FUN_00040130 -- gates load_game_from_slot's "can load now" check (src/saveload.c's own
 // comment on load_game_from_slot confirms this "unconditional-allow" semantics): unlike
 // check_can_save_game, never refuses -- just releases any cursor-held object first...
-undefined4 check_can_load_game()
-
+undefined4 check_can_load_game(void)
 {
   if (g_cursor_holding_state != 0) {
     g_cursor_holding_state = 0;
@@ -1242,11 +1197,10 @@ undefined4 check_can_load_game()
 // was FUN_00044624 -- dual-purpose player-save loader: given a real path (load_game_from_slot
 // passes &DAT_000857a0, the chosen slot's directory), opens that slot's player.dat, reads the
 // player status block and save-record buffer from it...
-undefined4 load_player_save_record(param_1)
-char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer load_game_from_slot passes in (the
-   save-slot-copy path), which only started actually running once the save-directory- creation fixes
-   above stopped it from bailing out earlier. */
-
+/* was `int` -- truncated the real DAT_000857a0 pointer load_game_from_slot passes in (the
+   save-slot-copy path), which only started actually running once the save-directory- creation
+   fixes above stopped it from bailing out earlier. */
+undefined4 load_player_save_record(char *slot_dir)
 {
   char stack0xffdc3234_buf [256];
   char *stack0xffdc3234_ptr;
@@ -1257,14 +1211,14 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer load_gam
   char acStack_124 [260];
   
   uVar4 = 1;
-  if ((param_1 != 0) && (-1 < DAT_00202080)) {
+  if ((slot_dir != 0) && (-1 < DAT_00202080)) {
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   close_panels_before_level_change();
   if ((g_save_record_buffer == 0) && (g_save_record_buffer = ce_malloc(0x4000), g_save_record_buffer == 0)) {
     return 0;
   }
-  if (param_1 != 0) {
+  if (slot_dir != 0) {
     pcVar2 = &DAT_0023cca8;
     stack0xffdc3234_ptr = acStack_124;
     do {
@@ -1272,7 +1226,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer load_gam
       *stack0xffdc3234_ptr = cVar1; stack0xffdc3234_ptr = stack0xffdc3234_ptr + 1;
       pcVar2 = pcVar2 + 1;
     } while (cVar1 != '\0');
-    ce_strcat(acStack_124,param_1);
+    ce_strcat(acStack_124,slot_dir);
     ce_strcat(acStack_124,s_player_dat_00085a74);
     iVar3 = open_file_for_read(acStack_124);
     if (iVar3 == -1) {
@@ -1294,7 +1248,7 @@ LAB_00044730:
     LocalFree(g_save_record_buffer);
     g_save_record_buffer = 0;
   }
-  if ((param_1 != 0) && (-1 < DAT_00202080)) {
+  if ((slot_dir != 0) && (-1 < DAT_00202080)) {
     object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   return uVar4;
@@ -1304,10 +1258,7 @@ LAB_00044730:
 // was FUN_00049b04 -- writes the level's tilemap/object arena (g_level_tiles) and scheduler state
 // into a level archive: given param_1==NULL, opens its own fresh archive handle (for SAVE0, the
 // live session) and closes it when done; given a real param_1...
-int write_level_tilemap_to_archive(param_1,param_2)
-undefined1 * param_1;
-int param_2;
-
+int write_level_tilemap_to_archive(undefined1 *archive, int level_number)
 {
   bool bVar1;
   short sVar2;
@@ -1319,7 +1270,7 @@ int param_2;
   undefined1 *puVar8;
   undefined1 auStack_20 [16];
   
-  if (param_1 == (undefined1 *)0x0) {
+  if (archive == (undefined1 *)0x0) {
     iVar4 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
     if (iVar4 == 0) {
       return 0;
@@ -1327,7 +1278,7 @@ int param_2;
   }
   else {
     iVar4 = 0xf;
-    puVar7 = param_1;
+    puVar7 = archive;
     puVar8 = auStack_20;
     do {
       iVar6 = iVar4 + -1;
@@ -1346,12 +1297,12 @@ int param_2;
   *(short *)(iVar4 + 0x7c04) = (short)(DAT_0020469c - DAT_002046bc >> 1);
   *puVar5 = 0x7577;
   DAT_002029d0 = 0;
-  sVar2 = write_archive_entry(auStack_20,param_2 + -1,DAT_002029cc,0x7c08);
+  sVar2 = write_archive_entry(auStack_20,level_number + -1,DAT_002029cc,0x7c08);
   sVar3 = 0;
   if (sVar2 != 0) {
-    sVar3 = scheduler_save(auStack_20,param_2);
+    sVar3 = scheduler_save(auStack_20,level_number);
   }
-  if (param_1 == (undefined1 *)0x0) {
+  if (archive == (undefined1 *)0x0) {
     close_level_archive(auStack_20);
   }
   return (int)sVar3;
@@ -1361,12 +1312,8 @@ int param_2;
 // was FUN_0005b298 -- assembles a fixed 0x7a-byte level-state block (quest-flag-shaped: three fixed
 // .data regions, DAT_0023ae58/adb8/ b841+b840) and writes it to the level archive via
 // write_archive_entry.
-undefined4 write_level_quest_flags_to_archive(param_1,param_2)
-/* .ark handle-struct pointer -- was `undefined4`, truncating it before
-   write_archive_entry. */
-undefined1 * param_1;
-int param_2;
-
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before write_archive_entry. */
+undefined4 write_level_quest_flags_to_archive(undefined1 *archive, int level_number)
 {
   int iVar1;
   int iVar2;
@@ -1403,5 +1350,5 @@ int param_2;
   } while (iVar2 < 3);
   /* Was `write_archive_entry(...); return 0;` -- a fabricated `return 0` masking a real result,
      same bug class as scheduler_save right above this function. */
-  return write_archive_entry(param_1,param_2 + 0x11,local_8c,0x7a);
+  return write_archive_entry(archive,level_number + 0x11,local_8c,0x7a);
 }

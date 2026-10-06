@@ -64,7 +64,7 @@ void draw_automap_screen(int level)
     load_automap_notes_from_archive(level);
     DAT_000bbef4=1;
 }
-int register_click_region(int left,int bottom,int right,int top,int flags,int mode,void *handler) { return 1; }
+int register_click_region(int left, int bottom, int right, int top, undefined2 flags, undefined2 mode, void *handler) { return 1; }
 void wait_for_click_release(int mode) {}
 int measure_text_width(char *text) { return strlen(text)*4; }
 uint poll_input_event(int mode) { return *note_input ? *note_input++ : 13; }
@@ -77,7 +77,7 @@ void set_cursor_confine_rect(int left,int bottom,int right,int top) {}
 void reset_cursor_confine_rect(void) {}
 void push_cursor_icon(int id) { DAT_00204788=id; }
 void pop_cursor_icon(int mode) {}
-void unregister_key_binding(int id) {}
+void unregister_key_binding(short id) {}
 void pick_random_pending_music_track(void) {}
 void clear_screen_and_restore_cursor(void) {}
 

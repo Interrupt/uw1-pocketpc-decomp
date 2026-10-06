@@ -3,21 +3,21 @@
 
 /* Local service declarations; game function bodies link these mocks. */
 undefined4 character_generator_start(void);
-undefined4 ensure_save_directory_exists(const char *path);
+undefined4 ensure_save_directory_exists(char *path);
 bool write_player_save_record(const char *path);
 undefined *load_string_resource(char *path);
 undefined4 seed_conversation_globals_for_new_game(void);
-bool open_level_archive(byte *handle, const char *path);
+bool open_level_archive(undefined1 *handle, char *path);
 int seek_file_handle(int handle, int offset, int method);
 int read_file_handle(int handle, void *destination, uint size);
 undefined4 scheduler_load(byte *handle, int level);
-undefined4 load_player_save_record(const char *path);
+undefined4 load_player_save_record(char *path);
 bool load_level_texture_ids(byte *handle, int level);
 void clear_automap_reveal_buffer(void);
 void reset_npc_path_cache(void);
 void clear_last_attacker_record(void);
 undefined4 load_automap_reveal_from_archive(byte *handle, int level);
-byte close_level_archive(byte *handle);
+byte close_level_archive(undefined4 *handle);
 void set_player_tile_position(uint x, uint y);
 void debug_print_player_position(const char *label);
 void save_or_restore_level_special_state(short restore, short slot);
@@ -93,7 +93,7 @@ undefined4 character_generator_start(void)
     return 1;
 }
 
-undefined4 ensure_save_directory_exists(const char *path)
+undefined4 ensure_save_directory_exists(char *path)
 {
     TEST_ASSERT_EQUAL_STRING("\\SAVE0", path);
     TEST_ASSERT_EQUAL_STRING("Test Avatar", character);
@@ -122,7 +122,7 @@ undefined4 seed_conversation_globals_for_new_game(void)
     return 0;
 }
 
-bool open_level_archive(byte *handle, const char *path)
+bool open_level_archive(undefined1 *handle, char *path)
 {
     opens++;
     if (!archive_ok) TEST_ASSERT_EQUAL_INT(0, unlink(archive_path));
@@ -154,7 +154,7 @@ undefined4 scheduler_load(byte *handle, int level)
     return scheduler_result;
 }
 
-undefined4 load_player_save_record(const char *path)
+undefined4 load_player_save_record(char *path)
 {
     TEST_ASSERT_NULL(path);
     TEST_ASSERT_TRUE(archive_open);
@@ -186,7 +186,7 @@ undefined4 load_automap_reveal_from_archive(byte *handle, int level)
     return 1;
 }
 
-byte close_level_archive(byte *handle)
+byte close_level_archive(undefined4 *handle)
 {
     TEST_ASSERT_TRUE(archive_open);
     int file;

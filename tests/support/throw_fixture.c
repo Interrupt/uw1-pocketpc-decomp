@@ -113,7 +113,7 @@ void randomize_settled_snapshot_position(void) {}
 void object_list_append_tail(void) { TEST_FAIL_MESSAGE("Throw took the ground-drop path"); }
 undefined4 play_positional_sound_effect(void) { return 0; }
 
-bool apply_swim_wade_pose(void) { TEST_FAIL_MESSAGE("Unexpected water"); return false; }
+bool apply_swim_wade_pose(ushort collision_mask) { (void)collision_mask; TEST_FAIL_MESSAGE("Unexpected water"); return false; }
 
 void throw_fixture_reset(void)
 {

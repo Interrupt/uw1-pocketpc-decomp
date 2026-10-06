@@ -104,7 +104,7 @@ undefined4 is_sound_effects_enabled(void) { return 0; }
 undefined4 is_music_playing(void) { return 0; }
 void set_sound_effects_enabled(int enabled) {}
 void set_music_enabled(int enabled) {}
-void apply_movement_mode_profile(int mode) {}
+void apply_movement_mode_profile(byte mode) {}
 int write_file_handle(int handle, const void *buffer, uint size)
 {
     TEST_ASSERT_EQUAL_UINT(1, size);

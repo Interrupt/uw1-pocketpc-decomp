@@ -120,18 +120,12 @@ static ushort DAT_0023b7f8;
 
 
 // was FUN_000116a4 -- set the active viewport/clip rectangle (DAT_000a85c4/c8 top-left, DAT_000842a4/a8 bottom-right)
-void set_viewport_clip_rect(param_1,param_2,param_3,param_4)
-undefined2 param_1;
-undefined2 param_2;
-undefined2 param_3;
-undefined2 param_4;
-
+void set_viewport_clip_rect(undefined2 left, undefined2 top, undefined2 right, undefined2 bottom)
 {
-  DAT_000a85c4 = param_1;
-  DAT_000a85c8 = param_2;
-  DAT_000842a4 = param_3;
-  DAT_000842a8 = param_4;
-  return;
+  DAT_000a85c4 = left;
+  DAT_000a85c8 = top;
+  DAT_000842a4 = right;
+  DAT_000842a8 = bottom;
 }
 
 
@@ -139,67 +133,57 @@ undefined2 param_4;
 
 // was FUN_000137c0 -- elementwise 3-float vector subtract, param_3 = param_2 - param_1.
 // was FUN_00020a74
-void vec3_sub(param_1,param_2,param_3)
-undefined4 * param_1;
-undefined4 * param_2;
-undefined1 * param_3;
-
+void vec3_sub(undefined4 *a, undefined4 *b, undefined1 *out)
 {
   undefined4 uVar1;
   
-  uVar1 = ordfloat_sub(*param_2,*param_1);
-  *param_3 = (char)uVar1;
-  param_3[1] = (char)((uint)uVar1 >> 8);
-  param_3[2] = (char)((uint)uVar1 >> 0x10);
-  param_3[3] = (char)((uint)uVar1 >> 0x18);
-  uVar1 = ordfloat_sub(param_2[1],param_1[1]);
-  param_3[4] = (char)uVar1;
-  param_3[5] = (char)((uint)uVar1 >> 8);
-  param_3[6] = (char)((uint)uVar1 >> 0x10);
-  param_3[7] = (char)((uint)uVar1 >> 0x18);
-  uVar1 = ordfloat_sub(param_2[2],param_1[2]);
-  param_3[8] = (char)uVar1;
-  param_3[9] = (char)((uint)uVar1 >> 8);
-  param_3[10] = (char)((uint)uVar1 >> 0x10);
-  param_3[0xb] = (char)((uint)uVar1 >> 0x18);
-  return;
+  uVar1 = ordfloat_sub(*b,*a);
+  *out = (char)uVar1;
+  out[1] = (char)((uint)uVar1 >> 8);
+  out[2] = (char)((uint)uVar1 >> 0x10);
+  out[3] = (char)((uint)uVar1 >> 0x18);
+  uVar1 = ordfloat_sub(b[1],a[1]);
+  out[4] = (char)uVar1;
+  out[5] = (char)((uint)uVar1 >> 8);
+  out[6] = (char)((uint)uVar1 >> 0x10);
+  out[7] = (char)((uint)uVar1 >> 0x18);
+  uVar1 = ordfloat_sub(b[2],a[2]);
+  out[8] = (char)uVar1;
+  out[9] = (char)((uint)uVar1 >> 8);
+  out[10] = (char)((uint)uVar1 >> 0x10);
+  out[0xb] = (char)((uint)uVar1 >> 0x18);
 }
 
 
 
 // was FUN_00013904 -- standard 3-float cross product, param_3 = param_1 x param_2 (confirmed
 // component-by-component, including the Y term's sign flip the textbook formula requires).
-void vec3_cross(param_1,param_2,param_3)
-undefined4 * param_1;
-undefined4 * param_2;
-undefined1 * param_3;
-
+void vec3_cross(undefined4 *a, undefined4 *b, undefined1 *out)
 {
   undefined4 uVar1;
   undefined4 uVar2;
   
-  uVar1 = ordfloat_mul(param_1[1],param_2[2]);
-  uVar2 = ordfloat_mul(param_1[2],param_2[1]);
+  uVar1 = ordfloat_mul(a[1],b[2]);
+  uVar2 = ordfloat_mul(a[2],b[1]);
   uVar1 = ordfloat_sub(uVar1,uVar2);
-  *param_3 = (char)uVar1;
-  param_3[1] = (char)((uint)uVar1 >> 8);
-  param_3[2] = (char)((uint)uVar1 >> 0x10);
-  param_3[3] = (char)((uint)uVar1 >> 0x18);
-  uVar1 = ordfloat_mul(param_2[2],*param_1);
-  uVar2 = ordfloat_mul(param_1[2],*param_2);
+  *out = (char)uVar1;
+  out[1] = (char)((uint)uVar1 >> 8);
+  out[2] = (char)((uint)uVar1 >> 0x10);
+  out[3] = (char)((uint)uVar1 >> 0x18);
+  uVar1 = ordfloat_mul(b[2],*a);
+  uVar2 = ordfloat_mul(a[2],*b);
   uVar1 = ordfloat_negate(ordfloat_sub(uVar1,uVar2));
-  param_3[4] = (char)uVar1;
-  param_3[5] = (char)((uint)uVar1 >> 8);
-  param_3[6] = (char)((uint)uVar1 >> 0x10);
-  param_3[7] = (char)((uint)uVar1 >> 0x18);
-  uVar1 = ordfloat_mul(param_2[1],*param_1);
-  uVar2 = ordfloat_mul(param_1[1],*param_2);
+  out[4] = (char)uVar1;
+  out[5] = (char)((uint)uVar1 >> 8);
+  out[6] = (char)((uint)uVar1 >> 0x10);
+  out[7] = (char)((uint)uVar1 >> 0x18);
+  uVar1 = ordfloat_mul(b[1],*a);
+  uVar2 = ordfloat_mul(a[1],*b);
   uVar1 = ordfloat_sub(uVar1,uVar2);
-  param_3[8] = (char)uVar1;
-  param_3[9] = (char)((uint)uVar1 >> 8);
-  param_3[10] = (char)((uint)uVar1 >> 0x10);
-  param_3[0xb] = (char)((uint)uVar1 >> 0x18);
-  return;
+  out[8] = (char)uVar1;
+  out[9] = (char)((uint)uVar1 >> 8);
+  out[10] = (char)((uint)uVar1 >> 0x10);
+  out[0xb] = (char)((uint)uVar1 >> 0x18);
 }
 
 
@@ -208,16 +192,9 @@ undefined1 * param_3;
 // was FUN_00014350 -- textured-triangle driver: viewport-culls, sorts the 3 verts by Y, builds 3
 // edges via raster_edge_setup, walks scanlines stepping edges (raster_edge_step) and emitting spans
 // (raster_textured_span) UW_DEBUG_RASTER=1...
-void raster_triangle(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
-undefined4 param_1;
-void *param_2; /* was undefined4 -- the framebuffer base (g_uw_framebuffer) */
-undefined4 * param_3;
-undefined4 param_4;
-undefined4 param_5;
-undefined4 param_6;
-intptr_t param_7; /* was undefined4 -- the tile's texture pixel data pointer */
-int * param_8;
-
+/* was undefined4 -- the framebuffer base (g_uw_framebuffer) was undefined4 -- the tile's texture
+   pixel data pointer */
+void raster_triangle(undefined4 stride, void *buffer, undefined4 *vertices, undefined4 surface, undefined4 width, undefined4 size, intptr_t texture, int *clip)
 {
   undefined4 uVar1;
   int iVar2;
@@ -231,8 +208,8 @@ int * param_8;
   undefined4 uVar10;
   undefined4 uVar11;
   /* auStack_c4 / auStack_7c were 12-byte locals but raster_edge_setup (called on each below) writes
-     its edge record out to param_6[10] == byte 0x2b, overflowing them; Ghidra named the tail of
-     each overflow `local_b8` / `local_70` (the param_6[3] scanline-count field, byte 0xc). */
+     its edge record out to size[10] == byte 0x2b, overflowing them; Ghidra named the tail of
+     each overflow `local_b8` / `local_70` (the size[3] scanline-count field, byte 0xc). */
   undefined1 auStack_154 [72];
   undefined1 auStack_10c [72];
   undefined1 auStack_c4 [72];
@@ -242,38 +219,38 @@ int * param_8;
 
   if (getenv("UW_DEBUG_RASTER")) {
     fprintf(stderr, "[raster] ENTRY texid=0x%x v0=(%g,%g) v1=(%g,%g) v2=(%g,%g) clip=(%d,%d,%d,%d) tex=%p\n",
-            (unsigned)param_4,
-            *(float *)param_3, *(float *)(param_3 + 1),
-            *(float *)(param_3 + 5), *(float *)(param_3 + 6),
-            *(float *)(param_3 + 10), *(float *)(param_3 + 11),
-            param_8[0], param_8[1], param_8[2], param_8[3], (void *)param_7);
+            (unsigned)surface,
+            *(float *)vertices, *(float *)(vertices + 1),
+            *(float *)(vertices + 5), *(float *)(vertices + 6),
+            *(float *)(vertices + 10), *(float *)(vertices + 11),
+            clip[0], clip[1], clip[2], clip[3], (void *)texture);
   }
-  uVar8 = param_3[6];
-  uVar10 = param_3[0xb];
-  uVar6 = param_3[1];
-  uVar1 = ordfloat_int_to_float2(*param_8);
-  uVar4 = *param_3;
+  uVar8 = vertices[6];
+  uVar10 = vertices[0xb];
+  uVar6 = vertices[1];
+  uVar1 = ordfloat_int_to_float2(*clip);
+  uVar4 = *vertices;
   iVar2 = ordfloat_lt(uVar4,uVar1);
-  if (((iVar2 != 0) && (iVar2 = ordfloat_lt(param_3[5],uVar1), iVar2 != 0)) &&
-     (iVar2 = ordfloat_ge(param_3[10],uVar1), iVar2 == 0)) {
+  if (((iVar2 != 0) && (iVar2 = ordfloat_lt(vertices[5],uVar1), iVar2 != 0)) &&
+     (iVar2 = ordfloat_ge(vertices[10],uVar1), iVar2 == 0)) {
     if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts left of clip-left\n");
     return;
   }
-  uVar1 = ordfloat_int_to_float2(param_8[2]);
+  uVar1 = ordfloat_int_to_float2(clip[2]);
   iVar2 = ordfloat_gt(uVar4,uVar1);
-  if (((iVar2 != 0) && (iVar2 = ordfloat_gt(param_3[5],uVar1), iVar2 != 0)) &&
-     (iVar2 = ordfloat_le(param_3[10],uVar1), iVar2 == 0)) {
+  if (((iVar2 != 0) && (iVar2 = ordfloat_gt(vertices[5],uVar1), iVar2 != 0)) &&
+     (iVar2 = ordfloat_le(vertices[10],uVar1), iVar2 == 0)) {
     if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts right of clip-right\n");
     return;
   }
-  uVar1 = ordfloat_int_to_float2(param_8[1]);
+  uVar1 = ordfloat_int_to_float2(clip[1]);
   iVar2 = ordfloat_lt(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_lt(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_ge(uVar10,uVar1), iVar2 == 0)) {
     if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts above clip-top\n");
     return;
   }
-  uVar1 = ordfloat_int_to_float2(param_8[3]);
+  uVar1 = ordfloat_int_to_float2(clip[3]);
   iVar2 = ordfloat_gt(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_gt(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_le(uVar10,uVar1), iVar2 == 0)) {
@@ -329,10 +306,10 @@ LAB_0001467c:
   uVar4 = 2;
   uVar9 = 2;
 LAB_00014684:
-  raster_triangle_perspective_setup(param_3,auStack_10c);
-  raster_edge_setup(auStack_10c,param_3,uVar11,uVar4,param_8[1],auStack_154);
-  raster_edge_setup(auStack_10c,param_3,uVar11,uVar1,param_8[1],auStack_c4);
-  raster_edge_setup(auStack_10c,param_3,uVar1,uVar4,param_8[1],auStack_7c);
+  raster_triangle_perspective_setup(vertices,auStack_10c);
+  raster_edge_setup(auStack_10c,vertices,uVar11,uVar4,clip[1],auStack_154);
+  raster_edge_setup(auStack_10c,vertices,uVar11,uVar1,clip[1],auStack_c4);
+  raster_edge_setup(auStack_10c,vertices,uVar1,uVar4,clip[1],auStack_7c);
   if (getenv("UW_DEBUG_RASTER")) {
     fprintf(stderr, "[raster] sort top=%u mid=%u bot=%u  uVar7(short-half-idx)=%u uVar9(cmp)=%u  long_x0=%d short1_x0=%d short2_x0=%d\n",
             (unsigned)uVar11, (unsigned)uVar1, (unsigned)uVar4,
@@ -366,12 +343,12 @@ LAB_00014684:
       }
       /* Second-half (mid vertex -> bottom vertex) scanline walk. */
       iVar2 = local_70;
-      while ((iVar2 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
-        if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) &&
-           (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)) {
+      while ((iVar2 != 0 && (*(int *)(puVar3 + 8) < clip[3]))) {
+        if ((*(int *)(puVar3 + 0x28) >> 0xe < clip[2]) &&
+           (*clip < *(int *)(puVar5 + 0x28) >> 0xe)) {
           _uw_span_calls++;
-          raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,
-                       param_4);
+          raster_textured_span(stride,buffer,auStack_10c,puVar3,puVar5,width,size,texture,clip,
+                       surface);
         }
         raster_edge_step(auStack_7c);
         raster_edge_step(auStack_154);
@@ -381,18 +358,17 @@ LAB_00014684:
       return;
     }
     iVar2 = iVar2 + -1;
-    if (param_8[3] <= *(int *)(puVar3 + 8)) break;
-    if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) && (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)
+    if (clip[3] <= *(int *)(puVar3 + 8)) break;
+    if ((*(int *)(puVar3 + 0x28) >> 0xe < clip[2]) && (*clip < *(int *)(puVar5 + 0x28) >> 0xe)
        ) {
       _uw_span_calls++;
-      raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,param_4
+      raster_textured_span(stride,buffer,auStack_10c,puVar3,puVar5,width,size,texture,clip,surface
                   );
     }
     raster_edge_step(auStack_c4);
     raster_edge_step(auStack_154);
   }
   if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE (broke on clip-bottom) span_calls=%d\n", _uw_span_calls);
-  return;
 }
 #undef local_b8
 #undef local_70
@@ -401,19 +377,18 @@ LAB_00014684:
 
 
 // was FUN_00014868 -- advance one scanline down an edge record
-int raster_edge_step(param_1)
-intptr_t param_1; /* was int -- edge-walk struct pointer */
-
+/* was int -- edge-walk struct pointer */
+int raster_edge_step(intptr_t edge)
 {
   int iVar1;
 
-  *(int *)(param_1 + 8) = *(int *)(param_1 + 8) + 1;
-  iVar1 = *(int *)(param_1 + 0xc) + -1;
-  *(int *)(param_1 + 0xc) = iVar1;
-  *(int *)(param_1 + 0x28) = *(int *)(param_1 + 0x2c) + *(int *)(param_1 + 0x28);
-  *(int *)(param_1 + 0x38) = *(int *)(param_1 + 0x3c) + *(int *)(param_1 + 0x38);
-  *(int *)(param_1 + 0x40) = *(int *)(param_1 + 0x44) + *(int *)(param_1 + 0x40);
-  *(int *)(param_1 + 0x30) = *(int *)(param_1 + 0x34) + *(int *)(param_1 + 0x30);
+  *(int *)(edge + 8) = *(int *)(edge + 8) + 1;
+  iVar1 = *(int *)(edge + 0xc) + -1;
+  *(int *)(edge + 0xc) = iVar1;
+  *(int *)(edge + 0x28) = *(int *)(edge + 0x2c) + *(int *)(edge + 0x28);
+  *(int *)(edge + 0x38) = *(int *)(edge + 0x3c) + *(int *)(edge + 0x38);
+  *(int *)(edge + 0x40) = *(int *)(edge + 0x44) + *(int *)(edge + 0x40);
+  *(int *)(edge + 0x30) = *(int *)(edge + 0x34) + *(int *)(edge + 0x30);
   return iVar1;
 }
 
@@ -422,10 +397,7 @@ intptr_t param_1; /* was int -- edge-walk struct pointer */
 // was FUN_000148c8 -- per-triangle perspective setup: 1/w, u/w, v/w per
 // vertex plus the screen-space interpolation gradients, into the
 // edge-coefficient array raster_edge_setup reads
-void raster_triangle_perspective_setup(param_1,param_2)
-undefined4 * param_1;
-undefined4 * param_2;
-
+void raster_triangle_perspective_setup(undefined4 *triangle, undefined4 *coefficients)
 {
   undefined4 uVar1;
   undefined4 uVar2;
@@ -437,20 +409,20 @@ undefined4 * param_2;
   int iVar8;
   undefined4 uVar9;
   
-  uVar5 = param_1[0xb];
-  uVar4 = param_1[10];
-  uVar1 = ordfloat_sub(param_1[1],uVar5);
-  uVar2 = ordfloat_sub(param_1[5],uVar4);
+  uVar5 = triangle[0xb];
+  uVar4 = triangle[10];
+  uVar1 = ordfloat_sub(triangle[1],uVar5);
+  uVar2 = ordfloat_sub(triangle[5],uVar4);
   uVar1 = ordfloat_mul(uVar1,uVar2);
-  uVar2 = ordfloat_sub(param_1[6],uVar5);
-  uVar4 = ordfloat_sub(*param_1,uVar4);
+  uVar2 = ordfloat_sub(triangle[6],uVar5);
+  uVar4 = ordfloat_sub(*triangle,uVar4);
   uVar2 = ordfloat_mul(uVar2,uVar4);
   uVar1 = ordfloat_sub(uVar1,uVar2);
   uVar1 = ordfloat_div(0x3f800000,uVar1);
   uVar2 = ordfloat_negate(uVar1);
-  puVar6 = param_2 + 6;
+  puVar6 = coefficients + 6;
   iVar8 = 3;
-  puVar7 = param_1;
+  puVar7 = triangle;
   do {
     uVar4 = ordfloat_div(0x3f800000,puVar7[2]);
     puVar6[-6] = uVar4;
@@ -462,84 +434,77 @@ undefined4 * param_2;
     puVar6 = puVar6 + 1;
     puVar7 = puVar7 + 5;
   } while (iVar8 != 0);
-  uVar5 = param_2[2];
-  uVar4 = ordfloat_sub(param_2[1],uVar5);
-  uVar9 = param_1[0xb];
-  uVar5 = ordfloat_sub(*param_2,uVar5);
-  uVar3 = ordfloat_sub(param_1[1],uVar9);
+  uVar5 = coefficients[2];
+  uVar4 = ordfloat_sub(coefficients[1],uVar5);
+  uVar9 = triangle[0xb];
+  uVar5 = ordfloat_sub(*coefficients,uVar5);
+  uVar3 = ordfloat_sub(triangle[1],uVar9);
   uVar3 = ordfloat_mul(uVar3,uVar4);
-  uVar9 = ordfloat_sub(param_1[6],uVar9);
+  uVar9 = ordfloat_sub(triangle[6],uVar9);
   uVar9 = ordfloat_mul(uVar9,uVar5);
   uVar3 = ordfloat_sub(uVar3,uVar9);
   uVar3 = ordfloat_mul(uVar3,uVar1);
-  param_2[9] = uVar3;
-  uVar9 = param_1[10];
-  uVar3 = ordfloat_sub(*param_1,uVar9);
+  coefficients[9] = uVar3;
+  uVar9 = triangle[10];
+  uVar3 = ordfloat_sub(*triangle,uVar9);
   uVar4 = ordfloat_mul(uVar3,uVar4);
-  uVar3 = ordfloat_sub(param_1[5],uVar9);
+  uVar3 = ordfloat_sub(triangle[5],uVar9);
   uVar5 = ordfloat_mul(uVar3,uVar5);
   uVar4 = ordfloat_sub(uVar4,uVar5);
   uVar4 = ordfloat_mul(uVar4,uVar2);
-  uVar5 = param_2[5];
-  param_2[10] = uVar4;
-  uVar4 = ordfloat_sub(param_2[4],uVar5);
-  uVar9 = param_1[0xb];
-  uVar5 = ordfloat_sub(param_2[3],uVar5);
-  uVar3 = ordfloat_sub(param_1[1],uVar9);
+  uVar5 = coefficients[5];
+  coefficients[10] = uVar4;
+  uVar4 = ordfloat_sub(coefficients[4],uVar5);
+  uVar9 = triangle[0xb];
+  uVar5 = ordfloat_sub(coefficients[3],uVar5);
+  uVar3 = ordfloat_sub(triangle[1],uVar9);
   uVar3 = ordfloat_mul(uVar3,uVar4);
-  uVar9 = ordfloat_sub(param_1[6],uVar9);
+  uVar9 = ordfloat_sub(triangle[6],uVar9);
   uVar9 = ordfloat_mul(uVar9,uVar5);
   uVar3 = ordfloat_sub(uVar3,uVar9);
   uVar3 = ordfloat_mul(uVar3,uVar1);
-  param_2[0xb] = uVar3;
-  uVar9 = param_1[10];
-  uVar3 = ordfloat_sub(*param_1,uVar9);
+  coefficients[0xb] = uVar3;
+  uVar9 = triangle[10];
+  uVar3 = ordfloat_sub(*triangle,uVar9);
   uVar4 = ordfloat_mul(uVar3,uVar4);
-  uVar3 = ordfloat_sub(param_1[5],uVar9);
+  uVar3 = ordfloat_sub(triangle[5],uVar9);
   uVar5 = ordfloat_mul(uVar3,uVar5);
   uVar4 = ordfloat_sub(uVar4,uVar5);
   uVar4 = ordfloat_mul(uVar4,uVar2);
-  uVar5 = param_2[8];
-  param_2[0xc] = uVar4;
-  uVar4 = ordfloat_sub(param_2[7],uVar5);
-  uVar9 = param_1[0xb];
-  uVar5 = ordfloat_sub(param_2[6],uVar5);
-  uVar3 = ordfloat_sub(param_1[1],uVar9);
+  uVar5 = coefficients[8];
+  coefficients[0xc] = uVar4;
+  uVar4 = ordfloat_sub(coefficients[7],uVar5);
+  uVar9 = triangle[0xb];
+  uVar5 = ordfloat_sub(coefficients[6],uVar5);
+  uVar3 = ordfloat_sub(triangle[1],uVar9);
   uVar3 = ordfloat_mul(uVar3,uVar4);
-  uVar9 = ordfloat_sub(param_1[6],uVar9);
+  uVar9 = ordfloat_sub(triangle[6],uVar9);
   uVar9 = ordfloat_mul(uVar9,uVar5);
   uVar3 = ordfloat_sub(uVar3,uVar9);
   uVar1 = ordfloat_mul(uVar3,uVar1);
-  param_2[0xd] = uVar1;
-  uVar3 = param_1[10];
-  uVar1 = ordfloat_sub(*param_1,uVar3);
+  coefficients[0xd] = uVar1;
+  uVar3 = triangle[10];
+  uVar1 = ordfloat_sub(*triangle,uVar3);
   uVar1 = ordfloat_mul(uVar1,uVar4);
-  uVar4 = ordfloat_sub(param_1[5],uVar3);
+  uVar4 = ordfloat_sub(triangle[5],uVar3);
   uVar4 = ordfloat_mul(uVar4,uVar5);
   uVar1 = ordfloat_sub(uVar1,uVar4);
   uVar1 = ordfloat_mul(uVar1,uVar2);
-  param_2[0xe] = uVar1;
-  uVar1 = ordfloat_uint_to_float(ordfloat_mul(param_2[9],0x45800000));
-  param_2[0xf] = uVar1;
-  uVar1 = ordfloat_uint_to_float(ordfloat_mul(param_2[0xb],0x45800000));
-  param_2[0x10] = uVar1;
-  uVar1 = ordfloat_uint_to_float(ordfloat_mul(param_2[0xd],0x45800000));
-  param_2[0x11] = uVar1;
-  return;
+  coefficients[0xe] = uVar1;
+  uVar1 = ordfloat_uint_to_float(ordfloat_mul(coefficients[9],0x45800000));
+  coefficients[0xf] = uVar1;
+  uVar1 = ordfloat_uint_to_float(ordfloat_mul(coefficients[0xb],0x45800000));
+  coefficients[0x10] = uVar1;
+  uVar1 = ordfloat_uint_to_float(ordfloat_mul(coefficients[0xd],0x45800000));
+  coefficients[0x11] = uVar1;
 }
 
 
 
 // was FUN_00014ef4 -- per-edge setup: given two vertex indices, the
 // starting value and per-scanline step for x, u/w, v/w and 1/w
-void raster_edge_setup(param_1,param_2,param_3,param_4,param_5,param_6)
-intptr_t param_1; /* was int -- edge-coeff array pointer */
-intptr_t param_2; /* was int -- vertex array pointer (stride 0x14) */
-int param_3;
-int param_4;
-int param_5;
-undefined4 * param_6;
-
+/* was int -- edge-coeff array pointer was int -- vertex array pointer (stride 0x14) */
+void raster_edge_setup(intptr_t coefficients, intptr_t vertices, int vertex_a, int vertex_b, int row_limit, undefined4 *edge)
 {
   int iVar1;
   uint uVar2;
@@ -555,18 +520,18 @@ undefined4 * param_6;
   undefined4 uVar12;
   int local_34;
   
-  puVar11 = (undefined4 *)(param_3 * 0x14 + param_2);
+  puVar11 = (undefined4 *)(vertex_a * 0x14 + vertices);
   uVar2 = ordfloat_uint_to_float(ordfloat_mul(puVar11[1],0x45800000));
   if ((uVar2 & 0xfff) != 0) {
     uVar2 = (uVar2 - (uVar2 & 0xfff)) + 0x1000;
   }
   iVar1 = (int)uVar2 >> 0xc;
-  param_6[2] = iVar1;
+  edge[2] = iVar1;
   local_34 = 0;
-  if (iVar1 < param_5) {
-    local_34 = param_5 - iVar1;
+  if (iVar1 < row_limit) {
+    local_34 = row_limit - iVar1;
   }
-  puVar10 = (undefined4 *)(param_4 * 0x14 + param_2);
+  puVar10 = (undefined4 *)(vertex_b * 0x14 + vertices);
   uVar2 = ordfloat_uint_to_float(ordfloat_mul(puVar10[1],0x45800000));
   if ((uVar2 & 0xfff) != 0) {
     uVar2 = (uVar2 - (uVar2 & 0xfff)) + 0x1000;
@@ -576,9 +541,9 @@ undefined4 * param_6;
   if (iVar3 < 0) {
     iVar7 = 0;
   }
-  param_6[3] = iVar3;
+  edge[3] = iVar3;
   if (iVar3 < 0) {
-    param_6[3] = iVar7;
+    edge[3] = iVar7;
   }
   uVar8 = puVar11[1];
   uVar4 = ordfloat_int_to_float2(iVar1);
@@ -592,72 +557,61 @@ undefined4 * param_6;
   uVar6 = ordfloat_mul(uVar4,uVar5);
   uVar6 = ordfloat_mul(uVar6,uVar8);
   uVar6 = ordfloat_add(uVar6,uVar9);
-  *param_6 = uVar6;
+  *edge = uVar6;
   uVar8 = ordfloat_mul(uVar8,uVar5);
-  param_6[1] = uVar8;
-  uVar12 = *param_6;
+  edge[1] = uVar8;
+  uVar12 = *edge;
   uVar5 = ordfloat_sub(uVar12,*puVar11);
-  param_6[2] = iVar1 + local_34;
-  uVar6 = ordfloat_mul(*(undefined4 *)(param_1 + 0x28),uVar4);
-  uVar9 = ordfloat_mul(*(undefined4 *)(param_1 + 0x24),uVar5);
+  edge[2] = iVar1 + local_34;
+  uVar6 = ordfloat_mul(*(undefined4 *)(coefficients + 0x28),uVar4);
+  uVar9 = ordfloat_mul(*(undefined4 *)(coefficients + 0x24),uVar5);
   uVar6 = ordfloat_add(uVar6,uVar9);
-  puVar11 = (undefined4 *)(param_1 + param_3 * 4);
+  puVar11 = (undefined4 *)(coefficients + vertex_a * 4);
   uVar6 = ordfloat_add(uVar6,*puVar11);
-  param_6[4] = uVar6;
-  uVar6 = ordfloat_mul(*(undefined4 *)(param_1 + 0x24),uVar8);
-  uVar6 = ordfloat_add(uVar6,*(undefined4 *)(param_1 + 0x28));
-  param_6[5] = uVar6;
-  uVar6 = ordfloat_mul(*(undefined4 *)(param_1 + 0x30),uVar4);
-  uVar9 = ordfloat_mul(*(undefined4 *)(param_1 + 0x2c),uVar5);
+  edge[4] = uVar6;
+  uVar6 = ordfloat_mul(*(undefined4 *)(coefficients + 0x24),uVar8);
+  uVar6 = ordfloat_add(uVar6,*(undefined4 *)(coefficients + 0x28));
+  edge[5] = uVar6;
+  uVar6 = ordfloat_mul(*(undefined4 *)(coefficients + 0x30),uVar4);
+  uVar9 = ordfloat_mul(*(undefined4 *)(coefficients + 0x2c),uVar5);
   uVar6 = ordfloat_add(uVar6,uVar9);
   uVar6 = ordfloat_add(uVar6,puVar11[3]);
-  param_6[6] = uVar6;
-  uVar6 = ordfloat_mul(*(undefined4 *)(param_1 + 0x2c),uVar8);
-  uVar6 = ordfloat_add(uVar6,*(undefined4 *)(param_1 + 0x30));
-  param_6[7] = uVar6;
-  uVar4 = ordfloat_mul(*(undefined4 *)(param_1 + 0x38),uVar4);
-  uVar5 = ordfloat_mul(*(undefined4 *)(param_1 + 0x34),uVar5);
+  edge[6] = uVar6;
+  uVar6 = ordfloat_mul(*(undefined4 *)(coefficients + 0x2c),uVar8);
+  uVar6 = ordfloat_add(uVar6,*(undefined4 *)(coefficients + 0x30));
+  edge[7] = uVar6;
+  uVar4 = ordfloat_mul(*(undefined4 *)(coefficients + 0x38),uVar4);
+  uVar5 = ordfloat_mul(*(undefined4 *)(coefficients + 0x34),uVar5);
   uVar4 = ordfloat_add(uVar4,uVar5);
   uVar4 = ordfloat_add(uVar4,puVar11[6]);
-  param_6[8] = uVar4;
-  uVar4 = ordfloat_mul(*(undefined4 *)(param_1 + 0x34),uVar8);
-  uVar4 = ordfloat_add(uVar4,*(undefined4 *)(param_1 + 0x38));
-  param_6[9] = uVar4;
+  edge[8] = uVar4;
+  uVar4 = ordfloat_mul(*(undefined4 *)(coefficients + 0x34),uVar8);
+  uVar4 = ordfloat_add(uVar4,*(undefined4 *)(coefficients + 0x38));
+  edge[9] = uVar4;
   uVar4 = ordfloat_uint_to_float(ordfloat_mul(uVar12,0x46800000));
-  param_6[10] = uVar4;
-  uVar4 = ordfloat_uint_to_float(ordfloat_mul(param_6[4],0x46800000));
-  param_6[0xc] = uVar4;
-  uVar4 = ordfloat_uint_to_float(ordfloat_mul(param_6[6],0x46800000));
-  param_6[0xe] = uVar4;
-  uVar4 = ordfloat_uint_to_float(ordfloat_mul(param_6[8],0x46800000));
-  param_6[0x10] = uVar4;
+  edge[10] = uVar4;
+  uVar4 = ordfloat_uint_to_float(ordfloat_mul(edge[4],0x46800000));
+  edge[0xc] = uVar4;
+  uVar4 = ordfloat_uint_to_float(ordfloat_mul(edge[6],0x46800000));
+  edge[0xe] = uVar4;
+  uVar4 = ordfloat_uint_to_float(ordfloat_mul(edge[8],0x46800000));
+  edge[0x10] = uVar4;
   uVar4 = ordfloat_uint_to_float(ordfloat_mul(uVar8,0x46800000));
-  param_6[0xb] = uVar4;
-  uVar4 = ordfloat_uint_to_float(ordfloat_mul(param_6[5],0x46800000));
-  param_6[0xd] = uVar4;
-  uVar4 = ordfloat_uint_to_float(ordfloat_mul(param_6[7],0x46800000));
-  param_6[0xf] = uVar4;
-  uVar4 = ordfloat_uint_to_float(ordfloat_mul(param_6[9],0x46800000));
-  param_6[0x11] = uVar4;
-  return;
+  edge[0xb] = uVar4;
+  uVar4 = ordfloat_uint_to_float(ordfloat_mul(edge[5],0x46800000));
+  edge[0xd] = uVar4;
+  uVar4 = ordfloat_uint_to_float(ordfloat_mul(edge[7],0x46800000));
+  edge[0xf] = uVar4;
+  uVar4 = ordfloat_uint_to_float(ordfloat_mul(edge[9],0x46800000));
+  edge[0x11] = uVar4;
 }
 
 
 
 // was FUN_0001548c -- the textured span rasterizer: for one scanline span between two edges,
 // perspective-divides per pixel, samples the tile texture...
-void raster_textured_span(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
-int param_1;
-intptr_t param_2; /* framebuffer base */
-intptr_t param_3; /* edge struct */
-intptr_t param_4; /* edge struct */
-intptr_t param_5; /* edge struct */
-int param_6;
-int param_7;
-intptr_t param_8; /* texture pixel data */
-int * param_9;
-byte param_10;
-
+/* framebuffer base edge struct edge struct edge struct texture pixel data */
+void raster_textured_span(int row, intptr_t framebuffer, intptr_t gradients, intptr_t left_edge, intptr_t right_edge, int texture_stride, int texture_size, intptr_t texture_pixels, int *depth_limit, byte shade)
 {
   byte bVar1;
   uint uVar2;
@@ -689,14 +643,14 @@ byte param_10;
   intptr_t local_4; /* fb row pointer */
 
   iVar12 = (intptr_t)DAT_0023cca0;
-  uVar2 = *(uint *)(param_4 + 0x28);
+  uVar2 = *(uint *)(left_edge + 0x28);
   uVar8 = uVar2 & 0x3fff;
   if (uVar8 != 0) {
     uVar2 = (uVar2 - uVar8) + 0x4000;
   }
   iVar6 = (int)uVar2 >> 0xe;
   iVar3 = 0x4000 - uVar8;
-  uVar2 = *(uint *)(param_5 + 0x28);
+  uVar2 = *(uint *)(right_edge + 0x28);
   if (uVar8 == 0) {
     iVar3 = 0;
   }
@@ -709,31 +663,31 @@ byte param_10;
     uVar2 = uVar2 + 0x4000;
   }
   iVar11 = ((int)uVar2 >> 0xe) - iVar6;
-  local_38 = (*(int *)(param_3 + 0x3c) * iVar3 >> 0xc) + (*(int *)(param_4 + 0x30) >> 2);
+  local_38 = (*(int *)(gradients + 0x3c) * iVar3 >> 0xc) + (*(int *)(left_edge + 0x30) >> 2);
   iVar9 = 0;
-  iVar14 = (*(int *)(param_3 + 0x40) * iVar3 >> 0xc) + (*(int *)(param_4 + 0x38) >> 2);
-  local_34 = (*(int *)(param_3 + 0x44) * iVar3 >> 0xc) + (*(int *)(param_4 + 0x40) >> 2);
-  if (iVar6 < *param_9) {
-    iVar9 = *param_9 - iVar6;
+  iVar14 = (*(int *)(gradients + 0x40) * iVar3 >> 0xc) + (*(int *)(left_edge + 0x38) >> 2);
+  local_34 = (*(int *)(gradients + 0x44) * iVar3 >> 0xc) + (*(int *)(left_edge + 0x40) >> 2);
+  if (iVar6 < *depth_limit) {
+    iVar9 = *depth_limit - iVar6;
   }
-  if (param_9[2] < iVar11 + iVar6) {
-    iVar11 = param_9[2] - iVar6;
+  if (depth_limit[2] < iVar11 + iVar6) {
+    iVar11 = depth_limit[2] - iVar6;
   }
-  local_4 = param_2;
+  local_4 = framebuffer;
   if (iVar9 != 0) {
     uVar4 = ordfloat_int_to_float2(iVar9);
-    uVar5 = ordfloat_mul(*(undefined4 *)(param_3 + 0x24),uVar4);
+    uVar5 = ordfloat_mul(*(undefined4 *)(gradients + 0x24),uVar4);
     iVar3 = ordfloat_uint_to_float(ordfloat_mul(uVar5,0xc5800000));
     local_38 = local_38 - iVar3;
-    uVar5 = ordfloat_mul(*(undefined4 *)(param_3 + 0x2c),uVar4);
+    uVar5 = ordfloat_mul(*(undefined4 *)(gradients + 0x2c),uVar4);
     iVar3 = ordfloat_uint_to_float(ordfloat_mul(uVar5,0xc5800000));
     iVar14 = iVar14 - iVar3;
-    uVar4 = ordfloat_mul(*(undefined4 *)(param_3 + 0x34),uVar4);
+    uVar4 = ordfloat_mul(*(undefined4 *)(gradients + 0x34),uVar4);
     iVar3 = ordfloat_uint_to_float(ordfloat_mul(uVar4,0xc5800000));
     iVar12 = iVar12 + iVar9;
     iVar11 = iVar11 - iVar9;
     local_34 = local_34 - iVar3;
-    local_4 = param_2 + iVar9 * 2;
+    local_4 = framebuffer + iVar9 * 2;
   }
   /* HACK: restore radial eye-to-surface lighting in both modes instead of
      shading whole planes by camera depth. render_visible_tile_list projects
@@ -742,20 +696,20 @@ byte param_10;
      preserve this distance. Include the left clip offset and advance x even
      for transparent pixels; texture perspective interpolation stays intact. */
   int light_x = iVar6 + iVar9;
-  double light_y = (*(int *)(param_4 + 8) - 80) / 90.0;
+  double light_y = (*(int *)(left_edge + 8) - 80) / 90.0;
   if (0 < iVar11) {
-    iVar6 = *(int *)(param_4 + 8) * param_1 + iVar6;
+    iVar6 = *(int *)(left_edge + 8) * row + iVar6;
     puVar13 = (undefined1 *)(iVar6 + iVar12);
     puVar10 = (ushort *)(local_4 + iVar6 * 2);
     do {
       iVar6 = ordint_divmod(local_38,0x1000000).quot;
       iVar12 = (local_34 >> 6) * iVar6 >> 0x12;
-      bVar1 = param_10;
-      if ((param_8 != 0) && (-1 < iVar12)) {
-        for (iVar12 = (int)(iVar12) * param_6 + ((iVar14 >> 6) * iVar6 >> 0x12); param_7 < iVar12;
-            iVar12 = iVar12 - param_7) {
+      bVar1 = shade;
+      if ((texture_pixels != 0) && (-1 < iVar12)) {
+        for (iVar12 = (int)(iVar12) * texture_stride + ((iVar14 >> 6) * iVar6 >> 0x12); texture_size < iVar12;
+            iVar12 = iVar12 - texture_size) {
         }
-        bVar1 = *(byte *)(iVar12 + param_8);
+        bVar1 = *(byte *)(iVar12 + texture_pixels);
       }
       if (bVar1 != 0) {
         double ray_x = (light_x - 140) / 100.0;
@@ -763,7 +717,7 @@ byte param_10;
         /* DOS's alternating +0.25/+0.75 thresholds, anchored to the screen.
            ARM applies them at RGB565 quantization rather than palette lookup. */
         int dither_offset = dither_enabled ?
-            (((light_x + *(int *)(param_4 + 8)) & 1) ? 0xc0 : 0x40) : 0;
+            (((light_x + *(int *)(left_edge + 8)) & 1) ? 0xc0 : 0x40) : 0;
         if (dos_light_mode) {
           /* HACK: palette shading uses SHADES.DAT's selected light strength.
              tmap supplies w = world_depth/1500. Edge setup scales 1/w by
@@ -815,20 +769,18 @@ byte param_10;
       iVar11 = iVar11 + -1;
       puVar10 = puVar10 + 1;
       puVar13 = puVar13 + 1;
-      local_38 = *(int *)(param_3 + 0x3c) + local_38;
-      iVar14 = *(int *)(param_3 + 0x40) + iVar14;
-      local_34 = *(int *)(param_3 + 0x44) + local_34;
+      local_38 = *(int *)(gradients + 0x3c) + local_38;
+      iVar14 = *(int *)(gradients + 0x40) + iVar14;
+      local_34 = *(int *)(gradients + 0x44) + local_34;
     } while (iVar11 != 0);
   }
-  return;
 }
 
 
 
 
 // was FUN_0001de0c -- build the view/camera matrix into DAT_000c8ac0 from the camera translation (DAT_000db438/43c/440) and 3 axis rotations (DAT_000db448/44c/450)
-void build_view_matrix()
-
+void build_view_matrix(void)
 {
   undefined4 uVar1;
   undefined4 uVar2;
@@ -889,48 +841,45 @@ void build_view_matrix()
   multiply_matrix4x4(auStack_d8,local_118,auStack_98);
   multiply_matrix4x4(auStack_98,auStack_158,auStack_58);
   multiply_matrix4x4(auStack_58,local_198_mtx,&DAT_000c8ac0);
-  return;
 }
 
 
 
 // was FUN_0001dfe8 -- per visible-tile vertex: subtract the camera position (ordfloat_add) to get camera-relative coords; also clears the per-tile visible flags
-void translate_verts_to_camera_space(param_1)
-int * param_1;
-
+void translate_verts_to_camera_space(int *vertex_list)
 {
   undefined4 uVar1;
   int *piVar2;
   int iVar3;
   
   iVar3 = 0;
-  if (0 < *param_1) {
-    piVar2 = param_1;
+  if (0 < *vertex_list) {
+    piVar2 = vertex_list;
     do {
-      uVar1 = ordfloat_add(piVar2[2],param_1[0x1202]);
+      uVar1 = ordfloat_add(piVar2[2],vertex_list[0x1202]);
       *(char *)(piVar2 + 0x602) = (char)uVar1;
       *(char *)((char *)piVar2 + 0x1809) = (char)((uint)uVar1 >> 8);
       *(char *)((char *)piVar2 + 0x180a) = (char)((uint)uVar1 >> 0x10);
       *(char *)((char *)piVar2 + 0x180b) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = ordfloat_add(piVar2[3],param_1[0x1203]);
+      uVar1 = ordfloat_add(piVar2[3],vertex_list[0x1203]);
       *(char *)(piVar2 + 0x603) = (char)uVar1;
       *(char *)((char *)piVar2 + 0x180d) = (char)((uint)uVar1 >> 8);
       *(char *)((char *)piVar2 + 0x180e) = (char)((uint)uVar1 >> 0x10);
       *(char *)((char *)piVar2 + 0x180f) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = ordfloat_add(piVar2[4],param_1[0x1204]);
+      uVar1 = ordfloat_add(piVar2[4],vertex_list[0x1204]);
       *(char *)(piVar2 + 0x604) = (char)uVar1;
       *(char *)((char *)piVar2 + 0x1811) = (char)((uint)uVar1 >> 8);
       *(char *)((char *)piVar2 + 0x1812) = (char)((uint)uVar1 >> 0x10);
       iVar3 = iVar3 + 1;
       *(char *)((char *)piVar2 + 0x1813) = (char)((uint)uVar1 >> 0x18);
       piVar2 = piVar2 + 3;
-    } while (iVar3 < *param_1);
+    } while (iVar3 < *vertex_list);
   }
   iVar3 = 0;
-  piVar2 = param_1;
+  piVar2 = vertex_list;
   if (getenv("UW_DEBUG_DOOR_POS"))
-    fprintf(stderr, "[doorpos] translate_verts_to_camera_space: second-list record count param_1[1]=%d\n", param_1[1]);
-  if (0 < param_1[1]) {
+    fprintf(stderr, "[doorpos] translate_verts_to_camera_space: second-list record count vertex_list[1]=%d\n", vertex_list[1]);
+  if (0 < vertex_list[1]) {
     do {
       *(undefined1 *)(piVar2 + 0x121b) = 1;
       iVar3 = iVar3 + 1;
@@ -942,17 +891,14 @@ int * param_1;
       *(undefined1 *)((char *)piVar2 + 0x4872) = 0;
       *(undefined1 *)((char *)piVar2 + 0x4873) = 0;
       piVar2 = piVar2 + 0x18;
-    } while (iVar3 < param_1[1]);
+    } while (iVar3 < vertex_list[1]);
   }
-  return;
 }
 
 
 
 // was FUN_0001e274 -- per vertex: multiply-accumulate the camera-relative coord through the 4x4 view matrix DAT_000c8ac0 (ordfloat_mul mul, ordfloat_add add) -> projected x,y,z,w
-void project_verts_through_view_matrix(param_1)
-int * param_1;
-
+void project_verts_through_view_matrix(int *vertex_list)
 {
   int iVar1;
   int iVar2;
@@ -963,8 +909,8 @@ int * param_1;
   int iVar7;
   
   iVar7 = 0;
-  piVar6 = param_1;
-  if (-1 < *param_1) {
+  piVar6 = vertex_list;
+  if (-1 < *vertex_list) {
     do {
       iVar1 = piVar6[0x604];
       iVar2 = piVar6[0x603];
@@ -1001,9 +947,8 @@ int * param_1;
       *(char *)((char *)piVar6 + 0x3012) = (char)((uint)uVar4 >> 0x10);
       *(char *)((char *)piVar6 + 0x3013) = (char)((uint)uVar4 >> 0x18);
       piVar6 = piVar6 + 3;
-    } while (iVar7 <= *param_1);
+    } while (iVar7 <= *vertex_list);
   }
-  return;
 }
 
 
@@ -1014,10 +959,7 @@ int * param_1;
 // was FUN_0001f370 -- near-plane (w=DAT_00084608=5.0) Sutherland-Hodgman clip of
 // each visible tile quad; writes clipped positions + interpolated texcoords into
 // the 0x88-byte render records at DAT_000bc038 and the DAT_000c4838[] pointer table
-void near_clip_visible_tiles(param_1,param_2)
-intptr_t param_1;
-int param_2;
-
+void near_clip_visible_tiles(intptr_t tile_list, int clip_mode)
 {
   undefined1 uVar1;
   undefined1 uVar2;
@@ -1047,16 +989,16 @@ int param_2;
   int local_4c;
   int local_48;
 
-  if (param_2 == 0) {
+  if (clip_mode == 0) {
     DAT_000c8c98 = 0;
   }
   else {
     local_48 = 0;
-    if (0 < *(int *)(param_1 + 4)) {
+    if (0 < *(int *)(tile_list + 4)) {
       local_74 = 0;
       local_7c = DAT_000c8c98;
       local_4c = 0;
-      iVar14 = param_1;
+      iVar14 = tile_list;
       do {
         if ((*(int *)(iVar14 + 0x486c) != 0) && (*(int *)(iVar14 + 0x4870) == 0)) {
           iVar19 = local_7c * 0x88;
@@ -1111,10 +1053,10 @@ int param_2;
             local_50 = iVar14;
             do {
               iVar7 = *(int *)(local_50 + 0x4818);
-              iVar5 = *(int *)(local_4c + local_64 * 4 + param_1 + 0x4818) * 0xc + param_1;
+              iVar5 = *(int *)(local_4c + local_64 * 4 + tile_list + 0x4818) * 0xc + tile_list;
               uVar10 = *(undefined4 *)(iVar5 + 0x3010);
               iVar6 = ordfloat_ge(uVar10,DAT_00084608);
-              iVar7 = iVar7 * 0xc + param_1;
+              iVar7 = iVar7 * 0xc + tile_list;
               puVar8 = (undefined4 *)(iVar7 + 0x3010);
               uVar11 = *puVar8;
               if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
@@ -1153,8 +1095,8 @@ int param_2;
                   puVar16[1] = (char)((uint)uVar10 >> 8);
                   puVar16[2] = (char)((uint)uVar10 >> 0x10);
                   puVar16[3] = (char)((uint)uVar10 >> 0x18);
-                  iVar6 = param_1 + (local_74 + local_78) * 8;
-                  iVar12 = param_1 + (local_74 + local_64) * 8;
+                  iVar6 = tile_list + (local_74 + local_78) * 8;
+                  iVar12 = tile_list + (local_74 + local_64) * 8;
                   iVar5 = *(int *)(iVar12 + 0x4838);
                   iVar13 = local_7c * 0x11;
                   uVar10 = ordfloat_int_to_float2(*(int *)(iVar6 + 0x4838) - iVar5);
@@ -1240,8 +1182,8 @@ int param_2;
                   puVar16[1] = (char)((uint)uVar10 >> 8);
                   puVar16[2] = (char)((uint)uVar10 >> 0x10);
                   puVar16[3] = (char)((uint)uVar10 >> 0x18);
-                  iVar6 = param_1 + (local_74 + local_78) * 8;
-                  iVar5 = param_1 + (local_74 + local_64) * 8;
+                  iVar6 = tile_list + (local_74 + local_78) * 8;
+                  iVar5 = tile_list + (local_74 + local_64) * 8;
                   iVar7 = *(int *)(iVar5 + 0x4838);
                   uVar10 = ordfloat_int_to_float2(*(int *)(iVar6 + 0x4838) - iVar7);
                   uVar10 = ordfloat_mul(uVar10,uVar11);
@@ -1274,7 +1216,7 @@ int param_2;
                   puVar16[1] = (char)((uint)uVar10 >> 8);
                   puVar16[2] = (char)((uint)uVar10 >> 0x10);
                   puVar16[3] = (char)((uint)uVar10 >> 0x18);
-                  iVar5 = param_1 + (local_74 + local_78) * 8;
+                  iVar5 = tile_list + (local_74 + local_78) * 8;
                   iVar7 = (local_7c * 0x11 + iVar18 + 8) * 8;
                   uVar10 = *(undefined4 *)(iVar5 + 0x4838);
                   (&DAT_000bc038)[iVar7] = (char)uVar10;
@@ -1330,10 +1272,9 @@ LAB_0002029c:
         local_4c = local_4c + 0x60;
         iVar14 = iVar14 + 0x60;
         local_74 = local_74 + 0xc;
-      } while (local_48 < *(int *)(param_1 + 4));
+      } while (local_48 < *(int *)(tile_list + 4));
     }
   }
-  return;
 }
 
 
@@ -1341,111 +1282,103 @@ LAB_0002029c:
 // was FUN_00013b8c -- confirmed by two independent pre-existing comments (uw.c's
 // DAT_000c8ac0-family global-layout note, and src/3d.c's own build_view_matrix-adjacent comment) as
 // a 4x4 (really 4x3-affine, homogeneous) matrix multiply...
-void multiply_matrix4x4(param_1,param_2,param_3)
-undefined4 * param_1;
-undefined4 * param_2;
-undefined4 * param_3;
-
+void multiply_matrix4x4(undefined4 *a, undefined4 *b, undefined4 *out)
 {
   undefined4 uVar1;
   undefined4 uVar2;
   
-  uVar1 = ordfloat_mul(param_2[8],param_1[2]);
-  uVar2 = ordfloat_mul(param_1[1],param_2[4]);
+  uVar1 = ordfloat_mul(b[8],a[2]);
+  uVar2 = ordfloat_mul(a[1],b[4]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(*param_1,*param_2);
+  uVar2 = ordfloat_mul(*a,*b);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  *param_3 = uVar1;
-  uVar1 = ordfloat_mul(param_2[9],param_1[2]);
-  uVar2 = ordfloat_mul(param_1[1],param_2[5]);
+  *out = uVar1;
+  uVar1 = ordfloat_mul(b[9],a[2]);
+  uVar2 = ordfloat_mul(a[1],b[5]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_2[1],*param_1);
+  uVar2 = ordfloat_mul(b[1],*a);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  param_3[1] = uVar1;
-  uVar1 = ordfloat_mul(param_2[10],param_1[2]);
-  uVar2 = ordfloat_mul(param_2[6],param_1[1]);
+  out[1] = uVar1;
+  uVar1 = ordfloat_mul(b[10],a[2]);
+  uVar2 = ordfloat_mul(b[6],a[1]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_2[2],*param_1);
+  uVar2 = ordfloat_mul(b[2],*a);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  param_3[2] = uVar1;
-  param_3[3] = 0;
-  uVar1 = ordfloat_mul(param_1[6],param_2[8]);
-  uVar2 = ordfloat_mul(param_1[5],param_2[4]);
+  out[2] = uVar1;
+  out[3] = 0;
+  uVar1 = ordfloat_mul(a[6],b[8]);
+  uVar2 = ordfloat_mul(a[5],b[4]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_1[4],*param_2);
+  uVar2 = ordfloat_mul(a[4],*b);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  param_3[4] = uVar1;
-  uVar1 = ordfloat_mul(param_1[6],param_2[9]);
-  uVar2 = ordfloat_mul(param_1[5],param_2[5]);
+  out[4] = uVar1;
+  uVar1 = ordfloat_mul(a[6],b[9]);
+  uVar2 = ordfloat_mul(a[5],b[5]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_1[4],param_2[1]);
+  uVar2 = ordfloat_mul(a[4],b[1]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  param_3[5] = uVar1;
-  uVar1 = ordfloat_mul(param_1[6],param_2[10]);
-  uVar2 = ordfloat_mul(param_1[5],param_2[6]);
+  out[5] = uVar1;
+  uVar1 = ordfloat_mul(a[6],b[10]);
+  uVar2 = ordfloat_mul(a[5],b[6]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_1[4],param_2[2]);
+  uVar2 = ordfloat_mul(a[4],b[2]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  param_3[6] = uVar1;
-  param_3[7] = 0;
-  uVar1 = ordfloat_mul(param_1[10],param_2[8]);
-  uVar2 = ordfloat_mul(param_1[9],param_2[4]);
+  out[6] = uVar1;
+  out[7] = 0;
+  uVar1 = ordfloat_mul(a[10],b[8]);
+  uVar2 = ordfloat_mul(a[9],b[4]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_1[8],*param_2);
+  uVar2 = ordfloat_mul(a[8],*b);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  param_3[8] = uVar1;
-  uVar1 = ordfloat_mul(param_1[10],param_2[9]);
-  uVar2 = ordfloat_mul(param_1[9],param_2[5]);
+  out[8] = uVar1;
+  uVar1 = ordfloat_mul(a[10],b[9]);
+  uVar2 = ordfloat_mul(a[9],b[5]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_1[8],param_2[1]);
+  uVar2 = ordfloat_mul(a[8],b[1]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  param_3[9] = uVar1;
-  uVar1 = ordfloat_mul(param_1[10],param_2[10]);
-  uVar2 = ordfloat_mul(param_1[9],param_2[6]);
+  out[9] = uVar1;
+  uVar1 = ordfloat_mul(a[10],b[10]);
+  uVar2 = ordfloat_mul(a[9],b[6]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_1[8],param_2[2]);
+  uVar2 = ordfloat_mul(a[8],b[2]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  param_3[10] = uVar1;
-  param_3[0xb] = 0;
-  uVar1 = ordfloat_mul(param_1[0xe],param_2[8]);
-  uVar2 = ordfloat_mul(param_1[0xd],param_2[4]);
+  out[10] = uVar1;
+  out[0xb] = 0;
+  uVar1 = ordfloat_mul(a[0xe],b[8]);
+  uVar2 = ordfloat_mul(a[0xd],b[4]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_1[0xc],*param_2);
+  uVar2 = ordfloat_mul(a[0xc],*b);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar1 = ordfloat_add(uVar1,param_2[0xc]);
-  param_3[0xc] = uVar1;
-  uVar1 = ordfloat_mul(param_1[0xe],param_2[9]);
-  uVar2 = ordfloat_mul(param_1[0xd],param_2[5]);
+  uVar1 = ordfloat_add(uVar1,b[0xc]);
+  out[0xc] = uVar1;
+  uVar1 = ordfloat_mul(a[0xe],b[9]);
+  uVar2 = ordfloat_mul(a[0xd],b[5]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_1[0xc],param_2[1]);
+  uVar2 = ordfloat_mul(a[0xc],b[1]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar1 = ordfloat_add(uVar1,param_2[0xd]);
-  param_3[0xd] = uVar1;
-  uVar1 = ordfloat_mul(param_1[0xe],param_2[10]);
-  uVar2 = ordfloat_mul(param_1[0xd],param_2[6]);
+  uVar1 = ordfloat_add(uVar1,b[0xd]);
+  out[0xd] = uVar1;
+  uVar1 = ordfloat_mul(a[0xe],b[10]);
+  uVar2 = ordfloat_mul(a[0xd],b[6]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar2 = ordfloat_mul(param_1[0xc],param_2[2]);
+  uVar2 = ordfloat_mul(a[0xc],b[2]);
   uVar1 = ordfloat_add(uVar1,uVar2);
-  uVar1 = ordfloat_add(uVar1,param_2[0xe]);
-  param_3[0xe] = uVar1;
-  param_3[0xf] = 0x3f800000;
-  return;
+  uVar1 = ordfloat_add(uVar1,b[0xe]);
+  out[0xe] = uVar1;
+  out[0xf] = 0x3f800000;
 }
 
 
 // was FUN_0001422c -- confirmed by src/3d.c's own pre-existing comment ("set_identity_matrix4x4's
 // identity-matrix values") as a 4x4 identity matrix setter: zeroes the 16-float (64-byte) buffer,
 // then sets the four diagonal elements to 1.0f.
-void set_identity_matrix4x4(param_1)
-undefined4 * param_1;
-
+void set_identity_matrix4x4(undefined4 *matrix)
 {
-  ce_memset(param_1,0,0x40);
-  param_1[0xf] = 0x3f800000;
-  param_1[10] = 0x3f800000;
-  param_1[5] = 0x3f800000;
-  *param_1 = 0x3f800000;
-  return;
+  ce_memset(matrix,0,0x40);
+  matrix[0xf] = 0x3f800000;
+  matrix[10] = 0x3f800000;
+  matrix[5] = 0x3f800000;
+  *matrix = 0x3f800000;
 }
 
 
@@ -1453,17 +1386,13 @@ undefined4 * param_1;
 /* was FUN_00014258 -- copy a 4x4 matrix param_1 -> param_2. param_1 was `int`, and the body
    computed the source address as `(param_1 - (int)param_2) + (int)puVar1` -- a 32-bit byte delta --
    so on a 64-bit host both the source pointer and the delta truncated... */
-void copy_matrix4x4(param_1,param_2)
-undefined4 * param_1;
-undefined4 * param_2;
-
+void copy_matrix4x4(undefined4 *source, undefined4 *dest)
 {
   int i;
 
   for (i = 0; i < 16; i = i + 1) {
-    param_2[i] = param_1[i];
+    dest[i] = source[i];
   }
-  return;
 }
 
 
@@ -1472,8 +1401,7 @@ undefined4 * param_2;
 // was FUN_0001dd2c -- builds the renderer's 361-entry (0..360 degrees) per-degree sin/cos tables:
 // for each angle, converts degrees to radians (multiplying by the pi/180 constant folded into the
 // ordfloat_double_mul2 call)...
-void build_trig_tables()
-
+void build_trig_tables(void)
 {
   undefined4 uVar1;
   int iVar2;
@@ -1495,15 +1423,13 @@ void build_trig_tables()
     (&DAT_000d9930)[iVar2] = uVar1;
     iVar2 = iVar2 + 1;
   } while (iVar2 < 0x169);
-  return;
 }
 
 
 // was FUN_0005b36c -- loads the dungeon-view texture/shade/door- frame arenas at game/level
 // startup: builds "\DATA\<filename>" paths and calls load_texture_arena four times for the
 // wall/floor texture sets, then load_door_frames.
-void load_dungeon_texture_arenas()
-
+void load_dungeon_texture_arenas(void)
 {
   char *wptr_42257;
   char *wptr_42265;
@@ -1578,7 +1504,6 @@ void load_dungeon_texture_arenas()
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] load_dungeon_texture_arenas: about to call load_door_frames (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
   load_door_frames();
-  return;
 }
 
 
@@ -1586,21 +1511,16 @@ void load_dungeon_texture_arenas()
 // was FUN_0005b758 -- configures the dungeon-view viewport region
 // (x=param_1,y=param_2,width=param_3,height=param_4): sets up the view-Y bound, tracked hotspot
 // rect, and interact zones for it...
-void configure_dungeon_viewport(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-int param_2;
-undefined4 param_3;
-int param_4;
-
+void configure_dungeon_viewport(int x, int y, int width, int height)
 {
   g_dungeon_view_active = 0;
-  DAT_0023b020 = (undefined2)param_3;
-  DAT_0023aed4 = (undefined2)param_4;
-  /* HACK: was `FUN_000129d4(param_1);` -- dropped 2 of 3 arguments, the same class of bug fixed
+  DAT_0023b020 = (undefined2)width;
+  DAT_0023aed4 = (undefined2)height;
+  /* HACK: was `FUN_000129d4(x);` -- dropped 2 of 3 arguments, the same class of bug fixed
      repeatedly elsewhere in this file. */
-  compute_view_y_bound(param_1,param_2,param_3);
-  set_tracked_hotspot_rect(param_1,param_2,param_3,param_4);
-  register_game_view_interact_zones(param_1,param_2 + param_4 + -1,param_3,param_4);
+  compute_view_y_bound(x,y,width);
+  set_tracked_hotspot_rect(x,y,width,height);
+  register_game_view_interact_zones(x,y + height + -1,width,height);
   if ((*(ushort *)(DAT_00085a6c + 8) & 8) == 0) {
     if ((*(ushort *)(DAT_00085a6c + 8) & 1) == 0) {
       DAT_0023aed8 = 0x7ed2;
@@ -1613,7 +1533,6 @@ int param_4;
   else {
     DAT_0023aed8 = 0x6062;
   }
-  return;
 }
 
 
@@ -1621,8 +1540,7 @@ int param_4;
 // was FUN_0005b828 -- one-time dungeon-view rendering init: resets the viewport, loads the 3D
 // object models, initializes the glyph- width table and draw-command cursor, and builds the initial
 // visibility light grid. Confirmed called once from game.c's startup sequence.
-void init_dungeon_rendering()
-
+void init_dungeon_rendering(void)
 {
   reset_viewport_to_fullscreen();
   load_3d_object_models();
@@ -1657,7 +1575,6 @@ void init_dungeon_rendering()
   DAT_00110fc0 = DAT_00110fc0 + 1;
   build_visibility_light_grid(8);
   DAT_0023b49c = DAT_00250650;
-  return;
 }
 
 
@@ -1665,8 +1582,7 @@ void init_dungeon_rendering()
 // was FUN_0005bac0 -- renders one dungeon-view frame (HUD draw commands + the 3D render pass)
 // within the dungeon viewport's clip rect. Confirmed used both for normal frame rendering and (per
 // an existing comment) to re-render in "pick" mode for mouse-object selection (hud.c).
-void render_dungeon_view_frame()
-
+void render_dungeon_view_frame(void)
 {
   draw_command_list_rewind();
   emit_hud_draw_commands();
@@ -1677,28 +1593,23 @@ void render_dungeon_view_frame()
   set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
   render_dungeon_view();
   set_viewport_clip_rect(0,0,0x13f,199);
-  return;
 }
 
 
 // was FUN_0005dd84 -- flat-shaded (low-detail) texture-select emitter for the "wall" surface slot
 // (DAT_00086b38_fnptrs[0], and the dynamic low-detail fallback for slots [1]/[3]): picks either a
 // texture-page byte or a hardcoded flat-shade fallback...
-void emit_flat_wall_texture_select(param_1,param_2,param_3)
-byte * param_1;
-uint param_2;
-ushort param_3;
-
+void emit_flat_wall_texture_select(byte *tile_record, uint depth_shade, ushort texture_index)
 {
   byte *pbVar1;
 
   if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
-    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
+    pbVar1 = (byte *)get_texture_page((texture_index & 0xff) + 0x6a);
+    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (depth_shade & 0xff) * 0x100 +
                                     DAT_0024fa2c);
   }
   else {
-    DAT_0023b7f8 = (param_3 & 0xff) + 0xf0;
+    DAT_0023b7f8 = (texture_index & 0xff) + 0xf0;
   }
   *DAT_00110fc0 = 0x2e;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -1708,16 +1619,15 @@ ushort param_3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 4;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)*param_1 << 3;
+  *DAT_00110fc0 = (ushort)*tile_record << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[1] << 3;
+  *DAT_00110fc0 = (ushort)tile_record[1] << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[2] << 3;
+  *DAT_00110fc0 = (ushort)tile_record[2] << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[3] << 3;
+  *DAT_00110fc0 = (ushort)tile_record[3] << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_000da47c = DAT_0023b7f8;
-  return;
 }
 
 
@@ -1725,17 +1635,13 @@ ushort param_3;
 // was FUN_0005debc -- flat-shaded (low-detail) texture-select emitter for the "floor-or-ceiling"
 // surface slot (DAT_00086b38_fnptrs[2]), structurally identical to emit_flat_wall_texture_select
 // but with its own fallback shade (0xfa) and no detailed/textured counterpart of its own.
-void emit_flat_floor_texture_select(param_1,param_2,param_3)
-byte * param_1;
-uint param_2;
-uint param_3;
-
+void emit_flat_floor_texture_select(byte *tile_record, uint depth_shade, uint texture_index)
 {
   byte *pbVar1;
 
   if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
-    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
+    pbVar1 = (byte *)get_texture_page((texture_index & 0xff) + 0x6a);
+    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (depth_shade & 0xff) * 0x100 +
                                     DAT_0024fa2c);
   }
   else {
@@ -1749,16 +1655,15 @@ uint param_3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 4;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)*param_1 << 3;
+  *DAT_00110fc0 = (ushort)*tile_record << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[1] << 3;
+  *DAT_00110fc0 = (ushort)tile_record[1] << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[2] << 3;
+  *DAT_00110fc0 = (ushort)tile_record[2] << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[3] << 3;
+  *DAT_00110fc0 = (ushort)tile_record[3] << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_000da47c = DAT_0023b7f8;
-  return;
 }
 
 
@@ -1766,22 +1671,17 @@ uint param_3;
 // was FUN_0005dff4 -- flat-shaded (low-detail) texture-select emitter for the "diagonal" surface
 // slot (DAT_00086b38_fnptrs[4]), using a different texture-page range (+0x3a) and fallback shade
 // (0xc0) from its wall/floor siblings.
-void emit_flat_diagonal_texture_select(param_1,param_2,param_3,param_4)
-byte * param_1;
-uint param_2;
-undefined4 param_3;
-ushort param_4;
-
+void emit_flat_diagonal_texture_select(byte *tile_record, uint depth_shade, undefined4 unused, ushort texture_index)
 {
   byte *pbVar1;
 
   if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)get_texture_page((param_4 & 0xff) + 0x3a);
-    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
+    pbVar1 = (byte *)get_texture_page((texture_index & 0xff) + 0x3a);
+    DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (depth_shade & 0xff) * 0x100 +
                                     DAT_0024fa2c);
   }
   else {
-    DAT_0023b7f8 = (param_4 & 0xff) + 0xc0;
+    DAT_0023b7f8 = (texture_index & 0xff) + 0xc0;
   }
   *DAT_00110fc0 = 0x2e;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -1791,44 +1691,39 @@ ushort param_4;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 4;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)*param_1 << 3;
+  *DAT_00110fc0 = (ushort)*tile_record << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[1] << 3;
+  *DAT_00110fc0 = (ushort)tile_record[1] << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[2] << 3;
+  *DAT_00110fc0 = (ushort)tile_record[2] << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (ushort)param_1[3] << 3;
+  *DAT_00110fc0 = (ushort)tile_record[3] << 3;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_000da47c = DAT_0023b7f8;
-  return;
 }
 
 
 
 // was emit_floor_texture_select
 // was FUN_0005e12c
-void emit_floor_texture_select(param_1,param_2,param_3)
-byte * param_1;
-uint param_2;
-short param_3;
-
+void emit_floor_texture_select(byte *tile_record, uint depth, short texture_index)
 {
   ushort uVar1;
   
-  param_2 = param_2 & 0xff;
-  if (((int)param_2 < (int)DAT_00086b28) || (param_1 == (byte *)0x0)) {
-    if ((int)param_2 < (int)DAT_00086b24) {
+  depth = depth & 0xff;
+  if (((int)depth < (int)DAT_00086b28) || (tile_record == (byte *)0x0)) {
+    if ((int)depth < (int)DAT_00086b24) {
       DAT_0023b81c = 2;
-      if ((param_2 != 0) || (DAT_00087938 != 'd')) {
+      if ((depth != 0) || (DAT_00087938 != 'd')) {
         DAT_0023b81c = DAT_00086b30 + 2;
       }
       DAT_0023b4d8 = 0x400;
-      uVar1 = param_3 + 0x30;
+      uVar1 = texture_index + 0x30;
       DAT_0023b824 = 0x20;
       DAT_0023b828 = 0x3ff;
     }
     else {
-      uVar1 = param_3 + 0x6a;
+      uVar1 = texture_index + 0x6a;
       DAT_0023b81c = DAT_00086b30;
       DAT_0023b4d8 = 0x100;
       DAT_0023b828 = 0xff;
@@ -1848,24 +1743,24 @@ short param_3;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_0023b828;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    if (param_1 != (byte *)0x0) {
+    if (tile_record != (byte *)0x0) {
       *DAT_00110fc0 = 0x36;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = DAT_0023b81c;
       DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)*param_1 << 3;
+      *DAT_00110fc0 = (ushort)*tile_record << 3;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = (ushort)DAT_0023b4f0[3];
       DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)param_1[1] << 3;
+      *DAT_00110fc0 = (ushort)tile_record[1] << 3;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = (ushort)DAT_0023b4f0[2];
       DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)param_1[2] << 3;
+      *DAT_00110fc0 = (ushort)tile_record[2] << 3;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = (ushort)DAT_0023b4f0[1];
       DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)param_1[3] << 3;
+      *DAT_00110fc0 = (ushort)tile_record[3] << 3;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = (ushort)*DAT_0023b4f0;
       DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -1873,21 +1768,15 @@ short param_3;
   }
   else {
     /* BUG FIX: was `FUN_0005dd84();` -- dropped all 3 arguments. */
-    emit_flat_wall_texture_select(param_1,param_2,param_3);
+    emit_flat_wall_texture_select(tile_record,depth,texture_index);
   }
-  return;
 }
 
 
 
 // was FUN_0005e3c0 -- detailed (fully textured) texture-select emitter for the "diagonal" surface
 // slot (DAT_00086b38_fnptrs[5]), the detailed counterpart to emit_flat_diagonal_texture_select.
-void emit_diagonal_wall_texture_select(param_1,param_2,param_3,param_4)
-byte * param_1;
-uint param_2;
-uint param_3;
-ushort param_4;
-
+void emit_diagonal_wall_texture_select(byte *tile_record, uint depth, uint orientation, ushort texture_index)
 {
   short *psVar1;
   short sVar2;
@@ -1895,20 +1784,20 @@ ushort param_4;
   ushort uVar4;
   bool bVar5;
   
-  param_2 = param_2 & 0xff;
-  if (((int)param_2 < (int)DAT_00086b28) || (param_1 == (byte *)0x0)) {
-    if ((int)param_2 < (int)DAT_00086b24) {
+  depth = depth & 0xff;
+  if (((int)depth < (int)DAT_00086b28) || (tile_record == (byte *)0x0)) {
+    if ((int)depth < (int)DAT_00086b24) {
       DAT_0023b81c = 4;
-      if ((param_2 != 0) || (DAT_00087938 != 'd')) {
+      if ((depth != 0) || (DAT_00087938 != 'd')) {
         DAT_0023b81c = DAT_00086b30 + 4;
       }
       DAT_0023b4d8 = 0x1000;
       DAT_0023b824 = 0x40;
-      sVar2 = (short)((param_3 & 0xff) << 10);
+      sVar2 = (short)((orientation & 0xff) << 10);
     }
     else {
       psVar1 = (short *)0x0;
-      bVar5 = param_2 != 0;
+      bVar5 = depth != 0;
       DAT_0023b81c = 0;
       if (bVar5) {
         psVar1 = &DAT_00086b30;
@@ -1917,8 +1806,8 @@ ushort param_4;
       if (bVar5) {
         psVar1 = (short *)(int)*psVar1;
       }
-      sVar2 = (short)((param_3 & 0xff) << 6);
-      param_4 = param_4 + 0x3a;
+      sVar2 = (short)((orientation & 0xff) << 6);
+      texture_index = texture_index + 0x3a;
       if (bVar5) {
         DAT_0023b81c = (ushort)psVar1;
       }
@@ -1932,7 +1821,7 @@ ushort param_4;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = DAT_0023b81c;
       DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = param_4 & 0xff;
+      *DAT_00110fc0 = texture_index & 0xff;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = DAT_0023b4d8;
       DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -1943,7 +1832,7 @@ ushort param_4;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_0023b828;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    if (param_1 != (byte *)0x0) {
+    if (tile_record != (byte *)0x0) {
       uVar4 = 0xa2;
       if (DAT_0023b4dc == 0) {
         uVar4 = 0xa0;
@@ -1952,25 +1841,23 @@ ushort param_4;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = DAT_0023b81c;
       DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)*param_1 + (ushort)param_1[1] * 0x100;
+      *DAT_00110fc0 = (ushort)*tile_record + (ushort)tile_record[1] * 0x100;
       DAT_00110fc0 = DAT_00110fc0 + 1;
-      *DAT_00110fc0 = (ushort)param_1[2] + (ushort)param_1[3] * 0x100;
+      *DAT_00110fc0 = (ushort)tile_record[2] + (ushort)tile_record[3] * 0x100;
       DAT_00110fc0 = DAT_00110fc0 + 1;
     }
   }
   else {
     /* BUG FIX: was `FUN_0005dff4();` -- dropped all 4 arguments, the same bug fixed just above in
        emit_floor_texture_select's own fallback. */
-    emit_flat_diagonal_texture_select(param_1,param_2,param_3,param_4);
+    emit_flat_diagonal_texture_select(tile_record,depth,orientation,texture_index);
   }
-  return;
 }
 
 
 // was FUN_0005d2b0 -- configures the dynamic entries (indices 1/3, DAT_00086b3c/DAT_00086b44) of
 // the tile-surface texture-emit function-pointer table based on the texture detail-level setting...
-void configure_texture_detail_functions()
-
+void configure_texture_detail_functions(void)
 {
   uint uVar1;
   int iVar2;
@@ -2011,17 +1898,11 @@ void configure_texture_detail_functions()
     DAT_00086b3c = emit_flat_wall_texture_select;
   }
   DAT_00086b30 = 1;
-  return;
 }
 
 
 // was FUN_0001e848 -- identity-init then compose up to 3 axis rotation matrices from angle-table indices (DAT_000d9ed8 sin / DAT_000d9930 cos); used by an object/effect transform, not the tile pipeline
-void build_euler_rotation_matrix(param_1,param_2,param_3,param_4)
-int * param_1;
-int param_2;
-int param_3;
-int param_4;
-
+void build_euler_rotation_matrix(int *matrix, int angle_x, int angle_y, int angle_z)
 {
   int iVar1;
   int iVar2;
@@ -2072,24 +1953,24 @@ int param_4;
 
   uVar11 = 0;
   uVar14 = 0;
-  if (((param_2 == 0) && (param_3 == 0)) && (param_4 == 0)) {
+  if (((angle_x == 0) && (angle_y == 0)) && (angle_z == 0)) {
     return;
   }
   set_identity_matrix4x4(local_164_arr);
   uVar8 = extraout_r3;
-  if (param_2 != 0) {
+  if (angle_x != 0) {
     set_identity_matrix4x4(auStack_124);
-    uVar10 = (&DAT_000d9ed8)[param_2];
-    local_10c = (&DAT_000d9930)[param_2];
+    uVar10 = (&DAT_000d9ed8)[angle_x];
+    local_10c = (&DAT_000d9930)[angle_x];
     local_110 = uVar10;
-    local_100 = ordfloat_negate(local_10c);  /* ARM 0x1e8a4-0x1e8bc: arg is DAT_000d9930[param_2] */
+    local_100 = ordfloat_negate(local_10c);  /* ARM 0x1e8a4-0x1e8bc: arg is DAT_000d9930[angle_x] */
     uVar8 = extraout_r3_00;
     local_fc = uVar10;
   }
-  if (param_3 != 0) {
+  if (angle_y != 0) {
     set_identity_matrix4x4(local_a4);
-    uVar10 = (&DAT_000d9ed8)[param_3];
-    uVar12 = (&DAT_000d9930)[param_3];
+    uVar10 = (&DAT_000d9ed8)[angle_y];
+    uVar12 = (&DAT_000d9930)[angle_y];
     uVar11 = uVar14;
     local_a4[0] = uVar10;
     local_9c = ordfloat_negate(uVar12);
@@ -2098,26 +1979,26 @@ int param_4;
     local_84 = uVar12;
     local_7c = uVar10;
   }
-  if (param_4 != 0) {
+  if (angle_z != 0) {
     set_identity_matrix4x4(local_e4_arr);
-    uVar10 = (&DAT_000d9ed8)[param_4];
-    local_e0 = (&DAT_000d9930)[param_4];
+    uVar10 = (&DAT_000d9ed8)[angle_z];
+    local_e0 = (&DAT_000d9930)[angle_z];
     local_e4 = uVar10;
     local_d4 = ordfloat_negate(local_e0);  /* ARM 0x1e91c-0x1e934 */
     uVar8 = extraout_r3_02;
     local_d0 = uVar10;
   }
-  if (param_2 != 0) {
+  if (angle_x != 0) {
     uVar11 = 4;
     uVar14 = 4;
     uVar8 = uVar11;
   }
-  if (param_3 != 0) {
+  if (angle_y != 0) {
     uVar11 = uVar11 | 2;
     uVar8 = uVar11;
     uVar14 = uVar11;
   }
-  if (param_4 != 0) {
+  if (angle_z != 0) {
     uVar11 = uVar11 | 1;
     uVar8 = uVar11;
     uVar14 = uVar11;
@@ -2160,8 +2041,8 @@ LAB_0001ea10:
   copy_matrix4x4(puVar4,&local_164);
 LAB_0001ea18:
   iVar13 = 0;
-  piVar9 = param_1;
-  if (0 < *param_1) {
+  piVar9 = matrix;
+  if (0 < *matrix) {
     do {
       iVar1 = piVar9[4];
       iVar2 = piVar9[3];
@@ -2195,7 +2076,7 @@ LAB_0001ea18:
       *(char *)((char *)piVar9 + 0x12) = (char)((uint)uVar12 >> 0x10);
       *(char *)((char *)piVar9 + 0x13) = (char)((uint)uVar12 >> 0x18);
       piVar9 = piVar9 + 3;
-    } while (iVar13 < *param_1);
+    } while (iVar13 < *matrix);
   }
 #undef local_164
 #undef local_160
@@ -2217,16 +2098,12 @@ LAB_0001ea18:
 #undef local_9c
 #undef local_84
 #undef local_7c
-  return;
 }
 
 
 
 // was FUN_0001ecb0 -- apply a matrix built by build_euler_rotation_matrix to a point/vertex list
-void transform_points_by_matrix(param_1,param_2)
-int * param_1;
-int * param_2;
-
+void transform_points_by_matrix(int *matrix, int *points)
 {
   int iVar1;
   undefined4 uVar2;
@@ -2243,24 +2120,24 @@ int * param_2;
   int local_2c;
   
   iVar9 = 0;
-  iVar1 = *param_1;
-  local_30 = param_1[1];
+  iVar1 = *matrix;
+  local_30 = matrix[1];
   iVar8 = iVar1;
-  if (0 < *param_2) {
-    piVar4 = param_1 + iVar1 * 3;
-    piVar3 = param_2;
+  if (0 < *points) {
+    piVar4 = matrix + iVar1 * 3;
+    piVar3 = points;
     do {
-      uVar2 = ordfloat_add(piVar3[2],param_2[0x302]);
+      uVar2 = ordfloat_add(piVar3[2],points[0x302]);
       *(char *)(piVar4 + 2) = (char)uVar2;
       *(char *)((char *)piVar4 + 9) = (char)((uint)uVar2 >> 8);
       *(char *)((char *)piVar4 + 10) = (char)((uint)uVar2 >> 0x10);
       *(char *)((char *)piVar4 + 0xb) = (char)((uint)uVar2 >> 0x18);
-      uVar2 = ordfloat_add(piVar3[3],param_2[0x303]);
+      uVar2 = ordfloat_add(piVar3[3],points[0x303]);
       *(char *)(piVar4 + 3) = (char)uVar2;
       *(char *)((char *)piVar4 + 0xd) = (char)((uint)uVar2 >> 8);
       *(char *)((char *)piVar4 + 0xe) = (char)((uint)uVar2 >> 0x10);
       *(char *)((char *)piVar4 + 0xf) = (char)((uint)uVar2 >> 0x18);
-      uVar2 = ordfloat_add(piVar3[4],param_2[0x304]);
+      uVar2 = ordfloat_add(piVar3[4],points[0x304]);
       *(char *)(piVar4 + 4) = (char)uVar2;
       *(char *)((char *)piVar4 + 0x11) = (char)((uint)uVar2 >> 8);
       *(char *)((char *)piVar4 + 0x12) = (char)((uint)uVar2 >> 0x10);
@@ -2269,16 +2146,16 @@ int * param_2;
       iVar8 = iVar8 + 1;
       piVar4 = piVar4 + 3;
       piVar3 = piVar3 + 3;
-    } while (iVar9 < *param_2);
+    } while (iVar9 < *points);
   }
-  *(char *)param_1 = (char)iVar8;
-  *(char *)((char *)param_1 + 1) = (char)((uint)iVar8 >> 8);
+  *(char *)matrix = (char)iVar8;
+  *(char *)((char *)matrix + 1) = (char)((uint)iVar8 >> 8);
   local_2c = 0;
-  *(char *)((char *)param_1 + 2) = (char)((uint)iVar8 >> 0x10);
-  *(char *)((char *)param_1 + 3) = (char)((uint)iVar8 >> 0x18);
-  if (0 < param_2[1]) {
-    piVar4 = param_1 + local_30 * 0x18;
-    piVar3 = param_2;
+  *(char *)((char *)matrix + 2) = (char)((uint)iVar8 >> 0x10);
+  *(char *)((char *)matrix + 3) = (char)((uint)iVar8 >> 0x18);
+  if (0 < points[1]) {
+    piVar4 = matrix + local_30 * 0x18;
+    piVar3 = points;
     do {
       iVar8 = piVar3[0x318];
       *(char *)(piVar4 + 0x1218) = (char)iVar8;
@@ -2360,11 +2237,10 @@ int * param_2;
       local_30 = local_30 + 1;
       piVar4 = piVar4 + 0x18;
       piVar3 = piVar3 + 0x18;
-    } while (local_2c < param_2[1]);
+    } while (local_2c < points[1]);
   }
-  *(char *)(param_1 + 1) = (char)local_30;
-  *(char *)((char *)param_1 + 5) = (char)((uint)local_30 >> 8);
-  *(char *)((char *)param_1 + 6) = (char)((uint)local_30 >> 0x10);
-  *(char *)((char *)param_1 + 7) = (char)((uint)local_30 >> 0x18);
-  return;
+  *(char *)(matrix + 1) = (char)local_30;
+  *(char *)((char *)matrix + 5) = (char)((uint)local_30 >> 8);
+  *(char *)((char *)matrix + 6) = (char)((uint)local_30 >> 0x10);
+  *(char *)((char *)matrix + 7) = (char)((uint)local_30 >> 0x18);
 }

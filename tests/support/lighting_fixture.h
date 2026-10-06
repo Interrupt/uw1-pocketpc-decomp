@@ -14,7 +14,7 @@ undefined4 apply_equipped_item_effect(int effect, int level, ushort *flags, int 
 void apply_equipment_effect_penalties(int flags);
 void update_screen_flicker_effect(int active);
 void force_locomotion_state_refresh(void);
-void apply_movement_mode_profile(int mode);
+void apply_movement_mode_profile(byte mode);
 int find_or_assign_object_widget(ushort *object);
 void decrement_object_count(ushort *object);
 undefined4 place_object_in_backpack_slot(ushort *object, int slot);

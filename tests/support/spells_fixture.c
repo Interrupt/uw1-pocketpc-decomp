@@ -114,7 +114,7 @@ UNUSED_EFFECT(cast_targeted_search_effect)
 UNUSED_EFFECT(cast_summon_or_spawn_effect)
 UNUSED_EFFECT(adjust_level7_hazard_value)
 UNUSED_EFFECT(dispatch_player_command)
-UNUSED_EFFECT(handle_level4_maze_puzzle_button)
+void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y) { (void)button; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected handle_level4_maze_puzzle_button"); }
 UNUSED_EFFECT(display_book_or_scroll_page)
 void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected scheduler_tick"); }
 UNUSED_EFFECT(handle_game_view_click_hold)

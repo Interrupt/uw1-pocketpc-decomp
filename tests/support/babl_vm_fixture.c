@@ -129,7 +129,7 @@ int babl_input_polls, babl_next_choice, babl_invalid_first_choice;
 void advance_menu_music_track(void) {}
 void dispatch_sticky_mode_handlers(void) {}
 void wait_for_click_to_continue(int delay, int mode) {}
-void poll_input_bindings(short *input)
+void poll_input_bindings(undefined1 *input)
 {
     TEST_ASSERT_LESS_THAN_INT_MESSAGE(16, ++babl_input_polls, "Menu failed to release input wait");
     if (babl_invalid_first_choice && babl_input_polls == 1) {

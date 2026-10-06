@@ -38,7 +38,7 @@ undefined4 resolve_collision_candidate_interaction(int contact, int slot);
 void randomize_settled_snapshot_position(void);
 void object_list_append_tail(void);
 undefined4 play_positional_sound_effect(void);
-bool apply_swim_wade_pose(void);
+bool apply_swim_wade_pose(ushort collision_mask);
 void throw_fixture_reset(void);
 void throw_fixture_dispose(void);
 void launch(void);

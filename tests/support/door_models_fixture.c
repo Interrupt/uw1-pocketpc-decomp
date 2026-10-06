@@ -161,7 +161,7 @@ void dbgui_field_button(const char *s,void (*fn)(void)) {}
 void dbgui_field_toggle(const char *s,int *n) {}
 void uw_debug_request_3d_frame_dump(void) {}
 int get_catalog_sprite_width(int id) { return id; }
-void emit_floor_texture_select(void) {}
+void emit_floor_texture_select(byte *tile_record, uint depth, short texture_index) { (void)tile_record; (void)depth; (void)texture_index;}
 void *get_texture_page(short id) { static char page[4096]; return page; }
 void *lookup_grtile_by_id(short id) { static char gr[4096]={4,64,64}; return gr; }
 byte *decompress_gr_bitmap(void *src,void *dst) { return src; }

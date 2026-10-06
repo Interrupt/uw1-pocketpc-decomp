@@ -399,7 +399,7 @@ undefined4 reset_dialogue_speech_state(void) { return 0; }
 void chargen_ui_transition_hook(undefined4 is_press) { (void)is_press;}
 void init_new_character_record(int mode) { (void)mode;}
 void report_fatal_error_and_exit(void) { TEST_FAIL_MESSAGE("Screen resources must load"); }
-void set_viewport_clip_rect(void) {}
+void set_viewport_clip_rect(undefined2 left, undefined2 top, undefined2 right, undefined2 bottom) { (void)left; (void)top; (void)right; (void)bottom;}
 bool read_buffer_from_file(char *path, void *buffer, unsigned int count)
 {
     int handle = uw_file_open_read(path);
@@ -431,7 +431,7 @@ undefined4 character_generator_loop(char *tree_data, char *scratch_data, char *f
     return 0; /* Cancel after verifying the initial screen. */
 }
 void unregister_game_view_interact_zones(void) {}
-void configure_dungeon_viewport(void) {}
+void configure_dungeon_viewport(int x, int y, int width, int height) { (void)x; (void)y; (void)width; (void)height;}
 void enter_dungeon_view_hud_init(void) {}
 void refresh_player_equipment_effects(void) {}
 void full_dungeon_redraw(void)
@@ -472,7 +472,7 @@ void uw_debug_dump_sprite_frames_once(void) {}
 void uw_debug_dump_critter_sheet_once(void) {}
 void uw_debug_force_item_id_once(void) {}
 void tick_weapon_swing_state(short attack_direction) { (void)attack_direction;}
-void poll_input_bindings(void)
+void poll_input_bindings(undefined1 *input_state)
 {
     if (input_opens_prompt) {
         prompt_start_presents = presents;

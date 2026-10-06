@@ -42,7 +42,7 @@ char *DAT_002029cc;
 uint read_realtime_clock_units(void) { return 0; }
 void object_list_unlink(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
 void object_list_insert_head(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
-void set_locomotion_state(int state, int flags) { (void)state; (void)flags; }
+void set_locomotion_state(ushort state, int flags) { (void)state; (void)flags; }
 undefined4 roll_skill_check(void) { TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
 undefined4 apply_typed_damage_to_object(void) { TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
 undefined4 play_sound_effect_with_pan(void) { TEST_FAIL_MESSAGE("Unexpected landing sound"); return 0; }

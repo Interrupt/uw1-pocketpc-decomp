@@ -59,7 +59,7 @@ void clear_object_pending_special_flag(void *object) {}
 void apply_equipment_effect_penalties(int effects) {}
 void update_screen_flicker_effect(int flicker) {}
 void force_locomotion_state_refresh(void) {}
-void apply_movement_mode_profile(int mode) {}
+void apply_movement_mode_profile(byte mode) {}
 void load_shading_level_config(record)
 char record;
 {
