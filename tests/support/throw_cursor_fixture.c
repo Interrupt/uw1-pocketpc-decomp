@@ -39,7 +39,7 @@ void *tilemap_lookup(int x, int y)
 }
 void *resolve_object_link(ushort *head)
 { return (*head >> 6) ? DAT_002046b8 + (*head >> 6) * 27 : NULL; }
-void heading_to_sine_cosine(uint heading, ushort *sine, ushort *cosine)
+void heading_to_sine_cosine(uint heading, short *sine, short *cosine)
 {
     double radians = (heading >> 8 & 255) * (2.0 * M_PI / 256.0);
     *sine = (short)lround(32767 * sin(radians));

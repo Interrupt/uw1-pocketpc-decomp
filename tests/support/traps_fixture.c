@@ -25,7 +25,7 @@ undefined4 object_ptr_in_arena(void);
 void open_door_object(void);
 undefined4 place_object_in_world(void);
 void print_message_with_proximity_qualifier(void);
-undefined4 rand_below(void);
+uint rand_below(int limit);
 void * resolve_object_link(void);
 uint resolve_skill_gated_unlock_or_use(void);
 uint scheduler_add_entry(void);
@@ -109,7 +109,7 @@ undefined4 place_object_in_world(void) { TEST_FAIL_MESSAGE("Unexpected place_obj
 
 void print_message_with_proximity_qualifier(void) { TEST_FAIL_MESSAGE("Unexpected print_message_with_proximity_qualifier in text trap"); }
 
-undefined4 rand_below(void) { TEST_FAIL_MESSAGE("Unexpected rand_below in text trap"); return 0; }
+uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected rand_below in text trap"); return 0; }
 
 void * resolve_object_link(void) { TEST_FAIL_MESSAGE("Unexpected resolve_object_link in text trap"); return 0; }
 

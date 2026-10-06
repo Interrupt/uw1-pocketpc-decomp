@@ -6338,7 +6338,7 @@ LAB_00036858:
       local_84 = puVar11;
       ce_memmove(local_b8,&DAT_00088d98,0x300);
       if (local_b9 == '\0') {
-        fade_out(g_uw_framebuffer,local_b8,0);
+        fade_out(g_uw_framebuffer,0,0);  /* ARM passes the saved palette (local_b8) here; the port keeps the live palette */
       }
       iVar10 = (int)acStack_d0[9];
       acStack_d0[9] = (char)(iVar10 + 1);
@@ -6754,7 +6754,7 @@ LAB_00037a94:
       }
       if (local_b9 == '\0') {
         if (local_8d != -2) {
-          fade_out(g_uw_framebuffer,local_b8,1);
+          fade_out(g_uw_framebuffer,0,0);
         }
         clear_screen_and_restore_cursor();
       }

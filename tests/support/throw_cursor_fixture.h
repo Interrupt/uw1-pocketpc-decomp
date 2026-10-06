@@ -10,7 +10,7 @@ void free_object_slot(void *object);
 int encode_object_slot_index(void *object);
 void *tilemap_lookup(int x, int y);
 void *resolve_object_link(ushort *head);
-void heading_to_sine_cosine(uint heading, ushort *sine, ushort *cosine);
+void heading_to_sine_cosine(uint heading, short *sine, short *cosine);
 void collision_height_envelope(int unused, int mode);
 void collision_build_height_field(int mode);
 void sort_collision_candidates(void);

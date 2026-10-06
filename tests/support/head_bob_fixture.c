@@ -82,5 +82,5 @@ uint read_realtime_clock_units(void) { return 0; }
 unsigned int uw_frame_clock_ms(void) { return g_uw_frame_clock_units; }
 long ce_rand(void) { return random_value; }
 undefined4 apply_typed_damage_to_object(void) { TEST_FAIL_MESSAGE("Unexpected hazard damage"); return 0; }
-void angle_to_screen_delta(int angle, short *x, short *y)
+void angle_to_screen_delta(uint angle, short *x, short *y)
 { TEST_FAIL_MESSAGE("Unexpected alternate camera subject"); }

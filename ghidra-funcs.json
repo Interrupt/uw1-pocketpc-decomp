@@ -1,18 +1,19 @@
 {
   "_meta": {
     "description": "Every function definition in src/*.c. Those with ghidra_origin true still carry a \"was FUN_xxxxxxxx\" comment, i.e. were renamed from a Ghidra placeholder; the rest have original_name null. Regenerate with tools/gen_ghidra_funcs.py.",
-    "total_functions": 1464,
+    "total_functions": 1469,
     "with_original_name": 1237,
-    "without_original_name": 227,
+    "without_original_name": 232,
     "still_unnamed_FUN": 12,
-    "audited_true": 1464,
-    "audited_false": 0
+    "audited_true": 1466,
+    "audited_false": 3,
+    "modernized_true": 13
   },
   "functions": [
     {
       "name": "set_viewport_clip_rect",
       "path": "src/3d.c",
-      "line": 122,
+      "line": 123,
       "original_name": "FUN_000116a4",
       "ghidra_origin": true,
       "param_count": 4,
@@ -22,7 +23,7 @@
     {
       "name": "vec3_sub",
       "path": "src/3d.c",
-      "line": 141,
+      "line": 142,
       "original_name": "FUN_000137c0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -32,7 +33,7 @@
     {
       "name": "vec3_cross",
       "path": "src/3d.c",
-      "line": 171,
+      "line": 172,
       "original_name": "FUN_00013904",
       "ghidra_origin": true,
       "param_count": 3,
@@ -42,7 +43,7 @@
     {
       "name": "raster_triangle",
       "path": "src/3d.c",
-      "line": 210,
+      "line": 211,
       "original_name": "FUN_00014350",
       "ghidra_origin": true,
       "param_count": 8,
@@ -52,7 +53,7 @@
     {
       "name": "raster_edge_step",
       "path": "src/3d.c",
-      "line": 403,
+      "line": 404,
       "original_name": "FUN_00014868",
       "ghidra_origin": true,
       "param_count": 1,
@@ -62,7 +63,7 @@
     {
       "name": "raster_triangle_perspective_setup",
       "path": "src/3d.c",
-      "line": 424,
+      "line": 425,
       "original_name": "FUN_000148c8",
       "ghidra_origin": true,
       "param_count": 2,
@@ -72,7 +73,7 @@
     {
       "name": "raster_edge_setup",
       "path": "src/3d.c",
-      "line": 534,
+      "line": 535,
       "original_name": "FUN_00014ef4",
       "ghidra_origin": true,
       "param_count": 6,
@@ -82,7 +83,7 @@
     {
       "name": "raster_textured_span",
       "path": "src/3d.c",
-      "line": 648,
+      "line": 649,
       "original_name": "FUN_0001548c",
       "ghidra_origin": true,
       "param_count": 10,
@@ -92,7 +93,7 @@
     {
       "name": "build_view_matrix",
       "path": "src/3d.c",
-      "line": 795,
+      "line": 830,
       "original_name": "FUN_0001de0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -102,7 +103,7 @@
     {
       "name": "translate_verts_to_camera_space",
       "path": "src/3d.c",
-      "line": 863,
+      "line": 898,
       "original_name": "FUN_0001dfe8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -112,7 +113,7 @@
     {
       "name": "project_verts_through_view_matrix",
       "path": "src/3d.c",
-      "line": 918,
+      "line": 953,
       "original_name": "FUN_0001e274",
       "ghidra_origin": true,
       "param_count": 1,
@@ -122,7 +123,7 @@
     {
       "name": "near_clip_visible_tiles",
       "path": "src/3d.c",
-      "line": 982,
+      "line": 1017,
       "original_name": "FUN_0001f370",
       "ghidra_origin": true,
       "param_count": 2,
@@ -132,7 +133,7 @@
     {
       "name": "multiply_matrix4x4",
       "path": "src/3d.c",
-      "line": 1309,
+      "line": 1344,
       "original_name": "FUN_00013b8c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -142,7 +143,7 @@
     {
       "name": "set_identity_matrix4x4",
       "path": "src/3d.c",
-      "line": 1404,
+      "line": 1439,
       "original_name": "FUN_0001422c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -152,7 +153,7 @@
     {
       "name": "copy_matrix4x4",
       "path": "src/3d.c",
-      "line": 1421,
+      "line": 1456,
       "original_name": "FUN_00014258",
       "ghidra_origin": true,
       "param_count": 2,
@@ -162,7 +163,7 @@
     {
       "name": "build_trig_tables",
       "path": "src/3d.c",
-      "line": 1440,
+      "line": 1475,
       "original_name": "FUN_0001dd2c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -172,7 +173,7 @@
     {
       "name": "load_dungeon_texture_arenas",
       "path": "src/3d.c",
-      "line": 1470,
+      "line": 1505,
       "original_name": "FUN_0005b36c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -182,7 +183,7 @@
     {
       "name": "configure_dungeon_viewport",
       "path": "src/3d.c",
-      "line": 1554,
+      "line": 1589,
       "original_name": "FUN_0005b758",
       "ghidra_origin": true,
       "param_count": 4,
@@ -192,7 +193,7 @@
     {
       "name": "init_dungeon_rendering",
       "path": "src/3d.c",
-      "line": 1589,
+      "line": 1624,
       "original_name": "FUN_0005b828",
       "ghidra_origin": true,
       "param_count": 0,
@@ -202,7 +203,7 @@
     {
       "name": "render_dungeon_view_frame",
       "path": "src/3d.c",
-      "line": 1633,
+      "line": 1668,
       "original_name": "FUN_0005bac0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -212,7 +213,7 @@
     {
       "name": "emit_flat_wall_texture_select",
       "path": "src/3d.c",
-      "line": 1652,
+      "line": 1687,
       "original_name": "FUN_0005dd84",
       "ghidra_origin": true,
       "param_count": 3,
@@ -222,7 +223,7 @@
     {
       "name": "emit_flat_floor_texture_select",
       "path": "src/3d.c",
-      "line": 1693,
+      "line": 1728,
       "original_name": "FUN_0005debc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -232,7 +233,7 @@
     {
       "name": "emit_flat_diagonal_texture_select",
       "path": "src/3d.c",
-      "line": 1734,
+      "line": 1769,
       "original_name": "FUN_0005dff4",
       "ghidra_origin": true,
       "param_count": 4,
@@ -242,7 +243,7 @@
     {
       "name": "emit_floor_texture_select",
       "path": "src/3d.c",
-      "line": 1775,
+      "line": 1810,
       "original_name": "FUN_0005e12c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -252,7 +253,7 @@
     {
       "name": "emit_diagonal_wall_texture_select",
       "path": "src/3d.c",
-      "line": 1850,
+      "line": 1885,
       "original_name": "FUN_0005e3c0",
       "ghidra_origin": true,
       "param_count": 4,
@@ -262,7 +263,7 @@
     {
       "name": "configure_texture_detail_functions",
       "path": "src/3d.c",
-      "line": 1937,
+      "line": 1972,
       "original_name": "FUN_0005d2b0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -272,7 +273,7 @@
     {
       "name": "build_euler_rotation_matrix",
       "path": "src/3d.c",
-      "line": 1984,
+      "line": 2019,
       "original_name": "FUN_0001e848",
       "ghidra_origin": true,
       "param_count": 4,
@@ -282,7 +283,7 @@
     {
       "name": "transform_points_by_matrix",
       "path": "src/3d.c",
-      "line": 2191,
+      "line": 2226,
       "original_name": "FUN_0001ecb0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -4347,7 +4348,8 @@
       "ghidra_origin": true,
       "param_count": 2,
       "description": "reduce the height field to floor/ceiling envelope + block flags.",
-      "audited": true
+      "audited": false,
+      "audit_note": "unresolved call-site mismatch (declared 2; e.g. tests/test_throw.c:148 passes 0)"
     },
     {
       "name": "compute_floor_height_at_position",
@@ -5518,7 +5520,7 @@
       "param_count": 2,
       "description": "real body confirmed stripped from the shipped ARM code (disassembly.",
       "audited": true,
-      "audit_note": "VERIFIED vs ARM: variadic; ARM prologue homes r0-r3 (mov ip,sp; push {r0-r3}) (declared 2; e.g. src/doors.c:226 passes 3, src/hud.c:699 passes 1, src/hud.c:1905 passes 1, ...)"
+      "audit_note": "VERIFIED vs ARM: variadic; ARM prologue homes r0-r3 (mov ip,sp; push {r0-r3}) (declared 2; e.g. src/doors.c:226 passes 3, src/hud.c:701 passes 1, src/hud.c:1919 passes 1, ...)"
     },
     {
       "name": "print_debug_stat_message",
@@ -5798,7 +5800,8 @@
       "ghidra_origin": true,
       "param_count": 8,
       "description": "bitmap blit to framebuffer.",
-      "audited": true
+      "audited": false,
+      "audit_note": "unresolved call-site mismatch (declared 8; e.g. tests/test_transitions.c:14 passes 7)"
     },
     {
       "name": "screen_backup_save",
@@ -5843,7 +5846,7 @@
     {
       "name": "fade_out",
       "path": "src/graphics.c",
-      "line": 569,
+      "line": 570,
       "original_name": "FUN_00012444",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5853,7 +5856,7 @@
     {
       "name": "flush_dungeon_frame",
       "path": "src/graphics.c",
-      "line": 648,
+      "line": 649,
       "original_name": "FUN_0001294c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5863,7 +5866,7 @@
     {
       "name": "render_dungeon_view",
       "path": "src/graphics.c",
-      "line": 659,
+      "line": 660,
       "original_name": "FUN_00012970",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5873,7 +5876,7 @@
     {
       "name": "build_shade_lut",
       "path": "src/graphics.c",
-      "line": 679,
+      "line": 680,
       "original_name": "FUN_00014294",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5883,7 +5886,7 @@
     {
       "name": "get_ambient_bias_reduction",
       "path": "src/graphics.c",
-      "line": 705,
+      "line": 706,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -5893,7 +5896,7 @@
     {
       "name": "set_ambient_bias_with_light",
       "path": "src/graphics.c",
-      "line": 718,
+      "line": 719,
       "original_name": "FUN_00014324",
       "ghidra_origin": true,
       "param_count": 1,
@@ -5903,7 +5906,7 @@
     {
       "name": "set_ambient_bias_without_light",
       "path": "src/graphics.c",
-      "line": 731,
+      "line": 732,
       "original_name": "FUN_0001433c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -5913,7 +5916,7 @@
     {
       "name": "expand_pals_bytes",
       "path": "src/graphics.c",
-      "line": 747,
+      "line": 748,
       "original_name": "FUN_00022abc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5923,7 +5926,7 @@
     {
       "name": "build_rgb565_palette",
       "path": "src/graphics.c",
-      "line": 791,
+      "line": 792,
       "original_name": "FUN_00022b54",
       "ghidra_origin": true,
       "param_count": 2,
@@ -5933,7 +5936,7 @@
     {
       "name": "palette_cycle_range",
       "path": "src/graphics.c",
-      "line": 937,
+      "line": 938,
       "original_name": "FUN_000259c0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5943,7 +5946,7 @@
     {
       "name": "blit_fullscreen_bitmap_file",
       "path": "src/graphics.c",
-      "line": 992,
+      "line": 993,
       "original_name": "FUN_0006c98c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5953,7 +5956,7 @@
     {
       "name": "blit_framebuffer_to_gx_display",
       "path": "src/graphics.c",
-      "line": 1037,
+      "line": 1038,
       "original_name": "FUN_000778fc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -5963,7 +5966,7 @@
     {
       "name": "reinstall_active_palette",
       "path": "src/graphics.c",
-      "line": 1094,
+      "line": 1095,
       "original_name": "FUN_0007e99c",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5973,7 +5976,7 @@
     {
       "name": "plot_pixel",
       "path": "src/graphics.c",
-      "line": 1112,
+      "line": 1113,
       "original_name": "FUN_0007e9c4",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5983,7 +5986,7 @@
     {
       "name": "draw_horizontal_line",
       "path": "src/graphics.c",
-      "line": 1143,
+      "line": 1144,
       "original_name": "FUN_000116dc",
       "ghidra_origin": true,
       "param_count": 3,
@@ -5993,7 +5996,7 @@
     {
       "name": "fill_viewport_and_flush",
       "path": "src/graphics.c",
-      "line": 1177,
+      "line": 1178,
       "original_name": "FUN_00011b34",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6003,7 +6006,7 @@
     {
       "name": "blit_bitmap_to_framebuffer_clipped",
       "path": "src/graphics.c",
-      "line": 1215,
+      "line": 1216,
       "original_name": "FUN_000120c8",
       "ghidra_origin": true,
       "param_count": 8,
@@ -6013,7 +6016,7 @@
     {
       "name": "copy_framebuffer_rect",
       "path": "src/graphics.c",
-      "line": 1300,
+      "line": 1301,
       "original_name": "FUN_00012850",
       "ghidra_origin": true,
       "param_count": 6,
@@ -6023,7 +6026,7 @@
     {
       "name": "reset_viewport_to_fullscreen",
       "path": "src/graphics.c",
-      "line": 1360,
+      "line": 1361,
       "original_name": "FUN_00012958",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6033,7 +6036,7 @@
     {
       "name": "compute_view_y_bound",
       "path": "src/graphics.c",
-      "line": 1371,
+      "line": 1372,
       "original_name": "FUN_000129d4",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6043,7 +6046,7 @@
     {
       "name": "end_gx_draw_session",
       "path": "src/graphics.c",
-      "line": 1385,
+      "line": 1386,
       "original_name": "FUN_000232b0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6053,7 +6056,7 @@
     {
       "name": "convert_palette_bgrx_to_rgb",
       "path": "src/graphics.c",
-      "line": 1398,
+      "line": 1399,
       "original_name": "FUN_00035fdc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6063,7 +6066,7 @@
     {
       "name": "tick_book_illustration_palette_cycles",
       "path": "src/graphics.c",
-      "line": 1424,
+      "line": 1425,
       "original_name": "FUN_0003601c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6073,7 +6076,7 @@
     {
       "name": "load_bmp_resource_to_rgb565",
       "path": "src/graphics.c",
-      "line": 1463,
+      "line": 1464,
       "original_name": "FUN_0003af28",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6083,7 +6086,7 @@
     {
       "name": "clear_screen_and_restore_cursor",
       "path": "src/graphics.c",
-      "line": 1540,
+      "line": 1541,
       "original_name": "FUN_00040df0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6093,7 +6096,7 @@
     {
       "name": "apply_palette_buffer",
       "path": "src/graphics.c",
-      "line": 1555,
+      "line": 1556,
       "original_name": "FUN_00040f34",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6103,7 +6106,7 @@
     {
       "name": "fade_active_palette_to_black",
       "path": "src/graphics.c",
-      "line": 1570,
+      "line": 1571,
       "original_name": "FUN_00040f64",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6123,7 +6126,7 @@
     {
       "name": "uw_set_present_refresh_rate",
       "path": "src/gx_stub.c",
-      "line": 241,
+      "line": 242,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6133,7 +6136,7 @@
     {
       "name": "uw_reset_frame_pacing",
       "path": "src/gx_stub.c",
-      "line": 250,
+      "line": 258,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6143,17 +6146,17 @@
     {
       "name": "uw_claim_frame",
       "path": "src/gx_stub.c",
-      "line": 261,
+      "line": 270,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
-      "description": "Port timing: retain a 60Hz game cadence independently of monitor vsync.",
+      "description": "Absolute deadlines avoid drift from rounded millisecond delays.",
       "audited": true
     },
     {
       "name": "uw_present_frame_due",
       "path": "src/gx_stub.c",
-      "line": 274,
+      "line": 284,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6161,9 +6164,29 @@
       "audited": true
     },
     {
+      "name": "uw_record_completed_present",
+      "path": "src/gx_stub.c",
+      "line": 301,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 1,
+      "description": "uw record completed present",
+      "audited": true
+    },
+    {
+      "name": "uw_request_cursor_present",
+      "path": "src/gx_stub.c",
+      "line": 317,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "description": "Cursor-only changes need a presentation even in a blocking input wait.",
+      "audited": true
+    },
+    {
       "name": "uw_service_pending_present",
       "path": "src/gx_stub.c",
-      "line": 291,
+      "line": 322,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6173,7 +6196,7 @@
     {
       "name": "uw_service_game_clock",
       "path": "src/gx_stub.c",
-      "line": 300,
+      "line": 331,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6183,7 +6206,7 @@
     {
       "name": "uw_gx_time_us",
       "path": "src/gx_stub.c",
-      "line": 312,
+      "line": 343,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6193,7 +6216,7 @@
     {
       "name": "uw_update_present_refresh_rate",
       "path": "src/gx_stub.c",
-      "line": 318,
+      "line": 349,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6203,7 +6226,7 @@
     {
       "name": "uw_begin_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1221,
+      "line": 1259,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6213,7 +6236,7 @@
     {
       "name": "uw_end_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1226,
+      "line": 1264,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6221,9 +6244,29 @@
       "audited": true
     },
     {
+      "name": "gfx_finalizedraw",
+      "path": "src/gx_stub.c",
+      "line": 1273,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "description": "gfx finalizedraw",
+      "audited": true
+    },
+    {
+      "name": "uw_take_completed_frame",
+      "path": "src/gx_stub.c",
+      "line": 1287,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "description": "uw take completed frame",
+      "audited": true
+    },
+    {
       "name": "uw_suspend_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1235,
+      "line": 1295,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6233,7 +6276,7 @@
     {
       "name": "uw_resume_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1240,
+      "line": 1300,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6243,7 +6286,7 @@
     {
       "name": "uw_begin_modal_present",
       "path": "src/gx_stub.c",
-      "line": 1245,
+      "line": 1305,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6253,7 +6296,7 @@
     {
       "name": "uw_end_modal_present",
       "path": "src/gx_stub.c",
-      "line": 1254,
+      "line": 1314,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6263,7 +6306,7 @@
     {
       "name": "uw_defer_present",
       "path": "src/gx_stub.c",
-      "line": 1261,
+      "line": 1321,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6304,7 +6347,7 @@
     {
       "name": "flush_dirty_rect_to_display_240",
       "path": "src/hud.c",
-      "line": 606,
+      "line": 608,
       "original_name": "FUN_0002310c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6314,7 +6357,7 @@
     {
       "name": "enter_dungeon_view_hud_init",
       "path": "src/hud.c",
-      "line": 696,
+      "line": 698,
       "original_name": "FUN_0003e44c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6324,7 +6367,7 @@
     {
       "name": "mode_icon_highlight_on",
       "path": "src/hud.c",
-      "line": 726,
+      "line": 728,
       "original_name": "FUN_0003f99c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6334,7 +6377,7 @@
     {
       "name": "mode_icon_highlight_off",
       "path": "src/hud.c",
-      "line": 756,
+      "line": 758,
       "original_name": "FUN_0003fa1c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6344,7 +6387,7 @@
     {
       "name": "cursor_mode_button_click",
       "path": "src/hud.c",
-      "line": 784,
+      "line": 786,
       "original_name": "FUN_0003faa0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6354,7 +6397,7 @@
     {
       "name": "cursor_mode_button_click_restricted",
       "path": "src/hud.c",
-      "line": 878,
+      "line": 880,
       "original_name": "FUN_0003fd14",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6364,7 +6407,7 @@
     {
       "name": "main_loop_hud_flush",
       "path": "src/hud.c",
-      "line": 946,
+      "line": 948,
       "original_name": "FUN_000497cc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6374,7 +6417,7 @@
     {
       "name": "emit_hud_draw_commands",
       "path": "src/hud.c",
-      "line": 1045,
+      "line": 1059,
       "original_name": "FUN_0005d704",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6384,7 +6427,7 @@
     {
       "name": "hud_vitals_threshold_shake",
       "path": "src/hud.c",
-      "line": 1128,
+      "line": 1142,
       "original_name": "FUN_0006ca4c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6394,7 +6437,7 @@
     {
       "name": "redraw_hud_panels",
       "path": "src/hud.c",
-      "line": 1174,
+      "line": 1188,
       "original_name": "FUN_0006cca8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6404,7 +6447,7 @@
     {
       "name": "set_hud_status_value",
       "path": "src/hud.c",
-      "line": 1253,
+      "line": 1267,
       "original_name": "FUN_0006cff4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6414,7 +6457,7 @@
     {
       "name": "hud_panel_redraw_dispatch",
       "path": "src/hud.c",
-      "line": 1368,
+      "line": 1382,
       "original_name": "FUN_0006d284",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6424,7 +6467,7 @@
     {
       "name": "hud_vitals_bar_tick",
       "path": "src/hud.c",
-      "line": 1455,
+      "line": 1469,
       "original_name": "FUN_0006d4a4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6434,7 +6477,7 @@
     {
       "name": "hud_dragon_reaction_tick",
       "path": "src/hud.c",
-      "line": 1577,
+      "line": 1591,
       "original_name": "FUN_0006d894",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6444,7 +6487,7 @@
     {
       "name": "hud_compass_needle_tick",
       "path": "src/hud.c",
-      "line": 1824,
+      "line": 1838,
       "original_name": "FUN_0006df70",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6454,7 +6497,7 @@
     {
       "name": "tick_hud_panel_transition",
       "path": "src/hud.c",
-      "line": 1865,
+      "line": 1879,
       "original_name": "FUN_0006e130",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6464,7 +6507,7 @@
     {
       "name": "redraw_active_hud_panel",
       "path": "src/hud.c",
-      "line": 1898,
+      "line": 1912,
       "original_name": "FUN_0006ed0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6474,7 +6517,7 @@
     {
       "name": "msg_scroll_draw_edges",
       "path": "src/hud.c",
-      "line": 1922,
+      "line": 1936,
       "original_name": "FUN_0007f208",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6484,7 +6527,7 @@
     {
       "name": "msg_scroll_scroll_up_line",
       "path": "src/hud.c",
-      "line": 1941,
+      "line": 1955,
       "original_name": "FUN_0007f340",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6494,7 +6537,7 @@
     {
       "name": "msg_scroll_more_prompt",
       "path": "src/hud.c",
-      "line": 1970,
+      "line": 1984,
       "original_name": "FUN_0007f454",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6504,7 +6547,7 @@
     {
       "name": "message_scroll_print_wrapped",
       "path": "src/hud.c",
-      "line": 1999,
+      "line": 2013,
       "original_name": "FUN_0007f570",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6514,7 +6557,7 @@
     {
       "name": "msg_scroll_draw_wrapped_span",
       "path": "src/hud.c",
-      "line": 2079,
+      "line": 2093,
       "original_name": "FUN_0007f7cc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6524,7 +6567,7 @@
     {
       "name": "msg_scroll_wrap_split_line",
       "path": "src/hud.c",
-      "line": 2209,
+      "line": 2223,
       "original_name": "FUN_0007fb2c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6534,7 +6577,7 @@
     {
       "name": "msg_scroll_panel_init",
       "path": "src/hud.c",
-      "line": 2279,
+      "line": 2293,
       "original_name": "FUN_0007fc8c",
       "ghidra_origin": true,
       "param_count": 5,
@@ -6544,7 +6587,7 @@
     {
       "name": "msg_scroll_panel_reset",
       "path": "src/hud.c",
-      "line": 2321,
+      "line": 2335,
       "original_name": "FUN_0007fce8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6554,7 +6597,7 @@
     {
       "name": "snap_compass_to_heading",
       "path": "src/hud.c",
-      "line": 2372,
+      "line": 2386,
       "original_name": "FUN_0006cb74",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6564,7 +6607,7 @@
     {
       "name": "reset_hud_panel_animation_state",
       "path": "src/hud.c",
-      "line": 2393,
+      "line": 2407,
       "original_name": "FUN_0006cbf0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6574,7 +6617,7 @@
     {
       "name": "release_panel_wipe_grtiles",
       "path": "src/hud.c",
-      "line": 2428,
+      "line": 2442,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6584,7 +6627,7 @@
     {
       "name": "update_hud_status_icon_frame",
       "path": "src/hud.c",
-      "line": 2451,
+      "line": 2465,
       "original_name": "FUN_0006e038",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6594,7 +6637,7 @@
     {
       "name": "hud_panel_wipe_transition_tick",
       "path": "src/hud.c",
-      "line": 2496,
+      "line": 2510,
       "original_name": "FUN_0006e1d4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6604,7 +6647,7 @@
     {
       "name": "update_ready_rune_slot_icons",
       "path": "src/hud.c",
-      "line": 2544,
+      "line": 2558,
       "original_name": "FUN_0006e96c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6614,7 +6657,7 @@
     {
       "name": "update_light_source_color_icons",
       "path": "src/hud.c",
-      "line": 2586,
+      "line": 2600,
       "original_name": "FUN_0006ea54",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6624,7 +6667,7 @@
     {
       "name": "begin_hud_panel_flip",
       "path": "src/hud.c",
-      "line": 2629,
+      "line": 2643,
       "original_name": "FUN_0006eb64",
       "ghidra_origin": true,
       "param_count": 5,
@@ -6634,7 +6677,7 @@
     {
       "name": "release_hud_panel_flip_grtiles",
       "path": "src/hud.c",
-      "line": 2727,
+      "line": 2741,
       "original_name": "FUN_0006edb8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6644,7 +6687,7 @@
     {
       "name": "advance_hud_panel_flip",
       "path": "src/hud.c",
-      "line": 2747,
+      "line": 2761,
       "original_name": "FUN_0006edfc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6654,7 +6697,7 @@
     {
       "name": "squash_hud_panel_flip_rows",
       "path": "src/hud.c",
-      "line": 3030,
+      "line": 3044,
       "original_name": "FUN_0006f6e0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6664,7 +6707,7 @@
     {
       "name": "copy_hud_panel_flip_column",
       "path": "src/hud.c",
-      "line": 3174,
+      "line": 3188,
       "original_name": "FUN_0006fa28",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6674,7 +6717,7 @@
     {
       "name": "init_sprite_list_buffers",
       "path": "src/hud.c",
-      "line": 3279,
+      "line": 3293,
       "original_name": "FUN_00075be0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6684,7 +6727,7 @@
     {
       "name": "clear_sprite_list_slot_flag",
       "path": "src/hud.c",
-      "line": 3305,
+      "line": 3319,
       "original_name": "FUN_00076488",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6694,7 +6737,7 @@
     {
       "name": "flush_sprite_list_compositor",
       "path": "src/hud.c",
-      "line": 3329,
+      "line": 3343,
       "original_name": "FUN_00076508",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6704,7 +6747,7 @@
     {
       "name": "capture_framebuffer_rect_to_grtile_paletted",
       "path": "src/hud.c",
-      "line": 3468,
+      "line": 3482,
       "original_name": "FUN_0007e998",
       "ghidra_origin": true,
       "param_count": 5,
@@ -6714,7 +6757,7 @@
     {
       "name": "init_msg_scroll_panel",
       "path": "src/hud.c",
-      "line": 3521,
+      "line": 3535,
       "original_name": "FUN_0007f044",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6724,7 +6767,7 @@
     {
       "name": "check_mouse_over_msg_scroll_panel",
       "path": "src/hud.c",
-      "line": 3536,
+      "line": 3550,
       "original_name": "FUN_0007f094",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6734,7 +6777,7 @@
     {
       "name": "select_msg_scroll_mode_normal",
       "path": "src/hud.c",
-      "line": 3548,
+      "line": 3562,
       "original_name": "FUN_0007f0e0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6744,7 +6787,7 @@
     {
       "name": "select_msg_scroll_mode_conversation",
       "path": "src/hud.c",
-      "line": 3562,
+      "line": 3576,
       "original_name": "FUN_0007f110",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6754,7 +6797,7 @@
     {
       "name": "select_msg_scroll_mode_2",
       "path": "src/hud.c",
-      "line": 3576,
+      "line": 3590,
       "original_name": "FUN_0007f140",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6764,7 +6807,7 @@
     {
       "name": "wait_for_click_to_continue",
       "path": "src/hud.c",
-      "line": 3591,
+      "line": 3605,
       "original_name": "FUN_0007f170",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6774,7 +6817,7 @@
     {
       "name": "draw_conversation_window_decoration",
       "path": "src/hud.c",
-      "line": 3627,
+      "line": 3641,
       "original_name": "FUN_0007f290",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6784,7 +6827,7 @@
     {
       "name": "msg_scroll_split_escape_segments",
       "path": "src/hud.c",
-      "line": 3654,
+      "line": 3668,
       "original_name": "FUN_0007f6fc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6794,7 +6837,7 @@
     {
       "name": "msg_scroll_split_newline_segments",
       "path": "src/hud.c",
-      "line": 3680,
+      "line": 3694,
       "original_name": "FUN_0007f770",
       "ghidra_origin": true,
       "param_count": 2,
@@ -6804,7 +6847,7 @@
     {
       "name": "echo_number_to_scroll",
       "path": "src/hud.c",
-      "line": 3707,
+      "line": 3721,
       "original_name": "FUN_0007fe20",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6814,7 +6857,7 @@
     {
       "name": "echo_yes_no_to_scroll",
       "path": "src/hud.c",
-      "line": 3735,
+      "line": 3749,
       "original_name": "FUN_0007fee8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6824,7 +6867,7 @@
     {
       "name": "scroll_text_entry_prompt",
       "path": "src/hud.c",
-      "line": 3768,
+      "line": 3782,
       "original_name": "FUN_0007ffa8",
       "ghidra_origin": true,
       "param_count": 5,
@@ -6834,7 +6877,7 @@
     {
       "name": "prompt_yes_no_scroll",
       "path": "src/hud.c",
-      "line": 4046,
+      "line": 4060,
       "original_name": "FUN_00080828",
       "ghidra_origin": true,
       "param_count": 3,
@@ -6844,7 +6887,7 @@
     {
       "name": "print_character_description_scroll",
       "path": "src/hud.c",
-      "line": 4116,
+      "line": 4130,
       "original_name": "FUN_0003df28",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6854,7 +6897,7 @@
     {
       "name": "show_flask_value_tooltip",
       "path": "src/hud.c",
-      "line": 4154,
+      "line": 4168,
       "original_name": "FUN_0003e0b4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6864,7 +6907,7 @@
     {
       "name": "register_stats_panel_click_regions",
       "path": "src/hud.c",
-      "line": 4209,
+      "line": 4223,
       "original_name": "FUN_0003e2a4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6874,7 +6917,7 @@
     {
       "name": "unregister_stats_panel_click_regions",
       "path": "src/hud.c",
-      "line": 4226,
+      "line": 4240,
       "original_name": "FUN_0003e404",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6884,7 +6927,7 @@
     {
       "name": "refresh_equipment_display_if_visible",
       "path": "src/hud.c",
-      "line": 4241,
+      "line": 4255,
       "original_name": "FUN_0003e644",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6894,7 +6937,7 @@
     {
       "name": "clear_rune_bag_contents",
       "path": "src/hud.c",
-      "line": 4257,
+      "line": 4271,
       "original_name": "FUN_00044814",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6904,7 +6947,7 @@
     {
       "name": "draw_rune_icon",
       "path": "src/hud.c",
-      "line": 4274,
+      "line": 4288,
       "original_name": "FUN_00044848",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6914,7 +6957,7 @@
     {
       "name": "redraw_rune_bag_display",
       "path": "src/hud.c",
-      "line": 4294,
+      "line": 4308,
       "original_name": "FUN_000448a8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6924,7 +6967,7 @@
     {
       "name": "reset_ready_rune_slots",
       "path": "src/hud.c",
-      "line": 4318,
+      "line": 4332,
       "original_name": "FUN_00044920",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6934,7 +6977,7 @@
     {
       "name": "handle_rune_bag_click",
       "path": "src/hud.c",
-      "line": 4337,
+      "line": 4351,
       "original_name": "FUN_0004497c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6944,7 +6987,7 @@
     {
       "name": "print_not_a_spell_message",
       "path": "src/hud.c",
-      "line": 4403,
+      "line": 4417,
       "original_name": "FUN_00044bcc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6954,7 +6997,7 @@
     {
       "name": "handle_light_source_click",
       "path": "src/hud.c",
-      "line": 4414,
+      "line": 4428,
       "original_name": "FUN_00044bd8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -6964,7 +7007,7 @@
     {
       "name": "handle_cast_spell_click",
       "path": "src/hud.c",
-      "line": 4458,
+      "line": 4472,
       "original_name": "FUN_00044d14",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6974,7 +7017,7 @@
     {
       "name": "report_spell_cast_failure",
       "path": "src/hud.c",
-      "line": 4501,
+      "line": 4515,
       "original_name": "FUN_00044e74",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6984,7 +7027,7 @@
     {
       "name": "cast_spell_from_rune_combo",
       "path": "src/hud.c",
-      "line": 4517,
+      "line": 4531,
       "original_name": "FUN_00044e9c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -6994,7 +7037,7 @@
     {
       "name": "reload_paperdoll_body_sprite",
       "path": "src/hud.c",
-      "line": 4578,
+      "line": 4592,
       "original_name": "FUN_0004638c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7004,7 +7047,7 @@
     {
       "name": "init_inventory_panel_hotspots",
       "path": "src/hud.c",
-      "line": 4598,
+      "line": 4612,
       "original_name": "FUN_00046414",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7014,7 +7057,7 @@
     {
       "name": "redraw_container_icon_slot",
       "path": "src/hud.c",
-      "line": 4655,
+      "line": 4669,
       "original_name": "FUN_00048110",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7024,7 +7067,7 @@
     {
       "name": "update_carry_weight_display",
       "path": "src/hud.c",
-      "line": 4676,
+      "line": 4690,
       "original_name": "FUN_00048514",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7034,7 +7077,7 @@
     {
       "name": "release_grtile_handle",
       "path": "src/hud.c",
-      "line": 4711,
+      "line": 4725,
       "original_name": "FUN_0004995c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7044,7 +7087,7 @@
     {
       "name": "run_pause_menu_modal_loop",
       "path": "src/hud.c",
-      "line": 4720,
+      "line": 4734,
       "original_name": "FUN_000564f8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7054,7 +7097,7 @@
     {
       "name": "redraw_pause_menu_icon",
       "path": "src/hud.c",
-      "line": 4815,
+      "line": 4829,
       "original_name": "FUN_00056640",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7064,7 +7107,7 @@
     {
       "name": "redraw_pause_submenu_icon",
       "path": "src/hud.c",
-      "line": 4829,
+      "line": 4843,
       "original_name": "FUN_00056688",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7074,7 +7117,7 @@
     {
       "name": "update_pause_submenu_highlight",
       "path": "src/hud.c",
-      "line": 4844,
+      "line": 4858,
       "original_name": "FUN_000566dc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7084,7 +7127,7 @@
     {
       "name": "close_ui_panel_return_to_game",
       "path": "src/hud.c",
-      "line": 4863,
+      "line": 4877,
       "original_name": "FUN_00056724",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7094,7 +7137,7 @@
     {
       "name": "draw_pause_menu_main_list",
       "path": "src/hud.c",
-      "line": 4928,
+      "line": 4942,
       "original_name": "FUN_000567c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7104,7 +7147,7 @@
     {
       "name": "draw_quit_confirm_panel",
       "path": "src/hud.c",
-      "line": 4940,
+      "line": 4954,
       "original_name": "FUN_00056838",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7114,7 +7157,7 @@
     {
       "name": "draw_music_or_sound_toggle_panel",
       "path": "src/hud.c",
-      "line": 4953,
+      "line": 4967,
       "original_name": "FUN_00056864",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7124,7 +7167,7 @@
     {
       "name": "draw_detail_level_panel",
       "path": "src/hud.c",
-      "line": 4990,
+      "line": 5004,
       "original_name": "FUN_0005693c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7134,7 +7177,7 @@
     {
       "name": "handle_music_toggle_click",
       "path": "src/hud.c",
-      "line": 5008,
+      "line": 5022,
       "original_name": "FUN_000569c0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7144,7 +7187,7 @@
     {
       "name": "handle_sound_toggle_click",
       "path": "src/hud.c",
-      "line": 5039,
+      "line": 5053,
       "original_name": "FUN_00056a18",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7154,7 +7197,7 @@
     {
       "name": "handle_detail_level_click",
       "path": "src/hud.c",
-      "line": 5071,
+      "line": 5085,
       "original_name": "FUN_00056a70",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7164,7 +7207,7 @@
     {
       "name": "handle_pause_menu_main_list_click",
       "path": "src/hud.c",
-      "line": 5106,
+      "line": 5120,
       "original_name": "FUN_00056b48",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7174,7 +7217,7 @@
     {
       "name": "handle_save_load_slot_click",
       "path": "src/hud.c",
-      "line": 5157,
+      "line": 5171,
       "original_name": "FUN_00056bdc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7184,7 +7227,7 @@
     {
       "name": "handle_quit_confirm_click",
       "path": "src/hud.c",
-      "line": 5198,
+      "line": 5212,
       "original_name": "FUN_00056c88",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7194,7 +7237,7 @@
     {
       "name": "enter_pause_menu_state",
       "path": "src/hud.c",
-      "line": 5220,
+      "line": 5234,
       "original_name": "FUN_00056cc8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7204,7 +7247,7 @@
     {
       "name": "dispatch_pause_menu_click",
       "path": "src/hud.c",
-      "line": 5238,
+      "line": 5252,
       "original_name": "FUN_00056cf8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7214,7 +7257,7 @@
     {
       "name": "handle_pause_menu_region_click",
       "path": "src/hud.c",
-      "line": 5259,
+      "line": 5273,
       "original_name": "FUN_00056d38",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7224,7 +7267,7 @@
     {
       "name": "handle_pause_menu_dpad_navigation",
       "path": "src/hud.c",
-      "line": 5289,
+      "line": 5303,
       "original_name": "FUN_00056d6c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7234,7 +7277,7 @@
     {
       "name": "open_pause_menu_via_hotkey",
       "path": "src/hud.c",
-      "line": 5362,
+      "line": 5376,
       "original_name": "FUN_00056ebc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7244,7 +7287,7 @@
     {
       "name": "init_cursor_subsystem",
       "path": "src/hud.c",
-      "line": 5382,
+      "line": 5396,
       "original_name": "FUN_00056f28",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7254,7 +7297,7 @@
     {
       "name": "erase_cursor_icon",
       "path": "src/hud.c",
-      "line": 5417,
+      "line": 5431,
       "original_name": "FUN_00056fe8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7264,17 +7307,27 @@
     {
       "name": "uw_always_show_cursor",
       "path": "src/hud.c",
-      "line": 5452,
+      "line": 5467,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
-      "description": "Desktop deviation: opt in to a persistent cursor with UW_ALWAYS_SHOW_CURSOR=1.",
+      "description": "Desktop deviation: present the game cursor as an overlay by default.",
+      "audited": true
+    },
+    {
+      "name": "uw_composite_desktop_cursor",
+      "path": "src/hud.c",
+      "line": 5482,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 1,
+      "description": "Desktop deviation: draw last, on GX's presentation copy.",
       "audited": true
     },
     {
       "name": "cursor_show_idle_tick",
       "path": "src/hud.c",
-      "line": 5465,
+      "line": 5510,
       "original_name": "FUN_000570b4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7284,7 +7337,7 @@
     {
       "name": "decrement_cursor_hide_depth",
       "path": "src/hud.c",
-      "line": 5492,
+      "line": 5535,
       "original_name": "FUN_00057118",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7294,7 +7347,7 @@
     {
       "name": "decrement_cursor_hide_depth_thunk",
       "path": "src/hud.c",
-      "line": 5514,
+      "line": 5557,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7304,7 +7357,7 @@
     {
       "name": "set_tracked_hotspot_rect",
       "path": "src/hud.c",
-      "line": 5525,
+      "line": 5568,
       "original_name": "FUN_00057188",
       "ghidra_origin": true,
       "param_count": 4,
@@ -7314,7 +7367,7 @@
     {
       "name": "is_mouse_within_tracked_hotspot",
       "path": "src/hud.c",
-      "line": 5543,
+      "line": 5586,
       "original_name": "FUN_000571c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7324,7 +7377,7 @@
     {
       "name": "track_hotspot_hover_state",
       "path": "src/hud.c",
-      "line": 5559,
+      "line": 5602,
       "original_name": "FUN_0005721c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7334,7 +7387,7 @@
     {
       "name": "redraw_hotspot_border_cursor",
       "path": "src/hud.c",
-      "line": 5622,
+      "line": 5665,
       "original_name": "FUN_00057460",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7344,7 +7397,7 @@
     {
       "name": "get_mouse_position",
       "path": "src/hud.c",
-      "line": 5645,
+      "line": 5688,
       "original_name": "FUN_00057504",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7354,7 +7407,7 @@
     {
       "name": "get_click_position",
       "path": "src/hud.c",
-      "line": 5660,
+      "line": 5703,
       "original_name": "FUN_00057528",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7364,7 +7417,7 @@
     {
       "name": "reset_keyboard_char_input",
       "path": "src/hud.c",
-      "line": 5682,
+      "line": 5725,
       "original_name": "FUN_00057570",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7374,7 +7427,7 @@
     {
       "name": "noop_post_input_reset_hook",
       "path": "src/hud.c",
-      "line": 5696,
+      "line": 5739,
       "original_name": "FUN_0005758c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7384,7 +7437,7 @@
     {
       "name": "warp_mouse_cursor",
       "path": "src/hud.c",
-      "line": 5707,
+      "line": 5750,
       "original_name": "FUN_00057590",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7394,7 +7447,7 @@
     {
       "name": "poll_keyboard_char_input",
       "path": "src/hud.c",
-      "line": 5725,
+      "line": 5768,
       "original_name": "FUN_000575c4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7404,7 +7457,7 @@
     {
       "name": "wait_for_key_or_mouse_move",
       "path": "src/hud.c",
-      "line": 5745,
+      "line": 5788,
       "original_name": "FUN_000576d0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7414,7 +7467,7 @@
     {
       "name": "lookup_onscreen_keyboard_key_hit",
       "path": "src/hud.c",
-      "line": 5787,
+      "line": 5830,
       "original_name": "FUN_00057a80",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7424,7 +7477,7 @@
     {
       "name": "register_cursor_hotspot",
       "path": "src/hud.c",
-      "line": 5812,
+      "line": 5855,
       "original_name": "FUN_00057af0",
       "ghidra_origin": true,
       "param_count": 5,
@@ -7434,7 +7487,7 @@
     {
       "name": "unregister_cursor_hotspot",
       "path": "src/hud.c",
-      "line": 5851,
+      "line": 5894,
       "original_name": "FUN_00057bb0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7444,7 +7497,7 @@
     {
       "name": "push_cursor_icon",
       "path": "src/hud.c",
-      "line": 5886,
+      "line": 5929,
       "original_name": "FUN_00057c5c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7454,7 +7507,7 @@
     {
       "name": "pop_cursor_icon",
       "path": "src/hud.c",
-      "line": 5908,
+      "line": 5951,
       "original_name": "FUN_00057cac",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7464,7 +7517,7 @@
     {
       "name": "is_position_within_rect",
       "path": "src/hud.c",
-      "line": 5936,
+      "line": 5979,
       "original_name": "FUN_00057d1c",
       "ghidra_origin": true,
       "param_count": 4,
@@ -7474,7 +7527,7 @@
     {
       "name": "set_cursor_sprite_id",
       "path": "src/hud.c",
-      "line": 5963,
+      "line": 6006,
       "original_name": "FUN_00057dc0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7484,7 +7537,7 @@
     {
       "name": "update_hotspot_cursor_icon",
       "path": "src/hud.c",
-      "line": 6001,
+      "line": 6054,
       "original_name": "FUN_00057e54",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7494,7 +7547,7 @@
     {
       "name": "handle_mouse_button_message",
       "path": "src/hud.c",
-      "line": 6042,
+      "line": 6095,
       "original_name": "FUN_00058438",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7504,7 +7557,7 @@
     {
       "name": "save_cursor_background",
       "path": "src/hud.c",
-      "line": 6071,
+      "line": 6124,
       "original_name": "FUN_000584c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7514,7 +7567,7 @@
     {
       "name": "draw_idle_mouse_cursor",
       "path": "src/hud.c",
-      "line": 6091,
+      "line": 6145,
       "original_name": "FUN_0005857c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7524,7 +7577,7 @@
     {
       "name": "noop_key_handler",
       "path": "src/hud.c",
-      "line": 6164,
+      "line": 6215,
       "original_name": "FUN_00058734",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7534,7 +7587,7 @@
     {
       "name": "poll_mouse_button_flags",
       "path": "src/hud.c",
-      "line": 6175,
+      "line": 6226,
       "original_name": "FUN_00058738",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7544,7 +7597,7 @@
     {
       "name": "toggle_stats_panel",
       "path": "src/hud.c",
-      "line": 6194,
+      "line": 6245,
       "original_name": "FUN_0003def4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7554,7 +7607,7 @@
     {
       "name": "reset_cursor_confine_rect",
       "path": "src/hud.c",
-      "line": 6219,
+      "line": 6270,
       "original_name": "FUN_000577f0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7564,7 +7617,7 @@
     {
       "name": "set_cursor_confine_rect",
       "path": "src/hud.c",
-      "line": 6246,
+      "line": 6297,
       "original_name": "FUN_00057788",
       "ghidra_origin": true,
       "param_count": 4,
@@ -7574,7 +7627,7 @@
     {
       "name": "uw_debug_blit_pick_buffer",
       "path": "src/hud.c",
-      "line": 6272,
+      "line": 6323,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -8999,127 +9052,140 @@
       "ghidra_origin": true,
       "param_count": 4,
       "description": "gated single step: only if stepping *param_1 by (param_3 * param_4) would already reach or cross the bound param_2 (checked one direction for param_4==-1, the other otherwise) does it actually apply that step and return true.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "project_position_by_heading",
       "path": "src/math.c",
-      "line": 111,
+      "line": 100,
       "original_name": "FUN_00069f2c",
       "ghidra_origin": true,
       "param_count": 4,
       "description": "disassembly-confirmed faithful.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "busy_wait_ms",
       "path": "src/math.c",
-      "line": 169,
+      "line": 153,
       "original_name": "FUN_0006a034",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "busy-waits (spinning on read_realtime_clock_units) for param_1 milliseconds.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "roll_dice_sum",
       "path": "src/math.c",
-      "line": 188,
+      "line": 168,
       "original_name": "FUN_0006a058",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "classic \"base + NdM\" dice roll.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "integer_sqrt",
       "path": "src/math.c",
-      "line": 210,
+      "line": 188,
       "original_name": "FUN_00013774",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "integer square root via Newton's method (bit- shift initial guess, refine with ordint_divmod division until the estimate stops decreasing).",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "heading_to_sine_cosine",
       "path": "src/math.c",
-      "line": 233,
+      "line": 207,
       "original_name": "FUN_00049c64",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "look up DAT_00085d48_sine/DAT_00085f50_cosine by the angle byte packed via pack_angle_byte, writing sin(angle) into *param_2 and cos(angle) into *param_3.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "pack_angle_byte",
       "path": "src/math.c",
-      "line": 252,
+      "line": 220,
       "original_name": "FUN_00049cc0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "pack param_1's low byte and param_2's low byte into one 16-bit value, param_2's byte going into the high or low half depending on param_3.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "angle_to_screen_delta",
       "path": "src/math.c",
-      "line": 272,
+      "line": 231,
       "original_name": "FUN_00049ce8",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "angle to screen delta.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "lookup_arctan_primary_range",
       "path": "src/math.c",
-      "line": 305,
+      "line": 255,
       "original_name": "FUN_00049db8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "compute_angle_from_slope's \"primary range\" sub-helper (|ratio| < ~1.0).",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "lookup_arctan_reciprocal_range",
       "path": "src/math.c",
-      "line": 330,
+      "line": 274,
       "original_name": "FUN_00049eb8",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "compute_angle_from_slope's \"reciprocal range\" sub-helper (|ratio| >= ~1.0).",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "compute_angle_from_slope",
       "path": "src/math.c",
-      "line": 355,
+      "line": 293,
       "original_name": "FUN_00049fb4",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "per src/combat.c's own comment, an atan2-shaped helper fed slope ratios.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "rand_below",
       "path": "src/math.c",
-      "line": 381,
+      "line": 316,
       "original_name": "FUN_00022910",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "Bounded random: rand() % param_1.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "read_realtime_clock_units",
       "path": "src/math.c",
-      "line": 395,
+      "line": 328,
       "original_name": "FUN_0002294c",
       "ghidra_origin": true,
       "param_count": 0,
       "description": "GetTickCount-shaped: GetTickCount() (SDL_GetTicks(), real elapsed ms since startup) scaled down to 4ms-per-unit.",
-      "audited": true
+      "audited": true,
+      "modernized": true
     },
     {
       "name": "tick_anim_record",
@@ -9219,7 +9285,8 @@
       "ghidra_origin": true,
       "param_count": 1,
       "description": "pick the object under the view reticle (-> DAT_00086998 slot, DAT_00086999/9a tile x/y).",
-      "audited": true
+      "audited": false,
+      "audit_note": "unresolved call-site mismatch (declared 1; e.g. tests/test_throw.c:149 passes 0)"
     },
     {
       "name": "movement_sweep_setup",
@@ -9620,7 +9687,7 @@
       "param_count": 2,
       "description": "dispatch_special_action's \"reduce item durability\" handler (its own case 9).",
       "audited": true,
-      "audit_note": "VERIFIED vs ARM: ARM apply_equipped_item_effect (0x663bc) also passes only r0; r1 is stale there (original quirk, left as-is) (declared 2; e.g. src/player.c:1118 passes 1)"
+      "audit_note": "VERIFIED vs ARM: ARM apply_equipped_item_effect (0x663bc) also passes only r0; r1 is stale there (original quirk, left as-is) (declared 2; e.g. src/player.c:1119 passes 1)"
     },
     {
       "name": "apply_targeted_spell_effect",
@@ -11501,17 +11568,17 @@
     {
       "name": "ce_toupper",
       "path": "src/ordinal_stubs.c",
-      "line": 791,
+      "line": 794,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
-      "description": "Sibling of ce_tolower just above -- same fix, same reasoning.",
+      "description": "Windows CE toupper import: the automap note editor uses this to map lowercase input to the uppercase-only FONT4X5P.SYS glyphs.",
       "audited": true
     },
     {
       "name": "cpp_operator_delete",
       "path": "src/ordinal_stubs.c",
-      "line": 799,
+      "line": 803,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11521,7 +11588,7 @@
     {
       "name": "cpp_operator_new",
       "path": "src/ordinal_stubs.c",
-      "line": 805,
+      "line": 809,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11531,7 +11598,7 @@
     {
       "name": "NKDbgPrintfW",
       "path": "src/ordinal_stubs.c",
-      "line": 811,
+      "line": 815,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11542,7 +11609,7 @@
     {
       "name": "ce_fopen",
       "path": "src/ordinal_stubs.c",
-      "line": 822,
+      "line": 826,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11552,7 +11619,7 @@
     {
       "name": "ce_fscanf",
       "path": "src/ordinal_stubs.c",
-      "line": 827,
+      "line": 831,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -11563,7 +11630,7 @@
     {
       "name": "ce_fclose",
       "path": "src/ordinal_stubs.c",
-      "line": 837,
+      "line": 841,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11573,7 +11640,7 @@
     {
       "name": "ce_calloc",
       "path": "src/ordinal_stubs.c",
-      "line": 846,
+      "line": 850,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11583,7 +11650,7 @@
     {
       "name": "ce_strrchr",
       "path": "src/ordinal_stubs.c",
-      "line": 857,
+      "line": 861,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11593,7 +11660,7 @@
     {
       "name": "_strlwr",
       "path": "src/ordinal_stubs.c",
-      "line": 871,
+      "line": 875,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11603,7 +11670,7 @@
     {
       "name": "_strupr",
       "path": "src/ordinal_stubs.c",
-      "line": 879,
+      "line": 883,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11613,7 +11680,7 @@
     {
       "name": "_isctype",
       "path": "src/ordinal_stubs.c",
-      "line": 892,
+      "line": 896,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11623,7 +11690,7 @@
     {
       "name": "ordint_divmod",
       "path": "src/ordinal_stubs.c",
-      "line": 913,
+      "line": 917,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11634,7 +11701,7 @@
     {
       "name": "orduint_divmod",
       "path": "src/ordinal_stubs.c",
-      "line": 931,
+      "line": 935,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11644,7 +11711,7 @@
     {
       "name": "ordfloat_sub",
       "path": "src/ordinal_stubs.c",
-      "line": 952,
+      "line": 956,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11654,7 +11721,7 @@
     {
       "name": "ordfloat_double_binop",
       "path": "src/ordinal_stubs.c",
-      "line": 959,
+      "line": 963,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
@@ -11664,7 +11731,7 @@
     {
       "name": "ordfloat_bits_to_float",
       "path": "src/ordinal_stubs.c",
-      "line": 971,
+      "line": 975,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11674,7 +11741,7 @@
     {
       "name": "ordfloat_float_to_bits",
       "path": "src/ordinal_stubs.c",
-      "line": 978,
+      "line": 982,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11684,7 +11751,7 @@
     {
       "name": "ordfloat_int_to_float",
       "path": "src/ordinal_stubs.c",
-      "line": 988,
+      "line": 992,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11694,7 +11761,7 @@
     {
       "name": "ordfloat_uint_to_float",
       "path": "src/ordinal_stubs.c",
-      "line": 994,
+      "line": 998,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11704,7 +11771,7 @@
     {
       "name": "ordfloat_float_to_double",
       "path": "src/ordinal_stubs.c",
-      "line": 1003,
+      "line": 1007,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11714,7 +11781,7 @@
     {
       "name": "ordfloat_negate",
       "path": "src/ordinal_stubs.c",
-      "line": 1018,
+      "line": 1022,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11724,7 +11791,7 @@
     {
       "name": "ordfloat_mul",
       "path": "src/ordinal_stubs.c",
-      "line": 1028,
+      "line": 1032,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11734,7 +11801,7 @@
     {
       "name": "ordfloat_double_mul2",
       "path": "src/ordinal_stubs.c",
-      "line": 1038,
+      "line": 1042,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
@@ -11744,7 +11811,7 @@
     {
       "name": "ordfloat_lt",
       "path": "src/ordinal_stubs.c",
-      "line": 1057,
+      "line": 1061,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11754,7 +11821,7 @@
     {
       "name": "ordfloat_le",
       "path": "src/ordinal_stubs.c",
-      "line": 1065,
+      "line": 1069,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11764,7 +11831,7 @@
     {
       "name": "ordfloat_int_to_float2",
       "path": "src/ordinal_stubs.c",
-      "line": 1072,
+      "line": 1076,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11774,7 +11841,7 @@
     {
       "name": "ordfloat_double_from_int",
       "path": "src/ordinal_stubs.c",
-      "line": 1078,
+      "line": 1082,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11784,7 +11851,7 @@
     {
       "name": "ordfloat_gt",
       "path": "src/ordinal_stubs.c",
-      "line": 1085,
+      "line": 1089,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11794,7 +11861,7 @@
     {
       "name": "ordfloat_ge",
       "path": "src/ordinal_stubs.c",
-      "line": 1094,
+      "line": 1098,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11804,7 +11871,7 @@
     {
       "name": "ordfloat_double_to_float",
       "path": "src/ordinal_stubs.c",
-      "line": 1104,
+      "line": 1108,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11814,7 +11881,7 @@
     {
       "name": "ordfloat_double_result",
       "path": "src/ordinal_stubs.c",
-      "line": 1116,
+      "line": 1120,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11824,7 +11891,7 @@
     {
       "name": "ordfloat_div",
       "path": "src/ordinal_stubs.c",
-      "line": 1124,
+      "line": 1128,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11834,7 +11901,7 @@
     {
       "name": "ordfloat_double_binop2",
       "path": "src/ordinal_stubs.c",
-      "line": 1133,
+      "line": 1137,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
@@ -11844,7 +11911,7 @@
     {
       "name": "ordfloat_add",
       "path": "src/ordinal_stubs.c",
-      "line": 1145,
+      "line": 1149,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -11854,7 +11921,7 @@
     {
       "name": "ordfloat_double_op3",
       "path": "src/ordinal_stubs.c",
-      "line": 1152,
+      "line": 1156,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
@@ -11864,7 +11931,7 @@
     {
       "name": "ordaudio_op_2063",
       "path": "src/ordinal_stubs.c",
-      "line": 1161,
+      "line": 1165,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 4,
@@ -11874,7 +11941,7 @@
     {
       "name": "ordaudio_op_2135",
       "path": "src/ordinal_stubs.c",
-      "line": 1170,
+      "line": 1174,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11885,7 +11952,7 @@
     {
       "name": "ordaudio_op_2142",
       "path": "src/ordinal_stubs.c",
-      "line": 1175,
+      "line": 1179,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -11895,7 +11962,7 @@
     {
       "name": "ordaudio_op_2304",
       "path": "src/ordinal_stubs.c",
-      "line": 1181,
+      "line": 1185,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -11905,7 +11972,7 @@
     {
       "name": "ordaudio_op_2413",
       "path": "src/ordinal_stubs.c",
-      "line": 1189,
+      "line": 1193,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -11915,7 +11982,7 @@
     {
       "name": "ordaudio_op_2582",
       "path": "src/ordinal_stubs.c",
-      "line": 1197,
+      "line": 1201,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -11925,7 +11992,7 @@
     {
       "name": "ordaudio_op_2588",
       "path": "src/ordinal_stubs.c",
-      "line": 1202,
+      "line": 1206,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -12025,7 +12092,7 @@
     {
       "name": "adjust_player_hp",
       "path": "src/player.c",
-      "line": 854,
+      "line": 855,
       "original_name": "FUN_00073ec0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12035,7 +12102,7 @@
     {
       "name": "write_player_status_block",
       "path": "src/player.c",
-      "line": 889,
+      "line": 890,
       "original_name": "FUN_00065b90",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12045,7 +12112,7 @@
     {
       "name": "read_player_status_block",
       "path": "src/player.c",
-      "line": 936,
+      "line": 937,
       "original_name": "FUN_00065d4c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12055,7 +12122,7 @@
     {
       "name": "reset_player_derived_state",
       "path": "src/player.c",
-      "line": 968,
+      "line": 969,
       "original_name": "FUN_00065eb4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12065,7 +12132,7 @@
     {
       "name": "update_screen_flicker_effect",
       "path": "src/player.c",
-      "line": 1005,
+      "line": 1006,
       "original_name": "FUN_000660d4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12075,7 +12142,7 @@
     {
       "name": "apply_equipped_item_effect",
       "path": "src/player.c",
-      "line": 1052,
+      "line": 1053,
       "original_name": "FUN_000661b0",
       "ghidra_origin": true,
       "param_count": 4,
@@ -12085,7 +12152,7 @@
     {
       "name": "compute_light_source_colors",
       "path": "src/player.c",
-      "line": 1204,
+      "line": 1205,
       "original_name": "FUN_000664bc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12095,7 +12162,7 @@
     {
       "name": "update_level7_floor_hazard_state",
       "path": "src/player.c",
-      "line": 1232,
+      "line": 1233,
       "original_name": "FUN_00066594",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12105,7 +12172,7 @@
     {
       "name": "apply_equipment_effect_penalties",
       "path": "src/player.c",
-      "line": 1268,
+      "line": 1269,
       "original_name": "FUN_00066634",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12115,7 +12182,7 @@
     {
       "name": "compute_object_weight",
       "path": "src/player.c",
-      "line": 1329,
+      "line": 1330,
       "original_name": "FUN_0006674c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12125,7 +12192,7 @@
     {
       "name": "trigger_view_transition",
       "path": "src/player.c",
-      "line": 1353,
+      "line": 1354,
       "original_name": "FUN_0006907c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12135,7 +12202,7 @@
     {
       "name": "set_movement_animation_timer",
       "path": "src/player.c",
-      "line": 1464,
+      "line": 1465,
       "original_name": "FUN_00069424",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12145,7 +12212,7 @@
     {
       "name": "update_current_view_from_subject",
       "path": "src/player.c",
-      "line": 1490,
+      "line": 1491,
       "original_name": "FUN_00069470",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12155,7 +12222,7 @@
     {
       "name": "sync_camera_from_player",
       "path": "src/player.c",
-      "line": 1606,
+      "line": 1607,
       "original_name": "FUN_00069938",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12165,7 +12232,7 @@
     {
       "name": "roll_skill_check",
       "path": "src/player.c",
-      "line": 1715,
+      "line": 1716,
       "original_name": "FUN_00069b68",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12175,7 +12242,7 @@
     {
       "name": "grant_experience_points",
       "path": "src/player.c",
-      "line": 1751,
+      "line": 1752,
       "original_name": "FUN_00069bd0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12185,7 +12252,7 @@
     {
       "name": "refresh_experience_display",
       "path": "src/player.c",
-      "line": 1824,
+      "line": 1825,
       "original_name": "FUN_00069e30",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12195,7 +12262,7 @@
     {
       "name": "toggle_light_table_flicker",
       "path": "src/player.c",
-      "line": 1856,
+      "line": 1857,
       "original_name": "FUN_00070224",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12205,7 +12272,7 @@
     {
       "name": "recalculate_player_stats",
       "path": "src/player.c",
-      "line": 1907,
+      "line": 1908,
       "original_name": "FUN_000703a0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12215,7 +12282,7 @@
     {
       "name": "advance_character_level",
       "path": "src/player.c",
-      "line": 1941,
+      "line": 1942,
       "original_name": "FUN_00070464",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12225,7 +12292,7 @@
     {
       "name": "classify_skill_training_tier",
       "path": "src/player.c",
-      "line": 1973,
+      "line": 1974,
       "original_name": "FUN_00070524",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12235,7 +12302,7 @@
     {
       "name": "advance_skill_training",
       "path": "src/player.c",
-      "line": 1996,
+      "line": 1997,
       "original_name": "FUN_00070548",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12245,7 +12312,7 @@
     {
       "name": "roll_skill_use_improvement",
       "path": "src/player.c",
-      "line": 2058,
+      "line": 2059,
       "original_name": "FUN_0007067c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12255,7 +12322,7 @@
     {
       "name": "print_single_skill_improvement_message",
       "path": "src/player.c",
-      "line": 2123,
+      "line": 2124,
       "original_name": "FUN_000707c8",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12265,7 +12332,7 @@
     {
       "name": "print_skill_improvement_list",
       "path": "src/player.c",
-      "line": 2144,
+      "line": 2145,
       "original_name": "FUN_0007080c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12275,7 +12342,7 @@
     {
       "name": "handle_mantra_chant",
       "path": "src/player.c",
-      "line": 2187,
+      "line": 2188,
       "original_name": "FUN_000708bc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12285,7 +12352,7 @@
     {
       "name": "render_endgame_character_stats",
       "path": "src/player.c",
-      "line": 2337,
+      "line": 2338,
       "original_name": "FUN_00070c90",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12295,7 +12362,7 @@
     {
       "name": "apply_rest_status_effects",
       "path": "src/player.c",
-      "line": 2524,
+      "line": 2525,
       "original_name": "FUN_0007141c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12305,7 +12372,7 @@
     {
       "name": "handle_rest_action",
       "path": "src/player.c",
-      "line": 2556,
+      "line": 2557,
       "original_name": "FUN_00071510",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12315,7 +12382,7 @@
     {
       "name": "adjust_player_hunger",
       "path": "src/player.c",
-      "line": 2736,
+      "line": 2737,
       "original_name": "FUN_00071b08",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12325,7 +12392,7 @@
     {
       "name": "handle_game_victory_sequence",
       "path": "src/player.c",
-      "line": 2774,
+      "line": 2775,
       "original_name": "FUN_00071b94",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12335,7 +12402,7 @@
     {
       "name": "handle_starvation_penalty",
       "path": "src/player.c",
-      "line": 2866,
+      "line": 2867,
       "original_name": "FUN_00072288",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12345,7 +12412,7 @@
     {
       "name": "adjust_level7_hazard_value",
       "path": "src/player.c",
-      "line": 2952,
+      "line": 2953,
       "original_name": "FUN_00073e14",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12355,7 +12422,7 @@
     {
       "name": "restore_stat_capped",
       "path": "src/player.c",
-      "line": 2984,
+      "line": 2985,
       "original_name": "FUN_00073f60",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12365,7 +12432,7 @@
     {
       "name": "apply_healing_item_effect",
       "path": "src/player.c",
-      "line": 3015,
+      "line": 3016,
       "original_name": "FUN_00073fc4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12375,7 +12442,7 @@
     {
       "name": "draw_stats_panel_header",
       "path": "src/player.c",
-      "line": 3042,
+      "line": 3043,
       "original_name": "FUN_00077f30",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12385,7 +12452,7 @@
     {
       "name": "draw_stats_panel_attribute_row",
       "path": "src/player.c",
-      "line": 3088,
+      "line": 3089,
       "original_name": "FUN_0007802c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12395,7 +12462,7 @@
     {
       "name": "draw_hp_stat_display",
       "path": "src/player.c",
-      "line": 3105,
+      "line": 3106,
       "original_name": "FUN_00078088",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12405,7 +12472,7 @@
     {
       "name": "draw_mana_stat_display",
       "path": "src/player.c",
-      "line": 3126,
+      "line": 3127,
       "original_name": "FUN_00078118",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12415,7 +12482,7 @@
     {
       "name": "draw_experience_points_display",
       "path": "src/player.c",
-      "line": 3148,
+      "line": 3149,
       "original_name": "FUN_000781a0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12425,7 +12492,7 @@
     {
       "name": "draw_stats_panel_skill_row",
       "path": "src/player.c",
-      "line": 3168,
+      "line": 3169,
       "original_name": "FUN_0007821c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12435,7 +12502,7 @@
     {
       "name": "draw_stats_panel_content",
       "path": "src/player.c",
-      "line": 3197,
+      "line": 3198,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -12445,7 +12512,7 @@
     {
       "name": "handle_stats_panel_skill_scroll_click",
       "path": "src/player.c",
-      "line": 3248,
+      "line": 3249,
       "original_name": "FUN_00078434",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12455,7 +12522,7 @@
     {
       "name": "refresh_stats_panel_if_active",
       "path": "src/player.c",
-      "line": 3294,
+      "line": 3295,
       "original_name": "FUN_00078550",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12465,7 +12532,7 @@
     {
       "name": "read_xor_scrambled_block",
       "path": "src/player.c",
-      "line": 3307,
+      "line": 3308,
       "original_name": "FUN_0007ee9c",
       "ghidra_origin": true,
       "param_count": 4,
@@ -12475,7 +12542,7 @@
     {
       "name": "write_xor_scrambled_block",
       "path": "src/player.c",
-      "line": 3352,
+      "line": 3353,
       "original_name": "FUN_0007ef78",
       "ghidra_origin": true,
       "param_count": 4,
@@ -12485,7 +12552,7 @@
     {
       "name": "detect_unsafe_rest_object_callback",
       "path": "src/player.c",
-      "line": 3407,
+      "line": 3408,
       "original_name": "FUN_000352d0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -12495,7 +12562,7 @@
     {
       "name": "check_rest_area_unsafe",
       "path": "src/player.c",
-      "line": 3430,
+      "line": 3431,
       "original_name": "FUN_00035340",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12505,7 +12572,7 @@
     {
       "name": "reset_player_for_resurrection",
       "path": "src/player.c",
-      "line": 3442,
+      "line": 3443,
       "original_name": "FUN_0003bee4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12515,7 +12582,7 @@
     {
       "name": "handle_player_death_and_menu_transition",
       "path": "src/player.c",
-      "line": 3484,
+      "line": 3485,
       "original_name": "FUN_0003c038",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12525,7 +12592,7 @@
     {
       "name": "apply_level9_random_hazard_tick",
       "path": "src/player.c",
-      "line": 3543,
+      "line": 3544,
       "original_name": "FUN_0003c6ac",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12535,7 +12602,7 @@
     {
       "name": "trigger_player_jump_if_grounded",
       "path": "src/player.c",
-      "line": 3603,
+      "line": 3604,
       "original_name": "FUN_0003dba0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12545,7 +12612,7 @@
     {
       "name": "force_locomotion_state_refresh",
       "path": "src/player.c",
-      "line": 3620,
+      "line": 3621,
       "original_name": "FUN_0003dbd8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12555,7 +12622,7 @@
     {
       "name": "apply_vertical_launch_impulse",
       "path": "src/player.c",
-      "line": 3631,
+      "line": 3632,
       "original_name": "FUN_0003dc04",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12565,7 +12632,7 @@
     {
       "name": "trigger_quest_stumble_animation",
       "path": "src/player.c",
-      "line": 3663,
+      "line": 3664,
       "original_name": "FUN_0003dc6c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12575,7 +12642,7 @@
     {
       "name": "apply_quest_vertical_effect",
       "path": "src/player.c",
-      "line": 3676,
+      "line": 3677,
       "original_name": "FUN_0003dc78",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12585,7 +12652,7 @@
     {
       "name": "cycle_active_light_source",
       "path": "src/player.c",
-      "line": 3694,
+      "line": 3695,
       "original_name": "FUN_00053ab0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -12595,7 +12662,7 @@
     {
       "name": "update_player_tick_effects",
       "path": "src/player.c",
-      "line": 3745,
+      "line": 3746,
       "original_name": "FUN_00053c74",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12605,7 +12672,7 @@
     {
       "name": "decay_equipped_light_sources",
       "path": "src/player.c",
-      "line": 3870,
+      "line": 3871,
       "original_name": "FUN_0005404c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -12615,7 +12682,7 @@
     {
       "name": "apply_drowning_hazard",
       "path": "src/player.c",
-      "line": 3936,
+      "line": 3937,
       "original_name": "FUN_000541d0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -12625,7 +12692,7 @@
     {
       "name": "dungeon_view_anim_tick",
       "path": "src/player.c",
-      "line": 3970,
+      "line": 3971,
       "original_name": "FUN_0003c194",
       "ghidra_origin": true,
       "param_count": 0,

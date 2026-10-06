@@ -132,7 +132,7 @@ undefined4 resolve_skill_gated_unlock_or_use(void)
 { TEST_FAIL_MESSAGE("Unexpected unlock trigger"); return 0; }
 ushort *use_object_on_target(void)
 { TEST_FAIL_MESSAGE("Unexpected use trigger"); return 0; }
-void angle_to_screen_delta(int heading, short *dx, short *dy)
+void angle_to_screen_delta(uint heading, short *dx, short *dy)
 {
     (void)heading;
     *dx = 0;

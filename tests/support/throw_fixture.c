@@ -39,7 +39,7 @@ void *get_object_record_by_slot_index(int slot)
 { return slot<256 ? DAT_002046b8+slot*27 : DAT_002046c4+(slot-256)*8; }
 void get_mouse_position(short *x, short *y) { *x=141; *y=cursor_y; }
 long ce_rand(void) { return 0; }
-void angle_to_screen_delta(int heading, short *x, short *y)
+void angle_to_screen_delta(uint heading, short *x, short *y)
 {
     /* Original fixed-point compass, cardinal headings used by this fixture. */
     switch ((ushort)heading) {
@@ -96,7 +96,7 @@ ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
 }
 ushort *settle_dropped_object(ushort *object, int x, int y, int mode) { return object; }
 ushort *reallocate_object_to_arena(void) { TEST_FAIL_MESSAGE("Unexpected reallocation during flight"); return NULL; }
-void project_position_by_heading(void) { TEST_FAIL_MESSAGE("Throw took the ground-drop path"); }
+void project_position_by_heading(int heading, short distance, short *x, short *y) { (void)heading; (void)distance; (void)x; (void)y; TEST_FAIL_MESSAGE("Throw took the ground-drop path"); }
 undefined4 check_object_placement_clearance(void) { return 1; }
 
 int compute_floor_height_at_position(void) { return 0; }

@@ -6,7 +6,7 @@
 void DEBUG_impl(DebugLevel level, const char *file, int line, const char *fmt, ...);
 void read_data(const char *name, long offset, void *buffer, size_t count);
 long ce_rand(void);
-int roll_dice_sum(int count, int sides);
+int roll_dice_sum(int count, short sides);
 byte *uw_load_critter_page_cached(int page, int tier);
 undefined4 decode_critter_sprite_page(int page, int tier, int direction, int palette, int frame);
 void *alloc_object_slot(int mobile);

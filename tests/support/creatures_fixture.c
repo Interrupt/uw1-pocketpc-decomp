@@ -38,7 +38,7 @@ long ce_rand(void)
     rng_state = rng_state * 1664525u + 1013904223u;
     return (rng_state >> 1) & 0x7fffffff;
 }
-int roll_dice_sum(int count, int sides)
+int roll_dice_sum(int count, short sides)
 {
     int sum = 0;
     while (count--) sum += 1 + ce_rand() % sides;

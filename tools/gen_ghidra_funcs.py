@@ -88,7 +88,7 @@ for path in sorted(glob.glob(root + '/src/*.c')):
                         param_count=nparams(m.group(2)), description=describe(blk, fun, m.group(1)) if fun else describe_plain(blk, m.group(1))))
         if fun: seen.add(fun)
 for f in out:
-    for k in ('audited', 'audit_note'):
+    for k in ('audited', 'audit_note', 'modernized'):
         if k in prev.get(f['name'], {}): f[k] = prev[f['name']][k]
 json.dump({'_meta': {'description': 'Every function definition in src/*.c. Those with ghidra_origin true still carry a \"was FUN_xxxxxxxx\" comment, i.e. were renamed from a Ghidra placeholder; the rest have original_name null. Regenerate with tools/gen_ghidra_funcs.py.', 'total_functions': len(out), 'with_original_name': sum(1 for x in out if x['original_name']), 'without_original_name': sum(1 for x in out if not x['original_name']), 'still_unnamed_FUN': sum(1 for x in out if x['name'].startswith('FUN_'))}, 'functions': out}, open(root + '/ghidra-funcs.json', 'w'), indent=2)
 print(len(out), 'functions;', sum(1 for x in out if not x['original_name']), 'without original;', len(seen), 'distinct originals')

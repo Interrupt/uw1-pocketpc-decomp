@@ -13,13 +13,13 @@ void other_panel_tick(int index);
 void flush_sprite_list_compositor(void);
 undefined4 sprite_list_set_frame_id(int slot, uint frame);
 int resolve_weapon_hit_skill_check(int attacker, int target);
-int roll_dice_sum(int count, int sides);
+int roll_dice_sum(int count, short sides);
 undefined4 play_sound_effect_with_pan(void);
 undefined4 play_positional_sound_effect(int sound, int x, int y, int volume);
 void set_movement_animation_timer(void);
 undefined4 play_weapon_impact_sound(int result);
 long ce_rand(void);
-void project_position_by_heading(int heading, int distance, short *x, short *y);
+void project_position_by_heading(int heading, short distance, short *x, short *y);
 void collision_height_envelope(int mode, int collision);
 void collision_build_height_field(int mode);
 void sort_collision_candidates(void);
@@ -230,7 +230,7 @@ int resolve_weapon_hit_skill_check(int attacker, int target)
     return skill_result;
 }
 
-int roll_dice_sum(int count, int sides) { return count * sides; }
+int roll_dice_sum(int count, short sides) { return count * sides; }
 undefined4 roll_skill_check(void)
 { TEST_FAIL_MESSAGE("Magic Arrow does not use the ranged weapon skill check"); return 0; }
 
@@ -278,7 +278,7 @@ undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
 
 /* Other destruction branches must not run for a door. */
 void try_combine_or_stow_object(void) { TEST_FAIL_MESSAGE("Unexpected container combination"); }
-undefined4 rand_below(void) { TEST_FAIL_MESSAGE("Unexpected random destruction"); return 0; }
+uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected random destruction"); return 0; }
 void try_empty_container(void) { TEST_FAIL_MESSAGE("Unexpected container emptying"); }
 undefined4 roll_object_destroy_chance(void) { TEST_FAIL_MESSAGE("Unexpected destroy chance"); return 0; }
 undefined4 reset_burnt_out_item_state(void) { TEST_FAIL_MESSAGE("Unexpected burnt item"); return 0; }
@@ -303,7 +303,7 @@ void object_list_unlink(ushort *head, ushort *object)
 
 long ce_rand(void) { return 1; }
 
-void project_position_by_heading(int heading, int distance, short *x, short *y)
+void project_position_by_heading(int heading, short distance, short *x, short *y)
 { (void)heading; (void)distance; (void)x; (void)y; }
 
 void collision_height_envelope(int mode, int collision)
