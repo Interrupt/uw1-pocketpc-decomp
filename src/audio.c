@@ -286,15 +286,36 @@ int param_2;
        * Load the real MOD file through the vendored HxCModPlayer backend
        * instead (see this file's "Real MOD playback backend" block
        * comment above). Builds its own filename directly from param_1
-       * rather than relying on acStack_120/auStack_130 just built above,
-       * whose own construction depends on an unverified Ghidra split-
-       * stack-slot alias (stack0xffdc3238_buf vs. acStack_120) that --
-       * like construct_and_load_mod_player itself -- has never actually
-       * been exercised either. DAT_0023c3b8 is deliberately left NULL;
-       * see the backend block comment for why. */
+       * rather than relying on acStack_120/auStack_130 just built above
+       * (those still depend on an unverified Ghidra split-stack-slot
+       * alias, stack0xffdc3238_buf vs. acStack_120, and are genuinely
+       * dead).
+       *
+       * BUG FIX (wrong track playing, e.g. automap/talk/rest-interrupt's
+       * track 0xd/13 audibly playing UW13.MOD instead of the real
+       * original's UW15.MOD): the file-number digits are NOT param_1
+       * formatted in decimal -- confirmed via live Ghidra decompile of
+       * the real FUN_00072910, the original (dead) path right above
+       * builds them as `local_12e = (param_1>>3)+'0';
+       * local_12d = (param_1&7)+'0';`, i.e. each digit character is
+       * computed separately (tens = param_1/8, ones = param_1%8), not
+       * param_1 run through a single base-10 conversion. The two
+       * schemes agree for param_1 0-7 (e.g. track 2 -> uw02.mod either
+       * way) but diverge from track 8 on: track 8 (combat) is really
+       * uw10.mod, track 9 is uw11.mod, track 0xb/11 is uw13.mod, track
+       * 0xd/13 (automap/talk/rest) is uw15.mod, etc. -- confirmed
+       * against the real shipped data/SOUND set, which has exactly the
+       * 12 files this formula predicts (01-07, 10-13, 15) and none of
+       * the ones plain decimal would ask for instead (08, 09, 14). A
+       * naive "\SOUND\uw%02d.mod" with plain decimal formatting (what
+       * this fix replaces) silently loaded a real but wrong file for
+       * every track >= 8 whose decimal number also happens to exist
+       * (9->uw09 doesn't exist so failed silently; 0xb->uw11 exists but
+       * is the wrong track; 0xd->uw13 exists but is the wrong track). */
       {
         char uwmod_path[32];
-        snprintf(uwmod_path, sizeof(uwmod_path), "\\SOUND\\uw%02d.mod", (int)param_1);
+        snprintf(uwmod_path, sizeof(uwmod_path), "\\SOUND\\uw%d%d.mod",
+                 (param_1 >> 3) & 0xf, param_1 & 7);
         platform_music_load_track(uwmod_path);
       }
     }
