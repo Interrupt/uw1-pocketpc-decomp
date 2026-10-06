@@ -970,7 +970,19 @@ long param_1;
  * cluster are reached with zero arguments -- a dropped-argument
  * decompilation artifact -- so a real free() behind it would free
  * whatever garbage sits in the argument register at those call sites;
- * harmless only because this stays a no-op). */
+ * harmless only because this stays a no-op).
+ *
+ * UPDATE (real music playback): confirmed live, as this comment
+ * predicted -- a real music backend (vendored HxCModPlayer + SDL2 audio,
+ * see audio.c's "Real MOD playback backend" block comment) was wired in
+ * at the play_music_track/resume_music_playback/set_music_enabled call
+ * sites instead of fixing this allocator, bypassing
+ * construct_and_load_mod_player and its ~1400-line MOD engine (and this
+ * stub) entirely for music. cpp_operator_new is deliberately left
+ * untouched: it stays on the sound-effect/voice-sample call sites
+ * (trigger_sound_sample_note, play_numbered_voice_sample in audio.c),
+ * which are intentionally left exactly as dormant as they've always
+ * been (out of scope -- see those call sites' own comments). */
 long cpp_operator_delete(param_1)
 long param_1;
 {

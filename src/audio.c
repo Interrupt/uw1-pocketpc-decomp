@@ -5,8 +5,20 @@
  */
 #include "headers/audio.h"
 #include "headers/debug.h"
+#include "headers/file_io.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+/* Real background-music playback backend: a vendored, tiny MOD player
+ * (third_party/hxcmod -- public-domain HxCModPlayer) plus a real SDL2
+ * audio device, hooked in at the construct_and_load_mod_player/
+ * start_mod_player_playback/stop_mod_player_playback call sites inside
+ * play_music_track/resume_music_playback/set_music_enabled below. See
+ * those three functions' own comments, and the uwmod_* functions further
+ * down this file, for why and exactly where. */
+#include "hxcmod.h"
+#include <SDL.h>
 
 #define DAT_00202a58 DAT_00202a58_backing[0]
 #define DAT_00086370 DAT_00086370_backing[0]
@@ -75,45 +87,30 @@ static char s_uw00_mod_00087514[] = "uw00.mod";
  * first-order cause of "no music playback", ahead of waveOut being
  * stubbed.
  *
- * NOT flipped to 1 here, though -- see bug-fixes-pass-4's "no music
- * playback" writeup for the full chain, but in short: fixing this flag
- * (and cpp_operator_new, see ordinal_stubs.c, which is ALSO a
- * hardcoded-NULL stub standing between here and any real MOD load)
- * unlocks construct_and_load_mod_player, which has evidently never
- * once executed since this was decompiled -- and it promptly SIGSEGVs,
- * live-confirmed, inside the MOD engine's internal "dynamic array"
- * bookkeeping: every one of those structs stores its cpp_operator_new
- * allocation in a 4-byte (`undefined4`) field and reads it back later
- * as a real address (e.g. resize_mod_pattern_array's
- * `*(int*)(param_1+4) = uVar1` / later `ce_memmove(..., *(int
- * *)(param_1+4), ...)`), which is exactly how the original 32-bit ARM
- * binary represented a real pointer -- but on this native 64-bit
- * recompile, malloc/calloc/mmap addresses here all land well above
- * 4GB (confirmed empirically: calloc() and even MAP_FIXED mmap() at
- * every address from 0x1000000 up to 0xff000000 are unreachable on
- * this platform, ENOMEM every time -- arm64 macOS reserves the entire
- * low 4GB), so storing any real allocation in one of these 4-byte
- * fields loses the high bits and the next read-back dereferences a
- * wrong, almost always unmapped address. Fixing that for real means
- * either widening every one of these dynamic-array structs' data-
- * pointer field (a large offset-shifting refactor across roughly
- * 1400 lines/20+ functions in this file) or a guaranteed-low-address
- * allocator (confirmed infeasible on this host) -- out of scope for
- * this pass. Left at its original default so the game keeps working
- * (silently, as before) rather than crashing the moment anyone enables
- * music; see run_game_startup_sequence's own play_music_track(1,1)
- * call for a 100%-reproducible repro once this flag is flipped. */
+ * UPDATE (real music playback): the "fix this flag -> unlocks
+ * construct_and_load_mod_player -> SIGSEGV in its internal dynamic-array
+ * bookkeeping" chain described above is all still accurate for the
+ * decompiled MOD engine itself (construct_and_load_mod_player/
+ * start_mod_player_playback/stop_mod_player_playback and the ~1400
+ * lines/20+ functions under them later in this file) -- that code is
+ * still never reached and the struct-layout problem above is unchanged.
+ * What changed is that play_music_track/resume_music_playback/
+ * set_music_enabled no longer call through to any of that: they go
+ * through a small vendored MOD player + real SDL2 audio device instead
+ * (see this file's "Real MOD playback backend" block comment, right
+ * before play_music_track). This flag is now genuinely set to 1 by
+ * init_music_playback_subsystem (called from gx_stub.c's GXOpenDisplay)
+ * once that backend actually succeeds in opening a real audio device --
+ * and left at this original default of 0 otherwise (no audio hardware,
+ * e.g. in a CI/sandboxed environment), which still falls back cleanly to
+ * this gate's original "subsystem not initialized" silent behavior. */
 static int DAT_00087454;
 /* "Is music currently enabled" -- same lost-initial-value bug class as
- * DAT_00087454 just above (confirmed live: with DAT_00087454 flipped to
- * 1 for testing, run_game_startup_sequence's very first
- * play_music_track(1,1) call -- the splash-screen intro tune, before
- * any character/save is even loaded -- still failed this gate every
- * time, since nothing had called set_music_enabled yet). Also left at
- * its original default for the same reason as DAT_00087454 above: both
- * flags need fixing together to get past play_music_track's gate at
- * all, and doing that currently only trades silence for a guaranteed
- * crash (see that comment). */
+ * DAT_00087454 just above.
+ *
+ * UPDATE (real music playback): now set to 1 alongside DAT_00087454 by
+ * init_music_playback_subsystem on success, for the same reason -- see
+ * that comment just above. */
 static int DAT_00087448;
 static byte DAT_0023c3a8;
 static undefined4 *DAT_0023c3b8;
@@ -182,6 +179,242 @@ static undefined1 DAT_0024d010;
 
 
 
+/* --- Real MOD playback backend (vendored HxCModPlayer + SDL2 audio) ------
+ *
+ * The decompiled MOD engine construct_and_load_mod_player/
+ * start_mod_player_playback/stop_mod_player_playback (and the ~1400 lines
+ * of dynamic-array/channel-mixing machinery under them later in this
+ * file) can never run safely on this 64-bit host: every one of their
+ * internal "dynamic array" structs stores a cpp_operator_new() allocation
+ * in a 4-byte field and reads it back later as a real pointer, which
+ * silently truncates any real 64-bit heap address (see DAT_00087454's own
+ * comment above, and cpp_operator_new's in ordinal_stubs.c, for the full
+ * investigation/root cause). Rather than refactor that struct layout
+ * across 20+ functions, background music is played through this small,
+ * separate backend instead, hooked in at the exact same call sites inside
+ * play_music_track/resume_music_playback/set_music_enabled/
+ * shutdown_music_module (see each function's own comment) below --
+ * construct_and_load_mod_player, start_mod_player_playback and
+ * stop_mod_player_playback themselves are left completely untouched and
+ * still unreachable from here (cpp_operator_new is still the same
+ * hardcoded-NULL stub it always was).
+ *
+ * Deliberately NOT wired into DAT_0023c3b8 or shared with the sound-
+ * effect/voice-sample call sites (trigger_sound_sample_note,
+ * play_numbered_voice_sample, stop_current_audio_handle(_dup),
+ * is_voice_sample_finished, stop_voice_sample): those all gate on
+ * DAT_0023c3b8 being non-NULL, which was never reachable before this
+ * change (cpp_operator_new always returned 0) and is deliberately left
+ * exactly that way -- DAT_0023c3b8 is never assigned a value anywhere in
+ * this backend, so every one of those call sites stays precisely as
+ * dormant/silent as it already was. Fixing sound effects/voice samples is
+ * out of scope here; this backend is music-only. */
+
+static modcontext g_uwmod_ctx;
+static unsigned char *g_uwmod_filedata;
+static int g_uwmod_loaded;
+static int g_uwmod_playing;
+static SDL_AudioDeviceID g_uwmod_audiodev;
+
+/* SDL audio device fill callback -- runs on SDL's own audio thread, not
+ * the game's main thread, so every access to the shared g_uwmod_* state
+ * above here is made safe by SDL_LockAudioDevice/SDL_UnlockAudioDevice in
+ * the uwmod_* functions below (SDL already holds that same lock for the
+ * duration of this callback). Pre-zeroes the buffer and only calls
+ * hxcmod_fillbuffer when actually "playing" so a stopped track freezes
+ * in place instead of silently advancing. */
+static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
+{
+  (void)userdata;
+  memset(stream, 0, (size_t)len);
+  if (!g_uwmod_playing || !g_uwmod_loaded) {
+    return;
+  }
+  hxcmod_fillbuffer(&g_uwmod_ctx, (msample *)stream, (mssize)(len / 4), NULL);
+
+  /* UW_DEBUG_AUDIO: dump basic PCM sample statistics from real callback
+   * output, to confirm real (non-silent, non-garbage) music data is
+   * actually being produced -- same ad-hoc getenv()-gated tracing
+   * convention used throughout this codebase (see e.g. 3d.c's
+   * UW_DEBUG_RASTER). */
+  if (getenv("UW_DEBUG_AUDIO")) {
+    short *samples = (short *)stream;
+    int n = len / 2;
+    int nonzero = 0;
+    short minv = 0, maxv = 0;
+    for (int i = 0; i < n; i++) {
+      if (samples[i] != 0) nonzero++;
+      if (samples[i] < minv) minv = samples[i];
+      if (samples[i] > maxv) maxv = samples[i];
+    }
+    fprintf(stderr,
+            "[audio] uwmod callback: len=%d samples=%d nonzero=%d min=%d max=%d first4=[%d,%d,%d,%d]\n",
+            len, n, nonzero, minv, maxv,
+            n > 0 ? samples[0] : 0, n > 1 ? samples[1] : 0,
+            n > 2 ? samples[2] : 0, n > 3 ? samples[3] : 0);
+  }
+}
+
+/* Opens the real SDL2 audio device and prepares the HxCModPlayer context.
+ * Called once, early at startup from gx_stub.c's GXOpenDisplay right
+ * after SDL_Init(... | SDL_INIT_AUDIO) -- well before
+ * run_game_startup_sequence's very first play_music_track(1,1) call.
+ *
+ * Sets DAT_00087454 ("audio subsystem initialized", see its own long
+ * comment above) and DAT_00087448 ("music enabled") to 1 only if this
+ * actually succeeds; both are left at their existing default of 0
+ * otherwise, which (via play_music_track/resume_music_playback/
+ * set_music_enabled's own existing gate checks, completely unchanged)
+ * falls back to exactly this build's current silent-but-stable behavior.
+ * No audio output device is a real condition in CI/sandboxed test
+ * environments, not just a hypothetical -- this must not crash there. */
+void init_music_playback_subsystem(void)
+{
+  if (SDL_GetNumAudioDevices(0) <= 0) {
+    DEBUG(WARN, "[audio] no audio output devices available -- music playback disabled\n");
+    return;
+  }
+
+  SDL_AudioSpec want;
+  SDL_AudioSpec have;
+  memset(&want, 0, sizeof(want));
+  want.freq = 44100;
+  want.format = AUDIO_S16SYS;
+  want.channels = 2;
+  want.samples = 2048;
+  want.callback = uwmod_audio_callback;
+  want.userdata = NULL;
+
+  g_uwmod_audiodev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+  if (g_uwmod_audiodev == 0) {
+    DEBUG(WARN, "[audio] SDL_OpenAudioDevice failed: %s -- music playback disabled\n", SDL_GetError());
+    return;
+  }
+
+  hxcmod_init(&g_uwmod_ctx);
+  hxcmod_setcfg(&g_uwmod_ctx, have.freq, 0, 1);
+
+  DEBUG(INFO, "[audio] music playback ready: %dHz %dch %d samples/buffer\n",
+        have.freq, have.channels, have.samples);
+
+  DAT_00087454 = 1;
+  DAT_00087448 = 1;
+  SDL_PauseAudioDevice(g_uwmod_audiodev, 0);
+}
+
+/* Reads the whole file at win_path (a "\SOUND\uwNN.mod"-style game path)
+ * into a freshly malloc'd buffer via this codebase's existing UW_DATA_DIR
+ * file helpers (uw_file_fopen), then hands it to hxcmod_load -- replacing
+ * construct_and_load_mod_player's own loader, which (per this file's
+ * block comment above) never once executed. hxcmod_load keeps pointers
+ * directly into this buffer for the entire lifetime of playback (it never
+ * copies sample data out of it), so the buffer is kept alive in
+ * g_uwmod_filedata until the next call here (or uwmod_shutdown), not just
+ * until this function returns. */
+static void uwmod_load_track(const char *win_path)
+{
+  FILE *fp = (FILE *)uw_file_fopen(win_path, "rb");
+  if (!fp) {
+    DEBUG(WARN, "[audio] uwmod_load_track: could not open %s\n", win_path);
+    return;
+  }
+  fseek(fp, 0, SEEK_END);
+  long size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  if (size <= 0) {
+    fclose(fp);
+    DEBUG(WARN, "[audio] uwmod_load_track: empty/unreadable file %s\n", win_path);
+    return;
+  }
+
+  unsigned char *data = (unsigned char *)malloc((size_t)size);
+  if (!data) {
+    fclose(fp);
+    DEBUG(ERR, "[audio] uwmod_load_track: out of memory (%ld bytes) for %s\n", size, win_path);
+    return;
+  }
+  size_t got = fread(data, 1, (size_t)size, fp);
+  fclose(fp);
+  if (got != (size_t)size) {
+    DEBUG(WARN, "[audio] uwmod_load_track: short read on %s (%zu/%ld bytes)\n", win_path, got, size);
+    free(data);
+    return;
+  }
+
+  if (g_uwmod_audiodev) SDL_LockAudioDevice(g_uwmod_audiodev);
+  g_uwmod_playing = 0;
+  if (g_uwmod_loaded) {
+    hxcmod_unload(&g_uwmod_ctx);
+    g_uwmod_loaded = 0;
+  }
+  unsigned char *old_filedata = g_uwmod_filedata;
+  g_uwmod_filedata = NULL;
+  int ok = hxcmod_load(&g_uwmod_ctx, data, (int)size);
+  if (ok) {
+    g_uwmod_filedata = data;
+    g_uwmod_loaded = 1;
+  }
+  if (g_uwmod_audiodev) SDL_UnlockAudioDevice(g_uwmod_audiodev);
+
+  free(old_filedata);
+  if (!ok) {
+    DEBUG(WARN, "[audio] hxcmod_load failed for %s\n", win_path);
+    free(data);
+    return;
+  }
+
+  DEBUG(INFO, "[audio] loaded MOD track %s (%ld bytes)\n", win_path, size);
+}
+
+/* (Re)starts playback of whatever track uwmod_load_track most recently
+ * loaded, from the engine's current position -- the counterpart to
+ * start_mod_player_playback at the music call sites below. A no-op if no
+ * audio device is open or nothing is loaded. */
+static void uwmod_start_playback(void)
+{
+  if (!g_uwmod_audiodev || !g_uwmod_loaded) {
+    return;
+  }
+  SDL_LockAudioDevice(g_uwmod_audiodev);
+  g_uwmod_playing = 1;
+  SDL_UnlockAudioDevice(g_uwmod_audiodev);
+}
+
+/* Silences (without unloading) whatever track is currently playing -- the
+ * counterpart to stop_mod_player_playback at the music call sites below.
+ * The engine's own position freezes in place (the audio callback simply
+ * stops calling hxcmod_fillbuffer) so a later uwmod_start_playback call
+ * resumes from where this left off, matching this cluster's existing
+ * stop-then-resume semantics (e.g. set_music_enabled/resume_music_playback). */
+static void uwmod_stop_playback(void)
+{
+  if (!g_uwmod_audiodev) {
+    return;
+  }
+  SDL_LockAudioDevice(g_uwmod_audiodev);
+  g_uwmod_playing = 0;
+  SDL_UnlockAudioDevice(g_uwmod_audiodev);
+}
+
+/* Closes the real audio device and releases the loaded track, for real
+ * app shutdown (see shutdown_music_module below, called once from
+ * run_game_shutdown_sequence right before process exit). Safe to call
+ * even if init_music_playback_subsystem never succeeded. */
+static void uwmod_shutdown(void)
+{
+  if (g_uwmod_audiodev) {
+    SDL_CloseAudioDevice(g_uwmod_audiodev);
+    g_uwmod_audiodev = 0;
+  }
+  if (g_uwmod_loaded) {
+    hxcmod_unload(&g_uwmod_ctx);
+    g_uwmod_loaded = 0;
+  }
+  free(g_uwmod_filedata);
+  g_uwmod_filedata = NULL;
+  g_uwmod_playing = 0;
+}
+
 
 
 // was FUN_00072910 -- plays background music track param_1 (patched
@@ -204,7 +437,6 @@ int param_2;
   char *stack0xffdc3238_ptr;
   char cVar1;
   char *pcVar2;
-  int iVar3;
   undefined4 uVar4;
   /* Was declared as just 2 bytes -- Ghidra only recovered the first
      access, but this is filled from the 9-byte "uw00.mod\0" template
@@ -213,7 +445,6 @@ int param_2;
      to hold the whole string. */
   undefined1 auStack_130 [16];
   undefined1 local_127;
-  undefined4 local_124;
   char acStack_120 [260];
 
   ce_memmove(auStack_130,s_uw00_mod_00087514,9);
@@ -243,19 +474,32 @@ int param_2;
         }
         DAT_0023c3b8 = (undefined4 *)0x0;
       }
-      iVar3 = cpp_operator_new(0x10581);
-      if (iVar3 == 0) {
-        DAT_0023c3b8 = (undefined4 *)0x0;
-      }
-      else {
-        SetFileTime(&local_124,acStack_120);
-        DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar3,local_124);
+      /* BUG FIX (real music playback): the cpp_operator_new/SetFileTime/
+       * construct_and_load_mod_player chain this replaces is permanently
+       * unreachable -- cpp_operator_new is a hardcoded-NULL stub (see its
+       * own comment in ordinal_stubs.c), and even with a real allocator
+       * the decompiled MOD engine's internal struct layout is unsafe on
+       * this 64-bit host (see DAT_00087454's comment above) -- so
+       * construct_and_load_mod_player has never once actually executed.
+       * Load the real MOD file through the vendored HxCModPlayer backend
+       * instead (see this file's "Real MOD playback backend" block
+       * comment above). Builds its own filename directly from param_1
+       * rather than relying on acStack_120/auStack_130 just built above,
+       * whose own construction depends on an unverified Ghidra split-
+       * stack-slot alias (stack0xffdc3238_buf vs. acStack_120) that --
+       * like construct_and_load_mod_player itself -- has never actually
+       * been exercised either. DAT_0023c3b8 is deliberately left NULL;
+       * see the backend block comment for why. */
+      {
+        char uwmod_path[32];
+        snprintf(uwmod_path, sizeof(uwmod_path), "\\SOUND\\uw%02d.mod", (int)param_1);
+        uwmod_load_track(uwmod_path);
       }
     }
     DAT_0023c384 = 0;
     DAT_0023c3a8 = param_1;
     if (param_2 != 0) {
-      start_mod_player_playback(DAT_0023c3b8);
+      uwmod_start_playback();
       DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
@@ -275,12 +519,15 @@ int param_2;
 // music module (same start-playback steps as the tail of play_music_track,
 // minus the load), gated on the audio subsystem being initialized and
 // DAT_0023c32c (an open-module handle) being valid.
+// BUG FIX (real music playback): start_mod_player_playback(DAT_0023c3b8)
+// replaced with uwmod_start_playback() -- see play_music_track's own
+// comment and this file's "Real MOD playback backend" block comment.
 void resume_music_playback()
 
 {
   if ((DAT_00087454 != 0) && (DAT_00087448 != 0)) {
     if (DAT_0023c32c != -1) {
-      start_mod_player_playback(DAT_0023c3b8);
+      uwmod_start_playback();
       DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
@@ -335,6 +582,9 @@ undefined4 is_sound_effects_enabled()
 // was FUN_00072b74 -- enables (param_1!=0: resumes playing
 // DAT_0023c384, the current/pending track) or disables (param_1==0:
 // stops playback via stop_mod_player_playback) background music.
+// BUG FIX (real music playback): stop_mod_player_playback(DAT_0023c3b8)
+// replaced with uwmod_stop_playback() -- see play_music_track's own
+// comment and this file's "Real MOD playback backend" block comment.
 void set_music_enabled(param_1)
 int param_1;
 
@@ -357,7 +607,7 @@ int param_1;
     }
     if (((DAT_00087448 & uVar1) != 0) && (DAT_0023c32c != -1)) {
       DAT_00087448 = 0;
-      stop_mod_player_playback(DAT_0023c3b8);
+      uwmod_stop_playback();
       DAT_00087448 = 0;
     }
   }
@@ -906,9 +1156,15 @@ void shutdown_sound_effects()
 // playback, releases the module's COM-style interface, and nulls the
 // handle. Called from the app-shutdown sequence right after
 // shutdown_sound_effects.
+// BUG FIX (real music playback): the DAT_0023c3b8 block below is
+// unreachable (DAT_0023c3b8 is deliberately never assigned a value
+// anywhere now -- see this file's "Real MOD playback backend" block
+// comment), so it's left exactly as-is; uwmod_shutdown() added instead
+// to actually close the real audio device before process exit.
 void shutdown_music_module()
 
 {
+  uwmod_shutdown();
   if (DAT_0023c3b8 != (undefined4 *)0x0) {
     stop_sfx_trigger_slot(DAT_0023c3b8,0);
     stop_mod_player_playback(DAT_0023c3b8);
