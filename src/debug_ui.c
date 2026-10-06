@@ -281,7 +281,13 @@ void dbgui_draw(void)
 
   /* Text color: draw_text_string does NOT use set_draw_color's palette index (confirmed by reading
      its own body, uw.c ~5826-5834) -- it honours g_text_flat_color (a direct RGB565 value) unless a
-     caller separately sets g_text_use_palette_color=1 AND *g_draw_color_index. */
+     caller separately sets g_text_use_palette_color=1 AND *g_draw_color_index. Saved/restored
+     around this function (same pattern babl.c/game.c/saveload.c already use around their own
+     g_text_use_palette_color changes) so the debug panel doesn't leak white flat-color text into
+     whatever draws next -- confirmed live: opening the panel once left every later draw_text_string
+     call (message scroll, HUD) drawing in flat white instead of its own real color. */
+  int _saved_use_pal = g_text_use_palette_color;
+  unsigned short _saved_flat_color = g_text_flat_color;
   g_text_use_palette_color = 0;
   g_text_flat_color = (unsigned short)0xffff;
 
@@ -337,6 +343,9 @@ void dbgui_draw(void)
     }
     draw_text_string(line, x0 + 3, ry);
   }
+
+  g_text_use_palette_color = _saved_use_pal;
+  g_text_flat_color = _saved_flat_color;
 }
 
 int dbgui_visible(void) { return g_visible; }
