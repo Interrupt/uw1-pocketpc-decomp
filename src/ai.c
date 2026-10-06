@@ -1106,9 +1106,7 @@ int sync_object_tile_position(ushort *object, ushort *position)
     *(byte *)(object + 4) = (byte)position[0xf];
   }
   else {
-    uVar1 = object[2];
-    *(byte *)(object + 2) = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
-    *(char *)((char *)object + 5) = (char)((uVar1 & 0xffc0) >> 8);
+    ((uw_object_hdr_t *)object)->quality = position[0xf] & 0x3f;
   }
   uVar1 = *(ushort *)((char *)position + 0x29);
   if (0x100 < uVar1) {
@@ -1123,9 +1121,7 @@ int sync_object_tile_position(ushort *object, ushort *position)
     *(byte *)(object + 4) = (byte)position[0xf];
   }
   else {
-    uVar1 = object[2];
-    *(byte *)(object + 2) = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
-    *(char *)((char *)object + 5) = (char)((uVar1 & 0xffc0) >> 8);
+    ((uw_object_hdr_t *)object)->quality = position[0xf] & 0x3f;
   }
   if ((position[0x14] & 4) != 0) {
     uVar6 = ce_rand();
@@ -1330,9 +1326,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
       *(byte *)((char *)puVar9 + 1) = (byte)(uVar1 >> 8);
       set_ambient_bias_without_light(0);
     }
-    uVar1 = puVar9[2];
-    *(byte *)(puVar9 + 2) = (byte)object[4] & 0x3f | (byte)(uVar1 & 0xffc0);
-    *(byte *)((char *)puVar9 + 5) = (byte)((uVar1 & 0xffc0) >> 8);
+    ((uw_object_hdr_t *)puVar9)->quality = object[4] & 0x3f;
     uVar12 = (uint)CONCAT11(*(byte *)((char *)puVar9 + 1),(byte)*puVar9);
     uVar11 = uVar12 & 0x1c0;
     if (((uVar11 != 0x140) && (uVar11 != 0x180)) &&
