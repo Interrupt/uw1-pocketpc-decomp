@@ -4697,16 +4697,16 @@ int tile_pair_los_blocked(byte tile_a_x, byte tile_a_y, byte tile_b_x, byte tile
   if ((puVar7 == (ushort *)0x0) || (pbVar8 == (byte *)0x0) || (puVar9 == (ushort *)0x0)) {
     return 0;
   }
-  uVar19 = *puVar7 & 0xf;
-  uVar11 = *puVar9 & 0xf;
+  uVar19 = ((uw_tile_t *)puVar7)->tile_type;
+  uVar11 = ((uw_tile_t *)puVar9)->tile_type;
   bVar3 = (byte)uVar11;
-  uVar4 = (ushort)(&DAT_0023ae40)[*puVar7 >> 10 & 0xf] >> 4;
-  uVar2 = (&DAT_0023ae40)[*puVar9 >> 10 & 0xf];
+  uVar4 = (ushort)(&DAT_0023ae40)[((uw_tile_t *)puVar7)->floor_tex] >> 4;
+  uVar2 = (&DAT_0023ae40)[((uw_tile_t *)puVar9)->floor_tex];
   uVar15 = (uint)tile_a_x;
   if (uVar15 == 0) {
     uVar20 = (uint)tile_b_x;
     *out_a = span;
-    uVar15 = (uint)(byte)((byte)*puVar9 >> 4);
+    uVar15 = (uint)((uw_tile_t *)puVar9)->floor_height;
     if ((uVar20 < uVar18) && (((&DAT_000878d0)[uVar11] & 2) != 0)) {
       return 0;
     }
@@ -4766,12 +4766,12 @@ int tile_pair_los_blocked(byte tile_a_x, byte tile_a_y, byte tile_b_x, byte tile
       puVar10 = puVar9 + 2;
       uVar2 = puVar9[2];
     }
-    uVar15 = (uint)(byte)((byte)*puVar7 >> 4);
+    uVar15 = (uint)((uw_tile_t *)puVar7)->floor_height;
     bVar1 = uVar11 <= uVar15;
     if (bVar1) {
       uVar11 = uVar15;
     }
-    if (uVar11 + 1 < (uint)(*pbVar8 >> 4)) {
+    if (uVar11 + 1 < (uint)((uw_tile_t *)pbVar8)->floor_height) {
       *out_a = (byte)uVar11;
       uVar11 = ((*out_b - uVar11) + (uint)span) - 1;
       *out_b = (byte)uVar11;
@@ -5041,7 +5041,7 @@ LAB_0002c778:
   if (uVar12 + 1 < uVar15) {
     return 0;
   }
-  if (((uVar12 <= (byte)((byte)*puVar7 >> 4) + 1) || (bVar6)) || (bVar1)) {
+  if (((uVar12 <= (byte)((uw_tile_t *)puVar7)->floor_height + 1) || (bVar6)) || (bVar1)) {
     if (((uVar11 & 8 << (uVar4 & 0xff)) == 0) || (bVar1)) goto LAB_0002c8cc;
     uVar15 = 8 << (uVar2 >> 4 & 0xff);
     if ((uVar11 & uVar15) != 0) {
