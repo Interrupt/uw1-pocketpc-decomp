@@ -246,7 +246,7 @@ void repopulate_container_grid_slots()
 
   iVar6 = 0x14;
   do {
-    if ((*(ushort *)(&g_equipped_items + iVar6 * 2) & 0xffc0) != 0) break;
+    if (((uw_chain_word_t *)(&g_equipped_items + iVar6 * 2))->chain != 0) break;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x1c);
   pContents = (char *)resolve_object_link(&g_current_container_link);
@@ -620,7 +620,7 @@ LAB_000438ac:
     if ((iVar10 == 0x13) && (*(char **)(g_current_container_record + 0x14) == 0)) {
       iVar10 = 0xb;
       do {
-        if ((*(ushort *)(&g_equipped_items + iVar10 * 2) & 0xffc0) == 0) {
+        if (((uw_chain_word_t *)(&g_equipped_items + iVar10 * 2))->chain == 0) {
           bVar11 = true;
           break;
         }
@@ -696,11 +696,8 @@ LAB_0004386c:
           if (!bVar11) {
             uVar7 = 1;
           }
-          iVar10 = (CONCAT11(*(undefined1 *)((char *)puVar6 + 7),(byte)puVar6[3]) & 0xffc0) +
-                   uVar7 * 0x40;
           bVar1 = (byte)puVar6[2];
-          *(byte *)(puVar6 + 3) = (byte)iVar10 ^ (byte)puVar6[3] & 0x3f;
-          *(char *)((char *)puVar6 + 7) = (char)((uint)iVar10 >> 8);
+          ((uw_object_hdr_t *)puVar6)->link = ((uw_object_hdr_t *)puVar6)->link + uVar7;
           *(byte *)(puVar6 + 2) =
                (bVar1 ^ (byte)((int)((((uw_object_hdr_t *)object)->quality) +
                                     (CONCAT11(*(undefined1 *)((char *)puVar6 + 5),bVar1) & 0x3f)) >> 1)
@@ -790,7 +787,7 @@ void encode_equipped_item_index(ushort *item_link, ushort *out_index)
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
-    if (((*(ushort *)(&g_equipped_items + iVar1) ^ *item_link) & 0xffc0) == 0) {
+    if (((uw_chain_word_t *)(&g_equipped_items + iVar1))->chain == ((uw_chain_word_t *)item_link)->chain) {
       uVar2 = *out_index;
       iVar4 = iVar1 + g_save_equip_table_ptr;
       bVar3 = (byte)uVar2;
@@ -817,7 +814,7 @@ void decode_equipped_item_index(ushort *saved_index, ushort *out_link)
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
-    if (((*(ushort *)(iVar1 + iVar4) ^ *out_link) & 0xffc0) == 0) {
+    if (((uw_chain_word_t *)(iVar1 + iVar4))->chain == ((uw_chain_word_t *)out_link)->chain) {
       uVar2 = *saved_index;
       bVar3 = (byte)uVar2;
       (&g_equipped_items)[iVar1] = ((&g_equipped_items)[iVar1] ^ bVar3) & 0x3f ^ bVar3;
@@ -860,7 +857,7 @@ int empty_container_into_world(ushort *container, short clear_flag)
   uint uVar8;
   char *pNextLink;
 
-  if ((container[3] & 0xffc0) == 0) {
+  if (((uw_object_hdr_t *)container)->link == 0) {
     uVar6 = 0;
   }
   else {
@@ -946,7 +943,7 @@ int discard_container_contents(ushort *container, int remove_all)
 
   uVar2 = 0;
   if ((!((uw_object_hdr_t *)container)->is_quant) &&
-     (local_18 = container + 3, (*local_18 & 0xffc0) != 0)) {
+     (local_18 = container + 3, ((uw_chain_word_t *)local_18)->chain != 0)) {
     puVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
     while (puVar1 != 0) {
       object_list_unlink(local_18,puVar1);
