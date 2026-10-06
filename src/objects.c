@@ -143,15 +143,15 @@ LAB_0004b06c:
     bVar2 = (*(byte *)((char *)DAT_00202a44 + 3) ^ bVar2) & 0x1c ^ bVar2;
     *(byte *)(puVar6 + 1) = bVar1;
     *(byte *)((char *)puVar6 + 3) = bVar2;
-    if ((byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] != 0) {
-      cVar4 = ordint_divmod(6,(uint)(byte)(&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] * 5).quot;
+    if ((byte)(&DAT_00202c90)[(((uw_object_hdr_t *)DAT_00202a44)->item_id) * 0xd] != 0) {
+      cVar4 = ordint_divmod(6,(uint)(byte)(&DAT_00202c90)[(((uw_object_hdr_t *)DAT_00202a44)->item_id) * 0xd] * 5).quot;
       bVar3 = (cVar4 + (char)DAT_00202a3c * '\x02' + (bVar1 & 0x7f) ^ bVar1) & 0x7f ^ bVar1;
       *(byte *)(puVar6 + 1) = bVar3;
       *(byte *)((char *)puVar6 + 3) = bVar2;
       if ((DAT_00202a44 == g_player_object) && (0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
         *(byte *)(puVar6 + 1) =
              (((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) +
-              (&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^
+              (&DAT_00202c90)[(((uw_object_hdr_t *)DAT_00202a44)->item_id) * 0xd] + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^
              bVar3;
         *(byte *)((char *)puVar6 + 3) = bVar2;
       }
@@ -164,7 +164,7 @@ LAB_0004b06c:
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-spawn] *puVar6=0x%x (&0x1c0=0x%x) puVar6[0xb]_before=0x%x DAT_00202a44_type=0x%x\n",
               (unsigned)*puVar6, (unsigned)(*puVar6 & 0x1c0), (unsigned)puVar6[0xb],
-              (unsigned)(*DAT_00202a44 & 0x1ff));
+              (unsigned)(((uw_object_hdr_t *)DAT_00202a44)->item_id));
     if ((*puVar6 & 0x1c0) != 0x40) {
       sVar5 = 0;
       iVar8 = (*(byte *)((char *)puVar6 + 3) & 0xe0) + ((puVar6[0xb] & 0xfc00) >> 2) + 0xf;
@@ -199,7 +199,7 @@ LAB_0004b06c:
        for genuine small integer scratch math, so not safe to widen wholesale)... */
     pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
     DEBUG(INFO, "[throw] object id=0x%03x spawned at tile=(%d,%d)\n",
-          (unsigned)(*puVar6 & 0x1ff), puVar6[0xb] >> 10, (puVar6[0xb] & 0x3f0) >> 4);
+          (unsigned)(((uw_object_hdr_t *)puVar6)->item_id), puVar6[0xb] >> 10, (puVar6[0xb] & 0x3f0) >> 4);
     object_list_insert_head(pbTile + 2,puVar6);
     play_sound_effect_at_object(10,puVar6,0);
     /* The original FUN_0004ad10 returns the mobile object here.
@@ -570,7 +570,7 @@ LAB_000382ac:
 LAB_00038100:
       uVar6 = 0xffffffff;
     }
-    else if (((uVar1 & 0x1ff) == 0x15d) || ((uVar1 & 0x1ff) == 0x15b)) {
+    else if (((((uw_object_hdr_t *)object)->item_id) == 0x15d) || ((((uw_object_hdr_t *)object)->item_id) == 0x15b)) {
       DAT_002020a4 = tile_y;
       DAT_002020a0 = sVar2;
       discard_container_contents(object,0);
@@ -583,7 +583,7 @@ LAB_00038100:
     }
     else {
       if ((damage_type_mask & 8) != 0) {
-        if (((uVar1 & 0x1ff) == 0xd5) || ((uVar1 & 0x1ff) == 0xd6)) {
+        if (((((uw_object_hdr_t *)object)->item_id) == 0xd5) || ((((uw_object_hdr_t *)object)->item_id) == 0xd6)) {
           /* was folded into `int iVar3` (reused elsewhere in this function
              for unrelated int values) -- truncated tilemap_lookup's real
              `void *` return */
@@ -716,7 +716,7 @@ int find_placement_via_tile_flood_fill(ushort *object, short tile_x, short tile_
       if (strict != 0) {
         for (puVar11 = (ushort *)(pbVar10 + 2); (*puVar11 & 0xffc0) != 0; puVar11 = puVar11 + 2) {
           puVar11 = (ushort *)resolve_object_link(puVar11);
-          if (((&DAT_00202c90)[(*puVar11 & 0x1ff) * 0xd] != '\0') ||
+          if (((&DAT_00202c90)[((uw_object_hdr_t *)puVar11)->item_id * 0xd] != '\0') ||
              (iVar12 = object_ptr_in_arena(puVar11), iVar12 != 0)) {
             discard_misplaced_object(pbVar10 + 2,puVar11,0);
           }
@@ -729,7 +729,7 @@ int find_placement_via_tile_flood_fill(ushort *object, short tile_x, short tile_
       uVar13 = encode_object_slot_index(object);
       iVar12 = (int)(short)cVar21;
       iVar2 = (int)(short)cVar7;
-      iVar14 = check_object_placement_clearance(*object & 0x1ff,uVar13,((iVar2 << 0x13) >> 0x10) + 3,
+      iVar14 = check_object_placement_clearance(((uw_object_hdr_t *)object)->item_id,uVar13,((iVar2 << 0x13) >> 0x10) + 3,
                             ((iVar12 << 0x13) >> 0x10) + 3,(*pbVar10 >> 4) * '\b' + cVar18,0,8);
       if (iVar14 != 0) {
         *out_x = (short)cVar7;
@@ -890,7 +890,7 @@ int clear_object_temp_flag_callback(ushort *object)
   if (iVar2 == 0) {
     uVar3 = *object & 0x1c0;
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
-       (((&DAT_00202c9a)[(*object & 0x1ff) * 0xd] & 3) != 2)) {
+       (((&DAT_00202c9a)[(((uw_object_hdr_t *)object)->item_id) * 0xd] & 3) != 2)) {
       uVar1 = object[1];
       *(char *)(object + 1) = (char)(uVar1 & 0xfdff);
       *(char *)((char *)object + 3) = (char)((uVar1 & 0xfdff) >> 8);
@@ -970,7 +970,7 @@ uint calculate_object_weight(ushort *object)
   ushort local_8 [2];
 
   uVar1 = *object;
-  iVar3 = (uVar1 & 0x1ff) * 0xd;
+  iVar3 = (((uw_object_hdr_t *)object)->item_id) * 0xd;
   if (((uVar1 & 0x8000) == 0) || ((object[3] & 0x8000) != 0)) {
     local_8[0] = *(ushort *)(&DAT_00202c91 + iVar3) >> 4;
     uVar2 = (uint)local_8[0];
@@ -1166,7 +1166,7 @@ int object_exceeds_size_threshold(ushort *object)
       iVar4 = iVar4 + 1;
     }
     uVar2 = 1;
-    if ((int)(((byte)(&DAT_00202c9a)[(uVar1 & 0x1ff) * 0xd] >> 2 & 0xf) + (iVar4 >> 1)) <=
+    if ((int)(((byte)(&DAT_00202c9a)[(((uw_object_hdr_t *)object)->item_id) * 0xd] >> 2 & 0xf) + (iVar4 >> 1)) <=
         (int)DAT_002046b0) {
       uVar2 = 0;
     }
@@ -1452,7 +1452,7 @@ int object_or_contents_has_type(ushort *object, ushort type_id)
   int iVar2;
   ushort *local_8;
   
-  if ((*object & 0x1ff) == (int)(short)type_id) {
+  if ((((uw_object_hdr_t *)object)->item_id) == (int)(short)type_id) {
     uVar1 = 1;
   }
   else {
@@ -1575,14 +1575,14 @@ ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int fo
   uVar6 = encode_object_slot_index(object);
   DAT_00202c6c[10] = (char)uVar6;
   DAT_00202c6c[0xb] = (char)((ushort)uVar6 >> 8);
-  iVar12 = (*object & 0x1ff) * 0xd;
+  iVar12 = (((uw_object_hdr_t *)object)->item_id) * 0xd;
   bVar5 = (&DAT_00202c93)[iVar12];
-  if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+  if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
     fprintf(stderr, "[f98] ENTER object=%p type=0x%x tile=(%d,%d) flags-byte=0x%x\n",
-            (void *)object, (unsigned)(*object & 0x1ff), (int)tile_x, (int)tile_y, (unsigned)bVar5);
+            (void *)object, (unsigned)(((uw_object_hdr_t *)object)->item_id), (int)tile_x, (int)tile_y, (unsigned)bVar5);
   do {
     if ((bVar5 & 8) != 0) {
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
         fprintf(stderr, "[f98] BAIL: flag8 set on class table, returning object unchanged\n");
       return object;
     }
@@ -1614,7 +1614,7 @@ ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int fo
            ((ushort)(byte)(&DAT_00202c38)[cVar4 * 6] != *(ushort *)(DAT_00202c6c + 4))) break;
         DAT_00086998 = cVar4;
         psVar7 = (short *)resolve_object_link(&DAT_00202c3a + cVar4 * 6);
-        uVar8 = (int)*psVar7 & 0x1ff;
+        uVar8 = ((uw_object_hdr_t *)psVar7)->item_id;
         DAT_00086999 = (undefined1)uVar8;
         DAT_0008699a = (undefined1)(uVar8 >> 8);
         if (((&DAT_00202c93)[(short)uVar8 * 0xd] & 2) == 2) {
@@ -1630,7 +1630,7 @@ ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int fo
     uVar3 = DAT_00101454;
     uVar6 = DAT_0010144c;
     uVar2 = *(ushort *)(DAT_00202c6c + 0xc);
-    if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+    if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
       fprintf(stderr, "[f98] uVar2(local_4c+0xc)=0x%x local_4c+0xe=0x%x local_4c[0x15]=%d iVar12=%d\n",
               (unsigned)uVar2, (unsigned)*(ushort *)(DAT_00202c6c + 0xe),
               (int)DAT_00202c6c[0x15], iVar12);
@@ -1639,12 +1639,12 @@ ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int fo
       cVar4 = '\x01';
 LAB_000564d0:
       if (cVar4 == '\0') {
-        if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+        if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
           fprintf(stderr, "[f98] BAIL at LAB_000564d0 (cVar4==0), returning object unchanged\n");
         return object;
       }
 LAB_000564d8:
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
         fprintf(stderr, "[f98] -> discard_misplaced_object fallback path (not reallocate_object_to_arena replace)\n");
       pDropTile = (char *)tilemap_lookup((int)tile_x,(int)tile_y);
       puVar9 = (ushort *)discard_misplaced_object(pDropTile + 2,object,0);
@@ -1652,8 +1652,8 @@ LAB_000564d8:
     }
     if ((uVar2 & 7) == 5) goto LAB_000564d8;
     if ((uVar2 & 7) == 6) {
-      if (((&DAT_00202c97)[(*object & 0x1ff) * 0xd] & 0xc) == 0xc) {
-        if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (((&DAT_00202c97)[(((uw_object_hdr_t *)object)->item_id) * 0xd] & 0xc) == 0xc) {
+        if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
           fprintf(stderr, "[f98] BAIL: (uVar2&7)==6 class-table gate, returning object unchanged\n");
         return object;
       }
@@ -1661,17 +1661,17 @@ LAB_000564d8:
       goto LAB_000564d0;
     }
     if ((uVar2 & 8) != 0) {
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
         fprintf(stderr, "[f98] BAIL: (uVar2&8)!=0, returning object unchanged\n");
       return object;
     }
     if (DAT_002046ec != 0) {
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
         fprintf(stderr, "[f98] BAIL: DAT_002046ec!=0, returning object unchanged\n");
       return object;
     }
     if (iVar12 == 0) {
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
         fprintf(stderr, "[f98] -> reallocate_object_to_arena replace path, coords=(%d,%d)\n", (int)tile_x, (int)tile_y);
       DAT_0010144c = tile_x;
       DAT_00101454 = tile_y;
@@ -1699,7 +1699,7 @@ LAB_000564d8:
     uVar6 = encode_object_slot_index(object);
     DAT_00202c6c[10] = (char)uVar6;
     DAT_00202c6c[0xb] = (char)((ushort)uVar6 >> 8);
-    iVar12 = (*object & 0x1ff) * 0xd;
+    iVar12 = (((uw_object_hdr_t *)object)->item_id) * 0xd;
     bVar5 = (&DAT_00202c93)[iVar12];
   } while( true );
 }
@@ -1858,7 +1858,7 @@ void compute_object_placement_fields(byte *object, uint tile_x, uint tile_y)
   object[0x18] = object[0x18] & 0xe0;
   object[0x14] = object[0x14] & 7 | 0x80;
   uVar6 = (uint)CONCAT11(object[1],*object);
-  bVar4 = (((&DAT_00202c93)[(uVar6 & 0x1ff) * 0xd] & 8) == 0) << 7;
+  bVar4 = (((&DAT_00202c93)[((uw_object_hdr_t *)object)->item_id * 0xd] & 8) == 0) << 7;
   object[0x13] = bVar4 | object[0x13] & 0x7f;
   uVar2 = tile_y & 0x3f | (tile_x & 0x3ff) << 6;
   object[0x16] = object[0x16] & 0xf | (byte)(uVar2 << 4);
@@ -1895,16 +1895,16 @@ ushort *reallocate_object_to_arena(ushort *object)
   ushort *puVar2;
 
   iVar1 = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
-  if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80) {
+  if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80) {
     ushort *pWalk;
     int n = 0;
     fprintf(stderr, "[replace] ENTER type=0x%x object=%p tile=(%d,%d) tilerec=%p\n",
-            (unsigned)(*object & 0x1ff), (void *)object,
+            (unsigned)(((uw_object_hdr_t *)object)->item_id), (void *)object,
             (int)DAT_0010144c, (int)DAT_00101454, (void *)iVar1);
     fprintf(stderr, "[replace] pre-unlink list @ %p:", (void *)(iVar1 + 2));
     pWalk = (ushort *)resolve_object_link(iVar1 + 2);
     while (pWalk != NULL && n < 20) {
-      fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk, (unsigned)(*pWalk & 0x1ff),
+      fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk, (unsigned)(((uw_object_hdr_t *)pWalk)->item_id),
               pWalk == object ? "<-TARGET" : "");
       pWalk = (ushort *)resolve_object_link((ushort *)((char *)pWalk + 4));
       n++;
@@ -1926,20 +1926,20 @@ ushort *reallocate_object_to_arena(ushort *object)
     *(undefined1 *)((char *)puVar2 + 7) = *(undefined1 *)((char *)object + 7);
     compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
     *(byte *)(puVar2 + 4) = (byte)object[2] & 0x3f;
-    if (((*object & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(*object & 0x1ff) * 0xd] & 3) != 2)) {
+    if (((*object & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(((uw_object_hdr_t *)object)->item_id) * 0xd] & 3) != 2)) {
       *(byte *)(puVar2 + 0xd) = (byte)(object[1] >> 7) & 7;
     }
     if ((*puVar2 & 0x1c0) == 0x1c0) {
       scheduler_relink_entry(puVar2,object);
     }
-    if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+    if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
       fprintf(stderr, "[replace] new copy puVar2=%p type=0x%x height(f/10)=%d in_arena=%d\n",
-              (void *)puVar2, (unsigned)(*puVar2 & 0x1ff),
+              (void *)puVar2, (unsigned)(((uw_object_hdr_t *)puVar2)->item_id),
               (int)*(short *)((char *)puVar2 + 0xf), (int)object_ptr_in_arena((char *)puVar2));
     object_list_unlink(iVar1 + 2,object);
     free_object_slot(object);
     object_list_insert_head(iVar1 + 2,puVar2);
-    if (getenv("UW_DEBUG_THROW") && (*puVar2 & 0x1ff) == 0x80) {
+    if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)puVar2)->item_id) == 0x80) {
       ushort *pWalk;
       int n = 0;
       int found = 0;
@@ -1947,7 +1947,7 @@ ushort *reallocate_object_to_arena(ushort *object)
       pWalk = (ushort *)resolve_object_link(iVar1 + 2);
       while (pWalk != NULL && n < 20) {
         if (pWalk == puVar2) found = 1;
-        fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk, (unsigned)(*pWalk & 0x1ff),
+        fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk, (unsigned)(((uw_object_hdr_t *)pWalk)->item_id),
                 pWalk == puVar2 ? "<-NEWCOPY" : "");
         pWalk = (ushort *)resolve_object_link((ushort *)((char *)pWalk + 4));
         n++;
@@ -1983,7 +1983,7 @@ int find_object_placement(ushort *object, uint tile_x, uint tile_y, short height
       uVar6 = (ordint_divmod(iVar5,(int)uVar2).rem - (int)radius) + tile_y;
     }
     uVar2 = encode_object_slot_index(object);
-    iVar5 = check_object_placement_clearance(*object & 0x1ff,uVar2,uVar4,uVar6,height,1,0);
+    iVar5 = check_object_placement_clearance(((uw_object_hdr_t *)object)->item_id,uVar2,uVar4,uVar6,height,1,0);
     if (iVar5 != 0) break;
     bVar3 = bVar3 + 1;
     if (0x17 < bVar3) {
