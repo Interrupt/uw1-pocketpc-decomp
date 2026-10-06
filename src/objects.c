@@ -190,9 +190,7 @@ LAB_0004b06c:
          ((byte)DAT_00202a48 ^ *(byte *)((char *)puVar6 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar6 + 0x13)
     ;
     if (g_object_type_props[DAT_00202a38].is_container) {
-      uVar9 = puVar6[3];
-      *(char *)(puVar6 + 3) = (char)(uVar9 & 0xffc0);
-      *(char *)((char *)puVar6 + 7) = (char)((uVar9 & 0xffc0) >> 8);
+      ((uw_object_hdr_t *)puVar6)->owner = 0;
     }
     /* Was `iVar8 = tilemap_lookup(...); object_list_insert_head(iVar8 + 2,...)` -- tilemap_lookup
        returns a real 64-bit tile-record pointer, but iVar8 is `int` (used throughout this function
@@ -371,11 +369,11 @@ void free_linked_object_recursive(char *link_field)
       free_trap_class_object(link_field,puVar1);
     }
     else {
-      if ((puVar1[2] & 0xffc0) != 0) {
+      if (((uw_object_hdr_t *)puVar1)->next != 0) {
         free_linked_object_recursive((char *)(puVar1 + 2));  /* ARM 0x5342c: add r0,r4,#4 */
       }
       if (!((uw_object_hdr_t *)puVar1)->is_quant) {
-        if ((puVar1[3] & 0xffc0) != 0) {
+        if (((uw_object_hdr_t *)puVar1)->link != 0) {
           free_linked_object_recursive((char *)(puVar1 + 3));  /* ARM 0x53470: add r0,r4,#6 */
         }
       }
@@ -398,7 +396,7 @@ void unlink_and_free_object(char *link_field, char *object)
   /* Dropped argument: free_linked_object_recursive takes the address of a link field to recursively
      free (its own declared link_field) -- here that's object's own "contains" field (+6, this file's
      standard container-contents offset) -- but it was called bare... */
-  if ((!((uw_object_hdr_t *)object)->is_quant) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
+  if ((!((uw_object_hdr_t *)object)->is_quant) && (((uw_object_hdr_t *)object)->link != 0)) {
     free_linked_object_recursive(object + 6);
   }
   if (link_field != 0) {
@@ -480,9 +478,7 @@ void *spawn_new_object(uint object_type, int region)
     puVar3[1] = bVar2;
     puVar3[4] = 0x28;
     puVar3[5] = 0;
-    uVar5 = CONCAT11(puVar3[7],puVar3[6]) & 0xffc0;
-    puVar3[6] = (char)uVar5;
-    puVar3[7] = (char)(uVar5 >> 8);
+    ((uw_object_hdr_t *)puVar3)->owner = 0;
     if ((((&DAT_00202c93)[(short)object_type * 0xd] & 0xc0) == 0) ||
        (((&DAT_00202c93)[(short)object_type * 0xd] & 0xc0) == 0x80)) {
       puVar3[6] = 0x40;
@@ -589,7 +585,7 @@ LAB_00038100:
           }
         }
       }
-      if ((!((uw_object_hdr_t *)object)->is_quant) && ((object[3] & 0xffc0) != 0)) {
+      if ((!((uw_object_hdr_t *)object)->is_quant) && (((uw_object_hdr_t *)object)->link != 0)) {
         free_linked_object_recursive(object + 3);
       }
     }
@@ -701,7 +697,7 @@ int find_placement_via_tile_flood_fill(ushort *object, short tile_x, short tile_
       cVar7 = local_a4[local_a8 * 2];
       pbVar10 = (byte *)tilemap_lookup((int)cVar7,(int)cVar21);
       if (strict != 0) {
-        for (puVar11 = (ushort *)(pbVar10 + 2); (*puVar11 & 0xffc0) != 0; puVar11 = puVar11 + 2) {
+        for (puVar11 = (ushort *)(pbVar10 + 2); ((uw_chain_word_t *)puVar11)->chain != 0; puVar11 = puVar11 + 2) {
           puVar11 = (ushort *)resolve_object_link(puVar11);
           if (((&DAT_00202c90)[((uw_object_hdr_t *)puVar11)->item_id * 0xd] != '\0') ||
              (iVar12 = object_ptr_in_arena(puVar11), iVar12 != 0)) {
@@ -904,7 +900,7 @@ void clear_temp_flags_on_all_objects()
   do {
     iVar3 = 0;
     do {
-      if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
+      if (((uw_tile_t *)iVar2)->obj_head != 0) {
         uVar1 = resolve_object_link((ushort *)(iVar2 + 2));
         walk_object_tree(uVar1,clear_object_temp_flag_callback);
       }
@@ -933,11 +929,11 @@ void free_player_inventory_chain(char *link_field)
   iVar1 = resolve_object_link(link_field);
   if (iVar1 != 0) {
     if (!((uw_object_hdr_t *)iVar1)->is_quant) {
-      if ((*(ushort *)(iVar1 + 6) & 0xffc0) != 0) {
+      if (((uw_object_hdr_t *)iVar1)->link != 0) {
         free_player_inventory_chain(iVar1 + 6); /* was called with no argument; confirmed via ARM disassembly, 0x44500 */
       }
     }
-    if ((*(ushort *)(iVar1 + 4) & 0xffc0) != 0) {
+    if (((uw_object_hdr_t *)iVar1)->next != 0) {
       free_player_inventory_chain(iVar1 + 4); /* was called with no argument; confirmed via ARM disassembly, 0x4451c */
     }
     object_list_unlink(link_field,iVar1);
@@ -962,7 +958,7 @@ uint calculate_object_weight(ushort *object)
     local_8[0] = *(ushort *)(&DAT_00202c91 + iVar3) >> 4;
     uVar2 = (uint)local_8[0];
     if (!((uw_object_hdr_t *)object)->is_quant) {
-      if ((object[3] & 0xffc0) != 0) {
+      if (((uw_object_hdr_t *)object)->link != 0) {
         sum_container_weight(object + 3,local_8);
         uVar2 = (uint)(short)local_8[0];
       }
@@ -1111,7 +1107,7 @@ int walk_object_tree(char *object, int (*callback)())
     if (iVar1 != 0) {
       return 1;
     }
-    if ((!((uw_object_hdr_t *)object)->is_quant) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
+    if ((!((uw_object_hdr_t *)object)->is_quant) && (((uw_object_hdr_t *)object)->link != 0)) {
       /* Was `undefined4 uVar2` -- truncated resolve_object_link's real
          pointer return before forwarding it into the recursive call
          just below, same class as object itself above. */
@@ -1121,7 +1117,7 @@ int walk_object_tree(char *object, int (*callback)())
         return 1;
       }
     }
-    if ((*(ushort *)(object + 4) & 0xffc0) == 0) break;
+    if (((uw_object_hdr_t *)object)->next == 0) break;
     object = (char *)resolve_object_link((ushort *)(object + 4)); /* confirmed via ARM disassembly, 0x52b84 */
     iVar1 = (*callback)(object);
   }
@@ -1171,7 +1167,7 @@ int should_destroy_linked_object(int base_chance, ushort *link_field)
 {
   char *pcVar1;
 
-  if ((*link_field & 0xffc0) != 0) {
+  if (((uw_chain_word_t *)link_field)->chain != 0) {
     /* ARM 0x52d54..0x52d64 forwards the object address in r1
        and leaves the destruction result in r0 for its caller. */
     pcVar1 = resolve_object_link(link_field);
@@ -1321,7 +1317,7 @@ ushort *find_object_by_encoded_slot_in_chain(ushort *link_field, int recurse, in
   byte *iVar3;
   ushort *iVar4;
 
-  if ((*link_field & 0xffc0) == 0) {
+  if (((uw_chain_word_t *)link_field)->chain == 0) {
 LAB_00053720:
     iVar4 = 0;
     puVar1 = DAT_002046b4;
@@ -1330,10 +1326,10 @@ LAB_00053720:
     DAT_002046b4 = link_field;
     iVar3 = resolve_object_link(link_field);
     while ((sVar2 = encode_object_slot_index(iVar3), iVar4 = (ushort *)iVar3, puVar1 = link_field, sVar2 != (short)slot &&
-           ((((((uw_object_hdr_t *)iVar3)->is_quant) || ((*(ushort *)(iVar3 + 6) & 0xffc0) == 0)) ||
+           ((((((uw_object_hdr_t *)iVar3)->is_quant) || (((uw_object_hdr_t *)iVar3)->link == 0)) ||
             (iVar4 = find_object_by_encoded_slot_in_chain((ushort *)(iVar3 + 6),recurse,slot), puVar1 = DAT_002046b4,
             iVar4 == 0))))) {
-      if ((*(ushort *)(iVar3 + 4) & 0xffc0) == 0) goto LAB_00053720;
+      if (((uw_object_hdr_t *)iVar3)->next == 0) goto LAB_00053720;
       iVar3 = resolve_object_link((ushort *)(iVar3 + 4));
     }
   }
@@ -1416,7 +1412,7 @@ ushort *find_object_in_chain(ushort **link_cursor, int recurse, int object_class
           return puVar1;
         }
       }
-      if ((((recurse != 0) && (!((uw_object_hdr_t *)puVar1)->is_quant)) && ((puVar1[3] & 0xffc0) != 0)) &&
+      if ((((recurse != 0) && (!((uw_object_hdr_t *)puVar1)->is_quant)) && (((uw_object_hdr_t *)puVar1)->link != 0)) &&
          (local_28 = puVar1 + 3,
          puVar2 = (ushort *)find_object_in_chain(&local_28,recurse,object_class,subclass,quality),
          puVar2 != (ushort *)0x0)) {
@@ -1485,7 +1481,7 @@ ushort *find_object_in_world(int object_class, int subclass, short quality, shor
     if (*out_x < 0x40) {
       do {
         local_24 = (ushort *)(iVar3 + 2);
-        if (((*local_24 & 0xffc0) != 0) &&
+        if ((((uw_chain_word_t *)local_24)->chain != 0) &&
            (puVar6 = find_object_in_chain(&local_24,1,object_class,subclass,quality), puVar6 != 0)) {
           return puVar6;
         }
