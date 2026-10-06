@@ -1816,7 +1816,7 @@ void emit_tile_features(ushort *tile)
             continue;
           }
           iVar7 = cVar8 * 4;
-          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (*puVar5 & 0x1ff) == 0x166)
+          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (((uw_object_hdr_t *)puVar5)->item_id) == 0x166)
             fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
                     (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
                     (int)DAT_0023b4e4, (int)DAT_0023b4e8);
@@ -1835,7 +1835,7 @@ void emit_tile_features(ushort *tile)
           else {
             DAT_0023b91c = *(short *)((char *)puVar5 + 0xf);
           }
-          if (getenv("UW_DEBUG_THROW") && (*puVar5 & 0x1ff) == 0x80)
+          if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)puVar5)->item_id) == 0x80)
             fprintf(stderr, "[throw-scrz] sack DAT_0023b91c=%d cam_ref(DAT_00086e6c+0xe)=%d in_arena=%d\n",
                     (int)(short)DAT_0023b91c, (int)g_current_view->view_elevation,
                     (int)object_ptr_in_arena(puVar5));
@@ -1883,7 +1883,7 @@ void emit_tile_features(ushort *tile)
       }
       return;
     }
-    uVar10 = (uint)(short)(*puVar5 & 0x1ff);
+    uVar10 = (uint)(short)(((uw_object_hdr_t *)puVar5)->item_id);
     if ((uVar10 == 0x164) || (((*puVar5 & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
       uVar2 = local_34 >> 0x10;
       local_34 = CONCAT22((short)uVar2,sVar3 + (short)((uVar10 << 0x16) >> 0x10));
@@ -2060,9 +2060,9 @@ void emit_tile_objects(ushort *tile)
   int iVar35;
   ushort local_54;
   
-  if (getenv("UW_DEBUG_THROW") && ((*tile & 0x1ff) == 0x80 || (*tile & 0x1ff) == 0x16e))
+  if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)tile)->item_id == 0x80 || ((uw_object_hdr_t *)tile)->item_id == 0x16e))
     fprintf(stderr, "[throw-emit] ENTER tile=%p type=0x%x is_player=%d flag4000=%d in_arena=%d DAT_002046c4=%p\n",
-            (void *)tile, (unsigned)(*tile & 0x1ff), tile == g_player_object,
+            (void *)tile, (unsigned)(((uw_object_hdr_t *)tile)->item_id), tile == g_player_object,
             (*tile & 0x4000) == 0x4000, (int)object_ptr_in_arena((char *)tile), (void *)DAT_002046c4);
   if (tile == g_player_object) {
     return;
@@ -2121,7 +2121,7 @@ void emit_tile_objects(ushort *tile)
       ushort *_rec = (ushort *)(_slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                                : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8));
       ushort _w0 = *_rec;
-      int _id = _w0 & 0x1ff;
+      int _id = ((uw_object_hdr_t *)_rec)->item_id;
       int _iv = _id * 0xd;
       int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
       int _qual = (byte)_rec[2] & 0x3f;
@@ -2152,7 +2152,7 @@ void emit_tile_objects(ushort *tile)
             void *_rec = _slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                         : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
             ushort _w = *(ushort *)_rec;
-            int _id = _w & 0x1ff;
+            int _id = ((uw_object_hdr_t *)_rec)->item_id;
             if ((_id >= 0x160 && _id <= 0x16f) || _id == 0x140 || _id == 0x141) {
               fprintf(stderr, "[objdump] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x\n",
                       _tx, _ty, _slot, _id, (unsigned)_w);
@@ -2188,7 +2188,7 @@ void emit_tile_objects(ushort *tile)
             void *_rec = _slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                         : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
             ushort _w = *(ushort *)_rec;
-            int _id = _w & 0x1ff;
+            int _id = ((uw_object_hdr_t *)_rec)->item_id;
             int _iv = _id * 0xd;
             unsigned char *_prop = (unsigned char *)&DAT_00202c90_backing[_iv];
             fprintf(stderr, "[objdumpall] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x rc=%d prop=%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
@@ -2226,7 +2226,7 @@ void emit_tile_objects(ushort *tile)
               ushort *_rec = _slot < 0x100 ? (ushort *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                             : (ushort *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
               ushort _w = _rec[0];
-              int _id = _w & 0x1ff;
+              int _id = ((uw_object_hdr_t *)_rec)->item_id;
 // Same field reads emit_tile_objects itself uses (not the objdumpall hook above,
               // which indexed the wrong property byte for render class -- see its own "rc=" column,
               // offset 0 instead of the real 0xa).
@@ -2273,14 +2273,14 @@ void emit_tile_objects(ushort *tile)
             int _guard = 0;
             while (_rec != NULL && _guard++ < 64) {
               ushort _w = *_rec;
-              int _id = _w & 0x1ff;
+              int _id = ((uw_object_hdr_t *)_rec)->item_id;
               if ((_w & 0x1c0) == 0x80) {
                 ushort *_item = (ushort *)resolve_object_link((ushort *)((char *)_rec + 6));
                 char _names[256];
                 _names[0] = '\0';
                 int _n = 0, _guard2 = 0;
                 while (_item != NULL && _guard2++ < 32) {
-                  int _iid = *_item & 0x1ff;
+                  int _iid = ((uw_object_hdr_t *)_item)->item_id;
                   char *_iname = (char *)get_message_string(0x800 | _iid);
                   strncat(_names, (_iname && _iname[0]) ? _iname : "?", sizeof(_names) - strlen(_names) - 2);
                   strncat(_names, ",", sizeof(_names) - strlen(_names) - 1);
@@ -2318,13 +2318,13 @@ void emit_tile_objects(ushort *tile)
     }
   }
   uVar27 = (uint)*tile;
-  bVar1 = (&DAT_00202c9a)[(uVar27 & 0x1ff) * 0xd];
+  bVar1 = (&DAT_00202c9a)[((uw_object_hdr_t *)tile)->item_id * 0xd];
   bVar13 = bVar1 & 3;
   if (getenv("UW_DEBUG_OBJCLASS")) {
-    int _iv = (uVar27 & 0x1ff) * 0xd;
+    int _iv = ((uw_object_hdr_t *)tile)->item_id * 0xd;
     int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
     fprintf(stderr, "[objclass] id=0x%03x renderclass=%d prop_byte=0x%02x quality=%d heading=%d namegrp=%d scrx=%d scry=%d scrz=%d names=",
-            (int)(uVar27 & 0x1ff), (int)bVar13, (int)bVar1,
+            (int)(((uw_object_hdr_t *)tile)->item_id), (int)bVar13, (int)bVar1,
             (int)((byte)tile[3] & 0x3f), (int)(tile[1] >> 6 & 7), _grp,
             (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c);
     { int _k;
@@ -2340,7 +2340,7 @@ void emit_tile_objects(ushort *tile)
     uVar27 = (byte)tile[3] & 0x3f;
     if ((bVar1 & 3) == 0) {
       if ((short)uVar27 == 0) {
-        uVar27 = (int)(short)*tile & 0x1ff;
+        uVar27 = ((uw_object_hdr_t *)tile)->item_id;
       }
       else {
         uVar27 = uVar27 + 0x1c0;
@@ -2400,7 +2400,7 @@ LAB_emit_mesh_sprite_quad:
         _angle_idx = g_billboard_angle_override_deg;
         g_billboard_angle_override_deg = -1;
       }
-      if (getenv("UW_DEBUG_OBJPOS") && (*tile & 0x1ff) == 0x166)
+      if (getenv("UW_DEBUG_OBJPOS") && ((uw_object_hdr_t *)tile)->item_id == 0x166)
         fprintf(stderr, "[decalangle] overridden=%d angle_idx=%d cam_yaw=%d\n",
                 _overridden, _angle_idx, (int)DAT_000db44c);
       uVar30 = (&DAT_000d9ed8)[_angle_idx];
@@ -2582,13 +2582,13 @@ LAB_00061d34:
     DAT_0023b83c = DAT_0023b83c + 1;
     DAT_000a85d4 = DAT_0023b83c;
     DAT_000a85d0 = iVar17 + 1;
-    if ((getenv("UW_DEBUG_OBJPOS") && (*tile & 0x1ff) == 0x166) ||
-        (getenv("UW_DEBUG_DOOR") && (*tile & 0x1ff) == 0x140)) {
+    if ((getenv("UW_DEBUG_OBJPOS") && ((uw_object_hdr_t *)tile)->item_id == 0x166) ||
+        (getenv("UW_DEBUG_DOOR") && ((uw_object_hdr_t *)tile)->item_id == 0x140)) {
       float _fx, _fy, _fz;
       unsigned int _bx = (unsigned int)uVar22, _by = (unsigned int)uVar19, _bz = (unsigned int)uVar25;
       memcpy(&_fx, &_bx, 4); memcpy(&_fy, &_by, 4); memcpy(&_fz, &_bz, 4);
       fprintf(stderr, "[objpos-final] id=0x%03x uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f DAT_00202508(w)=%d DAT_002022f8(h)=%d\n",
-              (unsigned)(*tile & 0x1ff), uVar27, _fx, _fy, _fz, (int)(short)DAT_00202508, (int)(short)DAT_002022f8);
+              (unsigned)(((uw_object_hdr_t *)tile)->item_id), uVar27, _fx, _fy, _fz, (int)(short)DAT_00202508, (int)(short)DAT_002022f8);
     }
     return;
   }
