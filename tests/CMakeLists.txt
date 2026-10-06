@@ -345,6 +345,7 @@ add_fixture_game_unit_test(scroll_messages
   src/player.c:advance_character_level
   src/object_actions.c:dispatch_object_action src/object_actions.c:dispatch_object_action_dup
   src/ai.c:build_creature_look_text src/interact.c:describe_picked_terrain
+  src/interact.c:resolve_picked_terrain_texture
   src/ordinal_stubs.c:ce_memmove src/ordinal_stubs.c:ce_strchr src/ordinal_stubs.c:ce_strrchr)
 target_link_libraries(uw_test_scroll_messages PUBLIC uw_test_static_strings)
 
