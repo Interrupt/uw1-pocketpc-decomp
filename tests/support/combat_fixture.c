@@ -30,7 +30,7 @@ uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y);
 void *tilemap_lookup(int x, int y);
 void object_list_append_tail(void *head, void *object);
 void free_object_slot(ushort *object);
-undefined4 read_file_handle(int handle, void *destination, int count);
+undefined4 read_file_handle(int handle, void *destination, uint count);
 
 byte mobile_objects[256 * 27];
 undefined1 DAT_002027d0_backing[48];
@@ -284,7 +284,7 @@ undefined4 roll_object_destroy_chance(void) { TEST_FAIL_MESSAGE("Unexpected dest
 undefined4 reset_burnt_out_item_state(void) { TEST_FAIL_MESSAGE("Unexpected burnt item"); return 0; }
 void free_linked_object_recursive(void) { TEST_FAIL_MESSAGE("Unexpected recursive cleanup"); }
 ushort *settle_dropped_object(void) { TEST_FAIL_MESSAGE("Unexpected settling"); return 0; }
-void adjust_door_close_animation_delay(void) { TEST_FAIL_MESSAGE("Unexpected closing door"); }
+void adjust_door_close_animation_delay(ushort *door) { (void)door; TEST_FAIL_MESSAGE("Unexpected closing door"); }
 ushort *find_object_in_chain(ushort **head, int recurse, int category, int family, int subtype)
 {
     TEST_ASSERT_EQUAL_PTR(wall_effect+3, *head);
@@ -381,7 +381,7 @@ void free_object_slot(ushort *object)
 
 FILE *monster_data;
 
-undefined4 read_file_handle(int handle, void *destination, int count)
+undefined4 read_file_handle(int handle, void *destination, uint count)
 {
     TEST_ASSERT_EQUAL_INT(1, handle);
     TEST_ASSERT_NOT_NULL(monster_data);

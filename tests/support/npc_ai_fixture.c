@@ -39,7 +39,7 @@ FILE *monster_data;
 int chase_steps, attacks, last_chase_x, last_chase_y, los_clear;
 unsigned random_index;
 
-undefined4 read_file_handle(int handle, void *buffer, int count)
+undefined4 read_file_handle(int handle, void *buffer, uint count)
 {
     TEST_ASSERT_NOT_NULL(monster_data);
     unsigned n = fread(buffer, 1, count, monster_data);

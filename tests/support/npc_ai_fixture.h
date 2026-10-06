@@ -2,7 +2,7 @@
 #define UW_TEST_NPC_AI_FIXTURE_H
 #include "unity.h"
 #include "../npc_ai_test_globals.h"
-undefined4 read_file_handle(int handle, void *buffer, int count);
+undefined4 read_file_handle(int handle, void *buffer, uint count);
 long ce_rand(void);
 int encode_object_slot_index(void *object);
 void *get_object_record_by_slot_index(int slot);

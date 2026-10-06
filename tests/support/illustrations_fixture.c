@@ -8,11 +8,11 @@ char *get_message_string(void);
 void msg_scroll_panel_reset(void);
 undefined1 *format_object_display_name(void);
 int message_scroll_print_wrapped(void);
-undefined4 open_file_for_read(void);
-undefined4 read_file_handle(void);
+undefined4 open_file_for_read(const char *path);
+undefined4 read_file_handle(int handle, void *buffer, uint count);
 undefined4 open_existing_file_rw_alt(const char *path);
 undefined4 seek_file_handle(int handle, int offset, int origin);
-undefined4 write_file_handle(int handle, const void *source, int count);
+undefined4 write_file_handle(int handle, const void *source, uint count);
 long CloseHandle(int handle);
 void display_book_or_scroll_page(uint page);
 
@@ -53,9 +53,9 @@ undefined1 *format_object_display_name(void) { TEST_FAIL_MESSAGE("Unexpected ins
 
 int message_scroll_print_wrapped(void) { TEST_FAIL_MESSAGE("Unexpected inscription printing"); return 0; }
 
-undefined4 open_file_for_read(void) { TEST_FAIL_MESSAGE("Unexpected grave file"); return -1; }
+undefined4 open_file_for_read(const char *path) { (void)path; TEST_FAIL_MESSAGE("Unexpected grave file"); return -1; }
 
-undefined4 read_file_handle(void) { TEST_FAIL_MESSAGE("Unexpected grave file read"); return 0; }
+undefined4 read_file_handle(int handle, void *buffer, uint count) { (void)handle; (void)buffer; (void)count; TEST_FAIL_MESSAGE("Unexpected grave file read"); return 0; }
 
 undefined4 open_existing_file_rw_alt(const char *path)
 {
@@ -78,7 +78,7 @@ undefined4 seek_file_handle(int handle, int offset, int origin)
     return position;
 }
 
-undefined4 write_file_handle(int handle, const void *source, int count)
+undefined4 write_file_handle(int handle, const void *source, uint count)
 {
     if (handle != 1 || fail_write) return 0;
     TEST_ASSERT_EQUAL_INT(2, count);

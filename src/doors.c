@@ -11,65 +11,59 @@
 static char s_At__d__d_00087360[] = "At %d %d\n";
 
 // was LAB_000415b4
-void *alloc_door_frame_buffer(param_1)
-unsigned int param_1;
-
+void *alloc_door_frame_buffer(unsigned int byte_count)
 {
   /* Ghidra couldn't resolve this address into a proper function (an indirect-jump/jumptable target
      it gave up on). */
-  return ce_malloc(param_1);
+  return ce_malloc(byte_count);
 }
 
 
 
 
 // was FUN_0007c580
-void close_door_object(param_1,param_2)
-char *param_1;
-ushort * param_2;
-
+void close_door_object(char *actor, ushort *door)
 {
-  ushort uVar1;
-  byte bVar2;
-  undefined4 uVar3;
-  ushort uVar4;
+  ushort quality_word;
+  ushort state;
+  byte low_byte;
+  undefined4 sound_id;
 
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] close_door_object (close) called: obj0=0x%04x dirbit=%d openbits=%d quality_low4=%d\n",
-            (unsigned)*param_2, (int)((*param_2 & 0x1000) != 0), (int)((*param_2 >> 9) & 7), (int)(param_2[3] & 0xf));
-  if ((*param_2 & 0x1ff) == 0x1cf) {
-    uVar4 = param_2[3];
-    if ((uVar4 & 0xf) < 8) {
+            (unsigned)*door, (int)((*door & 0x1000) != 0), (int)((*door >> 9) & 7), (int)(door[3] & 0xf));
+  if ((*door & 0x1ff) == 0x1cf) {
+    quality_word = door[3];
+    if ((quality_word & 0xf) < 8) {
       return;
     }
-    *(byte *)(param_2 + 3) = ((char)(uVar4 & 0xf) - 8U ^ (byte)uVar4) & 0x3f ^ (byte)uVar4;
-    *(byte *)((char *)param_2 + 7) = (byte)(uVar4 >> 8);
-    adjust_door_close_animation_delay(param_2);
+    *(byte *)(door + 3) = ((char)(quality_word & 0xf) - 8U ^ (byte)quality_word) & 0x3f ^ (byte)quality_word;
+    *(byte *)((char *)door + 7) = (byte)(quality_word >> 8);
+    adjust_door_close_animation_delay(door);
   }
   else {
-    uVar4 = *param_2 & 0xf;
-    if (7 < uVar4) {
+    state = *door & 0xf;
+    if (7 < state) {
       return;
     }
-    uVar1 = param_2[3];
-    *(byte *)(param_2 + 3) = (byte)(uVar1 & 0xfffe);
-    *(byte *)((char *)param_2 + 7) = (byte)((uVar1 & 0xfffe) >> 8);
-    if (uVar4 != 6) {
-      uVar4 = param_2[1];
-      bVar2 = (byte)uVar4;
-      *(byte *)(param_2 + 1) = (bVar2 + 0x18 ^ bVar2) & 0x7f ^ bVar2;
-      *(byte *)((char *)param_2 + 3) = (byte)(uVar4 >> 8);
+    quality_word = door[3];
+    *(byte *)(door + 3) = (byte)(quality_word & 0xfffe);
+    *(byte *)((char *)door + 7) = (byte)((quality_word & 0xfffe) >> 8);
+    if (state != 6) {
+      state = door[1];
+      low_byte = (byte)state;
+      *(byte *)(door + 1) = (low_byte + 0x18 ^ low_byte) & 0x7f ^ low_byte;
+      *(byte *)((char *)door + 3) = (byte)(state >> 8);
     }
-    trigger_object_trap_or_use_action(param_1,param_2,7,(int)DAT_002020a0,DAT_002020a4);
-    schedule_door_open_animation(param_2);
+    trigger_object_trap_or_use_action(actor, door, 7, (int)DAT_002020a0, DAT_002020a4);
+    schedule_door_open_animation(door);
   }
-  uVar3 = 0x14;
-  if ((*param_2 & 7) != 6) {
-    uVar3 = 0xb;
+  sound_id = 0x14;
+  if ((*door & 7) != 6) {
+    sound_id = 0xb;
   }
-  play_positional_sound_effect(uVar3,(uint)(*(byte *)((char *)param_2 + 3) >> 5) + DAT_002020a0 * 8,
-               (*(byte *)((char *)param_2 + 3) >> 2 & 7) + DAT_002020a4 * 8,0);
-  return;
+  play_positional_sound_effect(sound_id, (uint)(*(byte *)((char *)door + 3) >> 5) + DAT_002020a0 * 8,
+               (*(byte *)((char *)door + 3) >> 2 & 7) + DAT_002020a4 * 8, 0);
 }
 
 
@@ -77,38 +71,35 @@ ushort * param_2;
 // was FUN_0007c708 -- confirmed live as the real "open door" builtin (see
 // the door-quality analysis a few thousand lines up, near DAT_0018957a):
 // a single guarded (quality & 0xf) + 8 step, closed(0-7) -> open(8-15).
-void open_door_object(param_1)
-ushort * param_1;
-
+void open_door_object(ushort *door)
 {
-  ushort uVar1;
-  undefined4 uVar2;
+  ushort quality_word;
+  undefined4 sound_id;
 
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] open_door_object called: obj0=0x%04x already_1cf=%d quality_low4=%d\n",
-            (unsigned)*param_1, (int)((*param_1 & 0x1ff) == 0x1cf), (int)(param_1[3] & 0xf));
-  if ((*param_1 & 0x1ff) == 0x1cf) {
-    uVar1 = param_1[3];
-    if (7 < (uVar1 & 0xf)) {
+            (unsigned)*door, (int)((*door & 0x1ff) == 0x1cf), (int)(door[3] & 0xf));
+  if ((*door & 0x1ff) == 0x1cf) {
+    quality_word = door[3];
+    if (7 < (quality_word & 0xf)) {
       return;
     }
-    *(byte *)(param_1 + 3) = ((char)(uVar1 & 0xf) + 8U ^ (byte)uVar1) & 0x3f ^ (byte)uVar1;
-    *(byte *)((char *)param_1 + 7) = (byte)(uVar1 >> 8);
-    adjust_door_close_animation_delay(param_1);
+    *(byte *)(door + 3) = ((char)(quality_word & 0xf) + 8U ^ (byte)quality_word) & 0x3f ^ (byte)quality_word;
+    *(byte *)((char *)door + 7) = (byte)(quality_word >> 8);
+    adjust_door_close_animation_delay(door);
   }
   else {
-    if ((*param_1 & 0xf) < 8) {
+    if ((*door & 0xf) < 8) {
       return;
     }
-    schedule_door_open_animation(param_1);
+    schedule_door_open_animation(door);
   }
-  uVar2 = 0x14;
-  if ((*param_1 & 7) != 6) {
-    uVar2 = 0xb;
+  sound_id = 0x14;
+  if ((*door & 7) != 6) {
+    sound_id = 0xb;
   }
-  play_positional_sound_effect(uVar2,(uint)(*(byte *)((char *)param_1 + 3) >> 5) + DAT_002020a0 * 8,
-               (*(byte *)((char *)param_1 + 3) >> 2 & 7) + DAT_002020a4 * 8,0);
-  return;
+  play_positional_sound_effect(sound_id, (uint)(*(byte *)((char *)door + 3) >> 5) + DAT_002020a0 * 8,
+               (*(byte *)((char *)door + 3) >> 2 & 7) + DAT_002020a4 * 8, 0);
 }
 
 
@@ -116,18 +107,14 @@ ushort * param_1;
 // was FUN_0007c814 NOTE: for the item_id==0x1cf special-object branch inside
 // close_door_object/open_door_object, this dispatch is provably always a no-op: closed(<8) routes
 // to close_door_object, whose 0x1cf branch only proceeds when quality is ALREADY >=8...
-void toggle_door_object(param_1,param_2)
-char *param_1;
-byte * param_2;
-
+void toggle_door_object(char *actor, byte *door)
 {
-  if ((*param_2 & 0xf) < 8) {
-    close_door_object(param_1,param_2);
+  if ((*door & 0xf) < 8) {
+    close_door_object(actor, door);
   }
   else {
-    open_door_object(param_2);
+    open_door_object(door);
   }
-  return;
 }
 
 
@@ -137,67 +124,64 @@ byte * param_2;
 
 
 // was FUN_00071e20 -- disabled outright on level 9.
-undefined4 spawn_scheduled_door_texture_object()
-
+undefined4 spawn_scheduled_door_texture_object(void)
 {
-  ushort uVar1;
-  byte bVar2;
-  short sVar3;
-  undefined4 uVar4;
-  ushort *puVar5;
-  int iVar6;
-  undefined1 *puVar7;
-  uint uVar8;
-  undefined2 uVar9;
-  undefined1 uVar10;
-  ushort local_18;
-  ushort local_16;
-  
+  ushort tile_word;
+  byte position_high_bits;
+  short tile_type;
+  undefined4 slot_index;
+  ushort *tile;
+  int clearance;
+  undefined1 *door_texture;
+  uint object_word;
+  undefined2 object_word_low16;
+  undefined1 object_word_high_byte;
+  ushort target_y;
+  ushort target_x;
+
   if (DAT_00201b68 == 9) {
-    uVar4 = 0xffffffff;
+    return 0xffffffff;
   }
-  else {
-    local_16 = DAT_00204880 >> 5;
-    local_18 = DAT_00204882 >> 5;
-    project_position_by_heading((int)DAT_00201c70 >> 8,0xb,&local_16,&local_18);
-    puVar5 = (ushort *)tilemap_lookup((int)(short)local_16 >> 3,(int)(short)local_18 >> 3);
-    uVar1 = *puVar5;
-    if (((uVar1 & 0xf) == 1) &&
-       (((((sVar3 = (&DAT_0023adb8)[uVar1 >> 10 & 0xf], 4 < sVar3 && (sVar3 < 0xc)) ||
-          ((0x11 < sVar3 && (sVar3 < 0x17)))) || ((0x1a < sVar3 && (sVar3 < 0x20)))) ||
-        ((0x22 < sVar3 && (sVar3 < 0x29)))))) {
-      uVar8 = (uVar1 >> 4 & 0xf) << 3;
-      uVar9 = (undefined2)uVar8;
-      iVar6 = check_object_placement_clearance(0x1ca,0,(int)(short)local_16,(int)(short)local_18,uVar9,0,0);
-      uVar10 = (undefined1)((ushort)uVar9 >> 8);
-      if (iVar6 != 0) {
-        puVar7 = (undefined1 *)spawn_new_object(0x1ca,0);
-        uVar1 = *(ushort *)(puVar7 + 2);
-        uVar8 = (uVar1 ^ uVar8) & 0x7f ^ (uint)uVar1;
-        puVar7[2] = (char)uVar8;
-        puVar7[3] = (char)(uVar1 >> 8);
-        bVar2 = (byte)(((local_16 & 7) << 0xd) >> 8);
-        puVar7[2] = (char)(uVar8 & 0x1fff);
-        puVar7[3] = (byte)((uVar8 & 0x1fff) >> 8) | bVar2;
-        puVar7[2] = (char)(uVar8 & 0x3ff);
-        puVar7[3] = (byte)((uVar8 & 0x3ff) >> 8) | bVar2 | (byte)(((local_18 & 7) << 10) >> 8);
-        *puVar7 = *puVar7;
-        puVar7[1] = puVar7[1] | 0x20;
-        uVar4 = encode_object_slot_index(puVar7);
-        sVar3 = scheduler_add_entry(uVar4,0xffffffff,0,(short)local_16 >> 3 & 0xff,
-                             CONCAT11(uVar10,(char)((short)local_18 >> 3)));
-        if (sVar3 != 0) {
-          *(byte *)(DAT_00086df8 + 0x5e) =
-               (byte)(((int)DAT_00201b68 & 0xfU) << 4) | *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
-          object_list_insert_head(puVar5 + 1,puVar7);
-          return 1;
-        }
-        free_object_slot(puVar7);
+  target_x = DAT_00204880 >> 5;
+  target_y = DAT_00204882 >> 5;
+  project_position_by_heading((int)DAT_00201c70 >> 8, 0xb, &target_x, &target_y);
+  tile = (ushort *)tilemap_lookup((int)(short)target_x >> 3, (int)(short)target_y >> 3);
+  tile_word = *tile;
+  if (((tile_word & 0xf) == 1) &&
+     (((((tile_type = (&DAT_0023adb8)[tile_word >> 10 & 0xf], 4 < tile_type && (tile_type < 0xc)) ||
+        ((0x11 < tile_type && (tile_type < 0x17)))) || ((0x1a < tile_type && (tile_type < 0x20)))) ||
+      ((0x22 < tile_type && (tile_type < 0x29)))))) {
+    object_word = (tile_word >> 4 & 0xf) << 3;
+    object_word_low16 = (undefined2)object_word;
+    clearance = check_object_placement_clearance(0x1ca, 0, (int)(short)target_x, (int)(short)target_y,
+                                                 object_word_low16, 0, 0);
+    object_word_high_byte = (undefined1)((ushort)object_word_low16 >> 8);
+    if (clearance != 0) {
+      door_texture = (undefined1 *)spawn_new_object(0x1ca, 0);
+      tile_word = *(ushort *)(door_texture + 2);
+      object_word = (tile_word ^ object_word) & 0x7f ^ (uint)tile_word;
+      door_texture[2] = (char)object_word;
+      door_texture[3] = (char)(tile_word >> 8);
+      position_high_bits = (byte)(((target_x & 7) << 0xd) >> 8);
+      door_texture[2] = (char)(object_word & 0x1fff);
+      door_texture[3] = (byte)((object_word & 0x1fff) >> 8) | position_high_bits;
+      door_texture[2] = (char)(object_word & 0x3ff);
+      door_texture[3] = (byte)((object_word & 0x3ff) >> 8) | position_high_bits | (byte)(((target_y & 7) << 10) >> 8);
+      *door_texture = *door_texture;
+      door_texture[1] = door_texture[1] | 0x20;
+      slot_index = encode_object_slot_index(door_texture);
+      tile_type = scheduler_add_entry(slot_index, 0xffffffff, 0, (short)target_x >> 3 & 0xff,
+                                      CONCAT11(object_word_high_byte, (char)((short)target_y >> 3)));
+      if (tile_type != 0) {
+        *(byte *)(DAT_00086df8 + 0x5e) =
+             (byte)(((int)DAT_00201b68 & 0xfU) << 4) | *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
+        object_list_insert_head(tile + 1, door_texture);
+        return 1;
       }
+      free_object_slot(door_texture);
     }
-    uVar4 = 0;
   }
-  return uVar4;
+  return 0;
 }
 
 
@@ -208,47 +192,39 @@ undefined4 spawn_scheduled_door_texture_object()
 // was FUN_00072084 -- checks whether param_1 (a stored level number) matches the current level
 // (DAT_00201b68); if so, decodes param_2's packed tile coordinates (find_object_in_world) and shows
 // a debug "At X Y" message.
-bool check_scheduled_object_level_match(param_1,param_2)
-short param_1;
-ushort param_2;
-
+bool check_scheduled_object_level_match(short stored_level, ushort packed_tile)
 {
-  bool bVar1;
-  short local_8;
-  short local_6;
-  
+  short tile_x = 0;
+  short tile_y = 0;
+  bool matches_current_level = stored_level == DAT_00201b68;
+
   DAT_00201c9c = 0;
-  local_8 = 0;
-  local_6 = 0;
-  bVar1 = param_1 == DAT_00201b68;
-  if (bVar1) {
-    find_object_in_world((int)(short)param_2 >> 6,(short)param_2 >> 4 & 3,param_2 & 0xf,&local_8,&local_6);
-    debug_print(s_At__d__d_00087360,(int)local_8,(int)local_6);
-    DAT_00201c90 = local_8;
-    DAT_00201c8c = local_6;
+  if (matches_current_level) {
+    find_object_in_world((int)(short)packed_tile >> 6, (short)packed_tile >> 4 & 3, packed_tile & 0xf, &tile_x, &tile_y);
+    debug_print(s_At__d__d_00087360, (int)tile_x, (int)tile_y);
+    DAT_00201c90 = tile_x;
+    DAT_00201c8c = tile_y;
   }
-  return bVar1;
+  return matches_current_level;
 }
 
 
 
 // was FUN_0007213c -- applies a bundle of player-state changes (hunger restoration scaled off the
 // class base-stat row DAT_0023be74+4, the level-7 hazard byte, equipment flags)...
-void apply_special_object_use_effect()
-
+void apply_special_object_use_effect(void)
 {
-  char cVar1;
-  int iVar2;
-  uint uVar3;
-  
-  iVar2 = check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) >> 4,0x1ca);
-  if (iVar2 != 0) {
+  char hunger_roll;
+  int level_matches = check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) >> 4, 0x1ca);
+  uint masked_flags;
+
+  if (level_matches != 0) {
     if (*(byte *)(DAT_0023be74 + 4) < 9) {
       *(byte *)((char *)g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
     }
     else {
-      cVar1 = rand_below(3);
-      *(char *)((char *)g_player_object + 8) = (-2 - cVar1) + *(char *)(DAT_0023be74 + 4);
+      hunger_roll = rand_below(3);
+      *(char *)((char *)g_player_object + 8) = (-2 - hunger_roll) + *(char *)(DAT_0023be74 + 4);
     }
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
     if (8 < *(byte *)(DAT_00086df8 + 0x38)) {
@@ -256,16 +232,15 @@ void apply_special_object_use_effect()
            (-2 - (*(byte *)(DAT_00086df8 + 0x38) >> 3)) + *(char *)(DAT_00086df8 + 0x37);
     }
     *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
-    uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
-    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
-    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
-    uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfc3f;
-    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
-    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
+    masked_flags = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
+    *(char *)(DAT_00086df8 + 0x5f) = (char)masked_flags;
+    *(char *)(DAT_00086df8 + 0x60) = (char)(masked_flags >> 8);
+    masked_flags = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfc3f;
+    *(char *)(DAT_00086df8 + 0x5f) = (char)masked_flags;
+    *(char *)(DAT_00086df8 + 0x60) = (char)(masked_flags >> 8);
     refresh_player_equipment_effects();
     set_pending_music_track(4);
   }
-  return;
 }
 
 
@@ -275,42 +250,35 @@ void apply_special_object_use_effect()
 // was FUN_0007c3f4 -- schedules a door's open animation: derives an animation type from the door's
 // own low bits (a "portcullis"-style door, low 3 bits == 6, uses type 4; every other door type uses
 // 5), sets the door's quality/state field, forces its type-id bits to 0x1cf...
-void schedule_door_open_animation(param_1)
-ushort * param_1;
-
+void schedule_door_open_animation(ushort *door)
 {
-  ushort uVar1;
-  ushort uVar2;
-  byte bVar3;
-  undefined4 uVar4;
-  uint uVar5;
-  undefined4 uVar6;
-  
-  uVar6 = 5;
-  uVar1 = *param_1;
-  uVar2 = param_1[3];
-  if ((uVar1 & 7) == 6) {
-    uVar6 = 4;
+  ushort original_word = *door;
+  ushort quality_word = door[3];
+  byte quality_low_byte = (byte)quality_word;
+  uint updated_word;
+  undefined4 slot_index;
+  undefined4 animation_type = 5;
+
+  if ((original_word & 7) == 6) {
+    animation_type = 4;
   }
-  bVar3 = (byte)uVar2;
-  *(byte *)(param_1 + 3) = ((byte)uVar1 ^ bVar3) & 0x3f ^ bVar3;
-  *(char *)((char *)param_1 + 7) = (char)(uVar2 >> 8);
-  uVar5 = uVar1 & 0xffcf | 0x1cf;
-  *(char *)param_1 = (char)uVar5;
-  *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
+  *(byte *)(door + 3) = ((byte)original_word ^ quality_low_byte) & 0x3f ^ quality_low_byte;
+  *(char *)((char *)door + 7) = (char)(quality_word >> 8);
+  updated_word = original_word & 0xffcf | 0x1cf;
+  *(char *)door = (char)updated_word;
+  *(char *)((char *)door + 1) = (char)(updated_word >> 8);
   /* HACK: was a bare `encode_object_slot_index();` -- dropped argument, same class as
      scheduler_tick's own `scheduler_finish_entry();` fix just above (see its comment).
      encode_object_slot_index's real signature takes the object pointer it encodes... */
-  uVar4 = encode_object_slot_index((char *)param_1);
+  slot_index = encode_object_slot_index((char *)door);
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] schedule_door_open_animation: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d ptr=%p tilefield16=0x%04x doortile_x=%d doortile_y=%d cur_a0=%d cur_a4=%d player_x=%d player_y=%d\n",
-            (unsigned)uVar1, (unsigned)uVar5, (int)(((byte)uVar1 ^ bVar3) & 0x3f ^ bVar3), (int)uVar6, (int)uVar4, (void *)param_1,
-            (unsigned)*(ushort *)((char *)param_1 + 0x16), (int)(*(ushort *)((char *)param_1 + 0x16) >> 10),
-            (int)((*(ushort *)((char *)param_1 + 0x16) & 0x3f0) >> 4), (int)(short)DAT_002020a0, (int)(short)DAT_002020a4,
+            (unsigned)original_word, (unsigned)updated_word, (int)(((byte)original_word ^ quality_low_byte) & 0x3f ^ quality_low_byte), (int)animation_type, (int)slot_index, (void *)door,
+            (unsigned)*(ushort *)((char *)door + 0x16), (int)(*(ushort *)((char *)door + 0x16) >> 10),
+            (int)((*(ushort *)((char *)door + 0x16) & 0x3f0) >> 4), (int)(short)DAT_002020a0, (int)(short)DAT_002020a4,
             (int)(*(ushort *)((char *)g_player_object + 0x16) >> 10),
             (int)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4));
-  scheduler_add_entry(uVar4,uVar6,0,(undefined1)DAT_002020a0,(char)DAT_002020a4);
-  return;
+  scheduler_add_entry(slot_index, animation_type, 0, (undefined1)DAT_002020a0, (char)DAT_002020a4);
 }
 
 
@@ -320,31 +288,26 @@ ushort * param_1;
 // was FUN_0007c4a8 -- companion to schedule_door_open_animation for closing a door: derives the
 // same portcullis-aware animation type (4 vs 5), decrements the door's state field, and, if it
 // already has a live scheduler entry...
-void adjust_door_close_animation_delay(param_1)
-ushort * param_1;
-
+void adjust_door_close_animation_delay(ushort *door)
 {
-  short sVar1;
-  ushort uVar2;
-  short sVar3;
-  
-  sVar3 = 5;
-  uVar2 = *param_1;
-  if ((((uVar2 & 0x1c0) == 0x140) && ((uVar2 & 7) == 6)) ||
-     (((uVar2 & 0x1c0) == 0x1c0 && ((param_1[3] & 7) == 6)))) {
-    sVar3 = 4;
+  short delay;
+  ushort door_word = *door;
+  short animation_type = 5;
+
+  if ((((door_word & 0x1c0) == 0x140) && ((door_word & 7) == 6)) ||
+     (((door_word & 0x1c0) == 0x1c0 && ((door[3] & 7) == 6)))) {
+    animation_type = 4;
   }
-  if ((uVar2 & 0x1000) == 0) {
-    uVar2 = ((uVar2 & 0xe00) - 0xe01 ^ uVar2) & 0x1e00 ^ uVar2;
+  if ((door_word & 0x1000) == 0) {
+    door_word = ((door_word & 0xe00) - 0xe01 ^ door_word) & 0x1e00 ^ door_word;
   }
   else {
-    uVar2 = uVar2 & 0xefff;
+    door_word = door_word & 0xefff;
   }
-  *(char *)param_1 = (char)uVar2;
-  *(char *)((char *)param_1 + 1) = (char)(uVar2 >> 8);
-  sVar1 = scheduler_get_delay(param_1);
-  if (-1 < sVar1) {
-    scheduler_set_delay(param_1,((int)sVar3 - (int)sVar1) * 0x10000 >> 0x10);
+  *(char *)door = (char)door_word;
+  *(char *)((char *)door + 1) = (char)(door_word >> 8);
+  delay = scheduler_get_delay(door);
+  if (-1 < delay) {
+    scheduler_set_delay(door, ((int)animation_type - (int)delay) * 0x10000 >> 0x10);
   }
-  return;
 }

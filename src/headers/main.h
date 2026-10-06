@@ -6,11 +6,11 @@
  * itself so this header is self-contained for any caller. */
 #include "uw.h"
 
-void entry(undefined4 param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4);
-void run_static_initializers();
-void call_function_pointer_range();
-void terminate_process();
-undefined4 register_atexit_handler();
-undefined4 register_default_atexit_handler();
+void entry(undefined4 instance, undefined4 prev_instance, undefined4 command_line, undefined4 show_command);
+void run_static_initializers(void);
+void call_function_pointer_range(undefined4 *range_start, undefined4 *range_end);
+void terminate_process(int exit_code);
+undefined4 register_atexit_handler(undefined4 handler);
+undefined4 register_default_atexit_handler(undefined4 handler);
 
 #endif

@@ -9,7 +9,7 @@ void set_pending_update_flags(int flags);
 long ce_rand(void);
 int encode_object_slot_index(void *object);
 undefined4 check_object_placement_clearance(void);
-void adjust_door_close_animation_delay(void *object);
+void adjust_door_close_animation_delay(ushort *object);
 undefined4 play_positional_sound_effect(void);
 undefined4 scheduler_advance_effect(void);
 void *get_object_record_by_slot_index(int slot);
@@ -136,7 +136,7 @@ int encode_object_slot_index(void *object)
 
 undefined4 check_object_placement_clearance(void) { TEST_FAIL_MESSAGE("Unexpected door sweep"); return 0; }
 
-void adjust_door_close_animation_delay(void *object) { (void)object; }
+void adjust_door_close_animation_delay(ushort *object) { (void)object; }
 
 undefined4 play_positional_sound_effect(void) { return 0; }
 
