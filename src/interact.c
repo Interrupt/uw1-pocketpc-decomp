@@ -461,8 +461,8 @@ uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort 
     bVar6 = (byte)*lock_link;
   }
   iVar3 = (char *)resolve_object_link(lock_link + 3);
-  bVar6 = (byte)lock_link[2] & 0x3f;
-  bVar7 = (byte)lock_link[3] & 0x3f;
+  bVar6 = ((uw_object_hdr_t *)lock_link)->quality;
+  bVar7 = ((uw_object_hdr_t *)lock_link)->owner;
   if (iVar3 == 0) {
     return 2;
   }
@@ -585,7 +585,7 @@ void attempt_talk_interaction(ushort *target)
     return;
   }
   if (uVar6 == 0x16e) {
-    if (((&DAT_0023add0)[(byte)target[3] & 0x3f] & 0xff) != 8) {
+    if (((&DAT_0023add0)[((uw_object_hdr_t *)target)->owner] & 0xff) != 8) {
       return;
     }
     print_scroll_message_by_id(0x110);

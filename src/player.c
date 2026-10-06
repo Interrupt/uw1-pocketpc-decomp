@@ -1297,7 +1297,7 @@ int compute_object_weight(ushort *object)
     iVar2 = 0;
   }
   else {
-    iVar2 = (((int)((uint)(byte)(&DAT_00202750)[((uw_object_hdr_t *)object)->item_id * 4 - 0x80] * ((byte)object[2] & 0x3f)) >>
+    iVar2 = (((int)((uint)(byte)(&DAT_00202750)[((uw_object_hdr_t *)object)->item_id * 4 - 0x80] * (((uw_object_hdr_t *)object)->quality)) >>
              6) + 1) * 0x10000 >> 0x10;
   }
   return iVar2;

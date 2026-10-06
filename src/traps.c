@@ -78,14 +78,14 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
       uVar6 = 0;
     }
     sVar3 = -1;
-    if ((trap_record[3] & 0x3f) == 0) {
+    if (((uw_object_hdr_t *)trap_record)->owner == 0) {
       sVar3 = 1;
     }
     uVar7 = encode_object_slot_index(DAT_0024cff4);
-    iVar16 = apply_poison_or_damage_trap_effect(uVar7,((byte)trap_record[2] & 0x3f) * (int)sVar3,4,uVar6);
+    iVar16 = apply_poison_or_damage_trap_effect(uVar7,((uw_object_hdr_t *)trap_record)->quality * (int)sVar3,4,uVar6);
     break;
   case 1:
-    iVar16 = teleport_object_to_level_tile(DAT_0024cff4,(byte)trap_record[2] & 0x3f,(byte)trap_record[3] & 0x3f,
+    iVar16 = teleport_object_to_level_tile(DAT_0024cff4,((uw_object_hdr_t *)trap_record)->quality,((uw_object_hdr_t *)trap_record)->owner,
                           ((uw_object_hdr_t *)trap_record)->zpos);
     break;
   case 2:
@@ -103,7 +103,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
     if (iVar16 * 0x10000 >> 0x10 == 0xf) {
       uVar13 = 10;
     }
-    iVar16 = apply_area_terrain_effect(tile_x,tile_y,(byte)trap_record[3] & 0x3f,((byte)trap_record[2] & 0x3e) >> 1,
+    iVar16 = apply_area_terrain_effect(tile_x,tile_y,((uw_object_hdr_t *)trap_record)->owner,((byte)trap_record[2] & 0x3e) >> 1,
                           CONCAT22(uVar20,uVar4 >> 3) & 0xffff000f,CONCAT22(uVar21,uVar13),
                           ((uw_object_hdr_t *)trap_record)->xpos,((uw_object_hdr_t *)trap_record)->ypos,0);
     break;
@@ -114,7 +114,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
     break;
   case 7:
     iVar16 = rand_below(0x3f);
-    if (iVar16 < (int)((byte)trap_record[2] & 0x3f)) {
+    if (iVar16 < (int)((uw_object_hdr_t *)trap_record)->quality) {
       return 2;
     }
     if (((uw_object_hdr_t *)trap_record)->is_quant) {
@@ -202,7 +202,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
       if (_case8_p1 == (ushort *)0x0) {
         return 2;
       }
-      uVar4 = trap_record[2] & 0x3f;
+      uVar4 = ((uw_object_hdr_t *)trap_record)->quality;
       if (getenv("UW_DEBUG_DOOR"))
         fprintf(stderr, "[door] dispatch_trap_type_effect case8(branchA): trigger_state(uVar4)=%d target_nibble=%d target_obj0=0x%04x\n",
                 (int)uVar4, (int)(*(byte *)((char *)_case8_p1 + 6) & 0xf), (unsigned)*_case8_p1);
@@ -243,7 +243,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
           object_list_insert_head(local_34,puVar10);
         }
       }
-      uVar4 = trap_record[2] & 0x3f;
+      uVar4 = ((uw_object_hdr_t *)trap_record)->quality;
       if (getenv("UW_DEBUG_DOOR"))
         fprintf(stderr, "[door] dispatch_trap_type_effect case8(branchB): trigger_state(uVar4)=%d target_obj0=0x%04x\n",
                 (int)uVar4, (unsigned)*_case8_p1);
@@ -271,7 +271,7 @@ LAB_0007dce4:
     if (DAT_0024cff4 == (byte *)0x0) {
       return 2;
     }
-    if (((trap_record[2] & 0x3f) != 0x3f) && (((*DAT_0024cff4 & 0xf ^ trap_record[2]) & 0x3f) != 0)) {
+    if ((((uw_object_hdr_t *)trap_record)->quality != 0x3f) && (((*DAT_0024cff4 & 0xf ^ trap_record[2]) & 0x3f) != 0)) {
       return 2;
     }
     sVar3 = rand_below(*(undefined1 *)(DAT_00086df8 + 0x2a));
@@ -284,14 +284,14 @@ LAB_0007dce4:
     iVar16 = apply_poison_or_damage_trap_effect(uVar6,sVar3 + 3,4,0);
     return iVar16;
   case 0xb:
-    local_34 = (char *)tilemap_lookup(trap_record[2] & 0x3f,(byte)trap_record[3] & 0x3f);
+    local_34 = (char *)tilemap_lookup(((uw_object_hdr_t *)trap_record)->quality,((uw_object_hdr_t *)trap_record)->owner);
     local_34 = local_34 + 2;
     uVar6 = resolve_object_link(trap_record + 3);
     unlink_and_free_object(local_34,uVar6);
     set_pending_update_flags(2);
     return 2;
   case 0xc:
-    uVar4 = (byte)trap_record[3] & 0x3f | ((byte)trap_record[2] & 0x3f) << 5;
+    uVar4 = ((uw_object_hdr_t *)trap_record)->owner | ((uw_object_hdr_t *)trap_record)->quality << 5;
     iVar11 = find_equipped_item_by_category((short)uVar4 >> 6,(short)uVar4 >> 4 & 3,(byte)trap_record[3] & 0xf,4,
                           auStack_38);
     if (iVar11 == 0) {
@@ -386,7 +386,7 @@ LAB_0007d460:
       tile_y = (uint)sVar3;
     }
     if (((ushort)uVar14 !=
-         (ushort)(((uw_object_hdr_t *)trap_record)->ypos | (trap_record[3] & 0x3f | ((byte)trap_record[2] & 0x3f) << 5) << 3)) &&
+         (ushort)(((uw_object_hdr_t *)trap_record)->ypos | (((uw_object_hdr_t *)trap_record)->owner | ((uw_object_hdr_t *)trap_record)->quality << 5) << 3)) &&
        ((trap_record[3] & 0xffc0) != 0)) {
       iVar16 = resolve_object_link(trap_record + 3);
       if ((*(ushort *)(iVar16 + 4) & 0xffc0) == 0) {
@@ -401,7 +401,7 @@ LAB_0007d460:
     break;
   case 0x10:
     /* ARM 0x7de30..0x7de48 keeps the returned message pointer in r5. */
-    pcMessage = get_message_string((byte)trap_record[3] & 0x3f | ((byte)trap_record[2] & 0x2f | 0x90) << 5);
+    pcMessage = get_message_string(((uw_object_hdr_t *)trap_record)->owner | ((byte)trap_record[2] & 0x2f | 0x90) << 5);
     debug_print(s_Look__it_s_a_text_trap_00087918);
     if (pcMessage != 0) {
       message_scroll_print_wrapped(pcMessage);
@@ -540,7 +540,7 @@ int create_scripted_trap_pair_at_tile(int tile_x, int tile_y, uint code)
       *(undefined1 *)((char *)puVar4 + 5) = 0;
       uVar7 = encode_object_slot_index(puVar5);
       iVar1 = (uVar7 & 0x3ff) << 6;
-      bVar3 = (byte)puVar4[3] & 0x3f | (byte)iVar1;
+      bVar3 = ((uw_object_hdr_t *)puVar4)->owner | (byte)iVar1;
       uVar2 = puVar4[2];
       bVar9 = (byte)uVar2;
       *(byte *)(puVar4 + 2) = (bVar9 ^ (byte)tile_x) & 0x3f ^ bVar9;

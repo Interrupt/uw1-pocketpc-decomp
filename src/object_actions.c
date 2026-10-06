@@ -146,7 +146,7 @@ void dispatch_object_action(ushort *object, int mode)
     return;
   }
   iVar5 = 0;
-  if ((object[2] & 0x3f) != 0) {
+  if (((uw_object_hdr_t *)object)->quality != 0) {
     if (((&DAT_00202c97)[iVar9] & 0xc) == 0xc) {
       sVar4 = 5;
     }
@@ -470,7 +470,7 @@ void dispatch_object_action_dup(ushort *object, int mode)
     return;
   }
   iVar5 = 0;
-  if ((object[2] & 0x3f) != 0) {
+  if (((uw_object_hdr_t *)object)->quality != 0) {
     if (((&DAT_00202c97)[iVar9] & 0xc) == 0xc) {
       sVar4 = 5;
     }
@@ -2000,7 +2000,7 @@ int resolve_object_variant_or_special_link(ushort *object, ushort *out_class, us
       if (object == (ushort *)0x0) {
         return 0;
       }
-      if ((((object[2] & 0x3f) == 0) && (DAT_0024cfcc == 0)) &&
+      if (((((uw_object_hdr_t *)object)->quality == 0) && (DAT_0024cfcc == 0)) &&
          (iVar3 = rand_below(10), iVar3 < 4)) {
         return 0;
       }
@@ -2608,12 +2608,12 @@ void look_at_inscribed_object(ushort *inscribed_object, short look_mode)
           return;
         }
         if (-1 < look_mode) {
-          describe_picked_terrain(2,((byte)inscribed_object[3] & 0x3f) + 1);
+          describe_picked_terrain(2,((uw_object_hdr_t *)inscribed_object)->owner + 1);
         }
         if (look_mode < 1) {
           return;
         }
-        if (((&DAT_0023add0)[(byte)inscribed_object[3] & 0x3f] & 0xff) != 9) {
+        if (((&DAT_0023add0)[((uw_object_hdr_t *)inscribed_object)->owner] & 0xff) != 9) {
           return;
         }
         trigger_terrain_discovery_illustration();
@@ -2622,7 +2622,7 @@ void look_at_inscribed_object(ushort *inscribed_object, short look_mode)
       sVar10 = 0x170;
     }
     if (!((uw_object_hdr_t *)inscribed_object)->is_quant) {
-      uVar9 = (byte)inscribed_object[3] & 0x3f;
+      uVar9 = ((uw_object_hdr_t *)inscribed_object)->owner;
     }
     else {
       uVar9 = (CONCAT11(*(undefined1 *)((char *)inscribed_object + 7),(byte)inscribed_object[3]) & 0x7fc0) >> 6;
@@ -2690,7 +2690,7 @@ void describe_object_owner(ushort *object, short mode)
         uVar3 = 0x17;
       }
       print_scroll_message_by_id(uVar3);
-      uVar2 = (byte)object[3] & 0x3f;
+      uVar2 = ((uw_object_hdr_t *)object)->owner;
       if (uVar2 == 0x3f) {
         pcVar4 = s_an_adventurer__00085d08;
       }

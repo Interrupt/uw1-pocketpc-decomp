@@ -780,8 +780,8 @@ int npc_ai_tick()
   DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
                  (ushort)(*(byte *)((char *)DAT_0010190c + 3) >> 5);
   DAT_0010141c = (*(byte *)((char *)DAT_0010190c + 3) >> 2 & 7) + (short)((uVar9 << 0x13) >> 0x10);
-  DAT_0010143c = (byte)DAT_0010190c[2] & 0x3f;
-  DAT_0010173c = (byte)DAT_0010190c[3] & 0x3f;
+  DAT_0010143c = ((uw_object_hdr_t *)DAT_0010190c)->quality;
+  DAT_0010173c = ((uw_object_hdr_t *)DAT_0010190c)->owner;
   DAT_00101458 = *(byte *)((char *)DAT_0010190c + 9);
   bVar3 = (byte)(DAT_0010190c[1] >> 2);
   DAT_001018fc = (bVar3 ^ (byte)DAT_0010190c[0xc]) & 0x1f ^ bVar3;
@@ -2842,8 +2842,8 @@ void setup_npc_ai_tick_state(ushort *npc)
   DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
                  (ushort)(*(byte *)((char *)DAT_0010190c + 3) >> 5);
   DAT_0010141c = (*(byte *)((char *)DAT_0010190c + 3) >> 2 & 7) + (short)((uVar2 << 0x13) >> 0x10);
-  DAT_0010143c = (byte)DAT_0010190c[2] & 0x3f;
-  DAT_0010173c = (byte)DAT_0010190c[3] & 0x3f;
+  DAT_0010143c = ((uw_object_hdr_t *)DAT_0010190c)->quality;
+  DAT_0010173c = ((uw_object_hdr_t *)DAT_0010190c)->owner;
   DAT_00101458 = *(byte *)((char *)DAT_0010190c + 9);
   bVar1 = (byte)(DAT_0010190c[1] >> 2);
   DAT_001018fc = (bVar1 ^ (byte)DAT_0010190c[0xc]) & 0x1f ^ bVar1;
@@ -3412,7 +3412,7 @@ void npc_movement_tick(ushort *npc_object, char *scratch)
   if (getenv("UW_DEBUG_NPC_TICK"))
     fprintf(stderr, "[npc-tick] obj=%p class=0x%x tile=(%u,%u) target=(%u,%u)\n",
             (void *)npc_object, (unsigned)(((uw_object_hdr_t *)npc_object)->item_id), uVar9, uVar11,
-            (unsigned)((byte)npc_object[2] & 0x3f), (unsigned)(npc_object[3] & 0x3f));
+            (unsigned)(((uw_object_hdr_t *)npc_object)->quality), (unsigned)(((uw_object_hdr_t *)npc_object)->owner));
   if ((npc_object[7] & 1) != 0) {
     unlink_and_free_object(local_28 + 2,npc_object);
     return;
@@ -3441,8 +3441,8 @@ void npc_movement_tick(ushort *npc_object, char *scratch)
     *pcVar3 = cVar7;
   }
 LAB_00034db4:
-  uVar10 = (byte)npc_object[2] & 0x3f;
-  uVar8 = npc_object[3] & 0x3f;
+  uVar10 = ((uw_object_hdr_t *)npc_object)->quality;
+  uVar8 = ((uw_object_hdr_t *)npc_object)->owner;
   puVar4 = (ushort *)tilemap_lookup(uVar10,uVar8);
   if (((uVar9 != uVar10) || (uVar11 != uVar8)) &&
      (iVar5 = resolve_tile_entry_offset(((uw_tile_t *)puVar4)->tile_type,&local_2c,local_2b), iVar5 != 0)) {
@@ -3843,7 +3843,7 @@ void emit_noise_alert(ushort *source, byte noise_type)
   bVar1 = noise_type;
   if ((noise_type == 0) &&
      (bVar1 = DAT_0010195c, g_object_type_props[((uw_object_hdr_t *)source)->item_id].is_container)) {
-    bVar1 = (byte)source[3] & 0x3f;
+    bVar1 = ((uw_object_hdr_t *)source)->owner;
   }
   DAT_0010195c = bVar1;
   if (DAT_0010195c != 0) {
@@ -5187,7 +5187,7 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
     snapshot[0x11] = 0;
     snapshot[0x14] = 0;
     snapshot[0x15] = 0;
-    snapshot[0x1e] = (byte)object[2] & 0x3f;
+    snapshot[0x1e] = ((uw_object_hdr_t *)object)->quality;
     iVar5 = (int)CONCAT11(snapshot[1],*snapshot) + DAT_0010144c * 8;
     *snapshot = (byte)iVar5;
     snapshot[1] = (byte)((uint)iVar5 >> 8);

@@ -1033,7 +1033,7 @@ LAB_0005e7e0:
       /* UW1 tile word2 (bytes 2-3) bits 0-5 = wall texture index; word1's high byte (byte 1) holds
          the floor texture / height and was almost always 0 here, so every wall drew arena slot 0
          (plain grey) instead of the level's real -- often mossy -- wall texture. */
-      (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[2] & 0x3f);
+      (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,((uw_object_hdr_t *)puVar23)->quality);
       uVar26 = (ushort)DAT_0023b4e0;
       bVar25 = (byte)g_current_tile->wall_tex;
       if ((short)uVar26 < DAT_00086b24) {
@@ -1278,7 +1278,7 @@ LAB_0005e7e0:
         (int)*(short *)(iVar16 + 0x12)) * (int)(char)(&DAT_00086bcd)[iVar33] < 0) {
       /* diagonal-wall face: same wall-texture-index byte fix as the
          orthogonal branch above (word2 byte 2 bits 0-5, not byte 1). */
-      (*DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[2] & 0x3f);
+      (*DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,((uw_object_hdr_t *)puVar23)->quality);
       uVar27 = (ushort)DAT_0023b4e0;
       bVar25 = (byte)g_current_tile->wall_tex;
       if ((short)uVar27 < DAT_00086b24) {
@@ -2124,7 +2124,7 @@ void emit_tile_objects(ushort *tile)
       int _id = ((uw_object_hdr_t *)_rec)->item_id;
       int _iv = _id * 0xd;
       int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
-      int _qual = (byte)_rec[2] & 0x3f;
+      int _qual = ((uw_object_hdr_t *)_rec)->quality;
       int _off = 0;
       if (_qual != 0) {
         _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)_rec[2] >> 4 & 3) + 1);
@@ -2232,7 +2232,7 @@ void emit_tile_objects(ushort *tile)
               // offset 0 instead of the real 0xa).
               int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
               int _heading = (_rec[1] >> 6) & 7;
-              int _quality = _rec[3] & 0x3f;
+              int _quality = ((uw_object_hdr_t *)_rec)->owner;
 // Page 4 of comobj's string data is the base object-name table, indexed directly by
               // id (see UW_DUMP_NAMES/this session's findings) -- not the quality-adjective group
               // table UW_LOOK_SLOT resolves via namegrp*6+offset.
@@ -2325,7 +2325,7 @@ void emit_tile_objects(ushort *tile)
     int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
     fprintf(stderr, "[objclass] id=0x%03x renderclass=%d prop_byte=0x%02x quality=%d heading=%d namegrp=%d scrx=%d scry=%d scrz=%d names=",
             (int)(((uw_object_hdr_t *)tile)->item_id), (int)bVar13, (int)bVar1,
-            (int)((byte)tile[3] & 0x3f), (int)(tile[1] >> 6 & 7), _grp,
+            (int)(((uw_object_hdr_t *)tile)->owner), (int)(tile[1] >> 6 & 7), _grp,
             (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c);
     { int _k;
       for (_k = 0; _k < 6; _k++) {
@@ -2337,7 +2337,7 @@ void emit_tile_objects(ushort *tile)
   }
   if ((uVar27 & 0x1c0) == 0x1c0) {
     DAT_0023b804 = 1;
-    uVar27 = (byte)tile[3] & 0x3f;
+    uVar27 = ((uw_object_hdr_t *)tile)->owner;
     if ((bVar1 & 3) == 0) {
       if ((short)uVar27 == 0) {
         uVar27 = ((uw_object_hdr_t *)tile)->item_id;
@@ -2649,7 +2649,7 @@ LAB_00061d34:
         int _id = uVar27 & 0x1ff;
         int _iv = _id * 0xd;
         int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
-        int _qual = (byte)tile[2] & 0x3f;
+        int _qual = ((uw_object_hdr_t *)tile)->quality;
         int _off = 0;
         if (_qual != 0) {
           _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)tile[2] >> 4 & 3) + 1);
@@ -2874,12 +2874,12 @@ LAB_00061d34:
     return;
   }
   DAT_0023b818 = 0xe0;
-  emit_diagonal_wall_texture_select(0,DAT_0023b4e0,4,(byte)tile[3] & 0x3f);
+  emit_diagonal_wall_texture_select(0,DAT_0023b4e0,4,((uw_object_hdr_t *)tile)->owner);
   *DAT_00110fc0 = 0xb2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = DAT_0023b81c;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  cVar2 = *(char *)(&DAT_0023add0 + ((byte)tile[3] & 0x3f));
+  cVar2 = *(char *)(&DAT_0023add0 + ((uw_object_hdr_t *)tile)->owner);
   if ((cVar2 == '\x03') || (cVar2 == '\x04')) {
     DAT_0023b834 = 3;
   }
@@ -2905,7 +2905,7 @@ LAB_00060f54:
   /* Same heading fix as the generic DAT_00086c80 dispatch above (see its
      own comment). Class-3's other sub-branch (force field/special tmap
      obj). */
-  emit_catalog_object(0x16,tile,(tile[1] >> 7 & 7) << 1,(byte)tile[3] & 0x3f);
+  emit_catalog_object(0x16,tile,(tile[1] >> 7 & 7) << 1,((uw_object_hdr_t *)tile)->owner);
   if (!bVar14) {
     return;
   }

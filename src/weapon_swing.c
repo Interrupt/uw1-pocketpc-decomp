@@ -808,7 +808,7 @@ void fire_ranged_weapon(short weapon_type)
       *(char *)puVar6 = (char)*puVar6;
       *(byte *)((char *)puVar6 + 1) =
            (bVar2 ^ *(byte *)((char *)puVar6 + 1)) & 0x1e ^ *(byte *)((char *)puVar6 + 1);
-      *(byte *)(puVar6 + 4) = (byte)puVar7[2] & 0x3f;
+      *(byte *)(puVar6 + 4) = ((uw_object_hdr_t *)puVar7)->quality;
       *(byte *)(puVar6 + 3) = ((byte)puVar7[3] ^ (byte)puVar6[3]) & 0x3f ^ (byte)puVar6[3];
       *(undefined1 *)((char *)puVar6 + 7) = *(undefined1 *)((char *)puVar6 + 7);
       bVar2 = *(byte *)((char *)puVar7 + 1);

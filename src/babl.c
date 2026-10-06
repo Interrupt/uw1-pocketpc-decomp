@@ -936,7 +936,7 @@ void babl_builtin_x_obj_stuff(char *args)
       *psVar4 = (short)((puVar11[1] & 0x380) >> 7);
     }
     if (*puVar5 != 0xffff) {
-      *puVar5 = (byte)puVar11[3] & 0x3f;
+      *puVar5 = ((uw_object_hdr_t *)puVar11)->owner;
     }
     if (*psVar6 != -1) {
       *psVar6 = (short)((*(byte *)((char *)puVar11 + 1) & 0x1e) >> 1);
@@ -951,7 +951,7 @@ void babl_builtin_x_obj_stuff(char *args)
       *psVar9 = ((short)*(char *)((char *)puVar11 + 1) & 2U) << 8;
     }
     if (*puVar10 != 0xffff) {
-      *puVar10 = (byte)puVar11[2] & 0x3f;
+      *puVar10 = ((uw_object_hdr_t *)puVar11)->quality;
     }
   }
   else {
@@ -976,7 +976,7 @@ void babl_builtin_x_obj_stuff(char *args)
     }
     uVar12 = (uint)*psVar7;
     if (uVar12 != 0xffffffff) {
-      *(byte *)(puVar11 + 3) = (byte)puVar11[3] & 0x3f | (byte)(uVar12 << 6);
+      *(byte *)(puVar11 + 3) = ((uw_object_hdr_t *)puVar11)->owner | (byte)(uVar12 << 6);
       *(char *)((char *)puVar11 + 7) = (char)((uVar12 & 0x3ffffff | 0xfe00) >> 2);
     }
     sVar3 = *psVar8;
@@ -2961,9 +2961,9 @@ void sync_conv_vars_from_npc(ushort *npc)
   babl_set_variable(s_npc_talkedto_00085340,local_20,1);
   local_20[0] = (byte)(&DAT_001007dd)[iVar3] & 0xf;
   babl_set_variable(s_npc_level_00085334,local_20,1);
-  local_20[0] = (byte)npc[2] & 0x3f;
+  local_20[0] = ((uw_object_hdr_t *)npc)->quality;
   babl_set_variable(s_npc_xhome_00085328,local_20,1);
-  local_20[0] = (byte)npc[3] & 0x3f;
+  local_20[0] = ((uw_object_hdr_t *)npc)->owner;
   babl_set_variable(s_npc_yhome_0008531c,local_20,1);
   if ((byte)npc[0xd] == 0) {
     local_20[0] = ((uw_object_hdr_t *)npc)->item_id | 0x800;
@@ -4462,7 +4462,7 @@ int compute_barter_item_value(short is_player_side, int item_id, int mode)
   }
   iVar8 = (int)(short)uVar3 * (int)sVar6 * 0x10000 >> 0x10;
   if (0 < iVar8) {
-    iVar1 = (int)(short)((byte)puVar4[2] & 0x3f);
+    iVar1 = (int)(short)((uw_object_hdr_t *)puVar4)->quality;
     if (iVar1 == 0) {
       iVar8 = 0;
     }

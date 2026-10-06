@@ -251,7 +251,7 @@ int drop_held_object_near_player(ushort *held_object, int force)
       *(char *)puVar5 = (char)*puVar5;
       *(byte *)((char *)puVar5 + 1) =
            (bVar1 ^ *(byte *)((char *)puVar5 + 1)) & 0x1e ^ *(byte *)((char *)puVar5 + 1);
-      *(byte *)(puVar5 + 4) = (byte)held_object[2] & 0x3f;
+      *(byte *)(puVar5 + 4) = ((uw_object_hdr_t *)held_object)->quality;
       *(byte *)(puVar5 + 3) = ((byte)held_object[3] ^ (byte)puVar5[3]) & 0x3f ^ (byte)puVar5[3];
       *(undefined1 *)((char *)puVar5 + 7) = *(undefined1 *)((char *)puVar5 + 7);
       bVar1 = *(byte *)((char *)held_object + 1);
@@ -396,7 +396,7 @@ void use_light_source(ushort *object, int turn_on)
     uVar5 = 0x7b;
   }
   else {
-    if ((object[2] & 0x3f) != 0) {
+    if (((uw_object_hdr_t *)object)->quality != 0) {
       iVar6 = find_or_assign_object_widget(object);
       iVar8 = 0;
       do {
@@ -641,7 +641,7 @@ LAB_0007b2e0:
         ce_strcat(acStack_7c,s_UNNAMED_00084f24);
       }
       iVar11 = rand_below(0x14);
-      iVar11 = ((byte)object[2] & 0x3f) + iVar11;
+      iVar11 = ((uw_object_hdr_t *)object)->quality + iVar11;
       if (iVar11 < 0) {
         iVar11 = iVar11 + 0xf;
       }
@@ -1276,7 +1276,7 @@ void complete_use_item_on_flagged_tile(ushort *target, int consume)
   pop_cursor_icon(3);
   g_selected_object = 0;
   g_cursor_holding_state = 0;
-  if (((((uw_object_hdr_t *)target)->item_id) == 0x16e) && (((&DAT_0023add0)[(byte)target[3] & 0x3f] & 0xff) == 0xb)) {
+  if (((((uw_object_hdr_t *)target)->item_id) == 0x16e) && (((&DAT_0023add0)[((uw_object_hdr_t *)target)->owner] & 0xff) == 0xb)) {
     finish_object_use(DAT_00202098,consume,1);
     trigger_object_trap_or_use_action(g_player_object,target,7,(int)DAT_002020a0,DAT_002020a4);
     return;
@@ -2246,12 +2246,12 @@ int objects_can_stack(ushort *object_a, ushort *object_b)
        ((((uVar3 & 0x1f0) != 0x100 || (((uVar5 ^ uVar4) & 0x3f) == 0)) &&
         ((ushort)((uVar5 >> 6) + (uVar4 >> 6)) < 999)))) {
       if ((uVar6 < 0x10) || (0x12 < uVar6)) {
-        bVar1 = (byte)object_a[2] & 0x3f;
-        bVar2 = (byte)object_b[2] & 0x3f;
+        bVar1 = ((uw_object_hdr_t *)object_a)->quality;
+        bVar2 = ((uw_object_hdr_t *)object_b)->quality;
         if (((bVar1 ^ bVar2) & 0xf0) != 0) {
           return 0;
         }
-        if (((((byte)object_a[2] & 0x3f) == 0) || (((byte)object_b[2] & 0x3f) == 0)) &&
+        if ((((((uw_object_hdr_t *)object_a)->quality) == 0) || ((((uw_object_hdr_t *)object_b)->quality) == 0)) &&
            (bVar1 != bVar2)) {
           return 0;
         }
@@ -3451,7 +3451,7 @@ int handle_backpack_slot_interact(ushort *object, uint slot)
     *(byte *)(puVar4 + 3) = (byte)iVar5 ^ (byte)puVar4[3] & 0x3f;
     *(char *)((char *)puVar4 + 7) = (char)((uint)iVar5 >> 8);
     *(byte *)(puVar4 + 2) =
-         (bVar2 ^ (byte)((int)(((byte)object[2] & 0x3f) +
+         (bVar2 ^ (byte)((int)((((uw_object_hdr_t *)object)->quality) +
                               (CONCAT11(*(undefined1 *)((char *)puVar4 + 5),bVar2) & 0x3f)) >> 1)) &
          0x3f ^ bVar2;
     *(undefined1 *)((char *)puVar4 + 5) = *(undefined1 *)((char *)puVar4 + 5);

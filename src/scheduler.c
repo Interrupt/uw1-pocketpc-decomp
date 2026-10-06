@@ -117,7 +117,7 @@ void scheduler_finish_entry(int entry_slot)
   }
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] scheduler_finish_entry: obj0=0x%04x class=%d flags=0x%x bVar11(skip-inc)=%d quality_before=%d\n",
-            (unsigned)*puVar4, (int)uVar5, (unsigned)uVar1, (int)bVar11, (int)(puVar4[3] & 0x3f));
+            (unsigned)*puVar4, (int)uVar5, (unsigned)uVar1, (int)bVar11, (int)(((uw_object_hdr_t *)puVar4)->owner));
   if (!bVar11) {
     /* HACK: was a bare `scheduler_step_entry(entry_slot);` -- dropped second argument (elapsed ticks),
        same class as this file's other Ghidra-decompiled dropped-argument calls.
@@ -315,7 +315,7 @@ void scheduler_step_entry(int entry_slot, int elapsed)
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] scheduler_step_entry: obj0=0x%04x class=%d iVar1=%d flags(uVar7)=0x%x DAT_00250732[iVar1]=%d DAT_00250733[iVar1]=%d quality_before=%d\n",
               (unsigned)*puVar4, (*puVar4 & 0xf), iVar1, (unsigned)*(ushort *)(&DAT_00250730 + iVar1),
-              (int)(char)(&DAT_00250732)[iVar1], (int)(byte)(&DAT_00250733)[iVar1], (int)(puVar4[3] & 0x3f));
+              (int)(char)(&DAT_00250732)[iVar1], (int)(byte)(&DAT_00250733)[iVar1], (int)(((uw_object_hdr_t *)puVar4)->owner));
     for (uVar7 = *(ushort *)(&DAT_00250730 + iVar1); uVar7 != 0; uVar7 = uVar7 & uVar8) {
       uVar8 = uVar3 & uVar7;
       if (uVar8 == 1) {

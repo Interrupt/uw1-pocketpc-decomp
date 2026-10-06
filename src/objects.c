@@ -1925,7 +1925,7 @@ ushort *reallocate_object_to_arena(ushort *object)
     *(char *)(puVar2 + 3) = (char)object[3];
     *(undefined1 *)((char *)puVar2 + 7) = *(undefined1 *)((char *)object + 7);
     compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
-    *(byte *)(puVar2 + 4) = (byte)object[2] & 0x3f;
+    *(byte *)(puVar2 + 4) = ((uw_object_hdr_t *)object)->quality;
     if (((*object & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(((uw_object_hdr_t *)object)->item_id) * 0xd] & 3) != 2)) {
       *(byte *)(puVar2 + 0xd) = (byte)(object[1] >> 7) & 7;
     }

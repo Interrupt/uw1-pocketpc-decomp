@@ -1692,7 +1692,7 @@ void emit_anim_object_frames(uint door_type, ushort *obj)
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] anim_frames: door_type=%u obj0=0x%04x bVar4(obj+1)=0x%02x openbits=%d sign=%d iVar8=%d DAT_0018957a=%d quality(obj[3]&0x3f)=%d obj[3]=0x%04x\n",
               door_type, (unsigned)*obj, (unsigned)bVar4, (bVar4 >> 1 & 7), (bVar4 >> 5 & 1), iVar8, (int)(short)DAT_0018957a,
-              (int)(obj[3] & 0x3f), (unsigned)obj[3]);
+              (int)(((uw_object_hdr_t *)obj)->owner), (unsigned)obj[3]);
   }
   local_36 = 0x330 - sVar1;
   DAT_00110fc0 = DAT_00110fc0 + 1;

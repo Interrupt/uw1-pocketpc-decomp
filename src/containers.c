@@ -702,7 +702,7 @@ LAB_0004386c:
           *(byte *)(puVar6 + 3) = (byte)iVar10 ^ (byte)puVar6[3] & 0x3f;
           *(char *)((char *)puVar6 + 7) = (char)((uint)iVar10 >> 8);
           *(byte *)(puVar6 + 2) =
-               (bVar1 ^ (byte)((int)(((byte)object[2] & 0x3f) +
+               (bVar1 ^ (byte)((int)((((uw_object_hdr_t *)object)->quality) +
                                     (CONCAT11(*(undefined1 *)((char *)puVar6 + 5),bVar1) & 0x3f)) >> 1)
                ) & 0x3f ^ bVar1;
           *(undefined1 *)((char *)puVar6 + 5) = *(undefined1 *)((char *)puVar6 + 5);
@@ -912,7 +912,7 @@ void try_empty_container(ushort *container, int owned_by_player)
   
   bVar4 = 0;
   if (g_object_type_props[((uw_object_hdr_t *)container)->item_id].is_container) {
-    bVar4 = (byte)container[3] & 0x3f;
+    bVar4 = ((uw_object_hdr_t *)container)->owner;
   }
   iVar2 = empty_container_into_world(container,bVar4);
   if ((iVar2 == 0) && (owned_by_player != 0)) {
