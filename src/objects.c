@@ -1,8 +1,6 @@
-/* The object table: slot allocation/free, the per-tile/per-container
- * linked-list primitives (insert/append/unlink/resolve), and object
- * spawning. Split out of uw.c (the original monolithic decompile)
- * once these functions' real roles were confirmed.
- */
+/* The object table: slot allocation/free, the per-tile/per-container linked-list primitives
+   (insert/append/unlink/resolve), and object spawning. Split out of uw.c (the original monolithic
+   decompile) once these functions' real roles were confirmed. */
 #include "headers/objects.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -12,41 +10,27 @@ undefined4 DAT_00202c84;
 undefined2 DAT_002020a0;
 undefined2 DAT_002020a4;
 byte *DAT_00202c6c;
-/* Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below,
-   already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of
-   a repeating 6-byte-stride per-candidate record in
-   collision_height_envelope/sort_collision_candidates's up-to-256-entry collision
-   candidate list (the ARM loads at +0/+1/+2/+3/+4/+5 and next-record
-   sort reads at +6/+7 confirm the 6-byte stride). Indexing past element
-   0 read/wrote whatever memory happened to follow this single byte in
-   the link order -- confirmed via a real crash (a plain, non-debugger
-   run walking toward a critter; the same bug reproduced fine under
-   lldb/ASan since they lay out globals differently, masking it there).
-   Keep the aliases in uw.h: independent arrays lose the link high byte. */
+/* Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below, already fixed) every real use
+   is `(&DAT_00202c38)[i*6]` -- one field of a repeating 6-byte-stride per-candidate record in
+   collision_height_envelope/sort_collision_candidates's up-to-256-entry collision candidate list... */
 /* Sizing-audit pass: up-to-256-entry collision candidate list (per
    the comment above), 6-byte stride -- HARD: 256*6=1536. Down from
    8192. */
  undefined1 DAT_00202c38_backing[1536];
-/* Sizing pass: the real COMOBJ "class 0" object-record table, indexed
-   throughout ai.c as `(id & 0x1ff) * 0xd` (13-byte stride) -- real max
-   511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c, offset 0x825)
-   sits comfortably within that same bound. Sized to 8192 for
-   headroom, down from 65536. */
+/* Sizing pass: the real COMOBJ "class 0" object-record table, indexed throughout ai.c as `(id &
+   0x1ff) * 0xd` (13-byte stride) -- real max 511*13+13=6656 bytes. Its DAT_002034b5 alias (ai.c,
+   offset 0x825) sits comfortably within that same bound. */
 undefined1 DAT_00202c90_backing[8192];
-/* Was `int` despite being assigned real pointer values derived from
-   DAT_002046b8 (see there) and itself assigned into g_player_object
-   (`char *`) -- truncating on this 64-bit host, part of the same crash
-   chain (reset_player_object_record's ce_memset call reading g_player_object). */
+/* Was `int` despite being assigned real pointer values derived from DAT_002046b8 (see there) and
+   itself assigned into g_player_object (`char *`) -- truncating on this 64-bit host, part of the
+   same crash chain (reset_player_object_record's ce_memset call reading g_player_object). */
 char *DAT_0023b82c;
-/* Sizing-audit pass: `read_file_handle(param_1,&DAT_002027d0,0x30)`
-   (resources.c) reads exactly 48 bytes, matching its own
-   nibble*3-stride indexing (max 15*3+2=47). HARD exact. Down from
-   256. */
+/* Sizing-audit pass: `read_file_handle(param_1,&DAT_002027d0,0x30)` (resources.c) reads exactly 48
+   bytes, matching its own nibble*3-stride indexing (max 15*3+2=47). HARD exact. Down from 256. */
 undefined1 DAT_002027d0_backing[48];
-/* Sizing pass: resources.c's own loader confirms the exact real size
-   -- `read_file_handle(param_1,&DAT_00202800,0x80);` (128 bytes).
-   Also indexed as `&DAT_00202800 + nibble*8` (nibble 0-15, max
-   15*8+8=128) throughout combat.c/objects.c/player.c -- same bound. */
+/* Sizing pass: resources.c's own loader confirms the exact real size --
+   `read_file_handle(param_1,&DAT_00202800,0x80);` (128 bytes). Also indexed as `&DAT_00202800 +
+   nibble*8` (nibble 0-15, max 15*8+8=128) throughout combat.c/objects.c/player.c -- same bound. */
 undefined1 DAT_00202800_backing[256];
 byte *g_scratch_object_ptr;
 short DAT_00101454;
@@ -54,20 +38,8 @@ short DAT_0010144c;
 short DAT_00202a3c;
 byte *DAT_002046c0;
 byte *DAT_002046c8;
-/* Was a plain tentative definition (no initializer), so a truly fresh
-   process starts it at C's default zero instead of the real "no
-   container open" resting state. Every genuine reset in this file
-   (FUN_0003bcd8, probe_save_slots's caller, journey_onward_load_slot_menu's
-   own setup) explicitly sets this to 0xffff/-1, and every reader treats
-   it as signed (`-1 < DAT_00202080` gates load_player_save_record's
-   object_list_unlink call below) -- 0 reads as "container slot 0 is
-   open", spuriously unlinking g_player_object from a wild address
-   computed off a container that was never really open. Confirmed live:
-   SIGBUS in object_list_unlink on the very first "new game" of a
-   process that never had an earlier save to leave this at a sane value
-   (this codebase's regression scripts had been silently relying on
-   stale state left over from a prior interactive session to avoid ever
-   hitting this fresh-process path). */
+/* Was a plain tentative definition (no initializer), so a truly fresh process starts it at C's
+   default zero instead of the real "no container open" resting state. */
 short DAT_00202080 = -1;
 ushort *DAT_002046b4;
 undefined1 DAT_002029f8_backing[256];
@@ -89,20 +61,16 @@ static char s__DATA_objects_dat_000868a8[] = "\\DATA\\objects.dat";
 short DAT_002046b0;
 static int DAT_002046d4;
 static int DAT_002046ec;
-/* Was a lone `undefined` scalar, but the real class6 variant-effect
-   lookup (uw.c ~46760, class6_variant_effect_table_lookup) indexes it
-   as `&DAT_0024cfe0 + nibble` for nibble 0..0xf, and its boot-time
-   loader (load_class6_variant_effect_table) reads exactly 0x10 bytes
-   into it -- same lone-scalar-treated-as-array bug class fixed
-   repeatedly elsewhere in this file. */
+/* Was a lone `undefined` scalar, but the real class6 variant-effect lookup (uw.c ~46760,
+   class6_variant_effect_table_lookup) indexes it as `&DAT_0024cfe0 + nibble` for nibble 0..0xf, and
+   its boot-time loader (load_class6_variant_effect_table) reads exactly 0x10 bytes into it... */
 /* Sizing-audit pass: `read_file_handle(param_1,&DAT_0024cfe0,0x10)`
    reads exactly 16 bytes, matching its own nibble (0-0xf) indexing.
    HARD exact. Down from 8192. */
 undefined1 DAT_0024cfe0_backing[16];
 /* Sizing pass: own loader confirms the exact real size --
-   `read_file_handle(param_1,&DAT_00250730,0x40);` (64 bytes). Also
-   indexed as `&DAT_00250730 + nibble*4` (nibble 0-15, max
-   15*4+4=64) -- same bound. */
+   `read_file_handle(param_1,&DAT_00250730,0x40);` (64 bytes). Also indexed as `&DAT_00250730 +
+   nibble*4` (nibble 0-15, max 15*4+4=64) -- same bound. */
 undefined1 DAT_00250730_backing[128];
 
 
@@ -110,11 +78,9 @@ undefined1 DAT_00250730_backing[128];
 
 
 
-// was FUN_0004ad10 -- spawn a copy of the "template" object (DAT_00202a44)
-// as a new object slot placed near the player's own tile (DAT_00202a4c/
-// DAT_00202a50), used by drop_held_object_near_player's "split a stack,
-// throw one" path. Crash site of the throw-item bug (tilemap_lookup's
-// pointer truncated into iVar8, see that fix's own comment below).
+// was FUN_0004ad10 -- spawn a copy of the "template" object (DAT_00202a44) as a new object slot
+// placed near the player's own tile (DAT_00202a4c/ DAT_00202a50), used by
+// drop_held_object_near_player's "split a stack, throw one" path.
 ushort *spawn_object_near_player()
 
 {
@@ -228,19 +194,9 @@ LAB_0004b06c:
       *(char *)(puVar6 + 3) = (char)(uVar9 & 0xffc0);
       *(char *)((char *)puVar6 + 7) = (char)((uVar9 & 0xffc0) >> 8);
     }
-    /* Was `iVar8 = tilemap_lookup(...); object_list_insert_head(iVar8 + 2,...)`
-       -- tilemap_lookup returns a real 64-bit tile-record pointer, but
-       iVar8 is `int` (used throughout this function for genuine small
-       integer scratch math, so not safe to widen wholesale); truncating
-       the pointer into it and adding +2 produced a wild, non-dereferenced
-       -able address that crashed inside object_list_insert_head the
-       moment this (previously dead/untested) throw-item spawn path first
-       got real exercise. Same class as object_list_insert_head/
-       object_list_append_tail/discard_misplaced_object's own params, already fixed
-       elsewhere -- this just never got a properly-typed local to feed
-       them. Confirmed live: crashed 100% of the time replaying the
-       user's bug-throw-item.txt once its trailing WAIT gave the object-
-       drop tick enough time to run. */
+    /* Was `iVar8 = tilemap_lookup(...); object_list_insert_head(iVar8 + 2,...)` -- tilemap_lookup
+       returns a real 64-bit tile-record pointer, but iVar8 is `int` (used throughout this function
+       for genuine small integer scratch math, so not safe to widen wholesale)... */
     pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
     DEBUG(INFO, "[throw] object id=0x%03x spawned at tile=(%d,%d)\n",
           (unsigned)(*puVar6 & 0x1ff), puVar6[0xb] >> 10, (puVar6[0xb] & 0x3f0) >> 4);
@@ -256,41 +212,17 @@ LAB_0004b06c:
 
 
 
-/* was FUN_00052f28. Was `int FUN_00052f28(...)` with a local `int iVar1`
-   holding the computed slot address (`DAT_002046b8/DAT_002046c4 +
-   offset`, both real pointers) -- truncated the pointer to 32 bits on
-   this 64-bit host. Every call site casts the return value straight to
-   a pointer type (e.g. `(ushort *)alloc_object_slot(...)`), so the
-   caller got a wild address with zeroed-out upper 32 bits. This is the
-   confirmed root cause of the crash the new TELEPORT demomode command
-   exposed: the player object's slot, handed out by this function once
-   already during chargen, had its upper bits silently dropped, and the
-   second set_player_tile_position call (via
-   object_list_unlink/resolve_object_link, walking the tile's object
-   chain to unlink the player before its move) dereferenced that
-   truncated address and crashed (EXC_BAD_ACCESS on an address matching
-   the low 32 bits of a real heap pointer, upper 32 bits zero). */
+/* was FUN_00052f28. Was `int FUN_00052f28(...)` with a local `int iVar1` holding the computed slot
+   address (`DAT_002046b8/DAT_002046c4 + offset`, both real pointers) -- truncated the pointer to 32
+   bits on this 64-bit host. */
 void *alloc_object_slot(param_1)
 int param_1;
 
 {
   void *pvVar1;
   ushort *puVar2;
-  /* Was `undefined4 *puVar3` -- a 32-bit-wide alias onto DAT_0020469c/
-     DAT_002046a8 (both real 64-bit `char *` globals). The write-back
-     below (`*puVar3 = puVar2 + -1`) only ever stored the low 32 bits of
-     the decremented free-list-top pointer, zeroing its upper half on
-     the very first allocation. Every later call then read a bogus,
-     low (<4GB-looking) "pointer" back out of the corrupted global,
-     producing exactly the unmapped, oddly-small addresses (e.g.
-     0x3e8b37a0) seen crashing find_object_placement on the first-ever exercise
-     of this dead-until-now object-spawn path (spawn_new_object always
-     returning 0 previously masked this entirely). Also fixed the two
-     `*DAT_xxx` reads immediately below: DAT_0020469c/DAT_002046a8 are
-     byte pointers into a `short` array (confirmed by the manual `* 2`
-     / `>> 1` scaling used elsewhere in this file for the same globals),
-     so reading through them as `char` truncated the stored slot index
-     to one byte instead of two. */
+  /* Was `undefined4 *puVar3` -- a 32-bit-wide alias onto DAT_0020469c/ DAT_002046a8 (both real
+     64-bit `char *` globals). */
   char **puVar3;
 
   if (param_1 == 0) {
@@ -324,13 +256,9 @@ char *param_1;
   short sVar1;
   short *psVar2;
 
-  /* DAT_002046a8/DAT_0020469c are byte pointers into a `short` array
-     (see alloc_object_slot's matching fix) -- `+ 1` only advanced them
-     by one BYTE instead of one short-element (2 bytes), the mirror
-     image of alloc_object_slot's own "-1" pop bug, and the bare
-     `*DAT_xxx` reads below truncated the stored slot index to one
-     byte. Left uncaught until spawn_new_object (which calls this on the
-     retry path) started actually running instead of always failing. */
+  /* DAT_002046a8/DAT_0020469c are byte pointers into a `short` array (see alloc_object_slot's
+     matching fix) -- `+ 1` only advanced them by one BYTE instead of one short-element (2 bytes),
+     the mirror image of alloc_object_slot's own "-1" pop bug... */
   if (param_1 < DAT_002046c4) {
     psVar2 = (short *)(DAT_002046a8 + 2);
     DAT_002046a8 = (char *)psVar2;
@@ -394,10 +322,9 @@ char *param_2;
   byte *pbVar2;
   ushort uVar3;
 
-  /* iVar2 was `int`, truncating resolve_object_link's real pointer return --
-     same tile/object-chain-walk bug as object_list_unlink (see there), just
-     never exercised yet (this walks a different list, e.g. a
-     container's contents, to append param_2 at its tail). */
+  /* iVar2 was `int`, truncating resolve_object_link's real pointer return -- same
+     tile/object-chain-walk bug as object_list_unlink (see there), just never exercised yet (this
+     walks a different list, e.g. a container's contents, to append param_2 at its tail). */
   while (pbVar2 = (byte *)resolve_object_link(param_1), pbVar2 != 0) {
     param_1 = pbVar2 + 4;
   }
@@ -417,20 +344,8 @@ char *param_2;
 
 
 
-/* param_2 was `int`, and the local holding resolve_object_link's return value
-   was `int iVar4` -- both truncating real pointers on this 64-bit host.
-   Confirmed crashing (EXC_BAD_ACCESS on a wild ~32-bit address) the
-   first time this got called with DAT_00202080 already set from a
-   prior call (i.e. calling set_player_tile_position/set-player-position a SECOND
-   time in one run) -- every demo script this whole session only ever
-   called it once per process, so this path had never actually run
-   before the new TELEPORT demomode command exercised it. This is a
-   linked-list walk (resolve_object_link returns "next node", searching for
-   the node matching param_2); same pointer-truncation pattern fixed
-   repeatedly this session. Retyped both to real pointers; left the
-   30+ other call sites' own argument variables unaudited since only
-   this one (g_player_object, already a real pointer, needs no caller-side
-   change) has actually been exercised and confirmed fixed. */
+/* param_2 was `int`, and the local holding resolve_object_link's return value was `int iVar4` --
+   both truncating real pointers on this 64-bit host. */
 // was FUN_00053274
 void object_list_unlink(param_1,param_2)
 byte * param_1;
@@ -471,11 +386,9 @@ byte * param_2;
 
 
 
-// was FUN_000533e4 -- resolve param_1 (a link-field address) to the
-// object it points at and delete it: recurse into two nested-object
-// link fields first (offsets 4/6, e.g. contained items or a wielded
-// weapon), then unlink+free the object itself. param_1==0x180 class
-// (containers) instead defer to free_trap_class_object.
+// was FUN_000533e4 -- resolve param_1 (a link-field address) to the object it points at and delete
+// it: recurse into two nested-object link fields first (offsets 4/6, e.g. contained items or a
+// wielded weapon)...
 void free_linked_object_recursive(param_1)
 char *param_1;  /* was `undefined4` -- truncated the real object-record
                    pointer (passed straight to resolve_object_link),
@@ -507,29 +420,20 @@ char *param_1;  /* was `undefined4` -- truncated the real object-record
 
 
 
-// was FUN_000534a8 -- delete param_2: free its own "contains" link
-// field first (via free_linked_object_recursive, for a container/
-// wielded item), unlink param_2 from the list headed at param_1 (if
-// given), then free its slot. discard_misplaced_object's actual
-// deletion step.
+// was FUN_000534a8 -- delete param_2: free its own "contains" link field first (via
+// free_linked_object_recursive, for a container/ wielded item), unlink param_2 from the list headed
+// at param_1 (if given), then free its slot. discard_misplaced_object's actual deletion step.
 void unlink_and_free_object(param_1,param_2)
-/* Was `int param_1; int param_2;` -- both real object-record pointers
-   (param_2 is dereferenced directly; both are forwarded to
-   object_list_unlink/free_object_slot, which already declare pointer
-   params), truncated to 32 bits on this host -- same class as several
-   other fixes this session, in the same never-before-exercised
-   drop-into-world path. */
+/* Was `int param_1; int param_2;` -- both real object-record pointers (param_2 is dereferenced
+   directly; both are forwarded to object_list_unlink/free_object_slot, which already declare
+   pointer params), truncated to 32 bits on this host... */
 char *param_1;
 char *param_2;
 
 {
-  /* Dropped argument: free_linked_object_recursive takes the address of a link field
-     to recursively free (its own declared param_1) -- here that's
-     param_2's own "contains" field (+6, this file's standard
-     container-contents offset) -- but it was called bare, same idiom
-     as free_linked_object_recursive's own two internal self-recursive calls just above
-     this function (not touched: not reached by this session's specific
-     repro, and free_linked_object_recursive already tolerates a NULL resolve safely). */
+  /* Dropped argument: free_linked_object_recursive takes the address of a link field to recursively
+     free (its own declared param_1) -- here that's param_2's own "contains" field (+6, this file's
+     standard container-contents offset) -- but it was called bare... */
   if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
     free_linked_object_recursive(param_2 + 6);
   }
@@ -557,16 +461,8 @@ ushort * param_1;
      Keep the port's arena guard, but allow that original call contract. */
   if (param_1 != (ushort *)0x0) {
     char *_lo = DAT_002046b8 - 0x4000;
-    /* (DAT_002046b8-0x4000) is this arena buffer's own base (aliased as
-       _lo just above); +0x7c08+0x3a+0x180 is its new true end, covering
-       g_backpack_slot_table's reservation there (28 slots + g_current_container_link,
-       see both their comments) plus g_scheduler_table's own 0x180-byte
-       reservation right after it (see its own, DAT_00250778's, comment)
-       -- the buffer itself was widened by the same 0x3a+0x180 bytes in
-       init_level_object_arena. This replaces the narrower
-       DAT_002046c4+0x1800 the original binary's own object table alone
-       would need -- the new reservations sit well past that, in
-       previously-unallocated space, not inside it. */
+    /* (DAT_002046b8-0x4000) is this arena buffer's own base (aliased as _lo just above);
+       +0x7c08+0x3a+0x180 is its new true end, covering g_backpack_slot_table's reservation there... */
     char *_hi = (DAT_002046b8 - 0x4000) + 0x7c08 + 0x3a + 0x180;
     uintptr_t link_address = (uintptr_t)param_1;
     uintptr_t candidates = (uintptr_t)DAT_00202c38_backing;
@@ -574,12 +470,8 @@ ushort * param_1;
                           link_address < candidates + 9 * 6 &&
                           (link_address - candidates - 2) % 6 == 0;
     if (!candidate_link && ((char *)param_1 < _lo || (char *)param_1 >= _hi)) {
-      /* Throttled: this guard also fires every idle tick before any level
-         is loaded (DAT_002046b8/DAT_002046c4 aren't set up yet, so
-         everything looks "out of range"), and logging it unthrottled was
-         observed to slow real-time/demo playback to a crawl (dozens of
-         lines per tick). Log only the first hit and then one reminder
-         every 500 more, instead of every single call. */
+      /* Throttled: this guard also fires every idle tick before any level is loaded
+         (DAT_002046b8/DAT_002046c4 aren't set up yet, so everything looks "out of range")... */
       static unsigned _warn_count = 0;
       _warn_count++;
       if (_warn_count == 1 || (_warn_count % 500) == 0) {
@@ -627,18 +519,8 @@ char *param_1;
 
 // was FUN_00068138
 void *spawn_new_object(param_1,param_2)
-/* Was `undefined4 FUN_00068138(...)` ending in a hardcoded `return 0;`
-   that discarded the freshly-allocated object pointer (puVar3) on every
-   call, even on success. Every call site dereferences the return value
-   as a pointer (e.g. drop_monster_loot's `iVar5+2`/`+3`/`+4`/`+5` writes,
-   object_list_insert_head(iVar4+2,iVar5)) and gates on it being
-   non-null, so this whole "spawn a new object" path -- used for
-   monster death drops among other things -- was silently dead code.
-   Confirmed live: handle_starvation_penalty's per-turn call passed the always-zero
-   result straight into place_object_in_world -> find_object_placement, which dereferenced
-   the resulting NULL pointer and crashed the first time this
-   never-before-exercised turn-processing branch actually ran (hit by
-   simply clicking an item -- Bread -- inside an open container). */
+/* Was `undefined4 FUN_00068138(...)` ending in a hardcoded `return 0;` that discarded the
+   freshly-allocated object pointer (puVar3) on every call, even on success. */
 uint param_1;
 undefined4 param_2;
 
@@ -683,14 +565,9 @@ undefined4 param_2;
 
 
 
-// was FUN_00037fe8 -- resets an object (param_2) whose burnt-out/
-// spent counterpart type is being assigned (its only known caller
-// checks item type ids 0xd5/0xd6, the same "spent" marker ids seen
-// elsewhere as a candle/torch-style burnout transition): for a mobile
-// object, just zeroes its HP field; for a plain object-header object,
-// discards it if it's misplaced (discard_misplaced_object). Returns 1
-// if the object was left alone (not misplaced), 0 if it was reset/
-// discarded.
+// was FUN_00037fe8 -- resets an object (param_2) whose burnt-out/ spent counterpart type is being
+// assigned (its only known caller checks item type ids 0xd5/0xd6, the same "spent" marker ids seen
+// elsewhere as a candle/torch-style burnout transition): for a mobile object...
 undefined4 reset_burnt_out_item_state(param_1,param_2)
 undefined4 param_1;
 /* Object-record pointer -- was `uint`, truncating it (same class as
@@ -713,17 +590,9 @@ char *param_2;
 }
 
 
-// was FUN_00038028 -- applies a destruction/transformation effect
-// (from apply_typed_damage_to_object's dispatch, its only known caller) to a non-NPC
-// object (param_1) at tile param_4/param_5: doors get their contents
-// discarded; two special container-ish types (0x15d/0x15b) discard
-// contents and try to combine/stow; ordinary containers (class 0x80)
-// roll a destroy chance before emptying; a spent-item transition
-// (0xd5/0xd6) resets the object via reset_burnt_out_item_state;
-// anything else with contents but not already freed gets those
-// contents recursively freed. Falls through to a shared tail that
-// may randomly transform the object into a spent (0xd5/0xd6) type and
-// re-settle it into the world, returning whether the object survived.
+// was FUN_00038028 -- applies a destruction/transformation effect (from
+// apply_typed_damage_to_object's dispatch, its only known caller) to a non-NPC object (param_1) at
+// tile param_4/param_5: doors get their contents discarded...
 /* ARM 0x3803c forwards the damaging actor's address to the door callback.
    Keep it pointer-sized rather than truncating it through undefined4. */
 undefined4 apply_object_destruction_effect(param_1,param_2,param_3,param_4,param_5)
@@ -817,19 +686,8 @@ LAB_00038100:
 
 // WARNING: Type propagation algorithm not settling
 
-// was FUN_00038d4c -- searches outward from tile (param_2,param_3)
-// via a double-buffered BFS flood-fill (local_80/local_58, each a
-// 10-entry x/y coordinate-pair frontier list; local_a4/local_b0 swap
-// between them each wave) for a tile where object param_1 can be
-// placed (check_object_placement_clearance). Expansion direction from each tile is gated
-// by its type (bVar8, 0-5: floor vs. diagonal-wall variants), each
-// branch mirroring the same 4-neighbor/diagonal-corner pattern seen
-// in resolve_tile_entry_offset, with per-tile visited bitmasks
-// (auStack_98/uStack_9a) preventing revisits. Stops and returns 1 as
-// soon as a placement succeeds (writing the found tile into
-// param_4/param_5), or 0 once the frontier is exhausted. param_6
-// gates an extra step that discards misplaced/arena objects
-// encountered along the way.
+// was FUN_00038d4c -- searches outward from tile (param_2,param_3) via a double-buffered BFS
+// flood-fill (local_80/local_58, each a 10-entry x/y coordinate-pair frontier list)...
 undefined4 find_placement_via_tile_flood_fill(param_1,param_2,param_3,param_4,param_5,param_6)
 ushort * param_1;
 short param_2;
@@ -864,17 +722,13 @@ int param_6;
   uint local_a8;
   undefined1 *local_a4;
   uint local_a0;
-  /* Ghidra split the visited columns at adjacent stack offsets 0x2a/
-     0x2c. Keep the preceding column in the same array: expressions that
-     used &uStack_9a index one column before auStack_98. Initialize the
-     whole bitmap, since the original nine-byte memset left high columns
-     indeterminate on this host. */
+  /* Ghidra split the visited columns at adjacent stack offsets 0x2a/ 0x2c. Keep the preceding
+     column in the same array: expressions that used &uStack_9a index one column before auStack_98. */
   ushort visited_storage [13] = {0};
   ushort *auStack_98 = visited_storage + 1;
-  /* ARM 0x38e4c/0x38e5c stores X/Y at sp+0x44/sp+0x45, the first
-     coordinate pair in one buffer. Both frontiers span 0x28 bytes on
-     the original stack and hold up to 0x14 pairs. A separate local_7f
-     made the search read Y=0; a 0x14-byte buffer overflowed after swaps. */
+  /* ARM 0x38e4c/0x38e5c stores X/Y at sp+0x44/sp+0x45, the first coordinate pair in one buffer.
+     Both frontiers span 0x28 bytes on the original stack and hold up to 0x14 pairs. A separate
+     local_7f made the search read Y=0; a 0x14-byte buffer overflowed after swaps. */
   undefined1 local_80 [40];
   undefined1 local_58 [40];
 
@@ -1089,11 +943,8 @@ LAB_00039638:
 
 
 // was FUN_0003ae00 -- object-tree-walk callback (via
-// walk_object_tree/clear_temp_flags_on_all_objects): for a non-arena
-// object (object_ptr_in_arena) whose class isn't a door (0x140) or
-// other special type (0x180), and whose object-type props don't flag
-// it with sub-category 2, clears bit 0x200 of its second word -- a
-// "temporary/recently-used" style flag reset.
+// walk_object_tree/clear_temp_flags_on_all_objects): for a non-arena object (object_ptr_in_arena)
+// whose class isn't a door (0x140) or other special type (0x180)...
 undefined4 clear_object_temp_flag_callback(param_1)
 ushort * param_1;
 
@@ -1117,11 +968,9 @@ ushort * param_1;
 
 
 
-// was FUN_0003aea8 -- sweeps the entire 64x64 tile grid (DAT_002029cc)
-// and, for every tile with a non-empty object list, recursively walks
-// each object's tree (walk_object_tree, not yet named) applying
-// clear_object_temp_flag_callback to every object found -- a global
-// "reset the temporary flag on everything in the world" pass.
+// was FUN_0003aea8 -- sweeps the entire 64x64 tile grid (DAT_002029cc) and, for every tile with a
+// non-empty object list, recursively walks each object's tree (walk_object_tree, not yet named)
+// applying clear_object_temp_flag_callback to every object found...
 void clear_temp_flags_on_all_objects()
 
 {
@@ -1148,36 +997,17 @@ void clear_temp_flags_on_all_objects()
 }
 
 
-// was FUN_000444b0 -- free_linked_object_recursive's sibling,
-// specifically for the player's own carried-inventory chain: every
-// known call site passes g_player_object+6 (the "contents"/sp_link
-// field). Recurses into offsets +6 (nested contents, unless the
-// object's own 0x80 flag bit is set) and +4 (next-in-chain) before
-// unlinking and freeing the object itself -- no trap-class special
-// case, unlike free_linked_object_recursive. Used both to tear the
-// live inventory arena state down after it's been separately
-// serialized to a save (commit_level_to_save_slot), and before a level
-// transition/arena reset (close_panels_before_level_change), since the
-// save/restore path -- not direct memory carryover -- is what
-// preserves the player's items across levels.
+// was FUN_000444b0 -- free_linked_object_recursive's sibling, specifically for the player's own
+// carried-inventory chain: every known call site passes g_player_object+6 (the "contents"/sp_link
+// field).
 void free_player_inventory_chain(param_1)
-char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
-                   pointer close_panels_before_level_change passes in. Pre-existing bug, but
-                   never bit until resolve_object_link (this function's
-                   own first call) started actually using its argument
-                   instead of being called with no argument at all. */
+char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6 pointer close_panels_before_level_change
+   passes in. Pre-existing bug, but never bit until resolve_object_link (this function's own first
+   call) started actually using its argument instead of being called with no argument at all. */
 
 {
-  /* Was `int iVar1;` -- truncated resolve_object_link's real 64-bit
-     `void *` return to 32 bits on this recompile (harmless on the
-     original 32-bit ARM binary). This code path (the recursive
-     inventory-unlink walk) was never actually exercised in any session
-     until Enter started working correctly in the save/load name-entry
-     field (see gx_stub.c's g_keychar_deferred) and a save finally ran
-     all the way through to this function -- confirmed via lldb: the
-     fault address was exactly g_player_object's low 32 bits (+0x1b),
-     the classic signature of a pointer silently narrowed to `int`. Same
-     bug class as this function's own param_1 fix above. */
+  /* Was `int iVar1;` -- truncated resolve_object_link's real 64-bit `void *` return to 32 bits on
+     this recompile (harmless on the original 32-bit ARM binary). */
   char *iVar1;
 
   iVar1 = resolve_object_link(param_1);
@@ -1197,12 +1027,9 @@ char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
 }
 
 
-// was FUN_00046260 -- computes an object's weight: looks up the
-// per-class base weight (&DAT_00202c91, stride 0xd), multiplied by
-// quantity for stackable items (the 0x8000 flag set), or -- for a
-// non-stackable object that's itself a container -- adds the weight
-// of everything it contains via sum_container_weight. Used throughout
-// the inventory/equipment code for carry-weight bookkeeping.
+// was FUN_00046260 -- computes an object's weight: looks up the per-class base weight
+// (&DAT_00202c91, stride 0xd), multiplied by quantity for stackable items (the 0x8000 flag set), or
+// -- for a non-stackable object that's itself a container...
 uint calculate_object_weight(param_1)
 ushort * param_1;
 
@@ -1231,15 +1058,8 @@ ushort * param_1;
 }
 
 
-// was FUN_00052674 -- boot-time loader for the game's core object
-// definition data: opens "objects.dat" and dispatches to 8 per-class
-// variant/effect table loaders (load_armor_variant_tables,
-// load_monster_combat_stats, load_light_food_effect_tables,
-// load_class6_variant_effect_table, load_class7_variant_effect_table,
-// and others), then opens "comobj.dat" and reads 0x200 (512) 13-byte
-// records into DAT_00202c90 -- the object-type property table read
-// throughout collision/placement code (height, shape, size-class,
-// etc. nibbles).
+// was FUN_00052674 -- boot-time loader for the game's core object definition data: opens
+// "objects.dat" and dispatches to 8 per-class variant/effect table loaders...
 undefined4 load_object_catalog_data()
 
 {
@@ -1327,11 +1147,9 @@ undefined4 load_object_catalog_data()
 
 
 
-/* Was `undefined4` -- same 64-bit-pointer-truncated-through-a-32-bit-
-   return-type bug as get_equipped_item_at_slot's (see its own comment): this
-   function returns a POINTER into one of the runtime tables class2_variant_effect_table_lookup
-   and friends compute, and on a 64-bit build `undefined4` silently drops
-   the pointer's upper 32 bits, handing the caller a wild address. */
+/* Was `undefined4` -- same 64-bit-pointer-truncated-through-a-32-bit- return-type bug as
+   get_equipped_item_at_slot's (see its own comment): this function returns a POINTER into one of
+   the runtime tables class2_variant_effect_table_lookup and friends compute... */
 // was FUN_000528a8
 void *get_scanned_object_class_effect_ptr()
 
@@ -1350,50 +1168,29 @@ void *get_scanned_object_class_effect_ptr()
   local_10 = &class5_variant_effect_stub;
   local_c = &class6_variant_effect_table_lookup;
   local_8 = &class7_variant_effect_table_lookup;
-  /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace
-     a return value through the indirect call and fabricated a "return 0"
-     placeholder. Real disassembly (0x52928-0x52938) shows no instruction
-     sets r0 before the epilogue -- whatever the dispatched per-class
-     handler leaves in r0 IS this function's real return value. Every
-     caller relies on that (e.g. refresh_player_equipment_effects's light-scan loop:
-     `iVar7 = get_scanned_object_class_effect_ptr(); bVar1 = *(byte*)(iVar7+1);` -- with the
-     hardcoded 0 this dereferenced address 1 and crashed the moment a
-     real light source was actually found by the scan). */
+  /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace a return value through the
+     indirect call and fabricated a "return 0" placeholder. */
   return (*(void *(*)())local_24[(short)((*g_scratch_object_ptr & 0x1c0) >> 6)])();
 }
 
 
 
-// was FUN_00052af4 -- generic recursive object-tree walker: calls
-// callback param_2 on param_1, then (unless param_1 is flagged
-// "no contents") recurses into its contents link (+6), then advances
-// to its next-in-chain link (+4) and repeats -- stopping early and
-// returning 1 the moment any callback invocation returns nonzero,
-// else 0 once the whole tree/chain is exhausted. Confirmed generic
-// by two independent callers with different callbacks:
-// object_exceeds_size_threshold (a "does anything in here exceed the
-// current size limit" search) and clear_object_temp_flag_callback
-// (a "reset a flag on everything" sweep that never early-exits).
+// was FUN_00052af4 -- generic recursive object-tree walker: calls callback param_2 on param_1, then
+// (unless param_1 is flagged "no contents") recurses into its contents link (+6), then advances to
+// its next-in-chain link (+4) and repeats...
 undefined4 walk_object_tree(param_1,param_2)
-char *param_1;  /* was `int` -- truncated the real object-record pointer
-                   (dereferenced throughout this function via casts, and
-                   passed to resolve_object_link/itself), latent until
-                   those calls started actually using their arguments */
+char *param_1;  /* was `int` -- truncated the real object-record pointer (dereferenced throughout this function via
+   casts, and passed to resolve_object_link/itself), latent until those calls started actually using
+   their arguments */
 codeval * param_2;
 
 {
   int iVar1;
   char *pcVar2;
 
-  /* Dropped argument (both call sites below): param_2 is a callback
-     (object_exceeds_size_threshold at every call site reached so far) that declares one
-     parameter -- the object/link being tested, i.e. this function's
-     own param_1 -- but was invoked bare, leaving object_exceeds_size_threshold's own
-     param_1 as leftover-register garbage. Same idiom as this whole
-     session's other dropped-argument fixes; confirmed live
-     (UW_DEBUG_INV + demo_dropback_test.txt) crashing in object_exceeds_size_threshold's
-     first dereference the moment this never-before-exercised
-     drop-into-world path actually ran. */
+  /* Dropped argument (both call sites below): param_2 is a callback (object_exceeds_size_threshold
+     at every call site reached so far) that declares one parameter -- the object/link being tested,
+     i.e. this function's own param_1 -- but was invoked bare... */
   iVar1 = (*param_2)(param_1);
   while( true ) {
     if (iVar1 != 0) {
@@ -1418,15 +1215,9 @@ codeval * param_2;
 
 
 
-// was FUN_00052bac -- checks whether object param_1's size/weight
-// class exceeds the current threshold in DAT_002046b0 (set by its
-// caller, e.g. roll_object_destroy_chance, just before use):
-// container-flagged objects (0x2000) always report "exceeds" (1);
-// otherwise combines the object-type's size-class nibble
-// (DAT_00202c9a[type*0xd]>>2&0xf) with a stack-quantity-derived term
-// and compares against the threshold. Used standalone and as a
-// walk_object_tree callback for a "does this or anything inside it
-// exceed the limit" recursive check.
+// was FUN_00052bac -- checks whether object param_1's size/weight class exceeds the current
+// threshold in DAT_002046b0 (set by its caller, e.g. roll_object_destroy_chance, just before use):
+// container-flagged objects (0x2000) always report "exceeds" (1)...
 undefined4 object_exceeds_size_threshold(param_1)
 ushort * param_1;
 
@@ -1461,12 +1252,8 @@ ushort * param_1;
 }
 
 
-// was FUN_00052d24 -- if link param_2 points to a real object,
-// resolves it and rolls roll_object_destroy_chance(param_1, object).
-// Always returns 0 -- the caller (despawn_objects_outside_radius)
-// re-derives the actual decision itself rather than using this
-// return value, so the roll's effect (if any) only matters via
-// whatever roll_object_destroy_chance itself did internally.
+// was FUN_00052d24 -- if link param_2 points to a real object, resolves it and rolls
+// roll_object_destroy_chance(param_1, object).
 undefined4 should_destroy_linked_object(param_1,param_2)
 undefined4 param_1;
 ushort * param_2;
@@ -1483,15 +1270,8 @@ ushort * param_2;
 
 
 
-// was FUN_00052d68 -- reclaims object slots by probabilistically
-// destroying objects in tile rows more than (10-param_1) rows from
-// the player's row, up to param_2 destructions. Confirmed by its
-// three call sites: objects.c's free-object-slot allocator calls this
-// (radius param 3, limits 10/5) when the mobile/static free-list has
-// run dry, to try to free slots before giving up; player.c calls it
-// too (radius param 1, limit 0x14) on its own cadence. Each
-// candidate's actual destruction is decided by
-// should_destroy_linked_object/roll_object_destroy_chance.
+// was FUN_00052d68 -- reclaims object slots by probabilistically destroying objects in tile rows
+// more than (10-param_1) rows from the player's row, up to param_2 destructions.
 void despawn_objects_outside_radius(param_1,param_2)
 undefined4 param_1;
 short param_2;
@@ -1551,21 +1331,13 @@ short param_2;
 
 
 
-// was FUN_00053334 -- despite the name this settled on, it's a DESTROY
-// path, not a placement one: when param_3==0 it rolls
-// roll_object_destroy_chance(10, param_2), which (see that function's
-// own comment) returns true with ~100% probability under normal
-// conditions, then unconditionally unlinks and frees param_2 via
-// unlink_and_free_object. Reached by settle_dropped_object whenever an
-// object lands somewhere it can't actually rest (floor too high/low,
-// blocked corner, etc.) -- confirmed via disassembly this "destroy the
-// misplaced object" behavior is genuine original-game logic, not a
-// translation bug.
+// was FUN_00053334 -- despite the name this settled on, it's a DESTROY path, not a placement one:
+// when param_3==0 it rolls roll_object_destroy_chance(10, param_2), which (see that function's own
+// comment) returns true with ~100% probability under normal conditions...
 ushort *discard_misplaced_object(param_1,param_2,param_3)
-/* Was `int param_1` -- a real object-record pointer (drop_held_object_
-   near_player passes pDropTile+2, a resolve_object_link-style address)
-   truncated to 32 bits on this 64-bit host, same class as several
-   other fixes this session. */
+/* Was `int param_1` -- a real object-record pointer (drop_held_object_ near_player passes
+   pDropTile+2, a resolve_object_link-style address) truncated to 32 bits on this 64-bit host, same
+   class as several other fixes this session. */
 char *param_1;
 ushort * param_2;
 int param_3;
@@ -1575,15 +1347,9 @@ int param_3;
   int iVar2;
   ushort local_10 [2];
 
-  /* Dropped argument: roll_object_destroy_chance's declared signature takes
-     (short, char*) and dereferences its second parameter -- but it was
-     called here with only the literal 10, leaving the real argument
-     (param_2, the object being placed) as leftover-register garbage.
-     Confirmed live (UW_DEBUG_INV + demo_dropback_test.txt): dropping
-     an item out of the backpack into the 3D view crashed several
-     frames deeper (walk_object_tree/object_exceeds_size_threshold) dereferencing that
-     garbage pointer -- this whole collision/placement path had never
-     been exercised by any earlier fix or test this session. */
+  /* Dropped argument: roll_object_destroy_chance's declared signature takes (short, char*) and
+     dereferences its second parameter -- but it was called here with only the literal 10, leaving
+     the real argument (param_2, the object being placed) as leftover-register garbage. */
   if ((param_3 != 0) || (iVar2 = roll_object_destroy_chance(10,(char *)param_2), iVar2 != 0)) {
     uVar1 = encode_object_slot_index(param_2);
     local_10[0] = local_10[0] & 0x3f | uVar1 << 6;
@@ -1603,14 +1369,9 @@ int param_3;
 
 
 
-/* The fundamental "object slot index -> record pointer" accessor (70 call
-   sites): slots 0-0xff are 0x1b-byte records in the DAT_002046b8 table,
-   slots >=0x100 are 8-byte records in the DAT_002046c4 table. Was `int`,
-   truncating the real pointer arithmetic below on this 64-bit host --
-   many callers already store the result through a pointer-typed local
-   (e.g. `puVar4 = (undefined1 *)get_object_record_by_slot_index()`), so they got a
-   truncated pointer back regardless of their own care. Confirmed as a
-   crash source in reset_npc_path_cache (level-load object-table reset). */
+/* The fundamental "object slot index -> record pointer" accessor (70 call sites): slots 0-0xff are
+   0x1b-byte records in the DAT_002046b8 table, slots >=0x100 are 8-byte records in the DAT_002046c4
+   table. */
 // was FUN_000535fc
 void *get_object_record_by_slot_index(param_1)
 short param_1;
@@ -1623,15 +1384,8 @@ short param_1;
     iVar1 = 0;
   }
   else if (iVar1 < 0) {
-    /* No caller has ever legitimately passed a negative slot -- a real
-       UW1 level has exactly 1024 object slots (0-0x3ff), 256 static +
-       768 mobile -- but nothing bounded the input, and a corrupted/
-       garbage caller-side read (e.g. collision_height_envelope reading
-       *(short*)(DAT_00202c6c+10) as this slot) can hand one in.
-       Confirmed via lldb: this exact case crashed dereferencing the
-       resulting wild pointer, reproduced by the same mapped movement
-       sequence as resolve_object_link's own bounds fix (12x forward,
-       turn, 3x forward, turn, 5x forward). */
+    /* No caller has ever legitimately passed a negative slot -- a real UW1 level has exactly 1024
+       object slots (0-0x3ff), 256 static + 768 mobile -- but nothing bounded the input... */
     DEBUG(ERR, "[get_object_record_by_slot_index] negative slot %d, returning NULL\n", (int)param_1);
     iVar1 = 0;
   }
@@ -1652,25 +1406,9 @@ short param_1;
 }
 
 
-// was FUN_00053644 -- recursively searches the chain/contents
-// rooted at link param_1 for an object whose encode_object_slot_index()
-// matches target slot param_3 (param_2 is always passed 1, a recurse-
-// into-contents flag like find_object_in_chain's); tracks the current
-// search object in DAT_002046b4. Confirmed used both directly
-// (interact.c's "look up by slot index and unlink if found") and by
-// item_use.c for the same pattern.
-// BUG FIX (unit-testing-framework merge): encode_object_slot_index was
-// called bare below -- dropped argument, confirmed by every other call
-// site in this file passing one, and by the loop's own intent (checking
-// the just-resolved iVar3 link's encoded slot against param_3).
-// BUG FIX (unit-testing-framework merge): iVar3/iVar4 and this
-// function's own return type were `int`, truncating resolve_object_link's
-// real pointer to 32 bits on this 64-bit host -- caught live by
-// test_inventory's test_open_sack_finds_contents_through_inventory_widget
-// (encode_object_slot_index received a truncated object pointer that no
-// longer matched any real fixture object). Widened to real pointer types,
-// matching every other dropped-argument/pointer-truncation fix this
-// project has made.
+// was FUN_00053644 -- recursively searches the chain/contents rooted at link param_1 for an object
+// whose encode_object_slot_index() matches target slot param_3 (param_2 is always passed 1, a
+// recurse- into-contents flag like find_object_in_chain's)...
 ushort *find_object_by_encoded_slot_in_chain(param_1,param_2,param_3)
 ushort * param_1;
 undefined4 param_2;
@@ -1758,22 +1496,11 @@ char param_1;
 
 
 
-/* param_1 was `undefined4 *`, so `resolve_object_link(*param_1)` and
-   `*param_1 = local_28` truncated the 64-bit object-list pointer the
-   callers hand in by address (crashing e.g. a right-click "look" at the
-   spawn-room sack: trigger_object_trap_or_use_action -> here -> resolve_object_link(garbage)).
-   It's a pointer-to-pointer -- ushort **. */
-// was FUN_000537d0 -- searches the object chain starting at *param_1
-// for one matching class param_3 (>>6&7 of the type word), subclass
-// param_4 (>>4&3), and quality param_5 (&0xf), each -1/0xffff
-// ("wildcard") skipping that check; recurses into an object's own
-// contents when param_2 is set and it isn't flagged "no contents".
-// On success, advances *param_1 to the matching object's own link
-// (letting the caller resume the search past it on a repeat call --
-// the classic "find next matching object" pattern). Confirmed by
-// dozens of call sites across babl.c/containers.c/item_use.c/
-// interact.c/object_actions.c/traps.c, all passing a class/subclass/
-// quality filter triple.
+/* param_1 was `undefined4 *`, so `resolve_object_link(*param_1)` and `*param_1 = local_28`
+   truncated the 64-bit object-list pointer the callers hand in by address... */
+// was FUN_000537d0 -- searches the object chain starting at *param_1 for one matching class param_3
+// (>>6&7 of the type word), subclass param_4 (>>4&3), and quality param_5 (&0xf), each -1/0xffff
+// ("wildcard") skipping that check...
 ushort *find_object_in_chain(param_1,param_2,param_3,param_4,param_5)
 ushort ** param_1;
 int param_2;
@@ -1816,13 +1543,9 @@ short param_5;
 }
 
 
-// was FUN_00053920 -- returns whether object param_1 itself encodes
-// type param_2 (&0x1ff of its type word), or -- if it isn't flagged
-// "no contents" -- whether find_object_in_chain finds a match for
-// that type (decoded into class/subclass/quality) among its
-// contents. Confirmed called with the same literal type 0x126 at
-// both call sites (checking the selected/interact object for a
-// specific item type, directly or nested inside).
+// was FUN_00053920 -- returns whether object param_1 itself encodes type param_2 (&0x1ff of its
+// type word), or -- if it isn't flagged "no contents" -- whether find_object_in_chain finds a match
+// for that type (decoded into class/subclass/quality) among its contents.
 undefined4 object_or_contents_has_type(param_1,param_2)
 ushort * param_1;
 ushort param_2;
@@ -1851,14 +1574,9 @@ ushort param_2;
 
 
 
-// was FUN_000539b0 -- the world-wide counterpart to find_object_in_chain:
-// scans the 64x64 tile grid (DAT_002029cc) tile by tile, calling
-// find_object_in_chain on each tile's object chain with class param_1/
-// subclass param_2/quality param_3, resuming from (and updating) the
-// saved tile-column/tile-row cursor at *param_4/*param_5 -- the same
-// "find next match" resumable-search pattern. Confirmed used by
-// doors.c (locating a door's matching key/trigger by packed tile
-// coordinates) and traps.c (scanning for trap-relevant objects).
+// was FUN_000539b0 -- the world-wide counterpart to find_object_in_chain: scans the 64x64 tile grid
+// (DAT_002029cc) tile by tile, calling find_object_in_chain on each tile's object chain with class
+// param_1/ subclass param_2/quality param_3...
 ushort *find_object_in_world(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
@@ -1906,16 +1624,9 @@ short * param_5;
 }
 
 
-// was FUN_00055ef8 -- finalizes the position fields of a just-
-// settled object's placement snapshot (param_1, the same snapshot
-// struct build_object_placement_snapshot fills): if DAT_002046d4 is
-// clear (settled cleanly), sets a random quarter-heading and a fixed
-// "parked" offset marker (0xfc/0xff) at +0x10/+0x11; if set (settled
-// on top of a blocking surface, per settle_dropped_object's own use
-// of this flag), instead randomizes the heading-ish field at +0x21
-// within a +/-0x2000 range and marks +0x14/+0x15 with a different
-// marker (0xbc/0). Called only after settle_dropped_object succeeds
-// and the object resolved to a static (non-arena) slot.
+// was FUN_00055ef8 -- finalizes the position fields of a just- settled object's placement snapshot
+// (param_1, the same snapshot struct build_object_placement_snapshot fills): if DAT_002046d4 is
+// clear (settled cleanly)...
 void randomize_settled_snapshot_position(param_1)
 int param_1;
 
@@ -1944,12 +1655,9 @@ int param_1;
 
 
 
-// was FUN_00055f98 -- finalize a just-placed object's rest position at
-// (param_2,param_3): validate it can actually reach this floor height,
-// route genuinely-misplaced objects into discard_misplaced_object
-// (which destroys them, see its own comment), or reallocate a never-
-// before-placed object into the renderable arena via
-// reallocate_object_to_arena before returning it.
+// was FUN_00055f98 -- finalize a just-placed object's rest position at (param_2,param_3): validate
+// it can actually reach this floor height, route genuinely-misplaced objects into
+// discard_misplaced_object (which destroys them, see its own comment)...
 ushort *settle_dropped_object(param_1,param_2,param_3,param_4)
 ushort * param_1;
 short param_2;
@@ -1971,14 +1679,9 @@ int param_4;
   char extraout_r1;
   int iVar11;
   int iVar12;
-  /* iVar12 is reused throughout this function as a plain int (bitfield
-     math, array indices) -- real uses, left alone -- but the one use at
-     LAB_000564d8 held tilemap_lookup's real 64-bit pointer return,
-     truncating it on this host (same class as drop_held_object_near_
-     player's own identical bug just above it in this file). New,
-     properly-typed local for just that one pointer use; every other
-     iVar12 use is separated from it by an early `return`, so this
-     doesn't touch any of them. */
+  /* iVar12 is reused throughout this function as a plain int (bitfield math, array indices) -- real
+     uses, left alone -- but the one use at LAB_000564d8 held tilemap_lookup's real 64-bit pointer
+     return... */
   char *pDropTile;
   undefined1 local_4c [24];
 
@@ -2119,42 +1822,24 @@ LAB_000564d8:
 }
 
 
-/* was FUN_0001582c: dispatch slot 7 of FUN_00052674's boot-time
-   objects.dat table-loader list (siblings load_armor_variant_tables/
-   load_light_food_effect_tables sit at slots 0/2, called the same way:
-   `(*local_13c[i])(iVar3)` with iVar3 = the open objects.dat handle).
-   Reads 0x40 bytes -- 16 nibble-indexed entries at a 4-byte stride --
-   into DAT_00250730, the exact buffer class7_variant_effect_table_lookup
-   indexes below. Recovered via Ghidra headless; read_file_handle is this
-   file's uw_file_read wrapper. */
+/* was FUN_0001582c: dispatch slot 7 of FUN_00052674's boot-time objects.dat table-loader list
+   (siblings load_armor_variant_tables/ load_light_food_effect_tables sit at slots 0/2, called the
+   same way: `(*local_13c[i])(iVar3)` with iVar3 = the open objects.dat handle). */
 void load_class7_variant_effect_table(param_1)
 int param_1;
 {
   read_file_handle(param_1,&DAT_00250730,0x40);
   return;
 }
-/* was FUN_0007cd6c: dispatch slot 6, same boot-time loader list. Reads
-   0x10 bytes -- 16 nibble-indexed entries at a 1-byte stride -- into
-   DAT_0024cfe0, the buffer class6_variant_effect_table_lookup indexes
-   below (which is also why that global needed widening from a lone
-   scalar to a real 16-byte array). */
+/* was FUN_0007cd6c: dispatch slot 6, same boot-time loader list. */
 void load_class6_variant_effect_table(param_1)
 int param_1;
 {
   read_file_handle(param_1,&DAT_0024cfe0,0x10);
   return;
 }
-/* was FUN_0007cd7c: class6_variant_effect_table_lookup, dispatch slot 6
-   of get_scanned_object_class_effect_ptr's per-class table (uw.c below,
-   local_c -- Ghidra split the trailing 4 array slots of local_24[4] into
-   separate stack variables local_14/local_10/local_c/local_8 for classes
-   4-7, the same split-symbol-cluster pattern as several other stack
-   arrays in this file). Same id-split-then-table-lookup shape as
-   class0_variant_effect_table_lookup/class2_variant_effect_table_lookup,
-   but only defined for family==2 (id&0x30==0x20): indexes DAT_0024cfe0
-   (loaded above by load_class6_variant_effect_table) at 1-byte stride;
-   every other family returns 0, matching this table's real, deliberately
-   partial coverage. */
+/* was FUN_0007cd7c: class6_variant_effect_table_lookup, dispatch slot 6 of
+   get_scanned_object_class_effect_ptr's per-class table... */
 void *class6_variant_effect_table_lookup()
 
 {
@@ -2166,24 +1851,17 @@ void *class6_variant_effect_table_lookup()
   }
   return 0;
 }
-/* was FUN_0001583c: class7_variant_effect_table_lookup, dispatch slot 7
-   (local_8). Indexes DAT_00250730 (loaded above by
-   load_class7_variant_effect_table) at 4-byte stride, unconditionally --
-   unlike its class6 sibling, every family/nibble combination is valid
-   here. */
+/* was FUN_0001583c: class7_variant_effect_table_lookup, dispatch slot 7 (local_8). Indexes
+   DAT_00250730 (loaded above by load_class7_variant_effect_table) at 4-byte stride, unconditionally
+   -- unlike its class6 sibling, every family/nibble combination is valid here. */
 void *class7_variant_effect_table_lookup()
 
 {
   return &DAT_00250730 + (*(byte *)g_scratch_object_ptr & 0xf) * 4;
 }
-/* was FUN_0002a2d8: class1_variant_effect_table_lookup, dispatch slot 1
-   of get_scanned_object_class_effect_ptr's local_24 array (the same
-   4-entry array class0/class2/class3's handlers sit in). Same id-split
-   as its siblings, but ALSO caches the split family/nibble into
-   DAT_001013f4/DAT_001013f0 as a side effect (two freshly-declared
-   globals -- not otherwise read/written by any already-named code in
-   this file, so their consumer, if any, is still unrecovered) before
-   indexing DAT_001007d0 at a 0x30-byte stride, family*16+nibble. */
+/* was FUN_0002a2d8: class1_variant_effect_table_lookup, dispatch slot 1 of
+   get_scanned_object_class_effect_ptr's local_24 array (the same 4-entry array
+   class0/class2/class3's handlers sit in). */
 short DAT_001013f4;
 short DAT_001013f0;
 void *class1_variant_effect_table_lookup()
@@ -2203,25 +1881,7 @@ void *class1_variant_effect_table_lookup()
 
 
 /* class0_variant_effect_table_lookup: dispatch target index 0 of get_scanned_object_class_
-   effect_ptr's 8-entry table -- reached for any object whose class is
-   0 (id&0x1c0)>>6==0, which check_object_fits_in_slot treats as the
-   ARMOR class (its own uVar1==0 checks gate the body-slot validation
-   at uw.c ~36952). Was a no-op `return 0;` stub like
-   class2_variant_effect_table_lookup used to be, and for the exact
-   same reason: check_object_fits_in_slot dereferences this function's
-   return value at `+3` to read the equipped piece's slot-type byte,
-   so a hardcoded 0 crashed on address 3 the instant a real armor
-   piece was checked. Real disassembly (0x41e84-0x41f2c) shows the
-   same id-split-then-table-lookup shape as
-   class2_variant_effect_table_lookup, just with 3 possible tables
-   instead of one: family=(id&0x30)>>4 selects DAT_00202800 (stride 8,
-   family 0), DAT_002027d0 (stride 3, family 1), or DAT_00202750
-   (stride 4, families 2 and 3 -- family 3 adds 16 to the nibble index
-   into the same table). All three are already real, non-orphaned
-   globals loaded from objects.dat by the already-correct load_armor_variant_tables
-   (called via load_object_catalog_data's boot-time dispatch table, same loader
-   that reaches load_light_food_effect_tables) and already read
-   elsewhere in this file (resolve_equipped_weapon_attack, uw.c ~17840). */
+   effect_ptr's 8-entry table -- reached for any object whose class is 0 (id&0x1c0)>>6==0... */
 void *class0_variant_effect_table_lookup()
 
 {
@@ -2245,28 +1905,10 @@ void *class0_variant_effect_table_lookup()
 }
 /* class2_variant_effect_table_lookup: was `undefined DAT_0004a070;` -- a plain data byte, not a
    function. get_scanned_object_class_effect_ptr takes its address and CALLS it (`local_24[2] =
-   &DAT_0004a070; (*(code*)local_24[idx])();`) for any object whose class
-   is 2 (id&0x1c0)>>6==2 -- exactly the 0x90-class light sources
-   refresh_player_equipment_effects's and decay_equipped_light_sources's light-scan loops filter for. Taking
-   the address of a data byte and jumping into it crashed the instant a
-   real torch was found by the (now-fixed) scan loop. Real disassembly
-   (0x4a070-0x4a108) shows this reads the scanned object's id (via
-   g_scratch_object_ptr, the same object pointer get_scanned_object_class_effect_ptr's other handlers
-   already read), splits it into family=(id&0x30)>>4 and nibble=(id&0xf),
-   then returns a pointer into one of three already-recovered runtime
-   tables (g_carry_weight_limit_table/g_light_radius_table/g_food_effect_table, populated from
-   objects.dat by load_light_food_effect_tables via load_object_catalog_data's boot-time loader --
-   confirmed reachable, not orphaned) indexed by nibble at that family's
-   stride (3/2/1 bytes). Family 2 (torches' actual family, id=0x9X ->
-   (0x9X&0x30)>>4==1 -- so torches hit the *1*-stride table, not this
-   branch, but it's included for the other 0x90-class objects that do
-   route here) returns 0, matching the sibling LAB_ stub functions'
-   "Ghidra couldn't resolve, no-op returns 0" convention for entries
-   this table genuinely leaves unused. */
-/* Return type was `undefined4` -- same 64-bit-pointer-truncation bug
-   already flagged on get_scanned_object_class_effect_ptr itself: this handler hands back a
-   pointer into a runtime table, and undefined4 drops its upper 32 bits
-   on a 64-bit build, producing a wild address in the caller. */
+   &DAT_0004a070; (*(code*)local_24[idx])();`) for any object whose class is 2 (id&0x1c0)>>6==2... */
+/* Return type was `undefined4` -- same 64-bit-pointer-truncation bug already flagged on
+   get_scanned_object_class_effect_ptr itself: this handler hands back a pointer into a runtime
+   table, and undefined4 drops its upper 32 bits on a 64-bit build... */
 void *class2_variant_effect_table_lookup()
 
 {
@@ -2292,12 +1934,8 @@ void *class2_variant_effect_table_lookup()
 
 // was FUN_000522f0
 undefined4 place_object_in_world(param_1,param_2,param_3,param_4,param_5,param_6)
-/* param_4 was `int` -- a real object pointer (forwarded to
-   find_object_placement, which already declares its own param_1 as `ushort *`)
-   truncated to 32 bits on this host. Confirmed live: spawn_new_object now
-   actually returns a live pointer instead of always 0 (see its fix),
-   and this truncation crashed find_object_placement the first time this
-   never-before-exercised path ran with a real object. */
+/* param_4 was `int` -- a real object pointer (forwarded to find_object_placement, which already
+   declares its own param_1 as `ushort *`) truncated to 32 bits on this host. */
 uint param_1;
 uint param_2;
 undefined4 param_3;
@@ -2328,15 +1966,8 @@ int param_6;
 }
 
 
-// was FUN_0005578c -- finalize an object record's placement at tile
-// (param_2,param_3): recomputes its render/collision height from the
-// low 7 bits of its own offset 2-3 field (the same "height_field =
-// (raw&0x7f)<<3" formula emit_tile_objects and decode_tile_object_billboard_texture both use),
-// caching it into offsets 0xb-0x12 alongside the tile sub-position, and
-// sets a handful of per-object flag bytes (0x13/0x14/0x16-0x18). Called
-// by both spawn_object_near_player and reallocate_object_to_arena
-// whenever a fresh object copy needs a real position/height, not just a
-// carried-over one.
+// was FUN_0005578c -- finalize an object record's placement at tile (param_2,param_3): recomputes
+// its render/collision height from the low 7 bits of its own offset 2-3 field...
 void compute_object_placement_fields(param_1,param_2,param_3)
 undefined1 * param_1;
 uint param_2;
@@ -2388,17 +2019,9 @@ uint param_3;
 }
 
 
-// was FUN_00055610 -- the "spawn and replace" mechanism: allocate a
-// fresh low-region object slot (alloc_object_slot(1), same allocator
-// spawn_object_near_player uses -- the only region emit_tile_objects's
-// object_ptr_in_arena gate treats as renderable), copy param_1's key
-// fields into it, recompute its placement via
-// compute_object_placement_fields, then unlink param_1 from its tile's
-// object list, free its slot, and insert_head the new copy in its
-// place. Exists to move an object that was never allocated in the
-// renderable arena (e.g. a chargen-default inventory item dropped for
-// the first time) into it; without this an object can be correctly
-// linked into a tile's list yet still never actually render.
+// was FUN_00055610 -- the "spawn and replace" mechanism: allocate a fresh low-region object slot
+// (alloc_object_slot(1), same allocator spawn_object_near_player uses -- the only region
+// emit_tile_objects's object_ptr_in_arena gate treats as renderable)...
 ushort *reallocate_object_to_arena(param_1)
 ushort * param_1;
 
@@ -2494,19 +2117,7 @@ short param_5;
   while( true ) {
     if ((bVar3 != 0) || (uVar4 = param_2, uVar6 = param_3, DAT_00202c84 == 0)) {
       iVar5 = (int)(short)(param_5 * 2 + 1);
-      /* Was `ordint_divmod(iVar5,uVar2); ... (int)extraout_r1 ...` (twice)
-         -- bare calls whose result was read back via Ghidra's
-         extraout_r1 idiom, always uninitialized garbage on this host
-         (there's no way to read a second register out of a normal C
-         call). ordint_divmod is COREDLL's div/mod ordinal
-         (divisor,dividend): the quotient is its real C return value,
-         but this caller wants the REMAINDER, now named off its own
-         divmod_result instead of a nonexistent second return value:
-         this crashed 100% of the time using Use mode on a container
-         (find_object_placement is how try_combine_or_stow_object
-         scatters emptied contents onto the ground), confirmed live,
-         because uVar4/uVar6 below were built from garbage stack
-         memory, sending object placement to a wild tile. */
+      /* Was `ordint_divmod(iVar5,uVar2); ... */
       uVar2 = ce_rand();
       uVar4 = (ordint_divmod(iVar5,(int)uVar2).rem - (int)param_5) + param_2;
       uVar2 = ce_rand();
@@ -2544,27 +2155,24 @@ short param_5;
 undefined4 class3_variant_effect_stub()
 
 {
-  /* Confirmed via a direct Ghidra headless lookup by address
-     (0x7913c): `undefined4 FUN_0007913c(void) { return 0; }` -- this
-     genuinely IS a no-op in the real binary too, not a "Ghidra gave
-     up" placeholder. Kept as-is; not a bug. */
+  /* Confirmed via a direct Ghidra headless lookup by address (0x7913c): `undefined4
+     FUN_0007913c(void) { return 0; }` -- this genuinely IS a no-op in the real binary too, not a
+     "Ghidra gave up" placeholder. Kept as-is; not a bug. */
   return 0;
 }
 undefined4 class5_variant_effect_stub()
 
 {
-  /* Confirmed via a direct Ghidra headless lookup by address
-     (0x6b3d4): `undefined4 FUN_0006b3d4(void) { return 0; }` -- this
-     genuinely IS a no-op in the real binary too, not a "Ghidra gave
-     up" placeholder. Kept as-is; not a bug. */
+  /* Confirmed via a direct Ghidra headless lookup by address (0x6b3d4): `undefined4
+     FUN_0006b3d4(void) { return 0; }` -- this genuinely IS a no-op in the real binary too, not a
+     "Ghidra gave up" placeholder. Kept as-is; not a bug. */
   return 0;
 }
 undefined4 class4_variant_effect_stub()
 
 {
-  /* Confirmed via a direct Ghidra headless lookup by address
-     (0x73b10): `undefined4 FUN_00073b10(void) { return 0; }` -- this
-     genuinely IS a no-op in the real binary too, not a "Ghidra gave
-     up" placeholder. Kept as-is; not a bug. */
+  /* Confirmed via a direct Ghidra headless lookup by address (0x73b10): `undefined4
+     FUN_00073b10(void) { return 0; }` -- this genuinely IS a no-op in the real binary too, not a
+     "Ghidra gave up" placeholder. Kept as-is; not a bug. */
   return 0;
 }

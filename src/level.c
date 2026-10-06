@@ -1,8 +1,6 @@
-/* Level loading: the object-table arena init/reset, per-level object
- * table load, and the top-level "enter dungeon view"/"load level"
- * entry points. Split out of uw.c (the original monolithic decompile)
- * once these functions' real roles were confirmed.
- */
+/* Level loading: the object-table arena init/reset, per-level object table load, and the top-level
+   "enter dungeon view"/"load level" entry points. Split out of uw.c (the original monolithic
+   decompile) once these functions' real roles were confirmed. */
 #include "headers/level.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -17,21 +15,13 @@ undefined1 DAT_00088d98_backing[768];
 short DAT_00201c7c;
 undefined2 DAT_00201c90;
 undefined2 DAT_00201c8c;
-/* DAT_00085668_backing/DAT_00085668/DAT_000856a4 macros now live in
-   uw.h (DAT_000856a4 aliases into the same table at entry 15, byte
-   offset 15*8 -- Ghidra's own decompile of the real UU.exe shows this
-   used as `&DAT_000856a4 + mode*0x80`, i.e. "entry 15 of whichever
-   mode", the same table dispatch_sticky_mode_handlers reads -- not a
-   separate byte the way it was declared before, which left it
-   permanently 0/NULL too). */
+/* DAT_00085668_backing/DAT_00085668/DAT_000856a4 macros now live in uw.h (DAT_000856a4 aliases into
+   the same table at entry 15, byte offset 15*8 -- Ghidra's own decompile of the real UU.exe shows
+   this used as `&DAT_000856a4 + mode*0x80`, i.e. "entry 15 of whichever mode")... */
 static char s__DATA_main_byt_000857a8[] = "\\DATA\\main.byt";
 undefined4 DAT_002029d0;
-/* Both were `int` -- real 64-bit pointers (DAT_002046a8/DAT_0020469c,
-   both `char *`) stored through a 32-bit global truncate them on this
-   host. DAT_002046a0 feeds DAT_002046c0/DAT_002046c8's own bases
-   (used by active_mobile_list_add's message-buffer write), confirmed live as
-   the next crash in the spawn_new_object "spawn object" chain once the
-   earlier truncations in that same chain were fixed. */
+/* Both were `int` -- real 64-bit pointers (DAT_002046a8/DAT_0020469c, both `char *`) stored through
+   a 32-bit global truncate them on this host. */
 static char *DAT_002046ac;
 static char *DAT_002046a0;
 char *DAT_0024cff4;
@@ -64,7 +54,7 @@ void enter_dungeon_view()
   unregister_game_view_interact_zones();
   configure_dungeon_viewport(0x34,0x14,0xab,0x70);
   ce_memmove(auStack_314,&DAT_00088d98,0x300);
-  fade_out(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
+  fade_out(g_uw_framebuffer,auStack_314,0);
   if (g_new_game_entry_pause_pending) {
     g_new_game_entry_pause_pending = false;
     /* Intentional deviation: hold the black screen for 0.5 seconds after
@@ -73,16 +63,9 @@ void enter_dungeon_view()
     Sleep(500);
   }
   load_pals_bank(0,auStack_314);
-  /* load_pals_bank loads PALS.DAT bank 0 (the 3D dungeon-view palette --
-     cf. set_palette_bank(0) at the game-mode switch) into the local
-     auStack_314 and installs it, but leaves the global DAT_00088d98
-     holding whatever bank the main menu last loaded (bank 2). The torch
-     palette-cycle loop (palette_cycle_range -> reinstall_active_palette) then re-installs
-     g_palette_rgb565 straight from DAT_00088d98 on the very next redraw,
-     so the dungeon flips from its real bank-0 colours to the stale menu
-     palette (grey -> gold) after the first frame. Mirror the loaded
-     palette into DAT_00088d98 so the cycle loop keeps re-installing
-     bank 0. */
+  /* load_pals_bank loads PALS.DAT bank 0 (the 3D dungeon-view palette -- cf. set_palette_bank(0) at
+     the game-mode switch) into the local auStack_314 and installs it, but leaves the global
+     DAT_00088d98 holding whatever bank the main menu last loaded (bank 2). */
   ce_memmove(&DAT_00088d98,auStack_314,0x300);
   ce_memset(acStack_41c,0,0x104);
   pcVar2 = &DAT_0023cca8;
@@ -103,7 +86,7 @@ void enter_dungeon_view()
   full_dungeon_redraw();
   weapon_overlay_and_full_redraw();
   cursor_show_idle_tick();
-  fade_in(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
+  fade_in(g_uw_framebuffer,auStack_314,0);
   return;
 }
 
@@ -115,13 +98,9 @@ undefined4 init_level_object_arena()
 
 {
   if (DAT_002029cc == 0) {
-    /* Widened by 0x3a bytes: 28 backpack/equipment slots * 2 bytes
-       (0x38) plus g_current_container_link's own 2 bytes, both now reserved at
-       this buffer's tail -- see reset_level_object_arena and g_equipped_items's/
-       g_current_container_link's own comments. Further widened by 0x180
-       bytes right after that for g_scheduler_table (the scheduled-
-       effects queue's own link table) -- see its own (DAT_00250778's)
-       comment. */
+    /* Widened by 0x3a bytes: 28 backpack/equipment slots * 2 bytes (0x38) plus
+       g_current_container_link's own 2 bytes, both now reserved at this buffer's tail -- see
+       reset_level_object_arena and g_equipped_items's/ g_current_container_link's own comments. */
     DAT_002029cc = ce_malloc(0x7c08 + 0x3a + 0x180);
     if (DAT_002029cc == 0) {
       report_categorized_fatal_error(0x1002);
@@ -166,12 +145,9 @@ int param_2;
        right after a real load, magic marker and all -- see gx_stub.h's
        comment. */
     uw_debug_dump_tmap(param_2, (unsigned char *)iVar3);
-    /* Diagnostic (UW_DEBUG_BAG_TRACE): scan for a type-0x8f (rune bag)
-       object's tile linkage IMMEDIATELY after the raw level block lands
-       in the arena, before any other code (chargen-completion, HUD init,
-       etc.) gets a chance to touch it -- to tell apart "the file's raw
-       bytes never link it" from "something clears/corrupts the link
-       shortly after load". */
+    /* Diagnostic (UW_DEBUG_BAG_TRACE): scan for a type-0x8f (rune bag) object's tile linkage
+       IMMEDIATELY after the raw level block lands in the arena, before any other code
+       (chargen-completion, HUD init, etc.) gets a chance to touch it... */
     if (getenv("UW_DEBUG_BAG_TRACE")) {
       int _found = 0;
       for (int _i = 0x100; _i < 0x100 + 1064; _i++) {
@@ -239,22 +215,11 @@ void reset_level_object_arena()
   DAT_002046a8 = DAT_002029cc + 0x74fa;
   DAT_002046bc = DAT_002029cc + 0x74fc;
   DAT_0020469c = DAT_002029cc + 0x7afa;
-  /* g_backpack_slot_table lives in this same arena buffer, in the 0x38
-     bytes init_level_object_arena added past the buffer's old real end (0x7c08 --
-     note that's past this function's own highest touched offset,
-     0x7b00, and past resolve_object_link's old checked upper bound,
-     DAT_002046c4+0x1800=0x7300 -- both already-spoken-for, so the new
-     reservation goes after the *entire* old buffer instead of trying
-     to squeeze into either gap). resolve_object_link's valid-range
-     upper bound is widened to this same new true end (0x7c08+0x38) --
-     see its own comment -- so this table is both physically present
-     and accepted by resolve_object_link's guard. */
+  /* g_backpack_slot_table lives in this same arena buffer, in the 0x38 bytes
+     init_level_object_arena added past the buffer's old real end... */
   g_backpack_slot_table = DAT_002029cc + 0x7c08;
-  /* g_scheduler_table lives in this same arena buffer too, right after
-     g_backpack_slot_table's own 0x3a-byte reservation -- see
-     DAT_00250778's own comment for the full explanation, and
-     init_level_object_arena's/resolve_object_link's for the matching
-     allocation-size/bounds widening by this same 0x180. */
+  /* g_scheduler_table lives in this same arena buffer too, right after g_backpack_slot_table's own
+     0x3a-byte reservation -- see DAT_00250778's own comment for the full explanation... */
   g_scheduler_table = DAT_002029cc + 0x7c08 + 0x3a;
   iVar3 = 2;
   DAT_002046a0 = DAT_0020469c;
@@ -322,13 +287,9 @@ undefined4 param_1;
 
 
 
-// was FUN_0006c79c -- level-transition entry point: cancels any held
-// cursor item (same "drop what you're holding" guard as elsewhere),
-// snapshots the leaving level's special per-level state
-// (save_or_restore_level_special_state(param_1, 1)), commits the leaving
-// level to its save slot, loads the new level, and on success restores
-// the new level's own special state (save_or_restore_level_special_state
-// (param_2, 0)).
+// was FUN_0006c79c -- level-transition entry point: cancels any held cursor item (same "drop what
+// you're holding" guard as elsewhere), snapshots the leaving level's special per-level state
+// (save_or_restore_level_special_state(param_1, 1)), commits the leaving level to its save slot...
 int transition_to_level(param_1,param_2)
 undefined4 param_1;
 undefined4 param_2;
@@ -365,16 +326,9 @@ undefined4 param_2;
 
 
 
-// was FUN_0006c834 -- saves (param_2==1) or restores (param_2==0) a
-// leaving/entering level's special transient per-level state, called
-// from transition_to_level around commit_level_to_save_slot/load_level.
-// Only levels 7 and 9 have any such state: level 7's floor-hazard byte
-// (DAT_00086df8+0x38/+0x37, restored via update_level7_floor_hazard_state)
-// and level 9's DAT_00086b20 special value. param_2==3 (level 9 only)
-// clears DAT_00086b20 outright rather than saving/restoring it. Only
-// takes the save/restore/clear path when DAT_00086df8+0x60's bit 4 is
-// clear or this is a save/clear call (param_2!=0); a restore
-// (param_2==0) with that bit set instead calls reset_level_arena_and_invalidate(0).
+// was FUN_0006c834 -- saves (param_2==1) or restores (param_2==0) a leaving/entering level's
+// special transient per-level state, called from transition_to_level around
+// commit_level_to_save_slot/load_level.
 void save_or_restore_level_special_state(param_1,param_2)
 short param_1;
 short param_2;
@@ -425,17 +379,8 @@ short param_2;
 
 
 
-// was FUN_0007129c -- rolls for and triggers one of several as-yet-
-// untriggered special per-level dialog/effect ids (tracked as bits in
-// the 16-bit DAT_00086df8+0x6e mask): picks a candidate id (favoring
-// low ids 0-3 gated by which of that mask's own bits 1/2/4/8 are set,
-// falling back to a random id 4-9 if none of those are available or
-// already used), then shows it via display_book_or_scroll_page (this file's general
-// dialog-box routine, see its own "box drawing routine" comment) and
-// marks its bit used. If no id was available at all (or
-// DAT_00086df8+0x62 bit 3 is set), just busy-waits ~0x180 clock units
-// instead and reports no trigger. Exact meaning of ids 0-9 not
-// identified.
+// was FUN_0007129c -- rolls for and triggers one of several as-yet- untriggered special per-level
+// dialog/effect ids (tracked as bits in the 16-bit DAT_00086df8+0x6e mask): picks a candidate id...
 undefined4 trigger_random_level_special_event(param_1)
 short param_1;
 
@@ -495,17 +440,9 @@ short param_1;
 }
 
 
-// was FUN_000396a0 -- teleports object param_1 to tile
-// (param_2,param_3) on level param_4. Confirmed as the "teleporter
-// trap" handler (dispatch_trap_type_effect's case 1, teleporting the
-// current trigger object DAT_0024cff4 to a trap-record-specified
-// tile/level). Only proceeds if the target level matches the current
-// level (DAT_00201b68) or the target is the player. Skips the
-// find_placement_via_tile_flood_fill relocate step when both
-// coordinates are the 0x3f sentinel (used elsewhere purely to refresh
-// the player's tracked position/redraw state without moving them).
-// Returns 0x10 on success, 2 if blocked (wrong level, or no valid
-// nearby tile found).
+// was FUN_000396a0 -- teleports object param_1 to tile (param_2,param_3) on level param_4.
+// Confirmed as the "teleporter trap" handler (dispatch_trap_type_effect's case 1, teleporting the
+// current trigger object DAT_0024cff4 to a trap-record-specified tile/level).
 undefined4 teleport_object_to_level_tile(param_1,param_2,param_3,param_4)
 char *param_1;
 int param_2;
@@ -545,12 +482,8 @@ LAB_00039784:
 }
 
 
-// was FUN_0003bc1c -- hard-resets the level object arena
-// (reset_level_object_arena), flushes a redraw, and invalidates
-// DAT_00202080 (a loaded-level data marker). Used in place of the
-// normal save/restore path when a level's transient state can't be
-// trusted (save_or_restore_level_special_state's own "needs reset"
-// bit case).
+// was FUN_0003bc1c -- hard-resets the level object arena (reset_level_object_arena), flushes a
+// redraw, and invalidates DAT_00202080 (a loaded-level data marker).
 void reset_level_arena_and_invalidate(param_1)
 undefined4 param_1;
 

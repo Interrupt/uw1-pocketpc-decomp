@@ -46,16 +46,8 @@ void DEBUG_impl(DebugLevel level, const char *file, int line, const char *fmt, .
     vfprintf(stderr, fmt, args);
     va_end(args);
 
-    /* Level 0 (from DEBUG_impl's own frame) would just be whichever
-       function contains the DEBUG(...) call site -- already covered by
-       file:line above. Level 1 is one frame further up: whoever called
-       *that* function, which is what you actually want when the
-       DEBUG(...) call lives inside a shared helper (e.g.
-       bitmap_blit_to_framebuffer) and several different callers hit it.
-       Same dladdr-on-a-return-address idiom already used by
-       draw_text_string's UW_DIAG_TEXT trace in uw.c. Reliable at -O0 (this
-       project's only build mode) since frame pointers stay intact;
-       silently prints nothing extra if it can't resolve a symbol. */
+    /* Level 0 (from DEBUG_impl's own frame) would just be whichever function contains the
+       DEBUG(...) call site -- already covered by file:line above. */
     Dl_info caller_info;
     void *caller_addr = __builtin_return_address(1);
     if (caller_addr && dladdr(caller_addr, &caller_info) && caller_info.dli_sname) {

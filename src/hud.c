@@ -1,10 +1,6 @@
-/* The HUD: dirty-rect tracking/flush, mode icons, cursor-mode button
- * clicks, the per-frame HUD draw/tick dispatch (vitals bar, dragon
- * reaction, compass needle, panel transitions), and the message
- * scroll panel (word-wrap, line-by-line scroll, draw). Split out of
- * uw.c (the original monolithic decompile) once these functions' real
- * roles were confirmed.
- */
+/* The HUD: dirty-rect tracking/flush, mode icons, cursor-mode button clicks, the per-frame HUD
+   draw/tick dispatch (vitals bar, dragon reaction, compass needle, panel transitions), and the
+   message scroll panel (word-wrap, line-by-line scroll, draw). */
 #include "headers/hud.h"
 #include "headers/debug.h"
 #include <dlfcn.h>
@@ -18,17 +14,9 @@ static int DAT_00088950;
 static int DAT_00088958;
 short DAT_00084f10;
 undefined1 g_active_hud_panel;
-/* Not part of the original binary -- a port-side addition. scroll_text_entry_prompt
-   (the generic scroll-area text-entry field used by save-name entry,
-   "Move how many", "Chant the mantra", etc.) is opened as an overlay on
-   top of the dungeon view without ever calling set_game_mode, so
-   DAT_00201b60/DAT_00201b64 (the top-level game-mode pair) never change
-   while it's up -- gx_stub.c's in_dungeon_freelook() has no way to tell
-   the difference between "really in the 3D view" and "a text field is
-   capturing keystrokes over it", so it kept routing A/D/C/W/S/X/Z/1/2/3
-   to the movement poller instead of letting them type. Set true for the
-   duration of scroll_text_entry_prompt's input loop; gx_stub.c checks it (as an
-   extern) alongside DAT_00201b64. */
+/* Not part of the original binary -- a port-side addition. scroll_text_entry_prompt (the generic
+   scroll-area text-entry field used by save-name entry, "Move how many", "Chant the mantra", etc.)
+   is opened as an overlay on top of the dungeon view without ever calling set_game_mode... */
 int g_text_input_active;
 undefined2 g_cursor_mode;
 int DAT_00250718;
@@ -42,34 +30,16 @@ static undefined2 DAT_00202090;
 static undefined2 DAT_002020c8;
 static undefined2 DAT_002020bc;
 static char s_init_gamedisp_goes_000858e8[] = "init_gamedisp goes\n";
-/* Real, compile-time-baked data recovered directly from UU.exe (same
-   technique/precedent as DAT_00085668 -- see memory.md's "HOW WE GOT THE
-   DISPATCH TABLES POPULATED"), not something a runtime populator ever
-   writes. Confirmed via Ghidra: 0x858a8 holds 8 real int16 X coordinates
-   {8,8,6,6,7,8,0,0}, immediately followed at 0x858b8 by 8 real int16 Y
-   coordinates {100,81,66,48,28,11,144,0}, immediately followed at 0x858c8
-   by PTR_FUN_000858c8 (the very next declared symbol in this file) --
-   a clean, unambiguous 8-short/8-short layout with no gap. These are the
-   6 in-game HUD cursor-mode icon buttons' (Look/Use/Talk/etc, drawn by
-   mode_icon_highlight_on/mode_icon_highlight_off via draw_sprite_by_id) screen positions;
-   only indices 0-5 are ever read (cursor_mode_button_click bounds-checks
-   at 5), the remaining 2 slots are unused padding in the original data.
-   Declaring these as plain zero-filled arrays (as a prior session had
-   them) meant every highlight/unhighlight icon drew at (0,0) instead of
-   its real button position -- part of the "door image on mode-icon
-   click" bug (see cursor_mode_button_click's own comment for the other
-   half, a dropped mode_icon_highlight_off argument). */
+/* Real, compile-time-baked data recovered directly from UU.exe (same technique/precedent as
+   DAT_00085668 -- see memory.md's "HOW WE GOT THE DISPATCH TABLES POPULATED"), not something a
+   runtime populator ever writes. */
 static const unsigned short DAT_000858a8_real[8] = {8,8,6,6,7,8,0,0};
 #define DAT_000858a8 (*(undefined1 *)DAT_000858a8_real)
 static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
 #define DAT_000858b8 (*(undefined1 *)DAT_000858b8_real)
-/* Ghidra left 0x202988 and 0x2028e0 as bare literal addresses (no symbol)
-   -- small per-hand "currently drawn weapon / hand state" arrays indexed
-   0..5 by reset_equipment_and_container_state/reload_paperdoll_body_sprite (which zero them) and FUN_00046xxx
-   (which reads+rewrites them to gate a paperdoll redraw). On the 32-bit
-   binary `idx + 0x202988` was real addressing; here it hits an unmapped
-   low address and segfaults level init. Give them real backing storage
-   and address them as `&DAT_00202988 + idx`. */
+/* Ghidra left 0x202988 and 0x2028e0 as bare literal addresses (no symbol) -- small per-hand
+   "currently drawn weapon / hand state" arrays indexed 0..5 by
+   reset_equipment_and_container_state/reload_paperdoll_body_sprite (which zero them) and... */
 /* Sizing-audit pass: reload_paperdoll_body_sprite's own loop is
    `iVar1<6` (indices 0-5). HARD. Down from 16. */
 undefined1 DAT_00202988_backing[6];
@@ -78,10 +48,9 @@ static int DAT_002028d0;
    trailing newline. Real bytes at 0x85a80 (ARM UU.exe .data): "Not a spell\n". */
 static char s_Not_a_spell_00085a80[] = "Not a spell\n";
 static byte DAT_002028d4;
-/* Original UU.exe .data at 0x87530: 53 four-byte special-action records.
-   The first 48 match readied spells; byte 0 >> 3 is the action type,
-   bytes 1-2 pack three 5-bit rune indices (24 means an empty slot),
-   and byte 3 is the action parameter. These fields share one table. */
+/* Original UU.exe .data at 0x87530: 53 four-byte special-action records. The first 48 match readied
+   spells; byte 0 >> 3 is the action type, bytes 1-2 pack three 5-bit rune indices (24 means an
+   empty slot), and byte 3 is the action parameter. These fields share one table. */
 undefined DAT_00087530_backing[212] = {
   0x00, 0x78, 0x21, 0x83,
   0x10, 0x12, 0x05, 0x02,
@@ -146,17 +115,8 @@ undefined2 DAT_00085c50;
 static int DAT_002046f8;
 static char s_optbtns_00086954[] = "optbtns";
 static short DAT_002046f4;
-/* Real .data value confirmed via a Ghidra memory dump of the original
-   binary at 0x87990: 0x00000001, not the C zero-default this plain
-   declaration gave it. This flag gates msg_scroll_draw_wrapped_span's leading-backslash
-   control-code parser (`if (g_scroll_control_codes_enabled != 0 && *param_1=='\\')`);
-   draw_save_load_slot_list's save-slot-list header print happens before that
-   function's own explicit reset (confirmed both in the C source and via
-   disassembly -- not a decompile-dropped-statement bug, the real binary
-   really does read whatever this flag was last left at), so on this
-   port's very first save/load screen it inherited the wrong (zero)
-   default and printed its leading "\6" color code literally instead of
-   interpreting it. */
+/* Real .data value confirmed via a Ghidra memory dump of the original binary at 0x87990:
+   0x00000001, not the C zero-default this plain declaration gave it. */
 // was DAT_00087990
 undefined4 g_scroll_control_codes_enabled = 1;
 static short DAT_0020471c;
@@ -166,12 +126,9 @@ static short DAT_002047dc;
 static short DAT_002047d8;
 static int DAT_000889b8;
 static int DAT_000889bc;
-/* DAT_002047b0: declared as a scalar but indexed as (&DAT_002047b0)[i]
-   throughout (register_click_region-style helpers, up to 20 slots
-   per the `iVar2 < 0x14` loop bound) -- same "scalar declared but
-   accessed as array" bug class fixed several times this session.
-   Widened to real, safely-sized backing storage (zero-initialized,
-   not recovered) purely to make the access safe. */
+/* DAT_002047b0: declared as a scalar but indexed as (&DAT_002047b0)[i] throughout
+   (register_click_region-style helpers, up to 20 slots per the `iVar2 < 0x14` loop bound) -- same
+   "scalar declared but accessed as array" bug class fixed several times this session. */
 static undefined2 DAT_002047b0_backing[20];
 #define DAT_002047b0 DAT_002047b0_backing[0]
 static short DAT_002047a4;
@@ -187,11 +144,9 @@ static short DAT_00204854;
    20-slot table (`while(iVar2<0x14)`), 2-byte stride -- real max
    19*2+2=40 bytes. */
 static undefined1 DAT_00204720_backing[64];
-/* Sizing-audit pass: siblings of DAT_00204720 right above, same
-   register_cursor_hotspot 20-slot table, but indexed directly by
-   element (not a byte offset) -- real max index 19, 20 elements * 2
-   bytes = 40 bytes real need. Sized to 32 elements (64 bytes) to
-   match DAT_00204720's own headroom; down from 256. */
+/* Sizing-audit pass: siblings of DAT_00204720 right above, same register_cursor_hotspot 20-slot
+   table, but indexed directly by element (not a byte offset) -- real max index 19, 20 elements * 2
+   bytes = 40 bytes real need. */
 static undefined2 DAT_00204750_backing[32];
 #define DAT_00204750 DAT_00204750_backing[0]
 static undefined2 DAT_002047e0_backing[32];
@@ -201,126 +156,46 @@ static undefined2 DAT_00204808_backing[32];
 static undefined2 DAT_00086970;
 static char DAT_00204858;
 static undefined2 DAT_00204704;
-/* Sizing-audit pass: push_cursor_icon/pop_cursor_icon's own cursor-
-   icon stack, guarded by `if (DAT_00204858 != '\x03')` -- max depth
-   3, real need 3 elements (6 bytes). Sized to 8 for headroom; down
-   from 256. */
+/* Sizing-audit pass: push_cursor_icon/pop_cursor_icon's own cursor- icon stack, guarded by `if
+   (DAT_00204858 != '\x03')` -- max depth 3, real need 3 elements (6 bytes). Sized to 8 for
+   headroom; down from 256. */
 static undefined2 DAT_00204714_backing[8];
 #define DAT_00204714 DAT_00204714_backing[0]
 static short DAT_002047a8;
 static short DAT_0020478c;
 static short DAT_002047ac;
-/* Recovered from UU.exe .data at 0x86b38: three pairs of function
-   pointers, selected by an index (0 or 1, from DAT_00086b2c) in
-   walk_visible_tiles, loaded into DAT_0023b4f4 / DAT_0023b80c / DAT_0023b4d4,
-   and called by process_visible_tile_cell to emit a visible tile's 3D geometry
-   slice (wall / floor-or-ceiling / diagonal). Were silently-zero scalars,
-   so `(*DAT_0023b4f4)(...)` was a call through NULL the instant the
-   (now-working) visibility fill marked any tile visible. The six entries
-   are contiguous in .data: b38,b3c / b40,b44 / b48,b4c -- one array, the
-   symbols index it at 0..4. NOT const: configure_texture_detail_functions
-   (CORRECTED this pass -- was mislabeled "FUN_0005d664", an address
-   that doesn't match any real function in this file) patches entries
-   [1] and [3] (b3c / b44) at runtime between emit_flat_wall_texture_select
-   and emit_floor_texture_select. */
+/* Recovered from UU.exe .data at 0x86b38: three pairs of function pointers, selected by an index (0
+   or 1, from DAT_00086b2c) in walk_visible_tiles, loaded into DAT_0023b4f4 / DAT_0023b80c /
+   DAT_0023b4d4... */
 code *DAT_00086b38_fnptrs[6] = {
   (code *)emit_flat_wall_texture_select, (code *)emit_floor_texture_select,
   (code *)emit_flat_floor_texture_select, (code *)emit_flat_wall_texture_select,
   (code *)emit_flat_diagonal_texture_select, (code *)emit_diagonal_wall_texture_select,
 };
-/* Was `static undefined1 DAT_000870ec_backing[65536]` (an oversized,
-   never-populated byte buffer) -- real per-flask X position for
-   `hud_vitals_bar_tick` (the health/mana FLASK bar update function),
-   [0]=health [1]=mana. Read via byte-scaled pointer arithmetic at
-   every call site (`&DAT_000870ec + iVar1` where iVar1 is already a
-   pre-scaled byte offset of 0 or 2, or `&DAT_000870ec + iVar1*2` in
-   hud_vitals_threshold_shake where iVar1 is a plain 0/1 element index) -- kept
-   byte-typed here rather than a natural short array, matching every
-   existing call site instead of needing them all rewritten.
-   Recovered via direct memory dump (Ghidra headless, `mem.getShort`):
-   real values 248 (health) / 284 (mana), byte-encoded little-endian
-   below. */
+/* Was `static undefined1 DAT_000870ec_backing[65536]` (an oversized, never-populated byte buffer)
+   -- real per-flask X position for `hud_vitals_bar_tick` (the health/mana FLASK bar update
+   function), [0]=health [1]=mana. */
 static undefined1 DAT_000870ec_backing[4] = { 248,0, 28,1 };  /* 248, 284 */
 #define DAT_000870ec DAT_000870ec_backing[0]
 #define DAT_000870f2 (*(short *)(DAT_000870f0_backing + 2))
-/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
-   DAT_0023c224/DAT_0023c230 etc. (see DAT_0023c224's comment for the
-   full writeup). DAT_0023c118/DAT_0023c128 are `hud_vitals_bar_tick`'s
-   (the real health/mana FLASK bar update function) own current/target
-   fill-level counters per flask (index 0=health, 1=mana), used
-   throughout as `(&DAT_0023c118)[uVar2]`/`(&DAT_0023c128)[uVar2]`.
-   With these as lone scalars, index [1] on each aliased the next
-   global in this build's layout -- DAT_0023c118[1] read/wrote
-   DAT_0023c128[0]'s own byte, and DAT_0023c128[1] read/wrote
-   DAT_0023c224's first byte -- so the mana flask's fill-level
-   tracking was corrupting the health flask's, and the compass-icon
-   cluster besides. Fixed the same way, real 2-element arrays.
-
-   FOLLOW-UP (this session, chasing the chain-hotspot/stats-panel
-   revival): that first fix under-sized both arrays. set_hud_status_value
-   and reset_hud_panel_animation_state's own reset loop (`while (iVar1 < 9)`) both index
-   `(&DAT_0023c118)[i]`/`(&DAT_0023c128)[i]` up to i=8, and disassembly
-   of the real chain-hotspot handler chain (0x6cfb0-0x6cfdc) confirms
-   g_target_hud_panel's real address is exactly DAT_0023c118+6 -- so widened
-   to real 9-element arrays and folded g_target_hud_panel/DAT_0023c11f/
-   DAT_0023c120 (indices 6/7/8 of the first array) and g_committed_hud_panel/
-   DAT_0023c12f (indices 6/7 of the second) in as aliases instead of
-   the separate globals they were each declared as, which -- exactly
-   like the original bug here -- put them at unrelated addresses the
-   `(&DAT_0023c118)[6]`-style writes elsewhere in this file could never
-   actually reach. That was why toggling the stats panel (index 6)
-   silently did nothing: set_hud_status_value(6, target) wrote 6 bytes
-   past a 2-byte array into unrelated memory instead of the real
-   g_target_hud_panel the panel-transition ticker (tick_hud_panel_transition) reads. */
+/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as DAT_0023c224/DAT_0023c230 etc. (see
+   DAT_0023c224's comment for the full writeup). */
  undefined1 DAT_0023c118_arr[9];
 static undefined1 DAT_0023c128_arr[9];
 #define DAT_0023c128 DAT_0023c128_arr[0]
 #define g_committed_hud_panel DAT_0023c128_arr[6]
 #define DAT_0023c12f DAT_0023c128_arr[7]
-/* Was a lone `undefined2 DAT_0023c224;` -- but used as a real 2-element
-   array throughout (`(&DAT_0023c224)[iVar1]`/`[uVar2]` for index 0 AND
-   1, including the creation loop in redraw_hud_panels that assigns
-   BOTH elements). Same "split symbol" bug class as this project's
-   other reconstructed tables (see e.g. DAT_00087130's own history) --
-   index [1] read/wrote whatever global happened to sit 2 bytes past
-   this one in OUR build's memory layout, which is not guaranteed (or
-   even likely) to match the original binary's fixed layout. Confirmed
-   live via a sprite-position trace: with the lone-scalar declaration,
-   `(&DAT_0023c224)[1]` resolved to slot 8 -- the COMPASS BACKGROUND
-   sprite's own real slot handle (DAT_0023c228, created a few
-   statements later) -- so any code exercising the second status-icon
-   slot (uVar2==1 in the two functions above) stomped the compass
-   background's position to whatever it happened to pass for its own
-   icon (typically (0,0), before DAT_000870ec/DAT_000870f2 -- the real
-   FLASK X/Y tables -- were themselves recovered, see their own
-   comments above). This was the real cause of the compass background
-   staying stuck at
-   (0,0) despite being created with the correct position. Real fix:
-   make this a genuine 2-element array. */
+/* Was a lone `undefined2 DAT_0023c224;` -- but used as a real 2-element array throughout
+   (`(&DAT_0023c224)[iVar1]`/`[uVar2]` for index 0 AND 1, including the creation loop in
+   redraw_hud_panels that assigns BOTH elements). */
 static short DAT_0023c224_arr[2];
 #define DAT_0023c224 DAT_0023c224_arr[0]
 static byte DAT_0023c11a;
 static short DAT_0023c228;
 static short DAT_0023c22c;
-/* Was `FIXME[hud-compass-layout]: .data 0x87130 -- ... Ghidra never
-   recovered the .data contents so every entry reads 0 and the needle
-   is stuck at x=0 (part of the black block in the HUD top-left)`.
-   Same class of gap as the 4 "unrecoverable" resource-name strings
-   (see s_lfti_000859fc's comment) -- Ghidra just never created a
-   labeled cross-reference to this .data, but the real bytes are
-   perfectly intact in the binary. Recovered via direct memory dump
-   (Ghidra headless, `mem.getShort`): 16 real values tracing a clean
-   small ellipse (112-160), confirming this is genuine per-heading
-   compass-needle X data, not padding. Combined with DAT_00087150
-   below, the ellipse is centered around (136,142) in native
-   (320x200-ish) coordinates -- right at the bottom edge of the 3D
-   viewport (registered at native (52,20)-(223,132), see
-   configure_dungeon_viewport's caller), exactly where the "pedestal" decoration
-   sits in a real reference screenshot of the shipping game. Verified
-   live: with these real values, the needle no longer appears at the
-   top-left corner (the previous x=0/y=0 bug); it now subtly cycles
-   position on the pedestal as the player turns, matching the
-   reference. */
+/* Was `FIXME[hud-compass-layout]: .data 0x87130 -- ... Ghidra never recovered the .data contents so
+   every entry reads 0 and the needle is stuck at x=0 (part of the black block in the HUD
+   top-left)`. */
 static short DAT_00087130_arr[16] = {
   136, 128, 120, 116, 112, 112, 116, 124, 136, 144, 156, 160, 160, 156, 152, 144,
 };
@@ -332,33 +207,14 @@ static short DAT_00087150_arr[16] = {
   132, 134, 135, 138, 142, 146, 148, 151, 153, 151, 148, 146, 142, 138, 135, 134,
 };
 #define DAT_00087150 DAT_00087150_arr[0]
-/* Was two lone `short` scalars -- same split-symbol bug as
-   DAT_0023c11c/DAT_0023c230 etc. elsewhere in this file.
-   `hud_dragon_reaction_tick` indexes `&DAT_0023c1e8 + iVar6`
-   (iVar6=0/1, left/right dragon's HEAD-animation sprite-list slot
-   handle -- a separate, dynamically-allocated overlay sprite driving
-   the head's reaction animation, distinct from DAT_0023c230's own
-   static head sub-sprite) and `reset_hud_panel_animation_state` resets both elements
-   individually (`clear_sprite_list_slot_flag((int)DAT_0023c1e8);
-   clear_sprite_list_slot_flag((int)DAT_0023c1ea);`) -- confirming these are really
-   one 2-element array (0x23c1e8/0x23c1ea are exactly 2 bytes apart in
-   the original binary), not two independent globals. As separate C
-   symbols on this host, `(&DAT_0023c1e8)[1]` read/wrote whatever the
-   compiler placed next instead of the real right-dragon head-
-   animation slot -- confirmed live: this produced a garbage slot
-   handle for the right dragon's head-animation sprite, which happened
-   to land on/repurpose an unrelated already-allocated slot (an
-   inventory item's, e.g. a red key), drawing that item's sprite
-   instead of the dragon's own head animation. */
+/* Was two lone `short` scalars -- same split-symbol bug as DAT_0023c11c/DAT_0023c230 etc. elsewhere
+   in this file. `hud_dragon_reaction_tick` indexes `&DAT_0023c1e8 + iVar6`... */
 static short DAT_0023c1e8_arr[2];
 #define DAT_0023c1e8 DAT_0023c1e8_arr[0]
 #define DAT_0023c1ea DAT_0023c1e8_arr[1]
-/* Same split-symbol bug, same fix: `hud_dragon_reaction_tick` indexes
-   `&DAT_0023c1e4 + iVar6` (the animation-phase state byte per dragon
-   side) and `reset_hud_panel_animation_state` resets both elements individually
-   (`DAT_0023c1e6 = 0; ... DAT_0023c1e4 = 0;`) -- 0x23c1e4/0x23c1e6 are
-   exactly 2 bytes apart in the original binary, confirming this is
-   really one 2-element array too. */
+/* Same split-symbol bug, same fix: `hud_dragon_reaction_tick` indexes `&DAT_0023c1e4 + iVar6` (the
+   animation-phase state byte per dragon side) and `reset_hud_panel_animation_state` resets both
+   elements individually (`DAT_0023c1e6 = 0; ... */
 static undefined2 DAT_0023c1e4_arr[2];
 #define DAT_0023c1e4 DAT_0023c1e4_arr[0]
 #define DAT_0023c1e6 DAT_0023c1e4_arr[1]
@@ -367,73 +223,33 @@ static ushort DAT_0023c1d8;
 undefined1 DAT_0023c130;
 static int DAT_0023c23c;
 static short DAT_0023c21c;
-/* The three tables below all position the two dragons.gr decorations
-   that frame the compass -- index 0 = left dragon, index 1 = right
-   dragon -- built once in redraw_hud_panels (54155-54198). Each
-   dragon is drawn as three sprite-list sub-sprites (head, body,
-   wing/tail), created at fixed Y with X taken from these tables. Was
-   `FIXME[hud-dragon-layout]: Ghidra never recovered the .data so
-   every X reads 0 and both dragons pile up at the screen's left edge
-   as a black rectangle` -- same class of gap as the compass-needle
-   tables right above (see DAT_00087130's comment) and the 4
-   "unrecoverable" resource-name strings (s_lfti_000859fc's comment):
-   Ghidra just never labeled a cross-reference to this .data. Real
-   values recovered via direct memory dump (Ghidra headless,
-   `mem.getShort`). (The color-0-key transparency issue this comment
-   used to also mention, in the sprite-list compositor flush_sprite_list_compositor,
-   is a separate, still-open bug -- unrelated to position.) */
+/* The three tables below all position the two dragons.gr decorations that frame the compass --
+   index 0 = left dragon, index 1 = right dragon -- built once in redraw_hud_panels (54155-54198). */
 
-/* .data 0x87170 -- X of the dragon HEAD sub-sprite, [0]=left
-   [1]=right. Sprite made by sprite_list_alloc_raw_entry(2,0xd,10) into
-   DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
-   0xd x 10 (redraw_hud_panels:54161); animation frame set from DAT_000871d4
-   (54190). */
+/* .data 0x87170 -- X of the dragon HEAD sub-sprite, [0]=left [1]=right. Sprite made by
+   sprite_list_alloc_raw_entry(2,0xd,10) into DAT_0023c230[side], placed at ((&DAT_00087170)[side],
+   0x87), size 0xd x 10 (redraw_hud_panels:54161); animation frame set from DAT_000871d4 (54190). */
 static short DAT_00087170_arr[2] = { 36, 228};
 #define DAT_00087170 DAT_00087170_arr[0]
-/* .data 0x87174 -- X of the dragon BODY sub-sprite, [0]=left
-   [1]=right. Sprite made by sprite_list_alloc_raw_entry(2,0x25,0x17) into
-   DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
-   0x25 x 0x17 (redraw_hud_panels:54166); frame from DAT_000871d8 (54191). */
+/* .data 0x87174 -- X of the dragon BODY sub-sprite, [0]=left [1]=right. */
 static short DAT_00087174_arr[2] = { 36, 204};
 #define DAT_00087174 DAT_00087174_arr[0]
-/* .data 0x871b4 -- X of the dragon WING/TAIL sub-sprite, [0]=left
-   [1]=right. Sprite made by sprite_list_alloc_entry(0) into DAT_0023c238[side],
-   placed at ((&DAT_000871b4)[side], 0x42), size 0xc x 0x1c
-   (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
-   0x208d (right) at 54196, NOT from a table. */
+/* .data 0x871b4 -- X of the dragon WING/TAIL sub-sprite, [0]=left [1]=right. */
 /* Sizing-audit pass: same `iVar3<2` loop as its 2-element siblings
    DAT_00087170/DAT_00087174 right above. HARD. Down from 4. */
 static short DAT_000871b4_arr[2] = { 40, 224};
 #define DAT_000871b4 DAT_000871b4_arr[0]
-/* Was `FIXME[hud-dragon-frames]: .data 0x871d4 -- ... reads 0 now`.
-   Same class of gap as the position tables above -- recovered via
-   direct memory dump. Real values 0x206d (left) / 0x207f (right); the
-   +0x12 left/right delta matches the wing/tail sub-sprite's own
-   literal 0x207b/0x208d pair exactly, confirming this is the real
-   dragons.GR left/right frame convention, not a guess. Read as
-   `(&DAT_000871d4)[side]` and passed to sprite_list_set_frame_id as the frame arg
-   for DAT_0023c230[side] (redraw_hud_panels:54190). */
+/* Was `FIXME[hud-dragon-frames]: .data 0x871d4 -- ... reads 0 now`. Same class of gap as the
+   position tables above -- recovered via direct memory dump. */
 static unsigned short DAT_000871d4_arr[2] = { 0x206d, 0x207f };
 #define DAT_000871d4 DAT_000871d4_arr[0]
-/* Was `FIXME[hud-dragon-frames]: .data 0x871d8 -- ... reads 0 now`.
-   Real values 0x206e (left) / 0x2080 (right), same +0x12 delta.
-   Frame arg to sprite_list_set_frame_id for DAT_0023c234[side] (redraw_hud_panels
-   :54191, also FUN_0006dbe4:54753). */
+/* Was `FIXME[hud-dragon-frames]: .data 0x871d8 -- ... reads 0 now`. Real values 0x206e (left) /
+   0x2080 (right), same +0x12 delta. Frame arg to sprite_list_set_frame_id for DAT_0023c234[side]
+   (redraw_hud_panels :54191, also FUN_0006dbe4:54753). */
 static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
 #define DAT_000871d8 DAT_000871d8_arr[0]
-/* HUD-panel/tab dispatch table (13 entries), read as
-   `(&g_hud_panel_handlers)[index]` at 4 call sites (g_active_hud_panel/DAT_0023c134
-   select the index -- which panel/tab is active). Same class of bug as
-   DAT_00085668 above: link-time-initialized data in the original binary
-   that nothing in this decompile ever writes, declared here as a single
-   never-populated pointer instead of the real array -- so every one of
-   those 4 calls jumped through NULL/garbage. Recovered the same way
-   (Ghidra, reading UU.exe's .data directly and matching addresses
-   against this file's own FUN_ names); index 3 is genuinely NULL in the
-   original data, not a recovery gap. Since this was already declared as
-   a bare pointer rather than a byte array, no caller-side index-math
-   needs to change -- `(&g_hud_panel_handlers)[i]` already scales by the
-   (now-real, 8-byte-on-this-host) pointer size. */
+/* HUD-panel/tab dispatch table (13 entries), read as `(&g_hud_panel_handlers)[index]` at 4 call
+   sites (g_active_hud_panel/DAT_0023c134 select the index -- which panel/tab is active). */
 void (*const g_hud_panel_handlers_table[13])(void) = {
   (void(*)(void))refresh_equipment_display_if_visible, (void(*)(void))redraw_rune_bag_display, (void(*)(void))draw_stats_panel_content, 0,
   (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))update_hud_status_icon_frame,
@@ -441,54 +257,24 @@ void (*const g_hud_panel_handlers_table[13])(void) = {
   (void(*)(void))advance_action_animation_frame,
 };
 static char s_panels_00087260[] = "panels";
-/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
-   DAT_0023c224/DAT_0023c230 etc. above: both are used throughout as
-   real 2-element byte arrays (`(&DAT_0023c11c)[iVar6]`/
-   `(&DAT_0023c12c)[iVar6]` for index 0 AND 1, including redraw_hud_
-   panels's own creation loop). Fixed the same way. */
+/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as DAT_0023c224/DAT_0023c230 etc.
+   above: both are used throughout as real 2-element byte arrays (`(&DAT_0023c11c)[iVar6]`/
+   `(&DAT_0023c12c)[iVar6]` for index 0 AND 1, including redraw_hud_ panels's own creation loop). */
 static undefined1 DAT_0023c11c_arr[2];
 #define DAT_0023c11c DAT_0023c11c_arr[0]
 static undefined1 DAT_0023c12c_arr[2];
 #define DAT_0023c12c DAT_0023c12c_arr[0]
-/* Was 3 lone `undefined2` scalars (DAT_0023c230/234/238) -- same
-   "split symbol" bug as DAT_0023c224 (see its own comment for the
-   full writeup): each is used throughout as a real 2-element array
-   (`(&DAT_0023c23X)[iVar3]`/`[iVar6]` for index 0 AND 1, including
-   redraw_hud_panels's own creation loop, which assigns both elements
-   for all three in sequence). The real per-side addresses in the
-   original binary are exactly 4 bytes apart (0x230/0x234/0x238),
-   confirming each one really is a 2-element short array back to back,
-   not 3 independent scalars -- so as lone scalars in this build, index
-   [1] on each reads/writes whatever the compiler happened to place
-   next, with no guarantee of matching the original layout (exactly
-   the aliasing that stomped the compass background sprite via
-   DAT_0023c224). Same "left dragon head/body/wing pile-up" report
-   this affects -- fixed the same way, real 2-element arrays. */
+/* Was 3 lone `undefined2` scalars (DAT_0023c230/234/238) -- same "split symbol" bug as DAT_0023c224
+   (see its own comment for the full writeup): each is used throughout as a real 2-element array... */
 static short DAT_0023c230_arr[2];
 #define DAT_0023c230 DAT_0023c230_arr[0]
 static short DAT_0023c234_arr[2];
 #define DAT_0023c234 DAT_0023c234_arr[0]
 static short DAT_0023c238_arr[2];
 #define DAT_0023c238 DAT_0023c238_arr[0]
-/* Was 3 separate `undefined2` scalars (DAT_0023c200/202/204) -- same
-   split-symbol bug as DAT_0023c118/DAT_0023c128 just above (see that
-   comment's full writeup, found chasing the same chain-hotspot/
-   stats-panel revival): begin_hud_panel_flip/advance_hud_panel_flip both index
-   `(&DAT_0023c200)[i]` for i=0,1,2 (3 grtile handles backing the
-   panel-switch wipe transition), but as 3 independent globals they
-   don't land in contiguous memory on this recompile, so the loop that
-   allocates/checks all 3 only ever really touched DAT_0023c200 --
-   DAT_0023c202/DAT_0023c204 (read directly by name elsewhere in this
-   same function) stayed 0/uninitialized, so resolve_flip_grtile_slot(DAT_0023c202)
-   returned a garbage grtile handle and crashed
-   bitmap_blit_to_framebuffer the first time this code path ever ran.
-   Also widened the element type from `undefined2` to `undefined4`:
-   grtile_alloc_registered's return value (now that alloc_flip_grtile_slot
-   actually calls it instead of stubbing out) is a real 4-byte opaque
-   registry key -- 2 bytes isn't enough to round-trip it back through
-   resolve_flip_grtile_slot's registry-key comparison. Not a concern
-   while both allocator/resolver were stubs (every stored value was 0
-   either way), but a real requirement now that they aren't. */
+/* Was 3 separate `undefined2` scalars (DAT_0023c200/202/204) -- same split-symbol bug as
+   DAT_0023c118/DAT_0023c128 just above (see that comment's full writeup, found chasing the same
+   chain-hotspot/ stats-panel revival)... */
 static undefined4 DAT_0023c200_arr[3];
 #define DAT_0023c200 DAT_0023c200_arr[0]
 #define DAT_0023c202 DAT_0023c200_arr[1]
@@ -509,93 +295,39 @@ static undefined1 DAT_0023c1f0_backing[64];
 #define DAT_0023c1f0 DAT_0023c1f0_backing[0]
 static undefined1 DAT_0023c1f8_backing[64];
 #define DAT_0023c1f8 DAT_0023c1f8_backing[0]
-/* Was `undefined2 DAT_00087254;` -- split-symbol bug: real ARM code
-   (confirmed via disassembly of FUN_0006d4a4/hud_vitals_bar_tick)
-   computes `&DAT_00087254 + uVar2*2` for the mana slot, so this is a
-   genuine 2-element short array (0=health, 1=mana shimmer/wraparound
-   state), not a lone scalar. Also not zero-init bss like it looked --
-   raw memory dump (Ghidra headless) showed real .data here: 0x2019
-   (health) / 0x2032 (mana), i.e. each side starts equal to its OWN
-   `local_2c` shimmer-reset constant (a "settled" starting state). */
+/* Was `undefined2 DAT_00087254;` -- split-symbol bug: real ARM code (confirmed via disassembly of
+   FUN_0006d4a4/hud_vitals_bar_tick) computes `&DAT_00087254 + uVar2*2` for the mana slot, so this
+   is a genuine 2-element short array (0=health, 1=mana shimmer/wraparound state)... */
 static short DAT_00087254_arr[2] = { 0x2019, 0x2032 };
 #define DAT_00087254 DAT_00087254_arr[0]
-/* Was `static undefined1 DAT_000870f0_backing[65536]` (oversized,
-   never populated) -- real per-step Y offset for the FLASK fill-level
-   animation sprite in `hud_vitals_bar_tick`/`hud_vitals_threshold_shake` (the
-   health/mana flask bar update), read via explicit byte-scaled
-   pointer arithmetic (`&DAT_000870f0 + N*2`) at every call site, so
-   kept byte-typed here rather than converting to a natural short
-   array (would need editing 5 call sites for no behavioural gain).
-   Recovered via direct memory dump (Ghidra headless, `mem.getShort`):
-   14 real entries forming a smooth descending curve (liquid Y rises
-   as fill increases), byte-encoded little-endian below (all values
-   fit in one byte, high byte always 0):
-     [0]=156 [1]=152 [2]=150 [3]=148 [4]=146 [5]=144 [6]=142 [7]=141
-     [8]=140 [9]=139 [10]=137 [11]=135 [12]=133 [13]=131 [14..]=0
-   `DAT_000870f2` (see its own comment) is simply this same array's
-   real index [1]. */
+/* Was `static undefined1 DAT_000870f0_backing[65536]` (oversized, never populated) -- real per-step
+   Y offset for the FLASK fill-level animation sprite in
+   `hud_vitals_bar_tick`/`hud_vitals_threshold_shake` (the health/mana flask bar update)... */
 static undefined1 DAT_000870f0_backing[32] = {
   156,0, 152,0, 150,0, 148,0, 146,0, 144,0, 142,0, 141,0,
   140,0, 139,0, 137,0, 135,0, 133,0, 131,0, 0,0, 0,0,
 };
 #define DAT_000870f0 DAT_000870f0_backing[0]
-/* Was `static undefined1 DAT_00087112_backing[65536]` (oversized,
-   never populated) -- real per-step HEIGHT for the same flask
-   fill-level animation sprite (paired with DAT_000870f0's Y), read
-   the same byte-scaled way (`&DAT_00087112 + N*2`). Recovered the
-   same way: 13 real entries, a small rise-then-fall curve (the fill
-   bubble growing then settling), byte-encoded little-endian:
-     [0]=4 [1]=5 [2]=6 [3]=7 [4]=7 [5]=7 [6]=7 [7]=6
-     [8]=5 [9]=4 [10]=4 [11]=4 [12]=4 [13..]=0 */
+/* Was `static undefined1 DAT_00087112_backing[65536]` (oversized, never populated) -- real per-step
+   HEIGHT for the same flask fill-level animation sprite (paired with DAT_000870f0's Y), read the
+   same byte-scaled way (`&DAT_00087112 + N*2`). */
 static undefined1 DAT_00087112_backing[32] = {
   4,0, 5,0, 6,0, 7,0, 7,0, 7,0, 7,0, 6,0,
   5,0, 4,0, 4,0, 4,0, 4,0, 0,0, 0,0, 0,0,
 };
 #define DAT_00087112 DAT_00087112_backing[0]
 #define DAT_00087114 (*(short *)(DAT_00087112_backing + 2))
-/* .bss 0x23c240..0x23c24f: four short[2] rows of sprite handles for the
-   HUD flask/vitals animation (hud_vitals_bar_tick / hud_dragon_reaction_tick), indexed
-   `&row + param*2` with param in {0,1}. Ghidra split the region into four
-   lone 1-byte `undefined` scalars, so the param==1 (`+2`) access ran off
-   the end of a 1-byte global and read/wrote a neighbouring variable --
-   the resulting garbage handle crashed sprite_list_set_lifetime (`param_1 * 0x14 +
-   base` with a huge negative param_1). Back it with real contiguous
-   storage; the `&sym + iVar1` byte indexing is unchanged. */
+/* .bss 0x23c240..0x23c24f: four short[2] rows of sprite handles for the HUD flask/vitals animation
+   (hud_vitals_bar_tick / hud_dragon_reaction_tick), indexed `&row + param*2` with param in {0,1}. */
 static char DAT_0023c240_vitals[16];
 #define DAT_0023c240 DAT_0023c240_vitals[0]
 #define DAT_0023c244 DAT_0023c240_vitals[4]
 #define DAT_0023c248 DAT_0023c240_vitals[8]
 #define DAT_0023c24c DAT_0023c240_vitals[12]
 static short DAT_0023c250;
-/* .data 0x87178..0x871b7: four rows (x / y / w / h) of the dragon
-   HEAD-animation overlay sprite's placement table (a separate,
-   dynamically-allocated sprite driving the head's reaction animation
-   -- see DAT_0023c1e8's own comment), read as `*(short *)(&row +
-   iVar6*6)` at three call sites in hud_dragon_reaction_tick and
-   handed to sprite_list_set_rect. Ghidra split it into two lone
-   `undefined` scalars plus two `undefined *` pointer slots -- and
-   `&PTR_DAT_00087198` was then cast through `(int)`, truncating the
-   64-bit address (wild `*(short *)` read -> crash the first time the
-   head animation played). Back each row with real storage and keep
-   the byte-offset indexing.
-
-   Was left as all-zero ("worst case the [overlay] sprite draws at
-   0,0 with 0 size") because at the time nothing could reach this code
-   at all -- set_hud_status_value's dragon-reaction branch wrote its
-   request to the wrong global (see DAT_0023c11c's own comment), so
-   hud_dragon_reaction_tick's "has a reaction been requested" gate
-   never fired. Now that that's fixed, this table is genuinely read
-   every time the animation plays -- confirmed live: with it still
-   zeroed, the head-animation overlay drew a large blank/garbage rect
-   at native (0,0), the exact top-left corner the compass pedestal
-   occupies, visually stomping the compass needle every time (reported
-   as "scrolling the messages resets the compass animation"). Recovered
-   the real values the same way as everything else in this cluster
-   (Ghidra headless, `mem.getShort`): indices 0-2 are the left
-   dragon's 3 head-animation sub-rects, indices 3-5 the right dragon's;
-   indices 6-7 of each row are genuinely unused by this table (H's
-   happen to read back 40/224 -- that's DAT_000871b4's OWN data, the
-   very next real table, not padding belonging here) so are left 0. */
+/* .data 0x87178..0x871b7: four rows (x / y / w / h) of the dragon HEAD-animation overlay sprite's
+   placement table (a separate, dynamically-allocated sprite driving the head's reaction animation
+   -- see DAT_0023c1e8's own comment)... */
 static char DAT_00087178_arr[16] = {40,0, 48,0, 36,0, 204,0, 204,0, 200,0, 0,0, 0,0};  /* X: L 40/48/36, R 204/204/200 */
 static char DAT_00087188_arr[16] = {156,0, 146,0, 146,0, 156,0, 146,0, 146,0, 0,0, 0,0};  /* Y: L 156/146/146, R 156/146/146 */
 static char PTR_DAT_00087198_arr[16] = {33,0, 24,0, 37,0, 34,0, 24,0, 38,0, 0,0, 0,0};  /* W: L 33/24/37, R 34/24/38 */
@@ -604,27 +336,9 @@ static char PTR_DAT_000871a8_arr[16] = {14,0, 16,0, 23,0, 14,0, 16,0, 23,0, 0,0,
 #define DAT_00087188 DAT_00087188_arr[0]
 #define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
 #define PTR_DAT_000871a8 PTR_DAT_000871a8_arr[0]
-/* Was a 64KB never-populated scratch buffer -- same "oversized
-   placeholder" pattern as most of this file's other unrecovered .data
-   gaps, just missed in the earlier pass that fixed the sibling
-   DAT_00087178/DAT_00087188/PTR_DAT_00087198/PTR_DAT_000871a8 rect
-   table right above (they're read/write neighbors in
-   hud_dragon_reaction_tick, but this one's own comment never got
-   written, so it stayed zero-filled while the others got fixed).
-   `hud_dragon_reaction_tick` reads this as `*(short *)(&DAT_000871b8 +
-   (iVar6*7+iVar5)*2)` -- iVar6=0/1 left/right dragon, iVar5=DAT_0023c250
-   cycling 0-6 -- to pick the dragon TAIL sub-sprite's (DAT_0023c238)
-   frame id for each step of its whip/lash animation. With this at 0
-   the id resolved through resolve_sprite_id_to_frame's `id<0x1000`
-   branch as an absolute OBJECTS.GR frame instead of the intended
-   LFTI.GR-relative id, drawing whatever object happens to sit at that
-   low absolute frame index (confirmed live: a red-key-shaped
-   inventory item sprite, reported by the user, instead of the dragon
-   tail). Recovered the real values the same way as the rect table
-   (Ghidra headless, mem.getShort at 0x871b8): 7 frames per side, left
-   dragon ramping 0x207b->0x207e and back, right dragon 0x208d->0x2090
-   and back -- matches the ramp-up/ramp-down shape DAT_0023c250's own
-   0-6 cycling implies. */
+/* Was a 64KB never-populated scratch buffer -- same "oversized placeholder" pattern as most of this
+   file's other unrecovered .data gaps, just missed in the earlier pass that fixed the sibling
+   DAT_00087178/DAT_00087188/PTR_DAT_00087198/PTR_DAT_000871a8 rect table right above... */
 static const unsigned short DAT_000871b8_arr[14] = {
   0x207b, 0x207c, 0x207d, 0x207e, 0x207d, 0x207c, 0x207b,
   0x208d, 0x208e, 0x208f, 0x2090, 0x208f, 0x208e, 0x208d,
@@ -640,40 +354,15 @@ static short DAT_00087258;
 static short DAT_0023c258;
 static int DAT_0023c20c;
 static byte DAT_0023c25c;
-/* Was 2 lone `undefined2` scalars (DAT_0023c268/DAT_0023c270) -- same
-   split-symbol bug as DAT_0023c118/DAT_0023c200 elsewhere in this
-   file (see DAT_0023c118's own comment for the full writeup): both
-   are indexed as real 3-element short arrays by their respective
-   owners (update_ready_rune_slot_icons/update_light_source_color_icons, the mode-icon-highlight sprite
-   setup for the left/right dragon decorations), each written via a
-   `(&DAT_0023c26X)[i] = ...` one-time-init loop. As bare scalars, the
-   out-of-bounds writes for i=1,2 landed on whatever the compiler
-   placed next on THIS host -- empirically, DAT_0023c278 (see its own
-   comment), corrupting it from 0 to 13 (a leftover sprite-handle
-   value) the very first time redraw_hud_panels ever ran, which in
-   turn permanently defeated begin_hud_panel_flip's own `DAT_0023c278==0`
-   one-time-setup guard for the entire rest of the program -- found
-   while chasing why the chain-hotspot/stats-panel flip's grtile setup
-   never ran even after alloc_flip_grtile_slot/resolve_flip_grtile_slot
-   were implemented for real. */
+/* Was 2 lone `undefined2` scalars (DAT_0023c268/DAT_0023c270) -- same split-symbol bug as
+   DAT_0023c118/DAT_0023c200 elsewhere in this file (see DAT_0023c118's own comment for the full
+   writeup)... */
 static short DAT_0023c268_arr[3];
 #define DAT_0023c268 DAT_0023c268_arr[0]
 static short DAT_0023c270_arr[3];
 #define DAT_0023c270 DAT_0023c270_arr[0]
-/* DAT_00087210/DAT_00087218: real per-index position lookup tables --
-   recovered directly from the real ARM binary's .data (raw uint16 reads
-   at 0x87210/0x87218, not a function to decompile). DAT_00087210 (used
-   by update_ready_rune_slot_icons to X-position the 3 "ready to cast" rune-slot icons)
-   is 176,191,206 -- evenly spaced by 15, confirming it's real per-slot
-   data, not a scalar with garbage padding. Previously only index 0 had
-   a nonzero (but still not verified-real) value; indices 1/2 read as
-   0, landing both later slots' rune icons at the left screen edge --
-   confirmed live: "left-clicking a rune draws it at the wrong X
-   position in the spell-slot area" for any rune beyond the first
-   selected. DAT_00087218 (used by update_light_source_color_icons, gated on
-   `*(short*)(DAT_00085a6c+8)==1` -- a different, rarer UI state) is
-   86,69,52, decreasing by 17; recovered the same way even though no
-   live report has hit it yet. */
+/* DAT_00087210/DAT_00087218: real per-index position lookup tables -- recovered directly from the
+   real ARM binary's .data (raw uint16 reads at 0x87210/0x87218, not a function to decompile). */
 static const undefined2 DAT_00087210_arr[3] = {176, 191, 206};
 #define DAT_00087210 DAT_00087210_arr[0]
 static const undefined2 DAT_00087218_arr[3] = {86, 69, 52};
@@ -685,52 +374,30 @@ static undefined2 DAT_0023c14c;
 static undefined2 DAT_0023c144;
 byte g_flip_grtile_cache_ready;
 static short DAT_0023c134;
-/* Sizing-audit pass: single use, `debug_print(&DAT_00087298)`, 0
-   writers. Real content confirmed via direct Ghidra memory export of
-   UU.exe (tests/fixtures/static_strings.json): "ick\n" -- an odd
-   short fragment, but that's genuinely what's at this address in the
-   real binary's .data section. Sized to 16 for headroom; down from
-   8192. */
+/* Sizing-audit pass: single use, `debug_print(&DAT_00087298)`, 0 writers. Real content confirmed
+   via direct Ghidra memory export of UU.exe (tests/fixtures/static_strings.json): "ick\n" -- an odd
+   short fragment, but that's genuinely what's at this address in the real binary's .data section. */
 static undefined DAT_00087298_backing[16] = "ick\n";
 #define DAT_00087298 DAT_00087298_backing[0]
 static byte DAT_0023c208;
 static short DAT_0023c138;
 static short DAT_0023c13c;
 static short DAT_0023c110;
-/* Was `u"dgijjjigd\\G&"` -- Ghidra misidentified this as a UTF-16
-   string because its low bytes happen to be printable ASCII. It's
-   really a 16-entry numeric squash-percentage curve for the chain
-   flip animation's stage-by-stage width (symmetric: 100 down to 0 at
-   the midpoint, back up to 92), used by squash_hud_panel_flip_rows as
-   `table[stage]` and `table[stage+8]`. The string literal stopped at
-   the first embedded NUL (index 12), silently truncating the real
-   16-element array to 13 -- so `table[stage+8]` read out of bounds
-   for stage 5/6/7 (indices 13/14/15), feeding garbage into
-   DAT_0023c13c's stride computation and wild-writing past the grtile
-   buffer in copy_hud_panel_flip_column's pixel-copy loop (this is what was
-   corrupting the heap). Recovered via a direct memory dump of the
-   real binary at 0x000871e0. */
+/* Was `u"dgijjjigd\\G&"` -- Ghidra misidentified this as a UTF-16 string because its low bytes
+   happen to be printable ASCII. */
 static unsigned short u_dgijjjigd_G__000871e0[16] = {
   100,103,105,106,106,106,105,103,100,92,71,38,0,38,71,92
 };
-/* Same "was `int`, truncating a real pointer" bug as DAT_0023c3ec right
-   above -- assigned `DAT_0023c40c + 0x100` (a real 64-bit pointer) and
-   then compared against/derived into real `ushort *` locals throughout
-   flush_sprite_list_compositor and friends. */
+/* Same "was `int`, truncating a real pointer" bug as DAT_0023c3ec right above -- assigned
+   `DAT_0023c40c + 0x100` (a real 64-bit pointer) and then compared against/derived into real
+   `ushort *` locals throughout flush_sprite_list_compositor and friends. */
 static ushort *DAT_0023c414;
-/* Same truncation bug as DAT_0023c414/DAT_0023c3ec above, though this one
-   is never read back anywhere in this decompile -- fixed for consistency
-   regardless. Its assignment (init_sprite_list_buffers) computes it from
-   DAT_0023c40c + 0x100, the same expression as DAT_0023c414, rather than
-   from DAT_0023c3e4 (the buffer it's presumably meant to bound) -- looks
-   like a genuine bug already present in the original, not a decompile
-   artifact; left as-is since it's dead either way. */
+/* Same truncation bug as DAT_0023c414/DAT_0023c3ec above, though this one is never read back
+   anywhere in this decompile -- fixed for consistency regardless. */
 static char *DAT_0023c410;
-/* Sizing pass: this is the real Microsoft GXDisplayProperties struct
-   (see gx_stub.c's own "6 x 4-byte fields = 0x18" comment) -- confirmed
-   by game.c's GXGetDisplayProperties population site, which copies
-   exactly 0x18 (24) bytes into &DAT_0023cdb0 in a fixed-count loop.
-   Was oversized at 32768 bytes for a 24-byte struct. */
+/* Sizing pass: this is the real Microsoft GXDisplayProperties struct (see gx_stub.c's own "6 x
+   4-byte fields = 0x18" comment) -- confirmed by game.c's GXGetDisplayProperties population site,
+   which copies exactly 0x18 (24) bytes into &DAT_0023cdb0 in a fixed-count loop. */
 undefined1 DAT_0023cdb0_backing[32];
 undefined *DAT_00250704;
 static undefined2 DAT_00250714;
@@ -739,35 +406,8 @@ static undefined1 g_msg_scroll_panel_state_backing[65536];
 #define g_msg_scroll_panel_state g_msg_scroll_panel_state_backing[0]
 static undefined4 DAT_00250708;
 static undefined4 DAT_0025071c;
-/* Was a lone `undefined` (1-byte) scalar, but used throughout this
-   file as the BASE POINTER of a whole message-scroll-panel-state
-   struct (DAT_00250704 = &g_msg_scroll_panel_state_conv, then read/written at offsets
-   up to at least 0x17 -- same "split symbol" bug class as
-   g_msg_scroll_panel_state's own sibling struct a few lines above, which already
-   got the same fix). Confirmed live via lldb: entering NPC conversation
-   mode (select_msg_scroll_mode_conversation, DAT_00250714==1) points DAT_00250704 at this
-   1-byte variable, so every field read past its own single byte --
-   including the panel's own width (+6) and cursor-x (+8) -- silently
-   reads whatever unrelated byte happens to sit next to it in this
-   build's layout (observed: width=0, cursor-x=24576, both garbage).
-   With width 0, every string "doesn't fit", so message_scroll_print_
-   wrapped's -> msg_scroll_draw_wrapped_span -> msg_scroll_wrap_split_line
-   word-wrap chain always takes the "no space found" fallback, which
-   destructively NULs out its own working copy of the text while
-   hunting for a split point that can never satisfy a 0-wide line,
-   ultimately drawing nothing real -- this is why Bragit's dialogue
-   never appeared in the scroll panel. Widened to match g_msg_scroll_panel_state's
-   own oversized-safety convention, AND seeded with the real 28-byte
-   (0x1c) struct dumped straight from the original binary at 0x87978
-   (Ghidra headless, mem.getBytes) -- unlike g_msg_scroll_panel_state,
-   which gets its real geometry written at runtime by msg_scroll_panel_init,
-   nothing in this file ever calls that for the conversation-mode
-   struct, so its ONLY source of real values is this original .data
-   (confirmed real: struct ends exactly at 0x87994, the very next
-   symbol, s__MORE__00087994). Kept byte-typed rather than converted to
-   a real C struct, matching the health/mana flask fix's own precedent
-   (see compass-hud-position-fix's memory) -- every call site already
-   does its own byte-offset pointer arithmetic against this base. */
+/* Was a lone `undefined` (1-byte) scalar, but used throughout this file as the BASE POINTER of a
+   whole message-scroll-panel-state struct... */
 // was DAT_00087978
 static undefined1 g_msg_scroll_panel_state_conv_backing[65536] = {
   0x34,0x00,0x84,0x00,0x38,0x00,0xdb,0x00,0x3b,0x00,0x36,0x00,0x3b,0x00,0x36,0x00,
@@ -780,12 +420,9 @@ static short DAT_00250710;
 static char s__MORE__00087994[] = "[MORE]";
 static undefined4 DAT_00250720;
 static short DAT_0025070c;
-/* Was a bare 1-byte `undefined` scalar -- FUN_0008090c's yes/no dialog
-   takes its address and passes it to message_scroll_print_wrapped, so it
-   needs to be a real string. Real bytes confirmed via a Ghidra memory
-   dump of the original binary at 0x8799c: "No". Same bug class as the
-   save-slot label fix earlier this session (Ghidra typed it as a scalar
-   instead of generating a garbled placeholder string). */
+/* Was a bare 1-byte `undefined` scalar -- FUN_0008090c's yes/no dialog takes its address and passes
+   it to message_scroll_print_wrapped, so it needs to be a real string. Real bytes confirmed via a
+   Ghidra memory dump of the original binary at 0x8799c: "No". */
 // was DAT_0008799c
 static char s_No_0008799c[] = "No";
 /* Same fix as s_No_0008799c above: real bytes at 0x879a0 are "Yes". */
@@ -797,12 +434,9 @@ static char s_Yes_000879a0[] = "Yes";
 // was DAT_000879a4
 static undefined s_dash_000879a4_backing[8192] = "-";
 #define s_dash_000879a4 s_dash_000879a4_backing[0]
-/* Same pattern: scroll_text_entry_prompt defaults its prompt-before-the-input-field
-   text to `&s_scroll_prompt_arrow_000879a8` whenever the caller passes a NULL label (the
-   save-name-entry call site does exactly this) -- real bytes at 0x879a8
-   are ">" , the leading caret shown before the text cursor. Left zero
-   (empty string) by this backing array's C default, so that prompt
-   character was silently missing. */
+/* Same pattern: scroll_text_entry_prompt defaults its prompt-before-the-input-field text to
+   `&s_scroll_prompt_arrow_000879a8` whenever the caller passes a NULL label (the save-name-entry
+   call site does exactly this) -- real bytes at 0x879a8 are ">"... */
 // was DAT_000879a8
 static undefined s_scroll_prompt_arrow_000879a8_backing[8192] = ">";
 #define s_scroll_prompt_arrow_000879a8 s_scroll_prompt_arrow_000879a8_backing[0]
@@ -856,23 +490,9 @@ undefined4 param_4;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-/* This is the game's dirty-rect blit: DAT_00088954/5c/50/58 (top/
-   bottom/left/right) accumulate via dirty_rect_union, called from every
-   draw (rect fill, text draw, sprite blit, ...) to grow the damaged
-   region -- clamped here, then blitted from the software buffer
-   (g_uw_framebuffer) into GXBeginDraw()'s real framebuffer and
-   presented via GXEndDraw(). Investigated as a suspect for the
-   chargen "text flashes then gets covered by a rectangle" bug (SS1
-   shares this same Looking Glass dirty-rect heritage): the bounds are
-   accumulate-only in the normal UI flow -- the only explicit reset
-   (dirty_rect_set, setting them back to an empty/degenerate rect) is a
-   single call site elsewhere unrelated to chargen -- so nothing here
-   makes the tracked region shrink or exclude an area once drawn to.
-   Didn't find a bug in this function itself; the rapid-cycling
-   behavior traced back to unfiltered SDL key-repeat instead (see
-   gx_stub.c's uw_pump_events), but noting this in case the covered-
-   rectangle symptom persists after that fix and this needs a second
-   look. */
+/* This is the game's dirty-rect blit: DAT_00088954/5c/50/58 (top/ bottom/left/right) accumulate via
+   dirty_rect_union, called from every draw (rect fill, text draw, sprite blit, ...) to grow the
+   damaged region -- clamped here... */
 // was FUN_00022f0c
 void flush_dirty_rect_to_display()
 
@@ -939,15 +559,9 @@ void flush_dirty_rect_to_display()
       iVar7 = DAT_0023cdbc + 1;
     }
     puVar5 = (undefined2 *)((char *)DAT_0023c430 + ((iVar7 >> 1) * iVar10 + (iVar6 >> 1) * iVar2) * 2);
-    /* DAT_00088958 ("right") is a right-*exclusive* dirty-rect bound
-       everywhere else in this function (e.g. `iVar10 = 0x140 -
-       DAT_00088958` correctly treats it as a remaining-width count), but
-       here it's used directly as a starting column INDEX -- when the
-       dirty rect spans the full screen width (right==0x140), this reads
-       one full source row past the buffer's end (ASAN heap-buffer-
-       overflow). Needs the same -1 every other direct-index use of a
-       right/bottom bound in this codebase gets to become the last
-       *valid* column instead of one-past-it. */
+    /* DAT_00088958 ("right") is a right-*exclusive* dirty-rect bound everywhere else in this
+       function (e.g. `iVar10 = 0x140 - DAT_00088958` correctly treats it as a remaining-width
+       count), but here it's used directly as a starting column INDEX... */
     puVar4 = (undefined2 *)
              ((g_uw_framebuffer) +
              (DAT_00088954 * 0x140 + (DAT_00088958 - 1)) * 2);
@@ -1044,15 +658,9 @@ void flush_dirty_rect_to_display_240()
       iVar7 = DAT_0023cdbc + 1;
     }
     puVar5 = (undefined2 *)((char *)DAT_0023c430 + ((iVar7 >> 1) * iVar10 + (iVar6 >> 1) * iVar2) * 2);
-    /* DAT_00088958 ("right") is a right-*exclusive* dirty-rect bound
-       everywhere else in this function (e.g. `iVar10 = 0x140 -
-       DAT_00088958` correctly treats it as a remaining-width count), but
-       here it's used directly as a starting column INDEX -- when the
-       dirty rect spans the full screen width (right==0x140), this reads
-       one full source row past the buffer's end (ASAN heap-buffer-
-       overflow). Needs the same -1 every other direct-index use of a
-       right/bottom bound in this codebase gets to become the last
-       *valid* column instead of one-past-it. */
+    /* DAT_00088958 ("right") is a right-*exclusive* dirty-rect bound everywhere else in this
+       function (e.g. `iVar10 = 0x140 - DAT_00088958` correctly treats it as a remaining-width
+       count), but here it's used directly as a starting column INDEX... */
     puVar4 = (undefined2 *)
              ((g_uw_framebuffer) +
              (DAT_00088954 * 0x140 + (DAT_00088958 - 1)) * 2);
@@ -1084,13 +692,9 @@ void flush_dirty_rect_to_display_240()
 
 
 
-// was FUN_0003e44c -- per-frame(ish) HUD/gameplay-mode refresh, called
-// from enter_dungeon_view (chargen completion, returning from a menu,
-// etc.); re-establishes the mode-icon highlight if a mode is already
-// selected, then calls sync_player_stats_to_hud. Its first call
-// passes s_init_gamedisp_goes_000858e8 ("init_gamedisp goes..."), a
-// leftover original-build debug string strongly suggesting this
-// function's real name was closer to init_gamedisp.
+// was FUN_0003e44c -- per-frame(ish) HUD/gameplay-mode refresh, called from enter_dungeon_view
+// (chargen completion, returning from a menu, etc.); re-establishes the mode-icon highlight if a
+// mode is already selected, then calls sync_player_stats_to_hud.
 void enter_dungeon_view_hud_init()
 
 {
@@ -1101,12 +705,9 @@ void enter_dungeon_view_hud_init()
   register_stats_panel_click_regions();
   if (DAT_000868d8 == 0) {
     if (g_cursor_mode != 0) {
-      /* Dropped argument (confirmed via disassembly of 0x3e44c: r0
-         holds g_cursor_mode, untouched since the guard's own load,
-         right up to `bl 0x3f99c`) -- the real ARM code passes
-         g_cursor_mode through via register reuse. Without it, the
-         mode icon's initial highlight on entering the dungeon view
-         drew with whatever id happened to be left over in r0. */
+      /* Dropped argument (confirmed via disassembly of 0x3e44c: r0 holds g_cursor_mode, untouched
+         since the guard's own load, right up to `bl 0x3f99c`) -- the real ARM code passes
+         g_cursor_mode through via register reuse. */
       mode_icon_highlight_on((int)g_cursor_mode);
     }
   }
@@ -1121,13 +722,9 @@ void enter_dungeon_view_hud_init()
 
 
 
-// was FUN_0003f99c -- draws the "selected" state for mode icon
-// param_1 (1-based) by blitting LFTI.GR's per-icon highlight frame
-// (id (param_1-1)*-2+0x200b) at that icon's registered position
-// (DAT_000858a8/DAT_000858b8). Called both from
-// cursor_mode_button_click's own click handling and from
-// enter_dungeon_view_hud_init/close_ui_panel_return_to_game to
-// re-establish the highlight when a mode is already selected.
+// was FUN_0003f99c -- draws the "selected" state for mode icon param_1 (1-based) by blitting
+// LFTI.GR's per-icon highlight frame (id (param_1-1)*-2+0x200b) at that icon's registered position
+// (DAT_000858a8/DAT_000858b8).
 void mode_icon_highlight_on(param_1)
 int param_1;
 
@@ -1141,11 +738,9 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   decrement_cursor_hide_depth();
   g_blit_transparent_mode = 1;
-  /* Confirmed via real ARM disassembly (0x3f99c: `mov r0,#0x2000;
-     orr r0,r0,#0xb; sub r0,r0,r4,lsl #0x1`) that `(param_1-1)*-2 +
-     0x200b` is exactly what the original compiled code computes --
-     NOT a decompile artifact. The "door sprite" bug is NOT here; see
-     resolve_sprite_id_to_frame/the resource loader instead. */
+  /* Confirmed via real ARM disassembly (0x3f99c: `mov r0,#0x2000; orr r0,r0,#0xb; sub r0,r0,r4,lsl
+     #0x1`) that `(param_1-1)*-2 + 0x200b` is exactly what the original compiled code computes --
+     NOT a decompile artifact. */
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] mode_icon_highlight_on (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
             param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
@@ -1173,12 +768,9 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   decrement_cursor_hide_depth();
   g_blit_transparent_mode = 1;
-  /* Confirmed via real ARM disassembly (0x3fa1c: `mov r0,#0x1000;
-     orr r0,r0,#0x5; sub r0,r0,r4; mov r0,r0,lsl #0x1`) that
-     `(0x1005-(param_1-1))*2` is exactly what the original compiled
-     code computes -- NOT a decompile artifact. Reverted an earlier
-     incorrect "fix" that dropped this doubling; see resolve_sprite_id_to_frame/the
-     resource loader for the real "door sprite" bug instead. */
+  /* Confirmed via real ARM disassembly (0x3fa1c: `mov r0,#0x1000; orr r0,r0,#0x5; sub r0,r0,r4; mov
+     r0,r0,lsl #0x1`) that `(0x1005-(param_1-1))*2` is exactly what the original compiled code
+     computes -- NOT a decompile artifact. */
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] mode_icon_highlight_off (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
             param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
@@ -1236,17 +828,9 @@ short param_1;
       iVar7 = (iVar7 + 1) * 0x10000;
       iVar1 = iVar7 >> 0x10;
       if (iVar1 == g_cursor_mode) {
-        /* Dropped argument (Ghidra emitted a bare call despite
-           mode_icon_highlight_off's own body using param_1 throughout) -- confirmed
-           by this same function's sibling call sites elsewhere in the
-           file (mode_icon_highlight_off(2), mode_icon_highlight_off(5)) using the correct
-           explicit-argument convention. mode_icon_highlight_off un-highlights
-           whichever mode icon is currently selected, so it needs the
-           OLD g_cursor_mode value (read here, before it's overwritten
-           below) -- this is the exact "door image" bug: without it, the
-           call ran on register-leftover garbage, resolving to a wild,
-           essentially random absolute sprite frame instead of the
-           intended icon. */
+        /* Dropped argument (Ghidra emitted a bare call despite mode_icon_highlight_off's own body
+           using param_1 throughout) -- confirmed by this same function's sibling call sites
+           elsewhere in the file... */
         mode_icon_highlight_off(g_cursor_mode);
         g_cursor_mode = 0;
       }
@@ -1291,12 +875,8 @@ short param_1;
 
 
 
-// was FUN_0003fd14 -- registered over the same mode-icon-bar click
-// rect as cursor_mode_button_click but under a different active-mask
-// bit (4, not 1), so it's live in a different input context. Near-
-// identical body, but only lets the click force-select mode 3 (any
-// other resolved index besides toggling the current mode back off is
-// ignored) -- a restricted variant of the normal click handler.
+// was FUN_0003fd14 -- registered over the same mode-icon-bar click rect as cursor_mode_button_click
+// but under a different active-mask bit (4, not 1), so it's live in a different input context.
 void cursor_mode_button_click_restricted(param_1)
 short param_1;
 
@@ -1373,11 +953,7 @@ void main_loop_hud_flush()
   int _dbg_hf = getenv("UW_DEBUG_HUDSPLIT") != NULL;
   if (_dbg_hf) _dbg_hf_t0 = read_realtime_clock_units() * 4;
   dirty_rect_set(100,100,100,100);
-  /* HACK: redraw the 3D dungeon view on every main-loop iteration.
-     Normally the redraw is driven off dirty bit 3, which apply_movement_tick
-     only sets while a motion flag is live -- so the dungeon view freezes the
-     instant the player is idle (and never repaints for anything that changes
-     in view without the player moving). */
+  /* HACK: redraw the 3D dungeon view on every main-loop iteration. */
   int _did_force_redraw = 0;
   {
     static int _force = -1;
@@ -1397,39 +973,7 @@ void main_loop_hud_flush()
     if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0 &&
         (DAT_00201c84 & 1) == 0) {
       _did_force_redraw = 1;
-      /* Rebuild AND re-rasterise the 3D dungeon view every main-loop
-         iteration. An earlier version called only render_dungeon_view()
-         over the existing geometry -- but the camera globals it reads
-         (DAT_000db438.. position / DAT_000db448.. angles) are only synced
-         from the player object by build_frame_draw_list(), and the visible
-         -tile geometry only by walk_visible_tiles() inside
-         rebuild_dungeon_view(). Skipping both meant the view never changed
-         as the player moved or turned -- the exact symptom being fixed.
-         render_dungeon_frame_timed() is the real per-frame entry point
-         this main-loop hack should have been calling all along (was
-         full_dungeon_redraw() -- a strict subset: same rebuild+render,
-         minus the conditional-rebuild-skip optimisation, the
-         weapon-swing overlay draw, three more per-frame steps, and the
-         adaptive-quality timing feed). Found by tracing why
-         weapon_swing_draw_tick -- confirmed fully working once wired up
-         -- never actually appeared on screen during ordinary play: its
-         only call site turned out to be render_dungeon_frame_timed,
-         which nothing in the normal per-tick path was calling.
-         render_dungeon_frame_timed reaches rebuild_dungeon_view, which
-         has its own passive exploration-XP trickle (grant_experience_points,
-         restored once its dropped real argument was recovered from ARM
-         disassembly -- see that function's own comment); no special
-         handling needed for it here, since it only grants XP for tiles
-         whose automap-reveal flag is flipping from unrevealed to
-         revealed for the first time ever (sticky, never un-set), so
-         calling this hack more often than the original cadence can't
-         double-grant for the same exploration. render_dungeon_frame_timed
-         does its own dirty_rect_union internally (same rect this hack
-         used to set by hand), so flush_dirty_rect_to_display(1) below
-         still blits it -- GX batches these flushes with the final HUD
-         flush. Skipped while an animation owns the view (DAT_00201c90
-         != 0). Set UW_NO_FORCE_3D_REDRAW to restore the motion-gated
-         behaviour. */
+      /* Rebuild AND re-rasterise the 3D dungeon view every main-loop iteration. */
       render_dungeon_frame_timed();
       /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
          buffer, then paint it over the viewport (see
@@ -1445,26 +989,7 @@ void main_loop_hud_flush()
     if (_did_force_redraw) DAT_00201c84 &= ~2;
     dispatch_sticky_mode_handlers();
   }
-  /* HACK: drive the attack-swing state machine (tick_weapon_swing_state) every
-     main-loop tick. Its own body is a real, correct state machine
-     (wind-up -> resolve-impact -> follow-through -> return-to-idle,
-     gated on DAT_0010062c/DAT_000870e4 and a real-elapsed-time
-     accumulator read via read_realtime_clock_units()), but interact_attack only
-     ever calls it ONCE, with a nonzero param_1, to arm the swing
-     (DAT_0010062c set to a negative wind-up countdown). Nothing else
-     in the normal per-tick path calls tick_weapon_swing_state(0) to let that
-     countdown actually progress -- its only two "continue" (param_1==0)
-     call sites are one-shot level-load/save-load edge cases, not a
-     per-frame driver. Confirmed live: a real attack arms correctly
-     (weapon raises, [swing] trace shows a real wind-up countdown) but
-     then sits frozen forever, since nothing ever asks it to advance
-     past that point. Matches this same file's DAT_00085668 per-frame
-     dispatch table being link-time data Ghidra couldn't recover (see
-     its own comment) -- tick_weapon_swing_state(0) was almost certainly one of
-     that table's real entries originally. Calling it here is cheap
-     when idle (a couple of int compares) and exactly mirrors the
-     already-fixed render_dungeon_frame_timed hack above. Set
-     UW_NO_FORCE_SWING_TICK to restore the (broken) original behaviour. */
+  /* HACK: drive the attack-swing state machine (tick_weapon_swing_state) every main-loop tick. */
   { static int _swing_tick = -1;
     if (_swing_tick < 0) _swing_tick = (getenv("UW_NO_FORCE_SWING_TICK") == NULL);
     if (_swing_tick) tick_weapon_swing_state(0);
@@ -1485,60 +1010,23 @@ void main_loop_hud_flush()
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
-  /* HACK: re-run the per-tick mouse/cursor refresh (update_mouse_state)
-     unconditionally every main-loop iteration, not just when this tick
-     happens to dequeue a real OS input message.
-
-     update_mouse_state's own cursor-draw (draw_idle_mouse_cursor) is
-     reached only through poll_input_event()->poll_mouse_event(), which
-     is itself gated behind PeekMessageW finding a message THIS tick
-     (see poll_input_event's own body in input.c). A plain, physically
-     stationary mouse generates no WM_MOUSEMOVE at all between actual
-     pointer motions -- but the forced full dungeon-view redraw just
-     above (this same function's earlier hack) repaints the entire 3D
-     viewport every single tick regardless, painting over wherever the
-     cursor sprite was last drawn. The net effect: a motionless cursor
-     hovering over the 3D view gets erased by the next redraw tick and
-     stays invisible until the next real mouse-move message happens to
-     arrive -- "cursor not drawing always", reproducible anywhere the
-     view keeps redrawing without the mouse itself moving (idle hover,
-     combat, automap panning, dialogs advancing on their own).
-
-     update_mouse_state() is already safe to call speculatively: it
-     early-returns to a no-op whenever there's nothing to do (mouse
-     physically idle and D-pad/joystick emulation inactive, or
-     DAT_000bbef8's own suspend flag set), and its own erase-then-redraw
-     protocol (erase_cursor_icon() first, save_cursor_background() again
-     before the fresh draw) makes a redundant extra call in the same
-     tick as a real message-driven call harmless -- same sequence the
-     original code already performs every time a mouse message arrives,
-     just invoked more often. Set UW_NO_FORCE_CURSOR_REDRAW to restore
-     the message-reactive-only behaviour. */
+  /* HACK: re-run the per-tick mouse/cursor refresh (update_mouse_state) unconditionally every
+     main-loop iteration, not just when this tick happens to dequeue a real OS input message.
+     update_mouse_state's own cursor-draw (draw_idle_mouse_cursor) is reached only through... */
   { static int _force_cursor = -1;
     if (_force_cursor < 0) _force_cursor = (getenv("UW_NO_FORCE_CURSOR_REDRAW") == NULL);
     if (_force_cursor) update_mouse_state();
   }
-  /* Debug UI: must draw HERE, after the forced 3D redraw above (or it
-     gets painted over) but before flush_dirty_rect_to_display(1) below
-     -- that call is the actual screen present for this tick (blits the
-     software framebuffer through to GXEndDraw/SDL_RenderPresent, see
-     gx_stub.c). Drawing from app_main_loop after this function returns
-     is one full tick too late: the present for THIS tick already
-     happens inside this function, and the very next tick's forced 3D
-     redraw runs and gets flushed before this function is reached
-     again -- so the panel's own pixels never survive to reach an
-     actually-presented frame. rect_fill_or_save_restore/draw_text_string
-     already call dirty_rect_union themselves, so the panel's region is
-     automatically included in the flush below once drawn here. */
+  /* Debug UI: must draw HERE, after the forced 3D redraw above (or it gets painted over) but before
+     flush_dirty_rect_to_display(1) below -- that call is the actual screen present for this tick
+     (blits the software framebuffer through to GXEndDraw/SDL_RenderPresent, see gx_stub.c). */
   dbgui_draw();
   uw_debug_dump_sprite_frames_once();
   uw_debug_dump_critter_sheet_once();
   uw_debug_force_item_id_once();
-  /* When the forced 3D redraw ran this frame, push it through even if a
-     mouse button is being held in the viewport: DAT_0023c63c (the
-     click-hold flag) otherwise blocks flush_dirty_rect_to_display's real
-     screen flush for the whole hold, so a click-and-hold-to-walk froze
-     the view. */
+  /* When the forced 3D redraw ran this frame, push it through even if a mouse button is being held
+     in the viewport: DAT_0023c63c (the click-hold flag) otherwise blocks
+     flush_dirty_rect_to_display's real screen flush for the whole hold... */
   if (_did_force_redraw) {
     g_force_flush = 1;
     flush_dirty_rect_to_display(1);
@@ -1648,11 +1136,9 @@ void emit_hud_draw_commands()
 
 
 
-// was FUN_0006ca4c -- brief "shake" animation played on a flask's
-// shared decoration slot ((&DAT_0023c224)[iVar1]) when
-// hud_vitals_bar_tick's health-poisoned or mana threshold check
-// crosses over; param_1 selects health(0)/mana(1) and picks which of
-// the 3 literal id ranges (0x200c/0x203e/0x2025) to animate through.
+// was FUN_0006ca4c -- brief "shake" animation played on a flask's shared decoration slot
+// ((&DAT_0023c224)[iVar1]) when hud_vitals_bar_tick's health-poisoned or mana threshold check
+// crosses over...
 void hud_vitals_threshold_shake(param_1)
 short param_1;
 
@@ -1762,24 +1248,8 @@ void redraw_hud_panels()
   sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
   update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
   decode_gr_entry_to_buffer(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
-  /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
-     parameter -- it reads the global g_blit_transparent_mode instead (see its own
-     definition in graphics.c: g_blit_transparent_mode==0 draws every source byte
-     opaquely via the palette, nonzero skips byte==0 as the transparent
-     key). Every OTHER caller in this file that wants transparency sets
-     this global around the call (draw_sprite_by_id, mode_icon_highlight_on,
-     mode_icon_highlight_off all do `g_blit_transparent_mode = 1; ...; g_blit_transparent_mode = 0;`) --
-     this call's own trailing literal `1` argument clearly intended the
-     same thing (it's not a real parameter bitmap_blit_to_framebuffer
-     reads at all, just a leftover Ghidra also emitted at the other
-     sites where it happens to coincide with the real fix), but nothing
-     here ever sets the global, so this panel background blit ran
-     opaque -- painting every transparent-keyed pixel in the panels.GR
-     source (byte value 0) as solid black instead of leaving the
-     background visible underneath. This is the inventory-area "black
-     box" bug (uw.c's own DAT_0023cca4 decode is real panels.GR pixel
-     data, confirmed via UW_DEBUG_DRAW framebuffer dumps -- the missing
-     piece was purely this transparency-mode flag). */
+  /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode" parameter -- it reads the
+     global g_blit_transparent_mode instead... */
   g_blit_transparent_mode = 1;
   bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
   g_blit_transparent_mode = 0;
@@ -1791,13 +1261,9 @@ void redraw_hud_panels()
 
 
 
-// was FUN_0006cff4 -- generic "set HUD status slot param_1 to
-// param_2" dispatcher: negative param_1 writes a raw byte value
-// directly, 0/1 compute a health/mana fill tier (0-12) from the
-// player object via ordint_divmod (see hud_vitals_bar_tick), and other
-// small param_1 values (2,3,4,6,7,8 -- seen at this session's various
-// call sites) drive other HUD indicators (compass heading, action-
-// animation frame, poison flash, etc.) each with their own encoding.
+// was FUN_0006cff4 -- generic "set HUD status slot param_1 to param_2" dispatcher: negative param_1
+// writes a raw byte value directly, 0/1 compute a health/mana fill tier (0-12) from the player
+// object via ordint_divmod (see hud_vitals_bar_tick)...
 void set_hud_status_value(param_1,param_2)
 byte param_1;
 ushort param_2;
@@ -1901,24 +1367,9 @@ LAB_0006d164:
     if (DAT_0023c11c == 0) goto joined_r0x0006d150;
     if (uVar6 == 0) goto LAB_0006d164;
   }
-  /* Was `(&DAT_0023c118)[(char)param_1] = uVar4;` -- correct for the
-     iVar1<2 (health/mana) branch above, which jumps straight to
-     LAB_0006d17c without reaching this line, but this specific write
-     only executes for the iVar1==4 dragon-reaction branch, where
-     param_1 is 4 or 5 (the resolved left/right dragon side). In the
-     original 32-bit binary DAT_0023c118+4/+5 IS the same memory as
-     DAT_0023c11c/DAT_0023c11d (see their own comments) -- an address
-     coincidence this decompile's split, unrelated C globals don't
-     preserve. hud_dragon_reaction_tick (the function this value is FOR)
-     reads it back as `(&DAT_0023c11c)[iVar6]` where iVar6=param_1-4,
-     never DAT_0023c118 at all -- so on this host the old line silently
-     wrote a value nothing ever read, and hud_dragon_reaction_tick's own
-     "has a reaction been requested" gate (`(&DAT_0023c11c)[iVar6] !=
-     0`) was never satisfied, meaning the whole dragon reaction/wing-
-     flap animation this function drives never started, no matter how
-     many times set_hud_status_value(4,...) was called (e.g. every
-     message-scroll line, msg_scroll_scroll_up_line). Write to the real
-     target instead. */
+  /* Was `(&DAT_0023c118)[(char)param_1] = uVar4;` -- correct for the iVar1<2 (health/mana) branch
+     above, which jumps straight to LAB_0006d17c without reaching this line, but this specific write
+     only executes for the iVar1==4 dragon-reaction branch... */
   (&DAT_0023c11c)[param_1 + -4] = uVar4;
 LAB_0006d17c:
   DAT_0023c1d8 = DAT_0023c1d8 | (ushort)(1 << (uint)param_1);
@@ -2136,26 +1587,7 @@ short param_1;
 
 
 
-// was FUN_0006d894, briefly named hud_damage_flash_tick by an earlier
-// pass. Renamed again: despite the "damage" name, its 3 real callers
-// (msg_scroll_scroll_up_line on every message-scroll line,
-// sync_player_stats_to_hud on an HP/poison threshold, award_monster_kill_experience on
-// a trap/switch-type object trigger) are mostly unrelated to damage --
-// "damage" only describes one of the three. What this function
-// actually drives, dispatched via set_hud_status_value's status
-// category 4/5 (param_1, left/right dragon) through
-// g_hud_panel_handlers_table/g_hud_panel_ticker_handlers alongside its hud_X_tick
-// siblings: a small state machine (param_1-4 -> iVar6, indexing every
-// DAT_0023c11c/DAT_0023c12c-family global 0=left/1=right) that plays
-// the dragon decoration's reactive TAIL whip (DAT_0023c238's frame,
-// stepped through DAT_000871b8's per-side sequence) together with a
-// short-lived HEAD-animation overlay sprite (DAT_0023c1e8's slot,
-// distinct from DAT_0023c230's own static head sub-sprite) positioned
-// via the recovered DAT_00087178/DAT_00087188/PTR_DAT_00087198/
-// PTR_DAT_000871a8 rect table (see that table's own comment for the
-// "drew at 0,0" bug this state machine's dormancy used to hide).
-// "Dragon reacting to a HUD-worthy event" is the real generalization;
-// the event doesn't have to be damage.
+// was FUN_0006d894, briefly named hud_damage_flash_tick by an earlier pass.
 void hud_dragon_reaction_tick(param_1)
 int param_1;
 
@@ -2243,25 +1675,8 @@ LAB_0006dec8:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      // HACK: was draw-then-check (`sprite_list_set_frame_id(...); if
-      // (local_30[iVar6*3] < *psVar9) { reset-for-next-time; }`).
-      // Confirmed via real ARM disassembly that this exact `<` and
-      // draw-before-check order is what the original binary computes,
-      // not a decompiler artifact -- but it means the call where the
-      // counter first exceeds local_30[iVar6*3] (this reaction's own
-      // last legitimate frame) still draws THAT out-of-range value
-      // before resetting the counter for the next cycle. The frame
-      // actually shown is local_40[iVar6*3+1], the START frame of a
-      // completely different reaction type, briefly flashing here.
-      // Confirmed live via a frame-id trace: 0x2070,0x2071,0x2072,
-      // then 0x2073 (belongs to the trap/switch reaction, not this
-      // scroll one) before resetting back to 0x206f. Harmless-looking
-      // on the original hardware's real frame timing, clearly visible
-      // on this port's -- deliberately deviating from authentic
-      // behavior here (user's call) by resetting BEFORE drawing when
-      // the counter overshoots, so the foreign frame is never actually
-      // handed to sprite_list_set_frame_id (this cycle just redraws
-      // its own start frame, local_40[iVar6*3], one call early instead).
+// HACK: was draw-then-check (`sprite_list_set_frame_id(...); if (local_30[iVar6*3] < *psVar9)
+      // { reset-for-next-time; }`).
       if (local_30[iVar6 * 3] < *psVar9) {
         *psVar9 = local_40[iVar6 * 3];
         *(short *)(&DAT_0023c124 + iVar1) = *(short *)(&DAT_0023c124 + iVar1) + -1;
@@ -2293,25 +1708,8 @@ LAB_0006de00:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      // HACK: was `sprite_list_set_frame_id(...); if (*psVar9 <=
-      // local_30[iVar6*3]) return;` -- i.e. draw first, THEN decide
-      // whether the counter overshot. Confirmed via real ARM
-      // disassembly (0x6de4c `cmp r2,r3` / 0x6de50 `ble`) that this
-      // exact `<=` and draw-before-check order is what the original
-      // binary computes, not a decompiler artifact. But it means the
-      // draw already happened with an out-of-range value on the call
-      // where the counter first exceeds local_30[iVar6*3] (the scroll
-      // reaction's own last legitimate frame) -- the actual frame
-      // shown is local_40[iVar6*3+1], the START frame of the NEXT
-      // reaction type, briefly flashing in this reaction's overlay
-      // right before it transitions away. Confirmed live via a
-      // frame-id trace showing e.g. 0x2073 (belongs to a different
-      // reaction entirely) drawn here. Harmless-looking on the
-      // original hardware's real frame timing, clearly visible on
-      // this port's -- deliberately deviating from authentic behavior
-      // here (user's call) by checking BEFORE drawing instead, so the
-      // out-of-range value is never actually handed to
-      // sprite_list_set_frame_id.
+// HACK: was `sprite_list_set_frame_id(...); if (*psVar9 <= local_30[iVar6*3]) return;` --
+      // i.e. draw first, THEN decide whether the counter overshot.
       if (local_30[iVar6 * 3] < *psVar9) {
         goto LAB_0006de54;
       }
@@ -2434,17 +1832,9 @@ LAB_0006dd88:
 
 
 
-// was FUN_0006df70 -- one of the 13 entries in g_hud_panel_handlers_table
-// (the per-tick HUD panel redraw dispatch, alongside hud_vitals_bar_tick
-// and hud_dragon_reaction_tick, its naming siblings). Steps the compass
-// needle's displayed heading (DAT_0023c12a) one increment toward the
-// player's real heading (DAT_0023c11a) each call, clearing the "needle
-// dirty" bit in DAT_0023c1d8 once it catches up. Updates the needle
-// sprite via sprite_list_set_frame_id (compass rose frame) and
-// sprite_list_set_position (DAT_00087130/DAT_00087150, the needle's
-// recovered per-heading ellipse position table -- see their own
-// comments) using the two sprite-list slot handles allocated once at
-// startup by redraw_hud_panels (DAT_0023c228/DAT_0023c22c).
+// was FUN_0006df70 -- one of the 13 entries in g_hud_panel_handlers_table (the per-tick HUD panel
+// redraw dispatch, alongside hud_vitals_bar_tick and hud_dragon_reaction_tick, its naming
+// siblings).
 void hud_compass_needle_tick()
 
 {
@@ -2630,31 +2020,16 @@ char *param_1;
   undefined1 *puVar4;
   int extraout_r3;
   int extraout_r3_00;
-  /* Ghidra split these into two locals (their own stack-offset names,
-     0x54 and 0x23, differ by exactly 0x31 = sizeof(auStack_54)) -- same
-     "adjacent stack locals are really one buffer" pattern fixed
-     elsewhere this session. They ARE meant to be contiguous: when the
-     word-wrap loop below finds no space within a 49-byte chunk,
-     ce_strrchr returns NULL and the fallback `puVar4 = local_23`
-     is meant to NUL-terminate right at auStack_54's own end (offset 49)
-     -- not a separate, unrelated 3-byte buffer the C compiler is free to
-     place anywhere. Without the merge, that terminator write misses
-     auStack_54 entirely, so msg_scroll_split_escape_segments prints past its real content
-     into whatever stack garbage follows until it happens to hit a zero
-     byte -- confirmed via a real inscription message ("The writing
-     reads: We attacked the entrance...") long enough to need this
-     no-space-found fallback: it printed correctly up to the wrap point
-     then trailed into garbage characters. */
+  /* Ghidra split these into two locals (their own stack-offset names, 0x54 and 0x23, differ by
+     exactly 0x31 = sizeof(auStack_54)) -- same "adjacent stack locals are really one buffer"
+     pattern fixed elsewhere this session. */
   undefined1 auStack_54_backing [52];
   #define auStack_54 auStack_54_backing
   #define local_23 (auStack_54_backing + 49)
 
   iVar2 = (int)(short)DAT_00201b60;
-  /* Debug: log every string handed to the message scroll.
-     param_1 is NULL at the call sites that only flush a pending
-     inline graphic token (get_message_string). DAT_00201b60 (1 or 4) is the
-     "message scroll is the active text sink" gate -- anything else is
-     dropped on the floor, so note that too. */
+  /* Debug: log every string handed to the message scroll. param_1 is NULL at the call sites that
+     only flush a pending inline graphic token (get_message_string). */
 
     DEBUG(INFO, "[scroll] add %s\"%s\" (mode=%d)\n",
             (iVar2 == 1 || iVar2 == 4) ? "" : "DROPPED ",
@@ -2727,19 +2102,9 @@ undefined4 param_2;
   char *iVar5;
   undefined1 uVar6;
   int iVar7;
-  /* Recursion-depth safety valve for the msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line word-
-     wrap pair: msg_scroll_wrap_split_line's search-for-a-space-to-split-on has no
-     fallback once the remainder is down to a single character/space that
-     still doesn't fit the remaining line width (its own retry at
-     LAB_0007fc64 hands the SAME unshrinkable string straight back here),
-     which is a genuine stack-overflow-via-infinite-recursion for that
-     input, not a symptom of any pointer/memory bug already fixed this
-     session (confirmed: reached with param_1==" " on a real run after
-     every other known corruption source was already fixed). Rather than
-     reverse-engineer the exact original cursor-reset semantics for that
-     edge case, force this call to take the normal "print it" path once
-     recursion goes needlessly deep -- printing slightly past the margin
-     beats crashing the whole game over HUD message text. */
+  /* Recursion-depth safety valve for the msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line
+     word- wrap pair: msg_scroll_wrap_split_line's search-for-a-space-to-split-on has no fallback
+     once the remainder is down to a single character/space that still doesn't fit the remaining... */
   static int s_wrap_recursion_depth = 0;
   s_wrap_recursion_depth++;
 
@@ -2806,12 +2171,9 @@ LAB_0007f9ac:
   }
   else {
     if (iVar7 <= iVar5) goto LAB_0007f9ac;
-    /* Ghidra dropped msg_scroll_scroll_up_line's argument here: it's the
-       bottom Y of the block to shift up -- cursor_y + line_h, i.e. uVar3
-       as computed at the top of this function (msg_scroll_more_prompt's own call
-       passes the identical expression). Without it the scroll ran with a
-       garbage height and the last line was overwritten in place instead
-       of the panel scrolling up. */
+    /* Ghidra dropped msg_scroll_scroll_up_line's argument here: it's the bottom Y of the block to
+       shift up -- cursor_y + line_h, i.e. uVar3 as computed at the top of this function
+       (msg_scroll_more_prompt's own call passes the identical expression). */
     msg_scroll_scroll_up_line((int)(short)uVar3);
     uVar3 = *(undefined2 *)(DAT_00250704 + 10);
     DAT_00250710 = DAT_00250710 + -1;
@@ -2832,12 +2194,8 @@ LAB_0007fa30:
       || (32 < s_wrap_recursion_depth))
   {
     uVar4 = ce_strlen(param_1);
-    /* Guard against param_1 being an empty string: (uVar4 & 0xffff) - 1
-       underflows to 0xffff (index -1), reading/writing one byte before
-       the string -- a stack-buffer-underflow confirmed live via
-       AddressSanitizer (msg_scroll_split_newline_segments can hand this
-       an empty trailing segment after splitting on '\n'). Nothing to
-       strip from an empty span, so just skip the check. */
+    /* Guard against param_1 being an empty string: (uVar4 & 0xffff) - 1 underflows to 0xffff (index
+       -1), reading/writing one byte before the string... */
     if ((uVar4 != 0) && (param_1[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] == '\n')) {
       param_1[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] = '\0';
       *(undefined1 *)(DAT_00250704 + 0x10) = 1;
@@ -2874,18 +2232,9 @@ undefined4 param_2;
   int iVar5;
   char cVar6;
 
-  /* Guard against infinite msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line recursion on an
-     empty string: msg_scroll_draw_wrapped_span sends param_1 here whenever its pixel width
-     doesn't fit the remaining line width, but an empty string has zero
-     width and can never be split any narrower -- every one of this
-     function's exits below hands param_1 straight back to msg_scroll_draw_wrapped_span
-     unchanged, which (if the line is already full) sends it right back
-     here forever. There's nothing to wrap for an empty string, so just
-     stop. Confirmed via a real crash: reached with param_1="" once (this
-     session) the actual upstream bug (a lone-scalar DAT_00248418 palette
-     table smashing ~10KB of adjacent memory on every palette install,
-     since fixed) had already been eliminated, so this is a genuine
-     separate edge case, not just a symptom of that corruption. */
+  /* Guard against infinite msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line recursion on
+     an empty string: msg_scroll_draw_wrapped_span sends param_1 here whenever its pixel width
+     doesn't fit the remaining line width... */
   if (ce_strlen(param_1) == 0) {
     return;
   }
@@ -2907,47 +2256,12 @@ undefined4 param_2;
   pcVar3 = param_1 + iVar5 + -2;
   do {
     pcVar3[1] = cVar6;
-    /* BUG FIX: this bounds check used to run AFTER `pcVar3 = pcVar3 - 1;
-       cVar6 = *pcVar3; *pcVar3 = '\0';` below instead of before. That's
-       fine once pcVar3 has legitimately walked down to param_1 (reading/
-       writing index 0 is still in-bounds), but for a 1- or 2-character
-       param_1 the initial `pcVar3 = param_1 + iVar5 - 2` already starts
-       at or before param_1, so the old post-decrement check caught the
-       violation one step too late: it had already read and written 1-2
-       bytes BEFORE param_1 on the very first iteration. Confirmed live
-       via AddressSanitizer: a stack-buffer-underflow in this function,
-       reached from handle_mantra_chant's very first
-       message_scroll_print_wrapped("\n") call whenever the message-
-       scroll cursor is already close enough to the panel's right edge
-       that even a bare newline has to go through the word-wrap path
-       (intermittent -- depends on scroll-cursor state carried over from
-       whatever printed just before it, which is why this surfaced as a
-       flaky "chanting a mantra sometimes crashes" rather than every
-       time). Checking here, before touching pcVar3 at all this
-       iteration, makes the short-string case take the exact same "give
-       up, force a fresh line" exit as the already-correct len>=3 case,
-       without ever stepping outside param_1's own bytes. */
+    /* BUG FIX: this bounds check used to run AFTER `pcVar3 = pcVar3 - 1; cVar6 = *pcVar3; *pcVar3 =
+       '\0';` below instead of before. */
     if (pcVar3 <= param_1) {
-      /* Was `&s_scroll_newline_0008522c` -- confirmed via real ARM
-         disassembly (0x7fc74: `ldr r0,[0x7fc88]`, and DAT_0007fc88's own
-         stored value IS 0x8522c) that the original binary passes this
-         exact same shared "\n" constant's address here too, so this
-         isn't a porting artifact. But msg_scroll_draw_wrapped_span
-         unconditionally self-NULs byte 0 of whatever buffer it's handed
-         once it decides that buffer's last real char was '\n' (see its
-         own comment/disassembly, confirmed no restore anywhere in that
-         function) -- fine for every OTHER caller in this file, which
-         all go through message_scroll_print_wrapped's own local
-         auStack_54 copy first, but this is the ONE call site that
-         invokes msg_scroll_draw_wrapped_span directly on the shared,
-         permanent global, so hitting this fallback even once (confirmed
-         live via an lldb watchpoint during ordinary Bragit dialogue --
-         not some exotic edge case) permanently zeroes the "\n" every
-         other caller in the game relies on, silently collapsing every
-         later multi-line message (babl_menu's numbered responses among
-         them) onto one line for the rest of the process's life. Give
-         this call its own disposable copy instead of the shared
-         original. */
+      /* Was `&s_scroll_newline_0008522c` -- confirmed via real ARM disassembly (0x7fc74: `ldr
+         r0,[0x7fc88]`, and DAT_0007fc88's own stored value IS 0x8522c) that the original binary
+         passes this exact same shared "\n" constant's address here too... */
       char local_newline_copy[2];
       local_newline_copy[0] = '\n';
       local_newline_copy[1] = '\0';
@@ -2993,29 +2307,8 @@ int param_5;
   set_draw_color(0x2a);
   rect_fill_or_save_restore(param_1,param_2,param_3,param_4);
 
-  /* Populate the message-scroll context struct (DAT_00250704 ->
-     g_msg_scroll_panel_state) from the region rectangle. An earlier session's own
-     comment here claimed "the decompile lost this" from msg_scroll_panel_init's
-     real body -- re-checked via a fresh Ghidra disassembly of 0x7fc8c
-     this session and that's NOT accurate: the real function only draws
-     the (up to) two background rects and tail-calls
-     rect_fill_or_save_restore once more, nothing else -- this whole
-     struct-populate block has no match in the real binary at this
-     address. Left in place anyway (not reverted) because it's the only
-     place currently seeding these fields at all, and empirically
-     produces a correct, working panel (confirmed visually: the save/
-     load name prompt and the save-slot description list both render
-     correctly with it). Real ARM disassembly of msg_scroll_panel_reset (see its
-     own comment) independently confirmed the byte layout this block
-     writes to (+2 bottom_y, +4 left_x, +6 right_x, +8/+0xa draw cursor
-     x/y, +0xc/+0xe new-line-reset x/y) is at least self-consistent with
-     how the rest of the widget reads it. What's still missing: +0x00
-     ("top y", read by msg_scroll_panel_reset's own erase-rect on every reset) was
-     never written here either -- confirmed as the cause of that erase
-     covering the whole screen instead of just this panel's own strip,
-     fixed below by seeding it the same as +0x0e. Wherever the REAL
-     populate code for this struct actually lives is still unknown; flagged
-     for future investigation rather than solved here. */
+  /* Populate the message-scroll context struct (DAT_00250704 -> g_msg_scroll_panel_state) from the
+     region rectangle. */
   ctx = (char *)DAT_00250704;
   if (ctx != (char *)0x0) {
     *(short *)(ctx + 0x00) = (short)param_2;   /* top y (erase rect)   */
@@ -3036,32 +2329,8 @@ int param_5;
 
 
 
-/* Every field-offset constant below that was written as a bare
-   `DAT_00250704 + N` (no cast before the addition) was wrong -- half
-   what it should be. DAT_00250704 is declared `undefined *`
-   (uw.h: `typedef unsigned char undefined`), a real byte pointer, but
-   these specific expressions were decompiled as if it scaled by
-   sizeof(undefined2)==2, so every one of them landed N/2 bytes early.
-   The OTHER offsets in this same function, written with an explicit
-   `(char *)DAT_00250704 + N` cast placed *before* the addition, were
-   already byte-correct -- this mixed styling (both forms decompiled
-   from the same real ARM code, which is unambiguously byte-addressed
-   throughout) is what hid the bug: half the fields in this "reset the
-   scroll panel" struct landed at the right place, half didn't.
-   Confirmed via real ARM disassembly (0x7fd14-0x7fdd8): the struct's
-   real byte layout is top_y@0, bottom_y@2, left_x@4, right_x@6 (used
-   by the rect_fill_or_save_restore call below), base_x@0xc, base_y@0xe
-   (the panel's static origin, populated once by msg_scroll_panel_init),
-   cur_x@8, cur_y@0xa (the live draw-cursor these get copied into on
-   every reset -- this is the actual bug: cur_y was landing at byte 5,
-   splitting a partial write across the middle of top_y/bottom_y's own
-   bytes instead of the real cursor field, so it read back as garbage
-   or zero and every scroll message before the first real scroll-up
-   drew off in the weeds instead of at the panel's visible top row),
-   and three more zeroed fields at 0x10/0x12/0x14 (a 0x11/0x13/0x15
-   counterpart to each was already correct). Root cause of both the
-   invisible "Enter a save name" prompt and the invisible save-slot
-   list text -- same struct, same reset function, same bug. */
+/* Every field-offset constant below that was written as a bare `DAT_00250704 + N` (no cast before
+   the addition) was wrong -- half what it should be. */
 // was FUN_0007fce8
 void msg_scroll_panel_reset(param_1)
 int param_1;
@@ -3112,12 +2381,8 @@ int param_1;
 
 
 
-// was FUN_0006cb74 -- snaps the compass dial (DAT_0023c228) and needle
-// (DAT_0023c22c) sprites straight to the player's real current heading
-// (DAT_0023c11a), unlike hud_compass_needle_tick's own one-increment-
-// per-call stepping toward it via DAT_0023c12a (which this function
-// never touches). Used where the needle shouldn't visibly animate into
-// place -- e.g. on HUD panel open/reset.
+// was FUN_0006cb74 -- snaps the compass dial (DAT_0023c228) and needle (DAT_0023c22c) sprites
+// straight to the player's real current heading (DAT_0023c11a)...
 void snap_compass_to_heading()
 
 {
@@ -3136,15 +2401,9 @@ void snap_compass_to_heading()
 
 
 
-// was FUN_0006cbf0 -- resets the HUD panel subsystem's transient
-// animation/selection state: zeroes the two 9-entry per-panel-button
-// state arrays (DAT_0023c118/DAT_0023c128), hides the two sprites
-// DAT_0023c1e8/DAT_0023c1ea via clear_sprite_list_slot_flag, clears the active-panel
-// selector (g_active_hud_panel) and the panel-switch animation counters
-// hud_panel_wipe_transition_tick drives (DAT_0023c220 and friends), and reseeds
-// DAT_0023c11f/DAT_0023c120/DAT_0023c130/DAT_000870e0/DAT_000870e4 back
-// to their startup defaults (matching redraw_hud_panels's own initial
-// values for the latter two).
+// was FUN_0006cbf0 -- resets the HUD panel subsystem's transient animation/selection state: zeroes
+// the two 9-entry per-panel-button state arrays (DAT_0023c118/DAT_0023c128), hides the two sprites
+// DAT_0023c1e8/DAT_0023c1ea via clear_sprite_list_slot_flag...
 void reset_hud_panel_animation_state()
 
 {
@@ -3177,14 +2436,9 @@ void reset_hud_panel_animation_state()
 
 
 
-// was thunk_FUN_0006edb8 -- Ghidra's own name (not related to the
-// unrelated, differently-addressed release_hud_panel_flip_grtiles defined later in this
-// file, despite the identical-looking suffix -- this project's
-// established split-symbol/naming-collision bug class, not a real
-// thunk relationship). Releases the 3 grtile handles
-// (DAT_0023c200/202/204, see that array's own declaration comment)
-// backing the HUD panel-switch wipe transition, clearing each that's
-// still set via the currently-no-op release_grtile_handle.
+// was thunk_FUN_0006edb8 -- Ghidra's own name (not related to the unrelated, differently-addressed
+// release_hud_panel_flip_grtiles defined later in this file, despite the identical-looking suffix
+// -- this project's established split-symbol/naming-collision bug class)...
 void release_panel_wipe_grtiles()
 
 {
@@ -3206,17 +2460,8 @@ void release_panel_wipe_grtiles()
 
 
 
-// was FUN_0006e038 -- updates a small HUD status-icon sprite
-// (DAT_0023c254, allocated on first use) from the state code
-// DAT_0023c11b (0..0xd/13; out-of-range values leave the icon alone).
-// Most values just select a single static frame (0x2098 + value); the
-// special value 9 instead cycles through frames 0x2098+DAT_00087258
-// (wrapping 9..0xd) once per call, matching an animated variant of
-// whatever this icon represents, and sets bit 3 of DAT_0023c1d8 (a
-// "dirty"/"animating" flag other icons in this cluster also use, e.g.
-// hud_compass_needle_tick's own bit 2). Exact icon identity not
-// confirmed (no icon-name string or comment found nearby) -- named for
-// its mechanism, not its meaning.
+// was FUN_0006e038 -- updates a small HUD status-icon sprite (DAT_0023c254, allocated on first use)
+// from the state code DAT_0023c11b (0..0xd/13; out-of-range values leave the icon alone).
 void update_hud_status_icon_frame()
 
 {
@@ -3259,15 +2504,9 @@ void update_hud_status_icon_frame()
 
 
 
-// was FUN_0006e1d4 -- per-tick driver for the small HUD panel-switch
-// wipe-transition icon (sprite handle DAT_0023c21c, same one
-// snap_compass_to_heading's sibling reset_hud_panel_animation_state resets
-// to frame 0x20a6 ("idle") and redraw_hud_panels allocates at a 1x1
-// screen position). Steps a wipe-progress counter (DAT_0023c12f)
-// toward its target (DAT_0023c11f, advanced by 4 each time it's caught
-// up to) via a small state machine (DAT_0023c220/DAT_0023c25c) that
-// selects successive frames from the table at 0x87200, then resets
-// everything back to idle once DAT_0023c220 exceeds 5.
+// was FUN_0006e1d4 -- per-tick driver for the small HUD panel-switch wipe-transition icon (sprite
+// handle DAT_0023c21c, same one snap_compass_to_heading's sibling reset_hud_panel_animation_state
+// resets to frame 0x20a6 ("idle") and redraw_hud_panels allocates at a 1x1 screen position).
 void hud_panel_wipe_transition_tick()
 
 {
@@ -3313,11 +2552,9 @@ LAB_0006e244:
 
 
 
-// was FUN_0006e96c -- the "ready to cast" rune-slot icon updater (see
-// DAT_0023c268's own declaration comment): allocates 3 icon sprites on
-// first use (positioned via DAT_00087210) and, for each of the 3
-// selected-rune bytes at param_1[0..2], either shows the matching rune
-// icon (value+0xe8) or hides the slot (value >= 0x18).
+// was FUN_0006e96c -- the "ready to cast" rune-slot icon updater (see DAT_0023c268's own
+// declaration comment): allocates 3 icon sprites on first use (positioned via DAT_00087210) and,
+// for each of the 3 selected-rune bytes at param_1[0..2]...
 void update_ready_rune_slot_icons(param_1)
 /* Was `int`, truncating the real pointer callers pass (DAT_00086df8 +
    0x47, DAT_00086df8 being a genuine `char *`). */
@@ -3357,15 +2594,9 @@ char *param_1;
 
 
 
-// was FUN_0006ea54 -- HUD light-color indicator: shows up to 3 small
-// icons (mirrored off the opposite screen edge from
-// update_ready_rune_slot_icons's rune slots -- DAT_00087218's X
-// positions decrease where DAT_00087210's increase, same sprite/icon
-// infrastructure reused for a different purpose) representing the
-// player's currently lit light sources' colors, driven by
-// compute_light_source_colors's own output (see its comment, which
-// names this function as its HUD consumer). Active only in the rarer
-// game mode *(short*)(DAT_00085a6c+8)==1 (exact mode not identified).
+// was FUN_0006ea54 -- HUD light-color indicator: shows up to 3 small icons (mirrored off the
+// opposite screen edge from update_ready_rune_slot_icons's rune slots -- DAT_00087218's X positions
+// decrease where DAT_00087210's increase)...
 void update_light_source_color_icons(param_1)
 /* Same truncation bug as its sibling update_ready_rune_slot_icons above. */
 char *param_1;
@@ -3406,16 +2637,9 @@ char *param_1;
 
 
 
-// was FUN_0006eb64 -- begins the HUD panel-switch flip transition to
-// param_1 (the target panel): lazily allocates the 3 flip grtile slots
-// (DAT_0023c200/202/204) on first use, cleaning up via
-// release_hud_panel_flip_grtiles on failure, then captures the source
-// panel's current screen content into DAT_0023c200 and draws+captures
-// the target panel's content into DAT_0023c202 (restoring the source
-// content to screen afterward) so advance_hud_panel_flip's first tick
-// has both halves ready. Called once per transition by
-// tick_hud_panel_transition, which then drives advance_hud_panel_flip
-// every tick until it reports done.
+// was FUN_0006eb64 -- begins the HUD panel-switch flip transition to param_1 (the target panel):
+// lazily allocates the 3 flip grtile slots (DAT_0023c200/202/204) on first use, cleaning up via
+// release_hud_panel_flip_grtiles on failure...
 void begin_hud_panel_flip(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined2 param_2;
@@ -3425,22 +2649,16 @@ undefined2 param_5;
 
 {
   undefined1 uVar1;
-  /* Was `ushort` -- too narrow for alloc_flip_grtile_slot's real 4-byte
-     grtile key now that it's no longer a stub (harmless before, when
-     it always returned 0). Still reused a few lines down as a plain
-     0/1 success flag (decode_gr_entry_to_buffer's return), which fits fine in the
-     wider type too. */
+  /* Was `ushort` -- too narrow for alloc_flip_grtile_slot's real 4-byte grtile key now that it's no
+     longer a stub (harmless before, when it always returned 0). */
   undefined4 uVar2;
   ushort uVar3;
-  /* Was `undefined4` -- truncated resolve_flip_grtile_slot's real
-     pointer return (see its own comment) to 32 bits on this host
-     before handing it to decode_gr_entry_to_buffer/bitmap_blit_to_framebuffer.
-     Harmless while resolve_flip_grtile_slot was a stub always
-     returning 0; a real truncated-pointer bug now that it isn't. */
+  /* Was `undefined4` -- truncated resolve_flip_grtile_slot's real pointer return (see its own
+     comment) to 32 bits on this host before handing it to
+     decode_gr_entry_to_buffer/bitmap_blit_to_framebuffer. */
   char *uVar4;
-  /* Was `int` -- doubles as this loop's plain counter (0..2, fine
-     either way) AND, further down, resolve_flip_grtile_slot's real
-     pointer return used in pointer arithmetic (`iVar5 + 0x2800`),
+  /* Was `int` -- doubles as this loop's plain counter (0..2, fine either way) AND, further down,
+     resolve_flip_grtile_slot's real pointer return used in pointer arithmetic (`iVar5 + 0x2800`),
      which does need the wider type now that that call isn't a stub. */
   intptr_t iVar5;
   ushort uVar6;
@@ -3455,22 +2673,11 @@ undefined2 param_5;
     do {
       if ((&DAT_0023c200)[iVar5] == 0) {
         uVar2 = alloc_flip_grtile_slot();
-        /* Not decompiled -- see alloc_flip_grtile_slot's own comment.
-           This slot's newly-allocated key was never actually stored
-           back into the array, so this "already allocated?" check
-           above would see 0 again on every subsequent call even after
-           a real (non-stub) allocation succeeded -- invisible while
-           the allocator was a stub (there was never a real key to
-           lose), but a real bug once it does something. */
+        /* Not decompiled -- see alloc_flip_grtile_slot's own comment. */
         (&DAT_0023c200)[iVar5] = uVar2;
-        /* Was `uVar6 = uVar6 & uVar2;` -- a bitwise AND of the
-           success accumulator against uVar2 directly made sense when
-           uVar2 could only ever be the stub's constant 0, but uVar2 is
-           now a real (large, effectively-arbitrary-bit-pattern) grtile
-           key, so ANDing it directly could clear uVar6's low bit --
-           and so the whole accumulator -- on a perfectly successful
-           allocation just because that key's low bit happened to be
-           0. Normalize to a real boolean success check instead. */
+        /* Was `uVar6 = uVar6 & uVar2;` -- a bitwise AND of the success accumulator against uVar2
+           directly made sense when uVar2 could only ever be the stub's constant 0, but uVar2 is now
+           a real (large, effectively-arbitrary-bit-pattern) grtile key... */
         uVar6 = uVar6 & (uVar2 != 0);
       }
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
@@ -3500,20 +2707,8 @@ undefined2 param_5;
       report_fatal_error_and_exit(0x300e);
     }
     decrement_cursor_hide_depth();
-    /* Not decompiled -- capture the CURRENT (source/old panel's) live
-       screen content into DAT_0023c200's offset-0 region (its
-       0x2800 offset already holds the decoded chain graphic from
-       just above, so this doesn't collide) before the target panel's
-       content gets drawn over it below. Without this, advance_hud_panel_flip's
-       first tick captured "whatever's currently on screen" into
-       DAT_0023c200 believing it was grabbing the front (source) face
-       of the flip -- but by that point this function had already
-       drawn and captured the TARGET panel here, leaving it visible on
-       screen, so DAT_0023c200 ended up with the same target content
-       as DAT_0023c202. Both flip halves showed the target panel
-       instead of source-then-target. QA: "clicking the chain does
-       flip... but shows stats for both halves, should only switch at
-       the edge-on midpoint." */
+    /* Not decompiled -- capture the CURRENT (source/old panel's) live screen content into
+       DAT_0023c200's offset-0 region... */
     uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
     capture_framebuffer_rect_to_grtile_paletted(uVar4,0xec,8,0x53,0x72);
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
@@ -3528,13 +2723,8 @@ undefined2 param_5;
     g_active_hud_panel = uVar1;
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     capture_framebuffer_rect_to_grtile_paletted(uVar4,0xec,8,0x53,0x72);
-    /* Not decompiled -- put the source content (just captured above)
-       back on screen now that we're done using the screen as a
-       scratch surface to capture the target. Otherwise the target
-       panel stays visible here, and advance_hud_panel_flip's first tick's own
-       (unchanged) "capture whatever's on screen into DAT_0023c200"
-       step would just re-capture the target again, undoing the fix
-       above. */
+    /* Not decompiled -- put the source content (just captured above) back on screen now that we're
+       done using the screen as a scratch surface to capture the target. */
     uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
     cursor_show_idle_tick();
@@ -3545,13 +2735,9 @@ undefined2 param_5;
 
 
 
-// was FUN_0006edb8 -- byte-for-byte identical body to
-// release_panel_wipe_grtiles (this project's established split-symbol/
-// naming-collision bug class -- see that function's own comment; not
-// merged into one, kept as separately-named/addressed functions per
-// this project's convention of preserving what Ghidra recovered).
-// Releases the 3 flip grtile handles (DAT_0023c200/202/204), called by
-// begin_hud_panel_flip on allocation failure.
+// was FUN_0006edb8 -- byte-for-byte identical body to release_panel_wipe_grtiles (this project's
+// established split-symbol/ naming-collision bug class -- see that function's own comment; not
+// merged into one)...
 void release_hud_panel_flip_grtiles()
 
 {
@@ -3570,27 +2756,16 @@ void release_hud_panel_flip_grtiles()
 
 
 
-// was FUN_0006edfc -- per-tick step of the HUD panel-switch flip
-// animation begun by begin_hud_panel_flip: advances a multi-stage
-// counter (DAT_0023c208, stages 1-7) drawing the squashed-panel flip
-// visual at each stage via squash_hud_panel_flip_rows/rect_fill_or_save_restore/
-// bitmap_blit_to_framebuffer, and finally swaps in the target panel
-// (g_active_hud_panel/g_hud_panel_handlers) partway through. Returns
-// true once the stage counter resets to 0 (transition complete),
-// matching tick_hud_panel_transition's own use of the return value.
+// was FUN_0006edfc -- per-tick step of the HUD panel-switch flip animation begun by
+// begin_hud_panel_flip: advances a multi-stage counter...
 bool advance_hud_panel_flip()
 
 {
   undefined1 uVar1;
   byte bVar2;
-  /* Were `undefined4` -- truncated the real 64-bit pointers this
-     function passes around (DAT_0023cca4 itself, and resolve_flip_grtile_slot's
-     return value) to 32 bits on this host before handing them to
-     bitmap_blit_to_framebuffer/squash_hud_panel_flip_rows/capture_framebuffer_rect_to_grtile_paletted, which then
-     reconstructed a wild pointer from just the low half. Same
-     truncated-pointer-local class as everywhere else this session --
-     this is what crashed the panel-switch wipe transition the first
-     time it ever actually ran. */
+  /* Were `undefined4` -- truncated the real 64-bit pointers this function passes around
+     (DAT_0023cca4 itself, and resolve_flip_grtile_slot's return value) to 32 bits on this host
+     before handing them to... */
   char *uVar3;
   char *uVar4;
   int iVar5;
@@ -3599,13 +2774,9 @@ bool advance_hud_panel_flip()
   int iVar8;
   int iVar9;
   bool bVar10;
-  /* Was `iVar7 + 0x2800` (iVar7 declared `int`) -- iVar7 is reused as
-     a plain int scratch everywhere else in this function, but in the
-     DAT_0023c208==4 stage it briefly holds resolve_flip_grtile_slot's
-     real 64-bit pointer, truncated to 32 bits before the +0x2800
-     offset, producing a wild address. Same pointer-truncation class
-     as uVar3/uVar4 above; needs its own real-pointer local since
-     iVar7's other uses in this function are genuine int arithmetic. */
+  /* Was `iVar7 + 0x2800` (iVar7 declared `int`) -- iVar7 is reused as a plain int scratch
+     everywhere else in this function, but in the DAT_0023c208==4 stage it briefly holds
+     resolve_flip_grtile_slot's real 64-bit pointer... */
   char *pFlipSrc4;
   
   uVar3 = DAT_0023cca4;
@@ -3632,34 +2803,7 @@ bool advance_hud_panel_flip()
       if (iVar9 < 0) {
         iVar9 = iVar9 + 1;
       }
-      /* Not decompiled -- was `(iVar9 >> 1) - DAT_0023c14c`. Confirmed
-         via real ARM disassembly (0006f21c-0006f24c) that the shipped
-         binary genuinely computes it this way, so this is a real,
-         never-fixed bug in the original game's own compiled code for
-         this feature (which this whole investigation independently
-         confirmed is never reachable in any shipped build -- never
-         QA'd). QA (live): iVar9 (= DAT_0023c138-DAT_0023c140) stays
-         small (0-7) across the whole animation -- DAT_0023c138 is a
-         "should stay ~constant" height reference that actually
-         wobbles up to 106% of DAT_0023c140 due to the same curve
-         table's overshoot -- so the ORIGINAL buggy subtraction put
-         the panel's edge-erase strips and its squashed-content blit
-         ~15-16px ABOVE the panel's real top (DAT_0023c14c=8) instead
-         of a few px below it ("draws 16 pixels too high"). First fix
-         attempt just flipped the operand order (`DAT_0023c14c +
-         delta`), which was closer but still wrong: it anchors the
-         TOP edge at DAT_0023c14c and lets the panel grow downward as
-         DAT_0023c138 overshoots, drifting a few extra px low each
-         time the height wobbles ("shifts down a bit too much"). The
-         correct fix keeps the panel's VERTICAL CENTER fixed (not its
-         top) as its height wobbles -- `DAT_0023c14c -
-         (iVar9 >> 1)` -- since top = center - height/2 =
-         (DAT_0023c14c + DAT_0023c140/2) - DAT_0023c138/2 =
-         DAT_0023c14c - (DAT_0023c138-DAT_0023c140)/2. Verified live:
-         this keeps the computed center within 0.5px of the true
-         center (DAT_0023c14c+DAT_0023c140/2) at every stage, vs. the
-         addition version drifting up to 6px low at the most extreme
-         wobble (stage 3/5, DAT_0023c138=120). */
+      /* Not decompiled -- was `(iVar9 >> 1) - DAT_0023c14c`. */
       rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar9 >> 1 & 0xffffU),
                    (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
                    (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
@@ -3711,10 +2855,9 @@ bool advance_hud_panel_flip()
         if (iVar9 < 0) {
           iVar9 = iVar9 + 1;
         }
-        /* Not decompiled -- "16 pixels too high" fix, see the
-           identical block in the DAT_0023c208==1 branch above for the
-           full explanation (disassembly-confirmed real bug, not a
-           decompiler artifact). */
+        /* Not decompiled -- "16 pixels too high" fix, see the identical block in the
+           DAT_0023c208==1 branch above for the full explanation (disassembly-confirmed real bug,
+           not a decompiler artifact). */
         rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar9 >> 1 & 0xffffU),
                      (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
                      (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
@@ -3791,22 +2934,9 @@ bool advance_hud_panel_flip()
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          /* Was missing its 4th argument (y2) -- real disassembly
-             (0006f3d8-0006f400) shows r3 genuinely computed as
-             `(short)DAT_0023c14c + (short)(iVar7 >> 1)` right before
-             the call, matching the same y1/y2-around-center pattern
-             every other rect_fill_or_save_restore call in this
-             function uses; the decompiler just dropped it from the
-             call's C syntax. Previously left as the original 3-arg
-             dropped-argument call because applying this fix crashed a
-             few ticks later -- that turned out to be a side effect of
-             capture_framebuffer_rect_to_grtile_paletted/decode_gr_entry_to_buffer being broken (this rect_fill
-             finally actually running exposed their bugs, rather than
-             being wrong itself); now that both are fixed, re-applying
-             this fix is what it takes for the panel-flip's "erase old
-             content" pass to bound itself correctly instead of wiping
-             out the static flask/chain area below the panel with a
-             leftover-register y2. */
+          /* Was missing its 4th argument (y2) -- real disassembly (0006f3d8-0006f400) shows r3
+             genuinely computed as `(short)DAT_0023c14c + (short)(iVar7 >> 1)` right before the
+             call... */
           /* Not decompiled -- "16 pixels too high" fix, see the
              DAT_0023c208==1 branch above for the full explanation. */
           rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
@@ -3839,12 +2969,9 @@ bool advance_hud_panel_flip()
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          /* Was missing its 4th argument (y2) -- same dropped-argument
-             bug as the sibling call above (real disassembly
-             0006f56c-0006f594, identical instruction pattern);
-             re-applied for the same reason (see that comment). Y1 also
-             fixed for the same "16 pixels too high" bug as every other
-             occurrence in this function (see DAT_0023c208==1 branch). */
+          /* Was missing its 4th argument (y2) -- same dropped-argument bug as the sibling call
+             above (real disassembly 0006f56c-0006f594, identical instruction pattern); re-applied
+             for the same reason (see that comment). */
           rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
                        DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
           iVar7 = (int)DAT_0023c138 + (int)DAT_0023c140;
@@ -3912,27 +3039,17 @@ LAB_0006f6c8:
 
 
 
-// was FUN_0006f6e0 -- draws one stage of the HUD panel-flip's squashed-
-// panel visual: looks up this stage's squash amount from the curve
-// table u_dgijjjigd_G__000871e0 (indexed by param_3, the stage number)
-// to compute DAT_0023c13c (squashed width) and DAT_0023c138 (current
-// panel height) for this stage, then copies each destination column
-// via copy_hud_panel_flip_column, sweeping the full source width
-// (DAT_0023c144) across the narrower destination via a fixed-point
-// accumulator (squashAccum/squashSrcCol) -- see the accumulator's own
-// comment for why it's needed (the original per-call-site dropped-
-// argument bugs made this a left-aligned crop instead of a real
-// resample before being fixed).
+// was FUN_0006f6e0 -- draws one stage of the HUD panel-flip's squashed- panel visual: looks up this
+// stage's squash amount from the curve table u_dgijjjigd_G__000871e0...
 void squash_hud_panel_flip_rows(param_1,param_2,param_3)
 char *param_1;
 char *param_2;
 short param_3;
 
 {
-  /* Were `undefined4` -- truncated the real 64-bit source/dest pointers
-     (already fixed to real pointers at advance_hud_panel_flip's call sites)
-     back down to 32 bits on entry. Same pointer-truncation class as
-     everywhere else this session. */
+  /* Were `undefined4` -- truncated the real 64-bit source/dest pointers (already fixed to real
+     pointers at advance_hud_panel_flip's call sites) back down to 32 bits on entry. Same
+     pointer-truncation class as everywhere else this session. */
   short sVar1;
   wchar_t wVar2;
   short sVar3;
@@ -3944,27 +3061,8 @@ short param_3;
   int iVar9;
   int iVar10;
   int iVar11;
-  /* Not decompiled -- QA: "the panel should fully squish horizontally
-     during the flip, ours just crops part of it". Root cause: every
-     copy_hud_panel_flip_column() call site in this function (all disassembly-
-     confirmed dropped-argument fixes from earlier this session)
-     advances param_1 (source column) and param_2 (dest column) by
-     exactly 1 EACH, every single call, with no exception anywhere in
-     this function -- confirmed at the instruction level, not a
-     decompiler artifact. Since the total number of calls always
-     equals DAT_0023c13c (the squashed width, strictly less than
-     DAT_0023c144's full 83 except at stage 0/8), that lockstep means
-     param_1 only ever reaches the first DAT_0023c13c source columns
-     and never reads the rest -- a left-aligned crop, not a resample.
-     A real squash needs param_1 to sweep the FULL source width
-     (DAT_0023c144) over the same DAT_0023c13c destination writes.
-     Added a simple fixed-point accumulator (new, not decompiled) to
-     do that: advance a running source-position accumulator by
-     DAT_0023c144 on every destination column written, and step
-     param_1 by however many whole source columns that accumulator
-     just crossed -- so by the last destination column, param_1 has
-     swept the entire source width, however narrow the destination
-     got. param_2 keeps its original (correct) +1-per-call advance. */
+  /* Not decompiled -- QA: "the panel should fully squish horizontally during the flip, ours just
+     crops part of it". */
   int squashAccum;
   int squashSrcCol;
 
@@ -4010,11 +3108,9 @@ short param_3;
             else {
               iVar10 = (int)(short)(iVar8 << 1) + (int)sVar1;
             }
-            /* Was `copy_hud_panel_flip_column();` -- dropped arguments. Real
-               disassembly (0006f884-0006f8a4) shows param_1/param_2
-               passed in as-is, then both incremented by 1 byte
-               afterward -- confirmed identical at all 3 call sites
-               in this function. */
+            /* Was `copy_hud_panel_flip_column();` -- dropped arguments. Real disassembly
+               (0006f884-0006f8a4) shows param_1/param_2 passed in as-is, then both incremented by 1
+               byte afterward -- confirmed identical at all 3 call sites in this function. */
             copy_hud_panel_flip_column(param_1,param_2);
             /* Not decompiled -- squash accumulator, see this
                function's own comment near its locals. */
@@ -4087,13 +3183,8 @@ short param_3;
 
 
 
-// was FUN_0006fa28 -- copies one column of the HUD panel-flip's
-// squashed panel content from a source column (param_1) into a
-// destination column (param_2), stepping through rows via the current
-// stage's DAT_0023c138/DAT_0023c140/DAT_0023c110/DAT_0023c13c/
-// DAT_0023c144 state (set up by squash_hud_panel_flip_rows just
-// before each call) to stretch, shrink, or pad the column as the
-// panel's height changes across the flip animation.
+// was FUN_0006fa28 -- copies one column of the HUD panel-flip's squashed panel content from a
+// source column (param_1) into a destination column (param_2)...
 void copy_hud_panel_flip_column(param_1,param_2)
 undefined1 * param_1;
 undefined1 * param_2;
@@ -4154,20 +3245,7 @@ undefined1 * param_2;
     sVar2 = (DAT_0023c138 - sVar7 * (short)(sVar2 + 1)) + -1;
   }
   else {
-    /* Was `ordint_divmod(iVar3 + 1)` -- missing its dividend argument.
-       The sibling branch above (iVar3 < 1) makes the exact same call
-       shape fully: `ordint_divmod(iVar3 + -1,(int)DAT_0023c140).quot`
-       (divisor=iVar3+/-1, dividend=DAT_0023c140), so by direct
-       symmetry this one is missing `(int)DAT_0023c140` too. Unlike
-       ordint_divmod's own K&R "leftover register" idiom (safe on the
-       original ARM ABI, where an unfilled argument register
-       predictably still held the caller's last computed value), a
-       dropped argument here is NOT safe on this x86-64 recompile --
-       the reused register/stack slot holds architecture-mismatched
-       garbage, not the original value. sVar1 becomes this loop's
-       inner trip count, so garbage here produced an unbounded copy
-       loop and a wild param_1/param_2 write -- the intermittent,
-       ASLR-flaky crash/heap-corruption in this function. */
+    /* Was `ordint_divmod(iVar3 + 1)` -- missing its dividend argument. */
     sVar1 = ordint_divmod(iVar3 + 1,(int)DAT_0023c140).quot;
     iVar6 = 0;
     if (0 < iVar3) {
@@ -4210,14 +3288,8 @@ undefined1 * param_2;
 
 
 
-// was FUN_00075be0 -- allocates and zero-initializes the HUD sprite-
-// list compositor's 3 backing buffers: DAT_0023c3e8 (0x514 bytes,
-// 0x14-byte stride per sprite-slot record -- see
-// clear_sprite_list_slot_flag/flush_sprite_list_compositor below) and
-// two 0x102-byte queue/index buffers (DAT_0023c40c, DAT_0023c3e4),
-// each recording its own "end" pointer (DAT_0023c3ec/0x414/0x410).
-// Allocation failure for any one buffer just skips that buffer's
-// end-pointer setup rather than aborting.
+// was FUN_00075be0 -- allocates and zero-initializes the HUD sprite- list compositor's 3 backing
+// buffers: DAT_0023c3e8...
 undefined4 init_sprite_list_buffers()
 
 {
@@ -4241,12 +3313,9 @@ undefined4 init_sprite_list_buffers()
 
 
 
-// was FUN_00076488 -- clears a HUD sprite-list slot's status-word
-// flags (masked by DAT_0023c418) and queues it for redraw, but only
-// if the slot's status word currently has DAT_0008763c set (a
-// "valid/active" bit); a no-op otherwise, or for an out-of-range
-// slot index (>= 0x40). See sprite_list_queue_slot_redraw in
-// src/bitmap.c for the actual redraw-queue mechanism this calls into.
+// was FUN_00076488 -- clears a HUD sprite-list slot's status-word flags (masked by DAT_0023c418)
+// and queues it for redraw, but only if the slot's status word currently has DAT_0008763c set (a
+// "valid/active" bit); a no-op otherwise, or for an out-of-range slot index (>= 0x40).
 undefined4 clear_sprite_list_slot_flag(param_1)
 undefined4 param_1;
 
@@ -4269,22 +3338,8 @@ undefined4 param_1;
 
 
 
-// was FUN_00076508 -- the HUD sprite-list compositor's per-call
-// flush/draw pass, gated on DAT_0023c41c (skips entirely if not
-// dirty). Two passes over the sprite-slot record array
-// (DAT_0023c3e8..DAT_0023c414, 0x14-byte stride): the first captures
-// framebuffer regions behind "background capture" sprites into a
-// grtile (capture_framebuffer_rect_to_grtile) or forwards to
-// restore_captured_grtile_backdrop/invalidate_grtile_by_key (not yet named) for other status-word
-// bit combinations; the second actually draws each queued sprite via
-// draw_sprite_by_id (for a plain sprite) or sprite_list_flush_blit_raw
-// (for a raw-blit entry), toggling g_blit_transparent_mode around each
-// draw. Supports a UW_DIAG_SPRLIST env-var diagnostic (one line per
-// drawn sprite: id/x/y/w/h) already documented at its call site.
-// Finishes by calling cursor_show_idle_tick and clearing the dirty
-// flag. Confirmed real callers throughout src/hud.c (vitals bar,
-// dragon reaction, compass needle, panel transitions) and one in
-// src/babl.c.
+// was FUN_00076508 -- the HUD sprite-list compositor's per-call flush/draw pass, gated on
+// DAT_0023c41c (skips entirely if not dirty).
 void flush_sprite_list_compositor()
 
 {
@@ -4323,14 +3378,9 @@ void flush_sprite_list_compositor()
                          CONCAT12((char)puVar6[9],
                                   CONCAT11(*(undefined1 *)((char *)puVar6 + 0x11),(char)puVar6[8]))) !=
                 0) {
-              /* Ghidra dropped the arg here (relying on register
-                 carryover from the CONCAT-reconstructed nonzero check
-                 just above) -- same class of bug fixed throughout this
-                 session. That CONCAT chain reconstructs, byte by byte,
-                 exactly `*(undefined4 *)(puVar6 + 8)` -- the same
-                 grtile key field restore_captured_grtile_backdrop reads
-                 a few lines up -- so pass it explicitly instead of
-                 relying on leftover register state. */
+              /* Ghidra dropped the arg here (relying on register carryover from the
+                 CONCAT-reconstructed nonzero check just above) -- same class of bug fixed
+                 throughout this session. */
               invalidate_grtile_by_key(*(undefined4 *)(puVar6 + 8));
             }
           }
@@ -4364,9 +3414,8 @@ void flush_sprite_list_compositor()
             puVar4 = (ushort *)((uint)*puVar7 * 0x14 + DAT_0023c3e8);
             uVar1 = *puVar4;
             if ((uVar1 & DAT_0008763c) != 0) {
-              /* UW_DIAG_SPRLIST: one line per sprite the HUD sprite-list
-                 compositor draws -- id / x / y / w / h -- handy for
-                 filling in the still-zero compass/dragon layout tables
+              /* UW_DIAG_SPRLIST: one line per sprite the HUD sprite-list compositor draws -- id / x
+                 / y / w / h -- handy for filling in the still-zero compass/dragon layout tables
                  (see the FIXME[hud-*-layout] blocks). */
               if (getenv("UW_DIAG_SPRLIST"))
                 fprintf(stderr, "[sprlist] slot=%u id=0x%x x=%d y=%d w=%d h=%d path=%s\n",
@@ -4428,49 +3477,8 @@ void flush_sprite_list_compositor()
 }
 
 
-/* was FUN_0007e998 -- Not decompiled -- confirmed a genuine dead stub
-   in the real binary too (disassembly at 0x0007e998 is just
-   `cpy pc,lr`, 4 bytes, no body). This is the "capture the
-   framebuffer rect we just drew panel
-   content into, back into the grtile buffer" step (both real call
-   sites draw content live via draw_stats_panel_content/the target hud
-   panel handler and then immediately call this to snapshot it for the
-   flip animation to work from).
-
-   capture_framebuffer_rect_to_grtile, the obvious existing primitive
-   to delegate to, copies the live framebuffer's 16bpp RGB565 pixels
-   verbatim -- but the grtile buffers here and copy_hud_panel_flip_column's whole
-   squash-blit loop are 8bpp paletted (1 byte/pixel, confirmed via
-   disassembly-recovered pointer stepping), same format
-   decode_gr_entry_bitmap/decode_gr_entry_to_buffer already decoded into this exact
-   buffer just before draw_stats_panel_content ran. A real fix needs
-   an actual 16bpp->8bpp palette-matching capture, which doesn't exist
-   anywhere else in this codebase -- implemented here as a per-pixel
-   nearest-color search against g_palette_rgb565 (the same 256-entry
-   RGB565 table every other paletted draw in this file already
-   indexes into, e.g. rect_fill_or_save_restore's fill mode and
-   uw_get_default_palette's own reverse-conversion precedent).
-
-   Writes tightly-packed rows (stride = width, no padding) starting at
-   the destination buffer's own base -- matching the layout
-   decode_gr_entry_to_buffer's decode already established for this same buffer
-   (bitmap_blit_to_framebuffer reads it back with that same width as
-   its own row stride, no separate pitch).
-
-   param_1 is the destination grtile buffer's real pointer (both call
-   sites already resolve it via resolve_flip_grtile_slot before
-   calling, unlike capture_framebuffer_rect_to_grtile which wants the
-   raw registry key instead -- see that function's own comment on this
-   same distinction). param_2/param_3 are the framebuffer capture
-   rect's x/y; param_4/param_5 are width/height, in that order --
-   confirmed by cross-checking both real call sites' literal argument
-   values against the adjacent, already-working
-   bitmap_blit_to_framebuffer call's own disassembly-verified
-   (x,y,src,HEIGHT,WIDTH,...) parameter order (that function's param_4
-   drives the row/Y loop, param_5 the column/X loop and source
-   stride) -- capture_framebuffer_rect_to_grtile_paletted's own two call sites consistently pass
-   their last two arguments in the opposite (width,height) order from
-   that sibling blit call sitting right next to each of them. */
+/* was FUN_0007e998 -- Not decompiled -- confirmed a genuine dead stub in the real binary too
+   (disassembly at 0x0007e998 is just `cpy pc,lr`, 4 bytes, no body). */
 void capture_framebuffer_rect_to_grtile_paletted(param_1,param_2,param_3,param_4,param_5)
 unsigned char *param_1;
 int param_2;
@@ -4521,9 +3529,8 @@ int param_5;
 
 
 
-// was FUN_0007f044 -- one-time message-scroll-panel setup, called
-// once from src/hud.c's game init: points the shared panel-state
-// pointer (DAT_00250704) at g_msg_scroll_panel_state, selects mode 0,
+// was FUN_0007f044 -- one-time message-scroll-panel setup, called once from src/hud.c's game init:
+// points the shared panel-state pointer (DAT_00250704) at g_msg_scroll_panel_state, selects mode 0,
 // and initializes+draws the panel's geometry/border.
 void init_msg_scroll_panel()
 
@@ -4537,12 +3544,9 @@ void init_msg_scroll_panel()
 
 
 
-// was FUN_0007f094 -- checks whether the mouse cursor is currently
-// over the active message-scroll panel's rect (via is_position_within_rect, not
-// yet named -- a point-in-rect hit test with a cursor-size margin,
-// confirmed by its own body testing g_mouse_x/g_mouse_y), storing the
-// hit/miss result in the shared DAT_00250708 flag other panel code
-// reads (e.g. wait_for_click_release/input-wait loops below).
+// was FUN_0007f094 -- checks whether the mouse cursor is currently over the active message-scroll
+// panel's rect (via is_position_within_rect, not yet named -- a point-in-rect hit test with a
+// cursor-size margin, confirmed by its own body testing g_mouse_x/g_mouse_y)...
 void check_mouse_over_msg_scroll_panel()
 
 {
@@ -4553,10 +3557,8 @@ void check_mouse_over_msg_scroll_panel()
 
 
 
-// was FUN_0007f0e0 -- selects the message-scroll panel's "normal"
-// mode (id 0): points the shared state pointer at
-// g_msg_scroll_panel_state and sets the dirty/needs-redraw flag
-// (DAT_0025071c).
+// was FUN_0007f0e0 -- selects the message-scroll panel's "normal" mode (id 0): points the shared
+// state pointer at g_msg_scroll_panel_state and sets the dirty/needs-redraw flag (DAT_0025071c).
 void select_msg_scroll_mode_normal()
 
 {
@@ -4568,11 +3570,9 @@ void select_msg_scroll_mode_normal()
 
 
 
-// was FUN_0007f110 -- selects the message-scroll panel's "NPC
-// conversation" mode (id 1, confirmed by a pre-existing comment on
-// g_msg_scroll_panel_state_conv's own declaration): points the shared
-// state pointer at the separate conversation-mode panel struct and
-// sets the dirty flag.
+// was FUN_0007f110 -- selects the message-scroll panel's "NPC conversation" mode (id 1, confirmed
+// by a pre-existing comment on g_msg_scroll_panel_state_conv's own declaration): points the shared
+// state pointer at the separate conversation-mode panel struct and sets the dirty flag.
 void select_msg_scroll_mode_conversation()
 
 {
@@ -4584,15 +3584,9 @@ void select_msg_scroll_mode_conversation()
 
 
 
-// was FUN_0007f140 -- selects message-scroll mode id 2, reusing the
-// same underlying g_msg_scroll_panel_state buffer as mode 0
-// (select_msg_scroll_mode_normal) but under a distinct mode id.
-// Confirmed live usage (src/babl.c) calls this immediately before
-// select_msg_scroll_mode_conversation when entering a full-screen
-// barter/talk window, each followed by its own msg_scroll_panel_reset
-// -- reads as a transitional "reset the normal panel" step rather
-// than a genuinely distinct third display mode, but its exact
-// purpose beyond sharing mode 0's buffer isn't confirmed.
+// was FUN_0007f140 -- selects message-scroll mode id 2, reusing the same underlying
+// g_msg_scroll_panel_state buffer as mode 0 (select_msg_scroll_mode_normal) but under a distinct
+// mode id.
 void select_msg_scroll_mode_2()
 
 {
@@ -4606,16 +3600,8 @@ void select_msg_scroll_mode_2()
 
 
 
-// was FUN_0007f170 -- input-pump wait loop used by the message-scroll
-// panel: waits for the next distinct input event (or, if param_1 is
-// nonzero, until param_1 clock units elapse), flushing the dirty
-// rect and showing the idle-cursor tick each iteration when the
-// mouse is already over the panel (DAT_00250708) and param_2 is set.
-// Confirmed by its src/hud.c call site drawing the "--MORE--" prompt
-// text immediately beforehand (param_1=0, i.e. wait indefinitely) as
-// the "wait for the player to click through this page" step; after
-// the wait, re-checks the mouse-over-panel state and, if param_2's
-// bit matches, calls decrement_cursor_hide_depth (not yet named).
+// was FUN_0007f170 -- input-pump wait loop used by the message-scroll panel: waits for the next
+// distinct input event (or, if param_1 is nonzero, until param_1 clock units elapse)...
 void wait_for_click_to_continue(param_1,param_2)
 short param_1;
 uint param_2;
@@ -4649,13 +3635,9 @@ uint param_2;
 
 
 
-// was FUN_0007f290 -- the conversation-mode counterpart to
-// msg_scroll_draw_edges (src/hud.c calls this one specifically when
-// DAT_00250704 does NOT point at g_msg_scroll_panel_state, i.e. the
-// panel is in conversation/mode-2, not normal mode). Draws 3 rows of
-// mirrored sprite pairs (a decorative frame/border) at fixed x
-// positions, animated through 6 frames via DAT_00250728 as a cycling
-// counter.
+// was FUN_0007f290 -- the conversation-mode counterpart to msg_scroll_draw_edges (src/hud.c calls
+// this one specifically when DAT_00250704 does NOT point at g_msg_scroll_panel_state, i.e. the
+// panel is in conversation/mode-2, not normal mode).
 undefined4 draw_conversation_window_decoration()
 
 {
@@ -4681,14 +3663,8 @@ undefined4 draw_conversation_window_decoration()
 
 
 
-// was FUN_0007f6fc -- confirmed by message_scroll_print_wrapped's own
-// pre-existing comment (src/hud.c) as its per-~49-char-chunk worker
-// (one call per line in the word-wrap loop). Splits
-// its chunk on embedded backslash (0x5c) bytes, treating each segment
-// as one call to msg_scroll_split_newline_segments; a segment whose
-// second byte is 'm' (or whose third byte is nonzero) forces the wrap
-// flag to 1 regardless of param_2 -- an in-text escape/formatting
-// marker whose exact purpose isn't confirmed.
+// was FUN_0007f6fc -- confirmed by message_scroll_print_wrapped's own pre-existing comment
+// (src/hud.c) as its per-~49-char-chunk worker (one call per line in the word-wrap loop).
 void msg_scroll_split_escape_segments(param_1,param_2)
 undefined1 * param_1;
 undefined4 param_2;
@@ -4712,20 +3688,17 @@ undefined4 param_2;
 
 
 
-// was FUN_0007f770 -- confirmed by pre-existing callers' comments
-// (src/object_actions.c) as "the scroll's own line-break logic": only
-// breaks its input on an embedded '\n' (ASCII 10) byte, calling
-// msg_scroll_draw_wrapped_span for each resulting line.
+// was FUN_0007f770 -- confirmed by pre-existing callers' comments (src/object_actions.c) as "the
+// scroll's own line-break logic": only breaks its input on an embedded '\n' (ASCII 10) byte,
+// calling msg_scroll_draw_wrapped_span for each resulting line.
 void msg_scroll_split_newline_segments(param_1,param_2)
 char * param_1;
 undefined4 param_2;
 
 {
   char cVar1;
-  char *iVar2;   /* was `int` -- ce_strchr (strchr) returns a real
-                    64-bit pointer; truncating it made `*(char *)(iVar2+1)`
-                    a wild deref, e.g. crashing "You see nothing." on a
-                    right-click. */
+  char *iVar2;   /* was `int` -- ce_strchr (strchr) returns a real 64-bit pointer; truncating it made `*(char
+   *)(iVar2+1)` a wild deref, e.g. crashing "You see nothing." on a right-click. */
 
   while ((iVar2 = ce_strchr(param_1,10), iVar2 != 0 &&
          (cVar1 = iVar2[1], cVar1 != '\0'))) {
@@ -4742,10 +3715,9 @@ undefined4 param_2;
 
 
 
-// was FUN_0007fe20 -- prints the decimal string form of param_1 (via
-// itoa_radix) to the message scroll, restoring the cursor to the saved
-// column (DAT_0025070c) first. Used to echo a numeric answer back after
-// a scroll-based prompt.
+// was FUN_0007fe20 -- prints the decimal string form of param_1 (via itoa_radix) to the message
+// scroll, restoring the cursor to the saved column (DAT_0025070c) first. Used to echo a numeric
+// answer back after a scroll-based prompt.
 void echo_number_to_scroll(param_1)
 short param_1;
 
@@ -4771,10 +3743,9 @@ short param_1;
 
 
 
-// was FUN_0007fee8 -- prints "Yes" or "No" to the message scroll
-// (param_1 nonzero == "Yes"), restoring the cursor to the saved
-// column first, the same setup echo_number_to_scroll does. Used to
-// echo a yes/no answer back after a scroll-based prompt.
+// was FUN_0007fee8 -- prints "Yes" or "No" to the message scroll (param_1 nonzero == "Yes"),
+// restoring the cursor to the saved column first, the same setup echo_number_to_scroll does. Used
+// to echo a yes/no answer back after a scroll-based prompt.
 void echo_yes_no_to_scroll(param_1)
 int param_1;
 
@@ -5083,15 +4054,9 @@ LAB_0008062c:
 
 
 
-// was FUN_00080828 -- interactive yes/no scroll prompt: prints the
-// question (either param_1 directly, or print_scroll_message_by_id
-// on param_2 when param_1 is 0), echoes the current default answer
-// (*param_3) as "Yes"/"No", then loops on input: y/Y/n/N toggle and
-// re-echo the live answer; Enter/click/1/2/3 confirm with the current
-// answer written back to *param_3; Esc cancels (forces *param_3 to
-// 0/"No" and returns -1). Confirmed by its own two call sites
-// (echo_yes_no_to_scroll(0)/(iVar4) matching the exact "toggle and
-// re-echo" pattern) as the prompt behind those echo calls.
+// was FUN_00080828 -- interactive yes/no scroll prompt: prints the question (either param_1
+// directly, or print_scroll_message_by_id on param_2 when param_1 is 0), echoes the current default
+// answer (*param_3) as "Yes"/"No", then loops on input...
 undefined4 prompt_yes_no_scroll(param_1,param_2,param_3)
 int param_1;
 undefined4 param_2;
@@ -5160,23 +4125,8 @@ LAB_00080918:
 
 
 
-// was FUN_0003df28 -- click handler for the stats-panel name/portrait
-// click region (registered below in register_stats_panel_click_regions
-// at (0x7a,0x97,0x98,0x88)). Prints a multi-part descriptive "scroll"
-// paragraph about the player built from stat bytes at DAT_00086df8+0x39
-// (scaled via ordint_divmod into a 0-5 clamped adjective index) and
-// +0x3a, plus a percentile derived from orduint_divmod(0x1c2000, field
-// +0xce) -- that first argument is NOT the address of a global despite
-// how it first decompiled (`&DAT_001c2000`): real ARM disassembly at
-// this call site (and render_endgame_character_stats' identical one)
-// shows `mov r0,#0x1c0000` / `orr r0,r0,#0x2000`, ARM's standard two-
-// instruction idiom for building a 32-bit immediate that doesn't fit
-// one rotated-immediate encoding. Ghidra mistook the resulting literal
-// 0x1c2000 for "the address of whatever's mapped there" purely because
-// it falls inside .data; confirmed via getReferencesTo -- both of this
-// constant's only two "references" are PARAM-only (used as a value),
-// never a READ or WRITE, so nothing ever treats it as real storage.
-// Plain divisor constant, not a global.
+// was FUN_0003df28 -- click handler for the stats-panel name/portrait click region (registered
+// below in register_stats_panel_click_regions at (0x7a,0x97,0x98,0x88)).
 void print_character_description_scroll()
 
 {
@@ -5213,13 +4163,8 @@ void print_character_description_scroll()
 
 
 
-// was FUN_0003e0b4 -- click handler for the stats-panel flask click
-// region (registered below at (0xf4,0x9c,0x135,0x78); own debug label
-// already says "[flask]"). Reads the click-local offset DAT_00085a6c
-// (xoff/yoff within the flask widget) to decide which flask was hit and
-// prints a "current/max" scroll message (HP or mana, depending on
-// offset and the player record's class/stat-point bytes), or toggles
-// the stats panel if the click landed below the flask.
+// was FUN_0003e0b4 -- click handler for the stats-panel flask click region (registered below at
+// (0xf4,0x9c,0x135,0x78); own debug label already says "[flask]").
 void show_flask_value_tooltip()
 
 {
@@ -5272,11 +4217,9 @@ void show_flask_value_tooltip()
 
 
 
-// was FUN_0003e2a4 -- registers the stats panel's click regions: the
-// cursor-mode button (normal and restricted variants), the two
-// still-unnamed widget handlers handle_cast_spell_click/handle_light_source_click, and this
-// pass's print_character_description_scroll (name/portrait) and
-// show_flask_value_tooltip (HP/mana flask).
+// was FUN_0003e2a4 -- registers the stats panel's click regions: the cursor-mode button (normal and
+// restricted variants), the two still-unnamed widget handlers
+// handle_cast_spell_click/handle_light_source_click...
 void register_stats_panel_click_regions()
 
 {
@@ -5306,12 +4249,9 @@ void unregister_stats_panel_click_regions()
 
 
 
-// was FUN_0003e644 -- skips the refresh unless the compass/main view
-// is active (g_active_hud_panel == 0) or the stats-panel sub-view index
-// (DAT_00085a6c+8) is 4 (the equipment/paperdoll sub-view); otherwise
-// redraws the armor overlay plus the two still-unnamed
-// reload_paperdoll_body_sprite/redraw_container_icon_slot refreshes. Reads as "refresh the equipment
-// display if it's currently visible".
+// was FUN_0003e644 -- skips the refresh unless the compass/main view is active (g_active_hud_panel
+// == 0) or the stats-panel sub-view index (DAT_00085a6c+8) is 4 (the equipment/paperdoll
+// sub-view)...
 void refresh_equipment_display_if_visible()
 
 {
@@ -5362,10 +4302,9 @@ uint param_1;
 
 
 
-// was FUN_000448a8 -- the rune-bag panel's redraw callback (used
-// alongside refresh_equipment_display_if_visible/draw_stats_panel_content
-// in the stats-panel redraw dispatch table): draws every rune
-// currently set in the bag's bitset via draw_rune_icon.
+// was FUN_000448a8 -- the rune-bag panel's redraw callback (used alongside
+// refresh_equipment_display_if_visible/draw_stats_panel_content in the stats-panel redraw dispatch
+// table): draws every rune currently set in the bag's bitset via draw_rune_icon.
 void redraw_rune_bag_display()
 
 {
@@ -5406,13 +4345,9 @@ void reset_ready_rune_slots()
 }
 
 
-// was FUN_0004497c -- the rune-bag panel's click handler (dispatched
-// from inventory_panel_click_region's g_active_hud_panel==1 case,
-// src/inventory.c:81): maps the click position to a rune-grid cell,
-// and if that rune is present in the bag, either readies it into the
-// next "readied rune" slot (normal click) or dispatches a "look at
-// this rune" action (the psVar3[3]&2 modifier branch), via
-// dispatch_object_action_dup on a synthetic rune object.
+// was FUN_0004497c -- the rune-bag panel's click handler (dispatched from
+// inventory_panel_click_region's g_active_hud_panel==1 case, src/inventory.c:81): maps the click
+// position to a rune-grid cell, and if that rune is present in the bag...
 void handle_rune_bag_click()
 
 {
@@ -5422,20 +4357,9 @@ void handle_rune_bag_click()
   short sVar4;
   short sVar5;
   int iVar6;
-  /* Was two separately-declared locals, `ushort local_20[3]` immediately
-     followed by `undefined2 local_1a` -- Ghidra's own offset naming
-     (-0x20, then -0x1a, exactly 6 bytes later) confirms the real ARM
-     stack frame packs them contiguously, and the real code below relies
-     on that: dispatch_object_action_dup reads its param_1[3] (the
-     synthetic "look" object's owner field) as the 4th ushort of what
-     it's handed, but only 3 are ever declared, and local_1a (explicitly
-     zeroed, the very next line) is what's meant to BE that 4th slot.
-     C gives no such adjacency guarantee on this host -- confirmed live:
-     local_20[3] read real stack garbage that happened to decode to a
-     "headless" creature's owner-name index, so right-clicking a rune in
-     this alphabet grid printed "belonging to a headless" instead of
-     just the rune's name. Backing array + #define, same pattern used
-     throughout this file for exactly this class of bug. */
+  /* Was two separately-declared locals, `ushort local_20[3]` immediately followed by `undefined2
+     local_1a` -- Ghidra's own offset naming (-0x20, then -0x1a, exactly 6 bytes later) confirms the
+     real ARM stack frame packs them contiguously, and the real code below relies on that... */
   undefined1 local_20_backing[8];
 #define local_20 ((ushort *)(local_20_backing + 0))
 #define local_1a (*(undefined2 *)(local_20_backing + 6))
@@ -5498,13 +4422,9 @@ void print_not_a_spell_message()
 }
 
 
-// was FUN_00044bd8 -- light-source icon click handler on the stats
-// panel: a normal click cycles the active light source
-// (cycle_active_light_source, not yet named) and refreshes equipment effects on a
-// change; the DAT_00085a6c[3]&2 "look" modifier instead prints the
-// light source's name followed by a fuel-remaining description
-// (print_scroll_message_by_id, ranges by remaining-fuel byte
-// thresholds 3/10).
+// was FUN_00044bd8 -- light-source icon click handler on the stats panel: a normal click cycles the
+// active light source (cycle_active_light_source, not yet named) and refreshes equipment effects on
+// a change...
 void handle_light_source_click()
 
 {
@@ -5546,14 +4466,9 @@ void handle_light_source_click()
 
 
 
-// was FUN_00044d14 -- the "cast spell" button click handler
-// (registered in register_stats_panel_click_regions at (0xb0,0x9b),
-// also bound as a key binding in run_game_startup_sequence): checks
-// the player has enough mana for the readied rune combo's cost
-// (DAT_002028d4+DAT_002028d8), plays a fizzle sound if not, otherwise
-// looks the combo up in the 0x30-entry spell table (&DAT_00087531)
-// and either reports "not a spell" (print_not_a_spell_message) or
-// attempts the cast via cast_spell_from_rune_combo.
+// was FUN_00044d14 -- the "cast spell" button click handler (registered in
+// register_stats_panel_click_regions at (0xb0,0x9b), also bound as a key binding in
+// run_game_startup_sequence)...
 void handle_cast_spell_click(param_1)
 short param_1;
 
@@ -5610,12 +4525,9 @@ int param_1;
 
 // WARNING: Removing unreachable block (ram,0x00044ee8)
 
-// was FUN_00044e9c -- resolves and attempts to cast the spell matched
-// by handle_cast_spell_click's rune-combo lookup: checks caster-level
-// requirement, mana cost, rolls a casting skill check, and on success
-// dispatches the actual spell effect via dispatch_special_action,
-// playing the cast sound. Reports failure (insufficient level/mana/
-// skill-check, or a failed dispatch) through report_spell_cast_failure.
+// was FUN_00044e9c -- resolves and attempts to cast the spell matched by handle_cast_spell_click's
+// rune-combo lookup: checks caster-level requirement, mana cost, rolls a casting skill check, and
+// on success dispatches the actual spell effect via dispatch_special_action...
 undefined4 cast_spell_from_rune_combo(param_1)
 uint param_1;
 
@@ -5673,13 +4585,9 @@ uint param_1;
 }
 
 
-// was FUN_0004638c -- reloads the player's paperdoll body sprite
-// (BODIES.GR, the frame selected by gender/race bits at
-// DAT_00086df8+100) via reload_single_grtile_entry, then clears 5
-// bytes of the cached equipment-icon slot array (DAT_00202988+1..+5).
-// Called whenever the player's appearance or equipped-item display
-// needs a full refresh (equipment changes, panel reloads, resting).
-// WARNING: Removing unreachable block (ram,0x000463bc)
+// was FUN_0004638c -- reloads the player's paperdoll body sprite (BODIES.GR, the frame selected by
+// gender/race bits at DAT_00086df8+100) via reload_single_grtile_entry, then clears 5 bytes of the
+// cached equipment-icon slot array (DAT_00202988+1..+5).
 
 void reload_paperdoll_body_sprite()
 
@@ -5698,13 +4606,9 @@ void reload_paperdoll_body_sprite()
 }
 
 
-// was FUN_00046414 -- one-time inventory-panel setup (guarded by
-// DAT_002029a4), called from enter_dungeon_view_hud_init alongside
-// register_stats_panel_click_regions: reloads the paperdoll body
-// sprite, allocates a grtile per inventory hotspot region (paperdoll
-// slots, flask/compass icons) and captures the framebuffer into them
-// as the initial "undecorated" backdrop for dirty-rect restoration,
-// then registers the inventory panel's click region.
+// was FUN_00046414 -- one-time inventory-panel setup (guarded by DAT_002029a4), called from
+// enter_dungeon_view_hud_init alongside register_stats_panel_click_regions: reloads the paperdoll
+// body sprite, allocates a grtile per inventory hotspot region...
 void init_inventory_panel_hotspots()
 
 {
@@ -5729,17 +4633,9 @@ void init_inventory_panel_hotspots()
     DAT_002028ec = grtile_alloc_registered(0x54,0x52);
     iVar5 = 6;
     do {
-      /* iVar5==10/11 were hardcoded original-binary literal addresses
-         (0x85b5c/0x85b6a, plus the standalone DAT_00085b64/DAT_00085b72
-         symbols) instead of the same &g_inv_hotspot_click_x1/&g_inv_hotspot_draw_x +
-         iVar5*stride expression every other iteration already uses --
-         same "hardcoded address" bug class as probe_save_slots's -0x87020.
-         Confirmed identical by address arithmetic (0x85ad0 + 10*0xe =
-         0x85b5c, 0x85ad8 + 10*7 shorts = 0x85b64, etc.); rewritten to the
-         general form so these two icons resolve against our recompiled
-         symbols instead of the original binary's fixed layout. The
-         +5/-5 adjustments are the only real difference from the general
-         case and are kept as-is. */
+      /* iVar5==10/11 were hardcoded original-binary literal addresses (0x85b5c/0x85b6a, plus the
+         standalone DAT_00085b64/DAT_00085b72 symbols) instead of the same
+         &g_inv_hotspot_click_x1/&g_inv_hotspot_draw_x + iVar5*stride expression every other... */
       if (iVar5 == 10) {
         puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
         iVar3 = (&g_inv_hotspot_draw_x)[iVar5 * 7] + 5;
@@ -5767,12 +4663,9 @@ LAB_000464c8:
 }
 
 
-// was FUN_00048110 -- redraws the bag/container icon slot on the
-// compass-view HUD: restores its plain backdrop when no container is
-// open, or draws the "open container" icon sprite when one is, then
-// refreshes the equipment widget range. Resets the carry-weight
-// display sentinel (DAT_00085c50) so update_carry_weight_display
-// redraws fresh next tick.
+// was FUN_00048110 -- redraws the bag/container icon slot on the compass-view HUD: restores its
+// plain backdrop when no container is open, or draws the "open container" icon sprite when one is,
+// then refreshes the equipment widget range.
 void redraw_container_icon_slot()
 
 {
@@ -5791,10 +4684,9 @@ void redraw_container_icon_slot()
 
 
 
-// was FUN_00048514 -- the HUD carry-weight/encumbrance display: only
-// redraws when the weight-capacity-remaining value actually changed
-// since last tick (tracked via DAT_00085c50), restoring the flask-slot
-// backdrop and drawing the remaining-capacity percentage as text.
+// was FUN_00048514 -- the HUD carry-weight/encumbrance display: only redraws when the
+// weight-capacity-remaining value actually changed since last tick (tracked via DAT_00085c50),
+// restoring the flask-slot backdrop and drawing the remaining-capacity percentage as text.
 bool update_carry_weight_display(param_1)
 int param_1;
 
@@ -5827,10 +4719,9 @@ int param_1;
 }
 
 
-// was FUN_0004995c -- per release_panel_wipe_grtiles's own comment,
-// releases a grtile handle; this decompile's body is an empty no-op
-// (lost-body case, not confirmed to genuinely do nothing in the real
-// binary).
+// was FUN_0004995c -- per release_panel_wipe_grtiles's own comment, releases a grtile handle; this
+// decompile's body is an empty no-op (lost-body case, not confirmed to genuinely do nothing in the
+// real binary).
 void release_grtile_handle()
 
 {
@@ -5838,16 +4729,8 @@ void release_grtile_handle()
 }
 
 
-// was FUN_000564f8 -- the pause-menu's modal event loop: on a fresh
-// open (param_1 != 0) clears/redraws the panel and waits for click
-// release; then loops reading input events, dispatching clicks within
-// the button region to redraw_pause_submenu_icon's sibling
-// handle_pause_menu_region_click, Escape to close_ui_panel_return_to_game, and a
-// handful of other codes to handle_pause_menu_dpad_navigation (not yet named) with a
-// result code (0/1/2), until DAT_002046f8 (set by
-// close_ui_panel_return_to_game) signals the panel closed. Confirmed
-// as the pause menu by hud.c's callers and the GXGetDefaultKeys
-// "start button" comment just below.
+// was FUN_000564f8 -- the pause-menu's modal event loop: on a fresh open (param_1 != 0)
+// clears/redraws the panel and waits for click release; then loops reading input events...
 void run_pause_menu_modal_loop(param_1)
 short param_1;
 
@@ -5900,12 +4783,8 @@ LAB_00056638:
           if ((-1 < iVar3) && (iVar3 < 0x24)) {
             iVar3 = (0x76 - iVar4) * 0x10000 >> 0x10;
             if ((-1 < iVar3) && (iVar3 < 0x6d)) {
-              /* Was called with both args dropped (same missing-argument
-                 idiom as elsewhere in this file) -- handle_pause_menu_region_click only
-                 actually uses its 2nd (Y) argument, but the sibling call
-                 site in cursor_mode_button_click passes (x,y) in this
-                 order, so match it here with the just-computed
-                 region-relative click position. */
+              /* Was called with both args dropped (same missing-argument idiom as elsewhere in this
+                 file) -- handle_pause_menu_region_click only actually uses its 2nd (Y) argument... */
               handle_pause_menu_region_click(local_c, local_a);
             }
           }
@@ -5944,9 +4823,8 @@ LAB_000565a8:
 
 
 
-// was FUN_00056640 -- redraws the pause-menu's main icon slot
-// (OPTBTNS.GR tile 0x20eb) showing sub-panel/highlight variant
-// param_1. Confirmed called with distinct variant indices (1,2,3,4,5)
+// was FUN_00056640 -- redraws the pause-menu's main icon slot (OPTBTNS.GR tile 0x20eb) showing
+// sub-panel/highlight variant param_1. Confirmed called with distinct variant indices (1,2,3,4,5)
 // from each sub-panel setup function and saveload.c's save/load panel.
 void redraw_pause_menu_icon(param_1)
 undefined4 param_1;
@@ -5974,11 +4852,9 @@ undefined4 param_2;
 
 
 
-// was FUN_000566dc -- moves the pause-menu's sub-icon highlight: un-
-// highlights the previously-highlighted row (tracked in
-// DAT_002046f0/DAT_002046f4) via redraw_pause_submenu_icon, then
-// highlights row param_1 with content param_2, recording the new
-// state.
+// was FUN_000566dc -- moves the pause-menu's sub-icon highlight: un- highlights the
+// previously-highlighted row (tracked in DAT_002046f0/DAT_002046f4) via redraw_pause_submenu_icon,
+// then highlights row param_1 with content param_2, recording the new state.
 void update_pause_submenu_highlight(param_1,param_2)
 undefined4 param_1;
 int param_2;
@@ -5995,11 +4871,9 @@ int param_2;
 
 
 
-// was FUN_00056724 -- closes whatever UI panel/popup is currently
-// open (DAT_000868d8 = 0) and redraws the icon-bar's "options button"
-// background (OPTBTNS.GR), re-establishing the mode-icon highlight if
-// a mode is already selected. Called on Escape and other panel-close
-// paths.
+// was FUN_00056724 -- closes whatever UI panel/popup is currently open (DAT_000868d8 = 0) and
+// redraws the icon-bar's "options button" background (OPTBTNS.GR), re-establishing the mode-icon
+// highlight if a mode is already selected. Called on Escape and other panel-close paths.
 void close_ui_panel_return_to_game()
 
 {
@@ -6009,11 +4883,9 @@ void close_ui_panel_return_to_game()
   reload_single_grtile_entry(0x20eb,s_optbtns_00086954,0);
   draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   if (0 < g_cursor_mode) {
-    /* Dropped argument -- same idiom as the identical bug in
-       enter_dungeon_view_hud_init right above this function's sibling call (see its
-       comment); confirmed via disassembly of 0x56724 the same way:
-       r0 holds g_cursor_mode, untouched from the guard's own load
-       through to `blgt 0x3f99c`. */
+    /* Dropped argument -- same idiom as the identical bug in enter_dungeon_view_hud_init right
+       above this function's sibling call (see its comment); confirmed via disassembly of 0x56724
+       the same way: r0 holds g_cursor_mode... */
     mode_icon_highlight_on((int)g_cursor_mode);
   }
   DAT_002046f8 = 1;
@@ -6023,61 +4895,9 @@ void close_ui_panel_return_to_game()
 
 
 int DAT_002046fc;
-/* Were lone `undefined *` -- the real thing is a pair of function-pointer
-   dispatch tables for the in-game pause menu, indexed by menu "state"
-   (DAT_000868dc, 0..6): PTR_FUN_000868e0 is the no-arg "draw this state's
-   screen" table (enter_pause_menu_state calls table[state]()); PTR_FUN_00086900 is
-   the "handle a click/button-index within this state" table (dispatch_pause_menu_click
-   calls table[state](clicked_index)). Link-time-init data the decompile
-   never populated -> clicking the top-left panel's "menu" button (which
-   calls run_pause_menu_modal_loop -> enter_pause_menu_state(6), the top-level list) jumped
-   through a null pointer.
-
-   Entries 0-3 and 6 were correctly reconstructed by an earlier session
-   via call-shape analysis (cross-referencing handle_pause_menu_main_list_click's state-
-   transition targets against each candidate function's own logic).
-   Entries 4/5 (quit confirm vs. torch/detail brightness) were ALSO
-   guessed that same way and came out swapped -- confirmed live: clicking
-   the on-screen "DETAIL" button showed the quit-confirmation screen, and
-   clicking inside it actually exited the game; clicking "QUIT GAME"
-   showed the detail-brightness slider. Root-caused for real this time:
-   these two tables are genuine link-time data in the original binary
-   (not synthesized by Ghidra), readable directly at their own addresses
-   -- a Ghidra headless memory dump of 0x868e0 and 0x86900 in the
-   original .exe gives the real function pointers at every one of these
-   8 slots, no inference needed. Index 4's real target is 0x5693c
-   (draw_detail_level_panel, detail level) and index 5's is 0x56838 (draw_quit_confirm_panel,
-   quit confirm) in the draw table -- the reverse of what was guessed --
-   and correspondingly 0x56a70 (handle_detail_level_click, detail level click) / 0x56c88
-   (handle_quit_confirm_click, quit click) in the click table. Swapped both tables'
-   4/5 entries to match:
-     0  load-game slot list  (draw_save_load_slot_list draw, shared w/ save;
-                              handle_save_load_slot_click click, DAT_000868dc==1 gates
-                              the save-only "extra slot" bits)
-     1  save-game slot list  (same pair as 0)
-     2  music on/off toggle  (draw_music_or_sound_toggle_panel draw / handle_music_toggle_click click)
-     3  sound on/off toggle  (draw_music_or_sound_toggle_panel draw / handle_sound_toggle_click click)
-     4  texture detail level (draw_detail_level_panel draw / handle_detail_level_click click)
-     5  quit-game confirm    (draw_quit_confirm_panel draw / handle_quit_confirm_click click)
-     6  top-level menu list  (draw_pause_menu_main_list draw / handle_pause_menu_main_list_click click)
-   Index 7 is never dispatched (DAT_000868dc==7 is close_ui_panel_return_to_game's
-   "menu closing" sentinel, checked directly rather than redrawn) but
-   both tables are sized 8 with a null-safe entry there for defense.
-   CORRECTED (this pass): entries 2/3's prose labels above were swapped
-   ("2 sound"/"3 music") even though the entries 0-3/6 note just above
-   says those four were only inferred by call-shape analysis, not
-   ground-truth-dump-verified like 4/5 -- directly tracing
-   draw_music_or_sound_toggle_panel's own `DAT_000868dc == 2` branch (shows
-   is_music_playing when true) and handle_music_toggle_click's own body
-   (calls set_music_enabled, registered at index 2) confirms 2=music,
-   3=sound as written now. The function POINTERS at each index were
-   never changed by this correction, only these prose labels.
-   ALSO CORRECTED (this pass): entry 4 was previously named/labeled as
-   "brightness" -- draw_detail_level_panel/handle_detail_level_click's
-   own comments explain why this is actually a texture detail-level
-   setting (confirmed by configure_texture_detail_functions reading
-   the exact same DAT_00086df8+0xb5 nibble to choose flat vs. textured
-   floor rendering), not screen brightness/gamma. */
+/* Were lone `undefined *` -- the real thing is a pair of function-pointer dispatch tables for the
+   in-game pause menu, indexed by menu "state" (DAT_000868dc, 0..6): PTR_FUN_000868e0 is the no-arg
+   "draw this state's screen" table (enter_pause_menu_state calls table[state]())... */
 extern void draw_pause_menu_main_list(void);
 extern void draw_save_load_slot_list(void);
 extern void draw_quit_confirm_panel(void);
@@ -6089,12 +4909,9 @@ extern void handle_sound_toggle_click(int);
 extern void handle_quit_confirm_click(int);
 extern void handle_detail_level_click(int);
 extern void handle_pause_menu_main_list_click(int);
-/* CORRECTED: a prior pass's inline comments here had states 2/3 swapped
-   -- confirmed by directly tracing draw_music_or_sound_toggle_panel's own
-   `DAT_000868dc == 2` branch (shows is_music_playing when true) and by
-   handle_music_toggle_click (registered at index 2) calling
-   set_music_enabled, vs. handle_sound_toggle_click (index 3) calling
-   set_sound_effects_enabled. */
+/* CORRECTED: a prior pass's inline comments here had states 2/3 swapped -- confirmed by directly
+   tracing draw_music_or_sound_toggle_panel's own `DAT_000868dc == 2` branch (shows is_music_playing
+   when true) and by handle_music_toggle_click (registered at index 2) calling set_music_enabled... */
 static void (*const PTR_FUN_000868e0_table[8])(void) = {
   draw_save_load_slot_list,  /* 0: load slot list */
   draw_save_load_slot_list,  /* 1: save slot list */
@@ -6145,14 +4962,8 @@ void draw_quit_confirm_panel()
 
 
 
-// was FUN_00056864 -- draws the shared music/sound toggle panel
-// (states 2 and 3): shows the music on/off label and state when
-// DAT_000868dc==2, else the sound-effects on/off label and state.
-// Confirmed by its registration at both table indices, and by the
-// matching click handlers (handle_music_toggle_click at index 2
-// calling set_music_enabled, handle_sound_toggle_click at index 3
-// calling set_sound_effects_enabled) -- this corrects a prior pass's
-// swapped index comments on the dispatch tables themselves.
+// was FUN_00056864 -- draws the shared music/sound toggle panel (states 2 and 3): shows the music
+// on/off label and state when DAT_000868dc==2, else the sound-effects on/off label and state.
 void draw_music_or_sound_toggle_panel()
 
 {
@@ -6188,15 +4999,8 @@ void draw_music_or_sound_toggle_panel()
 
 
 
-// was FUN_0005693c -- draws the texture detail-level panel (state
-// 4): reads the current level from the high nibble of
-// DAT_00086df8+0xb5 and draws the slider sprite at a position
-// derived from it. CORRECTED (this pass, from an earlier "brightness/
-// gamma" guess): directly confirmed as a detail-level setting by
-// configure_texture_detail_functions, which reads the exact same
-// field/nibble to choose between a flat-shaded or fully-textured
-// floor emitter -- a classic performance "detail: low/high" option,
-// not screen brightness.
+// was FUN_0005693c -- draws the texture detail-level panel (state 4): reads the current level from
+// the high nibble of DAT_00086df8+0xb5 and draws the slider sprite at a position derived from it.
 void draw_detail_level_panel()
 
 {
@@ -6275,14 +5079,9 @@ LAB_00056a44:
 
 
 
-// was FUN_00056a70 -- click handler for the texture detail-level
-// panel (state 4): adjusts the detail level in DAT_00086df8+0xb5's
-// high nibble by the clicked delta, reconfigures the texture-emit
-// function pointers via configure_texture_detail_functions (called
-// directly right here -- the clearest possible confirmation this is
-// a detail setting, not brightness/gamma; see
-// draw_detail_level_panel's correction comment), forces a full
-// redraw, and refreshes the slider.
+// was FUN_00056a70 -- click handler for the texture detail-level panel (state 4): adjusts the
+// detail level in DAT_00086df8+0xb5's high nibble by the clicked delta, reconfigures the
+// texture-emit function pointers via configure_texture_detail_functions...
 void handle_detail_level_click(param_1)
 int param_1;
 
@@ -6315,11 +5114,9 @@ int param_1;
 
 
 
-// was FUN_00056b48 -- click handler for the top-level list (state 6):
-// maps the clicked row to the target pause-menu state (0=save,
-// 1=load, 2-5 the toggle/brightness/quit panels) and enters it,
+// was FUN_00056b48 -- click handler for the top-level list (state 6): maps the clicked row to the
+// target pause-menu state (0=save, 1=load, 2-5 the toggle/brightness/quit panels) and enters it,
 // gating save/load entry on check_can_save_game/check_can_load_game.
-// Row 1 (Resume) closes the panel directly instead.
 void handle_pause_menu_main_list_click(param_1)
 short param_1;
 
@@ -6368,9 +5165,8 @@ short param_1;
 
 
 
-// was FUN_00056bdc -- click handler shared by the load (state 0) and
-// save (state 1) slot lists: highlights the clicked slot and
-// dispatches to handle_save_load_menu_action, closing the panel
+// was FUN_00056bdc -- click handler shared by the load (state 0) and save (state 1) slot lists:
+// highlights the clicked slot and dispatches to handle_save_load_menu_action, closing the panel
 // afterward.
 void handle_save_load_slot_click(param_1)
 int param_1;
@@ -6488,26 +5284,8 @@ short param_2;
 
 
 
-/* Was raw pointer arithmetic `*(char *)(DAT_000868dc * 7 + iVar2 + 0x86920)`
-   -- 0x86920 is the ORIGINAL 32-bit binary's fixed load address for this
-   table (immediately following the PTR_FUN_000868e0/00086900 dispatch
-   tables, see their own comment -- same "orphaned link-time data" class),
-   used as a literal absolute pointer instead of a symbol. On this
-   recompile nothing is mapped there, so any state/highlight-index
-   combination whose real value is genuinely non-zero (i.e. that state
-   actually has a navigable widget in that D-pad-navigation slot) reads
-   through a wild pointer and crashes -- confirmed via lldb, EXC_BAD_ACCESS
-   at 0x86924. Never hit until the Enter-key WM_CHAR fix (see
-   [[save-load-name-entry-crash]]'s g_keychar_deferred) let VK_RETURN's
-   GXGetDefaultKeys() "start button" code (0x93) reach run_pause_menu_modal_loop's own
-   event loop cleanly for the first time -- that's what calls handle_pause_menu_dpad_navigation
-   with a real highlighted-item index. Real bytes recovered via a Ghidra
-   headless memory dump of the original binary at 0x86920 (8 rows x 7
-   columns, one row per menu state 0-7, one column per D-pad-navigable
-   list position 0-6): each nonzero byte is the widget-highlight value
-   update_pause_submenu_highlight's own 2nd argument expects for that slot (matches the
-   literal values each state's own draw function already passes it,
-   e.g. draw_pause_menu_main_list's `update_pause_submenu_highlight(6,6)`). */
+/* Was raw pointer arithmetic `*(char *)(DAT_000868dc * 7 + iVar2 + 0x86920)` -- 0x86920 is the
+   ORIGINAL 32-bit binary's fixed load address for this table... */
 static const unsigned char g_menu_nav_highlight_table[8][7] = {
   {  0,  24,  36,  34,  32,  30,   0 },
   {  0,  24,  36,  34,  32,  30,   0 },
@@ -6519,13 +5297,9 @@ static const unsigned char g_menu_nav_highlight_table[8][7] = {
   {  0,   0,   0, 111, 112, 116,  98 },
 };
 
-// was FUN_00056d6c -- D-pad/hotkey navigation for the pause menu:
-// param_1 0/2 move the row highlight up/down (consulting
-// g_menu_nav_highlight_table for the current state), 1/0x164 select
-// the current row, and the remaining magic codes (0x166/0x16d/0x171/
-// 0x172/0x173) are direct hotkeys for specific rows -- all funneled
-// into dispatch_pause_menu_click. open_pause_menu_via_hotkey forwards its
-// own key-binding arg here (previously dropped; fixed from ARM tracing).
+// was FUN_00056d6c -- D-pad/hotkey navigation for the pause menu: param_1 0/2 move the row
+// highlight up/down (consulting g_menu_nav_highlight_table for the current state), 1/0x164 select
+// the current row...
 void handle_pause_menu_dpad_navigation(param_1)
 short param_1;
 
@@ -6594,15 +5368,8 @@ LAB_00056ddc:
 
 
 
-// was FUN_00056ebc -- opens the pause menu via a bound hotkey
-// (registered in game.c for several key codes): forces state 6 (top-
-// level list) and runs the modal loop. NOTE: the
-// `handle_pause_menu_dpad_navigation()` call just below passes no
-// argument despite that function taking one -- possibly the same
-// dropped-argument bug fixed several times elsewhere this session,
-// but not confirmed (single call site, and DAT_000868dc is already
-// forced to 6 directly above regardless of its effect) -- left
-// unfixed pending stronger evidence.
+// was FUN_00056ebc -- opens the pause menu via a bound hotkey (registered in game.c for several key
+// codes): forces state 6 (top- level list) and runs the modal loop.
 /* Key-binding callback: the dispatcher (input.c) calls handler(arg) with the binding's own arg
    (0x164/0x166/0x16d/0x171-0x173 as registered in game.c). ARM 0x56ebc keeps that incoming r0
    untouched and tail-feeds it to handle_pause_menu_dpad_navigation (0x56efc). Ghidra dropped it. */
@@ -6659,14 +5426,8 @@ undefined4 init_cursor_subsystem()
 
 
 
-// was FUN_00056fe8 -- erases the dragged-item cursor icon if one is
-// currently drawn (DAT_00204844 != 0): restores the saved background
-// pixels under its last-drawn rect and flushes. Returns the PRIOR value
-// of DAT_00204844 but deliberately does NOT clear it itself -- every
-// caller is responsible for clearing DAT_00204844 off this return value
-// (see inventory.c's and item_use.c's own call-site comments for the
-// stale-icon-redraw race this convention exists to avoid). Named after
-// its own debug env var, UW_DEBUG_CURSORERASE.
+// was FUN_00056fe8 -- erases the dragged-item cursor icon if one is currently drawn (DAT_00204844
+// != 0): restores the saved background pixels under its last-drawn rect and flushes.
 int erase_cursor_icon()
 
 {
@@ -6680,86 +5441,17 @@ int erase_cursor_icon()
             (int)DAT_00204844, DAT_00204844 != 0, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
   if (DAT_00204844 != 0) {
-    /* Bug fix ("Clicking in the inventory area stamps a yellow box
-       there"): only actually paint a restore when DAT_00204848 (the
-       rect_fill_or_save_restore save/restore sentinel -- see its own
-       comment) is armed, i.e. a real save_cursor_background() SAVE is
-       pending to restore. DAT_00204844 is not exclusively owned by
-       that save/show/erase protocol -- handle_mouse_message's
-       WM_LBUTTONDOWN handler (src/input.c) also sets it directly
-       (1, or 2 whenever g_cursor_mode/g_cursor_holding_state is
-       nonzero) as a general click-pending flag, with no
-       save_cursor_background() call to match, so DAT_00204848 stays 0.
-       draw_idle_mouse_cursor's own "SKIP-SAVE" path (reached whenever
-       g_cursor_mode != 0) also never arms DAT_00204848, for the same
-       reason. Previously this unconditionally called
-       rect_fill_or_save_restore with draw color 0x15 regardless, and
-       rect_fill_or_save_restore only honors 0x15 as "RESTORE" while
-       DAT_00204848 != 0 (its own comment) -- with DAT_00204848 == 0 it
-       silently falls through to an ordinary flat fill using 0x15 as a
-       literal palette index instead, painting a solid box (that
-       palette entry renders bright yellow) at the mouse position and
-       leaving it there permanently (nothing ever marks it dirty again
-       to paint over it). Confirmed live via a temporary unconditional
-       trace in rect_fill_or_save_restore: a plain click inside the
-       open inventory panel reproduced exactly this -- DAT_00204844
-       freshly set to 2 by handle_mouse_message (g_cursor_mode was
-       nonzero), DAT_00204848 still 0, erase_cursor_icon's rect_fill
-       call landing in the flat-fill branch with color 21 (0x15).
-       Skipping the paint (and its flush/DAT_00204848 reset) when
-       there's nothing real to restore leaves DAT_00204844 itself
-       untouched here -- same as before this fix, every caller already
-       clears it off this function's own return value when nonzero
-       (see this function's own doc comment), and
-       handle_mouse_message's WM_LBUTTONUP handler unconditionally
-       zeroes it regardless, so a stale 1/2 left by a mismatched
-       button-down is still cleared on release either way. */
+    /* Bug fix ("Clicking in the inventory area stamps a yellow box there"): only actually paint a
+       restore when DAT_00204848 (the rect_fill_or_save_restore save/restore sentinel -- see its own
+       comment) is armed, i.e. a real save_cursor_background() SAVE is pending to restore. */
     if (DAT_00204848 != 0) {
       set_draw_color(0x15);
       rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
-    /* REVERTED (was: force g_force_flush around this call, matching
-       draw_idle_mouse_cursor's own sibling wrapping) -- caused a visible flicker
-       regression: rect_fill_or_save_restore's own dirty_rect_union call
-       already records this erase's rect unconditionally, BEFORE any
-       gating, and the dirty rect only resets once per FRAME (not once
-       per hide/show pair, see flush_dirty_rect_to_display's own
-       comment) -- so the immediately-following paired show call
-       (draw_idle_mouse_cursor, called right after this from the same
-       hide-move-show cycle) already sweeps up this erase's rect into
-       its own forced flush. Forcing a flush HERE TOO just adds a
-       second, premature flush per cycle, visibly showing the
-       transient "erased, nothing redrawn yet" frame for one beat
-       before the very next flush corrects it -- a flicker on every
-       single cursor hide/show (i.e. constantly, since effectively
-       every draw op in this file wraps itself in this hide/show pair).
-       User confirmed this regression live.
-
-       STILL OPEN -- user report not yet actually fixed: dragging an
-       item onto a paperdoll spot with no slot leaves its icon
-       stamped there permanently, and clicking again stamps more.
-       Traced (via a temporary UW_DEBUG_CURSORERASE trace on this
-       function's own entry) to a real, reproducible sequence: during
-       an idle gap, an erase call here successfully clears
-       DAT_00204844 to 0 (correct so far), but the PAIRED redraw
-       (update_mouse_state's own `if (0 < DAT_00204840) draw_idle_mouse_cursor();`
-       right after its own call to this function) does not fire,
-       because DAT_00204840 (the show/hide nesting depth counter) is
-       <=0 at that exact moment -- so nothing gets marked to redraw,
-       and DAT_00204844 stays at 0 even though the game may still
-       consider the item "held" and expect the cursor icon to keep
-       following the mouse. Did NOT chase this further: WHY the depth
-       counter is <=0 at that specific point (some other hide() with
-       no matching show() yet pending?) is unknown, and a wrong guess
-       here risks a second regression the same way the force-flush
-       attempt above did. Ruled OUT as an explanation: handle_mouse_message's
-       WM_LBUTTONUP handler unconditionally zeroing DAT_00204844 (see
-       its own comment) -- adding an erase-before-clear there made no
-       observable difference in the same trace, and this project's own
-       inventory drag/drop convention uses the RIGHT mouse button
-       throughout anyway (gx_stub.c's uw_inject_mouse_rdown/rup), not
-       left, so that handler may not even be on the relevant path. */
+    /* REVERTED (was: force g_force_flush around this call, matching draw_idle_mouse_cursor's own
+       sibling wrapping) -- caused a visible flicker regression: rect_fill_or_save_restore's own
+       dirty_rect_union call already records this erase's rect unconditionally, BEFORE any gating... */
       flush_dirty_rect_to_display(1);
       DAT_00204848 = 0;
     }
@@ -6837,17 +5529,9 @@ undefined4 cursor_show_idle_tick()
 
 
 
-// was FUN_00057118 -- decrements the cursor hide/show nesting depth
-// (DAT_00204840, floor-clamped at 0) one level, confirmed by an
-// existing comment on clear_screen_and_restore_cursor describing this
-// exact role. When the depth reaches 0 (fully visible again) or a
-// force flag (DAT_000bbef4) is set, checks erase_cursor_icon (not yet
-// named) and, if it signals a redraw is needed, resets DAT_00204844
-// and forces the default draw color. Called from nearly every UI
-// subsystem in the codebase as the "pop" half of a cursor-hide/show
-// nesting pair (cursor_show_idle_tick is the sibling "idle tick"
-// operation, though it has its own distinct ratcheting behavior
-// rather than a plain increment).
+// was FUN_00057118 -- decrements the cursor hide/show nesting depth (DAT_00204840, floor-clamped at
+// 0) one level, confirmed by an existing comment on clear_screen_and_restore_cursor describing this
+// exact role.
 void decrement_cursor_hide_depth()
 
 {
@@ -6867,10 +5551,9 @@ void decrement_cursor_hide_depth()
 }
 
 
-// was thunk_FUN_00057118 -- a Ghidra-generated "thunk" duplicate of
-// decrement_cursor_hide_depth (identical body, a separate call site
-// in the original binary decompiled as a second copy rather than a
-// jump-thunk). Collapsed to a real call to avoid the duplication.
+// was thunk_FUN_00057118 -- a Ghidra-generated "thunk" duplicate of decrement_cursor_hide_depth
+// (identical body, a separate call site in the original binary decompiled as a second copy rather
+// than a jump-thunk). Collapsed to a real call to avoid the duplication.
 void decrement_cursor_hide_depth_thunk()
 
 {
@@ -6879,10 +5562,9 @@ void decrement_cursor_hide_depth_thunk()
 }
 
 
-// was FUN_00057188 -- records the currently-tracked UI hotspot's
-// rectangle (x,y,width,height) into DAT_0020479c/DAT_002047a0/
-// DAT_00204798/DAT_00204790, read by is_mouse_within_tracked_hotspot
-// and track_hotspot_hover_state.
+// was FUN_00057188 -- records the currently-tracked UI hotspot's rectangle (x,y,width,height) into
+// DAT_0020479c/DAT_002047a0/ DAT_00204798/DAT_00204790, read by is_mouse_within_tracked_hotspot and
+// track_hotspot_hover_state.
 void set_tracked_hotspot_rect(param_1,param_2,param_3,param_4)
 undefined2 param_1;
 undefined2 param_2;
@@ -6899,17 +5581,8 @@ undefined2 param_4;
 
 
 
-// was FUN_000571c0 -- tests whether the mouse is within the tracked
-// hotspot rect (via is_position_within_rect's cursor-margin-aware hit test).
-// BUG FIX: was `is_position_within_rect(...); return 0;` -- the call's result
-// was computed and discarded, then a hardcoded 0 returned instead,
-// the same "Ghidra couldn't trace a return value through the call
-// and fabricated a placeholder" bug already fixed once this session
-// (get_scanned_object_class_effect_ptr). is_position_within_rect's own return
-// type is `undefined4`, not void, and its body is a real 0/1 hit
-// test -- confirmed by its only other caller treating a nonzero
-// result as "fire the ranged weapon" (weapon_swing.c), a check that
-// could never have fired with the old hardcoded 0.
+// was FUN_000571c0 -- tests whether the mouse is within the tracked hotspot rect (via
+// is_position_within_rect's cursor-margin-aware hit test).
 undefined4 is_mouse_within_tracked_hotspot()
 
 {
@@ -6923,12 +5596,9 @@ undefined4 is_mouse_within_tracked_hotspot()
 
 
 
-// was FUN_0005721c -- per-frame hover tracker for the tracked UI
-// hotspot: tests the mouse against the rect's outer bounds and its
-// (slightly inset) inner bounds to classify the hover state into
-// DAT_00204794 (0=outside, 1=on the border, 2=inside the interior),
-// redrawing the border highlight on a state change and nudging the
-// cursor hide/show depth (DAT_00204840) accordingly.
+// was FUN_0005721c -- per-frame hover tracker for the tracked UI hotspot: tests the mouse against
+// the rect's outer bounds and its (slightly inset) inner bounds to classify the hover state into
+// DAT_00204794 (0=outside, 1=on the border, 2=inside the interior)...
 void track_hotspot_hover_state()
 
 {
@@ -6989,9 +5659,8 @@ void track_hotspot_hover_state()
 
 
 
-// was FUN_00057460 -- after a frame flush, if the hover state
-// (DAT_00204794) is "on the border" and not in a specific display
-// mode, forces an idle cursor tick (cursor_show_idle_tick) within a
+// was FUN_00057460 -- after a frame flush, if the hover state (DAT_00204794) is "on the border" and
+// not in a specific display mode, forces an idle cursor tick (cursor_show_idle_tick) within a
 // full-viewport clip rect to refresh the border highlight.
 void redraw_hotspot_border_cursor()
 
@@ -7028,9 +5697,8 @@ undefined2 * param_2;
 
 
 
-// was FUN_00057528 -- returns the effective position for a click:
-// the real mouse position, unless DAT_0020484c (a demo/scripted-
-// input override flag) is set, in which case a fixed recorded
+// was FUN_00057528 -- returns the effective position for a click: the real mouse position, unless
+// DAT_0020484c (a demo/scripted- input override flag) is set, in which case a fixed recorded
 // position (DAT_0008696a/DAT_0008696c) is used instead.
 void get_click_position(param_1,param_2)
 undefined2 * param_1;
@@ -7065,11 +5733,9 @@ void reset_keyboard_char_input()
 
 
 
-// was FUN_0005758c -- confirmed genuinely empty (no body beyond
-// `return;`). Always called immediately after reset_keyboard_char_input
-// (player.c, end of a level-up sequence) -- possibly a vestigial
-// hook point or focus-reset stub the original build never filled in.
-// Named for its call-site pairing rather than any observed behavior.
+// was FUN_0005758c -- confirmed genuinely empty (no body beyond `return;`). Always called
+// immediately after reset_keyboard_char_input (player.c, end of a level-up sequence) -- possibly a
+// vestigial hook point or focus-reset stub the original build never filled in.
 void noop_post_input_reset_hook()
 
 {
@@ -7078,10 +5744,9 @@ void noop_post_input_reset_hook()
 
 
 
-// was FUN_00057590 -- warps the mouse cursor to (param_1,param_2)
-// directly, bracketed by a cursor-hide-depth pop/idle-tick pair.
-// Confirmed used by automap.c to snap the cursor onto a map-note
-// marker during note text entry.
+// was FUN_00057590 -- warps the mouse cursor to (param_1,param_2) directly, bracketed by a
+// cursor-hide-depth pop/idle-tick pair. Confirmed used by automap.c to snap the cursor onto a
+// map-note marker during note text entry.
 void warp_mouse_cursor(param_1,param_2)
 undefined2 param_1;
 undefined2 param_2;
@@ -7097,12 +5762,9 @@ undefined2 param_2;
 
 
 
-// was FUN_000575c4 -- polls for a pending keyboard character (via
-// poll_mouse_button_flags, not yet named), clearing DAT_00086968's "pending"
-// sentinel back to -1 (0xffff) when none is available, and recording
-// the result in DAT_00204850. Confirmed as keyboard polling by an
-// existing debug comment at its automap.c call site ("key-poll:
-// poll_keyboard_char_input returned").
+// was FUN_000575c4 -- polls for a pending keyboard character (via poll_mouse_button_flags, not yet
+// named), clearing DAT_00086968's "pending" sentinel back to -1 (0xffff) when none is available,
+// and recording the result in DAT_00204850.
 int poll_keyboard_char_input(param_1)
 short * param_1;
 
@@ -7120,18 +5782,9 @@ short * param_1;
 
 
 
-// was FUN_000576d0 -- a "press any key or move the mouse" modal wait:
-// loops flushing the display and polling input/mouse state
-// (optionally ticking sticky-mode handlers when param_1 is set) until
-// poll_keyboard_char_input reports a key or the mouse has moved more
-// than ~6 pixels (Manhattan distance) from its starting position.
-// NOTE: interact.c's call site passes no argument at all despite this
-// function taking one parameter, while every other call site passes
-// literal 1 -- possibly the same dropped-argument idiom fixed several
-// times this session, but not confirmed/fixed here (lower-stakes
-// effect than previously confirmed cases: param_1 only gates an
-// optional tick during the wait, not a crash-causing path) -- see
-// todo.md.
+// was FUN_000576d0 -- a "press any key or move the mouse" modal wait: loops flushing the display
+// and polling input/mouse state (optionally ticking sticky-mode handlers when param_1 is set) until
+// poll_keyboard_char_input reports a key or the mouse has moved more than ~6 pixels...
 int wait_for_key_or_mouse_move(param_1)
 int param_1;
 
@@ -7171,11 +5824,9 @@ int param_1;
 }
 
 
-// was FUN_00057a80 -- looks up which on-screen-keyboard key was
-// touched at (param_1,param_2), confirmed by DAT_00087650's own
-// existing comment describing this exact [row+column*20] indexing
-// scheme (a real static hit-grid recovered byte-for-byte from UU.exe
-// for the chargen name-entry keyboard).
+// was FUN_00057a80 -- looks up which on-screen-keyboard key was touched at (param_1,param_2),
+// confirmed by DAT_00087650's own existing comment describing this exact [row+column*20] indexing
+// scheme...
 int lookup_onscreen_keyboard_key_hit(param_1,param_2)
 short param_1;
 short param_2;
@@ -7198,11 +5849,9 @@ short param_2;
 
 
 
-// was FUN_00057af0 -- registers a cursor hotspot rectangle
-// (x1=param_1, y1=param_2, x2=param_3, y2=param_4, tag id=param_5)
-// into the 20-slot DAT_002047b0 parallel-array table, returning its
-// slot index or -1 if full. Confirmed by input.c registering exactly
-// 8 of these for the on-screen keyboard's directional/action regions.
+// was FUN_00057af0 -- registers a cursor hotspot rectangle (x1=param_1, y1=param_2, x2=param_3,
+// y2=param_4, tag id=param_5) into the 20-slot DAT_002047b0 parallel-array table, returning its
+// slot index or -1 if full.
 int register_cursor_hotspot(param_1,param_2,param_3,param_4,param_5)
 undefined2 param_1;
 undefined2 param_2;
@@ -7274,11 +5923,9 @@ short param_1;
 
 
 
-// was FUN_00057c5c -- pushes cursor sprite param_1 onto a small
-// (max 3-deep) cursor-icon stack and makes it active, confirmed by
-// its ubiquitous use alongside pop_cursor_icon across nearly every
-// UI subsystem to show a context-specific cursor (e.g. a targeting
-// reticle) temporarily.
+// was FUN_00057c5c -- pushes cursor sprite param_1 onto a small (max 3-deep) cursor-icon stack and
+// makes it active, confirmed by its ubiquitous use alongside pop_cursor_icon across nearly every UI
+// subsystem to show a context-specific cursor (e.g. a targeting reticle) temporarily.
 void push_cursor_icon(param_1)
 undefined4 param_1;
 
@@ -7298,10 +5945,9 @@ undefined4 param_1;
 
 
 
-// was FUN_00057cac -- pops the cursor-icon stack (push_cursor_icon's
-// counterpart), restoring the previous sprite (or the default 0x106c
-// if the stack is empty). param_1's low bits optionally gate the
-// cursor-hide-depth pop/idle-tick pair around the restore.
+// was FUN_00057cac -- pops the cursor-icon stack (push_cursor_icon's counterpart), restoring the
+// previous sprite (or the default 0x106c if the stack is empty). param_1's low bits optionally gate
+// the cursor-hide-depth pop/idle-tick pair around the restore.
 void pop_cursor_icon(param_1)
 ushort param_1;
 
@@ -7327,13 +5973,9 @@ ushort param_1;
 
 
 
-// was FUN_00057d1c -- tests whether the mouse is within rect
-// (param_1,param_2)-(param_3,param_4), inset by half the cursor's
-// own dimensions on each axis (so the cursor's hotspot, not just its
-// top-left corner, must overlap). Confirmed as a generic hit test by
-// its two callers: is_mouse_within_tracked_hotspot (the tracked
-// hotspot rect) and a hud.c hover check against the active message-
-// scroll panel's rect.
+// was FUN_00057d1c -- tests whether the mouse is within rect (param_1,param_2)-(param_3,param_4),
+// inset by half the cursor's own dimensions on each axis (so the cursor's hotspot, not just its
+// top-left corner, must overlap).
 undefined4 is_position_within_rect(param_1,param_2,param_3,param_4)
 short param_1;
 short param_2;
@@ -7358,67 +6000,23 @@ short param_4;
 // WARNING: Removing unreachable block (ram,0x00057df0)
 // WARNING: Removing unreachable block (ram,0x00057e24)
 
-// was FUN_00057dc0 -- sets the active cursor sprite to resource id
-// param_1, resolving it to its sprite frame/dimensions (lookup_grtile_by_id
-// or a direct g_grtile_registry lookup for already-resident high ids).
-// Confirmed called by push_cursor_icon/pop_cursor_icon to actually
-// apply the cursor change.
+// was FUN_00057dc0 -- sets the active cursor sprite to resource id param_1, resolving it to its
+// sprite frame/dimensions (lookup_grtile_by_id or a direct g_grtile_registry lookup for
+// already-resident high ids).
 void set_cursor_sprite_id(param_1)
 undefined4 param_1;
 
 {
   /* Was a genuinely dropped RETURN VALUE, not just a dropped argument:
-     resolve_sprite_id_to_frame(param_1) was called and its result thrown
-     away, then the lookup just below re-used the raw, UNRESOLVED
-     param_1 -- a previous pass here misdiagnosed this as the simpler
-     "argument dropped by Ghidra" idiom and patched it by forwarding
-     param_1 into lookup_grtile_by_id, which avoids a NULL-deref crash
-     but keeps indexing with the wrong id.
-
-     resolve_sprite_id_to_frame exists precisely to translate a symbolic
-     UI sprite id into its real absolute g_grtile_registry frame: ids
-     below 0x1000 are already absolute OBJECTS.GR frames (resolved ==
-     param_1, so this fix is a no-op for those), but every cursor icon
-     this project actually pushes -- 0x106c (the default idle cursor),
-     0x1077-0x107a (the automap/map-note cursors), etc -- lives in the
-     0x1000-0x1fff BUTTONS.GR range, which resolve_sprite_id_to_frame
-     remaps to DAT_00202730+(id-0x1000) before any table lookup is
-     valid. draw_sprite_by_id (the function that actually PAINTS this
-     cursor) does resolve first; this function, which decides the
-     cursor's save/erase RECT SIZE for the hide/show cycle, did not --
-     so for every one of those ids it looked up g_grtile_registry[raw
-     id] (an unrelated, unpopulated slot), silently fell back to the
-     zeroed dummy sprite, and set DAT_00204784/DAT_002047a4 (this
-     cursor's width/height, consumed by save_cursor_background/
-     erase_cursor_icon's own rect math in rect_fill_or_save_restore) to
-     0 -- while the real paint elsewhere drew the sprite at its real,
-     much larger size through the correctly-resolved frame. A 0-sized
-     erase can never remove what a full-sized draw just painted: a
-     permanent ghost of that cursor sprite stuck on screen, never
-     cleared by any later cursor move. Confirmed live via
-     UW_DEBUG_CURSORSHOW/CURSORERASE tracing: entering the automap
-     (draw_automap_screen's own idle-cursor draw, sprite 0x106c, fires
-     before enter_automap_screen ever pushes the real map cursor) logged
-     a 15x16ish real sprite blit immediately followed by an erase
-     clipped to rect_fill_or_save_restore(1,0,2,1) -- a 1x1 no-op --
-     leaving that default-cursor arrow permanently stamped in the
-     automap's top-left corner through every subsequent mouse move
-     (bug: "Automap cursor not invalidating, leaves a trail behind").
-     Capturing and using the resolved frame here fixes the save/erase
-     size for every cursor icon in the 0x1000+ range, not just this one
-     screen -- the same shared root cause other cursor-invalidation
-     reports on other screens trace back to. */
+     resolve_sprite_id_to_frame(param_1) was called and its result thrown away, then the lookup just
+     below re-used the raw, UNRESOLVED param_1... */
   char *iVar1;
   uint resolved_frame;
 
   erase_cursor_icon();
   resolved_frame = resolve_sprite_id_to_frame(param_1);
-  /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id
-     only covers ids below DAT_00202738 (the "still-compressed .GR
-     resource entry, needs decoding" range); ids at or above it are
-     already-resident raw sprites living directly in g_grtile_registry's own
-     table (see blit_object_sprite_by_frame's own identical branch on
-     this same resolved-frame value, which this function now matches). */
+  /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id only covers
+     ids below DAT_00202738 (the "still-compressed .GR resource entry, needs decoding" range)... */
   iVar1 = (int)resolved_frame < (int)(uint)DAT_00202738 ?
           lookup_grtile_by_id((short)resolved_frame) : (char *)g_grtile_registry[resolved_frame];
   if (iVar1 == (char *)0x0) {
@@ -7450,13 +6048,9 @@ undefined4 param_1;
 }
 
 
-// was FUN_00057e54 -- per-tick cursor-icon refresh for registered
-// hotspots: if the mouse has left the cached hotspot's cached bounds,
-// re-scans the 20-slot table (register_cursor_hotspot) for the one
-// now under the cursor, updates the cache, and applies its icon via
-// set_cursor_sprite_id, or resets to the default (0x106c) if none
-// match. Confirmed as "the registered-rect click hit-test" by an
-// existing ordinal_stubs.c comment.
+// was FUN_00057e54 -- per-tick cursor-icon refresh for registered hotspots: if the mouse has left
+// the cached hotspot's cached bounds, re-scans the 20-slot table (register_cursor_hotspot) for the
+// one now under the cursor, updates the cache, and applies its icon via set_cursor_sprite_id...
 void update_hotspot_cursor_icon()
 
 {
@@ -7495,12 +6089,9 @@ void update_hotspot_cursor_icon()
 
 
 
-// was FUN_00058438 -- handles a mouse button state change: injects
-// param_1 as a temporary button-state override (DAT_0020485c) while
-// polling update_mouse_state, then records a "click pending" slot
-// (DAT_00086968 + its position DAT_0008696a/c, read back by
-// get_click_position) if one wasn't already pending. Confirmed
-// called directly by visibility.c on a button-release transition.
+// was FUN_00058438 -- handles a mouse button state change: injects param_1 as a temporary
+// button-state override (DAT_0020485c) while polling update_mouse_state, then records a "click
+// pending" slot...
 void handle_mouse_button_message(param_1)
 short param_1;
 
@@ -7510,11 +6101,9 @@ short param_1;
   DAT_0020485c = (int)param_1;
   update_mouse_state();
   DAT_0020485c = 0;
-  /* Desktop input adaptation: the original checks the touch-held flag
-     DAT_0023c63c here. SDL right-button pickup instead uses DAT_002506ab;
-     checking only touch marks the drag released on a dungeon redraw.
-     Use the existing combined button reader for both the release check
-     and the cached button code, preserving the original wait protocol. */
+  /* Desktop input adaptation: the original checks the touch-held flag DAT_0023c63c here. SDL
+     right-button pickup instead uses DAT_002506ab; checking only touch marks the drag released on a
+     dungeon redraw. */
   sVar1 = poll_mouse_button_flags();
   if (sVar1 == 0) {
     DAT_0008696e = 0;
@@ -7529,11 +6118,9 @@ short param_1;
 
 
 
-// was FUN_000584c0 -- saves the screen area under the cursor (via
-// the color-0x14/0x15 save/restore convention rect_fill_or_save_restore
-// implements, confirmed by an existing graphics.c comment naming
-// this function as the one that sets DAT_00204848 for that purpose)
-// before draw_idle_mouse_cursor draws the cursor sprite over it.
+// was FUN_000584c0 -- saves the screen area under the cursor (via the color-0x14/0x15 save/restore
+// convention rect_fill_or_save_restore implements, confirmed by an existing graphics.c comment
+// naming this function as the one that sets DAT_00204848 for that purpose) before...
 void save_cursor_background()
 
 {
@@ -7624,11 +6211,7 @@ LAB_00058674:
 
 
 
-// was FUN_00058734 -- confirmed genuinely empty. Registered in
-// game.c as the key-binding handler for a dozen specific key codes
-// (deliberately swallowing them -- consuming the keypress without
-// any action), and also called directly in a few input wait loops
-// alongside the other per-tick input pollers.
+// was FUN_00058734 -- confirmed genuinely empty.
 void noop_key_handler()
 
 {
@@ -7637,12 +6220,9 @@ void noop_key_handler()
 
 
 
-// was FUN_00058738 -- reports the effective mouse button state as a
-// bitmask (bit0=left, bit1=right), confirmed by an existing input.c
-// comment ("reports the right button as bit 1 (value 2)"): uses the
-// real button flag (DAT_0023c63c) when set, otherwise falls back to
-// two keyboard d-pad-style flags (DAT_002506aa/ab) as touchscreen
-// button substitutes, gated on DAT_000876c4.
+// was FUN_00058738 -- reports the effective mouse button state as a bitmask (bit0=left,
+// bit1=right), confirmed by an existing input.c comment ("reports the right button as bit 1 (value
+// 2)"): uses the real button flag (DAT_0023c63c) when set...
 uint poll_mouse_button_flags()
 
 {
@@ -7737,16 +6317,9 @@ short param_4;
 }
 
 
-/* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer
-   DAT_0023cca0 over the 3D viewport instead of the rendered dungeon, so
-   the pick/stencil coverage is directly visible. Call *after* a pick-mode
-   render pass (render_dungeon_view_frame) has populated the buffer. Colour key:
-     0x00           empty (no geometry)      -> dark blue
-     0x01..0xbe     object slot id           -> bright cycling colour
-     0xc0..0xfa     wall texture (v-0xbf)    -> grey ramp
-     other          -> magenta
-   Plus a yellow crosshair at the cursor. Viewport rect is x[52,276)
-   y[19,150) (the rect_fill the renderer clears each frame). */
+/* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D
+   viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible. Call
+   *after* a pick-mode render pass (render_dungeon_view_frame) has populated the buffer. */
 void uw_debug_blit_pick_buffer(void)
 {
   /* 16 distinct colours for object slot ids; deliberately excludes the
@@ -7786,15 +6359,8 @@ void uw_debug_blit_pick_buffer(void)
 
 
 
-/* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory
-   hotspot's click rect (g_inventory_hotspot_table's 23 records) in
-   bright red, directly into the framebuffer -- for visually verifying
-   the recovered hotspot table lines up with the actual paperdoll/
-   backpack panel art (open the inventory panel, screenshot, and check
-   every box sits exactly on its icon). Record 0 is the real degenerate
-   sentinel (x1=x2, y1=y2) and is skipped, same as
-   hit_test_inventory_widget's own no-op treatment of it. Outline only
-   (not filled) so the icon underneath stays visible. */
+/* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory hotspot's click rect
+   (g_inventory_hotspot_table's 23 records) in bright red, directly into the framebuffer... */
  void uw_debug_draw_inv_hotspot_positions(void)
 {
   unsigned short *fb = (unsigned short *)g_uw_framebuffer;
@@ -7826,20 +6392,8 @@ void uw_debug_blit_pick_buffer(void)
   if (max_x >= 0) dirty_rect_union(min_y, max_y, min_x, max_x);
 }
 
-/* Debug tool (UW_DUMP_SPRITE_FRAMES / UW_DUMP_SPRITE_IDS): dump
-   individual sprites to standalone BMP files by real resource id, one
-   file per id, using the game's own real render path (blit_object_
-   sprite_by_frame for a raw absolute frame index, draw_sprite_by_id
-   for a normal game object/sprite id that goes through
-   resolve_sprite_id_to_frame first) -- not a separate from-scratch
-   .GR parser, so it exercises exactly the same code this project has
-   been chasing rendering bugs through (e.g. the TMOBJ sign investigation,
-   see [[tmobj-sign-table-recovery]] and follow-ups).
-
-   UW_DUMP_SPRITE_FRAMES/UW_DUMP_SPRITE_IDS are a comma-separated list
-   of ids and/or inclusive ranges, e.g. "643-680,18,149". Output goes to
-   UW_DUMP_SPRITE_DIR (default "debug/sprites"), as frame_<id>.bmp or
-   id_<id>.bmp. Runs once, early in the first real gameplay tick. */
+/* Debug tool (UW_DUMP_SPRITE_FRAMES / UW_DUMP_SPRITE_IDS): dump individual sprites to standalone
+   BMP files by real resource id, one file per id, using the game's own real render path... */
 static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
   unsigned short *fb = (unsigned short *)g_uw_framebuffer;
   int cw = 96, ch = 128, ox = 4, oy = 4;
@@ -7886,13 +6440,9 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
   }
 }
 
-/* Temporary test hook for verifying the armor paper-doll equip flow
-   without a real "give item" mechanism: once per run, the first time
-   backpack grid slot 12 holds a real object, overwrite its low 9 id
-   bits with UW_DEBUG_FORCE_ITEM_ID (hex) in place -- reusing a real,
-   already-linked object (e.g. a picked-up torch) the same way
-   use_light_source toggles bits on an existing object, rather than
-   fabricating a new arena entry. Not meant to stay long-term. */
+/* Temporary test hook for verifying the armor paper-doll equip flow without a real "give item"
+   mechanism: once per run, the first time backpack grid slot 12 holds a real object, overwrite its
+   low 9 id bits with UW_DEBUG_FORCE_ITEM_ID (hex) in place -- reusing a real... */
  void uw_debug_force_item_id_once(void) {
   static int done = 0;
   if (done) return;
@@ -7920,41 +6470,9 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
   _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_IDS", 0, dir);
 }
 
-/* Debug tool (UW_DUMP_CRITTER_SHEET): systematically drive
-   decode_critter_sprite_page across every (tier, direction, frame)
-   combination for one or more critter type indices, instead of
-   passively capturing whatever poses a demo happens to render. Lets a
-   bug in a creature's .GR page data (or in the glyph-selection math
-   reading it) be inspected directly as a full sprite sheet, rather
-   than inferred from whichever single frame the AI/camera angle
-   happened to trigger live -- built to investigate a report that
-   Bragit (a peaceful NPC) flashed a "facing player" idle frame, showed
-   garbage data, sometimes showed death-animation frames, and never
-   showed any of the other rotation angles.
-
-   UW_DUMP_CRITTER_SHEET=<type_idx>[,<type_idx>...] -- type_idx is
-   resolve_critter_sprite_tier's own param_1 (the object id's low 6
-   bits, uVar27 & 0x3f in emit_tile_objects -- NOT the full 9-bit
-   object id; run with UW_DEBUG_CRITTER while near the NPC in question
-   to read its real type_idx off the "[critter] emit_tile_objects:
-   ... type_idx=N" trace line). For each type_idx, looks up its real
-   page index and frame-count-check value from the same DAT_0023ce70/
-   DAT_0023ce71 assoc tables resolve_critter_sprite_tier itself reads
-   (skips a type_idx with no assoc entry, the 0xff sentinel), then
-   calls decode_critter_sprite_page directly for tier=0..3 (the real,
-   fixed tier range) x direction=0..UW_DUMP_CRITTER_SHEET_MAXDIR
-   (default 127) x frame=0..UW_DUMP_CRITTER_SHEET_MAXFRAME (default
-   15). decode_critter_sprite_page's own bounds checks (glyph-index
-   range, page-open failure, implausible >64px header) make
-   out-of-range combos a no-op rather than a crash -- most combos in
-   this sweep won't correspond to real data and simply produce no file.
-
-   Reuses the existing uw_debug_dump_critter_sprite hook already wired
-   into decode_critter_sprite_page (gx_stub.c, gated on
-   UW_DEBUG_DUMP_CRIT) to do the actual BMP writing -- implicitly
-   enables that hook so this tool works standalone. Output:
-   debug/crit/type<page_idx>/tier<N>/dir<D>_frame<F>.bmp. Runs once,
-   early in the first real gameplay tick. */
+/* Debug tool (UW_DUMP_CRITTER_SHEET): systematically drive decode_critter_sprite_page across every
+   (tier, direction, frame) combination for one or more critter type indices, instead of passively
+   capturing whatever poses a demo happens to render. */
  void uw_debug_dump_critter_sheet_once(void) {
   static int done = 0;
   if (done) return;
@@ -7962,19 +6480,9 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
   const char *spec = getenv("UW_DUMP_CRITTER_SHEET");
   if (!spec || !spec[0]) return;
   setenv("UW_DEBUG_DUMP_CRIT", "1", 0);
-  /* default maxdir kept conservative (63, not the full 0-255 clamp
-     resolve_critter_sprite_tier allows): sweeping direction values past
-     a creature's real per-page table found a separate, unfixed bug --
-     an out-of-range direction can produce a header that still passes
-     the existing "w/h > 64" plausibility check yet isn't real glyph
-     data, and decompress_gr_bitmap's decompressor doesn't bound its output to
-     the allocated buffer, corrupting the heap (confirmed via lldb:
-     malloc's free_list_checksum_botch, non-deterministic crash
-     manifesting later in unrelated code). Raise
-     UW_DUMP_CRITTER_SHEET_MAXDIR deliberately if you need to probe
-     further -- expect it to be crash-prone past a type's real table
-     size, which is itself diagnostic (that boundary IS the type's real
-     direction-table extent). */
+  /* default maxdir kept conservative (63, not the full 0-255 clamp resolve_critter_sprite_tier
+     allows): sweeping direction values past a creature's real per-page table found a separate,
+     unfixed bug... */
   int maxdir = 63, maxframe = 15;
   { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXDIR"); if (e) maxdir = atoi(e); }
   { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXFRAME"); if (e) maxframe = atoi(e); }

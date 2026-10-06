@@ -8,8 +8,6 @@
  "debug_print": "VERIFIED vs ARM: variadic; ARM prologue homes r0-r3 (mov ip,sp; push {r0-r3})",
  "ordfloat_log": "VERIFIED vs ARM: ordinal 1033 helper taking a double as 2 words (lo,hi); both sites pass 2 regs",
  "ordaudio_op_2135": "VERIFIED vs ARM: stub of a memcpy-like ordinal; 2 source sites carry a junk 5th arg (unaff_lr) from Ghidra, ARM sites set 3-4 regs",
- "fade_in": "VERIFIED vs ARM: port reimplementation takes (x,y,buf); real function takes 10 args (ARM main_menu_loop/enter_dungeon_view/level load all push 6 stack args); game.c's 4-arg calls are Ghidra truncation of the same 10-arg ARM call",
- "fade_out": "VERIFIED vs ARM: port reimplementation takes (x,y,buf); real function takes 10 args (ARM main_menu_loop/enter_dungeon_view/level load all push 6 stack args); game.c's 4-arg calls are Ghidra truncation of the same 10-arg ARM call",
  "flush_dirty_rect_to_display": "VERIFIED vs ARM: callee reads no argument at all; callers (ARM mov r0,#1) pass an unused literal 1, as the original unprototyped source did",
  "scheduler_add_entry": "VERIFIED vs ARM: ARM spawn_effect_debris_burst (0x81680) also pushes a 6th stack arg that the callee never reads",
  "reduce_item_quality_on_use": "VERIFIED vs ARM: ARM apply_equipped_item_effect (0x663bc) also passes only r0; r1 is stale there (original quirk, left as-is)",

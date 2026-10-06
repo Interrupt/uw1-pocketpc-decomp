@@ -1,7 +1,5 @@
-/* NPC melee combat AI: approach/engage/position/disengage tick states
- * and stance selection. Split out of uw.c (the original monolithic
- * decompile) once these functions' real roles were confirmed.
- */
+/* NPC melee combat AI: approach/engage/position/disengage tick states and stance selection. Split
+   out of uw.c (the original monolithic decompile) once these functions' real roles were confirmed. */
 #include "headers/combat.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -23,49 +21,25 @@ static char DAT_00084f18_backing[5] = {5, 3, 1, 7, 0};
 #define DAT_00084f18 DAT_00084f18_backing[0]
 #define DAT_00084f1c DAT_00084f18_backing[4]
 /* Sizing-audit pass: was an independent 256-byte array, but both uses
-   (`(&DAT_001007e0)[(uVar1&0x3f)*0x30]`, combat.c:1418/1433) index it
-   by the same per-class monster-record base as ai.c's DAT_001007d0 --
-   aliased into DAT_001007d0_backing in ai.h instead. */
+   (`(&DAT_001007e0)[(uVar1&0x3f)*0x30]`, combat.c:1418/1433) index it by the same per-class
+   monster-record base as ai.c's DAT_001007d0 -- aliased into DAT_001007d0_backing in ai.h instead. */
 static ushort DAT_00202d54;
 undefined DAT_00202878;
-/* Was a lone `undefined` scalar (1 byte), but tick_weapon_swing_state indexes it
-   as `(&DAT_00084eff)[iVar5]` with iVar5 = the swing's own attack-type
-   value (3-9, from interact_attack's screen-position-to-3x3-grid
-   mapping -- this is the real "attack from top/left/right/bottom
-   throws a different attack" mechanic the user reported as broken),
-   and compute_player_weapon_attack_stats separately indexes it by the same attack-type value
-   for a damage bonus lookup. A single byte can't hold 10 real,
-   distinct per-direction values -- recovered the real content via
-   Ghidra headless memory dump (0x84eff, 12 bytes -- Ghidra's own next
-   symbol, DAT_00084f0b, starts exactly 12 bytes later, matching this
-   project's usual "one lone scalar per real small table" pattern):
-   00 02 02 02 00 00 00 01 01 01 00 00. Confirmed genuinely
-   direction-sensitive data (not all-zero/all-same): indices 2-9 read
-   00,02,02,02,00,00,00,01 -- real variation across the attack-type
-   range, not the flat/garbage result a bare 1-byte read would produce
-   once indexed past its own storage. */
+/* Was a lone `undefined` scalar (1 byte), but tick_weapon_swing_state indexes it as
+   `(&DAT_00084eff)[iVar5]` with iVar5 = the swing's own attack-type value... */
 unsigned char DAT_00084eff_backing[12] = {
   0x00,0x02,0x02,0x02,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00
 };
-/* Was `undefined4` -- resolve_equipped_weapon_attack writes a real static-global address
-   through this (via its own `int *param_1`, truncating with an
-   explicit `(int)`/`(intptr_t)` cast at all 3 of its assignments), and
-   tick_weapon_swing_state reads it back and dereferences it as a pointer
-   (`*(byte*)(iVar5+3)` etc.) once the attack-swing state machine
-   reaches its "resolve impact" phase (DAT_000870e4==3). Confirmed live:
-   right-clicking to start an attack in Combat mode crashes a few ticks
-   later, once the swing reaches that phase, dereferencing the
-   truncated pointer. */
+/* Was `undefined4` -- resolve_equipped_weapon_attack writes a real static-global address through
+   this (via its own `int *param_1`, truncating with an explicit `(int)`/`(intptr_t)` cast at all 3
+   of its assignments)... */
 char *DAT_001005e4;
 static char DAT_001005e0_backing[128];
 char *DAT_001005e0 = DAT_001005e0_backing;
 #define DAT_001007e1 DAT_001007d0_backing[0x11]
 static char s__DATA_cmb_dat_00084f40[] = "\\DATA\\cmb.dat";
-/* Sizing pass: units trap -- declared element type is undefined2 (2
-   bytes), so [32768] was actually 65536 real bytes, not 32768. Its
-   only use is `read_buffer_from_file(acStack_108,&DAT_00100630,0x3c)`
-   -- exactly 0x3c (60) bytes read, so 32 elements (64 bytes) covers
-   it with a little headroom. */
+/* Sizing pass: units trap -- declared element type is undefined2 (2 bytes), so [32768] was actually
+   65536 real bytes, not 32768. */
 undefined2 DAT_00100630_backing[32];
 ushort *DAT_0010190c;
 undefined4 DAT_00101924;
@@ -88,31 +62,21 @@ short DAT_00101448; /* signed fine-coordinate delta; ARM reads 16 bits */
 char DAT_0010143c;
 char DAT_0010173c;
 char *DAT_00101400;
-/* Was a bare scalar, but apply_equipment_degradation_message reads it
-   through &DAT_00085a90 as a C string (the "was" half of the was/were
-   pair right before it in memory, see s_were_00085a98 below) -- so the
-   first byte being this port's always-zero default made it read as an
-   empty string. Confirmed via a Ghidra memory dump of the real UU.exe:
-   the actual bytes here are " was\0" (with the leading space the
-   damaged/destroyed message depends on for spacing). */
+/* Was a bare scalar, but apply_equipment_degradation_message reads it through &DAT_00085a90 as a C
+   string (the "was" half of the was/were pair right before it in memory, see s_were_00085a98 below)
+   -- so the first byte being this port's always-zero default made it read as an empty string. */
 static char DAT_00085a90[] = " was";
-/* Was missing its leading space -- confirmed via the same memory dump
-   that the real bytes are " were\0", not "were\0"; apply_equipment_
-   degradation_message relies on that leading space the same way its
-   sibling DAT_00085a90 above does. */
+/* Was missing its leading space -- confirmed via the same memory dump that the real bytes are "
+   were\0", not "were\0"; apply_equipment_ degradation_message relies on that leading space the same
+   way its sibling DAT_00085a90 above does. */
 static char s_were_00085a98[] = " were";
-/* Was a zero-initialized 32768-byte placeholder (oversized -- nothing
-   else aliases into it and its only reader just copies it out as a
-   plain null-terminated string, so it needs no more headroom than its
-   own content). Confirmed via a Ghidra memory dump of the real UU.exe
-   that the real bytes are "Your \0" -- this is the message's opening
-   subject ("Your <item> was/were damaged/destroyed."), copied into a
-   local buffer before the item's own display name is appended. */
+/* Was a zero-initialized 32768-byte placeholder (oversized -- nothing else aliases into it and its
+   only reader just copies it out as a plain null-terminated string, so it needs no more headroom
+   than its own content). */
 static char DAT_00085aa0[] = "Your ";
-/* Was missing its leading space and trailing newline -- confirmed via
-   a Ghidra memory dump of the real UU.exe that the real bytes are
-   " damaged.\n\0", matching the leading-space convention this whole
-   was/were/damaged/destroyed cluster uses for inter-word spacing. */
+/* Was missing its leading space and trailing newline -- confirmed via a Ghidra memory dump of the
+   real UU.exe that the real bytes are " damaged.\n\0", matching the leading-space convention this
+   whole was/were/damaged/destroyed cluster uses for inter-word spacing. */
 static char s_damaged__00085aa8[] = " damaged.\n";
 /* Same leading-space/trailing-newline fix as s_damaged__00085aa8 just
    above; real bytes confirmed " destroyed.\n\0". */
@@ -128,10 +92,9 @@ static undefined1 DAT_002046e4;
 
 
 
-// was FUN_0002f818 -- goal 3's main handler: distance-tiered response
-// to a detected target (close: randomize stance; medium: walk toward
-// the tracked target's own tile via npc_walk_toward_tile, i.e. chase;
-// far: random-walk reposition + relink tilemap bucket)
+// was FUN_0002f818 -- goal 3's main handler: distance-tiered response to a detected target (close:
+// randomize stance; medium: walk toward the tracked target's own tile via npc_walk_toward_tile,
+// i.e. chase; far: random-walk reposition + relink tilemap bucket)
 void npc_combat_approach_tick()
 
 {
@@ -171,15 +134,8 @@ void npc_combat_approach_tick()
     }
   }
   else {
-    /* HACK: was a bare `integer_sqrt();` -- dropped argument, the same
-       class of bug fixed repeatedly elsewhere in this file. No other
-       distance value is computed in this branch to reuse, but
-       DAT_00101444*DAT_00101444 + DAT_00101448*DAT_00101448 (dx*dx +
-       dy*dy) is the canonical "distance squared" expression this
-       exact file uses at every other integer_sqrt-shaped call site
-       (see e.g. npc_combat_approach_tick's own sibling functions) --
-       used here as the most defensible reconstruction, though not
-       independently confirmed the way the tmap.c fix was. */
+    /* HACK: was a bare `integer_sqrt();` -- dropped argument, the same class of bug fixed
+       repeatedly elsewhere in this file. */
     sVar4 = integer_sqrt(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448);
     cVar3 = DAT_00101918;
     iVar8 = (int)DAT_00101408;
@@ -223,9 +179,8 @@ void npc_combat_approach_tick()
 
 
 
-// was FUN_0002ff94 -- goal 5: attacks (npc_combat_set_stance) if
-// within dist^2<100 (~10 tiles) of the tracked target or already at
-// its tile, else picks a sub-goal (try_npc_special_ability_alt/
+// was FUN_0002ff94 -- goal 5: attacks (npc_combat_set_stance) if within dist^2<100 (~10 tiles) of
+// the tracked target or already at its tile, else picks a sub-goal (try_npc_special_ability_alt/
 // try_npc_special_ability_no_los/try_npc_special_ability_ranged)
 void npc_combat_engage_close_tick()
 
@@ -788,14 +743,9 @@ void npc_combat_disengage_tick()
 
 
 
-// was FUN_00025a98 -- part of the combat hit-test flow (called from
-// resolve_melee_swing_hit's own "[hit-test]" trace): given a
-// target's hit-zone span [param_1,param_2] and an impact span
-// [param_3,param_4], compares the impact midpoint against the target
-// span (with a chance-based fallback the closer the two overlap) and
-// returns a small 0-3 result selecting which hit zone/outcome was
-// struck. The exact real-world meaning of each of the 4 return values
-// isn't otherwise confirmed.
+// was FUN_00025a98 -- part of the combat hit-test flow (called from resolve_melee_swing_hit's own
+// "[hit-test]" trace): given a target's hit-zone span [param_1,param_2] and an impact span
+// [param_3,param_4]...
 undefined4 resolve_combat_hit_zone(param_1,param_2,param_3,param_4)
 short param_1;
 short param_2;
@@ -843,13 +793,9 @@ LAB_00025aec:
 
 
 
-// was FUN_00025b84 -- part of the combat hit-test flow: scans nearby
-// object records (&DAT_00202c3a family) for the one closest, in
-// projected screen space, to a target ray/point described by param_1,
-// tracking the minimum squared screen-space distance and returning that
-// candidate's index (or -1 if none matched). Also leaves the resolved
-// screen coordinates in DAT_00100600/DAT_00100604 as a side effect,
-// which resolve_combat_hit_zone's caller reads afterward.
+// was FUN_00025b84 -- part of the combat hit-test flow: scans nearby object records (&DAT_00202c3a
+// family) for the one closest, in projected screen space, to a target ray/point described by
+// param_1...
 int find_nearest_hit_target(param_1)
 short * param_1;
 
@@ -884,11 +830,9 @@ short * param_1;
   if (iVar10 < iVar9) {
     do {
       uVar4 = *(ushort *)(&DAT_00202c3a + iVar10 * 6);
-      /* BUG FIX (unit-testing-framework): was called bare -- dropped
-         argument. ARM 0x25c84..0x25c8c passes the candidate link's slot
-         index, confirmed by the identical `uVar4 >> 6` value used right
-         below in this same loop. Same dropped-argument idiom fixed
-         repeatedly elsewhere in this project. */
+      /* BUG FIX (unit-testing-framework): was called bare -- dropped argument. ARM 0x25c84..0x25c8c
+         passes the candidate link's slot index, confirmed by the identical `uVar4 >> 6` value used
+         right below in this same loop. */
       puVar6 = (ushort *)get_object_record_by_slot_index(uVar4 >> 6);
       if ((((*puVar6 & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
          (((DAT_00100610 != 1 ||
@@ -938,12 +882,9 @@ short * param_1;
 
 
 
-// was FUN_00025ed8 -- part of the combat hit-test flow (own
-// "[blood-splat]" trace): walks outward from the impact point along
-// param_1's heading until it finds a floor/ceiling boundary, then spawns
-// a blood-splat decal object (id 0x1cb) there, schedules its later
-// cleanup (scheduler_add_entry), and appends it into the target tile's
-// object list.
+// was FUN_00025ed8 -- part of the combat hit-test flow (own "[blood-splat]" trace): walks outward
+// from the impact point along param_1's heading until it finds a floor/ceiling boundary, then
+// spawns a blood-splat decal object (id 0x1cb) there...
 void spawn_blood_splat_object(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
@@ -959,16 +900,8 @@ byte * param_3;
   char *iVar7;  /* was `int` -- truncated spawn_new_object's real object
                    pointer, latent while that function always returned 0 */
   undefined4 uVar8;
-  char *iVar9;  /* was `int` -- truncated tilemap_lookup's real `void *`
-                   return (same class as iVar7 above and this whole
-                   file's dominant bug). Latent for a long time since
-                   this whole "resolve impact" swing code path was
-                   unreachable until a separate signedness bug on
-                   DAT_0010062c was fixed -- confirmed crashing
-                   (EXC_BAD_ACCESS in object_list_append_tail,
-                   dereferencing the truncated `iVar9 + 2` as a wild
-                   32-bit address) the first time a real attack swing
-                   ever reached this far. */
+  char *iVar9;  /* was `int` -- truncated tilemap_lookup's real `void *` return (same class as iVar7 above and this
+   whole file's dominant bug). */
   uint uVar10;
   short local_18;
   short local_16;
@@ -1032,12 +965,9 @@ byte * param_3;
 }
 
 
-// was FUN_00026194 -- resolves a melee weapon swing's hit test: computes
-// the swing's attack direction/position, checks for a wall collision
-// (spawning a blood-splat decal on the wall via spawn_blood_splat_object
-// if so) versus a creature collision (via find_nearest_hit_target +
-// resolve_combat_hit_zone if so), returning 1 if a creature was actually
-// hit or 0 otherwise. Own "[hit-test]" debug trace throughout.
+// was FUN_00026194 -- resolves a melee weapon swing's hit test: computes the swing's attack
+// direction/position, checks for a wall collision (spawning a blood-splat decal on the wall via
+// spawn_blood_splat_object if so) versus a creature collision...
 undefined4 resolve_melee_swing_hit()
 
 {
@@ -1048,28 +978,9 @@ undefined4 resolve_melee_swing_hit()
   int iVar5;
   ushort *puVar6;
   uint uVar7;
-  /* Same "6 independent locals treated as one contiguous record via
-     DAT_00202c6c" bug already fixed in resolve_collision_candidate_interaction's own sibling
-     collision-envelope caller (see its own comment, uw.c ~46514) --
-     this function has the IDENTICAL local name set (local_3c/3a/38/
-     34/33/32) and was never converted. Every DAT_00202c6c[N] read
-     throughout collision_height_envelope/collision_build_height_field/
-     sort_collision_candidates/spawn_blood_splat_object assumes one contiguous record, but as
-     independent C locals this compiler is free to place them (and
-     every OTHER local in this function, including iVar5) anywhere,
-     with any padding. Confirmed live via UW_DEBUG_COMBAT tracing: a
-     real attack swing's own `iVar5` (a small, masked heading value,
-     mathematically bounded to 0-255) read back as 0x80808080
-     (uninitialized-pattern garbage) at spawn_blood_splat_object's own call site --
-     writes through DAT_00202c6c at offsets up to 0x15 (from this
-     function's own body) were silently scribbling over whatever
-     unrelated local the compiler happened to place there instead of
-     real struct fields, this session's own instance of the "attacking
-     seems to do nothing, and generating a blood-splat effect crashes"
-     QA report (the crash instances presumably hit some OTHER
-     overlapping local worse than iVar5 was hit here). Same fix:
-     real backing array, zeroed before use, sized generously (0x20)
-     past the highest offset (0x15) this function's own body touches. */
+  /* Same "6 independent locals treated as one contiguous record via DAT_00202c6c" bug already fixed
+     in resolve_collision_candidate_interaction's own sibling collision-envelope caller (see its own
+     comment, uw.c ~46514)... */
   undefined1 local_pos_record[0x20];
 #define local_3c (*(short *)(local_pos_record + 0))
 #define local_3a (*(short *)(local_pos_record + 2))
@@ -1152,13 +1063,8 @@ undefined4 resolve_melee_swing_hit()
 #undef local_32
 
 
-// was FUN_00026570 -- resolves whether a confirmed hit actually
-// penetrates: rolls a skill check (weapon skill + facing modifier vs
-// the target's armor-class-shaped table at &DAT_001007e2), and on a
-// natural "2" result (fumble/special outcome) triggers an extra
-// stagger/sound reaction via damage_equipped_item_in_slot instead. Returns 1-result as
-// a hit/miss-shaped flag; called right after resolve_melee_swing_hit
-// confirms a creature was struck.
+// was FUN_00026570 -- resolves whether a confirmed hit actually penetrates: rolls a skill check
+// (weapon skill + facing modifier vs the target's armor-class-shaped table at &DAT_001007e2)...
 int resolve_weapon_hit_skill_check(param_1,param_2)
 short param_1;
 undefined4 param_2;
@@ -1229,15 +1135,8 @@ undefined4 param_2;
 
 
 
-// was FUN_00026858 -- applies a landed melee hit's damage: rolls a
-// damage dice pool, reduces it by the target's armor value (looked up
-// from &DAT_001007d0), plays the impact sound, and calls apply_typed_damage_to_object
-// (the same "apply damage/hit visual" primitive src/ai.c's monster
-// attack code also calls, not yet named) to actually apply it. On
-// nonzero final damage, either staggers the player (if the target is
-// the player) or spawns the appropriate damage-number/blood-effect via
-// spawn_scheduled_effect_object depending on target type and armor
-// flags.
+// was FUN_00026858 -- applies a landed melee hit's damage: rolls a damage dice pool, reduces it by
+// the target's armor value (looked up from &DAT_001007d0), plays the impact sound...
 void apply_melee_damage(param_1)
 undefined1 param_1;
 
@@ -1391,11 +1290,9 @@ undefined1 param_1;
 
 
 
-// was FUN_00026eb4 -- picks and plays a combat impact sound effect: id
-// 10 for a whiffed/no-target swing (param_1==0), else id 7 or 8
-// depending on whether the attacker's weapon type and the target's
-// armor/shield type both indicate a "blocked" match (a metal-on-metal
-// clang vs a duller impact).
+// was FUN_00026eb4 -- picks and plays a combat impact sound effect: id 10 for a whiffed/no-target
+// swing (param_1==0), else id 7 or 8 depending on whether the attacker's weapon type and the
+// target's armor/shield type both indicate a "blocked" match...
 undefined4 play_weapon_impact_sound(param_1)
 short param_1;
 
@@ -1448,10 +1345,8 @@ LAB_0002701c:
 
 
 
-// was FUN_0002702c -- computes the attacker's facing relative to the
-// target (DAT_00100628, a mirrored 0-4 octant offset from the two
-// objects' own heading fields), used by resolve_weapon_hit_skill_check
-// as a to-hit modifier (rear/flank attacks presumably easier to land).
+// was FUN_0002702c -- computes the attacker's facing relative to the target (DAT_00100628, a
+// mirrored 0-4 octant offset from the two objects' own heading fields)...
 void compute_attack_relative_facing()
 
 {
@@ -1473,13 +1368,9 @@ void compute_attack_relative_facing()
 
 
 
-// was FUN_000270d0 -- top-level melee swing resolution: calls
-// resolve_melee_swing_hit to hit-test the swing, then (if a creature
-// was struck and isn't already excluded by a same-faction/arena check)
-// computes relative facing, resolves the weapon-vs-armor skill check,
-// and either plays a whiff sound (skill check failed) or applies
-// damage and a hit-flash effect. Returns the final outcome flag via
-// play_weapon_impact_sound's own return value.
+// was FUN_000270d0 -- top-level melee swing resolution: calls resolve_melee_swing_hit to hit-test
+// the swing, then (if a creature was struck and isn't already excluded by a same-faction/arena
+// check) computes relative facing, resolves the weapon-vs-armor skill check...
 undefined4 process_melee_attack_swing()
 
 {
@@ -1498,10 +1389,9 @@ undefined4 process_melee_attack_swing()
   }
   else {
     if ((DAT_00100610 != 1) && (iVar1 = (int)DAT_00100620, DAT_00100620 != 1)) {
-      /* BUG FIX (unit-testing-framework): both calls were bare -- dropped
-         arguments. ARM 0x27110..0x27114 forwards the resolved target
-         pointer; same dropped-argument idiom fixed repeatedly elsewhere
-         in this project. */
+      /* BUG FIX (unit-testing-framework): both calls were bare -- dropped arguments. ARM
+         0x27110..0x27114 forwards the resolved target pointer; same dropped-argument idiom fixed
+         repeatedly elsewhere in this project. */
       puTarget = get_object_record_by_slot_index((int)DAT_00100620);
       iVar3 = object_ptr_in_arena(puTarget);
       iVar1 = 0;
@@ -1528,28 +1418,9 @@ undefined4 process_melee_attack_swing()
 }
 
 
-// was FUN_000272c0 -- resolves the player's currently equipped weapon
-// (the item in the off-hand slot, 8-handedness) into an attack-data
-// record pointer (*param_1) and outputs the raw item pointer itself
-// (*param_2): if it's a ranged weapon (category 0x10) with a valid ammo
-// type, finds/consumes the matching ammo (returning -1/0xffffffff and
-// canceling the swing via wait_for_click_release if none is found) and
-// points param_1 at its ammo-type weapon-data record
-// (&DAT_002027d0+offset); if it's melee (category 0), points param_1 at
-// its own weapon-data record (&DAT_00202800+offset) instead; if nothing
-// is equipped (or neither category matched), falls back to the
-// unarmed/fist data record (&DAT_00202878). Returns 1 for the
-// melee/unarmed paths, 0 for a successful ranged shot.
-//
-// param_1 was `int *` -- every store through it (`&DAT_002027d0 +
-// iVar5`, `&DAT_00202800 + ...`, `&DAT_00202878`) is a real static-
-// global address explicitly cast down to `(int)`/`(intptr_t)`,
-// truncating it on this 64-bit host before the caller (tick_weapon_swing_state)
-// reads it back and dereferences it as a pointer. param_2 had the
-// same problem one level removed: it points at DAT_001005e0 (a real
-// `char *`), but was declared `undefined4 *` (4 bytes), so `*param_2 =
-// puVar4` only ever wrote the low 32 bits of get_equipped_item_at_slot's real
-// pointer into the first half of that 8-byte slot.
+// was FUN_000272c0 -- resolves the player's currently equipped weapon (the item in the off-hand
+// slot, 8-handedness) into an attack-data record pointer (*param_1) and outputs the raw item
+// pointer itself (*param_2): if it's a ranged weapon (category 0x10) with a valid ammo type...
 undefined4 resolve_equipped_weapon_attack(param_1,param_2)
 char * * param_1;
 char * * param_2;
@@ -1593,23 +1464,9 @@ char * * param_2;
 
 
 
-// was FUN_000273f8 -- computes the player's own weapon-swing attack
-// stats: to-hit base (DAT_00100608, from the player's own weapon skill
-// plus a strength-derived bonus, +7 more if a "berserk"-shaped flag at
-// DAT_00086df8+0xb4 is set) and damage dice pool (DAT_0010061c, from
-// unarmed skill or a weapon-type-derived table lookup), sets
-// DAT_00100610=1 to mark the player as attacker, and if the weapon item
-// (param_2) resolves to a special enchanted-weapon link (category 0xc
-// via resolve_object_variant_or_special_link), adds its bonus into
-// whichever of the two stats its own flag bit selects. Feeds directly
-// into resolve_weapon_hit_skill_check/apply_melee_damage's own reads of
-// these same globals.
-//
-// param_1/param_2 were `int` -- both real object-record pointers
-// (tick_weapon_swing_state passes the now-fixed DAT_001005e4-derived pointer and
-// DAT_001005e0, both `char *`), truncated to 32 bits on this 64-bit
-// host before being dereferenced here and forwarded to resolve_object_variant_or_special_link
-// (which already declares its own params as real pointers).
+// was FUN_000273f8 -- computes the player's own weapon-swing attack stats: to-hit base
+// (DAT_00100608, from the player's own weapon skill plus a strength-derived bonus, +7 more if a
+// "berserk"-shaped flag at DAT_00086df8+0xb4 is set) and damage dice pool...
 void compute_player_weapon_attack_stats(param_1,param_2,param_3)
 char * param_1;
 char * param_2;
@@ -1663,18 +1520,9 @@ short param_3;
 }
 
 
-// was FUN_00027b3c -- a general-purpose "attacker object directly hits
-// target object" damage-application entry point (parallel to, but
-// independent of, the player's own tick_weapon_swing_state chain):
-// fills in the same globals resolve_combat_hit_zone/apply_melee_damage
-// read (attacker type param_1, target slot from param_3,
-// resolve_combat_hit_zone's own hit-zone roll from both objects'
-// hitbox-span data, damage dice param_6), plays an impact sound, then
-// calls apply_melee_damage(param_7). Its one confirmed real caller
-// (uw.c ~28596, a thrown/ranged-weapon-family impact handler) passes a
-// negative param_7 and a skill-check-scaled damage roll, suggesting
-// this is also the shared path for ranged/thrown projectile impacts,
-// not just melee.
+// was FUN_00027b3c -- a general-purpose "attacker object directly hits target object"
+// damage-application entry point (parallel to, but independent of, the player's own
+// tick_weapon_swing_state chain)...
 void apply_direct_object_hit(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 undefined2 param_1;
 ushort * param_2;
@@ -1718,15 +1566,9 @@ undefined1 param_7;
 }
 
 
-// was FUN_00027ce0 -- resolves an NPC's melee attack: computes its
-// to-hit base (DAT_00100608) and damage dice pool (DAT_0010061c) from
-// its own monster-stat table (&DAT_001007d0/&DAT_001007d5/&DAT_001007e1),
-// adding a random wander-offset spread when flag bit 2 of param_1[0xe]
-// is set, marks it as attacker (DAT_00100610), then calls
-// process_melee_attack_swing to actually resolve the hit. If the
-// player was struck and their own facing/awareness threshold allows,
-// updates a "being attacked from direction" flag on the player record.
-// Own "[npc-wander]" debug trace (reused from a related channel).
+// was FUN_00027ce0 -- resolves an NPC's melee attack: computes its to-hit base (DAT_00100608) and
+// damage dice pool (DAT_0010061c) from its own monster-stat table
+// (&DAT_001007d0/&DAT_001007d5/&DAT_001007e1)...
 int resolve_npc_melee_attack(param_1,param_2,param_3,param_4,param_5)
 byte * param_1;
 undefined2 param_2;
@@ -1758,15 +1600,9 @@ short param_5;
   DAT_00100608 = (short)(char)(&DAT_001007d0)[iVar5 + 0x13] +
                  (short)((int)(char)(&DAT_001007e1)[iVar6] >> 1);
   if ((param_1[0xe] & 4) != 0) {
-    /* Both ordint_divmod calls below were the same fabricated-remainder
-       bug fixed elsewhere this session (this port's ordint_divmod never
-       populates extraout_r1/extraout_r1_00); computed each remainder
-       directly instead. This randomizes a wander/patrol target offset,
-       so previously always added a fixed +7/+4 instead of a real
-       0-5/0-11 random spread -- contributing to (not the sole cause of)
-       the "NPC teleports far away on its first tick" bug this session's
-       QA pass reported, traced to npc_ai_tick's own dropped 5th argument
-       to this function (see its call site's comment). */
+    /* Both ordint_divmod calls below were the same fabricated-remainder bug fixed elsewhere this
+       session (this port's ordint_divmod never populates extraout_r1/extraout_r1_00); computed each
+       remainder directly instead. */
     uVar4 = ce_rand();
     DAT_00100608 = DAT_00100608 + (short)(uVar4 % 6) + 7;
     uVar4 = ce_rand();
@@ -1799,13 +1635,9 @@ short param_5;
 }
 
 
-// was FUN_00027f14 -- grants the player experience for killing param_1
-// (a monster object, category 0x40): plays a HUD update and music
-// sting, rolls XP from the monster's own stat table (&DAT_001007f8),
-// with a random spread when a specific stat flag bit is set, then
-// grants it via grant_experience_points. Called from the monster
-// take-damage/death path (uw.c's own killed-by-player branch) once a
-// kill is confirmed.
+// was FUN_00027f14 -- grants the player experience for killing param_1 (a monster object, category
+// 0x40): plays a HUD update and music sting, rolls XP from the monster's own stat table
+// (&DAT_001007f8), with a random spread when a specific stat flag bit is set...
 void award_monster_kill_experience(param_1)
 ushort * param_1;
 
@@ -1863,11 +1695,9 @@ void load_combat_data_file()
 }
 
 
-// was FUN_0002a2c8 -- reads a fixed 0xc00-byte block from file handle
-// param_1 into &DAT_001007d0 (the monster combat-stat table apply_melee_damage/
-// resolve_npc_melee_attack read armor/attack values from). Registered as
-// one of a small table of resource-loader callbacks (load_object_catalog_data,
-// alongside load_armor_variant_tables) indexed by resource type.
+// was FUN_0002a2c8 -- reads a fixed 0xc00-byte block from file handle param_1 into &DAT_001007d0
+// (the monster combat-stat table apply_melee_damage/ resolve_npc_melee_attack read armor/attack
+// values from).
 void load_monster_combat_stats(param_1)
 undefined4 param_1;
 
@@ -1877,15 +1707,9 @@ undefined4 param_1;
 }
 
 
-// was FUN_00030aac -- an NPC combat sub-goal attempt (one of 3
-// confirmed sibling sub-goals npc_combat_engage_close_tick picks
-// between when not yet close enough to attack, per its own comment).
-// Requires the monster's stat template to have a special-ability id
-// assigned (byte 0x2c != -1, no line-of-sight check needed -- likely a
-// self-targeted ability), rolls a chance from byte 0x2d, and on
-// success switches the NPC into state 0xd (byte 0x15) to begin it.
-// The exact real-world ability this and its two siblings below
-// represent isn't otherwise confirmed; named structurally.
+// was FUN_00030aac -- an NPC combat sub-goal attempt (one of 3 confirmed sibling sub-goals
+// npc_combat_engage_close_tick picks between when not yet close enough to attack, per its own
+// comment).
 undefined4 try_npc_special_ability_no_los()
 
 {
@@ -1919,13 +1743,9 @@ undefined4 try_npc_special_ability_no_los()
 
 
 
-// was FUN_00030be0 -- an NPC combat sub-goal attempt (sibling of
-// try_npc_special_ability_no_los): requires a clear line of sight
-// (check_fine_line_of_sight) and a resource check (check_npc_target_alignment(1),
-// likely "can afford this ability's cost"), rolls a chance from byte
-// 0x2d, and on success switches to state 0xd plus picks between 2
-// variants (byte 0x19 bits 2-3) via a further roll -- likely a ranged
-// spell/breath attack with two possible effect variants.
+// was FUN_00030be0 -- an NPC combat sub-goal attempt (sibling of try_npc_special_ability_no_los):
+// requires a clear line of sight (check_fine_line_of_sight) and a resource check
+// (check_npc_target_alignment(1), likely "can afford this ability's cost")...
 undefined4 try_npc_special_ability_ranged()
 
 {
@@ -1974,11 +1794,8 @@ undefined4 try_npc_special_ability_ranged()
 
 
 // was FUN_00030e50 -- an NPC combat sub-goal attempt (third sibling of
-// try_npc_special_ability_no_los/_ranged): also requires line of sight
-// and the same resource check, but uses a distinct probability byte
-// (stat template byte 6) and switches to a different state (0x5
-// rather than 0xd) on success -- likely a distinct ranged/missile
-// attack type from the other two.
+// try_npc_special_ability_no_los/_ranged): also requires line of sight and the same resource
+// check...
 undefined4 try_npc_special_ability_alt()
 
 {
@@ -2012,24 +1829,17 @@ undefined4 try_npc_special_ability_alt()
 }
 
 
-// was FUN_000318d8 -- adjusts an NPC's current heading (param_1) to
-// swerve away from the player when the player is within param_2 tiles
-// (distance squared): if closer than threshold, computes the heading
-// toward the player and, based on the angular difference from the
-// NPC's own current heading, snaps param_1 to one of 4 discrete
-// swerve-left/swerve-right offsets around it. Already had its 5
-// fabricated-remainder ordint_divmod/extraout_r1 calls fixed by an
-// earlier pass this session (see that fix's own comment just below).
+// was FUN_000318d8 -- adjusts an NPC's current heading (param_1) to swerve away from the player
+// when the player is within param_2 tiles (distance squared): if closer than threshold, computes
+// the heading toward the player and...
 uint adjust_heading_away_from_player(param_1,param_2)
 uint param_1;
 uint param_2;
 
 {
-  /* Was `int`, truncating the real 64-bit pointer get_object_record_by_slot_index(1)
-     returns -- same class of bug fixed repeatedly elsewhere this
-     session. Confirmed live crashing on the very first dereference (the
-     first time this newly-reachable NPC AI path called it). Reused for
-     small-int arithmetic afterward; intptr_t is safe for that too. */
+  /* Was `int`, truncating the real 64-bit pointer get_object_record_by_slot_index(1) returns --
+     same class of bug fixed repeatedly elsewhere this session. Confirmed live crashing on the very
+     first dereference (the first time this newly-reachable NPC AI path called it). */
   intptr_t iVar1;
   uint uVar2;
   uint extraout_r1;
@@ -2052,12 +1862,9 @@ uint param_2;
   if ((int)(uVar4 * uVar4 + uVar2 * uVar2 & 0xffff) < (int)((param_2 & 0xffff) * (param_2 & 0xffff))
      ) {
     uVar2 = compute_movement_heading((int)(uVar3 * 0x1000000) >> 0x18,(int)(uVar5 * 0x1000000) >> 0x18);
-    /* All 5 ordint_divmod calls below were the same fabricated-remainder
-       bug fixed elsewhere this session (this port's ordint_divmod never
-       populates extraout_r1/extraout_r1_NN) -- computed each remainder
-       directly instead. Divisors are constants (8, 0x100), so `% 8`/
-       `% 0x100` is exact (the latter equals `& 0xff`, matching the
-       explicit mask this code already applies to the overall result). */
+    /* All 5 ordint_divmod calls below were the same fabricated-remainder bug fixed elsewhere this
+       session (this port's ordint_divmod never populates extraout_r1/extraout_r1_NN) -- computed
+       each remainder directly instead. */
     iVar1 = (((uVar2 & 0xff) + 4) % 8) * 0x20;
     uVar4 = param_1 & 0xff;
     uVar2 = ((iVar1 - uVar4) + 0x100) & 0xff;
@@ -2081,15 +1888,9 @@ uint param_2;
 }
 
 
-// was FUN_00032410 -- checks/adjusts an NPC's 8-way facing toward a
-// target position (DAT_00101908/0x1c minus DAT_00101910/0x1c, the same
-// aim-point delta check_fine_line_of_sight's own callers compute):
-// param_1==0 checks the coarse 8-way heading via
-// compute_movement_heading, returning 1 if already facing that way or
-// nudging the facing one step closer and returning 0 otherwise;
-// param_1!=0 delegates entirely to check_npc_fine_facing_alignment
-// (a finer-grained sibling check) instead. Called from the special-
-// ability sub-goal functions with param_1=1 to gate on precise aim.
+// was FUN_00032410 -- checks/adjusts an NPC's 8-way facing toward a target position
+// (DAT_00101908/0x1c minus DAT_00101910/0x1c, the same aim-point delta check_fine_line_of_sight's
+// own callers compute): param_1==0 checks the coarse 8-way heading via compute_movement_heading...
 undefined4 check_npc_target_alignment(param_1)
 int param_1;
 
@@ -2140,13 +1941,9 @@ int param_1;
 
 
 
-// was FUN_0003276c -- checks/adjusts an NPC's fine-grained facing
-// toward a target delta (param_1,param_2): computes the precise angle
-// via slope ratios fed through compute_angle_from_slope (an atan2-shaped helper,
-// not yet named), and if the NPC's current fine facing (byte 2's own
-// angle XORed with a jitter field at byte 0x18) is already within a
-// band of the target angle, returns 1 (aligned); otherwise nudges the
-// facing by a fixed step toward it and returns 0.
+// was FUN_0003276c -- checks/adjusts an NPC's fine-grained facing toward a target delta
+// (param_1,param_2): computes the precise angle via slope ratios fed through
+// compute_angle_from_slope (an atan2-shaped helper, not yet named)...
 undefined4 check_npc_fine_facing_alignment(param_1,param_2)
 char param_1;
 char param_2;
@@ -2220,13 +2017,8 @@ char param_2;
 }
 
 
-// was FUN_000346a0 -- applies param_2 points of damage to object
-// param_1 from damaging object param_3 (NULL if none, e.g. environmental
-// damage). Updates the "last damaged by" quality/slot field (byte 9),
-// decrements HP, and on HP exhaustion routes through
-// handle_monster_death/award_monster_kill_experience. Also drives combat
-// music track selection (set_pending_music_track) based on the target's
-// remaining HP fraction via ordint_divmod.
+// was FUN_000346a0 -- applies param_2 points of damage to object param_1 from damaging object
+// param_3 (NULL if none, e.g. environmental damage).
 undefined4 apply_damage_to_object(param_1,param_2,param_3)
 ushort * param_1;
 byte param_2;
@@ -2310,15 +2102,9 @@ ushort * param_3;
 }
 
 
-// was FUN_000382cc -- resolves elemental/damage-type resistance for
-// object param_1 against a damage-type bitmask (param_3), returning
-// the effective damage to apply: 0 if fully resisted, otherwise
-// param_2 (the original damage amount) unchanged. Looks up the
-// object type's resistance byte (DAT_00202c99, 13-byte stride per
-// type) and ANDs it with param_3; if the low 2 bits (a specific
-// damage sub-category) match, rolls a 1/3 chance to still let it
-// through before checking the remaining bits. Only known caller:
-// apply_typed_damage_to_object's non-NPC damage-application path.
+// was FUN_000382cc -- resolves elemental/damage-type resistance for object param_1 against a
+// damage-type bitmask (param_3), returning the effective damage to apply: 0 if fully resisted,
+// otherwise param_2 (the original damage amount) unchanged.
 undefined4 resolve_damage_type_resistance(param_1,param_2,param_3)
 ushort * param_1;
 undefined4 param_2;
@@ -2348,16 +2134,9 @@ uint param_3;
 }
 
 
-// was FUN_00038374 -- the general-purpose "apply damage/effect to
-// any object" entry point (param_1: target; param_2: the damaging
-// object/weapon, or 0; param_3/param_4: tile x/y, when relevant;
-// param_5: raw damage amount; param_6: damage-type bitmask). Resolves
-// elemental resistance first (resolve_damage_type_resistance), then
-// for an NPC target (class 0x40) applies HP damage directly
-// (apply_damage_to_object); for anything else, checks eligibility via
-// apply_object_durability_damage (not yet named) before routing to
-// apply_object_destruction_effect for the object-specific
-// destroy/transform handling.
+// was FUN_00038374 -- the general-purpose "apply damage/effect to any object" entry point (param_1:
+// target; param_2: the damaging object/weapon, or 0; param_3/param_4: tile x/y, when relevant;
+// param_5: raw damage amount; param_6: damage-type bitmask).
 undefined4 apply_typed_damage_to_object(param_1,param_2,param_3,param_4,param_5,param_6)
 ushort * param_1;
 ushort *param_2; /* damaging object, forwarded to apply_damage_to_object */
@@ -2388,17 +2167,9 @@ undefined1 param_6;
 }
 
 
-// was FUN_00038418 -- applies durability damage (param_3, already
-// shifted right by the object type's hardness/resistance divisor from
-// DAT_00202c97) to a non-NPC object param_1, returning whether it
-// broke (durability reached 0). Bails out early (false, no damage)
-// for a protected object (flag bit 0x2000) or an indestructible class
-// (hardness divisor of 3) or non-positive adjusted damage. Uses
-// different durability fields depending on whether the object is a
-// live world object (object_ptr_in_arena) vs a portcullis/door-range
-// type (0x140-0x147) vs an ordinary item. On breaking (and not
-// in-arena, with a valid tile), also fires
-// trigger_object_trap_or_use_action(action 4).
+// was FUN_00038418 -- applies durability damage (param_3, already shifted right by the object
+// type's hardness/resistance divisor from DAT_00202c97) to a non-NPC object param_1, returning
+// whether it broke (durability reached 0).
 bool apply_object_durability_damage(param_1,param_2,param_3,param_4,param_5)
 ushort * param_1;
 ushort *param_2; /* damaging actor, forwarded to the destruction trigger */
@@ -2460,14 +2231,9 @@ undefined2 param_5;
 }
 
 
-// was FUN_00045f9c -- validates whether an object's class/subtype
-// (param_1, masked to 0x1ff) is a valid match for equipment slot
-// param_2: slot 9/10 or the handedness-derived "weapon hand" slot
-// (DAT_00086df8+100 bit 0, +7) always pass through to a subtype range
-// check (class 0x20-0x2f, subtype 0xb-0xf with no extra flag bits
-// set); any other slot index rejects outright. Used both by combat's
-// equipped-item-damage path and by item-property-effect resolution
-// (src/player.c's own comment on resolve_object_variant_or_special_link).
+// was FUN_00045f9c -- validates whether an object's class/subtype (param_1, masked to 0x1ff) is a
+// valid match for equipment slot param_2: slot 9/10 or the handedness-derived "weapon hand" slot
+// (DAT_00086df8+100 bit 0, +7) always pass through to a subtype range check...
 undefined4 is_valid_equipment_slot_item(param_1,param_2)
 ushort param_1;
 short param_2;
@@ -2490,15 +2256,9 @@ short param_2;
 
 
 
-// was FUN_00046030 -- attempts to damage the player's own equipped
-// item in slot param_1 (combat's "extra stagger/sound reaction"
-// trigger, src/combat.c), e.g. a shield or piece of armor absorbing a
-// hit: validates the slot/item combination (via
-// is_valid_equipment_slot_item for param_4==1) or requires an empty
-// flag set (param_4==0), applies typed damage (param_2/param_3), and
-// on destruction frees the item (optionally dropping a replacement
-// gem when param_5 is set) and reports "damaged"/"destroyed" via a
-// scroll message.
+// was FUN_00046030 -- attempts to damage the player's own equipped item in slot param_1 (combat's
+// "extra stagger/sound reaction" trigger, src/combat.c), e.g. a shield or piece of armor absorbing
+// a hit...
 undefined4 damage_equipped_item_in_slot(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined1 param_2;
@@ -2517,10 +2277,9 @@ int param_5;
   undefined4 uVar7;
   char *pcVar8;
   char *pcVar9;
-  char *pDropObj;  /* was `uVar7` (undefined4) for this use -- truncated
-                       spawn_new_object's real object pointer; uVar7 itself
-                       is only reused as a 0/1 message-select flag right
-                       after, so this needed a separate typed local */
+  char *pDropObj;  /* was `uVar7` (undefined4) for this use -- truncated spawn_new_object's real object pointer; uVar7
+   itself is only reused as a 0/1 message-select flag right after, so this needed a separate typed
+   local */
   char acStackY_85aec [547480];
   char acStack_4d [53];
   
@@ -2592,15 +2351,9 @@ int param_5;
 }
 
 
-// was FUN_000542f8 -- grants the player a new active light source:
-// fails (returns 0) if the active-light count (DAT_00086df8+0x5f
-// bits 6-9) is already at its cap; otherwise stages a new slot with
-// type param_1 and radius param_2, rolls its starting fuel from
-// quality tier param_3 (0=torch 2d3, 1=fixed 1, '@'=lantern 2d8+6,
-// -0x80=brightest 3d20+24), increments the active count, and
-// refreshes equipment effects. Confirmed by dispatch_special_action's
-// SPECIAL action types 0-3, reached only for the player object --
-// a tile trigger that lights the player a torch/lantern.
+// was FUN_000542f8 -- grants the player a new active light source: fails (returns 0) if the
+// active-light count (DAT_00086df8+0x5f bits 6-9) is already at its cap; otherwise stages a new
+// slot with type param_1 and radius param_2...
 undefined4 add_active_light_source(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
@@ -2659,28 +2412,9 @@ char param_3;
 
 
 
-// was FUN_0005448c -- default collision outcome for object param_2
-// when nothing else handles it (param_1, the object that struck it,
-// is unused): takes a position snapshot, and if the snapshot's
-// velocity-like field is nonzero, computes a randomized bounce/
-// scatter offset (ordint_divmod roll scaled by the object's own speed
-// field) and commits the new position via sync_object_tile_position.
-// Always returns 4. Confirmed as the fallback tail of
-// resolve_collision_candidate_interaction's door/usable-object checks.
-// BUG FIX (unit-testing-framework merge): this function's own stack
-// snapshot buffer had been split into separate named scalars
-// (local_3e/local_34/local_27/local_26) sitting "after" a shrunk
-// auStack_48[10] -- but build_object_placement_snapshot/
-// sync_object_tile_position both treat it as ONE opaque, contiguous
-// 0x2c-byte struct (per their own comments), and C makes no guarantee
-// locals are laid out contiguously or in declaration order. This was a
-// real stack buffer overflow (build_object_placement_snapshot writing
-// up to offset 0x2c into a 10-byte array) AND local_30 was read
-// (`if (local_30 != 0)`) without ever being assigned -- the assignment
-// from the snapshot (`local_30 = *(short *)(auStack_48 + 0x18)`) had
-// been dropped entirely in the split. Restored the single real-sized
-// buffer and the dropped read, indexing by the real ARM-confirmed
-// offsets instead.
+// was FUN_0005448c -- default collision outcome for object param_2 when nothing else handles it
+// (param_1, the object that struck it, is unused): takes a position snapshot, and if the snapshot's
+// velocity-like field is nonzero...
 undefined4 apply_object_collision_scatter(param_1,param_2)
 ushort *param_1;
 ushort *param_2;
@@ -2726,13 +2460,9 @@ ushort *param_2;
 
 // WARNING: Removing unreachable block (ram,0x00054668)
 
-// was FUN_000545ac -- looks up a base damage/flag pair for object
-// param_1's subtype (DAT_002027d0/DAT_002027d2, 3 bytes/entry), and
-// when a specific condition holds (param_1[0x12]==1 and that
-// subtype's flag byte == -0x40) adjusts the damage via a skill check
-// (+0x27) before applying it to param_1 through apply_direct_object_hit.
-// Confirmed called from use_object_on_target for class-0/family-1
-// targets -- a "use this object on a trap/trigger" damage effect.
+// was FUN_000545ac -- looks up a base damage/flag pair for object param_1's subtype
+// (DAT_002027d0/DAT_002027d2, 3 bytes/entry), and when a specific condition holds (param_1[0x12]==1
+// and that subtype's flag byte == -0x40) adjusts the damage via a skill check (+0x27) before...
 /* ARM 0x545c0 preserves the target in r8 and 0x54698 passes that address
    in r2 to apply_direct_object_hit. undefined4 truncated it on 64-bit hosts. */
 void apply_trap_type_damage_effect(param_1,param_2)
@@ -2774,15 +2504,9 @@ ushort * param_2;
 
 
 
-// was FUN_000546c4 -- resolves a collision between moving object
-// param_2 (a slot index) and collision-candidate param_1 (an index
-// into DAT_00202c38, or -1 for "the player directly"): marks the
-// candidate as processed, resolves both the candidate and param_2's
-// own records, and dispatches to resolve_skill_gated_unlock_or_use
-// for doors or use_object_on_target for usable objects on either
-// side, falling back to apply_object_collision_scatter when neither
-// applies. Confirmed called from both movement.c's player-movement
-// collision path and (twice) a weapon/trap collision path in uw.c.
+// was FUN_000546c4 -- resolves a collision between moving object param_2 (a slot index) and
+// collision-candidate param_1 (an index into DAT_00202c38, or -1 for "the player directly"): marks
+// the candidate as processed, resolves both the candidate and param_2's own records...
 undefined4 resolve_collision_candidate_interaction(param_1,param_2)
 short param_1;
 undefined4 param_2;
@@ -2814,15 +2538,9 @@ undefined4 param_2;
   DAT_002046e0 = (byte)(DAT_002049c8 >> 3);
   DAT_002046e4 = (byte)(DAT_002049ca >> 3);
   puVar4 = (ushort *)get_object_record_by_slot_index(param_2);
-  /* HACK: get_object_record_by_slot_index legitimately returns NULL for an out-of-range/
-     empty slot (its own established contract, guarded at many other
-     call sites this session) and this immediately dereferenced it
-     unconditionally. Newly reachable via npc_ai_tick's placement-sweep
-     -> movement_collision_sweep -> sweep_collision_flags chain now that
-     this session's NPC-AI-cluster byte-scaling fixes let more objects
-     take that path for the first time; confirmed live crashing
-     (EXC_BAD_ACCESS at `uVar2 = *puVar4`) in several regression demos.
-     Match this function's own "nothing to do" early-out (return 2). */
+  /* HACK: get_object_record_by_slot_index legitimately returns NULL for an out-of-range/ empty slot
+     (its own established contract, guarded at many other call sites this session) and this
+     immediately dereferenced it unconditionally. */
   if (puVar4 == (ushort *)0x0) {
     return 2;
   }

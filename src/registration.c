@@ -1,27 +1,14 @@
-/* Product registration/copy-protection cluster: the code-wheel
- * registration-word checksum (validate_codewheel_word and its two table-
- * lookup helpers), the registry-based "already validated" sentinel
- * (check_registration_key_saved/save_registration_key_validated), the
- * registration-key entry dialog (bypassed outright in this stub build --
- * see check_registration_key_dialog's own comment), and the related
- * power-status-flag and disk-space startup checks. Split out of uw.c
- * (the original monolithic decompile) once these functions' real roles
- * were confirmed.
- */
+/* Product registration/copy-protection cluster: the code-wheel registration-word checksum
+   (validate_codewheel_word and its two table- lookup helpers), the registry-based "already
+   validated" sentinel (check_registration_key_saved/save_registration_key_validated)... */
 #include "headers/registration.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Read as a pointer (codewheel_letter_at_index/codewheel_index_of_letter both
-   dereference it as `short *`), same truncated-pointer-in-an-int bug
-   class as this project's other DAT_xxx symbols, but never assigned
-   anywhere in the whole decompile -- whatever real 0x24(36)-entry
-   character table (a-la "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ") it once
-   pointed at wasn't recovered by Ghidra as initialized data. Left as-is
-   (not guessed/fabricated) since the only caller chain that reads it
-   (validate_codewheel_word) has zero callers itself in this build --
-   entirely dead under check_registration_key_dialog's bypass. */
+/* Read as a pointer (codewheel_letter_at_index/codewheel_index_of_letter both dereference it as
+   `short *`), same truncated-pointer-in-an-int bug class as this project's other DAT_xxx symbols,
+   but never assigned anywhere in the whole decompile... */
 static int DAT_00086f0c;
 static unsigned short u_BuildNo_00086f5c[] = u"BuildNo";
 static unsigned short u_Software_ZIO_Interactive_Ultima_U_00086f6c[] = u"Software\\ZIO_Interactive_Ultima_U";
@@ -36,12 +23,8 @@ static undefined DAT_0023bf78_backing[360];
 
 
 
-// was FUN_0006b3dc -- codewheel character-table lookup: returns the
-// short value at index param_1 (0..0x23/35) of the table DAT_00086f0c
-// points at, or 0 if out of range. Part of the code-wheel registration
-// word checksum (see validate_codewheel_word's own comment) -- unreachable
-// in this build since that function has no callers (the registration
-// gate is bypassed outright, see check_registration_key_dialog).
+// was FUN_0006b3dc -- codewheel character-table lookup: returns the short value at index param_1
+// (0..0x23/35) of the table DAT_00086f0c points at, or 0 if out of range.
 undefined2 codewheel_letter_at_index(param_1)
 int param_1;
 
@@ -83,16 +66,8 @@ short param_1;
 
 
 
-// was FUN_0006b448 -- the code-wheel registration-word checksum:
-// param_2 is a 12-char answer word (uppercased in-place into local_48),
-// param_1 a 4-entry ushort key. Splits the word into four 3-letter
-// groups, looks each letter up via codewheel_index_of_letter, and cross-
-// checks derived sum/product checksums against the word's own 3rd
-// letter of each group (via codewheel_letter_at_index) -- the classic
-// "read the word off the code wheel at the position matching your key"
-// copy-protection scheme. No callers in this build (see
-// codewheel_letter_at_index's own comment) -- the registration gate is
-// bypassed outright by check_registration_key_dialog.
+// was FUN_0006b448 -- the code-wheel registration-word checksum: param_2 is a 12-char answer word
+// (uppercased in-place into local_48), param_1 a 4-entry ushort key.
 undefined4 validate_codewheel_word(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -159,12 +134,9 @@ int param_2;
 
 
 
-// was FUN_0006b718 -- checks the registry (HKLM\Software\ZIO_Interactive_
-// Ultima_U\BuildNo) for the sentinel value 0xc0f this port's registration
-// flow writes via save_registration_key_validated once the product's been
-// validated; on a first run (key missing) it instead creates the key with
-// a placeholder value derived from the current tick count, ready for
-// save_registration_key_validated to overwrite for real.
+// was FUN_0006b718 -- checks the registry (HKLM\Software\ZIO_Interactive_ Ultima_U\BuildNo) for the
+// sentinel value 0xc0f this port's registration flow writes via save_registration_key_validated
+// once the product's been validated...
 undefined4 check_registration_key_saved()
 
 {
@@ -224,13 +196,9 @@ void save_registration_key_validated()
 void set_power_status_flag_bit()
 
 {
-  /* Looks like a GetSystemPowerStatus/GetVersionEx-shaped call: a struct
-     starting with a 4-byte "cbSize" field is zeroed, sized, and passed to
-     EnterCriticalSection (unidentified coredll query, currently a no-op stub that
-     always reports "unsupported"/0), so the flag-setting branch below is
-     presently dead. Widened from a bare 4-byte local to the full 0x30-byte
-     struct Ghidra's memset call actually touches -- the original
-     undersized declaration let a real memset() smash the stack. */
+  /* Looks like a GetSystemPowerStatus/GetVersionEx-shaped call: a struct starting with a 4-byte
+     "cbSize" field is zeroed, sized, and passed to EnterCriticalSection (unidentified coredll
+     query, currently a no-op stub that always reports "unsupported"/0)... */
   int iVar1;
   undefined1 local_34 [0x30];
   
@@ -274,15 +242,9 @@ undefined4 param_1;
 undefined4 param_2;
 
 {
-  /* This is the "enter your registration key" modal dialog gate (see the
-     "Invalid Registration Key Code!!" string and the registration_key_dialog_proc
-     dialog proc it registers via DialogBoxIndirectParamW, a CreateDialogParam-shaped call).
-     DialogBoxIndirectParamW is a generic no-op stub -- it never actually shows a
-     dialog or drives the dialog proc -- so DAT_0023c108 (the dialog's
-     "still open" flag) would never get set and this would always report
-     failure. Bypassed outright: this is exactly the kind of OS/GUI-level
-     platform interaction the stub build isn't trying to reproduce, and a
-     stub build shouldn't gate startup on a product key nobody has. */
+  /* This is the "enter your registration key" modal dialog gate (see the "Invalid Registration Key
+     Code!!" string and the registration_key_dialog_proc dialog proc it registers via
+     DialogBoxIndirectParamW, a CreateDialogParam-shaped call). */
   (void)param_1; (void)param_2;
   fprintf(stderr, "[stub] check_registration_key_dialog: bypassing registration-key dialog, "
                   "treating as already registered\n");
@@ -291,14 +253,9 @@ undefined4 param_2;
 
 
 
-// was FUN_0006ba54 -- window proc for the (never actually shown, see
-// check_registration_key_dialog) "enter your registration key" dialog:
-// WM_INITDIALOG-shaped (0x110)... but that message id is never checked
-// here (only WM_COMMAND, 0x111, is handled -- the 0x110 branch just
-// falls through to `return 1`), so param_2==0x111 is really the only
-// live path: IDCANCEL-or-similar (param_3==1 or 2) closes the dialog
-// and clears DAT_0023c108, while param_3==0x3ea (a custom "validate"
-// command) reads the entered key text, closes with DAT_0023c108 set.
+// was FUN_0006ba54 -- window proc for the (never actually shown, see check_registration_key_dialog)
+// "enter your registration key" dialog: WM_INITDIALOG-shaped (0x110)... but that message id is
+// never checked here...
 undefined4 registration_key_dialog_proc(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
@@ -327,9 +284,8 @@ short param_3;
 
 
 
-// was FUN_0006baf8 -- top-level registration check: true if the
-// registry sentinel is already set (check_registration_key_saved) or the
-// (bypassed, always-succeeding) registration dialog gate
+// was FUN_0006baf8 -- top-level registration check: true if the registry sentinel is already set
+// (check_registration_key_saved) or the (bypassed, always-succeeding) registration dialog gate
 // (check_registration_key_dialog) reports success.
 undefined4 is_product_registered(param_1,param_2)
 char *param_1;
@@ -353,13 +309,8 @@ undefined4 param_2;
 
 
 
-// was FUN_0006bb64 -- startup disk-space check (its only caller checks
-// it right after init_gameplay_session and shows "Not enough disk space
-// for save game" on failure): builds a path from DAT_0023cca8 plus
-// ensure_save_directory_exists's suffix and queries free space via the GetDiskFreeSpace-
-// shaped GetDiskFreeSpaceExW, requiring at least 0x9b0a0 (~635KB) free.
-// GetDiskFreeSpaceExW is stubbed to always report a large local_118 (see
-// ordinal_stubs.c), so this always reports success in this build.
+// was FUN_0006bb64 -- startup disk-space check (its only caller checks it right after
+// init_gameplay_session and shows "Not enough disk space for save game" on failure)...
 undefined4 check_save_disk_space()
 
 {
@@ -391,17 +342,9 @@ undefined4 check_save_disk_space()
   CreateDirectoryW(uVar4,0);
   ensure_save_directory_exists(acStack_109 + 1);
   uVar4 = load_string_resource(acStack_109 + 1);
-  /* local_114 is never actually passed to GetDiskFreeSpaceExW (only auStack_110
-     and &local_118 are) -- in the original 32-bit binary this local
-     apparently sat immediately after auStack_110 on the stack and got
-     written incidentally by a GetDiskFreeSpace-shaped call writing a
-     wider struct than Ghidra's 7-byte auStack_110 array captured. That
-     stack-adjacency trick doesn't carry over to this recompile, so
-     local_114 would otherwise be read uninitialized. GetDiskFreeSpaceExW is
-     implemented to always report success with a large local_118 value
-     (see ordinal_stubs.c) -- initialize local_114 to match so the
-     always-enough-disk-space intent holds regardless of real stack
-     layout. */
+  /* local_114 is never actually passed to GetDiskFreeSpaceExW (only auStack_110 and &local_118 are)
+     -- in the original 32-bit binary this local apparently sat immediately after auStack_110 on the
+     stack and got written incidentally by a GetDiskFreeSpace-shaped call writing a wider... */
   local_114 = 0;
   iVar3 = GetDiskFreeSpaceExW(uVar4,0,auStack_110,&local_118);
   if ((iVar3 == 0) || ((local_114 == 0 && (local_118 < 0x9b0a0)))) {

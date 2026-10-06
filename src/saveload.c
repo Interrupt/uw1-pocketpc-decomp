@@ -1,10 +1,6 @@
-/* Save/load: the slot-list menu (draw, "journey onward" selection),
- * slot probing, the actual game save/load, and the low-level .ark
- * archive I/O primitives (open/close/read-entry/write-entry) those
- * and the level loader build on. Split out of uw.c (the original
- * monolithic decompile) once these functions' real roles were
- * confirmed.
- */
+/* Save/load: the slot-list menu (draw, "journey onward" selection), slot probing, the actual game
+   save/load, and the low-level .ark archive I/O primitives (open/close/read-entry/write-entry)
+   those and the level loader build on. */
 #include "headers/saveload.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -14,76 +10,31 @@ static char s__arc_tmp_000842b4[] = "_arc.tmp";
 /* Not `static` -- also used by saveload.c (open_level_archive,
    close_level_archive, write_archive_entry, read_archive_entry); see the
    extern declarations and macro aliases in uw.h. */
-/* Sizing-audit pass: investigated, NOT shrunk -- flagged as a
-   caution, not a confirmed-safe target. Three call sites disagree on
-   the real bound: open_level_archive's read has no mask at all (up
-   to 65535 entries -> 262140 bytes); close_level_archive's write
-   masks the count with `&0x3fff` (16383 entries -> 65532 bytes);
-   write_archive_entry validates against the raw 16-bit count with no
-   0x3fff mask. The weakest of these (the 0x3fff mask) alone already
-   implies a need for 65532 bytes -- over 8x the current 8192. Real
-   lev.ark files almost certainly never have anywhere near that many
-   entries, but nothing in this code path actually enforces a smaller
-   number consistently, so shrinking below the current size would be
-   actively dangerous rather than merely untidy. Left as-is; the
-   inconsistent masking is a separate correctness question for
-   another pass. */
+/* Sizing-audit pass: investigated, NOT shrunk -- flagged as a caution, not a confirmed-safe target. */
 static undefined DAT_000b78b8_backing[8192];
 #define DAT_000b78b8 DAT_000b78b8_backing[0]
-/* Sizing pass: DAT_000b98b8 and DAT_000b98b9's real ARM addresses are
-   exactly 1 byte apart (0xb98b8/0xb98b9), and every real use confirms
-   they're one combined buffer, not two independent ones: both call
-   sites compute DAT_000b98b9's effective string position as
-   `&DAT_000b98b9 + ce_strlen(&DAT_000b98b8)` (open_level_archive at
-   line ~904, close_level_archive at line ~1076/1080) -- i.e. "right
-   after DAT_000b98b8's own NUL terminator, plus the 1-byte base
-   offset" -- a NUL-separated two-path-component layout in one real
-   buffer, matching this codebase's split-symbol pattern seen
-   elsewhere (e.g. the old DAT_0023b840/DAT_0023b841 pair). Worst case:
-   1 (base byte) + strlen(local_120, <=259) + 1 (NUL) +
-   strlen(local_228, <=263) + 1 (NUL) = 525 real bytes; sized with
-   headroom since nothing pins it to that exact byte count. */
+/* Sizing pass: DAT_000b98b8 and DAT_000b98b9's real ARM addresses are exactly 1 byte apart
+   (0xb98b8/0xb98b9), and every real use confirms they're one combined buffer, not two independent
+   ones... */
 static undefined1 DAT_000b98b8_backing[1024];
 #define DAT_000b98b8 DAT_000b98b8_backing[0]
 /* Archive name followed by NUL and the temporary-file name. */
 #define DAT_000b98b9 DAT_000b98b8_backing[1]
-/* Sizing pass: this is a file-copy scratch buffer, read in chunks
-   explicitly clamped to 0x2000 (8192) bytes right before every read
-   into it (see the `if (0x2000 < uVar12) uVar12 = 0x2000;` clamp and
-   the sibling fixed-0x2000 read_file_handle call a few lines below it)
-   -- was oversized at 16384 bytes for an 8192-byte chunk. */
+/* Sizing pass: this is a file-copy scratch buffer, read in chunks explicitly clamped to 0x2000
+   (8192) bytes right before every read into it (see the `if (0x2000 < uVar12) uVar12 = 0x2000;`
+   clamp and the sibling fixed-0x2000 read_file_handle call a few lines below it)... */
 static undefined1 DAT_000b58b8_backing[8448];
 #define DAT_000b58b8 DAT_000b58b8_backing[0]
 char s__SAVE0_lev_ark_000842fc[] = "\\SAVE0\\lev.ark";
 // was DAT_002028c8
 char *g_save_record_buffer;
 short DAT_002046f0;
-/* Was zero-initialized (C default, no initializer) -- confirmed via
-   Ghidra headless memory dump (0x868dc) that the real binary's own
-   .data has this at 7, not 0. This is the pause-menu-panel state index
-   (0-6 = a panel is open, 7 = closed/back in normal gameplay -- see
-   close_ui_panel_return_to_game's own comment above, uw.c ~4400), and
-   draw_idle_mouse_cursor (the idle mouse-cursor-sprite show function, reached
-   whenever nothing is held: g_selected_object==0) refuses to draw the
-   cursor at all unless this equals 7. Starting at the C default of 0
-   instead of the real 7 meant the idle cursor -- automap browsing
-   being the clearest case, since you're never holding an item there,
-   but really anywhere the player hasn't yet opened and closed the
-   Escape menu at least once this session -- never rendered via this
-   path from the moment the game starts, matching the reported "automap
-   cursor doesn't reliably show/flickers" (a session that happens to
-   have already cycled the pause menu once masks this; a fresh session
-   or the very first minutes of play would not). */
+/* Was zero-initialized (C default, no initializer) -- confirmed via Ghidra headless memory dump
+   (0x868dc) that the real binary's own .data has this at 7, not 0. */
 undefined2 DAT_000868dc = 7;
-/* Was a bare 1-byte `undefined` scalar -- draw_save_load_slot_list takes its address
-   and passes it straight to message_scroll_print_wrapped as the save-
-   slot IV label, so it needs to be a real string, not a scalar. Real
-   bytes confirmed via a Ghidra memory dump of the original binary at
-   0x8705c: "IV- " (with a trailing space, matching the sibling I-/II-/
-   III- labels below). Same class of bug as the other unrecovered-string
-   fixes this session, just previously missed because Ghidra had typed
-   this one as a scalar instead of generating a garbled placeholder
-   string for it. */
+/* Was a bare 1-byte `undefined` scalar -- draw_save_load_slot_list takes its address and passes it
+   straight to message_scroll_print_wrapped as the save- slot IV label, so it needs to be a real
+   string, not a scalar. */
 // was DAT_0008705c
 static char s_IV__0008705c[] = "IV- ";
 /* Was `"III-"` -- missing its trailing space, confirmed via the same
@@ -95,66 +46,41 @@ static char s_II__0008706c[] = "II- ";
 /* Same fix as s_IV__0008705c above: real bytes at 0x87074 are "I- ". */
 // was DAT_00087074
 static char s_I__00087074[] = "I- ";
-/* Same reused-global-holding-a-real-string pattern as s_scroll_newline_0008522c
-   above: a Ghidra memory dump of the original binary at 0x87038 shows
-   the real bytes are `5c 30 00` -- the string "\0" (a literal
-   backslash+'0' control code, not an escape byte), not the all-zero
-   default this backing array's C declaration gave it. */
+/* Same reused-global-holding-a-real-string pattern as s_scroll_newline_0008522c above: a Ghidra
+   memory dump of the original binary at 0x87038 shows the real bytes are `5c 30 00` -- the string
+   "\0" (a literal backslash+'0' control code, not an escape byte)... */
 // was DAT_00087038
 static undefined s_scroll_color_reset_00087038_backing[8192] = "\\0";
 #define s_scroll_color_reset_00087038 s_scroll_color_reset_00087038_backing[0]
-/* Was `"\\6_Save_Game_Descriptions"` -- underscores standing in for
-   whitespace, matching Ghidra's own auto-generated symbol name for this
-   string rather than its real recovered bytes (same garbled-placeholder
-   class as s__not_used_yet__00087020 and the save-name prompt string
-   fixed earlier this session). Real bytes confirmed via a Ghidra memory
-   dump of the original binary at 0x8703c
-   (`5c 36 20 20 20 20 53 61 76 65 20 47 61 6d 65 20 44 65 73 63 72 69
-   70 74 69 6f 6e 73 00`): a literal backslash and '6' (not an escape
-   sequence -- there's no raw 0x06 byte here, just the two printable
-   characters), then four real spaces, then "Save Game Descriptions". */
+/* Was `"\\6_Save_Game_Descriptions"` -- underscores standing in for whitespace, matching Ghidra's
+   own auto-generated symbol name for this string rather than its real recovered bytes... */
 static char s__6_Save_Game_Descriptions_0008703c[] = "\\6    Save Game Descriptions";
 static char s__DATA_OPSCR_BYT_00086efc[] = "\\DATA\\OPSCR.BYT";
-/* Was `"<not_used_yet>"` -- underscores standing in for the real spaces
-   (same garbled-placeholder class as the save-descriptions header
-   string above and the save-name prompt fixed earlier this session).
-   Real bytes confirmed via a Ghidra memory dump of the original binary
-   at 0x87020 (`3c 6e 6f 74 20 75 73 65 64 20 79 65 74 3e 00`): the
-   angle brackets were genuinely part of the string, just with real
-   spaces instead of underscores between the words, and no trailing
-   newline. */
+/* Was `"<not_used_yet>"` -- underscores standing in for the real spaces (same garbled-placeholder
+   class as the save-descriptions header string above and the save-name prompt fixed earlier this
+   session). */
 static char s__not_used_yet__00087020[] = "<not used yet>";
-/* Was zero-initialized -- see DAT_000857a0's comment above. probe_save_slots
-   appends this to DAT_000857a0 ("\SAVE0") to build each save-slot probe
-   path, then substitutes the '0' with '1'..'4'; the already-recovered
-   s__SAVE0_desc_00087078 == "\SAVE0\desc" spells out exactly what that
-   concatenation should produce, confirming this suffix is "\desc". */
+/* Was zero-initialized -- see DAT_000857a0's comment above. probe_save_slots appends this to
+   DAT_000857a0 ("\SAVE0") to build each save-slot probe path, then substitutes the '0' with
+   '1'..'4'... */
 /* Sizing-audit pass: confirmed 5-char content ("\desc"), no
    indexing. Sized to 16; down from 8192. */
 static undefined DAT_00087030_backing[16] = "\\desc";
 #define DAT_00087030 DAT_00087030_backing[0]
 static char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
-/* Was `"Please_enter_a_Save_Game_file_an"` -- a garbled placeholder that
-   just echoed this string's own auto-generated symbol name (underscores
-   for spaces, truncated at Ghidra's naming-length cap) instead of the
-   real recovered text; this is why the pause-menu's save/load name
-   prompt never showed anything in the message scroll. Real bytes
-   confirmed via Ghidra headless dump of 0x87094 in the original binary
-   (`20 20 50 6c ... 45 6e 74 65 72 0a 00`): two leading spaces, no
-   trailing period, a trailing newline before the NUL. */
+/* Was `"Please_enter_a_Save_Game_file_an"` -- a garbled placeholder that just echoed this string's
+   own auto-generated symbol name (underscores for spaces, truncated at Ghidra's naming-length cap)
+   instead of the real recovered text... */
 static char s_Please_enter_a_Save_Game_file_an_00087094[] = "  Please enter a Save Game file and press Enter\n";
 static char s__SAVE0_desc_00087078[] = "\\SAVE0\\desc";
-/* Sizing-audit pass: a directory-scan path suffix, appended once
-   before a FindFirstFile-style scan. Real content confirmed via
-   direct Ghidra memory export of UU.exe: "\". Sized to 32 for
-   headroom; down from 8192. */
+/* Sizing-audit pass: a directory-scan path suffix, appended once before a FindFirstFile-style scan.
+   Real content confirmed via direct Ghidra memory export of UU.exe: "\". Sized to 32 for headroom;
+   down from 8192. */
 static undefined DAT_00087084_backing[32] = "\\";
 #define DAT_00087084 DAT_00087084_backing[0]
-/* Was zero-initialized -- see DAT_000857a0's comment above. ensure_save_directory_exists
-   appends this to a directory path before scanning it with the
-   FindFirstFileW/181 FindFirstFile/FindNextFile-shaped ordinals, matching
-   the universal Win32 "\*.*" wildcard idiom for "list everything in this
-   directory". */
+/* Was zero-initialized -- see DAT_000857a0's comment above. ensure_save_directory_exists appends
+   this to a directory path before scanning it with the FindFirstFileW/181
+   FindFirstFile/FindNextFile-shaped ordinals... */
 /* Sizing-audit pass: confirmed 4-char content ("\*.*"), no indexing.
    Sized to 16; down from 8192. */
 static undefined DAT_000870c8_backing[16] = "\\*.*";
@@ -186,28 +112,9 @@ void draw_save_load_slot_list()
   local_bc[3] = &s_IV__0008705c;
   msg_scroll_panel_reset(1);
   probe_save_slots(auStack_ac,auStack_c4);
-  /* g_text_use_palette_color gates whether draw_text_string honours
-     *g_draw_color_index at all (see that global's own comment) --
-     confirmed via disassembly that neither message_scroll_print_wrapped
-     nor msg_scroll_draw_wrapped_span (the real functions behind this
-     whole print) ever touch it, so message-scroll text always takes the
-     flat g_text_flat_color path in the pristine binary. The "\6" control
-     code this header uses (real palette index 0xd4 -- confirmed RGB
-     (88,184,64), a real green, against PALS.DAT bank 0) needs this flag
-     on to have any visible effect at all, matching a QA report that the
-     original game rendered this list in green. Bracket it narrowly
-     around just this function's own prints (mirrors draw_menu_item_list
-     and FUN_0006a3d8/display_book_or_scroll_page's own established "caller forces it
-     for the scope of its own draw, then restores" pattern) rather than
-     forcing it on inside message_scroll_print_wrapped itself -- an
-     earlier attempt did that and leaked this panel's now-colored
-     DAT_00250704+0x16 persistent-color field into every *unrelated*
-     scroll message printed afterward for the rest of the session
-     (reported: ordinary messages rendering white, since this list's own
-     trailing "\0" sets that field to palette index 0x60 before this
-     function returns). Scoping the flag to just this call can't leak
-     that way, since it's always restored the moment this function
-     returns, regardless of what the persistent color field is left at. */
+  /* g_text_use_palette_color gates whether draw_text_string honours g_draw_color_index at all (see
+     that global's own comment) -- confirmed via disassembly that neither
+     message_scroll_print_wrapped nor msg_scroll_draw_wrapped_span... */
   int _saved_text_palette_color = g_text_use_palette_color;
   g_text_use_palette_color = 1;
   message_scroll_print_wrapped(s__6_Save_Game_Descriptions_0008703c);
@@ -228,11 +135,7 @@ void draw_save_load_slot_list()
 
 
 
-// was FUN_0006b178. Title screen's "Journey Onward" entry point: shows
-// the save-slot picker (via probe_save_slots + menu_button_list_navigate)
-// and, on a real selection, copies that slot into \SAVE0 and enters
-// gameplay -- see the tail's own comment for why it does a direct file
-// copy rather than reusing the in-game Save/Load paths.
+// was FUN_0006b178.
 undefined4 journey_onward_load_slot_menu()
 
 {
@@ -243,12 +146,9 @@ undefined4 journey_onward_load_slot_menu()
   char *pcVar3;
   int iVar4;
   undefined4 uVar5;
-  char *pcVar_str;  /* was folded into uVar5 (`undefined4`, this
-                        function's own 0/1/-1 return-code variable),
-                        truncating the real get_message_string() string
-                        pointer it also briefly held -- same "reused
-                        scalar" bug already fixed elsewhere this session
-                        (see dispatch_object_action's uVar11 comment) */
+  char *pcVar_str;  /* was folded into uVar5 (`undefined4`, this function's own 0/1/-1 return-code variable), truncating
+   the real get_message_string() string pointer it also briefly held -- same "reused scalar" bug
+   already fixed elsewhere this session (see dispatch_object_action's uVar11 comment) */
   short sVar6;
   uint uVar7;
   int iVar8;
@@ -261,18 +161,9 @@ undefined4 journey_onward_load_slot_menu()
      array as an 8-byte-stride char** table). Widened to match. */
   char *local_1d0 [4];
   char acStack_1c0 [264];
-  /* Was `char acStack_b8 [38]` -- another Ghidra stack-frame-size
-     miscalculation (same bug class fixed elsewhere this session).
-     probe_save_slots unconditionally writes 4 fixed-width 0x28(40)-byte
-     records into whatever buffer its param_1 points at (uVar5*0x28 +
-     charindex, for uVar5 = 0..3), i.e. it needs 0xA0 (160) bytes -- and
-     both its other call sites (draw_save_load_slot_list's auStack_ac, update_journey_onward_availability's
-     auStack_a4) already correctly declare exactly that. Only this one
-     was wrong, at less than a quarter the required size. Confirmed via
-     AddressSanitizer: a real stack-buffer-overflow, reproducibly
-     crashing (SIGABRT, corrupted heap free-list, surfacing later and
-     unpredictably depending on stack layout) as soon as the in-game
-     options/pause menu opens, since that's this function's own caller. */
+  /* Was `char acStack_b8 [38]` -- another Ghidra stack-frame-size miscalculation (same bug class
+     fixed elsewhere this session). probe_save_slots unconditionally writes 4 fixed-width
+     0x28(40)-byte records into whatever buffer its param_1 points at... */
   char acStack_b8 [160];
   char local_92 [122];
   
@@ -296,21 +187,8 @@ undefined4 journey_onward_load_slot_menu()
   uVar7 = 0;
   do {
     if ((uVar10 & 1 << (uVar7 & 0xff)) != 0) {
-      /* Was `local_92 + uVar7 * 0x28` -- local_92 is a separate,
-         never-written 122-byte stack local (too small for this indexing
-         past uVar7==2 anyway), while probe_save_slots actually wrote the 4
-         real 0x28-byte slot-description records into acStack_b8 (see its
-         own declaration comment). Also, this loop is meant to walk
-         BACKWARD from the END of the 40-byte record over trailing
-         padding spaces to find where the real text ends -- but Ghidra
-         dropped the "+0x27" (last-byte) offset from the starting point,
-         so `pcVar3` started at the record's FIRST byte instead. Since
-         the loop condition requires strictly greater-than the record
-         start to keep scanning backward, that made it a zero-iteration
-         loop every time, and `pcVar3[1] = '\0'` right below always
-         chopped the label down to its first character regardless of
-         content (confirmed via UW_DEBUG_TITLEMENU: "Level 1" -> "L").
-         Start from the record's real last byte instead. */
+      /* Was `local_92 + uVar7 * 0x28` -- local_92 is a separate, never-written 122-byte stack local
+         (too small for this indexing past uVar7==2 anyway)... */
       for (pcVar3 = acStack_b8 + uVar7 * 0x28 + 0x27;
           (*pcVar3 == ' ' && (acStack_b8 + uVar7 * 0x28 < pcVar3)); pcVar3 = pcVar3 + -1) {
       }
@@ -345,12 +223,8 @@ undefined4 journey_onward_load_slot_menu()
     } while (cVar1 != '\0');
     ce_strcat(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
     blit_fullscreen_bitmap_file(0xffffffff,acStack_1c0,1);
-    /* Was `uVar5 = get_message_string(0x301);` -- get_message_string returns a real
-       char*, but uVar5 is this function's own `undefined4` 0/1/-1
-       return-code variable, so storing the string pointer into it
-       truncated it on this 64-bit build (same "reused scalar" bug
-       already fixed elsewhere this session -- see dispatch_object_action's
-       uVar11 comment). Use a real pointer local instead. */
+    /* Was `uVar5 = get_message_string(0x301);` -- get_message_string returns a real char*, but
+       uVar5 is this function's own `undefined4` 0/1/-1 return-code variable... */
     pcVar_str = (char *)get_message_string(0x301);
     select_active_font(s_fontbig_sys_0008432c);
     *g_draw_color_index = 0xa2;
@@ -362,21 +236,9 @@ undefined4 journey_onward_load_slot_menu()
     }
     draw_text_string(pcVar_str,(short)(iVar8 >> 1) + 10,0x5a);
     select_active_font(s_font5x6p_sys_0008430c);
-    /* Was `load_game_from_slot(iVar4 + 1)` -- load_game_from_slot is "Save Game"
-       (copies the live \SAVE0 session INTO the chosen slot), which makes
-       no sense from the title screen where no game is running yet: this
-       whole screen only ever appears when main_menu_loop found an
-       existing save (see its uVar8=4 gate) and, on success, unconditionally
-       enters gameplay (`bVar11 = sVar3==1;` breaks main_menu_loop's own
-       loop straight into set_game_mode(1)) -- pure Save-Game semantics
-       for a title screen with no active session, but exactly what
-       "Continue/Load Game" should do. Reusing the real save_game_to_slot
-       Load path here would also pull in its own text-entry prompt
-       (scroll_text_entry_prompt), which is designed for the in-game pause-menu Load
-       flow, not a fresh process with no dungeon loaded yet -- so do the
-       same slot<->SAVE0 file copy save_game_to_slot does (just in the load
-       direction, \SAVEn -> \SAVE0) directly, then the same post-copy
-       refresh sequence load_game_from_slot already does on its own success. */
+    /* Was `load_game_from_slot(iVar4 + 1)` -- load_game_from_slot is "Save Game" (copies the live
+       \SAVE0 session INTO the chosen slot), which makes no sense from the title screen where no
+       game is running yet... */
     {
       char loadsrc[300];
       snprintf(loadsrc, sizeof(loadsrc), "\\SAVE%d", iVar4 + 1);
@@ -387,29 +249,15 @@ undefined4 journey_onward_load_slot_menu()
     }
     else {
       load_player_save_record(&DAT_000857a0);
-      /* DAT_00201b68 (current level) isn't meaningfully set yet at a
-         fresh title screen with no dungeon loaded -- unlike
-         load_game_from_slot's own use of it, which only ever runs mid-game.
-         Every save this decompile can produce is level 1 (no UI to
-         change levels exists yet), so load that directly rather than a
-         possibly-stale/zero level number. */
+      /* DAT_00201b68 (current level) isn't meaningfully set yet at a fresh title screen with no
+         dungeon loaded -- unlike load_game_from_slot's own use of it, which only ever runs
+         mid-game. */
       sVar2 = load_level(1);
       if (sVar2 != 0) {
         save_or_restore_level_special_state(1,3);
-        /* Was a hardcoded set_player_tile_position(0x20,2,1) here --
-           worked around load_level leaving the player at tile (0,0)
-           (unplaced, black 3D view) because the save/load path never
-           actually wrote the live player position into \SAVE0\lev.ark
-           to begin with (see [[save-load-position-not-persisted]]: 6
-           bugs in the archive-write chain plus save_game_to_slot/
-           load_game_from_slot's own copy_save_slot_files calls having src/dest
-           backwards, all fixed). The player's tile position is just
-           another field of its own object record, at a fixed offset
-           inside the same arena load_level's object-table read
-           populates -- with a real save now actually persisting it,
-           this hardcoded override would clobber the correct restored
-           position with the fixed chargen spawn point instead. Removed;
-           load_level's own read is what places the player now. */
+        /* Was a hardcoded set_player_tile_position(0x20,2,1) here -- worked around load_level
+           leaving the player at tile (0,0) (unplaced, black 3D view) because the save/load path
+           never actually wrote the live player position into \SAVE0\lev.ark to begin with... */
       }
       load_weapon_combat_maneuver_data();
       uVar5 = 1;
@@ -451,30 +299,16 @@ ushort * param_2;
   *param_2 = 0;
   uVar5 = 0;
   do {
-    /* DAT_000857a0/DAT_00087030 are both unrecoverable string constants
-       (no content Ghidra could recover) -- puVar3 (a '0' placeholder
-       digit position within the built path, meant to be replaced with
-       '1','2','3'... to probe a numbered series of optional resource
-       files) is genuinely NULL here as a result, since strchr can't find
-       a '0' that was never in the string to begin with. This whole loop
-       already treats a not-found probe file as a normal, expected case
-       (falls back to "not used yet" -- see s__not_used_yet__00087020
-       below), so skip the digit substitution defensively rather than
-       crash; every slot in this probe will just come up "not used yet"
-       until the real DAT_00087030 template is recovered. */
+    /* DAT_000857a0/DAT_00087030 are both unrecoverable string constants (no content Ghidra could
+       recover) -- puVar3 (a '0' placeholder digit position within the built path)... */
     if (puVar3 != (undefined1 *)0x0) {
     *puVar3 = (char)((uVar5 + 0x31) * 0x1000000 >> 0x18);
     }
     iVar4 = win_file_exists(acStack_128,0);
     if ((iVar4 != -1) && (iVar4 = open_file_for_read(acStack_128), iVar4 != -1)) {
-      /* Pad the record with spaces before reading the real "desc" file
-         text over the front of it -- journey_onward_load_slot_menu's caller trims
-         trailing spaces off this record to find where the real text
-         ends, which only works if anything past the file's own (short)
-         content is a space rather than whatever stack garbage happened
-         to be here. Dropped from this decompile; without it a save
-         slot's button label ran into garbage bytes following its real
-         description. */
+      /* Pad the record with spaces before reading the real "desc" file text over the front of it --
+         journey_onward_load_slot_menu's caller trims trailing spaces off this record to find where
+         the real text ends... */
       ce_memset(uVar5 * 0x28 + param_1,0x20,0x28);
       read_file_handle(iVar4,uVar5 * 0x28 + param_1,0x27);
       *param_2 = *param_2 | (ushort)(1 << (uVar5 & 0xff));
@@ -484,16 +318,8 @@ ushort * param_2;
       pcVar2 = s__not_used_yet__00087020;
       do {
         cVar1 = *pcVar2;
-        /* Was `pcVar2[uVar5*0x28 + -0x87020 + param_1]` -- `-0x87020`
-           hardcoded s__not_used_yet__00087020's address in the ORIGINAL
-           32-bit binary's fixed layout, used to turn pcVar2 back into a
-           zero-based character index (pcVar2 - stringBase) before
-           re-adding param_1. On this recompile the string lives at
-           whatever address the linker picked, not 0x87020, so this
-           always computed a wild pointer -- same bug class as the
-           (int)&DAT_x truncation fixes elsewhere, just via a literal
-           address constant instead of a cast. Fixed to compute the
-           character index properly via real pointer subtraction. */
+        /* Was `pcVar2[uVar5*0x28 + -0x87020 + param_1]` -- `-0x87020` hardcoded
+           s__not_used_yet__00087020's address in the ORIGINAL 32-bit binary's fixed layout... */
         param_1[uVar5 * 0x28 + (pcVar2 - s__not_used_yet__00087020)] = cVar1;
         pcVar2 = pcVar2 + 1;
       } while (cVar1 != '\0');
@@ -539,13 +365,9 @@ char param_1;
     *wptr_50330 = cVar1; wptr_50330 = wptr_50330 + 1;
     pcVar6 = pcVar6 + 1;
   } while (cVar1 != '\0');
-  /* Ghidra never emitted the copy of DAT_000857a0 into acStack_650 before
-     searching it below -- acStack_650 was read while still uninitialized
-     stack garbage, so the '0' substitution below found a random byte (or
-     nothing) instead of the real "SAVE0" digit. Same idea as the copy
-     just above into acStack_85df0 (which this function doesn't otherwise
-     use for the digit search), mirrored here to match probe_save_slots's
-     working copy-then-strchr pattern. */
+  /* Ghidra never emitted the copy of DAT_000857a0 into acStack_650 before searching it below --
+     acStack_650 was read while still uninitialized stack garbage, so the '0' substitution below
+     found a random byte (or nothing) instead of the real "SAVE0" digit. */
   pcVar6 = &DAT_000857a0;
   wptr_50330 = acStack_650;
   do {
@@ -556,10 +378,9 @@ char param_1;
   pcVar6 = (char *)ce_strchr(acStack_650,0x30);
   pcVar5 = &DAT_0023cca8;
     stack0xffdc2e30_ptr = stack0xffdc2e30_buf;
-  /* Same DAT_000857a0-is-unrecoverable NULL risk as probe_save_slots above
-     -- see its comment. Here the digit is a save-slot number (SAVE0,
-     SAVE1, ...), so a NULL means this path build silently keeps
-     whatever acStack_650 already had instead of crashing. */
+  /* Same DAT_000857a0-is-unrecoverable NULL risk as probe_save_slots above -- see its comment. Here
+     the digit is a save-slot number (SAVE0, SAVE1, ...), so a NULL means this path build silently
+     keeps whatever acStack_650 already had instead of crashing. */
   if (pcVar6 != (char *)0x0) {
   *pcVar6 = param_1 + '0';
   }
@@ -573,18 +394,9 @@ char param_1;
   ce_strcat(acStack_630,&DAT_000857a0);
   uVar3 = load_string_resource(acStack_630);
   ce_wcscpy(auStack_420,uVar3);
-  /* Was `stack0xffdc2e30_ptr = stack0xffdc2e30_buf;` above -- a stack
-     slot Ghidra split into two names (same bug class as the acStack_650
-     fix above), so this copy of DAT_0023cca8 landed in a buffer
-     (stack0xffdc2e30_buf) that acStack_528 below never reads, leaving
-     acStack_528 uninitialized when the strcat below appended to it.
-     Point the copy at acStack_528 directly, matching how the sibling
-     acStack_630 copy a few lines up already does this correctly. That
-     makes acStack_630/auStack_420 (unsubstituted "\SAVE0") the copy
-     SOURCE and acStack_528/auStack_218 (digit-substituted "\SAVE<n>")
-     the copy DESTINATION for copy_save_slot_files below -- i.e. "Save Game"
-     snapshot-copies the live SAVE0 session into the chosen numbered
-     slot. */
+  /* Was `stack0xffdc2e30_ptr = stack0xffdc2e30_buf;` above -- a stack slot Ghidra split into two
+     names (same bug class as the acStack_650 fix above), so this copy of DAT_0023cca8 landed in a
+     buffer (stack0xffdc2e30_buf) that acStack_528 below never reads... */
   stack0xffdc2e30_ptr = acStack_528;
   do {
     cVar1 = *pcVar5;
@@ -598,44 +410,16 @@ char param_1;
   iVar4 = ensure_save_directory_exists(acStack_630);
   if (iVar4 != 0) {
     print_scroll_message_by_id(0xaa);
-    /* Was copy_save_slot_files(acStack_528,acStack_630) -- i.e. (dest="\SAVEn",
-       src="\SAVE0"), copying the ACTIVE SESSION onto the chosen slot --
-       a save-direction copy. That's backwards for this function: live
-       testing confirms load_game_from_slot's own status text is "Restoring
-       Game " (this is the Load path, gated by check_can_load_game's
-       unconditional-allow "can load" semantics; save_game_to_slot -- own
-       status text "Saving Game " -- is the Save path, see its matching
-       fix). An earlier session's comment here ("chosen slot,
-       destination... live session, source... i.e. 'Save Game'
-       snapshot-copies the live SAVE0 session into the chosen numbered
-       slot") was the same directional mistake as save_game_to_slot's
-       original call, just never caught because this Load path was never
-       actually exercised end-to-end with a real position check.
-       acStack_630 ("\SAVE0", the active session) is the destination;
-       acStack_528 ("\SAVEn", the chosen slot) is the source -- loading
-       the slot's saved state into the live session, matching what
-       save_game_to_slot now does in the opposite direction. */
+    /* Was copy_save_slot_files(acStack_528,acStack_630) -- i.e. (dest="\SAVEn", src="\SAVE0"),
+       copying the ACTIVE SESSION onto the chosen slot -- a save-direction copy. */
     iVar4 = copy_save_slot_files(acStack_630,acStack_528);
     if (getenv("UW_DEBUG_SAVEDESC"))
       fprintf(stderr, "[savedesc] copy_save_slot_files returned %d, acStack_528=%s\n", iVar4, acStack_528);
     if (iVar4 != 0) {
       print_scroll_message_by_id(0xaa);
-      /* An earlier session added a snprintf("Level %d", ...) write-back
-         to this slot's desc file here, reasoning the decompile never
-         reconstructed a "type a save description" prompt for Save, so
-         Load should at least leave something non-blank behind. That
-         reasoning no longer applies -- save_game_to_slot (the Save path) now
-         has a fully working name-entry flow and writes the player's
-         actual chosen name into the desc file at save time (see its own
-         write_buffer_to_file call). This block ran on every LOAD too, though,
-         unconditionally overwriting the first strlen("Level N") bytes of
-         the slot's real desc file with "Level N" and leaving whatever
-         longer content used to be there past that point untouched --
-         confirmed as the cause of a QA report where loading a save named
-         "HELLO WORLD" corrupted its own stored name to "LEVEL 1ORLD" (7
-         bytes of "Level 1" overwriting the first 7 bytes of "HELLO
-         WORLD", "ORLD" being the un-overwritten remainder). Load has no
-         business rewriting the slot's description at all -- removed. */
+      /* An earlier session added a snprintf("Level %d", ...) write-back to this slot's desc file
+         here, reasoning the decompile never reconstructed a "type a save description" prompt for
+         Save, so Load should at least leave something non-blank behind. */
       reset_player_for_resurrection();
       iVar4 = load_player_save_record(&DAT_000857a0);
       if (iVar4 != 0) {
@@ -659,18 +443,8 @@ char param_1;
 // was FUN_0006c264
 undefined4 save_game_to_slot(param_1,param_2)
 char param_1;
-/* Was `undefined4` -- truncates the real 64-bit buffer pointer
-   handle_save_load_menu_action passes in (a pointer into its own auStack_ac local,
-   see that function's comment). On the original 32-bit ARM binary this
-   was harmless, but on this 64-bit recompile the parameter-spill in
-   this function's own prologue drops the pointer's upper 32 bits the
-   moment it's read out of the argument register, leaving every later
-   dereference (message_scroll_print_wrapped, the scroll_text_entry_prompt name-entry
-   call, the strlen/ce_strcat calls near the end) a wild pointer --
-   confirmed crash: "Enter a save/load name" renders fine (that prompt
-   is a static string, not this buffer), but touching the corrupted
-   buffer once you start typing segfaults. Same bug class as
-   draw_stats_panel_header's uVar3 fix earlier this session. */
+/* Was `undefined4` -- truncates the real 64-bit buffer pointer handle_save_load_menu_action passes
+   in (a pointer into its own auStack_ac local, see that function's comment). */
 char *param_2;
 
 {
@@ -713,13 +487,8 @@ char *param_2;
   }
   msg_scroll_panel_reset(1);
   message_scroll_print_wrapped(s_Please_enter_a_Save_Game_file_an_00087094);
-  /* Dropped 5th argument (max name length) -- confirmed via real ARM
-     disassembly (0x6c2f8-0x6c30c: `mov r3,#0x1e; strh r3,[sp,#0]` pushes
-     0x1e as the 5th/stack arg immediately before the call). Same
-     dropped-argument idiom fixed elsewhere this session -- without it
-     param_5 is whatever garbage was left on the stack, which
-     scroll_text_entry_prompt clamps to at most 0x32 but never validates as sane
-     otherwise. */
+  /* Dropped 5th argument (max name length) -- confirmed via real ARM disassembly (0x6c2f8-0x6c30c:
+     `mov r3,#0x1e; strh r3,[sp,#0]` pushes 0x1e as the 5th/stack arg immediately before the call). */
   sVar2 = scroll_text_entry_prompt(0,param_2,param_2,1,0x1e);
   if (((sVar2 != 0x1b) && (sVar2 != 1)) && (sVar2 != 2)) {
     message_scroll_print_wrapped(&s_scroll_newline_0008522c);
@@ -773,25 +542,8 @@ char *param_2;
             ce_wcscpy(auStack_428,uVar5);
             uVar5 = load_string_resource(local_638);
             ce_wcscpy(auStack_220,uVar5);
-            /* Was copy_save_slot_files(local_638,local_530) -- i.e.
-               (dest="\SAVE0", src="\SAVEn"), copying the CHOSEN SLOT
-               back onto the active session. That's backwards for this
-               function: save_game_to_slot is the SAVE path (confirmed live --
-               its own status text is "Saving Game ", gated by
-               check_can_save_game's real save preconditions, and it just
-               finished writing the current name/player.dat/lev.ark
-               state into local_638="\SAVE0" a few lines up) -- copying
-               SAVEn back onto SAVE0 immediately discards all of that
-               and leaves the actual save slot (local_530) untouched.
-               Confirmed via a live save/move/reload test: SAVE0 and the
-               target slot stayed byte-identical to each other (and to
-               their pre-save content) no matter what the player did,
-               until swapping this call's argument order so the
-               freshly-updated local_638 ("\SAVE0") is the SOURCE and
-               local_530 ("\SAVEn") the DESTINATION -- i.e. actually
-               writing the live session out to the chosen slot, matching
-               what load_game_from_slot (the sibling Load path, own status text
-               "Restoring Game ") does in the opposite direction. */
+            /* Was copy_save_slot_files(local_638,local_530) -- i.e. (dest="\SAVE0", src="\SAVEn"),
+               copying the CHOSEN SLOT back onto the active session. */
             iVar4 = copy_save_slot_files(local_530,local_638);
             if (iVar4 != 0) {
               message_scroll_print_wrapped(&s_scroll_color_reset_00087038);
@@ -813,25 +565,9 @@ LAB_0006c544:
 
 
 // was FUN_00015870
-/* param_2 was dropped entirely -- declared with only 1 parameter but
-   every caller passes 2 (the filename to open, e.g.
-   s__SAVE0_lev_ark_000842fc). `ce_strcat(local_120);` (a strcat-
-   shaped Ordinal used with an explicit 2-arg form everywhere else in
-   this file) was being called with just 1 visible argument, relying on
-   whatever the compiler happened to leave in the dropped argument's
-   register -- and `local_120` itself was never initialized first
-   either, so the "destination" that register leftover got appended
-   onto was uninitialized stack garbage, not an empty string. Confirmed
-   via lldb (this exact call site): this "worked" for the level-load
-   caller purely because the stack garbage there happened to already
-   read as an empty string, and broke for the automap-entry caller
-   (save_automap_reveal_to_archive, exercised for the first time by the new OPENMAP
-   demomode command) once different preceding activity left a stray
-   0x01 byte on the stack instead, producing a corrupt filename
-   ("\x01\SAVE0\lev.ark") and a failed file open. Fixed by copying
-   param_2 into local_120 directly instead of relying on either the
-   DAT_0023cca8 scratch-buffer copy or the dropped-argument concat --
-   neither was ever the real filename source. */
+/* param_2 was dropped entirely -- declared with only 1 parameter but every caller passes 2 (the
+   filename to open, e.g. s__SAVE0_lev_ark_000842fc). `ce_strcat(local_120);` (a strcat- shaped
+   Ordinal used with an explicit 2-arg form everywhere else in this file) was being called with... */
 bool open_level_archive(param_1,param_2)
 undefined1 * param_1;
 char * param_2;
@@ -846,16 +582,9 @@ char * param_2;
   int iVar6;
   uint uVar7;
   bool bVar8;
-  /* Was reusing `iVar3` (an int, otherwise a loop counter / file handle
-     elsewhere in this function) to also hold ce_strrchr's (strrchr)
-     return -- harmless while that ordinal was a dead `return 0;` stub
-     (see its own comment: fixed for real this session), but now that it
-     returns a genuine 64-bit pointer into local_228, storing it in an
-     `int` truncates it, and `*(undefined1*)(iVar3+1)=0` writes through
-     the truncated wild pointer. Confirmed via lldb crash in this exact
-     line reached from the "Journey Onward" title-screen load, the first
-     real exercise of this path since the stub got fixed. Dedicated
-     pointer local instead of reusing iVar3. */
+  /* Was reusing `iVar3` (an int, otherwise a loop counter / file handle elsewhere in this function)
+     to also hold ce_strrchr's (strrchr) return -- harmless while that ordinal was a dead `return
+     0;` stub (see its own comment: fixed for real this session)... */
   char *pLastSlash;
   ushort local_230 [4];
   char local_228 [264];
@@ -882,23 +611,7 @@ char * param_2;
     pLastSlash[1] = 0;
   }
   ce_strcat(local_228,s__arc_tmp_000842b4);
-  /* Was `open_existing_file_rw_alt(local_120)` -- opens read-only (uw_file_open_read).
-     This handle (*param_1 in every downstream caller) is later WRITTEN
-     to directly by write_archive_entry (the archive-entry byte-write a level
-     save/transition uses to flush the live in-memory object arena --
-     including the player's own position, since the player is just a
-     fixed-offset object inside that same arena -- back into this file)
-     -- a write through a read-only handle silently writes 0 bytes,
-     write_archive_entry returns false, and the whole save chain unwinds
-     through its failure path ("Save Game Failed"), never actually
-     persisting anything. Confirmed via tracing: SAVE0/lev.ark stayed
-     byte-identical across saves no matter what the player did.
-     open_existing_file_rw (uw_file_open_write with create_always=0) opens "rb+"
-     on an existing file -- read AND write, no truncation -- exactly
-     what every other caller of this handle already assumed. Falls back
-     to "wb+" (create) only if the file doesn't already exist, which
-     every real caller here doesn't hit (\SAVE0\lev.ark is always
-     seeded before this runs). */
+  /* Was `open_existing_file_rw_alt(local_120)` -- opens read-only (uw_file_open_read). */
   iVar3 = open_existing_file_rw(local_120);
   if (iVar3 == -1) {
     bVar8 = false;
@@ -945,10 +658,9 @@ char * param_2;
 
 
 
-// was FUN_00015a58 -- finalizes and closes an open_level_archive handle:
-// rewrites the entry-offset table header if the dirty flag (param_1+0xe)
-// is set, closes both file handles, and commits the tmp-file rename back
-// over the real archive name.
+// was FUN_00015a58 -- finalizes and closes an open_level_archive handle: rewrites the entry-offset
+// table header if the dirty flag (param_1+0xe) is set, closes both file handles, and commits the
+// tmp-file rename back over the real archive name.
 byte close_level_archive(param_1)
 undefined4 * param_1;
 
@@ -984,23 +696,14 @@ undefined4 * param_1;
 
 
 
-// was FUN_00015b94 -- write_archive_entry(handle, entry_index, src_buf,
-// len): the write-side counterpart to read_archive_entry, resizing the
-// archive's entry table when the new length doesn't fit the existing
-// slot.
+// was FUN_00015b94 -- write_archive_entry(handle, entry_index, src_buf, len): the write-side
+// counterpart to read_archive_entry, resizing the archive's entry table when the new length doesn't
+// fit the existing slot.
 bool write_archive_entry(param_1,param_2,param_3,param_4)
 undefined4 * param_1;
 uint param_2;
-/* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live
-   object arena) pointer write_level_tilemap_to_archive passes in as the source buffer for
-   the archive-entry write. Harmless while every actual write attempt
-   through it failed anyway for other reasons (ce_strrchr stub,
-   read-only archive handle -- both fixed, see open_level_archive's and
-   ce_strrchr's own comments); with those fixed this is the last thing
-   standing between a save and actually writing anything: fwrite() on
-   the truncated (now only-32-bit, so on a 64-bit host a wild/unmapped)
-   pointer fails with EFAULT, confirmed via a UW_DEBUG_INPUTEVENT trace
-   in uw_file_write (errno 14, "Bad address"). */
+/* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live object arena) pointer
+   write_level_tilemap_to_archive passes in as the source buffer for the archive-entry write. */
 void *param_3;
 uint param_4;
 
@@ -1028,10 +731,9 @@ uint param_4;
   
   iVar8 = (param_2 & 0xffff) * 4;
   uVar16 = 0;
-  /* param_1+0xa..0xd held the literal 0x000b78b8 (&DAT_000b78b8's address
-     in the original 32-bit binary) as the .ark entry-offset table
-     pointer -- see read_archive_entry's matching comment. The table is a fixed
-     global; use its real address. */
+  /* param_1+0xa..0xd held the literal 0x000b78b8 (&DAT_000b78b8's address in the original 32-bit
+     binary) as the .ark entry-offset table pointer -- see read_archive_entry's matching comment.
+     The table is a fixed global; use its real address. */
   uVar15 = *(uint *)((char *)&DAT_000b78b8 + iVar8);
   if (getenv("UW_DEBUG_INPUTEVENT"))
     fprintf(stderr, "[15b94] param_2=%u entrycount=%u uVar15=%u param_4=%u handle1=%d handle2=%d\n",
@@ -1172,11 +874,9 @@ uint param_4;
 undefined2 read_archive_entry(param_1,param_2,param_3)
 undefined4 * param_1;
 uint param_2;
-/* Was `undefined4`, truncating the real destination buffer pointer the
-   callers pass (load_level_object_table: the malloc'd DAT_002029cc workspace;
-   load_automap_reveal_from_archive: &DAT_000b99d0). Forwarded straight to read_file_handle
-   (uw_file_read), which needs a valid pointer -- the truncated value
-   segfaulted the level loader on the first real read. */
+/* Was `undefined4`, truncating the real destination buffer pointer the callers pass
+   (load_level_object_table: the malloc'd DAT_002029cc workspace; load_automap_reveal_from_archive:
+   &DAT_000b99d0). */
 void *param_3;
 
 {
@@ -1188,14 +888,9 @@ void *param_3;
   uint uVar6;
   uint uVar7;
   
-  /* param_1+10 (bytes 0xa..0xd) held the literal address 0x000b78b8 --
-     &DAT_000b78b8's location in the ORIGINAL 32-bit binary -- baked in by
-     open_level_archive as the .ark entry-offset table pointer. That table is a
-     single fixed global (open_level_archive/close_level_archive read the archive
-     straight into &DAT_000b78b8), so on this recompile just use its real
-     address instead of the truncated literal (which dereferenced as
-     ~0xb78b8 and crashed the level loader). Same "hardcoded original-
-     binary address" bug class as probe_save_slots's -0x87020. */
+  /* param_1+10 (bytes 0xa..0xd) held the literal address 0x000b78b8 -- &DAT_000b78b8's location in
+     the ORIGINAL 32-bit binary -- baked in by open_level_archive as the .ark entry-offset table
+     pointer. */
   if (((uint)*(ushort *)(param_1 + 2) < (param_2 & 0xffff)) ||
      (uVar6 = *(uint *)((char *)&DAT_000b78b8 + (param_2 & 0xffff) * 4), uVar6 == 0)) {
     uVar1 = 0;
@@ -1226,12 +921,9 @@ void *param_3;
 
 
 
-// was FUN_0001629c -- opens the archive at win path param_1 directly
-// (bypassing open_level_archive/close_level_archive), seeks to entry
-// param_2's slot in the entry-offset table, and reports whether it has
-// a nonzero offset (1 = has data, 0 = empty slot, -1 = I/O error).
-// Used e.g. to probe cnv.ark for a given conversation-id entry before
-// switching into conversation mode.
+// was FUN_0001629c -- opens the archive at win path param_1 directly (bypassing
+// open_level_archive/close_level_archive), seeks to entry param_2's slot in the entry-offset table,
+// and reports whether it has a nonzero offset (1 = has data, 0 = empty slot, -1 = I/O error).
 int probe_archive_entry_exists(param_1,param_2)
 char *param_1;
 uint param_2;
@@ -1275,12 +967,9 @@ uint param_2;
 
 
 
-// was FUN_0006bcd4 -- flushes the player's carried-inventory chain (freeing
-// the live objects, since write_player_save_record just above already
-// serialized them into the save buffer), then writes the current level's
-// live tilemap+object arena to its on-disk archive. Called both from the
-// explicit "Save Game" menu path (save_game_to_slot) and from level
-// transitions (so the level being left behind remembers its current state).
+// was FUN_0006bcd4 -- flushes the player's carried-inventory chain (freeing the live objects, since
+// write_player_save_record just above already serialized them into the save buffer), then writes
+// the current level's live tilemap+object arena to its on-disk archive.
 undefined4 commit_level_to_save_slot(param_1)
 undefined4 param_1;
 
@@ -1291,24 +980,9 @@ undefined4 param_1;
   undefined1 auStack_20 [16];
   
   write_player_save_record(0);
-  /* Was `+ 3` -- confirmed wrong via Ghidra decompile of the real ARM
-     binary (0x6bcd4): it passes `+ 6`. free_player_inventory_chain treats its argument
-     as a pointer to a 2-byte object link field (it immediately calls
-     resolve_object_link on it) -- offset 6 is the player object's real
-     "contents" field (sp_link, matching free_player_inventory_chain's own recursive
-     calls at +4/+6 a few lines into that function), the head of the
-     player's carried-inventory chain, which this function walks and
-     frees before the save write below (the inventory itself gets
-     separately serialized into the save buffer by
-     write_player_save_record just above). Offset 3 is a byte-misaligned
-     read straddling two unrelated 2-byte fields (the tail of the
-     player's position word and the head of their own "quality/chain"
-     word) -- a garbage value derived from the player's actual position,
-     resolved and then unlinked-and-freed via this same recursive walk.
-     Matches a live report of "saving a game makes items near the
-     player disappear": whatever real object that garbage link
-     happened to resolve to (plausibly something tile-adjacent, given
-     it's derived from position bytes) got deleted on every save. */
+  /* Was `+ 3` -- confirmed wrong via Ghidra decompile of the real ARM binary (0x6bcd4): it passes
+     `+ 6`. free_player_inventory_chain treats its argument as a pointer to a 2-byte object link
+     field (it immediately calls resolve_object_link on it)... */
   free_player_inventory_chain((char *)g_player_object + 6);
   if (-1 < DAT_00202080) {
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
@@ -1344,12 +1018,9 @@ LAB_0006bdbc:
 
 
 
-// was handle_save_load_menu_action -- save/load menu action dispatcher: param_1==0
-// saves to slot param_2 (save_game_to_slot), otherwise loads from it
-// (load_game_from_slot; the middle "already-occupied slot" gate is
-// disabled dead code -- see its own comment). Shows the resulting
-// status message via print_scroll_message_by_id(iVar2 + 0xa0) ("Save Game
-// Succeeded.", "Load Game Failed.", etc. -- iVar2 selects which).
+// was handle_save_load_menu_action -- save/load menu action dispatcher: param_1==0 saves to slot
+// param_2 (save_game_to_slot), otherwise loads from it (load_game_from_slot; the middle
+// "already-occupied slot" gate is disabled dead code -- see its own comment).
 // was FUN_0006bfec
 void handle_save_load_menu_action(param_1,param_2)
 short param_1;
@@ -1363,57 +1034,22 @@ undefined4 param_2;
 
   probe_save_slots(auStack_ac,local_b4);
   if (param_1 == 0) {
-    /* Was `auStack_d4 + (short)param_2 * 0x28` into a phantom, separately
-       -declared 32-byte `auStack_d4` local -- confirmed via real ARM
-       disassembly (0x6c088-0x6c098) that no such buffer exists: the real
-       code computes sp+8 + (slot-1)*0x28, i.e. a pointer straight into
-       auStack_ac (the very buffer probe_save_slots just filled, at
-       sp+8), offset by (slot-1) records, not slot. Ghidra's own
-       `auStack_d4 [32]` was a stack-slot-splitting artifact (same bug
-       class as stack0xffdc2e30_buf/acStack_528 -- see load_game_from_slot's own
-       comment) -- the 32-byte size wasn't even big enough for the real
-       4x40-byte-record indexing it was being used with, which would have
-       stack-smashed for any slot past the first. */
+    /* Was `auStack_d4 + (short)param_2 * 0x28` into a phantom, separately -declared 32-byte
+       `auStack_d4` local -- confirmed via real ARM disassembly (0x6c088-0x6c098) that no such
+       buffer exists: the real code computes sp+8 + (slot-1)*0x28... */
     iVar1 = save_game_to_slot(param_2,auStack_ac + ((short)param_2 - 1) * 0x28);
     iVar2 = 4;
     if (iVar1 != 0) {
       iVar2 = 5;
-      /* load_game_from_slot's own success branch just below (the mirror
-         Load path) calls load_weapon_combat_maneuver_data/sync_player_stats_to_hud/
-         redraw_hud_panels/apply_movement_mode_profile(0xffffffff)/set_pending_update_flags(0x7ffe)
-         after a successful load; this Save branch called none of them.
-         Most of those are Load-specific (resyncing HUD/stats after
-         reloading a possibly-different character), but set_pending_update_flags
-         (ORs param_1 into DAT_00201c84, the dirty-bit register
-         main_loop_hud_flush's per-tick force-3D-redraw hack and
-         dispatch_sticky_mode_handlers both gate on) is a general
-         "something changed, redraw everything" signal with no Load-
-         specific meaning -- Save closing its own UI panel needs it just
-         as much as Load does. Without it, closing the Save dialog left
-         the 3D viewport rendering nothing (solid black) until some
-         *other* code path happened to set a dirty bit on its own --
-         confirmed live via a QA report ("3d view stops updating after
-         saving, but the game is still running") and reproduced with a
-         screenshot immediately after a scripted save: viewport solid
-         black, HUD chrome and "Save Game Succeeded." both drawing fine
-         around it. Fixed by calling set_pending_update_flags(0x7ffe) here too. */
+      /* load_game_from_slot's own success branch just below (the mirror Load path) calls
+         load_weapon_combat_maneuver_data/sync_player_stats_to_hud/... */
       set_pending_update_flags(0x7ffe);
     }
   }
   else if (false) {
-    /* Was `(1 << (param_2-1) & local_b4[0]) == 0` -- local_b4[0] is the
-       bitmask probe_save_slots just built of which of the 4 numbered slots
-       already HAVE a save (bit set = a real "\SAVEn\desc" was found on
-       disk), so this required the chosen slot to already be occupied
-       before allowing a save into it -- meaning a brand new slot (the
-       common case: no prior saves exist at all, so this bitmask is all
-       zero) could never be saved to. The LOAD branch just above has no
-       equivalent gate (it tries save_game_to_slot unconditionally and lets it
-       fail for an empty slot), so this looks like an inverted/leftover
-       guard rather than an intentional "can't create new saves" limit.
-       Disabled so save always proceeds; kept as dead code (rather than
-       deleted) in case real disassembly turns up a legitimate reason for
-       it (e.g. a distinct "overwrite?" confirmation this decompile lost). */
+    /* Was `(1 << (param_2-1) & local_b4[0]) == 0` -- local_b4[0] is the bitmask probe_save_slots
+       just built of which of the 4 numbered slots already HAVE a save (bit set = a real
+       "\SAVEn\desc" was found on disk)... */
     iVar2 = 1;
   }
   else {
@@ -1437,11 +1073,9 @@ undefined4 param_2;
 
 
 
-// was ensure_save_directory_exists -- ensures the save-game directory exists: scans it
-// via the FindFirstFileW/181 FindFirstFile/FindNextFile-shaped ordinals
-// (appending DAT_000870c8's "\*.*" wildcard) and, if that scan finds
-// nothing (directory missing or empty), strips the wildcard back off
-// and creates it via create_directory_path (CreateDirectory-shaped).
+// was ensure_save_directory_exists -- ensures the save-game directory exists: scans it via the
+// FindFirstFileW/181 FindFirstFile/FindNextFile-shaped ordinals (appending DAT_000870c8's "\*.*"
+// wildcard) and, if that scan finds nothing (directory missing or empty)...
 // was FUN_0006c560
 undefined4 ensure_save_directory_exists(param_1)
 char * param_1;
@@ -1484,17 +1118,8 @@ char * param_1;
 LAB_0006c5f8:
   if (bVar9) {
     /* Was a `do { ... } while (sVar2 != 0)` loop rebuilding the path from
-       `load_string_resource_large(auStack_218)` each pass -- auStack_218 is never
-       written anywhere in this function, so that read uninitialized
-       stack memory as a string, and the loop's own exit condition
-       (`FindNextFileW` against `iVar5`, a handle already exhausted by the
-       while-loop above) meant it could only ever run once anyway even if
-       that read were meaningful. Simplified to the one real step this
-       was trying to do: undo the "\*.*" suffix appended above (acStack_348
-       was NUL-terminated at its original length `iVar3` before the
-       suffix) and create that plain directory. Also fixes `create_directory_path()`
-       being called with no arguments -- every other CreateDirectory-shaped
-       call in this file takes the path it's creating. */
+       `load_string_resource_large(auStack_218)` each pass -- auStack_218 is never written anywhere
+       in this function, so that read uninitialized stack memory as a string... */
     acStack_348[iVar3] = '\0';
     iVar7 = create_directory_path(acStack_348);
     if (iVar7 == 0) {
@@ -1509,54 +1134,18 @@ LAB_0006c5f8:
 
 
 
-/* Was a generic "copy every file matching dest\*.* " directory-copy
-   using CopyFileW/FindFirstFileW/FindNextFileW (CopyFileW/167/181) via
-   wide-string paths built through ce_wcscat/61/63 -- all six of those
-   are still no-op stubs (FindFirstFileW/181 real enough now for
-   ensure_save_directory_exists's own narrower directory-exists-or-create use, but not
-   real filename enumeration), so this always silently copied nothing.
-   Same situation the existing \SAVE0\lev.ark new-game seed already hit
-   and fixed the same way (see game.c's comment on that): making the
-   whole enumeration/wide-string machinery real is a much bigger lift
-   than this feature needs, since a save slot only ever holds the same 3
-   known files. Copy them directly instead, using the game's own
-   CreateFile-family wrappers (via uw_file_copy) against real ANSI
-   Windows-style paths -- both callers now pass their already-correct
-   acStack_630/acStack_528 (or local_638/local_530) buffers straight in,
-   instead of the broken wide copies of them this used to take. */
+/* Was a generic "copy every file matching dest\*.* " directory-copy using
+   CopyFileW/FindFirstFileW/FindNextFileW (CopyFileW/167/181) via wide-string paths built through
+   ce_wcscat/61/63... */
 // was FUN_0006c670
 undefined4 copy_save_slot_files(param_1,param_2)
 char *param_1;  /* destination directory, e.g. "\SAVE3" */
 char *param_2;  /* source directory, e.g. "\SAVE0" */
 
 {
-  /* Was a hardcoded 3-entry list missing "player.dat" entirely -- real
-     ARM disassembly of this function (0x6c670) shows it's genuinely
-     NOT a fixed-file-list copier at all: it calls what are clearly
-     FindFirstFile/FindNextFile/CopyFile-equivalents (0x8203c/0x82150/
-     0x81ff4), looping over and copying EVERY file in the source
-     directory (skipping only subdirectories, via a FILE_ATTRIBUTE_
-     DIRECTORY==0x10 check) -- a generic "copy this whole save folder"
-     operation, not a curated list an earlier session guessed at. A full
-     FindFirstFile-style reimplementation felt like more risk than this
-     specific bug warranted (the one real file it would additionally
-     pick up here, "_arc.tmp", is a zero-byte scratch file from the
-     archive-write path, harmless either way) -- confirmed the complete
-     real file set for a save directory empirically instead (`ls
-     data/SAVE0`) and added the one missing real file directly. Without
-     player.dat here, Save/Load's own player.dat write
-     (write_player_save_record) always goes straight to the fixed
-     \SAVE0\player.dat path and NOTHING ever copies a per-slot player.dat
-     to/from \SAVE<n> -- so every numbered slot shares the exact same,
-     single, always-most-recently-written player.dat regardless of which
-     slot you actually saved/loaded. Confirmed live and reported by QA:
-     the loaded dungeon state was correctly per-slot, but the player
-     character (inventory included) always reflected whichever save had
-     been made most recently, letting an item picked up after one save
-     be duplicated by loading an earlier save that still had it lying on
-     the ground -- the old \SAVE0\player.dat (with the item now in
-     inventory) was never actually replaced by loading, so it persisted
-     alongside the reloaded, not-yet-picked-up copy on the ground. */
+  /* Was a hardcoded 3-entry list missing "player.dat" entirely -- real ARM disassembly of this
+     function (0x6c670) shows it's genuinely NOT a fixed-file-list copier at all: it calls what are
+     clearly FindFirstFile/FindNextFile/CopyFile-equivalents (0x8203c/0x82150/ 0x81ff4)... */
   static const char *file_suffixes[] = { "\\lev.ark", "\\bglobals.dat", "\\player.dat", "\\desc" };
   char src[300];
   char dst[300];
@@ -1578,18 +1167,13 @@ char *param_2;  /* source directory, e.g. "\SAVE0" */
 }
 
 
-// was FUN_0007edf4 -- writes param_3 bytes from param_1 into the file
-// named by param_2, always creating/truncating (via
-// uw_file_open_write(param_2, 1)) rather than preserving existing
-// content -- see the HACK comment below on why this create_always
-// mode was chosen over open_existing_file_rw's no-truncate default.
-// Its only confirmed caller (src/saveload.c's save_game_to_slot) uses
-// it to write a save slot's description text file.
+// was FUN_0007edf4 -- writes param_3 bytes from param_1 into the file named by param_2, always
+// creating/truncating (via uw_file_open_write(param_2, 1)) rather than preserving existing
+// content...
 bool write_buffer_to_file(param_1,param_2,param_3)
-void *param_1;  /* was `undefined4` -- truncated the real data-buffer
-                   pointer (save_game_to_slot passes its own param_2, a real
-                   description-text buffer; the new save-description
-                   write above passes a real stack buffer too) */
+void *param_1;  /* was `undefined4` -- truncated the real data-buffer pointer (save_game_to_slot passes its own
+   param_2, a real description-text buffer; the new save-description write above passes a real stack
+   buffer too) */
 char *param_2;  /* was `undefined4` -- same truncation, for the real
                    path-string pointer */
 ushort param_3;
@@ -1599,27 +1183,9 @@ ushort param_3;
   uint uVar2;
   bool bVar3;
 
-  /* Was `open_existing_file_rw(param_2)` (== uw_file_open_write(param_2, 0), our
-     port's "rb+", no-truncate" mode) -- real ARM disassembly of
-     open_existing_file_rw (0x2273c) shows the original game's own write-open
-     helper always ends up starting from an empty file regardless of
-     which branch it takes (TRUNCATE_EXISTING when the target already
-     exists, OPEN_ALWAYS -- i.e. create fresh -- when it doesn't), never
-     "open and preserve existing content". This function is now this
-     codebase's only caller (the save-slot description write in
-     save_game_to_slot); using the non-truncating wrapper here left
-     stale trailing bytes from a previous, longer description whenever a
-     shorter new name was saved over it -- confirmed live: saving
-     "MYCHAR" over a slot that had previously held a longer name left
-     the file as "MYCHAR\0EST\0" (the old name's un-truncated tail after
-     the new null terminator), which the title-screen slot picker then
-     displayed as if two different labels were drawn on top of each
-     other. Call uw_file_open_write directly with create_always=1
-     ("wb+", truncates) instead of going through open_existing_file_rw's
-     no-truncate wrapper -- deliberately NOT changing open_existing_file_rw
-     itself, since its other several callers (the level-archive
-     read-then-write path in particular) may rely on its current
-     preserve-existing-content behavior and weren't audited here. */
+  /* Was `open_existing_file_rw(param_2)` (== uw_file_open_write(param_2, 0), our port's "rb+",
+     no-truncate" mode) -- real ARM disassembly of open_existing_file_rw (0x2273c) shows the
+     original game's own write-open helper always ends up starting from an empty file... */
   iVar1 = uw_file_open_write(param_2, 1);
   if (iVar1 == -1) {
     bVar3 = false;
@@ -1636,11 +1202,9 @@ ushort param_3;
 
 
 
-// was FUN_000400dc -- gates save_game_to_slot's "can save now" check
-// (confirmed via src/saveload.c's own comment on save_game_to_slot):
-// refuses (printing a scroll warning) while the cursor is holding an
-// object, or while on level 9 (the final/Abyss level), otherwise
-// allows the save.
+// was FUN_000400dc -- gates save_game_to_slot's "can save now" check (confirmed via
+// src/saveload.c's own comment on save_game_to_slot): refuses (printing a scroll warning) while the
+// cursor is holding an object, or while on level 9 (the final/Abyss level)...
 bool check_can_save_game()
 
 {
@@ -1661,12 +1225,9 @@ bool check_can_save_game()
 
 
 
-// was FUN_00040130 -- gates load_game_from_slot's "can load now" check
-// (src/saveload.c's own comment on load_game_from_slot confirms this
-// "unconditional-allow" semantics): unlike check_can_save_game, never
-// refuses -- just releases any cursor-held object first (via
-// pop_cursor_icon, not yet named) so loading never leaves a stale held
-// item -- then always returns true.
+// was FUN_00040130 -- gates load_game_from_slot's "can load now" check (src/saveload.c's own
+// comment on load_game_from_slot confirms this "unconditional-allow" semantics): unlike
+// check_can_save_game, never refuses -- just releases any cursor-held object first...
 undefined4 check_can_load_game()
 
 {
@@ -1678,23 +1239,13 @@ undefined4 check_can_load_game()
 }
 
 
-// was FUN_00044624 -- dual-purpose player-save loader: given a real
-// path (load_game_from_slot passes &DAT_000857a0, the chosen slot's
-// directory), opens that slot's player.dat, reads the player status
-// block and save-record buffer from it, then restores the live player
-// state via restore_player_save_record; given 0/NULL (src/level.c,
-// src/saveload.c's own level-reload path), skips the file read
-// entirely and just re-applies whatever's already sitting in
-// g_save_record_buffer -- a "refresh from the current in-memory save
-// state" mode used for same-session level reloads rather than an
-// actual slot load.
+// was FUN_00044624 -- dual-purpose player-save loader: given a real path (load_game_from_slot
+// passes &DAT_000857a0, the chosen slot's directory), opens that slot's player.dat, reads the
+// player status block and save-record buffer from it...
 undefined4 load_player_save_record(param_1)
-char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
-                   load_game_from_slot passes in (the save-slot-copy path), which
-                   only started actually running once the save-directory-
-                   creation fixes above stopped it from bailing out
-                   earlier. Every other call site passes 0/NULL, so this
-                   was latent until now. */
+char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer load_game_from_slot passes in (the
+   save-slot-copy path), which only started actually running once the save-directory- creation fixes
+   above stopped it from bailing out earlier. */
 
 {
   char stack0xffdc3234_buf [256];
@@ -1728,11 +1279,8 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
       uVar4 = 0;
       goto LAB_00044730;
     }
-    /* BUG FIX: was `read_player_status_block()` with no arguments,
-       relying on leftover register state -- iVar3 (the file handle,
-       used the very next line) is the value that belongs here,
-       matching read_player_status_block's own param_1 role (same
-       dropped-argument bug class documented throughout this project). */
+    /* BUG FIX: was `read_player_status_block()` with no arguments, relying on leftover register
+       state -- iVar3 (the file handle, used the very next line) is the value that belongs here... */
     read_player_status_block(iVar3);
     read_file_handle(iVar3,&g_save_record_count,2);
     read_file_handle(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
@@ -1753,14 +1301,9 @@ LAB_00044730:
 }
 
 
-// was FUN_00049b04 -- writes the level's tilemap/object arena
-// (g_level_tiles) and scheduler state into a level archive: given
-// param_1==NULL, opens its own fresh archive handle (for SAVE0, the
-// live session) and closes it when done; given a real param_1 (an
-// already-open archive handle, as commit_level_to_save_slot passes),
-// writes into that one instead. Builds the level header (room-bounds
-// fields +0x7c00/+0x7c02/+0x7c04 and the 0x7577 magic word) before
-// the main write_archive_entry/scheduler_save calls.
+// was FUN_00049b04 -- writes the level's tilemap/object arena (g_level_tiles) and scheduler state
+// into a level archive: given param_1==NULL, opens its own fresh archive handle (for SAVE0, the
+// live session) and closes it when done; given a real param_1...
 int write_level_tilemap_to_archive(param_1,param_2)
 undefined1 * param_1;
 int param_2;
@@ -1815,12 +1358,9 @@ int param_2;
 }
 
 
-// was FUN_0005b298 -- assembles a fixed 0x7a-byte level-state block
-// (quest-flag-shaped: three fixed .data regions, DAT_0023ae58/adb8/
-// b841+b840) and writes it to the level archive via
-// write_archive_entry. Confirmed as part of the per-level save
-// sequence (write_level_tilemap_to_archive -> this ->
-// save_automap_reveal_to_archive) by its sole call site.
+// was FUN_0005b298 -- assembles a fixed 0x7a-byte level-state block (quest-flag-shaped: three fixed
+// .data regions, DAT_0023ae58/adb8/ b841+b840) and writes it to the level archive via
+// write_archive_entry.
 undefined4 write_level_quest_flags_to_archive(param_1,param_2)
 /* .ark handle-struct pointer -- was `undefined4`, truncating it before
    write_archive_entry. */
@@ -1834,22 +1374,9 @@ int param_2;
   int iVar4;
   undefined2 *puVar5;
   undefined2 *puVar6;
-  /* Was three separate locals (local_8c[48], local_2c[10], local_18[6])
-     -- a stack-slot-splitting artifact (same bug class as
-     stack0xffdc2e30_buf/acStack_528 in load_game_from_slot, or
-     acStack_86af8/etc in load_dungeon_texture_arenas right below this function): real
-     ARM disassembly (0x5b29c: `sub sp,sp,#0x80`) allocates ONE 128-byte
-     (64-undefined2) buffer, and this function's own writes to
-     `local_8c[iVar2+0x30]` (indices 48-57) and `local_8c[iVar2+0x3a]`
-     (indices 58-60) already prove it -- those are past a real 48-element
-     array's bounds. With the split, those writes silently corrupted
-     local_2c/local_18's stack space at every call; on this recompile
-     (stack-protector enabled) that finally tripped `__stack_chk_fail`
-     and aborted -- confirmed via lldb, never hit before because nothing
-     reached this function successfully until the write-path bugs above
-     it (ce_strrchr, open_level_archive's read-only handle,
-     write_archive_entry/scheduler_save's own pointer-truncation and fabricated-
-     return-0 bugs) were fixed. One properly-sized buffer instead. */
+  /* Was three separate locals (local_8c[48], local_2c[10], local_18[6]) -- a stack-slot-splitting
+     artifact (same bug class as stack0xffdc2e30_buf/acStack_528 in load_game_from_slot, or
+     acStack_86af8/etc in load_dungeon_texture_arenas right below this function)... */
   undefined2 local_8c [64];
 
   iVar2 = 0;
@@ -1874,11 +1401,7 @@ int param_2;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     local_8c[iVar4] = CONCAT11((&DAT_0023b841)[iVar3],(&DAT_0023b840)[iVar1]);
   } while (iVar2 < 3);
-  /* Was `write_archive_entry(...); return 0;` -- a fabricated `return 0`
-     masking a real result, same bug class as scheduler_save right above
-     this function. Real disassembly (0x5b354-0x5b35c) shows a plain
-     `bl 0x15b94` with no instruction overwriting r0 before the function
-     returns -- r0 (write_archive_entry's own return value) falls straight
-     through as this function's return value, it's never hardcoded to 0. */
+  /* Was `write_archive_entry(...); return 0;` -- a fabricated `return 0` masking a real result,
+     same bug class as scheduler_save right above this function. */
   return write_archive_entry(param_1,param_2 + 0x11,local_8c,0x7a);
 }

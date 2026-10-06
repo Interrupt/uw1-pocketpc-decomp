@@ -17,19 +17,8 @@ extern undefined1 DAT_00202c90_backing[8192];
 #define g_object_type_props ((uw_object_type_props_t *)DAT_00202c90_backing)
 #define DAT_002027d2 DAT_002027d0_backing[2] /* third byte of each loaded weapon record */
 #define DAT_002027d1 DAT_002027d0_backing[1] /* projectile speed in each loaded weapon record */
-/* BUG FIX (unit-testing-framework merge): this branch's own history had
-   drifted into giving DAT_00202c39..3f each their OWN independent
-   backing array -- but every real use (uw.c's
-   `(&DAT_00202c38)[i*6]`/`(&DAT_00202c3a)[i*6]`/`&DAT_00202c3c + i*6`
-   address arithmetic) treats them as 8 adjacent byte-offsets WITHIN
-   ONE combined per-candidate record array, not 8 separate arrays --
-   confirmed by the unit-testing-framework branch independently finding
-   the same thing. Aliasing them back onto DAT_00202c38_backing (as
-   this branch's own DAT_00086998-family fields already do for a
-   similar multi-field record elsewhere in this file) is the correct
-   fix; the previous independent-array version let &DAT_00202c3a + i*6
-   arithmetic silently walk into unrelated heap memory instead of the
-   intended adjacent record. */
+/* BUG FIX (unit-testing-framework merge): this branch's own history had drifted into giving
+   DAT_00202c39..3f each their OWN independent backing array... */
 #define DAT_00202c39 DAT_00202c38_backing[1]
 #define DAT_00202c3a DAT_00202c38_backing[2]
 #define DAT_00202c3b DAT_00202c38_backing[3]

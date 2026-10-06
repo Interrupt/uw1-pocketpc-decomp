@@ -16,22 +16,17 @@ extern undefined DAT_00084f20_backing[128];
 
 #define DAT_001007d5 DAT_001007d0_backing[0x5]
 #define DAT_001007d9 DAT_001007d0_backing[0x9]
-/* Sizing-audit pass: these three were declared as independent
-   256-byte arrays in babl.c/combat.c, but every use indexes them with
-   the exact same per-class `(id&0x3f)*0x30` base as g_monster_max_
-   stats_table/DAT_001007d5 right alongside them in the same functions
-   (babl.c's sync_conv_vars_from_npc, combat.c:1418/1433) -- they're
-   fields of this same table, not separate tables. Aliased in; their
-   old independent backing arrays removed. */
+/* Sizing-audit pass: these three were declared as independent 256-byte arrays in babl.c/combat.c,
+   but every use indexes them with the exact same per-class `(id&0x3f)*0x30` base as g_monster_max_
+   stats_table/DAT_001007d5 right alongside them in the same functions... */
 #define DAT_001007dd DAT_001007d0_backing[0xd]
 #define DAT_001007de DAT_001007d0_backing[0xe] // same monster record byte used by barter pricing
 #define DAT_001007e0 DAT_001007d0_backing[0x10]
 #define DAT_001007e3 DAT_001007d0_backing[0x13]
 #define DAT_001007fd DAT_001007d0_backing[0x2d]
-/* OBJECTS.DAT monster records are loaded at DAT_001007d0, stride 0x30.
-   These original addresses are fields of that same table: max HP (+4),
-   flags (+0xa), defense (+0x12), perception (+0x1d). Separate backing
-   arrays left these fields zero even after load_monster_combat_stats. */
+/* OBJECTS.DAT monster records are loaded at DAT_001007d0, stride 0x30. These original addresses are
+   fields of that same table: max HP (+4), flags (+0xa), defense (+0x12), perception (+0x1d).
+   Separate backing arrays left these fields zero even after load_monster_combat_stats. */
 #define g_monster_max_stats_table DAT_001007d0_backing[0x4]
 #define DAT_001007da DAT_001007d0_backing[0xa]
 #define DAT_001007e2 DAT_001007d0_backing[0x12]
@@ -59,12 +54,9 @@ extern short DAT_0010193c;
 extern undefined4 DAT_00101944;
 extern undefined2 DAT_00101418;
 extern undefined2 DAT_00101908;
-/* "Last attacker" record, confirmed via check_npc_morale_flee's own use
-   (src/ai.c ~3230): a saved snapshot of who last attacked the current
-   NPC (tile x/y/heading + slot index + class id), with an expiry
-   timestamp so the alert reaction only fires while it's still recent.
-   Persisted to/from the save-game block (DAT_00086df8+0xba..0xc1) by
-   load_last_attacker_record/save_last_attacker_record. */
+/* "Last attacker" record, confirmed via check_npc_morale_flee's own use (src/ai.c ~3230): a saved
+   snapshot of who last attacked the current NPC (tile x/y/heading + slot index + class id), with an
+   expiry timestamp so the alert reaction only fires while it's still recent. */
 extern byte DAT_0010192c; // last attacker's tile x
 extern byte DAT_00101930; // last attacker's tile y
 extern undefined1 DAT_00101934; // last attacker's heading

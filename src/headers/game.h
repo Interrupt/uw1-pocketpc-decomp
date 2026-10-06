@@ -6,11 +6,9 @@
  * self-contained for any caller. */
 #include "uw.h"
 
-/* Globals defined in uw.c but also used by functions that now live in
-   automap.c (pick_closer_note_label, handle_automap_note_click,
-   draw_automap_notes, save_automap_notes_to_archive,
-   load_automap_notes_from_archive, switch_automap_level_display) --
-   extern'd here so both translation units see the same storage. */
+/* Globals defined in uw.c but also used by functions that now live in automap.c
+   (pick_closer_note_label, handle_automap_note_click, draw_automap_notes,
+   save_automap_notes_to_archive, load_automap_notes_from_archive, switch_automap_level_display)... */
 /* Globals defined in uw.c but also used by functions that now live in
    game.c (app_main_loop, main_menu_loop) -- extern'd here so both
    translation units see the same storage. */
@@ -59,10 +57,8 @@ void main_menu_loop();
 bool prepare_new_game(void);
 void begin_gameplay(void);
 
-/* Forward declaration needed because main_menu_loop (now in game.c) takes
-   this LAB_ callback's address to pass to load_gr_resource_entries; its own
-   definition stays in uw.c (see gr_resource_bump_alloc_entry/hud_icon_gr_bump_alloc_entry's matching
-   comment for what this callback family does). */
+/* Forward declaration needed because main_menu_loop (now in game.c) takes this LAB_ callback's
+   address to pass to load_gr_resource_entries; its own definition stays in uw.c... */
 void *opbtn_gr_bump_alloc_entry();
 void debug_adjust_view_heading();
 void debug_force_rest_action();
