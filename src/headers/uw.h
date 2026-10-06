@@ -481,6 +481,7 @@ void emit_object_billboard();
 #include "tmap.h"
 #include "objects.h"
 #include "hud.h"
+#include "debug_shim.h"
 #include "ai.h"
 #include "containers.h"
 #include "interact.h"

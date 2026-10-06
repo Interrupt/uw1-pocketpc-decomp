@@ -1,6 +1,10 @@
 /* Minimal immediate-mode debug GUI, built on top of this project's own recovered UW1 drawing
    primitives (rect_fill_or_save_restore, set_draw_color, draw_text_string) rather than a separate
-   rendering path... */
+   rendering path. General subsystem debug panel: populated once per frame, unconditionally, from
+   main_loop_hud_flush (hud.c) with on/off toggles for whole render/simulation subsystems bound
+   directly to each subsystem's own global flag. Add a new subsystem toggle at that same call site
+   instead of starting a second panel -- there is exactly one field list, rebuilt every frame, live
+   at a time. */
 #ifndef DEBUG_UI_H
 #define DEBUG_UI_H
 
@@ -19,6 +23,23 @@ void dbgui_field_button(const char *name, void (*on_press)(void));
    nonzero == ON). RETURN, LEFT, or RIGHT all just flip it -- no numeric-
    edit mode, unlike double/int fields. */
 void dbgui_field_toggle(const char *name, int *value);
+/* A read-only "name: value" row for displaying information rather than
+   an editable setting (an inspected object's id/type/position/...).
+   Selectable (keyboard nav doesn't skip it) but never enters edit mode
+   and ignores RETURN/LEFT/RIGHT/click, same as a plain label. `value`
+   is copied immediately, truncated to a small fixed buffer -- call
+   again next frame with a freshly formatted string for a live
+   display, same as every other field kind being rebuilt each frame. */
+void dbgui_field_text(const char *name, const char *value);
+/* A toggle-styled row ("name: ON"/"name: OFF", same click/RETURN/LEFT/
+   RIGHT dispatch as dbgui_field_toggle) for a boolean that's really a
+   COMPUTED property with a genuine action behind changing it rather
+   than a plain flag to flip (a door's locked state, driven by running
+   the real unlock action, not by writing a bit somewhere). `value` is
+   the state to display THIS frame, same as dbgui_field_text's value;
+   on_toggle is called on activation and decides what (if anything)
+   really changes -- see its own doc comment in debug_ui.c for why. */
+void dbgui_field_toggle_action(const char *name, int value, void (*on_toggle)(void));
 void dbgui_end(void);
 /* Actually paints the panel -- call once per frame from the true end of the frame (after the 3D
    view and HUD have drawn), NOT from wherever dbgui_begin/dbgui_field_.../dbgui_end happened to
@@ -33,6 +54,15 @@ int dbgui_visible(void);
    SDL_KEYDOWN case for SDLK_BACKQUOTE (96), before checking dbgui_visible(), so the panel can
    always be brought back even while hidden. */
 void dbgui_toggle(void);
+/* Call when the caller is about to switch the panel's own content
+   (toggle panel <-> object inspector <-> texture inspector) while it
+   stays open -- puts the real game pixels back behind the panel and
+   re-saves them, so the new content's own fill never has to rely on
+   covering whatever a previous, possibly-taller/wider draw left behind
+   (see its own comment in debug_ui.c for why that's not safe to lean
+   on). Do not call this around an actual close/reopen -- dbgui_toggle
+   already does the equivalent restore/re-arm pair for that. */
+void dbgui_invalidate_region(void);
 
 /* Raw input feed from gx_stub.c's SDL event loop, BEFORE any of the game's own WM_*-message
    translation -- landscape logical pixel coordinates (the same 320x240 space draw_text_string/
@@ -40,6 +70,20 @@ void dbgui_toggle(void);
 void dbgui_feed_mouse_down(int lx, int ly);
 void dbgui_feed_key(int sdl_keycode);
 void dbgui_feed_text(const char *utf8);
+
+/* Test-only accessors (tests/test_debug_ui.c) -- never called by game
+ * code. dbgui_test_reset() clears all panel/selection/edit state back
+ * to a fresh process start, so each test case gets a known baseline
+ * regardless of what an earlier test left behind (dbgui_begin() itself
+ * deliberately does NOT reset selection -- real play wants the cursor
+ * to survive from frame to frame). dbgui_test_row_x/row_y expose the
+ * real per-field click rect dbgui_draw() just computed, instead of
+ * tests duplicating DBGUI_PANEL_X/DBGUI_ROW_H's values by hand (only
+ * valid after a dbgui_draw() call this "frame", same as real mouse
+ * picking -- returns -1 for an out-of-range index). */
+void dbgui_test_reset(void);
+int dbgui_test_row_x(void);
+int dbgui_test_row_y(int field_index);
 
 #ifdef __cplusplus
 }
