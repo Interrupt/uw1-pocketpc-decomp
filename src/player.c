@@ -1080,7 +1080,7 @@ LAB_000669a8:
        used to decide which tiles the automap can discover. */
     load_shading_level_config(*(byte *)(DAT_00086df8 + 99) >> 4);
     const char *light_mode = getenv("UW_LIGHT_MODE");
-    if (!light_mode || strcmp(light_mode, "dos") != 0) {
+    if (!light_mode || strcasecmp(light_mode, "dos") != 0) {
       /* HACK: the ARM build only distinguished lit from unlit here.
          Restore per-strength brightness: start at the unlit bias (+8),
          subtract 16 for every light level, and retain the calibration

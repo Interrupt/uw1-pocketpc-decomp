@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include "ghidra_intrinsics.h"
 #include "ordinal_stubs.h"
