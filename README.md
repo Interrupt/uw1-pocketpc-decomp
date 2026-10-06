@@ -190,7 +190,8 @@ light strength level subtracts 16 from the unlit starting bias of +8.
 Use `UW_LIGHT_MODE=dos ./run.sh` for palette shading based on the equipped
 light's `SHADES.DAT` configuration and `LIGHT.DAT` mappings. Use
 `UW_LIGHT_MODE=arm ./run.sh` to select the default explicitly; unrecognized
-values also use ARM lighting.
+values also use ARM lighting. Mode names are case-insensitive (`DOS` and
+`dos` select the same palette shading).
 For optional ARM brightness calibration, use `UW_AMBIENT_BIAS_REDUCTION`:
 negative integers brighten the view and positive integers darken it. The
 adjustment defaults to `64` when unset. Set it to `0` to disable calibration. DOS palette shading does not use this adjustment.

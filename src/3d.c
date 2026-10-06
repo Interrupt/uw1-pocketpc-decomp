@@ -803,7 +803,7 @@ byte param_10;
   /* HACK: optional DOS-style surface shading; unset/unknown modes retain
      the original ARM RGB falloff below. Resolve once per span, not texel. */
   const char *light_mode = getenv("UW_LIGHT_MODE");
-  bool dos_light_mode = light_mode && strcmp(light_mode, "dos") == 0;
+  bool dos_light_mode = light_mode && strcasecmp(light_mode, "dos") == 0;
   /* HACK: ordered dithering defaults on in both lighting modes. Explicit 0
      or an empty value disables it. */
   const char *dither_mode = getenv("UW_DITHER");

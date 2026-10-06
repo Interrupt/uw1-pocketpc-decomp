@@ -347,9 +347,35 @@ static void test_arm_dithers_rgb565_fractional_channels_with_stable_row_parity(v
     g_palette_rgb565_backing[88] = 0;
     TEST_ASSERT_EQUAL_HEX16(0, lighting_draw_texel(reciprocal, 141, 80));
 }
+static void test_dos_mode_is_case_insensitive_for_equipment_and_surface_shading(void)
+{
+    const char *modes[] = {"dos", "DOS", "Dos", "dOs"};
+    slots[5] = lights[0];
+    for (int i = 0; i < 4; i++) {
+        setenv("UW_LIGHT_MODE", modes[i], 1);
+        lights[0][0] = 0x95;
+        lights[0][2] = 63;
+        DAT_000842b0 = 37;
+        refresh_player_equipment_effects();
+        assert_mode(2, 39, 2, -2);
+        /* Original light scanning sets -32. ARM-only strength calibration
+           would overwrite that with -24; DOS must skip that final step. */
+        TEST_ASSERT_EQUAL_INT(-32, DAT_000842b0);
+        ushort expected = g_palette_rgb565_backing[(byte)mappings[5*256+88]];
+        TEST_ASSERT_EQUAL_HEX16(expected, draw_at_world_depth(272));
+        /* DOS ignores ARM brightness calibration, regardless of spelling. */
+        DAT_000842b0 = -80;
+        TEST_ASSERT_EQUAL_HEX16(expected, draw_at_world_depth(272));
+        lights[0][0] = 0x91;
+        refresh_player_equipment_effects();
+        assert_mode(0, 56, 5, -3);
+        TEST_ASSERT_EQUAL_INT(-80, DAT_000842b0);
+    }
+}
 int main(void)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_dos_mode_is_case_insensitive_for_equipment_and_surface_shading);
     RUN_TEST(test_dither_defaults_on_and_zero_or_empty_disables_it_in_both_modes);
     RUN_TEST(test_arm_dithers_rgb565_fractional_channels_with_stable_row_parity);
     RUN_TEST(test_dos_fractional_shades_alternate_like_the_original_span_accumulators);
