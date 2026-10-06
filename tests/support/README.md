@@ -102,3 +102,18 @@ cover every native builtin. Additional cases exercise quest-dependent dialogue,
 NPC state on reentry, accepted/rejected/declined trades, 16-bit preferences and
 barter cache initialization/invalidation. A tick budget makes endless dialogue
 or input waits fail instead of hanging the test process.
+
+Recovered suites from `unit-testing-framework` use the same prebuilt fixture
+libraries. The `*_fixture_reset`/`*_fixture_dispose` functions own setup and cleanup;
+case files contain their assertions. `uw_test_gx_pacing`, `uw_test_look_pacing` and
+`uw_test_inventory_drag` exercise real deadline and pending-presentation handling
+with controlled clocks and display/input services. `uw_test_transitions` checks
+fades, menu/count prompts and character-to-dungeon transitions against real data.
+`uw_test_spell_runes` covers recognition and click checks, alongside `uw_test_spells`
+which covers the spell effects. Creature, lighting, stairs and throw fixtures use
+the original game function bodies and required data resources. Shared data helpers
+load maps and object properties; `uw_test_division` preserves the divisor-first
+ordinal and quotient/remainder return convention.
+
+The original commits and their already-ported source fixes are listed in
+[the recovery audit](../fixtures/legacy-test-recovery.md).

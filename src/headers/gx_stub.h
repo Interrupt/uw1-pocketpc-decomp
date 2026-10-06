@@ -13,10 +13,15 @@ int GXOpenDisplay(void *hwnd, unsigned int flags);
 int GXCloseDisplay(void);
 void *GXBeginDraw(void);
 int GXEndDraw(void);
+/* Queue a cursor overlay update through the normal display pacing. */
+void uw_request_cursor_present(void);
 /* Batch a gameplay tick's draw requests into one display refresh. Modal
    viewers present immediately while the surrounding tick is suspended. */
 void uw_begin_present_batch(void);
 void uw_end_present_batch(void);
+/* Finish one render batch and present the completed frame using SDL vsync,
+   bypassing the software deadline. Ordinary flushes remain paced. */
+void gfx_finalizedraw(void);
 /* Input handlers may block and run their own redraw/input loops. */
 void uw_suspend_present_batch(void);
 void uw_resume_present_batch(void);

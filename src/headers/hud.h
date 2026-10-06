@@ -66,6 +66,7 @@ void uw_debug_dump_critter_sheet_once(void);
 void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_force_item_id_once(void);
 int uw_always_show_cursor(void);
+void uw_composite_desktop_cursor(void *present_buffer);
 void flush_dirty_rect_to_display();
 void flush_dirty_rect_to_display_240();
 void toggle_stats_panel();

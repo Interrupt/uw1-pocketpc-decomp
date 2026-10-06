@@ -538,13 +538,15 @@ void flush_dirty_rect_to_display()
   iVar10 = 0x140 - DAT_00088958;
   iVar11 = 0x140 - DAT_00088950;
   if (getenv("UW_DEBUG_FLUSHGATE")) {
-    int willflush = ((0 < DAT_00084f10) ||
+    int willflush = ((uw_always_show_cursor() || 0 < DAT_00084f10) ||
       (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0))))));
     fprintf(stderr, "[flushgate] willflush=%d selected=%p force=%d rect=(%d,%d,%d,%d)\n",
             willflush, (void *)g_selected_object, (int)g_force_flush,
             (int)DAT_00088954, (int)DAT_0008895c, (int)DAT_00088950, (int)DAT_00088958);
   }
-  if (((0 < DAT_00084f10) ||
+  /* Desktop overlay never needs the stylus gate protecting saved pixels.
+     GX still batches and throttles these flushes to the display cadence. */
+  if (((uw_always_show_cursor() || 0 < DAT_00084f10) ||
       (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0)))))
       ) && ((DAT_0023cdc0 == 0x10 && (DAT_0023c430 = GXBeginDraw(), DAT_0023c430 != (void *)0x0))))
   {
@@ -1033,8 +1035,20 @@ void main_loop_hud_flush()
     flush_dirty_rect_to_display(1);
   }
   /* REVERTED (was a hand-hacked lit-torch HUD icon flicker -- see
-     mode-icon-and-hud-icon-flicker-fixes memory for the full arc). */
-  uw_end_present_batch();
+     mode-icon-and-hud-icon-flicker-fixes memory for the full arc).
+     Unconditionally rotating palette_cycle_range(16,8,1) every 8 ticks
+     from here ran regardless of dungeon-view state and touched the
+     shared global palette (DAT_00088d98/g_palette_rgb565), the same
+     table raster_textured_span samples fresh every frame for ALL 3D
+     wall/floor/ceiling rendering -- including real lava textures this
+     project confirmed use this exact fire-gradient range (F32.TR/
+     F16.TR entries 24/25, W64.TR/W16.TR entry 206). If the original
+     game's own (still-unfound) global fire/water palette-animation
+     mechanism turns up later, this hack would already be stomping on
+     the same palette range and timing, corrupting or double-animating
+     it. Pulled until that original mechanism is found or ruled out for
+     good; the equipped lit-torch HUD icon is back to not animating. */
+  gfx_finalizedraw();
   return;
 }
 
@@ -5417,6 +5431,8 @@ undefined4 init_cursor_subsystem()
 int erase_cursor_icon()
 
 {
+  /* Preserve the caller's click-state convention without restoring pixels. */
+  if (uw_always_show_cursor()) return DAT_00204844;
   int iVar1;
 
   iVar1 = 0;
@@ -5446,17 +5462,46 @@ int erase_cursor_icon()
 
 
 
-/* Desktop deviation: opt in to a persistent cursor with
-   UW_ALWAYS_SHOW_CURSOR=1. Keep the original touchscreen visibility
-   gates by default while the desktop cursor still has known bugs. */
+/* Desktop deviation: present the game cursor as an overlay by default.
+   UW_ALWAYS_SHOW_CURSOR=0 restores the Pocket PC stylus visibility rules. */
 int uw_always_show_cursor(void)
 {
   static int cached = -1;
   if (cached < 0) {
     const char *setting = getenv("UW_ALWAYS_SHOW_CURSOR");
-    cached = setting != NULL && strcmp(setting, "1") == 0;
+    cached = setting == NULL || strcmp(setting, "0") != 0;
   }
   return cached;
+}
+
+
+/* Desktop deviation: draw last, on GX's presentation copy. Never save or
+   restore cursor pixels in the game framebuffer: animated views and HUD
+   captures must remain cursor-free. Stylus hide depths and mode restrictions
+   do not control this overlay. Reuse the real sprite decoder and palette. */
+void uw_composite_desktop_cursor(void *present_buffer)
+{
+  if (!uw_always_show_cursor() || present_buffer == NULL ||
+      DAT_00204784 <= 0 || DAT_002047a4 <= 0) return;
+
+  void *game_buffer = g_uw_framebuffer;
+  int transparent = g_blit_transparent_mode;
+  undefined2 left = DAT_000a85c4, top = DAT_000a85c8;
+  undefined2 right = DAT_000842a4, bottom = DAT_000842a8;
+  int dirty_top = DAT_00088954, dirty_bottom = DAT_0008895c;
+  int dirty_left = DAT_00088950, dirty_right = DAT_00088958;
+
+  g_uw_framebuffer = present_buffer;
+  g_blit_transparent_mode = 1;
+  set_viewport_clip_rect(0,0,319,199);
+  draw_sprite_by_id((int)DAT_00204788,
+                   (int)g_mouse_x - (int)DAT_0020471c,
+                   (int)g_mouse_y - (int)DAT_00204748,
+                   (int)DAT_002047a4,(int)DAT_00204784);
+  g_uw_framebuffer = game_buffer;
+  g_blit_transparent_mode = transparent;
+  set_viewport_clip_rect(left,top,right,bottom);
+  dirty_rect_set(dirty_top,dirty_bottom,dirty_left,dirty_right);
 }
 
 
@@ -5469,9 +5514,7 @@ undefined4 cursor_show_idle_tick()
   
   iVar1 = (int)DAT_00204840;
   DAT_00204840 = (short)(iVar1 + 1);
-  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, same as draw_idle_mouse_cursor's own
-     deviation comment): 0x106c is the real, validly-loadable "default/no specific hotspot" cursor
-     sprite (see set_cursor_sprite_id)... */
+  /* Desktop drawing happens at presentation, independently of this depth. */
   if ((iVar1 + 1) * 0x10000 >> 0x10 == 1) {
     if ((DAT_00204788 != 0x106c) || uw_always_show_cursor()) {
       draw_idle_mouse_cursor();
@@ -5987,10 +6030,20 @@ undefined4 param_1;
   DAT_00204704 = (undefined2)param_1;
   DAT_0020471c = ((short)(ushort)*(byte *)(iVar1 + 1) >> 1) + -1;
   DAT_00204748 = (short)(ushort)*(byte *)(iVar1 + 2) >> 1;
+  /* Desktop deviation: ARM centers every icon (FUN_00057dc0), but the
+     wide automap pointer (CURSORS.GR frame 12) uses its lower-left pixel
+     as the mouse's map position. Keep item and targeting icons centered,
+     and retain ARM's hotspot in stylus mode. */
+  if (uw_always_show_cursor() && param_1 == 0x1078) {
+    DAT_0020471c = 0;
+    DAT_00204748 = DAT_002047a4 > 0 ? DAT_002047a4 - 1 : 0;
+  }
   DAT_00204788 = DAT_00204704;
   if (DAT_00204844 != 0) {
     save_cursor_background();
   }
+  /* Desktop overlay must update during modal waits without mouse/text input. */
+  if (uw_always_show_cursor()) uw_request_cursor_present();
   return;
 }
 
@@ -6071,6 +6124,7 @@ short param_1;
 void save_cursor_background()
 
 {
+  if (uw_always_show_cursor()) return;
   if (getenv("UW_DEBUG_CURSORSHOW")) {
     fprintf(stderr, "[cursorsave] entry DAT_00204844=%d sprite=%d mouse=(%d,%d) size=(%d,%d)\n",
             (int)DAT_00204844, (int)DAT_00204788, (int)g_mouse_x, (int)g_mouse_y,
@@ -6091,6 +6145,8 @@ void save_cursor_background()
 void draw_idle_mouse_cursor()
 
 {
+  /* The desktop overlay is drawn by GXEndDraw, outside game storage. */
+  if (uw_always_show_cursor()) return;
   int _dbg_show = getenv("UW_DEBUG_CURSORSHOW") != NULL;
   if (_dbg_show) {
     fprintf(stderr, "[cursorshow] entry selected=%p mode=%d holdstate=%d DAT_00204844=%d depth=%d mouse=(%d,%d)\n",
@@ -6098,10 +6154,8 @@ void draw_idle_mouse_cursor()
             (int)DAT_00204844, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
   if (g_selected_object == 0) {
-    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real Pocket PC binary only shows this
-       idle cursor sprite while DAT_0023c63c (the left-button-currently-held flag, see
-       handle_mouse_message's own comment) is set... */
-    if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0) && !uw_always_show_cursor()) {
+    /* Original stylus visibility gates; desktop mode returns above. */
+    if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0)) {
       if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (no button/mode)\n");
       return;
     }
@@ -6117,10 +6171,7 @@ void draw_idle_mouse_cursor()
       if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit2+button)\n");
       return;
     }
-    /* DEVIATION FROM AUTHENTIC BEHAVIOR (4th of this round, see the matching comments above and in
-       cursor_show_idle_tick/update_mouse_state's own tail): the original confines the drawn cursor
-       to a specific UI-mode rectangle... */
-    if ((((ushort)DAT_00201b60 & 0xc9) != 0) && !uw_always_show_cursor()) {
+    if ((((ushort)DAT_00201b60 & 0xc9) != 0)) {
       if (g_mouse_x < DAT_00204838) {
         if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");
         return;

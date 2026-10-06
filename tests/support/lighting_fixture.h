@@ -1,0 +1,36 @@
+#ifndef UW_TEST_LIGHTING_FIXTURE_H
+#define UW_TEST_LIGHTING_FIXTURE_H
+#include "unity.h"
+#include "../lighting_test_globals.h"
+void *get_equipped_item_at_slot(int slot);
+void *get_scanned_object_class_effect_ptr(void);
+int compute_object_weight(void);
+void request_weapon_swing_graphic(int category);
+void reset_player_derived_state(void);
+undefined4 is_valid_equipment_slot_item(int id, int slot);
+undefined4 resolve_object_variant_or_special_link(ushort *o, byte *a, byte *b, int *c);
+void clear_object_pending_special_flag(ushort *o);
+undefined4 apply_equipped_item_effect(int effect, int level, ushort *flags, int slot);
+void apply_equipment_effect_penalties(int flags);
+void update_screen_flicker_effect(int active);
+void force_locomotion_state_refresh(void);
+void apply_movement_mode_profile(int mode);
+int find_or_assign_object_widget(ushort *object);
+void decrement_object_count(ushort *object);
+undefined4 place_object_in_backpack_slot(ushort *object, int slot);
+void redraw_container_icon_slot(void);
+void redraw_backpack_slot_widget(int slot);
+void print_scroll_message_by_id(int id);
+void set_pending_update_flags(int mode);
+undefined4 open_file_for_read(const char *path);
+undefined4 read_file_handle(int h, void *buf, unsigned n);
+undefined4 seek_file_handle(int h, int offset, int whence);
+long CloseHandle(int h);
+void *ce_memset(void *p, int value, unsigned n);
+char *ce_strcat(char *p, const char *s);
+void lighting_fixture_reset(void);
+void lighting_fixture_dispose(void);
+ushort lighting_draw_texel(int reciprocal_w, int x, int y);
+void lighting_draw_span(int reciprocal_w, int x, int y, int count, int clip_left, ushort *pixels);
+void assert_mode(int mode, int falloff, int initial, int offset);
+#endif

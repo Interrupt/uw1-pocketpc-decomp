@@ -46,6 +46,7 @@ void load_dungeon_texture_arenas(void);
 void change_game_mode(void);
 undefined4 cursor_show_idle_tick(void);
 int uw_defer_present(void);
+int uw_take_completed_frame(void);
 void *GXBeginDraw(void);
 void assert_visible_picture(void);
 void render_dungeon_frame_timed(void);
@@ -312,6 +313,8 @@ undefined4 cursor_show_idle_tick(void) { return 0; }
 ushort framebuffer[320 * 200], hardware_framebuffer[240 * 320];
 
 int presents, testing_game_tick, input_opens_window;
+int desktop_cursor;
+int uw_always_show_cursor(void) { return desktop_cursor; }
 
 int g_force_flush, g_force_redraw_no_xp;
 
@@ -350,6 +353,7 @@ void *GXBeginDraw(void) { return hardware_framebuffer; }
 int GXEndDraw(void)
 {
     if (uw_defer_present()) return 1;
+    uw_take_completed_frame();
     presents++;
     if (!testing_game_tick) assert_visible_picture();
     return 1;
@@ -413,7 +417,7 @@ void illustration_render_fixture_reset(void)
     g_uw_framebuffer = framebuffer;
     memset(framebuffer, 0, sizeof framebuffer);
     memset(hardware_framebuffer, 0, sizeof hardware_framebuffer);
-    presents = testing_game_tick = input_opens_window = 0;
+    presents = testing_game_tick = input_opens_window = desktop_cursor = 0;
     DAT_0023cdb8 = 2; DAT_0023cdbc = 480; DAT_0023cdc0 = 16;
     DAT_00088954 = DAT_00088950 = 0;
     DAT_0008895c = 200; DAT_00088958 = 320;

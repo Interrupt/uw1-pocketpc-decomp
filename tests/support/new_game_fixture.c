@@ -18,7 +18,7 @@ void reset_npc_path_cache(void);
 void clear_last_attacker_record(void);
 undefined4 load_automap_reveal_from_archive(byte *handle, int level);
 byte close_level_archive(byte *handle);
-void set_player_tile_position(uint x, uint y, int flag);
+void set_player_tile_position(uint x, uint y);
 void debug_print_player_position(const char *label);
 void save_or_restore_level_special_state(int restore, int slot);
 void pop_cursor_icon(int state);
@@ -197,13 +197,12 @@ byte close_level_archive(byte *handle)
     return 1;
 }
 
-void set_player_tile_position(uint x, uint y, int flag)
+void set_player_tile_position(uint x, uint y)
 {
     TEST_ASSERT_EQUAL_INT(1, closes);
     TEST_ASSERT_EQUAL_INT(1, textures);
     TEST_ASSERT_EQUAL_UINT32(32, x);
     TEST_ASSERT_EQUAL_UINT32(2, y);
-    TEST_ASSERT_EQUAL_INT(1, flag);
     DAT_00202080 = y * 64 + x;
     spawn_calls++;
 }

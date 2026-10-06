@@ -1155,7 +1155,7 @@ int param_4;
   x = (short)param_4;
   *DAT_000876c0 = x;
 
-// HACK (extended): DAT_000876c4 has zero writers anywhere in the real binary (confirmed via
+  // HACK (extended): DAT_000876c4 has zero writers anywhere in the real binary (confirmed via
   // Ghidra xrefs), so update_mouse_state() would never trust *DAT_000876bc/*DAT_000876c0 and
   // g_mouse_x/g_mouse_y would never update from real mouse input at all...
   if (uw_always_show_cursor()) {

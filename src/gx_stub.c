@@ -234,16 +234,24 @@ static void poll_dungeon_movement_keys(int game_frame_due)
 struct uw_frame_pacing {
     uint64_t origin_us, next_us, frame_number, grace_us;
     int initialized, pending;
+    unsigned rate_hz;
 };
 static struct uw_frame_pacing g_display_pacing = {0};
 static struct uw_frame_pacing g_game_pacing = {0};
 
 void uw_set_present_refresh_rate(unsigned refresh_hz)
 {
-    /* Port timing: admit early flushes within one eighth of the monitor's refresh
-       interval. Fast displays get a shorter tolerance; an unknown rate
-       uses 60Hz. The game/display deadlines themselves remain at 60Hz. */
+    /* Port timing deviation: present cursor/HUD changes at monitor refresh,
+       while the existing game clock stays at 60Hz. Admit early flushes within
+       one eighth of a refresh interval and let SDL wait for vsync. */
     if (refresh_hz == 0) refresh_hz = 60;
+    if (g_display_pacing.rate_hz != refresh_hz) {
+        /* A display change starts a new presentation cadence, preserving any
+           queued flush and leaving the game clock untouched. */
+        g_display_pacing.initialized = 0;
+        g_display_pacing.next_us = 0;
+        g_display_pacing.rate_hz = refresh_hz;
+    }
     g_display_pacing.grace_us = 1000000 / ((uint64_t)refresh_hz * 8);
 }
 
@@ -255,19 +263,21 @@ void uw_reset_frame_pacing(void)
     uw_set_present_refresh_rate(60);
 }
 
-/* Port timing: retain a 60Hz game cadence independently of monitor vsync.
-   Absolute microsecond deadlines avoid the drift of repeated 16ms delays.
-   Multiple cursor/HUD flushes in one interval never buy another frame. */
+/* Absolute deadlines avoid drift from rounded millisecond delays. The game
+   uses 60Hz; display pacing uses the monitor rate. Multiple flushes within
+   one display interval never buy another presentation, except for an explicitly
+   finalized complete render. */
 int uw_claim_frame(struct uw_frame_pacing *pacing, uint64_t now_us)
 {
+    unsigned rate_hz = pacing->rate_hz ? pacing->rate_hz : 60;
     if (!pacing->initialized) {
         pacing->origin_us = now_us;
         pacing->initialized = 1;
     } else if (now_us < pacing->next_us) {
         return 0;
     }
-    pacing->frame_number = ((now_us - pacing->origin_us + 1) * 60) / 1000000 + 1;
-    pacing->next_us = pacing->origin_us + pacing->frame_number * 1000000 / 60;
+    pacing->frame_number = ((now_us - pacing->origin_us + 1) * rate_hz) / 1000000 + 1;
+    pacing->next_us = pacing->origin_us + pacing->frame_number * 1000000 / rate_hz;
     return 1;
 }
 
@@ -286,6 +296,27 @@ int uw_present_frame_due(uint64_t now_us)
     }
     g_display_pacing.pending = 0;
     return 1;
+}
+
+void uw_record_completed_present(uint64_t now_us)
+{
+    /* SDL has completed the vsync wait. Start the next cursor/ordinary flush
+       deadline here, rather than at the time the completed frame was submitted.
+       Keep the game clock independent and consume any older queued flush. */
+    unsigned rate = g_display_pacing.rate_hz ? g_display_pacing.rate_hz : 60;
+    g_display_pacing.origin_us = now_us;
+    g_display_pacing.frame_number = 1;
+    g_display_pacing.next_us = now_us + 1000000 / rate;
+    g_display_pacing.initialized = 1;
+    g_display_pacing.pending = 0;
+}
+
+/* Cursor-only changes need a presentation even in a blocking input wait.
+   Reuse the pacing queue so the next event poll shows the latest icon and
+   position without copying cursor pixels into the hardware framebuffer. */
+void uw_request_cursor_present(void)
+{
+    g_display_pacing.pending = 1;
 }
 
 void uw_service_pending_present(uint64_t now_us)
@@ -520,6 +551,10 @@ void uw_pump_events(void) {
                     ev.button.button != SDL_BUTTON_RIGHT) {
                     break;
                 }
+                /* Hovering a static menu still needs a cursor presentation.
+                   Queue the existing GX pacing service, without flushing or
+                   changing the game's saved framebuffer. */
+                if (uw_always_show_cursor()) uw_request_cursor_present();
                 if (is_right) {
                     /* Right-click = interact (handle_game_view_click's right-button branch).
                        Dispatch down and up straight through -- none of the left button's
@@ -602,6 +637,8 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
                     i, bounds.x, bounds.y, bounds.w, bounds.h, ddpi, hdpi, vdpi);
         }
     }
+    /* The game sprite replaces the native pointer in desktop cursor mode. */
+    if (uw_always_show_cursor()) SDL_ShowCursor(SDL_DISABLE);
     SDL_StartTextInput();
     /* VSYNC matters beyond just avoiding tearing here: several original routines (e.g. fade_in's
        fade-in-from-black transition) pace themselves purely by how long each GXEndDraw-equivalent
@@ -1195,6 +1232,7 @@ const char *uw_debug_3d_frame_dump_last_dir(void) {
 
 int GXCloseDisplay(void) {
     fprintf(stderr, "[gx] GXCloseDisplay\n");
+    if (uw_always_show_cursor()) SDL_ShowCursor(SDL_ENABLE);
     if (g_tex) { SDL_DestroyTexture(g_tex); g_tex = NULL; }
     if (g_ren) { SDL_DestroyRenderer(g_ren); g_ren = NULL; }
     if (g_win) { SDL_DestroyWindow(g_win); g_win = NULL; }
@@ -1214,7 +1252,7 @@ void *GXBeginDraw(void) {
 
 struct uw_present_state {
     unsigned batch_depth, modal_depth, suspend_depth;
-    int pending, saved_force_flush;
+    int pending, saved_force_flush, completed_frame;
 };
 static struct uw_present_state g_present_state = {0};
 
@@ -1230,6 +1268,28 @@ void uw_end_present_batch(void)
         g_present_state.pending = 0;
         GXEndDraw();
     }
+}
+
+void gfx_finalizedraw(void)
+{
+    /* Port timing deviation: completed frames bypass the software deadline;
+       SDL vsync handles their wait. Ordinary cursor/intermediate flushes retain
+       pacing. A nested render cannot force its unfinished outer frame out. */
+    g_present_state.completed_frame = 1;
+    if (g_present_state.batch_depth) {
+        g_present_state.pending = 1;
+        uw_end_present_batch();
+    } else {
+        GXEndDraw();
+    }
+}
+
+int uw_take_completed_frame(void)
+{
+    if (g_present_state.batch_depth) return 0;
+    int completed = g_present_state.completed_frame;
+    g_present_state.completed_frame = 0;
+    return completed;
 }
 
 void uw_suspend_present_batch(void)
@@ -1272,11 +1332,13 @@ int uw_defer_present(void)
 
 int GXEndDraw(void) {
     if (uw_defer_present()) return 1;
+    int completed_frame = uw_take_completed_frame();
     if (!g_tex) return 0;
-    if (!uw_present_frame_due(uw_gx_time_us())) return 1;
-    /* UW_DEBUG_ENDDRAW: log every real call to this function (i.e. every actual SDL_RenderPresent,
-       the true screen-present) with its immediate caller's symbol. Early flushes return above
-       without presenting or waiting on another vsync. */
+    if (!completed_frame && !uw_present_frame_due(uw_gx_time_us())) return 1;
+    /* UW_DEBUG_ENDDRAW: log every real call to this function (i.e. every
+       actual SDL_RenderPresent, the true screen-present) with its
+       immediate caller's symbol. Early flushes return above without
+       presenting or waiting on another vsync. */
     if (getenv("UW_DEBUG_ENDDRAW")) {
         void *caller = __builtin_return_address(0);
         Dl_info info;
@@ -1293,10 +1355,12 @@ int GXEndDraw(void) {
             g_display_buf[y * GX_W + x] = g_framebuffer[(HW_H - 1 - x) * HW_W + y];
         }
     }
+    uw_composite_desktop_cursor(g_display_buf);
     SDL_UpdateTexture(g_tex, NULL, g_display_buf, GX_W * sizeof(unsigned short));
     SDL_RenderClear(g_ren);
     SDL_RenderCopy(g_ren, g_tex, NULL, NULL);
     SDL_RenderPresent(g_ren);
+    if (completed_frame) uw_record_completed_present(uw_gx_time_us());
 
     /* UW_DEBUG_TIMELAPSE=<ms>: save a numbered frame every <ms> of wall-clock time (min 1, "1" or
        empty -> 250ms) into debug/timelapse/<run-timestamp>/. Pairs with UW_DEMO_DELAY_MS to pace a

@@ -787,10 +787,14 @@ long param_1;
     return param_1;
 }
 
-/* Sibling of ce_tolower just above -- same fix, same reasoning. */
+/* Windows CE toupper import: the automap note editor uses this to map
+ * lowercase input to the uppercase-only FONT4X5P.SYS glyphs. The original
+ * dropped argument was restored earlier, but the identity stub still left
+ * lowercase notes invisible. Preserve nonletters and input sentinels. */
 long ce_toupper(param_1)
 long param_1;
 {
+    if (param_1 >= 'a' && param_1 <= 'z') return param_1 - 'a' + 'A';
     return param_1;
 }
 
