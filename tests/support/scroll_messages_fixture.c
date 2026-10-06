@@ -112,7 +112,7 @@ int append_object_property_tag(ushort *object, short mode, char *buffer) { retur
 int append_object_special_name(byte *object, short mode, char *buffer) { return 0; }
 void describe_special_object_property(ushort *object, short mode) {}
 int identify_mushroom_type(ushort *object, char *properties) { return 0; }
-void look_at_inscribed_object(ushort *object, int mode) { TEST_FAIL_MESSAGE("Unexpected inscription"); }
+void look_at_inscribed_object(ushort *object, short mode) { TEST_FAIL_MESSAGE("Unexpected inscription"); }
 byte *format_object_display_name(byte *name, int article, int mode)
 {
     TEST_ASSERT_EQUAL_STRING("goblin", name);
