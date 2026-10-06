@@ -41,8 +41,8 @@ int build_collision_height_field_for_object(ushort *object)
   slot_index = encode_object_slot_index(object);
   DAT_00202c6c[10] = (char)slot_index;
   DAT_00202c6c[0xb] = (char)((ushort)slot_index >> 8);
-  DAT_00202c6c[8] = (&DAT_00202c91)[(*object & 0x1ff) * 0xd] & 7;
-  DAT_00202c6c[9] = (&DAT_00202c90)[(*object & 0x1ff) * 0xd];
+  DAT_00202c6c[8] = (&DAT_00202c91)[((uw_object_hdr_t *)object)->item_id * 0xd] & 7;
+  DAT_00202c6c[9] = (&DAT_00202c90)[((uw_object_hdr_t *)object)->item_id * 0xd];
   field = ((object[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)object + 3) >> 5);
   *DAT_00202c6c = (char)field;
   DAT_00202c6c[1] = (char)((uint)field >> 8);
@@ -402,7 +402,7 @@ void collision_height_envelope(int mode, int collision)
                  comment) where this loop's `while ((uVar3 & 0xffc0) != 0)` condition alone used to
                  guarantee success... */
               if (puVar7 == (ushort *)0x0) break;
-              iVar10 = (*puVar7 & 0x1ff) * 0xd;
+              iVar10 = ((uw_object_hdr_t *)puVar7)->item_id * 0xd;
               if ((((local_3c == 0) || (((&DAT_00202c93)[iVar10] & 4) == 0)) &&
                   (((&DAT_00202c90)[iVar10] != '\0' || (puVar7 < DAT_002046c4)))) &&
                  ((((DAT_002046c4 <= puVar7 || ((*puVar7 & 0x1c0) == 0x40)) ||
@@ -534,7 +534,7 @@ void collision_add_candidate_object(ushort *object, ushort slot_index, char tile
   candidate_count = *(byte *)(DAT_00202c6c + 0x14);
   if (candidate_count < 9) {
     object_word = *object;
-    props_src = &DAT_00202c90 + (object_word & 0x1ff) * 0xd;
+    props_src = &DAT_00202c90 + ((uw_object_hdr_t *)object)->item_id * 0xd;
     copy_count = 0xd;
     props_dst = class_props;
     do {
@@ -809,7 +809,7 @@ int check_object_placement_clearance(short catalog_type, short ignore_slot, shor
           /* Was an unguarded `*puVar4` -- resolve_object_link legitimately returns NULL when the
              candidate slot (&DAT_00202c3a + sVar7*6) has no object linked there at all... */
           if ((puVar4 != (ushort *)0x0) &&
-             (((&DAT_00202c93)[(*puVar4 & 0x1ff) * 0xd] & 2) == 0)) {
+             (((&DAT_00202c93)[((uw_object_hdr_t *)puVar4)->item_id * 0xd] & 2) == 0)) {
             DAT_00202c6c = uVar2;
             return 0;
           }

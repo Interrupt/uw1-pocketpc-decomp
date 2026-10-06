@@ -816,7 +816,7 @@ void fire_ranged_weapon(short weapon_type)
       *(byte *)((char *)puVar6 + 1) =
            (bVar2 ^ *(byte *)((char *)puVar6 + 1)) & 0x20 ^ *(byte *)((char *)puVar6 + 1);
       if ((*puVar7 & 0x1c0) != 0x140) {
-        if (((&DAT_00202c9a)[(*puVar7 & 0x1ff) * 0xd] & 3) != 2) {
+        if (((&DAT_00202c9a)[((uw_object_hdr_t *)puVar7)->item_id * 0xd] & 3) != 2) {
           *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;
         }
       }

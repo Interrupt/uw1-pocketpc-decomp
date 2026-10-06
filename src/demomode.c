@@ -502,7 +502,7 @@ void demomode_pump(void) {
         for (int i = 0; i < 0x1b; i++) fprintf(stderr, " %02x", rec[i]);
         fprintf(stderr, "\n[dumpobjslot] slot=%d word0=0x%04x word1=0x%04x type=0x%03x\n",
                 slot, (unsigned)(rec[0] | (rec[1] << 8)), (unsigned)(rec[2] | (rec[3] << 8)),
-                (unsigned)((rec[0] | (rec[1] << 8)) & 0x1ff));
+                (unsigned)(((uw_object_hdr_t *)rec)->item_id));
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
@@ -529,7 +529,7 @@ void demomode_pump(void) {
         int found = 0;
         for (int i = 1; i < 0x100; i++) {
             unsigned char *rec = (unsigned char *)DAT_002046b8 + i * 0x1b;
-            unsigned type = (rec[0] | (rec[1] << 8)) & 0x1ff;
+            unsigned type = ((uw_object_hdr_t *)rec)->item_id;
             if (type == (unsigned)want) {
                 fprintf(stderr, "[scanobjtype] small-table slot=%d addr=%p word0=0x%04x word1=0x%04x\n",
                         i, (void *)rec, (unsigned)(rec[0] | (rec[1] << 8)), (unsigned)(rec[2] | (rec[3] << 8)));
@@ -541,7 +541,7 @@ void demomode_pump(void) {
            so that's (0x7c08+0x3a-0x5b00)/8 =~ 1064 real slots -- stay inside that. */
         for (int i = 0x100; i < 0x100 + 1064; i++) {
             unsigned char *rec = (unsigned char *)DAT_002046c4 + (i - 0x100) * 8;
-            unsigned type = (rec[0] | (rec[1] << 8)) & 0x1ff;
+            unsigned type = ((uw_object_hdr_t *)rec)->item_id;
             if (type == (unsigned)want) {
                 fprintf(stderr, "[scanobjtype] large-table slot=%d addr=%p word0=0x%04x word1=0x%04x\n",
                         i, (void *)rec, (unsigned)(rec[0] | (rec[1] << 8)), (unsigned)(rec[2] | (rec[3] << 8)));
@@ -611,7 +611,7 @@ void demomode_pump(void) {
         if (contents) {
             unsigned short *c = (unsigned short *)contents;
             fprintf(stderr, "[dumpplayerinv] sp_link resolves to obj=%p type=0x%03x word0=0x%04x\n",
-                    contents, c[0] & 0x1ff, c[0]);
+                    contents, ((uw_object_hdr_t *)c)->item_id, c[0]);
             int n = 0;
             unsigned short *next_link = c + 2;
             while (1) {
@@ -619,7 +619,7 @@ void demomode_pump(void) {
                 if (!nx) break;
                 unsigned short *nc = (unsigned short *)nx;
                 fprintf(stderr, "[dumpplayerinv]   +sibling #%d obj=%p type=0x%03x word0=0x%04x\n",
-                        n, nx, nc[0] & 0x1ff, nc[0]);
+                        n, nx, ((uw_object_hdr_t *)nc)->item_id, nc[0]);
                 next_link = nc + 2;
                 if (++n > 32) break;
             }
@@ -679,7 +679,7 @@ void demomode_pump(void) {
             unsigned short *obj;
             while ((obj = (unsigned short *)resolve_object_link(link)) != NULL) {
                 fprintf(stderr, "[dumptileobjs]   #%d obj=%p type=0x%03x word0=0x%04x word1=0x%04x\n",
-                        n, (void *)obj, obj[0] & 0x1ff, obj[0], obj[1]);
+                        n, (void *)obj, ((uw_object_hdr_t *)obj)->item_id, obj[0], obj[1]);
                 link = obj + 2;
                 n++;
                 if (n > 64) { fprintf(stderr, "[dumptileobjs]   ...giving up after 64\n"); break; }

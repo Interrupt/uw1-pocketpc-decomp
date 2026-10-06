@@ -468,7 +468,7 @@ int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int d
   }
   else {
     if (source_object == (ushort *)0x0) goto LAB_00081980;
-    bVar9 = (byte)(&DAT_00202c90)[(*source_object & 0x1ff) * 0xd] >> 3;
+    bVar9 = (byte)(&DAT_00202c90)[((uw_object_hdr_t *)source_object)->item_id * 0xd] >> 3;
     uVar3 = *(undefined2 *)(iVar5 + 2);
     if (bVar9 == 0) {
       bVar9 = 1;

@@ -32,7 +32,7 @@ void close_door_object(char *actor, ushort *door)
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] close_door_object (close) called: obj0=0x%04x dirbit=%d openbits=%d quality_low4=%d\n",
             (unsigned)*door, (int)((*door & 0x1000) != 0), (int)((*door >> 9) & 7), (int)(door[3] & 0xf));
-  if ((*door & 0x1ff) == 0x1cf) {
+  if ((((uw_object_hdr_t *)door)->item_id) == 0x1cf) {
     quality_word = door[3];
     if ((quality_word & 0xf) < 8) {
       return;
@@ -78,8 +78,8 @@ void open_door_object(ushort *door)
 
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] open_door_object called: obj0=0x%04x already_1cf=%d quality_low4=%d\n",
-            (unsigned)*door, (int)((*door & 0x1ff) == 0x1cf), (int)(door[3] & 0xf));
-  if ((*door & 0x1ff) == 0x1cf) {
+            (unsigned)*door, (int)((((uw_object_hdr_t *)door)->item_id) == 0x1cf), (int)(door[3] & 0xf));
+  if ((((uw_object_hdr_t *)door)->item_id) == 0x1cf) {
     quality_word = door[3];
     if (7 < (quality_word & 0xf)) {
       return;

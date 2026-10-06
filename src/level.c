@@ -146,7 +146,7 @@ int load_level_object_table(byte *archive_handle, int level_number)
       int _found = 0;
       for (int _i = 0x100; _i < 0x100 + 1064; _i++) {
         unsigned char *_rec = (unsigned char *)DAT_002046c4 + (_i - 0x100) * 8;
-        unsigned _type = (_rec[0] | (_rec[1] << 8)) & 0x1ff;
+        unsigned _type = ((uw_object_hdr_t *)_rec)->item_id;
         if (_type == 0x8f) {
           fprintf(stderr, "[bag-trace] post-load large-table slot=%d addr=%p word0=0x%04x word1=0x%04x\n",
                   _i, (void *)_rec, (unsigned)(_rec[0] | (_rec[1] << 8)), (unsigned)(_rec[2] | (_rec[3] << 8)));
