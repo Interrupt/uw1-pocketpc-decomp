@@ -69,6 +69,7 @@ void lighting_fixture_reset(void)
 {
     setenv("UW_DATA_DIR", UW_TEST_DATA_DIR, 1);
     unsetenv("UW_LIGHT_MODE");
+    setenv("UW_DITHER", "0", 1); /* Isolate undithered falloff assertions. */
     unsetenv("UW_AMBIENT_BIAS_REDUCTION");
     g_ambient_bias_reduction = 0;
     memset(player, 0, sizeof player); memset(stats, 0, sizeof stats);
@@ -92,6 +93,7 @@ void lighting_fixture_reset(void)
 void lighting_fixture_dispose(void)
 {
     unsetenv("UW_LIGHT_MODE");
+    unsetenv("UW_DITHER");
     unsetenv("UW_AMBIENT_BIAS_REDUCTION");
 }
 void assert_mode(int mode, int falloff, int initial, int offset)
@@ -100,4 +102,27 @@ void assert_mode(int mode, int falloff, int initial, int offset)
     TEST_ASSERT_EQUAL_INT(falloff, DAT_0025063c);
     TEST_ASSERT_EQUAL_INT(initial, DAT_0025064c);
     TEST_ASSERT_EQUAL_INT(offset, DAT_002506dc);
+}
+
+/* Draw actual raster spans at dungeon projection coordinates. Keep buffer and
+   edge setup here so lighting tests specify points and expected colours. */
+void lighting_draw_span(int reciprocal_w, int x, int y, int count, int clip_left, ushort *pixels)
+{
+    static ushort framebuffer[320 * 200];
+    int gradients[32] = {0}, left[32] = {0}, right[32] = {0};
+    int clip[] = {clip_left, 0, x + count, 200};
+    memset(framebuffer, 0, sizeof framebuffer);
+    left[8/4] = y;
+    left[0x28/4] = x << 14;
+    left[0x30/4] = reciprocal_w;
+    right[0x28/4] = (x + count) << 14;
+    raster_textured_span(320, (intptr_t)framebuffer, (intptr_t)gradients,
+                        (intptr_t)left, (intptr_t)right, 1, 1, 0, clip, 88);
+    memcpy(pixels, framebuffer + y * 320 + x, count * sizeof *pixels);
+}
+ushort lighting_draw_texel(int reciprocal_w, int x, int y)
+{
+    ushort pixel;
+    lighting_draw_span(reciprocal_w, x, y, 1, x, &pixel);
+    return pixel;
 }

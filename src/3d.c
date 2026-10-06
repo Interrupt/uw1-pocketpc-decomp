@@ -9,6 +9,7 @@
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define DAT_000869cc (DAT_000869cc_str[0])
 #define DAT_000869d4 (DAT_000869d4_str[0])
@@ -803,6 +804,10 @@ byte param_10;
      the original ARM RGB falloff below. Resolve once per span, not texel. */
   const char *light_mode = getenv("UW_LIGHT_MODE");
   bool dos_light_mode = light_mode && strcmp(light_mode, "dos") == 0;
+  /* HACK: ordered dithering defaults on in both lighting modes. Explicit 0
+     or an empty value disables it. */
+  const char *dither_mode = getenv("UW_DITHER");
+  bool dither_enabled = !dither_mode || (*dither_mode && strcmp(dither_mode, "0") != 0);
   intptr_t local_4; /* fb row pointer */
 
   iVar12 = (intptr_t)DAT_0023cca0;
@@ -852,6 +857,14 @@ byte param_10;
     local_34 = local_34 - iVar3;
     local_4 = param_2 + iVar9 * 2;
   }
+  /* HACK: restore radial eye-to-surface lighting in both modes instead of
+     shading whole planes by camera depth. render_visible_tile_list projects
+     x = 140 + 100*eye_x/eye_z, y = 80 - 90*eye_y/eye_z. Inverting that ray
+     gives distance = depth * sqrt(1 + ray_x^2 + ray_y^2). Camera rotations
+     preserve this distance. Include the left clip offset and advance x even
+     for transparent pixels; texture perspective interpolation stays intact. */
+  int light_x = iVar6 + iVar9;
+  double light_y = (*(int *)(param_4 + 8) - 80) / 90.0;
   if (0 < iVar11) {
     iVar6 = *(int *)(param_4 + 8) * param_1 + iVar6;
     puVar13 = (undefined1 *)(iVar6 + iVar12);
@@ -867,22 +880,36 @@ byte param_10;
         bVar1 = *(byte *)(iVar12 + param_8);
       }
       if (bVar1 != 0) {
+        double ray_x = (light_x - 140) / 100.0;
+        int light_distance = (int)(iVar6 * sqrt(1.0 + ray_x * ray_x + light_y * light_y));
+        /* DOS's alternating +0.25/+0.75 thresholds, anchored to the screen.
+           ARM applies them at RGB565 quantization rather than palette lookup. */
+        int dither_offset = dither_enabled ?
+            (((light_x + *(int *)(param_4 + 8)) & 1) ? 0xc0 : 0x40) : 0;
         if (dos_light_mode) {
           /* HACK: palette shading uses SHADES.DAT's selected light strength.
              tmap supplies w = world_depth/1500. Edge setup scales 1/w by
              16384, the span shifts it by 2, and 2^24 / that gives w*4096.
-             Convert to the world_depth/32 units used by object shading. */
-          iVar12 = (int)DAT_002506dc +
-                   ((int)DAT_0025063c * (int)((int64_t)iVar6 * 1500 >> 17) >> 6);
+             Convert to world_distance/32, retaining an 8.8 shade fraction.
+             DOS's span accumulators start at shade+0.5 +/-0.25, swapping
+             on odd rows. Use those same 0x40/0xc0 thresholds here, anchored
+             to screen x/y so clipping and triangle boundaries cannot shift
+             the dither. Deliberate deviation: keep per-pixel radial lighting,
+             rather than DOS's vertex shade/scanline gradient interpolation.
+             Reference: cimmerianpit/openabyss, src/uw_shade.c (MIT). */
+          int shade_fixed = (int)((int64_t)light_distance * 1500 * DAT_0025063c / 32768) +
+                            (int)DAT_002506dc * 256;
+          if (shade_fixed < 0) shade_fixed = 0;
+          shade_fixed += (int)DAT_0025064c * 256;
+          shade_fixed += dither_offset;
+          iVar12 = shade_fixed >> 8;
           if (iVar12 < 0) iVar12 = 0;
-          iVar12 += DAT_0025064c;
-          if (iVar12 < 0) iVar12 = 0;
-          if (iVar12 > 14) iVar12 = 14;
+          if (iVar12 > 15) iVar12 = 15;
           bVar1 = ((byte *)DAT_0024fa2c)[iVar12 * 256 + bVar1];
           *puVar10 = (ushort)(&g_palette_rgb565)[bVar1];
         }
         else {
-          iVar12 = ((iVar6 >> 4) + (int)DAT_000842b0) * 0x10000 >> 0x10;
+          iVar12 = ((light_distance >> 4) + (int)DAT_000842b0) * 0x10000 >> 0x10;
           if (iVar12 < 0) {
             iVar12 = 0;
           }
@@ -892,14 +919,21 @@ byte param_10;
             sVar7 = 0x9f;
           }
           iVar12 = (&DAT_000b5638)[sVar7];
-          *puVar10 = (ushort)(((((int)((uVar2 & 0xf800) << 1) >> 6) * (int)(iVar12) >> 0x12) << 6 |
-                              ((int)((uVar2 & 0x7e0) << 7) >> 6) * (int)(iVar12) >> 0x12) << 5) |
-                     (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * (int)(iVar12) >> 0x12);
+          /* HACK: optionally dither the fractional RGB channels before their
+             final 18-bit shift. This preserves the ARM falloff LUT and avoids
+             creating another coarse shade-index step. Integer/full-bright
+             channels stay unchanged, including the RGB565 upper bounds. */
+          int round = dither_offset * 1024;
+          int red = (((uVar2 >> 11) & 31) * 64 * (int)iVar12 + round) >> 18;
+          int green = (((uVar2 >> 5) & 63) * 64 * (int)iVar12 + round) >> 18;
+          int blue = ((uVar2 & 31) * 64 * (int)iVar12 + round) >> 18;
+          *puVar10 = (ushort)((red << 11) | (green << 5) | blue);
         }
         if (DAT_0023b830 != '\0') {
           *puVar13 = (char)DAT_000da47c;
         }
       }
+      light_x++;
       iVar11 = iVar11 + -1;
       puVar10 = puVar10 + 1;
       puVar13 = puVar13 + 1;

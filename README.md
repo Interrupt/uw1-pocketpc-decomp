@@ -194,6 +194,10 @@ values also use ARM lighting.
 For optional ARM brightness calibration, use `UW_AMBIENT_BIAS_REDUCTION`:
 negative integers brighten the view and positive integers darken it. The
 adjustment defaults to `64` when unset. Set it to `0` to disable calibration. DOS palette shading does not use this adjustment.
+Both modes use radial eye-to-surface distance and default to screen-anchored
+ordered dithering: DOS alternates palette shades, while ARM dithers RGB565
+channel rounding. Set `UW_DITHER=0` to disable it or `UW_DITHER=1` to enable it
+explicitly.
 
 File loads are logged to stderr (`[fileio] open-read: ...`), including
 failures, which is the fastest way to tell what's missing or misnamed.
