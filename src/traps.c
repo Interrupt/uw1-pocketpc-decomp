@@ -739,7 +739,7 @@ void tick_ambient_doors_and_scheduler(int target_present)
     /* was folded into `int iVar2` (reused below for unrelated int
        values) -- truncated tilemap_lookup's real `void *` return */
     char *_tile2 = (char *)tilemap_lookup((int)local_1c,(int)local_1a);
-    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (*pbVar1 & 0xf))) &&
+    if (((!((uw_tile_t *)_tile2)->door_bit) && (7 < (*pbVar1 & 0xf))) &&
        (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
       DAT_002020a4 = local_1a;
