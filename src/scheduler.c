@@ -647,7 +647,8 @@ LAB_00081980:
 // comment for a case where that idiom was wrong; unconfirmed either
 // way for this specific call, left as originally decompiled). Returns
 // the slot index, or -1 if not found.
-int scheduler_find_entry()
+int scheduler_find_entry(param_1)
+char *param_1;  /* the object/link record whose slot index is searched for (ARM 0x819f0: r0 passes straight into encode_object_slot_index) */
 
 {
   short sVar1;
@@ -655,7 +656,7 @@ int scheduler_find_entry()
   uint uVar3;
   int iVar4;
   
-  sVar1 = encode_object_slot_index();
+  sVar1 = encode_object_slot_index(param_1);
   iVar4 = 0;
   uVar3 = (uint)g_scheduler_count;
   if (uVar3 != 0) {
@@ -674,13 +675,14 @@ int scheduler_find_entry()
 
 
 // was FUN_00081a84: reads scheduler_find_entry's result's delay field.
-int scheduler_get_delay()
+int scheduler_get_delay(param_1)
+undefined4 param_1;
 
 {
   short sVar1;
   int iVar2;
 
-  sVar1 = scheduler_find_entry();
+  sVar1 = scheduler_find_entry(param_1);
   if (sVar1 < 0) {
     iVar2 = -2;
   }
@@ -701,7 +703,7 @@ undefined4 param_2;
   short sVar1;
   int iVar2;
   
-  sVar1 = scheduler_find_entry();
+  sVar1 = scheduler_find_entry(param_1);
   if (-1 < sVar1) {
     iVar2 = sVar1 * 6;
     (&DAT_0025077a)[iVar2] = (char)param_2;

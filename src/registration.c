@@ -310,7 +310,7 @@ short param_3;
       return 0;
     }
     if ((param_3 == 1) || (param_3 == 2)) {
-      EndDialog(param_1);
+      EndDialog(param_1,param_3);  /* ARM 0x6bad8-0x6badc: r1 still holds the compared wParam (1 or 2) */
       DAT_0023c108 = 0;
     }
     else {

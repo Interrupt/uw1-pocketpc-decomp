@@ -1640,7 +1640,7 @@ short param_3;
     DAT_00100608 = DAT_00100608 + 7;
   }
   if ((short)uVar3 == 2) {
-    sVar4 = ordint_divmod(6).quot;
+    sVar4 = ordint_divmod(6,(&DAT_001007d5)[(*g_player_object & 0x3f) * 0x30]).quot;  /* dividend dropped by Ghidra; ARM 0x2749c-0x274bc, same table lookup as the else branch below */
     sVar5 = ordint_divmod(5,(uint)*(byte *)(iVar2 + 0x23) << 1).quot;
     DAT_0010061c = sVar4 + sVar5 + 4;
   }
@@ -2524,7 +2524,7 @@ int param_5;
   char acStackY_85aec [547480];
   char acStack_4d [53];
   
-  puVar5 = (undefined2 *)get_equipped_item_at_slot();
+  puVar5 = (undefined2 *)get_equipped_item_at_slot(param_1);
   if (puVar5 == (undefined2 *)0x0) {
     return 0xfffffffe;
   }

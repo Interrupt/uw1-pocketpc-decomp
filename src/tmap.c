@@ -1375,8 +1375,7 @@ LAB_0005e7e0:
       uVar17 = ordfloat_int_to_float2(iVar38 + -1);
       uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar34));
       uVar20 = ordfloat_mul(uVar20,0x3b800000);
-      ordfloat_mul(uVar20,uVar17);
-      uVar20 = ordfloat_uint_to_float();
+      uVar20 = ordfloat_uint_to_float(ordfloat_mul(uVar20,uVar17));
       (&DAT_000ace0c)[iVar18] = (char)uVar20;
       iVar36 = iVar16 + 1;
       DAT_0023b838 = iVar36;
@@ -1407,8 +1406,7 @@ LAB_0005e7e0:
       (&DAT_000ace13)[iVar18] = 0;
       uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar34));
       uVar20 = ordfloat_mul(uVar20,0x3b800000);
-      ordfloat_mul(uVar20,uVar17);
-      uVar20 = ordfloat_uint_to_float();
+      uVar20 = ordfloat_uint_to_float(ordfloat_mul(uVar20,uVar17));
       (&DAT_000ace14)[iVar18] = (char)uVar20;
       iVar34 = iVar16 + 2;
       DAT_0023b838 = iVar34;
@@ -1445,8 +1443,7 @@ LAB_0005e7e0:
       (&DAT_000ace1b)[iVar18] = uVar4;
       uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar19));
       uVar20 = ordfloat_mul(uVar20,0x3b800000);
-      ordfloat_mul(uVar20,uVar17);
-      uVar20 = ordfloat_uint_to_float();
+      uVar20 = ordfloat_uint_to_float(ordfloat_mul(uVar20,uVar17));
       (&DAT_000ace1c)[iVar18] = (char)uVar20;
       iVar30 = iVar16 + 3;
       (&DAT_000ace1d)[iVar18] = (char)((uint)uVar20 >> 8);
@@ -1480,8 +1477,7 @@ LAB_0005e7e0:
       (&DAT_000ace23)[iVar18] = uVar4;
       uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar19));
       uVar20 = ordfloat_mul(uVar20,0x3b800000);
-      ordfloat_mul(uVar20,uVar17);
-      uVar17 = ordfloat_uint_to_float();
+      uVar17 = ordfloat_uint_to_float(ordfloat_mul(uVar20,uVar17));
       (&DAT_000ace24)[iVar18] = (char)uVar17;
       (&DAT_000ace25)[iVar18] = (char)((uint)uVar17 >> 8);
       (&DAT_000ace26)[iVar18] = (char)((uint)uVar17 >> 0x10);
@@ -1624,8 +1620,7 @@ LAB_0005e7e0:
       uVar17 = ordfloat_int_to_float2(iVar19);
       uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar32));
       uVar20 = ordfloat_mul(uVar20,0x3b800000);
-      ordfloat_mul(uVar20,uVar17);
-      uVar20 = ordfloat_uint_to_float();
+      uVar20 = ordfloat_uint_to_float(ordfloat_mul(uVar20,uVar17));
       (&DAT_000ace0c)[iVar34] = (char)uVar20;
       (&DAT_000ace0d)[iVar34] = (char)((uint)uVar20 >> 8);
       iVar32 = iVar16 + 1;
@@ -1658,8 +1653,7 @@ LAB_0005e7e0:
       (&DAT_000ace13)[iVar34] = 0;
       uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar30));
       uVar20 = ordfloat_mul(uVar20,0x3b800000);
-      ordfloat_mul(uVar20,uVar17);
-      uVar20 = ordfloat_uint_to_float();
+      uVar20 = ordfloat_uint_to_float(ordfloat_mul(uVar20,uVar17));
       (&DAT_000ace14)[iVar34] = (char)uVar20;
       (&DAT_000ace15)[iVar34] = (char)((uint)uVar20 >> 8);
       iVar32 = iVar16 + 2;
@@ -1694,8 +1688,7 @@ LAB_0005e7e0:
       (&DAT_000ace1b)[iVar34] = uVar4;
       uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar30));
       uVar20 = ordfloat_mul(uVar20,0x3b800000);
-      ordfloat_mul(uVar20,uVar17);
-      uVar20 = ordfloat_uint_to_float();
+      uVar20 = ordfloat_uint_to_float(ordfloat_mul(uVar20,uVar17));
       (&DAT_000ace1c)[iVar34] = (char)uVar20;
       (&DAT_000ace1d)[iVar34] = (char)((uint)uVar20 >> 8);
       iVar32 = iVar16 + 3;
@@ -1727,8 +1720,7 @@ LAB_0005e7e0:
       (&DAT_000ace23)[iVar34] = uVar4;
       uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar30));
       uVar20 = ordfloat_mul(uVar20,0x3b800000);
-      ordfloat_mul(uVar20,uVar17);
-      uVar17 = ordfloat_uint_to_float();
+      uVar17 = ordfloat_uint_to_float(ordfloat_mul(uVar20,uVar17));
       (&DAT_000ace24)[iVar34] = (char)uVar17;
       (&DAT_000ace25)[iVar34] = (char)((uint)uVar17 >> 8);
       DAT_000a85d0 = iVar16 + 4;
@@ -2823,7 +2815,7 @@ LAB_emit_mesh_sprite_quad:
     iVar32 = (int)DAT_00202508;
     uVar19 = ordfloat_int_to_float2(iVar32 * -6);
     uVar19 = ordfloat_mul(uVar19,0x3f000000);
-    uVar20 = ordfloat_negate();
+    uVar20 = ordfloat_negate(uVar19);
     uVar16 = DAT_000da47c;
     iVar28 = DAT_0023b83c * 0x60;
     (&DAT_000ace30)[iVar28] = (char)DAT_000da47c;
@@ -3103,7 +3095,7 @@ LAB_00061d34:
     iVar32 = (int)DAT_00202508;
     uVar19 = ordfloat_int_to_float2(iVar32 * -4);
     uVar19 = ordfloat_mul(uVar19,0x3f000000);
-    uVar20 = ordfloat_negate();
+    uVar20 = ordfloat_negate(uVar19);
     uVar16 = DAT_000da47c;
     iVar28 = DAT_0023b83c * 0x60;
     iVar17 = (int)(short)DAT_0023b904;

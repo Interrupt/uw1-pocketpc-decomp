@@ -65,6 +65,7 @@ static char s_is_empty__0008790c[] = " is empty.\n";
 
 
 
+// was FUN_00042a44
 void release_container_reference(param_1)
 /* Was `int param_1` -- every call site passes g_current_container_record, a real
    64-bit pointer, which this narrower type truncates to 32 bits --
@@ -95,6 +96,7 @@ char *param_1;
    only declared as a single `undefined` byte here, so also likely
    undersized) -- revisit both together if/when this function's icon
    save/restore path is actually exercised and crashes. */
+// was FUN_00042aa8
 void free_open_container_chain()
 
 {
@@ -138,6 +140,7 @@ void free_open_container_chain()
 
 
 
+// was FUN_00042b38
 void close_backpack_container()
 
 {
@@ -247,6 +250,7 @@ void close_backpack_container()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// was FUN_00042c5c
 void leave_nested_container_level()
 
 {
@@ -326,6 +330,7 @@ void leave_nested_container_level()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// was FUN_00042d70
 void refresh_container_view()
 
 {
@@ -339,7 +344,7 @@ void refresh_container_view()
   while ((iVar2 = resolve_object_link(iVar2), iVar2 != 0 && ((*(byte *)(iVar2 + 1) & 0x40) != 0))) {
     iVar2 = iVar2 + 4;
   }
-  sVar1 = encode_object_slot_index();
+  sVar1 = encode_object_slot_index(iVar2);
   DAT_002029a0 = (uint)((uint)(_DAT_00202978 >> 6) != (int)sVar1);
   DAT_0020299c = (uint)((DAT_00202986 & 0xffc0) != 0);
   redraw_inventory_widget(0x15);
@@ -350,6 +355,7 @@ void refresh_container_view()
 
 
 
+// was FUN_00042e30
 void repopulate_container_grid_slots()
 
 {
@@ -460,6 +466,7 @@ void repopulate_container_grid_slots()
 
 
 
+// was FUN_00043100
 void open_backpack_container(param_1)
 short param_1;
 
@@ -886,6 +893,7 @@ LAB_00043700:
 
 // WARNING: Removing unreachable block (ram,0x00043adc)
 
+// was FUN_00043734
 undefined4 auto_place_in_container(param_1,param_2)
 ushort * param_1;
 short param_2;
@@ -1083,6 +1091,7 @@ LAB_000439a0:
 
 
 
+// was FUN_00043d40
 void sum_container_weight(param_1,param_2)
 ushort *param_1;  /* was `undefined4` -- truncated the real object-record
                      pointer (passed straight to resolve_object_link, and
@@ -1201,6 +1210,7 @@ ushort * param_2;
    this recompile reads were left uninitialized (the old `undefined4`
    return type only ever set the low 32 bits), so callers actually read
    garbage instead of a clean NULL and crashed dereferencing it. */
+// was FUN_00045054
 void *get_equipped_item_at_slot(param_1)
 short param_1;
 

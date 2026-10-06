@@ -832,7 +832,7 @@ char * param_1;
         CloseHandle(iVar2);
       }
       if (g_save_record_buffer != 0) {
-        LocalFree();
+        LocalFree(g_save_record_buffer);
         g_save_record_buffer = 0;
       }
       set_pending_update_flags(0x200);
@@ -904,6 +904,7 @@ undefined1 * param_1;
 
 
 
+// was FUN_000667cc
 void refresh_player_equipment_effects()
 
 {
@@ -1614,6 +1615,7 @@ uint param_1;
 // Its table starts at item 0x20; the old separate backing array never loaded
 // those protection values. Keep the existing function name for its callers.
 
+// was FUN_0006674c
 int compute_object_weight(param_1)
 ushort * param_1;
 
@@ -2146,10 +2148,7 @@ short param_1;
     iVar8 = DAT_00086df8;
     iVar7 = 0;
     uVar3 = *(uint *)(DAT_00086df8 + 0x4e);
-    /* ARM 0x69d70..0x69da4 leaves total XP in r1 for this division.
-       Ghidra dropped that second argument, making level checks depend
-       on whichever unrelated value the native call saw instead. */
-    sVar4 = orduint_divmod(500,uVar3).quot;
+    sVar4 = orduint_divmod(500,uVar3).quot;  /* dividend dropped; ARM 0x69d88-0x69da4 */
     uVar5 = (uint)*(byte *)(iVar8 + 0x3d);
     bVar1 = (&DAT_00086e87)[uVar5];
     uVar6 = uVar5;
@@ -2526,8 +2525,7 @@ int param_2;
   }
   else {
     print_scroll_message_by_id(0x1c);
-    get_message_string(param_1 + 0x1fU | 0x400);
-    message_scroll_print_wrapped();
+    message_scroll_print_wrapped(get_message_string(param_1 + 0x1fU | 0x400));
     message_scroll_print_wrapped(&DAT_00084f20);
   }
   return;
@@ -2568,8 +2566,7 @@ LAB_00070874:
           pcVar1 = &DAT_00087318;
           goto LAB_00070874;
         }
-        get_message_string((byte)param_1[iVar2] + 0x1f | 0x400);
-        message_scroll_print_wrapped();
+        message_scroll_print_wrapped(get_message_string((byte)param_1[iVar2] + 0x1f | 0x400));
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
       } while (param_1[iVar2] != -1);
     }
@@ -2826,7 +2823,7 @@ void render_endgame_character_stats()
   sVar6 = ce_strlen(local_58);
   iVar12 = DAT_00086df8;
   if (9 < *(byte *)(DAT_00086df8 + 0x3d)) {
-    cVar3 = ordint_divmod(10).quot;
+    cVar3 = ordint_divmod(10,*(byte *)(DAT_00086df8 + 0x3d)).quot;  /* dividend dropped, same as advance_character_level */
     local_58[sVar6] = cVar3 + '0';
     sVar6 = (short)((uint)((sVar6 + 1) * 0x10000) >> 0x10);
   }
@@ -3413,7 +3410,7 @@ LAB_00072374:
     DAT_00085730 = 3;
     if (iVar6 != 0) {
       display_book_or_scroll_page(0x102);
-      show_error_dialog_stub_thunk(0xf1);
+      show_error_dialog_stub_thunk();
       msg_scroll_panel_reset(1);
       return;
     }
@@ -3835,6 +3832,7 @@ void handle_stats_panel_skill_scroll_click()
 
 
 
+// was FUN_00078550
 void refresh_stats_panel_if_active()
 
 {
@@ -4255,7 +4253,8 @@ short param_1;
 // earlier in this pass, there's only ONE call site here and the
 // animation is always the same fixed timing, so this is left as a
 // no-arg function rather than guessed into taking one.
-void trigger_quest_stumble_animation()
+void trigger_quest_stumble_animation(param_1)
+undefined4 param_1;
 
 {
   set_movement_animation_timer(0x40,0x1e);
@@ -4627,7 +4626,7 @@ undefined4 dungeon_view_anim_tick()
     }
     DAT_00201c90 = local_20;
     DAT_00201c8c = local_1e;
-    set_player_tile_position((int)local_20,(int)local_1e,1);
+    set_player_tile_position((int)local_20,(int)local_1e);
     if ((DAT_00085730 & 2) != 0) {
       full_dungeon_redraw();
       weapon_overlay_flash_restore((int)g_visibility_max_ring_passes);

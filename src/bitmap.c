@@ -93,7 +93,7 @@ static short DAT_0023c3f4;
 // with edge clipping against the framebuffer bounds. Used by
 // blit_object_sprite_by_frame's absolute-frame-table branch and by
 // sprite_list_flush_blit_raw.
-void blit_raw_sprite_clipped(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+void blit_raw_sprite_clipped(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 short param_1;
 short param_2;
 /* Source-bitmap pointer -- was `int`, truncating the real `char *` the
@@ -105,6 +105,7 @@ short param_4;
 short param_5;
 short param_6;
 short param_7;
+undefined4 param_8;
 
 {
   short sVar1;
@@ -285,10 +286,13 @@ uint param_4;
 
 
 
-void blit_object_sprite_by_frame(param_1,param_2,param_3)
+// was FUN_00040918
+void blit_object_sprite_by_frame(param_1,param_2,param_3,param_4,param_5)
 short param_1;
 undefined4 param_2;
 undefined4 param_3;
+undefined4 param_4;
+undefined4 param_5;
 
 {
   char cVar1;

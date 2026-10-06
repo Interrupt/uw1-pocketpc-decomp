@@ -116,6 +116,7 @@ static char s_chrbtns_00084ef8[] = "chrbtns";
 
 
 // The main character-generation state machine: steps through portrait/gender/skills/stats/name/confirm, one screen per state.
+// was FUN_00024e24
 undefined4 character_generator_loop(param_1,param_2,param_3)
 char *param_1;
 char *param_2;
@@ -204,7 +205,7 @@ char *param_3;
     pcVar_rec = param_3 + iVar12 * 0x14;
     iVar4 = *(int *)(pcVar_rec + 6);
     pcVar_name = (char *)&DAT_000fb8f0 + iVar4;
-    screen_backup_save((int)uVar15,(int)(uVar15 >> 0x20));
+    screen_backup_save();  /* takes no args (ARM 0x11478 never reads r0-r3); the old args were the halves of the previous call's 64-bit return */
     chargen_ui_transition_hook(1);
     DAT_000fb858 = DAT_001005c8;
     // Redraws the raw parchment background (both pages, 0,0 to 320,200) from scratch every loop iteration -- this is the mechanism that clears stale text from the *right* page between prompts (confirmed: disabling it leaves old prompt text visibly bleeding through under new prompt text). As a side effect it also wipes any stats text the previous iteration's switch-case drew on the left page. Confirmed present in the real ARM disassembly at this exact spot, in this exact order relative to the fill below -- not a decompilation bug.
@@ -427,6 +428,7 @@ LAB_00025468:
 
 
 // Loads CHRGEN.DAT/CHARGEN.BYT/fonts/palette, builds the per-field record array, and drives character_generator_loop's state machine.
+// was FUN_00025608
 int run_character_generator()
 
 {
@@ -589,6 +591,7 @@ int run_character_generator()
 
 
 // Thin wrapper that enters/exits a critical section around run_character_generator.
+// was FUN_000259a0
 undefined4 character_generator_start()
 
 {
@@ -1323,6 +1326,7 @@ byte param_3;
 
 
 // Translates a touch/shortcut-key position into a selected item index for the current chargen field.
+// was FUN_0002454c
 uint character_generator_touch_select(param_1,param_2)
 short * param_1;
 uint param_2;
@@ -1454,11 +1458,11 @@ LAB_000247f8:
 // was FUN_00024840 -- waits for input on the current chargen field:
 // navigates/selects a list, or (for the name field) runs the
 // text-entry loop.
-uint wait_for_chargen_field_input(param_1,param_2)
+uint wait_for_chargen_field_input(param_1)
 short * param_1;
-undefined4 param_2;
 
 {
+  undefined4 param_2;  /* was a 2nd parameter: only ever assigned the high half of a 64-bit return; ARM 0x24840 reads r0 only */
   byte bVar1;
   short sVar2;
   short sVar3;
@@ -1502,7 +1506,7 @@ undefined4 param_2;
   if ((*param_1 == 0) || (*(int *)(param_1 + 1) == 0)) {
     do {
       do {
-        advance_menu_music_track(uVar6,param_2);
+        advance_menu_music_track();
         flush_dirty_rect_to_display(1);
         uVar14 = next_input_event();
         param_2 = (undefined4)((ulonglong)uVar14 >> 0x20);
@@ -1750,7 +1754,8 @@ LAB_00024dd4:
 // of this build) or a decompilation gap -- not confirmed via
 // disassembly. Kept as-is, matching its real (argument-less) decompiled
 // signature.
-void chargen_ui_transition_hook()
+void chargen_ui_transition_hook(param_1)
+undefined4 param_1;
 
 {
   return;

@@ -11,7 +11,7 @@ static void test_window_illustration_loads_and_draws_real_picture(void)
     TEST_ASSERT_EQUAL_HEX16_ARRAY(gameplay_palette, g_palette_rgb565_backing, 256);
     /* Subsequent HUD drawing must still use the game's palette. */
     byte hud_tile[4] = {32, 33, 34, 35};
-    bitmap_blit_to_framebuffer(0, 0, hud_tile, 2, 2, 0, 0);
+    bitmap_blit_to_framebuffer(0, 0, hud_tile, 2, 2, 0, 0, 0);
     TEST_ASSERT_EQUAL_HEX16(gameplay_palette[32], framebuffer[0]);
     TEST_ASSERT_EQUAL_HEX16(gameplay_palette[35], framebuffer[321]);
     TEST_ASSERT_EQUAL_STRING("\\CUTS\\CS400.n00", opened[0]);

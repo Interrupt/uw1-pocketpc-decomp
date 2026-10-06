@@ -193,6 +193,7 @@ void unready_weapon()
 
 
 
+// was FUN_00046a94
 void attach_picked_up_object_to_cursor(param_1)
 ushort * param_1;
 
@@ -281,6 +282,7 @@ ushort * param_1;
 
 
 
+// was FUN_0004a69c
 undefined4 drop_held_object_near_player(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -825,6 +827,7 @@ LAB_0007b254:
 
 
 
+// was FUN_0007c93c
 void try_combine_or_stow_object(param_1,param_2,param_3)
 /* Was `int param_1; undefined4 param_2;` -- both real object pointers
    (matching check_object_combination's own param_1/param_2 types, forwarded to it
@@ -894,6 +897,7 @@ int param_3;
 
 
 
+// was FUN_00079984
 ushort *use_object_on_target(param_1,param_2,param_3)
 /* Was `int param_1` -- every call site passes a real object pointer
    (g_player_object, the player object, at most sites), truncating it to
@@ -1518,9 +1522,10 @@ short param_2;
 // a major one-time quest/ritual completion rather than an everyday
 // item interaction; the exact quest isn't identified here. No
 // callers found by grep in the remaining decompile.
-void complete_use_item_special_quest_event(param_1,param_2)
+void complete_use_item_special_quest_event(param_1,param_2,param_3)
 ushort * param_1;
 int param_2;
+undefined4 param_3;
 
 {
   undefined2 uVar1;
@@ -1686,8 +1691,7 @@ uint param_2;
         *param_1 = (bVar2 + 4 ^ bVar2) & 0xf ^ bVar2;
         param_1[1] = (byte)((ushort)uVar1 >> 8);
         print_scroll_message_by_id(0x7d);
-        find_or_assign_object_widget(param_1);
-        redraw_backpack_slot_widget();
+        redraw_backpack_slot_widget(find_or_assign_object_widget(param_1));  /* r0 passthrough, ARM 0x7acb8-0x7acbc */
       }
     }
   }
@@ -1851,8 +1855,7 @@ int param_3;
       uVar2 = *param_1;
       *(undefined1 *)param_1 = 0x91;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8) & 0xfe;
-      find_or_assign_object_widget(param_1);
-      redraw_backpack_slot_widget();
+      redraw_backpack_slot_widget(find_or_assign_object_widget(param_1));  /* r0 passthrough, ARM 0x7b67c-0x7b680 */
     }
   }
   return;
@@ -2171,7 +2174,7 @@ ushort * param_2;
   else if (uVar4 == 1) {
     uVar4 = uVar5 & 0xf;
     if (uVar4 == 7) {
-      handle_mantra_chant(0);
+      handle_mantra_chant();
     }
     else if (((uVar4 == 0xb) || (uVar4 == 0xd)) && ((uVar5 & 0x8000) == 0)) {
       try_combine_or_stow_object(param_1,param_2,0);
@@ -2552,7 +2555,7 @@ int param_3;
       iVar2 = 0;
     }
     else if (iVar2 < 0x1f) {
-      sVar1 = ordint_divmod(10).quot;
+      sVar1 = ordint_divmod(10,iVar2).quot;  /* dividend dropped; ARM 0x3abe0-0x3ac10 */
       iVar2 = sVar1 + 1;
     }
     else {
@@ -3378,6 +3381,7 @@ ushort param_5;
    relying on two separate locals happening to land adjacently on the
    stack (true in the original 32-bit ARM build, not guaranteed by a
    modern compiler). */
+// was FUN_00046b88
 undefined4 load_armor_overlay_frame(param_1,param_2)
 int param_1;
 undefined4 param_2;
@@ -3400,6 +3404,7 @@ undefined4 param_2;
 
 
 
+// was FUN_00046bfc
 void redraw_armor_overlay_widgets()
 
 {
@@ -3481,6 +3486,7 @@ void redraw_armor_overlay_widgets()
 
 
 
+// was FUN_00046ff4
 void swap_cursor_and_slot_item(param_1,param_2)
 undefined4 param_1;
 int param_2;
@@ -3497,8 +3503,7 @@ int param_2;
   }
   else {
     iVar1 = get_equipped_item_at_slot(param_1);
-    resolve_object_link(iVar1 + 4);
-    uVar2 = encode_object_slot_index();
+    uVar2 = encode_object_slot_index(resolve_object_link(iVar1 + 4));  /* ARM 0x47030: r0 passthrough */
   }
   g_selected_object = (ushort *)extract_matching_object_from_slot(0xffffffff,0xffffffff,0xffffffff,param_1,0);
   if (g_selected_object != (ushort *)0x0) {
@@ -3602,6 +3607,7 @@ undefined1 * param_1;
 }
 
 
+// was FUN_0004506c
 undefined4 place_object_in_backpack_slot(param_1,param_2)
 /* Was `undefined4 param_1` -- same 64-bit-pointer-truncated-through-a-
    32-bit-typedef-parameter bug as place_held_item_in_empty_slot's identical fix just
@@ -3768,6 +3774,7 @@ ushort *param_1;
 
 
 
+// was FUN_000472c4
 uint check_object_fits_in_slot(param_1,param_2)
 ushort * param_1;
 undefined4 param_2;
@@ -4082,6 +4089,7 @@ LAB_000479c0:
 
 
 
+// was FUN_00047a7c
 void handle_backpack_slot_click(param_1)
 short param_1;
 
@@ -4112,6 +4120,7 @@ short param_1;
 
 
 
+// was FUN_00047ae0
 undefined4 place_held_item_in_empty_slot(param_1,param_2)
 /* Was `undefined4 param_1` -- a 64-bit pointer truncates to its low 32
    bits the moment a caller passes it to a function whose own signature
@@ -4161,6 +4170,7 @@ short param_2;
 
 // WARNING: Removing unreachable block (ram,0x00047f40)
 
+// was FUN_00047cfc
 undefined4 handle_backpack_slot_interact(param_1,param_2)
 ushort * param_1;
 uint param_2;
@@ -4292,6 +4302,7 @@ uint param_2;
 }
 
 
+// was FUN_00042870
 void handle_object_drop_target(param_1)
 short param_1;
 

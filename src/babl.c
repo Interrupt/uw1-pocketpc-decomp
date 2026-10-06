@@ -940,7 +940,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   byte *pbVar9;
   
   uVar3 = babl_read_var_word((int)*(short *)(param_1 + -6));
-  puVar4 = (undefined1 *)get_object_record_by_slot_index();
+  puVar4 = (undefined1 *)get_object_record_by_slot_index(uVar3);
   uVar5 = babl_read_var_word((int)*(short *)(param_1 + -4));
   uVar6 = babl_read_var_word((int)*(short *)(param_1 + -2));
   puVar7 = (ushort *)(DAT_00100674 + 6);
@@ -1033,8 +1033,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 {
   undefined4 uVar1;
 
-  babl_read_var_word((int)*(short *)(param_1 + -2));
-  uVar1 = get_object_record_by_slot_index();
+  uVar1 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(param_1 + -2)));  /* r0 passthrough */
   object_list_append_tail(DAT_00100674 + 6,uVar1);
   return;
 }
@@ -1185,8 +1184,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   psVar8 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -6));
   psVar9 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -4));
   puVar10 = (ushort *)babl_var_word_addr((int)*(short *)(param_1 + -2));
-  babl_read_var_word((int)*(short *)(param_1 + -0x12));
-  puVar11 = (ushort *)get_object_record_by_slot_index();
+  puVar11 = (ushort *)get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(param_1 + -0x12)));  /* r0 passthrough */
   sVar3 = babl_read_var_word((int)*(short *)(param_1 + -0x10));
   if (sVar3 == 0) {
     if (((*psVar4 != -1) && ((*puVar11 & 0x1c0) != 0x140)) &&
@@ -1279,8 +1277,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   puVar2 = (ushort *)babl_var_word_addr((int)*(short *)(param_1 + -6));
   psVar3 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -4));
   puVar4 = (ushort *)babl_var_word_addr((int)*(short *)(param_1 + -2));
-  babl_read_var_word((int)*(short *)(param_1 + -10));
-  iVar5 = get_object_record_by_slot_index();
+  iVar5 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(param_1 + -10)));  /* r0 passthrough */
   sVar1 = babl_read_var_word((int)*(short *)(param_1 + -8));
   if (sVar1 == 0) {
     if (*puVar2 != 0xffff) {
@@ -1324,6 +1321,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
 
 
+// was FUN_00018ac8
 uint *babl_alloc(param_1)
 int param_1;
 
@@ -1353,6 +1351,7 @@ int param_1;
 
 
 
+// was FUN_00018ccc
 void babl_free(param_1)
 intptr_t param_1;
 /* HACK: matching replacement for babl_alloc -- see its own comment.
@@ -1377,6 +1376,7 @@ intptr_t param_1;
 
 
 
+// was FUN_00018f34
 intptr_t babl_resize(param_1,param_2)
 intptr_t param_1;
 int param_2;
@@ -1405,6 +1405,7 @@ int param_2;
 
 
 
+// was FUN_0001927c
 void load_npc_conversation_variables(param_1,param_2)
 intptr_t param_1; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer its own caller passes (load_npc_conversation_record); dormant (silently never reached the write) until the scan-alignment fix in this same function let execution actually get to read_file_handle(iVar4,param_1,...) below, which then crashed writing through the truncated address
 short param_2;
@@ -1728,6 +1729,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
 
 
+// was FUN_00019aa0
 char *babl_expand_string_refs(param_1)
 char * param_1;
 
@@ -1914,6 +1916,7 @@ LAB_00019cc0:
 
 
 
+// was FUN_00019e58
 undefined4 build_babl_symbol_table()
 
 {
@@ -2745,7 +2748,10 @@ void enter_conversation_mode_screen()
 
 
 
-void start_npc_conversation()
+// was FUN_00028c00
+void start_npc_conversation(param_1,param_2)
+undefined4 param_1;
+undefined4 param_2;
 
 {
   short sVar1;
@@ -3349,8 +3355,7 @@ LAB_00029f2c:
 void babl_builtin_do_inv_delete(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "do_inv_delete" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
-  babl_read_var_word((int)*(short *)(param_1 + -2));
-  remove_item_from_npc_inventory_by_id();
+  remove_item_from_npc_inventory_by_id(babl_read_var_word((int)*(short *)(param_1 + -2)));  /* ARM 0x29f3c-0x29f48: tail call with r0 = babl_read_var_word's result */
   return;
 }
 
@@ -3385,8 +3390,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     iVar1 = (int)(short)((short)uVar4 + -1000 >> 2);
     uVar2 = 0xffff;
   }
-  find_object_in_chain(&local_10,1,iVar1,uVar4 & 3,uVar2);
-  encode_object_slot_index();
+  encode_object_slot_index(find_object_in_chain(&local_10,1,iVar1,uVar4 & 3,uVar2));  /* ARM 0x1d4ec: r0 passthrough */
   return;
 }
 
@@ -3486,8 +3490,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   ushort uVar1;
   int iVar2;
 
-  babl_read_var_word((int)*(short *)(param_1 + -2));
-  iVar2 = get_object_record_by_slot_index();
+  iVar2 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(param_1 + -2)));  /* r0 passthrough */
   if (((*(byte *)(iVar2 + 1) & 0x80) == 0) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {
     uVar1 = 1;
   }
@@ -3505,8 +3508,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 {
   int iVar1;
 
-  babl_read_var_word((int)*(short *)(param_1 + -2));
-  iVar1 = get_object_record_by_slot_index();
+  iVar1 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(param_1 + -2)));  /* r0 passthrough */
   return *(byte *)(iVar1 + 4) & 0x3f;
 }
 
@@ -3521,8 +3523,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   byte bVar3;
   int iVar4;
   
-  babl_read_var_word((int)*(short *)(param_1 + -4));
-  iVar4 = get_object_record_by_slot_index();
+  iVar4 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(param_1 + -4)));  /* r0 passthrough */
   bVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
   uVar1 = *(undefined2 *)(iVar4 + 4);
   bVar2 = (byte)uVar1;
@@ -3555,6 +3556,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
    is the real object-record/console-variable binding the "npc_xhome"/
    "npc_yhome" evidence for uw_object_hdr_t's quality/owner fields (see
    struct-recovery-plan.md) came from. */
+// was FUN_0002a8e0
 void sync_conv_vars_from_npc(param_1)
 ushort * param_1;
 
@@ -3700,6 +3702,7 @@ ushort * param_1;
    tool. Return value reflects whether npc_attitude ended up 0 after the
    script ran; the caller uses it (OR'd with DAT_001007b4) to decide
    whether to skip a post-conversation delay. */
+// was FUN_0002af88
 bool sync_conv_vars_to_npc(param_1)
 char *param_1;
 
@@ -3771,6 +3774,7 @@ char *param_1;
 
 
 
+// was FUN_00019470
 undefined4 load_npc_conversation_record(param_1,param_2)
 char *param_1;
 undefined1 *param_2;
@@ -3875,6 +3879,7 @@ undefined1 *param_2;
 
 
 
+// was FUN_0001a5bc
 void save_npc_conversation_variables()
 
 {
@@ -4784,7 +4789,7 @@ undefined4 * param_6;
   short sVar1;
   undefined4 *puVar2;
   
-  sVar1 = hit_test_barter_player_slot();
+  sVar1 = hit_test_barter_player_slot(param_1,param_2);  /* ARM 0x1bef4-0x1bf08: r0/r1 pass straight through */
   if ((uint)(int)sVar1 < 0x80000000) {
     *param_3 = 1;
     *param_4 = sVar1;
@@ -4845,7 +4850,7 @@ short param_2;
     psVar6 = psVar2;
   }
   else {
-    psVar6 = (short *)get_object_record_by_slot_index();
+    psVar6 = (short *)get_object_record_by_slot_index(sVar4);
     uVar9 = (int)*psVar6 & 0x1ff;
   }
   puVar10 = &DAT_000845d8;
@@ -4914,8 +4919,7 @@ int param_3;
   *psVar2 = 0;
   if (g_selected_object != (ushort *)0x0) {
     if (param_3 != 0) {
-      resolve_object_link(g_selected_object + 2);
-      sVar1 = encode_object_slot_index();
+      sVar1 = encode_object_slot_index(resolve_object_link(g_selected_object + 2));  /* ARM 0x1c220: r0 passthrough */
       *psVar2 = sVar1;
     }
     decrement_cursor_hide_depth();
@@ -6215,7 +6219,7 @@ void exit_talk_mode()
 
 {
   if (DAT_00100784 != 0) {
-    LocalFree();
+    LocalFree(DAT_00100784);
     DAT_00100784 = 0;
   }
   if (DAT_001006d0 != 0) {
@@ -7578,7 +7582,7 @@ LAB_00036ca4:
               }
               if ((((local_8b & 0x20) != 0) && ((local_8b & 0x40) == 0)) &&
                  ((-1 < local_91 && (local_91 < 999)))) {
-                play_numbered_voice_sample();
+                play_numbered_voice_sample(local_91);
                 local_8b = local_8b | 0x40;
               }
               uVar14 = (uint)*puVar11;
@@ -7875,11 +7879,11 @@ LAB_00037d3c:
 // current level).
 // ARM 0x37e64/0x37e88/0x37ecc confirms all three writes use param_2's
 // stack slot. They intentionally update the script with the same value.
-void record_illustration_discovery_and_display(param_1,param_2,param_3,param_4)
+/* Real arity is 2: ARM 0x6fed4-0x6fee0 and 0x6feec-0x6ff00 (both call sites) set only r0/r1, and
+   Ghidra's param_3/param_4 were just the unwritten r2/r3 spilled into stack slots that nothing read. */
+void record_illustration_discovery_and_display(param_1,param_2)
 uint param_1;
 undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
 
 {
   char *wptr_22113;
@@ -7899,14 +7903,10 @@ undefined4 param_4;
   char acStack_144 [12];
   char acStack_12c [260];
   undefined4 uStack_c;
-  undefined4 uStack_8;
-  undefined4 uStack_4;
   
   pcVar2 = &DAT_00085460;
     wptr_22113 = acStack_144;
   uStack_c = param_2;
-  uStack_8 = param_3;
-  uStack_4 = param_4;
   do {
     cVar1 = *pcVar2;
     *wptr_22113 = cVar1; wptr_22113 = wptr_22113 + 1;
@@ -8328,8 +8328,7 @@ short param_2;
           }
           ce_strcat(acStack_6c,&DAT_00085ce0);
           message_scroll_print_wrapped(acStack_6c);
-          get_message_string(param_1[3] >> 6 | 0x600);
-          message_scroll_print_wrapped();
+          message_scroll_print_wrapped(get_message_string(param_1[3] >> 6 | 0x600));
           puVar5 = &s_scroll_newline_0008522c;
         }
         else {

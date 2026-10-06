@@ -542,6 +542,7 @@ uint param_4;
 // picked up fit in the backpack" weight/capacity check -- same "wrapper
 // forgot to forward its own argument" idiom as get_equipped_item_at_slot elsewhere in
 // this file, just a missing forward instead of a hardcoded return.
+// was FUN_00046358
 bool check_object_carry_weight(param_1)
 ushort *param_1;
 
@@ -559,6 +560,7 @@ ushort *param_1;
 
 
 
+// was FUN_00048764
 void dispatch_object_action_dup(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -844,6 +846,7 @@ LAB_0004b4d4:
 
 
 
+// was FUN_0007bf38
 undefined4 check_object_combination(param_1,param_2,param_3)
 char *param_1;
 ushort * param_2;
@@ -1133,6 +1136,7 @@ char param_2;
 
 
 
+// was FUN_00074150
 void *spawn_and_prime_spell_effect_object(param_1,param_2)
 /* Was `int spawn_and_prime_spell_effect_object(...)` -- returned spawn_new_object's real object
    pointer through a 32-bit int, truncated on this host; both callers
@@ -1688,7 +1692,7 @@ char param_6;
   ushort local_1c;
   ushort local_1a;
   
-  uVar2 = encode_object_slot_index();
+  uVar2 = encode_object_slot_index(param_1);  /* ARM 0x74ad0-0x74ae8: r0 untouched since entry */
   uVar3 = *(ushort *)(param_1 + 2) & 0x380;
   if ((short)uVar2 < 0x100) {
     uVar2 = uVar2 & 0xff;
@@ -2388,7 +2392,7 @@ LAB_0007588c:
     else {
       DAT_00201c9c = &check_scheduled_object_location_callback;
       teleport_object_to_level_tile(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
-      set_player_tile_position(0,0,0);
+      set_player_tile_position(0,0);
       set_pending_update_flags(0x7ffe);
     }
     break;
@@ -2441,7 +2445,7 @@ undefined1 param_4;
 
   bVar5 = param_3 - 1;
   if (param_3 != '\0') {
-    iVar2 = (char *)tilemap_lookup(param_1);
+    iVar2 = (char *)tilemap_lookup(param_1,param_2);  /* ARM 0x75ab4-0x75ab8: r1 still holds param_2 */
     iVar2 = (char *)resolve_object_link(iVar2 + 2);
     if (iVar2 != 0) {
       do {
@@ -2516,6 +2520,7 @@ undefined4 param_4;
 
 
 
+// was FUN_00078bfc
 undefined1 *format_object_display_name(param_1,param_2,param_3)
 undefined1 * param_1;
 int param_2;
@@ -3507,11 +3512,11 @@ ushort * param_1;
 short param_2;
 
 {
-  int iVar1;
+  char *iVar1;  /* was `int`: truncated get_message_string's real pointer, now actually dereferenced by message_scroll_print_wrapped */
 
   if ((param_2 != 0) &&
      (iVar1 = get_message_string((*(byte *)((char *)param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
-    message_scroll_print_wrapped();
+    message_scroll_print_wrapped(iVar1);
   }
   return;
 }
@@ -3679,6 +3684,7 @@ short param_2;
    the already-named player-stats struct pointer DAT_00086df8; reads a
    nibble from it at offset 0x5e and hands it (plus a fixed msgid 0x126)
    to the already-recovered check_scheduled_object_level_match. */
+// was FUN_00072268
 void check_scheduled_object_location_callback()
 {
   check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) & 0xf,0x126);

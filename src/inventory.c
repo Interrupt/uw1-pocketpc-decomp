@@ -417,6 +417,7 @@ short DAT_0023be80;
 
 
 
+// was FUN_0003f7e0
 void handle_inventory_panel_normal_click()
 
 {
@@ -473,6 +474,7 @@ LAB_0003f91c:
 
 
 
+// was FUN_0003f95c
 void inventory_panel_click_region()
 
 {
@@ -551,7 +553,7 @@ ushort * param_2;
     puVar1[5] = puVar3[5];
     puVar1[6] = puVar3[6];
     puVar1[7] = puVar3[7];
-    uVar2 = encode_object_slot_index();
+    uVar2 = encode_object_slot_index(puVar1);
     *param_1 = *param_1 & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
     param_1[1] = (byte)((uVar2 << 0x16) >> 0x18);
     decode_equipped_item_index(param_1,param_2);
@@ -578,6 +580,7 @@ ushort * param_2;
 
 
 
+// was FUN_00046698
 void handle_inventory_panel_click(param_1)
 short param_1;
 
@@ -785,6 +788,7 @@ short param_1;
 
 
 
+// was FUN_00046eec
 void redraw_inventory_widget(param_1)
 undefined4 param_1;
 
@@ -828,6 +832,7 @@ undefined4 param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// was FUN_00048198
 void redraw_inventory_widget_range(param_1,param_2)
 int param_1;
 short param_2;
@@ -985,6 +990,7 @@ joined_r0x00048308:
 
 
 
+// was FUN_000485f4
 int hit_test_inventory_widget(param_1,param_2)
 short param_1;
 short param_2;

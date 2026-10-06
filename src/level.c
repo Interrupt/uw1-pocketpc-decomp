@@ -47,6 +47,7 @@ bool g_new_game_entry_pause_pending = false;
 
 // was enter_dungeon_view -- 3D dungeon-view entry transition (fade out, load PALS.DAT
 // bank 0, redraw dungeon, fade in)
+// was FUN_0003bd50
 void enter_dungeon_view()
 
 {
@@ -109,6 +110,7 @@ void enter_dungeon_view()
 
 
 
+// was FUN_00049960
 undefined4 init_level_object_arena()
 
 {
@@ -132,6 +134,7 @@ undefined4 init_level_object_arena()
 
 
 
+// was FUN_000499c0
 int load_level_object_table(param_1,param_2)
 undefined1 * param_1;
 int param_2;
@@ -214,6 +217,7 @@ int param_2;
 
 
 
+// was FUN_00052960
 void reset_level_object_arena()
 
 {
@@ -277,6 +281,7 @@ void reset_level_object_arena()
 
 
 
+// was FUN_0006bc28
 int load_level(param_1)
 undefined4 param_1;
 
@@ -546,7 +551,8 @@ LAB_00039784:
 // normal save/restore path when a level's transient state can't be
 // trusted (save_or_restore_level_special_state's own "needs reset"
 // bit case).
-void reset_level_arena_and_invalidate()
+void reset_level_arena_and_invalidate(param_1)
+undefined4 param_1;
 
 {
   reset_level_object_arena();
@@ -563,7 +569,7 @@ void free_level_tile_arena()
 
 {
   if (DAT_002029cc != 0) {
-    LocalFree();
+    LocalFree(DAT_002029cc);
   }
   return;
 }

@@ -672,6 +672,7 @@ undefined1 * param_1;
 
 
 
+// was FUN_00057604
 void wait_for_click_release(param_1)
 int param_1;
 
@@ -723,6 +724,7 @@ undefined4 next_input_event()
 
 
 
+// was FUN_00057ff0
 void update_mouse_state()
 
 {
@@ -1291,6 +1293,7 @@ LAB_00077d70:
    path real keyboard input already uses. Taps outside that strip instead
    set DAT_00204844, a general click-pending flag consumed elsewhere
    (main game world / inventory click handling, not chargen). */
+// was FUN_00077dd0
 undefined4 handle_mouse_message(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
@@ -1543,7 +1546,7 @@ int param_1;
     uVar4 = 0xffffffff;
   }
   else {
-    DAT_00204868 = read_realtime_clock_units(uVar2);
+    DAT_00204868 = read_realtime_clock_units();
     if ((uVar2 & 0x80) == 0) {
       if ((*DAT_0008794c != '\0') && (iVar3 = _isctype(sVar1,0x103), iVar3 != 0)) {
         if (DAT_0023c448 == 0x400) {
@@ -1804,7 +1807,7 @@ LAB_0003c940:
       iVar7 = (int)(short)*(char *)(DAT_00202c6c + 0xb);
       if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
         do {
-          uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6,iVar8);
+          uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6);
           /* Was `iVar8 = (int)((ulonglong)uVar11 >> 0x20);` -- a leftover
              from the original 32-bit ARM ABI, where resolve_object_link's
              caller apparently re-read some other value out of r1 right
@@ -2071,6 +2074,7 @@ void dispatch_sticky_mode_handlers()
 }
 
 
+// was FUN_00057888
 int poll_mouse_event()
 
 {

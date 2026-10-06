@@ -1168,6 +1168,7 @@ uint param_4;
 
 
 
+// was FUN_0001613c
 undefined2 read_archive_entry(param_1,param_2,param_3)
 undefined4 * param_1;
 uint param_2;
@@ -1349,6 +1350,7 @@ LAB_0006bdbc:
 // disabled dead code -- see its own comment). Shows the resulting
 // status message via print_scroll_message_by_id(iVar2 + 0xa0) ("Save Game
 // Succeeded.", "Load Game Failed.", etc. -- iVar2 selects which).
+// was FUN_0006bfec
 void handle_save_load_menu_action(param_1,param_2)
 short param_1;
 undefined4 param_2;
@@ -1440,6 +1442,7 @@ undefined4 param_2;
 // (appending DAT_000870c8's "\*.*" wildcard) and, if that scan finds
 // nothing (directory missing or empty), strips the wildcard back off
 // and creates it via create_directory_path (CreateDirectory-shaped).
+// was FUN_0006c560
 undefined4 ensure_save_directory_exists(param_1)
 char * param_1;
 
@@ -1651,7 +1654,7 @@ bool check_can_save_game()
     sVar1 = 0x9f;
   }
   if (sVar1 != 0) {
-    print_scroll_message_by_id();
+    print_scroll_message_by_id(sVar1);
   }
   return sVar1 == 0;
 }
@@ -1740,7 +1743,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
   refresh_player_equipment_effects();
 LAB_00044730:
   if (g_save_record_buffer != 0) {
-    LocalFree();
+    LocalFree(g_save_record_buffer);
     g_save_record_buffer = 0;
   }
   if ((param_1 != 0) && (-1 < DAT_00202080)) {

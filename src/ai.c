@@ -1111,6 +1111,7 @@ LAB_00034a98:
 
 
 
+// was FUN_00049404
 void build_creature_look_text(param_1,param_2)
 ushort * param_1;
 char *param_2;   /* was undefined4 -- the caller's stack description buffer
@@ -3068,11 +3069,12 @@ ushort * param_1;
 // flag on a couple of outcomes) instead of walking straight there, then
 // steers toward whichever tile was settled on via npc_walk_toward_tile,
 // clearing the special-goal flag if that walk reports blocked.
-void npc_wander_reposition(param_1,param_2,param_3,param_4)
+/* Real arity is 3: the ARM prologue (0x30878) just spills r0-r3 (`push {r0-r3}`), and the lone caller
+   (0x30358) leaves r3 as a stale `ands` result. Ghidra's param_4 was that spilled-but-unused r3. */
+void npc_wander_reposition(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
 uint param_3;
-undefined4 param_4;
 
 {
   int uw_ord2005_rem_57 = 0; int uw_ord2005_rem_58 = 0;
@@ -3085,12 +3087,10 @@ undefined4 param_4;
   uint local_10;
   uint local_c;
   uint uStack_8;
-  undefined4 uStack_4;
   
   local_10 = param_1;
   local_c = param_2;
   uStack_8 = param_3;
-  uStack_4 = param_4;
   if (((param_1 & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f)) ||
      ((param_2 & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0xfc0) >> 6)) {
     uVar3 = ce_rand();
@@ -4299,7 +4299,7 @@ ushort * param_3;
             uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
             for (puVar7 = (ushort *)((char *)uVar15 + 2); (*puVar7 & 0xffc0) != 0; puVar7 = puVar7 + 2)
             {
-              uVar15 = resolve_object_link(puVar7,uVar9);
+              uVar15 = resolve_object_link(puVar7);
               uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
               puVar7 = (ushort *)uVar15;
               if ((((*puVar7 & 0x1c0) == 0x180) && ((*puVar7 & 0x30) == 0x20)) &&
@@ -4835,6 +4835,7 @@ undefined2 param_3;
 
 // was npc_set_walk_target -- write an NPC's goal (byte 0xf bits 0-5), goal target
 // (bits 6-11) and attitude (byte 0xd bits 4-7), flagging the change in byte 0x18
+// was FUN_0002e454
 void npc_set_walk_target(param_1,param_2,param_3)
 byte param_1;
 uint param_2;
@@ -5489,8 +5490,9 @@ void npc_clear_special_goal()
 // nonzero is tick_mobile_objects' entire loop-termination signal, since
 // npc_ai_tick/mobile_object_tick's own return values don't reliably
 // carry that meaning (npc_ai_tick always returns 1).
-undefined4 object_tick_is_due(param_1)
+undefined4 object_tick_is_due(param_1,param_2)
 short param_1;
+undefined4 param_2;
 
 {
   int iVar1;

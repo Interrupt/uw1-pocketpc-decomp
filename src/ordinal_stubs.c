@@ -15,37 +15,54 @@ void uw_pump_events(void);
 unsigned int handle_keyboard_message(void *param_1, unsigned int param_2, unsigned int param_3);
 int uw_take_mouse_event_pending(void);
 
-long EnterCriticalSection()
+long EnterCriticalSection(param_1,param_2,param_3,param_4)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
 {
     return 0;
 }
 
-long GetSystemTime()
+long GetSystemTime(param_1)
+long param_1;
 {
     return 0;
 }
 
-long LocalAlloc()
+long LocalAlloc(param_1,param_2)
+long param_1;
+long param_2;
 {
     return 0;
 }
 
-long LocalReAlloc()
+long LocalReAlloc(param_1,param_2,param_3)
+long param_1;
+long param_2;
+long param_3;
 {
     return 0;
 }
 
-long LocalSize()
+long LocalSize(param_1)
+long param_1;
 {
     return 0;
 }
 
-long RemoteLocalReAlloc()
+long RemoteLocalReAlloc(param_1,param_2,param_3,param_4,param_5)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
+long param_5;
 {
     return 0;
 }
 
-long HeapReAlloc()
+long HeapReAlloc(param_1)
+long param_1;
 {
     return 0;
 }
@@ -108,17 +125,21 @@ unsigned int fWinIni;
     return 1;
 }
 
-long RegisterClassW()
+long RegisterClassW(param_1)
+long param_1;
 {
     return 0;
 }
 
-long CopyRect()
+long CopyRect(param_1)
+long param_1;
 {
     return 0;
 }
 
-long CreateDirectoryW()
+long CreateDirectoryW(param_1,param_2)
+long param_1;
+long param_2;
 {
     return 0;
 }
@@ -198,12 +219,24 @@ long FindFirstFileW(void *path_ptr, unsigned int *out_attrs)
     return 1;
 }
 
-long CreateFileW()
+long CreateFileW(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
+long param_5;
+long param_6;
+long param_7;
 {
     return 0;
 }
 
-long ReadFile()
+long ReadFile(param_1,param_2,param_3,param_4,param_5)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
+long param_5;
 {
     return 0;
 }
@@ -225,7 +258,9 @@ long SetFilePointer()
     return 0;
 }
 
-long SetFileTime()
+long SetFileTime(param_1,param_2)
+long param_1;
+long param_2;
 {
     return 0;
 }
@@ -268,17 +303,27 @@ int capacity;
     return (long)count;
 }
 
-long WideCharToMultiByte()
+long WideCharToMultiByte(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
+long param_5;
+long param_6;
+long param_7;
+long param_8;
 {
     return 0;
 }
 
-long GetUserDefaultLangID()
+long GetUserDefaultLangID(param_1)
+long param_1;
 {
     return 0;
 }
 
-long FoldStringW()
+long FoldStringW(param_1)
+long param_1;
 {
     return 0;
 }
@@ -295,7 +340,8 @@ unsigned short *b;
     return *a == *b;
 }
 
-long CloseAllFileHandles()
+long CloseAllFileHandles(param_1)
+long param_1;
 {
     return 0;
 }
@@ -312,12 +358,15 @@ long DefWindowProcW()
     return 0;
 }
 
-long ShowWindow()
+long ShowWindow(param_1,param_2)
+long param_1;
+long param_2;
 {
     return 0;
 }
 
-long UpdateWindow()
+long UpdateWindow(param_1)
+long param_1;
 {
     return 0;
 }
@@ -329,12 +378,15 @@ int FindWindowW(void *a, void *b)
     return 0; /* no existing instance / success */
 }
 
-long BatteryDrvrGetLevels()
+long BatteryDrvrGetLevels(param_1)
+long param_1;
 {
     return 0;
 }
 
-long CeReadRecordProps()
+long CeReadRecordProps(param_1,param_2)
+long param_1;
+long param_2;
 {
     return 0;
 }
@@ -344,17 +396,26 @@ long waveOutClose()
     return 0;
 }
 
-long waveOutPrepareHeader()
+long waveOutPrepareHeader(param_1,param_2,param_3)
+long param_1;
+long param_2;
+long param_3;
 {
     return 0;
 }
 
-long waveOutUnprepareHeader()
+long waveOutUnprepareHeader(param_1,param_2,param_3)
+long param_1;
+long param_2;
+long param_3;
 {
     return 0;
 }
 
-long waveOutWrite()
+long waveOutWrite(param_1,param_2,param_3)
+long param_1;
+long param_2;
+long param_3;
 {
     return 0;
 }
@@ -364,17 +425,33 @@ long waveOutReset()
     return 0;
 }
 
-long waveOutOpen()
+long waveOutOpen(param_1,param_2,param_3,param_4,param_5,param_6)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
+long param_5;
+long param_6;
 {
     return 0;
 }
 
-long RegCloseKey()
+long RegCloseKey(param_1)
+long param_1;
 {
     return 0;
 }
 
-long RegCreateKeyExW()
+long RegCreateKeyExW(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
+long param_5;
+long param_6;
+long param_7;
+long param_8;
+long param_9;
 {
     return 0;
 }
@@ -386,12 +463,24 @@ int RegOpenKeyExW(unsigned int hkey, void *subkey, unsigned int reserved, void *
     return 0;
 }
 
-long RegQueryValueExW()
+long RegQueryValueExW(param_1,param_2,param_3,param_4,param_5,param_6)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
+long param_5;
+long param_6;
 {
     return 0;
 }
 
-long RegSetValueExW()
+long RegSetValueExW(param_1,param_2,param_3,param_4,param_5,param_6)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
+long param_5;
+long param_6;
 {
     return 0;
 }
@@ -450,12 +539,16 @@ long GetLastError()
     return 0;
 }
 
-long FindResourceW()
+long FindResourceW(param_1,param_2,param_3)
+long param_1;
+long param_2;
+long param_3;
 {
     return 0;
 }
 
-long LoadResource()
+long LoadResource(param_1)
+long param_1;
 {
     return 0;
 }
@@ -488,7 +581,11 @@ int handle;
     return uw_file_close(handle);
 }
 
-long GetDlgItemTextW()
+long GetDlgItemTextW(param_1,param_2,param_3,param_4)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
 {
     return 0;
 }
@@ -498,12 +595,15 @@ long DialogBoxIndirectParamW()
     return 0;
 }
 
-long EndDialog()
+long EndDialog(param_1,param_2)
+long param_1;
+long param_2;
 {
     return 0;
 }
 
-long SetForegroundWindow()
+long SetForegroundWindow(param_1)
+long param_1;
 {
     return 0;
 }
@@ -513,12 +613,15 @@ long ce_sprintf()
     return 0;
 }
 
-long MessageBoxW()
+long MessageBoxW(param_1,param_2)
+long param_1;
+long param_2;
 {
     return 0;
 }
 
-long DispatchMessageW()
+long DispatchMessageW(param_1)
+long param_1;
 {
     return 0;
 }
@@ -560,7 +663,8 @@ int PeekMessageW(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsign
     return (DAT_0023c448 != 0) || uw_take_mouse_event_pending();
 }
 
-long PostQuitMessage()
+long PostQuitMessage(param_1)
+long param_1;
 {
     return 0;
 }
@@ -578,27 +682,32 @@ int PostMessageW(void *hwnd, unsigned int msg, unsigned int wparam, int lparam)
     return (int)handle_keyboard_message(hwnd, msg, wparam);
 }
 
-long TranslateMessage()
+long TranslateMessage(param_1)
+long param_1;
 {
     return 0;
 }
 
-long GetSystemMetrics()
+long GetSystemMetrics(param_1)
+long param_1;
 {
     return 0;
 }
 
-long DeleteObject()
+long DeleteObject(param_1)
+long param_1;
 {
     return 0;
 }
 
-long GetStockObject()
+long GetStockObject(param_1)
+long param_1;
 {
     return 0;
 }
 
-long ce_atoi()
+long ce_atoi(param_1)
+long param_1;
 {
     return 0;
 }
@@ -629,7 +738,10 @@ void *ptr;
     (void)ptr;
 }
 
-long _itoa()
+long _itoa(param_1,param_2,param_3)
+long param_1;
+long param_2;
+long param_3;
 {
     return 0;
 }
@@ -639,7 +751,10 @@ long ordfloat_log()
     return 0;
 }
 
-long _ltoa()
+long _ltoa(param_1,param_2,param_3)
+long param_1;
+long param_2;
+long param_3;
 {
     return 0;
 }
@@ -713,7 +828,8 @@ unsigned int hi;
     return (long)b;
 }
 
-long ce_srand()
+long ce_srand(param_1)
+long param_1;
 {
     return 0;
 }
@@ -780,7 +896,9 @@ unsigned int n;
     return (long)dest;
 }
 
-long ce_strstr()
+long ce_strstr(param_1,param_2)
+long param_1;
+long param_2;
 {
     return 0;
 }
@@ -865,12 +983,14 @@ long param_1;
  * decompilation artifact -- so a real free() behind it would free
  * whatever garbage sits in the argument register at those call sites;
  * harmless only because this stays a no-op). */
-long cpp_operator_delete()
+long cpp_operator_delete(param_1)
+long param_1;
 {
     return 0;
 }
 
-long cpp_operator_new()
+long cpp_operator_new(param_1)
+long param_1;
 {
     return 0;
 }
@@ -950,7 +1070,8 @@ int c;
     return (long)last;
 }
 
-long _strlwr()
+long _strlwr(param_1)
+long param_1;
 {
     return 0;
 }
@@ -1101,7 +1222,11 @@ unsigned int b;
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) - ordfloat_bits_to_float(b));
 }
 
-long ordfloat_double_binop()
+long ordfloat_double_binop(param_1,param_2,param_3,param_4)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
 {
     return 0;
 }
@@ -1232,7 +1357,8 @@ int x;
     return (long)ordfloat_float_to_bits((float)x);
 }
 
-long ordfloat_double_from_int()
+long ordfloat_double_from_int(param_1)
+long param_1;
 {
     return 0;
 }
@@ -1289,7 +1415,11 @@ unsigned int b;
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) / fb);
 }
 
-long ordfloat_double_binop2()
+long ordfloat_double_binop2(param_1,param_2,param_3,param_4)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
 {
     return 0;
 }
@@ -1305,12 +1435,20 @@ unsigned int b;
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) + ordfloat_bits_to_float(b));
 }
 
-long ordfloat_double_op3()
+long ordfloat_double_op3(param_1,param_2,param_3,param_4)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
 {
     return 0;
 }
 
-long ordaudio_op_2063()
+long ordaudio_op_2063(param_1,param_2,param_3,param_4)
+long param_1;
+long param_2;
+long param_3;
+long param_4;
 {
     return 0;
 }
@@ -1320,17 +1458,24 @@ long ordaudio_op_2135()
     return 0;
 }
 
-long ordaudio_op_2142()
+long ordaudio_op_2142(param_1)
+long param_1;
 {
     return 0;
 }
 
-long ordaudio_op_2304()
+long ordaudio_op_2304(param_1,param_2,param_3)
+long param_1;
+long param_2;
+long param_3;
 {
     return 0;
 }
 
-long ordaudio_op_2413()
+long ordaudio_op_2413(param_1,param_2,param_3)
+long param_1;
+long param_2;
+long param_3;
 {
     return 0;
 }
@@ -1340,7 +1485,9 @@ long ordaudio_op_2582()
     return 0;
 }
 
-long ordaudio_op_2588()
+long ordaudio_op_2588(param_1,param_2)
+long param_1;
+long param_2;
 {
     return 0;
 }

@@ -1696,6 +1696,7 @@ short param_1;
 
 
 
+// was FUN_0006cca8
 void redraw_hud_panels()
 
 {
@@ -2482,6 +2483,7 @@ void hud_compass_needle_tick()
 
 
 
+// was FUN_0006e130
 void tick_hud_panel_transition()
 
 {
@@ -2514,6 +2516,7 @@ void tick_hud_panel_transition()
 
 
 
+// was FUN_0006ed0c
 void redraw_active_hud_panel()
 
 {
@@ -2657,7 +2660,7 @@ char *param_1;
             iVar2);
 
   if (iVar2 == 1 || iVar2 == 4) {
-    check_mouse_over_msg_scroll_panel(iVar2);
+    check_mouse_over_msg_scroll_panel();
     iVar2 = extraout_r3;
     if (DAT_00250708 != 0) {
       decrement_cursor_hide_depth();
@@ -5520,8 +5523,7 @@ void handle_light_source_click()
       }
       else {
         compute_light_source_colors(abStack_e);
-        get_message_string(abStack_e[local_10] + 0x180 | 0xc00);
-        message_scroll_print_wrapped();
+        message_scroll_print_wrapped(get_message_string(abStack_e[local_10] + 0x180 | 0xc00));
         bVar1 = *(byte *)(DAT_00086df8 + local_10 * 2 + 0x3f);
         if (bVar1 < 3) {
           iVar2 = 0;
@@ -6520,10 +6522,8 @@ static const unsigned char g_menu_nav_highlight_table[8][7] = {
 // g_menu_nav_highlight_table for the current state), 1/0x164 select
 // the current row, and the remaining magic codes (0x166/0x16d/0x171/
 // 0x172/0x173) are direct hotkeys for specific rows -- all funneled
-// into dispatch_pause_menu_click. NOTE: open_pause_menu_via_hotkey
-// calls this with no argument at all (a possible dropped-argument
-// bug of the same shape fixed elsewhere this session, but not
-// confirmed/fixed here -- see its own comment).
+// into dispatch_pause_menu_click. open_pause_menu_via_hotkey forwards its
+// own key-binding arg here (previously dropped; fixed from ARM tracing).
 void handle_pause_menu_dpad_navigation(param_1)
 short param_1;
 
@@ -6601,13 +6601,17 @@ LAB_00056ddc:
 // but not confirmed (single call site, and DAT_000868dc is already
 // forced to 6 directly above regardless of its effect) -- left
 // unfixed pending stronger evidence.
-void open_pause_menu_via_hotkey()
+/* Key-binding callback: the dispatcher (input.c) calls handler(arg) with the binding's own arg
+   (0x164/0x166/0x16d/0x171-0x173 as registered in game.c). ARM 0x56ebc keeps that incoming r0
+   untouched and tail-feeds it to handle_pause_menu_dpad_navigation (0x56efc). Ghidra dropped it. */
+void open_pause_menu_via_hotkey(param_1)
+short param_1;
 
 {
   if (g_cursor_holding_state == 0) {
     DAT_002046fc = 1;
     DAT_000868dc = 6;
-    handle_pause_menu_dpad_navigation();
+    handle_pause_menu_dpad_navigation(param_1);
     run_pause_menu_modal_loop(DAT_000868dc == 6);
     DAT_002046fc = 0;
   }
@@ -6619,6 +6623,7 @@ void open_pause_menu_via_hotkey()
 
 
 
+// was FUN_00056f28
 undefined4 init_cursor_subsystem()
 
 {
@@ -6776,6 +6781,7 @@ int uw_always_show_cursor(void)
 
 
 
+// was FUN_000570b4
 undefined4 cursor_show_idle_tick()
 
 {
@@ -7515,6 +7521,7 @@ void save_cursor_background()
 
 
 
+// was FUN_0005857c
 void draw_idle_mouse_cursor()
 
 {
@@ -7688,7 +7695,9 @@ uint poll_mouse_button_flags()
 }
 
 
-void toggle_stats_panel()
+// was FUN_0003def4
+void toggle_stats_panel(param_1)
+undefined4 param_1;
 
 {
   undefined4 uVar1;
@@ -7711,6 +7720,7 @@ void toggle_stats_panel()
 }
 
 
+// was FUN_000577f0
 void reset_cursor_confine_rect()
 
 {
@@ -7737,6 +7747,7 @@ void reset_cursor_confine_rect()
 }
 
 
+// was FUN_00057788
 void set_cursor_confine_rect(param_1,param_2,param_3,param_4)
 short param_1;
 short param_2;
@@ -7873,7 +7884,7 @@ static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
     }
   }
   if (is_frame) {
-    blit_object_sprite_by_frame(id, ox, oy);
+    blit_object_sprite_by_frame(id, ox, oy, cw, ch);  /* real arity is 5 (ARM draw_sprite_by_id passes id,x,y,w,h) */
   } else {
     draw_sprite_by_id(id, ox, oy, cw, ch);
   }

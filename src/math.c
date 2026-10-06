@@ -408,7 +408,7 @@ undefined4 param_2;
   uint uVar2;
 
   if (((short)param_1 < 0x5a83) && (-0x5a83 < (short)param_1)) {
-    iVar1 = lookup_arctan_primary_range();
+    iVar1 = lookup_arctan_primary_range(param_1);
     if ((short)iVar1 < 0) {
       iVar1 = 0x8000 - iVar1;
     }

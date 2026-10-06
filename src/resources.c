@@ -393,6 +393,7 @@ void load_door_frames()
    and the g_grtile_real_ptrs registry-walk resolution already used by
    capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop/blit_grtile_to_framebuffer) rather
    than invented from nothing. */
+// was FUN_0004994c
 undefined4 alloc_flip_grtile_slot()
 
 {
@@ -408,6 +409,7 @@ undefined4 alloc_flip_grtile_slot()
 
 
 
+// was FUN_00049954
 void *resolve_flip_grtile_slot(param_1)
 undefined4 param_1;
 
@@ -1393,7 +1395,7 @@ int param_3;
 // the captured background rect behind a row before redrawing its
 // text over it -- the third member of the capture/restore/blit trio
 // documented together in src/resources.c.
-void blit_grtile_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+void blit_grtile_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 ushort param_1;
 int param_2;
 int param_3;
@@ -1401,6 +1403,7 @@ short param_4;
 short param_5;
 short param_6;
 short param_7;
+undefined4 param_8;
 
 {
   int iVar1;
@@ -1473,7 +1476,7 @@ short param_7;
   if (200 < iVar2) {
     sVar12 = (short)iVar6 + -200;
   }
-  dirty_rect_union(iVar13,iVar2,iVar7);
+  dirty_rect_union(iVar13,iVar2,iVar7,iVar7 + iVar1);  /* 4th (right) bound was dropped; same (top,bottom,left,right) shape as bitmap.c's blit_raw_sprite_clipped */
   iVar3 = (int)local_30;
   if (g_blit_transparent_mode == 0) {
     iVar5 = iVar5 - sVar12;
@@ -2016,7 +2019,7 @@ void close_gr_resource_file()
 {
   CloseHandle(DAT_00202514);
   if (DAT_0020274c != 0) {
-    LocalFree();
+    LocalFree(DAT_0020274c);
   }
   return;
 }
@@ -2438,6 +2441,7 @@ codeval * param_5;
 
 
 
+// was FUN_00041e40
 void load_armor_variant_tables(param_1)
 undefined4 param_1;
 
@@ -2459,6 +2463,7 @@ undefined4 param_1;
 
 // was load_pals_bank -- read PALS.DAT bank param_1 (768 raw bytes) into param_2 and
 // install it via build_rgb565_palette
+// was FUN_00040e24
 bool load_pals_bank(param_1,param_2)
 undefined4 param_1;
 void *param_2;
@@ -2497,6 +2502,7 @@ void *param_2;
 
 // was set_palette_bank -- switch active palette to PALS.DAT bank param_1 (load into
 // DAT_00088d98, install, reinstall_active_palette)
+// was FUN_00040efc
 bool set_palette_bank(param_1)
 undefined4 param_1;
 
@@ -2589,6 +2595,7 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
 }
 
 
+// was FUN_0004a02c
 void load_light_food_effect_tables(param_1)
 undefined4 param_1;
 

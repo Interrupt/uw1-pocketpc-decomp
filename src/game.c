@@ -352,6 +352,7 @@ static undefined1 DAT_000830b0_backing[256];
 
 
 // WinMain's real body: single-instance mutex check, window class/window creation, framebuffer + subsystem init, shows the main menu once, then runs the PeekMessage/Translate/Dispatch message pump until quit.
+// was FUN_00077004
 undefined4 app_main_loop(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
@@ -473,6 +474,7 @@ undefined4 param_4;
 
 
 // Title/main menu loop: builds the menu layout, dispatches on the selected option (0=continue?, 1=new game -> character_generator_loop, 2=show CREDIT1/2/3.BYT credits screens, 3=load a saved game), looping back to the menu until a game session actually starts.
+// was FUN_0006a3d8
 void main_menu_loop(param_1)
 undefined4 param_1;
 
@@ -1118,7 +1120,7 @@ short param_1;
     }
   }
   else if (param_1 < 0x100) {
-    iVar1 = get_object_record_by_slot_index();
+    iVar1 = get_object_record_by_slot_index(param_1);
     DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);
     DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
     DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;
@@ -1142,7 +1144,8 @@ short param_1;
 // counterpart to normal player movement, driven from
 // handle_game_view_click_hold when DAT_002020d8 (free-camera mode) is
 // set.
-void move_custom_view_target()
+void move_custom_view_target(param_1)
+undefined4 param_1;
 
 {
   short *psVar1;
@@ -1206,7 +1209,7 @@ short param_1;
     if (DAT_000db500 == 0) {
       return;
     }
-    sVar2 = encode_object_slot_index();
+    sVar2 = encode_object_slot_index(DAT_000db500);
     iVar1 = (int)sVar2;
     if (iVar1 == 0) {
       return;
@@ -1257,7 +1260,8 @@ short param_1;
 // position" case per its own switch, matching this function's own
 // role, so pass it explicitly rather than relying on leftover
 // register state.
-void enter_free_camera_mode()
+void enter_free_camera_mode(param_1)
+undefined4 param_1;
 
 {
   set_custom_view_target(0);
@@ -1316,7 +1320,9 @@ short param_3;
 // argument this K&R declaration doesn't accept -- harmless (K&R
 // ignores extra args) but not yet understood; flagging rather than
 // guessing.
-void spin_view_full_rotation()
+// was FUN_00067f1c
+void spin_view_full_rotation(param_1)
+undefined4 param_1;
 
 {
   int iVar1;
@@ -1594,6 +1600,7 @@ short param_4;
 // once it moves off after having hit one, returns that index offset
 // by param_1 instead (its caller, menu_button_list_navigate, decodes
 // this by comparing against/subtracting param_1).
+// was FUN_0006ac38
 int poll_menu_pointer_selection(param_1,param_2,param_3)
 undefined4 param_1;
 char *param_2;
@@ -1955,7 +1962,7 @@ undefined4 param_2;
     ce_memset(auStack_638,0,0x208);
     iVar3 = RegOpenKeyExW(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008784c,0,0);
     if (iVar3 == 0) {
-      RegQueryValueExW(local_7d4,u_InstlDir_00087838,0,&local_7c4);
+      RegQueryValueExW(local_7d4,u_InstlDir_00087838,0,&local_7c4,auStack_638,&local_7c0);  /* data buffer + size dropped by Ghidra (ARM stack args) */
       pcVar4 = (char *)load_string_resource_large(auStack_638);
       do {
         cVar2 = *pcVar4;
@@ -1978,7 +1985,7 @@ undefined4 param_2;
     ce_memset(auStack_430,0,0x208);
     iVar3 = RegOpenKeyExW(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_000877a4,0,0);
     if (iVar3 == 0) {
-      RegQueryValueExW(local_7d8,u_InstlDir_00087838,0,&local_7c8);
+      RegQueryValueExW(local_7d8,u_InstlDir_00087838,0,&local_7c8,auStack_430,&local_7bc);
       pcVar9 = (char *)load_string_resource_large(auStack_430);
       do {
         cVar2 = *pcVar9;
@@ -1997,10 +2004,11 @@ undefined4 param_2;
       } while (cVar2 != '\0');
     }
     local_7b8[0] = 1;
+    local_7b8[1] = 0x208;  /* size-in-bytes store dropped by Ghidra, same as the two sibling lookups above */
     ce_memset(auStack_228,0,0x208);
     iVar3 = RegOpenKeyExW(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008771c,0,0);
     if (iVar3 == 0) {
-      RegQueryValueExW(local_7d0,u_InstlDir_00087838,0,local_7b8);
+      RegQueryValueExW(local_7d0,u_InstlDir_00087838,0,local_7b8,auStack_228,&local_7b8[1]);
       pcVar10 = (char *)load_string_resource_large(auStack_228);
       pcVar9 = &DAT_00241f08;
       do {
@@ -2164,28 +2172,28 @@ undefined4 shutdown_game_resources()
 
   end_gx_draw_session();
   if (DAT_0023c44c != 0) {
-    LocalFree();
+    LocalFree(DAT_0023c44c);
   }
   if (DAT_0023cca0 != 0) {
-    LocalFree();
+    LocalFree(DAT_0023cca0);
   }
   if (DAT_000890a4 != 0) {
-    LocalFree();
+    LocalFree(DAT_000890a4);
   }
   if (DAT_000879b0 != 0) {
-    LocalFree();
+    LocalFree(DAT_000879b0);
   }
   if (DAT_0024af78 != 0) {
-    LocalFree();
+    LocalFree(DAT_0024af78);
   }
   if (DAT_0024af7c != 0) {
-    LocalFree();
+    LocalFree(DAT_0024af7c);
   }
   piVar2 = &DAT_00202308;
   iVar1 = 0x80;
   do {
     if (*piVar2 != 0) {
-      LocalFree();
+      LocalFree(*piVar2);
     }
     iVar1 = iVar1 + -1;
     piVar2 = piVar2 + 1;
@@ -2442,7 +2450,7 @@ void run_game_startup_sequence()
   Sleep(0x5dc);
   sVar2 = load_startup_gr_resources();
   if (sVar2 != 0) {
-    report_fatal_error_and_exit();
+    report_fatal_error_and_exit(sVar2);
   }
   ce_memset(acStack_62c,0,0x104);
   pcVar4 = pcVar6;
@@ -2463,7 +2471,7 @@ void run_game_startup_sequence()
   }
   sVar2 = load_object_catalog_data();
   if (sVar2 != 0) {
-    report_fatal_error_and_exit();
+    report_fatal_error_and_exit(sVar2);
   }
   reset_texture_id_lists();
   init_dungeon_rendering();
@@ -2501,7 +2509,7 @@ void run_game_startup_sequence()
   CopyFileW(auStack_214,auStack_41c,0);
   sVar2 = seed_conversation_globals_for_new_game();
   if (sVar2 != 0) {
-    report_fatal_error_and_exit();
+    report_fatal_error_and_exit(sVar2);
   }
   clear_screen_and_restore_cursor();
   set_palette_bank(5);
@@ -2513,7 +2521,8 @@ void run_game_startup_sequence()
 // run_game_startup_sequence: frees input bindings, stops ambient
 // sound and other sound effects/music, releases panel-wipe grtiles,
 // then builds the save directory path and ensures it exists.
-void run_game_shutdown_sequence()
+void run_game_shutdown_sequence(param_1)
+undefined4 param_1;
 
 {
   char stack0xffdc3250_buf [256];
@@ -2587,7 +2596,8 @@ void init_main_loop_state()
 // was FUN_0003bc08 -- key-binding callback (registered by
 // init_main_loop_state) that clears the "game running" flag,
 // signaling the main loop to exit.
-void request_game_exit()
+void request_game_exit(param_1)
+undefined4 param_1;
 
 {
   DAT_00201b6c = 0;
@@ -3104,13 +3114,16 @@ bool prepare_new_game(void)
     ce_wcscpy(destination_copy_path, converted_path);
     if (!CopyFileW(source_copy_path, destination_copy_path, 0)) return false;
 
-    if (seed_conversation_globals_for_new_game() != 0) {
-        report_fatal_error_and_exit();
-        return false;
+    {
+        int seed_status = seed_conversation_globals_for_new_game();
+        if (seed_status != 0) {
+            report_fatal_error_and_exit(seed_status);
+            return false;
+        }
     }
     if (load_level(1) < 1) return false;
 
-    set_player_tile_position(0x20, 2, 1);
+    set_player_tile_position(0x20, 2);
     debug_print_player_position("chargen-spawn");
     save_or_restore_level_special_state(1, 0);
     /* Port-only timing: the next dungeon entry pauses after its fade-out. */
