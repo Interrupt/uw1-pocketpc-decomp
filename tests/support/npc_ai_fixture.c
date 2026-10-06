@@ -69,8 +69,7 @@ void save_walk_path_to_cache_slot(byte *record) { (void)record;}
 int creature_find_path_to_tile(int start_x, char start_y, byte size_class, char goal_x, char goal_y, char goal_sub_x, byte goal_sub_y) { (void)start_x; (void)start_y; (void)size_class; (void)goal_x; (void)goal_y; (void)goal_sub_x; (void)goal_sub_y; return 0; }
 void set_npc_altitude_state(byte tile_x, byte tile_y) { (void)tile_x; (void)tile_y;}
 void npc_arrival_interaction(ushort *npc) { (void)npc;}
-undefined4 tile_pair_los_blocked(int x0, int y0, int x1, int y1, int x2, int y2,
-    int flags0, int flags1, int height, byte *height_out, byte *scratch)
+int tile_pair_los_blocked(byte x0, byte y0, byte x1, byte y1, byte x2, byte y2, ushort flags0, ushort flags1, byte height, byte *height_out, byte *scratch)
 {
     /* The fixture allows a straight, level corridor at x=10. */
     TEST_ASSERT_TRUE(x0 == 0 || x0 == 10);
@@ -100,7 +99,7 @@ byte tile_is_no_magic(int tile_x, int tile_y) { (void)tile_x; (void)tile_y; retu
 int try_npc_special_ability_alt(void) { return 0; }
 int try_npc_special_ability_no_los(void) { return 0; }
 int try_npc_special_ability_ranged(void) { return 0; }
-void build_object_placement_snapshot(void) {}
+void build_object_placement_snapshot(ushort *object, byte *snapshot) { (void)object; (void)snapshot;}
 int build_collision_height_field_for_object(ushort *object) { (void)object; return 0; }
 int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags) { (void)snapshot; (void)sweep_flags; return 0; }
 int sync_object_tile_position(ushort *object, ushort *position) { (void)object; (void)position; return 0; }

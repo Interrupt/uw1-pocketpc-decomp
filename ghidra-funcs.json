@@ -7,8 +7,8 @@
     "still_unnamed_FUN": 12,
     "audited_true": 1464,
     "audited_false": 0,
-    "modernized_true": 1241,
-    "modernized_false": 223
+    "modernized_true": 1258,
+    "modernized_false": 206
   },
   "functions": [
     {
@@ -669,12 +669,12 @@
       "param_count": 3,
       "description": "an NPC's random-walk reposition step (confirmed via npc_combat_approach_tick's own comment describing its \"far.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "npc_react_to_nearby_player",
       "path": "src/ai.c",
-      "line": 2670,
+      "line": 2665,
       "original_name": "FUN_00031dbc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -685,7 +685,7 @@
     {
       "name": "detect_npc_wander_proximity",
       "path": "src/ai.c",
-      "line": 2716,
+      "line": 2711,
       "original_name": "FUN_00032180",
       "ghidra_origin": true,
       "param_count": 2,
@@ -696,7 +696,7 @@
     {
       "name": "compute_vertical_aim_offset",
       "path": "src/ai.c",
-      "line": 2785,
+      "line": 2780,
       "original_name": "FUN_0003298c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -707,7 +707,7 @@
     {
       "name": "setup_npc_ai_tick_state",
       "path": "src/ai.c",
-      "line": 2830,
+      "line": 2825,
       "original_name": "FUN_00032aa4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -718,7 +718,7 @@
     {
       "name": "npc_ai_default_tick",
       "path": "src/ai.c",
-      "line": 2877,
+      "line": 2872,
       "original_name": "FUN_00033880",
       "ghidra_origin": true,
       "param_count": 0,
@@ -729,7 +729,7 @@
     {
       "name": "refresh_npc_target_delta",
       "path": "src/ai.c",
-      "line": 3174,
+      "line": 3169,
       "original_name": "FUN_00034044",
       "ghidra_origin": true,
       "param_count": 0,
@@ -740,7 +740,7 @@
     {
       "name": "check_npc_morale_flee",
       "path": "src/ai.c",
-      "line": 3213,
+      "line": 3208,
       "original_name": "FUN_00034270",
       "ghidra_origin": true,
       "param_count": 4,
@@ -751,7 +751,7 @@
     {
       "name": "compute_pathfind_search_radius",
       "path": "src/ai.c",
-      "line": 3245,
+      "line": 3240,
       "original_name": "FUN_0003431c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -762,7 +762,7 @@
     {
       "name": "initiate_npc_death",
       "path": "src/ai.c",
-      "line": 3266,
+      "line": 3261,
       "original_name": "FUN_000345b8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -773,7 +773,7 @@
     {
       "name": "handle_monster_death",
       "path": "src/ai.c",
-      "line": 3293,
+      "line": 3288,
       "original_name": "FUN_00034634",
       "ghidra_origin": true,
       "param_count": 1,
@@ -784,7 +784,7 @@
     {
       "name": "npc_set_goal_for_object",
       "path": "src/ai.c",
-      "line": 3314,
+      "line": 3309,
       "original_name": "FUN_00034ac4",
       "ghidra_origin": true,
       "param_count": 3,
@@ -795,7 +795,7 @@
     {
       "name": "randomize_active_npc_flags",
       "path": "src/ai.c",
-      "line": 3329,
+      "line": 3324,
       "original_name": "FUN_00034af0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -806,7 +806,7 @@
     {
       "name": "resolve_tile_entry_offset",
       "path": "src/ai.c",
-      "line": 3361,
+      "line": 3356,
       "original_name": "FUN_00034ba8",
       "ghidra_origin": true,
       "param_count": 3,
@@ -817,7 +817,7 @@
     {
       "name": "npc_movement_tick",
       "path": "src/ai.c",
-      "line": 3394,
+      "line": 3389,
       "original_name": "FUN_00034c10",
       "ghidra_origin": true,
       "param_count": 2,
@@ -828,7 +828,7 @@
     {
       "name": "settle_misplaced_mobile_object",
       "path": "src/ai.c",
-      "line": 3483,
+      "line": 3478,
       "original_name": "FUN_00034fa4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -839,7 +839,7 @@
     {
       "name": "advance_mobile_objects",
       "path": "src/ai.c",
-      "line": 3523,
+      "line": 3518,
       "original_name": "FUN_0003513c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -850,7 +850,7 @@
     {
       "name": "spawn_rest_interrupt_monster_callback",
       "path": "src/ai.c",
-      "line": 3586,
+      "line": 3581,
       "original_name": "FUN_00035394",
       "ghidra_origin": true,
       "param_count": 3,
@@ -861,7 +861,7 @@
     {
       "name": "check_rest_interrupted_by_monster",
       "path": "src/ai.c",
-      "line": 3710,
+      "line": 3705,
       "original_name": "FUN_00035894",
       "ghidra_origin": true,
       "param_count": 0,
@@ -872,7 +872,7 @@
     {
       "name": "load_last_attacker_record",
       "path": "src/ai.c",
-      "line": 3722,
+      "line": 3717,
       "original_name": "FUN_000358e8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -883,7 +883,7 @@
     {
       "name": "save_last_attacker_record",
       "path": "src/ai.c",
-      "line": 3738,
+      "line": 3733,
       "original_name": "FUN_00035960",
       "ghidra_origin": true,
       "param_count": 0,
@@ -894,7 +894,7 @@
     {
       "name": "clear_last_attacker_record",
       "path": "src/ai.c",
-      "line": 3760,
+      "line": 3755,
       "original_name": "FUN_000359f4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -905,7 +905,7 @@
     {
       "name": "alert_npc_to_noise_callback",
       "path": "src/ai.c",
-      "line": 3773,
+      "line": 3768,
       "original_name": "FUN_00035a18",
       "ghidra_origin": true,
       "param_count": 3,
@@ -916,7 +916,7 @@
     {
       "name": "emit_noise_alert",
       "path": "src/ai.c",
-      "line": 3842,
+      "line": 3837,
       "original_name": "FUN_00035cb0",
       "ghidra_origin": true,
       "param_count": 2,
@@ -927,7 +927,7 @@
     {
       "name": "resolve_unique_npc_special_behavior",
       "path": "src/ai.c",
-      "line": 3868,
+      "line": 3863,
       "original_name": "FUN_0003a73c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -938,7 +938,7 @@
     {
       "name": "load_critter_association_tables",
       "path": "src/ai.c",
-      "line": 3948,
+      "line": 3943,
       "original_name": "FUN_00040160",
       "ghidra_origin": true,
       "param_count": 1,
@@ -949,7 +949,7 @@
     {
       "name": "flush_pending_critter_resource_slots",
       "path": "src/ai.c",
-      "line": 4071,
+      "line": 4066,
       "original_name": "FUN_00040440",
       "ghidra_origin": true,
       "param_count": 0,
@@ -960,7 +960,7 @@
     {
       "name": "spawn_npc_thrown_weapon",
       "path": "src/ai.c",
-      "line": 4095,
+      "line": 4090,
       "original_name": "FUN_0004a510",
       "ghidra_origin": true,
       "param_count": 3,
@@ -971,7 +971,7 @@
     {
       "name": "npc_set_walk_target",
       "path": "src/ai.c",
-      "line": 4111,
+      "line": 4106,
       "original_name": "FUN_0002e454",
       "ghidra_origin": true,
       "param_count": 3,
@@ -982,7 +982,7 @@
     {
       "name": "npc_idle_behavior_tick",
       "path": "src/ai.c",
-      "line": 4141,
+      "line": 4136,
       "original_name": "FUN_0002f124",
       "ghidra_origin": true,
       "param_count": 0,
@@ -993,7 +993,7 @@
     {
       "name": "npc_wander_return_home_tick",
       "path": "src/ai.c",
-      "line": 4336,
+      "line": 4331,
       "original_name": "FUN_0002fba8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1004,7 +1004,7 @@
     {
       "name": "npc_notice_and_idle_tick",
       "path": "src/ai.c",
-      "line": 4376,
+      "line": 4371,
       "original_name": "FUN_0002fcec",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1015,7 +1015,7 @@
     {
       "name": "npc_wander_return_home_exact_tick",
       "path": "src/ai.c",
-      "line": 4504,
+      "line": 4499,
       "original_name": "FUN_00031fa8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1026,7 +1026,7 @@
     {
       "name": "npc_set_goal",
       "path": "src/ai.c",
-      "line": 4582,
+      "line": 4577,
       "original_name": "FUN_000343d8",
       "ghidra_origin": true,
       "param_count": 2,
@@ -1037,7 +1037,7 @@
     {
       "name": "npc_clear_special_goal",
       "path": "src/ai.c",
-      "line": 4607,
+      "line": 4602,
       "original_name": "FUN_000344a4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -1048,7 +1048,7 @@
     {
       "name": "object_tick_is_due",
       "path": "src/ai.c",
-      "line": 4646,
+      "line": 4641,
       "original_name": "FUN_0003495c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -1059,24 +1059,24 @@
     {
       "name": "tile_pair_los_blocked",
       "path": "src/ai.c",
-      "line": 4666,
+      "line": 4661,
       "original_name": "FUN_0002bdac",
       "ghidra_origin": true,
       "param_count": 11,
       "description": "tile pair los blocked.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "build_object_placement_snapshot",
       "path": "src/ai.c",
-      "line": 5100,
+      "line": 5083,
       "original_name": "FUN_00054a00",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "build object placement snapshot.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "play_music_track",
@@ -10924,67 +10924,67 @@
       "param_count": 4,
       "description": "resolves an object instance's (param_1) packed quality/variant field into a (class, value) pair plus a flag distinguishing \"ordinary quality variant\" from \"special/linked\" items.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "clear_object_pending_special_flag",
       "path": "src/object_actions.c",
-      "line": 2056,
+      "line": 2051,
       "original_name": "FUN_0007cc30",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "called by src/player.c's equip-effect refresh loop right after apply_equipped_item_effect succeeds for an equipped item.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "consume_linked_special_object_charge",
       "path": "src/object_actions.c",
-      "line": 2088,
+      "line": 2080,
       "original_name": "FUN_0007cc78",
       "ghidra_origin": true,
       "param_count": 1,
       "description": "trigger_object_use_babl_script's \"finalize\" step for the interacting object (src/item_use.c's own comment already names this function).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "compute_compass_direction",
       "path": "src/object_actions.c",
-      "line": 2125,
+      "line": 2114,
       "original_name": "FUN_0007ec58",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "confirmed by its only caller's own pre-existing comment (cast_detect_life_spell, src/object_actions.c) as bucketing a relative (dx,dy) offset into one of 8 compass directions (0-7).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "print_message_with_proximity_qualifier",
       "path": "src/object_actions.c",
-      "line": 2182,
+      "line": 2168,
       "original_name": "FUN_0007ed20",
       "ghidra_origin": true,
       "param_count": 8,
       "description": "prints param_1 (a get_message_string result at every confirmed call site) via message_scroll_print_wrapped, then compares two (x,y) tile positions (param_2/3 vs param_5/6) against a max-distance threshold.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_effect_debris_burst",
       "path": "src/object_actions.c",
-      "line": 2234,
+      "line": 2210,
       "original_name": "FUN_00081388",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "spawns a small burst of 2-4 debris/particle objects at tile (param_2,param_3), each copied from the 8-byte template param_1, given randomized position/orientation offsets within the tile, linked into the tile's object list.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "init_monster_spawn_defaults",
       "path": "src/object_actions.c",
-      "line": 2349,
+      "line": 2320,
       "original_name": "FUN_0002a35c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -10995,95 +10995,95 @@
     {
       "name": "append_object_property_tag",
       "path": "src/object_actions.c",
-      "line": 2456,
+      "line": 2429,
       "original_name": "FUN_00048b6c",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "appends a \"magical\"/\"cursed\" property tag onto the caller's description buffer (param_3), resolved via resolve_object_variant_or_special_link.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "append_object_special_name",
       "path": "src/object_actions.c",
-      "line": 2493,
+      "line": 2463,
       "original_name": "FUN_00048bf0",
       "ghidra_origin": true,
       "param_count": 3,
       "description": "appends a special/unique item's proper name onto the caller's description buffer (param_3, called after build_object_display_name), for param_2==3.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "look_at_inscribed_object",
       "path": "src/object_actions.c",
-      "line": 2600,
+      "line": 2566,
       "original_name": "FUN_00049008",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "look\" handler for inscribed objects (class range 0x160, dispatched from object_actions.c's look-description builder).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "describe_object_owner",
       "path": "src/object_actions.c",
-      "line": 2712,
+      "line": 2674,
       "original_name": "FUN_000492bc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "describes who a key/quest item belongs to.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "print_object_flavor_text",
       "path": "src/object_actions.c",
-      "line": 2755,
+      "line": 2713,
       "original_name": "FUN_000493cc",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "prints a flavor-text scroll message keyed by the object's own sub-quality field (offset+6 & 0x3f, message range 100-163), if one exists for this object.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "describe_special_object_property",
       "path": "src/object_actions.c",
-      "line": 2774,
+      "line": 2728,
       "original_name": "FUN_000495d0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "dispatches a \"look\" sub-description by object class bit-fields (subcategory uVar2, sub-subcategory uVar3).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "identify_mushroom_type",
       "path": "src/object_actions.c",
-      "line": 2812,
+      "line": 2762,
       "original_name": "FUN_000496b0",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "called from describe_picked_terrain with a tile record (param_2).",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "spawn_object_near_actor",
       "path": "src/object_actions.c",
-      "line": 2876,
+      "line": 2823,
       "original_name": "FUN_0004a588",
       "ghidra_origin": true,
       "param_count": 2,
       "description": "the general \"spawn an object near a given actor\" helper.",
       "audited": true,
-      "modernized": false
+      "modernized": true
     },
     {
       "name": "check_scheduled_object_location_callback",
       "path": "src/object_actions.c",
-      "line": 2908,
+      "line": 2852,
       "original_name": "FUN_00072268",
       "ghidra_origin": true,
       "param_count": 0,

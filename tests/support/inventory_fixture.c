@@ -21,7 +21,7 @@ void complete_use_reagent_on_player(ushort *target, int clicked);
 char *get_message_string(ushort id);
 int message_scroll_print_wrapped(char *text);
 void print_scroll_message_by_id(uint id);
-void describe_object_owner(ushort *object, int mode);
+void describe_object_owner(ushort *object, short mode);
 void read_object_text(ushort *object, int mode);
 
 ushort objects[5][4];
@@ -162,7 +162,7 @@ int message_scroll_print_wrapped(char *text)
 void print_scroll_message_by_id(uint id)
 { TEST_ASSERT_NOT_NULL(picked_target); scroll_message = id; }
 
-void describe_object_owner(ushort *object, int mode)
+void describe_object_owner(ushort *object, short mode)
 { last_action_object = object; last_action_mode = mode; other_actions++; }
 
 void read_object_text(ushort *object, int mode)

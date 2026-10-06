@@ -53,9 +53,9 @@ void reset_player_derived_state(void) {}
 void set_ambient_bias_with_light(char strength) {}
 void set_ambient_bias_without_light(char strength) { visibility_ambient_strength = strength; }
 int is_valid_equipment_slot_item(ushort item, short slot) { return 0; }
-undefined4 resolve_object_variant_or_special_link(void *object, void *type, void *level, void *result) { return 0; }
+int resolve_object_variant_or_special_link(ushort *object, ushort *type, ushort *level, uint *result) { return 0; }
 int apply_equipped_item_effect(byte type, byte level, ushort *effects, int slot) { return 0; }
-void clear_object_pending_special_flag(void *object) {}
+void clear_object_pending_special_flag(ushort *object) {}
 void apply_equipment_effect_penalties(uint effects) {}
 void update_screen_flicker_effect(int flicker) {}
 void force_locomotion_state_refresh(void) {}

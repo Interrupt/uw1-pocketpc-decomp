@@ -8,7 +8,7 @@ int compute_object_weight(ushort *object);
 void request_weapon_swing_graphic(char category);
 void reset_player_derived_state(void);
 int is_valid_equipment_slot_item(ushort id, short slot);
-undefined4 resolve_object_variant_or_special_link(ushort *o, byte *a, byte *b, int *c);
+int resolve_object_variant_or_special_link(ushort *o, ushort *a, ushort *b, uint *c);
 void clear_object_pending_special_flag(ushort *o);
 int apply_equipped_item_effect(byte effect, byte level, ushort *flags, int slot);
 void apply_equipment_effect_penalties(uint flags);

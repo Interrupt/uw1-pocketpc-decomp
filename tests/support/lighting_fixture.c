@@ -33,7 +33,7 @@ int compute_object_weight(ushort *object) { (void)object; return 0; }
 void request_weapon_swing_graphic(char category) {}
 void reset_player_derived_state(void) {}
 int is_valid_equipment_slot_item(ushort id, short slot) { return 0; }
-undefined4 resolve_object_variant_or_special_link(ushort *o, byte *a, byte *b, int *c) { return 0; }
+int resolve_object_variant_or_special_link(ushort *o, ushort *a, ushort *b, uint *c) { return 0; }
 void clear_object_pending_special_flag(ushort *o) {}
 int apply_equipped_item_effect(byte effect, byte level, ushort *flags, int slot)
 {

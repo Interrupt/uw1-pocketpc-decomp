@@ -13,7 +13,7 @@ void adjust_door_close_animation_delay(ushort *object);
 int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias);
 int scheduler_advance_effect(short entry_slot, int elapsed);
 void *get_object_record_by_slot_index(short slot);
-void build_object_placement_snapshot(void);
+void build_object_placement_snapshot(ushort *object, byte *snapshot);
 int build_collision_height_field_for_object(ushort *object);
 int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags);
 int sync_object_tile_position(ushort *object, ushort *position);
@@ -144,7 +144,7 @@ int scheduler_advance_effect(short entry_slot, int elapsed) { (void)entry_slot; 
 
 void *get_object_record_by_slot_index(short slot) { TEST_ASSERT_EQUAL_INT(1, slot); return objects[1]; }
 
-void build_object_placement_snapshot(void) {}
+void build_object_placement_snapshot(ushort *object, byte *snapshot) { (void)object; (void)snapshot;}
 
 int build_collision_height_field_for_object(ushort *object) { (void)object; return 0; }
 

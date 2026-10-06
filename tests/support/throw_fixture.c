@@ -85,7 +85,7 @@ int roll_object_destroy_chance(short base_chance, char *object) { (void)base_cha
 int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
 void print_scroll_message_by_id(uint message_id) { (void)message_id;}
 void set_pending_update_flags(ushort flags) { (void)flags;}
-void spawn_effect_debris_burst(void) {}
+void spawn_effect_debris_burst(byte *template, uint tile_x, int tile_y) { (void)template; (void)tile_x; (void)tile_y;}
 void scheduler_relink_entry(char *new_object, char *old_object) { (void)new_object; (void)old_object;}
 void set_ambient_bias_without_light(char light_level) { (void)light_level;}
 int activate_area_hazard_object(ushort *hazard, uint tile_x, int tile_y, int damage) { (void)hazard; (void)tile_x; (void)tile_y; (void)damage; return 1; }

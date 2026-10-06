@@ -78,7 +78,7 @@ void scheduler_remove_entry(short slot) { TEST_FAIL_MESSAGE("Unexpected schedule
 int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; TEST_FAIL_MESSAGE("Unexpected damage during healthy sleep"); return 0; }
 void apply_rest_status_effects(void) { TEST_FAIL_MESSAGE("Unexpected forced rest"); }
 void free_trap_class_object(char *link_field, byte *trap_object) { (void)link_field; (void)trap_object; TEST_FAIL_MESSAGE("Unexpected trap deletion"); }
-undefined4 resolve_object_variant_or_special_link(void)
+int resolve_object_variant_or_special_link(ushort *object, ushort *out_class, ushort *out_value, uint *out_flag)
 { TEST_FAIL_MESSAGE("Unexpected fountain effect"); return 0; }
 int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, uintptr_t actor, intptr_t target, ushort action_id, byte argument)
 { TEST_FAIL_MESSAGE("Unexpected fountain dispatch"); return 0; }
@@ -101,7 +101,7 @@ uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byt
 void open_door_object(ushort *door) { (void)door; TEST_FAIL_MESSAGE("Unexpected open_door_object"); }
 void close_door_object(char *actor, ushort *door) { (void)actor; (void)door; TEST_FAIL_MESSAGE("Unexpected close_door_object"); }
 void toggle_door_object(char *actor, byte *door) { (void)actor; (void)door; TEST_FAIL_MESSAGE("Unexpected toggle_door_object"); }
-UNUSED_VOID(print_message_with_proximity_qualifier)
+void print_message_with_proximity_qualifier(char *message, short x1, short y1, short z1, short x2, short y2, short z2, short limit) { (void)message; (void)x1; (void)y1; (void)z1; (void)x2; (void)y2; (void)z2; (void)limit; TEST_FAIL_MESSAGE("Unexpected print_message_with_proximity_qualifier"); }
 uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id) { (void)object; (void)key_item; (void)lock_link; (void)key_id; TEST_FAIL_MESSAGE("Unexpected resolve_skill_gated_unlock_or_use"); return 0; }
 void set_pending_update_flags(ushort flags) { (void)flags; TEST_FAIL_MESSAGE("Unexpected set_pending_update_flags"); }
 char *get_message_string(ushort message_id) { (void)message_id; TEST_FAIL_MESSAGE("Unexpected text trap"); return NULL; }

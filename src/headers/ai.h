@@ -68,7 +68,7 @@ extern undefined1 DAT_0023c460_backing[128];
 
 
 void drop_monster_loot(byte *monster, ushort gold_nibble, ushort item_nibble);
-undefined4 tile_pair_los_blocked();
+int tile_pair_los_blocked(byte tile_a_x, byte tile_a_y, byte tile_b_x, byte tile_b_y, byte tile_c_x, byte tile_c_y, ushort block_mask, ushort wall_mask, byte span, byte *out_a, byte *out_b);
 int creature_find_path_to_tile(int start_x, char start_y, byte size_class, char goal_x, char goal_y, char goal_sub_x, byte goal_sub_y);
 void reconstruct_path_from_bfs(byte step_count, byte goal_x, byte goal_y);
 int try_direct_line_walk(byte start_x, byte start_y, short goal_x, short goal_y);
@@ -89,7 +89,7 @@ void npc_arrival_interaction(ushort *npc);
 void npc_idle_behavior_tick();
 void npc_wander_return_home_tick();
 void npc_notice_and_idle_tick();
-void npc_wander_reposition();
+void npc_wander_reposition(uint saved_a, uint saved_b, uint saved_c);
 void npc_react_to_nearby_player();
 void npc_wander_return_home_exact_tick();
 int detect_npc_wander_proximity(char *out_near, char *out_far);
@@ -133,7 +133,7 @@ int mobile_object_tick(); // was FUN_0002b47c
 undefined4 npc_ai_tick(); // was FUN_00032d38
 int object_tick_is_due(short period, int phase); // was FUN_0003495c
 void tick_mobile_objects(char elapsed); // was FUN_000349bc
-void build_object_placement_snapshot(); // was FUN_00054a00
+void build_object_placement_snapshot(ushort *object, byte *snapshot); // was FUN_00054a00
 int sync_object_tile_position(ushort *object, ushort *position); // was FUN_00054f6c
 ushort *settle_mobile_to_immobile(ushort *object); // was FUN_0005596c
 

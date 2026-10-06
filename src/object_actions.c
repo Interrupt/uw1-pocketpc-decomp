@@ -1984,12 +1984,7 @@ void complete_cast_spell_on_target()
 // was FUN_0007ca50 -- resolves an object instance's (param_1) packed quality/variant field into a
 // (class, value) pair plus a flag distinguishing "ordinary quality variant" from "special/linked"
 // items.
-undefined4 resolve_object_variant_or_special_link(param_1,param_2,param_3,param_4)
-ushort * param_1;
-ushort * param_2;
-undefined2 * param_3;
-uint * param_4;
-
+int resolve_object_variant_or_special_link(ushort *object, ushort *out_class, ushort *out_value, uint *out_flag)
 {
   byte bVar1;
   ushort uVar2;
@@ -1998,14 +1993,14 @@ uint * param_4;
   uint uVar5;
   ushort *local_20;
   
-  uVar2 = *param_1;
+  uVar2 = *object;
   if ((uVar2 & 0x1c0) != 0x180) {
-    if (((uVar2 & 0x8000) == 0) && (local_20 = param_1 + 3, (*local_20 & 0xffc0) != 0)) {
-      param_1 = (ushort *)find_object_in_chain(&local_20,0,4,2,0);
-      if (param_1 == (ushort *)0x0) {
+    if (((uVar2 & 0x8000) == 0) && (local_20 = object + 3, (*local_20 & 0xffc0) != 0)) {
+      object = (ushort *)find_object_in_chain(&local_20,0,4,2,0);
+      if (object == (ushort *)0x0) {
         return 0;
       }
-      if ((((param_1[2] & 0x3f) == 0) && (DAT_0024cfcc == 0)) &&
+      if ((((object[2] & 0x3f) == 0) && (DAT_0024cfcc == 0)) &&
          (iVar3 = rand_below(10), iVar3 < 4)) {
         return 0;
       }
@@ -2021,25 +2016,25 @@ uint * param_4;
         return 0;
       }
     }
-    if (param_1 != (ushort *)0x0) {
-      uVar5 = (uint)((*param_1 & 0x800) != 0);
-      *param_4 = uVar5;
+    if (object != (ushort *)0x0) {
+      uVar5 = (uint)((*object & 0x800) != 0);
+      *out_flag = uVar5;
       if (uVar5 == 1) {
-        bVar1 = *(byte *)((char *)param_1 + 7) >> 4;
+        bVar1 = *(byte *)((char *)object + 7) >> 4;
         uVar2 = bVar1 & 7;
-        *param_2 = uVar2;
+        *out_class = uVar2;
         uVar4 = 0xffff;
         if ((bVar1 & 7) != 0) {
           uVar4 = uVar2 + 0xc;
         }
-        *param_2 = uVar4;
-        uVar5 = param_1[3] & 0xfc0;
+        *out_class = uVar4;
+        uVar5 = object[3] & 0xfc0;
       }
       else {
-        *param_2 = (ushort)((*(byte *)((char *)param_1 + 7) & 0x7c) >> 2);
-        uVar5 = param_1[3] & 0x3c0;
+        *out_class = (ushort)((*(byte *)((char *)object + 7) & 0x7c) >> 2);
+        uVar5 = object[3] & 0x3c0;
       }
-      *param_3 = (short)(uVar5 >> 6);
+      *out_value = (short)(uVar5 >> 6);
       return 1;
     }
   }
@@ -2053,9 +2048,7 @@ uint * param_4;
 // was FUN_0007cc30 -- called by src/player.c's equip-effect refresh loop right after
 // apply_equipped_item_effect succeeds for an equipped item; only acts when the item's flags word
 // has bit 0x8000 set (the same gating bit resolve_object_variant_or_special_link checks first).
-void clear_object_pending_special_flag(param_1)
-ushort * param_1;
-
+void clear_object_pending_special_flag(ushort *object)
 {
   ushort uVar1;
   uint uVar2;
@@ -2063,7 +2056,7 @@ ushort * param_1;
   uint uVar4;
   bool bVar5;
   
-  uVar1 = *param_1;
+  uVar1 = *object;
   uVar3 = (uint)uVar1;
   if ((uVar1 & 0x8000) != 0) {
     uVar4 = uVar3 & 0x1000;
@@ -2074,20 +2067,17 @@ ushort * param_1;
       uVar2 = 0x140;
     }
     if (bVar5 && uVar4 != uVar2) {
-      *(char *)param_1 = (char)(uVar3 & 0xefff);
-      *(char *)((char *)param_1 + 1) = (char)((uVar3 & 0xefff) >> 8);
+      *(char *)object = (char)(uVar3 & 0xefff);
+      *(char *)((char *)object + 1) = (char)((uVar3 & 0xefff) >> 8);
     }
   }
-  return;
 }
 
 
 
 // was FUN_0007cc78 -- trigger_object_use_babl_script's "finalize" step for the interacting object
 // (src/item_use.c's own comment already names this function).
-void consume_linked_special_object_charge(param_1)
-int param_1;
-
+void consume_linked_special_object_charge(char *object)
 {
   ushort uVar1;
   byte bVar2;
@@ -2095,8 +2085,8 @@ int param_1;
   int iVar4;
   ushort *local_c;
   
-  if (((((*(byte *)(param_1 + 1) & 0x80) == 0) &&
-       (local_c = (ushort *)(param_1 + 6), (*local_c & 0xffc0) != 0)) &&
+  if (((((*(byte *)(object + 1) & 0x80) == 0) &&
+       (local_c = (ushort *)(object + 6), (*local_c & 0xffc0) != 0)) &&
       (iVar3 = find_object_in_chain(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
     uVar1 = *(ushort *)(iVar3 + 4);
     if ((uVar1 & 0x3f) == 0) {
@@ -2112,7 +2102,6 @@ int param_1;
       *(char *)(iVar3 + 5) = (char)(uVar1 >> 8);
     }
   }
-  return;
 }
 
 
@@ -2122,10 +2111,7 @@ int param_1;
 // was FUN_0007ec58 -- confirmed by its only caller's own pre-existing comment
 // (cast_detect_life_spell, src/object_actions.c) as bucketing a relative (dx,dy) offset into one of
 // 8 compass directions (0-7).
-char compute_compass_direction(param_1,param_2)
-char param_1;
-char param_2;
-
+char compute_compass_direction(char dx, char dy)
 {
   uint uVar1;
   uint uVar2;
@@ -2134,9 +2120,9 @@ char param_2;
   int iVar5;
   int iVar6;
   
-  uVar1 = (uint)param_1;
+  uVar1 = (uint)dx;
   iVar4 = (uVar1 ^ (int)uVar1 >> 0x1f) - ((int)uVar1 >> 0x1f);
-  uVar2 = (uint)param_2;
+  uVar2 = (uint)dy;
   iVar5 = (uVar2 ^ (int)uVar2 >> 0x1f) - ((int)uVar2 >> 0x1f);
   iVar6 = iVar4;
   if (iVar4 < 0) {
@@ -2179,16 +2165,7 @@ char param_2;
 // was FUN_0007ed20 -- prints param_1 (a get_message_string result at every confirmed call site) via
 // message_scroll_print_wrapped, then compares two (x,y) tile positions (param_2/3 vs param_5/6)
 // against a max-distance threshold...
-void print_message_with_proximity_qualifier(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
-undefined4 param_1;
-short param_2;
-short param_3;
-short param_4;
-short param_5;
-short param_6;
-short param_7;
-short param_8;
-
+void print_message_with_proximity_qualifier(char *message, short x1, short y1, short z1, short x2, short y2, short z2, short limit)
 {
   uint uVar1;
   uint uVar2;
@@ -2198,20 +2175,20 @@ short param_8;
   bVar3 = false;
   /* HACK: was a bare `message_scroll_print_wrapped();` -- dropped argument, the same class of bug
      fixed repeatedly elsewhere in this file. */
-  message_scroll_print_wrapped(param_1);
-  if (param_8 < 0) {
+  message_scroll_print_wrapped(message);
+  if (limit < 0) {
 LAB_0007ed8c:
     bVar3 = true;
   }
   else {
-    uVar1 = (int)param_2 - (int)param_5 >> 0x1f;
-    uVar2 = (int)param_3 - (int)param_6 >> 0x1f;
-    if ((int)param_8 <
-        (int)((((int)param_3 - (int)param_6 ^ uVar2) - uVar2) +
-             (((int)param_2 - (int)param_5 ^ uVar1) - uVar1))) goto LAB_0007ed8c;
+    uVar1 = (int)x1 - (int)x2 >> 0x1f;
+    uVar2 = (int)y1 - (int)y2 >> 0x1f;
+    if ((int)limit <
+        (int)((((int)y1 - (int)y2 ^ uVar2) - uVar2) +
+             (((int)x1 - (int)x2 ^ uVar1) - uVar1))) goto LAB_0007ed8c;
   }
-  if ((param_4 == param_7) || (param_4 == 0)) {
-    if ((bVar3) || (param_4 == 0)) goto LAB_0007edd8;
+  if ((z1 == z2) || (z1 == 0)) {
+    if ((bVar3) || (z1 == 0)) goto LAB_0007edd8;
     pcVar4 = s_very_near_00087954;
   }
   else {
@@ -2221,7 +2198,6 @@ LAB_0007ed8c:
   message_scroll_print_wrapped(pcVar4);
 LAB_0007edd8:
   message_scroll_print_wrapped(&DAT_00084f20);
-  return;
 }
 
 
@@ -2231,11 +2207,7 @@ LAB_0007edd8:
 // was FUN_00081388 -- spawns a small burst of 2-4 debris/particle objects at tile
 // (param_2,param_3), each copied from the 8-byte template param_1, given randomized
 // position/orientation offsets within the tile, linked into the tile's object list...
-void spawn_effect_debris_burst(param_1,param_2,param_3)
-undefined1 * param_1;
-uint param_2;
-undefined4 param_3;
-
+void spawn_effect_debris_burst(byte *template, uint tile_x, int tile_y)
 {
   int uw_ord2005_rem_170 = 0; int uw_ord2005_rem_171 = 0; int uw_ord2005_rem_172 = 0; int uw_ord2005_rem_173 = 0; int uw_ord2005_rem_174 = 0;
   short sVar1;
@@ -2263,14 +2235,14 @@ undefined4 param_3;
   sVar1 = (short)iVar7;
   while (-1 < iVar7 * 0x10000 >> 0x10) {
     puVar8 = (ushort *)alloc_object_slot(0);
-    *(undefined1 *)puVar8 = *param_1;
-    *(undefined1 *)((char *)puVar8 + 1) = param_1[1];
-    *(undefined1 *)(puVar8 + 1) = param_1[2];
-    *(undefined1 *)((char *)puVar8 + 3) = param_1[3];
-    *(undefined1 *)(puVar8 + 2) = param_1[4];
-    *(undefined1 *)((char *)puVar8 + 5) = param_1[5];
-    *(undefined1 *)(puVar8 + 3) = param_1[6];
-    *(undefined1 *)((char *)puVar8 + 7) = param_1[7];
+    *(undefined1 *)puVar8 = *template;
+    *(undefined1 *)((char *)puVar8 + 1) = template[1];
+    *(undefined1 *)(puVar8 + 1) = template[2];
+    *(undefined1 *)((char *)puVar8 + 3) = template[3];
+    *(undefined1 *)(puVar8 + 2) = template[4];
+    *(undefined1 *)((char *)puVar8 + 5) = template[5];
+    *(undefined1 *)(puVar8 + 3) = template[6];
+    *(undefined1 *)((char *)puVar8 + 7) = template[7];
     uVar9 = ce_rand();
     uVar10 = (uint)*puVar8;
     uVar10 = ((uVar9 & 1) + uVar10 + 1 ^ uVar10) & 0x1ff ^ uVar10;
@@ -2310,22 +2282,22 @@ undefined4 param_3;
        immediately after this for unrelated int values) -- truncated
        tilemap_lookup's real `void *` return */
     {
-      char *_tile7 = (char *)tilemap_lookup(param_2,param_3);
+      char *_tile7 = (char *)tilemap_lookup(tile_x,tile_y);
       object_list_insert_head(_tile7 + 2,puVar8);
     }
     uVar6 = ce_rand();
     uw_ord2005_rem_173 = ((int)(uVar6)) % (3);
     uVar6 = ce_rand();
     uVar11 = encode_object_slot_index(puVar8);
-    uVar12 = (undefined1)param_3;
+    uVar12 = (undefined1)tile_y;
     uVar13 = (undefined1)uw_ord2005_rem_173;
     uw_ord2005_rem_174 = ((int)(uVar6)) % (3);
     sVar5 = scheduler_add_entry(uVar11,((int)uw_ord2005_rem_174 - (int)uw_ord2005_rem_173) + 2,(int)uw_ord2005_rem_173,
-                         param_2 & 0xff,uVar12);  /* a 6th arg (uVar13) was Ghidra noise: ARM scheduler_add_entry takes 5 */
+                         tile_x & 0xff,uVar12);  /* a 6th arg (uVar13) was Ghidra noise: ARM scheduler_add_entry takes 5 */
     if (sVar5 == -1) {
       /* was folded into `int iVar7` (this function's loop counter) --
          truncated tilemap_lookup's real `void *` return */
-      char *_tile7b = (char *)tilemap_lookup(param_2,param_3);
+      char *_tile7b = (char *)tilemap_lookup(tile_x,tile_y);
       object_list_unlink(_tile7b + 2,puVar8);
       free_object_slot(puVar8);
       iVar7 = -1;
@@ -2336,7 +2308,6 @@ undefined4 param_3;
     iVar7 = iVar7 + -1;
     sVar1 = (short)iVar7;
   }
-  return;
 }
 
 
@@ -2453,11 +2424,9 @@ undefined4 init_monster_spawn_defaults()
 // was FUN_00048b6c -- appends a "magical"/"cursed" property tag onto the caller's description
 // buffer (param_3), resolved via resolve_object_variant_or_special_link. param_2 selects which tag
 // family to check...
-undefined4 append_object_property_tag(param_1,param_2,param_3)
-ushort *param_1;   /* was undefined4 -- object ptr into resolve_object_variant_or_special_link */
-short param_2;
-char *param_3;     /* was undefined4 -- caller's stack buffer for ce_strcat */
-
+/* was undefined4 -- object ptr into resolve_object_variant_or_special_link was undefined4 --
+   caller's stack buffer for ce_strcat */
+int append_object_property_tag(ushort *object, short mode, char *out_text)
 {
   int iVar1;
   bool bVar2;
@@ -2465,19 +2434,19 @@ char *param_3;     /* was undefined4 -- caller's stack buffer for ce_strcat */
   undefined1 auStack_12 [2];
   int local_10;
   
-  iVar1 = resolve_object_variant_or_special_link(param_1,&local_14,auStack_12,&local_10);
+  iVar1 = resolve_object_variant_or_special_link(object,&local_14,auStack_12,&local_10);
   if (iVar1 != 0) {
-    if (param_2 == 2) {
-      ce_strcat(param_3,s_magical_00085ca8);
+    if (mode == 2) {
+      ce_strcat(out_text,s_magical_00085ca8);
       return 1;
     }
-    if (param_2 == 3) {
+    if (mode == 3) {
       bVar2 = local_10 == 0;
       if (bVar2) {
         local_10 = (int)local_14;
       }
       if (bVar2 && local_10 == 9) {
-        ce_strcat(param_3,s_cursed_00085ca0);
+        ce_strcat(out_text,s_cursed_00085ca0);
       }
     }
   }
@@ -2490,11 +2459,8 @@ char *param_3;     /* was undefined4 -- caller's stack buffer for ce_strcat */
 // buffer (param_3, called after build_object_display_name), for param_2==3: resolves the item's
 // variant/special-link data...
 
-undefined4 append_object_special_name(param_1,param_2,param_3)
-byte * param_1;
-short param_2;
-char *param_3;   /* was int -- caller's stack buffer for ce_strcat/1044/1068 */
-
+/* was int -- caller's stack buffer for ce_strcat/1044/1068 */
+int append_object_special_name(byte *object, short mode, char *out_text)
 {
   int uw_ord2005_rem_113 = 0;
   char cVar1;
@@ -2514,16 +2480,16 @@ char *param_3;   /* was int -- caller's stack buffer for ce_strcat/1044/1068 */
   byte *local_1c;
   
   DAT_0024cfcc = 1;
-  local_1c = (byte *)resolve_object_variant_or_special_link(param_1,local_26,&local_28,&local_20);
+  local_1c = (byte *)resolve_object_variant_or_special_link(object,local_26,&local_28,&local_20);
   DAT_0024cfcc = 0;
-  if ((local_1c == (byte *)0x0) || (param_2 != 3)) {
+  if ((local_1c == (byte *)0x0) || (mode != 3)) {
 LAB_00048e80:
     uVar6 = 0;
   }
   else {
     if (*(short *)local_26 == 0xc) {
       *(short *)local_26 = 0x1c0;
-      if ((*param_1 & 0x30) < 0x11) {
+      if ((*object & 0x30) < 0x11) {
         iVar2 = (int)local_28;
       }
       else {
@@ -2545,12 +2511,12 @@ LAB_00048e80:
     if ((pcVar4 == (char *)0x0) || (*pcVar4 == '\0')) {
       pcVar4 = s_UNNAMED_00084f24;
     }
-    ce_strcat(param_3,&DAT_00085cd8);
+    ce_strcat(out_text,&DAT_00085cd8);
     iVar2 = ce_strlen(pcVar4);
-    iVar5 = ce_strlen(param_3);
-    ce_memmove(param_3 + iVar5,pcVar4,iVar2 + 1);
-    if ((param_1[1] & 0x80) == 0) {
-      local_1c = param_1 + 6;
+    iVar5 = ce_strlen(out_text);
+    ce_memmove(out_text + iVar5,pcVar4,iVar2 + 1);
+    if ((object[1] & 0x80) == 0) {
+      local_1c = object + 6;
       uVar8 = 0xffff;
       iVar2 = find_object_in_chain(&local_1c,0,4,2,0);
       bVar9 = iVar2 == 0;
@@ -2562,7 +2528,7 @@ LAB_00048e80:
       }
       iVar2 = (int)(short)uVar8;
       if (-1 < iVar2) {
-        ce_strcat(param_3,s_with_00085cd0);
+        ce_strcat(out_text,s_with_00085cd0);
         if (iVar2 < 1) {
           puVar7 = (undefined2 *)DAT_00085cc8;
         }
@@ -2581,10 +2547,10 @@ LAB_00048e80:
             puVar7 = (undefined2 *)local_26;
           }
         }
-        ce_strcat(param_3,puVar7);
-        ce_strcat(param_3,s_full_charge_00085cb8);
+        ce_strcat(out_text,puVar7);
+        ce_strcat(out_text,s_full_charge_00085cb8);
         if (iVar2 != 1) {
-          ce_strcat(param_3,&DAT_00085cb4);
+          ce_strcat(out_text,&DAT_00085cb4);
         }
       }
     }
@@ -2597,10 +2563,7 @@ LAB_00048e80:
 // was FUN_00049008 -- "look" handler for inscribed objects (class range 0x160, dispatched from
 // object_actions.c's look-description builder): terrain-plaque text for class 4, a gravestone
 // epitaph looked up by index in grave.dat for class 5...
-void look_at_inscribed_object(param_1,param_2)
-ushort * param_1;
-short param_2;
-
+void look_at_inscribed_object(ushort *inscribed_object, short look_mode)
 {
   char stack0xffdc3238_buf [256];
   char *stack0xffdc3238_ptr;
@@ -2624,7 +2587,7 @@ short param_2;
   
   local_128[0] = '\0';
   sVar10 = 0x160;
-  uVar2 = *param_1;
+  uVar2 = *inscribed_object;
   uVar8 = uVar2 & 0xf;
   if (uVar8 == 4) {
     uVar8 = uVar2 & 0x1e00;
@@ -2644,13 +2607,13 @@ short param_2;
         if (0xf < uVar8) {
           return;
         }
-        if (-1 < param_2) {
-          describe_picked_terrain(2,((byte)param_1[3] & 0x3f) + 1);
+        if (-1 < look_mode) {
+          describe_picked_terrain(2,((byte)inscribed_object[3] & 0x3f) + 1);
         }
-        if (param_2 < 1) {
+        if (look_mode < 1) {
           return;
         }
-        if (((&DAT_0023add0)[(byte)param_1[3] & 0x3f] & 0xff) != 9) {
+        if (((&DAT_0023add0)[(byte)inscribed_object[3] & 0x3f] & 0xff) != 9) {
           return;
         }
         trigger_terrain_discovery_illustration();
@@ -2659,10 +2622,10 @@ short param_2;
       sVar10 = 0x170;
     }
     if ((uVar2 & 0x8000) == 0) {
-      uVar9 = (byte)param_1[3] & 0x3f;
+      uVar9 = (byte)inscribed_object[3] & 0x3f;
     }
     else {
-      uVar9 = (CONCAT11(*(undefined1 *)((char *)param_1 + 7),(byte)param_1[3]) & 0x7fc0) >> 6;
+      uVar9 = (CONCAT11(*(undefined1 *)((char *)inscribed_object + 7),(byte)inscribed_object[3]) & 0x7fc0) >> 6;
     }
     if (uVar8 == 5) {
       ce_memset(acStack_120,0,0x104);
@@ -2686,11 +2649,11 @@ short param_2;
     if (pcVar_str != (char *)0x0 && local_128[0] != '\0') {
       msg_scroll_panel_reset(1);
     }
-    if (((*param_1 & 0xf) == 6) || (local_128[0] == '\0')) {
+    if (((*inscribed_object & 0xf) == 6) || (local_128[0] == '\0')) {
       /* was two separate calls with message_scroll_print_wrapped()'s arg dropped -- same pattern
          already fixed at line ~9137: get_message_string's return (char *) flows straight into
          message_scroll_print_wrapped as its argument. */
-      message_scroll_print_wrapped((char *)get_message_string((*param_1 >> 9 & 0xf) + sVar10 | 0x1000));
+      message_scroll_print_wrapped((char *)get_message_string((*inscribed_object >> 9 & 0xf) + sVar10 | 0x1000));
     }
     if (pcVar_str != (char *)0x0) {
       /* Same dropped-argument pattern: format_object_display_name's real `undefined1 *` return
@@ -2703,16 +2666,12 @@ short param_2;
       trigger_inscription_illustration(local_128[0]);
     }
   }
-  return;
 }
 
 
 // was FUN_000492bc -- describes who a key/quest item belongs to: for an object whose quality field
 // names an owner (not 0, 0x28, or the 0x3c-0x3e range)...
-void describe_object_owner(param_1,param_2)
-ushort * param_1;
-short param_2;
-
+void describe_object_owner(ushort *object, short mode)
 {
   ushort uVar1;
   ushort uVar2;
@@ -2722,16 +2681,16 @@ short param_2;
   undefined1 local_3a;
   undefined1 auStack_34 [40];
   
-  if (param_2 != 0) {
-    uVar2 = param_1[3];
+  if (mode != 0) {
+    uVar2 = object[3];
     uVar1 = uVar2 & 0x3f;
     if ((((uVar2 & 0x3f) != 0) && (uVar1 != 0x28)) && ((uVar1 < 0x3c || (uVar1 == 0x3f)))) {
       uVar3 = 0x16;
-      if (((*param_1 & 0x1ff) == 0xc6) || (0x40 < (uVar2 & 0xffc0))) {
+      if (((*object & 0x1ff) == 0xc6) || (0x40 < (uVar2 & 0xffc0))) {
         uVar3 = 0x17;
       }
       print_scroll_message_by_id(uVar3);
-      uVar2 = (byte)param_1[3] & 0x3f;
+      uVar2 = (byte)object[3] & 0x3f;
       if (uVar2 == 0x3f) {
         pcVar4 = s_an_adventurer__00085d08;
       }
@@ -2745,25 +2704,20 @@ short param_2;
       message_scroll_print_wrapped(pcVar4);
     }
   }
-  return;
 }
 
 
 
 // was FUN_000493cc -- prints a flavor-text scroll message keyed by the object's own sub-quality
 // field (offset+6 & 0x3f, message range 100-163), if one exists for this object.
-void print_object_flavor_text(param_1,param_2)
-ushort * param_1;
-short param_2;
-
+void print_object_flavor_text(ushort *object, short mode)
 {
   char *iVar1;  /* was `int`: truncated get_message_string's real pointer, now actually dereferenced by message_scroll_print_wrapped */
 
-  if ((param_2 != 0) &&
-     (iVar1 = get_message_string((*(byte *)((char *)param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
+  if ((mode != 0) &&
+     (iVar1 = get_message_string((*(byte *)((char *)object + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
     message_scroll_print_wrapped(iVar1);
   }
-  return;
 }
 
 
@@ -2771,57 +2725,50 @@ short param_2;
 // was FUN_000495d0 -- dispatches a "look" sub-description by object class bit-fields (subcategory
 // uVar2, sub-subcategory uVar3): keys in class 0xc2-0xc6 get describe_object_owner; class-4
 // sub-type 3 objects get read_object_text (books/scrolls)...
-void describe_special_object_property(param_1,param_2)
-ushort * param_1;
-short param_2;
-
+void describe_special_object_property(ushort *object, short mode)
 {
   ushort uVar1;
   ushort uVar2;
   ushort uVar3;
 
-  uVar1 = *param_1;
+  uVar1 = *object;
   uVar3 = uVar1 >> 4 & 3;
   uVar2 = uVar1 >> 6 & 7;
   if (uVar2 == 3) {
     if (uVar3 == 0) {
       if ((0xc1 < (uVar1 & 0x1ff)) && ((uVar1 & 0x1ff) < 199)) {
-        describe_object_owner(param_1,param_2);
+        describe_object_owner(object,mode);
       }
     }
   }
   else if (uVar2 == 4) {
     if (uVar3 == 3) {
-      read_object_text(param_1,param_2);
+      read_object_text(object,mode);
     }
     else if (uVar3 == 0) {
-      print_object_flavor_text(param_1,param_2);
+      print_object_flavor_text(object,mode);
     }
   }
   else if (((uVar2 == 5) && (uVar3 == 0)) && ((uVar1 & 0xf) < 8)) {
-    if ((param_1[3] & 1) != 0) {
+    if ((object[3] & 1) != 0) {
       print_scroll_message_by_id(0x83);
     }
   }
-  return;
 }
 
 
 // was FUN_000496b0 -- called from describe_picked_terrain with a tile record (param_2): only acts
 // on special-mushroom-bearing tiles (trap-type field bits 0x1e == 0x14)...
-undefined4 identify_mushroom_type(param_1,param_2)
-ushort * param_1;
-int param_2;
-
+int identify_mushroom_type(ushort *object, char *tile)
 {
   ushort uVar1;
   int iVar2;
   short local_c;
   
-  if ((*(byte *)(param_2 + 8) & 0x1e) != 0x14) {
+  if ((*(byte *)(tile + 8) & 0x1e) != 0x14) {
     return 0;
   }
-  uVar1 = *param_1 & 0x1ff;
+  uVar1 = *object & 0x1ff;
   if (uVar1 < 0x98) {
     if (uVar1 == 0x97) {
       iVar2 = 2;
@@ -2873,29 +2820,26 @@ LAB_000497a0:
 // was FUN_0004a588 -- the general "spawn an object near a given actor" helper: if the actor is the
 // player, aims from the cursor (compute_drop_aim_from_cursor); otherwise uses the actor's own
 // position, falling back to the current tile if the actor is outside the live object arena.
-bool spawn_object_near_actor(param_1,param_2)
-ushort *param_1;
-short param_2;
-
+bool spawn_object_near_actor(ushort *actor, short height_offset)
 {
   ushort *puVar1; /* ARM 0x4a678 tests the returned object pointer for NULL. */
   
-  DAT_00202a38 = param_2 + 0x10;
-  DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[param_2 * 3];
-  DAT_00202a4c = (ushort)(*((byte *)param_1 + 0x17) >> 2);
-  DAT_00202a50 = (ushort)((param_1[11] & 0x3f0) >> 4);
+  DAT_00202a38 = height_offset + 0x10;
+  DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[height_offset * 3];
+  DAT_00202a4c = (ushort)(*((byte *)actor + 0x17) >> 2);
+  DAT_00202a50 = (ushort)((actor[11] & 0x3f0) >> 4);
   DAT_00202a54 = 1;
-  DAT_00202a44 = param_1;
-  if (param_1 == g_player_object) {
+  DAT_00202a44 = actor;
+  if (actor == g_player_object) {
     compute_drop_aim_from_cursor();
   }
   else {
-    if ((uintptr_t)DAT_002046c4 <= (uintptr_t)param_1) {
+    if ((uintptr_t)DAT_002046c4 <= (uintptr_t)actor) {
       DAT_00202a4c = (ushort)DAT_0023c3dc;
       DAT_00202a50 = (ushort)DAT_0023c3d8;
       DAT_00202a3c = 0;
     }
-    DAT_00202a54 = (ushort)((uintptr_t)DAT_002046c4 > (uintptr_t)param_1);
+    DAT_00202a54 = (ushort)((uintptr_t)DAT_002046c4 > (uintptr_t)actor);
     DAT_00202a40 = 0;
   }
   puVar1 = spawn_object_near_player();

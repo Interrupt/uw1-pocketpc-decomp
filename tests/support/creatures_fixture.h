@@ -25,7 +25,7 @@ int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int d
 int roll_object_destroy_chance(short base_chance, char *object);
 void print_scroll_message_by_id(uint message_id);
 void set_pending_update_flags(ushort flags);
-void spawn_effect_debris_burst(void);
+void spawn_effect_debris_burst(byte *template, uint tile_x, int tile_y);
 void scheduler_relink_entry(char *new_object, char *old_object);
 void set_ambient_bias_without_light(char light_level);
 int activate_area_hazard_object(ushort *hazard, uint tile_x, int tile_y, int damage);

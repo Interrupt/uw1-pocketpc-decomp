@@ -24,7 +24,7 @@ void object_list_unlink(byte *link_field, byte *object);
 int object_ptr_in_arena(char *object);
 void open_door_object(ushort *door);
 int place_object_in_world(uint tile_x, uint tile_y, int height, char *object, short radius, int skip_roll);
-void print_message_with_proximity_qualifier(void);
+void print_message_with_proximity_qualifier(char *message, short x1, short y1, short z1, short x2, short y2, short z2, short limit);
 uint rand_below(int limit);
 void *resolve_object_link(ushort *link_field);
 uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id);
@@ -107,7 +107,7 @@ void open_door_object(ushort *door) { (void)door; TEST_FAIL_MESSAGE("Unexpected 
 
 int place_object_in_world(uint tile_x, uint tile_y, int height, char *object, short radius, int skip_roll) { (void)tile_x; (void)tile_y; (void)height; (void)object; (void)radius; (void)skip_roll; TEST_FAIL_MESSAGE("Unexpected place_object_in_world in text trap"); return 0; }
 
-void print_message_with_proximity_qualifier(void) { TEST_FAIL_MESSAGE("Unexpected print_message_with_proximity_qualifier in text trap"); }
+void print_message_with_proximity_qualifier(char *message, short x1, short y1, short z1, short x2, short y2, short z2, short limit) { (void)message; (void)x1; (void)y1; (void)z1; (void)x2; (void)y2; (void)z2; (void)limit; TEST_FAIL_MESSAGE("Unexpected print_message_with_proximity_qualifier in text trap"); }
 
 uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected rand_below in text trap"); return 0; }
 

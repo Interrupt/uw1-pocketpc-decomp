@@ -108,10 +108,10 @@ char *get_message_string(ushort id)
         default: TEST_FAIL_MESSAGE("Unexpected message ID"); return NULL;
     }
 }
-undefined4 append_object_property_tag(ushort *object, int mode, char *buffer) { return 0; }
-undefined4 append_object_special_name(ushort *object, int mode, char *buffer) { return 0; }
-void describe_special_object_property(ushort *object, int mode) {}
-undefined4 identify_mushroom_type(ushort *object, void *properties) { return 0; }
+int append_object_property_tag(ushort *object, short mode, char *buffer) { return 0; }
+int append_object_special_name(byte *object, short mode, char *buffer) { return 0; }
+void describe_special_object_property(ushort *object, short mode) {}
+int identify_mushroom_type(ushort *object, char *properties) { return 0; }
 void look_at_inscribed_object(ushort *object, int mode) { TEST_FAIL_MESSAGE("Unexpected inscription"); }
 byte *format_object_display_name(byte *name, int article, int mode)
 {
