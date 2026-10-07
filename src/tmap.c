@@ -2,6 +2,7 @@
    walk/collection, per-tile wall/floor/object emission, and the final visible-tile-list
    rasterization pass. */
 #include "headers/tmap.h"
+#include <math.h>
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -318,8 +319,8 @@ void render_visible_tile_list()
           raster_triangle(0x140,g_uw_framebuffer,local_60_arr,piVar14[0x1e],
                        piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],
                        ((unsigned)local_94 < UW_MAX_VIS_TILES)
-                         ? (intptr_t)g_tile_texptr_out[local_94]
-                         : (intptr_t)piVar14[0x1a],
+                         ? (char *)g_tile_texptr_out[local_94]
+                         : (char *)(intptr_t)piVar14[0x1a],
                        local_70_rect);
           { char _facetag[32];
             snprintf(_facetag, sizeof(_facetag), "rec%03d_tri%d_tex0x%x", local_94, iVar16, piVar14[0x1e]);
@@ -382,7 +383,7 @@ void walk_visible_tiles()
   undefined1 *puVar9;
   
   DAT_0023b818 = 0xe0;
-  DAT_0023b4f0 = DAT_0023b4a0 * 4 + UW_B50_LIT(0x86b60);
+  DAT_0023b4f0 = (char *)(DAT_0023b4a0 * 4 + UW_B50_LIT(0x86b60));
   iVar4 = DAT_0023b4a0 * 6;
   sVar2 = *(short *)(&DAT_00086a00 + iVar4);
   iVar7 = (int)sVar2;
@@ -392,7 +393,7 @@ void walk_visible_tiles()
   DAT_0023b814 = tilemap_lookup(0,0);
   DAT_0023b808 = tilemap_lookup(0x3f,0x3f);
   DAT_0023b83c = 0;
-  uVar6 = (uint)(short)((int)pbVar8 - (int)DAT_0023b814 >> 2);
+  uVar6 = (uint)(short)(((byte *)pbVar8 - (byte *)DAT_0023b814) >> 2);
   DAT_0023b838 = 0;
   /* Also clear the arena's own count fields (offset 0 = vertex count, offset 4 = record count).
      process_visible_tile_cell normally keeps them in step with DAT_0023b838 / DAT_0023b83c as it
@@ -402,7 +403,7 @@ void walk_visible_tiles()
   if (0x2000 < (int)uVar6) {
     uVar6 = uVar6 - 0x4000;
   }
-  update_wall_partition_phase(0xfffffff6);
+  update_wall_partition_phase(-10);
   DAT_0023b4e8 = g_visibility_ring_depth;
   if (-1 < g_visibility_ring_depth) {
     do {
@@ -474,9 +475,7 @@ void walk_visible_tiles()
 
 
 // was FUN_0005e604
-void process_visible_tile_cell(param_1)
-byte * param_1;
-
+void process_visible_tile_cell(byte *cell)
 {
   uint uVar1;
   char cVar2;
@@ -514,7 +513,7 @@ byte * param_1;
   int iVar34;
   byte *pbVar35;
   int iVar36;
-  char *pcVar37;
+  const char *pcVar37;
   int iVar38;
   bool bVar39;
   byte local_84;
@@ -543,15 +542,15 @@ byte * param_1;
     int _ddy = _dcy - _dpy; if (_ddy < 0) _ddy = -_ddy;
     fprintf(stderr, "[geom-dist] bit80=%d rawbyte=0x%02x tile=(%d,%d) player=(%d,%d) dist=%d willreveal=%d\n",
             (local_48 & 0x80) != 0, (unsigned)bVar25, _dcx, _dcy, _dpx, _dpy, _ddx > _ddy ? _ddx : _ddy,
-            (int)(*param_1 == 0));
+            (int)(*cell == 0));
   }
   if ((local_48 & 0x80) == 0) {
     /* Unreached cells stay unknown. For reached cells without geometry,
        use the tile's shade to distinguish discovered floors from the
        original unknown shapes (10..15) used for boundary walls. */
-    if ((*param_1 == 0) && (bVar25 != 0)) {
+    if ((*cell == 0) && (bVar25 != 0)) {
       /* Shade indices below 8 are bright enough to discover the floor. */
-      *param_1 = (DAT_0023b820[1] & 0xf) < 8
+      *cell = (DAT_0023b820[1] & 0xf) < 8
           ? automap_reveal_byte(DAT_0023b4ec)
           : DAT_00086bf0_real_table[g_current_tile->tile_type];
       DAT_0023b810 = DAT_0023b810 + 1;
@@ -566,9 +565,9 @@ byte * param_1;
     if (_disabled
         || (int)(uint)DAT_0023b838 >= 512 - 28
         || (int)DAT_0023b83c >= 490 - 6) {
-      if (*param_1 == 0) {
+      if (*cell == 0) {
         /* Even when geometry storage is full, darkness must not reveal floors. */
-        *param_1 = (DAT_0023b820[1] & 0xf) < 8
+        *cell = (DAT_0023b820[1] & 0xf) < 8
             ? automap_reveal_byte(DAT_0023b4ec)
             : DAT_00086bf0_real_table[g_current_tile->tile_type];
         DAT_0023b810 = DAT_0023b810 + 1;
@@ -587,7 +586,7 @@ byte * param_1;
     local_84 = automap_reveal_byte(DAT_0023b4ec);
   }
   else {
-    local_84 = *param_1;
+    local_84 = *cell;
     if (local_84 == 0) {
       local_84 = (&DAT_00086bf0)[g_current_tile->tile_type];
     }
@@ -622,7 +621,7 @@ LAB_0005e7e0:
   DAT_0023b818 = 0xe0;
   iVar16 = DAT_00086e6c;
   if (bVar39) {
-    (*DAT_0023b4f4)(auStack_50,DAT_0023b4e0,g_current_tile->floor_tex);
+    ((void (*)(void *, int, int))DAT_0023b4f4)(auStack_50,DAT_0023b4e0,g_current_tile->floor_tex);
     uVar28 = g_current_tile->floor_tex;
     if ((short)(ushort)DAT_0023b4e0 < DAT_00086b24) {
       DAT_0023b81c = 2;
@@ -812,7 +811,7 @@ LAB_0005e7e0:
     }
   }
   if (*(short *)(iVar16 + 0xe) < 0x3f5) {
-    (*DAT_0023b80c)(auStack_50,DAT_0023b4e0,9);
+    ((void (*)(void *, int, int))DAT_0023b80c)(auStack_50,DAT_0023b4e0,9);
     if ((short)(ushort)DAT_0023b4e0 < DAT_00086b24) {
       DAT_0023b81c = 2;
       if ((DAT_0023b4e0 != 0) || (DAT_00087938 != 'd')) {
@@ -994,7 +993,7 @@ LAB_0005e7e0:
   }
   DAT_0023b818 = 0;
   local_54 = 0;
-  puVar23 = DAT_0023b4ec;
+  puVar23 = (ushort *)DAT_0023b4ec;
   uVar27 = 0x40;
   local_83 = DAT_0023b4e0;
   bVar25 = DAT_0023b4e0;
@@ -1035,7 +1034,7 @@ LAB_0005e7e0:
       /* UW1 tile word2 (bytes 2-3) bits 0-5 = wall texture index; word1's high byte (byte 1) holds
          the floor texture / height and was almost always 0 here, so every wall drew arena slot 0
          (plain grey) instead of the level's real -- often mossy -- wall texture. */
-      (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[2] & 0x3f);
+      ((void (*)(void *, int, int, int))DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[2] & 0x3f);
       uVar26 = (ushort)DAT_0023b4e0;
       bVar25 = (byte)g_current_tile->wall_tex;
       if ((short)uVar26 < DAT_00086b24) {
@@ -1049,17 +1048,10 @@ LAB_0005e7e0:
       }
       else {
         bVar39 = uVar26 != 0;
-        psVar29 = (short *)0x0;
-        if (bVar39) {
-          psVar29 = &DAT_00086b30;
-        }
         DAT_0023b81c = 0;
         bVar25 = bVar25 + 0x3a;
         if (bVar39) {
-          psVar29 = (short *)(int)*psVar29;
-        }
-        if (bVar39) {
-          DAT_0023b81c = (short)psVar29;
+          DAT_0023b81c = DAT_00086b30;  /* was routed through a bogus `short *psVar29` pointer variable */
         }
         sVar31 = (ushort)bVar15 << 6;
         DAT_0023b4d8 = 0x100;
@@ -1263,7 +1255,7 @@ LAB_0005e7e0:
       (&DAT_000acde7)[iVar18] = 0;
       if (!g_uw_hide_walls) DAT_000a85d4 = iVar32 + 1;
       local_83 = DAT_0023b4e0;
-      puVar23 = DAT_0023b4ec;
+      puVar23 = (ushort *)DAT_0023b4ec;
       iVar16 = DAT_00086e6c;
       bVar25 = DAT_0023b4e0;
       if (!g_uw_hide_walls) DAT_0023b83c = DAT_000a85d4;
@@ -1280,7 +1272,7 @@ LAB_0005e7e0:
         (int)*(short *)(iVar16 + 0x12)) * (int)(char)(&DAT_00086bcd)[iVar33] < 0) {
       /* diagonal-wall face: same wall-texture-index byte fix as the
          orthogonal branch above (word2 byte 2 bits 0-5, not byte 1). */
-      (*DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[2] & 0x3f);
+      ((void (*)(void *, int, int, int))DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[2] & 0x3f);
       uVar27 = (ushort)DAT_0023b4e0;
       bVar25 = (byte)g_current_tile->wall_tex;
       if ((short)uVar27 < DAT_00086b24) {
@@ -1294,18 +1286,11 @@ LAB_0005e7e0:
       }
       else {
         bVar39 = uVar27 != 0;
-        psVar29 = (short *)0x0;
-        if (bVar39) {
-          psVar29 = &DAT_00086b30;
-        }
         DAT_0023b81c = 0;
-        if (bVar39) {
-          psVar29 = (short *)(int)*psVar29;
-        }
         sVar31 = (ushort)bVar15 << 6;
         bVar25 = bVar25 + 0x3a;
         if (bVar39) {
-          DAT_0023b81c = (short)psVar29;
+          DAT_0023b81c = DAT_00086b30;  /* was routed through a bogus `short *psVar29` pointer variable */
         }
         DAT_0023b4d8 = 0x100;
         DAT_0023b824 = 0x10;
@@ -1481,7 +1466,7 @@ LAB_0005e7e0:
       (&DAT_000acde5)[iVar34] = 0;
       (&DAT_000acde6)[iVar34] = 0;
       (&DAT_000acde7)[iVar34] = 0;
-      puVar23 = DAT_0023b4ec;
+      puVar23 = (ushort *)DAT_0023b4ec;
     }
   }
   /* emit_tile_features renders this tile's animated features and the objects sitting on it (doors,
@@ -1500,9 +1485,8 @@ LAB_0005e7e0:
     local_84 = cVar2 << 6 | local_84;
   }
   if (DAT_00086b20 != 0) {
-    *param_1 = local_84;
+    *cell = local_84;
   }
-  return;
 }
 
 
@@ -1511,19 +1495,16 @@ LAB_0005e7e0:
 // Was `int`, truncating the real DAT_002029cc pointer arithmetic result below
 // (same pointer-truncation pattern fixed elsewhere this session).
 // was FUN_00068100 -- (tileX,tileY) -> 4-byte tile record ptr in the level map, NULL if either coord is outside 0..63
-void *tilemap_lookup(param_1,param_2)
-short param_1;
-short param_2;
-
+void *tilemap_lookup(short tile_x, short tile_y)
 {
   char *iVar1;
 
   /* DAT_002029cc is set once, early (init_level_object_arena/ reset_level_object_arena, a real
      malloc'd pointer via ce_malloc), but has been separately observed (init_gameplay_session's own
      comment) to no longer hold that pointer by later points in a session... */
-  if ((((int)param_2 & 0xffffffc0U) + ((int)param_1 & 0xffffffc0U) == 0) &&
+  if ((((int)tile_y & 0xffffffc0U) + ((int)tile_x & 0xffffffc0U) == 0) &&
       ((uintptr_t)DAT_002029cc >= 0x10000)) {
-    iVar1 = DAT_002029cc + ((int)param_1 + param_2 * 0x40) * 4;
+    iVar1 = DAT_002029cc + ((int)tile_x + tile_y * 0x40) * 4;
   }
   else {
     iVar1 = 0;
@@ -1537,21 +1518,19 @@ short param_2;
 // was FUN_00064d34 -- tracks which phase of the per-ring wall/tile scan is current (recorded in
 // DAT_0023bb94, read back by bitmap.c's sprite-vs-wall depth-partition dispatch) and maintains a
 // rolling window of up to 8 recent wall-edge entries (DAT_0023b908/DAT_0023b928) across ring...
-void update_wall_partition_phase(param_1)
-char param_1;
-
+void update_wall_partition_phase(char phase)
 {
   uint uVar1;
   uint uVar2;
 
-  if (param_1 == -10) {
+  if (phase == -10) {
     ce_memset(&DAT_0023b940,0,0x252);
   }
   else {
-    if (param_1 == '\0') {
+    if (phase == '\0') {
       uVar1 = (uint)DAT_0023b908;
       if (uVar1 == 0) {
-        DAT_0023bb94 = param_1;
+        DAT_0023bb94 = phase;
         return;
       }
       uVar2 = (uint)DAT_0023b928;
@@ -1561,24 +1540,23 @@ char param_1;
       }
       ce_memmove(&DAT_0023b928 + uVar2 + 1,&DAT_0023b90a,(uVar1 & 0xffff) << 1);
       DAT_0023b928 = DAT_0023b928 + (short)uVar1;
-      DAT_0023bb94 = param_1;
+      DAT_0023bb94 = phase;
       return;
     }
-    if (param_1 == '\x01') {
+    if (phase == '\x01') {
       ce_memmove(&DAT_0023b908,&DAT_0023b928,0x12);
       DAT_0023b928 = 0;
-      DAT_0023bb94 = param_1;
+      DAT_0023bb94 = phase;
       return;
     }
-    if (param_1 != '\x02') {
-      DAT_0023bb94 = param_1;
+    if (phase != '\x02') {
+      DAT_0023bb94 = phase;
       return;
     }
   }
   ce_memset(&DAT_0023b908,0,0x12);
   ce_memset(&DAT_0023b928,0,0x12);
-  DAT_0023bb94 = param_1;
-  return;
+  DAT_0023bb94 = phase;
 }
 
 
@@ -1587,10 +1565,7 @@ char param_1;
 // was FUN_00064e3c -- bubble-sorts adjacent-index pairs in DAT_0023b8c8/DAT_0023b8c9 (see the
 // array-layout comment on their declaration) over [param_1, param_2) by each entry's depth key
 // (compute_feature_depth_key's output, cached in DAT_0023bb98).
-void sort_feature_pairs_by_depth(param_1,param_2)
-short param_1;
-int param_2;
-
+void sort_feature_pairs_by_depth(short first, int last)
 {
   int iVar1;
   int iVar2;
@@ -1598,8 +1573,8 @@ int param_2;
   int iVar4;
   int iVar5;
   
-  iVar5 = (param_2 + -1) * 0x10000 >> 0x10;
-  iVar1 = (int)param_1;
+  iVar5 = (last + -1) * 0x10000 >> 0x10;
+  iVar1 = (int)first;
   if (iVar1 <= iVar5) {
     iVar4 = iVar1;
     if (iVar5 < iVar1) goto LAB_00064ea8;
@@ -1619,7 +1594,6 @@ LAB_00064ea8:
       iVar4 = iVar1;
     } while (iVar1 <= iVar5);
   }
-  return;
 }
 
 
@@ -1627,20 +1601,17 @@ LAB_00064ea8:
 // was FUN_00064ec8 -- initializes DAT_0023b8c8[0..param_1) to the
 // identity order (0,1,2,...) before sort_feature_pairs_by_depth
 // reorders it.
-void init_feature_sort_order(param_1)
-short param_1;
-
+void init_feature_sort_order(short count)
 {
   int iVar1;
   
   iVar1 = 0;
-  if (0 < param_1) {
+  if (0 < count) {
     do {
       (&DAT_0023b8c8)[iVar1] = (char)iVar1;
       iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-    } while (iVar1 < param_1);
+    } while (iVar1 < count);
   }
-  return;
 }
 
 
@@ -1650,19 +1621,16 @@ short param_1;
 // was FUN_00065210 -- computes a rotated-quad corner's screen X/Y offset (param_1[1]/[2]) from a
 // source feature record's facing byte (param_2[3]) via the DAT_00086d68/DAT_00086d69
 // per-view-facing corner-index remap table...
-void resolve_billboard_corner_offset(param_1,param_2)
-byte *param_1;
-byte *param_2;
-
+void resolve_billboard_corner_offset(byte *corner, void *feature_ptr)
 {
-  *(undefined *)(param_1 + 1) =
-       (&DAT_00086d68)[((uint)(*(byte *)(param_2 + 3) >> 5) + DAT_0023b4a0 * 8) * 2] +
-       (&DAT_00086d68)[((*(byte *)(param_2 + 3) >> 2 & 7) + ((int)DAT_0023b4a0 + 1U & 3) * 8) * 2];
-  *(undefined *)(param_1 + 2) =
-       (&DAT_00086d69)[((uint)(*(byte *)(param_2 + 3) >> 5) + DAT_0023b4a0 * 8) * 2] +
-       (&DAT_00086d69)[((*(byte *)(param_2 + 3) >> 2 & 7) + ((int)DAT_0023b4a0 + 1U & 3) * 8) * 2];
-  *(byte *)(param_1 + 3) = *(byte *)(param_2 + 2) & 0x7f;
-  return;
+  byte *feature = (byte *)feature_ptr;
+  *(undefined *)(corner + 1) =
+       (&DAT_00086d68)[((uint)(*(byte *)(feature + 3) >> 5) + DAT_0023b4a0 * 8) * 2] +
+       (&DAT_00086d68)[((*(byte *)(feature + 3) >> 2 & 7) + ((int)DAT_0023b4a0 + 1U & 3) * 8) * 2];
+  *(undefined *)(corner + 2) =
+       (&DAT_00086d69)[((uint)(*(byte *)(feature + 3) >> 5) + DAT_0023b4a0 * 8) * 2] +
+       (&DAT_00086d69)[((*(byte *)(feature + 3) >> 2 & 7) + ((int)DAT_0023b4a0 + 1U & 3) * 8) * 2];
+  *(byte *)(corner + 3) = *(byte *)(feature + 2) & 0x7f;
 }
 
 
@@ -1670,26 +1638,23 @@ byte *param_2;
 // was FUN_000652e8 -- computes a feature's draw-order depth key (written to param_1[0]) from its
 // X/Y offsets (param_1[1]/[2]), combined differently depending on which ring-scan phase is current
 // (DAT_0023bb94, see update_wall_partition_phase).
-void compute_feature_depth_key(param_1)
-char * param_1;
-
+void compute_feature_depth_key(char *feature)
 {
   char cVar1;
   
   if (DAT_0023bb94 == '\0') {
-    cVar1 = param_1[2] << 1;
+    cVar1 = feature[2] << 1;
   }
   else if (DAT_0023bb94 == '\x01') {
-    cVar1 = param_1[2] + param_1[1] + '\x01';
+    cVar1 = feature[2] + feature[1] + '\x01';
   }
   else {
     if (DAT_0023bb94 != '\x02') {
       return;
     }
-    cVar1 = ('\b' - param_1[1]) + param_1[2];
+    cVar1 = ('\b' - feature[1]) + feature[2];
   }
-  *param_1 = cVar1;
-  return;
+  *feature = cVar1;
 }
 
 
@@ -1712,9 +1677,7 @@ void flush_pending_tile_features()
 
 
 // was FUN_00065394
-void emit_tile_features(param_1)
-ushort * param_1;
-
+void emit_tile_features(ushort *tile)
 {
   int iVar1;
   uint uVar2;
@@ -1795,7 +1758,7 @@ ushort * param_1;
     ce_memmove(&DAT_0023b940 + DAT_0023b4e4 * 0x12,&DAT_0023b928,2);
   }
   DAT_0023b928 = 0;
-  puVar5 = (ushort *)resolve_object_link(param_1);
+  puVar5 = (ushort *)resolve_object_link(tile);
   do {
     sVar3 = (short)iVar13;
     if ((puVar5 == (ushort *)0x0) || (local_30 = (int)(short)iVar16, 0x3b < local_30)) {
@@ -1869,7 +1832,7 @@ ushort * param_1;
                                       ((int)g_current_view->view_x & 0xffU)) >> 5);
             iVar16 = (int)(short)((int)((int)DAT_0023b920 -
                                        ((int)g_current_view->view_y & 0xffU)) >> 5);
-            iVar13 = (int)(short)((int)DAT_0023b91c - (int)g_current_view->view_elevation >> 5);
+            iVar13 = (int)(short)(((int)DAT_0023b91c - (int)g_current_view->view_elevation) >> 5);
             if (((iVar7 * iVar7 * 0x10000 >> 0x10) + (iVar16 * iVar16 * 0x10000 >> 0x10) +
                 (iVar13 * iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10 < 1) {
               sVar3 = 0;
@@ -1927,7 +1890,7 @@ LAB_000657b0:
         cVar8 = *pcVar14 + ' ';
         goto LAB_000657b0;
       }
-      (&DAT_0023b848)[iVar15] = *param_1 >> 6;
+      (&DAT_0023b848)[iVar15] = *tile >> 6;
       if (iVar15 < 0x3c) {
         local_38 = (short)((uint)((iVar15 + 1) * 0x10000) >> 0x10);
         goto LAB_000657f4;
@@ -1958,7 +1921,7 @@ LAB_0006576c:
         iVar13 = (int)local_38;
         goto LAB_00065770;
       }
-      uVar12 = uVar12 | *param_1 >> 6;
+      uVar12 = uVar12 | *tile >> 6;
       if ((uVar10 & 0x1c0) == 0x1c0) {
         uVar12 = uVar12 | 0x8000;
       }
@@ -1986,11 +1949,11 @@ LAB_0006570c:
 LAB_000657f4:
       iVar13 = (int)local_38;
     }
-    param_1 = puVar5 + 2;
+    tile = puVar5 + 2;
     /* Ghidra dropped the arg -- advance to the next object in the tile's
-       chain via the link field at puVar5+2 (== param_1), same as the
-       resolve_object_link(param_1) call that primes this loop. */
-    puVar5 = (ushort *)resolve_object_link(param_1);
+       chain via the link field at puVar5+2 (== tile), same as the
+       resolve_object_link(tile) call that primes this loop. */
+    puVar5 = (ushort *)resolve_object_link(tile);
     iVar16 = (local_30 + 1) * 0x10000 >> 0x10;
   } while( true );
 }
@@ -2007,12 +1970,9 @@ LAB_000657f4:
 /* was declared with empty parens and called tilemap_lookup() with no explicit args, relying on its
    2 real args still sitting in the same ABI registers/stack slots at the nested call (a K&R
    "dropped-arg" register-forwarding idiom used elsewhere in this file, e.g. the DAT_0023aecc fix). */
-byte tile_is_no_magic(param_1,param_2)
-int param_1;
-int param_2;
-
+byte tile_is_no_magic(int tile_x, int tile_y)
 {
-  uw_tile_t *tile = (uw_tile_t *)tilemap_lookup(param_1,param_2);
+  uw_tile_t *tile = (uw_tile_t *)tilemap_lookup(tile_x,tile_y);
   return tile->no_magic;
 }
 
@@ -2020,14 +1980,12 @@ int param_2;
 /* Return type was `int`, truncating the real 64-bit pointer every
    caller casts back to (byte *) and dereferences. */
 // was FUN_00040c5c
-void *get_texture_page(param_1)
-short param_1;
-
+void *get_texture_page(short page_index)
 {
   int iVar1;
   char **ppcVar2;
 
-  iVar1 = (int)param_1;
+  iVar1 = (int)page_index;
   if (iVar1 < 0x30) {
     return DAT_0023ae38 + iVar1 * 0x1000;
   }
@@ -2050,9 +2008,7 @@ short param_1;
 
 
 // was FUN_00060aa0
-void emit_tile_objects(param_1)
-ushort * param_1;
-
+void emit_tile_objects(ushort *tile)
 {
   byte bVar1;
   char cVar2;
@@ -2092,21 +2048,21 @@ ushort * param_1;
   int iVar35;
   ushort local_54;
   
-  if (getenv("UW_DEBUG_THROW") && ((*param_1 & 0x1ff) == 0x80 || (*param_1 & 0x1ff) == 0x16e))
-    fprintf(stderr, "[throw-emit] ENTER param_1=%p type=0x%x is_player=%d flag4000=%d in_arena=%d DAT_002046c4=%p\n",
-            (void *)param_1, (unsigned)(*param_1 & 0x1ff), param_1 == g_player_object,
-            (*param_1 & 0x4000) == 0x4000, (int)object_ptr_in_arena((char *)param_1), (void *)DAT_002046c4);
-  if (param_1 == g_player_object) {
+  if (getenv("UW_DEBUG_THROW") && ((*tile & 0x1ff) == 0x80 || (*tile & 0x1ff) == 0x16e))
+    fprintf(stderr, "[throw-emit] ENTER tile=%p type=0x%x is_player=%d flag4000=%d in_arena=%d DAT_002046c4=%p\n",
+            (void *)tile, (unsigned)(*tile & 0x1ff), tile == g_player_object,
+            (*tile & 0x4000) == 0x4000, (int)object_ptr_in_arena((char *)tile), (void *)DAT_002046c4);
+  if (tile == g_player_object) {
     return;
   }
-  if ((*param_1 & 0x4000) == 0x4000) {
+  if ((*tile & 0x4000) == 0x4000) {
     return;
   }
   if (DAT_0023b830 != 0) {
     *(short *)((intptr_t)g_pick_tile_off_backing + (uint)DAT_0023b830 * 2 + 2) =
-         DAT_0023b8c4 + (short)(DAT_0023b4ec - DAT_0023b814 >> 2);
-    uVar15 = encode_object_slot_index(param_1);
-    puVar12 = DAT_00110fc0;
+         DAT_0023b8c4 + (short)((DAT_0023b4ec - DAT_0023b814) >> 2);
+    uVar15 = encode_object_slot_index(tile);
+    puVar12 = (ushort *)DAT_00110fc0;
     *(undefined2 *)(&DAT_0023b676 + (uint)DAT_0023b830 * 2) = uVar15;
     *puVar12 = 0xae;
     DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -2119,10 +2075,10 @@ ushort * param_1;
       DAT_0023b830 = 1;
     }
   }
-  iVar17 = object_ptr_in_arena(param_1);
-  if ((iVar17 != 0) && ((*param_1 & 0x1c0) != 0x40)) {
-    bVar13 = *(byte *)((char *)param_1 + 0xb);
-    bVar1 = *(byte *)((char *)param_1 + 0xd);
+  iVar17 = object_ptr_in_arena(tile);
+  if ((iVar17 != 0) && ((*tile & 0x1c0) != 0x40)) {
+    bVar13 = *(byte *)((char *)tile + 0xb);
+    bVar1 = *(byte *)((char *)tile + 0xd);
     if (DAT_0023b4a0 == '\0') {
       local_54 = (ushort)bVar13;
       uVar16 = (ushort)bVar1;
@@ -2349,7 +2305,7 @@ ushort * param_1;
       fprintf(stderr, "[names] scan complete\n");
     }
   }
-  uVar27 = (uint)*param_1;
+  uVar27 = (uint)*tile;
   bVar1 = (&DAT_00202c9a)[(uVar27 & 0x1ff) * 0xd];
   bVar13 = bVar1 & 3;
   if (getenv("UW_DEBUG_OBJCLASS")) {
@@ -2357,7 +2313,7 @@ ushort * param_1;
     int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
     fprintf(stderr, "[objclass] id=0x%03x renderclass=%d prop_byte=0x%02x quality=%d heading=%d namegrp=%d scrx=%d scry=%d scrz=%d names=",
             (int)(uVar27 & 0x1ff), (int)bVar13, (int)bVar1,
-            (int)((byte)param_1[3] & 0x3f), (int)(param_1[1] >> 6 & 7), _grp,
+            (int)((byte)tile[3] & 0x3f), (int)(tile[1] >> 6 & 7), _grp,
             (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c);
     { int _k;
       for (_k = 0; _k < 6; _k++) {
@@ -2369,10 +2325,10 @@ ushort * param_1;
   }
   if ((uVar27 & 0x1c0) == 0x1c0) {
     DAT_0023b804 = 1;
-    uVar27 = (byte)param_1[3] & 0x3f;
+    uVar27 = (byte)tile[3] & 0x3f;
     if ((bVar1 & 3) == 0) {
       if ((short)uVar27 == 0) {
-        uVar27 = (int)(short)*param_1 & 0x1ff;
+        uVar27 = (int)(short)*tile & 0x1ff;
       }
       else {
         uVar27 = uVar27 + 0x1c0;
@@ -2420,7 +2376,7 @@ LAB_emit_mesh_sprite_quad:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_0023b91c;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 0x7f8;
+    *DAT_00110fc0 = -8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     decode_tile_object_billboard_texture(uVar27,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     /* DAT_000d9ed8/DAT_000d9930[angle] = sin/cos(angle degrees) (see build_trig_tables). Normally
@@ -2432,7 +2388,7 @@ LAB_emit_mesh_sprite_quad:
         _angle_idx = g_billboard_angle_override_deg;
         g_billboard_angle_override_deg = -1;
       }
-      if (getenv("UW_DEBUG_OBJPOS") && (*param_1 & 0x1ff) == 0x166)
+      if (getenv("UW_DEBUG_OBJPOS") && (*tile & 0x1ff) == 0x166)
         fprintf(stderr, "[decalangle] overridden=%d angle_idx=%d cam_yaw=%d\n",
                 _overridden, _angle_idx, (int)DAT_000db44c);
       uVar30 = (&DAT_000d9ed8)[_angle_idx];
@@ -2614,13 +2570,13 @@ LAB_00061d34:
     DAT_0023b83c = DAT_0023b83c + 1;
     DAT_000a85d4 = DAT_0023b83c;
     DAT_000a85d0 = iVar17 + 1;
-    if ((getenv("UW_DEBUG_OBJPOS") && (*param_1 & 0x1ff) == 0x166) ||
-        (getenv("UW_DEBUG_DOOR") && (*param_1 & 0x1ff) == 0x140)) {
+    if ((getenv("UW_DEBUG_OBJPOS") && (*tile & 0x1ff) == 0x166) ||
+        (getenv("UW_DEBUG_DOOR") && (*tile & 0x1ff) == 0x140)) {
       float _fx, _fy, _fz;
       unsigned int _bx = (unsigned int)uVar22, _by = (unsigned int)uVar19, _bz = (unsigned int)uVar25;
       memcpy(&_fx, &_bx, 4); memcpy(&_fy, &_by, 4); memcpy(&_fz, &_bz, 4);
       fprintf(stderr, "[objpos-final] id=0x%03x uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f DAT_00202508(w)=%d DAT_002022f8(h)=%d\n",
-              (unsigned)(*param_1 & 0x1ff), uVar27, _fx, _fy, _fz, (int)(short)DAT_00202508, (int)(short)DAT_002022f8);
+              (unsigned)(*tile & 0x1ff), uVar27, _fx, _fy, _fz, (int)(short)DAT_00202508, (int)(short)DAT_002022f8);
     }
     return;
   }
@@ -2633,9 +2589,9 @@ LAB_00061d34:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_0023b91c;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 0x7f8;
+    *DAT_00110fc0 = -8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    uVar29 = *(byte *)((char *)param_1 + 0x15) & 0x3f;
+    uVar29 = *(byte *)((char *)tile + 0x15) & 0x3f;
     { const char *_fs = getenv("UW_FORCE_CRITTER_STATE"); if (_fs) uVar29 = (uint)atoi(_fs); }
     /* Ghidra modelled the divmod's remainder (ARM r1) as `extraout_r1`, which was never assigned ->
        wild index into the 0x20-entry DAT_00086cc0 direction table (crash when an object first came
@@ -2643,13 +2599,13 @@ LAB_00061d34:
     {
       short _col_angle = g_current_view->view_facing;
       short _quad_term = *(short *)(&DAT_00086a18 + DAT_0023b4a0 * 2);
-      int _dm = ((param_1[1] >> 5 & 0x1c) -
+      int _dm = ((tile[1] >> 5 & 0x1c) -
                  ((int)((int)_col_angle +
                         (uint)*(ushort *)(&DAT_00086a18 + DAT_0023b4a0 * 2)) >> 0xb)) + 0x20;
       bVar13 = (&DAT_00086cc0)[((_dm % 0x20) + 0x20) % 0x20];
       if (getenv("UW_DEBUG_CRITTER"))
         fprintf(stderr, "[critter] dirtable: id=0x%03x own_heading_bits=%d col_angle=%d quad_term=%d sum=%d shifted=%d _dm=%d bVar13=%d\n",
-                uVar27 & 0x1ff, (int)(param_1[1] >> 5 & 0x1c),
+                uVar27 & 0x1ff, (int)(tile[1] >> 5 & 0x1c),
                 (int)_col_angle, (int)_quad_term, (int)_col_angle + (int)(unsigned short)_quad_term,
                 (int)((int)((int)_col_angle + (uint)(unsigned short)_quad_term) >> 0xb), _dm, (int)bVar13);
     }
@@ -2668,12 +2624,12 @@ LAB_00061d34:
     }
     if (getenv("UW_DEBUG_CRITTER"))
       fprintf(stderr, "[critter] emit_tile_objects: id=0x%03x type_idx=%d raw_slot=%d own_heading_bits=%d cam_yaw=%d quadrant=%d dir(uVar29)=%d\n",
-              uVar27 & 0x1ff, uVar27 & 0x3f, *(byte *)((char *)param_1 + 0x15) & 0x3f,
-              (int)(param_1[1] >> 5 & 0x1c), (int)DAT_000db44c, (int)DAT_0023b4a0, (int)uVar29);
+              uVar27 & 0x1ff, uVar27 & 0x3f, *(byte *)((char *)tile + 0x15) & 0x3f,
+              (int)(tile[1] >> 5 & 0x1c), (int)DAT_000db44c, (int)DAT_0023b4a0, (int)uVar29);
     if (getenv("UW_DEBUG_CRITTER_Z"))
       fprintf(stderr, "[critter-z] id=0x%03x world_x(b904)=%d world_z(b920)=%d HEIGHT(b91c)=%d raw_b9=%d raw_b13=%d\n",
               uVar27 & 0x1ff, (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c,
-              (int)*(byte *)((char *)param_1 + 9), (int)*(byte *)((char *)param_1 + 0x13));
+              (int)*(byte *)((char *)tile + 9), (int)*(byte *)((char *)tile + 0x13));
     if (getenv("UW_DEBUG_CRITTER_NAME")) {
       static int _named = 0;
       if (!_named) {
@@ -2681,10 +2637,10 @@ LAB_00061d34:
         int _id = uVar27 & 0x1ff;
         int _iv = _id * 0xd;
         int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
-        int _qual = (byte)param_1[2] & 0x3f;
+        int _qual = (byte)tile[2] & 0x3f;
         int _off = 0;
         if (_qual != 0) {
-          _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)param_1[2] >> 4 & 3) + 1);
+          _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)tile[2] >> 4 & 3) + 1);
         }
         char *_nm = (char *)get_message_string(_grp * 6 + _off | 0xa00);
         fprintf(stderr, "[critter-name] id=0x%03x namegrp=%d name='%s'\n",
@@ -2692,7 +2648,7 @@ LAB_00061d34:
       }
     }
     {
-      short _frame_arg = (byte)param_1[6] >> 4;
+      short _frame_arg = (byte)tile[6] >> 4;
       const char *_ff = getenv("UW_FORCE_CRITTER_FRAME");
       if (_ff) _frame_arg = (short)atoi(_ff);
       resolve_critter_sprite_tier(uVar27 & 0x3f,uVar29,_frame_arg,(uint)DAT_0023bc88 * (int)DAT_00086b30);
@@ -2847,8 +2803,8 @@ LAB_00061d34:
       if (getenv("UW_DEBUG_DOOR_POS"))
         fprintf(stderr, "[doorpos] anchor=(%d,%d,%d) tile_word0=0x%04x\n",
                 (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,
-                (unsigned)*param_1);
-      emit_anim_object_frames(uVar27 & 7, param_1);
+                (unsigned)*tile);
+      emit_anim_object_frames(uVar27 & 7, tile);
       return;
     }
     /* DAT_00086c80 (the real per-sign-variant -> billboard-catalog index table) has now been
@@ -2864,21 +2820,21 @@ LAB_00061d34:
     /* Confirmed correct: calling emit_catalog_object directly with the real table value is right --
        matches the exact 4-argument call shape the two other real callers use... */
     /* frame_or_texid=-1, exactly as the real call site (FUN_00060aa0: `FUN_00061e60(uVar26 & 0xff,
-       param_1, -1, -1)`): emit_catalog_object's own catalog-2 branch resolves a_bridge's TMOBJ
+       tile, -1, -1)`): emit_catalog_object's own catalog-2 branch resolves a_bridge's TMOBJ
        30/31 plank frame (or its flags>=2 floor texture) from the object's flags. */
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[sign] variant=%d table_val=%d heading=%d -> emit_catalog_object(catalog_idx=%d)\n",
               iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-              (int)((param_1[1] >> 7 & 7) << 1),
+              (int)((tile[1] >> 7 & 7) << 1),
               (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
     emit_catalog_object((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-                        param_1, (param_1[1] >> 7 & 7) << 1, -1);
+                        tile, (tile[1] >> 7 & 7) << 1, -1);
     return;
   }
   if (bVar13 != 3) {
     return;
   }
-  if ((*param_1 & 0x30) == 0x30) {
+  if ((*tile & 0x30) == 0x30) {
     if (DAT_0023b830 == 0 && DAT_00086b2c == 0) {
       *DAT_00110fc0 = 2;
       DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -2891,7 +2847,7 @@ LAB_00061d34:
     }
     /* Same heading fix as the generic DAT_00086c80 dispatch above (see its own comment) -- this
        call was ALSO passing heading=-1 (camera-relative billboard angle) unconditionally. */
-    emit_catalog_object(0x14,param_1,(param_1[1] >> 7 & 7) << 1,(uVar27 & 0xf) + (uint)DAT_00202734);
+    emit_catalog_object(0x14,tile,(tile[1] >> 7 & 7) << 1,(uVar27 & 0xf) + (uint)DAT_00202734);
     if (DAT_0023b830 != 0 || DAT_00086b2c != 0) {
       return;
     }
@@ -2906,12 +2862,12 @@ LAB_00061d34:
     return;
   }
   DAT_0023b818 = 0xe0;
-  emit_diagonal_wall_texture_select(0,DAT_0023b4e0,4,(byte)param_1[3] & 0x3f);
+  emit_diagonal_wall_texture_select(0,DAT_0023b4e0,4,(byte)tile[3] & 0x3f);
   *DAT_00110fc0 = 0xb2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = DAT_0023b81c;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  cVar2 = *(char *)(&DAT_0023add0 + ((byte)param_1[3] & 0x3f));
+  cVar2 = *(char *)(&DAT_0023add0 + ((byte)tile[3] & 0x3f));
   if ((cVar2 == '\x03') || (cVar2 == '\x04')) {
     DAT_0023b834 = 3;
   }
@@ -2937,7 +2893,7 @@ LAB_00060f54:
   /* Same heading fix as the generic DAT_00086c80 dispatch above (see its
      own comment). Class-3's other sub-branch (force field/special tmap
      obj). */
-  emit_catalog_object(0x16,param_1,(param_1[1] >> 7 & 7) << 1,(byte)param_1[3] & 0x3f);
+  emit_catalog_object(0x16,tile,(tile[1] >> 7 & 7) << 1,(byte)tile[3] & 0x3f);
   if (!bVar14) {
     return;
   }
@@ -2949,5 +2905,4 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
 }

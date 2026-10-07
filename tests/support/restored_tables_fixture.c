@@ -2,7 +2,7 @@
 undefined2 DAT_00100630_backing[32];
 undefined1 DAT_00202800_backing[256], DAT_00202750_backing[128];
 undefined4 DAT_0024cff8;
-ushort *DAT_0024cfd4;
+char *DAT_0024cfd4;
 int restored_spawn_id, restored_scan_count;
 int restored_message_kind, restored_message_id, restored_message_lparam;
 undefined4 restored_message_window, restored_message_wparam;
@@ -33,10 +33,9 @@ void restored_tables_fixture_reset(void)
     TEST_ASSERT_EQUAL_UINT(128, fread(DAT_00202750_backing, 1, 128, file));
     fclose(file);
 }
-void *spawn_new_object(int id, int argument)
+void * spawn_new_object(uint id, int argument)
 { TEST_ASSERT_EQUAL_INT(0, argument); restored_spawn_id=id; return NULL; }
-void scan_area_ahead_of_object(ushort *source, int radius, codeval *callback,
-                               int a, int b, int mode)
+void scan_area_ahead_of_object(void *source, int radius, int (*callback)(), int a, byte b, char mode)
 {
     TEST_ASSERT_EQUAL_PTR(DAT_0024cfd4, source);
     TEST_ASSERT_EQUAL_INT(1, radius);
@@ -48,21 +47,21 @@ void scan_area_ahead_of_object(ushort *source, int radius, codeval *callback,
     }
 }
 
-undefined4 handle_keyboard_message(undefined4 window, int message, uint key)
+int handle_keyboard_message(int window, int message, uint key)
 {
     restored_message_kind=1; restored_message_window=window;
     restored_message_id=message; restored_message_wparam=key;
     return 0;
 }
-undefined4 handle_mouse_message(undefined4 window, uint message, undefined4 buttons, int position)
+int handle_mouse_message(int window, uint message, uint buttons, int position)
 {
     restored_message_kind=2; restored_message_window=window;
     restored_message_id=message; restored_message_wparam=buttons;
     restored_message_lparam=position;
     return 0;
 }
-undefined4 blit_framebuffer_to_gx_display(void) { restored_message_kind=3; return 0; }
-undefined4 shutdown_game_resources(void) { restored_message_kind=4; return 0; }
+int blit_framebuffer_to_gx_display(void) { restored_message_kind=3; return 0; }
+int shutdown_game_resources(void) { restored_message_kind=4; return 0; }
 int GXSuspend(void) { restored_message_kind=5; return 0; }
 int GXResume(void) { restored_message_kind=6; return 0; }
 long DefWindowProcW(void) { restored_message_kind=7; return 0; }

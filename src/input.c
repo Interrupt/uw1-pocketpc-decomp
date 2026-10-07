@@ -20,8 +20,8 @@ static short DAT_00202074;
 short g_mouse_y;
 short g_mouse_x;
 short DAT_00204840;
-static char *DAT_00202890;
-static char *DAT_0020289c;
+static short *DAT_00202890;
+static short *DAT_0020289c;
 /* Real-pointer side table for the keybinding records' handler field. */
 static void (*g_keybind_handler[512])(int);
 static int g_keybind_handler_n;
@@ -32,7 +32,7 @@ static int g_click_region_handler_n;
 static undefined2 DAT_00202898;
 static undefined2 DAT_0020288c;
 static undefined2 DAT_00202894;
-static undefined2 DAT_00085a70;
+static short DAT_00085a70;
 /* Per-mode "sticky redraw bits" mask read by dispatch_sticky_mode_handlers right after it finishes
    dispatching DAT_00201c84's currently-set bits through DAT_00085668... */
 static const unsigned short DAT_00085728_real_table[3] = { 0x3800, 0x1000, 0x0000 };
@@ -97,24 +97,21 @@ HWND__ *DAT_0023c548;
 
 // was FUN_0003c524 -- set the player's locomotion state from a collision-state mask (param_1): when
 // it changes, pick the movement mode (walk / swim / fly / fall) via apply_movement_mode_profile.
-void set_locomotion_state(param_1,param_2)
-ushort param_1;
-int param_2;
-
+void set_locomotion_state(ushort collision_mask, int mode_flag)
 {
   uint uVar1;
   undefined1 uVar2;
   int iVar3;
   
-  uVar1 = (uint)(short)param_1;
+  uVar1 = (uint)(short)collision_mask;
   if (getenv("UW_DEBUG_LOCO"))
-    fprintf(stderr, "[loco] param_1=0x%x param_2=%d DAT_00202084(old)=0x%x fallflag=%d vvel=%d\n",
-            (unsigned)param_1, param_2, (unsigned)DAT_00202084,
+    fprintf(stderr, "[loco] collision_mask=0x%x mode_flag=%d DAT_00202084(old)=0x%x fallflag=%d vvel=%d\n",
+            (unsigned)collision_mask, mode_flag, (unsigned)DAT_00202084,
             (int)g_fall_accel, (int)g_vertical_velocity);
-  if ((DAT_00202084 != uVar1) || (param_2 != 0)) {
+  if ((DAT_00202084 != uVar1) || (mode_flag != 0)) {
     iVar3 = 0;
     uVar2 = 0;
-    DAT_00202084 = param_1;
+    DAT_00202084 = collision_mask;
     if ((uVar1 & 0x22) == 0) {
       if ((uVar1 & 4) == 0) {
         if ((uVar1 & 0x10) != 0) {
@@ -138,9 +135,9 @@ int param_2;
       }
     }
     else if ((DAT_0020208c & 8) == 0) {
-      /* Was `apply_swim_wade_pose()` with no argument -- apply_swim_wade_pose reads its `param_1 &
+      /* Was `apply_swim_wade_pose()` with no argument -- apply_swim_wade_pose reads its `collision_mask &
          2` to decide between the two swim/wade sub-states... */
-      iVar3 = apply_swim_wade_pose(param_1);
+      iVar3 = apply_swim_wade_pose(collision_mask);
       uVar2 = 1;
     }
     if (getenv("UW_DEBUG_LOCO"))
@@ -181,7 +178,6 @@ int param_2;
       }
     }
   }
-  return;
 }
 
 
@@ -190,11 +186,7 @@ int param_2;
 // was FUN_0003d94c -- resolve a movement mode (param_1 = g_movement_mode) into a travel direction
 // (DAT_00201c78) + step magnitude (*param_3): 0 stop 1 analog move/turn (DAT_0023bf48/4c rates) 6/7
 // jump 8 move + face 180 9 sidestep left 10 sidestep right...
-void resolve_move_vector(param_1,param_2,param_3)
-undefined2 param_1;
-short param_2;
-short * param_3;
-
+void resolve_move_vector(short movement_mode, short step_scale, short *out_step)
 {
   short sVar1;
   int iVar2;
@@ -205,9 +197,9 @@ short * param_3;
   
   sVar3 = DAT_00201c70;
   sVar1 = DAT_0020207a;
-  switch(param_1) {
+  switch(movement_mode) {
   case 0:
-    *param_3 = 0;
+    *out_step = 0;
     sVar3 = DAT_00201c78;
     break;
   case 1:
@@ -215,7 +207,7 @@ short * param_3;
     if (iVar4 < 0) {
       iVar4 = iVar4 + 3;
     }
-    iVar4 = (iVar4 >> 2) * (int)DAT_00086e68 * (int)param_2;
+    iVar4 = (iVar4 >> 2) * (int)DAT_00086e68 * (int)step_scale;
     if (iVar4 < 0) {
       iVar4 = iVar4 + 3;
     }
@@ -225,7 +217,7 @@ short * param_3;
       iVar4 = iVar4 + 0x1f;
     }
     DAT_00201c70 = sVar3;
-    *param_3 = (short)(iVar4 >> 5);
+    *out_step = (short)(iVar4 >> 5);
     DAT_00202088 = 0;
     break;
   case 2:
@@ -259,7 +251,7 @@ short * param_3;
       iVar4 = iVar4 + 1;
     }
     g_jump_ascent_timer = (short)(iVar4 >> 1);
-    *param_3 = g_jump_ascent_timer;
+    *out_step = g_jump_ascent_timer;
     DAT_00202088 = 0;
     goto LAB_0003dafc;
   case 7:
@@ -299,7 +291,7 @@ LAB_0003dafc:
     sVar3 = DAT_00201c70 + 0x4000;
     DAT_00202088 = 1;
 LAB_0003da74:
-    *param_3 = sVar1;
+    *out_step = sVar1;
     break;
   case 0xb:
     sVar3 = DAT_00201c70;
@@ -315,7 +307,6 @@ LAB_0003db80:
     sVar3 = DAT_00201c70;
   }
   DAT_00201c78 = sVar3;
-  return;
 }
 
 
@@ -323,14 +314,10 @@ LAB_0003db80:
 
 // was FUN_0004213c -- append a (keycode, arg, mode-mask, handler) record
 // to the DAT_0020289c keybinding table.
-int register_key_binding(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-void *param_4;   /* was undefined4 -- the handler function pointer; 32-bit truncated every real 64-bit callee address
-   at the call site (move_key_directional_step etc.), so the side-table entry was an uncallable
-   low-32-bits value. */
-
+/* was undefined4 -- the handler function pointer; 32-bit truncated every real 64-bit callee
+   address at the call site (move_key_directional_step etc.), so the side-table entry was an
+   uncallable low-32-bits value. */
+int register_key_binding(int key_code, int arg, int mode_mask, void *handler)
 {
   short sVar1;
   int iVar2;
@@ -350,22 +337,22 @@ void *param_4;   /* was undefined4 -- the handler function pointer; 32-bit trunc
   DAT_0020289c = pvVar4;
   /* real 64-bit handler, indexed by record position (iVar2 == old count) */
   if ((uint)iVar2 < 512) {
-    g_keybind_handler[iVar2] = (void (*)(int))param_4;
+    g_keybind_handler[iVar2] = (void (*)(int))handler;
     if (iVar2 + 1 > g_keybind_handler_n) g_keybind_handler_n = iVar2 + 1;
   }
   *(undefined1 *)(iVar3 + -0xc) = (char)DAT_00085a70;
   *(char *)(iVar3 + -0xb) = (char)((ushort)sVar1 >> 8);
   DAT_00085a70 = DAT_00085a70 + -1;
-  *(char *)(iVar3 + -7) = (char)((uint)param_2 >> 8);
-  *(char *)(iVar3 + -5) = (char)((uint)param_3 >> 8);
-  *(char *)(iVar3 + -3) = (char)((uintptr_t)param_4 >> 8);
-  *(char *)(iVar3 + -8) = (char)param_2;
-  *(char *)(iVar3 + -2) = (char)((uintptr_t)param_4 >> 0x10);
-  *(char *)(iVar3 + -6) = (char)param_3;
-  *(char *)(iVar3 + -4) = (char)(uintptr_t)param_4;
-  *(char *)(iVar3 + -1) = (char)((uintptr_t)param_4 >> 0x18);
-  *(char *)(iVar3 + -9) = (char)((uint)param_1 >> 8);
-  *(char *)(iVar3 + -10) = (char)param_1;
+  *(char *)(iVar3 + -7) = (char)((uint)arg >> 8);
+  *(char *)(iVar3 + -5) = (char)((uint)mode_mask >> 8);
+  *(char *)(iVar3 + -3) = (char)((uintptr_t)handler >> 8);
+  *(char *)(iVar3 + -8) = (char)arg;
+  *(char *)(iVar3 + -2) = (char)((uintptr_t)handler >> 0x10);
+  *(char *)(iVar3 + -6) = (char)mode_mask;
+  *(char *)(iVar3 + -4) = (char)(uintptr_t)handler;
+  *(char *)(iVar3 + -1) = (char)((uintptr_t)handler >> 0x18);
+  *(char *)(iVar3 + -9) = (char)((uint)key_code >> 8);
+  *(char *)(iVar3 + -10) = (char)key_code;
   return (int)CONCAT11(*(undefined1 *)(iVar3 + -0xb),*(undefined1 *)(iVar3 + -0xc));
 }
 
@@ -373,9 +360,7 @@ void *param_4;   /* was undefined4 -- the handler function pointer; 32-bit trunc
 
 // was FUN_0004221c -- remove a keybinding (and its mouse-region sibling)
 // by record id, compacting the table.
-void unregister_key_binding(param_1)
-short param_1;
-
+void unregister_key_binding(short binding_id)
 {
   bool bVar1;
   int iVar2;
@@ -388,19 +373,19 @@ short param_1;
   short *psVar9;
   int iVar10;
   
-  if (param_1 == 0) {
+  if (binding_id == 0) {
     return;
   }
   iVar10 = 1;
   sVar6 = 1;
-  if (param_1 < 1) {
+  if (binding_id < 1) {
     psVar9 = &DAT_0020288c;
     iVar5 = (int)DAT_0020288c;
     psVar7 = DAT_0020289c;
     if (0 < iVar5) {
       do {
         sVar6 = (short)iVar10;
-        if (*psVar7 == param_1) break;
+        if (*psVar7 == binding_id) break;
         iVar3 = (int)sVar6;
         iVar2 = (iVar3 + 1) * 0x10000;
         psVar7 = psVar7 + 6;
@@ -447,7 +432,7 @@ short param_1;
     if (0 < iVar5) {
       do {
         sVar6 = (short)iVar10;
-        if (*psVar7 == param_1) break;
+        if (*psVar7 == binding_id) break;
         iVar3 = (int)sVar6;
         iVar2 = (iVar3 + 1) * 0x10000;
         psVar7 = psVar7 + 9;
@@ -508,17 +493,15 @@ LAB_00042510:
     DAT_00202890 = (short *)0x0;
   }
   report_fatal_error_and_exit(uVar4);
-  return;
 }
 
 
 
 // was FUN_0004251c -- per-frame input pump: read the pending input code,
 // dispatch a mouse button to a click region or a key to a keybinding.
-void poll_input_bindings(param_1)
-undefined1 * param_1;
-
+void poll_input_bindings(void *input_state_ptr)
 {
+  byte *input_state = (byte *)input_state_ptr;
   undefined4 uVar1;
   /* Was `int`, truncating the real DAT_00202890 pointer arithmetic result below -- same
      pointer-truncation pattern already fixed in this function's own sibling dispatch_key_binding
@@ -535,51 +518,51 @@ undefined1 * param_1;
   if (-1 < (short)uVar1) {
     if ((short)uVar1 < 4) {
       get_click_position(&local_28,&local_26);
-      param_1[6] = (char)uVar1;
-      param_1[7] = (char)((uint)uVar1 >> 8);
+      input_state[6] = (char)uVar1;
+      input_state[7] = (char)((uint)uVar1 >> 8);
       /* The mouse-button-state field of the DAT_00085a6c struct is at BYTE offset 12: every reader
          (handle_game_view_click's click-and-hold walk, spawn_new_object, ...) does `*(ushort
          *)(DAT_00085a6c + 6)`, which is byte 12 because DAT_00085a6c is typed `short *`... */
-      param_1[12] = (char)uVar1;
-      param_1[13] = (char)((uint)uVar1 >> 8);
+      input_state[12] = (char)uVar1;
+      input_state[13] = (char)((uint)uVar1 >> 8);
       get_click_position(&local_28,&local_26);
-      param_1[4] = 1;
-      param_1[5] = 0;
+      input_state[4] = 1;
+      input_state[5] = 0;
       iVar4 = DAT_00202898 + -1;
       iVar3 = iVar4 * 0x10000 >> 0x10;
       if (getenv("UW_DEBUG_CLICKREGION"))
         fprintf(stderr, "[clickregion] click at (%d,%d), scanning %d regions\n", (int)local_28, (int)local_26, (int)DAT_00202898);
       if (-1 < iVar3) {
         do {
-          pcVar2 = DAT_00202890 + iVar3 * 0x12;
+          pcVar2 = (char *)DAT_00202890 + iVar3 * 0x12;
           if (getenv("UW_DEBUG_CLICKREGION"))
             fprintf(stderr, "[clickregion]   region %d: x1=%d y2=%d x2=%d y1=%d mask=0x%x active_mask=0x%x handler_flag=%d\n",
                     (int)iVar3, (int)*(short *)(pcVar2 + 6), (int)*(short *)(pcVar2 + 4),
                     (int)*(short *)(pcVar2 + 2), (int)*(short *)(pcVar2 + 8),
-                    (unsigned)*(ushort *)(pcVar2 + 0xc), (unsigned)*(ushort *)(param_1 + 8),
+                    (unsigned)*(ushort *)(pcVar2 + 0xc), (unsigned)*(ushort *)(input_state + 8),
                     (int)*(int *)(pcVar2 + 0xe));
           if ((((*(short *)(pcVar2 + 6) <= local_28) && (local_26 <= *(short *)(pcVar2 + 8))) &&
               (local_28 <= *(short *)(pcVar2 + 2))) &&
              (((*(short *)(pcVar2 + 4) <= local_26 &&
-               ((*(ushort *)(pcVar2 + 0xc) & *(ushort *)(param_1 + 8)) != 0)) &&
+               ((*(ushort *)(pcVar2 + 0xc) & *(ushort *)(input_state + 8)) != 0)) &&
               (*(int *)(pcVar2 + 0xe) != 0)))) {
             {
               int _cri = (int)(short)iVar4;   /* matched record index */
               iVar3 = (short)iVar4 * 0x12;
-              iVar4 = (int)local_28 - (int)*(short *)(iVar3 + DAT_00202890 + 6);
-              *param_1 = (char)iVar4;
-              param_1[1] = (char)((uint)iVar4 >> 8);
-              iVar4 = (int)*(short *)(iVar3 + DAT_00202890 + 8) - (int)local_26;
-              param_1[2] = (char)iVar4;
-              param_1[3] = (char)((uint)iVar4 >> 8);
+              iVar4 = (int)local_28 - (int)*(short *)((char *)DAT_00202890 + iVar3 + 6);
+              *input_state = (char)iVar4;
+              input_state[1] = (char)((uint)iVar4 >> 8);
+              iVar4 = (int)*(short *)((char *)DAT_00202890 + iVar3 + 8) - (int)local_26;
+              input_state[2] = (char)iVar4;
+              input_state[3] = (char)((uint)iVar4 >> 8);
               if (getenv("UW_DEBUG_CLICKREGION"))
                 fprintf(stderr, "[clickregion]   MATCHED region %d -> handler=%p local_offset=(%d,%d)\n",
                         _cri, (void *)(_cri < 128 ? g_click_region_handler[_cri] : 0),
-                        (int)(char)*param_1, (int)(char)param_1[2]);
+                        (int)(char)*input_state, (int)(char)input_state[2]);
               /* call the real 64-bit handler, not the truncated in-record
                  pointer (see g_click_region_handler). */
               if ((uint)_cri < 128 && g_click_region_handler[_cri] != 0) {
-                g_click_region_handler[_cri]((int)*(short *)(iVar3 + DAT_00202890 + 10));
+                g_click_region_handler[_cri]((int)*(short *)((char *)DAT_00202890 + iVar3 + 10));
               }
             }
             return;
@@ -590,21 +573,18 @@ undefined1 * param_1;
       }
     }
     else {
-      param_1[4] = 0;
-      param_1[5] = 0;
-      dispatch_key_binding(param_1,uVar1);
+      input_state[4] = 0;
+      input_state[5] = 0;
+      dispatch_key_binding(input_state,uVar1);
     }
   }
-  return;
 }
 
 
 
 
 // was FUN_00057604
-void wait_for_click_release(param_1)
-int param_1;
-
+void wait_for_click_release(int mode)
 {
   short sVar1;
   short sVar2;
@@ -617,7 +597,7 @@ int param_1;
   while( true ) {
     sVar1 = peek_input_event();
     if (((((int)sVar2 | 0xfffcU) & (int)sVar1) != (int)sVar2) || (DAT_0008696e != -1)) break;
-    if (param_1 != 0) {
+    if (mode != 0) {
       dispatch_sticky_mode_handlers();
     }
     process_pending_keyboard_scan_code(1);
@@ -629,7 +609,6 @@ int param_1;
     DAT_0008696c = g_mouse_y;
     DAT_00086968 = sVar2;
   }
-  return;
 }
 
 
@@ -637,8 +616,7 @@ int param_1;
 
 // was FUN_00057a70 -- poll_input_event(0): consume and return the next
 // input event code (used by the menu / prompt input-wait loops).
-undefined4 next_input_event()
-
+int next_input_event()
 {
   /* Was `poll_input_event(0); return 0;` -- computing the real event code and then discarding it in
      favor of a hardcoded 0. */
@@ -650,7 +628,6 @@ undefined4 next_input_event()
 
 // was FUN_00057ff0
 void update_mouse_state()
-
 {
   short sVar1;
   short sVar4;
@@ -783,7 +760,6 @@ void update_mouse_state()
       set_viewport_clip_rect((int)local_28,(int)sVar1,(int)sVar2,(int)sVar3);
     }
   }
-  return;
 }
 
 
@@ -792,9 +768,7 @@ void update_mouse_state()
 // was FUN_000682f0 -- discrete movement-command handler: keyboard Z/C (strafe left/right), the 4
 // GAPI hardware buttons (0x8d/0x8f/0x91/0x93), and the mouse click-and-hold walk (param_1 < 0).
 // Routes via decode_movement_command.
-void move_command_dispatch(param_1)
-short param_1;
-
+void move_command_dispatch(short command)
 {
   short sVar1;
   short *psVar2;
@@ -803,7 +777,7 @@ short param_1;
   int iVar5;
   ushort local_28 [2];
   
-  if (param_1 < 0) {
+  if (command < 0) {
     DAT_0023bf50 = 0;
     poll_keyboard_char_input(local_28);
     psVar2 = DAT_00085a6c;
@@ -850,25 +824,24 @@ short param_1;
   else {
     DAT_0023bf50 = 1;
     decode_movement_command();
-    if (param_1 == 0) {
-      g_movement_mode = param_1;
+    if (command == 0) {
+      g_movement_mode = command;
       DAT_0023bf48 = 0;
       DAT_0023bf4c = 0;
       return;
     }
-    if (param_1 < 6) {
+    if (command < 6) {
       return;
     }
-    if (7 < param_1) {
+    if (7 < command) {
       return;
     }
     if (((DAT_002048a8 & 0x10) == 0) && (*(char *)(DAT_00086df8 + 0xb8) != '\x01')) {
-      g_movement_mode = param_1;
+      g_movement_mode = command;
       return;
     }
   }
   g_movement_mode = 1;
-  return;
 }
 
 
@@ -894,16 +867,14 @@ void uw_set_analog_move_turn(int fwd_held, int turn_dir) {
 // was FUN_00068884 -- keyboard directional-move handler bound to W/S/X/A/D
 // (run-forward / walk-forward / walk-back / turn-left / turn-right); calls
 // begin_directional_move then movement_tick, then paces one held-key frame.
-void move_key_directional_step(param_1)
-undefined4 param_1;
-
+void move_key_directional_step(int direction)
 {
   int iVar1;
   int iVar2;
   ushort uVar3;
   
   iVar1 = read_realtime_clock_units();
-  iVar2 = begin_directional_move(param_1);
+  iVar2 = begin_directional_move(direction);
   if (iVar2 != 0) {
     DAT_0023bf54 = read_realtime_clock_units();
     DAT_0023bf58 = DAT_0023bf58 + 4;
@@ -938,7 +909,6 @@ undefined4 param_1;
     iVar2 = read_realtime_clock_units();
   } while ((uint)(iVar2 - iVar1) < 0x18);
   reset_keyboard_char_input();
-  return;
 }
 
 
@@ -947,12 +917,7 @@ undefined4 param_1;
 // was FUN_0006764c -- divides the game viewport rect (param_1=x, param_2=y, param_3=width,
 // param_4=height) into 8 click regions, all sharing the same handler (handle_game_view_click, the
 // "3D-viewport's own click-and-hold-to-walk region" per input.c's own comment)...
-void register_game_view_interact_zones(param_1,param_2,param_3,param_4)
-int param_1;
-int param_2;
-int param_3;
-int param_4;
-
+void register_game_view_interact_zones(int x, int y, int width, int height)
 {
   int iVar1;
   short sVar2;
@@ -966,33 +931,32 @@ int param_4;
   int iVar10;
   
   unregister_key_binding((int)DAT_0023be8c);
-  iVar9 = (param_2 - param_4) + 1;
-  sVar2 = (short)param_1;
-  iVar10 = param_1 + param_3 + -1;
-  sVar3 = (short)param_2;
-  sVar4 = (short)param_3;
-  sVar5 = (short)param_4;
+  iVar9 = (y - height) + 1;
+  sVar2 = (short)x;
+  iVar10 = x + width + -1;
+  sVar3 = (short)y;
+  sVar4 = (short)width;
+  sVar5 = (short)height;
   DAT_0023bd80 = sVar4;
   DAT_0023be5c = sVar2;
   DAT_0023be80 = sVar3;
   DAT_0023be88 = sVar5;
-  DAT_0023be8c = register_click_region(param_1,param_2,iVar10,iVar9,0,0x1b,handle_game_view_click);
+  DAT_0023be8c = register_click_region(x,y,iVar10,iVar9,0,0x1b,handle_game_view_click);
   iVar6 = ordint_divmod(0xf,sVar5 * 3).quot;
   iVar6 = (sVar3 - iVar6) * 0x10000 >> 0x10;
   iVar7 = ordint_divmod(0xf,sVar4 * 5).quot;
   iVar1 = (iVar7 + sVar2) * 0x10000 >> 0x10;
-  DAT_0023be6c = register_cursor_hotspot(param_1,param_2,iVar1,iVar6,0x106f);
+  DAT_0023be6c = register_cursor_hotspot(x,y,iVar1,iVar6,0x106f);
   iVar7 = ((sVar2 - iVar7) + (int)sVar4) * 0x10000 >> 0x10;
-  DAT_0023be68 = register_cursor_hotspot(iVar7,param_2,iVar10,iVar6,0x1070);
-  DAT_0023be70 = register_cursor_hotspot(iVar1,param_2,iVar7,iVar6,0x106e);
+  DAT_0023be68 = register_cursor_hotspot(iVar7,y,iVar10,iVar6,0x1070);
+  DAT_0023be70 = register_cursor_hotspot(iVar1,y,iVar7,iVar6,0x106e);
   iVar8 = ordint_divmod(0xf,sVar5 * 6).quot;
   iVar8 = (sVar3 - iVar8) * 0x10000 >> 0x10;
-  DAT_0023be7c = register_cursor_hotspot(param_1,iVar6,iVar1,iVar8,0x1071);
+  DAT_0023be7c = register_cursor_hotspot(x,iVar6,iVar1,iVar8,0x1071);
   DAT_0023be84 = register_cursor_hotspot(iVar7,iVar6,iVar10,iVar8,0x1072);
   DAT_0023be78 = register_cursor_hotspot(iVar1,iVar8,iVar7,iVar9,0x106d);
-  DAT_0023be60 = register_cursor_hotspot(param_1,iVar8,iVar1,iVar9,0x1073);
+  DAT_0023be60 = register_cursor_hotspot(x,iVar8,iVar1,iVar9,0x1073);
   DAT_0023bd7c = register_cursor_hotspot(iVar7,iVar8,iVar10,iVar9,0x1074);
-  return;
 }
 
 
@@ -1001,7 +965,6 @@ int param_4;
 // register_game_view_interact_zones: unregisters the whole-rect key
 // binding and all 8 click regions.
 void unregister_game_view_interact_zones()
-
 {
   unregister_key_binding((int)DAT_0023be8c);
   DAT_0023be8c = 0;
@@ -1013,7 +976,6 @@ void unregister_game_view_interact_zones()
   unregister_cursor_hotspot((int)DAT_0023be78);
   unregister_cursor_hotspot((int)DAT_0023be60);
   unregister_cursor_hotspot((int)DAT_0023bd7c);
-  return;
 }
 
 
@@ -1026,34 +988,30 @@ void unregister_game_view_interact_zones()
 extern int g_text_input_active;
 
 // was FUN_00077b2c
-undefined4 handle_keyboard_message(param_1,param_2,param_3)
-undefined4 param_1;
-int param_2;
-uint param_3;
-
+int handle_keyboard_message(int window, int message, uint wparam)
 {
   ushort uVar1;
   undefined4 *puVar2;
   undefined4 uVar3;
   
-  if (param_2 == 7) {
+  if (message == 7) {
     GXResume();
     return 0;
   }
-  if (param_2 == 8) {
+  if (message == 8) {
     GXSuspend();
     return 0;
   }
-  uVar1 = (ushort)param_3;
+  uVar1 = (ushort)wparam;
   if (getenv("UW_DEBUG_INPUTEVENT"))
-    fprintf(stderr, "[keymsg] msg=0x%x wparam=0x%x DAT_0023c448_before=0x%x\n", (unsigned int)param_2, (unsigned int)param_3, (unsigned int)DAT_0023c448);
-  if (param_2 != 0x100) {
-    if (param_2 == 0x101) {
+    fprintf(stderr, "[keymsg] msg=0x%x wparam=0x%x DAT_0023c448_before=0x%x\n", (unsigned int)message, (unsigned int)wparam, (unsigned int)DAT_0023c448);
+  if (message != 0x100) {
+    if (message == 0x101) {
       DAT_000876c8 = 1;
       DAT_0024af6c = 0;
       return 0;
     }
-    if (param_2 != 0x102) {
+    if (message != 0x102) {
       return 0;
     }
     /* No case-folding here any more. */
@@ -1142,20 +1100,15 @@ LAB_00077d70:
    that routes WM_MOUSEMOVE/WM_LBUTTONDOWN/ WM_LBUTTONUP/WM_RBUTTONDOWN/WM_RBUTTONUP (msg
    0x200/0x201/0x202/0x204/ 0x205) to this handler... */
 // was FUN_00077dd0
-undefined4 handle_mouse_message(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-uint param_2;
-undefined4 param_3;
-int param_4;
-
+int handle_mouse_message(int window, uint message, uint wparam, int lparam)
 {
   short x;
   short y;
   int id;
 
-  y = (short)(param_4 >> 16);
+  y = (short)(lparam >> 16);
   *DAT_000876bc = (ushort)(0x140 - y);
-  x = (short)param_4;
+  x = (short)lparam;
   *DAT_000876c0 = x;
 
   // HACK (extended): DAT_000876c4 has zero writers anywhere in the real binary (confirmed via
@@ -1164,7 +1117,7 @@ int param_4;
   if (uw_always_show_cursor()) {
     *DAT_000876c4 = 1;
   }
-  if (param_2 == 0x201) {
+  if (message == 0x201) {
     if (!uw_always_show_cursor()) {
       *DAT_000876c4 = 1;
     }
@@ -1193,7 +1146,7 @@ int param_4;
       DAT_0023c63c = 1;
     }
   }
-  if (param_2 == 0x202) {
+  if (message == 0x202) {
     /* An EARLIER attempt at this exact fix (erase before clearing DAT_00204844) was reverted as "no
        measurable effect" -- that test apparently didn't hit the actual failure window. */
     erase_cursor_icon();
@@ -1210,11 +1163,11 @@ int param_4;
     DAT_0023c63c = 0;
   }
   /* Right button (WM_RBUTTONDOWN/UP). */
-  if (param_2 == 0x204) {
+  if (message == 0x204) {
     *DAT_000876c4 = 1;
     DAT_002506ab = 1;
   }
-  if (param_2 == 0x205) {
+  if (message == 0x205) {
     DAT_002506ab = 0;
     *DAT_000876bc = 0;
     *DAT_000876c0 = 0;
@@ -1226,9 +1179,7 @@ int param_4;
 // was FUN_0003dca4 -- called from set_locomotion_state (src/input.c:83) with an "anim mode" code
 // (0=walk,1=swim,2=fly-ish,4/5/6=fall variants; see that function's own comment) whenever the
 // locomotion state changes...
-void apply_movement_mode_profile(param_1)
-byte param_1;
-
+void apply_movement_mode_profile(byte anim_mode)
 {
   int iVar1;
   byte *pbVar2;
@@ -1246,7 +1197,7 @@ byte param_1;
   local_1c[4] = 1;
   builtin_strncpy(local_24 + 1,"\x01\x02\x04\b\b",5);
   local_1c[6] = 2;
-  iVar1 = (int)(char)param_1;
+  iVar1 = (int)(char)anim_mode;
   local_1c[5] = 7;
   /* Was `piVar6 = (int *)&DAT_00086df8;` (address of the global itself) with every subsequent
      `*piVar6` in this branch meant to read DAT_00086df8's real value back out -- but piVar6 was
@@ -1255,20 +1206,20 @@ byte param_1;
   local_24[0] = '\0';
   local_24[6] = 0;
   if (iVar1 == -1) {
-    param_1 = *(byte *)((char *)piVar6 + 0xb6) & 7;
+    anim_mode = *(byte *)((char *)piVar6 + 0xb6) & 7;
   }
   else {
     *(byte *)((char *)DAT_00086df8 + 0xb8) = local_24[iVar1] + (*(byte *)((char *)DAT_00086df8 + 0xb8) & 0xe0);
     pbVar2 = (byte *)((char *)DAT_00086df8 + 0xb6);
     uVar3 = *(undefined2 *)pbVar2;
-    *(byte *)((char *)DAT_00086df8 + 0xb6) = (*pbVar2 ^ param_1) & 7 ^ (byte)uVar3;
+    *(byte *)((char *)DAT_00086df8 + 0xb6) = (*pbVar2 ^ anim_mode) & 7 ^ (byte)uVar3;
     *(char *)((char *)DAT_00086df8 + 0xb7) = (char)((ushort)uVar3 >> 8);
   }
-  uVar5 = (uint)local_1c[(char)param_1];
+  uVar5 = (uint)local_1c[(char)anim_mode];
   DAT_00202078 = ordint_divmod(10,(int)DAT_0008589c * uVar5).quot;
   DAT_0020207a = ordint_divmod(10,(int)DAT_00085898 * uVar5).quot;
   DAT_0020207c = ordint_divmod(10,(int)DAT_00085894 * uVar5).quot;
-  if ((char)param_1 < 4) {
+  if ((char)anim_mode < 4) {
     DAT_00202074 = ordint_divmod(10,(int)DAT_00086e68 * uVar5).quot;
   }
   else {
@@ -1282,13 +1233,11 @@ byte param_1;
     sVar4 = ordint_divmod(uVar5 << 1,(uint)*(ushort *)((char *)piVar6 + 0x4a) * 0x60).quot;
     DAT_00085890 = 0x60 - sVar4;
   }
-  return;
 }
 
 
 // was FUN_000578fc -- always returns 0.
-undefined4 get_alternate_keyboard_scan_code()
-
+int get_alternate_keyboard_scan_code()
 {
   return 0;
 }
@@ -1298,9 +1247,7 @@ undefined4 get_alternate_keyboard_scan_code()
 // was FUN_00057904 -- translates the pending keyboard event (DAT_0023c448, or
 // get_alternate_keyboard_scan_code's result when param_1 is set) into an
 // international-charset-mapped scan code via ce_tolower/1091, or 0xffffffff if none is pending.
-uint process_pending_keyboard_scan_code(param_1)
-int param_1;
-
+uint process_pending_keyboard_scan_code(int use_alternate)
 {
   short sVar1;
   uint uVar2;
@@ -1308,7 +1255,7 @@ int param_1;
   uint uVar4;
   
   uVar2 = (uint)DAT_0023c448;
-  if (param_1 != 0) {
+  if (use_alternate != 0) {
     uVar2 = get_alternate_keyboard_scan_code();
   }
   uVar4 = uVar2 & 0xff;
@@ -1350,9 +1297,7 @@ int param_1;
 // was FUN_000579e4 -- pump input, then return the pending event code: the keyboard code latched in
 // DAT_0023c448 (set by handle_keyboard_message), or a poll_mouse_event() code, or 0xffffffff if
 // nothing is pending. param_1 == 0 clears DAT_0023c448 first (consume); != 0 leaves it (peek)...
-uint poll_input_event(param_1)
-int param_1;
-
+uint poll_input_event(int peek_only)
 {
   int iVar1;
   uint uVar2;
@@ -1361,15 +1306,15 @@ int param_1;
   if ((short)DAT_00201b60 == 4) {
     DAT_0023c448 = 0;
   }
-  if (param_1 == 0) {
+  if (peek_only == 0) {
     DAT_0023c448 = 0;
   }
   iVar1 = PeekMessageW(auStack_24,0,0,0,1);
   if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_event: PeekMessageW=%d DAT_0023c448=0x%x\n", iVar1, (unsigned)DAT_0023c448);
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] poll_input_event(peek=%d): new_os_event(iVar1)=%d DAT_0023c448(before)=0x%x\n",
-            param_1, iVar1, (unsigned)DAT_0023c448);
-  if (getenv("UW_DEBUG_INPUTEVENT2")) fprintf(stderr, "[inputevent2] poll_input_event(%d): PeekMessageW=%d DAT_00201b60=%d DAT_002506ab=%d\n", param_1, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
+            peek_only, iVar1, (unsigned)DAT_0023c448);
+  if (getenv("UW_DEBUG_INPUTEVENT2")) fprintf(stderr, "[inputevent2] poll_input_event(%d): PeekMessageW=%d DAT_00201b60=%d DAT_002506ab=%d\n", peek_only, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
   if (iVar1 == 0) {
     uVar2 = 0xffffffff;
   }
@@ -1394,8 +1339,7 @@ int param_1;
 
 // was FUN_00057a78 -- poll_input_event(1): return the pending input event
 // code without consuming it (used by the per-frame keybinding poll).
-undefined4 peek_input_event()
-
+int peek_input_event()
 {
   return poll_input_event(1);
 }
@@ -1404,13 +1348,11 @@ undefined4 peek_input_event()
 // was FUN_0003c4dc -- set the player's swim/wade sub-pose byte (DAT_00086df8+0xb9) from the
 // collision-state mask's "in liquid, how deep" bit (0x2): shallow (0x10) vs deep/wading (0x60, also
 // force-leaving combat stance via unready_weapon -- can't hold a weapon ready while swimming).
-bool apply_swim_wade_pose(param_1)
-ushort param_1;
-
+bool apply_swim_wade_pose(ushort collision_mask)
 {
   bool bVar1;
 
-  bVar1 = (param_1 & 2) == 0;
+  bVar1 = (collision_mask & 2) == 0;
   if (bVar1) {
     *(undefined1 *)(DAT_00086df8 + 0xb9) = 0x10;
   }
@@ -1428,14 +1370,13 @@ ushort param_1;
 
 // was FUN_0003c7f4 -- translate a W/S/X/A/D direction arg (-2..2) into
 // movement-engine target state (heading-relative goal position/heading).
-undefined4 begin_directional_move(param_1)
-short param_1;
-
+int begin_directional_move(short direction)
 {
   undefined2 uVar1;
   byte bVar2;
   uint uVar3;
-  char *uVar4;
+  int uVar4;
+  byte *saved_scratch;
   int extraout_r1;
   uint uVar5;
   ushort uVar6;
@@ -1443,7 +1384,7 @@ short param_1;
   int iVar8;
   int iVar9;
   uint uVar10;
-  undefined8 uVar11;
+  ushort *uVar11;
   ushort local_44;
   ushort local_42;
   uint local_40;
@@ -1459,12 +1400,12 @@ short param_1;
 #define local_32 (*(undefined2 *)(local_24 + 8))
   
   if (getenv("UW_DEBUG_STEPHEIGHT"))
-    fprintf(stderr, "[bdm-entry] param_1=%d g_fall_accel=%d g_jump_ascent_timer=%d DAT_00085890=%d z=%d guard=%d\n",
-            (int)param_1, (int)g_fall_accel, (int)g_jump_ascent_timer, (int)DAT_00085890, (int)DAT_00204884,
+    fprintf(stderr, "[bdm-entry] direction=%d g_fall_accel=%d g_jump_ascent_timer=%d DAT_00085890=%d z=%d guard=%d\n",
+            (int)direction, (int)g_fall_accel, (int)g_jump_ascent_timer, (int)DAT_00085890, (int)DAT_00204884,
             (g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890));
   if ((g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890)) {
     uVar10 = 0;
-    if (param_1 == -2) {
+    if (direction == -2) {
       uVar4 = 0x40;
       iVar7 = (short)DAT_00201c70 + 0x8000;
 LAB_0003c940:
@@ -1540,8 +1481,8 @@ LAB_0003c940:
       uVar5 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
       *(char *)((char *)g_player_object + 0xb) = (char)uVar5;
       *(byte *)((char *)g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
-      uVar4 = DAT_00202c6c;
-      DAT_00202c6c = &local_3c;
+      saved_scratch = DAT_00202c6c;
+      DAT_00202c6c = (byte *)&local_3c;
       local_32 = 1;
       local_33 = DAT_00203303;
       local_34 = (byte)DAT_00203304 & 7;
@@ -1562,16 +1503,16 @@ LAB_0003c940:
       iVar7 = (int)(short)*(char *)(DAT_00202c6c + 0xb);
       if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
         do {
-          uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6);
+          uVar11 = (ushort *)resolve_object_link(&DAT_00202c3a + iVar7 * 6);
           /* Was `iVar8 = (int)((ulonglong)uVar11 >> 0x20);` -- a leftover from the original 32-bit
              ARM ABI, where resolve_object_link's caller apparently re-read some other value out of
              r1 right after the call (Ghidra folded it into a fake 64-bit return value, r0:r1). */
           if (uVar11 == 0) break;
-          if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
+          if ((*uVar11 & 0x1ff) == 0x1a0) {
             /* Was followed by `iVar8 = extraout_r1;` -- same bug as the sibling fix just above in
                this function (resolve_object_link's own high-bits carry), but via a different,
                unrelated callee... */
-            resolve_skill_gated_unlock_or_use(g_player_object,0,(ushort *)uVar11,0);
+            resolve_skill_gated_unlock_or_use(g_player_object,0,uVar11,0);
           }
           iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
         } while (iVar7 < (int)((uint)*(byte *)((char *)DAT_00202c6c + 0x15) +
@@ -1579,21 +1520,21 @@ LAB_0003c940:
       }
     }
     else {
-      if (param_1 == 0) {
+      if (direction == 0) {
 LAB_0003c920:
         uVar4 = 0x80;
         iVar7 = (int)(short)DAT_00201c70;
         goto LAB_0003c940;
       }
-      if (param_1 == 2) {
+      if (direction == 2) {
         uVar10 = 1;
         goto LAB_0003c920;
       }
       if ((DAT_00201c70 & 0x1fff) == 0) {
-        DAT_00201c70 = DAT_00201c70 + param_1 * 0x2000;
+        DAT_00201c70 = DAT_00201c70 + direction * 0x2000;
       }
       else {
-        DAT_00201c70 = (DAT_00201c70 & 0xe000) + (ushort)(0 < param_1) * 0x2000;
+        DAT_00201c70 = (DAT_00201c70 & 0xe000) + (ushort)(0 < direction) * 0x2000;
       }
       uVar10 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
       *(char *)((char *)g_player_object + 2) = (char)uVar10;
@@ -1601,9 +1542,9 @@ LAB_0003c920:
       *(byte *)((char *)g_player_object + 0x18) =
            ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
            *(byte *)((char *)g_player_object + 0x18);
-      uVar4 = DAT_00202c6c;
+      saved_scratch = DAT_00202c6c;
     }
-    DAT_00202c6c = (undefined2 *)uVar4;
+    DAT_00202c6c = saved_scratch;
     uVar4 = 1;
   }
   else {
@@ -1625,7 +1566,6 @@ LAB_0003cdf8:
 
 // was FUN_00041f34 -- allocate/reset the keybinding + click-region tables.
 void input_bindings_init()
-
 {
   DAT_00202890 = ce_malloc(0x12);
   DAT_0020289c = ce_malloc(0xc);
@@ -1640,35 +1580,25 @@ void input_bindings_init()
   DAT_00085a70 = 0xffff;
   *(undefined1 *)(DAT_00085a6c + 6) = 0;
   *(undefined1 *)(DAT_00085a6c + 7) = 0;
-  return;
 }
 
 
 
 // was FUN_00041fe4 -- free the keybinding + click-region tables.
 void input_bindings_free()
-
 {
   if (DAT_00085a70 != -0x29a) {
     LocalFree(DAT_00202890);
     LocalFree(DAT_0020289c);
     DAT_00085a70 = -0x29a;
   }
-  return;
 }
 
 
 
 // was FUN_0004202c -- append a mouse click-region record to DAT_00202890.
-int register_click_region(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-undefined2 param_5;
-undefined2 param_6;
-void *param_7;   /* was undefined4 -- handler fn pointer; see g_click_region_handler */
-
+/* was undefined4 -- handler fn pointer; see g_click_region_handler */
+int register_click_region(int left, int bottom, int right, int top, short arg, short mode_mask, void *handler)
 {
   short sVar1;
   int iVar2;
@@ -1679,7 +1609,7 @@ void *param_7;   /* was undefined4 -- handler fn pointer; see g_click_region_han
   DAT_00202898 = (short)(iVar2 + 1);
   /* real 64-bit handler, indexed by record position (iVar2 == old count) */
   if ((uint)iVar2 < 128) {
-    g_click_region_handler[iVar2] = (void (*)(int))param_7;
+    g_click_region_handler[iVar2] = (void (*)(int))handler;
     if (iVar2 + 1 > g_click_region_handler_n) g_click_region_handler_n = iVar2 + 1;
   }
   /* ce_realloc is realloc-shaped and now returns a real pointer; iVar2 was reused here for that
@@ -1695,25 +1625,25 @@ void *param_7;   /* was undefined4 -- handler fn pointer; see g_click_region_han
   *(undefined1 *)(iVar3 + -0x12) = (char)DAT_00202894;
   *(char *)(iVar3 + -0x11) = (char)((ushort)sVar1 >> 8);
   DAT_00202894 = DAT_00202894 + 1;
-  *(char *)(iVar3 + -8) = (char)param_5;
-  *(char *)(iVar3 + -0xc) = (char)param_1;
-  *(char *)(iVar3 + -7) = (char)((ushort)param_5 >> 8);
-  *(char *)(iVar3 + -10) = (char)param_2;
-  *(char *)(iVar3 + -0x10) = (char)param_3;
-  *(char *)(iVar3 + -6) = (char)param_6;
-  *(char *)(iVar3 + -0xe) = (char)param_4;
-  *(char *)(iVar3 + -5) = (char)((ushort)param_6 >> 8);
+  *(char *)(iVar3 + -8) = (char)arg;
+  *(char *)(iVar3 + -0xc) = (char)left;
+  *(char *)(iVar3 + -7) = (char)((ushort)arg >> 8);
+  *(char *)(iVar3 + -10) = (char)bottom;
+  *(char *)(iVar3 + -0x10) = (char)right;
+  *(char *)(iVar3 + -6) = (char)mode_mask;
+  *(char *)(iVar3 + -0xe) = (char)top;
+  *(char *)(iVar3 + -5) = (char)((ushort)mode_mask >> 8);
   /* low 32 bits only (0x12-byte record has no room for a 64-bit pointer);
      kept solely so poll_input_bindings' non-null gate passes -- the real
      call goes through g_click_region_handler. */
-  *(char *)(iVar3 + -4) = (char)(uintptr_t)param_7;
-  *(char *)(iVar3 + -3) = (char)((uintptr_t)param_7 >> 8);
-  *(char *)(iVar3 + -2) = (char)((uintptr_t)param_7 >> 0x10);
-  *(char *)(iVar3 + -1) = (char)((uintptr_t)param_7 >> 0x18);
-  *(char *)(iVar3 + -0xb) = (char)((uint)param_1 >> 8);
-  *(char *)(iVar3 + -9) = (char)((uint)param_2 >> 8);
-  *(char *)(iVar3 + -0xf) = (char)((uint)param_3 >> 8);
-  *(char *)(iVar3 + -0xd) = (char)((uint)param_4 >> 8);
+  *(char *)(iVar3 + -4) = (char)(uintptr_t)handler;
+  *(char *)(iVar3 + -3) = (char)((uintptr_t)handler >> 8);
+  *(char *)(iVar3 + -2) = (char)((uintptr_t)handler >> 0x10);
+  *(char *)(iVar3 + -1) = (char)((uintptr_t)handler >> 0x18);
+  *(char *)(iVar3 + -0xb) = (char)((uint)left >> 8);
+  *(char *)(iVar3 + -9) = (char)((uint)bottom >> 8);
+  *(char *)(iVar3 + -0xf) = (char)((uint)right >> 8);
+  *(char *)(iVar3 + -0xd) = (char)((uint)top >> 8);
   return (int)CONCAT11(*(undefined1 *)(iVar3 + -0x11),*(undefined1 *)(iVar3 + -0x12));
 }
 
@@ -1721,12 +1651,9 @@ void *param_7;   /* was undefined4 -- handler fn pointer; see g_click_region_han
 
 // was FUN_00042758 -- look up a pressed key in the DAT_0020289c table
 // (keycode + mode-mask match) and invoke its handler.
-void dispatch_key_binding(param_1,param_2)
-/* Was `int`, truncating the real pointer poll_input_bindings passes through
-   (its own param_1, e.g. DAT_00085a6c). */
-char *param_1;
-short param_2;
-
+/* Was `int`, truncating the real pointer poll_input_bindings passes through (its own param_1, e.g.
+   DAT_00085a6c). */
+void dispatch_key_binding(char *input_state, short key_code)
 {
   /* Was `int`; both double as a plain loop index (iVar2 only) and a real pointer into the
      DAT_0020289c keybinding table (iVar1 always, iVar2 once more on the match path just before it
@@ -1737,9 +1664,9 @@ short param_2;
   iVar2 = 0;
   if (0 < DAT_0020288c) {
     do {
-      pcVar1 = iVar2 * 0xc + DAT_0020289c;
-      if (((*(short *)(pcVar1 + 2) == param_2) &&
-          ((*(ushort *)(pcVar1 + 6) & *(ushort *)(param_1 + 8)) != 0)) &&
+      pcVar1 = (char *)DAT_0020289c + iVar2 * 0xc;
+      if (((*(short *)(pcVar1 + 2) == key_code) &&
+          ((*(ushort *)(pcVar1 + 6) & *(ushort *)(input_state + 8)) != 0)) &&
           (((uint)iVar2 < 512 && g_keybind_handler[iVar2] != 0)))
       {
         g_keybind_handler[iVar2]((int)*(short *)(pcVar1 + 4));
@@ -1748,7 +1675,6 @@ short param_2;
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < DAT_0020288c);
   }
-  return;
 }
 
 
@@ -1756,7 +1682,6 @@ short param_2;
 // through the DAT_00085668 per-mode handler table (movement_pacing_handler is mode 0's bit 12, see
 // DAT_00085728's own comment)...
 void dispatch_sticky_mode_handlers()
-
 {
   short sVar1;
   char cVar2;
@@ -1791,13 +1716,11 @@ void dispatch_sticky_mode_handlers()
       }
     }
   }
-  return;
 }
 
 
 // was FUN_00057888
 int poll_mouse_event()
-
 {
   short sVar1;
 

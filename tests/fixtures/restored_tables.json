@@ -95,7 +95,7 @@
     "src/item_use.c:spawn_combined_object",
     "src/traps.c:%DAT_00202807",
     "src/traps.c:resolve_lock_difficulty_rating",
-    "src/traps.c:FUN_0007e644",
+    "src/traps.c:detect_spawn_blocking_object_callback",
     "src/traps.c:check_object_area_for_spawn_block",
     "src/game.c:FUN_00028bfc",
     "src/game.c:FUN_000778f4",

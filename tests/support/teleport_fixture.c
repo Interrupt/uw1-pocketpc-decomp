@@ -2,19 +2,19 @@
 
 /* Local service declarations; game function bodies link these mocks. */
 void decode_movement_command(void);
-void tick_mobile_objects(int elapsed);
-void apply_movement_tick(void);
+void tick_mobile_objects(char elapsed);
+void apply_movement_tick(int elapsed);
 void trigger_view_transition(void);
 void stop_movement_sound_handle(void);
 uint read_realtime_clock_units(void);
-undefined4 play_sound_effect_with_pan(void);
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias);
 void cancel_weapon_swing(void);
-void pop_cursor_icon(int state);
-undefined4 commit_level_to_save_slot(int level);
+void pop_cursor_icon(ushort state);
+int commit_level_to_save_slot(int level);
 int load_level(int level);
-void set_player_tile_position(uint x, uint y);
-void set_pending_update_flags(int flags);
-void report_fatal_error_and_exit(void);
+void set_player_tile_position(uint tile_x, uint tile_y, int flag);
+void set_pending_update_flags(ushort flags);
+void report_fatal_error_and_exit(ushort error_code);
 void full_dungeon_redraw(void);
 void weapon_overlay_flash_hold(int passes);
 void weapon_overlay_flash_restore(int passes);
@@ -68,7 +68,7 @@ int destination_ticks;
 
 void decode_movement_command(void) {}
 
-void tick_mobile_objects(int elapsed)
+void tick_mobile_objects(char elapsed)
 {
     TEST_ASSERT_EQUAL_INT(1, elapsed);
     TEST_ASSERT_EQUAL_INT(2, DAT_00201b68);
@@ -77,7 +77,7 @@ void tick_mobile_objects(int elapsed)
     destination_ticks++;
 }
 
-void apply_movement_tick(void)
+void apply_movement_tick(int elapsed)
 {
     TEST_FAIL_MESSAGE("Stationary player unexpectedly entered movement physics");
 }
@@ -91,14 +91,14 @@ void stop_movement_sound_handle(void) {}
 
 uint read_realtime_clock_units(void) { return 0; }
 
-divmod_result ordint_divmod(void)
+divmod_result ordint_divmod(int divisor, int dividend)
 {
     TEST_FAIL_MESSAGE("Stationary tick unexpectedly needed jump timing");
     divmod_result result = {0, 0};
     return result;
 }
 
-undefined4 play_sound_effect_with_pan(void)
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias)
 {
     TEST_FAIL_MESSAGE("Stationary tick unexpectedly played a movement sound");
     return 0;
@@ -106,15 +106,13 @@ undefined4 play_sound_effect_with_pan(void)
 
 void cancel_weapon_swing(void) { cancelled_swings++; }
 
-void pop_cursor_icon(int state)
+void pop_cursor_icon(ushort state)
 {
     TEST_ASSERT_EQUAL_INT(3, state);
     cursor_updates++;
 }
 
-void save_or_restore_level_special_state(level, save)
-short level;
-short save;
+void save_or_restore_level_special_state(short level, short save)
 {
     if (save) {
         TEST_ASSERT_EQUAL_INT(0, commits);
@@ -125,7 +123,7 @@ short save;
     }
 }
 
-undefined4 commit_level_to_save_slot(int level)
+int commit_level_to_save_slot(int level)
 {
     TEST_ASSERT_EQUAL_INT(saved_level, level);
     commits++;
@@ -141,8 +139,7 @@ int load_level(int level)
     return load_result;
 }
 
-undefined4 find_placement_via_tile_flood_fill(char *object, int x, int y,
-                                           short *out_x, short *out_y, int fallback)
+int find_placement_via_tile_flood_fill(ushort *object, short x, short y, short *out_x, short *out_y, int fallback)
 {
     TEST_ASSERT_EQUAL_PTR(g_player_object, object);
     TEST_ASSERT_EQUAL_INT(resolved_x, x);
@@ -154,20 +151,20 @@ undefined4 find_placement_via_tile_flood_fill(char *object, int x, int y,
     return placement_result[fallback];
 }
 
-void set_player_tile_position(uint x, uint y)
+void set_player_tile_position(uint x, uint y, int flag)
 {
     placed_x = x;
     placed_y = y;
     positions++;
 }
 
-void set_pending_update_flags(int flags)
+void set_pending_update_flags(ushort flags)
 {
     TEST_ASSERT_TRUE(flags == 0x20 || flags == 0x7ffe);
     notifications++;
 }
 
-void report_fatal_error_and_exit(void)
+void report_fatal_error_and_exit(ushort error_code)
 {
     TEST_FAIL_MESSAGE("Teleport unexpectedly reached a fatal-error path");
 }

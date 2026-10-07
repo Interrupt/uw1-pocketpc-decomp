@@ -2,37 +2,35 @@
 #include "combat_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-int encode_object_slot_index(ushort *object);
+int encode_object_slot_index(void *object);
 void refresh_experience_display(void);
-void set_pending_music_track(uint track);
+void set_pending_music_track(byte track);
 uint read_realtime_clock_units(void);
-void attempt_talk_interaction(char *object);
+void attempt_talk_interaction(void *object);
 void cancel_weapon_swing(void);
 void trigger_quest_milestone_cleanup_event(void);
 void other_panel_tick(int index);
 void flush_sprite_list_compositor(void);
-undefined4 sprite_list_set_frame_id(int slot, uint frame);
-int resolve_weapon_hit_skill_check(int attacker, int target);
-int roll_dice_sum(int count, int sides);
-undefined4 play_sound_effect_with_pan(void);
-undefined4 play_positional_sound_effect(int sound, int x, int y, int volume);
-#ifndef UW_TEST_NPC_COMBAT
-void set_movement_animation_timer(void);
-#endif
-undefined4 play_weapon_impact_sound(int result);
+int sprite_list_set_frame_id(short slot, int frame);
+int resolve_weapon_hit_skill_check(short attacker, int target);
+int roll_dice_sum(int count, short sides);
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias);
+int play_positional_sound_effect(uint sound, short x, short y, uint volume);
+void set_movement_animation_timer(byte timer_id, byte ticks);
+int play_weapon_impact_sound(short result);
 long ce_rand(void);
-void project_position_by_heading(int heading, int distance, short *x, short *y);
+void project_position_by_heading(int heading, short distance, void *x, void *y);
 void collision_height_envelope(int mode, int collision);
-void collision_build_height_field(int mode);
+void collision_build_height_field(uint step_limit);
 void sort_collision_candidates(void);
-void *get_object_record_by_slot_index(int slot);
-undefined4 object_ptr_in_arena(ushort *object);
-void *spawn_new_object(int type, int mobile);
-uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y);
-void *tilemap_lookup(int x, int y);
+void * get_object_record_by_slot_index(short slot);
+int object_ptr_in_arena(void *object);
+void * spawn_new_object(uint type, int mobile);
+uint scheduler_add_entry(uint slot, int delay, byte frame, byte x, byte y);
+void * tilemap_lookup(short x, short y);
 void object_list_append_tail(void *head, void *object);
-void free_object_slot(ushort *object);
-undefined4 read_file_handle(int handle, void *destination, int count);
+void free_object_slot(void *object);
+int read_file_handle(int handle, void *destination, uint count);
 
 byte mobile_objects[256 * 27];
 undefined1 DAT_002027d0_backing[48];
@@ -53,7 +51,8 @@ short DAT_001005f4, DAT_001005f8, DAT_0023beb4;
 
 char DAT_001005dc;
 
-ushort DAT_00100610, DAT_00100620, DAT_00100604;
+short DAT_00100610;
+ushort DAT_00100620, DAT_00100604;
 
 undefined2 DAT_00100600, DAT_00100624;
 
@@ -121,7 +120,7 @@ ushort DAT_00101910, DAT_0010141c;
 
 uint music_track;
 
-int encode_object_slot_index(ushort *object)
+int encode_object_slot_index(void *object)
 {
     if (object == wall_effect) return 0x100;
     for (int slot = 1; slot < 256; slot++)
@@ -132,7 +131,7 @@ int encode_object_slot_index(ushort *object)
 
 void refresh_experience_display(void) {}
 
-void set_pending_music_track(uint track) { music_track = track; }
+void set_pending_music_track(byte track) { music_track = track; }
 
 uint clock_units;
 
@@ -153,9 +152,9 @@ void combat_create_character(void)
 {
     uw_test_create_character((char *)player_stats, character_attributes, object_at(1));
 }
-undefined4 recalculate_player_stats(int refill_mana) { level_stat_recalculations++; return 0; }
+int recalculate_player_stats(int refill_mana) { level_stat_recalculations++; return 0; }
 void refresh_stats_panel_if_active(void) {}
-void print_scroll_message_by_id(int id) { TEST_ASSERT_EQUAL_HEX16(0x93,id); }
+void print_scroll_message_by_id(uint id) { TEST_ASSERT_EQUAL_HEX16(0x93,id); }
 int message_scroll_print_wrapped(char *text)
 {
     snprintf(level_message,sizeof level_message,"%s",text);
@@ -164,7 +163,7 @@ int message_scroll_print_wrapped(char *text)
 void configure_texture_detail_functions(void) {}
 void refresh_player_equipment_effects(void) {}
 
-void attempt_talk_interaction(char *object)
+void attempt_talk_interaction(void *object)
 { TEST_ASSERT_EQUAL_PTR(mobile_objects + 2 * 27, object); talks++; }
 
 void cancel_weapon_swing(void) {}
@@ -217,7 +216,7 @@ void (*const g_hud_panel_handlers_table[13])(void) = {
 
 void flush_sprite_list_compositor(void) { hud_flushes++; }
 
-undefined4 sprite_list_set_frame_id(int slot, uint frame)
+int sprite_list_set_frame_id(short slot, int frame)
 {
     TEST_ASSERT_EQUAL_INT(7, slot);
     TEST_ASSERT_LESS_THAN_INT(32, wipe_frames);
@@ -226,7 +225,7 @@ undefined4 sprite_list_set_frame_id(int slot, uint frame)
 }
 
 #ifndef UW_TEST_NPC_COMBAT
-int resolve_weapon_hit_skill_check(int attacker, int target)
+int resolve_weapon_hit_skill_check(short attacker, int target)
 {
     TEST_ASSERT_EQUAL_UINT16(DAT_00100610, attacker);
     TEST_ASSERT_EQUAL_UINT16(DAT_00100620, target);
@@ -234,28 +233,27 @@ int resolve_weapon_hit_skill_check(int attacker, int target)
     return skill_result;
 }
 
-int roll_dice_sum(int count, int sides) { return count * sides; }
-undefined4 roll_skill_check(void)
+int roll_dice_sum(int count, short sides) { return count * sides; }
+int roll_skill_check(int skill, int difficulty)
 { TEST_FAIL_MESSAGE("Magic Arrow does not use the ranged weapon skill check"); return 0; }
 #endif
 
-undefined4 play_sound_effect_with_pan(void) { return 0; }
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias) { (void)sound_id; (void)pan; (void)volume_bias; return 0; }
 
-undefined4 play_positional_sound_effect(int sound, int x, int y, int volume)
+int play_positional_sound_effect(uint sound, short x, short y, uint volume)
 { (void)x; (void)y; (void)volume; if (sound == 6) death_sounds++; if (sound == 4) positional_impacts++; return 0; }
 
 #ifdef UW_TEST_NPC_COMBAT
-void set_movement_animation_timer(int mode, int duration)
+void set_movement_animation_timer(byte mode, byte duration)
 { TEST_ASSERT_EQUAL_INT(0x20, mode); TEST_ASSERT_TRUE(duration >= 0 && duration <= 15); }
 void weapon_overlay_flash_once(int colour) { TEST_ASSERT_EQUAL_HEX16(0xb8, colour); }
-undefined4 damage_equipped_item_in_slot(int slot, int damage, int type, int critical, int mode)
+int damage_equipped_item_in_slot(int slot, byte damage, byte type, short critical, int mode)
 { (void)slot; (void)damage; TEST_ASSERT_EQUAL_INT(4, type); (void)critical; TEST_ASSERT_EQUAL_INT(1, mode); return 0; }
 #else
-void set_movement_animation_timer(void) { TEST_FAIL_MESSAGE("Unexpected player hit animation"); }
+void set_movement_animation_timer(byte timer_id, byte ticks) { TEST_FAIL_MESSAGE("Unexpected player hit animation"); }
 #endif
 
-undefined4 spawn_scheduled_effect_object(ushort *target, int type, int mode, int intensity,
-                                        int height, int x, int y)
+int spawn_scheduled_effect_object(ushort *target, int type, int mode, byte intensity, short height, short x, short y)
 {
     TEST_ASSERT_EQUAL_PTR(expected_effect_target, target);
     TEST_ASSERT_LESS_THAN_INT(2, effects);
@@ -266,7 +264,7 @@ undefined4 spawn_scheduled_effect_object(ushort *target, int type, int mode, int
     return 0;
 }
 
-undefined4 play_weapon_impact_sound(int result)
+int play_weapon_impact_sound(short result)
 {
     impact_sounds++;
 #ifdef UW_TEST_NPC_COMBAT
@@ -280,7 +278,7 @@ undefined4 play_weapon_impact_sound(int result)
 int door_triggers, door_scheduled, discarded_links;
 undefined2 DAT_002020a0, DAT_002020a4;
 char *DAT_002046c4;
-void trigger_object_trap_or_use_action(ushort *actor, ushort *target, int action, int x, int y)
+void trigger_object_trap_or_use_action(void *actor, void *target, int action, int x, short y)
 {
     TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
     TEST_ASSERT_EQUAL_PTR(wall_effect, target);
@@ -289,7 +287,7 @@ void trigger_object_trap_or_use_action(ushort *actor, ushort *target, int action
     TEST_ASSERT_EQUAL_INT(10, y);
     door_triggers++;
 }
-undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
+int play_sound_effect_at_object(int sound, ushort *object, int mode)
 {
     TEST_ASSERT_EQUAL_INT(4, sound);
     TEST_ASSERT_EQUAL_PTR(wall_effect, object);
@@ -299,18 +297,18 @@ undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
 }
 
 /* Other destruction branches must not run for a door. */
-void try_combine_or_stow_object(void) { TEST_FAIL_MESSAGE("Unexpected container combination"); }
+void try_combine_or_stow_object(void *actor, ushort *object, int stow) { (void)actor; (void)object; (void)stow; TEST_FAIL_MESSAGE("Unexpected container combination"); }
 #ifndef UW_TEST_NPC_COMBAT
-undefined4 rand_below(void) { TEST_FAIL_MESSAGE("Unexpected random destruction"); return 0; }
+uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected random destruction"); return 0; }
 #endif
-void try_empty_container(void) { TEST_FAIL_MESSAGE("Unexpected container emptying"); }
-undefined4 roll_object_destroy_chance(void) { TEST_FAIL_MESSAGE("Unexpected destroy chance"); return 0; }
-undefined4 reset_burnt_out_item_state(void) { TEST_FAIL_MESSAGE("Unexpected burnt item"); return 0; }
-void free_linked_object_recursive(void) { TEST_FAIL_MESSAGE("Unexpected recursive cleanup"); }
-ushort *settle_dropped_object(void) { TEST_FAIL_MESSAGE("Unexpected settling"); return 0; }
-void adjust_door_close_animation_delay(void) { TEST_FAIL_MESSAGE("Unexpected closing door"); }
-ushort *find_object_in_chain(ushort **head, int recurse, int category, int family, int subtype)
-{
+void try_empty_container(ushort *container, int owned_by_player) { (void)container; (void)owned_by_player; TEST_FAIL_MESSAGE("Unexpected container emptying"); }
+int roll_object_destroy_chance(short base_chance, void *object) { (void)base_chance; (void)object; TEST_FAIL_MESSAGE("Unexpected destroy chance"); return 0; }
+int reset_burnt_out_item_state(char *tile_link, void *object) { (void)tile_link; (void)object; TEST_FAIL_MESSAGE("Unexpected burnt item"); return 0; }
+void free_linked_object_recursive(void *link_field) { (void)link_field; TEST_FAIL_MESSAGE("Unexpected recursive cleanup"); }
+ushort * settle_dropped_object(void *object, short tile_x, short tile_y, int force) { (void)object; (void)tile_x; (void)tile_y; (void)force; TEST_FAIL_MESSAGE("Unexpected settling"); return 0; }
+void adjust_door_close_animation_delay(ushort *door) { (void)door; TEST_FAIL_MESSAGE("Unexpected closing door"); }
+ushort * find_object_in_chain(void *head_, int recurse, int category, int family, short subtype)
+{ ushort **head = (ushort **)head_;
     TEST_ASSERT_EQUAL_PTR(wall_effect+3, *head);
     TEST_ASSERT_EQUAL_INT(1, recurse);
     TEST_ASSERT_EQUAL_INT(4, category);
@@ -318,17 +316,17 @@ ushort *find_object_in_chain(ushort **head, int recurse, int category, int famil
     TEST_ASSERT_EQUAL_INT(15, subtype);
     return (**head & 0xffc0) ? object_at(4) : NULL;
 }
-void object_list_unlink(ushort *head, ushort *object)
+void object_list_unlink(void *head, void *object)
 {
     TEST_ASSERT_EQUAL_PTR(wall_effect+3, head);
     TEST_ASSERT_EQUAL_PTR(object_at(4), object);
-    *head &= 0x3f;
+    *(ushort *)head &= 0x3f;
 }
 
 long combat_random_roll = 1;
 long ce_rand(void) { return combat_random_roll; }
 
-void project_position_by_heading(int heading, int distance, short *x, short *y)
+void project_position_by_heading(int heading, short distance, void *x, void *y)
 { (void)heading; (void)distance; (void)x; (void)y; }
 
 void collision_height_envelope(int mode, int collision)
@@ -338,9 +336,9 @@ void collision_height_envelope(int mode, int collision)
     DAT_00202c6c[0x14] = candidate_count;
 }
 
-void collision_build_height_field(int mode)
+void collision_build_height_field(uint step_limit)
 {
-    TEST_ASSERT_EQUAL_INT(0, mode);
+    TEST_ASSERT_EQUAL_INT(0, step_limit);
     if (wall_in_front) {
         ushort flags = 0x100;
         memcpy(DAT_00202c6c + 0xc, &flags, sizeof flags);
@@ -353,7 +351,7 @@ void sort_collision_candidates(void)
     DAT_00202c6c[0x16] = 0;
 }
 
-void *get_object_record_by_slot_index(int slot)
+void * get_object_record_by_slot_index(short slot)
 {
     if (slot == 0x100) return wall_effect;
     TEST_ASSERT_GREATER_THAN_INT(0, slot);
@@ -363,10 +361,10 @@ void *get_object_record_by_slot_index(int slot)
     return mobile_objects + slot * 27;
 }
 
-undefined4 object_ptr_in_arena(ushort *object)
+int object_ptr_in_arena(void *object)
 { TEST_ASSERT_NOT_NULL(object); return object != wall_effect; }
 
-void *spawn_new_object(int type, int mobile)
+void * spawn_new_object(uint type, int mobile)
 {
     TEST_ASSERT_EQUAL_HEX16(0x1cb, type);
     TEST_ASSERT_EQUAL_INT(0, mobile);
@@ -374,7 +372,7 @@ void *spawn_new_object(int type, int mobile)
     return wall_effect;
 }
 
-uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y)
+uint scheduler_add_entry(uint slot, int delay, byte frame, byte x, byte y)
 {
     TEST_ASSERT_EQUAL_UINT(0x100, slot);
     if ((wall_effect[0] & 0x1ff) == 0x1cf) {
@@ -387,7 +385,7 @@ uint scheduler_add_entry(uint slot, int delay, int frame, int x, int y)
     return 1;
 }
 
-void *tilemap_lookup(int x, int y)
+void * tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_EQUAL_INT(10, x);
     TEST_ASSERT_EQUAL_INT(10, y);
@@ -401,12 +399,12 @@ void object_list_append_tail(void *head, void *object)
     wall_collision++;
 }
 
-void free_object_slot(ushort *object)
+void free_object_slot(void *object)
 { TEST_ASSERT_EQUAL_PTR(object_at(4), object); discarded_links++; }
 
 FILE *monster_data;
 
-undefined4 read_file_handle(int handle, void *destination, int count)
+int read_file_handle(int handle, void *destination, uint count)
 {
     TEST_ASSERT_EQUAL_INT(1, handle);
     TEST_ASSERT_NOT_NULL(monster_data);

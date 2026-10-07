@@ -2,37 +2,37 @@
 #include "traps_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-char *get_message_string(uint id);
+char *get_message_string(ushort id);
 int message_scroll_print_wrapped(char *text);
 void debug_print(char *format, ...);
-ushort * find_equipped_item_by_category(void);
-void set_pending_update_flags(void);
-void spawn_trap_hazard_object(void);
-void * get_object_record_by_slot_index(void);
-ushort * find_object_in_chain(void);
-void * alloc_object_slot(void);
-undefined4 apply_area_terrain_effect(void);
-undefined4 apply_poison_or_damage_trap_effect(void);
-undefined4 check_object_area_for_spawn_block(ushort *object);
-void close_door_object(void);
-undefined4 dispatch_quest_event_code(void);
-undefined4 dispatch_trap_special_or_tile_action(void);
-int encode_object_slot_index(void);
-void free_object_slot(void);
-void object_list_insert_head(void);
-void object_list_unlink(void);
-undefined4 object_ptr_in_arena(void);
-void open_door_object(void);
-undefined4 place_object_in_world(void);
-void print_message_with_proximity_qualifier(void);
-undefined4 rand_below(void);
-void * resolve_object_link(void);
-uint resolve_skill_gated_unlock_or_use(void);
-uint scheduler_add_entry(void);
-undefined4 teleport_object_to_level_tile(void);
-void * tilemap_lookup(void);
-void toggle_door_object(void);
-void unlink_and_free_object(void);
+ushort *find_equipped_item_by_category(int category, int subcategory, int quality, short full_scan, void *out_slot);
+void set_pending_update_flags(ushort flags);
+void spawn_trap_hazard_object(ushort *trap_record, short tile_x, short tile_y);
+void *get_object_record_by_slot_index(short slot_index);
+ushort *find_object_in_chain(void *link_cursor, int recurse, int object_class, int subclass, short quality);
+void *alloc_object_slot(int region);
+int apply_area_terrain_effect(short tile_x, int tile_y, short wall_texture, short height_value, short height_adjust, short floor_texture, short width, short height_extent, short mode);
+int apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, int unused_a, int unused_b);
+int check_object_area_for_spawn_block(ushort *object);
+void close_door_object(void *actor, ushort *door);
+int dispatch_quest_event_code(void *trap_record, int tile_x, int tile_y);
+int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, void *tile_x, void *tile_y, ushort action_id, byte argument);
+int encode_object_slot_index(void *object);
+void free_object_slot(void *object);
+void object_list_insert_head(void *link_field, void *object);
+void object_list_unlink(void *link_field, void *object);
+int object_ptr_in_arena(void *object);
+void open_door_object(void *door);
+int place_object_in_world(uint tile_x, uint tile_y, int height, void *object, short radius, int skip_roll);
+void print_message_with_proximity_qualifier(char *message, short x1, short y1, short z1, short x2, short y2, short z2, short limit);
+uint rand_below(int limit);
+void *resolve_object_link(void *link_field);
+uint resolve_skill_gated_unlock_or_use(void *object, void *key_item, void *lock_link, ushort key_id);
+uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byte tile_x, byte tile_y);
+int teleport_object_to_level_tile(void *object, int tile_x, int tile_y, short level_number);
+void *tilemap_lookup(short tile_x, short tile_y);
+void toggle_door_object(char *actor, void *door);
+void unlink_and_free_object(void *link_field, void *object);
 ushort *level_object(unsigned slot);
 
 char *DAT_00086df8, *DAT_0024cff4;
@@ -55,7 +55,7 @@ uint message_id;
 
 int lookups, prints;
 
-char *get_message_string(uint id)
+char *get_message_string(ushort id)
 { lookups++; message_id = id; return available_message; }
 
 int message_scroll_print_wrapped(char *text)
@@ -69,61 +69,61 @@ int message_scroll_print_wrapped(char *text)
 
 void debug_print(char *format, ...) { (void)format; }
 
-ushort * find_equipped_item_by_category(void) { TEST_FAIL_MESSAGE("Unexpected find_equipped_item_by_category in text trap"); return 0; }
+ushort *find_equipped_item_by_category(int category, int subcategory, int quality, short full_scan, void *out_slot) { (void)category; (void)subcategory; (void)quality; (void)full_scan; (void)out_slot; TEST_FAIL_MESSAGE("Unexpected find_equipped_item_by_category in text trap"); return 0; }
 
-void set_pending_update_flags(void) { TEST_FAIL_MESSAGE("Unexpected set_pending_update_flags in text trap"); }
+void set_pending_update_flags(ushort flags) { (void)flags; TEST_FAIL_MESSAGE("Unexpected set_pending_update_flags in text trap"); }
 
-void spawn_trap_hazard_object(void) { TEST_FAIL_MESSAGE("Unexpected spawn_trap_hazard_object in text trap"); }
+void spawn_trap_hazard_object(ushort *trap_record, short tile_x, short tile_y) { (void)trap_record; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected spawn_trap_hazard_object in text trap"); }
 
-void * get_object_record_by_slot_index(void) { TEST_FAIL_MESSAGE("Unexpected get_object_record_by_slot_index in text trap"); return 0; }
+void *get_object_record_by_slot_index(short slot_index) { (void)slot_index; TEST_FAIL_MESSAGE("Unexpected get_object_record_by_slot_index in text trap"); return 0; }
 
-ushort * find_object_in_chain(void) { TEST_FAIL_MESSAGE("Unexpected find_object_in_chain in text trap"); return 0; }
+ushort *find_object_in_chain(void *link_cursor, int recurse, int object_class, int subclass, short quality) { (void)link_cursor; (void)recurse; (void)object_class; (void)subclass; (void)quality; TEST_FAIL_MESSAGE("Unexpected find_object_in_chain in text trap"); return 0; }
 
-void * alloc_object_slot(void) { TEST_FAIL_MESSAGE("Unexpected alloc_object_slot in text trap"); return 0; }
+void *alloc_object_slot(int region) { (void)region; TEST_FAIL_MESSAGE("Unexpected alloc_object_slot in text trap"); return 0; }
 
-undefined4 apply_area_terrain_effect(void) { TEST_FAIL_MESSAGE("Unexpected apply_area_terrain_effect in text trap"); return 0; }
+int apply_area_terrain_effect(short tile_x, int tile_y, short wall_texture, short height_value, short height_adjust, short floor_texture, short width, short height_extent, short mode) { (void)tile_x; (void)tile_y; (void)wall_texture; (void)height_value; (void)height_adjust; (void)floor_texture; (void)width; (void)height_extent; (void)mode; TEST_FAIL_MESSAGE("Unexpected apply_area_terrain_effect in text trap"); return 0; }
 
-undefined4 apply_poison_or_damage_trap_effect(void) { TEST_FAIL_MESSAGE("Unexpected apply_poison_or_damage_trap_effect in text trap"); return 0; }
+int apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, int unused_a, int unused_b) { (void)object_slot; (void)damage_delta; (void)unused_a; (void)unused_b; TEST_FAIL_MESSAGE("Unexpected apply_poison_or_damage_trap_effect in text trap"); return 0; }
 
-undefined4 check_object_area_for_spawn_block(ushort *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected check_object_area_for_spawn_block in text trap"); return 0; }
+int check_object_area_for_spawn_block(ushort *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected check_object_area_for_spawn_block in text trap"); return 0; }
 
-void close_door_object(void) { TEST_FAIL_MESSAGE("Unexpected close_door_object in text trap"); }
+void close_door_object(void *actor, ushort *door) { (void)actor; (void)door; TEST_FAIL_MESSAGE("Unexpected close_door_object in text trap"); }
 
-undefined4 dispatch_quest_event_code(void) { TEST_FAIL_MESSAGE("Unexpected dispatch_quest_event_code in text trap"); return 0; }
+int dispatch_quest_event_code(void *trap_record, int tile_x, int tile_y) { (void)trap_record; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected dispatch_quest_event_code in text trap"); return 0; }
 
-undefined4 dispatch_trap_special_or_tile_action(void) { TEST_FAIL_MESSAGE("Unexpected dispatch_trap_special_or_tile_action in text trap"); return 0; }
+int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, void *tile_x, void *tile_y, ushort action_id, byte argument) { (void)context_x; (void)context_y; (void)tile_x; (void)tile_y; (void)action_id; (void)argument; TEST_FAIL_MESSAGE("Unexpected dispatch_trap_special_or_tile_action in text trap"); return 0; }
 
-int encode_object_slot_index(void) { TEST_FAIL_MESSAGE("Unexpected encode_object_slot_index in text trap"); return 0; }
+int encode_object_slot_index(void *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected encode_object_slot_index in text trap"); return 0; }
 
-void free_object_slot(void) { TEST_FAIL_MESSAGE("Unexpected free_object_slot in text trap"); }
+void free_object_slot(void *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected free_object_slot in text trap"); }
 
-void object_list_insert_head(void) { TEST_FAIL_MESSAGE("Unexpected object_list_insert_head in text trap"); }
+void object_list_insert_head(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected object_list_insert_head in text trap"); }
 
-void object_list_unlink(void) { TEST_FAIL_MESSAGE("Unexpected object_list_unlink in text trap"); }
+void object_list_unlink(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected object_list_unlink in text trap"); }
 
-undefined4 object_ptr_in_arena(void) { TEST_FAIL_MESSAGE("Unexpected object_ptr_in_arena in text trap"); return 0; }
+int object_ptr_in_arena(void *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected object_ptr_in_arena in text trap"); return 0; }
 
-void open_door_object(void) { TEST_FAIL_MESSAGE("Unexpected open_door_object in text trap"); }
+void open_door_object(void *door) { (void)door; TEST_FAIL_MESSAGE("Unexpected open_door_object in text trap"); }
 
-undefined4 place_object_in_world(void) { TEST_FAIL_MESSAGE("Unexpected place_object_in_world in text trap"); return 0; }
+int place_object_in_world(uint tile_x, uint tile_y, int height, void *object, short radius, int skip_roll) { (void)tile_x; (void)tile_y; (void)height; (void)object; (void)radius; (void)skip_roll; TEST_FAIL_MESSAGE("Unexpected place_object_in_world in text trap"); return 0; }
 
-void print_message_with_proximity_qualifier(void) { TEST_FAIL_MESSAGE("Unexpected print_message_with_proximity_qualifier in text trap"); }
+void print_message_with_proximity_qualifier(char *message, short x1, short y1, short z1, short x2, short y2, short z2, short limit) { (void)message; (void)x1; (void)y1; (void)z1; (void)x2; (void)y2; (void)z2; (void)limit; TEST_FAIL_MESSAGE("Unexpected print_message_with_proximity_qualifier in text trap"); }
 
-undefined4 rand_below(void) { TEST_FAIL_MESSAGE("Unexpected rand_below in text trap"); return 0; }
+uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected rand_below in text trap"); return 0; }
 
-void * resolve_object_link(void) { TEST_FAIL_MESSAGE("Unexpected resolve_object_link in text trap"); return 0; }
+void *resolve_object_link(void *link_field) { (void)link_field; TEST_FAIL_MESSAGE("Unexpected resolve_object_link in text trap"); return 0; }
 
-uint resolve_skill_gated_unlock_or_use(void) { TEST_FAIL_MESSAGE("Unexpected resolve_skill_gated_unlock_or_use in text trap"); return 0; }
+uint resolve_skill_gated_unlock_or_use(void *object, void *key_item, void *lock_link, ushort key_id) { (void)object; (void)key_item; (void)lock_link; (void)key_id; TEST_FAIL_MESSAGE("Unexpected resolve_skill_gated_unlock_or_use in text trap"); return 0; }
 
-uint scheduler_add_entry(void) { TEST_FAIL_MESSAGE("Unexpected scheduler_add_entry in text trap"); return 0; }
+uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byte tile_x, byte tile_y) { (void)object_link; (void)delay; (void)animation_offset; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected scheduler_add_entry in text trap"); return 0; }
 
-undefined4 teleport_object_to_level_tile(void) { TEST_FAIL_MESSAGE("Unexpected teleport_object_to_level_tile in text trap"); return 0; }
+int teleport_object_to_level_tile(void *object, int tile_x, int tile_y, short level_number) { (void)object; (void)tile_x; (void)tile_y; (void)level_number; TEST_FAIL_MESSAGE("Unexpected teleport_object_to_level_tile in text trap"); return 0; }
 
-void * tilemap_lookup(void) { TEST_FAIL_MESSAGE("Unexpected tilemap_lookup in text trap"); return 0; }
+void *tilemap_lookup(short tile_x, short tile_y) { (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected tilemap_lookup in text trap"); return 0; }
 
-void toggle_door_object(void) { TEST_FAIL_MESSAGE("Unexpected toggle_door_object in text trap"); }
+void toggle_door_object(char *actor, void *door) { (void)actor; (void)door; TEST_FAIL_MESSAGE("Unexpected toggle_door_object in text trap"); }
 
-void unlink_and_free_object(void) { TEST_FAIL_MESSAGE("Unexpected unlink_and_free_object in text trap"); }
+void unlink_and_free_object(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected unlink_and_free_object in text trap"); }
 
 ushort *level_object(unsigned slot)
 {

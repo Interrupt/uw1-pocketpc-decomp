@@ -6,7 +6,7 @@ void tearDown(void) {}
 static void test_tile_action_keeps_64_bit_actor_and_context(void)
 {
     TEST_ASSERT_TRUE((uintptr_t)fx.target > UINT32_MAX);
-    dispatch_tile_special_action(2, (uintptr_t)fx.target, (intptr_t)fx.tile);
+    dispatch_tile_special_action(2, fx.target, fx.tile);
     TEST_ASSERT_EQUAL_HEX64((uintptr_t)fx.target, fx.dispatched_actor);
     TEST_ASSERT_EQUAL_HEX64((uintptr_t)fx.tile, fx.dispatched_context);
     TEST_ASSERT_EQUAL_INT(5, fx.dispatched_type);
@@ -17,7 +17,7 @@ static void test_trap_dispatch_preserves_actor_and_context_in_both_branches(void
     for (int branch=0; branch<2; branch++) {
         ushort action=branch ? 5 : 0xffff;
         TEST_ASSERT_EQUAL_INT(2, dispatch_trap_special_or_tile_action(32,2,
-            (uintptr_t)fx.target,(intptr_t)fx.tile,action,2));
+            fx.target,fx.tile,action,2));
         TEST_ASSERT_EQUAL_HEX64((uintptr_t)fx.target, fx.dispatched_actor);
         TEST_ASSERT_EQUAL_HEX64((uintptr_t)fx.tile, fx.dispatched_context);
         TEST_ASSERT_EQUAL_INT(5, fx.dispatched_type);
@@ -27,13 +27,13 @@ static void test_trap_dispatch_preserves_actor_and_context_in_both_branches(void
 }
 static void test_cone_unlock_executes_callback(void)
 {
-    cast_cone_damage_spell((uintptr_t)g_player_object, 1);
+    cast_cone_damage_spell(g_player_object, 1);
     TEST_ASSERT_EQUAL_INT(1, fx.scans);
     TEST_ASSERT_EQUAL_INT(1, fx.unlocks);
 }
 static void test_cone_tile_spell_uses_second_damage_tier(void)
 {
-    cast_cone_damage_spell((uintptr_t)g_player_object, 2);
+    cast_cone_damage_spell(g_player_object, 2);
     TEST_ASSERT_EQUAL_INT(1, fx.spawns); TEST_ASSERT_EQUAL_INT(1, fx.links);
     TEST_ASSERT_EQUAL_INT(6, fx.dice_count); TEST_ASSERT_EQUAL_INT(5, fx.dice_sides);
     TEST_ASSERT_EQUAL_INT(30, fx.damage); TEST_ASSERT_EQUAL_INT(3, fx.damage_type);
@@ -41,7 +41,7 @@ static void test_cone_tile_spell_uses_second_damage_tier(void)
 static void test_cone_permanent_state_effect_preserves_object_address(void)
 {
     fx.resist=1;
-    cast_cone_damage_spell((uintptr_t)g_player_object, 3);
+    cast_cone_damage_spell(g_player_object, 3);
     TEST_ASSERT_EQUAL_INT(1, fx.effects); TEST_ASSERT_EQUAL_INT(2, fx.goal);
     TEST_ASSERT_EQUAL_INT(0, fx.goal_mode);
     TEST_ASSERT_EQUAL_HEX8(0x40, ((byte *)fx.target)[0x19] & 0x40);
@@ -49,7 +49,7 @@ static void test_cone_permanent_state_effect_preserves_object_address(void)
 }
 static void test_search_area_spell_uses_first_damage_tier(void)
 {
-    cast_targeted_search_effect((uintptr_t)g_player_object, 0);
+    cast_targeted_search_effect(g_player_object, 0);
     TEST_ASSERT_EQUAL_INT(1, fx.spawns); TEST_ASSERT_EQUAL_INT(1, fx.links);
     TEST_ASSERT_EQUAL_INT(5, fx.damage_calls);
     TEST_ASSERT_EQUAL_INT(10, fx.dice_count); TEST_ASSERT_EQUAL_INT(6, fx.dice_sides);
@@ -60,7 +60,7 @@ static void test_search_morph_variants_execute_on_actual_object(void)
     const int parameters[]={1,3,5}, goals[]={6,2,7};
     for (int i=0; i<3; i++) {
         fx.resist=1;
-        cast_targeted_search_effect((uintptr_t)g_player_object, parameters[i]);
+        cast_targeted_search_effect(g_player_object, parameters[i]);
         TEST_ASSERT_EQUAL_INT(4, fx.variant);
         TEST_ASSERT_EQUAL_INT(1, fx.goal_mode);
         TEST_ASSERT_EQUAL_INT(goals[i], fx.goal);
@@ -69,9 +69,9 @@ static void test_search_morph_variants_execute_on_actual_object(void)
 }
 static void test_search_resistance_and_tile_damage_callbacks(void)
 {
-    cast_targeted_search_effect((uintptr_t)g_player_object, 2);
+    cast_targeted_search_effect(g_player_object, 2);
     TEST_ASSERT_EQUAL_INT(255, fx.damage); TEST_ASSERT_EQUAL_INT(3, fx.damage_type);
-    cast_targeted_search_effect((uintptr_t)g_player_object, 4);
+    cast_targeted_search_effect(g_player_object, 4);
     TEST_ASSERT_EQUAL_INT(20, fx.damage); TEST_ASSERT_EQUAL_INT(0x13, fx.damage_type);
     TEST_ASSERT_EQUAL_INT(4, fx.variant);
 }

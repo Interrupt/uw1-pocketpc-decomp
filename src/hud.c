@@ -3,6 +3,15 @@
    message scroll panel (word-wrap, line-by-line scroll, draw). */
 #include "headers/hud.h"
 #include "headers/debug.h"
+#include "headers/debug_ui.h"
+#include "headers/models.h"
+#include "headers/movement.h"
+#include "headers/tmap.h"
+#include "headers/interact.h"
+#include "headers/objects.h"
+#include "headers/resources.h"
+#include "headers/ai.h"
+#include "headers/object_actions.h"
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -153,7 +162,7 @@ static undefined2 DAT_002047e0_backing[32];
 #define DAT_002047e0 DAT_002047e0_backing[0]
 static undefined2 DAT_00204808_backing[32];
 #define DAT_00204808 DAT_00204808_backing[0]
-static undefined2 DAT_00086970;
+static short DAT_00086970;
 static char DAT_00204858;
 static undefined2 DAT_00204704;
 /* Sizing-audit pass: push_cursor_icon/pop_cursor_icon's own cursor- icon stack, guarded by `if
@@ -445,44 +454,32 @@ static undefined s_scroll_prompt_arrow_000879a8_backing[8192] = ">";
 
 
 // was FUN_00011000 -- expand the damaged-region bounds (DAT_00088950..5c) to include the given rect; sibling of dirty_rect_set
-void dirty_rect_union(param_1,param_2,param_3,param_4)
-int param_1;
-int param_2;
-int param_3;
-int param_4;
-
+void dirty_rect_union(int left, int bottom, int right, int top)
 {
-  if (param_1 < DAT_00088954) {
-    DAT_00088954 = param_1;
+  if (left < DAT_00088954) {
+    DAT_00088954 = left;
   }
-  if (DAT_0008895c < param_2) {
-    DAT_0008895c = param_2;
+  if (DAT_0008895c < bottom) {
+    DAT_0008895c = bottom;
   }
-  if (param_3 < DAT_00088950) {
-    DAT_00088950 = param_3;
+  if (right < DAT_00088950) {
+    DAT_00088950 = right;
   }
-  if (DAT_00088958 < param_4) {
-    DAT_00088958 = param_4;
+  if (DAT_00088958 < top) {
+    DAT_00088958 = top;
   }
-  return;
 }
 
 
 
 // was FUN_00011040 -- dirty-rect SET (overwrite the damaged-region
 // bounds to exact values; sibling of dirty_rect union dirty_rect_union)
-void dirty_rect_set(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-
+void dirty_rect_set(int left, int bottom, int right, int top)
 {
-  DAT_00088954 = param_1;
-  DAT_0008895c = param_2;
-  DAT_00088950 = param_3;
-  DAT_00088958 = param_4;
-  return;
+  DAT_00088954 = left;
+  DAT_0008895c = bottom;
+  DAT_00088950 = right;
+  DAT_00088958 = top;
 }
 
 
@@ -494,8 +491,7 @@ undefined4 param_4;
    dirty_rect_union, called from every draw (rect fill, text draw, sprite blit, ...) to grow the
    damaged region -- clamped here... */
 // was FUN_00022f0c
-void flush_dirty_rect_to_display()
-
+void flush_dirty_rect_to_display(int unused_flag)
 {
   undefined2 uVar1;
   int iVar2;
@@ -725,29 +721,26 @@ void enter_dungeon_view_hud_init()
 // was FUN_0003f99c -- draws the "selected" state for mode icon param_1 (1-based) by blitting
 // LFTI.GR's per-icon highlight frame (id (param_1-1)*-2+0x200b) at that icon's registered position
 // (DAT_000858a8/DAT_000858b8).
-void mode_icon_highlight_on(param_1)
-int param_1;
-
+void mode_icon_highlight_on(int icon_index)
 {
   int iVar1;
   short sVar2;
   short sVar3;
   
-  iVar1 = (param_1 + -1) * 0x10000 >> 0x10;
+  iVar1 = (icon_index + -1) * 0x10000 >> 0x10;
   sVar2 = *(short *)(&DAT_000858a8 + iVar1 * 2);
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   decrement_cursor_hide_depth();
   g_blit_transparent_mode = 1;
   /* Confirmed via real ARM disassembly (0x3f99c: `mov r0,#0x2000; orr r0,r0,#0xb; sub r0,r0,r4,lsl
-     #0x1`) that `(param_1-1)*-2 + 0x200b` is exactly what the original compiled code computes --
+     #0x1`) that `(icon_index-1)*-2 + 0x200b` is exactly what the original compiled code computes --
      NOT a decompile artifact. */
   if (getenv("UW_DEBUG_MODEICON"))
-    fprintf(stderr, "[modeicon] mode_icon_highlight_on (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
-            param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
-  draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
+    fprintf(stderr, "[modeicon] mode_icon_highlight_on (highlight ON) icon_index=%d iVar1=%d id=0x%x x=%d y=%d\n",
+            icon_index, iVar1, (icon_index + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
+  draw_sprite_by_id((icon_index + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
   cursor_show_idle_tick();
-  return;
 }
 
 
@@ -755,37 +748,32 @@ int param_1;
 // was FUN_0003fa1c -- un-highlights mode icon param_1 (1-based),
 // mode_icon_highlight_on's counterpart: draws LFTI.GR's adjacent
 // "unselected" frame (id (0x1005-(param_1-1))*2) at the same position.
-void mode_icon_highlight_off(param_1)
-int param_1;
-
+void mode_icon_highlight_off(int icon_index)
 {
   int iVar1;
   short sVar2;
   short sVar3;
   
-  iVar1 = (param_1 + -1) * 0x10000 >> 0x10;
+  iVar1 = (icon_index + -1) * 0x10000 >> 0x10;
   sVar2 = *(short *)(&DAT_000858a8 + iVar1 * 2);
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   decrement_cursor_hide_depth();
   g_blit_transparent_mode = 1;
   /* Confirmed via real ARM disassembly (0x3fa1c: `mov r0,#0x1000; orr r0,r0,#0x5; sub r0,r0,r4; mov
-     r0,r0,lsl #0x1`) that `(0x1005-(param_1-1))*2` is exactly what the original compiled code
+     r0,r0,lsl #0x1`) that `(0x1005-(icon_index-1))*2` is exactly what the original compiled code
      computes -- NOT a decompile artifact. */
   if (getenv("UW_DEBUG_MODEICON"))
-    fprintf(stderr, "[modeicon] mode_icon_highlight_off (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
-            param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
-  draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
+    fprintf(stderr, "[modeicon] mode_icon_highlight_off (highlight OFF) icon_index=%d iVar1=%d id=0x%x x=%d y=%d\n",
+            icon_index, iVar1, (0x1005 - (icon_index + -1)) * 2, (int)sVar2, (int)sVar3);
+  draw_sprite_by_id((0x1005 - (icon_index + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
   cursor_show_idle_tick();
-  return;
 }
 
 
 
 // was FUN_0003faa0
-void cursor_mode_button_click(param_1)
-short param_1;
-
+void cursor_mode_button_click(short button_y)
 {
   int iVar1;
   undefined2 uVar2;
@@ -793,13 +781,13 @@ short param_1;
   char cVar4;
   short sVar5;
   if (getenv("UW_DEBUG_MODEBTN"))
-    fprintf(stderr, "[modebtn] cursor_mode_button_click in: param_1=%d rel_y=%d cursor_mode=%d\n",
-            (int)param_1, (int)DAT_00085a6c[1], (int)g_cursor_mode);
+    fprintf(stderr, "[modebtn] cursor_mode_button_click in: button_y=%d rel_y=%d cursor_mode=%d\n",
+            (int)button_y, (int)DAT_00085a6c[1], (int)g_cursor_mode);
   uint uVar6;
   int iVar7;
   
   if ((g_cursor_holding_state == 0) && ((short)DAT_00201b60 == 1)) {
-    iVar7 = (int)param_1;
+    iVar7 = (int)button_y;
     if (iVar7 == -1) {
       if (DAT_000868d8 == 0) {
         sVar5 = ordint_divmod(0x12,DAT_00085a6c[1] + 2).quot;
@@ -829,7 +817,7 @@ short param_1;
       iVar1 = iVar7 >> 0x10;
       if (iVar1 == g_cursor_mode) {
         /* Dropped argument (Ghidra emitted a bare call despite mode_icon_highlight_off's own body
-           using param_1 throughout) -- confirmed by this same function's sibling call sites
+           using button_y throughout) -- confirmed by this same function's sibling call sites
            elsewhere in the file... */
         mode_icon_highlight_off(g_cursor_mode);
         g_cursor_mode = 0;
@@ -870,16 +858,13 @@ short param_1;
       }
     }
   }
-  return;
 }
 
 
 
 // was FUN_0003fd14 -- registered over the same mode-icon-bar click rect as cursor_mode_button_click
 // but under a different active-mask bit (4, not 1), so it's live in a different input context.
-void cursor_mode_button_click_restricted(param_1)
-short param_1;
-
+void cursor_mode_button_click_restricted(int button_y)
 {
   int iVar1;
   char cVar2;
@@ -888,7 +873,7 @@ short param_1;
   int iVar5;
   
   if ((g_cursor_holding_state == 0) && ((short)DAT_00201b60 == 1)) {
-    iVar5 = (int)param_1;
+    iVar5 = (int)button_y;
     if (iVar5 == -1) {
       if (DAT_000868d8 == 0) {
         sVar3 = ordint_divmod(0x12,DAT_00085a6c[1] + 2).quot;
@@ -936,7 +921,6 @@ short param_1;
       }
     }
   }
-  return;
 }
 
 
@@ -1017,6 +1001,7 @@ void main_loop_hud_flush()
     if (_force_cursor < 0) _force_cursor = (getenv("UW_NO_FORCE_CURSOR_REDRAW") == NULL);
     if (_force_cursor) update_mouse_state();
   }
+  populate_debug_panel();
   /* Debug UI: must draw HERE, after the forced 3D redraw above (or it gets painted over) but before
      flush_dirty_rect_to_display(1) below -- that call is the actual screen present for this tick
      (blits the software framebuffer through to GXEndDraw/SDL_RenderPresent, see gx_stub.c). */
@@ -1075,25 +1060,25 @@ void emit_hud_draw_commands()
   emit_glyph_draw_command(0xa0,1);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x2200;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x400;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x1100;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x3300;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -1139,9 +1124,7 @@ void emit_hud_draw_commands()
 // was FUN_0006ca4c -- brief "shake" animation played on a flask's shared decoration slot
 // ((&DAT_0023c224)[iVar1]) when hud_vitals_bar_tick's health-poisoned or mana threshold check
 // crosses over...
-void hud_vitals_threshold_shake(param_1)
-short param_1;
-
+void hud_vitals_threshold_shake(short flask)
 {
   int iVar1;
   short sVar2;
@@ -1149,7 +1132,7 @@ short param_1;
   int iVar4;
   byte *pbVar5;
   
-  iVar1 = (int)param_1;
+  iVar1 = (int)flask;
   if (iVar1 == 0) {
     if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) == 0) {
       sVar2 = 0x200c;
@@ -1178,7 +1161,6 @@ short param_1;
     } while (iVar3 < (int)(uint)*pbVar5);
   }
   (&DAT_0023c128)[iVar1] = *pbVar5;
-  return;
 }
 
 
@@ -1264,10 +1246,7 @@ void redraw_hud_panels()
 // was FUN_0006cff4 -- generic "set HUD status slot param_1 to param_2" dispatcher: negative param_1
 // writes a raw byte value directly, 0/1 compute a health/mana fill tier (0-12) from the player
 // object via ordint_divmod (see hud_vitals_bar_tick)...
-void set_hud_status_value(param_1,param_2)
-byte param_1;
-ushort param_2;
-
+void set_hud_status_value(byte slot, ushort value)
 {
   int iVar1;
   char cVar2;
@@ -1276,11 +1255,11 @@ ushort param_2;
   ushort uVar5;
   ushort uVar6;
   
-  iVar1 = (int)(char)param_1;
-  uVar4 = (undefined1)param_2;
+  iVar1 = (int)(char)slot;
+  uVar4 = (undefined1)value;
   if (iVar1 < 0) {
 LAB_0006d09c:
-    DAT_0023c1d8 = DAT_0023c1d8 | (ushort)(1 << (uint)param_1);
+    DAT_0023c1d8 = DAT_0023c1d8 | (ushort)(1 << (uint)slot);
     (&DAT_0023c118)[iVar1] = uVar4;
     return;
   }
@@ -1295,7 +1274,7 @@ LAB_0006d09c:
       (&DAT_0023c118)[iVar1] = 0;
     }
     else {
-      uVar4 = ordint_divmod(cVar2,(short)param_2 * 0xc).quot;
+      uVar4 = ordint_divmod(cVar2,(short)value * 0xc).quot;
       (&DAT_0023c118)[iVar1] = uVar4;
     }
     if (0xb < (byte)(&DAT_0023c118)[iVar1]) {
@@ -1304,7 +1283,7 @@ LAB_0006d09c:
     goto LAB_0006d17c;
   }
   if (iVar1 == 2) {
-    if (param_2 == DAT_0023c12a) {
+    if (value == DAT_0023c12a) {
       return;
     }
     DAT_0023c11a = uVar4;
@@ -1312,7 +1291,7 @@ LAB_0006d09c:
     return;
   }
   if (iVar1 == 3) {
-    if (param_2 == 9) {
+    if (value == 9) {
       DAT_0023c11b = uVar4;
       DAT_0023c1d8 = DAT_0023c1d8 | 8;
       return;
@@ -1337,43 +1316,42 @@ LAB_0006d09c:
     }
     goto LAB_0006d09c;
   }
-  if (DAT_0023c11c == param_2) {
+  if (DAT_0023c11c == value) {
     return;
   }
   uVar6 = (ushort)DAT_0023c11d;
-  if (uVar6 == param_2) {
+  if (uVar6 == value) {
     return;
   }
-  if (DAT_0023c12c == param_2) {
+  if (DAT_0023c12c == value) {
     return;
   }
   uVar5 = (ushort)DAT_0023c12d;
-  if (uVar5 == param_2) {
+  if (uVar5 == value) {
     return;
   }
   if (DAT_0023c12c == 0) {
 joined_r0x0006d150:
     if (uVar5 == 0) {
       bVar3 = ce_rand();
-      param_1 = (bVar3 & 1) + param_1;
+      slot = (bVar3 & 1) + slot;
     }
   }
   else if (uVar5 == 0) {
 LAB_0006d164:
-    param_1 = 5;
+    slot = 5;
   }
   else {
     uVar5 = uVar6;
     if (DAT_0023c11c == 0) goto joined_r0x0006d150;
     if (uVar6 == 0) goto LAB_0006d164;
   }
-  /* Was `(&DAT_0023c118)[(char)param_1] = uVar4;` -- correct for the iVar1<2 (health/mana) branch
+  /* Was `(&DAT_0023c118)[(char)slot] = uVar4;` -- correct for the iVar1<2 (health/mana) branch
      above, which jumps straight to LAB_0006d17c without reaching this line, but this specific write
      only executes for the iVar1==4 dragon-reaction branch... */
-  (&DAT_0023c11c)[param_1 + -4] = uVar4;
+  (&DAT_0023c11c)[slot + -4] = uVar4;
 LAB_0006d17c:
-  DAT_0023c1d8 = DAT_0023c1d8 | (ushort)(1 << (uint)param_1);
-  return;
+  DAT_0023c1d8 = DAT_0023c1d8 | (ushort)(1 << (uint)slot);
 }
 
 
@@ -1401,7 +1379,7 @@ void hud_panel_redraw_dispatch()
     do {
       uVar1 = (ushort)iVar7;
       if ((uVar1 & uVar4) != 0) {
-        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
+        (*(void (*)(int))(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
         uVar4 = DAT_0023c1e0 & ~uVar1;
         bVar8 = true;
         DAT_0023c1e0 = uVar4;
@@ -1416,7 +1394,7 @@ void hud_panel_redraw_dispatch()
     iVar9 = 0;
     do {
       if (((ushort)iVar7 & DAT_0023c1dc) != 0) {
-        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
+        (*(void (*)(int))(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
         bVar6 = DAT_0023c150;
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
@@ -1449,7 +1427,7 @@ void hud_panel_redraw_dispatch()
       if (((ushort)iVar7 & DAT_0023c1d8) != 0) {
         if (getenv("UW_DEBUG_CLICKREGION"))
           fprintf(stderr, "[stats] hud_panel_redraw_dispatch: dispatching g_hud_panel_ticker_handlers[%d] (table index %d)\n", iVar9, iVar9 + 4);
-        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
+        (*(void (*)(int))(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
       iVar7 = ((int)(short)(ushort)iVar7 << 0x11) >> 0x10;
@@ -1466,9 +1444,7 @@ void hud_panel_redraw_dispatch()
 
 
 // was FUN_0006d4a4
-void hud_vitals_bar_tick(param_1)
-short param_1;
-
+void hud_vitals_bar_tick(short flask)
 {
   int iVar1;
   uint uVar2;
@@ -1485,7 +1461,7 @@ short param_1;
   short local_2e;
   short local_2c;
   
-  uVar2 = (uint)param_1;
+  uVar2 = (uint)flask;
   if (uVar2 == 0) {
     if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) == 0) {
       local_30 = 0x200c;
@@ -1582,15 +1558,12 @@ short param_1;
       sprite_list_set_frame_id_transparent((int)*psVar11,0x2058);
     }
   }
-  return;
 }
 
 
 
 // was FUN_0006d894, briefly named hud_damage_flash_tick by an earlier pass.
-void hud_dragon_reaction_tick(param_1)
-int param_1;
-
+void hud_dragon_reaction_tick(int elapsed)
 {
   int iVar1;
   uint uVar2;
@@ -1618,11 +1591,11 @@ int param_1;
   local_30[3] = 0x2084;
   local_30[4] = 0x2088;
   local_30[5] = 0x208c;
-  uVar2 = (uint)(short)param_1;
+  uVar2 = (uint)(short)elapsed;
   if ((uVar2 != 4) && (uVar2 != 5)) {
     return;
   }
-  iVar6 = (param_1 + -4) * 0x10000 >> 0x10;
+  iVar6 = (elapsed + -4) * 0x10000 >> 0x10;
   iVar1 = iVar6 * 2;
   psVar11 = &DAT_0023c1e8 + iVar6;
   if (*psVar11 == 0) {
@@ -1644,7 +1617,7 @@ int param_1;
   }
   psVar7 = &DAT_0023c1e4 + iVar6;
   if (getenv("UW_DEBUG_DRAGON"))
-    fprintf(stderr, "[dragon] tick param_1=%d iVar6=%d target=%d playing=%d\n", param_1, iVar6, (int)(&DAT_0023c11c)[iVar6], (int)(&DAT_0023c12c)[iVar6]);
+    fprintf(stderr, "[dragon] tick elapsed=%d iVar6=%d target=%d playing=%d\n", elapsed, iVar6, (int)(&DAT_0023c11c)[iVar6], (int)(&DAT_0023c12c)[iVar6]);
   if ((*psVar7 == 0) && ((&DAT_0023c11c)[iVar6] != '\0')) {
     (&DAT_0023c12c)[iVar6] = (&DAT_0023c11c)[iVar6];
     *psVar7 = 1;
@@ -1827,7 +1800,6 @@ LAB_0006dd88:
     }
     *psVar7 = 3;
   }
-  return;
 }
 
 
@@ -1933,7 +1905,7 @@ void redraw_active_hud_panel()
 
 
 // was FUN_0007f208
-undefined4 msg_scroll_draw_edges()
+int msg_scroll_draw_edges()
 
 {
   int iVar1;
@@ -1952,9 +1924,7 @@ undefined4 msg_scroll_draw_edges()
 
 
 // was FUN_0007f340
-void msg_scroll_scroll_up_line(param_1)
-int param_1;
-
+void msg_scroll_scroll_up_line(int y_offset)
 {
   short sVar1;
   short sVar2;
@@ -1963,11 +1933,11 @@ int param_1;
   sVar2 = *(short *)(DAT_00250704 + 4);
   copy_framebuffer_rect((int)sVar2,((int)*(short *)(DAT_000879b0 + 6) + (int)sVar1) * 0x10000 >> 0x10,
                ((int)*(short *)(DAT_00250704 + 6) - (int)sVar2) * 0x10000 >> 0x10,
-               ((sVar1 * -0x10000 >> 0x10) - (int)*(short *)(DAT_000879b0 + 6)) + param_1,sVar2,
+               ((sVar1 * -0x10000 >> 0x10) - (int)*(short *)(DAT_000879b0 + 6)) + y_offset,sVar2,
                sVar1);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 4),*(undefined2 *)(DAT_00250704 + 10),
-               *(undefined2 *)(DAT_00250704 + 6),param_1 + 1);
+               *(undefined2 *)(DAT_00250704 + 6),y_offset + 1);
   if (DAT_00250704 == &g_msg_scroll_panel_state) {
     set_hud_status_value(4,1);
     msg_scroll_draw_edges();
@@ -1975,7 +1945,6 @@ int param_1;
   else {
     draw_conversation_window_decoration();
   }
-  return;
 }
 
 
@@ -2010,9 +1979,7 @@ void msg_scroll_more_prompt()
 
 // was FUN_0007f570 -- print a string to the message scroll, word-wrapped
 // at ~0x31 columns (one msg_scroll_split_escape_segments call per line).
-int message_scroll_print_wrapped(param_1)
-char *param_1;
-
+int message_scroll_print_wrapped(char *text)
 {
   undefined1 uVar1;
   int iVar2;
@@ -2028,12 +1995,12 @@ char *param_1;
   #define local_23 (auStack_54_backing + 49)
 
   iVar2 = (int)(short)DAT_00201b60;
-  /* Debug: log every string handed to the message scroll. param_1 is NULL at the call sites that
+  /* Debug: log every string handed to the message scroll. text is NULL at the call sites that
      only flush a pending inline graphic token (get_message_string). */
 
     DEBUG(INFO, "[scroll] add %s\"%s\" (mode=%d)\n",
             (iVar2 == 1 || iVar2 == 4) ? "" : "DROPPED ",
-            (param_1 != (char *)0x0) ? param_1 : "(inline-graphic)",
+            (text != (char *)0x0) ? text : "(inline-graphic)",
             iVar2);
 
   if (iVar2 == 1 || iVar2 == 4) {
@@ -2054,10 +2021,10 @@ char *param_1;
     DAT_0025071c = 0;
     *g_draw_color_index = *(undefined1 *)(DAT_00250704 + 0x16);
     *DAT_00084298 = 0x2a;
-    uVar3 = ce_strlen(param_1);
+    uVar3 = ce_strlen(text);
     for (uVar3 = uVar3 & 0xffff; 0x31 < (uVar3 & 0xffff);
         uVar3 = ((short)uVar3 - iVar2) * 0x10000 >> 0x10) {
-      ce_memmove(auStack_54,param_1,0x31);
+      ce_memmove(auStack_54,text,0x31);
       local_23[0] = 0;
       puVar4 = (undefined1 *)ce_strrchr(auStack_54,0x20);
       if (puVar4 == (undefined1 *)0x0) {
@@ -2065,12 +2032,12 @@ char *param_1;
       }
       uVar1 = *puVar4;
       *puVar4 = 0;
-      iVar2 = ((int)puVar4 - (int)auStack_54) * 0x10000 >> 0x10;
+      iVar2 = ((int)((char *)puVar4 - (char *)auStack_54) * 0x10000) >> 0x10;
       msg_scroll_split_escape_segments(auStack_54,1);
       *puVar4 = uVar1;
-      param_1 = iVar2 + param_1;
+      text = iVar2 + text;
     }
-    ce_memmove(auStack_54,param_1,(short)uVar3 + 1);
+    ce_memmove(auStack_54,text,(short)uVar3 + 1);
     msg_scroll_split_escape_segments(auStack_54,0);
     DAT_00250720 = read_realtime_clock_units();
     if (DAT_00250708 != 0) {
@@ -2090,16 +2057,14 @@ char *param_1;
 
 
 // was FUN_0007f7cc
-void msg_scroll_draw_wrapped_span(param_1,param_2)
-char * param_1;
-undefined4 param_2;
-
+void msg_scroll_draw_wrapped_span(char *text, int span_length)
 {
+  char *pRec;
   undefined2 *puVar1;
   char cVar2;
   undefined2 uVar3;
   uint uVar4;
-  char *iVar5;
+  int iVar5;
   undefined1 uVar6;
   int iVar7;
   /* Recursion-depth safety valve for the msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line
@@ -2109,9 +2074,9 @@ undefined4 param_2;
   s_wrap_recursion_depth++;
 
   iVar5 = 0;
-  if ((g_scroll_control_codes_enabled != 0) && (*param_1 == '\\')) {
-    cVar2 = param_1[1];
-    param_1 = param_1 + 2;
+  if ((g_scroll_control_codes_enabled != 0) && (*text == '\\')) {
+    cVar2 = text[1];
+    text = text + 2;
     if (cVar2 < '6') {
       if (cVar2 == '5') {
         uVar6 = 0xc4;
@@ -2154,10 +2119,10 @@ LAB_0007f8b8:
   }
   if (*(int *)(DAT_00250704 + 0x10) == 0) goto LAB_0007fa30;
   iVar5 = (int)*(short *)(DAT_00250704 + 10) + (int)*(short *)(DAT_000879b0 + 6);
-  uVar3 = (undefined2)iVar5;
+  uVar3 = (undefined2)(uintptr_t)iVar5;
   iVar7 = (int)*(short *)(DAT_000879b0 + 6) + ((int)(iVar5) * 0x10000 >> 0x10);
   iVar5 = *(short *)(DAT_00250704 + 2) + 1;
-  if ((int)DAT_00250710 - (int)(short)param_2 < 0) {
+  if ((int)DAT_00250710 - (int)(short)span_length < 0) {
     if (iVar5 < iVar7) {
       msg_scroll_more_prompt();
       uVar3 = *(undefined2 *)(DAT_00250704 + 10);
@@ -2165,8 +2130,8 @@ LAB_0007f8b8:
     else {
 LAB_0007f9ac:
       iVar5 = *(short *)(DAT_00250704 + 0x14) + 1;
-      *(char *)(DAT_00250704 + 0x14) = (char)iVar5;
-      *(char *)(DAT_00250704 + 0x15) = (char)((uint)iVar5 >> 8);
+      *(char *)(DAT_00250704 + 0x14) = (char)(uintptr_t)iVar5;
+      *(char *)(DAT_00250704 + 0x15) = (char)((uint)(uintptr_t)iVar5 >> 8);
     }
   }
   else {
@@ -2188,42 +2153,38 @@ LAB_0007f9ac:
   *(undefined1 *)(DAT_00250704 + 0x12) = 0;
   *(undefined1 *)(DAT_00250704 + 0x13) = 0;
 LAB_0007fa30:
-  iVar7 = measure_text_width(param_1);
-  iVar5 = DAT_00250704;
+  iVar7 = measure_text_width(text);
+  pRec = (char *)DAT_00250704;
   if (((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
       || (32 < s_wrap_recursion_depth))
   {
-    uVar4 = ce_strlen(param_1);
-    /* Guard against param_1 being an empty string: (uVar4 & 0xffff) - 1 underflows to 0xffff (index
+    uVar4 = ce_strlen(text);
+    /* Guard against text being an empty string: (uVar4 & 0xffff) - 1 underflows to 0xffff (index
        -1), reading/writing one byte before the string... */
-    if ((uVar4 != 0) && (param_1[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] == '\n')) {
-      param_1[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] = '\0';
+    if ((uVar4 != 0) && (text[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] == '\n')) {
+      text[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] = '\0';
       *(undefined1 *)(DAT_00250704 + 0x10) = 1;
       *(undefined1 *)(DAT_00250704 + 0x11) = 0;
       *(undefined1 *)(DAT_00250704 + 0x12) = 0;
       *(undefined1 *)(DAT_00250704 + 0x13) = 0;
-      iVar5 = DAT_00250704;
+      pRec = (char *)DAT_00250704;
     }
-    draw_text_string(param_1,(int)*(short *)(iVar5 + 8),(int)*(short *)(iVar5 + 10));
-    iVar5 = measure_text_width(param_1);
+    draw_text_string(text,(int)*(short *)(pRec + 8),(int)*(short *)(pRec + 10));
+    iVar5 = measure_text_width(text);
     iVar5 = *(short *)(DAT_00250704 + 8) + iVar5;
-    *(char *)(DAT_00250704 + 8) = (char)iVar5;
-    *(char *)(DAT_00250704 + 9) = (char)((uint)iVar5 >> 8);
+    *(char *)(DAT_00250704 + 8) = (char)(uintptr_t)iVar5;
+    *(char *)(DAT_00250704 + 9) = (char)((uint)(uintptr_t)iVar5 >> 8);
   }
   else {
-    msg_scroll_wrap_split_line(param_1,param_2);
+    msg_scroll_wrap_split_line(text,span_length);
   }
   s_wrap_recursion_depth--;
-  return;
 }
 
 
 
 // was FUN_0007fb2c
-void msg_scroll_wrap_split_line(param_1,param_2)
-char * param_1;
-undefined4 param_2;
-
+void msg_scroll_wrap_split_line(char *text, int span_length)
 {
   char cVar1;
   short sVar2;
@@ -2233,32 +2194,32 @@ undefined4 param_2;
   char cVar6;
 
   /* Guard against infinite msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line recursion on
-     an empty string: msg_scroll_draw_wrapped_span sends param_1 here whenever its pixel width
+     an empty string: msg_scroll_draw_wrapped_span sends text here whenever its pixel width
      doesn't fit the remaining line width... */
-  if (ce_strlen(param_1) == 0) {
+  if (ce_strlen(text) == 0) {
     return;
   }
-  pcVar3 = (char *)ce_strrchr(param_1,0x20);
+  pcVar3 = (char *)ce_strrchr(text,0x20);
   if (pcVar3 != (char *)0x0) {
     cVar6 = ' ';
     do {
       *pcVar3 = '\0';
-      sVar2 = measure_text_width(param_1);
+      sVar2 = measure_text_width(text);
       if ((int)*(short *)(DAT_00250704 + 8) + (int)sVar2 < (int)*(short *)(DAT_00250704 + 6))
       goto LAB_0007fc2c;
-      pcVar4 = (char *)ce_strrchr(param_1,0x20);
+      pcVar4 = (char *)ce_strrchr(text,0x20);
       *pcVar3 = ' ';
       pcVar3 = pcVar4;
     } while (pcVar4 != (char *)0x0);
   }
-  iVar5 = ce_strlen(param_1);
-  cVar6 = param_1[iVar5 + -1];
-  pcVar3 = param_1 + iVar5 + -2;
+  iVar5 = ce_strlen(text);
+  cVar6 = text[iVar5 + -1];
+  pcVar3 = text + iVar5 + -2;
   do {
     pcVar3[1] = cVar6;
     /* BUG FIX: this bounds check used to run AFTER `pcVar3 = pcVar3 - 1; cVar6 = *pcVar3; *pcVar3 =
        '\0';` below instead of before. */
-    if (pcVar3 <= param_1) {
+    if (pcVar3 <= text) {
       /* Was `&s_scroll_newline_0008522c` -- confirmed via real ARM disassembly (0x7fc74: `ldr
          r0,[0x7fc88]`, and DAT_0007fc88's own stored value IS 0x8522c) that the original binary
          passes this exact same shared "\n" constant's address here too... */
@@ -2271,60 +2232,52 @@ undefined4 param_2;
     pcVar3 = pcVar3 + -1;
     cVar6 = *pcVar3;
     *pcVar3 = '\0';
-    sVar2 = measure_text_width(param_1);
+    sVar2 = measure_text_width(text);
   } while ((int)*(short *)(DAT_00250704 + 6) <= (int)*(short *)(DAT_00250704 + 8) + (int)sVar2);
 LAB_0007fc2c:
   *pcVar3 = cVar6;
   cVar1 = pcVar3[1];
   *pcVar3 = '\n';
   pcVar3[1] = '\0';
-  msg_scroll_draw_wrapped_span(param_1,1);
+  msg_scroll_draw_wrapped_span(text,1);
   *pcVar3 = cVar6;
   pcVar3[1] = cVar1;
-  param_1 = pcVar3 + (cVar6 == ' ');
+  text = pcVar3 + (cVar6 == ' ');
 LAB_0007fc64:
-  msg_scroll_draw_wrapped_span(param_1,param_2);
-  return;
+  msg_scroll_draw_wrapped_span(text,span_length);
 }
 
 
 
 // was FUN_0007fc8c
-void msg_scroll_panel_init(param_1,param_2,param_3,param_4,param_5)
-int param_1;
-int param_2;
-int param_3;
-int param_4;
-int param_5;
-
+void msg_scroll_panel_init(int panel_x, int panel_y, int panel_width, int panel_height, int clear_panel)
 {
   char *ctx;
 
-  if (param_5 != 0) {
+  if (clear_panel != 0) {
     set_draw_color(0xf1);
-    rect_fill_or_save_restore(param_1 + 0xe,param_2 + 1,param_3 + -0xf,param_4 + -1);
+    rect_fill_or_save_restore(panel_x + 0xe,panel_y + 1,panel_width + -0xf,panel_height + -1);
   }
   set_draw_color(0x2a);
-  rect_fill_or_save_restore(param_1,param_2,param_3,param_4);
+  rect_fill_or_save_restore(panel_x,panel_y,panel_width,panel_height);
 
   /* Populate the message-scroll context struct (DAT_00250704 -> g_msg_scroll_panel_state) from the
      region rectangle. */
   ctx = (char *)DAT_00250704;
   if (ctx != (char *)0x0) {
-    *(short *)(ctx + 0x00) = (short)param_2;   /* top y (erase rect)   */
-    *(short *)(ctx + 0x02) = (short)param_4;   /* bottom y             */
-    *(short *)(ctx + 0x04) = (short)param_1;   /* left x               */
-    *(short *)(ctx + 0x06) = (short)param_3;   /* right x              */
-    *(short *)(ctx + 0x08) = (short)param_1;   /* draw cursor x        */
-    *(short *)(ctx + 0x0a) = (short)(param_2 + 4); /* draw cursor y (small top margin) */
-    *(short *)(ctx + 0x0c) = (short)param_1;   /* new-line left margin */
-    *(short *)(ctx + 0x0e) = (short)param_2;   /* top y (scroll blit)  */
+    *(short *)(ctx + 0x00) = (short)panel_y;   /* top y (erase rect)   */
+    *(short *)(ctx + 0x02) = (short)panel_height;   /* bottom y             */
+    *(short *)(ctx + 0x04) = (short)panel_x;   /* left x               */
+    *(short *)(ctx + 0x06) = (short)panel_width;   /* right x              */
+    *(short *)(ctx + 0x08) = (short)panel_x;   /* draw cursor x        */
+    *(short *)(ctx + 0x0a) = (short)(panel_y + 4); /* draw cursor y (small top margin) */
+    *(short *)(ctx + 0x0c) = (short)panel_x;   /* new-line left margin */
+    *(short *)(ctx + 0x0e) = (short)panel_y;   /* top y (scroll blit)  */
     *(int   *)(ctx + 0x10) = 0;                /* pending-newline flag */
     *(short *)(ctx + 0x14) = 0;                /* lines printed        */
     ctx[0x16] = 0x60;                          /* default text colour  */
     ctx[0x17] = 0;
   }
-  return;
 }
 
 
@@ -2332,15 +2285,13 @@ int param_5;
 /* Every field-offset constant below that was written as a bare `DAT_00250704 + N` (no cast before
    the addition) was wrong -- half what it should be. */
 // was FUN_0007fce8
-void msg_scroll_panel_reset(param_1)
-int param_1;
-
+void msg_scroll_panel_reset(int redraw)
 {
   char *pStruct;
   undefined2 uVar1;
   int iVar2;
 
-  if ((param_1 != 0) && (check_mouse_over_msg_scroll_panel(), DAT_00250708 != 0)) {
+  if ((redraw != 0) && (check_mouse_over_msg_scroll_panel(), DAT_00250708 != 0)) {
     decrement_cursor_hide_depth();
   }
   set_draw_color(0x2a);
@@ -2366,13 +2317,12 @@ int param_1;
   else {
     iVar2 = draw_conversation_window_decoration();
   }
-  if (param_1 != 0) {
+  if (redraw != 0) {
     iVar2 = DAT_00250708;
   }
-  if (param_1 != 0 && iVar2 != 0) {
+  if (redraw != 0 && iVar2 != 0) {
     cursor_show_idle_tick();
   }
-  return;
 }
 
 
@@ -2555,11 +2505,9 @@ LAB_0006e244:
 // was FUN_0006e96c -- the "ready to cast" rune-slot icon updater (see DAT_0023c268's own
 // declaration comment): allocates 3 icon sprites on first use (positioned via DAT_00087210) and,
 // for each of the 3 selected-rune bytes at param_1[0..2]...
-void update_ready_rune_slot_icons(param_1)
-/* Was `int`, truncating the real pointer callers pass (DAT_00086df8 +
-   0x47, DAT_00086df8 being a genuine `char *`). */
-char *param_1;
-
+/* Was `int`, truncating the real pointer callers pass (DAT_00086df8 + 0x47, DAT_00086df8 being a
+   genuine `char *`). */
+void update_ready_rune_slot_icons(char *character)
 {
   undefined4 uVar1;
   int iVar2;
@@ -2577,8 +2525,8 @@ char *param_1;
   }
   iVar2 = 0;
   do {
-    if (*(byte *)(iVar2 + param_1) < 0x18) {
-      sprite_list_set_frame_id((int)(&DAT_0023c268)[iVar2],*(byte *)(iVar2 + param_1) + 0xe8);
+    if (*(byte *)(iVar2 + character) < 0x18) {
+      sprite_list_set_frame_id((int)(&DAT_0023c268)[iVar2],*(byte *)(iVar2 + character) + 0xe8);
     }
     else {
       clear_sprite_list_slot_flag((int)(&DAT_0023c268)[iVar2]);
@@ -2586,7 +2534,6 @@ char *param_1;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 3);
   flush_sprite_list_compositor();
-  return;
 }
 
 
@@ -2597,10 +2544,8 @@ char *param_1;
 // was FUN_0006ea54 -- HUD light-color indicator: shows up to 3 small icons (mirrored off the
 // opposite screen edge from update_ready_rune_slot_icons's rune slots -- DAT_00087218's X positions
 // decrease where DAT_00087210's increase)...
-void update_light_source_color_icons(param_1)
 /* Same truncation bug as its sibling update_ready_rune_slot_icons above. */
-char *param_1;
-
+void update_light_source_color_icons(char *character)
 {
   undefined4 uVar1;
   int iVar2;
@@ -2619,8 +2564,8 @@ char *param_1;
     }
     iVar2 = 0;
     do {
-      if (*(byte *)(iVar2 + param_1) < 0x15) {
-        sprite_list_set_frame_id((int)(&DAT_0023c270)[iVar2],*(byte *)(iVar2 + param_1) + 0x20c0);
+      if (*(byte *)(iVar2 + character) < 0x15) {
+        sprite_list_set_frame_id((int)(&DAT_0023c270)[iVar2],*(byte *)(iVar2 + character) + 0x20c0);
       }
       else {
         clear_sprite_list_slot_flag((int)(&DAT_0023c270)[iVar2]);
@@ -2629,7 +2574,6 @@ char *param_1;
     } while (iVar2 < 3);
     flush_sprite_list_compositor();
   }
-  return;
 }
 
 
@@ -2640,13 +2584,7 @@ char *param_1;
 // was FUN_0006eb64 -- begins the HUD panel-switch flip transition to param_1 (the target panel):
 // lazily allocates the 3 flip grtile slots (DAT_0023c200/202/204) on first use, cleaning up via
 // release_hud_panel_flip_grtiles on failure...
-void begin_hud_panel_flip(param_1,param_2,param_3,param_4,param_5)
-undefined4 param_1;
-undefined2 param_2;
-undefined2 param_3;
-undefined2 param_4;
-undefined2 param_5;
-
+void begin_hud_panel_flip(int target_panel, short rect_x, short rect_y, short rect_width, short rect_height)
 {
   undefined1 uVar1;
   /* Was `ushort` -- too narrow for alloc_flip_grtile_slot's real 4-byte grtile key now that it's no
@@ -2664,10 +2602,10 @@ undefined2 param_5;
   ushort uVar6;
 
   uVar6 = 1;
-  DAT_0023c140 = param_5;
-  DAT_0023c144 = param_4;
-  DAT_0023c148 = param_2;
-  DAT_0023c14c = param_3;
+  DAT_0023c140 = rect_height;
+  DAT_0023c144 = rect_width;
+  DAT_0023c148 = rect_x;
+  DAT_0023c14c = rect_y;
   if (DAT_0023c278 == 0) {
     iVar5 = 0;
     do {
@@ -2691,16 +2629,16 @@ undefined2 param_5;
     DAT_0023c278 = 1;
   }
   if (getenv("UW_DEBUG_CLICKREGION"))
-    fprintf(stderr, "[stats] begin_hud_panel_flip entry: param_1(target)=%d g_flip_grtile_cache_ready=0x%x DAT_0023c278=%d uVar6=%d\n",
-            (int)param_1, (unsigned)g_flip_grtile_cache_ready, (int)DAT_0023c278, (int)uVar6);
+    fprintf(stderr, "[stats] begin_hud_panel_flip entry: target_panel(target)=%d g_flip_grtile_cache_ready=0x%x DAT_0023c278=%d uVar6=%d\n",
+            (int)target_panel, (unsigned)g_flip_grtile_cache_ready, (int)DAT_0023c278, (int)uVar6);
   if ((g_flip_grtile_cache_ready & 1) != 0) {
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
-    uVar2 = decode_gr_entry_to_buffer(s_panels_00087260,param_1,uVar4);
-    iVar5 = resolve_flip_grtile_slot(DAT_0023c200);
-    uVar3 = decode_gr_entry_to_buffer(s_panels_00087260,3,iVar5 + 0x2800);
+    uVar2 = decode_gr_entry_to_buffer(s_panels_00087260,target_panel,uVar4);
+    iVar5 = (intptr_t)resolve_flip_grtile_slot(DAT_0023c200);
+    uVar3 = decode_gr_entry_to_buffer(s_panels_00087260,3,(void *)(intptr_t)(iVar5 + 0x2800));
     if (getenv("UW_DEBUG_CLICKREGION"))
       fprintf(stderr, "[stats] begin_hud_panel_flip: uVar4(dst202)=%u uVar2(decode1 ok)=%u iVar5(dst200)=%d uVar3(decode2 ok)=%u\n",
-              (unsigned)uVar4, (unsigned)uVar2, iVar5, (unsigned)uVar3);
+              (unsigned)(uintptr_t)uVar4, (unsigned)uVar2, (int)iVar5, (unsigned)uVar3);
     if ((uVar2 & uVar3 & uVar6) == 0) {
       if (getenv("UW_DEBUG_CLICKREGION"))
         fprintf(stderr, "[stats] begin_hud_panel_flip: DECODE FAILED, calling report_fatal_error_and_exit(0x300e)\n");
@@ -2713,12 +2651,12 @@ undefined2 param_5;
     capture_framebuffer_rect_to_grtile_paletted(uVar4,0xec,8,0x53,0x72);
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     if (getenv("UW_DEBUG_CLICKREGION"))
-      fprintf(stderr, "[stats] begin_hud_panel_flip: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)uVar4);
+      fprintf(stderr, "[stats] begin_hud_panel_flip: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)(uintptr_t)uVar4);
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
     uVar1 = g_active_hud_panel;
-    g_active_hud_panel = (undefined1)param_1;
+    g_active_hud_panel = (undefined1)target_panel;
     DAT_00085c54 = 0;
-    (*(code *)(&g_hud_panel_handlers)[(short)param_1])();
+    (*(code *)(&g_hud_panel_handlers)[(short)target_panel])();
     DAT_00085c54 = 1;
     g_active_hud_panel = uVar1;
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
@@ -2729,8 +2667,7 @@ undefined2 param_5;
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
     cursor_show_idle_tick();
   }
-  DAT_0023c134 = (short)param_1;
-  return;
+  DAT_0023c134 = (short)target_panel;
 }
 
 
@@ -2999,7 +2936,7 @@ bool advance_hud_panel_flip()
     rect_fill_or_save_restore(0xec,8,0x13f,0x7a);
     draw_sprite_by_id(0x20bc,0x110,4,1,1);
     draw_sprite_by_id(0x20b4,0x110,0x7a,1,1);
-    bitmap_blit_to_framebuffer(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
+    bitmap_blit_to_framebuffer(0x114,0xfffb,uVar3,0x78,3,0,0,1);
 LAB_0006f008:
     cursor_show_idle_tick();
   }
@@ -3041,11 +2978,7 @@ LAB_0006f6c8:
 
 // was FUN_0006f6e0 -- draws one stage of the HUD panel-flip's squashed- panel visual: looks up this
 // stage's squash amount from the curve table u_dgijjjigd_G__000871e0...
-void squash_hud_panel_flip_rows(param_1,param_2,param_3)
-char *param_1;
-char *param_2;
-short param_3;
-
+void squash_hud_panel_flip_rows(char *src, char *dst, short stage)
 {
   /* Were `undefined4` -- truncated the real 64-bit source/dest pointers (already fixed to real
      pointers at advance_hud_panel_flip's call sites) back down to 32 bits on entry. Same
@@ -3067,7 +3000,7 @@ short param_3;
   int squashSrcCol;
 
   sVar6 = DAT_0023c144;
-  iVar8 = (int)param_3;
+  iVar8 = (int)stage;
   iVar11 = (int)DAT_0023c144;
   wVar2 = u_dgijjjigd_G__000871e0[iVar8 + 8];
   sVar3 = ordint_divmod(100,iVar11 * wVar2).quot;
@@ -3109,15 +3042,15 @@ short param_3;
               iVar10 = (int)(short)(iVar8 << 1) + (int)sVar1;
             }
             /* Was `copy_hud_panel_flip_column();` -- dropped arguments. Real disassembly
-               (0006f884-0006f8a4) shows param_1/param_2 passed in as-is, then both incremented by 1
+               (0006f884-0006f8a4) shows src/dst passed in as-is, then both incremented by 1
                byte afterward -- confirmed identical at all 3 call sites in this function. */
-            copy_hud_panel_flip_column(param_1,param_2);
+            copy_hud_panel_flip_column(src,dst);
             /* Not decompiled -- squash accumulator, see this
                function's own comment near its locals. */
             squashAccum = squashAccum + (int)DAT_0023c144;
-            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+            src = src + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
             squashSrcCol = squashAccum / (int)DAT_0023c13c;
-            param_2 = param_2 + 1;
+            dst = dst + 1;
             iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
           } while (iVar9 < sVar6);
           iVar9 = (int)DAT_0023c13c;
@@ -3150,13 +3083,13 @@ short param_3;
             /* Was `copy_hud_panel_flip_column();` -- same dropped-argument bug as
                the sibling branch above (real disassembly
                0006f96c-0006f988). */
-            copy_hud_panel_flip_column(param_1,param_2);
+            copy_hud_panel_flip_column(src,dst);
             /* Not decompiled -- squash accumulator, see this
                function's own comment near its locals. */
             squashAccum = squashAccum + (int)DAT_0023c144;
-            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+            src = src + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
             squashSrcCol = squashAccum / (int)DAT_0023c13c;
-            param_2 = param_2 + 1;
+            dst = dst + 1;
             iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
           } while (iVar9 < sVar6);
           iVar9 = (int)DAT_0023c13c;
@@ -3169,26 +3102,22 @@ short param_3;
       iVar9 = iVar9 + -1) {
     /* Was `copy_hud_panel_flip_column();` -- same dropped-argument bug (real
        disassembly 0006f9ec-0006fa0c: leftover-rows loop). */
-    copy_hud_panel_flip_column(param_1,param_2);
+    copy_hud_panel_flip_column(src,dst);
     /* Not decompiled -- squash accumulator, see this function's own
        comment near its locals. */
     squashAccum = squashAccum + (int)DAT_0023c144;
-    param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+    src = src + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
     squashSrcCol = squashAccum / (int)DAT_0023c13c;
-    param_2 = param_2 + 1;
+    dst = dst + 1;
   }
   DAT_0023c138 = sVar4;
-  return;
 }
 
 
 
 // was FUN_0006fa28 -- copies one column of the HUD panel-flip's squashed panel content from a
 // source column (param_1) into a destination column (param_2)...
-void copy_hud_panel_flip_column(param_1,param_2)
-undefined1 * param_1;
-undefined1 * param_2;
-
+void copy_hud_panel_flip_column(byte *src, byte *dst)
 {
   short sVar1;
   short sVar2;
@@ -3202,8 +3131,8 @@ undefined1 * param_2;
   if (0 < DAT_0023c110) {
     iVar3 = 0;
     do {
-      *param_2 = 0;
-      param_2 = param_2 + DAT_0023c13c;
+      *dst = 0;
+      dst = dst + DAT_0023c13c;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     } while (iVar3 < DAT_0023c110);
   }
@@ -3213,9 +3142,9 @@ undefined1 * param_2;
     if (0 < DAT_0023c140) {
       iVar3 = 0;
       do {
-        *param_2 = *param_1;
-        param_2 = param_2 + DAT_0023c13c;
-        param_1 = param_1 + DAT_0023c144;
+        *dst = *src;
+        dst = dst + DAT_0023c13c;
+        src = src + DAT_0023c144;
         iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
       } while (iVar3 < DAT_0023c140);
     }
@@ -3231,15 +3160,15 @@ undefined1 * param_2;
         if (iVar4 < 0) {
           iVar5 = 0;
           do {
-            *param_2 = *param_1;
+            *dst = *src;
             iVar5 = (iVar5 + -1) * 0x10000 >> 0x10;
-            param_2 = param_2 + DAT_0023c13c;
-            param_1 = param_1 + DAT_0023c144;
+            dst = dst + DAT_0023c13c;
+            src = src + DAT_0023c144;
             sVar1 = DAT_0023c144;
           } while (iVar4 < iVar5);
         }
         iVar6 = iVar6 + -1;
-        param_1 = param_1 + sVar1;
+        src = src + sVar1;
       } while (iVar3 < iVar6 * 0x10000 >> 0x10);
     }
     sVar2 = (DAT_0023c138 - sVar7 * (short)(sVar2 + 1)) + -1;
@@ -3253,35 +3182,34 @@ undefined1 * param_2;
         if (0 < sVar1) {
           iVar4 = 0;
           do {
-            *param_2 = *param_1;
-            param_2 = param_2 + DAT_0023c13c;
-            param_1 = param_1 + DAT_0023c144;
+            *dst = *src;
+            dst = dst + DAT_0023c13c;
+            src = src + DAT_0023c144;
             iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
           } while (iVar4 < sVar1);
         }
         iVar6 = iVar6 + 1;
-        *param_2 = *param_1;
-        param_2 = param_2 + DAT_0023c13c;
+        *dst = *src;
+        dst = dst + DAT_0023c13c;
         sVar2 = DAT_0023c140;
       } while (iVar6 * 0x10000 >> 0x10 < iVar3);
     }
     sVar2 = sVar2 - sVar7 * sVar1;
   }
   for (iVar3 = (int)sVar2; 0 < iVar3; iVar3 = (iVar3 + -1) * 0x10000 >> 0x10) {
-    *param_2 = *param_1;
-    param_2 = param_2 + DAT_0023c13c;
-    param_1 = param_1 + DAT_0023c144;
+    *dst = *src;
+    dst = dst + DAT_0023c13c;
+    src = src + DAT_0023c144;
   }
   if (0 < DAT_0023c110) {
     iVar3 = 0;
     do {
-      *param_2 = 0;
-      param_2 = param_2 + DAT_0023c13c;
+      *dst = 0;
+      dst = dst + DAT_0023c13c;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     } while (iVar3 < DAT_0023c110);
   }
-  *param_2 = 0;
-  return;
+  *dst = 0;
 }
 
 
@@ -3290,7 +3218,7 @@ undefined1 * param_2;
 
 // was FUN_00075be0 -- allocates and zero-initializes the HUD sprite- list compositor's 3 backing
 // buffers: DAT_0023c3e8...
-undefined4 init_sprite_list_buffers()
+int init_sprite_list_buffers()
 
 {
   DAT_0023c3e8 = ce_malloc(0x514);
@@ -3301,7 +3229,7 @@ undefined4 init_sprite_list_buffers()
   DAT_0023c40c = ce_malloc(0x102);
   if (DAT_0023c40c != 0) {
     ce_memset(DAT_0023c40c,0,0x102);
-    DAT_0023c414 = DAT_0023c40c + 0x100;
+    DAT_0023c414 = (ushort *)(DAT_0023c40c + 0x100);
   }
   DAT_0023c3e4 = ce_malloc(0x102);
   if (DAT_0023c3e4 != 0) {
@@ -3316,22 +3244,20 @@ undefined4 init_sprite_list_buffers()
 // was FUN_00076488 -- clears a HUD sprite-list slot's status-word flags (masked by DAT_0023c418)
 // and queues it for redraw, but only if the slot's status word currently has DAT_0008763c set (a
 // "valid/active" bit); a no-op otherwise, or for an out-of-range slot index (>= 0x40).
-undefined4 clear_sprite_list_slot_flag(param_1)
-undefined4 param_1;
-
+int clear_sprite_list_slot_flag(int slot)
 {
   ushort uVar1;
   ushort *puVar2;
   
-  if ((short)param_1 < 0x40) {
-    puVar2 = (ushort *)((short)param_1 * 0x14 + DAT_0023c3e8);
+  if ((short)slot < 0x40) {
+    puVar2 = (ushort *)((short)slot * 0x14 + DAT_0023c3e8);
     if ((*puVar2 & DAT_0008763c) == 0) {
       return 0;
     }
     uVar1 = DAT_0023c418 & *puVar2;
     *(char *)puVar2 = (char)uVar1;
     *(char *)((char *)puVar2 + 1) = (char)(uVar1 >> 8);
-    sprite_list_queue_slot_redraw(param_1);
+    sprite_list_queue_slot_redraw(slot);
   }
   return 0xffffffff;
 }
@@ -3355,8 +3281,8 @@ void flush_sprite_list_compositor()
   if (DAT_0023c41c != 0) {
     decrement_cursor_hide_depth();
     puVar7 = DAT_0023c414 + -0x20;
-    puVar6 = DAT_0023c40c;
-    if (DAT_0023c40c < puVar7) {
+    puVar6 = (ushort *)DAT_0023c40c;
+    if ((ushort *)DAT_0023c40c < puVar7) {
       do {
         puVar4 = puVar7;
         for (uVar5 = *puVar7; uVar5 != 0; uVar5 = uVar5 - 1) {
@@ -3384,7 +3310,7 @@ void flush_sprite_list_compositor()
               invalidate_grtile_by_key(*(undefined4 *)(puVar6 + 8));
             }
           }
-          puVar6 = DAT_0023c40c;
+          puVar6 = (ushort *)DAT_0023c40c;
         }
         puVar7 = puVar7 + -0x20;
       } while (puVar6 < puVar7);
@@ -3479,13 +3405,7 @@ void flush_sprite_list_compositor()
 
 /* was FUN_0007e998 -- Not decompiled -- confirmed a genuine dead stub in the real binary too
    (disassembly at 0x0007e998 is just `cpy pc,lr`, 4 bytes, no body). */
-void capture_framebuffer_rect_to_grtile_paletted(param_1,param_2,param_3,param_4,param_5)
-unsigned char *param_1;
-int param_2;
-int param_3;
-int param_4;
-int param_5;
-
+void capture_framebuffer_rect_to_grtile_paletted(unsigned char *out_pixels, int x, int y, int width, int height)
 {
   int row;
   int col;
@@ -3502,9 +3422,9 @@ int param_5;
   short *fb_row;
 
   pal565 = (unsigned short *)g_palette_rgb565_backing;
-  for (row = 0; row < param_5; row++) {
-    fb_row = (short *)((char *)g_uw_framebuffer + ((param_3 + row) * 0x140 + param_2) * 2);
-    for (col = 0; col < param_4; col++) {
+  for (row = 0; row < height; row++) {
+    fb_row = (short *)((char *)g_uw_framebuffer + ((y + row) * 0x140 + x) * 2);
+    for (col = 0; col < width; col++) {
       src_pixel = (unsigned short)fb_row[col];
       best_index = 0;
       best_dist = 0x7fffffff;
@@ -3520,7 +3440,7 @@ int param_5;
           if (dist == 0) break;
         }
       }
-      param_1[row * param_4 + col] = (unsigned char)best_index;
+      out_pixels[row * width + col] = (unsigned char)best_index;
     }
   }
 }
@@ -3602,10 +3522,7 @@ void select_msg_scroll_mode_2()
 
 // was FUN_0007f170 -- input-pump wait loop used by the message-scroll panel: waits for the next
 // distinct input event (or, if param_1 is nonzero, until param_1 clock units elapse)...
-void wait_for_click_to_continue(param_1,param_2)
-short param_1;
-uint param_2;
-
+void wait_for_click_to_continue(short use_timeout, uint timeout_units)
 {
   short sVar1;
   short sVar2;
@@ -3615,20 +3532,19 @@ uint param_2;
   wait_for_click_release(1);
   sVar1 = next_input_event();
   iVar3 = read_realtime_clock_units();
-  if (DAT_00250708 != 0 && param_2 != 0) {
+  if (DAT_00250708 != 0 && timeout_units != 0) {
     cursor_show_idle_tick();
   }
   do {
     sVar2 = next_input_event();
     if (sVar1 != sVar2) break;
     flush_dirty_rect_to_display(1);
-  } while ((param_1 == 0) || (uVar4 = read_realtime_clock_units(), uVar4 <= (uint)(param_1 + iVar3)));
+  } while ((use_timeout == 0) || (uVar4 = read_realtime_clock_units(), uVar4 <= (uint)(use_timeout + iVar3)));
   wait_for_click_release(1);
   check_mouse_over_msg_scroll_panel();
-  if ((param_2 & DAT_00250708) != 0) {
+  if ((timeout_units & DAT_00250708) != 0) {
     decrement_cursor_hide_depth();
   }
-  return;
 }
 
 
@@ -3638,7 +3554,7 @@ uint param_2;
 // was FUN_0007f290 -- the conversation-mode counterpart to msg_scroll_draw_edges (src/hud.c calls
 // this one specifically when DAT_00250704 does NOT point at g_msg_scroll_panel_state, i.e. the
 // panel is in conversation/mode-2, not normal mode).
-undefined4 draw_conversation_window_decoration()
+int draw_conversation_window_decoration()
 
 {
   int iVar1;
@@ -3665,25 +3581,21 @@ undefined4 draw_conversation_window_decoration()
 
 // was FUN_0007f6fc -- confirmed by message_scroll_print_wrapped's own pre-existing comment
 // (src/hud.c) as its per-~49-char-chunk worker (one call per line in the word-wrap loop).
-void msg_scroll_split_escape_segments(param_1,param_2)
-undefined1 * param_1;
-undefined4 param_2;
-
+void msg_scroll_split_escape_segments(byte *text, int span_length)
 {
   undefined1 *puVar1;
   undefined4 uVar2;
   
-  while (puVar1 = (undefined1 *)ce_strchr(param_1 + 1,0x5c), puVar1 != (undefined1 *)0x0) {
+  while (puVar1 = (undefined1 *)ce_strchr(text + 1,0x5c), puVar1 != (undefined1 *)0x0) {
     *puVar1 = 0;
-    if ((puVar1[2] != '\0') || (uVar2 = param_2, puVar1[1] == 'm')) {
+    if ((puVar1[2] != '\0') || (uVar2 = span_length, puVar1[1] == 'm')) {
       uVar2 = 1;
     }
-    msg_scroll_split_newline_segments(param_1,uVar2);
+    msg_scroll_split_newline_segments(text,uVar2);
     *puVar1 = 0x5c;
-    param_1 = puVar1;
+    text = puVar1;
   }
-  msg_scroll_split_newline_segments(param_1,param_2);
-  return;
+  msg_scroll_split_newline_segments(text,span_length);
 }
 
 
@@ -3691,24 +3603,20 @@ undefined4 param_2;
 // was FUN_0007f770 -- confirmed by pre-existing callers' comments (src/object_actions.c) as "the
 // scroll's own line-break logic": only breaks its input on an embedded '\n' (ASCII 10) byte,
 // calling msg_scroll_draw_wrapped_span for each resulting line.
-void msg_scroll_split_newline_segments(param_1,param_2)
-char * param_1;
-undefined4 param_2;
-
+void msg_scroll_split_newline_segments(char *text, int span_length)
 {
   char cVar1;
   char *iVar2;   /* was `int` -- ce_strchr (strchr) returns a real 64-bit pointer; truncating it made `*(char
    *)(iVar2+1)` a wild deref, e.g. crashing "You see nothing." on a right-click. */
 
-  while ((iVar2 = ce_strchr(param_1,10), iVar2 != 0 &&
+  while ((iVar2 = ce_strchr(text,10), iVar2 != 0 &&
          (cVar1 = iVar2[1], cVar1 != '\0'))) {
     iVar2[1] = 0;
-    msg_scroll_draw_wrapped_span(param_1,1);
-    param_1 = iVar2 + 1;
-    *param_1 = cVar1;
+    msg_scroll_draw_wrapped_span(text,1);
+    text = iVar2 + 1;
+    *text = cVar1;
   }
-  msg_scroll_draw_wrapped_span(param_1,param_2);
-  return;
+  msg_scroll_draw_wrapped_span(text,span_length);
 }
 
 
@@ -3718,15 +3626,13 @@ undefined4 param_2;
 // was FUN_0007fe20 -- prints the decimal string form of param_1 (via itoa_radix) to the message
 // scroll, restoring the cursor to the saved column (DAT_0025070c) first. Used to echo a numeric
 // answer back after a scroll-based prompt.
-void echo_number_to_scroll(param_1)
-short param_1;
-
+void echo_number_to_scroll(short number)
 {
   short sVar1;
   int iVar2;
   undefined1 auStack_18 [8];
 
-  itoa_radix((int)param_1,auStack_18,10);
+  itoa_radix((int)number,auStack_18,10);
   iVar2 = (int)DAT_0025070c;
   sVar1 = *(short *)(DAT_00250704 + 10);
   select_msg_scroll_mode_normal();
@@ -3738,7 +3644,6 @@ short param_1;
   *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
   *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
   message_scroll_print_wrapped(auStack_18);
-  return;
 }
 
 
@@ -3746,12 +3651,10 @@ short param_1;
 // was FUN_0007fee8 -- prints "Yes" or "No" to the message scroll (param_1 nonzero == "Yes"),
 // restoring the cursor to the saved column first, the same setup echo_number_to_scroll does. Used
 // to echo a yes/no answer back after a scroll-based prompt.
-void echo_yes_no_to_scroll(param_1)
-int param_1;
-
+void echo_yes_no_to_scroll(int is_yes)
 {
   short sVar1;
-  undefined *puVar2;
+  char *puVar2;
   int iVar3;
   
   iVar3 = (int)DAT_0025070c;
@@ -3764,14 +3667,13 @@ int param_1;
   sVar1 = DAT_0025070c;
   *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
   *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
-  if (param_1 == 0) {
-    puVar2 = &s_No_0008799c;
+  if (is_yes == 0) {
+    puVar2 = s_No_0008799c;
   }
   else {
-    puVar2 = &s_Yes_000879a0;
+    puVar2 = s_Yes_000879a0;
   }
   message_scroll_print_wrapped(puVar2);
-  return;
 }
 
 
@@ -3779,13 +3681,7 @@ int param_1;
 
 
 // was FUN_0007ffa8
-undefined4 scroll_text_entry_prompt(param_1,param_2,param_3,param_4,param_5)
-undefined * param_1;
-char * param_2;
-intptr_t param_3;
-int param_4;
-short param_5;
-
+int scroll_text_entry_prompt(char *prompt, char *buffer, char *dest, int allow_all_chars, short max_length)
 {
   char cVar1;
   short sVar2;
@@ -3805,38 +3701,38 @@ short param_5;
   char acStack_a1 [57];
   char local_68 [52];
   
-  if (0x32 < param_5) {
-    param_5 = 0x32;
+  if (0x32 < max_length) {
+    max_length = 0x32;
   }
   select_msg_scroll_mode_normal();
   *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
-  if (param_1 == (undefined *)0x0) {
+  if (prompt == (char *)0x0) {
     sVar3 = measure_text_width(&s_scroll_prompt_arrow_000879a8);
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
-    param_1 = &s_scroll_prompt_arrow_000879a8;
+    prompt = &s_scroll_prompt_arrow_000879a8;
   }
   else {
-    sVar3 = measure_text_width(param_1);
+    sVar3 = measure_text_width(prompt);
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
   }
   sVar2 = *(short *)(DAT_00250704 + 6);
-  message_scroll_print_wrapped(param_1);
+  message_scroll_print_wrapped(prompt);
   DAT_0025070c = *(short *)(DAT_00250704 + 8);
-  if (param_2 == (char *)0x0) {
+  if (buffer == (char *)0x0) {
     uVar13 = 0;
   }
   else {
     g_scroll_control_codes_enabled = 0;
-    message_scroll_print_wrapped(param_2);
+    message_scroll_print_wrapped(buffer);
     g_scroll_control_codes_enabled = 1;
-    pcVar6 = param_2;
+    pcVar6 = buffer;
     do {
       cVar1 = *pcVar6;
       /* Preserve Ghidra's relative-copy idiom without truncating pointers. */
-      pcVar6[(intptr_t)(acStack_a1 + 1) - (intptr_t)param_2] = cVar1;
+      pcVar6[(intptr_t)(acStack_a1 + 1) - (intptr_t)buffer] = cVar1;
       pcVar6 = pcVar6 + 1;
     } while (cVar1 != '\0');
-    iVar7 = ce_strlen(param_2);
+    iVar7 = ce_strlen(buffer);
     uVar13 = iVar7 * -0x10000 >> 0x10;
   }
   sVar5 = (short)uVar13;
@@ -3865,11 +3761,11 @@ short param_5;
       }
       cursor_show_idle_tick();
       if ((short)uVar8 == 0x1b) {
-        param_3 = param_3 - (intptr_t)param_2;
+        intptr_t dest_offset = (intptr_t)dest - (intptr_t)buffer;
         do {
-          cVar1 = *param_2;
-          param_2[param_3] = cVar1;
-          param_2 = param_2 + 1;
+          cVar1 = *buffer;
+          buffer[dest_offset] = cVar1;
+          buffer = buffer + 1;
         } while (cVar1 != '\0');
         set_draw_color(0x2a);
         rect_fill_or_save_restore((int)DAT_0025070c,(uint)*(ushort *)(DAT_00250704 + 10),
@@ -3885,7 +3781,7 @@ short param_5;
         do {
           pcVar6 = pcVar6 + 1;
           cVar1 = *pcVar6;
-          pcVar6[param_3 - (intptr_t)(acStack_a1 + 1)] = cVar1;
+          pcVar6[(intptr_t)dest - (intptr_t)(acStack_a1 + 1)] = cVar1;
         } while (cVar1 != '\0');
         *(char *)(DAT_00250704 + 8) = (char)iVar7;
         *(char *)(DAT_00250704 + 9) = (char)((uint)iVar7 >> 8);
@@ -4023,8 +3919,8 @@ LAB_000804d0:
           }
           if (((((iVar12 != -1) && (iVar10 = _isctype(iVar12,0x157), iVar10 != 0)) &&
                (sVar5 = measure_text_width(acStack_a1 + 1), sVar5 < (short)(sVar3 + -0x14 + sVar2))) &&
-              (uVar11 = ce_strlen(acStack_a1 + 1), uVar11 < (uint)(int)param_5)) &&
-             ((param_4 != 0 || (iVar12 = _isctype(iVar12,4), iVar12 != 0)))) {
+              (uVar11 = ce_strlen(acStack_a1 + 1), uVar11 < (uint)(int)max_length)) &&
+             ((allow_all_chars != 0 || (iVar12 = _isctype(iVar12,4), iVar12 != 0)))) {
             sVar5 = ce_strlen(acStack_a1 + 1);
             iVar12 = (int)sVar5;
             acStack_a1[iVar12 + 2] = '\0';
@@ -4057,11 +3953,7 @@ LAB_0008062c:
 // was FUN_00080828 -- interactive yes/no scroll prompt: prints the question (either param_1
 // directly, or print_scroll_message_by_id on param_2 when param_1 is 0), echoes the current default
 // answer (*param_3) as "Yes"/"No", then loops on input...
-undefined4 prompt_yes_no_scroll(param_1,param_2,param_3)
-int param_1;
-undefined4 param_2;
-int * param_3;
-
+int prompt_yes_no_scroll(int question_text, int message_id, int *result)
 {
   short sVar1;
   undefined *puVar2;
@@ -4069,21 +3961,21 @@ int * param_3;
   int iVar4;
   int iVar5;
   
-  iVar5 = *param_3;
+  iVar5 = *result;
   select_msg_scroll_mode_normal();
   *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
-  if (param_1 == 0) {
-    print_scroll_message_by_id(param_2);
+  if (question_text == 0) {
+    print_scroll_message_by_id(message_id);
   }
   else {
-    message_scroll_print_wrapped(param_1);
+    message_scroll_print_wrapped((char *)(intptr_t)(question_text));
   }
   DAT_0025070c = *(undefined2 *)(DAT_00250704 + 8);
-  if (*param_3 == 0) {
-    puVar2 = &s_No_0008799c;
+  if (*result == 0) {
+    puVar2 = s_No_0008799c;
   }
   else {
-    puVar2 = &s_Yes_000879a0;
+    puVar2 = s_Yes_000879a0;
   }
   message_scroll_print_wrapped(puVar2);
   decrement_cursor_hide_depth();
@@ -4095,11 +3987,11 @@ int * param_3;
       cursor_show_idle_tick();
       if (sVar1 == 0x1b) {
         echo_yes_no_to_scroll(0);
-        *param_3 = 0;
+        *result = 0;
         uVar3 = 0xffffffff;
       }
       else {
-        *param_3 = iVar5;
+        *result = iVar5;
       }
       return uVar3;
     }
@@ -4285,19 +4177,16 @@ void clear_rune_bag_contents()
 
 // was FUN_00044848 -- draws a single rune's icon (param_1, a rune
 // index 0-0x17) at its grid position in the rune-bag panel.
-void draw_rune_icon(param_1)
-uint param_1;
-
+void draw_rune_icon(uint rune_index)
 {
   int iVar1;
   int iVar2;
 
   decrement_cursor_hide_depth();
-  iVar1 = ((int)(short)param_1 >> 2) * 0xf;
-  iVar2 = (param_1 & 3) * 0x12;
-  draw_sprite_by_id(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
+  iVar1 = ((int)(short)rune_index >> 2) * 0xf;
+  iVar2 = (rune_index & 3) * 0x12;
+  draw_sprite_by_id(rune_index + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
   cursor_show_idle_tick();
-  return;
 }
 
 
@@ -4387,14 +4276,14 @@ void handle_rune_bag_click()
             bVar2 = (byte)(uVar1 >> 8);
             *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
             *(byte *)(DAT_00086df8 + 0x60) =
-                 ((byte)((uVar1 & 0xfc00) - 1 >> 8) ^ bVar2) & 0xc ^ bVar2;
+                 ((byte)(((uVar1 & 0xfc00) - 1) >> 8) ^ bVar2) & 0xc ^ bVar2;
           }
           *(char *)((*(byte *)(DAT_00086df8 + 0x60) >> 2 & 3) + DAT_00086df8 + 0x47) = (char)iVar6;
           uVar1 = *(ushort *)(DAT_00086df8 + 0x5f);
           bVar2 = (byte)(uVar1 >> 8);
           *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
           *(byte *)(DAT_00086df8 + 0x60) =
-               ((byte)((uVar1 & 0xfc00) + 0x400 >> 8) ^ bVar2) & 0xc ^ bVar2;
+               ((byte)(((uVar1 & 0xfc00) + 0x400) >> 8) ^ bVar2) & 0xc ^ bVar2;
           update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
         }
         else {
@@ -4469,14 +4358,12 @@ void handle_light_source_click()
 // was FUN_00044d14 -- the "cast spell" button click handler (registered in
 // register_stats_panel_click_regions at (0xb0,0x9b), also bound as a key binding in
 // run_game_startup_sequence)...
-void handle_cast_spell_click(param_1)
-short param_1;
-
+void handle_cast_spell_click(short click_state)
 {
   int iVar1;
 
   if (g_cursor_holding_state == 0) {
-    if (((*(ushort *)((byte *)DAT_00085a6c + 6) & 2) == 0) || (param_1 != 0)) {
+    if (((*(ushort *)((byte *)DAT_00085a6c + 6) & 2) == 0) || (click_state != 0)) {
       DAT_002028d0 = 1;
       if (*(uint *)(DAT_00086df8 + 0xce) < (uint)DAT_002028d4 + DAT_002028d8) {
         play_sound_effect_with_pan(0x15,0x40,0);
@@ -4504,7 +4391,6 @@ short param_1;
       wait_for_click_release(1);
     }
   }
-  return;
 }
 
 
@@ -4512,12 +4398,10 @@ short param_1;
 // was FUN_00044e74 -- shared spell-cast-failure reporter: plays the
 // fizzle sound and prints the failure-reason scroll message (param_1,
 // a reason code 0-3) from cast_spell_from_rune_combo. Always returns 0.
-undefined4 report_spell_cast_failure(param_1)
-int param_1;
-
+int report_spell_cast_failure(int failure_reason)
 {
   play_sound_effect_with_pan(0x16,0x40,0);
-  print_scroll_message_by_id(param_1 + 0xd2);
+  print_scroll_message_by_id(failure_reason + 0xd2);
   return 0;
 }
 
@@ -4528,9 +4412,7 @@ int param_1;
 // was FUN_00044e9c -- resolves and attempts to cast the spell matched by handle_cast_spell_click's
 // rune-combo lookup: checks caster-level requirement, mana cost, rolls a casting skill check, and
 // on success dispatches the actual spell effect via dispatch_special_action...
-undefined4 cast_spell_from_rune_combo(param_1)
-uint param_1;
-
+int cast_spell_from_rune_combo(uint circle_hint)
 {
   byte bVar1;
   char cVar2;
@@ -4540,9 +4422,9 @@ uint param_1;
   byte bVar6;
   byte bVar7;
   
-  cVar2 = ordint_divmod(6,param_1 & 0xff).quot;
+  cVar2 = ordint_divmod(6,circle_hint & 0xff).quot;
   bVar6 = cVar2 + 1;
-  iVar5 = (param_1 & 0xff) * 4;
+  iVar5 = (circle_hint & 0xff) * 4;
   bVar7 = (byte)(&DAT_00087530)[iVar5] >> 3;
   if ((uint)((int)(*(byte *)(DAT_00086df8 + 0x3d) + 1) >> 1) < (uint)bVar6) {
     uVar4 = 0;
@@ -4687,9 +4569,7 @@ void redraw_container_icon_slot()
 // was FUN_00048514 -- the HUD carry-weight/encumbrance display: only redraws when the
 // weight-capacity-remaining value actually changed since last tick (tracked via DAT_00085c50),
 // restoring the flask-slot backdrop and drawing the remaining-capacity percentage as text.
-bool update_carry_weight_display(param_1)
-int param_1;
-
+bool update_carry_weight_display(int force)
 {
   int iVar1;
   short sVar2;
@@ -4704,7 +4584,7 @@ int param_1;
   if (DAT_00085c50 != iVar1) {
     restore_captured_grtile_backdrop(DAT_002028e8);
     DAT_00085c50 = (short)((uint)iVar4 >> 0x10);
-    bVar5 = param_1 != 0;
+    bVar5 = force != 0;
     *g_draw_color_index = 0xe0;
     uVar3 = ordint_divmod(10,iVar1).quot;
     itoa_radix(uVar3,auStack_24,10);
@@ -4731,9 +4611,7 @@ void release_grtile_handle()
 
 // was FUN_000564f8 -- the pause-menu's modal event loop: on a fresh open (param_1 != 0)
 // clears/redraws the panel and waits for click release; then loops reading input events...
-void run_pause_menu_modal_loop(param_1)
-short param_1;
-
+void run_pause_menu_modal_loop(short fresh_open)
 {
   short sVar1;
   undefined4 uVar2;
@@ -4747,7 +4625,7 @@ short param_1;
      instead of deferring them until the surrounding gameplay tick ends. */
   uw_begin_modal_present();
   DAT_000868d8 = 1;
-  if (param_1 != 0) {
+  if (fresh_open != 0) {
     decrement_cursor_hide_depth();
     enter_pause_menu_state(6);
     cursor_show_idle_tick();
@@ -4826,13 +4704,10 @@ LAB_000565a8:
 // was FUN_00056640 -- redraws the pause-menu's main icon slot (OPTBTNS.GR tile 0x20eb) showing
 // sub-panel/highlight variant param_1. Confirmed called with distinct variant indices (1,2,3,4,5)
 // from each sub-panel setup function and saveload.c's save/load panel.
-void redraw_pause_menu_icon(param_1)
-undefined4 param_1;
-
+void redraw_pause_menu_icon(int variant)
 {
-  reload_single_grtile_entry(0x20eb,s_optbtns_00086954,param_1);
+  reload_single_grtile_entry(0x20eb,s_optbtns_00086954,variant);
   draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
-  return;
 }
 
 
@@ -4840,14 +4715,10 @@ undefined4 param_1;
 // was FUN_00056688 -- redraws one row of the pause-menu's sub-icon
 // strip (OPTBTNS.GR tile 0x20ec) at a position derived from row index
 // param_1, showing highlight/content variant param_2.
-void redraw_pause_submenu_icon(param_1,param_2)
-int param_1;
-undefined4 param_2;
-
+void redraw_pause_submenu_icon(int row, int variant)
 {
-  reload_single_grtile_entry(0x20ec,s_optbtns_00086954,param_2);
-  draw_sprite_by_id(0x20ec,5,param_1 * -0xf + 0x67,0xe,0x1f);
-  return;
+  reload_single_grtile_entry(0x20ec,s_optbtns_00086954,variant);
+  draw_sprite_by_id(0x20ec,5,row * -0xf + 0x67,0xe,0x1f);
 }
 
 
@@ -4855,18 +4726,14 @@ undefined4 param_2;
 // was FUN_000566dc -- moves the pause-menu's sub-icon highlight: un- highlights the
 // previously-highlighted row (tracked in DAT_002046f0/DAT_002046f4) via redraw_pause_submenu_icon,
 // then highlights row param_1 with content param_2, recording the new state.
-void update_pause_submenu_highlight(param_1,param_2)
-undefined4 param_1;
-int param_2;
-
+void update_pause_submenu_highlight(int previous_row, int new_row)
 {
   if (-1 < DAT_002046f0) {
     redraw_pause_submenu_icon((int)DAT_002046f4,DAT_002046f0 + -1);
   }
-  redraw_pause_submenu_icon(param_1,param_2 + 1);
-  DAT_002046f0 = (short)(param_2 + 1);
-  DAT_002046f4 = (short)param_1;
-  return;
+  redraw_pause_submenu_icon(previous_row,new_row + 1);
+  DAT_002046f0 = (short)(new_row + 1);
+  DAT_002046f4 = (short)previous_row;
 }
 
 
@@ -4898,17 +4765,11 @@ int DAT_002046fc;
 /* Were lone `undefined *` -- the real thing is a pair of function-pointer dispatch tables for the
    in-game pause menu, indexed by menu "state" (DAT_000868dc, 0..6): PTR_FUN_000868e0 is the no-arg
    "draw this state's screen" table (enter_pause_menu_state calls table[state]())... */
-extern void draw_pause_menu_main_list(void);
-extern void draw_save_load_slot_list(void);
-extern void draw_quit_confirm_panel(void);
-extern void draw_music_or_sound_toggle_panel(void);
-extern void draw_detail_level_panel(void);
-extern void handle_save_load_slot_click(int);
-extern void handle_music_toggle_click(int);
-extern void handle_sound_toggle_click(int);
-extern void handle_quit_confirm_click(int);
-extern void handle_detail_level_click(int);
-extern void handle_pause_menu_main_list_click(int);
+extern void draw_pause_menu_main_list();
+extern void draw_save_load_slot_list();
+extern void draw_quit_confirm_panel();
+extern void draw_music_or_sound_toggle_panel();
+extern void draw_detail_level_panel();
 /* CORRECTED: a prior pass's inline comments here had states 2/3 swapped -- confirmed by directly
    tracing draw_music_or_sound_toggle_panel's own `DAT_000868dc == 2` branch (shows is_music_playing
    when true) and by handle_music_toggle_click (registered at index 2) calling set_music_enabled... */
@@ -4926,11 +4787,11 @@ static void (*const PTR_FUN_000868e0_table[8])(void) = {
 static void (*const PTR_FUN_00086900_table[8])(int) = {
   handle_save_load_slot_click,  /* 0: load slot list */
   handle_save_load_slot_click,  /* 1: save slot list */
-  handle_music_toggle_click,  /* 2: music toggle   */
-  handle_sound_toggle_click,  /* 3: sound toggle   */
+  (void (*)(int))handle_music_toggle_click,  /* 2: music toggle   */
+  (void (*)(int))handle_sound_toggle_click,  /* 3: sound toggle   */
   handle_detail_level_click,  /* 4: texture detail level */
-  handle_quit_confirm_click,  /* 5: quit confirm   */
-  handle_pause_menu_main_list_click,  /* 6: top-level list */
+  (void (*)(int))handle_quit_confirm_click,  /* 5: quit confirm   */
+  (void (*)(int))handle_pause_menu_main_list_click,  /* 6: top-level list */
   0,
 };
 #define PTR_FUN_00086900 (PTR_FUN_00086900_table[0])
@@ -5019,62 +4880,56 @@ void draw_detail_level_panel()
 
 // was FUN_000569c0 -- click handler for the music-toggle panel
 // (state 2): toggles music on/off and redraws the panel.
-void handle_music_toggle_click(param_1)
-short param_1;
-
+void handle_music_toggle_click(short row)
 {
   undefined4 uVar1;
 
-  if (param_1 == 4) {
+  if (row == 4) {
     uVar1 = 1;
   }
   else {
-    if (param_1 != 3) goto LAB_000569ec;
+    if (row != 3) goto LAB_000569ec;
     uVar1 = 0;
   }
   set_music_enabled(uVar1);
   draw_music_or_sound_toggle_panel();
 LAB_000569ec:
   if (DAT_002046fc == 0) {
-    if (param_1 == 2) {
+    if (row == 2) {
       enter_pause_menu_state(6);
     }
   }
   else {
     close_ui_panel_return_to_game();
   }
-  return;
 }
 
 
 
 // was FUN_00056a18 -- click handler for the sound-toggle panel
 // (state 3): toggles sound effects on/off and redraws the panel.
-void handle_sound_toggle_click(param_1)
-short param_1;
-
+void handle_sound_toggle_click(short row)
 {
   undefined4 uVar1;
 
-  if (param_1 == 4) {
+  if (row == 4) {
     uVar1 = 1;
   }
   else {
-    if (param_1 != 3) goto LAB_00056a44;
+    if (row != 3) goto LAB_00056a44;
     uVar1 = 0;
   }
   set_sound_effects_enabled(uVar1);
   draw_music_or_sound_toggle_panel();
 LAB_00056a44:
   if (DAT_002046fc == 0) {
-    if (param_1 == 2) {
+    if (row == 2) {
       enter_pause_menu_state(6);
     }
   }
   else {
     close_ui_panel_return_to_game();
   }
-  return;
 }
 
 
@@ -5082,24 +4937,22 @@ LAB_00056a44:
 // was FUN_00056a70 -- click handler for the texture detail-level panel (state 4): adjusts the
 // detail level in DAT_00086df8+0xb5's high nibble by the clicked delta, reconfigures the
 // texture-emit function pointers via configure_texture_detail_functions...
-void handle_detail_level_click(param_1)
-int param_1;
-
+void handle_detail_level_click(int row)
 {
   short sVar1;
   
-  sVar1 = (short)param_1;
+  sVar1 = (short)row;
   if ((0 < sVar1) && (sVar1 < 5)) {
-    param_1 = -param_1;
+    row = -row;
     *(byte *)(DAT_00086df8 + 0xb5) =
-         (byte)(((param_1 + 4) * 0x10000 >> 0x10 & 0xfU) << 4) |
+         (byte)(((row + 4) * 0x10000 >> 0x10 & 0xfU) << 4) |
          *(byte *)(DAT_00086df8 + 0xb5) & 0xf;
     configure_texture_detail_functions();
     full_dungeon_redraw();
     weapon_overlay_and_full_redraw();
-    reload_single_grtile_entry(0x20ed,s_optbtns_00086954,param_1 + 0x39);
+    reload_single_grtile_entry(0x20ed,s_optbtns_00086954,row + 0x39);
     draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
-    update_pause_submenu_highlight(4 - (param_1 + 4),(param_1 + 0x17) * 2);
+    update_pause_submenu_highlight(4 - (row + 4),(row + 0x17) * 2);
   }
   if (sVar1 == 0) {
     if (DAT_002046fc == 0) {
@@ -5109,7 +4962,6 @@ int param_1;
       close_ui_panel_return_to_game();
     }
   }
-  return;
 }
 
 
@@ -5117,31 +4969,29 @@ int param_1;
 // was FUN_00056b48 -- click handler for the top-level list (state 6): maps the clicked row to the
 // target pause-menu state (0=save, 1=load, 2-5 the toggle/brightness/quit panels) and enters it,
 // gating save/load entry on check_can_save_game/check_can_load_game.
-void handle_pause_menu_main_list_click(param_1)
-short param_1;
-
+void handle_pause_menu_main_list_click(short row)
 {
   int iVar1;
   undefined4 uVar2;
   
-  if (param_1 == 0) {
+  if (row == 0) {
     uVar2 = 5;
   }
   else {
-    if (param_1 == 1) {
+    if (row == 1) {
       close_ui_panel_return_to_game();
       return;
     }
-    if (param_1 == 2) {
+    if (row == 2) {
       uVar2 = 4;
     }
-    else if (param_1 == 3) {
+    else if (row == 3) {
       uVar2 = 3;
     }
-    else if (param_1 == 4) {
+    else if (row == 4) {
       uVar2 = 2;
     }
-    else if (param_1 == 5) {
+    else if (row == 5) {
       iVar1 = check_can_load_game();
       if (iVar1 == 0) {
         return;
@@ -5149,7 +4999,7 @@ short param_1;
       uVar2 = 1;
     }
     else {
-      if (param_1 != 6) {
+      if (row != 6) {
         return;
       }
       iVar1 = check_can_save_game();
@@ -5160,7 +5010,6 @@ short param_1;
     }
   }
   enter_pause_menu_state(uVar2);
-  return;
 }
 
 
@@ -5168,17 +5017,15 @@ short param_1;
 // was FUN_00056bdc -- click handler shared by the load (state 0) and save (state 1) slot lists:
 // highlights the clicked slot and dispatches to handle_save_load_menu_action, closing the panel
 // afterward.
-void handle_save_load_slot_click(param_1)
-int param_1;
-
+void handle_save_load_slot_click(int row)
 {
   short sVar1;
   int iVar2;
   
-  sVar1 = (short)param_1;
+  sVar1 = (short)row;
   iVar2 = 4;
   if ((0 < sVar1) && (sVar1 < 6)) {
-    update_pause_submenu_highlight(param_1,(0x14 - param_1) * 2);
+    update_pause_submenu_highlight(row,(0x14 - row) * 2);
     msg_scroll_panel_reset(0);
     if (sVar1 != 1) {
       if (sVar1 != 2) {
@@ -5201,7 +5048,6 @@ int param_1;
     }
     close_ui_panel_return_to_game();
   }
-  return;
 }
 
 
@@ -5209,12 +5055,10 @@ int param_1;
 // was FUN_00056c88 -- click handler for the quit-confirm panel
 // (state 5): row 4 confirms (requests game exit), any other closes
 // the panel without action.
-void handle_quit_confirm_click(param_1)
-short param_1;
-
+void handle_quit_confirm_click(short row)
 {
-  if (param_1 != 3) {
-    if (param_1 != 4) {
+  if (row != 3) {
+    if (row != 4) {
       return;
     }
     update_pause_submenu_highlight(4,0x39);
@@ -5223,7 +5067,6 @@ short param_1;
     decrement_cursor_hide_depth();
   }
   close_ui_panel_return_to_game();
-  return;
 }
 
 
@@ -5231,17 +5074,14 @@ short param_1;
 // was FUN_00056cc8 -- enters pause-menu state param_1: sets
 // DAT_000868dc and invokes that state's draw callback from
 // PTR_FUN_000868e0_table.
-void enter_pause_menu_state(param_1)
-short param_1;
-
+void enter_pause_menu_state(short new_state)
 {
-  DAT_000868dc = param_1;
+  DAT_000868dc = new_state;
   if (getenv("UW_DEBUG_PAUSEMENU"))
-    fprintf(stderr, "[pausemenu] enter_pause_menu_state: entering state=%d\n", (int)param_1);
-  if ((uint)param_1 < 8 && PTR_FUN_000868e0_table[param_1] != 0) {
-    PTR_FUN_000868e0_table[param_1]();
+    fprintf(stderr, "[pausemenu] enter_pause_menu_state: entering state=%d\n", (int)new_state);
+  if ((uint)new_state < 8 && PTR_FUN_000868e0_table[new_state] != 0) {
+    PTR_FUN_000868e0_table[new_state]();
   }
-  return;
 }
 
 
@@ -5249,20 +5089,17 @@ short param_1;
 // was FUN_00056cf8 -- dispatches a click (param_1, a row/item index)
 // to the current pause-menu state's click handler in
 // PTR_FUN_00086900_table.
-void dispatch_pause_menu_click(param_1)
-undefined4 param_1;
-
+void dispatch_pause_menu_click(int row)
 {
   decrement_cursor_hide_depth();
   if (getenv("UW_DEBUG_PAUSEMENU"))
     fprintf(stderr, "[pausemenu] dispatch_pause_menu_click: state=%d clicked_index=%d\n",
-            (int)DAT_000868dc, (int)param_1);
+            (int)DAT_000868dc, (int)row);
   if ((uint)DAT_000868dc < 8 && PTR_FUN_00086900_table[DAT_000868dc] != 0) {
-    PTR_FUN_00086900_table[DAT_000868dc](param_1);
+    PTR_FUN_00086900_table[DAT_000868dc](row);
   }
   cursor_show_idle_tick();
   wait_for_click_release(0);
-  return;
 }
 
 
@@ -5270,16 +5107,12 @@ undefined4 param_1;
 // was FUN_00056d38 -- converts a raw click Y offset (param_2) within
 // the pause-menu's button region into a row index (one of 16 rows,
 // param_2/15) and dispatches it via dispatch_pause_menu_click.
-void handle_pause_menu_region_click(param_1,param_2)
-undefined4 param_1;
-short param_2;
-
+void handle_pause_menu_region_click(int region, short click_y)
 {
   short sVar1;
 
-  sVar1 = ordint_divmod(0xf,(int)param_2).quot;
+  sVar1 = ordint_divmod(0xf,(int)click_y).quot;
   dispatch_pause_menu_click((int)sVar1);
-  return;
 }
 
 
@@ -5300,20 +5133,18 @@ static const unsigned char g_menu_nav_highlight_table[8][7] = {
 // was FUN_00056d6c -- D-pad/hotkey navigation for the pause menu: param_1 0/2 move the row
 // highlight up/down (consulting g_menu_nav_highlight_table for the current state), 1/0x164 select
 // the current row...
-void handle_pause_menu_dpad_navigation(param_1)
-short param_1;
-
+void handle_pause_menu_dpad_navigation(short key_code)
 {
   short sVar1;
   int iVar2;
   int iVar3;
 
-  if (param_1 < 0x167) {
-    if (param_1 == 0x166) {
+  if (key_code < 0x167) {
+    if (key_code == 0x166) {
       iVar2 = 3;
     }
     else {
-      if (param_1 == 0) {
+      if (key_code == 0) {
         sVar1 = -1;
 LAB_00056ddc:
         iVar3 = (int)DAT_002046f4;
@@ -5332,38 +5163,37 @@ LAB_00056ddc:
         cursor_show_idle_tick();
         return;
       }
-      if (param_1 == 1) {
+      if (key_code == 1) {
         iVar2 = (int)DAT_002046f4;
       }
       else {
-        if (param_1 == 2) {
+        if (key_code == 2) {
           sVar1 = 1;
           goto LAB_00056ddc;
         }
-        if (param_1 != 0x164) {
+        if (key_code != 0x164) {
           return;
         }
         iVar2 = 2;
       }
     }
   }
-  else if (param_1 == 0x16d) {
+  else if (key_code == 0x16d) {
     iVar2 = 4;
   }
-  else if (param_1 == 0x171) {
+  else if (key_code == 0x171) {
     iVar2 = 0;
   }
-  else if (param_1 == 0x172) {
+  else if (key_code == 0x172) {
     iVar2 = 5;
   }
   else {
-    if (param_1 != 0x173) {
+    if (key_code != 0x173) {
       return;
     }
     iVar2 = 6;
   }
   dispatch_pause_menu_click(iVar2);
-  return;
 }
 
 
@@ -5373,27 +5203,24 @@ LAB_00056ddc:
 /* Key-binding callback: the dispatcher (input.c) calls handler(arg) with the binding's own arg
    (0x164/0x166/0x16d/0x171-0x173 as registered in game.c). ARM 0x56ebc keeps that incoming r0
    untouched and tail-feeds it to handle_pause_menu_dpad_navigation (0x56efc). Ghidra dropped it. */
-void open_pause_menu_via_hotkey(param_1)
-short param_1;
-
+void open_pause_menu_via_hotkey(short key_code)
 {
   if (g_cursor_holding_state == 0) {
     DAT_002046fc = 1;
     DAT_000868dc = 6;
-    handle_pause_menu_dpad_navigation(param_1);
+    handle_pause_menu_dpad_navigation(key_code);
     run_pause_menu_modal_loop(DAT_000868dc == 6);
     DAT_002046fc = 0;
   }
   else {
     print_scroll_message_by_id(0xa0);
   }
-  return;
 }
 
 
 
 // was FUN_00056f28
-undefined4 init_cursor_subsystem()
+int init_cursor_subsystem()
 
 {
   undefined4 uVar1;
@@ -5464,7 +5291,7 @@ int erase_cursor_icon()
 
 /* Desktop deviation: present the game cursor as an overlay by default.
    UW_ALWAYS_SHOW_CURSOR=0 restores the Pocket PC stylus visibility rules. */
-int uw_always_show_cursor(void)
+int uw_always_show_cursor()
 {
   static int cached = -1;
   if (cached < 0) {
@@ -5507,7 +5334,7 @@ void uw_composite_desktop_cursor(void *present_buffer)
 
 
 // was FUN_000570b4
-undefined4 cursor_show_idle_tick()
+int cursor_show_idle_tick()
 
 {
   int iVar1;
@@ -5565,25 +5392,19 @@ void decrement_cursor_hide_depth_thunk()
 // was FUN_00057188 -- records the currently-tracked UI hotspot's rectangle (x,y,width,height) into
 // DAT_0020479c/DAT_002047a0/ DAT_00204798/DAT_00204790, read by is_mouse_within_tracked_hotspot and
 // track_hotspot_hover_state.
-void set_tracked_hotspot_rect(param_1,param_2,param_3,param_4)
-undefined2 param_1;
-undefined2 param_2;
-undefined2 param_3;
-undefined2 param_4;
-
+void set_tracked_hotspot_rect(short x, short y, short width, short height)
 {
-  DAT_0020479c = param_1;
-  DAT_002047a0 = param_2;
-  DAT_00204798 = param_3;
-  DAT_00204790 = param_4;
-  return;
+  DAT_0020479c = x;
+  DAT_002047a0 = y;
+  DAT_00204798 = width;
+  DAT_00204790 = height;
 }
 
 
 
 // was FUN_000571c0 -- tests whether the mouse is within the tracked hotspot rect (via
 // is_position_within_rect's cursor-margin-aware hit test).
-undefined4 is_mouse_within_tracked_hotspot()
+int is_mouse_within_tracked_hotspot()
 
 {
   undefined4 uVar1;
@@ -5685,14 +5506,10 @@ void redraw_hotspot_border_cursor()
 
 
 // was FUN_00057504 -- returns the current raw mouse position.
-void get_mouse_position(param_1,param_2)
-undefined2 * param_1;
-undefined2 * param_2;
-
+void get_mouse_position(ushort *out_x, ushort *out_y)
 {
-  *param_1 = g_mouse_x;
-  *param_2 = g_mouse_y;
-  return;
+  *out_x = g_mouse_x;
+  *out_y = g_mouse_y;
 }
 
 
@@ -5700,23 +5517,19 @@ undefined2 * param_2;
 // was FUN_00057528 -- returns the effective position for a click: the real mouse position, unless
 // DAT_0020484c (a demo/scripted- input override flag) is set, in which case a fixed recorded
 // position (DAT_0008696a/DAT_0008696c) is used instead.
-void get_click_position(param_1,param_2)
-undefined2 * param_1;
-undefined2 * param_2;
-
+void get_click_position(ushort *out_x, ushort *out_y)
 {
   undefined2 uVar1;
 
   if (DAT_0020484c == 0) {
-    *param_1 = g_mouse_x;
+    *out_x = g_mouse_x;
     uVar1 = g_mouse_y;
   }
   else {
-    *param_1 = DAT_0008696a;
+    *out_x = DAT_0008696a;
     uVar1 = DAT_0008696c;
   }
-  *param_2 = uVar1;
-  return;
+  *out_y = uVar1;
 }
 
 
@@ -5747,17 +5560,13 @@ void noop_post_input_reset_hook()
 // was FUN_00057590 -- warps the mouse cursor to (param_1,param_2) directly, bracketed by a
 // cursor-hide-depth pop/idle-tick pair. Confirmed used by automap.c to snap the cursor onto a
 // map-note marker during note text entry.
-void warp_mouse_cursor(param_1,param_2)
-undefined2 param_1;
-undefined2 param_2;
-
+void warp_mouse_cursor(short x, short y)
 {
   decrement_cursor_hide_depth();
   update_hotspot_cursor_icon();
-  g_mouse_x = param_1;
-  g_mouse_y = param_2;
+  g_mouse_x = x;
+  g_mouse_y = y;
   cursor_show_idle_tick();
-  return;
 }
 
 
@@ -5765,19 +5574,18 @@ undefined2 param_2;
 // was FUN_000575c4 -- polls for a pending keyboard character (via poll_mouse_button_flags, not yet
 // named), clearing DAT_00086968's "pending" sentinel back to -1 (0xffff) when none is available,
 // and recording the result in DAT_00204850.
-int poll_keyboard_char_input(param_1)
-short * param_1;
-
+int poll_keyboard_char_input(void *out_char_ptr)
 {
+  short *out_char = (short *)out_char_ptr;
   short sVar1;
 
   sVar1 = poll_mouse_button_flags();
-  *param_1 = sVar1;
+  *out_char = sVar1;
   if (sVar1 == 0) {
     DAT_00086968 = 0xffff;
   }
-  DAT_00204850 = *param_1;
-  return (int)*param_1;
+  DAT_00204850 = *out_char;
+  return (int)*out_char;
 }
 
 
@@ -5785,9 +5593,7 @@ short * param_1;
 // was FUN_000576d0 -- a "press any key or move the mouse" modal wait: loops flushing the display
 // and polling input/mouse state (optionally ticking sticky-mode handlers when param_1 is set) until
 // poll_keyboard_char_input reports a key or the mouse has moved more than ~6 pixels...
-int wait_for_key_or_mouse_move(param_1)
-int param_1;
-
+int wait_for_key_or_mouse_move(int poll_mouse)
 {
   uint uVar1;
   uint uVar2;
@@ -5805,7 +5611,7 @@ int param_1;
     sVar3 = poll_keyboard_char_input(auStack_10);
     if ((sVar3 == 0) || (iVar4 != 0)) break;
     flush_dirty_rect_to_display(1);
-    if (param_1 != 0) {
+    if (poll_mouse != 0) {
       dispatch_sticky_mode_handlers();
     }
     poll_input_event(0);
@@ -5813,8 +5619,8 @@ int param_1;
     noop_key_handler();
     update_mouse_state();
     get_mouse_position(&local_18,&local_14);
-    uVar1 = (int)local_18 - (int)local_16 >> 0x1f;
-    uVar2 = (int)local_14 - (int)local_12 >> 0x1f;
+    uVar1 = ((int)local_18 - (int)local_16) >> 0x1f;
+    uVar2 = ((int)local_14 - (int)local_12) >> 0x1f;
     if (6 < (int)((((int)local_14 - (int)local_12 ^ uVar2) - uVar2) +
                  (((int)local_18 - (int)local_16 ^ uVar1) - uVar1))) {
       iVar4 = 1;
@@ -5827,20 +5633,17 @@ int param_1;
 // was FUN_00057a80 -- looks up which on-screen-keyboard key was touched at (param_1,param_2),
 // confirmed by DAT_00087650's own existing comment describing this exact [row+column*20] indexing
 // scheme...
-int lookup_onscreen_keyboard_key_hit(param_1,param_2)
-short param_1;
-short param_2;
-
+int lookup_onscreen_keyboard_key_hit(short x, short y)
 {
   int iVar1;
   short sVar2;
   
-  iVar1 = (int)param_1;
+  iVar1 = (int)x;
   if (iVar1 < 0) {
     iVar1 = iVar1 + 0xf;
   }
   sVar2 = (short)(iVar1 >> 4);
-  iVar1 = ordint_divmod(0x14,param_2 + -200).quot;
+  iVar1 = ordint_divmod(0x14,y + -200).quot;
   if (0 < iVar1) {
     sVar2 = (short)iVar1 * 0x14 + sVar2;
   }
@@ -5852,13 +5655,7 @@ short param_2;
 // was FUN_00057af0 -- registers a cursor hotspot rectangle (x1=param_1, y1=param_2, x2=param_3,
 // y2=param_4, tag id=param_5) into the 20-slot DAT_002047b0 parallel-array table, returning its
 // slot index or -1 if full.
-int register_cursor_hotspot(param_1,param_2,param_3,param_4,param_5)
-undefined2 param_1;
-undefined2 param_2;
-undefined2 param_3;
-undefined2 param_4;
-undefined2 param_5;
-
+int register_cursor_hotspot(short x1, short y1, short x2, short y2, short tag_id)
 {
   int iVar1;
   int iVar2;
@@ -5873,11 +5670,11 @@ undefined2 param_5;
     iVar2 = -1;
   }
   else {
-    (&DAT_002047b0)[iVar1] = param_1;
-    (&DAT_00204808)[iVar1] = param_3;
-    (&DAT_002047e0)[iVar1] = param_4;
-    (&DAT_00204750)[iVar1] = param_2;
-    *(undefined2 *)(&DAT_00204720 + iVar1 * 2) = param_5;
+    (&DAT_002047b0)[iVar1] = x1;
+    (&DAT_00204808)[iVar1] = x2;
+    (&DAT_002047e0)[iVar1] = y2;
+    (&DAT_00204750)[iVar1] = y1;
+    *(undefined2 *)(&DAT_00204720 + iVar1 * 2) = tag_id;
     if (DAT_00204854 <= iVar1) {
       DAT_00204854 = (short)iVar2 + 1;
     }
@@ -5891,9 +5688,7 @@ undefined2 param_5;
 // was FUN_00057bb0 -- unregisters cursor hotspot slot param_1
 // (register_cursor_hotspot's counterpart), clearing its sentinel and
 // compacting the active-slot count if it was the last one.
-void unregister_cursor_hotspot(param_1)
-short param_1;
-
+void unregister_cursor_hotspot(short slot)
 {
   int iVar1;
   int iVar2;
@@ -5901,7 +5696,7 @@ short param_1;
   
   iVar3 = (int)DAT_00204854;
   iVar1 = (int)DAT_00204854;
-  iVar2 = (int)param_1;
+  iVar2 = (int)slot;
   if (iVar2 < iVar1) {
     (&DAT_002047b0)[iVar2] = 10000;
     if (*(short *)(&DAT_00204720 + iVar2 * 2) == DAT_00204788) {
@@ -5918,7 +5713,6 @@ short param_1;
     }
     update_hotspot_cursor_icon();
   }
-  return;
 }
 
 
@@ -5926,9 +5720,7 @@ short param_1;
 // was FUN_00057c5c -- pushes cursor sprite param_1 onto a small (max 3-deep) cursor-icon stack and
 // makes it active, confirmed by its ubiquitous use alongside pop_cursor_icon across nearly every UI
 // subsystem to show a context-specific cursor (e.g. a targeting reticle) temporarily.
-void push_cursor_icon(param_1)
-undefined4 param_1;
-
+void push_cursor_icon(int icon)
 {
   int iVar1;
   
@@ -5937,10 +5729,9 @@ undefined4 param_1;
     iVar1 = (int)DAT_00204858;
     DAT_00204858 = DAT_00204858 + '\x01';
     (&DAT_00204714)[iVar1] = DAT_00204704;
-    set_cursor_sprite_id(param_1);
+    set_cursor_sprite_id(icon);
     cursor_show_idle_tick();
   }
-  return;
 }
 
 
@@ -5948,13 +5739,11 @@ undefined4 param_1;
 // was FUN_00057cac -- pops the cursor-icon stack (push_cursor_icon's counterpart), restoring the
 // previous sprite (or the default 0x106c if the stack is empty). param_1's low bits optionally gate
 // the cursor-hide-depth pop/idle-tick pair around the restore.
-void pop_cursor_icon(param_1)
-ushort param_1;
-
+void pop_cursor_icon(ushort flags)
 {
   int iVar1;
   
-  if ((param_1 & 1) != 0) {
+  if ((flags & 1) != 0) {
     decrement_cursor_hide_depth();
   }
   iVar1 = (int)DAT_00204858;
@@ -5965,10 +5754,9 @@ ushort param_1;
   }
   set_cursor_sprite_id((int)(short)(&DAT_00204714)[DAT_00204858]);
   update_hotspot_cursor_icon();
-  if ((param_1 & 2) != 0) {
+  if ((flags & 2) != 0) {
     cursor_show_idle_tick();
   }
-  return;
 }
 
 
@@ -5976,19 +5764,14 @@ ushort param_1;
 // was FUN_00057d1c -- tests whether the mouse is within rect (param_1,param_2)-(param_3,param_4),
 // inset by half the cursor's own dimensions on each axis (so the cursor's hotspot, not just its
 // top-left corner, must overlap).
-undefined4 is_position_within_rect(param_1,param_2,param_3,param_4)
-short param_1;
-short param_2;
-short param_3;
-short param_4;
-
+int is_position_within_rect(short x1, short y1, short x2, short y2)
 {
   int iVar1;
   
-  iVar1 = (int)(short)(DAT_002047a4 + 1 >> 1);
-  if ((iVar1 + param_2 <= (int)g_mouse_y) && ((int)g_mouse_y <= param_4 - iVar1)) {
-    iVar1 = (int)(short)(DAT_00204784 + 1 >> 1);
-    if ((param_1 - iVar1 <= (int)g_mouse_x) && ((int)g_mouse_x <= iVar1 + param_3)) {
+  iVar1 = (int)(short)((DAT_002047a4 + 1) >> 1);
+  if ((iVar1 + y1 <= (int)g_mouse_y) && ((int)g_mouse_y <= y2 - iVar1)) {
+    iVar1 = (int)(short)((DAT_00204784 + 1) >> 1);
+    if ((x1 - iVar1 <= (int)g_mouse_x) && ((int)g_mouse_x <= iVar1 + x2)) {
       return 1;
     }
   }
@@ -6003,19 +5786,17 @@ short param_4;
 // was FUN_00057dc0 -- sets the active cursor sprite to resource id param_1, resolving it to its
 // sprite frame/dimensions (lookup_grtile_by_id or a direct g_grtile_registry lookup for
 // already-resident high ids).
-void set_cursor_sprite_id(param_1)
-undefined4 param_1;
-
+void set_cursor_sprite_id(int sprite_id)
 {
   /* Was a genuinely dropped RETURN VALUE, not just a dropped argument:
-     resolve_sprite_id_to_frame(param_1) was called and its result thrown away, then the lookup just
-     below re-used the raw, UNRESOLVED param_1... */
+     resolve_sprite_id_to_frame(sprite_id) was called and its result thrown away, then the lookup just
+     below re-used the raw, UNRESOLVED sprite_id... */
   char *iVar1;
   uint resolved_frame;
 
   erase_cursor_icon();
-  resolved_frame = resolve_sprite_id_to_frame(param_1);
-  /* Was unconditional `iVar1 = lookup_grtile_by_id(param_1);` -- lookup_grtile_by_id only covers
+  resolved_frame = resolve_sprite_id_to_frame(sprite_id);
+  /* Was unconditional `iVar1 = lookup_grtile_by_id(sprite_id);` -- lookup_grtile_by_id only covers
      ids below DAT_00202738 (the "still-compressed .GR resource entry, needs decoding" range)... */
   iVar1 = (int)resolved_frame < (int)(uint)DAT_00202738 ?
           lookup_grtile_by_id((short)resolved_frame) : (char *)g_grtile_registry[resolved_frame];
@@ -6027,14 +5808,14 @@ undefined4 param_1;
   }
   DAT_00204784 = (ushort)*(byte *)(iVar1 + 1);
   DAT_002047a4 = (ushort)*(byte *)(iVar1 + 2);
-  DAT_00204704 = (undefined2)param_1;
+  DAT_00204704 = (undefined2)sprite_id;
   DAT_0020471c = ((short)(ushort)*(byte *)(iVar1 + 1) >> 1) + -1;
   DAT_00204748 = (short)(ushort)*(byte *)(iVar1 + 2) >> 1;
   /* Desktop deviation: ARM centers every icon (FUN_00057dc0), but the
      wide automap pointer (CURSORS.GR frame 12) uses its lower-left pixel
      as the mouse's map position. Keep item and targeting icons centered,
      and retain ARM's hotspot in stylus mode. */
-  if (uw_always_show_cursor() && param_1 == 0x1078) {
+  if (uw_always_show_cursor() && sprite_id == 0x1078) {
     DAT_0020471c = 0;
     DAT_00204748 = DAT_002047a4 > 0 ? DAT_002047a4 - 1 : 0;
   }
@@ -6044,7 +5825,6 @@ undefined4 param_1;
   }
   /* Desktop overlay must update during modal waits without mouse/text input. */
   if (uw_always_show_cursor()) uw_request_cursor_present();
-  return;
 }
 
 
@@ -6092,13 +5872,11 @@ void update_hotspot_cursor_icon()
 // was FUN_00058438 -- handles a mouse button state change: injects param_1 as a temporary
 // button-state override (DAT_0020485c) while polling update_mouse_state, then records a "click
 // pending" slot...
-void handle_mouse_button_message(param_1)
-short param_1;
-
+void handle_mouse_button_message(short button_state)
 {
   short sVar1;
 
-  DAT_0020485c = (int)param_1;
+  DAT_0020485c = (int)button_state;
   update_mouse_state();
   DAT_0020485c = 0;
   /* Desktop input adaptation: the original checks the touch-held flag DAT_0023c63c here. SDL
@@ -6113,7 +5891,6 @@ short param_1;
     DAT_0008696a = g_mouse_x;
     DAT_0008696c = g_mouse_y;
   }
-  return;
 }
 
 
@@ -6242,9 +6019,7 @@ uint poll_mouse_button_flags()
 
 
 // was FUN_0003def4
-void toggle_stats_panel(param_1)
-undefined4 param_1;
-
+void toggle_stats_panel(int target_panel)
 {
   undefined4 uVar1;
 
@@ -6262,7 +6037,6 @@ undefined4 param_1;
   if (getenv("UW_DEBUG_CLICKREGION"))
     fprintf(stderr, "[stats] toggle_stats_panel -> set_hud_status_value(6,%d)\n", (int)uVar1);
   set_hud_status_value(6,uVar1);
-  return;
 }
 
 
@@ -6294,225 +6068,19 @@ void reset_cursor_confine_rect()
 
 
 // was FUN_00057788
-void set_cursor_confine_rect(param_1,param_2,param_3,param_4)
-short param_1;
-short param_2;
-short param_3;
-short param_4;
-
+void set_cursor_confine_rect(short x1, short y1, short x2, short y2)
 {
   if (getenv("UW_DEBUG_CURSORSHOW")) {
     fprintf(stderr, "[cursorbounds] set_cursor_confine_rect(%d,%d,%d,%d)\n",
-            (int)param_1, (int)param_2, (int)param_3, (int)param_4);
+            (int)x1, (int)y1, (int)x2, (int)y2);
   }
-  DAT_00204838 = DAT_0020471c + param_1 + 1;
+  DAT_00204838 = DAT_0020471c + x1 + 1;
   DAT_0020470c = DAT_00204838;
-  DAT_0020483c = DAT_00204748 + param_4 + 1;
+  DAT_0020483c = DAT_00204748 + y2 + 1;
   DAT_00204710 = DAT_0020483c;
-  DAT_002047dc = (param_3 - DAT_0020471c) + -2;
-  DAT_002047d8 = (param_2 - DAT_00204748) + 2;
+  DAT_002047dc = (x2 - DAT_0020471c) + -2;
+  DAT_002047d8 = (y1 - DAT_00204748) + 2;
   DAT_00204830 = DAT_002047dc;
   DAT_00204834 = DAT_002047d8;
-  return;
 }
 
-
-/* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D
-   viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible. Call
-   *after* a pick-mode render pass (render_dungeon_view_frame) has populated the buffer. */
-void uw_debug_blit_pick_buffer(void)
-{
-  /* 16 distinct colours for object slot ids; deliberately excludes the
-     crosshair yellow (0xFFE0) and the out-of-range magenta (0xF81F). */
-  static const unsigned short obj_pal[16] = {
-    0xF800, 0x07E0, 0x001F, 0x07FF, 0xFC00, 0xFD20, 0x8400, 0x0410,
-    0x001A, 0x8010, 0xAFE5, 0x05FF, 0xF7B0, 0x7BEF, 0xFAE0, 0x39C7,
-  };
-  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
-  int x, y;
-  if (fb == 0 || DAT_0023cca0 == 0) return;
-  for (y = 19; y < 150; y++) {
-    const unsigned char *row = (const unsigned char *)DAT_0023cca0 + y * 0x140;
-    unsigned short *frow = fb + y * 0x140;
-    for (x = 52; x < 276; x++) {
-      unsigned int v = row[x];
-      unsigned short c;
-      if (v == 0)                 c = 0x0008;                 /* near-black blue */
-      else if (v >= 0xc0 && v < 0xfb) {
-        unsigned int g = ((v - 0xbf) * 5) & 0x3f;             /* 0..0x3f grey ramp */
-        c = (unsigned short)(((g >> 1) << 11) | (g << 5) | (g >> 1));
-      }
-      else if (v < 0xc0)          c = obj_pal[v & 0xf];
-      else                        c = 0xF81F;                 /* magenta: out of range */
-      frow[x] = c;
-    }
-  }
-  /* cursor crosshair */
-  { int cx = (int)g_mouse_x, cy = (int)g_mouse_y, i;
-    for (i = -4; i <= 4; i++) {
-      int px = cx + i, py = cy + i;
-      if (cy >= 0 && cy < 240 && cx + i >= 0 && cx + i < 320) fb[cy * 0x140 + px] = 0xFFE0;
-      if (cx >= 0 && cx < 320 && cy + i >= 0 && cy + i < 240) fb[py * 0x140 + cx] = 0xFFE0;
-    }
-  }
-}
-
-
-
-/* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory hotspot's click rect
-   (g_inventory_hotspot_table's 23 records) in bright red, directly into the framebuffer... */
- void uw_debug_draw_inv_hotspot_positions(void)
-{
-  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
-  int i, min_x = 0x7fffffff, max_x = -1, min_y = 0x7fffffff, max_y = -1;
-  if (fb == 0) return;
-  for (i = 0; i < 0x17; i++) {
-    int x1, y1, x2, y2, x, y;
-    int off = i * 0xe;
-    x1 = *(short *)(&g_inv_hotspot_click_x1 + off);
-    y1 = *(short *)(&g_inv_hotspot_click_y1 + off);
-    x2 = *(short *)(&g_inv_hotspot_click_x2 + off);
-    y2 = *(short *)(&g_inv_hotspot_click_y2 + off);
-    if (x1 == x2 && y1 == y2) continue;
-    for (x = x1; x <= x2; x++) {
-      if (x < 0 || x >= 320) continue;
-      if (y1 >= 0 && y1 < 200) fb[y1 * 0x140 + x] = 0xF800;
-      if (y2 >= 0 && y2 < 200) fb[y2 * 0x140 + x] = 0xF800;
-    }
-    for (y = y1; y <= y2; y++) {
-      if (y < 0 || y >= 200) continue;
-      if (x1 >= 0 && x1 < 320) fb[y * 0x140 + x1] = 0xF800;
-      if (x2 >= 0 && x2 < 320) fb[y * 0x140 + x2] = 0xF800;
-    }
-    if (x1 < min_x) min_x = x1;
-    if (x2 > max_x) max_x = x2;
-    if (y1 < min_y) min_y = y1;
-    if (y2 > max_y) max_y = y2;
-  }
-  if (max_x >= 0) dirty_rect_union(min_y, max_y, min_x, max_x);
-}
-
-/* Debug tool (UW_DUMP_SPRITE_FRAMES / UW_DUMP_SPRITE_IDS): dump individual sprites to standalone
-   BMP files by real resource id, one file per id, using the game's own real render path... */
-static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
-  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
-  int cw = 96, ch = 128, ox = 4, oy = 4;
-  if (fb == 0) return;
-  for (int y = 0; y < ch; y++) {
-    for (int x = 0; x < cw; x++) {
-      fb[(oy + y) * 0x140 + (ox + x)] = 0;
-    }
-  }
-  if (is_frame) {
-    blit_object_sprite_by_frame(id, ox, oy, cw, ch);  /* real arity is 5 (ARM draw_sprite_by_id passes id,x,y,w,h) */
-  } else {
-    draw_sprite_by_id(id, ox, oy, cw, ch);
-  }
-  char path[320];
-  snprintf(path, sizeof(path), "%s/%s_%d.bmp", dir, is_frame ? "frame" : "id", id);
-  uw_save_rgb565_region_bmp(path, fb + oy * 0x140 + ox, cw, ch, 0x140);
-}
-
-static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, const char *dir) {
-  const char *spec = getenv(envname);
-  if (!spec || !spec[0]) return;
-  uw_debug_mkdir_p(dir);
-  const char *p = spec;
-  while (*p) {
-    int lo, hi;
-    char *end;
-    lo = (int)strtol(p, &end, 10);
-    if (end == p) break;
-    p = end;
-    if (*p == '-') {
-      p++;
-      hi = (int)strtol(p, &end, 10);
-      if (end == p) hi = lo;
-      p = end;
-    } else {
-      hi = lo;
-    }
-    for (int id = lo; id <= hi; id++) {
-      _uw_dump_sprite_to_file(is_frame, id, dir);
-    }
-    if (*p == ',') p++;
-    else break;
-  }
-}
-
-/* Temporary test hook for verifying the armor paper-doll equip flow without a real "give item"
-   mechanism: once per run, the first time backpack grid slot 12 holds a real object, overwrite its
-   low 9 id bits with UW_DEBUG_FORCE_ITEM_ID (hex) in place -- reusing a real... */
- void uw_debug_force_item_id_once(void) {
-  static int done = 0;
-  if (done) return;
-  const char *idstr = getenv("UW_DEBUG_FORCE_ITEM_ID");
-  if (!idstr) return;
-  ushort *obj = (ushort *)get_equipped_item_at_slot(12);
-  if (!obj) return;
-  done = 1;
-  int newid = (int)strtol(idstr, NULL, 16);
-  ushort old = *obj;
-  *obj = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
-  fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff, *obj & 0x1ff);
-}
-
-
-
- void uw_debug_dump_sprite_frames_once(void) {
-  static int done = 0;
-  if (done) return;
-  done = 1;
-  if (!getenv("UW_DUMP_SPRITE_FRAMES") && !getenv("UW_DUMP_SPRITE_IDS")) return;
-  const char *dir = getenv("UW_DUMP_SPRITE_DIR");
-  if (!dir || !dir[0]) dir = "debug/sprites";
-  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_FRAMES", 1, dir);
-  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_IDS", 0, dir);
-}
-
-/* Debug tool (UW_DUMP_CRITTER_SHEET): systematically drive decode_critter_sprite_page across every
-   (tier, direction, frame) combination for one or more critter type indices, instead of passively
-   capturing whatever poses a demo happens to render. */
- void uw_debug_dump_critter_sheet_once(void) {
-  static int done = 0;
-  if (done) return;
-  done = 1;
-  const char *spec = getenv("UW_DUMP_CRITTER_SHEET");
-  if (!spec || !spec[0]) return;
-  setenv("UW_DEBUG_DUMP_CRIT", "1", 0);
-  /* default maxdir kept conservative (63, not the full 0-255 clamp resolve_critter_sprite_tier
-     allows): sweeping direction values past a creature's real per-page table found a separate,
-     unfixed bug... */
-  int maxdir = 63, maxframe = 15;
-  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXDIR"); if (e) maxdir = atoi(e); }
-  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXFRAME"); if (e) maxframe = atoi(e); }
-  const char *p = spec;
-  while (*p) {
-    char *end;
-    long type_idx = strtol(p, &end, 10);
-    if (end == p) break;
-    p = end;
-    if (type_idx >= 0 && type_idx < 64) {
-      int page_idx = (unsigned char)(&DAT_0023ce70)[type_idx * 2];
-      int frame_count_param = (unsigned char)(&DAT_0023ce71)[type_idx * 2];
-      if (page_idx == 0xff) {
-        fprintf(stderr, "[crit-sheet] type_idx=%ld has no assoc-table entry (0xff sentinel), skipping\n",
-                type_idx);
-      } else {
-        fprintf(stderr, "[crit-sheet] type_idx=%ld -> page_idx=%d frame_count_param=%d, sweeping "
-                "tier=0..3 dir=0..%d frame=0..%d\n",
-                type_idx, page_idx, frame_count_param, maxdir, maxframe);
-        for (int tier = 0; tier < 4; tier++) {
-          for (int dir = 0; dir <= maxdir; dir++) {
-            for (int frame = 0; frame <= maxframe; frame++) {
-              decode_critter_sprite_page(page_idx, tier, dir, frame_count_param, frame);
-            }
-          }
-        }
-      }
-    }
-    if (*p == ',') p++;
-    else break;
-  }
-  fprintf(stderr, "[crit-sheet] sweep complete, see debug/crit/\n");
-}

@@ -67,8 +67,8 @@ const char *scroll_messages_fixture_line(unsigned line)
 
 /* Exercise the actual scroll parser/wrapper and cursor state. Only font
    measurement and drawing are replaced by a one-cell character canvas. */
-int measure_text_width(const char *text) { return strlen(text); }
-void draw_text_string(const char *text, int x, int y)
+int measure_text_width(char *text) { return strlen(text); }
+void draw_text_string(char *text, short x, short y)
 {
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, x);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, y);
@@ -78,29 +78,29 @@ void draw_text_string(const char *text, int x, int y)
     if ((unsigned)x > used) memset(lines[y] + used, ' ', x - used);
     memcpy(lines[y] + x, text, length + 1);
 }
-void check_mouse_over_msg_scroll_panel(int mode) {}
+void check_mouse_over_msg_scroll_panel() {}
 void decrement_cursor_hide_depth(void) { TEST_FAIL_MESSAGE("Unexpected cursor hide"); }
-undefined4 cursor_show_idle_tick(void) { TEST_FAIL_MESSAGE("Unexpected cursor show"); return 0; }
+int cursor_show_idle_tick(void) { TEST_FAIL_MESSAGE("Unexpected cursor show"); return 0; }
 void msg_scroll_panel_reset(int mode) { TEST_FAIL_MESSAGE("Unexpected scroll reset"); }
 void msg_scroll_more_prompt(void) { TEST_FAIL_MESSAGE("Unexpected MORE prompt"); }
 void msg_scroll_scroll_up_line(int bottom) { TEST_FAIL_MESSAGE("Unexpected scrolling"); }
-void wait_for_click_to_continue(int delay, int mode) { TEST_FAIL_MESSAGE("Unexpected input wait"); }
+void wait_for_click_to_continue(short delay, uint mode) { TEST_FAIL_MESSAGE("Unexpected input wait"); }
 uint read_realtime_clock_units(void) { return 0; }
-void push_cursor_icon(unsigned icon) {}
+void push_cursor_icon(int icon) {}
 void print_scroll_message_by_id(unsigned id)
 {
     TEST_ASSERT_EQUAL_HEX(0x93, id);
     message_scroll_print_wrapped("You have attained experience level");
 }
-undefined4 recalculate_player_stats(int refill) { return 0; }
+int recalculate_player_stats(int refill) { return 0; }
 void refresh_stats_panel_if_active(void) {}
-undefined4 build_object_display_name(char *buffer, ushort *object, int article, int mode)
-{
+int build_object_display_name(char *buffer, void *object_, int article, int mode)
+{ ushort *object = (ushort *)object_;
     strcpy(buffer, (*object & 0x1ff) == 0x80 ? "a sack" :
                    (*object & 0x1ff) == 0x81 ? "a torch" : "iron key");
     return 1;
 }
-char *get_message_string(unsigned id)
+char *get_message_string(ushort id)
 {
     switch (id) {
         case 0xa00: case 0xa60: return NULL; /* No quality adjective. */
@@ -111,16 +111,16 @@ char *get_message_string(unsigned id)
         default: TEST_FAIL_MESSAGE("Unexpected message ID"); return NULL;
     }
 }
-undefined4 append_object_property_tag(ushort *object, int mode, char *buffer) { return 0; }
-undefined4 append_object_special_name(ushort *object, int mode, char *buffer) { return 0; }
-void describe_special_object_property(ushort *object, int mode) {}
-undefined4 identify_mushroom_type(ushort *object, void *properties) { return 0; }
-void look_at_inscribed_object(ushort *object, int mode) { TEST_FAIL_MESSAGE("Unexpected inscription"); }
-undefined1 *format_object_display_name(char *name, int article, int mode)
+int append_object_property_tag(ushort *object, short mode, char *buffer) { return 0; }
+int append_object_special_name(void *object, short mode, char *buffer) { return 0; }
+void describe_special_object_property(ushort *object, short mode) {}
+int identify_mushroom_type(ushort *object, char *properties) { return 0; }
+void look_at_inscribed_object(ushort *object, short mode) { TEST_FAIL_MESSAGE("Unexpected inscription"); }
+byte *format_object_display_name(byte *name, int article, int mode)
 {
     TEST_ASSERT_EQUAL_STRING("goblin", name);
     TEST_ASSERT_EQUAL_INT(1, article);
     return (undefined1 *)"a goblin";
 }
 long _isctype(int value, int flags) { TEST_FAIL_MESSAGE("Unexpected named creature"); return 0; }
-long _itoa(int value, char *buffer, int radix) { TEST_FAIL_MESSAGE("Unexpected quantity"); return (long)buffer; }
+char *_itoa(long value, char *buffer, long radix) { TEST_FAIL_MESSAGE("Unexpected quantity"); return buffer; }

@@ -2,33 +2,33 @@
 #include "new_game_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-undefined4 character_generator_start(void);
-undefined4 ensure_save_directory_exists(const char *path);
-bool write_player_save_record(const char *path);
-undefined *load_string_resource(char *path);
-undefined4 seed_conversation_globals_for_new_game(void);
-bool open_level_archive(byte *handle, const char *path);
-undefined4 seek_file_handle(int handle, int offset, int method);
-undefined4 read_file_handle(int handle, void *destination, uint size);
-undefined4 scheduler_load(byte *handle, int level);
-undefined4 load_player_save_record(const char *path);
+int character_generator_start(void);
+int ensure_save_directory_exists(char *path);
+bool write_player_save_record(char *path);
+byte *load_string_resource(char *path);
+int seed_conversation_globals_for_new_game(void);
+bool open_level_archive(void *handle, char *path);
+int seek_file_handle(int handle, int offset, int method);
+int read_file_handle(int handle, void *destination, uint size);
+int scheduler_load(void *handle, int level);
+int load_player_save_record(char *path);
 bool load_level_texture_ids(byte *handle, int level);
 void clear_automap_reveal_buffer(void);
 void reset_npc_path_cache(void);
 void clear_last_attacker_record(void);
-undefined4 load_automap_reveal_from_archive(byte *handle, int level);
-byte close_level_archive(byte *handle);
-void set_player_tile_position(uint x, uint y);
+int load_automap_reveal_from_archive(byte *handle, int level);
+byte close_level_archive(void *handle);
+void set_player_tile_position(uint tile_x, uint tile_y, int flag);
 void debug_print_player_position(const char *label);
-void save_or_restore_level_special_state(int restore, int slot);
-void pop_cursor_icon(int state);
-undefined4 cursor_show_idle_tick(void);
-void set_pending_update_flags(int sound);
+void save_or_restore_level_special_state(short restore, short slot);
+void pop_cursor_icon(ushort state);
+int cursor_show_idle_tick(void);
+void set_pending_update_flags(ushort sound);
 void reset_cursor_confine_rect(void);
-void report_fatal_error_and_exit(void);
+void report_fatal_error_and_exit(ushort error_code);
 void uw_debug_dump_tmap(int level, const unsigned char *data);
-void *tilemap_lookup(void);
-void *resolve_object_link(void);
+void *tilemap_lookup(short tile_x, short tile_y);
+void *resolve_object_link(void *link_field);
 
 unsigned char arena[0x7c08], pristine_level[0x7c08];
 
@@ -82,7 +82,7 @@ bool archive_open;
 
 bool g_new_game_entry_pause_pending;
 
-undefined4 character_generator_start(void)
+int character_generator_start(void)
 {
     character_calls++;
     if (!accept_character) return 0;
@@ -93,14 +93,14 @@ undefined4 character_generator_start(void)
     return 1;
 }
 
-undefined4 ensure_save_directory_exists(const char *path)
+int ensure_save_directory_exists(char *path)
 {
     TEST_ASSERT_EQUAL_STRING("\\SAVE0", path);
     TEST_ASSERT_EQUAL_STRING("Test Avatar", character);
     return 1;
 }
 
-bool write_player_save_record(const char *path)
+bool write_player_save_record(char *path)
 {
     if (saves == 0) TEST_ASSERT_EQUAL_STRING("\\SAVE0", path);
     else TEST_ASSERT_NULL(path); /* load_level's snapshot */
@@ -109,20 +109,20 @@ bool write_player_save_record(const char *path)
     return true;
 }
 
-undefined *load_string_resource(char *path)
+byte *load_string_resource(char *path)
 {
     static char converted[520];
     MultiByteToWideChar(0, 2, path, -1, converted, 255);
     return (undefined *)converted;
 }
 
-undefined4 seed_conversation_globals_for_new_game(void)
+int seed_conversation_globals_for_new_game(void)
 {
     seeds++;
     return 0;
 }
 
-bool open_level_archive(byte *handle, const char *path)
+bool open_level_archive(void *handle, char *path)
 {
     opens++;
     if (!archive_ok) TEST_ASSERT_EQUAL_INT(0, unlink(archive_path));
@@ -140,13 +140,13 @@ bool open_level_archive(byte *handle, const char *path)
     return true;
 }
 
-undefined4 seek_file_handle(int handle, int offset, int method)
+int seek_file_handle(int handle, int offset, int method)
 { return uw_file_seek(handle, offset, method); }
 
-undefined4 read_file_handle(int handle, void *destination, uint size)
+int read_file_handle(int handle, void *destination, uint size)
 { return uw_file_read(handle, destination, size); }
 
-undefined4 scheduler_load(byte *handle, int level)
+int scheduler_load(void *handle, int level)
 {
     TEST_ASSERT_TRUE(archive_open);
     TEST_ASSERT_EQUAL_INT(1, level);
@@ -154,7 +154,7 @@ undefined4 scheduler_load(byte *handle, int level)
     return scheduler_result;
 }
 
-undefined4 load_player_save_record(const char *path)
+int load_player_save_record(char *path)
 {
     TEST_ASSERT_NULL(path);
     TEST_ASSERT_TRUE(archive_open);
@@ -177,7 +177,7 @@ void reset_npc_path_cache(void) { cache_resets++; }
 
 void clear_last_attacker_record(void) { attacker_resets++; }
 
-undefined4 load_automap_reveal_from_archive(byte *handle, int level)
+int load_automap_reveal_from_archive(byte *handle, int level)
 {
     TEST_ASSERT_TRUE(archive_open);
     TEST_ASSERT_EQUAL_INT(1, level);
@@ -186,7 +186,7 @@ undefined4 load_automap_reveal_from_archive(byte *handle, int level)
     return 1;
 }
 
-byte close_level_archive(byte *handle)
+byte close_level_archive(void *handle)
 {
     TEST_ASSERT_TRUE(archive_open);
     int file;
@@ -197,7 +197,7 @@ byte close_level_archive(byte *handle)
     return 1;
 }
 
-void set_player_tile_position(uint x, uint y)
+void set_player_tile_position(uint x, uint y, int flag)
 {
     TEST_ASSERT_EQUAL_INT(1, closes);
     TEST_ASSERT_EQUAL_INT(1, textures);
@@ -212,7 +212,7 @@ void debug_print_player_position(const char *label)
     TEST_ASSERT_EQUAL_STRING("chargen-spawn", label);
 }
 
-void save_or_restore_level_special_state(int restore, int slot)
+void save_or_restore_level_special_state(short restore, short slot)
 {
     TEST_ASSERT_EQUAL_INT(1, spawn_calls);
     TEST_ASSERT_EQUAL_INT(1, restore);
@@ -220,11 +220,11 @@ void save_or_restore_level_special_state(int restore, int slot)
     special_state_calls++;
 }
 
-void pop_cursor_icon(int state) { TEST_ASSERT_EQUAL_INT(3, state); }
+void pop_cursor_icon(ushort state) { TEST_ASSERT_EQUAL_INT(3, state); }
 
-undefined4 cursor_show_idle_tick(void) { return 0; }
+int cursor_show_idle_tick(void) { return 0; }
 
-void set_pending_update_flags(int sound) { TEST_ASSERT_EQUAL_INT(0x7ffe, sound); }
+void set_pending_update_flags(ushort sound) { TEST_ASSERT_EQUAL_INT(0x7ffe, sound); }
 
 void reset_cursor_confine_rect(void)
 {
@@ -232,7 +232,7 @@ void reset_cursor_confine_rect(void)
     cursor_resets++;
 }
 
-void report_fatal_error_and_exit(void)
+void report_fatal_error_and_exit(ushort error_code)
 {
     TEST_FAIL_MESSAGE("New game unexpectedly reached a fatal-error path");
 }
@@ -243,9 +243,9 @@ void uw_debug_dump_tmap(int level, const unsigned char *data)
     TEST_ASSERT_EQUAL_PTR(arena, data);
 }
 
-void *tilemap_lookup(void) { return NULL; }
+void *tilemap_lookup(short tile_x, short tile_y) { (void)tile_x; (void)tile_y; return NULL; }
 
-void *resolve_object_link(void) { return NULL; }
+void *resolve_object_link(void *link_field) { (void)link_field; return NULL; }
 
 void new_game_fixture_reset(void)
 {

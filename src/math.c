@@ -143,33 +143,22 @@ static undefined1 DAT_00086260_backing[1028] = {
 // was FUN_00069eb0 -- gated single step: only if stepping *param_1 by (param_3 * param_4) would
 // already reach or cross the bound param_2 (checked one direction for param_4==-1, the other
 // otherwise) does it actually apply that step and return true...
-bool step_value_toward_limit(param_1,param_2,param_3,param_4)
-short * param_1;
-short param_2;
-short param_3;
-short param_4;
-
+bool step_value_toward_limit(short *value, short limit, short step, short direction)
 {
-  int iVar1;
-  bool bVar2;
-  int iVar3;
-  
-  iVar3 = (int)*param_1;
-  iVar1 = (int)param_3;
-  if (param_4 == -1) {
-    if ((int)param_2 <= iVar3 - iVar1) {
-LAB_00069f08:
-      bVar2 = true;
-      goto LAB_00069ee8;
-    }
+  int current = (int)*value;
+  int step_size = (int)step;
+  bool reaches_limit;
+
+  if (direction == -1) {
+    reaches_limit = (int)limit <= current - step_size;
   }
-  else if (iVar1 + iVar3 <= (int)param_2) goto LAB_00069f08;
-  bVar2 = false;
-LAB_00069ee8:
-  if (bVar2) {
-    *param_1 = (short)((uint)((iVar1 * param_4 + iVar3) * 0x10000) >> 0x10);
+  else {
+    reaches_limit = step_size + current <= (int)limit;
   }
-  return bVar2;
+  if (reaches_limit) {
+    *value = (short)((uint)((step_size * direction + current) * 0x10000) >> 0x10);
+  }
+  return reaches_limit;
 }
 
 
@@ -177,57 +166,54 @@ LAB_00069ee8:
 // was FUN_00069f2c -- disassembly-confirmed faithful: given a compass heading (param_1) and a
 // distance (param_2), looks up heading_to_sine_cosine and adds `*param_4(Y) += sin(heading)*dist`,
 // `*param_3(X) += cos(heading)*dist` -- the standard heading->direction- vector projection...
-void project_position_by_heading(param_1,param_2,param_3,param_4)
-int param_1;
-short param_2;
-short * param_3;
-short * param_4;
-
+void project_position_by_heading(int heading, short distance, void *x_ptr, void *y_ptr)
 {
-  short sVar1;
-  short sVar2;
-  int iVar3;
-  short local_14;
-  short local_12;
-  
-  heading_to_sine_cosine((0x40U - param_1 & 0xff) << 8,&local_14,&local_12);
-  iVar3 = (int)local_14;
-  if (iVar3 < 0) {
-    iVar3 = iVar3 + 0x7f;
+  short *x = (short *)x_ptr;
+  short *y = (short *)y_ptr;
+  short sine;
+  short cosine;
+  int scaled;
+  short y_step;
+  short x_step;
+
+  heading_to_sine_cosine((0x40U - heading & 0xff) << 8, &sine, &cosine);
+  scaled = (int)sine;
+  if (scaled < 0) {
+    scaled = scaled + 0x7f;
   }
-  iVar3 = (iVar3 >> 7) * (int)param_2 * 0x10000 >> 0x10;
-  if (iVar3 < 0) {
-    iVar3 = iVar3 + 0xff;
+  scaled = (scaled >> 7) * (int)distance * 0x10000 >> 0x10;
+  if (scaled < 0) {
+    scaled = scaled + 0xff;
   }
-  sVar1 = (short)((uint)iVar3 >> 8);
-  iVar3 = (int)local_12;
-  if (iVar3 < 0) {
-    iVar3 = iVar3 + 0x7f;
+  y_step = (short)((uint)scaled >> 8);
+  scaled = (int)cosine;
+  if (scaled < 0) {
+    scaled = scaled + 0x7f;
   }
-  iVar3 = (iVar3 >> 7) * (int)param_2 * 0x10000 >> 0x10;
-  if (iVar3 < 0) {
-    iVar3 = iVar3 + 0xff;
+  scaled = (scaled >> 7) * (int)distance * 0x10000 >> 0x10;
+  if (scaled < 0) {
+    scaled = scaled + 0xff;
   }
-  sVar2 = (short)((uint)iVar3 >> 8);
-  if (sVar1 < 1) {
-    if (sVar1 < 0) {
-      sVar1 = sVar1 + -1;
+  x_step = (short)((uint)scaled >> 8);
+  /* Round each step away from zero by one unit. */
+  if (y_step < 1) {
+    if (y_step < 0) {
+      y_step = y_step + -1;
     }
   }
   else {
-    sVar1 = sVar1 + 1;
+    y_step = y_step + 1;
   }
-  if (sVar2 < 1) {
-    if (sVar2 < 0) {
-      sVar2 = sVar2 + -1;
+  if (x_step < 1) {
+    if (x_step < 0) {
+      x_step = x_step + -1;
     }
   }
   else {
-    sVar2 = sVar2 + 1;
+    x_step = x_step + 1;
   }
-  *param_4 = *param_4 + sVar1;
-  *param_3 = *param_3 + sVar2;
-  return;
+  *y = *y + y_step;
+  *x = *x + x_step;
 }
 
 
@@ -235,18 +221,14 @@ short * param_4;
 
 // was FUN_0006a034 -- busy-waits (spinning on read_realtime_clock_units)
 // for param_1 milliseconds.
-void busy_wait_ms(param_1)
-uint param_1;
-
+void busy_wait_ms(uint milliseconds)
 {
-  int iVar1;
-  uint uVar2;
-  
-  iVar1 = read_realtime_clock_units();
+  int start = read_realtime_clock_units();
+  uint now;
+
   do {
-    uVar2 = read_realtime_clock_units();
-  } while (uVar2 < iVar1 + (param_1 & 0xffff));
-  return;
+    now = read_realtime_clock_units();
+  } while (now < start + (milliseconds & 0xffff));
 }
 
 
@@ -254,63 +236,51 @@ uint param_1;
 // was FUN_0006a058 -- classic "base + NdM" dice roll: param_1 doubles as both the starting value
 // and the iteration count, and each of param_1 iterations adds a random 0..param_2-1 roll to the
 // running total.
-int roll_dice_sum(param_1,param_2)
-int param_1;
-short param_2;
-
+int roll_dice_sum(int base_and_dice, short sides)
 {
-  short sVar1;
-  int iVar2;
-  
-  if ((0 < param_2) && (iVar2 = (int)(short)param_1, 0 < iVar2)) {
+  int total = base_and_dice;
+  int dice_left;
+  short roll;
+
+  if ((0 < sides) && (dice_left = (int)(short)base_and_dice, 0 < dice_left)) {
     do {
-      iVar2 = (iVar2 + -1) * 0x10000 >> 0x10;
-      sVar1 = rand_below((int)param_2);
-      param_1 = param_1 + sVar1;
-    } while (iVar2 != 0);
+      dice_left = (dice_left + -1) * 0x10000 >> 0x10;
+      roll = rand_below((int)sides);
+      total = total + roll;
+    } while (dice_left != 0);
   }
-  return param_1;
+  return total;
 }
 
 
 
 // was FUN_00013774 -- integer square root via Newton's method (bit- shift initial guess, refine
 // with ordint_divmod division until the estimate stops decreasing).
-int integer_sqrt(param_1)
-int param_1;
-
+int integer_sqrt(int value)
 {
-  int iVar1;
-  int iVar2;
-  
-  iVar2 = param_1;
-  iVar1 = param_1 >> 1;
-  if (1 < param_1) {
+  int estimate = value;
+  int next = value >> 1;
+
+  if (1 < value) {
     do {
-      iVar2 = iVar1;
-      iVar1 = ordint_divmod(iVar2,param_1).quot;
-      iVar1 = iVar2 + iVar1 >> 1;
-    } while (iVar1 < iVar2);
+      estimate = next;
+      next = ordint_divmod(estimate, value).quot;
+      next = (estimate + next) >> 1;
+    } while (next < estimate);
   }
-  return iVar2;
+  return estimate;
 }
 
 
 // was FUN_00049c64 -- look up DAT_00085d48_sine/DAT_00085f50_cosine by
 // the angle byte packed via pack_angle_byte, writing sin(angle) into
 // *param_2 and cos(angle) into *param_3.
-void heading_to_sine_cosine(param_1,param_2,param_3)
-uint param_1;
-undefined2 * param_2;
-undefined2 * param_3;
-
+void heading_to_sine_cosine(uint heading_word, short *sine, short *cosine)
 {
-  ushort uVar1;
+  ushort table_index = pack_angle_byte(heading_word, (heading_word & 0xffff) >> 8, 0);
 
-  uVar1 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
-  *param_2 = *(undefined2 *)(&DAT_00085d48 + (short)(uVar1 & 0xff) * 2);
-  *param_3 = *(undefined2 *)(&DAT_00085f50 + (short)(uVar1 & 0xff) * 2);
-  return;
+  *sine = *(short *)(&DAT_00085d48 + (short)(table_index & 0xff) * 2);
+  *cosine = *(short *)(&DAT_00085f50 + (short)(table_index & 0xff) * 2);
 }
 
 
@@ -318,52 +288,36 @@ undefined2 * param_3;
 // was FUN_00049cc0 -- pack param_1's low byte and param_2's low byte into one 16-bit value,
 // param_2's byte going into the high or low half depending on param_3. Small shared helper used by
 // heading_to_sine_cosine and angle_to_screen_delta.
-uint pack_angle_byte(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-int param_3;
-
+uint pack_angle_byte(uint word, uint new_byte, int into_high_byte)
 {
-  uint uVar1;
-  
-  if (param_3 == 0) {
-    uVar1 = param_1 & 0xff00 | param_2 & 0xff;
+  if (into_high_byte == 0) {
+    return word & 0xff00 | new_byte & 0xff;
   }
-  else {
-    uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
-  }
-  return uVar1;
+  return word & 0xff | (new_byte & 0xff) << 8;
 }
 
 
 
 // was FUN_00049ce8
-void angle_to_screen_delta(param_1,param_2,param_3)
-uint param_1;
-undefined1 * param_2;
-undefined1 * param_3;
-
+void angle_to_screen_delta(uint angle_word, void *out_sine_ptr, void *out_cosine_ptr)
 {
-  int iVar1;
-  int iVar2;
-  int iVar3;
-  ushort uVar4;
-  
-  uVar4 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
-  iVar1 = (short)(uVar4 & 0xff) * 2;
-  iVar3 = (int)(short)((ushort)param_1 & 0xff);
-  iVar1 = ((int)*(short *)(&DAT_00085d48 + iVar1) +
-          ((((int)*(short *)(&DAT_00085d4c + iVar1) - (int)*(short *)(&DAT_00085d48 + iVar1)) *
-            0x10000 >> 0x10) * iVar3 >> 8)) * 0x10000;
-  *param_2 = (char)((uint)iVar1 >> 0x10);
-  iVar2 = (short)(uVar4 & 0xff) * 2;
-  param_2[1] = (char)((uint)iVar1 >> 0x18);
-  iVar1 = ((int)*(short *)(&DAT_00085f50 + iVar2) +
-          ((((int)*(short *)(&DAT_00085f54 + iVar2) - (int)*(short *)(&DAT_00085f50 + iVar2)) *
-            0x10000 >> 0x10) * iVar3 >> 8)) * 0x10000;
-  *param_3 = (char)((uint)iVar1 >> 0x10);
-  param_3[1] = (char)((uint)iVar1 >> 0x18);
-  return;
+  short *out_sine = (short *)out_sine_ptr;
+  short *out_cosine = (short *)out_cosine_ptr;
+  ushort table_index = pack_angle_byte(angle_word, (angle_word & 0xffff) >> 8, 0);
+  int offset = (short)(table_index & 0xff) * 2;
+  int fraction = (int)(short)((ushort)angle_word & 0xff);
+  int interpolated;
+
+  /* Linear interpolation between adjacent table entries, using the angle's low byte as the fraction. */
+  interpolated = ((int)*(short *)(&DAT_00085d48 + offset) +
+                 ((((int)*(short *)(&DAT_00085d4c + offset) - (int)*(short *)(&DAT_00085d48 + offset)) *
+                   0x10000 >> 0x10) * fraction >> 8)) * 0x10000;
+  *out_sine = (short)((uint)interpolated >> 0x10);
+  offset = (short)(table_index & 0xff) * 2;
+  interpolated = ((int)*(short *)(&DAT_00085f50 + offset) +
+                 ((((int)*(short *)(&DAT_00085f54 + offset) - (int)*(short *)(&DAT_00085f50 + offset)) *
+                   0x10000 >> 0x10) * fraction >> 8)) * 0x10000;
+  *out_cosine = (short)((uint)interpolated >> 0x10);
 }
 
 
@@ -371,25 +325,19 @@ undefined1 * param_3;
 // was FUN_00049db8 -- compute_angle_from_slope's "primary range" sub-helper (|ratio| < ~1.0):
 // interpolates a fixed-point arctangent lookup table (&DAT_00086260/DAT_00086264) by the ratio's
 // packed angle-byte index, restoring the input's original sign at the end.
-int lookup_arctan_primary_range(param_1)
-uint param_1;
-
+int lookup_arctan_primary_range(uint ratio)
 {
-  int iVar1;
-  ushort uVar2;
-  uint uVar3;
-  uint uVar4;
+  uint sign = (ratio & 0xffff) >> 8;
+  uint magnitude = (ratio & 0xff ^ sign) - sign;
+  uint index_word = pack_angle_byte(0, (magnitude & 0xffff) >> 8, 0);
+  int offset = (index_word & 0xff) * 4;
+  ushort base_value = *(ushort *)(&DAT_00086260 + offset);
+  uint scaled = (magnitude & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + offset) - (uint)base_value & 0xffff);
+  uint carry = (int)scaled >> 0x10;
+  uint fraction = pack_angle_byte(scaled & 0xffff, (scaled & 0xffff) >> 8, 0);
 
-  uVar3 = (param_1 & 0xffff) >> 8;
-  uVar3 = (param_1 & 0xff ^ uVar3) - uVar3;
-  uVar4 = pack_angle_byte(0,(uVar3 & 0xffff) >> 8,0);
-  iVar1 = (uVar4 & 0xff) * 4;
-  uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
-  uVar4 = (uVar3 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
-  uVar3 = (int)uVar4 >> 0x10;
-  uVar4 = pack_angle_byte(uVar4 & 0xffff,(uVar4 & 0xffff) >> 8,0);
-  /* ARM 0x49e9c-0x49ea8 also adds the signed-angle quadrant mask. */
-  return (0xffff8000u & uVar3) + (((uVar4 & 0xff | uVar3 << 8) + (uint)uVar2 ^ uVar3) - uVar3);
+  /* Original ARM quadrant correction, preserved through declaration cleanup. */
+  return (0xffff8000u & carry) + (((fraction & 0xff | carry << 8) + (uint)base_value ^ carry) - carry);
 }
 
 
@@ -397,25 +345,19 @@ uint param_1;
 // was FUN_00049eb8 -- compute_angle_from_slope's "reciprocal range" sub-helper (|ratio| >= ~1.0):
 // same arctangent table lookup as lookup_arctan_primary_range, used for the classic atan2
 // reduce-to-45-degrees technique (90 degrees minus atan(1/ratio)).
-int lookup_arctan_reciprocal_range(param_1)
-uint param_1;
-
+int lookup_arctan_reciprocal_range(uint ratio)
 {
-  int iVar1;
-  ushort uVar2;
-  uint uVar3;
-  uint uVar4;
+  uint sign = (ratio & 0xffff) >> 8;
+  uint magnitude = (ratio & 0xff ^ sign) - sign;
+  uint index_word = pack_angle_byte(ratio, (magnitude & 0xffff) >> 8, 0);
+  int offset = (index_word & 0xff) * 4;
+  ushort base_value = *(ushort *)(&DAT_00086260 + offset);
+  uint scaled = (magnitude & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + offset) - (uint)base_value & 0xffff);
+  uint carry = (int)scaled >> 0x10;
+  uint fraction = pack_angle_byte(scaled & 0xffff, (scaled & 0xffff) >> 8, 0);
 
-  uVar4 = (param_1 & 0xffff) >> 8;
-  uVar4 = (param_1 & 0xff ^ uVar4) - uVar4;
-  uVar3 = pack_angle_byte(param_1,(uVar4 & 0xffff) >> 8,0);
-  iVar1 = (uVar3 & 0xff) * 4;
-  uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
-  uVar3 = (uVar4 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
-  uVar4 = (int)uVar3 >> 0x10;
-  uVar3 = pack_angle_byte(uVar3 & 0xffff,(uVar3 & 0xffff) >> 8,0);
-  /* ARM 0x49f98-0x49fa4: same quadrant correction as the primary lookup. */
-  return (0xffff8000u & uVar4) + (((uVar3 & 0xff | uVar4 << 8) + (uint)uVar2 ^ uVar4) - uVar4);
+  /* Original ARM quadrant correction, preserved through declaration cleanup. */
+  return (0xffff8000u & carry) + (((fraction & 0xff | carry << 8) + (uint)base_value ^ carry) - carry);
 }
 
 
@@ -423,25 +365,22 @@ uint param_1;
 // was FUN_00049fb4 -- per src/combat.c's own comment, an atan2-shaped helper fed slope ratios:
 // dispatches to lookup_arctan_primary_range for ratios within +-0x5a83 (~1.0 in this fixed-point
 // scale), otherwise lookup_arctan_reciprocal_range...
-int compute_angle_from_slope(param_1,param_2)
-ushort param_1;
-undefined4 param_2;
-
+int compute_angle_from_slope(ushort slope, uint reciprocal_slope)
 {
-  int iVar1;
-  uint uVar2;
+  int angle;
+  uint reciprocal_angle;
 
-  if (((short)param_1 < 0x5a83) && (-0x5a83 < (short)param_1)) {
-    iVar1 = lookup_arctan_primary_range(param_1);
-    if ((short)iVar1 < 0) {
-      iVar1 = 0x8000 - iVar1;
+  if (((short)slope < 0x5a83) && (-0x5a83 < (short)slope)) {
+    angle = lookup_arctan_primary_range(slope);
+    if ((short)angle < 0) {
+      angle = 0x8000 - angle;
     }
   }
   else {
-    uVar2 = lookup_arctan_reciprocal_range(param_2);
-    iVar1 = (uVar2 ^ param_1 >> 8) - (uint)(param_1 >> 8);
+    reciprocal_angle = lookup_arctan_reciprocal_range(reciprocal_slope);
+    angle = (reciprocal_angle ^ slope >> 8) - (uint)(slope >> 8);
   }
-  return iVar1;
+  return angle;
 }
 
 
@@ -449,14 +388,12 @@ undefined4 param_2;
    r1 remainder leftover -- Ghidra lost that into an uninitialised `extraout_r1`, so it always
    returned garbage (and with ce_rand stubbed to 0, effectively always 0). */
 // was FUN_00022910
-undefined4 rand_below(param_1)
-int param_1;
-
+uint rand_below(int limit)
 {
-  if (param_1 == 0) {
+  if (limit == 0) {
     return 0;
   }
-  return (undefined4)((uint)ce_rand() % (uint)param_1);
+  return (uint)ce_rand() % (uint)limit;
 }
 
 
@@ -464,10 +401,6 @@ int param_1;
 // was FUN_0002294c -- GetTickCount-shaped: GetTickCount() (SDL_GetTicks(), real elapsed ms since
 // startup) scaled down to 4ms-per-unit.
 uint read_realtime_clock_units()
-
 {
-  uint uVar1;
-
-  uVar1 = GetTickCount();
-  return uVar1 >> 2;
+  return (uint)GetTickCount() >> 2;
 }

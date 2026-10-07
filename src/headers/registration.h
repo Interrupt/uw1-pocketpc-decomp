@@ -6,16 +6,16 @@
    gate). Pulls in uw.h itself so this header is self-contained for any caller. */
 #include "uw.h"
 
-undefined2 codewheel_letter_at_index();
-int codewheel_index_of_letter();
-undefined4 validate_codewheel_word();
-undefined4 check_registration_key_saved();
+short codewheel_letter_at_index(int index);
+int codewheel_index_of_letter(short letter);
+int validate_codewheel_word(ushort *key, ushort *answer_address);
+int check_registration_key_saved();
 void save_registration_key_validated();
 void set_power_status_flag_bit();
 void clear_power_status_flag_bit();
-undefined4 check_registration_key_dialog();
-undefined4 registration_key_dialog_proc();
-undefined4 is_product_registered();
-undefined4 check_save_disk_space();
+int check_registration_key_dialog(void *window, int instance);
+int registration_key_dialog_proc(int dialog, int message, short control_id);
+int is_product_registered(void *window, int instance);
+int check_save_disk_space();
 
 #endif

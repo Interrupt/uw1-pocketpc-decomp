@@ -273,7 +273,7 @@ static void test_opcode_builtin_call(void)
 {
     native_calls = 0;
     babl_symbol(2, "sum", 7, 1, 0, 0x111);
-    babl_register_builtin("sum", (intptr_t)native_sum);
+    babl_register_builtin("sum", (void *)native_sum);
     RUN_PROGRAM(0x22, 0x16, -20, 0x16, 13, 0x16, 0, 0x14, 7, 0x26);
     TEST_ASSERT_EQUAL_INT(1, native_calls);
     TEST_ASSERT_EQUAL_INT(3, DAT_000bbf78); /* replaces reserved return slot */
@@ -323,27 +323,27 @@ static void test_named_variables_and_defaults(void)
     TEST_ASSERT_EQUAL_INT(321, babl_words[21]);
     TEST_ASSERT_EQUAL_INT(321, babl_words[30]);
     short values[] = {1, 2, 3, 4}, readback[] = {-1, -1, -1, -1};
-    babl_set_variable("events", (intptr_t)values, 4);
-    babl_get_variable("events", (intptr_t)readback, 4);
+    babl_set_variable("events", (short *)values, 4);
+    babl_get_variable("events", (short *)readback, 4);
     TEST_ASSERT_EQUAL_INT16_ARRAY(values, readback, 3);
     TEST_ASSERT_EQUAL_INT(-1, readback[3]);
     TEST_ASSERT_EQUAL_INT(99, babl_words[9]);
     TEST_ASSERT_EQUAL_INT(99, babl_words[13]);
-    babl_set_variable("unknown", (intptr_t)values, 1);
-    babl_get_variable("unknown", (intptr_t)readback, 1);
+    babl_set_variable("unknown", (short *)values, 1);
+    babl_get_variable("unknown", (short *)readback, 1);
     TEST_ASSERT_EQUAL_INT(1, readback[0]);
 }
 static void set_quest(short index, short value)
 {
     babl_words[2] = index; babl_words[3] = value;
     short args[] = {2, 3, 0};
-    babl_builtin_set_quest((intptr_t)(args + 2));
+    babl_builtin_set_quest((char *)(args + 2));
 }
 static int get_quest(short index)
 {
     babl_words[2] = index;
     short args[] = {2, 0};
-    return babl_builtin_get_quest((intptr_t)(args + 1));
+    return babl_builtin_get_quest((char *)(args + 1));
 }
 static void test_quest_flags_and_event_counters(void)
 {
@@ -365,11 +365,11 @@ static void test_quest_flags_and_event_counters(void)
     DAT_00086df8[0x6d] = 77;
     TEST_ASSERT_EQUAL_INT(77, get_quest(36));
 }
-static int native_get_quest(intptr_t top) { return babl_builtin_get_quest(top); }
+static int native_get_quest(intptr_t top) { return babl_builtin_get_quest((char *)top); }
 static void test_event_changes_choose_expected_dialogue_branch(void)
 {
     babl_symbol(2, "get_quest", 2, 1, 0, 0x111);
-    babl_register_builtin("get_quest", (intptr_t)native_get_quest);
+    babl_register_builtin("get_quest", (void *)native_get_quest);
     for (int state=0; state<2; state++) {
         set_quest(7, state);
         RUN_PROGRAM(0x22, 0x16, 2, 0x16, 0, 0x14, 2, 0x11, 7,
@@ -383,20 +383,20 @@ static void test_filtered_menu_tracks_event_state_and_releases_wait(void)
     babl_words[10] = 4; babl_words[11] = 5; babl_words[12] = 0;
     babl_words[20] = 0; babl_words[21] = 1;
     short args[] = {20, 10, 0};
-    TEST_ASSERT_EQUAL_INT(5, babl_fmenu((intptr_t)(args + 2)));
+    TEST_ASSERT_EQUAL_INT(5, babl_fmenu((char *)(args + 2)));
     TEST_ASSERT_EQUAL_STRING("Leave", babl_reply);
     TEST_ASSERT_EQUAL_INT(0, DAT_0010078c);
     TEST_ASSERT_EQUAL_INT(0, DAT_00100790);
     TEST_ASSERT_EQUAL_INT(0, DAT_00250718);
     babl_words[20] = 1; babl_words[21] = 0;
-    TEST_ASSERT_EQUAL_INT(4, babl_fmenu((intptr_t)(args + 2)));
+    TEST_ASSERT_EQUAL_INT(4, babl_fmenu((char *)(args + 2)));
     TEST_ASSERT_EQUAL_STRING("Trade", babl_reply);
     TEST_ASSERT_EQUAL_INT(2, babl_frees);
 }
 static void test_menu_returns_choice_then_dialogue_continues(void)
 {
     babl_symbol(2, "babl_menu", 2, 1, 0, 0x111);
-    babl_register_builtin("babl_menu", (intptr_t)babl_menu);
+    babl_register_builtin("babl_menu", (void *)babl_menu);
     babl_words[10] = 4; babl_words[11] = 5;
     RUN_PROGRAM(0x22, 0x16, 10, 0x16, 0, 0x14, 2, 0x18, 0x18,
                 0x16, 3, 0x27, 0x15);
@@ -441,7 +441,7 @@ static void test_barter_preferences_use_word_arrays(void)
     babl_words[10] = 300; babl_words[11] = -1;
     babl_words[20] = -1;
     short args[] = {10, 20, 0};
-    babl_builtin_set_likes_dislikes((intptr_t)(args + 2));
+    babl_builtin_set_likes_dislikes((char *)(args + 2));
     TEST_ASSERT_EQUAL_INT(1, (short)check_npc_item_preference(1));
     babl_words[10] = 1000 + (300 >> 4);
     TEST_ASSERT_EQUAL_INT(1, (short)check_npc_item_preference(1));
@@ -481,8 +481,8 @@ static void test_accepted_offer_exits_barter_branch_and_continues_dialogue(void)
     stage_offer(100, 100);
     babl_symbol(2, "do_offer", 2, 1, 0, 0x111);
     babl_symbol(3, "end_barter", 3, 1, 0, 0x111);
-    babl_register_builtin("do_offer", (intptr_t)babl_builtin_do_offer);
-    babl_register_builtin("end_barter", (intptr_t)end_barter_ui);
+    babl_register_builtin("do_offer", (void *)babl_builtin_do_offer);
+    babl_register_builtin("end_barter", (void *)end_barter_ui);
     RUN_PROGRAM(0x22, 0x16, 10, 0x16, 11, 0x16, 12, 0x16, 13, 0x16, 14,
                 0x16, 0, 0x14, 2, 0x10, 9, 0x14, 3,
                 0x16, 3, 0x27, 0x1c, 0x16, -5, 0x1e, 0x15, 0x26);
@@ -498,7 +498,7 @@ static void test_rejected_offer_remains_available_then_declines(void)
 {
     stage_offer(50, 100);
     short args[] = {10, 11, 12, 13, 14, 0};
-    TEST_ASSERT_EQUAL_INT(0, babl_builtin_do_offer((intptr_t)(args+5)));
+    TEST_ASSERT_EQUAL_INT(0, babl_builtin_do_offer((char *)(args+5)));
     TEST_ASSERT_EQUAL_INT(0, DAT_000bc008);
     TEST_ASSERT_EQUAL_INT(1, DAT_000bbfd0_backing[0]);
     TEST_ASSERT_EQUAL_INT(2, DAT_000bbfe8_backing[0]);
@@ -513,7 +513,7 @@ static void test_empty_offer_returns_failure_without_trading(void)
     stage_offer(100, 100);
     DAT_000bbf98_backing[0] = 0;
     short args[] = {10, 11, 12, 13, 14, 0};
-    TEST_ASSERT_EQUAL_INT(0, babl_builtin_do_offer((intptr_t)(args+5)));
+    TEST_ASSERT_EQUAL_INT(0, babl_builtin_do_offer((char *)(args+5)));
     TEST_ASSERT_EQUAL_STRING("Leave", babl_speech);
     TEST_ASSERT_EQUAL_INT(0, DAT_000bc008);
     TEST_ASSERT_EQUAL_INT(0, DAT_00100674[3]);
@@ -533,8 +533,8 @@ static void test_npc_events_survive_conversation_writeback_and_reentry(void)
     TEST_ASSERT_EQUAL_INT(25, babl_named_word("npc_hp"));
     TEST_ASSERT_EQUAL_INT(30, babl_named_word("play_hp"));
     short attitude = 1, experience = 10;
-    babl_set_variable("npc_attitude", (intptr_t)&attitude, 1);
-    babl_set_variable("new_player_exp", (intptr_t)&experience, 1);
+    babl_set_variable("npc_attitude", (short *)&attitude, 1);
+    babl_set_variable("new_player_exp", (short *)&experience, 1);
     TEST_ASSERT_FALSE(sync_conv_vars_to_npc((char *)DAT_00100674));
     TEST_ASSERT_EQUAL_INT(10, babl_awarded_xp);
     TEST_ASSERT_EQUAL_INT(30, ((byte *)g_player_object)[8]);
@@ -554,7 +554,7 @@ static void test_menu_wait_ignores_invalid_selection_then_accepts_leave(void)
     babl_words[10] = 4; babl_words[11] = 5;
     babl_input_polls = 0; babl_invalid_first_choice = 1; babl_next_choice = 2;
     short args[] = {10, 0};
-    TEST_ASSERT_EQUAL_INT(5, babl_menu((intptr_t)(args + 1)));
+    TEST_ASSERT_EQUAL_INT(5, babl_menu((char *)(args + 1)));
     TEST_ASSERT_EQUAL_INT(2, babl_input_polls);
     TEST_ASSERT_EQUAL_INT(0, DAT_0010078c);
     TEST_ASSERT_EQUAL_INT(0, DAT_00100790);

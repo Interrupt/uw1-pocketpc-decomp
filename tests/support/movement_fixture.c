@@ -15,8 +15,7 @@ undefined1 DAT_00204980_backing[32];
 undefined2 DAT_00204990_backing[16];
 undefined2 DAT_002049a0_backing[16];
 undefined2 DAT_002049b0_backing[16];
-undefined *DAT_00204988, *DAT_00204998, *DAT_002049b8;
-undefined1 *DAT_002049a8;
+int (*DAT_00204988)(ushort *), (*DAT_00204998)(ushort *), (*DAT_002049a8)(ushort *), (*DAT_002049b8)(ushort *);
 undefined1 DAT_002049c0;
 char DAT_002049bc;
 short DAT_00086980, DAT_00086982, DAT_00086990, DAT_00086996;
@@ -40,12 +39,12 @@ undefined2 DAT_00201c78;
 undefined4 DAT_000858a0;
 char *DAT_002029cc;
 uint read_realtime_clock_units(void) { return 0; }
-void object_list_unlink(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
-void object_list_insert_head(void) { TEST_FAIL_MESSAGE("Unexpected tile change"); }
-void set_locomotion_state(int state, int flags) { (void)state; (void)flags; }
-undefined4 roll_skill_check(void) { TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
-undefined4 apply_typed_damage_to_object(void) { TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
-undefined4 play_sound_effect_with_pan(void) { TEST_FAIL_MESSAGE("Unexpected landing sound"); return 0; }
+void object_list_unlink(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void object_list_insert_head(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void set_locomotion_state(ushort state, int flags) { (void)state; (void)flags; }
+int roll_skill_check(int skill, int difficulty) { (void)skill; (void)difficulty; TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
+int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias) { (void)sound_id; (void)pan; (void)volume_bias; TEST_FAIL_MESSAGE("Unexpected landing sound"); return 0; }
 
 short movement_fixture_read_short(int offset)
 {
@@ -58,7 +57,7 @@ void movement_fixture_write_short(int offset, short value)
     memcpy(movement + offset, &value, sizeof(value));
 }
 
-void *tilemap_lookup(int tile_x, int tile_y)
+void *tilemap_lookup(short tile_x, short tile_y)
 {
     if (!movement_fixture.setup_fixture) {
         TEST_ASSERT_EQUAL_INT(1, tile_x);
@@ -67,13 +66,13 @@ void *tilemap_lookup(int tile_x, int tile_y)
     movement_fixture.sampled_tiles++;
     return &movement_fixture.destination_floor;
 }
-uint collision_sample_floor_height(int sample, int *status)
+uint collision_sample_floor_height(uint sample, undefined4 *status)
 {
     TEST_ASSERT_EQUAL_INT(4, sample);
     *status = 0;
     return movement_fixture.destination_floor;
 }
-void collision_build_height_field(int step_limit)
+void collision_build_height_field(uint step_limit)
 {
     if (movement_fixture.setup_fixture) movement_fixture.destination_floor = DAT_002049c8 == 16 ? 128 : 0;
     if (movement_fixture.stair_fixture) {
@@ -83,7 +82,7 @@ void collision_build_height_field(int step_limit)
         DAT_002049d4 = movement_fixture.wall_flags;
     }
 }
-void collision_height_envelope(void)
+void collision_height_envelope(int mode, int collision)
 {
     DAT_002049d6 = movement_fixture.envelope_flags;
     DAT_002049d8 = DAT_002049d9 = movement_fixture.destination_floor;
@@ -107,7 +106,7 @@ byte DAT_002046dc;
 int DAT_002046e8;
 ushort DAT_002020a0, DAT_002020a4;
 
-void *get_object_record_by_slot_index(int slot)
+void *get_object_record_by_slot_index(short slot)
 {
     if (slot == 1) return movement_fixture.player;
     if (slot == 300) return movement_fixture.door;
@@ -115,25 +114,25 @@ void *get_object_record_by_slot_index(int slot)
 }
 char *DAT_002046c4 = (char *)movement_fixture.object_arena + 0x5b00;
 short DAT_0010144c, DAT_00101454;
-int encode_object_slot_index(ushort *object)
+int encode_object_slot_index(void *object)
 {
     TEST_ASSERT_EQUAL_PTR(movement_fixture.door, object);
     movement_fixture.door_contacts++;
     return 300;
 }
-undefined4 sync_object_tile_position(ushort *object, byte *snapshot)
+int sync_object_tile_position(ushort *object, void *snapshot)
 {
     TEST_ASSERT_EQUAL_PTR(movement_fixture.door, object);
     memcpy(movement_fixture.last_obstacle_snapshot, snapshot, sizeof(movement_fixture.last_obstacle_snapshot));
     movement_fixture.obstacle_syncs++;
     return 1;
 }
-undefined4 resolve_skill_gated_unlock_or_use(void)
+uint resolve_skill_gated_unlock_or_use(void *object, void *key_item, void *lock_link, ushort key_id)
 { TEST_FAIL_MESSAGE("Unexpected unlock trigger"); return 0; }
-ushort *use_object_on_target(void)
+ushort *use_object_on_target(ushort *actor, ushort *used_object, int flag)
 { TEST_FAIL_MESSAGE("Unexpected use trigger"); return 0; }
-void angle_to_screen_delta(int heading, short *dx, short *dy)
-{
+void angle_to_screen_delta(uint heading, void *dx_, void *dy_)
+{ short *dx = (short *)dx_; short *dy = (short *)dy_;
     (void)heading;
     *dx = 0;
     *dy = 0;
@@ -144,7 +143,7 @@ void sweep_land_on_surface(void)
     movement_fixture.surface_landings++;
     movement_fixture.foot_position[2] = (short)_DAT_0008699b;
 }
-undefined4 sweep_step(int direction)
+int sweep_step(int direction)
 {
     TEST_ASSERT_EQUAL_INT(-1, direction);
     /* Revert the attempted blocked sub-step to its pre-contact position. */

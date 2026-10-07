@@ -39,7 +39,7 @@ FILE *monster_data;
 int chase_steps, attacks, last_chase_x, last_chase_y, los_clear;
 unsigned random_index;
 
-undefined4 read_file_handle(int handle, void *buffer, int count)
+int read_file_handle(int handle, void *buffer, uint count)
 {
     TEST_ASSERT_NOT_NULL(monster_data);
     unsigned n = fread(buffer, 1, count, monster_data);
@@ -52,9 +52,9 @@ long ce_rand(void)
     return random_index++ % 2 ? 1 : 0;
 }
 int encode_object_slot_index(void *object) { return object == player ? 1 : 2; }
-void *get_object_record_by_slot_index(int slot) { return slot == 1 ? player : slot == 2 ? npc : NULL; }
-void *tilemap_lookup(int x, int y) { return tile; }
-undefined4 check_fine_line_of_sight(void) { return los_clear; }
+void *get_object_record_by_slot_index(short slot) { return slot == 1 ? player : slot == 2 ? npc : NULL; }
+void *tilemap_lookup(short x, short y) { return tile; }
+int check_fine_line_of_sight(uint from_x, uint from_y, uint from_z, short to_x, short to_y, short to_z) { (void)from_x; (void)from_y; (void)from_z; (void)to_x; (void)to_y; (void)to_z; return los_clear; }
 char DAT_00101740_backing[448];
 undefined1 DAT_00101739, DAT_0010173a;
 undefined DAT_00101733;
@@ -63,14 +63,13 @@ undefined1 DAT_0010142c;
 undefined4 DAT_00101440;
 byte DAT_00101450;
 char *DAT_00101904;
-undefined4 walk_using_cached_path(void) { return 0; }
-undefined4 advance_cached_path_step(void) { return 0; }
-void save_walk_path_to_cache_slot(void) {}
-undefined4 creature_find_path_to_tile(void) { return 0; }
-void set_npc_altitude_state(void) {}
-void npc_arrival_interaction(void) {}
-undefined4 tile_pair_los_blocked(int x0, int y0, int x1, int y1, int x2, int y2,
-    int flags0, int flags1, int height, byte *height_out, byte *scratch)
+int walk_using_cached_path(byte *cache_record) { (void)cache_record; return 0; }
+int advance_cached_path_step(char *record) { (void)record; return 0; }
+void save_walk_path_to_cache_slot(byte *record) { (void)record;}
+int creature_find_path_to_tile(int start_x, char start_y, byte size_class, char goal_x, char goal_y, char goal_sub_x, byte goal_sub_y) { (void)start_x; (void)start_y; (void)size_class; (void)goal_x; (void)goal_y; (void)goal_sub_x; (void)goal_sub_y; return 0; }
+void set_npc_altitude_state(byte tile_x, byte tile_y) { (void)tile_x; (void)tile_y;}
+void npc_arrival_interaction(void *npc) { (void)npc;}
+int tile_pair_los_blocked(byte x0, byte y0, byte x1, byte y1, byte x2, byte y2, ushort flags0, ushort flags1, byte height, byte *height_out, byte *scratch)
 {
     /* The fixture allows a straight, level corridor at x=10. */
     TEST_ASSERT_TRUE(x0 == 0 || x0 == 10);
@@ -94,30 +93,30 @@ void npc_combat_approach_tick(void) {}
 void npc_combat_position_tick(void) {}
 void npc_combat_disengage_tick(void) {}
 void npc_clear_special_goal(void) {}
-undefined4 check_npc_morale_flee(void) { return 0; }
-undefined4 check_npc_target_alignment(void) { return 1; }
-byte tile_is_no_magic(void) { return 0; }
-undefined4 try_npc_special_ability_alt(void) { return 0; }
-undefined4 try_npc_special_ability_no_los(void) { return 0; }
-undefined4 try_npc_special_ability_ranged(void) { return 0; }
-void build_object_placement_snapshot(void) {}
-int build_collision_height_field_for_object(void) { return 0; }
-undefined4 apply_placement_collision_sweep(void) { return 0; }
-undefined4 sync_object_tile_position(void) { return 0; }
-undefined4 resolve_unique_npc_special_behavior(void) { return 1; }
-void object_list_unlink(void) {}
-void spawn_creature_death_loot(void) {}
-void drop_monster_loot(void) {}
-void drop_creature_inventory_on_death(void) {}
-void free_object_slot(void) {}
-int compute_vertical_aim_offset(void) { return 0; }
-void spawn_npc_thrown_weapon(void) { TEST_FAIL_MESSAGE("Unexpected ranged attack"); }
-void dispatch_tile_special_action(uint action, uintptr_t actor, intptr_t context) { (void)action; (void)actor; (void)context; TEST_FAIL_MESSAGE("Unexpected special ability"); }
+int check_npc_morale_flee(uint morale_stat, uint current_hp, uint hp_margin, uint flee_threshold) { (void)morale_stat; (void)current_hp; (void)hp_margin; (void)flee_threshold; return 0; }
+int check_npc_target_alignment(int mode) { (void)mode; return 1; }
+byte tile_is_no_magic(int tile_x, int tile_y) { (void)tile_x; (void)tile_y; return 0; }
+int try_npc_special_ability_alt(void) { return 0; }
+int try_npc_special_ability_no_los(void) { return 0; }
+int try_npc_special_ability_ranged(void) { return 0; }
+void build_object_placement_snapshot(ushort *object, byte *snapshot) { (void)object; (void)snapshot;}
+int build_collision_height_field_for_object(ushort *object) { (void)object; return 0; }
+int apply_placement_collision_sweep(void *snapshot, void *sweep_flags) { (void)snapshot; (void)sweep_flags; return 0; }
+int sync_object_tile_position(ushort *object, void *position) { (void)object; (void)position; return 0; }
+int resolve_unique_npc_special_behavior(void *npc, int event_mode) { (void)npc; (void)event_mode; return 1; }
+void object_list_unlink(void *link_field, void *object) { (void)link_field; (void)object;}
+void spawn_creature_death_loot(ushort *creature) { (void)creature;}
+void drop_monster_loot(void *monster, ushort gold_nibble, ushort item_nibble) { (void)monster; (void)gold_nibble; (void)item_nibble;}
+void drop_creature_inventory_on_death(void *creature) { (void)creature;}
+void free_object_slot(void *object) { (void)object;}
+int compute_vertical_aim_offset(short has_target, int target) { (void)has_target; (void)target; return 0; }
+void spawn_npc_thrown_weapon(void *attacker, short launch_offset, short launch_flags) { (void)attacker; (void)launch_offset; (void)launch_flags; TEST_FAIL_MESSAGE("Unexpected ranged attack"); }
+void dispatch_tile_special_action(uint tile_type, void *actor, void *target) { (void)tile_type; (void)actor; (void)target; TEST_FAIL_MESSAGE("Unexpected special ability"); }
 byte get_current_music_track(void) { return 6; }
-void set_pending_music_track(void) {}
+void set_pending_music_track(byte track) { (void)track;}
 uint read_realtime_clock_units(void) { return 0; }
-undefined4 play_positional_sound_effect(void) { return 0; }
-int resolve_npc_melee_attack(ushort *actor, int swing, int direction, int style, int skill)
+int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias) { (void)sound_id; (void)world_x; (void)world_y; (void)volume_bias; return 0; }
+int resolve_npc_melee_attack(void *actor, short swing, byte direction, short style, short skill)
 {
     TEST_ASSERT_EQUAL_PTR(npc, actor);
     TEST_ASSERT_EQUAL_UINT16(1, (*(ushort *)((byte *)npc + 0xb) >> 4) & 0xff);

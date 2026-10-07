@@ -25,9 +25,9 @@ void (*const PTR_FUN_000858c8_table[5])(void) = {0};
 
 void push_cursor_icon(int icon)
 { TEST_ASSERT_EQUAL_HEX16(0x1075, icon); spells_fixture.cursor_pushes++; }
-void pop_cursor_icon(int mode)
+void pop_cursor_icon(ushort mode)
 { TEST_ASSERT_EQUAL_INT(3, mode); spells_fixture.cursor_pops++; }
-void get_mouse_position(short *x, short *y)
+void get_mouse_position(ushort *x, ushort *y)
 { *x=spells_fixture.mouse_x; *y=spells_fixture.mouse_y; }
 void *alloc_object_slot(int region)
 {
@@ -35,23 +35,23 @@ void *alloc_object_slot(int region)
     spells_fixture.allocations++;
     return spells_fixture.allocation_fails ? NULL : spells_fixture.projectile;
 }
-undefined4 check_object_drop_height(ushort *object, ushort *actor)
+int check_object_drop_height(ushort *object, ushort *actor)
 {
     TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object);
     TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
     return spells_fixture.placement_allowed;
 }
-void free_object_slot(ushort *object)
+void free_object_slot(void *object)
 { TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object); spells_fixture.frees++; }
-int encode_object_slot_index(ushort *object)
+int encode_object_slot_index(void *object)
 { TEST_ASSERT_EQUAL_PTR(g_player_object, object); return 1; }
-void object_list_insert_head(void *head, ushort *object)
+void object_list_insert_head(void *head, void *object)
 {
     TEST_ASSERT_EQUAL_PTR(spells_fixture.map+(32+64*2)*4+2, head);
     TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object);
     spells_fixture.links++;
 }
-undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
+int play_sound_effect_at_object(int sound, ushort *object, int mode)
 {
     TEST_ASSERT_EQUAL_INT(10, sound);
     TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object);
@@ -61,11 +61,9 @@ undefined4 play_sound_effect_at_object(int sound, ushort *object, int mode)
 }
 
 void configure_texture_detail_functions(void) {}
-undefined4 recalculate_player_stats(int level) { (void)level; return 0; }
+int recalculate_player_stats(int level) { (void)level; return 0; }
 void refresh_player_equipment_effects(void) { spells_fixture.equipment_refreshes++; }
-int roll_dice_sum(count, sides)
-int count;
-short sides;
+int roll_dice_sum(int count, short sides)
 {
     spells_fixture.dice_calls++;
     if (spells_fixture.skill_result == -1) {
@@ -78,7 +76,7 @@ short sides;
     return 9;
 }
 void weapon_overlay_flash_once(int frame) { TEST_ASSERT_EQUAL_HEX16(0xa8, frame); }
-undefined4 roll_skill_check(int skill, int difficulty)
+int roll_skill_check(int skill, int difficulty)
 {
     TEST_ASSERT_EQUAL_INT((byte)spells_fixture.character[0x2a] + 5, skill);
     TEST_ASSERT_EQUAL_INT(2, difficulty);
@@ -87,17 +85,17 @@ undefined4 roll_skill_check(int skill, int difficulty)
 }
 void wait_for_click_release(int mode)
 { TEST_ASSERT_EQUAL_INT(1, mode); spells_fixture.click_releases++; }
-undefined4 play_sound_effect_with_pan(int sound, int pan, int mode)
+int play_sound_effect_with_pan(uint sound, byte pan, uint mode)
 {
     TEST_ASSERT_EQUAL_INT(0x40, pan);
     TEST_ASSERT_EQUAL_INT(0, mode);
     spells_fixture.sound = sound;
     return 0;
 }
-void print_scroll_message_by_id(int id)
+void print_scroll_message_by_id(uint id)
 { spells_fixture.messages++; spells_fixture.message_id = id; }
 void print_not_a_spell_message(void) { TEST_FAIL_MESSAGE("Runes must match the real spell table"); }
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_EQUAL_INT(32, x);
     TEST_ASSERT_EQUAL_INT(2, y);
@@ -107,26 +105,26 @@ void *tilemap_lookup(int x, int y)
 /* Fail on unrelated dispatcher branches, rather than substituting its real
    light effect with a success stub and hiding the pointer truncation. */
 #define UNUSED_EFFECT(name) void name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); }
-UNUSED_EFFECT(trigger_player_jump_if_grounded)
-UNUSED_EFFECT(apply_healing_item_effect)
-UNUSED_EFFECT(cast_cone_damage_spell)
-UNUSED_EFFECT(cast_targeted_search_effect)
-UNUSED_EFFECT(cast_summon_or_spawn_effect)
-UNUSED_EFFECT(adjust_level7_hazard_value)
-UNUSED_EFFECT(dispatch_player_command)
-UNUSED_EFFECT(handle_level4_maze_puzzle_button)
-UNUSED_EFFECT(display_book_or_scroll_page)
-UNUSED_EFFECT(scheduler_tick)
+void trigger_player_jump_if_grounded(char *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected trigger_player_jump_if_grounded"); }
+void apply_healing_item_effect(ushort *object, char effect_code) { (void)object; (void)effect_code; TEST_FAIL_MESSAGE("Unexpected apply_healing_item_effect"); }
+void cast_cone_damage_spell(void *caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_cone_damage_spell"); }
+void cast_targeted_search_effect(void *caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_targeted_search_effect"); }
+void cast_summon_or_spawn_effect(void *caster, char variant) { (void)caster; (void)variant; TEST_FAIL_MESSAGE("Unexpected cast_summon_or_spawn_effect"); }
+void adjust_level7_hazard_value(void *object, char delta) { (void)object; (void)delta; TEST_FAIL_MESSAGE("Unexpected adjust_level7_hazard_value"); }
+void dispatch_player_command(ushort *actor, int unused, char command) { (void)actor; (void)unused; (void)command; TEST_FAIL_MESSAGE("Unexpected dispatch_player_command"); }
+void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y) { (void)button; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected handle_level4_maze_puzzle_button"); }
+void display_book_or_scroll_page(uint page_id) { (void)page_id; TEST_FAIL_MESSAGE("Unexpected display_book_or_scroll_page"); }
+void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected scheduler_tick"); }
 UNUSED_EFFECT(handle_game_view_click_hold)
 UNUSED_EFFECT(interact_use)
-UNUSED_EFFECT(describe_picked_terrain)
-UNUSED_EFFECT(handle_object_drop_target)
+void describe_picked_terrain(byte terrain_kind, short step_count) { (void)terrain_kind; (void)step_count; TEST_FAIL_MESSAGE("Unexpected describe_picked_terrain"); }
+void handle_object_drop_target(short widget) { (void)widget; TEST_FAIL_MESSAGE("Unexpected handle_object_drop_target"); }
 #undef UNUSED_EFFECT
 ushort *pick_object_under_cursor(int mode)
 { (void)mode; TEST_FAIL_MESSAGE("Magic Arrow must not require picking a target"); return NULL; }
-undefined4 target_in_range(void)
+int target_in_range(short range_squared, void *actor, char *target)
 { TEST_FAIL_MESSAGE("Unexpected target_in_range"); return 0; }
-undefined4 target_line_of_sight(void)
+int target_line_of_sight(short target_class, void *target)
 { TEST_FAIL_MESSAGE("Unexpected target_line_of_sight"); return 0; }
 
 void spells_fixture_ready_ort_jux(int mana)

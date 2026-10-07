@@ -3,6 +3,7 @@
    textured model geometry, and door animation-frame emission. */
 #include "headers/models.h"
 #include "headers/debug.h"
+#include "headers/debug_ui.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +36,12 @@ static int g_tune_last_catalog = -1;
    lets the pick stencil/object-resolution trace be flipped on live from the object tuner panel
    instead of needing a relaunch with the env var set. */
 int g_uw_debug_pick_diag = 0;
+/* Debug-panel toggle for tick_anim_record's own UW_DISABLE_3D_OBJECTS
+   gate -- see that function's own comment. -1 = env var not yet
+   checked this process; resolved to a real 0/1 on first read (by
+   tick_anim_record or by the general debug panel, whichever runs
+   first in a given frame), then flippable live via the panel. */
+int g_uw_3d_objects_enabled = -1;
 static undefined1 *DAT_000db45c;
 static int DAT_000db458;
 // was DAT_000d91d0 -- running point count while parse_e_model_file reads a .E model's POINTS block
@@ -617,9 +624,7 @@ static short DAT_00189576;
    dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the moment an animated tile object (door,
    etc.) came into view. */
 // was FUN_0001dc04
-void *tick_anim_record(catalog)
-short catalog;
-
+void *tick_anim_record(short catalog)
 {
   undefined4 uVar1;
   int *piVar2;
@@ -630,14 +635,14 @@ short catalog;
 
   /* Native 3D catalog-object rendering (doors/frames drawing as real .E model geometry instead of
      flat sprites) is enabled by default -- no env var needed, unlike this project's earlier,
-     now-removed g_model_map hack (which defaulted off). */
-  { static int _disabled = -1;
-    if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_OBJECTS") != NULL);
-    if (!_disabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
-      void *dest = g_anim_model_scratch[catalog];
-      memcpy(dest, g_anim_model_slot[catalog], 16384);
-      return dest;
-    }
+     now-removed g_model_map hack (which defaulted off). g_uw_3d_objects_enabled is a real global
+     (not a function-local static) so the general debug panel (main_loop_hud_flush, hud.c) can
+     flip it live instead of only at launch. */
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  if (g_uw_3d_objects_enabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
+    void *dest = g_anim_model_scratch[catalog];
+    memcpy(dest, g_anim_model_slot[catalog], 16384);
+    return dest;
   }
 
   iVar4 = catalog * 0x3c2c;
@@ -677,15 +682,11 @@ short catalog;
 // WARNING: Removing unreachable block (ram,0x00064024)
 
 // was FUN_00061e60
-void emit_catalog_object(catalog,obj,heading,frame_or_texid)
-byte catalog;
-/* Object-record pointer -- was `uint`, truncating it (same class as
-   object_list_insert_head above). */
-char *obj;
-char heading;
-short frame_or_texid;
-
+/* Object-record pointer -- was `uint`, truncating it (same class as object_list_insert_head
+   above). */
+void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_or_texid)
 {
+  char *obj = (char *)obj_ptr;
   int uw_ord2005_rem_123 = 0; int uw_ord2005_rem_124 = 0;
   int iVar1;
   int iVar2;
@@ -742,6 +743,7 @@ short frame_or_texid;
   byte *texptr;
   int local_60;
   byte *local_58;
+  int row_base;
   int faces_remaining;
   
   catalog_u = (uint)catalog;
@@ -758,9 +760,9 @@ short frame_or_texid;
   *DAT_00110fc0 = uVar10;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = (ushort)DAT_0023bc88 * DAT_00086b30;
-  puVar25 = DAT_00110fc0 + 1;
+  puVar25 = (ushort *)(DAT_00110fc0 + 1);
   DAT_00189584 = (ushort)DAT_0023bc88 * DAT_00086b30;
-  DAT_00110fc0 = puVar25;
+  DAT_00110fc0 = (char *)puVar25;
   if ((catalog_flags & 0x20) == 0) {
     if ((catalog_flags & 0x80) == 0) {
       uVar21 = (int)(short)(ushort)catalog_flags & 7;
@@ -779,8 +781,8 @@ short frame_or_texid;
             fprintf(stderr, "[billboard] static sub-frame %d: mesh_slot=0x%04x pushed_val=0x%04x (catalog_byte=0x%02x)\n",
                     iVar29, (unsigned)tex_w, (unsigned)*DAT_00110fc0,
                     (unsigned)(byte)(&DAT_00086c09)[iVar29 + iVar1]);
-          puVar25 = DAT_00110fc0 + 1;
-          DAT_00110fc0 = puVar25;
+          puVar25 = (ushort *)(DAT_00110fc0 + 1);
+          DAT_00110fc0 = (char *)puVar25;
           (&DAT_00189570)[iVar29] =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                (ushort)DAT_0023bc88 * DAT_00086b30 * 0x100;
@@ -797,7 +799,7 @@ short frame_or_texid;
         local_7c = 3 - (tex_w & 3);
       }
       uVar21 = (int)(short)(ushort)catalog_flags & 7;
-      puVar25 = DAT_00110fc0;
+      puVar25 = (ushort *)(DAT_00110fc0);
       if (uVar21 != 0) {
         iVar29 = 0;
         do {
@@ -809,8 +811,8 @@ short frame_or_texid;
           *DAT_00110fc0 =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                (*(ushort *)(obj + 6) >> 6 & 0x1ff) + local_7c;
-          puVar25 = DAT_00110fc0 + 1;
-          DAT_00110fc0 = puVar25;
+          puVar25 = (ushort *)(DAT_00110fc0 + 1);
+          DAT_00110fc0 = (char *)puVar25;
           (&DAT_00189570)[iVar29] =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                ((*(ushort *)(obj + 6) & 0x7fc0) >> 6) + local_7c;
@@ -841,7 +843,7 @@ short frame_or_texid;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)DAT_0023b4e0 * DAT_00086b30;
     DAT_00189584 = (ushort)DAT_0023b4e0 * DAT_00086b30;
-    puVar25 = DAT_00110fc0 + 1;
+    puVar25 = (ushort *)(DAT_00110fc0 + 1);
     DAT_00110fc0 = DAT_00110fc0 + 1;
     DAT_00189570 = (ushort)bVar5;
   }
@@ -869,8 +871,8 @@ short frame_or_texid;
           *DAT_00110fc0 = 0xb2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 = 6;
-          puVar25 = DAT_00110fc0 + 1;
-          DAT_00110fc0 = puVar25;
+          puVar25 = (ushort *)(DAT_00110fc0 + 1);
+          DAT_00110fc0 = (char *)puVar25;
         }
         else {
           emit_floor_texture_select(0,DAT_0023b4e0,
@@ -885,8 +887,8 @@ short frame_or_texid;
           *DAT_00110fc0 = 0xb2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 = DAT_0023b81c;
-          puVar25 = DAT_00110fc0 + 1;
-          DAT_00110fc0 = puVar25;
+          puVar25 = (ushort *)(DAT_00110fc0 + 1);
+          DAT_00110fc0 = (char *)puVar25;
         }
       }
       else {
@@ -910,8 +912,8 @@ short frame_or_texid;
       *DAT_00110fc0 = (ushort)iVar29;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = (ushort)DAT_0023bc88 * DAT_00086b30;
-      puVar25 = DAT_00110fc0 + 1;
-      DAT_00110fc0 = puVar25;
+      puVar25 = (ushort *)(DAT_00110fc0 + 1);
+      DAT_00110fc0 = (char *)puVar25;
     }
     DAT_0023b818 = 0xe0;
   }
@@ -925,15 +927,15 @@ short frame_or_texid;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0x400 - tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 0x800;
+    *DAT_00110fc0 = 0x0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_000b4620 + 0x30;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (0x400 - tex_w) * 2 - 1;
-    puVar25 = DAT_00110fc0 + 1;
-    DAT_00110fc0 = puVar25;
+    puVar25 = (ushort *)(DAT_00110fc0 + 1);
+    DAT_00110fc0 = (char *)puVar25;
   }
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[billboard] position anchor: DAT_0023b904=%d DAT_0023b91c=%d DAT_0023b920=%d\n",
@@ -952,8 +954,8 @@ short frame_or_texid;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = (short)DAT_0023b920 >> 0x10;
   cVar9 = DAT_0023b4a0;
-  puVar25 = DAT_00110fc0 + 1;
-  DAT_00110fc0 = puVar25;
+  puVar25 = (ushort *)(DAT_00110fc0 + 1);
+  DAT_00110fc0 = (char *)puVar25;
   if (heading < '\0') {
     uw_ord2005_rem_123 = ((int)((*(ushort *)(obj + 2) >> 7 & 7) + (4 - DAT_0023b4a0) * 2)) % (8);
     local_7c = (ushort)((uint)(uw_ord2005_rem_123 << 0x1d) >> 0x10);
@@ -977,8 +979,8 @@ short frame_or_texid;
     *DAT_00110fc0 = tex_h;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = tex_w;
-    puVar25 = DAT_00110fc0 + 1;
-    DAT_00110fc0 = puVar25;
+    puVar25 = (ushort *)(DAT_00110fc0 + 1);
+    DAT_00110fc0 = (char *)puVar25;
     DAT_0018957a = tex_w;
   }
   if (((catalog_u == 0x10) || (catalog_u == 0x11)) && (DAT_0023b830 == '\0' && DAT_00086b2c == 0)) {
@@ -1092,7 +1094,7 @@ short frame_or_texid;
     iVar2 = (int)(short)tex_w;
     iVar3 = (int)(short)tex_h;
     iVar22 = iVar16 * 0x60;
-    local_58 = (byte *)(iVar16 * 0x18);
+    row_base = iVar16 * 0x18;
     do {
       sVar7 = DAT_000da47c;
       _face_rec = iVar22 + _anim + 0xc14;
@@ -1118,12 +1120,12 @@ short frame_or_texid;
       pbVar23 = &DAT_00086c08 + iVar1;
       pbVar6 = (byte *)0x0;
       if (cVar9 != '\0') {
-        pbVar23 = (byte *)(uint)(byte)(&DAT_00086c0a)[iVar1];
+        pbVar23 = (byte *)(uintptr_t)(byte)(&DAT_00086c0a)[iVar1];
         pbVar6 = pbVar23;
       }
       if (cVar9 != '\0' && pbVar6 != (byte *)0x0) {
-        uVar10 = (undefined2)((uint)pbVar23 >> 8);
-        *(char *)(_face_rec + 0x50) = (char)pbVar23;
+        uVar10 = (undefined2)((uint)(uintptr_t)pbVar23 >> 8);
+        *(char *)(_face_rec + 0x50) = (char)(uintptr_t)pbVar23;
       }
       else {
         uVar10 = 0;
@@ -1132,10 +1134,10 @@ short frame_or_texid;
       *(char *)(_face_rec + 0x51) = (char)uVar10;
       *(char *)(_face_rec + 0x52) = (char)((ushort)uVar10 >> 8);
       *(undefined1 *)(_face_rec + 0x53) = 0;
-      *(char *)(_face_rec + 0x18) = (char)texptr;
-      *(char *)(_face_rec + 0x19) = (char)((uint)texptr >> 8);
-      *(char *)(_face_rec + 0x1a) = (char)((uint)texptr >> 0x10);
-      *(char *)(_face_rec + 0x1b) = (char)((uint)texptr >> 0x18);
+      *(char *)(_face_rec + 0x18) = (char)(uintptr_t)texptr;
+      *(char *)(_face_rec + 0x19) = (char)((uint)(uintptr_t)texptr >> 8);
+      *(char *)(_face_rec + 0x1a) = (char)((uint)(uintptr_t)texptr >> 0x10);
+      *(char *)(_face_rec + 0x1b) = (char)((uint)(uintptr_t)texptr >> 0x18);
       *(char *)(_face_rec + 0x1c) = (char)tex_w;
       *(char *)(_face_rec + 0x1d) = (char)(tex_w >> 8);
                     // WARNING: Store size is inaccurate
@@ -1152,7 +1154,7 @@ short frame_or_texid;
         local_60 = 0;
         do {
           iVar27 = (int)(short)DAT_0023b91c;
-          iVar30 = *(int *)(_anim + 0xc14 + ((int)local_58 + local_60) * 4 + 4);
+          iVar30 = *(int *)(_anim + 0xc14 + (row_base + local_60) * 4 + 4);
           uVar17 = ordfloat_int_to_float2(iVar27);
           uVar17 = ordfloat_add(*(undefined4 *)(iVar30 * 0xc + _anim + 0xc),uVar17);
           iVar18 = ordfloat_gt(uVar17,0x44800000);
@@ -1481,18 +1483,12 @@ LAB_000640ec:
     g_tune_last_catalog = (int)catalog_u;
     g_tune_rotation_offset = 0.0;
   }
-  /* Was gated behind UW_MODEL_TUNER=1 -- on unconditionally now, per direct request ("turn the
-     debug panel on by default instead of needing an env var"), so no relaunch-with-env-var step is
-     needed to use it. */
-  { char _tune_title[48];
-    snprintf(_tune_title, sizeof(_tune_title), "Object Tuner (catalog=%d)", (int)catalog_u);
-    dbgui_begin(_tune_title);
-    dbgui_field_double("rotation_offset", &g_tune_rotation_offset, 5.0);
-    dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
-    dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
-    dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
-    dbgui_end();
-  }
+  /* This used to populate the shared debug-UI field list with a live per-catalog "Object Tuner"
+     panel every time a model drew, which silently overwrote whatever the general debug panel
+     (main_loop_hud_flush, hud.c) had just populated that same frame, since dbgui_begin/_end share
+     one static field list. The debug panel is a general subsystem-toggle panel now, not a model
+     debugger -- this site no longer touches it. g_tune_rotation_offset keeps applying below at
+     its known-good default (0.0); it's just no longer live-editable from the UI. */
   sVar13 = (short)((int)sVar13 + (int)g_tune_rotation_offset);
   for (; 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
   }
@@ -1619,7 +1615,6 @@ LAB_000640ec:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  return;
 }
 
 
@@ -1627,10 +1622,7 @@ LAB_000640ec:
 // WARNING: Removing unreachable block (ram,0x000647ac)
 
 // was FUN_00064384
-void emit_anim_object_frames(door_type,obj)
-uint door_type;
-ushort * obj;
-
+void emit_anim_object_frames(uint door_type, ushort *obj)
 {
   short sVar1;
   int iVar3;
@@ -1684,7 +1676,7 @@ ushort * obj;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (*(byte *)((char *)obj + 1) >> 1 & 7) * -0x30 + 0xd0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 0x400;
+    *DAT_00110fc0 = 0x0;
     sVar1 = local_32;
   }
   else {
@@ -1719,7 +1711,7 @@ ushort * obj;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = local_36;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x800;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   if (((*(byte *)((char *)obj + 1) & 0xe) == 0) || (local_34 != -1)) goto LAB_000647e4;
   uVar7 = (obj[1] >> 7) + DAT_0023b4a0 * -2;
@@ -1869,7 +1861,6 @@ LAB_00064cdc:
       uVar10 = ((int)local_37 + (int)local_30) * 0x1000000 >> 0x18;
     } while ((int)uVar10 < 2);
   }
-  return;
 }
 
 
@@ -1877,35 +1868,30 @@ LAB_00064cdc:
 // was FUN_0001e594 -- adds a per-axis float offset (param_2/3/4, each an int converted to float via
 // ordfloat_int_to_float2) to the model animation block's own stored position floats at offsets
 // 0xc08/0xc0c/0xc10 (x/y/z).
-void apply_model_position_offset(param_1,param_2,param_3,param_4)
-char *param_1;  /* was `int` -- truncated the real _anim pointer emit_catalog_object passes in, latent until the
+/* was `int` -- truncated the real _anim pointer emit_catalog_object passes in, latent until the
    DAT_00202c9X object-property fix let real property data reach a nonzero case here */
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-
+void apply_model_position_offset(char *model, int offset_x, int offset_y, int offset_z)
 {
   undefined4 uVar1;
   
-  uVar1 = ordfloat_int_to_float2(param_2);
-  uVar1 = ordfloat_add(*(undefined4 *)(param_1 + 0xc08),uVar1);
-  *(char *)(param_1 + 0xc08) = (char)uVar1;
-  *(char *)(param_1 + 0xc09) = (char)((uint)uVar1 >> 8);
-  *(char *)(param_1 + 0xc0a) = (char)((uint)uVar1 >> 0x10);
-  *(char *)(param_1 + 0xc0b) = (char)((uint)uVar1 >> 0x18);
-  uVar1 = ordfloat_int_to_float2(param_3);
-  uVar1 = ordfloat_add(*(undefined4 *)(param_1 + 0xc0c),uVar1);
-  *(char *)(param_1 + 0xc0c) = (char)uVar1;
-  *(char *)(param_1 + 0xc0d) = (char)((uint)uVar1 >> 8);
-  *(char *)(param_1 + 0xc0e) = (char)((uint)uVar1 >> 0x10);
-  *(char *)(param_1 + 0xc0f) = (char)((uint)uVar1 >> 0x18);
-  uVar1 = ordfloat_int_to_float2(param_4);
-  uVar1 = ordfloat_add(*(undefined4 *)(param_1 + 0xc10),uVar1);
-  *(char *)(param_1 + 0xc10) = (char)uVar1;
-  *(char *)(param_1 + 0xc11) = (char)((uint)uVar1 >> 8);
-  *(char *)(param_1 + 0xc12) = (char)((uint)uVar1 >> 0x10);
-  *(char *)(param_1 + 0xc13) = (char)((uint)uVar1 >> 0x18);
-  return;
+  uVar1 = ordfloat_int_to_float2(offset_x);
+  uVar1 = ordfloat_add(*(undefined4 *)(model + 0xc08),uVar1);
+  *(char *)(model + 0xc08) = (char)uVar1;
+  *(char *)(model + 0xc09) = (char)((uint)uVar1 >> 8);
+  *(char *)(model + 0xc0a) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(model + 0xc0b) = (char)((uint)uVar1 >> 0x18);
+  uVar1 = ordfloat_int_to_float2(offset_y);
+  uVar1 = ordfloat_add(*(undefined4 *)(model + 0xc0c),uVar1);
+  *(char *)(model + 0xc0c) = (char)uVar1;
+  *(char *)(model + 0xc0d) = (char)((uint)uVar1 >> 8);
+  *(char *)(model + 0xc0e) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(model + 0xc0f) = (char)((uint)uVar1 >> 0x18);
+  uVar1 = ordfloat_int_to_float2(offset_z);
+  uVar1 = ordfloat_add(*(undefined4 *)(model + 0xc10),uVar1);
+  *(char *)(model + 0xc10) = (char)uVar1;
+  *(char *)(model + 0xc11) = (char)((uint)uVar1 >> 8);
+  *(char *)(model + 0xc12) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(model + 0xc13) = (char)((uint)uVar1 >> 0x18);
 }
 
 
@@ -1913,47 +1899,42 @@ undefined4 param_4;
 // was FUN_0001e6f0 -- multiplies (ordfloat_mul, float MULTIPLY) a model animation block's own
 // position floats by per-axis scale factors (param_2/3/4). param_1[0] is read as a sub-part
 // count...
-void scale_model_part_offsets(param_1,param_2,param_3,param_4)
-int * param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-
+void scale_model_part_offsets(void *model_block_ptr, int scale_x, int scale_y, int scale_z)
 {
+  int *model_block = (int *)model_block_ptr;
   undefined4 uVar1;
-  int *piVar2;
+  int *part;
   int iVar3;
   
   iVar3 = 0;
-  piVar2 = param_1;
-  if (0 < *param_1) {
+  part = model_block;
+  if (0 < *model_block) {
     do {
-      uVar1 = ordfloat_mul(piVar2[2],param_2);
-      *(char *)(piVar2 + 2) = (char)uVar1;
-      *(char *)((char *)piVar2 + 9) = (char)((uint)uVar1 >> 8);
-      *(char *)((char *)piVar2 + 10) = (char)((uint)uVar1 >> 0x10);
-      *(char *)((char *)piVar2 + 0xb) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)piVar2 + 0xf),
-                                    CONCAT12(*(undefined1 *)((char *)piVar2 + 0xe),
-                                             CONCAT11(*(undefined1 *)((char *)piVar2 + 0xd),
-                                                      (char)piVar2[3]))),param_3);
-      *(char *)(piVar2 + 3) = (char)uVar1;
-      *(char *)((char *)piVar2 + 0xd) = (char)((uint)uVar1 >> 8);
-      *(char *)((char *)piVar2 + 0xe) = (char)((uint)uVar1 >> 0x10);
-      *(char *)((char *)piVar2 + 0xf) = (char)((uint)uVar1 >> 0x18);
-      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)piVar2 + 0x13),
-                                    CONCAT12(*(undefined1 *)((char *)piVar2 + 0x12),
-                                             CONCAT11(*(undefined1 *)((char *)piVar2 + 0x11),
-                                                      (char)piVar2[4]))),param_4);
-      *(char *)(piVar2 + 4) = (char)uVar1;
+      uVar1 = ordfloat_mul(part[2],scale_x);
+      *(char *)(part + 2) = (char)uVar1;
+      *(char *)((char *)part + 9) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)part + 10) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)part + 0xb) = (char)((uint)uVar1 >> 0x18);
+      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)part + 0xf),
+                                    CONCAT12(*(undefined1 *)((char *)part + 0xe),
+                                             CONCAT11(*(undefined1 *)((char *)part + 0xd),
+                                                      (char)part[3]))),scale_y);
+      *(char *)(part + 3) = (char)uVar1;
+      *(char *)((char *)part + 0xd) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)part + 0xe) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)part + 0xf) = (char)((uint)uVar1 >> 0x18);
+      uVar1 = ordfloat_mul(CONCAT13(*(undefined1 *)((char *)part + 0x13),
+                                    CONCAT12(*(undefined1 *)((char *)part + 0x12),
+                                             CONCAT11(*(undefined1 *)((char *)part + 0x11),
+                                                      (char)part[4]))),scale_z);
+      *(char *)(part + 4) = (char)uVar1;
       iVar3 = iVar3 + 1;
-      *(char *)((char *)piVar2 + 0x11) = (char)((uint)uVar1 >> 8);
-      *(char *)((char *)piVar2 + 0x12) = (char)((uint)uVar1 >> 0x10);
-      *(char *)((char *)piVar2 + 0x13) = (char)((uint)uVar1 >> 0x18);
-      piVar2 = piVar2 + 3;
-    } while (iVar3 < *param_1);
+      *(char *)((char *)part + 0x11) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)part + 0x12) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)part + 0x13) = (char)((uint)uVar1 >> 0x18);
+      part = part + 3;
+    } while (iVar3 < *model_block);
   }
-  return;
 }
 
 
@@ -2028,13 +2009,10 @@ static void *uw_e_model_strip_cr(void *raw_fh) {
   return clean ? clean : f;
 }
 
-void parse_e_model_file(param_1,param_2,flip_winding)
-char *param_1;
-undefined1 * param_2;
-int flip_winding; /* HACK: not part of the original recovered signature -- see its own use site (the "HACK:
+/* HACK: not part of the original recovered signature -- see its own use site (the "HACK:
    flip_winding" comment, right before the PARTS block's per-face vertex-reversal) for the full
    rationale. */
-
+void parse_e_model_file(char *path, byte *out_buffer, int flip_winding)
 {
   char stack0xffdc3228_buf [256];
   char *stack0xffdc3228_ptr;
@@ -2083,7 +2061,7 @@ int flip_winding; /* HACK: not part of the original recovered signature -- see i
   int local_220;
   undefined1 local_21c [4];
   undefined4 local_218;
-  undefined4 ***local_214;
+  intptr_t local_214;
   int local_210;
   int local_20c;
   int local_208;
@@ -2117,7 +2095,7 @@ int flip_winding; /* HACK: not part of the original recovered signature -- see i
     *stack0xffdc3228_ptr = cVar18; stack0xffdc3228_ptr = stack0xffdc3228_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar18 != '\0');
-  ce_strcat(acStack_130,param_1);
+  ce_strcat(acStack_130,path);
   pvVar_fh = ce_fopen(acStack_130,&DAT_00084a24);
   pvVar_fh = uw_e_model_strip_cr(pvVar_fh);
   local_25c = pvVar_fh;
@@ -2127,18 +2105,18 @@ int flip_winding; /* HACK: not part of the original recovered signature -- see i
   if (pvVar_fh == 0) {
     goto LAB_0002263c;
   }
-  param_2[0xc08] = 0;
-  param_2[0xc09] = 0;
-  param_2[0xc0a] = 0;
-  param_2[0xc0b] = 0;
-  param_2[0xc0c] = 0;
-  param_2[0xc0d] = 0;
-  param_2[0xc0e] = 0;
-  param_2[0xc0f] = 0;
-  param_2[0xc10] = 0;
-  param_2[0xc11] = 0;
-  param_2[0xc12] = 0;
-  param_2[0xc13] = 0;
+  out_buffer[0xc08] = 0;
+  out_buffer[0xc09] = 0;
+  out_buffer[0xc0a] = 0;
+  out_buffer[0xc0b] = 0;
+  out_buffer[0xc0c] = 0;
+  out_buffer[0xc0d] = 0;
+  out_buffer[0xc0e] = 0;
+  out_buffer[0xc0f] = 0;
+  out_buffer[0xc10] = 0;
+  out_buffer[0xc11] = 0;
+  out_buffer[0xc12] = 0;
+  out_buffer[0xc13] = 0;
   ce_fscanf(pvVar_fh,s__100s_00084a1c,auStack_1c8);
   iVar4 = ce_strcmp(auStack_1c8,s_BEGIN_00084a14);
   if (iVar4 != 0) {
@@ -2181,7 +2159,7 @@ int flip_winding; /* HACK: not part of the original recovered signature -- see i
       }
     }
     if (getenv("UW_DEBUG_MODEL_TOKENS"))
-      fprintf(stderr, "[model-token] file=%s iVar4=%d token='%s' delim='%c'\n", param_1, iVar4, auStack_1c8, local_260[0]);
+      fprintf(stderr, "[model-token] file=%s iVar4=%d token='%s' delim='%c'\n", path, iVar4, auStack_1c8, local_260[0]);
     if (((iVar4 == -1) && (iVar5 = ce_strncmp(auStack_1c8,&DAT_000849c8,3), iVar5 == 0)) ||
        ((iVar4 != 0 && (iVar5 = ce_strcmp(auStack_1c8,&DAT_000849c8), iVar5 == 0))))
     goto LAB_0002263c;
@@ -2247,10 +2225,10 @@ LAB_00022604:
             (&DAT_000d2ab5)[iVar6] = (char)((uint)local_224 >> 8);
             (&DAT_000d2ab6)[iVar6] = (char)((uint)local_224 >> 0x10);
             (&DAT_000d2ab7)[iVar6] = (char)((uint)local_224 >> 0x18);
-            (&DAT_000d2ab8)[iVar6] = (char)local_214;
-            (&DAT_000d2ab9)[iVar6] = (char)((uint)local_214 >> 8);
-            (&DAT_000d2aba)[iVar6] = (char)((uint)local_214 >> 0x10);
-            (&DAT_000d2abb)[iVar6] = (char)((uint)local_214 >> 0x18);
+            (&DAT_000d2ab8)[iVar6] = (char)(uintptr_t)local_214;
+            (&DAT_000d2ab9)[iVar6] = (char)((uint)(uintptr_t)local_214 >> 8);
+            (&DAT_000d2aba)[iVar6] = (char)((uint)(uintptr_t)local_214 >> 0x10);
+            (&DAT_000d2abb)[iVar6] = (char)((uint)(uintptr_t)local_214 >> 0x18);
             (&DAT_000d2ac8)[iVar6] = 8;
             (&DAT_000d2ac9)[iVar6] = 0;
             (&DAT_000d2aca)[iVar6] = 0;
@@ -2271,22 +2249,22 @@ LAB_00022604:
                conversions right below it (Y=local_224, Z=local_214) both pass their value
                explicitly; this one, the X coordinate, did not. */
             uVar7 = ordfloat_int_to_float2(local_204);
-            param_2[iVar19 * 0xc + 8] = (char)uVar7;
-            param_2[iVar19 * 0xc + 9] = (char)((uint)uVar7 >> 8);
-            param_2[iVar19 * 0xc + 10] = (char)((uint)uVar7 >> 0x10);
-            param_2[iVar19 * 0xc + 0xb] = (char)((uint)uVar7 >> 0x18);
+            out_buffer[iVar19 * 0xc + 8] = (char)uVar7;
+            out_buffer[iVar19 * 0xc + 9] = (char)((uint)uVar7 >> 8);
+            out_buffer[iVar19 * 0xc + 10] = (char)((uint)uVar7 >> 0x10);
+            out_buffer[iVar19 * 0xc + 0xb] = (char)((uint)uVar7 >> 0x18);
             uVar7 = ordfloat_int_to_float2(local_224);
-            puVar13 = param_2 + (g_model_parse_point_count + 1) * 0xc;
+            puVar13 = out_buffer + (g_model_parse_point_count + 1) * 0xc;
             *puVar13 = (char)uVar7;
             puVar13[1] = (char)((uint)uVar7 >> 8);
             puVar13[2] = (char)((uint)uVar7 >> 0x10);
             puVar13[3] = (char)((uint)uVar7 >> 0x18);
-            uVar7 = ordfloat_int_to_float2(local_214);
+            uVar7 = ordfloat_int_to_float2((int)local_214);
             iVar19 = g_model_parse_point_count;
-            param_2[g_model_parse_point_count * 0xc + 0x10] = (char)uVar7;
-            param_2[iVar19 * 0xc + 0x11] = (char)((uint)uVar7 >> 8);
-            param_2[iVar19 * 0xc + 0x12] = (char)((uint)uVar7 >> 0x10);
-            param_2[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
+            out_buffer[g_model_parse_point_count * 0xc + 0x10] = (char)uVar7;
+            out_buffer[iVar19 * 0xc + 0x11] = (char)((uint)uVar7 >> 8);
+            out_buffer[iVar19 * 0xc + 0x12] = (char)((uint)uVar7 >> 0x10);
+            out_buffer[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
             g_model_parse_point_count = g_model_parse_point_count + 1;
             if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
               static int hwm_points = -1;
@@ -2301,31 +2279,31 @@ LAB_00022604:
             }
           }
           DAT_000db4fc = g_model_parse_point_count;
-          param_2[1] = (char)((uint)g_model_parse_point_count >> 8);
-          *param_2 = (char)iVar19;
-          param_2[2] = (char)((uint)iVar19 >> 0x10);
-          param_2[3] = (char)((uint)iVar19 >> 0x18);
+          out_buffer[1] = (char)((uint)g_model_parse_point_count >> 8);
+          *out_buffer = (char)iVar19;
+          out_buffer[2] = (char)((uint)iVar19 >> 0x10);
+          out_buffer[3] = (char)((uint)iVar19 >> 0x18);
           uVar7 = ordfloat_int_to_float2(iVar4);
-          param_2[0x3c1c] = (char)uVar7;
-          param_2[0x3c1d] = (char)((uint)uVar7 >> 8);
-          param_2[0x3c1e] = (char)((uint)uVar7 >> 0x10);
-          param_2[0x3c1f] = (char)((uint)uVar7 >> 0x18);
+          out_buffer[0x3c1c] = (char)uVar7;
+          out_buffer[0x3c1d] = (char)((uint)uVar7 >> 8);
+          out_buffer[0x3c1e] = (char)((uint)uVar7 >> 0x10);
+          out_buffer[0x3c1f] = (char)((uint)uVar7 >> 0x18);
           uVar7 = ordfloat_int_to_float2(iVar10 - iVar4);
-          param_2[0x3c20] = (char)uVar7;
-          param_2[0x3c21] = (char)((uint)uVar7 >> 8);
-          param_2[0x3c22] = (char)((uint)uVar7 >> 0x10);
-          param_2[0x3c23] = (char)((uint)uVar7 >> 0x18);
+          out_buffer[0x3c20] = (char)uVar7;
+          out_buffer[0x3c21] = (char)((uint)uVar7 >> 8);
+          out_buffer[0x3c22] = (char)((uint)uVar7 >> 0x10);
+          out_buffer[0x3c23] = (char)((uint)uVar7 >> 0x18);
           uVar7 = ordfloat_int_to_float2(iVar3);
-          param_2[0x3c24] = (char)uVar7;
-          param_2[0x3c25] = (char)((uint)uVar7 >> 8);
-          param_2[0x3c26] = (char)((uint)uVar7 >> 0x10);
-          param_2[0x3c27] = (char)((uint)uVar7 >> 0x18);
+          out_buffer[0x3c24] = (char)uVar7;
+          out_buffer[0x3c25] = (char)((uint)uVar7 >> 8);
+          out_buffer[0x3c26] = (char)((uint)uVar7 >> 0x10);
+          out_buffer[0x3c27] = (char)((uint)uVar7 >> 0x18);
           uVar7 = ordfloat_int_to_float2(iVar5 - iVar3);
           pcVar2 = &DAT_000849a8;
-          param_2[0x3c28] = (char)uVar7;
-          param_2[0x3c29] = (char)((uint)uVar7 >> 8);
-          param_2[0x3c2a] = (char)((uint)uVar7 >> 0x10);
-          param_2[0x3c2b] = (char)((uint)uVar7 >> 0x18);
+          out_buffer[0x3c28] = (char)uVar7;
+          out_buffer[0x3c29] = (char)((uint)uVar7 >> 8);
+          out_buffer[0x3c2a] = (char)((uint)uVar7 >> 0x10);
+          out_buffer[0x3c2b] = (char)((uint)uVar7 >> 0x18);
           pvVar_fh = local_25c;
           goto LAB_00022604;
         }
@@ -2343,10 +2321,10 @@ LAB_00022604:
               ;
               iVar4 = g_model_parse_part_count;
               iVar5 = g_model_parse_part_count * 0x67;
-              (&DAT_000c9e2f)[iVar5] = (char)local_1dc;
-              (&DAT_000c9e30)[iVar5] = (char)((uint)local_1dc >> 8);
-              (&DAT_000c9e31)[iVar5] = (char)((uint)local_1dc >> 0x10);
-              (&DAT_000c9e32)[iVar5] = (char)((uint)local_1dc >> 0x18);
+              (&DAT_000c9e2f)[iVar5] = (char)(uintptr_t)local_1dc;
+              (&DAT_000c9e30)[iVar5] = (char)((uint)(uintptr_t)local_1dc >> 8);
+              (&DAT_000c9e31)[iVar5] = (char)((uint)(uintptr_t)local_1dc >> 0x10);
+              (&DAT_000c9e32)[iVar5] = (char)((uint)(uintptr_t)local_1dc >> 0x18);
               (&DAT_000c9e28)[iVar5] = (undefined1)local_254;
               (&DAT_000c9e0e)[iVar5] = (char)iVar4;
               (&DAT_000c9e0f)[iVar5] = (char)((uint)iVar4 >> 8);
@@ -2360,11 +2338,11 @@ LAB_00022604:
               (&DAT_000c9e34)[iVar5] = 0xff;
               (&DAT_000c9e35)[iVar5] = 0xff;
               (&DAT_000c9e36)[iVar5] = 0xff;
-              param_2[iVar4 * 0x60 + 0xc6c] = 1;
-              param_2[iVar4 * 0x60 + 0xc6d] = 0;
-              param_2[iVar4 * 0x60 + 0xc6e] = 0;
-              param_2[iVar4 * 0x60 + 0xc6f] = 0;
-              puVar14 = param_2 + (g_model_parse_part_count + 0x21) * 0x60;
+              out_buffer[iVar4 * 0x60 + 0xc6c] = 1;
+              out_buffer[iVar4 * 0x60 + 0xc6d] = 0;
+              out_buffer[iVar4 * 0x60 + 0xc6e] = 0;
+              out_buffer[iVar4 * 0x60 + 0xc6f] = 0;
+              puVar14 = out_buffer + (g_model_parse_part_count + 0x21) * 0x60;
               *puVar14 = 0xe0;
               puVar14[1] = 0;
               puVar14[2] = 0;
@@ -2401,10 +2379,10 @@ LAB_00022604:
                 (&DAT_000c9e26)[iVar10] = uVar1;
               }
               if (iVar4 < DAT_000db458) {
-                (&DAT_000c9e22)[iVar10] = (char)local_258;
-                (&DAT_000c9e23)[iVar10] = (char)((uint)local_258 >> 8);
-                (&DAT_000c9e24)[iVar10] = (char)((uint)local_258 >> 0x10);
-                (&DAT_000c9e25)[iVar10] = (char)((uint)local_258 >> 0x18);
+                (&DAT_000c9e22)[iVar10] = (char)(uintptr_t)local_258;
+                (&DAT_000c9e23)[iVar10] = (char)((uint)(uintptr_t)local_258 >> 8);
+                (&DAT_000c9e24)[iVar10] = (char)((uint)(uintptr_t)local_258 >> 0x10);
+                (&DAT_000c9e25)[iVar10] = (char)((uint)(uintptr_t)local_258 >> 0x18);
                 iVar4 = ce_strlen(local_258);
                 puVar16 = puVar16 + iVar4 + 1;
                 local_258 = puVar16;
@@ -2420,13 +2398,13 @@ LAB_00022604:
               if (iVar5 == 0) {
 LAB_000218b8:
                 piVar12 = DAT_000c8b00 + 1;
-                (&DAT_000c9dd8)[iVar10] = (char)piVar12;
-                (&DAT_000c9dd9)[iVar10] = (char)((uint)piVar12 >> 8);
+                (&DAT_000c9dd8)[iVar10] = (char)(uintptr_t)piVar12;
+                (&DAT_000c9dd9)[iVar10] = (char)((uint)(uintptr_t)piVar12 >> 8);
                 iVar5 = 0;
                 DAT_000c8b00 = piVar12;
-                (&DAT_000c9dda)[iVar10] = (char)((uint)piVar12 >> 0x10);
-                (&DAT_000c9ddb)[iVar10] = (char)((uint)piVar12 >> 0x18);
-                iVar4 = ce_fscanf(local_25c,&DAT_000849a8,local_260,(uint)piVar12 >> 0x18,
+                (&DAT_000c9dda)[iVar10] = (char)((uint)(uintptr_t)piVar12 >> 0x10);
+                (&DAT_000c9ddb)[iVar10] = (char)((uint)(uintptr_t)piVar12 >> 0x18);
+                iVar4 = ce_fscanf(local_25c,&DAT_000849a8,local_260,(uint)(uintptr_t)piVar12 >> 0x18,
                                      pppppuVar21,puVar13);
                 iVar3 = 0;
                 do {
@@ -2437,25 +2415,25 @@ LAB_000218b8:
                   DAT_000c8b00 = DAT_000c8b00 + 1;
                   iVar10 = g_model_parse_part_count * 0x18 + iVar5;
                   iVar5 = iVar5 + 1;
-                  puVar13 = param_2 + (iVar10 + 0x306) * 4;
+                  puVar13 = out_buffer + (iVar10 + 0x306) * 4;
                   *puVar13 = (char)local_210;
                   puVar13[1] = (char)((uint)local_210 >> 8);
                   puVar13[2] = (char)((uint)local_210 >> 0x10);
                   puVar13[3] = (char)((uint)local_210 >> 0x18);
                   iVar10 = g_model_parse_part_count;
                 } while (local_260[0] == ',');
-                param_2[g_model_parse_part_count * 0x60 + 0xc14] = (char)iVar5;
-                param_2[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
-                param_2[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
-                param_2[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
+                out_buffer[g_model_parse_part_count * 0x60 + 0xc14] = (char)iVar5;
+                out_buffer[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
+                out_buffer[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
+                out_buffer[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
                 /* HACK: flip_winding (new parameter, not part of the original recovered signature)
                    -- caller-supplied, per-model opt-in to reverse every face's just-read vertex
                    list. */
                 if (flip_winding && 1 < iVar3) {
                   int _flip_lo = 0, _flip_hi = iVar3 - 1;
                   while (_flip_lo < _flip_hi) {
-                    int *_flip_pa = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_lo + 0x306) * 4);
-                    int *_flip_pb = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_hi + 0x306) * 4);
+                    int *_flip_pa = (int *)(out_buffer + (g_model_parse_part_count * 0x18 + _flip_lo + 0x306) * 4);
+                    int *_flip_pb = (int *)(out_buffer + (g_model_parse_part_count * 0x18 + _flip_hi + 0x306) * 4);
                     int _flip_tmp = *_flip_pa;
                     *_flip_pa = *_flip_pb;
                     *_flip_pb = _flip_tmp;
@@ -2463,13 +2441,13 @@ LAB_000218b8:
                   }
                 }
                 if (getenv("UW_DEBUG_EPARSE"))
-                  fprintf(stderr, "[eparse] %s part=%d vertcount=%d\n", param_1, g_model_parse_part_count, iVar5);
-                iVar5 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc18);
-                iVar10 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc20);
-                vec3_sub(param_2 + iVar5 * 0xc + 8,
-                             param_2 + *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc1c) * 0xc + 8,
+                  fprintf(stderr, "[eparse] %s part=%d vertcount=%d\n", path, g_model_parse_part_count, iVar5);
+                iVar5 = *(int *)(out_buffer + g_model_parse_part_count * 0x60 + 0xc18);
+                iVar10 = *(int *)(out_buffer + g_model_parse_part_count * 0x60 + 0xc20);
+                vec3_sub(out_buffer + iVar5 * 0xc + 8,
+                             out_buffer + *(int *)(out_buffer + g_model_parse_part_count * 0x60 + 0xc1c) * 0xc + 8,
                              auStack_150);
-                vec3_sub(param_2 + iVar5 * 0xc + 8,param_2 + iVar10 * 0xc + 8,auStack_160);
+                vec3_sub(out_buffer + iVar5 * 0xc + 8,out_buffer + iVar10 * 0xc + 8,auStack_160);
                 vec3_cross(auStack_160,auStack_150,auStack_140);
                 if ((local_23c == 4) && (iVar3 != 4)) {
                   NKDbgPrintfW(s_Error__polygon__d__bitmap_must_h_00084898,g_model_parse_part_count);
@@ -2491,9 +2469,9 @@ LAB_000218b8:
                   iVar5 = iVar5 >> 1;
                   if (iVar5 != 0) {
                     puVar11 = (undefined4 *)
-                              (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + iVar5 * 4);
+                              ((intptr_t)*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + iVar5 * 4);
                     puVar8 = (undefined4 *)
-                             (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + (iVar3 - iVar5) * 4);
+                             ((intptr_t)*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + (iVar3 - iVar5) * 4);
                     do {
                       iVar5 = iVar5 + -1;
                       uVar7 = puVar11[-1];
@@ -2516,7 +2494,7 @@ LAB_000218b8:
                   NKDbgPrintfW(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
                 }
-                if (&DAT_000c8a90 < DAT_000c8b00) {
+                if ((int *)&DAT_000c8a90 < DAT_000c8b00) {
                   NKDbgPrintfW(s_Out_of_vertex_list_space_00084908);
                   goto LAB_0002263c;
                 }
@@ -2536,17 +2514,17 @@ LAB_000218b8:
                 iVar5 = g_model_parse_part_count * 0x67;
                 piVar17 = DAT_000c8b00 + 1;
                 DAT_000c8b00 = piVar17;
-                (&DAT_000c9dd8)[iVar5] = (char)piVar17;
-                (&DAT_000c9dd9)[iVar5] = (char)((uint)piVar17 >> 8);
-                (&DAT_000c9dda)[iVar5] = (char)((uint)piVar17 >> 0x10);
-                (&DAT_000c9ddb)[iVar5] = (char)((uint)piVar17 >> 0x18);
+                (&DAT_000c9dd8)[iVar5] = (char)(uintptr_t)piVar17;
+                (&DAT_000c9dd9)[iVar5] = (char)((uint)(uintptr_t)piVar17 >> 8);
+                (&DAT_000c9dda)[iVar5] = (char)((uint)(uintptr_t)piVar17 >> 0x10);
+                (&DAT_000c9ddb)[iVar5] = (char)((uint)(uintptr_t)piVar17 >> 0x18);
                 *piVar17 = local_1e0;
                 DAT_000c8b00 = DAT_000c8b00 + 1;
                 iVar5 = local_20c;
 LAB_00021838:
                 *DAT_000c8b00 = iVar5;
                 DAT_000c8b00 = DAT_000c8b00 + 1;
-                if (&DAT_000c8a90 < DAT_000c8b00) {
+                if ((int *)&DAT_000c8a90 < DAT_000c8b00) {
                   NKDbgPrintfW(s_Out_of_vertex_list_space_00084908);
                   goto LAB_0002263c;
                 }
@@ -2595,10 +2573,10 @@ LAB_00021838:
                     *piVar17 = 1;
                     iVar5 = g_model_parse_part_count * 0x67;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
-                    (&DAT_000c9dd8)[iVar5] = (char)DAT_000c8b00;
-                    (&DAT_000c9dd9)[iVar5] = (char)((uint)DAT_000c8b00 >> 8);
-                    (&DAT_000c9dda)[iVar5] = (char)((uint)DAT_000c8b00 >> 0x10);
-                    (&DAT_000c9ddb)[iVar5] = (char)((uint)DAT_000c8b00 >> 0x18);
+                    (&DAT_000c9dd8)[iVar5] = (char)(uintptr_t)DAT_000c8b00;
+                    (&DAT_000c9dd9)[iVar5] = (char)((uint)(uintptr_t)DAT_000c8b00 >> 8);
+                    (&DAT_000c9dda)[iVar5] = (char)((uint)(uintptr_t)DAT_000c8b00 >> 0x10);
+                    (&DAT_000c9ddb)[iVar5] = (char)((uint)(uintptr_t)DAT_000c8b00 >> 0x18);
                     iVar5 = local_1f4;
                     goto LAB_00021838;
                   }
@@ -2644,13 +2622,13 @@ LAB_00021838:
                     iVar3 = g_model_parse_part_count * 0x67;
                     piVar17 = DAT_000c8b00 + 1;
                     DAT_000c8b00 = piVar17;
-                    (&DAT_000c9dd8)[iVar3] = (char)piVar17;
-                    (&DAT_000c9dd9)[iVar3] = (char)((uint)piVar17 >> 8);
-                    (&DAT_000c9dda)[iVar3] = (char)((uint)piVar17 >> 0x10);
-                    (&DAT_000c9ddb)[iVar3] = (char)((uint)piVar17 >> 0x18);
+                    (&DAT_000c9dd8)[iVar3] = (char)(uintptr_t)piVar17;
+                    (&DAT_000c9dd9)[iVar3] = (char)((uint)(uintptr_t)piVar17 >> 8);
+                    (&DAT_000c9dda)[iVar3] = (char)((uint)(uintptr_t)piVar17 >> 0x10);
+                    (&DAT_000c9ddb)[iVar3] = (char)((uint)(uintptr_t)piVar17 >> 0x18);
                     *piVar17 = local_1fc;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
-                    *DAT_000c8b00 = (int)local_1d4;
+                    *DAT_000c8b00 = (int)(uintptr_t)local_1d4;
                     iVar3 = g_model_parse_part_count;
                     piVar17 = DAT_000c8b00 + 1;
                     iVar5 = g_model_parse_part_count * 0x67;
@@ -2663,7 +2641,7 @@ LAB_00021838:
                     (&DAT_000c9e38)[iVar5] = (char)((uint)local_220 >> 8);
                     (&DAT_000c9e39)[iVar5] = (char)((uint)local_220 >> 0x10);
                     (&DAT_000c9e3a)[iVar5] = (char)((uint)local_220 >> 0x18);
-                    if (&DAT_000c8a90 < piVar17) {
+                    if ((int *)&DAT_000c8a90 < piVar17) {
                       NKDbgPrintfW(s_Out_of_vertex_list_space_00084908);
                       goto LAB_0002263c;
                       iVar3 = g_model_parse_part_count;
@@ -2688,10 +2666,10 @@ LAB_00021bec:
             iVar5 = g_model_parse_part_count;
           } while (local_260[0] == ';');
           iVar10 = 0;
-          param_2[5] = (char)((uint)g_model_parse_part_count >> 8);
-          param_2[4] = (char)iVar5;
-          param_2[6] = (char)((uint)iVar5 >> 0x10);
-          param_2[7] = (char)((uint)iVar5 >> 0x18);
+          out_buffer[5] = (char)((uint)g_model_parse_part_count >> 8);
+          out_buffer[4] = (char)iVar5;
+          out_buffer[6] = (char)((uint)iVar5 >> 0x10);
+          out_buffer[7] = (char)((uint)iVar5 >> 0x18);
           iVar3 = g_model_parse_part_count;
           iVar5 = g_model_parse_part_count;
           piVar17 = piVar20;
@@ -2725,14 +2703,14 @@ LAB_00021bec:
                 iVar5 = *piVar17;
                 *DAT_000c8b00 = iVar19;
                 iVar6 = g_model_parse_part_count;
-                piVar12 = (int *)(iVar5 + iVar19 * 4);
+                piVar12 = (int *)(intptr_t)(iVar5 + iVar19 * 4);
                 piVar9 = DAT_000c8b00 + 1;
                 iVar5 = g_model_parse_part_count * 0x67;
                 DAT_000c8b00 = piVar9;
-                (&DAT_000c9dd8)[iVar5] = (char)piVar9;
-                (&DAT_000c9dd9)[iVar5] = (char)((uint)piVar9 >> 8);
-                (&DAT_000c9dda)[iVar5] = (char)((uint)piVar9 >> 0x10);
-                (&DAT_000c9ddb)[iVar5] = (char)((uint)piVar9 >> 0x18);
+                (&DAT_000c9dd8)[iVar5] = (char)(uintptr_t)piVar9;
+                (&DAT_000c9dd9)[iVar5] = (char)((uint)(uintptr_t)piVar9 >> 8);
+                (&DAT_000c9dda)[iVar5] = (char)((uint)(uintptr_t)piVar9 >> 0x10);
+                (&DAT_000c9ddb)[iVar5] = (char)((uint)(uintptr_t)piVar9 >> 0x18);
                 for (; iVar19 != 0; iVar19 = iVar19 + -1) {
                   piVar12 = piVar12 + -1;
                   *piVar9 = *piVar12;
@@ -2824,10 +2802,10 @@ LAB_0002226c:
                   (&DAT_000d9769)[iVar4] = (char)((uint)local_200 >> 8);
                   (&DAT_000d976a)[iVar4] = (char)((uint)local_200 >> 0x10);
                   (&DAT_000d976b)[iVar4] = (char)((uint)local_200 >> 0x18);
-                  (&DAT_000d9774)[iVar4] = (char)local_1f8;
-                  (&DAT_000d9775)[iVar4] = (char)((uint)local_1f8 >> 8);
-                  (&DAT_000d9776)[iVar4] = (char)((uint)local_1f8 >> 0x10);
-                  (&DAT_000d9777)[iVar4] = (char)((uint)local_1f8 >> 0x18);
+                  (&DAT_000d9774)[iVar4] = (char)(uintptr_t)local_1f8;
+                  (&DAT_000d9775)[iVar4] = (char)((uint)(uintptr_t)local_1f8 >> 8);
+                  (&DAT_000d9776)[iVar4] = (char)((uint)(uintptr_t)local_1f8 >> 0x10);
+                  (&DAT_000d9777)[iVar4] = (char)((uint)(uintptr_t)local_1f8 >> 0x18);
                   (&DAT_000d9778)[iVar4] = (char)local_1f0;
                   (&DAT_000d9779)[iVar4] = (char)((uint)local_1f0 >> 8);
                   (&DAT_000d977a)[iVar4] = (char)((uint)local_1f0 >> 0x10);
@@ -2838,10 +2816,10 @@ LAB_0002226c:
                                ,local_1f0);
                   pvVar_fh = local_25c;
                   iVar4 = DAT_000db4e0 * 0x15;
-                  (&DAT_000d9770)[iVar4] = (char)piVar17;
-                  (&DAT_000d9771)[iVar4] = (char)((uint)piVar17 >> 8);
-                  (&DAT_000d9772)[iVar4] = (char)((uint)piVar17 >> 0x10);
-                  (&DAT_000d9773)[iVar4] = (char)((uint)piVar17 >> 0x18);
+                  (&DAT_000d9770)[iVar4] = (char)(uintptr_t)piVar17;
+                  (&DAT_000d9771)[iVar4] = (char)((uint)(uintptr_t)piVar17 >> 8);
+                  (&DAT_000d9772)[iVar4] = (char)((uint)(uintptr_t)piVar17 >> 0x10);
+                  (&DAT_000d9773)[iVar4] = (char)((uint)(uintptr_t)piVar17 >> 0x18);
                   do {
                     ce_fscanf(pvVar_fh,s__d_1s_000848c8,&local_1e8,local_260,pppppuVar21,uVar7,
                                  puVar13);
@@ -2966,7 +2944,7 @@ LAB_check_clusters:
                   if (iVar5 == 0) {
                     iVar4 = ce_fscanf(pvVar_fh,s__1s__d__d__d_1s_000847e4,&local_234,&local_250,
                                          &local_238,&local_230,local_260);
-                    local_240 = (undefined4 *****)0xffffffff;
+                    local_240 = (undefined4 ****)0xffffffff;
                     local_248 = 0xffffffff;
                   }
                   else {
@@ -2987,10 +2965,10 @@ LAB_check_clusters:
                   (&DAT_000c954f)[iVar10] = (char)((uint)local_248 >> 8);
                   (&DAT_000c9550)[iVar10] = (char)((uint)local_248 >> 0x10);
                   (&DAT_000c9551)[iVar10] = (char)((uint)local_248 >> 0x18);
-                  (&DAT_000c9552)[iVar10] = (char)local_240;
-                  (&DAT_000c9553)[iVar10] = (char)((uint)local_240 >> 8);
-                  (&DAT_000c9554)[iVar10] = (char)((uint)local_240 >> 0x10);
-                  (&DAT_000c9555)[iVar10] = (char)((uint)local_240 >> 0x18);
+                  (&DAT_000c9552)[iVar10] = (char)(uintptr_t)local_240;
+                  (&DAT_000c9553)[iVar10] = (char)((uint)(uintptr_t)local_240 >> 8);
+                  (&DAT_000c9554)[iVar10] = (char)((uint)(uintptr_t)local_240 >> 0x10);
+                  (&DAT_000c9555)[iVar10] = (char)((uint)(uintptr_t)local_240 >> 0x18);
                   (&DAT_000c9546)[iVar10] = (char)local_238;
                   (&DAT_000c9547)[iVar10] = (char)((uint)local_238 >> 8);
                   (&DAT_000c9548)[iVar10] = (char)((uint)local_238 >> 0x10);
@@ -3038,5 +3016,4 @@ LAB_0002263c:
       piVar20 = (int *)((char *)piVar20 + 0x67);
     } while (iVar4 < iVar3);
   }
-  return;
 }

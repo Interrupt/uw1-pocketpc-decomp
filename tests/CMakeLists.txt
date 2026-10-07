@@ -1,5 +1,7 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-
+add_compile_options(-Wno-pointer-sign)
+# unity is a PUBLIC dependency of several diamond-shaped static test libraries; the duplicate is harmless.
+add_link_options(-Wl,-no_warn_duplicate_libraries)
 add_custom_target(unit_tests)
 add_library(unity STATIC "${PROJECT_SOURCE_DIR}/third_party/unity/src/unity.c")
 target_include_directories(unity PUBLIC "${PROJECT_SOURCE_DIR}/third_party/unity/src")
@@ -23,8 +25,6 @@ endfunction()
 
 function(uw_configure_test_target target)
   target_include_directories(${target} PUBLIC "${PROJECT_SOURCE_DIR}")
-  target_compile_options(${target} PRIVATE -Wno-deprecated-non-prototype
-    -Wno-int-conversion -Wno-pointer-to-int-cast)
   target_link_libraries(${target} PUBLIC unity)
 endfunction()
 
@@ -85,6 +85,16 @@ add_game_test_library(uw_test_math src/math.c:step_value_toward_limit
   src/math.c:pack_angle_byte src/math.c:lookup_arctan_primary_range
   src/math.c:lookup_arctan_reciprocal_range src/math.c:compute_angle_from_slope)
 add_supported_game_unit_test(math uw_test_math)
+
+# debug_ui.c is this project's own hand-written support code (not pulled
+# from the decompiled game sources), already cleanly encapsulated behind
+# a small public API -- link it in directly rather than through
+# uw_extract_test_functions, which exists for isolating one function out
+# of a much larger original-game file.
+add_library(uw_test_debug_ui STATIC
+  "${PROJECT_SOURCE_DIR}/src/debug_ui.c" support/debug_ui_fixture.c)
+uw_configure_test_target(uw_test_debug_ui)
+add_supported_game_unit_test(debug_ui uw_test_debug_ui)
 
 add_supported_game_unit_test(support uw_test_support)
 
@@ -242,7 +252,9 @@ add_fixture_game_unit_test(inventory
   src/item_use.c:arm_use_item_on_player_prompt
   src/item_use.c:prompt_use_item_on_target
   src/item_use.c:complete_use_item_on_player
-  src/game.c:handle_game_view_click)
+  src/game.c:handle_game_view_click
+  src/containers.c:open_backpack_container src/containers.c:refresh_container_view
+  src/containers.c:sum_container_weight)
 
 add_fixture_game_unit_test(geometry
   src/3d.c:@DAT_000bc038_backing
@@ -351,6 +363,7 @@ add_fixture_game_unit_test(scroll_messages
   src/player.c:advance_character_level
   src/object_actions.c:dispatch_object_action src/object_actions.c:dispatch_object_action_dup
   src/ai.c:build_creature_look_text src/interact.c:describe_picked_terrain
+  src/interact.c:resolve_picked_terrain_texture
   src/ordinal_stubs.c:ce_memmove src/ordinal_stubs.c:ce_strchr src/ordinal_stubs.c:ce_strrchr)
 target_link_libraries(uw_test_scroll_messages PUBLIC uw_test_static_strings)
 
@@ -887,3 +900,56 @@ uw_configure_test_target(uw_test_restored_tables)
 target_include_directories(uw_test_restored_tables PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
 target_link_libraries(uw_test_restored_tables PUBLIC uw_test_support)
 add_supported_game_unit_test(restored_tables uw_test_restored_tables)
+
+add_fixture_game_unit_test(special_use
+  src/item_use.c:dispatch_use_special_item_by_type
+  src/traps.c:dispatch_trap_special_or_tile_action
+  src/object_actions.c:dispatch_tile_special_action
+  src/object_actions.c:dispatch_special_action
+  src/object_actions.c:resolve_object_variant_or_special_link
+  src/objects.c:find_object_in_chain
+  src/objects.c:resolve_object_link
+  src/objects.c:encode_object_slot_index
+  src/object_actions.c:scan_area_for_matching_objects
+  src/object_actions.c:scan_area_ahead_of_object
+  src/player.c:detect_unsafe_rest_object_callback
+  src/player.c:check_rest_area_unsafe
+  src/player.c:apply_healing_item_effect
+  src/player.c:restore_stat_capped
+  src/tmap.c:tilemap_lookup)
+
+add_fixture_game_unit_test(sleep
+  src/item_use.c:dispatch_use_special_item_by_type
+  src/player.c:handle_rest_action src/player.c:check_rest_area_unsafe
+  src/player.c:detect_unsafe_rest_object_callback
+  src/player.c:adjust_player_hp src/player.c:adjust_level7_hazard_value
+  src/player.c:adjust_player_hunger src/player.c:restore_stat_capped
+  src/player.c:decay_equipped_light_sources
+  src/level.c:trigger_random_level_special_event
+  src/weapon_swing.c:weapon_overlay_flash_hold
+  src/weapon_swing.c:weapon_overlay_flash_restore
+  src/traps.c:process_nearby_background_traps
+  src/traps.c:is_out_of_player_range
+  src/traps.c:dispatch_trap_type_effect
+  src/traps.c:check_object_area_for_spawn_block
+  src/traps.c:detect_spawn_blocking_object_callback
+  src/objects.c:find_object_in_world src/objects.c:find_object_in_chain
+  src/objects.c:object_ptr_in_arena
+  src/objects.c:despawn_objects_outside_radius
+  src/objects.c:should_destroy_linked_object src/ai.c:roll_object_destroy_chance
+  src/objects.c:walk_object_tree src/objects.c:object_exceeds_size_threshold
+  src/objects.c:resolve_object_link src/objects.c:get_object_record_by_slot_index
+  src/objects.c:encode_object_slot_index src/objects.c:object_list_insert_head
+  src/objects.c:object_list_unlink src/objects.c:unlink_and_free_object
+  src/objects.c:free_object_slot src/objects.c:free_linked_object_recursive
+  src/object_actions.c:scan_area_for_matching_objects
+  src/object_actions.c:scan_area_ahead_of_object
+  src/tmap.c:tilemap_lookup)
+target_sources(uw_test_sleep PRIVATE support/special_use_fixture.c)
+target_compile_definitions(uw_test_sleep PRIVATE UW_TEST_FULL_REST)
+
+# These fixtures own very large globals (a whole level's tile map, visibility ring buffers, ...).
+# As tentative (common) definitions ld caps their alignment and warns, so give them real storage.
+foreach(suite new_game traps visibility_walk)
+  target_compile_options(uw_test_${suite} PRIVATE -fno-common)
+endforeach()

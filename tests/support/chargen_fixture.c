@@ -35,9 +35,7 @@ long ce_rand(void)
     return random_values[random_index++];
 }
 
-int roll_dice_sum(count, sides)
-int count;
-short sides;
+int roll_dice_sum(int count, short sides)
 {
     /* Deterministic roll totals distinguish skills from attributes. */
     if (dice_calls < 20) {
@@ -56,8 +54,7 @@ void configure_texture_detail_functions(void) { reset_calls++; }
 
 void refresh_player_equipment_effects(void) { equipment_calls++; }
 
-void advance_skill_training(skill)
-short skill;
+void advance_skill_training(short skill)
 {
     TEST_ASSERT_LESS_THAN_INT(6, trained_count);
     trained[trained_count++] = skill;
@@ -100,30 +97,30 @@ void prepare_initial_randomness(void)
 undefined1 DAT_00204880_backing[128], DAT_00202750_backing[128];
 short DAT_00201c70;
 static byte saved_status[0xd2], saved_key;
-undefined4 is_sound_effects_enabled(void) { return 0; }
-undefined4 is_music_playing(void) { return 0; }
+int is_sound_effects_enabled(void) { return 0; }
+int is_music_playing(void) { return 0; }
 void set_sound_effects_enabled(int enabled) {}
 void set_music_enabled(int enabled) {}
-void apply_movement_mode_profile(int mode) {}
-undefined4 write_file_handle(int handle, const void *buffer, uint size)
+void apply_movement_mode_profile(byte mode) {}
+int write_file_handle(int handle, const void *buffer, uint size)
 {
     TEST_ASSERT_EQUAL_UINT(1, size);
     saved_key = *(const byte *)buffer;
     return size;
 }
-undefined4 read_file_handle(int handle, void *buffer, uint size)
+int read_file_handle(int handle, void *buffer, uint size)
 {
     TEST_ASSERT_EQUAL_UINT(1, size);
     *(byte *)buffer = saved_key;
     return size;
 }
-int write_xor_scrambled_block(int handle, int key, const void *buffer, int size)
+int write_xor_scrambled_block(int handle, byte key, char *buffer, short size)
 {
     TEST_ASSERT_EQUAL_UINT(sizeof saved_status, size);
     memcpy(saved_status, buffer, size);
     return size;
 }
-short read_xor_scrambled_block(int handle, int key, void *buffer, int size)
+short read_xor_scrambled_block(int handle, byte key, char *buffer, short size)
 {
     TEST_ASSERT_EQUAL_UINT(sizeof saved_status, size);
     memcpy(buffer, saved_status, size);
@@ -137,5 +134,5 @@ int DAT_00086db8_backing[256], DAT_0023bc94;
 undefined4 DAT_0023bc9c, DAT_0023bc98, DAT_002020dc;
 undefined4 DAT_002020d0, DAT_002020d4, DAT_002020d8;
 short DAT_000858c4;
-void reduce_item_quality_on_use(ushort *object) { TEST_FAIL_MESSAGE("Unexpected quality decay"); }
+void reduce_item_quality_on_use(ushort *object, char dice_count) { (void)object; (void)dice_count; TEST_FAIL_MESSAGE("Unexpected quality decay"); }
 uint calculate_object_weight(ushort *object) { return 25; }

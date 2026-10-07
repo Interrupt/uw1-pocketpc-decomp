@@ -34,7 +34,7 @@ static byte cursor_header[5];
 
 /* Registry services resolve to the real cursor entry's loaded header. */
 uint resolve_sprite_id_to_frame(int id) { return 1; }
-void *lookup_grtile_by_id(int frame) { return (char *)cursor_header; }
+void *lookup_grtile_by_id(short frame) { return (char *)cursor_header; }
 
 static void select_real_cursor(int id)
 {
@@ -54,7 +54,7 @@ static void select_real_cursor(int id)
 
 /* Sprite service boundary: a transparent 3x3 icon, with real viewport clipping.
    Rendering lifecycle, cursor gates, and dirty/viewport storage are game code. */
-void draw_sprite_by_id(int id,int x,int y,int height,int width)
+void draw_sprite_by_id(int id, int x, int y, int height, short width)
 {
     ++draws; sprite_id=id; sprite_x=x; sprite_y=y;
     TEST_ASSERT_EQUAL_INT(1,g_blit_transparent_mode);
@@ -66,8 +66,8 @@ void draw_sprite_by_id(int id,int x,int y,int height,int width)
                col>=DAT_000a85c4 && col<=DAT_000842a4 &&
                (row!=y || col!=x)) pixels[row*320+col]=id;
 }
-void set_draw_color(int color) {}
-void rect_fill_or_save_restore(int x,int y,int right,int bottom) { ++saves; }
+void set_draw_color(short color) {}
+void rect_fill_or_save_restore(ushort x, uint y, short right, short bottom) { ++saves; }
 void flush_dirty_rect_to_display(int mode) { ++flushes; }
 
 void setUp(void)

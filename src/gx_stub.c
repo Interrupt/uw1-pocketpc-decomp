@@ -17,6 +17,9 @@
 
 #define GX_W 320
 #define GX_H 240
+/* Keep the Pocket PC framebuffer/pitches intact; present only the DOS game
+   area unless UW_TOUCHSCREEN enables the extra 40-row touch input strip. */
+static int g_display_height = 200;
 
 /* The game's own screen-flush routines (flush_dirty_rect_to_display/flush_dirty_rect_to_display_240
    in uw.c) always blit by transposing rows<->columns from the software framebuffer into whatever
@@ -255,7 +258,7 @@ void uw_set_present_refresh_rate(unsigned refresh_hz)
     g_display_pacing.grace_us = 1000000 / ((uint64_t)refresh_hz * 8);
 }
 
-void uw_reset_frame_pacing(void)
+void uw_reset_frame_pacing()
 {
     memset(&g_display_pacing, 0, sizeof g_display_pacing);
     memset(&g_game_pacing, 0, sizeof g_game_pacing);
@@ -314,7 +317,7 @@ void uw_record_completed_present(uint64_t now_us)
 /* Cursor-only changes need a presentation even in a blocking input wait.
    Reuse the pacing queue so the next event poll shows the latest icon and
    position without copying cursor pixels into the hardware framebuffer. */
-void uw_request_cursor_present(void)
+void uw_request_cursor_present()
 {
     g_display_pacing.pending = 1;
 }
@@ -340,13 +343,13 @@ int uw_service_game_clock(uint64_t now_us)
     return 1;
 }
 
-uint64_t uw_gx_time_us(void)
+uint64_t uw_gx_time_us()
 {
     return (uint64_t)((double)SDL_GetPerformanceCounter() * 1000000.0 /
                       (double)SDL_GetPerformanceFrequency());
 }
 
-void uw_update_present_refresh_rate(void)
+void uw_update_present_refresh_rate()
 {
     SDL_DisplayMode mode;
     int display = SDL_GetWindowDisplayIndex(g_win);
@@ -524,9 +527,29 @@ void uw_pump_events(void) {
                 float lx, ly;
                 SDL_RenderWindowToLogical(g_ren, win_x, win_y, &lx, &ly);
                 int landscape_x = (int)lx, landscape_y = (int)ly;
+                /* Resized windows can have letterboxing. Keep input within
+                   the displayed area, including button releases outside it. */
+                landscape_x = SDL_clamp(landscape_x, 0, GX_W - 1);
+                landscape_y = SDL_clamp(landscape_y, 0, g_display_height - 1);
                 if (dbgui_visible()) {
                     if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
-                        dbgui_feed_mouse_down(landscape_x, landscape_y);
+                        if (getenv("UW_DEBUG_DBGUI"))
+                            fprintf(stderr, "[dbgui] click win=(%d,%d) landscape=(%d,%d)\n", win_x, win_y, landscape_x, landscape_y);
+                        /* A click inside the 3D viewport's own registered
+                           rect (the exact bounds pick_object_under_cursor
+                           itself guards with -- see its own comment) runs
+                           the real object pick and swaps the debug panel
+                           into the object inspector; anywhere else (the
+                           panel itself, or any other HUD chrome) is a
+                           normal panel click as before. */
+                        if (landscape_x >= DAT_0023be5c && landscape_x < DAT_0023be5c + DAT_0023bd80 &&
+                            landscape_y >= (short)(DAT_0023be80 - DAT_0023be88) && landscape_y < DAT_0023be80) {
+                            g_mouse_x = landscape_x;
+                            g_mouse_y = landscape_y;
+                            dbgui_object_inspector_pick();
+                        } else {
+                            dbgui_feed_mouse_down(landscape_x, landscape_y);
+                        }
                     }
                     return;
                 }
@@ -607,15 +630,18 @@ void uw_pump_events(void) {
 int GXOpenDisplay(void *hwnd, unsigned int flags) {
     (void)hwnd;
     (void)flags;
+    const char *touchscreen = getenv("UW_TOUCHSCREEN");
+    g_display_height = (touchscreen && touchscreen[0] && strcmp(touchscreen, "0") != 0)
+                       ? GX_H : 200;
     uw_reset_frame_pacing();
     fprintf(stderr, "[gx] GXOpenDisplay: opening %dx%d SDL window (game's GAPI display init)\n",
-            GX_W, GX_H);
+            GX_W, g_display_height);
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
         return 0;
     }
     g_win = SDL_CreateWindow("Ultima Underworld", SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED, GX_W * 2, GX_H * 2,
+                              SDL_WINDOWPOS_CENTERED, GX_W * 2, g_display_height * 2,
                               SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (!g_win) {
         fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
@@ -652,9 +678,9 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
         fprintf(stderr, "[gx] renderer=%s vsync=%s\n", info.name,
                 (info.flags & SDL_RENDERER_PRESENTVSYNC) ? "yes" : "no");
     }
-    SDL_RenderSetLogicalSize(g_ren, GX_W, GX_H);
+    SDL_RenderSetLogicalSize(g_ren, GX_W, g_display_height);
     g_tex = SDL_CreateTexture(g_ren, SDL_PIXELFORMAT_RGB565,
-                               SDL_TEXTUREACCESS_STREAMING, GX_W, GX_H);
+                               SDL_TEXTUREACCESS_STREAMING, GX_W, g_display_height);
     memset(g_framebuffer, 0, sizeof(g_framebuffer));
     demomode_init();
     democapture_init();
@@ -1256,12 +1282,12 @@ struct uw_present_state {
 };
 static struct uw_present_state g_present_state = {0};
 
-void uw_begin_present_batch(void)
+void uw_begin_present_batch()
 {
     g_present_state.batch_depth++;
 }
 
-void uw_end_present_batch(void)
+void uw_end_present_batch()
 {
     if (g_present_state.batch_depth == 0) return;
     if (--g_present_state.batch_depth == 0 && g_present_state.pending) {
@@ -1270,7 +1296,7 @@ void uw_end_present_batch(void)
     }
 }
 
-void gfx_finalizedraw(void)
+void gfx_finalizedraw()
 {
     /* Port timing deviation: completed frames bypass the software deadline;
        SDL vsync handles their wait. Ordinary cursor/intermediate flushes retain
@@ -1284,7 +1310,7 @@ void gfx_finalizedraw(void)
     }
 }
 
-int uw_take_completed_frame(void)
+int uw_take_completed_frame()
 {
     if (g_present_state.batch_depth) return 0;
     int completed = g_present_state.completed_frame;
@@ -1292,17 +1318,17 @@ int uw_take_completed_frame(void)
     return completed;
 }
 
-void uw_suspend_present_batch(void)
+void uw_suspend_present_batch()
 {
     g_present_state.suspend_depth++;
 }
 
-void uw_resume_present_batch(void)
+void uw_resume_present_batch()
 {
     if (g_present_state.suspend_depth) g_present_state.suspend_depth--;
 }
 
-void uw_begin_modal_present(void)
+void uw_begin_modal_present()
 {
     if (g_present_state.modal_depth++ == 0) {
         g_present_state.saved_force_flush = g_force_flush;
@@ -1311,14 +1337,14 @@ void uw_begin_modal_present(void)
     }
 }
 
-void uw_end_modal_present(void)
+void uw_end_modal_present()
 {
     if (g_present_state.modal_depth == 0) return;
     if (--g_present_state.modal_depth == 0)
         g_force_flush = g_present_state.saved_force_flush;
 }
 
-int uw_defer_present(void)
+int uw_defer_present()
 {
     if (g_present_state.batch_depth && !g_present_state.modal_depth &&
         !g_present_state.suspend_depth) {
@@ -1416,7 +1442,7 @@ int GXResume(void) { fprintf(stderr, "[gx] GXResume (window gained focus)\n"); r
 void *GXGetDisplayProperties(void) {
     fprintf(stderr, "[gx] GXGetDisplayProperties: reporting %dx%d 16bpp RGB565 (portrait "
                     "hardware framebuffer; presented rotated to a %dx%d landscape window)\n",
-            HW_W, HW_H, GX_W, GX_H);
+            HW_W, HW_H, GX_W, g_display_height);
     static GxDisplayProps props;
     props.cxWidth = HW_W;
     props.cyHeight = HW_H;

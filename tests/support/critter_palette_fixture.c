@@ -19,7 +19,7 @@ unsigned allocations, allocation_size;
 void DEBUG_impl(DebugLevel level, const char *file, int line, const char *fmt, ...) {}
 void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
                                 const unsigned char *buffer, int width, int height) {}
-void *ce_malloc(int size)
+void *ce_malloc(unsigned int size)
 {
     TEST_ASSERT_GREATER_THAN_INT(0, size);
     TEST_ASSERT_LESS_OR_EQUAL_INT(65536, size);
@@ -30,7 +30,7 @@ void *ce_malloc(int size)
     return buffer;
 }
 void *ce_memset(void *buffer, int value, unsigned int size) { return memset(buffer, value, size); }
-void *ce_memmove(void *dest, const void *src, int size) { return memcpy(dest, src, size); }
+void *ce_memmove(void *dest, void *src, unsigned int size) { return memcpy(dest, src, size); }
 byte *uw_load_critter_page_cached(int page, int tier)
 {
     TEST_ASSERT_EQUAL_INT(0, page);

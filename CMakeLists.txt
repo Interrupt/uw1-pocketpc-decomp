@@ -61,6 +61,7 @@ set(UW_SOURCES
   src/democapture.c
   src/debug.c
   src/debug_ui.c
+  src/debug_shim.c
 )
 
 add_executable(uw_dbg ${UW_SOURCES})
@@ -70,12 +71,8 @@ target_link_directories(uw_dbg PRIVATE ${SDL2_LIBRARY_DIRS})
 target_link_libraries(uw_dbg PRIVATE ${SDL2_LIBRARIES})
 target_compile_options(uw_dbg PRIVATE
   ${SDL2_CFLAGS_OTHER}
-  -Wno-implicit-function-declaration
-  -Wno-int-conversion
-  -Wno-int-to-pointer-cast
-  -Wno-pointer-to-int-cast
-  -Wno-incompatible-function-pointer-types
-  -Wno-deprecated-non-prototype
+  -Wno-pointer-sign
+  -fno-common
 )
 
 set_target_properties(uw_dbg PROPERTIES
@@ -96,12 +93,8 @@ target_link_directories(uw_asan PRIVATE ${SDL2_LIBRARY_DIRS})
 target_link_libraries(uw_asan PRIVATE ${SDL2_LIBRARIES})
 target_compile_options(uw_asan PRIVATE
   ${SDL2_CFLAGS_OTHER}
-  -Wno-implicit-function-declaration
-  -Wno-int-conversion
-  -Wno-int-to-pointer-cast
-  -Wno-pointer-to-int-cast
-  -Wno-incompatible-function-pointer-types
-  -Wno-deprecated-non-prototype
+  -Wno-pointer-sign
+  -fno-common
   -fsanitize=address
   -fno-omit-frame-pointer
 )

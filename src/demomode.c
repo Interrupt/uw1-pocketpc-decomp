@@ -557,8 +557,6 @@ void demomode_pump(void) {
         /* Diagnostic: does ANY tile's object chain (across the whole 64x64 map) ever reach the
            object at the given large-table slot index? If not, it's a real, populated record that's
            simply never linked into the world -- an orphaned object, not a rendering/pick bug. */
-        extern void *tilemap_lookup(int row, int col);
-        extern void *resolve_object_link(void *link_field);
         extern char *DAT_002046c4;
         int slot = atoi(p + 8);
         void *target = (void *)((char *)DAT_002046c4 + (slot - 0x100) * 8);
@@ -603,7 +601,6 @@ void demomode_pump(void) {
         /* Diagnostic: object slot 1 is reserved for the player (real UW1 format doc 4.3: "Entry 1
            is partly used to store the player's information"). */
         extern char *DAT_002046b8;
-        extern void *resolve_object_link(void *link_field);
         unsigned char *slot1 = (unsigned char *)DAT_002046b8 + 1 * 0x1b;
         unsigned word0 = slot1[0] | (slot1[1] << 8);
         int is_quant = (word0 >> 15) & 1;
@@ -637,7 +634,6 @@ void demomode_pump(void) {
         /* Diagnostic: calls the real "save to slot 0" flow (commit_level_to_save_slot) directly,
            bypassing pause-menu UI navigation, so a demo script can test the save path without
            reproducing its exact keypress sequence. */
-        extern unsigned int commit_level_to_save_slot(int level);
         extern short DAT_00201b68;
         fprintf(stderr, "[triggersave] calling commit_level_to_save_slot(%d)\n", (int)DAT_00201b68);
         unsigned int _r = commit_level_to_save_slot((int)DAT_00201b68);
@@ -652,15 +648,13 @@ void demomode_pump(void) {
            cast_spell_from_rune_combo calls after its mana/skill checks pass) once for each of... */
         extern ushort *g_player_object;
         extern undefined DAT_00087530_backing[212];
-        extern unsigned int dispatch_special_action(unsigned int type, unsigned int param,
-                                                      uintptr_t actor, intptr_t target);
         int i;
         for (i = 0; i < 48; i++) {
             unsigned char byte0 = DAT_00087530_backing[i * 4];
             unsigned char byte3 = DAT_00087530_backing[i * 4 + 3];
             unsigned int type = byte0 >> 3;
             fprintf(stderr, "[castallspells] spell %d: type=%u param=%u\n", i, type, byte3);
-            dispatch_special_action(type, byte3, (uintptr_t)g_player_object, (intptr_t)g_player_object);
+            dispatch_special_action(type, byte3, g_player_object, g_player_object);
             fprintf(stderr, "[castallspells] spell %d: survived\n", i);
         }
         fprintf(stderr, "[castallspells] all 48 spells dispatched\n");
@@ -673,8 +667,6 @@ void demomode_pump(void) {
            tilemap_lookup(row,col)+2 -> resolve_object_link -> +2 shorts -> resolve_object_link ...
            walk object_chain_max_barrier uses) and print each object's raw type/flags words... */
         extern ushort *g_player_object;
-        extern void *tilemap_lookup(int row, int col);
-        extern void *resolve_object_link(void *link_field);
         unsigned short *pl = (unsigned short *)g_player_object;
         if (pl) {
             int row = pl[0x16/2] >> 10;
@@ -798,7 +790,7 @@ void demomode_pump(void) {
     if (strncasecmp(p, "SCREENSHOT ", 11) == 0) {
         const char *path = p + 11;
         /* Push the whole software framebuffer to the display before capturing. */
-        { extern int g_force_flush; extern void flush_dirty_rect_to_display();
+        { extern int g_force_flush; 
           dirty_rect_union(0, 200, 0, 0x140);
           g_force_flush = 1;
           flush_dirty_rect_to_display(1);

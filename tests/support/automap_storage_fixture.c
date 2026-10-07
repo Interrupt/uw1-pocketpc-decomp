@@ -35,7 +35,7 @@ short *DAT_00085a6c=click_position;
 static const char *note_input;
 
 bool select_active_font(char *font) { return true; }
-void draw_text_string(char *text,int x,int y)
+void draw_text_string(char *text, short x, short y)
 {
     TEST_ASSERT_LESS_THAN_INT(100,automap_text_draws);
     snprintf(automap_drawn_text[automap_text_draws],52,"%s",text);
@@ -45,7 +45,7 @@ void draw_text_string(char *text,int x,int y)
 int uw_always_show_cursor(void) { return 0; }
 void flush_dirty_rect_to_display(int mode) {}
 void dirty_rect_union(int top,int bottom,int left,int right) {}
-void draw_sprite_by_id(int id,int x,int y,int height,int width)
+void draw_sprite_by_id(int id, int x, int y, int height, short width)
 {
     for(int row=y;row<y+height;++row)
         for(int col=x;col<x+width;++col)
@@ -54,30 +54,30 @@ void draw_sprite_by_id(int id,int x,int y,int height,int width)
 /* Lifecycle UI services: keep actual close/save and open/load paths. */
 int register_key_binding(int key,int mode,int flags,void *callback) { return 1; }
 void change_game_mode(int mode) {}
-void set_pending_music_track(int track) {}
+void set_pending_music_track(byte track) {}
 void update_ingame_music_track(void) {}
-undefined4 save_automap_reveal_to_archive(void *archive,int level) { return 1; }
-undefined4 load_automap_reveal_from_archive(void *archive,int level) { return 1; }
+int save_automap_reveal_to_archive(byte *archive, int level) { return 1; }
+int load_automap_reveal_from_archive(byte *archive, int level) { return 1; }
 void draw_automap_screen(int level)
 {
     DAT_000ba9d0=level;
     load_automap_notes_from_archive(level);
     DAT_000bbef4=1;
 }
-int register_click_region(int left,int bottom,int right,int top,int flags,int mode,void *handler) { return 1; }
+int register_click_region(int left, int bottom, int right, int top, short flags, short mode, void *handler) { return 1; }
 void wait_for_click_release(int mode) {}
 int measure_text_width(char *text) { return strlen(text)*4; }
 uint poll_input_event(int mode) { return *note_input ? *note_input++ : 13; }
-int poll_keyboard_char_input(short *key) { *key=0; return 0; }
-undefined4 next_input_event(void) { return 1; }
+int poll_keyboard_char_input(void *key_) { short *key = (short *)key_; *key=0; return 0; }
+int next_input_event(void) { return 1; }
 void update_hotspot_cursor_icon(void) {}
-void screen_backup_restore_rect(int x,int y,int right,int bottom) {}
+void screen_backup_restore_rect(uint x, uint y, uint right, uint bottom) {}
 void switch_automap_level_display(int level) {}
-void set_cursor_confine_rect(int left,int bottom,int right,int top) {}
+void set_cursor_confine_rect(short left, short bottom, short right, short top) {}
 void reset_cursor_confine_rect(void) {}
 void push_cursor_icon(int id) { DAT_00204788=id; }
-void pop_cursor_icon(int mode) {}
-void unregister_key_binding(int id) {}
+void pop_cursor_icon(ushort mode) {}
+void unregister_key_binding(short id) {}
 void pick_random_pending_music_track(void) {}
 void clear_screen_and_restore_cursor(void) {}
 

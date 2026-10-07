@@ -109,7 +109,7 @@ undefined2 DAT_00242010_backing[12800];
    256-entry faded-palette table (`(ushort*)(&DAT_00248418 + iVar21) + level*0x100`, iVar21 stepping
    by 2 per palette entry, 20 levels stepped by 0x100 ushorts/level)... */
 undefined2 DAT_00248418_backing[20 * 256];
-static undefined4 DAT_0023c638;
+static void *DAT_0023c638;
 static undefined1 DAT_001005cc;
 static undefined1 DAT_001005cd;
 static undefined1 DAT_001005ce;
@@ -131,13 +131,10 @@ static undefined2 DAT_000879b8_backing[4096];
 
 
 // was FUN_00011694
-void set_draw_color(param_1)
-undefined2 param_1;
-
+void set_draw_color(short color_index)
 {
-  DEBUG(TRACE, "[graphics] set draw color to %u", param_1);
-  DAT_000a85c0 = param_1;
-  return;
+  DEBUG(TRACE, "[graphics] set draw color to %u", color_index);
+  DAT_000a85c0 = color_index;
 }
 
 
@@ -145,12 +142,7 @@ undefined2 param_1;
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00011774
-void rect_fill_or_save_restore(param_1,param_2,param_3,param_4)
-ushort param_1;
-uint param_2;
-short param_3;
-short param_4;
-
+void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
 {
   short sVar1;
   uint uVar2;
@@ -169,53 +161,53 @@ short param_4;
   int iVar14;
   int iVar15;
   
-  DEBUG(TRACE, "[graphics] rect_fill_or_save_restore(%u,%u,%u,%u)", param_1, param_2, param_3, param_4);
+  DEBUG(TRACE, "[graphics] rect_fill_or_save_restore(%u,%u,%u,%u)", left, top, right, bottom);
 
   if (DAT_00204848 != 0 && getenv("UW_DEBUG_CURSORCLIP")) {
     fprintf(stderr, "[cursorclip] request color=%d rect=(%d,%d,%d,%d) clip=(%d,%d,%d,%d)\n",
-            (int)DAT_000a85c0, (int)(short)param_1, (int)(short)param_2, (int)param_3, (int)param_4,
+            (int)DAT_000a85c0, (int)(short)left, (int)(short)top, (int)right, (int)bottom,
             (int)(short)DAT_000a85c4, (int)(short)DAT_000a85c8,
             (int)(short)DAT_000842a4, (int)(short)DAT_000842a8);
   }
 
-  iVar14 = (int)(short)param_1;
-  iVar13 = (param_3 - iVar14) * 0x10000;
+  iVar14 = (int)(short)left;
+  iVar13 = (right - iVar14) * 0x10000;
   iVar11 = iVar13 >> 0x10;
-  iVar4 = (int)(short)param_2;
-  iVar15 = (param_4 - iVar4) * 0x10000;
+  iVar4 = (int)(short)top;
+  iVar15 = (bottom - iVar4) * 0x10000;
   iVar12 = iVar15 >> 0x10;
-  dirty_rect_union(param_2 & 0xffff,param_4,param_1,param_3);
+  dirty_rect_union(top & 0xffff,bottom,left,right);
   if ((int)(short)DAT_000a85c4 <= iVar11 + iVar14 + -1) {
     if (iVar14 < (short)DAT_000a85c4) {
       iVar14 = (int)(short)DAT_000a85c4;
       iVar11 = ((int)(short)DAT_000a85c4 - (int)(short)DAT_000a85c4) +
                (int)(short)((uint)iVar13 >> 0x10);
-      param_1 = DAT_000a85c4;
+      left = DAT_000a85c4;
     }
     sVar10 = (short)iVar11;
     if (iVar14 <= DAT_000842a4) {
       if ((DAT_000842a4 - iVar14) + 1 < (int)sVar10) {
-        sVar10 = (DAT_000842a4 - param_1) + 1;
+        sVar10 = (DAT_000842a4 - left) + 1;
       }
       sVar1 = (short)((uint)iVar15 >> 0x10);
       if ((int)DAT_000a85c8 <= sVar1 + iVar4) {
         if (iVar4 < DAT_000a85c8) {
-          iVar12 = ((int)DAT_000a85c8 - (int)(short)param_2) + (int)sVar1;
-          param_2 = (int)DAT_000a85c8;
+          iVar12 = ((int)DAT_000a85c8 - (int)(short)top) + (int)sVar1;
+          top = (int)DAT_000a85c8;
         }
-        if ((int)(short)param_2 <= (int)DAT_000842a8) {
-          if (((int)DAT_000842a8 - (int)(short)param_2) + 1 < (int)(short)iVar12) {
-            iVar12 = ((int)DAT_000842a8 - param_2) + 1;
+        if ((int)(short)top <= (int)DAT_000842a8) {
+          if (((int)DAT_000842a8 - (int)(short)top) + 1 < (int)(short)iVar12) {
+            iVar12 = ((int)DAT_000842a8 - top) + 1;
           }
-          uVar2 = (uint)param_1;
-          param_1 = sVar10 + param_1;
-          uVar5 = param_2 & 0xffff;
-          uVar9 = iVar12 + (param_2 & 0xffff);
+          uVar2 = (uint)left;
+          left = sVar10 + left;
+          uVar5 = top & 0xffff;
+          uVar9 = iVar12 + (top & 0xffff);
           iVar13 = 0;
           // DAT_00204848 is only ever set by the mouse-cursor code (save_cursor_background sets it to 1 right before deliberately drawing with color 0x14, to save what's under the cursor), so colors 0x14/0x15 only mean save/restore during that specific sequence -- with DAT_00204848 at its default 0 (every other caller), they're ordinary palette colors and this whole block is skipped in favor of the flat fill below. There are 256 real palette entries (0x100, see the palette-conversion loop), so 20/21 aren't reserved from the palette's own perspective either.
           if (DAT_00204848 != 0 && getenv("UW_DEBUG_CURSORCLIP")) {
             fprintf(stderr, "[cursorclip] PROCEEDING color=%d clipped_rect=(%u,%u)-(%u,%u)\n",
-                    (int)DAT_000a85c0, uVar2, uVar5, (uint)param_1, uVar9);
+                    (int)DAT_000a85c0, uVar2, uVar5, (uint)left, uVar9);
           }
           if (DAT_00204848 != 0) {
             if (DAT_000a85c0 == 0x14) {
@@ -235,7 +227,7 @@ short param_4;
                   }
                   return;
                 }
-                if (uVar2 < param_1) {
+                if (uVar2 < left) {
                   puVar8 = &DAT_000879b8 + iVar13;
                   uVar7 = uVar2;
                   do {
@@ -245,7 +237,7 @@ short param_4;
                     iVar13 = iVar13 + 1;
                     *puVar8 = *(undefined2 *)((char *)pvVar_buf25800 + iVar14 * 2);
                     puVar8 = puVar8 + 1;
-                  } while ((int)uVar7 < (int)(uint)param_1);
+                  } while ((int)uVar7 < (int)(uint)left);
                 }
                 uVar5 = uVar5 + 1;
                 iVar15 = iVar15 + 0x140;
@@ -267,7 +259,7 @@ short param_4;
                 if (63999 < iVar15) {
                   return;
                 }
-                if (uVar2 < param_1) {
+                if (uVar2 < left) {
                   puVar8 = &DAT_000879b8 + iVar13;
                   uVar6 = uVar2;
                   do {
@@ -278,7 +270,7 @@ short param_4;
                     *(undefined2 *)((g_uw_framebuffer) + iVar14 * 2) =
                          *puVar8;
                     puVar8 = puVar8 + 1;
-                  } while ((int)uVar6 < (int)(uint)param_1);
+                  } while ((int)uVar6 < (int)(uint)left);
                 }
                 uVar5 = uVar5 + 1;
                 iVar15 = iVar15 + 0x140;
@@ -295,7 +287,7 @@ short param_4;
               if (63999 < iVar13) {
                 return;
               }
-              for (uVar6 = uVar2; ((int)uVar6 < (int)(uint)param_1 && ((int)uVar6 < 0x140));
+              for (uVar6 = uVar2; ((int)uVar6 < (int)(uint)left && ((int)uVar6 < 0x140));
                   uVar6 = uVar6 + 1) {
                 *(undefined2 *)
                  ((g_uw_framebuffer) + (iVar13 + uVar6) * 2) =
@@ -310,7 +302,6 @@ short param_4;
     }
   }
   debug_framebuffer_dump("rect_fill");
-  return;
 }
 
 
@@ -318,16 +309,7 @@ short param_4;
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00011e5c
-void bitmap_blit_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
-ushort param_1;
-ushort param_2;
-char *param_3;
-short param_4;
-short param_5;
-short param_6;
-short param_7;
-undefined1 param_8;
-
+void bitmap_blit_to_framebuffer(ushort x, ushort y, char *pixels, short height, short width, short src_x, short src_y, byte transparent)
 {
   short sVar1;
   int iVar2;
@@ -344,18 +326,18 @@ undefined1 param_8;
   short sVar13;
   short sVar14;
   short sVar15;
-  /* param_3 is the source-bitmap pointer (was `int`, truncating it on this 64-bit host -- every
+  /* pixels is the source-bitmap pointer (was `int`, truncating it on this 64-bit host -- every
      caller passes a real malloc'd/global pixel-data pointer, e.g. blit_fullscreen_bitmap_file's
      OPSCR.BYT load buffer). */
   intptr_t local_34;
   
-  DEBUG(TRACE, "[graphics] bitmap_blit_to_framebuffer(%u,%u,%p,%u,%u,%u,%u)", param_1, param_2, (void *)param_3, param_4, param_5, param_6, param_7);
+  DEBUG(TRACE, "[graphics] bitmap_blit_to_framebuffer(%u,%u,%p,%u,%u,%u,%u)", x, y, (void *)pixels, height, width, src_x, src_y);
 
   sVar13 = 0;
-  iVar11 = (int)param_6;
+  iVar11 = (int)src_x;
   sVar12 = 0;
-  local_34 = (intptr_t)param_3 + (int)param_7 * (int)param_5 + iVar11;
-  iVar9 = (uint)param_1 << 0x10;
+  local_34 = (intptr_t)pixels + (int)src_y * (int)width + iVar11;
+  iVar9 = (uint)x << 0x10;
   iVar8 = iVar9 >> 0x10;
   if (iVar8 < 0) {
     iVar9 = iVar8 * -0x10000;
@@ -364,7 +346,7 @@ undefined1 param_8;
   if (iVar8 < 0) {
     sVar15 = (short)((uint)iVar9 >> 0x10);
   }
-  iVar9 = (uint)param_2 << 0x10;
+  iVar9 = (uint)y << 0x10;
   iVar7 = iVar9 >> 0x10;
   if (iVar7 < 0) {
     iVar9 = iVar7 * -0x10000;
@@ -373,20 +355,20 @@ undefined1 param_8;
   if (iVar7 < 0) {
     sVar14 = (short)((uint)iVar9 >> 0x10);
   }
-  iVar9 = ((int)param_5 - (int)param_6) * 0x10000 >> 0x10;
+  iVar9 = ((int)width - (int)src_x) * 0x10000 >> 0x10;
   if (0x140 < iVar8 + iVar9) {
-    sVar13 = param_1 + (short)((int)param_5 - (int)param_6) + -0x140;
+    sVar13 = x + (short)((int)width - (int)src_x) + -0x140;
   }
-  sVar1 = (short)((uint)(((int)param_4 - (int)param_7) * 0x10000) >> 0x10);
+  sVar1 = (short)((uint)(((int)height - (int)src_y) * 0x10000) >> 0x10);
   iVar2 = (int)sVar1;
   if (200 < iVar7 + iVar2) {
-    sVar12 = param_2 + sVar1 + -200;
+    sVar12 = y + sVar1 + -200;
   }
   /* Was a 3-argument call to a K&R-style `dirty_rect_union()` (no prototype, so this compiles
      without error) -- missing its 4th ("right" bound) argument entirely. */
   if (getenv("UW_DEBUG_BLITRAW")) {
     fprintf(stderr, "[blitfb] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
-            (int)param_1, (int)param_2, (int)iVar9, (int)iVar2,
+            (int)x, (int)y, (int)iVar9, (int)iVar2,
             iVar7, iVar7 + iVar2, iVar8, iVar8 + iVar9);
   }
   dirty_rect_union(iVar7,iVar7 + iVar2,iVar8,iVar8 + iVar9);
@@ -433,7 +415,6 @@ undefined1 param_8;
     } while (iVar5 < iVar2 - sVar12);
   }
   debug_framebuffer_dump("blit");
-  return;
 }
 
 
@@ -443,8 +424,7 @@ undefined1 param_8;
 // Snapshots the current 320x200 framebuffer into the DAT_000891b0 backup buffer, skipping any pixel
 // already equal to g_transparent_screen_color.
 // was FUN_00011478
-undefined4 screen_backup_save()
-
+int screen_backup_save()
 {
   short sVar1;
   short *psVar2;
@@ -464,7 +444,7 @@ undefined4 screen_backup_save()
         /* `(intptr_t)&DAT_000891b0` fixed globally across the file (17 sites) -- taking a global's
            address then truncating it through `(int)` before pointer arithmetic, same bug class as
            the `(TYPE *)((int)VAR + offset)` pattern fixed much earlier... */
-        *(short *)(((intptr_t)&DAT_000891b0 - (int)psVar3) + (int)psVar2) = *psVar2;
+        *(short *)((char *)&DAT_000891b0 + ((char *)psVar2 - (char *)psVar3)) = *psVar2;
       }
       psVar2 = psVar2 + 1;
     } while (iVar4 != 0);
@@ -481,7 +461,6 @@ undefined4 screen_backup_save()
 // refilled from the screen_backup_save snapshot (DAT_000891b0), then the frame is presented.
 // was FUN_000114e4
 void screen_backup_restore()
-
 {
   int iVar1;
   short *psVar2;
@@ -502,7 +481,6 @@ void screen_backup_restore()
   } while (iVar1 < 0x1f400);
   debug_framebuffer_dump("screen_backup_restore");
   flush_dirty_rect_to_display(1);
-  return;
 }
 
 
@@ -512,12 +490,7 @@ void screen_backup_restore()
 // screen_backup_restore bounded to the rect (param_1,param_2)-(param_3,
 // param_4); unlike the full-screen version it does not present.
 // was FUN_0001156c
-void screen_backup_restore_rect(param_1,param_2,param_3,param_4)
-uint param_1;
-uint param_2;
-uint param_3;
-uint param_4;
-
+void screen_backup_restore_rect(uint left, uint top, uint right, uint bottom)
 {
   uint uVar1;
   int iVar2;
@@ -525,15 +498,15 @@ uint param_4;
   int iVar4;
   
   dirty_rect_union(0,200,0,0x140);
-  param_2 = param_2 & 0xffff;
-  if (param_2 < (param_4 & 0xffff)) {
-    iVar4 = param_2 * 0x140;
+  top = top & 0xffff;
+  if (top < (bottom & 0xffff)) {
+    iVar4 = top * 0x140;
     do {
       if (63999 < iVar4) {
         return;
       }
-      uVar1 = param_1 & 0xffff;
-      while (((int)uVar1 < (int)(param_3 & 0xffff) && ((int)uVar1 < 0x140))) {
+      uVar1 = left & 0xffff;
+      while (((int)uVar1 < (int)(right & 0xffff) && ((int)uVar1 < 0x140))) {
         iVar2 = iVar4 + uVar1;
         uVar1 = uVar1 + 1;
         psVar3 = (short *)(iVar2 * 2 + (g_uw_framebuffer));
@@ -541,23 +514,20 @@ uint param_4;
           *psVar3 = (&DAT_000891b0)[iVar2];
         }
       }
-      param_2 = param_2 + 1;
+      top = top + 1;
       iVar4 = iVar4 + 0x140;
-    } while ((int)param_2 < (int)(param_4 & 0xffff));
+    } while ((int)top < (int)(bottom & 0xffff));
   }
   debug_framebuffer_dump("screen_backup_restore_rect");
-  return;
 }
 
 
 
 
 // was FUN_000122d4
-void fade_in(framebuffer,palette,palette_flag)
-ushort *framebuffer;
-char *palette;  /* 768-byte palette buffer to install first, or 0 to keep the current palette */
-int palette_flag;  /* passed through to apply_palette_buffer/reinstall_active_palette */
-
+/* 768-byte palette buffer to install first, or 0 to keep the current palette passed through to
+   apply_palette_buffer/reinstall_active_palette */
+void fade_in(ushort *framebuffer, char *palette, int palette_flag)
 {
   int iVar1;
   ushort uVar2;
@@ -578,7 +548,7 @@ int palette_flag;  /* passed through to apply_palette_buffer/reinstall_active_pa
   uw_begin_modal_present();
   dirty_rect_union(0,200,0,0x140);
   puVar3 = (ushort *)ce_malloc(0x1f400);
-  /* A null palette keeps the caller's current LUT (e.g. an LPF palette). */
+  /* A null palette keeps the live LUT (e.g. an LPF palette); the level-entry and dialog fades pass their saved palette. */
   if (palette != 0) apply_palette_buffer(palette,palette_flag);
   ce_memmove(puVar3,framebuffer,0x1f400);
   iVar9 = 1;
@@ -626,17 +596,14 @@ int palette_flag;  /* passed through to apply_palette_buffer/reinstall_active_pa
   debug_framebuffer_dump("fade_in");
   LocalFree(puVar3);
   uw_end_modal_present();
-  return;
 }
 
 
 
 // was FUN_00012444
-void fade_out(framebuffer,palette,palette_flag)
-undefined2 * framebuffer;
-char *palette;  /* 768-byte palette buffer to install first, or 0 to keep the current palette */
-int palette_flag;  /* passed through to apply_palette_buffer/reinstall_active_palette */
-
+/* 768-byte palette buffer to install first, or 0 to keep the current palette passed through to
+   apply_palette_buffer/reinstall_active_palette */
+void fade_out(ushort *framebuffer, char *palette, int palette_flag)
 {
   int iVar1;
   ushort uVar2;
@@ -705,25 +672,21 @@ int palette_flag;  /* passed through to apply_palette_buffer/reinstall_active_pa
   debug_framebuffer_dump("fade_out");
   LocalFree(puVar4);
   uw_end_modal_present();
-  return;
 }
 
 
 // was FUN_0001294c -- render_dungeon_frame_timed's own per-frame screen
 // flush step; GX batches presentations during a gameplay tick.
 void flush_dungeon_frame()
-
 {
   flush_dirty_rect_to_display(1);
-  return;
 }
 
 
 
 
 // was FUN_00012970 -- 3D dungeon-view frame driver: clears the viewport then runs the whole pipeline (view matrix, visibility walk, vertex transform, near-clip, rasterize, cleanup)
-undefined4 render_dungeon_view()
-
+int render_dungeon_view()
 {
   set_draw_color(0);
   rect_fill_or_save_restore(0x34,0x13,0xe0,0x83);
@@ -743,7 +706,6 @@ undefined4 render_dungeon_view()
 // was build_shade_lut -- build the 160-entry distance-shade LUT DAT_000b5638
 // was FUN_00014294
 void build_shade_lut()
-
 {
   undefined4 uVar1;
   int iVar2;
@@ -764,7 +726,6 @@ void build_shade_lut()
     iVar2 = iVar2 + -1;
     puVar3 = puVar3 + 1;
   } while (iVar4 != 0);
-  return;
 }
 
 
@@ -781,27 +742,21 @@ static int get_ambient_bias_reduction()
 // was FUN_00014324. ARM lighting bias: -32 when a light is active.
 // HACK: optional project calibration is added to the original formula;
 // default 64; an override of zero preserves ARM lighting. Negative values brighten it.
-void set_ambient_bias_with_light(param_1)
-char param_1;
-
+void set_ambient_bias_with_light(char light_level)
 {
-  DAT_000842b0 = -0x20 - param_1 + get_ambient_bias_reduction();
+  DAT_000842b0 = -0x20 - light_level + get_ambient_bias_reduction();
   if (getenv("UW_DEBUG_AMBIENT"))
-    fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
-  return;
+    fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)light_level, (int)DAT_000842b0);
 }
 
 
 
 // was FUN_0001433c
-void set_ambient_bias_without_light(param_1)
-char param_1;
-
+void set_ambient_bias_without_light(char light_level)
 {
-  DAT_000842b0 = '\b' - param_1 + get_ambient_bias_reduction();
+  DAT_000842b0 = '\b' - light_level + get_ambient_bias_reduction();
   if (getenv("UW_DEBUG_AMBIENT"))
-    fprintf(stderr, "[ambient] set_ambient_bias_without_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
-  return;
+    fprintf(stderr, "[ambient] set_ambient_bias_without_light(%d) -> DAT_000842b0=%d\n", (int)light_level, (int)DAT_000842b0);
 }
 
 
@@ -810,43 +765,38 @@ char param_1;
 // was expand_pals_bytes -- expand PALS.DAT 6-bit channel bytes (param_2) to 8-bit into
 // param_1; param_3!=0 copies unscaled
 // was FUN_00022abc
-void expand_pals_bytes(param_1,param_2,param_3)
-char *param_1;
-char * param_2;
-int param_3;
-
+void expand_pals_bytes(char *out_rgb8, char *pals_6bit, int copy_unscaled)
 {
   char *pcVar1;
   char *pcVar2;
   int iVar3;
 
-  /* param_1 was declared `int` despite every caller passing a real pointer (e.g. load_pals_bank:
-     `expand_pals_bytes(auStack_318,param_2,0);`) -- truncating it on this 64-bit host. */
-  intptr_t offset = (intptr_t)param_1 - (intptr_t)param_2;
+  /* out_rgb8 was declared `int` despite every caller passing a real pointer (e.g. load_pals_bank:
+     `expand_pals_bytes(auStack_318,pals_6bit,0);`) -- truncating it on this 64-bit host. */
+  intptr_t offset = (intptr_t)out_rgb8 - (intptr_t)pals_6bit;
   iVar3 = 0;
-  if (param_3 == 0) {
+  if (copy_unscaled == 0) {
     do {
-      pcVar2 = param_2 + offset;
-      *pcVar2 = *param_2 << 2;
+      pcVar2 = pals_6bit + offset;
+      *pcVar2 = *pals_6bit << 2;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-      pcVar2[1] = param_2[1] << 2;
-      pcVar1 = param_2 + 2;
-      param_2 = param_2 + 3;
+      pcVar2[1] = pals_6bit[1] << 2;
+      pcVar1 = pals_6bit + 2;
+      pals_6bit = pals_6bit + 3;
       pcVar2[2] = *pcVar1 << 2;
     } while (iVar3 < 0x100);
   }
   else {
     do {
-      pcVar2 = param_2 + offset;
-      *pcVar2 = *param_2;
+      pcVar2 = pals_6bit + offset;
+      *pcVar2 = *pals_6bit;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-      pcVar2[1] = param_2[1];
-      pcVar1 = param_2 + 2;
-      param_2 = param_2 + 3;
+      pcVar2[1] = pals_6bit[1];
+      pcVar1 = pals_6bit + 2;
+      pals_6bit = pals_6bit + 3;
       pcVar2[2] = *pcVar1;
     } while (iVar3 < 0x100);
   }
-  return;
 }
 
 
@@ -854,10 +804,7 @@ int param_3;
 // was build_rgb565_palette -- build g_palette_rgb565 from an RGB buffer (param_1; NULL =
 // built-in default). param_2==0 also builds the 21-level shade ramp DAT_00248418.
 // was FUN_00022b54
-void build_rgb565_palette(param_1,param_2)
-undefined1 * param_1;
-short param_2;
-
+void build_rgb565_palette(byte *rgb_buffer, short mode)
 {
   byte *pbVar1;
   byte *pbVar2;
@@ -881,9 +828,9 @@ short param_2;
   ushort *puVar20;
   int iVar21;
 
-  DEBUG(TRACE, "[palette] build_rgb565_palette installing g_palette_rgb565, param_1=%s param_2=%d",
-        param_1 ? "buffer" : "NULL(default)", param_2);
-  if (param_1 == (undefined1 *)0x0) {
+  DEBUG(TRACE, "[palette] build_rgb565_palette installing g_palette_rgb565, rgb_buffer=%s mode=%d",
+        rgb_buffer ? "buffer" : "NULL(default)", mode);
+  if (rgb_buffer == (undefined1 *)0x0) {
     puVar20 = &g_palette_rgb565;
     iVar21 = 0x100;
     pbVar15 = &DAT_00084a40;
@@ -900,31 +847,31 @@ short param_2;
   else {
     iVar21 = 0;
     do {
-      uVar7 = ordfloat_int_to_float2(*param_1);
+      uVar7 = ordfloat_int_to_float2(*rgb_buffer);
       uVar7 = ordfloat_mul(uVar7,0x3fc00000);
       /* ordfloat_uint_to_float(); -- Ghidra dropped the preceding return value. */
       iVar8 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar8) {
         iVar8 = 0xff;
       }
-      uVar7 = ordfloat_int_to_float2(param_1[1]);
+      uVar7 = ordfloat_int_to_float2(rgb_buffer[1]);
       uVar7 = ordfloat_mul(uVar7,0x3fc00000);
       /* ordfloat_uint_to_float(); */
       iVar9 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar9) {
         iVar9 = 0xff;
       }
-      uVar7 = ordfloat_int_to_float2(param_1[2]);
+      uVar7 = ordfloat_int_to_float2(rgb_buffer[2]);
       uVar7 = ordfloat_mul(uVar7,0x3fc00000);
       /* ordfloat_uint_to_float(); */
       iVar10 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar10) {
         iVar10 = 0xff;
       }
-      param_1 = param_1 + 3;
+      rgb_buffer = rgb_buffer + 3;
       *(ushort *)((intptr_t)&g_palette_rgb565 + iVar21) =
            (ushort)(iVar10 >> 3) | (ushort)((iVar9 >> 2 | (iVar8 >> 3) << 6) << 5);
-      if (param_2 == 0) {
+      if (mode == 0) {
         uVar7 = ordfloat_int_to_float2(iVar8 >> 3);
         uVar11 = ordfloat_int_to_float2(iVar9 >> 2);
         uVar12 = ordfloat_int_to_float2(iVar10 >> 3);
@@ -989,7 +936,6 @@ short param_2;
     } while (iVar8 != 0);
     GXEndDraw();
   }
-  return;
 }
 
 
@@ -1000,11 +946,7 @@ short param_2;
 
 // was palette_cycle_range -- rotate a contiguous run of DAT_00088d98 palette entries by one.
 // was FUN_000259c0
-void palette_cycle_range(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-int param_3;
-
+void palette_cycle_range(uint first_index, uint last_index, int reverse)
 {
   undefined *puVar1;
   int iVar2;
@@ -1012,23 +954,23 @@ int param_3;
   int iVar4;
   int iVar5;
   
-  iVar5 = (param_1 & 0xff) * 3;
+  iVar5 = (first_index & 0xff) * 3;
   sVar3 = 3;
   puVar1 = &DAT_00088d98 + iVar5;
-  if (param_3 == 0) {
+  if (reverse == 0) {
     sVar3 = -3;
   }
   else {
     /* Was `(undefined *)(... + 0x88d95)` -- a literal original-binary address (0x88d95 =
        &DAT_00088d98's real address there, minus 3) instead of real pointer arithmetic against the
        actual (relocated) global... */
-    puVar1 = &DAT_00088d98 + (-3 + (param_2 & 0xff) * 3 + iVar5);
+    puVar1 = &DAT_00088d98 + (-3 + (last_index & 0xff) * 3 + iVar5);
   }
   DAT_001005cc = *puVar1;
   iVar4 = 0;
   DAT_001005cd = puVar1[1];
   DAT_001005ce = puVar1[2];
-  iVar5 = (param_2 & 0xff) - 1;
+  iVar5 = (last_index & 0xff) - 1;
   if (0 < iVar5) {
     do {
       iVar2 = 0;
@@ -1043,7 +985,6 @@ int param_3;
   *puVar1 = DAT_001005cc;
   puVar1[1] = DAT_001005cd;
   puVar1[2] = DAT_001005ce;
-  return;
 }
 
 
@@ -1055,11 +996,7 @@ int param_3;
 // was FUN_0006c98c -- loads and displays a raw 320x200 (64000-byte) full-screen bitmap file
 // (param_2, a path): optionally selects a palette bank first (param_1, skipped if negative -- used
 // for e.g. the copyright screen), blits it to the framebuffer...
-undefined4 blit_fullscreen_bitmap_file(param_1,param_2,param_3)
-undefined4 param_1;
-char *param_2;
-int param_3;
-
+int blit_fullscreen_bitmap_file(int palette_bank, char *path, int show_flag)
 {
   /* iVar1 was `int`, truncating the ce_malloc (malloc) heap pointer it holds -- it's used both as
      the fread-destination buffer and as the source pointer handed to bitmap_blit_to_framebuffer
@@ -1073,17 +1010,17 @@ int param_3;
     uVar3 = 0;
   }
   else {
-    iVar2 = read_buffer_from_file(param_2,iVar1,64000);
+    iVar2 = read_buffer_from_file(path,iVar1,64000);
     if (iVar2 != 0) {
-      if (-1 < (short)param_1) {
+      if (-1 < (short)palette_bank) {
         clear_screen_and_restore_cursor();
       }
       set_viewport_clip_rect(0,0,0x13f,199);
-      if (-1 < (short)param_1) {
-        set_palette_bank(param_1);
+      if (-1 < (short)palette_bank) {
+        set_palette_bank(palette_bank);
       }
       bitmap_blit_to_framebuffer(0,0,iVar1,200,0x140,0,0,0);
-      if (param_3 != 0) {
+      if (show_flag != 0) {
         flush_dirty_rect_to_display(1);
       }
     }
@@ -1100,8 +1037,7 @@ int param_3;
 // was FUN_000778fc -- gated on DAT_0024af70 (likely "GAPI display active"): opens a direct hardware
 // framebuffer via GXBeginDraw, blits the DAT_00242010 buffer (the same one
 // store_window_extra_data_ptr stashes into the window's extra-data slot) onto it row by row...
-undefined4 blit_framebuffer_to_gx_display()
-
+int blit_framebuffer_to_gx_display()
 {
   undefined2 *puVar1;
   undefined2 *puVar2;
@@ -1157,17 +1093,12 @@ undefined4 blit_framebuffer_to_gx_display()
 
 // was FUN_0007e99c -- re-expand DAT_00088d98 into DAT_00088640 and re-install it as
 // g_palette_rgb565 (real light-level/tint args dropped by Ghidra)
-void reinstall_active_palette(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-
+void reinstall_active_palette(int entry_count, int first_entry, int flag)
 {
   /* expand_pals_bytes's 3rd argument was dropped here -- confirmed via real ARM disassembly: this
      call site (`bl expand_pals_bytes` right after loading only r0/r1) never sets r2 itself... */
   expand_pals_bytes(&DAT_00088640,&DAT_00088d98,0);
-  build_rgb565_palette(&DAT_00088640,0xffffffff);
-  return;
+  build_rgb565_palette(&DAT_00088640,-1);
 }
 
 
@@ -1175,26 +1106,21 @@ undefined4 param_3;
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_0007e9c4
-void plot_pixel(param_1,param_2,param_3)
-short param_1;
-short param_2;
-short param_3;
-
+void plot_pixel(short x, short y, short color_index)
 {
   int iVar1;
 
-  iVar1 = (int)param_2;
-  /* No bounds check on (param_1, iVar1) against the real 320x240 framebuffer (GX_W/GX_H, gx_stub.c)
+  iVar1 = (int)y;
+  /* No bounds check on (x, iVar1) against the real 320x240 framebuffer (GX_W/GX_H, gx_stub.c)
      before this raw write -- callers that plot a small crosshair/cursor around a point... */
-  if ((param_1 < 0) || (0x140 <= param_1) || (iVar1 < 0) || (0xf0 <= iVar1)) {
+  if ((x < 0) || (0x140 <= x) || (iVar1 < 0) || (0xf0 <= iVar1)) {
     return;
   }
   *(undefined2 *)
-   ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
-       (&g_palette_rgb565)[param_3];
-  dirty_rect_union(iVar1,iVar1 + 1,(int)param_1,(int)param_1 + 1);  /* 4th (right) bound was missing: dirty_rect_union takes (top,bottom,left,right) */
+   ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)x) * 2) =
+       (&g_palette_rgb565)[color_index];
+  dirty_rect_union(iVar1,iVar1 + 1,(int)x,(int)x + 1);  /* 4th (right) bound was missing: dirty_rect_union takes (top,bottom,left,right) */
   debug_framebuffer_dump("plot_pixel");
-  return;
 }
 
 
@@ -1206,23 +1132,19 @@ short param_3;
 // was FUN_000116dc -- draws a horizontal line of pixels at row param_2 from column param_1 to
 // param_3, using the current color index (DAT_000a85c0) into g_palette_rgb565, and unions the drawn
 // span into the dirty-rect tracker.
-void draw_horizontal_line(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-uint param_3;
-
+void draw_horizontal_line(uint x_start, uint y, uint x_end)
 {
   uint uVar1;
   int iVar2;
   int iVar3;
 
-  param_2 = param_2 & 0xffff;
-  uVar1 = param_1 & 0xffff;
-  param_3 = param_3 & 0xffff;
-  dirty_rect_union(param_2,param_2,uVar1,param_3);
-  if (uVar1 < param_3) {
-    iVar3 = param_3 - uVar1;
-    iVar2 = (param_2 * 0x140 + (param_1 & 0xffff)) * 2;
+  y = y & 0xffff;
+  uVar1 = x_start & 0xffff;
+  x_end = x_end & 0xffff;
+  dirty_rect_union(y,y,uVar1,x_end);
+  if (uVar1 < x_end) {
+    iVar3 = x_end - uVar1;
+    iVar2 = (y * 0x140 + (x_start & 0xffff)) * 2;
     do {
       iVar3 = iVar3 + -1;
       *(undefined2 *)(iVar2 + (g_uw_framebuffer)) =
@@ -1231,7 +1153,6 @@ uint param_3;
     } while (iVar3 != 0);
   }
   debug_framebuffer_dump("draw_horizontal_line");
-  return;
 }
 
 
@@ -1241,7 +1162,6 @@ uint param_3;
 // DAT_000842a8/DAT_000842a4/DAT_000a85c4/DAT_000a85c8 bounds set_viewport_clip_rect establishes)
 // with the current draw color index into g_palette_rgb565...
 void fill_viewport_and_flush()
-
 {
   int iVar1;
   short sVar2;
@@ -1267,7 +1187,6 @@ void fill_viewport_and_flush()
   }
   debug_framebuffer_dump("fill_viewport_and_flush");
   flush_dirty_rect_to_display(1);
-  return;
 }
 
 
@@ -1278,18 +1197,9 @@ void fill_viewport_and_flush()
 // was FUN_000120c8 -- a clipped variant of bitmap_blit_to_framebuffer (its own comment already
 // cross-references it): blits an 8bpp paletted source bitmap into the framebuffer at
 // (param_1,param_2)...
-void blit_bitmap_to_framebuffer_clipped(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
-short param_1;
-short param_2;
-/* Was `int`, truncating the real char* source-bitmap pointer callers
-   pass (e.g. DAT_001005c8) -- same role/bug as bitmap_blit_to_framebuffer's param_3. */
-char *param_3;
-short param_4;
-short param_5;
-short param_6;
-short param_7;
-int param_8;
-
+/* Was `int`, truncating the real char* source-bitmap pointer callers pass (e.g. DAT_001005c8) --
+   same role/bug as bitmap_blit_to_framebuffer's param_3. */
+void blit_bitmap_to_framebuffer_clipped(short x, short y, char *pixels, short height, short width, short src_x, short src_y, int transparent)
 {
   int iVar1;
   int iVar2;
@@ -1299,27 +1209,27 @@ int param_8;
   int iVar6;
   int iVar7;
   
-  iVar4 = (int)param_1;
-  if ((int)DAT_000a85c4 <= param_5 + iVar4 + -1) {
+  iVar4 = (int)x;
+  if ((int)DAT_000a85c4 <= width + iVar4 + -1) {
     if (iVar4 < DAT_000a85c4) {
       iVar4 = (int)DAT_000a85c4;
     }
     if (iVar4 <= DAT_000842a4) {
-      if ((int)DAT_000a85c8 <= (int)param_4 + (int)param_2) {
-        if ((int)param_2 < (int)DAT_000a85c8) {
-          param_4 = (DAT_000a85c8 - param_2) + param_4;
-          param_2 = DAT_000a85c8;
+      if ((int)DAT_000a85c8 <= (int)height + (int)y) {
+        if ((int)y < (int)DAT_000a85c8) {
+          height = (DAT_000a85c8 - y) + height;
+          y = DAT_000a85c8;
         }
-        iVar7 = (int)param_2;
+        iVar7 = (int)y;
         if (iVar7 <= DAT_000842a8) {
-          if ((DAT_000842a8 - iVar7) + 1 < (int)param_4) {
-            param_4 = (DAT_000842a8 - param_2) + 1;
+          if ((DAT_000842a8 - iVar7) + 1 < (int)height) {
+            height = (DAT_000842a8 - y) + 1;
           }
-          iVar1 = (int)param_5;
-          iVar2 = (int)param_4;
+          iVar1 = (int)width;
+          iVar2 = (int)height;
           dirty_rect_union(iVar7,iVar2 + iVar7,iVar4,iVar1 + iVar4);
           iVar4 = iVar7 * 0x140 + iVar4;
-          pbVar5 = (byte *)(param_7 * 0x140 + (int)param_6 + param_3);
+          pbVar5 = (byte *)(src_y * 0x140 + (int)src_x + pixels);
           iVar7 = 0;
           if (0 < iVar2) {
             do {
@@ -1330,7 +1240,7 @@ int param_8;
                   if (0x13f < iVar6) break;
                   bVar3 = *pbVar5;
                   pbVar5 = pbVar5 + 1;
-                  if ((g_blit_transparent_mode & bVar3 == 0) == 0) {
+                  if ((g_blit_transparent_mode & (bVar3 == 0)) == 0) {
                     *(undefined2 *)((g_uw_framebuffer) + iVar4 * 2) =
                          (&g_palette_rgb565)[bVar3];
                   }
@@ -1339,13 +1249,13 @@ int param_8;
                 } while (iVar6 < iVar1);
               }
               iVar7 = iVar7 + 1;
-              if (param_6 != 0) {
+              if (src_x != 0) {
                 pbVar5 = pbVar5 + (0x140 - iVar1);
               }
               iVar4 = (0x140 - iVar1) + iVar4;
             } while (iVar7 < iVar2);
           }
-          if (param_8 != 0) {
+          if (transparent != 0) {
             flush_dirty_rect_to_display(1);
           }
         }
@@ -1353,7 +1263,6 @@ int param_8;
     }
   }
   debug_framebuffer_dump("blit_bitmap_to_framebuffer_clipped");
-  return;
 }
 
 
@@ -1363,14 +1272,7 @@ int param_8;
 // was FUN_00012850 -- copies a param_3-wide by param_4-tall rect within the framebuffer from
 // (param_5,param_6) to (param_1,param_2), unioning the destination into the dirty-rect tracker and
 // always flushing to the display afterward.
-void copy_framebuffer_rect(param_1,param_2,param_3,param_4,param_5,param_6)
-short param_1;
-short param_2;
-short param_3;
-short param_4;
-short param_5;
-short param_6;
-
+void copy_framebuffer_rect(short src_x, short src_y, short width, short height, short dst_x, short dst_y)
 {
   int iVar2;
   void *pvVar_buf25800;
@@ -1383,15 +1285,15 @@ short param_6;
   int iVar10;
   undefined2 *puVar11;
 
-  iVar7 = (int)param_2;
-  if (param_6 < iVar7) {
-    iVar4 = (int)param_4;
-    iVar5 = (int)param_3;
+  iVar7 = (int)src_y;
+  if (dst_y < iVar7) {
+    iVar4 = (int)height;
+    iVar5 = (int)width;
     pvVar_buf25800 = g_uw_framebuffer;
     iVar10 = 0x140 - iVar5;
     dirty_rect_union(200 - iVar4,iVar4 + (200 - iVar4),iVar10,iVar7 + iVar10);
-    iVar6 = param_6 * 0x140 + (int)param_5;
-    iVar7 = iVar7 * 0x140 + (int)param_1;
+    iVar6 = dst_y * 0x140 + (int)dst_x;
+    iVar7 = iVar7 * 0x140 + (int)src_x;
     iVar9 = 0;
     if (0 < iVar4) {
       do {
@@ -1417,30 +1319,23 @@ short param_6;
     debug_framebuffer_dump("copy_framebuffer_rect");
     flush_dirty_rect_to_display(1);
   }
-  return;
 }
 
 
 // was FUN_00012958 -- resets the viewport/clip rect to the full
 // screen (0,0,0x13f,199).
 void reset_viewport_to_fullscreen()
-
 {
   set_viewport_clip_rect(0,0,0x13f,199);
-  return;
 }
 
 
 
 // was FUN_000129d4 -- computes `((param_1 << 16) >> 18) - param_2 + 199` (a Y-coordinate-ish
 // transform; 199 matches the full-screen clip rect's bottom edge used elsewhere)...
-undefined8 compute_view_y_bound(param_1,param_2,param_3)
-int param_1;
-int param_2;
-undefined4 param_3;
-
+uint64_t compute_view_y_bound(int angle, int offset, int passthrough)
 {
-  return CONCAT44(param_3,(((param_1 << 0x10) >> 0x12) - param_2) + 199);
+  return CONCAT44(passthrough,(((angle << 0x10) >> 0x12) - offset) + 199);
 }
 
 
@@ -1449,37 +1344,31 @@ undefined4 param_3;
 // tracking whether one is open) and releases DAT_0023c638 (an offscreen/back-buffer pointer --
 // LocalFree is a deliberate no-op/leak stub, see its own comment).
 void end_gx_draw_session()
-
 {
   if (DAT_0023c430 != 0) {
     GXEndDraw();
   }
   LocalFree(DAT_0023c638);
-  return;
 }
 
 
 // was FUN_00035fdc -- converts a 256-entry, 4-bytes-per-entry BGRX/RGBQUAD-style palette (param_1)
 // into a packed 3-bytes-per-entry RGB buffer (param_2), reversing each entry's first 3 bytes.
-void convert_palette_bgrx_to_rgb(param_1,param_2)
-undefined1 * param_1;
-undefined1 * param_2;
-
+void convert_palette_bgrx_to_rgb(byte *bgrx, byte *rgb)
 {
   undefined1 uVar1;
   int iVar2;
 
   iVar2 = 0;
   do {
-    *param_2 = param_1[2];
-    param_2[1] = param_1[1];
-    uVar1 = *param_1;
-    param_1 = param_1 + 4;
-    param_2[2] = uVar1;
+    *rgb = bgrx[2];
+    rgb[1] = bgrx[1];
+    uVar1 = *bgrx;
+    bgrx = bgrx + 4;
+    rgb[2] = uVar1;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-    param_2 = param_2 + 3;
+    rgb = rgb + 3;
   } while (iVar2 < 0x100);
-  return;
 }
 
 
@@ -1487,9 +1376,7 @@ undefined1 * param_2;
 /* NOT a per-tile lava/water/torch tile-shimmer driver, despite looking like one -- traced both of
    its two real call sites (uw.c ~37381 and ~68657) and they're gated on a special object flag right
    where the game prints "You read the..." and dispatches to... */
-void tick_book_illustration_palette_cycles(param_1)
-ushort * param_1;
-
+void tick_book_illustration_palette_cycles(ushort *cycle_record)
 {
   undefined2 uVar1;
   uint uVar2;
@@ -1498,27 +1385,26 @@ ushort * param_1;
   
   iVar4 = 0x10;
   do {
-    if (getenv("UW_DEBUG_PALCYCLE_RECORDS") && param_1[1] != 0) {
+    if (getenv("UW_DEBUG_PALCYCLE_RECORDS") && cycle_record[1] != 0) {
       fprintf(stderr, "[palcycle] slot=%d last=%u rate=%u start=%d end=%d\n",
-              0x10 - iVar4, (unsigned)*param_1, (unsigned)param_1[1],
-              (int)(byte)param_1[3], (int)*(byte *)((char *)param_1 + 7));
+              0x10 - iVar4, (unsigned)*cycle_record, (unsigned)cycle_record[1],
+              (int)(byte)cycle_record[3], (int)*(byte *)((char *)cycle_record + 7));
     }
-    if (param_1[1] != 0) {
+    if (cycle_record[1] != 0) {
       uVar2 = read_realtime_clock_units();
-      iVar3 = ordint_divmod(param_1[1],0x38e).quot;
-      if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*param_1)) {
-        uVar2 = (1 - (uint)(byte)param_1[3]) + (uint)*(byte *)((char *)param_1 + 7);
-        palette_cycle_range((uint)(byte)param_1[3],uVar2,0);
-        reinstall_active_palette(uVar2 & 0xff,(char)param_1[3],1);
+      iVar3 = ordint_divmod(cycle_record[1],0x38e).quot;
+      if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*cycle_record)) {
+        uVar2 = (1 - (uint)(byte)cycle_record[3]) + (uint)*(byte *)((char *)cycle_record + 7);
+        palette_cycle_range((uint)(byte)cycle_record[3],uVar2,0);
+        reinstall_active_palette(uVar2 & 0xff,(char)cycle_record[3],1);
         uVar1 = read_realtime_clock_units();
-        *(char *)param_1 = (char)uVar1;
-        *(char *)((char *)param_1 + 1) = (char)((ushort)uVar1 >> 8);
+        *(char *)cycle_record = (char)uVar1;
+        *(char *)((char *)cycle_record + 1) = (char)((ushort)uVar1 >> 8);
       }
     }
     iVar4 = iVar4 + -1;
-    param_1 = param_1 + 4;
+    cycle_record = cycle_record + 4;
   } while (iVar4 != 0);
-  return;
 }
 
 
@@ -1526,13 +1412,10 @@ ushort * param_1;
 // FindResourceW/FindResource-style module+name lookup) and decodes it into an RGB565 buffer
 // (param_3): reads the 0x28-byte BITMAPINFOHEADER and 0x400-byte (256-entry RGBQUAD) palette...
 
-undefined4 load_bmp_resource_to_rgb565(param_1,param_2,param_3)
-undefined4 param_1;
-undefined2 param_2;
-ushort * param_3;
-
+int load_bmp_resource_to_rgb565(int module, short resource_name, ushort *out_pixels)
 {
-  int iVar1;
+  char *iVar1;
+  char *src_row;
   byte *pbVar2;
   ushort *puVar3;
   int iVar4;
@@ -1545,8 +1428,8 @@ ushort * param_3;
   ushort local_62c [256];
   byte local_42c [1024];
   
-  iVar1 = FindResourceW(param_1,param_2,2);
-  if ((iVar1 != 0) && (iVar1 = LoadResource(param_1), iVar1 != 0)) {
+  iVar1 = (char *)FindResourceW(module,resource_name,2);
+  if ((iVar1 != 0) && (iVar1 = (char *)LoadResource(module), iVar1 != 0)) {
     ce_memmove(auStack_654,iVar1,0x28);
     ce_memmove(local_42c,iVar1 + 0x28,0x400);
     puVar3 = local_62c;
@@ -1562,18 +1445,18 @@ ushort * param_3;
     if (pbVar2 != (byte *)0x0) {
       if (0 < local_64c) {
         pbVar6 = pbVar2 + (local_64c + -1) * local_650;
-        iVar4 = iVar1;
+        src_row = iVar1;
         iVar7 = local_64c;
         do {
-          ce_memmove(pbVar6,iVar4 + 0x428,local_650);
+          ce_memmove(pbVar6,src_row + 0x428,local_650);
           iVar7 = iVar7 + -1;
-          iVar4 = iVar4 + local_650;
+          src_row = src_row + local_650;
           pbVar6 = pbVar6 + -local_650;
         } while (iVar7 != 0);
         pbVar6 = pbVar2;
         if (0 < local_64c) {
           do {
-            puVar3 = param_3;
+            puVar3 = out_pixels;
             pbVar5 = pbVar6;
             iVar4 = local_650;
             if (0 < local_650) {
@@ -1585,16 +1468,16 @@ ushort * param_3;
               } while (iVar4 != 0);
             }
             local_64c = local_64c + -1;
-            param_3 = param_3 + local_650;
+            out_pixels = out_pixels + local_650;
             pbVar6 = pbVar6 + local_650;
           } while (local_64c != 0);
         }
       }
-      DeleteObject(iVar1);
+      DeleteObject((long)iVar1);
       cpp_operator_delete(pbVar2);
       return 1;
     }
-    DeleteObject(iVar1);
+    DeleteObject((long)iVar1);
   }
   return 0;
 }
@@ -1604,28 +1487,23 @@ ushort * param_3;
 // chargen, graphics, player rest) to tear down the overlay: decrements the cursor hide/show nesting
 // depth (decrement_cursor_hide_depth, not yet named), clears the whole viewport to black...
 void clear_screen_and_restore_cursor()
-
 {
   decrement_cursor_hide_depth();
   set_viewport_clip_rect(0,0,0x13f,199);
   set_draw_color(0);
   fill_viewport_and_flush();
   cursor_show_idle_tick();
-  return;
 }
 
 
 // was FUN_00040f34 -- generic "install this 768-byte palette buffer as the active palette" helper,
 // shared by set_palette_bank (a specific PALS.DAT bank) and the fade_in/fade_out RGB framebuffer
 // crossfades (src/graphics.c)...
-void apply_palette_buffer(param_1,param_2)
-void *param_1;  /* was undefined4: truncated the real buffer pointer on this 64-bit host */
-undefined4 param_2;
-
+/* was undefined4: truncated the real buffer pointer on this 64-bit host */
+void apply_palette_buffer(void *palette, int flag)
 {
-  ce_memmove(&DAT_00088d98,param_1,0x300);
-  reinstall_active_palette(0x100,0,param_2);
-  return;
+  ce_memmove(&DAT_00088d98,palette,0x300);
+  reinstall_active_palette(0x100,0,flag);
 }
 
 
@@ -1633,10 +1511,7 @@ undefined4 param_2;
 // was FUN_00040f64 -- fades the active palette down to black over param_2 steps (frame-paced via
 // read_realtime_clock_units, at least 10 clock units apart), re-applying the dimmed palette via
 // apply_palette_buffer each step; param_2==0 instead snaps straight to black.
-void fade_active_palette_to_black(param_1,param_2)
-int param_1;
-short param_2;
-
+void fade_active_palette_to_black(char *palette, short steps)
 {
   int iVar1;
   char *iVar2;
@@ -1646,12 +1521,12 @@ short param_2;
   short *psVar6;
   short sVar7;
   int iVar8;
-  int iVar9;
+  char *iVar9;
   
-  iVar2 = DAT_0024af78;
-  iVar9 = DAT_0024af78 + 0x300;
+  iVar2 = (char *)DAT_0024af78;
+  iVar9 = (char *)DAT_0024af78 + 0x300;
   iVar4 = read_realtime_clock_units();
-  if (param_2 == 0) {
+  if (steps == 0) {
     iVar4 = 0;
     do {
       *(undefined1 *)(iVar4 + iVar2) = 0;
@@ -1660,11 +1535,11 @@ short param_2;
     apply_palette_buffer(iVar2,0);
   }
   else {
-    iVar1 = (int)param_2 << 0x13;
+    iVar1 = (int)steps << 0x13;
     iVar5 = 0;
     do {
       *(short *)(iVar9 + iVar5 * 2) =
-           (short)((uint)*(byte *)(iVar5 + param_1) * (iVar1 >> 0x10 & 0xffffU) * 0x10000 >> 0x10);
+           (short)((uint)*(byte *)(iVar5 + palette) * (iVar1 >> 0x10 & 0xffffU) * 0x10000 >> 0x10);
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 0x300);
     iVar1 = (int)(short)((uint)iVar1 >> 0x10);
@@ -1674,7 +1549,7 @@ short param_2;
         iVar8 = 0;
         do {
           psVar6 = (short *)(iVar9 + iVar8 * 2);
-          sVar7 = *psVar6 - (ushort)*(byte *)(iVar8 + param_1);
+          sVar7 = *psVar6 - (ushort)*(byte *)(iVar8 + palette);
           *psVar6 = sVar7;
           uVar3 = ordint_divmod(iVar1,sVar7).quot;
           *(undefined1 *)(iVar8 + iVar2) = uVar3;
@@ -1691,5 +1566,4 @@ short param_2;
       } while (iVar5 * 0x10000 >> 0x10 < iVar1);
     }
   }
-  return;
 }

@@ -36,13 +36,13 @@ int g_force_flush;
 uint read_realtime_clock_units(void) { return polls * 5; } /* 20ms per OS poll */
 long GetTickCount(void) { return polls * 20; }
 unsigned int uw_frame_clock_ms(void) { return g_uw_frame_clock_units; }
-void movement_tick(uint elapsed, uint bob, int mode)
+void movement_tick(int elapsed, int bob, int mode)
 {
     TEST_ASSERT_NOT_NULL(g_selected_object);
     TEST_ASSERT_GREATER_THAN_UINT(0, elapsed);
     movement_ticks++;
 }
-void scheduler_tick(uint elapsed)
+void scheduler_tick(int elapsed)
 {
     TEST_ASSERT_NOT_NULL(g_selected_object);
     scheduler_steps += elapsed;
@@ -57,8 +57,8 @@ int GXEndDraw(void)
 }
 
 void push_cursor_icon(int type) { TEST_ASSERT_EQUAL_HEX16(0x82, type); }
-void get_mouse_position(short *x, short *y) { *x = g_mouse_x; *y = g_mouse_y; }
-int hit_test_inventory_widget(int x, int y)
+void get_mouse_position(ushort *x, ushort *y) { *x = g_mouse_x; *y = g_mouse_y; }
+int hit_test_inventory_widget(short x, short y)
 {
     TEST_ASSERT_EQUAL_INT(release_poll, polls);
     TEST_ASSERT_EQUAL_INT(100 + release_poll, x);
@@ -66,8 +66,8 @@ int hit_test_inventory_widget(int x, int y)
     return target_widget;
 }
 int erase_cursor_icon(void) { return 1; }
-void pop_cursor_icon(int mode) { TEST_ASSERT_EQUAL_INT(3, mode); }
-void handle_object_drop_target(int widget)
+void pop_cursor_icon(ushort mode) { TEST_ASSERT_EQUAL_INT(3, mode); }
+void handle_object_drop_target(short widget)
 {
     TEST_ASSERT_EQUAL_INT(0x17, widget);
     TEST_ASSERT_EQUAL_INT(release_poll, polls);
@@ -76,7 +76,7 @@ void handle_object_drop_target(int widget)
     g_selected_object = NULL;
     g_cursor_holding_state = 0;
 }
-void handle_backpack_slot_click(int slot)
+void handle_backpack_slot_click(short slot)
 {
     TEST_ASSERT_EQUAL_INT(4, slot);
     TEST_ASSERT_EQUAL_INT(release_poll, polls);
@@ -86,7 +86,7 @@ void handle_backpack_slot_click(int slot)
 void update_mouse_state(void) { if (g_selected_object) GXEndDraw(); }
 void noop_key_handler(void) {}
 uint process_pending_keyboard_scan_code(int peek) { (void)peek; return 0; }
-undefined4 peek_input_event(void)
+int peek_input_event(void)
 {
     TEST_ASSERT_LESS_THAN_INT_MESSAGE(100, ++polls, "Pickup never noticed release");
     g_mouse_x = 100 + polls;

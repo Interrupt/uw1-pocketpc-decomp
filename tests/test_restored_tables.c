@@ -56,13 +56,14 @@ static void test_lock_ratings_use_loaded_armor_and_accessory_records(void)
 static void test_spawn_block_scan_preserves_host_pointers_and_excludes_player(void)
 {
     ushort source[16]={0}, nearby[16]={0};
-    source[7]=g_player_object[7]=0x100;
+    /* ARM tests bit 0x100 of the unaligned word at +0xd: byte +0xe bit 0. */
+    source[7]=g_player_object[7]=1;
     restored_scan_objects[0]=source;
     restored_scan_objects[1]=g_player_object;
     restored_scan_objects[2]=nearby;
     TEST_ASSERT_EQUAL_INT(0,check_object_area_for_spawn_block(source));
     TEST_ASSERT_EQUAL_INT(3,restored_scan_count);
-    nearby[7]=0x100;
+    nearby[7]=1;
     TEST_ASSERT_EQUAL_INT(1,check_object_area_for_spawn_block(source));
     nearby[7]=0;
     TEST_ASSERT_EQUAL_INT(0,check_object_area_for_spawn_block(source));

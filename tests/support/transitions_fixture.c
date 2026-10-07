@@ -33,15 +33,15 @@ char prompt_answer[4];
 ushort framebuffer[320 * 200], hardware_framebuffer[240 * 320];
 ushort gameplay_palette[256];
 char opened[4][260];
-codeval *const PTR_FUN_00085408[16] = {
-    babl_render_op_wrap_message, FUN_000362e8, FUN_00036300, FUN_00036308,
-    FUN_00036394, FUN_000363f0, FUN_00036404, FUN_00036418,
-    babl_render_op_show_code, FUN_000365bc, FUN_000365fc, FUN_0003663c,
-    FUN_00036698, babl_render_op_say, FUN_00036344, babl_render_op_play_sound
+const babl_render_op_fn PTR_FUN_00085408[16] = {
+    (babl_render_op_fn)babl_render_op_wrap_message, (babl_render_op_fn)FUN_000362e8, (babl_render_op_fn)FUN_00036300, (babl_render_op_fn)FUN_00036308,
+    (babl_render_op_fn)FUN_00036394, (babl_render_op_fn)FUN_000363f0, (babl_render_op_fn)FUN_00036404, (babl_render_op_fn)FUN_00036418,
+    (babl_render_op_fn)babl_render_op_show_code, (babl_render_op_fn)FUN_000365bc, (babl_render_op_fn)FUN_000365fc, (babl_render_op_fn)FUN_0003663c,
+    (babl_render_op_fn)FUN_00036698, (babl_render_op_fn)babl_render_op_say, (babl_render_op_fn)FUN_00036344, (babl_render_op_fn)babl_render_op_play_sound
 };
-undefined4 babl_render_op_wrap_message(void) { if (intro_fade_test) return 2; TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
-undefined4 babl_render_op_say(void) { if (intro_fade_test) return 3; TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
-undefined4 babl_render_op_play_sound(void) { return 0; }
+int babl_render_op_wrap_message(byte *op_args, intptr_t render_state) { (void)op_args; (void)render_state; if (intro_fade_test) return 2; TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
+int babl_render_op_say(intptr_t op_args, intptr_t render_state) { (void)op_args; (void)render_state; if (intro_fade_test) return 3; TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
+int babl_render_op_play_sound(void) { return 0; }
 void *ce_malloc(unsigned int count)
 {
     TEST_ASSERT_LESS_THAN_INT(64, alloc_count);
@@ -52,8 +52,8 @@ void *ce_malloc(unsigned int count)
 }
 void *ce_calloc(unsigned int count, unsigned int size) { return ce_malloc(count * size); }
 void *ce_memset(void *p, int value, unsigned int count) { return memset(p, value, count); }
-void *ce_memmove(void *p, const void *source, unsigned int count) { return memcpy(p, source, count); }
-char *ce_strcat(char *p, const char *source) { return strcat(p, source); }
+void *ce_memmove(void *p, void *source, unsigned int count) { return memcpy(p, source, count); }
+char *ce_strcat(char *p, char *source) { return strcat(p, source); }
 void LocalFree(void *p)
 {
     for (int i = 0; i < alloc_count; i++) if (allocations[i] == p) {
@@ -75,7 +75,7 @@ long Sleep(unsigned int ms)
     if (testing_fade) fade_clock_ms += ms;
     return 0;
 }
-undefined4 open_file_for_read(const char *path)
+int open_file_for_read(const char *path)
 {
     TEST_ASSERT_LESS_THAN_INT(4, opens);
     int slot = opens++;
@@ -86,14 +86,14 @@ undefined4 open_file_for_read(const char *path)
     if (handle > 0) file_handles[slot] = handle;
     return handle;
 }
-undefined4 read_file_handle(int handle, void *p, unsigned int count)
+int read_file_handle(int handle, void *p, unsigned int count)
 {
     unsigned int bytes = uw_file_read(handle, p, count);
     /* Emulate the discovery handler's three script patches in memory. */
     if (bytes == 16) { ((ushort *)p)[2] = 1; ((ushort *)p)[3] = 1; ((ushort *)p)[6] = 1; }
     return bytes;
 }
-undefined4 seek_file_handle(int handle, int offset, int origin) { return uw_file_seek(handle, offset, origin); }
+int seek_file_handle(int handle, int offset, int origin) { return uw_file_seek(handle, offset, origin); }
 uint read_realtime_clock_units(void)
 {
     if (testing_fade) return fade_clock_ms++ >> 2;
@@ -122,11 +122,11 @@ short *DAT_000876c4 = &mouse_driver;
 char keyboard_case;
 char *DAT_0008794c = &keyboard_case;
 int opening_hold_polls, idle_polls, dismissal_sent;
-long TranslateMessage(void) { return 0; }
-long DispatchMessageW(void) { return 0; }
+long TranslateMessage(const void *message) { (void)message; return 0; }
+long DispatchMessageW(const void *message) { (void)message; return 0; }
 long _isctype(int key, int mask) { return input_opens_prompt && key >= '0' && key <= '9'; }
-long ce_tolower(int key) { return key; }
-long ce_toupper(int key) { return key; }
+long ce_tolower(long key) { return key; }
+long ce_toupper(long key) { return key; }
 int PeekMessageW(void *msg, void *hwnd, unsigned int low,
                 unsigned int high, unsigned int remove)
 {
@@ -199,14 +199,14 @@ short *DAT_00085a6c;
 char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
 void debug_framebuffer_dump(const char *tag) { (void)tag; }
-void apply_palette_buffer(char *palette, int flag)
+void apply_palette_buffer(void *palette, int flag)
 {
     TEST_ASSERT_NOT_NULL(palette);
     TEST_ASSERT_LESS_THAN_INT(8, palette_installs);
     installed_palette_flags[palette_installs++] = flag;
     memcpy(last_installed_palette, palette, sizeof last_installed_palette);
 }
-void tick_book_illustration_palette_cycles(void) {}
+void tick_book_illustration_palette_cycles(ushort *cycle_record) { (void)cycle_record; }
 void clear_ambient_sound_target(void) {}
 void voice_sample_cluster_stub_1(void) {}
 void voice_sample_cluster_stub_2(void) {}
@@ -214,19 +214,19 @@ void advance_menu_music_track(void) {}
 void stop_voice_sample(void) {}
 void clear_screen_and_restore_cursor(void) {}
 void thunk_FUN_0007ec1c(void) {}
-void draw_text_string(void) { if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); }
-int measure_text_width(const char *text) { if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); return strlen(text) * 6; }
+void draw_text_string(char *text, short x, short y) { (void)text; (void)x; (void)y; if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); }
+int measure_text_width(char *text) { if (!input_opens_prompt) TEST_FAIL_MESSAGE("Unexpected window text"); return strlen(text) * 6; }
 static void assert_visible_picture(void);
-undefined4 get_audio_subsystem_flag(void) { return 0; }
-undefined4 play_numbered_voice_sample(void) { return 0; }
+int get_audio_subsystem_flag(void) { return 0; }
+int play_numbered_voice_sample(short sample_number) { (void)sample_number; return 0; }
 bool is_voice_sample_finished(void) { return 1; }
-undefined4 play_music_track(void) { return 0; }
-bool select_active_font(void) { return true; }
-bool set_palette_bank(void) { return true; }
+int play_music_track(byte track_number, int flags) { (void)track_number; (void)flags; return 0; }
+bool select_active_font(char *font_filename) { (void)font_filename; return true; }
+bool set_palette_bank(int bank) { (void)bank; return true; }
 void decrement_cursor_hide_depth(void) {}
 void load_dungeon_texture_arenas(void) {}
-void change_game_mode(void) {}
-undefined4 cursor_show_idle_tick(void) { return 0; }
+void change_game_mode(int mode) { (void)mode;}
+int cursor_show_idle_tick(void) { return 0; }
 
 int testing_game_tick, input_opens_window;
 int g_force_flush, g_force_redraw_no_xp;
@@ -292,7 +292,7 @@ void render_dungeon_frame_timed(void)
     }
     if (testing_game_tick) flush_dungeon_frame();
 }
-undefined4 dungeon_view_anim_tick(void) { TEST_FAIL_MESSAGE("Unexpected dungeon_view_anim_tick during picture dismissal"); return 0; }
+int dungeon_view_anim_tick(void) { TEST_FAIL_MESSAGE("Unexpected dungeon_view_anim_tick during picture dismissal"); return 0; }
 void refresh_equipment_display_if_visible(void) { TEST_FAIL_MESSAGE("Unexpected refresh_equipment_display_if_visible during picture dismissal"); }
 void handle_game_victory_sequence(void) { TEST_FAIL_MESSAGE("Unexpected handle_game_victory_sequence during picture dismissal"); }
 void movement_pacing_handler(void) { TEST_FAIL_MESSAGE("Unexpected movement_pacing_handler during picture dismissal"); }
@@ -366,8 +366,8 @@ void transitions_fixture_dispose(void)
 
 int uw_always_show_cursor(void) { return 0; }
 void clear_ambient_sound_target_thunk(void) { clear_ambient_sound_target(); }
-char *chrbtns_bump_alloc_entry(int size) { TEST_FAIL_MESSAGE("Unexpected chargen allocation callback"); return NULL; }
-undefined4 chrbtns_offset_table_builder(int index, int kind, void *entry)
+void *chrbtns_bump_alloc_entry(uint size) { TEST_FAIL_MESSAGE("Unexpected chargen allocation callback"); return NULL; }
+int chrbtns_offset_table_builder(void *index, uint kind, int entry)
 { TEST_FAIL_MESSAGE("Unexpected chargen resource callback"); return 0; }
 
 
@@ -388,6 +388,7 @@ void uw_debug_blit_pick_buffer(void) {}
 void render_dungeon_view_frame(void) {}
 void uw_debug_draw_inv_hotspot_positions(void) {}
 void dbgui_draw(void) {}
+void populate_debug_panel(void) {}
 /* Screen-transition fixtures keep the real background files and palette
    data; unrelated character choices and dungeon rendering are stubbed. */
 char *DAT_001005c4, *DAT_001005c8, *DAT_000fb858;
@@ -404,13 +405,13 @@ char s__DATA_main_byt_000857a8[] = "\\DATA\\main.byt";
 int character_screen_inputs;
 char *LAB_000255b4(void) { return NULL; }
 undefined4 LAB_000255d0(void) { return 0; }
-uint load_gr_resource_entries(void) { return 1; }
-undefined4 reset_dialogue_speech_state(void) { return 0; }
-void chargen_ui_transition_hook(void) {}
-void init_new_character_record(void) {}
-void report_fatal_error_and_exit(void) { TEST_FAIL_MESSAGE("Screen resources must load"); }
-void set_viewport_clip_rect(void) {}
-bool read_buffer_from_file(char *path, void *buffer, unsigned int count)
+uint load_gr_resource_entries(char *path, int first_entry, short count, void *(*allocator)(), int (*post_process)()) { (void)path; (void)first_entry; (void)count; (void)allocator; (void)post_process; return 1; }
+int reset_dialogue_speech_state(void) { return 0; }
+void chargen_ui_transition_hook(int is_press) { (void)is_press;}
+void init_new_character_record(int mode) { (void)mode;}
+void report_fatal_error_and_exit(ushort error_code) { (void)error_code; TEST_FAIL_MESSAGE("Screen resources must load"); }
+void set_viewport_clip_rect(short left, short top, short right, short bottom) { (void)left; (void)top; (void)right; (void)bottom;}
+bool read_buffer_from_file(char *path, void *buffer, int count)
 {
     int handle = uw_file_open_read(path);
     TEST_ASSERT_GREATER_THAN_INT(0, handle);
@@ -418,7 +419,7 @@ bool read_buffer_from_file(char *path, void *buffer, unsigned int count)
     uw_file_close(handle);
     return bytes == count;
 }
-bool load_pals_bank(unsigned int bank, void *buffer)
+bool load_pals_bank(int bank, void *buffer)
 {
     FILE *file = fopen(UW_TEST_DATA_DIR "/DATA/PALS.DAT", "rb");
     TEST_ASSERT_NOT_NULL(file);
@@ -430,7 +431,7 @@ bool load_pals_bank(unsigned int bank, void *buffer)
     build_rgb565_palette(rgb, bank);
     return true;
 }
-undefined4 character_generator_loop(void)
+int character_generator_loop(char *tree_data, char *scratch_data, char *field_records)
 {
     character_screen_inputs++;
     TEST_ASSERT_EQUAL_UINT(9, fade_samples);
@@ -441,7 +442,7 @@ undefined4 character_generator_loop(void)
     return 0; /* Cancel after verifying the initial screen. */
 }
 void unregister_game_view_interact_zones(void) {}
-void configure_dungeon_viewport(void) {}
+void configure_dungeon_viewport(int x, int y, int width, int height) { (void)x; (void)y; (void)width; (void)height;}
 void enter_dungeon_view_hud_init(void) {}
 void refresh_player_equipment_effects(void) {}
 void full_dungeon_redraw(void)
@@ -452,15 +453,15 @@ void full_dungeon_redraw(void)
 void weapon_overlay_and_full_redraw(void) { flush_dirty_rect_to_display(1); }
 undefined2 DAT_000868d8;
 int DAT_002046f8;
-void enter_pause_menu_state(int state)
+void enter_pause_menu_state(short state)
 {
     TEST_ASSERT_EQUAL_INT(6, state);
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0x001f;
     dirty_rect_union(0, 200, 0, 320);
 }
-void get_mouse_position(void) { TEST_FAIL_MESSAGE("Menu regression uses the keyboard"); }
-void handle_pause_menu_region_click(void) { TEST_FAIL_MESSAGE("Menu regression uses the keyboard"); }
-void handle_pause_menu_dpad_navigation(void) { TEST_FAIL_MESSAGE("Menu regression closes without taking an action"); }
+void get_mouse_position(ushort *out_x, ushort *out_y) { (void)out_x; (void)out_y; TEST_FAIL_MESSAGE("Menu regression uses the keyboard"); }
+void handle_pause_menu_region_click(int region, short click_y) { (void)region; (void)click_y; TEST_FAIL_MESSAGE("Menu regression uses the keyboard"); }
+void handle_pause_menu_dpad_navigation(short key_code) { (void)key_code; TEST_FAIL_MESSAGE("Menu regression closes without taking an action"); }
 void close_ui_panel_return_to_game(void) { DAT_000868d8 = 0; DAT_002046f8 = 1; }
 int g_text_input_active;
 undefined4 g_scroll_control_codes_enabled;
@@ -470,19 +471,19 @@ undefined s_dash_000879a4_backing[8192] = "-";
 undefined s_scroll_prompt_arrow_000879a8_backing[8192] = ">";
 short prompt_panel[16], prompt_font[8];
 void select_msg_scroll_mode_normal(void) {}
-int message_scroll_print_wrapped(void)
+int message_scroll_print_wrapped(char *text)
 {
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0x001f;
     dirty_rect_union(0, 200, 0, 320);
     return 0;
 }
-void set_draw_color(void) {}
-void rect_fill_or_save_restore(void) {}
+void set_draw_color(short color_index) { (void)color_index;}
+void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom) { (void)left; (void)top; (void)right; (void)bottom;}
 void uw_debug_dump_sprite_frames_once(void) {}
 void uw_debug_dump_critter_sheet_once(void) {}
 void uw_debug_force_item_id_once(void) {}
-void tick_weapon_swing_state(void) {}
-void poll_input_bindings(void)
+void tick_weapon_swing_state(short attack_direction) { (void)attack_direction;}
+void poll_input_bindings(void *input_state)
 {
     if (input_opens_prompt) {
         prompt_start_presents = presents;

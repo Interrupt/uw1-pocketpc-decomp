@@ -32,14 +32,14 @@ void free_object_slot(void *object)
 }
 int encode_object_slot_index(void *object)
 { return ((char *)object - DAT_002046b8) / 27; }
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_TRUE(x >= 0 && x < 64 && y >= 0 && y < 64);
     return (byte *)arena + (y * 64 + x) * 4;
 }
-void *resolve_object_link(ushort *head)
-{ return (*head >> 6) ? DAT_002046b8 + (*head >> 6) * 27 : NULL; }
-void heading_to_sine_cosine(uint heading, ushort *sine, ushort *cosine)
+void *resolve_object_link(void *head_)
+{ ushort *head = (ushort *)head_; return (*head >> 6) ? DAT_002046b8 + (*head >> 6) * 27 : NULL; }
+void heading_to_sine_cosine(uint heading, short *sine, short *cosine)
 {
     double radians = (heading >> 8 & 255) * (2.0 * M_PI / 256.0);
     *sine = (short)lround(32767 * sin(radians));
@@ -53,20 +53,20 @@ void collision_height_envelope(int unused, int mode)
     TEST_ASSERT_EQUAL_UINT(DAT_00202c90_backing[0x80 * 13 + 1] & 7, DAT_00202c6c[8]);
     memset(DAT_00202c6c + 12, 0, 12);
 }
-void collision_build_height_field(int mode) {}
+void collision_build_height_field(uint step_limit) {}
 void sort_collision_candidates(void) { TEST_FAIL_MESSAGE("Empty world has no object contacts"); }
-undefined4 play_sound_effect_at_object(void) { return 1; }
-undefined4 object_ptr_in_arena(void) { return 1; }
+int play_sound_effect_at_object(int sound_id, ushort *object, int volume_bias) { (void)sound_id; (void)object; (void)volume_bias; return 1; }
+int object_ptr_in_arena(void *object) { (void)object; return 1; }
 ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
 { return NULL; }
-undefined4 play_sound_effect_with_pan(void) { return 1; }
-ushort *reallocate_object_to_arena(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
-ushort *settle_dropped_object(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
-undefined4 check_object_placement_clearance(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); return 0; }
-void object_list_append_tail(void) { TEST_FAIL_MESSAGE("Unexpected ground drop"); }
-undefined4 play_positional_sound_effect(void) { return 1; }
-void print_scroll_message_by_id(void) {}
-void set_ambient_bias_without_light(void) {}
+int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias) { (void)sound_id; (void)pan; (void)volume_bias; return 1; }
+ushort *reallocate_object_to_arena(ushort *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
+ushort *settle_dropped_object(void *object, short tile_x, short tile_y, int force) { (void)object; (void)tile_x; (void)tile_y; (void)force; TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
+int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; TEST_FAIL_MESSAGE("Unexpected ground drop"); return 0; }
+void object_list_append_tail(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected ground drop"); }
+int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias) { (void)sound_id; (void)world_x; (void)world_y; (void)volume_bias; return 1; }
+void print_scroll_message_by_id(uint message_id) { (void)message_id;}
+void set_ambient_bias_without_light(char light_level) { (void)light_level;}
 void throw_cursor_fixture_reset(void)
 {
     memset(arena, 0, sizeof arena);
