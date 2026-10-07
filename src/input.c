@@ -1523,9 +1523,7 @@ LAB_0003c920:
       else {
         DAT_00201c70 = (DAT_00201c70 & 0xe000) + (ushort)(0 < direction) * 0x2000;
       }
-      uVar10 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-      *(char *)((char *)g_player_object + 2) = (char)uVar10;
-      *(char *)((char *)g_player_object + 3) = (char)(uVar10 >> 8);
+      ((uw_object_hdr_t *)g_player_object)->heading = ((short)DAT_00201c70 >> 0xd) & 7;
       *(byte *)((char *)g_player_object + 0x18) =
            ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
            *(byte *)((char *)g_player_object + 0x18);

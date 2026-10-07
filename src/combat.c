@@ -121,9 +121,7 @@ void npc_combat_approach_tick()
       ;
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
       uVar7 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
-      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar7 & 7;
       *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
     }
   }
@@ -304,9 +302,7 @@ int npc_combat_set_stance(ushort stance_code)
      DAT_0010190c is ushort *, so cast before applying those offsets. */
   uVar4 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
   uVar9 = uVar4 & 0xff;
-  uVar4 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar4 & 7) << 7;
-  *(char *)((char *)DAT_0010190c + 2) = (char)uVar4;
-  *(char *)((char *)DAT_0010190c + 3) = (char)(uVar4 >> 8);
+  ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar4 & 7;
   *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
   uVar1 = (undefined1)(uVar9 << 5);
   *(undefined1 *)((char *)DAT_0010190c + 9) = uVar1;
@@ -442,9 +438,7 @@ void npc_combat_engage_wide_tick()
       uVar3 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
       *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
-      uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
+      ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar3 & 7;
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
       *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
@@ -1843,9 +1837,7 @@ int check_npc_target_alignment(int mode)
         uw_ord2005_rem_89 = ((int)(uVar7 - 1)) % (8);
         uVar7 = uw_ord2005_rem_89;
       }
-      uVar7 = uVar3 & 0xfc7f | (uVar7 & 7) << 7;
-      *(char *)(iVar4 + 2) = (char)uVar7;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar7 & 7;
       uVar6 = 0;
     }
   }
@@ -1920,9 +1912,7 @@ int check_npc_fine_facing_alignment(char delta_x, char delta_y)
       }
       uVar3 = uVar3 & 0xff;
     }
-    uVar6 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 0xffe0) << 2;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar6;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar6 >> 8);
+    ((uw_object_hdr_t *)DAT_0010190c)->heading = (uVar3 >> 5) & 7;
     *(byte *)((char *)DAT_0010190c + 0x18) =
          (*(byte *)((char *)DAT_0010190c + 0x18) ^ (byte)uVar3) & 0x1f ^ *(byte *)((char *)DAT_0010190c + 0x18);
   }

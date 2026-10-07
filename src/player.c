@@ -348,9 +348,7 @@ void commit_player_move()
     }
   }
   DAT_00201c70 = uVar5;
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
+  ((uw_object_hdr_t *)g_player_object)->heading = ((short)DAT_00201c70 >> 0xd) & 7;
   *(byte *)((char *)g_player_object + 0x18) =
        ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
        *(byte *)((char *)g_player_object + 0x18);
@@ -3307,13 +3305,9 @@ int check_rest_area_unsafe()
 void reset_player_for_resurrection()
 
 {
-  uint uVar1;
-
   close_panels_before_level_change();
   refresh_player_equipment_effects();
-  uVar1 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f;
-  *(char *)((char *)g_player_object + 2) = (char)uVar1;
-  *(char *)((char *)g_player_object + 3) = (char)(uVar1 >> 8);
+  ((uw_object_hdr_t *)g_player_object)->heading = 0;
   *(byte *)((char *)g_player_object + 0x18) = *(byte *)((char *)g_player_object + 0x18) & 0xe0;
   DAT_00201c70 = 0;
   DAT_00201c78 = 0;

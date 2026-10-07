@@ -121,9 +121,7 @@ LAB_0004b06c:
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-pos] after compute_object_placement_fields: puVar6[0xb]=0x%x tilex_out=%d tiley_out=%d\n",
               (unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));
-    uVar7 = puVar6[1] & 0xfc7f | ((int)(short)(DAT_00202a54 & 0xe0) >> 5) << 7;
-    *(char *)(puVar6 + 1) = (char)uVar7;
-    *(char *)((char *)puVar6 + 3) = (char)(uVar7 >> 8);
+    ((uw_object_hdr_t *)puVar6)->heading = (short)(DAT_00202a54 & 0xe0) >> 5;
     *(byte *)(puVar6 + 0xc) = ((byte)DAT_00202a54 ^ (byte)puVar6[0xc]) & 0x1f ^ (byte)puVar6[0xc];
     *(char *)((char *)puVar6 + 9) = (char)DAT_00202a54;
     uVar9 = *puVar6;

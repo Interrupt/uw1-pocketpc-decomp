@@ -955,9 +955,7 @@ void babl_builtin_x_obj_stuff(char *args)
   else {
     if ((((int)*psVar4 != 0xffffffff) && ((*puVar11 & 0x1c0) != 0x140)) &&
        (((&DAT_00202c9a)[((uw_object_hdr_t *)puVar11)->item_id * 0xd] & 3) != 2)) {
-      uVar12 = puVar11[1] & 0xfc7f | ((int)*psVar4 & 7U) << 7;
-      *(char *)(puVar11 + 1) = (char)uVar12;
-      *(char *)((char *)puVar11 + 3) = (char)(uVar12 >> 8);
+      ((uw_object_hdr_t *)puVar11)->heading = *psVar4 & 7;
     }
     if (*puVar5 != 0xffff) {
       uVar1 = puVar11[3];
