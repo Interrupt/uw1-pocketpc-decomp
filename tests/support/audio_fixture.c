@@ -37,6 +37,15 @@ char *DAT_00086df8;
 undefined4 DAT_00101944;
 undefined2 DAT_00201b60;
 
+/* play_weapon_impact_sound's own private (file-static in combat.c)
+   globals -- combat.c itself isn't linked into this suite. DAT_00100610
+   is declared extern via headers/combat.h (combat.c's own copy is
+   non-static), so needs real storage here too, same reason. */
+ushort DAT_00100610;
+ushort DAT_00100620;
+undefined2 DAT_00100624;
+undefined1 DAT_001007d0_backing[3072]; /* real size, see tests/audio_test_globals.h */
+
 static unsigned char combat_flag_byte[0x60];
 static unsigned fake_clock;
 static long next_random;
@@ -52,6 +61,7 @@ static int positional_sfx_calls;
 static int last_positional_sfx_id;
 static int last_positional_sfx_pan;
 static int last_positional_sfx_volume;
+static void *next_object_record;
 
 void audio_fixture_reset(void)
 {
@@ -74,6 +84,11 @@ void audio_fixture_reset(void)
     memset(combat_flag_byte, 0, sizeof combat_flag_byte);
     DAT_00086df8 = (char *)combat_flag_byte; /* byte[0x5f] bit 2 == "in combat" */
     DAT_00101944 = 0;
+    DAT_00100610 = 0;
+    DAT_00100620 = 0;
+    DAT_00100624 = 0;
+    memset(DAT_001007d0_backing, 0, sizeof DAT_001007d0_backing);
+    next_object_record = 0;
     fake_clock = 0;
     next_random = 0;
     load_track_calls = 0;
@@ -104,9 +119,28 @@ int audio_fixture_positional_sfx_call_count(void) { return positional_sfx_calls;
 int audio_fixture_last_positional_sfx_id(void) { return last_positional_sfx_id; }
 int audio_fixture_last_positional_sfx_pan(void) { return last_positional_sfx_pan; }
 int audio_fixture_last_positional_sfx_volume(void) { return last_positional_sfx_volume; }
+void audio_fixture_set_next_object_record(void *record) { next_object_record = record; }
 
 uint read_realtime_clock_units(void) { return fake_clock; }
 long ce_rand(void) { return next_random; }
+
+/* play_weapon_impact_sound's own real callee -- controllable so tests
+   can exercise both "a real object record" and "an empty slot" (the
+   real, legitimate NULL case -- see that function's own "BUG FIX"
+   comment in combat.c). get_equipped_item_at_slot is unreachable by
+   every test in this suite (DAT_00100620 never equals 1 -- see
+   audio_fixture_reset), so it stays a hard-fail guard. */
+void *get_object_record_by_slot_index(slot)
+short slot;
+{
+    (void)slot;
+    return next_object_record;
+}
+void *get_equipped_item_at_slot(void)
+{
+    TEST_FAIL_MESSAGE("Unexpected call to get_equipped_item_at_slot");
+    return 0;
+}
 
 void platform_music_load_track(const char *win_path)
 {

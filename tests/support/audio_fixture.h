@@ -18,5 +18,6 @@ int audio_fixture_positional_sfx_call_count(void);
 int audio_fixture_last_positional_sfx_id(void);
 int audio_fixture_last_positional_sfx_pan(void);
 int audio_fixture_last_positional_sfx_volume(void);
+void audio_fixture_set_next_object_record(void *record);
 
 #endif

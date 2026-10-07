@@ -225,6 +225,41 @@ static void test_play_sound_effect_at_object_does_not_truncate_the_object_pointe
     TEST_ASSERT_EQUAL_INT(0 + 280, audio_fixture_last_positional_sfx_volume());
 }
 
+/* BUG FIX regression (real crash, same class as the two fixes above --
+   see play_weapon_impact_sound's own "BUG FIX" comment in combat.c):
+   the hit branch (param_1 != 0) dereferenced
+   get_object_record_by_slot_index(DAT_00100610)'s result unconditionally,
+   with no NULL check, before ever reaching play_sound_effect_at_object
+   (the function fixed above) at all. get_object_record_by_slot_index
+   legitimately returns NULL for an empty slot -- audio_fixture.c's
+   version is directly controllable via
+   audio_fixture_set_next_object_record. */
+static void test_play_weapon_impact_sound_does_not_crash_on_null_attacker(void)
+{
+    audio_fixture_set_next_object_record(0); /* empty slot -- the real, legitimate case */
+
+    undefined4 result = play_weapon_impact_sound(1); /* param_1 != 0: the hit branch */
+
+    TEST_ASSERT_EQUAL_UINT(0, result);
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_positional_sfx_call_count());
+}
+
+/* Flip side: a real attacker record in the hit branch must still reach
+   play_sound_effect_at_object/play_positional_sound_effect normally --
+   confirms the new guard only rejects the NULL case, not every call. */
+static void test_play_weapon_impact_sound_plays_a_sound_for_a_real_attacker(void)
+{
+    unsigned char attacker[0x20];
+    memset(attacker, 0, sizeof attacker);
+    attacker[0] = 5; /* low byte of the packed `*puVar6 & 0x1ff` id field */
+    audio_fixture_set_next_object_record(attacker);
+
+    undefined4 result = play_weapon_impact_sound(1);
+
+    (void)result;
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_positional_sfx_call_count());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -239,5 +274,7 @@ int main(void)
     RUN_TEST(test_stop_current_audio_handle_dup_does_not_crash_on_null_handle);
     RUN_TEST(test_play_sound_effect_at_object_does_not_crash_on_null_object);
     RUN_TEST(test_play_sound_effect_at_object_does_not_truncate_the_object_pointer);
+    RUN_TEST(test_play_weapon_impact_sound_does_not_crash_on_null_attacker);
+    RUN_TEST(test_play_weapon_impact_sound_plays_a_sound_for_a_real_attacker);
     return UNITY_END();
 }

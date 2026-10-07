@@ -51,3 +51,16 @@ void platform_voice_stop(void);
    audio_fixture.c since game.c, its real owner, isn't linked into this
    suite. The extern+macro here just needs to see game.h's own
    declaration, already pulled in transitively via uw.h above. */
+
+/* play_weapon_impact_sound's own private (file-static in combat.c)
+   globals -- storage in audio_fixture.c since combat.c itself isn't
+   linked into this suite. DAT_00100610 is already declared extern via
+   headers/combat.h (combat.c's own copy is non-static); the rest
+   aren't declared in any header. */
+extern ushort DAT_00100620;
+extern undefined2 DAT_00100624;
+/* Real size (ai.c's own DAT_001007d0_backing[3072]) -- play_weapon_impact_sound
+   indexes up to (0x3f*0x30)+0x10 == 3040 bytes in, so a smaller stub
+   would be a genuine (fixture-only) out-of-bounds read under ASan. */
+#define DAT_001007e0 DAT_001007d0_backing[0x10]
+extern undefined1 DAT_001007d0_backing[3072];

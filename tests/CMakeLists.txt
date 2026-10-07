@@ -113,6 +113,7 @@ add_fixture_game_unit_test(audio
   src/audio.c:allocate_and_play_sound_channel
   src/audio.c:stop_current_audio_handle_dup
   src/audio.c:play_sound_effect_at_object
+  src/combat.c:play_weapon_impact_sound
   src/ordinal_stubs.c:ce_memmove)
 add_game_test_library(uw_test_movement
   src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading
