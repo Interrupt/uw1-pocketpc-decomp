@@ -67,18 +67,21 @@ static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
    "an adventurer.\n". */
 static char s_an_adventurer__00085d08[] = "an adventurer.\n";
 static uint DAT_00202094;
-/* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
-   (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
-undefined1 DAT_00087604_backing[256];
-/* Sizing pass: cast_targeted_search_effect indexes this as `(&PTR_FUN_00087614)[param_2 & 0x3f]`
-   (6-bit mask, 64 entries) -- a bare scalar `undefined *` only backs index 0, so every other index
-   (63 of 64 possible spell-table params) read past the end of this single-pointer global. */
-undefined *PTR_FUN_00087614_backing[64];
+/* ARM 0x87604..0x87610 and 0x87614..0x87628 contain native callbacks,
+   not byte data. Preserve the original entries using host-sized pointers;
+   casting a loaded 32-bit word would truncate them on a 64-bit host. */
+codeval *const DAT_00087604_backing[4] = {
+  NULL, (codeval *)force_unlock_target_object, (codeval *)cast_single_tile_spell_effect,
+  (codeval *)trigger_permanent_object_state_effect
+};
+codeval *const PTR_FUN_00087614_backing[6] = {
+  (codeval *)cast_area_spell_effect, (codeval *)apply_tile_morph_variant_6,
+  (codeval *)trigger_type_flagged_trap_effect, (codeval *)apply_tile_morph_variant_2,
+  (codeval *)trigger_tile_damage_trap_effect, (codeval *)apply_tile_morph_variant_7
+};
 #define PTR_FUN_00087614 PTR_FUN_00087614_backing[0]
-/* Sizing-audit pass: damage_all_objects_at_tile's only caller passes param_3 in {1,2}, so the
-   shared `bVar5=param_3-1` index is 0-1 -- max byte touched is DAT_00087634's offset 8+1=9. Sized
-   to 16 for headroom; down from 8192. */
-static undefined DAT_0008762c_backing[16];
+/* ARM 0x8762c/30/34: two tile-damage tiers, dice count/size/type. */
+static undefined DAT_0008762c_backing[12] = {10,6,0,0,6,5,0,0,11,3,0,0};
 #define DAT_0008762c DAT_0008762c_backing[0]
 #define DAT_00087630 DAT_0008762c_backing[4]
 #define DAT_00087634 DAT_0008762c_backing[8]
@@ -745,10 +748,11 @@ LAB_0007c130:
 // dispatch_special_action with param_2/param_3 as the actor object and an extra parameter.
 void dispatch_tile_special_action(param_1,param_2,param_3)
 uint param_1;
-undefined4 param_2;
-undefined4 param_3;
+uintptr_t param_2;
+intptr_t param_3;
 
 {
+  /* ARM 0x73b54 forwards the actor address unchanged in r2. */
   param_1 = param_1 & 0xff;
   if (param_1 < 0x35) {
     dispatch_special_action((byte)(&DAT_00087530)[param_1 * 4] >> 3,(&DAT_00087533)[param_1 * 4],param_2,
@@ -981,7 +985,7 @@ ushort * param_3;
 
 {
   undefined1 uVar1;
-  int iVar2;
+  ushort *iVar2;
   ushort *local_14;
   
   if (((((*param_3 & 0x8000) == 0) && (local_14 = param_3 + 3, (*local_14 & 0xffc0) != 0)) &&
@@ -1003,10 +1007,11 @@ ushort * param_3;
 undefined4 cast_single_tile_spell_effect(param_1,param_2,param_3,param_4,param_5)
 uint param_1;
 undefined4 param_2;
-undefined4 param_3;
-int param_4;
+ushort *param_3;
+byte *param_4;
 undefined1 param_5;
 
+/* ARM spell callbacks retain the object/tile addresses in r2/r3. */
 {
   int uw_ord2005_rem_153 = 0;
   short sVar1;
@@ -1039,10 +1044,11 @@ undefined1 param_5;
 undefined4 cast_area_spell_effect(param_1,param_2,param_3,param_4,param_5)
 uint param_1;
 int param_2;
-undefined4 param_3;
-int param_4;
+ushort *param_3;
+byte *param_4;
 undefined1 param_5;
 
+/* ARM spell callbacks retain the object/tile addresses in r2/r3. */
 {
   short sVar1;
   char *uVar2;  /* was `undefined4` -- truncated spawn_and_prime_spell_effect_object's pointer */
@@ -1072,16 +1078,17 @@ undefined1 param_5;
 
 // was FUN_00074474 -- gated trap/effect trigger: resolve_damage_type_resistance (not yet named) is
 // the shared per-object-type-flags helper used throughout this cluster...
-bool trigger_type_flagged_trap_effect(param_1,param_2,param_3,param_4,param_5)
+undefined4 trigger_type_flagged_trap_effect(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
+ushort *param_3;
+byte *param_4;
 undefined1 param_5;
 
+/* ARM spell callbacks retain the object/tile addresses in r2/r3. */
 {
   char cVar1;
-  undefined4 uVar2;
+  ushort *uVar2;
   
   cVar1 = resolve_damage_type_resistance(param_3,1,0x80);
   if (cVar1 == '\0') {
@@ -1098,13 +1105,14 @@ undefined1 param_5;
 undefined4 trigger_tile_damage_trap_effect(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
+ushort *param_3;
+byte *param_4;
 undefined1 param_5;
 
+/* ARM spell callbacks retain the object/tile addresses in r2/r3. */
 {
   undefined1 uVar1;
-  undefined4 uVar2;
+  ushort *uVar2;
   undefined1 uVar3;
   undefined2 uVar4;
   undefined1 uVar5;
@@ -1127,10 +1135,11 @@ undefined1 param_5;
 undefined4 morph_tile_object_state(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 char param_2;
-int param_3;
+char *param_3;
 undefined2 param_4;
 undefined2 param_5;
 
+/* ARM spell callbacks retain the object/tile addresses in r2/r3. */
 {
   char cVar1;
   uint uVar2;
@@ -1158,8 +1167,9 @@ undefined2 param_5;
 undefined4 trigger_permanent_object_state_effect(param_1,param_2,param_3)
 undefined2 param_1;
 undefined2 param_2;
-int param_3;
+char *param_3;
 
+/* ARM spell callbacks retain the object/tile addresses in r2/r3. */
 {
   char cVar1;
   
@@ -1180,14 +1190,15 @@ int param_3;
 
 // was FUN_000746b0 -- thin wrapper: morph_tile_object_state with
 // texture/effect variant 2 and object-state id 1.
-void apply_tile_morph_variant_2(param_1,param_2,param_3)
+undefined4 apply_tile_morph_variant_2(param_1,param_2,param_3)
 undefined4 param_1;
 undefined2 param_2;
-undefined4 param_3;
+char *param_3;
 
+/* ARM spell callbacks retain the object/tile addresses in r2/r3. */
 {
-  morph_tile_object_state(2,1,param_3,param_1,param_2);
-  return;
+  /* ARM leaves morph_tile_object_state's result in r0 for the scanner. */
+  return morph_tile_object_state(2,1,param_3,param_1,param_2);
 }
 
 
@@ -1195,28 +1206,28 @@ undefined4 param_3;
 // was FUN_000746d4 -- thin wrapper: morph_tile_object_state with texture/effect variant 6 and
 // object-state id -1 ("no change" -- this variant only affects the tile's texture/decoration, not
 // the target object's quality/link field).
-void apply_tile_morph_variant_6(param_1,param_2,param_3)
+undefined4 apply_tile_morph_variant_6(param_1,param_2,param_3)
 undefined4 param_1;
 undefined2 param_2;
-undefined4 param_3;
+char *param_3;
 
+/* ARM spell callbacks retain the object/tile addresses in r2/r3. */
 {
-  morph_tile_object_state(6,0xffffffff,param_3,param_1,param_2);
-  return;
+  return morph_tile_object_state(6,0xffffffff,param_3,param_1,param_2);
 }
 
 
 
 // was FUN_000746f8 -- thin wrapper: morph_tile_object_state with
 // texture/effect variant 7 and object-state id 1.
-void apply_tile_morph_variant_7(param_1,param_2,param_3)
+undefined4 apply_tile_morph_variant_7(param_1,param_2,param_3)
 undefined4 param_1;
 undefined2 param_2;
-undefined4 param_3;
+char *param_3;
 
+/* ARM spell callbacks retain the object/tile addresses in r2/r3. */
 {
-  morph_tile_object_state(7,1,param_3,param_1,param_2);
-  return;
+  return morph_tile_object_state(7,1,param_3,param_1,param_2);
 }
 
 
@@ -1258,9 +1269,7 @@ char param_8;
   short local_60;
   short local_5e;
 
-  /* param_3 (the match callback) legitimately arrives NULL for a cone-damage/search-effect spell
-     cast (dispatch_special_action case 6/7, via
-     cast_cone_damage_spell/cast_targeted_search_effect)... */
+  /* Entry zero of the original cone callback table is NULL. */
   if (param_3 == (codeval *)0) {
     return;
   }
@@ -1389,7 +1398,7 @@ LAB_000749bc:
 void scan_area_ahead_of_object(param_1,param_2,param_3,param_4,param_5,param_6)
 char *param_1;
 undefined4 param_2;
-undefined4 param_3;
+codeval *param_3;
 undefined4 param_4;
 undefined1 param_5;
 char param_6;
@@ -1473,7 +1482,7 @@ uint param_2;
   char cVar1;
 
   cVar1 = roll_dice_sum(3,4);
-  scan_area_ahead_of_object(param_1,(int)cVar1,*(undefined4 *)(&DAT_00087604 + (param_2 & 0x3f) * 4),
+  scan_area_ahead_of_object(param_1,(int)cVar1,DAT_00087604_backing[param_2 & 0x3f],
                param_2 & 0xc0,4,2);
   return;
 }
@@ -1984,7 +1993,7 @@ undefined1 param_4;
   char *iVar2;  /* was `int` -- truncated tilemap_lookup's/resolve_object_link's
                    real `void *` returns */
   char *iVar3;  /* was `int` -- same, holds resolve_object_link's return */
-  undefined4 uVar4;
+  ushort *uVar4;
   byte bVar5;
 
   bVar5 = param_3 - 1;

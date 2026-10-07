@@ -28,9 +28,12 @@ undefined4 DAT_0010191c;
 static undefined4 DAT_00101440;
 static byte DAT_00101450;
 static byte DAT_00101730;
-static undefined DAT_000853c4_backing[256];
-#define DAT_000853c4 DAT_000853c4_backing[0]
-static undefined DAT_000853cc_backing[256];
+/* ARM 0x853c0..0x853c8 maps signed (dx*3 + dy) offsets to cached
+   directions. DAT_000853c4 is the center, so negative indexes are valid. */
+static undefined DAT_000853c0_backing[9] = {0xff,3,0xff,2,0xff,0,0xff,1,0xff};
+#define DAT_000853c4 DAT_000853c0_backing[4]
+/* ARM 0x853cc: diagonal tile types accepted for each cached direction. */
+static undefined DAT_000853cc_backing[4] = {6,8,7,9};
 #define DAT_000853cc DAT_000853cc_backing[0]
 char *DAT_00101438;
 static undefined1 DAT_0010142c;
@@ -51,10 +54,10 @@ static char DAT_00101740_backing[448];
 /* Sizing-audit pass: direction-delta table, every index is
    `(2-bit value)*2` -- max 3*2=6. Sized to 8 for headroom; down from
    256. */
-static undefined1 DAT_000853b0_backing[8];
+/* ARM 0x853b0: four interleaved signed X/Y direction deltas. */
+static undefined1 DAT_000853b0_backing[8] = {0,1,1,0,0,0xff,0xff,0};
 #define DAT_000853b0 DAT_000853b0_backing[0]
-static undefined1 DAT_000853b1_backing[8];
-#define DAT_000853b1 DAT_000853b1_backing[0]
+#define DAT_000853b1 DAT_000853b0_backing[1]
 static undefined1 DAT_00101460;
 static undefined1 DAT_001014e0_backing[256];
 #define DAT_001014e0 DAT_001014e0_backing[0]
@@ -862,7 +865,7 @@ LAB_000337fc:
     if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
     cVar4 = compute_vertical_aim_offset(0x1e,0);
     DAT_00202a3c = (short)cVar4;
-    dispatch_tile_special_action(DAT_00101404[(*(byte *)((char *)DAT_0010190c + 0x19) >> 2 & 3) + 0x29],DAT_0010190c,0)
+    dispatch_tile_special_action(DAT_00101404[(*(byte *)((char *)DAT_0010190c + 0x19) >> 2 & 3) + 0x29],(uintptr_t)DAT_0010190c,0)
     ;
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
     uVar9 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
@@ -2276,11 +2279,12 @@ undefined1 * param_1;
       uVar1 = 0;
       do {
         iVar2 = (uVar1 + uVar4) * 7;
+        /* ARM adds a signed direction offset to the table's center. */
         iVar3 = iVar3 + (((byte)(&DAT_000853c4)
-                                [(((uint)(byte)(&DAT_00101747)[iVar2] -
-                                  (uint)(byte)(&DAT_00101740)[iVar2]) * 3 -
-                                 (uint)(byte)(&DAT_00101741)[iVar2]) +
-                                 (uint)(byte)(&DAT_00101748)[iVar2]] & 3) << ((uVar1 & 0x7f) << 1));
+                                [((int)(byte)(&DAT_00101747)[iVar2] -
+                                  (int)(byte)(&DAT_00101740)[iVar2]) * 3 -
+                                 (int)(byte)(&DAT_00101741)[iVar2] +
+                                 (int)(byte)(&DAT_00101748)[iVar2]] & 3) << ((uVar1 & 0x7f) << 1));
         uVar1 = uVar1 + 1 & 0xff;
       } while (uVar1 < 4);
       param_1[(uVar4 >> 2) + 4] = (char)iVar3;
@@ -4929,7 +4933,7 @@ byte * param_11;
     }
     if (((5 < uVar11) && (uVar11 < 10)) &&
        (uVar11 != (byte)(&DAT_000853cc)
-                        [(byte)(&DAT_000853c4)[((uVar18 - uVar20) * 3 - uVar12) + uVar16]])) {
+                        [(byte)(&DAT_000853c4)[(int)(((uVar18 - uVar20) * 3 - uVar12) + uVar16)]])) {
       uVar15 = uVar15 + 1;
     }
     if (uVar15 <= param_9 + 1) {
@@ -5192,7 +5196,7 @@ switchD_0002c458_default:
   }
   if (((5 < bVar3) && (bVar3 < 10)) &&
      (bVar3 != (&DAT_000853cc)
-               [(byte)(&DAT_000853c4)[((uVar18 - uVar20) * 3 - (uint)param_4) + (uint)param_6]])) {
+               [(byte)(&DAT_000853c4)[(int)(((uVar18 - uVar20) * 3 - (uint)param_4) + (uint)param_6)]])) {
     uVar15 = uVar15 + 1;
   }
   uVar18 = uVar12;

@@ -831,3 +831,37 @@ target_link_libraries(uw_test_transitions PUBLIC uw_test_division)
 foreach(suite creatures critter_palette throw throw_cursor)
   target_link_libraries(uw_test_${suite} PUBLIC uw_test_support)
 endforeach()
+
+add_game_test_library(uw_test_spell_effects
+  src/hud.c:@DAT_00087530_backing
+  src/object_actions.c:@DAT_00087604_backing
+  src/object_actions.c:@PTR_FUN_00087614_backing
+  src/object_actions.c:@DAT_0008762c_backing
+  src/traps.c:dispatch_trap_special_or_tile_action
+  src/object_actions.c:dispatch_tile_special_action
+  src/object_actions.c:cast_cone_damage_spell
+  src/object_actions.c:cast_targeted_search_effect
+  src/object_actions.c:scan_area_ahead_of_object
+  src/object_actions.c:force_unlock_target_object
+  src/object_actions.c:cast_single_tile_spell_effect
+  src/object_actions.c:cast_area_spell_effect
+  src/object_actions.c:trigger_type_flagged_trap_effect
+  src/object_actions.c:trigger_tile_damage_trap_effect
+  src/object_actions.c:morph_tile_object_state
+  src/object_actions.c:trigger_permanent_object_state_effect
+  src/object_actions.c:apply_tile_morph_variant_2
+  src/object_actions.c:apply_tile_morph_variant_6
+  src/object_actions.c:apply_tile_morph_variant_7
+  src/object_actions.c:damage_all_objects_at_tile
+  src/ai.c:@DAT_000853b0_backing
+  src/ai.c:@DAT_000853c0_backing
+  src/ai.c:@DAT_000853cc_backing
+  src/ai.c:tile_pair_los_blocked
+  src/ai.c:save_walk_path_to_cache_slot
+  src/ai.c:advance_cached_path_step)
+target_sources(uw_test_spell_effects PRIVATE support/spell_effects_fixture.c)
+target_include_directories(uw_test_spell_effects PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_options(uw_test_spell_effects PUBLIC
+  -include "${CMAKE_CURRENT_SOURCE_DIR}/support/spell_effects_fixture.h")
+target_link_libraries(uw_test_spell_effects PUBLIC uw_test_support)
+add_supported_game_unit_test(spell_effects uw_test_spell_effects)

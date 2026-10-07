@@ -976,12 +976,13 @@ undefined4 param_4;
 undefined4 dispatch_trap_special_or_tile_action(param_1,param_2,param_3,param_4,param_5,param_6)
 undefined1 param_1;
 undefined1 param_2;
-undefined4 param_3;
-undefined4 param_4;
+uintptr_t param_3;
+intptr_t param_4;
 ushort param_5;
 undefined1 param_6;
 
 {
+  /* Actor and optional target/context addresses pass unchanged to spell dispatch. */
   DAT_0023c3d8 = param_2;
   DAT_0023c3dc = param_1;
   if ((short)param_5 < 0) {

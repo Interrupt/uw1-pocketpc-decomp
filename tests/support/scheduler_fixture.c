@@ -23,7 +23,7 @@ void spawn_creature_death_loot(void);
 void drop_creature_inventory_on_death(void);
 int compute_vertical_aim_offset(void);
 void spawn_npc_thrown_weapon(void);
-void dispatch_tile_special_action(void);
+void dispatch_tile_special_action(uint action, uintptr_t actor, intptr_t context);
 byte get_current_music_track(void);
 void set_pending_music_track(void);
 uint read_realtime_clock_units(void);
@@ -164,7 +164,7 @@ int compute_vertical_aim_offset(void) { TEST_FAIL_MESSAGE("Unexpected NPC missil
 
 void spawn_npc_thrown_weapon(void) { TEST_FAIL_MESSAGE("Unexpected NPC missile"); }
 
-void dispatch_tile_special_action(void) { TEST_FAIL_MESSAGE("Unexpected NPC special action"); }
+void dispatch_tile_special_action(uint action, uintptr_t actor, intptr_t context) { (void)action; (void)actor; (void)context; TEST_FAIL_MESSAGE("Unexpected NPC special action"); }
 
 byte get_current_music_track(void) { return 0; }
 

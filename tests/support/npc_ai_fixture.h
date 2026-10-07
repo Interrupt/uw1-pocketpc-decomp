@@ -41,7 +41,7 @@ void drop_creature_inventory_on_death(void);
 void free_object_slot(void);
 int compute_vertical_aim_offset(void);
 void spawn_npc_thrown_weapon(void);
-void dispatch_tile_special_action(void);
+void dispatch_tile_special_action(uint action, uintptr_t actor, intptr_t context);
 byte get_current_music_track(void);
 void set_pending_music_track(void);
 uint read_realtime_clock_units(void);

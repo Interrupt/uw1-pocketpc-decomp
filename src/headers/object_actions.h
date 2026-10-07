@@ -19,9 +19,9 @@ extern undefined1 DAT_0023ce70_backing[128];
 extern char s_You_see_000858fc[];
 extern undefined1 DAT_0023c3dc;
 extern undefined1 DAT_0023c3d8;
-extern undefined1 DAT_00087604_backing[256];
+extern codeval *const DAT_00087604_backing[4];
 #define DAT_00087604 DAT_00087604_backing[0]
-extern undefined *PTR_FUN_00087614_backing[64];
+extern codeval *const PTR_FUN_00087614_backing[6];
 #define PTR_FUN_00087614 PTR_FUN_00087614_backing[0]
 
 
@@ -41,7 +41,7 @@ undefined4 identify_mushroom_type();
 bool spawn_object_near_actor();
 undefined4 check_object_drop_height();
 void check_scheduled_object_location_callback();
-void dispatch_tile_special_action();
+void dispatch_tile_special_action(uint action, uintptr_t actor, intptr_t context);
 undefined4 dispatch_special_action();
 void reduce_item_quality_on_use();
 void apply_targeted_spell_effect();
@@ -49,13 +49,13 @@ void *spawn_and_prime_spell_effect_object();
 undefined4 force_unlock_target_object();
 undefined4 cast_single_tile_spell_effect();
 undefined4 cast_area_spell_effect();
-bool trigger_type_flagged_trap_effect();
+undefined4 trigger_type_flagged_trap_effect();
 undefined4 trigger_tile_damage_trap_effect();
 undefined4 morph_tile_object_state();
 undefined4 trigger_permanent_object_state_effect();
-void apply_tile_morph_variant_2();
-void apply_tile_morph_variant_6();
-void apply_tile_morph_variant_7();
+undefined4 apply_tile_morph_variant_2();
+undefined4 apply_tile_morph_variant_6();
+undefined4 apply_tile_morph_variant_7();
 void scan_area_for_matching_objects();
 void scan_area_ahead_of_object();
 void for_each_object_of_type();
