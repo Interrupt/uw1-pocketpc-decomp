@@ -48,6 +48,10 @@ static int voice_play_calls;
 static int last_voice_sample_id;
 static int voice_is_finished_result;
 static int voice_stop_calls;
+static int positional_sfx_calls;
+static int last_positional_sfx_id;
+static int last_positional_sfx_pan;
+static int last_positional_sfx_volume;
 
 void audio_fixture_reset(void)
 {
@@ -80,6 +84,10 @@ void audio_fixture_reset(void)
     last_voice_sample_id = 0;
     voice_is_finished_result = 1;
     voice_stop_calls = 0;
+    positional_sfx_calls = 0;
+    last_positional_sfx_id = 0;
+    last_positional_sfx_pan = 0;
+    last_positional_sfx_volume = 0;
 }
 
 void audio_fixture_advance_clock(unsigned units) { fake_clock += units; }
@@ -92,6 +100,10 @@ int audio_fixture_voice_play_call_count(void) { return voice_play_calls; }
 int audio_fixture_last_voice_sample_id(void) { return last_voice_sample_id; }
 void audio_fixture_set_voice_is_finished(int value) { voice_is_finished_result = value; }
 int audio_fixture_voice_stop_call_count(void) { return voice_stop_calls; }
+int audio_fixture_positional_sfx_call_count(void) { return positional_sfx_calls; }
+int audio_fixture_last_positional_sfx_id(void) { return last_positional_sfx_id; }
+int audio_fixture_last_positional_sfx_pan(void) { return last_positional_sfx_pan; }
+int audio_fixture_last_positional_sfx_volume(void) { return last_positional_sfx_volume; }
 
 uint read_realtime_clock_units(void) { return fake_clock; }
 long ce_rand(void) { return next_random; }
@@ -209,13 +221,20 @@ undefined4 load_and_resample_wave_file()
 }
 
 /* play_sound_effect_at_object's own real callee once its NULL-object
-   guard is past (see audio.c's "BUG FIX (real crash...)" comment) --
-   every test in this suite that exercises that guard passes a NULL
-   object specifically so this is never actually reached; failing loudly
-   here instead of returning a plausible-looking value makes sure the
-   guard itself is really what's being tested, not a coincidence. */
-undefined4 play_positional_sound_effect()
+   guard is past (see audio.c's "BUG FIX (real crash...)" comment).
+   Records what it was called with instead of touching real audio, so
+   tests can assert either "never reached" (the NULL-object case) or
+   the exact pan/volume values computed from a real object record (the
+   pointer-truncation regression case). */
+undefined4 play_positional_sound_effect(id, pan, volume, flags)
+uint id;
+short pan;
+short volume;
+undefined4 flags;
 {
-    TEST_FAIL_MESSAGE("Unexpected call to play_positional_sound_effect with a NULL object");
+    positional_sfx_calls++;
+    last_positional_sfx_id = (int)id;
+    last_positional_sfx_pan = pan;
+    last_positional_sfx_volume = volume;
     return 0;
 }

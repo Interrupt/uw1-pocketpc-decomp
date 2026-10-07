@@ -183,13 +183,46 @@ static void test_stop_current_audio_handle_dup_does_not_crash_on_null_handle(voi
    calls get_object_record_by_slot_index(0), which legitimately returns
    NULL, then passes that straight through play_sound_effect_at_object
    to an unconditional pointer dereference -- a real SIGSEGV reachable
-   by swinging a weapon with nothing in range. audio_fixture.c's
-   play_positional_sound_effect stub hard-fails the test if it's ever
-   reached at all, so this fails loudly if the NULL guard regresses. */
+   by swinging a weapon with nothing in range. Asserts both the early
+   return AND that play_positional_sound_effect is never reached at
+   all, so this fails loudly (not just "wrong return value") if the
+   NULL guard regresses. */
 static void test_play_sound_effect_at_object_does_not_crash_on_null_object(void)
 {
     undefined4 result = play_sound_effect_at_object(10, 0, 0);
     TEST_ASSERT_EQUAL_UINT(0xff, result);
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_positional_sfx_call_count());
+}
+
+/* BUG FIX regression (real crash, confirmed live via lldb -- see
+   play_sound_effect_at_object's own comment in audio.c):
+   param_2 was `int`, truncating the real 64-bit object pointer every
+   real caller passes (e.g. spawn_object_near_player's own
+   play_sound_effect_at_object(10,puVar6,0) in objects.c) -- confirmed
+   live: dropping an item into a container SIGSEGV'd reading
+   *(ushort*)(param_2+0x16) with param_2 == 87805 (0x1577d), a small
+   truncated value, not a real heap address and not NULL. This builds a
+   real local object record on the stack (whose address, like any real
+   64-bit pointer, doesn't fit in 32 bits) with known bytes at offsets
+   0x16/0x17 (the position word) and 3 (the facing/group byte), and
+   checks play_sound_effect_at_object forwards the exact pan/volume
+   those real bytes compute to play_positional_sound_effect -- if
+   param_2 were still truncated, this would read garbage (or crash)
+   instead of these exact values. */
+static void test_play_sound_effect_at_object_does_not_truncate_the_object_pointer(void)
+{
+    unsigned char fake_object[0x20];
+    memset(fake_object, 0, sizeof fake_object);
+    fake_object[3] = 0xA0;             /* byte3: >>5 == 5, >>2&7 == 0 */
+    fake_object[0x16] = 0x34;          /* word16 (LE) == 0x1234:       */
+    fake_object[0x17] = 0x12;          /*   &0xfc00>>7 == 32, &0x3f0>>1 == 280 */
+
+    undefined4 result = play_sound_effect_at_object(10, fake_object, 99);
+
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_positional_sfx_call_count());
+    TEST_ASSERT_EQUAL_INT(10, audio_fixture_last_positional_sfx_id());
+    TEST_ASSERT_EQUAL_INT(32 + 5, audio_fixture_last_positional_sfx_pan());
+    TEST_ASSERT_EQUAL_INT(0 + 280, audio_fixture_last_positional_sfx_volume());
 }
 
 int main(void)
@@ -205,5 +238,6 @@ int main(void)
     RUN_TEST(test_allocate_and_play_sound_channel_survives_channel_exhaustion);
     RUN_TEST(test_stop_current_audio_handle_dup_does_not_crash_on_null_handle);
     RUN_TEST(test_play_sound_effect_at_object_does_not_crash_on_null_object);
+    RUN_TEST(test_play_sound_effect_at_object_does_not_truncate_the_object_pointer);
     return UNITY_END();
 }

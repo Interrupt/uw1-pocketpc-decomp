@@ -14,5 +14,9 @@ int audio_fixture_voice_play_call_count(void);
 int audio_fixture_last_voice_sample_id(void);
 void audio_fixture_set_voice_is_finished(int value);
 int audio_fixture_voice_stop_call_count(void);
+int audio_fixture_positional_sfx_call_count(void);
+int audio_fixture_last_positional_sfx_id(void);
+int audio_fixture_last_positional_sfx_pan(void);
+int audio_fixture_last_positional_sfx_volume(void);
 
 #endif

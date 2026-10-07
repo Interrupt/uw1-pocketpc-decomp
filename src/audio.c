@@ -792,9 +792,22 @@ uint param_3;
 // play_sound_effect_at_object). Guarded the same way the subsystem-
 // disabled case already is, matching this function's own existing
 // "fails (returns 0xff)" convention.
+//
+// BUG FIX (real crash, confirmed live via lldb): param_2 was `int` --
+// a 32-bit truncation of the real 64-bit object pointer every real
+// caller passes (e.g. spawn_object_near_player's own
+// `play_sound_effect_at_object(10,puVar6,0)`, objects.c, where puVar6
+// is a genuine `ushort *`) -- the exact same pointer-truncation class
+// fixed repeatedly elsewhere in this codebase (see e.g.
+// read_xor_scrambled_block's own param_3 fix in player.c). Confirmed
+// live under lldb: dropping an item into a container SIGSEGVs at
+// `*(ushort *)(param_2 + 0x16)` with param_2 == 87805 (0x1577d) -- a
+// small, clearly-truncated value, not a real heap address and not the
+// NULL case the fix just above this one already covers. Widened to a
+// real pointer type so the full 64-bit address survives the call.
 undefined4 play_sound_effect_at_object(param_1,param_2,param_3)
 undefined4 param_1;
-int param_2;
+char *param_2;
 undefined4 param_3;
 
 {
