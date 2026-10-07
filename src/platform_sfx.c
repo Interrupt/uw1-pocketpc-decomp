@@ -680,7 +680,7 @@ void platform_sfx_play(int resource_id)
   g_sfx_voices[slot].pos = 0;
   SDL_UnlockAudioDevice(g_sfx_audiodev);
 
-  DEBUG(TRACE, "[audio] platform_sfx_play: resource %d (%u bytes) -> voice %d\n",
+  DEBUG(INFO, "[audio] platform_sfx_play: resource %d (%u bytes) -> voice %d\n",
         resource_id, entry->len, slot);
 }
 

@@ -941,7 +941,8 @@ undefined4 param_6;
   undefined2 uVar3;
   byte bVar4;
 
-  DEBUG(TRACE, "[audio] allocate_and_play_sound_channel(id=%u, volume=%u)", param_1, param_4);
+  DEBUG(INFO, "[audio] allocate_and_play_sound_channel(id=%u, volume=%u)", param_1, param_4);
+
   bVar1 = 1;
   bVar4 = DAT_0023c39c & 1;
   for (uVar2 = 0; (bVar4 != 0 && (uVar2 < 4)); uVar2 = uVar2 + 1 & 0xff) {
@@ -1034,6 +1035,9 @@ undefined4 param_2;
   char cVar1;
   int iVar2;
   undefined4 local_18;
+
+  DEBUG(INFO, "[audio] trigger_sound_sample_note: param_1 %d, param_2 %d\n",
+        param_1, param_2);
 
   platform_sfx_play(param_1 + 800);
 
