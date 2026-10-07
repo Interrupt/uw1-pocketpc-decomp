@@ -3,10 +3,9 @@
 
 #include <string.h>
 
-/* Standard Ghidra pseudo-intrinsics used by the decompiler output.
- * CONCATxy(hi, lo): concatenate an x-byte high part and y-byte low part
- * into an (x+y)-byte value. SUBab(v, off): extract b bytes from an a-byte
- * value starting at byte offset `off` from the LSB. */
+/* Standard Ghidra pseudo-intrinsics used by the decompiler output. CONCATxy(hi, lo): concatenate an
+   x-byte high part and y-byte low part into an (x+y)-byte value. SUBab(v, off): extract b bytes
+   from an a-byte value starting at byte offset `off` from the LSB. */
 
 #define CONCAT11(hi, lo) \
     ((unsigned short)(((unsigned)(unsigned char)(hi) << 8) | (unsigned char)(lo)))

@@ -24,6 +24,7 @@ uint object_chain_max_barrier();
 undefined4 target_line_of_sight();
 ushort *pick_object_under_cursor();
 void describe_picked_terrain();
+int resolve_picked_terrain_texture(short pick, char **out_desc);
 void finalize_object_pickup();
 void interact_default();
 void interact_talk_npc();

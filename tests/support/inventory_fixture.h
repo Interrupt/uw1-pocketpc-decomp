@@ -37,4 +37,5 @@ ushort *level_object(unsigned slot);
 void load_key_from_level_one_sack(void);
 void inventory_fixture_reset(void);
 void inventory_fixture_dispose(void);
+extern int container_grid_redraws, container_arrow_redraws;
 #endif

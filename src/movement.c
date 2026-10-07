@@ -1,8 +1,6 @@
-/* Movement collision sweep: the substep integrator, wall-slide/
- * deflect/knockback/land-on-surface resolution, and the reticle
- * object pick. Split out of uw.c (the original monolithic decompile)
- * once these functions' real roles were confirmed.
- */
+/* Movement collision sweep: the substep integrator, wall-slide/ deflect/knockback/land-on-surface
+   resolution, and the reticle object pick. Split out of uw.c (the original monolithic decompile)
+   once these functions' real roles were confirmed. */
 #include "headers/movement.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -12,10 +10,9 @@
 #define _DAT_00204982 (*(uint*)&DAT_00204982)
 #define _DAT_00204986 (*(uint*)&DAT_00204986)
 #define _DAT_00204992 (*(uint*)&DAT_00204992)
-/* Sizing pass: one of 4 interchangeable collision-response-profile
-   buffers (siblings DAT_00204980/990/9b0 below) -- see their own
-   combined sizing-pass comment a few lines down for the full trace.
-   Real max touched offset is 7 (8 bytes); sized to 32 for headroom. */
+/* Sizing pass: one of 4 interchangeable collision-response-profile buffers (siblings
+   DAT_00204980/990/9b0 below) -- see their own combined sizing-pass comment a few lines down for
+   the full trace. Real max touched offset is 7 (8 bytes); sized to 32 for headroom. */
 undefined2 DAT_002049a0_backing[16];
 static undefined2 DAT_002048cc;
 static undefined2 DAT_002048ce;
@@ -29,10 +26,9 @@ static undefined1 DAT_00204937;
 static undefined2 DAT_0020495c;
 static undefined2 DAT_0020495e;
 static undefined1 DAT_00204967;
-/* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes)
-   via the _DAT_00204982 macro below -- widened to its own real backing
-   storage so that wider access can't spill into whatever global happens
-   to follow (it used to rely on uw.c's own incidental layout). */
+/* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes) via the _DAT_00204982
+   macro below -- widened to its own real backing storage so that wider access can't spill into
+   whatever global happens to follow (it used to rely on uw.c's own incidental layout). */
 static undefined DAT_00204982_backing[8];
 #define DAT_00204982 DAT_00204982_backing[0]
 static undefined2 DAT_00204984;
@@ -40,19 +36,9 @@ static undefined2 DAT_00204984;
    its comment), via the _DAT_00204986 macro below. */
 static undefined DAT_00204986_backing[8];
 #define DAT_00204986 DAT_00204986_backing[0]
-/* Sizing pass: this and its 3 siblings (DAT_00204990/9a0/9b0, and
-   DAT_00204982/84/86/88 right above -- all really one struct Ghidra
-   split into separate globals) are the 4 interchangeable collision-
-   response-profile buffers npc_ai_tick selects between (see
-   init_collision_response_profiles's own field-by-field init, and
-   movement.c's DAT_002048bc/DAT_00101438 dispatch -- sweep_apply_
-   collision and npc_ai_tick touch byte offsets 0 through 7 across
-   all of them, never further: `*DAT_002048bc`, `*(ushort*)
-   (DAT_002048bc+2)`, `*(ushort*)(DAT_002048bc+4)`, and ai.c's
-   DAT_00101438[6]/[7]). The already-fixed sibling scalars
-   DAT_00204982_backing/DAT_00204986_backing/DAT_002048c2_backing just
-   above independently confirm the same 8-byte real extent. Was
-   oversized at 65536 bytes; sized to 32 for headroom. */
+/* Sizing pass: this and its 3 siblings (DAT_00204990/9a0/9b0, and DAT_00204982/84/86/88 right above
+   -- all really one struct Ghidra split into separate globals) are the 4 interchangeable collision-
+   response-profile buffers npc_ai_tick selects between... */
 undefined1 DAT_00204980_backing[32];
 static undefined *DAT_00204988;
 /* Same wider-access-than-declared-size issue as DAT_00204982 above (see
@@ -81,16 +67,9 @@ static short DAT_002048d0;
    its comment), via the _DAT_002048c2 macro below. */
 static undefined DAT_002048c2_backing[8];
 #define DAT_002048c2 DAT_002048c2_backing[0]
-/* Was a bare `undefined2` -- same split-symbol class as DAT_002048f0/
-   DAT_00204950 below (see their own comment): build_object_placement_snapshot writes up to
-   offset 0x28 into whichever of these three globals DAT_0010172c
-   currently points at, a massive out-of-bounds write past a 2-byte
-   scalar. Was oversized generously like its siblings.
-
-   Sizing pass: see ai.c's DAT_002048f0_backing for the full trace
-   across every real reader/writer of this 4-buffer family (confirmed
-   max touched offset 0x2a/42 bytes). Sized to 64 elements (128
-   bytes), matching its siblings, rather than the previous 32768. */
+/* Was a bare `undefined2` -- same split-symbol class as DAT_002048f0/ DAT_00204950 below (see their
+   own comment): build_object_placement_snapshot writes up to offset 0x28 into whichever of these
+   three globals DAT_0010172c currently points at... */
 undefined2 DAT_002048c0_backing[64];
 static undefined2 DAT_002048c8;
 static undefined2 DAT_002048c6;
@@ -102,61 +81,19 @@ undefined1 DAT_00101428_backing[4];
 static undefined2 DAT_002048fa;
 static undefined2 DAT_00204958;
 static undefined2 DAT_00204956;
-// was DAT_0023bf1c. Requested movement mode consumed by
-// resolve_move_vector -- see its header comment for the full mode list
-// (0 stop, 1 analog move/turn, 6/7 jump, 8 move+face-180, 9/10
+// was DAT_0023bf1c. Requested movement mode consumed by resolve_move_vector -- see its header
+// comment for the full mode list (0 stop, 1 analog move/turn, 6/7 jump, 8 move+face-180, 9/10
 // sidestep, 0xc/0xd fly up/down).
 short g_movement_mode;
 short DAT_0023bf4c;
 short DAT_0023bf48;
-/* collision_build_height_field's collision height-field: five 5-byte corner records at
-   0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the
-   fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads
-   them by index off DAT_00202bf8. Only DAT_00202bf8 had a backing array;
-   the rest were lone Ghidra scalars, so the named writes and indexed reads
-   hit different memory and every corner sampled as height 8 -- solid-rock
-   tiles reported the same floor height as open floor, so collision never
-   stopped the player at a wall. Alias every field into the one backing
-   buffer. Per-corner layout: [0]=shape/index, [1..2]=diag corner offsets,
-   [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05).
-
-   Sizing-audit pass: every field is a named, explicitly-offset alias
-   (see movement.h) -- the furthest is DAT_00202c14, a 4-byte uint at
-   offset 0x1c, ending at byte 31. Exact real need is 32 bytes, a HARD
-   bound (no dynamic indexing past these fixed offsets exists). Down
-   from 32768. */
+/* collision_build_height_field's collision height-field: five 5-byte corner records at 0x202bf8,
+   laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the fields by
+   name... */
  undefined1 DAT_00202bf8_backing[32];
-/* Wall-slide corner-classification tables, used by resolve_wall_slide_corner (called
-   from sweep_slide_along_wall when a wall hit has a specific blocked-
-   corner shape) to pick which of the 8 candidate headings in
-   DAT_000869a8 to deflect toward. Both were declared as single-byte
-   scalars -- an "orphaned data table" class bug, same as DAT_000869a8
-   just fixed above -- so any index past 0 read undefined, unrelated
-   adjacent globals in this port's own memory layout (not the real
-   binary's), producing effectively-random results for any corner
-   configuration except the very first. This is the deeper reason wall
-   sliding sometimes turned the player back INTO the wall: even once
-   DAT_000869a8 held real headings, resolve_wall_slide_corner was often picking the
-   WRONG index into it.
-
-   Real data recovered via Ghidra headless dump (matching these globals'
-   own name-encoded addresses, 0x86884 and 0x8688c): DAT_00086884 is a
-   real 4-entry SIGNED array {1,-1,-1,1} (per-corner +/-1 deltas, read as
-   `(&DAT_00086884)[iVar3]` for iVar3 0-3 in resolve_wall_slide_corner's loop).
-   DAT_0008688c sits 4 bytes into a real lookup table that starts at
-   0x86888 (confirmed: the function's own literal pool for the "r8" table
-   base is 0x86888, and 0x86888+4 = 0x8688c exactly) -- both of
-   resolve_wall_slide_corner's own lookups already index relative to DAT_0008688c
-   correctly (`(&DAT_0008688c)[iVar6*3+iVar7]` and
-   `(&DAT_0008688c)[iVar9*-3-iVar7]`, the latter reaching back to offset
-   -4, i.e. the table's real start at 0x86888); only the DECLARATION was
-   wrong, not the indexing arithmetic. Backed with the real bytes from
-   0x86884 through 0x868893 (32 bytes from the table's real start,
-   comfortably covering every offset either lookup can produce); bytes
-   past offset +7 from DAT_0008688c decode as the ASCII string
-   "\DATA\comobj.dat" -- real, unrelated adjacent data in the original
-   binary, kept verbatim rather than guessed at, since matching the
-   original memory layout exactly is safer than inventing a boundary. */
+/* Wall-slide corner-classification tables, used by resolve_wall_slide_corner (called from
+   sweep_slide_along_wall when a wall hit has a specific blocked- corner shape) to pick which of the
+   8 candidate headings in DAT_000869a8 to deflect toward. */
 static signed char DAT_00086884_backing[4] = {1, -1, -1, 1};
 #define DAT_00086884 DAT_00086884_backing[0]
 static unsigned char DAT_0008688c_backing[32] = {
@@ -165,97 +102,42 @@ static unsigned char DAT_0008688c_backing[32] = {
 };
 #define DAT_0008688c DAT_0008688c_backing[4]
 char *DAT_00204874;
-/* The movement/collision-sweep working block. Ghidra split this one ~24-byte
-   struct into 14 separate globals (DAT_002049c8 .. DAT_002049de), but
-   collision_build_height_field / collision_height_envelope write its fields through `DAT_00202c6c[offset]`
-   (DAT_00202c6c = &DAT_002049c8) while sweep_init_position / sweep_collision_
-   flags read/write them by name -- so the indexed writes and the named reads
-   landed on unrelated memory and collision flags never reflected the tile
-   under the player (walked straight through walls). Back them with one buffer
-   at the name-derived offsets so both views alias. */
+/* The movement/collision-sweep working block. Ghidra split this one ~24-byte struct into 14
+   separate globals (DAT_002049c8 .. */
  unsigned char DAT_002049c8_backing[64];
-/* The reticle/collision "picked tile" record at 0x86998..0x869a2. Ghidra
-   split it into scattered byte scalars (DAT_00086998/99/9a/9b/9f/a0/a1/a2)
-   plus overlapping 16-bit "_DAT_" views (_DAT_00086999 = the x/y pair,
-   _DAT_0008699b = target floor height, _DAT_0008699f = ceiling clearance).
-   Recompiled as separate globals the wide writes and narrow reads landed on
-   different memory: reticle_object_pick's `_DAT_0008699f = 0x7f` never
-   reached DAT_0008699f/DAT_000869a0, so sweep_collision_flags read the
-   ceiling clearance as 0 and decided the player never fits -> "walk forward"
-   stalled after 1/8 tile on every open tile. Back them with one buffer so
-   the byte and word views alias. */
+/* The reticle/collision "picked tile" record at 0x86998..0x869a2. */
  unsigned char DAT_00086998_backing[16];
 static char DAT_0008794c_backing[128];
 char *DAT_0008794c = DAT_0008794c_backing;
 char *DAT_002048bc;
 // was DAT_00086978. The three 16-bit velocity components of the movement block
 /* (&DAT_00204886/88/8a). Ghidra typed this `char *`, so movement_sweep_setup's
-   `g_sweep_velocity[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
-   shorts at offsets 2,4 -- and every copy (`psVar11 = g_sweep_velocity`) is
-   already `short *`, confirming the intent. The byte misread made `[2]`
-   (meant: the Z/vertical velocity g_vertical_velocity, 0 for level movement) return
-   the low byte of the forward velocity DAT_00204888, so plain forward
-   movement took the "vertical movement" path (collision_build_height_field / collision_height_envelope)
-   which corrupts DAT_00204880 -- one forward step overflowed the player X to
-   the map edge and wedged them there.
-   g_sweep_velocity[2] is *(short*)(DAT_00204874+0xa) -- the exact same
-   memory as g_vertical_velocity (see its #define, uw.c:2025), just reached
-   through this pointer instead; movement_sweep_setup's own accumulation
-   `g_sweep_velocity[2] += speed*g_fall_accel` is the ordinary velocity +=
-   accel*dt integration step, not a separate quantity (confirmed while
-   investigating the jump-arc bug, see
-   [[jump-physics-fix-and-open-integrator-issue]]). */
+   `g_sweep_velocity[1]` / `[2]` read single BYTES (offsets 7,8) instead of the shorts at offsets
+   2,4 -- and every copy (`psVar11 = g_sweep_velocity`) is already `short *`, confirming the intent. */
 static short *g_sweep_velocity;
 static undefined1 DAT_002049c0;
-/* "Already slid this tick" cooldown, decremented once per ordinary substep
-   in sweep_step (`DAT_002049bc = DAT_002049bc + -1;`) and read back in
-   sweep_slide_along_wall's own first line to skip re-deflecting mid-slide.
-   Verified via disassembly (0x59b84/0x5a5c0) both sites use `ldrsb` --
-   SIGNED byte reads -- so 0 decrementing to -1 reads back as -1, and the
-   guard (`if (0 < DAT_002049bc)`) correctly stays false. Declared here as
-   `undefined1` (unsigned char), it was reset to 0 every tick
-   (movement_collision_sweep) then immediately decremented on the very
-   first ordinary substep before any wall was ever hit, underflowing to
-   255 (unsigned) instead of -1 (signed) -- permanently latching the
-   "already slid" guard true, so sweep_slide_along_wall took its early
-   revert-and-end path on every single call and sweep_deflect_heading
-   never ran at all. Symptom: running straight into a wall stopped the
-   player dead with zero deflection/turning, forever, instead of sliding
-   along it -- confirmed live via a new UW_DEBUG_WALL trace showing
-   DAT_002049bc=255 on every one of 4523 calls during an 80+-tick
-   straight-on wall hold. */
+/* "Already slid this tick" cooldown, decremented once per ordinary substep in sweep_step
+   (`DAT_002049bc = DAT_002049bc + -1;`) and read back in sweep_slide_along_wall's own first line to
+   skip re-deflecting mid-slide. */
 static char DAT_002049bc;
 short DAT_00086990;
 static short DAT_00086996;
-// was DAT_0008697c_backing/DAT_0008697c -- the swept working foot position
-// (coarse X/Y/Z, tile-eighths / eighth-fine units) collision math operates
-// on each sub-step before sweep_writeback_position commits it back to the
-// real player position.
+// was DAT_0008697c_backing/DAT_0008697c -- the swept working foot position (coarse X/Y/Z,
+// tile-eighths / eighth-fine units) collision math operates on each sub-step before
+// sweep_writeback_position commits it back to the real player position.
 /* UU.exe .data at 0x8697c contains 0x2049c8: the swept XYZ and
    collision working XYZ are the same three halfwords, including rollback. */
 static short *g_sweep_foot_pos = (short *)DAT_002049c8_backing;
-/* X/Y/Z fine sweep position, indexed as a real 3-element array throughout
-   this file (`(&DAT_00086980)[axis]` for axis 0/1/2) -- see this block's
-   own comment above. Was three separately-declared scalars that happened
-   to sit contiguously in uw.c's original declaration order, which this
-   file's indexed accesses silently relied on for X/Y (axis 1, i.e.
-   DAT_00086982) and Z (axis 2, DAT_00086984). An earlier widening pass
-   (code-cleanup-pass-2, chasing a different out-of-bounds risk on
-   DAT_00086980 alone) gave DAT_00086980 its own padded backing array and
-   broke that adjacency: `(&DAT_00086980)[1]` started landing in
-   DAT_00086980's own unused padding instead of reaching DAT_00086982's
-   real storage, silently dropping every Y/Z sweep-position update. Real
-   3-element array instead, so the by-name writes and the indexed
-   `(&DAT_00086980)[axis]` writes are provably the same storage. */
+/* X/Y/Z fine sweep position, indexed as a real 3-element array throughout this file
+   (`(&DAT_00086980)[axis]` for axis 0/1/2) -- see this block's own comment above. */
 static short DAT_00086980_arr[3];
 #define DAT_00086980 DAT_00086980_arr[0]
 #define DAT_00086982 DAT_00086980_arr[1]
 #define DAT_00086984 DAT_00086980_arr[2]
 static undefined4 DAT_00204878;
-/* Sizing-audit pass: dead -- per the comment at its one real mention
-   (collision height-field lookup, ~line 496), the correct access goes
-   through DAT_00202c38 directly; this symbol is never actually
-   read/written anywhere in the live decompile. Down from 256. */
+/* Sizing-audit pass: dead -- per the comment at its one real mention (collision height-field
+   lookup, ~line 496), the correct access goes through DAT_00202c38 directly; this symbol is never
+   actually read/written anywhere in the live decompile. Down from 256. */
 static undefined DAT_00202c32_backing[4];
 #define DAT_00202c32 DAT_00202c32_backing[0]
 static ushort DAT_0008698c;
@@ -263,40 +145,15 @@ static short DAT_0008698e;
 static ushort DAT_00086992;
 static short DAT_00086994;
 static short DAT_0008698a;
-/* Sizing pass: both aliases are indexed only by DAT_0008698c/
-   DAT_0008698e (confirmed 0 or 1, the "which movement axis is
-   dominant" selector) at a 2-byte stride -- real max byte offset
-   across both aliases is 3, +2 for a short read = 8 bytes. */
+/* Sizing pass: both aliases are indexed only by DAT_0008698c/ DAT_0008698e (confirmed 0 or 1, the
+   "which movement axis is dominant" selector) at a 2-byte stride -- real max byte offset across
+   both aliases is 3, +2 for a short read = 8 bytes. */
 static undefined1 DAT_00086986_backing[64];
 #define DAT_00086986 DAT_00086986_backing[0]
 #define DAT_00086987 DAT_00086986_backing[1]
-/* Wall-slide deflection candidate-heading table (was a zero-initialized
-   65536-byte placeholder with no writer anywhere in the decompile -- an
-   "orphaned data table" of the same class as the TMOBJ/inventory-hotspot
-   tables fixed elsewhere in this project). sweep_slide_along_wall reads
-   `*(short*)(&DAT_000869a8 + index*2)` to pick which heading to deflect
-   the move toward; with the real table missing, every read always came
-   back 0, so every wall hit -- head-on or glancing -- tried to deflect
-   toward the SAME fixed heading regardless of which way the wall
-   actually faced. That deflection only succeeds when it happens to be
-   close enough to the real wall's face (confirmed via a live
-   UW_DEBUG_WALL trace: candidate_heading=0 on 100% of calls, and
-   sweep_deflect_heading itself only returned nonzero -- i.e. actually
-   redirected the move -- 3 times out of 2258 during a real diagonal
-   wall hold), matching the reported symptom exactly: sliding sometimes
-   turns the player further INTO the wall instead of along it, "working"
-   only by coincidence when heading 0 happens to roughly line up with
-   the actual wall.
-
-   Recovered the real 8-entry table from the original binary at 0x869a8
-   (Ghidra headless dump, matching this global's own name/address) --
-   confirmed via disassembly of sweep_slide_along_wall (0x59b7c) that the
-   pointer literal at 0x59c20 resolves to exactly this address. The 8
-   real values are `-8192*i` (i.e. -45 degrees * i, wrapped to a signed
-   16-bit heading) for i=0..7 -- the 8 compass octants relative to the
-   hit. Confirmed the table is EXACTLY these 8 entries and no more: bytes
-   immediately following decode as ASCII (an unrelated string literal),
-   not further table data. */
+/* Wall-slide deflection candidate-heading table (was a zero-initialized 65536-byte placeholder with
+   no writer anywhere in the decompile -- an "orphaned data table" of the same class as the
+   TMOBJ/inventory-hotspot tables fixed elsewhere in this project). sweep_slide_along_wall reads... */
 static unsigned char DAT_000869a8_backing[16] = {
   0x00, 0x00, /*     0 */  0x00, 0xE0, /* -8192 */  0x00, 0xC0, /* -16384 */
   0x00, 0xA0, /* -24576 */ 0x00, 0x80, /* -32768 */ 0x00, 0x60, /*  24576 */
@@ -306,13 +163,8 @@ static unsigned char DAT_000869a8_backing[16] = {
 static int DAT_00204870;
 static char DAT_00087944_backing[128];
 static char *DAT_00087944 = DAT_00087944_backing;
-/* Port clock for movement_pacing_handler, in the original 4ms units.
-   GX input polling samples elapsed time at 60Hz, including inside the
-   original blocking input waits. Repeated polls in the same interval
-   do not advance it; missed intervals follow elapsed time rather than
-   the number of loop iterations or display flushes. Other clock users
-   keep read_realtime_clock_units(), since some busy waits do not poll
-   input at all. */
+/* Port clock for movement_pacing_handler, in the original 4ms units. GX input polling samples
+   elapsed time at 60Hz, including inside the original blocking input waits. */
 unsigned int g_uw_frame_clock_units;
 static char DAT_00087950_backing[128];
 static char *DAT_00087950 = DAT_00087950_backing;
@@ -321,43 +173,25 @@ static char *DAT_00087948 = DAT_00087948_backing;
 undefined4 DAT_0023bf54;
 byte DAT_0023bf58;
 int DAT_000879ac;
-// was DAT_00086dfc. movement_tick's enable gate for tick_mobile_objects
-// (the real per-tick NPC AI + mobile-object dispatcher) -- declared but
-// never assigned anywhere in this decompile, a permanently-false gate;
-// see init_gameplay_session's own comment for the fix.
+// was DAT_00086dfc. movement_tick's enable gate for tick_mobile_objects (the real per-tick NPC AI +
+// mobile-object dispatcher) -- declared but never assigned anywhere in this decompile, a
+// permanently-false gate; see init_gameplay_session's own comment for the fix.
 int g_npc_tick_enabled;
 char DAT_00086e84;
 static int DAT_0023bf64;
 static char DAT_0023bf60;
 static uint DAT_0023bf5c;
-/* Real static lookup table (.data, read-only in practice) recovered
-   byte-for-byte from UU.exe via Ghidra (bytes at 0x86e38..0x86e47) --
-   confirmed boundary: the string literal just before it ("Lev %d @ ...")
-   ends exactly at 0x86e38, and DAT_00086e68 (the next real scalar after
-   this table and DAT_00086e48/DAT_00086e58 below) was already separately
-   recovered elsewhere in this codebase as the literal 15 found at
-   0x86e68 -- matching this same dump and confirming the alignment.
-   Independently cross-confirmed byte-for-byte by a second, concurrent
-   recovery pass (bug-fixes-pass-2) via the same Ghidra method.
-   apply_movement_tick indexes this with `bVar1 >> 4` (bVar1 =
-   DAT_0023bf18, a byte that free-runs upward every tick), so only 16
-   entries are ever live; the real data is this exact 8-value bob curve
-   (+1,+3,+4,+3,+1,-3,0,0, one footfall) repeated twice, i.e. two
-   footfalls per full 0-255 wrap of DAT_0023bf18 -- the walking
-   head-bob curve. This table was previously left as an all-zero 256-
-   byte placeholder, which silently disabled head bob while walking
-   (DAT_0023be98 always came out 0 here) without affecting anything
-   else, since every real access stays inside these first 16 bytes. */
+/* Real static lookup table (.data, read-only in practice) recovered byte-for-byte from UU.exe via
+   Ghidra (bytes at 0x86e38..0x86e47) -- confirmed boundary: the string literal just before it ("Lev
+   %d @ ...") ends exactly at 0x86e38... */
 static const signed char DAT_00086e38_backing[16] = {
    1,  3,  4,  3,  1, -3,  0,  0,
    1,  3,  4,  3,  1, -3,  0,  0
 };
 #define DAT_00086e38 DAT_00086e38_backing[0]
-/* Real static lookup table, same recovery as DAT_00086e38 just above
-   (bytes at 0x86e48..0x86e57, immediately following it in UU.exe's
-   .data). apply_movement_tick indexes this with the same `bVar1 >> 4`
-   for the sidestep-move bob curve (g_movement_mode 9/10). Also 16 real
-   entries. */
+/* Real static lookup table, same recovery as DAT_00086e38 just above (bytes at 0x86e48..0x86e57,
+   immediately following it in UU.exe's .data). apply_movement_tick indexes this with the same
+   `bVar1 >> 4` for the sidestep-move bob curve (g_movement_mode 9/10). Also 16 real entries. */
 static const signed char DAT_00086e48_backing[16] = {
    0,  0, -1, -2, -3, -4, -5, -6,
   -6, -4, -3, -2, -1,  0,  0,  0
@@ -369,14 +203,9 @@ static const signed char DAT_00086e48_backing[16] = {
 
 
 
-/* param_1/param_2 were `int`/`undefined4`, truncating the real pointers
-   this is always called with (&DAT_00204880, &DAT_002048b0) -- confirmed
-   crashing (EXC_BAD_ACCESS, param_1 read back truncated to ~12MB) on a
-   real run even after widening the callee-side globals, because the
-   truncation was happening right here at the call boundary. g_sweep_velocity/
-   DAT_00204874 (assigned from these) are already real pointer-typed
-   globals, confirming the intent. Same pointer-truncation pattern fixed
-   repeatedly this session. */
+/* param_1/param_2 were `int`/`undefined4`, truncating the real pointers this is always called with
+   (&DAT_00204880, &DAT_002048b0) -- confirmed crashing (EXC_BAD_ACCESS, param_1 read back truncated
+   to ~12MB) on a real run even after widening the callee-side globals... */
 // was FUN_0005878c -- per-tick movement + collision sweep (from apply_movement_tick)
 void movement_collision_sweep(param_1,param_2)
 char *param_1;
@@ -523,10 +352,9 @@ undefined4 param_1;
         iVar6 = iVar4 - uVar5;
         bVar1 = DAT_002049de;
         if (iVar4 <= (int)uVar5) {
-          /* ARM 0x58d78..0x58d84 reads collision_table + count*6 - 6:
-             the highest surface below the foot. Ghidra named the base-6
-             address DAT_00202c32, but its separate C scalar is not part
-             of the table, so indexing it could skip bridges entirely. */
+          /* ARM 0x58d78..0x58d84 reads collision_table + count*6 - 6: the highest surface below the
+             foot. Ghidra named the base-6 address DAT_00202c32, but its separate C scalar is not
+             part of the table, so indexing it could skip bridges entirely. */
           bVar1 = (&DAT_00202c38)[(iVar4 - 1) * 6];
           bVar7 = SBORROW4((int)(short)(ushort)DAT_002049d9,(uint)bVar1);
           iVar6 = (int)(short)(ushort)DAT_002049d9 - (uint)bVar1;
@@ -542,38 +370,7 @@ undefined4 param_1;
   }
   if (DAT_002049dc == 0) {
 LAB_00058a64:
-    /* No slope/step feature at this sub-position. This whole block (44937-
-       44959) is ONLY reached from the *rising* branch (g_vertical_velocity
-       >= 1, the `if (*(short*)(DAT_00204874+10) < 1) {...} else {this}`
-       split above) -- the falling/at-rest case has its own, separate
-       target-height logic a few lines up and never falls through to here.
-       So _DAT_0008699b here plays the role of "ceiling", per
-       sweep_step_vertical's own header comment ("target surface height --
-       floor when falling, ceiling when rising").
-       Was `DAT_002049d9` (the tile's flat FLOOR) -- with no real
-       overhead feature to define a ceiling, that fed the floor height
-       into the "rising -- hit the ceiling if foot > target" check in
-       sweep_step_vertical, so a jump's very first upward step (foot Z
-       barely above the floor already) immediately registered as hitting
-       the "ceiling" and called sweep_land_on_surface(), landing the jump
-       before it could rise more than a couple of units -- confirmed live
-       via UW_DEBUG_JUMP2 (a rising jump-vert step landing at foot_z=98,
-       one unit above floor_z=96, is nowhere near a real ceiling).
-       Use `0x80 - player_height` instead -- the same "room's own physical
-       top, minus how tall the player is" sentinel already used a few
-       lines below as the upper bound for a real candidate ceiling height
-       (0x104 area) and elsewhere as the "no floor at all" sentinel -- so
-       with no real overhead obstruction, rising is only stopped by the
-       room's actual ceiling, not by the floor underfoot.
-       NOTE: an earlier comment here claimed this exact substitution had
-       already been tried and reverted for making a ledge-walk-off
-       "float near the ceiling" and "oscillate beside a drop" -- but
-       walking off a ledge only ever *falls* (velocity <= 0), which can
-       never reach this rising-only branch, so that regression (if real)
-       must have come from elsewhere. Regression-tested this change
-       against demo_ceiling_walk2/demo_ceiling_repro/demo_analog_walk3/
-       demo_critter_deep/demo_sack_final/demo_save_test/demo_realturn_full
-       -- all clean; see [[jump-physics-fix-and-open-integrator-issue]]. */
+    /* No slope/step feature at this sub-position. */
     _DAT_0008699b = (ushort)(0x80 - (uint)*(byte *)(DAT_00204874 + 0x26));
   }
   else {
@@ -592,15 +389,8 @@ LAB_00058a64:
 LAB_00058db4:
   if (DAT_00086998 != -1) {
     psVar3 = (short *)resolve_object_link(&DAT_00202c3a + DAT_00086998 * 6);
-    /* resolve_object_link returns NULL when the picked slot carries no object
-       link (id bits 6..15 clear).  The slot-selection loop above only tests a
-       tile flag via get_object_record_by_slot_index(id >> 6), so a slot with id < 0x40 passes the
-       filter yet resolves to NULL here.  The ARM original guarded this deref;
-       the Ghidra decompile dropped the check, so a turn tick whose reticle pick
-       lands on such a slot segfaults in this per-frame path
-       (reticle_object_pick <- movement_sweep_setup <- movement_collision_sweep <- apply_movement_tick),
-       which is what made scripted in-dungeon turning die mid-spin.  Treat a
-       NULL resolve as "nothing under the reticle". */
+    /* resolve_object_link returns NULL when the picked slot carries no object link (id bits 6..15
+       clear). */
     if (psVar3 == (short *)0x0) {
       DAT_00086998 = -1;
     }
@@ -682,13 +472,7 @@ int param_2;
   if (psVar11[iVar10] < 1) {
     uVar5 = 0xe0;
   }
-  /* DAT_0008698e is the OTHER movement axis (DAT_0008698c is the dominant one,
-     0=X or 1=Y). Ghidra dropped the `ordint_divmod(2, iVar10+1).quot` whose result
-     it wanted and read `extraout_r1` (the division remainder register
-     leftover), which is 0 for iVar10 in {0,1} -- so the secondary axis was
-     always X and turning never changed the direction of travel. Compute it
-     directly: `(iVar10 + 1) % 2` == `1 - iVar10`. (Same register-leftover
-     pattern the visibility-flood code documents at ~uw.c:45585.) */
+  /* DAT_0008698e is the OTHER movement axis (DAT_0008698c is the dominant one, 0=X or 1=Y). */
   DAT_0008698e = (short)((iVar10 + 1) % 2);
   (&DAT_00086986)[iVar10 * 2] = 0;
   (&DAT_00086987)[iVar10 * 2] = uVar5;
@@ -732,30 +516,15 @@ int param_2;
     collision_height_envelope(0,0);
     psVar11 = g_sweep_velocity;
   }
-  // PHYSICS: gravity gate -- psVar11[2] is g_sweep_velocity[2], which (g_sweep_velocity
-  // == (short*)(DAT_00204874+6)) is *(short*)(DAT_00204874+0xa) -- the exact
-  // same memory as g_vertical_velocity itself, just reached through a
-  // different pointer/name. So this really is checking g_vertical_velocity
-  // directly, and the accumulation a few lines up in this same function
-  // (g_sweep_velocity[2] += speed*g_fall_accel) is the ordinary "velocity +=
-  // accel*dt" integration -- confirmed against the #define at uw.c:2025.
-  // Must be non-zero to run any vertical integration this sweep. It is only
-  // set for scripted vertical motion (jump / knockback / slope step); a
-  // plain walk off a ledge never sets it, so no gravity accumulates and the
-  // step resolver snaps the foot down in one tick.
+// PHYSICS: gravity gate -- psVar11[2] is g_sweep_velocity[2], which (g_sweep_velocity ==
+  // (short*)(DAT_00204874+6)) is *(short*)(DAT_00204874+0xa) -- the exact same memory as
+  // g_vertical_velocity itself, just reached through a different pointer/name.
   if (psVar11[2] == 0) {
     DAT_0008698a = 0;
     return 1;
   }
-  /* PHYSICS: seed the vertical direction for the fine sub-integrator from
-     the current velocity's sign. (Tried this explicitly via
-     g_vertical_velocity instead of psVar11[2] under UW_DEBUG_JUMP2 -- no
-     measurable change, because they're the same memory, per the note
-     above; this is not an independent alternative, just documenting that
-     equivalence was checked.) This does NOT explain why the jump's fine
-     vertical integrator (DAT_0008698a/_DAT_000869a1, in sweep_step_vertical)
-     barely accumulates net foot-Z movement during a real jump -- that
-     remains open, see [[jump-physics-fix-and-open-integrator-issue]]. */
+  /* PHYSICS: seed the vertical direction for the fine sub-integrator from the current velocity's
+     sign. */
   DAT_0008698a = 0x800;
   if (psVar11[2] < 1) {
     DAT_0008698a = -0x800;
@@ -812,10 +581,9 @@ undefined4 param_1;
 
 
 
-// was FUN_000593c0
-// PHYSICS: kill all velocity -- zero the horizontal (+6/+8/+0xc/+0xe) and
-// vertical (+0xa/+0x10) velocity/accumulator fields and end the sweep. Called
-// on a hard blocking hit (0x4000) so the player stops instead of bouncing.
+// was FUN_000593c0 PHYSICS: kill all velocity -- zero the horizontal (+6/+8/+0xc/+0xe) and vertical
+// (+0xa/+0x10) velocity/accumulator fields and end the sweep. Called on a hard blocking hit
+// (0x4000) so the player stops instead of bouncing.
 void sweep_kill_velocity()
 
 {
@@ -847,12 +615,9 @@ void sweep_writeback_position()
   undefined2 uVar2;
   int iVar3;
   
-  /* Ghidra split three 16-bit stores of the reconstructed player position
-     (X at +0, Y at +2, Z at +4 of the movement block) into byte pairs and
-     botched the low-byte offset of the 2nd and 3rd: Y-low went to +1 (X's
-     high byte) and Z-low to +2 (Y's low byte), while the high bytes stayed
-     at the correct +3 / +5. Result: one forward step scrambled X and Y and
-     threw the player off the map. Restore proper halfword stores. */
+  /* Ghidra split three 16-bit stores of the reconstructed player position (X at +0, Y at +2, Z at
+     +4 of the movement block) into byte pairs and botched the low-byte offset of the 2nd and 3rd:
+     Y-low went to +1 (X's high byte) and Z-low to +2 (Y's low byte)... */
   // PHYSICS: commit swept X (+0), Y (+2) and Z/foot height (+4) to the movement block
   *(short *)(DAT_00204874 + 0) =
        (short)(*g_sweep_foot_pos * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18));
@@ -1160,11 +925,8 @@ void sweep_apply_knockback()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_00059d20
-// PHYSICS: landing / surface contact -- called when the vertical integrator
-// crosses the target height. Derives a landing-impact value (bob/thump on the
-// camera via DAT_00204874+9), snaps the foot Z to _DAT_0008699b, clears the
-// vertical remainder, and if this was a floor landing kills the fall velocity.
+// was FUN_00059d20 PHYSICS: landing / surface contact -- called when the vertical integrator
+// crosses the target height.
 void sweep_land_on_surface()
 
 {
@@ -1208,10 +970,9 @@ void sweep_land_on_surface()
   *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
   psVar9 = (short *)DAT_00204874;
   DAT_00086984 = 0;
-  // HACK: The player-only landing workaround is enabled by default;
-  // UW_PLAYER_NO_BOUNCE=0 disables it. It is absent from the original ARM code.
-  // Clear downward velocity, gravity, and airborne state before restitution
-  // so the player stops on landing. Mobile items retain their normal bounce.
+// HACK: The player-only landing workaround is enabled by default; UW_PLAYER_NO_BOUNCE=0 disables
+// it. It is absent from the original ARM code. Clear downward velocity, gravity, and airborne state
+// before restitution so the player stops on landing. Mobile items retain their normal bounce.
   {
     const char *player_no_bounce = getenv("UW_PLAYER_NO_BOUNCE");
     if ((puVar7 == g_player_object) && (*(short *)(DAT_00204874 + 10) < 0) &&
@@ -1330,13 +1091,8 @@ LAB_0005a33c:
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_0005a348
-// PHYSICS: vertical integrator -- applies gravity/climb to the swept foot Z
-// (g_sweep_foot_pos[2]) and resolves floor + ceiling contact. Only reached from
-// sweep_step when the "vertical motion active" flag *(DAT_00204874+10) is set.
-// _DAT_000869a1 = per-tick vertical rate (gravity accel / climb speed),
-// DAT_0008698a = signed vertical velocity, DAT_00086984 = sub-unit remainder,
-// _DAT_0008699b = target surface height (floor when falling, ceiling when rising).
+// was FUN_0005a348 PHYSICS: vertical integrator -- applies gravity/climb to the swept foot Z
+// (g_sweep_foot_pos[2]) and resolves floor + ceiling contact.
 undefined4 sweep_step_vertical(param_1,param_2)
 undefined4 param_1;
 short param_2;
@@ -1461,21 +1217,14 @@ undefined4 param_1;
     uVar3 = sweep_integrate_substep(0,param_1);
   }
   else {
-    /* PHYSICS: vertical motion active (falling / climbing a slope) -> run the
-       gravity + floor/ceiling integrator. Ghidra dropped both args here, so
-       sweep_step_vertical ran with a garbage `param_2` direction/scale -- one call
-       overshot the target height and snapped, which is why a drop resolved
-       in a single tick instead of accelerating over several. Forward the
-       sweep direction like the horizontal path above. */
+    /* PHYSICS: vertical motion active (falling / climbing a slope) -> run the gravity +
+       floor/ceiling integrator. */
     uVar3 = sweep_step_vertical(0,param_1);
   }
   if (bVar1) {
     /* Was `sweep_collision_flags();` with its return discarded, then
-       `collision_flags_to_locomotion_code()` called with no argument -- the same dropped-
-       argument pattern fixed in sweep_apply_collision just below (see
-       its comment): collision_flags_to_locomotion_code wants sweep_collision_flags()'s own
-       result, not whatever happens to be left in a register. Capture and
-       forward it explicitly. */
+       `collision_flags_to_locomotion_code()` called with no argument -- the same dropped- argument
+       pattern fixed in sweep_apply_collision just below (see its comment)... */
     ushort uVar4 = sweep_collision_flags();
     DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
     uVar2 = collision_flags_to_locomotion_code(uVar4);
@@ -1505,15 +1254,7 @@ void sweep_apply_collision()
   DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
   /* Was `collision_flags_to_locomotion_code()` with no argument, relying on local_14[0] still
      sitting in the same register collision_flags_to_locomotion_code's declared `short param_1`
-     reads it from -- undefined behavior, latent since this line predates
-     any work this session. Adding the UW_DEBUG_JUMP fprintf/getenv calls
-     just above (real function calls, clobbering caller-saved registers)
-     broke whatever register-leftover coincidence made this "work" before,
-     which is almost certainly what silently broke water/swim-mode
-     detection (set_locomotion_state's `param_1 & 0x22` swim check reads
-     this exact byte) -- confirmed this was already a dropped-argument bug
-     matching this whole session's recurring class; pass local_14[0]
-     explicitly instead of relying on whatever's left in the register. */
+     reads it from -- undefined behavior, latent since this line predates any work this session. */
   uVar1 = collision_flags_to_locomotion_code(local_14[0]);
   *(undefined1 *)(DAT_00204874 + 0x28) = uVar1;
   if ((local_14[0] & 0xc000) == 0) {
@@ -1523,28 +1264,8 @@ void sweep_apply_collision()
         fprintf(stderr, "[apply-collision] -> clean resolve (no flags after mask)\n");
       return;
     }
-    /* This branch used to call through a function pointer read via
-       generic offset arithmetic on DAT_002048bc (`*(void**)(...+4)`,
-       later corrected to `+8` against fresh disassembly of the real
-       function, FUN_0005ad18 0x5add4-0x5adf8: the original ARM code
-       reconstructs a 32-bit address from 4 bytes at offsets 8/9/0xa/0xb
-       and branches to it directly). That approach can never work on
-       this port even at the right offset: the four real snapshot
-       buffers (DAT_00204980/00204990/002049a0/002049b0) were each
-       decompiled with their own callback slot as an INDEPENDENT global
-       (DAT_00204988/00204998/002049a8/002049b8 respectively -- see
-       their real initialization a few hundred lines up, uw.c ~20450-
-       20465: `DAT_00204988=collision_response_default; DAT_00204998=collision_response_alt_locomotion;
-       DAT_002049a8=&collision_response_mobile_object; DAT_002049b8=collision_response_other_locomotion;`), not
-       packed contiguously the way the original ARM struct was -- so no
-       fixed-offset read from a runtime-varying base can reach the right
-       one. Look up which of the four known buffers DAT_002048bc
-       currently is and call ITS real, already-correctly-initialized
-       callback directly instead. Confirmed live: the old generic read
-       caused an intermittent (~30-50% of runs) SIGSEGV here, newly
-       exposed now that NPCs actually move far enough to hit real
-       collisions (see this file's earlier byte-0x14/dropped-arg fixes
-       in apply_placement_collision_sweep). */
+    /* This branch used to call through a function pointer read via generic offset arithmetic on
+       DAT_002048bc (`*(void**))`... */
     {
       codeval *_cb = (codeval *)0;
       if (DAT_002048bc == (char *)&DAT_00204980) _cb = (codeval *)DAT_00204988;
@@ -1559,10 +1280,9 @@ void sweep_apply_collision()
          (_cb == (codeval *)0) || (iVar2 = (*_cb)(local_14), iVar2 == 0)) {
       // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
       // slide the move along it (sweep_slide_along_wall) instead of stopping dead.
-      /* The original mask includes raised faces (0x100), not just rock
-       * and object walls (0x600). A height flag is a horizontal obstruction
-       * only while the footprint floor is above the foot; airborne baseline
-       * flags must not roll back an otherwise unobstructed vertical jump. */
+      /* The original mask includes raised faces (0x100), not just rock and object walls (0x600). A
+         height flag is a horizontal obstruction only while the footprint floor is above the foot;
+         airborne baseline flags must not roll back an otherwise unobstructed vertical jump. */
       bVar3 = ((local_14[0] & 0x600) != 0) ||
               (((local_14[0] & 0x100) != 0) &&
                (g_sweep_foot_pos[2] < (short)DAT_002049d9));
@@ -1613,12 +1333,9 @@ void sweep_apply_collision()
 
 
 
-/* Fixed turn-rate accelerator value for decode_movement_command's turn
-   branches -- see that function's own comment for why turning was
-   decoupled from DAT_0024af6c (the held-key ramp, still used as-is for
-   forward/back). UW_TURN_ACCEL overrides it (same units as DAT_0024af6c,
-   i.e. plug in any value that function would otherwise have ramped to)
-   for retuning without a rebuild. */
+/* Fixed turn-rate accelerator value for decode_movement_command's turn branches -- see that
+   function's own comment for why turning was decoupled from DAT_0024af6c (the held-key ramp, still
+   used as-is for forward/back). */
 int uw_turn_rate_accel(void) {
   static int v = -1;
   if (v < 0) {
@@ -1628,25 +1345,8 @@ int uw_turn_rate_accel(void) {
   return v;
 }
 
-// was FUN_000685e8 -- turn the latched input code (DAT_0023c448) into the
-// analog forward rate DAT_0023bf48 / turn rate DAT_0023bf4c. DAT_0023bf48
-// (forward/back) is scaled by the held-key accelerator DAT_0024af6c, which
-// is meant to -- and, per playtesting against DOS UW1, correctly does --
-// ramp walk into run the longer W/S stays held. NOTE: DAT_0024af6c ramps
-// to ~0x140 in this recompile, so the rate multiplies (esp. run's
-// 0x700000) overflowed int32 and produced a negative rate -- widened to
-// 64-bit below.
-//
-// DAT_0023bf4c (turn) uses uw_turn_rate_accel() instead of DAT_0024af6c
-// directly: side-by-side playtesting against DOS UW1 (same A/D-analog +
-// Shift+A/D-stepped scheme) found our turning ramped up to ~3x DOS's
-// speed and, since DAT_0024af6c is shared with forward/back (confirmed:
-// forward/run speed alone matched DOS fine), carried over an already-
-// ramped rate from a preceding held run/walk into an immediately-
-// following turn -- DOS's turn read as a constant, non-accelerating
-// rate throughout. uw_turn_rate_accel() reproduces that: a fixed value,
-// independent of how long any key (including a differently-coded one)
-// has been held.
+// was FUN_000685e8 -- turn the latched input code (DAT_0023c448) into the analog forward rate
+// DAT_0023bf48 / turn rate DAT_0023bf4c.
 void decode_movement_command()
 
 {
@@ -1788,17 +1488,8 @@ void movement_pacing_handler()
   undefined8 uVar7;
   uint uVar_now;
 
-  /* The original reads read_realtime_clock_units() four times. The port
-     uses the latest GX elapsed-time sample in the same 4ms-per-unit
-     scale (see g_uw_frame_clock_units). All four original reads are
-     asking "what time is it right now", each then diffed against the
-     SAME DAT_0023bf54 reference -- captured once into uVar_now here so
-     they keep agreeing with each other exactly as they did when each
-     was a fresh (but, within the same real millisecond, effectively
-     identical) clock read. uVar6 is the actual movement/turn-distance
-     driver (movement_tick below); the other reads feed DAT_0023bf58's
-     animation-bob phase, which shares the same DAT_0023bf54 reference
-     point and so needs to move in step with it too. */
+  /* The original reads read_realtime_clock_units() four times. The port uses the latest GX
+     elapsed-time sample in the same 4ms-per-unit scale (see g_uw_frame_clock_units). */
   uVar_now = uw_frame_clock_ms();
   if (getenv("UW_DEBUG_MOVEPACE")) {
     static unsigned int call_count = 0;
@@ -1981,16 +1672,9 @@ void settle_movement_to_rest()
 
 
 // was FUN_00068cac
-/* Was called with no args from both call sites (movement_tick's real
-   time-delta param_1, and settle_movement_to_rest's literal 0x40) -- dropped
-   argument, same pattern as apply_heading_turn below (which this
-   function itself calls with no args, same bug one level deeper).
-   Confirmed this matters now that the DAT_00204880-relative struct
-   fields are correctly aliased (see that fix's comment): apply_heading_turn
-   writes this forwarded value into DAT_00204892 (struct offset 0x12,
-   the "speed" field movement_sweep_setup's movement engine reads), so losing
-   it here meant that field could never become the real per-tick delta
-   even once the aliasing bug was fixed. */
+/* Was called with no args from both call sites (movement_tick's real time-delta param_1, and
+   settle_movement_to_rest's literal 0x40) -- dropped argument, same pattern as apply_heading_turn
+   below (which this function itself calls with no args, same bug one level deeper). */
 void apply_movement_tick(param_1)
 undefined4 param_1;
 
@@ -2038,16 +1722,8 @@ undefined4 param_1;
 
 
 
-// was FUN_0002b63c -- initializes 4 collision-response snapshot buffers
-// (DAT_00204980/990/9a0/9b0) and their respective callback slots
-// (DAT_00204988=collision_response_default, DAT_00204998=
-// collision_response_alt_locomotion, DAT_002049a8=collision_response_mobile_object
-// -- used by mobile_object_tick for generic mobile/projectile objects,
-// DAT_002049b8=collision_response_other_locomotion). npc_ai_tick selects
-// between the default/alt_locomotion/other_locomotion profiles
-// per-monster based on two flag bits in its own stat template (byte 10,
-// 0x80/0x40); the exact real-world meaning of those two bits isn't
-// otherwise confirmed.
+// was FUN_0002b63c -- initializes 4 collision-response snapshot buffers (DAT_00204980/990/9a0/9b0)
+// and their respective callback slots...
 void init_collision_response_profiles()
 
 {
@@ -2090,22 +1766,11 @@ void init_collision_response_profiles()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-/* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this
-   NPC-AI cluster this session (see
-   [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
-   `ushort *`, so every bare `DAT_0010190c + N` here was scaling N by
-   2. Verified against fresh disassembly of this function's entry
-   (0x2b998): `ldrb r3,[r0,#0x14]` -- raw, unscaled byte 0x14. This is
-   the DAT_00204980 collision-config buffer's real callback (see
-   sweep_apply_collision's fix this session), called via the same
-   indirect-callback path as collision_response_alt_locomotion/collision_response_other_locomotion. Cast every
-   offset to a byte pointer throughout this function so none of them
-   are scaled. */
-// was FUN_0002b960 -- the default collision-response callback (slot 0,
-// DAT_00204988), used by npc_ai_tick for monsters whose stat template
-// doesn't set either of the alt-locomotion flag bits. Handles a mix of
-// collision-flag-driven reactions: staggering/bump damage, spawning a
-// hit-effect, and various movement-blocked flag resets.
+/* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI cluster this session
+   (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`, so every bare
+   `DAT_0010190c + N` here was scaling N by 2. */
+// was FUN_0002b960 -- the default collision-response callback (slot 0, DAT_00204988), used by
+// npc_ai_tick for monsters whose stat template doesn't set either of the alt-locomotion flag bits.
 undefined4 collision_response_default(param_1)
 ushort * param_1;
 
@@ -2252,16 +1917,9 @@ ushort * param_1;
 }
 
 
-// was FUN_0002c8e0 -- checks whether movement is blocked stepping from
-// tile (param_3,param_4) to adjacent tile (param_5,param_6): tests the
-// per-tile-type wall/door bitmask (&DAT_000878d0, indexed by each
-// tile's own type nibble) for a wall on the shared edge in either
-// direction, and checks a height/floor threshold (param_7) against the
-// destination tile's own ceiling byte. param_1/param_2 are an optional
-// "origin" tile -- if provided and different from (param_3,param_4),
-// an extra check gates the step on the origin tile too. Used as the
-// per-step tile-transition primitive by a path-tracing routine (not
-// yet named) walking a line of tiles between two points.
+// was FUN_0002c8e0 -- checks whether movement is blocked stepping from tile (param_3,param_4) to
+// adjacent tile (param_5,param_6): tests the per-tile-type wall/door bitmask (&DAT_000878d0,
+// indexed by each tile's own type nibble) for a wall on the shared edge in either direction...
 undefined4 can_step_between_tiles(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 byte param_1;
 byte param_2;
@@ -2333,18 +1991,9 @@ LAB_0002caa4:
 }
 
 
-// was FUN_0005aea0 -- scans the nearby collision-candidate list
-// (DAT_002049dd count, base DAT_002049de) for a door object (type
-// 0x140-0x147), writing relative tile-offset deltas (param_1,param_2)
-// for each candidate as it scans and returning the door object (via
-// resolve_object_link) the moment one is found, else 0. Confirmed
-// used by movement.c alongside get_first_nearby_candidate_object in
-// NPC movement/pathfinding.
-// BUG FIX (unit-testing-framework merge): was `undefined4` return (and
-// a matching `undefined4 uVar4`), truncating the real pointer to 32
-// bits on this 64-bit host -- same pointer-truncation class fixed
-// throughout this project. Caught live by test_movement's
-// test_door_contact_lookup_returns_full_pointer_and_tile.
+// was FUN_0005aea0 -- scans the nearby collision-candidate list (DAT_002049dd count, base
+// DAT_002049de) for a door object (type 0x140-0x147), writing relative tile-offset deltas
+// (param_1,param_2) for each candidate as it scans and returning the door object...
 void *find_nearby_door_in_candidates(param_1,param_2)
 undefined1 * param_1;
 byte * param_2;
@@ -2383,13 +2032,8 @@ byte * param_2;
 
 
 
-// was FUN_0005b010 -- returns the first entry of the nearby
-// collision-candidate list (DAT_002049de), or 0 if the list
-// (DAT_002049dd) is empty.
-// BUG FIX (unit-testing-framework merge): same pointer-truncation class
-// as find_nearby_door_in_candidates's own fix just above -- was
-// `undefined4` return/local, truncating resolve_object_link's real
-// pointer to 32 bits on this 64-bit host.
+// was FUN_0005b010 -- returns the first entry of the nearby collision-candidate list
+// (DAT_002049de), or 0 if the list (DAT_002049dd) is empty.
 void *get_first_nearby_candidate_object()
 
 {
@@ -2472,11 +2116,9 @@ undefined4 param_1;
 }
 
 
-// was FUN_00051320 -- classify the blocked-corner shape of the current
-// wall hit (from the DAT_00202bfb corner-flag table) and pick which of
-// the 8 candidate octant headings in DAT_000869a8 to deflect toward,
-// writing the choice into DAT_00202c6c[0x12]. Called from
-// sweep_slide_along_wall.
+// was FUN_00051320 -- classify the blocked-corner shape of the current wall hit (from the
+// DAT_00202bfb corner-flag table) and pick which of the 8 candidate octant headings in DAT_000869a8
+// to deflect toward, writing the choice into DAT_00202c6c[0x12].
 void resolve_wall_slide_corner()
 
 {
@@ -2679,42 +2321,17 @@ uint sweep_collision_flags()
   }
   else {
     if ((iVar5 == -1) && (bVar8)) {
-      // PHYSICS: floor step -- if the height change is within the step limit
-      // (byte 0x27), OR the tile is a walkable auto-stick floor (DAT_002049d4 & 4)
-      // and no vertical motion is active, snap straight to it instead of falling.
-      //
-      // The `iVar4 - iVar6 <= step limit` guard on the auto-stick clause is
-      // added: without it, a walk off a real ledge onto a walkable floor far
-      // below still auto-sticks (foot Z snapped down in one tick). Restricting
-      // the auto-stick to drops within the step-down limit lets a bigger drop
-      // fall through to the "blocked" resolution below, where sweep_apply_collision
-      // arms a gravity fall (+0x10 = -4) and sweep_step_vertical plays it out over
-      // several ticks, ending in sweep_land_on_surface. An upward step
-      // (iVar4 - iVar6 < 0) always satisfies the guard, so auto-stick up a slope
-      // is unchanged.
+// PHYSICS: floor step -- if the height change is within the step limit (byte 0x27), OR the
+      // tile is a walkable auto-stick floor (DAT_002049d4 & 4) and no vertical motion is active,
+      // snap straight to it instead of falling.
       uVar3 = iVar4 - iVar6 >> 0x1f;
       if (getenv("UW_DEBUG_JUMP"))
         fprintf(stderr, "[jump-collision] foot_z=%d floor_z=%d diff=%d step_limit=%d fallflag(0x10)=%d vvel(0xa)=%d\n",
                 iVar4, iVar6, iVar4 - iVar6, (int)(uint)*(byte *)(DAT_00204874 + 0x27),
                 (int)*(short *)(DAT_00204874 + 0x10), (int)*(short *)(DAT_00204874 + 0xa));
-      /* The "within step limit" clause below was unconditional -- unlike
-         the auto-stick clause right next to it, which correctly requires
-         g_vertical_velocity==0 (offset 0xa, "no vertical motion is
-         active" per the comment above) before snapping. A jump's whole
-         ascent (and the tail of its descent) passes through foot-Z
-         values within a few units of the floor's while g_fall_accel
-         (offset 0x10) is nonzero and g_vertical_velocity is large and
-         real -- confirmed live via UW_DEBUG_JUMP: foot_z=98 floor_z=96
-         diff=2 step_limit=8, comfortably "within limit", while
-         g_fall_accel=-4 and g_vertical_velocity=267, i.e. clearly
-         mid-jump, not standing on a small ledge. That silently snapped
-         the player straight back onto the floor a few ticks into every
-         jump, before it could climb high enough to look like it left
-         the ground. Add the same g_fall_accel==0 gate here: no real
-         gravity arc in progress (matches the comment's own claim that
-         ordinary small steps involve "no gravity" at all, so this
-         should never fire while a real jump/fall is live) means this is
-         genuinely just an ordinary walked step, safe to snap instantly. */
+      /* The "within step limit" clause below was unconditional -- unlike the auto-stick clause
+         right next to it, which correctly requires g_vertical_velocity==0 (offset 0xa, "no vertical
+         motion is active" per the comment above) before snapping. */
       if ((*(short *)(DAT_00204874 + 0x10) == 0 &&
            (int)((iVar4 - iVar6 ^ uVar3) - uVar3) <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)) ||
          (((((*(short *)(DAT_00204874 + 10) == 0 && ((DAT_002049d6 & 0x800) == 0)) &&
@@ -2831,11 +2448,8 @@ LAB_0005abe4:
 }
 
 
-// small locomotion-state code (1/2/4/8/0x10/0x20) set_locomotion_state
-// reads from the movement block's +0x28 byte to pick walk/swim/fly/fall
-// animation and physics. Always called right after sweep_collision_flags()
-// with its return value (both call sites had this dropped by Ghidra --
-// fixed this session, see [[water-wading-and-wall-slide-findings]]).
+// small locomotion-state code (1/2/4/8/0x10/0x20) set_locomotion_state reads from the movement
+// block's +0x28 byte to pick walk/swim/fly/fall animation and physics.
 // was FUN_0005a630
 uint collision_flags_to_locomotion_code(param_1)
 short param_1;
@@ -2877,15 +2491,8 @@ short param_1;
 }
 
 
-// was LAB_0002bbe4 -- the "mobile object" collision-response callback
-// (slot 2, DAT_002049a8), used by mobile_object_tick for generic
-// mobile/projectile objects. Ghidra couldn't resolve this address from
-// its own indirect-jump/jumptable call site, but a direct Ghidra
-// headless lookup by address (0x2bbe4) DOES decompile it: `undefined4
-// FUN_0002bbe4(void) { return 0; }` -- confirmed via disassembly that
-// this genuinely IS a no-op in the real binary too (generic
-// mobile/projectile objects get no special collision response), not a
-// "Ghidra gave up" placeholder. Kept as-is; not a bug.
+// was LAB_0002bbe4 -- the "mobile object" collision-response callback (slot 2, DAT_002049a8), used
+// by mobile_object_tick for generic mobile/projectile objects.
 undefined4 collision_response_mobile_object()
 
 {
@@ -2893,22 +2500,9 @@ undefined4 collision_response_mobile_object()
 }
 
 
-// was FUN_0003d8e4. Stored into DAT_002048b8 (a movement-state callback
-// slot) right alongside the rest of the jump/fall fields' reset in
-// set_player_tile_position and the game-init player setup -- always with
-// param_1 = the player object. Recovered via Ghidra headless: gates on
-// the object's 0x1000 flag bit, g_vertical_velocity being exactly 0 (not
-// still rising/falling) and g_jump_ascent_timer being under a
-// DAT_00202078-derived threshold, then clears the two landing-adjacent
-// fields at struct offsets 6/8 (DAT_00204886/DAT_00204888) and reports
-// success -- i.e. a "has the player settled after a jump/fall" check.
-// DAT_0003d948/DAT_0003d944 were literal-pool constants (addresses of
-// DAT_00204880's struct base and DAT_00202078 respectively), same
-// pattern as DAT_0001842c -- resolved to the existing named fields
-// rather than left as fresh globals. No call site through DAT_002048b8
-// itself was found in this decompile (likely reached only via a
-// jumptable Ghidra never resolved into a caller), so this is ported for
-// fidelity but not independently exercised.
+// was FUN_0003d8e4. Stored into DAT_002048b8 (a movement-state callback slot) right alongside the
+// rest of the jump/fall fields' reset in set_player_tile_position and the game-init player setup --
+// always with param_1 = the player object.
 undefined4 check_and_reset_landing_state(param_1)
 ushort *param_1;
 {

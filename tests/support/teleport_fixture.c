@@ -12,7 +12,7 @@ void cancel_weapon_swing(void);
 void pop_cursor_icon(int state);
 undefined4 commit_level_to_save_slot(int level);
 int load_level(int level);
-void set_player_tile_position(uint x, uint y, int flag);
+void set_player_tile_position(uint x, uint y);
 void set_pending_update_flags(int flags);
 void report_fatal_error_and_exit(void);
 void full_dungeon_redraw(void);
@@ -154,9 +154,8 @@ undefined4 find_placement_via_tile_flood_fill(char *object, int x, int y,
     return placement_result[fallback];
 }
 
-void set_player_tile_position(uint x, uint y, int flag)
+void set_player_tile_position(uint x, uint y)
 {
-    TEST_ASSERT_EQUAL_INT(1, flag);
     placed_x = x;
     placed_y = y;
     positions++;

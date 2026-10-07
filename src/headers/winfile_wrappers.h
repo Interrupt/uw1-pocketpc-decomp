@@ -2,10 +2,8 @@
 #define HEADERS_WINFILE_WRAPPERS_H
 
 /* Declarations for winfile_wrappers.c: the decompiled CreateFile/
- * ReadFile/WriteFile/SetFilePointer/CloseHandle-shaped coredll wrapper
- * thunks, implemented directly against file_io.c's real file I/O.
- * Pulls in uw.h itself so this header is self-contained for any
- * caller. */
+   ReadFile/WriteFile/SetFilePointer/CloseHandle-shaped coredll wrapper thunks, implemented directly
+   against file_io.c's real file I/O. */
 #include "uw.h"
 
 undefined4 win_file_exists();

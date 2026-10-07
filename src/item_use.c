@@ -1,8 +1,6 @@
-/* Item use: ready/unready weapon, picking up/dropping objects near the
- * player or a target, light sources, food, and combine/stow-into-
- * container logic. Split out of uw.c (the original monolithic
- * decompile) once these functions' real roles were confirmed.
- */
+/* Item use: ready/unready weapon, picking up/dropping objects near the player or a target, light
+   sources, food, and combine/stow-into- container logic. Split out of uw.c (the original monolithic
+   decompile) once these functions' real roles were confirmed. */
 #include "headers/item_use.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -18,25 +16,19 @@ static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking if %d and 
    search loop) at a 6-byte stride -- real max 9*6+2=56 bytes. */
 static undefined1 DAT_00100634_backing[128];
 #define DAT_00100634 DAT_00100634_backing[0]
-/* Sizing-audit pass: sibling high-slot of DAT_00100630 (combat.c),
-   same combination-index param_2 (0-9) and the same `*3` ushort
-   stride (`&DAT_00100632 + param_2*3` in is_object_consumed_in_
-   combination) -- real max 9*3=27, 28 elements (56 bytes), same
-   bound as DAT_00100630's own fix. Sized to 32 elements (64 bytes)
-   to match; down from 256. */
+/* Sizing-audit pass: sibling high-slot of DAT_00100630 (combat.c), same combination-index param_2
+   (0-9) and the same `*3` ushort stride (`&DAT_00100632 + param_2*3` in is_object_consumed_in_
+   combination) -- real max 9*3=27, 28 elements (56 bytes), same bound as DAT_00100630's own fix. */
 static undefined2 DAT_00100632_backing[32];
 #define DAT_00100632 DAT_00100632_backing[0]
-/* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes)
-   via the _DAT_002035cf macro below -- widened to its own real backing
-   storage so that wider access can't spill into whatever global happens
-   to follow (it used to rely on uw.c's own incidental layout). */
+/* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes) via the _DAT_002035cf
+   macro below -- widened to its own real backing storage so that wider access can't spill into
+   whatever global happens to follow (it used to rely on uw.c's own incidental layout). */
 static undefined DAT_002035cf_backing[8];
 #define DAT_002035cf DAT_002035cf_backing[0]
-// was DAT_0008725c -- gates weapon_swing_draw_tick's blit; temporarily
-// cleared during full-screen wipe/dissolve transitions (level loads,
-// screen fades) so the weapon overlay doesn't glitch mid-transition,
-// then restored once the transition finishes. ARM .data at 0x8725c
-// initializes this to 1; Combat mode relies on that default.
+// was DAT_0008725c -- gates weapon_swing_draw_tick's blit; temporarily cleared during full-screen
+// wipe/dissolve transitions (level loads, screen fades) so the weapon overlay doesn't glitch
+// mid-transition, then restored once the transition finishes.
 undefined4 g_weapon_overlay_enabled = 1;
 /* Sizing-audit pass: sibling of hud.c's DAT_00202988, same loop
    (`iVar4<6`) in the shared paperdoll-overlay refresh code. HARD.
@@ -58,44 +50,27 @@ static char s_is_too_full__00085c78[] = " is too full.\n";
    short there (max byte 46). Sized to 48; down from 256. */
 static undefined DAT_002029f9_backing[48];
 #define DAT_002029f9 DAT_002029f9_backing[0]
-/* Sizing-audit pass sized this to 32 and marked its content
-   "unrecovered" (single use, `ce_strcat(acStack_7c,&DAT_00085ce0)`,
-   0 writers). A direct Ghidra headless byte read against the ARM
-   UU.exe .data section at 0x85ce0 found it after all: "...\n" (an
-   ellipsis-and-newline fragment immediately followed by
-   s_You_read_the_00085ce8's "You read the " four bytes later). */
+/* Sizing-audit pass sized this to 32 and marked its content "unrecovered" (single use,
+   `ce_strcat(acStack_7c,&DAT_00085ce0)`, 0 writers). */
 undefined DAT_00085ce0_backing[32] = "...\n";
 /* Ghidra rendered the embedded spaces as underscores and dropped the
    trailing space. Real bytes at 0x85ce8 (ARM UU.exe .data):
    "You read the ". */
 char s_You_read_the_00085ce8[] = "You read the ";
-// g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
-// object id's low nibble) effect/quality byte table, loaded at runtime
-// (read_file_handle) and read by use_food_item to decide a food item's
-// flavor text and whether it's harmful.
+// g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the object id's low nibble)
+// effect/quality byte table, loaded at runtime (read_file_handle) and read by use_food_item to
+// decide a food item's flavor text and whether it's harmful.
  undefined1 DAT_00202a28_backing[256];
-/* Was `uint` (4 bytes), truncating the real object pointer stored here
-   (confirmed by its own assignments -- `DAT_00202098 = g_player_object;`/
-   `= param_1;` where param_1 is a real `ushort *` object pointer right
-   next to a parallel `g_selected_object = param_1;` -- and its readers,
-   e.g. `finish_object_use(DAT_00202098,...)`/`*(ushort*)(DAT_00202098+6)`,
-   all treating it as a pointer). Same truncated-pointer-global bug class
-   as everywhere else in this project (g_player_object itself, etc.) --
-   on this 64-bit host the upper 32 bits of any stored pointer were
-   silently dropped, corrupting DAT_00202098 for every later reader.
-   The "held item currently being used" global driving the item-use
-   dispatch chain (finish_object_use and friends). */
+/* Was `uint` (4 bytes), truncating the real object pointer stored here (confirmed by its own
+   assignments -- `DAT_00202098 = g_player_object;`/ `= param_1;` where param_1 is a real `ushort *`
+   object pointer right next to a parallel `g_selected_object = param_1;` -- and its readers)... */
 char *DAT_00202098;
 /* Ghidra rendered the embedded space as an underscore, dropped the
    leading space and trailing newline. Real bytes at 0x878e0 (ARM
    UU.exe .data): " on what?\n". */
 static char s_on_what__000878e0[] = " on what?\n";
-/* Sizing pass sized this to 64 and marked its content "unrecovered"
-   (read-only, `pcVar3 = &DAT_000878ec;`, copied into a 40-byte local
-   acStack_34). A direct Ghidra headless byte read against the ARM
-   UU.exe .data section at 0x878ec found it after all: "Use " (four
-   bytes before s_That_000878f4's "That "). Sized generously above
-   that 40-byte destination. */
+/* Sizing pass sized this to 64 and marked its content "unrecovered" (read-only, `pcVar3 =
+   &DAT_000878ec;`, copied into a 40-byte local acStack_34). */
 static undefined1 DAT_000878ec_backing[64] = "Use ";
 #define DAT_000878ec DAT_000878ec_backing[0]
 /* Ghidra dropped the trailing space. Real bytes at 0x878f4 (ARM
@@ -111,12 +86,9 @@ static char s_is_locked__000878fc[] = " is locked.\n";
 
 
 
-// was FUN_0003ff10 -- enters combat stance: readies the weapon in the
-// player's hand (called from handle_object_drop_target when the
-// weapon-hand paperdoll slot is clicked, via toggle_weapon_ready), sets
-// flags5f bit 2 (tick_weapon_swing_state's attack-swing "start new swing" gate)
-// and requests advance_action_animation_frame raise the weapon
-// (DAT_0023c120 = 4).
+// was FUN_0003ff10 -- enters combat stance: readies the weapon in the player's hand (called from
+// handle_object_drop_target when the weapon-hand paperdoll slot is clicked, via
+// toggle_weapon_ready)...
 void ready_weapon()
 
 {
@@ -131,16 +103,9 @@ void ready_weapon()
       /* Same dropped-argument bug as cursor_mode_button_click's sites. */
       mode_icon_highlight_off(g_cursor_mode);
     }
-    /* Originally decompiled as `g_cursor_mode = 2`. An earlier session
-       changed this to 5, reasoning that PTR_FUN_000858c8_table's
-       (then-wrong) declared order put interact_attack at index 4 (mode
-       5). That table order turned out to be wrong -- a fresh raw dump of
-       the 5 pointers directly from UU.exe at 0x858c8 (see the table's
-       own comment) shows interact_attack genuinely at index 1 (mode 2),
-       matching this line's own original value. Restored to 2: mode 2 is
-       the real numeric Attack mode (also matches
-       cursor_mode_button_click's mode-2 special case, which sets this
-       exact same weapon-ready HUD state independently). */
+    /* Originally decompiled as `g_cursor_mode = 2`. An earlier session changed this to 5, reasoning
+       that PTR_FUN_000858c8_table's (then-wrong) declared order put interact_attack at index 4
+       (mode 5). */
     g_cursor_mode = 2;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar1 | 2;
@@ -158,15 +123,9 @@ void ready_weapon()
 
 
 
-// was FUN_00040004 -- leaves combat stance: requests
-// advance_action_animation_frame lower the weapon (DAT_0023c120 = 6,
-// playing the raise animation in reverse over several ticks -- the
+// was FUN_00040004 -- leaves combat stance: requests advance_action_animation_frame lower the
+// weapon (DAT_0023c120 = 6, playing the raise animation in reverse over several ticks -- the
 // "animation delay as you leave" -- before settling at idle state 6).
-// Deliberately does NOT clear g_weapon_overlay_enabled itself: state
-// 6's existing exclusion in weapon_swing_draw_tick already stops the
-// overlay once that settle completes, so clearing bit 2 here is enough
-// (matches ready_weapon not needing to touch cursor mode either, past
-// resetting it to 0).
 void unready_weapon()
 
 {
@@ -216,47 +175,16 @@ ushort * param_1;
     iVar1 = (int)sVar2;
     if (0 < iVar1) {
       g_cursor_holding_state = 1;
-      /* User QA report: "dragging and dropping into a paper doll slot
-         does not show the item" -- confirmed live (also reproduces for
-         an ordinary backpack-grid drop under the same drag pattern, so
-         this isn't slot-specific) via UW_DEBUG_CURSORERASE/CURSORSHOW:
-         update_mouse_state's own continuous per-tick cursor-icon cycle
-         (still running here, since g_selected_object doesn't clear
-         until the widget dispatch below actually succeeds) leaves a
-         pending "erase this saved background" state (DAT_00204844) from
-         the drag icon's last shown position. The widget dispatch below
-         (handle_backpack_slot_click -> place_held_item_in_empty_slot,
-         or handle_object_drop_target) draws the placed item fresh into
-         its slot -- but then ITS OWN cleanup (pop_cursor_icon(3) below)
-         erases that still-pending stale save, which restores the
-         PRE-drop background over top of the item that was just
-         correctly drawn, since a drop's target slot position commonly
-         overlaps where the drag icon was last shown (releasing ON the
-         slot is the whole point of a drop). Flushing that pending erase
-         HERE -- before any redraw happens -- makes it a genuine no-op
-         (nothing to restore yet) instead of a same-tick race against
-         the fresh redraw, matching update_mouse_state's own
-         erase-before-anything-else protocol. erase_cursor_icon() only does
-         the actual pixel restore, it does NOT clear DAT_00204844
-         itself (every caller is responsible for that off its own
-         return value, see its own comment); missing that clear left
-         the flag set, so a LATER update_mouse_state cycle still saw
-         "erase pending" and redundantly restored the same stale save a
-         second time, clobbering the fresh redraw anyway. */
+      /* User QA report: "dragging and dropping into a paper doll slot does not show the item" --
+         confirmed live (also reproduces for an ordinary backpack-grid drop under the same drag
+         pattern, so this isn't slot-specific) via UW_DEBUG_CURSORERASE/CURSORSHOW... */
       if (erase_cursor_icon() != 0) {
         DAT_00204844 = 0;
       }
       if ((g_active_hud_panel == '\0') || (iVar1 == 0x17)) {
-        /* Widget 20 (the real "leave container" indicator) falls
-           through to handle_object_drop_target below same as
-           everywhere else -- see that function's own `iVar2==0x14`
-           case for the drop/click logic this used to duplicate here as
-           a CONTAINER_ICON_WIDGET_ID special case (a drag that started
-           in the 3D world, e.g. picking an item straight off the
-           ground and releasing it on this icon while a container
-           happens to be open, is exactly the kind of drop that case
-           already handles). Same `< 0x15` -> `< 0x14` fix as
-           handle_inventory_panel_click's own two copies. */
+        /* Widget 20 (the real "leave container" indicator) falls through to
+           handle_object_drop_target below same as everywhere else -- see that function's own
+           `iVar2==0x14` case for the drop/click logic this used to duplicate here as a... */
         if (iVar1 < 0x14) {
           handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
           if (g_selected_object == (ushort *)0x0) {
@@ -265,12 +193,9 @@ ushort * param_1;
           }
         }
         else {
-          /* Dropped argument -- every sibling call to
-             handle_object_drop_target elsewhere in this file forwards
-             the resolved widget id (see handle_inventory_panel_click's
-             own two copies); this bare call left it uninitialized,
-             so widget 20/21/22 reached here with garbage instead of
-             their real id. */
+          /* Dropped argument -- every sibling call to handle_object_drop_target elsewhere in this
+             file forwards the resolved widget id (see handle_inventory_panel_click's own two
+             copies); this bare call left it uninitialized... */
           handle_object_drop_target(iVar1);
         }
       }
@@ -297,17 +222,9 @@ int param_2;
   int iVar7;
   int iVar8;
   char cVar9;
-  /* iVar4 is reused earlier in this function as a plain int (return
-     codes from compute_drop_aim_from_cursor/check_object_placement_clearance) -- real uses, left alone --
-     but also held tilemap_lookup's real 64-bit pointer return,
-     truncating it to 32 bits on this host. The NULL check added
-     earlier (see below) only ever caught a truly-NULL result; a
-     non-NULL-but-truncated pointer still reached
-     object_list_append_tail(iVar4+2, ...) with a wild address.
-     Confirmed live (UW_DEBUG_INV + demo_dropback_test.txt): dragging
-     an item out of the backpack and dropping it in the 3D view
-     crashed here even with that guard in place. New, properly-typed
-     local for just this final pointer use. */
+  /* iVar4 is reused earlier in this function as a plain int (return codes from
+     compute_drop_aim_from_cursor/check_object_placement_clearance) -- real uses, left alone -- but
+     also held tilemap_lookup's real 64-bit pointer return, truncating it to 32 bits on this host. */
   char *pDropTile;
   ushort local_28;
   ushort local_26;
@@ -398,18 +315,9 @@ int param_2;
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-fallback] dropping via trajectory path: tile=(%d,%d)\n", iVar7 >> 3, iVar8 >> 3);
     pDropTile = (char *)tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
-    /* tilemap_lookup returns NULL for any tile coordinate outside
-       0-63 (see its own bounds check) -- confirmed live: dragging an
-       item out of an open backpack slot and dropping it back into the
-       3D view crashed in object_list_append_tail(pDropTile+2, ...),
-       i.e. exactly a NULL+2 wild pointer. This is the same unguarded-
-       tilemap_lookup-result class as this file's other "wild tilemap
-       access" crash (see the map-edge Y-wraparound note in memory.md);
-       here it wasn't a real map-edge case, just a computed nearby-drop
-       tile (local_28/local_26, from project_position_by_heading just above) that
-       apparently isn't always guaranteed to land in range. Treat it
-       the same as the "no room to drop it" (bVar3) failure just below
-       instead of dereferencing a wild pointer. */
+    /* tilemap_lookup returns NULL for any tile coordinate outside 0-63 (see its own bounds check)
+       -- confirmed live: dragging an item out of an open backpack slot and dropping it back into
+       the 3D view crashed in object_list_append_tail(pDropTile+2, ...)... */
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-fallback] bVar3(no-room)=%d pDropTile=%p\n", (int)bVar3, (void *)pDropTile);
     if ((bVar3) || (pDropTile == NULL)) {
@@ -451,20 +359,12 @@ int param_2;
 
 
 // was FUN_000523d0
-/* Was `void`, discarding place_object_in_world's own tail-call return
-   value (a real 0/1 "did it place" result -- see that function's own
-   comment) -- real ARM calling convention leaves a leaf tail call's
-   return value in r0 for THIS function's own caller, and
-   babl_builtin_take_from_npc (recovered this round) needs that value
-   to decide whether to fall back to the barter table when a dropped
-   item can't be placed. Confirmed by inspecting place_object_in_world's
-   own always-meaningful return (0 or 1), never garbage. */
+/* Was `void`, discarding place_object_in_world's own tail-call return value (a real 0/1 "did it
+   place" result -- see that function's own comment) -- real ARM calling convention leaves a leaf
+   tail call's return value in r0 for THIS function's own caller... */
 undefined4 drop_object_near_target(param_1,param_2,param_3,param_4)
-/* param_2 was `undefined4` -- a real object pointer forwarded straight
-   into place_object_in_world's own (now char*) param_4, truncated to 32 bits on
-   this host. Same class as place_object_in_world/spawn_new_object's other fixes;
-   all of this function's callers already pass real object pointers
-   (g_selected_object, or spawn_new_object's freshly-allocated object). */
+/* param_2 was `undefined4` -- a real object pointer forwarded straight into place_object_in_world's
+   own (now char*) param_4, truncated to 32 bits on this host. */
 char *param_1;
 char *param_2;
 undefined2 param_3;
@@ -587,23 +487,9 @@ int param_3;
   int iVar12;
   bool bVar13;
   undefined2 uVar14;
-  /* Was 76 bytes with a separate 555248-byte `acStackY_87970` "prefix"
-     buffer that a copy loop wrote "That " into -- but the very next
-     lines (ce_strlen/build_object_display_name) read and append to acStack_7c,
-     which never got that prefix, so it started from stale/uninitialized
-     stack content. Same split-buffer decompile artifact already fixed
-     in build_creature_look_text's acStack_7c (see its comment): the
-     giant acStackY_* array is a phantom Ghidra stack-frame-miscalc, and
-     the real buffer is acStack_7c. Confirmed live: eating the bread
-     inside an open container printed a message built from garbage
-     stack bytes and, via ce_strlen returning a wild "current length"
-     into that garbage, build_object_display_name wrote the object's name out of
-     bounds of the 76-byte buffer -- corrupting the stack badly enough
-     to zero the player's HP field, immediately killing the character
-     (a UW_DEBUG_INV hp-debug trace showed HP was still 34 right before
-     this code ran and 0 immediately after). Fixed by seeding acStack_7c
-     directly with the prefix instead, and widened generously like the
-     other fix. */
+  /* Was 76 bytes with a separate 555248-byte `acStackY_87970` "prefix" buffer that a copy loop
+     wrote "That " into -- but the very next lines (ce_strlen/build_object_display_name) read and
+     append to acStack_7c, which never got that prefix... */
   char acStack_7c [256];
   
   iVar11 = 0;
@@ -633,23 +519,9 @@ int param_3;
   }
   uVar8 = uVar8 & 0x1ff;
   if (bVar13) {
-    /* Was `(int)puVar7` -- round-tripping a real pointer (&g_food_effect_table,
-       a static global whose real address can be anywhere in this
-       64-bit process, not just the low 32 bits) through a 32-bit int
-       truncates it before the offset is even added back, same class as
-       many other fixes this session. Confirmed live: clicking a food
-       item (id class 0xb0, e.g. the bread inside an open backpack
-       container) crashed here reading an essentially random address.
-       Do the offset arithmetic in the real pointer type instead.
-       Also was `*(char *)` (signed) -- g_food_effect_table is declared
-       `undefined1` (unsigned char), and the sentinel check just below
-       (`(short)iVar12 == 0xff`) only makes sense if a stored byte of
-       0xff reads back as +255, not -1. Reading it signed sign-extended
-       any byte >= 0x80 into a negative iVar12, which the code below
-       misreads as "this food is poisonous" and applies lethal damage
-       for what should be an ordinary, harmless nutrition value -- the
-       cause of a fresh character dying instantly from eating the bread
-       once the crash above was fixed. */
+    /* Was `(int)puVar7` -- round-tripping a real pointer (&g_food_effect_table, a static global
+       whose real address can be anywhere in this 64-bit process, not just the low 32 bits) through
+       a 32-bit int truncates it before the offset is even added back... */
     iVar12 = (int)*(byte *)((char *)puVar7 + uVar10);
   }
   if (uVar8 < 0xbf) {
@@ -829,11 +701,9 @@ LAB_0007b254:
 
 // was FUN_0007c93c
 void try_combine_or_stow_object(param_1,param_2,param_3)
-/* Was `int param_1; undefined4 param_2;` -- both real object pointers
-   (matching check_object_combination's own param_1/param_2 types, forwarded to it
-   unchanged just below), truncated to 32 bits on this 64-bit host.
-   Same class as use_object_on_target/handle_object_drop_target's fixes just above it in
-   this same never-before-exercised container-interact call chain. */
+/* Was `int param_1; undefined4 param_2;` -- both real object pointers (matching
+   check_object_combination's own param_1/param_2 types, forwarded to it unchanged just below),
+   truncated to 32 bits on this 64-bit host. */
 char *param_1;
 ushort *param_2;
 int param_3;
@@ -843,10 +713,9 @@ int param_3;
   char cVar1;
   short sVar2;
   char *pcVar3;
-  /* Was 544548 bytes -- same Ghidra stack-frame-size-miscalculation
-     artifact already fixed twice this session (check_object_fits_in_slot,
-     dispatch_object_action): a scratch copy of the short "UNNAMED"
-     string that's never read back afterward. */
+  /* Was 544548 bytes -- same Ghidra stack-frame-size-miscalculation artifact already fixed twice
+     this session (check_object_fits_in_slot, dispatch_object_action): a scratch copy of the short
+     "UNNAMED" string that's never read back afterward. */
   char acStack_84f48 [64];
   char acStack_24 [20];
   
@@ -870,17 +739,9 @@ int param_3;
     try_empty_container(param_2,param_1 == g_player_object);
   }
   else {
-    /* Both calls here were bare (no arguments) -- see
-       find_or_assign_object_widget's own fix comment and
-       open_backpack_container's declared `short param_1`.
-       find_or_assign_object_widget(param_2) finds (or allocates) the
-       grid widget currently displaying this container; that widget
-       index is exactly what open_backpack_container needs to know
-       WHICH container to open. Confirmed crashing for real: opening a
-       container nested inside an already-open container dereferenced
-       whatever garbage register value reached open_backpack_container's
-       param_1, since nothing here ever captured
-       find_or_assign_object_widget's return value at all. */
+    /* Both calls here were bare (no arguments) -- see find_or_assign_object_widget's own fix
+       comment and open_backpack_container's declared `short param_1`.
+       find_or_assign_object_widget(param_2) finds (or allocates) the grid widget currently... */
     int _widget = find_or_assign_object_widget(param_2);
     if (getenv("UW_DEBUG_INV"))
       fprintf(stderr, "[inv] try_combine_or_stow_object open: param_2=%p find_or_assign_object_widget returned widget=%d\n",
@@ -899,10 +760,9 @@ int param_3;
 
 // was FUN_00079984
 ushort *use_object_on_target(param_1,param_2,param_3)
-/* Was `int param_1` -- every call site passes a real object pointer
-   (g_player_object, the player object, at most sites), truncating it to
-   32 bits on this 64-bit host. Same class as handle_object_drop_target's `iVar2`
-   fix just above this function's own callers. */
+/* Was `int param_1` -- every call site passes a real object pointer (g_player_object, the player
+   object, at most sites), truncating it to 32 bits on this 64-bit host. Same class as
+   handle_object_drop_target's `iVar2` fix just above this function's own callers. */
 ushort *param_1;
 ushort * param_2;
 int param_3;
@@ -948,14 +808,9 @@ int param_3;
         refuel_light_source_item(param_2,param_3);
         return param_2;
       }
-      /* Dropped arguments: use_light_source (light/extinguish a light
-         source) declares two params it dereferences immediately, but
-         was called bare here -- leftover ARM register garbage stood in
-         for the real torch object and mode. Confirmed live: clicking
-         the Torch inside an open backpack container read garbage for
-         `param_1[2] & 0x3f` (the torch's real fuel/charges field) and
-         almost always happened to read 0, printing "That light is
-         already used up" regardless of the torch's actual fuel. */
+      /* Dropped arguments: use_light_source (light/extinguish a light source) declares two params
+         it dereferences immediately, but was called bare here -- leftover ARM register garbage
+         stood in for the real torch object and mode. */
       use_light_source(param_2,param_3);
     }
     else if (uVar1 == 3) {
@@ -1035,20 +890,18 @@ LAB_00079cb8:
 
 // was FUN_00079d08
 bool finish_object_use(param_1,param_2,param_3)
-/* Was `undefined4 param_1` -- a real object-record pointer (forwarded
-   to decrement_object_count/discard_misplaced_object, which both dereference it), truncated
-   to 32 bits on this host -- same class as many other fixes this
-   session. */
+/* Was `undefined4 param_1` -- a real object-record pointer (forwarded to
+   decrement_object_count/discard_misplaced_object, which both dereference it), truncated to 32 bits
+   on this host -- same class as many other fixes this session. */
 ushort *param_1;
 int param_2;
 undefined4 param_3;
 
 {
   short sVar1;
-  char *iVar2;  /* was `int` -- truncated tilemap_lookup's/discard_misplaced_object's
-                   real `void *`/`ushort *` returns; only ever compared to
-                   0 (find_object_by_encoded_slot_in_chain's plain int return also lands here, but
-                   is likewise only ever compared to 0, so char* is safe) */
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's/discard_misplaced_object's real `void *`/`ushort *`
+   returns; only ever compared to 0 (find_object_by_encoded_slot_in_chain's plain int return also
+   lands here, but is likewise only ever compared to 0, so char* is safe) */
   undefined4 uVar3;
   ushort local_14 [2];
 
@@ -1081,13 +934,9 @@ undefined4 param_3;
 
 
 
-// was FUN_00079dec -- begins holding an object on the cursor for a
-// deferred "use on target" interaction, but only if nothing is
-// already selected (g_selected_object == 0; otherwise a no-op
-// returning NULL). param_1 is an existing object to hold, or NULL to
-// spawn a fresh one of type param_2 first. Sets g_cursor_holding_
-// state to 1 and prompts via push_cursor_icon (not yet named). Confirmed
-// real callers in src/audio.c, src/item_use.c, and src/player.c.
+// was FUN_00079dec -- begins holding an object on the cursor for a deferred "use on target"
+// interaction, but only if nothing is already selected (g_selected_object == 0; otherwise a no-op
+// returning NULL). param_1 is an existing object to hold...
 short *begin_holding_object_on_cursor(param_1,param_2)
 short * param_1;
 uint param_2;
@@ -1114,14 +963,9 @@ uint param_2;
 
 
 
-// was FUN_00079e64 -- deferred-target-click completion callback for
-// item type 0x101 specifically (armed by arm_use_item_on_player_
-// prompt below): clears the pending-target UI state, then checks
-// whether the held item (param_1) combines with the player, using
-// the player's own offset+0x31 byte (a mixture/poison-type index) as
-// the combination's extra parameter, and reports the result via one
-// of several scroll messages -- playing a sound effect on one
-// specific outcome (sVar1's default case).
+// was FUN_00079e64 -- deferred-target-click completion callback for item type 0x101 specifically
+// (armed by arm_use_item_on_player_ prompt below): clears the pending-target UI state, then checks
+// whether the held item (param_1) combines with the player...
 void complete_use_reagent_on_player(param_1,param_2)
 undefined4 param_1;
 int param_2;
@@ -1156,12 +1000,9 @@ int param_2;
 
 
 
-// was FUN_00079f1c -- deferred-target-click completion callback for
-// item types 0x102-0x10e (armed by arm_use_item_on_player_prompt
-// below): the general case, combining the held item with the player
-// using the held item's own quality field (DAT_00202098+6, masked to
-// 0x3f) as the combination parameter, reporting the result via
-// message id (result+2).
+// was FUN_00079f1c -- deferred-target-click completion callback for item types 0x102-0x10e (armed
+// by arm_use_item_on_player_prompt below): the general case, combining the held item with the
+// player using the held item's own quality field...
 void complete_use_item_on_player(param_1,param_2)
 ushort *param_1;
 int param_2;
@@ -1181,12 +1022,9 @@ int param_2;
 
 
 
-// was FUN_00079f90 -- arms the "use item on target" prompt for a
-// held item whose type falls in 0x101-0x10e: picks
-// complete_use_reagent_on_player for the specific type 0x101, or
-// complete_use_item_on_player for 0x102-0x10e, then hands that
-// callback to prompt_use_item_on_target below. A no-op for any type
-// outside that range.
+// was FUN_00079f90 -- arms the "use item on target" prompt for a held item whose type falls in
+// 0x101-0x10e: picks complete_use_reagent_on_player for the specific type 0x101, or
+// complete_use_item_on_player for 0x102-0x10e...
 void arm_use_item_on_player_prompt(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -1211,16 +1049,9 @@ int param_2;
 
 
 
-// was FUN_00079ff0 -- the general "use item on target" prompt setup:
-// builds and prints "<item's display name> -- use it on what?" via
-// build_object_display_name, then prompts the player to click a
-// target (push_cursor_icon) and arms the deferred-target-click state
-// (g_selected_object, g_cursor_holding_state=2, DAT_00202098=the
-// item being used, DAT_002020b8=the completion callback param_2 --
-// the same pending-click callback slot dispatch_player_command's own
-// cluster uses). param_2 is later invoked by whatever click-handling
-// code resolves the target (see complete_use_reagent_on_player and
-// complete_use_item_on_player above for two such callbacks).
+// was FUN_00079ff0 -- the general "use item on target" prompt setup: builds and prints "<item's
+// display name> -- use it on what?" via build_object_display_name, then prompts the player to click
+// a target (push_cursor_icon) and arms the deferred-target-click state...
 void prompt_use_item_on_target(param_1,param_2)
 ushort * param_1;
 code *param_2;
@@ -1260,13 +1091,9 @@ code *param_2;
 
 
 
-// was FUN_0007a0cc -- deferred-target-click completion callback for
-// a use-item interaction restricted to target types 0x140-0x147:
-// prints a "no effect" message (id 0x80) if the clicked target isn't
-// in that range; otherwise prints a success message (id 0x81), sets
-// bits on the target's quality field, and consumes the held item via
-// finish_object_use. Armed by arm_use_item_on_special_target_prompt
-// below. No callers found by grep in the remaining decompile.
+// was FUN_0007a0cc -- deferred-target-click completion callback for a use-item interaction
+// restricted to target types 0x140-0x147: prints a "no effect" message (id 0x80) if the clicked
+// target isn't in that range; otherwise prints a success message (id 0x81)...
 void complete_use_item_on_special_target(param_1)
 ushort * param_1;
 
@@ -1309,17 +1136,9 @@ int param_2;
 
 
 
-// was FUN_0007a198 -- deferred-target-click completion callback for
-// a single specific quest interaction: requires the clicked target
-// to be object type 0x165 and the held item's quality to be exactly
-// 0x3e, plus a specific flag/field pattern on both objects (offset
-// +0x8000/+0x7fc0==0x840); on success, sets two player quest-flag
-// bits (DAT_00086df8+0x61/0x62), marks the target's quality "used",
-// triggers an effect via attempt_talk_interaction, and syncs an
-// object at a fixed tile (0x36,0x34) to the player via resolve_skill_gated_unlock_or_use.
-// Prints one of several failure/progress messages otherwise. No
-// callers found by grep in the remaining decompile -- likely a
-// one-off scripted quest puzzle, not a general mechanic.
+// was FUN_0007a198 -- deferred-target-click completion callback for a single specific quest
+// interaction: requires the clicked target to be object type 0x165 and the held item's quality to
+// be exactly 0x3e...
 void complete_use_item_on_quest_target(param_1,param_2)
 ushort * param_1;
 undefined4 param_2;
@@ -1380,14 +1199,9 @@ LAB_0007a38c:
 
 
 
-// was FUN_0007a3a8 -- deferred-target-click completion callback:
-// resets DAT_0023bc94 and refreshes equipment effects, then if the
-// clicked target is a container-class object (type class 0x1f0==
-// 0x170), prints a progress message (id 0x9d) and re-dispatches
-// through use_object_on_target (letting that function's own
-// container-combination path finish the interaction); otherwise
-// prints a "can't do that" message (id 0x9e). No callers found by
-// grep in the remaining decompile.
+// was FUN_0007a3a8 -- deferred-target-click completion callback: resets DAT_0023bc94 and refreshes
+// equipment effects, then if the clicked target is a container-class object (type class 0x1f0==
+// 0x170)...
 void complete_use_item_on_container(param_1)
 ushort * param_1;
 
@@ -1408,13 +1222,8 @@ ushort * param_1;
 
 
 
-// was FUN_0007a418 -- deferred-target-click completion callback,
-// gated on both param_2 and param_3 being nonzero: resets the
-// click-target UI state, then runs use_lockpick_on_object (a
-// skill-difficulty-check interaction that builds the target's
-// display name and compares its own difficulty rating against the
-// player's skill byte at offset +0x2f) against the target. No
-// callers found by grep in the remaining decompile.
+// was FUN_0007a418 -- deferred-target-click completion callback, gated on both param_2 and param_3
+// being nonzero: resets the click-target UI state, then runs use_lockpick_on_object...
 void complete_use_item_skill_check(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
@@ -1434,13 +1243,9 @@ int param_3;
 
 
 
-// was FUN_0007a478 -- item-type dispatcher for use_object_on_target's
-// class-3 branch: types 0xc2-0xc6 arm complete_use_item_on_quest_target
-// (the one-off scripted puzzle); 0xd7 arms complete_use_item_skill_check;
-// 0xd8 sets DAT_0023bc94 and arms complete_use_item_on_container;
-// 0xd9/0xce/0xcf use a food item directly (use_food_item, no target
-// prompt); anything else is a no-op. Confirmed real caller:
-// use_object_on_target (src/item_use.c).
+// was FUN_0007a478 -- item-type dispatcher for use_object_on_target's class-3 branch: types
+// 0xc2-0xc6 arm complete_use_item_on_quest_target (the one-off scripted puzzle); 0xd7 arms
+// complete_use_item_skill_check; 0xd8 sets DAT_0023bc94 and arms complete_use_item_on_container...
 void arm_use_item_on_target_prompt(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -1484,12 +1289,9 @@ int param_2;
 
 
 
-// was FUN_0007a53c -- for_each_object_of_type callback (see that
-// function's own callback contract): rolls a random value 0..param_2
-// against the matched object's own byte at offset +8, adds 1 to that
-// byte, and sets a flag bit at offset +0xe (bit 1). Always returns 0
-// (never removes the object from for_each_object_of_type's scan).
-// Confirmed real caller: complete_use_item_special_quest_event below.
+// was FUN_0007a53c -- for_each_object_of_type callback (see that function's own callback contract):
+// rolls a random value 0..param_2 against the matched object's own byte at offset +8, adds 1 to
+// that byte, and sets a flag bit at offset +0xe (bit 1).
 undefined4 apply_random_roll_to_matched_object(param_1,param_2)
 int param_1;
 short param_2;
@@ -1506,22 +1308,8 @@ short param_2;
 
 
 
-// was FUN_0007a598 -- deferred-target-click completion callback for
-// a single, major scripted quest event: only fires for target item
-// type 0x117. On success: prints a message (id 0x85), consumes the
-// held item, alters the target tile's texture, discards the object
-// from the tile, resets DAT_002020a0 to -1 (a sentinel), sets two
-// player status-flag bits (DAT_00086df8+0x5f/0x60 bit 0x20), sets
-// BOTH the player's current and max mana (offsets +0x37/+0x38 --
-// see draw_mana_stat_display's own confirmed "play_mana" field) from
-// a max-mana source byte (+0xb0), and applies a random roll (via
-// apply_random_roll_to_matched_object above) to every object of type
-// 0xe7 in the level. Prints a different message (id 0x84) for any
-// other clicked target. Given the scale of the state changes (mana
-// restored to full, a whole object class affected), this looks like
-// a major one-time quest/ritual completion rather than an everyday
-// item interaction; the exact quest isn't identified here. No
-// callers found by grep in the remaining decompile.
+// was FUN_0007a598 -- deferred-target-click completion callback for a single, major scripted quest
+// event: only fires for target item type 0x117.
 void complete_use_item_special_quest_event(param_1,param_2,param_3)
 ushort * param_1;
 int param_2;
@@ -1562,13 +1350,9 @@ undefined4 param_3;
 
 
 
-// was FUN_0007a704 -- deferred-target-click completion callback:
-// only fires for target type 0x16e whose quality-indexed tile-flag
-// lookup (DAT_0023add0) equals 0xb; on that match, consumes the held
-// item and triggers an effect (trigger_object_trap_or_use_action, not yet named) at the
-// player's own tile. Prints a "no effect" message (id 0x84)
-// otherwise. Confirmed real caller: use_object_on_target
-// (src/item_use.c).
+// was FUN_0007a704 -- deferred-target-click completion callback: only fires for target type 0x16e
+// whose quality-indexed tile-flag lookup (DAT_0023add0) equals 0xb; on that match, consumes the
+// held item and triggers an effect...
 void complete_use_item_on_flagged_tile(param_1,param_2)
 ushort * param_1;
 undefined4 param_2;
@@ -1588,19 +1372,8 @@ undefined4 param_2;
 
 
 
-// was FUN_0007a7fc -- dispatches by the HELD item's own type (not
-// the target's): type 0x112 either directly triggers
-// complete_use_item_special_quest_event (if param_3==0, using
-// param_2 as the item and skipping the target-click prompt) or arms
-// it as a deferred-target-click completion (otherwise); 0x114 calls
-// trigger_exploding_book_trap when param_3!=0; 0x115 advances a
-// 3-state player counter (DAT_00086df8+0x61, wrapping) and triggers
-// an effect via display_book_or_scroll_page, then rewrites the
-// item's own low byte to 0xd5 and clears one bit of its high byte
-// before flushing a redraw (set_pending_update_flags or redraw_container_icon_slot depending
-// on param_3); 0x11b uses a food item directly. Confirmed real
-// caller: use_object_on_target's class-1/family-1 branch
-// (src/item_use.c).
+// was FUN_0007a7fc -- dispatches by the HELD item's own type (not the target's): type 0x112 either
+// directly triggers complete_use_item_special_quest_event...
 void dispatch_use_held_item_by_type(param_1,param_2,param_3)
 undefined4 param_1;
 ushort * param_2;
@@ -1661,14 +1434,9 @@ int param_3;
 
 
 
-// was FUN_0007abbc -- refuels a light source item (torch/lamp):
-// gated on the item's low nibble being outside 0xc-0xf (a "not
-// already refueled" state check) and its "already used" flag (offset
-// +1 bit 0x80) being clear. Looks for a matching fuel source in the
-// item's own contents (find_object_in_chain), and on success advances the
-// item's state nibble by 4, prints a "refueled" message (id 0x7d),
-// and refreshes its inventory widget. Confirmed real caller:
-// use_object_on_target's class-2 branch.
+// was FUN_0007abbc -- refuels a light source item (torch/lamp): gated on the item's low nibble
+// being outside 0xc-0xf (a "not already refueled" state check) and its "already used" flag (offset
+// +1 bit 0x80) being clear.
 void refuel_light_source_item(param_1,param_2)
 byte * param_1;
 uint param_2;
@@ -1702,16 +1470,9 @@ uint param_2;
 
 
 
-// was FUN_0007b2f0 -- deferred-target-click completion callback,
-// gated on param_2 != 0 && param_3 == 0 and the used item not
-// already being held by the player: for target types 0x153-0x156,
-// clones the item 1-2 times (each clone's type id nudged by a random
-// die roll toward 0x156), scattering the clones onto nearby tiles
-// (place_object_in_world) -- one specific type-id outcome (0x10)
-// also rolls a random enchantment bonus on the clone -- then discards
-// the original from its tile. Prints a "no effect" message (id 0x84)
-// for any other target type. No callers found by grep in the
-// remaining decompile.
+// was FUN_0007b2f0 -- deferred-target-click completion callback, gated on param_2 != 0 && param_3
+// == 0 and the used item not already being held by the player: for target types 0x153-0x156, clones
+// the item 1-2 times (each clone's type id nudged by a random die roll toward 0x156)...
 void complete_use_item_scatter_spawn(param_1,param_2,param_3)
 short * param_1;
 int param_2;
@@ -1795,17 +1556,9 @@ int param_3;
 
 
 
-// was FUN_0007b5a4 -- deferred-target-click completion callback,
-// gated on both param_2 and param_3 nonzero: for target types
-// 0xcc/0xcd (a fillable source, e.g. a fountain/well), consumes the
-// held item and rewrites its type to 0x91 (matches this function's
-// own 0x90/0x91 branch, so likely "empty flask" -> "filled flask"),
-// then refreshes its inventory widget. For a held item already of
-// type 0x90/0x91, tops off its quality/fill-level field (offset +2,
-// low 6 bits) unless already full, printing a fill-progress message;
-// types 0x94/0x95 print a sibling message pair without modifying
-// anything. Any other combination just reports "no effect". No
-// callers found by grep in the remaining decompile.
+// was FUN_0007b5a4 -- deferred-target-click completion callback, gated on both param_2 and param_3
+// nonzero: for target types 0xcc/0xcd (a fillable source, e.g. a fountain/well), consumes the held
+// item and rewrites its type to 0x91...
 void complete_use_item_fill_flask(param_1,param_2,param_3)
 ushort * param_1;
 int param_2;
@@ -1865,24 +1618,13 @@ int param_3;
 
 
 
-// was FUN_0007b72c -- the central "use this special/unique item
-// directly" dispatcher for item types 0x121-0x12f and 299/300,
-// covering: resting in a bed (0x121, gated on the current UI state);
-// door-texture scheduling (0x122); playing one of 2 musical
-// instruments (0x123/0x124); a food-quality-reducing item (0x125);
-// arming the special-target prompt (0x127, arm_use_item_on_special_
-// target_prompt) or the scatter-spawn (0x128) and fill-flask (0x12d)
-// completions via prompt_use_item_on_target; a specific quest item
-// (0x129) that searches nearby containers for a matching combinable
-// item and merges their quantities -- already fixed here (an earlier
-// comment documents a real "already holding the matching quest item"
-// check that was silently always false due to a sign-extension bug,
-// same class as swap_cursor_and_slot_item's own fix); and 2 more
-// object-type-specific branches (0x12e/0x12f) outside the switch,
-// handled when param_3==0 (a "not yet holding a target" pre-check).
-// Confirmed real caller: use_object_on_target's class-4 branch.
+// was FUN_0007b72c -- the central "use this special/unique item directly" dispatcher for item types
+// 0x121-0x12f and 299/300, covering: resting in a bed (0x121, gated on the current UI state);
+// door-texture scheduling (0x122); playing one of 2 musical instruments (0x123/0x124)...
 void dispatch_use_special_item_by_type(param_1,param_2,param_3)
-int param_1;
+/* The actor is an object address, forwarded in r3 to the fountain's
+   special-action dispatcher (ARM 0x7b99c). */
+ushort *param_1;
 ushort * param_2;
 int param_3;
 
@@ -1893,27 +1635,21 @@ int param_3;
   ushort *puVar4;
   code *pcVar5;
   uint uVar6;
-  undefined4 in_stack_ffffffd4;
   undefined2 uVar7;
   short local_24;
   short local_22;
   short local_20 [2];
   undefined1 auStack_1c [4];
   
-  uVar7 = (undefined2)((uint)in_stack_ffffffd4 >> 0x10);
   if (param_3 == 0) {
     uVar1 = *param_2 & 0x1ff;
     if (uVar1 == 0x129) {
       if (param_1 != g_player_object) {
         return;
       }
-      /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
-         own identical fix comment. 0x129 has its own bit 8 set, so this
-         comparison could never even succeed while reading a
-         sign-extended single byte (0x29's own top bit is clear, so
-         char-sign-extension never contributes that bit) -- this
-         "already holding the matching quest item" check was silently
-         always false. */
+      /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's own identical fix
+         comment. 0x129 has its own bit 8 set, so this comparison could never even succeed while
+         reading a sign-extended single byte... */
       if ((g_selected_object == (ushort *)0x0) || ((*(ushort *)g_selected_object & 0x1ff) != 0x129)) {
         puVar4 = (ushort *)find_equipped_item_by_category(4,2,9,2,&local_22);
         if (puVar4 == (ushort *)0x0) {
@@ -1951,7 +1687,7 @@ int param_3;
     if (uVar1 == 0x12e) {
       iVar3 = resolve_object_variant_or_special_link(param_2,&local_24,local_20,auStack_1c);
       if (iVar3 != 0) {
-        dispatch_trap_special_or_tile_action((int)DAT_002020a0,(int)DAT_002020a4,param_2,param_1,CONCAT22(uVar7,local_24),
+        dispatch_trap_special_or_tile_action((int)DAT_002020a0,(int)DAT_002020a4,param_2,param_1,local_24,
                      local_20[0]);
         iVar3 = 0xf9;
         if (local_24 == 4) goto LAB_0007b9b8;
@@ -1968,7 +1704,8 @@ int param_3;
   }
   switch(*param_2 & 0x1ff) {
   case 0x121:
-    if (*(short *)(DAT_00085a6c + 8) == 1) {
+    /* ARM 0x7b7b8..0x7b7c0 reads the mode at byte offset 8. */
+    if (*(short *)((char *)DAT_00085a6c + 8) == 1) {
       handle_rest_action(1);
     }
     break;
@@ -2039,17 +1776,9 @@ LAB_0007b8b8:
 
 
 
-// was FUN_0007baf0 -- "read" a book/sign/scroll-like item: type
-// 0x13b (likely a dedicated multi-page book) switches to a reading
-// UI mode (change_game_mode) when the current UI state permits.
-// Other readable items (not the "inscribed" class 0x1000/0x140 combo)
-// either print "You read the <name>: <text>" via message_scroll_
-// print_wrapped -- fixing a dropped-argument bug already documented
-// here -- when they have a real text id, or (for the "already
-// triggered" bit 0x400 case) fire a babl/effect trigger via
-// display_book_or_scroll_page instead. Anything else falls through to a generic
-// tile-effect trigger + finish_object_use. Confirmed real caller:
-// use_object_on_target's family-3 branch (src/item_use.c).
+// was FUN_0007baf0 -- "read" a book/sign/scroll-like item: type 0x13b (likely a dedicated
+// multi-page book) switches to a reading UI mode (change_game_mode) when the current UI state
+// permits.
 void use_readable_item(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -2058,12 +1787,9 @@ int param_2;
   ushort uVar2;
   short sVar3;
   int iVar5;
-  /* Same split-buffer decompile artifact fixed in use_food_item (see its
-     comment) and in build_creature_look_text: the "You read the "
-     prefix was copied into a phantom, oversized acStackY_85d64 buffer
-     that nothing else ever reads, leaving the real acStack_7c (read by
-     ce_strlen just below) uninitialized. Fixed the same way: seed
-     acStack_7c directly, widened for safety. */
+  /* Same split-buffer decompile artifact fixed in use_food_item (see its comment) and in
+     build_creature_look_text: the "You read the " prefix was copied into a phantom, oversized
+     acStackY_85d64 buffer that nothing else ever reads... */
   char acStack_7c [256];
   
   if (param_2 != 0) {
@@ -2085,11 +1811,9 @@ int param_2;
           }
           ce_strcat(acStack_7c,&DAT_00085ce0);
           message_scroll_print_wrapped(acStack_7c);
-          /* Was `get_message_string(id); message_scroll_print_wrapped();`
-             -- the SAME dropped-argument idiom fixed throughout this
-             session (a register-carryover call with no explicit args).
-             Thread the looked-up book/sign text through explicitly
-             instead of relying on leftover register state. */
+          /* Was `get_message_string(id); message_scroll_print_wrapped();` -- the SAME
+             dropped-argument idiom fixed throughout this session (a register-carryover call with no
+             explicit args). */
           message_scroll_print_wrapped(get_message_string(param_1[3] >> 6 | 0x600));
           message_scroll_print_wrapped(&s_scroll_newline_0008522c);
         }
@@ -2114,16 +1838,9 @@ int param_2;
 
 
 
-// was FUN_0007bcdc -- dispatches an interaction with a world object
-// by its own type-id "family" bits (bits 4-5): family 0 handles
-// doors (open/close, or a "locked"/"already open" scroll message for
-// the player); family 1 handles mantra-chant statues (low nibble 7,
-// handle_mantra_chant) and combinable levers/switches (nibble 0xb/
-// 0xd, try_combine_or_stow_object); families 2 and 3 cycle a small
-// state value (e.g. a multi-position switch or a lever with a
-// positional sound effect) and flush a redraw. Already had a
-// UW_DEBUG_DOOR diagnostic despite covering more than just doors.
-// Confirmed real caller: use_object_on_target's class-5 branch.
+// was FUN_0007bcdc -- dispatches an interaction with a world object by its own type-id "family"
+// bits (bits 4-5): family 0 handles doors (open/close, or a "locked"/"already open" scroll message
+// for the player); family 1 handles mantra-chant statues...
 void dispatch_world_object_interaction_by_family(param_1,param_2)
 ushort * param_1;
 ushort * param_2;
@@ -2206,18 +1923,9 @@ ushort * param_2;
 
 
 
-// was FUN_0007c1bc -- a shared "finalize object use" step called at
-// the end of virtually every use-object interaction path
-// (use_object_on_target, use_readable_item, dispatch_world_object_
-// interaction_by_family): checks resolve_object_variant_or_special_link
-// for a real link/description on the target (param_4), then either
-// triggers a babl conversation script (dispatch_trap_special_or_tile_action) for the
-// player-only case, or -- gated on a per-player cooldown counter
-// (DAT_0024cfc8 vs a player field at offset +0xce) -- does the same
-// for the interacting object (param_3) and finalizes via
-// consume_linked_special_object_charge; plays a "denied" sound effect
-// if the cooldown hasn't elapsed yet. Returns whether the script
-// actually fired.
+// was FUN_0007c1bc -- a shared "finalize object use" step called at the end of virtually every
+// use-object interaction path (use_object_on_target, use_readable_item, dispatch_world_object_
+// interaction_by_family)...
 undefined4 trigger_object_use_babl_script(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
@@ -2256,17 +1964,8 @@ LAB_0007c2b8:
 
 
 
-// was FUN_0007c2ec -- another shared "finalize object use/trap check"
-// step, called alongside trigger_object_use_babl_script throughout
-// the use-object interaction paths: if the interacting object
-// (param_2) isn't already flagged and has trapped/linked contents
-// (offset +6 quality bits), searches its container chain
-// (find_object_in_chain) for a matching entry -- a low-class match with an
-// empty extra-flags field and param_3==4 triggers a trap effect
-// (apply_trap_or_link_effect/refresh_object_link_chain, not yet named); a higher-class match
-// instead runs the general "use item on object" resolver
-// (resolve_skill_gated_unlock_or_use -- confirmed in an earlier pass as the skill-gated
-// unlock/use resolver behind force_unlock_target_object).
+// was FUN_0007c2ec -- another shared "finalize object use/trap check" step, called alongside
+// trigger_object_use_babl_script throughout the use-object interaction paths...
 void trigger_object_trap_or_use_action(param_1,param_2,param_3,param_4,param_5)
 char *param_1;
 char *param_2;   /* was int -- the picked object (g_interact_target etc.), deref'd at param_2+1 / param_2+6 */
@@ -2297,12 +1996,9 @@ undefined2 param_5;
 }
 
 
-// was FUN_0002805c -- checks if two objects are combinable: searches
-// the combat/combination data table (&DAT_00100630, loaded by
-// load_combat_data_file, 10 entries) for an unordered match of the two
-// object ids, returning the combination index or -1 if none matches.
-// Own debug trace confirms this role verbatim ("checking if %d and %d
-// are combinable" / "objsbecombinable returns %d").
+// was FUN_0002805c -- checks if two objects are combinable: searches the combat/combination data
+// table (&DAT_00100630, loaded by load_combat_data_file, 10 entries) for an unordered match of the
+// two object ids, returning the combination index or -1 if none matches.
 int objects_are_combinable(param_1,param_2)
 ushort * param_1;
 ushort * param_2;
@@ -2370,10 +2066,9 @@ short param_1;
 
 
 
-// was FUN_00028254 -- checks whether object param_1 is the "consumed"
-// ingredient half of combination index param_2: picks whichever of the
-// combination table's two id slots matches param_1's own id, and
-// returns that slot's own high bit (its "consumed" flag).
+// was FUN_00028254 -- checks whether object param_1 is the "consumed" ingredient half of
+// combination index param_2: picks whichever of the combination table's two id slots matches
+// param_1's own id, and returns that slot's own high bit (its "consumed" flag).
 bool is_object_consumed_in_combination(param_1,param_2)
 ushort * param_1;
 short param_2;
@@ -2389,16 +2084,9 @@ short param_2;
 }
 
 
-// was FUN_000282ac -- a specific puzzle/quest handler triggered by
-// "reading" a special item (its own caller only reaches here for a
-// message-id field in a reserved high range, not a normal book/sign
-// text): searches a nearby container for exactly one each of 3
-// hardcoded object ids (0xd9/0xb8/0xbe), and on a full match, marks the
-// container "opened" (leaving any nested-container UI showing it first),
-// frees its now-consumed contents, and prints a success scroll message
-// (id 0x95); prints a "missing item"/"container not found" message
-// (0x94/0x96) otherwise. The specific real-world puzzle/location this
-// corresponds to isn't otherwise confirmed from the code alone.
+// was FUN_000282ac -- a specific puzzle/quest handler triggered by "reading" a special item (its
+// own caller only reaches here for a message-id field in a reserved high range, not a normal
+// book/sign text)...
 undefined4 check_offering_container_puzzle()
 
 {
@@ -2467,18 +2155,9 @@ LAB_000283ec:
 }
 
 
-// was FUN_00039d78 -- the "climb" command handler: projects a point
-// 11 units ahead of the player along their current heading, checks
-// the tile there is a climbable wall/door of a height the player's
-// own stat allows (else message 0x65, "can't climb here"), then rolls
-// a 1-in-5 success chance. On success, checks encumbrance (comparing
-// carried weight against a capacity derived from _DAT_002035cf and
-// the player record) -- if too heavy, prints message 99 and returns 1
-// (abort without spending the attempt); otherwise prints the success
-// message 0x66. On the 4-in-5 failure roll, prints message 100.
-// Returns 0 whenever a climb attempt (successful or not) actually
-// happened.
-// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+// was FUN_00039d78 -- the "climb" command handler: projects a point 11 units ahead of the player
+// along their current heading, checks the tile there is a climbable wall/door of a height the
+// player's own stat allows (else message 0x65, "can't climb here")...
 
 undefined4 try_climb_wall()
 
@@ -2520,15 +2199,9 @@ undefined4 try_climb_wall()
 }
 
 
-// was FUN_0003ab90 -- the "use lockpick on this lock" item-use
-// handler: when param_3 is set, first prompts the player with a
-// difficulty-flavored confirmation message (via prompt_yes_no_scroll)
-// before proceeding; otherwise/always then shows the lockpicking UI
-// page (0x104) and calls attempt_pick_lock. On success/failure,
-// advances game time by a cost scaled to the lock's difficulty, rolls
-// a chance to destroy the lockpick on a bad outcome
-// (roll_object_destroy_chance), and prints the matching result
-// message.
+// was FUN_0003ab90 -- the "use lockpick on this lock" item-use handler: when param_3 is set, first
+// prompts the player with a difficulty-flavored confirmation message (via prompt_yes_no_scroll)
+// before proceeding...
 void use_lockpick_on_object(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
@@ -2568,11 +2241,9 @@ int param_3;
     sVar1 = prompt_yes_no_scroll(0,0xda,&local_68);
     if ((sVar1 != 0) && (sVar1 < 4)) {
       local_68 = (uint)(sVar1 == 2);
-      /* HACK: was a bare `echo_yes_no_to_scroll();` -- dropped
-         argument, the same class of bug fixed repeatedly elsewhere in
-         this file. local_68, just set on the line above from the
-         prompt's own answer, is obviously the intended argument
-         here. */
+      /* HACK: was a bare `echo_yes_no_to_scroll();` -- dropped argument, the same class of bug
+         fixed repeatedly elsewhere in this file. local_68, just set on the line above from the
+         prompt's own answer, is obviously the intended argument here. */
       echo_yes_no_to_scroll(local_68);
     }
     message_scroll_print_wrapped(&s_scroll_newline_0008522c);
@@ -2620,13 +2291,9 @@ int param_3;
 }
 
 
-// was FUN_00043b78 -- place_object_in_backpack_slot's sibling for
-// equipment slots (g_equipped_items, indexed by param_2): walks the
-// container's contents list looking for the item currently in that
-// slot, swaps it to the cursor if the new object doesn't fit, links
-// the new object in, updates the slot's object-index encoding,
-// propagates the weight delta up the container ancestry chain, then
-// refreshes equipment effects and the inventory/backpack widgets.
+// was FUN_00043b78 -- place_object_in_backpack_slot's sibling for equipment slots
+// (g_equipped_items, indexed by param_2): walks the container's contents list looking for the item
+// currently in that slot, swaps it to the cursor if the new object doesn't fit...
 bool place_object_in_equipment_slot(param_1,param_2)
 ushort * param_1;
 undefined4 param_2;
@@ -2644,19 +2311,8 @@ undefined4 param_2;
   ushort *puVar10;
   char *pAncestor;
 
-  /* Was `resolve_object_link(g_current_container_record + 8)` -- a
-     tracking record lives outside the level's object arena
-     resolve_object_link bounds-checks against, so this always returned
-     NULL on this host (same class as the several already-fixed
-     `resolve_object_link(g_current_container_record + 8)` call sites
-     elsewhere in this file -- search "g_current_container_link holds
-     the same identity"). Route through that same established
-     global-copy workaround instead of resolving through the record's
-     own memory directly. Also was truncating the resolved 64-bit
-     contents-head pointer through `int iVar4` before adding +6 --
-     fixed by giving it its own pointer-typed local rather than reusing
-     `iVar4`, which has two unrelated plain-int roles later in this
-     function. */
+  /* Was `resolve_object_link(g_current_container_record + 8)` -- a tracking record lives outside
+     the level's object arena resolve_object_link bounds-checks against... */
   g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
   puVar10 = (ushort *)((char *)resolve_object_link(&g_current_container_link) + 6);
   iVar4 = (short)param_2 * 2;
@@ -2681,11 +2337,9 @@ undefined4 param_2;
       (&DAT_00202951)[iVar4] = (char)((uVar7 << 0x16) >> 0x18);
       sVar2 = calculate_object_weight(param_1);
       sVar3 = calculate_object_weight(puVar5);
-      /* Legacy truncated "prev" walk -- same fix as
-         place_object_in_backpack_slot's sibling copy (search "still
-         broken for genuine container nesting"); given its own dedicated
-         local (pAncestor) since `iVar4` has unrelated plain-int roles
-         elsewhere in this function. */
+      /* Legacy truncated "prev" walk -- same fix as place_object_in_backpack_slot's sibling copy
+         (search "still broken for genuine container nesting"); given its own dedicated local
+         (pAncestor) since `iVar4` has unrelated plain-int roles elsewhere in this function. */
       for (pAncestor = g_current_container_record; pAncestor != 0;
           pAncestor = *(char **)(pAncestor + 0x14)) {
         iVar8 = (int)*(short *)(pAncestor + 10) + (((int)sVar2 - (int)sVar3) * 0x10000 >> 0x10);
@@ -2718,12 +2372,9 @@ short param_1;
 }
 
 
-// was FUN_00047b38 -- checks whether two objects can be merged into
-// one stack: same class, both stackable (or both non-stacked), not in
-// an excluded category (0xc0 bits), and -- for the "cheap goods"
-// class range 0x10-0x12 -- matching quality-family nibbles. Checked
-// before objects_are_combinable in handle_backpack_slot_interact; a
-// true result merges quantities instead of combining into a new item.
+// was FUN_00047b38 -- checks whether two objects can be merged into one stack: same class, both
+// stackable (or both non-stacked), not in an excluded category (0xc0 bits), and -- for the "cheap
+// goods" class range 0x10-0x12 -- matching quality-family nibbles.
 undefined4 objects_can_stack(param_1,param_2)
 ushort * param_1;
 ushort * param_2;
@@ -2764,15 +2415,9 @@ ushort * param_2;
 }
 
 
-// was FUN_000452dc -- searches equipped items (g_equipped_items,
-// slots 0-0xa quickly, 0-0x12 if param_4 isn't 1) for the first one
-// matching category/subcategory/quality filters param_1/param_2/
-// param_3 (each <0 = any), returning its slot index via param_5; if
-// still unmatched and param_4 isn't 2 or 3, recurses into each
-// equipped item's own contents via find_object_in_link_chain.
-// Confirmed by callers across item_use.c/traps.c/weapon_swing.c/
-// game.c as a general "find an equipped (or carried) item matching
-// these criteria" query.
+// was FUN_000452dc -- searches equipped items (g_equipped_items, slots 0-0xa quickly, 0-0x12 if
+// param_4 isn't 1) for the first one matching category/subcategory/quality filters param_1/param_2/
+// param_3 (each <0 = any), returning its slot index via param_5...
 ushort *find_equipped_item_by_category(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
@@ -2786,10 +2431,9 @@ undefined2 * param_5;
   int iVar5;
   undefined2 uVar6;
   int iVar7;
-  /* Was `undefined4 local_74 [2];` -- element [0] holds a real 64-bit
-     object pointer passed by address into find_object_in_link_chain (see that
-     function's own fix comment); [1] is unused padding from the
-     original 32-bit stack layout. */
+  /* Was `undefined4 local_74 [2];` -- element [0] holds a real 64-bit object pointer passed by
+     address into find_object_in_link_chain (see that function's own fix comment); [1] is unused
+     padding from the original 32-bit stack layout. */
   char *local_74 [2];
   int local_6c [19];
   ushort uVar2;
@@ -2844,25 +2488,16 @@ LAB_0004552c:
 
 
 
-// was FUN_00045538 -- recursively walks an object's contents link chain
-// (descending into nested containers) looking for the first object
-// matching the category/subcategory/quality filters in param_1/param_2/
-// param_3 (each <0 means "any"); param_4 is an in/out cursor: on entry
-// it points at the current link to examine, on a match it's zeroed (or
-// updated to the next link) and the matched object pointer is returned.
+// was FUN_00045538 -- recursively walks an object's contents link chain (descending into nested
+// containers) looking for the first object matching the category/subcategory/quality filters in
+// param_1/param_2/ param_3 (each <0 means "any"); param_4 is an in/out cursor...
 char *find_object_in_link_chain(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
-/* Was `int * param_4;` -- the caller-supplied slot always holds a real
-   64-bit object-record pointer (see find_equipped_item_by_category's own local_74 and
-   extract_matching_object_from_slot's own local_28, both fixed alongside this one), but this
-   function only ever read/wrote its low 4 bytes through an `int *` view,
-   truncating the pointer on every pass. Confirmed live (regression suite,
-   demo_inventory_container_torch_use_test.txt): using a torch crashed
-   dereferencing a truncated object pointer at `uVar3 = (uint)*puVar1;`
-   (this function's own line, EXC_BAD_ACCESS at the low 32 bits of a real
-   object address). */
+/* Was `int * param_4;` -- the caller-supplied slot always holds a real 64-bit object-record pointer
+   (see find_equipped_item_by_category's own local_74 and extract_matching_object_from_slot's own
+   local_28, both fixed alongside this one)... */
 char **param_4;
 
 {
@@ -2913,13 +2548,8 @@ LAB_000455f8:
 
 
 
-// was FUN_00045678 -- resolves the inventory item under the current
-// click position: hit-tests the backpack widget grid, then either
-// directly resolves the equipped slot (param_1==2,
-// get_equipped_item_at_widget_slot) or extracts and refreshes
-// whatever's in that backpack slot (extract_clicked_backpack_item).
-// Confirmed used to set g_interact_target from a right-click/search
-// context (inventory.c).
+// was FUN_00045678 -- resolves the inventory item under the current click position: hit-tests the
+// backpack widget grid, then either directly resolves the equipped slot...
 ushort *resolve_clicked_inventory_item(param_1)
 short param_1;
 
@@ -2927,12 +2557,7 @@ short param_1;
   int iVar1;
   short sVar2;
   /* Was `undefined4 uVar3;` -- truncated find_object_in_link_chain's/
-     get_equipped_item_at_widget_slot's real 64-bit object pointer to 32 bits. The
-     param_1!=2 branch (extract_clicked_backpack_item) still returns a narrower
-     `undefined4` itself (a separate, not-yet-fixed truncation one level
-     further down its own call chain via FUN_00045b20) -- cast here just
-     carries that existing truncation forward unchanged rather than
-     introducing a new one. */
+     get_equipped_item_at_widget_slot's real 64-bit object pointer to 32 bits. */
   ushort *uVar3;
 
   sVar2 = hit_test_inventory_widget(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
@@ -2958,16 +2583,9 @@ ushort *get_equipped_item_at_widget_slot(param_1)
 short param_1;
 
 {
-  /* Was `resolve_object_link(&g_equipped_items + param_1 * 2); return 0;` --
-     confirmed via real ARM disassembly (0x45708-0x45718: `mov r3,r0,lsl
-     #0x10; ldr r0,[...]; mov r3,r3,asr #0x10; add r0,r0,r3,lsl #0x1; b
-     0x53514` -- a genuine TAIL CALL straight into resolve_object_link,
-     0x53514) that this always returned resolve_object_link's own result,
-     not a hardcoded 0. Ghidra didn't model the tail call and decompiled
-     it as "call for side effect, then return 0" instead -- the caller
-     (resolve_clicked_inventory_item, in turn feeding g_interact_target in perform_object_search_check's
-     own right-click-in-inventory "ready item" handler) always saw a
-     NULL target as a result, silently no-op'ing every right-click. */
+  /* Was `resolve_object_link(&g_equipped_items + param_1 * 2); return 0;` -- confirmed via real ARM
+     disassembly (0x45708-0x45718: `mov r3,r0,lsl #0x10; ldr r0,[...]; mov r3,r3,asr #0x10; add
+     r0,r0,r3,lsl #0x1; b 0x53514` -- a genuine TAIL CALL straight into resolve_object_link)... */
   return (ushort *)resolve_object_link(&g_equipped_items + param_1 * 2);
 }
 
@@ -2986,10 +2604,9 @@ undefined4 param_1;
 
 // was FUN_00045728
 void decrement_object_count(param_1)
-/* Was `undefined4 param_1` -- a real object-record pointer (forwarded
-   straight to reduce_object_count, which dereferences it via
-   encode_object_slot_index/calculate_object_weight), truncated to 32 bits on this
-   host -- same class as many other fixes this session. */
+/* Was `undefined4 param_1` -- a real object-record pointer (forwarded straight to
+   reduce_object_count, which dereferences it via encode_object_slot_index/calculate_object_weight),
+   truncated to 32 bits on this host -- same class as many other fixes this session. */
 ushort *param_1;
 
 {
@@ -3018,12 +2635,8 @@ uint param_2;
   uint uVar9;
   char *pObj;
 
-  /* Dropped argument: calculate_object_weight dereferences its own declared
-     param_1 immediately -- called bare here, same idiom as this whole
-     session's other fixes. Confirmed live (UW_DEBUG_INV +
-     demo_container_click_test.txt): clicking a food item (bread)
-     inside an open backpack container crashed here on first use of
-     this never-before-exercised "use item" dispatch path. */
+  /* Dropped argument: calculate_object_weight dereferences its own declared param_1 immediately --
+     called bare here, same idiom as this whole session's other fixes. */
   iVar3 = calculate_object_weight(param_1);
   uVar4 = encode_object_slot_index(param_1);
   iVar7 = 0;
@@ -3041,14 +2654,9 @@ uint param_2;
     else {
       repopulate_container_grid_slots();
       refresh_container_view();
-      /* Was `for (iVar7 = g_current_container_record; ...)` -- truncated
-         g_current_container_record (a real char* global) into a 32-bit
-         int, then rebuilt a bogus "next" address out of raw bytes at
-         iVar7+4..+7 instead of resolving the object's real next-link via
-         resolve_object_link, same idiom as walk_object_tree's chain walk.
-         Confirmed live (UW_DEBUG_INV + demo_container_click_test.txt):
-         this crashed on the first-ever exercise of the food-item "use"
-         path (clicking Bread inside an open container). */
+      /* Was `for (iVar7 = g_current_container_record; ...)` -- truncated g_current_container_record
+         (a real char* global) into a 32-bit int, then rebuilt a bogus "next" address out of raw
+         bytes at iVar7+4..+7 instead of resolving the object's real next-link via... */
       for (pObj = g_current_container_record; pObj != NULL;
           pObj = (*(ushort *)(pObj + 4) & 0xffc0) == 0 ? NULL :
                  (char *)resolve_object_link((ushort *)(pObj + 4))) {
@@ -3085,19 +2693,9 @@ uint param_2;
     }
     object_list_unlink(DAT_002046b4,puVar5);
     g_player_carry_weight = g_player_carry_weight - (short)iVar3;
-    /* This else-branch (reached when the object isn't found among the
-       28 direct/open-container-borrowed slots at all, e.g. nested two
-       containers deep) unlinked the object but, unlike this function's
-       OWN sibling branch just above (the `iVar8<0x1c && iVar8>=0x13`
-       case), never refreshed the open-container widget grid
-       afterward. Added the same repopulate_container_grid_slots/refresh_container_view pair that
-       sibling already calls (refresh_container_view's own first line is
-       `redraw_inventory_widget_range(0xc,0x13)` -- exactly that grid)
-       for consistency -- not independently confirmed live (this
-       specific branch wasn't the one the torch-duplication repro
-       exercised; see extract_and_refresh_slot_item's own comment for
-       the actual confirmed root cause), but the same staleness risk
-       applies on general principle. */
+    /* This else-branch (reached when the object isn't found among the 28
+       direct/open-container-borrowed slots at all, e.g. nested two containers deep) unlinked the
+       object but... */
     repopulate_container_grid_slots();
     refresh_container_view();
     redraw_inventory_widget(0x13);
@@ -3108,29 +2706,12 @@ uint param_2;
 
 
 
-// was FUN_000459d8 -- extracts and refreshes the item in slot
-// param_4 via extract_and_refresh_slot_item, then updates either the
-// container view or the inventory widget depending on what the
-// extracted slot held. Confirmed as its only caller
-// (resolve_clicked_inventory_item) always passes wildcard (-1,-1,-1)
-// filters -- "extract whatever's in the clicked backpack slot."
+// was FUN_000459d8 -- extracts and refreshes the item in slot param_4 via
+// extract_and_refresh_slot_item, then updates either the container view or the inventory widget
+// depending on what the extracted slot held.
 ushort *extract_clicked_backpack_item(param_1,param_2,param_3,param_4)
-/* Was a bare K&R `()` reading an implicit `short in_r3;` for its 4th
-   arg, and forwarding to FUN_00045b20 via a bare `FUN_00045b20()` call
-   with no explicit arguments at all. On real ARM32 hardware, a
-   register-passing K&R call like this genuinely forwards whatever's
-   still sitting in r0-r3 (this function's own incoming args) straight
-   through -- but a C compiler targeting this 64-bit host has no such
-   guarantee for a literal `foo()` call: it passes exactly zero
-   arguments, full stop. Confirmed as the actual root cause of the
-   torch-duplication bug (not a mere stale-redraw issue as first
-   suspected): reduce_object_count's OWN call to FUN_00045b20 passed
-   real, explicit arguments correctly, but FUN_00045b20's undeclared
-   body had no way to name/forward them, so its own nested
-   extract_matching_object_from_slot() call ran with garbage/zeroed
-   arguments and silently did nothing -- the torch was never actually
-   unlinked from the sack's contents chain before use_light_source
-   moved a (correctly readied) copy of it into the shoulder slot. */
+/* Was a bare K&R `()` reading an implicit `short in_r3;` for its 4th arg, and forwarding to
+   FUN_00045b20 via a bare `FUN_00045b20()` call with no explicit arguments at all. */
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -3154,11 +2735,8 @@ short param_4;
 
 
 
-// was FUN_00045a7c -- byte-for-byte identical to
-// extract_clicked_backpack_item (see its own comment on the shared
-// bug); kept as a thin forwarding call to avoid the duplication.
-// Confirmed as weapon_swing.c's "extract this ammo slot and refresh"
-// helper, called with real (non-wildcard) filters.
+// was FUN_00045a7c -- byte-for-byte identical to extract_clicked_backpack_item (see its own comment
+// on the shared bug); kept as a thin forwarding call to avoid the duplication.
 ushort *extract_ammo_and_refresh(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
@@ -3171,17 +2749,9 @@ short param_4;
 
 
 
-// was FUN_00045b20 -- thin wrapper: extracts the object matching
-// param_1/param_2/param_3 (category/subcategory/quality, <0 = any)
-// from slot param_4 via extract_matching_object_from_slot, then
-// refreshes carry-weight/UI state via refresh_player_equipment_effects(). Was a bare K&R
-// `()` blindly relying on ARM32 register pass-through to forward its
-// own caller's args into extract_matching_object_from_slot() -- see
-// extract_clicked_backpack_item's own comment on why that's unsound on this 64-bit
-// host. This was THE actual root cause of the torch-duplication bug:
-// reduce_object_count's real, explicit call here (with a genuine
-// object-bearing slot index) silently forwarded nothing, so the torch
-// was never unlinked from its container before being placed anew.
+// was FUN_00045b20 -- thin wrapper: extracts the object matching param_1/param_2/param_3
+// (category/subcategory/quality, <0 = any) from slot param_4 via extract_matching_object_from_slot,
+// then refreshes carry-weight/UI state via refresh_player_equipment_effects().
 ushort *extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
@@ -3199,13 +2769,9 @@ ushort param_5;
 
 
 
-// was FUN_00045b48 -- finds the first object matching the category/
-// subcategory/quality filters (param_1/param_2/param_3, <0 = any) in
-// inventory slot param_4 (searched directly, or via
-// find_object_in_link_chain for nested containers); if it's a stackable
-// object and param_5 asks for fewer than the full stack, splits off a
-// new object for the remaining count via alloc_object_slot before
-// unlinking and returning the matched (now correctly-sized) object.
+// was FUN_00045b48 -- finds the first object matching the category/ subcategory/quality filters
+// (param_1/param_2/param_3, <0 = any) in inventory slot param_4 (searched directly, or via
+// find_object_in_link_chain for nested containers)...
 ushort *extract_matching_object_from_slot(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
@@ -3236,31 +2802,9 @@ ushort param_5;
       local_28 = g_player_object;
     }
     else {
-      /* Was `resolve_object_link(g_current_container_record + 8)` --
-         g_current_container_record is a small (12-byte) ce_malloc
-         heap allocation, nowhere near the object arena buffer
-         resolve_object_link's own bounds guard checks against (see its
-         own comment), so this call was ALWAYS silently rejected on this
-         64-bit host, returning NULL regardless of what offset+8/9 held
-         (confirmed live: local_28 read back NULL even after fixing
-         offset+8/9's own encoding to correctly carry the container's
-         identity -- see that write's own comment a few thousand lines
-         up). g_current_container_link is a normal global, already
-         proven arena-resolvable throughout this whole file, and
-         open_backpack_container keeps it in lockstep with the exact
-         same identity value this record's own offset+8/9 encodes for
-         the currently-displayed (innermost, if nested) open container
-         -- which is exactly what this branch (iVar4>=0x13, a widget
-         showing that container's own contents) needs. Confirmed live:
-         this was the reason object_list_unlink got called with a
-         bogus near-null "list" address, corrupting/dropping other
-         objects still in the sack's real contents chain whenever an
-         item was used out of an open container (matching a user report
-         of "closing and reopening a container loses other contents
-         seemingly randomly"). Other call sites of this same
-         `resolve_object_link(g_current_container_record+8)` pattern
-         likely share this bug too, but aren't exercised by this
-         specific repro -- not fixed here. */
+      /* Was `resolve_object_link(g_current_container_record + 8)` -- g_current_container_record is
+         a small (12-byte) ce_malloc heap allocation, nowhere near the object arena buffer
+         resolve_object_link's own bounds guard checks against (see its own comment)... */
       local_28 = resolve_object_link(&g_current_container_link);
     }
     uVar6 = (uint)(short)param_1;
@@ -3365,22 +2909,9 @@ ushort param_5;
 
 
 
-/* Was copying "armor_f" into acStack_85c88, a 547936-byte buffer
-   Ghidra misattributed here (the same stack-frame-size-miscalculation
-   artifact already fixed in dispatch_object_action's acStack_85978
-   and check_object_fits_in_slot's acStack_84f64 -- see their own
-   comments) that's never read back afterward. The REAL destination,
-   acStack_28 (6 bytes) + local_22 (the dynamically-picked gender
-   letter, right after it), never actually got "armor_" copied into
-   it -- so reload_single_grtile_entry loaded a resource file named by 6 bytes of
-   uninitialized stack instead of "armor_f"/"armor_m", explaining why
-   an equipped item's paper-doll overlay renders as a solid block
-   (whatever placeholder/error frame a failed .GR load falls back to)
-   instead of the real worn-armor graphic. Fixed by building the real
-   name into one properly-sized, NUL-terminated local instead of
-   relying on two separate locals happening to land adjacently on the
-   stack (true in the original 32-bit ARM build, not guaranteed by a
-   modern compiler). */
+/* Was copying "armor_f" into acStack_85c88, a 547936-byte buffer Ghidra misattributed here (the
+   same stack-frame-size-miscalculation artifact already fixed in dispatch_object_action's
+   acStack_85978 and check_object_fits_in_slot's acStack_84f64)... */
 // was FUN_00046b88
 undefined4 load_armor_overlay_frame(param_1,param_2)
 int param_1;
@@ -3447,19 +2978,8 @@ void redraw_armor_overlay_widgets()
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 6);
     g_blit_transparent_mode = 0;
-    /* Widgets 10/11 (the finger/ring slots, per g_inventory_hotspot_table's
-       own comment) are handled as a one-off pair here instead of folding
-       into the loop above like widgets 1-5 do -- but this block still used
-       10 standalone scalars (DAT_00085b64/66/68/69/72/74/76/77 for the
-       draw rect, DAT_00202910/00202914 for the saved-icon grtile handle)
-       that were never aliased into their real backing storage, the same
-       "hardcoded original-binary address instead of a symbolic reference"
-       bug hud.c's own main_loop_hud_flush path already fixed for these
-       exact two slots (see its comment: "0x85ad8 + 10*7 shorts = 0x85b64,
-       etc."). Rewritten to the same g_inv_hotspot_draw_x/y/dirty_w/dirty_h
-       and DAT_002028e8 indexed form, so these rects/handles resolve
-       against the real recovered inventory-hotspot table instead of
-       always-zero dead globals. */
+    /* Widgets 10/11 (the finger/ring slots, per g_inventory_hotspot_table's own comment) are
+       handled as a one-off pair here instead of folding into the loop above like widgets 1-5 do... */
     capture_framebuffer_rect_to_grtile((&DAT_002028e8)[11],(int)(&g_inv_hotspot_draw_x)[11 * 7],
                  (int)(&g_inv_hotspot_draw_y)[11 * 7],(&g_inv_hotspot_dirty_w)[11 * 0xe] - 5,
                  (&g_inv_hotspot_dirty_h)[11 * 0xe]);
@@ -3519,22 +3039,9 @@ int param_2;
     if (bVar3) {
       pop_cursor_icon(0);
     }
-    /* Was `*g_selected_object & 0x1ff` -- g_selected_object is declared
-       `char *` (a single signed byte, used elsewhere in this file for
-       genuine byte-level access), but an object's own id is a 9-bit
-       field spanning 2 bytes, needing a real `ushort` read. Reading
-       just the low byte and sign-extending it (as `char` does) set bit
-       8 spuriously whenever that byte's own top bit was set --
-       e.g. objid 0xb6 read as signed char -74, sign-extended to
-       0xffffffb6, then `&0x1ff` incorrectly produced 0x1b6 instead of
-       0xb6. Confirmed live (UW_DEBUG_CURSOR): every held-item cursor
-       icon with an id >= 0x80 in its low byte resolved to a
-       completely different (or, for ids that pushed the corrupted
-       value past this file's populated sprite range, entirely blank)
-       icon -- matching a user report of several items showing the
-       wrong cursor icon or none at all when picked up. Same root
-       cause at every other `*g_selected_object & 0x1ff` site in this
-       file (see their own copies of this comment). */
+    /* Was `*g_selected_object & 0x1ff` -- g_selected_object is declared `char *` (a single signed
+       byte, used elsewhere in this file for genuine byte-level access), but an object's own id is a
+       9-bit field spanning 2 bytes, needing a real `ushort` read. */
     push_cursor_icon(*(ushort *)g_selected_object & 0x1ff);
     cursor_show_idle_tick();
     refresh_player_equipment_effects();
@@ -3544,12 +3051,9 @@ int param_2;
 
 
 
-// was FUN_000470fc -- prompts "Move how many?" (s_Move_how_many__00085c68)
-// for splitting a stacked object (param_1): splits off and returns a
-// new object with the entered quantity (via alloc_object_slot), or
-// returns param_1 itself if the whole stack was taken, or NULL on
-// cancel. Confirmed as the "STACK-SPLIT branch" of interact.c's grab
-// handling by its own debug comment there.
+// was FUN_000470fc -- prompts "Move how many?" (s_Move_how_many__00085c68) for splitting a stacked
+// object (param_1): splits off and returns a new object with the entered quantity (via
+// alloc_object_slot), or returns param_1 itself if the whole stack was taken, or NULL on cancel.
 undefined1 *prompt_split_object_stack(param_1)
 undefined1 * param_1;
 
@@ -3609,11 +3113,9 @@ undefined1 * param_1;
 
 // was FUN_0004506c
 undefined4 place_object_in_backpack_slot(param_1,param_2)
-/* Was `undefined4 param_1` -- same 64-bit-pointer-truncated-through-a-
-   32-bit-typedef-parameter bug as place_held_item_in_empty_slot's identical fix just
-   above (and sum_container_weight's, elsewhere in this file): param_1 is
-   dereferenced further down (calculate_object_weight(param_1), etc.) as a real
-   object pointer. */
+/* Was `undefined4 param_1` -- same 64-bit-pointer-truncated-through-a- 32-bit-typedef-parameter bug
+   as place_held_item_in_empty_slot's identical fix just above (and sum_container_weight's,
+   elsewhere in this file): param_1 is dereferenced further down... */
 ushort *param_1;
 short param_2;
 
@@ -3622,20 +3124,9 @@ short param_2;
   short sVar2;
   int iVar3;
   char *iVar4;
-  /* Was `int iVar5;` -- truncated g_current_container_record's real
-     64-bit pointer on assignment (`iVar5 = g_current_container_record;`
-     just below), then dereferenced the truncated wild value at
-     `*(short *)(iVar5 + 10)`. Same class as this whole session's other
-     narrow-local-for-a-pointer fixes. Confirmed live: crashed
-     immediately on the loop's first iteration, right after fixing this
-     same function's sibling resolve_object_link(record+8) bug just
-     above (both reached by the same "drag an item to a different slot
-     inside an open container" user repro). The CONCAT13-based "next"
-     pointer reconstruction two lines below has its own separate,
-     not-fixed-here 64-bit truncation (same as free_open_container_chain's
-     identical idiom) -- harmless for a single, non-nested open
-     container (next is always a real zero there), still broken for
-     genuine container nesting. */
+  /* Was `int iVar5;` -- truncated g_current_container_record's real 64-bit pointer on assignment
+     (`iVar5 = g_current_container_record;` just below), then dereferenced the truncated wild value
+     at `*(short *)(iVar5 + 10)`. */
   char *iVar5;
   uint uVar6;
   int iVar7;
@@ -3650,14 +3141,9 @@ short param_2;
   sVar2 = (short)uVar8;
   uVar8 = 0;
   if (iVar1 != -1) {
-    /* Dropped arguments: check_object_fits_in_slot's declared signature is
-       (object, slot_index) and dereferences its first argument
-       immediately -- called bare here (same idiom as the
-       handle_backpack_slot_click/place_held_item_in_empty_slot chain just above it), so with a real
-       slot index now actually reaching this far (see handle_backpack_slot_click's own
-       fix), the leftover-register param_1 it got instead was frequently
-       NULL/garbage, segfaulting on first dereference the moment a real
-       backpack-slot placement was attempted. */
+    /* Dropped arguments: check_object_fits_in_slot's declared signature is (object, slot_index) and
+       dereferences its first argument immediately -- called bare here (same idiom as the
+       handle_backpack_slot_click/place_held_item_in_empty_slot chain just above it)... */
     sVar2 = check_object_fits_in_slot(param_1, param_2);
   }
   if (sVar2 < 1) {
@@ -3669,32 +3155,13 @@ short param_2;
     iVar3 = calculate_object_weight(param_1);
     if (-1 < iVar1) {
       if (0x12 < iVar1) {
-        /* Was `resolve_object_link(g_current_container_record + 8)` --
-           same bug, same fix, as extract_matching_object_from_slot's
-           and check_object_fits_in_slot's own identical calls (see
-           their comments): g_current_container_record is a small heap
-           allocation outside the object arena resolve_object_link
-           bounds-checks against, so this was always NULL on this
-           64-bit host. iVar4 (initialized to g_player_object at this
-           function's top) is used below unconditionally
-           (`object_list_append_tail(iVar4 + 6, param_1)`), so the NULL
-           result crashed immediately. g_current_container_link holds
-           the same identity and is normal-global arena-resolvable.
-           Confirmed live: this was the very next crash after fixing
-           check_object_fits_in_slot's own copy of the same bug,
-           reached by the identical "drag an item to a different slot
-           inside an open container" user repro. */
+        /* Was `resolve_object_link(g_current_container_record + 8)` -- same bug, same fix, as
+           extract_matching_object_from_slot's and check_object_fits_in_slot's own identical calls
+           (see their comments)... */
         iVar4 = resolve_object_link(&g_current_container_link);
-        /* Was walking the ancestor chain via the legacy 4-byte "prev"
-           field (CONCAT13/12/11 of bytes 4-7) -- only ever a truncated
-           half of a real 64-bit pointer (see open_backpack_container's
-           record-widening comment); this exact spot was already flagged
-           as a known, deliberately-deferred gap by an earlier session
-           ("harmless for a single, non-nested open container... still
-           broken for genuine container nesting" -- see this function's
-           own comment a few lines up). Real nesting exists now,
-           courtesy of this session's container fixes -- walk the real,
-           untruncated prev pointer at +0x14 instead. */
+        /* Was walking the ancestor chain via the legacy 4-byte "prev" field (CONCAT13/12/11 of
+           bytes 4-7) -- only ever a truncated half of a real 64-bit pointer (see
+           open_backpack_container's record-widening comment)... */
         for (iVar5 = g_current_container_record; iVar5 != 0;
             iVar5 = *(char **)(iVar5 + 0x14)) {
           iVar7 = *(short *)(iVar5 + 10) + iVar3;
@@ -3719,22 +3186,9 @@ short param_2;
 // was FUN_000451b0 -- given an object, find which currently-displayed
 // backpack-grid widget shows it (or allocate it one if it isn't shown
 // yet).
-/* Was declared with no parameters at all, and its body called
-   encode_object_slot_index() bare -- but every one of its 4 real call
-   sites passes a real object pointer, so this silently relied on ARM
-   register leftover (the caller's arg still sitting in r0, unclobbered)
-   to accidentally forward the right value. That's the same
-   dropped-argument idiom already fixed dozens of times in this file,
-   except here BOTH this function's own argument and its inner
-   encode_object_slot_index() call were dropped in tandem -- confirmed
-   to crash for real: try_combine_or_stow_object's "open a nested
-   container" branch calls find_or_assign_object_widget(container) then
-   open_backpack_container() (also bare -- see that call site's own fix),
-   and whatever register leftover reached open_backpack_container's
-   param_1 there was garbage in a fresh call context, producing a wild
-   resolve_object_link() dereference the instant a SECOND level of
-   container nesting was opened (a top-level open happened to work by
-   the same lucky-leftover coincidence one level up). */
+/* Was declared with no parameters at all, and its body called encode_object_slot_index() bare --
+   but every one of its 4 real call sites passes a real object pointer, so this silently relied on
+   ARM register leftover... */
 int find_or_assign_object_widget(param_1)
 ushort *param_1;
 
@@ -3797,16 +3251,8 @@ undefined4 param_2;
   char *pcVar14;
   int iVar15;
   bool bVar16;
-  /* Was 544528 bytes -- same Ghidra stack-frame-size-miscalculation
-     artifact already fixed in dispatch_object_action's acStack_85978
-     (see its own comment): this is just a scratch copy of the short
-     "UNNAMED" string (s_UNNAMED_00084f24) that's never read back
-     afterward (only acStack_40 feeds the real message_scroll_print_wrapped
-     calls below). Never triggered before because nothing reached this
-     deep into check_object_fits_in_slot until the handle_backpack_slot_click/place_object_in_backpack_slot dropped
-     arguments were forwarded correctly (see their own fixes) -- with a
-     real object now reaching here, allocating the huge frame crashed on
-     entry (SIGSEGV touching the stack guard page). Shrunk to a sane size. */
+  /* Was 544528 bytes -- same Ghidra stack-frame-size-miscalculation artifact already fixed in
+     dispatch_object_action's acStack_85978 (see its own comment)... */
   char acStack_84f64 [64];
   short local_54 [2];
   int local_50;
@@ -3827,22 +3273,9 @@ undefined4 param_2;
     if (g_current_container_record == 0) {
       return 0;
     }
-    /* Both `g_current_container_record + 4` reads below were the legacy
-       4-byte "prev" field -- only ever a truncated half of a real
-       64-bit pointer (same class as the whole Update-29 sweep --
-       search "still broken for genuine container nesting"). The second
-       one compounded it: it fed the truncated value + 8 straight into
-       resolve_object_link as an object-pointer base, the same
-       "tracking record lives outside the object arena" bug already
-       fixed at several other call sites -- confirmed live: this is the
-       exact crash from "dropping [a held item] in another inventory
-       slot" while viewing a nested container (check_object_fits_in_slot,
-       via place_object_in_backpack_slot/place_held_item_in_empty_slot/
-       handle_backpack_slot_click). Walk the real +0x14 prev pointer to
-       find the parent record, then resolve its own saved link through
-       the established g_current_container_link global-copy workaround
-       (save/restore, since this function runs while a CHILD container
-       is still the "current" one). */
+    /* Both `g_current_container_record + 4` reads below were the legacy 4-byte "prev" field -- only
+       ever a truncated half of a real 64-bit pointer (same class as the whole Update-29 sweep --
+       search "still broken for genuine container nesting"). */
     _parentRec = *(char **)(g_current_container_record + 0x14);
     if (_parentRec == 0) {
       iVar15 = 0xb;
@@ -3971,24 +3404,8 @@ LAB_00047a0c:
   iVar12 = g_current_container_record;
   bVar7 = 1;
   if (0x13 < iVar15) {
-    /* Was `iVar12 = *(int *)(iVar12 + 4)` walking the legacy 4-byte
-       "prev" field (truncated half of a real 64-bit pointer, same class
-       as this whole file's Update-29 sweep) -- an EARLIER pass through
-       this exact loop already found and partly fixed the DIFFERENT bug
-       right below (resolve_object_link(iVar12+8) always NULL for a
-       tracking record, outside the object arena), but that fix only
-       covered the FIRST iteration (the innermost/currently-open
-       container, via the ternary onto g_current_container_link) and
-       explicitly flagged deeper ancestors as "untested and likely
-       still-broken" for lack of an "equivalent stand-in" at the time --
-       that stand-in is the same g_current_container_link save/restore
-       workaround, just needed on every iteration, not only the first,
-       now that the walk pointer itself is also fixed. Confirmed live:
-       still the exact same crash (check_object_fits_in_slot via
-       place_object_in_backpack_slot/place_held_item_in_empty_slot/
-       handle_backpack_slot_click) the moment a real 2-level-deep
-       ancestor chain existed to walk into on this loop's SECOND
-       iteration. */
+    /* Was `iVar12 = *(int *)(iVar12 + 4)` walking the legacy 4-byte "prev" field (truncated half of
+       a real 64-bit pointer, same class as this whole file's Update-29 sweep)... */
     for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(char **)(iVar12 + 0x14)) {
       _savedLink = g_current_container_link;
       g_current_container_link = *(undefined2 *)(iVar12 + 8);
@@ -4030,29 +3447,9 @@ LAB_00047a0c:
     return 0;
   }
   uVar2 = (uint)*(short *)(&DAT_002029f9 + iVar15);
-  /* DAT_002029f9 (this container-type's "specific item id required" table,
-     alongside its sibling g_carry_weight_limit_table used for the weight-capacity check
-     just above) is loaded by load_light_food_effect_tables -- but that loader itself has
-     no caller anywhere in the decompiled binary (confirmed via a real
-     Ghidra xref search: the only reference to load_light_food_effect_tables's address is
-     a DATA reference, meaning it's stored into some struct as a function
-     pointer for an indirect call this project hasn't traced/wired up
-     yet), so this table is permanently all-zero. The sibling capacity
-     table (g_carry_weight_limit_table) already treats a zero entry as "no limit" (see
-     the `(&g_carry_weight_limit_table)[iVar15] == 0` check just above); this table's
-     own zero-entry case was instead falling into the "must be this
-     exact item id" branch below with a real zero, incorrectly requiring
-     the placed item's id to literally be 0 -- rejecting every real
-     item with the "does not fit" message (print_scroll_message_by_id(0xf8)).
-     Confirmed live: dragging an item to an empty slot inside an open
-     container printed "That item does not fit." on every attempt.
-     Treat an unpopulated (zero) entry the same permissive way its
-     sibling table already does, via the same LAB_00047a0c fallback
-     already used for the table's other explicit "no restriction"
-     sentinel (a negative entry) -- a narrow, local fix for the
-     immediate symptom; the deeper root cause (wiring up load_light_food_effect_tables's
-     real call so this table, g_carry_weight_limit_table, and g_food_effect_table all
-     get their real game data) is a separate, larger task. */
+  /* DAT_002029f9 (this container-type's "specific item id required" table, alongside its sibling
+     g_carry_weight_limit_table used for the weight-capacity check just above) is loaded by
+     load_light_food_effect_tables... */
   if ((int)uVar2 <= 0) goto LAB_00047a0c;
   if ((int)uVar2 < 0x200) {
     if ((local_4c != uVar2) && (print_scroll_message_by_id(0xf8), uVar8 != uVar2)) {
@@ -4096,16 +3493,9 @@ short param_1;
 {
   int iVar1;
 
-  /* Dropped arguments: both branches call a 2-param function with only
-     one arg -- place_held_item_in_empty_slot/handle_backpack_slot_interact's own declared signatures take
-     (held_object, slot_index), but this wrapper only forwards
-     g_selected_object (the held object) and drops its own param_1 (the slot
-     index that hit_test_inventory_widget just resolved from the click). Same
-     "wrapper forgot to forward its own argument" idiom as
-     check_object_carry_weight/blit_object_sprite_by_frame earlier this session -- traced by hand
-     while wiring up backpack-slot placement (the click hit-boxes and
-     widget-to-slot mapping in g_inv_hotspot_click_x1/g_backpack_widget_to_slot were the other
-     missing pieces, see their own comments). */
+  /* Dropped arguments: both branches call a 2-param function with only one arg --
+     place_held_item_in_empty_slot/handle_backpack_slot_interact's own declared signatures take
+     (held_object, slot_index)... */
   if ((*(ushort *)(&g_equipped_items + param_1 * 2) & 0xffc0) == 0) {
     iVar1 = place_held_item_in_empty_slot(g_selected_object, param_1);
   }
@@ -4122,13 +3512,9 @@ short param_1;
 
 // was FUN_00047ae0
 undefined4 place_held_item_in_empty_slot(param_1,param_2)
-/* Was `undefined4 param_1` -- a 64-bit pointer truncates to its low 32
-   bits the moment a caller passes it to a function whose own signature
-   declares this narrower type (matches sum_container_weight's identical fix
-   elsewhere in this file). Latent until handle_backpack_slot_click's dropped argument
-   was fixed and a real g_selected_object object pointer started actually
-   reaching here -- then this truncated pointer segfaulted three frames
-   further down in check_object_fits_in_slot's first dereference. */
+/* Was `undefined4 param_1` -- a 64-bit pointer truncates to its low 32 bits the moment a caller
+   passes it to a function whose own signature declares this narrower type (matches
+   sum_container_weight's identical fix elsewhere in this file). */
 ushort *param_1;
 short param_2;
 
@@ -4143,11 +3529,9 @@ short param_2;
     uVar3 = 0;
   }
   else {
-    /* Dropped argument: place_object_in_backpack_slot's own declared signature takes
-       (object, slot_index) and writes the object's link into
-       &g_equipped_items + slot_index*2 -- the real "place held item into
-       this backpack slot" primitive -- but slot_index was never
-       forwarded here, so it placed nothing at a real slot. */
+    /* Dropped argument: place_object_in_backpack_slot's own declared signature takes (object,
+       slot_index) and writes the object's link into &g_equipped_items + slot_index*2 -- the real
+       "place held item into this backpack slot" primitive... */
     iVar2 = place_object_in_backpack_slot(param_1, param_2);
     if (iVar2 != 0) {
       if (iVar1 < 0x13) {
@@ -4321,15 +3705,9 @@ short param_1;
     if (iVar2 < 10) {
       if (iVar2 == 9 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
         puVar1 = (ushort *)resolve_object_link(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
-        /* Was missing a NULL check -- resolve_object_link legitimately
-           returns 0 for an empty slot (its own link word has no
-           object-table bits set, see its own comment), and every fresh
-           character's weapon-hand slot IS empty by default (confirmed
-           live). Widgets 8/9 had no click rect at all before this round
-           (see g_inventory_hotspot_table's comment), so this branch was
-           never reachable, and the bug went unnoticed. Now that the
-           click rect exists, clicking an empty weapon hand would
-           otherwise crash here on the very first try. */
+        /* Was missing a NULL check -- resolve_object_link legitimately returns 0 for an empty slot
+           (its own link word has no object-table bits set, see its own comment), and every fresh
+           character's weapon-hand slot IS empty by default (confirmed live). */
         if ((puVar1 != 0) && (uVar3 = *puVar1 & 0x1ff,
            ((((*puVar1 & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
            ((uVar3 == 0x1a || (uVar3 == 0x1f))))) {
@@ -4340,40 +3718,8 @@ short param_1;
     }
     else {
       if (iVar2 == 0x14) {
-        /* Widget 20, the real "leave container" indicator -- see
-           DAT_00085c4c's own comment for the display side. This used
-           to be a synthetic CONTAINER_ICON_WIDGET_ID special-cased
-           directly in hit_test_inventory_widget plus 3 separate
-           near-identical copies of the logic below scattered across
-           handle_inventory_panel_click (x2) and
-           attach_picked_up_object_to_cursor -- now that widget 20 is a
-           real, correctly-positioned table entry, all 3 of those
-           dispatch here naturally instead, so this is the one place
-           that needs it.
-
-           Was unconditional (just leave_nested_container_level()):
-           dropping a held item onto this icon (drag it out of the open
-           container back to the parent) closed the container without
-           ever placing the item anywhere, leaving it stuck on the
-           cursor -- the user then had to click again, now on the
-           parent's own backpack grid, to actually place it. This
-           specific "drop here auto-places into the parent" behavior is
-           this project's own addition (not constrained by the original
-           binary), using the same auto_place_in_container(...,0x13)
-           "find an empty slot" sentinel its other callers (and
-           check_object_fits_in_slot's matching special-case) already
-           establish. Matches a user report: "dragging from a container
-           to the parent requires an extra click".
-
-           Whether to ALSO auto-close the container after that drop
-           (the original behavior, matching a plain click on this same
-           icon with nothing held) is a deliberate opt-in via
-           UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF, per user
-           request -- placing the item and leaving the container open
-           lets the user drag several items out in a row without it
-           snapping shut after the first one. A plain click here
-           (nothing held) always closes/pops one level as before,
-           unaffected by this toggle. */
+        /* Widget 20, the real "leave container" indicator -- see DAT_00085c4c's own comment for the
+           display side. */
         if (g_selected_object != (ushort *)0x0) {
           if (auto_place_in_container(g_selected_object, 0x13) != 0) {
             g_selected_object = (ushort *)0x0;
@@ -4391,9 +3737,8 @@ short param_1;
         else {
           leave_nested_container_level();
         }
-        /* Same "drain the still-pending click" protection the original
-           3 copies of this logic each had -- see their own history:
-           without it, leave_nested_container_level could fire 2-3
+        /* Same "drain the still-pending click" protection the original 3 copies of this logic each
+           had -- see their own history: without it, leave_nested_container_level could fire 2-3
            times per real single click and pop more than one level. */
         wait_for_click_release(1);
         goto LAB_00042a10;
@@ -4425,14 +3770,9 @@ short param_1;
       }
     }
   }
-  /* Was reusing `iVar2` (an `int`) for resolve_object_link's real
-     pointer return, truncating it to 32 bits on this 64-bit host --
-     same "narrow local for a pointer" idiom already fixed at several
-     call sites this session. Only reached once a click actually landed
-     on an occupied backpack slot for the first time (see the arena
-     storage fix a few functions up), immediately segfaulting one frame
-     further in on use_object_on_target's own dereference of the same
-     truncated value. */
+  /* Was reusing `iVar2` (an `int`) for resolve_object_link's real pointer return, truncating it to
+     32 bits on this 64-bit host -- same "narrow local for a pointer" idiom already fixed at several
+     call sites this session. */
   puVar2 = (ushort *)resolve_object_link(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
   if (puVar2 != 0) {
     /* Page 4 of comobj's string data is the base object-name table,
@@ -4453,11 +3793,8 @@ LAB_00042a10:
 }
 
 
-// was FUN_0004a110 -- read the cursor position, derive an "arc"
-// height/angle pair from it into DAT_00202a40/DAT_00202a3c (consumed by
-// spawn_object_near_player when placing the new copy), and return
-// whether the cursor is far enough from the player's own screen
-// position to count as a deliberate throw rather than a same-spot drop.
+// was FUN_0004a110 -- read the cursor position, derive an "arc" height/angle pair from it into
+// DAT_00202a40/DAT_00202a3c (consumed by spawn_object_near_player when placing the new copy)...
 bool compute_drop_aim_from_cursor()
 
 {
@@ -4494,23 +3831,9 @@ bool compute_drop_aim_from_cursor()
   sVar3 = ordint_divmod(0xd,(sVar3 + -0x56) * 5).quot;
   DAT_00202a40 = sVar3 + -1;
   sVar3 = ordint_divmod(6,sVar5 + -0x38).quot;
-  /* Sign fix: DAT_00202a3c is "aim/launch angle, positive = up" --
-     confirmed by compute_vertical_aim_offset (src/ai.c), which assigns it
-     directly from (target_height - npc_height), positive when the target
-     is above. The cursor term above already follows that convention
-     (sVar5, and so sVar3, grows as the cursor moves toward the top of
-     the screen). But DAT_0023beb4 is "view pitch, negative = up" (see
-     src/game.c's recovered original key-1/2/3 handler,
-     debug_adjust_view_heading, which drives it negative for the "look
-     up" key; src/player.c's camera-projection consumer agrees and is
-     screenshot-verified). Dividing DAT_0023beb4 directly, as the
-     original decompile did here, added it with the OPPOSITE sign from
-     the cursor term -- harmless while nothing ever drove DAT_0023beb4
-     off zero, but once view-pitch controls exist (1/2/3 keys) it makes
-     thrown items and player-cast targeted spell effects
-     (apply_targeted_spell_effect -> spawn_object_near_actor -> here)
-     launch toward the floor when looking up and the ceiling when
-     looking down. Negate it to match. */
+  /* Sign fix: DAT_00202a3c is "aim/launch angle, positive = up" -- confirmed by
+     compute_vertical_aim_offset (src/ai.c), which assigns it directly from (target_height -
+     npc_height), positive when the target is above. */
   sVar4 = -ordint_divmod(0x300,(int)DAT_0023beb4).quot;
   DAT_00202a3c = sVar3 + sVar4;
   if (getenv("UW_DEBUG_THROW"))

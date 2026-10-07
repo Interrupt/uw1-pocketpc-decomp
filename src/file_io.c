@@ -47,10 +47,9 @@ static int find_case_insensitive(const char *dir_path, const char *name, char *o
     return found;
 }
 
-/* Translate a Windows-style game path ("\DATA\cnv.ark") into a real path
- * under UW_DATA_DIR, resolving each path component case-insensitively
- * since the extracted CE install files are all-uppercase but the game
- * code references them in mixed/lower case. */
+/* Translate a Windows-style game path ("\DATA\cnv.ark") into a real path under UW_DATA_DIR,
+   resolving each path component case-insensitively since the extracted CE install files are
+   all-uppercase but the game code references them in mixed/lower case. */
 static int resolve_path(const char *win_path, char *out, size_t out_sz) {
     const char *base = data_dir();
     if (!base) return 0;
@@ -86,14 +85,9 @@ static int resolve_path(const char *win_path, char *out, size_t out_sz) {
     return 1;
 }
 
-/* The game's WinCE install always had its SAVE0/SAVE1/etc. directories
- * pre-created (part of the shipped install), so it never needed to
- * create one itself -- resolve_path() only case-insensitively matches
- * existing entries and otherwise passes the path through unchanged.
- * We're extracting fresh data without those save directories, so create
- * the target file's parent directory on write instead of failing (this
- * showed up as a fatal "not enough disk space"-style error at startup,
- * from a bglobals.dat save write into a nonexistent SAVE0/). */
+/* The game's WinCE install always had its SAVE0/SAVE1/etc. directories pre-created (part of the
+   shipped install), so it never needed to create one itself -- resolve_path() only
+   case-insensitively matches existing entries and otherwise passes the path through unchanged. */
 static void ensure_parent_dir(const char *path) {
     char dir[4096];
     snprintf(dir, sizeof(dir), "%s", path);
@@ -120,13 +114,8 @@ int uw_file_open_read(const char *win_path) {
     char real[4096];
     if (!resolve_path(win_path, real, sizeof(real))) return -1;
     /* real Windows CreateFile fails to open a directory as a file (without
-     * FILE_FLAG_BACKUP_SEMANTICS, which this game never asks for); POSIX
-     * fopen() happily "succeeds" on one instead, which papers over game
-     * paths that are missing a filename component (a path built from a
-     * directory prefix with no filename ever appended -- see uw.c's
-     * load_texture_arena for a case that depends on this failing cleanly rather
-     * than than silently opening the directory and returning garbage on
-     * every subsequent read). */
+       FILE_FLAG_BACKUP_SEMANTICS, which this game never asks for); POSIX fopen() happily "succeeds"
+       on one instead... */
     struct stat st;
     if (stat(real, &st) == 0 && S_ISDIR(st.st_mode)) {
         DEBUG(WARN, "[fileio] open-read FAILED (is a directory): %s -> %s\n", win_path, real);
@@ -199,23 +188,9 @@ int uw_file_write(int handle, const void *buf, unsigned int size) {
         DEBUG(ERR, "[fileio] write: handle %d invalid/null-buf/oversized, size=%u\n", handle, size);
         return 0;
     }
-    /* C89/C99 7.19.5.3: on a stream opened for update ("rb+"/"wb+"),
-     * output must not directly follow input without an intervening
-     * fseek/fflush/rewind call (even a zero-distance SEEK_CUR), or the
-     * write's effect is undefined. Callers that scan-then-overwrite a
-     * record in place (e.g. the babl per-NPC conversation-state save,
-     * save_npc_conversation_variables) do exactly that: read the matching record's header,
-     * then immediately write over its data with no seek in between --
-     * a faithful port of the real game's own read-then-write algorithm
-     * (confirmed identical in the real ARM disassembly), but the real
-     * binary's Win32 ReadFile/WriteFile calls have no such stdio-
-     * specific restriction, so this only misbehaves in this port.
-     * Confirmed live: fwrite reported the correct byte count and
-     * returned success, but the write never actually reached disk --
-     * a freshly re-opened FILE* on the same path still read the old
-     * bytes. This phantom seek is a no-op on position, and fixes it
-     * for every caller uniformly rather than patching each read-then-
-     * write call site individually. */
+    /* C89/C99 7.19.5.3: on a stream opened for update ("rb+"/"wb+"), output must not directly
+       follow input without an intervening fseek/fflush/rewind call (even a zero-distance SEEK_CUR),
+       or the write's effect is undefined. */
     fseek(f, 0, SEEK_CUR);
     errno = 0;
     int n = (int)fwrite(buf, 1, size, f);
@@ -247,14 +222,9 @@ int uw_file_seek(int handle, int distance, int method) {
     return (int)ftell(f);
 }
 
-/* CloseHandle-shaped (CloseHandle): callers that check the return value
- * (uw.c:7717, 25111, 36182, 58401 as of this writing) all treat it as
- * "nonzero = success", matching uw_file_copy's own documented Win32
- * convention just below -- was returning 0 on success/-1 on failure
- * (POSIX close() convention instead), so every one of those checks was
- * unconditionally false. Confirmed live: FUN_0006e3ac (weapons.GR
- * loader) failed its own "did everything succeed" check purely because
- * of this, even after its separate allocator-callback bug was fixed. */
+/* CloseHandle-shaped (CloseHandle): callers that check the return value (uw.c:7717, 25111, 36182,
+   58401 as of this writing) all treat it as "nonzero = success", matching uw_file_copy's own
+   documented Win32 convention just below... */
 int uw_file_close(int handle) {
     if (handle <= 0 || handle >= MAX_HANDLES || !g_handles[handle]) return 0;
     fclose(g_handles[handle]);
@@ -262,10 +232,9 @@ int uw_file_close(int handle) {
     return 1;
 }
 
-/* Byte-for-byte copy of one game-path file to another (CopyFile-shaped).
- * Used for new-game world setup (\DATA\lev.ark -> \SAVE0\lev.ark) and
- * save/restore. Returns 1 on success, 0 on failure -- the Win32
- * CopyFile convention the callers expect. */
+/* Byte-for-byte copy of one game-path file to another (CopyFile-shaped). Used for new-game world
+   setup (\DATA\lev.ark -> \SAVE0\lev.ark) and save/restore. Returns 1 on success, 0 on failure --
+   the Win32 CopyFile convention the callers expect. */
 int uw_file_copy(const char *win_src, const char *win_dst) {
     char src[4096], dst[4096];
     if (!resolve_path(win_src, src, sizeof(src)) ||

@@ -1,8 +1,6 @@
-/* Graphics resource loading: .GR bitmap decode, resource-file open,
- * the "flip grtile" screen-flip capture slots, and door-frame
- * loading. Split out of uw.c (the original monolithic decompile)
- * once these functions' real roles were confirmed.
- */
+/* Graphics resource loading: .GR bitmap decode, resource-file open, the "flip grtile" screen-flip
+   capture slots, and door-frame loading. Split out of uw.c (the original monolithic decompile) once
+   these functions' real roles were confirmed. */
 #include "headers/resources.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -21,17 +19,9 @@ static undefined DAT_000fb650_backing[512];
    -- cbMultiByte=0xff(255) bytes exact. Sized to 256. Down from 8192. */
 static undefined DAT_000fb550_backing[256];
 #define DAT_000fb550 DAT_000fb550_backing[0]
-/* Real string, recovered via Ghidra disassembly of decode_critter_sprite_page
-   (the caching "\CRIT\CR<pp>PAGE.N<nn>" per-page critter-animation
-   resource loader): the decompile showed DAT_00085928/29/30/31 as four
-   unrelated lone chars, and its own two-arg ce_strcat (strcat) call
-   right after them dropped BOTH arguments (same class of bug as
-   resolve_object_link's ~30 call sites fixed earlier this session).
-   The real ARM passes `ce_strcat(stack0xffdc3238_buf, &DAT_00085920)`
-   -- concatenating this template (its "00"/"00" digit pairs already
-   patched with the real page numbers by the writes at +8/+9 and
-   +0x10/+0x11) onto the copied install-dir path -- then opens THAT
-   buffer, not the never-populated `acStack_120` the decompile shows. */
+/* Real string, recovered via Ghidra disassembly of decode_critter_sprite_page (the caching
+   "\CRIT\CR<pp>PAGE.N<nn>" per-page critter-animation resource loader): the decompile showed
+   DAT_00085928/29/30/31 as four unrelated lone chars... */
 static char DAT_00085920_backing[20] = "\\CRIT\\CR00PAGE.N00";
 #define DAT_00085920 DAT_00085920_backing[0]
 #define DAT_00085928 DAT_00085920_backing[8]
@@ -55,12 +45,8 @@ static undefined DAT_00202518_backing[4];
 #define DAT_00202518 DAT_00202518_backing[0]
 ushort DAT_00202744;
 static undefined2 DAT_000859a8;
-/* Was `undefined4` -- truncated the real 64-bit destination pointer
-   decode_gr_entry_to_buffer assigns here (see that function's own comment on why
-   this global exists at all: load_gr_resource_entries always decodes
-   into its OWN malloc'd buffer via the allocator callback and only
-   ever hands that buffer back through the post-process callback, so
-   passing a pre-allocated destination needs this indirection). */
+/* Was `undefined4` -- truncated the real 64-bit destination pointer decode_gr_entry_to_buffer
+   assigns here (see that function's own comment on why this global exists at all)... */
 static void *DAT_00202510;
 static undefined2 DAT_00202748;
 static char s_doors_00085a64[] = "doors";
@@ -73,34 +59,16 @@ static char s_doors_00085a64[] = "doors";
 undefined1 DAT_00202750_backing[128];
 static char *DAT_0023c3fc;
 static undefined4 *DAT_0023c404;
-/* Sizing pass: the "grows unboundedly" claim below was wrong from the
-   moment it was written, not just stale -- register_interned_string
-   (this family's ONLY writer) has an unconditional `if (1 < iVar2)
-   return 0;` early return that hard-caps the real record/page count
-   (DAT_0024cfc0) at exactly 2, and every one of the 6 real call sites
-   across the whole codebase (babl.c x5, game.c x1) passes one of only
-   2 distinct page constants (0x7c/0x7d) -- independently confirmed by
-   get_message_string's own header comment ("capped to at most 2
-   distinct pages"). That cap isn't a recent fix either: it's been
-   there since this function was first extracted/named (commit
-   95f878f) with no behavior change, so it predates every widening
-   pass that assumed otherwise. Verified live too: instrumented every
-   high-water mark (UW_DEBUG_STRING_CACHE=1) and ran the full 19-script
-   regression suite -- real usage never exceeded 1 page / 1 slot.
-   Per-page stride is 0x804 (2052) bytes, so page index max 1 needs
-   at most byte offset 2052+1; rounded up to 4096 for headroom. (The
-   byte-plane pointer arrays just below have a different, finer-
-   grained real bound -- see their own comment.) */
+/* Sizing pass: the "grows unboundedly" claim below was wrong from the moment it was written, not
+   just stale -- register_interned_string (this family's ONLY writer) has an unconditional `if (1 <
+   iVar2) return 0;` early return that hard-caps the real record/page count (DAT_0024cfc0) at... */
 static undefined1 DAT_0024bfa0_backing[4096];
 #define DAT_0024bfa0 DAT_0024bfa0_backing[0]
 static undefined1 DAT_0024bfa1_backing[4096];
 #define DAT_0024bfa1 DAT_0024bfa1_backing[0]
-/* Sizing pass: byte-plane index is `(page*0x201 + sub_index) * 4`,
-   page capped at 1 (see DAT_0024bfa0's own comment) and sub_index
-   capped at 511 by register_interned_string's own zero-init loop
-   (`while (iVar4 < 0x200)`, 512 slots per page) -- max byte offset
-   (1*0x201+511)*4 = 4096. Rounded up to 8192 for headroom, down from
-   1052672. */
+/* Sizing pass: byte-plane index is `(page*0x201 + sub_index) * 4`, page capped at 1 (see
+   DAT_0024bfa0's own comment) and sub_index capped at 511 by register_interned_string's own
+   zero-init loop (`while (iVar4 < 0x200)`, 512 slots per page)... */
 static undefined1 DAT_0024bfa2_backing[8192];
 #define DAT_0024bfa2 DAT_0024bfa2_backing[0]
 static undefined1 DAT_0024bfa3_backing[8192];
@@ -109,62 +77,30 @@ static undefined1 DAT_0024bfa4_backing[8192];
 #define DAT_0024bfa4 DAT_0024bfa4_backing[0]
 static undefined1 DAT_0024bfa5_backing[8192];
 #define DAT_0024bfa5 DAT_0024bfa5_backing[0]
-/* The record-registration function (near FUN_00078820, "the string-
-   interning cache") splits a real char* pointer byte-by-byte across
-   these FOUR SEPARATE byte-plane arrays at the SAME index (byte0 in
-   bfa2[i], byte1 in bfa3[i], byte2 in bfa4[i], byte3 in bfa5[i]) --
-   capturing only the pointer's low 32 bits even before this port's
-   64-bit truncation concerns. A side table of real pointers, indexed
-   the same way (record*0x201+slot, i.e. the byte-plane index /4) is
-   used instead wherever the real pointer is needed.
-   Sizing pass: was matched to DAT_0024bfa2_backing's own (then-
-   inflated) size/4; now matches its real bound instead (max slot
-   index 1*0x201+511=1024, rounded up to 2048). */
+/* The record-registration function (near FUN_00078820, "the string- interning cache") splits a real
+   char* pointer byte-by-byte across these FOUR SEPARATE byte-plane arrays at the SAME index (byte0
+   in bfa2[i], byte1 in bfa3[i], byte2 in bfa4[i], byte3 in bfa5[i])... */
 static char *g_bfa2_real_ptrs[2048];
-/* Sizing pass: same real bound as DAT_0024bfa0 above (this pair is
-   indexed identically, `iVar3 * 0x804`, iVar3 capped at 1 by the same
-   register_interned_string cap) -- the "once more than ~4 pages
-   register" premise below was never possible; see DAT_0024bfa0's own
-   comment for the full trace (git history, cap, and live
-   verification). */
+/* Sizing pass: same real bound as DAT_0024bfa0 above (this pair is indexed identically, `iVar3 *
+   0x804`, iVar3 capped at 1 by the same register_interned_string cap) -- the "once more than ~4
+   pages register" premise below was never possible... */
 static undefined1 DAT_0024c7a2_backing[4096];
 #define DAT_0024c7a2 DAT_0024c7a2_backing[0]
 static undefined1 DAT_0024c7a3_backing[4096];
 #define DAT_0024c7a3 DAT_0024c7a3_backing[0]
 static undefined4 DAT_0024bf98;
-/* Declared char* despite always being allocated/read/cast as a single
-   2-byte count (see open_strings_pak_file: `(short *)ce_malloc(2)`, a 2-byte
-   read into it, then `*DAT_0024cfb8` used as the item count). That
-   mismatch meant every *DAT_0024cfb8 dereference only ever read the
-   *first byte* of the real 2-byte count as a signed char -- for
-   STRINGS.PAK's real (large, >127) count this came out negative, and
-   `(int)*DAT_0024cfb8 << 2` produced a huge garbage byte count
-   (0xFFFFFB94 observed) passed straight to fread() as `unsigned int
-   size`, overflowing the undersized buffer ce_malloc allocated for
-   the same corrupted (and clamped-to-4096-by-the-allocator's-own-sanity-
-   check) size. This was corrupting the heap on nearly every run --
-   almost certainly the root cause of the "free_list_checksum_botch"-style
-   intermittent SIGABRT documented in the README, since a heap overflow's
-   corruption is only detected whenever some later, unrelated free()
-   happens to stumble on the mangled metadata. */
+/* Declared char* despite always being allocated/read/cast as a single 2-byte count (see
+   open_strings_pak_file: `(short *)ce_malloc(2)`, a 2-byte read into it, then `*DAT_0024cfb8` used
+   as the item count). */
 static unsigned short *DAT_0024cfb8;
 static char *DAT_0024cfa8;
 static short DAT_0024cfc0;
 static char s_strings_pak_000878c0[] = "strings.pak";
 static short DAT_0024cfb4;
 static undefined2 DAT_000878bc;
-/* decode_strings_pak_entry's decoded-string ring buffer: DAT_0024cfb4 cycles
-   through offsets 0, 0x200, 0x400, ... wrapping back to 0 once it
-   would reach 0x1000 (4096), and each slot can hold up to a 0x200-byte
-   decoded string. Declared as a single scalar byte, this let every
-   decode past the very first 512-byte slot write far out of bounds --
-   confirmed via an lldb watchpoint that this overflow is what corrupts
-   DAT_0024bf98 (the compressed-string file handle, coincidentally laid
-   out 0x1000 bytes after this one in our translation) into garbage
-   partway through the very first character-generation screen, which is
-   the root cause of the "most chargen text doesn't render" bug: once
-   DAT_0024bf98 is corrupted, every subsequent compressed-string decode
-   for the rest of the process fails. */
+/* decode_strings_pak_entry's decoded-string ring buffer: DAT_0024cfb4 cycles through offsets 0,
+   0x200, 0x400, ... wrapping back to 0 once it would reach 0x1000 (4096), and each slot can hold up
+   to a 0x200-byte decoded string. */
 static undefined1 DAT_0024af98_backing[4096];
 #define DAT_0024af98 DAT_0024af98_backing[0]
 /* Sizing-audit pass: `read_file_handle(param_1,&DAT_0024cfbc,1)` --
@@ -178,12 +114,9 @@ static undefined2 DAT_0024cfbc_backing[4];
 
 
 
-// was FUN_000409f8 -- decodes a raw (still-compressed) .GR entry
-// buffer into a real bitmap: entries whose own header byte is 4 are
-// already stored raw (just skip the 5-byte header), anything else
-// goes through decompress_gr_bitmap's palette-shifted decompressor. Same
-// shape as the sibling decode inlined in blit_object_sprite_by_frame
-// (see its own comment) -- called by weapon_swing_draw_tick.
+// was FUN_000409f8 -- decodes a raw (still-compressed) .GR entry buffer into a real bitmap: entries
+// whose own header byte is 4 are already stored raw (just skip the 5-byte header), anything else
+// goes through decompress_gr_bitmap's palette-shifted decompressor.
 char *decode_gr_entry_bitmap(param_1)
 char * param_1;
 
@@ -192,14 +125,9 @@ char * param_1;
     param_1 = param_1 + 5;
   }
   else {
-    /* Dropped 3rd argument (the .GR entry's own compression-mode byte,
-       *param_1) -- same bug already found and fixed twice elsewhere in
-       this file for this identical decompress_gr_bitmap call shape (see
-       object-rendering-findings.txt's "MILESTONE: objects render").
-       Without it, decompress_gr_bitmap took its param_3==0 path and returned
-       NULL for every weapon-swing frame, so weapon_swing_draw_tick's
-       blit never actually ran despite resolving a real frame pointer
-       and correct width/height. Confirmed live via UW_DEBUG_COMBAT. */
+    /* Dropped 3rd argument (the .GR entry's own compression-mode byte, param_1) -- same bug already
+       found and fixed twice elsewhere in this file for this identical decompress_gr_bitmap call
+       shape (see object-rendering-findings.txt's "MILESTONE: objects render"). */
     param_1 = (char *)decompress_gr_bitmap(param_1 + 4,&DAT_00202520 + (uint)(byte)param_1[3] * 0x10,*param_1);
   }
   return param_1;
@@ -247,18 +175,12 @@ char param_2;
     } while (cVar2 != '\0');
     ce_strcat(local_114,s__DATA__00085970);
     ce_strcat(local_114,param_1);
-    /* Originally `uVar1 * 4 + 0x85990`: an index into a table of string
-       pointers living at a fixed address in the original binary's data
-       segment. Ghidra never surfaced that table's actual contents (no
-       string constant was recovered at that address), so its real values
-       are unrecoverable from this decompile. Best-effort style-suffix
-       guess based on nearby font filenames (FONT5X6P.SYS/FONT5X6I.SYS);
-       falls back to no suffix for anything out of that guessed range. */
+    /* Originally `uVar1 * 4 + 0x85990`: an index into a table of string pointers living at a fixed
+       address in the original binary's data segment. */
     {
-      /* Corrected: the actual data files are QUESTION.GR, VIEWS.GR,
-         OBJECTS.GR, DOORS.GR etc. (confirmed present in the real install),
-         not the "P/I/B.SYS" style-suffix guessed earlier -- ".GR" is the
-         real extension for all of these regardless of uVar1. */
+      /* Corrected: the actual data files are QUESTION.GR, VIEWS.GR, OBJECTS.GR, DOORS.GR etc.
+         (confirmed present in the real install), not the "P/I/B.SYS" style-suffix guessed earlier
+         -- ".GR" is the real extension for all of these regardless of uVar1. */
       ce_strcat(local_114, ".GR");
     }
   }
@@ -300,59 +222,13 @@ void load_door_frames()
   uVar2 = DAT_00202748;
   uVar1 = DAT_00202744;
   iVar3 = 0;
-  /* Was `DAT_00202734 + 0x30` -- confirmed via real ARM disassembly
-     (0x41dcc: `add r0,r0,#0x30`) that this is genuinely what the
-     original binary computes, not a decompiler artifact. With
-     DAT_00202734==643 (TMOBJ's own start, see its declaration
-     comment), that lands this loop's 6 scratch slots at absolute
-     691-696 -- overlapping LFTI's own last 2 entries (691-692) AND
-     FLASKS' first 4 (693-696), which have already been correctly
-     registered by the time a door is first loaded. Since
-     DAT_00202744 gets restored right after this loop, these 6 slots
-     are only ever meant to be scratch space, but the original game's
-     chosen offset was too small to clear the whole HUD-icon preload
-     range (LFTI/FLASKS/COMPASS/DRAGONS/INV/POWER/EYES/CHAINS/SPELLS/
-     SCRLEDGE/OPTB, ending at 919) -- a genuine bug in the shipped
-     1994 binary, confirmed live: it silently overwrites the flask's
-     own first 4 animation frames with door-sized (32x64) data,
-     visible as a spurious door image under the health/mana flasks.
-     Deliberately deviating from the original's exact (buggy) value
-     here per user direction: picked a fixed scratch base far past
-     every real resource range this project has identified, so this
-     temporary borrow can never collide with anything real again.
-
-     REAL BUG FOUND (this session): the first choice, 60000, broke a
-     DIFFERENT thing than the collision this comment was written to
-     avoid -- emit_catalog_object's own `frame_or_texid` parameter
-     (the value emit_anim_object_frames passes straight through as
-     `60000 + door_type`, see its own comment) is a signed 16-bit
-     `short`, and that function uses `frame_or_texid < 0` as a real,
-     deliberate sentinel check (confirmed via disassembly: original
-     code, not something this project added) meaning "no specific
-     frame -- use the catalog's own internal multi-frame animation
-     logic instead." 60000 wraps to -5536 as a signed short, so the
-     door leaf's real, correctly-decoded texture was silently
-     discarded every time in favor of that internal fallback path --
-     confirmed live via UW_DEBUG_DOOR ("door leaf using the wrong
-     texture"). g_grtile_registry's own backing table is genuinely sized
-     for the full unsigned 0..65535 range, so 60000 is a perfectly
-     valid WRITE index here -- the bug is purely on the signed-short READ side deep in
-     emit_catalog_object, not fixable by widening this one constant's
-     own type. Lowered to stay under 32768 (comfortably clear of both
-     the ~919 real-resource ceiling above and the signed-short sign
-     bit here) so the exact same scratch-slot mechanism reads back
-     correctly on both ends. */
+  /* Was `DAT_00202734 + 0x30` -- confirmed via real ARM disassembly (0x41dcc: `add r0,r0,#0x30`)
+     that this is genuinely what the original binary computes, not a decompiler artifact. */
   DAT_00202744 = 20000;
   do {
-    /* Was passed `0` for the post-process/registration callback (param_5)
-       -- with no registrar, even a successful allocate+read never stores
-       the decoded buffer into lookup_grtile_by_id's DAT_0024e090[] pointer
-       table, so every door frame stayed permanently unresolved (0x0
-       width/height, drawing nothing). register_gr_group_entry (load_gr_resource_group/
-       QUESTION-VIEWS-etc.'s own registrar) already does exactly what's
-       needed here: register at the running cursor DAT_00202744, which
-       this loop already manages by hand the same way load_gr_resource_group's
-       caller does. */
+    /* Was passed `0` for the post-process/registration callback (param_5) -- with no registrar,
+       even a successful allocate+read never stores the decoded buffer into lookup_grtile_by_id's
+       DAT_0024e090[] pointer table... */
     uint _ok = load_gr_resource_entries(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&alloc_door_frame_buffer,&register_gr_group_entry);
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] load_door_frames: loading doors[%d] slot=%d -> DAT_00202744=%d ok=%u\n",
@@ -369,41 +245,14 @@ void load_door_frames()
 
 
 
-/* alloc_flip_grtile_slot/resolve_flip_grtile_slot: were real, confirmed
-   `mov r0,#0; cpy pc,lr` no-ops in the pristine binary (disassembly-
-   verified at both real addresses, 0x4994c and 0x49954 -- not a
-   decompilation artifact). Their only caller, begin_hud_panel_flip's
-   double-buffered-grtile setup for the chain-hotspot panel-switch flip
-   animation, unconditionally failed as a result (uVar6 = uVar6 &
-   alloc_flip_grtile_slot() forced uVar6 to 0), so g_flip_grtile_cache_ready's
-   ready bit could never be set and the entire staged blit path in
-   advance_hud_panel_flip was dead code -- in the shipped .exe, not just this
-   decompile. See [[chain-hotspot-stats-panel]]: exhaustive real-binary
-   cross-referencing found no other path to draw_stats_panel_content
-   either, so this genuinely was inert in the original game.
-
-   THE BODIES BELOW ARE NOT DECOMPILED CODE. Per explicit user request
-   ("implement these stubs to revive this path"), this is a from-
-   scratch reimplementation of what these two functions would need to
-   do for the surrounding (real, decompiled) double-buffered-grtile
-   machinery to actually work, since the original binary's own version
-   is confirmed permanently inert and there is nothing to recover.
-   Written to match this file's own already-established grtile
-   conventions (grtile_alloc_registered's opaque-key allocation,
-   and the g_grtile_real_ptrs registry-walk resolution already used by
-   capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop/blit_grtile_to_framebuffer) rather
-   than invented from nothing. */
+/* alloc_flip_grtile_slot/resolve_flip_grtile_slot: were real, confirmed `mov r0,#0; cpy pc,lr`
+   no-ops in the pristine binary (disassembly- verified at both real addresses, 0x4994c and 0x49954
+   -- not a decompilation artifact). */
 // was FUN_0004994c
 undefined4 alloc_flip_grtile_slot()
 
 {
-  /* Not decompiled (see above). Sized generously (0x100*0x80 = 32768
-     bytes) rather than exactly: the real per-slot sizes the original
-     binary would have used were never recovered (this whole path was
-     dead, so nothing to disassemble), and begin_hud_panel_flip itself indexes
-     one slot at a +0x2800 (10240) byte offset, so this needs enough
-     headroom for whatever panels.GR frame-3 decode lands there on top
-     of the base 0x72x0x53 panel rect every slot also needs to hold. */
+  /* Not decompiled (see above). */
   return grtile_alloc_registered(0x100,0x80);
 }
 
@@ -414,12 +263,7 @@ void *resolve_flip_grtile_slot(param_1)
 undefined4 param_1;
 
 {
-  /* Not decompiled (see above). Same registry-walk resolution as
-     capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop/blit_grtile_to_framebuffer:
-     grtile_alloc_registered's return value is an opaque truncated
-     identity key (see its own comment), not a real pointer -- find
-     the matching record in the DAT_0023c3fc registry and return the
-     real pointer g_grtile_real_ptrs tracks for it. */
+  /* Not decompiled (see above). */
   int iVar1;
   undefined4 *puVar2;
 
@@ -439,30 +283,16 @@ undefined4 param_1;
 }
 
 
-// was FUN_00076a2c -- allocates a param_1 x param_2 raw pixel buffer
-// (real heap pointer, tracked in g_grtile_real_ptrs) and registers it
-// into DAT_0023c3fc's 320-record identity-key table, returning a
-// truncated 32-bit key most callers use for opaque compare/store
-// (sprite_list_alloc_raw_entry, container/inventory hotspot scratch
-// tiles, status-icon buffers) rather than the real pointer -- see
-// capture_framebuffer_rect_to_grtile, the one caller that needs actual
-// dereferenceable pixels. Sibling of uw_alloc_grtile, which does the
-// same allocation without registering a lookup key.
+// was FUN_00076a2c -- allocates a param_1 x param_2 raw pixel buffer (real heap pointer, tracked in
+// g_grtile_real_ptrs) and registers it into DAT_0023c3fc's 320-record identity-key table...
 undefined4 grtile_alloc_registered(param_1,param_2)
 uint param_1;
 uint param_2;
 
 {
-  /* uVar1 (the malloc'd buffer's real address) is deliberately ALSO
-     packed byte-by-byte into the record below as an opaque 4-byte
-     identity key, and *that* truncated key -- not the real pointer -- is
-     what this function returns and what all 11 of its other callers
-     store/compare/pass into restore_captured_grtile_backdrop/capture_framebuffer_rect_to_grtile ("does this key
-     match a record's stored key"): self-consistent lookups that don't
-     need the real address, so leave this alone. The one caller that DOES
-     need the real, dereferenceable pointer (register_grtile_entry, feeding a
-     memmove) gets it from uw_alloc_grtile() instead -- see there -- not
-     from this function's return value. */
+  /* uVar1 (the malloc'd buffer's real address) is deliberately ALSO packed byte-by-byte into the
+     record below as an opaque 4-byte identity key, and *that* truncated key -- not the real
+     pointer... */
   void *uVar1;
   undefined4 *puVar2;
   int iVar3;
@@ -477,13 +307,9 @@ uint param_2;
   }
   iVar3 = (param_1 & 0xffff) * (param_2 & 0xffff);
   uVar1 = ce_malloc(iVar3);
-  /* capture_framebuffer_rect_to_grtile (one of the "11 other callers" mentioned above) turns
-     out to ALSO need the real pointer -- it renders glyph pixels
-     directly into this buffer, not just compare-by-key -- so track the
-     real address alongside the truncated key, indexed the same way
-     capture_framebuffer_rect_to_grtile's own search loop does (record position / 0x11). A
-     real 64-bit heap address can't be losslessly recovered from the
-     low-32-bits-only identity key on this host. */
+  /* capture_framebuffer_rect_to_grtile (one of the "11 other callers" mentioned above) turns out to
+     ALSO need the real pointer -- it renders glyph pixels directly into this buffer, not just
+     compare-by-key -- so track the real address alongside the truncated key... */
   g_grtile_real_ptrs[((char *)puVar2 - (char *)DAT_0023c3fc) / 0x11] = uVar1;
   *(char *)puVar2 = (char)(uintptr_t)uVar1;
   *(char *)((char *)puVar2 + 1) = (char)((uintptr_t)uVar1 >> 8);
@@ -507,12 +333,8 @@ void *uw_alloc_grtile(param_1,param_2)
 uint param_1;
 uint param_2;
 {
-  /* register_grtile_entry needs a real, dereferenceable pointer (it memmoves into
-     the result) rather than grtile_alloc_registered's opaque truncated handle -- see
-     the comment there. Same size computation, no registration into
-     grtile_alloc_registered's own DAT_0023c3fc identity-key table since nothing
-     ever looks buffers from this call path up that way (see
-     register_grtile_entry). */
+  /* register_grtile_entry needs a real, dereferenceable pointer (it memmoves into the result)
+     rather than grtile_alloc_registered's opaque truncated handle -- see the comment there. */
   unsigned int size;
   void *p;
   size = (param_1 & 0xffff) * (param_2 & 0xffff);
@@ -549,13 +371,9 @@ short param_5;
   short sVar10;
   int iVar11;
   int iVar12;
-  /* param_1 is grtile_alloc_registered's opaque truncated identity key (used for
-     the record-table search below), not a real pointer -- but this
-     function ALSO renders glyph pixels directly into the matched
-     record's buffer (the `*param_1 = ...` loop further down used to
-     write through the key itself, which crashes once real heap
-     addresses don't fit in 32 bits). Use the real pointer tracked in
-     g_grtile_real_ptrs instead once a match is found. */
+  /* param_1 is grtile_alloc_registered's opaque truncated identity key (used for the record-table
+     search below), not a real pointer -- but this function ALSO renders glyph pixels directly into
+     the matched record's buffer... */
   short *psVar_target;
 
   puVar5 = DAT_0023c3fc;
@@ -668,14 +486,9 @@ short param_5;
 
 
 
-// was FUN_000769e8 -- allocates and zero-initializes the grtile
-// registry's record table (DAT_0023c3fc, 0x1540 bytes / 0x11-byte
-// stride = 320 records exactly, matching g_grtile_real_ptrs's own
-// 320-entry size), and sets its "end" pointer (DAT_0023c404).
-// Backs grtile_alloc_registered/capture_framebuffer_rect_to_grtile/
-// restore_captured_grtile_backdrop/invalidate_grtile_by_key below --
-// the "captured framebuffer region" system used to save/restore
-// backdrop pixels behind menus, dialogs, and HUD overlays.
+// was FUN_000769e8 -- allocates and zero-initializes the grtile registry's record table
+// (DAT_0023c3fc, 0x1540 bytes / 0x11-byte stride = 320 records exactly, matching
+// g_grtile_real_ptrs's own 320-entry size), and sets its "end" pointer (DAT_0023c404).
 void init_grtile_registry()
 
 {
@@ -690,13 +503,9 @@ void init_grtile_registry()
 
 
 
-// was FUN_00076b24 -- searches the grtile registry (DAT_0023c3fc)
-// for a record whose key matches param_1, and if found, zeroes that
-// record's own key field (marking the slot free/invalid). Returns
-// 0xffffffff if no match was found before reaching the table's end
-// (DAT_0023c404). Fixed a dropped-argument call site in
-// src/hud.c's flush_sprite_list_compositor while moving this (see
-// its own comment).
+// was FUN_00076b24 -- searches the grtile registry (DAT_0023c3fc) for a record whose key matches
+// param_1, and if found, zeroes that record's own key field (marking the slot free/invalid).
+// Returns 0xffffffff if no match was found before reaching the table's end (DAT_0023c404).
 undefined4 invalidate_grtile_by_key(param_1)
 int param_1;
 
@@ -719,16 +528,9 @@ int param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_00076e98 -- looks up a grtile registry record by key
-// (param_1) and blits its previously-captured backdrop pixels
-// (tracked via g_grtile_real_ptrs, not the truncated key itself --
-// see param_1's own comment) back into the real framebuffer at the
-// record's stored rect, honoring g_blit_transparent_mode, then marks
-// the affected rect dirty. Fixed a dropped-argument call site in
-// src/player.c's refresh_experience_display while moving this (see
-// its own comment). Widely used throughout babl.c, chargen.c,
-// containers.c, and inventory.c to restore backdrops behind closed
-// menus/dialogs.
+// was FUN_00076e98 -- looks up a grtile registry record by key (param_1) and blits its
+// previously-captured backdrop pixels (tracked via g_grtile_real_ptrs, not the truncated key itself
+// -- see param_1's own comment) back into the real framebuffer at the record's stored rect...
 undefined4 restore_captured_grtile_backdrop(param_1)
 short * param_1;
 
@@ -740,10 +542,9 @@ short * param_1;
   int iVar5;
   int iVar6;
   int iVar7;
-  /* param_1 is grtile_alloc_registered's opaque truncated identity key, not a
-     real pointer -- same issue as capture_framebuffer_rect_to_grtile above. Read glyph
-     pixels back through the real pointer tracked in
-     g_grtile_real_ptrs instead of dereferencing the key directly. */
+  /* param_1 is grtile_alloc_registered's opaque truncated identity key, not a real pointer -- same
+     issue as capture_framebuffer_rect_to_grtile above. Read glyph pixels back through the real
+     pointer tracked in g_grtile_real_ptrs instead of dereferencing the key directly. */
   short *psVar_target;
 
   iVar3 = 0;
@@ -793,16 +594,8 @@ short * param_1;
 
 
 
-// was FUN_0007856c -- initializes the string-resource page cache
-// (DAT_0024bfa0-family, see that global's own comment): clears the
-// first 2 cache-record slots (0x804/2052-byte stride, matching
-// get_message_string's and register_interned_string's own indexing) to
-// an empty/sentinel state (DAT_0024bfa0/1 = 0xffff, the page-id
-// short field; DAT_0024c7a2/3 and the 512-entry DAT_0024bfa2/3/4/5
-// sub-arrays zeroed), then calls open_strings_pak_file and,
-// conditionally, report_categorized_fatal_error -- likely a "load the default/startup
-// string table" step. This cache grows unboundedly at runtime as
-// more pages are registered; this only seeds its initial 2 slots.
+// was FUN_0007856c -- initializes the string-resource page cache (DAT_0024bfa0-family, see that
+// global's own comment): clears the first 2 cache-record slots...
 undefined4 init_string_resource_cache()
 
 {
@@ -831,11 +624,9 @@ undefined4 init_string_resource_cache()
   } while (iVar4 < 2);
   sVar2 = open_strings_pak_file();
   if (sVar2 != 0) {
-    /* Was called bare -- dropped argument. open_strings_pak_file's own
-       return values (e.g. 0x1001) are already fully-formed error
-       codes in report_categorized_fatal_error's expected
-       category*0x1000+subcode shape, confirming sVar2 itself is the
-       intended argument. */
+    /* Was called bare -- dropped argument. open_strings_pak_file's own return values (e.g. 0x1001)
+       are already fully-formed error codes in report_categorized_fatal_error's expected
+       category*0x1000+subcode shape, confirming sVar2 itself is the intended argument. */
     report_categorized_fatal_error(sVar2);
   }
   return 1;
@@ -844,9 +635,8 @@ undefined4 init_string_resource_cache()
 
 
 // was thunk_FUN_00078e28 -- byte-identical duplicate body of
-// close_strings_pak_file (was FUN_00078e28) at a different address --
-// same split-symbol/naming-collision pattern collapsed elsewhere in
-// this project. Collapsed to a real call to avoid the duplication.
+// close_strings_pak_file (was FUN_00078e28) at a different address -- same
+// split-symbol/naming-collision pattern collapsed elsewhere in this project.
 void close_strings_pak_file_thunk()
 
 {
@@ -858,22 +648,8 @@ void close_strings_pak_file_thunk()
 
 
 
-// was FUN_0007863c -- the core message-string lookup used throughout
-// this game: param_1 packs a page number (bits 9+) and a sub-index
-// within that page (low 9 bits). Searches the string-resource cache
-// (DAT_0024bfa0-family) for the page; if not yet cached, decodes it
-// via decode_strings_pak_entry (not yet named) and returns the string directly;
-// if already cached, returns the pointer from the real-pointer side
-// table (g_bfa2_real_ptrs). ~130 call sites throughout this codebase.
-//
-// Was `undefined4` return -- truncating the real char* string pointer
-// decode_strings_pak_entry returns (and the string pointers stored in the
-// DAT_0024bfa0-family table read below). Most callers pass the
-// result straight into a char*-typed argument so aren't affected by
-// this fix, but any caller that first stores it in an
-// `undefined4`/`int` local before using it as a pointer needs that
-// local retyped too -- fix those as they're actually hit crashing,
-// same as everywhere else this session.
+// was FUN_0007863c -- the core message-string lookup used throughout this game: param_1 packs a
+// page number (bits 9+) and a sub-index within that page (low 9 bits).
 char *get_message_string(param_1)
 ushort param_1;
 
@@ -898,27 +674,14 @@ ushort param_1;
     if (uVar1 == 0) {
       uVar1 = (uint)DAT_0024cfac;
     }
-    /* Was `decode_strings_pak_entry(uVar1)` -- called with only one explicit
-       argument, relying on a register-leftover idiom for the second
-       (the "dropped argument" pattern used throughout this file, e.g.
-       ce_strlen/draw_text_string earlier this session) to still hold
-       the string's sub-index within this page. That register doesn't
-       reliably survive here either (confirmed: string lookups that
-       should succeed -- e.g. chargen field labels -- came back as
-       genuinely empty strings, because decode_strings_pak_entry's own `iVar1 <
-       local_2e` bounds check saw garbage and fell straight through to
-       its "not found" empty-string return). param_1's low 9 bits are
-       exactly this sub-index (uVar1 above is `param_1 >> 9`, the page
-       number) -- pass it explicitly instead. */
+    /* Was `decode_strings_pak_entry(uVar1)` -- called with only one explicit argument, relying on a
+       register-leftover idiom for the second... */
     uVar2 = (char *)decode_strings_pak_entry(uVar1,(uint)(param_1 & 0x1ff));
   }
   else {
-    /* Was reading 4 consecutive bytes from DAT_0024bfa2 alone, but the
-       register function actually splits the pointer across bfa2/3/4/5
-       at the SAME (un-multiplied-by-4) index -- that read was pulling
-       the real low byte plus 3 zero padding bytes, not reconstructing
-       anything real, and only ever captured 32 bits regardless. Use
-       the real-pointer side table instead -- see its comment. */
+    /* Was reading 4 consecutive bytes from DAT_0024bfa2 alone, but the register function actually
+       splits the pointer across bfa2/3/4/5 at the SAME (un-multiplied-by-4) index -- that read was
+       pulling the real low byte plus 3 zero padding bytes, not reconstructing anything real... */
     uVar2 = g_bfa2_real_ptrs[sVar4 * 0x201 + (int)(short)(param_1 & 0x1ff)];
   }
   return uVar2;
@@ -928,15 +691,9 @@ ushort param_1;
 
 
 
-// was FUN_0007873c -- the write-side counterpart to
-// get_message_string: interns a real string pointer (param_1) into
-// the string-resource cache under page param_2, creating that page
-// (capped to at most 2 distinct pages via this path) if it doesn't
-// exist yet. Stores the pointer in g_bfa2_real_ptrs (and its split
-// byte-plane form in the DAT_0024bfa2-family arrays) at the page's
-// next free sub-index, then returns a packed message id
-// `(page << 9) | sub_index` -- the exact same encoding
-// get_message_string's param_1 decodes.
+// was FUN_0007873c -- the write-side counterpart to get_message_string: interns a real string
+// pointer (param_1) into the string-resource cache under page param_2, creating that page (capped
+// to at most 2 distinct pages via this path) if it doesn't exist yet.
 int register_interned_string(param_1,param_2)
 char *param_1;
 undefined4 param_2;
@@ -1017,14 +774,9 @@ undefined4 param_2;
 
 
 
-// was FUN_00078918 -- overwrites an already-interned string in
-// place: param_2 is an existing packed message id (page in bits 9+,
-// sub-index in the low 9 bits, same encoding as get_message_string/
+// was FUN_00078918 -- overwrites an already-interned string in place: param_2 is an existing packed
+// message id (page in bits 9+, sub-index in the low 9 bits, same encoding as get_message_string/
 // register_interned_string), param_1 is the new real string pointer.
-// Looks up the page and, if found, rewrites the real-pointer side
-// table entry at that exact sub-index (does not allocate a new
-// slot). Returns param_2 unchanged on success, or 0 if the page
-// wasn't found. No callers found by grep in the remaining decompile.
 uint overwrite_interned_string(param_1,param_2)
 char *param_1;
 uint param_2;
@@ -1063,12 +815,9 @@ uint param_2;
 
 
 
-// was FUN_00078a04 -- finds the string-resource cache page matching
-// param_1 and, if found, clears its entire contents: resets its
-// sub-index count (DAT_0024c7a2/3) and nulls out every one of its
-// 512 real-pointer/byte-plane slots (g_bfa2_real_ptrs and the
-// DAT_0024bfa2-family arrays). A no-op if the page isn't cached.
-// Confirmed real caller: src/babl.c, called with page 0x7c.
+// was FUN_00078a04 -- finds the string-resource cache page matching param_1 and, if found, clears
+// its entire contents: resets its sub-index count (DAT_0024c7a2/3) and nulls out every one of its
+// 512 real-pointer/byte-plane slots (g_bfa2_real_ptrs and the DAT_0024bfa2-family arrays).
 void reset_string_resource_page(param_1)
 undefined4 param_1;
 
@@ -1113,23 +862,15 @@ undefined4 param_1;
 
 
 
-// was FUN_00078d18 -- opens STRINGS.PAK (built from the install
-// dir + "\DATA\strings.pak"): reads its 2-byte item count into
-// DAT_0024cfb8, allocates and reads the offset-index table into
-// DAT_0024cfa8, then reopens the file (keeping the handle in
-// DAT_0024bf98 for later per-string seeks/reads, see
-// get_message_string's own decode path). Returns 0 on success,
-// 0x1001 if the index-table allocation failed, or 0x3002 if either
-// open failed. Confirmed real caller: init_string_resource_cache.
+// was FUN_00078d18 -- opens STRINGS.PAK (built from the install dir + "\DATA\strings.pak"): reads
+// its 2-byte item count into DAT_0024cfb8, allocates and reads the offset-index table into
+// DAT_0024cfa8...
 undefined4 open_strings_pak_file()
 
 {
-  /* Ghidra couldn't correlate this copy loop's destination with a real
-     stack slot (see fix_stack_copy_loops.py); it's actually copying
-     DAT_0023cca8 (the install dir, set up earlier) directly into
-     acStack_118, which the two ce_strcat (strcat-shaped) calls right
-     below then append "\DATA\" and "strings.pak" onto to build the full
-     path. */
+  /* Ghidra couldn't correlate this copy loop's destination with a real stack slot (see
+     fix_stack_copy_loops.py); it's actually copying DAT_0023cca8 (the install dir, set up earlier)
+     directly into acStack_118... */
   char *stack0xffdc3240_ptr;
   char cVar1;
   char *pcVar2;
@@ -1166,13 +907,8 @@ undefined4 open_strings_pak_file()
 
 
 
-// was FUN_00078e28 -- closes STRINGS.PAK and frees its index/data
-// buffers (DAT_0024cfb8/DAT_0024cfa8). Byte-identical body to
-// close_strings_pak_file_thunk (was close_strings_pak_file_thunk, above) -- same
-// split-symbol/naming-collision pattern as this project's other
-// thunk-duplicate pairs (this is the real function at this address;
-// the other is a separate thunk elsewhere that happens to share the
-// exact same compiled body, now collapsed to call this one).
+// was FUN_00078e28 -- closes STRINGS.PAK and frees its index/data buffers
+// (DAT_0024cfb8/DAT_0024cfa8).
 void close_strings_pak_file()
 
 {
@@ -1186,16 +922,8 @@ void close_strings_pak_file()
 
 
 
-// was FUN_00078e60 -- decodes one string out of STRINGS.PAK: seeks
-// the page's offset-table entry for param_1, finds param_2's
-// sub-offset within that page's own sub-table, then reads
-// compressed bytes one at a time via walk_strings_pak_huffman_tree (not yet named)
-// until a terminator (-1 or '|') or the 0x200-byte cap, writing into
-// the decoded-string ring buffer (DAT_0024af98, cycling through
-// DAT_0024cfb4 -- see that global's own comment). Already widely
-// referenced by this exact name throughout this codebase's existing
-// comments describing the string-resource system. Confirmed real
-// caller: get_message_string.
+// was FUN_00078e60 -- decodes one string out of STRINGS.PAK: seeks the page's offset-table entry
+// for param_1, finds param_2's sub-offset within that page's own sub-table...
 undefined1 *decode_strings_pak_entry(param_1,param_2)
 short param_1;
 short param_2;
@@ -1216,12 +944,8 @@ short param_2;
   uVar5 = 0;
   puVar6 = &DAT_0024af98 + DAT_0024cfb4;
   seek_file_handle(DAT_0024bf98,*DAT_0024cfb8 * 4 + 2,0);
-  /* If this read fails (e.g. DAT_0024bf98 holds a corrupted/invalid
-     handle -- see walk_strings_pak_huffman_tree's comment for the known separate bug
-     this guards against), local_30 stays uninitialized garbage and the
-     search loop below would iterate up to 65535 times, one failing
-     read each, instead of the fast "not found" bailout every other
-     failure path in this function already takes. */
+  /* If this read fails (e.g. DAT_0024bf98 holds a corrupted/invalid handle -- see
+     walk_strings_pak_huffman_tree's comment for the known separate bug this guards against)... */
   if (read_file_handle(DAT_0024bf98,&local_30,2) == 0) {
     *puVar6 = 0;
     return puVar6;
@@ -1267,15 +991,9 @@ short param_2;
 
 
 
-// was FUN_0007907c -- walks STRINGS.PAK's per-page Huffman-style
-// decode tree (stored in DAT_0024cfa8, 4 bytes/node) one bit at a
-// time (read_strings_pak_bit) starting from tree-node param_2, until
-// reaching a leaf (terminator byte != -1), returning the decoded
-// byte. Already had an existing comment documenting a real
-// corrupted-file-handle infinite-loop guard already added here
-// (bails out with the '|' separator sentinel after 256 tree steps
-// instead of hanging forever). Confirmed real caller:
-// decode_strings_pak_entry.
+// was FUN_0007907c -- walks STRINGS.PAK's per-page Huffman-style decode tree (stored in
+// DAT_0024cfa8, 4 bytes/node) one bit at a time (read_strings_pak_bit) starting from tree-node
+// param_2, until reaching a leaf (terminator byte != -1), returning the decoded byte.
 undefined1 walk_strings_pak_huffman_tree(param_1,param_2)
 undefined4 param_1;
 ushort param_2;
@@ -1284,16 +1002,9 @@ ushort param_2;
   short sVar1;
   /* Was `int iVar2`, truncating DAT_0024cfa8 (a real char* pointer). */
   char *iVar2;
-  /* Guard against a known, separate, not-yet-root-caused bug: under
-     some string IDs the compressed-string file handle this receives
-     (traced back to DAT_0024bf98) ends up corrupted before reaching
-     here, so every underlying file read fails and this tree walk never
-     reaches a leaf node -- an unbounded busy loop that hangs the whole
-     game (confirmed via lldb: uw_file_read spinning forever on a
-     garbage handle). No real Huffman tree used by this format is
-     anywhere near this deep, so treat exceeding it as corrupt/failed
-     decode and bail out with the same separator sentinel a normal
-     decode already uses to signal "stop appending". */
+  /* Guard against a known, separate, not-yet-root-caused bug: under some string IDs the
+     compressed-string file handle this receives (traced back to DAT_0024bf98) ends up corrupted
+     before reaching here... */
   int iVar3 = 0;
   while (*(char *)((short)param_2 * 4 + DAT_0024cfa8 + 2) != -1) {
     if (256 < iVar3) {
@@ -1317,13 +1028,8 @@ ushort param_2;
 
 
 
-// was FUN_000790e0 -- reads one bit from STRINGS.PAK's compressed
-// bitstream (DAT_0024cfbc, refilled from the file one byte at a time
-// via DAT_000878bc as a bit-position counter), returning -1 instead
-// of a 0/0x80 bit value on a file-read failure so
-// walk_strings_pak_huffman_tree's caller can bail out immediately
-// rather than spinning through its iteration cap one failed read at
-// a time (already had an existing comment documenting this).
+// was FUN_000790e0 -- reads one bit from STRINGS.PAK's compressed bitstream (DAT_0024cfbc, refilled
+// from the file one byte at a time via DAT_000878bc as a bit-position counter)...
 int read_strings_pak_bit(param_1)
 undefined4 param_1;
 
@@ -1343,13 +1049,8 @@ undefined4 param_1;
 }
 
 
-// was FUN_0007ee4c -- the mirror-image "read" counterpart to
-// write_buffer_to_file: opens param_1 for read and reads param_3
-// bytes into param_2, returning whether the full byte count was
-// read. Widely used across uw.c and src/automap.c, src/chargen.c,
-// src/game.c, src/graphics.c for various fixed-size resource/palette/
-// bitmap loads (several call sites pass a fixed 64000 = 320*200,
-// e.g. a full-screen 8bpp image).
+// was FUN_0007ee4c -- the mirror-image "read" counterpart to write_buffer_to_file: opens param_1
+// for read and reads param_3 bytes into param_2, returning whether the full byte count was read.
 bool read_buffer_from_file(param_1,param_2,param_3)
 char *param_1;
 void *param_2;
@@ -1378,23 +1079,14 @@ int param_3;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-/* Forward declaration: g_grtile_real_ptrs is defined much further down
-   (see its own comment there), but blit_grtile_to_framebuffer here -- much earlier in
-   the file -- needs it to resolve a grtile registry key to the real
-   pointer the key was only ever a truncated stand-in for. */
+/* Forward declaration: g_grtile_real_ptrs is defined much further down (see its own comment there),
+   but blit_grtile_to_framebuffer here -- much earlier in the file -- needs it to resolve a grtile
+   registry key to the real pointer the key was only ever a truncated stand-in for. */
  void *g_grtile_real_ptrs[320];
 
-// was FUN_00011c10 -- blits a captured grtile buffer (param_3, a
-// registry key resolved via g_grtile_real_ptrs the same way
-// capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop
-// do) into the framebuffer at (param_2,param_1), clipped against the
-// screen edges (0x140x200) and honoring g_blit_transparent_mode (a
-// zero source pixel is treated as transparent and skipped in that
-// mode, copied verbatim otherwise). Confirmed live caller
-// (src/player.c's stats-panel skill-row draw) uses this to restore
-// the captured background rect behind a row before redrawing its
-// text over it -- the third member of the capture/restore/blit trio
-// documented together in src/resources.c.
+// was FUN_00011c10 -- blits a captured grtile buffer (param_3, a registry key resolved via
+// g_grtile_real_ptrs the same way
+// capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop do) into the framebuffer...
 void blit_grtile_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 ushort param_1;
 int param_2;
@@ -1420,14 +1112,8 @@ undefined4 param_8;
   short sVar12;
   int iVar13;
   short local_30;
-  /* Was `int local_2c = param_3 + ...` -- param_3 is
-     grtile_alloc_registered's opaque truncated identity key, not a real
-     pointer (same issue already fixed in capture_framebuffer_rect_to_grtile
-     and restore_captured_grtile_backdrop, see their own comments -- blit_grtile_to_framebuffer was the one
-     remaining consumer still dereferencing the key directly instead of
-     resolving it through g_grtile_real_ptrs first). Crashed the instant
-     the stats panel -- the only caller that reaches this with a real
-     grtile key -- first tried to draw. */
+  /* Was `int local_2c = param_3 + ...` -- param_3 is grtile_alloc_registered's opaque truncated
+     identity key, not a real pointer... */
   intptr_t local_2c;
   char *_resolvedGrtilePtr;
   {
@@ -1537,20 +1223,9 @@ undefined4 param_8;
 }
 
 
-// was FUN_000129f8 -- confirmed by decode_gr_entry_bitmap's own
-// comment ("decompress_gr_bitmap's palette-shifted decompressor") and
-// extensive investigation logged in object-rendering-findings.txt as
-// the core .GR resource bitmap decompressor: param_1 is the
-// compressed entry data, param_2 an auxiliary nibble->8bit palette
-// remap table, and param_3 the entry's own compression-mode byte
-// (0 = unsupported/returns NULL, 2/4/6/8/0xa are distinct bit-packed/
-// RLE decode paths, several confirmed live via real .GR data during
-// that investigation -- e.g. mode 8's RLE fill through
-// decode_gr_rle_stream). Two confirmed real callers (decode_gr_entry_bitmap
-// and decode_tile_object_billboard_texture) each independently had this exact "dropped
-// compression-mode argument" bug found and fixed in an earlier
-// session (see decode_gr_entry_bitmap's own HACK comment and
-// object-rendering-findings.txt's "MILESTONE: objects render" entry).
+// was FUN_000129f8 -- confirmed by decode_gr_entry_bitmap's own comment ("decompress_gr_bitmap's
+// palette-shifted decompressor") and extensive investigation logged in
+// object-rendering-findings.txt as the core .GR resource bitmap decompressor...
 byte *decompress_gr_bitmap(param_1,param_2,param_3)
 byte * param_1;
 byte * param_2;
@@ -1607,21 +1282,8 @@ LAB_000130d0:
       return DAT_000b462c;
     }
     if (param_3 == '\x06') {
-      /* blit_sprite_row_remapped's 4th arg (a shade byte; 0xff means "no
-         remap, plain copy") is never set by any of this function's 3 real
-         ARM call sites either (confirmed via Ghidra disassembly at
-         0x12aa0/0x12bf0/0x12d34 -- r3 genuinely isn't loaded before any
-         of the 3 `bl 0x13170` calls). The real binary's r3 register
-         happened to still hold a leftover value from earlier, unrelated
-         code at that point; a C recompile has no equivalent "whatever's
-         left in the register" state, so param_4 here was reading
-         uninitialized garbage -- confirmed live via ASan: a
-         heap-buffer-overflow in blit_sprite_row_remapped reading up to
-         64KB past the 4096-byte LIGHT.DAT remap table (DAT_0024fa2c),
-         since the garbage byte routinely wasn't the 0xff sentinel and so
-         took the remap-table-index path with an unclamped shade value.
-         Passing 0xff explicitly forces the same safe, table-free plain-
-         copy path the callee already has for exactly this situation. */
+      /* blit_sprite_row_remapped's 4th arg (a shade byte; 0xff means "no remap, plain copy") is
+         never set by any of this function's 3 real ARM call sites either... */
       blit_sprite_row_remapped(bVar2,6,2,0xff);
       DAT_000b462c = pbVar4;
       DAT_000b4628 = pbVar4;
@@ -1740,13 +1402,9 @@ LAB_000130d0:
     DAT_000b5630 = pbVar4;
     DAT_000b4628 = pbVar5;
     DAT_000b461c = pbVar5;
-    /* blit_sprite_row_remapped above resets DAT_000b4610 to the scratch
-       DAT_000842ac (memset to 0x0a) on the way out, but decode_gr_rle_stream's RLE
-       fill looks its run colours up through DAT_000b4610 -- for the RLE
-       formats (6/8/0xa) that table is the auxiliary palette passed in
-       param_2 (nibble -> 8-bit palette index). Ghidra dropped the setup;
-       point it there so the sprite decodes to real colours instead of a
-       flat 0x0a. */
+    /* blit_sprite_row_remapped above resets DAT_000b4610 to the scratch DAT_000842ac (memset to
+       0x0a) on the way out, but decode_gr_rle_stream's RLE fill looks its run colours up through
+       DAT_000b4610... */
     DAT_000b4610 = (byte *)param_2;
     decode_gr_rle_stream(uVar7,param_3,uVar8);
     DAT_000b462c = DAT_000b4628;
@@ -1758,11 +1416,9 @@ LAB_000130d0:
 
 
 
-// was FUN_000130e0 -- merges param_2's own low byte into either the
-// low half (param_3==0, keeping param_1's high byte) or high half
-// (param_3!=0, keeping param_1's low byte) of param_1's 16-bit value.
-// Confirmed heavily used by decompress_gr_bitmap's bit-packed/RLE
-// decode paths as a byte-pair merge primitive.
+// was FUN_000130e0 -- merges param_2's own low byte into either the low half (param_3==0, keeping
+// param_1's high byte) or high half (param_3!=0, keeping param_1's low byte) of param_1's 16-bit
+// value.
 uint merge_byte_into_word(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
@@ -1784,12 +1440,8 @@ int param_3;
 
 
 
-// was FUN_00013108 -- decompress_gr_bitmap's own private setup
-// helper (its only confirmed caller, inside that function's mode-4
-// branch): computes a table-row offset from param_2 (optionally
-// overridden by param_4's high byte, unless that byte is the 0xff
-// "no override" sentinel) and points the shared remap-table pointer
-// (DAT_000b4610/DAT_000b4624) at DAT_000b4614 plus that offset.
+// was FUN_00013108 -- decompress_gr_bitmap's own private setup helper (its only confirmed caller,
+// inside that function's mode-4 branch): computes a table-row offset from param_2...
 void select_gr_bitmap_remap_table(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
@@ -1810,14 +1462,9 @@ uint param_4;
 }
 
 
-// was FUN_000132c4 -- confirmed by decompress_gr_bitmap's own
-// pre-existing comment ("this function's RLE fill looks its run
-// colours up through DAT_000b4610") as the RLE-stream decoder behind
-// decompress_gr_bitmap's mode 6/8/0xa branches: reads a run-length/
-// tag-coded byte stream from the shared cursor (DAT_000b5630) and
-// writes resolved palette bytes (via DAT_000b4610, the shared
-// remap-table pointer select_gr_bitmap_remap_table sets up) into the
-// output cursor (DAT_000b461c), up to param_3 bytes of input.
+// was FUN_000132c4 -- confirmed by decompress_gr_bitmap's own pre-existing comment ("this
+// function's RLE fill looks its run colours up through DAT_000b4610") as the RLE-stream decoder
+// behind decompress_gr_bitmap's mode 6/8/0xa branches...
 void decode_gr_rle_stream(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
@@ -1976,13 +1623,9 @@ LAB_00013530:
 }
 
 
-// was FUN_00041260 -- called from open_gr_resource_file (src/resources.c:110)
-// only for format-type-3 .GR files, right after the frame count
-// (DAT_00202728) is read and before the main offset table: reads a
-// separate count (DAT_00202724) and either skips past that many
-// 32-byte entries (if no destination buffer DAT_00202720 was set) or
-// allocates and loads them. Reads as an optional extra metadata table
-// specific to format-3 resource files.
+// was FUN_00041260 -- called from open_gr_resource_file (src/resources.c:110) only for
+// format-type-3 .GR files, right after the frame count (DAT_00202728) is read and before the main
+// offset table...
 undefined4 load_gr_format3_extra_table()
 
 {
@@ -2073,14 +1716,9 @@ void *param_2;
 }
 
 
-// was FUN_00041708 -- load_gr_resource_entries's post-process callback
-// for the flasks/compass/etc. resource group (passed as its param_5 at
-// uw.c's "hud_icon_gr_bump_alloc_entry"-paired call site): allocates a fresh grtile
-// buffer sized from the entry's own width/height header bytes, copies
-// the decoded data in, and registers it at
-// g_grtile_registry[DAT_00202744 + entry_index]. Same registration
-// shape as uw_register_gr_entry, for a resource group that already had
-// a real (not stubbed) registrar.
+// was FUN_00041708 -- load_gr_resource_entries's post-process callback for the flasks/compass/etc.
+// resource group (passed as its param_5 at uw.c's "hud_icon_gr_bump_alloc_entry"-paired call site):
+// allocates a fresh grtile buffer sized from the entry's own width/height header bytes...
 bool register_grtile_entry(param_1,param_2,param_3)
 void *param_1;
 undefined4 param_2;
@@ -2089,11 +1727,8 @@ short param_3;
 {
   void *pvVar1;
 
-  /* param_1 (a real buffer pointer, from load_gr_resource_entries's allocator
-     callback) was declared int here and silently truncated to 32 bits on
-     dereference -- see uw_alloc_grtile()'s comment for why this uses that
-     helper instead of grtile_alloc_registered directly. g_grtile_registry is
-     a flat pointer array -- see its declaration comment. */
+  /* param_1 (a real buffer pointer, from load_gr_resource_entries's allocator callback) was
+     declared int here and silently truncated to 32 bits on dereference... */
   pvVar1 = uw_alloc_grtile(*(undefined1 *)((char *)param_1 + 1),*(byte *)((char *)param_1 + 2) + 1);
   if (pvVar1 != 0) {
     ce_memmove(pvVar1,param_1,(uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
@@ -2104,33 +1739,15 @@ short param_3;
 
 
 
-// was FUN_00041770 -- register_grtile_entry's "slot may already be
-// populated" sibling, used for reload paths (e.g. the save/load menu's
-// level reload): always allocates a FRESH buffer sized for this write
-// rather than reusing/overwriting whatever the slot already points to
-// (fixed heap-buffer-overflow -- see this function's own body comment).
+// was FUN_00041770 -- register_grtile_entry's "slot may already be populated" sibling, used for
+// reload paths (e.g. the save/load menu's level reload)...
 undefined4 reregister_grtile_entry(param_1,param_2,param_3)
 void *param_1;
 undefined4 param_2;
 short param_3;
 
 {
-  /* See register_grtile_entry -- same param_1/g_grtile_registry truncation fix.
-     This "overwrite an already-allocated slot" path blindly memcpy'd
-     width*height bytes into whatever pointer g_grtile_registry's table
-     already held for this slot -- fine as long as that's still the SAME
-     size it was originally allocated at, but nothing guarantees that:
-     confirmed via AddressSanitizer, a real heap-buffer-overflow, 100%
-     reproducible opening the in-game options/pause menu and picking
-     Save or Load. The existing 888-byte allocation there came from an
-     unrelated resource loaded into this same slot at startup
-     (app_main_loop's initial preload); the save/load menu's own level
-     reload (load_player_save_record -> reload_paperdoll_body_sprite -> ... -> here) later reuses
-     the slot for a bigger (2484-byte) one, overflowing it. Rather than
-     assume the existing allocation is still big enough, allocate a
-     fresh one sized for THIS write (same sizing register_grtile_entry uses for
-     a brand new slot) and replace the table pointer -- the old
-     allocation leaks, but that beats corrupting the heap. */
+  /* See register_grtile_entry -- same param_1/g_grtile_registry truncation fix. */
   void *pvVar1 = uw_alloc_grtile(*(byte *)((char *)param_1 + 1),
                                   (uint)*(byte *)((char *)param_1 + 2) + 1);
   if (pvVar1 == 0) {
@@ -2143,15 +1760,9 @@ short param_3;
 }
 
 
-// was FUN_00041910 -- the generic .GR resource-group loader: registers
-// every entry at the running absolute-frame cursor DAT_00202744 (via
-// register_gr_group_entry -> uw_register_gr_entry) then advances the cursor by
-// the file's own entry count. Used for most of the startup preload
-// chain (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/3DWIN/TMOBJ and friends)
-// -- everything except OBJECTS.GR (load_objects_gr, which doesn't
-// advance the cursor) and the flasks/compass HUD icon group
-// (load_hud_icon_gr, which registers via register_grtile_entry
-// instead).
+// was FUN_00041910 -- the generic .GR resource-group loader: registers every entry at the running
+// absolute-frame cursor DAT_00202744 (via register_gr_group_entry -> uw_register_gr_entry) then
+// advances the cursor by the file's own entry count.
 undefined4 load_gr_resource_group(param_1)
 char *param_1;
 
@@ -2170,12 +1781,9 @@ char *param_1;
 
 
 
-// was FUN_00041960 -- loads OBJECTS.GR specifically: registers each
-// entry at absolute cursor 0 (register_objects_gr_entry) rather than the running
-// DAT_00202744 cursor, and does NOT advance it -- OBJECTS.GR occupies
-// the absolute [0, entry_count) frame range (frame N == object type
-// N), with the running cursor reset to 0x1c0 by the next load in the
-// preload chain.
+// was FUN_00041960 -- loads OBJECTS.GR specifically: registers each entry at absolute cursor 0
+// (register_objects_gr_entry) rather than the running DAT_00202744 cursor, and does NOT advance it
+// -- OBJECTS.GR occupies the absolute [0, entry_count) frame range (frame N == object type N)...
 undefined4 load_objects_gr(param_1)
 char *param_1;
 
@@ -2198,11 +1806,9 @@ undefined4 param_3;
 
 
 
-// was FUN_000419c8 -- loads a HUD icon .GR resource (flasks, compass,
-// dragons, power, eyes, chains, spells, scroll-edge, etc.) by
-// registering each entry via register_grtile_entry rather than
-// uw_register_gr_entry, otherwise identical in shape to
-// load_gr_resource_group (same running-cursor advance/debug dump).
+// was FUN_000419c8 -- loads a HUD icon .GR resource (flasks, compass, dragons, power, eyes, chains,
+// spells, scroll-edge, etc.) by registering each entry via register_grtile_entry rather than
+// uw_register_gr_entry...
 undefined4 load_hud_icon_gr(param_1)
 char *param_1;
 
@@ -2223,19 +1829,14 @@ char *param_1;
 
 
 
-// was FUN_00041a18 -- reloads a SINGLE .GR entry (count=1) into its
-// existing grtile slot via reregister_grtile_entry, temporarily
-// repointing the running cursor DAT_00202744 at the entry's own
-// absolute frame (derived from param_1, a symbolic sprite id >= 0x2000)
-// for the one call, then restoring it. Used for live reloads of a
-// single already-loaded sprite (e.g. a paperdoll body entry) without
-// disturbing the rest of the preload chain's frame numbering.
+// was FUN_00041a18 -- reloads a SINGLE .GR entry (count=1) into its existing grtile slot via
+// reregister_grtile_entry, temporarily repointing the running cursor DAT_00202744 at the entry's
+// own absolute frame (derived from param_1, a symbolic sprite id >= 0x2000) for the one call...
 void reload_single_grtile_entry(param_1,param_2,param_3)
 short param_1;
-/* Was `undefined4`, truncating the real resource-name string pointer
-   callers pass (e.g. reload_paperdoll_body_sprite's s_bodies_00085c58) before it reaches
-   load_gr_resource_entries's own `char *param_1`, which then crashed dereferencing
-   it. Same pointer-truncation class as everywhere else this session. */
+/* Was `undefined4`, truncating the real resource-name string pointer callers pass (e.g.
+   reload_paperdoll_body_sprite's s_bodies_00085c58) before it reaches load_gr_resource_entries's
+   own `char *param_1`, which then crashed dereferencing it. */
 char *param_2;
 undefined4 param_3;
 
@@ -2251,22 +1852,12 @@ undefined4 param_3;
 
 
 
-/* Was `load_gr_resource_entries(...); return 0;` -- a dropped return
-   value (same class as FUN_00045054/get_scanned_object_class_effect_ptr
-   elsewhere this session): load_gr_resource_entries has a real `uint`
-   return (used directly by its other callers, e.g. FUN_00041a4c/
-   FUN_00041a90's own `return load_gr_resource_entries(...)`), but this
-   wrapper discarded it and always reported success. Harmless at
-   redraw_hud_panels's own call site (doesn't check the return value),
-   but begin_hud_panel_flip/redraw_active_hud_panel both DO check it, and with
-   the hardcoded 0 they always took their "decode failed" error branch
-   -- confirmed live once alloc_flip_grtile_slot/resolve_flip_grtile_slot
-   stopped being stubs and this path actually ran for the first time. */
-// was FUN_00041a78 -- decodes a single .GR entry directly into a
-// caller-supplied destination buffer (param_3, stashed in DAT_00202510
-// and consumed by uw_copy_gr_entry_to_dest) rather than registering it
-// in g_grtile_registry. No registry involvement at all; purely a
-// "decode this one resource entry into my own buffer" helper.
+/* Was `load_gr_resource_entries(...); return 0;` -- a dropped return value (same class as
+   FUN_00045054/get_scanned_object_class_effect_ptr elsewhere this session):
+   load_gr_resource_entries has a real `uint` return... */
+// was FUN_00041a78 -- decodes a single .GR entry directly into a caller-supplied destination buffer
+// (param_3, stashed in DAT_00202510 and consumed by uw_copy_gr_entry_to_dest) rather than
+// registering it in g_grtile_registry.
 undefined4 decode_gr_entry_to_buffer(param_1,param_2,param_3)
 char *param_1;
 undefined4 param_2;
@@ -2274,30 +1865,16 @@ void *param_3;
 
 {
   DAT_00202510 = param_3;
-  /* Was a hardcoded `0` (no post-process callback) -- see
-     uw_copy_gr_entry_to_dest's own comment: without a real callback
-     here, load_gr_resource_entries decodes into its own throwaway
-     buffer and DAT_00202510 (this function's whole reason for
-     existing) is never actually consulted, so this decode always
-     reported success while leaving the caller's destination buffer
-     untouched. */
+  /* Was a hardcoded `0` (no post-process callback) -- see uw_copy_gr_entry_to_dest's own comment:
+     without a real callback here, load_gr_resource_entries decodes into its own throwaway buffer
+     and DAT_00202510 (this function's whole reason for existing) is never actually consulted... */
   return load_gr_resource_entries(param_1,param_2,1,&decode_gr_entry_bump_alloc_entry,&uw_copy_gr_entry_to_dest);
 }
 
 
-// was FUN_0002295c -- a Win32 LoadString-shaped resource-string
-// loader: loads string resource param_1 into a fixed static buffer
-// and returns its address. Confirmed as "LoadString-shaped" by an
-// existing comment on win_file_exists, one of its callers.
-// BUG FIX (unit-testing-framework merge): param_1 was `undefined4`
-// (32-bit), but every real call site across this project (saveload.c,
-// registration.c, game.c, winfile_wrappers.c) passes a real stack/path
-// pointer, which got truncated to 32 bits storing into this narrower
-// parameter, then zero-extended back into MultiByteToWideChar's `const char
-// *source` as a garbage pointer -- confirmed live (EXC_BAD_ACCESS in
-// MultiByteToWideChar's strlen, called from check_save_disk_space, crashing
-// every single regression script at startup). Widened to a real
-// pointer type, matching this project's other pointer-truncation fixes.
+// was FUN_0002295c -- a Win32 LoadString-shaped resource-string loader: loads string resource
+// param_1 into a fixed static buffer and returns its address. Confirmed as "LoadString-shaped" by
+// an existing comment on win_file_exists, one of its callers.
 undefined *load_string_resource(param_1)
 char * param_1;
 
@@ -2308,12 +1885,9 @@ char * param_1;
 
 
 
-// was FUN_00022998 -- structurally identical to load_string_resource
-// but via a different ordinal (WideCharToMultiByte, two extra trailing
-// arguments) and a larger buffer (0x260 vs 0xff) -- likely a longer-
-// message variant of the same LoadString-shaped resource loader.
-// BUG FIX (unit-testing-framework merge): same pointer-truncation class
-// as load_string_resource's own fix just above.
+// was FUN_00022998 -- structurally identical to load_string_resource but via a different ordinal
+// (WideCharToMultiByte, two extra trailing arguments) and a larger buffer (0x260 vs 0xff) -- likely
+// a longer- message variant of the same LoadString-shaped resource loader.
 undefined *load_string_resource_large(param_1)
 char * param_1;
 
@@ -2340,47 +1914,16 @@ codeval * param_5;
   int iVar5;
   uint uVar6;
   undefined2 local_8;
-  /* param_4 is an allocator callback (returns a real buffer pointer, sized
-     by the byte count in iVar4) -- Ghidra's 'iVar2' held both the item
-     index (int arithmetic, above) and the allocator's return value at
-     different points in the loop, which silently truncated the pointer to
-     32 bits on this 64-bit host. Split the pointer use into its own
-     variable. */
+  /* param_4 is an allocator callback (returns a real buffer pointer, sized by the byte count in
+     iVar4) -- Ghidra's 'iVar2' held both the item index (int arithmetic, above) and the allocator's
+     return value at different points in the loop... */
   void *pvVar_buf;
   
   uVar6 = 1;
   if (param_1 == 0 || param_1[0] == '\0') {
-    /* A handful of resource-name string constants at this call site's
-       original address were never recovered by Ghidra (no content, just
-       a dangling address -- see README "Unrecoverable string tables").
-       Treat "nothing to load" as success rather than failing the whole
-       resource-preload batch this participates in.
-
-       BUG (found tracing the mode-icon "door sprite" report): this
-       early return never touches DAT_00202728 (the just-loaded
-       resource's frame count), so it's left holding whatever the
-       PREVIOUS real load set it to. load_gr_resource_group/load_hud_icon_gr's
-       callers unconditionally do `DAT_00202744 += DAT_00202728`
-       right after calling this regardless of success/failure -- so
-       every one of these "nothing to load" resources silently
-       RE-ADDS the previous resource's frame count to the running
-       absolute-frame counter instead of contributing zero. Confirmed
-       live via UW_DEBUG_DUMP_GR: all 4 unrecovered resource names in
-       the post-TMOBJ preload chain (this project's own prior
-       "Unrecoverable string tables" investigation already knew these
-       fail to load, but not that the failure corrupts every
-       subsequent resource's frame numbering) each duplicate the
-       immediately-preceding real resource's exact frame count
-       (e.g. the one right after TMOBJ.GR claims TMOBJ's own 38
-       frames a second time). This is why the mode-icon highlight
-       (which indexes into this same running counter, expecting the
-       resource that comes right after TMOBJ) actually landed on
-       TMOBJ's OWN leftover frame data (a wall-mounted decorative tile
-       object) instead of whatever the missing resource's real icon
-       content should have been -- a door/gate-like TMOBJ decoration,
-       matching the user's report exactly. Zero the count so a missing
-       resource correctly contributes no frames instead of duplicating
-       the previous one. */
+    /* A handful of resource-name string constants at this call site's original address were never
+       recovered by Ghidra (no content, just a dangling address -- see README "Unrecoverable string
+       tables"). */
     DAT_00202728 = 0;
     return uVar6;
   }
@@ -2517,14 +2060,9 @@ undefined4 param_1;
 }
 
 
-/* Extracted from decode_critter_sprite_page (was inlined at its top) so
-   resolve_critter_sprite_tier can also load/cache a candidate tier's
-   page and inspect its real (base, span) -- see that function's own
-   comment for why. Behavior unchanged: same page-cache array
-   (DAT_00202308), same filename-building convention, same graceful
-   NULL-return-on-missing-file contract (decode_critter_sprite_page's
-   caller-visible dummy_page sentinel is now applied at its own call
-   site instead of inside this helper). */
+/* Extracted from decode_critter_sprite_page (was inlined at its top) so resolve_critter_sprite_tier
+   can also load/cache a candidate tier's page and inspect its real (base, span) -- see that
+   function's own comment for why. */
 byte *uw_load_critter_page_cached(int param_1, int param_2) {
   char stack0xffdc3238_buf [256];
   char *stack0xffdc3238_ptr;
@@ -2534,15 +2072,9 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
   int iVar5;
   byte *pbVar11;
 
-  /* Tracks (page,tier) slots already confirmed to have no file, separate
-     from DAT_00202308 (0=never tried, else=a real ce_malloc pointer
-     that shutdown_game_resources unconditionally frees at shutdown -- stuffing a
-     sentinel in there instead would make that loop free garbage).
-     Needed because resolve_critter_sprite_tier now probes every tier
-     0-3 looking for the one whose range covers a given direction, and
-     most creatures only ever have tiers 0-1 (see that function's own
-     comment); without this, tiers 2-3 would re-attempt a failing disk
-     open every single call. */
+  /* Tracks (page,tier) slots already confirmed to have no file, separate from DAT_00202308 (0=never
+     tried, else=a real ce_malloc pointer that shutdown_game_resources unconditionally frees at
+     shutdown -- stuffing a sentinel in there instead would make that loop free garbage). */
   static char known_missing[256];
 
   iVar1 = (param_2 + param_1 * 4) * 0x10000 >> 0x10;
@@ -2611,24 +2143,11 @@ void *gr_resource_bump_alloc_entry(param_1)
 unsigned int param_1;
 
 {
-  /* Ghidra couldn't resolve this address into a proper function (an
-     indirect-jump/jumptable target it gave up on). Traced from its use in
-     load_gr_resource_entries: called as (*param_4)(itemByteSize) and the result is
-     used as the destination buffer for reading that item's data, then
-     passed on to the post-process callback -- i.e. an allocator. A no-op
-     stub returning 0 here made load_gr_resource_entries treat every real resource
-     load as a failure (the batch-AND check in load_startup_gr_resources), even though
-     the underlying file read succeeded. */
+  /* Ghidra couldn't resolve this address into a proper function (an indirect-jump/jumptable target
+     it gave up on). */
   return ce_malloc(param_1);
 }
-/* load_gr_resource_entries's post-process callback: (decoded_buffer, byte_size,
-   entry_index). Ghidra lost the real body (indirect-jump target); the old
-   no-op stub read every .GR file but never REGISTERED the loaded buffers,
-   so lookup_grtile_by_id's g_grtile_registry[] pointer table stayed empty for every
-   resource loaded through here (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/
-   3DWIN/OBJECTS/TMFLAT/TMOBJ). Only register_grtile_entry (flasks/compass/...) was
-   a real registrar. Register the buffer the same way register_grtile_entry does:
-   at g_grtile_registry[base + entry_index]. */
+/* load_gr_resource_entries's post-process callback: (decoded_buffer, byte_size, entry_index). */
 #define UW_DAT_0024E090_SLOTS (sizeof(g_grtile_registry) / sizeof(g_grtile_registry[0]))
 static void uw_register_gr_entry(unsigned base, void *buf, int idx)
 {
@@ -2657,19 +2176,9 @@ undefined4 register_objects_gr_entry(void *buf, unsigned size, int idx)
 // was LAB_00041670
 undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx)
 {
-  /* Caller load_tmflat_gr (TMFLAT.GR) with a fixed id base stashed in
-     DAT_000859a8 (0x170). Real ARM (0x41670): registers each entry at
-     the running cursor DAT_00202744 and ADVANCES the cursor by one,
-     recording DAT_0024d090[(0x170+idx)*4] = frame as the object-id ->
-     frame remap. So TMFLAT occupies DAT_00202734..+0xf and TMOBJ
-     starts at DAT_00202734+0x10 -- the "+0x10" in emit_catalog_object's
-     per-instance frame formula. This used to register only at the id
-     alias and never advance the cursor, placing TMOBJ 16 frames early
-     so every "+DAT_00202734" / "+DAT_00202734+0x10" TMFLAT/TMOBJ frame
-     read landed on the wrong image (lever/pull-chain/sign/bridge).
-     The id alias (0x170+idx) is kept because this port resolves object
-     ids to frames as the identity (resolve_sprite_id_to_frame never
-     consults the remap). */
+  /* Caller load_tmflat_gr (TMFLAT.GR) with a fixed id base stashed in DAT_000859a8 (0x170). Real
+     ARM (0x41670): registers each entry at the running cursor DAT_00202744 and ADVANCES the cursor
+     by one, recording DAT_0024d090[(0x170+idx)*4] = frame as the object-id -> frame remap. */
   (void)size;
   uw_register_gr_entry((unsigned)DAT_000859a8, buf, idx);
   uw_register_gr_entry((unsigned)DAT_00202744, buf, 0);
@@ -2693,24 +2202,7 @@ unsigned int param_1;
      decode_gr_entry_to_buffer, which passes no post-process callback (param_5 == 0). */
   return ce_malloc(param_1);
 }
-/* Not decompiled -- decode_gr_entry_to_buffer's post-process callback. Ghidra never
-   recovered a real one here (it hardcoded param_5=0, "no callback"),
-   but that leaves load_gr_resource_entries's freshly-decoded buffer
-   completely unreachable: it's malloc'd fresh by decode_gr_entry_bump_alloc_entry, never
-   registered anywhere (unlike every sibling load_gr_resource_entries
-   call site, which DOES pass a real post-process callback to register
-   its buffer into g_grtile_registry[] -- see register_gr_group_entry/register_objects_gr_entry/
-   register_tmflat_gr_entry), and then simply discarded once load_gr_resource_entries's
-   loop moves on. Confirmed live: begin_hud_panel_flip's decode calls reported
-   success while leaving their destination grtile buffer entirely
-   zeroed (0/9462 nonzero bytes), which is exactly what "decode
-   succeeds but the caller's buffer is never touched" looks like. Since
-   decode_gr_entry_to_buffer stashes its REAL destination in DAT_00202510 (see that
-   global's own comment) specifically to route around the missing
-   callback, the callback this decode always needed is simply "copy the
-   decoded bytes there" -- same leak-the-temporary-allocation posture
-   as LocalFree's own documented precedent (freeing a possibly-
-   garbage pointer is worse than a short-lived leak). */
+/* Not decompiled -- decode_gr_entry_to_buffer's post-process callback. */
 unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx)
 {
   (void)idx;

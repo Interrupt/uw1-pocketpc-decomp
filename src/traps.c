@@ -1,35 +1,21 @@
-/* Tile trap/link "type" effect dispatch: the classic-UW trap-type
- * switch fired when a trap/link record's chain is triggered. Split
- * out of uw.c (the original monolithic decompile) once its real role
- * was confirmed.
- */
+/* Tile trap/link "type" effect dispatch: the classic-UW trap-type switch fired when a trap/link
+   record's chain is triggered. Split out of uw.c (the original monolithic decompile) once its real
+   role was confirmed. */
 #include "headers/traps.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-/* was a raw `iVar4 + 0x85638` absolute-address literal inside
-   trigger_quest_milestone_cleanup_event (no declared global at all --
-   Ghidra never recovered this one), read as a 9-entry object-type-id
-   table. Its address falls in the same static-data run as the two
-   named globals immediately around it here (s__DATA3D_DFRAME_E_00085620
-   ends ~0x85632; this string starts at 0x85644), so it's genuinely
-   static data, not a wild pointer -- but since the real byte values
-   were never recovered, a zero-initialized fallback (matching this
-   file's established "safe stand-in, not recovered data" pattern,
-   e.g. DAT_00110fc0's own scratch buffer) replaces what would
-   otherwise be an absolute-address dereference into unmapped memory
-   on this 64-bit host. */
+/* was a raw `iVar4 + 0x85638` absolute-address literal inside trigger_quest_milestone_cleanup_event
+   (no declared global at all -- Ghidra never recovered this one), read as a 9-entry object-type-id
+   table. */
 static undefined1 DAT_00085638[10]; /* indices 1-9 are the ones actually read (index 0 unused) */
 /* Ghidra rendered the embedded spaces as underscores and dropped the
    trailing newline. Real bytes at 0x85644 (ARM UU.exe .data):
    "The book explodes in your face!\n". */
 static char s_The_book_explodes_in_your_face__00085644[] = "The book explodes in your face!\n";
-/* Both were single `undefined` scalars, but resolve_lock_difficulty_rating
-   (the only function anywhere in this decompile that touches either)
-   indexes each one via `(&DAT_xxx)[i]` up to the extents below -- the
-   same out-of-bounds scalar-as-array bug class as DAT_001007ee and
-   the glyph-table globals fixed earlier this session. Widened to real
-   arrays, sized to the highest index each is ever read at. */
+/* Both were single `undefined` scalars, but resolve_lock_difficulty_rating (the only function
+   anywhere in this decompile that touches either) indexes each one via `(&DAT_xxx)[i]` up to the
+   extents below... */
 static undefined DAT_002026d1[253];
 static undefined DAT_00202807[121];
 /* Ghidra rendered the embedded space as an underscore and dropped
@@ -37,57 +23,14 @@ static undefined DAT_00202807[121];
    "Look, it's a text trap\n". */
 static char s_Look__it_s_a_text_trap_00087918[] = "Look, it's a text trap\n";
 static undefined4 DAT_0024cff8;
-static undefined4 DAT_0024cfd4;
-/* Sizing-audit pass: its ADDRESS is passed as scan_area_ahead_of_
-   object's callback argument (see the GAP note below) -- a stand-in
-   for an unrecovered callback, never read/written/indexed as data.
-   Shrunk for consistency; down from 8192. */
-static undefined DAT_0007e644_backing[16];
-#define DAT_0007e644 DAT_0007e644_backing[0]
+/* The spawn template's native record address, compared by FUN_0007e644. */
+static char *DAT_0024cfd4;
 
 
 
-// was FUN_0007d0b0 -- the tile trap/link "type" effect dispatcher
-// wrapped by apply_trap_or_link_effect: param_1 is the trap/link
-// record (its low 6 bits, &0x3f, select one of 17 effect types via
-// this switch), param_2/param_3 the tile (x,y) coordinates it fired
-// at. Each case is a distinct classic-UW trap/trigger effect; only a
-// few are pinned down with real confidence from cross-referencing
-// already-named callees and sibling code:
-//   case 6:  triggers a babl conversation script directly (calls
-//            dispatch_trap_special_or_tile_action, the same function
-//            trigger_object_use_babl_script's own comment already
-//            names as "triggers a babl conversation script").
-//   case 7:  spawns a brand-new object at this tile from a linked
-//            template record (allocates a slot, copies the template,
-//            calls place_object_in_world, optionally resolves a
-//            quality-link sub-object, and schedules a follow-up
-//            entry for door-class results) -- a "spawn trap".
-//   case 8:  door control -- reads a trigger-state nibble and calls
-//            open_door_object/close_door_object/toggle_door_object;
-//            has its own UW_DEBUG_DOOR-gated fprintf tracing, like
-//            the other door-dispatch code in uw.c.
-//   case 0xb: unlinks and frees a linked object outright -- a
-//            "destroy object" trap.
-//   case 0xd: reads/writes a bitfield in the player record at offset
-//            +0x70 (set/clear/toggle/AND/OR/XOR/shift by an op code)
-//            -- reads as a "quest flag/variable" trap.
-//   case 0xe: compares a computed value against the player's +0x70
-//            state and, on mismatch, resolves a linked lock/use
-//            record and delegates to resolve_skill_gated_unlock_or_use
-//            -- a "conditional trigger" trap.
-//   case 0x10: prints a message-table string via
-//            message_scroll_print_wrapped -- a "text trap" (its own
-//            debug string literally says "Look,_it's_a_text_trap").
-// The remaining cases (0-5, 9, 0xa, 0xc, 0xf) call still-unnamed
-// helper functions (apply_poison_or_damage_trap_effect, teleport_object_to_level_tile, spawn_trap_hazard_object,
-// dispatch_quest_event_code, apply_area_terrain_effect, print_message_with_proximity_qualifier, find_equipped_item_by_category) whose own
-// purpose isn't pinned down yet, so their exact trap semantics are
-// left undetermined here rather than guessed at. After the switch,
-// if the record has a linked "next" object, it either recurses into
-// itself (another trap-class link) or delegates to
-// resolve_skill_gated_unlock_or_use (a non-trap-class link, e.g. a
-// lock) -- so trap/lock records can be chained.
+// was FUN_0007d0b0 -- the tile trap/link "type" effect dispatcher wrapped by
+// apply_trap_or_link_effect: param_1 is the trap/link record (its low 6 bits, &0x3f, select one of
+// 17 effect types via this switch), param_2/param_3 the tile (x,y) coordinates it fired at.
 int dispatch_trap_type_effect(param_1,param_2,param_3)
 ushort * param_1;
 uint param_2;
@@ -106,18 +49,9 @@ uint param_3;
   undefined1 *puVar10;
   int iVar11;
   char *pcMessage;
-  /* HACK: case 8's own two find_object_in_chain results (real `ushort *`
-     returns, see that function's own signature) were stored into
-     iVar16/iVar11 -- both plain `int`, truncating a real 64-bit
-     pointer on this host. Confirmed live (bug-pull-chain-crash.txt):
-     pulling a chain crashed with EXC_BAD_ACCESS inside
-     object_list_insert_head, param_1 (== `(char*)(iVar16+6)`) having
-     read as an invalid address reconstructed from a truncated iVar16.
-     iVar16/iVar11 themselves are reused for genuinely unrelated small
-     integers in every OTHER case of this switch (and even earlier in
-     this same case, in iVar11's case) -- not safe to blanket-retype --
-     so case 8's own pointer-holding uses get these two dedicated,
-     correctly-typed locals instead, scoped to exactly that case. */
+  /* HACK: case 8's own two find_object_in_chain results (real `ushort *` returns, see that
+     function's own signature) were stored into iVar16/iVar11 -- both plain `int`, truncating a real
+     64-bit pointer on this host. */
   ushort *_case8_p1;
   ushort *_case8_p2;
   ushort *puVar12;
@@ -308,18 +242,8 @@ uint param_3;
           puVar10[5] = puVar9[5];
           puVar10[6] = puVar9[6];
           puVar10[7] = puVar9[7];
-          /* HACK: was a bare `object_list_insert_head(local_34);` --
-             dropped second argument, same class as this file's other
-             Ghidra-decompiled dropped-argument calls. Every other call
-             site of object_list_insert_head passes exactly two
-             arguments (a list head and the object to insert), and
-             puVar10 -- the object slot this block just allocated and
-             populated a few lines above -- is obviously the intended
-             one here (nothing else newly-relevant is in scope).
-             Confirmed live (bug-pull-chain-crash.txt): pulling a chain
-             crashed with EXC_BAD_ACCESS dereferencing NULL inside
-             object_list_insert_head, param_2 having read as garbage
-             (0) from whatever register happened to be left over. */
+          /* HACK: was a bare `object_list_insert_head(local_34);` -- dropped second argument, same
+             class as this file's other Ghidra-decompiled dropped-argument calls. */
           object_list_insert_head(local_34,puVar10);
         }
       }
@@ -329,15 +253,8 @@ uint param_3;
                 (int)uVar4, (unsigned)*_case8_p1);
       if (uVar4 == 1) {
 LAB_0007dbc0:
-        /* HACK: was `close_door_object(DAT_0024cff4,iVar16);` -- same
-           truncated-pointer class as _case8_p1's own fix a few lines
-           above (see this switch case's top comment). This label is
-           reached either by falling through from here (where
-           _case8_p1 still holds this case's first find_object_in_chain call)
-           or by `goto` from the if-branch above (where _case8_p1 was
-           reassigned to that branch's own find_object_in_chain call) -- in
-           both cases _case8_p1 is the object close_door_object needs,
-           `iVar16` (a plain, truncated int here) was never it. */
+        /* HACK: was `close_door_object(DAT_0024cff4,iVar16);` -- same truncated-pointer class as
+           _case8_p1's own fix a few lines above (see this switch case's top comment). */
         close_door_object(DAT_0024cff4,_case8_p1);
         return 2;
       }
@@ -513,14 +430,9 @@ LAB_0007d460:
 
 
 
-// was FUN_0007e0d8 -- per-object callback passed to
-// for_each_object_of_type (see dispatch_quest_event_code's case 0x32,
-// which sweeps every object of class 0xd8). When the object's flags
-// nibble at +0xb is 7, resets it to 1. Also unconditionally resets
-// the cursor confine rect (reset_cursor_confine_rect) and calls
-// attempt_talk_interaction on the object. Reads as "reset a
-// stuck class-0xd8 object's UI-confine state", but the exact meaning
-// of the flag nibble isn't pinned down further here.
+// was FUN_0007e0d8 -- per-object callback passed to for_each_object_of_type (see
+// dispatch_quest_event_code's case 0x32, which sweeps every object of class 0xd8). When the
+// object's flags nibble at +0xb is 7, resets it to 1.
 undefined4 reset_object_ui_state_callback(param_1)
 int param_1;
 
@@ -539,24 +451,8 @@ int param_1;
 
 
 
-// was FUN_0007e12c -- dispatch_trap_type_effect's case 3 handler
-// (called there as `FUN_0007e12c(param_1,param_2,param_3)`, the trap/
-// link record and its tile x,y). Switches on the record's quality
-// field (bits 0x3f at +4) across ~20 distinct codes, mostly
-// delegating to helper functions (trigger_exploding_book_trap_at_tile, apply_quest_event_numeric_effect,
-// emit_player_noise_alert, handle_level4_maze_puzzle_button, try_combine_shrine_markers, trigger_scripted_npc_conversation,
-// advance_scheduler_and_show_page3) whose own exact quest semantics
-// mostly aren't pinned down beyond what each one's own comment
-// confirms. apply_quest_vertical_effect (one remaining case) is still unnamed. A
-// few codes are more legible: code 2 calls
-// restore_view_from_object_record; code 0x32 sweeps every class-0xd8
-// object via for_each_object_of_type(reset_object_ui_state_callback);
-// codes 0x3b-0x3e are gated on DAT_0024cff4 == g_player_object (the
-// current trap-trigger context being the player); code 0x3f sets a
-// quest-ish byte (DAT_0023c27c) and calls set_pending_update_flags(0x400). Reads
-// as a "quest/cutscene event code" dispatcher, but most individual
-// codes' real meaning is left undetermined here rather than guessed
-// at.
+// was FUN_0007e12c -- dispatch_trap_type_effect's case 3 handler (called there as
+// `FUN_0007e12c(param_1,param_2,param_3)`, the trap/ link record and its tile x,y).
 undefined4 dispatch_quest_event_code(param_1,param_2,param_3)
 int param_1;
 undefined4 param_2;
@@ -615,21 +511,9 @@ undefined4 param_3;
 
 
 
-// was FUN_0007e2dc -- allocates two new object slots and links both
-// into the tile (param_1,param_2) object list at tilemap_lookup's
-// head: the first is initialized with class/flag bits matching
-// 0x180-bracket (the same "trap class" test dispatch_trap_type_effect
-// uses, `& 0x1c0 == 0x180`) and linked to the second via the
-// standard quality-link encoding (offset+2/3, matching
-// resolve_object_variant_or_special_link's own field layout); the
-// second stores param_3 in its low 4 bits (a trap-type code -- its
-// only confirmed caller, cast_summon_or_spawn_effect, passes 9, which
-// dispatch_trap_type_effect's case 9 cascades into case 10's "alert
-// nearby guards" effect). Returns the first object's encoded slot
-// index on success, 0 if either alloc_object_slot call failed. Reads
-// as "place a scripted trap object pair at this tile", but the exact
-// in-game spell/mechanic this serves beyond its one caller isn't
-// confirmed.
+// was FUN_0007e2dc -- allocates two new object slots and links both into the tile (param_1,param_2)
+// object list at tilemap_lookup's head: the first is initialized with class/flag bits matching
+// 0x180-bracket...
 undefined4 create_scripted_trap_pair_at_tile(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
@@ -710,18 +594,9 @@ uint param_3;
 
 
 
-// was FUN_0007e558 -- the special-case cleanup free_trap_class_object
-// defers to for a class-0x180 (trap) object being deleted: param_2 is
-// the trap object itself, param_1 the link-field address it's being
-// unlinked from. Resolves the trap's own linked sub-object (offset
-// +6) and reads a 4-bit "remaining count" field from it (bits
-// 0x1e00). When the count is down to its last unit (==1), does a
-// full refresh sweep instead of an incremental one
-// (refresh_object_link_chain on the tile's object list) rather than
-// freeing param_2 directly here -- that sweep is expected to catch
-// param_2 itself along with any other stale markers. Otherwise,
-// decrements the count field in place and unlinks+frees param_2
-// immediately (object_list_unlink + free_object_slot).
+// was FUN_0007e558 -- the special-case cleanup free_trap_class_object defers to for a class-0x180
+// (trap) object being deleted: param_2 is the trap object itself, param_1 the link-field address
+// it's being unlinked from.
 void remove_trap_chain_marker(param_1,param_2)
 undefined4 param_1;
 int param_2;
@@ -752,25 +627,9 @@ int param_2;
 
 
 
-// was FUN_0007e610 -- confirmed by its own caller's pre-existing
-// comment (free_linked_object_recursive, src/objects.c: "param_1==
-// 0x180 class (containers) instead defer to FUN_0007e610") as the
-// special-case delete path for a class-0x180 (trap) object, taken
-// instead of the normal recursive object-tree free. Dispatches on
-// param_2's own low class bits (0x30): a low-class ("open"?) trap
-// object goes straight to a full refresh_object_link_chain sweep;
-// anything else goes to the incremental
-// remove_trap_chain_marker path.
-//
-// HACK: both calls were bare `refresh_object_link_chain();` /
-// `FUN_0007e558();` in the original decompile -- dropped arguments,
-// the same class of bug fixed repeatedly elsewhere in this file. This
-// function does no other work before either call, so on ARM's
-// register-passthrough calling convention param_1/param_2 are still
-// sitting in r0/r1 unchanged from this function's own entry; both
-// callees take exactly this function's own two parameters (see their
-// own signatures), so passing them through explicitly restores the
-// evidently-intended behavior.
+// was FUN_0007e610 -- confirmed by its own caller's pre-existing comment
+// (free_linked_object_recursive, src/objects.c: "param_1== 0x180 class (containers) instead defer
+// to FUN_0007e610") as the special-case delete path for a class-0x180 (trap) object...
 void free_trap_class_object(param_1,param_2)
 undefined4 param_1;
 byte * param_2;
@@ -789,33 +648,33 @@ byte * param_2;
 
 
 
-// was FUN_0007e694 -- its only confirmed caller is
-// dispatch_trap_type_effect's case 7 ("spawn trap"), which aborts the
-// spawn when this returns nonzero for the target object (class 0x40).
-// Stashes param_1 into DAT_0024cfd4 (for the callback below to read)
-// and zeroes DAT_0024cff8 (a shared "result" global) before running
-// scan_area_ahead_of_object with &DAT_0007e644 as its callback,
-// finally returning whatever DAT_0024cff8 ended up as.
-//
-// GAP: DAT_0007e644 is declared as a plain zero-initialized data
-// array (DAT_0007e644_backing[8192]), not a decompiled function --
-// but every other scan_area_ahead_of_object call site (see
-// src/object_actions.c) passes a real function or function-pointer-
-// table entry in this exact argument position, so &DAT_0007e644 is
-// almost certainly meant to be a callback Ghidra never recovered as
-// code, the same class of gap already documented for
-// DAT_00087604/PTR_FUN_00087614 (uw.c, ~line 1676) in an earlier
-// session pass. On this host the callback storage is zero-filled, so
-// if scan_area_ahead_of_object ever actually invokes it, real
-// behavior can't be inferred here -- left as an honest gap rather
-// than guessed at.
-undefined4 check_object_area_for_spawn_block(param_1)
+// was FUN_0007e644 -- area-scan callback: another marked NPC blocks the spawn;
+// the template itself and player do not. ARM 0x7e644..0x7e688 tests word +0xd
+// bit 0x100 and compares the record in r2 against those two native addresses.
+undefined4 detect_spawn_blocking_object_callback(param_1,param_2,param_3)
 undefined4 param_1;
+undefined4 param_2;
+char *param_3;
+
+{
+  if (((*(byte *)(param_3 + 0xe) & 1) != 0) &&
+      (param_3 != DAT_0024cfd4) && (param_3 != (char *)g_player_object)) {
+    DAT_0024cff8 = 1;
+  }
+  return DAT_0024cff8;
+}
+
+
+// was FUN_0007e694 -- checks the spawn template's surrounding NPCs. Called by
+// dispatch_trap_type_effect's case 7, which aborts the spawn on a nonzero result.
+undefined4 check_object_area_for_spawn_block(param_1)
+char *param_1;
 
 {
   DAT_0024cff8 = 0;
   DAT_0024cfd4 = param_1;
-  scan_area_ahead_of_object(param_1,1,&DAT_0007e644,0,0,4);
+  /* ARM 0x7e6bc loads code address 0x7e644, not a data buffer. */
+  scan_area_ahead_of_object(param_1,1,detect_spawn_blocking_object_callback,0,0,4);
   return DAT_0024cff8;
 }
 
@@ -823,18 +682,9 @@ undefined4 param_1;
 
 
 
-// was FUN_0007e6e0 -- returns 1 when param_1 is 0, or when the tile
-// (param_2,param_3) is more than 7 tiles away from the player's own
-// view tile (g_player_object+0x16, matching the "current view tile"
-// field used throughout this file) on either axis; returns 0 when
-// param_1 is nonzero AND the tile is within 7 tiles on both axes.
-// Both confirmed callers (process_nearby_background_traps and
-// tick_ambient_doors_and_scheduler) only
-// act on their own effect (dispatch_trap_type_effect /
-// open_door_object) when this returns nonzero, i.e. when the tile is
-// NOT near the player -- reads as "only fire background/ambient
-// triggers when the player isn't standing right there to see it",
-// though the exact rationale isn't confirmed beyond that pattern.
+// was FUN_0007e6e0 -- returns 1 when param_1 is 0, or when the tile (param_2,param_3) is more than
+// 7 tiles away from the player's own view tile (g_player_object+0x16, matching the "current view
+// tile" field used throughout this file) on either axis...
 undefined4 is_out_of_player_range(param_1,param_2,param_3)
 int param_1;
 short param_2;
@@ -859,30 +709,17 @@ short param_3;
 
 
 
-// was FUN_0007e778 -- periodic world-tick helper: scans every type-6
-// object within 7 tiles (find_object_in_world, not yet named) and, for each
-// whose class bits (0x1e at +1) are clear, resolves its linked
-// sub-object, sets a flag bit on it, and -- only when
-// is_out_of_player_range(param_1, tile) is true -- fires
-// dispatch_trap_type_effect on it. Two confirmed callers pass
-// different param_1 values: src/player.c's rest/tick handler passes 0
-// (which is_out_of_player_range treats as "always fire", i.e.
-// unconditional regardless of player position), while a periodic
-// hunger-tick block in uw.c passes 1 under a random 1-in-4 gate
-// (respecting actual player proximity). Reads as "tick background/
-// ambient trap objects periodically, gated on the player not being
-// right next to them unless explicitly overridden".
+// was FUN_0007e778 -- periodic world-tick helper: scans every type-6 object within 7 tiles
+// (find_object_in_world, not yet named) and, for each whose class bits (0x1e at +1) are clear,
+// resolves its linked sub-object, sets a flag bit on it, and -- only when is_out_of_player_range...
 void process_nearby_background_traps(param_1)
 undefined4 param_1;
 
 {
   undefined2 uVar1;
-  /* find_object_in_world/resolve_object_link now return real pointers
-     (ushort-pointer / void-pointer) -- was `int iVar2`/`iVar3`,
-     truncating them on this 64-bit host exactly like the sibling fix
-     in objects.c's find_object_in_world/find_object_in_chain. iVar3
-     keeps its later plain-int role (is_out_of_player_range's return)
-     once pbVar5 takes over its pointer-holding span. */
+  /* find_object_in_world/resolve_object_link now return real pointers (ushort-pointer /
+     void-pointer) -- was `int iVar2`/`iVar3`, truncating them on this 64-bit host exactly like the
+     sibling fix in objects.c's find_object_in_world/find_object_in_chain. iVar3 keeps its later... */
   ushort *pObj;
   char *pbVar5;
   int iVar3;
@@ -896,12 +733,9 @@ undefined4 param_1;
   while (pObj != 0) {
     if ((*(byte *)((char *)pObj + 1) & 0x1e) == 0) {
       pbVar5 = resolve_object_link((char *)pObj + 6);
-      /* HACK: was a bare `object_ptr_in_arena();` -- dropped argument,
-         the same class of bug fixed repeatedly elsewhere in this
-         file. object_ptr_in_arena takes exactly one argument at every
-         other call site in this codebase, and pbVar5 (just set from
-         resolve_object_link on the line above) is obviously the
-         intended one here. */
+      /* HACK: was a bare `object_ptr_in_arena();` -- dropped argument, the same class of bug fixed
+         repeatedly elsewhere in this file. object_ptr_in_arena takes exactly one argument at every
+         other call site in this codebase... */
       iVar4 = object_ptr_in_arena(pbVar5);
       if (iVar4 != 0) {
         uVar1 = *(undefined2 *)(pbVar5 + 0xd);
@@ -923,20 +757,9 @@ undefined4 param_1;
 
 
 
-// was FUN_0007e85c -- periodic world-tick helper, sibling to
-// process_nearby_background_traps: scans every type-5 (door) object
-// world-wide, and for each unlocked (class bit 0x80 clear), non-
-// trivial (quality nibble > 7) door, rolls a 30% chance
-// (rand_below(10) < 3) to open it via open_door_object -- but only
-// when is_out_of_player_range(param_1, tile) is true, gating the
-// effect the same way process_nearby_background_traps does.
-// Afterward, when param_1 is 0 and DAT_000879ac is set, advances the
-// scheduler 8 ticks (scheduler_tick(1) x8). Its only confirmed caller
-// (src/player.c's rest/tick handler, alongside
-// process_nearby_background_traps(0) a few lines later) always passes
-// 0. Reads as "simulate ambient doors opening and advance scheduled
-// events after a rest/wait", though the exact trigger condition for
-// the scheduler-advance half isn't confirmed.
+// was FUN_0007e85c -- periodic world-tick helper, sibling to process_nearby_background_traps: scans
+// every type-5 (door) object world-wide, and for each unlocked (class bit 0x80 clear), non- trivial
+// (quality nibble > 7) door...
 void tick_ambient_doors_and_scheduler(param_1)
 int param_1;
 
@@ -957,15 +780,9 @@ int param_1;
        (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
       DAT_002020a4 = local_1a;
-      /* HACK: was a bare `FUN_0007e6e0(param_1);` -- dropped
-         arguments, the same class of bug fixed repeatedly elsewhere in
-         this file. is_out_of_player_range takes exactly three params
-         (an acting object plus a tile x/y), and its sibling caller
-         process_nearby_background_traps (just above) calls it with its own loop tile
-         coordinates in this exact position; this loop's own
-         local_1c/local_1a (the tile just scanned, freshly stored into
-         DAT_002020a0/DAT_002020a4 the lines above) are obviously the
-         intended arguments here. */
+      /* HACK: was a bare `FUN_0007e6e0(param_1);` -- dropped arguments, the same class of bug fixed
+         repeatedly elsewhere in this file. is_out_of_player_range takes exactly three params (an
+         acting object plus a tile x/y)... */
       iVar2 = is_out_of_player_range(param_1,(int)local_1c,(int)local_1a);
       if (iVar2 != 0) {
         open_door_object(pbVar1);
@@ -988,19 +805,9 @@ int param_1;
 
 
 
-// was FUN_00039790 -- area terrain-modification trap/spell effect:
-// over a param_7 x param_8 rectangle of tiles starting at
-// (param_1,param_2), adjusts each tile's floor-height nibble (either
-// relatively, by param_9, when param_9 is 1 or 3, or set absolutely
-// to param_9 when under 0xe), repositions any contained objects to
-// stay consistent with the new height (moving the player's
-// locomotion state if affected), and optionally rewrites each tile's
-// floor texture id (param_4, if <0xb), wall texture bits (param_3, if
-// <0x30), and door/tmap flag nibble (param_6, if <10). Confirmed as
-// dispatch_trap_type_effect's case 5 handler -- plausibly the
-// "raise/lower floor" or quake-style terrain trap given its area
-// height-shift behavior, though its exact in-game name isn't pinned
-// down.
+// was FUN_00039790 -- area terrain-modification trap/spell effect: over a param_7 x param_8
+// rectangle of tiles starting at (param_1,param_2), adjusts each tile's floor-height nibble (either
+// relatively, by param_9, when param_9 is 1 or 3, or set absolutely to param_9 when under 0xe)...
 undefined4 apply_area_terrain_effect(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9)
 short param_1;
 int param_2;
@@ -1090,17 +897,9 @@ LAB_0003987c:
                 uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
                 if (((int)uVar14 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
                   if (puVar8 == g_player_object) {
-                    /* Was `uVar10 = extraout_r1;` -- set_locomotion_state is
-                       void (stops/locks the player's movement when a trap
-                       hits them), so there's no real second return value
-                       to read here; this was pure garbage. uVar10 is this
-                       loop's own resolve_object_link "carry" value (see
-                       its two uses above), threaded into the call at the
-                       top of this for loop's next iteration -- same
-                       crash-prone pattern already fixed elsewhere in this
-                       codebase when it gets corrupted. Leave it untouched
-                       instead, matching this loop's own established
-                       convention. */
+                    /* Was `uVar10 = extraout_r1;` -- set_locomotion_state is void (stops/locks the
+                       player's movement when a trap hits them), so there's no real second return
+                       value to read here... */
                     set_locomotion_state(0x10,1);  /* ARM 0x39aac-0x39ab4: moveq r1,#1; moveq r0,#0x10; bleq */
                   }
                 }
@@ -1142,23 +941,9 @@ LAB_0003987c:
 }
 
 
-// was FUN_00039bd8 -- confirmed as dispatch_trap_type_effect's case 0
-// AND case 0xb handler (a "poison dart"-style trap): param_2's low 16
-// bits are a signed delta -- negative poisons the player directly
-// (adjusting their poison-level nibble at DAT_00086df8+0x5f, gated on
-// resolve_damage_type_resistance's poison check), positive instead
-// applies typed damage via apply_typed_damage_to_object (hardcoding
-// its damage-type bitmask to 4) to the object get_object_record_by_slot_index resolves
-// (not yet named -- likely "get trap's current target"). Returns 0x10
-// on a successful damage application, else 2.
-// Note: both known callers pass 2 more arguments than this signature
-// declares (a constant 4, matching the hardcoded damage-type bitmask
-// above -- consistent, not a bug) and a 4th value computed specially
-// per call site (case 0: 2 or 0 from a 1-in-10 roll; case 0xb: a
-// literal 0) that has no other use at either call site and is simply
-// dropped here. NOT fixed: no concrete evidence for where inside this
-// function that 4th value should plug in, so speculatively adding it
-// risks a behavior change rather than a verified bug fix.
+// was FUN_00039bd8 -- confirmed as dispatch_trap_type_effect's case 0 AND case 0xb handler (a
+// "poison dart"-style trap): param_2's low 16 bits are a signed delta -- negative poisons the
+// player directly...
 undefined4 apply_poison_or_damage_trap_effect(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
@@ -1199,19 +984,16 @@ undefined4 param_4;
 }
 
 
-// was FUN_00039d1c -- shared special-action dispatch helper: stashes
-// two coordinate/context bytes (param_1/param_2) into
-// DAT_0023c3dc/DAT_0023c3d8, then dispatches by the sign of param_5
-// (a signed action id): negative runs dispatch_tile_special_action,
-// non-negative runs dispatch_special_action. Always returns 2. Used
-// by dispatch_trap_type_effect's case 6 (a "run a special action"
-// trap) and directly by item-use code in src/item_use.c (one call
-// site's own comment: "triggers a babl conversation script").
+// was FUN_00039d1c -- shared special-action dispatch helper: stashes two coordinate/context bytes
+// (param_1/param_2) into DAT_0023c3dc/DAT_0023c3d8, then dispatches by the sign of param_5 (a
+// signed action id): negative runs dispatch_tile_special_action...
 undefined4 dispatch_trap_special_or_tile_action(param_1,param_2,param_3,param_4,param_5,param_6)
 undefined1 param_1;
 undefined1 param_2;
-undefined4 param_3;
-undefined4 param_4;
+/* ARM 0x39d24/0x39d48 keeps the actor address in r2, and r3 carries
+   the target through to dispatch_special_action. These are host addresses. */
+uintptr_t param_3;
+intptr_t param_4;
 ushort param_5;
 undefined1 param_6;
 
@@ -1228,16 +1010,8 @@ undefined1 param_6;
 }
 
 
-// was FUN_00039f04 -- handler for a level-4-exclusive interactive
-// puzzle mechanism (only active when DAT_00201b68==4; prints "not
-// here" message 0xbf on any other level): param_1 selects a numbered
-// button/action (0/1 advance a shared step counter at
-// DAT_00086df8+0x8a and redraw the puzzle's wall pattern around a
-// fixed base tile (0x30,0x30) via apply_area_terrain_effect, 2/3
-// advance separate X/Y cursor bytes, 4 resets the counter and clears
-// the pattern). Strongly resembles a maze/wall-shifting puzzle device
-// (a set of directional buttons carving a path through movable
-// walls), though its exact in-game name/lore isn't confirmed here.
+// was FUN_00039f04 -- handler for a level-4-exclusive interactive puzzle mechanism (only active
+// when DAT_00201b68==4; prints "not here" message 0xbf on any other level)...
 void handle_level4_maze_puzzle_button(param_1,param_2,param_3)
 short param_1;
 undefined4 param_2;
@@ -1315,16 +1089,7 @@ undefined4 param_3;
 }
 
 
-// was FUN_0003a0e8 -- dispatch_quest_event_code's code 0x28 handler
-// (param_1 unused throughout). Checks the 4 tiles diagonally offset
-// from (param_2,param_3) by (+-4,+-4) each for a specific marker
-// object (find_object_in_chain's search); if all 4 are found, spawns a new
-// object (catalog id 0xfd) at (param_2,param_3+1) and discards all 4
-// markers -- a "place 4 items around a shrine/altar to trigger a
-// reward" style puzzle. Only known caller drops all 3 arguments
-// (garbage param_1/param_2/param_3); the natural fix -- forwarding
-// the trap record's own tile position, matching the sibling case-<5
-// call a few lines above it -- is applied at that call site.
+// was FUN_0003a0e8 -- dispatch_quest_event_code's code 0x28 handler (param_1 unused throughout).
 void try_combine_shrine_markers(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
@@ -1342,12 +1107,9 @@ int param_3;
   int aiStackY_234 [89];
   char acStackY_d0 [4];
   char acStackY_cc [108];
-  /* local_34[] / local_44[] / local_54 held 64-bit tile-record and
-     object-list pointers -- Ghidra typed them `int`, truncating every one
-     (tilemap_lookup / find_object_in_chain / spawn_new_object results are all real
-     pointers). local_54's address is handed to find_object_in_chain (now
-     ushort **), so it must be pointer-sized or that call scribbles past
-     the slot. */
+  /* local_34[] / local_44[] / local_54 held 64-bit tile-record and object-list pointers -- Ghidra
+     typed them `int`, truncating every one (tilemap_lookup / find_object_in_chain /
+     spawn_new_object results are all real pointers). local_54's address is handed to... */
   void *local_54;
   char local_50 [4];
   char local_4c [8];
@@ -1410,15 +1172,9 @@ undefined1 param_1;
 
 
 
-// was FUN_0003a2b0 -- confirmed as dispatch_quest_event_code's case
-// 3/4 handler: computes a value from param_2's (the quest/trap
-// record) own position byte plus param_1*8 (a context-object type
-// nibble from DAT_0024cff0). If the record's own quality field is 3,
-// applies a scaled terrain-height effect via
-// apply_area_terrain_effect at tile (param_3,param_4) when the
-// computed value is small enough; otherwise resolves a linked object
-// (get_object_record_by_slot_index, not yet named) and toggles one of its low 7 bits.
-// Exact quest semantics not pinned down.
+// was FUN_0003a2b0 -- confirmed as dispatch_quest_event_code's case 3/4 handler: computes a value
+// from param_2's (the quest/trap record) own position byte plus param_1*8 (a context-object type
+// nibble from DAT_0024cff0).
 void apply_quest_event_numeric_effect(param_1,param_2,param_3,param_4)
 int param_1;
 int param_2;
@@ -1449,14 +1205,8 @@ undefined4 param_4;
 
 
 
-// was FUN_0003a398 -- the "booby-trapped book" item-use effect:
-// confirmed by its own message ("The book explodes in your face!").
-// Finds a specific marker object on the player's own tile; if found,
-// prints the message, applies a poison/damage-style effect to the
-// player's status fields (DAT_00086df8+0x65..0x68), reduces the
-// book's own item quality, decrements its stack count, and discards
-// it. Called from item_use.c's item-id-0x114 case when triggered with
-// a target.
+// was FUN_0003a398 -- the "booby-trapped book" item-use effect: confirmed by its own message ("The
+// book explodes in your face!").
 void trigger_exploding_book_trap()
 
 {
@@ -1484,14 +1234,9 @@ void trigger_exploding_book_trap()
 }
 
 
-// was FUN_0003a4a0 -- confirmed as dispatch_quest_event_code's case
-// 0x29 handler, a parameterized sibling of trigger_exploding_book_trap:
-// the same "book explodes" effect but checking a caller-specified
-// tile (param_2,param_3) rather than the player's own position
-// (param_1 unused throughout). Only known caller dropped all 3
-// arguments; fixed to forward the trap record's own tile position,
-// matching the established pattern for this dispatcher's other
-// dropped-arg cases (e.g. try_combine_shrine_markers).
+// was FUN_0003a4a0 -- confirmed as dispatch_quest_event_code's case 0x29 handler, a parameterized
+// sibling of trigger_exploding_book_trap: the same "book explodes" effect but checking a
+// caller-specified tile (param_2,param_3) rather than the player's own position...
 void trigger_exploding_book_trap_at_tile(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
@@ -1522,11 +1267,9 @@ undefined4 param_3;
 
 
 
-// was FUN_0003a57c -- confirmed as dispatch_quest_event_code's case
-// 0x2a handler: spawns a temporary NPC object (catalog id 0x40),
-// sets its goal/state fields to force an immediate conversation, runs
-// interact_talk_npc() against it, then frees the slot -- a "trigger a
-// scripted conversation with a throwaway speaker" effect.
+// was FUN_0003a57c -- confirmed as dispatch_quest_event_code's case 0x2a handler: spawns a
+// temporary NPC object (catalog id 0x40), sets its goal/state fields to force an immediate
+// conversation, runs interact_talk_npc() against it, then frees the slot...
 void trigger_scripted_npc_conversation()
 
 {
@@ -1561,10 +1304,9 @@ void advance_scheduler_and_show_page3()
 }
 
 
-// was FUN_0003a604 -- for_each_object_of_type callback: unlinks and
-// frees the given object (param_1) from its own current tile. Used
-// by trigger_quest_milestone_cleanup_event to sweep away every
-// instance of a set of object types.
+// was FUN_0003a604 -- for_each_object_of_type callback: unlinks and frees the given object
+// (param_1) from its own current tile. Used by trigger_quest_milestone_cleanup_event to sweep away
+// every instance of a set of object types.
 undefined4 unlink_object_from_tile_callback(param_1)
 int param_1;
 
@@ -1579,15 +1321,9 @@ int param_1;
 
 
 
-// was FUN_0003a654 -- triggered by resolve_unique_npc_special_behavior's dispatch for a
-// specific object "special behavior" byte (0x1a) value 0xe7: shows
-// book/scroll page 2, sets a quest-flag bit (DAT_00086df8+0x6e), then
-// sweeps away every instance of a small list of object types
-// (indexed from DAT_00085638, 9 entries) via
-// unlink_object_from_tile_callback, and finally removes any object of
-// type 0x1a0 specifically from tile (0x17,0x38). Reads as a major
-// quest-milestone cutscene/cleanup trigger; the item/event's exact
-// in-game identity isn't confirmed here.
+// was FUN_0003a654 -- triggered by resolve_unique_npc_special_behavior's dispatch for a specific
+// object "special behavior" byte (0x1a) value 0xe7: shows book/scroll page 2, sets a quest-flag bit
+// (DAT_00086df8+0x6e)...
 void trigger_quest_milestone_cleanup_event()
 
 {
@@ -1620,15 +1356,9 @@ void trigger_quest_milestone_cleanup_event()
 }
 
 
-// was FUN_0003a924 -- resolves a difficulty/rating value for a
-// class-0 (quality bits 0x1c0==0) object record param_1 by looking up
-// one of two tables depending on a 2-bit sub-code in its low word:
-// sub-code 0 indexes DAT_00202807, sub-codes 2/3 index DAT_002026d1.
-// Returns -1 for anything outside class 0 or sub-code 1. Only known
-// caller (attempt_pick_lock, a skill-check resolver) treats the result as
-// a difficulty fed into roll_skill_check -- plausibly a lock/trap
-// difficulty rating, matching this class-0 object range's established
-// role elsewhere as door/lock-type records.
+// was FUN_0003a924 -- resolves a difficulty/rating value for a class-0 (quality bits 0x1c0==0)
+// object record param_1 by looking up one of two tables depending on a 2-bit sub-code in its low
+// word: sub-code 0 indexes DAT_00202807, sub-codes 2/3 index DAT_002026d1.
 int resolve_lock_difficulty_rating(param_1)
 ushort * param_1;
 
@@ -1652,18 +1382,9 @@ ushort * param_1;
 
 // WARNING: Removing unreachable block (ram,0x0003a9ec)
 
-// was FUN_0003a99c -- the lockpicking skill-check resolver: looks up
-// the lock's difficulty (resolve_lock_difficulty_rating), writes an
-// estimated difficulty display value to *param_3, then rolls a skill
-// check (roll_skill_check) against the player's lockpicking skill
-// (param_2). Based on the outcome (critical failure, or success
-// tiers 0/1/2), adjusts the lock's own condition/wear byte
-// (param_1+4) and returns a status code: 0 = not pickable at all,
-// 1 = fully picked (success), 3 = lock jammed/no further progress
-// possible, 0xfffffffe = the attempt broke something (pick or lock),
-// 0xffffffff = a lesser setback. Matches UW1's gradual lockpicking
-// mechanic (repeated attempts wear the lock down or risk breaking the
-// pick).
+// was FUN_0003a99c -- the lockpicking skill-check resolver: looks up the lock's difficulty
+// (resolve_lock_difficulty_rating), writes an estimated difficulty display value to *param_3, then
+// rolls a skill check (roll_skill_check) against the player's lockpicking skill (param_2).
 uint attempt_pick_lock(param_1,param_2,param_3)
 int param_1;
 int param_2;
@@ -1741,13 +1462,9 @@ undefined2 * param_3;
 }
 
 
-// was FUN_0004ac98 -- dispatch_trap_type_effect's case-2 trap handler:
-// spawns a fixed object class (0x14) near the player, aimed from the
-// trap record's own quality bits (+4/+6) and positioned at param_2/
-// param_3 (the trap's tile coordinates), with a distinct spawn mode
-// (DAT_00202a40/DAT_00202a3c both set to 2, unlike the aimed-throw
-// mode other spawners use) -- reads as a trap that launches a
-// hazard object rather than directly damaging the player.
+// was FUN_0004ac98 -- dispatch_trap_type_effect's case-2 trap handler: spawns a fixed object class
+// (0x14) near the player, aimed from the trap record's own quality bits (+4/+6) and positioned at
+// param_2/ param_3 (the trap's tile coordinates)...
 void spawn_trap_hazard_object(param_1,param_2,param_3)
 int param_1;
 undefined2 param_2;

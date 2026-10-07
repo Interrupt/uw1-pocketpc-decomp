@@ -1,9 +1,6 @@
-/* NPC AI: the per-tick object dispatcher, pathfinding, movement toward
- * a target tile, tile-position sync, and the mobile<->immobile object
- * settle/destroy-roll logic. Split out of uw.c (the original
- * monolithic decompile) once these functions' real roles were
- * confirmed.
- */
+/* NPC AI: the per-tick object dispatcher, pathfinding, movement toward a target tile, tile-position
+   sync, and the mobile<->immobile object settle/destroy-roll logic. Split out of uw.c (the original
+   monolithic decompile) once these functions' real roles were confirmed. */
 #include "headers/ai.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -15,22 +12,13 @@
 #define DAT_0024ac18 DAT_0024ac18_backing[0]
 short DAT_0010061c;
 short DAT_00100608;
-/* Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)`
-   (combat.c's load_monster_combat_stats) reads exactly 0xc00 (3072)
-   bytes, matching every indexed access's `&0x3f` class-id mask * 0x30
-   stride (63*48+48=3072). HARD exact bound. Down from 6144. */
+/* Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's
+   load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's
+   `&0x3f` class-id mask * 0x30 stride (63*48+48=3072). HARD exact bound. Down from 6144. */
  undefined1 DAT_001007d0_backing[3072];
-/* Reused-global-holding-a-real-string pattern (see the
-   s_scroll_newline_0008522c comment in player.h) -- interact.c, ai.c
-   and player.c all pass `&DAT_00084f20` straight into
-   message_scroll_print_wrapped/ce_strcat with no write beforehand, to
-   terminate an item/trap name with a period and newline. Real bytes
-   at 0x84f20 (ARM UU.exe .data, read via Ghidra headless): ".\n"
-   (immediately followed by s_UNNAMED_00084f24's "UNNAMED" at
-   0x84f24) -- not actually unrecovered, just needed a direct byte
-   read against the binary rather than a source-level pattern match.
-   Sized to 128 for headroom as a display-text fragment; down from
-   8192. */
+/* Reused-global-holding-a-real-string pattern (see the s_scroll_newline_0008522c comment in
+   player.h) -- interact.c, ai.c and player.c all pass `&DAT_00084f20` straight into
+   message_scroll_print_wrapped/ce_strcat with no write beforehand... */
  undefined DAT_00084f20_backing[128] = ".\n";
 ushort DAT_00101414;
 char *DAT_00101904;
@@ -49,13 +37,9 @@ static undefined1 DAT_0010142c;
 /* NPC waypoints are contiguous 7-byte records at the original 0x101740.
    Alias the adjacent field symbols into this array so recording later
    waypoints cannot overwrite unrelated globals or 64-bit AI pointers. */
-/* Sizing-audit pass: shared waypoint/scalar array, 7-byte stride.
-   record_line_walk_step's own cap (`if (uVar1 < 0x40)` after the
-   write, ai.c:~2448) allows the write index up to 63*7=441 before
-   that function stops advancing further -- the GOVERNING bound,
-   wider than reconstruct_path_from_bfs's own smaller 31-deep cap on
-   the same array (sizing off that smaller cap alone would have
-   under-sized this). HARD: 64*7=448. Down from 8192. */
+/* Sizing-audit pass: shared waypoint/scalar array, 7-byte stride. record_line_walk_step's own cap
+   (`if (uVar1 < 0x40)` after the write, ai.c:~2448) allows the write index up to 63*7=441 before
+   that function stops advancing further -- the GOVERNING bound... */
 static char DAT_00101740_backing[448];
 #define DAT_00101740 DAT_00101740_backing[0]
 #define DAT_00101741 DAT_00101740_backing[1]
@@ -81,13 +65,8 @@ static undefined1 DAT_001014e1_backing[256];
    size. */
 static undefined1 DAT_0023cf08_backing[20480];
 #define DAT_0023cf08 DAT_0023cf08_backing[0]
-/* Sizing-audit pass: BUG FIX, not a shrink -- these 4 siblings are
-   indexed by the exact same `iVar18 = (iVar8 + iVar7*0x40) * 5`
-   formula as DAT_0023cf08 right above (confirmed: `(&DAT_0023cf0b)
-   [iVar18]` and `(&DAT_0023cf08)[iVar18]` share the same iVar18 at
-   this call site), which needs the full confirmed 0x5000 (20480)
-   bytes -- these were left at the old 256-byte placeholder, a real
-   out-of-bounds write/read risk. Matched to DAT_0023cf08's size. */
+/* Sizing-audit pass: BUG FIX, not a shrink -- these 4 siblings are indexed by the exact same
+   `iVar18 = (iVar8 + iVar7*0x40) * 5` formula as DAT_0023cf08 right above... */
 static undefined DAT_0023cf09_backing[20480];
 #define DAT_0023cf09 DAT_0023cf09_backing[0]
 static undefined DAT_0023cf0a_backing[20480];
@@ -102,20 +81,8 @@ static undefined DAT_0023cf0c_backing[20480];
 static undefined4 DAT_00101728_backing[1];
 #define DAT_00101728 DAT_00101728_backing[0]
 /* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
-   npc_ai_tick/setup_npc_ai_tick_state store here (&DAT_002048c0/002048f0/00204950,
-   one of a 3-way "which per-class scratch buffer" choice) -- same class
-   of bug as npc_ai_tick's own iVar5 fix and get_object_record_by_slot_index's header
-   comment. Confirmed live via lldb: DAT_0010172c read 0xb6c724 instead
-   of the real 0x100b6c724 (upper word dropped), so the very next
-   build_object_placement_snapshot(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
-   first time an NPC's per-tick AI (npc_ai_tick) got this far -- which
-   never happened before this session's other fixes let that code run
-   at all. Note: the tile_pair_los_blocked call sites a few thousand
-   lines below used to read raw bytes at `&DAT_0010172c + small offset`
-   as part of a split-symbol cluster spanning several separately-named
-   globals that are really one real waypoint array (DAT_00101740,
-   stride 7) -- now fixed to index that array directly instead of
-   relying on undefined/compiler-chosen adjacent-global layout. */
+   npc_ai_tick/setup_npc_ai_tick_state store here (&DAT_002048c0/002048f0/00204950, one of a 3-way
+   "which per-class scratch buffer" choice)... */
 void *DAT_0010172c;
 #define DAT_00101749 DAT_00101740_backing[9]
 static ushort DAT_000853b8;
@@ -124,17 +91,14 @@ ushort DAT_0010141c;
 ushort DAT_00101910;
 static undefined4 DAT_00101920;
 static undefined4 DAT_00101914;
-/* Sizing-audit pass: NPC path-cache, slot index masked `&0xf`
-   everywhere (16 slots), 28-byte per-slot record (see
-   advance_cached_path_step's own comment) -- 16*28=448 bytes, a HARD
-   bound. Down from 8192. */
+/* Sizing-audit pass: NPC path-cache, slot index masked `&0xf` everywhere (16 slots), 28-byte
+   per-slot record (see advance_cached_path_step's own comment) -- 16*28=448 bytes, a HARD bound.
+   Down from 8192. */
 static undefined DAT_00101568_backing[448];
 #define DAT_00101568 DAT_00101568_backing[0]
-/* Sizing-audit pass: was an independent 256-byte array, but its only
-   use (`(&DAT_00101569)[iVar6]` at ai.c:585, `iVar6=(uVar3&0xf)*0x1c`)
-   indexes it with the exact same per-slot cache-record base as
-   DAT_00101568 right above -- a field of that same record, not a
-   separate table. Aliased at offset 1. */
+/* Sizing-audit pass: was an independent 256-byte array, but its only use (`(&DAT_00101569)[iVar6]`
+   at ai.c:585, `iVar6=(uVar3&0xf)*0x1c`) indexes it with the exact same per-slot cache-record base
+   as DAT_00101568 right above -- a field of that same record, not a separate table. */
 #define DAT_00101569 DAT_00101568_backing[1]
 undefined2 DAT_00101418;
 undefined2 DAT_00101908;
@@ -142,25 +106,9 @@ static undefined1 DAT_00101738;
 static byte DAT_00101458;
 static byte DAT_001018fc;
 static byte DAT_00101434;
-/* Was a bare 1-byte `undefined` -- same split-symbol class as
-   DAT_00204980/990/9b0's own backing-array fixes just above: build_object_placement_snapshot
-   (called with this as its param_2 "object state" out-buffer, via
-   DAT_0010172c) writes fields up to offset 0x28 into it, a massive
-   out-of-bounds write past a 1-byte scalar. Confirmed live crashing
-   (EXC_BAD_ACCESS writing param_2[0x23]) the first time an NPC actually
-   got far enough through its per-tick AI (npc_ai_tick) to reach this
-   call -- which never happened before g_npc_tick_enabled/npc_ai_tick's other
-   fixes let that code run at all. Was then oversized generously rather
-   than tightly to 0x29 bytes, in case another not-yet-exercised caller
-   wrote further into the same real struct.
-   Sizing pass: traced every actual reader/writer of this whole 4-buffer
-   family (build_object_placement_snapshot, sync_object_tile_position,
-   randomize_settled_snapshot_position) across ai.c/objects.c/
-   collision.c -- the real max touched offset across all of them is
-   0x2a (42, from sync_object_tile_position's
-   `*(ushort*)((char*)param_2+0x29)`), not just this function's own
-   0x28. Sized to 128 for 3x headroom above that confirmed bound,
-   rather than the previous 65536. */
+/* Was a bare 1-byte `undefined` -- same split-symbol class as DAT_00204980/990/9b0's own
+   backing-array fixes just above: build_object_placement_snapshot (called with this as its param_2
+   "object state" out-buffer, via DAT_0010172c) writes fields up to offset 0x28 into it... */
 static undefined1 DAT_002048f0_backing[128];
 #define DAT_002048f0 DAT_002048f0_backing[0]
 static undefined1 DAT_00204950_backing[128];
@@ -188,35 +136,24 @@ static char DAT_00085910;
 static char DAT_00085911;
 static char DAT_00085918;
 static char DAT_00085919;
-/* Sizing-audit pass: a filename template with digit pokes at fixed
-   offsets 8,9,0x10,0x11 (via DAT_00085910/11/18/19) -- hard lower
-   bound 18 bytes. Real template text recovered (bug-fixes-pass-2):
-   "\CRIT\CR00PAGE.N00". Sized to 32 for headroom; down from 8192. */
+/* Sizing-audit pass: a filename template with digit pokes at fixed offsets 8,9,0x10,0x11 (via
+   DAT_00085910/11/18/19) -- hard lower bound 18 bytes. Real template text recovered
+   (bug-fixes-pass-2): "\CRIT\CR00PAGE.N00". Sized to 32 for headroom; down from 8192. */
 static undefined DAT_00085908_backing[32] = "\\CRIT\\CR00PAGE.N00";
 static char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
-/* Sizing-audit pass: load_critter_association_tables's own per-level
-   write is `puVar6[iVar7]` where `iVar7 = iVar10*3 + iVar5`, iVar10
-   bounded to 32 levels (`< 0x20`) and iVar5 bounded to 3 (`if (iVar5
-   < 3)` write guard) -- exact max index 31*3+2 = 95, a HARD bound (32
-   levels * 3 slots is the real table shape, not an estimate). Sized
-   to 128 for headroom, down from 32768. */
+/* Sizing-audit pass: load_critter_association_tables's own per-level write is `puVar6[iVar7]` where
+   `iVar7 = iVar10*3 + iVar5`, iVar10 bounded to 32 levels (`< 0x20`) and iVar5 bounded to 3 (`if
+   (iVar5 < 3)` write guard) -- exact max index 31*3+2 = 95... */
 undefined1 DAT_0023c460_backing[128];
 /* DAT_0023c4c0/DAT_0023c5b8/DAT_0024ac18 (a resource-slot status table,
-   load_critter_association_tables) were lone-byte scalars indexed up to 0x80 (128) --
-   confirmed overflowing into the unrelated DAT_00248410 (a malloc'd
-   buffer pointer) via an lldb watchpoint, corrupting it and causing a
-   later crash in seed_conversation_globals_for_new_game far away from this actual bad write.
-   Widened with the usual backing-buffer pattern. Macro defines for all
-   four backing arrays now live in uw.h, since load_critter_association_tables
-   (their only reader) moved into src/ai.c. */
+   load_critter_association_tables) were lone-byte scalars indexed up to 0x80 (128) -- confirmed
+   overflowing into the unrelated DAT_00248410 (a malloc'd buffer pointer) via an lldb watchpoint... */
 static undefined1 DAT_0023c4c0_backing[256];
 static undefined1 DAT_0023c5b8_backing[256];
 static undefined1 DAT_0024ac18_backing[256];
-/* Was "named" with no surrounding spaces -- build_creature_look_text (creature look
-   text) appends it directly between the description and the proper name
-   with no separator of its own, so a named creature's look text ran
-   the words together: "You see an mellow outcastnamedBragit" instead of
-   "You see a mellow outcast named Bragit". */
+/* Was "named" with no surrounding spaces -- build_creature_look_text (creature look text) appends
+   it directly between the description and the proper name with no separator of its own, so a named
+   creature's look text ran the words together... */
 static char s_named_00085d18[] = " named ";
 /* Original binary 0x868c0..0x868d7 maps locomotion bit values to
    the compact mobile-record state (indexed by snapshot byte 0x28). */
@@ -224,11 +161,9 @@ static undefined DAT_000868c0_backing[24] = {
   0,0,1,0,2,0,0,0,3,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0
 };
 #define DAT_000868c0 DAT_000868c0_backing[0]
-/* was `int` -- truncated pointer to a 64-bit address on assignment in
-   spawn_creature_death_loot (&DAT_001007d0 + index*0x30), causing spawn_creature_treasure_drop to
-   dereference a garbage address (crash in demo_critter_orbit_cardinal.txt,
-   EXC_BAD_ACCESS at uw.c:70173). Sibling DAT_00101404, assigned via the
-   identical pattern, is correctly `char *`. */
+/* was `int` -- truncated pointer to a 64-bit address on assignment in spawn_creature_death_loot
+   (&DAT_001007d0 + index*0x30), causing spawn_creature_treasure_drop to dereference a garbage
+   address (crash in demo_critter_orbit_cardinal.txt, EXC_BAD_ACCESS at uw.c:70173). */
 // was DAT_0024cfc4
 static char *g_despawn_creature_record;
 /* Treasure values are fields of the loaded COMOBJ table (type 0xa0,
@@ -240,12 +175,9 @@ static char *g_despawn_creature_record;
 
 
 
-// was FUN_0002b47c. Per-object per-tick processor for non-NPC mobile
-// objects (thrown/dropped items, debris, ...) -- tick_mobile_objects'
-// sibling dispatch to npc_ai_tick for class-0x40 (NPC) objects. Advances
-// the object's position (sync_object_tile_position) and its own tick-phase field
-// directly (no ordint_divmod dependency, unlike npc_ai_tick's own
-// now-fixed phase-advance code).
+// was FUN_0002b47c. Per-object per-tick processor for non-NPC mobile objects (thrown/dropped items,
+// debris, ...) -- tick_mobile_objects' sibling dispatch to npc_ai_tick for class-0x40 (NPC)
+// objects.
 int mobile_object_tick()
 
 {
@@ -281,13 +213,7 @@ int mobile_object_tick()
 
 
 
-// was FUN_0002cb14. BFS/wavefront pathfinder from tile (param_1,param_2)
-// toward tile (param_4,param_5), expanding outward one ring at a time
-// (DAT_0023cf08-family scratch arrays hold each visited tile's parent
-// direction/cost, capped at 0x20 rings) and using tile_pair_los_blocked
-// to test whether each candidate step is wall-blocked. Calls
-// reconstruct_path_from_bfs to reconstruct the path on success. Creature AI, not
-// part of the 3D render chain -- see tile_pair_los_blocked's comment.
+// was FUN_0002cb14.
 undefined4 creature_find_path_to_tile(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 undefined4 param_1;
 char param_2;
@@ -516,26 +442,9 @@ undefined1 param_7;
 
 
 
-/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as
-   the rest of this NPC-AI cluster this session (see
-   [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
-   `ushort *`, so every bare `DAT_0010190c + N` throughout this
-   function was scaling N by 2. Verified against fresh disassembly of
-   this function's own entry (0x2e5d0-0x2e620): `ldrb r3,[r0,#0x18];
-   ...; ldrb r3,[r0,#0x15]; ...; ldrb r3,[r0,#0x17]; ldrb r2,[r0,#0x16]`
-   -- all raw, unscaled bytes. This is param_1=target tile x,
-   param_2=target tile y, param_3=direction -- called from both
-   npc_wander_return_home_tick (when far enough from a wander/chase target) and this
-   function's own sibling switch's case 1, and itself calls
-   creature_find_path_to_tile (line ~180 below, with a wrong direction
-   argument before this fix: `*(byte *)(DAT_0010190c + 2) >> 3 & 0xf`
-   read byte 4 instead of the real heading at byte 2). This is very
-   likely the actual "step toward a destination tile" implementation --
-   with essentially every read/write in the function operating on the
-   wrong byte, this plausibly explains a QA report that a wandering
-   NPC's walk animation plays while its tile position never advances.
-   Cast every offset to a byte pointer throughout this function so none
-   of them are scaled. */
+/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI
+   cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`,
+   so every bare `DAT_0010190c + N` throughout this function was scaling N by 2. */
 // was FUN_0002e58c
 void npc_walk_toward_tile(param_1,param_2,param_3)
 uint param_1;
@@ -562,12 +471,9 @@ undefined1 param_3;
   
   local_3c = 0;
   local_38 = 0;
-  /* Dropped arguments: the real call (0x2e5c0) is made with r0/r1/r2
-     still holding this function's own three incoming parameters (the
-     prologue spills all three, `stmdb sp!,{r0,r1,r2}`), so the
-     destination y and the third value were whatever this port's ABI
-     left in those registers -- garbage written straight into the NPC
-     record by npc_set_walk_target. */
+  /* Dropped arguments: the real call (0x2e5c0) is made with r0/r1/r2 still holding this function's
+     own three incoming parameters (the prologue spills all three, `stmdb sp!,{r0,r1,r2}`), so the
+     destination y and the third value were whatever this port's ABI left in those registers... */
   npc_set_walk_target(param_1,param_2,param_3);
   if (((*(byte *)((char *)DAT_0010190c + 0x18) & 0x20) != 0) &&
      ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0)) {
@@ -601,11 +507,7 @@ LAB_0002e6fc:
       iVar6 = (uVar3 & 0xf) * 0x1c;
       if ((uVar3 >> 10 == (ushort)(byte)(&DAT_00101568)[(int)iVar6]) &&
          ((uVar3 & 0x3f0) >> 4 == (uint)(byte)(&DAT_00101569)[(int)iVar6])) {
-        /* Was a dropped argument -- called with no args (`FUN_0002dd4c();`
-           before this rename). This whole block's own cache-slot record (iVar6-offset into
-           &DAT_00101568/1569, the same `slot*0x1c` byte record layout
-           save_walk_path_to_cache_slot writes) is exactly what this
-           function needs to advance. */
+        /* Was a dropped argument -- called with no args (`FUN_0002dd4c();` before this rename). */
         advance_cached_path_step(&DAT_00101568 + (int)iVar6);
       }
     }
@@ -753,15 +655,8 @@ LAB_0002ee74:
 
 
 
-// was FUN_00032d38. Per-object per-tick AI/movement processor for
-// class-0x40 (NPC/monster) objects, dispatched from tick_mobile_objects.
-// Handles HP regen, goal-tile pathing/movement (via
-// build_collision_height_field_for_object/movement_collision_sweep-style
-// helpers), and always returns 1 -- so tick_mobile_objects' own
-// object_tick_is_due catch-up-window check is what makes its caller's
-// loop terminate, not this function's return value. Was completely
-// unreachable before this session (g_npc_tick_enabled's own fix), so
-// this whole function and everything it calls had never executed.
+// was FUN_00032d38. Per-object per-tick AI/movement processor for class-0x40 (NPC/monster) objects,
+// dispatched from tick_mobile_objects.
 undefined4 npc_ai_tick()
 
 {
@@ -770,15 +665,8 @@ undefined4 npc_ai_tick()
   byte bVar3;
   char cVar4;
   /* Was `int`, truncating the real 64-bit pointers this variable holds
-     (get_object_record_by_slot_index(1) and tilemap_lookup() both return real pointers, and
-     the two dereferences below and the object_list_unlink(iVar5+2,...)
-     call both need the full address) -- same class of bug as
-     get_object_record_by_slot_index's own header comment describes, confirmed live via
-     lldb: iVar5 held 0x1181181b instead of the real 0x111812e1b-range
-     pointer, an exact 32-bit truncation (upper word dropped), crashing
-     npc_ai_tick's very first wild dereference. iVar5 is also reused
-     for small-int distance-squared arithmetic later in this function;
-     intptr_t is safe for that too. */
+     (get_object_record_by_slot_index(1) and tilemap_lookup() both return real pointers, and the two
+     dereferences below and the object_list_unlink(iVar5+2,...) call both need the full address)... */
   intptr_t iVar5;
   int iVar6;
   undefined4 uVar7;
@@ -811,25 +699,9 @@ undefined4 npc_ai_tick()
          100 < (iVar5 * iVar5 + iVar6 * iVar6) * 0x10000 >> 0x10)) &&
      ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 3)) {
     bVar3 = (byte)DAT_0010190c[5];
-    /* Was `ordint_divmod(0x10,(bVar3&0xf)+8); bVar8 = extraout_r1;` -- the
-       classic "call idivmod, then read its remainder back through the
-       extraout_r1 register-leftover fiction" pattern already fixed
-       elsewhere this session (itoa_radix, draw_chargen_field_options's sVar_rem):
-       this port's ordint_divmod (ordinal_stubs.c) only returns the
-       quotient through its real C return value and never touches
-       anything a recompiled build's own extraout_r1 local could
-       legitimately read, so every read of it here was uninitialized/
-       stray-value garbage -- confirmed via UW_DEBUG_NPC_PHASE: it read
-       0 every single time regardless of the real (bVar3&0xf)+8 dividend,
-       which fed straight back into DAT_0010190c[5]'s own low nibble
-       below and pinned it there forever, so the class-0x40 (NPC)
-       "too far to path, just advance its clock" branch this is in
-       could never advance an off-screen monster's tick phase past
-       where object_tick_is_due's catch-up-window check first admitted it --
-       an unconditional infinite loop (npc_ai_tick always really does
-       return 1, confirmed via real disassembly at 0x33874: `mov r0,#1`)
-       hanging the entire game solid the moment any monster ever took
-       this path. Compute the remainder directly instead. */
+    /* Was `ordint_divmod(0x10,(bVar3&0xf)+8); bVar8 = extraout_r1;` -- the classic "call idivmod,
+       then read its remainder back through the extraout_r1 register-leftover fiction" pattern
+       already fixed elsewhere this session (itoa_radix, draw_chargen_field_options's sVar_rem)... */
     bVar8 = ((bVar3 & 0xf) + 8) % 0x10;
     if (getenv("UW_DEBUG_NPC_WANDER"))
       fprintf(stderr, "[npc-branch] obj=%p took too-far-early-exit\n", (void *)DAT_0010190c);
@@ -882,15 +754,8 @@ undefined4 npc_ai_tick()
               (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4),
               (unsigned)((ushort *)DAT_0010172c)[0], (unsigned)((ushort *)DAT_0010172c)[1]);
     /* Was `build_collision_height_field_for_object()` -- a dropped argument (K&R declared, relying
-       on whatever register-content reuse the real ARM code got for
-       free). build_collision_height_field_for_object's own single param is dereferenced the exact
-       same way every other call in this function uses DAT_0010190c (the
-       object currently being processed) -- e.g. `*param_1 & 0x1ff`
-       mirrors `*DAT_0010190c & 0x1ff` used just a few lines below.
-       Confirmed live: called with no argument, param_1 read as
-       garbage/NULL and crashed on its first dereference the moment an
-       NPC's per-tick AI got this far (only possible after this
-       session's other npc_ai_tick fixes). */
+       on whatever register-content reuse the real ARM code got for free).
+       build_collision_height_field_for_object's own single param is dereferenced the exact same... */
     DAT_00101414 = build_collision_height_field_for_object(DAT_0010190c);
     apply_placement_collision_sweep(DAT_0010172c,DAT_00101438);
     if (getenv("UW_DEBUG_NPC_WANDER"))
@@ -1016,24 +881,7 @@ LAB_000337fc:
     uVar1 = (&DAT_000853d8)[(uint)(byte)((byte)DAT_0010190c[8] >> 4) * 2];
     /* Was `ordint_divmod(9,uVar7,*(byte*)(DAT_0010190c+0xf),ordint_divmod_exref,
        DAT_00101404[0xf]); resolve_npc_melee_attack(puVar11,(int)extraout_r1_01,uVar1,
-       (bVar3&0x3f)-1);` -- badly garbled. Real disassembly (0x335b8-0x33628)
-       shows this is genuinely TWO separate things the decompiler folded
-       together: a plain `ordint_divmod(9,uVar7).quot` (same fabricated-remainder
-       bug fixed throughout this session -- computed the remainder
-       directly), and resolve_npc_melee_attack's own 5th argument (it takes 5 params,
-       confirmed at its definition; this call was silently dropping the
-       last one) -- DAT_00101404[0xf], stashed on the stack by the real
-       ARM code before the ordint_divmod call and read back after it, which
-       the decompiler instead spliced into ordint_divmod's own argument
-       list as three bogus extra params (including the nonsensical
-       ordint_divmod_exref placeholder). Confirmed live: this whole branch
-       (an NPC's "pick a new wander/patrol target" state) is exactly what
-       the QA-reported "NPC teleports away on its first tick" bug was
-       tracing back to -- resolve_npc_melee_attack computes DAT_00100608/DAT_0010061c
-       (target position deltas) then calls process_melee_attack_swing to path there;
-       with param_5 uninitialized/garbage and param_2 (the modulo-9
-       remainder) also fabricated-garbage before this fix, the computed
-       target tile could land anywhere. */
+       (bVar3&0x3f)-1);` -- badly garbled. */
     resolve_npc_melee_attack(puVar11,(short)(uVar7 % 9),uVar1,(bVar3 & 0x3f) - 1,(short)DAT_00101404[0xf]);
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
     uVar9 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
@@ -1065,14 +913,7 @@ LAB_00033860:
 
 
 
-// was FUN_000349bc. The real per-tick NPC AI + mobile-object dispatcher:
-// walks the mobile-object-arena "currently active slot indices" list
-// (DAT_002046c0..DAT_002046c8), and for each slot due for a sub-step
-// (object_tick_is_due) dispatches to npc_ai_tick (class 0x40, NPC) or
-// mobile_object_tick (everything else), looping while that call keeps
-// signaling more catch-up work. Only caller is movement_tick, gated on
-// g_npc_tick_enabled -- see that global's own comment for why this
-// never ran before this session.
+// was FUN_000349bc.
 void tick_mobile_objects(param_1)
 char param_1;
 
@@ -1114,10 +955,9 @@ LAB_00034a98:
 // was FUN_00049404
 void build_creature_look_text(param_1,param_2)
 ushort * param_1;
-char *param_2;   /* was undefined4 -- the caller's stack description buffer
-                    (acStack_7c); ce_strcat/message_scroll_print_wrapped
-                    write through it, so truncating it crashed a right-click
-                    "look" at a creature (the "vitality is N out of N" path). */
+char *param_2;   /* was undefined4 -- the caller's stack description buffer (acStack_7c);
+   ce_strcat/message_scroll_print_wrapped write through it, so truncating it crashed a right-click
+   "look" at a creature (the "vitality is N out of N" path). */
 
 {
   byte bVar1;
@@ -1127,16 +967,8 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
   char *pcVar5;
   int iVar6;
   undefined4 uVar7;
-  /* format_object_display_name's real return type is `undefined1 *` -- was captured
-     into `uVar7` (undefined4/int), which also does double duty as a
-     plain 0/1 flag a few lines down. On this 64-bit host that truncated
-     the real pointer to 32 bits before handing it to ce_strcat
-     (strcat), so appending a creature's description/name here crashed
-     inside the fortified strcat on a wild source pointer -- reproduced
-     via a real right-click "look" at a named creature (repro needed
-     UW_PICK_FORCE_SLOT since no object in the previously-tested area
-     had a real name to overflow through). Separate real pointer local
-     for the string result, keeping uVar7 for its flag use. */
+  /* format_object_display_name's real return type is `undefined1 *` -- was captured into `uVar7`
+     (undefined4/int), which also does double duty as a plain 0/1 flag a few lines down. */
   char *pcVar_desc;
   undefined1 *puVar8;
 
@@ -1200,28 +1032,21 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
 
 
 
-// was FUN_00052c5c -- disassembly-confirmed real math, not a bug: with
-// param_1=10 (discard_misplaced_object's only caller value) this
-// computes `rand_below(10) < (10 + rand_below(3))`, and since
-// rand_below(10) maxes at 9 while the threshold is always >=10, the
-// roll ALWAYS succeeds under normal conditions (unless the object is
-// itself gated by roll_object_destroy_chance's own nested container
-// check via free_linked_object_recursive/walk_object_tree).
+// was FUN_00052c5c -- disassembly-confirmed real math, not a bug: with param_1=10
+// (discard_misplaced_object's only caller value) this computes `rand_below(10) < (10 +
+// rand_below(3))`, and since rand_below(10) maxes at 9 while the threshold is always >=10...
 undefined4 roll_object_destroy_chance(param_1,param_2)
 short param_1;
-char *param_2;  /* was `int` -- truncated the real object-record pointer
-                   (dereferenced via casts, passed to resolve_object_link
-                   and object_exceeds_size_threshold), latent until those calls started
-                   actually using their arguments */
+char *param_2;  /* was `int` -- truncated the real object-record pointer (dereferenced via casts, passed to
+   resolve_object_link and object_exceeds_size_threshold), latent until those calls started actually
+   using their arguments */
 
 {
   short sVar1;
   int iVar2;
-  /* Was `undefined4 uVar3` -- truncated resolve_object_link's real
-     pointer return before forwarding it into walk_object_tree just below,
-     same class as this whole never-before-exercised drop-into-world
-     path's other fixes. Confirmed live: walk_object_tree received a NULL/
-     garbage param_1 and crashed the moment it dereferenced it. */
+  /* Was `undefined4 uVar3` -- truncated resolve_object_link's real pointer return before forwarding
+     it into walk_object_tree just below, same class as this whole never-before-exercised
+     drop-into-world path's other fixes. */
   char *pcVar3;
 
   if (param_2 != 0) {
@@ -1251,13 +1076,7 @@ char *param_2;  /* was `int` -- truncated the real object-record pointer
 
 
 
-// was FUN_00054f6c. Applies the placement snapshot (param_2, built by
-// build_object_placement_snapshot) back onto the real object (param_1):
-// relinks it between tilemap tile lists when its tile changed, then
-// copies position/orientation fields and, for arena-mobile objects,
-// speed/collision-height data. May call settle_mobile_to_immobile on a
-// decayed object and, on that path, free it -- callers must always
-// propagate its return value.
+// was FUN_00054f6c.
 undefined4 sync_object_tile_position(param_1,param_2)
 ushort * param_1;
 ushort * param_2;
@@ -1268,18 +1087,9 @@ ushort * param_2;
   undefined1 uVar2;
   byte bVar3;
   short sVar4;
-  /* Was `int`, truncating the real 64-bit pointers this variable holds
-     from tilemap_lookup() and settle_mobile_to_immobile() (both real pointer
-     returns) -- same class of bug fixed several times elsewhere this
-     session (npc_ai_tick's own iVar5, DAT_0010172c, apply_placement_collision_sweep's
-     param_1). Confirmed live via lldb: iVar5 held 0x1c820200 instead of
-     the real 0x11c820200 (upper word dropped, DAT_002029cc itself was
-     NOT corrupted -- an earlier working theory this session, based on
-     comparing DAT_002029cc across separate process runs with different
-     ASLR-derived heap addresses, was wrong), crashing
-     object_list_insert_head on the truncated iVar5+2. iVar5 is also
-     reused for small-int arithmetic later in this function; intptr_t is
-     safe for that too. */
+  /* Was `int`, truncating the real 64-bit pointers this variable holds from tilemap_lookup() and
+     settle_mobile_to_immobile() (both real pointer returns) -- same class of bug fixed several
+     times elsewhere this session... */
   intptr_t iVar5;
   undefined4 uVar6;
   int extraout_r1;
@@ -1290,26 +1100,9 @@ ushort * param_2;
   bool bVar11;
   
   if (((short)*param_2 >> 8 != DAT_0010144c) || ((short)param_2[1] >> 8 != DAT_00101454)) {
-    /* Both tilemap_lookup() calls below were dropped-argument (K&R,
-       relying on register-content reuse) -- unlike the many other such
-       call sites in this file that legitimately reuse whatever's still
-       in r0/r1 from an immediately preceding, equivalent computation,
-       here the surrounding code makes the intended arguments
-       unambiguous and explicit: DAT_0010144c/DAT_00101454 are "the
-       current tile" (old, for the unlink just below; the caller's own
-       just-written new values, for the insert after they're updated).
-       Confirmed live via lldb: the second call returned NULL (garbage
-       register content, not the real new tile coords), crashing
-       object_list_insert_head on iVar5+2 == 0x2.
-
-       Separately: neither object_list_unlink nor object_list_insert_head
-       itself tolerates a NULL tilemap_lookup result (both unconditionally
-       dereference their first arg), so also skip each call outright on
-       NULL -- tilemap_lookup can legitimately return NULL now that it
-       guards against DAT_002029cc's own separately-documented corruption
-       (see that function's comment); confirmed live crashing here via
-       exactly that path (a wild pointer read at object_list_insert_head's
-       first dereference) the first time NPC AI reached this function. */
+    /* Both tilemap_lookup() calls below were dropped-argument (K&R, relying on register-content
+       reuse) -- unlike the many other such call sites in this file that legitimately reuse
+       whatever's still in r0/r1 from an immediately preceding, equivalent computation... */
     iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
     if (iVar5 != 0) {
       object_list_unlink(iVar5 + 2,param_1);
@@ -1447,16 +1240,7 @@ LAB_0005559c:
 
 
 
-// was FUN_0005596c. Completes the mobile->immobile object-arena
-// transition per the Ultima Codex internal-format docs: rolls a class-
-// derived decay/destroy chance, and on survival copies param_1's fields
-// into a freshly alloc_object_slot(0)'d immobile-arena record, relinking
-// it into the tile list in param_1's place. Unconditionally frees
-// param_1 via discard_misplaced_object regardless of outcome -- callers
-// must always propagate the return value (including NULL on decay),
-// never keep using their own stale param_1 pointer. Called by
-// sync_object_tile_position when ordinary mobile-object physics reaches
-// rest, and by settle_misplaced_mobile_object during the transition pass.
+// was FUN_0005596c.
 ushort *settle_mobile_to_immobile(param_1)
 ushort * param_1;
 
@@ -1519,19 +1303,9 @@ ushort * param_1;
             *(byte *)((char *)param_1 + 3) = (byte)(uVar1 >> 8);
             uVar6 = ce_rand();
             uVar7 = ce_rand();
-            /* Was `ordint_divmod(3,uVar6); ... extraout_r1_00` / same for
-               uVar7/extraout_r1 -- the same fabricated-remainder bug
-               fixed several times elsewhere this session (this port's
-               old `long`-returning ordint_divmod never populated
-               extraout_r1). Now gets the remainder by name off
-               ordint_divmod's own divmod_result instead of reading a
-               second return value that was never really there; this
-               was feeding a random scatter offset into
-               spawn_effect_debris_burst (spawn debris around the
-               object), so previously ran with a garbage/undefined delta
-               every time this rare "teleport gate" branch was taken --
-               intermittently crashing (confirmed live, ~1-in-5 runs of
-               demo_critter_orbit_cardinal.txt). */
+            /* Was `ordint_divmod(3,uVar6); ... extraout_r1_00` / same for uVar7/extraout_r1 -- the
+               same fabricated-remainder bug fixed several times elsewhere this session (this port's
+               old `long`-returning ordint_divmod never populated extraout_r1). */
             extraout_r1_00 = (short)ordint_divmod(3,uVar6).rem;
             iVar10 = (int)DAT_00101454;
             extraout_r1 = (short)ordint_divmod(3,uVar7).rem;
@@ -1551,17 +1325,11 @@ ushort * param_1;
   if (DAT_00201b68 == 9) {
     bVar3 = false;
   }
-  /* Was `iVar8 = tilemap_lookup(...); iVar8 = iVar8 + 2;` -- same pointer-
-     truncation-into-`int` bug fixed in FUN_0004ad10 just above (that one
-     crashed live; this is the same call shape, iVar8 already reused here
-     for unrelated small-integer math earlier in this function, so given
-     its own dedicated pointer local rather than widening iVar8 itself). */
+  /* Was `iVar8 = tilemap_lookup(...); iVar8 = iVar8 + 2;` -- same pointer- truncation-into-`int`
+     bug fixed in FUN_0004ad10 just above... */
   pbTile = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
-  /* Off-map landing tile (a projectile carried past the map edge --
-     sync_object_tile_position already skipped its own unlink/insert on
-     the same NULL). There is no tile list to settle into, so destroy
-     the object outright: freeing it also removes it from the active
-     mobile list, which is what returning 0 promises tick_mobile_objects. */
+  /* Off-map landing tile (a projectile carried past the map edge -- sync_object_tile_position
+     already skipped its own unlink/insert on the same NULL). */
   if (pbTile == (char *)0x0) {
     discard_misplaced_object((char *)0x0,param_1,1);
     return (ushort *)0x0;
@@ -1627,11 +1395,9 @@ ushort * param_1;
 
 
 
-// was FUN_0007931c -- empties a dead creature's inventory into the
-// world, capping the number of items dropped via a per-monster-class
-// value (DAT_001007d9, indexed by the creature's type, 0x30-byte
-// stride -- see g_monster_max_stats_table's own comment for this
-// same table). Confirmed real caller: src/ai.c's death handling.
+// was FUN_0007931c -- empties a dead creature's inventory into the world, capping the number of
+// items dropped via a per-monster-class value (DAT_001007d9, indexed by the creature's type,
+// 0x30-byte stride -- see g_monster_max_stats_table's own comment for this same table).
 void drop_creature_inventory_on_death(param_1)
 byte * param_1;
 
@@ -1644,15 +1410,8 @@ byte * param_1;
 
 
 
-// was FUN_00079350 -- rolls a chance (based on g_despawn_creature_
-// record's own drop-rate byte, offset +0x26, high nibble) to spawn a
-// treasure item on a dying/despawning creature: on a hit, derives an
-// item-type tier from the current dungeon level (DAT_00201b68) via a
-// lookup table (DAT_002034b5), rolls a quantity (ordint_divmod/
-// roll_dice_sum), and if positive spawns a new object (type
-// tier+0xa0) with that quantity encoded into its quality field,
-// linking it into param_1's object chain. No callers found by grep
-// in the remaining decompile.
+// was FUN_00079350 -- rolls a chance (based on g_despawn_creature_ record's own drop-rate byte,
+// offset +0x26, high nibble) to spawn a treasure item on a dying/despawning creature: on a hit...
 void spawn_creature_treasure_drop(param_1)
 char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature_death_loot
                    passes in (on this 64-bit build), corrupting the address
@@ -1733,13 +1492,9 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
 
 
 
-// was FUN_0007955c -- second creature-death drop roll: chance from
-// g_despawn_creature_record's offset +0x27 low nibble; on a hit,
-// spawns a single fixed-type item (high nibble + 0xb0) and links it
-// into param_1's object chain. Simpler sibling of
-// spawn_creature_treasure_drop (no quantity computation, just a
-// single item spawn). No callers found by grep in the remaining
-// decompile.
+// was FUN_0007955c -- second creature-death drop roll: chance from g_despawn_creature_record's
+// offset +0x27 low nibble; on a hit, spawns a single fixed-type item (high nibble + 0xb0) and links
+// it into param_1's object chain.
 void spawn_creature_special_item_drop(param_1)
 char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
 
@@ -1763,16 +1518,8 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
 
 
 
-// was FUN_000795cc -- third creature-death drop roll: iterates 2
-// equipment-slot flag bytes (g_despawn_creature_record offsets
-// +0x20/+0x21), and for each with bit 0 set, spawns an item (type
-// from bits 1-4 + subtype bits 5-6) and rolls its quality either
-// level-scaled (50% chance) or fully random 0-63 (the other 50%).
-// For weapon-class items (type class 0x30==0x10) whose comobj.dat
-// record marks them as enchantable (DAT_002027d2 entry == -0x40),
-// also rolls a random enchantment/charge bonus. Links each spawned
-// item into param_1's object chain. No callers found by grep in the
-// remaining decompile.
+// was FUN_000795cc -- third creature-death drop roll: iterates 2 equipment-slot flag bytes
+// (g_despawn_creature_record offsets +0x20/+0x21), and for each with bit 0 set...
 void spawn_creature_equipment_drop(param_1)
 char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
 
@@ -1833,14 +1580,9 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
 
 
 
-// was FUN_00079784 -- fourth creature-death drop roll: iterates 2
-// item slots (g_despawn_creature_record offsets +0x22/+0x24, each a
-// packed ushort: item id in the high 12 bits, drop-chance nibble in
-// the low 4), rolling a d16 chance per slot; on a hit, spawns the
-// item and rolls its quality (level-scaled 50% of the time, fully
-// random 0-63 the rest) -- same quality-roll shape as
-// spawn_creature_equipment_drop but without its enchantment-bonus
-// step. No callers found by grep in the remaining decompile.
+// was FUN_00079784 -- fourth creature-death drop roll: iterates 2 item slots
+// (g_despawn_creature_record offsets +0x22/+0x24, each a packed ushort: item id in the high 12
+// bits, drop-chance nibble in the low 4), rolling a d16 chance per slot; on a hit...
 void spawn_creature_misc_item_drop(param_1)
 char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
 
@@ -1897,20 +1639,9 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
 
 
 
-// was FUN_000798c4 -- the creature death-loot orchestrator, gated on
-// a "already dropped" flag (param_1[7] bit 0x10, set at the end):
-// points g_despawn_creature_record at this creature's own per-class
-// record in the same table as g_monster_max_stats_table (DAT_001007d0
-// -- note this is 4 bytes BEFORE DAT_001007d4, g_monster_max_stats_
-// table's own documented base; both are used as this table's "start"
-// at different call sites throughout this file, e.g. the 0xc00-byte
-// bulk file-load at uw.c's resource-load code reads into
-// &DAT_001007d0 directly -- worth resolving which base is truly
-// authoritative in a future struct-recovery pass, not done here),
-// then calls all 4 drop-roll functions in sequence
-// (spawn_creature_treasure_drop/special_item/equipment/misc_item)
-// and marks the flag so this never re-fires for the same object.
-// Confirmed real callers in src/ai.c and src/babl.c.
+// was FUN_000798c4 -- the creature death-loot orchestrator, gated on a "already dropped" flag
+// (param_1[7] bit 0x10, set at the end): points g_despawn_creature_record at this creature's own
+// per-class record in the same table as g_monster_max_stats_table...
 void spawn_creature_death_loot(param_1)
 ushort * param_1;
 
@@ -1935,18 +1666,9 @@ ushort * param_1;
 }
 
 
-// was FUN_000816e0 -- morphs a trap/hazard object (class id 0x14 or
-// 0x15) into its "active" counterpart (0x1c2 or 0x1c5 respectively --
-// 0x1c2 is the same spell-effect id cast_area_spell_effect spawns),
-// schedules it (type 4, delay 0), applies area damage to the tile,
-// and, for the 0x14->0x1c2 case specifically, also spawns a debris
-// burst. Returns 0 (and does nothing) if the object's id doesn't
-// match either trap class, or if scheduling fails. Confirmed live
-// caller: settle_mobile_to_immobile (src/ai.c) triggers this for a
-// specific dying-creature item class, discarding the item outright if
-// activation fails -- reads as "an explosive/hazard creature item
-// detonating on death", though the exact game mechanic beyond the
-// object-id morph isn't independently confirmed.
+// was FUN_000816e0 -- morphs a trap/hazard object (class id 0x14 or 0x15) into its "active"
+// counterpart (0x1c2 or 0x1c5 respectively -- 0x1c2 is the same spell-effect id
+// cast_area_spell_effect spawns), schedules it (type 4, delay 0)...
 undefined4 activate_area_hazard_object(param_1,param_2,param_3,param_4)
 ushort * param_1;
 uint param_2;
@@ -1994,14 +1716,9 @@ undefined4 param_4;
 
 
 
-// was FUN_0002b258 -- drops a dead monster's loot: if param_2 (a
-// gold-category nibble from the monster's own template data) is
-// nonzero, spawns a gold-pile object (0xd8+category) at the corpse's
-// own tile; if param_3 (a treasure-category nibble) is nonzero, rolls
-// a 7-in-16 chance to spawn a treasure item (0xc0+category) and drop
-// it near the corpse. Called from the monster death path (src/ai.c)
-// with param_1 the monster object and both category nibbles read from
-// its own stat template.
+// was FUN_0002b258 -- drops a dead monster's loot: if param_2 (a gold-category nibble from the
+// monster's own template data) is nonzero, spawns a gold-pile object (0xd8+category) at the
+// corpse's own tile; if param_3 (a treasure-category nibble) is nonzero...
 void drop_monster_loot(param_1,param_2,param_3)
 byte * param_1;
 ushort param_2;
@@ -2059,12 +1776,8 @@ ushort param_3;
 }
 
 
-// was FUN_0002d110 -- reconstructs an NPC's walk path from
-// creature_find_path_to_tile's BFS parent-pointer scratch arrays
-// (&DAT_0023cf08-family), walking backward from the found tile
-// (param_1 ring count, param_2/param_3 its coordinates) and filling the
-// step fields (DAT_00101740 offsets -7/-6, plus DAT_00101743-746) the
-// NPC's own movement code then walks forward through.
+// was FUN_0002d110 -- reconstructs an NPC's walk path from creature_find_path_to_tile's BFS
+// parent-pointer scratch arrays (&DAT_0023cf08-family), walking backward from the found tile...
 void reconstruct_path_from_bfs(param_1,param_2,param_3)
 byte param_1;
 undefined1 param_2;
@@ -2096,13 +1809,9 @@ undefined1 param_3;
 
 
 
-// was FUN_0002d1e0 -- attempts a direct straight-line walk from tile
-// (param_1,param_2) toward tile (param_3,param_4): sets up a
-// Bresenham-style line-walk state (DAT_00101740/etc), stepping through
-// can_step_between_tiles-checked tiles via record_line_walk_step. Returns 1 if
-// a clear direct line exists (the NPC's simple, preferred pathing
-// strategy, tried before falling back to creature_find_path_to_tile's
-// slower BFS search), -1 if blocked/no line possible.
+// was FUN_0002d1e0 -- attempts a direct straight-line walk from tile (param_1,param_2) toward tile
+// (param_3,param_4): sets up a Bresenham-style line-walk state (DAT_00101740/etc), stepping through
+// can_step_between_tiles-checked tiles via record_line_walk_step.
 int try_direct_line_walk(param_1,param_2,param_3,param_4)
 byte param_1;
 byte param_2;
@@ -2135,16 +1844,9 @@ short param_4;
   iVar7 = (int)(char)param_4 - (int)(char)param_2;
   local_34 = param_2;
   local_33 = param_1;
-  /* Dropped both arguments -- was `tilemap_lookup()`. param_1/param_2 are
-     this line-walk's starting tile (just stashed into local_33/local_34
-     above, and into DAT_00101740/DAT_00101741 a few lines below as the
-     walk's "current position" state), matching *pbVar4's own use right
-     after (>> 4 = floor_height, presumably seeding a step-climb check
-     for the walk that follows). Confirmed as a live crash: called with
-     no args, tilemap_lookup ran on whatever garbage happened to be in
-     its parameter registers, occasionally returning NULL/a wild pointer
-     that *pbVar4 then dereferenced unchecked -- a real SIGSEGV in
-     npc_walk_toward_tile's call chain (demo_automap.txt). */
+  /* Dropped both arguments -- was `tilemap_lookup()`. param_1/param_2 are this line-walk's starting
+     tile (just stashed into local_33/local_34 above, and into DAT_00101740/DAT_00101741 a few lines
+     below as the walk's "current position" state)... */
   pbVar4 = (byte *)tilemap_lookup(param_1,param_2);
   if (pbVar4 == 0) {
     DAT_00101450 = 0;
@@ -2237,15 +1939,8 @@ LAB_0002d340:
 }
 
 
-// was FUN_0002d4e8 -- checks line-of-sight between two fine-grained
-// (sub-tile) positions, walking a Bresenham-style line and testing
-// each crossed tile boundary via can_step_between_tiles, similar to
-// try_direct_line_walk but operating on precise coordinates (>>3 for
-// tile conversion) rather than whole tiles. Used by NPC combat AI to
-// decide whether a spell/ranged attack has a clear line to its target.
-// Contains 2 confirmed dropped-argument fixes (ordint_divmod calls
-// reconstructed from their own sibling branches, see their own
-// comments).
+// was FUN_0002d4e8 -- checks line-of-sight between two fine-grained (sub-tile) positions, walking a
+// Bresenham-style line and testing each crossed tile boundary via can_step_between_tiles...
 undefined4 check_fine_line_of_sight(param_1,param_2,param_3,param_4,param_5,param_6)
 uint param_1;
 uint param_2;
@@ -2322,14 +2017,7 @@ short param_6;
         local_3a = '\x01';
       }
       if (local_3a == '\x01') {
-        /* Was a dropped register-forwarding argument -- was
-           `ordint_divmod().quot;` with no args. Reconstructed as this exact
-           branch's own sibling call (the `else` just below,
-           `ordint_divmod(iVar3,iVar2 << 7).quot`) wrapped in the negation
-           this code already applies afterward (`uVar5 = -iVar7`) --
-           mathematically the same sign-flip trick the other two
-           if/else pairs in this function apply via a `* -0x80`
-           operand instead of a post-call negation. */
+        /* Was a dropped register-forwarding argument -- was `ordint_divmod().quot;` with no args. */
         iVar7 = ordint_divmod(iVar3,iVar2 << 7).quot;
         uVar5 = -iVar7;
         uVar9 = uVar9 & 7;
@@ -2382,11 +2070,9 @@ LAB_0002d768:
         uVar10 = uVar10 & 7;
         goto LAB_0002d768;
       }
-      /* Was a dropped register-forwarding argument -- same class as
-         this function's own earlier fix (uw.c ~8942): reconstructed
-         as this branch's own sibling call above
-         (`ordint_divmod(iVar2,iVar3 << 7).quot`) wrapped in the negation
-         this code already applies afterward. */
+      /* Was a dropped register-forwarding argument -- same class as this function's own earlier fix
+         (uw.c ~8942): reconstructed as this branch's own sibling call above
+         (`ordint_divmod(iVar2,iVar3 << 7).quot`) wrapped in the negation this code already... */
       iVar7 = ordint_divmod(iVar2,iVar3 << 7).quot;
       uVar5 = -iVar7;
       uVar10 = uVar10 & 7;
@@ -2467,13 +2153,9 @@ LAB_0002d808:
 }
 
 
-// was FUN_0002d9f4 -- records the next waypoint (param_1,param_2) into
-// try_direct_line_walk's own step-array state (DAT_00101740/41), then
-// validates line-of-sight for that step via tile_pair_los_blocked
-// (a special-cased 2-step check when this is only the walk's 2nd
-// waypoint, else the general per-step form). Returns 1 if the line is
-// now blocked (DAT_00101450 stays 0, matching try_direct_line_walk's
-// own success/failure convention).
+// was FUN_0002d9f4 -- records the next waypoint (param_1,param_2) into try_direct_line_walk's own
+// step-array state (DAT_00101740/41), then validates line-of-sight for that step via
+// tile_pair_los_blocked...
 undefined4 record_line_walk_step(param_1,param_2)
 undefined1 param_1;
 undefined1 param_2;
@@ -2517,11 +2199,9 @@ undefined1 param_2;
 }
 
 
-// was FUN_0002db4c -- pops the lowest set bit (0-15) from
-// DAT_000853b8, the pending "path cache slot needs recompute" bitmask
-// (set per-NPC via `1 << (record's own byte 0xb & 0xf)` slot index),
-// outputting it via *param_1. Returns 1 if a pending slot was found, 0
-// if the mask is empty.
+// was FUN_0002db4c -- pops the lowest set bit (0-15) from DAT_000853b8, the pending "path cache
+// slot needs recompute" bitmask (set per-NPC via `1 << (record's own byte 0xb & 0xf)` slot index),
+// outputting it via *param_1. Returns 1 if a pending slot was found, 0 if the mask is empty.
 undefined4 pop_pending_path_cache_slot(param_1)
 undefined1 * param_1;
 
@@ -2543,11 +2223,9 @@ undefined1 * param_1;
 
 
 
-// was FUN_0002dba4 -- resets the NPC path-cache system: clears a
-// per-record flag (byte 0x15 bit 7, likely "path cached") on every
-// object slot 2-255, then resets DAT_000853b8 to 0xffff, marking all
-// 16 path-cache slots pending recompute. Called on level load
-// (src/level.c) and once more at uw.c ~11583.
+// was FUN_0002dba4 -- resets the NPC path-cache system: clears a per-record flag (byte 0x15 bit 7,
+// likely "path cached") on every object slot 2-255, then resets DAT_000853b8 to 0xffff, marking all
+// 16 path-cache slots pending recompute.
 void reset_npc_path_cache()
 
 {
@@ -2567,13 +2245,9 @@ void reset_npc_path_cache()
 
 
 
-// was FUN_0002dbf4 -- serializes the just-computed walk path
-// (DAT_00101740/41 start, DAT_0010142c step count, and the per-step
-// direction arrays try_direct_line_walk/record_line_walk_step filled)
-// into a compact bitfield cache record at param_1: 2 bits per step
-// (packed via a direction lookup table, &DAT_000853c4) plus 1 bit per
-// step (&DAT_0010174a). Called right after pop_pending_path_cache_slot
-// pops a slot, to save that slot's freshly-computed path for reuse.
+// was FUN_0002dbf4 -- serializes the just-computed walk path (DAT_00101740/41 start, DAT_0010142c
+// step count, and the per-step direction arrays try_direct_line_walk/record_line_walk_step filled)
+// into a compact bitfield cache record at param_1...
 void save_walk_path_to_cache_slot(param_1)
 undefined1 * param_1;
 
@@ -2629,17 +2303,9 @@ undefined1 * param_1;
 }
 
 
-// was FUN_0002dd4c -- advances a cached NPC walk path (the 28-byte
-// per-slot record save_walk_path_to_cache_slot writes, keyed on the
-// current step index at param_1[2]&0x7f vs the total step count at
-// param_1[3]) by one step: applies the current step's direction delta
-// (looked up from the 2-bit packed table via &DAT_000853b0/1) to the
-// record's own tracked position (param_1[0]/[1]), then either advances
-// the step index (if that step's 1-bit "blocked" flag, from the table
-// at param_1+0x14, is clear) or sets the record's own high bit
-// (param_1[2]|=0x80) marking the cached path as blocked/stale instead.
-// Returns 1 if a step was available to advance, 0 if the path was
-// already exhausted.
+// was FUN_0002dd4c -- advances a cached NPC walk path (the 28-byte per-slot record
+// save_walk_path_to_cache_slot writes, keyed on the current step index at param_1[2]&0x7f vs the
+// total step count at param_1[3]) by one step...
 undefined4 advance_cached_path_step(param_1)
 char * param_1;
 
@@ -2681,15 +2347,9 @@ char * param_1;
 
 
 
-// was FUN_0002de40 -- checks whether an NPC's current tile position
-// matches its cached path's expected position for this tick. param_1
-// is the cache record's own "blocked" flag (param_1[2]>>7 at the call
-// site); if clear, computes a predicted next-step position from
-// param_2/3 (current x/y) toward param_6/7 (target x/y), snapping via
-// the same 6-tile-threshold direction logic used elsewhere in NPC
-// pathing, then compares the (possibly-updated) param_2/3 against
-// param_6/7 for exact equality. If the blocked flag was set, skips the
-// prediction and just compares the raw input coordinates directly.
+// was FUN_0002de40 -- checks whether an NPC's current tile position matches its cached path's
+// expected position for this tick. param_1 is the cache record's own "blocked" flag (param_1[2]>>7
+// at the call site); if clear...
 undefined4 check_path_cache_position_match(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 int param_1;
 short param_2;
@@ -2762,13 +2422,9 @@ short param_7;
 }
 
 
-// was FUN_0002df2c -- the top-level "walk via cached path" driver:
-// checks the cache slot's position match (check_path_cache_position_match)
-// and advances it a step if valid (advance_cached_path_step); if the
-// path isn't blocked, computes a heading toward the sub-tile-precise
-// interpolated position between waypoints (via compute_movement_heading) and
-// steers the NPC there, else delegates to handle_blocked_cached_path.
-// Returns 0 only when the position check fails outright.
+// was FUN_0002df2c -- the top-level "walk via cached path" driver: checks the cache slot's position
+// match (check_path_cache_position_match) and advances it a step if valid
+// (advance_cached_path_step); if the path isn't blocked...
 undefined4 walk_using_cached_path(param_1)
 byte * param_1;
 
@@ -2831,14 +2487,8 @@ byte * param_1;
 
 
 
-// was FUN_0002e104 -- handles a blocked/exhausted cached path: if the
-// NPC is close (<3 tiles) to the cache's own tracked endpoint, takes
-// one more direction-table-driven step past it (marking DAT_00101920
-// and several NPC-record state bits, likely "path needs recompute
-// soon") and steers toward that; otherwise just steers directly toward
-// the cache's own last tracked position. Called from
-// walk_using_cached_path when advance_cached_path_step marked the path
-// blocked.
+// was FUN_0002e104 -- handles a blocked/exhausted cached path: if the NPC is close (<3 tiles) to
+// the cache's own tracked endpoint, takes one more direction-table-driven step past it...
 void handle_blocked_cached_path(param_1)
 byte * param_1;
 
@@ -2905,12 +2555,9 @@ byte * param_1;
 
 
 
-// was FUN_0002e3b4 -- computes an 8-way movement heading (0-7) from a
-// relative (param_1,param_2) delta, used by walk_using_cached_path/
-// handle_blocked_cached_path to steer an NPC's facing/movement byte 9.
-// Distinct from compute_compass_direction (a different, separately
-// confirmed algorithm used for a different purpose) despite both
-// producing an octant-shaped 0-7 result from a delta.
+// was FUN_0002e3b4 -- computes an 8-way movement heading (0-7) from a relative (param_1,param_2)
+// delta, used by walk_using_cached_path/ handle_blocked_cached_path to steer an NPC's
+// facing/movement byte 9.
 undefined4 compute_movement_heading(param_1,param_2)
 int param_1;
 int param_2;
@@ -2956,13 +2603,9 @@ int param_2;
 }
 
 
-// was FUN_0002ee80 -- sets a flying/levitating NPC's vertical
-// movement/animation state (packed into the top bits of record byte
-// 0x14): compares its current altitude (byte 2 & 0x7f) against the
-// target tile (param_1,param_2)'s own ceiling-derived height, picking
-// a climb/descend/random-hover animation code. Called from
-// walk_using_cached_path only for monsters whose stat template sets
-// the flying-locomotion flag bit (0x80).
+// was FUN_0002ee80 -- sets a flying/levitating NPC's vertical movement/animation state (packed into
+// the top bits of record byte 0x14): compares its current altitude (byte 2 & 0x7f) against the
+// target tile (param_1,param_2)'s own ceiling-derived height...
 void set_npc_altitude_state(param_1,param_2)
 undefined1 param_1;
 undefined1 param_2;
@@ -3002,17 +2645,9 @@ undefined1 param_2;
 }
 
 
-// was FUN_0002efa0 -- an NPC's "arrived at destination tile" reaction:
-// if a "use on arrival" flag is set in its stat template (byte 0x2e),
-// uses the object it arrived on; if that object is a specific
-// combinable-ingredient-shaped category (0x140) with a low sub-id, and
-// the arrival-flag is set, randomly either combines with it
-// (check_object_combination) or (the arrival-flag clear path) has a
-// 1-in-4 chance to instead damage it via apply_typed_damage_to_object (the shared
-// damage/hit-visual primitive, not yet named) with a random roll
-// bounded by the stat template's own byte at +0x14. Contains a
-// confirmed fabricated-remainder ordint_divmod/extraout_r1 fix (see its
-// own comment).
+// was FUN_0002efa0 -- an NPC's "arrived at destination tile" reaction: if a "use on arrival" flag
+// is set in its stat template (byte 0x2e), uses the object it arrived on; if that object is a
+// specific combinable-ingredient-shaped category (0x140) with a low sub-id...
 void npc_arrival_interaction(param_1)
 ushort * param_1;
 
@@ -3045,13 +2680,9 @@ ushort * param_1;
       if (uw_ord2005_rem_22 == 0) {
         uVar1 = ce_rand();
         uVar2 = 4;
-        /* Was `ordint_divmod(...); apply_typed_damage_to_object(...,extraout_r1,...)` --
-           same fabricated-remainder bug fixed throughout this session
-           (this port's ordint_divmod never populates extraout_r1).
-           ordint_divmod(divisor,dividend).quot here divides the random roll
-           (uVar1) by the stat-template byte at +0x14 (a max-damage-
-           shaped value); compute that remainder -- a bounded random
-           damage roll in [0,byte_val) -- directly instead. */
+        /* Was `ordint_divmod(...); apply_typed_damage_to_object(...,extraout_r1,...)` -- same
+           fabricated-remainder bug fixed throughout this session (this port's ordint_divmod never
+           populates extraout_r1). ordint_divmod(divisor,dividend).quot here divides the... */
         uw_ord2005_rem_21 = (int)uVar1 % (int)(uint)(*(byte *)(DAT_00101404 + 0x14));
         apply_typed_damage_to_object(param_1,DAT_0010190c,DAT_00101424,DAT_00101428,uw_ord2005_rem_21,uVar2);
       }
@@ -3061,14 +2692,9 @@ ushort * param_1;
 }
 
 
-// was FUN_00030874 -- an NPC's random-walk reposition step (confirmed
-// via npc_combat_approach_tick's own comment describing its "far:
-// random walk reposition" branch, which calls this): if not already
-// at the given wander tile (param_1,param_2), has a 1-in-8 chance to
-// pick a nearby random tile via detect_npc_wander_proximity (adjusting a special-goal
-// flag on a couple of outcomes) instead of walking straight there, then
-// steers toward whichever tile was settled on via npc_walk_toward_tile,
-// clearing the special-goal flag if that walk reports blocked.
+// was FUN_00030874 -- an NPC's random-walk reposition step (confirmed via
+// npc_combat_approach_tick's own comment describing its "far: random walk reposition" branch, which
+// calls this): if not already at the given wander tile (param_1,param_2)...
 /* Real arity is 3: the ARM prologue (0x30878) just spills r0-r3 (`push {r0-r3}`), and the lone caller
    (0x30358) leaves r3 as a stale `ands` result. Ghidra's param_4 was that spilled-but-unused r3. */
 void npc_wander_reposition(param_1,param_2,param_3)
@@ -3139,13 +2765,9 @@ LAB_000309a0:
 }
 
 
-// was FUN_00031dbc -- called unconditionally at the tail of
-// npc_idle_behavior_tick: if the NPC's own "aware" state flag (byte
-// 0x13) is clear or the player is currently in a special mode (byte
-// 0x5f bit 1), refreshes the delta-to-player (refresh_npc_target_delta)
-// and, if the player is within ~12 tiles, switches the NPC
-// into a distinct alert/react state (byte 0x15=0x20, byte 0x14=6) and
-// picks a heading toward the player with a randomized facing nudge.
+// was FUN_00031dbc -- called unconditionally at the tail of npc_idle_behavior_tick: if the NPC's
+// own "aware" state flag (byte 0x13) is clear or the player is currently in a special mode (byte
+// 0x5f bit 1), refreshes the delta-to-player (refresh_npc_target_delta) and...
 void npc_react_to_nearby_player()
 
 {
@@ -3189,16 +2811,9 @@ void npc_react_to_nearby_player()
 }
 
 
-// was FUN_00032180 -- checks the NPC's proximity to its current
-// wander/goal tile against two stat-template-derived radii (byte
-// 0x1e's two nibbles, each multiplied against a per-monster-class
-// table entry): outputs the goal tile itself via param_1/param_2, and
-// returns 0 if outside the larger radius, 1 if within the smaller
-// "close" radius (also checking heading + line-of-sight to gate a
-// side-effect flag), or 2 for the band between them. Called from
-// npc_wander_reposition to decide whether/how to pick a fresh random
-// wander tile. Contains a confirmed dropped-argument fix (see its own
-// comment).
+// was FUN_00032180 -- checks the NPC's proximity to its current wander/goal tile against two
+// stat-template-derived radii (byte 0x1e's two nibbles, each multiplied against a per-monster-class
+// table entry): outputs the goal tile itself via param_1/param_2...
 undefined4 detect_npc_wander_proximity(param_1,param_2)
 char * param_1;
 char * param_2;
@@ -3238,11 +2853,9 @@ LAB_000323ac:
                  (uint)((byte)(&DAT_001007ed)[((byte)*DAT_00101400 & 0x3f) * 0x30] >> 4)) >> 4;
     puVar7 = DAT_0010190c;
     if (iVar2 <= iVar5 * iVar5 * 0x10000 >> 0x10) {
-      /* Was a dropped register-forwarding argument -- was
-         `compute_movement_heading();` with no args. deltaX/deltaY,
-         preserved above from this function's own delta computation
-         (before it got squashed into the squared-distance iVar2), are
-         exactly what this call needs. */
+      /* Was a dropped register-forwarding argument -- was `compute_movement_heading();` with no
+         args. deltaX/deltaY, preserved above from this function's own delta computation (before it
+         got squashed into the squared-distance iVar2), are exactly what this call needs. */
       cVar4 = compute_movement_heading(deltaX,deltaY);
       puVar7 = DAT_0010190c;
       uVar3 = DAT_0010190c[1];
@@ -3270,14 +2883,9 @@ LAB_000323ac:
 }
 
 
-// was FUN_0003298c -- computes a vertical aim/pitch offset toward the
-// tracked target: derives it from the height difference between the
-// NPC and target scaled by distance (integer_sqrt(DAT_00101728)),
-// clamped to [-0xf,0xf], optionally blended with an extra
-// param_1-scaled component when both param_1 and param_2 are nonzero.
-// Confirmed via its real call sites (src/ai.c) feeding a ranged/thrown
-// weapon launch's own pitch parameter (DAT_00202a3c) right before
-// spawn_npc_thrown_weapon.
+// was FUN_0003298c -- computes a vertical aim/pitch offset toward the tracked target: derives it
+// from the height difference between the NPC and target scaled by distance
+// (integer_sqrt(DAT_00101728)), clamped to [-0xf,0xf]...
 int compute_vertical_aim_offset(param_1,param_2)
 short param_1;
 int param_2;
@@ -3323,16 +2931,9 @@ int param_2;
 }
 
 
-// was FUN_00032aa4 -- the per-tick NPC AI setup step: stashes the
-// current NPC object into DAT_0010190c and computes the whole
-// derived-state fan-out virtually every other function in this NPC AI
-// cluster reads -- its own stat template pointer (DAT_00101404), its
-// slot-encoded id (DAT_00101738), position/delta fields
-// (DAT_00101918/0x1c/0x910/etc.), and which of the collision-response
-// profile buffers to use for this monster's locomotion type. Called at
-// the very start of npc_ai_tick before dispatching to any goal
-// handler. Fixed a confirmed dropped-argument bug (see its own
-// comment).
+// was FUN_00032aa4 -- the per-tick NPC AI setup step: stashes the current NPC object into
+// DAT_0010190c and computes the whole derived-state fan-out virtually every other function in this
+// NPC AI cluster reads -- its own stat template pointer (DAT_00101404)...
 void setup_npc_ai_tick_state(param_1)
 ushort * param_1;
 
@@ -3342,10 +2943,9 @@ ushort * param_1;
   int iVar3;
   
   DAT_0010190c = param_1;
-  /* Was a dropped argument -- was `encode_object_slot_index();` with no
-     args. param_1 (just stashed above as DAT_0010190c, the "current
-     NPC" this whole per-tick setup is for) is the obvious intended
-     argument. */
+  /* Was a dropped argument -- was `encode_object_slot_index();` with no args. param_1 (just stashed
+     above as DAT_0010190c, the "current NPC" this whole per-tick setup is for) is the obvious
+     intended argument. */
   DAT_00101738 = encode_object_slot_index(param_1);
   iVar3 = ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101404 = &DAT_001007d0 + iVar3;
@@ -3381,20 +2981,9 @@ ushort * param_1;
 }
 
 
-// was FUN_00033880 -- npc_ai_tick's `case 0xb`/default dispatch target,
-// confirmed via this function's own already-documented internal
-// comments: the shared per-tick tail for every "no special goal" NPC
-// (idle/wander goals 0xb/3, but also the fallback landing point every
-// non-special AI state shares). At its head, checks whether the NPC
-// should notice/react to the player (playing an alert sound cue keyed
-// off its stat template, then transitioning into goal 5/combat via
-// npc_set_goal+npc_set_walk_target when detection conditions are met);
-// at its tail (unconditionally reached, also the direct entry point
-// for other goal values per this file's own cross-references),
-// gradually orients the NPC's facing toward the last-seen player
-// direction. Already had 2 confirmed real bugs fixed by an earlier
-// pass (an inverted branch condition and several fabricated-remainder
-// ordint_divmod reads) -- see their own comments.
+// was FUN_00033880 -- npc_ai_tick's `case 0xb`/default dispatch target, confirmed via this
+// function's own already-documented internal comments: the shared per-tick tail for every "no
+// special goal" NPC...
 void npc_ai_default_tick()
 
 {
@@ -3488,14 +3077,9 @@ LAB_000339fc:
         }
       }
       cVar4 = *(char *)((char *)DAT_0010190c + 0x12);
-      /* Added a NULL guard on get_object_record_by_slot_index's result: it legitimately
-         returns NULL for an out-of-range slot index (its own established
-         behavior/contract), and this code unconditionally dereferenced
-         it. Confirmed live crashing (EXC_BAD_ACCESS at 0x19) the first
-         time this branch was reached with a real (previously always-0,
-         now-fixed) random cVar4 value from this session's ordint_divmod
-         sweep -- a pre-existing bug in this never-before-exercised
-         function, not something the sweep itself introduced. */
+      /* Added a NULL guard on get_object_record_by_slot_index's result: it legitimately returns
+         NULL for an out-of-range slot index (its own established behavior/contract), and this code
+         unconditionally dereferenced it. */
       if ((cVar4 != '\0') &&
          (((cVar4 == '\x01' && ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0)) ||
           (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0 ||
@@ -3630,45 +3214,17 @@ LAB_00033e9c:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) | 7;
   }
   iVar7 = DAT_0010190c;
-  /* HACK: same ushort-vs-byte pointer-arithmetic scaling bug as
-     process_visible_tile_cell's sibling npc_notice_and_idle_tick (fixed earlier this
-     session) -- DAT_0010190c is `ushort *`, so bare `DAT_0010190c + 2`
-     scales to byte offset 4, but real disassembly of this exact block
-     (0x32578-0x3257c: `ldrb r3,[r4,#0x3]; ldrb r2,[r4,#0x2]`) reads raw
-     BYTE offsets 2/3. Cast to a byte pointer first so the offset isn't
-     doubled; see the matching write fix a few lines down (was
-     `DAT_0010190c + 3`, same bug, confirmed via 0x32654-0x3265c:
-     `ldr r1,[r6,#0x0]; strb r3,[r1,#0x3]` -- also raw byte 3, not the
-     scaled byte 6 the undecorated expression computed). */
+  /* HACK: same ushort-vs-byte pointer-arithmetic scaling bug as process_visible_tile_cell's sibling
+     npc_notice_and_idle_tick (fixed earlier this session) -- DAT_0010190c is `ushort *`, so bare
+     `DAT_0010190c + 2` scales to byte offset 4... */
   uVar2 = *(ushort *)((char *)DAT_0010190c + 2);
   bVar10 = *(byte *)((char *)DAT_0010190c + 9);
   uVar11 = uVar2 >> 2 & 0xff;
   uVar11 = (uVar11 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^ uVar11;
   uVar12 = (uint)DAT_001018fc;
   /* Was `ordint_divmod(0x100,(uVar11-uVar12)+0x100,*(undefined1*)(DAT_0010190c+2),
-     ordint_divmod_exref,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_r8,unaff_r9,
-     unaff_lr);` -- badly garbled. Real disassembly (0x3256c-0x32768, this
-     function's actual body per Ghidra -- npc_ai_default_tick's own "0x33880"
-     entry point is just one jump-table case landing in a shared tail
-     block starting here) confirms this is genuinely a plain 2-argument
-     `ordint_divmod(0x100,(uVar11-uVar12)+0x100).quot` call; the extra
-     "arguments" are a decompiler artifact with no real source (the
-     unaff_rN/unaff_lr names mean "whatever these callee-saved registers
-     happened to hold since function entry", never actually read by the
-     real code here). All 5 ordint_divmod calls in this function also
-     have the by-now-familiar fabricated-remainder bug (this port's
-     ordint_divmod never populates extraout_r1); computed each directly
-     instead (divisor is always the constant 0x100, so `% 0x100` == the
-     `& 0xff` already applied everywhere the remainder is consumed).
-     Confirmed live: this function is npc_ai_tick's `case 0xb`/default
-     dispatch target (the "orient toward last-seen-player direction"
-     tail shared by every non-special AI state), and was the real source
-     of the QA-reported "NPC disappears/teleports on its first tick" bug
-     -- with the remainder always reading as garbage/0, the facing-delta
-     clamp this computes could send an object's orientation (and, via
-     the offset+2/+3 tile-position bits it also writes here, its
-     position) to an arbitrary value on the very first tick any NPC ran
-     this path. */
+     ordint_divmod_exref,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_r8,unaff_r9, unaff_lr);` -- badly
+     garbled. */
   uVar5 = ((uVar11 - uVar12) + 0x100) & 0xff;
   if ((0x1f < uVar5) && (uVar5 < 0xe1)) {
     if (uVar5 < 0x80) {
@@ -3685,20 +3241,9 @@ LAB_00033e9c:
   *(byte *)((char *)DAT_0010190c + 0x18) =
        (*(byte *)((char *)DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)((char *)DAT_0010190c + 0x18);
   iVar7 = DAT_0010190c;
-  /* Was `if (DAT_00101430 == 0)` -- an inverted condition, confirmed via
-     real disassembly (`cmp r0,#0x0; beq 0x326a4`, where r0 is
-     DAT_00101430 and 0x326a4 is the simple "just copy DAT_00101458"
-     branch this decompile currently has as the ELSE): the real branch
-     runs this whole ordint_divmod-laden "randomly step the facing toward
-     the last-known player direction" block when DAT_00101430 is
-     NONZERO, and takes the simple path when it's zero -- exactly
-     backwards from what was here. DAT_00101430 defaults to 0 at the top
-     of npc_ai_tick (its only other writer in this file), so with the
-     inverted condition, ordinary NPCs took this complex branch on
-     essentially every tick instead of the simple one -- combined with
-     this branch's own fabricated-remainder bugs (fixed above), this was
-     the real source of the QA-reported "NPC teleports on its first
-     tick" bug. */
+  /* Was `if (DAT_00101430 == 0)` -- an inverted condition, confirmed via real disassembly (`cmp
+     r0,#0x0; beq 0x326a4`, where r0 is DAT_00101430 and 0x326a4 is the simple "just copy
+     DAT_00101458" branch this decompile currently has as the ELSE)... */
   if (DAT_00101430 != 0) {
     if (DAT_00101434 < 2) {
       return;
@@ -3733,14 +3278,9 @@ LAB_00032690:
 }
 
 
-// was FUN_00034044 -- refreshes the whole "delta to tracked target"
-// state every function in this NPC AI cluster reads: looks up the
-// target object from the NPC's own goal-target slot (byte 0xb's high
-// nibble), and if it's valid and alive, recomputes the target's tile
-// position (DAT_00101408/10), level (DAT_00101420), fine position
-// (DAT_00101908/18), delta (DAT_00101444/8), and both a tile-level and
-// fine-level distance-squared (DAT_00101900/DAT_00101728). Returns 0
-// if there's no valid target to track.
+// was FUN_00034044 -- refreshes the whole "delta to tracked target" state every function in this
+// NPC AI cluster reads: looks up the target object from the NPC's own goal-target slot (byte 0xb's
+// high nibble), and if it's valid and alive...
 undefined4 refresh_npc_target_delta()
 
 {
@@ -3777,16 +3317,9 @@ undefined4 refresh_npc_target_delta()
 }
 
 
-// was FUN_00034270 -- an NPC morale/flee-shaped check: param_1 is a
-// stat-template byte (byte 4), param_2 the NPC's own current HP (byte
-// 8); if param_2 falls outside a band scaled off param_1, returns 0
-// outright. Otherwise, once param_4 (an NPC record field, byte 0x11)
-// drops to half of param_1 or below, rolls a random chance (biased by
-// the param_2/param_1 ratio and param_3, another stat-template field)
-// to decide whether the check fails. Confirmed via its one real call
-// site (src/ai.c) gating a state transition to state 6 -- likely a
-// low-HP flee/morale-break reaction, though the exact real-world
-// meaning of param_3/param_4 isn't independently confirmed.
+// was FUN_00034270 -- an NPC morale/flee-shaped check: param_1 is a stat-template byte (byte 4),
+// param_2 the NPC's own current HP (byte 8); if param_2 falls outside a band scaled off param_1,
+// returns 0 outright.
 undefined4 check_npc_morale_flee(param_1,param_2,param_3,param_4)
 uint param_1;
 uint param_2;
@@ -3821,13 +3354,9 @@ LAB_000342b0:
 }
 
 
-// was FUN_0003431c -- computes the BFS search-radius parameter passed
-// to creature_find_path_to_tile: gated on the NPC being alive/awake
-// and having a nonzero stat-template byte 4 (with a quest-mode
-// exception), returns a value derived from that stat scaled by the
-// NPC's own current HP plus a further stat-template component, or 0
-// if any gate fails (which creature_find_path_to_tile presumably
-// treats as "search nothing"/immediate failure).
+// was FUN_0003431c -- computes the BFS search-radius parameter passed to
+// creature_find_path_to_tile: gated on the NPC being alive/awake and having a nonzero stat-template
+// byte 4 (with a quest-mode exception)...
 int compute_pathfind_search_radius()
 
 {
@@ -3845,13 +3374,9 @@ int compute_pathfind_search_radius()
 }
 
 
-// was FUN_000345b8 -- transitions an NPC object into the death state
-// (goal 0xc, the state npc_ai_default_tick's own goal-0xc branch reads
-// to drop loot and free the slot): allowed unconditionally if byte
-// 0x1a is 0 (a "not immortal/scripted" marker), or via resolve_unique_npc_special_behavior's
-// own eligibility check otherwise. On success, sets goal 0xc, clears
-// the animation-frame nibble, and zeroes HP (byte 8). Returns 1 if the
-// transition happened, 0 if blocked.
+// was FUN_000345b8 -- transitions an NPC object into the death state (goal 0xc, the state
+// npc_ai_default_tick's own goal-0xc branch reads to drop loot and free the slot): allowed
+// unconditionally if byte 0x1a is 0 (a "not immortal/scripted" marker)...
 /* ARM 0x345bc..0x3462c uses the full object pointer with byte offsets. */
 undefined4 initiate_npc_death(param_1)
 char *param_1;
@@ -3878,11 +3403,9 @@ char *param_1;
 
 
 
-// was FUN_00034634 -- wraps initiate_npc_death: bails out early (returns
-// 0) if the NPC is already in goal 0xc (dead) or initiate_npc_death()
-// refuses the transition; otherwise plays a positional death sound
-// (only for goal-category 1 NPCs) and returns 1. Callers use the
-// return value to gate award_monster_kill_experience().
+// was FUN_00034634 -- wraps initiate_npc_death: bails out early (returns 0) if the NPC is already
+// in goal 0xc (dead) or initiate_npc_death() refuses the transition; otherwise plays a positional
+// death sound (only for goal-category 1 NPCs) and returns 1.
 /* ARM 0x34638..0x34648 uses the full object pointer with byte offsets. */
 undefined4 handle_monster_death(param_1)
 char *param_1;
@@ -3904,11 +3427,9 @@ char *param_1;
 }
 
 
-// was FUN_00034ac4 -- calls npc_set_goal(param_2,param_3) as if
-// param_1 were the "current NPC" (DAT_0010190c), temporarily swapping
-// that context pointer in and restoring the caller's own value
-// afterward. Lets a caller change another NPC's goal without disturbing
-// its own in-progress AI-tick context.
+// was FUN_00034ac4 -- calls npc_set_goal(param_2,param_3) as if param_1 were the "current NPC"
+// (DAT_0010190c), temporarily swapping that context pointer in and restoring the caller's own value
+// afterward.
 void npc_set_goal_for_object(param_1,param_2,param_3)
 char *param_1;
 undefined4 param_2;
@@ -3926,12 +3447,9 @@ undefined4 param_3;
 
 
 
-// was FUN_00034af0 -- for every NPC in the active mobile list
-// (DAT_002046c0..DAT_002046c8), randomly re-rolls two flag bits on its
-// mobile-object record's byte 0x19: bit 7 is set/cleared on a 50/50
-// coin flip, and bit 6 is cleared unless a separate 1-in-4 roll hits.
-// Byte 0x19's exact meaning isn't documented by the wiki; this only
-// captures the observed random-flag-refresh behavior.
+// was FUN_00034af0 -- for every NPC in the active mobile list (DAT_002046c0..DAT_002046c8),
+// randomly re-rolls two flag bits on its mobile-object record's byte 0x19: bit 7 is set/cleared on
+// a 50/50 coin flip, and bit 6 is cleared unless a separate 1-in-4 roll hits.
 void randomize_active_npc_flags()
 
 {
@@ -3961,13 +3479,9 @@ void randomize_active_npc_flags()
 }
 
 
-// was FUN_00034ba8 -- looks up a within-tile entry-point offset
-// (written to *param_2/*param_3, x/y in 1/8-tile units) based on the
-// destination tile's type nibble (param_1, from tilemap_lookup's low
-// 4 type bits). Returns 0 (offset left unset) for type 0 (solid rock,
-// not enterable); diagonal-wall types get an asymmetric corner offset
-// so NPCs don't clip into the angled wall, everything else gets the
-// tile-center default (4,4).
+// was FUN_00034ba8 -- looks up a within-tile entry-point offset (written to *param_2/*param_3, x/y
+// in 1/8-tile units) based on the destination tile's type nibble (param_1, from tilemap_lookup's
+// low 4 type bits).
 undefined4 resolve_tile_entry_offset(param_1,param_2,param_3)
 char param_1;
 undefined1 * param_2;
@@ -4002,33 +3516,13 @@ LAB_00034bf0:
 }
 
 
-// was FUN_00034c10 -- per-tick movement/animation step for an active
-// NPC (class 0x40), called by advance_mobile_objects. Nudges the NPC's
-// HP toward its stat-template max, applies a random facing jitter,
-// bumps a shared per-class animation-frame accumulator (param_2, a
-// 64-byte scratch buffer keyed by class) toward/away from a rest frame
-// depending on which quadrant it's facing, and if it has just entered
-// a new tile, resolves an entry-point offset for that tile
-// (resolve_tile_entry_offset) and re-links it into the new tile's
-// object list at that sub-tile position.
-//
-// WARNING: Removing unreachable block (ram,0x00034e70)
-// WARNING: Removing unreachable block (ram,0x00034d4c)
+// was FUN_00034c10 -- per-tick movement/animation step for an active NPC (class 0x40), called by
+// advance_mobile_objects.
 
 void npc_movement_tick(param_1,param_2)
 ushort * param_1;
 char *param_2; // was `int` -- truncated advance_mobile_objects's real stack-buffer
-                // pointer (acStack_58, a char[64] scratch record) on this
-                // 64-bit host. Confirmed live via lldb (bug surfaced after
-                // merging origin/main into this branch): param_2 arrived as
-                // a small, wild 32-bit value (the low half of the real
-                // stack address), and `pcVar3 = (char*)(param_2 + offset);
-                // cVar7 = *pcVar3 - 1;` dereferenced it, segfaulting.
-                // Pre-existing bug (present on both branches individually,
-                // stack-layout dependent -- whether the truncated address
-                // happens to still land in mapped memory), just not
-                // triggered until this merge's combined code size shifted
-                // the real stack layout enough to make it fatal.
+// pointer (acStack_58, a char[64] scratch record) on this 64-bit host.
 
 {
   int uw_ord2005_rem_100 = 0;
@@ -4117,12 +3611,8 @@ LAB_00034db4:
 
 
 
-// was FUN_00034fa4 -- per-tick settle step for a non-NPC active
-// mobile object (thrown/dropped items, projectiles, etc). Caches the
-// object's own tile x/y into DAT_0010144c/DAT_00101454, and if it's
-// misplaced (discard_misplaced_object) and eligible to settle
-// (settle_mobile_to_immobile), unlinks it and re-drops it into the
-// world via find_object_placement at its resolved tile position.
+// was FUN_00034fa4 -- per-tick settle step for a non-NPC active mobile object (thrown/dropped
+// items, projectiles, etc).
 undefined4 settle_misplaced_mobile_object(param_1)
 int param_1;
 
@@ -4162,13 +3652,9 @@ int param_1;
 
 
 
-// was FUN_0003513c -- second per-tick pass over the active mobile
-// list (after tick_mobile_objects' own goal-AI pass): drives each
-// NPC's movement/animation via npc_movement_tick, or settles each
-// non-NPC mobile object via settle_misplaced_mobile_object, sharing a
-// 64-byte per-class animation-frame-delta scratch buffer (acStack_58)
-// between them; then applies each object's accumulated delta to its
-// own animation-frame field in a second loop.
+// was FUN_0003513c -- second per-tick pass over the active mobile list (after tick_mobile_objects'
+// own goal-AI pass): drives each NPC's movement/animation via npc_movement_tick, or settles each
+// non-NPC mobile object via settle_misplaced_mobile_object...
 void advance_mobile_objects()
 
 {
@@ -4229,17 +3715,9 @@ void advance_mobile_objects()
 }
 
 
-// was FUN_00035394 -- scan_area_ahead_of_object callback used while
-// the player rests: for an eligible non-player NPC (param_3, not
-// currently fleeing/special per byte 7's top bits) within its
-// stat-template's perception range of the player, on a 50/50 roll
-// tries creature_find_path_to_tile to the player and, if a path of
-// more than one step is found, walks that cached path checking each
-// tile for traps (dispatch_trap_type_effect), then teleports the NPC
-// to the path's final tile (resolve_tile_entry_offset placement) and
-// starts it walking toward the player's current position
-// (npc_set_walk_target). Sets DAT_00101950 on success -- this is the
-// "a monster sneaks up and interrupts your rest" mechanic.
+// was FUN_00035394 -- scan_area_ahead_of_object callback used while the player rests: for an
+// eligible non-player NPC (param_3, not currently fleeing/special per byte 7's top bits) within its
+// stat-template's perception range of the player...
 undefined4 spawn_rest_interrupt_monster_callback(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
@@ -4365,11 +3843,9 @@ ushort * param_3;
 
 
 
-// was FUN_00035894 -- scans nearby NPCs via
-// spawn_rest_interrupt_monster_callback and reports whether one
-// teleported in to interrupt the player's rest. handle_rest_action
-// checks this once resting begins to decide whether to run the
-// "peaceful rest" or "interrupted rest" branch.
+// was FUN_00035894 -- scans nearby NPCs via spawn_rest_interrupt_monster_callback and reports
+// whether one teleported in to interrupt the player's rest. handle_rest_action checks this once
+// resting begins to decide whether to run the "peaceful rest" or "interrupted rest" branch.
 undefined4 check_rest_interrupted_by_monster()
 
 {
@@ -4430,15 +3906,9 @@ void clear_last_attacker_record()
 }
 
 
-// was FUN_00035a18 -- scan_area_for_matching_objects callback used by
-// emit_noise_alert: for a candidate NPC (param_3) whose class matches
-// the current noise type (DAT_0010195c) and is either awake or the
-// noise is loud enough to wake it, checks it's within the class's
-// perception-range table entry AND has clear line of sight
-// (check_fine_line_of_sight) to the noise source object
-// (DAT_00101958, at tile param_1,param_2). If so, decrements the
-// noise's remaining reaction-message counter (byte 0xd's top 2 bits)
-// and prints a graduated named reaction message for that NPC.
+// was FUN_00035a18 -- scan_area_for_matching_objects callback used by emit_noise_alert: for a
+// candidate NPC (param_3) whose class matches the current noise type (DAT_0010195c) and is either
+// awake or the noise is loud enough to wake it...
 undefined4 alert_npc_to_noise_callback(param_1,param_2,param_3)
 int param_1;
 int param_2;
@@ -4509,13 +3979,9 @@ ushort * param_3;
 
 
 
-// was FUN_00035cb0 -- makes noise at object param_1 (e.g. a trap
-// triggering, a loud action): resolves the noise type/volume to use
-// (param_2, or if 0 and the object is a container, a class-specific
-// field off the object itself), and if nonzero, scans a 15x15-tile
-// area around it via alert_npc_to_noise_callback so any NPC that can
-// perceive it reacts. Clears the object's own remaining-uses field
-// (byte 3's low 5 bits) once it's run low.
+// was FUN_00035cb0 -- makes noise at object param_1 (e.g. a trap triggering, a loud action):
+// resolves the noise type/volume to use (param_2, or if 0 and the object is a container, a
+// class-specific field off the object itself), and if nonzero...
 void emit_noise_alert(param_1,param_2)
 ushort * param_1;
 byte param_2;
@@ -4544,19 +4010,8 @@ byte param_2;
 }
 
 
-// was FUN_0003a73c -- special-behavior dispatcher for "unique" NPCs,
-// keyed by their own byte 0x1a (a per-record special-event code, 0
-// meaning "ordinary, no special handling"). Called two ways: with
-// param_2==0 as initiate_npc_death's own eligibility check (codes 0xb
-// and 0x16 intercept it -- talk instead of dying, 0x16 also granting
-// one-time 500 XP -- returning 0 to block the normal death
-// transition; every other code just returns 1, allowing it); with
-// param_2!=0 after the NPC has actually died, where most codes set a
-// specific quest-flag bit (DAT_00086df8+0x65, or clear one at +0x61
-// for code 0x1b) and code 0xe7 instead fires
-// trigger_quest_milestone_cleanup_event. Each code corresponds to a
-// specific named/quest-critical NPC; their individual in-game
-// identities aren't confirmed here.
+// was FUN_0003a73c -- special-behavior dispatcher for "unique" NPCs, keyed by their own byte 0x1a
+// (a per-record special-event code, 0 meaning "ordinary, no special handling").
 undefined4 resolve_unique_npc_special_behavior(param_1,param_2)
 char *param_1;
 int param_2;
@@ -4638,15 +4093,8 @@ int param_2;
 }
 
 
-// was FUN_00040160 -- called during the bitmap-loading stage of game
-// startup (uw.c, right after every HUD bitmap resource load succeeds)
-// with param_1=1. Clears several 0x80-entry per-tile/per-sound cache
-// arrays and the ambient sound target; when param_1 is set, also loads
-// the per-level "CRIT_assoc_anm.NN" critter-animation-association
-// files (one per level, 0-0x1f) into DAT_0023c460, falling back to an
-// all-0xff table and failing out early if the base association file
-// can't be opened at all. Reads as "load the critter animation
-// association tables".
+// was FUN_00040160 -- called during the bitmap-loading stage of game startup (uw.c, right after
+// every HUD bitmap resource load succeeds) with param_1=1.
 undefined4 load_critter_association_tables(param_1)
 int param_1;
 
@@ -4668,16 +4116,9 @@ int param_1;
   int extraout_r2_00;
   ushort uVar9;
   int iVar10;
-  /* Were two independently-declared single-byte scalars, relying on
-     accidental stack adjacency to work as one 2-byte destination for
-     `read_file_handle(puVar6,&local_130,2)` below (and the combined
-     `(ushort)local_12f + (ushort)local_130` read right after) -- the
-     same original-32-bit-ARM-stack-layout assumption already fixed
-     elsewhere in this port via a real backing array. This path was
-     unreachable until DAT_00085908's real template string was
-     recovered (see its own comment above); once reachable, ASan
-     caught the stack-buffer-overflow the very first time
-     read_file_handle actually got called with a real file handle. */
+  /* Were two independently-declared single-byte scalars, relying on accidental stack adjacency to
+     work as one 2-byte destination for `read_file_handle(puVar6,&local_130,2)` below (and the
+     combined `(ushort)local_12f + (ushort)local_130` read right after)... */
   byte local_130_arr[2];
 #define local_130 local_130_arr[0]
 #define local_12f local_130_arr[1]
@@ -4704,10 +4145,9 @@ int param_1;
   } while (iVar8 < 0x80);
   clear_ambient_sound_target();
   if (param_1 != 0) {
-    /* Was pointed at the placeholder stack0xffdc3230 scalar (from an
-       earlier undeclared-identifier pass) instead of the real 260-byte
-       path buffer acStack_128 that both copy loops below (and the
-       ce_strcat/open_file_for_read calls right after) actually operate on. */
+    /* Was pointed at the placeholder stack0xffdc3230 scalar (from an earlier undeclared-identifier
+       pass) instead of the real 260-byte path buffer acStack_128 that both copy loops below (and
+       the ce_strcat/open_file_for_read calls right after) actually operate on. */
     local_12c = (undefined1 *)acStack_128;
     pcVar4 = &DAT_0023cca8;
     wptr_26821 = local_12c;
@@ -4778,16 +4218,8 @@ int param_1;
 }
 
 
-// was FUN_00040440 -- called once from handle_rest_action, right after
-// resting/sleeping finishes (before the jump/fall timers get reset for
-// the new tick). Walks the same 0x80-entry resource-slot status table
-// load_critter_association_tables initializes (DAT_0023c5b8/
-// DAT_0024ac18/DAT_0023c4c0): any slot flagged "1" is treated as a
-// completed/expired load -- its target cache entry (DAT_0023c4c0) is
-// marked stale (0xfe) and the slot itself is freed back to 0xff.
-// Finishes by clearing the ambient sound target, same as
-// load_critter_association_tables does. Reads as "flush pending
-// critter resource slots" after time has passed.
+// was FUN_00040440 -- called once from handle_rest_action, right after resting/sleeping finishes
+// (before the jump/fall timers get reset for the new tick).
 void flush_pending_critter_resource_slots()
 
 {
@@ -4809,12 +4241,9 @@ void flush_pending_critter_resource_slots()
 }
 
 
-// was FUN_0004a510 -- NPC-side ranged/thrown weapon launch (the
-// counterpart to the player's fire_ranged_weapon): given the attacker
-// object (param_1), weapon type (param_2), and ammo quality (param_3),
-// sets up the throw/aim state directly from the attacker's position
-// fields and spawns the projectile. Called right after
-// compute_vertical_aim_offset stages the pitch.
+// was FUN_0004a510 -- NPC-side ranged/thrown weapon launch (the counterpart to the player's
+// fire_ranged_weapon): given the attacker object (param_1), weapon type (param_2), and ammo quality
+// (param_3)...
 void spawn_npc_thrown_weapon(param_1,param_2,param_3)
 char *param_1;
 short param_2;
@@ -4945,26 +4374,9 @@ void npc_idle_behavior_tick()
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (cVar4 + '\x0e') * '\b';
   }
 LAB_0002f314:
-  /* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as
-     the rest of this NPC-AI cluster this session (see
-     [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
-     `ushort *`, so every bare `DAT_0010190c + N` in this function (both
-     the hex- and decimal-offset forms) was scaling N by 2. Verified
-     against fresh disassembly of this exact state-transition gate
-     (0x2f360-0x2f390): `ldrb r2,[r0,#0xb]; ldrb r3,[r0,#0xc]; orr
-     r3,r2,r3,lsl#8; and r3,r3,#0xf000; cmp r3,#0x3000` -- raw bytes
-     0xb/0xc combined, masked to byte 0xc's own upper nibble (our
-     "frame" field), compared against 3 -- all real, unscaled offsets.
-     This is npc_ai_tick's case-0xb/default target reaching this
-     function's state 0x20<->0x2c toggle (idle vs whatever 0x2c really
-     is): with the read scaled to byte 0x18 instead of the real frame
-     byte 0xc, this gate compared against essentially unrelated data
-     and could all but never see frame==3, so an object could get stuck
-     never transitioning off state 0x20 -- exactly the symptom reported
-     live (a peaceful NPC, Bragit, permanently showing what looks like
-     an alert/hostile idle pose instead of cycling into whatever state
-     0x2c's animation actually is). Cast every offset to a byte pointer
-     throughout this function so none of them are scaled. */
+  /* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI
+     cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort
+     *`... */
   if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x20) {
     uVar3 = ce_rand();
     uw_ord2005_rem_27 = ((int)(uVar3)) % (0x10);
@@ -5080,10 +4492,9 @@ LAB_0002f810:
 
 
 
-// was FUN_0002fba8 -- goal 8: if attitude neutral and goal isn't
-// already 4, resets to idle via npc_set_goal(4,1); else walks toward
-// the home tile (DAT_0010143c/173c) via npc_walk_toward_tile if
-// farther than a threshold, otherwise idles (npc_idle_behavior_tick)
+// was FUN_0002fba8 -- goal 8: if attitude neutral and goal isn't already 4, resets to idle via
+// npc_set_goal(4,1); else walks toward the home tile (DAT_0010143c/173c) via npc_walk_toward_tile
+// if farther than a threshold, otherwise idles (npc_idle_behavior_tick)
 void npc_wander_return_home_tick()
 
 {
@@ -5093,17 +4504,9 @@ void npc_wander_return_home_tick()
   ushort *puVar4;
   
   if (DAT_00101734 != 0) {
-    /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this
-       NPC-AI cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]])
-       -- bare `DAT_0010190c + 0xe`/`+ 0xb` scaled to byte 0x1c/0x16
-       (the latter being this object's real tile-position field) instead
-       of the real disassembly's raw bytes 0xe and 0xb (0x2fbc4-0x2fbf8:
-       `ldrb r3,[r0,#0xe]; ldrb r2,[r0,#0xd]; ...; ldrb r3,[r0,#0xc];
-       ldrb r2,[r0,#0xb]; ...; and r3,r3,#0xf; cmp r3,#0x4` -- both raw).
-       With the wrong read, this guard was evaluating against the (now
-       frozen/stable) tile-position byte instead of the real state
-       nibble, so this function's real body below (the actual
-       step/collision check) may never have run as intended. */
+    /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI cluster this session
+       (see [[ushort-byte-scaling-bug-npc-cluster]]) -- bare `DAT_0010190c + 0xe`/`+ 0xb` scaled to
+       byte 0x1c/0x16 (the latter being this object's real tile-position field) instead of the... */
     if (((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) &&
        ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 4)) {
       npc_set_goal(4,1);
@@ -5153,30 +4556,13 @@ void npc_notice_and_idle_tick()
   if (DAT_00101734 == 0) {
     return;
   }
-  /* HACK: DAT_0010190c is `ushort *`, so bare `DAT_0010190c + N` pointer
-     arithmetic scales N by 2 -- correct for the handful of genuine 16-bit-
-     array-style fields elsewhere in this file, but WRONG here: real
-     disassembly (0x2fd0c-0x2fd44) reads/writes this object's raw BYTE
-     offsets 0xe (a guard byte) and 0xb/0xc (a packed 16-bit field) via
-     plain `ldrb/strb r,[r0,#N]` -- i.e. N is meant as a byte offset, not a
-     ushort-array index. The undecorated `DAT_0010190c + 0xb` here instead
-     computed byte offset 0x16 (0xb*2) -- which happens to be this object's
-     REAL current-tile-position field (confirmed via a live lldb watchpoint
-     on that address during a recorded repro, demo_critter.txt: the write
-     below fired and corrupted the tile Y coordinate from 7 to 1 in a
-     single tick, exactly matching the QA-reported "NPC disappears on its
-     first tick" symptom -- process_visible_tile_cell's rendering sweep
-     no longer reaches an object 6 tiles away). This function's real
-     target (byte 0xb/0xc) is unrelated to position; cast to a byte
-     pointer before adding so the offset isn't scaled. */
+  /* HACK: DAT_0010190c is `ushort *`, so bare `DAT_0010190c + N` pointer arithmetic scales N by 2
+     -- correct for the handful of genuine 16-bit- array-style fields elsewhere in this file, but
+     WRONG here... */
   if (getenv("UW_DEBUG_NPC_ATTITUDE")) {
-    /* uw-formats.txt (4.3.3, "Mobile object extra info"): offset 0xd is
-       a 16-bit field -- bits 0-3 npc_level, bit 13 npc_talkedto, bits
-       14-15 npc_attitude. Byte 0xe is that field's high byte, so its
-       own bits 6-7 (mask 0xc0) ARE npc_attitude, and bit 5 (mask 0x20)
-       is npc_talkedto. Offset 0xb is likewise a 16-bit field -- bits
-       0-3 npc_goal, bits 4-11 npc_gtarg -- matching this function's own
-       "uVar6 & 0xf"-style dispatch nibble read elsewhere in this file. */
+    /* uw-formats.txt (4.3.3, "Mobile object extra info"): offset 0xd is a 16-bit field -- bits 0-3
+       npc_level, bit 13 npc_talkedto, bits 14-15 npc_attitude. Byte 0xe is that field's high byte,
+       so its own bits 6-7 (mask 0xc0) ARE npc_attitude, and bit 5 (mask 0x20) is npc_talkedto. */
     ushort _de = *(ushort *)((char *)DAT_0010190c + 0xd);
     fprintf(stderr, "[npc-attitude] obj=%p npc_attitude=%d npc_talkedto=%d npc_level=%d npc_goal=%d\n",
             (void *)DAT_0010190c, (_de >> 14) & 3, (_de >> 13) & 1, _de & 0xf,
@@ -5224,15 +4610,9 @@ LAB_0002fe88:
       }
     }
   }
-  /* HACK: same ushort-vs-byte pointer-scaling bug as the two other fixes
-     in this NPC-AI cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]])
-     -- DAT_0010190c is `ushort *`, so bare `DAT_0010190c + 0xb` scales to
-     byte offset 0x16 (this object's real tile-position field, since
-     confirmed stable this session) instead of the raw byte 0xb the real
-     disassembly reads here (0x2fe98-0x2feb0: `ldrb r3,[r0,#0xc]; ldrb
-     r2,[r0,#0xb]; orr r3,r2,r3,lsl#8; ...; ands r1,r3,#0xf` -- byte 0xb's
-     own low nibble, nothing to do with tile position). Cast to a byte
-     pointer first. */
+  /* HACK: same ushort-vs-byte pointer-scaling bug as the two other fixes in this NPC-AI cluster
+     this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`, so
+     bare `DAT_0010190c + 0xb` scales to byte offset 0x16... */
   uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf;
   if (getenv("UW_DEBUG_NPC_WANDER"))
     fprintf(stderr, "[npc-fcec-dispatch] obj=%p uVar5=%d\n", (void *)DAT_0010190c, (int)uVar5);
@@ -5253,20 +4633,9 @@ LAB_0002fe88:
   uw_ord2005_rem_44 = ((int)(uVar4)) % (2);
   iVar2 = DAT_0010190c;
   if (uw_ord2005_rem_44 != 0) {
-    /* HACK: this is the real frame-cycle step (advance this idle
-       critter's animation frame, wrapping 0..3 -- see uVar5>>0xc, the
-       upper nibble of raw byte 0xc, matching resolve_critter_sprite_tier's
-       own "frame" param computed the same way in emit_tile_objects). Same
-       scaling bug as the read above: bare `DAT_0010190c + 0xb`/`+ 0xc`
-       hit bytes 0x16/0x18 (corrupting tile position and an unrelated
-       byte) instead of the real bytes 0xb/0xc this data lives at
-       (0x2ff38-0x2ff88: `ldrb r3,[r5,#0xc]; ldrb r2,[r5,#0xb]; ...;
-       strb r3,[r5,#0xb]; ...; strb r3,[r0,#0xc]` -- all raw). With this
-       never actually reaching the real frame byte, it stayed pinned at
-       its spawn value (1, an alert/hostile-looking pose) forever instead
-       of cycling through the idle set -- confirmed live via
-       UW_FORCE_CRITTER_FRAME: frame 0 is a relaxed idle stance, frame 1
-       is alert/weapon-ready, frame 2 is a lunge/attack pose. */
+    /* HACK: this is the real frame-cycle step (advance this idle critter's animation frame,
+       wrapping 0..3 -- see uVar5>>0xc, the upper nibble of raw byte 0xc, matching
+       resolve_critter_sprite_tier's own "frame" param computed the same way in emit_tile_objects). */
     uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_45 = ((int)((uVar5 >> 0xc) + 1)) % (4);
     uVar6 = uVar5 & 0xfff;
@@ -5353,30 +4722,9 @@ void npc_wander_return_home_exact_tick()
 
 
 
-/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as
-   the rest of this NPC-AI cluster this session (see
-   [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
-   `ushort *`, so every bare `DAT_0010190c + N` throughout this
-   function (both the "orient toward last-seen-player" tail already
-   fixed earlier, and everything else here, which hadn't been audited)
-   was scaling N by 2. This function's own goal-dispatch switch
-   (`switch(*(ushort *)(DAT_0010190c + 0xb) & 0xf)`) was reading byte
-   offset 0x16 (part of this object's tile-position field) instead of
-   the real goal nibble at raw byte 0xb -- verified against fresh
-   disassembly (0x33d38-0x33d58: `ldrb r3,[r0,#0xc]; ldrb r2,[r0,#0xb];
-   orr r3,r2,r3,lsl#8; ...; and r1,r3,#0xf; addls pc,pc,r1,lsl#2`, a
-   real ARM jump table on raw unscaled bytes -- also confirmed at this
-   function's own entry, 0x338bc-0x338d0, same pattern). A live trace
-   comparing the scaled and correctly-cast reads found 0 matches out of
-   75 samples in a short demo. This is the main per-tick goal dispatch
-   for every NPC (idle, wander-to-target, chase, flee, ...); with it
-   reading the wrong byte, any goal other than the ones that happen to
-   alias to the same idle-dispatch target (0/4/7) got misrouted into
-   idle handling instead of its real handler -- matching a QA report
-   that a wandering NPC's walk ANIMATION played while its tile POSITION
-   never advanced, since the real movement-stepping cases (1, 5, 6, 8,
-   9, 10) were never actually reached. Cast every offset to a byte
-   pointer throughout this function so none of them are scaled. */
+/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI
+   cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort
+   *`... */
 
 
 
@@ -5389,29 +4737,9 @@ void npc_wander_return_home_exact_tick()
 
 
 
-/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as
-   the rest of this NPC-AI cluster this session (see
-   [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
-   `ushort *`, so every bare `DAT_0010190c + N` here was scaling N by
-   2. Verified against fresh disassembly of this function's entry
-   (0x343e4-0x34478): `ldrb r11,[r2,#0xc]; ldrb r10,[r2,#0xb]; ...;
-   strb r0,[r2,#0xb]; ...; strb r2,[r0,#0xc]` -- all raw, unscaled
-   bytes. THIS IS THE REAL "set a new NPC goal" FUNCTION --
-   `*(byte *)(DAT_0010190c + 0xb) = param_1 & 0xf | ...` writes
-   param_1's low nibble as the new goal -- called throughout this
-   cluster with goal values 4, 5, 6, 8, 9 (npc_ai_default_tick's tail,
-   npc_wander_return_home_tick's guard, etc.). With the write scaled to byte 0x16
-   instead of the real byte 0xb, every call to "pick a new goal" was
-   silently corrupting the object's TILE POSITION field instead of
-   ever actually changing its goal -- meaning goal could structurally
-   never change away from whatever it started at. This is very likely
-   the actual root cause of a wandering NPC's walk animation playing
-   while its tile position never advances: not just that the dispatch
-   (fixed earlier) was misrouting whatever goal existed, but that goal
-   itself could never transition to a real movement goal (1/5/6/9/10)
-   in the first place. npc_clear_special_goal right below (its sibling, called
-   from the same call sites' alternate branch) has the identical bug,
-   fixed the same way. */
+/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI
+   cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`,
+   so every bare `DAT_0010190c + N` here was scaling N by 2. */
 // was FUN_000343d8
 void npc_set_goal(param_1,param_2)
 byte param_1;
@@ -5439,10 +4767,9 @@ uint param_2;
 
 
 
-// was FUN_000344a4 -- npc_set_goal's sibling: fallback when a
-// combat-engage goal's guard fails (player not detected / no path).
-// Sets goal to 2 (idle) when npc_level's low nibble is 0, else XORs
-// goal with a level-derived value and sets flag 0x10
+// was FUN_000344a4 -- npc_set_goal's sibling: fallback when a combat-engage goal's guard fails
+// (player not detected / no path). Sets goal to 2 (idle) when npc_level's low nibble is 0, else
+// XORs goal with a level-derived value and sets flag 0x10
 void npc_clear_special_goal()
 
 {
@@ -5481,15 +4808,7 @@ void npc_clear_special_goal()
 
 
 
-// was FUN_0003495c. Checks whether an object's own 4-bit tick-phase
-// field (param_1, from the low nibble of its class-record's phase byte)
-// has caught up to the current dispatch target (DAT_00101928, set once
-// per tick_mobile_objects call) within a small catch-up window, vs. the
-// previous tick's target (DAT_00101948). Real ARM disassembly confirms
-// this genuinely ignores its second (dropped) argument. Returning
-// nonzero is tick_mobile_objects' entire loop-termination signal, since
-// npc_ai_tick/mobile_object_tick's own return values don't reliably
-// carry that meaning (npc_ai_tick always returns 1).
+// was FUN_0003495c.
 undefined4 object_tick_is_due(param_1,param_2)
 short param_1;
 undefined4 param_2;
@@ -5512,15 +4831,7 @@ undefined4 param_2;
 }
 
 
-// was FUN_0002bdac. Tests whether movement/sight between tile (param_1,
-// param_2) and tile (param_3,param_4) -- via intermediate tile (param_5,
-// param_6) -- is blocked by a wall, reading each tile's DAT_000878d0
-// direction-blocking bitmask (bits 2/4/8/0x10 = which of the 4 axis
-// directions that tile type blocks). Used by creature_find_path_to_tile's
-// wavefront pathfinding and by the line-of-sight scanner below it -- NOT
-// part of the 3D dungeon-view render chain (see memory.md's tmap-tiles
-// section: this whole subsystem is creature AI, a dead end for that
-// investigation, but a real, previously-unexamined one worth naming).
+// was FUN_0002bdac.
 undefined4 tile_pair_los_blocked(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10,param_11)
 byte param_1;
 byte param_2;
@@ -5567,17 +4878,8 @@ byte * param_11;
   pbVar8 = (byte *)tilemap_lookup(param_1,param_2);
   uVar18 = (uint)param_5;
   puVar9 = (ushort *)tilemap_lookup(uVar18,param_6);
-  /* Added NULL guards: tilemap_lookup legitimately returns NULL for an
-     out-of-range tile coordinate (its own documented contract), and all
-     three results here were dereferenced unconditionally. Confirmed
-     live crashing (EXC_BAD_ACCESS at puVar9, param_6=0xff -- an
-     off-map Y coordinate) via a recorded repro
-     (bug_critter_crash.txt): creature_find_path_to_tile's BFS
-     wavefront explores neighbor tiles around the search area without
-     clamping to the map's 0-63 bounds first, so it can hand this
-     function a genuinely off-map (param_5,param_6) intermediate tile.
-     Treat an off-map tile the same as every other "no line of sight"
-     case in this function: return 0 (blocked). */
+  /* Added NULL guards: tilemap_lookup legitimately returns NULL for an out-of-range tile coordinate
+     (its own documented contract), and all three results here were dereferenced unconditionally. */
   if ((puVar7 == (ushort *)0x0) || (pbVar8 == (byte *)0x0) || (puVar9 == (ushort *)0x0)) {
     return 0;
   }
@@ -5637,23 +4939,9 @@ byte * param_11;
     }
     uVar11 = 0;
     uVar2 = puVar7[1];
-    /* `resolve_object_link(puVar7 + 1)` was called unchanged on every
-       iteration -- real disassembly (0x2bdac @ 0x2c068-0x2c0f8) shows
-       the argument register is only ever set to puVar7+1 ONCE, before
-       the loop; each iteration instead advances it by 4 bytes right
-       after the call (`add r0,r0,#0x4`, i.e. `puVar9 + 2`) and the
-       loop-back branch lands AFTER that advance, so the real code
-       walks the object chain one link at a time. The decompiler lost
-       track of that carried register and re-derived a fixed expression
-       from puVar7 instead, so puVar9 -- and therefore uVar11 and uVar2
-       -- was always recomputed from the SAME first object in the
-       chain. Confirmed live via a recorded repro (bug-npc-freeze.txt):
-       whenever that first object doesn't set uVar11 and its own "next"
-       flag stays set, nothing can ever change, so the loop spins at
-       100% CPU forever -- reproduced exactly (same PC, same
-       resolve_object_link argument, sampled repeatedly under lldb on a
-       genuinely hung process). Track the advancing link pointer in its
-       own variable instead. */
+    /* `resolve_object_link(puVar7 + 1)` was called unchanged on every iteration -- real disassembly
+       (0x2bdac @ 0x2c068-0x2c0f8) shows the argument register is only ever set to puVar7+1 ONCE,
+       before the loop... */
     puVar10 = puVar7 + 1;
     while (((uVar2 & 0xffc0) != 0 && (uVar11 == 0))) {
       puVar9 = (ushort *)resolve_object_link(puVar10);
@@ -5733,13 +5021,9 @@ LAB_0002c220:
   local_50 = 0;
   uVar14 = puVar7[1];
   uVar11 = uVar15;
-  /* Same bug as the earlier resolve_object_link loop above in this
-     function (see that one's comment for the full disassembly-
-     confirmed explanation): `resolve_object_link(puVar7 + 1)` was
-     called unchanged on every iteration instead of advancing through
-     the object chain, making this loop genuinely unable to terminate
-     whenever the first linked object doesn't set local_50 and its own
-     "next" flag stays set. Track the advancing link pointer instead. */
+  /* Same bug as the earlier resolve_object_link loop above in this function (see that one's comment
+     for the full disassembly- confirmed explanation): `resolve_object_link(puVar7 + 1)` was called
+     unchanged on every iteration instead of advancing through the object chain... */
   ushort *puVar_link2 = puVar7 + 1;
   while (((uVar14 & 0xffc0) != 0 && (local_50 == 0))) {
     puVar10 = (ushort *)resolve_object_link(puVar_link2);
@@ -5981,12 +5265,7 @@ LAB_0002c8cc:
 }
 
 
-// was FUN_00054a00. Fills param_2 (a per-class scratch buffer chosen by
-// npc_ai_tick/mobile_object_tick from DAT_00204920/002048c0/002048f0/
-// 00204950) with a placement/orientation snapshot derived from param_1's
-// current fields -- offsets, class flags, and (for arena-mobile objects)
-// speed/step data used by the following collision-sweep + tile-sync
-// calls.
+// was FUN_00054a00.
 void build_object_placement_snapshot(param_1,param_2)
 ushort * param_1;
 byte * param_2;

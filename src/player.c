@@ -1,8 +1,6 @@
-/* Player state: tile position/movement commit, save-record build/
- * write/restore, HUD stat sync, equipment-effect refresh, and HP
- * adjustment. Split out of uw.c (the original monolithic decompile)
- * once these functions' real roles were confirmed.
- */
+/* Player state: tile position/movement commit, save-record build/ write/restore, HUD stat sync,
+   equipment-effect refresh, and HP adjustment. Split out of uw.c (the original monolithic
+   decompile) once these functions' real roles were confirmed. */
 #include "headers/player.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -11,105 +9,30 @@
 
 char *DAT_0024fa2c;
 char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
-/* Was `char *` -- but every `g_player_object[N]` bracket-index use
-   throughout this file (position/facing/type fields) matches the SAME
-   ushort-array-index convention every other object-record pointer in
-   this codebase uses (e.g. `param_1[N]` for a `ushort *param_1`), not a
-   byte-array one: g_player_object[0xc] as ushort-index 0xc = byte
-   offset 0x18, matching the real ARM disassembly's `ldrb r0,[r0,#0x18]`
-   facing-byte read; g_player_object[0xb] = byte offset 0x16, matching
-   set_player_tile_position's own tile-position writes; bare
-   `*g_player_object & 0x1ff` (the object type/class field) needs 9
-   bits, which no single byte read can supply. With the old `char *`
-   type every one of those bracket-index reads was silently reading the
-   wrong byte (index N instead of byte offset 2*N) -- confirmed live:
-   drop_held_object_near_player's g_player_object[0xb] read (meant to
-   recover the player's own tile Y position for a "throw distance"
-   projection) read whatever unrelated byte sits at offset 0xb instead
-   of the real position at offset 0x16, producing a wildly wrong throw
-   start point. Retyped to `ushort *` to match; every *pointer-
-   arithmetic* use elsewhere in this file (`g_player_object + N`,
-   expecting a literal byte offset N, then cast down to byte/char for a
-   sub-field read) has been updated alongside this to explicitly cast to
-   `(char *)` first, preserving their existing (correct) byte-offset
-   arithmetic now that the base type's own implicit scaling would
-   otherwise double it. */
+/* Was `char *` -- but every `g_player_object[N]` bracket-index use throughout this file
+   (position/facing/type fields) matches the SAME ushort-array-index convention every other
+   object-record pointer in this codebase uses (e.g. `param_1[N]` for a `ushort *param_1`)... */
 ushort *g_player_object;
 char *DAT_0023be74;
 short DAT_0023beb4;
-/* Sizing-audit pass: investigated, NOT confidently shrunk to the
-   minimum. DAT_0010060c/d/e/f are always touched in lockstep (reset
-   and `+=3`'d together) and DAT_0010060c has at least one real
-   indexed access (`(&DAT_0010060c)[local_1c[iVar6]]`), raising the
-   same split-symbol-cluster question already fixed elsewhere this
-   session (c/d/e/f's real addresses are consecutive). But that
-   index's second-iteration value can come from an unbounded
-   `param_4`-derived short, not a clearly-capped category id, so
-   unlike the automap case there's no confirmed max index here.
-   Given that ambiguity, widened conservatively instead of guessing
-   either an exact bound or a merge target; down from 256 to 8. Worth
-   a dedicated follow-up pass. */
+/* Sizing-audit pass: investigated, NOT confidently shrunk to the minimum. */
 undefined1 DAT_0010060c_backing[8];
 #define DAT_0010060c DAT_0010060c_backing[0]
 short DAT_00201c74;
 undefined1 DAT_0023bf0c;
-/* Reused scratch global (see the DAT_000a85d0 comment above for the
-   general pattern) -- most call sites treat it as a writable sprintf-
-   style destination buffer via ce_strcat, but several others
-   (draw_save_load_slot_list's save-slot list among them) pass `&s_scroll_newline_0008522c`
-   straight to message_scroll_print_wrapped with no write beforehand,
-   relying on it holding its real static initial content. A Ghidra
-   memory dump of the original binary at 0x8522c confirmed that content
-   is the two bytes `0a 00` -- the string "\n" -- not zero. Printing an
-   empty string (this array's old all-zero C default) instead of a real
-   "\n" silently skipped the pending-newline flag msg_scroll_draw_wrapped_span sets from
-   a string's trailing '\n' (see its own comment), which is why the
-   save-slot list rendered every entry run together on one line with no
-   breaks. Seeded to match. */
+/* Reused scratch global (see the DAT_000a85d0 comment above for the general pattern) -- most call
+   sites treat it as a writable sprintf- style destination buffer via ce_strcat... */
 // was DAT_0008522c
  undefined s_scroll_newline_0008522c_backing[8192] = "\n";
 static undefined4 DAT_00101954;
-/* DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/
-   a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2`
-   scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step,
-   sweep_apply_collision, sweep_writeback_position -- reached by `DAT_00204874 = &DAT_00204880`
-   then dereferenced relative to that) treat this as one struct with real
-   fields up to offset 0x2a (42 bytes) -- confirmed crashing
-   (EXC_BAD_ACCESS) dereferencing that far out on a real run. Widened to
-   a real backing buffer for that crash, but originally only 80/82/84
-   were pointed at it -- every other field was left as its own
-   independent global, so `apply_heading_turn`/`apply_movement_tick` and
-   friends, which write these fields BY NAME (e.g. `g_jump_ascent_timer = ...`
-   for heading), were updating completely different memory than what
-   movement_collision_sweep's collision/movement engine reads via
-   `*(short *)(DAT_00204874 + 0x14)` pointer arithmetic (real address
-   0x204894) -- confirmed via lldb: g_jump_ascent_timer demonstrably changed on
-   turn input, while `*(short*)(DAT_00204874+0x14)` read 0 on every
-   single check all session. This -- not a dropped call anywhere -- is
-   why position/heading never visibly changed despite the movement-
-   command-decode and turn-application fixes earlier this session: the
-   update landed in memory the movement/collision code never looks at.
-   Same lone-scalars-instead-of-a-real-record pattern fixed repeatedly
-   this session, just spread across two declaration sites and not
-   caught the first time because the earlier fix only needed to solve
-   the immediate crash. Rebuilt as a real byte-addressed backing buffer
-   (byte, not short, since several fields are single bytes at odd
-   offsets) with every field aliased at its real offset, generous
-   margin past the furthest (0x2a) seen. */
+/* DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/ a7/a8/a9/aa were ~20 separate
+   lone `short`/`undefined1`/`undefined2` scalars, but movement_collision_sweep and its siblings... */
  undefined1 DAT_00204880_backing[128];
 short DAT_00201c70;
 undefined2 DAT_00201b60;
-/* Was `undefined2` (unsigned) -- change_game_mode/FUN_0003bd48 (see their
-   own "0x80, see DAT_00085668's comment" sites) cast this to `int` and
-   compare against the 32-bit sentinel `0xffffffff` to detect "dispatch
-   disabled" (set via `DAT_00201b64 = 0xffff;`, uw.c ~27530/27774). An
-   unsigned 16-bit 0xffff zero-extends to 0x0000ffff on that cast, never
-   matching 0xffffffff -- the guard silently never fired, and the "no
-   dispatch" state fell through into `&DAT_000856a4 + 0xffff * 0x80`, a
-   wild out-of-bounds read (confirmed live: an ASan global-buffer-overflow
-   in change_game_mode, reached via demomode_pump, in
-   demo_automap_note_test.txt). Signed so the same cast sign-extends
-   0xffff to -1, matching the comparison's actual intent. */
+/* Was `undefined2` (unsigned) -- change_game_mode/FUN_0003bd48 (see their own "0x80, see
+   DAT_00085668's comment" sites) cast this to `int` and compare against the 32-bit sentinel
+   `0xffffffff` to detect "dispatch disabled" (set via `DAT_00201b64 = 0xffff;`, uw.c ~27530/27774). */
 short DAT_00201b64;
 short DAT_00201c94;
 undefined4 DAT_0024cfc8;
@@ -125,49 +48,25 @@ byte DAT_0020208c;
 undefined2 DAT_00203304;
 undefined1 DAT_00203303;
 short DAT_00202078;
-/* Sizing-audit pass: pure scalar, only ever set to 0 or 0x1000 and
-   passed by address into movement_collision_sweep, which only
-   dereferences its own callee-side alias (DAT_002048bc) up to offset
-   +4 as a ushort -- max byte touched 5. Sized to 16 for headroom,
-   matching the project's established 4-buffer-family convention;
-   down from 8192 elements (16384 bytes). */
+/* Sizing-audit pass: pure scalar, only ever set to 0 or 0x1000 and passed by address into
+   movement_collision_sweep, which only dereferences its own callee-side alias (DAT_002048bc) up to
+   offset +4 as a ushort -- max byte touched 5. */
  undefined2 DAT_002048b0_backing[16];
 undefined1 *DAT_002048b8;
 undefined2 DAT_002048b2;
 undefined2 DAT_0023be98;
 undefined4 DAT_000858a0;
-/* Recovered from UU.exe .data at 0x85d20: tile-floor-height -> world Z
-   table, `height_nibble * 64` for nibbles 0..13 (then 0,0,1024).
-   `*(short *)(&DAT_00085d20 + nibble*2)`. Was all-zero, so the player's
-   world Z (DAT_00204884, set from this table at uw.c ~26936) stayed 0
-   -> the 3D camera sat at floor level + a 164-unit eye offset while the
-   tile geometry's Y is `height*64` (~768 for a mid-level floor), so
-   every floor projected far above the viewport. Also used by
-   process_visible_tile_cell's height cull.
-   Sizing pass: the real initializer below is only 18 shorts (36
-   bytes); tmap.c's own usage adds a small direction-offset byte to
-   the nibble index at one call site (`uVar1 + *pbVar35`), so sized to
-   128 for headroom past the real data rather than the exact 36,
-   down from 65536. */
+/* Recovered from UU.exe .data at 0x85d20: tile-floor-height -> world Z table, `height_nibble * 64`
+   for nibbles 0..13 (then 0,0,1024). `*(short *)(&DAT_00085d20 + nibble*2)`. */
  undefined1 DAT_00085d20_backing[128] = {
   0x00,0x00, 0x40,0x00, 0x80,0x00, 0xc0,0x00, 0x00,0x01, 0x40,0x01,
   0x80,0x01, 0xc0,0x01, 0x00,0x02, 0x40,0x02, 0x80,0x02, 0xc0,0x02,
   0x00,0x03, 0x40,0x03, 0x00,0x00, 0x00,0x00, 0x00,0x04, 0x00,0x00,
 };
 short DAT_00202088;
-/* DAT_0008589c/85898/85894 are link-time-initialized read-only data,
-   same situation as DAT_00086e68 right above's fix (nothing in this
-   decompile writes any of the three, and an exhaustive whole-binary
-   Ghidra reference search confirms the real UU.exe agrees -- their
-   only references, all in apply_movement_mode_profile, are reads). Sibling constants
-   to DAT_00086e68 in the exact same per-facing-direction table
-   (apply_movement_mode_profile multiplies each by the same `uVar5` direction-lookup
-   value right next to where it uses DAT_00086e68), so almost
-   certainly hit the same bug for the same reason. Recovered the real
-   values by reading UU.exe's .data bytes directly via Ghidra:
-   0x3ac (940), 0xeb (235), 0xbc (188) respectively. Macro defines now
-   live in uw.h alongside DAT_00086e68, since apply_movement_mode_profile
-   (their only reader) moved into src/input.c. */
+/* DAT_0008589c/85898/85894 are link-time-initialized read-only data, same situation as DAT_00086e68
+   right above's fix (nothing in this decompile writes any of the three, and an exhaustive
+   whole-binary Ghidra reference search confirms the real UU.exe agrees -- their only references)... */
 static byte DAT_001013a4;
 static uint DAT_002020e4;
 static byte DAT_002020e8;
@@ -176,23 +75,15 @@ int DAT_0023bc94;
 undefined1 *g_save_equip_table_ptr;
 // was DAT_002028c4
 undefined1 *g_save_record_base_ptr;
-/* Was missing its leading backslash -- both call sites append this
-   straight onto a directory path built with no trailing separator (e.g.
-   load_player_save_record builds "<root>\SAVE0" then appends this), so the file name
-   ran into the directory name with nothing between them
-   ("...\SAVE0player.dat"). A leading "\\" here is harmless even for a
-   caller whose own prefix already ends in one (resolve_path collapses
-   repeated separators). */
+/* Was missing its leading backslash -- both call sites append this straight onto a directory path
+   built with no trailing separator (e.g. load_player_save_record builds "<root>\SAVE0" then appends
+   this)... */
 /* Original bytes are "player.dat"; the port's save-directory prefix
    omits its trailing separator, so this suffix supplies it instead. */
 char s_player_dat_00085a74[] = "\\player.dat";
 /* g_light_source_slots: light-source-eligible equip slots {5,6,7,8} (see
-   refresh_player_equipment_effects and decay_equipped_light_sources's light-scan loops, and use_light_source's
-   own comparison against find_or_assign_object_widget's result). Was a
-   bare 1-byte scalar -- every existing `(&g_light_source_slots)[1..3]` read past
-   the single declared byte into whatever the linker placed next, instead
-   of the real dumped table. Dumped directly from the real binary at
-   0x85ac8: `5 6 7 8 0 0 0 0 0 0 0xc8 0 0 0 0xc8 0`. */
+   refresh_player_equipment_effects and decay_equipped_light_sources's light-scan loops, and
+   use_light_source's own comparison against find_or_assign_object_widget's result). */
  unsigned char DAT_00085ac8_backing[16] =
     {5,6,7,8,0,0,0,0,0,0,0xc8,0,0,0,0xc8,0};
 static byte DAT_002046d0;
@@ -211,16 +102,14 @@ static undefined4 DAT_002020dc;
 undefined4 DAT_002020d8;
 undefined4 DAT_002020d4;
 static char DAT_00086db4;
-/* Sizing-audit pass: accessed as a raw byte blob at
-   `(intptr_t)&DAT_00086db8 + uVar1 + 3` with uVar1 guarded to [5,9]
-   -- max byte 12. Sized to 4 int elements (16 bytes) for headroom;
-   down from 256. */
+/* Sizing-audit pass: accessed as a raw byte blob at `(intptr_t)&DAT_00086db8 + uVar1 + 3` with
+   uVar1 guarded to [5,9] -- max byte 12. Sized to 4 int elements (16 bytes) for headroom; down from
+   256. */
 static int DAT_00086db8_backing[4];
 #define DAT_00086db8 DAT_00086db8_backing[0]
-/* Sizing-audit pass: equip-slot weight table, loop bound
-   `iVar4<5` (5 equip slots). HARD. Down from 256.
-   ARM equipment slot -> armor region table at 0x86da8 (real recovered
-   data, not just zero-init). */
+/* Sizing-audit pass: equip-slot weight table, loop bound `iVar4<5` (5 equip slots). HARD. Down from
+   256. ARM equipment slot -> armor region table at 0x86da8 (real recovered data, not just
+   zero-init). */
 static undefined1 DAT_00086da8_backing[5] = {3, 0, 1, 2, 2};
 #define DAT_00086da8 DAT_00086da8_backing[0]
 /* Was a lone `undefined` scalar, but compute_light_source_colors
@@ -229,16 +118,9 @@ static undefined1 DAT_00086da8_backing[5] = {3, 0, 1, 2, 2};
 static undefined DAT_00086dc8_backing[16];
 #define DAT_00086dc8 DAT_00086dc8_backing[0]
 undefined2 DAT_0023beb8;
-/* Player status record: character attributes, skills, mana, carry weights,
-   quest flags, and world state. DAT_00086df8 points here in the game;
-   write_player_status_block serializes 0xd2 bytes, and the inventory save
-   path also preserves a 220-byte snapshot. Field aliases must share this
-   storage so calculations, HUD reads, and save/restore see the same values.
-
-   Sizing-audit pass: the struct's exact real size IS confirmed -- both
-   save (player.c:746) and load (player.c:835) round-trip it via
-   `ce_memmove(...,&DAT_0023bca8,220)`, an exact, symmetric, HARD
-   bound. Sized to 256 for headroom; down from 8192. */
+/* Player status record: character attributes, skills, mana, carry weights, quest flags, and world
+   state. DAT_00086df8 points here in the game; write_player_status_block serializes 0xd2 bytes, and
+   the inventory save path also preserves a 220-byte snapshot. */
  undefined1 DAT_0023bca8_backing[256];
 short DAT_0023be90;
 short DAT_0023be92;
@@ -259,16 +141,9 @@ undefined2 DAT_0023be9c;
 undefined2 DAT_0023be9a;
 static char DAT_0023bf14;
 static byte DAT_0023bf10;
-/* Real static lookup table, same recovery/boundary evidence as
-   movement.c's DAT_00086e38/DAT_00086e48 (bytes at 0x86e58..0x86e67 in
-   UU.exe's .data, immediately after those two and immediately before
-   the already-recovered DAT_00086e68 == 15 scalar). Independently
-   cross-confirmed byte-for-byte by a second, concurrent recovery pass
-   (bug-fixes-pass-2) via the same Ghidra method. trigger_view_transition
-   indexes this with `(char)bVar8` and `(char)bVar8 + 2 & 0xf` (bVar8 =
-   DAT_0023bf18 >> 4), so 16 real entries -- a symmetric wobble curve
-   used for the jump/landing camera-bob wobble (DAT_0023be98/be9e). Was
-   an all-zero 256-byte placeholder, silently zeroing that wobble. */
+/* Real static lookup table, same recovery/boundary evidence as movement.c's
+   DAT_00086e38/DAT_00086e48 (bytes at 0x86e58..0x86e67 in UU.exe's .data, immediately after those
+   two and immediately before the already-recovered DAT_00086e68 == 15 scalar). */
 static const signed char DAT_00086e58_backing[16] = {
   -4, -3, -2, -1,  0,  1,  2,  3,
    4,  3,  2,  1,  0, -1, -2, -3
@@ -279,10 +154,9 @@ static short DAT_0023bf34;
 static short DAT_0023bf38;
 static short DAT_0023bf3c;
 static short DAT_0023bf40;
-/* ARM .data 0x86e87..0x86e97: level thresholds measured in units of
-   500 XP. Index by the current character level; entry 16 is the terminal
-   sentinel because grant_experience_points stops advancing at level 16.
-   A zero-filled replacement made ordinary kills cross every threshold. */
+/* ARM .data 0x86e87..0x86e97: level thresholds measured in units of 500 XP. Index by the current
+   character level; entry 16 is the terminal sentinel because grant_experience_points stops
+   advancing at level 16. A zero-filled replacement made ordinary kills cross every threshold. */
 static const byte DAT_00086e87_backing[17] = {
   0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 0
 };
@@ -290,56 +164,28 @@ static const byte DAT_00086e87_backing[17] = {
 static int DAT_0024af8c;
 static char s_font5x6i_sys_00086e98[] = "font5x6i.sys";
 char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
-/* "currently-loaded shading level" for load_shading_level_config's `if (DAT_000872a0
-   == param_1) return;` early-out. Ghidra dropped its initialiser (same
-   silently-zero link-time-init class as DAT_00086e68 &c); left at 0 the
-   first dungeon entry -- load_shading_level_config(0) -- matched and returned without
-   ever reading SHADES.DAT, so the texture-LOD threshold DAT_00086b24
-   stayed 0 and every visible tile drew with the 16x16 low-detail
-   texture. Sentinel = no level loaded yet. */
+/* "currently-loaded shading level" for load_shading_level_config's `if (DAT_000872a0 == param_1)
+   return;` early-out. */
 char DAT_000872a0 = -1;
-/* Sizing-audit pass: BUG FIX, not just a shrink -- advance_character_
-   level builds a 2-digit level-number string here (tens digit/space
-   at offset 0, units digit written to the separately-declared
-   DAT_0008730d at real address +1) then prints it via
-   message_scroll_print_wrapped(&DAT_0008730c), which needs a real
-   NUL right after. DAT_0008730d was never aliased in, so the units
-   digit landed in a dead, never-read global instead of the string
-   buffer -- message_scroll_print_wrapped would see DAT_0008730c_
-   backing[1] (always zero, nothing else writes it) immediately after
-   the tens digit/space and print a 1-character message, silently
-   dropping the units digit on every level-up message (visibly wrong
-   once the character reaches level 10+, reachable in normal play).
-   Aliased DAT_0008730d into DAT_0008730c_backing[1] so the real
-   write lands in the string, with backing[2] as the NUL terminator.
-   Real initial template content confirmed via direct Ghidra memory
-   export of UU.exe: " 0\n". Sized to 16 for headroom; down from
-   8192. */
+/* Sizing-audit pass: BUG FIX, not just a shrink -- advance_character_ level builds a 2-digit
+   level-number string here (tens digit/space at offset 0, units digit written to the
+   separately-declared DAT_0008730d at real address +1) then prints it via... */
 static undefined1 DAT_0008730c_backing[16] = " 0\n";
 #define DAT_0008730c DAT_0008730c_backing[0]
 /* The second digit belongs to the same scroll-message buffer. */
 #define DAT_0008730d DAT_0008730c_backing[1]
-/* Was a lone scalar, but roll_skill_use_improvement indexes it
-   `(&DAT_00087308)[tier]` for tier 0..2 (classify_skill_training_tier's
-   full range) as a per-tier probability threshold for
-   ordint_divmod(uVar2, random).quot. Widened to the real 3-entry array this
-   needs -- as a lone scalar, indices 1/2 read into whatever the
-   compiler placed next (s_and_00087310's string data on this host),
-   an arbitrary/wrong probability for tiers 1 and 2. Real per-tier
-   values weren't recovered (Ghidra never surfaced this as initialized
-   data), so left zero-initialized rather than guessed -- still an
-   improvement over reading unrelated string bytes as a probability. */
+/* Was a lone scalar, but roll_skill_use_improvement indexes it `(&DAT_00087308)[tier]` for tier
+   0..2 (classify_skill_training_tier's full range) as a per-tier probability threshold for
+   ordint_divmod(uVar2, random).quot. */
 static undefined DAT_00087308_arr[3];
 #define DAT_00087308 DAT_00087308_arr[0]
-/* Ghidra rendered this as "and" (dropped the real leading/trailing
-   spaces). Real bytes at 0x87310 (ARM UU.exe .data, confirmed via
-   tests/fixtures/static_strings.json's direct memory export):
-   " and ". */
+/* Ghidra rendered this as "and" (dropped the real leading/trailing spaces). Real bytes at 0x87310
+   (ARM UU.exe .data, confirmed via tests/fixtures/static_strings.json's direct memory export): "
+   and ". */
 char s_and_00087310[] = " and ";
-/* Used as a NUL-terminated string (&DAT_00087318) by
-   print_skill_improvement_list, joining middle entries of its skill-
-   name list. Ghidra never surfaced this as initialized string data;
-   real bytes confirmed via the same direct memory export: ", ". */
+/* Used as a NUL-terminated string (&DAT_00087318) by print_skill_improvement_list, joining middle
+   entries of its skill- name list. Ghidra never surfaced this as initialized string data; real
+   bytes confirmed via the same direct memory export: ", ". */
 static char DAT_00087318[] = ", ";
 /* Ghidra rendered the embedded spaces as underscores and dropped
    the trailing space. Real bytes at 0x8731c (ARM UU.exe .data):
@@ -358,9 +204,10 @@ static undefined4 DAT_0024af88;
 
 
 // was FUN_0003cff8
-void set_player_tile_position(param_1,param_2)
+void set_player_tile_position(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
+int param_3;
 
 {
   undefined2 uVar1;
@@ -443,18 +290,9 @@ uint param_2;
 
 
 
-/* Debug-only helper (UW_DEBUG_THROW-gated): print both player-position
-   representations side by side -- the fine, continuous DAT_00204880/2
-   (used by the camera and by demo_set_player_pos) vs. the coarser
-   tile-position bytes packed into g_player_object's own record (offset
-   0x16/0x17, read elsewhere as DAT_00202a4c/DAT_00202a50 by
-   drop_held_object_near_player). Added to bisect a desync between the
-   two: right after chargen's set_player_tile_position(0x20,2,1) call
-   they should agree (that function sets both atomically), so if they
-   already disagree here, the bug is upstream of/inside that call; if
-   they still agree here but disagree later (at throw time), something
-   between chargen-complete and the throw resets g_player_object's own
-   bytes without touching DAT_00204880/2. */
+/* Debug-only helper (UW_DEBUG_THROW-gated): print both player-position representations side by side
+   -- the fine, continuous DAT_00204880/2 (used by the camera and by demo_set_player_pos) vs. the
+   coarser tile-position bytes packed into g_player_object's own record... */
 void debug_print_player_position(const char *label)
 {
   if (getenv("UW_DEBUG_THROW"))
@@ -468,15 +306,8 @@ void debug_print_player_position(const char *label)
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_0003d438 (previously mis-guessed as "update_3d_sound_position"
-// from its trailing sound call). Per-tick commit of the freshly-integrated
-// player position/facing back into the world: recompute the tile index and
-// relink the player object between tile object lists on a tile change,
-// pack sub-tile position / height / facing into the player object record
-// (g_player_object +2/+3/+0x16/+0x17/+0x18), auto-straighten the facing
-// toward the travel direction, then handle a pending landing impact
-// (fall damage apply_typed_damage_to_object + thud play_sound_effect_with_pan) and refresh the
-// locomotion pose. Called every tick from apply_movement_tick.
+// was FUN_0003d438 (previously mis-guessed as "update_3d_sound_position" from its trailing sound
+// call).
 void commit_player_move()
 
 {
@@ -582,60 +413,28 @@ void commit_player_move()
 
 
 
-// New (not decompiled from the binary): a debug/testing entry point for
-// demomode.c's SETPLAYERPOS command. Directly sets the fine-grained player
-// position (DAT_00204880/82, format (tile<<8)|fine, 256 units/tile -- see
-// commit_player_move's own tile-index derivation), persistent yaw
-// (DAT_00201c70, 65536 units/360 degrees -- confirmed via the 0x2000 =
-// 45-degree turn-step increments in apply_heading_turn) and pitch
-// (DAT_0023beb4, signed 1/256-degree units -- see
-// update_current_view_from_subject's own >>8 use of it), then reuses
-// set_player_tile_position (for the integer
-// tile part: object-list relink, collision height field, locomotion state)
-// and commit_player_move (to pack the final fine position/yaw back into the
-// player object record g_player_object) so this goes through the same object-
-// sync paths real movement does, instead of duplicating them. x/y are tile
-// coordinates with a fractional part (e.g. 32.5); z is the same raw height
-// unit sync_camera_from_player's [playerpos] print shows (DAT_00204884,
-// e.g. z=768 at spawn) -- pass back a value read from that print to land on
-// an exact remembered spot; yaw/pitch are degrees.
+// New (not decompiled from the binary): a debug/testing entry point for demomode.c's SETPLAYERPOS
+// command.
 void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg)
 {
-  set_player_tile_position((int)floor(x), (int)floor(y));
+  set_player_tile_position((int)floor(x), (int)floor(y), 1);
   if (getenv("UW_DEBUG_FLOORZ")) {
     fprintf(stderr, "[floorz] tile=(%d,%d) natural z (from set_player_tile_position) = %d, overriding to %g\n",
             (int)floor(x), (int)floor(y), (int)DAT_00204884, z);
   }
-  /* Clear any in-flight smooth-turn interpolation
-     (update_current_view_from_subject's DAT_0023bea8-gated add-on to
-     DAT_00086e6c+0x2c): if a turn animation was still mid-flight when this
-     runs, update_current_view_from_subject would add its leftover per-tick
-     delta (DAT_0023be9a) on top of the DAT_00201c70 we're about to set
-     below, so sync_camera_from_player's very next [playerpos] print would
-     show a transient, wrong yaw for one frame
-     until the animation finished on its own. Confirmed via testing: two
-     back-to-back SETPLAYERPOS calls, the first (right after spawn, an
-     interpolation still pending) showed the old yaw, the second (nothing
-     pending any more) matched exactly. */
+  /* Clear any in-flight smooth-turn interpolation (update_current_view_from_subject's
+     DAT_0023bea8-gated add-on to DAT_00086e6c+0x2c): if a turn animation was still mid-flight when
+     this runs... */
   DAT_0023bea8 = 0;
-  /* Force the camera to track the player object right now.
-     update_current_view_from_subject (the function that actually copies
-     DAT_00201c70/DAT_00204880 etc. into the camera-facing DAT_00086e6c
-     record sync_camera_from_player reads)
-     only does that when DAT_0023b82c -- "whichever object the camera is
-     currently tracking" -- equals g_player_object, the player object; normally
-     true, but right after spawn/chargen it can still be unset/stale for a
-     frame, so the very first SETPLAYERPOS call of a run would appear to
-     not take effect (confirmed live: first call's yaw didn't show up,
-     second did). Setting it here makes this reliable regardless of when
-     it's called. */
+  /* Force the camera to track the player object right now. update_current_view_from_subject (the
+     function that actually copies DAT_00201c70/DAT_00204880 etc. into the camera-facing
+     DAT_00086e6c record sync_camera_from_player reads) only does that when DAT_0023b82c... */
   DAT_0023b82c = g_player_object;
   DAT_00204880 = (short)lround(x * 256.0);
   DAT_00204882 = (short)lround(y * 256.0);
-  /* set_player_tile_position just computed a default DAT_00204884 from the
-     destination tile's own floor-height table lookup; override it with the
-     caller's exact value (e.g. to stand at a specific mid-air/step height,
-     not just "on the floor of this tile"). */
+  /* set_player_tile_position just computed a default DAT_00204884 from the destination tile's own
+     floor-height table lookup; override it with the caller's exact value (e.g. to stand at a
+     specific mid-air/step height, not just "on the floor of this tile"). */
   DAT_00204884 = (short)lround(z);
   DAT_00201c70 = (short)lround(yaw_deg * (65536.0 / 360.0));
   DAT_0023beb4 = (short)lround(pitch_deg * 256.0);
@@ -647,10 +446,9 @@ void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pi
 
 
 
-// was FUN_0003e4cc -- reads the player object's current HP/MP/etc.
-// and pushes them into the HUD via set_hud_status_value, one call per
-// status slot (0=health, 1=mana, 2=hunger-ish, 4=poison flash, ...).
-// Called once per HUD refresh from enter_dungeon_view_hud_init.
+// was FUN_0003e4cc -- reads the player object's current HP/MP/etc. and pushes them into the HUD via
+// set_hud_status_value, one call per status slot (0=health, 1=mana, 2=hunger-ish, 4=poison flash,
+// ...). Called once per HUD refresh from enter_dungeon_view_hud_init.
 void sync_player_stats_to_hud()
 
 {
@@ -781,32 +579,8 @@ char * param_1;
   else {
     build_player_save_record(g_save_record_buffer);
     g_save_record_count = g_save_record_count + 1;
-    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real
-       binary's own write_player_save_record never serializes
-       DAT_0023bca8 (the player's stats/skills/quest-flags struct,
-       confirmed via Ghidra decompile of the real ARM functions at
-       0x43e20/0x43fd8/0x44538 -- none reference it) -- so quest flags,
-       skills, difficulty, and the live game clock never actually
-       survived a real save/load, even in the shipped Pocket PC game.
-       Confirmed via the real UW1 savegame format documentation
-       (uw-formats.txt section 9.2.1) that this struct's layout matches
-       player.dat's own documented fields byte-for-byte starting at
-       offset 0x1e (Strength) -- and this project's own live code
-       already reads/writes this exact struct via DAT_00086df8 at those
-       same documented offsets (e.g. 0xce = game_time, 0x65 = quest
-       flags 0-31), confirming it's genuinely the right data, just
-       never persisted. Appended after the existing (dynamically sized)
-       inventory section using THIS function's own post-increment
-       g_save_record_count (matching the exact count the file-length
-       calculation just below uses -- build_player_save_record's own
-       internal offset math runs before this +1, so the copy can't live
-       there without a mismatched offset) rather than interleaved into
-       the middle of the existing fixed-offset layout, so no existing
-       offset changes. 220 bytes matches the documented "first 220
-       bytes" of a real player.dat (the XOR-encrypted header, ending
-       just past the last documented field before the equipment-slot-
-       index table, which this project's own g_save_equip_table_ptr
-       logic already serializes separately -- not duplicated here). */
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real binary's own
+       write_player_save_record never serializes DAT_0023bca8... */
     ce_memmove(g_save_record_buffer + 0x5b + g_save_record_count * 8,&DAT_0023bca8,220);
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] SAVE appending quest_bits=0x%x at buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
     if (param_1 != (char *)0x0) {
@@ -820,12 +594,9 @@ char * param_1;
       iVar2 = open_existing_file_rw(acStack_114);
       bVar3 = iVar2 != -1;
       if (bVar3) {
-        /* BUG FIX: was `write_player_status_block()` with no arguments,
-           relying on leftover register state -- iVar2 (the file
-           handle, used the very next line) is the value that belongs
-           here, matching write_player_status_block's own param_1 role
-           (same dropped-argument bug class documented throughout this
-           project). */
+        /* BUG FIX: was `write_player_status_block()` with no arguments, relying on leftover
+           register state -- iVar2 (the file handle, used the very next line) is the value that
+           belongs here... */
         write_player_status_block(iVar2);
         write_file_handle(iVar2,&g_save_record_count,2);
         write_file_handle(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
@@ -884,18 +655,9 @@ undefined1 * param_1;
       deserialize_inventory_link_chain(g_selected_object + 6,param_1 + 0x21);
     }
   }
-  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
-     write_player_save_record's own matching comment: restores
-     DAT_0023bca8 from the same trailing offset that function now
-     appends it at. g_save_record_count is already set here (the
-     caller reads it directly from the file's own 2-byte header
-     before calling this function), matching the exact post-increment
-     count the save side used, so this offset is consistent whether
-     restore_player_save_record's own caller went through a real file
-     read or is just re-applying the currently-held in-memory record
-     (build_player_save_record is only ever called from
-     write_player_save_record, which always fills this same trailing
-     block first -- never garbage). */
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see write_player_save_record's own
+     matching comment: restores DAT_0023bca8 from the same trailing offset that function now appends
+     it at. g_save_record_count is already set here... */
   ce_memmove(&DAT_0023bca8,param_1 + 0x5b + g_save_record_count * 8,220);
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] LOAD restored quest_bits=0x%x from buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
   return;
@@ -998,19 +760,8 @@ LAB_000669a8:
   do {
     puVar6 = g_selected_object;
     if (!bVar12) {
-      /* Was get_equipped_item_at_slot(iVar4) -- scanning raw equip slots 0-3, which
-         never hold a light source. Disassembly of the real binary
-         (0x669e8-0x669f4) shows an indirect table lookup was dropped:
-         r8 is loaded from the literal pool with g_light_source_slots, then
-         `ldrsbne r0,[r5,r8]` reads g_light_source_slots[iVar4] (the real
-         light-source-eligible slots {5,6,7,8}) before calling
-         get_equipped_item_at_slot. The sibling light-fuel-burn loop in decay_equipped_light_sources
-         (uw.c ~45174) already uses this exact
-         `get_equipped_item_at_slot((char)(&g_light_source_slots)[iVar9])` pattern for the
-         identical 0x90-class/radius-nibble check, confirming this is
-         the real call shape here too -- this was the actual cause of
-         [[torch-ambient-light-scan-range-mismatch]]: a lit torch
-         auto-equips to slot 5 (widget 6), which this loop never read. */
+      /* Was get_equipped_item_at_slot(iVar4) -- scanning raw equip slots 0-3, which never hold a
+         light source. */
       puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar4]);
     }
     g_scratch_object_ptr = puVar6;
@@ -1080,7 +831,7 @@ LAB_000669a8:
        used to decide which tiles the automap can discover. */
     load_shading_level_config(*(byte *)(DAT_00086df8 + 99) >> 4);
     const char *light_mode = getenv("UW_LIGHT_MODE");
-    if (!light_mode || strcmp(light_mode, "dos") != 0) {
+    if (!light_mode || strcasecmp(light_mode, "dos") != 0) {
       /* HACK: the ARM build only distinguished lit from unlit here.
          Restore per-strength brightness: start at the unlit bias (+8),
          subtract 16 for every light level, and retain the calibration
@@ -1133,12 +884,9 @@ char param_2;
 
 
 
-// was FUN_00065b90 -- packs live game state (recent equip/attack
-// bytes, world x/y/z/facing, locomotion state) into the 0xd2-byte
-// DAT_00086df8 player-status block, then writes it to file handle
-// param_1 through a length-prefixed, presumably checksummed/XOR'd
-// wrapper (write_xor_scrambled_block). Called from write_player_save_record as the
-// player.dat header write step.
+// was FUN_00065b90 -- packs live game state (recent equip/attack bytes, world x/y/z/facing,
+// locomotion state) into the 0xd2-byte DAT_00086df8 player-status block, then writes it to file
+// handle param_1 through a length-prefixed...
 void write_player_status_block(param_1)
 undefined4 param_1;
 
@@ -1183,10 +931,9 @@ undefined4 param_1;
 
 
 
-// was FUN_00065d4c -- read-side counterpart to
-// write_player_status_block: reads the 0xd2-byte DAT_00086df8 player-
-// status block from file handle param_1 and unpacks it back into the
-// live game-state globals it was packed from.
+// was FUN_00065d4c -- read-side counterpart to write_player_status_block: reads the 0xd2-byte
+// DAT_00086df8 player- status block from file handle param_1 and unpacks it back into the live
+// game-state globals it was packed from.
 void read_player_status_block(param_1)
 undefined4 param_1;
 
@@ -1216,12 +963,9 @@ undefined4 param_1;
 
 
 
-// was FUN_00065eb4 -- recomputes the player's derived stealth/hide
-// thresholds (DAT_00086db0/DAT_00086db1, die-roll-jittered from a
-// player-stat byte at DAT_00086df8+0x2e) and resets a batch of
-// movement/combat scratch flags and counters (including the step-
-// counter default DAT_000858c4, doubled on hard difficulty). Called
-// from refresh_player_equipment_effects after an equipment change.
+// was FUN_00065eb4 -- recomputes the player's derived stealth/hide thresholds
+// (DAT_00086db0/DAT_00086db1, die-roll-jittered from a player-stat byte at DAT_00086df8+0x2e) and
+// resets a batch of movement/combat scratch flags and counters...
 void reset_player_derived_state()
 
 {
@@ -1256,16 +1000,9 @@ void reset_player_derived_state()
 
 
 
-// was FUN_000660d4 -- toggles a randomized screen flicker effect
-// tracked in DAT_00086db4 (-1=off, 0/1/2 = which of 3 sub-effects):
-// param_1==0 cancels any active effect (restoring palette bank 0, or
-// stopping toggle_light_table_flicker's effect); param_1!=0 with no effect currently
-// active picks a random one (or forces sub-effect 0 if DAT_00086db8
-// is set) and starts it -- sub-effect 1 randomly cycles the palette
-// bank, sub-effect 2 drives toggle_light_table_flicker. Called from
-// refresh_player_equipment_effects gated on bits 2-3 of the player's
-// status byte (DAT_00086df8+0x61) -- likely a worn item's
-// cursed/poisoned status flags, not confirmed.
+// was FUN_000660d4 -- toggles a randomized screen flicker effect tracked in DAT_00086db4 (-1=off,
+// 0/1/2 = which of 3 sub-effects): param_1==0 cancels any active effect (restoring palette bank 0,
+// or stopping toggle_light_table_flicker's effect)...
 void update_screen_flicker_effect(param_1)
 int param_1;
 
@@ -1310,15 +1047,9 @@ int param_1;
 
 
 
-// was FUN_000661b0 -- applies one "intrinsic equipment effect" opcode
-// (param_1, 0-0xd) with magnitude/argument param_2, against scratch
-// state param_3 and an equipment-slot/object index param_4. Called
-// from refresh_player_equipment_effects for both the fixed light-
-// radius contributions packed at DAT_00086df8+0x3e and per-equipped-
-// item property effects it resolves via is_valid_equipment_slot_item/resolve_object_variant_or_special_link.
-// Individual opcode semantics aren't all confirmed (several, e.g. 4-8
-// and 10, are no-ops in this decompile); named for the dispatcher's
-// overall role, not a verified meaning of every case.
+// was FUN_000661b0 -- applies one "intrinsic equipment effect" opcode (param_1, 0-0xd) with
+// magnitude/argument param_2, against scratch state param_3 and an equipment-slot/object index
+// param_4.
 undefined4 apply_equipped_item_effect(param_1,param_2,param_3,param_4)
 undefined1 param_1;
 byte param_2;
@@ -1468,14 +1199,9 @@ LAB_00066398:
 
 
 
-// was FUN_000664bc -- fills param_1[0..2] (default color index 0x15
-// each) with per-light-source color indices derived from the ambient-
-// light contributions packed at DAT_00086df8+0x3e (same bitfield
-// layout apply_equipped_item_effect's light scan uses), via the
-// DAT_00086dc8 type->base-color lookup table plus the light-level
-// nibble. Consumed both to render a HUD light-color indicator
-// (update_light_source_color_icons) and to pick a "you see a <color> light" message
-// string fragment.
+// was FUN_000664bc -- fills param_1[0..2] (default color index 0x15 each) with per-light-source
+// color indices derived from the ambient- light contributions packed at DAT_00086df8+0x3e (same
+// bitfield layout apply_equipped_item_effect's light scan uses)...
 void compute_light_source_colors(param_1)
 undefined1 * param_1;
 
@@ -1501,15 +1227,9 @@ undefined1 * param_1;
 
 
 
-// was FUN_00066594 -- on level 7 only (DAT_00201b68==7), swaps the
-// special floor texture between ids 0xc and 0xe via
-// load_floor_texture_arenas as param_1 toggles on/off, then sets or
-// clears bit 12 of the player status word at DAT_00086df8+0x61/0x62
-// to record the current state. Called with a quest-flag byte
-// (DAT_0023bc9c, set by apply_equipped_item_effect's opcode 0xd) and
-// with a bit read back out of that same status word elsewhere -- exact
-// narrative trigger (lava cooling/heating? a specific quest item?) not
-// confirmed.
+// was FUN_00066594 -- on level 7 only (DAT_00201b68==7), swaps the special floor texture between
+// ids 0xc and 0xe via load_floor_texture_arenas as param_1 toggles on/off, then sets or clears bit
+// 12 of the player status word at DAT_00086df8+0x61/0x62 to record the current state.
 void update_level7_floor_hazard_state(param_1)
 uint param_1;
 
@@ -1528,12 +1248,9 @@ uint param_1;
       cVar1 = '\f';
     }
     if (-1 < cVar1) {
-      /* BUG FIX: was `load_floor_texture_arenas()` with no arguments,
-         relying on leftover register state -- cVar1 (just computed
-         above, the new special-floor texture id 0xc/0xe) is the value
-         that belongs here, matching load_floor_texture_arenas' own
-         param_1 role (same dropped-argument bug class documented
-         throughout this project). */
+      /* BUG FIX: was `load_floor_texture_arenas()` with no arguments, relying on leftover register
+         state -- cVar1 (just computed above, the new special-floor texture id 0xc/0xe) is the value
+         that belongs here... */
       load_floor_texture_arenas(cVar1);
     }
   }
@@ -1546,15 +1263,9 @@ uint param_1;
 
 
 
-// was FUN_00066634 -- final step of refresh_player_equipment_effects:
-// param_1 is the effect-flag bitmask accumulated by
-// apply_equipped_item_effect's scan over equipped items (bit 0 unused,
-// bits 1-3 each an independent penalty). For each set bit, reduces
-// the player's stealth (DAT_00086db0, capped at 0x10/tick) or hide
-// (DAT_00086db1, capped at 5 or 0x10/tick depending on which bit)
-// threshold. Also adds a fixed per-slot offset into the DAT_0023be74
-// scratch array (0-3, purpose not confirmed), then refreshes the
-// level-7 floor hazard state and the HUD light-color indicator.
+// was FUN_00066634 -- final step of refresh_player_equipment_effects: param_1 is the effect-flag
+// bitmask accumulated by apply_equipped_item_effect's scan over equipped items (bit 0 unused, bits
+// 1-3 each an independent penalty).
 void apply_equipment_effect_penalties(param_1)
 uint param_1;
 
@@ -1637,14 +1348,9 @@ ushort * param_1;
 
 
 
-// was FUN_0006907c -- starts a smooth camera transition: sets the
-// "turn animation in flight" flag (DAT_0023bea8, gates
-// update_current_view_from_subject's own per-tick facing interpolation),
-// resets the camera-shake accumulators, forces a resync, and computes
-// an eye-height bob offset from the player's landing/jump state.
-// Called after teleporting the player (set_player_tile_position) or
-// other position changes that should ease the view in rather than
-// snap it.
+// was FUN_0006907c -- starts a smooth camera transition: sets the "turn animation in flight" flag
+// (DAT_0023bea8, gates update_current_view_from_subject's own per-tick facing interpolation),
+// resets the camera-shake accumulators, forces a resync...
 void trigger_view_transition()
 
 {
@@ -1689,12 +1395,9 @@ void trigger_view_transition()
     DAT_0023be98 = sVar9 + (short)(char)(&DAT_00086e58)[(int)(char)bVar8 + 2U & 0xf] * (short)cVar3
                            * 2;
     uVar4 = ce_rand();
-    /* HACK: replace ARM's per-tick random water yaw with three smooth
-       sine waves at 0.55, 1.1 and 1.9 Hz. The shared game clock uses
-       4 ms units, so phase depends on elapsed time, not tick count.
-       Weights sum to 64, retaining the original speed-scaled amplitude.
-       Keep the random draw above so subsequent effects keep their RNG
-       sequence. This changes only water yaw, not the player heading. */
+    /* HACK: replace ARM's per-tick random water yaw with three smooth sine waves at 0.55, 1.1 and
+       1.9 Hz. The shared game clock uses 4 ms units, so phase depends on elapsed time, not tick
+       count. Weights sum to 64, retaining the original speed-scaled amplitude. */
     {
       double phase = (double)uw_frame_clock_ms() * 0.004 * 6.283185307179586;
       DAT_0023be9a = (short)((32.0 * sin(phase * 0.55) +
@@ -1756,9 +1459,8 @@ void trigger_view_transition()
 
 
 
-// was FUN_00069424 -- sets a movement-animation sub-timer
-// (DAT_0023bf10 for param_1==0x20 "landing", DAT_0023bf14 for
-// param_1==0x40 "jump") to param_2 and ORs the corresponding bit into
+// was FUN_00069424 -- sets a movement-animation sub-timer (DAT_0023bf10 for param_1==0x20
+// "landing", DAT_0023bf14 for param_1==0x40 "jump") to param_2 and ORs the corresponding bit into
 // the player's landing-state status byte (DAT_00086df8+0xb8).
 void set_movement_animation_timer(param_1,param_2)
 byte param_1;
@@ -1783,15 +1485,9 @@ undefined1 param_2;
 
 
 
-// Writes g_current_view (world x/y/elevation/facing + camera-shake
-// offsets) from whichever object DAT_0023b82c currently designates as
-// the view subject -- the player object (the common case), a specific
-// NPC/mobile object being looked at, or none (falls back to saved
-// DAT_0023be90-family scratch values). NOT the same function as
-// sync_camera_from_player below (was FUN_00069938), which goes the
-// other direction: g_current_view -> the DAT_000db438-family 3D camera
-// globals. Distinct names matter here since this file already had two
-// functions colliding on this name before this rename.
+// Writes g_current_view (world x/y/elevation/facing + camera-shake offsets) from whichever object
+// DAT_0023b82c currently designates as the view subject -- the player object (the common case), a
+// specific NPC/mobile object being looked at...
 void update_current_view_from_subject()
 
 {
@@ -1905,10 +1601,9 @@ LAB_00069910:
 
 
 
-// was FUN_00069938 -- sync the 3D camera globals (DAT_000db438.. position,
-// DAT_000db448 pitch / DAT_000db44c yaw) from the player object DAT_00086e6c
-// (pos at +10/+0x12, view angle at +0x2c), applying the DAT_0023b4a0 screen
-// -rotation quadrant. Called from build_frame_draw_list each redraw.
+// was FUN_00069938 -- sync the 3D camera globals (DAT_000db438.. position, DAT_000db448 pitch /
+// DAT_000db44c yaw) from the player object DAT_00086e6c (pos at +10/+0x12, view angle at +0x2c),
+// applying the DAT_0023b4a0 screen -rotation quadrant.
 void sync_camera_from_player()
 
 {
@@ -1966,12 +1661,8 @@ void sync_camera_from_player()
     }
     DAT_000db448 = (iVar6 >> 8) + (int)DAT_0023bf3c;
   }
-  /* Hack - Testing: UW_HACK_PITCH overrides the camera pitch angle
-     (index into the sin/cos tables, 0..360). DAT_0023beb4 / DAT_0023bf3c
-     come out 0 with nothing driving the look-up/down, so the 3D view
-     looks dead level and the floor you are standing on projects entirely
-     below the viewport. A downward pitch (~300-340) brings it into view
-     for testing -- the real look pitch source is still unrecovered. */
+  /* Hack - Testing: UW_HACK_PITCH overrides the camera pitch angle (index into the sin/cos tables,
+     0..360). */
   { const char *_p = getenv("UW_HACK_PITCH"); if (_p) DAT_000db448 = atoi(_p); }
   if (cVar1 == '\0') {
     sVar8 = *(short *)(iVar4 + 0x2c);
@@ -1986,11 +1677,9 @@ void sync_camera_from_player()
     sVar8 = *(short *)(iVar4 + 0x2c) + 0x4000;
   }
   if (sVar8 < 1) {
-    /* Ghidra dropped the dividend: this is the 16-bit view angle sVar8
-       converted to degrees, angle / 180 (0xb4). Without sVar8 passed
-       the divide ran on a leftover register -> yaw came out 0/360 ->
-       identity view rotation -> every tile projected behind the near
-       plane. */
+    /* Ghidra dropped the dividend: this is the 16-bit view angle sVar8 converted to degrees, angle
+       / 180 (0xb4). Without sVar8 passed the divide ran on a leftover register -> yaw came out
+       0/360 -> identity view rotation -> every tile projected behind the near plane. */
     iVar4 = ordint_divmod(0xb4, (int)sVar8).quot;
     DAT_000db44c = iVar4 + DAT_0023bf40 + 0x168;
   }
@@ -1998,42 +1687,9 @@ void sync_camera_from_player()
     iVar4 = ordint_divmod(0xb4, (int)sVar8).quot;
     DAT_000db44c = iVar4 + DAT_0023bf40;
   }
-  /* Always-on (no env var) position/heading debug print, for correlating
-     a live playtester's exact standing spot/facing with what the
-     decompile is doing -- e.g. pinning down the wall-decal depth/
-     parallax issue. First cut read the coarse per-tile position cached in
-     g_player_object (the player object, +0x16, only updated on tile-boundary
-     crossings) the same way demomode.c's own "player tile" TELEPORT/REVEAL
-     print does -- not fine-grained enough (whole tiles only). Switched to
-     DAT_00204880/82 (X/Y) and DAT_00204884 (Z), the true continuously-
-     updated fine-grained player position, format (tile<<8)|fine, 256
-     units/tile -- confirmed via commit_player_move's own tile-index
-     derivation from these exact fields. Pitch is degrees, 0-360, an index
-     into the DAT_000d9ed8/DAT_000d9930 sin/cos tables (same convention
-     emit_tile_objects's decal-angle override uses).
-     Yaw is NOT read from DAT_000db44c (this function's own "camera yaw"
-     local a few lines up) -- confirmed live (both by a full real-turning
-     sweep and by direct screenshot diffing at yaw 0/90/180/270, which
-     render as 4 genuinely different views despite DAT_000db44c reporting
-     near-identical values for all of them) that DAT_000db44c is only the
-     small residual *within* whichever 90-degree quadrant DAT_0023b4a0
-     already rotated the camera's world-space axes into a few lines above
-     (cVar1's branches) -- not the true compass heading. DAT_0023bf40, the
-     field that would need to add the quadrant's own 90*n back in to
-     reconstruct the full angle, has no writer anywhere in this decompile
-     (permanently 0), so DAT_000db44c alone folds every quarter-turn back
-     on top of the others. The renderer itself works around this by also
-     pre-rotating world-space positions via that same DAT_0023b4a0 (see
-     this function's own uVar3/uVar7 swaps above) rather than relying on
-     DAT_000db44c for the coarse direction, which is why the actual 3D
-     view rotates correctly even though DAT_000db44c doesn't reflect it --
-     but anything that reads DAT_000db44c directly as if it *were* the
-     full yaw (this print, previously) reports nonsense above/below one
-     quadrant. DAT_00201c70 (the player's own persistent yaw, 65536
-     units/360 degrees -- the same field SETPLAYERPOS writes and ordinary
-     turning increments by 0x2000/45 degrees) is the real, un-folded full
-     compass heading; convert it directly instead. Throttled to print
-     only on change. Set UW_QUIET_POSDEBUG=1 to silence it. */
+  /* Always-on (no env var) position/heading debug print, for correlating a live playtester's exact
+     standing spot/facing with what the decompile is doing -- e.g. pinning down the wall-decal
+     depth/ parallax issue. */
   if (!getenv("UW_QUIET_POSDEBUG")) {
     static int _last_x = -1, _last_y = -1, _last_z = -1, _last_yaw = -1, _last_pitch = -1;
     int _x = (unsigned short)DAT_00204880;
@@ -2054,14 +1710,9 @@ void sync_camera_from_player()
 
 
 
-// was FUN_00069b68 -- the game's general skill-check roll: rolls a
-// random value mod 31, offsets it by (param_1 - param_2) (typically a
-// skill/stat value minus a difficulty threshold), and buckets the
-// result into -1 (critical failure, <3), 0 (failure, 3-15), 1
-// (success, 16-28), or 2 (critical success, >=29). Used throughout
-// combat, item use, object interaction, and babl conversation scripts
-// for stealth/lockpicking/attack/persuasion-style checks against a
-// player skill byte.
+// was FUN_00069b68 -- the game's general skill-check roll: rolls a random value mod 31, offsets it
+// by (param_1 - param_2) (typically a skill/stat value minus a difficulty threshold), and buckets
+// the result into -1 (critical failure, <3), 0 (failure, 3-15), 1 (success, 16-28)...
 undefined4 roll_skill_check(param_1,param_2)
 int param_1;
 int param_2;
@@ -2169,11 +1820,8 @@ short param_1;
 
 
 
-// was FUN_00069e30 -- redraws the stats panel's experience/level
-// progress indicator, but only when that panel (g_active_hud_panel==2)
-// is currently the active HUD view. Called from grant_experience_points
-// and other stat-changing paths whenever a display-relevant XP/level
-// boundary is crossed.
+// was FUN_00069e30 -- redraws the stats panel's experience/level progress indicator, but only when
+// that panel (g_active_hud_panel==2) is currently the active HUD view.
 void refresh_experience_display()
 
 {
@@ -2183,9 +1831,8 @@ void refresh_experience_display()
     decrement_cursor_hide_depth();
     select_active_font(s_font5x6i_sys_00086e98);
     if (DAT_0024af8c != 0) {
-      /* Ghidra dropped the arg here (relying on register carryover from
-         the `!= 0` compare) -- same class of bug fixed throughout this
-         session. DAT_0024af8c is the grtile key allocated in
+      /* Ghidra dropped the arg here (relying on register carryover from the `!= 0` compare) -- same
+         class of bug fixed throughout this session. DAT_0024af8c is the grtile key allocated in
          draw_stats_panel_content (uw.c), passed explicitly here. */
       restore_captured_grtile_backdrop(DAT_0024af8c);
     }
@@ -2204,11 +1851,9 @@ void refresh_experience_display()
 
 
 
-// was FUN_00070224 -- update_screen_flicker_effect's "sub-effect 2"
-// driver: param_1==0 restores the light remap table by reloading
-// LIGHT.DAT/MONO.DAT (mirroring load_light_tables' own load), param_1!=0
-// zeroes its first 16 entries instead, producing the visual light
-// distortion the flicker effect uses.
+// was FUN_00070224 -- update_screen_flicker_effect's "sub-effect 2" driver: param_1==0 restores the
+// light remap table by reloading LIGHT.DAT/MONO.DAT (mirroring load_light_tables' own load),
+// param_1!=0 zeroes its first 16 entries instead...
 void toggle_light_table_flicker(param_1)
 int param_1;
 
@@ -2257,11 +1902,9 @@ int param_1;
 
 
 
-// was FUN_000703a0 -- recalculates maximum HP (30 + level * STR / 5),
-// maximum mana ((casting skill + 1) * INT / 8), and carrying capacity
-// (STR * 20, in tenths of a stone). Level 7 keeps normal maximum mana
-// at +0xb0 while its special state occupies +0x38. A nonzero argument
-// refills current mana from +0x38 during character creation.
+// was FUN_000703a0 -- recalculates maximum HP (30 + level * STR / 5), maximum mana ((casting skill
+// + 1) * INT / 8), and carrying capacity (STR * 20, in tenths of a stone). Level 7 keeps normal
+// maximum mana at +0xb0 while its special state occupies +0x38.
 undefined4 recalculate_player_stats(param_1)
 int param_1;
 
@@ -2326,14 +1969,8 @@ char param_1;
 
 
 
-// was FUN_00070524 -- 3-way tier classifier: param_1<7 -> tier 0,
-// param_1>9 -> tier 1, otherwise (7..9) -> tier 2. Its result indexes
-// DAT_0023be74 (the player's class base-stat row) to pick a tier's
-// base training value -- called by both advance_skill_training and
-// roll_skill_use_improvement with their own skill-index parameter
-// (advance_skill_training's call site was missing this argument, a
-// dropped-argument bug fixed there once roll_skill_use_improvement's
-// sibling call confirmed the correct value to pass).
+// was FUN_00070524 -- 3-way tier classifier: param_1<7 -> tier 0, param_1>9 -> tier 1, otherwise
+// (7..9) -> tier 2.
 undefined4 classify_skill_training_tier(param_1)
 short param_1;
 
@@ -2354,12 +1991,9 @@ short param_1;
 
 
 
-// was FUN_00070548 -- advances the skill/combat-category progress byte
-// at DAT_00086df8[param_1+0x21] (one of the per-skill bytes babl.c's
-// own "play_arms" variable sums, see its comment) toward its 30 (0x1e)
-// cap: a flat increment (larger the first time the byte is still 0),
-// a class-scaled random bonus (via classify_skill_training_tier and the
-// player's class stat row DAT_0023be74), and 2-3 roll_skill_check rolls.
+// was FUN_00070548 -- advances the skill/combat-category progress byte at
+// DAT_00086df8[param_1+0x21] (one of the per-skill bytes babl.c's own "play_arms" variable sums,
+// see its comment) toward its 30 (0x1e) cap...
 void advance_skill_training(param_1)
 short param_1;
 
@@ -2387,17 +2021,9 @@ short param_1;
     uVar6 = 0xd;
     sVar7 = 2;
   }
-  /* BUG FIX: was `classify_skill_training_tier()` with no argument --
-     dropped by Ghidra (same "ARM register-leftover doesn't survive a
-     literal recompile" idiom as every other dropped-argument bug in
-     this file). Confirmed via the sibling call in
-     roll_skill_use_improvement (was FUN_0007067c), which performs the
-     exact same DAT_0023be74[tier+5]/DAT_00086df8[param_1+0x21] dance
-     and explicitly passes its own skill-index parameter:
-     `classify_skill_training_tier((int)param_1)`. Without this, the
-     tier classification read whatever value was left over in the
-     argument register, potentially indexing DAT_0023be74 with a wrong
-     tier and applying the wrong class's training rate for this skill. */
+  /* BUG FIX: was `classify_skill_training_tier()` with no argument -- dropped by Ghidra (same "ARM
+     register-leftover doesn't survive a literal recompile" idiom as every other dropped-argument
+     bug in this file). */
   sVar4 = classify_skill_training_tier(param_1);
   uVar2 = *(undefined1 *)(DAT_0023be74 + sVar4 + 5);
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
@@ -2427,17 +2053,9 @@ short param_1;
 
 // WARNING: Removing unreachable block (ram,0x00070700)
 
-// was FUN_0007067c -- the "skill improves through use" roll: on a
-// successful use of skill param_1, fails outright (returns false, no
-// change) if the skill's current progress (DAT_00086df8[param_1+0x21])
-// already exceeds double its class/tier's base value
-// (classify_skill_training_tier + DAT_0023be74[tier+5]) or has hit 0x1d
-// (29); otherwise increments the progress byte by 1 (plus a second +1
-// for tier!=0 skills still under half that base value, plus a further
-// ordint_divmod-randomized chance +1), capping the final result at 30
-// (0x1e), and returns true. param_1==8 (a specific skill index) also
-// refreshes a per-level cached value at DAT_00086df8+0xc2 for the
-// current level.
+// was FUN_0007067c -- the "skill improves through use" roll: on a successful use of skill param_1,
+// fails outright (returns false, no change) if the skill's current progress
+// (DAT_00086df8[param_1+0x21]) already exceeds double its class/tier's base value...
 undefined4 roll_skill_use_improvement(param_1)
 char param_1;
 
@@ -2450,19 +2068,8 @@ char param_1;
   int extraout_r1;
   uint uVar6;
   int iVar7;
-  /* Was `int`, truncating the real 64-bit pointer `iVar1 + DAT_00086df8`
-     (DAT_00086df8 is `char *`) down to 32 bits before it was dereferenced
-     just below -- same pointer-truncation bug class as every other
-     get_message_string/DAT_00086df8-pointer fix this session (see e.g.
-     handle_mantra_chant's own pcVar_typed/pcVar_name fix just above this
-     function, or refresh_player_equipment_effects's iVar7 fix). Confirmed
-     live: a SIGSEGV dereferencing the truncated pointer, reached only
-     when this skill's current training progress is still below its
-     class-tier base (data-dependent -- not every roll_skill_use_improvement
-     call takes this branch, which is why this crashed "SUMM RA" but not
-     every mantra/skill-use roll). Reusing `iVar7` (already doing double
-     duty as the tier index earlier in this function) for a pointer was
-     the actual bug; split it into its own correctly-typed local instead. */
+  /* Was `int`, truncating the real 64-bit pointer `iVar1 + DAT_00086df8` (DAT_00086df8 is `char *`)
+     down to 32 bits before it was dereferenced just below... */
   char *pcVar_skillrow;
   undefined4 uVar8;
 
@@ -2511,9 +2118,8 @@ char param_1;
 
 
 
-// was FUN_000707c8 -- prints a single skill-improvement message:
-// param_2==0 shows message 0x1b ("no improvement"), otherwise message
-// 0x1c followed by param_1's skill name (resolved via
+// was FUN_000707c8 -- prints a single skill-improvement message: param_2==0 shows message 0x1b ("no
+// improvement"), otherwise message 0x1c followed by param_1's skill name (resolved via
 // get_message_string(param_1+0x1f|0x400), the skill-name string-id range).
 void print_single_skill_improvement_message(param_1,param_2)
 int param_1;
@@ -2533,12 +2139,9 @@ int param_2;
 
 
 
-// was FUN_0007080c -- prints a comma/and-joined list of improved skill
-// names from param_1 (a byte array of skill ids, -1-terminated, up to
-// 4 entries): message 0x1e if the list is empty (*param_1==-1), else
-// message 0x1d followed by each skill name, separated by DAT_00087318
-// between middle entries and s_and_00087310 ("and") before the last.
-// The comma/space separator is verified against UU.exe at 0x87318.
+// was FUN_0007080c -- prints a comma/and-joined list of improved skill names from param_1 (a byte
+// array of skill ids, -1-terminated, up to 4 entries): message 0x1e if the list is empty
+// (*param_1==-1), else message 0x1d followed by each skill name...
 void print_skill_improvement_list(param_1)
 char * param_1;
 
@@ -2580,31 +2183,8 @@ LAB_00070874:
 
 
 
-// was FUN_000708bc -- the "Chant the mantra" feature: prompts for a
-// typed mantra word (scroll_text_entry_prompt), matches it against the
-// known-mantra string table (string ids 0x33..0x4c via get_message_string,
-// compared with ce_strcmp) and dispatches on which one matched:
-// - ids 0x33..0x46 (iVar6<0x14): single-skill mantras, spending one
-//   "mantra use" (DAT_00086df8+0x52) for two roll_skill_use_improvement
-//   attempts on the mantra's associated skill.
-// - id 0x47 (0x14): "nothing happens" NPC-reaction-shift flavor text.
-// - id 0x48 (0x15): sets a one-time flag (DAT_00086df8+0x60 bit 6).
-// - id 0x49 (0x16): another flavor-text-only outcome.
-// - ids 0x4a-0x4c (0x17-0x19): "class" mantras rolling multiple
-//   roll_skill_use_improvement attempts across a themed range of
-//   skills (base/count/spread per id), printed via
-//   print_skill_improvement_list.
-// - no match ('M'/0x4d): "you don't know that mantra" (message 0x19).
-//
-// BUG FIX (crash when using a mantra): the matching loop's two locals
-// holding _strupr's and get_message_string's return values were
-// `undefined4` (32-bit) -- on this 64-bit host that truncated both
-// real pointers down to their low 32 bits before ce_strcmp ever saw
-// them, so ce_strcmp dereferenced a bogus, zero-extended address and
-// crashed with SIGSEGV. This was unconditional: it crashed on the very
-// first comparison (id 0x33) regardless of what the player typed, i.e.
-// every single invocation of "Chant the mantra". Fixed by giving them
-// their own correctly-sized `char *` locals (pcVar_name/pcVar_typed).
+// was FUN_000708bc -- the "Chant the mantra" feature: prompts for a typed mantra word
+// (scroll_text_entry_prompt), matches it against the known-mantra string table...
 void handle_mantra_chant()
 
 {
@@ -2630,14 +2210,9 @@ void handle_mantra_chant()
   message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   iVar10 = 0x33;
   do {
-    /* uVar4/uVar5 were `undefined4` (32-bit) here, truncating _strupr's
-       and get_message_string's real 64-bit pointer returns -- the same
-       pointer-truncation bug class already fixed at dozens of other
-       get_message_string call sites in this codebase (see player.c's
-       other FUN_... comments, object_actions.c, chargen.c, babl.c).
-       ce_strcmp then dereferenced the zero-extended, bogus low-32-bits
-       pointer and crashed. Confirmed live: this crashed every "Chant
-       the mantra" invocation with a SIGSEGV inside ce_strcmp. */
+    /* uVar4/uVar5 were `undefined4` (32-bit) here, truncating _strupr's and get_message_string's
+       real 64-bit pointer returns -- the same pointer-truncation bug class already fixed at dozens
+       of other get_message_string call sites in this codebase... */
     pcVar_typed = (char *)_strupr(local_58);
     pcVar_name = get_message_string((int)(char)iVar10 | 0x400);
     iVar6 = ce_strcmp(pcVar_name,pcVar_typed);
@@ -2757,14 +2332,9 @@ LAB_00070b58:
 
 
 
-// was FUN_00070c90 -- draws the full character-sheet text overlay
-// (name, class, level, elapsed game time (DAT_00086df8+0xce, this
-// project's already-documented game_time field), the 6 core attributes
-// in a 3-column grid, and all 20 skill values in a 3x7 grid) on top of whatever
-// background the caller already blit. Its one call site is the game-
-// completion/victory sequence (after blitting win1.byt/win2.byt), so
-// this is effectively the final character stats screen, though the
-// drawing logic itself isn't victory-specific.
+// was FUN_00070c90 -- draws the full character-sheet text overlay (name, class, level, elapsed game
+// time (DAT_00086df8+0xce, this project's already-documented game_time field), the 6 core
+// attributes in a 3-column grid)...
 void render_endgame_character_stats()
 
 {
@@ -2775,12 +2345,9 @@ void render_endgame_character_stats()
   undefined1 uVar4;
   byte bVar5;
   short sVar6;
-  /* Was `undefined4`, truncating get_message_string's real char* return on
-     this 64-bit host -- same bug class as the other get_message_string
-     truncation fixes this session (e.g. character_generator_loop's uVar10). Used
-     consistently as a string pointer everywhere else in this function
-     (draw_text_string's first arg, ce_strcat's second arg), so retyping
-     is a straightforward drop-in fix. */
+  /* Was `undefined4`, truncating get_message_string's real char* return on this 64-bit host -- same
+     bug class as the other get_message_string truncation fixes this session (e.g.
+     character_generator_loop's uVar10). */
   char *uVar7;
   char *pcVar8;
   int iVar9;
@@ -2801,11 +2368,9 @@ void render_endgame_character_stats()
   *DAT_00084298 = 0x5c;
   *g_draw_color_index = 0x5c;
   uVar7 = get_message_string((int)DAT_00201c74);
-  /* Was `measure_text_width()` with no argument -- see draw_text_string/
-     measure_text_width's own comments above for the root "dropped argument"
-     bug this matches; uVar7 (the string get_message_string just returned) is
-     right here, so pass it explicitly instead of hoping it's still
-     sitting in the right register. */
+  /* Was `measure_text_width()` with no argument -- see draw_text_string/ measure_text_width's own
+     comments above for the root "dropped argument" bug this matches; uVar7 (the string
+     get_message_string just returned) is right here... */
   sVar6 = measure_text_width(uVar7);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
@@ -2849,11 +2414,9 @@ void render_endgame_character_stats()
     iVar12 = iVar12 + 1;
   }
   draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
-  /* First argument is NOT the address of a global despite how this
-     first decompiled (`&DAT_001c2000`) -- see
-     print_character_description_scroll's identical call in hud.c for
-     the real-disassembly explanation (ARM's split-immediate idiom for
-     the plain literal 0x1c2000, misread as a data reference). */
+  /* First argument is NOT the address of a global despite how this first decompiled
+     (`&DAT_001c2000`) -- see print_character_description_scroll's identical call in hud.c for the
+     real-disassembly explanation... */
   sVar6 = orduint_divmod(0x1c2000,*(undefined4 *)(DAT_00086df8 + 0xce)).quot;
   sVar6 = ordint_divmod(0xc,(int)sVar6).quot;
   pcVar8 = (char *)get_message_string(0x2bd);
@@ -2956,13 +2519,9 @@ LAB_00071110:
 
 
 
-// was FUN_0007141c -- applies pending status effects around a rest
-// action: clears any active screen-flash effect (bits 1/2 of
-// DAT_00086df8+0xb8) both before and after settling movement/refreshing
-// equipment effects, and if bit 3 (poison) is set and not in a gated
-// game state (DAT_0020208c bits 0x16), applies a randomized damage tick
-// (12-57, type 0x10) to the player via apply_typed_damage_to_object -- the "poisoned
-// while you sleep" mechanic.
+// was FUN_0007141c -- applies pending status effects around a rest action: clears any active
+// screen-flash effect (bits 1/2 of DAT_00086df8+0xb8) both before and after settling
+// movement/refreshing equipment effects...
 void apply_rest_status_effects()
 
 {
@@ -2993,19 +2552,8 @@ void apply_rest_status_effects()
 
 
 
-// was FUN_00071510 -- the "Rest" command handler, reached either
-// directly (param_1<0) or, for param_1>=0, only after passing
-// preconditions (not poisoned/etc. per DAT_00086df8+0xb8, not falling,
-// not on level 9) and check_rest_area_unsafe reporting it's unsafe to rest here
-// (message 0xf shown either way): advances game time
-// (DAT_00086df8+0xce) by a random 2-6 "day" count, heals HP/mana based
-// on hunger state (g_player_object+8) via adjust_player_hp, decays
-// hunger, rolls for a random level special event
-// (trigger_random_level_special_event), resets jump/fall physics state,
-// and redraws. apply_rest_status_effects (including the poison tick)
-// is only called for the original param_1<0 path specifically. When
-// preconditions pass and resting IS safe (param_1>=0), a different,
-// shorter message plays instead and none of the rest logic runs.
+// was FUN_00071510 -- the "Rest" command handler, reached either directly (param_1<0) or, for
+// param_1>=0, only after passing preconditions...
 void handle_rest_action(param_1)
 short param_1;
 
@@ -3184,13 +2732,8 @@ LAB_0007158c:
 
 
 
-// was FUN_00071b08 -- adjusts the player's hunger byte
-// (DAT_00086df8+0x39) by param_1, clamped to 0..0xff (returns false if
-// it would go >=0x100 without applying anything). If param_1>0 (the
-// player just ate), also restores a capped amount of stat points from
-// the accumulated rest-debt byte (+0x3b) via restore_stat_capped and
-// clears it. Called by handle_rest_action with negative deltas (hunger
-// decay while resting).
+// was FUN_00071b08 -- adjusts the player's hunger byte (DAT_00086df8+0x39) by param_1, clamped to
+// 0..0xff (returns false if it would go >=0x100 without applying anything).
 undefined4 adjust_player_hunger(param_1)
 short param_1;
 
@@ -3227,15 +2770,8 @@ short param_1;
 
 
 
-// was FUN_00071b94 -- the game-completion/victory sequence, gated on
-// DAT_0023c27c (0 = the one-time "ending cutscene" stage not yet run,
-// nonzero = show the victory stats screen). The cutscene stage (once
-// per game, guarded by DAT_00086df8+0x6d) spawns a special object
-// (catalog id 0x15a), links it into the current tile, spins the camera
-// a full rotation, then unlinks/frees the object and applies an effect
-// to the player (teleport_object_to_level_tile). The stats-screen stage blits
-// win1.byt/win2.byt as backgrounds, draws render_endgame_character_stats
-// on top, waits for input, then resets DAT_0023c27c to end the sequence.
+// was FUN_00071b94 -- the game-completion/victory sequence, gated on DAT_0023c27c (0 = the one-time
+// "ending cutscene" stage not yet run, nonzero = show the victory stats screen).
 void handle_game_victory_sequence()
 
 {
@@ -3326,19 +2862,8 @@ void handle_game_victory_sequence()
 
 
 
-// was FUN_00072288 -- the starvation handler: its one caller invokes
-// this every turn the player's hunger byte (g_player_object+8) reads 0.
-// Gated on DAT_00086df8+0x6d (also set by handle_game_victory_sequence's
-// ending cutscene -- its exact broader meaning here, "already suffered
-// starvation once" vs something victory-specific, isn't resolved): if
-// clear, this is treated as a first warning -- just reset hunger to 4,
-// no penalty. If already set, apply real starvation consequences: lose
-// experience (grant_experience_points with a derived negative amount),
-// drop any held cursor item, spawn an object (catalog 0xc2+0..4) near
-// the player and settle it into the world, and -- if DAT_00086df8+0x5e's
-// upper nibble is set and not on level 9 -- re-arm the
-// apply_special_object_use_effect callback and play a camera animation
-// before showing a message.
+// was FUN_00072288 -- the starvation handler: its one caller invokes this every turn the player's
+// hunger byte (g_player_object+8) reads 0.
 void handle_starvation_penalty()
 
 {
@@ -3376,11 +2901,9 @@ void handle_starvation_penalty()
 LAB_00072374:
   uVar5 = ce_rand();
   uw_ord2005_rem_148 = ((int)(uVar5)) % (5);
-  /* Was `iVar6 = spawn_new_object(...)` (plain int) -- spawn_new_object now
-     really returns a fresh object pointer (see its fix) instead of
-     always 0, so storing it in a 32-bit int truncates it on this 64-bit
-     host. New pNewObj local rather than retyping iVar6, which is reused
-     below for dungeon_view_anim_tick()'s unrelated int result. */
+  /* Was `iVar6 = spawn_new_object(...)` (plain int) -- spawn_new_object now really returns a fresh
+     object pointer (see its fix) instead of always 0, so storing it in a 32-bit int truncates it on
+     this 64-bit host. */
   pNewObj = (char *)spawn_new_object(uw_ord2005_rem_148 + 0xc2,0);
   iVar7 = place_object_in_world((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,
                        pNewObj,0,1);
@@ -3424,12 +2947,9 @@ LAB_00072374:
 
 
 
-// was FUN_00073e14 -- adjusts the level-7 hazard byte
-// (DAT_00086df8+0x37, only when param_1 is the player object):
-// param_2<=0 subtracts it as a delta from the current value; param_2>0
-// instead adds a randomized amount (param_2 plus 0-3, scaled by the
-// hazard cap DAT_00086df8+0x38) to the current value plus 1. Clamps
-// to the cap and refreshes the experience/stats display.
+// was FUN_00073e14 -- adjusts the level-7 hazard byte (DAT_00086df8+0x37, only when param_1 is the
+// player object): param_2<=0 subtracts it as a delta from the current value; param_2>0 instead adds
+// a randomized amount...
 void adjust_level7_hazard_value(param_1,param_2)
 char *param_1;
 char param_2;
@@ -3471,22 +2991,9 @@ uint param_2;
   byte bVar2;
 
   uVar1 = (param_2 & 0xff) + (uint)param_1[8];
-  /* Was an unconditional `(&g_monster_max_stats_table)[(*param_1 & 0x3f) * 0x30]` cap
-     -- that table is the per-monster-class max-stat table, indexed by
-     the low 6 bits of a monster object's own type id (a valid index
-     for any real monster, 0x40-0x7f). But this function is also called
-     with param_1 == g_player_object (see adjust_player_hunger's food-digestion
-     "restore a resting bonus" call, and this function's own existing
-     `if (param_1 == g_player_object)` special case just below), and the
-     player's object type happens to be 0x7f, whose low 6 bits (0x3f)
-     index the table's last, unused/zeroed entry. That zero cap then
-     clamped the player's HP down to 0 every time -- confirmed live via
-     UW_DEBUG_INV: "restore_stat_capped *param_1=0x7f class=0x3f cap=0
-     uVar1=42 hp_before=34" immediately followed by the player's death
-     sequence after simply eating a loaf of bread. Use the real player
-     max-HP stat (DAT_0023be74+4, the same source adjust_player_hp already
-     uses for player HP capping) instead of the monster table when the
-     target is the player. */
+  /* Was an unconditional `(&g_monster_max_stats_table)[(*param_1 & 0x3f) * 0x30]` cap -- that table
+     is the per-monster-class max-stat table, indexed by the low 6 bits of a monster object's own
+     type id (a valid index for any real monster, 0x40-0x7f). */
   bVar2 = (param_1 == g_player_object) ? *(byte *)(DAT_0023be74 + 4) :
           (&g_monster_max_stats_table)[(*param_1 & 0x3f) * 0x30];
   if (bVar2 < uVar1) {
@@ -3503,11 +3010,9 @@ uint param_2;
 
 
 
-// was FUN_00073fc4 -- dispatch_special_action's "healing item" handler
-// (its own case 4): only applies if the target object's quality bits
-// match 0x40 (a food/potion-shaped flag), then restores HP via
-// restore_stat_capped -- param_2==0xf is a full-heal sentinel (-1),
-// otherwise param_2 is a dice count rolled via roll_dice_sum (d8s).
+// was FUN_00073fc4 -- dispatch_special_action's "healing item" handler (its own case 4): only
+// applies if the target object's quality bits match 0x40 (a food/potion-shaped flag), then restores
+// HP via restore_stat_capped -- param_2==0xf is a full-heal sentinel (-1)...
 void apply_healing_item_effect(param_1,param_2)
 ushort * param_1;
 char param_2;
@@ -3533,27 +3038,16 @@ char param_2;
 
 
 
-// was FUN_00077f30 -- draws the stats panel's name/title/level
-// header. Called from draw_stats_panel_content. Draws the player's
-// name (uppercased via _strupr, the real _strupr), then their
-// title (a gender+race-derived message lookup), then their level
-// number (0-3 capped, offset 0x3d) right-aligned. Already referenced
-// by this name in existing comments in src/ordinal_stubs.c and
-// src/saveload.c documenting two real bugs already fixed here in an
-// earlier session pass (a truncated-pointer crash and a dropped-
-// argument bug that left the player's title never drawn).
+// was FUN_00077f30 -- draws the stats panel's name/title/level header. Called from
+// draw_stats_panel_content.
 void draw_stats_panel_header()
 
 {
   char cVar1;
   short sVar2;
-  /* Was `undefined4` -- truncated _strupr's real 64-bit string
-     pointer return (see that ordinal's own comment: it's `_strupr`,
-     genuinely implemented now instead of a stub) to 32 bits on this
-     host before handing it to draw_text_string. Harmless while
-     _strupr was a stub always returning 0; a real
-     pointer-truncation crash now that it isn't. Same class as
-     everywhere else this session. */
+  /* Was `undefined4` -- truncated _strupr's real 64-bit string pointer return (see that ordinal's
+     own comment: it's `_strupr`, genuinely implemented now instead of a stub) to 32 bits on this
+     host before handing it to draw_text_string. */
   char *uVar3;
   int iVar4;
   undefined1 auStack_28 [30];
@@ -3568,14 +3062,8 @@ void draw_stats_panel_header()
     iVar4 = -(int)sVar2 + 0x49;
   }
   draw_text_string(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
-  /* Was `get_message_string(id); uVar3 = _strupr();` -- _strupr
-     (real body: `_strupr`, see its own comment) needs an explicit
-     string argument, but was called with none, relying on the K&R
-     leftover-register idiom (this project's established "dropped
-     argument" pattern) to still hold get_message_string's just-returned
-     string pointer. That register doesn't reliably carry through on
-     this recompile, so uVar3 came back NULL/garbage and the player's
-     title was never drawn. Thread the string through explicitly. */
+  /* Was `get_message_string(id); uVar3 = _strupr();` -- _strupr (real body: `_strupr`, see its own
+     comment) needs an explicit string argument, but was called with none... */
   uVar3 = _strupr(get_message_string((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
   draw_text_string(uVar3,0xf2,0x16);
   itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
@@ -3583,10 +3071,9 @@ void draw_stats_panel_header()
   if (3 < *(byte *)(DAT_00086df8 + 0x3d)) {
     cVar1 = '\x03';
   }
-  /* Originally `cVar1 * 3 + 0x878b0`: index into a small string table at a
-     fixed original-binary address Ghidra never recovered contents for
-     (see open_gr_resource_file for the same pattern) -- skipped rather than
-     guessed, this is cosmetic HUD text formatting. */
+  /* Originally `cVar1 * 3 + 0x878b0`: index into a small string table at a fixed original-binary
+     address Ghidra never recovered contents for (see open_gr_resource_file for the same pattern) --
+     skipped rather than guessed, this is cosmetic HUD text formatting. */
   iVar4 = measure_text_width(auStack_28);
   draw_text_string(auStack_28,0x138 - iVar4,0x16);
   return;
@@ -3596,12 +3083,9 @@ void draw_stats_panel_header()
 
 
 
-// was FUN_0007802c -- draws one row of the stats panel's 3-value
-// attribute display: param_1 selects the row (0-2), reading byte
-// DAT_0023be74+5+row (see character_generator_loop's own init of
-// these 3 bytes via "roll 2d10+10", uw.c ~10097) and right-aligning
-// it at y = row*7+0x1d, just below the name/title/level header.
-// Called 3x in a loop from draw_stats_panel_content.
+// was FUN_0007802c -- draws one row of the stats panel's 3-value attribute display: param_1 selects
+// the row (0-2), reading byte DAT_0023be74+5+row (see character_generator_loop's own init of these
+// 3 bytes via "roll 2d10+10", uw.c ~10097) and right-aligning it at y = row*7+0x1d...
 void draw_stats_panel_attribute_row(param_1)
 uint param_1;
 
@@ -3617,12 +3101,8 @@ uint param_1;
 
 
 
-// was FUN_00078088 -- draws the player's "current/max HP" fraction
-// (g_player_object offset+8, the real player HP byte) as "X/Y" text
-// at y=0x32. Called from draw_stats_panel_content and
-// refresh_experience_display (the latter re-running it whenever the
-// player's stats change while the stats panel is the active HUD
-// view).
+// was FUN_00078088 -- draws the player's "current/max HP" fraction (g_player_object offset+8, the
+// real player HP byte) as "X/Y" text at y=0x32.
 void draw_hp_stat_display()
 
 {
@@ -3641,10 +3121,9 @@ void draw_hp_stat_display()
 
 
 
-// was FUN_00078118 -- draws the player's "current/max mana" fraction
-// (DAT_00086df8+0x37/+0x38 -- offset 0x37 confirmed as "play_mana"
-// against babl.c's own read of the same offset) as "X/Y" text at
-// y=0x39. Same caller pair as draw_hp_stat_display above.
+// was FUN_00078118 -- draws the player's "current/max mana" fraction (DAT_00086df8+0x37/+0x38 --
+// offset 0x37 confirmed as "play_mana" against babl.c's own read of the same offset) as "X/Y" text
+// at y=0x39. Same caller pair as draw_hp_stat_display above.
 void draw_mana_stat_display()
 
 {
@@ -3664,9 +3143,8 @@ void draw_mana_stat_display()
 
 
 
-// was FUN_000781a0 -- draws the player's total experience points
-// (DAT_00086df8+0x4e, a 4-byte value) formatted via orduint_divmod/
-// _ltoa at y=0x40. Same caller pair as draw_hp_stat_display
+// was FUN_000781a0 -- draws the player's total experience points (DAT_00086df8+0x4e, a 4-byte
+// value) formatted via orduint_divmod/ _ltoa at y=0x40. Same caller pair as draw_hp_stat_display
 // above.
 void draw_experience_points_display()
 
@@ -3686,12 +3164,8 @@ void draw_experience_points_display()
 
 
 
-// was FUN_0007821c -- draws one row of the stats panel's skill list:
-// param_1 selects the skill index, restores the captured backdrop
-// rect behind that row (blit_grtile_to_framebuffer), then draws the skill's name
-// (a message lookup at DAT_0024af80+index+0x1f) and its numeric
-// value (DAT_00086df8+0x21+index) side by side. Called in a loop
-// from draw_stats_panel_content.
+// was FUN_0007821c -- draws one row of the stats panel's skill list: param_1 selects the skill
+// index, restores the captured backdrop rect behind that row (blit_grtile_to_framebuffer)...
 void draw_stats_panel_skill_row(param_1)
 uint param_1;
 
@@ -3708,11 +3182,9 @@ uint param_1;
   itoa_radix(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
   blit_grtile_to_framebuffer(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
                0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
-  /* Was `get_message_string(id); uVar1 = _strupr();` -- same dropped-
-     argument bug as draw_stats_panel_header's player-title draw above; thread
-     the looked-up skill-name string through explicitly instead of
-     relying on leftover-register reuse. This is why no skill names
-     (Sword/Swimming/Mace/etc.) ever displayed. */
+  /* Was `get_message_string(id); uVar1 = _strupr();` -- same dropped- argument bug as
+     draw_stats_panel_header's player-title draw above; thread the looked-up skill-name string
+     through explicitly instead of relying on leftover-register reuse. */
   uVar1 = _strupr(get_message_string((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400));
   iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
   draw_text_string(uVar1,0xf2,iVar4);
@@ -3771,14 +3243,9 @@ void draw_stats_panel_content()
 
 
 
-// was FUN_00078434 -- handles a click on the stats panel's skill
-// list, scrolling it up or down by one (DAT_0024af80, the skill
-// scroll offset draw_stats_panel_skill_row reads) depending on click
-// position relative to DAT_00085a6c. Already had an existing comment
-// documenting a real dropped-argument bug already fixed here (a
-// scroll-direction bug -- "scrolling jumps somewhere else instead of
-// line by line"). Confirmed real caller: src/inventory.c's panel-
-// click dispatch.
+// was FUN_00078434 -- handles a click on the stats panel's skill list, scrolling it up or down by
+// one (DAT_0024af80, the skill scroll offset draw_stats_panel_skill_row reads) depending on click
+// position relative to DAT_00085a6c.
 void handle_stats_panel_skill_scroll_click()
 
 {
@@ -3800,17 +3267,9 @@ void handle_stats_panel_skill_scroll_click()
     if (sVar2 != 1) {
       uVar1 = 0;
     }
-    /* Was `step_value_toward_limit(local_c,uVar1,1);` -- dropped its 4th
-       argument (direction, -1/+1), the SAME `sVar2` value just
-       computed above from the click position but about to be
-       clobbered by this very call's own return value (Ghidra reused
-       the variable slot). step_value_toward_limit's own body branches on
-       param_4==-1 vs anything else to pick which bound check and
-       which sign to apply, so a dropped/garbage direction here could
-       clamp against the wrong bound or step the wrong way --
-       confirmed as the cause of "scrolling jumps somewhere else
-       instead of line by line". Re-derive the direction explicitly
-       instead of relying on the leftover register. */
+    /* Was `step_value_toward_limit(local_c,uVar1,1);` -- dropped its 4th argument (direction,
+       -1/+1), the SAME `sVar2` value just computed above from the click position but about to be
+       clobbered by this very call's own return value (Ghidra reused the variable slot).... */
     sVar2 = step_value_toward_limit(local_c,uVar1,1,(0x24 < *DAT_00085a6c) ? 1 : -1);
     if (sVar2 != 0) {
       DAT_0024af80 = (byte)local_c[0];
@@ -3843,21 +3302,15 @@ void refresh_stats_panel_if_active()
 }
 
 
-// was FUN_0007ee9c -- confirmed by read_player_status_block
-// (src/player.c) as the low-level "read and de-scramble" primitive
-// behind the player.dat status block: reads param_4 bytes from file
-// handle param_1 into param_3, 80 (0x50) bytes at a time, XOR'ing
-// each chunk against a rolling key derived from param_2 (incremented
-// by 3 every 80 bytes) -- a simple byte-scrambling obfuscation, not
-// real encryption. Returns the total byte count actually read.
+// was FUN_0007ee9c -- confirmed by read_player_status_block (src/player.c) as the low-level "read
+// and de-scramble" primitive behind the player.dat status block: reads param_4 bytes from file
+// handle param_1 into param_3, 80 (0x50) bytes at a time...
 short read_xor_scrambled_block(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 byte param_2;
-char *param_3;  /* was `int` -- same DAT_00086df8-pointer truncation bug
-                   as its sibling write_xor_scrambled_block (see that function's
-                   comment); this one is reached from the save-slot-copy
-                   path (read_player_status_block <- load_player_save_record) rather than
-                   write_player_status_block's caller */
+char *param_3;  /* was `int` -- same DAT_00086df8-pointer truncation bug as its sibling write_xor_scrambled_block
+   (see that function's comment); this one is reached from the save-slot-copy path
+   (read_player_status_block <- load_player_save_record) rather than... */
 short param_4;
 
 {
@@ -3894,19 +3347,15 @@ short param_4;
 
 
 
-// was FUN_0007ef78 -- write-side mirror of read_xor_scrambled_block,
-// confirmed by write_player_status_block (src/player.c): XOR-
-// scrambles param_4 bytes from param_3 against the same rolling
-// param_2-derived key, 80 bytes at a time, writing each chunk to file
-// handle param_1. Returns the total byte count actually written.
+// was FUN_0007ef78 -- write-side mirror of read_xor_scrambled_block, confirmed by
+// write_player_status_block (src/player.c): XOR- scrambles param_4 bytes from param_3 against the
+// same rolling param_2-derived key, 80 bytes at a time, writing each chunk to file handle param_1.
 int write_xor_scrambled_block(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 byte param_2;
-char *param_3;  /* was `int` -- truncated the real DAT_00086df8 pointer
-                   write_player_status_block passes in, latent until something
-                   (write_player_save_record, the player.dat writer) actually called
-                   write_player_status_block -- previously only reachable from the
-                   Load Game path */
+char *param_3;  /* was `int` -- truncated the real DAT_00086df8 pointer write_player_status_block passes in, latent
+   until something (write_player_save_record, the player.dat writer) actually called
+   write_player_status_block -- previously only reachable from the Load Game path */
 short param_4;
 
 {
@@ -3953,16 +3402,15 @@ short param_4;
 
 
 
-// was FUN_000352d0 -- scan_area_ahead_of_object callback: flags
-// DAT_00101954 if the scanned object (param_3) isn't the player, its
-// class-record quality nibble (byte 0xb) is 4, 5, or 9 (a hostile
-// creature category), and its own alerted/aware flag (byte 0x19, bit
-// 0) is set. Used by check_rest_area_unsafe to detect a nearby
-// alerted hostile within resting range.
+// was FUN_000352d0 -- scan_area_ahead_of_object callback: flags DAT_00101954 if the scanned object
+// (param_3) isn't the player, its class-record quality nibble (byte 0xb) is 4, 5, or 9 (a hostile
+// creature category), and its own alerted/aware flag (byte 0x19, bit 0) is set.
 undefined4 detect_unsafe_rest_object_callback(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
-int param_3;
+/* ARM 0x352d4 preserves the scanned object from r2 in r4 before reading
+   +0xb/+0x19. Keep that record address intact on a 64-bit host. */
+char *param_3;
 
 {
   byte bVar1;
@@ -3979,10 +3427,9 @@ int param_3;
 
 
 
-// was FUN_00035340 -- scans a radius (0x7f) around the player for an
-// alerted hostile creature (detect_unsafe_rest_object_callback) and
-// returns whether one was found. handle_rest_action's non-negative
-// path reads this to decide whether resting is safe here.
+// was FUN_00035340 -- scans a radius (0x7f) around the player for an alerted hostile creature
+// (detect_unsafe_rest_object_callback) and returns whether one was found. handle_rest_action's
+// non-negative path reads this to decide whether resting is safe here.
 undefined4 check_rest_area_unsafe()
 
 {
@@ -3992,12 +3439,9 @@ undefined4 check_rest_area_unsafe()
 }
 
 
-// was FUN_0003bee4 -- confirmed by close_panels_before_level_change's
-// own cross-reference as a "resurrect/reset-position" path: closes
-// UI panels, refreshes equipment effects, clears the player's
-// posture/heading bits, resets heading-related globals and the level
-// 9 special-state byte, resets the HUD panel animation, un-readies
-// the weapon, and clears cursor mode/holding state.
+// was FUN_0003bee4 -- confirmed by close_panels_before_level_change's own cross-reference as a
+// "resurrect/reset-position" path: closes UI panels, refreshes equipment effects, clears the
+// player's posture/heading bits...
 void reset_player_for_resurrection()
 
 {
@@ -4037,14 +3481,9 @@ void reset_player_for_resurrection()
 }
 
 
-// was FUN_0003c038 -- exits the current game mode and transitions
-// through the main menu before resuming: for param_1==1 (the player
-// death case), shows the "You died" message, the death illustration
-// page (0x103), and a 2-second pause before continuing. Waits out any
-// pending input, runs the current mode's exit callback (from the
-// mode-dispatch table at DAT_000856a4), resets mode state, calls
-// reset_player_for_resurrection, runs main_menu_loop(0), then restores
-// and re-enters the previous mode's entry callback.
+// was FUN_0003c038 -- exits the current game mode and transitions through the main menu before
+// resuming: for param_1==1 (the player death case), shows the "You died" message, the death
+// illustration page (0x103), and a 2-second pause before continuing.
 void handle_player_death_and_menu_transition(param_1)
 short param_1;
 
@@ -4068,11 +3507,7 @@ short param_1;
     sVar1 = next_input_event();
   } while (sVar1 < 0);
   msg_scroll_panel_reset(1);
-  /* 0x80, see DAT_00085668's comment. Guarded the same way
-     change_game_mode guards its own identical table-callback call --
-     this call site was missing the NULL/0xffffffff check entirely,
-     so any mode with no registered exit callback (e.g. mode 2, the
-     NPC-conversation mode) crashed here with a NULL indirect call. */
+  /* 0x80, see DAT_00085668's comment. */
   pcVar2 = (code *)(int)DAT_00201b64;
   /* Same 64-bit pointer-sentinel fix as change_game_mode's own identical
      guard -- see its comment. */
@@ -4106,14 +3541,8 @@ short param_1;
 }
 
 
-// was FUN_0003c6ac -- confirmed by its only call site as a level-9
-// (the final/Abyss level) exclusive random environmental hazard: only
-// ever rolled 1-in-32 per tick while on that level. Plays effect
-// weapon_overlay_flash_once(0xb5), then randomly reduces the player's HP (byte
-// g_player_object+8) by a smaller amount at higher HP tiers (0-5 at
-// full-ish health, down to a chance of just 1 near death) so it can't
-// outright kill, occasionally triggers a stumble animation
-// (set_movement_animation_timer), and flashes the HP HUD status.
+// was FUN_0003c6ac -- confirmed by its only call site as a level-9 (the final/Abyss level)
+// exclusive random environmental hazard: only ever rolled 1-in-32 per tick while on that level.
 void apply_level9_random_hazard_tick()
 
 {
@@ -4172,12 +3601,8 @@ LAB_0003c780:
 }
 
 
-// was FUN_0003dba0 -- dispatch_special_action's case-1 handler for
-// sub-codes 3/5 (uw.c, src/object_actions.c:896). If the target is the
-// player and the player isn't already airborne (DAT_002048a8 bit 0x10,
-// the locomotion-state "jumping/falling" bit), launches them upward
-// (g_vertical_velocity = 0x8d) and resets fall acceleration to 0 --
-// reads as "trigger a jump if grounded" (e.g. a jump-pad tile effect).
+// was FUN_0003dba0 -- dispatch_special_action's case-1 handler for sub-codes 3/5 (uw.c,
+// src/object_actions.c:896).
 void trigger_player_jump_if_grounded(param_1)
 int param_1;
 
@@ -4193,12 +3618,8 @@ int param_1;
 
 
 
-// was FUN_0003dbd8 -- called once per player-update tick
-// (src/player.c:759, right after the per-frame ambient-light/flicker
-// update). Forces set_locomotion_state to recompute off the current
-// DAT_002048a8 state (param_2=1, the "force" flag) and sets
-// DAT_000858a0, a movement-dirty flag checked alongside g_fall_accel
-// in src/movement.c's redraw/update-pending conditions.
+// was FUN_0003dbd8 -- called once per player-update tick (src/player.c:759, right after the
+// per-frame ambient-light/flicker update).
 void force_locomotion_state_refresh()
 
 {
@@ -4209,12 +3630,7 @@ void force_locomotion_state_refresh()
 
 
 
-// was FUN_0003dc04 -- one of apply_quest_vertical_effect's two
-// sub-effects (bit 2). Computes a vertical launch velocity from
-// param_1 (rounds toward zero before the >>2, then scales), forces
-// fall acceleration into its "in flight" state (-2, unless already in
-// the steeper -4 state), and halves the horizontal momentum decay
-// counters DAT_00204886/DAT_00204888 (also rounding toward zero).
+// was FUN_0003dc04 -- one of apply_quest_vertical_effect's two sub-effects (bit 2).
 void apply_vertical_launch_impulse(param_1)
 short param_1;
 
@@ -4244,15 +3660,9 @@ short param_1;
 
 
 
-// was FUN_0003dc6c -- apply_quest_vertical_effect's other sub-effect
-// (bit 1). Always the same fixed-duration animation-timer trigger
-// (set_movement_animation_timer(0x40,0x1e)); reads as a scripted
-// "stumble" animation cue. Its only call site passes an argument this
-// function's own declaration doesn't accept (K&R silently discards
-// it) -- unlike report_categorized_fatal_error's dropped PARAMETER
-// earlier in this pass, there's only ONE call site here and the
-// animation is always the same fixed timing, so this is left as a
-// no-arg function rather than guessed into taking one.
+// was FUN_0003dc6c -- apply_quest_vertical_effect's other sub-effect (bit 1). Always the same
+// fixed-duration animation-timer trigger (set_movement_animation_timer(0x40,0x1e)); reads as a
+// scripted "stumble" animation cue.
 void trigger_quest_stumble_animation(param_1)
 undefined4 param_1;
 
@@ -4263,13 +3673,9 @@ undefined4 param_1;
 
 
 
-// was FUN_0003dc78 -- dispatch_quest_event_code's handler for quest
-// codes 0x3c-0x3e (src/traps.c:562, gated on the trap/link record's
-// trigger context being the player), called as
-// apply_quest_vertical_effect(code-0x3b, linkval&0x3f) so param_1 in {1,2,3}. Bit 0
-// (codes 0x3c,0x3e) triggers the stumble animation; bit 1 (codes
-// 0x3d,0x3e) applies the vertical launch impulse sized by param_2.
-// Reads as a scripted "quest event moves/jolts the player" dispatcher.
+// was FUN_0003dc78 -- dispatch_quest_event_code's handler for quest codes 0x3c-0x3e
+// (src/traps.c:562, gated on the trap/link record's trigger context being the player), called as
+// apply_quest_vertical_effect(code-0x3b, linkval&0x3f) so param_1 in {1,2,3}.
 void apply_quest_vertical_effect(param_1,param_2)
 ushort param_1;
 undefined4 param_2;
@@ -4285,17 +3691,9 @@ undefined4 param_2;
 }
 
 
-// was FUN_00053ab0 -- manages the player's active-light-source list
-// (a small array at DAT_00086df8+0x3e, count tracked in bits 6-9 of
-// the status word at +0x5f/+0x60): confirmed by handle_light_source_click's
-// own comment as "cycle the active light source" on a UI click, and
-// also called from the per-tick updater (update_player_tick_effects).
-// For slot *param_1, a specific type/severity match (type 1,
-// severity 0x30 or 0x50) escalates it into a staging slot at +0x1f+
-// index instead of removing it; otherwise removes the slot from the
-// active list (swap-with-last-and-shrink) and decrements the count,
-// returning 1 once the list is exhausted. A type-0xb/severity-0x10
-// match also forces the view via set_view_subject_by_command.
+// was FUN_00053ab0 -- manages the player's active-light-source list (a small array at
+// DAT_00086df8+0x3e, count tracked in bits 6-9 of the status word at +0x5f/+0x60): confirmed by
+// handle_light_source_click's own comment as "cycle the active light source" on a UI click...
 undefined4 cycle_active_light_source(param_1)
 short * param_1;
 
@@ -4344,15 +3742,9 @@ short * param_1;
 
 
 
-// was FUN_00053c74 -- periodic player-tick updater, called from
-// player.c roughly every 20 realtime-clock ticks: cycles/decays every
-// active light source (cycle_active_light_source) and refreshes
-// equipment effects on a change, processes a second pending-effect
-// mask at +0x61 bits 2-3, applies queued HP/hazard damage flagged in
-// DAT_002046cc, triggers apply_drowning_hazard (not yet named) once liquid-
-// submersion depth (+0xb9) exceeds a threshold, and every 3rd call
-// (DAT_002046d0 % 3 == 0) applies typed damage for an active +0x5f
-// bits 2-5 condition and rolls a skill check.
+// was FUN_00053c74 -- periodic player-tick updater, called from player.c roughly every 20
+// realtime-clock ticks: cycles/decays every active light source (cycle_active_light_source) and
+// refreshes equipment effects on a change...
 void update_player_tick_effects()
 
 {
@@ -4475,15 +3867,9 @@ void update_player_tick_effects()
 }
 
 
-// was FUN_0005404c -- burns fuel on the player's equipped light
-// sources (g_light_source_slots, 4 slots): for each equipped item
-// whose type falls in the light-source category and has a valid
-// radius (g_light_radius_table), rolls fuel consumption from elapsed
-// time param_2 (and a second roll when param_1 > 1), decrementing the
-// item's fuel field or, once exhausted, its charge count -- at zero
-// charges, redraws the slot, recomputes ambient lighting
-// (set_ambient_bias_without_light), and returns 1. Confirmed as "the
-// light-fuel-burn loop" by an existing comment in player.c.
+// was FUN_0005404c -- burns fuel on the player's equipped light sources (g_light_source_slots, 4
+// slots): for each equipped item whose type falls in the light-source category and has a valid
+// radius (g_light_radius_table)...
 undefined4 decay_equipped_light_sources(param_1,param_2)
 short param_1;
 undefined1 param_2;
@@ -4509,16 +3895,14 @@ undefined1 param_2;
       uVar2 = *puVar6;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
           (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
-        /* Was two separate ordint_divmod calls on the same (cVar1,
-           param_2) pair -- one bare (wanting the remainder via a
-           never-populated extraout_r1), one capturing the quotient
-           via a dropped-dividend second call. One real call now,
-           both halves named off its divmod_result. */
+        /* ARM 0x540d4 uses the tick phase (param_2) for the remainder.
+           Before the second division, 0x540ec reloads elapsed ticks
+           (param_1) into r1. Sleep needs that distinct bulk dividend. */
         divmod_result dmr4414 = ordint_divmod(cVar1,param_2);
         extraout_r1 = dmr4414.rem;
         uVar8 = (ushort)(extraout_r1 == 0);
         if (1 < param_1) {
-          sVar5 = dmr4414.quot;
+          sVar5 = ordint_divmod(cVar1,param_1).quot;
           uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
         }
         if ((short)uVar8 != 0) {
@@ -4549,14 +3933,9 @@ undefined1 param_2;
 
 
 
-// was FUN_000541d0 -- drowning hazard tick, called once liquid-
-// submersion depth (DAT_00086df8+0xb9) exceeds a threshold: rolls a
-// skill check (+0x34, swimming-like stat) against a light-encumbrance-
-// derived difficulty, and on failure (while depth is still below
-// 0x8c/140) increases the depth further via roll_dice_sum -- i.e.
-// struggling/sinking deeper. Once depth exceeds 0x78/120, rolls again
-// and on failure flashes a damage overlay and applies typed damage to
-// the player -- i.e. drowning damage.
+// was FUN_000541d0 -- drowning hazard tick, called once liquid- submersion depth
+// (DAT_00086df8+0xb9) exceeds a threshold: rolls a skill check (+0x34, swimming-like stat) against
+// a light-encumbrance- derived difficulty...
 void apply_drowning_hazard()
 
 {
@@ -4588,12 +3967,9 @@ void apply_drowning_hazard()
 }
 
 
-// was FUN_0003c194 -- mode-0 dirty-bit-3 handler: advance the in-progress
-// step/turn view animation one tick (interpolate the player tile position
-// via find_placement_via_tile_flood_fill) and redraw the dungeon view around it. Does nothing
-// unless an animation is queued (0 < DAT_00201c90). DAT_00085730 bit 0
-// gates the mid-animation full_dungeon_redraw, bit 1 the on-completion
-// redraw + set_pending_update_flags(0x7ffe).
+// was FUN_0003c194 -- mode-0 dirty-bit-3 handler: advance the in-progress step/turn view animation
+// one tick (interpolate the player tile position via find_placement_via_tile_flood_fill) and redraw
+// the dungeon view around it. Does nothing unless an animation is queued (0 < DAT_00201c90).
 undefined4 dungeon_view_anim_tick()
 
 {
@@ -4626,7 +4002,7 @@ undefined4 dungeon_view_anim_tick()
     }
     DAT_00201c90 = local_20;
     DAT_00201c8c = local_1e;
-    set_player_tile_position((int)local_20,(int)local_1e);
+    set_player_tile_position((int)local_20,(int)local_1e,1);
     if ((DAT_00085730 & 2) != 0) {
       full_dungeon_redraw();
       weapon_overlay_flash_restore((int)g_visibility_max_ring_passes);

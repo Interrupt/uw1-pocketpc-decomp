@@ -1,127 +1,55 @@
-/* The dungeon tile map: the tile-record lookup accessor, the per-frame
- * visible-tile walk/collection, per-tile wall/floor/object emission,
- * and the final visible-tile-list rasterization pass. Split out of
- * uw.c (the original monolithic decompile) once these functions' real
- * roles were confirmed.
- */
+/* The dungeon tile map: the tile-record lookup accessor, the per-frame visible-tile
+   walk/collection, per-tile wall/floor/object emission, and the final visible-tile-list
+   rasterization pass. */
 #include "headers/tmap.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Sizing-audit pass: investigated, NOT shrunk -- per the overflow-
-   guard comment a few hundred lines down (0x4814 record region base,
-   ~490-record cap, 0x60-byte stride), real worst case is
-   0x4814+490*0x60=65492 bytes=16373 elements -- already a near-exact
-   match for the current 16384, not oversized. (An initial pass at
-   this arithmetic mistakenly computed 47852 bytes; rechecked by hand
-   here.) Left as-is. */
+/* Sizing-audit pass: investigated, NOT shrunk -- per the overflow- guard comment a few hundred
+   lines down (0x4814 record region base, ~490-record cap, 0x60-byte stride), real worst case is
+   0x4814+490*0x60=65492 bytes=16373 elements -- already a near-exact match for the current 16384... */
  undefined4 DAT_000a85d0_backing[16384];
-/* Set (0-359) by emit_tile_objects's class-2 TMOBJ/sign branch right
-   before jumping into the shared class-0 mesh-quad code, to make a
-   wall-mounted decal extend along the WALL's own fixed facing angle
-   instead of the camera's (DAT_000db44c, "yaw... from the player
-   object" per its own comment a few thousand lines down) -- see the
-   quad-build code's own comment for why. -1 = no override (normal
-   camera-facing item billboard, the class-0 default). Self-clearing:
-   read and reset back to -1 the moment it's consumed, since
-   DAT_000db44c is a real per-FRAME camera value shared by every object
-   processed after this one -- an override left set would face every
-   later billboard this frame the wrong way. */
+/* Set (0-359) by emit_tile_objects's class-2 TMOBJ/sign branch right before jumping into the shared
+   class-0 mesh-quad code, to make a wall-mounted decal extend along the WALL's own fixed facing
+   angle instead of the camera's... */
 static int g_billboard_angle_override_deg = -1;
-/* UW_MODEL_TUNER=1's "hide_walls" toggle (debug panel, dbgui_field_toggle)
-   -- lets wall/floor tile geometry be filtered out of the render so a
-   single object's own faces (a decal, a boulder) can be inspected via
-   UW_DEBUG_RASTER/the dump_3d_frame face-dump tool without unrelated
-   wall polygons cluttering the trace (several of them coincidentally
-   share texture ids with the object being investigated, confirmed
-   while chasing the TMAP-decal backface report -- filtering by texture
-   id alone doesn't isolate one object's own draws). Checked at the two
-   "commit this wall quad" sites in process_visible_tile_cell (each already
-   writes the quad's geometry/texptr into the current arena slot, THEN
-   advances DAT_0023b83c/DAT_0023b838 to make it visible to the renderer)
-   -- when set, the advance is skipped, so the wall's just-written data is
-   silently overwritten by whatever gets emitted into that same slot next
-   (the next wall, or the tile's own floor/object via emit_tile_features)
-   instead of ever reaching render_visible_tile_list. Floor and objects are
-   untouched -- only process_visible_tile_cell's own wall-quad commits
-   check this flag. */
+/* UW_MODEL_TUNER=1's "hide_walls" toggle (debug panel, dbgui_field_toggle) -- lets wall/floor tile
+   geometry be filtered out of the render so a single object's own faces... */
 int g_uw_hide_walls = 0;
-/* Recovered from UU.exe .data at 0x8462c: the 3D viewport clip rect
-   {x0=0x34, y0=0x13, w=0xe0, h=0x84} == {52, 19, 224, 132}, matching
-   render_dungeon_view's `rect_fill(0x34,0x13,0xe0,0x83)`. render_visible_tile_
-   list copies these into a local passed to raster_triangle as param_8;
-   raster_triangle only calls the span rasterizer raster_textured_span inside
-   `while (param_8[0] != 0 && ...)`. All zero -> that loop never ran ->
-   no pixel ever drawn even with the geometry projecting into view. */
+/* Recovered from UU.exe .data at 0x8462c: the 3D viewport clip rect {x0=0x34, y0=0x13, w=0xe0,
+   h=0x84} == {52, 19, 224, 132}, matching render_dungeon_view's `rect_fill(0x34,0x13,0xe0,0x83)`.
+   render_visible_tile_ list copies these into a local passed to raster_triangle as param_8... */
 static undefined4 DAT_0008462c = 0x34;
 static undefined4 DAT_00084634 = 0xe0;
 static undefined4 DAT_00084630 = 0x13;
 static undefined4 DAT_00084638 = 0x84;
-/* Recovered from UU.exe .data at 0x84610: the perspective/screen scale,
-   integer 100. render_visible_tile_list does ordfloat_int_to_float2(DAT_00084610)
-   (int->float) -> 100.0, then multiplies each vertex's 1/z * eye-space
-   coord by it to get the screen offset from the viewport centre. Was
-   silently zero -> that offset was always 0, so every tile triangle
-   projected to the single centre point (x=140, y=80). */
+/* Recovered from UU.exe .data at 0x84610: the perspective/screen scale, integer 100.
+   render_visible_tile_list does ordfloat_int_to_float2(DAT_00084610) (int->float) -> 100.0... */
 static undefined4 DAT_00084610 = 100u;
-/* Sizing-audit pass: wall-texture property table. Loader fills only
-   48 entries, but every read site masks the index with `&0x3f`
-   (0-63) -- the wider read-side mask governs. HARD: 64 elements
-   (128 bytes). Down from 8192. */
+/* Sizing-audit pass: wall-texture property table. Loader fills only 48 entries, but every read site
+   masks the index with `&0x3f` (0-63) -- the wider read-side mask governs. HARD: 64 elements (128
+   bytes). Down from 8192. */
  undefined2 DAT_0023add0_backing[64];
-/* Sizing-audit pass: floor-texture property table. Loader fills only
-   10 entries, but every read site masks the index with `&0xf`
-   (0-15) -- the wider read-side mask governs. HARD: 16 elements
+/* Sizing-audit pass: floor-texture property table. Loader fills only 10 entries, but every read
+   site masks the index with `&0xf` (0-15) -- the wider read-side mask governs. HARD: 16 elements
    (32 bytes). Down from 8192. */
  undefined2 DAT_0023ae40_backing[16];
-/* Was a lone `undefined4` (zero-initialized), but confirmed via a raw
-   Ghidra memory read of the real UU.exe's .data section that this
-   address's real static initial value is 1, not 0 -- same "silently-
-   zero global instead of its real nonzero .data bytes" bug class fixed
-   repeatedly this session. process_visible_tile_cell gates its main
-   (bit-0x80-SET) automap-reveal write on this flag being nonzero;
-   with it wrongly defaulting to 0, a genuinely fresh character (never
-   having gone through load_game_from_slot or the death/return-to-menu
-   path, the only two real writers-of-1 -- confirmed via a Ghidra xref
-   dump, no third caller exists) got NO automap reveal at all through
-   that path for its entire first dungeon visit. This had been masked
-   until now by process_visible_tile_cell's bit-0x80-CLEAR fallback
-   revealing everything unconditionally (the over-reveal bug fixed
-   just above in this same function) -- confirmed live via a recorded
-   repro (bug-fresh-map.txt): with only the over-reveal fix applied,
-   a fresh character's automap came back completely blank instead of
-   correctly showing the small area actually explored. */
+/* Was a lone `undefined4` (zero-initialized), but confirmed via a raw Ghidra memory read of the
+   real UU.exe's .data section that this address's real static initial value is 1, not 0... */
 undefined4 DAT_00086b20 = 1;
 byte * DAT_0023b814;
-/* SPLIT SYMBOL. In the 32-bit original, DAT_0023b4f4 was the head of a
-   memory region: bytes 0..3 a function pointer (a tile-geometry emitter,
-   selected in walk_visible_tiles / emit_hud_draw_commands, called at
-   process_visible_tile_cell), and from byte 4 on a short[] of per-pick-
-   slot tile offsets, indexed `slot*2 + 2` (slot 1 -> byte 4) by the
-   object-pick ID assignment (emit_tile_objects) and read back by pick_object_under_cursor.
-   On a 64-bit host the pointer is 8 bytes, so those short writes landed
-   *inside* the pointer and corrupted it -> wild call in
-   process_visible_tile_cell the moment pick IDs were being assigned
-   (i.e. as soon as the pick re-render ran). Give the offset table its own
-   backing store; keep the exact `v*2 + 2` index math at both use sites. */
+/* SPLIT SYMBOL. */
 code *DAT_0023b4f4;
 short g_pick_tile_off_backing[0x200];
-/* Sizing pass: indexed by the same DAT_0023b830 cursor as
-   g_pick_tile_off_backing right above (interact.c:1032, tmap.c:2393),
-   a 2-byte stride -- sized to match that sibling's own real extent
+/* Sizing pass: indexed by the same DAT_0023b830 cursor as g_pick_tile_off_backing right above
+   (interact.c:1032, tmap.c:2393), a 2-byte stride -- sized to match that sibling's own real extent
    (0x200 elements * 2 bytes = 1024 bytes), down from 65536. */
 undefined1 DAT_0023b676_backing[1024];
 int DAT_0023b83c;
-/* Were int / undefined4, truncating the real &DAT_002049e0-relative
-   pointers this loader (FUN_00042174 area) computes into them:
-     ae38 = &DAT_002049e0
-     ae34 = ae38 + DAT_0023adb0*0x1000   (10 x 0x400 shade tables at +0x30..)
-     ae3c = ae34 + DAT_0023aeb8*0x400
-     ae30 = ae3c + n*0x100               (10 x 0x100 colour-light tables at +0x6a..)
-   get_texture_page returns *one* of these + index*stride; its callers cast
-   the result to (byte*) and dereference it -> wild pointer + crash the
-   moment the (now-live) 3D geometry path calls it. */
+/* Were int / undefined4, truncating the real &DAT_002049e0-relative pointers this loader
+   (FUN_00042174 area) computes into them: ae38 = &DAT_002049e0 ae34 = ae38 + DAT_0023adb0*0x1000
+   (10 x 0x400 shade tables at +0x30..) ae3c = ae34 + DAT_0023aeb8*0x400 ae30 = ae3c + n*0x100... */
 char *DAT_0023ae38;
 char *DAT_0023ae3c;
 undefined2 DAT_00202734;
@@ -130,35 +58,7 @@ char *DAT_0023aecc;
 short DAT_0025063c;
 short DAT_002506dc;
 short DAT_0025064c;
-/* Recovered from UU.exe .data at 0x86a00 (0x60 bytes). Was FOUR separate
-   silently-zero 64KB Ghidra backing arrays (DAT_00086a00/a02/a18/a20),
-   which also broke the relative addressing the code relies on -- e.g.
-   `*(short *)(&DAT_00086a00 + dir*6)` and `*(short *)(&DAT_00086a02 +
-   dir*6)` are meant to read the same table two bytes apart. Unified into
-   one region with the real bytes; the four symbols are offsets into it.
-
-     +0x00  per-facing tile-record stride pairs, indexed [dir*6] (via
-            &DAT_00086a00) and [dir*6] (via &DAT_00086a02, = +0x02):
-              dir 0..3  a00 = {+1, -64, -1, +64}
-                        a02 = {+64, +1, -64, -1}
-            i.e. the 90-degree rotation basis (tile index = x + y*64) that
-            walk_visible_tiles's automap reveal walk and the 3D tile-neighbour
-            sampling (FUN_0005bd9c &c, uw.c ~44695-44982) step tiles by.
-            All zero before this -> the reveal walk never advanced
-            (teleport+REVEAL only marked the player's own tile) and the
-            view geometry kept sampling one tile.
-     +0x18  four facing angles {0x0000, 0x4000, 0x8000, 0xc000}, [dir*2].
-     +0x20  four 10-entry tile-shape rotation remaps, one row (stride
-            0x10) per facing: identity, then the diagonal/slope types
-            (2-9) permuted for each 90-degree view rotation.
-     +0x60  DAT_00086a60: the tile-shape -> visibility-edge-flags table
-            compute_visibility_ray_offset indexes as [shape*7 + sVar9] (shape
-            0..9, sVar9 0..~8; 80 bytes). This was a lone silently-zero
-            `undefined` scalar, so compute_visibility_ray_offset's bVar6 came
-            out 0 for every cell -> it wrote 0 (never the 0x80 "visible"
-            bit) into the g_visibility_ring_buffer output grid -> process_reaction_
-            queue marked NO tile visible -> empty 3D tile list (black
-            viewport) and only the un-gated automap reveal worked. */
+/* Recovered from UU.exe .data at 0x86a00 (0x60 bytes). */
  const undefined1 DAT_00086a00_region[0xb0] = {
   0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff,
   0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x00,0x00,0x00,0x40,0x00,0x80,0x00,0xc0,
@@ -179,21 +79,9 @@ undefined2 DAT_00086b30;
 code *DAT_0023b80c;
 code *DAT_0023b4d4;
 ushort DAT_00189580;
-/* Recovered from UU.exe .data: 0x86b50 .. 0x86bef (0xa0 bytes). A dense
-   cluster of small per-view-orientation / per-tile-shape byte tables
-   that process_visible_tile_cell reads while building a tile's vertex
-   set for the 3D view. Ghidra had scattered it across ~15 lone
-   `undefined`/`undefined1` scalars (DAT_00086b50, b52, b84, b88,
-   bb0..bb5, bc8..bcd) PLUS a dozen bare-literal `iVar + 0x86bXX`
-   dereferences -- all reading zero / wild. Unified into one region with
-   the real bytes; the scalars and literals now index into it.
-     +0x00 (b50) view-basis shorts, [facing*4] (walk_visible_tiles)
-     +0x10 (b60) 4x4 per-facing something
-     +0x20 (b70) vertex/height offset base, indexed via b84/b88 + n*4
-     +0x40 (b90) 6x5 per-(facing,slot) offsets
-     +0x60 (bb0) 6-entry group used by the billboard-vertex ordfloat_int_to_float2 calls
-     +0x78 (bc8) 6-entry group for the diagonal-tile path
-     +0x90 (be0) 3x4 cull-plane normal components (be0/be1/be2) */
+/* Recovered from UU.exe .data: 0x86b50 .. 0x86bef (0xa0 bytes). A dense cluster of small
+   per-view-orientation / per-tile-shape byte tables that process_visible_tile_cell reads while
+   building a tile's vertex set for the 3D view. */
  const undefined1 DAT_00086b50_region[0xa0] = {
   0x01,0x00,0x40,0x00,0xc0,0xff,0x01,0x00, 0xff,0xff,0xc0,0xff,0x40,0x00,0xff,0xff,
   0x00,0x01,0x03,0x02,0x02,0x00,0x01,0x03, 0x03,0x02,0x00,0x01,0x01,0x03,0x02,0x00,
@@ -206,55 +94,31 @@ ushort DAT_00189580;
   0x01,0x00,0xff,0xff,0x01,0x00,0x00,0x01, 0x01,0x01,0x01,0x01,0x00,0x00,0xff,0x01,
   0x00,0x04,0xff,0x00,0x04,0x01,0xff,0x04, 0x00,0x01,0x04,0x00,0x00,0x00,0x00,0x00,
 };
-/* Sizing-audit pass: process_visible_tile_cell's own loop is
-   `} while (local_54 < 3);` -- max index 2, matching the real
-   recovered content (0,1,2; the rest was always just padding).
-   HARD. Down from 8. */
+/* Sizing-audit pass: process_visible_tile_cell's own loop is `} while (local_54 < 3);` -- max index
+   2, matching the real recovered content (0,1,2; the rest was always just padding). HARD. Down from
+   8. */
 static const undefined1 DAT_00086c00_arr[3] = { 0x00,0x01,0x02 };
 #define DAT_00086c00 (*(const undefined1 *)DAT_00086c00_arr)
 undefined2 DAT_0023bc8c;
 undefined2 DAT_0023b8c0;
 byte *DAT_0023b4ec;
 /* Was a lone `undefined` scalar; walk_visible_tiles/process_visible_tile_cell index it as
-   `(&DAT_00086bf0)[tile_type_nibble]`. Real bytes recovered from
-   UU.exe's .data at 0x86bf0 (confirmed 3 ways: reference search,
-   literal-pool value, disassembly of the `ldrb r2,[r2,r0]` read):
-   0a 0b 0c 0d 0e 0f 0b 0b 0b 0b 0a 0b 0c 0d 0e 0f.
-
-   NOTE: this table is now essentially unused. It turned out NOT to be
-   the real automap reveal-byte source -- the two ring-walk write sites
-   (walk_visible_tiles / process_visible_tile_cell) were changed to compute the reveal byte
-   the way process_visible_tile_cell's bit-0x80-SET branch always did:
-     `DAT_0023ae40[floor-texture index] low byte  |  tile shape nibble`
-   where DAT_0023ae40 is the per-level floor-texture property table
-   (loaded from the .ark). Water floors read 0x10 there -> reveal-byte
-   bit 4 set -> blue fill; every other floor reads 0 -> grey "explored"
-   shading. That's what makes ONLY water render blue (an all-`0x10|type`
-   reconstruction of THIS table made every floor blue, which was wrong).
-
-   Kept here as the raw recovered bytes; it's only hit now via a
-   `local_84 == 0` fallback in dead (bit-0x80-SET) code. */
+   `(&DAT_00086bf0)[tile_type_nibble]`. */
  const unsigned char DAT_00086bf0_real_table[16] = {
   0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0b, 0x0b,
   0x0b, 0x0b, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
 };
 undefined1 DAT_0023b818;
 char *DAT_0023b4f0;
-static char *DAT_0023b808;  /* was `undefined4` (4 bytes) -- would truncate the
-                        real `void *` tilemap_lookup returns; currently a
-                        write-only global (no reader elsewhere in this
-                        file), so not a live bug, but fixed for safety */
+static char *DAT_0023b808;  /* was `undefined4` (4 bytes) -- would truncate the real `void *` tilemap_lookup returns; currently
+   a write-only global (no reader elsewhere in this file), so not a live bug, but fixed for safety */
 undefined4 DAT_0023b838;
 short DAT_0023b4e8;
 short DAT_0023b4e4;
 undefined1 *DAT_0023b820;
 ushort DAT_0023b828;
 undefined2 DAT_0023b824;
-/* Was silently zero -- compared against the literal `'d'` at all 4
-   call sites in this file. Confirmed via a Ghidra memory dump of the
-   real UU.exe that its actual byte value is 0x64 ('d'), not zero; no
-   writer anywhere in this decompile, so every `DAT_00087938 != 'd'`
-   check was permanently true regardless of real game state. */
+/* Was silently zero -- compared against the literal `'d'` at all 4 call sites in this file. */
 char DAT_00087938 = 'd';
 short DAT_00086b24;
 ushort DAT_0023b81c;
@@ -269,84 +133,40 @@ ushort DAT_0023b904;
 ushort DAT_0023b920;
 ushort DAT_0023b91c;
 byte DAT_0023bc88;
-/* .data 0x86c80: real TMOBJ sign-variant -> frame-index table, 32
-   ushort entries, recovered directly from UU.exe (same contiguous
-   dump as DAT_00086c08 above -- see its own comment). CORRECTED: an
-   earlier investigation this project concluded this table's content
-   was "genuinely lost -- not present anywhere in this binary or its
-   data files" and hand-picked a single fallback frame (668, TMOBJ.GR's
-   own "message/plaque" entry 25) for every sign variant instead. That
-   conclusion was wrong the same way g_inventory_hotspot_table's own
-   "doesn't map cleanly" conclusion was wrong -- nobody had actually
-   dumped these bytes. Real values (index -> raw table value; -1/0xffff
-   marks "no sign here", matching the existing `< 0 -> return` bail-out
-   this table's own reader already had): 0->3, 1->8, 2->8, 3->7, 4->7,
-   5->6, 6->5, 7->11, 8->24, 9->9, 10->23, 11->27, 12->28, 13->25,
-   14->26, 15->4, 16->10, 17->16, 18->17, 19->-1, 20->2, 21->19,
-   22->18, 23-31->-1. All non-sentinel values fall inside 0-28 -- see
-   the fix at this table's own reader (search "DAT_00202734") for why
-   these are relative offsets into TMOBJ's own frame range, not
-   standalone absolute frame numbers, and the addition that was
-   missing to use them correctly. */
+/* .data 0x86c80: real TMOBJ sign-variant -> frame-index table, 32 ushort entries, recovered
+   directly from UU.exe (same contiguous dump as DAT_00086c08 above -- see its own comment). */
 static unsigned short DAT_00086c80_backing[32] = {
   3,8,8,7,7,6,5,11,24,9,23,27,28,25,26,4,
   10,16,17,0xffff,2,19,18,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
 };
 #define DAT_00086c80 (*(unsigned char *)&DAT_00086c80_backing[0])
-/* .data 0x86cc0: real 32-step -> 8-octant angle-quantization table,
-   recovered in the same dump as DAT_00086c08/DAT_00086c80 above.
-   CORRECTED: was hand-reconstructed as a uniform "4 consecutive steps
-   per octant" identity quantization after an earlier investigation
-   concluded (same wrong "lost" framing as the other two tables here)
-   that the real content was unrecoverable. The real table is NOT a
-   uniform quantization -- bucket sizes are 3,3,5,3,5,3,5,3 (octants
-   0-7), not 4 each. */
+/* .data 0x86cc0: real 32-step -> 8-octant angle-quantization table, recovered in the same dump as
+   DAT_00086c08/DAT_00086c80 above. */
 static const unsigned char DAT_00086cc0_arr[32] = {
   0,0,0,1,1,1,2,2, 2,2,2,3,3,3,4,4,
   4,4,4,5,5,5,6,6, 6,6,6,7,7,7,0,0,
 };
 #define DAT_00086cc0 (DAT_00086cc0_arr[0])
-/* Sizing pass: every access to this array is bounded to 0x12 (18)
-   bytes (the ce_memmove/ce_memset sites just below, and the plain
-   scalar DAT_0023b908 read/write) -- was oversized at 8192 elements
-   (16384 bytes) for an 18-byte need. Its sibling DAT_0023b928_backing
-   just below is NOT touched here: unlike this array, it's written at
-   a dynamic self-relative offset elsewhere in this file and needs its
-   own separate, more careful review before any resize. */
+/* Sizing pass: every access to this array is bounded to 0x12 (18) bytes (the ce_memmove/ce_memset
+   sites just below, and the plain scalar DAT_0023b908 read/write) -- was oversized at 8192 elements
+   (16384 bytes) for an 18-byte need. */
 static undefined2 DAT_0023b908_backing[32];
 #define DAT_0023b908 DAT_0023b908_backing[0]
-/* Sizing-audit pass: the "separate, more careful review" flagged
-   above is done. update_wall_partition_phase's dynamic write
-   (`ce_memmove(&DAT_0023b928 + uVar2 + 1, &DAT_0023b90a, ...)`) is
-   clamped so `uVar2 + uVar1 <= 8` (the function's own "8-entry
-   window" cap), so max index touched is 8 (9 elements). This also
-   matches the literal `ce_memmove(&DAT_0023b908,&DAT_0023b928,0x12)`
-   copy between the two siblings -- same exact 18-byte real bound as
-   DAT_0023b908. Sized to 32 elements (64 bytes) to match; down from
-   8192. */
+/* Sizing-audit pass: the "separate, more careful review" flagged above is done.
+   update_wall_partition_phase's dynamic write... */
 static undefined2 DAT_0023b928_backing[32];
 #define DAT_0023b928 DAT_0023b928_backing[0]
 char DAT_0023bb94;
 /* Sizing-audit pass: only read as a memmove source
-   (`ce_memmove(&DAT_0023b928+uVar2+1,&DAT_0023b90a,(uVar1&0xffff)<<1)`)
-   with uVar1 capped at 8 (same 8-entry window cap as DAT_0023b928) --
-   max byte count 8*2=16 bytes. Sized to 32 for headroom; down from
-   8192. */
+   (`ce_memmove(&DAT_0023b928+uVar2+1,&DAT_0023b90a,(uVar1&0xffff)<<1)`) with uVar1 capped at 8
+   (same 8-entry window cap as DAT_0023b928) -- max byte count 8*2=16 bytes. */
 static undefined DAT_0023b90a_backing[32];
 #define DAT_0023b90a DAT_0023b90a_backing[0]
 /* Sizing pass: `ce_memset(&DAT_0023b940,0,0x252)` -- 594 bytes exact. */
 static undefined1 DAT_0023b940_backing[1024];
 #define DAT_0023b940 DAT_0023b940_backing[0]
 /* Object/feature-draw sort scratch (emit_tile_features and helpers sort_feature_pairs_by_depth/
-   ec8/508c/5128/65210/652e8, ~uw.c:49340-49766). Ghidra split each of
-   these into a lone scalar, but the code indexes them as arrays:
-   - DAT_0023b848[i]            u16, object slot ids,  i in 0..8
-   - DAT_0023b8c8[i]/[i+1]      bytes, adjacent-swap sort order (b8c9 == b8c8[1])
-   - DAT_0023bb98[i*4 + 0/1/2]  bytes, per-object billboard X/Y/Z offsets
-                                (bb99 == bb98[1], bb9a == bb98[2]), i in 0..0x3b
-   Recompiled as separate scalars the indexed writes and reads land on
-   different memory (NULL slot deref crash). Back them with real arrays;
-   all uses are confined to that function span, no external refs. */
+   ec8/508c/5128/65210/652e8, ~uw.c:49340-49766). */
 /* Sizing-audit pass: DAT_0023b848[i] real extent is i in 0..8 (9
    u16 elements, 18 bytes) per the comment above. Sized to 32 elements
    (64 bytes) for headroom; down from 64. */
@@ -359,10 +179,9 @@ static undefined1 DAT_0023b940_backing[1024];
    0..0x3b (per the comment above), max byte 59*4+2=238. Sized to
    256 for headroom; down from 512. */
  undefined1 DAT_0023bb98_backing[256];
-/* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view-
-   facing corner-index remap for a rotating quad: resolve_billboard_corner_offset reads
-   `(&DAT_00086d68)[idx*2]` (low byte) and `(&DAT_00086d69)[idx*2]` (high
-   byte) with idx = (corner>>5) + facing*8. Were lone zero scalars. */
+/* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view- facing corner-index remap
+   for a rotating quad: resolve_billboard_corner_offset reads `(&DAT_00086d68)[idx*2]` (low byte)
+   and `(&DAT_00086d69)[idx*2]` (high byte) with idx = (corner>>5) + facing*8. */
 static const undefined1 DAT_00086d68_region[64] = {
   0x00,0x00,0x01,0x00,0x02,0x00,0x03,0x00, 0x04,0x00,0x05,0x00,0x06,0x00,0x07,0x00,
   0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x03, 0x00,0x04,0x00,0x05,0x00,0x06,0x00,0x07,
@@ -371,30 +190,9 @@ static const undefined1 DAT_00086d68_region[64] = {
 };
 #define DAT_00086d68 (*(const undefined1 *)DAT_00086d68_region)
 #define DAT_00086d69 (*(const undefined1 *)(DAT_00086d68_region + 1))
-/* Was a lone `undefined` (1-byte) scalar -- but emit_tile_features
-   indexes it as a per-tile array of 18-byte (0x12) "feature count +
-   up to 8 feature ids" records (`&DAT_0023b92e + DAT_0023b4e4*0x12`,
-   DAT_0023b4e4 ranging up to 0x20), same "split symbol" bug class as
-   its two siblings DAT_0023b928/DAT_0023b940 a few lines above, which
-   already got real backing arrays in an earlier round -- this one was
-   simply missed. Confirmed live via an lldb watchpoint: emit_tile_features's
-   own record-count overflow guard (`if (8 < *puVar6) skip`) still lets
-   a write at index 9 through when count reaches 8, one past this
-   record's real 9-ushort span (0x12 bytes = 9 ushorts, valid indices
-   0-8) -- with the real original binary's per-tile stride this only
-   ever spills into the START of the NEXT tile's own record, harmless,
-   but with this variable's own 1-byte declaration EVERY record after
-   the first was already out of bounds, so this single-byte overflow
-   became a wild write landing squarely on grtile_alloc_registered's
-   own DAT_0023c3fc (an unrelated, ordinarily 5440-byte-safe pointer
-   table used by capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop),
-   observed corrupting it one ushort at a time across repeated calls
-   until it held the exact non-pointer bit pattern (0x10f010f010f010f0)
-   that then crashed restore_captured_grtile_backdrop's own linear scan of that table --
-   the intermittent (ASLR-dependent, since it depends on this build's
-   own relative global layout) HUD-compositor crash long tracked as a
-   separate, pre-existing, unsolved issue. Widened to match its
-   siblings' oversized-safety convention. */
+/* Was a lone `undefined` (1-byte) scalar -- but emit_tile_features indexes it as a per-tile array
+   of 18-byte (0x12) "feature count + up to 8 feature ids" records (`&DAT_0023b92e +
+   DAT_0023b4e4*0x12`, DAT_0023b4e4 ranging up to 0x20)... */
 static undefined1 g_tile_feature_records_b92e_backing[65536];
 #define DAT_0023b92e g_tile_feature_records_b92e_backing[0]
 
@@ -428,23 +226,15 @@ void render_visible_tile_list()
   int iVar17;
   void **local_98; // was `undefined4 *`, misaligning the DAT_000c4838 pointer-array walk below now that its elements are real 8-byte pointers
   int local_94;
-  /* Ghidra named the 4 words of the viewport-clip-rect struct passed to
-     raster_triangle (as param_8) as 4 separate locals. The recompiler is
-     free to lay them out in any order / non-contiguously, so param_8[1..3]
-     read stack garbage and raster_triangle's `*(int*)(puVar3+8) < param_8[3]`
-     never let it call the span rasterizer. Real 4-int array. */
+  /* Ghidra named the 4 words of the viewport-clip-rect struct passed to raster_triangle (as
+     param_8) as 4 separate locals. */
   undefined4 local_70_rect[4];
 #define local_70 (local_70_rect[0])
 #define local_6c (local_70_rect[1])
 #define local_68 (local_70_rect[2])
 #define local_64 (local_70_rect[3])
-  /* Same bug as local_70_rect above: Ghidra named the 15 words of the
-     triangle-vertex struct passed to raster_triangle as param_3 (three
-     vertices x 5 floats: x, y, w, u, v) as 15 separate locals. The
-     recompiler lays them out non-contiguously, so raster_triangle_perspective_setup /
-     raster_edge_setup read stack garbage for every field past [0] -- every
-     transformed vertex came out (x,0,0) and the triangle setup produced
-     -inf/nan, so no texel was ever sampled. Real 15-float array. */
+  /* Same bug as local_70_rect above: Ghidra named the 15 words of the triangle-vertex struct passed
+     to raster_triangle as param_3 (three vertices x 5 floats: x, y, w, u, v) as 15 separate locals. */
   undefined4 local_60_arr[15];
 #define local_60 (local_60_arr[0])
 #define local_5c (local_60_arr[1])
@@ -604,13 +394,9 @@ void walk_visible_tiles()
   DAT_0023b83c = 0;
   uVar6 = (uint)(short)((int)pbVar8 - (int)DAT_0023b814 >> 2);
   DAT_0023b838 = 0;
-  /* Also clear the arena's own count fields (offset 0 = vertex count,
-     offset 4 = record count). process_visible_tile_cell normally keeps
-     them in step with DAT_0023b838 / DAT_0023b83c as it emits, but a
-     frame where it emits nothing (all tiles culled, or the overflow
-     guard trips for every tile) would otherwise leave last frame's stale
-     counts for near_clip_visible_tiles / render_visible_tile_list to
-     re-draw -- the "view stuck on the tiles from the overflow frame" bug. */
+  /* Also clear the arena's own count fields (offset 0 = vertex count, offset 4 = record count).
+     process_visible_tile_cell normally keeps them in step with DAT_0023b838 / DAT_0023b83c as it
+     emits, but a frame where it emits nothing... */
   *(int *)((char *)DAT_000a85d0_backing + 0) = 0;
   *(int *)((char *)DAT_000a85d0_backing + 4) = 0;
   if (0x2000 < (int)uVar6) {
@@ -669,18 +455,8 @@ void walk_visible_tiles()
   pcVar5 = &DAT_000b99d0 + (short)uVar6;
   DAT_0023b4e4 = 0;
   do {
-    // HACK: this trailing one-row sweep (33 tiles wide, confirmed via a
-    // recorded repro to land one row "behind" the player -- e.g.
-    // dy=-1 at heading 0 -- outside the range run_visibility_flood's
-    // ring-walk ever populates) has no g_visibility_ring_buffer byte
-    // of its own to check at all, unlike process_visible_tile_cell's
-    // per-cell reveal (see that function's own bVar25!=0 fix). It was
-    // revealing every in-bounds, not-yet-revealed cell unconditionally
-    // -- with zero flood/line-of-sight justification -- contributing
-    // to the same perfect-rectangle over-reveal bug. No ring-buffer
-    // data exists here to check instead, so just stop revealing
-    // through this path; genuinely visible tiles still get revealed
-    // through the main ring-walk / process_visible_tile_cell above.
+// HACK: this trailing one-row sweep (33 tiles wide, confirmed via a recorded repro to land one
+    // row "behind" the player -- e.g. dy=-1 at heading 0)...
     if (0) {
       if (((uVar6 & 0xf000) == 0) && (*pcVar5 == '\0')) {
         *pcVar5 = automap_reveal_byte(DAT_0023b4ec);
@@ -783,31 +559,10 @@ byte * param_1;
     flush_pending_tile_features();
     return;
   }
-  /* This branch emits a visible tile's 3D geometry slice for the dungeon
-     viewport. It now renders a real textured room end to end -- the
-     visibility flood-fill (run_visibility_flood / process_reaction_
-     entry / compute_visibility_ray_offset / extend_visibility_ray_row) and the
-     software span rasterizer (raster_triangle / raster_textured_span)
-     were resurrected across this session's commits (see git tags
-     milestone-3d-tiles-render, milestone-3d-room). Enabled by default;
-     set UW_DISABLE_3D_GEOMETRY to fall back to the automap-reveal-only
-     path (the old behaviour). */
+  /* This branch emits a visible tile's 3D geometry slice for the dungeon viewport. */
   { static int _disabled = -1;
     if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_GEOMETRY") != NULL);
-    /* Arena overflow guard. The DAT_000a85d0_backing arena packs the raw,
-       camera-space and projected vertex arrays at 0x8 / 0x1808 / 0x3008
-       (0xc stride), and near_clip_visible_tiles reads a record's stored
-       vertex index as `idx*0xc + base + 0x3010` -- so once the vertex
-       count passes ~512 the projected coords run into the 0x4814 record
-       region and near_clip then dereferences a garbage vertex index
-       (wild-pointer crash / black view when looking down a long open
-       hallway). Records likewise cap near 490. One tile emits up to ~28
-       verts / ~6 records, so stop emitting geometry for further tiles
-       well before that; walk_visible_tiles rings outward from the camera,
-       so it's the farthest tiles that drop. Test DAT_0023b838 /
-       DAT_0023b83c -- the working counters walk_visible_tiles resets each
-       frame -- NOT the arena's offset-0 count (which persists and would
-       make the guard latch on forever after one overflow). */
+    /* Arena overflow guard. */
     if (_disabled
         || (int)(uint)DAT_0023b838 >= 512 - 28
         || (int)DAT_0023b83c >= 490 - 6) {
@@ -826,10 +581,9 @@ byte * param_1;
   uVar1 = (uint)bVar15;
   DAT_0023b4e0 = DAT_0023b820[1] & 0xf;
   if (DAT_0023b4e0 < 8) {
-    /* `*DAT_0023b4ec >> 10` decompiled from a 16-bit tile-record read
-       but DAT_0023b4ec is a byte* here, so as written it always read
-       DAT_0023ae40[0]. floor-tex index is byte 1 bits 2-5. Shared
-       helper with walk_visible_tiles's ring-walk. */
+    /* `*DAT_0023b4ec >> 10` decompiled from a 16-bit tile-record read but DAT_0023b4ec is a byte*
+       here, so as written it always read DAT_0023ae40[0]. floor-tex index is byte 1 bits 2-5.
+       Shared helper with walk_visible_tiles's ring-walk. */
     local_84 = automap_reveal_byte(DAT_0023b4ec);
   }
   else {
@@ -1278,12 +1032,9 @@ LAB_0005e7e0:
                    local_81;
         bVar25 = local_83;
       }
-      /* UW1 tile word2 (bytes 2-3) bits 0-5 = wall texture index; word1's
-         high byte (byte 1) holds the floor texture / height and was almost
-         always 0 here, so every wall drew arena slot 0 (plain grey) instead
-         of the level's real -- often mossy -- wall texture. Ghidra read the
-         wrong byte. (automap_reveal_byte / the floor path correctly take the
-         floor index from byte 1 bits 2-5.) */
+      /* UW1 tile word2 (bytes 2-3) bits 0-5 = wall texture index; word1's high byte (byte 1) holds
+         the floor texture / height and was almost always 0 here, so every wall drew arena slot 0
+         (plain grey) instead of the level's real -- often mossy -- wall texture. */
       (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[2] & 0x3f);
       uVar26 = (ushort)DAT_0023b4e0;
       bVar25 = (byte)g_current_tile->wall_tex;
@@ -1609,14 +1360,9 @@ LAB_0005e7e0:
       (&DAT_000ace0a)[iVar34] = 0;
       (&DAT_000ace0b)[iVar34] = 0;
       iVar19 = DAT_0023b824 + -1;
-      /* Ghidra dropped the argument: this is ordfloat_int_to_float2(iVar19), the
-         int->float of (texture_size - 1) used as the V-texcoord scale for
-         all four corners of this tile-emit branch -- exactly as the sibling
-         branch does at the `ordfloat_int_to_float2(iVar38 + -1)` site above. Left
-         no-arg, uVar17 took a stale register (the 512.0f / 1024.0f literal
-         bit pattern from the projection scratch), so every V texcoord this
-         branch emitted came out as ~1.14e9 -> the back-wall dither and
-         part of the ceiling breakup in the 3D view. */
+      /* Ghidra dropped the argument: this is ordfloat_int_to_float2(iVar19), the int->float of
+         (texture_size - 1) used as the V-texcoord scale for all four corners of this tile-emit
+         branch... */
       uVar17 = ordfloat_int_to_float2(iVar19);
       uVar20 = ordfloat_sub(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar32));
       uVar20 = ordfloat_mul(uVar20,0x3b800000);
@@ -1738,13 +1484,8 @@ LAB_0005e7e0:
       puVar23 = DAT_0023b4ec;
     }
   }
-  /* emit_tile_features renders this tile's animated features and the objects
-     sitting on it (doors, switches, bridges, item billboards). It used to
-     walk a bogus object count and deref a NULL slot from get_object_record_by_slot_index
-     because of dropped-arg bugs in it and its callees; those are fixed, so
-     it now runs by default. Set UW_DISABLE_TILE_FEATURES to skip it (the
-     wall / floor / diagonal geometry for the tile is already emitted above
-     via the DAT_0023b4f4/b80c/b4d4 calls). */
+  /* emit_tile_features renders this tile's animated features and the objects sitting on it (doors,
+     switches, bridges, item billboards). */
   {
     static int _tile_features = -1;
     if (_tile_features < 0)
@@ -1777,21 +1518,9 @@ short param_2;
 {
   char *iVar1;
 
-  /* DAT_002029cc is set once, early (init_level_object_arena/
-     reset_level_object_arena, a real malloc'd pointer via ce_malloc),
-     but has been separately observed (init_gameplay_session's own comment) to no
-     longer hold that pointer by later points in a session -- some other
-     write elsewhere in this file lands on its storage, a real,
-     documented, not-yet-root-caused bug. init_gameplay_session already guards
-     its own use with this same bounds check; tilemap_lookup is the
-     single shared accessor behind 70+ call sites, so guard here too
-     rather than just the one caller -- confirmed live crashing via a
-     wild dereference several calls downstream (object_list_insert_head)
-     the first time NPC AI (sync_object_tile_position, reached only after this
-     session's other npc_ai_tick/tick_mobile_objects fixes) called this with
-     DAT_002029cc already corrupted. Treat a corrupted base the same as
-     an out-of-range coordinate: every caller already has to tolerate
-     this function's documented NULL return. */
+  /* DAT_002029cc is set once, early (init_level_object_arena/ reset_level_object_arena, a real
+     malloc'd pointer via ce_malloc), but has been separately observed (init_gameplay_session's own
+     comment) to no longer hold that pointer by later points in a session... */
   if ((((int)param_2 & 0xffffffc0U) + ((int)param_1 & 0xffffffc0U) == 0) &&
       ((uintptr_t)DAT_002029cc >= 0x10000)) {
     iVar1 = DAT_002029cc + ((int)param_1 + param_2 * 0x40) * 4;
@@ -1805,17 +1534,9 @@ short param_2;
 
 
 
-// was FUN_00064d34 -- tracks which phase of the per-ring wall/tile
-// scan is current (recorded in DAT_0023bb94, read back by bitmap.c's
-// sprite-vs-wall depth-partition dispatch) and maintains a rolling
-// window of up to 8 recent wall-edge entries
-// (DAT_0023b908/DAT_0023b928) across ring boundaries: mode -10/2 does
-// a full reset, mode 1 copies the current window into the "previous"
-// slot, mode 0 appends the ring's own edge data (trimmed to the 8-
-// entry cap). Called once per ring phase from walk_visible_tiles.
-// Exact consumer semantics of the wall-edge data are not fully traced
-// -- named for its role in the state machine, not a confirmed meaning
-// of the buffer contents themselves.
+// was FUN_00064d34 -- tracks which phase of the per-ring wall/tile scan is current (recorded in
+// DAT_0023bb94, read back by bitmap.c's sprite-vs-wall depth-partition dispatch) and maintains a
+// rolling window of up to 8 recent wall-edge entries (DAT_0023b908/DAT_0023b928) across ring...
 void update_wall_partition_phase(param_1)
 char param_1;
 
@@ -1863,11 +1584,9 @@ char param_1;
 
 
 
-// was FUN_00064e3c -- bubble-sorts adjacent-index pairs in
-// DAT_0023b8c8/DAT_0023b8c9 (see the array-layout comment on their
-// declaration) over [param_1, param_2) by each entry's depth key
-// (compute_feature_depth_key's output, cached in DAT_0023bb98). Part
-// of emit_tile_features' per-tile object/feature draw-order sort.
+// was FUN_00064e3c -- bubble-sorts adjacent-index pairs in DAT_0023b8c8/DAT_0023b8c9 (see the
+// array-layout comment on their declaration) over [param_1, param_2) by each entry's depth key
+// (compute_feature_depth_key's output, cached in DAT_0023bb98).
 void sort_feature_pairs_by_depth(param_1,param_2)
 short param_1;
 int param_2;
@@ -1928,11 +1647,9 @@ short param_1;
 
 /* param_1 (out record) and param_2 (src record) were `int`, truncating
    the real pointers emit_tile_features passes. */
-// was FUN_00065210 -- computes a rotated-quad corner's screen X/Y
-// offset (param_1[1]/[2]) from a source feature record's facing byte
-// (param_2[3]) via the DAT_00086d68/DAT_00086d69 per-view-facing
-// corner-index remap table, plus copies a masked flag byte
-// (param_2[2] & 0x7f) into param_1[3].
+// was FUN_00065210 -- computes a rotated-quad corner's screen X/Y offset (param_1[1]/[2]) from a
+// source feature record's facing byte (param_2[3]) via the DAT_00086d68/DAT_00086d69
+// per-view-facing corner-index remap table...
 void resolve_billboard_corner_offset(param_1,param_2)
 byte *param_1;
 byte *param_2;
@@ -1950,11 +1667,9 @@ byte *param_2;
 
 
 
-// was FUN_000652e8 -- computes a feature's draw-order depth key
-// (written to param_1[0]) from its X/Y offsets (param_1[1]/[2]),
-// combined differently depending on which ring-scan phase is current
-// (DAT_0023bb94, see update_wall_partition_phase). Feeds
-// sort_feature_pairs_by_depth via DAT_0023bb98.
+// was FUN_000652e8 -- computes a feature's draw-order depth key (written to param_1[0]) from its
+// X/Y offsets (param_1[1]/[2]), combined differently depending on which ring-scan phase is current
+// (DAT_0023bb94, see update_wall_partition_phase).
 void compute_feature_depth_key(param_1)
 char * param_1;
 
@@ -1979,9 +1694,8 @@ char * param_1;
 
 
 
-// was FUN_00065348 -- flushes any still-pending per-tile feature
-// records (a nonzero feature count at the current DAT_0023b940 slot,
-// or a nonzero DAT_0023b928 wall-partition entry) via
+// was FUN_00065348 -- flushes any still-pending per-tile feature records (a nonzero feature count
+// at the current DAT_0023b940 slot, or a nonzero DAT_0023b928 wall-partition entry) via
 // emit_tile_features, so nothing queued gets silently dropped.
 void flush_pending_tile_features()
 
@@ -2005,14 +1719,8 @@ ushort * param_1;
   int iVar1;
   uint uVar2;
   short sVar3;
-  char *puVar4;  /* was `undefined4 uVar4` -- truncated get_object_record_by_slot_index's
-                    real pointer before forwarding it into
-                    resolve_billboard_corner_offset, which dereferences it (offset+2/+3).
-                    Confirmed live: the automap full-level sweep
-                    (demo_automap.txt) crashed here on tile (23,8), the
-                    first tile whose feature-object slot value made
-                    get_object_record_by_slot_index actually resolve to a real, non-null
-                    pointer. */
+  char *puVar4;  /* was `undefined4 uVar4` -- truncated get_object_record_by_slot_index's real pointer before
+   forwarding it into resolve_billboard_corner_offset, which dereferences it (offset+2/+3). */
   ushort *puVar5;
   ushort *puVar6;
   int iVar7;
@@ -2044,21 +1752,14 @@ ushort * param_1;
       uVar9 = *(ushort *)(&DAT_0023b940 + (iVar15 * 9 + (int)(short)iVar7) * 2);
       (&DAT_0023b848)[iVar1] = uVar9 & 0x3ff;
       /* Ghidra dropped the object-slot arg -- with it defaulting to 0,
-         get_object_record_by_slot_index returned NULL and resolve_billboard_corner_offset below dereferenced it,
-         which is why the whole tile-features/object pass was disabled.
-         Pass the slot id just stored, like the other get_object_record_by_slot_index call
-         sites in this function. */
+         get_object_record_by_slot_index returned NULL and resolve_billboard_corner_offset below
+         dereferenced it, which is why the whole tile-features/object pass was disabled. */
       puVar4 = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[iVar1]);
       iVar15 = iVar1 * 4;
       pcVar14 = &DAT_0023bb98 + iVar15;
-      /* get_object_record_by_slot_index legitimately returns NULL for a slot value that
-         isn't a currently-populated object (unlike the dropped-arg bug
-         fixed just above, this is a real "nothing here" case, not a
-         truncation/garbage-argument one) -- resolve_billboard_corner_offset dereferences
-         its second argument immediately, so skip it rather than
-         crashing. Confirmed live: demo_automap.txt's full-level sweep
-         crashed here on tile (30,17), the first tile whose feature
-         slot resolved to a genuinely empty object. */
+      /* get_object_record_by_slot_index legitimately returns NULL for a slot value that isn't a
+         currently-populated object (unlike the dropped-arg bug fixed just above, this is a real
+         "nothing here" case, not a truncation/garbage-argument one)... */
       if (puVar4 != NULL) {
         resolve_billboard_corner_offset(pcVar14,puVar4);
       }
@@ -2132,10 +1833,9 @@ ushort * param_1;
         do {
           cVar8 = (&DAT_0023b8c8)[iVar15];
           puVar5 = (ushort *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[cVar8]);
-          /* Same "get_object_record_by_slot_index can legitimately return NULL for an
-             empty slot" case as the fix above -- this loop dereferences
-             puVar5 immediately below (and passes it to
-             emit_tile_objects), so skip this index instead of crashing. */
+          /* Same "get_object_record_by_slot_index can legitimately return NULL for an empty slot"
+             case as the fix above -- this loop dereferences puVar5 immediately below (and passes it
+             to emit_tile_objects), so skip this index instead of crashing. */
           if (puVar5 == (ushort *)0x0) {
             iVar15 = (iVar15 + 1) * 0x10000 >> 0x10;
             continue;
@@ -2175,14 +1875,8 @@ ushort * param_1;
               sVar3 = 0;
             }
             else {
-              /* HACK: was a bare `integer_sqrt();` -- dropped argument,
-                 the same class of bug fixed repeatedly elsewhere in
-                 this file. The if-condition just above computes this
-                 exact 3D distance-squared expression and only takes
-                 this branch when it's nonzero -- obviously the
-                 intended argument here, matching every other
-                 confirmed integer_sqrt call site's own
-                 "distance squared in, distance out" shape. */
+              /* HACK: was a bare `integer_sqrt();` -- dropped argument, the same class of bug fixed
+                 repeatedly elsewhere in this file. */
               sVar3 = integer_sqrt(((iVar7 * iVar7 * 0x10000 >> 0x10) + (iVar16 * iVar16 * 0x10000 >> 0x10) +
                 (iVar13 * iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10);
             }
@@ -2307,20 +2001,12 @@ LAB_000657f4:
 
 
 
-// was FUN_00073b18 -- struct-recovery-plan.md: converts a
-// uw_tile_t.no_magic read (was `*(byte*)(tile+1) >> 6 & 1`, bit 6 of
-// byte 1 = overall bit 14 = no_magic per uw_tile_t's own field-
-// confirmed layout) to the real struct field.
-/* was declared with empty parens and called tilemap_lookup() with no
-   explicit args, relying on its 2 real args still sitting in the same
-   ABI registers/stack slots at the nested call (a K&R "dropped-arg"
-   register-forwarding idiom used elsewhere in this file, e.g. the
-   DAT_0023aecc fix). Every one of this function's 6 call sites passes
-   exactly 2 args -- fragile on this host's calling convention:
-   intermittently (~1/18 runs) an intervening op clobbered the forwarded
-   registers before reaching tilemap_lookup, corrupting its args and
-   crashing tile_is_no_magic + 16 (demo_critter_orbit_cardinal.txt). Given
-   real declared parameters and forwarded explicitly instead. */
+// was FUN_00073b18 -- struct-recovery-plan.md: converts a uw_tile_t.no_magic read (was
+// `*(byte*)(tile+1) >> 6 & 1`, bit 6 of byte 1 = overall bit 14 = no_magic per uw_tile_t's own
+// field- confirmed layout) to the real struct field.
+/* was declared with empty parens and called tilemap_lookup() with no explicit args, relying on its
+   2 real args still sitting in the same ABI registers/stack slots at the nested call (a K&R
+   "dropped-arg" register-forwarding idiom used elsewhere in this file, e.g. the DAT_0023aecc fix). */
 byte tile_is_no_magic(param_1,param_2)
 int param_1;
 int param_2;
@@ -2484,16 +2170,9 @@ ushort * param_1;
     static int _dumped = 0;
     if (!_dumped) {
       _dumped = 1;
-      /* Walk every tile's object chain (tile record = 4 bytes at
-       * DAT_002029cc[tile_idx*4], chain head = ushort at +2, matching
-       * set_player_tile_position's object_list_unlink(DAT_002029cc +
-       * tile_idx*4 + 2, ...)) so found objects come with real tile
-       * coordinates, rather than scanning the raw slot table blind. Each
-       * object record's own "next in this tile's chain" link is a
-       * separate ushort at +6 within the record (not the type word at
-       * +0 -- confirmed by the `resolve_object_link(param_1 + 6)` call
-       * sites fixed earlier this session), both encoding the next slot
-       * as (link >> 6). */
+      /* Walk every tile's object chain (tile record = 4 bytes at DAT_002029cc[tile_idx*4], chain
+         head = ushort at +2, matching set_player_tile_position's object_list_unlink(DAT_002029cc +
+         tile_idx*4 + 2, ...)) so found objects come with real tile coordinates... */
       int _tx, _ty;
       for (_ty = 0; _ty < 0x40; _ty++) {
         for (_tx = 0; _tx < 0x40; _tx++) {
@@ -2556,14 +2235,8 @@ ushort * param_1;
       fprintf(stderr, "[objdumpall] scan complete\n");
     }
   }
-  // Level-load object census for debugging: every placed object's tile
-  // position, id, resolved name, render class, and (if applicable) which
-  // DATA3D model it now draws as. Gated the same way every other UW_DEBUG_*/
-  // UW_DUMP_* hook in this file is: off by default so a normal run doesn't
-  // pay for a 64x64-tile scan + file write on every level entry, and so
-  // this file's exact wording is opt-in rather than something a screenshot-
-  // diffing regression test would have to account for. Set to a file path
-  // to enable; fires once, on the first object walked after level load.
+// Level-load object census for debugging: every placed object's tile position, id, resolved name,
+  // render class, and (if applicable) which DATA3D model it now draws as.
   if (getenv("UW_DUMP_OBJECTS_FILE")) {
     static int _dumped_census = 0;
     if (!_dumped_census) {
@@ -2586,16 +2259,14 @@ ushort * param_1;
                                             : (ushort *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
               ushort _w = _rec[0];
               int _id = _w & 0x1ff;
-              // Same field reads emit_tile_objects itself uses (not the
-              // objdumpall hook above, which indexed the wrong property
-              // byte for render class -- see its own "rc=" column, offset
-              // 0 instead of the real 0xa).
+// Same field reads emit_tile_objects itself uses (not the objdumpall hook above,
+              // which indexed the wrong property byte for render class -- see its own "rc=" column,
+              // offset 0 instead of the real 0xa).
               int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
               int _heading = (_rec[1] >> 6) & 7;
               int _quality = _rec[3] & 0x3f;
-              // Page 4 of comobj's string data is the base object-name
-              // table, indexed directly by id (see UW_DUMP_NAMES/this
-              // session's findings) -- not the quality-adjective group
+// Page 4 of comobj's string data is the base object-name table, indexed directly by
+              // id (see UW_DUMP_NAMES/this session's findings) -- not the quality-adjective group
               // table UW_LOOK_SLOT resolves via namegrp*6+offset.
               char *_name = (char *)get_message_string(0x800 | _id);
               fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%d\t%d\t0x%04x\n",
@@ -2612,15 +2283,9 @@ ushort * param_1;
       }
     }
   }
-  // Debug tool (UW_DUMP_CONTAINERS_FILE): scan every tile's object chain
-  // (correctly, via resolve_object_link + the real "next" field at
-  // offset+4 -- NOT UW_DUMP_OBJECTS_FILE's own +6, which is actually the
-  // "first item inside this container" field, not "next object on this
-  // tile"; that census tool's re-use of +6 for both purposes is its own,
-  // separate, lower-priority bug, left alone here since it's debug-only)
-  // and lists every container's real contents. Written to verify whether
-  // level load correctly preserves container contents end to end -- see
-  // memory.md's "sack contents" finding.
+// Debug tool (UW_DUMP_CONTAINERS_FILE): scan every tile's object chain (correctly, via
+// resolve_object_link + the real "next" field at offset+4 -- NOT UW_DUMP_OBJECTS_FILE's own +6,
+// which is actually the "first item inside this container" field)...
   if (getenv("UW_DUMP_CONTAINERS_FILE")) {
     static int _dumped_containers = 0;
     if (!_dumped_containers) {
@@ -2722,19 +2387,9 @@ ushort * param_1;
       uVar27 = 0xe0;
     }
 LAB_emit_mesh_sprite_quad:
-    /* Same arena-overflow risk as the tile-geometry guard a few hundred
-       lines above this function (see its own comment for the full
-       explanation of the ~512-vert/~490-record cap on DAT_000a85d0_backing)
-       -- that guard only accounts for wall/floor geometry, not the
-       object quad this label builds (4 verts / 1 record). Doors newly
-       reaching this path (previously a dead end -- see the door-reroute
-       comment above) add more objects than any single room exercised
-       before, so guard this shared tail defensively too rather than
-       assume the tile-level guard alone always leaves enough headroom.
-       (A wild-Y-coordinate crash chased while testing this turned out
-       to be an unrelated, pre-existing map-edge bug -- see
-       [[map-edge-y-wraparound-crash]] -- not caused by this change; this
-       guard is still worth keeping on its own merits.) */
+    /* Same arena-overflow risk as the tile-geometry guard a few hundred lines above this function
+       (see its own comment for the full explanation of the ~512-vert/~490-record cap on
+       DAT_000a85d0_backing) -- that guard only accounts for wall/floor geometry... */
     if (getenv("UW_DEBUG_THROW") && uVar27 == 0x80)
       fprintf(stderr, "[throw-render] sack (id=0x80) reached quad emit: DAT_0023b838(vtx)=%u DAT_0023b83c(rec)=%d cap=(508,489)\n",
               (unsigned)DAT_0023b838, (int)DAT_0023b83c);
@@ -2744,33 +2399,9 @@ LAB_emit_mesh_sprite_quad:
       return;
     }
     if (g_billboard_angle_override_deg >= 0) {
-      /* A wall-mounted decal's anchor (DAT_0023b904/920) came out of
-         emit_tile_features' generic per-slot floor-object table
-         (DAT_0023bb99/9a[cVar8*4]) -- cVar8 is this object's position in
-         a depth-*sorted* list of everything in the tile, so which slot
-         (and therefore which sub-tile offset) THIS object lands in
-         depends on where the camera is standing, not on the object
-         itself. Confirmed live: the exact same object (identical
-         param_1[1]=0x1770 raw record) got assigned bb99/bb9a=(0,5) from
-         one standing spot (rendered flush) and (5,7) from two others
-         (rendered rotated 90 degrees / invisible) -- same sign, jittering
-         between different anchors depending on viewpoint. Floor items are
-         fine with that (it's how multiple items in one tile avoid fully
-         overlapping); a wall decal needs a fixed anchor. Round back down
-         to the tile's own center (clear the low 5 bits -- one tile is
-         0x20 units -- then re-add the +0x10 half-tile constant
-         emit_tile_features' own formula ends with) to undo whatever
-         sub-tile jitter this frame's slot happened to contribute, before
-         pushing out to the wall surface along the wall's own normal
-         (perpendicular to the facing direction g_billboard_angle_
-         override_deg's tangent extrusion already uses). Without the push
-         the quad is correctly oriented flush-with-the-wall (proven via
-         [decalangle]'s 100%-constant angle_idx) but anchored in the open
-         floor area of the tile instead of at the wall plane. Tunable via
-         UW_DECAL_PUSH (magnitude, default 16 = half a tile) and
-         UW_DECAL_PUSH_SIGN (+1/-1, default +1) while calibrating --
-         applied here (before the DAT_00110fc0 pick/collision copy just
-         below) so picking matches the pushed visual position too. */
+      /* A wall-mounted decal's anchor (DAT_0023b904/920) came out of emit_tile_features' generic
+         per-slot floor-object table (DAT_0023bb99/9a[cVar8*4]) -- cVar8 is this object's position
+         in a depth-*sorted* list of everything in the tile... */
       DAT_0023b904 = (DAT_0023b904 & ~0x1f) | 0x10;
       DAT_0023b920 = (DAT_0023b920 & ~0x1f) | 0x10;
       double _rad = (g_billboard_angle_override_deg + 90) * (3.14159265358979 / 180.0);
@@ -2792,14 +2423,9 @@ LAB_emit_mesh_sprite_quad:
     *DAT_00110fc0 = 0x7f8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     decode_tile_object_billboard_texture(uVar27,(uint)DAT_0023bc88 * (int)DAT_00086b30);
-    /* DAT_000d9ed8/DAT_000d9930[angle] = sin/cos(angle degrees) (see
-       build_trig_tables). Normally angle = DAT_000db44c, the CAMERA's yaw,
-       which is what makes this quad extend along the camera's own
-       right-vector -- i.e. always face the camera, a real billboard.
-       A wall-mounted decal (emit_tile_objects's TMOBJ/sign branch)
-       sets g_billboard_angle_override_deg to the WALL's own fixed
-       facing angle instead, so the quad extends along the wall's
-       plane and stays flush against it regardless of camera angle. */
+    /* DAT_000d9ed8/DAT_000d9930[angle] = sin/cos(angle degrees) (see build_trig_tables). Normally
+       angle = DAT_000db44c, the CAMERA's yaw, which is what makes this quad extend along the
+       camera's own right-vector -- i.e. always face the camera, a real billboard. */
     { int _angle_idx = DAT_000db44c;
       int _overridden = (g_billboard_angle_override_deg >= 0);
       if (_overridden) {
@@ -3011,10 +2637,9 @@ LAB_00061d34:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     uVar29 = *(byte *)((char *)param_1 + 0x15) & 0x3f;
     { const char *_fs = getenv("UW_FORCE_CRITTER_STATE"); if (_fs) uVar29 = (uint)atoi(_fs); }
-    /* Ghidra modelled the divmod's remainder (ARM r1) as `extraout_r1`,
-       which was never assigned -> wild index into the 0x20-entry
-       DAT_00086cc0 direction table (crash when an object first came into
-       view down a long hallway). It is (that dividend) % 0x20. */
+    /* Ghidra modelled the divmod's remainder (ARM r1) as `extraout_r1`, which was never assigned ->
+       wild index into the 0x20-entry DAT_00086cc0 direction table (crash when an object first came
+       into view down a long hallway). It is (that dividend) % 0x20. */
     {
       short _col_angle = g_current_view->view_facing;
       short _quad_term = *(short *)(&DAT_00086a18 + DAT_0023b4a0 * 2);
@@ -3029,27 +2654,9 @@ LAB_00061d34:
                 (int)((int)((int)_col_angle + (uint)(unsigned short)_quad_term) >> 0xb), _dm, (int)bVar13);
     }
     if ((ushort)uVar29 < 0x20) {
-      /* REVERTED (checked against a fresh disassembly of this exact block,
-         real addresses 0x611ac-0x611cc): an earlier session added an
-         `else { uVar29 = bVar13; }` here, theorizing the missing else was
-         a decompiler-dropped branch. It isn't. The real code is a plain
-         ARM conditional instruction:
-           0x611c4: cmp r3,#0x3
-           0x611c8: addge r4,r1,#0x20   ; r4 (uVar29) only touched if r3>=3
-         There is no corresponding instruction for the r3<3 case anywhere
-         nearby -- r4 simply keeps whatever it already held (the object's
-         raw animation-state byte from *(param_1+0x15)&0x3f, set at
-         0x61134 and never touched again on this path), exactly like the
-         "buggy" pre-fix behavior. That earlier fix was plausible-looking
-         (an object's raw state coinciding with another state's real
-         direction index can show a wrong frame) but not what the shipped
-         binary does. This mirroring scheme is the classic "5 real images
-         cover 8 octants via horizontal flip" trick: the mirror test true
-         (`2 < (bVar13-3&7)`,
-         i.e. bVar13 in {0,1,2,6,7} -- back/side views) reuses a flipped
-         image via the +0x20 flag; false (bVar13 in {3,4,5} -- front-ish
-         views) leaves uVar29 as-is, matching the real code exactly. The
-         uVar29==0xc special case (skips this whole block) is unchanged. */
+      /* REVERTED (checked against a fresh disassembly of this exact block, real addresses
+         0x611ac-0x611cc): an earlier session added an `else { uVar29 = bVar13; }` here, theorizing
+         the missing else was a decompiler-dropped branch. It isn't. */
       if ((ushort)uVar29 != 0xc) {
         if (2 < (bVar13 - 3 & 7)) {
           uVar29 = bVar13 + 0x20;
@@ -3234,19 +2841,9 @@ LAB_00061d34:
   }
   if (bVar13 == 2) {
     if ((uVar27 & 0x30) == 0) {
-      /* Doors. emit_anim_object_frames is the real handler for this
-         branch: it draws through emit_catalog_object, whose own
-         tick_anim_record helper resolves a "catalog" id to the same 29
-         real .E model buffers loaded at startup -- genuine native 3D
-         mesh rendering (door frame + leaf), not a flat sprite. Traced
-         how DOS's dialog_script_event really calls dialog_action_here
-         for door ids (uw1-decomp/docs/decompilation/functions/
-         dialog_action_here.c): its body calls dialog_action_object with
-         catalog ids 1/0xc/0xe/0xf, the exact constants
-         emit_anim_object_frames already uses -- confirming it as the
-         real counterpart, not a guess. `uVar27 & 7` is the door's low 3
-         id bits (0x140-0x147 -> 7 door skins/types + secret), matching
-         emit_anim_object_frames's own `door_type` parameter. */
+      /* Doors. emit_anim_object_frames is the real handler for this branch: it draws through
+         emit_catalog_object, whose own tick_anim_record helper resolves a "catalog" id to the same
+         29 real .E model buffers loaded at startup... */
       if (getenv("UW_DEBUG_DOOR_POS"))
         fprintf(stderr, "[doorpos] anchor=(%d,%d,%d) tile_word0=0x%04x\n",
                 (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,
@@ -3254,10 +2851,9 @@ LAB_00061d34:
       emit_anim_object_frames(uVar27 & 7, param_1);
       return;
     }
-    /* DAT_00086c80 (the real per-sign-variant -> billboard-catalog
-       index table) has now been recovered from the real binary -- see
-       its own declaration comment -- replacing the "fill every entry
-       with 668" placeholder that used to live here. */
+    /* DAT_00086c80 (the real per-sign-variant -> billboard-catalog index table) has now been
+       recovered from the real binary -- see its own declaration comment -- replacing the "fill
+       every entry with 668" placeholder that used to live here. */
     iVar17 = (int)(((uVar27 & 0x3f) - 0x10) * 0x10000) >> 0x10;
     if ((short)*(ushort *)(&DAT_00086c80 + iVar17 * 2) < 0) {
       return;
@@ -3265,31 +2861,11 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    /* Confirmed correct: calling emit_catalog_object directly with the
-       real table value is right -- matches the exact 4-argument call
-       shape the two other real callers use (search
-       "emit_catalog_object(0x14," and "0x16,"), because this table can
-       resolve to a real loaded .E model catalog (e.g. FBRIDGE.E), not
-       just another flat sprite variant, so it has to go through the one
-       call that actually knows how to draw both.
-
-       heading=-1 told emit_catalog_object to use ITS OWN camera-
-       relative billboard angle instead of the object's real placed
-       orientation -- visibly wrong for a wall-mounted decal (e.g. the
-       starting room's own entry-door decal rotating with the camera's
-       yaw instead of staying fixed). Fixed the same way doors already
-       do it: pass the object's own real stored heading (word1 bits
-       7-9, doubled -- the exact formula emit_anim_object_frames already
-       uses) instead of -1. emit_catalog_object's own internal math
-       (the heading>=0 branch) already applies the camera-quadrant
-       correction itself, so nothing extra is needed at this call site. */
-    /* frame_or_texid=-1, exactly as the real call site (FUN_00060aa0:
-       `FUN_00061e60(uVar26 & 0xff, param_1, -1, -1)`): emit_catalog_object's
-       own catalog-2 branch resolves a_bridge's TMOBJ 30/31 plank frame (or
-       its flags>=2 floor texture) from the object's flags. A caller-side
-       `_mesh_tex_row` table used to precompute that frame here, bypassing
-       the real branch -- only ever needed because that branch read the
-       idivmod remainder from an uninitialised `extraout_r1`. */
+    /* Confirmed correct: calling emit_catalog_object directly with the real table value is right --
+       matches the exact 4-argument call shape the two other real callers use... */
+    /* frame_or_texid=-1, exactly as the real call site (FUN_00060aa0: `FUN_00061e60(uVar26 & 0xff,
+       param_1, -1, -1)`): emit_catalog_object's own catalog-2 branch resolves a_bridge's TMOBJ
+       30/31 plank frame (or its flags>=2 floor texture) from the object's flags. */
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[sign] variant=%d table_val=%d heading=%d -> emit_catalog_object(catalog_idx=%d)\n",
               iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
@@ -3313,12 +2889,8 @@ LAB_00061d34:
       DAT_00110fc0 = DAT_00110fc0 + 1;
       DAT_00189580 = 0;
     }
-    /* Same heading fix as the generic DAT_00086c80 dispatch above (see
-       its own comment) -- this call was ALSO passing heading=-1
-       (camera-relative billboard angle) unconditionally. This is the
-       class-3 (button/switch/pull-chain) TMFLAT dispatch -- same fix,
-       same reasoning: these are real placed wall fixtures, not camera-
-       facing billboards. */
+    /* Same heading fix as the generic DAT_00086c80 dispatch above (see its own comment) -- this
+       call was ALSO passing heading=-1 (camera-relative billboard angle) unconditionally. */
     emit_catalog_object(0x14,param_1,(param_1[1] >> 7 & 7) << 1,(uVar27 & 0xf) + (uint)DAT_00202734);
     if (DAT_0023b830 != 0 || DAT_00086b2c != 0) {
       return;

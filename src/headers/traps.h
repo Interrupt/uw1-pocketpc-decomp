@@ -29,6 +29,7 @@ undefined4 create_scripted_trap_pair_at_tile();
 void remove_trap_chain_marker();
 void free_trap_class_object();
 undefined4 check_object_area_for_spawn_block();
+undefined4 detect_spawn_blocking_object_callback();
 undefined4 is_out_of_player_range();
 void process_nearby_background_traps();
 void tick_ambient_doors_and_scheduler();

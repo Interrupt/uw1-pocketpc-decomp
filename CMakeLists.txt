@@ -63,6 +63,7 @@ set(UW_SOURCES
   src/debug.c
   src/debug_ui.c
   third_party/hxcmod/hxcmod.c
+  src/debug_shim.c
 )
 
 add_executable(uw_dbg ${UW_SOURCES})
