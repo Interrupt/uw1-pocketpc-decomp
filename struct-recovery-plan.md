@@ -263,12 +263,35 @@ them.
    the same `0xfc7f`-mask-clears-heading-bits signature already
    established -- not xpos/ypos, left untouched.
 
-   Genuinely still open: `heading` writes (not part of this pass's
-   mandate, though a few were converted incidentally alongside
-   is_quant/doordir/invisible in game.c's player-reset function),
-   and the dedicated writes pass has not touched `flags_res`/
-   `enchanted`/`invisible` elsewhere, `npc_*` fields, or anything in
-   `uw_mobile_object_t`'s NPC-extension region.
+   **`heading` writes are now converted project-wide too** (ai.c,
+   combat.c, input.c, player.c, babl.c, objects.c -- 20 sites total),
+   same verified idiom (`word & 0xfc7f | (source & MASK) << SHIFT`,
+   confirmed to reduce to a plain bitfield assignment, including the
+   `(X >> 5) & 7` wide-mask variants after confirming the source is
+   byte-clamped right before use in each case).
+
+   **A likely genuine pre-existing bug was found and deliberately
+   NOT touched**: 4 sites in combat.c's npc_combat_position_tick
+   area (~532-718) use `*(ushort *)(DAT_0010190c + 2)` without the
+   `(char *)` cast present at every other equivalent site in this
+   codebase (ai.c's versions of the same logic all have it). Since
+   `DAT_0010190c` is `ushort *`, this scales by `sizeof(ushort)`,
+   landing on byte offset 4 instead of 2, and the sibling `+ 9`/
+   `+ 0x15`/`+ 0x18` writes in the same block land on byte offsets
+   18/42/48 -- the latter two past the entire 27-byte mobile record.
+   This looks like Ghidra dropping a cast it kept everywhere else,
+   not a safe target for this refactor (converting it to a named
+   field access would silently change which bytes get touched --
+   a behavior change, not a pure layout conversion). Worth a
+   dedicated investigation (does ASan ever actually exercise this
+   branch? what's really at byte 42/48 if it does?) before deciding
+   whether to fix it as a real bug in its own pass.
+
+   Still genuinely open: `flags_res`/`enchanted`/`invisible` writes
+   outside the sites already converted, `npc_*` fields, and anything
+   else in `uw_mobile_object_t`'s NPC-extension region (offsets
+   0x08-0x1a) -- none of these were part of this session's item_id/
+   zpos/ypos/xpos/is_quant/heading mandate.
 5. **comobj.dat property record** (0xd bytes) — next-highest leverage
    after the two now-mostly-done types: well-documented, touches
    gameplay-visible logic (`dispatch_object_action`), bounded call-site
