@@ -2917,12 +2917,11 @@ void sync_conv_vars_from_npc(ushort *npc)
   undefined4 uVar2;
   ushort extraout_r1;
   int iVar3;
-  ushort uVar4;
   bool bVar5;
   ushort local_20 [2];
   
   iVar3 = ((byte)*npc & 0x3f) * 0x30;
-  local_20[0] = (ushort)(byte)npc[0xd];
+  local_20[0] = ((uw_mobile_object_t *)npc)->npc_whoami;
   babl_set_variable(s_npc_whoami_000853a0,local_20,1);
   local_20[0] = 0x10;
   if ((*(byte *)((char *)npc + 0x19) & 0x80) == 0) {
@@ -2936,17 +2935,17 @@ void sync_conv_vars_from_npc(ushort *npc)
     local_20[0] = ordint_divmod((&g_monster_max_stats_table)[iVar3],(uint)(byte)npc[4] << 8).quot;
   }
   babl_set_variable(s_npc_health_00085388,local_20,1);
-  local_20[0] = (ushort)(byte)npc[4];
+  local_20[0] = ((uw_mobile_object_t *)npc)->npc_hp;
   babl_set_variable(s_npc_hp_00085380,local_20,1);
   local_20[0] = (ushort)(char)(&DAT_001007e3)[iVar3];
   babl_set_variable(s_npc_arms_00085374,local_20,1);
   local_20[0] = (ushort)(byte)(&DAT_001007d5)[iVar3] + (ushort)((byte)(&DAT_001007fd)[iVar3] >> 1);
   babl_set_variable(s_npc_power_00085368,local_20,1);
-  local_20[0] = *(byte *)((char *)npc + 0xb) & 0xf;
+  local_20[0] = ((uw_mobile_object_t *)npc)->npc_goal;
   babl_set_variable(s_npc_goal_0008535c,local_20,1);
-  local_20[0] = (ushort)((*(ushort *)((char *)npc + 0xb) & 0xff0) >> 4);
+  local_20[0] = ((uw_mobile_object_t *)npc)->npc_gtarg;
   babl_set_variable(s_npc_gtarg_00085350,local_20,1);
-  local_20[0] = (ushort)(((byte)npc[7] & 0x20) >> 5);
+  local_20[0] = ((uw_mobile_object_t *)npc)->npc_talkedto;
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] sync_conv_vars_from_npc: seeding npc_talkedto=%d from object byte@0xe=0x%02x (obj=%p)\n", (int)local_20[0], (unsigned)(byte)npc[7], (void *)npc);
   babl_set_variable(s_npc_talkedto_00085340,local_20,1);
   local_20[0] = (byte)(&DAT_001007dd)[iVar3] & 0xf;
@@ -2955,23 +2954,19 @@ void sync_conv_vars_from_npc(ushort *npc)
   babl_set_variable(s_npc_xhome_00085328,local_20,1);
   local_20[0] = ((uw_object_hdr_t *)npc)->owner;
   babl_set_variable(s_npc_yhome_0008531c,local_20,1);
-  if ((byte)npc[0xd] == 0) {
+  if (((uw_mobile_object_t *)npc)->npc_whoami == 0) {
     local_20[0] = ((uw_object_hdr_t *)npc)->item_id | 0x800;
   }
   else {
-    local_20[0] = (byte)npc[0xd] + 0x10 | 0xe00;
+    local_20[0] = ((uw_mobile_object_t *)npc)->npc_whoami + 0x10 | 0xe00;
   }
   babl_set_variable(s_npc_name_00085310,local_20,1);
-  uVar4 = *(ushort *)((char *)npc + 0xb) & 0xf;
-  bVar5 = uVar4 == 5;
-  if (bVar5) {
-    uVar4 = *(ushort *)((char *)npc + 0xb) & 0xff0;
-  }
-  if (bVar5 && uVar4 == 0x10) {
+  bVar5 = ((uw_mobile_object_t *)npc)->npc_goal == 5;
+  if (bVar5 && ((uw_mobile_object_t *)npc)->npc_gtarg == 1) {
     local_20[0] = 0;
   }
   else if ((*(byte *)((char *)npc + 0x19) & 0x40) == 0) {
-    local_20[0] = (ushort)(byte)((byte)npc[7] >> 6);
+    local_20[0] = ((uw_mobile_object_t *)npc)->npc_attitude;
   }
   else {
     local_20[0] = 6;

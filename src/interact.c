@@ -594,7 +594,7 @@ void attempt_talk_interaction(ushort *target)
     uVar3 = 0xe00;
     goto LAB_0002865c;
   }
-  uVar6 = (ushort)(byte)target[0xd];
+  uVar6 = ((uw_mobile_object_t *)target)->npc_whoami;
   DAT_00100674 = target;
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction: conv-id byte(uVar6)=0x%x uVar5=0x%x flagbits(target+7)=0x%x flagbyte(target+0x19)=0x%x\n", (unsigned)uVar6, (unsigned)(*(ushort *)((char *)target + 0xb) & 0xf), (unsigned)(target[7] & 0xc0), (unsigned)(*(byte *)((char *)target + 0x19) & 0x40));
   if (((uVar6 == 0x16) || (uVar6 == 0x8e)) || (uVar6 == 0xe7)) {

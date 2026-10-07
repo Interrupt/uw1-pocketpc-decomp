@@ -105,11 +105,15 @@ typedef struct __attribute__((packed)) {
     unsigned short xpos       : 3;  /* bits 13-15: sub-tile X, 0-7 */
 
     /* word 0x04 */
-    unsigned short quality    : 6;  /* bits 0-5 */
+    unsigned short quality    : 6;  /* bits 0-5: for a uw_mobile_object_t, this same byte is exposed to the
+                                        babl VM as "npc_xhome" instead (confirmed via babl.c's
+                                        sync_conv_vars_from_npc, which reads ->quality straight into that
+                                        variable) -- same kind of dual meaning as link/is_quant below */
     unsigned short next       : 10; /* bits 6-15: next object slot index in this tile's/container's chain */
 
     /* word 0x06 */
-    unsigned short owner      : 6;  /* bits 0-5: owner / special property (context-dependent) */
+    unsigned short owner      : 6;  /* bits 0-5: owner / special property (context-dependent); for a
+                                        uw_mobile_object_t this is babl's "npc_yhome" (see ->quality above) */
     unsigned short link       : 10; /* bits 6-15: quantity / special link / "contains" chain head, see is_quant */
 } uw_object_hdr_t;
 
@@ -135,6 +139,11 @@ typedef struct __attribute__((packed)) {
 
     unsigned char  _unk11_15[5];    /* offsets 0x11-0x15: entirely undocumented by the wiki */
 
+    /* NOTE: babl.c's sync_conv_vars_from_npc (the definitive source for this struct's other
+       confirmed NPC offsets) exposes the babl VM variables "npc_xhome"/"npc_yhome" from
+       uw_object_hdr_t.quality/owner instead, not from this word -- so the names below, inherited
+       from the wiki's own offset table, are unconfirmed and may not be what this word really
+       holds. Left as originally named pending a real call site that reads/writes it. */
     unsigned short _pad16_lo  : 4;  /* offset 0x16, bits 0-3: not in the wiki's own table */
     unsigned short npc_yhome  : 6;  /* bits 4-9 */
     unsigned short npc_xhome  : 6;  /* bits 10-15 */

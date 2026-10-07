@@ -951,7 +951,7 @@ void build_creature_look_text(ushort *creature, char *out_text)
   undefined1 *puVar8;
 
   pcVar3 = (char *)get_message_string(((uw_object_hdr_t *)creature)->item_id | 0x800);
-  bVar1 = (byte)creature[0xd];
+  bVar1 = ((uw_mobile_object_t *)creature)->npc_whoami;
   if ((pcVar3 == (char *)0x0) || (*pcVar3 == '\0')) {
     pcVar3 = (char *)0x0;
   }
@@ -3525,9 +3525,7 @@ void advance_mobile_objects()
         else if (3 < iVar4) {
           cVar3 = '\x03';
         }
-        uVar6 = *(ushort *)(pbVar2 + 0xd) & 0x3fff;
-        pbVar2[0xd] = (byte)uVar6;
-        pbVar2[0xe] = (byte)(uVar6 >> 8) | (byte)((((int)cVar3 & 3U) << 0xe) >> 8);
+        ((uw_mobile_object_t *)pbVar2)->npc_attitude = cVar3 & 3;
         pbVar7 = DAT_002046c8;
       }
       pbVar8 = pbVar8 + 1;
