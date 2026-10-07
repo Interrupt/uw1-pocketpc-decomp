@@ -65,7 +65,7 @@ void toggle_weapon_ready();
 void serialize_inventory_link_chain(byte *link_chain, byte *out_link);
 void *alloc_save_record_slot();
 void *save_record_slot_from_index(short slot_index);
-void deserialize_inventory_link_chain(byte *link_field, ushort *saved_link);
+void deserialize_inventory_link_chain(byte *link_field, void *saved_link);
 void handle_inventory_panel_click(short slot);
 void redraw_inventory_widget(int widget_id);
 void redraw_inventory_widget_range(int first_widget, short last_widget);

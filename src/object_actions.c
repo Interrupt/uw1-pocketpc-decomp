@@ -69,11 +69,11 @@ static char s_an_adventurer__00085d08[] = "an adventurer.\n";
 static uint DAT_00202094;
 /* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
    (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
-undefined1 DAT_00087604_backing[256];
+int (*DAT_00087604_backing[64])();  /* spell-effect callbacks (was a 256-byte array read through 4-byte casts) */
 /* Sizing pass: cast_targeted_search_effect indexes this as `(&PTR_FUN_00087614)[param_2 & 0x3f]`
    (6-bit mask, 64 entries) -- a bare scalar `undefined *` only backs index 0, so every other index
    (63 of 64 possible spell-table params) read past the end of this single-pointer global. */
-undefined *PTR_FUN_00087614_backing[64];
+int (*PTR_FUN_00087614_backing[64])();
 #define PTR_FUN_00087614 PTR_FUN_00087614_backing[0]
 /* Sizing-audit pass: damage_all_objects_at_tile's only caller passes param_3 in {1,2}, so the
    shared `bVar5=param_3-1` index is 0-1 -- max byte touched is DAT_00087634's offset 8+1=9. Sized
@@ -101,7 +101,7 @@ void dispatch_object_action(ushort *object, int mode)
   short sVar4;
   int iVar5;
   char *pcVar6;
-  undefined4 uVar7;
+  char *count_str;
   undefined *puVar8;
   int iVar9;
   char cVar10;
@@ -181,8 +181,8 @@ void dispatch_object_action(ushort *object, int mode)
   else {
     uVar11 = 1;
     cVar10 = 'x';
-    uVar7 = _itoa(uVar3 >> 6,auStack_b4,10);
-    ce_strcat(acStack_7c,uVar7);
+    count_str = _itoa(uVar3 >> 6,auStack_b4,10);
+    ce_strcat(acStack_7c,count_str);
     puVar8 = &DAT_00085240;
 LAB_000489fc:
     ce_strcat(acStack_7c,puVar8);
@@ -237,8 +237,7 @@ int decode_critter_sprite_page(int page_base, int page_index, short column, shor
   if (pbVar11 == (byte *)0) {
     /* Missing/unopenable per-page resource file -- was an unconditional
        terminate_process(0xffffffff) hard exit... */
-    static undefined1 dummy_page[8];
-    return dummy_page;
+    return 0;  /* (was `return dummy_page;`, an 8-byte static buffer whose address was truncated to int; no caller uses the result) */
   }
   iVar1 = (page_index + page_base * 4) * 0x10000 >> 0x10;
   iVar9 = ((int)(((int)column - (uint)*pbVar11) * 0x10000) >> 0x10) + 2;
@@ -423,7 +422,7 @@ void dispatch_object_action_dup(ushort *object, int mode)
   short sVar4;
   int iVar5;
   char *pcVar6;
-  undefined4 uVar7;
+  char *count_str;
   undefined *puVar8;
   int iVar9;
   char cVar10;
@@ -505,8 +504,8 @@ void dispatch_object_action_dup(ushort *object, int mode)
   else {
     uVar11 = 1;
     cVar10 = 'x';
-    uVar7 = _itoa(uVar3 >> 6,auStack_b4,10);
-    ce_strcat(acStack_7c,uVar7);
+    count_str = _itoa(uVar3 >> 6,auStack_b4,10);
+    ce_strcat(acStack_7c,count_str);
     puVar8 = &DAT_00085240;
 LAB_000489fc:
     ce_strcat(acStack_7c,puVar8);
@@ -650,8 +649,9 @@ LAB_0004b4d4:
 
 
 // was FUN_0007bf38
-int check_object_combination(char *actor, ushort *object, short count)
+int check_object_combination(void *actor_ptr, ushort *object, short count)
 {
+  char *actor = (char *)actor_ptr;
   ushort uVar1;
   ushort uVar2;
   short sVar3;
@@ -715,7 +715,7 @@ LAB_0007c130:
 // was FUN_00073b40 -- looks up tile-type id param_1 (0..0x34) in a per-type 4-byte-stride table
 // (DAT_00087530/DAT_00087533) to get a "special action" type/id pair, then forwards to
 // dispatch_special_action with param_2/param_3 as the actor object and an extra parameter.
-void dispatch_tile_special_action(uint tile_type, uintptr_t actor, intptr_t target)
+void dispatch_tile_special_action(uint tile_type, void *actor, void *target)
 {
   tile_type = tile_type & 0xff;
   if (tile_type < 0x35) {
@@ -729,7 +729,7 @@ void dispatch_tile_special_action(uint tile_type, uintptr_t actor, intptr_t targ
 // was FUN_00073b74 -- the general "SPECIAL" action dispatcher (see the SPECIAL ILLUSTRATED
 // BOOK/SCROLL comment elsewhere in this file for one example caller shape). param_1&0xff selects
 // the action type (0-0xe, a case switch)...
-int dispatch_special_action(uint action_id, uint argument, uintptr_t actor, intptr_t target)
+int dispatch_special_action(uint action_id, uint argument, void *actor, void *target)
 {
   undefined2 uVar1;
   int iVar2;
@@ -737,7 +737,7 @@ int dispatch_special_action(uint action_id, uint argument, uintptr_t actor, intp
   /* ARM 0x73b74 receives object addresses in r2/r3 and reads the actor's
      position at +0x16. Keep these address-sized on the native host: Ghidra's
      uint/int declarations truncated the player pointer during rune casts. */
-  if ((actor < (uintptr_t)DAT_002046c4) || (0xb < (action_id & 0xff))) {
+  if (((char *)actor < DAT_002046c4) || (0xb < (action_id & 0xff))) {
     iVar2 = tile_is_no_magic(*(ushort *)(actor + 0x16) >> 10,
                          (*(ushort *)(actor + 0x16) & 0x3f0) >> 4);
     if (iVar2 != 0) {
@@ -758,14 +758,14 @@ int dispatch_special_action(uint action_id, uint argument, uintptr_t actor, intp
     goto LAB_00073c90;
   case 1:
     if (((argument & 0x3f) == 3) || ((argument & 0x3f) == 5)) {
-      trigger_player_jump_if_grounded(actor);
+      trigger_player_jump_if_grounded((char *)actor);
     }
     goto LAB_00073c90;
   case 2:
     goto LAB_00073c90;
   case 3:
 LAB_00073c90:
-    if ((actor != (uintptr_t)g_player_object) ||
+    if ((actor != g_player_object) ||
        (iVar2 = add_active_light_source(action_id,argument & 0x3f,argument & 0xc0), iVar2 == 0)) {
       return 0;
     }
@@ -774,13 +774,13 @@ LAB_00073c90:
     if (target == 0) {
       return 0;
     }
-    apply_healing_item_effect(target,argument);
+    apply_healing_item_effect((ushort *)target,argument);
     return 1;
   case 5:
-    if (actor == (uintptr_t)g_player_object) {
+    if (actor == g_player_object) {
       g_cursor_holding_state = 3;
       DAT_00202094 = argument & 0xff;
-      DAT_00202098 = g_player_object;
+      DAT_00202098 = (char *)g_player_object;
       push_cursor_icon(0x1075);
     }
     else {
@@ -797,13 +797,13 @@ LAB_00073c90:
     cast_summon_or_spawn_effect(actor,argument);
     break;
   case 9:
-    reduce_item_quality_on_use(actor,argument);
+    reduce_item_quality_on_use((ushort *)actor,argument);
     break;
   case 10:
-    adjust_level7_hazard_value(actor,argument);
+    adjust_level7_hazard_value((void *)actor,argument);
     break;
   case 0xb:
-    dispatch_player_command(actor,argument & 0xffffffc0,argument & 0x3f);
+    dispatch_player_command((ushort *)actor,argument & 0xffffffc0,argument & 0x3f);
     break;
   case 0xc:
     break;
@@ -928,7 +928,7 @@ void *spawn_and_prime_spell_effect_object(int object_type, byte *source)
 int force_unlock_target_object(int unused_a, int unused_b, ushort *object)
 {
   undefined1 uVar1;
-  int iVar2;
+  ushort *iVar2;
   ushort *local_14;
   
   if (((((*object & 0x8000) == 0) && (local_14 = object + 3, (*local_14 & 0xffc0) != 0)) &&
@@ -947,7 +947,7 @@ int force_unlock_target_object(int unused_a, int unused_b, ushort *object)
 // was FUN_000742c0 -- casts a single-tile spell effect at tile (param_1,param_2): spawns a
 // type-0x1c5 effect object via spawn_and_prime_spell_effect_object, applies its damage to just that
 // one tile (damage_all_objects_at_tile with damage-tier index 2-1=1)...
-int cast_single_tile_spell_effect(uint tile_x, int tile_y, int unused, int caster, byte damage)
+int cast_single_tile_spell_effect(uint tile_x, int tile_y, int unused, void *caster, byte damage)
 {
   int uw_ord2005_rem_153 = 0;
   short sVar1;
@@ -977,7 +977,7 @@ int cast_single_tile_spell_effect(uint tile_x, int tile_y, int unused, int caste
 
 // was FUN_00074380 -- casts an area spell effect centered on tile (param_1,param_2): spawns a
 // type-0x1c2 effect object via spawn_and_prime_spell_effect_object, applies damage...
-int cast_area_spell_effect(uint tile_x, int tile_y, int unused, int caster, byte damage)
+int cast_area_spell_effect(uint tile_x, int tile_y, int unused, void *caster, byte damage)
 {
   short sVar1;
   char *uVar2;  /* was `undefined4` -- truncated spawn_and_prime_spell_effect_object's pointer */
@@ -1007,10 +1007,10 @@ int cast_area_spell_effect(uint tile_x, int tile_y, int unused, int caster, byte
 
 // was FUN_00074474 -- gated trap/effect trigger: resolve_damage_type_resistance (not yet named) is
 // the shared per-object-type-flags helper used throughout this cluster...
-bool trigger_type_flagged_trap_effect(int tile_x, int tile_y, int object, int unused, byte attacker_slot)
+bool trigger_type_flagged_trap_effect(int tile_x, int tile_y, void *object, int unused, byte attacker_slot)
 {
   char cVar1;
-  undefined4 uVar2;
+  void *uVar2;
   
   cVar1 = resolve_damage_type_resistance(object,1,0x80);
   if (cVar1 == '\0') {
@@ -1024,10 +1024,10 @@ bool trigger_type_flagged_trap_effect(int tile_x, int tile_y, int object, int un
 
 // was FUN_000744e0 -- unconditional tile-trap damage effect at tile (param_1,param_2): first alters
 // the tile's texture/decoration (spawn_scheduled_effect_object, group 7, subtype 4)...
-int trigger_tile_damage_trap_effect(int tile_x, int tile_y, int object, int unused, byte attacker_slot)
+int trigger_tile_damage_trap_effect(int tile_x, int tile_y, void *object, int unused, byte attacker_slot)
 {
   undefined1 uVar1;
-  undefined4 uVar2;
+  void *uVar2;
   undefined1 uVar3;
   undefined2 uVar4;
   undefined1 uVar5;
@@ -1047,7 +1047,7 @@ int trigger_tile_damage_trap_effect(int tile_x, int tile_y, int object, int unus
 // was FUN_0007455c -- resistance-gated object-state morph: runs a real resistance roll via
 // resolve_damage_type_resistance (mask 3, i.e. the random partial-resist chance bits) against the
 // target object (param_3); if not resisted...
-int morph_tile_object_state(int texture_variant, char state_id, int object, short tile_x, short tile_y)
+int morph_tile_object_state(int texture_variant, char state_id, void *object, short tile_x, short tile_y)
 {
   char cVar1;
   uint uVar2;
@@ -1072,7 +1072,7 @@ int morph_tile_object_state(int texture_variant, char state_id, int object, shor
 // was FUN_00074614 -- resistance-gated, one-time-effect object-state trigger: like
 // morph_tile_object_state, runs a real resistance roll (resolve_damage_type_resistance, mask 3)
 // before acting.
-int trigger_permanent_object_state_effect(short tile_x, short tile_y, int object)
+int trigger_permanent_object_state_effect(short tile_x, short tile_y, void *object)
 {
   char cVar1;
   
@@ -1093,7 +1093,7 @@ int trigger_permanent_object_state_effect(short tile_x, short tile_y, int object
 
 // was FUN_000746b0 -- thin wrapper: morph_tile_object_state with
 // texture/effect variant 2 and object-state id 1.
-void apply_tile_morph_variant_2(int tile_x, short tile_y, int object)
+void apply_tile_morph_variant_2(int tile_x, short tile_y, void *object)
 {
   morph_tile_object_state(2,1,object,tile_x,tile_y);
 }
@@ -1103,16 +1103,16 @@ void apply_tile_morph_variant_2(int tile_x, short tile_y, int object)
 // was FUN_000746d4 -- thin wrapper: morph_tile_object_state with texture/effect variant 6 and
 // object-state id -1 ("no change" -- this variant only affects the tile's texture/decoration, not
 // the target object's quality/link field).
-void apply_tile_morph_variant_6(int tile_x, short tile_y, int object)
+void apply_tile_morph_variant_6(int tile_x, short tile_y, void *object)
 {
-  morph_tile_object_state(6,0xffffffff,object,tile_x,tile_y);
+  morph_tile_object_state(6,-1,object,tile_x,tile_y);
 }
 
 
 
 // was FUN_000746f8 -- thin wrapper: morph_tile_object_state with
 // texture/effect variant 7 and object-state id 1.
-void apply_tile_morph_variant_7(int tile_x, short tile_y, int object)
+void apply_tile_morph_variant_7(int tile_x, short tile_y, void *object)
 {
   morph_tile_object_state(7,1,object,tile_x,tile_y);
 }
@@ -1150,7 +1150,7 @@ void scan_area_for_matching_objects(char filter_a, byte filter_b, int (*callback
   /* callback (the match callback) legitimately arrives NULL for a cone-damage/search-effect spell
      cast (dispatch_special_action case 6/7, via
      cast_cone_damage_spell/cast_targeted_search_effect)... */
-  if (callback == (codeval *)0) {
+  if (callback == (int (*)())0) {
     return;
   }
   iVar1 = (int)x;
@@ -1211,7 +1211,7 @@ void scan_area_for_matching_objects(char filter_a, byte filter_b, int (*callback
                         uVar5 = ce_rand();
                         extraout_r1 = ordint_divmod(iVar8 * iVar1 + 3,uVar5).rem;
                         if (((extraout_r1 < filter_a) &&
-                            (iVar10 = (*callback)((int)local_60,iVar12,0,pbVar14,filter_b),
+                            (iVar10 = ((int (*)(int,int,void *,void *,int))callback)((int)local_60,iVar12,0,pbVar14,filter_b),
                             iVar10 != 0)) &&
                            (iVar10 = (filter_a + -1) * 0x1000000,
                            filter_a = (char)((uint)iVar10 >> 0x18), iVar10 >> 0x18 == 0)) {
@@ -1226,7 +1226,7 @@ void scan_area_for_matching_objects(char filter_a, byte filter_b, int (*callback
                         uVar2 = *puVar13;
                         if (object_class == -0x80) {
 LAB_000749c4:
-                          iVar10 = (*callback)((int)local_60,iVar12,puVar6,pbVar14,filter_b);
+                          iVar10 = ((int (*)(int,int,void *,void *,int))callback)((int)local_60,iVar12,puVar6,pbVar14,filter_b);
                           if ((iVar10 != 0) &&
                              (iVar10 = (int)filter_a, filter_a = (char)(iVar10 + -1),
                              (iVar10 + -1) * 0x1000000 >> 0x18 < 1)) {
@@ -1276,8 +1276,9 @@ LAB_000749bc:
 // (project_position_by_heading, using its heading bits at offset+2 and location at offset+0x16)...
 /* ARM carries the callback unchanged into the scan (r11 -> pc at 0x749e4). A 32-bit integer
    truncates its native function address. */
-void scan_area_ahead_of_object(char *object, int filter_a, int (*callback)(), int object_class, byte distance, char half_width)
+void scan_area_ahead_of_object(void *object_ptr, int filter_a, int (*callback)(), int object_class, byte distance, char half_width)
 {
+  char *object = (char *)object_ptr;
   char cVar1;
   ushort uVar2;
   uint uVar3;
@@ -1321,7 +1322,7 @@ void for_each_object_of_type(ushort type_id, int mode, int argument, int (*callb
     do {
       iVar1 = (intptr_t)get_object_record_by_slot_index(*puVar2);
       if (*(byte *)(iVar1 + 0x1a) == type_id) {
-        iVar1 = (*callback)(iVar1,argument);
+        iVar1 = ((int (*)(intptr_t,int))callback)(iVar1,argument);
         if (iVar1 != 0) {
           puVar2 = puVar2 + -1;
         }
@@ -1341,12 +1342,12 @@ void for_each_object_of_type(ushort type_id, int mode, int argument, int (*callb
 // was FUN_00074c64 -- dispatch_special_action's case 6 handler: rolls 3d4 damage, then scans a
 // 4-deep, 2-wide area in front of the caster (scan_area_ahead_of_object) invoking a spell-effect
 // callback selected from a function-pointer table...
-void cast_cone_damage_spell(uintptr_t caster, uint spell_variant)
+void cast_cone_damage_spell(void *caster, uint spell_variant)
 {
   char cVar1;
 
   cVar1 = roll_dice_sum(3,4);
-  scan_area_ahead_of_object(caster,(int)cVar1,*(undefined4 *)(&DAT_00087604 + (spell_variant & 0x3f) * 4),
+  scan_area_ahead_of_object(caster,(int)cVar1,DAT_00087604_backing[spell_variant & 0x3f],
                spell_variant & 0xc0,4,2);
 }
 
@@ -1355,10 +1356,10 @@ void cast_cone_damage_spell(uintptr_t caster, uint spell_variant)
 // was FUN_00074cc8 -- dispatch_special_action's case 7 handler, player-only: same
 // scan-ahead-of-object shape as cast_cone_damage_spell, but fixed to a single match and drawing its
 // callback from a different function-pointer table...
-void cast_targeted_search_effect(uintptr_t caster, uint spell_variant)
+void cast_targeted_search_effect(void *caster, uint spell_variant)
 {
-  if (caster == (uintptr_t)g_player_object) {
-    scan_area_ahead_of_object(caster,1,(&PTR_FUN_00087614)[spell_variant & 0x3f],spell_variant & 0xc0,4,2);
+  if (caster == g_player_object) {
+    scan_area_ahead_of_object(caster,1,PTR_FUN_00087614_backing[spell_variant & 0x3f],spell_variant & 0xc0,4,2);
   }
 }
 
@@ -1369,13 +1370,14 @@ void cast_targeted_search_effect(uintptr_t caster, uint spell_variant)
 /* ARM passes the caster/actor address unchanged through r0 (dispatch_special_action's case 8, which
    itself already keeps this address-sized -- see that function's own comment on the same
    host-truncation class). param_1 was declared `int`... */
-void cast_summon_or_spawn_effect(uintptr_t caster, char variant)
+void cast_summon_or_spawn_effect(void *caster, char variant)
 {
   int uw_ord2005_rem_154 = 0; int uw_ord2005_rem_155 = 0; int uw_ord2005_rem_156 = 0;
   byte bVar1;
   ushort uVar2;
   short sVar3;
-  char *uVar4;
+  long uVar4;
+  ushort *saved_scratch;
   byte *pbVar5;
   uint uVar6;
   undefined2 uVar7;
@@ -1460,7 +1462,7 @@ void cast_summon_or_spawn_effect(uintptr_t caster, char variant)
       do {
         do {
           uVar4 = ce_rand();
-          uVar10 = ((uint)ordint_divmod(uVar6,(int)(uintptr_t)uVar4).rem & 0xffff) + uVar6 + 0x40;
+          uVar10 = ((uint)ordint_divmod(uVar6,(int)uVar4).rem & 0xffff) + uVar6 + 0x40;
           iVar8 = (uVar10 & 0xfe3f) * 0x30;
         } while ((&g_monster_max_stats_table)[iVar8] == '\0');
       } while ((((((&DAT_001007da)[iVar8] & 2) != 0) || ((uVar10 & 0xffff) == 0x7b)) ||
@@ -1480,12 +1482,12 @@ void cast_summon_or_spawn_effect(uintptr_t caster, char variant)
       uVar6 = uVar2 & 0x3ff;
       *(char *)(pObj + 2) = (char)uVar6;
       *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
-      uVar4 = g_scratch_object_ptr;
+      saved_scratch = g_scratch_object_ptr;
       if (variant == '\x04') {
-        g_scratch_object_ptr = (byte *)pObj;
+        g_scratch_object_ptr = (ushort *)pObj;
         init_monster_spawn_defaults();
         uVar6 = local_2e & 0x3f | (local_2c & 0x3ff) << 6;
-        g_scratch_object_ptr = (byte *)uVar4;
+        g_scratch_object_ptr = saved_scratch;
         *(byte *)(pObj + 0x16) = *(byte *)(pObj + 0x16) & 0xf | (byte)(uVar6 << 4);
         *(char *)(pObj + 0x17) = (char)(uVar6 >> 4);
         if (((&DAT_001007da)[(uVar10 & 0xfe3f) * 0x30] & 0x80) != 0) {
@@ -1590,7 +1592,7 @@ int spawn_random_variant_object_at_tile(int tile_x, int tile_y)
 // creatures were found there.
 void report_detected_creatures_in_direction(ushort direction, byte count)
 {
-  undefined4 uVar1;
+  void *uVar1;
   
   uVar1 = get_message_string((int)(short)(ushort)(4 < count) + (int)(short)(ushort)(1 < count) + 0x3bU
                        | 0x200);
@@ -1712,7 +1714,7 @@ void complete_pending_player_command_target(ushort *target)
     }
   }
   else if ((short)DAT_00202094 == 5) {
-    sVar2 = check_object_combination(g_player_object,target,0xffffffd3);
+    sVar2 = check_object_combination(g_player_object,target,-45);
     if (sVar2 == 3) {
       uVar3 = 0x10e;
     }
@@ -1730,7 +1732,7 @@ void complete_pending_player_command_target(ushort *target)
 
 // was FUN_00075808 -- dispatch_special_action's case 0xb handler: a numbered (0-0xc) player-command
 // dispatcher, player-only.
-void dispatch_player_command(char *actor, int unused, char command)
+void dispatch_player_command(ushort *actor, int unused, char command)
 {
   undefined2 uVar1;
   char cVar2;
@@ -1756,7 +1758,7 @@ void dispatch_player_command(char *actor, int unused, char command)
   case 5:
 LAB_0007588c:
     g_cursor_holding_state = 2;
-    DAT_00202098 = g_player_object;
+    DAT_00202098 = (char *)g_player_object;
     DAT_002020b8 = complete_pending_player_command_target;
     DAT_00202094 = (int)command;
     push_cursor_icon(0x1076);
@@ -1769,7 +1771,7 @@ LAB_0007588c:
   case 7:
     add_active_light_source(0xb,1,unused);
     set_custom_view_target(0);
-    set_view_subject_by_command(0xffffffff);
+    set_view_subject_by_command(-1);
     break;
   case 8:
     uVar3 = 3;
@@ -1824,7 +1826,7 @@ void damage_all_objects_at_tile(int tile_x, short tile_y, char damage_tier, byte
   char *iVar2;  /* was `int` -- truncated tilemap_lookup's/resolve_object_link's
                    real `void *` returns */
   char *iVar3;  /* was `int` -- same, holds resolve_object_link's return */
-  undefined4 uVar4;
+  void *uVar4;
   byte bVar5;
 
   bVar5 = damage_tier - 1;
@@ -1836,7 +1838,7 @@ void damage_all_objects_at_tile(int tile_x, short tile_y, char damage_tier, byte
         iVar3 = (char *)resolve_object_link(iVar2 + 4);
         uVar1 = roll_dice_sum((&DAT_0008762c)[bVar5],(&DAT_00087630)[bVar5]);
         uVar4 = get_object_record_by_slot_index(attacker_slot);
-        apply_typed_damage_to_object(iVar2,uVar4,tile_x,(int)tile_y,uVar1,(&DAT_00087634)[bVar5]);
+        apply_typed_damage_to_object((ushort *)iVar2,uVar4,tile_x,(int)tile_y,uVar1,(&DAT_00087634)[bVar5]);
         iVar2 = iVar3;
       } while (iVar3 != 0);
     }
@@ -1850,12 +1852,13 @@ void damage_all_objects_at_tile(int tile_x, short tile_y, char damage_tier, byte
 // was FUN_00078b18 -- builds an object's display name into param_1's buffer. For a creature (type
 // class 0x1c0==0x40) with a valid "whoami" id (param_2[0xd], uw_mobile_object_t's npc_whoami
 // field), looks up and copies that creature's proper name string directly.
-int build_object_display_name(char *out_text, ushort *object, int flag_a, int flag_b)
+int build_object_display_name(char *out_text, void *object_ptr, int flag_a, int flag_b)
 {
+  ushort *object = (ushort *)object_ptr;
   char cVar1;
   uint uVar2;
   char *pcVar3;
-  int iVar4;
+  intptr_t iVar4;
   
   if ((((*object & 0x1c0) == 0x40) && (uVar2 = (uint)(byte)object[0xd], uVar2 != 0)) &&
      (uVar2 < 0xf0)) {
@@ -1863,7 +1866,7 @@ int build_object_display_name(char *out_text, ushort *object, int flag_a, int fl
     if ((pcVar3 == (char *)0x0) || (*pcVar3 == '\0')) {
       return 0;
     }
-    iVar4 = (int)out_text - (int)pcVar3;
+    iVar4 = (intptr_t)out_text - (intptr_t)pcVar3;
     do {
       cVar1 = *pcVar3;
       pcVar3[iVar4] = cVar1;
@@ -1984,8 +1987,12 @@ void complete_cast_spell_on_target()
 // was FUN_0007ca50 -- resolves an object instance's (param_1) packed quality/variant field into a
 // (class, value) pair plus a flag distinguishing "ordinary quality variant" from "special/linked"
 // items.
-int resolve_object_variant_or_special_link(ushort *object, ushort *out_class, ushort *out_value, uint *out_flag)
+int resolve_object_variant_or_special_link(void *object_ptr, void *out_class_ptr, void *out_value_ptr, void *out_flag_ptr)
 {
+  ushort *object = (ushort *)object_ptr;
+  ushort *out_class = (ushort *)out_class_ptr;
+  ushort *out_value = (ushort *)out_value_ptr;
+  uint *out_flag = (uint *)out_flag_ptr;
   byte bVar1;
   ushort uVar2;
   int iVar3;
@@ -2048,8 +2055,9 @@ int resolve_object_variant_or_special_link(ushort *object, ushort *out_class, us
 // was FUN_0007cc30 -- called by src/player.c's equip-effect refresh loop right after
 // apply_equipped_item_effect succeeds for an equipped item; only acts when the item's flags word
 // has bit 0x8000 set (the same gating bit resolve_object_variant_or_special_link checks first).
-void clear_object_pending_special_flag(ushort *object)
+void clear_object_pending_special_flag(void *object_ptr)
 {
+  ushort *object = (ushort *)object_ptr;
   ushort uVar1;
   uint uVar2;
   uint uVar3;
@@ -2077,11 +2085,12 @@ void clear_object_pending_special_flag(ushort *object)
 
 // was FUN_0007cc78 -- trigger_object_use_babl_script's "finalize" step for the interacting object
 // (src/item_use.c's own comment already names this function).
-void consume_linked_special_object_charge(char *object)
+void consume_linked_special_object_charge(void *object_ptr)
 {
+  char *object = (char *)object_ptr;
   ushort uVar1;
   byte bVar2;
-  int iVar3;
+  void *iVar3;
   int iVar4;
   ushort *local_c;
   
@@ -2181,8 +2190,8 @@ LAB_0007ed8c:
     bVar3 = true;
   }
   else {
-    uVar1 = (int)x1 - (int)x2 >> 0x1f;
-    uVar2 = (int)y1 - (int)y2 >> 0x1f;
+    uVar1 = ((int)x1 - (int)x2) >> 0x1f;
+    uVar2 = ((int)y1 - (int)y2) >> 0x1f;
     if ((int)limit <
         (int)((((int)y1 - (int)y2 ^ uVar2) - uVar2) +
              (((int)x1 - (int)x2 ^ uVar1) - uVar1))) goto LAB_0007ed8c;
@@ -2207,8 +2216,9 @@ LAB_0007edd8:
 // was FUN_00081388 -- spawns a small burst of 2-4 debris/particle objects at tile
 // (param_2,param_3), each copied from the 8-byte template param_1, given randomized
 // position/orientation offsets within the tile, linked into the tile's object list...
-void spawn_effect_debris_burst(byte *template, uint tile_x, int tile_y)
+void spawn_effect_debris_burst(void *template_ptr, uint tile_x, int tile_y)
 {
+  byte *template = (byte *)template_ptr;
   int uw_ord2005_rem_170 = 0; int uw_ord2005_rem_171 = 0; int uw_ord2005_rem_172 = 0; int uw_ord2005_rem_173 = 0; int uw_ord2005_rem_174 = 0;
   short sVar1;
   ushort uVar2;
@@ -2325,98 +2335,99 @@ int init_monster_spawn_defaults()
   undefined4 uVar2;
   int extraout_r1;
   int iVar3;
+  byte *scratch_bytes = (byte *)g_scratch_object_ptr;  /* the record is addressed by byte offsets throughout */
   
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
-  g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0x3ff);
-  g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0x3ff) >> 8) | 0x80;
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
-  g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0xfe0f);
-  g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0xfe0f) >> 8) | 2;
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 4);
-  g_scratch_object_ptr[4] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  g_scratch_object_ptr[5] = (byte)((uVar1 & 0xffc0) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 6);
-  g_scratch_object_ptr[6] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  g_scratch_object_ptr[7] = (byte)((uVar1 & 0xffc0) >> 8);
-  DAT_001007c8 = &DAT_001007d0 + (*g_scratch_object_ptr & 0x3f) * 0x30;
+  uVar1 = *(ushort *)(scratch_bytes + 0x16);
+  scratch_bytes[0x16] = (byte)(uVar1 & 0x3ff);
+  scratch_bytes[0x17] = (byte)((uVar1 & 0x3ff) >> 8) | 0x80;
+  uVar1 = *(ushort *)(scratch_bytes + 0x16);
+  scratch_bytes[0x16] = (byte)(uVar1 & 0xfe0f);
+  scratch_bytes[0x17] = (byte)((uVar1 & 0xfe0f) >> 8) | 2;
+  uVar1 = *(ushort *)(scratch_bytes + 4);
+  scratch_bytes[4] = (byte)(uVar1 & 0xffc0) ^ 0x20;
+  scratch_bytes[5] = (byte)((uVar1 & 0xffc0) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 6);
+  scratch_bytes[6] = (byte)(uVar1 & 0xffc0) ^ 0x20;
+  scratch_bytes[7] = (byte)((uVar1 & 0xffc0) >> 8);
+  DAT_001007c8 = &DAT_001007d0 + (*scratch_bytes & 0x3f) * 0x30;
   uVar2 = ce_rand();
   uw_ord2005_rem_11 = ((int)(uVar2)) % (0x18);
   iVar3 = (uw_ord2005_rem_11 + 0x10) * (uint)(byte)DAT_001007c8[4];
   if (iVar3 < 0) {
     iVar3 = iVar3 + 0x1f;
   }
-  g_scratch_object_ptr[8] = (byte)(iVar3 >> 5);
-  g_scratch_object_ptr[9] = (byte)(*(ushort *)(g_scratch_object_ptr + 2) >> 2) & 0xe0;
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xb);
-  g_scratch_object_ptr[0xb] = (byte)(uVar1 & 0xfff8) | 8;
-  g_scratch_object_ptr[0xc] = (byte)((uVar1 & 0xfff8) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xb);
-  g_scratch_object_ptr[0xb] = (byte)(uVar1 & 0xf00f);
-  g_scratch_object_ptr[0xc] = (byte)((uVar1 & 0xf00f) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
-  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfff0);
-  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfff0) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xf);
-  g_scratch_object_ptr[0xf] = (byte)(uVar1 & 0xffc0);
-  g_scratch_object_ptr[0x10] = (byte)((uVar1 & 0xffc0) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xf);
-  g_scratch_object_ptr[0xf] = (byte)(uVar1 & 0xf03f);
-  g_scratch_object_ptr[0x10] = (byte)((uVar1 & 0xf03f) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
-  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xff0f);
-  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xff0f) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
-  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfdff);
-  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfdff) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
-  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfbff);
-  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfbff) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
-  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xf7ff);
-  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xf7ff) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
-  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfeff);
-  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfeff) >> 8);
-  g_scratch_object_ptr[0x18] = g_scratch_object_ptr[0x18] & 0xdf;
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xf);
-  g_scratch_object_ptr[0xf] = (byte)(uVar1 & 0xfff);
-  g_scratch_object_ptr[0x10] = (byte)((uVar1 & 0xfff) >> 8);
-  g_scratch_object_ptr[10] = g_scratch_object_ptr[10] & 0xf0;
-  g_scratch_object_ptr[0x14] = g_scratch_object_ptr[0x14] & 0xfc | 4;
-  g_scratch_object_ptr[0x15] = g_scratch_object_ptr[0x15] & 0xe0 | 0x20;
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xb);
-  g_scratch_object_ptr[0xb] = (byte)(uVar1 & 0xfff);
-  g_scratch_object_ptr[0xc] = (byte)((uVar1 & 0xfff) >> 8);
-  g_scratch_object_ptr[0x14] = g_scratch_object_ptr[0x14] & 7 | 0x80;
-  g_scratch_object_ptr[0x13] = g_scratch_object_ptr[0x13] & 0x7f;
-  g_scratch_object_ptr[0x13] = g_scratch_object_ptr[0x13] & 0x80;
-  g_scratch_object_ptr[0x11] = 0;
-  g_scratch_object_ptr[0x12] = 0;
-  g_scratch_object_ptr[0x15] = g_scratch_object_ptr[0x15] & 0x7f;
-  g_scratch_object_ptr[0x18] = g_scratch_object_ptr[0x18] & 0x7f;
-  g_scratch_object_ptr[0x18] = g_scratch_object_ptr[0x18] & 0xbf;
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
-  g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0xfff0);
-  g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0xfff0) >> 8);
-  g_scratch_object_ptr[0x15] = g_scratch_object_ptr[0x15] & 0xbf;
-  g_scratch_object_ptr[0x1a] = 0;
-  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xfe;
-  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xfd;
-  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xef;
-  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xdf;
-  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xbf;
-  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0x7f;
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
-  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xefff);
-  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xefff) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
-  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xdfff);
-  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xdfff) >> 8);
-  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
-  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0x3fff);
-  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0x3fff) >> 8) | 0x80;
-  g_scratch_object_ptr[10] = g_scratch_object_ptr[10] & 0x7f;
-  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xf3;
+  scratch_bytes[8] = (byte)(iVar3 >> 5);
+  scratch_bytes[9] = (byte)(*(ushort *)(scratch_bytes + 2) >> 2) & 0xe0;
+  uVar1 = *(ushort *)(scratch_bytes + 0xb);
+  scratch_bytes[0xb] = (byte)(uVar1 & 0xfff8) | 8;
+  scratch_bytes[0xc] = (byte)((uVar1 & 0xfff8) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xb);
+  scratch_bytes[0xb] = (byte)(uVar1 & 0xf00f);
+  scratch_bytes[0xc] = (byte)((uVar1 & 0xf00f) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xd);
+  scratch_bytes[0xd] = (byte)(uVar1 & 0xfff0);
+  scratch_bytes[0xe] = (byte)((uVar1 & 0xfff0) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xf);
+  scratch_bytes[0xf] = (byte)(uVar1 & 0xffc0);
+  scratch_bytes[0x10] = (byte)((uVar1 & 0xffc0) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xf);
+  scratch_bytes[0xf] = (byte)(uVar1 & 0xf03f);
+  scratch_bytes[0x10] = (byte)((uVar1 & 0xf03f) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xd);
+  scratch_bytes[0xd] = (byte)(uVar1 & 0xff0f);
+  scratch_bytes[0xe] = (byte)((uVar1 & 0xff0f) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xd);
+  scratch_bytes[0xd] = (byte)(uVar1 & 0xfdff);
+  scratch_bytes[0xe] = (byte)((uVar1 & 0xfdff) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xd);
+  scratch_bytes[0xd] = (byte)(uVar1 & 0xfbff);
+  scratch_bytes[0xe] = (byte)((uVar1 & 0xfbff) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xd);
+  scratch_bytes[0xd] = (byte)(uVar1 & 0xf7ff);
+  scratch_bytes[0xe] = (byte)((uVar1 & 0xf7ff) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xd);
+  scratch_bytes[0xd] = (byte)(uVar1 & 0xfeff);
+  scratch_bytes[0xe] = (byte)((uVar1 & 0xfeff) >> 8);
+  scratch_bytes[0x18] = scratch_bytes[0x18] & 0xdf;
+  uVar1 = *(ushort *)(scratch_bytes + 0xf);
+  scratch_bytes[0xf] = (byte)(uVar1 & 0xfff);
+  scratch_bytes[0x10] = (byte)((uVar1 & 0xfff) >> 8);
+  scratch_bytes[10] = scratch_bytes[10] & 0xf0;
+  scratch_bytes[0x14] = scratch_bytes[0x14] & 0xfc | 4;
+  scratch_bytes[0x15] = scratch_bytes[0x15] & 0xe0 | 0x20;
+  uVar1 = *(ushort *)(scratch_bytes + 0xb);
+  scratch_bytes[0xb] = (byte)(uVar1 & 0xfff);
+  scratch_bytes[0xc] = (byte)((uVar1 & 0xfff) >> 8);
+  scratch_bytes[0x14] = scratch_bytes[0x14] & 7 | 0x80;
+  scratch_bytes[0x13] = scratch_bytes[0x13] & 0x7f;
+  scratch_bytes[0x13] = scratch_bytes[0x13] & 0x80;
+  scratch_bytes[0x11] = 0;
+  scratch_bytes[0x12] = 0;
+  scratch_bytes[0x15] = scratch_bytes[0x15] & 0x7f;
+  scratch_bytes[0x18] = scratch_bytes[0x18] & 0x7f;
+  scratch_bytes[0x18] = scratch_bytes[0x18] & 0xbf;
+  uVar1 = *(ushort *)(scratch_bytes + 0x16);
+  scratch_bytes[0x16] = (byte)(uVar1 & 0xfff0);
+  scratch_bytes[0x17] = (byte)((uVar1 & 0xfff0) >> 8);
+  scratch_bytes[0x15] = scratch_bytes[0x15] & 0xbf;
+  scratch_bytes[0x1a] = 0;
+  scratch_bytes[0x19] = scratch_bytes[0x19] & 0xfe;
+  scratch_bytes[0x19] = scratch_bytes[0x19] & 0xfd;
+  scratch_bytes[0x19] = scratch_bytes[0x19] & 0xef;
+  scratch_bytes[0x19] = scratch_bytes[0x19] & 0xdf;
+  scratch_bytes[0x19] = scratch_bytes[0x19] & 0xbf;
+  scratch_bytes[0x19] = scratch_bytes[0x19] & 0x7f;
+  uVar1 = *(ushort *)(scratch_bytes + 0xd);
+  scratch_bytes[0xd] = (byte)(uVar1 & 0xefff);
+  scratch_bytes[0xe] = (byte)((uVar1 & 0xefff) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xd);
+  scratch_bytes[0xd] = (byte)(uVar1 & 0xdfff);
+  scratch_bytes[0xe] = (byte)((uVar1 & 0xdfff) >> 8);
+  uVar1 = *(ushort *)(scratch_bytes + 0xd);
+  scratch_bytes[0xd] = (byte)(uVar1 & 0x3fff);
+  scratch_bytes[0xe] = (byte)((uVar1 & 0x3fff) >> 8) | 0x80;
+  scratch_bytes[10] = scratch_bytes[10] & 0x7f;
+  scratch_bytes[0x19] = scratch_bytes[0x19] & 0xf3;
   return 1;
 }
 
@@ -2460,11 +2471,13 @@ int append_object_property_tag(ushort *object, short mode, char *out_text)
 // variant/special-link data...
 
 /* was int -- caller's stack buffer for ce_strcat/1044/1068 */
-int append_object_special_name(byte *object, short mode, char *out_text)
+int append_object_special_name(void *object_ptr, short mode, char *out_text)
 {
+  byte *object = (byte *)object_ptr;
   int uw_ord2005_rem_113 = 0;
   char cVar1;
   int iVar2;
+  ushort *chain_item;
   uint uVar3;
   char *pcVar4;
   int iVar5;
@@ -2478,11 +2491,12 @@ int append_object_special_name(byte *object, short mode, char *out_text)
   undefined1 local_24;
   int local_20;
   byte *local_1c;
+  int has_variant;
   
   DAT_0024cfcc = 1;
-  local_1c = (byte *)resolve_object_variant_or_special_link(object,local_26,&local_28,&local_20);
+  has_variant = resolve_object_variant_or_special_link(object,local_26,&local_28,&local_20);
   DAT_0024cfcc = 0;
-  if ((local_1c == (byte *)0x0) || (mode != 3)) {
+  if ((has_variant == 0) || (mode != 3)) {
 LAB_00048e80:
     uVar6 = 0;
   }
@@ -2518,13 +2532,13 @@ LAB_00048e80:
     if ((object[1] & 0x80) == 0) {
       local_1c = object + 6;
       uVar8 = 0xffff;
-      iVar2 = find_object_in_chain(&local_1c,0,4,2,0);
-      bVar9 = iVar2 == 0;
+      chain_item = find_object_in_chain((ushort **)&local_1c,0,4,2,0);
+      bVar9 = chain_item == 0;
       if (!bVar9) {
-        bVar9 = (*(byte *)(iVar2 + 1) & 8) == 0;
+        bVar9 = (*(byte *)((char *)chain_item + 1) & 8) == 0;
       }
       if (!bVar9) {
-        uVar8 = *(byte *)(iVar2 + 4) & 0x3f;
+        uVar8 = *(byte *)((char *)chain_item + 4) & 0x3f;
       }
       iVar2 = (int)(short)uVar8;
       if (-1 < iVar2) {
@@ -2547,7 +2561,7 @@ LAB_00048e80:
             puVar7 = (undefined2 *)local_26;
           }
         }
-        ce_strcat(out_text,puVar7);
+        ce_strcat(out_text,(char *)puVar7);
         ce_strcat(out_text,s_full_charge_00085cb8);
         if (iVar2 != 1) {
           ce_strcat(out_text,&DAT_00085cb4);
@@ -2641,7 +2655,7 @@ void look_at_inscribed_object(ushort *inscribed_object, short look_mode)
       iVar6 = seek_file_handle(iVar5,(short)uVar9,0);
       iVar7 = read_file_handle(iVar5,local_128,1);
       bVar3 = CloseHandle(iVar5);
-      if ((iVar7 == 1 & bVar3 & (iVar5 != -1 && iVar6 != -1)) == 0) {
+      if (((iVar7 == 1) & bVar3 & (iVar5 != -1 && iVar6 != -1)) == 0) {
         return;
       }
     }

@@ -16,7 +16,7 @@ undefined4 DAT_00084610=100;
 int geometry_triangles, geometry_surface_ids[1024];
 undefined4 geometry_last_triangle[15];
 
-void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int width, int size, intptr_t texture, int *clip)
+void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int width, int size, char *texture, int *clip)
 {
     (void)stride; (void)buffer; (void)width; (void)size; (void)texture; (void)clip;
     TEST_ASSERT_LESS_THAN_INT(1024, geometry_triangles);
@@ -56,6 +56,6 @@ void geometry_fixture_render(void)
 {
     geometry_triangles=0;
     near_clip_visible_tiles(0,0);
-    near_clip_visible_tiles((intptr_t)DAT_000a85d0_backing,1);
+    near_clip_visible_tiles(DAT_000a85d0_backing,1);
     render_visible_tile_list();
 }

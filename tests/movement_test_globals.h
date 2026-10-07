@@ -25,8 +25,7 @@ extern ushort DAT_00086992;
 #define DAT_00086987 DAT_00086986_backing[1]
 extern undefined1 DAT_00202c70_backing[];
 #define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
-extern undefined *DAT_00204988, *DAT_00204998, *DAT_002049b8;
-extern undefined1 *DAT_002049a8;
+extern int (*DAT_00204988)(ushort *), (*DAT_00204998)(ushort *), (*DAT_002049a8)(ushort *), (*DAT_002049b8)(ushort *);
 extern undefined1 DAT_002049c0;
 extern char DAT_002049bc;
 extern short *g_sweep_foot_pos;

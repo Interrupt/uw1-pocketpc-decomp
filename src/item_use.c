@@ -2,6 +2,7 @@
    sources, food, and combine/stow-into- container logic. Split out of uw.c (the original monolithic
    decompile) once these functions' real roles were confirmed. */
 #include "headers/item_use.h"
+#include <math.h>
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,7 +64,7 @@ char s_You_read_the_00085ce8[] = "You read the ";
  undefined1 DAT_00202a28_backing[256];
 /* Was `uint` (4 bytes), truncating the real object pointer stored here (confirmed by its own
    assignments -- `DAT_00202098 = g_player_object;`/ `= param_1;` where param_1 is a real `ushort *`
-   object pointer right next to a parallel `g_selected_object = param_1;` -- and its readers)... */
+   object pointer right next to a parallel `g_selected_object = (char *)param_1;` -- and its readers)... */
 char *DAT_00202098;
 /* Ghidra rendered the embedded space as an underscore, dropped the
    leading space and trailing newline. Real bytes at 0x878e0 (ARM
@@ -161,10 +162,10 @@ void attach_picked_up_object_to_cursor(ushort *object)
   short local_12;
   short local_10 [2];
   
-  g_selected_object = object;
+  g_selected_object = (char *)object;
   push_cursor_icon(*object & 0x1ff);
   poll_keyboard_char_input(&local_14);
-  if ((local_14 != 0) && (wait_for_click_release(1), g_selected_object != (ushort *)0x0)) {
+  if ((local_14 != 0) && (wait_for_click_release(1), g_selected_object != (char *)0x0)) {
     get_mouse_position(local_10,&local_12);
     sVar2 = hit_test_inventory_widget((int)local_10[0],(int)local_12);
     if (getenv("UW_DEBUG_INV"))
@@ -185,7 +186,7 @@ void attach_picked_up_object_to_cursor(ushort *object)
            `iVar2==0x14` case for the drop/click logic this used to duplicate here as a... */
         if (iVar1 < 0x14) {
           handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
-          if (g_selected_object == (ushort *)0x0) {
+          if (g_selected_object == (char *)0x0) {
             g_cursor_holding_state = 0;
             pop_cursor_icon(3);
           }
@@ -205,8 +206,9 @@ void attach_picked_up_object_to_cursor(ushort *object)
 
 
 // was FUN_0004a69c
-int drop_held_object_near_player(ushort *held_object, int force)
+int drop_held_object_near_player(void *held_object_ptr, int force)
 {
+  ushort *held_object = (ushort *)held_object_ptr;
   byte bVar1;
   ushort uVar2;
   bool bVar3;
@@ -358,8 +360,10 @@ int drop_held_object_near_player(ushort *held_object, int force)
    tail call's return value in r0 for THIS function's own caller... */
 /* param_2 was `undefined4` -- a real object pointer forwarded straight into
    place_object_in_world's own (now char*) param_4, truncated to 32 bits on this host. */
-int drop_object_near_target(char *actor, char *object, short mode, uint flags)
+int drop_object_near_target(void *actor_ptr, void *object_ptr, short mode, uint flags)
 {
+  char *actor = (char *)actor_ptr;
+  char *object = (char *)object_ptr;
   ushort uVar1;
 
   uVar1 = *(ushort *)(actor + 2);
@@ -454,8 +458,9 @@ LAB_0007ab1c:
 
 
 // was FUN_0007acd4
-int use_food_item(char *actor, ushort *object, int consume)
+int use_food_item(void *actor_ptr, ushort *object, int consume)
 {
+  char *actor = (char *)actor_ptr;
   int iVar1;
   byte bVar3;
   short sVar4;
@@ -482,7 +487,7 @@ int use_food_item(char *actor, ushort *object, int consume)
   else {
     uVar9 = object[3] >> 6;
   }
-  if (object == g_selected_object) {
+  if ((char *)object == g_selected_object) {
     if (1 < uVar9) {
       print_scroll_message_by_id(0x77);
       return 0xfffffffe;
@@ -493,7 +498,7 @@ int use_food_item(char *actor, ushort *object, int consume)
   }
   uVar10 = uVar8 & 0x1f0;
   bVar13 = uVar10 == 0xb0;
-  puVar7 = g_selected_object;
+  puVar7 = (ushort *)g_selected_object;
   if (bVar13) {
     puVar7 = (ushort *)&g_food_effect_table;
     uVar10 = uVar8 & 0xf;
@@ -601,7 +606,7 @@ LAB_0007af3c:
                              (*(ushort *)(DAT_00086df8 + 0x61) & 0x3f0) >> 4);
         if (sVar4 == -1) {
           print_scroll_message_by_id(0xf1);
-          handle_rest_action(0xfffffffe);
+          handle_rest_action(-2);
           if (*(char *)((char *)g_player_object + 8) == '\0') goto LAB_0007b254;
           print_scroll_message_by_id(0xf3);
           uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f).quot;
@@ -611,7 +616,7 @@ LAB_0007af3c:
           if (sVar4 != 0) {
             if (sVar4 == 2) {
               print_scroll_message_by_id(0xf2);
-              adjust_player_hp(g_player_object,0xfffffffe);
+              adjust_player_hp(g_player_object,-2);
             }
             goto LAB_0007b254;
           }
@@ -672,7 +677,7 @@ LAB_0007b254:
   trigger_object_trap_or_use_action(actor,object,4,(int)DAT_002020a0,CONCAT22(uVar14,DAT_002020a4));
   iVar11 = finish_object_use(object,consume,1);
   if ((iVar11 != 0) && (g_cursor_holding_state == 1)) {
-    g_selected_object = (ushort *)0x0;
+    g_selected_object = (char *)0x0;
   }
   return 1;
 }
@@ -684,8 +689,9 @@ LAB_0007b254:
 /* Was `int param_1; undefined4 param_2;` -- both real object pointers (matching
    check_object_combination's own param_1/param_2 types, forwarded to it unchanged just below),
    truncated to 32 bits on this 64-bit host. */
-void try_combine_or_stow_object(char *actor, ushort *object, int stow)
+void try_combine_or_stow_object(void *actor_ptr, ushort *object, int stow)
 {
+  char *actor = (char *)actor_ptr;
   char *wptr_60073;
   char cVar1;
   short sVar2;
@@ -713,7 +719,7 @@ void try_combine_or_stow_object(char *actor, ushort *object, int stow)
     message_scroll_print_wrapped(s_is_locked__000878fc);
   }
   else if (stow == 0) {
-    try_empty_container(object,actor == g_player_object);
+    try_empty_container(object,(ushort *)actor == g_player_object);
   }
   else {
     /* Both calls here were bare (no arguments) -- see find_or_assign_object_widget's own fix
@@ -864,8 +870,9 @@ LAB_00079cb8:
 /* Was `undefined4 param_1` -- a real object-record pointer (forwarded to
    decrement_object_count/discard_misplaced_object, which both dereference it), truncated to 32
    bits on this host -- same class as many other fixes this session. */
-bool finish_object_use(ushort *used_object, int consume, int force_discard)
+bool finish_object_use(void *used_object_ptr, int consume, int force_discard)
 {
+  ushort *used_object = (ushort *)used_object_ptr;
   short sVar1;
   char *iVar2;  /* was `int` -- truncated tilemap_lookup's/discard_misplaced_object's real `void *`/`ushort *`
    returns; only ever compared to 0 (find_object_by_encoded_slot_in_chain's plain int return also
@@ -907,7 +914,7 @@ bool finish_object_use(ushort *used_object, int consume, int force_discard)
 // returning NULL). param_1 is an existing object to hold...
 short *begin_holding_object_on_cursor(short *object, uint object_type)
 {
-  if (g_selected_object == (short *)0x0) {
+  if (g_selected_object == (char *)0x0) {
     if (object == (short *)0x0) {
       object = (short *)spawn_new_object(object_type,0);
     }
@@ -915,7 +922,7 @@ short *begin_holding_object_on_cursor(short *object, uint object_type)
       object_type = (int)*object & 0x1ff;
     }
     g_cursor_holding_state = 1;
-    g_selected_object = object;
+    g_selected_object = (char *)object;
     push_cursor_icon(object_type);
   }
   else {
@@ -1029,9 +1036,9 @@ void prompt_use_item_on_target(ushort *item, void (*completion)())
   ce_strcat(acStack_34,s_on_what__000878e0);
   message_scroll_print_wrapped(acStack_34);
   push_cursor_icon(*item & 0x1ff);
-  g_selected_object = item;
+  g_selected_object = (char *)item;
   g_cursor_holding_state = 2;
-  DAT_00202098 = item;
+  DAT_00202098 = (char *)item;
   /* ARM 0x79ffc/0x7a004/0x7a0a4 preserves and stores the callback pointer. */
   DAT_002020b8 = completion;
 }
@@ -1252,7 +1259,7 @@ void complete_use_item_special_quest_event(ushort *target, int confirmed, int un
     *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x20;
     *(undefined1 *)(DAT_00086df8 + 0x38) = *(undefined1 *)(DAT_00086df8 + 0xb0);
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0xb0);
-    for_each_object_of_type(0xe7,0,2,apply_random_roll_to_matched_object);
+    for_each_object_of_type(0xe7,0,2,(int (*)())apply_random_roll_to_matched_object);
   }
   else if (confirmed != 0) {
     print_scroll_message_by_id(0x84);
@@ -1300,7 +1307,7 @@ void dispatch_use_held_item_by_type(ushort *target, ushort *item, int confirmed)
   uVar3 = *item & 0x1ff;
   if (uVar3 == 0x112) {
     if (confirmed == 0) {
-      DAT_00202098 = item;
+      DAT_00202098 = (char *)item;
       complete_use_item_special_quest_event(target,0,0);
     }
     else {
@@ -1346,11 +1353,12 @@ void dispatch_use_held_item_by_type(ushort *target, ushort *item, int confirmed)
 // was FUN_0007abbc -- refuels a light source item (torch/lamp): gated on the item's low nibble
 // being outside 0xc-0xf (a "not already refueled" state check) and its "already used" flag (offset
 // +1 bit 0x80) being clear.
-void refuel_light_source_item(byte *item, uint refuel)
+void refuel_light_source_item(void *item_ptr, uint refuel)
 {
+  byte *item = (byte *)item_ptr;
   undefined2 uVar1;
   byte bVar2;
-  int iVar3;
+  void *iVar3;
   byte *local_1c;
   
   if ((refuel != 0) && (((*item & 0xf) < 0xc || (0xf < (*item & 0xf))))) {
@@ -1387,6 +1395,7 @@ void complete_use_item_scatter_spawn(short *target, int clicked, int confirmed)
   short sVar4;
   undefined4 uVar5;
   int iVar6;
+  ushort *found_item;
   char *iVar7;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
   ushort *puVar8;
   uint uVar9;
@@ -1399,8 +1408,8 @@ void complete_use_item_scatter_spawn(short *target, int clicked, int confirmed)
   g_cursor_holding_state = 0;
   if ((clicked != 0) && (confirmed == 0)) {
     uVar5 = encode_object_slot_index(target);
-    iVar6 = find_object_by_encoded_slot_in_chain((char *)g_player_object + 6,1,uVar5);
-    if (iVar6 == 0) {
+    found_item = find_object_by_encoded_slot_in_chain((char *)g_player_object + 6,1,uVar5);
+    if (found_item == 0) {
       uVar11 = (int)*target & 0x1ff;
       if (((ushort)uVar11 < 0x153) || (0x156 < (ushort)uVar11)) {
         print_scroll_message_by_id(0x84);
@@ -1520,6 +1529,7 @@ void complete_use_item_fill_flask(ushort *target, int clicked, int confirmed)
    0x7b99c). */
 void dispatch_use_special_item_by_type(ushort *actor, ushort *item, int flag)
 {
+  char *held_rec;
   ushort uVar1;
   int iVar2;
   int iVar3;
@@ -1541,7 +1551,7 @@ void dispatch_use_special_item_by_type(ushort *actor, ushort *item, int flag)
       /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's own identical fix
          comment. 0x129 has its own bit 8 set, so this comparison could never even succeed while
          reading a sign-extended single byte... */
-      if ((g_selected_object == (ushort *)0x0) || ((*(ushort *)g_selected_object & 0x1ff) != 0x129)) {
+      if ((g_selected_object == (char *)0x0) || ((*(ushort *)g_selected_object & 0x1ff) != 0x129)) {
         puVar4 = (ushort *)find_equipped_item_by_category(4,2,9,2,&local_22);
         if (puVar4 == (ushort *)0x0) {
           puVar4 = (ushort *)find_equipped_item_by_category(4,2,9,4,&local_22);
@@ -1558,7 +1568,7 @@ void dispatch_use_special_item_by_type(ushort *actor, ushort *item, int flag)
       }
       else {
         local_20[0] = 0;
-        puVar4 = g_selected_object;
+        puVar4 = (ushort *)g_selected_object;
       }
       if (puVar4 == (ushort *)0x0) {
         return;
@@ -1646,10 +1656,10 @@ LAB_0007b7e4:
   case 299:
     iVar3 = try_climb_wall();
     if (iVar3 != 0) {
-      iVar3 = begin_holding_object_on_cursor(0,0xb6);
-      uVar7 = *(undefined2 *)(iVar3 + 4);
-      *(byte *)(iVar3 + 4) = (byte)uVar7 | 0x3f;
-      *(char *)(iVar3 + 5) = (char)((ushort)uVar7 >> 8);
+      held_rec = (char *)begin_holding_object_on_cursor(0,0xb6);
+      uVar7 = *(undefined2 *)(held_rec + 4);
+      *(byte *)(held_rec + 4) = (byte)uVar7 | 0x3f;
+      *(char *)(held_rec + 5) = (char)((ushort)uVar7 >> 8);
     }
     wait_for_click_release(1);
     break;
@@ -1783,7 +1793,7 @@ void dispatch_world_object_interaction_by_family(ushort *actor, ushort *object)
   else {
     if (uVar4 == 2) {
       if (((uVar5 & 0xf) != 1) && ((uVar5 & 0xf) != 2)) {
-        look_at_inscribed_object(object,0xffffffff);
+        look_at_inscribed_object(object,-1);
         return;
       }
       uVar5 = ((uVar5 >> 9) + 1) * 0x200 & 0xe00 | uVar5 & 0xe1ff;
@@ -1808,8 +1818,10 @@ void dispatch_world_object_interaction_by_family(ushort *actor, ushort *object)
 // was FUN_0007c1bc -- a shared "finalize object use" step called at the end of virtually every
 // use-object interaction path (use_object_on_target, use_readable_item, dispatch_world_object_
 // interaction_by_family)...
-int trigger_object_use_babl_script(int context_x, int context_y, ushort *actor, ushort *object, int confirmed)
+int trigger_object_use_babl_script(int context_x, int context_y, void *actor_ptr, void *object_ptr, int confirmed)
 {
+  ushort *actor = (ushort *)actor_ptr;
+  ushort *object = (ushort *)object_ptr;
   int iVar1;
   ushort *puVar2;
   undefined2 local_1c;
@@ -1843,8 +1855,10 @@ LAB_0007c2b8:
 // was FUN_0007c2ec -- another shared "finalize object use/trap check" step, called alongside
 // trigger_object_use_babl_script throughout the use-object interaction paths...
 /* was int -- the picked object (g_interact_target etc.), deref'd at param_2+1 / param_2+6 */
-void trigger_object_trap_or_use_action(char *actor, char *object, int action, int tile_x, short tile_y)
+void trigger_object_trap_or_use_action(void *actor_ptr, void *object_ptr, int action, int tile_x, short tile_y)
 {
+  char *actor = (char *)actor_ptr;
+  char *object = (char *)object_ptr;
   ushort *puVar1;
   ushort *local_1c;
   
@@ -1923,10 +1937,11 @@ int objects_are_combinable(ushort *object_a, ushort *object_b)
 // was FUN_0002822c -- spawns the resulting object for combination
 // index param_1 (the id looked up from &DAT_00100634, the same
 // combination-table stride objects_are_combinable searches).
-int spawn_combined_object(short combination_index)
+void *spawn_combined_object(short combination_index)
 {
-  spawn_new_object((int)*(short *)(&DAT_00100634 + combination_index * 6),0);
-  return 0;
+  /* ARM 0x2824c is a tail call (`b spawn_new_object`): the new object pointer is this function's
+     return value. It was decompiled as `...; return 0;`, so combining items always saw NULL. */
+  return spawn_new_object((int)*(short *)(&DAT_00100634 + combination_index * 6),0);
 }
 
 
@@ -1985,7 +2000,7 @@ int check_offering_container_puzzle()
         psVar1 = local_24 + iVar8;
         local_2c[iVar8] = local_2c[iVar8] + (ushort)((uVar2 & 0x1ff) == (int)*psVar1);
         iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
-        bVar3 = (bool)(bVar3 | (uVar2 & 0x1ff) == (int)*psVar1);
+        bVar3 = (bool)(bVar3 | ((uVar2 & 0x1ff) == (int)*psVar1));
       } while (iVar8 < 3);
       if (!bVar3) goto LAB_000283ec;
       puVar7 = puVar7 + 2;
@@ -1993,7 +2008,7 @@ int check_offering_container_puzzle()
     bVar3 = true;
     iVar8 = 0;
     do {
-      bVar3 = (bool)(bVar3 & local_2c[iVar8] != 0);
+      bVar3 = (bool)(bVar3 & (local_2c[iVar8] != 0));
       iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
     } while (iVar8 < 3);
     if (bVar3) {
@@ -2178,7 +2193,7 @@ bool place_object_in_equipment_slot(ushort *equip_object, int slot)
       swap_cursor_and_slot_item(slot,0);
       sVar1 = check_object_fits_in_slot(equip_object,slot);
       if (sVar1 == 0) {
-        g_selected_object = equip_object;
+        g_selected_object = (char *)equip_object;
         pop_cursor_icon(3);
         /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
            own identical fix comment. */
@@ -2266,8 +2281,9 @@ int objects_can_stack(ushort *object_a, ushort *object_b)
 // was FUN_000452dc -- searches equipped items (g_equipped_items, slots 0-0xa quickly, 0-0x12 if
 // param_4 isn't 1) for the first one matching category/subcategory/quality filters param_1/param_2/
 // param_3 (each <0 = any), returning its slot index via param_5...
-ushort *find_equipped_item_by_category(int category, int subcategory, int quality, short full_scan, ushort *out_slot)
+ushort *find_equipped_item_by_category(int category, int subcategory, int quality, short full_scan, void *out_slot_ptr)
 {
+  ushort *out_slot = (ushort *)out_slot_ptr;
   short sVar1;
   ushort *puVar4;
   int iVar5;
@@ -2277,7 +2293,8 @@ ushort *find_equipped_item_by_category(int category, int subcategory, int qualit
      address into find_object_in_link_chain (see that function's own fix comment); [1] is unused
      padding from the original 32-bit stack layout. */
   char *local_74 [2];
-  int local_6c [19];
+  char *local_6c [19];  /* was int [19]: stored (and later dereferenced) truncated object pointers */
+  char *item_rec;
   ushort uVar2;
   ushort uVar3;
   
@@ -2285,7 +2302,7 @@ ushort *find_equipped_item_by_category(int category, int subcategory, int qualit
   do {
     uVar6 = (undefined2)iVar7;
     puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar7 * 2);
-    local_6c[iVar7] = (int)puVar4;
+    local_6c[iVar7] = (char *)puVar4;
     sVar1 = (short)category;
     uVar2 = (ushort)subcategory;
     uVar3 = (ushort)quality;
@@ -2299,7 +2316,7 @@ ushort *find_equipped_item_by_category(int category, int subcategory, int qualit
     iVar5 = (int)(short)((uint)iVar5 >> 0x10);
     while (uVar6 = (undefined2)iVar7, iVar5 < 0x13) {
       puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar5 * 2);
-      local_6c[iVar5] = (int)puVar4;
+      local_6c[iVar5] = (char *)puVar4;
       if (((puVar4 != (ushort *)0x0) && ((sVar1 < 0 || ((*puVar4 >> 6 & 7) == (int)sVar1)))) &&
          ((((short)uVar2 < 0 || (((byte)((byte)*puVar4 >> 4) & 3) == uVar2)) &&
           (((short)uVar3 < 0 || (((byte)*puVar4 & 0xf) == uVar3)))))) goto LAB_0004552c;
@@ -2310,11 +2327,11 @@ ushort *find_equipped_item_by_category(int category, int subcategory, int qualit
       iVar7 = 0;
       do {
         uVar6 = (undefined2)iVar7;
-        iVar5 = local_6c[iVar7];
-        if ((iVar5 != 0) && ((*(byte *)(iVar5 + 1) & 0x80) == 0)) {
-          local_74[0] = resolve_object_link(iVar5 + 6);
+        item_rec = local_6c[iVar7];
+        if ((item_rec != 0) && ((*(byte *)(item_rec + 1) & 0x80) == 0)) {
+          local_74[0] = resolve_object_link(item_rec + 6);
           puVar4 = (ushort *)find_object_in_link_chain(category,subcategory,quality,local_74);
-          local_6c[iVar7] = (int)puVar4;
+          local_6c[iVar7] = (char *)puVar4;
           if (puVar4 != (ushort *)0x0) {
 LAB_0004552c:
             *out_slot = uVar6;
@@ -2602,7 +2619,7 @@ ushort *extract_matching_object_from_slot(int category, int subcategory, int qua
   puVar3 = (ushort *)resolve_object_link(pbVar11);
   if (puVar3 != (ushort *)0x0) {
     if (iVar4 < 0x13) {
-      local_28 = g_player_object;
+      local_28 = (char *)g_player_object;
     }
     else {
       /* Was `resolve_object_link(g_current_container_record + 8)` -- g_current_container_record is
@@ -2640,7 +2657,7 @@ ushort *extract_matching_object_from_slot(int category, int subcategory, int qua
           object_list_insert_head(puVar3 + 2,pbVar10);
         }
       }
-      if ((local_28 == g_player_object) || (0x13 < iVar4)) {
+      if ((local_28 == (char *)g_player_object) || (0x13 < iVar4)) {
         if (pbVar10 == (byte *)0x0) {
           uVar7 = *pbVar11 & 0x3f;
         }
@@ -2810,20 +2827,21 @@ void redraw_armor_overlay_widgets()
 void swap_cursor_and_slot_item(int slot, int mode)
 {
   int iVar1;
+  void *slot_item;
   uint uVar2;
   bool bVar3;
   short local_20;
   
-  bVar3 = g_selected_object != (ushort *)0x0;
+  bVar3 = g_selected_object != (char *)0x0;
   if (mode == 0) {
     uVar2 = (uint)local_20;
   }
   else {
-    iVar1 = get_equipped_item_at_slot(slot);
-    uVar2 = encode_object_slot_index(resolve_object_link(iVar1 + 4));  /* ARM 0x47030: r0 passthrough */
+    slot_item = get_equipped_item_at_slot(slot);
+    uVar2 = encode_object_slot_index(resolve_object_link((char *)slot_item + 4));  /* ARM 0x47030: r0 passthrough */
   }
-  g_selected_object = (ushort *)extract_matching_object_from_slot(0xffffffff,0xffffffff,0xffffffff,slot,0);
-  if (g_selected_object != (ushort *)0x0) {
+  g_selected_object = (char *)extract_matching_object_from_slot(0xffffffff,0xffffffff,0xffffffff,slot,0);
+  if (g_selected_object != (char *)0x0) {
     if (mode != 0) {
       iVar1 = (int)(short)slot;
       if (getenv("UW_DEBUG_INV"))
@@ -2919,13 +2937,14 @@ int place_object_in_backpack_slot(ushort *pack_object, short slot)
      (`iVar5 = g_current_container_record;` just below), then dereferenced the truncated wild value
      at `*(short *)(iVar5 + 10)`. */
   char *iVar5;
+  char *container_rec;
   uint uVar6;
   int iVar7;
   undefined4 uVar8;
 
-  iVar4 = g_player_object;
+  iVar4 = (char *)g_player_object;
   iVar1 = (int)slot;
-  uVar8 = pack_object;
+  uVar8 = 0;  /* was `pack_object` (a pointer); sVar2 only matters when iVar1 == -1 (1) -- otherwise it is overwritten below */
   if (iVar1 == -1) {
     uVar8 = 1;
   }
@@ -2980,8 +2999,9 @@ int place_object_in_backpack_slot(ushort *pack_object, short slot)
 /* Was declared with no parameters at all, and its body called encode_object_slot_index() bare --
    but every one of its 4 real call sites passes a real object pointer, so this silently relied on
    ARM register leftover... */
-int find_or_assign_object_widget(ushort *object)
+int find_or_assign_object_widget(void *object_ptr)
 {
+  ushort *object = (ushort *)object_ptr;
   char cVar1;
   undefined4 uVar2;
   ushort *puVar3;
@@ -3032,7 +3052,9 @@ uint check_object_fits_in_slot(ushort *object, int slot)
   short sVar9;
   undefined1 *puVar10;
   ushort *puVar11;
-  char *iVar12;
+  int iVar12;
+  char *effect_ptr;
+  char *container_rec;
   byte *pbVar13;
   char *pcVar14;
   int iVar15;
@@ -3054,7 +3076,7 @@ uint check_object_fits_in_slot(ushort *object, int slot)
   uVar5 = ((byte)*object & 0x30) >> 4;
   bVar4 = (byte)*object & 0xf;
   iVar15 = (int)(short)slot;
-  g_scratch_object_ptr = object;
+  g_scratch_object_ptr = (ushort *)object;
   if (iVar15 == 0x13) {
     if (g_current_container_record == 0) {
       return 0;
@@ -3109,24 +3131,24 @@ uint check_object_fits_in_slot(ushort *object, int slot)
     if (((byte)*object & 0x30) < 0x20) {
       return 0;
     }
-    iVar12 = get_scanned_object_class_effect_ptr();
+    effect_ptr = (char *)get_scanned_object_class_effect_ptr();
     if (iVar15 == 0) {
-      bVar16 = *(char *)(iVar12 + 3) == '\b';
+      bVar16 = *(char *)(effect_ptr + 3) == '\b';
     }
     else if (iVar15 == 1) {
-      bVar16 = *(char *)(iVar12 + 3) == '\x01';
+      bVar16 = *(char *)(effect_ptr + 3) == '\x01';
     }
     else if (iVar15 == 2) {
-      bVar16 = *(char *)(iVar12 + 3) == '\x04';
+      bVar16 = *(char *)(effect_ptr + 3) == '\x04';
     }
     else if (iVar15 == 3) {
-      bVar16 = *(char *)(iVar12 + 3) == '\x03';
+      bVar16 = *(char *)(effect_ptr + 3) == '\x03';
     }
     else {
       if (iVar15 != 4) {
         return 0;
       }
-      bVar16 = *(char *)(iVar12 + 3) == '\x05';
+      bVar16 = *(char *)(effect_ptr + 3) == '\x05';
     }
 LAB_00047a68:
     if (!bVar16) {
@@ -3141,8 +3163,8 @@ LAB_00047a68:
     if (((byte)*object & 0x30) < 0x20) {
       return 0;
     }
-    iVar15 = get_scanned_object_class_effect_ptr();
-    bVar16 = *(char *)(iVar15 + 3) == '\t';
+    effect_ptr = (char *)get_scanned_object_class_effect_ptr();
+    bVar16 = *(char *)(effect_ptr + 3) == '\t';
     goto LAB_00047a68;
   }
   if ((iVar15 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) && ((uVar1 == 0 && (uVar5 == 0)))) {
@@ -3159,10 +3181,10 @@ LAB_00047a68:
     if ((local_50 == 2) && (((uVar5 == 1 && (3 < bVar4)) && (bVar4 < 8)))) {
       iVar12 = 0;
       do {
-        if (iVar15 == (char)(&g_light_source_slots)[(int)iVar12]) {
+        if (iVar15 == (char)(&g_light_source_slots)[iVar12]) {
           return 1;
         }
-        iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
+        iVar12 = (iVar12 + 1) * 0x10000 >> 0x10;
       } while (iVar12 < 4);
       uVar1 = *object;
       bVar6 = (byte)uVar1;
@@ -3187,14 +3209,14 @@ LAB_00047a0c:
   }
   bVar6 = 1;
   local_54[0] = calculate_object_weight(object);
-  iVar12 = g_current_container_record;
+  container_rec = g_current_container_record;
   bVar7 = 1;
   if (0x13 < iVar15) {
-    /* Was `iVar12 = *(int *)(iVar12 + 4)` walking the legacy 4-byte "prev" field (truncated half of
+    /* Was `container_rec = *(int *)(container_rec + 4)` walking the legacy 4-byte "prev" field (truncated half of
        a real 64-bit pointer, same class as this whole file's Update-29 sweep)... */
-    for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(char **)(iVar12 + 0x14)) {
+    for (; bVar6 = bVar7, container_rec != 0; container_rec = *(char **)(container_rec + 0x14)) {
       _savedLink = g_current_container_link;
-      g_current_container_link = *(undefined2 *)(iVar12 + 8);
+      g_current_container_link = *(undefined2 *)(container_rec + 8);
       pbVar13 = (byte *)resolve_object_link(&g_current_container_link);
       g_current_container_link = _savedLink;
       if (pbVar13 == (byte *)0x0) {
@@ -3202,7 +3224,7 @@ LAB_00047a0c:
       }
       else if (((short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3] == 0) ||
          (bVar7 = 0,
-         (int)*(short *)(iVar12 + 10) + (int)local_54[0] <=
+         (int)*(short *)(container_rec + 10) + (int)local_54[0] <=
          (int)(short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3])) {
         bVar7 = 1;
       }
@@ -3297,8 +3319,9 @@ void handle_backpack_slot_click(short slot)
 /* Was `undefined4 param_1` -- a 64-bit pointer truncates to its low 32 bits the moment a caller
    passes it to a function whose own signature declares this narrower type (matches
    sum_container_weight's identical fix elsewhere in this file). */
-int place_held_item_in_empty_slot(ushort *held_object, short target_slot)
+int place_held_item_in_empty_slot(void *held_object_ptr, short target_slot)
 {
+  ushort *held_object = (ushort *)held_object_ptr;
   int iVar1;
   int iVar2;
   undefined4 uVar3;
@@ -3335,13 +3358,15 @@ int place_held_item_in_empty_slot(ushort *held_object, short target_slot)
 // WARNING: Removing unreachable block (ram,0x00047f40)
 
 // was FUN_00047cfc
-int handle_backpack_slot_interact(ushort *object, uint slot)
+int handle_backpack_slot_interact(void *object_ptr, uint slot)
 {
+  ushort *object = (ushort *)object_ptr;
   int iVar1;
   byte bVar2;
   short sVar3;
   ushort *puVar4;
-  char *iVar5;
+  int iVar5;
+  char *container_rec;
   undefined4 uVar6;
   ushort *puVar7;
   int iVar8;
@@ -3367,10 +3392,10 @@ int handle_backpack_slot_interact(ushort *object, uint slot)
         iVar5 = place_held_item_in_empty_slot(object,slot);
         if (iVar5 == 0) {
           place_held_item_in_empty_slot(puVar4,slot);
-          puVar4 = g_selected_object;
+          puVar4 = (ushort *)g_selected_object;
         }
-        g_selected_object = puVar4;
-        if (g_selected_object != (ushort *)0x0) {
+        g_selected_object = (char *)puVar4;
+        if (g_selected_object != (char *)0x0) {
           pop_cursor_icon(0);
           /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
              own identical fix comment. */
@@ -3393,7 +3418,7 @@ int handle_backpack_slot_interact(ushort *object, uint slot)
       if (iVar5 == 1) {
         discard_misplaced_object(0,object,1);
         g_cursor_holding_state = 1;
-        g_selected_object = puVar7;
+        g_selected_object = (char *)puVar7;
         pop_cursor_icon(3);
         /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
            own identical fix comment. */
@@ -3433,23 +3458,23 @@ int handle_backpack_slot_interact(ushort *object, uint slot)
       *(undefined1 *)((char *)puVar4 + 7) = 0;
     }
     iVar8 = (*(ushort *)(&DAT_00202c91 + (*object & 0x1ff) * 0xd) >> 4) * slot;
-    iVar5 = g_current_container_record;
+    container_rec = g_current_container_record;
     /* Legacy truncated "prev" walk -- same fix as
        place_object_in_backpack_slot's sibling copy (search "still
        broken for genuine container nesting"). */
     if (0x13 < iVar1) {
-      for (; iVar5 != 0; iVar5 = *(char **)(iVar5 + 0x14)) {
-        iVar10 = *(short *)(iVar5 + 10) + iVar8;
-        *(char *)(iVar5 + 10) = (char)iVar10;
-        *(char *)(iVar5 + 0xb) = (char)((uint)iVar10 >> 8);
+      for (; container_rec != 0; container_rec = *(char **)(container_rec + 0x14)) {
+        iVar10 = *(short *)(container_rec + 10) + iVar8;
+        *(char *)(container_rec + 10) = (char)iVar10;
+        *(char *)(container_rec + 0xb) = (char)((uint)iVar10 >> 8);
       }
     }
     g_player_carry_weight = g_player_carry_weight + (short)iVar8;
     refresh_player_equipment_effects();
     iVar5 = (puVar4[3] & 0xffc0) + slot * 0x40;
     bVar2 = (byte)puVar4[2];
-    *(byte *)(puVar4 + 3) = (byte)iVar5 ^ (byte)puVar4[3] & 0x3f;
-    *(char *)((char *)puVar4 + 7) = (char)((uint)iVar5 >> 8);
+    *(byte *)(puVar4 + 3) = (byte)(uintptr_t)iVar5 ^ (byte)puVar4[3] & 0x3f;
+    *(char *)((char *)puVar4 + 7) = (char)((uint)(uintptr_t)iVar5 >> 8);
     *(byte *)(puVar4 + 2) =
          (bVar2 ^ (byte)((int)(((byte)object[2] & 0x3f) +
                               (CONCAT11(*(undefined1 *)((char *)puVar4 + 5),bVar2) & 0x3f)) >> 1)) &
@@ -3495,9 +3520,9 @@ void handle_object_drop_target(short widget)
       if (iVar2 == 0x14) {
         /* Widget 20, the real "leave container" indicator -- see DAT_00085c4c's own comment for the
            display side. */
-        if (g_selected_object != (ushort *)0x0) {
+        if (g_selected_object != (char *)0x0) {
           if (auto_place_in_container(g_selected_object, 0x13) != 0) {
-            g_selected_object = (ushort *)0x0;
+            g_selected_object = (char *)0x0;
             g_cursor_holding_state = 0;
             pop_cursor_icon(3);
           }

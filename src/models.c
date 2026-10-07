@@ -3,6 +3,7 @@
    textured model geometry, and door animation-frame emission. */
 #include "headers/models.h"
 #include "headers/debug.h"
+#include "headers/debug_ui.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -673,8 +674,9 @@ void *tick_anim_record(short catalog)
 // was FUN_00061e60
 /* Object-record pointer -- was `uint`, truncating it (same class as object_list_insert_head
    above). */
-void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_texid)
+void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_or_texid)
 {
+  char *obj = (char *)obj_ptr;
   int uw_ord2005_rem_123 = 0; int uw_ord2005_rem_124 = 0;
   int iVar1;
   int iVar2;
@@ -731,6 +733,7 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
   byte *texptr;
   int local_60;
   byte *local_58;
+  int row_base;
   int faces_remaining;
   
   catalog_u = (uint)catalog;
@@ -747,9 +750,9 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
   *DAT_00110fc0 = uVar10;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = (ushort)DAT_0023bc88 * DAT_00086b30;
-  puVar25 = DAT_00110fc0 + 1;
+  puVar25 = (ushort *)(DAT_00110fc0 + 1);
   DAT_00189584 = (ushort)DAT_0023bc88 * DAT_00086b30;
-  DAT_00110fc0 = puVar25;
+  DAT_00110fc0 = (char *)puVar25;
   if ((catalog_flags & 0x20) == 0) {
     if ((catalog_flags & 0x80) == 0) {
       uVar21 = (int)(short)(ushort)catalog_flags & 7;
@@ -768,8 +771,8 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
             fprintf(stderr, "[billboard] static sub-frame %d: mesh_slot=0x%04x pushed_val=0x%04x (catalog_byte=0x%02x)\n",
                     iVar29, (unsigned)tex_w, (unsigned)*DAT_00110fc0,
                     (unsigned)(byte)(&DAT_00086c09)[iVar29 + iVar1]);
-          puVar25 = DAT_00110fc0 + 1;
-          DAT_00110fc0 = puVar25;
+          puVar25 = (ushort *)(DAT_00110fc0 + 1);
+          DAT_00110fc0 = (char *)puVar25;
           (&DAT_00189570)[iVar29] =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                (ushort)DAT_0023bc88 * DAT_00086b30 * 0x100;
@@ -786,7 +789,7 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
         local_7c = 3 - (tex_w & 3);
       }
       uVar21 = (int)(short)(ushort)catalog_flags & 7;
-      puVar25 = DAT_00110fc0;
+      puVar25 = (ushort *)(DAT_00110fc0);
       if (uVar21 != 0) {
         iVar29 = 0;
         do {
@@ -798,8 +801,8 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
           *DAT_00110fc0 =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                (*(ushort *)(obj + 6) >> 6 & 0x1ff) + local_7c;
-          puVar25 = DAT_00110fc0 + 1;
-          DAT_00110fc0 = puVar25;
+          puVar25 = (ushort *)(DAT_00110fc0 + 1);
+          DAT_00110fc0 = (char *)puVar25;
           (&DAT_00189570)[iVar29] =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                ((*(ushort *)(obj + 6) & 0x7fc0) >> 6) + local_7c;
@@ -830,7 +833,7 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)DAT_0023b4e0 * DAT_00086b30;
     DAT_00189584 = (ushort)DAT_0023b4e0 * DAT_00086b30;
-    puVar25 = DAT_00110fc0 + 1;
+    puVar25 = (ushort *)(DAT_00110fc0 + 1);
     DAT_00110fc0 = DAT_00110fc0 + 1;
     DAT_00189570 = (ushort)bVar5;
   }
@@ -858,8 +861,8 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
           *DAT_00110fc0 = 0xb2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 = 6;
-          puVar25 = DAT_00110fc0 + 1;
-          DAT_00110fc0 = puVar25;
+          puVar25 = (ushort *)(DAT_00110fc0 + 1);
+          DAT_00110fc0 = (char *)puVar25;
         }
         else {
           emit_floor_texture_select(0,DAT_0023b4e0,
@@ -874,8 +877,8 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
           *DAT_00110fc0 = 0xb2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 = DAT_0023b81c;
-          puVar25 = DAT_00110fc0 + 1;
-          DAT_00110fc0 = puVar25;
+          puVar25 = (ushort *)(DAT_00110fc0 + 1);
+          DAT_00110fc0 = (char *)puVar25;
         }
       }
       else {
@@ -899,8 +902,8 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
       *DAT_00110fc0 = (ushort)iVar29;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = (ushort)DAT_0023bc88 * DAT_00086b30;
-      puVar25 = DAT_00110fc0 + 1;
-      DAT_00110fc0 = puVar25;
+      puVar25 = (ushort *)(DAT_00110fc0 + 1);
+      DAT_00110fc0 = (char *)puVar25;
     }
     DAT_0023b818 = 0xe0;
   }
@@ -914,15 +917,15 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0x400 - tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 0x800;
+    *DAT_00110fc0 = 0x0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_000b4620 + 0x30;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (0x400 - tex_w) * 2 - 1;
-    puVar25 = DAT_00110fc0 + 1;
-    DAT_00110fc0 = puVar25;
+    puVar25 = (ushort *)(DAT_00110fc0 + 1);
+    DAT_00110fc0 = (char *)puVar25;
   }
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[billboard] position anchor: DAT_0023b904=%d DAT_0023b91c=%d DAT_0023b920=%d\n",
@@ -941,8 +944,8 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = (short)DAT_0023b920 >> 0x10;
   cVar9 = DAT_0023b4a0;
-  puVar25 = DAT_00110fc0 + 1;
-  DAT_00110fc0 = puVar25;
+  puVar25 = (ushort *)(DAT_00110fc0 + 1);
+  DAT_00110fc0 = (char *)puVar25;
   if (heading < '\0') {
     uw_ord2005_rem_123 = ((int)((*(ushort *)(obj + 2) >> 7 & 7) + (4 - DAT_0023b4a0) * 2)) % (8);
     local_7c = (ushort)((uint)(uw_ord2005_rem_123 << 0x1d) >> 0x10);
@@ -966,8 +969,8 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
     *DAT_00110fc0 = tex_h;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = tex_w;
-    puVar25 = DAT_00110fc0 + 1;
-    DAT_00110fc0 = puVar25;
+    puVar25 = (ushort *)(DAT_00110fc0 + 1);
+    DAT_00110fc0 = (char *)puVar25;
     DAT_0018957a = tex_w;
   }
   if (((catalog_u == 0x10) || (catalog_u == 0x11)) && (DAT_0023b830 == '\0' && DAT_00086b2c == 0)) {
@@ -1081,7 +1084,7 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
     iVar2 = (int)(short)tex_w;
     iVar3 = (int)(short)tex_h;
     iVar22 = iVar16 * 0x60;
-    local_58 = (byte *)(iVar16 * 0x18);
+    row_base = iVar16 * 0x18;
     do {
       sVar7 = DAT_000da47c;
       _face_rec = iVar22 + _anim + 0xc14;
@@ -1107,12 +1110,12 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
       pbVar23 = &DAT_00086c08 + iVar1;
       pbVar6 = (byte *)0x0;
       if (cVar9 != '\0') {
-        pbVar23 = (byte *)(uint)(byte)(&DAT_00086c0a)[iVar1];
+        pbVar23 = (byte *)(uintptr_t)(byte)(&DAT_00086c0a)[iVar1];
         pbVar6 = pbVar23;
       }
       if (cVar9 != '\0' && pbVar6 != (byte *)0x0) {
-        uVar10 = (undefined2)((uint)pbVar23 >> 8);
-        *(char *)(_face_rec + 0x50) = (char)pbVar23;
+        uVar10 = (undefined2)((uint)(uintptr_t)pbVar23 >> 8);
+        *(char *)(_face_rec + 0x50) = (char)(uintptr_t)pbVar23;
       }
       else {
         uVar10 = 0;
@@ -1121,10 +1124,10 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
       *(char *)(_face_rec + 0x51) = (char)uVar10;
       *(char *)(_face_rec + 0x52) = (char)((ushort)uVar10 >> 8);
       *(undefined1 *)(_face_rec + 0x53) = 0;
-      *(char *)(_face_rec + 0x18) = (char)texptr;
-      *(char *)(_face_rec + 0x19) = (char)((uint)texptr >> 8);
-      *(char *)(_face_rec + 0x1a) = (char)((uint)texptr >> 0x10);
-      *(char *)(_face_rec + 0x1b) = (char)((uint)texptr >> 0x18);
+      *(char *)(_face_rec + 0x18) = (char)(uintptr_t)texptr;
+      *(char *)(_face_rec + 0x19) = (char)((uint)(uintptr_t)texptr >> 8);
+      *(char *)(_face_rec + 0x1a) = (char)((uint)(uintptr_t)texptr >> 0x10);
+      *(char *)(_face_rec + 0x1b) = (char)((uint)(uintptr_t)texptr >> 0x18);
       *(char *)(_face_rec + 0x1c) = (char)tex_w;
       *(char *)(_face_rec + 0x1d) = (char)(tex_w >> 8);
                     // WARNING: Store size is inaccurate
@@ -1141,7 +1144,7 @@ void emit_catalog_object(byte catalog, char *obj, char heading, short frame_or_t
         local_60 = 0;
         do {
           iVar27 = (int)(short)DAT_0023b91c;
-          iVar30 = *(int *)(_anim + 0xc14 + ((int)local_58 + local_60) * 4 + 4);
+          iVar30 = *(int *)(_anim + 0xc14 + (row_base + local_60) * 4 + 4);
           uVar17 = ordfloat_int_to_float2(iVar27);
           uVar17 = ordfloat_add(*(undefined4 *)(iVar30 * 0xc + _anim + 0xc),uVar17);
           iVar18 = ordfloat_gt(uVar17,0x44800000);
@@ -1669,7 +1672,7 @@ void emit_anim_object_frames(uint door_type, ushort *obj)
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (*(byte *)((char *)obj + 1) >> 1 & 7) * -0x30 + 0xd0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 0x400;
+    *DAT_00110fc0 = 0x0;
     sVar1 = local_32;
   }
   else {
@@ -1704,7 +1707,7 @@ void emit_anim_object_frames(uint door_type, ushort *obj)
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = local_36;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x800;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   if (((*(byte *)((char *)obj + 1) & 0xe) == 0) || (local_34 != -1)) goto LAB_000647e4;
   uVar7 = (obj[1] >> 7) + DAT_0023b4a0 * -2;
@@ -1892,8 +1895,9 @@ void apply_model_position_offset(char *model, int offset_x, int offset_y, int of
 // was FUN_0001e6f0 -- multiplies (ordfloat_mul, float MULTIPLY) a model animation block's own
 // position floats by per-axis scale factors (param_2/3/4). param_1[0] is read as a sub-part
 // count...
-void scale_model_part_offsets(int *model_block, int scale_x, int scale_y, int scale_z)
+void scale_model_part_offsets(void *model_block_ptr, int scale_x, int scale_y, int scale_z)
 {
+  int *model_block = (int *)model_block_ptr;
   undefined4 uVar1;
   int *part;
   int iVar3;
@@ -2053,7 +2057,7 @@ void parse_e_model_file(char *path, byte *out_buffer, int flip_winding)
   int local_220;
   undefined1 local_21c [4];
   undefined4 local_218;
-  undefined4 ***local_214;
+  intptr_t local_214;
   int local_210;
   int local_20c;
   int local_208;
@@ -2217,10 +2221,10 @@ LAB_00022604:
             (&DAT_000d2ab5)[iVar6] = (char)((uint)local_224 >> 8);
             (&DAT_000d2ab6)[iVar6] = (char)((uint)local_224 >> 0x10);
             (&DAT_000d2ab7)[iVar6] = (char)((uint)local_224 >> 0x18);
-            (&DAT_000d2ab8)[iVar6] = (char)local_214;
-            (&DAT_000d2ab9)[iVar6] = (char)((uint)local_214 >> 8);
-            (&DAT_000d2aba)[iVar6] = (char)((uint)local_214 >> 0x10);
-            (&DAT_000d2abb)[iVar6] = (char)((uint)local_214 >> 0x18);
+            (&DAT_000d2ab8)[iVar6] = (char)(uintptr_t)local_214;
+            (&DAT_000d2ab9)[iVar6] = (char)((uint)(uintptr_t)local_214 >> 8);
+            (&DAT_000d2aba)[iVar6] = (char)((uint)(uintptr_t)local_214 >> 0x10);
+            (&DAT_000d2abb)[iVar6] = (char)((uint)(uintptr_t)local_214 >> 0x18);
             (&DAT_000d2ac8)[iVar6] = 8;
             (&DAT_000d2ac9)[iVar6] = 0;
             (&DAT_000d2aca)[iVar6] = 0;
@@ -2251,7 +2255,7 @@ LAB_00022604:
             puVar13[1] = (char)((uint)uVar7 >> 8);
             puVar13[2] = (char)((uint)uVar7 >> 0x10);
             puVar13[3] = (char)((uint)uVar7 >> 0x18);
-            uVar7 = ordfloat_int_to_float2(local_214);
+            uVar7 = ordfloat_int_to_float2((int)local_214);
             iVar19 = g_model_parse_point_count;
             out_buffer[g_model_parse_point_count * 0xc + 0x10] = (char)uVar7;
             out_buffer[iVar19 * 0xc + 0x11] = (char)((uint)uVar7 >> 8);
@@ -2313,10 +2317,10 @@ LAB_00022604:
               ;
               iVar4 = g_model_parse_part_count;
               iVar5 = g_model_parse_part_count * 0x67;
-              (&DAT_000c9e2f)[iVar5] = (char)local_1dc;
-              (&DAT_000c9e30)[iVar5] = (char)((uint)local_1dc >> 8);
-              (&DAT_000c9e31)[iVar5] = (char)((uint)local_1dc >> 0x10);
-              (&DAT_000c9e32)[iVar5] = (char)((uint)local_1dc >> 0x18);
+              (&DAT_000c9e2f)[iVar5] = (char)(uintptr_t)local_1dc;
+              (&DAT_000c9e30)[iVar5] = (char)((uint)(uintptr_t)local_1dc >> 8);
+              (&DAT_000c9e31)[iVar5] = (char)((uint)(uintptr_t)local_1dc >> 0x10);
+              (&DAT_000c9e32)[iVar5] = (char)((uint)(uintptr_t)local_1dc >> 0x18);
               (&DAT_000c9e28)[iVar5] = (undefined1)local_254;
               (&DAT_000c9e0e)[iVar5] = (char)iVar4;
               (&DAT_000c9e0f)[iVar5] = (char)((uint)iVar4 >> 8);
@@ -2371,10 +2375,10 @@ LAB_00022604:
                 (&DAT_000c9e26)[iVar10] = uVar1;
               }
               if (iVar4 < DAT_000db458) {
-                (&DAT_000c9e22)[iVar10] = (char)local_258;
-                (&DAT_000c9e23)[iVar10] = (char)((uint)local_258 >> 8);
-                (&DAT_000c9e24)[iVar10] = (char)((uint)local_258 >> 0x10);
-                (&DAT_000c9e25)[iVar10] = (char)((uint)local_258 >> 0x18);
+                (&DAT_000c9e22)[iVar10] = (char)(uintptr_t)local_258;
+                (&DAT_000c9e23)[iVar10] = (char)((uint)(uintptr_t)local_258 >> 8);
+                (&DAT_000c9e24)[iVar10] = (char)((uint)(uintptr_t)local_258 >> 0x10);
+                (&DAT_000c9e25)[iVar10] = (char)((uint)(uintptr_t)local_258 >> 0x18);
                 iVar4 = ce_strlen(local_258);
                 puVar16 = puVar16 + iVar4 + 1;
                 local_258 = puVar16;
@@ -2390,13 +2394,13 @@ LAB_00022604:
               if (iVar5 == 0) {
 LAB_000218b8:
                 piVar12 = DAT_000c8b00 + 1;
-                (&DAT_000c9dd8)[iVar10] = (char)piVar12;
-                (&DAT_000c9dd9)[iVar10] = (char)((uint)piVar12 >> 8);
+                (&DAT_000c9dd8)[iVar10] = (char)(uintptr_t)piVar12;
+                (&DAT_000c9dd9)[iVar10] = (char)((uint)(uintptr_t)piVar12 >> 8);
                 iVar5 = 0;
                 DAT_000c8b00 = piVar12;
-                (&DAT_000c9dda)[iVar10] = (char)((uint)piVar12 >> 0x10);
-                (&DAT_000c9ddb)[iVar10] = (char)((uint)piVar12 >> 0x18);
-                iVar4 = ce_fscanf(local_25c,&DAT_000849a8,local_260,(uint)piVar12 >> 0x18,
+                (&DAT_000c9dda)[iVar10] = (char)((uint)(uintptr_t)piVar12 >> 0x10);
+                (&DAT_000c9ddb)[iVar10] = (char)((uint)(uintptr_t)piVar12 >> 0x18);
+                iVar4 = ce_fscanf(local_25c,&DAT_000849a8,local_260,(uint)(uintptr_t)piVar12 >> 0x18,
                                      pppppuVar21,puVar13);
                 iVar3 = 0;
                 do {
@@ -2461,9 +2465,9 @@ LAB_000218b8:
                   iVar5 = iVar5 >> 1;
                   if (iVar5 != 0) {
                     puVar11 = (undefined4 *)
-                              (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + iVar5 * 4);
+                              ((intptr_t)*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + iVar5 * 4);
                     puVar8 = (undefined4 *)
-                             (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + (iVar3 - iVar5) * 4);
+                             ((intptr_t)*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + (iVar3 - iVar5) * 4);
                     do {
                       iVar5 = iVar5 + -1;
                       uVar7 = puVar11[-1];
@@ -2486,7 +2490,7 @@ LAB_000218b8:
                   NKDbgPrintfW(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
                 }
-                if (&DAT_000c8a90 < DAT_000c8b00) {
+                if ((int *)&DAT_000c8a90 < DAT_000c8b00) {
                   NKDbgPrintfW(s_Out_of_vertex_list_space_00084908);
                   goto LAB_0002263c;
                 }
@@ -2506,17 +2510,17 @@ LAB_000218b8:
                 iVar5 = g_model_parse_part_count * 0x67;
                 piVar17 = DAT_000c8b00 + 1;
                 DAT_000c8b00 = piVar17;
-                (&DAT_000c9dd8)[iVar5] = (char)piVar17;
-                (&DAT_000c9dd9)[iVar5] = (char)((uint)piVar17 >> 8);
-                (&DAT_000c9dda)[iVar5] = (char)((uint)piVar17 >> 0x10);
-                (&DAT_000c9ddb)[iVar5] = (char)((uint)piVar17 >> 0x18);
+                (&DAT_000c9dd8)[iVar5] = (char)(uintptr_t)piVar17;
+                (&DAT_000c9dd9)[iVar5] = (char)((uint)(uintptr_t)piVar17 >> 8);
+                (&DAT_000c9dda)[iVar5] = (char)((uint)(uintptr_t)piVar17 >> 0x10);
+                (&DAT_000c9ddb)[iVar5] = (char)((uint)(uintptr_t)piVar17 >> 0x18);
                 *piVar17 = local_1e0;
                 DAT_000c8b00 = DAT_000c8b00 + 1;
                 iVar5 = local_20c;
 LAB_00021838:
                 *DAT_000c8b00 = iVar5;
                 DAT_000c8b00 = DAT_000c8b00 + 1;
-                if (&DAT_000c8a90 < DAT_000c8b00) {
+                if ((int *)&DAT_000c8a90 < DAT_000c8b00) {
                   NKDbgPrintfW(s_Out_of_vertex_list_space_00084908);
                   goto LAB_0002263c;
                 }
@@ -2565,10 +2569,10 @@ LAB_00021838:
                     *piVar17 = 1;
                     iVar5 = g_model_parse_part_count * 0x67;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
-                    (&DAT_000c9dd8)[iVar5] = (char)DAT_000c8b00;
-                    (&DAT_000c9dd9)[iVar5] = (char)((uint)DAT_000c8b00 >> 8);
-                    (&DAT_000c9dda)[iVar5] = (char)((uint)DAT_000c8b00 >> 0x10);
-                    (&DAT_000c9ddb)[iVar5] = (char)((uint)DAT_000c8b00 >> 0x18);
+                    (&DAT_000c9dd8)[iVar5] = (char)(uintptr_t)DAT_000c8b00;
+                    (&DAT_000c9dd9)[iVar5] = (char)((uint)(uintptr_t)DAT_000c8b00 >> 8);
+                    (&DAT_000c9dda)[iVar5] = (char)((uint)(uintptr_t)DAT_000c8b00 >> 0x10);
+                    (&DAT_000c9ddb)[iVar5] = (char)((uint)(uintptr_t)DAT_000c8b00 >> 0x18);
                     iVar5 = local_1f4;
                     goto LAB_00021838;
                   }
@@ -2614,13 +2618,13 @@ LAB_00021838:
                     iVar3 = g_model_parse_part_count * 0x67;
                     piVar17 = DAT_000c8b00 + 1;
                     DAT_000c8b00 = piVar17;
-                    (&DAT_000c9dd8)[iVar3] = (char)piVar17;
-                    (&DAT_000c9dd9)[iVar3] = (char)((uint)piVar17 >> 8);
-                    (&DAT_000c9dda)[iVar3] = (char)((uint)piVar17 >> 0x10);
-                    (&DAT_000c9ddb)[iVar3] = (char)((uint)piVar17 >> 0x18);
+                    (&DAT_000c9dd8)[iVar3] = (char)(uintptr_t)piVar17;
+                    (&DAT_000c9dd9)[iVar3] = (char)((uint)(uintptr_t)piVar17 >> 8);
+                    (&DAT_000c9dda)[iVar3] = (char)((uint)(uintptr_t)piVar17 >> 0x10);
+                    (&DAT_000c9ddb)[iVar3] = (char)((uint)(uintptr_t)piVar17 >> 0x18);
                     *piVar17 = local_1fc;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
-                    *DAT_000c8b00 = (int)local_1d4;
+                    *DAT_000c8b00 = (int)(uintptr_t)local_1d4;
                     iVar3 = g_model_parse_part_count;
                     piVar17 = DAT_000c8b00 + 1;
                     iVar5 = g_model_parse_part_count * 0x67;
@@ -2633,7 +2637,7 @@ LAB_00021838:
                     (&DAT_000c9e38)[iVar5] = (char)((uint)local_220 >> 8);
                     (&DAT_000c9e39)[iVar5] = (char)((uint)local_220 >> 0x10);
                     (&DAT_000c9e3a)[iVar5] = (char)((uint)local_220 >> 0x18);
-                    if (&DAT_000c8a90 < piVar17) {
+                    if ((int *)&DAT_000c8a90 < piVar17) {
                       NKDbgPrintfW(s_Out_of_vertex_list_space_00084908);
                       goto LAB_0002263c;
                       iVar3 = g_model_parse_part_count;
@@ -2695,14 +2699,14 @@ LAB_00021bec:
                 iVar5 = *piVar17;
                 *DAT_000c8b00 = iVar19;
                 iVar6 = g_model_parse_part_count;
-                piVar12 = (int *)(iVar5 + iVar19 * 4);
+                piVar12 = (int *)(intptr_t)(iVar5 + iVar19 * 4);
                 piVar9 = DAT_000c8b00 + 1;
                 iVar5 = g_model_parse_part_count * 0x67;
                 DAT_000c8b00 = piVar9;
-                (&DAT_000c9dd8)[iVar5] = (char)piVar9;
-                (&DAT_000c9dd9)[iVar5] = (char)((uint)piVar9 >> 8);
-                (&DAT_000c9dda)[iVar5] = (char)((uint)piVar9 >> 0x10);
-                (&DAT_000c9ddb)[iVar5] = (char)((uint)piVar9 >> 0x18);
+                (&DAT_000c9dd8)[iVar5] = (char)(uintptr_t)piVar9;
+                (&DAT_000c9dd9)[iVar5] = (char)((uint)(uintptr_t)piVar9 >> 8);
+                (&DAT_000c9dda)[iVar5] = (char)((uint)(uintptr_t)piVar9 >> 0x10);
+                (&DAT_000c9ddb)[iVar5] = (char)((uint)(uintptr_t)piVar9 >> 0x18);
                 for (; iVar19 != 0; iVar19 = iVar19 + -1) {
                   piVar12 = piVar12 + -1;
                   *piVar9 = *piVar12;
@@ -2794,10 +2798,10 @@ LAB_0002226c:
                   (&DAT_000d9769)[iVar4] = (char)((uint)local_200 >> 8);
                   (&DAT_000d976a)[iVar4] = (char)((uint)local_200 >> 0x10);
                   (&DAT_000d976b)[iVar4] = (char)((uint)local_200 >> 0x18);
-                  (&DAT_000d9774)[iVar4] = (char)local_1f8;
-                  (&DAT_000d9775)[iVar4] = (char)((uint)local_1f8 >> 8);
-                  (&DAT_000d9776)[iVar4] = (char)((uint)local_1f8 >> 0x10);
-                  (&DAT_000d9777)[iVar4] = (char)((uint)local_1f8 >> 0x18);
+                  (&DAT_000d9774)[iVar4] = (char)(uintptr_t)local_1f8;
+                  (&DAT_000d9775)[iVar4] = (char)((uint)(uintptr_t)local_1f8 >> 8);
+                  (&DAT_000d9776)[iVar4] = (char)((uint)(uintptr_t)local_1f8 >> 0x10);
+                  (&DAT_000d9777)[iVar4] = (char)((uint)(uintptr_t)local_1f8 >> 0x18);
                   (&DAT_000d9778)[iVar4] = (char)local_1f0;
                   (&DAT_000d9779)[iVar4] = (char)((uint)local_1f0 >> 8);
                   (&DAT_000d977a)[iVar4] = (char)((uint)local_1f0 >> 0x10);
@@ -2808,10 +2812,10 @@ LAB_0002226c:
                                ,local_1f0);
                   pvVar_fh = local_25c;
                   iVar4 = DAT_000db4e0 * 0x15;
-                  (&DAT_000d9770)[iVar4] = (char)piVar17;
-                  (&DAT_000d9771)[iVar4] = (char)((uint)piVar17 >> 8);
-                  (&DAT_000d9772)[iVar4] = (char)((uint)piVar17 >> 0x10);
-                  (&DAT_000d9773)[iVar4] = (char)((uint)piVar17 >> 0x18);
+                  (&DAT_000d9770)[iVar4] = (char)(uintptr_t)piVar17;
+                  (&DAT_000d9771)[iVar4] = (char)((uint)(uintptr_t)piVar17 >> 8);
+                  (&DAT_000d9772)[iVar4] = (char)((uint)(uintptr_t)piVar17 >> 0x10);
+                  (&DAT_000d9773)[iVar4] = (char)((uint)(uintptr_t)piVar17 >> 0x18);
                   do {
                     ce_fscanf(pvVar_fh,s__d_1s_000848c8,&local_1e8,local_260,pppppuVar21,uVar7,
                                  puVar13);
@@ -2936,7 +2940,7 @@ LAB_check_clusters:
                   if (iVar5 == 0) {
                     iVar4 = ce_fscanf(pvVar_fh,s__1s__d__d__d_1s_000847e4,&local_234,&local_250,
                                          &local_238,&local_230,local_260);
-                    local_240 = (undefined4 *****)0xffffffff;
+                    local_240 = (undefined4 ****)0xffffffff;
                     local_248 = 0xffffffff;
                   }
                   else {
@@ -2957,10 +2961,10 @@ LAB_check_clusters:
                   (&DAT_000c954f)[iVar10] = (char)((uint)local_248 >> 8);
                   (&DAT_000c9550)[iVar10] = (char)((uint)local_248 >> 0x10);
                   (&DAT_000c9551)[iVar10] = (char)((uint)local_248 >> 0x18);
-                  (&DAT_000c9552)[iVar10] = (char)local_240;
-                  (&DAT_000c9553)[iVar10] = (char)((uint)local_240 >> 8);
-                  (&DAT_000c9554)[iVar10] = (char)((uint)local_240 >> 0x10);
-                  (&DAT_000c9555)[iVar10] = (char)((uint)local_240 >> 0x18);
+                  (&DAT_000c9552)[iVar10] = (char)(uintptr_t)local_240;
+                  (&DAT_000c9553)[iVar10] = (char)((uint)(uintptr_t)local_240 >> 8);
+                  (&DAT_000c9554)[iVar10] = (char)((uint)(uintptr_t)local_240 >> 0x10);
+                  (&DAT_000c9555)[iVar10] = (char)((uint)(uintptr_t)local_240 >> 0x18);
                   (&DAT_000c9546)[iVar10] = (char)local_238;
                   (&DAT_000c9547)[iVar10] = (char)((uint)local_238 >> 8);
                   (&DAT_000c9548)[iVar10] = (char)((uint)local_238 >> 0x10);

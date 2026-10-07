@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-ushort DAT_00100610;
+short DAT_00100610;  /* sentinel -1 (set by weapon_swing.c) -- was ushort, which made every `!= -1` test always true */
 static undefined2 DAT_00100600;
 static ushort DAT_00100604;
 static short DAT_001005f4;
@@ -102,7 +102,8 @@ void npc_combat_approach_tick()
   char cVar2;
   char cVar3;
   short sVar4;
-  char *iVar5;
+  int iVar5;
+  char *iVar5_rec;
   byte *pbVar6;
   uint extraout_r1;
   uint uVar7;
@@ -112,11 +113,11 @@ void npc_combat_approach_tick()
   if (DAT_00101900 < 3) {
     if (DAT_00101734 != 0) {
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc1 | 1;
-      iVar5 = DAT_0010190c;
+      iVar5_rec = (char *)DAT_0010190c;
       uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
       uw_ord2005_rem_40 = ((int)((uVar1 >> 0xc) + 1)) % (4);
       uVar7 = uVar1 & 0xfff;
-      *(char *)(iVar5 + 0xb) = (char)uVar7;
+      *(char *)(iVar5_rec + 0xb) = (char)uVar7;
       *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar7 >> 8) | (byte)(((uw_ord2005_rem_40 & 0xf) << 0xc) >> 8)
       ;
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
@@ -141,7 +142,7 @@ void npc_combat_approach_tick()
     iVar5 = ordint_divmod((int)sVar4,
                          (((int)DAT_00101918 - (int)(short)DAT_00101408) * 0x10000 >> 0x10) << 2).quot;
     cVar2 = DAT_001013f8;
-    iVar5 = ((int)iVar5 + (int)iVar8) * 0x1000000;
+    iVar5 = ((int)(uintptr_t)iVar5 + (int)iVar8) * 0x1000000;
     iVar9 = (int)DAT_00101410;
     iVar8 = ordint_divmod((int)sVar4,
                          (((int)DAT_001013f8 - (int)(short)DAT_00101410) * 0x10000 >> 0x10) << 2).quot;
@@ -157,7 +158,7 @@ void npc_combat_approach_tick()
     uVar7 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0x3ff;
     *(char *)((char *)DAT_0010190c + 0x16) = (char)uVar7;
     *(byte *)((char *)DAT_0010190c + 0x17) =
-         (byte)(uVar7 >> 8) | (byte)((((int)(char)((uint)iVar5 >> 0x18) & 0x3fU) << 10) >> 8);
+         (byte)(uVar7 >> 8) | (byte)((((int)(char)((uint)(uintptr_t)iVar5 >> 0x18) & 0x3fU) << 10) >> 8);
     uVar7 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0xfc0f |
             ((int)(char)((uint)iVar8 >> 0x18) & 0x3fU) << 4;
     *(char *)((char *)DAT_0010190c + 0x16) = (char)uVar7;
@@ -189,7 +190,8 @@ void npc_combat_engage_close_tick()
   byte bVar3;
   ushort uVar4;
   uint uVar5;
-  char *iVar6;
+  int iVar6;
+  char *iVar6_rec;
   bool bVar7;
   undefined1 local_28;
   
@@ -217,7 +219,7 @@ void npc_combat_engage_close_tick()
     *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar5 >> 8);
   }
   if (((uVar4 < 100) || ((DAT_00101918 == DAT_00101408 && (DAT_001013f8 == DAT_00101410)))) &&
-     ((uVar5 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
+     ((uVar5 = ((int)DAT_0010140c - (int)DAT_00101420) >> 0x1f,
       (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar5) - uVar5) < 4 ||
       ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0)))) {
     /* ARM 0x301f4 passes the fine-coordinate squared distance in r0. */
@@ -245,11 +247,11 @@ void npc_combat_engage_close_tick()
     }
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
-    iVar6 = (char *)DAT_0010190c;
+    iVar6_rec = (char *)DAT_0010190c;
     uVar4 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_46 = ((int)((uVar4 >> 0xc) + 1)) % (4);
     uVar5 = uVar4 & 0xfff;
-    *(char *)(iVar6 + 0xb) = (char)uVar5;
+    *(char *)(iVar6_rec + 0xb) = (char)uVar5;
     *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uw_ord2005_rem_46 & 0xf) << 0xc) >> 8);
     *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
     return;
@@ -294,7 +296,8 @@ int npc_combat_set_stance(ushort stance_code)
   int extraout_r1_05;
   int extraout_r1_06;
   int extraout_r1_07;
-  char *iVar6;
+  int iVar6;
+  char *iVar6_rec;
   uint extraout_r1_08;
   int iVar7;
   byte bVar8;
@@ -327,10 +330,10 @@ LAB_00030534:
     uw_ord2005_rem_49 = ((int)(uVar5)) % (2);
     uw_ord2005_rem_50 = ((int)(uVar9 + uw_ord2005_rem_49 * 4 + 6)) % (8);
     *(char *)((char *)DAT_0010190c + 9) = (char)(uw_ord2005_rem_50 << 5);
-    iVar6 = (char *)DAT_0010190c;
+    iVar6_rec = (char *)DAT_0010190c;
     bVar8 = *(byte *)((char *)DAT_0010190c + 0x13);
     bVar3 = ordint_divmod(3,(uint)*(byte *)(DAT_00101404 + 0xb) << 1).quot;
-    *(byte *)(iVar6 + 0x13) = (bVar3 ^ bVar8) & 0x7f ^ bVar8;
+    *(byte *)(iVar6_rec + 0x13) = (bVar3 ^ bVar8) & 0x7f ^ bVar8;
   }
   else {
     if (0x51 < stance_code) {
@@ -401,16 +404,16 @@ LAB_000305e4:
     if ((uVar4 & 0xf000) < 0xf000) {
       *(char *)((char *)DAT_0010190c + 0xf) = (char)(uVar4 & 0xfff);
       *(byte *)((char *)DAT_0010190c + 0x10) =
-           (byte)((uVar4 & 0xf000) + 0x1000 >> 8) ^ (byte)((uVar4 & 0xfff) >> 8);
+           (byte)(((uVar4 & 0xf000) + 0x1000) >> 8) ^ (byte)((uVar4 & 0xfff) >> 8);
     }
   }
   *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
-  iVar6 = (char *)DAT_0010190c;
+  iVar6_rec = (char *)DAT_0010190c;
   uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
   uw_ord2005_rem_56 = ((int)((uVar2 >> 0xc) + 1)) % (4);
   uVar9 = uVar2 & 0xfff;
   uVar4 = uVar9 | (uw_ord2005_rem_56 & 0xf) << 0xc;
-  *(char *)(iVar6 + 0xb) = (char)uVar9;
+  *(char *)(iVar6_rec + 0xb) = (char)uVar9;
 LAB_00030860:
   *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar4 >> 8);
   return 1;
@@ -427,7 +430,8 @@ void npc_combat_engage_wide_tick()
   int uw_ord2005_rem_63 = 0;
   ushort uVar1;
   ushort distance_squared;
-  char *iVar2;
+  int iVar2;
+  char *iVar2_rec;
   uint uVar3;
   uint extraout_r1;
   
@@ -448,11 +452,11 @@ void npc_combat_engage_wide_tick()
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
       *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
-      iVar2 = (char *)DAT_0010190c;
+      iVar2_rec = (char *)DAT_0010190c;
       uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
       uw_ord2005_rem_63 = ((int)((uVar1 >> 0xc) + 1)) % (4);
       uVar3 = uVar1 & 0xfff;
-      *(char *)(iVar2 + 0xb) = (char)uVar3;
+      *(char *)(iVar2_rec + 0xb) = (char)uVar3;
       *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar3 >> 8) | (byte)(((uw_ord2005_rem_63 & 0xf) << 0xc) >> 8)
       ;
     }
@@ -504,7 +508,8 @@ void npc_combat_position_tick()
   byte bVar4;
   byte bVar5;
   ushort uVar6;
-  char *iVar7;
+  int iVar7;
+  char *iVar7_rec;
   uint uVar8;
   
   if (DAT_00101734 == 0) {
@@ -540,11 +545,11 @@ void npc_combat_position_tick()
       *(char *)(DAT_0010190c + 3) = (char)(uVar1 >> 8);
       *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
       *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 199 | 7;
-      iVar7 = DAT_0010190c;
+      iVar7_rec = (char *)DAT_0010190c;
       uVar6 = *(ushort *)(DAT_0010190c + 0xb);
       uw_ord2005_rem_68 = ((int)((uVar6 >> 0xc) + 1)) % (4);
       uVar1 = uVar6 & 0xfff;
-      *(char *)(iVar7 + 0xb) = (char)uVar1;
+      *(char *)(iVar7_rec + 0xb) = (char)uVar1;
       *(byte *)(DAT_0010190c + 0xc) =
            (byte)(uVar1 >> 8) | (byte)(((uw_ord2005_rem_68 & 0xf) << 0xc) >> 8);
       *(byte *)(DAT_0010190c + 0x13) =
@@ -567,7 +572,7 @@ LAB_000314d0:
       uw_ord2005_rem_69 = ((int)(uVar2)) % (0x40);
       if ((uw_ord2005_rem_69 & 0xff) < (bVar4 & 0xf) + 8) {
         uVar2 = ce_rand();
-        iVar7 = DAT_0010190c;
+        iVar7_rec = (char *)DAT_0010190c;
         bVar4 = *(byte *)(DAT_0010190c + 9);
         uw_ord2005_rem_70 = ((int)(uVar2)) % (0x40);
         uw_ord2005_rem_71 = ((int)(uw_ord2005_rem_70 + (uint)bVar4 + 0xe0)) % (0x100);
@@ -575,13 +580,13 @@ LAB_000314d0:
       }
       else {
         uVar1 = (uint)*(byte *)(DAT_0010190c + 9);
-        iVar7 = DAT_0010190c;
+        iVar7_rec = (char *)DAT_0010190c;
       }
       if (DAT_00101430 == 0) {
         uVar1 = adjust_heading_away_from_player(uVar1,0x18);
-        iVar7 = DAT_0010190c;
+        iVar7_rec = (char *)DAT_0010190c;
       }
-      *(byte *)(iVar7 + 9) = (byte)uVar1;
+      *(byte *)(iVar7_rec + 9) = (byte)uVar1;
       uVar8 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar1 & 0xe0) << 2;
       *(char *)(DAT_0010190c + 2) = (char)uVar8;
       *(char *)(DAT_0010190c + 3) = (char)(uVar8 >> 8);
@@ -599,11 +604,11 @@ LAB_000314d0:
           *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
           *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
           *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc0;
-          iVar7 = DAT_0010190c;
+          iVar7_rec = (char *)DAT_0010190c;
           uVar6 = *(ushort *)(DAT_0010190c + 0xb);
           uw_ord2005_rem_72 = ((int)((uVar6 >> 0xc) + 1)) % (4);
           uVar1 = uVar6 & 0xfff;
-          *(char *)(iVar7 + 0xb) = (char)uVar1;
+          *(char *)(iVar7_rec + 0xb) = (char)uVar1;
           *(byte *)(DAT_0010190c + 0xc) =
                (byte)(uVar1 >> 8) | (byte)(((uw_ord2005_rem_72 & 0xf) << 0xc) >> 8);
           return;
@@ -612,14 +617,14 @@ LAB_000314d0:
       }
       uVar2 = ce_rand();
       uVar3 = ce_rand();
-      iVar7 = DAT_0010190c;
+      iVar7_rec = (char *)DAT_0010190c;
       bVar4 = *(byte *)(DAT_0010190c + 9);
       uw_ord2005_rem_73 = ((int)(uVar2)) % (2);
       uw_ord2005_rem_74 = ((int)((uint)(bVar4 >> 5) + uw_ord2005_rem_73 * 4 + 6)) % (8);
       uw_ord2005_rem_75 = ((int)(uVar3)) % (0x20);
       uVar1 = uw_ord2005_rem_74 + uw_ord2005_rem_75 * 0x20;
       bVar5 = (byte)uVar1;
-      *(byte *)(iVar7 + 9) = bVar5;
+      *(byte *)(iVar7_rec + 9) = bVar5;
       uVar1 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar1 & 0xe0) << 2;
       *(char *)(DAT_0010190c + 2) = (char)uVar1;
       *(char *)(DAT_0010190c + 3) = (char)(uVar1 >> 8);
@@ -638,11 +643,11 @@ LAB_000314d0:
     *(byte *)(DAT_0010190c + 0x13) =
          (*(byte *)(DAT_0010190c + 0x13) ^ bVar4) & 0x7f ^ *(byte *)(DAT_0010190c + 0x13);
     *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xec | 0x2c;
-    iVar7 = DAT_0010190c;
+    iVar7_rec = (char *)DAT_0010190c;
     uVar6 = *(ushort *)(DAT_0010190c + 0xb);
     uw_ord2005_rem_76 = ((int)((uVar6 >> 0xc) + 1)) % (4);
     uVar1 = uVar6 & 0xfff;
-    *(char *)(iVar7 + 0xb) = (char)uVar1;
+    *(char *)(iVar7_rec + 0xb) = (char)uVar1;
     *(byte *)(DAT_0010190c + 0xc) =
          (byte)(uVar1 >> 8) | (byte)(((uw_ord2005_rem_76 & 0xf) << 0xc) >> 8);
     *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
@@ -686,7 +691,7 @@ void npc_combat_disengage_tick()
       *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xe0 | 0x20;
       uVar4 = ce_rand();
       uw_ord2005_rem_77 = ((int)(uVar4)) % (2);
-      iVar2 = DAT_0010190c;
+      iVar2 = (char *)DAT_0010190c;
       if (uw_ord2005_rem_77 != 0) {
         uVar6 = *(ushort *)(DAT_0010190c + 0xb);
         uw_ord2005_rem_78 = ((int)((uVar6 >> 0xc) + 1)) % (4);
@@ -703,7 +708,7 @@ void npc_combat_disengage_tick()
       *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfe | 6;
       uVar4 = ce_rand();
       uw_ord2005_rem_79 = ((int)(uVar4)) % (2);
-      iVar2 = DAT_0010190c;
+      iVar2 = (char *)DAT_0010190c;
       if (uw_ord2005_rem_79 != 0) {
         uVar1 = *(ushort *)(DAT_0010190c + 0xb);
         uw_ord2005_rem_80 = ((int)((uVar1 >> 0xc) + 1)) % (4);
@@ -743,7 +748,7 @@ int resolve_combat_hit_zone(short zone_min, short zone_max, short hit_min, short
   int extraout_r1_00;
   int extraout_r1_01;
   
-  iVar1 = (int)(short)((int)hit_min + (int)hit_max >> 1);
+  iVar1 = (int)(short)(((int)hit_min + (int)hit_max) >> 1);
   if (iVar1 < zone_min + 1) {
     return 2;
   }
@@ -752,7 +757,7 @@ LAB_00025aec:
     uVar2 = 3;
   }
   else {
-    if (iVar1 < (short)((int)zone_max + (int)zone_min >> 1)) {
+    if (iVar1 < (short)(((int)zone_max + (int)zone_min) >> 1)) {
       uVar2 = ce_rand();
       uw_ord2005_rem_3 = ((int)(uVar2)) % (2);
       if (uw_ord2005_rem_3 != 0) {
@@ -965,7 +970,7 @@ int resolve_melee_swing_hit()
 #define local_32 (*(short *)(local_pos_record + 0xa))
 
   ce_memset(local_pos_record, 0, sizeof(local_pos_record));
-  DAT_00202c6c = &local_3c;
+  DAT_00202c6c = local_pos_record;
   uVar7 = (uint)DAT_001005f4;
   local_34 = (char)DAT_001005f4 + '\x01';
   local_32 = DAT_00100610;
@@ -1267,7 +1272,7 @@ int play_weapon_impact_sound(short result)
   uint uVar1;
   byte bVar2;
   ushort uVar3;
-  undefined4 uVar4;
+  void *uVar4;
   undefined4 uVar5;
   ushort *puVar6;
   byte bVar7;
@@ -1479,8 +1484,9 @@ void compute_player_weapon_attack_stats(char *weapon_stats, char *weapon_item, s
 // was FUN_00027b3c -- a general-purpose "attacker object directly hits target object"
 // damage-application entry point (parallel to, but independent of, the player's own
 // tick_weapon_swing_state chain)...
-void apply_direct_object_hit(short hit_flag, ushort *attacker, ushort *target, short tile_x, short tile_y, short damage_dice, byte hit_type)
+void apply_direct_object_hit(short hit_flag, void *attacker_ptr, ushort *target, short tile_x, short tile_y, short damage_dice, byte hit_type)
 {
+  ushort *attacker = (ushort *)attacker_ptr;
   short sVar1;
   uint uVar2;
   int iVar3;
@@ -1516,8 +1522,9 @@ void apply_direct_object_hit(short hit_flag, ushort *attacker, ushort *target, s
 // was FUN_00027ce0 -- resolves an NPC's melee attack: computes its to-hit base (DAT_00100608) and
 // damage dice pool (DAT_0010061c) from its own monster-stat table
 // (&DAT_001007d0/&DAT_001007d5/&DAT_001007e1)...
-int resolve_npc_melee_attack(byte *npc, short tile_x, byte tile_y, short offset_x, short offset_y)
+int resolve_npc_melee_attack(void *npc_ptr, short tile_x, byte tile_y, short offset_x, short offset_y)
 {
+  byte *npc = (byte *)npc_ptr;
   byte bVar1;
   char cVar2;
   short sVar3;
@@ -1779,7 +1786,7 @@ uint adjust_heading_away_from_player(uint heading, uint min_distance_sq)
   uint uVar4;
   uint uVar5;
   
-  iVar1 = get_object_record_by_slot_index(1);
+  iVar1 = (intptr_t)get_object_record_by_slot_index(1);
   uVar3 = ((*(ushort *)(iVar1 + 0x16) >> 7 & 0x1f8) + (uint)(*(byte *)(iVar1 + 3) >> 5)) -
           (uint)DAT_00101910;
   uVar5 = ((*(ushort *)(iVar1 + 0x16) >> 1 & 0x1f8) + ((*(byte *)(iVar1 + 3) & 0x1c) >> 2)) -
@@ -1835,7 +1842,7 @@ int check_npc_target_alignment(int mode)
   iVar1 = (int)(((uint)DAT_00101908 - (uint)DAT_00101910) * 0x1000000) >> 0x18;
   iVar2 = (int)(((uint)DAT_00101418 - (uint)DAT_0010141c) * 0x1000000) >> 0x18;
   cVar5 = compute_movement_heading(iVar1,iVar2);
-  iVar4 = DAT_0010190c;
+  iVar4 = (char *)DAT_0010190c;
   uVar3 = *(ushort *)((char *)DAT_0010190c + 2);
   uw_ord2005_rem_87 = ((int)(((int)cVar5 - ((int)(char)(uVar3 >> 7) & 7U)) + 8)) % (8);
   if (mode == 0) {
@@ -1949,12 +1956,10 @@ int apply_damage_to_object(ushort *target, byte damage, ushort *attacker)
   undefined4 uVar4;
   int iVar5;
   bool bVar6;
+  uint attacker_id = 0;  /* was the `attacker` pointer param itself, reused as an integer id (truncating cast) */
 
   bVar6 = attacker == (ushort *)0x0;
   iVar5 = (((int)(short)*target & 0xfU) + (short)((*target & 0x30) >> 4) * 0x10) * 0x30;
-  if (bVar6) {
-    attacker = (ushort *)0x0;
-  }
   *(byte *)((char *)target + 0x11) = *(char *)((char *)target + 0x11) + damage;
   if (!bVar6) {
     if ((*attacker & 0x1c0) == 0x40) {
@@ -1963,15 +1968,15 @@ int apply_damage_to_object(ushort *target, byte damage, ushort *attacker)
       if (0xff < (int)uVar2) {
         uVar2 = 0;
       }
-      attacker = (ushort *)(uVar2 & 0xff);
+      attacker_id = uVar2 & 0xff;
     }
     else {
-      attacker = (ushort *)(uint)(byte)attacker[9];
+      attacker_id = (byte)attacker[9];
     }
   }
-  uVar2 = (uint)attacker & 0xff;
+  uVar2 = attacker_id & 0xff;
   if (uVar2 != 0) {
-    *(char *)(target + 9) = (char)attacker;
+    *(char *)(target + 9) = (char)attacker_id;
   }
   if ((uVar2 == 1) && ((target[5] & 0x80) == 0)) {
     DAT_000853d0 = (&DAT_001007d9)[iVar5];
@@ -2196,7 +2201,7 @@ int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short 
     }
   }
   bVar1 = *(byte *)(puVar5 + 2);
-  iVar6 = apply_typed_damage_to_object(puVar5,0,0xffffffff,0xffffffff,damage,damage_type);
+  iVar6 = apply_typed_damage_to_object(puVar5,0,0xffffffff,-1,damage,damage_type);
   if (iVar6 == 0) {
     if ((*(byte *)(puVar5 + 2) & 0x3f) == (bVar1 & 0x3f)) {
       return 0xffffffff;
@@ -2352,8 +2357,9 @@ int apply_object_collision_scatter(ushort *striker, ushort *object)
 // and that subtype's flag byte == -0x40) adjusts the damage via a skill check (+0x27) before...
 /* ARM 0x545c0 preserves the target in r8 and 0x54698 passes that address
    in r2 to apply_direct_object_hit. undefined4 truncated it on 64-bit hosts. */
-void apply_trap_type_damage_effect(byte *trap_object, ushort *target)
+void apply_trap_type_damage_effect(void *trap_object_ptr, ushort *target)
 {
+  byte *trap_object = (byte *)trap_object_ptr;
   byte bVar1;
   undefined1 uVar2;
   short sVar4;
@@ -2365,7 +2371,7 @@ void apply_trap_type_damage_effect(byte *trap_object, ushort *target)
   iVar5 = (*trap_object & 0xf) * 3;
   bVar1 = (&DAT_002027d0)[iVar5];
   uVar7 = (ushort)bVar1;
-  if ((trap_object[0x12] == 1) && ((&DAT_002027d2)[iVar5] == -0x40)) {
+  if ((trap_object[0x12] == 1) && ((&DAT_002027d2)[iVar5] == 0xc0)) {  /* was `== -0x40` on an unsigned byte: never true */
     uVar6 = (*(byte *)(DAT_00086df8 + 0x27) + 0x18) * 8;
     sVar4 = roll_skill_check((uint)*(byte *)(DAT_00086df8 + 0x27),10);
     if (sVar4 == -1) {

@@ -85,8 +85,8 @@ void babl_fixture_reset(void)
     babl_speech[0] = babl_reply[0] = 0;
     babl_symbol(0, "say", 0, 1, 0, 0x111);
     babl_symbol(1, "respond", 1, 1, 0, 0x111);
-    babl_register_builtin("say", (intptr_t)speak);
-    babl_register_builtin("respond", (intptr_t)reply);
+    babl_register_builtin("say", (void *)speak);
+    babl_register_builtin("respond", (void *)reply);
 }
 void babl_run(const short *script, size_t count)
 {
@@ -111,12 +111,12 @@ char *get_message_string(ushort id)
 }
 char *babl_expand_string_refs(char *text) { return babl_expand_owned ? strdup(text) : text; }
 void babl_free(void *ptr) { babl_frees++; free((void *)ptr); }
-uint *babl_alloc(int size) { return (uint *)calloc(1, size); }
+void *babl_alloc(int size) { return (uint *)calloc(1, size); }
 int debug_noop_checkpoint(void) { return 0; }
 void decrement_cursor_hide_depth(void) {}
 int cursor_show_idle_tick(void) { return 0; }
-int restore_captured_grtile_backdrop(short *key) { return 0; }
-int invalidate_grtile_by_key(int key) { return 0; }
+int restore_captured_grtile_backdrop(uint key) { return 0; }
+int invalidate_grtile_by_key(uint key) { return 0; }
 void select_msg_scroll_mode_2(void) {}
 void select_msg_scroll_mode_normal(void) {}
 void select_msg_scroll_mode_conversation(void) {}
@@ -129,7 +129,7 @@ int babl_input_polls, babl_next_choice, babl_invalid_first_choice;
 void advance_menu_music_track(void) {}
 void dispatch_sticky_mode_handlers(void) {}
 void wait_for_click_to_continue(short delay, uint mode) {}
-void poll_input_bindings(undefined1 *input)
+void poll_input_bindings(void *input)
 {
     TEST_ASSERT_LESS_THAN_INT_MESSAGE(16, ++babl_input_polls, "Menu failed to release input wait");
     if (babl_invalid_first_choice && babl_input_polls == 1) {
@@ -161,29 +161,29 @@ void *get_object_record_by_slot_index(short slot)
     TEST_ASSERT_LESS_THAN_INT(12, slot);
     return babl_items[slot];
 }
-int encode_object_slot_index(char *object) { return (int)((object - (char *)babl_items[0]) / 8); }
-void *resolve_object_link(ushort *link)
-{
+int encode_object_slot_index(void *object_) { char *object = (char *)object_; return (int)((object - (char *)babl_items[0]) / 8); }
+void *resolve_object_link(void *link_)
+{ ushort *link = (ushort *)link_;
     if (link == (ushort *)((char *)DAT_00100674 + 6)) return *link ? babl_items[*link] : NULL;
     for (int i = 1; i < 12; i++)
         if (link == babl_items[i] + 2) return *link ? babl_items[*link] : NULL;
     TEST_FAIL_MESSAGE("Inventory link must address the NPC byte offset 6 or an object's link word");
     return NULL;
 }
-void object_list_unlink(byte *head, byte *object)
-{
+void object_list_unlink(void *head_, void *object_)
+{ byte *head = (byte *)head_; byte *object = (byte *)object_;
     TEST_ASSERT_EQUAL_PTR((char *)DAT_00100674 + 6, head);
-    while (*head && babl_items[*head] != object) head = babl_items[*head] + 2;
+    while (*head && (byte *)babl_items[*head] != object) head = (byte *)(babl_items[*head] + 2);
     TEST_ASSERT_NOT_EQUAL(0, *head);
     *head = object[2]; object[2] = 0;
 }
-void object_list_insert_head(byte *head, char *object)
-{
+void object_list_insert_head(void *head_, void *object_)
+{ byte *head = (byte *)head_; char *object = (char *)object_;
     TEST_ASSERT_EQUAL_PTR((char *)DAT_00100674 + 6, head);
     object[2] = *head;
     *head = encode_object_slot_index(object);
 }
-int drop_object_near_target(char *owner, char *object, short radius, uint flags)
+int drop_object_near_target(void *owner, void *object, short radius, uint flags)
 {
     TEST_ASSERT_EQUAL_INT(5, radius);
     TEST_ASSERT_EQUAL_INT(0, flags);
@@ -200,7 +200,7 @@ undefined4 DAT_000bbf98_backing[8], DAT_000bbff0_backing[8];
 
 void babl_builtin_say(char *text) { strcpy(babl_speech, text); }
 void draw_hotspot_crosshair_marker(short side, short slot) {}
-void free_object_slot(char *object) { memset(object, 0, 8); }
+void free_object_slot(void *object) { memset(object, 0, 8); }
 long ce_srand(long seed) { return 0; }
 int randomize_value_pct(short value, short low, short high) { return value; }
 void compute_dimension_volume(void) {}
@@ -209,7 +209,7 @@ undefined1 DAT_001007d0_backing[3072];
 short DAT_00201b68, DAT_00201c74;
 int babl_awarded_xp;
 void grant_experience_points(short xp) { babl_awarded_xp += xp; }
-void npc_set_goal_for_object(char *object, int goal, int target)
+void npc_set_goal_for_object(void *object, int goal, int target)
 {
     ushort packed = *(ushort *)(object + 11);
     *(ushort *)(object + 11) = (packed & 0xf000) | (target << 4) | goal;
@@ -233,7 +233,7 @@ void babl_bind_npc_variables(void)
 short babl_named_word(char *name)
 {
     short value = -1;
-    babl_get_variable(name, (intptr_t)&value, 1);
+    babl_get_variable(name, &value, 1);
     return value;
 }
 
@@ -243,5 +243,5 @@ undefined1 DAT_000845b8_backing[16], DAT_000845ba_backing[16];
 undefined1 DAT_000845d8_backing[16], DAT_000845da_backing[16];
 
 int g_blit_transparent_mode;
-int grtile_alloc_registered(uint width, uint height) { return 1; }
-int capture_framebuffer_rect_to_grtile(short *tile, int x, int y, int width, short height) { return 1; }
+uint grtile_alloc_registered(uint width, uint height) { return 1; }
+int capture_framebuffer_rect_to_grtile(uint tile, int x, int y, int width, short height) { return 1; }

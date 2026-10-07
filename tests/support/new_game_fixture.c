@@ -7,17 +7,17 @@ int ensure_save_directory_exists(char *path);
 bool write_player_save_record(char *path);
 byte *load_string_resource(char *path);
 int seed_conversation_globals_for_new_game(void);
-bool open_level_archive(undefined1 *handle, char *path);
+bool open_level_archive(void *handle, char *path);
 int seek_file_handle(int handle, int offset, int method);
 int read_file_handle(int handle, void *destination, uint size);
-int scheduler_load(byte *handle, int level);
+int scheduler_load(void *handle, int level);
 int load_player_save_record(char *path);
 bool load_level_texture_ids(byte *handle, int level);
 void clear_automap_reveal_buffer(void);
 void reset_npc_path_cache(void);
 void clear_last_attacker_record(void);
 int load_automap_reveal_from_archive(byte *handle, int level);
-byte close_level_archive(undefined4 *handle);
+byte close_level_archive(void *handle);
 void set_player_tile_position(uint tile_x, uint tile_y, int flag);
 void debug_print_player_position(const char *label);
 void save_or_restore_level_special_state(short restore, short slot);
@@ -28,7 +28,7 @@ void reset_cursor_confine_rect(void);
 void report_fatal_error_and_exit(ushort error_code);
 void uw_debug_dump_tmap(int level, const unsigned char *data);
 void *tilemap_lookup(short tile_x, short tile_y);
-void *resolve_object_link(ushort *link_field);
+void *resolve_object_link(void *link_field);
 
 unsigned char arena[0x7c08], pristine_level[0x7c08];
 
@@ -122,7 +122,7 @@ int seed_conversation_globals_for_new_game(void)
     return 0;
 }
 
-bool open_level_archive(undefined1 *handle, char *path)
+bool open_level_archive(void *handle, char *path)
 {
     opens++;
     if (!archive_ok) TEST_ASSERT_EQUAL_INT(0, unlink(archive_path));
@@ -146,7 +146,7 @@ int seek_file_handle(int handle, int offset, int method)
 int read_file_handle(int handle, void *destination, uint size)
 { return uw_file_read(handle, destination, size); }
 
-int scheduler_load(byte *handle, int level)
+int scheduler_load(void *handle, int level)
 {
     TEST_ASSERT_TRUE(archive_open);
     TEST_ASSERT_EQUAL_INT(1, level);
@@ -186,7 +186,7 @@ int load_automap_reveal_from_archive(byte *handle, int level)
     return 1;
 }
 
-byte close_level_archive(undefined4 *handle)
+byte close_level_archive(void *handle)
 {
     TEST_ASSERT_TRUE(archive_open);
     int file;
@@ -245,7 +245,7 @@ void uw_debug_dump_tmap(int level, const unsigned char *data)
 
 void *tilemap_lookup(short tile_x, short tile_y) { (void)tile_x; (void)tile_y; return NULL; }
 
-void *resolve_object_link(ushort *link_field) { (void)link_field; return NULL; }
+void *resolve_object_link(void *link_field) { (void)link_field; return NULL; }
 
 void new_game_fixture_reset(void)
 {

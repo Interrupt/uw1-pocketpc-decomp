@@ -381,7 +381,7 @@ void load_terrain_texture_props(char *wall_texture_ids, char *floor_texture_ids)
 // was FUN_0005b890 -- reset the draw-command list write cursor DAT_00110fc0 back to its base DAT_0023aed0
 void draw_command_list_rewind()
 {
-  DAT_00110fc0 = DAT_0023aed0;
+  DAT_00110fc0 = (char *)DAT_0023aed0;
 }
 
 
@@ -503,7 +503,7 @@ int build_frame_draw_list()
   DAT_00101938 = (short)(char)((ushort)g_current_view->view_x >> 8);
   DAT_0010193c = (short)(char)((ushort)g_current_view->view_y >> 8);
   DAT_0023aecc = tilemap_lookup(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
-  bVar3 = (byte)((short)(g_current_view->view_facing >> 0xd) + 1 >> 1) & 3;
+  bVar3 = (byte)(((short)(g_current_view->view_facing >> 0xd) + 1) >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
   /* Dropped-remainder bug, same class fixed elsewhere this session. */
   extraout_r1 = (char)ordint_divmod(2,bVar3).rem;
@@ -610,8 +610,8 @@ void seed_visibility_queue()
     DAT_0023aee7 = 0;
     DAT_0023aee6 = (undefined1)g_current_view->view_x;
     DAT_0023aee8 = (undefined1)g_current_view->view_y;
-    DAT_0023aeea = (undefined2)((uint)DAT_0023aecc >> 8);
-    DAT_0023aeec = (undefined1)((uint)DAT_0023aecc >> 0x18);
+    DAT_0023aeea = (undefined2)((uint)(uintptr_t)DAT_0023aecc >> 8);
+    DAT_0023aeec = (undefined1)((uint)(uintptr_t)DAT_0023aecc >> 0x18);
     DAT_0023aeed = 0x58;
     DAT_0023aeee = 0x23b0;
     DAT_0023aef0 = 0;
@@ -621,11 +621,11 @@ void seed_visibility_queue()
     DAT_0023aefc = 0;
     DAT_0023aefb = (undefined1)g_current_view->view_x;
     DAT_0023aefd = (undefined1)g_current_view->view_y;
-    DAT_0023aefe = SUB42(DAT_0023aecc,0);
-    DAT_0023af00 = (undefined2)((uint)DAT_0023aecc >> 0x10);
+    DAT_0023aefe = (undefined2)(uintptr_t)DAT_0023aecc;
+    DAT_0023af00 = (undefined2)((uint)(uintptr_t)DAT_0023aecc >> 0x10);
     _DAT_0023af02 = 0x23b058;
     g_visibility_ray_realptr2[1] = (char *)&g_visibility_ring_buffer_backing[0x20]; // same real-pointer side channel, entry 1
-    DAT_0023aee9 = (char)DAT_0023aecc;
+    DAT_0023aee9 = (char)(uintptr_t)DAT_0023aecc;
     g_visibility_ray_realptr[0] = DAT_0023aecc; // real-pointer side channel for advance_visibility_ray -- see g_visibility_ray_realptr's comment
     g_visibility_ray_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
     angle_to_screen_delta(g_current_view->view_facing + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
@@ -647,8 +647,9 @@ void seed_visibility_queue()
 
 // Was FUN_0005c0c4. Same param_1-truncation + packed-pointer-arithmetic fix as its mirror-image sibling visibility_ray_step_backward.
 // was FUN_0005c0c4
-void visibility_ray_step_forward(intptr_t ray)
+void visibility_ray_step_forward(void *ray_ptr)
 {
+  char *ray = (char *)ray_ptr;
   int iVar1;
   int entry_idx;
 
@@ -677,8 +678,9 @@ void visibility_ray_step_forward(intptr_t ray)
 /* Was FUN_0005c16c. param_1 was `int`, truncating the real record pointer (same fix as its siblings
    advance_visibility_ray/compute_visibility_ray_offset). */
 // was FUN_0005c16c
-void visibility_ray_step_backward(intptr_t ray)
+void visibility_ray_step_backward(void *ray_ptr)
 {
+  char *ray = (char *)ray_ptr;
   int iVar1;
   int entry_idx;
 
@@ -707,8 +709,9 @@ void visibility_ray_step_backward(intptr_t ray)
 /* Was FUN_0005c214. param_1 was `int`, truncating the real record pointer every caller passes --
    same fix as advance_visibility_ray. */
 // was FUN_0005c214
-int compute_visibility_ray_offset(intptr_t ray, char step_x, char step_y)
+int compute_visibility_ray_offset(void *ray_ptr, char step_x, char step_y)
 {
+  char *ray = (char *)ray_ptr;
   byte bVar1;
   byte *pbVar2;
   byte *pbVar3;
@@ -914,13 +917,13 @@ int extend_visibility_ray_row(byte *ray_a, byte *ray_b)
           }
           visibility_ray_step_backward(ray_b);
           *(undefined1 *)(ray_b + 6) = 0xff;
-          compute_visibility_ray_offset((intptr_t)ray_b,0,0);
+          compute_visibility_ray_offset(ray_b,0,0);
         } while (*(char *)(ray_a + 5) <= *(char *)(ray_b + 5));
         return 0;
       }
-      visibility_ray_step_forward((intptr_t)ray_a);
+      visibility_ray_step_forward(ray_a);
       *(undefined1 *)(ray_a + 6) = 0;
-      compute_visibility_ray_offset((intptr_t)ray_a,0,0);
+      compute_visibility_ray_offset(ray_a,0,0);
     } while (*(char *)(ray_a + 5) <= *(char *)(ray_b + 5));
   }
   return 0;
@@ -1104,7 +1107,7 @@ void merge_adjacent_visibility_rays(byte **ray_cursor, byte **out_cursor)
   }
   if ((int)(char)(&DAT_0023aee5)[iVar10] < (int)(char)(&DAT_0023aee5)[iVar5]) {
     do {
-      iVar3 = compute_visibility_ray_offset(pbVar8,0xffffffff,8);
+      iVar3 = compute_visibility_ray_offset(pbVar8,-1,8);
     } while (iVar3 != 0);
   }
   iVar3 = 0x15;
@@ -1277,25 +1280,25 @@ void rebuild_dungeon_view()
   emit_glyph_draw_command(0xa0,1);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x2200;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x400;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x1100;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x3300;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;

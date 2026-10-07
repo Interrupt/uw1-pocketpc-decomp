@@ -16,8 +16,8 @@ int open_file_for_read(const char *path);
 int read_file_handle(int handle, void *p, unsigned int count);
 int seek_file_handle(int handle, int offset, int origin);
 uint read_realtime_clock_units(void);
-long TranslateMessage(long message);
-long DispatchMessageW(long message);
+long TranslateMessage(const void *message);
+long DispatchMessageW(const void *message);
 long _isctype(int c, int mask);
 long ce_tolower(long key);
 long ce_toupper(long key);
@@ -71,7 +71,7 @@ void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_dump_critter_sheet_once(void);
 void uw_debug_force_item_id_once(void);
 void tick_weapon_swing_state(short attack_direction);
-void poll_input_bindings(undefined1 *input_state);
+void poll_input_bindings(void *input_state);
 
 undefined1 DAT_00085448_backing[11] = "\\CSXXX.nXX";
 
@@ -99,11 +99,11 @@ ushort gameplay_palette[256];
 
 char opened[4][260];
 
-int (*const PTR_FUN_00085408[16])() = {
-    babl_render_op_wrap_message, FUN_000362e8, FUN_00036300, FUN_00036308,
-    FUN_00036394, FUN_000363f0, FUN_00036404, FUN_00036418,
-    babl_render_op_show_code, FUN_000365bc, FUN_000365fc, FUN_0003663c,
-    FUN_00036698, babl_render_op_say, FUN_00036344, babl_render_op_play_sound
+const babl_render_op_fn PTR_FUN_00085408[16] = {
+    (babl_render_op_fn)babl_render_op_wrap_message, (babl_render_op_fn)FUN_000362e8, (babl_render_op_fn)FUN_00036300, (babl_render_op_fn)FUN_00036308,
+    (babl_render_op_fn)FUN_00036394, (babl_render_op_fn)FUN_000363f0, (babl_render_op_fn)FUN_00036404, (babl_render_op_fn)FUN_00036418,
+    (babl_render_op_fn)babl_render_op_show_code, (babl_render_op_fn)FUN_000365bc, (babl_render_op_fn)FUN_000365fc, (babl_render_op_fn)FUN_0003663c,
+    (babl_render_op_fn)FUN_00036698, (babl_render_op_fn)babl_render_op_say, (babl_render_op_fn)FUN_00036344, (babl_render_op_fn)babl_render_op_play_sound
 };
 
 int babl_render_op_wrap_message(byte *op_args, intptr_t render_state) { (void)op_args; (void)render_state; TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
@@ -197,9 +197,9 @@ char *DAT_0008794c = &keyboard_case;
 
 int opening_hold_polls, idle_polls, dismissal_sent;
 
-long TranslateMessage(long message) { (void)message; return 0; }
+long TranslateMessage(const void *message) { (void)message; return 0; }
 
-long DispatchMessageW(long message) { (void)message; return 0; }
+long DispatchMessageW(const void *message) { (void)message; return 0; }
 
 long _isctype(int c, int mask) { (void)c; (void)mask; return 0; }
 
@@ -477,7 +477,7 @@ void uw_debug_force_item_id_once(void) {}
 
 void tick_weapon_swing_state(short attack_direction) { (void)attack_direction;}
 
-void poll_input_bindings(undefined1 *input_state)
+void poll_input_bindings(void *input_state)
 {
     if (input_opens_window) {
         int saved_presents = presents;

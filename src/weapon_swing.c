@@ -127,7 +127,7 @@ byte load_weapon_swing_sprites()
       } while (cVar1 != '\0');
       ce_strcat(acStack_118,s__DATA_weapons_dat_00087268);
       iVar6 = open_file_for_read(acStack_118);
-      bVar2 = bVar2 & iVar6 != -1;
+      bVar2 = bVar2 & (iVar6 != -1);
       if (iVar6 != -1) {
         /* Was `bVar3 = seek_file_handle(...)` truncated straight to a byte and then bitwise-&'d
            into bVar2's overall success flag below -- seek_file_handle (SetFilePointer-shaped, see
@@ -137,7 +137,7 @@ byte load_weapon_swing_sprites()
         iVar8 = read_file_handle(iVar6,&g_weapon_swing_frame_x_offset,0x1c);
         iVar7 = read_file_handle(iVar6,&g_weapon_swing_frame_y_offset,0x1c);
         bVar4 = CloseHandle(iVar6);
-        bVar2 = iVar7 == 0x1c & bVar4 & bVar2 & bVar3 & iVar8 == 0x1c;
+        bVar2 = (iVar7 == 0x1c) & bVar4 & bVar2 & bVar3 & (iVar8 == 0x1c);
       }
     }
     else {
@@ -446,6 +446,7 @@ void debug_noop_frame_hook(int frame)
 // up from &DAT_002027d2), returning its inventory slot; on failure (none found), prints a "Sorry...
 int find_and_consume_ammo(short weapon_type)
 {
+  ushort *found_item;
   char *wptr_14062;
   char cVar1;
   short sVar2;
@@ -460,8 +461,8 @@ int find_and_consume_ammo(short weapon_type)
   char acStack_3c [52];
   
   cVar1 = (&DAT_002027d2)[weapon_type * 3];
-  iVar3 = find_equipped_item_by_category(0,1,(int)cVar1,4,local_4c);
-  if (iVar3 == 0) {
+  found_item = find_equipped_item_by_category(0,1,(int)cVar1,4,(ushort *)local_4c);
+  if (found_item == 0) {
     local_44[0] = ((short)cVar1 + 0x10U ^ local_44[0]) & 0x1ff ^ local_44[0];
     message_scroll_print_wrapped(s_Sorry__you_have_no_00084f2c);
     sVar2 = build_object_display_name(acStack_3c,local_44,0,1);
@@ -530,7 +531,7 @@ void cancel_weapon_swing()
   update_weapon_ready_hud_icon();
   DAT_0010062c = 0;
   DAT_00084f10 = 0xffff;
-  DAT_00100610 = 0xffff;
+  DAT_00100610 = -1;
 }
 
 

@@ -194,7 +194,7 @@ void emit_tile_objects(ushort *tile);
 void update_wall_partition_phase(char phase);
 void sort_feature_pairs_by_depth(short first, int last);
 void init_feature_sort_order(short count);
-void resolve_billboard_corner_offset(byte *corner, byte *feature);
+void resolve_billboard_corner_offset(byte *corner, void *feature);
 void compute_feature_depth_key(char *feature);
 void flush_pending_tile_features();
 void emit_tile_features(ushort *tile);

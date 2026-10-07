@@ -99,7 +99,7 @@ extern unsigned int g_uw_frame_clock_units;
 #define _DAT_000869a1 (*(unsigned short*)&DAT_000869a1)
 #define _DAT_00204980 (*(uint*)&DAT_00204980)
 
-int collision_response_mobile_object();
+int collision_response_mobile_object(ushort *collision_flags);
 unsigned int uw_frame_clock_ms();
 int check_and_reset_landing_state(ushort *object);
 int uw_turn_rate_accel();
@@ -110,7 +110,7 @@ int collision_response_other_locomotion(ushort *object);
 int can_step_between_tiles(byte ignore_x, byte ignore_y, byte from_x, byte from_y, byte to_x, byte to_y, byte step_height);
 void apply_heading_turn(int turn_amount);
 void resolve_wall_slide_corner();
-void movement_collision_sweep(char *movement_block, char *snapshot);
+void movement_collision_sweep(void *movement_block, void *snapshot);
 void sweep_init_position();
 void reticle_object_pick(int mode);
 int movement_sweep_setup(int is_initial, int use_remaining);

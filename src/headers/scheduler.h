@@ -20,16 +20,16 @@ extern char *g_scheduler_table;
 void scheduler_despawn_entry(short entry_index);
 void scheduler_remove_entry(short object_link);
 void scheduler_finish_entry(int entry_slot);
-void scheduler_relink_entry(char *new_object, char *old_object);
+void scheduler_relink_entry(void *new_object, void *old_object);
 uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byte tile_x, byte tile_y);
 void scheduler_step_entry(int entry_slot, int elapsed);
 void scheduler_tick(int elapsed);
 int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y);
 int scheduler_find_entry(char *object);
-int scheduler_get_delay(char *object);
-void scheduler_set_delay(char *object, int delay);
+int scheduler_get_delay(void *object);
+void scheduler_set_delay(void *object, int delay);
 int scheduler_advance_effect(short entry_slot, int elapsed);
-int scheduler_load(byte *archive, int level_number);
-int scheduler_save(uint *archive, int level_number);
+int scheduler_load(void *archive, int level_number);
+int scheduler_save(void *archive, int level_number);
 
 #endif

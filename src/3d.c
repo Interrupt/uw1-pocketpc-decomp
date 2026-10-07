@@ -133,8 +133,10 @@ void set_viewport_clip_rect(short left, short top, short right, short bottom)
 
 // was FUN_000137c0 -- elementwise 3-float vector subtract, param_3 = param_2 - param_1.
 // was FUN_00020a74
-void vec3_sub(uint *a, uint *b, byte *out)
+void vec3_sub(void *a_ptr, void *b_ptr, byte *out)
 {
+  uint *a = (uint *)a_ptr;
+  uint *b = (uint *)b_ptr;
   undefined4 uVar1;
   
   uVar1 = ordfloat_sub(*b,*a);
@@ -158,8 +160,10 @@ void vec3_sub(uint *a, uint *b, byte *out)
 
 // was FUN_00013904 -- standard 3-float cross product, param_3 = param_1 x param_2 (confirmed
 // component-by-component, including the Y term's sign flip the textbook formula requires).
-void vec3_cross(uint *a, uint *b, byte *out)
+void vec3_cross(void *a_ptr, void *b_ptr, byte *out)
 {
+  uint *a = (uint *)a_ptr;
+  uint *b = (uint *)b_ptr;
   undefined4 uVar1;
   undefined4 uVar2;
   
@@ -194,7 +198,7 @@ void vec3_cross(uint *a, uint *b, byte *out)
 // (raster_textured_span) UW_DEBUG_RASTER=1...
 /* was undefined4 -- the framebuffer base (g_uw_framebuffer) was undefined4 -- the tile's texture
    pixel data pointer */
-void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int width, int size, intptr_t texture, int *clip)
+void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int width, int size, char *texture, int *clip)
 {
   undefined4 uVar1;
   int iVar2;
@@ -307,9 +311,9 @@ LAB_0001467c:
   uVar9 = 2;
 LAB_00014684:
   raster_triangle_perspective_setup(vertices,auStack_10c);
-  raster_edge_setup(auStack_10c,vertices,uVar11,uVar4,clip[1],auStack_154);
-  raster_edge_setup(auStack_10c,vertices,uVar11,uVar1,clip[1],auStack_c4);
-  raster_edge_setup(auStack_10c,vertices,uVar1,uVar4,clip[1],auStack_7c);
+  raster_edge_setup(auStack_10c,(char *)vertices,uVar11,uVar4,clip[1],auStack_154);
+  raster_edge_setup(auStack_10c,(char *)vertices,uVar11,uVar1,clip[1],auStack_c4);
+  raster_edge_setup(auStack_10c,(char *)vertices,uVar1,uVar4,clip[1],auStack_7c);
   if (getenv("UW_DEBUG_RASTER")) {
     fprintf(stderr, "[raster] sort top=%u mid=%u bot=%u  uVar7(short-half-idx)=%u uVar9(cmp)=%u  long_x0=%d short1_x0=%d short2_x0=%d\n",
             (unsigned)uVar11, (unsigned)uVar1, (unsigned)uVar4,
@@ -378,7 +382,7 @@ LAB_00014684:
 
 // was FUN_00014868 -- advance one scanline down an edge record
 /* was int -- edge-walk struct pointer */
-int raster_edge_step(intptr_t edge)
+int raster_edge_step(char *edge)
 {
   int iVar1;
 
@@ -397,8 +401,9 @@ int raster_edge_step(intptr_t edge)
 // was FUN_000148c8 -- per-triangle perspective setup: 1/w, u/w, v/w per
 // vertex plus the screen-space interpolation gradients, into the
 // edge-coefficient array raster_edge_setup reads
-void raster_triangle_perspective_setup(uint *triangle, uint *coefficients)
+void raster_triangle_perspective_setup(uint *triangle, void *coefficients_ptr)
 {
+  uint *coefficients = (uint *)coefficients_ptr;
   undefined4 uVar1;
   undefined4 uVar2;
   undefined4 uVar3;
@@ -504,8 +509,9 @@ void raster_triangle_perspective_setup(uint *triangle, uint *coefficients)
 // was FUN_00014ef4 -- per-edge setup: given two vertex indices, the
 // starting value and per-scanline step for x, u/w, v/w and 1/w
 /* was int -- edge-coeff array pointer was int -- vertex array pointer (stride 0x14) */
-void raster_edge_setup(intptr_t coefficients, intptr_t vertices, int vertex_a, int vertex_b, int row_limit, uint *edge)
+void raster_edge_setup(char *coefficients, char *vertices, int vertex_a, int vertex_b, int row_limit, void *edge_ptr)
 {
+  uint *edge = (uint *)edge_ptr;
   int iVar1;
   uint uVar2;
   int iVar3;
@@ -611,7 +617,7 @@ void raster_edge_setup(intptr_t coefficients, intptr_t vertices, int vertex_a, i
 // was FUN_0001548c -- the textured span rasterizer: for one scanline span between two edges,
 // perspective-divides per pixel, samples the tile texture...
 /* framebuffer base edge struct edge struct edge struct texture pixel data */
-void raster_textured_span(int row, intptr_t framebuffer, intptr_t gradients, intptr_t left_edge, intptr_t right_edge, int texture_stride, int texture_size, intptr_t texture_pixels, int *depth_limit, byte shade)
+void raster_textured_span(int row, char *framebuffer, char *gradients, char *left_edge, char *right_edge, int texture_stride, int texture_size, char *texture_pixels, int *depth_limit, byte shade)
 {
   byte bVar1;
   uint uVar2;
@@ -640,7 +646,7 @@ void raster_textured_span(int row, intptr_t framebuffer, intptr_t gradients, int
      or an empty value disables it. */
   const char *dither_mode = getenv("UW_DITHER");
   bool dither_enabled = !dither_mode || (*dither_mode && strcmp(dither_mode, "0") != 0);
-  intptr_t local_4; /* fb row pointer */
+  char *local_4; /* fb row pointer */
 
   iVar12 = (intptr_t)DAT_0023cca0;
   uVar2 = *(uint *)(left_edge + 0x28);
@@ -959,8 +965,9 @@ void project_verts_through_view_matrix(int *vertex_list)
 // was FUN_0001f370 -- near-plane (w=DAT_00084608=5.0) Sutherland-Hodgman clip of
 // each visible tile quad; writes clipped positions + interpolated texcoords into
 // the 0x88-byte render records at DAT_000bc038 and the DAT_000c4838[] pointer table
-void near_clip_visible_tiles(intptr_t tile_list, int clip_mode)
+void near_clip_visible_tiles(void *tile_list, int clip_mode)
 {
+  intptr_t tile_base = (intptr_t)tile_list;  /* the tile list is addressed by byte offsets throughout */
   undefined1 uVar1;
   undefined1 uVar2;
   undefined1 uVar3;
@@ -994,11 +1001,11 @@ void near_clip_visible_tiles(intptr_t tile_list, int clip_mode)
   }
   else {
     local_48 = 0;
-    if (0 < *(int *)(tile_list + 4)) {
+    if (0 < *(int *)(tile_base + 4)) {
       local_74 = 0;
       local_7c = DAT_000c8c98;
       local_4c = 0;
-      iVar14 = tile_list;
+      iVar14 = tile_base;
       do {
         if ((*(int *)(iVar14 + 0x486c) != 0) && (*(int *)(iVar14 + 0x4870) == 0)) {
           iVar19 = local_7c * 0x88;
@@ -1053,10 +1060,10 @@ void near_clip_visible_tiles(intptr_t tile_list, int clip_mode)
             local_50 = iVar14;
             do {
               iVar7 = *(int *)(local_50 + 0x4818);
-              iVar5 = *(int *)(local_4c + local_64 * 4 + tile_list + 0x4818) * 0xc + tile_list;
+              iVar5 = *(int *)(local_4c + local_64 * 4 + tile_base + 0x4818) * 0xc + tile_base;
               uVar10 = *(undefined4 *)(iVar5 + 0x3010);
               iVar6 = ordfloat_ge(uVar10,DAT_00084608);
-              iVar7 = iVar7 * 0xc + tile_list;
+              iVar7 = iVar7 * 0xc + tile_base;
               puVar8 = (undefined4 *)(iVar7 + 0x3010);
               uVar11 = *puVar8;
               if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
@@ -1066,7 +1073,7 @@ void near_clip_visible_tiles(intptr_t tile_list, int clip_mode)
                   fprintf(stderr, "[nearclip] rec=%d pointcount=%d edge=%d prev_vi=%d cur_vi=%d prev_w=%g cur_w=%g thresh=%g prev_behind=%d\n",
                           local_48, iVar4, local_78, local_64,
                           *(int *)(local_50 + 0x4818),
-                          *(float *)&uVar10, *(float *)&uVar11, *(float *)&DAT_00084608, iVar6);
+                          *(float *)&uVar10, *(float *)&uVar11, *(float *)&DAT_00084608, (int)iVar6);
               }
               if (iVar6 == 0) {
                 iVar6 = ordfloat_ge(uVar11,DAT_00084608);
@@ -1095,8 +1102,8 @@ void near_clip_visible_tiles(intptr_t tile_list, int clip_mode)
                   puVar16[1] = (char)((uint)uVar10 >> 8);
                   puVar16[2] = (char)((uint)uVar10 >> 0x10);
                   puVar16[3] = (char)((uint)uVar10 >> 0x18);
-                  iVar6 = tile_list + (local_74 + local_78) * 8;
-                  iVar12 = tile_list + (local_74 + local_64) * 8;
+                  iVar6 = tile_base + (local_74 + local_78) * 8;
+                  iVar12 = tile_base + (local_74 + local_64) * 8;
                   iVar5 = *(int *)(iVar12 + 0x4838);
                   iVar13 = local_7c * 0x11;
                   uVar10 = ordfloat_int_to_float2(*(int *)(iVar6 + 0x4838) - iVar5);
@@ -1182,8 +1189,8 @@ void near_clip_visible_tiles(intptr_t tile_list, int clip_mode)
                   puVar16[1] = (char)((uint)uVar10 >> 8);
                   puVar16[2] = (char)((uint)uVar10 >> 0x10);
                   puVar16[3] = (char)((uint)uVar10 >> 0x18);
-                  iVar6 = tile_list + (local_74 + local_78) * 8;
-                  iVar5 = tile_list + (local_74 + local_64) * 8;
+                  iVar6 = tile_base + (local_74 + local_78) * 8;
+                  iVar5 = tile_base + (local_74 + local_64) * 8;
                   iVar7 = *(int *)(iVar5 + 0x4838);
                   uVar10 = ordfloat_int_to_float2(*(int *)(iVar6 + 0x4838) - iVar7);
                   uVar10 = ordfloat_mul(uVar10,uVar11);
@@ -1216,7 +1223,7 @@ void near_clip_visible_tiles(intptr_t tile_list, int clip_mode)
                   puVar16[1] = (char)((uint)uVar10 >> 8);
                   puVar16[2] = (char)((uint)uVar10 >> 0x10);
                   puVar16[3] = (char)((uint)uVar10 >> 0x18);
-                  iVar5 = tile_list + (local_74 + local_78) * 8;
+                  iVar5 = tile_base + (local_74 + local_78) * 8;
                   iVar7 = (local_7c * 0x11 + iVar18 + 8) * 8;
                   uVar10 = *(undefined4 *)(iVar5 + 0x4838);
                   (&DAT_000bc038)[iVar7] = (char)uVar10;
@@ -1272,7 +1279,7 @@ LAB_0002029c:
         local_4c = local_4c + 0x60;
         iVar14 = iVar14 + 0x60;
         local_74 = local_74 + 0xc;
-      } while (local_48 < *(int *)(tile_list + 4));
+      } while (local_48 < *(int *)(tile_base + 4));
     }
   }
 }
@@ -1282,8 +1289,11 @@ LAB_0002029c:
 // was FUN_00013b8c -- confirmed by two independent pre-existing comments (uw.c's
 // DAT_000c8ac0-family global-layout note, and src/3d.c's own build_view_matrix-adjacent comment) as
 // a 4x4 (really 4x3-affine, homogeneous) matrix multiply...
-void multiply_matrix4x4(uint *a, uint *b, uint *out)
+void multiply_matrix4x4(void *a_ptr, void *b_ptr, void *out_ptr)
 {
+  uint *a = (uint *)a_ptr;
+  uint *b = (uint *)b_ptr;
+  uint *out = (uint *)out_ptr;
   undefined4 uVar1;
   undefined4 uVar2;
   
@@ -1372,8 +1382,9 @@ void multiply_matrix4x4(uint *a, uint *b, uint *out)
 // was FUN_0001422c -- confirmed by src/3d.c's own pre-existing comment ("set_identity_matrix4x4's
 // identity-matrix values") as a 4x4 identity matrix setter: zeroes the 16-float (64-byte) buffer,
 // then sets the four diagonal elements to 1.0f.
-void set_identity_matrix4x4(uint *matrix)
+void set_identity_matrix4x4(void *matrix_ptr)
 {
+  uint *matrix = (uint *)matrix_ptr;
   ce_memset(matrix,0,0x40);
   matrix[0xf] = 0x3f800000;
   matrix[10] = 0x3f800000;
@@ -1437,7 +1448,7 @@ void load_dungeon_texture_arenas()
   char *wptr_42281;
   char *stack0xffdc3244_ptr;
   char cVar1;
-  char *pcVar2;
+  const char *pcVar2;
   int iVar3;
   short local_11c [4];
   char acStack_114 [260];
@@ -1570,7 +1581,7 @@ void init_dungeon_rendering()
   init_glyph_width_table();
   init_draw_command_cursor();
   save_draw_command_cursor();
-  DAT_0023aed0 = DAT_00110fc0;
+  DAT_0023aed0 = (undefined2 *)DAT_00110fc0;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   build_visibility_light_grid(8);
@@ -1796,20 +1807,14 @@ void emit_diagonal_wall_texture_select(byte *tile_record, uint depth, uint orien
       sVar2 = (short)((orientation & 0xff) << 10);
     }
     else {
-      psVar1 = (short *)0x0;
       bVar5 = depth != 0;
       DAT_0023b81c = 0;
-      if (bVar5) {
-        psVar1 = &DAT_00086b30;
-      }
       DAT_0023b824 = 0x10;
-      if (bVar5) {
-        psVar1 = (short *)(int)*psVar1;
-      }
       sVar2 = (short)((orientation & 0xff) << 6);
       texture_index = texture_index + 0x3a;
       if (bVar5) {
-        DAT_0023b81c = (ushort)psVar1;
+        /* was routed through a bogus `short *psVar1` pointer variable holding (int)DAT_00086b30 */
+        DAT_0023b81c = (ushort)DAT_00086b30;
       }
       DAT_0023b4d8 = 0x100;
     }
@@ -1886,24 +1891,25 @@ void configure_texture_detail_functions()
     }
   }
   if (bVar4) {
-    DAT_00086b44 = emit_floor_texture_select;
+    DAT_00086b44 = (code *)emit_floor_texture_select;
   }
   else {
-    DAT_00086b44 = emit_flat_wall_texture_select;
+    DAT_00086b44 = (code *)emit_flat_wall_texture_select;
   }
   if (bVar3) {
-    DAT_00086b3c = emit_floor_texture_select;
+    DAT_00086b3c = (code *)emit_floor_texture_select;
   }
   else {
-    DAT_00086b3c = emit_flat_wall_texture_select;
+    DAT_00086b3c = (code *)emit_flat_wall_texture_select;
   }
   DAT_00086b30 = 1;
 }
 
 
 // was FUN_0001e848 -- identity-init then compose up to 3 axis rotation matrices from angle-table indices (DAT_000d9ed8 sin / DAT_000d9930 cos); used by an object/effect transform, not the tile pipeline
-void build_euler_rotation_matrix(int *matrix, int angle_x, int angle_y, int angle_z)
+void build_euler_rotation_matrix(void *matrix_ptr, int angle_x, int angle_y, int angle_z)
 {
+  int *matrix = (int *)matrix_ptr;
   int iVar1;
   int iVar2;
   int iVar3;
@@ -2103,8 +2109,9 @@ LAB_0001ea18:
 
 
 // was FUN_0001ecb0 -- apply a matrix built by build_euler_rotation_matrix to a point/vertex list
-void transform_points_by_matrix(int *matrix, int *points)
+void transform_points_by_matrix(int *matrix, void *points_ptr)
 {
+  int *points = (int *)points_ptr;
   int iVar1;
   undefined4 uVar2;
   int *piVar3;

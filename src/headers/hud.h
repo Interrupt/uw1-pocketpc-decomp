@@ -67,7 +67,7 @@ void uw_debug_dump_sprite_frames_once();
 void uw_debug_force_item_id_once();
 int uw_always_show_cursor();
 void uw_composite_desktop_cursor(void *present_buffer);
-void flush_dirty_rect_to_display();
+void flush_dirty_rect_to_display(int unused_flag);
 void flush_dirty_rect_to_display_240();
 void toggle_stats_panel(int target_panel);
 void print_character_description_scroll();
@@ -130,7 +130,7 @@ void get_click_position(ushort *out_x, ushort *out_y);
 void reset_keyboard_char_input();
 void noop_post_input_reset_hook();
 void warp_mouse_cursor(short x, short y);
-int poll_keyboard_char_input(short *out_char);
+int poll_keyboard_char_input(void *out_char);
 int wait_for_key_or_mouse_move(int poll_mouse);
 void set_cursor_confine_rect(short x1, short y1, short x2, short y2);
 void reset_cursor_confine_rect();
@@ -192,7 +192,7 @@ void msg_scroll_panel_init(int panel_x, int panel_y, int panel_width, int panel_
 void msg_scroll_panel_reset(int redraw);
 void echo_number_to_scroll(short number);
 void echo_yes_no_to_scroll(int is_yes);
-int scroll_text_entry_prompt(char *prompt, char *buffer, intptr_t buffer_end, int allow_all_chars, short max_length);
+int scroll_text_entry_prompt(char *prompt, char *buffer, char *dest, int allow_all_chars, short max_length);
 int prompt_yes_no_scroll(int question_text, int message_id, int *result);
 
 #endif

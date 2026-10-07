@@ -68,39 +68,39 @@ void *tilemap_lookup(short x, short y)
     TEST_ASSERT_EQUAL_INT(28, y);
     return (byte *)arena + (y * 64 + x) * 4;
 }
-void *resolve_object_link(ushort *link)
-{
+void *resolve_object_link(void *link_)
+{ ushort *link = (ushort *)link_;
     unsigned slot = *link >> 6;
     return !slot ? NULL : slot < 256 ? DAT_002046b8 + slot * 27
         : DAT_002046c4 + (slot - 256) * 8;
 }
-int object_ptr_in_arena(char *object) { (void)object; return 1; }
+int object_ptr_in_arena(void *object) { (void)object; return 1; }
 void record_placement(ushort *object)
 {
     TEST_ASSERT_LESS_THAN_UINT(16, placed);
     types[placed++] = object[0] & 0x1ff;
     TEST_ASSERT_NOT_EQUAL(0x157, object[0] & 0x1ff); /* Shrine */
 }
-ushort *settle_dropped_object(ushort *object, short x, short y, int mode)
+ushort *settle_dropped_object(void *object, short x, short y, int mode)
 { record_placement(object); return object; }
-int drop_object_near_target(char *target, char *object, short distance, uint mode)
+int drop_object_near_target(void *target, void *object, short distance, uint mode)
 { record_placement(object); return 1; }
-int place_object_in_world(uint x, uint y, int z, char *object, short distance, int mode)
+int place_object_in_world(uint x, uint y, int z, void *object, short distance, int mode)
 { record_placement(object); return 1; }
 
-void free_object_slot(char *object) {}
+void free_object_slot(void *object) {}
 int check_object_drop_height(ushort *object, ushort *source) { return 1; }
-int encode_object_slot_index(char *object) { (void)object; return 225; }
+int encode_object_slot_index(void *object) { (void)object; return 225; }
 int play_sound_effect_at_object(int sound, ushort *object, int mode) { return 1; }
 int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
-int roll_object_destroy_chance(short base_chance, char *object) { (void)base_chance; (void)object; return 0; }
+int roll_object_destroy_chance(short base_chance, void *object) { (void)base_chance; (void)object; return 0; }
 void print_scroll_message_by_id(uint message_id) { (void)message_id;}
 void set_pending_update_flags(ushort flags) { (void)flags;}
-void spawn_effect_debris_burst(byte *template, uint tile_x, int tile_y) { (void)template; (void)tile_x; (void)tile_y;}
-void scheduler_relink_entry(char *new_object, char *old_object) { (void)new_object; (void)old_object;}
+void spawn_effect_debris_burst(void *template, uint tile_x, int tile_y) { (void)template; (void)tile_x; (void)tile_y;}
+void scheduler_relink_entry(void *new_object, void *old_object) { (void)new_object; (void)old_object;}
 void set_ambient_bias_without_light(char light_level) { (void)light_level;}
 int activate_area_hazard_object(ushort *hazard, uint tile_x, int tile_y, int damage) { (void)hazard; (void)tile_x; (void)tile_y; (void)damage; return 1; }
-ushort *discard_misplaced_object(char *list, ushort *object, int release) { return NULL; }
+ushort *discard_misplaced_object(void *list, ushort *object, int release) { return NULL; }
 
 void creatures_fixture_reset(void)
 {

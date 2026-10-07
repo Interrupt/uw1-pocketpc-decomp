@@ -32,7 +32,7 @@ extern undefined4 DAT_00101924;
 extern byte DAT_001005fc;
 extern undefined2 DAT_00100630_backing[32];
 #define DAT_00100630 DAT_00100630_backing[0]
-extern ushort DAT_00100610;
+extern short DAT_00100610;
 extern char *DAT_001005e4;
 extern char *DAT_001005e0;
 
@@ -48,8 +48,8 @@ void compute_attack_relative_facing();
 int process_melee_attack_swing();
 int resolve_equipped_weapon_attack(char * *out_attack_data, char * *out_weapon_object);
 void compute_player_weapon_attack_stats(char *weapon_stats, char *weapon_item, short attack_type);
-void apply_direct_object_hit(short hit_flag, ushort *attacker, ushort *target, short tile_x, short tile_y, short damage_dice, byte hit_type);
-int resolve_npc_melee_attack(byte *npc, short tile_x, byte tile_y, short offset_x, short offset_y);
+void apply_direct_object_hit(short hit_flag, void *attacker, ushort *target, short tile_x, short tile_y, short damage_dice, byte hit_type);
+int resolve_npc_melee_attack(void *npc, short tile_x, byte tile_y, short offset_x, short offset_y);
 void award_monster_kill_experience(ushort *monster);
 void load_combat_data_file();
 void load_monster_combat_stats(int file_handle);
@@ -73,7 +73,7 @@ int is_valid_equipment_slot_item(ushort object_word, short slot);
 int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short reaction_mode, int report_flag);
 int add_active_light_source(uint light_id, uint duration, char flag);
 int apply_object_collision_scatter(ushort *striker, ushort *object);
-void apply_trap_type_damage_effect(byte *trap_object, ushort *target);
+void apply_trap_type_damage_effect(void *trap_object, ushort *target);
 int resolve_collision_candidate_interaction(short candidate_index, int mover_slot);
 
 #endif

@@ -33,7 +33,7 @@ static undefined1 DAT_00189588;
 /* Was a single `undefined2`/`undefined1` scalar, but init_glyph_width_table (the only function
    anywhere in this decompile that touches any of these 4 globals) indexes each one via
    `(&DAT_xxx)[i]` up to the extents below -- an out-of-bounds scalar-as-array access... */
-static undefined2 DAT_00110a78[0xa0];
+static short DAT_00110a78[0xa0];  /* 0xffff (-1) = "no entry yet" */
 static undefined2 DAT_00110bc0[0x200];
 static undefined1 DAT_00110fd0[0x20];
 static undefined1 DAT_00201b18[0x20];
@@ -41,7 +41,7 @@ static undefined2 DAT_00189572;
 static undefined2 DAT_00189574;
 char * DAT_00110fc8 = 0;
 static undefined1 DAT_00110fc4;
-static undefined4 DAT_00110bb8;
+static char *DAT_00110bb8;
 /* Was `undefined4` (4 bytes) despite init_draw_command_cursor using it to reset DAT_00110fc0 (`char
    *`) -- truncating on this 64-bit host, and overwriting the DAT_00110fc0_scratch fallback (see
    DAT_00110fc0's own comment) with a truncated garbage/NULL pointer right before... */
@@ -454,7 +454,7 @@ void init_glyph_width_table()
 // glyph/sprite data table (DAT_00110fc8).
 int get_catalog_sprite_width(int sprite_id)
 {
-  return (sprite_id + 0x7ff4) * 2 + (uint)(ushort)DAT_00110fc8;
+  return (sprite_id + 0x7ff4) * 2 + (uint)(ushort)(uintptr_t)DAT_00110fc8;
 }
 
 
@@ -486,19 +486,19 @@ void init_draw_command_cursor()
 void emit_glyph_draw_command(uint glyph_id, short value)
 {
   byte bVar1;
-  short *psVar2;
+  char *psVar2;
   byte *pbVar3;
   
   glyph_id = glyph_id & 0xff;
   if (glyph_id == 0xa0) {
-    DAT_00201b38 = (undefined2)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1);
+    DAT_00201b38 = (undefined2)((int)(DAT_00110fc0 - DAT_00110fc8) >> 1);
     psVar2 = DAT_00110fc0;
     DAT_00201b10 = value;
   }
   else {
     if (DAT_00110a78[glyph_id] != -1) {
       *DAT_00110fc0 =
-           (((short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1) + 1) * 0x7fff + DAT_00110a78[glyph_id]
+           (((short)((int)(DAT_00110fc0 - DAT_00110fc8) >> 1) + 1) * 0x7fff + DAT_00110a78[glyph_id]
            ) * 2;
       goto LAB_00038c04;
     }
@@ -508,7 +508,7 @@ void emit_glyph_draw_command(uint glyph_id, short value)
     }
     psVar2 = DAT_00110fc0;
     bVar1 = *pbVar3;
-    DAT_00110bc0[(uint)bVar1 + glyph_id * 0x10] = (short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1);
+    DAT_00110bc0[(uint)bVar1 + glyph_id * 0x10] = (short)((int)(DAT_00110fc0 - DAT_00110fc8) >> 1);
     *pbVar3 = bVar1 + 1;
   }
   *psVar2 = 0;
@@ -536,10 +536,10 @@ void finalize_glyph_draw_command(uint glyph_id)
   glyph_id = glyph_id & 0xff;
   if (glyph_id == 0xa0) {
     *(ushort *)(DAT_00110fc8 + (uint)DAT_00201b38 * 2) =
-         ((DAT_00201b10 + DAT_00201b38) * 0x7fff + (short)(DAT_00110fc0 - DAT_00110fc8 >> 1)) * 2;
+         ((DAT_00201b10 + DAT_00201b38) * 0x7fff + (short)((DAT_00110fc0 - DAT_00110fc8) >> 1)) * 2;
   }
   else {
-    DAT_00110a78[glyph_id] = (short)(DAT_00110fc0 - DAT_00110fc8 >> 1);
+    DAT_00110a78[glyph_id] = (short)((DAT_00110fc0 - DAT_00110fc8) >> 1);
     if ((glyph_id < 0x20) && (DAT_00110fd0[glyph_id] != 0)) {
       iVar1 = 0;
       do {

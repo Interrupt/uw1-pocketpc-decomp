@@ -40,7 +40,7 @@ static undefined DAT_00204986_backing[8];
    -- all really one struct Ghidra split into separate globals) are the 4 interchangeable collision-
    response-profile buffers npc_ai_tick selects between... */
 undefined1 DAT_00204980_backing[32];
-static undefined *DAT_00204988;
+static int (*DAT_00204988)(ushort *);
 /* Same wider-access-than-declared-size issue as DAT_00204982 above (see
    its comment), via the _DAT_00204992 macro below. */
 static undefined DAT_00204992_backing[8];
@@ -50,18 +50,18 @@ static undefined2 DAT_00204996;
 /* Sizing pass: sibling of DAT_00204980 above -- see its combined
    comment for the full trace. Sized to 16 elements (32 bytes). */
 undefined2 DAT_00204990_backing[16];
-static undefined *DAT_00204998;
+static int (*DAT_00204998)(ushort *);
 static undefined2 DAT_002049a2;
 static undefined2 DAT_002049a4;
 static undefined2 DAT_002049a6;
-static undefined1 *DAT_002049a8;
+static int (*DAT_002049a8)(ushort *);
 static undefined2 DAT_002049b2;
 static undefined2 DAT_002049b4;
 static undefined2 DAT_002049b6;
 /* Sizing pass: sibling of DAT_00204980 above -- see its combined
    comment for the full trace. Sized to 16 elements (32 bytes). */
 undefined2 DAT_002049b0_backing[16];
-static undefined *DAT_002049b8;
+static int (*DAT_002049b8)(ushort *);
 static short DAT_002048d0;
 /* Same wider-access-than-declared-size issue as DAT_00204982 above (see
    its comment), via the _DAT_002048c2 macro below. */
@@ -207,8 +207,10 @@ static const signed char DAT_00086e48_backing[16] = {
    (&DAT_00204880, &DAT_002048b0) -- confirmed crashing (EXC_BAD_ACCESS, param_1 read back truncated
    to ~12MB) on a real run even after widening the callee-side globals... */
 // was FUN_0005878c -- per-tick movement + collision sweep (from apply_movement_tick)
-void movement_collision_sweep(char *movement_block, char *snapshot)
+void movement_collision_sweep(void *movement_block_ptr, void *snapshot_ptr)
 {
+  char *movement_block = (char *)movement_block_ptr;
+  char *snapshot = (char *)snapshot_ptr;
   int iVar1;
   char cVar2;
   char cVar3;
@@ -253,7 +255,7 @@ void movement_collision_sweep(char *movement_block, char *snapshot)
 // was FUN_00058878 -- init the per-tick collision-sweep working set from the movement block
 void sweep_init_position()
 {
-  DAT_00202c6c = &DAT_002049c8;
+  DAT_00202c6c = (byte *)&DAT_002049c8;
   DAT_002049ce = *(undefined2 *)(DAT_00204874 + 0x21);
   DAT_002049d0 = DAT_00204874[0x25];
   DAT_002049d1 = DAT_00204874[0x26];
@@ -406,7 +408,8 @@ int movement_sweep_setup(int is_initial, int use_remaining)
   undefined4 uVar6;
   short extraout_r1;
   int iVar7;
-  char *iVar8;
+  int iVar8;
+  char *state_rec;
   undefined2 uVar9;
   int iVar10;
   short *psVar11;
@@ -448,7 +451,7 @@ int movement_sweep_setup(int is_initial, int use_remaining)
   if (is_initial != 0) {
     sweep_init_position();
   }
-  iVar8 = DAT_00204874;
+  state_rec = DAT_00204874;
   psVar11 = g_sweep_velocity;
   uVar1 = (int)*(short *)(DAT_00204874 + 6) >> 0x1f;
   uVar2 = (int)*(short *)(DAT_00204874 + 8) >> 0x1f;
@@ -473,7 +476,7 @@ int movement_sweep_setup(int is_initial, int use_remaining)
     (&DAT_00086987)[iVar10 * 2] = 0;
     DAT_00086990 = 0;
     DAT_00086992 = 0;
-    DAT_00086994 = *(short *)(iVar8 + 0x12);
+    DAT_00086994 = *(short *)(state_rec + 0x12);
     psVar11 = g_sweep_velocity;
   }
   else {
@@ -488,7 +491,7 @@ int movement_sweep_setup(int is_initial, int use_remaining)
     (&DAT_00086986)[iVar10] = 0;
     (&DAT_00086987)[iVar10] = uVar5;
     psVar11 = g_sweep_velocity;
-    iVar10 = (int)*(short *)(iVar8 + 0x12) * (int)g_sweep_velocity[(short)DAT_0008698c] * 0x10000;
+    iVar10 = (int)*(short *)(state_rec + 0x12) * (int)g_sweep_velocity[(short)DAT_0008698c] * 0x10000;
     uVar1 = iVar10 >> 0x1f;
     iVar10 = (iVar10 >> 0x10 ^ uVar1) - uVar1;
     DAT_00086992 = (ushort)((uint)(iVar10 * 0x10000) >> 0x10) & 0x1fff;
@@ -500,7 +503,7 @@ int movement_sweep_setup(int is_initial, int use_remaining)
   DAT_00086996 = 0;
   // PHYSICS: build the destination tile's floor/ceiling height field for collision
   if (((DAT_002049d2 == 1) || (psVar11[2] != 0)) && (use_remaining != 0)) {
-    collision_build_height_field(*(undefined1 *)(iVar8 + 0x27));
+    collision_build_height_field(*(undefined1 *)(state_rec + 0x27));
     collision_height_envelope(0,0);
     psVar11 = g_sweep_velocity;
   }
@@ -1230,17 +1233,17 @@ void sweep_apply_collision()
     /* This branch used to call through a function pointer read via generic offset arithmetic on
        DAT_002048bc (`*(void**))`... */
     {
-      codeval *_cb = (codeval *)0;
-      if (DAT_002048bc == (char *)&DAT_00204980) _cb = (codeval *)DAT_00204988;
-      else if (DAT_002048bc == (char *)&DAT_00204990) _cb = (codeval *)DAT_00204998;
-      else if (DAT_002048bc == (char *)&DAT_002049a0) _cb = (codeval *)DAT_002049a8;
-      else if (DAT_002048bc == (char *)&DAT_002049b0) _cb = (codeval *)DAT_002049b8;
+      int (*_cb)(ushort *) = (int (*)(ushort *))0;
+      if (DAT_002048bc == (char *)&DAT_00204980) _cb = DAT_00204988;
+      else if (DAT_002048bc == (char *)&DAT_00204990) _cb = DAT_00204998;
+      else if (DAT_002048bc == (char *)&DAT_002049a0) _cb = DAT_002049a8;
+      else if (DAT_002048bc == (char *)&DAT_002049b0) _cb = DAT_002049b8;
       if (getenv("UW_DEBUG_JUMP"))
         fprintf(stderr, "[apply-collision] cond1(local_14&callback_mask==0)=%d callback_mask=0x%x cb=%p\n",
                 (int)((local_14[0] & *(ushort *)(DAT_002048bc + 2)) == 0), (unsigned)*(ushort *)(DAT_002048bc + 2),
                 (void *)_cb);
       if (((local_14[0] & *(ushort *)(DAT_002048bc + 2)) == 0) ||
-         (_cb == (codeval *)0) || (iVar2 = (*_cb)(local_14), iVar2 == 0)) {
+         (_cb == (int (*)(ushort *))0) || (iVar2 = (*_cb)(local_14), iVar2 == 0)) {
       // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
       // slide the move along it (sweep_slide_along_wall) instead of stopping dead.
       /* The original mask includes raised faces (0x100), not just rock and object walls (0x600). A
@@ -1510,7 +1513,7 @@ void movement_tick(int elapsed, int tick_flags, int skip_npc_tick)
 {
   short sVar1;
   uint uVar2;
-  char *iVar3;
+  uint iVar3;
   undefined4 uVar4;
   ushort uVar5;
   undefined4 unaff_r4;
@@ -1578,7 +1581,7 @@ void movement_tick(int elapsed, int tick_flags, int skip_npc_tick)
       }
       else {
         uVar6 = DAT_0023bf60 != '\0';
-        iVar3 = DAT_00086df8;
+        /* (was `iVar3 = DAT_00086df8;` -- always overwritten just below) */
         if ((bool)uVar6) {
           iVar3 = 0x48;
         }
@@ -1700,7 +1703,7 @@ void init_collision_response_profiles()
   DAT_002049a4 = 0;
   DAT_002049a6 = 0;
   DAT_002049a0 = 0;
-  DAT_002049a8 = &collision_response_mobile_object;
+  DAT_002049a8 = collision_response_mobile_object;
   DAT_002049b2 = 0x1728;
   DAT_002049b4 = 0x10a8;
   DAT_002049b6 = 0;
@@ -2053,7 +2056,8 @@ void resolve_wall_slide_corner()
   byte bVar4;
   int extraout_r1;
   short sVar5;
-  char *iVar6;
+  int iVar6;
+  char *rec;
   int iVar7;
   uint uVar8;
   int iVar9;
@@ -2083,19 +2087,19 @@ void resolve_wall_slide_corner()
   iVar3 = (int)sVar5;
   if (iVar3 == 0) {
     *(undefined1 *)(DAT_00202c6c + 0x12) = 9;
-    iVar6 = DAT_00202c6c;
+    rec = DAT_00202c6c;
     goto switchD_000514e0_default;
   }
   iVar6 = ordint_divmod(iVar3,(int)(char)iVar6).quot;
   iVar7 = ordint_divmod(iVar3,(int)(char)iVar7).quot;
   *(undefined *)(DAT_00202c6c + 0x12) = (&DAT_0008688c)[(int)(iVar6) * 3 + iVar7];
-  iVar6 = DAT_00202c6c;
+  rec = DAT_00202c6c;
   if (iVar3 != 1) goto switchD_000514e0_default;
   bVar2 = *(byte *)(DAT_00202c6c + 0x12);
   uVar8 = (uint)bVar2;
   uw_ord2005_rem_115 = ((int)(uVar8)) % (2);
   if ((uw_ord2005_rem_115 == 0) || (DAT_00202c14 == 0)) goto switchD_000514e0_default;
-  switch((uint)(*(byte *)(iVar6 + 7) >> 5) - (1 - uVar8 & 0xff) & 7) {
+  switch((uint)(*(byte *)(rec + 7) >> 5) - (1 - uVar8 & 0xff) & 7) {
   case 0:
     break;
   case 1:
@@ -2106,15 +2110,15 @@ void resolve_wall_slide_corner()
 LAB_00051524:
     cVar1 = '\x01';
 LAB_000515d8:
-    *(byte *)(iVar6 + 0x12) = bVar2 + cVar1 & 7;
-    iVar6 = DAT_00202c6c;
+    *(byte *)(rec + 0x12) = bVar2 + cVar1 & 7;
+    rec = DAT_00202c6c;
     goto switchD_000514e0_default;
   case 4:
     goto LAB_0005152c;
   case 5:
 LAB_0005152c:
     uVar8 = (int)(uVar8 - 1) >> 1 & 0xff;
-    *(byte *)(iVar6 + 0x12) = bVar2 - 1;
+    *(byte *)(rec + 0x12) = bVar2 - 1;
     bVar2 = DAT_00202bf9;
     bVar4 = DAT_00202bfa;
     if (uVar8 != 0) {
@@ -2140,10 +2144,10 @@ LAB_0005152c:
     if (bVar2 < bVar4) {
       *(byte *)(DAT_00202c6c + 0x12) = *(char *)(DAT_00202c6c + 0x12) + 2U & 7;
     }
-    iVar6 = DAT_00202c6c;
+    rec = DAT_00202c6c;
     if (bVar2 == bVar4) {
       *(char *)(DAT_00202c6c + 0x12) = *(char *)(DAT_00202c6c + 0x12) + '\x01';
-      iVar6 = DAT_00202c6c;
+      rec = DAT_00202c6c;
     }
     goto switchD_000514e0_default;
   case 6:
@@ -2155,17 +2159,17 @@ LAB_000515d4:
   default:
     goto switchD_000514e0_default;
   }
-  *(undefined1 *)(iVar6 + 0x12) = 9;
-  iVar6 = DAT_00202c6c;
+  *(undefined1 *)(rec + 0x12) = 9;
+  rec = DAT_00202c6c;
 switchD_000514e0_default:
   iVar7 = (int)local_28;
   if (iVar7 == 1 || iVar7 == 2) {
     iVar9 = ordint_divmod(iVar7,(int)(char)iVar9).quot;
     iVar7 = ordint_divmod(iVar7,(int)local_25).quot;
-    *(undefined *)(iVar6 + 0x13) = (&DAT_0008688c)[iVar9 * -3 - iVar7];
+    *(undefined *)(rec + 0x13) = (&DAT_0008688c)[iVar9 * -3 - iVar7];
   }
   else {
-    *(undefined1 *)(iVar6 + 0x13) = 9;
+    *(undefined1 *)(rec + 0x13) = 9;
   }
 }
 
@@ -2246,7 +2250,7 @@ uint sweep_collision_flags()
 // PHYSICS: floor step -- if the height change is within the step limit (byte 0x27), OR the
       // tile is a walkable auto-stick floor (DAT_002049d4 & 4) and no vertical motion is active,
       // snap straight to it instead of falling.
-      uVar3 = iVar4 - iVar6 >> 0x1f;
+      uVar3 = (iVar4 - iVar6) >> 0x1f;
       if (getenv("UW_DEBUG_JUMP"))
         fprintf(stderr, "[jump-collision] foot_z=%d floor_z=%d diff=%d step_limit=%d fallflag(0x10)=%d vvel(0xa)=%d\n",
                 iVar4, iVar6, iVar4 - iVar6, (int)(uint)*(byte *)(DAT_00204874 + 0x27),
@@ -2413,8 +2417,9 @@ uint collision_flags_to_locomotion_code(short collision_mask)
 
 // was LAB_0002bbe4 -- the "mobile object" collision-response callback (slot 2, DAT_002049a8), used
 // by mobile_object_tick for generic mobile/projectile objects.
-int collision_response_mobile_object()
+int collision_response_mobile_object(ushort *collision_flags)
 {
+  (void)collision_flags;
   return 0;
 }
 

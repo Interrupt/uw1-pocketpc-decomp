@@ -31,8 +31,8 @@ static char DAT_00085920_backing[20] = "\\CRIT\\CR00PAGE.N00";
 char s__DATA__00085970[] = "\\DATA\\";
 static char s__DATA_pals_dat_00085978[] = "\\DATA\\pals.dat";
 static undefined4 DAT_00202514;
-static int DAT_00202720_backing[128];
-static int *DAT_00202720 = DAT_00202720_backing;
+static void *DAT_00202720_backing[128];  /* real pointers: were int, truncating malloc results */
+static void **DAT_00202720 = DAT_00202720_backing;
 /* Sizing-audit pass: `read_file_handle(DAT_00202514,&DAT_00202724,1)`
    -- pure 1-byte scalar (`(uint)DAT_00202724<<5`), never indexed.
    Down from 8192. */
@@ -57,7 +57,7 @@ static char s_doors_00085a64[] = "doors";
    -- exactly 128 bytes, matching its own nibble*4-stride indexing.
    HARD exact. Down from 256. */
 undefined1 DAT_00202750_backing[128];
-static char *DAT_0023c3fc;
+static undefined4 *DAT_0023c3fc;  /* grtile registry: 0x11-byte records, first dword = identity key */
 static undefined4 *DAT_0023c404;
 /* Sizing pass: the "grows unboundedly" claim below was wrong from the moment it was written, not
    just stale -- register_interned_string (this family's ONLY writer) has an unconditional `if (1 <
@@ -153,10 +153,11 @@ int open_gr_resource_file(char *path, char flag)
   } while (iVar3 < 0x41);
   uVar1 = (uint)flag;
   if (uVar1 == 3) {
-    iVar3 = -(int)path;
+    pcVar4 = local_114;
     do {
       cVar2 = *path;
-      path[(int)(local_114 + iVar3)] = cVar2;
+      *pcVar4 = cVar2;
+      pcVar4 = pcVar4 + 1;
       path = path + 1;
     } while (cVar2 != '\0');
   }
@@ -278,7 +279,7 @@ void *resolve_flip_grtile_slot(int slot)
 
 // was FUN_00076a2c -- allocates a param_1 x param_2 raw pixel buffer (real heap pointer, tracked in
 // g_grtile_real_ptrs) and registers it into DAT_0023c3fc's 320-record identity-key table...
-int grtile_alloc_registered(uint width, uint height)
+uint grtile_alloc_registered(uint width, uint height)
 {
   /* uVar1 (the malloc'd buffer's real address) is deliberately ALSO packed byte-by-byte into the
      record below as an opaque 4-byte identity key, and *that* truncated key -- not the real
@@ -339,7 +340,7 @@ void *uw_alloc_grtile(uint width, uint height)
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00076b8c
-int capture_framebuffer_rect_to_grtile(short *key, int left, int top, int right, short bottom)
+int capture_framebuffer_rect_to_grtile(uint key, int left, int top, int right, short bottom)
 {
   bool bVar1;
   int iVar2;
@@ -364,7 +365,7 @@ int capture_framebuffer_rect_to_grtile(short *key, int left, int top, int right,
   iVar12 = 0;
   puVar6 = DAT_0023c3fc;
   do {
-    if (key == (short *)*puVar6) {
+    if (key == *puVar6) {
       psVar_target = (short *)g_grtile_real_ptrs[iVar12];
       iVar12 = iVar12 * 0x11;
       *(char *)((char *)DAT_0023c3fc + iVar12 + 9) = (char)left;
@@ -444,7 +445,7 @@ int capture_framebuffer_rect_to_grtile(short *key, int left, int top, int right,
                     sVar10 = *(short *)((g_uw_framebuffer) + iVar12 * 2)
                     ;
                     iVar12 = iVar12 + 1;
-                    if ((g_blit_transparent_mode & sVar10 == 0) == 0) {
+                    if ((g_blit_transparent_mode & (sVar10 == 0)) == 0) {
                       *psVar_target = sVar10;
                     }
                     psVar_target = psVar_target + 1;
@@ -477,7 +478,7 @@ void init_grtile_registry()
   DAT_0023c3fc = ce_malloc(0x1540);
   if (DAT_0023c3fc != 0) {
     ce_memset(DAT_0023c3fc,0,0x1540);
-    DAT_0023c404 = DAT_0023c3fc + 0x11;
+    DAT_0023c404 = (undefined4 *)((char *)DAT_0023c3fc + 0x11);
   }
   return;
 }
@@ -488,9 +489,9 @@ void init_grtile_registry()
 // was FUN_00076b24 -- searches the grtile registry (DAT_0023c3fc) for a record whose key matches
 // param_1, and if found, zeroes that record's own key field (marking the slot free/invalid).
 // Returns 0xffffffff if no match was found before reaching the table's end (DAT_0023c404).
-int invalidate_grtile_by_key(int key)
+int invalidate_grtile_by_key(uint key)
 {
-  int *piVar1;
+  undefined4 *piVar1;
   
   piVar1 = DAT_0023c3fc;
   while( true ) {
@@ -498,7 +499,7 @@ int invalidate_grtile_by_key(int key)
       return 0xffffffff;
     }
     if (*piVar1 == key) break;
-    piVar1 = (int *)((char *)piVar1 + 0x11);
+    piVar1 = (undefined4 *)((char *)piVar1 + 0x11);
   }
   *(undefined1 *)(piVar1 + 2) = 0;
   return 0;
@@ -511,7 +512,7 @@ int invalidate_grtile_by_key(int key)
 // was FUN_00076e98 -- looks up a grtile registry record by key (param_1) and blits its
 // previously-captured backdrop pixels (tracked via g_grtile_real_ptrs, not the truncated key itself
 // -- see param_1's own comment) back into the real framebuffer at the record's stored rect...
-int restore_captured_grtile_backdrop(short *key)
+int restore_captured_grtile_backdrop(uint key)
 {
   int iVar1;
   short sVar2;
@@ -527,7 +528,7 @@ int restore_captured_grtile_backdrop(short *key)
 
   iVar3 = 0;
   puVar4 = DAT_0023c3fc;
-  while (key != (short *)*puVar4) {
+  while (key != *puVar4) {
     iVar3 = iVar3 + 1;
     puVar4 = (undefined4 *)((char *)puVar4 + 0x11);
     if (0x13f < iVar3) {
@@ -554,7 +555,7 @@ int restore_captured_grtile_backdrop(short *key)
           sVar2 = *psVar_target;
           iVar7 = iVar7 + 1;
           psVar_target = psVar_target + 1;
-          if ((g_blit_transparent_mode & sVar2 == 0) == 0) {
+          if ((g_blit_transparent_mode & (sVar2 == 0)) == 0) {
             *(short *)((g_uw_framebuffer) + iVar6 * 2) = sVar2;
           }
           iVar6 = iVar6 + 1;
@@ -724,10 +725,10 @@ int register_interned_string(char *string, int page)
      iVar2 is already the byte-plane index (pre-multiplied by 4); the
      side table uses the un-multiplied slot index. */
   g_bfa2_real_ptrs[iVar2 / 4] = string;
-  (&DAT_0024bfa2)[iVar2] = (char)string;
-  (&DAT_0024bfa3)[iVar2] = (char)((uint)string >> 8);
-  (&DAT_0024bfa4)[iVar2] = (char)((uint)string >> 0x10);
-  (&DAT_0024bfa5)[iVar2] = (char)((uint)string >> 0x18);
+  (&DAT_0024bfa2)[iVar2] = (char)(uintptr_t)string;
+  (&DAT_0024bfa3)[iVar2] = (char)((uintptr_t)string >> 8);
+  (&DAT_0024bfa4)[iVar2] = (char)((uintptr_t)string >> 0x10);
+  (&DAT_0024bfa5)[iVar2] = (char)((uintptr_t)string >> 0x18);
   if (getenv("UW_DEBUG_STRING_CACHE")) {
     static int hwm_slot = -1;
     int slot = sVar5 * 0x201 + (int)(short)uVar3;
@@ -773,10 +774,10 @@ uint overwrite_interned_string(char *string, uint message_id)
     /* Real pointer tracked separately -- see g_bfa2_real_ptrs's comment
        and register_interned_string's identical write above. */
     g_bfa2_real_ptrs[iVar1 / 4] = string;
-    (&DAT_0024bfa2)[iVar1] = (char)string;
-    (&DAT_0024bfa3)[iVar1] = (char)((uint)string >> 8);
-    (&DAT_0024bfa4)[iVar1] = (char)((uint)string >> 0x10);
-    (&DAT_0024bfa5)[iVar1] = (char)((uint)string >> 0x18);
+    (&DAT_0024bfa2)[iVar1] = (char)(uintptr_t)string;
+    (&DAT_0024bfa3)[iVar1] = (char)((uintptr_t)string >> 8);
+    (&DAT_0024bfa4)[iVar1] = (char)((uintptr_t)string >> 0x10);
+    (&DAT_0024bfa5)[iVar1] = (char)((uintptr_t)string >> 0x18);
   }
   return message_id;
 }
@@ -1561,12 +1562,11 @@ int load_gr_format3_extra_table()
 
   iVar1 = read_file_handle(DAT_00202514,&DAT_00202724,1);
   if (iVar1 == 1) {
-    if (*DAT_00202720 == 0) {
+    if (*DAT_00202720 == (void *)0) {
       seek_file_handle(DAT_00202514,(uint)DAT_00202724 << 5,1);
     }
     else {
-      iVar1 = ce_malloc((uint)DAT_00202724 << 5);
-      *DAT_00202720 = iVar1;
+      *DAT_00202720 = ce_malloc((uint)DAT_00202724 << 5);
       iVar1 = read_file_handle(DAT_00202514,*DAT_00202720,(uint)DAT_00202724 << 5);
       if (iVar1 != (uint)DAT_00202724 * 0x20) goto LAB_000412d8;
     }
@@ -1643,7 +1643,7 @@ uint read_gr_resource_record(uint index, void *buffer)
 // was FUN_00041708 -- load_gr_resource_entries's post-process callback for the flasks/compass/etc.
 // resource group (passed as its param_5 at uw.c's "hud_icon_gr_bump_alloc_entry"-paired call site):
 // allocates a fresh grtile buffer sized from the entry's own width/height header bytes...
-bool register_grtile_entry(void *buffer, int unused, short index)
+int register_grtile_entry(void *buffer, uint unused, int index)
 {
   void *pvVar1;
 
@@ -1661,7 +1661,7 @@ bool register_grtile_entry(void *buffer, int unused, short index)
 
 // was FUN_00041770 -- register_grtile_entry's "slot may already be populated" sibling, used for
 // reload paths (e.g. the save/load menu's level reload)...
-int reregister_grtile_entry(void *buffer, int unused, short index)
+int reregister_grtile_entry(void *buffer, uint unused, int index)
 {
   /* See register_grtile_entry -- same buffer/g_grtile_registry truncation fix. */
   void *pvVar1 = uw_alloc_grtile(*(byte *)((char *)buffer + 1),
@@ -1684,7 +1684,7 @@ int load_gr_resource_group(char *path)
   undefined4 uVar1;
   short _dbg_before;
   _dbg_before = DAT_00202744;
-  uVar1 = load_gr_resource_entries(path,0,0xffffffff,&gr_resource_bump_alloc_entry,&register_gr_group_entry);
+  uVar1 = load_gr_resource_entries(path,0,-1,&gr_resource_bump_alloc_entry,&register_gr_group_entry);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
   if (getenv("UW_DEBUG_DUMP_GR")) {
     fprintf(stderr, "[dumpgr] load_gr_resource_group(\"%s\") frames [%d, %d) count=%d ok=%d\n",
@@ -1700,7 +1700,7 @@ int load_gr_resource_group(char *path)
 // -- OBJECTS.GR occupies the absolute [0, entry_count) frame range (frame N == object type N)...
 int load_objects_gr(char *path)
 {
-  return load_gr_resource_entries(path,0,0xffffffff,&gr_resource_bump_alloc_entry,&register_objects_gr_entry);
+  return load_gr_resource_entries(path,0,-1,&gr_resource_bump_alloc_entry,&register_objects_gr_entry);
 }
 
 
@@ -1724,7 +1724,7 @@ int load_hud_icon_gr(char *path)
   undefined4 uVar1;
   short _dbg_before;
   _dbg_before = DAT_00202744;
-  uVar1 = load_gr_resource_entries(path,0,0xffffffff,&hud_icon_gr_bump_alloc_entry,register_grtile_entry);
+  uVar1 = load_gr_resource_entries(path,0,-1,&hud_icon_gr_bump_alloc_entry,register_grtile_entry);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
   if (getenv("UW_DEBUG_DUMP_GR")) {
     fprintf(stderr, "[dumpgr] load_hud_icon_gr(\"%s\") frames [%d, %d) count=%d ok=%d\n",
@@ -1791,7 +1791,7 @@ byte *load_string_resource_large(char *text)
 
 
 // was FUN_000417b4
-uint load_gr_resource_entries(char *path, int first_entry, short count, void *(*allocator)(), int (*post_process)())
+uint load_gr_resource_entries(char *path, int first_entry, short count, gr_alloc_fn *allocator, gr_entry_fn *post_process)
 {
   int iVar1;
   int iVar2;
@@ -1847,7 +1847,7 @@ uint load_gr_resource_entries(char *path, int first_entry, short count, void *(*
              entry's raw bytes to a BMP under debug/gr/ when
              UW_DEBUG_DUMP_GR is set. No-op otherwise. */
           uw_debug_dump_gr_entry(path,iVar5,(unsigned char *)pvVar_buf,iVar4);
-          if (post_process != (code *)0x0) {
+          if (post_process != (gr_entry_fn *)0x0) {
             uVar3 = (*post_process)(pvVar_buf,iVar4,iVar5);
             uVar6 = uVar6 & uVar3;
           }
@@ -2073,7 +2073,7 @@ void *decode_gr_entry_bump_alloc_entry(unsigned int byte_count)
   return ce_malloc(byte_count);
 }
 /* Not decompiled -- decode_gr_entry_to_buffer's post-process callback. */
-unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx)
+int uw_copy_gr_entry_to_dest(void *buf, uint size, int idx)
 {
   (void)idx;
   if (DAT_00202510 != 0) {

@@ -2,6 +2,7 @@
    walk/collection, per-tile wall/floor/object emission, and the final visible-tile-list
    rasterization pass. */
 #include "headers/tmap.h"
+#include <math.h>
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -318,8 +319,8 @@ void render_visible_tile_list()
           raster_triangle(0x140,g_uw_framebuffer,local_60_arr,piVar14[0x1e],
                        piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],
                        ((unsigned)local_94 < UW_MAX_VIS_TILES)
-                         ? (intptr_t)g_tile_texptr_out[local_94]
-                         : (intptr_t)piVar14[0x1a],
+                         ? (char *)g_tile_texptr_out[local_94]
+                         : (char *)(intptr_t)piVar14[0x1a],
                        local_70_rect);
           { char _facetag[32];
             snprintf(_facetag, sizeof(_facetag), "rec%03d_tri%d_tex0x%x", local_94, iVar16, piVar14[0x1e]);
@@ -382,7 +383,7 @@ void walk_visible_tiles()
   undefined1 *puVar9;
   
   DAT_0023b818 = 0xe0;
-  DAT_0023b4f0 = DAT_0023b4a0 * 4 + UW_B50_LIT(0x86b60);
+  DAT_0023b4f0 = (char *)(DAT_0023b4a0 * 4 + UW_B50_LIT(0x86b60));
   iVar4 = DAT_0023b4a0 * 6;
   sVar2 = *(short *)(&DAT_00086a00 + iVar4);
   iVar7 = (int)sVar2;
@@ -392,7 +393,7 @@ void walk_visible_tiles()
   DAT_0023b814 = tilemap_lookup(0,0);
   DAT_0023b808 = tilemap_lookup(0x3f,0x3f);
   DAT_0023b83c = 0;
-  uVar6 = (uint)(short)((int)pbVar8 - (int)DAT_0023b814 >> 2);
+  uVar6 = (uint)(short)(((byte *)pbVar8 - (byte *)DAT_0023b814) >> 2);
   DAT_0023b838 = 0;
   /* Also clear the arena's own count fields (offset 0 = vertex count, offset 4 = record count).
      process_visible_tile_cell normally keeps them in step with DAT_0023b838 / DAT_0023b83c as it
@@ -402,7 +403,7 @@ void walk_visible_tiles()
   if (0x2000 < (int)uVar6) {
     uVar6 = uVar6 - 0x4000;
   }
-  update_wall_partition_phase(0xfffffff6);
+  update_wall_partition_phase(-10);
   DAT_0023b4e8 = g_visibility_ring_depth;
   if (-1 < g_visibility_ring_depth) {
     do {
@@ -512,7 +513,7 @@ void process_visible_tile_cell(byte *cell)
   int iVar34;
   byte *pbVar35;
   int iVar36;
-  char *pcVar37;
+  const char *pcVar37;
   int iVar38;
   bool bVar39;
   byte local_84;
@@ -620,7 +621,7 @@ LAB_0005e7e0:
   DAT_0023b818 = 0xe0;
   iVar16 = DAT_00086e6c;
   if (bVar39) {
-    (*DAT_0023b4f4)(auStack_50,DAT_0023b4e0,g_current_tile->floor_tex);
+    ((void (*)(void *, int, int))DAT_0023b4f4)(auStack_50,DAT_0023b4e0,g_current_tile->floor_tex);
     uVar28 = g_current_tile->floor_tex;
     if ((short)(ushort)DAT_0023b4e0 < DAT_00086b24) {
       DAT_0023b81c = 2;
@@ -810,7 +811,7 @@ LAB_0005e7e0:
     }
   }
   if (*(short *)(iVar16 + 0xe) < 0x3f5) {
-    (*DAT_0023b80c)(auStack_50,DAT_0023b4e0,9);
+    ((void (*)(void *, int, int))DAT_0023b80c)(auStack_50,DAT_0023b4e0,9);
     if ((short)(ushort)DAT_0023b4e0 < DAT_00086b24) {
       DAT_0023b81c = 2;
       if ((DAT_0023b4e0 != 0) || (DAT_00087938 != 'd')) {
@@ -992,7 +993,7 @@ LAB_0005e7e0:
   }
   DAT_0023b818 = 0;
   local_54 = 0;
-  puVar23 = DAT_0023b4ec;
+  puVar23 = (ushort *)DAT_0023b4ec;
   uVar27 = 0x40;
   local_83 = DAT_0023b4e0;
   bVar25 = DAT_0023b4e0;
@@ -1033,7 +1034,7 @@ LAB_0005e7e0:
       /* UW1 tile word2 (bytes 2-3) bits 0-5 = wall texture index; word1's high byte (byte 1) holds
          the floor texture / height and was almost always 0 here, so every wall drew arena slot 0
          (plain grey) instead of the level's real -- often mossy -- wall texture. */
-      (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[2] & 0x3f);
+      ((void (*)(void *, int, int, int))DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[2] & 0x3f);
       uVar26 = (ushort)DAT_0023b4e0;
       bVar25 = (byte)g_current_tile->wall_tex;
       if ((short)uVar26 < DAT_00086b24) {
@@ -1047,17 +1048,10 @@ LAB_0005e7e0:
       }
       else {
         bVar39 = uVar26 != 0;
-        psVar29 = (short *)0x0;
-        if (bVar39) {
-          psVar29 = &DAT_00086b30;
-        }
         DAT_0023b81c = 0;
         bVar25 = bVar25 + 0x3a;
         if (bVar39) {
-          psVar29 = (short *)(int)*psVar29;
-        }
-        if (bVar39) {
-          DAT_0023b81c = (short)psVar29;
+          DAT_0023b81c = DAT_00086b30;  /* was routed through a bogus `short *psVar29` pointer variable */
         }
         sVar31 = (ushort)bVar15 << 6;
         DAT_0023b4d8 = 0x100;
@@ -1261,7 +1255,7 @@ LAB_0005e7e0:
       (&DAT_000acde7)[iVar18] = 0;
       if (!g_uw_hide_walls) DAT_000a85d4 = iVar32 + 1;
       local_83 = DAT_0023b4e0;
-      puVar23 = DAT_0023b4ec;
+      puVar23 = (ushort *)DAT_0023b4ec;
       iVar16 = DAT_00086e6c;
       bVar25 = DAT_0023b4e0;
       if (!g_uw_hide_walls) DAT_0023b83c = DAT_000a85d4;
@@ -1278,7 +1272,7 @@ LAB_0005e7e0:
         (int)*(short *)(iVar16 + 0x12)) * (int)(char)(&DAT_00086bcd)[iVar33] < 0) {
       /* diagonal-wall face: same wall-texture-index byte fix as the
          orthogonal branch above (word2 byte 2 bits 0-5, not byte 1). */
-      (*DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[2] & 0x3f);
+      ((void (*)(void *, int, int, int))DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[2] & 0x3f);
       uVar27 = (ushort)DAT_0023b4e0;
       bVar25 = (byte)g_current_tile->wall_tex;
       if ((short)uVar27 < DAT_00086b24) {
@@ -1292,18 +1286,11 @@ LAB_0005e7e0:
       }
       else {
         bVar39 = uVar27 != 0;
-        psVar29 = (short *)0x0;
-        if (bVar39) {
-          psVar29 = &DAT_00086b30;
-        }
         DAT_0023b81c = 0;
-        if (bVar39) {
-          psVar29 = (short *)(int)*psVar29;
-        }
         sVar31 = (ushort)bVar15 << 6;
         bVar25 = bVar25 + 0x3a;
         if (bVar39) {
-          DAT_0023b81c = (short)psVar29;
+          DAT_0023b81c = DAT_00086b30;  /* was routed through a bogus `short *psVar29` pointer variable */
         }
         DAT_0023b4d8 = 0x100;
         DAT_0023b824 = 0x10;
@@ -1479,7 +1466,7 @@ LAB_0005e7e0:
       (&DAT_000acde5)[iVar34] = 0;
       (&DAT_000acde6)[iVar34] = 0;
       (&DAT_000acde7)[iVar34] = 0;
-      puVar23 = DAT_0023b4ec;
+      puVar23 = (ushort *)DAT_0023b4ec;
     }
   }
   /* emit_tile_features renders this tile's animated features and the objects sitting on it (doors,
@@ -1634,8 +1621,9 @@ void init_feature_sort_order(short count)
 // was FUN_00065210 -- computes a rotated-quad corner's screen X/Y offset (param_1[1]/[2]) from a
 // source feature record's facing byte (param_2[3]) via the DAT_00086d68/DAT_00086d69
 // per-view-facing corner-index remap table...
-void resolve_billboard_corner_offset(byte *corner, byte *feature)
+void resolve_billboard_corner_offset(byte *corner, void *feature_ptr)
 {
+  byte *feature = (byte *)feature_ptr;
   *(undefined *)(corner + 1) =
        (&DAT_00086d68)[((uint)(*(byte *)(feature + 3) >> 5) + DAT_0023b4a0 * 8) * 2] +
        (&DAT_00086d68)[((*(byte *)(feature + 3) >> 2 & 7) + ((int)DAT_0023b4a0 + 1U & 3) * 8) * 2];
@@ -1844,7 +1832,7 @@ void emit_tile_features(ushort *tile)
                                       ((int)g_current_view->view_x & 0xffU)) >> 5);
             iVar16 = (int)(short)((int)((int)DAT_0023b920 -
                                        ((int)g_current_view->view_y & 0xffU)) >> 5);
-            iVar13 = (int)(short)((int)DAT_0023b91c - (int)g_current_view->view_elevation >> 5);
+            iVar13 = (int)(short)(((int)DAT_0023b91c - (int)g_current_view->view_elevation) >> 5);
             if (((iVar7 * iVar7 * 0x10000 >> 0x10) + (iVar16 * iVar16 * 0x10000 >> 0x10) +
                 (iVar13 * iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10 < 1) {
               sVar3 = 0;
@@ -2072,9 +2060,9 @@ void emit_tile_objects(ushort *tile)
   }
   if (DAT_0023b830 != 0) {
     *(short *)((intptr_t)g_pick_tile_off_backing + (uint)DAT_0023b830 * 2 + 2) =
-         DAT_0023b8c4 + (short)(DAT_0023b4ec - DAT_0023b814 >> 2);
+         DAT_0023b8c4 + (short)((DAT_0023b4ec - DAT_0023b814) >> 2);
     uVar15 = encode_object_slot_index(tile);
-    puVar12 = DAT_00110fc0;
+    puVar12 = (ushort *)DAT_00110fc0;
     *(undefined2 *)(&DAT_0023b676 + (uint)DAT_0023b830 * 2) = uVar15;
     *puVar12 = 0xae;
     DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -2388,7 +2376,7 @@ LAB_emit_mesh_sprite_quad:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_0023b91c;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 0x7f8;
+    *DAT_00110fc0 = -8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     decode_tile_object_billboard_texture(uVar27,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     /* DAT_000d9ed8/DAT_000d9930[angle] = sin/cos(angle degrees) (see build_trig_tables). Normally
@@ -2601,7 +2589,7 @@ LAB_00061d34:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_0023b91c;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 0x7f8;
+    *DAT_00110fc0 = -8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     uVar29 = *(byte *)((char *)tile + 0x15) & 0x3f;
     { const char *_fs = getenv("UW_FORCE_CRITTER_STATE"); if (_fs) uVar29 = (uint)atoi(_fs); }

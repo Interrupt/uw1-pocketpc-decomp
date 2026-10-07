@@ -67,7 +67,7 @@ extern undefined1 DAT_0023c460_backing[128];
 #define DAT_0023c460 DAT_0023c460_backing[0]
 
 
-void drop_monster_loot(byte *monster, ushort gold_nibble, ushort item_nibble);
+void drop_monster_loot(void *monster, ushort gold_nibble, ushort item_nibble);
 int tile_pair_los_blocked(byte tile_a_x, byte tile_a_y, byte tile_b_x, byte tile_b_y, byte tile_c_x, byte tile_c_y, ushort block_mask, ushort wall_mask, byte span, byte *out_a, byte *out_b);
 int creature_find_path_to_tile(int start_x, char start_y, byte size_class, char goal_x, char goal_y, char goal_sub_x, byte goal_sub_y);
 void reconstruct_path_from_bfs(byte step_count, byte goal_x, byte goal_y);
@@ -85,14 +85,14 @@ int compute_movement_heading(int dx, int dy);
 void npc_set_walk_target(byte goal, uint goal_target, byte attitude);
 void npc_walk_toward_tile(uint goal, char goal_target, byte attitude);
 void set_npc_altitude_state(byte tile_x, byte tile_y);
-void npc_arrival_interaction(ushort *npc);
+void npc_arrival_interaction(void *npc);
 void npc_idle_behavior_tick();
 void npc_wander_return_home_tick();
 void npc_notice_and_idle_tick();
 void npc_wander_reposition(uint saved_a, uint saved_b, uint saved_c);
 void npc_react_to_nearby_player();
 void npc_wander_return_home_exact_tick();
-int detect_npc_wander_proximity(char *out_near, char *out_far);
+int detect_npc_wander_proximity(void *out_near, void *out_far);
 int compute_vertical_aim_offset(short has_target, int target);
 void setup_npc_ai_tick_state(ushort *npc);
 void npc_ai_default_tick();
@@ -102,8 +102,8 @@ int compute_pathfind_search_radius();
 void npc_set_goal(byte goal, uint goal_target);
 void npc_clear_special_goal();
 int initiate_npc_death(char *npc);
-int handle_monster_death(char *npc);
-void npc_set_goal_for_object(char *npc, int goal, int goal_target);
+int handle_monster_death(void *npc);
+void npc_set_goal_for_object(void *npc, int goal, int goal_target);
 void randomize_active_npc_flags();
 int resolve_tile_entry_offset(char tile_type, byte *out_x, byte *out_y);
 void npc_movement_tick(ushort *npc_object, char *scratch);
@@ -116,17 +116,17 @@ void save_last_attacker_record();
 void clear_last_attacker_record();
 int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc);
 void emit_noise_alert(ushort *source, byte noise_type);
-int resolve_unique_npc_special_behavior(char *npc, int event_mode);
+int resolve_unique_npc_special_behavior(void *npc, int event_mode);
 int load_critter_association_tables(int file_handle);
 void flush_pending_critter_resource_slots();
 void build_creature_look_text(ushort *creature, char *out_text);
-void spawn_npc_thrown_weapon(char *attacker, short launch_offset, short launch_flags);
-int roll_object_destroy_chance(short base_chance, char *object);
-void drop_creature_inventory_on_death(byte *creature);
-void spawn_creature_treasure_drop(char *creature);
-void spawn_creature_special_item_drop(char *creature);
-void spawn_creature_equipment_drop(char *creature);
-void spawn_creature_misc_item_drop(char *creature);
+void spawn_npc_thrown_weapon(void *attacker, short launch_offset, short launch_flags);
+int roll_object_destroy_chance(short base_chance, void *object);
+void drop_creature_inventory_on_death(void *creature);
+void spawn_creature_treasure_drop(void *creature);
+void spawn_creature_special_item_drop(void *creature);
+void spawn_creature_equipment_drop(void *creature);
+void spawn_creature_misc_item_drop(void *creature);
 void spawn_creature_death_loot(ushort *creature);
 int activate_area_hazard_object(ushort *hazard, uint tile_x, int tile_y, int damage);
 int mobile_object_tick(); // was FUN_0002b47c
@@ -134,7 +134,7 @@ int npc_ai_tick(); // was FUN_00032d38
 int object_tick_is_due(short period, int phase); // was FUN_0003495c
 void tick_mobile_objects(char elapsed); // was FUN_000349bc
 void build_object_placement_snapshot(ushort *object, byte *snapshot); // was FUN_00054a00
-int sync_object_tile_position(ushort *object, ushort *position); // was FUN_00054f6c
+int sync_object_tile_position(ushort *object, void *position); // was FUN_00054f6c
 ushort *settle_mobile_to_immobile(ushort *object); // was FUN_0005596c
 
 #endif

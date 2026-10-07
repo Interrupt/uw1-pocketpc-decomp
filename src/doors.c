@@ -22,8 +22,9 @@ void *alloc_door_frame_buffer(unsigned int byte_count)
 
 
 // was FUN_0007c580
-void close_door_object(char *actor, ushort *door)
+void close_door_object(void *actor_ptr, ushort *door)
 {
+  char *actor = (char *)actor_ptr;
   ushort quality_word;
   ushort state;
   byte low_byte;
@@ -71,8 +72,9 @@ void close_door_object(char *actor, ushort *door)
 // was FUN_0007c708 -- confirmed live as the real "open door" builtin (see
 // the door-quality analysis a few thousand lines up, near DAT_0018957a):
 // a single guarded (quality & 0xf) + 8 step, closed(0-7) -> open(8-15).
-void open_door_object(ushort *door)
+void open_door_object(void *door_ptr)
 {
+  ushort *door = (ushort *)door_ptr;
   ushort quality_word;
   undefined4 sound_id;
 
@@ -107,13 +109,14 @@ void open_door_object(ushort *door)
 // was FUN_0007c814 NOTE: for the item_id==0x1cf special-object branch inside
 // close_door_object/open_door_object, this dispatch is provably always a no-op: closed(<8) routes
 // to close_door_object, whose 0x1cf branch only proceeds when quality is ALREADY >=8...
-void toggle_door_object(char *actor, byte *door)
+void toggle_door_object(char *actor, void *door_ptr)
 {
+  byte *door = (byte *)door_ptr;
   if ((*door & 0xf) < 8) {
-    close_door_object(actor, door);
+    close_door_object(actor, (ushort *)door);
   }
   else {
-    open_door_object(door);
+    open_door_object((ushort *)door);
   }
 }
 

@@ -542,9 +542,9 @@ int sprite_list_alloc_entry(int resource_id)
   uint uVar5;
   bool bVar6;
   
-  puVar4 = DAT_0023c3e8;
+  puVar4 = (ushort *)DAT_0023c3e8;
   while( true ) {
-    if (DAT_0023c3ec <= puVar4) {
+    if ((ushort *)DAT_0023c3ec <= puVar4) {
       return -1;
     }
     if ((DAT_00087638 & *puVar4) == 0) break;
@@ -572,7 +572,7 @@ int sprite_list_alloc_entry(int resource_id)
   *(undefined1 *)((char *)puVar4 + 0x13) = 0;
   *(undefined1 *)(puVar4 + 5) = 0;
   *(undefined1 *)((char *)puVar4 + 0xb) = 0;
-  sVar3 = ordint_divmod(0x14,(int)puVar4 - (int)DAT_0023c3e8).quot;
+  sVar3 = ordint_divmod(0x14,(int)((char *)puVar4 - DAT_0023c3e8)).quot;
   return (int)sVar3;
 }
 
@@ -589,9 +589,9 @@ int sprite_list_alloc_raw_entry(int resource_id, int alloc_arg, int pixel_count)
   ushort *puVar5;
   bool bVar6;
   
-  puVar5 = DAT_0023c3e8;
+  puVar5 = (ushort *)DAT_0023c3e8;
   while( true ) {
-    if (DAT_0023c3ec <= puVar5) {
+    if ((ushort *)DAT_0023c3ec <= puVar5) {
       return -1;
     }
     if ((DAT_00087638 & *puVar5) == 0) break;
@@ -621,7 +621,7 @@ int sprite_list_alloc_raw_entry(int resource_id, int alloc_arg, int pixel_count)
   *(char *)((char *)puVar5 + 0x13) = (char)((uint)iVar3 >> 0x18);
   *(undefined1 *)(puVar5 + 5) = 0;
   *(undefined1 *)((char *)puVar5 + 0xb) = 0;
-  sVar2 = ordint_divmod(0x14,(int)puVar5 - (int)DAT_0023c3e8).quot;
+  sVar2 = ordint_divmod(0x14,(int)((char *)puVar5 - DAT_0023c3e8)).quot;
   return (int)sVar2;
 }
 

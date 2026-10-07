@@ -51,7 +51,7 @@ extern undefined1 DAT_00250730_backing[128];
 extern short DAT_00202080;
 extern byte * DAT_00202c6c;
 extern char * DAT_0023b82c;
-extern byte * g_scratch_object_ptr;
+extern ushort * g_scratch_object_ptr;
 extern undefined1 DAT_00202800_backing[256];
 /* Globals defined in uw.c but also used by functions that now live in
    objects.c (the object table) -- extern'd here so both translation
@@ -84,7 +84,7 @@ extern undefined1 DAT_00202c38_backing[1536];
 #define DAT_00202c38 DAT_00202c38_backing[0]
 
 
-int reset_burnt_out_item_state(int tile_link, char *object);
+int reset_burnt_out_item_state(char *tile_link, void *object);
 int apply_object_destruction_effect(ushort *object, ushort *attacker, uint damage_type_mask, int tile_x, short tile_y);
 int find_placement_via_tile_flood_fill(ushort *object, short tile_x, short tile_y, short *out_x, short *out_y, int strict);
 int clear_object_temp_flag_callback(ushort *object);
@@ -102,36 +102,36 @@ int class5_variant_effect_stub();
 void free_player_inventory_chain(char *link_field);
 uint calculate_object_weight(ushort *object);
 ushort *spawn_object_near_player();
-int place_object_in_world(uint tile_x, uint tile_y, int height, char *object, short radius, int skip_roll);
+int place_object_in_world(uint tile_x, uint tile_y, int height, void *object, short radius, int skip_roll);
 int find_object_placement(ushort *object, uint tile_x, uint tile_y, short height, short radius);
 int load_object_catalog_data();
 void *get_scanned_object_class_effect_ptr();
-int walk_object_tree(char *object, int (*callback)());
-int object_exceeds_size_threshold(ushort *object);
+int walk_object_tree(void *object, int (*callback)());
+int object_exceeds_size_threshold(void *object);
 int should_destroy_linked_object(int base_chance, ushort *link_field);
 void despawn_objects_outside_radius(int keep_rows, short max_destroyed);
 void *alloc_object_slot(int region);
-void free_object_slot(char *object);
-void object_list_insert_head(byte *link_field, char *object);
-void object_list_append_tail(byte *link_field, char *object);
-void object_list_unlink(byte *link_field, byte *object);
-ushort *discard_misplaced_object(char *tile_link, ushort *object, int skip_roll);
-void free_linked_object_recursive(char *link_field);
-void unlink_and_free_object(char *link_field, char *object);
-void *resolve_object_link(ushort *link_field);
-int encode_object_slot_index(char *object);
+void free_object_slot(void *object);
+void object_list_insert_head(void *link_field, void *object);
+void object_list_append_tail(void *link_field, void *object);
+void object_list_unlink(void *link_field, void *object);
+ushort *discard_misplaced_object(void *tile_link, ushort *object, int skip_roll);
+void free_linked_object_recursive(void *link_field);
+void unlink_and_free_object(void *link_field, void *object);
+void *resolve_object_link(void *link_field);
+int encode_object_slot_index(void *object);
 void *get_object_record_by_slot_index(short slot_index);
-ushort *find_object_by_encoded_slot_in_chain(ushort *link_field, int recurse, int slot);
-int object_ptr_in_arena(char *object);
+ushort *find_object_by_encoded_slot_in_chain(void *link_field, int recurse, int slot);
+int object_ptr_in_arena(void *object);
 void active_mobile_list_add(byte slot);
 void active_mobile_list_remove(char slot);
-ushort *find_object_in_chain(ushort **link_cursor, int recurse, int object_class, int subclass, short quality);
-int object_or_contents_has_type(ushort *object, ushort type_id);
+ushort *find_object_in_chain(void *link_cursor, int recurse, int object_class, int subclass, short quality);
+int object_or_contents_has_type(void *object, ushort type_id);
 ushort *find_object_in_world(int object_class, int subclass, short quality, short *out_x, short *out_y);
 ushort *reallocate_object_to_arena(ushort *object);
-void compute_object_placement_fields(byte *object, uint tile_x, uint tile_y);
-void randomize_settled_snapshot_position(char *snapshot);
-ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int force);
+void compute_object_placement_fields(void *object, uint tile_x, uint tile_y);
+void randomize_settled_snapshot_position(void *snapshot);
+ushort *settle_dropped_object(void *object, short tile_x, short tile_y, int force);
 void *spawn_new_object(uint object_type, int region);
 
 #endif

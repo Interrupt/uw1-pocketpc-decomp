@@ -58,7 +58,7 @@ int check_fine_line_of_sight(uint x, uint y, uint z, short sx, short sy, short s
     return noise_los_clear;
 }
 
-int build_object_display_name(char *buffer, ushort *object, int article, int mode)
+int build_object_display_name(char *buffer, void *object, int article, int mode)
 {
     TEST_ASSERT_EQUAL_PTR(noise_npc, object);
     TEST_ASSERT_EQUAL_INT(1, article);
@@ -94,5 +94,5 @@ void scan_area_for_matching_objects(char budget, byte excluded, int (*callback)(
     TEST_ASSERT_EQUAL_INT(15, width);
     TEST_ASSERT_EQUAL_INT(15, height);
     noise_scans++;
-    callback(21, 20, noise_npc);
+    ((int (*)(int, int, void *))callback)(21, 20, noise_npc);
 }

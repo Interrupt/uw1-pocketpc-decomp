@@ -59,7 +59,7 @@ def describe_plain(text, name):
 
 def nparams(p):
     p = p.strip()
-    return 0 if p in ('', 'void') else len([x for x in p.split(',') if x.strip()])
+    return 0 if p in ('', 'void') else len([x for x in p.split(',') if x.strip() and x.strip() != '...'])
 
 # audit state (written by tools/audit_call_args.py --mark) survives regeneration
 try: prev = {f['name']: f for f in json.load(open(root + '/ghidra-funcs.json'))['functions']}
@@ -85,7 +85,7 @@ for path in sorted(glob.glob(root + '/src/*.c')):
             fun = next((f for f, n in ATTACH.items() if n == m.group(1) and f not in seen), None)
         if fun in seen: fun = None
         out.append(dict(name=m.group(1), path=rel, line=i+1, original_name=fun, ghidra_origin=bool(fun),
-                        param_count=nparams(m.group(2)), description=describe(blk, fun, m.group(1)) if fun else describe_plain(blk, m.group(1))))
+                        param_count=nparams(m.group(2)), variadic=m.group(2).strip().endswith('...'), description=describe(blk, fun, m.group(1)) if fun else describe_plain(blk, m.group(1))))
         if fun: seen.add(fun)
 for f in out:
     for k in ('audited', 'audit_note', 'modernized'):

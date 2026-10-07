@@ -85,6 +85,7 @@ int character_generator_loop(char *tree_data, char *scratch_data, char *field_re
   char *uVar10;
   int iVar11;
   undefined4 extraout_r1;
+  undefined4 hi_word;
   undefined4 extraout_r1_00;
   undefined4 extraout_r1_01;
   int iVar12;
@@ -137,7 +138,7 @@ int character_generator_loop(char *tree_data, char *scratch_data, char *field_re
     draw_chargen_field_options((short *)pcVar_rec,0,0xff);
     screen_backup_restore();
     uVar15 = wait_for_chargen_field_input((short *)pcVar_rec);
-    uVar6 = CONCAT44((int)(uVar15 >> 0x20),DAT_00086df8);
+    uVar6 = CONCAT44((int)(uVar15 >> 0x20),(uint)(uintptr_t)DAT_00086df8);
     uVar9 = (uint)uVar15;
     uVar1 = (uint)(short)uVar15;
     if ((int)uVar1 < 0) {
@@ -179,7 +180,7 @@ LAB_00025468:
       case 1:
         sVar8 = 2;
         bVar3 = *(byte *)(DAT_00086df8 + 100);
-        uVar15 = (ulonglong)CONCAT14(bVar3,DAT_00086df8);
+        uVar15 = (ulonglong)CONCAT14(bVar3,(uint)(uintptr_t)DAT_00086df8);
         *(byte *)(DAT_00086df8 + 100) = (bVar2 ^ bVar3) & 1 ^ bVar3;
         break;
       case 2:
@@ -246,7 +247,7 @@ LAB_00025468:
         bitmap_blit_to_framebuffer((short)(iVar13 >> 1) + 0x10,(short)(iVar11 >> 1) + 0x2b,iVar14 + tree_data,bVar3,
                      bVar2,0,0,1);
         cursor_show_idle_tick();
-        uVar15 = CONCAT44(extraout_r1,DAT_00086df8);
+        uVar15 = CONCAT44(extraout_r1,(uint)(uintptr_t)DAT_00086df8);
         g_blit_transparent_mode = 0;
         sVar8 = 5;
         *(byte *)(DAT_00086df8 + 100) =
@@ -267,15 +268,15 @@ LAB_00025468:
         }
         draw_text_string(pcVar5,(short)(iVar12 >> 1) + 0x11,0xb);
         cursor_show_idle_tick();
-        uVar10 = extraout_r1_00;
+        hi_word = extraout_r1_00;
         if (*pcVar5 != '\0') {
           /* Regression-verification hook only (see bugfix/lowercase-text- universal): no other
              UW_DEBUG_* trace in this file surfaces the committed name-entry text... */
           DEBUG(TRACE, "[chargen] name field committed: \"%s\"", pcVar5);
           ce_strncpy(DAT_00086df8,pcVar5,0x1d);
-          uVar10 = extraout_r1_01;
+          hi_word = extraout_r1_01;
         }
-        uVar15 = CONCAT44(uVar10,DAT_00086df8);
+        uVar15 = CONCAT44(hi_word,(uint)(uintptr_t)DAT_00086df8);
         sVar8 = 7;
         *(undefined1 *)(DAT_00086df8 + 0x1d) = 0;
         break;
@@ -342,7 +343,9 @@ int run_character_generator()
      stayed `int` either way, truncating the pointer. */
   char *pcVar_palbuf;
   char *pcVar3;
-  char *iVar4;
+  int iVar4;
+  char *buf_a;
+  char *bg_buf;
   uint uVar5;
   char *pcVar6;
   uint uVar7;
@@ -354,12 +357,12 @@ int run_character_generator()
   reset_dialogue_speech_state();
   DAT_001005c4 = ce_malloc(0x10000);
   DAT_001005c8 = ce_malloc(0x10000);
-  iVar4 = DAT_001005c4;
+  buf_a = DAT_001005c4;
   uVar10 = 2;
   DAT_000fb858 = DAT_001005c4;
-  iVar2 = load_gr_resource_entries(s_chrbtns_00084ef8,0,0xffffffff,&chrbtns_bump_alloc_entry,&chrbtns_offset_table_builder);
+  iVar2 = load_gr_resource_entries(s_chrbtns_00084ef8,0,-1,&chrbtns_bump_alloc_entry,&chrbtns_offset_table_builder);
   if (iVar2 != 0) {
-    DAT_000fb858 = iVar4;
+    DAT_000fb858 = buf_a;
     ce_memset(acStack_128,0,0x104);
     pcVar9 = &DAT_0023cca8;
     stack0xffdc3230_ptr = stack0xffdc3230_buf;
@@ -412,7 +415,7 @@ int run_character_generator()
           *g_draw_color_index = 0x49;
           *DAT_00084298 = 0x49;
           chargen_ui_transition_hook(1);
-          iVar4 = DAT_001005c8;
+          bg_buf = DAT_001005c8;
           pcVar_palbuf = DAT_001005c8 + 64000;
           ce_memset(acStack_128,0,0x104);
           do {
@@ -421,11 +424,11 @@ int run_character_generator()
             pcVar9 = pcVar9 + 1;
           } while (cVar1 != '\0');
           ce_strcat(acStack_128,s__DATA_CHARGEN_BYT_00084eac);
-          uVar5 = read_buffer_from_file(acStack_128,iVar4,64000);
+          uVar5 = read_buffer_from_file(acStack_128,bg_buf,64000);
           uVar7 = load_pals_bank(3,pcVar_palbuf);
           if ((uVar5 & uVar7) != 0) {
             decrement_cursor_hide_depth();
-            bitmap_blit_to_framebuffer(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
+            bitmap_blit_to_framebuffer(0,0,bg_buf,200,CONCAT22(uVar10,0x140),0,0,0);
             /* The PocketPC path drew this screen at full brightness.
                Fade in its loaded background before accepting choices. */
             fade_in(g_uw_framebuffer,0,0);
@@ -1432,7 +1435,7 @@ LAB_00024dd4:
             uVar13 = uVar13 - 1;
             local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),*(undefined1 *)(g_chargen_textfield_buf + uVar13)
                                   );
-            sVar5 = measure_text_width(local_2c);
+            sVar5 = measure_text_width((char *)local_2c);
             iVar11 = ((int)sVar3 - (int)sVar5) * 0x10000;
             iVar7 = iVar11 >> 0x10;
             decrement_cursor_hide_depth();
@@ -1445,9 +1448,9 @@ LAB_00024dd4:
       else {
         local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),(char)sVar5);
         decrement_cursor_hide_depth();
-        draw_text_string(local_2c,iVar7,iVar9 + 3);
+        draw_text_string((char *)local_2c,iVar7,iVar9 + 3);
         cursor_show_idle_tick();
-        iVar7 = measure_text_width(local_2c);
+        iVar7 = measure_text_width((char *)local_2c);
         iVar7 = iVar7 + sVar3;
         local_28 = 0;
         *(char *)(g_chargen_textfield_buf + uVar13) = (char)sVar5;
@@ -1476,7 +1479,7 @@ void chargen_ui_transition_hook(int is_press)
 /* r1 = &DAT_000fb858; r2 = *r1 (current cursor); r0 = r2 + param_1; r1 = r0 (advance cursor by
    param_1 bytes); return r2 (the position before* advancing) -- a bump-pointer sub-allocator
    carving fixed- size chunks out of whatever buffer DAT_000fb858 currently points to. */
-void *chrbtns_bump_alloc_entry(int byte_count)
+void *chrbtns_bump_alloc_entry(uint byte_count)
 {
   char *old = DAT_000fb858;
   DAT_000fb858 = DAT_000fb858 + byte_count;
@@ -1486,7 +1489,7 @@ void *chrbtns_bump_alloc_entry(int byte_count)
 /* r0 is loaded fresh from a literal (&DAT_000fb880), discarding whatever was passed in that
    register -- this callback's real parameters are param_2 (r1) and param_3 (r2, only its low 16
    bits used, sign-extended, as a table index). */
-int chrbtns_offset_table_builder(int unused, int entry_size, int index)
+int chrbtns_offset_table_builder(void *unused, uint entry_size, int index)
 {
   int idx = (short)(index & 0xffff);
   if (idx == 0) {

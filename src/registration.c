@@ -9,7 +9,7 @@
 /* Read as a pointer (codewheel_letter_at_index/codewheel_index_of_letter both dereference it as
    `short *`), same truncated-pointer-in-an-int bug class as this project's other DAT_xxx symbols,
    but never assigned anywhere in the whole decompile... */
-static int DAT_00086f0c;
+static short *DAT_00086f0c;
 static unsigned short u_BuildNo_00086f5c[] = u"BuildNo";
 static unsigned short u_Software_ZIO_Interactive_Ultima_U_00086f6c[] = u"Software\\ZIO_Interactive_Ultima_U";
 static int DAT_0023c108;
@@ -30,7 +30,7 @@ short codewheel_letter_at_index(int index)
   if ((index < 0) || (0x23 < index)) {
     return 0;
   }
-  return *(undefined2 *)(DAT_00086f0c + index * 2);
+  return DAT_00086f0c[index];
 }
 
 
@@ -57,7 +57,7 @@ int codewheel_index_of_letter(short letter)
 
 // was FUN_0006b448 -- the code-wheel registration-word checksum: param_2 is a 12-char answer word
 // (uppercased in-place into local_48), param_1 a 4-entry ushort key.
-int validate_codewheel_word(ushort *key, int answer_address)
+int validate_codewheel_word(ushort *key, ushort *answer_address)
 {
   int uw_ord2005_rem_128 = 0; int uw_ord2005_rem_129 = 0; int uw_ord2005_rem_130 = 0; int uw_ord2005_rem_131 = 0; int uw_ord2005_rem_132 = 0; int uw_ord2005_rem_133 = 0;
   short expected_letter;
@@ -77,7 +77,7 @@ int validate_codewheel_word(ushort *key, int answer_address)
   /* Uppercase the 12-character answer into answer[]. */
   i = 0;
   do {
-    character = *(ushort *)(i * 2 + answer_address);
+    character = answer_address[i];
     if ((character < 0x7b) && (0x60 < character)) {
       character = character - 0x20;
     }
@@ -209,7 +209,7 @@ void clear_power_status_flag_bit()
 
 
 // was FUN_0006b980
-int check_registration_key_dialog(int window, int instance)
+int check_registration_key_dialog(void *window, int instance)
 {
   /* This is the "enter your registration key" modal dialog gate (see the "Invalid Registration Key
      Code!!" string and the registration_key_dialog_proc dialog proc it registers via
@@ -252,7 +252,7 @@ int registration_key_dialog_proc(int dialog, int message, short control_id)
 // was FUN_0006baf8 -- top-level registration check: true if the registry sentinel is already set
 // (check_registration_key_saved) or the (bypassed, always-succeeding) registration dialog gate
 // (check_registration_key_dialog) reports success.
-int is_product_registered(char *window, int instance)
+int is_product_registered(void *window, int instance)
 {
   int result;
   undefined1 system_time_header[10];

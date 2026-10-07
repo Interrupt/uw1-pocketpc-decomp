@@ -173,7 +173,7 @@ void handle_inventory_panel_normal_click()
     if ((sVar1 != 0x15) && (sVar1 != 0x16)) {
       g_interact_target = resolve_clicked_inventory_item(2);
       if (g_interact_target != 0) {
-        (*DAT_002020b8)(g_interact_target,1,1);
+        ((void (*)(ushort *, int, int))DAT_002020b8)(g_interact_target,1,1);
         wait_for_click_release(1);
         return;
       }
@@ -233,7 +233,7 @@ void serialize_inventory_link_chain(byte *link_chain, byte *out_link)
     uVar3 = (uint)g_save_record_count;
     *out_link = *out_link & 0x3f | (byte)((uVar3 & 0x3ff) << 6);
     out_link[1] = (byte)((uVar3 << 0x16) >> 0x18);
-    encode_equipped_item_index(link_chain,out_link);
+    encode_equipped_item_index((ushort *)link_chain,(ushort *)out_link);
     link_chain = puVar1 + 4;
     out_link = puVar2 + 4;
     if (((puVar1[1] & 0x80) == 0) && ((*(ushort *)(puVar1 + 6) & 0xffc0) != 0)) {
@@ -247,8 +247,9 @@ void serialize_inventory_link_chain(byte *link_chain, byte *out_link)
 
 
 // was FUN_00044398
-void deserialize_inventory_link_chain(byte *link_field, ushort *saved_link)
+void deserialize_inventory_link_chain(byte *link_field, void *saved_link_ptr)
 {
+  ushort *saved_link = (ushort *)saved_link_ptr;
   undefined1 *puVar1;
   uint uVar2;
   undefined1 *puVar3;
@@ -266,7 +267,7 @@ void deserialize_inventory_link_chain(byte *link_field, ushort *saved_link)
     uVar2 = encode_object_slot_index(puVar1);
     *link_field = *link_field & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
     link_field[1] = (byte)((uVar2 << 0x16) >> 0x18);
-    decode_equipped_item_index(link_field,saved_link);
+    decode_equipped_item_index((ushort *)link_field,saved_link);
     link_field = puVar1 + 4;
     saved_link = (ushort *)(puVar3 + 4);
     if (((puVar3[1] & 0x80) == 0) && ((*(ushort *)(puVar3 + 6) & 0xffc0) != 0)) {
@@ -287,9 +288,10 @@ void handle_inventory_panel_click(short slot)
   short sVar1;
   char cVar2;
   ushort uVar3;
-  undefined4 *puVar4;
+  char *open_record;
+  char *container_record;
   undefined4 uVar5;
-  char *iVar6;
+  int iVar6;
   ushort *puVar7;
   ushort *puVar8;
   int iVar9;
@@ -334,13 +336,15 @@ void handle_inventory_panel_click(short slot)
         uVar3 = *puVar7;
         if (((uVar3 & 0x8000) == 0) || ((puVar7[3] & 0x8000) != 0)) {
           if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
-            puVar4 = g_open_container_list;
+            open_record = g_open_container_list;
             if ((DAT_00085a6c[4] == 4) && ((uVar3 & 0xf) != 0xf)) {
               print_scroll_message_by_id(0xba);
               return;
             }
-            for (; puVar4 != (undefined4 *)0x0; puVar4 = (undefined4 *)*puVar4) {
-              puVar8 = (ushort *)resolve_object_link(puVar4 + 2);
+            /* Walk the open-container chain via each record's full-width "next" link at +0xc (the
+               legacy 4-byte link at +0 only ever held a truncated pointer). */
+            for (; open_record != (char *)0x0; open_record = *(char **)(open_record + 0xc)) {
+              puVar8 = (ushort *)resolve_object_link(open_record + 8);
               if (puVar8 == puVar7) {
                 return;
               }
@@ -348,7 +352,7 @@ void handle_inventory_panel_click(short slot)
           }
         }
         else if ((puVar7[3] & 0xffc0) != 0x40) {
-          puVar10 = (ushort *)prompt_split_object_stack(puVar7);
+          puVar10 = (ushort *)prompt_split_object_stack((byte *)puVar7);
           if (puVar10 == (ushort *)0x0) {
             return;
           }
@@ -361,7 +365,7 @@ void handle_inventory_panel_click(short slot)
           uVar5 = 0;
         }
         swap_cursor_and_slot_item((int)cVar2,uVar5);
-        iVar6 = g_current_container_record;
+        container_record = g_current_container_record;
         if (iVar9 < 0x14) {
           redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar9]);
         }
@@ -369,11 +373,11 @@ void handle_inventory_panel_click(short slot)
           /* Was walking the "prev" chain (up through every ancestor container, to propagate the
              removed item's weight all the way to the root) via CONCAT13/12/11 of the record's own
              byte-4..7 field... */
-          for (; iVar6 != 0; iVar6 = *(char **)(iVar6 + 0x14)) {
+          for (; container_record != 0; container_record = *(char **)(container_record + 0x14)) {
             iVar9 = calculate_object_weight(puVar7);
-            iVar9 = *(short *)(iVar6 + 10) - iVar9;
-            *(char *)(iVar6 + 10) = (char)iVar9;
-            *(char *)(iVar6 + 0xb) = (char)((uint)iVar9 >> 8);
+            iVar9 = *(short *)(container_record + 10) - iVar9;
+            *(char *)(container_record + 10) = (char)iVar9;
+            *(char *)(container_record + 0xb) = (char)((uint)iVar9 >> 8);
           }
           repopulate_container_grid_slots();
           refresh_container_view();
@@ -496,7 +500,7 @@ void redraw_inventory_widget_range(int first_widget, short last_widget)
   bool bVar5;
   int iVar6;
   ushort *puVar7;
-  undefined4 uVar8;
+  char *count_text;
   undefined1 auStack_60 [12];
   /* Was `ushort auStack_54 [20]` (matching the real ARM binary's own stack layout exactly,
      confirmed via Ghidra decompile of the real FUN_00048198 at 0x48198) -- but
@@ -565,8 +569,8 @@ joined_r0x00048308:
         *g_draw_color_index = 0x60;
         for (; iVar1 <= iVar2; iVar1 = (iVar1 + 1) * 0x10000 >> 0x10) {
           if (1 < (short)auStack_54[iVar1]) {
-            uVar8 = _itoa((int)(short)auStack_54[iVar1],auStack_60,10);
-            draw_text_string(uVar8,(short)(&g_inv_hotspot_draw_x)[iVar1 * 7] + 3,
+            count_text = _itoa((int)(short)auStack_54[iVar1],auStack_60,10);
+            draw_text_string(count_text,(short)(&g_inv_hotspot_draw_x)[iVar1 * 7] + 3,
                          (short)(&g_inv_hotspot_draw_y)[iVar1 * 7] + 1);
           }
         }
@@ -584,7 +588,7 @@ joined_r0x00048308:
                 (int)(unsigned char)DAT_00085c4c,
                 (unsigned)*(ushort *)(&g_equipped_items + DAT_00085c4c * 2),
                 (int)((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0),
-                (void *)DAT_00202938, (int)_DAT_00085bf0, (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
+                (void *)(uintptr_t)DAT_00202938, (int)_DAT_00085bf0, (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                 (int)DAT_00085bf5, (int)DAT_00085bf4);
       if ((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0) {
         puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + DAT_00085c4c * 2));
@@ -687,7 +691,7 @@ LAB_0003f69c:
   uVar2 = 1;
 LAB_0003f7cc:
   dispatch_object_action(g_interact_target,uVar2);
-  handle_inventory_panel_click(0xffffffff);
+  handle_inventory_panel_click(-1);
   return;
 }
 

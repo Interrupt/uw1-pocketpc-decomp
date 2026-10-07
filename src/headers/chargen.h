@@ -34,8 +34,8 @@ int character_generator_loop(char *tree_data, char *scratch_data, char *field_re
 /* chrbtns_bump_alloc_entry/chrbtns_offset_table_builder: orphaned callbacks Ghidra never recognized
    as real functions (only reached indirectly, via addresses passed to load_gr_resource_entries) --
    their definitions stay in uw.c (see their own comment there for the full recovery story)... */
-void *chrbtns_bump_alloc_entry(int byte_count);
-int chrbtns_offset_table_builder(int unused, int entry_size, int index);
+void *chrbtns_bump_alloc_entry(uint byte_count);
+int chrbtns_offset_table_builder(void *unused, uint entry_size, int index);
 void init_new_character_record(int mode);
 int advance_skill_tree_node(byte *cursor, char *picked_skills, char *record, char *tree);
 void draw_chargen_attribute_summary();

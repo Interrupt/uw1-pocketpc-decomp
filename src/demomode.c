@@ -654,7 +654,7 @@ void demomode_pump(void) {
             unsigned char byte3 = DAT_00087530_backing[i * 4 + 3];
             unsigned int type = byte0 >> 3;
             fprintf(stderr, "[castallspells] spell %d: type=%u param=%u\n", i, type, byte3);
-            dispatch_special_action(type, byte3, (uintptr_t)g_player_object, (intptr_t)g_player_object);
+            dispatch_special_action(type, byte3, g_player_object, g_player_object);
             fprintf(stderr, "[castallspells] spell %d: survived\n", i);
         }
         fprintf(stderr, "[castallspells] all 48 spells dispatched\n");
@@ -790,7 +790,7 @@ void demomode_pump(void) {
     if (strncasecmp(p, "SCREENSHOT ", 11) == 0) {
         const char *path = p + 11;
         /* Push the whole software framebuffer to the display before capturing. */
-        { extern int g_force_flush; extern void flush_dirty_rect_to_display();
+        { extern int g_force_flush; 
           dirty_rect_union(0, 200, 0, 0x140);
           g_force_flush = 1;
           flush_dirty_rect_to_display(1);

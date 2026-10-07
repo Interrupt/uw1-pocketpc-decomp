@@ -43,7 +43,7 @@ undefined2 DAT_00242010_backing[12800];
    256-entry faded-palette table (`(ushort*)(&DAT_00248418 + iVar21) + level*0x100`, iVar21 stepping
    by 2 per palette entry, 20 levels stepped by 0x100 ushorts/level)... */
 undefined2 DAT_00248418_backing[20 * 256];
-static undefined4 DAT_0023c638;
+static void *DAT_0023c638;
 static undefined1 DAT_001005cc;
 static undefined1 DAT_001005cd;
 static undefined1 DAT_001005ce;
@@ -378,7 +378,7 @@ int screen_backup_save()
         /* `(intptr_t)&DAT_000891b0` fixed globally across the file (17 sites) -- taking a global's
            address then truncating it through `(int)` before pointer arithmetic, same bug class as
            the `(TYPE *)((int)VAR + offset)` pattern fixed much earlier... */
-        *(short *)(((intptr_t)&DAT_000891b0 - (int)psVar3) + (int)psVar2) = *psVar2;
+        *(short *)((char *)&DAT_000891b0 + ((char *)psVar2 - (char *)psVar3)) = *psVar2;
       }
       psVar2 = psVar2 + 1;
     } while (iVar4 != 0);
@@ -1032,7 +1032,7 @@ void reinstall_active_palette(int entry_count, int first_entry, int flag)
   /* expand_pals_bytes's 3rd argument was dropped here -- confirmed via real ARM disassembly: this
      call site (`bl expand_pals_bytes` right after loading only r0/r1) never sets r2 itself... */
   expand_pals_bytes(&DAT_00088640,&DAT_00088d98,0);
-  build_rgb565_palette(&DAT_00088640,0xffffffff);
+  build_rgb565_palette(&DAT_00088640,-1);
 }
 
 
@@ -1174,7 +1174,7 @@ void blit_bitmap_to_framebuffer_clipped(short x, short y, char *pixels, short he
                   if (0x13f < iVar6) break;
                   bVar3 = *pbVar5;
                   pbVar5 = pbVar5 + 1;
-                  if ((g_blit_transparent_mode & bVar3 == 0) == 0) {
+                  if ((g_blit_transparent_mode & (bVar3 == 0)) == 0) {
                     *(undefined2 *)((g_uw_framebuffer) + iVar4 * 2) =
                          (&g_palette_rgb565)[bVar3];
                   }
@@ -1348,7 +1348,8 @@ void tick_book_illustration_palette_cycles(ushort *cycle_record)
 
 int load_bmp_resource_to_rgb565(int module, short resource_name, ushort *out_pixels)
 {
-  int iVar1;
+  char *iVar1;
+  char *src_row;
   byte *pbVar2;
   ushort *puVar3;
   int iVar4;
@@ -1361,8 +1362,8 @@ int load_bmp_resource_to_rgb565(int module, short resource_name, ushort *out_pix
   ushort local_62c [256];
   byte local_42c [1024];
   
-  iVar1 = FindResourceW(module,resource_name,2);
-  if ((iVar1 != 0) && (iVar1 = LoadResource(module), iVar1 != 0)) {
+  iVar1 = (char *)FindResourceW(module,resource_name,2);
+  if ((iVar1 != 0) && (iVar1 = (char *)LoadResource(module), iVar1 != 0)) {
     ce_memmove(auStack_654,iVar1,0x28);
     ce_memmove(local_42c,iVar1 + 0x28,0x400);
     puVar3 = local_62c;
@@ -1378,12 +1379,12 @@ int load_bmp_resource_to_rgb565(int module, short resource_name, ushort *out_pix
     if (pbVar2 != (byte *)0x0) {
       if (0 < local_64c) {
         pbVar6 = pbVar2 + (local_64c + -1) * local_650;
-        iVar4 = iVar1;
+        src_row = iVar1;
         iVar7 = local_64c;
         do {
-          ce_memmove(pbVar6,iVar4 + 0x428,local_650);
+          ce_memmove(pbVar6,src_row + 0x428,local_650);
           iVar7 = iVar7 + -1;
-          iVar4 = iVar4 + local_650;
+          src_row = src_row + local_650;
           pbVar6 = pbVar6 + -local_650;
         } while (iVar7 != 0);
         pbVar6 = pbVar2;
@@ -1406,11 +1407,11 @@ int load_bmp_resource_to_rgb565(int module, short resource_name, ushort *out_pix
           } while (local_64c != 0);
         }
       }
-      DeleteObject(iVar1);
+      DeleteObject((long)iVar1);
       cpp_operator_delete(pbVar2);
       return 1;
     }
-    DeleteObject(iVar1);
+    DeleteObject((long)iVar1);
   }
   return 0;
 }
@@ -1454,10 +1455,10 @@ void fade_active_palette_to_black(char *palette, short steps)
   short *psVar6;
   short sVar7;
   int iVar8;
-  int iVar9;
+  char *iVar9;
   
-  iVar2 = DAT_0024af78;
-  iVar9 = DAT_0024af78 + 0x300;
+  iVar2 = (char *)DAT_0024af78;
+  iVar9 = (char *)DAT_0024af78 + 0x300;
   iVar4 = read_realtime_clock_units();
   if (steps == 0) {
     iVar4 = 0;

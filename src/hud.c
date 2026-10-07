@@ -3,6 +3,7 @@
    message scroll panel (word-wrap, line-by-line scroll, draw). */
 #include "headers/hud.h"
 #include "headers/debug.h"
+#include "headers/debug_ui.h"
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -153,7 +154,7 @@ static undefined2 DAT_002047e0_backing[32];
 #define DAT_002047e0 DAT_002047e0_backing[0]
 static undefined2 DAT_00204808_backing[32];
 #define DAT_00204808 DAT_00204808_backing[0]
-static undefined2 DAT_00086970;
+static short DAT_00086970;
 static char DAT_00204858;
 static undefined2 DAT_00204704;
 /* Sizing-audit pass: push_cursor_icon/pop_cursor_icon's own cursor- icon stack, guarded by `if
@@ -482,8 +483,7 @@ void dirty_rect_set(int left, int bottom, int right, int top)
    dirty_rect_union, called from every draw (rect fill, text draw, sprite blit, ...) to grow the
    damaged region -- clamped here... */
 // was FUN_00022f0c
-void flush_dirty_rect_to_display()
-
+void flush_dirty_rect_to_display(int unused_flag)
 {
   undefined2 uVar1;
   int iVar2;
@@ -1051,25 +1051,25 @@ void emit_hud_draw_commands()
   emit_glyph_draw_command(0xa0,1);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x2200;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x400;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x1100;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x3300;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -1370,7 +1370,7 @@ void hud_panel_redraw_dispatch()
     do {
       uVar1 = (ushort)iVar7;
       if ((uVar1 & uVar4) != 0) {
-        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
+        (*(void (*)(int))(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
         uVar4 = DAT_0023c1e0 & ~uVar1;
         bVar8 = true;
         DAT_0023c1e0 = uVar4;
@@ -1385,7 +1385,7 @@ void hud_panel_redraw_dispatch()
     iVar9 = 0;
     do {
       if (((ushort)iVar7 & DAT_0023c1dc) != 0) {
-        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
+        (*(void (*)(int))(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
         bVar6 = DAT_0023c150;
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
@@ -1418,7 +1418,7 @@ void hud_panel_redraw_dispatch()
       if (((ushort)iVar7 & DAT_0023c1d8) != 0) {
         if (getenv("UW_DEBUG_CLICKREGION"))
           fprintf(stderr, "[stats] hud_panel_redraw_dispatch: dispatching g_hud_panel_ticker_handlers[%d] (table index %d)\n", iVar9, iVar9 + 4);
-        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
+        (*(void (*)(int))(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
       iVar7 = ((int)(short)(ushort)iVar7 << 0x11) >> 0x10;
@@ -2023,7 +2023,7 @@ int message_scroll_print_wrapped(char *text)
       }
       uVar1 = *puVar4;
       *puVar4 = 0;
-      iVar2 = ((int)puVar4 - (int)auStack_54) * 0x10000 >> 0x10;
+      iVar2 = ((int)((char *)puVar4 - (char *)auStack_54) * 0x10000) >> 0x10;
       msg_scroll_split_escape_segments(auStack_54,1);
       *puVar4 = uVar1;
       text = iVar2 + text;
@@ -2050,11 +2050,12 @@ int message_scroll_print_wrapped(char *text)
 // was FUN_0007f7cc
 void msg_scroll_draw_wrapped_span(char *text, int span_length)
 {
+  char *pRec;
   undefined2 *puVar1;
   char cVar2;
   undefined2 uVar3;
   uint uVar4;
-  char *iVar5;
+  int iVar5;
   undefined1 uVar6;
   int iVar7;
   /* Recursion-depth safety valve for the msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line
@@ -2109,7 +2110,7 @@ LAB_0007f8b8:
   }
   if (*(int *)(DAT_00250704 + 0x10) == 0) goto LAB_0007fa30;
   iVar5 = (int)*(short *)(DAT_00250704 + 10) + (int)*(short *)(DAT_000879b0 + 6);
-  uVar3 = (undefined2)iVar5;
+  uVar3 = (undefined2)(uintptr_t)iVar5;
   iVar7 = (int)*(short *)(DAT_000879b0 + 6) + ((int)(iVar5) * 0x10000 >> 0x10);
   iVar5 = *(short *)(DAT_00250704 + 2) + 1;
   if ((int)DAT_00250710 - (int)(short)span_length < 0) {
@@ -2120,8 +2121,8 @@ LAB_0007f8b8:
     else {
 LAB_0007f9ac:
       iVar5 = *(short *)(DAT_00250704 + 0x14) + 1;
-      *(char *)(DAT_00250704 + 0x14) = (char)iVar5;
-      *(char *)(DAT_00250704 + 0x15) = (char)((uint)iVar5 >> 8);
+      *(char *)(DAT_00250704 + 0x14) = (char)(uintptr_t)iVar5;
+      *(char *)(DAT_00250704 + 0x15) = (char)((uint)(uintptr_t)iVar5 >> 8);
     }
   }
   else {
@@ -2144,7 +2145,7 @@ LAB_0007f9ac:
   *(undefined1 *)(DAT_00250704 + 0x13) = 0;
 LAB_0007fa30:
   iVar7 = measure_text_width(text);
-  iVar5 = DAT_00250704;
+  pRec = (char *)DAT_00250704;
   if (((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
       || (32 < s_wrap_recursion_depth))
   {
@@ -2157,13 +2158,13 @@ LAB_0007fa30:
       *(undefined1 *)(DAT_00250704 + 0x11) = 0;
       *(undefined1 *)(DAT_00250704 + 0x12) = 0;
       *(undefined1 *)(DAT_00250704 + 0x13) = 0;
-      iVar5 = DAT_00250704;
+      pRec = (char *)DAT_00250704;
     }
-    draw_text_string(text,(int)*(short *)(iVar5 + 8),(int)*(short *)(iVar5 + 10));
+    draw_text_string(text,(int)*(short *)(pRec + 8),(int)*(short *)(pRec + 10));
     iVar5 = measure_text_width(text);
     iVar5 = *(short *)(DAT_00250704 + 8) + iVar5;
-    *(char *)(DAT_00250704 + 8) = (char)iVar5;
-    *(char *)(DAT_00250704 + 9) = (char)((uint)iVar5 >> 8);
+    *(char *)(DAT_00250704 + 8) = (char)(uintptr_t)iVar5;
+    *(char *)(DAT_00250704 + 9) = (char)((uint)(uintptr_t)iVar5 >> 8);
   }
   else {
     msg_scroll_wrap_split_line(text,span_length);
@@ -2624,11 +2625,11 @@ void begin_hud_panel_flip(int target_panel, short rect_x, short rect_y, short re
   if ((g_flip_grtile_cache_ready & 1) != 0) {
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     uVar2 = decode_gr_entry_to_buffer(s_panels_00087260,target_panel,uVar4);
-    iVar5 = resolve_flip_grtile_slot(DAT_0023c200);
-    uVar3 = decode_gr_entry_to_buffer(s_panels_00087260,3,iVar5 + 0x2800);
+    iVar5 = (intptr_t)resolve_flip_grtile_slot(DAT_0023c200);
+    uVar3 = decode_gr_entry_to_buffer(s_panels_00087260,3,(void *)(intptr_t)(iVar5 + 0x2800));
     if (getenv("UW_DEBUG_CLICKREGION"))
       fprintf(stderr, "[stats] begin_hud_panel_flip: uVar4(dst202)=%u uVar2(decode1 ok)=%u iVar5(dst200)=%d uVar3(decode2 ok)=%u\n",
-              (unsigned)uVar4, (unsigned)uVar2, iVar5, (unsigned)uVar3);
+              (unsigned)(uintptr_t)uVar4, (unsigned)uVar2, (int)iVar5, (unsigned)uVar3);
     if ((uVar2 & uVar3 & uVar6) == 0) {
       if (getenv("UW_DEBUG_CLICKREGION"))
         fprintf(stderr, "[stats] begin_hud_panel_flip: DECODE FAILED, calling report_fatal_error_and_exit(0x300e)\n");
@@ -2641,7 +2642,7 @@ void begin_hud_panel_flip(int target_panel, short rect_x, short rect_y, short re
     capture_framebuffer_rect_to_grtile_paletted(uVar4,0xec,8,0x53,0x72);
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     if (getenv("UW_DEBUG_CLICKREGION"))
-      fprintf(stderr, "[stats] begin_hud_panel_flip: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)uVar4);
+      fprintf(stderr, "[stats] begin_hud_panel_flip: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)(uintptr_t)uVar4);
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
     uVar1 = g_active_hud_panel;
     g_active_hud_panel = (undefined1)target_panel;
@@ -2926,7 +2927,7 @@ bool advance_hud_panel_flip()
     rect_fill_or_save_restore(0xec,8,0x13f,0x7a);
     draw_sprite_by_id(0x20bc,0x110,4,1,1);
     draw_sprite_by_id(0x20b4,0x110,0x7a,1,1);
-    bitmap_blit_to_framebuffer(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
+    bitmap_blit_to_framebuffer(0x114,0xfffb,uVar3,0x78,3,0,0,1);
 LAB_0006f008:
     cursor_show_idle_tick();
   }
@@ -3219,7 +3220,7 @@ int init_sprite_list_buffers()
   DAT_0023c40c = ce_malloc(0x102);
   if (DAT_0023c40c != 0) {
     ce_memset(DAT_0023c40c,0,0x102);
-    DAT_0023c414 = DAT_0023c40c + 0x100;
+    DAT_0023c414 = (ushort *)(DAT_0023c40c + 0x100);
   }
   DAT_0023c3e4 = ce_malloc(0x102);
   if (DAT_0023c3e4 != 0) {
@@ -3271,8 +3272,8 @@ void flush_sprite_list_compositor()
   if (DAT_0023c41c != 0) {
     decrement_cursor_hide_depth();
     puVar7 = DAT_0023c414 + -0x20;
-    puVar6 = DAT_0023c40c;
-    if (DAT_0023c40c < puVar7) {
+    puVar6 = (ushort *)DAT_0023c40c;
+    if ((ushort *)DAT_0023c40c < puVar7) {
       do {
         puVar4 = puVar7;
         for (uVar5 = *puVar7; uVar5 != 0; uVar5 = uVar5 - 1) {
@@ -3300,7 +3301,7 @@ void flush_sprite_list_compositor()
               invalidate_grtile_by_key(*(undefined4 *)(puVar6 + 8));
             }
           }
-          puVar6 = DAT_0023c40c;
+          puVar6 = (ushort *)DAT_0023c40c;
         }
         puVar7 = puVar7 + -0x20;
       } while (puVar6 < puVar7);
@@ -3644,7 +3645,7 @@ void echo_number_to_scroll(short number)
 void echo_yes_no_to_scroll(int is_yes)
 {
   short sVar1;
-  undefined *puVar2;
+  char *puVar2;
   int iVar3;
   
   iVar3 = (int)DAT_0025070c;
@@ -3658,10 +3659,10 @@ void echo_yes_no_to_scroll(int is_yes)
   *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
   *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
   if (is_yes == 0) {
-    puVar2 = &s_No_0008799c;
+    puVar2 = s_No_0008799c;
   }
   else {
-    puVar2 = &s_Yes_000879a0;
+    puVar2 = s_Yes_000879a0;
   }
   message_scroll_print_wrapped(puVar2);
 }
@@ -3671,7 +3672,7 @@ void echo_yes_no_to_scroll(int is_yes)
 
 
 // was FUN_0007ffa8
-int scroll_text_entry_prompt(char *prompt, char *buffer, intptr_t buffer_end, int allow_all_chars, short max_length)
+int scroll_text_entry_prompt(char *prompt, char *buffer, char *dest, int allow_all_chars, short max_length)
 {
   char cVar1;
   short sVar2;
@@ -3751,10 +3752,10 @@ int scroll_text_entry_prompt(char *prompt, char *buffer, intptr_t buffer_end, in
       }
       cursor_show_idle_tick();
       if ((short)uVar8 == 0x1b) {
-        buffer_end = buffer_end - (intptr_t)buffer;
+        intptr_t dest_offset = (intptr_t)dest - (intptr_t)buffer;
         do {
           cVar1 = *buffer;
-          buffer[buffer_end] = cVar1;
+          buffer[dest_offset] = cVar1;
           buffer = buffer + 1;
         } while (cVar1 != '\0');
         set_draw_color(0x2a);
@@ -3771,7 +3772,7 @@ int scroll_text_entry_prompt(char *prompt, char *buffer, intptr_t buffer_end, in
         do {
           pcVar6 = pcVar6 + 1;
           cVar1 = *pcVar6;
-          pcVar6[buffer_end - (intptr_t)(acStack_a1 + 1)] = cVar1;
+          pcVar6[(intptr_t)dest - (intptr_t)(acStack_a1 + 1)] = cVar1;
         } while (cVar1 != '\0');
         *(char *)(DAT_00250704 + 8) = (char)iVar7;
         *(char *)(DAT_00250704 + 9) = (char)((uint)iVar7 >> 8);
@@ -3958,14 +3959,14 @@ int prompt_yes_no_scroll(int question_text, int message_id, int *result)
     print_scroll_message_by_id(message_id);
   }
   else {
-    message_scroll_print_wrapped(question_text);
+    message_scroll_print_wrapped((char *)(intptr_t)(question_text));
   }
   DAT_0025070c = *(undefined2 *)(DAT_00250704 + 8);
   if (*result == 0) {
-    puVar2 = &s_No_0008799c;
+    puVar2 = s_No_0008799c;
   }
   else {
-    puVar2 = &s_Yes_000879a0;
+    puVar2 = s_Yes_000879a0;
   }
   message_scroll_print_wrapped(puVar2);
   decrement_cursor_hide_depth();
@@ -4266,14 +4267,14 @@ void handle_rune_bag_click()
             bVar2 = (byte)(uVar1 >> 8);
             *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
             *(byte *)(DAT_00086df8 + 0x60) =
-                 ((byte)((uVar1 & 0xfc00) - 1 >> 8) ^ bVar2) & 0xc ^ bVar2;
+                 ((byte)(((uVar1 & 0xfc00) - 1) >> 8) ^ bVar2) & 0xc ^ bVar2;
           }
           *(char *)((*(byte *)(DAT_00086df8 + 0x60) >> 2 & 3) + DAT_00086df8 + 0x47) = (char)iVar6;
           uVar1 = *(ushort *)(DAT_00086df8 + 0x5f);
           bVar2 = (byte)(uVar1 >> 8);
           *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
           *(byte *)(DAT_00086df8 + 0x60) =
-               ((byte)((uVar1 & 0xfc00) + 0x400 >> 8) ^ bVar2) & 0xc ^ bVar2;
+               ((byte)(((uVar1 & 0xfc00) + 0x400) >> 8) ^ bVar2) & 0xc ^ bVar2;
           update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
         }
         else {
@@ -4777,11 +4778,11 @@ static void (*const PTR_FUN_000868e0_table[8])(void) = {
 static void (*const PTR_FUN_00086900_table[8])(int) = {
   handle_save_load_slot_click,  /* 0: load slot list */
   handle_save_load_slot_click,  /* 1: save slot list */
-  handle_music_toggle_click,  /* 2: music toggle   */
-  handle_sound_toggle_click,  /* 3: sound toggle   */
+  (void (*)(int))handle_music_toggle_click,  /* 2: music toggle   */
+  (void (*)(int))handle_sound_toggle_click,  /* 3: sound toggle   */
   handle_detail_level_click,  /* 4: texture detail level */
-  handle_quit_confirm_click,  /* 5: quit confirm   */
-  handle_pause_menu_main_list_click,  /* 6: top-level list */
+  (void (*)(int))handle_quit_confirm_click,  /* 5: quit confirm   */
+  (void (*)(int))handle_pause_menu_main_list_click,  /* 6: top-level list */
   0,
 };
 #define PTR_FUN_00086900 (PTR_FUN_00086900_table[0])
@@ -5564,8 +5565,9 @@ void warp_mouse_cursor(short x, short y)
 // was FUN_000575c4 -- polls for a pending keyboard character (via poll_mouse_button_flags, not yet
 // named), clearing DAT_00086968's "pending" sentinel back to -1 (0xffff) when none is available,
 // and recording the result in DAT_00204850.
-int poll_keyboard_char_input(short *out_char)
+int poll_keyboard_char_input(void *out_char_ptr)
 {
+  short *out_char = (short *)out_char_ptr;
   short sVar1;
 
   sVar1 = poll_mouse_button_flags();
@@ -5608,8 +5610,8 @@ int wait_for_key_or_mouse_move(int poll_mouse)
     noop_key_handler();
     update_mouse_state();
     get_mouse_position(&local_18,&local_14);
-    uVar1 = (int)local_18 - (int)local_16 >> 0x1f;
-    uVar2 = (int)local_14 - (int)local_12 >> 0x1f;
+    uVar1 = ((int)local_18 - (int)local_16) >> 0x1f;
+    uVar2 = ((int)local_14 - (int)local_12) >> 0x1f;
     if (6 < (int)((((int)local_14 - (int)local_12 ^ uVar2) - uVar2) +
                  (((int)local_18 - (int)local_16 ^ uVar1) - uVar1))) {
       iVar4 = 1;
@@ -5757,9 +5759,9 @@ int is_position_within_rect(short x1, short y1, short x2, short y2)
 {
   int iVar1;
   
-  iVar1 = (int)(short)(DAT_002047a4 + 1 >> 1);
+  iVar1 = (int)(short)((DAT_002047a4 + 1) >> 1);
   if ((iVar1 + y1 <= (int)g_mouse_y) && ((int)g_mouse_y <= y2 - iVar1)) {
-    iVar1 = (int)(short)(DAT_00204784 + 1 >> 1);
+    iVar1 = (int)(short)((DAT_00204784 + 1) >> 1);
     if ((x1 - iVar1 <= (int)g_mouse_x) && ((int)g_mouse_x <= iVar1 + x2)) {
       return 1;
     }

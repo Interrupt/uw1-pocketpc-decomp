@@ -21,9 +21,9 @@ byte *g_draw_color_index = g_draw_color_index_backing;
 /* DAT_000879b0/DAT_000890a4 (the active font's 12-byte header and its glyph-bitmap data, both
    filled in by select_active_font's file reads) were plain uninitialized pointers -- no allocation
    anywhere in this file... */
-static static char DAT_000879b0_backing[12];
+static char DAT_000879b0_backing[12];
 char *DAT_000879b0 = DAT_000879b0_backing;
-static static char DAT_000890a4_backing[0x1080];
+static char DAT_000890a4_backing[0x1080];
 char *DAT_000890a4 = DAT_000890a4_backing;
 byte *DAT_0024af78;
 byte *DAT_0024af7c;
@@ -144,10 +144,10 @@ static undefined1 DAT_00086e06;
    fragment; down from 8192. */
 static undefined DAT_00086e00_backing[128];
 #define DAT_00086e00 DAT_00086e00_backing[0]
-static int DAT_000db500;
+static void *DAT_000db500;  /* spectate target object (never assigned in this decompile) */
 short DAT_0024af6c;
 /* Was `int` despite holding a real stack address (main_menu_loop:
-   `DAT_0023bf6c = &local_82c;`) used in pointer arithmetic throughout
+   `DAT_0023bf6c = local_82c;`) used in pointer arithmetic throughout
    this file -- truncating on this 64-bit host. */
 static char *DAT_0023bf6c;
 static ushort DAT_0023bf74;
@@ -236,7 +236,7 @@ int app_main_loop(int instance, int prev_instance, int command_line, int show_co
       flush_dirty_rect_to_display_240();
       Sleep(2000);
       LocalFree(uVar3);
-      build_rgb565_palette(0,0xffffffff);
+      build_rgb565_palette(0,-1);
       build_shade_lut();
       DAT_0023c44c = ce_malloc(0x4cce);
       DAT_0023cca0 = ce_malloc(64000);
@@ -307,8 +307,8 @@ int app_main_loop(int instance, int prev_instance, int command_line, int show_co
           }
         }
       }
-      uVar3 = window_message_noop_handler(instance,local_38);
-      return uVar3;
+      iVar2 = window_message_noop_handler(instance,local_38);
+      return iVar2;
     }
   }
   else {
@@ -336,7 +336,7 @@ void main_menu_loop(int is_first_entry)
   int iVar4;
   char *pcVar5;
   int iVar6;
-  undefined4 uVar7;
+  void *uVar7;
   undefined2 uVar8;
   int iVar9;
   int iVar10;
@@ -384,7 +384,7 @@ void main_menu_loop(int is_first_entry)
   *(short *)(local_82c + 0x3c) = 1;
   *(short *)(local_82c + 0x3e) = 1;
   dirty_rect_union(0,200,0,0x140);
-  DAT_0023bf6c = &local_82c;
+  DAT_0023bf6c = local_82c;
   probe_save_slots(auStack_4d4,local_83c);
   uVar8 = 3;
   if (local_83c[0] != 0) {
@@ -439,7 +439,7 @@ void main_menu_loop(int is_first_entry)
       if ((DAT_0023bf70 == 0) ||
          /* Was a literal 0 here (an earlier fix pass believed this mirrored sibling call sites like
             decode_gr_entry_to_buffer's genuine "no postprocessing needed" case)... */
-         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,0xffffffff,&opbtn_gr_bump_alloc_entry,&populate_menu_button_bitmap_entry), iVar10 == 0)) {
+         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,-1,&opbtn_gr_bump_alloc_entry,&populate_menu_button_bitmap_entry), iVar10 == 0)) {
         report_fatal_error_and_exit(0x300d);
       }
       if (local_838 != 3) {
@@ -630,7 +630,7 @@ void init_gameplay_session()
   if ((uintptr_t)DAT_002029cc < 0x10000) {
     return;
   }
-  DAT_0023b82c = (byte *)(DAT_002046b8 + 0x1b);
+  DAT_0023b82c = DAT_002046b8 + 0x1b;
   DAT_00202080 = 0xffff;
   DAT_00201c78 = 0;
   DAT_00201c70 = 0;
@@ -642,10 +642,10 @@ void init_gameplay_session()
   DAT_002048a7 = 8;
   DAT_002048a3 = 1;
   DAT_002048a4 = 0;
-  DAT_002048b8 = &check_and_reset_landing_state;
+  DAT_002048b8 = check_and_reset_landing_state;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
-  g_player_object = DAT_0023b82c;
+  g_player_object = (ushort *)DAT_0023b82c;
   load_shading_level_config(0);
   DAT_0023be8c = 0;
   DAT_00086df8 = &DAT_0023bca8;
@@ -799,7 +799,7 @@ void print_help_message()
 // player's own live position (param_1==1 also applies the eye-height offset)...
 void set_custom_view_target(short mode)
 {
-  int iVar1;
+  void *iVar1;
   short sVar2;
   bool bVar3;
   
@@ -908,10 +908,10 @@ void set_view_subject_by_command(short command)
     DAT_0023b82c = iVar1 * 0x1b + DAT_002046b8;
   }
   else if (command == 1) {
-    if (DAT_0023b82c == g_player_object) {
+    if (DAT_0023b82c == (char *)g_player_object) {
       return;
     }
-    DAT_0023b82c = g_player_object;
+    DAT_0023b82c = (char *)g_player_object;
   }
   else {
     if (command != 2) {
@@ -939,7 +939,7 @@ void set_view_subject_by_command(short command)
 void enter_free_camera_mode(int unused)
 {
   set_custom_view_target(0);
-  set_view_subject_by_command(0xffffffff);
+  set_view_subject_by_command(-1);
 }
 
 
@@ -1017,7 +1017,7 @@ void handle_game_view_click_hold()
 
 {
   if (DAT_002020d8 == 0) {
-    move_command_dispatch(0xffffffff);
+    move_command_dispatch(-1);
     if (DAT_0023bf0c == '\0') {
       set_cursor_confine_rect((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
                    ((int)DAT_0023be80 - (int)DAT_0023be88) + 1);
@@ -1036,8 +1036,9 @@ void handle_game_view_click_hold()
 // was FUN_0006a0c8 -- postprocess callback for the main menu's "opbtn" (OPBTN.GR) resource load --
 // populates DAT_0023bf6c's per-button record table (bitmap pointer via g_menu_button_bitmaps, plus
 // width/height) as each button-state bitmap finishes loading.
-bool populate_menu_button_bitmap_entry(char *entry, int success, short index)
+int populate_menu_button_bitmap_entry(void *entry_ptr, uint success, int index)
 {
+  char *entry = (char *)entry_ptr;
   uint uVar1;
   int iVar3;
   int bmp_idx;
@@ -1304,8 +1305,9 @@ int poll_menu_pointer_selection(int item_count, char *rects, char use_text)
 
 
 // was FUN_0006af3c
-int menu_button_list_navigate(int item_count, char *rects, byte use_text, int selected)
+int menu_button_list_navigate(int item_count, void *rects_ptr, byte use_text, int selected)
 {
+  char *rects = (char *)rects_ptr;
   short sVar1;
   short sVar2;
   int iVar3;
@@ -1436,7 +1438,7 @@ LAB_0006b144:
 
 // was FUN_000773ac -- called from app_main_loop (src/game.c, WinMain's real body) right before
 // create_main_window_and_init_display below.
-void spawn_message_dispatch_thread(int instance, int show_command)
+void spawn_message_dispatch_thread(int instance, const void *class_name)
 {
   undefined4 local_34;
   code *local_30;
@@ -1458,7 +1460,7 @@ void spawn_message_dispatch_thread(int instance, int show_command)
   local_24 = instance;
   local_18 = GetStockObject(0);
   local_14 = 0;
-  local_10 = show_command;
+  local_10 = (undefined4)(uintptr_t)class_name;  /* the second argument is really the window-class name pointer */
   RegisterClassW(&local_34);
 }
 
@@ -2260,7 +2262,7 @@ void handle_game_view_click()
           print_scroll_message_by_id(0x5e);
         }
         else {
-          (*DAT_002020b8)(g_interact_target,1,0);
+          ((void (*)(ushort *, int, int))DAT_002020b8)(g_interact_target,1,0);
         }
       }
       if (g_selected_object != 0) {
@@ -2296,7 +2298,7 @@ void play_view_restore_transition()
 
 {
   full_dungeon_redraw();
-  set_view_subject_by_command(0xffffffff);
+  set_view_subject_by_command(-1);
   weapon_overlay_flash_hold(5);
   full_dungeon_redraw();
   weapon_overlay_flash_restore(5);
@@ -2537,7 +2539,7 @@ void change_game_mode(int mode)
   code *pcVar1;
   bool bVar2;
   
-  pcVar1 = (code *)(int)DAT_00201b64;
+  pcVar1 = (code *)0;
   /* Was `pcVar1 != (code *)0xffffffff` -- a 32-bit-pointer-sentinel idiom that's broken on this
      64-bit host even after fixing DAT_00201b64's own signedness above: `pcVar1` sign-extends from a
      negative `int` to a full 64-bit all-ones pointer... */
@@ -2545,7 +2547,7 @@ void change_game_mode(int mode)
   if (bVar2) {
     /* 0x80 = 16 entries/mode * 8 bytes/entry (real pointer size) -- was
        0x40 (*4-byte entries), see DAT_00085668's comment. */
-    pcVar1 = *(code **)(&DAT_000856a4 + (int)pcVar1 * 0x80);
+    pcVar1 = *(code **)(&DAT_000856a4 + (int)DAT_00201b64 * 0x80);
   }
   if (bVar2 && pcVar1 != (code *)0x0) {
     (*pcVar1)();

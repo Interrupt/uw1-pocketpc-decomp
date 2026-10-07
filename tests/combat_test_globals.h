@@ -11,7 +11,8 @@ extern char DAT_00084f18_backing[];
 extern undefined1 DAT_0023c128_arr[];
 #define DAT_0023c12f DAT_0023c128_arr[7]
 extern undefined2 DAT_00100600, DAT_00100624;
-extern ushort DAT_00100610, DAT_00100620, DAT_00100604;
+extern short DAT_00100610;
+extern ushort DAT_00100620, DAT_00100604;
 extern byte DAT_00100628, DAT_001005fc;
 extern char DAT_001005dc;
 extern undefined4 DAT_001005d8;

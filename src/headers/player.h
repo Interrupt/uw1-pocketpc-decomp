@@ -84,7 +84,7 @@ extern undefined2 DAT_00203304;
 extern undefined2 DAT_002048b0_backing[16];
 #define DAT_002048b0 DAT_002048b0_backing[0]
 extern undefined2 DAT_002048b2;
-extern undefined1 * DAT_002048b8;
+extern int (*DAT_002048b8)(ushort *);
 extern undefined1 DAT_0023bca8_backing[256];
 #define DAT_0023bca8 DAT_0023bca8_backing[0]
 /* ARM 0x23bcf2/0x23bcf4 are fields of the serialized player status
@@ -174,9 +174,9 @@ void handle_rest_action(short mode);
 int adjust_player_hunger(short delta);
 void handle_game_victory_sequence();
 void handle_starvation_penalty();
-void adjust_level7_hazard_value(char *object, char delta);
-void adjust_player_hp(char *object, char delta);
-void restore_stat_capped(byte *object, uint amount);
+void adjust_level7_hazard_value(void *object, char delta);
+void adjust_player_hp(void *object, char delta);
+void restore_stat_capped(void *object, uint amount);
 void apply_healing_item_effect(ushort *object, char effect_code);
 void draw_stats_panel_header();
 void draw_stats_panel_attribute_row(uint row);

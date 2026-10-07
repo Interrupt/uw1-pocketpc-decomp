@@ -105,12 +105,12 @@ void draw_save_load_slot_list()
   if (DAT_000868dc == 1) {
     redraw_pause_submenu_icon(6,0x2e);
   }
-  local_bc[0] = &s_I__00087074;
-  local_bc[1] = &s_II__0008706c;
+  local_bc[0] = s_I__00087074;
+  local_bc[1] = s_II__0008706c;
   local_bc[2] = s_III__00087064;
-  local_bc[3] = &s_IV__0008705c;
+  local_bc[3] = s_IV__0008705c;
   msg_scroll_panel_reset(1);
-  probe_save_slots(auStack_ac,auStack_c4);
+  probe_save_slots((char *)auStack_ac,(ushort *)auStack_c4);
   /* g_text_use_palette_color gates whether draw_text_string honours g_draw_color_index at all (see
      that global's own comment) -- confirmed via disassembly that neither
      message_scroll_print_wrapped nor msg_scroll_draw_wrapped_span... */
@@ -448,6 +448,7 @@ int save_game_to_slot(char slot_digit, char *description)
      load_string_resource's (and ce_strcat's) real pointer -- same
      class as load_string_resource's own fix. */
   char *uVar5;
+  int result;
   char *pcVar6;
   uint uVar7;
   char *pcVar8;
@@ -535,7 +536,7 @@ int save_game_to_slot(char slot_digit, char *description)
             iVar4 = copy_save_slot_files(local_530,local_638);
             if (iVar4 != 0) {
               message_scroll_print_wrapped(&s_scroll_color_reset_00087038);
-              uVar5 = 1;
+              result = 1;
               goto LAB_0006c544;
             }
           }
@@ -544,10 +545,10 @@ int save_game_to_slot(char slot_digit, char *description)
     }
   }
 LAB_0006c540:
-  uVar5 = 0;
+  result = 0;
 LAB_0006c544:
   msg_scroll_panel_reset(1);
-  return uVar5;
+  return result;
 }
 
 
@@ -556,8 +557,9 @@ LAB_0006c544:
 /* param_2 was dropped entirely -- declared with only 1 parameter but every caller passes 2 (the
    filename to open, e.g. s__SAVE0_lev_ark_000842fc). `ce_strcat(local_120);` (a strcat- shaped
    Ordinal used with an explicit 2-arg form everywhere else in this file) was being called with... */
-bool open_level_archive(byte *archive, char *path)
+bool open_level_archive(void *archive_handle, char *path)
 {
+  byte *archive = (byte *)archive_handle;  /* 16-byte handle record, addressed as bytes */
   char cVar1;
   char *pcVar2;
   char *pcVar9;
@@ -646,8 +648,9 @@ bool open_level_archive(byte *archive, char *path)
 // was FUN_00015a58 -- finalizes and closes an open_level_archive handle: rewrites the entry-offset
 // table header if the dirty flag (param_1+0xe) is set, closes both file handles, and commits the
 // tmp-file rename back over the real archive name.
-byte close_level_archive(uint *archive)
+byte close_level_archive(void *archive_handle)
 {
+  uint *archive = (uint *)archive_handle;  /* 16-byte handle record, addressed as words */
   char cVar1;
   ushort uVar2;
   int iVar3;
@@ -674,7 +677,7 @@ byte close_level_archive(uint *archive)
     pcVar5 = pcVar5 + 1;
   } while (cVar1 != '\0');
   close_file_handle(acStack_118);
-  return bVar6 & iVar4 != 0;
+  return bVar6 & (iVar4 != 0);
 }
 
 
@@ -684,8 +687,9 @@ byte close_level_archive(uint *archive)
 // fit the existing slot.
 /* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live object arena) pointer
    write_level_tilemap_to_archive passes in as the source buffer for the archive-entry write. */
-bool write_archive_entry(uint *archive, uint entry_index, void *data, uint byte_count)
+bool write_archive_entry(void *archive_handle, uint entry_index, void *data, uint byte_count)
 {
+  uint *archive = (uint *)archive_handle;  /* 16-byte handle record, addressed as words */
   char cVar1;
   undefined2 uVar2;
   short sVar3;
@@ -852,8 +856,9 @@ bool write_archive_entry(uint *archive, uint entry_index, void *data, uint byte_
 /* Was `undefined4`, truncating the real destination buffer pointer the callers pass
    (load_level_object_table: the malloc'd DAT_002029cc workspace; load_automap_reveal_from_archive:
    &DAT_000b99d0). */
-short read_archive_entry(uint *archive, uint entry_index, void *buffer)
+short read_archive_entry(void *archive_handle, uint entry_index, void *buffer)
 {
+  uint *archive = (uint *)archive_handle;  /* 16-byte handle record, addressed as words */
   undefined2 uVar1;
   int iVar2;
   uint uVar3;
@@ -1028,7 +1033,7 @@ void handle_save_load_menu_action(short action, int slot)
       iVar2 = 2;
       sync_player_stats_to_hud();
       redraw_hud_panels();
-      apply_movement_mode_profile(0xffffffff);
+      apply_movement_mode_profile(0xff);
       DAT_000858a0 = 1;
       set_pending_update_flags(0x7ffe);
     }
@@ -1061,10 +1066,11 @@ int ensure_save_directory_exists(char *path)
   undefined1 auStack_218 [520];
 
   bVar9 = true;
-  iVar3 = -(int)path;
+  pcVar8 = acStack_348;
   do {
     cVar1 = *path;
-    path[(int)(acStack_348 + iVar3)] = cVar1;
+    *pcVar8 = cVar1;
+    pcVar8 = pcVar8 + 1;
     path = path + 1;
   } while (cVar1 != '\0');
   iVar3 = ce_strlen(acStack_348);
@@ -1263,7 +1269,8 @@ int write_level_tilemap_to_archive(byte *archive, int level_number)
   bool bVar1;
   short sVar2;
   short sVar3;
-  char *iVar4;
+  int iVar4;
+  char *arena;
   undefined2 *puVar5;
   int iVar6;
   undefined1 *puVar7;
@@ -1289,12 +1296,12 @@ int write_level_tilemap_to_archive(byte *archive, int level_number)
       puVar8 = puVar8 + 1;
     } while (iVar6 != 0 && bVar1);
   }
-  iVar4 = DAT_002029cc;
+  arena = DAT_002029cc;
   puVar5 = (undefined2 *)(DAT_002029cc + 0x7c06);
   *(short *)(DAT_002029cc + 0x7c00) =
        (short)((uint)((DAT_002046c8 - DAT_002046c0) * 0x10000) >> 0x10);
-  *(short *)(iVar4 + 0x7c02) = (short)(DAT_002046a8 - DAT_002046a4 >> 1);
-  *(short *)(iVar4 + 0x7c04) = (short)(DAT_0020469c - DAT_002046bc >> 1);
+  *(short *)(arena + 0x7c02) = (short)((DAT_002046a8 - DAT_002046a4) >> 1);
+  *(short *)(arena + 0x7c04) = (short)((DAT_0020469c - DAT_002046bc) >> 1);
   *puVar5 = 0x7577;
   DAT_002029d0 = 0;
   sVar2 = write_archive_entry(auStack_20,level_number + -1,DAT_002029cc,0x7c08);

@@ -204,8 +204,10 @@ void scheduler_finish_entry(int entry_slot)
 // was FUN_00080e00 -- finds the scheduler entry currently linked to param_2 (an "old" object) and
 // re-links it to point at param_1(a "new" object) instead, matching by each entry's encoded
 // object-link field.
-void scheduler_relink_entry(char *new_object, char *old_object)
+void scheduler_relink_entry(void *new_object_ptr, void *old_object_ptr)
 {
+  char *new_object = (char *)new_object_ptr;
+  char *old_object = (char *)old_object_ptr;
   short sVar1;
   uint uVar2;
   int iVar3;
@@ -521,8 +523,9 @@ int scheduler_find_entry(char *object)
 
 
 // was FUN_00081a84: reads scheduler_find_entry's result's delay field.
-int scheduler_get_delay(char *object)
+int scheduler_get_delay(void *object_ptr)
 {
+  char *object = (char *)object_ptr;
   short sVar1;
   int iVar2;
 
@@ -539,8 +542,9 @@ int scheduler_get_delay(char *object)
 
 
 // was FUN_00081abc: re-arms scheduler_find_entry's result's delay field.
-void scheduler_set_delay(char *object, int delay)
+void scheduler_set_delay(void *object_ptr, int delay)
 {
+  char *object = (char *)object_ptr;
   short sVar1;
   int iVar2;
   
@@ -607,7 +611,7 @@ int scheduler_advance_effect(short entry_slot, int elapsed)
     bVar1 = (byte)((uVar5 & 0xefff) >> 8);
     *(char *)puVar2 = (char)(uVar5 & 0xefff);
     *(byte *)((char *)puVar2 + 1) =
-         ((byte)((uVar5 & 0xe00) + (elapsed + 1) * -0x200 >> 8) ^ bVar1) & 0x1e ^ bVar1;
+         ((byte)(((uVar5 & 0xe00) + (elapsed + 1) * -0x200) >> 8) ^ bVar1) & 0x1e ^ bVar1;
     iVar6 = scheduler_get_delay(puVar2);
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] scheduler_advance_effect: elapsed(elapsed)=%d obj0(after settle)=0x%04x dirbit=%d openbits=%d get_delay=%d anim_type(iVar10)=%d\n",
@@ -640,8 +644,9 @@ int scheduler_advance_effect(short entry_slot, int elapsed)
 // g_scheduler_count by re-scanning for the first empty entry.
 /* .ark handle-struct pointer -- was `undefined4`, truncating the stack struct
    load_level_object_table passes and crashing read_archive_entry below. */
-int scheduler_load(byte *archive, int level_number)
+int scheduler_load(void *archive_ptr, int level_number)
 {
+  byte *archive = (byte *)archive_ptr;
   short sVar1;
   undefined4 uVar2;
   int iVar3;
@@ -675,8 +680,9 @@ int scheduler_load(byte *archive, int level_number)
 /* Was `undefined4` -- truncated the real 64-bit archive-handle-struct pointer
    (write_level_tilemap_to_archive's own `auStack_20`) write_archive_entry needs as its own
    param_1. */
-int scheduler_save(uint *archive, int level_number)
+int scheduler_save(void *archive_ptr, int level_number)
 {
+  uint *archive = (uint *)archive_ptr;
   int iVar1;
   
   if (g_scheduler_count < 0x40) {

@@ -2,15 +2,15 @@
 #include "inventory_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-void *resolve_object_link(ushort *link);
-int encode_object_slot_index(char *object);
-int build_object_display_name(char *text, ushort *object, int a, int b);
+void *resolve_object_link(void *link);
+int encode_object_slot_index(void *object);
+int build_object_display_name(char *text, void *object, int a, int b);
 void push_cursor_icon(int type);
 void pop_cursor_icon(ushort mode);
 ushort *pick_object_under_cursor(int mode);
-int target_in_range(short actor, char *target, char *range);
-int target_line_of_sight(short actor, char *target);
-int check_object_combination(char *actor, ushort *target, short key_id);
+int target_in_range(short actor, void *target, char *range);
+int target_line_of_sight(short actor, void *target);
+int check_object_combination(void *actor, ushort *target, short key_id);
 void handle_game_view_click_hold(void);
 void interact_use(void);
 void describe_picked_terrain(byte mode, short tile);
@@ -36,15 +36,15 @@ char *g_current_container_record;
 
 ushort *DAT_002046b4;
 
-void *resolve_object_link(ushort *link)
-{
+void *resolve_object_link(void *link_)
+{ ushort *link = (ushort *)link_;
     unsigned slot = *link >> 6;
     if (slot == 0) return NULL;
     TEST_ASSERT_LESS_THAN_UINT(5, slot);
     return objects[slot];
 }
 
-int encode_object_slot_index(char *object)
+int encode_object_slot_index(void *object)
 {
     if (object == NULL) return 0;
     for (int i = 1; i < 5; i++)
@@ -95,7 +95,7 @@ uint scroll_message;
 
 int target_reachable = 1, target_obstructed;
 
-int build_object_display_name(char *text, ushort *object, int a, int b)
+int build_object_display_name(char *text, void *object, int a, int b)
 {
     TEST_ASSERT_EQUAL_PTR(objects[2], object);
     (void)a; (void)b;
@@ -110,13 +110,13 @@ void pop_cursor_icon(ushort mode) { TEST_ASSERT_EQUAL_INT(3, mode); reset_cursor
 ushort *pick_object_under_cursor(int mode)
 { TEST_ASSERT_EQUAL_INT(2, mode); return picked_target; }
 
-int target_in_range(short actor, char *target, char *range)
+int target_in_range(short actor, void *target, char *range)
 { (void)actor; (void)range; TEST_ASSERT_EQUAL_PTR(picked_target, target); return target_reachable; }
 
-int target_line_of_sight(short actor, char *target)
+int target_line_of_sight(short actor, void *target)
 { (void)actor; TEST_ASSERT_EQUAL_PTR(picked_target, target); return target_obstructed; }
 
-int check_object_combination(char *actor, ushort *target, short key_id)
+int check_object_combination(void *actor, ushort *target, short key_id)
 {
     TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
     TEST_ASSERT_EQUAL_INT(1, key_id);
@@ -271,9 +271,9 @@ void redraw_inventory_widget(int widget)
     if (widget == 21 || widget == 22) container_arrow_redraws++;
     else TEST_ASSERT_LESS_THAN_INT(11, widget);
 }
-int grtile_alloc_registered(uint width, uint height)
+uint grtile_alloc_registered(uint width, uint height)
 { (void)width; (void)height; return 1; }
-int capture_framebuffer_rect_to_grtile(short *tile, int x, int y, int w, short h)
+int capture_framebuffer_rect_to_grtile(uint tile, int x, int y, int w, short h)
 { (void)tile; (void)x; (void)y; (void)w; (void)h; return 1; }
 void draw_sprite_by_id(int tile, int x, int y, int w, short h)
 { (void)tile; (void)x; (void)y; (void)w; (void)h; }

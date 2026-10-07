@@ -24,6 +24,6 @@ void swap_collision_candidates(uint index);
 void sort_collision_candidates();
 int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit);
 int build_collision_height_field_for_object(ushort *object); // was FUN_0002b7a0
-int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags); // was FUN_0002bd70
+int apply_placement_collision_sweep(void *snapshot, void *sweep_flags); // was FUN_0002bd70
 
 #endif

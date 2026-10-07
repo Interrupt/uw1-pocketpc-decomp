@@ -68,7 +68,7 @@ int register_click_region(int left, int bottom, int right, int top, short flags,
 void wait_for_click_release(int mode) {}
 int measure_text_width(char *text) { return strlen(text)*4; }
 uint poll_input_event(int mode) { return *note_input ? *note_input++ : 13; }
-int poll_keyboard_char_input(short *key) { *key=0; return 0; }
+int poll_keyboard_char_input(void *key_) { short *key = (short *)key_; *key=0; return 0; }
 int next_input_event(void) { return 1; }
 void update_hotspot_cursor_icon(void) {}
 void screen_backup_restore_rect(uint x, uint y, uint right, uint bottom) {}

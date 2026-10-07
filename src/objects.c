@@ -24,7 +24,7 @@ undefined1 DAT_00202c90_backing[8192];
 /* Was `int` despite being assigned real pointer values derived from DAT_002046b8 (see there) and
    itself assigned into g_player_object (`char *`) -- truncating on this 64-bit host, part of the
    same crash chain (reset_player_object_record's ce_memset call reading g_player_object). */
-char *DAT_0023b82c;
+char *DAT_0023b82c;  /* object the camera currently tracks (normally the player); byte-offset addressed */
 /* Sizing-audit pass: `read_file_handle(param_1,&DAT_002027d0,0x30)` (resources.c) reads exactly 48
    bytes, matching its own nibble*3-stride indexing (max 15*3+2=47). HARD exact. Down from 256. */
 undefined1 DAT_002027d0_backing[48];
@@ -32,7 +32,7 @@ undefined1 DAT_002027d0_backing[48];
    `read_file_handle(param_1,&DAT_00202800,0x80);` (128 bytes). Also indexed as `&DAT_00202800 +
    nibble*8` (nibble 0-15, max 15*8+8=128) throughout combat.c/objects.c/player.c -- same bound. */
 undefined1 DAT_00202800_backing[256];
-byte *g_scratch_object_ptr;
+ushort *g_scratch_object_ptr;  /* object whose class/state is being examined; was `byte *`, which dropped bit 8 of every `*g_scratch_object_ptr & 0x1ff`/`& 0x1c0` read */
 short DAT_00101454;
 short DAT_0010144c;
 short DAT_00202a3c;
@@ -247,8 +247,9 @@ void *alloc_object_slot(int region)
 
 
 // was FUN_00053004
-void free_object_slot(char *object)
+void free_object_slot(void *object_ptr)
 {
+  char *object = (char *)object_ptr;
   short sVar1;
   short *psVar2;
 
@@ -277,8 +278,10 @@ void free_object_slot(char *object)
 /* Object-record pointer -- was `uint`, truncating it (e.g. set_player_tile_position passes the
    real g_player_object player-object pointer here; truncated it crashed placing the player into
    the level). */
-void object_list_insert_head(byte *link_field, char *object)
+void object_list_insert_head(void *link_field_ptr, void *object_ptr)
 {
+  byte *link_field = (byte *)link_field_ptr;
+  char *object = (char *)object_ptr;
   undefined2 uVar1;
   byte bVar2;
   short sVar3;
@@ -304,8 +307,10 @@ void object_list_insert_head(byte *link_field, char *object)
 // was FUN_000531a0
 /* Object-record pointer -- was `uint`, truncating it (same class as object_list_insert_head
    above). */
-void object_list_append_tail(byte *link_field, char *object)
+void object_list_append_tail(void *link_field_ptr, void *object_ptr)
 {
+  byte *link_field = (byte *)link_field_ptr;
+  char *object = (char *)object_ptr;
   short sVar1;
   byte *pbVar2;
   ushort uVar3;
@@ -334,8 +339,10 @@ void object_list_append_tail(byte *link_field, char *object)
 /* param_2 was `int`, and the local holding resolve_object_link's return value was `int iVar4` --
    both truncating real pointers on this 64-bit host. */
 // was FUN_00053274
-void object_list_unlink(byte *link_field, byte *object)
+void object_list_unlink(void *link_field_ptr, void *object_ptr)
 {
+  byte *link_field = (byte *)link_field_ptr;
+  byte *object = (byte *)object_ptr;
   short sVar1;
   undefined2 uVar2;
   byte bVar3;
@@ -374,8 +381,9 @@ void object_list_unlink(byte *link_field, byte *object)
 // wielded weapon)...
 /* was `undefined4` -- truncated the real object-record pointer (passed straight to
    resolve_object_link), latent until that call started actually using it */
-void free_linked_object_recursive(char *link_field)
+void free_linked_object_recursive(void *link_field_ptr)
 {
+  char *link_field = (char *)link_field_ptr;
   ushort *puVar1;
   
   puVar1 = (ushort *)resolve_object_link(link_field); /* confirmed via ARM disassembly, 0x533e4 */
@@ -406,8 +414,10 @@ void free_linked_object_recursive(char *link_field)
 /* Was `int param_1; int param_2;` -- both real object-record pointers (param_2 is dereferenced
    directly; both are forwarded to object_list_unlink/free_object_slot, which already declare
    pointer params), truncated to 32 bits on this host... */
-void unlink_and_free_object(char *link_field, char *object)
+void unlink_and_free_object(void *link_field_ptr, void *object_ptr)
 {
+  char *link_field = (char *)link_field_ptr;
+  char *object = (char *)object_ptr;
   /* Dropped argument: free_linked_object_recursive takes the address of a link field to recursively
      free (its own declared link_field) -- here that's object's own "contains" field (+6, this file's
      standard container-contents offset) -- but it was called bare... */
@@ -426,8 +436,9 @@ void unlink_and_free_object(char *link_field, char *object)
 /* Was `int`, truncating the same DAT_002046b8/DAT_002046c4 object-record
    pointer arithmetic as get_object_record_by_slot_index above (fixed earlier this session)
    -- same fix. */
-void *resolve_object_link(ushort *link_field)
+void *resolve_object_link(void *link_field_ptr)
 {
+  ushort *link_field = (ushort *)link_field_ptr;
   ushort uVar1;
 
   /* ARM FUN_00053514 accepts any valid link-word address, including
@@ -450,8 +461,9 @@ void *resolve_object_link(ushort *link_field)
 
 
 // was FUN_0005358c
-int encode_object_slot_index(char *object)
+int encode_object_slot_index(void *object_ptr)
 {
+  char *object = (char *)object_ptr;
   short sVar1;
   int iVar2;
   
@@ -521,16 +533,17 @@ void *spawn_new_object(uint object_type, int region)
 // elsewhere as a candle/torch-style burnout transition): for a mobile object...
 /* Object-record pointer -- was `uint`, truncating it (same class as
    object_list_insert_head/object_list_append_tail below). */
-int reset_burnt_out_item_state(int tile_link, char *object)
+int reset_burnt_out_item_state(char *tile_link, void *object_ptr)
 {
-  int iVar1;
+  char *object = (char *)object_ptr;
+  ushort *discarded;
 
   if (object < DAT_002046c4) {
     *(undefined1 *)(object + 8) = 0;
   }
   else {
-    iVar1 = discard_misplaced_object(tile_link,object,0);
-    if (iVar1 == 0) {
+    discarded = discard_misplaced_object(tile_link,(ushort *)object,0);
+    if (discarded == 0) {
       return 1;
     }
   }
@@ -545,6 +558,7 @@ int reset_burnt_out_item_state(int tile_link, char *object)
    Keep it pointer-sized rather than truncating it through undefined4. */
 int apply_object_destruction_effect(ushort *object, ushort *attacker, uint damage_type_mask, int tile_x, short tile_y)
 {
+  ushort *settled;
   ushort uVar1;
   short sVar2;
   int iVar3;
@@ -614,8 +628,8 @@ LAB_00038100:
       uVar5 = (*object ^ uVar6) & 0x1ff ^ (uint)*object;
       *(char *)object = (char)uVar5;
       *(char *)((char *)object + 1) = (char)(uVar5 >> 8);
-      if ((DAT_002046c4 <= object) &&
-         (iVar3 = settle_dropped_object(object,tile_x,(int)tile_y,1), iVar3 == 0)) goto LAB_000382ac;
+      if (((char *)object >= DAT_002046c4) &&
+         (settled = settle_dropped_object(object,tile_x,(int)tile_y,1), settled == 0)) goto LAB_000382ac;
     }
     uVar4 = 1;
     if (-2 < (short)uVar6) {
@@ -905,27 +919,26 @@ int clear_object_temp_flag_callback(ushort *object)
 // non-empty object list, recursively walks each object's tree (walk_object_tree, not yet named)
 // applying clear_object_temp_flag_callback to every object found...
 void clear_temp_flags_on_all_objects()
-
 {
-  undefined4 uVar1;
-  char *iVar2;
-  int iVar3;
-  int iVar4;
+  void *contents;
+  char *tile_cursor;
+  int column;
+  int row;
 
-  iVar4 = 0;
-  iVar2 = DAT_002029cc;
+  row = 0;
+  tile_cursor = DAT_002029cc;
   do {
-    iVar3 = 0;
+    column = 0;
     do {
-      if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
-        uVar1 = resolve_object_link((ushort *)(iVar2 + 2));
-        walk_object_tree(uVar1,clear_object_temp_flag_callback);
+      if ((*(ushort *)(tile_cursor + 2) & 0xffc0) != 0) {
+        contents = resolve_object_link(tile_cursor + 2);
+        walk_object_tree(contents,clear_object_temp_flag_callback);
       }
-      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-      iVar2 = iVar2 + 4;
-    } while (iVar3 < 0x40);
-    iVar4 = iVar4 + 1;
-  } while (iVar4 * 0x10000 >> 0x10 < 0x40);
+      column = (column + 1) * 0x10000 >> 0x10;
+      tile_cursor = tile_cursor + 4;
+    } while (column < 0x40);
+    row = row + 1;
+  } while (row * 0x10000 >> 0x10 < 0x40);
   return;
 }
 
@@ -1035,7 +1048,7 @@ int load_object_catalog_data()
     read_file_handle(iVar3,auStack_142,2);
     do {
       if (local_13c[iVar5] != (code *)0x0) {
-        (*local_13c[iVar5])(iVar3);
+        ((void (*)(int))local_13c[iVar5])(iVar3);
       }
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 8);
@@ -1082,25 +1095,21 @@ int load_object_catalog_data()
    the runtime tables class2_variant_effect_table_lookup and friends compute... */
 // was FUN_000528a8
 void *get_scanned_object_class_effect_ptr()
-
 {
-  undefined1 *local_24 [4];
-  undefined1 *local_14;
-  undefined1 *local_10;
-  undefined1 *local_c;
-  undefined1 *local_8;
-  
-  local_24[0] = &class0_variant_effect_table_lookup;
-  local_24[1] = &class1_variant_effect_table_lookup;
-  local_24[2] = &class2_variant_effect_table_lookup;
-  local_24[3] = &class3_variant_effect_stub;
-  local_14 = &class4_variant_effect_stub;
-  local_10 = &class5_variant_effect_stub;
-  local_c = &class6_variant_effect_table_lookup;
-  local_8 = &class7_variant_effect_table_lookup;
+  void *(*class_handlers[8])() = {
+    (void *(*)())class0_variant_effect_table_lookup,
+    (void *(*)())class1_variant_effect_table_lookup,
+    (void *(*)())class2_variant_effect_table_lookup,
+    (void *(*)())class3_variant_effect_stub,
+    (void *(*)())class4_variant_effect_stub,
+    (void *(*)())class5_variant_effect_stub,
+    (void *(*)())class6_variant_effect_table_lookup,
+    (void *(*)())class7_variant_effect_table_lookup,
+  };
+
   /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace a return value through the
      indirect call and fabricated a "return 0" placeholder. */
-  return (*(void *(*)())local_24[(short)((*g_scratch_object_ptr & 0x1c0) >> 6)])();
+  return class_handlers[(short)((*g_scratch_object_ptr & 0x1c0) >> 6)]();
 }
 
 
@@ -1111,15 +1120,16 @@ void *get_scanned_object_class_effect_ptr()
 /* was `int` -- truncated the real object-record pointer (dereferenced throughout this function via
    casts, and passed to resolve_object_link/itself), latent until those calls started actually
    using their arguments */
-int walk_object_tree(char *object, int (*callback)())
+int walk_object_tree(void *object_ptr, int (*callback)())
 {
+  char *object = (char *)object_ptr;
   int iVar1;
   char *pcVar2;
 
   /* Dropped argument (both call sites below): callback is a callback (object_exceeds_size_threshold
      at every call site reached so far) that declares one parameter -- the object/link being tested,
      i.e. this function's own object -- but was invoked bare... */
-  iVar1 = (*callback)(object);
+  iVar1 = ((int (*)(void *))callback)(object);
   while( true ) {
     if (iVar1 != 0) {
       return 1;
@@ -1136,7 +1146,7 @@ int walk_object_tree(char *object, int (*callback)())
     }
     if ((*(ushort *)(object + 4) & 0xffc0) == 0) break;
     object = (char *)resolve_object_link((ushort *)(object + 4)); /* confirmed via ARM disassembly, 0x52b84 */
-    iVar1 = (*callback)(object);
+    iVar1 = ((int (*)(void *))callback)(object);
   }
   return 0;
 }
@@ -1146,8 +1156,9 @@ int walk_object_tree(char *object, int (*callback)())
 // was FUN_00052bac -- checks whether object param_1's size/weight class exceeds the current
 // threshold in DAT_002046b0 (set by its caller, e.g. roll_object_destroy_chance, just before use):
 // container-flagged objects (0x2000) always report "exceeds" (1)...
-int object_exceeds_size_threshold(ushort *object)
+int object_exceeds_size_threshold(void *object_ptr)
 {
+  ushort *object = (ushort *)object_ptr;
   ushort uVar1;
   undefined4 uVar2;
   short sVar3;
@@ -1227,7 +1238,7 @@ void despawn_objects_outside_radius(int keep_rows, short max_destroyed)
     local_34 = (int)(short)(((uVar6 ^ uVar1) - uVar1) * 0x10000 >> 0x10);
     iVar8 = 0;
     do {
-      uVar1 = local_38 - iVar8 >> 0x1f;
+      uVar1 = (local_38 - iVar8) >> 0x1f;
       if (local_30 < (int)(local_34 + ((local_38 - iVar8 ^ uVar1) - uVar1))) {
         for (local_3c[0] = *(ushort *)(iVar9 + 2); (local_3c[0] & 0xffc0) != 0;
             local_3c[0] = local_3c[0] & 0x3f | uVar3 & 0xffc0) {
@@ -1261,8 +1272,9 @@ void despawn_objects_outside_radius(int keep_rows, short max_destroyed)
 /* Was `int param_1` -- a real object-record pointer (drop_held_object_ near_player passes
    pDropTile+2, a resolve_object_link-style address) truncated to 32 bits on this 64-bit host, same
    class as several other fixes this session. */
-ushort *discard_misplaced_object(char *tile_link, ushort *object, int skip_roll)
+ushort *discard_misplaced_object(void *tile_link_ptr, ushort *object, int skip_roll)
 {
+  char *tile_link = (char *)tile_link_ptr;
   ushort uVar1;
   int iVar2;
   ushort local_10 [2];
@@ -1327,8 +1339,9 @@ void *get_object_record_by_slot_index(short slot_index)
 // was FUN_00053644 -- recursively searches the chain/contents rooted at link param_1 for an object
 // whose encode_object_slot_index() matches target slot param_3 (param_2 is always passed 1, a
 // recurse- into-contents flag like find_object_in_chain's)...
-ushort *find_object_by_encoded_slot_in_chain(ushort *link_field, int recurse, int slot)
+ushort *find_object_by_encoded_slot_in_chain(void *link_field_ptr, int recurse, int slot)
 {
+  ushort *link_field = (ushort *)link_field_ptr;
   ushort *puVar1;
   short sVar2;
   byte *iVar3;
@@ -1357,8 +1370,9 @@ LAB_00053720:
 
 
 // was FUN_00053728
-int object_ptr_in_arena(char *object)
+int object_ptr_in_arena(void *object_ptr)
 {
+  char *object = (char *)object_ptr;
   undefined4 uVar1;
   
   if ((object == 0) || (uVar1 = 1, DAT_002046c4 <= object)) {
@@ -1383,21 +1397,21 @@ void active_mobile_list_add(byte slot)
 // was FUN_00053774
 void active_mobile_list_remove(char slot)
 {
-  char *pcVar1;
-  
-  pcVar1 = DAT_002046c0;
+  byte *entry;
+
+  entry = DAT_002046c0;
   while( true ) {
-    if (DAT_002046c8 <= pcVar1) {
+    if (DAT_002046c8 <= entry) {
       return;
     }
-    if (*pcVar1 == slot) break;
-    pcVar1 = pcVar1 + 1;
+    if ((char)*entry == slot) break;
+    entry = entry + 1;
   }
   DAT_002046c8 = DAT_002046c8 + -1;
-  if (DAT_002046c8 <= pcVar1) {
+  if (DAT_002046c8 <= entry) {
     return;
   }
-  *pcVar1 = *DAT_002046c8;
+  *entry = *DAT_002046c8;
 }
 
 
@@ -1407,8 +1421,9 @@ void active_mobile_list_remove(char slot)
 // was FUN_000537d0 -- searches the object chain starting at *param_1 for one matching class param_3
 // (>>6&7 of the type word), subclass param_4 (>>4&3), and quality param_5 (&0xf), each -1/0xffff
 // ("wildcard") skipping that check...
-ushort *find_object_in_chain(ushort **link_cursor, int recurse, int object_class, int subclass, short quality)
+ushort *find_object_in_chain(void *link_cursor_ptr, int recurse, int object_class, int subclass, short quality)
 {
+  ushort **link_cursor = (ushort **)link_cursor_ptr;
   ushort *puVar1;
   ushort *puVar2;
   uint uVar3;
@@ -1446,10 +1461,11 @@ ushort *find_object_in_chain(ushort **link_cursor, int recurse, int object_class
 // was FUN_00053920 -- returns whether object param_1 itself encodes type param_2 (&0x1ff of its
 // type word), or -- if it isn't flagged "no contents" -- whether find_object_in_chain finds a match
 // for that type (decoded into class/subclass/quality) among its contents.
-int object_or_contents_has_type(ushort *object, ushort type_id)
+int object_or_contents_has_type(void *object_ptr, ushort type_id)
 {
+  ushort *object = (ushort *)object_ptr;
   undefined4 uVar1;
-  int iVar2;
+  ushort *found;
   ushort *local_8;
   
   if ((*object & 0x1ff) == (int)(short)type_id) {
@@ -1458,9 +1474,9 @@ int object_or_contents_has_type(ushort *object, ushort type_id)
   else {
     if ((*object & 0x8000) == 0) {
       local_8 = object + 3;
-      iVar2 = find_object_in_chain(&local_8,1,(int)(short)type_id >> 6,(short)type_id >> 4 & 3,type_id & 0xf
+      found = find_object_in_chain(&local_8,1,(int)(short)type_id >> 6,(short)type_id >> 4 & 3,type_id & 0xf
                           );
-      if (iVar2 != 0) {
+      if (found != 0) {
         return 1;
       }
     }
@@ -1518,8 +1534,9 @@ ushort *find_object_in_world(int object_class, int subclass, short quality, shor
 // was FUN_00055ef8 -- finalizes the position fields of a just- settled object's placement snapshot
 // (param_1, the same snapshot struct build_object_placement_snapshot fills): if DAT_002046d4 is
 // clear (settled cleanly)...
-void randomize_settled_snapshot_position(char *snapshot)
+void randomize_settled_snapshot_position(void *snapshot_ptr)
 {
+  char *snapshot = (char *)snapshot_ptr;
   char cVar1;
   short sVar2;
   int iVar3;
@@ -1546,8 +1563,9 @@ void randomize_settled_snapshot_position(char *snapshot)
 // was FUN_00055f98 -- finalize a just-placed object's rest position at (param_2,param_3): validate
 // it can actually reach this floor height, route genuinely-misplaced objects into
 // discard_misplaced_object (which destroys them, see its own comment)...
-ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int force)
+ushort *settle_dropped_object(void *object_ptr, short tile_x, short tile_y, int force)
 {
+  ushort *object = (ushort *)object_ptr;
   int uw_ord2005_rem_119 = 0;
   bool bVar1;
   ushort uVar2;
@@ -1814,12 +1832,13 @@ void *class2_variant_effect_table_lookup()
 // was FUN_000522f0
 /* param_4 was `int` -- a real object pointer (forwarded to find_object_placement, which already
    declares its own param_1 as `ushort *`) truncated to 32 bits on this host. */
-int place_object_in_world(uint tile_x, uint tile_y, int height, char *object, short radius, int skip_roll)
+int place_object_in_world(uint tile_x, uint tile_y, int height, void *object_ptr, short radius, int skip_roll)
 {
+  char *object = (char *)object_ptr;
   int iVar1;
   uint uVar2;
   
-  iVar1 = find_object_placement(object,tile_x,tile_y,height,radius);
+  iVar1 = find_object_placement((ushort *)object,tile_x,tile_y,height,radius);
   if (iVar1 == 0) {
     if ((skip_roll == 0) && (iVar1 = roll_object_destroy_chance(10,object), iVar1 != 0)) {
       unlink_and_free_object(0,object);
@@ -1840,8 +1859,9 @@ int place_object_in_world(uint tile_x, uint tile_y, int height, char *object, sh
 
 // was FUN_0005578c -- finalize an object record's placement at tile (param_2,param_3): recomputes
 // its render/collision height from the low 7 bits of its own offset 2-3 field...
-void compute_object_placement_fields(byte *object, uint tile_x, uint tile_y)
+void compute_object_placement_fields(void *object_ptr, uint tile_x, uint tile_y)
 {
+  byte *object = (byte *)object_ptr;
   char cVar1;
   uint uVar2;
   int iVar3;

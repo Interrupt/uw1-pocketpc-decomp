@@ -109,7 +109,7 @@ void weapon_ready_fixture_start_unloaded(void)
     DAT_000870dc = initial_loaded;
     DAT_000870e4 = initial_frame;
 }
-int poll_keyboard_char_input(short *buttons) { *buttons = 2; return 2; }
+int poll_keyboard_char_input(void *buttons_) { short *buttons = (short *)buttons_; *buttons = 2; return 2; }
 void get_mouse_position(ushort *x, ushort *y) { *x = *y = 0; }
 int hit_test_inventory_widget(short x, short y) { return 0; }
 int erase_cursor_icon(void) { return 0; }

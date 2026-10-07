@@ -15,8 +15,7 @@ undefined1 DAT_00204980_backing[32];
 undefined2 DAT_00204990_backing[16];
 undefined2 DAT_002049a0_backing[16];
 undefined2 DAT_002049b0_backing[16];
-undefined *DAT_00204988, *DAT_00204998, *DAT_002049b8;
-undefined1 *DAT_002049a8;
+int (*DAT_00204988)(ushort *), (*DAT_00204998)(ushort *), (*DAT_002049a8)(ushort *), (*DAT_002049b8)(ushort *);
 undefined1 DAT_002049c0;
 char DAT_002049bc;
 short DAT_00086980, DAT_00086982, DAT_00086990, DAT_00086996;
@@ -40,8 +39,8 @@ undefined2 DAT_00201c78;
 undefined4 DAT_000858a0;
 char *DAT_002029cc;
 uint read_realtime_clock_units(void) { return 0; }
-void object_list_unlink(byte *link_field, byte *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
-void object_list_insert_head(byte *link_field, char *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void object_list_unlink(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void object_list_insert_head(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
 void set_locomotion_state(ushort state, int flags) { (void)state; (void)flags; }
 int roll_skill_check(int skill, int difficulty) { (void)skill; (void)difficulty; TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
 int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
@@ -115,25 +114,25 @@ void *get_object_record_by_slot_index(short slot)
 }
 char *DAT_002046c4 = (char *)movement_fixture.object_arena + 0x5b00;
 short DAT_0010144c, DAT_00101454;
-int encode_object_slot_index(char *object)
+int encode_object_slot_index(void *object)
 {
     TEST_ASSERT_EQUAL_PTR(movement_fixture.door, object);
     movement_fixture.door_contacts++;
     return 300;
 }
-int sync_object_tile_position(ushort *object, ushort *snapshot)
+int sync_object_tile_position(ushort *object, void *snapshot)
 {
     TEST_ASSERT_EQUAL_PTR(movement_fixture.door, object);
     memcpy(movement_fixture.last_obstacle_snapshot, snapshot, sizeof(movement_fixture.last_obstacle_snapshot));
     movement_fixture.obstacle_syncs++;
     return 1;
 }
-uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id)
+uint resolve_skill_gated_unlock_or_use(void *object, void *key_item, void *lock_link, ushort key_id)
 { TEST_FAIL_MESSAGE("Unexpected unlock trigger"); return 0; }
 ushort *use_object_on_target(ushort *actor, ushort *used_object, int flag)
 { TEST_FAIL_MESSAGE("Unexpected use trigger"); return 0; }
-void angle_to_screen_delta(uint heading, short *dx, short *dy)
-{
+void angle_to_screen_delta(uint heading, void *dx_, void *dy_)
+{ short *dx = (short *)dx_; short *dy = (short *)dy_;
     (void)heading;
     *dx = 0;
     *dy = 0;

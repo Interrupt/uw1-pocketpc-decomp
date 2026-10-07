@@ -97,8 +97,10 @@ bool step_value_toward_limit(short *value, short limit, short step, short direct
 // was FUN_00069f2c -- disassembly-confirmed faithful: given a compass heading (param_1) and a
 // distance (param_2), looks up heading_to_sine_cosine and adds `*param_4(Y) += sin(heading)*dist`,
 // `*param_3(X) += cos(heading)*dist` -- the standard heading->direction- vector projection...
-void project_position_by_heading(int heading, short distance, short *x, short *y)
+void project_position_by_heading(int heading, short distance, void *x_ptr, void *y_ptr)
 {
+  short *x = (short *)x_ptr;
+  short *y = (short *)y_ptr;
   short sine;
   short cosine;
   int scaled;
@@ -194,7 +196,7 @@ int integer_sqrt(int value)
     do {
       estimate = next;
       next = ordint_divmod(estimate, value).quot;
-      next = estimate + next >> 1;
+      next = (estimate + next) >> 1;
     } while (next < estimate);
   }
   return estimate;
@@ -228,8 +230,10 @@ uint pack_angle_byte(uint word, uint new_byte, int into_high_byte)
 
 
 // was FUN_00049ce8
-void angle_to_screen_delta(uint angle_word, short *out_sine, short *out_cosine)
+void angle_to_screen_delta(uint angle_word, void *out_sine_ptr, void *out_cosine_ptr)
 {
+  short *out_sine = (short *)out_sine_ptr;
+  short *out_cosine = (short *)out_cosine_ptr;
   ushort table_index = pack_angle_byte(angle_word, (angle_word & 0xffff) >> 8, 0);
   int offset = (short)(table_index & 0xff) * 2;
   int fraction = (int)(short)((ushort)angle_word & 0xff);

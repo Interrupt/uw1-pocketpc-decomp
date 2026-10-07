@@ -64,7 +64,7 @@ int build_collision_height_field_for_object(ushort *object)
 /* Second argument was previously left undeclared, relying on it still sitting in the same ABI
    register (r1) at the tail call to movement_collision_sweep() -- a K&R "dropped-argument" idiom
    already seen (and fixed) elsewhere this session (tile_is_no_magic). */
-int apply_placement_collision_sweep(intptr_t snapshot, intptr_t sweep_flags)
+int apply_placement_collision_sweep(void *snapshot, void *sweep_flags)
 {
   /* snapshot was `int`, truncating the real 64-bit pointers callers pass (&DAT_00204920, and
      DAT_0010172c after its own fix above) -- same class of bug as DAT_0010172c's own fix. */
@@ -297,7 +297,7 @@ void collision_height_envelope(int mode, int collision)
   int iVar2;
   ushort uVar3;
   byte bVar4;
-  intptr_t iVar5;  /* was int -- holds the void* tilemap_lookup returns (a real 64-bit tile-array pointer); truncated
+  char *iVar5;  /* was int -- holds the void* tilemap_lookup returns (a real 64-bit tile-array pointer); truncated
    to 32 bits it made `*(ushort *)(iVar5 + ...)` a wild deref -- the crash the first time a keyboard
    forward step actually dispatched. */
   ushort *puVar6;
@@ -403,8 +403,8 @@ void collision_height_envelope(int mode, int collision)
               if (puVar7 == (ushort *)0x0) break;
               iVar10 = (*puVar7 & 0x1ff) * 0xd;
               if ((((local_3c == 0) || (((&DAT_00202c93)[iVar10] & 4) == 0)) &&
-                  (((&DAT_00202c90)[iVar10] != '\0' || (puVar7 < DAT_002046c4)))) &&
-                 ((((DAT_002046c4 <= puVar7 || ((*puVar7 & 0x1c0) == 0x40)) ||
+                  (((&DAT_00202c90)[iVar10] != '\0' || ((char *)puVar7 < DAT_002046c4)))) &&
+                 ((((DAT_002046c4 <= (char *)puVar7 || ((*puVar7 & 0x1c0) == 0x40)) ||
                    ((*(byte *)((char *)puVar7 + 0x15) & 0x80) == 0)) &&
                   ((collision == 0 || (((&DAT_00202c97)[iVar10] & 1) != 0)))))) {
                 collision_add_candidate_object(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);

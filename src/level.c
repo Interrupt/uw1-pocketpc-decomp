@@ -116,7 +116,7 @@ int load_level_object_table(byte *archive_handle, int level_number)
   short objects_loaded;
   char *arena;
   short *magic_marker;
-  undefined1 archive[16];
+  byte archive[16];
 
   if (archive_handle == NULL) {
     if (!open_level_archive(archive, s__SAVE0_lev_ark_000842fc)) return 0;
@@ -190,7 +190,7 @@ int load_level_object_table(byte *archive_handle, int level_number)
 // was FUN_00052960
 void reset_level_object_arena()
 {
-  undefined2 *free_list_cursor;
+  char *free_list_cursor;
   char *tile_record = DAT_002029cc;
   int index = 0;
 
@@ -202,7 +202,7 @@ void reset_level_object_arena()
   } while (index < 0x1000);
   DAT_002046b8 = DAT_002029cc + 0x4000;
   DAT_002046c4 = DAT_002029cc + 0x5b00;
-  free_list_cursor = (undefined2 *)(DAT_002029cc + 0x7300);
+  free_list_cursor = (DAT_002029cc + 0x7300);
   DAT_002046a8 = DAT_002029cc + 0x74fa;
   DAT_002046bc = DAT_002029cc + 0x74fc;
   DAT_0020469c = DAT_002029cc + 0x7afa;
@@ -240,7 +240,7 @@ void reset_level_object_arena()
 int load_level(int level_number)
 {
   int result;
-  undefined1 archive[16];
+  byte archive[16];
 
   write_player_save_record(0);
   if (-1 < DAT_00202080) {
@@ -408,8 +408,9 @@ int trigger_random_level_special_event(short chance_scale)
 // was FUN_000396a0 -- teleports object param_1 to tile (param_2,param_3) on level param_4.
 // Confirmed as the "teleporter trap" handler (dispatch_trap_type_effect's case 1, teleporting the
 // current trigger object DAT_0024cff4 to a trap-record-specified tile/level).
-int teleport_object_to_level_tile(char *object, int tile_x, int tile_y, short level_number)
+int teleport_object_to_level_tile(void *object_ptr, int tile_x, int tile_y, short level_number)
 {
+  ushort *object = (ushort *)object_ptr;
   short current_level = DAT_00201b68;
   int placed;
   short placed_x;

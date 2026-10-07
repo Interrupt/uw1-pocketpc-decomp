@@ -296,7 +296,7 @@ void repopulate_container_grid_slots()
     iVar6 = 0x14;
     do {
       iVar5 = iVar6 * 2;
-      uVar1 = *(undefined2 *)(iVar5 + 0x202958);
+      uVar1 = *(undefined2 *)((char *)&g_backpack_slot_table[0] + 8 + iVar5); /* was the literal original address 0x202958 + iVar5 */
       bVar2 = (byte)uVar1;
       (&g_equipped_items)[iVar5] = ((&g_equipped_items)[iVar5] ^ bVar2) & 0x3f ^ bVar2;
       (&DAT_00202951)[iVar5] = (char)((ushort)uVar1 >> 8);
@@ -354,7 +354,7 @@ void open_backpack_container(short container_slot)
       set_hud_status_value(6,1);
     }
     else {
-      if (g_open_container_list == (undefined4 *)0x0) {
+      if (g_open_container_list == (char *)0x0) {
         decrement_cursor_hide_depth();
         if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (g_active_hud_panel == '\0')) {
           draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
@@ -425,7 +425,7 @@ void open_backpack_container(short container_slot)
          4-byte fields -- correct on the original 32-bit target where a pointer IS 4 bytes... */
       puVar9 = (undefined4 *)ce_malloc(0x1c);
       if (puVar9 != (undefined4 *)0x0) {
-        if (g_open_container_list == (undefined4 *)0x0) {
+        if (g_open_container_list == (char *)0x0) {
           g_open_container_list = (char *)puVar9;
           g_current_container_record = (char *)puVar9;
           *(undefined1 *)(puVar9 + 1) = 0;
@@ -436,15 +436,9 @@ void open_backpack_container(short container_slot)
           *(char **)((char *)puVar9 + 0x14) = 0;
         }
         else {
-          *(char *)g_current_container_record = (char)puVar9;
-          *(char *)((char *)g_current_container_record + 1) = (char)((uint)puVar9 >> 8);
-          *(char *)((char *)g_current_container_record + 2) = (char)((uint)puVar9 >> 0x10);
-          *(char *)((char *)g_current_container_record + 3) = (char)((uint)puVar9 >> 0x18);
-          puVar6 = (undefined4 *)g_current_container_record;
-          *(char *)(puVar9 + 1) = (char)g_current_container_record;
-          *(char *)((char *)puVar9 + 5) = (char)((uint)puVar6 >> 8);
-          *(char *)((char *)puVar9 + 6) = (char)((uint)puVar6 >> 0x10);
-          *(char *)((char *)puVar9 + 7) = (char)((uint)puVar6 >> 0x18);
+          /* The legacy 4-byte next/prev fields at +0/+4 used to be written here as truncated
+             halves of these 64-bit pointers; nothing reads them any more (the chain is walked via
+             the full-width links at +0xc/+0x14 below), so they are no longer stored. */
           /* Real (untruncated) chain links: the OLD current record's
              "next" now really points at the new one, and the new one's
              "prev" really points back at the old one. */
@@ -479,7 +473,7 @@ void open_backpack_container(short container_slot)
         if (getenv("UW_DEBUG_INV"))
           fprintf(stderr, "[inv] open_backpack_container open: container=%p contents_head=%p\n",
                   (void *)puVar14, (void *)puVar15);
-        sum_container_weight((ushort *)((char *)puVar14 + 6),(undefined1 *)((char *)g_current_container_record + 10));
+        sum_container_weight((ushort *)((char *)puVar14 + 6),(short *)((char *)g_current_container_record + 10));
         iVar10 = 0x14;
         do {
           uVar12 = encode_object_slot_index(puVar15);
@@ -588,8 +582,9 @@ LAB_00043700:
 // WARNING: Removing unreachable block (ram,0x00043adc)
 
 // was FUN_00043734
-int auto_place_in_container(ushort *object, short slot)
+int auto_place_in_container(void *object_ptr, short slot)
 {
+  ushort *object = (ushort *)object_ptr;
   byte bVar1;
   ushort uVar2;
   short sVar3;
@@ -845,8 +840,9 @@ void *get_equipped_item_at_slot(short slot)
 // was FUN_00079144 -- walks a container's (param_1) contents link chain and places each item into
 // the world near the container's own position (via place_object_in_world), clearing param_1's own
 // contents-head link as it goes. param_2, when non-zero...
-int empty_container_into_world(ushort *container, short clear_flag)
+int empty_container_into_world(void *container_ptr, short clear_flag)
 {
+  ushort *container = (ushort *)container_ptr;
   ushort uVar1;
   ushort uVar2;
   byte bVar3;

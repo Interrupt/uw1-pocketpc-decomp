@@ -31,11 +31,11 @@ char prompt_answer[4];
 ushort framebuffer[320 * 200], hardware_framebuffer[240 * 320];
 ushort gameplay_palette[256];
 char opened[4][260];
-int (*const PTR_FUN_00085408[16])() = {
-    babl_render_op_wrap_message, FUN_000362e8, FUN_00036300, FUN_00036308,
-    FUN_00036394, FUN_000363f0, FUN_00036404, FUN_00036418,
-    babl_render_op_show_code, FUN_000365bc, FUN_000365fc, FUN_0003663c,
-    FUN_00036698, babl_render_op_say, FUN_00036344, babl_render_op_play_sound
+const babl_render_op_fn PTR_FUN_00085408[16] = {
+    (babl_render_op_fn)babl_render_op_wrap_message, (babl_render_op_fn)FUN_000362e8, (babl_render_op_fn)FUN_00036300, (babl_render_op_fn)FUN_00036308,
+    (babl_render_op_fn)FUN_00036394, (babl_render_op_fn)FUN_000363f0, (babl_render_op_fn)FUN_00036404, (babl_render_op_fn)FUN_00036418,
+    (babl_render_op_fn)babl_render_op_show_code, (babl_render_op_fn)FUN_000365bc, (babl_render_op_fn)FUN_000365fc, (babl_render_op_fn)FUN_0003663c,
+    (babl_render_op_fn)FUN_00036698, (babl_render_op_fn)babl_render_op_say, (babl_render_op_fn)FUN_00036344, (babl_render_op_fn)babl_render_op_play_sound
 };
 int babl_render_op_wrap_message(byte *op_args, intptr_t render_state) { (void)op_args; (void)render_state; if (intro_fade_test) return 2; TEST_FAIL_MESSAGE("Unexpected text in window script"); return 0; }
 int babl_render_op_say(intptr_t op_args, intptr_t render_state) { (void)op_args; (void)render_state; if (intro_fade_test) return 3; TEST_FAIL_MESSAGE("Unexpected voice in window script"); return 0; }
@@ -120,8 +120,8 @@ short *DAT_000876c4 = &mouse_driver;
 char keyboard_case;
 char *DAT_0008794c = &keyboard_case;
 int opening_hold_polls, idle_polls, dismissal_sent;
-long TranslateMessage(long message) { (void)message; return 0; }
-long DispatchMessageW(long message) { (void)message; return 0; }
+long TranslateMessage(const void *message) { (void)message; return 0; }
+long DispatchMessageW(const void *message) { (void)message; return 0; }
 long _isctype(int key, int mask) { return input_opens_prompt && key >= '0' && key <= '9'; }
 long ce_tolower(long key) { return key; }
 long ce_toupper(long key) { return key; }
@@ -356,8 +356,8 @@ void transitions_fixture_dispose(void)
 
 int uw_always_show_cursor(void) { return 0; }
 void clear_ambient_sound_target_thunk(void) { clear_ambient_sound_target(); }
-void *chrbtns_bump_alloc_entry(int size) { TEST_FAIL_MESSAGE("Unexpected chargen allocation callback"); return NULL; }
-int chrbtns_offset_table_builder(int index, int kind, int entry)
+void *chrbtns_bump_alloc_entry(uint size) { TEST_FAIL_MESSAGE("Unexpected chargen allocation callback"); return NULL; }
+int chrbtns_offset_table_builder(void *index, uint kind, int entry)
 { TEST_FAIL_MESSAGE("Unexpected chargen resource callback"); return 0; }
 
 
@@ -472,7 +472,7 @@ void uw_debug_dump_sprite_frames_once(void) {}
 void uw_debug_dump_critter_sheet_once(void) {}
 void uw_debug_force_item_id_once(void) {}
 void tick_weapon_swing_state(short attack_direction) { (void)attack_direction;}
-void poll_input_bindings(undefined1 *input_state)
+void poll_input_bindings(void *input_state)
 {
     if (input_opens_prompt) {
         prompt_start_presents = presents;

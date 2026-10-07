@@ -182,14 +182,14 @@ int mobile_object_tick()
 
 {
   byte bVar1;
-  char *iVar2;  /* was `int` -- truncated tilemap_lookup's, then
-                   discard_misplaced_object's, real pointer returns */
+  int iVar2;
+  char *tile_rec;  /* tilemap_lookup / discard_misplaced_object pointer results */
 
   if (((char)DAT_0010190c[4] == '\0') &&
      (((&DAT_00202c97)[(*DAT_0010190c & 0x1ff) * 0xd] & 0xc) < 0xc)) {
-    iVar2 = (char *)tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
-    iVar2 = (char *)discard_misplaced_object(iVar2 + 2,DAT_0010190c,0);
-    if (iVar2 == 0) {
+    tile_rec = (char *)tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
+    tile_rec = (char *)discard_misplaced_object(tile_rec + 2,DAT_0010190c,0);
+    if (tile_rec == 0) {
       return 0;
     }
     *(undefined1 *)(DAT_0010190c + 4) = 1;
@@ -387,10 +387,7 @@ int creature_find_path_to_tile(int start_x, char start_y, byte size_class, char 
               (&DAT_0023cf0c)[iVar19] = local_5a + 1;
               (&DAT_0023cf0b)[iVar19] = local_5c << 1 | (&DAT_0023cf0b)[iVar19] & 1;
               bVar14 = (&DAT_0023cf0b)[iVar18];
-              puVar10 = (undefined1 *)(uint)bVar14;
-              if (bVar20) {
-                puVar10 = local_4c;
-              }
+              puVar10 = local_4c;  /* only used when bVar20 (was `(undefined1 *)(uint)bVar14` otherwise, never read) */
               (&DAT_0023cf0b)[iVar18] = ((byte)DAT_00101440 ^ bVar14) & 1 ^ bVar14;
               if (bVar20) {
                 uVar16 = (uint)local_5b;
@@ -446,7 +443,8 @@ void npc_walk_toward_tile(uint goal, char goal_target, byte attitude)
   ushort uVar3;
   undefined1 uVar4;
   short sVar5;
-  char *iVar6;
+  int iVar6;
+  char *npc_bytes;
   undefined4 uVar7;
   int extraout_r1;
   int extraout_r1_00;
@@ -571,11 +569,11 @@ LAB_0002ed50:
       bVar9 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
     }
     *(byte *)((char *)DAT_0010190c + 0x13) = bVar9;
-    iVar6 = DAT_0010190c;
+    npc_bytes = (char *)DAT_0010190c;
     uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_18 = ((int)((uVar3 >> 0xc) + 1)) % (4);
     uVar8 = uVar3 & 0xfff;
-    *(char *)(iVar6 + 0xb) = (char)uVar8;
+    *(char *)(npc_bytes + 0xb) = (char)uVar8;
     *(byte *)((char *)DAT_0010190c + 0xc) =
          (byte)(uVar8 >> 8) | (byte)(((uw_ord2005_rem_18 & 0xf) << 0xc) >> 8);
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
@@ -654,7 +652,9 @@ int npc_ai_tick()
   /* Was `int`, truncating the real 64-bit pointers this variable holds
      (get_object_record_by_slot_index(1) and tilemap_lookup() both return real pointers, and the two
      dereferences below and the object_list_unlink(iVar5+2,...) call both need the full address)... */
-  intptr_t iVar5;
+  int iVar5;
+  char *player_rec;
+  char *tile_pos;
   int iVar6;
   undefined4 uVar7;
   byte extraout_r1;
@@ -674,15 +674,15 @@ int npc_ai_tick()
   DAT_00101404 = &DAT_001007d0 + ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
   DAT_001013f8 = (byte)(DAT_0010190c[0xb] >> 4) & 0x3f;
-  iVar5 = get_object_record_by_slot_index(1);
+  player_rec = get_object_record_by_slot_index(1);
   puVar11 = DAT_0010190c;
   if (((100 < ((((int)(char)DAT_00101918 - (int)DAT_00101938) * 0x10000 >> 0x10) *
                (((int)(char)DAT_00101918 - (int)DAT_00101938) * 0x10000 >> 0x10) +
               (((int)(char)DAT_001013f8 - (int)DAT_0010193c) * 0x10000 >> 0x10) *
               (((int)(char)DAT_001013f8 - (int)DAT_0010193c) * 0x10000 >> 0x10)) * 0x10000 >> 0x10)
       && (iVar6 = (int)(char)DAT_001013f8 -
-                  (int)(char)((byte)(*(ushort *)(iVar5 + 0x16) >> 4) & 0x3f),
-         iVar5 = (int)(char)DAT_00101918 - (int)(char)(byte)(*(ushort *)(iVar5 + 0x16) >> 10),
+                  (int)(char)((byte)(*(ushort *)(player_rec + 0x16) >> 4) & 0x3f),
+         iVar5 = (int)(char)DAT_00101918 - (int)(char)(byte)(*(ushort *)(player_rec + 0x16) >> 10),
          100 < (iVar5 * iVar5 + iVar6 * iVar6) * 0x10000 >> 0x10)) &&
      ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 3)) {
     bVar3 = (byte)DAT_0010190c[5];
@@ -813,8 +813,8 @@ LAB_00033830:
       DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
       /* ARM 0x3343c..0x33470 passes the dead NPC's tile x/y in r0/r1.
          Dropping these arguments leaves its final frame in the old tile list. */
-      iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
-      object_list_unlink(iVar5 + 2,DAT_0010190c);
+      tile_pos = tilemap_lookup(DAT_0010144c,DAT_00101454);
+      object_list_unlink(tile_pos + 2,DAT_0010190c);
       spawn_creature_death_loot(DAT_0010190c);
       drop_monster_loot(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
       drop_creature_inventory_on_death(DAT_0010190c);
@@ -1019,8 +1019,9 @@ void build_creature_look_text(ushort *creature, char *out_text)
 /* was `int` -- truncated the real object-record pointer (dereferenced via casts, passed to
    resolve_object_link and object_exceeds_size_threshold), latent until those calls started
    actually using their arguments */
-int roll_object_destroy_chance(short base_chance, char *object)
+int roll_object_destroy_chance(short base_chance, void *object_ptr)
 {
+  char *object = (char *)object_ptr;
   short sVar1;
   int iVar2;
   /* Was `undefined4 uVar3` -- truncated resolve_object_link's real pointer return before forwarding
@@ -1056,8 +1057,9 @@ int roll_object_destroy_chance(short base_chance, char *object)
 
 
 // was FUN_00054f6c.
-int sync_object_tile_position(ushort *object, ushort *position)
+int sync_object_tile_position(ushort *object, void *position_ptr)
 {
+  ushort *position = (ushort *)position_ptr;
   int uw_ord2005_rem_118 = 0;
   ushort uVar1;
   undefined1 uVar2;
@@ -1066,7 +1068,9 @@ int sync_object_tile_position(ushort *object, ushort *position)
   /* Was `int`, truncating the real 64-bit pointers this variable holds from tilemap_lookup() and
      settle_mobile_to_immobile() (both real pointer returns) -- same class of bug fixed several
      times elsewhere this session... */
-  intptr_t iVar5;
+  int iVar5;
+  void *tile_cell;
+  ushort *settled;
   undefined4 uVar6;
   int extraout_r1;
   uint uVar7;
@@ -1079,15 +1083,15 @@ int sync_object_tile_position(ushort *object, ushort *position)
     /* Both tilemap_lookup() calls below were dropped-argument (K&R, relying on register-content
        reuse) -- unlike the many other such call sites in this file that legitimately reuse
        whatever's still in r0/r1 from an immediately preceding, equivalent computation... */
-    iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
-    if (iVar5 != 0) {
-      object_list_unlink(iVar5 + 2,object);
+    tile_cell = tilemap_lookup(DAT_0010144c,DAT_00101454);
+    if (tile_cell != 0) {
+      object_list_unlink((char *)tile_cell + 2,object);
     }
     DAT_0010144c = (ushort)(char)(*position >> 8);
     DAT_00101454 = (short)(char)(position[1] >> 8);
-    iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
-    if (iVar5 != 0) {
-      object_list_insert_head(iVar5 + 2,object);
+    tile_cell = tilemap_lookup(DAT_0010144c,DAT_00101454);
+    if (tile_cell != 0) {
+      object_list_insert_head((char *)tile_cell + 2,object);
     }
   }
   uVar7 = (uint)object[1];
@@ -1102,7 +1106,7 @@ int sync_object_tile_position(ushort *object, ushort *position)
   *(byte *)((char *)object + 3) =
        (byte)((uVar7 & 0x380) >> 8) | bVar3 |
        (byte)((uint)(((int)(short)(uVar1 & 0xe0) >> 5) << 10) >> 8);
-  if (object < DAT_002046c4) {
+  if ((char *)object < DAT_002046c4) {
     *(byte *)(object + 4) = (byte)position[0xf];
   }
   else {
@@ -1119,7 +1123,7 @@ int sync_object_tile_position(ushort *object, ushort *position)
     }
     apply_typed_damage_to_object(object,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
   }
-  if (object < DAT_002046c4) {
+  if ((char *)object < DAT_002046c4) {
     *(byte *)(object + 4) = (byte)position[0xf];
   }
   else {
@@ -1135,7 +1139,7 @@ int sync_object_tile_position(ushort *object, ushort *position)
     }
   }
   if ((*object & 0x1c0) != 0x40) {
-    if (DAT_002046c4 < object) {
+    if (DAT_002046c4 < (char *)object) {
       if ((position[10] != 0 || position[8] != 0) || position[5] != 0) {
         object = (ushort *)reallocate_object_to_arena(object);
       }
@@ -1143,19 +1147,19 @@ int sync_object_tile_position(ushort *object, ushort *position)
     else if ((position[10] == 0 && position[8] == 0) && position[5] == 0) {
       *(byte *)(object + 5) =
            (byte)object[5] & 0x8f | ((&DAT_000868c0)[(byte)position[0x14]] & 7) << 4;
-      iVar5 = settle_mobile_to_immobile(object);
-      if (iVar5 == 0) {
+      settled = settle_mobile_to_immobile(object);
+      if (settled == 0) {
         return 0;
       }
-      object = (ushort *)settle_dropped_object(iVar5,(int)(short)DAT_0010144c,(int)DAT_00101454,0);
+      object = (ushort *)settle_dropped_object(settled,(int)(short)DAT_0010144c,(int)DAT_00101454,0);
       if (object == (ushort *)0x0) {
         return 0;
       }
-      if (DAT_002046c4 <= object) goto LAB_0005559c;
+      if (DAT_002046c4 <= (char *)object) goto LAB_0005559c;
       randomize_settled_snapshot_position(position);
     }
   }
-  if (object < DAT_002046c4) {
+  if ((char *)object < DAT_002046c4) {
     uVar1 = object[0xb];
     *(char *)((char *)object + 9) = (char)((ushort)*(undefined2 *)((char *)position + 0x21) >> 8);
     uVar8 = uVar1 & 0x3ff;
@@ -1372,8 +1376,9 @@ ushort *settle_mobile_to_immobile(ushort *object)
 // was FUN_0007931c -- empties a dead creature's inventory into the world, capping the number of
 // items dropped via a per-monster-class value (DAT_001007d9, indexed by the creature's type,
 // 0x30-byte stride -- see g_monster_max_stats_table's own comment for this same table).
-void drop_creature_inventory_on_death(byte *creature)
+void drop_creature_inventory_on_death(void *creature_ptr)
 {
+  byte *creature = (byte *)creature_ptr;
   empty_container_into_world(creature,(&DAT_001007d9)[(*creature & 0x3f) * 0x30]);
 }
 
@@ -1385,8 +1390,9 @@ void drop_creature_inventory_on_death(byte *creature)
 // offset +0x26, high nibble) to spawn a treasure item on a dying/despawning creature: on a hit...
 /* was `int` -- truncated the real object pointer spawn_creature_death_loot passes in (on this
    64-bit build), corrupting the address handed to object_list_insert_head(param_1 + 6, ...) below */
-void spawn_creature_treasure_drop(char *creature)
+void spawn_creature_treasure_drop(void *creature_ptr)
 {
+  char *creature = (char *)creature_ptr;
   int uw_ord2005_rem_159 = 0;
   int iVar1;
   uint uVar2;
@@ -1464,8 +1470,9 @@ void spawn_creature_treasure_drop(char *creature)
 // offset +0x27 low nibble; on a hit, spawns a single fixed-type item (high nibble + 0xb0) and links
 // it into param_1's object chain.
 /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
-void spawn_creature_special_item_drop(char *creature)
+void spawn_creature_special_item_drop(void *creature_ptr)
 {
+  char *creature = (char *)creature_ptr;
   int uw_ord2005_rem_160 = 0;
   byte bVar1;
   undefined4 uVar2;
@@ -1487,8 +1494,9 @@ void spawn_creature_special_item_drop(char *creature)
 // was FUN_000795cc -- third creature-death drop roll: iterates 2 equipment-slot flag bytes
 // (g_despawn_creature_record offsets +0x20/+0x21), and for each with bit 0 set...
 /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
-void spawn_creature_equipment_drop(char *creature)
+void spawn_creature_equipment_drop(void *creature_ptr)
 {
+  char *creature = (char *)creature_ptr;
   int uw_ord2005_rem_161 = 0; int uw_ord2005_rem_162 = 0; int uw_ord2005_rem_163 = 0;
   undefined2 uVar1;
   byte bVar2;
@@ -1526,7 +1534,7 @@ void spawn_creature_equipment_drop(char *creature)
       pbVar4[4] = (bVar2 ^ bVar6) & 0x3f ^ bVar2;
       pbVar4[5] = (byte)((ushort)uVar1 >> 8);
       if ((*pbVar4 & 0x30) == 0x10) {
-        if ((&DAT_002027d2)[(*pbVar4 & 0xf) * 3] == -0x40) {
+        if ((&DAT_002027d2)[(*pbVar4 & 0xf) * 3] == 0xc0) {  /* byte value 0xc0 (was compared against -0x40, never true for an unsigned byte) */
           uVar5 = ce_rand();
           uw_ord2005_rem_163 = ((int)(uVar5)) % (8);
           uVar7 = (uw_ord2005_rem_163 & 0xffff) + 4;
@@ -1548,8 +1556,9 @@ void spawn_creature_equipment_drop(char *creature)
 // (g_despawn_creature_record offsets +0x22/+0x24, each a packed ushort: item id in the high 12
 // bits, drop-chance nibble in the low 4), rolling a d16 chance per slot; on a hit...
 /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
-void spawn_creature_misc_item_drop(char *creature)
+void spawn_creature_misc_item_drop(void *creature_ptr)
 {
+  char *creature = (char *)creature_ptr;
   int uw_ord2005_rem_164 = 0; int uw_ord2005_rem_165 = 0; int uw_ord2005_rem_166 = 0;
   ushort uVar1;
   undefined2 uVar2;
@@ -1673,8 +1682,9 @@ int activate_area_hazard_object(ushort *hazard, uint tile_x, int tile_y, int dam
 // was FUN_0002b258 -- drops a dead monster's loot: if param_2 (a gold-category nibble from the
 // monster's own template data) is nonzero, spawns a gold-pile object (0xd8+category) at the
 // corpse's own tile; if param_3 (a treasure-category nibble) is nonzero...
-void drop_monster_loot(byte *monster, ushort gold_nibble, ushort item_nibble)
+void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble)
 {
+  byte *monster = (byte *)monster_ptr;
   int uw_ord2005_rem_12 = 0;
   byte bVar1;
   byte bVar2;
@@ -2550,8 +2560,9 @@ void set_npc_altitude_state(byte tile_x, byte tile_y)
 // was FUN_0002efa0 -- an NPC's "arrived at destination tile" reaction: if a "use on arrival" flag
 // is set in its stat template (byte 0x2e), uses the object it arrived on; if that object is a
 // specific combinable-ingredient-shaped category (0x140) with a low sub-id...
-void npc_arrival_interaction(ushort *npc)
+void npc_arrival_interaction(void *npc_ptr)
 {
+  ushort *npc = (ushort *)npc_ptr;
   int uw_ord2005_rem_21 = 0; int uw_ord2005_rem_22 = 0;
   undefined4 uVar1;
   undefined1 extraout_r1;
@@ -2641,12 +2652,12 @@ LAB_00030984:
   }
 LAB_000309a0:
   if (((((local_10 & 0xff) != (uint)DAT_00101918) || ((char)local_c != DAT_001013f8)) ||
-      (uVar1 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
+      (uVar1 = ((int)DAT_0010140c - (int)DAT_00101420) >> 0x1f,
       3 < (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar1) - uVar1))) &&
      ((((saved_c = saved_c & 0xff, 1 < saved_c && (saved_c * saved_c < (uint)DAT_00101900)) ||
        ((saved_c * saved_c * 0x40 < DAT_00101728 ||
         ((saved_c < 2 &&
-         (uVar1 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
+         (uVar1 = ((int)DAT_0010140c - (int)DAT_00101420) >> 0x1f,
          3 < (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar1) - uVar1))))))) &&
       /* Dropped third argument: at the real call (0x30a6c) r2 still holds
          DAT_00101420 from the `ldrb r2,[r5]` that fed the
@@ -2708,8 +2719,10 @@ void npc_react_to_nearby_player()
 // was FUN_00032180 -- checks the NPC's proximity to its current wander/goal tile against two
 // stat-template-derived radii (byte 0x1e's two nibbles, each multiplied against a per-monster-class
 // table entry): outputs the goal tile itself via param_1/param_2...
-int detect_npc_wander_proximity(char *out_near, char *out_far)
+int detect_npc_wander_proximity(void *out_near_ptr, void *out_far_ptr)
 {
+  char *out_near = (char *)out_near_ptr;
+  char *out_far = (char *)out_far_ptr;
   int uw_ord2005_rem_86 = 0;
   int iVar1;
   int iVar2;
@@ -2852,16 +2865,16 @@ void setup_npc_ai_tick_state(ushort *npc)
   if (((&DAT_001007da)[iVar3] & 0x80) == 0) {
     if (((&DAT_001007da)[iVar3] & 0x40) == 0) {
       DAT_0010172c = &DAT_002048c0;
-      DAT_00101438 = (undefined2 *)&DAT_00204980;
+      DAT_00101438 = (char *)&DAT_00204980;
     }
     else {
       DAT_0010172c = (undefined2 *)&DAT_00204950;
-      DAT_00101438 = &DAT_002049b0;
+      DAT_00101438 = (char *)&DAT_002049b0;
     }
   }
   else {
     DAT_0010172c = (undefined2 *)&DAT_002048f0;
-    DAT_00101438 = &DAT_00204990;
+    DAT_00101438 = (char *)&DAT_00204990;
   }
 }
 
@@ -2879,7 +2892,8 @@ void npc_ai_default_tick()
   char cVar4;
   uint uVar5;
   undefined4 uVar6;
-  char *iVar7;
+  int iVar7;
+  char *npc_rec;
   ushort *puVar8;
   undefined1 extraout_r1;
   undefined1 uVar9;
@@ -2968,7 +2982,7 @@ LAB_000339fc:
       if ((cVar4 != '\0') &&
          (((cVar4 == '\x01' && ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0)) ||
           (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0 ||
-           (iVar7 = get_object_record_by_slot_index(cVar4), (iVar7 != 0) && (*(byte *)(iVar7 + 0x19) & 0x40) != 0)))))) {
+           (npc_rec = get_object_record_by_slot_index(cVar4), (npc_rec != 0) && (*(byte *)(npc_rec + 0x19) & 0x40) != 0)))))) {
         if ((uint)*(byte *)((char *)DAT_0010190c + 0x12) != (*(ushort *)((char *)DAT_0010190c + 0xb) >> 4 & 0xff)) {
           uVar11 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f |
                    (uint)*(byte *)((char *)DAT_0010190c + 0x12) << 4;
@@ -3072,10 +3086,10 @@ LAB_00033e9c:
   case 0xb:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
     uVar6 = ce_rand();
-    iVar7 = DAT_0010190c;
+    npc_rec = (char *)DAT_0010190c;
     bVar10 = *(byte *)((char *)DAT_0010190c + 0x13);
     uw_ord2005_rem_93 = ((int)(uVar6)) % (2);
-    *(byte *)(iVar7 + 0x13) = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
+    *(byte *)(npc_rec + 0x13) = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
     uVar6 = ce_rand();
     uw_ord2005_rem_94 = ((int)(uVar6)) % (0x100);
     *(undefined1 *)((char *)DAT_0010190c + 9) = uw_ord2005_rem_94;
@@ -3083,11 +3097,11 @@ LAB_00033e9c:
     uw_ord2005_rem_95 = ((int)(uVar6)) % (3);
     *(byte *)((char *)DAT_0010190c + 0x14) =
          *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_95 + '\x0f') * '\b';
-    iVar7 = DAT_0010190c;
+    npc_rec = (char *)DAT_0010190c;
     uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_96 = ((int)((uVar2 >> 0xc) + 1)) % (4);
     uVar11 = uVar2 & 0xfff;
-    *(char *)(iVar7 + 0xb) = (char)uVar11;
+    *(char *)(npc_rec + 0xb) = (char)uVar11;
     *(byte *)((char *)DAT_0010190c + 0xc) =
          (byte)(uVar11 >> 8) | (byte)(((uw_ord2005_rem_96 & 0xf) << 0xc) >> 8);
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x40;
@@ -3098,7 +3112,7 @@ LAB_00033e9c:
   default:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) | 7;
   }
-  iVar7 = DAT_0010190c;
+  npc_rec = (char *)DAT_0010190c;
   /* HACK: same ushort-vs-byte pointer-arithmetic scaling bug as process_visible_tile_cell's sibling
      npc_notice_and_idle_tick (fixed earlier this session) -- DAT_0010190c is `ushort *`, so bare
      `DAT_0010190c + 2` scales to byte offset 4... */
@@ -3121,11 +3135,11 @@ LAB_00033e9c:
     uVar11 = uVar11 & 0xff;
   }
   uVar5 = uVar2 & 0xfc7f | (uVar11 & 0xffe0) << 2;
-  *(char *)(iVar7 + 2) = (char)uVar5;
+  *(char *)(npc_rec + 2) = (char)uVar5;
   *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
   *(byte *)((char *)DAT_0010190c + 0x18) =
        (*(byte *)((char *)DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)((char *)DAT_0010190c + 0x18);
-  iVar7 = DAT_0010190c;
+  npc_rec = (char *)DAT_0010190c;
   /* Was `if (DAT_00101430 == 0)` -- an inverted condition, confirmed via real disassembly (`cmp
      r0,#0x0; beq 0x326a4`, where r0 is DAT_00101430 and 0x326a4 is the simple "just copy
      DAT_00101458" branch this decompile currently has as the ELSE)... */
@@ -3140,7 +3154,7 @@ LAB_00033e9c:
     uVar5 = (uint)DAT_00101458;
     uVar11 = ((bVar10 - uVar5) + 0x100) & 0xff;
     if ((uVar11 < 0x20) || (0xe0 < uVar11)) {
-      *(byte *)(iVar7 + 9) = bVar10;
+      *(byte *)(npc_rec + 9) = bVar10;
       return;
     }
     if (uVar11 < 0x40) {
@@ -3148,12 +3162,12 @@ LAB_00033e9c:
     }
     else {
       if (uVar11 < 0xc1) {
-        *(byte *)(iVar7 + 0x13) = bVar1 & 0x80;
+        *(byte *)(npc_rec + 0x13) = bVar1 & 0x80;
         goto LAB_00032690;
       }
       uVar9 = (uVar5 + 0xe0) & 0xff;
     }
-    *(undefined1 *)(iVar7 + 9) = uVar9;
+    *(undefined1 *)(npc_rec + 9) = uVar9;
   }
   else {
 LAB_00032690:
@@ -3285,8 +3299,9 @@ int initiate_npc_death(char *npc)
 // in goal 0xc (dead) or initiate_npc_death() refuses the transition; otherwise plays a positional
 // death sound (only for goal-category 1 NPCs) and returns 1.
 /* ARM 0x34638..0x34648 uses the full object pointer with byte offsets. */
-int handle_monster_death(char *npc)
+int handle_monster_death(void *npc_ptr)
 {
+  char *npc = (char *)npc_ptr;
   int iVar1;
   undefined4 uVar2;
 
@@ -3306,14 +3321,15 @@ int handle_monster_death(char *npc)
 // was FUN_00034ac4 -- calls npc_set_goal(param_2,param_3) as if param_1 were the "current NPC"
 // (DAT_0010190c), temporarily swapping that context pointer in and restoring the caller's own value
 // afterward.
-void npc_set_goal_for_object(char *npc, int goal, int goal_target)
+void npc_set_goal_for_object(void *npc_ptr, int goal, int goal_target)
 {
-  char *uVar1;
+  ushort *npc = (ushort *)npc_ptr;
+  ushort *saved_npc;
 
-  uVar1 = DAT_0010190c;
+  saved_npc = DAT_0010190c;
   DAT_0010190c = npc;
   npc_set_goal(goal,goal_target);
-  DAT_0010190c = uVar1;
+  DAT_0010190c = saved_npc;
 }
 
 
@@ -3329,7 +3345,7 @@ void randomize_active_npc_flags()
   uint extraout_r1;
   int extraout_r1_00;
   byte *pbVar2;
-  int iVar3;
+  char *iVar3;
   
   pbVar2 = DAT_002046c0;
   if (DAT_002046c0 < DAT_002046c8) {
@@ -3481,7 +3497,7 @@ int settle_misplaced_mobile_object(char *object)
   byte bVar2;
   byte bVar3;
   byte *pbVar4;
-  int iVar5;
+  char *iVar5;
   int iVar6;
   uint uVar7;
   byte *pbVar8;
@@ -3494,11 +3510,11 @@ int settle_misplaced_mobile_object(char *object)
   bVar2 = *(byte *)(object + 3);
   pbVar4 = (byte *)tilemap_lookup(DAT_0010144c,DAT_00101454);
   pbVar8 = pbVar4 + 2;
-  iVar5 = discard_misplaced_object(pbVar8,object,0);
-  if ((iVar5 != 0) && (iVar5 = settle_mobile_to_immobile(object), iVar5 != 0)) {
+  iVar5 = (char *)discard_misplaced_object(pbVar8,(ushort *)object,0);
+  if ((iVar5 != 0) && (iVar5 = (char *)settle_mobile_to_immobile((ushort *)object), iVar5 != 0)) {
     object_list_unlink(pbVar8,iVar5);
     DAT_00202c84 = 1;
-    iVar6 = find_object_placement(iVar5,(uint)(bVar1 >> 5) + (uint)bVar3 * 8,
+    iVar6 = find_object_placement((ushort *)iVar5,(uint)(bVar1 >> 5) + (uint)bVar3 * 8,
                          ((bVar2 & 0x1c) >> 2) + uVar7 * 8,(uint)(*pbVar4 >> 4) << 3,6);
     if (iVar6 == 0) {
       uVar7 = *(ushort *)(iVar5 + 2) & 0xff80;
@@ -3537,7 +3553,7 @@ void advance_mobile_objects()
         npc_movement_tick(puVar1,acStack_58);
       }
       else {
-        iVar5 = settle_misplaced_mobile_object(puVar1);
+        iVar5 = settle_misplaced_mobile_object((char *)puVar1);
         if (iVar5 != 0) {
           pbVar7 = pbVar7 + -1;
         }
@@ -3597,7 +3613,7 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
   uint uVar12;
   int iVar13;
   bool bVar14;
-  undefined8 uVar15;
+  void *tile_ptr;
   undefined2 in_stack_ffffffcc;
   undefined1 uVar16;
   undefined4 in_stack_ffffffd0;
@@ -3629,13 +3645,10 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
           uVar12 = 0;
           do {
             iVar11 = uVar12 * 7;
-            uVar15 = tilemap_lookup((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
-            uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
-            for (puVar7 = (ushort *)((char *)uVar15 + 2); (*puVar7 & 0xffc0) != 0; puVar7 = puVar7 + 2)
+            tile_ptr = tilemap_lookup((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
+            for (puVar7 = (ushort *)((char *)tile_ptr + 2); (*puVar7 & 0xffc0) != 0; puVar7 = puVar7 + 2)
             {
-              uVar15 = resolve_object_link(puVar7);
-              uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
-              puVar7 = (ushort *)uVar15;
+              puVar7 = (ushort *)resolve_object_link(puVar7);
               if ((((*puVar7 & 0x1c0) == 0x180) && ((*puVar7 & 0x30) == 0x20)) &&
                  ((puVar7[3] & 0xffc0) != 0)) {
                 puVar8 = (ushort *)resolve_object_link(puVar7 + 3);
@@ -3860,8 +3873,9 @@ void emit_noise_alert(ushort *source, byte noise_type)
 
 // was FUN_0003a73c -- special-behavior dispatcher for "unique" NPCs, keyed by their own byte 0x1a
 // (a per-record special-event code, 0 meaning "ordinary, no special handling").
-int resolve_unique_npc_special_behavior(char *npc, int event_mode)
+int resolve_unique_npc_special_behavior(void *npc_ptr, int event_mode)
 {
+  char *npc = (char *)npc_ptr;
   char cVar1;
   uint uVar2;
 
@@ -4032,15 +4046,15 @@ int load_critter_association_tables(int file_handle)
           pcVar4 = pcVar4 + 1;
         } while (cVar2 != '\0');
         ce_strcat(acStack_128,&DAT_00085908);
-        puVar6 = (undefined1 *)open_file_for_read(acStack_128);
+        file_handle = open_file_for_read(acStack_128);
         iVar7 = extraout_r2;
-        if (puVar6 != (undefined1 *)0xffffffff) {
-          iVar7 = read_file_handle(puVar6,&local_130,2);
+        if (file_handle != -1) {
+          iVar7 = read_file_handle(file_handle,&local_130,2);
           uVar9 = 0xa0;
           if (iVar7 == 2) {
             uVar9 = (ushort)local_12f + (ushort)local_130;
           }
-          puVar6 = (undefined1 *)CloseHandle(puVar6);
+          CloseHandle(file_handle);
           iVar7 = extraout_r2_00;
         }
         if (iVar5 < 3) {
@@ -4087,14 +4101,15 @@ void flush_pending_critter_resource_slots()
 // was FUN_0004a510 -- NPC-side ranged/thrown weapon launch (the counterpart to the player's
 // fire_ranged_weapon): given the attacker object (param_1), weapon type (param_2), and ammo quality
 // (param_3)...
-void spawn_npc_thrown_weapon(char *attacker, short launch_offset, short launch_flags)
+void spawn_npc_thrown_weapon(void *attacker_ptr, short launch_offset, short launch_flags)
 {
+  char *attacker = (char *)attacker_ptr;
   DAT_00202a38 = launch_offset + 0x10;
   DAT_00202a4c = (ushort)(*(byte *)(attacker + 0x17) >> 2);
   DAT_00202a50 = (undefined2)((*(ushort *)(attacker + 0x16) & 0x3f0) >> 4);
   DAT_00202a54 = 1;
   DAT_00202a40 = 0;
-  DAT_00202a44 = attacker;
+  DAT_00202a44 = (ushort *)attacker;
   DAT_00202a48 = launch_flags;
   spawn_object_near_player();
 }
@@ -4189,7 +4204,7 @@ void npc_idle_behavior_tick()
     if (DAT_0010140c < 0xf) {
       if (DAT_0010140c < (byte)((*pbVar2 >> 4) + 2)) {
         uVar3 = ce_rand();
-        iVar9 = DAT_0010190c;
+        iVar9 = (char *)DAT_0010190c;
         bVar5 = *(byte *)((char *)DAT_0010190c + 0x14);
         uw_ord2005_rem_24 = ((int)(uVar3)) % (3);
         *(byte *)(iVar9 + 0x14) = ~bVar5 & 7 ^ (char)((uw_ord2005_rem_24 & 0xff) << 3) + 0x87U;
@@ -4233,7 +4248,7 @@ LAB_0002f390:
     if ((DAT_00101924 != 0) && (DAT_00101430 == 0)) {
       uVar3 = ce_rand();
       uw_ord2005_rem_29 = ((int)(uVar3)) % (2);
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
       uw_ord2005_rem_30 = ((int)((uint)*(byte *)((char *)DAT_0010190c + 9) + uw_ord2005_rem_29 * 0x80 + 0xc0)) % (0x100);
       *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_30;
       uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_30 & 0xe0) << 2;
@@ -4250,7 +4265,7 @@ LAB_0002f390:
     uw_ord2005_rem_31 = ((int)(uVar3)) % (0x40);
     if ((uw_ord2005_rem_31 & 0xff) < (bVar5 & 0xf) + 8) {
       uVar3 = ce_rand();
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
       bVar5 = *(byte *)((char *)DAT_0010190c + 9);
       uw_ord2005_rem_32 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_33 = ((int)(uw_ord2005_rem_32 + (uint)bVar5 + 0xe0)) % (0x100);
@@ -4258,11 +4273,11 @@ LAB_0002f390:
     }
     else {
       uVar7 = (uint)*(byte *)((char *)DAT_0010190c + 9);
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
     }
     if (DAT_00101430 == 0) {
       uVar7 = adjust_heading_away_from_player(uVar7,10);
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
     }
     *(byte *)(iVar9 + 9) = (byte)uVar7;
     uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 0xe0) << 2;
@@ -4278,7 +4293,7 @@ LAB_0002f6cc:
     uw_ord2005_rem_34 = ((int)(uVar3)) % (0x80);
     if ((uw_ord2005_rem_34 & 0xff) < (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) {
       uVar3 = ce_rand();
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
       bVar5 = *(byte *)((char *)DAT_0010190c + 9);
       uw_ord2005_rem_35 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_36 = ((int)(uw_ord2005_rem_35 + (uint)bVar5 + 0xe0)) % (0x100);
@@ -4298,7 +4313,7 @@ LAB_0002f6cc:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
     uVar3 = ce_rand();
     uw_ord2005_rem_37 = ((int)(uVar3)) % (2);
-    iVar9 = DAT_0010190c;
+    iVar9 = (char *)DAT_0010190c;
     if (uw_ord2005_rem_37 == 0) goto LAB_0002f810;
     uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_38 = ((int)((uVar1 >> 0xc) + 1)) % (4);
@@ -4310,7 +4325,7 @@ LAB_0002f6cc:
          (*(byte *)((char *)DAT_0010190c + 0x13) ^ *(byte *)(DAT_00101404 + 0xb)) & 0x7f ^
          *(byte *)((char *)DAT_0010190c + 0x13);
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
-    iVar9 = DAT_0010190c;
+    iVar9 = (char *)DAT_0010190c;
     uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_39 = ((int)((uVar1 >> 0xc) + 1)) % (4);
     uVar7 = uw_ord2005_rem_39;
@@ -4464,7 +4479,7 @@ LAB_0002fe88:
   *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
   uVar4 = ce_rand();
   uw_ord2005_rem_44 = ((int)(uVar4)) % (2);
-  iVar2 = DAT_0010190c;
+  iVar2 = (char *)DAT_0010190c;
   if (uw_ord2005_rem_44 != 0) {
     /* HACK: this is the real frame-cycle step (advance this idle critter's animation frame,
        wrapping 0..3 -- see uVar5>>0xc, the upper nibble of raw byte 0xc, matching
@@ -4519,7 +4534,7 @@ void npc_wander_return_home_exact_tick()
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
       uVar3 = ce_rand();
       uw_ord2005_rem_84 = ((int)(uVar3)) % (2);
-      iVar2 = DAT_0010190c;
+      iVar2 = (char *)DAT_0010190c;
       if (uw_ord2005_rem_84 != 0) {
         uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
         uw_ord2005_rem_85 = ((int)((uVar1 >> 0xc) + 1)) % (4);
@@ -5119,7 +5134,7 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
   snapshot[3] = 0;
   snapshot[4] = (byte)object[1] & 0x7f;
   snapshot[5] = 0;
-  if (object < DAT_002046c4) {
+  if ((char *)object < DAT_002046c4) {
     iVar7 = (int)*(short *)snapshot + ((object[0xb] & 0xfc00) >> 7);
     *snapshot = (byte)iVar7;
     snapshot[1] = (byte)((uint)iVar7 >> 8);

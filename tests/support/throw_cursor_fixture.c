@@ -25,20 +25,20 @@ void *alloc_object_slot(int mobile)
     allocations++;
     return thrown;
 }
-void free_object_slot(char *object)
+void free_object_slot(void *object)
 {
     TEST_ASSERT_EQUAL_PTR(held, object);
     freed++;
 }
-int encode_object_slot_index(char *object)
+int encode_object_slot_index(void *object)
 { return ((char *)object - DAT_002046b8) / 27; }
 void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_TRUE(x >= 0 && x < 64 && y >= 0 && y < 64);
     return (byte *)arena + (y * 64 + x) * 4;
 }
-void *resolve_object_link(ushort *head)
-{ return (*head >> 6) ? DAT_002046b8 + (*head >> 6) * 27 : NULL; }
+void *resolve_object_link(void *head_)
+{ ushort *head = (ushort *)head_; return (*head >> 6) ? DAT_002046b8 + (*head >> 6) * 27 : NULL; }
 void heading_to_sine_cosine(uint heading, short *sine, short *cosine)
 {
     double radians = (heading >> 8 & 255) * (2.0 * M_PI / 256.0);
@@ -56,14 +56,14 @@ void collision_height_envelope(int unused, int mode)
 void collision_build_height_field(uint step_limit) {}
 void sort_collision_candidates(void) { TEST_FAIL_MESSAGE("Empty world has no object contacts"); }
 int play_sound_effect_at_object(int sound_id, ushort *object, int volume_bias) { (void)sound_id; (void)object; (void)volume_bias; return 1; }
-int object_ptr_in_arena(char *object) { (void)object; return 1; }
-ushort *discard_misplaced_object(char *list, ushort *object, int destroy)
+int object_ptr_in_arena(void *object) { (void)object; return 1; }
+ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
 { return NULL; }
 int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias) { (void)sound_id; (void)pan; (void)volume_bias; return 1; }
 ushort *reallocate_object_to_arena(ushort *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
-ushort *settle_dropped_object(ushort *object, short tile_x, short tile_y, int force) { (void)object; (void)tile_x; (void)tile_y; (void)force; TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
+ushort *settle_dropped_object(void *object, short tile_x, short tile_y, int force) { (void)object; (void)tile_x; (void)tile_y; (void)force; TEST_FAIL_MESSAGE("Unexpected ground drop"); return NULL; }
 int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; TEST_FAIL_MESSAGE("Unexpected ground drop"); return 0; }
-void object_list_append_tail(byte *link_field, char *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected ground drop"); }
+void object_list_append_tail(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected ground drop"); }
 int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias) { (void)sound_id; (void)world_x; (void)world_y; (void)volume_bias; return 1; }
 void print_scroll_message_by_id(uint message_id) { (void)message_id;}
 void set_ambient_bias_without_light(char light_level) { (void)light_level;}

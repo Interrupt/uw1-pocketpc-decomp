@@ -7,7 +7,7 @@ int message_scroll_print_wrapped(char *message);
 int play_sound_effect_with_pan(uint id, byte pan, uint mode);
 void print_scroll_message_by_id(uint id);
 int roll_skill_check(int skill, int difficulty);
-int dispatch_special_action(uint type, uint param, uintptr_t caster, intptr_t target);
+int dispatch_special_action(uint type, uint param, void *caster, void *target);
 void spell_runes_fixture_reset(void);
 void spell_runes_fixture_dispose(void);
 void ready_runes(int first, int second, int third);

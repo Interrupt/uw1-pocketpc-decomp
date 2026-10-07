@@ -112,9 +112,7 @@ void pop_cursor_icon(ushort state)
     cursor_updates++;
 }
 
-void save_or_restore_level_special_state(level, save)
-short level;
-short save;
+void save_or_restore_level_special_state(short level, short save)
 {
     if (save) {
         TEST_ASSERT_EQUAL_INT(0, commits);

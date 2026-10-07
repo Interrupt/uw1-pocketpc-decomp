@@ -20,8 +20,8 @@ static short DAT_00202074;
 short g_mouse_y;
 short g_mouse_x;
 short DAT_00204840;
-static char *DAT_00202890;
-static char *DAT_0020289c;
+static short *DAT_00202890;
+static short *DAT_0020289c;
 /* Real-pointer side table for the keybinding records' handler field. */
 static void (*g_keybind_handler[512])(int);
 static int g_keybind_handler_n;
@@ -32,7 +32,7 @@ static int g_click_region_handler_n;
 static undefined2 DAT_00202898;
 static undefined2 DAT_0020288c;
 static undefined2 DAT_00202894;
-static undefined2 DAT_00085a70;
+static short DAT_00085a70;
 /* Per-mode "sticky redraw bits" mask read by dispatch_sticky_mode_handlers right after it finishes
    dispatching DAT_00201c84's currently-set bits through DAT_00085668... */
 static const unsigned short DAT_00085728_real_table[3] = { 0x3800, 0x1000, 0x0000 };
@@ -496,8 +496,9 @@ LAB_00042510:
 
 // was FUN_0004251c -- per-frame input pump: read the pending input code,
 // dispatch a mouse button to a click region or a key to a keybinding.
-void poll_input_bindings(byte *input_state)
+void poll_input_bindings(void *input_state_ptr)
 {
+  byte *input_state = (byte *)input_state_ptr;
   undefined4 uVar1;
   /* Was `int`, truncating the real DAT_00202890 pointer arithmetic result below -- same
      pointer-truncation pattern already fixed in this function's own sibling dispatch_key_binding
@@ -530,7 +531,7 @@ void poll_input_bindings(byte *input_state)
         fprintf(stderr, "[clickregion] click at (%d,%d), scanning %d regions\n", (int)local_28, (int)local_26, (int)DAT_00202898);
       if (-1 < iVar3) {
         do {
-          pcVar2 = DAT_00202890 + iVar3 * 0x12;
+          pcVar2 = (char *)DAT_00202890 + iVar3 * 0x12;
           if (getenv("UW_DEBUG_CLICKREGION"))
             fprintf(stderr, "[clickregion]   region %d: x1=%d y2=%d x2=%d y1=%d mask=0x%x active_mask=0x%x handler_flag=%d\n",
                     (int)iVar3, (int)*(short *)(pcVar2 + 6), (int)*(short *)(pcVar2 + 4),
@@ -545,10 +546,10 @@ void poll_input_bindings(byte *input_state)
             {
               int _cri = (int)(short)iVar4;   /* matched record index */
               iVar3 = (short)iVar4 * 0x12;
-              iVar4 = (int)local_28 - (int)*(short *)(iVar3 + DAT_00202890 + 6);
+              iVar4 = (int)local_28 - (int)*(short *)((char *)DAT_00202890 + iVar3 + 6);
               *input_state = (char)iVar4;
               input_state[1] = (char)((uint)iVar4 >> 8);
-              iVar4 = (int)*(short *)(iVar3 + DAT_00202890 + 8) - (int)local_26;
+              iVar4 = (int)*(short *)((char *)DAT_00202890 + iVar3 + 8) - (int)local_26;
               input_state[2] = (char)iVar4;
               input_state[3] = (char)((uint)iVar4 >> 8);
               if (getenv("UW_DEBUG_CLICKREGION"))
@@ -558,7 +559,7 @@ void poll_input_bindings(byte *input_state)
               /* call the real 64-bit handler, not the truncated in-record
                  pointer (see g_click_region_handler). */
               if ((uint)_cri < 128 && g_click_region_handler[_cri] != 0) {
-                g_click_region_handler[_cri]((int)*(short *)(iVar3 + DAT_00202890 + 10));
+                g_click_region_handler[_cri]((int)*(short *)((char *)DAT_00202890 + iVar3 + 10));
               }
             }
             return;
@@ -1371,7 +1372,8 @@ int begin_directional_move(short direction)
   undefined2 uVar1;
   byte bVar2;
   uint uVar3;
-  char *uVar4;
+  int uVar4;
+  byte *saved_scratch;
   int extraout_r1;
   uint uVar5;
   ushort uVar6;
@@ -1379,7 +1381,7 @@ int begin_directional_move(short direction)
   int iVar8;
   int iVar9;
   uint uVar10;
-  undefined8 uVar11;
+  ushort *uVar11;
   ushort local_44;
   ushort local_42;
   uint local_40;
@@ -1476,8 +1478,8 @@ LAB_0003c940:
       uVar5 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
       *(char *)((char *)g_player_object + 0xb) = (char)uVar5;
       *(byte *)((char *)g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
-      uVar4 = DAT_00202c6c;
-      DAT_00202c6c = &local_3c;
+      saved_scratch = DAT_00202c6c;
+      DAT_00202c6c = (byte *)&local_3c;
       local_32 = 1;
       local_33 = DAT_00203303;
       local_34 = (byte)DAT_00203304 & 7;
@@ -1498,16 +1500,16 @@ LAB_0003c940:
       iVar7 = (int)(short)*(char *)(DAT_00202c6c + 0xb);
       if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
         do {
-          uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6);
+          uVar11 = (ushort *)resolve_object_link(&DAT_00202c3a + iVar7 * 6);
           /* Was `iVar8 = (int)((ulonglong)uVar11 >> 0x20);` -- a leftover from the original 32-bit
              ARM ABI, where resolve_object_link's caller apparently re-read some other value out of
              r1 right after the call (Ghidra folded it into a fake 64-bit return value, r0:r1). */
           if (uVar11 == 0) break;
-          if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
+          if ((*uVar11 & 0x1ff) == 0x1a0) {
             /* Was followed by `iVar8 = extraout_r1;` -- same bug as the sibling fix just above in
                this function (resolve_object_link's own high-bits carry), but via a different,
                unrelated callee... */
-            resolve_skill_gated_unlock_or_use(g_player_object,0,(ushort *)uVar11,0);
+            resolve_skill_gated_unlock_or_use(g_player_object,0,uVar11,0);
           }
           iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
         } while (iVar7 < (int)((uint)*(byte *)((char *)DAT_00202c6c + 0x15) +
@@ -1537,9 +1539,9 @@ LAB_0003c920:
       *(byte *)((char *)g_player_object + 0x18) =
            ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
            *(byte *)((char *)g_player_object + 0x18);
-      uVar4 = DAT_00202c6c;
+      saved_scratch = DAT_00202c6c;
     }
-    DAT_00202c6c = (undefined2 *)uVar4;
+    DAT_00202c6c = saved_scratch;
     uVar4 = 1;
   }
   else {
@@ -1659,7 +1661,7 @@ void dispatch_key_binding(char *input_state, short key_code)
   iVar2 = 0;
   if (0 < DAT_0020288c) {
     do {
-      pcVar1 = iVar2 * 0xc + DAT_0020289c;
+      pcVar1 = (char *)DAT_0020289c + iVar2 * 0xc;
       if (((*(short *)(pcVar1 + 2) == key_code) &&
           ((*(ushort *)(pcVar1 + 6) & *(ushort *)(input_state + 8)) != 0)) &&
           (((uint)iVar2 < 512 && g_keybind_handler[iVar2] != 0)))

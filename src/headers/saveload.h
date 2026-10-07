@@ -15,10 +15,10 @@ extern undefined2 DAT_000868dc;
 extern short DAT_002046f0;
 
 
-bool open_level_archive(byte *archive, char *path);
-byte close_level_archive(uint *archive);
-bool write_archive_entry(uint *archive, uint entry_index, void *data, uint byte_count);
-short read_archive_entry(uint *archive, uint entry_index, void *buffer);
+bool open_level_archive(void *archive_handle, char *path);
+byte close_level_archive(void *archive_handle);
+bool write_archive_entry(void *archive_handle, uint entry_index, void *data, uint byte_count);
+short read_archive_entry(void *archive_handle, uint entry_index, void *buffer);
 int probe_archive_entry_exists(char *path, uint entry_index);
 bool check_can_save_game();
 int check_can_load_game();

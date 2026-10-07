@@ -76,7 +76,7 @@ void draw_text_string(char *text, short x, short y)
     if ((unsigned)x > used) memset(lines[y] + used, ' ', x - used);
     memcpy(lines[y] + x, text, length + 1);
 }
-void check_mouse_over_msg_scroll_panel(int mode) {}
+void check_mouse_over_msg_scroll_panel() {}
 void decrement_cursor_hide_depth(void) { TEST_FAIL_MESSAGE("Unexpected cursor hide"); }
 int cursor_show_idle_tick(void) { TEST_FAIL_MESSAGE("Unexpected cursor show"); return 0; }
 void msg_scroll_panel_reset(int mode) { TEST_FAIL_MESSAGE("Unexpected scroll reset"); }
@@ -92,8 +92,8 @@ void print_scroll_message_by_id(unsigned id)
 }
 int recalculate_player_stats(int refill) { return 0; }
 void refresh_stats_panel_if_active(void) {}
-int build_object_display_name(char *buffer, ushort *object, int article, int mode)
-{
+int build_object_display_name(char *buffer, void *object_, int article, int mode)
+{ ushort *object = (ushort *)object_;
     strcpy(buffer, (*object & 0x1ff) == 0x80 ? "a sack" :
                    (*object & 0x1ff) == 0x81 ? "a torch" : "iron key");
     return 1;
@@ -109,7 +109,7 @@ char *get_message_string(ushort id)
     }
 }
 int append_object_property_tag(ushort *object, short mode, char *buffer) { return 0; }
-int append_object_special_name(byte *object, short mode, char *buffer) { return 0; }
+int append_object_special_name(void *object, short mode, char *buffer) { return 0; }
 void describe_special_object_property(ushort *object, short mode) {}
 int identify_mushroom_type(ushort *object, char *properties) { return 0; }
 void look_at_inscribed_object(ushort *object, short mode) { TEST_FAIL_MESSAGE("Unexpected inscription"); }
@@ -120,4 +120,4 @@ byte *format_object_display_name(byte *name, int article, int mode)
     return (undefined1 *)"a goblin";
 }
 long _isctype(int value, int flags) { TEST_FAIL_MESSAGE("Unexpected named creature"); return 0; }
-long _itoa(long value, long buffer, long radix) { TEST_FAIL_MESSAGE("Unexpected quantity"); return (long)buffer; }
+char *_itoa(long value, char *buffer, long radix) { TEST_FAIL_MESSAGE("Unexpected quantity"); return buffer; }

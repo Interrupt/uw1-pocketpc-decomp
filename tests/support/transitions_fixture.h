@@ -20,8 +20,8 @@ int read_file_handle(int handle, void *p, unsigned int count);
 int seek_file_handle(int handle, int offset, int origin);
 uint read_realtime_clock_units(void);
 long GetTickCount(void);
-long TranslateMessage(long message);
-long DispatchMessageW(long message);
+long TranslateMessage(const void *message);
+long DispatchMessageW(const void *message);
 long _isctype(int key, int mask);
 long ce_tolower(long key);
 long ce_toupper(long key);
@@ -69,8 +69,8 @@ void transitions_fixture_reset(void);
 void transitions_fixture_dispose(void);
 int uw_always_show_cursor(void);
 void clear_ambient_sound_target_thunk(void);
-void *chrbtns_bump_alloc_entry(int size);
-int chrbtns_offset_table_builder(int index, int kind, int entry);
+void *chrbtns_bump_alloc_entry(uint size);
+int chrbtns_offset_table_builder(void *index, uint kind, int entry);
 
 void dirty_rect_set(int top, int bottom, int left, int right);
 void dispatch_sticky_mode_handlers(void);
@@ -108,5 +108,5 @@ void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_dump_critter_sheet_once(void);
 void uw_debug_force_item_id_once(void);
 void tick_weapon_swing_state(short attack_direction);
-void poll_input_bindings(undefined1 *input_state);
+void poll_input_bindings(void *input_state);
 #endif

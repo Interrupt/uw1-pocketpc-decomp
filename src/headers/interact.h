@@ -18,13 +18,13 @@ extern short DAT_002020ac;
 extern void (*const PTR_FUN_000858c8_table[5])();
 
 
-void attempt_talk_interaction(ushort *target);
-int target_in_range(short range_squared, char *actor, char *target);
+void attempt_talk_interaction(void *target);
+int target_in_range(short range_squared, void *actor, char *target);
 uint object_chain_max_barrier(char *tile);
-int target_line_of_sight(short target_class, char *target);
+int target_line_of_sight(short target_class, void *target);
 ushort *pick_object_under_cursor(int mode);
 void describe_picked_terrain(byte terrain_kind, short step_count);
-void finalize_object_pickup(char *object);
+void finalize_object_pickup(void *object);
 void interact_default();
 void interact_talk_npc();
 void interact_look();
@@ -32,11 +32,11 @@ void interact_use();
 void interact_attack();
 void trigger_terrain_discovery_illustration();
 void trigger_inscription_illustration(int first_char);
-int roll_container_lockpick_check(char *container, int skill);
-int roll_container_trap_disarm_check(char *container, int skill);
-uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id);
-int apply_trap_or_link_effect(char *trigger_object, ushort *trigger_link, ushort *trap_record, int tile_x, int tile_y);
-void purge_tagged_objects_from_chain(ushort *link_field);
-void refresh_object_link_chain(char *chain_link, char *object);
+int roll_container_lockpick_check(void *container, int skill);
+int roll_container_trap_disarm_check(void *container, int skill);
+uint resolve_skill_gated_unlock_or_use(void *object, void *key_item, void *lock_link, ushort key_id);
+int apply_trap_or_link_effect(void *trigger_object, void *trigger_link, void *trap_record, int tile_x, int tile_y);
+void purge_tagged_objects_from_chain(void *link_field);
+void refresh_object_link_chain(void *chain_link, void *object);
 
 #endif

@@ -8,9 +8,9 @@
 
 void entry(int instance, int prev_instance, int command_line, int show_command);
 void run_static_initializers();
-void call_function_pointer_range(uint *range_start, uint *range_end);
+void call_function_pointer_range(code **range_start, code **range_end);
 void terminate_process(int exit_code);
-int register_atexit_handler(int handler);
-int register_default_atexit_handler(int handler);
+int register_atexit_handler(code *handler);
+int register_default_atexit_handler(code *handler);
 
 #endif

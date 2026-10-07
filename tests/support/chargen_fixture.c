@@ -35,9 +35,7 @@ long ce_rand(void)
     return random_values[random_index++];
 }
 
-int roll_dice_sum(count, sides)
-int count;
-short sides;
+int roll_dice_sum(int count, short sides)
 {
     /* Deterministic roll totals distinguish skills from attributes. */
     if (dice_calls < 20) {
@@ -56,8 +54,7 @@ void configure_texture_detail_functions(void) { reset_calls++; }
 
 void refresh_player_equipment_effects(void) { equipment_calls++; }
 
-void advance_skill_training(skill)
-short skill;
+void advance_skill_training(short skill)
 {
     TEST_ASSERT_LESS_THAN_INT(6, trained_count);
     trained[trained_count++] = skill;

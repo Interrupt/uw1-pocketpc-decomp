@@ -50,7 +50,7 @@ static int DAT_00087454;
    first play_music_track)... */
 static int DAT_00087448;
 static byte DAT_0023c3a8;
-static undefined4 *DAT_0023c3b8;
+static char *DAT_0023c3b8;  /* the MOD-player engine object */
 static undefined1 DAT_0023c384;
 static undefined4 DAT_0023c280;
 static undefined4 DAT_0023c330;
@@ -82,7 +82,7 @@ static ushort g_sound_channel_group[4];
    Sized to 128 for headroom as a path-text fragment; down from 8192. */
 static undefined DAT_0023c3d4_backing[128];
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
-static int DAT_0023c3bc;
+static char *DAT_0023c3bc;  /* sound-channel slot record */
 static int DAT_0023c378;
 /* Sizing pass: sibling of DAT_00087414 above -- same per-track,
    4-byte-stride indexing by DAT_0023c3a8, same real bound (max
@@ -114,7 +114,7 @@ int play_music_track(byte track_number, int flags)
   char *stack0xffdc3238_ptr;
   char cVar1;
   char *pcVar2;
-  int iVar3;
+  void *iVar3;
   undefined4 uVar4;
   /* Was declared as just 2 bytes -- Ghidra only recovered the first access, but this is filled from
      the 9-byte "uw00.mod\0" template right below and local_12e/local_12d (now folded in as direct
@@ -144,20 +144,20 @@ int play_music_track(byte track_number, int flags)
       } while (cVar1 != '\0');
       ce_strcat(acStack_120,s__SOUND__0008750c);
       ce_strcat(acStack_120,auStack_130);
-      if (DAT_0023c3b8 != (undefined4 *)0x0) {
+      if (DAT_0023c3b8 != (char *)0x0) {
         stop_mod_player_playback(DAT_0023c3b8);
-        if (DAT_0023c3b8 != (undefined4 *)0x0) {
-          (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
+        if (DAT_0023c3b8 != (char *)0x0) {
+          (**(void (**)(void *, int))(uintptr_t)*(uint *)DAT_0023c3b8)(DAT_0023c3b8,1);  /* virtual destructor via the (32-bit) vtable slot */
         }
-        DAT_0023c3b8 = (undefined4 *)0x0;
+        DAT_0023c3b8 = (char *)0x0;
       }
       iVar3 = cpp_operator_new(0x10581);
       if (iVar3 == 0) {
-        DAT_0023c3b8 = (undefined4 *)0x0;
+        DAT_0023c3b8 = (char *)0x0;
       }
       else {
         SetFileTime(&local_124,acStack_120);
-        DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar3,local_124);
+        DAT_0023c3b8 = (char *)construct_and_load_mod_player(iVar3,(void *)(uintptr_t)local_124);
       }
     }
     DAT_0023c384 = 0;
@@ -296,13 +296,7 @@ void set_sound_effects_enabled(int enabled)
 void stop_current_audio_handle()
 
 {
-  undefined4 *puVar1;
-
-  puVar1 = &DAT_00087448;
-  if (DAT_00087454 != 0) {
-    puVar1 = DAT_00087448;
-  }
-  if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
+  if (DAT_00087454 != 0 && DAT_00087448 != 0) {
     stop_mod_player_playback(DAT_0023c3b8);
   }
   return;
@@ -483,13 +477,7 @@ void stop_movement_sound_handle()
 void stop_current_audio_handle_dup()
 
 {
-  undefined4 *puVar1;
-
-  puVar1 = &DAT_00087448;
-  if (DAT_00087454 != 0) {
-    puVar1 = DAT_00087448;
-  }
-  if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
+  if (DAT_00087454 != 0 && DAT_00087448 != 0) {
     stop_mod_player_playback(DAT_0023c3b8);
   }
   return;
@@ -555,22 +543,22 @@ LAB_00073108:
 void trigger_sound_sample_note(int sample_index, int note)
 {
   char cVar1;
-  int iVar2;
+  void *iVar2;
   undefined4 local_18;
   
-  if (DAT_0023c3b8 != (undefined4 *)0x0) {
+  if (DAT_0023c3b8 != (char *)0x0) {
     if (DAT_00087448 == 0) {
       stop_mod_player_playback(DAT_0023c3b8);
-      if (DAT_0023c3b8 != (undefined4 *)0x0) {
-        (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
+      if (DAT_0023c3b8 != (char *)0x0) {
+        (**(void (**)(void *, int))(uintptr_t)*(uint *)DAT_0023c3b8)(DAT_0023c3b8,1);  /* virtual destructor via the (32-bit) vtable slot */
       }
       iVar2 = cpp_operator_new(0x10581);
       if (iVar2 == 0) {
-        DAT_0023c3b8 = (undefined4 *)0x0;
+        DAT_0023c3b8 = (char *)0x0;
       }
       else {
         SetFileTime(&local_18,&DAT_0023c3d4);
-        DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar2,local_18);
+        DAT_0023c3b8 = (char *)construct_and_load_mod_player(iVar2,(void *)(uintptr_t)local_18);
       }
       start_mod_player_playback(DAT_0023c3b8);
       DAT_0023c280 = read_realtime_clock_units();
@@ -672,7 +660,7 @@ void play_musical_instrument(short instrument)
 int check_secret_tune_match(char *notes)
 {
   undefined2 uVar1;
-  int iVar2;
+  void *iVar2;
   uint uVar3;
   char local_14 [12];
   
@@ -719,13 +707,13 @@ void shutdown_sound_effects()
 void shutdown_music_module()
 
 {
-  if (DAT_0023c3b8 != (undefined4 *)0x0) {
+  if (DAT_0023c3b8 != (char *)0x0) {
     stop_sfx_trigger_slot(DAT_0023c3b8,0);
     stop_mod_player_playback(DAT_0023c3b8);
-    if (DAT_0023c3b8 != (undefined4 *)0x0) {
-      (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
+    if (DAT_0023c3b8 != (char *)0x0) {
+      (**(void (**)(void *, int))(uintptr_t)*(uint *)DAT_0023c3b8)(DAT_0023c3b8,1);  /* virtual destructor via the (32-bit) vtable slot */
     }
-    DAT_0023c3b8 = (undefined4 *)0x0;
+    DAT_0023c3b8 = (char *)0x0;
   }
   return;
 }
@@ -915,7 +903,8 @@ int play_numbered_voice_sample(short sample_number)
      real pointer to 32 bits before forwarding it to load_and_resample_wave_file as a path -- same
      pointer-truncation class as load_string_resource's own fix. */
   char *uVar2;
-  int iVar3;
+  int result;
+  void *iVar3;
   char *pcVar4;
   char extraout_r1;
   char acStack_87740 [554264];
@@ -925,22 +914,22 @@ int play_numbered_voice_sample(short sample_number)
   char local_21b;
   char acStack_118 [260];
   
-  if (DAT_0023c3b8 == (undefined4 *)0x0) {
-    uVar2 = 0;
+  if (DAT_0023c3b8 == (char *)0x0) {
+    result = 0;
   }
   else {
     if (DAT_00087448 == 0) {
       stop_mod_player_playback(DAT_0023c3b8);
-      if (DAT_0023c3b8 != (undefined4 *)0x0) {
-        (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
+      if (DAT_0023c3b8 != (char *)0x0) {
+        (**(void (**)(void *, int))(uintptr_t)*(uint *)DAT_0023c3b8)(DAT_0023c3b8,1);  /* virtual destructor via the (32-bit) vtable slot */
       }
       iVar3 = cpp_operator_new(0x10581);
       if (iVar3 == 0) {
-        DAT_0023c3b8 = (undefined4 *)0x0;
+        DAT_0023c3b8 = (char *)0x0;
       }
       else {
         SetFileTime(local_228,&DAT_0023c3d4);
-        DAT_0023c3b8 = (undefined4 *)construct_and_load_mod_player(iVar3,local_228[0]);
+        DAT_0023c3b8 = (char *)construct_and_load_mod_player(iVar3,(void *)(uintptr_t)local_228[0]);
       }
       start_mod_player_playback(DAT_0023c3b8);
       DAT_0023c330 = 0;
@@ -985,9 +974,9 @@ int play_numbered_voice_sample(short sample_number)
     load_and_resample_wave_file(DAT_0023c3bc,DAT_0023c540,uVar2);
     arm_sfx_trigger_slot(DAT_0023c3b8,DAT_0023c3bc,0);
     start_sfx_trigger_slot(DAT_0023c3b8,0);
-    uVar2 = 1;
+    result = 1;
   }
-  return uVar2;
+  return result;
 }
 
 
@@ -1107,7 +1096,7 @@ void stop_ambient_sound_effect()
 void init_ambient_sound_timing(short interval)
 {
   DAT_0024d00c = 0x16;
-  DAT_0024fa18 = (short)(interval + -0x16 >> 1);
+  DAT_0024fa18 = (short)((interval + -0x16) >> 1);
   DAT_0024d008 = 0xff;
   DAT_0024fa10 = 0xff;
   DAT_0024d010 = 9;
@@ -1202,7 +1191,7 @@ LAB_00035fd4:
 void cache_ambient_sound_handle()
 
 {
-  DAT_00101a70 = DAT_002506ec;
+  DAT_00101a70 = (uintptr_t)DAT_002506ec;
   return;
 }
 
@@ -1245,13 +1234,29 @@ int init_sound_channel_slot(char *slot)
 
 
 
+/* A sound-channel slot is a 0x1a-byte record: +0x00..0x11 the WAVEFORMATEX header, +0x12..0x15 a 4-byte
+   field that held the sample-buffer pointer in the original 32-bit binary, +0x16..0x19 the sample
+   length/rate bytes. These accessors make the (legacy, 32-bit-truncating) pointer field explicit. */
+static void *slot_sample_ptr(const char *slot)
+{
+  uint packed;
+  memcpy(&packed,slot + 0x12,4);
+  return (void *)(uintptr_t)packed;
+}
+
+static void set_slot_sample_ptr(char *slot, void *buffer)
+{
+  uint packed = (uint)(uintptr_t)buffer;
+  memcpy(slot + 0x12,&packed,4);
+}
+
 // was FUN_0004b644 -- the shutdown counterpart to init_sound_channel_slot: releases the slot's
 // playback resource (cpp_operator_delete) if its +0x12 field is non-zero (a sample currently
 // loaded/playing).
 void release_sound_channel_slot(char *slot)
 {
-  if (*(int *)(slot + 0x12) != 0) {
-    cpp_operator_delete(*(int *)(slot + 0x12));
+  if (slot_sample_ptr(slot) != 0) {
+    cpp_operator_delete(slot_sample_ptr(slot));
   }
 }
 
@@ -1266,17 +1271,17 @@ int load_and_resample_wave_sample(char *slot, int module, short resource_id)
   undefined1 uVar3;
   undefined3 uVar4;
   uint uVar5;
-  undefined8 uVar6;
-  int iVar7;
-  undefined4 uVar8;
+  char *iVar7;
+  void *uVar8;
+  int result;
   int iVar9;
   int iVar10;
   bool bVar11;
-  undefined8 uVar12;
+  void *uVar12;
   
-  iVar7 = FindResourceW(module,resource_id,u_WAVE_0008686c);
-  if ((iVar7 == 0) || (iVar7 = LoadResource(module), iVar7 == 0)) {
-    uVar8 = 0;
+  iVar7 = (char *)FindResourceW(module,resource_id,(long)(intptr_t)u_WAVE_0008686c);
+  if ((iVar7 == 0) || (iVar7 = (char *)LoadResource(module), iVar7 == 0)) {
+    result = 0;
   }
   else {
     uVar4 = *(undefined3 *)(iVar7 + 0x28);
@@ -1290,27 +1295,19 @@ int load_and_resample_wave_sample(char *slot, int module, short resource_id)
       *(char *)(slot + 0x17) = (char)((uint)iVar1 >> 8);
       *(char *)(slot + 0x18) = (char)(((uVar5 & 0x3fffffff) >> 6) >> 8);
       *(char *)(slot + 0x19) = (char)(((uVar5 & 0x3fffffff) >> 0xe) >> 8);
-      if (CONCAT13(*(undefined1 *)(slot + 0x15),
-                   CONCAT12(*(undefined1 *)(slot + 0x14),
-                            CONCAT11(uVar3,*(undefined1 *)(slot + 0x12)))) != 0) {
-        cpp_operator_delete(CONCAT13(*(undefined1 *)(slot + 0x15), CONCAT12(*(undefined1 *)(slot + 0x14), CONCAT11(uVar3,*(undefined1 *)(slot + 0x12)))));
+      if (slot_sample_ptr(slot) != 0) {
+        cpp_operator_delete(slot_sample_ptr(slot));
       }
       uVar8 = cpp_operator_new(iVar1);
-      *(char *)(slot + 0x12) = (char)uVar8;
-      *(char *)(slot + 0x13) = (char)((uint)uVar8 >> 8);
+      set_slot_sample_ptr(slot,uVar8);
       iVar9 = 0;
-      *(char *)(slot + 0x14) = (char)((uint)uVar8 >> 0x10);
-      *(char *)(slot + 0x15) = (char)((uint)uVar8 >> 0x18);
       if (0 < iVar1) {
         do {
           iVar10 = iVar9;
           if (iVar9 < 0) {
             iVar10 = iVar9 + 3;
           }
-          *(undefined1 *)
-           (CONCAT13(*(undefined1 *)(slot + 0x15),
-                     CONCAT12(*(undefined1 *)(slot + 0x14),*(undefined2 *)(slot + 0x12))) +
-           iVar9) = *(undefined1 *)(iVar7 + (iVar10 >> 2) + 0x2c);
+          ((char *)slot_sample_ptr(slot))[iVar9] = *((char *)iVar7 + (iVar10 >> 2) + 0x2c);
           iVar9 = iVar9 + 1;
         } while (iVar9 < iVar1);
       }
@@ -1321,27 +1318,19 @@ int load_and_resample_wave_sample(char *slot, int module, short resource_id)
       *(char *)(slot + 0x17) = (char)((uint)iVar1 >> 8);
       *(char *)(slot + 0x18) = (char)(((uVar5 & 0x7fffffff) >> 7) >> 8);
       *(char *)(slot + 0x19) = (char)(((uVar5 & 0x7fffffff) >> 0xf) >> 8);
-      if (CONCAT13(*(undefined1 *)(slot + 0x15),
-                   CONCAT12(*(undefined1 *)(slot + 0x14),
-                            CONCAT11(uVar3,*(undefined1 *)(slot + 0x12)))) != 0) {
-        cpp_operator_delete(CONCAT13(*(undefined1 *)(slot + 0x15), CONCAT12(*(undefined1 *)(slot + 0x14), CONCAT11(uVar3,*(undefined1 *)(slot + 0x12)))));
+      if (slot_sample_ptr(slot) != 0) {
+        cpp_operator_delete(slot_sample_ptr(slot));
       }
       uVar8 = cpp_operator_new(iVar1);
-      *(char *)(slot + 0x12) = (char)uVar8;
-      *(char *)(slot + 0x13) = (char)((uint)uVar8 >> 8);
+      set_slot_sample_ptr(slot,uVar8);
       iVar9 = 0;
-      *(char *)(slot + 0x14) = (char)((uint)uVar8 >> 0x10);
-      *(char *)(slot + 0x15) = (char)((uint)uVar8 >> 0x18);
       if (0 < iVar1) {
         do {
           iVar10 = iVar9;
           if (iVar9 < 0) {
             iVar10 = iVar9 + 1;
           }
-          *(undefined1 *)
-           (CONCAT13(*(undefined1 *)(slot + 0x15),
-                     CONCAT12(*(undefined1 *)(slot + 0x14),*(undefined2 *)(slot + 0x12))) +
-           iVar9) = *(undefined1 *)(iVar7 + (iVar10 >> 1) + 0x2c);
+          ((char *)slot_sample_ptr(slot))[iVar9] = *((char *)iVar7 + (iVar10 >> 1) + 0x2c);
           iVar9 = iVar9 + 1;
         } while (iVar9 < iVar1);
       }
@@ -1351,51 +1340,43 @@ int load_and_resample_wave_sample(char *slot, int module, short resource_id)
       *(char *)(slot + 0x17) = (char)((uint3)uVar4 >> 8);
       *(char *)(slot + 0x18) = (char)((uint3)uVar4 >> 0x10);
       *(undefined1 *)(slot + 0x19) = uVar2;
-      if (CONCAT13(*(undefined1 *)(slot + 0x15),
-                   CONCAT12(*(undefined1 *)(slot + 0x14),
-                            CONCAT11(uVar3,*(undefined1 *)(slot + 0x12)))) != 0) {
-        cpp_operator_delete(CONCAT13(*(undefined1 *)(slot + 0x15), CONCAT12(*(undefined1 *)(slot + 0x14), CONCAT11(uVar3,*(undefined1 *)(slot + 0x12)))));
+      if (slot_sample_ptr(slot) != 0) {
+        cpp_operator_delete(slot_sample_ptr(slot));
       }
       uVar12 = cpp_operator_new(uVar5);
-      *(char *)(slot + 0x12) = (char)uVar12;
-      bVar11 = (int)uVar12 == 0;
-      uVar6 = uVar12;
+      set_slot_sample_ptr(slot,uVar12);
+      bVar11 = uVar12 == 0;
       if (bVar11) {
-        uVar6 = 0x8683000000000;
+        /* allocation failed: ARM shows a message box (text at 0x86830 in the original image) */
+        MessageBoxW((const void *)0,(const void *)(uintptr_t)0x86830);
       }
-      *(char *)(slot + 0x13) = (char)((ulonglong)uVar12 >> 8);
-      *(char *)(slot + 0x14) = (char)((ulonglong)uVar12 >> 0x10);
-      *(char *)(slot + 0x15) = (char)((ulonglong)uVar12 >> 0x18);
-      if (bVar11) {
-        MessageBoxW((int)uVar6,(int)((ulonglong)uVar6 >> 0x20));
-      }
-      ce_memmove(*(undefined4 *)(slot + 0x12),iVar7 + 0x2c,uVar5);
+      ce_memmove(slot_sample_ptr(slot),iVar7 + 0x2c,uVar5);
     }
-    DeleteObject(iVar7);
-    uVar8 = 1;
+    DeleteObject((long)iVar7);
+    result = 1;
   }
-  return uVar8;
+  return result;
 }
 
 
 // was FUN_0004b948 -- load_and_resample_wave_sample's file-based counterpart: opens a WAVE file on
 // disk (param_3, the path) instead of a module resource, otherwise identical (same header read,
 // same 44100/22050Hz resample-vs-raw-copy logic, same slot-buffer layout at param_1).
-int load_and_resample_wave_file(char *slot, int unused, int path)
+int load_and_resample_wave_file(char *slot, int unused, const char *path)
 {
   undefined1 uVar1;
   undefined1 uVar2;
   undefined3 uVar3;
   uint uVar4;
-  undefined8 uVar5;
   int iVar6;
   int iVar7;
-  int iVar8;
+  char *iVar8;
   int iVar9;
-  undefined4 uVar10;
+  void *uVar10;
+  int result;
   int iVar11;
   bool bVar12;
-  undefined8 uVar13;
+  void *uVar13;
   int local_20;
   
   iVar6 = CreateFileW(path,0x80000000,1,0,3,0x80,0);
@@ -1404,7 +1385,7 @@ int load_and_resample_wave_file(char *slot, int unused, int path)
     if ((iVar7 != -1) && (iVar8 = ce_malloc(iVar7), iVar8 != 0)) {
       iVar9 = ReadFile(iVar6,iVar8,iVar7,&local_20,0);
       if ((iVar9 == 0) || (local_20 != iVar7)) {
-        uVar10 = 0;
+        result = 0;
       }
       else {
         uVar3 = *(undefined3 *)(iVar8 + 0x28);
@@ -1418,27 +1399,19 @@ int load_and_resample_wave_file(char *slot, int unused, int path)
           *(char *)(slot + 0x17) = (char)((uint)iVar7 >> 8);
           *(char *)(slot + 0x18) = (char)(((uVar4 & 0x3fffffff) >> 6) >> 8);
           *(char *)(slot + 0x19) = (char)(((uVar4 & 0x3fffffff) >> 0xe) >> 8);
-          if (CONCAT13(*(undefined1 *)(slot + 0x15),
-                       CONCAT12(*(undefined1 *)(slot + 0x14),
-                                CONCAT11(uVar2,*(undefined1 *)(slot + 0x12)))) != 0) {
-            cpp_operator_delete(CONCAT13(*(undefined1 *)(slot + 0x15), CONCAT12(*(undefined1 *)(slot + 0x14), CONCAT11(uVar2,*(undefined1 *)(slot + 0x12)))));
+          if (slot_sample_ptr(slot) != 0) {
+            cpp_operator_delete(slot_sample_ptr(slot));
           }
           uVar10 = cpp_operator_new(iVar7);
-          *(char *)(slot + 0x12) = (char)uVar10;
-          *(char *)(slot + 0x13) = (char)((uint)uVar10 >> 8);
-          iVar9 = 0;
-          *(char *)(slot + 0x14) = (char)((uint)uVar10 >> 0x10);
-          *(char *)(slot + 0x15) = (char)((uint)uVar10 >> 0x18);
+          set_slot_sample_ptr(slot,uVar10);
+      iVar9 = 0;
           if (0 < iVar7) {
             do {
               iVar11 = iVar9;
               if (iVar9 < 0) {
                 iVar11 = iVar9 + 3;
               }
-              *(undefined1 *)
-               (CONCAT13(*(undefined1 *)(slot + 0x15),
-                         CONCAT12(*(undefined1 *)(slot + 0x14),*(undefined2 *)(slot + 0x12)))
-               + iVar9) = *(undefined1 *)(iVar8 + (iVar11 >> 2) + 0x2c);
+              ((char *)slot_sample_ptr(slot))[iVar9] = *((char *)iVar8 + (iVar11 >> 2) + 0x2c);
               iVar9 = iVar9 + 1;
             } while (iVar9 < iVar7);
           }
@@ -1449,27 +1422,19 @@ int load_and_resample_wave_file(char *slot, int unused, int path)
           *(char *)(slot + 0x17) = (char)((uint)iVar7 >> 8);
           *(char *)(slot + 0x18) = (char)(((uVar4 & 0x7fffffff) >> 7) >> 8);
           *(char *)(slot + 0x19) = (char)(((uVar4 & 0x7fffffff) >> 0xf) >> 8);
-          if (CONCAT13(*(undefined1 *)(slot + 0x15),
-                       CONCAT12(*(undefined1 *)(slot + 0x14),
-                                CONCAT11(uVar2,*(undefined1 *)(slot + 0x12)))) != 0) {
-            cpp_operator_delete(CONCAT13(*(undefined1 *)(slot + 0x15), CONCAT12(*(undefined1 *)(slot + 0x14), CONCAT11(uVar2,*(undefined1 *)(slot + 0x12)))));
+          if (slot_sample_ptr(slot) != 0) {
+            cpp_operator_delete(slot_sample_ptr(slot));
           }
           uVar10 = cpp_operator_new(iVar7);
-          *(char *)(slot + 0x12) = (char)uVar10;
-          *(char *)(slot + 0x13) = (char)((uint)uVar10 >> 8);
-          iVar9 = 0;
-          *(char *)(slot + 0x14) = (char)((uint)uVar10 >> 0x10);
-          *(char *)(slot + 0x15) = (char)((uint)uVar10 >> 0x18);
+          set_slot_sample_ptr(slot,uVar10);
+      iVar9 = 0;
           if (0 < iVar7) {
             do {
               iVar11 = iVar9;
               if (iVar9 < 0) {
                 iVar11 = iVar9 + 1;
               }
-              *(undefined1 *)
-               (CONCAT13(*(undefined1 *)(slot + 0x15),
-                         CONCAT12(*(undefined1 *)(slot + 0x14),*(undefined2 *)(slot + 0x12)))
-               + iVar9) = *(undefined1 *)(iVar8 + (iVar11 >> 1) + 0x2c);
+              ((char *)slot_sample_ptr(slot))[iVar9] = *((char *)iVar8 + (iVar11 >> 1) + 0x2c);
               iVar9 = iVar9 + 1;
             } while (iVar9 < iVar7);
           }
@@ -1479,31 +1444,23 @@ int load_and_resample_wave_file(char *slot, int unused, int path)
           *(char *)(slot + 0x17) = (char)((uint3)uVar3 >> 8);
           *(char *)(slot + 0x18) = (char)((uint3)uVar3 >> 0x10);
           *(undefined1 *)(slot + 0x19) = uVar1;
-          if (CONCAT13(*(undefined1 *)(slot + 0x15),
-                       CONCAT12(*(undefined1 *)(slot + 0x14),
-                                CONCAT11(uVar2,*(undefined1 *)(slot + 0x12)))) != 0) {
-            cpp_operator_delete(CONCAT13(*(undefined1 *)(slot + 0x15), CONCAT12(*(undefined1 *)(slot + 0x14), CONCAT11(uVar2,*(undefined1 *)(slot + 0x12)))));
+          if (slot_sample_ptr(slot) != 0) {
+            cpp_operator_delete(slot_sample_ptr(slot));
           }
           uVar13 = cpp_operator_new(uVar4);
-          *(char *)(slot + 0x12) = (char)uVar13;
-          bVar12 = (int)uVar13 == 0;
-          uVar5 = uVar13;
+          set_slot_sample_ptr(slot,uVar13);
+          bVar12 = uVar13 == 0;
           if (bVar12) {
-            uVar5 = 0x8683000000000;
+            /* allocation failed: ARM shows a message box (text at 0x86830 in the original image) */
+            MessageBoxW((const void *)0,(const void *)(uintptr_t)0x86830);
           }
-          *(char *)(slot + 0x13) = (char)((ulonglong)uVar13 >> 8);
-          *(char *)(slot + 0x14) = (char)((ulonglong)uVar13 >> 0x10);
-          *(char *)(slot + 0x15) = (char)((ulonglong)uVar13 >> 0x18);
-          if (bVar12) {
-            MessageBoxW((int)uVar5,(int)((ulonglong)uVar5 >> 0x20));
-          }
-          ce_memmove(*(undefined4 *)(slot + 0x12),iVar8 + 0x2c,uVar4);
+          ce_memmove(slot_sample_ptr(slot),iVar8 + 0x2c,uVar4);
         }
-        uVar10 = 1;
+        result = 1;
       }
       CloseHandle(iVar6);
       LocalFree(iVar8);
-      return uVar10;
+      return result;
     }
     CloseHandle(iVar6);
   }
@@ -1517,19 +1474,19 @@ int load_and_resample_wave_file(char *slot, int unused, int path)
 // arrays...
 /* Real arity is 2: all three ARM call sites set only r0/r1; Ghidra's param_3/param_4 were the
    unwritten r2/r3 spilled into stack slots that nothing read. */
-byte *construct_and_load_mod_player(byte *player, int module)
+byte *construct_and_load_mod_player(byte *player, void *module)
 {
   char cVar1;
   char cVar2;
-  int iVar3;
-  int iVar4;
+  intptr_t iVar3;
+  intptr_t iVar4;
   undefined4 uVar5;
   int *piVar6;
   int iVar7;
   byte *pbVar8;
   undefined1 uVar9;
-  int iVar10;
-  int iVar11;
+  intptr_t iVar10;
+  intptr_t iVar11;
   int iVar12;
   int *piVar13;
   uint uVar14;
@@ -1544,7 +1501,7 @@ byte *construct_and_load_mod_player(byte *player, int module)
   int local_338;
   undefined1 *local_334;
   undefined1 auStack_330 [4];
-  int local_32c;
+  char *local_32c;
   int local_328;
   undefined8 local_318;
   uint local_310;
@@ -1559,10 +1516,10 @@ byte *construct_and_load_mod_player(byte *player, int module)
   undefined1 local_2b2;
   undefined1 auStack_2b0 [72];
   undefined1 auStack_268 [560];
-  undefined4 local_c;
+  void *local_c;
   
   local_c = module;
-  FindNextFileW(player + 0x104d8);
+  FindNextFileW(0,player + 0x104d8);  /* ARM passes only the object pointer (r0); handle slot unused */
   init_mod_dynamic_array(player + 0x104e0);
   local_334 = player + 0x104f4;
   /* BUG FIX: was `init_mod_pattern_array();` -- a dropped argument. */
@@ -1575,7 +1532,7 @@ byte *construct_and_load_mod_player(byte *player, int module)
   player[1] = 0x30;
   player[2] = 8;
   player[3] = 0;
-  iVar3 = FindFirstFileW(local_c,auStack_268);
+  iVar3 = FindFirstFileW(local_c,(unsigned int *)auStack_268);
   if (iVar3 == -1) {
     player[0x10580] = 0;
     build_mod_volume_sample_table(player,0x40);
@@ -1670,10 +1627,10 @@ LAB_0004c038:
       ce_memmove(auStack_2c8,local_32c + local_340,0x16);
       local_2b2 = 0;
       uVar5 = SetFileTime(&local_33c,auStack_2c8);
-      CeReadRecordProps(*piVar13 + iVar3,uVar5);
+      CeReadRecordProps((void *)(intptr_t)(*piVar13 + iVar3),uVar5);
       BatteryDrvrGetLevels(&local_33c);
       local_340 = local_340 + 0x16;
-      uVar5 = read_mod_word_length_field(player,auStack_330,&local_340);
+      uVar5 = read_mod_word_length_field(player,(char *)auStack_330,&local_340);
       iVar10 = *piVar13 + iVar3;
       *(char *)(iVar10 + 4) = (char)uVar5;
       *(char *)(iVar10 + 5) = (char)((uint)uVar5 >> 8);
@@ -1700,13 +1657,13 @@ LAB_0004c038:
       *(undefined1 *)(iVar10 + 0xd) = 0;
       *(undefined1 *)(iVar10 + 0xe) = 0;
       *(undefined1 *)(iVar10 + 0xf) = 0;
-      uVar5 = read_mod_word_length_field(player,auStack_330,&local_340);
+      uVar5 = read_mod_word_length_field(player,(char *)auStack_330,&local_340);
       iVar10 = *piVar13 + iVar3;
       *(char *)(iVar10 + 0x10) = (char)uVar5;
       *(char *)(iVar10 + 0x11) = (char)((uint)uVar5 >> 8);
       *(char *)(iVar10 + 0x12) = (char)((uint)uVar5 >> 0x10);
       *(char *)(iVar10 + 0x13) = (char)((uint)uVar5 >> 0x18);
-      uVar5 = read_mod_word_length_field(player,auStack_330,&local_340);
+      uVar5 = read_mod_word_length_field(player,(char *)auStack_330,&local_340);
       iVar10 = *piVar13 + iVar3;
       *(char *)(iVar10 + 0x14) = (char)uVar5;
       *(char *)(iVar10 + 0x15) = (char)((uint)uVar5 >> 8);
@@ -1761,10 +1718,10 @@ LAB_0004c038:
     iVar4 = 0;
     local_33c = iVar3;
     do {
-      resize_mod_pattern_row_array(iVar4 + *piVar13,0x40,0xffffffff);
+      resize_mod_pattern_row_array((char *)(intptr_t)(iVar4 + *piVar13),0x40,0xffffffff);
       iVar3 = 0;
       do {
-        resize_mod_event_row_array(*(int *)(iVar4 + *piVar13 + 4) + iVar3,*piVar15,0xffffffff);
+        resize_mod_event_row_array((char *)(intptr_t)(*(int *)(iVar4 + *piVar13 + 4) + iVar3),*piVar15,0xffffffff);
         local_334 = (undefined1 *)0x0;
         if (0 < *piVar15) {
           iVar10 = 0;
@@ -1789,7 +1746,7 @@ LAB_0004c038:
               uVar18 = ordfloat_log(0,0x408ac000);
               local_2ec = (undefined4)((ulonglong)uVar18 >> 0x20);
               ordfloat_double_from_int(uVar14);
-              uVar19 = ordfloat_log();
+              uVar19 = ordfloat_log(0,0);  /* ARM: result/args come from the preceding float-conversion call (dropped by the decompiler) */
               local_2e4 = (undefined4)((ulonglong)uVar19 >> 0x20);
               uVar20 = ordfloat_log(0x69f83f23,0x3ff01dae);
               local_318 = uVar20;
@@ -1823,7 +1780,7 @@ LAB_0004c038:
             *(char *)(iVar11 + 0xe) = (char)(local_30c >> 0x10);
             *(char *)(iVar11 + 0xf) = (char)(local_30c >> 0x18);
             local_334 = local_334 + 1;
-          } while ((int)local_334 < *piVar15);
+          } while ((int)(intptr_t)local_334 < *piVar15);
         }
         iVar3 = iVar3 + 0x14;
       } while (iVar3 < 0x500);
@@ -1836,23 +1793,23 @@ LAB_0004c038:
     iVar3 = 0x30;
     iVar4 = local_338 + -1;
     do {
-      ordaudio_op_2413(iVar3 + *piVar15 + 0x1c,*(undefined4 *)(iVar3 + *piVar15 + 4),0xffffffff);
+      ordaudio_op_2413((void *)(intptr_t)(iVar3 + *piVar15 + 0x1c),*(undefined4 *)(iVar3 + *piVar15 + 4),0xffffffff);
       if (*(int *)(iVar3 + *piVar15 + 4) != 0) {
         /* Ghidra dropped the size argument here; the length field it just
            tested (*(iVar3 + *piVar15 + 4)) is the natural candidate --
            it's the field used as the "anything to copy" gate. */
-        ce_memmove(*(undefined4 *)(iVar3 + *piVar15 + 0x20),local_32c + local_340,
+        ce_memmove((void *)(intptr_t)(*(undefined4 *)(iVar3 + *piVar15 + 0x20)),local_32c + local_340,
                      *(int *)(iVar3 + *piVar15 + 4));
       }
       iVar10 = iVar3 + *piVar15;
       local_340 = *(int *)(iVar10 + 4) + local_340;
       if (0 < *(int *)(iVar10 + 4)) {
-        ordaudio_op_2304(iVar10 + 0x1c,*(undefined4 *)(iVar10 + 0x24),
-                     *(undefined1 *)(*(int *)(iVar10 + 0x20) + *(int *)(iVar10 + 4) + -1));
+        ordaudio_op_2304((void *)(intptr_t)(iVar10 + 0x1c),(void *)(intptr_t)(*(undefined4 *)(iVar10 + 0x24)),
+                     *(undefined1 *)(intptr_t)(*(int *)(iVar10 + 0x20) + *(int *)(iVar10 + 4) + -1));
         iVar10 = iVar3 + *piVar15;
         if (2 < *(int *)(iVar10 + 0x14)) {
-          *(undefined1 *)(*(int *)(iVar10 + 0x18) + *(int *)(iVar10 + 0x20)) =
-               *(undefined1 *)(*(int *)(iVar10 + 0x10) + *(int *)(iVar10 + 0x20));
+          *(undefined1 *)(intptr_t)(*(int *)(iVar10 + 0x18) + *(int *)(iVar10 + 0x20)) =
+               *(undefined1 *)(intptr_t)(*(int *)(iVar10 + 0x10) + *(int *)(iVar10 + 0x20));
         }
       }
       iVar4 = iVar4 + -1;
@@ -1878,9 +1835,9 @@ LAB_0004c940:
 // is set...
 int destroy_mod_player(int player, uint delete_flags)
 {
-  reset_mod_player_state(player);
+  reset_mod_player_state((byte *)(intptr_t)(player));
   if ((delete_flags & 1) != 0) {
-    cpp_operator_delete(player);
+    cpp_operator_delete((void *)(intptr_t)(player));
   }
   return player;
 }
@@ -1913,8 +1870,9 @@ void reset_mod_player_state(byte *player)
 // was FUN_0004ca50 -- starts MOD-player playback (no-op if already playing, per the +0x10554 "is
 // playing" flag): opens the audio output device (waveOutOpen, with mod_player_wave_out_callback as
 // its fill-buffer callback), zeroes the per-channel state array and several header fields...
-int start_mod_player_playback(char *player)
+int start_mod_player_playback(void *player_ptr)
 {
+  char *player = (char *)player_ptr;
   int iVar1;
   int *piVar2;
   int iVar3;
@@ -1931,7 +1889,7 @@ int start_mod_player_playback(char *player)
   
   if (*(int *)(player + 0x10554) == 0) {
     if (*(int *)(player + 0x1051c) != 0) {
-      waveOutClose();
+      waveOutClose(*(int *)(player + 0x1051c));
     }
     local_1e = 8;
     local_28 = DAT_00086368;
@@ -1946,88 +1904,88 @@ int start_mod_player_playback(char *player)
       piVar2 = (int *)(player + 0x10524);
       iVar1 = 0;
       do {
-        puVar5 = (undefined1 *)(*piVar2 + iVar1);
+        puVar5 = (undefined1 *)(intptr_t)(*piVar2 + iVar1);
         *puVar5 = 0;
         puVar5[1] = 0;
         puVar5[2] = 0;
         puVar5[3] = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 4) = 0;
-        *(undefined1 *)(iVar6 + 5) = 0;
-        *(undefined1 *)(iVar6 + 6) = 0;
-        *(undefined1 *)(iVar6 + 7) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 4) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 5) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 6) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 7) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 8) = 0;
-        *(undefined1 *)(iVar6 + 9) = 0;
-        *(undefined1 *)(iVar6 + 10) = 0;
-        *(undefined1 *)(iVar6 + 0xb) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 8) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 9) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 10) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0xb) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0xc) = 0;
-        *(undefined1 *)(iVar6 + 0xd) = 0;
-        *(undefined1 *)(iVar6 + 0xe) = 0;
-        *(undefined1 *)(iVar6 + 0xf) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0xc) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0xd) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0xe) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0xf) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x14) = 0;
-        *(undefined1 *)(iVar6 + 0x15) = 0;
-        *(undefined1 *)(iVar6 + 0x16) = 0;
-        *(undefined1 *)(iVar6 + 0x17) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x14) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x15) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x16) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x17) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x18) = 0;
-        *(undefined1 *)(iVar6 + 0x19) = 0;
-        *(undefined1 *)(iVar6 + 0x1a) = 0;
-        *(undefined1 *)(iVar6 + 0x1b) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x18) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x19) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x1a) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x1b) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x1c) = 0;
-        *(undefined1 *)(iVar6 + 0x1d) = 0;
-        *(undefined1 *)(iVar6 + 0x1e) = 0;
-        *(undefined1 *)(iVar6 + 0x1f) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x1c) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x1d) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x1e) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x1f) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x20) = 0;
-        *(undefined1 *)(iVar6 + 0x21) = 0;
-        *(undefined1 *)(iVar6 + 0x22) = 0;
-        *(undefined1 *)(iVar6 + 0x23) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x20) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x21) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x22) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x23) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x24) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x24) = 0;
         iVar3 = iVar3 + 1;
-        *(undefined1 *)(iVar6 + 0x25) = 0;
-        *(undefined1 *)(iVar6 + 0x26) = 0;
-        *(undefined1 *)(iVar6 + 0x27) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x25) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x26) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x27) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x28) = 0;
-        *(undefined1 *)(iVar6 + 0x29) = 0;
-        *(undefined1 *)(iVar6 + 0x2a) = 0;
-        *(undefined1 *)(iVar6 + 0x2b) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x28) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x29) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x2a) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x2b) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x2c) = 0;
-        *(undefined1 *)(iVar6 + 0x2d) = 0;
-        *(undefined1 *)(iVar6 + 0x2e) = 0;
-        *(undefined1 *)(iVar6 + 0x2f) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x2c) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x2d) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x2e) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x2f) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x30) = 0;
-        *(undefined1 *)(iVar6 + 0x31) = 0;
-        *(undefined1 *)(iVar6 + 0x32) = 0;
-        *(undefined1 *)(iVar6 + 0x33) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x30) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x31) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x32) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x33) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x34) = 0;
-        *(undefined1 *)(iVar6 + 0x35) = 0;
-        *(undefined1 *)(iVar6 + 0x36) = 0;
-        *(undefined1 *)(iVar6 + 0x37) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x34) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x35) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x36) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x37) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x10) = 0;
-        *(undefined1 *)(iVar6 + 0x11) = 0;
-        *(undefined1 *)(iVar6 + 0x12) = 0;
-        *(undefined1 *)(iVar6 + 0x13) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x10) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x11) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x12) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x13) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x38) = 0;
-        *(undefined1 *)(iVar6 + 0x39) = 0;
-        *(undefined1 *)(iVar6 + 0x3a) = 0;
-        *(undefined1 *)(iVar6 + 0x3b) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x38) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x39) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x3a) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x3b) = 0;
         iVar6 = *piVar2 + iVar1;
-        *(undefined1 *)(iVar6 + 0x3c) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x3c) = 0;
         iVar1 = iVar1 + 0x40;
-        *(undefined1 *)(iVar6 + 0x3d) = 0;
-        *(undefined1 *)(iVar6 + 0x3e) = 0;
-        *(undefined1 *)(iVar6 + 0x3f) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x3d) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x3e) = 0;
+        *(undefined1 *)(intptr_t)(iVar6 + 0x3f) = 0;
       } while (iVar3 < *(int *)(player + 0x1054c));
     }
     *(undefined1 *)(player + 0x10534) = 6;
@@ -2051,7 +2009,7 @@ int start_mod_player_playback(char *player)
     *(undefined1 *)(player + 0x1053e) = 0;
     *(undefined1 *)(player + 0x1053f) = 0;
     if (*(char *)(player + 0x10580) != '\0') {
-      uVar4 = *(undefined4 *)
+      uVar4 = *(undefined4 *)(intptr_t)
                (**(int **)(player + 0x104e4) * 0x14 + *(int *)(player + 0x104f8) + 4);
       *(char *)(player + 0x10550) = (char)uVar4;
       *(char *)(player + 0x10551) = (char)((uint)uVar4 >> 8);
@@ -2079,8 +2037,9 @@ int start_mod_player_playback(char *player)
 // was FUN_0004cfc8 -- stops MOD-player playback: the shutdown
 // counterpart to start_mod_player_playback, clearing the "is playing"
 // flag first thing.
-int stop_mod_player_playback(char *player)
+int stop_mod_player_playback(void *player_ptr)
 {
+  char *player = (char *)player_ptr;
   *(undefined1 *)(player + 0x10554) = 0;
   *(undefined1 *)(player + 0x10555) = 0;
   *(undefined1 *)(player + 0x10556) = 0;
@@ -2134,16 +2093,16 @@ bool queue_mod_audio_buffer(char *player)
   resize_mod_int_array(auStack_7c,iVar8,0xffffffff);
   resize_mod_int_array(auStack_94,iVar8,0xffffffff);
   puVar4 = (undefined1 *)cpp_operator_new(8);
-  *puVar4 = (char)player;
-  puVar4[1] = (char)((uint)player >> 8);
-  puVar4[2] = (char)((uint)player >> 0x10);
-  puVar4[3] = (char)((uint)player >> 0x18);
+  *puVar4 = (char)(uintptr_t)player;
+  puVar4[1] = (char)((uint)(uintptr_t)player >> 8);
+  puVar4[2] = (char)((uint)(uintptr_t)player >> 0x10);
+  puVar4[3] = (char)((uint)(uintptr_t)player >> 0x18);
   puVar5 = (undefined1 *)cpp_operator_new(iVar8 + 0x20);
   local_a0 = 0;
-  puVar4[4] = (char)puVar5;
-  puVar4[5] = (char)((uint)puVar5 >> 8);
-  puVar4[6] = (char)((uint)puVar5 >> 0x10);
-  puVar4[7] = (char)((uint)puVar5 >> 0x18);
+  puVar4[4] = (char)(uintptr_t)puVar5;
+  puVar4[5] = (char)((uint)(uintptr_t)puVar5 >> 8);
+  puVar4[6] = (char)((uint)(uintptr_t)puVar5 >> 0x10);
+  puVar4[7] = (char)((uint)(uintptr_t)puVar5 >> 0x18);
   if ((*(char *)(player + 0x10580) != '\0') && (iVar8 != 0)) {
     piVar14 = (int *)(player + 0x10548);
     iVar15 = iVar8;
@@ -2154,7 +2113,7 @@ bool queue_mod_audio_buffer(char *player)
           piVar9 = (int *)(player + 0x10538);
           piVar6 = (int *)(player + 0x1053c);
           iVar10 = *piVar6 + 1;
-          iVar16 = *(int *)(*(int *)(*(int *)(player + 0x104e4) + *piVar9 * 4) * 0x14 +
+          iVar16 = *(int *)(intptr_t)(*(int *)(intptr_t)(*(int *)(player + 0x104e4) + *piVar9 * 4) * 0x14 +
                             *(int *)(player + 0x104f8) + 4) + *piVar6 * 0x14;
           *(char *)(player + 0x10550) = (char)iVar16;
           *(char *)(player + 0x10551) = (char)((uint)iVar16 >> 8);
@@ -2213,16 +2172,16 @@ bool queue_mod_audio_buffer(char *player)
       iVar15 = iVar15 - iVar16;
       *(char *)(player + 0x1054a) = (char)((uint)iVar10 >> 0x10);
       *(char *)(player + 0x1054b) = (char)((uint)iVar10 >> 0x18);
-      mix_mod_channels_to_buffer(player,local_78 + local_a0 * 4,local_90 + local_a0 * 4,iVar16);
+      mix_mod_channels_to_buffer(player,(uint *)(intptr_t)(local_78 + local_a0 * 4),(uint *)(intptr_t)(local_90 + local_a0 * 4),iVar16);
       local_a0 = iVar16 + local_a0;
     } while (iVar15 != 0);
   }
   iVar15 = 0;
   iVar10 = 0;
   piVar14 = local_64;
-  iVar16 = player;
+  iVar16 = (int)(intptr_t)player;
   do {
-    pcVar1 = (char *)(iVar16 + 0x10410);
+    pcVar1 = (char *)(intptr_t)(iVar16 + 0x10410);
     iVar16 = iVar16 + 0xd;
     if (*pcVar1 != '\0') {
       *piVar14 = iVar10;
@@ -2239,27 +2198,27 @@ bool queue_mod_audio_buffer(char *player)
         piVar14 = local_64;
         local_9c = iVar15;
         do {
-          iVar16 = *piVar14 * 0xd + player;
-          if (*(char *)(iVar16 + 0x10410) != '\0') {
-            iVar11 = *(int *)(iVar16 + 0x10408);
-            if (iVar11 < *(int *)(iVar16 + 0x1040c)) {
-              iVar10 = iVar10 + (uint)*(byte *)(*(int *)(iVar16 + 0x10404) + iVar11) + -0x80;
+          iVar16 = (int)(intptr_t)(*piVar14 * 0xd + player);
+          if (*(char *)(intptr_t)(iVar16 + 0x10410) != '\0') {
+            iVar11 = *(int *)(intptr_t)(iVar16 + 0x10408);
+            if (iVar11 < *(int *)(intptr_t)(iVar16 + 0x1040c)) {
+              iVar10 = iVar10 + (uint)*(byte *)(intptr_t)(*(int *)(intptr_t)(iVar16 + 0x10404) + iVar11) + -0x80;
               iVar11 = iVar11 + 1;
             }
             else {
-              *(char *)(iVar16 + 0x10410) = '\0';
+              *(char *)(intptr_t)(iVar16 + 0x10410) = '\0';
               iVar11 = 0;
             }
-            *(char *)(iVar16 + 0x10408) = (char)iVar11;
-            *(char *)(iVar16 + 0x10409) = (char)((uint)iVar11 >> 8);
-            *(char *)(iVar16 + 0x1040a) = (char)((uint)iVar11 >> 0x10);
-            *(char *)(iVar16 + 0x1040b) = (char)((uint)iVar11 >> 0x18);
+            *(char *)(intptr_t)(iVar16 + 0x10408) = (char)iVar11;
+            *(char *)(intptr_t)(iVar16 + 0x10409) = (char)((uint)iVar11 >> 8);
+            *(char *)(intptr_t)(iVar16 + 0x1040a) = (char)((uint)iVar11 >> 0x10);
+            *(char *)(intptr_t)(iVar16 + 0x1040b) = (char)((uint)iVar11 >> 0x18);
           }
           piVar14 = piVar14 + 1;
           local_9c = local_9c + -1;
         } while (local_9c != 0);
       }
-      iVar10 = iVar10 + (*(int *)(local_90 + local_a0 * 4) + *(int *)(local_78 + local_a0 * 4) >> 8)
+      iVar10 = iVar10 + ((*(int *)(intptr_t)(local_90 + local_a0 * 4) + *(int *)(intptr_t)(local_78 + local_a0 * 4)) >> 8)
       ;
       bVar19 = SCARRY4(iVar10,0x80);
       iVar10 = iVar10 + 0x80;
@@ -2281,10 +2240,10 @@ bool queue_mod_audio_buffer(char *player)
   }
   puVar7 = puVar5 + 0x20;
   puVar5[4] = (char)iVar8;
-  *puVar5 = (char)puVar7;
-  puVar5[1] = (char)((uint)puVar7 >> 8);
-  puVar5[2] = (char)((uint)puVar7 >> 0x10);
-  puVar5[3] = (char)((uint)puVar7 >> 0x18);
+  *puVar5 = (char)(uintptr_t)puVar7;
+  puVar5[1] = (char)((uint)(uintptr_t)puVar7 >> 8);
+  puVar5[2] = (char)((uint)(uintptr_t)puVar7 >> 0x10);
+  puVar5[3] = (char)((uint)(uintptr_t)puVar7 >> 0x18);
   puVar5[5] = (char)((uint)iVar8 >> 8);
   puVar5[6] = (char)((uint)iVar8 >> 0x10);
   puVar5[7] = (char)(iVar2 >> 0x1b);
@@ -2296,16 +2255,16 @@ bool queue_mod_audio_buffer(char *player)
   puVar5[0x15] = 0;
   puVar5[0x16] = 0;
   puVar5[0x17] = 0;
-  puVar5[0xc] = (char)puVar4;
-  puVar5[0xd] = (char)((uint)puVar4 >> 8);
-  puVar5[0xe] = (char)((uint)puVar4 >> 0x10);
-  puVar5[0xf] = (char)((uint)puVar4 >> 0x18);
+  puVar5[0xc] = (char)(uintptr_t)puVar4;
+  puVar5[0xd] = (char)((uint)(uintptr_t)puVar4 >> 8);
+  puVar5[0xe] = (char)((uint)(uintptr_t)puVar4 >> 0x10);
+  puVar5[0xf] = (char)((uint)(uintptr_t)puVar4 >> 0x18);
   puVar12 = (undefined4 *)(player + 0x1051c);
   waveOutPrepareHeader(*puVar12,puVar5,0x20);
   iVar8 = waveOutWrite(*puVar12,puVar5,0x20);
   if (iVar8 != 0) {
     waveOutUnprepareHeader(*puVar12,puVar5,0x20);
-    cpp_operator_delete(*(undefined4 *)(puVar4 + 4));
+    cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(puVar4 + 4)));
   }
   destroy_mod_dynamic_array(auStack_94);
   destroy_mod_dynamic_array(auStack_7c);
@@ -2353,7 +2312,7 @@ void process_mod_tracker_row(char *player)
     piVar19 = (int *)(player + 0x10524);
     iVar18 = 0;
     do {
-      piVar11 = (int *)(*(int *)(*(int *)(player + 0x10550) + 4) + local_34);
+      piVar11 = (int *)(intptr_t)(*(int *)(intptr_t)(*(int *)(player + 0x10550) + 4) + local_34);
       iVar17 = *piVar11;
       iVar14 = piVar11[1];
       iVar8 = piVar11[2];
@@ -2365,41 +2324,41 @@ void process_mod_tracker_row(char *player)
       iVar20 = iVar10 >> 4;
       uVar16 = *puVar1 & 0xf;
       if (0 < iVar17) {
-        puVar12 = (undefined1 *)(iVar18 + *piVar19);
+        puVar12 = (undefined1 *)(intptr_t)(iVar18 + *piVar19);
         *puVar12 = (char)iVar17;
         puVar12[1] = (char)((uint)iVar17 >> 8);
         puVar12[2] = (char)((uint)iVar17 >> 0x10);
         puVar12[3] = (char)((uint)iVar17 >> 0x18);
         iVar22 = iVar18 + *piVar19;
-        uVar15 = *(undefined4 *)(*(int *)(player + 0x1050c) + iVar17 * 0x30 + 0xc);
-        *(char *)(iVar22 + 0x14) = (char)uVar15;
-        *(char *)(iVar22 + 0x15) = (char)((uint)uVar15 >> 8);
-        *(char *)(iVar22 + 0x16) = (char)((uint)uVar15 >> 0x10);
-        *(char *)(iVar22 + 0x17) = (char)((uint)uVar15 >> 0x18);
+        uVar15 = *(undefined4 *)(intptr_t)(*(int *)(player + 0x1050c) + iVar17 * 0x30 + 0xc);
+        *(char *)(intptr_t)(iVar22 + 0x14) = (char)uVar15;
+        *(char *)(intptr_t)(iVar22 + 0x15) = (char)((uint)uVar15 >> 8);
+        *(char *)(intptr_t)(iVar22 + 0x16) = (char)((uint)uVar15 >> 0x10);
+        *(char *)(intptr_t)(iVar22 + 0x17) = (char)((uint)uVar15 >> 0x18);
         iVar22 = *piVar19 + iVar18;
-        uVar15 = *(undefined4 *)(*piVar19 + iVar18 + 0x14);
-        *(char *)(iVar22 + 0x18) = (char)uVar15;
-        *(char *)(iVar22 + 0x19) = (char)((uint)uVar15 >> 8);
-        *(char *)(iVar22 + 0x1a) = (char)((uint)uVar15 >> 0x10);
-        *(char *)(iVar22 + 0x1b) = (char)((uint)uVar15 >> 0x18);
+        uVar15 = *(undefined4 *)(intptr_t)(*piVar19 + iVar18 + 0x14);
+        *(char *)(intptr_t)(iVar22 + 0x18) = (char)uVar15;
+        *(char *)(intptr_t)(iVar22 + 0x19) = (char)((uint)uVar15 >> 8);
+        *(char *)(intptr_t)(iVar22 + 0x1a) = (char)((uint)uVar15 >> 0x10);
+        *(char *)(intptr_t)(iVar22 + 0x1b) = (char)((uint)uVar15 >> 0x18);
         if ((iVar8 != 3) && (iVar8 != 5)) {
           iVar22 = iVar18 + *piVar19;
-          *(undefined1 *)(iVar22 + 4) = 0;
-          *(undefined1 *)(iVar22 + 5) = 0;
-          *(undefined1 *)(iVar22 + 6) = 0;
-          *(undefined1 *)(iVar22 + 7) = 0;
+          *(undefined1 *)(intptr_t)(iVar22 + 4) = 0;
+          *(undefined1 *)(intptr_t)(iVar22 + 5) = 0;
+          *(undefined1 *)(intptr_t)(iVar22 + 6) = 0;
+          *(undefined1 *)(intptr_t)(iVar22 + 7) = 0;
         }
       }
       if (-1 < iVar14) {
         iVar22 = iVar18 + *piVar19;
         iVar14 = piVar11[1];
-        *(char *)(iVar22 + 8) = (char)iVar14;
-        *(char *)(iVar22 + 9) = (char)((uint)iVar14 >> 8);
-        *(char *)(iVar22 + 10) = (char)((uint)iVar14 >> 0x10);
-        *(char *)(iVar22 + 0xb) = (char)((uint)iVar14 >> 0x18);
+        *(char *)(intptr_t)(iVar22 + 8) = (char)iVar14;
+        *(char *)(intptr_t)(iVar22 + 9) = (char)((uint)iVar14 >> 8);
+        *(char *)(intptr_t)(iVar22 + 10) = (char)((uint)iVar14 >> 0x10);
+        *(char *)(intptr_t)(iVar22 + 0xb) = (char)((uint)iVar14 >> 0x18);
         if ((iVar8 != 3) && (iVar8 != 5)) {
-          piVar13 = (int *)(*piVar19 + iVar18);
-          iVar14 = *(int *)(*piVar13 * 0x30 + *(int *)(player + 0x1050c) + 8) + piVar13[2];
+          piVar13 = (int *)(intptr_t)(*piVar19 + iVar18);
+          iVar14 = *(int *)(intptr_t)(*piVar13 * 0x30 + *(int *)(player + 0x1050c) + 8) + piVar13[2];
           if (iVar14 < 0) {
             iVar14 = 0;
           }
@@ -2408,48 +2367,48 @@ void process_mod_tracker_row(char *player)
             iVar14 = 0x127;
           }
           uVar15 = (&DAT_00086370)[iVar14];
-          *(char *)(iVar22 + 0xc) = (char)uVar15;
-          *(char *)(iVar22 + 0xd) = (char)((uint)uVar15 >> 8);
-          *(char *)(iVar22 + 0xe) = (char)((uint)uVar15 >> 0x10);
-          *(char *)(iVar22 + 0xf) = (char)((uint)uVar15 >> 0x18);
+          *(char *)(intptr_t)(iVar22 + 0xc) = (char)uVar15;
+          *(char *)(intptr_t)(iVar22 + 0xd) = (char)((uint)uVar15 >> 8);
+          *(char *)(intptr_t)(iVar22 + 0xe) = (char)((uint)uVar15 >> 0x10);
+          *(char *)(intptr_t)(iVar22 + 0xf) = (char)((uint)uVar15 >> 0x18);
         }
         if ((iVar17 == 0) && (iVar8 == 0)) {
           iVar14 = iVar18 + *piVar19;
-          *(undefined1 *)(iVar14 + 4) = 0;
-          *(undefined1 *)(iVar14 + 5) = 0;
-          *(undefined1 *)(iVar14 + 6) = 0;
-          *(undefined1 *)(iVar14 + 7) = 0;
+          *(undefined1 *)(intptr_t)(iVar14 + 4) = 0;
+          *(undefined1 *)(intptr_t)(iVar14 + 5) = 0;
+          *(undefined1 *)(intptr_t)(iVar14 + 6) = 0;
+          *(undefined1 *)(intptr_t)(iVar14 + 7) = 0;
         }
         iVar14 = iVar18 + *piVar19;
-        *(undefined1 *)(iVar14 + 0x24) = 0;
-        *(undefined1 *)(iVar14 + 0x25) = 0;
-        *(undefined1 *)(iVar14 + 0x26) = 0;
-        *(undefined1 *)(iVar14 + 0x27) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x24) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x25) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x26) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x27) = 0;
         iVar14 = iVar18 + *piVar19;
-        *(undefined1 *)(iVar14 + 0x28) = 0;
-        *(undefined1 *)(iVar14 + 0x29) = 0;
-        *(undefined1 *)(iVar14 + 0x2a) = 0;
-        *(undefined1 *)(iVar14 + 0x2b) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x28) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x29) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x2a) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x2b) = 0;
         iVar14 = iVar18 + *piVar19;
-        *(undefined1 *)(iVar14 + 0x2c) = 0;
-        *(undefined1 *)(iVar14 + 0x2d) = 0;
-        *(undefined1 *)(iVar14 + 0x2e) = 0;
-        *(undefined1 *)(iVar14 + 0x2f) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x2c) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x2d) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x2e) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x2f) = 0;
         iVar14 = iVar18 + *piVar19;
-        *(undefined1 *)(iVar14 + 0x30) = 0;
-        *(undefined1 *)(iVar14 + 0x31) = 0;
-        *(undefined1 *)(iVar14 + 0x32) = 0;
-        *(undefined1 *)(iVar14 + 0x33) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x30) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x31) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x32) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x33) = 0;
         iVar14 = iVar18 + *piVar19;
-        *(undefined1 *)(iVar14 + 0x38) = 0;
-        *(undefined1 *)(iVar14 + 0x39) = 0;
-        *(undefined1 *)(iVar14 + 0x3a) = 0;
-        *(undefined1 *)(iVar14 + 0x3b) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x38) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x39) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x3a) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x3b) = 0;
         iVar14 = iVar18 + *piVar19;
-        *(undefined1 *)(iVar14 + 0x3c) = 0;
-        *(undefined1 *)(iVar14 + 0x3d) = 0;
-        *(undefined1 *)(iVar14 + 0x3e) = 0;
-        *(undefined1 *)(iVar14 + 0x3f) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x3c) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x3d) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x3e) = 0;
+        *(undefined1 *)(intptr_t)(iVar14 + 0x3f) = 0;
       }
       if (0xc < piVar11[2] - 3U) goto LAB_0004e21c;
       uVar4 = (undefined1)uVar16;
@@ -2462,35 +2421,35 @@ void process_mod_tracker_row(char *player)
       case 4:
         if (0 < iVar20) {
           iVar17 = iVar18 + *piVar19;
-          *(char *)(iVar17 + 0x24) = (char)iVar20;
-          *(undefined1 *)(iVar17 + 0x25) = uVar5;
-          *(undefined1 *)(iVar17 + 0x26) = uVar6;
-          *(char *)(iVar17 + 0x27) = cVar7;
+          *(char *)(intptr_t)(iVar17 + 0x24) = (char)iVar20;
+          *(undefined1 *)(intptr_t)(iVar17 + 0x25) = uVar5;
+          *(undefined1 *)(intptr_t)(iVar17 + 0x26) = uVar6;
+          *(char *)(intptr_t)(iVar17 + 0x27) = cVar7;
         }
         if ((uVar9 & 0xf) != 0) {
           iVar20 = iVar18 + *piVar19;
-          *(undefined1 *)(iVar20 + 0x28) = uVar4;
-          *(undefined1 *)(iVar20 + 0x29) = 0;
-          *(undefined1 *)(iVar20 + 0x2a) = 0;
-          *(undefined1 *)(iVar20 + 0x2b) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x28) = uVar4;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x29) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x2a) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x2b) = 0;
         }
         break;
       case 5:
 LAB_0004dcac:
         iVar20 = *piVar19 + iVar18;
         uVar15 = (&DAT_00086370)
-                 [*(int *)(*(int *)(player + 0x1050c) + iVar17 * 0x30 + 8) +
-                  *(int *)(*piVar19 + iVar18 + 8)];
-        *(char *)(iVar20 + 0x1c) = (char)uVar15;
-        *(char *)(iVar20 + 0x1d) = (char)((uint)uVar15 >> 8);
-        *(char *)(iVar20 + 0x1e) = (char)((uint)uVar15 >> 0x10);
-        *(char *)(iVar20 + 0x1f) = (char)((uint)uVar15 >> 0x18);
+                 [*(int *)(intptr_t)(*(int *)(player + 0x1050c) + iVar17 * 0x30 + 8) +
+                  *(int *)(intptr_t)(*piVar19 + iVar18 + 8)];
+        *(char *)(intptr_t)(iVar20 + 0x1c) = (char)uVar15;
+        *(char *)(intptr_t)(iVar20 + 0x1d) = (char)((uint)uVar15 >> 8);
+        *(char *)(intptr_t)(iVar20 + 0x1e) = (char)((uint)uVar15 >> 0x10);
+        *(char *)(intptr_t)(iVar20 + 0x1f) = (char)((uint)uVar15 >> 0x18);
         if ((0 < iVar10) && (iVar8 == 3)) {
           iVar20 = iVar18 + *piVar19;
-          *(char *)(iVar20 + 0x20) = (char)uVar9;
-          *(char *)(iVar20 + 0x21) = (char)(uVar9 >> 8);
-          *(undefined1 *)(iVar20 + 0x22) = uVar2;
-          *(char *)(iVar20 + 0x23) = cVar3;
+          *(char *)(intptr_t)(iVar20 + 0x20) = (char)uVar9;
+          *(char *)(intptr_t)(iVar20 + 0x21) = (char)(uVar9 >> 8);
+          *(undefined1 *)(intptr_t)(iVar20 + 0x22) = uVar2;
+          *(char *)(intptr_t)(iVar20 + 0x23) = cVar3;
         }
         break;
       case 6:
@@ -2498,51 +2457,51 @@ LAB_0004dcac:
       case 7:
         if (0 < iVar20) {
           iVar17 = iVar18 + *piVar19;
-          *(char *)(iVar17 + 0x2c) = (char)iVar20;
-          *(undefined1 *)(iVar17 + 0x2d) = uVar5;
-          *(undefined1 *)(iVar17 + 0x2e) = uVar6;
-          *(char *)(iVar17 + 0x2f) = cVar7;
+          *(char *)(intptr_t)(iVar17 + 0x2c) = (char)iVar20;
+          *(undefined1 *)(intptr_t)(iVar17 + 0x2d) = uVar5;
+          *(undefined1 *)(intptr_t)(iVar17 + 0x2e) = uVar6;
+          *(char *)(intptr_t)(iVar17 + 0x2f) = cVar7;
         }
         if ((uVar9 & 0xf) != 0) {
           iVar20 = iVar18 + *piVar19;
-          *(undefined1 *)(iVar20 + 0x30) = uVar4;
-          *(undefined1 *)(iVar20 + 0x31) = 0;
-          *(undefined1 *)(iVar20 + 0x32) = 0;
-          *(undefined1 *)(iVar20 + 0x33) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x30) = uVar4;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x31) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x32) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x33) = 0;
         }
         break;
       case 8:
         if (iVar10 == 0xa4) {
           iVar20 = iVar18 + *piVar19;
-          *(undefined1 *)(iVar20 + 0x34) = 7;
-          *(undefined1 *)(iVar20 + 0x35) = 0;
-          *(undefined1 *)(iVar20 + 0x36) = 0;
-          *(undefined1 *)(iVar20 + 0x37) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x34) = 7;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x35) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x36) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x37) = 0;
         }
         else {
           iVar17 = (iVar10 >> 3) + -1;
           iVar20 = iVar18 + *piVar19;
-          *(char *)(iVar20 + 0x34) = (char)iVar17;
-          *(char *)(iVar20 + 0x35) = (char)((uint)iVar17 >> 8);
-          *(char *)(iVar20 + 0x36) = (char)((uint)iVar17 >> 0x10);
-          *(char *)(iVar20 + 0x37) = (char)((uint)iVar17 >> 0x18);
+          *(char *)(intptr_t)(iVar20 + 0x34) = (char)iVar17;
+          *(char *)(intptr_t)(iVar20 + 0x35) = (char)((uint)iVar17 >> 8);
+          *(char *)(intptr_t)(iVar20 + 0x36) = (char)((uint)iVar17 >> 0x10);
+          *(char *)(intptr_t)(iVar20 + 0x37) = (char)((uint)iVar17 >> 0x18);
         }
-        if (*(int *)(*piVar19 + iVar18 + 0x34) < 0) {
+        if (*(int *)(intptr_t)(*piVar19 + iVar18 + 0x34) < 0) {
           iVar20 = *piVar19 + iVar18;
-          *(undefined1 *)(iVar20 + 0x34) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x34) = 0;
 LAB_0004e0b8:
-          *(undefined1 *)(iVar20 + 0x35) = 0;
-          *(undefined1 *)(iVar20 + 0x36) = 0;
-          *(undefined1 *)(iVar20 + 0x37) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x35) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x36) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x37) = 0;
         }
         break;
       case 9:
         uVar9 = *(ushort *)(piVar11 + 3);
         iVar20 = iVar18 + *piVar19;
-        *(undefined1 *)(iVar20 + 4) = 0;
-        *(undefined1 *)(iVar20 + 5) = 0;
-        *(char *)(iVar20 + 6) = (char)(((uVar9 & 0x3fff) << 10) >> 8);
-        *(char *)(iVar20 + 7) = (char)(((uVar9 & 0x3fff) << 2) >> 8);
+        *(undefined1 *)(intptr_t)(iVar20 + 4) = 0;
+        *(undefined1 *)(intptr_t)(iVar20 + 5) = 0;
+        *(char *)(intptr_t)(iVar20 + 6) = (char)(((uVar9 & 0x3fff) << 10) >> 8);
+        *(char *)(intptr_t)(iVar20 + 7) = (char)(((uVar9 & 0x3fff) << 2) >> 8);
         break;
       case 10:
         break;
@@ -2557,19 +2516,19 @@ LAB_0004e0b8:
 LAB_0004df60:
         iVar17 = iVar18 + *piVar19;
         iVar20 = piVar11[3];
-        *(char *)(iVar17 + 0x14) = (char)iVar20;
-        *(char *)(iVar17 + 0x15) = (char)((uint)iVar20 >> 8);
-        *(char *)(iVar17 + 0x16) = (char)((uint)iVar20 >> 0x10);
-        *(char *)(iVar17 + 0x17) = (char)((uint)iVar20 >> 0x18);
+        *(char *)(intptr_t)(iVar17 + 0x14) = (char)iVar20;
+        *(char *)(intptr_t)(iVar17 + 0x15) = (char)((uint)iVar20 >> 8);
+        *(char *)(intptr_t)(iVar17 + 0x16) = (char)((uint)iVar20 >> 0x10);
+        *(char *)(intptr_t)(iVar17 + 0x17) = (char)((uint)iVar20 >> 0x18);
         uVar16 = 0;
 LAB_0004e058:
         adjust_mod_channel_volume(player,local_48,uVar16);
         iVar20 = *piVar19 + iVar18;
-        uVar15 = *(undefined4 *)(*piVar19 + iVar18 + 0x14);
-        *(char *)(iVar20 + 0x18) = (char)uVar15;
-        *(char *)(iVar20 + 0x19) = (char)((uint)uVar15 >> 8);
-        *(char *)(iVar20 + 0x1a) = (char)((uint)uVar15 >> 0x10);
-        *(char *)(iVar20 + 0x1b) = (char)((uint)uVar15 >> 0x18);
+        uVar15 = *(undefined4 *)(intptr_t)(*piVar19 + iVar18 + 0x14);
+        *(char *)(intptr_t)(iVar20 + 0x18) = (char)uVar15;
+        *(char *)(intptr_t)(iVar20 + 0x19) = (char)((uint)uVar15 >> 8);
+        *(char *)(intptr_t)(iVar20 + 0x1a) = (char)((uint)uVar15 >> 0x10);
+        *(char *)(intptr_t)(iVar20 + 0x1b) = (char)((uint)uVar15 >> 0x18);
         break;
       case 0xd:
         local_3c = iVar20 * 10 + uVar16;
@@ -2586,7 +2545,7 @@ LAB_0004e058:
         break;
       case 0xe:
         if (iVar20 == 1) {
-          piVar11 = (int *)(iVar18 + *piVar19 + 0xc);
+          piVar11 = (int *)(intptr_t)(iVar18 + *piVar19 + 0xc);
           iVar20 = *piVar11 - uVar16;
 LAB_0004e184:
           *(char *)piVar11 = (char)iVar20;
@@ -2596,24 +2555,24 @@ LAB_0004e184:
           break;
         }
         if (iVar20 == 2) {
-          piVar11 = (int *)(iVar18 + *piVar19 + 0xc);
+          piVar11 = (int *)(intptr_t)(iVar18 + *piVar19 + 0xc);
           iVar20 = *piVar11 + uVar16;
           goto LAB_0004e184;
         }
         if (iVar20 == 5) {
           iVar20 = iVar17 * 0x30 + *(int *)(player + 0x1050c);
-          *(undefined1 *)(iVar20 + 8) = uVar4;
-          *(undefined1 *)(iVar20 + 9) = 0;
-          *(undefined1 *)(iVar20 + 10) = 0;
-          *(undefined1 *)(iVar20 + 0xb) = 0;
-          piVar11 = (int *)(iVar17 * 0x30 + *(int *)(player + 0x1050c) + 8);
+          *(undefined1 *)(intptr_t)(iVar20 + 8) = uVar4;
+          *(undefined1 *)(intptr_t)(iVar20 + 9) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 10) = 0;
+          *(undefined1 *)(intptr_t)(iVar20 + 0xb) = 0;
+          piVar11 = (int *)(intptr_t)(iVar17 * 0x30 + *(int *)(player + 0x1050c) + 8);
           if (*piVar11 < 8) break;
           iVar20 = *piVar11 + -0x10;
           goto LAB_0004e184;
         }
         if (iVar20 == 8) {
           iVar20 = iVar18 + *piVar19;
-          *(undefined1 *)(iVar20 + 0x34) = uVar4;
+          *(undefined1 *)(intptr_t)(iVar20 + 0x34) = uVar4;
           goto LAB_0004e0b8;
         }
         if (iVar20 != 10) {
@@ -2640,13 +2599,13 @@ LAB_0004e184:
       }
 LAB_0004e21c:
       iVar20 = iVar18 + *piVar19;
-      if (0 < *(int *)(iVar20 + 0xc)) {
-        uVar15 = ordfloat_int_to_float2(*(int *)(iVar20 + 0xc));
+      if (0 < *(int *)(intptr_t)(iVar20 + 0xc)) {
+        uVar15 = ordfloat_int_to_float2(*(int *)(intptr_t)(iVar20 + 0xc));
         uVar15 = ordfloat_div(0x4a5a7a65,uVar15);
-        *(char *)(iVar20 + 0x10) = (char)uVar15;
-        *(char *)(iVar20 + 0x11) = (char)((uint)uVar15 >> 8);
-        *(char *)(iVar20 + 0x12) = (char)((uint)uVar15 >> 0x10);
-        *(char *)(iVar20 + 0x13) = (char)((uint)uVar15 >> 0x18);
+        *(char *)(intptr_t)(iVar20 + 0x10) = (char)uVar15;
+        *(char *)(intptr_t)(iVar20 + 0x11) = (char)((uint)uVar15 >> 8);
+        *(char *)(intptr_t)(iVar20 + 0x12) = (char)((uint)uVar15 >> 0x10);
+        *(char *)(intptr_t)(iVar20 + 0x13) = (char)((uint)uVar15 >> 0x18);
       }
       iVar18 = iVar18 + 0x40;
       local_48 = local_48 + 1;
@@ -2692,7 +2651,7 @@ int mix_mod_channels_to_buffer(char *player, uint *left_buffer, uint *right_buff
     puVar4 = left_buffer;
     iVar9 = sample_count;
     do {
-      *(undefined4 *)(((int)right_buffer - (int)left_buffer) + (int)puVar4) = 0;
+      *(undefined4 *)(intptr_t)(((int)(uintptr_t)right_buffer - (int)(uintptr_t)left_buffer) + (int)(uintptr_t)puVar4) = 0;
       iVar9 = iVar9 + -1;
       *puVar4 = 0;
       puVar4 = puVar4 + 1;
@@ -2702,16 +2661,16 @@ int mix_mod_channels_to_buffer(char *player, uint *left_buffer, uint *right_buff
   if (0 < *(int *)(player + 0x1054c)) {
     local_50 = 0;
     do {
-      piVar11 = (int *)(local_50 + *(int *)(player + 0x10524));
+      piVar11 = (int *)(intptr_t)(local_50 + *(int *)(player + 0x10524));
       if ((0 < *piVar11) &&
-         (iVar9 = *piVar11 * 0x30 + *(int *)(player + 0x1050c), *(int *)(iVar9 + 0x24) != 0)) {
+         (iVar9 = *piVar11 * 0x30 + *(int *)(player + 0x1050c), *(int *)(intptr_t)(iVar9 + 0x24) != 0)) {
         if (((local_4c & 3) == 0) || (local_48 = right_buffer, (local_4c & 3) == 3)) {
           local_48 = left_buffer;
         }
-        iVar15 = *(int *)(iVar9 + 0x20);
-        iVar1 = (uint)*(uint3 *)(iVar9 + 4) * 0x400;
-        uVar2 = *(uint3 *)(iVar9 + 0x14);
-        iVar9 = (uint)*(uint3 *)(iVar9 + 0x18) * 0x400;
+        iVar15 = *(int *)(intptr_t)(iVar9 + 0x20);
+        iVar1 = (uint)*(uint3 *)(intptr_t)(iVar9 + 4) * 0x400;
+        uVar2 = *(uint3 *)(intptr_t)(iVar9 + 0x14);
+        iVar9 = (uint)*(uint3 *)(intptr_t)(iVar9 + 0x18) * 0x400;
         iVar13 = piVar11[1];
         uVar5 = ordfloat_mul(piVar11[4],0x44800000);
         uVar6 = ordfloat_int_to_float2(DAT_00086368);
@@ -2752,16 +2711,16 @@ int mix_mod_channels_to_buffer(char *player, uint *left_buffer, uint *right_buff
               iVar10 = iVar10 + -1;
               iVar13 = iVar7 + iVar13;
               *piVar11 = *(int *)(player + (uint)uVar3 * 0x400 + 4 +
-                                 (uint)*(byte *)(iVar15 + iVar8) * 4) + *piVar11;
+                                 (uint)*(byte *)(intptr_t)(iVar15 + iVar8) * 4) + *piVar11;
               piVar11 = piVar11 + 1;
             } while (iVar10 != 0);
           }
         }
         iVar9 = local_50 + *(int *)(player + 0x10524);
-        *(char *)(iVar9 + 4) = (char)iVar13;
-        *(char *)(iVar9 + 5) = (char)((uint)iVar13 >> 8);
-        *(char *)(iVar9 + 6) = (char)((uint)iVar13 >> 0x10);
-        *(char *)(iVar9 + 7) = (char)((uint)iVar13 >> 0x18);
+        *(char *)(intptr_t)(iVar9 + 4) = (char)iVar13;
+        *(char *)(intptr_t)(iVar9 + 5) = (char)((uint)iVar13 >> 8);
+        *(char *)(intptr_t)(iVar9 + 6) = (char)((uint)iVar13 >> 0x10);
+        *(char *)(intptr_t)(iVar9 + 7) = (char)((uint)iVar13 >> 0x18);
       }
       local_4c = local_4c + 1;
       local_50 = local_50 + 0x40;
@@ -2797,33 +2756,33 @@ void apply_mod_tracker_tick_effects(char *player)
     iVar8 = 0;
     piVar4 = piVar2;
     do {
-      iVar3 = *(int *)(*(int *)(player + 0x10550) + 4) + local_30;
-      uVar1 = *(uint *)(iVar3 + 0xc);
+      iVar3 = *(int *)(intptr_t)(*(int *)(player + 0x10550) + 4) + local_30;
+      uVar1 = *(uint *)(intptr_t)(iVar3 + 0xc);
       iVar7 = (int)uVar1 >> 4;
       uVar9 = uVar1 & 0xf;
-      switch(*(undefined4 *)(iVar3 + 8)) {
+      switch(*(undefined4 *)(intptr_t)(iVar3 + 8)) {
       case 0:
         if (0 < (int)uVar1) {
           uw_ord2005_rem_114 = ((int)(*(undefined4 *)(player + 0x10540))) % (3);
           if (uw_ord2005_rem_114 == 0) {
-            piVar4 = *(int **)(*(int *)(player + 0x10524) + iVar8 + 0xc);
+            piVar4 = *(int **)(intptr_t)(*(int *)(player + 0x10524) + iVar8 + 0xc);
           }
           else {
             if (uw_ord2005_rem_114 == 1) {
-              piVar4 = (int *)(*(int *)(player + 0x10524) + iVar8);
-              iVar7 = *(int *)(*piVar4 * 0x30 + *(int *)(player + 0x1050c) + 8) + piVar4[2] +
+              piVar4 = (int *)(intptr_t)(*(int *)(player + 0x10524) + iVar8);
+              iVar7 = *(int *)(intptr_t)(*piVar4 * 0x30 + *(int *)(player + 0x1050c) + 8) + piVar4[2] +
                       iVar7 * 8;
             }
             else {
               if (uw_ord2005_rem_114 != 2) goto LAB_0004e964;
-              piVar4 = (int *)(*(int *)(player + 0x10524) + iVar8);
-              iVar7 = *(int *)(*piVar4 * 0x30 + *(int *)(player + 0x1050c) + 8) + piVar4[2] +
+              piVar4 = (int *)(intptr_t)(*(int *)(player + 0x10524) + iVar8);
+              iVar7 = *(int *)(intptr_t)(*piVar4 * 0x30 + *(int *)(player + 0x1050c) + 8) + piVar4[2] +
                       uVar9 * 8;
             }
-            piVar4 = (int *)(&DAT_00086370)[iVar7];
+            piVar4 = (int *)(intptr_t)(&DAT_00086370)[iVar7];
           }
 LAB_0004e964:
-          uVar5 = ordfloat_int_to_float2(piVar4);
+          uVar5 = ordfloat_int_to_float2((int)(intptr_t)piVar4);
           uVar5 = ordfloat_div(0x4a5a7a65,uVar5);
           iVar7 = *(int *)(player + 0x10524);
           goto LAB_0004eb28;
@@ -2832,38 +2791,38 @@ LAB_0004e964:
       case 1:
         piVar6 = (int *)(player + 0x10524);
         iVar7 = iVar8 + *piVar6;
-        iVar3 = *(int *)(iVar7 + 0xc) - uVar1;
-        *(char *)(iVar7 + 0xc) = (char)iVar3;
-        *(char *)(iVar7 + 0xd) = (char)((uint)iVar3 >> 8);
-        *(char *)(iVar7 + 0xe) = (char)((uint)iVar3 >> 0x10);
-        *(char *)(iVar7 + 0xf) = (char)((uint)iVar3 >> 0x18);
-        if (*(int *)(iVar8 + *piVar6 + 0xc) < 0x36) {
+        iVar3 = *(int *)(intptr_t)(iVar7 + 0xc) - uVar1;
+        *(char *)(intptr_t)(iVar7 + 0xc) = (char)iVar3;
+        *(char *)(intptr_t)(iVar7 + 0xd) = (char)((uint)iVar3 >> 8);
+        *(char *)(intptr_t)(iVar7 + 0xe) = (char)((uint)iVar3 >> 0x10);
+        *(char *)(intptr_t)(iVar7 + 0xf) = (char)((uint)iVar3 >> 0x18);
+        if (*(int *)(intptr_t)(iVar8 + *piVar6 + 0xc) < 0x36) {
           iVar7 = iVar8 + *piVar6;
-          *(undefined1 *)(iVar7 + 0xc) = 0x36;
-          *(undefined1 *)(iVar7 + 0xd) = 0;
-          *(undefined1 *)(iVar7 + 0xe) = 0;
-          *(undefined1 *)(iVar7 + 0xf) = 0;
+          *(undefined1 *)(intptr_t)(iVar7 + 0xc) = 0x36;
+          *(undefined1 *)(intptr_t)(iVar7 + 0xd) = 0;
+          *(undefined1 *)(intptr_t)(iVar7 + 0xe) = 0;
+          *(undefined1 *)(intptr_t)(iVar7 + 0xf) = 0;
         }
         iVar7 = *piVar6;
-        uVar5 = ordfloat_int_to_float2(*(undefined4 *)(iVar8 + iVar7 + 0xc));
+        uVar5 = ordfloat_int_to_float2(*(undefined4 *)(intptr_t)(iVar8 + iVar7 + 0xc));
         uVar5 = ordfloat_div(0x4a5a7a65,uVar5);
         goto LAB_0004eb28;
       case 2:
         iVar7 = iVar8 + *(int *)(player + 0x10524);
-        iVar3 = *(int *)(iVar7 + 0xc) + uVar1;
-        *(char *)(iVar7 + 0xc) = (char)iVar3;
-        *(char *)(iVar7 + 0xd) = (char)((uint)iVar3 >> 8);
-        *(char *)(iVar7 + 0xe) = (char)((uint)iVar3 >> 0x10);
-        *(char *)(iVar7 + 0xf) = (char)((uint)iVar3 >> 0x18);
+        iVar3 = *(int *)(intptr_t)(iVar7 + 0xc) + uVar1;
+        *(char *)(intptr_t)(iVar7 + 0xc) = (char)iVar3;
+        *(char *)(intptr_t)(iVar7 + 0xd) = (char)((uint)iVar3 >> 8);
+        *(char *)(intptr_t)(iVar7 + 0xe) = (char)((uint)iVar3 >> 0x10);
+        *(char *)(intptr_t)(iVar7 + 0xf) = (char)((uint)iVar3 >> 0x18);
         iVar7 = *(int *)(player + 0x10524);
-        uVar5 = ordfloat_int_to_float2(*(undefined4 *)(iVar8 + iVar7 + 0xc));
+        uVar5 = ordfloat_int_to_float2(*(undefined4 *)(intptr_t)(iVar8 + iVar7 + 0xc));
         uVar5 = ordfloat_div(0x4a5a7a65,uVar5);
 LAB_0004eb28:
         iVar7 = iVar8 + iVar7;
-        *(char *)(iVar7 + 0x10) = (char)uVar5;
-        *(char *)(iVar7 + 0x11) = (char)((uint)uVar5 >> 8);
-        *(char *)(iVar7 + 0x12) = (char)((uint)uVar5 >> 0x10);
-        *(char *)(iVar7 + 0x13) = (char)((uint)uVar5 >> 0x18);
+        *(char *)(intptr_t)(iVar7 + 0x10) = (char)uVar5;
+        *(char *)(intptr_t)(iVar7 + 0x11) = (char)((uint)uVar5 >> 8);
+        *(char *)(intptr_t)(iVar7 + 0x12) = (char)((uint)uVar5 >> 0x10);
+        *(char *)(intptr_t)(iVar7 + 0x13) = (char)((uint)uVar5 >> 0x18);
         break;
       case 3:
         apply_mod_tone_portamento(player,iVar10);
@@ -2888,11 +2847,11 @@ LAB_0004eb28:
 LAB_0004eb74:
         adjust_mod_channel_volume(player,iVar10,iVar7 - uVar9);
         iVar7 = iVar8 + *(int *)(player + 0x10524);
-        uVar5 = *(undefined4 *)(iVar8 + *(int *)(player + 0x10524) + 0x14);
-        *(char *)(iVar7 + 0x18) = (char)uVar5;
-        *(char *)(iVar7 + 0x19) = (char)((uint)uVar5 >> 8);
-        *(char *)(iVar7 + 0x1a) = (char)((uint)uVar5 >> 0x10);
-        *(char *)(iVar7 + 0x1b) = (char)((uint)uVar5 >> 0x18);
+        uVar5 = *(undefined4 *)(intptr_t)(iVar8 + *(int *)(player + 0x10524) + 0x14);
+        *(char *)(intptr_t)(iVar7 + 0x18) = (char)uVar5;
+        *(char *)(intptr_t)(iVar7 + 0x19) = (char)((uint)uVar5 >> 8);
+        *(char *)(intptr_t)(iVar7 + 0x1a) = (char)((uint)uVar5 >> 0x10);
+        *(char *)(intptr_t)(iVar7 + 0x1b) = (char)((uint)uVar5 >> 0x18);
         break;
       case 0xb:
         break;
@@ -2903,16 +2862,16 @@ LAB_0004eb74:
       case 0xe:
         if ((iVar7 == 0xc) && (*(uint *)(player + 0x10540) == uVar9)) {
           iVar7 = iVar8 + *(int *)(player + 0x10524);
-          *(undefined1 *)(iVar7 + 0x14) = 0;
-          *(undefined1 *)(iVar7 + 0x15) = 0;
-          *(undefined1 *)(iVar7 + 0x16) = 0;
-          *(undefined1 *)(iVar7 + 0x17) = 0;
+          *(undefined1 *)(intptr_t)(iVar7 + 0x14) = 0;
+          *(undefined1 *)(intptr_t)(iVar7 + 0x15) = 0;
+          *(undefined1 *)(intptr_t)(iVar7 + 0x16) = 0;
+          *(undefined1 *)(intptr_t)(iVar7 + 0x17) = 0;
           iVar7 = iVar8 + *(int *)(player + 0x10524);
-          uVar5 = *(undefined4 *)(iVar7 + 0x14);
-          *(char *)(iVar7 + 0x18) = (char)uVar5;
-          *(char *)(iVar7 + 0x19) = (char)((uint)uVar5 >> 8);
-          *(char *)(iVar7 + 0x1a) = (char)((uint)uVar5 >> 0x10);
-          *(char *)(iVar7 + 0x1b) = (char)((uint)uVar5 >> 0x18);
+          uVar5 = *(undefined4 *)(intptr_t)(iVar7 + 0x14);
+          *(char *)(intptr_t)(iVar7 + 0x18) = (char)uVar5;
+          *(char *)(intptr_t)(iVar7 + 0x19) = (char)((uint)uVar5 >> 8);
+          *(char *)(intptr_t)(iVar7 + 0x1a) = (char)((uint)uVar5 >> 0x10);
+          *(char *)(intptr_t)(iVar7 + 0x1b) = (char)((uint)uVar5 >> 0x18);
         }
       }
       iVar10 = iVar10 + 1;
@@ -2934,20 +2893,20 @@ void mod_player_wave_out_callback(int wave_out, int message, int instance, int h
   int *piVar4;
   
   if (message == 0x3bd) {
-    piVar1 = *(int **)(header + 0xc);
+    piVar1 = *(int **)(intptr_t)(header + 0xc);
     iVar2 = *piVar1;
-    piVar4 = (int *)(iVar2 + 0x10554);
+    piVar4 = (int *)(intptr_t)(iVar2 + 0x10554);
     if (*piVar4 != 0) {
-      waveOutUnprepareHeader(*(undefined4 *)(iVar2 + 0x1051c),header,0x20);
+      waveOutUnprepareHeader(*(undefined4 *)(intptr_t)(iVar2 + 0x1051c),(void *)(intptr_t)(header),0x20);
     }
-    cpp_operator_delete(piVar1[1]);
+    cpp_operator_delete((void *)(intptr_t)(piVar1[1]));
     cpp_operator_delete(piVar1);
     if (*piVar4 != 0) {
-      uVar3 = queue_mod_audio_buffer(iVar2);
+      uVar3 = queue_mod_audio_buffer((char *)(intptr_t)(iVar2));
       *(char *)piVar4 = (char)uVar3;
-      *(char *)(iVar2 + 0x10555) = (char)((uint)uVar3 >> 8);
-      *(char *)(iVar2 + 0x10556) = (char)((uint)uVar3 >> 0x10);
-      *(char *)(iVar2 + 0x10557) = (char)((uint)uVar3 >> 0x18);
+      *(char *)(intptr_t)(iVar2 + 0x10555) = (char)((uint)uVar3 >> 8);
+      *(char *)(intptr_t)(iVar2 + 0x10556) = (char)((uint)uVar3 >> 0x10);
+      *(char *)(intptr_t)(iVar2 + 0x10557) = (char)((uint)uVar3 >> 0x18);
     }
   }
 }
@@ -2965,7 +2924,7 @@ void adjust_mod_channel_volume(char *player, int channel, int delta)
   bool bVar5;
   
   iVar2 = channel * 0x40 + *(int *)(player + 0x10524);
-  iVar1 = *(int *)(channel * 0x40 + *(int *)(player + 0x10524) + 0x14);
+  iVar1 = *(int *)(intptr_t)(channel * 0x40 + *(int *)(player + 0x10524) + 0x14);
   bVar5 = SCARRY4(iVar1,delta);
   iVar1 = iVar1 + delta;
   bVar3 = iVar1 < 0;
@@ -2980,10 +2939,10 @@ void adjust_mod_channel_volume(char *player, int channel, int delta)
   if (!bVar4 && (bVar3 || iVar1 + -0x40 < 0) == bVar5) {
     iVar1 = 0x40;
   }
-  *(char *)(iVar2 + 0x14) = (char)iVar1;
-  *(char *)(iVar2 + 0x15) = (char)((uint)iVar1 >> 8);
-  *(char *)(iVar2 + 0x16) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(iVar2 + 0x17) = (char)((uint)iVar1 >> 0x18);
+  *(char *)(intptr_t)(iVar2 + 0x14) = (char)iVar1;
+  *(char *)(intptr_t)(iVar2 + 0x15) = (char)((uint)iVar1 >> 8);
+  *(char *)(intptr_t)(iVar2 + 0x16) = (char)((uint)iVar1 >> 0x10);
+  *(char *)(intptr_t)(iVar2 + 0x17) = (char)((uint)iVar1 >> 0x18);
 }
 
 
@@ -3001,42 +2960,42 @@ void apply_mod_tone_portamento(char *player, int channel)
   piVar4 = (int *)(player + 0x10524);
   channel = channel * 0x40;
   iVar1 = channel + *piVar4;
-  piVar3 = (int *)(iVar1 + 0xc);
-  if (*piVar3 < *(int *)(iVar1 + 0x1c)) {
-    iVar5 = *(int *)(iVar1 + 0x20) + CONCAT13(*(undefined1 *)(iVar1 + 0xf),*(undefined3 *)piVar3);
+  piVar3 = (int *)(intptr_t)(iVar1 + 0xc);
+  if (*piVar3 < *(int *)(intptr_t)(iVar1 + 0x1c)) {
+    iVar5 = *(int *)(intptr_t)(iVar1 + 0x20) + CONCAT13(*(undefined1 *)(intptr_t)(iVar1 + 0xf),*(undefined3 *)piVar3);
     *(char *)piVar3 = (char)iVar5;
-    *(char *)(iVar1 + 0xd) = (char)((uint)iVar5 >> 8);
-    *(char *)(iVar1 + 0xe) = (char)((uint)iVar5 >> 0x10);
-    *(char *)(iVar1 + 0xf) = (char)((uint)iVar5 >> 0x18);
+    *(char *)(intptr_t)(iVar1 + 0xd) = (char)((uint)iVar5 >> 8);
+    *(char *)(intptr_t)(iVar1 + 0xe) = (char)((uint)iVar5 >> 0x10);
+    *(char *)(intptr_t)(iVar1 + 0xf) = (char)((uint)iVar5 >> 0x18);
     iVar5 = *piVar4;
-    iVar1 = *(int *)(channel + iVar5 + 0x1c);
-    if (*(int *)(channel + iVar5 + 0xc) <= iVar1) goto LAB_0004f030;
+    iVar1 = *(int *)(intptr_t)(channel + iVar5 + 0x1c);
+    if (*(int *)(intptr_t)(channel + iVar5 + 0xc) <= iVar1) goto LAB_0004f030;
   }
   else {
-    if (*piVar3 <= *(int *)(iVar1 + 0x1c)) goto LAB_0004f030;
-    iVar5 = *(int *)(iVar1 + 0xc) - *(int *)(iVar1 + 0x20);
-    *(char *)(iVar1 + 0xc) = (char)iVar5;
-    *(char *)(iVar1 + 0xd) = (char)((uint)iVar5 >> 8);
-    *(char *)(iVar1 + 0xe) = (char)((uint)iVar5 >> 0x10);
-    *(char *)(iVar1 + 0xf) = (char)((uint)iVar5 >> 0x18);
+    if (*piVar3 <= *(int *)(intptr_t)(iVar1 + 0x1c)) goto LAB_0004f030;
+    iVar5 = *(int *)(intptr_t)(iVar1 + 0xc) - *(int *)(intptr_t)(iVar1 + 0x20);
+    *(char *)(intptr_t)(iVar1 + 0xc) = (char)iVar5;
+    *(char *)(intptr_t)(iVar1 + 0xd) = (char)((uint)iVar5 >> 8);
+    *(char *)(intptr_t)(iVar1 + 0xe) = (char)((uint)iVar5 >> 0x10);
+    *(char *)(intptr_t)(iVar1 + 0xf) = (char)((uint)iVar5 >> 0x18);
     iVar5 = *piVar4;
-    iVar1 = *(int *)(channel + iVar5 + 0x1c);
-    if (iVar1 <= *(int *)(channel + iVar5 + 0xc)) goto LAB_0004f030;
+    iVar1 = *(int *)(intptr_t)(channel + iVar5 + 0x1c);
+    if (iVar1 <= *(int *)(intptr_t)(channel + iVar5 + 0xc)) goto LAB_0004f030;
   }
   iVar5 = channel + iVar5;
-  *(char *)(iVar5 + 0xc) = (char)iVar1;
-  *(char *)(iVar5 + 0xd) = (char)((uint)iVar1 >> 8);
-  *(char *)(iVar5 + 0xe) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(iVar5 + 0xf) = (char)((uint)iVar1 >> 0x18);
+  *(char *)(intptr_t)(iVar5 + 0xc) = (char)iVar1;
+  *(char *)(intptr_t)(iVar5 + 0xd) = (char)((uint)iVar1 >> 8);
+  *(char *)(intptr_t)(iVar5 + 0xe) = (char)((uint)iVar1 >> 0x10);
+  *(char *)(intptr_t)(iVar5 + 0xf) = (char)((uint)iVar1 >> 0x18);
 LAB_0004f030:
   iVar1 = *piVar4;
-  uVar2 = ordfloat_int_to_float2(*(undefined4 *)(channel + iVar1 + 0xc));
+  uVar2 = ordfloat_int_to_float2(*(undefined4 *)(intptr_t)(channel + iVar1 + 0xc));
   uVar2 = ordfloat_div(0x4a5a7a65,uVar2);
   channel = channel + iVar1;
-  *(char *)(channel + 0x10) = (char)uVar2;
-  *(char *)(channel + 0x11) = (char)((uint)uVar2 >> 8);
-  *(char *)(channel + 0x12) = (char)((uint)uVar2 >> 0x10);
-  *(char *)(channel + 0x13) = (char)((uint)uVar2 >> 0x18);
+  *(char *)(intptr_t)(channel + 0x10) = (char)uVar2;
+  *(char *)(intptr_t)(channel + 0x11) = (char)((uint)uVar2 >> 8);
+  *(char *)(intptr_t)(channel + 0x12) = (char)((uint)uVar2 >> 0x10);
+  *(char *)(intptr_t)(channel + 0x13) = (char)((uint)uVar2 >> 0x18);
 }
 
 
@@ -3057,40 +3016,40 @@ void apply_mod_vibrato_effect(char *player, int channel)
   iVar7 = *piVar6;
   channel = channel * 0x40;
   iVar1 = channel + iVar7;
-  iVar3 = (int)((uint)(byte)(&DAT_00086810)[*(int *)(iVar1 + 0x38)] * *(int *)(iVar1 + 0x28)) >> 7;
-  if (*(int *)(iVar1 + 0x3c) == 0) {
-    uVar2 = ordfloat_int_to_float2(*(int *)(iVar1 + 0xc) + iVar3);
+  iVar3 = (int)((uint)(byte)(&DAT_00086810)[*(int *)(intptr_t)(iVar1 + 0x38)] * *(int *)(intptr_t)(iVar1 + 0x28)) >> 7;
+  if (*(int *)(intptr_t)(iVar1 + 0x3c) == 0) {
+    uVar2 = ordfloat_int_to_float2(*(int *)(intptr_t)(iVar1 + 0xc) + iVar3);
     uVar2 = ordfloat_div(0x4a5a7a65,uVar2);
   }
   else {
-    uVar2 = ordfloat_int_to_float2(*(int *)(iVar1 + 0xc) - iVar3);
+    uVar2 = ordfloat_int_to_float2(*(int *)(intptr_t)(iVar1 + 0xc) - iVar3);
     uVar2 = ordfloat_div(0x4a5a7a65,uVar2);
   }
   iVar7 = channel + iVar7;
-  *(char *)(iVar7 + 0x10) = (char)uVar2;
-  *(char *)(iVar7 + 0x11) = (char)((uint)uVar2 >> 8);
-  *(char *)(iVar7 + 0x12) = (char)((uint)uVar2 >> 0x10);
-  *(char *)(iVar7 + 0x13) = (char)((uint)uVar2 >> 0x18);
+  *(char *)(intptr_t)(iVar7 + 0x10) = (char)uVar2;
+  *(char *)(intptr_t)(iVar7 + 0x11) = (char)((uint)uVar2 >> 8);
+  *(char *)(intptr_t)(iVar7 + 0x12) = (char)((uint)uVar2 >> 0x10);
+  *(char *)(intptr_t)(iVar7 + 0x13) = (char)((uint)uVar2 >> 0x18);
   iVar3 = channel + *piVar6;
-  iVar1 = *(int *)(iVar3 + 0x24) + *(int *)(iVar3 + 0x38);
-  *(char *)(iVar3 + 0x38) = (char)iVar1;
-  *(char *)(iVar3 + 0x39) = (char)((uint)iVar1 >> 8);
-  *(char *)(iVar3 + 0x3a) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(iVar3 + 0x3b) = (char)((uint)iVar1 >> 0x18);
+  iVar1 = *(int *)(intptr_t)(iVar3 + 0x24) + *(int *)(intptr_t)(iVar3 + 0x38);
+  *(char *)(intptr_t)(iVar3 + 0x38) = (char)iVar1;
+  *(char *)(intptr_t)(iVar3 + 0x39) = (char)((uint)iVar1 >> 8);
+  *(char *)(intptr_t)(iVar3 + 0x3a) = (char)((uint)iVar1 >> 0x10);
+  *(char *)(intptr_t)(iVar3 + 0x3b) = (char)((uint)iVar1 >> 0x18);
   iVar3 = channel + *piVar6;
-  piVar4 = (int *)(iVar3 + 0x38);
+  piVar4 = (int *)(intptr_t)(iVar3 + 0x38);
   if (0x1f < *piVar4) {
     iVar1 = *piVar4 + -0x20;
     *(char *)piVar4 = (char)iVar1;
-    *(char *)(iVar3 + 0x39) = (char)((uint)iVar1 >> 8);
-    *(char *)(iVar3 + 0x3a) = (char)((uint)iVar1 >> 0x10);
-    *(char *)(iVar3 + 0x3b) = (char)((uint)iVar1 >> 0x18);
-    uVar5 = ~*(uint *)(channel + *piVar6 + 0x3c);
+    *(char *)(intptr_t)(iVar3 + 0x39) = (char)((uint)iVar1 >> 8);
+    *(char *)(intptr_t)(iVar3 + 0x3a) = (char)((uint)iVar1 >> 0x10);
+    *(char *)(intptr_t)(iVar3 + 0x3b) = (char)((uint)iVar1 >> 0x18);
+    uVar5 = ~*(uint *)(intptr_t)(channel + *piVar6 + 0x3c);
     channel = channel + *piVar6;
-    *(char *)(channel + 0x3c) = (char)uVar5;
-    *(char *)(channel + 0x3d) = (char)(uVar5 >> 8);
-    *(char *)(channel + 0x3e) = (char)(uVar5 >> 0x10);
-    *(char *)(channel + 0x3f) = (char)(uVar5 >> 0x18);
+    *(char *)(intptr_t)(channel + 0x3c) = (char)uVar5;
+    *(char *)(intptr_t)(channel + 0x3d) = (char)(uVar5 >> 8);
+    *(char *)(intptr_t)(channel + 0x3e) = (char)(uVar5 >> 0x10);
+    *(char *)(intptr_t)(channel + 0x3f) = (char)(uVar5 >> 0x18);
   }
 }
 
@@ -3111,9 +3070,9 @@ void apply_mod_tremolo_effect(char *player, int channel)
   piVar5 = (int *)(player + 0x10524);
   channel = channel * 0x40;
   iVar1 = channel + *piVar5;
-  iVar2 = (int)((uint)(byte)(&DAT_00086810)[*(int *)(iVar1 + 0x38)] * *(int *)(iVar1 + 0x30)) >> 6;
-  iVar4 = *(int *)(iVar1 + 0x14);
-  if (*(int *)(iVar1 + 0x3c) == 0) {
+  iVar2 = (int)((uint)(byte)(&DAT_00086810)[*(int *)(intptr_t)(iVar1 + 0x38)] * *(int *)(intptr_t)(iVar1 + 0x30)) >> 6;
+  iVar4 = *(int *)(intptr_t)(iVar1 + 0x14);
+  if (*(int *)(intptr_t)(iVar1 + 0x3c) == 0) {
     if (0x40 < iVar4 + iVar2) {
       iVar2 = 0x40 - iVar4;
     }
@@ -3123,30 +3082,30 @@ void apply_mod_tremolo_effect(char *player, int channel)
   }
   iVar4 = iVar4 + iVar2;
   iVar2 = channel + *piVar5;
-  *(char *)(iVar2 + 0x18) = (char)iVar4;
-  *(char *)(iVar2 + 0x19) = (char)((uint)iVar4 >> 8);
-  *(char *)(iVar2 + 0x1a) = (char)((uint)iVar4 >> 0x10);
-  *(char *)(iVar2 + 0x1b) = (char)((uint)iVar4 >> 0x18);
+  *(char *)(intptr_t)(iVar2 + 0x18) = (char)iVar4;
+  *(char *)(intptr_t)(iVar2 + 0x19) = (char)((uint)iVar4 >> 8);
+  *(char *)(intptr_t)(iVar2 + 0x1a) = (char)((uint)iVar4 >> 0x10);
+  *(char *)(intptr_t)(iVar2 + 0x1b) = (char)((uint)iVar4 >> 0x18);
   iVar2 = channel + *piVar5;
-  iVar4 = *(int *)(iVar2 + 0x2c) + *(int *)(iVar2 + 0x38);
-  *(char *)(iVar2 + 0x38) = (char)iVar4;
-  *(char *)(iVar2 + 0x39) = (char)((uint)iVar4 >> 8);
-  *(char *)(iVar2 + 0x3a) = (char)((uint)iVar4 >> 0x10);
-  *(char *)(iVar2 + 0x3b) = (char)((uint)iVar4 >> 0x18);
+  iVar4 = *(int *)(intptr_t)(iVar2 + 0x2c) + *(int *)(intptr_t)(iVar2 + 0x38);
+  *(char *)(intptr_t)(iVar2 + 0x38) = (char)iVar4;
+  *(char *)(intptr_t)(iVar2 + 0x39) = (char)((uint)iVar4 >> 8);
+  *(char *)(intptr_t)(iVar2 + 0x3a) = (char)((uint)iVar4 >> 0x10);
+  *(char *)(intptr_t)(iVar2 + 0x3b) = (char)((uint)iVar4 >> 0x18);
   iVar2 = channel + *piVar5;
-  piVar3 = (int *)(iVar2 + 0x38);
+  piVar3 = (int *)(intptr_t)(iVar2 + 0x38);
   if (0x1f < *piVar3) {
     iVar4 = *piVar3 + -0x20;
     *(char *)piVar3 = (char)iVar4;
-    *(char *)(iVar2 + 0x39) = (char)((uint)iVar4 >> 8);
-    *(char *)(iVar2 + 0x3a) = (char)((uint)iVar4 >> 0x10);
-    *(char *)(iVar2 + 0x3b) = (char)((uint)iVar4 >> 0x18);
-    uVar6 = ~*(uint *)(channel + *piVar5 + 0x3c);
+    *(char *)(intptr_t)(iVar2 + 0x39) = (char)((uint)iVar4 >> 8);
+    *(char *)(intptr_t)(iVar2 + 0x3a) = (char)((uint)iVar4 >> 0x10);
+    *(char *)(intptr_t)(iVar2 + 0x3b) = (char)((uint)iVar4 >> 0x18);
+    uVar6 = ~*(uint *)(intptr_t)(channel + *piVar5 + 0x3c);
     channel = channel + *piVar5;
-    *(char *)(channel + 0x3c) = (char)uVar6;
-    *(char *)(channel + 0x3d) = (char)(uVar6 >> 8);
-    *(char *)(channel + 0x3e) = (char)(uVar6 >> 0x10);
-    *(char *)(channel + 0x3f) = (char)(uVar6 >> 0x18);
+    *(char *)(intptr_t)(channel + 0x3c) = (char)uVar6;
+    *(char *)(intptr_t)(channel + 0x3d) = (char)(uVar6 >> 8);
+    *(char *)(intptr_t)(channel + 0x3e) = (char)(uVar6 >> 0x10);
+    *(char *)(intptr_t)(channel + 0x3f) = (char)(uVar6 >> 0x18);
   }
 }
 
@@ -3190,8 +3149,9 @@ void build_mod_volume_sample_table(byte *table, int scale)
 // was FUN_0004f858 -- queries whether SFX trigger slot param_2 is currently playing (reads its
 // "playing" flag at +0x10410 directly, same field start_sfx_trigger_slot sets and
 // stop_sfx_trigger_slot clears).
-byte is_sfx_trigger_slot_active(char *player, int slot)
+byte is_sfx_trigger_slot_active(void *player_ptr, int slot)
 {
+  char *player = (char *)player_ptr;
   return *(undefined1 *)(slot * 0xd + player + 0x10410);
 }
 
@@ -3199,16 +3159,16 @@ byte is_sfx_trigger_slot_active(char *player, int slot)
 // was FUN_0004f560 -- reads a big-endian 16-bit word count from the MOD file buffer (param_2+4) at
 // the cursor position *param_3, advances the cursor by 2, and returns the count doubled to a byte
 // count.
-int read_mod_word_length_field(int unused, char *file, int *cursor)
+int read_mod_word_length_field(void *unused, char *file, int *cursor)
 {
   byte bVar1;
   int iVar2;
 
   iVar2 = *cursor;
   *cursor = iVar2 + 1;
-  bVar1 = *(byte *)(*(int *)(file + 4) + iVar2);
+  bVar1 = *(byte *)(intptr_t)(*(int *)(file + 4) + iVar2);
   *cursor = iVar2 + 2;
-  return ((uint)*(byte *)(*(int *)(file + 4) + iVar2 + 1) + (uint)bVar1 * 0x100) * 2;
+  return ((uint)*(byte *)(intptr_t)(*(int *)(file + 4) + iVar2 + 1) + (uint)bVar1 * 0x100) * 2;
 }
 
 
@@ -3216,33 +3176,34 @@ int read_mod_word_length_field(int unused, char *file, int *cursor)
 // was FUN_0004f594 -- arms one-shot SFX trigger slot param_3 (of 16, each a 13-byte record at
 // player+0x10404+slot*0xd) with the sample data pointer+length from loaded wave handle param_2's
 // fields +0x12/+0x16...
-bool arm_sfx_trigger_slot(char *player, char *sample_slot, int trigger_slot)
+bool arm_sfx_trigger_slot(void *player_ptr, char *sample_slot, int trigger_slot)
 {
+  char *player = (char *)player_ptr;
   undefined4 uVar1;
   int iVar2;
   bool bVar3;
 
-  iVar2 = trigger_slot * 0xd + player;
-  if (*(char *)(iVar2 + 0x10410) != '\0') {
+  iVar2 = (int)(intptr_t)(trigger_slot * 0xd + player);
+  if (*(char *)(intptr_t)(iVar2 + 0x10410) != '\0') {
     stop_sfx_trigger_slot(player,trigger_slot);
   }
   bVar3 = *(int *)(sample_slot + 0x12) != 0;
   if (bVar3) {
-    *(char *)(iVar2 + 0x10410) = '\0';
-    *(undefined1 *)(iVar2 + 0x10408) = 0;
-    *(undefined1 *)(iVar2 + 0x10409) = 0;
-    *(undefined1 *)(iVar2 + 0x1040a) = 0;
-    *(undefined1 *)(iVar2 + 0x1040b) = 0;
+    *(char *)(intptr_t)(iVar2 + 0x10410) = '\0';
+    *(undefined1 *)(intptr_t)(iVar2 + 0x10408) = 0;
+    *(undefined1 *)(intptr_t)(iVar2 + 0x10409) = 0;
+    *(undefined1 *)(intptr_t)(iVar2 + 0x1040a) = 0;
+    *(undefined1 *)(intptr_t)(iVar2 + 0x1040b) = 0;
     uVar1 = *(undefined4 *)(sample_slot + 0x12);
-    *(char *)(iVar2 + 0x10404) = (char)uVar1;
-    *(char *)(iVar2 + 0x10405) = (char)((uint)uVar1 >> 8);
-    *(char *)(iVar2 + 0x10406) = (char)((uint)uVar1 >> 0x10);
-    *(char *)(iVar2 + 0x10407) = (char)((uint)uVar1 >> 0x18);
+    *(char *)(intptr_t)(iVar2 + 0x10404) = (char)uVar1;
+    *(char *)(intptr_t)(iVar2 + 0x10405) = (char)((uint)uVar1 >> 8);
+    *(char *)(intptr_t)(iVar2 + 0x10406) = (char)((uint)uVar1 >> 0x10);
+    *(char *)(intptr_t)(iVar2 + 0x10407) = (char)((uint)uVar1 >> 0x18);
     uVar1 = *(undefined4 *)(sample_slot + 0x16);
-    *(char *)(iVar2 + 0x1040c) = (char)uVar1;
-    *(char *)(iVar2 + 0x1040d) = (char)((uint)uVar1 >> 8);
-    *(char *)(iVar2 + 0x1040e) = (char)((uint)uVar1 >> 0x10);
-    *(char *)(iVar2 + 0x1040f) = (char)((uint)uVar1 >> 0x18);
+    *(char *)(intptr_t)(iVar2 + 0x1040c) = (char)uVar1;
+    *(char *)(intptr_t)(iVar2 + 0x1040d) = (char)((uint)uVar1 >> 8);
+    *(char *)(intptr_t)(iVar2 + 0x1040e) = (char)((uint)uVar1 >> 0x10);
+    *(char *)(intptr_t)(iVar2 + 0x1040f) = (char)((uint)uVar1 >> 0x18);
   }
   return bVar3;
 }
@@ -3252,8 +3213,9 @@ bool arm_sfx_trigger_slot(char *player, char *sample_slot, int trigger_slot)
 // was FUN_0004f6b0 -- starts SFX trigger slot param_2 playing: resets its position (+0x10408) to 0
 // and sets the "playing" flag (+0x10410) -- the counterpart to arm_sfx_trigger_slot, which loads
 // the sample data but leaves this flag cleared.
-int start_sfx_trigger_slot(char *player, int slot)
+int start_sfx_trigger_slot(void *player_ptr, int slot)
 {
+  char *player = (char *)player_ptr;
   undefined4 uVar1;
 
   player = slot * 0xd + player;
@@ -3276,8 +3238,9 @@ int start_sfx_trigger_slot(char *player, int slot)
 // was FUN_0004f748 -- stops SFX trigger slot param_2: clears its "playing" flag (+0x10410) and
 // resets its position (+0x10408) to 0, but leaves the armed sample pointer/length
 // (+0x10404/+0x1040c) intact so arm_sfx_trigger_slot can detect and cancel a still-armed...
-int stop_sfx_trigger_slot(char *player, int slot)
+int stop_sfx_trigger_slot(void *player_ptr, int slot)
 {
+  char *player = (char *)player_ptr;
   undefined4 uVar1;
 
   player = slot * 0xd + player;
@@ -3371,7 +3334,7 @@ void resize_mod_event_row_array(char *array, int new_size, int growth)
   if (new_size == 0) {
     new_size = 0;
     if (*(int *)(array + 4) != 0) {
-      cpp_operator_delete(*(int *)(array + 4));
+      cpp_operator_delete((void *)(intptr_t)(*(int *)(array + 4)));
       *(undefined4 *)(array + 4) = 0;
     }
   }
@@ -3406,24 +3369,24 @@ void resize_mod_event_row_array(char *array, int new_size, int growth)
         if (iVar2 <= new_size) {
           iVar2 = new_size;
         }
-        iVar3 = cpp_operator_new(iVar2 << 4);
-        ce_memmove(iVar3,*(undefined4 *)(array + 4),*(int *)(array + 8) << 4);
-        construct_mod_event_array_range(iVar3 + *(int *)(array + 8) * 0x10,new_size - *(int *)(array + 8));
-        cpp_operator_delete(*(undefined4 *)(array + 4));
+        iVar3 = (int)(intptr_t)cpp_operator_new(iVar2 << 4);
+        ce_memmove((void *)(intptr_t)(iVar3),(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(int *)(array + 8) << 4);
+        construct_mod_event_array_range((void *)(intptr_t)(iVar3 + *(int *)(array + 8) * 0x10),new_size - *(int *)(array + 8));
+        cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
         *(int *)(array + 4) = iVar3;
         *(int *)(array + 0xc) = iVar2;
       }
       else {
         iVar2 = *(int *)(array + 8);
         if (iVar2 < new_size) {
-          construct_mod_event_array_range(*(int *)(array + 4) + iVar2 * 0x10,new_size - iVar2);
+          construct_mod_event_array_range((void *)(intptr_t)(*(int *)(array + 4) + iVar2 * 0x10),new_size - iVar2);
         }
       }
       goto LAB_0004f994;
     }
-    uVar1 = cpp_operator_new(new_size << 4);
+    uVar1 = (int)(intptr_t)cpp_operator_new(new_size << 4);
     *(undefined4 *)(array + 4) = uVar1;
-    construct_mod_event_array_range(uVar1,new_size);
+    construct_mod_event_array_range((void *)(intptr_t)(uVar1),new_size);
   }
   *(int *)(array + 0xc) = new_size;
 LAB_0004f994:
@@ -3449,8 +3412,8 @@ void resize_mod_pattern_row_array(char *array, int new_size, int growth)
   if (new_size == 0) {
     new_size = 0;
     if (*(int *)(array + 4) != 0) {
-      destroy_mod_row_array_range(*(int *)(array + 4),*(undefined4 *)(array + 8));
-      cpp_operator_delete(*(undefined4 *)(array + 4));
+      destroy_mod_row_array_range((char *)(intptr_t)(*(int *)(array + 4)),*(undefined4 *)(array + 8));
+      cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
       *(undefined4 *)(array + 4) = 0;
     }
   }
@@ -3486,27 +3449,27 @@ void resize_mod_pattern_row_array(char *array, int new_size, int growth)
         if (iVar4 <= new_size) {
           iVar4 = new_size;
         }
-        iVar2 = cpp_operator_new(iVar4 * 0x14);
-        ce_memmove(iVar2,*(undefined4 *)(array + 4),*(int *)(array + 8) * 0x14);
-        construct_mod_row_array_range(*(int *)(array + 8) * 0x14 + iVar2,new_size - *(int *)(array + 8));
-        cpp_operator_delete(*(undefined4 *)(array + 4));
+        iVar2 = (int)(intptr_t)cpp_operator_new(iVar4 * 0x14);
+        ce_memmove((void *)(intptr_t)(iVar2),(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(int *)(array + 8) * 0x14);
+        construct_mod_row_array_range((char *)(intptr_t)(*(int *)(array + 8) * 0x14 + iVar2),new_size - *(int *)(array + 8));
+        cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
         *(int *)(array + 4) = iVar2;
         *(int *)(array + 0xc) = iVar4;
       }
       else {
         iVar2 = *(int *)(array + 8);
         if (iVar2 < new_size) {
-          construct_mod_row_array_range(iVar2 * 0x14 + iVar4,new_size - iVar2);
+          construct_mod_row_array_range((char *)(intptr_t)(iVar2 * 0x14 + iVar4),new_size - iVar2);
         }
         else if (new_size < iVar2) {
-          destroy_mod_row_array_range(new_size * 0x14 + iVar4,iVar2 - new_size);
+          destroy_mod_row_array_range((char *)(intptr_t)(new_size * 0x14 + iVar4),iVar2 - new_size);
         }
       }
       goto LAB_0004faec;
     }
-    uVar1 = cpp_operator_new(new_size * 0x14);
+    uVar1 = (int)(intptr_t)cpp_operator_new(new_size * 0x14);
     *(undefined4 *)(array + 4) = uVar1;
-    construct_mod_row_array_range(uVar1,new_size);
+    construct_mod_row_array_range((char *)(intptr_t)(uVar1),new_size);
   }
   *(int *)(array + 0xc) = new_size;
 LAB_0004faec:
@@ -3550,7 +3513,7 @@ void resize_mod_int_array(char *array, int new_size, int growth)
   if (new_size == 0) {
     new_size = 0;
     if (*(int *)(array + 4) != 0) {
-      cpp_operator_delete(*(int *)(array + 4));
+      cpp_operator_delete((void *)(intptr_t)(*(int *)(array + 4)));
       *(undefined4 *)(array + 4) = 0;
     }
   }
@@ -3585,24 +3548,24 @@ void resize_mod_int_array(char *array, int new_size, int growth)
         if (iVar2 <= new_size) {
           iVar2 = new_size;
         }
-        iVar3 = cpp_operator_new(iVar2 << 2);
-        ce_memmove(iVar3,*(undefined4 *)(array + 4),*(int *)(array + 8) << 2);
-        construct_mod_int_array_range(iVar3 + *(int *)(array + 8) * 4,new_size - *(int *)(array + 8));
-        cpp_operator_delete(*(undefined4 *)(array + 4));
+        iVar3 = (int)(intptr_t)cpp_operator_new(iVar2 << 2);
+        ce_memmove((void *)(intptr_t)(iVar3),(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(int *)(array + 8) << 2);
+        construct_mod_int_array_range((void *)(intptr_t)(iVar3 + *(int *)(array + 8) * 4),new_size - *(int *)(array + 8));
+        cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
         *(int *)(array + 4) = iVar3;
         *(int *)(array + 0xc) = iVar2;
       }
       else {
         iVar2 = *(int *)(array + 8);
         if (iVar2 < new_size) {
-          construct_mod_int_array_range(*(int *)(array + 4) + iVar2 * 4,new_size - iVar2);
+          construct_mod_int_array_range((void *)(intptr_t)(*(int *)(array + 4) + iVar2 * 4),new_size - iVar2);
         }
       }
       goto LAB_0004fc58;
     }
-    uVar1 = cpp_operator_new(new_size << 2);
+    uVar1 = (int)(intptr_t)cpp_operator_new(new_size << 2);
     *(undefined4 *)(array + 4) = uVar1;
-    construct_mod_int_array_range(uVar1,new_size);
+    construct_mod_int_array_range((void *)(intptr_t)(uVar1),new_size);
   }
   *(int *)(array + 0xc) = new_size;
 LAB_0004fc58:
@@ -3619,7 +3582,7 @@ void destroy_mod_dynamic_array(byte *array)
   array[2] = 8;
   array[3] = 0;
   if (*(int *)(array + 4) != 0) {
-    cpp_operator_delete(*(int *)(array + 4));
+    cpp_operator_delete((void *)(intptr_t)(*(int *)(array + 4)));
   }
   *array = 0x20;
   array[1] = 0x30;
@@ -3665,7 +3628,7 @@ void serialize_mod_int_array(char *array, char *archive)
     ordaudio_op_2582();
   }
   else {
-    ordaudio_op_2135(archive,*(undefined4 *)(array + 4),*(int *)(array + 8) << 2,uVar2,unaff_lr);
+    ordaudio_op_2135(archive,(const void *)(intptr_t)(*(undefined4 *)(array + 4)),*(int *)(array + 8) << 2,uVar2,unaff_lr);
   }
 }
 
@@ -3704,8 +3667,8 @@ void resize_mod_pattern_array(char *array, int new_size, int growth)
   if (new_size == 0) {
     new_size = 0;
     if (*(int *)(array + 4) != 0) {
-      destroy_mod_pattern_array_range(*(int *)(array + 4),*(undefined4 *)(array + 8));
-      cpp_operator_delete(*(undefined4 *)(array + 4));
+      destroy_mod_pattern_array_range((char *)(intptr_t)(*(int *)(array + 4)),*(undefined4 *)(array + 8));
+      cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
       *(undefined4 *)(array + 4) = 0;
     }
   }
@@ -3741,27 +3704,27 @@ void resize_mod_pattern_array(char *array, int new_size, int growth)
         if (iVar4 <= new_size) {
           iVar4 = new_size;
         }
-        iVar2 = cpp_operator_new(iVar4 * 0x14);
-        ce_memmove(iVar2,*(undefined4 *)(array + 4),*(int *)(array + 8) * 0x14);
-        construct_mod_pattern_array_range(*(int *)(array + 8) * 0x14 + iVar2,new_size - *(int *)(array + 8));
-        cpp_operator_delete(*(undefined4 *)(array + 4));
+        iVar2 = (int)(intptr_t)cpp_operator_new(iVar4 * 0x14);
+        ce_memmove((void *)(intptr_t)(iVar2),(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(int *)(array + 8) * 0x14);
+        construct_mod_pattern_array_range((char *)(intptr_t)(*(int *)(array + 8) * 0x14 + iVar2),new_size - *(int *)(array + 8));
+        cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
         *(int *)(array + 4) = iVar2;
         *(int *)(array + 0xc) = iVar4;
       }
       else {
         iVar2 = *(int *)(array + 8);
         if (iVar2 < new_size) {
-          construct_mod_pattern_array_range(iVar2 * 0x14 + iVar4,new_size - iVar2);
+          construct_mod_pattern_array_range((char *)(intptr_t)(iVar2 * 0x14 + iVar4),new_size - iVar2);
         }
         else if (new_size < iVar2) {
-          destroy_mod_pattern_array_range(new_size * 0x14 + iVar4,iVar2 - new_size);
+          destroy_mod_pattern_array_range((char *)(intptr_t)(new_size * 0x14 + iVar4),iVar2 - new_size);
         }
       }
       goto LAB_0004fef0;
     }
-    uVar1 = cpp_operator_new(new_size * 0x14);
+    uVar1 = (int)(intptr_t)cpp_operator_new(new_size * 0x14);
     *(undefined4 *)(array + 4) = uVar1;
-    construct_mod_pattern_array_range(uVar1,new_size);
+    construct_mod_pattern_array_range((char *)(intptr_t)(uVar1),new_size);
   }
   *(int *)(array + 0xc) = new_size;
 LAB_0004fef0:
@@ -3779,8 +3742,8 @@ void destroy_mod_pattern_array(byte *array)
   array[2] = 8;
   array[3] = 0;
   if (*(int *)(array + 4) != 0) {
-    destroy_mod_pattern_array_range(*(int *)(array + 4),*(undefined4 *)(array + 8));
-    cpp_operator_delete(*(undefined4 *)(array + 4));
+    destroy_mod_pattern_array_range((char *)(intptr_t)(*(int *)(array + 4)),*(undefined4 *)(array + 8));
+    cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
   }
   *array = 0x20;
   array[1] = 0x30;
@@ -3803,7 +3766,7 @@ void serialize_mod_pattern_array(char *array, char *archive)
     uVar1 = ordaudio_op_2142(archive);
     resize_mod_pattern_array(array,uVar1,0xffffffff);
   }
-  write_mod_pattern_array(archive,*(undefined4 *)(array + 4),*(undefined4 *)(array + 8));
+  write_mod_pattern_array(archive,(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(undefined4 *)(array + 8));
 }
 
 
@@ -3842,8 +3805,8 @@ void resize_mod_instrument_array(char *array, int new_size, int growth)
   if (new_size == 0) {
     new_size = 0;
     if (*(int *)(array + 4) != 0) {
-      destroy_mod_instrument_array_range(*(int *)(array + 4),*(undefined4 *)(array + 8));
-      cpp_operator_delete(*(undefined4 *)(array + 4));
+      destroy_mod_instrument_array_range((char *)(intptr_t)(*(int *)(array + 4)),*(undefined4 *)(array + 8));
+      cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
       *(undefined4 *)(array + 4) = 0;
     }
   }
@@ -3879,27 +3842,27 @@ void resize_mod_instrument_array(char *array, int new_size, int growth)
         if (iVar4 <= new_size) {
           iVar4 = new_size;
         }
-        iVar2 = cpp_operator_new(iVar4 * 0x30);
-        ce_memmove(iVar2,*(undefined4 *)(array + 4),*(int *)(array + 8) * 0x30);
-        construct_mod_instrument_array_range(*(int *)(array + 8) * 0x30 + iVar2,new_size - *(int *)(array + 8));
-        cpp_operator_delete(*(undefined4 *)(array + 4));
+        iVar2 = (int)(intptr_t)cpp_operator_new(iVar4 * 0x30);
+        ce_memmove((void *)(intptr_t)(iVar2),(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(int *)(array + 8) * 0x30);
+        construct_mod_instrument_array_range((char *)(intptr_t)(*(int *)(array + 8) * 0x30 + iVar2),new_size - *(int *)(array + 8));
+        cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
         *(int *)(array + 4) = iVar2;
         *(int *)(array + 0xc) = iVar4;
       }
       else {
         iVar2 = *(int *)(array + 8);
         if (iVar2 < new_size) {
-          construct_mod_instrument_array_range(iVar2 * 0x30 + iVar4,new_size - iVar2);
+          construct_mod_instrument_array_range((char *)(intptr_t)(iVar2 * 0x30 + iVar4),new_size - iVar2);
         }
         else if (new_size < iVar2) {
-          destroy_mod_instrument_array_range(new_size * 0x30 + iVar4,iVar2 - new_size);
+          destroy_mod_instrument_array_range((char *)(intptr_t)(new_size * 0x30 + iVar4),iVar2 - new_size);
         }
       }
       goto LAB_00050140;
     }
-    uVar1 = cpp_operator_new(new_size * 0x30);
+    uVar1 = (int)(intptr_t)cpp_operator_new(new_size * 0x30);
     *(undefined4 *)(array + 4) = uVar1;
-    construct_mod_instrument_array_range(uVar1,new_size);
+    construct_mod_instrument_array_range((char *)(intptr_t)(uVar1),new_size);
   }
   *(int *)(array + 0xc) = new_size;
 LAB_00050140:
@@ -3918,8 +3881,8 @@ void destroy_mod_instrument_array(byte *array)
   array[2] = 8;
   array[3] = 0;
   if (*(int *)(array + 4) != 0) {
-    destroy_mod_instrument_array_range(*(int *)(array + 4),*(undefined4 *)(array + 8));
-    cpp_operator_delete(*(undefined4 *)(array + 4));
+    destroy_mod_instrument_array_range((char *)(intptr_t)(*(int *)(array + 4)),*(undefined4 *)(array + 8));
+    cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
   }
   *array = 0x20;
   array[1] = 0x30;
@@ -3943,7 +3906,7 @@ void serialize_mod_instrument_array(char *array, char *archive)
     uVar1 = ordaudio_op_2142(archive);
     resize_mod_instrument_array(array,uVar1,0xffffffff);
   }
-  write_mod_instrument_array(archive,*(undefined4 *)(array + 4),*(undefined4 *)(array + 8));
+  write_mod_instrument_array(archive,(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(undefined4 *)(array + 8));
 }
 
 
@@ -3981,7 +3944,7 @@ void resize_mod_channel_state_array(char *array, int new_size, int growth)
   if (new_size == 0) {
     new_size = 0;
     if (*(int *)(array + 4) != 0) {
-      cpp_operator_delete(*(int *)(array + 4));
+      cpp_operator_delete((void *)(intptr_t)(*(int *)(array + 4)));
       *(undefined4 *)(array + 4) = 0;
     }
   }
@@ -4016,24 +3979,24 @@ void resize_mod_channel_state_array(char *array, int new_size, int growth)
         if (iVar2 <= new_size) {
           iVar2 = new_size;
         }
-        iVar3 = cpp_operator_new(iVar2 << 6);
-        ce_memmove(iVar3,*(undefined4 *)(array + 4),*(int *)(array + 8) << 6);
-        construct_mod_channel_state_array_range(iVar3 + *(int *)(array + 8) * 0x40,new_size - *(int *)(array + 8));
-        cpp_operator_delete(*(undefined4 *)(array + 4));
+        iVar3 = (int)(intptr_t)cpp_operator_new(iVar2 << 6);
+        ce_memmove((void *)(intptr_t)(iVar3),(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(int *)(array + 8) << 6);
+        construct_mod_channel_state_array_range((void *)(intptr_t)(iVar3 + *(int *)(array + 8) * 0x40),new_size - *(int *)(array + 8));
+        cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(array + 4)));
         *(int *)(array + 4) = iVar3;
         *(int *)(array + 0xc) = iVar2;
       }
       else {
         iVar2 = *(int *)(array + 8);
         if (iVar2 < new_size) {
-          construct_mod_channel_state_array_range(*(int *)(array + 4) + iVar2 * 0x40,new_size - iVar2);
+          construct_mod_channel_state_array_range((void *)(intptr_t)(*(int *)(array + 4) + iVar2 * 0x40),new_size - iVar2);
         }
       }
       goto LAB_00050364;
     }
-    uVar1 = cpp_operator_new(new_size << 6);
+    uVar1 = (int)(intptr_t)cpp_operator_new(new_size << 6);
     *(undefined4 *)(array + 4) = uVar1;
-    construct_mod_channel_state_array_range(uVar1,new_size);
+    construct_mod_channel_state_array_range((void *)(intptr_t)(uVar1),new_size);
   }
   *(int *)(array + 0xc) = new_size;
 LAB_00050364:
@@ -4052,7 +4015,7 @@ void destroy_mod_channel_state_array(byte *array)
   array[2] = 8;
   array[3] = 0;
   if (*(int *)(array + 4) != 0) {
-    cpp_operator_delete(*(int *)(array + 4));
+    cpp_operator_delete((void *)(intptr_t)(*(int *)(array + 4)));
   }
   *array = 0x20;
   array[1] = 0x30;
@@ -4083,7 +4046,7 @@ void serialize_mod_channel_state_array(char *array, char *archive)
     ordaudio_op_2582();
   }
   else {
-    ordaudio_op_2135(archive,*(undefined4 *)(array + 4),*(int *)(array + 8) << 6,uVar2,unaff_lr);
+    ordaudio_op_2135(archive,(const void *)(intptr_t)(*(undefined4 *)(array + 4)),*(int *)(array + 8) << 6,uVar2,unaff_lr);
   }
 }
 
@@ -4092,7 +4055,7 @@ void serialize_mod_channel_state_array(char *array, char *archive)
 // was FUN_00050430 -- MSVC-style "scalar deleting destructor" for the int-array type: destroys the
 // array in place then, if param_2's low bit is set, frees the struct itself. BUG FIX: was
 // `destroy_mod_dynamic_array();` -- a dropped argument.
-int destroy_mod_dynamic_array_and_maybe_free(char *array, uint delete_flags)
+void *destroy_mod_dynamic_array_and_maybe_free(char *array, uint delete_flags)
 {
   destroy_mod_dynamic_array(array);
   if ((delete_flags & 1) != 0) {
@@ -4106,7 +4069,7 @@ int destroy_mod_dynamic_array_and_maybe_free(char *array, uint delete_flags)
 // was FUN_00050454 -- "scalar deleting destructor" for the top-level pattern-array type (see
 // destroy_mod_dynamic_array_and_maybe_free). BUG FIX: was `destroy_mod_pattern_array();`
 // (destroy_mod_pattern_array) -- the same dropped-argument bug, same fix (pass param_1).
-int destroy_mod_pattern_array_and_maybe_free(char *array, uint delete_flags)
+void *destroy_mod_pattern_array_and_maybe_free(char *array, uint delete_flags)
 {
   destroy_mod_pattern_array(array);
   if ((delete_flags & 1) != 0) {
@@ -4119,7 +4082,7 @@ int destroy_mod_pattern_array_and_maybe_free(char *array, uint delete_flags)
 
 // was FUN_00050478 -- "scalar deleting destructor" for the MOD instrument/sample-descriptor array
 // type (see destroy_mod_dynamic_array_and_maybe_free).
-int destroy_mod_instrument_array_and_maybe_free(char *array, uint delete_flags)
+void *destroy_mod_instrument_array_and_maybe_free(char *array, uint delete_flags)
 {
   destroy_mod_instrument_array(array);
   if ((delete_flags & 1) != 0) {
@@ -4133,7 +4096,7 @@ int destroy_mod_instrument_array_and_maybe_free(char *array, uint delete_flags)
 // was FUN_0005049c -- "scalar deleting destructor" for the MOD channel runtime-state array type
 // (see destroy_mod_dynamic_array_and_maybe_free). BUG FIX: was `destroy_mod_channel_state_array();`
 // (destroy_mod_channel_state_array) -- the same dropped-argument bug, same fix (pass param_1).
-int destroy_mod_channel_state_array_and_maybe_free(char *array, uint delete_flags)
+void *destroy_mod_channel_state_array_and_maybe_free(char *array, uint delete_flags)
 {
   destroy_mod_channel_state_array(array);
   if ((delete_flags & 1) != 0) {
@@ -4175,7 +4138,7 @@ void destroy_mod_row_array_elem(byte *element)
   element[2] = 8;
   element[3] = 0;
   if (*(int *)(element + 4) != 0) {
-    cpp_operator_delete(*(int *)(element + 4));
+    cpp_operator_delete((void *)(intptr_t)(*(int *)(element + 4)));
   }
   *element = 0x20;
   element[1] = 0x30;
@@ -4199,14 +4162,14 @@ void serialize_mod_event_row_array(char *array, char *archive)
     uVar1 = ordaudio_op_2142(archive);
     resize_mod_event_row_array(array,uVar1,0xffffffff);
   }
-  write_mod_event_array(archive,*(undefined4 *)(array + 4),*(undefined4 *)(array + 8));
+  write_mod_event_array(archive,(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(undefined4 *)(array + 8));
 }
 
 
 
 // was FUN_000505bc -- "scalar deleting destructor" for the "row" element type (see
 // destroy_mod_dynamic_array_and_maybe_free).
-int destroy_mod_row_array_elem_and_maybe_free(char *element, uint delete_flags)
+void *destroy_mod_row_array_elem_and_maybe_free(char *element, uint delete_flags)
 {
   destroy_mod_row_array_elem(element);
   if ((delete_flags & 1) != 0) {
@@ -4280,8 +4243,8 @@ void destroy_mod_pattern_array_elem(byte *element)
   element[2] = 8;
   element[3] = 0;
   if (*(int *)(element + 4) != 0) {
-    destroy_mod_row_array_range(*(int *)(element + 4),*(undefined4 *)(element + 8));
-    cpp_operator_delete(*(undefined4 *)(element + 4));
+    destroy_mod_row_array_range((char *)(intptr_t)(*(int *)(element + 4)),*(undefined4 *)(element + 8));
+    cpp_operator_delete((void *)(intptr_t)(*(undefined4 *)(element + 4)));
   }
   *element = 0x20;
   element[1] = 0x30;
@@ -4305,14 +4268,14 @@ void serialize_mod_pattern_row_array(char *array, char *archive)
     uVar1 = ordaudio_op_2142(archive);
     resize_mod_pattern_row_array(array,uVar1,0xffffffff);
   }
-  write_mod_pattern_row_array(archive,*(undefined4 *)(array + 4),*(undefined4 *)(array + 8));
+  write_mod_pattern_row_array(archive,(void *)(intptr_t)(*(undefined4 *)(array + 4)),*(undefined4 *)(array + 8));
 }
 
 
 
 // was FUN_00050768 -- "scalar deleting destructor" for the "pattern" element type (see
 // destroy_mod_dynamic_array_and_maybe_free).
-int destroy_mod_pattern_array_elem_and_maybe_free(char *element, uint delete_flags)
+void *destroy_mod_pattern_array_elem_and_maybe_free(char *element, uint delete_flags)
 {
   destroy_mod_pattern_array_elem(element);
   if ((delete_flags & 1) != 0) {
@@ -4389,7 +4352,7 @@ void construct_mod_instrument_array_range(char *elements, int count)
   ce_memset(elements,0,count * 0x30);
   for (; count != 0; count = count + -1) {
     if (elements != 0) {
-      FindNextFileW(elements);
+      FindNextFileW(0,elements);  /* ARM passes only the object pointer (r0); handle slot unused */
       HeapReAlloc(elements + 0x1c);
     }
     elements = elements + 0x30;

@@ -10,6 +10,8 @@
 #define UW_SYNTH_KEY 0x55570002u
 
 int GXOpenDisplay(void *hwnd, unsigned int flags);
+int uw_save_rgb565_region_bmp(const char *path, const unsigned short *pixels, int w, int h, int stride_pixels);
+void uw_debug_mkdir_p(const char *path);
 int GXCloseDisplay();
 void *GXBeginDraw();
 int GXEndDraw();

@@ -23,7 +23,7 @@ extern short DAT_00201c7c;
 /* Port-only timing flag consumed by the first entry after character creation. */
 extern bool g_new_game_entry_pause_pending;
 
-int teleport_object_to_level_tile(char *object, int tile_x, int tile_y, short level_number);
+int teleport_object_to_level_tile(void *object, int tile_x, int tile_y, short level_number);
 void reset_level_arena_and_invalidate(int reserved);
 void enter_dungeon_view();
 int init_level_object_arena();

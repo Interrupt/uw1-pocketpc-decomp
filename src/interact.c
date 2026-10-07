@@ -281,8 +281,9 @@ void trigger_inscription_illustration(int first_char)
 // was FUN_00072598 -- rolls a skill check (roll_skill_check(param_2,8)) against the first contained
 // item in container param_1, but only if that item's own quality/type field (after resolving
 // through a link when a specific bit is set) is below 3...
-int roll_container_lockpick_check(char *container, int skill)
+int roll_container_lockpick_check(void *container_ptr, int skill)
 {
+  char *container = (char *)container_ptr;
   byte *pbVar1;
   undefined4 uVar2;
   ushort *local_c;
@@ -309,8 +310,9 @@ int roll_container_lockpick_check(char *container, int skill)
 // was FUN_0007266c -- roll_container_lockpick_check's sibling for the "disarm trap" mechanic: same
 // container-contents/quality-gated setup, but rolls a disarm skill check
 // (roll_skill_check(param_2,8)) and handles all three outcomes -- critical failure...
-int roll_container_trap_disarm_check(char *container, int skill)
+int roll_container_trap_disarm_check(void *container_ptr, int skill)
 {
+  char *container = (char *)container_ptr;
   char *wptr_53920;
   char *wptr_53945;
   char *wptr_53956;
@@ -361,7 +363,7 @@ int roll_container_trap_disarm_check(char *container, int skill)
               refresh_object_link_chain(local_34[0],pbVar4);
             }
             else {
-              resolve_skill_gated_unlock_or_use(g_player_object,container,pbVar7,0xffffffff);
+              resolve_skill_gated_unlock_or_use(g_player_object,container,pbVar7,0xffff);
             }
           }
           else {
@@ -408,8 +410,11 @@ int roll_container_trap_disarm_check(char *container, int skill)
 
 // was FUN_0007cdbc -- confirmed by its callers as the general skill-gated "use item on object"
 // resolver behind force_unlock_target_object...
-uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort *lock_link, ushort key_id)
+uint resolve_skill_gated_unlock_or_use(void *object_ptr, void *key_item_ptr, void *lock_link_ptr, ushort key_id)
 {
+  ushort *object = (ushort *)object_ptr;
+  ushort *key_item = (ushort *)key_item_ptr;
+  ushort *lock_link = (ushort *)lock_link_ptr;
   ushort uVar1;
   short sVar2;
   char *iVar3;  /* was `int` -- truncated resolve_object_link's real `void *` return */
@@ -487,8 +492,11 @@ uint resolve_skill_gated_unlock_or_use(ushort *object, ushort *key_item, ushort 
    `iVar3`/ resolve_object_link's result, in src/interact.c now)... */
 // was FUN_0007d074 -- thin re-entrancy-guarded wrapper around the trap/link-effect type dispatcher
 // dispatch_trap_type_effect (not yet named, a large switch on the trap/link record's type code).
-int apply_trap_or_link_effect(char *trigger_object, ushort *trigger_link, ushort *trap_record, int tile_x, int tile_y)
+int apply_trap_or_link_effect(void *trigger_object_ptr, void *trigger_link_ptr, void *trap_record_ptr, int tile_x, int tile_y)
 {
+  char *trigger_object = (char *)trigger_object_ptr;
+  ushort *trigger_link = (ushort *)trigger_link_ptr;
+  ushort *trap_record = (ushort *)trap_record_ptr;
   if (DAT_0024cff4 == 0) {
     DAT_0024cff0 = trigger_link;
     DAT_0024cff4 = trigger_object;
@@ -508,8 +516,9 @@ int apply_trap_or_link_effect(char *trigger_object, ushort *trigger_link, ushort
 /* was `undefined4` -- truncated the real object-record pointer (passed to resolve_object_link and
    to itself recursively as `puVar1+3`), latent until those calls started actually using their
    arguments */
-void purge_tagged_objects_from_chain(ushort *link_field)
+void purge_tagged_objects_from_chain(void *link_field_ptr)
 {
+  ushort *link_field = (ushort *)link_field_ptr;
   ushort *puVar1;
   
   for (puVar1 = (ushort *)resolve_object_link(link_field); puVar1 != (ushort *)0x0; /* confirmed via ARM disassembly, 0x7deec */
@@ -532,8 +541,10 @@ void purge_tagged_objects_from_chain(ushort *link_field)
 // was FUN_0007dfd8 -- confirmed by callers' own comments (resolve_skill_gated_unlock_or_use,
 // trigger_object_trap_or_use_action) as the "refresh" step run after a lock/link record's own
 // use/pull action.
-void refresh_object_link_chain(char *chain_link, char *object)
+void refresh_object_link_chain(void *chain_link_ptr, void *object_ptr)
 {
+  char *chain_link = (char *)chain_link_ptr;
+  char *object = (char *)object_ptr;
   undefined4 uVar1;
   char *iVar2;
   short sVar3;
@@ -553,7 +564,7 @@ void refresh_object_link_chain(char *chain_link, char *object)
     }
   }
   uVar1 = encode_object_slot_index(object);
-  iVar2 = find_object_by_encoded_slot_in_chain(chain_link,1,uVar1);
+  iVar2 = (char *)find_object_by_encoded_slot_in_chain(chain_link,1,uVar1);
   if (iVar2 != 0) {
     unlink_and_free_object(DAT_002046b4,iVar2);  /* ARM 0x7e0c0-0x7e0cc: r0 = DAT_002046b4, r1 = the find result */
   }
@@ -566,8 +577,9 @@ void refresh_object_link_chain(char *chain_link, char *object)
 // was FUN_00028488 -- the actual talk-interaction worker: handles the mantra-chant and
 // special-lever/statue item ids, then for creatures checks whether a real CNV.ARK conversation
 // record exists (probe_archive_entry_exists) and switches to Talk game mode if so...
-void attempt_talk_interaction(ushort *target)
+void attempt_talk_interaction(void *target_ptr)
 {
+  ushort *target = (ushort *)target_ptr;
   char stack0xffdc3244_buf [256];
   char *stack0xffdc3244_ptr;
   char cVar1;
@@ -638,8 +650,9 @@ LAB_0002865c:
 
 // was FUN_0003ee10 -- called from interact_default (src/interact.c:90) right before a grabbed
 // object is attached to the cursor.
-void finalize_object_pickup(char *object)
+void finalize_object_pickup(void *object_ptr)
 {
+  char *object = (char *)object_ptr;
   if (DAT_002020ec != 0) {
     trigger_object_trap_or_use_action(g_player_object,object,2,(int)DAT_002020a0,DAT_002020a4);
     object_list_unlink(DAT_002020a8,object);
@@ -653,8 +666,9 @@ void finalize_object_pickup(char *object)
    tilemap byte address) were both declared `int`, truncating the 64-bit pointers every caller
    passes... */
 // was FUN_0003e694
-int target_in_range(short range_squared, char *actor, char *target)
+int target_in_range(short range_squared, void *actor_ptr, char *target)
 {
+  char *actor = (char *)actor_ptr;
   short sVar1;
   int iVar2;
   int iVar3;
@@ -719,8 +733,9 @@ uint object_chain_max_barrier(char *tile)
 
 // was FUN_0003e8b0
 /* was int -- truncated g_interact_target; deref'd at param_2+2 */
-int target_line_of_sight(short target_class, char *target)
+int target_line_of_sight(short target_class, void *target_ptr)
 {
+  char *target = (char *)target_ptr;
   bool bVar1;
   ushort uVar2;
   int iVar3;

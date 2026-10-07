@@ -15,37 +15,37 @@ void uw_pump_events();
 unsigned int handle_keyboard_message(void *param_1, unsigned int param_2, unsigned int param_3);
 int uw_take_mouse_event_pending();
 
-long EnterCriticalSection(long critical_section, long arg2, long arg3, long arg4)
+long EnterCriticalSection(long critical_section, long arg2, void *arg3, long arg4)
 {
     return 0;
 }
 
-long GetSystemTime(long system_time)
+long GetSystemTime(void *system_time)
 {
     return 0;
 }
 
-long LocalAlloc(long flags, long byte_count)
+void *LocalAlloc(long flags, long byte_count)
 {
     return 0;
 }
 
-long LocalReAlloc(long block, long byte_count, long flags)
+void *LocalReAlloc(void *block, long byte_count, long flags)
 {
     return 0;
 }
 
-long LocalSize(long block)
+long LocalSize(void *block)
 {
     return 0;
 }
 
-long RemoteLocalReAlloc(long arg1, long arg2, long arg3, long arg4, long arg5)
+long RemoteLocalReAlloc(void *arg1, void *arg2, long arg3, long arg4, long arg5)
 {
     return 0;
 }
 
-long HeapReAlloc(long heap)
+long HeapReAlloc(void *heap)
 {
     return 0;
 }
@@ -89,17 +89,17 @@ long SystemParametersInfoW(unsigned int action, unsigned int cb, void *buf, unsi
     return 1;
 }
 
-long RegisterClassW(long window_class)
+long RegisterClassW(void *window_class)
 {
     return 0;
 }
 
-long CopyRect(long rect)
+long CopyRect(void *rect)
 {
     return 0;
 }
 
-long CreateDirectoryW(long path, long security)
+long CreateDirectoryW(const char *path, void *security)
 {
     return 0;
 }
@@ -157,12 +157,12 @@ long FindFirstFileW(void *path_ptr, unsigned int *out_attrs)
     return 1;
 }
 
-long CreateFileW(long path, long access, long share_mode, long security, long creation, long attributes, long template_file)
+long CreateFileW(const char *path, long access, long share_mode, void *security, long creation, long attributes, void *template_file)
 {
     return 0;
 }
 
-long ReadFile(long file, long buffer, long byte_count, long bytes_read, long overlapped)
+long ReadFile(long file, void *buffer, long byte_count, void *bytes_read, void *overlapped)
 {
     return 0;
 }
@@ -184,12 +184,12 @@ long SetFilePointer()
     return 0;
 }
 
-long SetFileTime(long file, long file_time)
+long SetFileTime(void *file, const void *file_time)
 {
     return 0;
 }
 
-long FindNextFileW()
+long FindNextFileW(long handle, void *find_data)
 {
     return 0;
 }
@@ -217,17 +217,17 @@ long MultiByteToWideChar(unsigned int code_page, unsigned int flags, const char 
     return (long)count;
 }
 
-long WideCharToMultiByte(long code_page, long flags, long source, long source_count, long destination, long capacity, long default_char, long used_default)
+long WideCharToMultiByte(long code_page, long flags, const char *source, long source_count, char *destination, long capacity, const char *default_char, void *used_default)
 {
     return 0;
 }
 
-long GetUserDefaultLangID(long arg1)
+long GetUserDefaultLangID(void *arg1)
 {
     return 0;
 }
 
-long FoldStringW(long string)
+long FoldStringW(void *string)
 {
     return 0;
 }
@@ -235,13 +235,14 @@ long FoldStringW(long string)
 /* UTF-16 string-equality check; the only call site compares SystemParametersInfoW's SPI_GETOEMINFO
    string against a fixed device name (see SystemParametersInfoW's comment). wcscmp isn't used here
    because macOS wchar_t is 4 bytes, not the 2-byte UTF-16 units this game's strings use. */
-long _wcsicmp(unsigned short *a, unsigned short *b)
+long _wcsicmp(void *a_ptr, unsigned short *b)
 {
+  unsigned short *a = (unsigned short *)a_ptr;
     while (*a && *b && *a == *b) { a++; b++; }
     return *a == *b;
 }
 
-long CloseAllFileHandles(long arg1)
+long CloseAllFileHandles(void *arg1)
 {
     return 0;
 }
@@ -258,12 +259,12 @@ long DefWindowProcW()
     return 0;
 }
 
-long ShowWindow(long window, long show_command)
+long ShowWindow(void *window, long show_command)
 {
     return 0;
 }
 
-long UpdateWindow(long window)
+long UpdateWindow(void *window)
 {
     return 0;
 }
@@ -275,32 +276,32 @@ int FindWindowW(void *a, void *b)
     return 0; /* no existing instance / success */
 }
 
-long BatteryDrvrGetLevels(long levels)
+long BatteryDrvrGetLevels(void *levels)
 {
     return 0;
 }
 
-long CeReadRecordProps(long arg1, long arg2)
+long CeReadRecordProps(void *arg1, long arg2)
 {
     return 0;
 }
 
-long waveOutClose()
+long waveOutClose(long wave_out)
 {
     return 0;
 }
 
-long waveOutPrepareHeader(long wave_out, long header, long header_size)
+long waveOutPrepareHeader(long wave_out, void *header, long header_size)
 {
     return 0;
 }
 
-long waveOutUnprepareHeader(long wave_out, long header, long header_size)
+long waveOutUnprepareHeader(long wave_out, void *header, long header_size)
 {
     return 0;
 }
 
-long waveOutWrite(long wave_out, long header, long header_size)
+long waveOutWrite(long wave_out, void *header, long header_size)
 {
     return 0;
 }
@@ -310,7 +311,7 @@ long waveOutReset()
     return 0;
 }
 
-long waveOutOpen(long wave_out, long device_id, long format, long callback, long instance, long flags)
+long waveOutOpen(void *wave_out, long device_id, void *format, void *callback, void *instance, long flags)
 {
     return 0;
 }
@@ -320,7 +321,7 @@ long RegCloseKey(long key)
     return 0;
 }
 
-long RegCreateKeyExW(long key, long sub_key, long reserved, long class_name, long options, long access, long security, long result, long disposition)
+long RegCreateKeyExW(long key, const unsigned short *sub_key, long reserved, void *class_name, long options, long access, void *security, void *result, void *disposition)
 {
     return 0;
 }
@@ -332,12 +333,12 @@ int RegOpenKeyExW(unsigned int hkey, void *subkey, unsigned int reserved, void *
     return 0;
 }
 
-long RegQueryValueExW(long key, long value_name, long reserved, long type, long data, long data_size)
+long RegQueryValueExW(long key, const unsigned short *value_name, long reserved, void *type, void *data, void *data_size)
 {
     return 0;
 }
 
-long RegSetValueExW(long key, long value_name, long reserved, long type, long data, long data_size)
+long RegSetValueExW(long key, const unsigned short *value_name, long reserved, long type, const void *data, long data_size)
 {
     return 0;
 }
@@ -401,7 +402,7 @@ long CloseHandle(int handle)
     return uw_file_close(handle);
 }
 
-long GetDlgItemTextW(long dialog, long item_id, long text, long max_count)
+long GetDlgItemTextW(long dialog, long item_id, void *text, long max_count)
 {
     return 0;
 }
@@ -421,17 +422,17 @@ long SetForegroundWindow(long window)
     return 0;
 }
 
-long ce_sprintf()
+long ce_sprintf(char *buffer, const char *format, ...)
 {
     return 0;
 }
 
-long MessageBoxW(long text, long caption)
+long MessageBoxW(const void *text, const void *caption)
 {
     return 0;
 }
 
-long DispatchMessageW(long message)
+long DispatchMessageW(const void *message)
 {
     return 0;
 }
@@ -462,7 +463,7 @@ int PostMessageW(void *hwnd, unsigned int msg, unsigned int wparam, int lparam)
     return (int)handle_keyboard_message(hwnd, msg, wparam);
 }
 
-long TranslateMessage(long message)
+long TranslateMessage(const void *message)
 {
     return 0;
 }
@@ -482,7 +483,7 @@ long GetStockObject(long object_id)
     return 0;
 }
 
-long ce_atoi(long text)
+int ce_atoi(const char *text)
 {
     return 0;
 }
@@ -507,17 +508,17 @@ void LocalFree(void *ptr)
     (void)ptr;
 }
 
-long _itoa(long value, long buffer, long radix)
+char *_itoa(long value, char *buffer, long radix)
 {
     return 0;
 }
 
-long ordfloat_log()
+long ordfloat_log(long lo, long hi)
 {
     return 0;
 }
 
-long _ltoa(long value, long buffer, long radix)
+char *_ltoa(long value, char *buffer, long radix)
 {
     return 0;
 }
@@ -624,7 +625,7 @@ long ce_strncpy(char *dest, const char *src, unsigned int n)
     return (long)dest;
 }
 
-long ce_strstr(long haystack, long needle)
+char *ce_strstr(const char *haystack, const char *needle)
 {
     return 0;
 }
@@ -648,12 +649,12 @@ long ce_toupper(long ch)
 
 /* Was, and stays, a hardcoded no-op always returning 0 (NULL) -- every single call site (the
    MOD-tracker music engine's buffer/pattern/ instrument allocators in audio.c)... */
-long cpp_operator_delete(long block)
+long cpp_operator_delete(void *block)
 {
     return 0;
 }
 
-long cpp_operator_new(long byte_count)
+void *cpp_operator_new(long byte_count)
 {
     return 0;
 }
@@ -702,7 +703,7 @@ void *ce_calloc(unsigned int elem_size, unsigned int count)
 
 /* MSVCRT `strrchr(str, c)` -- find the LAST occurrence of character `c` in `str`, or NULL if
    absent. */
-long ce_strrchr(char *str, int c)
+char *ce_strrchr(char *str, int c)
 {
     char *p;
     char *last = 0;
@@ -711,24 +712,24 @@ long ce_strrchr(char *str, int c)
         if (*p == (char)c) last = p;
         if (*p == '\0') break;
     }
-    return (long)last;
+    return last;
 }
 
-long _strlwr(long text)
+char *_strlwr(char *text)
 {
     return 0;
 }
 
 /* MSVCRT `_strupr(str)` -- uppercase a string in place, return the same pointer. Sits right before
    _isctype (`_isctype`), matching MSVCRT's own clustering of case/character-type functions. */
-long _strupr(char *str)
+char *_strupr(char *str)
 {
     char *p;
     if (str == 0) return 0;
     for (p = str; *p != '\0'; p++) {
         *p = (char)toupper((unsigned char)*p);
     }
-    return (long)str;
+    return str;
 }
 
 /* MSVCRT-style `_isctype(c, mask)` character classification helper -- every call site ORs together
@@ -957,27 +958,27 @@ long ordfloat_double_op3(long a_lo, long a_hi, long b_lo, long b_hi)
     return 0;
 }
 
-long ordaudio_op_2063(long arg1, long arg2, long arg3, long arg4)
+long ordaudio_op_2063(void *arg1, const void *arg2, long arg3, long arg4)
 {
     return 0;
 }
 
-long ordaudio_op_2135()
+long ordaudio_op_2135(void *archive, const void *buffer, long byte_count, ...)
 {
     return 0;
 }
 
-long ordaudio_op_2142(long arg1)
+long ordaudio_op_2142(void *archive)
 {
     return 0;
 }
 
-long ordaudio_op_2304(long arg1, long arg2, long arg3)
+long ordaudio_op_2304(void *arg1, void *arg2, long arg3)
 {
     return 0;
 }
 
-long ordaudio_op_2413(long arg1, long arg2, long arg3)
+long ordaudio_op_2413(void *arg1, long arg2, long arg3)
 {
     return 0;
 }
@@ -987,7 +988,7 @@ long ordaudio_op_2582()
     return 0;
 }
 
-long ordaudio_op_2588(long archive, long value)
+long ordaudio_op_2588(void *archive, long value)
 {
     return 0;
 }

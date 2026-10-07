@@ -2,9 +2,10 @@
 #include <signal.h>
 #include <execinfo.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-static undefined4 *DAT_0025090c;
-static undefined4 *DAT_00250908;
+static code **g_atexit_handlers;      /* was DAT_0025090c: base of the handler array */
+static code **g_atexit_handlers_end;  /* was DAT_00250908: next free slot */
 void entry(int instance, int prev_instance, int command_line, int show_command)
 {
   run_static_initializers();
@@ -22,11 +23,11 @@ void run_static_initializers()
 // was FUN_00082358 -- generic "call every function pointer in
 // [param_1,param_2)" helper, the mechanism run_static_initializers
 // and terminate_process's own (dead) atexit-walk originally used.
-void call_function_pointer_range(uint *range_start, uint *range_end)
+void call_function_pointer_range(code **range_start, code **range_end)
 {
   for (; range_start < range_end; range_start = range_start + 1) {
-    if ((code *)*range_start != (code *)0x0) {
-      (*(code *)*range_start)();
+    if (*range_start != (code *)0x0) {
+      (**range_start)();
     }
   }
 }
@@ -41,32 +42,31 @@ void terminate_process(int exit_code)
 // was FUN_00082448 -- registers an atexit-style handler: appends param_1 to a dynamically-grown
 // array (DAT_00250908/DAT_0025090c), reallocating via LocalAlloc/34/35 (malloc/realloc/size-query
 // style WinCE ordinals) when it's full.
-int register_atexit_handler(int handler)
+int register_atexit_handler(code *handler)
 {
-  uint capacity_bytes = LocalSize(DAT_0025090c);
-  int new_block;
+  uint capacity_bytes = LocalSize(g_atexit_handlers);
+  code **new_block;
 
-  if (capacity_bytes < (uint)((int)DAT_00250908 + (4 - (int)DAT_0025090c))) {
-    if (DAT_0025090c == 0) {
+  if (capacity_bytes < (uint)((char *)g_atexit_handlers_end + 4 - (char *)g_atexit_handlers)) {
+    if (g_atexit_handlers == 0) {
       new_block = LocalAlloc(0, 0x10);
     }
     else {
-      new_block = LocalSize(DAT_0025090c);
-      new_block = LocalReAlloc(DAT_0025090c, new_block + 0x10, 2);
+      new_block = LocalReAlloc(g_atexit_handlers, LocalSize(g_atexit_handlers) + 0x10, 2);
     }
     if (new_block == 0) {
       return 0;
     }
-    DAT_00250908 = (undefined4 *)(new_block + ((int)DAT_00250908 - (int)DAT_0025090c >> 2) * 4);
-    DAT_0025090c = new_block;
+    g_atexit_handlers_end = new_block + (g_atexit_handlers_end - g_atexit_handlers);
+    g_atexit_handlers = new_block;
   }
-  *DAT_00250908 = handler;
-  DAT_00250908 = DAT_00250908 + 1;
-  return handler;
+  *g_atexit_handlers_end = handler;
+  g_atexit_handlers_end = g_atexit_handlers_end + 1;
+  return handler != 0;
 }
 // was FUN_000824f0 -- thin wrapper reporting whether register_atexit_handler succeeded (0) or
 // failed (-1).
-int register_default_atexit_handler(int handler)
+int register_default_atexit_handler(code *handler)
 {
   if (register_atexit_handler(handler) == 0) {
     return 0xffffffff;
