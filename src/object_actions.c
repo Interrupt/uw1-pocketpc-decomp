@@ -2061,8 +2061,7 @@ void clear_object_pending_special_flag(ushort *object)
       uVar2 = 0x140;
     }
     if (bVar5 && uVar4 != uVar2) {
-      *(char *)object = (char)(uVar3 & 0xefff);
-      *(char *)((char *)object + 1) = (char)((uVar3 & 0xefff) >> 8);
+      ((uw_object_hdr_t *)object)->enchanted = 0;
     }
   }
 }

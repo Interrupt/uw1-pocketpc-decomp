@@ -1844,8 +1844,7 @@ void compute_object_placement_fields(byte *object, uint tile_x, uint tile_y)
   object[0x13] = bVar4;
   object[10] = (cVar1 + 1U ^ object[10]) & 0xf ^ object[10];
   object[0x14] = 0x82;
-  *object = (char)(uVar6 & 0xbfff);
-  object[1] = (char)((uVar6 & 0xbfff) >> 8);
+  ((uw_object_hdr_t *)object)->invisible = 0;
   object[8] = 0x3f;
   object[10] = object[10] & 0x8f;
   if ((uVar6 & 0x1c0) != 0x40) {
