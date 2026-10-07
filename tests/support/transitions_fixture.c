@@ -16,6 +16,8 @@ int alloc_count, frees, opens, blits, clicks, dungeon_redraws;
 uint clock_units;
 int dismiss_event, missing_resource, opening_click_pending, releases;
 int testing_fade, intro_fade_test, palette_installs, presents;
+int installed_palette_flags[8];
+byte last_installed_palette[768];
 unsigned long long fade_brightness[256];
 unsigned fade_samples;
 uint fade_clock_ms, fade_present_ms;
@@ -197,7 +199,13 @@ short *DAT_00085a6c;
 char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
 void debug_framebuffer_dump(const char *tag) { (void)tag; }
-void apply_palette_buffer(void) { palette_installs++; }
+void apply_palette_buffer(char *palette, int flag)
+{
+    TEST_ASSERT_NOT_NULL(palette);
+    TEST_ASSERT_LESS_THAN_INT(8, palette_installs);
+    installed_palette_flags[palette_installs++] = flag;
+    memcpy(last_installed_palette, palette, sizeof last_installed_palette);
+}
 void tick_book_illustration_palette_cycles(void) {}
 void clear_ambient_sound_target(void) {}
 void voice_sample_cluster_stub_1(void) {}
@@ -311,6 +319,8 @@ void transitions_fixture_reset(void)
     memset(hardware_framebuffer, 0, sizeof hardware_framebuffer);
     presents = testing_game_tick = input_opens_window = 0;
     testing_fade = intro_fade_test = palette_installs = 0;
+    memset(installed_palette_flags, 0, sizeof installed_palette_flags);
+    memset(last_installed_palette, 0, sizeof last_installed_palette);
     fade_samples = 0;
     fade_clock_ms = 0;
     fade_present_ms = 16;

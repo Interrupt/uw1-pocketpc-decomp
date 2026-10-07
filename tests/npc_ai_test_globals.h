@@ -10,7 +10,7 @@ extern undefined1 DAT_002048f0_backing[128], DAT_00204950_backing[128];
 extern undefined1 DAT_00204980_backing[32];
 extern undefined2 DAT_00204990_backing[16], DAT_002049b0_backing[16];
 extern undefined1 DAT_002027d0_backing[48];
-extern undefined DAT_000853d8;
+#define DAT_000853d8 DAT_000853d8_backing[0]
 extern char *DAT_00101400, *DAT_00101404, *DAT_00101438;
 extern void *DAT_0010172c;
 extern char DAT_00101408, DAT_00101410, DAT_0010143c, DAT_0010173c;

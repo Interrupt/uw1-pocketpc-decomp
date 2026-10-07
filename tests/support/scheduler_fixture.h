@@ -29,7 +29,7 @@ extern undefined1 DAT_002048f0_backing[128], DAT_00204950_backing[128];
 extern undefined1 DAT_00204980_backing[32];
 extern undefined2 DAT_00204990_backing[16], DAT_002049b0_backing[16];
 extern undefined1 DAT_002027d0_backing[48];
-extern undefined DAT_000853d8;
+
 extern ushort DAT_000853b8, DAT_00101414, DAT_0010141c, DAT_00101910;
 extern short DAT_00101938, DAT_0010193c, DAT_00202a3c;
 extern byte DAT_00101918, DAT_001013f8, DAT_0010140c, DAT_00101458;

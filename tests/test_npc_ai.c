@@ -60,6 +60,22 @@ static void test_hostile_npc_in_melee_range_completes_an_attack(void)
     TEST_ASSERT_EQUAL_UINT8(5, npc_bytes()[0xb] & 0xf);
     TEST_ASSERT_EQUAL_UINT8(30, ((byte *)player)[8]);
 }
+static void test_ready_melee_attack_uses_every_arm_charge_scale(void)
+{
+    for (unsigned charge = 0; charge < 16; charge++) {
+        npc_ai_fixture_reset();
+        set_position(player, 10, 11);
+        ushort ready_goal = 0x4015; /* attack frame 4, target player 1, goal 5 */
+        memcpy(npc_bytes() + 0xb, &ready_goal, sizeof ready_goal);
+        npc_bytes()[0x15] = 1; /* first melee style */
+        npc_bytes()[0x10] = charge << 4;
+        npc_ai_tick();
+        /* The attack fixture checks the actual strength argument against ARM
+           values, not merely that an attack callback was invoked. */
+        TEST_ASSERT_EQUAL_INT(1, attacks);
+    }
+}
+
 static void test_wide_engage_goal_completes_a_melee_attack(void)
 {
     npc_set_goal(9, 1);
@@ -133,6 +149,7 @@ int main(void)
     RUN_TEST(test_line_walk_records_waypoints_without_corrupting_ai_globals);
     RUN_TEST(test_repeated_walking_preserves_npc_position_and_ai_pointers);
     RUN_TEST(test_hostile_npc_in_melee_range_completes_an_attack);
+    RUN_TEST(test_ready_melee_attack_uses_every_arm_charge_scale);
     RUN_TEST(test_wide_engage_goal_completes_a_melee_attack);
     RUN_TEST(test_wide_engage_goal_advances_stance_without_corrupting_tile_position);
     RUN_TEST(test_target_delta_preserves_signed_full_tile_distance);

@@ -79,7 +79,7 @@ undefined2 DAT_00204990_backing[16], DAT_002049b0_backing[16];
 
 undefined1 DAT_002027d0_backing[48];
 
-undefined DAT_000853d8;
+
 
 ushort DAT_000853b8, DAT_00101414, DAT_0010141c, DAT_00101910;
 

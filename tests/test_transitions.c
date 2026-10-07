@@ -170,7 +170,7 @@ static void test_fade_in_presents_progressive_brightness_and_keeps_palette(void)
     testing_fade = 1;
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
     g_force_flush = 1;
-    fade_in(0, 0, framebuffer);
+    fade_in(framebuffer, NULL, 0);
     TEST_ASSERT_EQUAL_UINT(9, fade_samples);
     for (unsigned step = 1; step <= 8; step++)
         TEST_ASSERT_EQUAL_UINT64(64000ULL * (2 * (31 * step / 8) + 63 * step / 8), fade_brightness[step - 1]);
@@ -186,13 +186,13 @@ static void test_fades_present_each_step_inside_gameplay_batch_with_held_click(v
     g_force_flush = 0;
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
     uw_begin_present_batch();
-    fade_out(0, 0, framebuffer);
+    fade_out(framebuffer, NULL, 0);
     unsigned after_fade_out = fade_samples;
     int force_after_fade_out = g_force_flush;
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
     flush_dirty_rect_to_display(1);
     unsigned after_ordinary_flush = fade_samples;
-    fade_in(0, 0, framebuffer);
+    fade_in(framebuffer, NULL, 0);
     unsigned after_fade_in = fade_samples;
     uw_end_present_batch();
     TEST_ASSERT_EQUAL_UINT(8, after_fade_out);
@@ -209,7 +209,7 @@ static void test_fade_out_presents_progressive_brightness_to_black(void)
     testing_fade = 1;
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
     g_force_flush = 1;
-    fade_out(0, 0, framebuffer);
+    fade_out(framebuffer, NULL, 0);
     TEST_ASSERT_EQUAL_UINT(8, fade_samples);
     for (unsigned step = 7; step > 0; step--)
         TEST_ASSERT_EQUAL_UINT64(64000ULL * (2 * (31 * step / 8) + 63 * step / 8), fade_brightness[7 - step]);
@@ -217,6 +217,25 @@ static void test_fade_out_presents_progressive_brightness_to_black(void)
     TEST_ASSERT_EQUAL_HEX16(0, framebuffer[0]);
     TEST_ASSERT_EQUAL_INT(0, palette_installs);
 }
+static void test_fades_forward_palette_buffer_and_install_flag(void)
+{
+    char palette[768];
+    for (unsigned i = 0; i < sizeof palette; i++) palette[i] = i & 63;
+    testing_fade = 1;
+    g_force_flush = 1;
+    for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
+    fade_out(framebuffer, palette, 1);
+    TEST_ASSERT_EQUAL_INT(1, palette_installs);
+    TEST_ASSERT_EQUAL_INT(1, installed_palette_flags[0]);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(palette, last_installed_palette, sizeof palette);
+    for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
+    fade_in(framebuffer, palette, 0);
+    TEST_ASSERT_EQUAL_INT(2, palette_installs);
+    TEST_ASSERT_EQUAL_INT(0, installed_palette_flags[1]);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(palette, last_installed_palette, sizeof palette);
+    TEST_ASSERT_EQUAL_INT(alloc_count, frees);
+}
+
 static void test_intro_first_face_fades_in_before_full_brightness(void)
 {
     intro_fade_test = 1;
@@ -235,7 +254,11 @@ static void test_intro_first_face_fades_in_before_full_brightness(void)
         TEST_ASSERT_TRUE(fade_brightness[first_face + step] > fade_brightness[first_face + step - 1]);
     TEST_ASSERT_EQUAL_UINT64(fade_brightness[first_face + 7], fade_brightness[first_face + 8]);
     TEST_ASSERT_EQUAL_INT(1, dismissal_sent);
-    TEST_ASSERT_EQUAL_INT(0, palette_installs);
+    /* The corrected fade signature now forwards the saved palette on entry
+       and restoration on exit; the null-palette face fade preserves its LUT. */
+    TEST_ASSERT_EQUAL_INT(2, palette_installs);
+    TEST_ASSERT_EQUAL_INT(0, installed_palette_flags[0]);
+    TEST_ASSERT_EQUAL_INT(1, installed_palette_flags[1]);
     TEST_ASSERT_EQUAL_INT(alloc_count, frees);
 }
 static void test_fades_hold_each_brightness_step_for_40ms(void)
@@ -243,7 +266,7 @@ static void test_fades_hold_each_brightness_step_for_40ms(void)
     testing_fade = 1;
     g_force_flush = 1;
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
-    fade_in(0, 0, framebuffer);
+    fade_in(framebuffer, NULL, 0);
     TEST_ASSERT_EQUAL_UINT(9, fade_samples);
     for (unsigned i = 1; i < 8; i++)
         TEST_ASSERT_GREATER_OR_EQUAL_UINT(40, fade_present_times[i] - fade_present_times[i - 1]);
@@ -251,7 +274,7 @@ static void test_fades_hold_each_brightness_step_for_40ms(void)
     TEST_ASSERT_LESS_THAN_UINT(370, fade_clock_ms);
 
     fade_samples = fade_clock_ms = 0;
-    fade_out(0, 0, framebuffer);
+    fade_out(framebuffer, NULL, 0);
     TEST_ASSERT_EQUAL_UINT(8, fade_samples);
     for (unsigned i = 1; i < 8; i++)
         TEST_ASSERT_GREATER_OR_EQUAL_UINT(40, fade_present_times[i] - fade_present_times[i - 1]);
@@ -316,11 +339,11 @@ static void test_slow_presentations_count_toward_fade_step_duration(void)
     fade_present_ms = 48;
     g_force_flush = 1;
     for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
-    fade_in(0, 0, framebuffer);
+    fade_in(framebuffer, NULL, 0);
     TEST_ASSERT_GREATER_OR_EQUAL_UINT(9 * 48, fade_clock_ms);
     TEST_ASSERT_LESS_THAN_UINT(9 * 48 + 40, fade_clock_ms);
     fade_samples = fade_clock_ms = 0;
-    fade_out(0, 0, framebuffer);
+    fade_out(framebuffer, NULL, 0);
     TEST_ASSERT_GREATER_OR_EQUAL_UINT(8 * 48, fade_clock_ms);
     TEST_ASSERT_LESS_THAN_UINT(8 * 48 + 40, fade_clock_ms);
 }
@@ -419,6 +442,7 @@ int main(void)
     RUN_TEST(test_fade_in_presents_progressive_brightness_and_keeps_palette);
     RUN_TEST(test_fades_present_each_step_inside_gameplay_batch_with_held_click);
     RUN_TEST(test_fade_out_presents_progressive_brightness_to_black);
+    RUN_TEST(test_fades_forward_palette_buffer_and_install_flag);
     RUN_TEST(test_intro_first_face_fades_in_before_full_brightness);
     RUN_TEST(test_fades_hold_each_brightness_step_for_40ms);
     RUN_TEST(test_character_creator_fades_in_real_background_before_input);

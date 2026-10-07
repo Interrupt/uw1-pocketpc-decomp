@@ -30,7 +30,9 @@ int PeekMessageW(void *msg, void *hwnd, unsigned int low,
 void noop_key_handler(void);
 void update_mouse_state(void);
 void debug_framebuffer_dump(const char *tag);
-void apply_palette_buffer(void);
+void apply_palette_buffer(char *palette, int flag);
+extern int installed_palette_flags[8];
+extern byte last_installed_palette[768];
 void tick_book_illustration_palette_cycles(void);
 void clear_ambient_sound_target(void);
 void voice_sample_cluster_stub_1(void);

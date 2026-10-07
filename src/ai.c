@@ -114,9 +114,14 @@ static undefined1 DAT_002048f0_backing[128];
 static undefined1 DAT_00204950_backing[128];
 #define DAT_00204950 DAT_00204950_backing[0]
 undefined4 DAT_00101944;
-/* Sizing-audit pass: index is `(byte>>4)*2` -- a nibble (0-15),
-   max 30. Sized to 32 for headroom; down from 256. */
-static undefined DAT_000853d8_backing[32];
+/* ARM UU.exe 0x853d8: sixteen little-endian attack-strength scales.
+   npc_ai_tick indexes the low byte with the attack charge nibble * 2;
+   apply_melee_damage multiplies the dice roll by this value / 128.
+   The decompile omitted the initializer, making every NPC's scale zero. */
+static undefined DAT_000853d8_backing[32] = {
+  50,0, 60,0, 70,0, 80,0, 90,0, 100,0, 110,0, 120,0,
+  130,0, 140,0, 155,0, 170,0, 185,0, 205,0, 230,0, 255,0
+};
 #define DAT_000853d8 DAT_000853d8_backing[0]
 short DAT_00101938;
 short DAT_0010193c;

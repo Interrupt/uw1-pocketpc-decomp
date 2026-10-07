@@ -76,4 +76,5 @@ void candidate(unsigned index, unsigned slot, short displacement);
 void combat_fixture_reset(void);
 void combat_fixture_dispose(void);
 ushort wall_spark_height(short pitch);
+extern long combat_random_roll;
 #endif

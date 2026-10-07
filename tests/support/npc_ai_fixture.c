@@ -15,7 +15,7 @@ undefined1 DAT_002048f0_backing[128], DAT_00204950_backing[128];
 undefined1 DAT_00204980_backing[32];
 undefined2 DAT_00204990_backing[16], DAT_002049b0_backing[16];
 undefined1 DAT_002027d0_backing[48];
-undefined DAT_000853d8;
+
 char *DAT_00101400, *DAT_00101404, *DAT_00101438;
 void *DAT_0010172c;
 char DAT_00101408, DAT_00101410, DAT_0010143c, DAT_0010173c;
@@ -123,6 +123,9 @@ int resolve_npc_melee_attack(ushort *actor, int swing, int direction, int style,
     TEST_ASSERT_EQUAL_UINT16(1, (*(ushort *)((byte *)npc + 0xb) >> 4) & 0xff);
     TEST_ASSERT_TRUE(style >= 0 && style <= 2);
     TEST_ASSERT_EQUAL_INT((byte)DAT_00101404[0xf], skill);
+    /* ARM table at 0x853d8: low bytes of sixteen 16-bit fixed-point scales. */
+    static const byte strength[16] = {50,60,70,80,90,100,110,120,130,140,155,170,185,205,230,255};
+    TEST_ASSERT_EQUAL_UINT8(strength[((byte *)actor)[0x10] >> 4], direction);
     attacks++;
     return 1;
 }

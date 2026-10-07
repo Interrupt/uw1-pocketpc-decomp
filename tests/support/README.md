@@ -72,6 +72,16 @@ wins over the default without pulling in unrelated mocks.
 `uw_test_math` compiles just the original value-stepping function and needs no
 unrelated service stubs. `test_support.c` demonstrates the common helpers.
 
+`uw_test_npc_combat` reuses the combat fixture with real NPC attack setup,
+weapon hit checks, skill rolls, damage dice, resistance and HP updates.
+It loads Bragit's level-one record (human type 0x5a, identity 19) and
+OBJECTS.DAT stats, including his enhanced-NPC flag. Controlled RNG exercises
+all three attack styles against player defense and armor, critical hits,
+misses and attack-strength scaling. Collision candidates, presentation and
+equipment-wear output are controlled boundaries. The NPC AI suite separately
+checks that every charge nibble passes the original ARM attack-strength scale
+through the real attack animation tick; it extracts the table from ai.c.
+
 `uw_test_geometry` exercises the real near-plane clipping and polygon-list
 renderer against controlled arena records. Its raster callback captures the
 current triangles without opening a window. The clipped-record buffer is

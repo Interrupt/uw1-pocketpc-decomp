@@ -122,7 +122,7 @@ target_link_libraries(uw_test_movement PUBLIC uw_test_support)
 target_compile_options(uw_test_movement PUBLIC
   -include "${CMAKE_CURRENT_SOURCE_DIR}/movement_test_globals.h")
 add_supported_game_unit_test(movement uw_test_movement)
-add_fixture_game_unit_test(combat
+set(UW_COMBAT_TEST_FUNCTIONS
   src/player.c:@DAT_00086e87_backing src/player.c:@DAT_0008730c_backing
   src/player.c:grant_experience_points src/player.c:advance_character_level
   src/ordinal_stubs.c:orduint_divmod
@@ -142,6 +142,20 @@ add_fixture_game_unit_test(combat
   src/objects.c:apply_object_destruction_effect
   src/containers.c:discard_container_contents
   src/doors.c:close_door_object src/doors.c:schedule_door_open_animation)
+add_fixture_game_unit_test(combat ${UW_COMBAT_TEST_FUNCTIONS})
+# Reuse the combat fixture with real NPC attack, skill and dice calculations.
+add_game_test_library(uw_test_npc_combat ${UW_COMBAT_TEST_FUNCTIONS}
+  src/combat.c:resolve_npc_melee_attack src/combat.c:resolve_weapon_hit_skill_check
+  src/player.c:roll_skill_check src/math.c:roll_dice_sum src/math.c:rand_below)
+target_sources(uw_test_npc_combat PRIVATE support/combat_fixture.c)
+target_include_directories(uw_test_npc_combat PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_link_libraries(uw_test_npc_combat PUBLIC uw_test_support)
+target_compile_definitions(uw_test_npc_combat PRIVATE
+  UW_TEST_NPC_COMBAT UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+target_compile_options(uw_test_npc_combat PUBLIC
+  -include "${CMAKE_CURRENT_SOURCE_DIR}/combat_test_globals.h")
+add_supported_game_unit_test(npc_combat uw_test_npc_combat)
+
 add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(noise
@@ -217,6 +231,7 @@ add_fixture_game_unit_test(scheduler
   src/scheduler.c:scheduler_finish_entry src/scheduler.c:scheduler_despawn_entry
   src/scheduler.c:scheduler_add_entry src/scheduler.c:scheduler_remove_entry
   src/objects.c:object_list_unlink
+  src/ai.c:@DAT_000853d8_backing
   src/ai.c:npc_ai_tick src/ai.c:initiate_npc_death src/ai.c:drop_monster_loot)
 add_fixture_game_unit_test(inventory
   src/objects.c:find_object_by_encoded_slot_in_chain src/item_use.c:find_or_assign_object_widget
@@ -489,6 +504,7 @@ add_supported_game_unit_test(stair_transition uw_test_stair_transition)
 target_compile_definitions(test_stair_transition PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 
 add_game_test_library(uw_test_npc_ai
+  src/ai.c:@DAT_000853d8_backing
   src/ai.c:npc_ai_tick
   src/ai.c:npc_ai_default_tick
   src/ai.c:refresh_npc_target_delta
