@@ -19,7 +19,7 @@ char *DAT_00202098;
 code *DAT_002020b8;
 undefined1 DAT_00202c90_backing[8192];
 undefined2 DAT_0023ae58_backing[48];
-undefined1 DAT_0023ad58_backing[256];
+undefined2 DAT_0023adb8_backing[16];
 
 void scroll_messages_fixture_reset(void)
 {
@@ -33,6 +33,8 @@ void scroll_messages_fixture_reset(void)
     g_object_type_props[0x40].has_look_description = 1;
     DAT_0023ae58_backing[0] = 5;
     DAT_0023ae58_backing[1] = 6;
+    DAT_0023adb8_backing[0] = 0x1f8;
+    DAT_0023adb8_backing[9] = 0x1f7;
     character[0x3d] = 1;
     DAT_00250704 = (undefined *)panel;
     DAT_000879b0 = (char *)font;
@@ -105,6 +107,7 @@ char *get_message_string(ushort id)
         case 0x840: return "goblin";
         case 0x1405: return "a stone wall";
         case 0x1406: return "a stone floor";
+        case 0x1407: return "a tiled floor";
         default: TEST_FAIL_MESSAGE("Unexpected message ID"); return NULL;
     }
 }

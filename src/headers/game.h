@@ -104,7 +104,7 @@ void spawn_message_dispatch_thread(int instance, const void *class_name);
 int create_main_window_and_init_display(int instance, int show_command);
 int window_message_noop_handler(int window, int message);
 void store_window_extra_data_ptr(int module);
-void dispatch_window_message(int window, int message);
+void dispatch_window_message(undefined4 window, int message, undefined4 wparam, int lparam);
 int shutdown_game_resources();
 void debug_print_init();
 void debug_print(char *param_1, ...);

@@ -32,6 +32,8 @@ void update_mouse_state(void);
 void debug_framebuffer_dump(const char *tag);
 void apply_palette_buffer(void *palette, int flag);
 void tick_book_illustration_palette_cycles(ushort *cycle_record);
+extern int installed_palette_flags[8];
+extern byte last_installed_palette[768];
 void clear_ambient_sound_target(void);
 void voice_sample_cluster_stub_1(void);
 void voice_sample_cluster_stub_2(void);

@@ -15,18 +15,16 @@ static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking if %d and 
 /* Sizing pass: combination-result table, indexed by
    objects_are_combinable's own return (0-9, a fixed "10 entries"
    search loop) at a 6-byte stride -- real max 9*6+2=56 bytes. */
-static undefined1 DAT_00100634_backing[128];
-#define DAT_00100634 DAT_00100634_backing[0]
+/* ARM field view: use the parent record populated by the loader/runtime. */
+#define DAT_00100634 (*(undefined1 *)((char *)DAT_00100630_backing + 4))
 /* Sizing-audit pass: sibling high-slot of DAT_00100630 (combat.c), same combination-index param_2
    (0-9) and the same `*3` ushort stride (`&DAT_00100632 + param_2*3` in is_object_consumed_in_
    combination) -- real max 9*3=27, 28 elements (56 bytes), same bound as DAT_00100630's own fix. */
-static undefined2 DAT_00100632_backing[32];
-#define DAT_00100632 DAT_00100632_backing[0]
-/* Written as a 1-byte scalar but also read/written as a `uint` (4 bytes) via the _DAT_002035cf
-   macro below -- widened to its own real backing storage so that wider access can't spill into
-   whatever global happens to follow (it used to rely on uw.c's own incidental layout). */
-static undefined DAT_002035cf_backing[8];
-#define DAT_002035cf DAT_002035cf_backing[0]
+/* ARM field view: use the parent record populated by the loader/runtime. */
+#define DAT_00100632 DAT_00100630_backing[1]
+
+/* ARM field view: use the parent record populated by the loader/runtime. */
+#define DAT_002035cf DAT_00202c90_backing[0x93f]
 // was DAT_0008725c -- gates weapon_swing_draw_tick's blit; temporarily cleared during full-screen
 // wipe/dissolve transitions (level loads, screen fades) so the weapon overlay doesn't glitch
 // mid-transition, then restored once the transition finishes.
@@ -49,8 +47,8 @@ static char s_Move_how_many__00085c68[] = "Move how many? ";
 static char s_is_too_full__00085c78[] = " is too full.\n";
 /* Sizing-audit pass: index is `(nibble&0xf)*3`, max 45, read as a
    short there (max byte 46). Sized to 48; down from 256. */
-static undefined DAT_002029f9_backing[48];
-#define DAT_002029f9 DAT_002029f9_backing[0]
+/* ARM field view: use the parent record populated by the loader/runtime. */
+#define DAT_002029f9 DAT_002029f8_backing[1]
 /* Sizing-audit pass sized this to 32 and marked its content "unrecovered" (single use,
    `ce_strcat(acStack_7c,&DAT_00085ce0)`, 0 writers). */
 undefined DAT_00085ce0_backing[32] = "...\n";

@@ -63,10 +63,9 @@ static undefined2 DAT_002049b6;
 undefined2 DAT_002049b0_backing[16];
 static int (*DAT_002049b8)(ushort *);
 static short DAT_002048d0;
-/* Same wider-access-than-declared-size issue as DAT_00204982 above (see
-   its comment), via the _DAT_002048c2 macro below. */
-static undefined DAT_002048c2_backing[8];
-#define DAT_002048c2 DAT_002048c2_backing[0]
+
+/* ARM field view: use the parent record populated by the loader/runtime. */
+#define DAT_002048c2 (*(undefined1 *)((char *)DAT_002048c0_backing + 2))
 /* Was a bare `undefined2` -- same split-symbol class as DAT_002048f0/ DAT_00204950 below (see their
    own comment): build_object_placement_snapshot writes up to offset 0x28 into whichever of these
    three globals DAT_0010172c currently points at... */

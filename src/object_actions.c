@@ -67,18 +67,21 @@ static char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
    "an adventurer.\n". */
 static char s_an_adventurer__00085d08[] = "an adventurer.\n";
 static uint DAT_00202094;
-/* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
-   (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
-int (*DAT_00087604_backing[64])();  /* spell-effect callbacks (was a 256-byte array read through 4-byte casts) */
-/* Sizing pass: cast_targeted_search_effect indexes this as `(&PTR_FUN_00087614)[param_2 & 0x3f]`
-   (6-bit mask, 64 entries) -- a bare scalar `undefined *` only backs index 0, so every other index
-   (63 of 64 possible spell-table params) read past the end of this single-pointer global. */
-int (*PTR_FUN_00087614_backing[64])();
+/* ARM 0x87604..0x87610 and 0x87614..0x87628 contain native callbacks,
+   not byte data. Preserve the original entries using host-sized pointers;
+   casting a loaded 32-bit word would truncate them on a 64-bit host. */
+int (*const DAT_00087604_backing[4])() = {
+  NULL, (int (*)())force_unlock_target_object, (int (*)())cast_single_tile_spell_effect,
+  (int (*)())trigger_permanent_object_state_effect
+};
+int (*const PTR_FUN_00087614_backing[6])() = {
+  (int (*)())cast_area_spell_effect, (int (*)())apply_tile_morph_variant_6,
+  (int (*)())trigger_type_flagged_trap_effect, (int (*)())apply_tile_morph_variant_2,
+  (int (*)())trigger_tile_damage_trap_effect, (int (*)())apply_tile_morph_variant_7
+};
 #define PTR_FUN_00087614 PTR_FUN_00087614_backing[0]
-/* Sizing-audit pass: damage_all_objects_at_tile's only caller passes param_3 in {1,2}, so the
-   shared `bVar5=param_3-1` index is 0-1 -- max byte touched is DAT_00087634's offset 8+1=9. Sized
-   to 16 for headroom; down from 8192. */
-static undefined DAT_0008762c_backing[16];
+/* ARM 0x8762c/30/34: two tile-damage tiers, dice count/size/type. */
+static undefined DAT_0008762c_backing[12] = {10,6,0,0,6,5,0,0,11,3,0,0};
 #define DAT_0008762c DAT_0008762c_backing[0]
 #define DAT_00087630 DAT_0008762c_backing[4]
 #define DAT_00087634 DAT_0008762c_backing[8]
@@ -947,7 +950,7 @@ int force_unlock_target_object(int unused_a, int unused_b, ushort *object)
 // was FUN_000742c0 -- casts a single-tile spell effect at tile (param_1,param_2): spawns a
 // type-0x1c5 effect object via spawn_and_prime_spell_effect_object, applies its damage to just that
 // one tile (damage_all_objects_at_tile with damage-tier index 2-1=1)...
-int cast_single_tile_spell_effect(uint tile_x, int tile_y, int unused, void *caster, byte damage)
+int cast_single_tile_spell_effect(uint tile_x, int tile_y, void *unused, void *caster, byte damage)
 {
   int uw_ord2005_rem_153 = 0;
   short sVar1;
@@ -977,7 +980,7 @@ int cast_single_tile_spell_effect(uint tile_x, int tile_y, int unused, void *cas
 
 // was FUN_00074380 -- casts an area spell effect centered on tile (param_1,param_2): spawns a
 // type-0x1c2 effect object via spawn_and_prime_spell_effect_object, applies damage...
-int cast_area_spell_effect(uint tile_x, int tile_y, int unused, void *caster, byte damage)
+int cast_area_spell_effect(uint tile_x, int tile_y, void *unused, void *caster, byte damage)
 {
   short sVar1;
   char *uVar2;  /* was `undefined4` -- truncated spawn_and_prime_spell_effect_object's pointer */
@@ -1007,7 +1010,7 @@ int cast_area_spell_effect(uint tile_x, int tile_y, int unused, void *caster, by
 
 // was FUN_00074474 -- gated trap/effect trigger: resolve_damage_type_resistance (not yet named) is
 // the shared per-object-type-flags helper used throughout this cluster...
-bool trigger_type_flagged_trap_effect(int tile_x, int tile_y, void *object, int unused, byte attacker_slot)
+bool trigger_type_flagged_trap_effect(int tile_x, int tile_y, void *object, void *unused, byte attacker_slot)
 {
   char cVar1;
   void *uVar2;
@@ -1024,7 +1027,7 @@ bool trigger_type_flagged_trap_effect(int tile_x, int tile_y, void *object, int 
 
 // was FUN_000744e0 -- unconditional tile-trap damage effect at tile (param_1,param_2): first alters
 // the tile's texture/decoration (spawn_scheduled_effect_object, group 7, subtype 4)...
-int trigger_tile_damage_trap_effect(int tile_x, int tile_y, void *object, int unused, byte attacker_slot)
+int trigger_tile_damage_trap_effect(int tile_x, int tile_y, void *object, void *unused, byte attacker_slot)
 {
   undefined1 uVar1;
   void *uVar2;
@@ -1093,9 +1096,10 @@ int trigger_permanent_object_state_effect(short tile_x, short tile_y, void *obje
 
 // was FUN_000746b0 -- thin wrapper: morph_tile_object_state with
 // texture/effect variant 2 and object-state id 1.
-void apply_tile_morph_variant_2(int tile_x, short tile_y, void *object)
+int apply_tile_morph_variant_2(int tile_x, short tile_y, void *object)
 {
-  morph_tile_object_state(2,1,object,tile_x,tile_y);
+  /* ARM leaves the morph result in r0 for the area scanner. */
+  return morph_tile_object_state(2,1,object,tile_x,tile_y);
 }
 
 
@@ -1103,18 +1107,20 @@ void apply_tile_morph_variant_2(int tile_x, short tile_y, void *object)
 // was FUN_000746d4 -- thin wrapper: morph_tile_object_state with texture/effect variant 6 and
 // object-state id -1 ("no change" -- this variant only affects the tile's texture/decoration, not
 // the target object's quality/link field).
-void apply_tile_morph_variant_6(int tile_x, short tile_y, void *object)
+int apply_tile_morph_variant_6(int tile_x, short tile_y, void *object)
 {
-  morph_tile_object_state(6,-1,object,tile_x,tile_y);
+  /* ARM leaves the morph result in r0 for the area scanner. */
+  return morph_tile_object_state(6,-1,object,tile_x,tile_y);
 }
 
 
 
 // was FUN_000746f8 -- thin wrapper: morph_tile_object_state with
 // texture/effect variant 7 and object-state id 1.
-void apply_tile_morph_variant_7(int tile_x, short tile_y, void *object)
+int apply_tile_morph_variant_7(int tile_x, short tile_y, void *object)
 {
-  morph_tile_object_state(7,1,object,tile_x,tile_y);
+  /* ARM leaves the morph result in r0 for the area scanner. */
+  return morph_tile_object_state(7,1,object,tile_x,tile_y);
 }
 
 

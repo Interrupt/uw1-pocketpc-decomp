@@ -617,7 +617,11 @@ static undefined4 DAT_00086ce0_backing[32] = {
 /* Sizing pass: a small fixed lookup table indexed by a 4-bit nibble (`(*(byte*)(obj+1)>>1 &
    0xf)*2`, a ushort stride) -- real max byte offset is 15*2+2=32; no comment ever justified the
    original 65536- byte size. Sized to 64 bytes for headroom. */
-static undefined1 DAT_00086d60_backing[64];
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined1 DAT_00086d60_backing[32] = {
+  0xe4, 0x00, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00,
+  0x04, 0x00, 0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03,
+};
 #define DAT_00086d60 DAT_00086d60_backing[0]
 static short DAT_0018957e;
 static short DAT_0018957c;

@@ -1,6 +1,6 @@
 #include "src/headers/uw.h"
 extern int DAT_002508fc;
-extern undefined DAT_000853d8;
+#define DAT_000853d8 DAT_000853d8_backing[0]
 extern ushort DAT_000853b8;
 extern byte DAT_00101458, DAT_001018fc, DAT_00101434, DAT_00101730;
 extern undefined1 DAT_00101738;

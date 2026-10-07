@@ -80,7 +80,10 @@ target_compile_definitions(uw_test_support PRIVATE UW_TEST_DATA_DIR="${PROJECT_S
 target_compile_options(uw_test_support PRIVATE
   -include "${CMAKE_CURRENT_SOURCE_DIR}/support/game_fixture.h")
 
-add_game_test_library(uw_test_math src/math.c:step_value_toward_limit)
+add_game_test_library(uw_test_math src/math.c:step_value_toward_limit
+  src/math.c:@DAT_00086260_backing src/math.c:%DAT_00086260 src/math.c:%DAT_00086264
+  src/math.c:pack_angle_byte src/math.c:lookup_arctan_primary_range
+  src/math.c:lookup_arctan_reciprocal_range src/math.c:compute_angle_from_slope)
 add_supported_game_unit_test(math uw_test_math)
 
 # debug_ui.c is this project's own hand-written support code (not pulled
@@ -144,7 +147,7 @@ target_link_libraries(uw_test_movement PUBLIC uw_test_support)
 target_compile_options(uw_test_movement PUBLIC
   -include "${CMAKE_CURRENT_SOURCE_DIR}/movement_test_globals.h")
 add_supported_game_unit_test(movement uw_test_movement)
-add_fixture_game_unit_test(combat
+set(UW_COMBAT_TEST_FUNCTIONS
   src/player.c:@DAT_00086e87_backing src/player.c:@DAT_0008730c_backing
   src/player.c:grant_experience_points src/player.c:advance_character_level
   src/ordinal_stubs.c:orduint_divmod
@@ -164,6 +167,20 @@ add_fixture_game_unit_test(combat
   src/objects.c:apply_object_destruction_effect
   src/containers.c:discard_container_contents
   src/doors.c:close_door_object src/doors.c:schedule_door_open_animation)
+add_fixture_game_unit_test(combat ${UW_COMBAT_TEST_FUNCTIONS})
+# Reuse the combat fixture with real NPC attack, skill and dice calculations.
+add_game_test_library(uw_test_npc_combat ${UW_COMBAT_TEST_FUNCTIONS}
+  src/combat.c:resolve_npc_melee_attack src/combat.c:resolve_weapon_hit_skill_check
+  src/player.c:roll_skill_check src/math.c:roll_dice_sum src/math.c:rand_below)
+target_sources(uw_test_npc_combat PRIVATE support/combat_fixture.c)
+target_include_directories(uw_test_npc_combat PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_link_libraries(uw_test_npc_combat PUBLIC uw_test_support)
+target_compile_definitions(uw_test_npc_combat PRIVATE
+  UW_TEST_NPC_COMBAT UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+target_compile_options(uw_test_npc_combat PUBLIC
+  -include "${CMAKE_CURRENT_SOURCE_DIR}/combat_test_globals.h")
+add_supported_game_unit_test(npc_combat uw_test_npc_combat)
+
 add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(noise
@@ -239,6 +256,7 @@ add_fixture_game_unit_test(scheduler
   src/scheduler.c:scheduler_finish_entry src/scheduler.c:scheduler_despawn_entry
   src/scheduler.c:scheduler_add_entry src/scheduler.c:scheduler_remove_entry
   src/objects.c:object_list_unlink
+  src/ai.c:@DAT_000853d8_backing
   src/ai.c:npc_ai_tick src/ai.c:initiate_npc_death src/ai.c:drop_monster_loot)
 add_fixture_game_unit_test(inventory
   src/objects.c:find_object_by_encoded_slot_in_chain src/item_use.c:find_or_assign_object_widget
@@ -514,6 +532,7 @@ add_supported_game_unit_test(stair_transition uw_test_stair_transition)
 target_compile_definitions(test_stair_transition PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 
 add_game_test_library(uw_test_npc_ai
+  src/ai.c:@DAT_000853d8_backing
   src/ai.c:npc_ai_tick
   src/ai.c:npc_ai_default_tick
   src/ai.c:refresh_npc_target_delta
@@ -840,6 +859,59 @@ target_link_libraries(uw_test_transitions PUBLIC uw_test_division)
 foreach(suite creatures critter_palette throw throw_cursor)
   target_link_libraries(uw_test_${suite} PUBLIC uw_test_support)
 endforeach()
+
+add_game_test_library(uw_test_spell_effects
+  src/hud.c:@DAT_00087530_backing
+  src/object_actions.c:@DAT_00087604_backing
+  src/object_actions.c:@PTR_FUN_00087614_backing
+  src/object_actions.c:@DAT_0008762c_backing
+  src/traps.c:dispatch_trap_special_or_tile_action
+  src/object_actions.c:dispatch_tile_special_action
+  src/object_actions.c:cast_cone_damage_spell
+  src/object_actions.c:cast_targeted_search_effect
+  src/object_actions.c:scan_area_ahead_of_object
+  src/object_actions.c:force_unlock_target_object
+  src/object_actions.c:cast_single_tile_spell_effect
+  src/object_actions.c:cast_area_spell_effect
+  src/object_actions.c:trigger_type_flagged_trap_effect
+  src/object_actions.c:trigger_tile_damage_trap_effect
+  src/object_actions.c:morph_tile_object_state
+  src/object_actions.c:trigger_permanent_object_state_effect
+  src/object_actions.c:apply_tile_morph_variant_2
+  src/object_actions.c:apply_tile_morph_variant_6
+  src/object_actions.c:apply_tile_morph_variant_7
+  src/object_actions.c:damage_all_objects_at_tile
+  src/ai.c:@DAT_000853b0_backing
+  src/ai.c:@DAT_000853c0_backing
+  src/ai.c:@DAT_000853cc_backing
+  src/ai.c:tile_pair_los_blocked
+  src/ai.c:save_walk_path_to_cache_slot
+  src/ai.c:advance_cached_path_step)
+target_sources(uw_test_spell_effects PRIVATE support/spell_effects_fixture.c)
+target_include_directories(uw_test_spell_effects PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_compile_options(uw_test_spell_effects PUBLIC
+  -include "${CMAKE_CURRENT_SOURCE_DIR}/support/spell_effects_fixture.h")
+target_link_libraries(uw_test_spell_effects PUBLIC uw_test_support)
+add_supported_game_unit_test(spell_effects uw_test_spell_effects)
+
+# Audit fixes: test original constants and shared field views using actual game declarations.
+set(restored_tables_source "${CMAKE_CURRENT_BINARY_DIR}/restored_tables_generated.c")
+add_custom_command(OUTPUT "${restored_tables_source}"
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_restored_tables.py"
+    --root "${PROJECT_SOURCE_DIR}" --audit "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/restored_tables.json"
+    --output "${restored_tables_source}"
+  DEPENDS tools/generate_restored_tables.py tools/extract_functions.py fixtures/restored_tables.json
+    "${PROJECT_SOURCE_DIR}/src/audio.c" "${PROJECT_SOURCE_DIR}/src/babl.c"
+    "${PROJECT_SOURCE_DIR}/src/graphics.c" "${PROJECT_SOURCE_DIR}/src/input.c"
+    "${PROJECT_SOURCE_DIR}/src/player.c" "${PROJECT_SOURCE_DIR}/src/models.c"
+    "${PROJECT_SOURCE_DIR}/src/traps.c" "${PROJECT_SOURCE_DIR}/src/math.c"
+    "${PROJECT_SOURCE_DIR}/src/item_use.c" "${PROJECT_SOURCE_DIR}/src/game.c"
+  VERBATIM)
+add_library(uw_test_restored_tables STATIC "${restored_tables_source}" support/restored_tables_fixture.c)
+uw_configure_test_target(uw_test_restored_tables)
+target_include_directories(uw_test_restored_tables PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_link_libraries(uw_test_restored_tables PUBLIC uw_test_support)
+add_supported_game_unit_test(restored_tables uw_test_restored_tables)
 
 add_fixture_game_unit_test(special_use
   src/item_use.c:dispatch_use_special_item_by_type

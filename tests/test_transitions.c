@@ -217,6 +217,25 @@ static void test_fade_out_presents_progressive_brightness_to_black(void)
     TEST_ASSERT_EQUAL_HEX16(0, framebuffer[0]);
     TEST_ASSERT_EQUAL_INT(0, palette_installs);
 }
+static void test_fades_forward_palette_buffer_and_install_flag(void)
+{
+    char palette[768];
+    for (unsigned i = 0; i < sizeof palette; i++) palette[i] = i & 63;
+    testing_fade = 1;
+    g_force_flush = 1;
+    for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
+    fade_out(framebuffer, palette, 1);
+    TEST_ASSERT_EQUAL_INT(1, palette_installs);
+    TEST_ASSERT_EQUAL_INT(1, installed_palette_flags[0]);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(palette, last_installed_palette, sizeof palette);
+    for (unsigned i = 0; i < 64000; i++) framebuffer[i] = 0xffff;
+    fade_in(framebuffer, palette, 0);
+    TEST_ASSERT_EQUAL_INT(2, palette_installs);
+    TEST_ASSERT_EQUAL_INT(0, installed_palette_flags[1]);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(palette, last_installed_palette, sizeof palette);
+    TEST_ASSERT_EQUAL_INT(alloc_count, frees);
+}
+
 static void test_intro_first_face_fades_in_before_full_brightness(void)
 {
     intro_fade_test = 1;
@@ -235,9 +254,11 @@ static void test_intro_first_face_fades_in_before_full_brightness(void)
         TEST_ASSERT_TRUE(fade_brightness[first_face + step] > fade_brightness[first_face + step - 1]);
     TEST_ASSERT_EQUAL_UINT64(fade_brightness[first_face + 7], fade_brightness[first_face + 8]);
     TEST_ASSERT_EQUAL_INT(1, dismissal_sent);
-    /* The opening/closing fades install the saved gameplay palette;
-       the face fade itself keeps the current cutscene palette. */
+    /* The corrected fade signature now forwards the saved palette on entry
+       and restoration on exit; the null-palette face fade preserves its LUT. */
     TEST_ASSERT_EQUAL_INT(2, palette_installs);
+    TEST_ASSERT_EQUAL_INT(0, installed_palette_flags[0]);
+    TEST_ASSERT_EQUAL_INT(1, installed_palette_flags[1]);
     TEST_ASSERT_EQUAL_INT(alloc_count, frees);
 }
 static void test_fades_hold_each_brightness_step_for_40ms(void)
@@ -421,6 +442,7 @@ int main(void)
     RUN_TEST(test_fade_in_presents_progressive_brightness_and_keeps_palette);
     RUN_TEST(test_fades_present_each_step_inside_gameplay_batch_with_held_click);
     RUN_TEST(test_fade_out_presents_progressive_brightness_to_black);
+    RUN_TEST(test_fades_forward_palette_buffer_and_install_flag);
     RUN_TEST(test_intro_first_face_fades_in_before_full_brightness);
     RUN_TEST(test_fades_hold_each_brightness_step_for_40ms);
     RUN_TEST(test_character_creator_fades_in_real_background_before_input);

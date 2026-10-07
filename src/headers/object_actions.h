@@ -19,9 +19,9 @@ extern undefined1 DAT_0023ce70_backing[128];
 extern char s_You_see_000858fc[];
 extern undefined1 DAT_0023c3dc;
 extern undefined1 DAT_0023c3d8;
-extern int (*DAT_00087604_backing[64])();
+extern int (*const DAT_00087604_backing[4])();
 #define DAT_00087604 DAT_00087604_backing[0]
-extern int (*PTR_FUN_00087614_backing[64])();
+extern int (*const PTR_FUN_00087614_backing[6])();
 #define PTR_FUN_00087614 PTR_FUN_00087614_backing[0]
 
 
@@ -47,15 +47,15 @@ void reduce_item_quality_on_use(ushort *object, char dice_count);
 void apply_targeted_spell_effect(ushort *caster, char effect_index);
 void *spawn_and_prime_spell_effect_object(int object_type, byte *source);
 int force_unlock_target_object(int unused_a, int unused_b, ushort *object);
-int cast_single_tile_spell_effect(uint tile_x, int tile_y, int unused, void *caster, byte damage);
-int cast_area_spell_effect(uint tile_x, int tile_y, int unused, void *caster, byte damage);
-bool trigger_type_flagged_trap_effect(int tile_x, int tile_y, void *object, int unused, byte attacker_slot);
-int trigger_tile_damage_trap_effect(int tile_x, int tile_y, void *object, int unused, byte attacker_slot);
+int cast_single_tile_spell_effect(uint tile_x, int tile_y, void *unused, void *caster, byte damage);
+int cast_area_spell_effect(uint tile_x, int tile_y, void *unused, void *caster, byte damage);
+bool trigger_type_flagged_trap_effect(int tile_x, int tile_y, void *object, void *unused, byte attacker_slot);
+int trigger_tile_damage_trap_effect(int tile_x, int tile_y, void *object, void *unused, byte attacker_slot);
 int morph_tile_object_state(int texture_variant, char state_id, void *object, short tile_x, short tile_y);
 int trigger_permanent_object_state_effect(short tile_x, short tile_y, void *object);
-void apply_tile_morph_variant_2(int tile_x, short tile_y, void *object);
-void apply_tile_morph_variant_6(int tile_x, short tile_y, void *object);
-void apply_tile_morph_variant_7(int tile_x, short tile_y, void *object);
+int apply_tile_morph_variant_2(int tile_x, short tile_y, void *object);
+int apply_tile_morph_variant_6(int tile_x, short tile_y, void *object);
+int apply_tile_morph_variant_7(int tile_x, short tile_y, void *object);
 void scan_area_for_matching_objects(char filter_a, byte filter_b, int (*callback)(), char object_class, char x, char y, char width, char height);
 void scan_area_ahead_of_object(void *object, int filter_a, int (*callback)(), int object_class, byte distance, char half_width);
 void for_each_object_of_type(ushort type_id, int mode, int argument, int (*callback)());

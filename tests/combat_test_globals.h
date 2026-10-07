@@ -42,3 +42,7 @@ extern undefined1 DAT_002046e0, DAT_002046e4;
 #define DAT_00086e87 DAT_00086e87_backing[0]
 #define DAT_0008730c DAT_0008730c_backing[0]
 #define DAT_0008730d DAT_0008730c_backing[1]
+
+#ifndef DAT_001007e1
+#define DAT_001007e1 DAT_001007d0_backing[0x11]
+#endif

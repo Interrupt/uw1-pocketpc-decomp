@@ -28,9 +28,12 @@ undefined4 DAT_0010191c;
 static undefined4 DAT_00101440;
 static byte DAT_00101450;
 static byte DAT_00101730;
-static undefined DAT_000853c4_backing[256];
-#define DAT_000853c4 DAT_000853c4_backing[0]
-static undefined DAT_000853cc_backing[256];
+/* ARM 0x853c0..0x853c8 maps signed (dx*3 + dy) offsets to cached
+   directions. DAT_000853c4 is the center, so negative indexes are valid. */
+static undefined DAT_000853c0_backing[9] = {0xff,3,0xff,2,0xff,0,0xff,1,0xff};
+#define DAT_000853c4 DAT_000853c0_backing[4]
+/* ARM 0x853cc: diagonal tile types accepted for each cached direction. */
+static undefined DAT_000853cc_backing[4] = {6,8,7,9};
 #define DAT_000853cc DAT_000853cc_backing[0]
 char *DAT_00101438;
 static undefined1 DAT_0010142c;
@@ -51,10 +54,10 @@ static char DAT_00101740_backing[448];
 /* Sizing-audit pass: direction-delta table, every index is
    `(2-bit value)*2` -- max 3*2=6. Sized to 8 for headroom; down from
    256. */
-static undefined1 DAT_000853b0_backing[8];
+/* ARM 0x853b0: four interleaved signed X/Y direction deltas. */
+static undefined1 DAT_000853b0_backing[8] = {0,1,1,0,0,0xff,0xff,0};
 #define DAT_000853b0 DAT_000853b0_backing[0]
-static undefined1 DAT_000853b1_backing[8];
-#define DAT_000853b1 DAT_000853b1_backing[0]
+#define DAT_000853b1 DAT_000853b0_backing[1]
 static undefined1 DAT_00101460;
 static undefined1 DAT_001014e0_backing[256];
 #define DAT_001014e0 DAT_001014e0_backing[0]
@@ -114,9 +117,14 @@ static undefined1 DAT_002048f0_backing[128];
 static undefined1 DAT_00204950_backing[128];
 #define DAT_00204950 DAT_00204950_backing[0]
 undefined4 DAT_00101944;
-/* Sizing-audit pass: index is `(byte>>4)*2` -- a nibble (0-15),
-   max 30. Sized to 32 for headroom; down from 256. */
-static undefined DAT_000853d8_backing[32];
+/* ARM UU.exe 0x853d8: sixteen little-endian attack-strength scales.
+   npc_ai_tick indexes the low byte with the attack charge nibble * 2;
+   apply_melee_damage multiplies the dice roll by this value / 128.
+   The decompile omitted the initializer, making every NPC's scale zero. */
+static undefined DAT_000853d8_backing[32] = {
+  50,0, 60,0, 70,0, 80,0, 90,0, 100,0, 110,0, 120,0,
+  130,0, 140,0, 155,0, 170,0, 185,0, 205,0, 230,0, 255,0
+};
 #define DAT_000853d8 DAT_000853d8_backing[0]
 short DAT_00101938;
 short DAT_0010193c;
@@ -2206,11 +2214,12 @@ void save_walk_path_to_cache_slot(byte *record)
       uVar1 = 0;
       do {
         iVar2 = (uVar1 + uVar4) * 7;
+        /* ARM adds a signed direction offset to the table's center. */
         iVar3 = iVar3 + (((byte)(&DAT_000853c4)
-                                [(((uint)(byte)(&DAT_00101747)[iVar2] -
-                                  (uint)(byte)(&DAT_00101740)[iVar2]) * 3 -
-                                 (uint)(byte)(&DAT_00101741)[iVar2]) +
-                                 (uint)(byte)(&DAT_00101748)[iVar2]] & 3) << ((uVar1 & 0x7f) << 1));
+                                [((int)(byte)(&DAT_00101747)[iVar2] -
+                                  (int)(byte)(&DAT_00101740)[iVar2]) * 3 -
+                                 (int)(byte)(&DAT_00101741)[iVar2] +
+                                 (int)(byte)(&DAT_00101748)[iVar2]] & 3) << ((uVar1 & 0x7f) << 1));
         uVar1 = uVar1 + 1 & 0xff;
       } while (uVar1 < 4);
       record[(uVar4 >> 2) + 4] = (char)iVar3;
@@ -4753,7 +4762,7 @@ int tile_pair_los_blocked(byte tile_a_x, byte tile_a_y, byte tile_b_x, byte tile
     }
     if (((5 < uVar11) && (uVar11 < 10)) &&
        (uVar11 != (byte)(&DAT_000853cc)
-                        [(byte)(&DAT_000853c4)[((uVar18 - uVar20) * 3 - uVar12) + uVar16]])) {
+                        [(byte)(&DAT_000853c4)[(int)(((uVar18 - uVar20) * 3 - uVar12) + uVar16)]])) {
       uVar15 = uVar15 + 1;
     }
     if (uVar15 <= span + 1) {
@@ -5016,7 +5025,7 @@ switchD_0002c458_default:
   }
   if (((5 < bVar3) && (bVar3 < 10)) &&
      (bVar3 != (&DAT_000853cc)
-               [(byte)(&DAT_000853c4)[((uVar18 - uVar20) * 3 - (uint)tile_b_y) + (uint)tile_c_y]])) {
+               [(byte)(&DAT_000853c4)[(int)(((uVar18 - uVar20) * 3 - (uint)tile_b_y) + (uint)tile_c_y)]])) {
     uVar15 = uVar15 + 1;
   }
   uVar18 = uVar12;

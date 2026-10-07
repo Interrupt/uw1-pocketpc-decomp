@@ -39,11 +39,36 @@ static unsigned short u_WAVE_0008686c[] = u"WAVE";
 /* Was a bare scalar, but process_mod_tracker_row indexes it as `(&DAT_00086370)[iVar14]` with
    iVar14 clamped to [0,0x127] -- the same scalar-declared-but-accessed-as-array bug class fixed
    many times this session (e.g. DAT_00086260/DAT_00086264 above). */
-static undefined4 DAT_00086370_backing[296];
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined4 DAT_00086370_backing[296] = {
+  907, 900, 894, 887, 881, 875, 868, 862, 856, 850, 844, 838, 832, 826, 820, 814,
+  808, 802, 796, 791, 785, 779, 774, 768, 762, 757, 752, 746, 741, 736, 730, 725,
+  720, 715, 709, 704, 699, 694, 689, 684, 678, 675, 670, 665, 660, 655, 651, 646,
+  640, 636, 632, 628, 623, 619, 614, 610, 604, 601, 597, 592, 588, 584, 580, 575,
+  570, 567, 563, 559, 555, 551, 547, 543, 538, 535, 532, 528, 524, 520, 516, 513,
+  508, 505, 502, 498, 494, 491, 487, 484, 480, 477, 474, 470, 467, 463, 460, 457,
+  453, 450, 447, 444, 441, 437, 434, 431, 428, 425, 422, 419, 416, 413, 410, 407,
+  404, 401, 398, 395, 392, 390, 387, 384, 381, 379, 376, 373, 370, 368, 365, 363,
+  360, 357, 355, 352, 350, 347, 345, 342, 339, 337, 335, 332, 330, 328, 325, 323,
+  320, 318, 316, 314, 312, 309, 307, 305, 302, 300, 298, 296, 294, 292, 290, 288,
+  285, 284, 282, 280, 278, 276, 274, 272, 269, 268, 266, 264, 262, 260, 258, 256,
+  254, 253, 251, 249, 247, 245, 244, 242, 240, 238, 237, 235, 233, 232, 230, 228,
+  226, 225, 223, 222, 220, 219, 217, 216, 214, 212, 211, 209, 208, 206, 205, 203,
+  202, 200, 199, 198, 196, 195, 193, 192, 190, 189, 188, 187, 185, 184, 183, 181,
+  180, 179, 177, 176, 175, 174, 172, 171, 170, 169, 167, 166, 165, 164, 163, 161,
+  160, 159, 158, 157, 156, 155, 154, 152, 151, 150, 149, 148, 147, 146, 145, 144,
+  143, 142, 141, 140, 139, 138, 137, 136, 135, 134, 133, 132, 131, 130, 129, 128,
+  127, 126, 125, 125, 123, 123, 122, 121, 120, 119, 118, 118, 117, 116, 115, 114,
+  113, 113, 112, 111, 110, 109, 109, 108,
+};
 /* DAT_00086810: declared as a scalar but indexed as (&DAT_00086810)[pos] in
    apply_mod_vibrato_effect/apply_mod_tremolo_effect, where pos is a per-channel counter that wraps
    at 0x20 (32) -- a 32-entry sine lookup table for the MOD tracker's vibrato/tremolo effects. */
-static undefined1 DAT_00086810_backing[32];
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined1 DAT_00086810_backing[32] = {
+  0x00, 0x18, 0x31, 0x4a, 0x61, 0x78, 0x8d, 0xa1, 0xb4, 0xc5, 0xd4, 0xe0, 0xeb, 0xf4, 0xfa, 0xfd,
+  0xff, 0xfd, 0xfa, 0xf4, 0xeb, 0xe0, 0xd4, 0xc5, 0xb4, 0xa1, 0x8d, 0x78, 0x61, 0x4a, 0x31, 0x18,
+};
 #define DAT_00086810 DAT_00086810_backing[0]
 /* Sizing pass: init_all_sound_channel_slots's own comment already
    says it -- "16 hardware sound-channel slots (0x1a/26-byte
@@ -169,12 +194,9 @@ static undefined DAT_0023c2b0_backing[1280];
 /* Same per-sound-effect-id table shape as DAT_0023c2b0 just above (all four indexed by
    play_positional_sound_effect's own `id*5`-stride iVar10) -- were lone scalars, so every id past 0
    read into whatever the compiler placed next... */
-static undefined DAT_0023c2b1_backing[1280];
-#define DAT_0023c2b1 DAT_0023c2b1_backing[0]
-static undefined DAT_0023c2b2_backing[1280];
-#define DAT_0023c2b2 DAT_0023c2b2_backing[0]
-static undefined DAT_0023c2b3_backing[1280];
-#define DAT_0023c2b3 DAT_0023c2b3_backing[0]
+#define DAT_0023c2b1 DAT_0023c2b0_backing[1] /* Same five-byte ARM sound metadata record. */
+#define DAT_0023c2b2 DAT_0023c2b0_backing[2] /* Same five-byte ARM sound metadata record. */
+#define DAT_0023c2b3 DAT_0023c2b0_backing[3] /* Same five-byte ARM sound metadata record. */
 static byte DAT_0023c39c;
 /* allocate_and_play_sound_channel indexed these two by raw hardcoded
    original-binary literal addresses (0x23c338/0x23c350) rather than

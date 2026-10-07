@@ -8,16 +8,17 @@
 /* was a raw `iVar4 + 0x85638` absolute-address literal inside trigger_quest_milestone_cleanup_event
    (no declared global at all -- Ghidra never recovered this one), read as a 9-entry object-type-id
    table. */
-static undefined1 DAT_00085638[10]; /* indices 1-9 are the ones actually read (index 0 unused) */
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined1 DAT_00085638[10] = {
+  0xde, 0xd1, 0xdb, 0xd2, 0xdc, 0xd5, 0xd8, 0xd4, 0xd3, 0xdd,
+}; /* indices 1-9 are the ones actually read (index 0 unused) */
 /* Ghidra rendered the embedded spaces as underscores and dropped the
    trailing newline. Real bytes at 0x85644 (ARM UU.exe .data):
    "The book explodes in your face!\n". */
 static char s_The_book_explodes_in_your_face__00085644[] = "The book explodes in your face!\n";
-/* Both were single `undefined` scalars, but resolve_lock_difficulty_rating (the only function
-   anywhere in this decompile that touches either) indexes each one via `(&DAT_xxx)[i]` up to the
-   extents below... */
-static undefined DAT_002026d1[253];
-static undefined DAT_00202807[121];
+
+/* ARM indexes this loaded four-byte record table with type IDs 32-63. */
+#define DAT_00202807 (DAT_00202800_backing + 7) /* Loaded armor record byte 7. */
 /* Ghidra rendered the embedded space as an underscore and dropped
    the trailing newline. Real bytes at 0x87918 (ARM UU.exe .data):
    "Look, it's a text trap\n". */
@@ -1282,7 +1283,7 @@ int resolve_lock_difficulty_rating(ushort *lock)
       return (int)(char)DAT_00202807[(short)(uVar1 & 0xf) * 8];
     }
     if ((((uVar2 & 3) != 1) && ((uVar2 & 3) != 0)) && ((uVar2 & 3) < 4)) {
-      return (int)(char)DAT_002026d1[(uVar1 & 0x3f) * 4];
+      return (int)(char)(&DAT_00202750)[((uVar1 & 0x3f) - 0x20) * 4 + 1];
     }
   }
   return -1;

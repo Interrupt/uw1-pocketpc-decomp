@@ -11,6 +11,11 @@ import re
 def extract(source, name):
     # @name selects an initialized object or named struct,
     # letting tests exercise its actual entries rather than fixture copies.
+    if name.startswith("%"):
+        definition = re.search(r"^#define\s+" + re.escape(name[1:]) + r"\b[^\n]*", source, re.MULTILINE)
+        if definition is None:
+            raise ValueError(f"Macro definition not found: {name[1:]}")
+        return definition.group()
     is_array = name.startswith("@")
     if is_array:
         name = name[1:]
@@ -53,7 +58,7 @@ def main():
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("functions", nargs="+",
-                        help="source.c:function_name or source.c:@initialized_object")
+                        help="source.c:function_name or source.c:@initialized_object or source.c:%macro")
     args = parser.parse_args()
     chunks = ['/* Generated from original game sources; do not edit. */\n'
               '#include "src/headers/uw.h"\n#include "src/headers/debug.h"\n#include "src/headers/debug_ui.h"\n#include "src/headers/file_io.h"\n#include <dlfcn.h>\n']
