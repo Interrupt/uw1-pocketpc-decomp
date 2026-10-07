@@ -378,6 +378,7 @@ void uw_debug_blit_pick_buffer(void) {}
 void render_dungeon_view_frame(void) {}
 void uw_debug_draw_inv_hotspot_positions(void) {}
 void dbgui_draw(void) {}
+void populate_debug_panel(void) {}
 /* Screen-transition fixtures keep the real background files and palette
    data; unrelated character choices and dungeon rendering are stubbed. */
 char *DAT_001005c4, *DAT_001005c8, *DAT_000fb858;

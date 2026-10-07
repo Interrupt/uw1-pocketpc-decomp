@@ -36,6 +36,12 @@ static int g_tune_last_catalog = -1;
    lets the pick stencil/object-resolution trace be flipped on live from the object tuner panel
    instead of needing a relaunch with the env var set. */
 int g_uw_debug_pick_diag = 0;
+/* Debug-panel toggle for tick_anim_record's own UW_DISABLE_3D_OBJECTS
+   gate -- see that function's own comment. -1 = env var not yet
+   checked this process; resolved to a real 0/1 on first read (by
+   tick_anim_record or by the general debug panel, whichever runs
+   first in a given frame), then flippable live via the panel. */
+int g_uw_3d_objects_enabled = -1;
 static undefined1 *DAT_000db45c;
 static int DAT_000db458;
 // was DAT_000d91d0 -- running point count while parse_e_model_file reads a .E model's POINTS block
@@ -625,14 +631,14 @@ void *tick_anim_record(short catalog)
 
   /* Native 3D catalog-object rendering (doors/frames drawing as real .E model geometry instead of
      flat sprites) is enabled by default -- no env var needed, unlike this project's earlier,
-     now-removed g_model_map hack (which defaulted off). */
-  { static int _disabled = -1;
-    if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_OBJECTS") != NULL);
-    if (!_disabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
-      void *dest = g_anim_model_scratch[catalog];
-      memcpy(dest, g_anim_model_slot[catalog], 16384);
-      return dest;
-    }
+     now-removed g_model_map hack (which defaulted off). g_uw_3d_objects_enabled is a real global
+     (not a function-local static) so the general debug panel (main_loop_hud_flush, hud.c) can
+     flip it live instead of only at launch. */
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  if (g_uw_3d_objects_enabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
+    void *dest = g_anim_model_scratch[catalog];
+    memcpy(dest, g_anim_model_slot[catalog], 16384);
+    return dest;
   }
 
   iVar4 = catalog * 0x3c2c;
@@ -1473,18 +1479,12 @@ LAB_000640ec:
     g_tune_last_catalog = (int)catalog_u;
     g_tune_rotation_offset = 0.0;
   }
-  /* Was gated behind UW_MODEL_TUNER=1 -- on unconditionally now, per direct request ("turn the
-     debug panel on by default instead of needing an env var"), so no relaunch-with-env-var step is
-     needed to use it. */
-  { char _tune_title[48];
-    snprintf(_tune_title, sizeof(_tune_title), "Object Tuner (catalog=%d)", (int)catalog_u);
-    dbgui_begin(_tune_title);
-    dbgui_field_double("rotation_offset", &g_tune_rotation_offset, 5.0);
-    dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
-    dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
-    dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
-    dbgui_end();
-  }
+  /* This used to populate the shared debug-UI field list with a live per-catalog "Object Tuner"
+     panel every time a model drew, which silently overwrote whatever the general debug panel
+     (main_loop_hud_flush, hud.c) had just populated that same frame, since dbgui_begin/_end share
+     one static field list. The debug panel is a general subsystem-toggle panel now, not a model
+     debugger -- this site no longer touches it. g_tune_rotation_offset keeps applying below at
+     its known-good default (0.0); it's just no longer live-editable from the UI. */
   sVar13 = (short)((int)sVar13 + (int)g_tune_rotation_offset);
   for (; 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
   }

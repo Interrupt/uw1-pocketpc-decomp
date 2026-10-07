@@ -3,8 +3,12 @@
 
 /* Declarations for hud.c: the HUD (dirty-rect flush, mode icons, cursor-mode clicks, per-frame tick
    dispatch) and the message scroll panel. Pulls in uw.h itself so this header is self-contained for
-   any caller. */
+   any caller. The debug panel's own population/inspector logic and one-shot dump tools live in
+   debug_shim.c/debug_shim.h now, not here -- included below so callers that only know about this
+   header (gx_stub.c's dbgui_object_inspector_pick call, main_loop_hud_flush's own populate_debug_
+   panel/uw_debug_* calls) keep working unchanged. */
 #include "uw.h"
+#include "debug_shim.h"
 
 #define DAT_00087644 0x1000u
 #define DAT_0023c418 ((ushort)~0x4000u)

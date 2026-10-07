@@ -83,6 +83,16 @@ target_compile_options(uw_test_support PRIVATE
 add_game_test_library(uw_test_math src/math.c:step_value_toward_limit)
 add_supported_game_unit_test(math uw_test_math)
 
+# debug_ui.c is this project's own hand-written support code (not pulled
+# from the decompiled game sources), already cleanly encapsulated behind
+# a small public API -- link it in directly rather than through
+# uw_extract_test_functions, which exists for isolating one function out
+# of a much larger original-game file.
+add_library(uw_test_debug_ui STATIC
+  "${PROJECT_SOURCE_DIR}/src/debug_ui.c" support/debug_ui_fixture.c)
+uw_configure_test_target(uw_test_debug_ui)
+add_supported_game_unit_test(debug_ui uw_test_debug_ui)
+
 add_supported_game_unit_test(support uw_test_support)
 
 add_fixture_game_unit_test(chargen
@@ -335,6 +345,7 @@ add_fixture_game_unit_test(scroll_messages
   src/player.c:advance_character_level
   src/object_actions.c:dispatch_object_action src/object_actions.c:dispatch_object_action_dup
   src/ai.c:build_creature_look_text src/interact.c:describe_picked_terrain
+  src/interact.c:resolve_picked_terrain_texture
   src/ordinal_stubs.c:ce_memmove src/ordinal_stubs.c:ce_strchr src/ordinal_stubs.c:ce_strrchr)
 target_link_libraries(uw_test_scroll_messages PUBLIC uw_test_static_strings)
 

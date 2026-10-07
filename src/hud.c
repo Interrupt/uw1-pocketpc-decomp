@@ -4,6 +4,14 @@
 #include "headers/hud.h"
 #include "headers/debug.h"
 #include "headers/debug_ui.h"
+#include "headers/models.h"
+#include "headers/movement.h"
+#include "headers/tmap.h"
+#include "headers/interact.h"
+#include "headers/objects.h"
+#include "headers/resources.h"
+#include "headers/ai.h"
+#include "headers/object_actions.h"
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -993,6 +1001,7 @@ void main_loop_hud_flush()
     if (_force_cursor < 0) _force_cursor = (getenv("UW_NO_FORCE_CURSOR_REDRAW") == NULL);
     if (_force_cursor) update_mouse_state();
   }
+  populate_debug_panel();
   /* Debug UI: must draw HERE, after the forced 3D redraw above (or it gets painted over) but before
      flush_dirty_rect_to_display(1) below -- that call is the actual screen present for this tick
      (blits the software framebuffer through to GXEndDraw/SDL_RenderPresent, see gx_stub.c). */
@@ -6075,203 +6084,3 @@ void set_cursor_confine_rect(short x1, short y1, short x2, short y2)
   DAT_00204834 = DAT_002047d8;
 }
 
-
-/* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D
-   viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible. Call
-   *after* a pick-mode render pass (render_dungeon_view_frame) has populated the buffer. */
-void uw_debug_blit_pick_buffer()
-{
-  /* 16 distinct colours for object slot ids; deliberately excludes the
-     crosshair yellow (0xFFE0) and the out-of-range magenta (0xF81F). */
-  static const unsigned short obj_pal[16] = {
-    0xF800, 0x07E0, 0x001F, 0x07FF, 0xFC00, 0xFD20, 0x8400, 0x0410,
-    0x001A, 0x8010, 0xAFE5, 0x05FF, 0xF7B0, 0x7BEF, 0xFAE0, 0x39C7,
-  };
-  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
-  int x, y;
-  if (fb == 0 || DAT_0023cca0 == 0) return;
-  for (y = 19; y < 150; y++) {
-    const unsigned char *row = (const unsigned char *)DAT_0023cca0 + y * 0x140;
-    unsigned short *frow = fb + y * 0x140;
-    for (x = 52; x < 276; x++) {
-      unsigned int v = row[x];
-      unsigned short c;
-      if (v == 0)                 c = 0x0008;                 /* near-black blue */
-      else if (v >= 0xc0 && v < 0xfb) {
-        unsigned int g = ((v - 0xbf) * 5) & 0x3f;             /* 0..0x3f grey ramp */
-        c = (unsigned short)(((g >> 1) << 11) | (g << 5) | (g >> 1));
-      }
-      else if (v < 0xc0)          c = obj_pal[v & 0xf];
-      else                        c = 0xF81F;                 /* magenta: out of range */
-      frow[x] = c;
-    }
-  }
-  /* cursor crosshair */
-  { int cx = (int)g_mouse_x, cy = (int)g_mouse_y, i;
-    for (i = -4; i <= 4; i++) {
-      int px = cx + i, py = cy + i;
-      if (cy >= 0 && cy < 240 && cx + i >= 0 && cx + i < 320) fb[cy * 0x140 + px] = 0xFFE0;
-      if (cx >= 0 && cx < 320 && cy + i >= 0 && cy + i < 240) fb[py * 0x140 + cx] = 0xFFE0;
-    }
-  }
-}
-
-
-
-/* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory hotspot's click rect
-   (g_inventory_hotspot_table's 23 records) in bright red, directly into the framebuffer... */
- void uw_debug_draw_inv_hotspot_positions(void)
-{
-  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
-  int i, min_x = 0x7fffffff, max_x = -1, min_y = 0x7fffffff, max_y = -1;
-  if (fb == 0) return;
-  for (i = 0; i < 0x17; i++) {
-    int x1, y1, x2, y2, x, y;
-    int off = i * 0xe;
-    x1 = *(short *)(&g_inv_hotspot_click_x1 + off);
-    y1 = *(short *)(&g_inv_hotspot_click_y1 + off);
-    x2 = *(short *)(&g_inv_hotspot_click_x2 + off);
-    y2 = *(short *)(&g_inv_hotspot_click_y2 + off);
-    if (x1 == x2 && y1 == y2) continue;
-    for (x = x1; x <= x2; x++) {
-      if (x < 0 || x >= 320) continue;
-      if (y1 >= 0 && y1 < 200) fb[y1 * 0x140 + x] = 0xF800;
-      if (y2 >= 0 && y2 < 200) fb[y2 * 0x140 + x] = 0xF800;
-    }
-    for (y = y1; y <= y2; y++) {
-      if (y < 0 || y >= 200) continue;
-      if (x1 >= 0 && x1 < 320) fb[y * 0x140 + x1] = 0xF800;
-      if (x2 >= 0 && x2 < 320) fb[y * 0x140 + x2] = 0xF800;
-    }
-    if (x1 < min_x) min_x = x1;
-    if (x2 > max_x) max_x = x2;
-    if (y1 < min_y) min_y = y1;
-    if (y2 > max_y) max_y = y2;
-  }
-  if (max_x >= 0) dirty_rect_union(min_y, max_y, min_x, max_x);
-}
-
-/* Debug tool (UW_DUMP_SPRITE_FRAMES / UW_DUMP_SPRITE_IDS): dump individual sprites to standalone
-   BMP files by real resource id, one file per id, using the game's own real render path... */
-static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
-  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
-  int cw = 96, ch = 128, ox = 4, oy = 4;
-  if (fb == 0) return;
-  for (int y = 0; y < ch; y++) {
-    for (int x = 0; x < cw; x++) {
-      fb[(oy + y) * 0x140 + (ox + x)] = 0;
-    }
-  }
-  if (is_frame) {
-    blit_object_sprite_by_frame(id, ox, oy, cw, ch);  /* real arity is 5 (ARM draw_sprite_by_id passes id,x,y,w,h) */
-  } else {
-    draw_sprite_by_id(id, ox, oy, cw, ch);
-  }
-  char path[320];
-  snprintf(path, sizeof(path), "%s/%s_%d.bmp", dir, is_frame ? "frame" : "id", id);
-  uw_save_rgb565_region_bmp(path, fb + oy * 0x140 + ox, cw, ch, 0x140);
-}
-
-static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, const char *dir) {
-  const char *spec = getenv(envname);
-  if (!spec || !spec[0]) return;
-  uw_debug_mkdir_p(dir);
-  const char *p = spec;
-  while (*p) {
-    int lo, hi;
-    char *end;
-    lo = (int)strtol(p, &end, 10);
-    if (end == p) break;
-    p = end;
-    if (*p == '-') {
-      p++;
-      hi = (int)strtol(p, &end, 10);
-      if (end == p) hi = lo;
-      p = end;
-    } else {
-      hi = lo;
-    }
-    for (int id = lo; id <= hi; id++) {
-      _uw_dump_sprite_to_file(is_frame, id, dir);
-    }
-    if (*p == ',') p++;
-    else break;
-  }
-}
-
-/* Temporary test hook for verifying the armor paper-doll equip flow without a real "give item"
-   mechanism: once per run, the first time backpack grid slot 12 holds a real object, overwrite its
-   low 9 id bits with UW_DEBUG_FORCE_ITEM_ID (hex) in place -- reusing a real... */
- void uw_debug_force_item_id_once(void) {
-  static int done = 0;
-  if (done) return;
-  const char *idstr = getenv("UW_DEBUG_FORCE_ITEM_ID");
-  if (!idstr) return;
-  ushort *obj = (ushort *)get_equipped_item_at_slot(12);
-  if (!obj) return;
-  done = 1;
-  int newid = (int)strtol(idstr, NULL, 16);
-  ushort old = *obj;
-  *obj = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
-  fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff, *obj & 0x1ff);
-}
-
-
-
- void uw_debug_dump_sprite_frames_once(void) {
-  static int done = 0;
-  if (done) return;
-  done = 1;
-  if (!getenv("UW_DUMP_SPRITE_FRAMES") && !getenv("UW_DUMP_SPRITE_IDS")) return;
-  const char *dir = getenv("UW_DUMP_SPRITE_DIR");
-  if (!dir || !dir[0]) dir = "debug/sprites";
-  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_FRAMES", 1, dir);
-  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_IDS", 0, dir);
-}
-
-/* Debug tool (UW_DUMP_CRITTER_SHEET): systematically drive decode_critter_sprite_page across every
-   (tier, direction, frame) combination for one or more critter type indices, instead of passively
-   capturing whatever poses a demo happens to render. */
- void uw_debug_dump_critter_sheet_once(void) {
-  static int done = 0;
-  if (done) return;
-  done = 1;
-  const char *spec = getenv("UW_DUMP_CRITTER_SHEET");
-  if (!spec || !spec[0]) return;
-  setenv("UW_DEBUG_DUMP_CRIT", "1", 0);
-  /* default maxdir kept conservative (63, not the full 0-255 clamp resolve_critter_sprite_tier
-     allows): sweeping direction values past a creature's real per-page table found a separate,
-     unfixed bug... */
-  int maxdir = 63, maxframe = 15;
-  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXDIR"); if (e) maxdir = atoi(e); }
-  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXFRAME"); if (e) maxframe = atoi(e); }
-  const char *p = spec;
-  while (*p) {
-    char *end;
-    long type_idx = strtol(p, &end, 10);
-    if (end == p) break;
-    p = end;
-    if (type_idx >= 0 && type_idx < 64) {
-      int page_idx = (unsigned char)(&DAT_0023ce70)[type_idx * 2];
-      int frame_count_param = (unsigned char)(&DAT_0023ce71)[type_idx * 2];
-      if (page_idx == 0xff) {
-        fprintf(stderr, "[crit-sheet] type_idx=%ld has no assoc-table entry (0xff sentinel), skipping\n",
-                type_idx);
-      } else {
-        fprintf(stderr, "[crit-sheet] type_idx=%ld -> page_idx=%d frame_count_param=%d, sweeping "
-                "tier=0..3 dir=0..%d frame=0..%d\n",
-                type_idx, page_idx, frame_count_param, maxdir, maxframe);
-        for (int tier = 0; tier < 4; tier++) {
-          for (int dir = 0; dir <= maxdir; dir++) {
-            for (int frame = 0; frame <= maxframe; frame++) {
-              decode_critter_sprite_page(page_idx, tier, dir, frame_count_param, frame);
-            }
-          }
-        }
-      }
-    }
-    if (*p == ',') p++;
-    else break;
-  }
-  fprintf(stderr, "[crit-sheet] sweep complete, see debug/crit/\n");
-}

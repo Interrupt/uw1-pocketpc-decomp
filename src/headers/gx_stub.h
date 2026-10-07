@@ -119,4 +119,11 @@ void uw_clear_synth_scancode(int sdl_keycode);
 
 unsigned char *uw_get_default_palette(const char *gr_name);
 
+/* Shared helper behind several of the UW_DUMP_* debug tools above: saves a WxH RGB565 region
+   (stride pixels per row) as a standalone BMP. Returns 1 on success, 0 on failure. */
+int uw_save_rgb565_region_bmp(const char *path, const unsigned short *pixels,
+                               int width, int height, int stride);
+/* mkdir -p, for the debug dump tools' own output directories. */
+void uw_debug_mkdir_p(const char *path);
+
 #endif

@@ -66,6 +66,7 @@ void dispatch_sticky_mode_handlers(void);
 void uw_debug_blit_pick_buffer(void);
 void render_dungeon_view_frame(void);
 void uw_debug_draw_inv_hotspot_positions(void);
+void populate_debug_panel(void);
 void dbgui_draw(void);
 void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_dump_critter_sheet_once(void);
@@ -467,6 +468,12 @@ void render_dungeon_view_frame(void) {}
 
 void uw_debug_draw_inv_hotspot_positions(void) {}
 
+/* populate_debug_panel (hud.c) is its own function specifically so this
+   suite's isolated extraction of main_loop_hud_flush doesn't also need
+   fixtures for the object inspector's own dependencies (pick_object_
+   under_cursor, get_message_string, g_monster_max_stats_table, ...) --
+   see that function's own comment in hud.c. */
+void populate_debug_panel(void) {}
 void dbgui_draw(void) {}
 
 void uw_debug_dump_sprite_frames_once(void) {}

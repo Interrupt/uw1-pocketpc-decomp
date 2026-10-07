@@ -24,6 +24,7 @@ uint object_chain_max_barrier(char *tile);
 int target_line_of_sight(short target_class, void *target);
 ushort *pick_object_under_cursor(int mode);
 void describe_picked_terrain(byte terrain_kind, short step_count);
+int resolve_picked_terrain_texture(short pick, char **out_desc);
 void finalize_object_pickup(void *object);
 void interact_default();
 void interact_talk_npc();

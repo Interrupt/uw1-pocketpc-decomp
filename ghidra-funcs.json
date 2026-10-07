@@ -1,13 +1,13 @@
 {
   "_meta": {
     "description": "Every function definition in src/*.c. Those with ghidra_origin true still carry a \"was FUN_xxxxxxxx\" comment, i.e. were renamed from a Ghidra placeholder; the rest have original_name null. Regenerate with tools/gen_ghidra_funcs.py.",
-    "total_functions": 1467,
+    "total_functions": 1478,
     "with_original_name": 1233,
-    "without_original_name": 234,
+    "without_original_name": 245,
     "still_unnamed_FUN": 12,
-    "audited_true": 1467,
+    "audited_true": 1478,
     "audited_false": 0,
-    "modernized_true": 1464,
+    "modernized_true": 1475,
     "modernized_false": 3
   },
   "functions": [
@@ -6012,9 +6012,93 @@
       "modernized": true
     },
     {
+      "name": "dbgui_inspector_toggle_door_lock",
+      "path": "src/debug_shim.c",
+      "line": 53,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "variadic": false,
+      "description": "dbgui inspector toggle door lock",
+      "audited": true,
+      "modernized": true
+    },
+    {
+      "name": "dbgui_object_inspector_pick",
+      "path": "src/debug_shim.c",
+      "line": 58,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "variadic": false,
+      "description": "dbgui object inspector pick",
+      "audited": true,
+      "modernized": true
+    },
+    {
+      "name": "populate_debug_object_inspector",
+      "path": "src/debug_shim.c",
+      "line": 94,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 1,
+      "variadic": false,
+      "description": "Populates the panel for the currently-inspected object -- see dbgui_object_inspector_pick above.",
+      "audited": true,
+      "modernized": true
+    },
+    {
+      "name": "populate_debug_texture_inspector",
+      "path": "src/debug_shim.c",
+      "line": 128,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 1,
+      "variadic": false,
+      "description": "Populates the panel for a picked wall/floor texture instead of an object -- see dbgui_object_inspector_pick's own comment on g_dbgui_inspect_tex_pick.",
+      "audited": true,
+      "modernized": true
+    },
+    {
+      "name": "populate_debug_panel",
+      "path": "src/debug_shim.c",
+      "line": 161,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "variadic": false,
+      "description": "General debug panel: subsystem on/off toggles, bound directly to each subsystem's own global flag.",
+      "audited": true,
+      "modernized": true
+    },
+    {
+      "name": "uw_debug_blit_pick_buffer",
+      "path": "src/debug_shim.c",
+      "line": 214,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "variadic": false,
+      "description": "Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible.",
+      "audited": true,
+      "modernized": true
+    },
+    {
+      "name": "uw_debug_draw_inv_hotspot_positions",
+      "path": "src/debug_shim.c",
+      "line": 253,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "variadic": false,
+      "description": "Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory hotspot's click rect (g_inventory_hotspot_table's 23 records) in bright red, directly into the framebuffer.",
+      "audited": true,
+      "modernized": true
+    },
+    {
       "name": "dbgui_save_backing",
       "path": "src/debug_ui.c",
-      "line": 53,
+      "line": 68,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6026,7 +6110,7 @@
     {
       "name": "dbgui_restore_backing",
       "path": "src/debug_ui.c",
-      "line": 67,
+      "line": 82,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6036,9 +6120,21 @@
       "modernized": true
     },
     {
+      "name": "dbgui_invalidate_region",
+      "path": "src/debug_ui.c",
+      "line": 113,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "variadic": false,
+      "description": "dbgui invalidate region",
+      "audited": true,
+      "modernized": true
+    },
+    {
       "name": "dbgui_begin",
       "path": "src/debug_ui.c",
-      "line": 94,
+      "line": 130,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6048,21 +6144,21 @@
       "modernized": true
     },
     {
-      "name": "dbgui_add_field",
+      "name": "dbgui_new_field",
       "path": "src/debug_ui.c",
-      "line": 103,
+      "line": 146,
       "original_name": null,
       "ghidra_origin": false,
-      "param_count": 5,
+      "param_count": 1,
       "variadic": false,
-      "description": "dbgui add field",
+      "description": "dbgui new field",
       "audited": true,
       "modernized": true
     },
     {
       "name": "dbgui_field_double",
       "path": "src/debug_ui.c",
-      "line": 118,
+      "line": 157,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -6074,7 +6170,7 @@
     {
       "name": "dbgui_field_int",
       "path": "src/debug_ui.c",
-      "line": 123,
+      "line": 165,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 3,
@@ -6084,9 +6180,21 @@
       "modernized": true
     },
     {
+      "name": "dbgui_field_text",
+      "path": "src/debug_ui.c",
+      "line": 190,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 2,
+      "variadic": false,
+      "description": "A read-only row, shown as \"name: value\" -- for displaying information (an object's id/type/position/...) that isn't a live editable setting.",
+      "audited": true,
+      "modernized": true
+    },
+    {
       "name": "dbgui_field_toggle",
       "path": "src/debug_ui.c",
-      "line": 143,
+      "line": 199,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -6098,7 +6206,7 @@
     {
       "name": "dbgui_field_get",
       "path": "src/debug_ui.c",
-      "line": 158,
+      "line": 232,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6110,7 +6218,7 @@
     {
       "name": "dbgui_field_set",
       "path": "src/debug_ui.c",
-      "line": 163,
+      "line": 237,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -6122,7 +6230,7 @@
     {
       "name": "dbgui_end",
       "path": "src/debug_ui.c",
-      "line": 168,
+      "line": 242,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6134,7 +6242,7 @@
     {
       "name": "dbgui_draw",
       "path": "src/debug_ui.c",
-      "line": 177,
+      "line": 251,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6146,7 +6254,7 @@
     {
       "name": "dbgui_toggle",
       "path": "src/debug_ui.c",
-      "line": 229,
+      "line": 353,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -6158,7 +6266,7 @@
     {
       "name": "dbgui_feed_mouse_down",
       "path": "src/debug_ui.c",
-      "line": 244,
+      "line": 368,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 2,
@@ -6170,7 +6278,7 @@
     {
       "name": "dbgui_feed_key",
       "path": "src/debug_ui.c",
-      "line": 269,
+      "line": 405,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -6180,9 +6288,33 @@
       "modernized": true
     },
     {
+      "name": "dbgui_test_reset",
+      "path": "src/debug_ui.c",
+      "line": 454,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 0,
+      "variadic": false,
+      "description": "dbgui test reset",
+      "audited": true,
+      "modernized": true
+    },
+    {
+      "name": "dbgui_test_row_y",
+      "path": "src/debug_ui.c",
+      "line": 467,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 1,
+      "variadic": false,
+      "description": "dbgui test row y",
+      "audited": true,
+      "modernized": true
+    },
+    {
       "name": "dbgui_feed_text",
       "path": "src/debug_ui.c",
-      "line": 306,
+      "line": 473,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -7491,7 +7623,7 @@
     {
       "name": "uw_begin_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1269,
+      "line": 1285,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7503,7 +7635,7 @@
     {
       "name": "uw_end_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1274,
+      "line": 1290,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7515,7 +7647,7 @@
     {
       "name": "gfx_finalizedraw",
       "path": "src/gx_stub.c",
-      "line": 1283,
+      "line": 1299,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7527,7 +7659,7 @@
     {
       "name": "uw_take_completed_frame",
       "path": "src/gx_stub.c",
-      "line": 1297,
+      "line": 1313,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7539,7 +7671,7 @@
     {
       "name": "uw_suspend_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1305,
+      "line": 1321,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7551,7 +7683,7 @@
     {
       "name": "uw_resume_present_batch",
       "path": "src/gx_stub.c",
-      "line": 1310,
+      "line": 1326,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7563,7 +7695,7 @@
     {
       "name": "uw_begin_modal_present",
       "path": "src/gx_stub.c",
-      "line": 1315,
+      "line": 1331,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7575,7 +7707,7 @@
     {
       "name": "uw_end_modal_present",
       "path": "src/gx_stub.c",
-      "line": 1324,
+      "line": 1340,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7587,7 +7719,7 @@
     {
       "name": "uw_defer_present",
       "path": "src/gx_stub.c",
-      "line": 1331,
+      "line": 1347,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7599,7 +7731,7 @@
     {
       "name": "dirty_rect_union",
       "path": "src/hud.c",
-      "line": 449,
+      "line": 457,
       "original_name": "FUN_00011000",
       "ghidra_origin": true,
       "param_count": 4,
@@ -7611,7 +7743,7 @@
     {
       "name": "dirty_rect_set",
       "path": "src/hud.c",
-      "line": 469,
+      "line": 477,
       "original_name": "FUN_00011040",
       "ghidra_origin": true,
       "param_count": 4,
@@ -7623,7 +7755,7 @@
     {
       "name": "flush_dirty_rect_to_display",
       "path": "src/hud.c",
-      "line": 486,
+      "line": 494,
       "original_name": "FUN_00022f0c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7636,7 +7768,7 @@
     {
       "name": "flush_dirty_rect_to_display_240",
       "path": "src/hud.c",
-      "line": 596,
+      "line": 604,
       "original_name": "FUN_0002310c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7648,7 +7780,7 @@
     {
       "name": "enter_dungeon_view_hud_init",
       "path": "src/hud.c",
-      "line": 686,
+      "line": 694,
       "original_name": "FUN_0003e44c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7660,7 +7792,7 @@
     {
       "name": "mode_icon_highlight_on",
       "path": "src/hud.c",
-      "line": 716,
+      "line": 724,
       "original_name": "FUN_0003f99c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7672,7 +7804,7 @@
     {
       "name": "mode_icon_highlight_off",
       "path": "src/hud.c",
-      "line": 743,
+      "line": 751,
       "original_name": "FUN_0003fa1c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7684,7 +7816,7 @@
     {
       "name": "cursor_mode_button_click",
       "path": "src/hud.c",
-      "line": 768,
+      "line": 776,
       "original_name": "FUN_0003faa0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7696,7 +7828,7 @@
     {
       "name": "cursor_mode_button_click_restricted",
       "path": "src/hud.c",
-      "line": 859,
+      "line": 867,
       "original_name": "FUN_0003fd14",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7708,7 +7840,7 @@
     {
       "name": "main_loop_hud_flush",
       "path": "src/hud.c",
-      "line": 924,
+      "line": 932,
       "original_name": "FUN_000497cc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7720,7 +7852,7 @@
     {
       "name": "emit_hud_draw_commands",
       "path": "src/hud.c",
-      "line": 1035,
+      "line": 1044,
       "original_name": "FUN_0005d704",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7732,7 +7864,7 @@
     {
       "name": "hud_vitals_threshold_shake",
       "path": "src/hud.c",
-      "line": 1118,
+      "line": 1127,
       "original_name": "FUN_0006ca4c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7744,7 +7876,7 @@
     {
       "name": "redraw_hud_panels",
       "path": "src/hud.c",
-      "line": 1161,
+      "line": 1170,
       "original_name": "FUN_0006cca8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7756,7 +7888,7 @@
     {
       "name": "set_hud_status_value",
       "path": "src/hud.c",
-      "line": 1240,
+      "line": 1249,
       "original_name": "FUN_0006cff4",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7768,7 +7900,7 @@
     {
       "name": "hud_panel_redraw_dispatch",
       "path": "src/hud.c",
-      "line": 1351,
+      "line": 1360,
       "original_name": "FUN_0006d284",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7780,7 +7912,7 @@
     {
       "name": "hud_vitals_bar_tick",
       "path": "src/hud.c",
-      "line": 1438,
+      "line": 1447,
       "original_name": "FUN_0006d4a4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7792,7 +7924,7 @@
     {
       "name": "hud_dragon_reaction_tick",
       "path": "src/hud.c",
-      "line": 1557,
+      "line": 1566,
       "original_name": "FUN_0006d894",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7804,7 +7936,7 @@
     {
       "name": "hud_compass_needle_tick",
       "path": "src/hud.c",
-      "line": 1801,
+      "line": 1810,
       "original_name": "FUN_0006df70",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7816,7 +7948,7 @@
     {
       "name": "tick_hud_panel_transition",
       "path": "src/hud.c",
-      "line": 1842,
+      "line": 1851,
       "original_name": "FUN_0006e130",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7828,7 +7960,7 @@
     {
       "name": "redraw_active_hud_panel",
       "path": "src/hud.c",
-      "line": 1875,
+      "line": 1884,
       "original_name": "FUN_0006ed0c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7840,7 +7972,7 @@
     {
       "name": "msg_scroll_draw_edges",
       "path": "src/hud.c",
-      "line": 1899,
+      "line": 1908,
       "original_name": "FUN_0007f208",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7852,7 +7984,7 @@
     {
       "name": "msg_scroll_scroll_up_line",
       "path": "src/hud.c",
-      "line": 1918,
+      "line": 1927,
       "original_name": "FUN_0007f340",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7864,7 +7996,7 @@
     {
       "name": "msg_scroll_more_prompt",
       "path": "src/hud.c",
-      "line": 1944,
+      "line": 1953,
       "original_name": "FUN_0007f454",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7876,7 +8008,7 @@
     {
       "name": "message_scroll_print_wrapped",
       "path": "src/hud.c",
-      "line": 1973,
+      "line": 1982,
       "original_name": "FUN_0007f570",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7888,7 +8020,7 @@
     {
       "name": "msg_scroll_draw_wrapped_span",
       "path": "src/hud.c",
-      "line": 2051,
+      "line": 2060,
       "original_name": "FUN_0007f7cc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7900,7 +8032,7 @@
     {
       "name": "msg_scroll_wrap_split_line",
       "path": "src/hud.c",
-      "line": 2178,
+      "line": 2187,
       "original_name": "FUN_0007fb2c",
       "ghidra_origin": true,
       "param_count": 2,
@@ -7912,7 +8044,7 @@
     {
       "name": "msg_scroll_panel_init",
       "path": "src/hud.c",
-      "line": 2244,
+      "line": 2253,
       "original_name": "FUN_0007fc8c",
       "ghidra_origin": true,
       "param_count": 5,
@@ -7924,7 +8056,7 @@
     {
       "name": "msg_scroll_panel_reset",
       "path": "src/hud.c",
-      "line": 2279,
+      "line": 2288,
       "original_name": "FUN_0007fce8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -7936,7 +8068,7 @@
     {
       "name": "snap_compass_to_heading",
       "path": "src/hud.c",
-      "line": 2327,
+      "line": 2336,
       "original_name": "FUN_0006cb74",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7948,7 +8080,7 @@
     {
       "name": "reset_hud_panel_animation_state",
       "path": "src/hud.c",
-      "line": 2348,
+      "line": 2357,
       "original_name": "FUN_0006cbf0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7960,7 +8092,7 @@
     {
       "name": "release_panel_wipe_grtiles",
       "path": "src/hud.c",
-      "line": 2383,
+      "line": 2392,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -7972,7 +8104,7 @@
     {
       "name": "update_hud_status_icon_frame",
       "path": "src/hud.c",
-      "line": 2406,
+      "line": 2415,
       "original_name": "FUN_0006e038",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7984,7 +8116,7 @@
     {
       "name": "hud_panel_wipe_transition_tick",
       "path": "src/hud.c",
-      "line": 2451,
+      "line": 2460,
       "original_name": "FUN_0006e1d4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -7996,7 +8128,7 @@
     {
       "name": "update_ready_rune_slot_icons",
       "path": "src/hud.c",
-      "line": 2501,
+      "line": 2510,
       "original_name": "FUN_0006e96c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8008,7 +8140,7 @@
     {
       "name": "update_light_source_color_icons",
       "path": "src/hud.c",
-      "line": 2539,
+      "line": 2548,
       "original_name": "FUN_0006ea54",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8020,7 +8152,7 @@
     {
       "name": "begin_hud_panel_flip",
       "path": "src/hud.c",
-      "line": 2578,
+      "line": 2587,
       "original_name": "FUN_0006eb64",
       "ghidra_origin": true,
       "param_count": 5,
@@ -8032,7 +8164,7 @@
     {
       "name": "release_hud_panel_flip_grtiles",
       "path": "src/hud.c",
-      "line": 2669,
+      "line": 2678,
       "original_name": "FUN_0006edb8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8044,7 +8176,7 @@
     {
       "name": "advance_hud_panel_flip",
       "path": "src/hud.c",
-      "line": 2689,
+      "line": 2698,
       "original_name": "FUN_0006edfc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8056,7 +8188,7 @@
     {
       "name": "squash_hud_panel_flip_rows",
       "path": "src/hud.c",
-      "line": 2972,
+      "line": 2981,
       "original_name": "FUN_0006f6e0",
       "ghidra_origin": true,
       "param_count": 3,
@@ -8068,7 +8200,7 @@
     {
       "name": "copy_hud_panel_flip_column",
       "path": "src/hud.c",
-      "line": 3111,
+      "line": 3120,
       "original_name": "FUN_0006fa28",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8080,7 +8212,7 @@
     {
       "name": "init_sprite_list_buffers",
       "path": "src/hud.c",
-      "line": 3212,
+      "line": 3221,
       "original_name": "FUN_00075be0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8092,7 +8224,7 @@
     {
       "name": "clear_sprite_list_slot_flag",
       "path": "src/hud.c",
-      "line": 3238,
+      "line": 3247,
       "original_name": "FUN_00076488",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8104,7 +8236,7 @@
     {
       "name": "flush_sprite_list_compositor",
       "path": "src/hud.c",
-      "line": 3260,
+      "line": 3269,
       "original_name": "FUN_00076508",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8116,7 +8248,7 @@
     {
       "name": "capture_framebuffer_rect_to_grtile_paletted",
       "path": "src/hud.c",
-      "line": 3399,
+      "line": 3408,
       "original_name": "FUN_0007e998",
       "ghidra_origin": true,
       "param_count": 5,
@@ -8128,7 +8260,7 @@
     {
       "name": "init_msg_scroll_panel",
       "path": "src/hud.c",
-      "line": 3446,
+      "line": 3455,
       "original_name": "FUN_0007f044",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8140,7 +8272,7 @@
     {
       "name": "check_mouse_over_msg_scroll_panel",
       "path": "src/hud.c",
-      "line": 3461,
+      "line": 3470,
       "original_name": "FUN_0007f094",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8152,7 +8284,7 @@
     {
       "name": "select_msg_scroll_mode_normal",
       "path": "src/hud.c",
-      "line": 3473,
+      "line": 3482,
       "original_name": "FUN_0007f0e0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8164,7 +8296,7 @@
     {
       "name": "select_msg_scroll_mode_conversation",
       "path": "src/hud.c",
-      "line": 3487,
+      "line": 3496,
       "original_name": "FUN_0007f110",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8176,7 +8308,7 @@
     {
       "name": "select_msg_scroll_mode_2",
       "path": "src/hud.c",
-      "line": 3501,
+      "line": 3510,
       "original_name": "FUN_0007f140",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8188,7 +8320,7 @@
     {
       "name": "wait_for_click_to_continue",
       "path": "src/hud.c",
-      "line": 3516,
+      "line": 3525,
       "original_name": "FUN_0007f170",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8200,7 +8332,7 @@
     {
       "name": "draw_conversation_window_decoration",
       "path": "src/hud.c",
-      "line": 3548,
+      "line": 3557,
       "original_name": "FUN_0007f290",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8212,7 +8344,7 @@
     {
       "name": "msg_scroll_split_escape_segments",
       "path": "src/hud.c",
-      "line": 3575,
+      "line": 3584,
       "original_name": "FUN_0007f6fc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8224,7 +8356,7 @@
     {
       "name": "msg_scroll_split_newline_segments",
       "path": "src/hud.c",
-      "line": 3597,
+      "line": 3606,
       "original_name": "FUN_0007f770",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8236,7 +8368,7 @@
     {
       "name": "echo_number_to_scroll",
       "path": "src/hud.c",
-      "line": 3620,
+      "line": 3629,
       "original_name": "FUN_0007fe20",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8248,7 +8380,7 @@
     {
       "name": "echo_yes_no_to_scroll",
       "path": "src/hud.c",
-      "line": 3645,
+      "line": 3654,
       "original_name": "FUN_0007fee8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8260,7 +8392,7 @@
     {
       "name": "scroll_text_entry_prompt",
       "path": "src/hud.c",
-      "line": 3675,
+      "line": 3684,
       "original_name": "FUN_0007ffa8",
       "ghidra_origin": true,
       "param_count": 5,
@@ -8272,7 +8404,7 @@
     {
       "name": "prompt_yes_no_scroll",
       "path": "src/hud.c",
-      "line": 3947,
+      "line": 3956,
       "original_name": "FUN_00080828",
       "ghidra_origin": true,
       "param_count": 3,
@@ -8284,7 +8416,7 @@
     {
       "name": "print_character_description_scroll",
       "path": "src/hud.c",
-      "line": 4013,
+      "line": 4022,
       "original_name": "FUN_0003df28",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8296,7 +8428,7 @@
     {
       "name": "show_flask_value_tooltip",
       "path": "src/hud.c",
-      "line": 4051,
+      "line": 4060,
       "original_name": "FUN_0003e0b4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8308,7 +8440,7 @@
     {
       "name": "register_stats_panel_click_regions",
       "path": "src/hud.c",
-      "line": 4106,
+      "line": 4115,
       "original_name": "FUN_0003e2a4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8320,7 +8452,7 @@
     {
       "name": "unregister_stats_panel_click_regions",
       "path": "src/hud.c",
-      "line": 4123,
+      "line": 4132,
       "original_name": "FUN_0003e404",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8332,7 +8464,7 @@
     {
       "name": "refresh_equipment_display_if_visible",
       "path": "src/hud.c",
-      "line": 4138,
+      "line": 4147,
       "original_name": "FUN_0003e644",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8344,7 +8476,7 @@
     {
       "name": "clear_rune_bag_contents",
       "path": "src/hud.c",
-      "line": 4154,
+      "line": 4163,
       "original_name": "FUN_00044814",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8356,7 +8488,7 @@
     {
       "name": "draw_rune_icon",
       "path": "src/hud.c",
-      "line": 4171,
+      "line": 4180,
       "original_name": "FUN_00044848",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8368,7 +8500,7 @@
     {
       "name": "redraw_rune_bag_display",
       "path": "src/hud.c",
-      "line": 4188,
+      "line": 4197,
       "original_name": "FUN_000448a8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8380,7 +8512,7 @@
     {
       "name": "reset_ready_rune_slots",
       "path": "src/hud.c",
-      "line": 4212,
+      "line": 4221,
       "original_name": "FUN_00044920",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8392,7 +8524,7 @@
     {
       "name": "handle_rune_bag_click",
       "path": "src/hud.c",
-      "line": 4231,
+      "line": 4240,
       "original_name": "FUN_0004497c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8404,7 +8536,7 @@
     {
       "name": "print_not_a_spell_message",
       "path": "src/hud.c",
-      "line": 4297,
+      "line": 4306,
       "original_name": "FUN_00044bcc",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8416,7 +8548,7 @@
     {
       "name": "handle_light_source_click",
       "path": "src/hud.c",
-      "line": 4308,
+      "line": 4317,
       "original_name": "FUN_00044bd8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8428,7 +8560,7 @@
     {
       "name": "handle_cast_spell_click",
       "path": "src/hud.c",
-      "line": 4352,
+      "line": 4361,
       "original_name": "FUN_00044d14",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8440,7 +8572,7 @@
     {
       "name": "report_spell_cast_failure",
       "path": "src/hud.c",
-      "line": 4392,
+      "line": 4401,
       "original_name": "FUN_00044e74",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8452,7 +8584,7 @@
     {
       "name": "cast_spell_from_rune_combo",
       "path": "src/hud.c",
-      "line": 4406,
+      "line": 4415,
       "original_name": "FUN_00044e9c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8464,7 +8596,7 @@
     {
       "name": "reload_paperdoll_body_sprite",
       "path": "src/hud.c",
-      "line": 4465,
+      "line": 4474,
       "original_name": "FUN_0004638c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8476,7 +8608,7 @@
     {
       "name": "init_inventory_panel_hotspots",
       "path": "src/hud.c",
-      "line": 4485,
+      "line": 4494,
       "original_name": "FUN_00046414",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8488,7 +8620,7 @@
     {
       "name": "redraw_container_icon_slot",
       "path": "src/hud.c",
-      "line": 4542,
+      "line": 4551,
       "original_name": "FUN_00048110",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8500,7 +8632,7 @@
     {
       "name": "update_carry_weight_display",
       "path": "src/hud.c",
-      "line": 4563,
+      "line": 4572,
       "original_name": "FUN_00048514",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8512,7 +8644,7 @@
     {
       "name": "release_grtile_handle",
       "path": "src/hud.c",
-      "line": 4596,
+      "line": 4605,
       "original_name": "FUN_0004995c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8524,7 +8656,7 @@
     {
       "name": "run_pause_menu_modal_loop",
       "path": "src/hud.c",
-      "line": 4605,
+      "line": 4614,
       "original_name": "FUN_000564f8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8536,7 +8668,7 @@
     {
       "name": "redraw_pause_menu_icon",
       "path": "src/hud.c",
-      "line": 4698,
+      "line": 4707,
       "original_name": "FUN_00056640",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8548,7 +8680,7 @@
     {
       "name": "redraw_pause_submenu_icon",
       "path": "src/hud.c",
-      "line": 4709,
+      "line": 4718,
       "original_name": "FUN_00056688",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8560,7 +8692,7 @@
     {
       "name": "update_pause_submenu_highlight",
       "path": "src/hud.c",
-      "line": 4720,
+      "line": 4729,
       "original_name": "FUN_000566dc",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8572,7 +8704,7 @@
     {
       "name": "close_ui_panel_return_to_game",
       "path": "src/hud.c",
-      "line": 4735,
+      "line": 4744,
       "original_name": "FUN_00056724",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8584,7 +8716,7 @@
     {
       "name": "draw_pause_menu_main_list",
       "path": "src/hud.c",
-      "line": 4794,
+      "line": 4803,
       "original_name": "FUN_000567c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8596,7 +8728,7 @@
     {
       "name": "draw_quit_confirm_panel",
       "path": "src/hud.c",
-      "line": 4806,
+      "line": 4815,
       "original_name": "FUN_00056838",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8608,7 +8740,7 @@
     {
       "name": "draw_music_or_sound_toggle_panel",
       "path": "src/hud.c",
-      "line": 4819,
+      "line": 4828,
       "original_name": "FUN_00056864",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8620,7 +8752,7 @@
     {
       "name": "draw_detail_level_panel",
       "path": "src/hud.c",
-      "line": 4856,
+      "line": 4865,
       "original_name": "FUN_0005693c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8632,7 +8764,7 @@
     {
       "name": "handle_music_toggle_click",
       "path": "src/hud.c",
-      "line": 4874,
+      "line": 4883,
       "original_name": "FUN_000569c0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8644,7 +8776,7 @@
     {
       "name": "handle_sound_toggle_click",
       "path": "src/hud.c",
-      "line": 4902,
+      "line": 4911,
       "original_name": "FUN_00056a18",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8656,7 +8788,7 @@
     {
       "name": "handle_detail_level_click",
       "path": "src/hud.c",
-      "line": 4931,
+      "line": 4940,
       "original_name": "FUN_00056a70",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8668,7 +8800,7 @@
     {
       "name": "handle_pause_menu_main_list_click",
       "path": "src/hud.c",
-      "line": 4963,
+      "line": 4972,
       "original_name": "FUN_00056b48",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8680,7 +8812,7 @@
     {
       "name": "handle_save_load_slot_click",
       "path": "src/hud.c",
-      "line": 5011,
+      "line": 5020,
       "original_name": "FUN_00056bdc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8692,7 +8824,7 @@
     {
       "name": "handle_quit_confirm_click",
       "path": "src/hud.c",
-      "line": 5049,
+      "line": 5058,
       "original_name": "FUN_00056c88",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8704,7 +8836,7 @@
     {
       "name": "enter_pause_menu_state",
       "path": "src/hud.c",
-      "line": 5068,
+      "line": 5077,
       "original_name": "FUN_00056cc8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8716,7 +8848,7 @@
     {
       "name": "dispatch_pause_menu_click",
       "path": "src/hud.c",
-      "line": 5083,
+      "line": 5092,
       "original_name": "FUN_00056cf8",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8728,7 +8860,7 @@
     {
       "name": "handle_pause_menu_region_click",
       "path": "src/hud.c",
-      "line": 5101,
+      "line": 5110,
       "original_name": "FUN_00056d38",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8740,7 +8872,7 @@
     {
       "name": "handle_pause_menu_dpad_navigation",
       "path": "src/hud.c",
-      "line": 5127,
+      "line": 5136,
       "original_name": "FUN_00056d6c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8752,7 +8884,7 @@
     {
       "name": "open_pause_menu_via_hotkey",
       "path": "src/hud.c",
-      "line": 5197,
+      "line": 5206,
       "original_name": "FUN_00056ebc",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8764,7 +8896,7 @@
     {
       "name": "init_cursor_subsystem",
       "path": "src/hud.c",
-      "line": 5214,
+      "line": 5223,
       "original_name": "FUN_00056f28",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8776,7 +8908,7 @@
     {
       "name": "erase_cursor_icon",
       "path": "src/hud.c",
-      "line": 5249,
+      "line": 5258,
       "original_name": "FUN_00056fe8",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8788,7 +8920,7 @@
     {
       "name": "uw_always_show_cursor",
       "path": "src/hud.c",
-      "line": 5285,
+      "line": 5294,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -8800,7 +8932,7 @@
     {
       "name": "uw_composite_desktop_cursor",
       "path": "src/hud.c",
-      "line": 5300,
+      "line": 5309,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 1,
@@ -8812,7 +8944,7 @@
     {
       "name": "cursor_show_idle_tick",
       "path": "src/hud.c",
-      "line": 5328,
+      "line": 5337,
       "original_name": "FUN_000570b4",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8824,7 +8956,7 @@
     {
       "name": "decrement_cursor_hide_depth",
       "path": "src/hud.c",
-      "line": 5353,
+      "line": 5362,
       "original_name": "FUN_00057118",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8836,7 +8968,7 @@
     {
       "name": "decrement_cursor_hide_depth_thunk",
       "path": "src/hud.c",
-      "line": 5375,
+      "line": 5384,
       "original_name": null,
       "ghidra_origin": false,
       "param_count": 0,
@@ -8848,7 +8980,7 @@
     {
       "name": "set_tracked_hotspot_rect",
       "path": "src/hud.c",
-      "line": 5386,
+      "line": 5395,
       "original_name": "FUN_00057188",
       "ghidra_origin": true,
       "param_count": 4,
@@ -8860,7 +8992,7 @@
     {
       "name": "is_mouse_within_tracked_hotspot",
       "path": "src/hud.c",
-      "line": 5398,
+      "line": 5407,
       "original_name": "FUN_000571c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8872,7 +9004,7 @@
     {
       "name": "track_hotspot_hover_state",
       "path": "src/hud.c",
-      "line": 5414,
+      "line": 5423,
       "original_name": "FUN_0005721c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8884,7 +9016,7 @@
     {
       "name": "redraw_hotspot_border_cursor",
       "path": "src/hud.c",
-      "line": 5477,
+      "line": 5486,
       "original_name": "FUN_00057460",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8896,7 +9028,7 @@
     {
       "name": "get_mouse_position",
       "path": "src/hud.c",
-      "line": 5500,
+      "line": 5509,
       "original_name": "FUN_00057504",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8908,7 +9040,7 @@
     {
       "name": "get_click_position",
       "path": "src/hud.c",
-      "line": 5511,
+      "line": 5520,
       "original_name": "FUN_00057528",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8920,7 +9052,7 @@
     {
       "name": "reset_keyboard_char_input",
       "path": "src/hud.c",
-      "line": 5529,
+      "line": 5538,
       "original_name": "FUN_00057570",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8932,7 +9064,7 @@
     {
       "name": "noop_post_input_reset_hook",
       "path": "src/hud.c",
-      "line": 5543,
+      "line": 5552,
       "original_name": "FUN_0005758c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -8944,7 +9076,7 @@
     {
       "name": "warp_mouse_cursor",
       "path": "src/hud.c",
-      "line": 5554,
+      "line": 5563,
       "original_name": "FUN_00057590",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8956,7 +9088,7 @@
     {
       "name": "poll_keyboard_char_input",
       "path": "src/hud.c",
-      "line": 5568,
+      "line": 5577,
       "original_name": "FUN_000575c4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8968,7 +9100,7 @@
     {
       "name": "wait_for_key_or_mouse_move",
       "path": "src/hud.c",
-      "line": 5587,
+      "line": 5596,
       "original_name": "FUN_000576d0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -8980,7 +9112,7 @@
     {
       "name": "lookup_onscreen_keyboard_key_hit",
       "path": "src/hud.c",
-      "line": 5627,
+      "line": 5636,
       "original_name": "FUN_00057a80",
       "ghidra_origin": true,
       "param_count": 2,
@@ -8992,7 +9124,7 @@
     {
       "name": "register_cursor_hotspot",
       "path": "src/hud.c",
-      "line": 5649,
+      "line": 5658,
       "original_name": "FUN_00057af0",
       "ghidra_origin": true,
       "param_count": 5,
@@ -9004,7 +9136,7 @@
     {
       "name": "unregister_cursor_hotspot",
       "path": "src/hud.c",
-      "line": 5682,
+      "line": 5691,
       "original_name": "FUN_00057bb0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9016,7 +9148,7 @@
     {
       "name": "push_cursor_icon",
       "path": "src/hud.c",
-      "line": 5714,
+      "line": 5723,
       "original_name": "FUN_00057c5c",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9028,7 +9160,7 @@
     {
       "name": "pop_cursor_icon",
       "path": "src/hud.c",
-      "line": 5733,
+      "line": 5742,
       "original_name": "FUN_00057cac",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9040,7 +9172,7 @@
     {
       "name": "is_position_within_rect",
       "path": "src/hud.c",
-      "line": 5758,
+      "line": 5767,
       "original_name": "FUN_00057d1c",
       "ghidra_origin": true,
       "param_count": 4,
@@ -9052,7 +9184,7 @@
     {
       "name": "set_cursor_sprite_id",
       "path": "src/hud.c",
-      "line": 5780,
+      "line": 5789,
       "original_name": "FUN_00057dc0",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9064,7 +9196,7 @@
     {
       "name": "update_hotspot_cursor_icon",
       "path": "src/hud.c",
-      "line": 5825,
+      "line": 5834,
       "original_name": "FUN_00057e54",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9076,7 +9208,7 @@
     {
       "name": "handle_mouse_button_message",
       "path": "src/hud.c",
-      "line": 5866,
+      "line": 5875,
       "original_name": "FUN_00058438",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9088,7 +9220,7 @@
     {
       "name": "save_cursor_background",
       "path": "src/hud.c",
-      "line": 5892,
+      "line": 5901,
       "original_name": "FUN_000584c0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9100,7 +9232,7 @@
     {
       "name": "draw_idle_mouse_cursor",
       "path": "src/hud.c",
-      "line": 5913,
+      "line": 5922,
       "original_name": "FUN_0005857c",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9112,7 +9244,7 @@
     {
       "name": "noop_key_handler",
       "path": "src/hud.c",
-      "line": 5983,
+      "line": 5992,
       "original_name": "FUN_00058734",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9124,7 +9256,7 @@
     {
       "name": "poll_mouse_button_flags",
       "path": "src/hud.c",
-      "line": 5994,
+      "line": 6003,
       "original_name": "FUN_00058738",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9136,7 +9268,7 @@
     {
       "name": "toggle_stats_panel",
       "path": "src/hud.c",
-      "line": 6013,
+      "line": 6022,
       "original_name": "FUN_0003def4",
       "ghidra_origin": true,
       "param_count": 1,
@@ -9148,7 +9280,7 @@
     {
       "name": "reset_cursor_confine_rect",
       "path": "src/hud.c",
-      "line": 6035,
+      "line": 6044,
       "original_name": "FUN_000577f0",
       "ghidra_origin": true,
       "param_count": 0,
@@ -9160,24 +9292,12 @@
     {
       "name": "set_cursor_confine_rect",
       "path": "src/hud.c",
-      "line": 6062,
+      "line": 6071,
       "original_name": "FUN_00057788",
       "ghidra_origin": true,
       "param_count": 4,
       "variadic": false,
       "description": "set cursor confine rect.",
-      "audited": true,
-      "modernized": true
-    },
-    {
-      "name": "uw_debug_blit_pick_buffer",
-      "path": "src/hud.c",
-      "line": 6082,
-      "original_name": null,
-      "ghidra_origin": false,
-      "param_count": 0,
-      "variadic": false,
-      "description": "Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible.",
       "audited": true,
       "modernized": true
     },
@@ -9734,14 +9854,26 @@
       "modernized": true
     },
     {
-      "name": "describe_picked_terrain",
+      "name": "resolve_picked_terrain_texture",
       "path": "src/interact.c",
-      "line": 910,
+      "line": 921,
       "original_name": "FUN_0003ed6c",
       "ghidra_origin": true,
       "param_count": 2,
       "variadic": false,
-      "description": "describe picked terrain.",
+      "description": "Resolves a raw terrain pick index (DAT_002020ac -- pick_object_under_ cursor's own \"the pick stencil wasn't an object slot, here's a wall/ floor texture index instead\" output, byte - 0xbf) to a real texture id and its message-string description.",
+      "audited": true,
+      "modernized": true
+    },
+    {
+      "name": "describe_picked_terrain",
+      "path": "src/interact.c",
+      "line": 940,
+      "original_name": null,
+      "ghidra_origin": false,
+      "param_count": 2,
+      "variadic": false,
+      "description": "describe picked terrain",
       "audited": true,
       "modernized": true
     },
@@ -11020,7 +11152,7 @@
     {
       "name": "tick_anim_record",
       "path": "src/models.c",
-      "line": 617,
+      "line": 623,
       "original_name": "FUN_0001dc04",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11032,7 +11164,7 @@
     {
       "name": "emit_catalog_object",
       "path": "src/models.c",
-      "line": 677,
+      "line": 683,
       "original_name": "FUN_00061e60",
       "ghidra_origin": true,
       "param_count": 4,
