@@ -17,13 +17,17 @@
       "source": "src/audio.c",
       "symbol": "DAT_000873e0_backing",
       "address": "000873e0",
-      "bytes": "00000000000000000100000001000000010000000100000001000000010000000100000000000000000000000000000001000000"
+      "bytes": "00000000000000000100000001000000010000000100000001000000010000000100000000000000000000000000000001000000010000007e00000079000000",
+      "storage_size": 256,
+      "note": "ARM flags for track IDs 13-15 overlap duration records 0-2; remaining native allocation is padding."
     },
     {
       "source": "src/audio.c",
       "symbol": "DAT_00087414_backing",
       "address": "00087414",
-      "bytes": "010000007e000000790000007e000000880000002d000000260000002100000030000000100000002b0000000700000048000000"
+      "bytes": "010000007e000000790000007e000000880000002d000000260000002100000030000000100000002b0000000700000048000000010000000100000001000000",
+      "storage_size": 256,
+      "note": "ARM duration reads for track IDs 13-15 overlap the original initialized music-control words at 0x87448/4c/50; remaining native allocation is padding."
     },
     {
       "source": "src/graphics.c",

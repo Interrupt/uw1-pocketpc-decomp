@@ -2,9 +2,24 @@
    through the game's COM-style audio interface. Split out of uw.c (the original monolithic
    decompile) once these functions' real roles were confirmed. */
 #include "headers/audio.h"
+#include "headers/platform_music.h"
+#include "headers/platform_sfx.h"
+#include "headers/platform_voice.h"
 #include "headers/debug.h"
+#include "headers/file_io.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+/* Real background-music playback backend: a vendored, tiny MOD player
+ * (third_party/hxcmod -- public-domain HxCModPlayer) plus a real SDL2
+ * audio device, hooked in at the construct_and_load_mod_player/
+ * start_mod_player_playback/stop_mod_player_playback call sites inside
+ * play_music_track/resume_music_playback/set_music_enabled below via the
+ * platform_music_* functions declared in headers/platform_music.h -- see
+ * platform_music.c for the backend itself and why it's split out into
+ * its own file, and those three functions' own comments below for
+ * exactly where. */
 
 #define DAT_00202a58 DAT_00202a58_backing[0]
 #define DAT_00086370 DAT_00086370_backing[0]
@@ -59,33 +74,118 @@ static undefined1 DAT_00086810_backing[32] = {
    says it -- "16 hardware sound-channel slots (0x1a/26-byte
    records)" -- 16*26=416 bytes real need. */
 static undefined1 DAT_00202a58_backing[512];
-/* ARM stores thirteen four-byte track durations at 0x87414. */
-/* Recovered from the original ARM UU.exe; retain the original table bounds. */
-static undefined1 DAT_00087414_backing[52] = {
-  0x01, 0x00, 0x00, 0x00, 0x7e, 0x00, 0x00, 0x00, 0x79, 0x00, 0x00, 0x00, 0x7e, 0x00, 0x00, 0x00,
-  0x88, 0x00, 0x00, 0x00, 0x2d, 0x00, 0x00, 0x00, 0x26, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00, 0x00,
-  0x30, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x2b, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
-  0x48, 0x00, 0x00, 0x00,
+/* Per-music-track duration table, indexed by the current track byte
+   (DAT_0023c3a8) at a 4-byte stride; real shipped tracks (data/SOUND/
+   UW*.MOD) top out at track 15. Sibling of DAT_000873e0 below, same
+   bound.
+
+   REAL DATA (not a "never recovered" table -- confirmed live via a
+   Ghidra headless read of UU.exe's own initialized .data at this
+   address, /Users/ccuddigan/Projects/UW1/decomp/UW.gpr): each 4-byte
+   entry is a track's elapsed-time budget, consumed as
+   `DAT_0023c330 * 0x100 + 3` in advance_menu_music_track_elapsed's
+   `read_realtime_clock_units() - DAT_0023c280` comparison (each unit
+   is 4ms -- see read_realtime_clock_units' own comment in math.c).
+   track 1 (the title theme) = 126 -> (126*256+3)*4ms =~ 129s; track 11
+   (one of the "track 9/0xb" tracks update_ingame_music_track special-
+   cases as short, not a looping bed) = 7 -> ~7.2s. Before this fix the
+   backing array defaulted to all-zero, so every track's budget was
+   just 3 units (12ms) -- play_music_track's own DAT_0023c330 write
+   happens, but advance_menu_music_track_elapsed then reports "elapsed"
+   on the very next tick, which is the real cause of music restarting
+   on a new random track every few seconds in actual gameplay. Indices
+   past 15 are never reached by real gameplay and stay zero-initialized
+   padding, same defensive sizing as before this fix. */
+static undefined1 DAT_00087414_backing[256] = {
+  1,0,0,0, 126,0,0,0, 121,0,0,0, 126,0,0,0,
+  136,0,0,0, 45,0,0,0, 38,0,0,0, 33,0,0,0,
+  48,0,0,0, 16,0,0,0, 43,0,0,0, 7,0,0,0,
+  72,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0
 };
 #define DAT_00087414 DAT_00087414_backing[0]
 static char s__SOUND__0008750c[] = "\\SOUND\\";
 static char s_uw00_mod_00087514[] = "uw00.mod";
-/* Was always 0 ("audio subsystem not initialized"), with NO writer anywhere in this decompile
-   (every one of the ~15 read sites in this file, grepped exhaustively, only ever compares it --
-   none assigns it) -- same "lost nonzero initial static value" bug class as DAT_00086368 above... */
-static int DAT_00087454;
-/* "Is music currently enabled" -- same lost-initial-value bug class as DAT_00087454 just above
-   (confirmed live: with DAT_00087454 flipped to 1 for testing, run_game_startup_sequence's very
-   first play_music_track)... */
-static int DAT_00087448;
+/* Was always 0 ("audio subsystem not initialized"), with NO writer
+ * anywhere in this decompile (every one of the ~15 read sites in this
+ * file, grepped exhaustively, only ever compares it -- none assigns
+ * it) -- same "lost nonzero initial static value" bug class as
+ * DAT_00086368 above, confirmed live by instrumenting play_music_track:
+ * every single call during real gameplay (menu music cycling, chargen,
+ * dungeon entry) printed `subsys=0`, so play_music_track,
+ * resume_music_playback and set_music_enabled all permanently took
+ * their very first early-out branch -- this flag (together with its
+ * DAT_00087448 "music enabled" sibling right below) is genuinely the
+ * first-order cause of "no music playback", ahead of waveOut being
+ * stubbed.
+ *
+ * UPDATE (real music playback): the "fix this flag -> unlocks
+ * construct_and_load_mod_player -> SIGSEGV in its internal dynamic-array
+ * bookkeeping" chain described above is all still accurate for the
+ * decompiled MOD engine itself (construct_and_load_mod_player/
+ * start_mod_player_playback/stop_mod_player_playback and the ~1400
+ * lines/20+ functions under them later in this file) -- that code is
+ * still never reached and the struct-layout problem above is unchanged.
+ * What changed is that play_music_track/resume_music_playback/
+ * set_music_enabled no longer call through to any of that: they go
+ * through a small vendored MOD player + real SDL2 audio device instead
+ * (see this file's "Real MOD playback backend" block comment, right
+ * before play_music_track). This flag is now genuinely set to 1 by
+ * platform_music_init (called from gx_stub.c's GXOpenDisplay) once that
+ * backend actually succeeds in opening a real audio device -- and left
+ * at this original default of 0 otherwise (no audio hardware, e.g. in a
+ * CI/sandboxed environment), which still falls back cleanly to this
+ * gate's original "subsystem not initialized" silent behavior.
+ *
+ * Not static: platform_music.c's platform_music_init (in its own
+ * translation unit) sets this directly on success -- see
+ * headers/audio.h's extern declaration. */
+int DAT_00087454;
+/* "Is music currently enabled" -- same lost-initial-value bug class as
+ * DAT_00087454 just above.
+ *
+ * UPDATE (real music playback): now set to 1 alongside DAT_00087454 by
+ * platform_music_init on success, for the same reason -- see that
+ * comment just above. Not static, for the same reason as DAT_00087454. */
+int DAT_00087448;
 static byte DAT_0023c3a8;
 static char *DAT_0023c3b8;  /* the MOD-player engine object */
 static undefined1 DAT_0023c384;
 static undefined4 DAT_0023c280;
 static undefined4 DAT_0023c330;
 static short DAT_0023c32c;
-static int DAT_00087450;
-static undefined4 DAT_0008744c;
+/* "Is the sound-effects subsystem initialized" -- the exact same
+ * "lost nonzero initial static value" bug class as DAT_00087454/
+ * DAT_00087448 above (its music-subsystem twin), confirmed the same
+ * way: a live Ghidra memory dump of UU.exe's own initialized .data at
+ * this address reads 01 00 00 00 (1), not 0, and every one of this
+ * file's ~6 read sites (play_positional_sound_effect,
+ * play_sound_effect_with_pan, play_sound_effect_at_object,
+ * set_sound_effects_enabled, is_sound_effects_enabled) only ever
+ * compares it, never assigns it. Before this fix it defaulted to 0,
+ * so all three of this cluster's real positional/pan SFX call sites
+ * took their early-out `return 0xff` branch on every single call --
+ * allocate_and_play_sound_channel (and therefore
+ * trigger_sound_sample_note/platform_sfx_play) could never be reached
+ * through any of them, regardless of allocate_and_play_sound_channel's
+ * own id-whitelist gate (see that function's own comment) or the sfx
+ * engine itself being real. This, not the id-whitelist, was the actual
+ * first-order reason no positional sound effect ever played.
+ *
+ * UPDATE (real SFX playback): now genuinely set to 1 by
+ * platform_sfx_init (in its own translation unit, platform_sfx.c) once
+ * that backend actually succeeds in opening a real audio device --
+ * exactly mirroring DAT_00087454/platform_music_init -- and left at
+ * this original default of 0 otherwise (no audio hardware), which
+ * still falls back cleanly to this gate's original silent behavior.
+ * Not static, for the same reason as DAT_00087454: platform_sfx.c sets
+ * it directly -- see headers/audio.h's extern declaration. */
+int DAT_00087450;
+/* "Are sound effects currently enabled" -- DAT_0008744c's own twin of
+ * DAT_00087448 ("is music enabled"), same lost-initial-value bug,
+ * same live-memory-dump confirmation (01 00 00 00), same fix: set to 1
+ * alongside DAT_00087450 by platform_sfx_init on success. Not static,
+ * for the same reason. */
+int DAT_0008744c;
 /* Sizing-audit pass: max real index is 0xff*5+4=1279 (confirmed by
    the comment below, an 8-bit id field * 5-byte stride) -- a HARD
    bound. Sized all 4 siblings to 1280; down from 8192. */
@@ -98,11 +198,42 @@ static undefined DAT_0023c2b0_backing[1280];
 #define DAT_0023c2b2 DAT_0023c2b0_backing[2] /* Same five-byte ARM sound metadata record. */
 #define DAT_0023c2b3 DAT_0023c2b0_backing[3] /* Same five-byte ARM sound metadata record. */
 static byte DAT_0023c39c;
-/* allocate_and_play_sound_channel indexed these two by raw hardcoded original-binary literal
-   addresses (0x23c338/0x23c350) rather than real declared globals -- same "hardcoded address" bug
-   class as probe_save_slots's -0x87020 and the g_inv_hotspot fix elsewhere in this file. */
-static byte g_sound_channel_state[4];
-static ushort g_sound_channel_group[4];
+/* allocate_and_play_sound_channel indexed these two by raw hardcoded
+   original-binary literal addresses (0x23c338/0x23c350) rather than
+   real declared globals -- same "hardcoded address" bug class as
+   probe_save_slots's -0x87020 and the g_inv_hotspot fix elsewhere in
+   this file. No symbol was ever recovered at either address (nothing
+   else in the whole decompile references them), so on this 64-bit
+   recompile those writes landed on literal address 0x23c338/0x23c350
+   in the process's own address space -- unmapped, so a guaranteed
+   SIGSEGV the first time a sound effect played. Declared as the real
+   4-entry (one per sound channel) per-channel state/group arrays this
+   indexing implies and rewritten to index them properly.
+
+   Sizing-audit pass (real, reachable OOB write, not hypothetical):
+   allocate_and_play_sound_channel's own bit-scan loop over
+   DAT_0023c39c is bounded to `uVar2 < 4`, but DAT_0023c39c's bits are
+   only ever OR'd in (`DAT_0023c39c = DAT_0023c39c | bVar1`) and never
+   cleared anywhere in this whole decompile -- confirmed by grepping
+   every reference to DAT_0023c39c/g_sound_channel_state/
+   g_sound_channel_group project-wide: both arrays are write-only (no
+   code anywhere ever reads them back to free a slot), and nothing
+   clears the bitmask. So once 4 distinct successful calls have each
+   claimed one of the 4 bits (entirely plausible: the id-whitelist
+   below allows 7 distinct ids, and nothing ever resets this), the
+   bit-scan loop runs out all 4 iterations and exits with uVar2==4 --
+   one past the end of both 4-entry arrays. Confirmed via a live
+   Ghidra decompile of the real FUN_00073064 that this is the real
+   original binary's own behavior (identical loop/bound), not a
+   decompile-introduced bug. Widened both arrays by one defensive slot
+   purely for memory safety (same "pad for a confirmed-reachable
+   out-of-bounds index" class as this project's other backing-array
+   sizing fixes) -- not a behavior change: index 4 is still never
+   read by anything, so the extra slot just gives the write somewhere
+   safe to land instead of corrupting whatever static happens to sit
+   next in memory. */
+static byte g_sound_channel_state[5];
+static ushort g_sound_channel_group[5];
 /* Sizing-audit pass: 0 writers, used only as a path-string argument
    (audio.c's SetFileTime-named ordinal stub), content unrecovered.
    Sized to 128 for headroom as a path-text fragment; down from 8192. */
@@ -110,18 +241,46 @@ static undefined DAT_0023c3d4_backing[128];
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
 static char *DAT_0023c3bc;  /* sound-channel slot record */
 static int DAT_0023c378;
-/* ARM stores thirteen four-byte track flags at 0x873e0. */
-/* Recovered from the original ARM UU.exe; retain the original table bounds. */
-static undefined1 DAT_000873e0_backing[52] = {
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-  0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-  0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x01, 0x00, 0x00, 0x00,
+/* Sibling of DAT_00087414 above -- same per-track, 4-byte-stride
+   indexing by DAT_0023c3a8, same real bound (max shipped track 15).
+
+   REAL DATA (same Ghidra headless read as DAT_00087414 above): this
+   table and DAT_00087414 are contiguous in UU.exe's real .data (this
+   one sits 0x34/52 bytes before it, so its own indices 13-15 are
+   literally DAT_00087414's indices 0-2), used in
+   update_ingame_music_track as a per-track "is this an ambient-cycling
+   track" flag (`*(int*)(&DAT_000873e0 + track*4) == 0`). Before this
+   fix it defaulted to all-zero -- i.e. "yes, every track is ambient,
+   always reselect" -- compounding the same DAT_00087414 bug above. */
+static undefined1 DAT_000873e0_backing[256] = {
+  0,0,0,0, 0,0,0,0, 1,0,0,0, 1,0,0,0,
+  1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0,
+  1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+  1,0,0,0, 1,0,0,0, 126,0,0,0, 121,0,0,0
 };
 #define DAT_000873e0 DAT_000873e0_backing[0]
-static undefined4 DAT_00087458;
-/* Sizing pass: read-only (`pcVar4 = &DAT_00087520;`), a base-directory path fragment per its usage
-   context. Real content confirmed via direct Ghidra memory export of UU.exe: "\VOC00.WAV". Sized
+/* BUG FIX (missing table data): was a plain zero-initialized
+   `undefined4` -- get_audio_subsystem_flag's own comment used to say
+   this is "not otherwise written anywhere in this decompile (always
+   its zero-initialized default)", which is true for CODE writers, but
+   the real UU.exe .data byte at this address, confirmed via a live
+   Ghidra memory read (same technique as DAT_00087414/DAT_000873e0/
+   DAT_00087520 above/below), is `01 00 00 00` -- i.e. this flag
+   defaults to 1 (enabled), it's just never written by any function,
+   only ever read once (by get_audio_subsystem_flag itself). Left at 0
+   here, render_babl_dialog_window's own `bVar4 = get_audio_subsystem_flag();
+   local_8b = local_8b & 0xdf | (bVar4 & 1) << 5;` (babl.c) permanently
+   clears the babl conversation-render state's "voice available" bit --
+   confirmed live: every voiced-line call site this port's demo scripts
+   exercise (babl.c's play_numbered_voice_sample call, gated on that
+   same bit) traced to zero calls across 10 different demo scripts
+   before this fix. Corrected to match the real .data content, making
+   the whole numbered-VOC-sample pool (see platform_voice.c) actually
+   reachable for the first time. */
+static undefined4 DAT_00087458 = 1;
+/* Sizing pass: read-only (`pcVar4 = &DAT_00087520;`), a base-directory
+   path fragment per its usage context. Real content confirmed via
+   direct Ghidra memory export of UU.exe: "\VOC00.WAV". Sized
    generously for a path component; down from 32768. */
 static undefined1 DAT_00087520_backing[256] = "\\VOC00.WAV";
 #define DAT_00087520 DAT_00087520_backing[0]
@@ -132,26 +291,32 @@ static undefined2 DAT_0024d00c;
 static undefined1 DAT_0024d010;
 
 
-
-
-
-// was FUN_00072910 -- plays background music track param_1 (patched into the "uw%02d.mod" filename
-// template, played from \SOUND\): no-op if the audio subsystem isn't initialized
-// (DAT_00087454/DAT_00087448) or the track is already playing (param_1==DAT_0023c3a8).
+// was FUN_00072910 -- plays background music track track_number (patched
+// into the "uwNN.mod" filename template via a base-8-style two-digit
+// construction -- (track_number>>3)&0xf then track_number&7, NOT a naive
+// %02d -- see this function's own "BUG FIX" comment below, and played
+// from \SOUND\): no-op if the audio subsystem isn't initialized
+// (DAT_00087454/DAT_00087448) or the track is already playing
+// (track_number==DAT_0023c3a8). Stops any currently-playing module via
+// its COM-style interface (DAT_0023c3b8), opens and loads the new one via
+// the MOD-player ordinals (cpp_operator_new/177/construct_and_load_mod_player),
+// and -- if flags!=0 -- starts playback (start_mod_player_playback)
+// and records the start time and this track's own duration
+// (DAT_00087414-indexed per-track table -- see
+// advance_menu_music_track's own comment for how it's used) for later
+// use.
 int play_music_track(byte track_number, int flags)
 {
   char stack0xffdc3238_buf [256];
   char *stack0xffdc3238_ptr;
   char cVar1;
   char *pcVar2;
-  void *iVar3;
   undefined4 uVar4;
   /* Was declared as just 2 bytes -- Ghidra only recovered the first access, but this is filled from
      the 9-byte "uw00.mod\0" template right below and local_12e/local_12d (now folded in as direct
      indexed writes) patch the two '0' digits in place at offsets 2/3... */
   undefined1 auStack_130 [16];
   undefined1 local_127;
-  undefined4 local_124;
   char acStack_120 [260];
 
   ce_memmove(auStack_130,s_uw00_mod_00087514,9);
@@ -181,19 +346,54 @@ int play_music_track(byte track_number, int flags)
         }
         DAT_0023c3b8 = (char *)0x0;
       }
-      iVar3 = cpp_operator_new(0x10581);
-      if (iVar3 == 0) {
-        DAT_0023c3b8 = (char *)0x0;
-      }
-      else {
-        SetFileTime(&local_124,acStack_120);
-        DAT_0023c3b8 = (char *)construct_and_load_mod_player(iVar3,(void *)(uintptr_t)local_124);
+      /* BUG FIX (real music playback): the cpp_operator_new/SetFileTime/
+       * construct_and_load_mod_player chain this replaces is permanently
+       * unreachable -- cpp_operator_new is a hardcoded-NULL stub (see its
+       * own comment in ordinal_stubs.c), and even with a real allocator
+       * the decompiled MOD engine's internal struct layout is unsafe on
+       * this 64-bit host (see DAT_00087454's comment above) -- so
+       * construct_and_load_mod_player has never once actually executed.
+       * Load the real MOD file through the vendored HxCModPlayer backend
+       * instead (see this file's "Real MOD playback backend" block
+       * comment above). Builds its own filename directly from
+       * track_number rather than relying on acStack_120/auStack_130 just
+       * built above (those still depend on an unverified Ghidra
+       * split-stack-slot alias, stack0xffdc3238_buf vs. acStack_120, and
+       * are genuinely dead).
+       *
+       * BUG FIX (wrong track playing, e.g. automap/talk/rest-interrupt's
+       * track 0xd/13 audibly playing UW13.MOD instead of the real
+       * original's UW15.MOD): the file-number digits are NOT track_number
+       * formatted in decimal -- confirmed via live Ghidra decompile of
+       * the real FUN_00072910, the original (dead) path right above
+       * builds them as `local_12e = (track_number>>3)+'0';
+       * local_12d = (track_number&7)+'0';`, i.e. each digit character is
+       * computed separately (tens = track_number/8, ones =
+       * track_number%8), not track_number run through a single base-10
+       * conversion. The two schemes agree for track_number 0-7 (e.g.
+       * track 2 -> uw02.mod either way) but diverge from track 8 on:
+       * track 8 (combat) is really uw10.mod, track 9 is uw11.mod, track
+       * 0xb/11 is uw13.mod, track 0xd/13 (automap/talk/rest) is
+       * uw15.mod, etc. -- confirmed against the real shipped data/SOUND
+       * set, which has exactly the 12 files this formula predicts (01-07,
+       * 10-13, 15) and none of the ones plain decimal would ask for
+       * instead (08, 09, 14). A naive "\SOUND\uw%02d.mod" with plain
+       * decimal formatting (what this fix replaces) silently loaded a
+       * real but wrong file for every track >= 8 whose decimal number
+       * also happens to exist (9->uw09 doesn't exist so failed silently;
+       * 0xb->uw11 exists but is the wrong track; 0xd->uw13 exists but is
+       * the wrong track). */
+      {
+        char uwmod_path[32];
+        snprintf(uwmod_path, sizeof(uwmod_path), "\\SOUND\\uw%d%d.mod",
+                 (track_number >> 3) & 0xf, track_number & 7);
+        platform_music_load_track(uwmod_path);
       }
     }
     DAT_0023c384 = 0;
     DAT_0023c3a8 = track_number;
     if (flags != 0) {
-      start_mod_player_playback(DAT_0023c3b8);
+      platform_music_start();
       DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
@@ -209,15 +409,19 @@ int play_music_track(byte track_number, int flags)
 
 
 
-// was FUN_00072aac -- restarts/resumes playback of the currently-loaded music module (same
-// start-playback steps as the tail of play_music_track, minus the load), gated on the audio
-// subsystem being initialized and DAT_0023c32c (an open-module handle) being valid.
+// was FUN_00072aac -- restarts/resumes playback of the currently-loaded
+// music module (same start-playback steps as the tail of play_music_track,
+// minus the load), gated on the audio subsystem being initialized and
+// DAT_0023c32c (an open-module handle) being valid.
+// BUG FIX (real music playback): start_mod_player_playback(DAT_0023c3b8)
+// replaced with platform_music_start() -- see play_music_track's own
+// comment and this file's "Real MOD playback backend" block comment.
 void resume_music_playback()
 
 {
   if ((DAT_00087454 != 0) && (DAT_00087448 != 0)) {
     if (DAT_0023c32c != -1) {
-      start_mod_player_playback(DAT_0023c3b8);
+      platform_music_start();
       DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
@@ -272,6 +476,9 @@ int is_sound_effects_enabled()
 // was FUN_00072b74 -- enables (param_1!=0: resumes playing
 // DAT_0023c384, the current/pending track) or disables (param_1==0:
 // stops playback via stop_mod_player_playback) background music.
+// BUG FIX (real music playback): stop_mod_player_playback(DAT_0023c3b8)
+// replaced with platform_music_stop() -- see play_music_track's own
+// comment and this file's "Real MOD playback backend" block comment.
 void set_music_enabled(int enable)
 {
   uint uVar1;
@@ -292,7 +499,7 @@ void set_music_enabled(int enable)
     }
     if (((DAT_00087448 & uVar1) != 0) && (DAT_0023c32c != -1)) {
       DAT_00087448 = 0;
-      stop_mod_player_playback(DAT_0023c3b8);
+      platform_music_stop();
       DAT_00087448 = 0;
     }
   }
@@ -301,10 +508,11 @@ void set_music_enabled(int enable)
 
 
 // was FUN_00072c10 -- set_music_enabled's counterpart for the sound-
-// effects subsystem: param_1==0 disables it (also calling
-// stop_current_audio_handle_dup to clean up), param_1!=0 enables it.
+// effects subsystem: enabled==0 disables it (also calling
+// stop_current_audio_handle_dup to clean up), enabled!=0 enables it.
 void set_sound_effects_enabled(int enabled)
 {
+  DEBUG(TRACE, "[audio] set_sound_effects_enabled(enabled=%d) subsys=%d enabled=%d", enabled, DAT_00087450, DAT_0008744c);
   if (DAT_00087450 != 0) {
     if (enabled == 0) {
       DAT_0008744c = 0;
@@ -321,12 +529,47 @@ void set_sound_effects_enabled(int enabled)
 
 
 
-// was FUN_00072c44 -- stops the current sound/music handle (stop_mod_player_playback(DAT_0023c3b8))
-// if the audio subsystem is initialized and a "handle" check passes.
+// was FUN_00072c44 -- stops the current sound/music handle
+// (stop_mod_player_playback(DAT_0023c3b8)) if the audio subsystem is
+// initialized and music is enabled. The gate originally decompiled as a
+// Ghidra artifact rather than real original logic -- it read
+// DAT_00087448 (elsewhere in this file a plain int on/off flag, e.g.
+// is_music_playing) as if it were a pointer value, which only made
+// sense as a mis-inferred type from this one call site. That artifact
+// has since been resolved into the plain `DAT_00087448 != 0` int test it
+// always really was.
+//
+// BUG FIX (real crash, confirmed live): the gate above was PREVIOUSLY
+// believed harmless ("no live bug has been observed from it") because
+// DAT_00087454/DAT_00087448 used to be permanently stuck at 0 (see
+// their own comment) -- but platform_music_init now genuinely sets
+// both to 1 once a real audio device opens, so on any machine with
+// working audio this gate now evaluates true and calls
+// stop_mod_player_playback(DAT_0023c3b8) unconditionally, with
+// DAT_0023c3b8 always NULL (deliberately never assigned -- see
+// platform_music.c's block comment). stop_mod_player_playback's own
+// body (its "shutdown counterpart to start_mod_player_playback" --
+// see that function's comment) writes through param_1+0x10554 with no
+// null check of its own, i.e. a guaranteed NULL-pointer write/crash.
+// Every *other* stop_mod_player_playback call site in this file
+// (play_music_track, set_music_enabled, the dead body of
+// trigger_sound_sample_note, etc.) already guards it behind an
+// explicit `DAT_0023c3b8 != 0` check first -- this function and its
+// stop_current_audio_handle_dup twin were simply missing that same
+// guard, decompiled as literally as the rest of the gate was. Two real
+// call sites reach this live: handle_starvation_penalty (player.c,
+// fires whenever the player starves) and set_sound_effects_enabled
+// (hud.c's sound-effects toggle UI / player.c's settings load), both
+// via stop_current_audio_handle_dup -- so this is a real, reachable
+// crash during ordinary gameplay, not a hypothetical. Adding the same
+// NULL guard every sibling call site already has fixes it while
+// leaving this function's own decompiled shape/intent completely
+// unchanged -- it was always meant to be a safe no-op while
+// DAT_0023c3b8 stays NULL, it just wasn't actually safe before.
 void stop_current_audio_handle()
 
 {
-  if (DAT_00087454 != 0 && DAT_00087448 != 0) {
+  if (DAT_00087454 != 0 && DAT_00087448 != 0 && DAT_0023c3b8 != (char *)0x0) {
     stop_mod_player_playback(DAT_0023c3b8);
   }
   return;
@@ -337,9 +580,28 @@ void stop_current_audio_handle()
 
 
 
-// was FUN_00072c74 -- plays sound effect param_1 positioned at world coordinates (param_2,param_3),
-// with a base volume/id-derived parameter block param_4: computes the distance from the player
-// (integer_sqrt, a sqrt-shaped distance function) and, if within range...
+// was FUN_00072c74 -- plays sound effect sound_id positioned at world
+// coordinates (world_x,world_y), with a base volume/id-derived
+// parameter block volume_bias: computes the distance from the player
+// (integer_sqrt, a sqrt-shaped distance function) and, if within range
+// (uVar3<=0x30, else fails outright), derives a distance-attenuated
+// volume and a stereo pan (via heading_to_sine_cosine against the
+// player's own facing) before dispatching to allocate_and_play_sound_channel with the
+// per-sound-effect-id parameter table entries (DAT_0023c2b0/b1/b2/b3,
+// 5-byte stride per id). Fails (returns 0xff) if the sound-effects
+// subsystem is disabled or the sound is out of range.
+//
+// BUG FIX (real SFX playback, root cause): "the sound-effects
+// subsystem is disabled" was NOT a real runtime condition before this
+// fix -- DAT_00087450 was permanently stuck at 0 (see its own comment
+// above), so this early-out fired on literally every call, for every
+// caller, always. Now that platform_sfx_init sets it (and
+// DAT_0008744c) to 1 on success, this function's own body -- already
+// correct, matches a live Ghidra decompile of the real FUN_00072c74
+// exactly, no dropped arguments -- genuinely runs and reaches
+// allocate_and_play_sound_channel/trigger_sound_sample_note/
+// platform_sfx_play for the first time. No change was needed here
+// beyond the global's own default-value fix.
 int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias)
 {
   short sVar1;
@@ -354,7 +616,9 @@ int play_positional_sound_effect(uint sound_id, short world_x, short world_y, ui
   int iVar10;
   short local_28;
   short local_26;
-  
+
+  DEBUG(TRACE, "[audio] play_positional_sound_effect(id=%u) gate: subsys=%d enabled=%d",
+        sound_id & 0xff, DAT_00087450, DAT_0008744c);
   if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
 LAB_00072f24:
     uVar4 = 0xff;
@@ -438,8 +702,16 @@ LAB_00072f24:
 
 
 
-// was FUN_00072f30 -- play_positional_sound_effect's non-positional sibling: plays sound effect
-// param_1 with an explicit pan (param_2, passed straight through) and a volume boost...
+// was FUN_00072f30 -- play_positional_sound_effect's non-positional
+// sibling: plays sound effect sound_id with an explicit pan (passed
+// straight through) and a volume boost (volume_bias, added to the
+// per-id base volume DAT_0023c2b2[id] and clamped to 0..0x7f) rather
+// than deriving pan/volume from a world position.
+//
+// BUG FIX (real SFX playback, root cause): same DAT_00087450/
+// DAT_0008744c default-value fix as play_positional_sound_effect
+// above unlocks this function too -- see that function's own "BUG
+// FIX" comment. No change needed in this function's own body.
 int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias)
 {
   uint uVar1;
@@ -469,20 +741,70 @@ int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias)
 
 
 // was FUN_00072fc8 -- play_positional_sound_effect's convenience wrapper taking an object pointer
-// (param_2) instead of raw coordinates: extracts the object's world position and forwards to
+// instead of raw coordinates: extracts the object's world position and forwards to
 // play_positional_sound_effect.
+//
+// BUG FIX (real SFX playback, root cause): same DAT_00087450/
+// DAT_0008744c default-value fix unlocks this wrapper too -- see
+// play_positional_sound_effect's own "BUG FIX" comment. No change
+// needed in this function's own body.
+//
+// BUG FIX (real crash, confirmed live + via Ghidra): the object pointer
+// is dereferenced unconditionally (*(ushort*)(object+0x16),
+// *(byte*)(object+3)) with no NULL check -- confirmed byte-for-byte
+// against a live Ghidra decompile of the real FUN_00072fc8, so this is
+// a genuine latent bug in the original compiled game, not a
+// decompile artifact, just never reachable before DAT_00087450/
+// DAT_0008744c were fixed to their real nonzero default (see above).
+// get_object_record_by_slot_index (this function's own callers'
+// shared accessor) legitimately returns NULL for an empty slot --
+// already documented at its own definition in objects.c and guarded
+// at several other call sites (movement.c, tmap.c) -- and
+// play_weapon_impact_sound's own whiff-case branch
+// (result==0 in combat.c) calls it with DAT_00100610, which is 0 on
+// a swing with no acquired target, passing that NULL straight through
+// to here. Confirmed live: swinging a weapon with no target in range
+// SIGSEGVs here (crash_backtrace_handler: play_weapon_impact_sound ->
+// play_sound_effect_at_object). Guarded the same way the subsystem-
+// disabled case already is, matching this function's own existing
+// "fails (returns 0xff)" convention.
+//
+// BUG FIX (real crash, confirmed live via lldb): this object parameter
+// was `int` -- a 32-bit truncation of the real 64-bit object pointer
+// every real caller passes (e.g. spawn_object_near_player's own
+// `play_sound_effect_at_object(10,puVar6,0)`, objects.c, where puVar6
+// is a genuine `ushort *`) -- the exact same pointer-truncation class
+// fixed repeatedly elsewhere in this codebase (see e.g.
+// read_xor_scrambled_block's own param_3 fix in player.c). Confirmed
+// live under lldb: dropping an item into a container SIGSEGVs at
+// `*(ushort *)(object + 0x16)` with the parameter == 87805 (0x1577d) --
+// a small, clearly-truncated value, not a real heap address and not the
+// NULL case the fix just above this one already covers. Widened to a
+// real pointer type so the full 64-bit address survives the call.
+//
+// The 0x16/3 offsets below are BYTE offsets into the object record, so
+// the arithmetic is done through a `char *` view rather than directly on
+// the `ushort *` parameter: `object + 0x16` on a ushort pointer would
+// scale by 2 and read byte 44 instead of byte 22, silently reading the
+// wrong fields (and past the end of a real 0x20-byte record). The
+// parameter itself stays `ushort *` to match every caller and the
+// headers/audio.h declaration. Covered by
+// test_play_sound_effect_at_object_does_not_truncate_the_object_pointer,
+// which pins the exact decoded pan/volume for known bytes at those
+// offsets.
 int play_sound_effect_at_object(int sound_id, ushort *object, int volume_bias)
 {
   undefined4 uVar1;
-  
-  if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
+  const char *record = (const char *)object;
+
+  if ((DAT_00087450 == 0) || (DAT_0008744c == 0) || (object == 0)) {
     uVar1 = 0xff;
   }
   else {
-    uVar1 = play_positional_sound_effect(sound_id,((*(ushort *)(object + 0x16) & 0xfc00) >> 7) +
-                                 (uint)(*(byte *)(object + 3) >> 5),
-                         (*(byte *)(object + 3) >> 2 & 7) +
-                         ((*(ushort *)(object + 0x16) & 0x3f0) >> 1),volume_bias);
+    uVar1 = play_positional_sound_effect(sound_id,((*(ushort *)(record + 0x16) & 0xfc00) >> 7) +
+                                 (uint)(*(byte *)(record + 3) >> 5),
+                         (*(byte *)(record + 3) >> 2 & 7) +
+                         ((*(ushort *)(record + 0x16) & 0x3f0) >> 1),volume_bias);
   }
   return uVar1;
 }
@@ -492,7 +814,24 @@ int play_sound_effect_at_object(int sound_id, ushort *object, int volume_bias)
 
 
 
-// was FUN_0007305c -- currently a no-op stub (Ghidra recovered an empty body).
+// was FUN_0007305c -- currently a no-op stub (Ghidra recovered an
+// empty body). Its two call sites, both in movement.c's per-tick
+// footstep/jump sound handling, call it right before resetting
+// DAT_00086e84 (a sound-handle-in-progress marker) to -1, so this was
+// most plausibly meant to stop that in-progress movement sound.
+//
+// INVESTIGATED (positional SFX cluster): re-confirmed via a live
+// Ghidra decompile of the real FUN_0007305c -- it genuinely is an
+// empty function in the original compiled binary (no instructions at
+// all beyond the return), not a Ghidra lost-body case. There is
+// nothing real to wire up here: the movement-sound "handle"
+// (DAT_00086e84) it's named after is itself just the *return value*
+// of play_sound_effect_with_pan(0,...) (see movement.c), and that id
+// (0) is below allocate_and_play_sound_channel's own id-whitelist
+// floor (see that function's comment) -- footstep sounds never
+// actually reach trigger_sound_sample_note/platform_sfx_play in the
+// real game at all, confirmed, so there is no real in-progress voice
+// for this function to ever stop. Left exactly as decompiled.
 void stop_movement_sound_handle()
 
 {
@@ -501,13 +840,24 @@ void stop_movement_sound_handle()
 
 
 
-// was thunk_FUN_00072c44 -- byte-for-byte identical body to stop_current_audio_handle (this
-// project's established split-symbol/ naming-collision bug class -- see that function's own
-// comment)...
+// was thunk_FUN_00072c44 -- byte-for-byte identical body to
+// stop_current_audio_handle (this project's established split-symbol/
+// naming-collision bug class -- see that function's own comment; kept
+// as a separately-named/addressed function per this project's
+// convention of preserving what Ghidra recovered).
+//
+// BUG FIX (real crash, confirmed live): same missing
+// `DAT_0023c3b8 != 0` guard as stop_current_audio_handle -- see that
+// function's own "BUG FIX (real crash, confirmed live)" comment for
+// the full root-cause writeup. This is the twin that's actually
+// called from real gameplay: handle_starvation_penalty (player.c)
+// calls it directly, and set_sound_effects_enabled (this file, driven
+// live by hud.c's sound-toggle click handler and player.c's settings
+// load) calls it whenever sound effects are turned off.
 void stop_current_audio_handle_dup()
 
 {
-  if (DAT_00087454 != 0 && DAT_00087448 != 0) {
+  if (DAT_00087454 != 0 && DAT_00087448 != 0 && DAT_0023c3b8 != (char *)0x0) {
     stop_mod_player_playback(DAT_0023c3b8);
   }
   return;
@@ -518,15 +868,52 @@ void stop_current_audio_handle_dup()
 
 
 
-// was FUN_00073064 -- allocates a free sound channel slot (bit-scanned from DAT_0023c39c, 4
-// channels) and maps sound-effect id param_1 to a "sound group" value...
+// was FUN_00073064 -- allocates a free sound channel slot (bit-scanned
+// from DAT_0023c39c, 4 channels) and maps sound-effect id sound_id to a
+// "sound group" value (4/8/0x10, ids 3/0x16 -> 4, 4/0x10 -> 0x10, else
+// 8; ids <7 fail outright, returning 0xff) stored per-channel in
+// g_sound_channel_state/g_sound_channel_group (see their own
+// declaration comment -- BUG FIX: was raw hardcoded-address writes),
+// then dispatches the actual sample trigger via trigger_sound_sample_note.
+// Called by play_positional_sound_effect and siblings as their final
+// low-level step.
+//
+// INVESTIGATED (positional SFX cluster): the id-whitelist above is
+// confirmed via a live Ghidra decompile of the real FUN_00073064 to be
+// genuine original behavior, not a decompile artifact -- only ids
+// {3,4,7,8,0x10,0x15,0x16} ever succeed; every other id (including the
+// footstep ids play_sound_effect_with_pan(0/2,...) uses in movement.c,
+// and the door-open/close ids play_positional_sound_effect(0xb/0x14,...)
+// uses in doors.c) returns 0xff here and never reaches
+// trigger_sound_sample_note -- footsteps and door sounds are genuinely
+// silent via this path in the real game, not a bug introduced here.
+//
+// INVESTIGATED (module/resource_id/flags/extra are real but unused):
+// the raw Ghidra signature for FUN_00073064 has only 4 formal
+// parameters; module/resource_id (the per-id table bytes
+// DAT_0023c2b0/b1) are never read anywhere in its body, and
+// there is no code reading a 5th/6th stack argument either -- i.e.
+// play_positional_sound_effect's carefully distance-attenuated volume
+// (note, which DOES get forwarded to trigger_sound_sample_note
+// below and IS used) survives, but its equally carefully computed
+// stereo pan (flags) and the per-id group table value
+// (extra) are discarded right here, never reaching
+// real playback, in the real original compiled game -- see
+// trigger_sound_sample_note's own comment for where volume itself
+// then also gets dropped one layer further down. This declaration
+// keeps all 6 parameters (matching every real call site's
+// own argument count) rather than trimming it to Ghidra's bare 4,
+// per this project's convention of preserving what a caller actually
+// passes even when the callee provably ignores some of it.
 uint allocate_and_play_sound_channel(byte sound_id, int module, int resource_id, byte note, uint flags, int extra)
 {
   byte bVar1;
   uint uVar2;
   undefined2 uVar3;
   byte bVar4;
-  
+
+  DEBUG(INFO, "[audio] allocate_and_play_sound_channel(id=%u, volume=%u)", sound_id, note);
+
   bVar1 = 1;
   bVar4 = DAT_0023c39c & 1;
   for (uVar2 = 0; (bVar4 != 0 && (uVar2 < 4)); uVar2 = uVar2 + 1 & 0xff) {
@@ -567,15 +954,61 @@ LAB_00073108:
 
 
 
-// was FUN_00073140 -- the low-level sound-sample trigger: lazily reloads the current music module
-// if playback had stopped (DAT_00087448==0) and lazily allocates the sample-set handle
-// (DAT_0023c3bc) on first use...
+// was FUN_00073140 -- the low-level sound-sample trigger: lazily
+// reloads the current music module if playback had stopped
+// (DAT_00087448==0) and lazily allocates the sample-set handle
+// (DAT_0023c3bc) on first use, then triggers sample id sample_index+800
+// as a one-shot note into the module player (load_and_resample_wave_sample/
+// arm_sfx_trigger_slot/start_sfx_trigger_slot), all through the audio interface
+// DAT_0023c3b8.
+//
+// BUG FIX (real SFX playback): the body below (gated by
+// `DAT_0023c3b8 != 0`) has never once executed -- DAT_0023c3b8 is the
+// dead decompiled MOD engine's COM-style handle, deliberately never
+// assigned a value anywhere in this codebase (see platform_music.c's
+// block comment) -- and even if it somehow were non-NULL,
+// load_and_resample_wave_sample's own FindResourceW/LoadResource calls
+// are hardcoded-0 stubs (ordinal_stubs.c) feeding a struct-packing
+// scheme that's the same 64-bit-unsafe disease as the MOD engine's
+// (see platform_sfx.c's own block comment for the full chain). Resource
+// id sample_index+800 really is a genuine "WAVE"-type PE resource embedded
+// in data/UU.exe (36 of them, ids 801-859 with gaps -- confirmed via
+// direct PE parsing), so play it through the real platform_sfx backend
+// instead, ahead of the dead gate below rather than inside it -- same
+// shape as play_music_track's own real interception sitting ahead of
+// its dead construct_and_load_mod_player chain. The original body is
+// left completely untouched/still unreachable underneath, exactly like
+// the MOD engine's own dead code.
+//
+// INVESTIGATED (no volume/pan parameter to forward): the `note`
+// parameter here is the volume allocate_and_play_sound_channel forwards
+// on from play_positional_sound_effect/play_sound_effect_with_pan's own
+// distance/pan math (see allocate_and_play_sound_channel's own
+// comment) -- but a live Ghidra decompile of the real FUN_00073140
+// shows only ONE formal parameter (the sample index); its body never
+// reads a second argument at all. So in the real original compiled game,
+// volume was computed, forwarded this far, and then genuinely
+// dropped -- never reaching the actual sample trigger. platform_sfx_play
+// below is deliberately a plain `(resource_id)` call for the same
+// reason: there's no real volume value from this call chain worth
+// forwarding, and the 36 extracted WAVE resources are themselves mono
+// PCM with no stereo image to pan in the first place. This is a
+// confirmed fact about the original binary (not a guess from "mono
+// WAVs probably didn't need panning"), so no volume/pan parameter was
+// added to platform_sfx_play's own interface -- see platform_sfx.h's
+// own comment for where that conclusion is recorded for the backend
+// side too.
 void trigger_sound_sample_note(int sample_index, int note)
 {
   char cVar1;
   void *iVar2;
   undefined4 local_18;
-  
+
+  DEBUG(INFO, "[audio] trigger_sound_sample_note: sample_index %d, note %d\n",
+        sample_index, note);
+
+  platform_sfx_play(sample_index + 800);
+
   if (DAT_0023c3b8 != (char *)0x0) {
     if (DAT_00087448 == 0) {
       stop_mod_player_playback(DAT_0023c3b8);
@@ -720,12 +1153,19 @@ int check_secret_tune_match(char *notes)
 
 
 
-// was FUN_0007355c -- currently a no-op stub (Ghidra recovered an empty body). Called immediately
-// before shutdown_music_module in the app-shutdown sequence, so most plausibly meant to shut down
-// the sound-effects subsystem as its counterpart.
+// was FUN_0007355c -- currently a no-op stub (Ghidra recovered an
+// empty body). Called immediately before shutdown_music_module in the
+// app-shutdown sequence, so most plausibly meant to shut down the
+// sound-effects subsystem as its counterpart.
+// BUG FIX (real voice-sample playback): added platform_voice_shutdown()
+// to actually close the real voice-sample audio device before process
+// exit, same shape as shutdown_music_module's own
+// platform_music_shutdown() addition just below. (platform_sfx's own
+// shutdown is a separate cluster's call site, not touched here.)
 void shutdown_sound_effects()
 
 {
+  platform_voice_shutdown();
   return;
 }
 
@@ -734,9 +1174,15 @@ void shutdown_sound_effects()
 // was FUN_00073560 -- fully shuts down the music module: stops playback, releases the module's
 // COM-style interface, and nulls the handle. Called from the app-shutdown sequence right after
 // shutdown_sound_effects.
+// BUG FIX (real music playback): the DAT_0023c3b8 block below is
+// unreachable (DAT_0023c3b8 is deliberately never assigned a value
+// anywhere now -- see this file's "Real MOD playback backend" block
+// comment), so it's left exactly as-is; platform_music_shutdown() added instead
+// to actually close the real audio device before process exit.
 void shutdown_music_module()
 
 {
+  platform_music_shutdown();
   if (DAT_0023c3b8 != (char *)0x0) {
     stop_sfx_trigger_slot(DAT_0023c3b8,0);
     stop_mod_player_playback(DAT_0023c3b8);
@@ -899,8 +1345,12 @@ bool advance_menu_music_track_elapsed()
 
 
 // was FUN_000738ac -- returns DAT_00087458, an audio-subsystem-related
-// flag not otherwise written anywhere in this decompile (always its
-// zero-initialized default in this build).
+// flag not otherwise written anywhere in this decompile (no function
+// ever assigns it -- see its own declaration comment above for why
+// it's still initialized to 1, not left at a zero default: confirmed
+// real .data content, not a guess). The one real caller,
+// render_babl_dialog_window (babl.c), uses this value to gate whether
+// a conversation line's "voice available" bit is ever set at all.
 int get_audio_subsystem_flag()
 
 {
@@ -919,9 +1369,24 @@ int audio_always_true_stub()
 
 
 
-// was FUN_000738c4 -- plays a numbered voice/speech sample: lazily reloads the music module if
-// playback had stopped (same pattern as trigger_sound_sample_note), waits for any currently-playing
-// sample to finish, lazily allocates the sample-set handle...
+// was FUN_000738c4 -- plays a numbered voice/speech sample: lazily
+// reloads the music module if playback had stopped (same pattern as
+// trigger_sound_sample_note), waits for any currently-playing sample
+// to finish, lazily allocates the sample-set handle, then patches two
+// ASCII decimal digits (sample_number/10, sample_number%10 -- confirmed
+// genuine divide-by-10 via a live Ghidra decompile, NOT the base-8 scheme
+// play_music_track's own filename digits turned out to need) into the
+// "00" placeholder of a stack copy of DAT_00087520 ("\VOC00.WAV",
+// already-recovered real content, see its own declaration comment
+// above -- this comment used to wrongly claim neither buffer here was
+// ever recovered), then strcats that patched "\VOCnn.WAV" onto a stack
+// copy of DAT_00241f08 (confirmed, via its other use site in game.c's
+// registry-install-dir lookup, to hold the game's absolute install
+// directory, not a second filename template) before loading/playing
+// the result as a one-shot note. See platform_voice.c's own block
+// comment for the full chain (including why DAT_00241f08's half is
+// irrelevant to this port) and the real playback backend hooked in
+// below.
 int play_numbered_voice_sample(short sample_number)
 {
   int uw_ord2005_rem_152 = 0;
@@ -943,7 +1408,9 @@ int play_numbered_voice_sample(short sample_number)
   char local_21c;
   char local_21b;
   char acStack_118 [260];
-  
+
+  platform_voice_play(sample_number);
+
   if (DAT_0023c3b8 == (char *)0x0) {
     result = 0;
   }
@@ -1027,9 +1494,27 @@ void voice_sample_cluster_stub_1()
 
 // was FUN_00073ac4 -- true once the voice/speech sample most recently
 // started (via play_numbered_voice_sample) has finished playing.
+//
+// BUG FIX (real voice-sample playback): unlike play_numbered_voice_sample
+// and stop_voice_sample just below, this function's real decompiled body
+// has NO `DAT_0023c3b8 == 0` guard at all -- it unconditionally calls
+// is_sfx_trigger_slot_active(DAT_0023c3b8, 0), which dereferences
+// `*(char*)(param_2*0xd + param_1 + 0x10410)` with param_1 (DAT_0023c3b8)
+// always NULL on this codebase's current (deliberately dead) MOD-engine
+// path, i.e. a raw dereference of address 0x10410 -- a real crash the
+// instant any babl conversation line sets the "voice forced on" flag
+// (see babl.c's render_babl_dialog_window/babl_render_tick), not just a
+// hypothetical. The real platform_voice backend (see platform_voice.c)
+// replaces this whole body outright -- returning its real answer
+// directly, rather than prepending a call and falling through the way
+// play_numbered_voice_sample/stop_voice_sample do -- specifically to
+// never reach that unguarded dereference. The original body is left
+// completely untouched/still unreachable underneath.
 bool is_voice_sample_finished()
 
 {
+  return platform_voice_is_finished();
+
   char cVar1;
 
   cVar1 = is_sfx_trigger_slot_active(DAT_0023c3b8,0);
@@ -1043,6 +1528,8 @@ bool is_voice_sample_finished()
 void stop_voice_sample()
 
 {
+  platform_voice_stop();
+
   if (DAT_0023c3b8 != 0) {
     stop_sfx_trigger_slot(DAT_0023c3b8,0);
   }
@@ -1060,8 +1547,46 @@ void voice_sample_cluster_stub_2()
 }
 
 
-// was FUN_0007ea44 -- probabilistically starts an ambient looping sound effect: rolls a ~1-in-8-ish
-// chance (ce_rand % 8), and if it lands, tries to acquire an ambient-sound-class resource...
+// was FUN_0007ea44 -- probabilistically starts an ambient looping
+// sound effect: rolls a ~1-in-8-ish chance (ce_rand % 8), and if
+// it lands, tries to acquire an ambient-sound-class resource
+// (acquire_sound_resource_slot(0x1e), not yet named -- reads as "get a free slot/
+// count for class 0x1e"). On failure to get any (result 0), reports a
+// fatal error (report_categorized_fatal_error(0x2001), not yet named -- confirmed
+// elsewhere in this file as an ce_malloc-allocation-failure
+// handler, e.g. init_level_object_arena's report_categorized_fatal_error(0x1002));
+// otherwise, if the acquired value is below the roll threshold and
+// above 0x23, releases it and retries with an adjusted count,
+// falling back to another fatal-error report if that retry still
+// comes up short. On success, calls init_ambient_sound_timing to set
+// up the effect's timing state. Regardless of the roll outcome,
+// always allocates a small (0x10010-flagged) buffer via ce_malloc,
+// reporting a third fatal-error code (0x1007) if that allocation
+// fails too -- this second half's exact purpose (distinct from the
+// ambient-sound roll above it) isn't confirmed.
+//
+// INVESTIGATED (positional SFX cluster): this entire mechanism is a
+// separate, never-fully-decompiled subsystem that does NOT go through
+// trigger_sound_sample_note/DAT_0023c3b8 or any WAVE resource id at
+// all -- it operates purely on acquire_sound_resource_slot/
+// release_sound_resource_slot (ce_rand-driven "resource slot" counts,
+// not sample ids) and opaque ce_malloc/LocalFree buffer handles.
+// acquire_sound_resource_slot's own body always returns the fixed
+// value 0x28 regardless of its real parameters (same "lost body"
+// class as several LAB_ stub functions elsewhere), and
+// release_sound_resource_slot is itself an empty no-op. With no real
+// resource id anywhere in this chain to map onto platform_sfx's
+// WAVE-resource engine, there is nothing concrete here to wire up --
+// forcing a platform_sfx_play call in here would be inventing new
+// behavior with no decompiled evidence behind it. Left untouched.
+//
+// RE-CONFIRMED (QA question "should this be playing notes in the
+// tracker?"): re-verified acquire_sound_resource_slot's "always
+// returns 0x28" claim above against a FRESH live Ghidra decompile of
+// the real FUN_00049940 -- byte-for-byte `undefined4 FUN_00049940(void)
+// { return 0x28; }`, genuinely parameter-less and constant-returning in
+// the real original binary, not a decompile artifact masking something
+// real. This rules out a hidden tracker-note mechanism definitively.
 void start_ambient_sound_effect(int sound_id)
 {
   int uw_ord2005_rem_169 = 0;
@@ -1102,9 +1627,18 @@ void start_ambient_sound_effect(int sound_id)
 
 
 
-// was FUN_0007eb34 -- the shutdown counterpart to start_ambient_sound_effect: releases the acquired
-// resource (release_sound_resource_slot, not yet named) when one is held (DAT_002506f0 > 0), and
-// stops the looping sound (LocalFree) when one is playing (DAT_002506ec != 0)...
+// was FUN_0007eb34 -- the shutdown counterpart to
+// start_ambient_sound_effect: releases the acquired resource
+// (release_sound_resource_slot, not yet named) when one is held (DAT_002506f0 > 0),
+// and stops the looping sound (LocalFree) when one is playing
+// (DAT_002506ec != 0), clearing that handle afterward. Its only
+// confirmed caller runs during game shutdown, paired with
+// start_ambient_sound_effect(2)'s own call during game init.
+//
+// INVESTIGATED (positional SFX cluster): see start_ambient_sound_effect's
+// own "INVESTIGATED" comment -- same separate, resource-id-less
+// subsystem, nothing here to connect to platform_sfx either. Left
+// untouched.
 void stop_ambient_sound_effect()
 
 {
@@ -1165,9 +1699,27 @@ int reset_dialogue_speech_state()
 }
 
 
-// was FUN_00035ec4 -- fully loads one voice-sample page (param_2, indexing into the resource at
-// param_1) into the caller's buffer (param_4, a freshly-allocated 0x10000-byte block at its only
-// known call site) in a single ce_memmove read, sized from the page's own header fields at param_3.
+// was FUN_00035ec4 -- despite the "voice_sample" name (kept to avoid
+// an unrelated rename churn -- see the correction below), this is NOT
+// part of the numbered VOC voice-sample pool (play_numbered_voice_sample/
+// is_voice_sample_finished/stop_voice_sample, now backed by
+// platform_voice.c). Its only real caller, render_babl_dialog_window
+// (babl.c, inside the illustrated book/scroll-viewer branch), feeds its
+// output straight into ce_memmove(..., 64000)/decompress_rle_stream/
+// bitmap_blit_to_framebuffer -- i.e. this pages in 320x200 RLE/raw
+// bitmap ANIMATION FRAMES for the picture viewer, not audio. (This
+// project's own test grouping already bundles this function with
+// render_babl_dialog_window/decompress_rle_stream/
+// bitmap_blit_to_framebuffer under the "illustration_render" suite,
+// independently agreeing.) Confirmed via a live Ghidra decompile plus
+// tracing render_babl_dialog_window's own consumer of this data.
+//
+// Fully loads one picture-page (page_index, indexing into the resource
+// at `resource`) into the caller's buffer (out_buffer, a freshly-
+// allocated 0x10000-byte block at its only known call site) in a single
+// ce_memmove read, sized from the page's own header fields at `header`.
+// See the sibling read_voice_sample_page_chunk for the incremental/
+// streaming variant used during actual playback.
 short load_voice_sample_page(char *resource, int page_index, char *header, void *out_buffer)
 {
   undefined2 uVar1;
@@ -1183,8 +1735,15 @@ short load_voice_sample_page(char *resource, int page_index, char *header, void 
 
 
 
-// was FUN_00035f24 -- incremental/streaming counterpart to load_voice_sample_page: reads up to
-// param_4 bytes of voice-sample page param_2 into param_5...
+// was FUN_00035f24 -- incremental/streaming counterpart to
+// load_voice_sample_page: reads up to byte_count bytes of picture-page
+// page_index into out_buffer, caching the page's total remaining size
+// (DAT_000853fc/DAT_00085400) across calls so repeated calls for the
+// same page don't recompute it, and returning 0 once the page is
+// exhausted. Used by the babl conversation-rendering loop to stream
+// illustrated-book/scroll bitmap ANIMATION FRAME data in display-sized
+// pieces (NOT voice-sample audio -- see load_voice_sample_page's own
+// comment just above for the full correction).
 uint read_voice_sample_page_chunk(char *resource, ushort page_index, char *header, uint byte_count, void *out_buffer)
 {
   uint uVar1;
@@ -3292,6 +3851,23 @@ int stop_sfx_trigger_slot(void *player_ptr, int slot)
 // was FUN_0004f7e0 -- one-time startup entry point for the hardware sound-channel slot pool:
 // initializes all 16 slots now (init_all_sound_channel_slots) and registers their teardown to run
 // automatically at exit.
+//
+// INVESTIGATED (positional SFX cluster): this function -- and
+// therefore init_all_sound_channel_slots/release_all_sound_channel_slots
+// below it -- has ZERO call sites anywhere in this project (confirmed
+// by grepping every src/*.c and header for its name, and for the raw
+// FUN_0004f7e0 in case it survives un-renamed somewhere not yet
+// extracted: no hits at all). This whole 16-"hardware slot" pool is
+// completely orphaned dead code in the current decompile, independent
+// of DAT_0023c3b8/DAT_00087450 ever being real -- the same
+// "intentionally dead, nothing calls it" category as DAT_0023c3b8
+// itself staying NULL by design. It is NOT the same pool as
+// platform_sfx.c's own internal 16-voice mixer array (that one is a
+// private implementation detail of the real backend; this one is
+// unused decompiled bookkeeping for the 0x1a-byte slot records at
+// DAT_00202a58) -- don't conflate them. Left completely untouched: no
+// live caller depends on it being correct, so there's nothing to wire
+// into platform_sfx here.
 void register_sound_channel_pool_cleanup()
 
 {

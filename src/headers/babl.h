@@ -22,7 +22,13 @@ extern undefined1 DAT_0023c698_backing[1024];
 #define DAT_0023c698 DAT_0023c698_backing[0]
 extern uintptr_t DAT_00101a70;
 extern undefined2 DAT_00101960; // talking-portrait mouth-frame cycle count, reset by reset_dialogue_speech_state
-/* Voice-sample page size cache used by load_voice_sample_page and read_voice_sample_page_chunk. */
+/* Picture-page size cache used by load_voice_sample_page and
+   read_voice_sample_page_chunk (illustrated book/scroll bitmap ANIMATION
+   FRAME paging, despite the "voice_sample" name -- see
+   load_voice_sample_page's own comment in audio.c). DAT_000853f8 was
+   mis-declared as a 1-byte `undefined` in the original decompile despite
+   holding a computed size masked with & 0xffff elsewhere -- widened to
+   ushort, matching its siblings, to stop the silent truncation. */
 extern ushort DAT_000853fc;
 
 

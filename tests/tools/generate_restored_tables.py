@@ -22,7 +22,7 @@ def main():
         original = bytes.fromhex(entry['bytes'])
         expected = ','.join(str(v) for v in original)
         chunks.append(f'static const byte original_{index}[] = {{{expected}}};')
-        checks.append(f'    if (sizeof {entry["symbol"]} != sizeof original_{index} || '
+        checks.append(f'    if (sizeof {entry["symbol"]} != {entry.get("storage_size", len(original))} || '
                       f'memcmp({entry["symbol"]}, original_{index}, sizeof original_{index})) return {index + 1};')
     for entry in audit['functions']:
         filename, name = entry.split(':', 1)

@@ -5,8 +5,6 @@
     "with_original_name": 1233,
     "without_original_name": 245,
     "still_unnamed_FUN": 12,
-    "audited_true": 1478,
-    "audited_false": 0,
     "modernized_true": 1475,
     "modernized_false": 3
   },
@@ -6777,8 +6775,8 @@
       "variadic": true,
       "description": "real body confirmed stripped from the shipped ARM code (disassembly.",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: variadic; ARM prologue homes r0-r3 (mov ip,sp; push {r0-r3})"
+      "audit_note": "VERIFIED vs ARM: variadic; ARM prologue homes r0-r3 (mov ip,sp; push {r0-r3})",
+      "modernized": true
     },
     {
       "name": "print_debug_stat_message",
@@ -7762,8 +7760,8 @@
       "variadic": false,
       "description": "flush dirty rect to display.",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: callee reads no argument at all; callers (ARM mov r0,#1) pass an unused literal 1, as the original unprototyped source did"
+      "audit_note": "VERIFIED vs ARM: callee reads no argument at all; callers (ARM mov r0,#1) pass an unused literal 1, as the original unprototyped source did",
+      "modernized": true
     },
     {
       "name": "flush_dirty_rect_to_display_240",
@@ -11152,7 +11150,7 @@
     {
       "name": "tick_anim_record",
       "path": "src/models.c",
-      "line": 623,
+      "line": 633,
       "original_name": "FUN_0001dc04",
       "ghidra_origin": true,
       "param_count": 1,
@@ -11164,7 +11162,7 @@
     {
       "name": "emit_catalog_object",
       "path": "src/models.c",
-      "line": 683,
+      "line": 693,
       "original_name": "FUN_00061e60",
       "ghidra_origin": true,
       "param_count": 4,
@@ -11176,7 +11174,7 @@
     {
       "name": "emit_anim_object_frames",
       "path": "src/models.c",
-      "line": 1621,
+      "line": 1631,
       "original_name": "FUN_00064384",
       "ghidra_origin": true,
       "param_count": 2,
@@ -11188,7 +11186,7 @@
     {
       "name": "apply_model_position_offset",
       "path": "src/models.c",
-      "line": 1869,
+      "line": 1879,
       "original_name": "FUN_0001e594",
       "ghidra_origin": true,
       "param_count": 4,
@@ -11200,7 +11198,7 @@
     {
       "name": "scale_model_part_offsets",
       "path": "src/models.c",
-      "line": 1898,
+      "line": 1908,
       "original_name": "FUN_0001e6f0",
       "ghidra_origin": true,
       "param_count": 4,
@@ -11212,7 +11210,7 @@
     {
       "name": "load_3d_object_models",
       "path": "src/models.c",
-      "line": 1940,
+      "line": 1950,
       "original_name": "FUN_00038680",
       "ghidra_origin": true,
       "param_count": 0,
@@ -11224,7 +11222,7 @@
     {
       "name": "parse_e_model_file",
       "path": "src/models.c",
-      "line": 2011,
+      "line": 2021,
       "original_name": "FUN_00020a74",
       "ghidra_origin": true,
       "param_count": 3,
@@ -11747,8 +11745,8 @@
       "variadic": false,
       "description": "dispatch_special_action's \"reduce item durability\" handler (its own case 9).",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: ARM apply_equipped_item_effect (0x663bc) also passes only r0; r1 is stale there (original quirk, left as-is)"
+      "audit_note": "VERIFIED vs ARM: ARM apply_equipped_item_effect (0x663bc) also passes only r0; r1 is stale there (original quirk, left as-is)",
+      "modernized": true
     },
     {
       "name": "apply_targeted_spell_effect",
@@ -12888,8 +12886,8 @@
       "variadic": false,
       "description": "LocalSize",
       "audited": true,
-      "modernized": true,
-      "audit_note": "stub; second main.c site fixed from ARM trace (arg DAT_0025090c); remaining mismatch is the stub's declared 0 vs 1"
+      "audit_note": "stub; second main.c site fixed from ARM trace (arg DAT_0025090c); remaining mismatch is the stub's declared 0 vs 1",
+      "modernized": true
     },
     {
       "name": "RemoteLocalReAlloc",
@@ -13153,8 +13151,8 @@
       "variadic": false,
       "description": "FindNextFileW",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: ordinal 181 sites in the ARM mod-player code pass 1 data pointer; the Win32 name is a guess for a no-op stub; saveload.c passes the true (handle,data) pair"
+      "audit_note": "VERIFIED vs ARM: ordinal 181 sites in the ARM mod-player code pass 1 data pointer; the Win32 name is a guess for a no-op stub; saveload.c passes the true (handle,data) pair",
+      "modernized": true
     },
     {
       "name": "GetDiskFreeSpaceExW",
@@ -13334,8 +13332,8 @@
       "variadic": false,
       "description": "waveOutClose",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: ARM passes only the handle (1 arg); stub declared `()`"
+      "audit_note": "VERIFIED vs ARM: ARM passes only the handle (1 arg); stub declared `()`",
+      "modernized": true
     },
     {
       "name": "waveOutPrepareHeader",
@@ -13563,8 +13561,8 @@
       "variadic": false,
       "description": "EndDialog",
       "audited": true,
-      "modernized": true,
-      "audit_note": "fixed from ARM trace"
+      "audit_note": "fixed from ARM trace",
+      "modernized": true
     },
     {
       "name": "SetForegroundWindow",
@@ -13588,8 +13586,8 @@
       "variadic": true,
       "description": "ce sprintf",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: variadic sprintf-style; arities legitimately vary"
+      "audit_note": "VERIFIED vs ARM: variadic sprintf-style; arities legitimately vary",
+      "modernized": true
     },
     {
       "name": "MessageBoxW",
@@ -13757,8 +13755,8 @@
       "variadic": false,
       "description": "ordfloat log",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: ordinal 1033 helper taking a double as 2 words (lo,hi); both sites pass 2 regs"
+      "audit_note": "VERIFIED vs ARM: ordinal 1033 helper taking a double as 2 words (lo,hi); both sites pass 2 regs",
+      "modernized": true
     },
     {
       "name": "_ltoa",
@@ -13998,8 +13996,8 @@
       "variadic": true,
       "description": "NKDbgPrintfW",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: variadic printf-style (callee homes r0-r3); arities legitimately vary"
+      "audit_note": "VERIFIED vs ARM: variadic printf-style (callee homes r0-r3); arities legitimately vary",
+      "modernized": true
     },
     {
       "name": "ce_fopen",
@@ -14023,8 +14021,8 @@
       "variadic": true,
       "description": "ce fscanf",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: variadic scanf-style; arities legitimately vary"
+      "audit_note": "VERIFIED vs ARM: variadic scanf-style; arities legitimately vary",
+      "modernized": true
     },
     {
       "name": "ce_fclose",
@@ -14108,8 +14106,8 @@
       "variadic": false,
       "description": "ARM has no hardware integer divide, so the original WinCE/ARM compiler routed every `/` and `%` in the whole game through this shared runtime division helper -- it's called ~250 places across uw.c.",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: remaining sites are fixed; counts reflect the decl of 2 vs a few sites ARM-verified earlier"
+      "audit_note": "VERIFIED vs ARM: remaining sites are fixed; counts reflect the decl of 2 vs a few sites ARM-verified earlier",
+      "modernized": true
     },
     {
       "name": "orduint_divmod",
@@ -14409,8 +14407,8 @@
       "variadic": true,
       "description": "ordaudio op 2135",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: stub of a memcpy-like ordinal; 2 source sites carry a junk 5th arg (unaff_lr) from Ghidra, ARM sites set 3-4 regs"
+      "audit_note": "VERIFIED vs ARM: stub of a memcpy-like ordinal; 2 source sites carry a junk 5th arg (unaff_lr) from Ghidra, ARM sites set 3-4 regs",
+      "modernized": true
     },
     {
       "name": "ordaudio_op_2142",
@@ -16390,8 +16388,8 @@
       "variadic": false,
       "description": "pushes a new entry onto the scheduler -- an encoded object link (param_1), delay (param_2), initial animation offset (param_3), and tile position (param_4/param_5).",
       "audited": true,
-      "modernized": true,
-      "audit_note": "VERIFIED vs ARM: ARM spawn_effect_debris_burst (0x81680) also pushes a 6th stack arg that the callee never reads"
+      "audit_note": "VERIFIED vs ARM: ARM spawn_effect_debris_burst (0x81680) also pushes a 6th stack arg that the callee never reads",
+      "modernized": true
     },
     {
       "name": "scheduler_step_entry",

@@ -53,6 +53,9 @@ set(UW_SOURCES
   src/math.c
   src/registration.c
   src/audio.c
+  src/platform_music.c
+  src/platform_sfx.c
+  src/platform_voice.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c
@@ -61,12 +64,13 @@ set(UW_SOURCES
   src/democapture.c
   src/debug.c
   src/debug_ui.c
+  third_party/hxcmod/hxcmod.c
   src/debug_shim.c
 )
 
 add_executable(uw_dbg ${UW_SOURCES})
 
-target_include_directories(uw_dbg PRIVATE ${SDL2_INCLUDE_DIRS})
+target_include_directories(uw_dbg PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod)
 target_link_directories(uw_dbg PRIVATE ${SDL2_LIBRARY_DIRS})
 target_link_libraries(uw_dbg PRIVATE ${SDL2_LIBRARIES})
 target_compile_options(uw_dbg PRIVATE
@@ -88,7 +92,7 @@ set_target_properties(uw_dbg PROPERTIES
 # ASan's overhead.
 add_executable(uw_asan ${UW_SOURCES})
 
-target_include_directories(uw_asan PRIVATE ${SDL2_INCLUDE_DIRS})
+target_include_directories(uw_asan PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod)
 target_link_directories(uw_asan PRIVATE ${SDL2_LIBRARY_DIRS})
 target_link_libraries(uw_asan PRIVATE ${SDL2_LIBRARIES})
 target_compile_options(uw_asan PRIVATE

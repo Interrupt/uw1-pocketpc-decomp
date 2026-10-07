@@ -6,6 +6,10 @@
 #include "headers/demomode.h"
 #include "headers/democapture.h"
 #include "headers/debug_ui.h"
+#include "headers/audio.h"
+#include "headers/platform_music.h"
+#include "headers/platform_sfx.h"
+#include "headers/platform_voice.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -639,6 +643,32 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
         return 0;
+    }
+    /* Real background-music playback (see audio.c's "Real MOD playback
+     * backend" block comment) needs its own SDL subsystem, initialized
+     * separately from SDL_INIT_VIDEO above so a sandboxed/CI environment
+     * with no audio device still gets a working video/input game --
+     * SDL_InitSubSystem's own failure here is reported and otherwise
+     * ignored, not fatal. platform_music_init() itself handles
+     * "no audio device" (SDL_GetNumAudioDevices()==0) and
+     * SDL_OpenAudioDevice failure the same way, leaving the music gate
+     * flags at their safe "subsystem not initialized" default.
+     *
+     * platform_sfx_init() (real one-shot SFX playback, see
+     * platform_sfx.c's own block comment) rides the same SDL_INIT_AUDIO
+     * subsystem and fails exactly as softly -- no audio device just
+     * means SFX stay silent, same as music above.
+     *
+     * platform_voice_init() (real numbered VOC voice/narration sample
+     * playback, see platform_voice.c's own block comment) is the third
+     * and last of these, same soft-fail shape. */
+    if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+        fprintf(stderr, "[gx] SDL_InitSubSystem(SDL_INIT_AUDIO) failed: %s -- music/sfx/voice playback disabled\n",
+                SDL_GetError());
+    } else {
+        platform_music_init();
+        platform_sfx_init();
+        platform_voice_init();
     }
     g_win = SDL_CreateWindow("Ultima Underworld", SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED, GX_W * 2, g_display_height * 2,

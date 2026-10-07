@@ -116,6 +116,18 @@ add_fixture_game_unit_test(new_game
 add_fixture_game_unit_test(teleport
   src/level.c:transition_to_level src/level.c:teleport_object_to_level_tile
   src/player.c:dungeon_view_anim_tick src/movement.c:movement_tick)
+add_fixture_game_unit_test(audio
+  src/audio.c:@DAT_00087414_backing src/audio.c:@DAT_000873e0_backing
+  src/audio.c:@DAT_00087520_backing
+  src/audio.c:play_music_track src/audio.c:advance_menu_music_track_elapsed
+  src/audio.c:update_ingame_music_track src/audio.c:trigger_sound_sample_note
+  src/audio.c:play_numbered_voice_sample src/audio.c:is_voice_sample_finished
+  src/audio.c:stop_voice_sample
+  src/audio.c:allocate_and_play_sound_channel
+  src/audio.c:stop_current_audio_handle_dup
+  src/audio.c:play_sound_effect_at_object
+  src/combat.c:play_weapon_impact_sound
+  src/ordinal_stubs.c:ce_memmove)
 add_game_test_library(uw_test_movement
   src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading
   src/movement.c:sweep_slide_along_wall src/movement.c:sweep_apply_collision

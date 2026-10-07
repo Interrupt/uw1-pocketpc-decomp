@@ -5937,8 +5937,30 @@ void babl_render_tick(char *render_state)
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_0003671c -- the main babl conversation/book-viewer window renderer, shared by ordinary
-// NPC dialogue AND the special illustrated-book/scroll full-screen viewer...
+// was FUN_0003671c -- the main babl conversation/book-viewer window
+// renderer, shared by ordinary NPC dialogue AND the special
+// illustrated-book/scroll full-screen viewer (its only known caller,
+// display_book_or_scroll_page, picks the y/width/height/mode arguments
+// -- a style flag plus window geometry -- based on whether the
+// requested display id is a regular text page (<0x100) or a picture
+// page (>=0x100)). Runs its own modal input-handling loop
+// (next_input_event/read_realtime_clock_units polling) while
+// interpreting the compiled dialogue-text stream, dispatching embedded
+// opcode bytes < 0x10 through the PTR_FUN_00085408 table
+// (babl_render_op_wrap_message, babl_render_op_say,
+// babl_render_op_show_code, babl_render_op_play_sound), streaming
+// illustrated book/scroll bitmap animation-frame data via
+// load_voice_sample_page/read_voice_sample_page_chunk (despite their
+// "voice_sample" names -- see load_voice_sample_page's own comment in
+// audio.c), driving portrait/illustration palette-cycle animation via
+// tick_book_illustration_palette_cycles, and per-tick housekeeping
+// via babl_render_tick. See the individual opcode handlers and
+// PTR_FUN_00085408's own comment for the dispatch table itself.
+//
+// NOTE: the first parameter's name `x` is misleading -- it is the
+// display/resource id, not a coordinate: the body uses it only to build
+// the page-resource filename digits (`(x >> 6) & 7` etc. below), never
+// as a position. Left named as-is to match the rest of the codebase.
 void render_babl_dialog_window(short x, short y, short width, short height, short mode)
 {
   char *wptr_21485;

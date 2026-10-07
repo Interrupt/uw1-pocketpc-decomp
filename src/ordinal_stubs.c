@@ -647,8 +647,60 @@ long ce_toupper(long ch)
     return ch;
 }
 
-/* Was, and stays, a hardcoded no-op always returning 0 (NULL) -- every single call site (the
-   MOD-tracker music engine's buffer/pattern/ instrument allocators in audio.c)... */
+/* Was, and stays, a hardcoded no-op always returning 0 (NULL) -- every
+ * single call site (the MOD-tracker music engine's buffer/pattern/
+ * instrument allocators in audio.c, plus one BMP-resource loader in
+ * graphics.c) gets NULL back. graphics.c's one call site null-checks
+ * the result and fails gracefully; audio.c's ~30 call sites mostly
+ * don't (e.g. queue_mod_audio_buffer immediately writes through the
+ * "allocated" pointer with no check at all) -- this is the second half
+ * of "no music playback" alongside DAT_00087454/DAT_00087448 in
+ * audio.c: once those gate flags are flipped nonzero, play_music_track's
+ * very first real step (`iVar3 = cpp_operator_new(0x10581); if (iVar3
+ * == 0) { ... }`) always takes the failure branch too, so
+ * construct_and_load_mod_player (and the entire MOD engine under it)
+ * has apparently never actually run even once since this was
+ * decompiled.
+ *
+ * Investigated turning this into a real calloc()-backed allocator
+ * (matching ce_malloc's own zero-init convention) as the other half of
+ * fixing "no music playback" -- confirmed it builds and runs, but live-
+ * tested it all the way through and it crashes construct_and_load_mod_player
+ * on its first real file load: see DAT_00087454's comment in audio.c
+ * for the full root cause (every MOD-engine "dynamic array" struct
+ * stores this allocator's result in a 4-byte field and reads it back
+ * later as a real address, which silently truncates on this 64-bit
+ * build since no allocation here can land below 4GB -- confirmed
+ * empirically, not just in theory: calloc() and even mmap(MAP_FIXED)
+ * at every low address tried from 0x1000000 to 0xff000000 are refused
+ * by the kernel on this platform). Left as the original no-op rather
+ * than shipping something that trades silence for a crash; a real fix
+ * needs that 4-byte-field problem solved first (see audio.c), at which
+ * point this stub is the easy half -- just swap the `return 0` below
+ * for a real `calloc(1, size)` (with a sane size clamp, see ce_malloc
+ * above for the pattern) once that's done. cpp_operator_delete, right
+ * below, would need the same follow-up treatment (it's a leak-not-free
+ * no-op today; several of its call sites in audio.c's MOD-engine
+ * cluster are reached with zero arguments -- a dropped-argument
+ * decompilation artifact -- so a real free() behind it would free
+ * whatever garbage sits in the argument register at those call sites;
+ * harmless only because this stays a no-op).
+ *
+ * UPDATE (real music playback): confirmed live, as this comment
+ * predicted -- a real music backend (vendored HxCModPlayer + SDL2 audio,
+ * see audio.c's "Real MOD playback backend" block comment) was wired in
+ * at the play_music_track/resume_music_playback/set_music_enabled call
+ * sites instead of fixing this allocator, bypassing
+ * construct_and_load_mod_player and its ~1400-line MOD engine (and this
+ * stub) entirely for music.
+ *
+ * UPDATE (real SFX/voice playback): same story for sound effects and
+ * voice samples -- real backends (platform_sfx.c's PE WAVE-resource
+ * mixer, platform_voice.c's VOC-sample backend) were wired in at
+ * trigger_sound_sample_note/play_numbered_voice_sample in audio.c too,
+ * also bypassing this allocator and the MOD-tracker SFX engine under
+ * it entirely. Every call site through cpp_operator_new is now
+ * provably dead for both music and SFX/voice. */
 long cpp_operator_delete(void *block)
 {
     return 0;
