@@ -772,6 +772,26 @@ uint param_3;
 // DAT_0008744c default-value fix unlocks this wrapper too -- see
 // play_positional_sound_effect's own "BUG FIX" comment. No change
 // needed in this function's own body.
+//
+// BUG FIX (real crash, confirmed live + via Ghidra): param_2 is
+// dereferenced unconditionally (*(ushort*)(param_2+0x16),
+// *(byte*)(param_2+3)) with no NULL check -- confirmed byte-for-byte
+// against a live Ghidra decompile of the real FUN_00072fc8, so this is
+// a genuine latent bug in the original compiled game, not a
+// decompile artifact, just never reachable before DAT_00087450/
+// DAT_0008744c were fixed to their real nonzero default (see above).
+// get_object_record_by_slot_index (this function's own callers'
+// shared accessor) legitimately returns NULL for an empty slot --
+// already documented at its own definition in objects.c and guarded
+// at several other call sites (movement.c, tmap.c) -- and
+// play_weapon_impact_sound's own whiff-case branch
+// (param_1==0 in combat.c) calls it with DAT_00100610, which is 0 on
+// a swing with no acquired target, passing that NULL straight through
+// to here. Confirmed live: swinging a weapon with no target in range
+// SIGSEGVs here (crash_backtrace_handler: play_weapon_impact_sound ->
+// play_sound_effect_at_object). Guarded the same way the subsystem-
+// disabled case already is, matching this function's own existing
+// "fails (returns 0xff)" convention.
 undefined4 play_sound_effect_at_object(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
@@ -779,8 +799,8 @@ undefined4 param_3;
 
 {
   undefined4 uVar1;
-  
-  if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
+
+  if ((DAT_00087450 == 0) || (DAT_0008744c == 0) || (param_2 == 0)) {
     uVar1 = 0xff;
   }
   else {

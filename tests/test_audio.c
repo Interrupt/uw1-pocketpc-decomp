@@ -177,6 +177,21 @@ static void test_stop_current_audio_handle_dup_does_not_crash_on_null_handle(voi
     TEST_PASS();
 }
 
+/* BUG FIX regression (real crash, confirmed live + via Ghidra -- see
+   play_sound_effect_at_object's own comment in audio.c):
+   play_weapon_impact_sound's whiff-case branch (no target acquired)
+   calls get_object_record_by_slot_index(0), which legitimately returns
+   NULL, then passes that straight through play_sound_effect_at_object
+   to an unconditional pointer dereference -- a real SIGSEGV reachable
+   by swinging a weapon with nothing in range. audio_fixture.c's
+   play_positional_sound_effect stub hard-fails the test if it's ever
+   reached at all, so this fails loudly if the NULL guard regresses. */
+static void test_play_sound_effect_at_object_does_not_crash_on_null_object(void)
+{
+    undefined4 result = play_sound_effect_at_object(10, 0, 0);
+    TEST_ASSERT_EQUAL_UINT(0xff, result);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -189,5 +204,6 @@ int main(void)
     RUN_TEST(test_allocate_and_play_sound_channel_id_whitelist);
     RUN_TEST(test_allocate_and_play_sound_channel_survives_channel_exhaustion);
     RUN_TEST(test_stop_current_audio_handle_dup_does_not_crash_on_null_handle);
+    RUN_TEST(test_play_sound_effect_at_object_does_not_crash_on_null_object);
     return UNITY_END();
 }

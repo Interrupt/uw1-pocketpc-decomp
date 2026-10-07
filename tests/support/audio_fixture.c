@@ -207,3 +207,15 @@ undefined4 load_and_resample_wave_file()
     TEST_FAIL_MESSAGE("Unexpected call to dead SFX engine load_and_resample_wave_file");
     return 0;
 }
+
+/* play_sound_effect_at_object's own real callee once its NULL-object
+   guard is past (see audio.c's "BUG FIX (real crash...)" comment) --
+   every test in this suite that exercises that guard passes a NULL
+   object specifically so this is never actually reached; failing loudly
+   here instead of returning a plausible-looking value makes sure the
+   guard itself is really what's being tested, not a coincidence. */
+undefined4 play_positional_sound_effect()
+{
+    TEST_FAIL_MESSAGE("Unexpected call to play_positional_sound_effect with a NULL object");
+    return 0;
+}
