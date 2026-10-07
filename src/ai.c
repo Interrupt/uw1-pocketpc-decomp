@@ -585,9 +585,7 @@ LAB_0002ed50:
   if (((bVar9 & 0x20) == 0) && ((bVar9 & 0x80) != 0)) {
     uVar8 = compute_movement_heading(iVar1,iVar2);
     *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
-    uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
+    ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar8 & 7;
     *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
     if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
       set_npc_altitude_state(goal,goal_target);
@@ -606,9 +604,7 @@ LAB_0002ed50:
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x80;
       uVar8 = compute_movement_heading(iVar1,iVar2);
       *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
-      uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
+      ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar8 & 7;
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
       if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) goto LAB_0002ed50;
@@ -1193,9 +1189,7 @@ int sync_object_tile_position(ushort *object, ushort *position)
   }
 LAB_0005559c:
   if ((*object & 0x1c0) == 0x140) {
-    uVar7 = object[1] & 0xfc7f | ((int)*(short *)((char *)position + 0x21) >> 0xd & 7U) << 7;
-    *(char *)(object + 1) = (char)uVar7;
-    *(char *)((char *)object + 3) = (char)(uVar7 >> 8);
+    ((uw_object_hdr_t *)object)->heading = (*(short *)((char *)position + 0x21) >> 0xd) & 7;
   }
   return 0;
 }
@@ -1319,9 +1313,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
     uVar11 = uVar12 & 0x1c0;
     if (((uVar11 != 0x140) && (uVar11 != 0x180)) &&
        (((&DAT_00202c9a)[((uw_object_hdr_t *)puVar9)->item_id * 0xd] & 3) != 2)) {
-      uVar11 = puVar9[1] & 0xfc7f | ((byte)object[0xd] & 7) << 7;
-      *(byte *)(puVar9 + 1) = (byte)uVar11;
-      *(byte *)((char *)puVar9 + 3) = (byte)(uVar11 >> 8);
+      ((uw_object_hdr_t *)puVar9)->heading = (byte)object[0xd] & 7;
     }
   }
   else {
@@ -2363,9 +2355,7 @@ int walk_using_cached_path(byte *cache_record)
       uVar7 = compute_movement_heading((int)((iVar5 - (uint)DAT_00101910) * 0x1000000) >> 0x18,
                            (int)((iVar8 - (uint)DAT_0010141c) * 0x1000000) >> 0x18);
       *(char *)((char *)DAT_0010190c + 9) = (char)((uVar7 & 0xff) << 5);
-      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar7 & 7;
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
     }
     else {
@@ -2426,9 +2416,7 @@ void handle_blocked_cached_path(byte *cache_record)
                          (*(ushort *)((char *)DAT_0010190c + 0x16) >> 4 & 0x3f));
     DAT_00101920 = 1;
     *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
+    ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar3 & 7;
     *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 7 | 0xb0;
@@ -2437,9 +2425,7 @@ void handle_blocked_cached_path(byte *cache_record)
   else {
     uVar3 = compute_movement_heading((int)(uVar4 * 0x1000000) >> 0x18,(int)(uVar3 * 0x1000000) >> 0x18);
     *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
+    ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar3 & 7;
     *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
   }
 }
@@ -2677,9 +2663,7 @@ void npc_react_to_nearby_player()
         *(byte *)((char *)DAT_0010190c + 0xc) =
              (byte)(uVar4 >> 8) | (byte)(((uw_ord2005_rem_83 & 0xf) << 0xc) >> 8);
       }
-      uVar5 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar5 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar5;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
+      ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar5 & 7;
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
     }
   }
@@ -3102,9 +3086,7 @@ LAB_00033e9c:
     }
     uVar11 = uVar11 & 0xff;
   }
-  uVar5 = uVar2 & 0xfc7f | (uVar11 & 0xffe0) << 2;
-  *(char *)(iVar7 + 2) = (char)uVar5;
-  *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
+  ((uw_object_hdr_t *)DAT_0010190c)->heading = (uVar11 >> 5) & 7;
   *(byte *)((char *)DAT_0010190c + 0x18) =
        (*(byte *)((char *)DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)((char *)DAT_0010190c + 0x18);
   iVar7 = DAT_0010190c;
@@ -3402,9 +3384,7 @@ void npc_movement_tick(ushort *npc_object, char *scratch)
   *(byte *)((char *)npc_object + 0x19) = *(byte *)((char *)npc_object + 0x19) & 0xc;
   uVar2 = ce_rand();
   uw_ord2005_rem_100 = ((int)(uVar2)) % (8);
-  uVar8 = npc_object[1] & 0xfc7f | (uw_ord2005_rem_100 & 7) << 7;
-  *(byte *)(npc_object + 1) = (byte)uVar8;
-  *(byte *)((char *)npc_object + 3) = (byte)(uVar8 >> 8);
+  ((uw_object_hdr_t *)npc_object)->heading = uw_ord2005_rem_100 & 7;
   if (((uint)(byte)npc_object[4] < (uint)(byte)(&g_monster_max_stats_table)[iVar6]) && ((npc_object[7] & 2) == 0)) {
     *(byte *)(npc_object + 4) =
          (byte)((int)((uint)(byte)npc_object[4] + (uint)(byte)(&g_monster_max_stats_table)[iVar6]) >> 1);
@@ -4215,9 +4195,7 @@ LAB_0002f390:
       iVar9 = DAT_0010190c;
       uw_ord2005_rem_30 = ((int)((uint)*(byte *)((char *)DAT_0010190c + 9) + uw_ord2005_rem_29 * 0x80 + 0xc0)) % (0x100);
       *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_30;
-      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_30 & 0xe0) << 2;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      ((uw_object_hdr_t *)DAT_0010190c)->heading = (uw_ord2005_rem_30 >> 5) & 7;
       *(byte *)((char *)DAT_0010190c + 0x18) =
            ((byte)uw_ord2005_rem_30 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^
            *(byte *)((char *)DAT_0010190c + 0x18);
@@ -4244,9 +4222,7 @@ LAB_0002f390:
       iVar9 = DAT_0010190c;
     }
     *(byte *)(iVar9 + 9) = (byte)uVar7;
-    uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 0xe0) << 2;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
+    ((uw_object_hdr_t *)DAT_0010190c)->heading = (uVar7 >> 5) & 7;
     bVar5 = *(byte *)((char *)DAT_0010190c + 0x18);
     bVar6 = bVar5 ^ (byte)uVar7;
 LAB_0002f6cc:
@@ -4262,9 +4238,7 @@ LAB_0002f6cc:
       uw_ord2005_rem_35 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_36 = ((int)(uw_ord2005_rem_35 + (uint)bVar5 + 0xe0)) % (0x100);
       *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_36;
-      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_36 & 0xe0) << 2;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      ((uw_object_hdr_t *)DAT_0010190c)->heading = (uw_ord2005_rem_36 >> 5) & 7;
       bVar5 = *(byte *)((char *)DAT_0010190c + 0x18);
       bVar6 = (byte)uw_ord2005_rem_36 ^ bVar5;
       goto LAB_0002f6cc;
