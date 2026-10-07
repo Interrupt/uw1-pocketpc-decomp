@@ -1207,7 +1207,7 @@ void scan_area_for_matching_objects(char filter_a, byte filter_b, int (*callback
                     pbVar14 = (byte *)(_tile16 + (((iVar15 - y) * 0x40 - (int)x) + iVar7)
                                                 * 4);
                     if (object_class == '@') {
-                      if ((*pbVar14 & 0xf) != 0) {
+                      if (((uw_tile_t *)pbVar14)->tile_type != 0) {
                         uVar5 = ce_rand();
                         extraout_r1 = ordint_divmod(iVar8 * iVar1 + 3,uVar5).rem;
                         if (((extraout_r1 < filter_a) &&
