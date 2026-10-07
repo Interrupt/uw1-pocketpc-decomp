@@ -295,13 +295,37 @@ them.
    mask, but a totally different field at that offset -- not
    enchanted).
 
-   Still genuinely open: `npc_*` fields and anything else in
-   `uw_mobile_object_t`'s NPC-extension region (offsets 0x08-0x1a) --
-   not part of this session's item_id/zpos/ypos/xpos/is_quant/
-   heading/enchanted/invisible mandate, and a large enough scope
-   (confirming each field's real byte layout against the wiki,
-   finding and verifying its own read+write sites) to deserve its
-   own dedicated session rather than being squeezed in here.
+   **The NPC-extension region (`uw_mobile_object_t`, offsets
+   0x08-0x1a) is now started, with a much stronger confirmation
+   basis than the wiki alone**: `babl.c`'s `sync_conv_vars_from_npc`
+   explicitly maps raw bit extractions to named babl VM script
+   variables ("npc_whoami", "npc_goal", "npc_gtarg", "npc_talkedto",
+   "npc_attitude", "npc_hp"), independently confirming each of those
+   offsets bit-for-bit against a second source, not just the wiki.
+   Converted project-wide: `npc_hp` (0x08, a full unshared byte --
+   lowest risk of any field here), `npc_whoami` (0x1a, also a full
+   byte), `npc_goal`/`npc_gtarg` (0x0b), `npc_talkedto`/`npc_attitude`
+   (0x0d). One correction to this session's own earlier notes: a
+   site previously described as "an ambiguous quality write that
+   doesn't preserve next" (ai.c's `sync_object_tile_position`) is
+   actually a plain `npc_hp` write, now named correctly.
+
+   **Important discovery, documented in uw.h**: that same babl dump
+   reads `->quality`/`->owner` directly into the "npc_xhome"/
+   "npc_yhome" script variables for a `uw_mobile_object_t` -- i.e.
+   quality/owner have a dual meaning for NPCs, the same pattern as
+   link/is_quant. This doesn't invalidate any earlier quality/owner
+   conversion (the bits touched are identical either way), but it
+   does mean the wiki-derived `npc_xhome`/`npc_yhome` field names at
+   offset 0x16 are unconfirmed and may not be what that word really
+   holds -- left exactly as named, flagged for whoever looks at it
+   next with a real call site in hand.
+
+   Still genuinely open: `npc_level` (babl's own "npc_level" variable
+   turned out to read a monster-stats table, not the live per-object
+   field, so this offset isn't independently confirmed the way the
+   others are), `npc_height`, `npc_hunger`, offset 0x16's true
+   contents, and `_unk11_15`/padding fields generally.
 5. **comobj.dat property record** (0xd bytes) — next-highest leverage
    after the two now-mostly-done types: well-documented, touches
    gameplay-visible logic (`dispatch_object_action`), bounded call-site
