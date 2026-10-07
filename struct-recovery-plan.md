@@ -310,22 +310,36 @@ them.
    doesn't preserve next" (ai.c's `sync_object_tile_position`) is
    actually a plain `npc_hp` write, now named correctly.
 
-   **Important discovery, documented in uw.h**: that same babl dump
-   reads `->quality`/`->owner` directly into the "npc_xhome"/
-   "npc_yhome" script variables for a `uw_mobile_object_t` -- i.e.
-   quality/owner have a dual meaning for NPCs, the same pattern as
-   link/is_quant. This doesn't invalidate any earlier quality/owner
-   conversion (the bits touched are identical either way), but it
-   does mean the wiki-derived `npc_xhome`/`npc_yhome` field names at
-   offset 0x16 are unconfirmed and may not be what that word really
-   holds -- left exactly as named, flagged for whoever looks at it
-   next with a real call site in hand.
+   **Discovery from last session, now resolved**: that same babl
+   dump reads `->quality`/`->owner` directly into the "npc_xhome"/
+   "npc_yhome" script variables for a `uw_mobile_object_t`, which
+   left offset 0x16's own wiki-derived `npc_xhome`/`npc_yhome` names
+   flagged as unconfirmed. Found the real evidence this session:
+   ~20 sites in ai.c/audio.c extract this word's bits 10-15/4-9 and
+   feed them straight into `tilemap_lookup`/`npc_set_walk_target`/
+   proximity checks as tile X/Y -- confirming the wiki's names and
+   widths are correct for this word too. The engine appears to keep
+   two independent "home" notions (this word for wander-target
+   pathing, quality/owner for whatever babl's scripts use) rather
+   than one contradicting the other. All ~20 sites converted,
+   `->npc_xhome`/`->npc_yhome` now used project-wide; one site
+   (audio.c's positional-sound panning) uses the same word scaled by
+   8 for precision and was correctly left raw (verified via 10,000
+   randomized trials, the same "scaled rebase" exclusion pattern
+   used elsewhere).
 
    Still genuinely open: `npc_level` (babl's own "npc_level" variable
    turned out to read a monster-stats table, not the live per-object
    field, so this offset isn't independently confirmed the way the
-   others are), `npc_height`, `npc_hunger`, offset 0x16's true
-   contents, and `_unk11_15`/padding fields generally.
+   others are), `npc_height`, `npc_hunger`'s real bit layout (bit 7
+   of that byte is confirmed a separate boolean, bit 6 gets used for
+   something unrelated to a monotonic hunger value -- see uw.h's own
+   comment), and `_unk11_15`/padding fields generally. `npc_height`
+   specifically has no isolated call sites anywhere in the codebase
+   to convert -- every touch is a whole-word copy loop that correctly
+   shouldn't be split apart (it would silently drop the padding bits
+   sharing that word), so there's nothing unsafe being left behind
+   there, just nothing to convert either.
 5. **comobj.dat property record** (0xd bytes) — next-highest leverage
    after the two now-mostly-done types: well-documented, touches
    gameplay-visible logic (`dispatch_object_action`), bounded call-site

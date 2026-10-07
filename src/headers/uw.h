@@ -139,11 +139,13 @@ typedef struct __attribute__((packed)) {
 
     unsigned char  _unk11_15[5];    /* offsets 0x11-0x15: entirely undocumented by the wiki */
 
-    /* NOTE: babl.c's sync_conv_vars_from_npc (the definitive source for this struct's other
-       confirmed NPC offsets) exposes the babl VM variables "npc_xhome"/"npc_yhome" from
-       uw_object_hdr_t.quality/owner instead, not from this word -- so the names below, inherited
-       from the wiki's own offset table, are unconfirmed and may not be what this word really
-       holds. Left as originally named pending a real call site that reads/writes it. */
+    /* Now independently confirmed (ai.c/audio.c, ~20 call sites feeding tilemap_lookup/
+       npc_set_walk_target/proximity checks with this word's bits 10-15 and 4-9) as a real tile
+       X/Y coordinate pair, matching the wiki's own npc_xhome/npc_yhome names and widths exactly.
+       Note babl.c's sync_conv_vars_from_npc exposes the babl VM variables of the SAME names
+       ("npc_xhome"/"npc_yhome") from uw_object_hdr_t.quality/owner instead -- the engine appears
+       to keep two independent notions of "home" (this word for wander-target pathing, quality/
+       owner for whatever babl's own scripts read/write), not a naming conflict to resolve here. */
     unsigned short _pad16_lo  : 4;  /* offset 0x16, bits 0-3: not in the wiki's own table */
     unsigned short npc_yhome  : 6;  /* bits 4-9 */
     unsigned short npc_xhome  : 6;  /* bits 10-15 */
