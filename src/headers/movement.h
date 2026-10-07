@@ -91,12 +91,8 @@ extern unsigned int g_uw_frame_clock_units;
 
 
 /* --- auto-generated overlap/exref aliases --- */
-/* _DAT_00085bf0 dropped from here: superseded by the real, hand-traced
-   definition near the inventory.c extern block above (this
-   auto-generated one referenced a bare DAT_00085bf0 that was never a
-   real declared symbol -- the actual storage is g_inventory_hotspot_
-   table[288], see there). Conflicting with it broke the build the
-   moment inventory.c actually needed this symbol. */
+/* _DAT_00085bf0 dropped from here: superseded by the real, hand-traced definition near the
+   inventory.c extern block above... */
 #define _DAT_00086999 (*(unsigned short*)&DAT_00086999)
 #define _DAT_0008699b (*(unsigned short*)&DAT_0008699b)
 #define _DAT_0008699f (*(unsigned short*)&DAT_0008699f)

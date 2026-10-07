@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include "ghidra_intrinsics.h"
 #include "ordinal_stubs.h"
@@ -74,60 +75,20 @@ typedef unsigned short    word;
 #define unkfloat16   long double
 
 #define BADSPACEBASE   void
-/* Ghidra's pseudo-type for "executable code" reached through a function
- * pointer. Must be a K&R (unspecified-parameter) function type, not void,
- * so that '(**(code **)expr)(args...)' -- calling through a doubly
- * indirected function pointer, Ghidra's usual idiom for vtable/jump-table
- * dispatch -- type-checks regardless of how many arguments are passed. */
+/* Ghidra's pseudo-type for "executable code" reached through a function pointer. */
 typedef void code();
 /* Same idea as 'code', but for call-through-pointer sites whose result is
  * actually used as a value (Ghidra's jump tables mix void and value-
  * returning targets under the same 'code' label). */
 typedef undefined4 codeval();
-/* Same idea as 'codeval', but for call-through-pointer sites whose result
- * is a real pointer (e.g. an allocator callback) rather than a 4-byte
- * scalar -- returning through 'codeval' truncates the pointer on 64-bit
- * hosts. */
+/* Same idea as 'codeval', but for call-through-pointer sites whose result is a real pointer (e.g.
+   an allocator callback) rather than a 4-byte scalar -- returning through 'codeval' truncates the
+   pointer on 64-bit hosts. */
 typedef void *codeptr();
 
 
-/* ---------------------------------------------------------------------
- * Object / tile record structs.
- *
- * This WinCE port keeps the exact same bit-packed layout LEV.ARK uses on
- * disk for its object table and tilemap, in memory, at runtime -- not
- * just at load time. Layout is documented at
- * https://wiki.ultimacodex.com/wiki/File_uw-formats.txt section 4.2/4.3;
- * cross-confirmed field-by-field against this file's own independently-
- * recovered accesses (not just trusted from the wiki):
- *   - uw_object_hdr_t.item_id: `*g_player_object & 0x1ff`, uw.c ~394
- *   - uw_object_hdr_t.heading: emit_object_billboard's
- *     `*(ushort*)(g_player_object+2) >> 7 & 7` dispatch, uw.c ~54972
- *   - uw_object_hdr_t.quality/.next: object_list_insert_head/_unlink's
- *     `(param_2+4) & 0x3f` (quality preserved) / `sVar<<6` (next
- *     shifted into the high 10 bits), uw.c ~45790/45871
- *   - uw_object_hdr_t.owner/.link: unlink_and_free_object's own "+6,
- *     this file's standard container-contents offset" comment, uw.c
- *     ~46015 (word3's high 10 bits reused as a "contains" chain head)
- *   - uw_mobile_object_t.npc_yhome/npc_xhome (offset 0x16) and
- *     .npc_heading (offset 0x18): g_player_object[0xb]/[0xc]
- *     ushort-index reads, uw.c ~390-393
- * Fields inside the 19-byte mobile-extra block the wiki itself marks
- * "(unknown)", plus the entirely-undocumented 0x11-0x15 gap, are left
- * as raw reserved bytes rather than guessed at -- don't trust names
- * beyond the ones cited above without checking real disassembly first.
- *
- * Two record sizes share the same 8-byte common header (resolve_object_link,
- * uw.c ~46036, is the single accessor behind 70+ call sites):
- *   - slots 0x000-0x0ff: uw_mobile_object_t (0x1b/27 bytes, adds NPC
- *     state) -- DAT_002046b8 array
- *   - slots 0x100-0x3ff: uw_object_hdr_t alone (8 bytes) -- DAT_002046c4
- *     array
- * These typedefs exist so call sites can be migrated incrementally from
- * raw `*(ushort*)(ptr+N)` offset math to named field access; the bulk of
- * this file's ~900 existing raw accesses are NOT yet converted -- this
- * is a starting point, not a finished migration.
- * --------------------------------------------------------------------- */
+/* Object / tile record structs. This WinCE port keeps the exact same bit-packed layout LEV.ARK uses
+   on disk for its object table and tilemap, in memory, at runtime -- not just at load time. */
 typedef struct __attribute__((packed)) {
     /* word 0x00 */
     unsigned short item_id    : 9;  /* object id / type, 0-0x1ff */
@@ -183,16 +144,9 @@ typedef struct __attribute__((packed)) {
     unsigned char  npc_whoami;      /* offset 0x1a, full byte */
 } uw_mobile_object_t;  /* 0x1b (27) bytes total */
 
-/* 4-byte level tilemap record (wiki section 4.2). DAT_002029cc is the
- * level's flat 64x64 array of these (tilemap_lookup, uw.c ~58433, is
- * the single shared accessor behind 70+ call sites: index = tileX +
- * tileY*0x40). Field-confirmed against this file's own code:
- *   - wall_tex: DAT_0023b4ec[2] & 0x3f (the tile-cache byte-pointer
- *     copy of a live tile record), matching the real wall-rendering
- *     code's own read a few hundred lines above emit_tile_objects
- *   - obj_head: the field object_list_insert_head/_unlink operate on
- *     via `tile_ptr + 2` at 70+ call sites throughout this file
- */
+/* 4-byte level tilemap record (wiki section 4.2). DAT_002029cc is the level's flat 64x64 array of
+   these (tilemap_lookup, uw.c ~58433, is the single shared accessor behind 70+ call sites: index =
+   tileX + tileY*0x40). */
 typedef struct __attribute__((packed)) {
     /* word 0x00 */
     unsigned short tile_type    : 4;  /* bits 0-3: 0-9 */
@@ -208,35 +162,13 @@ typedef struct __attribute__((packed)) {
     unsigned short obj_head     : 10; /* bits 6-15: first object slot index on this tile */
 } uw_tile_t;  /* 4 bytes total */
 
-/* 0xd (13)-byte comobj.dat per-object-type property record.
- * DAT_00202c90_backing is the flat array (base DAT_00202c90, stride
- * 0xd), indexed by an object's type id (obj_hdr.item_id & 0x1ff).
- * Dozens of call sites throughout uw.c and the split-out src files read individual
- * byte offsets of this record directly; see struct-recovery-plan.md
- * for the fuller catalog. Don't add fields here without the same bar
- * of evidence (a direct, already-written comment naming the bit/
- * byte's real meaning) that is_container/has_look_description had --
- * offsets 3, 7, 8, 9, 0xa, 0xb still have at least one confirmed-used
- * bit or value that isn't individually pinned down and named yet. */
+/* 0xd (13)-byte comobj.dat per-object-type property record. DAT_00202c90_backing is the flat array
+   (base DAT_00202c90, stride 0xd), indexed by an object's type id (obj_hdr.item_id & 0x1ff). */
 typedef struct __attribute__((packed)) {
     unsigned char _unk00;        /* offset 0x00: a numeric stat (fed into ordint_divmod/roll-style calls in several places) -- not yet confirmed */
 
-    /* offsets 0x01-0x02: 16-bit little-endian packed field (read as
-     * `*(ushort*)(&DAT_00202c91 + type*0xd)` at several call sites).
-     * Investigated for "Door collision box seems too large and
-     * misplaced" via a fresh Ghidra headless decompile of the real
-     * ARM UU.exe collision_add_candidate_object (was FUN_00051658,
-     * 0x51658-0x51743; decompile matches src/collision.c line-for-
-     * line, so this is NOT a decompilation bug) plus a direct read of
-     * the real data/DATA/COMOBJ.DAT bytes for every door type (the
-     * 11-byte-on-disk/13-byte-in-memory record for type ids
-     * 0x140-0x147, confirmed as "7 door skins/types + secret" by
-     * src/tmap.c's own emit_anim_object_frames comment): every one of
-     * the 8 door types has low3 bits (collision_radius) == 3, never 4
-     * -- so doors do NOT hit collision_add_candidate_object's
-     * shape==4 full-tile-box special case (collision.c's own
-     * long-suspected "oversized full-tile branch" culprit), ruling
-     * that out as the cause. */
+    /* offsets 0x01-0x02: 16-bit little-endian packed field (read as `*(ushort*)(&DAT_00202c91 +
+       type*0xd)` at several call sites). */
     unsigned short collision_radius : 3; /* bits 0-2 (&7): CONFIRMED -- a symmetric collision/placement half-width in eighths-of-a-tile, read identically (and always as a plain radius, never a lookup index) by collision_add_candidate_object/collision_sample_floor_height (src/collision.c), the tile-boundary-crossing check in emit_tile_features (src/tmap.c, "& 8"-gated block a few lines below), src/ai.c, src/combat.c, src/movement.c and src/object_actions.c. Independently corroborated by uw1-decomp's own from-scratch disassembly of the original DOS binary, which names the analogous player-entity field "the player's radius word" and confirms it is consumed as a plain radial distance (collision.json: "wall_rest_is_radius_determined"). */
     unsigned short _unk01_b3        : 1; /* bit 3 (&8): confirmed used as a standalone flag gating a billboard/sprite-partition branch in src/tmap.c (`(&DAT_00202c91)[type*0xd] & 8`), not yet named */
     unsigned short unit_weight       : 12; /* bits 4-15 (the remaining 4 bits of offset 0x01 plus all of offset 0x02): CONFIRMED -- src/objects.c's calculate_object_weight (was FUN_00046260) names this exact `>>4` value its own "per-class base weight", multiplied by quantity for stackable items or summed with container contents */
@@ -261,16 +193,10 @@ typedef struct __attribute__((packed)) {
     unsigned char _unk0c;        /* offset 0x0c: unconfirmed (last byte of the 0xd-byte stride) */
 } uw_object_type_props_t;  /* 0xd (13) bytes total */
 
-/* ~0x2e-byte "current view" scratch record: the screen-space eye/
- * camera transform (world x/y/elevation, facing, and a camera-shake
- * offset pair), written once per frame by update_current_view_from_subject
- * (was FUN_00069470) from the live player state -- or, in that function's
- * other branches, from an NPC/corpse being looked at -- then read all
- * over the tile/sprite projection code. Single global instance, not an
- * array: DAT_00086e6c_backing is a 64-byte oversized-safety-margin
- * allocation (see its own comment) but only the ~0x2e (46) bytes below
- * have a confirmed call site; the two gaps are left as honest raw
- * bytes rather than guessed fields. */
+/* ~0x2e-byte "current view" scratch record: the screen-space eye/ camera transform (world
+   x/y/elevation, facing, and a camera-shake offset pair), written once per frame by
+   update_current_view_from_subject from the live player state -- or... */
+// was FUN_00069470
 typedef struct __attribute__((packed)) {
     unsigned char _unk00_09[10];   /* 0x00-0x09: unconfirmed */
     short view_x;                  /* 0x0a: world X */
@@ -541,14 +467,8 @@ void emit_object_billboard();
 
 #define ordint_divmod_exref ((void*)&ordint_divmod)
 
-/* Declarations for the functions and owned globals that used to live
- * directly in this file but were split out into their own topic .c
- * files this session -- moved to matching headers/*.h so those files
- * (and anything else that only needs one topic's declarations) can
- * include just what they need. Included here too so anything that
- * already includes uw.h keeps working unchanged. Safe against the
- * circular #include "uw.h" each of these does themselves, since UW_H
- * is already defined by this point. */
+/* Declarations for the functions and owned globals that used to live directly in this file but were
+   split out into their own topic .c files this session... */
 #include "helpers.h"
 #include "graphics.h"
 #include "babl.h"
@@ -561,6 +481,7 @@ void emit_object_billboard();
 #include "tmap.h"
 #include "objects.h"
 #include "hud.h"
+#include "debug_shim.h"
 #include "ai.h"
 #include "containers.h"
 #include "interact.h"
@@ -589,8 +510,6 @@ void emit_object_billboard();
 #include "demomode.h"
 
 /* .E model-parser globals (g_model_known_ext_colors/g_model_parse_point_count/
-   g_model_parse_part_count and ~190 bare-literal-address DAT_xxx/string
-   constants) -- un-staticed and declared here so parse_e_model_file and
-   uw_e_model_strip_cr can be extracted into src/models.c. */
+   g_model_parse_part_count and ~190 bare-literal-address DAT_xxx/string constants)... */
 
 #endif /* UW_H */

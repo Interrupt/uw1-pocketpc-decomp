@@ -1,17 +1,13 @@
 /* Door open/close/toggle handlers and the doors.GR frame-buffer allocator.
- *
- * close_door_object/open_door_object/toggle_door_object were originally
- * FUN_0007c580/FUN_0007c708/FUN_0007c814 -- see uw.h and the comment on
- * open_door_object for how the naming was confirmed (live repro tied
- * FUN_0007c708 to the "closed -> open" quality transition). */
+   close_door_object/open_door_object/toggle_door_object were originally
+   FUN_0007c580/FUN_0007c708/FUN_0007c814... */
 #include "headers/doors.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Ghidra rendered the embedded spaces as underscores and dropped the
-   trailing newline. Real bytes at 0x87360 (ARM UU.exe .data, confirmed
-   via tests/fixtures/static_strings.json's direct memory export):
-   "At %d %d\n". */
+/* Ghidra rendered the embedded spaces as underscores and dropped the trailing newline. Real bytes
+   at 0x87360 (ARM UU.exe .data, confirmed via tests/fixtures/static_strings.json's direct memory
+   export): "At %d %d\n". */
 static char s_At__d__d_00087360[] = "At %d %d\n";
 
 // was LAB_000415b4
@@ -19,18 +15,8 @@ void *alloc_door_frame_buffer(param_1)
 unsigned int param_1;
 
 {
-  /* Ghidra couldn't resolve this address into a proper function (an
-     indirect-jump/jumptable target it gave up on). Was stubbed as a
-     bare `return 0;`, on the (wrong) assumption that it's "used purely
-     as a callback pointer elsewhere" -- it's actually passed as
-     load_door_frames's (doors.GR) allocator callback, the exact same role
-     as gr_resource_bump_alloc_entry/hud_icon_gr_bump_alloc_entry/decode_gr_entry_bump_alloc_entry (see gr_resource_bump_alloc_entry's own
-     comment: a no-op allocator here makes load_gr_resource_entries treat every real
-     resource load as a failure even though the file read itself
-     succeeds) -- confirmed live via UW_DEBUG_DOOR: every one of doors.GR's
-     6 entries opened and read its header fine, then failed right at the
-     allocate-a-destination-buffer step. Real allocator like its
-     siblings. */
+  /* Ghidra couldn't resolve this address into a proper function (an indirect-jump/jumptable target
+     it gave up on). */
   return ce_malloc(param_1);
 }
 
@@ -127,18 +113,9 @@ ushort * param_1;
 
 
 
-// was FUN_0007c814
-//
-// NOTE: for the item_id==0x1cf special-object branch inside
-// close_door_object/open_door_object, this dispatch is provably always a
-// no-op: closed(<8) routes to close_door_object, whose 0x1cf branch only
-// proceeds when quality is ALREADY >=8, and open(>=8) routes to
-// open_door_object, whose 0x1cf branch only proceeds when quality is
-// ALREADY <8 -- i.e. whichever function gets called, its own guard is
-// guaranteed to fail for that item type. Left as originally decompiled
-// (only the dropped-argument call below is a clear, unambiguous bug) since
-// ordinary (non-0x1cf) doors take the other branch inside each function,
-// where the guards DO agree with this dispatch and toggling works.
+// was FUN_0007c814 NOTE: for the item_id==0x1cf special-object branch inside
+// close_door_object/open_door_object, this dispatch is provably always a no-op: closed(<8) routes
+// to close_door_object, whose 0x1cf branch only proceeds when quality is ALREADY >=8...
 void toggle_door_object(param_1,param_2)
 char *param_1;
 byte * param_2;
@@ -159,17 +136,7 @@ byte * param_2;
 
 
 
-// was FUN_00071e20 -- disabled outright on level 9. Projects a target
-// tile 11 units ahead of the player's facing (DAT_00201c70) and, if
-// that tile is a door (tile_type==1) whose wall texture id falls into
-// one of four specific ranges (5-11/18-22/27-31/35-40), checks
-// check_object_placement_clearance for whether catalog object 0x1ca can be placed there,
-// then spawns one, encodes the door's texture-derived flags/facing
-// into it, schedules it with an unbounded duration
-// (scheduler_add_entry(...,0xffffffff,...)), and links it into the
-// tile's object list. Exact gameplay meaning (which door-texture
-// feature this represents) not identified -- no supporting strings or
-// comments found nearby.
+// was FUN_00071e20 -- disabled outright on level 9.
 undefined4 spawn_scheduled_door_texture_object()
 
 {
@@ -238,14 +205,9 @@ undefined4 spawn_scheduled_door_texture_object()
 
 
 
-// was FUN_00072084 -- checks whether param_1 (a stored level number)
-// matches the current level (DAT_00201b68); if so, decodes param_2's
-// packed tile coordinates (find_object_in_world) and shows a debug "At X Y"
-// message. Called by apply_special_object_use_effect with
-// DAT_00086df8+0x5e's upper nibble (the level spawn_scheduled_door_texture_object
-// stores there) and catalog id 0x1ca, so this gates that feature's
-// effect on still being on the same level the special object was
-// placed on.
+// was FUN_00072084 -- checks whether param_1 (a stored level number) matches the current level
+// (DAT_00201b68); if so, decodes param_2's packed tile coordinates (find_object_in_world) and shows
+// a debug "At X Y" message.
 bool check_scheduled_object_level_match(param_1,param_2)
 short param_1;
 ushort param_2;
@@ -270,13 +232,8 @@ ushort param_2;
 
 
 
-// was FUN_0007213c -- applies a bundle of player-state changes (hunger
-// restoration scaled off the class base-stat row DAT_0023be74+4, the
-// level-7 hazard byte, equipment flags, and clearing status bits at
-// DAT_00086df8+0x5f) when check_scheduled_object_level_match confirms the
-// player is still on the level where spawn_scheduled_door_texture_object's
-// catalog-0x1ca object was placed. Exact gameplay meaning (what
-// interaction triggers this) not identified.
+// was FUN_0007213c -- applies a bundle of player-state changes (hunger restoration scaled off the
+// class base-stat row DAT_0023be74+4, the level-7 hazard byte, equipment flags)...
 void apply_special_object_use_effect()
 
 {
@@ -315,16 +272,9 @@ void apply_special_object_use_effect()
 
 
 
-// was FUN_0007c3f4 -- schedules a door's open animation: derives an
-// animation type from the door's own low bits (a "portcullis"-style
-// door, low 3 bits == 6, uses type 4; every other door type uses 5),
-// sets the door's quality/state field, forces its type-id bits to
-// 0x1cf, and pushes a scheduler entry for it. Already had an
-// existing comment documenting a real fixed bug here (the last of 3
-// stacked bugs -- scheduler_finish_entry's own missing argument and a
-// dead gate -- that all had to be fixed together before a door's
-// queued open animation could ever actually run). Confirmed real
-// callers in src/game.c and src/doors.c.
+// was FUN_0007c3f4 -- schedules a door's open animation: derives an animation type from the door's
+// own low bits (a "portcullis"-style door, low 3 bits == 6, uses type 4; every other door type uses
+// 5), sets the door's quality/state field, forces its type-id bits to 0x1cf...
 void schedule_door_open_animation(param_1)
 ushort * param_1;
 
@@ -348,21 +298,9 @@ ushort * param_1;
   uVar5 = uVar1 & 0xffcf | 0x1cf;
   *(char *)param_1 = (char)uVar5;
   *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
-  /* HACK: was a bare `encode_object_slot_index();` -- dropped argument,
-     same class as scheduler_tick's own `scheduler_finish_entry();` fix just above
-     (see its comment). encode_object_slot_index's real signature takes
-     the object pointer it encodes (`char *param_1`, dereferenced via
-     pointer comparisons against DAT_002046b8/DAT_002046c4) -- with none
-     passed, this read garbage instead of this door object, so the
-     scheduled-effects queue entry scheduler_add_entry pushes right below
-     carried an encoded reference to the wrong (or no) object. Confirmed
-     live: scheduler_step_entry/scheduler_finish_entry (the queue's own per-tick step and
-     finalize) resolved this door's queue slot to NULL every time,
-     silently skipping it forever, once the separate scheduler_finish_entry
-     missing-argument bug and the DAT_000879ac dead-gate were both
-     already fixed -- this was the last of three stacked bugs that had
-     to be fixed together before a door's queued open animation could
-     ever actually run. */
+  /* HACK: was a bare `encode_object_slot_index();` -- dropped argument, same class as
+     scheduler_tick's own `scheduler_finish_entry();` fix just above (see its comment).
+     encode_object_slot_index's real signature takes the object pointer it encodes... */
   uVar4 = encode_object_slot_index((char *)param_1);
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] schedule_door_open_animation: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d ptr=%p tilefield16=0x%04x doortile_x=%d doortile_y=%d cur_a0=%d cur_a4=%d player_x=%d player_y=%d\n",
@@ -379,12 +317,9 @@ ushort * param_1;
 
 
 
-// was FUN_0007c4a8 -- companion to schedule_door_open_animation for
-// closing a door: derives the same portcullis-aware animation type
-// (4 vs 5), decrements the door's state field, and, if it already
-// has a live scheduler entry, adjusts that entry's remaining delay
-// to match the new animation type's timing. Confirmed real caller in
-// src/doors.c.
+// was FUN_0007c4a8 -- companion to schedule_door_open_animation for closing a door: derives the
+// same portcullis-aware animation type (4 vs 5), decrements the door's state field, and, if it
+// already has a live scheduler entry...
 void adjust_door_close_animation_delay(param_1)
 ushort * param_1;
 

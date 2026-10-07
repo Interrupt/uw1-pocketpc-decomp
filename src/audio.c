@@ -1,8 +1,6 @@
-/* Background music track playback: loads and plays a numbered MOD
- * tracker file (\SOUND\uwNN.mod) through the game's COM-style audio
- * interface. Split out of uw.c (the original monolithic decompile)
- * once these functions' real roles were confirmed.
- */
+/* Background music track playback: loads and plays a numbered MOD tracker file (\SOUND\uwNN.mod)
+   through the game's COM-style audio interface. Split out of uw.c (the original monolithic
+   decompile) once these functions' real roles were confirmed. */
 #include "headers/audio.h"
 #include "headers/platform_music.h"
 #include "headers/platform_sfx.h"
@@ -28,41 +26,23 @@
 static undefined1 DAT_0024d008;
 static undefined1 DAT_0024fa10;
 static undefined1 DAT_0024f90c;
-/* was `undefined` (1 byte) -- load_voice_sample_page computes
-   `(*(ushort*)(param_3+2)+4)*2 + (uint)*(ushort*)(param_3+4)` into
-   this global then reads it back masked with & 0xffff and returns it
-   as undefined2, so a 1-byte declaration silently truncated any
-   sample-page size over 255 bytes before it was ever read back.
-   Widened to match its sibling size-cache globals DAT_000853fc/
-   DAT_00085400 (both ushort). */
+/* was `undefined` (1 byte) -- load_voice_sample_page computes `(*(ushort*)(param_3+2)+4)*2 +
+   (uint)*(ushort*)(param_3+4)` into this global then reads it back masked with & 0xffff and returns
+   it as undefined2... */
 static ushort DAT_000853f8;
 static ushort DAT_00085400;
 static char *DAT_002506ec;
-/* Was silently zero -- the resampler's output rate, compared against
-   both real sample rates it supports (`== 0xac44` i.e. 44100 and
-   `== 0x5622` i.e. 22050 throughout this file). Confirmed via a Ghidra
-   memory dump of the real UU.exe that its actual initial value is
-   0x5622 (22050), not zero; no writer anywhere in this decompile, so
-   neither branch of either comparison ever matched. */
+/* Was silently zero -- the resampler's output rate, compared against both real sample rates it
+   supports (`== 0xac44` i.e. 44100 and `== 0x5622` i.e. 22050 throughout this file). */
 static int DAT_00086368 = 0x5622;
 static unsigned short u_WAVE_0008686c[] = u"WAVE";
-/* Was a bare scalar, but process_mod_tracker_row indexes it as
-   `(&DAT_00086370)[iVar14]` with iVar14 clamped to [0,0x127] -- the
-   same scalar-declared-but-accessed-as-array bug class fixed many
-   times this session (e.g. DAT_00086260/DAT_00086264 above). Likely a
-   period/frequency lookup table for the MOD-tracker engine, but this
-   data isn't flagged as recovered from UU.exe anywhere in this
-   decompile -- widened to real, safely-sized backing storage (zero-
-   initialized, not recovered) purely to make the access safe. */
+/* Was a bare scalar, but process_mod_tracker_row indexes it as `(&DAT_00086370)[iVar14]` with
+   iVar14 clamped to [0,0x127] -- the same scalar-declared-but-accessed-as-array bug class fixed
+   many times this session (e.g. DAT_00086260/DAT_00086264 above). */
 static undefined4 DAT_00086370_backing[296];
-/* DAT_00086810: declared as a scalar but indexed as
-   (&DAT_00086810)[pos] in apply_mod_vibrato_effect/apply_mod_tremolo_effect,
-   where pos is a per-channel counter that wraps at 0x20 (32) -- a
-   32-entry sine lookup table for the MOD tracker's vibrato/tremolo
-   effects. Same "scalar declared but accessed as array" bug class
-   fixed several times this session; widened to real, safely-sized
-   backing storage (zero-initialized, not recovered) purely to make
-   the access safe. */
+/* DAT_00086810: declared as a scalar but indexed as (&DAT_00086810)[pos] in
+   apply_mod_vibrato_effect/apply_mod_tremolo_effect, where pos is a per-channel counter that wraps
+   at 0x20 (32) -- a 32-entry sine lookup table for the MOD tracker's vibrato/tremolo effects. */
 static undefined1 DAT_00086810_backing[32];
 #define DAT_00086810 DAT_00086810_backing[0]
 /* Sizing pass: init_all_sound_channel_slots's own comment already
@@ -186,13 +166,9 @@ int DAT_0008744c;
    bound. Sized all 4 siblings to 1280; down from 8192. */
 static undefined DAT_0023c2b0_backing[1280];
 #define DAT_0023c2b0 DAT_0023c2b0_backing[0]
-/* Same per-sound-effect-id table shape as DAT_0023c2b0 just above (all
-   four indexed by play_positional_sound_effect's own `id*5`-stride
-   iVar10) -- were lone scalars, so every id past 0 read into whatever
-   the compiler placed next, corrupting the volume/pan parameters
-   play_positional_sound_effect derives for any sound but the first.
-   Widened to match DAT_0023c2b0_backing's own generous sizing (max
-   real index is 0xff*5+4=1279, given the 8-bit id field). */
+/* Same per-sound-effect-id table shape as DAT_0023c2b0 just above (all four indexed by
+   play_positional_sound_effect's own `id*5`-stride iVar10) -- were lone scalars, so every id past 0
+   read into whatever the compiler placed next... */
 static undefined DAT_0023c2b1_backing[1280];
 #define DAT_0023c2b1 DAT_0023c2b1_backing[0]
 static undefined DAT_0023c2b2_backing[1280];
@@ -294,14 +270,17 @@ static undefined1 DAT_0024d010;
 
 
 // was FUN_00072910 -- plays background music track param_1 (patched
-// into the "uw%02d.mod" filename template, played from \SOUND\): no-op
-// if the audio subsystem isn't initialized (DAT_00087454/DAT_00087448)
-// or the track is already playing (param_1==DAT_0023c3a8). Stops any
-// currently-playing module via its COM-style interface (DAT_0023c3b8),
-// opens and loads the new one via the MOD-player ordinals
-// (cpp_operator_new/177/construct_and_load_mod_player), and -- if param_2!=0 -- starts
-// playback (start_mod_player_playback) and records the start time and this track's
-// own duration (DAT_00087414-indexed per-track table -- see
+// into the "uwNN.mod" filename template via a base-8-style two-digit
+// construction -- (param_1>>3)&0xf then param_1&7, NOT a naive %02d --
+// see this function's own "BUG FIX" comment below, and played from
+// \SOUND\): no-op if the audio subsystem isn't initialized
+// (DAT_00087454/DAT_00087448) or the track is already playing
+// (param_1==DAT_0023c3a8). Stops any currently-playing module via its
+// COM-style interface (DAT_0023c3b8), opens and loads the new one via
+// the MOD-player ordinals (cpp_operator_new/177/construct_and_load_mod_player),
+// and -- if param_2!=0 -- starts playback (start_mod_player_playback)
+// and records the start time and this track's own duration
+// (DAT_00087414-indexed per-track table -- see
 // advance_menu_music_track's own comment for how it's used) for later
 // use.
 undefined4 play_music_track(param_1,param_2)
@@ -314,11 +293,9 @@ int param_2;
   char cVar1;
   char *pcVar2;
   undefined4 uVar4;
-  /* Was declared as just 2 bytes -- Ghidra only recovered the first
-     access, but this is filled from the 9-byte "uw00.mod\0" template
-     right below and local_12e/local_12d (now folded in as direct indexed
-     writes) patch the two '0' digits in place at offsets 2/3, so it needs
-     to hold the whole string. */
+  /* Was declared as just 2 bytes -- Ghidra only recovered the first access, but this is filled from
+     the 9-byte "uw00.mod\0" template right below and local_12e/local_12d (now folded in as direct
+     indexed writes) patch the two '0' digits in place at offsets 2/3... */
   undefined1 auStack_130 [16];
   undefined1 local_127;
   char acStack_120 [260];
@@ -763,9 +740,8 @@ uint param_3;
 
 
 
-// was FUN_00072fc8 -- play_positional_sound_effect's convenience
-// wrapper taking an object pointer (param_2) instead of raw
-// coordinates: extracts the object's world position and forwards to
+// was FUN_00072fc8 -- play_positional_sound_effect's convenience wrapper taking an object pointer
+// (param_2) instead of raw coordinates: extracts the object's world position and forwards to
 // play_positional_sound_effect.
 //
 // BUG FIX (real SFX playback, root cause): same DAT_00087450/
@@ -1065,18 +1041,9 @@ undefined4 param_2;
         DAT_0023c3bc = 0;
       }
       else {
-        /* BUG FIX: was `DAT_0023c3bc = init_sound_channel_slot();` --
-           a dropped argument (iVar2, the handle cpp_operator_new just
-           allocated, is the only value in scope this could mean --
-           same idiom as every other dropped-argument fix this
-           session) AND a wrongly-captured return value:
-           init_sound_channel_slot always returns 0, so capturing it
-           into DAT_0023c3bc discarded the freshly-allocated handle
-           and left this "allocate a sound channel" path permanently
-           setting DAT_0023c3bc back to 0 -- every later read of it
-           (e.g. the load_and_resample_wave_sample call just below, which takes it as
-           a real handle) then saw no channel at all. Initialize the
-           slot for its side effect and keep the real handle. */
+        /* BUG FIX: was `DAT_0023c3bc = init_sound_channel_slot();` -- a dropped argument (iVar2,
+           the handle cpp_operator_new just allocated, is the only value in scope this could
+           mean)... */
         init_sound_channel_slot(iVar2);
         DAT_0023c3bc = iVar2;
       }
@@ -1096,21 +1063,9 @@ undefined4 param_2;
 
 
 
-// was FUN_0007328c -- a playable musical instrument (param_1 selects
-// which of two instruments/octave ranges, offsetting the sound-sample
-// ids played): while active, number keys 1-0 each play a note
-// (trigger_sound_sample_note) and record it into a rolling 16-note
-// buffer, resetting that buffer if more than ~0x40 clock units pass
-// between notes. On exit (Escape), if this is the param_1==1
-// instrument, the player is on level 3, and standing within a small
-// area of a specific tile (both coordinate checks against
-// g_player_object's position bits), the last 9 notes played are
-// checked against check_secret_tune_match's hardcoded tune
-// ("@CA>@GHGC") -- playing it correctly (once per game, gated by a
-// flag bit at DAT_00086df8+0x60) triggers a hidden reward (message
-// 0x88), otherwise shows a generic "nothing happens" message (0xfb).
-// Not developer debug tooling: this is a real "play the secret tune
-// standing in the right spot" puzzle/easter egg.
+// was FUN_0007328c -- a playable musical instrument (param_1 selects which of two
+// instruments/octave ranges, offsetting the sound-sample ids played): while active, number keys 1-0
+// each play a note (trigger_sound_sample_note) and record it into a rolling 16-note buffer...
 void play_musical_instrument(param_1)
 short param_1;
 
@@ -1174,11 +1129,9 @@ short param_1;
 
 
 
-// was FUN_00073474 -- compares the 9 notes at param_1 against the
-// hardcoded secret tune "@CA>@GHGC". On a match, and only if the
-// one-time flag bit at DAT_00086df8+0x60 isn't already set, shows
-// message 0x88 and sets that flag (so the reward only triggers once
-// per game).
+// was FUN_00073474 -- compares the 9 notes at param_1 against the hardcoded secret tune
+// "@CA>@GHGC". On a match, and only if the one-time flag bit at DAT_00086df8+0x60 isn't already
+// set, shows message 0x88 and sets that flag (so the reward only triggers once per game).
 undefined4 check_secret_tune_match(param_1)
 int param_1;
 
@@ -1232,9 +1185,8 @@ void shutdown_sound_effects()
 
 
 
-// was FUN_00073560 -- fully shuts down the music module: stops
-// playback, releases the module's COM-style interface, and nulls the
-// handle. Called from the app-shutdown sequence right after
+// was FUN_00073560 -- fully shuts down the music module: stops playback, releases the module's
+// COM-style interface, and nulls the handle. Called from the app-shutdown sequence right after
 // shutdown_sound_effects.
 // BUG FIX (real music playback): the DAT_0023c3b8 block below is
 // unreachable (DAT_0023c3b8 is deliberately never assigned a value
@@ -1291,13 +1243,9 @@ void pick_random_pending_music_track()
 
 
 
-// was FUN_000735fc -- the main-menu music loop-advance tick: if the
-// current track has finished playing (advance_menu_music_track_elapsed,
-// comparing elapsed time against the track's own duration), replays it
-// -- except track 1 (the title theme), which advances to track 4
-// instead of looping itself. Called from the main-menu idle-input loop
-// (menu_button_list_navigate and friends) alongside
-// animate_title_palette_cycle.
+// was FUN_000735fc -- the main-menu music loop-advance tick: if the current track has finished
+// playing (advance_menu_music_track_elapsed, comparing elapsed time against the track's own
+// duration), replays it -- except track 1 (the title theme)...
 void advance_menu_music_track()
 
 {
@@ -1320,13 +1268,9 @@ void advance_menu_music_track()
 
 
 
-// was FUN_00073634 -- the in-game ambient music selection tick:
-// picks/transitions between ambient music tracks based on the current
-// track group, combat state (DAT_00086df8+0x5f bit 2, forcing track 8
-// when in combat), and elapsed-time throttling (DAT_0023c378), calling
-// play_music_track once a transition is actually due. Early-outs
-// unless the audio subsystem is initialized and (for tracks 9/0xb
-// specifically) the current track has finished playing.
+// was FUN_00073634 -- the in-game ambient music selection tick: picks/transitions between ambient
+// music tracks based on the current track group, combat state (DAT_00086df8+0x5f bit 2, forcing
+// track 8 when in combat), and elapsed-time throttling (DAT_0023c378)...
 void update_ingame_music_track()
 
 {
@@ -1400,10 +1344,9 @@ void update_ingame_music_track()
 
 
 
-// was FUN_00073870 -- true once the current music track's elapsed
-// play time exceeds its own recorded duration (DAT_0023c330, set by
-// play_music_track/resume_music_playback), i.e. "this track has finished
-// playing and it's time to loop or advance."
+// was FUN_00073870 -- true once the current music track's elapsed play time exceeds its own
+// recorded duration (DAT_0023c330, set by play_music_track/resume_music_playback), i.e. "this track
+// has finished playing and it's time to loop or advance."
 bool advance_menu_music_track_elapsed()
 
 {
@@ -1470,12 +1413,9 @@ short param_1;
   char stack0xffdbdfe0_buf [256];
   char *stack0xffdbdfe0_ptr;
   char cVar1;
-  /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating
-     load_string_resource's real pointer to 32 bits before forwarding it
-     to load_and_resample_wave_file as a path -- same pointer-truncation
-     class as load_string_resource's own fix. Also used as a plain 0/1
-     flag elsewhere in this function, which still works as a null/non-
-     null pointer. */
+  /* BUG FIX (unit-testing-framework merge): was `undefined4`, truncating load_string_resource's
+     real pointer to 32 bits before forwarding it to load_and_resample_wave_file as a path -- same
+     pointer-truncation class as load_string_resource's own fix. */
   char *uVar2;
   int iVar3;
   char *pcVar4;
@@ -1657,6 +1597,14 @@ void voice_sample_cluster_stub_2()
 // WAVE-resource engine, there is nothing concrete here to wire up --
 // forcing a platform_sfx_play call in here would be inventing new
 // behavior with no decompiled evidence behind it. Left untouched.
+//
+// RE-CONFIRMED (QA question "should this be playing notes in the
+// tracker?"): re-verified acquire_sound_resource_slot's "always
+// returns 0x28" claim above against a FRESH live Ghidra decompile of
+// the real FUN_00049940 -- byte-for-byte `undefined4 FUN_00049940(void)
+// { return 0x28; }`, genuinely parameter-less and constant-returning in
+// the real original binary, not a decompile artifact masking something
+// real. This rules out a hidden tracker-note mechanism definitively.
 void start_ambient_sound_effect(param_1)
 undefined4 param_1;
 
@@ -1727,13 +1675,9 @@ void stop_ambient_sound_effect()
 
 
 
-// was FUN_0007eb70 -- initializes a 9-field ambient-sound-effect
-// state block (the DAT_0024d0xx/DAT_0024faxx globals; the two address
-// families suggest two parallel channels/slots), called by
-// start_ambient_sound_effect on a successful roll. param_1 seeds one
-// derived timing field (DAT_0024fa18); the rest are fixed constants.
-// The exact per-field meaning (delay, volume, pan?) isn't pinned down
-// beyond "ambient sound timing/target state" here.
+// was FUN_0007eb70 -- initializes a 9-field ambient-sound-effect state block (the
+// DAT_0024d0xx/DAT_0024faxx globals; the two address families suggest two parallel
+// channels/slots)...
 void init_ambient_sound_timing(param_1)
 short param_1;
 
@@ -1752,15 +1696,8 @@ short param_1;
 
 
 
-// was FUN_0007ec1c -- resets 3 of init_ambient_sound_timing's 9
-// fields (the "target select" ones, all set to the sentinel 0xff)
-// without touching the other 6 timing fields. Called broadly across
-// level/character-creation transitions (src/chargen.c,
-// src/resources.c, and several not-yet-extracted uw.c call sites) to
-// avoid an ambient sound referencing a now-stale emitter. Has a
-// byte-identical duplicate at a different address,
-// clear_ambient_sound_target_thunk (uw.c), now collapsed to a real
-// call to this function.
+// was FUN_0007ec1c -- resets 3 of init_ambient_sound_timing's 9 fields (the "target select" ones,
+// all set to the sentinel 0xff) without touching the other 6 timing fields.
 void clear_ambient_sound_target()
 
 {
@@ -1774,12 +1711,9 @@ void clear_ambient_sound_target()
 
 
 
-// was FUN_00035dd8 -- clears the current ambient sound target and
-// resets DAT_00101960 (the talking-portrait mouth-frame cycle count,
-// confirmed via its use a few thousand lines below in the babl
-// conversation-rendering loop, which wraps a frame counter at this
-// value) to its default of 3. Called once at the start of
-// character-generation's intro speech sequence.
+// was FUN_00035dd8 -- clears the current ambient sound target and resets DAT_00101960 (the
+// talking-portrait mouth-frame cycle count, confirmed via its use a few thousand lines below in the
+// babl conversation-rendering loop, which wraps a frame counter at this value) to its default of 3.
 undefined4 reset_dialogue_speech_state()
 
 {
@@ -1820,10 +1754,9 @@ intptr_t param_4;
   undefined2 uVar1;
 
   DAT_000853f8 = (*(ushort *)(param_3 + 2) + 4) * 2 + (uint)*(ushort *)(param_3 + 4);
-  /* Ghidra dropped the size argument at this call site; the sibling
-     function read_voice_sample_page_chunk computes the equivalent size the same way and
-     passes it explicitly (& 0xffff), so reuse the value just computed
-     into DAT_000853f8 above. */
+  /* Ghidra dropped the size argument at this call site; the sibling function
+     read_voice_sample_page_chunk computes the equivalent size the same way and passes it explicitly
+     (& 0xffff), so reuse the value just computed into DAT_000853f8 above. */
   ce_memmove(param_4,param_1 + param_2 * 0x10000 + 0xb00,DAT_000853f8 & 0xffff);
   uVar1 = (undefined2)DAT_000853f8;
   return uVar1;
@@ -1876,13 +1809,9 @@ LAB_00035fd4:
 }
 
 
-// was FUN_00037d50 -- copies the current ambient-sound loop handle
-// (DAT_002506ec, set by start_ambient_sound_effect) into DAT_00101a70.
-// Its only confirmed call site runs during game init, right after
-// start_ambient_sound_effect(2). DAT_00101a70 also appears to double
-// as scratch state elsewhere (e.g. a bitmap pointer inside
-// render_babl_dialog_window) at times this handle wouldn't be live,
-// so treat it as a reused scratch slot rather than a dedicated field.
+// was FUN_00037d50 -- copies the current ambient-sound loop handle (DAT_002506ec, set by
+// start_ambient_sound_effect) into DAT_00101a70. Its only confirmed call site runs during game
+// init, right after start_ambient_sound_effect(2).
 void cache_ambient_sound_handle()
 
 {
@@ -1891,11 +1820,9 @@ void cache_ambient_sound_handle()
 }
 
 
-// was FUN_00049948 -- per stop_ambient_sound_effect/start_ambient_sound_effect's
-// own comments, releases a previously acquired sound-resource slot
-// (the counterpart to acquire_sound_resource_slot); this decompile's
-// body is an empty no-op, same lost-body situation as its acquire
-// counterpart.
+// was FUN_00049948 -- per stop_ambient_sound_effect/start_ambient_sound_effect's own comments,
+// releases a previously acquired sound-resource slot (the counterpart to
+// acquire_sound_resource_slot); this decompile's body is an empty no-op...
 void release_sound_resource_slot()
 
 {
@@ -1903,14 +1830,9 @@ void release_sound_resource_slot()
 }
 
 
-// was FUN_00049940 -- per start_ambient_sound_effect's own comment,
-// reads as "get a free slot/count for class 0x1e" (its only known
-// caller passes 0x1e, and in the retry path a second argument too),
-// but this function's own declaration takes NO parameters and its
-// body always returns the fixed value 0x28 -- the real
-// parameter-taking implementation appears to be one of this
-// decompile's lost-body cases (same class as the LAB_ stub
-// functions), not recovered here. Ported as-is rather than guessed.
+// was FUN_00049940 -- per start_ambient_sound_effect's own comment, reads as "get a free slot/count
+// for class 0x1e" (its only known caller passes 0x1e, and in the retry path a second argument
+// too)...
 undefined4 acquire_sound_resource_slot()
 
 {
@@ -1918,11 +1840,9 @@ undefined4 acquire_sound_resource_slot()
 }
 
 
-// was FUN_0004b600 -- initializes one 0x1a-byte sound-channel slot
-// (zeroing its +0x12..+0x19 playback-state fields): called in a loop
-// over all 0x10 slots at startup (uw.c's init_all_sound_channel_slots), and per-slot
-// right after cpp_operator_new(0x1a) allocates a fresh one in
-// src/audio.c. Always returns 0.
+// was FUN_0004b600 -- initializes one 0x1a-byte sound-channel slot (zeroing its +0x12..+0x19
+// playback-state fields): called in a loop over all 0x10 slots at startup (uw.c's
+// init_all_sound_channel_slots)...
 undefined4 init_sound_channel_slot(param_1)
 int param_1;
 
@@ -1940,9 +1860,8 @@ int param_1;
 
 
 
-// was FUN_0004b644 -- the shutdown counterpart to
-// init_sound_channel_slot: releases the slot's playback resource
-// (cpp_operator_delete) if its +0x12 field is non-zero (a sample currently
+// was FUN_0004b644 -- the shutdown counterpart to init_sound_channel_slot: releases the slot's
+// playback resource (cpp_operator_delete) if its +0x12 field is non-zero (a sample currently
 // loaded/playing).
 void release_sound_channel_slot(param_1)
 int param_1;
@@ -1955,15 +1874,9 @@ int param_1;
 }
 
 
-// was FUN_0004b66c -- loads a WAVE resource (param_2=module,
-// param_3=resource id) into the given sound-channel slot (param_1),
-// resampling it to the output rate DAT_00086368 if the resource's own
-// rate is a recognized standard one (0xac44=44100Hz -> 4:1 decimate,
-// 0x5622=22050Hz -> 2:1 decimate), otherwise copying the raw sample
-// data unchanged. Frees any previously-loaded sample in the slot
-// first, allocates fresh storage for the new one, and releases the
-// resource handle when done. Returns whether the resource was found
-// and loaded.
+// was FUN_0004b66c -- loads a WAVE resource (param_2=module, param_3=resource id) into the given
+// sound-channel slot (param_1), resampling it to the output rate DAT_00086368 if the resource's own
+// rate is a recognized standard one...
 undefined4 load_and_resample_wave_sample(param_1,param_2,param_3)
 int param_1;
 undefined4 param_2;
@@ -2087,11 +2000,9 @@ undefined2 param_3;
 }
 
 
-// was FUN_0004b948 -- load_and_resample_wave_sample's file-based
-// counterpart: opens a WAVE file on disk (param_3, the path) instead
-// of a module resource, otherwise identical (same header read, same
-// 44100/22050Hz resample-vs-raw-copy logic, same slot-buffer layout
-// at param_1).
+// was FUN_0004b948 -- load_and_resample_wave_sample's file-based counterpart: opens a WAVE file on
+// disk (param_3, the path) instead of a module resource, otherwise identical (same header read,
+// same 44100/22050Hz resample-vs-raw-copy logic, same slot-buffer layout at param_1).
 undefined4 load_and_resample_wave_file(param_1,param_2,param_3)
 int param_1;
 undefined4 param_2;
@@ -2227,23 +2138,9 @@ undefined4 param_3;
 
 
 
-// was FUN_0004bc94 -- constructs a MOD-player engine object in-place at
-// param_1 (its counterpart is the very next function, destroy_mod_player):
-// initializes its pattern/instrument/channel-state arrays, opens and
-// reads the MOD file named/handled by param_2 (FindFirstFileW/ordaudio_op_2135),
-// and -- if the open succeeds -- parses the ProTracker header tag
-// ("M.K."/"6CHN"/"8CHN"/"FLT4"/"FLT8") to pick a channel count, then
-// walks the instrument-header table building each instrument's sample
-// length/repeat-offset/repeat-length fields (read_mod_word_length_field).
-// Returns param_1 itself (the now-constructed object), matching every
-// call site's `DAT_0023c3b8 = construct_and_load_mod_player(alloc_ptr, path_handle);`
-// idiom. param_3/param_4: declared but every one of this function's 3
-// call sites passes only 2 arguments, and the body only ever stores them
-// (never branches on them) into a 12-byte scratch block with param_2
-// that gets released via BatteryDrvrGetLevels right before returning -- this
-// looks like Ghidra mislabeling local scratch stack slots as incoming
-// parameters (same shape as a real 2-parameter function), not a genuine
-// dropped-argument bug, so left alone rather than "fixed" on no evidence.
+// was FUN_0004bc94 -- constructs a MOD-player engine object in-place at param_1 (its counterpart is
+// the very next function, destroy_mod_player): initializes its pattern/instrument/channel-state
+// arrays...
 /* Real arity is 2: all three ARM call sites set only r0/r1; Ghidra's param_3/param_4 were the
    unwritten r2/r3 spilled into stack slots that nothing read. */
 undefined1 *construct_and_load_mod_player(param_1,param_2)
@@ -2297,13 +2194,7 @@ undefined4 param_2;
   FindNextFileW(param_1 + 0x104d8);
   init_mod_dynamic_array(param_1 + 0x104e0);
   local_334 = param_1 + 0x104f4;
-  /* BUG FIX: was `init_mod_pattern_array();` -- a dropped argument. The
-     function takes exactly one parameter (the array header to
-     construct) and local_334, just assigned above to this exact
-     struct's address, is the only value in scope this could mean --
-     same idiom as every other dropped-argument fix this session.
-     Called with no argument, the original read garbage for param_1
-     and wrote the construct pattern through it -- a wild write. */
+  /* BUG FIX: was `init_mod_pattern_array();` -- a dropped argument. */
   init_mod_pattern_array(local_334);
   init_mod_instrument_array(param_1 + 0x10508);
   init_mod_channel_state_array(param_1 + 0x10520);
@@ -2611,11 +2502,9 @@ LAB_0004c940:
 }
 
 
-// was FUN_0004c958 -- destroys a MOD-player engine object: resets its
-// state (reset_mod_player_state), then frees the object itself
-// (cpp_operator_delete) if param_2's low bit is set (the "also free the
-// container" flag, as opposed to just resetting an embedded/reused
-// instance).
+// was FUN_0004c958 -- destroys a MOD-player engine object: resets its state
+// (reset_mod_player_state), then frees the object itself (cpp_operator_delete) if param_2's low bit
+// is set...
 undefined4 destroy_mod_player(param_1,param_2)
 undefined4 param_1;
 uint param_2;
@@ -2630,11 +2519,9 @@ uint param_2;
 
 
 
-// was FUN_0004c97c -- resets a MOD-player engine object's full
-// internal state (the large structure this whole cluster operates on,
-// 0x10554+ bytes: pattern/sample/channel data): clears its header
-// fields, stops playback first if currently playing
-// (stop_mod_player_playback), and resets each sub-component buffer.
+// was FUN_0004c97c -- resets a MOD-player engine object's full internal state (the large structure
+// this whole cluster operates on, 0x10554+ bytes: pattern/sample/channel data): clears its header
+// fields, stops playback first if currently playing (stop_mod_player_playback)...
 void reset_mod_player_state(param_1)
 undefined1 * param_1;
 
@@ -2658,13 +2545,9 @@ undefined1 * param_1;
 
 
 
-// was FUN_0004ca50 -- starts MOD-player playback (no-op if already
-// playing, per the +0x10554 "is playing" flag): opens the audio
-// output device (waveOutOpen, with mod_player_wave_out_callback as its fill-buffer
-// callback), zeroes the per-channel state array and several header
-// fields, queues the initial audio buffers (queue_mod_audio_buffer, called
-// twice for double-buffering) and, only once both queue attempts
-// succeed, marks the engine as playing.
+// was FUN_0004ca50 -- starts MOD-player playback (no-op if already playing, per the +0x10554 "is
+// playing" flag): opens the audio output device (waveOutOpen, with mod_player_wave_out_callback as
+// its fill-buffer callback), zeroes the per-channel state array and several header fields...
 undefined4 start_mod_player_playback(param_1)
 char *param_1;
 
@@ -2849,12 +2732,9 @@ char *param_1;
 }
 
 
-// was FUN_0004d050 -- prepares and queues the next audio buffer for
-// MOD playback (called twice from start_mod_player_playback for
-// double-buffering): advances the row/pattern/song-position counters,
-// mixing one row's worth of audio via process_mod_tracker_row when a row
-// boundary is reached, and submits the filled buffer to the audio
-// output device.
+// was FUN_0004d050 -- prepares and queues the next audio buffer for MOD playback (called twice from
+// start_mod_player_playback for double-buffering): advances the row/pattern/song-position counters,
+// mixing one row's worth of audio via process_mod_tracker_row when a row boundary is reached...
 bool queue_mod_audio_buffer(param_1)
 int param_1;
 
@@ -3074,13 +2954,8 @@ int param_1;
 }
 
 
-// was FUN_0004d79c -- the MOD-tracker engine's "process one pattern
-// row" routine, called from queue_mod_audio_buffer at each row
-// boundary: for every channel, reads its current row entry
-// (instrument, note period, effect/parameter) from the pattern data
-// and updates that channel's playback state (sample pointer, loop
-// points, frequency) accordingly, triggering new notes and applying
-// tracker effects.
+// was FUN_0004d79c -- the MOD-tracker engine's "process one pattern row" routine, called from
+// queue_mod_audio_buffer at each row boundary: for every channel, reads its current row entry...
 void process_mod_tracker_row(param_1)
 int param_1;
 
@@ -3433,13 +3308,9 @@ LAB_0004e21c:
 }
 
 
-// was FUN_0004e324 -- the MOD-tracker engine's core sample mixer:
-// zeroes the left/right output buffers (param_2/param_3, param_4
-// samples each), then for every active channel with a loaded sample
-// (per-channel state at +0x10524, sample data pointer check at
-// +0x24), steps through and adds its sample data into both buffers at
-// a rate derived from the channel's note frequency, handling sample
-// looping along the way.
+// was FUN_0004e324 -- the MOD-tracker engine's core sample mixer: zeroes the left/right output
+// buffers (param_2/param_3, param_4 samples each), then for every active channel with a loaded
+// sample (per-channel state at +0x10524, sample data pointer check at +0x24)...
 undefined4 mix_mod_channels_to_buffer(param_1,param_2,param_3,param_4)
 int param_1;
 undefined4 * param_2;
@@ -3549,12 +3420,9 @@ int param_4;
 }
 
 
-// was FUN_0004e6e0 -- the MOD-tracker engine's per-tick effect
-// processor (as opposed to process_mod_tracker_row's per-row setup):
-// for each channel, dispatches on its current effect code (0 =
-// arpeggio, 1 = portamento down, 2 = portamento up, matching classic
-// MOD effect numbering) and updates its playback frequency/period
-// accordingly for this tick.
+// was FUN_0004e6e0 -- the MOD-tracker engine's per-tick effect processor (as opposed to
+// process_mod_tracker_row's per-row setup): for each channel, dispatches on its current effect
+// code...
 void apply_mod_tracker_tick_effects(param_1)
 int param_1;
 
@@ -3707,13 +3575,9 @@ LAB_0004eb74:
 }
 
 
-// was FUN_0004ecd4 -- the waveOutProc-shaped callback passed to
-// waveOutOpen (waveOutOpen) in start_mod_player_playback: on WOM_DONE
-// (param_2==0x3bd, a completed-buffer notification), frees the
-// just-finished buffer's resources and, if still playing, queues the
-// next one via queue_mod_audio_buffer -- the other half of the
-// double-buffering loop queue_mod_audio_buffer's own two initial
-// calls set up.
+// was FUN_0004ecd4 -- the waveOutProc-shaped callback passed to waveOutOpen (waveOutOpen) in
+// start_mod_player_playback: on WOM_DONE (param_2==0x3bd, a completed-buffer notification), frees
+// the just-finished buffer's resources and, if still playing...
 void mod_player_wave_out_callback(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 int param_2;
@@ -3786,11 +3650,9 @@ int param_3;
 }
 
 
-// was FUN_0004ee60 -- applies the MOD tracker's "tone portamento"
-// effect to channel param_2: slides its current period (+0xc) toward
-// a target period (+0x1c) by one step (+0x20), clamping once the
-// target is reached, then recomputes the channel's playback frequency
-// from the updated period.
+// was FUN_0004ee60 -- applies the MOD tracker's "tone portamento" effect to channel param_2: slides
+// its current period (+0xc) toward a target period (+0x1c) by one step (+0x20), clamping once the
+// target is reached, then recomputes the channel's playback frequency from the updated period.
 void apply_mod_tone_portamento(param_1,param_2)
 int param_1;
 int param_2;
@@ -3845,13 +3707,9 @@ LAB_0004f030:
 }
 
 
-// was FUN_0004f0ac -- applies the MOD tracker's "vibrato" effect to
-// channel param_2: looks up a sine value from the 32-entry
-// DAT_00086810 table at the channel's vibrato position (+0x38),
-// scales it by vibrato depth (+0x28), and adds or subtracts it from
-// the current period (+0xc) depending on the direction flag (+0x3c)
-// before recomputing playback frequency. Advances the vibrato
-// position by its speed (+0x24) and flips direction each half-cycle.
+// was FUN_0004f0ac -- applies the MOD tracker's "vibrato" effect to channel param_2: looks up a
+// sine value from the 32-entry DAT_00086810 table at the channel's vibrato position (+0x38), scales
+// it by vibrato depth (+0x28)...
 void apply_mod_vibrato_effect(param_1,param_2)
 int param_1;
 int param_2;
@@ -3909,13 +3767,9 @@ int param_2;
 
 
 
-// was FUN_0004f2f0 -- applies the MOD tracker's "tremolo" effect to
-// channel param_2: looks up a sine value from the same DAT_00086810
-// table at the channel's vibrato position (+0x38), scales it by
-// tremolo depth (+0x30), and adds or subtracts it from the current
-// volume (+0x14), clamped to [0,0x40]. Advances the shared vibrato
-// position by tremolo speed (+0x2c) and flips direction each
-// half-cycle, same as apply_mod_vibrato_effect.
+// was FUN_0004f2f0 -- applies the MOD tracker's "tremolo" effect to channel param_2: looks up a
+// sine value from the same DAT_00086810 table at the channel's vibrato position (+0x38), scales it
+// by tremolo depth (+0x30), and adds or subtracts it from the current volume (+0x14)...
 void apply_mod_tremolo_effect(param_1,param_2)
 int param_1;
 int param_2;
@@ -3972,15 +3826,9 @@ int param_2;
 }
 
 
-// was FUN_0004f4ec -- builds a 65-row (volume 0..0x40) x 256-column
-// (signed sample byte) lookup table of pre-scaled int32 mix
-// contributions: table[vol][sample] = round(sample * vol * scale / 64).
-// Confirmed by mix_mod_channels_to_buffer's read side, which indexes
-// this exact table as `param_1 + channel_volume*0x400 +
-// sample_byte*4` while mixing, avoiding a per-sample multiply.
-// param_2 is a master scale factor -- called with 0x40 (the default)
-// when a MOD-embedded sample fails to load, and with 0x3c after a
-// real sample has been resampled.
+// was FUN_0004f4ec -- builds a 65-row (volume 0..0x40) x 256-column (signed sample byte) lookup
+// table of pre-scaled int32 mix contributions: table[vol][sample] = round(sample * vol * scale /
+// 64).
 void build_mod_volume_sample_table(param_1,param_2)
 undefined1 * param_1;
 int param_2;
@@ -4018,10 +3866,9 @@ int param_2;
 }
 
 
-// was FUN_0004f858 -- queries whether SFX trigger slot param_2 is
-// currently playing (reads its "playing" flag at +0x10410 directly,
-// same field start_sfx_trigger_slot sets and stop_sfx_trigger_slot
-// clears).
+// was FUN_0004f858 -- queries whether SFX trigger slot param_2 is currently playing (reads its
+// "playing" flag at +0x10410 directly, same field start_sfx_trigger_slot sets and
+// stop_sfx_trigger_slot clears).
 undefined1 is_sfx_trigger_slot_active(param_1,param_2)
 char *param_1;
 int param_2;
@@ -4031,13 +3878,9 @@ int param_2;
 }
 
 
-// was FUN_0004f560 -- reads a big-endian 16-bit word count from the
-// MOD file buffer (param_2+4) at the cursor position *param_3,
-// advances the cursor by 2, and returns the count doubled to a byte
-// count. Confirmed by its three call sites inside the MOD instrument-
-// header parser (still-unnamed construct_and_load_mod_player): classic ProTracker
-// instrument fields (sample length/repeat offset/repeat length) are
-// stored as big-endian word counts.
+// was FUN_0004f560 -- reads a big-endian 16-bit word count from the MOD file buffer (param_2+4) at
+// the cursor position *param_3, advances the cursor by 2, and returns the count doubled to a byte
+// count.
 int read_mod_word_length_field(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
@@ -4056,16 +3899,9 @@ int * param_3;
 
 
 
-// was FUN_0004f594 -- arms one-shot SFX trigger slot param_3 (of 16,
-// each a 13-byte record at player+0x10404+slot*0xd) with the sample
-// data pointer+length from loaded wave handle param_2's fields
-// +0x12/+0x16, canceling (stop_sfx_trigger_slot) any trigger already
-// playing in that slot first. Leaves the slot's "playing" flag
-// (+0x10410) cleared -- start_sfx_trigger_slot flips it on. Confirmed
-// by the consumer loop in queue_mod_audio_buffer's tail, which mixes
-// raw unsigned-to-signed sample bytes from +0x10404 directly into the
-// output while +0x10410 is set and the position (+0x10408) is below
-// the length (+0x1040c).
+// was FUN_0004f594 -- arms one-shot SFX trigger slot param_3 (of 16, each a 13-byte record at
+// player+0x10404+slot*0xd) with the sample data pointer+length from loaded wave handle param_2's
+// fields +0x12/+0x16...
 bool arm_sfx_trigger_slot(param_1,param_2,param_3)
 char *param_1;
 int param_2;
@@ -4103,11 +3939,9 @@ int param_3;
 
 
 
-// was FUN_0004f6b0 -- starts SFX trigger slot param_2 playing: resets
-// its position (+0x10408) to 0 and sets the "playing" flag (+0x10410)
-// -- the counterpart to arm_sfx_trigger_slot, which loads the sample
-// data but leaves this flag cleared. Fails (returns 0) if the slot
-// has no armed sample (+0x10404==0) or the index is out of range.
+// was FUN_0004f6b0 -- starts SFX trigger slot param_2 playing: resets its position (+0x10408) to 0
+// and sets the "playing" flag (+0x10410) -- the counterpart to arm_sfx_trigger_slot, which loads
+// the sample data but leaves this flag cleared.
 undefined4 start_sfx_trigger_slot(param_1,param_2)
 char *param_1;
 int param_2;
@@ -4132,12 +3966,9 @@ int param_2;
 
 
 
-// was FUN_0004f748 -- stops SFX trigger slot param_2: clears its
-// "playing" flag (+0x10410) and resets its position (+0x10408) to 0,
-// but leaves the armed sample pointer/length (+0x10404/+0x1040c)
-// intact so arm_sfx_trigger_slot can detect and cancel a still-armed
-// slot before overwriting it. Returns whether the slot had an armed
-// sample at all.
+// was FUN_0004f748 -- stops SFX trigger slot param_2: clears its "playing" flag (+0x10410) and
+// resets its position (+0x10408) to 0, but leaves the armed sample pointer/length
+// (+0x10404/+0x1040c) intact so arm_sfx_trigger_slot can detect and cancel a still-armed...
 undefined4 stop_sfx_trigger_slot(param_1,param_2)
 char *param_1;
 int param_2;
@@ -4161,9 +3992,8 @@ int param_2;
 }
 
 
-// was FUN_0004f7e0 -- one-time startup entry point for the hardware
-// sound-channel slot pool: initializes all 16 slots now
-// (init_all_sound_channel_slots) and registers their teardown to run
+// was FUN_0004f7e0 -- one-time startup entry point for the hardware sound-channel slot pool:
+// initializes all 16 slots now (init_all_sound_channel_slots) and registers their teardown to run
 // automatically at exit.
 //
 // INVESTIGATED (positional SFX cluster): this function -- and
@@ -4213,11 +4043,8 @@ void init_all_sound_channel_slots()
 
 
 
-// was FUN_0004f828 -- releases all 16 hardware sound-channel slots in
-// reverse order via release_sound_channel_slot; DAT_00202bf8 is
-// confirmed (by address arithmetic: 0x202bf8 - 0x202a58 == 0x1a0 ==
-// 16*0x1a) to be exactly the one-past-the-end address of the same
-// slot array init_all_sound_channel_slots walks forward from.
+// was FUN_0004f828 -- releases all 16 hardware sound-channel slots in reverse order via
+// release_sound_channel_slot; DAT_00202bf8 is confirmed...
 void release_all_sound_channel_slots()
 
 {
@@ -4239,15 +4066,9 @@ void release_all_sound_channel_slots()
 
 
 
-// was FUN_0004f874 -- generic growable-array resize for 16-byte,
-// zero-initializable elements (grows via cpp_operator_new/realloc-style
-// copy, zero-fills new slots via construct_mod_event_array_range's ce_memset memset).
-// Confirmed used only by the MOD pattern loader (both call sites are
-// building per-row note-event storage: note/sample/period/effect,
-// each field 4 bytes = 16 bytes/event) -- a sibling of the 20-byte
-// variant (still-unnamed resize_mod_pattern_row_array) used one level up for the
-// per-pattern channel-row array. param_3 (-1 = "leave unchanged")
-// optionally overrides the growth-hint field at +0x10.
+// was FUN_0004f874 -- generic growable-array resize for 16-byte, zero-initializable elements (grows
+// via cpp_operator_new/realloc-style copy, zero-fills new slots via
+// construct_mod_event_array_range's ce_memset memset).
 void resize_mod_event_row_array(param_1,param_2,param_3)
 int param_1;
 int param_2;
@@ -4328,15 +4149,9 @@ LAB_0004f994:
 }
 
 
-// was FUN_0004f9a0 -- generic growable-array resize for 20-byte
-// elements with real construct/destruct lifecycle (construct_mod_row_array_range on
-// grow, destroy_mod_row_array_range on shrink/clear). Confirmed used only by the MOD
-// pattern loader to size the per-pattern row array to 0x40 (64) --
-// the standard ProTracker row count -- making each element one
-// pattern row's channel-event descriptors (the sibling 16-byte
-// variant, resize_mod_event_row_array, handles the per-channel event
-// storage one level down). param_3 (-1 = "leave unchanged")
-// optionally overrides the growth-hint field at +0x10.
+// was FUN_0004f9a0 -- generic growable-array resize for 20-byte elements with real
+// construct/destruct lifecycle (construct_mod_row_array_range on grow, destroy_mod_row_array_range
+// on shrink/clear).
 void resize_mod_pattern_row_array(param_1,param_2,param_3)
 int param_1;
 int param_2;
@@ -4423,14 +4238,9 @@ LAB_0004faec:
 
 
 
-// was FUN_0004faf4 -- default-constructs one empty dynamic-array
-// instance in place: zeroes the array header (data pointer, count,
-// capacity, growth-hint at +4/+8/+0xc/+0x10) and resets a leading
-// 4-byte tag immediately before it to its default state. Called
-// directly (never through a resize function) on three distinct
-// per-player struct fields that are each later grown by
-// resize_mod_int_array, confirming this constructs that same array-
-// header struct type.
+// was FUN_0004faf4 -- default-constructs one empty dynamic-array instance in place: zeroes the
+// array header (data pointer, count, capacity, growth-hint at +4/+8/+0xc/+0x10) and resets a
+// leading 4-byte tag immediately before it to its default state.
 void init_mod_dynamic_array(param_1)
 undefined1 * param_1;
 
@@ -4448,13 +4258,9 @@ undefined1 * param_1;
 
 
 
-// was FUN_0004fb38 -- generic growable-array resize for plain 4-byte
-// (int) elements: no construct/destruct step, new slots are just
-// zero-filled (construct_mod_int_array_range -> memset). Confirmed by its 4-byte
-// stride (`<< 2` throughout, vs. the 16/20-byte MOD-event/row
-// variants) and by operating on the same per-player struct fields
-// init_mod_dynamic_array constructs. param_3 (-1 = "leave unchanged")
-// optionally overrides the growth-hint field at +0x10.
+// was FUN_0004fb38 -- generic growable-array resize for plain 4-byte (int) elements: no
+// construct/destruct step, new slots are just zero-filled (construct_mod_int_array_range ->
+// memset).
 void resize_mod_int_array(param_1,param_2,param_3)
 int param_1;
 int param_2;
@@ -4535,12 +4341,8 @@ LAB_0004fc58:
 }
 
 
-// was FUN_0004fc64 -- destroys one dynamic-array instance: frees its
-// data buffer (if allocated) and resets it to the empty/closed tag
-// state. Called directly on the same three per-player struct fields
-// (+0x104e0/+0x10558/+0x1056c) that init_mod_dynamic_array constructs
-// and resize_mod_int_array grows -- the matching destructor for that
-// lifecycle.
+// was FUN_0004fc64 -- destroys one dynamic-array instance: frees its data buffer (if allocated) and
+// resets it to the empty/closed tag state.
 void destroy_mod_dynamic_array(param_1)
 undefined1 * param_1;
 
@@ -4561,12 +4363,8 @@ undefined1 * param_1;
 
 
 
-// was FUN_0004fcd4 -- resets a dynamic-array instance to its empty/
-// closed tag state (without touching/freeing its data buffer) and,
-// if param_2's low bit is set, frees the struct itself -- the MSVC-
-// style "scalar deleting destructor" shape seen throughout this
-// templated container cluster (cf. destroy_mod_dynamic_array, the
-// plain in-place destructor for the same struct type).
+// was FUN_0004fcd4 -- resets a dynamic-array instance to its empty/ closed tag state (without
+// touching/freeing its data buffer) and, if param_2's low bit is set, frees the struct itself...
 undefined1 *reset_mod_dynamic_array_and_maybe_free(param_1,param_2)
 undefined1 * param_1;
 uint param_2;
@@ -4584,11 +4382,8 @@ uint param_2;
 
 
 
-// was FUN_0004fd18 -- MFC CArchive-style serialize for a
-// resize_mod_int_array-managed array: param_2's +0x14 bit 0 matches
-// CArchive::IsLoading()'s flag convention. Loading reads a count
-// (ordaudio_op_2142) and resizes the array to it; storing writes the
-// element count then the raw int data (ordaudio_op_2135).
+// was FUN_0004fd18 -- MFC CArchive-style serialize for a resize_mod_int_array-managed array:
+// param_2's +0x14 bit 0 matches CArchive::IsLoading()'s flag convention.
 void serialize_mod_int_array(param_1,param_2)
 int param_1;
 int param_2;
@@ -4617,14 +4412,8 @@ int param_2;
 
 
 
-// was FUN_0004fd68 -- constructs the top-level "array of patterns"
-// header in place (tag 0x38, zeroed count/capacity/growth-hint).
-// Confirmed by its sole call site (the MOD loader, which stores the
-// struct's address in local_334 and immediately after resizes it via
-// resize_mod_pattern_array and indexes its data pointer to grow each
-// individual pattern's own row array via resize_mod_pattern_row_array)
-// -- each element of this array is itself a nested dynamic-array
-// header for one pattern's rows.
+// was FUN_0004fd68 -- constructs the top-level "array of patterns" header in place (tag 0x38,
+// zeroed count/capacity/growth-hint).
 void init_mod_pattern_array(param_1)
 undefined1 * param_1;
 
@@ -4642,11 +4431,8 @@ undefined1 * param_1;
 
 
 
-// was FUN_0004fda4 -- resizes the top-level "array of patterns":
-// each 20-byte element is itself a nested resize_mod_pattern_row_array-
-// style header for one pattern's rows, constructed/destroyed via
-// destroy_mod_pattern_array_range/the still-unnamed per-element helpers one level down
-// (next pass). The matching constructor is init_mod_pattern_array.
+// was FUN_0004fda4 -- resizes the top-level "array of patterns": each 20-byte element is itself a
+// nested resize_mod_pattern_row_array- style header for one pattern's rows...
 void resize_mod_pattern_array(param_1,param_2,param_3)
 int param_1;
 int param_2;
@@ -4732,11 +4518,9 @@ LAB_0004fef0:
 }
 
 
-// was FUN_0004fef8 -- destroys the top-level "array of patterns" in
-// place: frees each pattern's own nested row-array (destroy_mod_pattern_array_range,
-// the same destroy-range callback resize_mod_pattern_array uses) then
-// the outer buffer, and resets the tag to closed. The in-place
-// counterpart to init_mod_pattern_array.
+// was FUN_0004fef8 -- destroys the top-level "array of patterns" in place: frees each pattern's own
+// nested row-array (destroy_mod_pattern_array_range, the same destroy-range callback
+// resize_mod_pattern_array uses) then the outer buffer, and resets the tag to closed.
 void destroy_mod_pattern_array(param_1)
 undefined1 * param_1;
 
@@ -4758,11 +4542,8 @@ undefined1 * param_1;
 
 
 
-// was FUN_0004ff68 -- MFC CArchive-style serialize for the top-level
-// "array of patterns" (loading resizes via resize_mod_pattern_array,
-// storing writes via still-unnamed write_mod_pattern_array). No call sites found
-// in this codebase -- likely an unused template instantiation, kept
-// for parity with serialize_mod_int_array/serialize_mod_instrument_array.
+// was FUN_0004ff68 -- MFC CArchive-style serialize for the top-level "array of patterns" (loading
+// resizes via resize_mod_pattern_array, storing writes via still-unnamed write_mod_pattern_array).
 void serialize_mod_pattern_array(param_1,param_2)
 int param_1;
 int param_2;
@@ -4783,13 +4564,8 @@ int param_2;
 
 
 
-// was FUN_0004ffb8 -- constructs the MOD instrument/sample-descriptor
-// array header in place (tag 0x50). Confirmed by its sole call site
-// (param_1+0x10508 in the MOD loader) and by resize_mod_instrument_array
-// immediately after growing that same field with 0x30 (48)-byte
-// elements matching the classic ProTracker instrument record (22-byte
-// name + length/finetune/volume/repeat-offset/repeat-length, already
-// expanded to real byte counts via read_mod_word_length_field).
+// was FUN_0004ffb8 -- constructs the MOD instrument/sample-descriptor array header in place (tag
+// 0x50).
 void init_mod_instrument_array(param_1)
 undefined1 * param_1;
 
@@ -4896,10 +4672,9 @@ LAB_00050140:
 
 
 
-// was FUN_00050148 -- destroys the MOD instrument/sample-descriptor
-// array in place: frees each element via the destroy-range callback
-// destroy_mod_instrument_array_range (same one resize_mod_instrument_array uses), then the
-// outer buffer, and resets the tag to closed.
+// was FUN_00050148 -- destroys the MOD instrument/sample-descriptor array in place: frees each
+// element via the destroy-range callback destroy_mod_instrument_array_range (same one
+// resize_mod_instrument_array uses), then the outer buffer, and resets the tag to closed.
 void destroy_mod_instrument_array(param_1)
 undefined1 * param_1;
 
@@ -4921,9 +4696,8 @@ undefined1 * param_1;
 
 
 
-// was FUN_000501b8 -- MFC CArchive-style serialize for the MOD
-// instrument/sample-descriptor array (loading resizes via
-// resize_mod_instrument_array, storing writes via still-unnamed
+// was FUN_000501b8 -- MFC CArchive-style serialize for the MOD instrument/sample-descriptor array
+// (loading resizes via resize_mod_instrument_array, storing writes via still-unnamed
 // write_mod_instrument_array).
 void serialize_mod_instrument_array(param_1,param_2)
 int param_1;
@@ -4945,13 +4719,7 @@ int param_2;
 
 
 
-// was FUN_00050208 -- constructs the MOD channel runtime-state array
-// header in place (tag 0x68). Confirmed by its sole call site
-// (param_1+0x10520) and by resize_mod_channel_state_array growing
-// that field with 0x40 (64)-byte elements -- exactly the stride every
-// per-channel effect function (apply_mod_vibrato_effect,
-// apply_mod_tremolo_effect, apply_mod_tone_portamento, ...) already
-// uses off this same array's data pointer at +0x10524 (+0x10520+4).
+// was FUN_00050208 -- constructs the MOD channel runtime-state array header in place (tag 0x68).
 void init_mod_channel_state_array(param_1)
 undefined1 * param_1;
 
@@ -4969,10 +4737,9 @@ undefined1 * param_1;
 
 
 
-// was FUN_00050244 -- resizes the MOD channel runtime-state array
-// (64-byte elements, no element construct/destruct -- new slots are
-// just zero-filled via construct_mod_channel_state_array_range). The matching constructor is
-// init_mod_channel_state_array.
+// was FUN_00050244 -- resizes the MOD channel runtime-state array (64-byte elements, no element
+// construct/destruct -- new slots are just zero-filled via
+// construct_mod_channel_state_array_range).
 void resize_mod_channel_state_array(param_1,param_2,param_3)
 int param_1;
 int param_2;
@@ -5054,10 +4821,9 @@ LAB_00050364:
 
 
 
-// was FUN_00050370 -- destroys the MOD channel runtime-state array in
-// place: frees the raw buffer (no per-element destructor, matching
-// resize_mod_channel_state_array's plain zero-fill constructor) and
-// resets the tag to closed.
+// was FUN_00050370 -- destroys the MOD channel runtime-state array in place: frees the raw buffer
+// (no per-element destructor, matching resize_mod_channel_state_array's plain zero-fill
+// constructor) and resets the tag to closed.
 void destroy_mod_channel_state_array(param_1)
 undefined1 * param_1;
 
@@ -5078,10 +4844,9 @@ undefined1 * param_1;
 
 
 
-// was FUN_000503e0 -- MFC CArchive-style serialize for the MOD
-// channel runtime-state array (loading resizes via
-// resize_mod_channel_state_array, storing writes the raw 64-byte
-// elements directly via ordaudio_op_2135).
+// was FUN_000503e0 -- MFC CArchive-style serialize for the MOD channel runtime-state array (loading
+// resizes via resize_mod_channel_state_array, storing writes the raw 64-byte elements directly via
+// ordaudio_op_2135).
 void serialize_mod_channel_state_array(param_1,param_2)
 int param_1;
 int param_2;
@@ -5110,19 +4875,9 @@ int param_2;
 
 
 
-// was FUN_00050430 -- MSVC-style "scalar deleting destructor" for the
-// int-array type: destroys the array in place then, if param_2's low
-// bit is set, frees the struct itself.
-// BUG FIX: was `destroy_mod_dynamic_array();` -- a dropped argument.
-// The function takes exactly one parameter and param_1 (this
-// wrapper's own struct pointer, the only value in scope this could
-// mean) is obviously intended -- confirmed by three structurally
-// identical siblings just below (destroy_mod_pattern_array_and_maybe_free/
-// destroy_mod_instrument_array_and_maybe_free/
-// destroy_mod_channel_state_array_and_maybe_free), all with the exact
-// same shape and the exact same bug, each calling their own in-place
-// destructor correctly elsewhere in this file. Called with no
-// argument, this read garbage for the inner destructor's param_1.
+// was FUN_00050430 -- MSVC-style "scalar deleting destructor" for the int-array type: destroys the
+// array in place then, if param_2's low bit is set, frees the struct itself. BUG FIX: was
+// `destroy_mod_dynamic_array();` -- a dropped argument.
 undefined4 destroy_mod_dynamic_array_and_maybe_free(param_1,param_2)
 undefined4 param_1;
 uint param_2;
@@ -5137,10 +4892,9 @@ uint param_2;
 
 
 
-// was FUN_00050454 -- "scalar deleting destructor" for the top-level
-// pattern-array type (see destroy_mod_dynamic_array_and_maybe_free).
-// BUG FIX: was `destroy_mod_pattern_array();` (destroy_mod_pattern_array) -- the
-// same dropped-argument bug, same fix (pass param_1).
+// was FUN_00050454 -- "scalar deleting destructor" for the top-level pattern-array type (see
+// destroy_mod_dynamic_array_and_maybe_free). BUG FIX: was `destroy_mod_pattern_array();`
+// (destroy_mod_pattern_array) -- the same dropped-argument bug, same fix (pass param_1).
 undefined4 destroy_mod_pattern_array_and_maybe_free(param_1,param_2)
 undefined4 param_1;
 uint param_2;
@@ -5155,11 +4909,8 @@ uint param_2;
 
 
 
-// was FUN_00050478 -- "scalar deleting destructor" for the MOD
-// instrument/sample-descriptor array type (see
-// destroy_mod_dynamic_array_and_maybe_free).
-// BUG FIX: was `destroy_mod_instrument_array();` (destroy_mod_instrument_array) --
-// the same dropped-argument bug, same fix (pass param_1).
+// was FUN_00050478 -- "scalar deleting destructor" for the MOD instrument/sample-descriptor array
+// type (see destroy_mod_dynamic_array_and_maybe_free).
 undefined4 destroy_mod_instrument_array_and_maybe_free(param_1,param_2)
 undefined4 param_1;
 uint param_2;
@@ -5174,11 +4925,9 @@ uint param_2;
 
 
 
-// was FUN_0005049c -- "scalar deleting destructor" for the MOD
-// channel runtime-state array type (see
-// destroy_mod_dynamic_array_and_maybe_free).
-// BUG FIX: was `destroy_mod_channel_state_array();` (destroy_mod_channel_state_array) --
-// the same dropped-argument bug, same fix (pass param_1).
+// was FUN_0005049c -- "scalar deleting destructor" for the MOD channel runtime-state array type
+// (see destroy_mod_dynamic_array_and_maybe_free). BUG FIX: was `destroy_mod_channel_state_array();`
+// (destroy_mod_channel_state_array) -- the same dropped-argument bug, same fix (pass param_1).
 undefined4 destroy_mod_channel_state_array_and_maybe_free(param_1,param_2)
 undefined4 param_1;
 uint param_2;
@@ -5206,11 +4955,8 @@ int param_2;
 
 
 
-// was FUN_000504cc -- destroys param_2 20-byte "row" elements (each a
-// nested event-array header, destroyed via destroy_mod_row_array_elem).
-// The destroy-range callback resize_mod_pattern_row_array uses, and
-// also used directly by destroy_mod_pattern_array_elem to tear down
-// one pattern's own row array.
+// was FUN_000504cc -- destroys param_2 20-byte "row" elements (each a nested event-array header,
+// destroyed via destroy_mod_row_array_elem).
 void destroy_mod_row_array_range(param_1,param_2)
 int param_1;
 int param_2;
@@ -5225,10 +4971,9 @@ int param_2;
 
 
 
-// was FUN_000504fc -- destroys one "row" element in place: frees its
-// nested event-array buffer (if allocated) and resets the tag to
-// closed. The per-element destructor resize_mod_pattern_row_array's
-// destroy-range (destroy_mod_row_array_range) calls for each row.
+// was FUN_000504fc -- destroys one "row" element in place: frees its nested event-array buffer (if
+// allocated) and resets the tag to closed. The per-element destructor
+// resize_mod_pattern_row_array's destroy-range (destroy_mod_row_array_range) calls for each row.
 void destroy_mod_row_array_elem(param_1)
 undefined1 * param_1;
 
@@ -5272,13 +5017,8 @@ int param_2;
 
 
 
-// was FUN_000505bc -- "scalar deleting destructor" for the "row"
-// element type (see destroy_mod_dynamic_array_and_maybe_free).
-// BUG FIX: was `FUN_000504fc();` (destroy_mod_row_array_elem) -- the
-// same dropped-argument bug fixed four times in pass 387, confirmed
-// again here: param_1 is the obvious intended argument, and
-// destroy_mod_row_array_elem is called correctly (with param_1)
-// everywhere else in this file (e.g. destroy_mod_row_array_range).
+// was FUN_000505bc -- "scalar deleting destructor" for the "row" element type (see
+// destroy_mod_dynamic_array_and_maybe_free).
 undefined4 destroy_mod_row_array_elem_and_maybe_free(param_1,param_2)
 undefined4 param_1;
 uint param_2;
@@ -5293,11 +5033,9 @@ uint param_2;
 
 
 
-// was FUN_000505e0 -- MFC CArchive write helper for the event-array
-// (16-byte elements): writes param_3 elements of param_2 via
-// ordaudio_op_2135 if storing, else asserts/no-ops (ordaudio_op_2582) --
-// mirrors write_mod_pattern_row_array/write_mod_pattern_array/
-// write_mod_instrument_array for their own element sizes.
+// was FUN_000505e0 -- MFC CArchive write helper for the event-array (16-byte elements): writes
+// param_3 elements of param_2 via ordaudio_op_2135 if storing, else asserts/no-ops
+// (ordaudio_op_2582)...
 void write_mod_event_array(param_1,param_2,param_3)
 int param_1;
 undefined4 param_2;
@@ -5349,11 +5087,8 @@ int param_2;
 
 
 
-// was FUN_00050678 -- destroys param_2 20-byte "pattern" elements
-// (each a nested row-array header, destroyed via
-// destroy_mod_pattern_array_elem). The destroy-range callback
-// resize_mod_pattern_array uses, and also used directly by
-// destroy_mod_pattern_array to tear down the whole top-level array.
+// was FUN_00050678 -- destroys param_2 20-byte "pattern" elements (each a nested row-array header,
+// destroyed via destroy_mod_pattern_array_elem).
 void destroy_mod_pattern_array_range(param_1,param_2)
 int param_1;
 int param_2;
@@ -5368,11 +5103,9 @@ int param_2;
 
 
 
-// was FUN_000506a8 -- destroys one "pattern" element in place: frees
-// its nested row array (destroy_mod_row_array_range, same callback
-// resize_mod_pattern_row_array's destructor uses) then the row array's
-// own buffer, and resets the tag to closed. The per-element destructor
-// destroy_mod_pattern_array_range calls for each pattern.
+// was FUN_000506a8 -- destroys one "pattern" element in place: frees its nested row array
+// (destroy_mod_row_array_range, same callback resize_mod_pattern_row_array's destructor uses) then
+// the row array's own buffer, and resets the tag to closed.
 void destroy_mod_pattern_array_elem(param_1)
 undefined1 * param_1;
 
@@ -5394,9 +5127,8 @@ undefined1 * param_1;
 
 
 
-// was FUN_00050718 -- MFC CArchive-style serialize for the per-pattern
-// row array (20-byte elements, one pattern's rows): loading resizes
-// via resize_mod_pattern_row_array, storing writes via
+// was FUN_00050718 -- MFC CArchive-style serialize for the per-pattern row array (20-byte elements,
+// one pattern's rows): loading resizes via resize_mod_pattern_row_array, storing writes via
 // write_mod_pattern_row_array.
 void serialize_mod_pattern_row_array(param_1,param_2)
 int param_1;
@@ -5418,14 +5150,8 @@ int param_2;
 
 
 
-// was FUN_00050768 -- "scalar deleting destructor" for the "pattern"
-// element type (see destroy_mod_dynamic_array_and_maybe_free).
-// BUG FIX: was `FUN_000506a8();` (destroy_mod_pattern_array_elem) --
-// the same dropped-argument bug flagged after pass 386 and fixed four
-// times over in pass 387: param_1 is the obvious intended argument,
-// and destroy_mod_pattern_array_elem is called correctly (with
-// param_1) everywhere else in this file (e.g.
-// destroy_mod_pattern_array_range).
+// was FUN_00050768 -- "scalar deleting destructor" for the "pattern" element type (see
+// destroy_mod_dynamic_array_and_maybe_free).
 undefined4 destroy_mod_pattern_array_elem_and_maybe_free(param_1,param_2)
 undefined4 param_1;
 uint param_2;
@@ -5498,11 +5224,9 @@ int param_3;
 
 
 
-// was FUN_00050828 -- destroys param_2 48-byte instrument elements:
-// releases an embedded object (likely a CString sample name, given
-// BatteryDrvrGetLevels's use alongside name-reading code in the MOD loader)
-// per element via FoldStringW/BatteryDrvrGetLevels. The destroy-range callback
-// resize_mod_instrument_array/destroy_mod_instrument_array use.
+// was FUN_00050828 -- destroys param_2 48-byte instrument elements: releases an embedded object
+// (likely a CString sample name, given BatteryDrvrGetLevels's use alongside name-reading code in
+// the MOD loader) per element via FoldStringW/BatteryDrvrGetLevels.
 void destroy_mod_instrument_array_range(param_1,param_2)
 int param_1;
 int param_2;
@@ -5518,11 +5242,9 @@ int param_2;
 
 
 
-// was FUN_00050860 -- zero-fills param_2 48-byte instrument elements
-// then default-constructs each one's embedded object (FindNextFileW/
-// HeapReAlloc, the construct counterpart to destroy_mod_instrument_array_range's
-// BatteryDrvrGetLevels/FoldStringW). The construct-range callback
-// resize_mod_instrument_array uses on grow.
+// was FUN_00050860 -- zero-fills param_2 48-byte instrument elements then default-constructs each
+// one's embedded object (FindNextFileW/ HeapReAlloc, the construct counterpart to
+// destroy_mod_instrument_array_range's BatteryDrvrGetLevels/FoldStringW).
 void construct_mod_instrument_array_range(param_1,param_2)
 int param_1;
 int param_2;
@@ -5560,11 +5282,9 @@ int param_3;
 
 
 
-// was FUN_000508dc -- zero-fills param_2 64-byte channel-state
-// elements in one memset. The construct-range callback
-// resize_mod_channel_state_array passes on grow (no per-element
-// constructor needed -- see resize_mod_channel_state_array's own
-// comment).
+// was FUN_000508dc -- zero-fills param_2 64-byte channel-state elements in one memset. The
+// construct-range callback resize_mod_channel_state_array passes on grow (no per-element
+// constructor needed -- see resize_mod_channel_state_array's own comment).
 void construct_mod_channel_state_array_range(param_1,param_2)
 undefined4 param_1;
 int param_2;
@@ -5596,10 +5316,9 @@ undefined1 * param_1;
 
 
 
-// was FUN_00050948 -- default-constructs one "pattern" element in
-// place (tag 0x98, zeroed nested row-array header). The per-element
-// constructor construct_mod_pattern_array_range calls for each new
-// pattern.
+// was FUN_00050948 -- default-constructs one "pattern" element in place (tag 0x98, zeroed nested
+// row-array header). The per-element constructor construct_mod_pattern_array_range calls for each
+// new pattern.
 void construct_mod_pattern_array_elem(param_1)
 undefined1 * param_1;
 
@@ -5616,14 +5335,9 @@ undefined1 * param_1;
 }
 
 
-// byte-identical duplicate body of clear_ambient_sound_target (was
-// FUN_0007ec1c) at a different address -- same split-symbol/naming-
-// collision pattern documented elsewhere in this file (e.g.
-// close_strings_pak_file vs close_strings_pak_file_thunk).
-// was thunk_FUN_0007ec1c -- a byte-identical duplicate of
-// clear_ambient_sound_target at a different address (see that
-// function's own comment). Collapsed to a real call to avoid the
-// duplication.
+// byte-identical duplicate body of clear_ambient_sound_target (was FUN_0007ec1c) at a different
+// address -- same split-symbol/naming- collision pattern documented elsewhere in this file (e.g.
+// close_strings_pak_file vs close_strings_pak_file_thunk). was thunk_FUN_0007ec1c...
 void clear_ambient_sound_target_thunk()
 
 {

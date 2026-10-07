@@ -1,8 +1,6 @@
-/* General math/geometry helpers: threshold-gated value stepping and
- * heading-to-direction-vector projection. Split out of uw.c (the
- * original monolithic decompile) once these functions' real roles
- * were confirmed.
- */
+/* General math/geometry helpers: threshold-gated value stepping and heading-to-direction-vector
+   projection. Split out of uw.c (the original monolithic decompile) once these functions' real
+   roles were confirmed. */
 #include "headers/math.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -14,23 +12,9 @@
 #define DAT_00085f54 (*(const undefined1 *)((const char *)(const void *)DAT_00085f50_cosine + 2))
 #define DAT_00086260 DAT_00086260_backing[0]
 #define DAT_00086264 DAT_00086264_backing[0]
-/* Recovered from UU.exe .data: the renderer's sine (0x85d48) and cosine
-   (0x85f50) tables, 256 int16 entries each, amplitude 32767 --
-   sine[i] = round(32767 * sin(i*PI/128)); cosine[i] = sine[(i+64)&255].
-   Both were silently-zero 64KB Ghidra backing arrays, so angle_to_screen_delta
-   (angle -> screen delta) returned {0,0} for every angle. That zeroed
-   the entry-0 direction vector seed_visibility_queue seeds the visibility
-   flood-fill with, so advance_visibility_ray did no expansion,
-   run_visibility_flood marked no tile visible, and the 3D tile list
-   came out empty (black viewport). It also broke every other bit of
-   angle math in the projection code. Four trailing pad shorts each
-   (angle_to_screen_delta interpolates to table[idx+1], so idx can reach 256).
-   DAT_00085d4c / DAT_00085f54 are &table + 2 == &table[1], the "next" sample:
-   the angle's high byte is the coarse index 0..255 (single-step, period 256)
-   and the low byte the 0..255 lerp fraction, so the next sample is +1 entry
-   (+2 bytes). Was &table + 4 (== &table[2]) -- an off-by-one-entry that
-   skipped every other sample and gave the wrong direction for any heading
-   whose coarse index was odd, so a turned player kept walking the old way. */
+/* Recovered from UU.exe .data: the renderer's sine (0x85d48) and cosine (0x85f50) tables, 256 int16
+   entries each, amplitude 32767 -- sine[i] = round(32767 * sin(i*PI/128)); cosine[i] =
+   sine[(i+64)&255]. */
 static const short DAT_00085d48_sine[260] = {
   0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
   9512, 10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
@@ -79,34 +63,17 @@ static const short DAT_00085f50_cosine[260] = {
   30274, 30572, 30853, 31114, 31357, 31581, 31786, 31972, 32138, 32286, 32413, 32522,
   32610, 32679, 32729, 32758, 32767, 0, 0, 0,
 };
-/* Were bare 1-byte scalars, but lookup_arctan_primary_range/
-   lookup_arctan_reciprocal_range index them as `*(ushort *)(&DAT_00086260
-   + iVar1)` with iVar1 up to (0xff * 4) == 0x3fc -- the same
-   scalar-declared-but-accessed-as-array bug class fixed many times
-   this session (e.g. the glyph-width-table cluster). Likely a second
-   lookup table analogous to the sine/cosine ones just above (same
-   "DAT_X / DAT_X+4 is the next sample" shape), but unlike those this
-   data isn't flagged as recovered from UU.exe anywhere in this
-   decompile -- widened to real, safely-sized backing storage (zero-
-   initialized, not recovered) purely to make the access safe; the
-   real table contents, if this lookup is currently silently broken
-   the same way the sine/cosine tables were before their own fix, are
-   not recovered here. Macro defines for all of these (and the
-   sine/cosine tables above) now live in uw.h, since the functions that
-   read them moved into src/math.c. */
+/* Were bare 1-byte scalars, but lookup_arctan_primary_range/ lookup_arctan_reciprocal_range index
+   them as `*(ushort *)(&DAT_00086260 + iVar1)` with iVar1 up to (0xff * 4) == 0x3fc... */
 static undefined1 DAT_00086260_backing[1024];
 static undefined1 DAT_00086264_backing[1024];
 
 
 
 
-// was FUN_00069eb0 -- gated single step: only if stepping *param_1 by
-// (param_3 * param_4) would already reach or cross the bound param_2
-// (checked one direction for param_4==-1, the other otherwise) does it
-// actually apply that step and return true; otherwise *param_1 is left
-// untouched and it returns false. A threshold-crossing step helper --
-// used for both the debug camera-pitch adjust keys and a scroll-
-// position stepper.
+// was FUN_00069eb0 -- gated single step: only if stepping *param_1 by (param_3 * param_4) would
+// already reach or cross the bound param_2 (checked one direction for param_4==-1, the other
+// otherwise) does it actually apply that step and return true...
 bool step_value_toward_limit(param_1,param_2,param_3,param_4)
 short * param_1;
 short param_2;
@@ -138,12 +105,9 @@ LAB_00069ee8:
 
 
 
-// was FUN_00069f2c -- disassembly-confirmed faithful: given a compass
-// heading (param_1) and a distance (param_2), looks up
-// heading_to_sine_cosine and adds `*param_4(Y) += sin(heading)*dist`,
-// `*param_3(X) += cos(heading)*dist` -- the standard heading->direction-
-// vector projection, used to compute where a thrown/dropped object's
-// trajectory lands relative to the thrower's position.
+// was FUN_00069f2c -- disassembly-confirmed faithful: given a compass heading (param_1) and a
+// distance (param_2), looks up heading_to_sine_cosine and adds `*param_4(Y) += sin(heading)*dist`,
+// `*param_3(X) += cos(heading)*dist` -- the standard heading->direction- vector projection...
 void project_position_by_heading(param_1,param_2,param_3,param_4)
 int param_1;
 short param_2;
@@ -218,11 +182,9 @@ uint param_1;
 
 
 
-// was FUN_0006a058 -- classic "base + NdM" dice roll: param_1 doubles
-// as both the starting value and the iteration count, and each of
-// param_1 iterations adds a random 0..param_2-1 roll to the running
-// total. Used extensively (~20 call sites) for combat damage, loot
-// quantities, and other randomized game values.
+// was FUN_0006a058 -- classic "base + NdM" dice roll: param_1 doubles as both the starting value
+// and the iteration count, and each of param_1 iterations adds a random 0..param_2-1 roll to the
+// running total.
 int roll_dice_sum(param_1,param_2)
 int param_1;
 short param_2;
@@ -243,12 +205,8 @@ short param_2;
 
 
 
-// was FUN_00013774 -- integer square root via Newton's method (bit-
-// shift initial guess, refine with ordint_divmod division until the
-// estimate stops decreasing). Confirmed by src/audio.c's own comment
-// as "a sqrt-shaped distance function"; every confirmed caller passes
-// a sum-of-squares (dx*dx + dy*dy, the canonical "distance squared"
-// expression used throughout this codebase's positioning/AI math).
+// was FUN_00013774 -- integer square root via Newton's method (bit- shift initial guess, refine
+// with ordint_divmod division until the estimate stops decreasing).
 int integer_sqrt(param_1)
 int param_1;
 
@@ -288,9 +246,8 @@ undefined2 * param_3;
 
 
 
-// was FUN_00049cc0 -- pack param_1's low byte and param_2's low byte
-// into one 16-bit value, param_2's byte going into the high or low half
-// depending on param_3. Small shared helper used by
+// was FUN_00049cc0 -- pack param_1's low byte and param_2's low byte into one 16-bit value,
+// param_2's byte going into the high or low half depending on param_3. Small shared helper used by
 // heading_to_sine_cosine and angle_to_screen_delta.
 uint pack_angle_byte(param_1,param_2,param_3)
 uint param_1;
@@ -342,10 +299,9 @@ undefined1 * param_3;
 
 
 
-// was FUN_00049db8 -- compute_angle_from_slope's "primary range"
-// sub-helper (|ratio| < ~1.0): interpolates a fixed-point arctangent
-// lookup table (&DAT_00086260/DAT_00086264) by the ratio's packed
-// angle-byte index, restoring the input's original sign at the end.
+// was FUN_00049db8 -- compute_angle_from_slope's "primary range" sub-helper (|ratio| < ~1.0):
+// interpolates a fixed-point arctangent lookup table (&DAT_00086260/DAT_00086264) by the ratio's
+// packed angle-byte index, restoring the input's original sign at the end.
 int lookup_arctan_primary_range(param_1)
 uint param_1;
 
@@ -368,9 +324,8 @@ uint param_1;
 
 
 
-// was FUN_00049eb8 -- compute_angle_from_slope's "reciprocal range"
-// sub-helper (|ratio| >= ~1.0): same arctangent table lookup as
-// lookup_arctan_primary_range, used for the classic atan2
+// was FUN_00049eb8 -- compute_angle_from_slope's "reciprocal range" sub-helper (|ratio| >= ~1.0):
+// same arctangent table lookup as lookup_arctan_primary_range, used for the classic atan2
 // reduce-to-45-degrees technique (90 degrees minus atan(1/ratio)).
 int lookup_arctan_reciprocal_range(param_1)
 uint param_1;
@@ -394,11 +349,9 @@ uint param_1;
 
 
 
-// was FUN_00049fb4 -- per src/combat.c's own comment, an atan2-shaped
-// helper fed slope ratios: dispatches to lookup_arctan_primary_range
-// for ratios within +-0x5a83 (~1.0 in this fixed-point scale),
-// otherwise lookup_arctan_reciprocal_range, applying the appropriate
-// sign/range correction to produce a full heading angle.
+// was FUN_00049fb4 -- per src/combat.c's own comment, an atan2-shaped helper fed slope ratios:
+// dispatches to lookup_arctan_primary_range for ratios within +-0x5a83 (~1.0 in this fixed-point
+// scale), otherwise lookup_arctan_reciprocal_range...
 int compute_angle_from_slope(param_1,param_2)
 ushort param_1;
 undefined4 param_2;
@@ -421,11 +374,9 @@ undefined4 param_2;
 }
 
 
-/* Bounded random: rand() % param_1. The original takes the modulo from
-   ordint_divmod's (idivmod's) r1 remainder leftover -- Ghidra lost that
-   into an uninitialised `extraout_r1`, so it always returned garbage
-   (and with ce_rand stubbed to 0, effectively always 0). Compute
-   the modulo directly. */
+/* Bounded random: rand() % param_1. The original takes the modulo from ordint_divmod's (idivmod's)
+   r1 remainder leftover -- Ghidra lost that into an uninitialised `extraout_r1`, so it always
+   returned garbage (and with ce_rand stubbed to 0, effectively always 0). */
 // was FUN_00022910
 undefined4 rand_below(param_1)
 int param_1;
@@ -439,15 +390,8 @@ int param_1;
 
 
 
-// was FUN_0002294c -- GetTickCount-shaped: GetTickCount() (SDL_GetTicks(),
-// real elapsed ms since startup) scaled down to 4ms-per-unit. Used
-// throughout this file (fades, double-click/hold timing, the attack-swing
-// state machine, movement_pacing_handler's pre-uw_frame_clock_ms reads,
-// ...) as the generic "what time is it" source; some callers (e.g.
-// move_key_directional_step's own tail) busy-spin on it in a tight loop
-// with no event pump in between, so it must keep returning genuine
-// real-time -- see uw_frame_clock_ms's own comment for why movement's
-// deterministic clock is a separate function, not a change here.
+// was FUN_0002294c -- GetTickCount-shaped: GetTickCount() (SDL_GetTicks(), real elapsed ms since
+// startup) scaled down to 4ms-per-unit.
 uint read_realtime_clock_units()
 
 {

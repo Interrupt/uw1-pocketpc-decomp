@@ -1,8 +1,6 @@
-/* Object interaction dispatch: the default click handler and the
- * per-cursor-mode handlers (talk, look, use, attack). Split out of
- * uw.c (the original monolithic decompile) once these functions' real
- * roles were confirmed.
- */
+/* Object interaction dispatch: the default click handler and the per-cursor-mode handlers (talk,
+   look, use, attack). Split out of uw.c (the original monolithic decompile) once these functions'
+   real roles were confirmed. */
 #include "headers/interact.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -31,28 +29,14 @@ void (*const PTR_FUN_000858c8_table[5])(void) = {
   interact_default,     /* 3: get (mode 4) */
   interact_talk_npc,    /* 4: talk (mode 5, topmost icon) */
 };
-/* These four were all mangled by Ghidra the same way: embedded spaces
-   rendered as underscores, and in s_Your_bumbling_attempts_have_set_o's
-   case the tail of the string ("ff the ", plus a trailing space) was
-   dropped entirely. Real bytes confirmed against the ARM UU.exe .data
-   section at each address below. */
+/* These four were all mangled by Ghidra the same way: embedded spaces rendered as underscores, and
+   in s_Your_bumbling_attempts_have_set_o's case the tail of the string ("ff the ", plus a trailing
+   space) was dropped entirely. */
 static char s_Unable_to_defuse_trap__0008736c[] = "Unable to defuse trap.\n";
 static char s_Your_bumbling_attempts_have_set_o_00087384[] = "Your bumbling attempts have set off the ";
 static char s_was_successfully_dearmed__000873b0[] = " was successfully dearmed.\n";
 static char s_on_the_000873cc[] = " on the ";
-/* HACK: was `undefined4` -- truncated a real 64-bit object pointer.
-   Same bug class as DAT_0024cff4 right above (already a real pointer
-   type) and countless other fixes throughout this file: apply_trap_or_link_effect
-   stores its own real `ushort *` param_2 here, and it's read back as a
-   pointer both directly (resolve_skill_gated_unlock_or_use's own param_2 at both call sites
-   below) and via dereference (`*(byte*)(DAT_0024cff0+1)` further
-   down). Confirmed live (bug-pull-chain-crash.txt, a saved repro):
-   using a pull chain crashed with EXC_BAD_ACCESS at a wild address
-   (0x4c029128, an obviously-truncated 32-bit value) dereferenced in
-   dispatch_trap_type_effect -- traced back through apply_trap_or_link_effect's own matching
-   param_3 truncation (fixed at its own declaration, see that
-   function's comment) to this global being the same bug one hop
-   earlier in the same call chain. */
+/* HACK: was `undefined4` -- truncated a real 64-bit object pointer. */
 ushort *DAT_0024cff0;
 static short DAT_0024cfd0;
 static short DAT_0024cfd8;
@@ -108,13 +92,9 @@ void interact_default()
          (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
         if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
           fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling prompt_split_object_stack\n");
-        /* BUG FIX: was `FUN_000470fc();` -- dropped its only argument.
-           g_interact_target (the object this whole "grab" handler is
-           operating on throughout this function) is the obvious
-           intended argument -- same dropped-argument idiom fixed
-           repeatedly elsewhere this session. Called with no argument,
-           prompt_split_object_stack read garbage for its own param_1
-           and dereferenced it. */
+        /* BUG FIX: was `FUN_000470fc();` -- dropped its only argument. g_interact_target (the
+           object this whole "grab" handler is operating on throughout this function) is the obvious
+           intended argument -- same dropped-argument idiom fixed repeatedly elsewhere this session. */
         puVar3 = (ushort *)prompt_split_object_stack((undefined1 *)g_interact_target);
         if (puVar3 == (ushort *)0x0) {
           if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
@@ -193,11 +173,9 @@ void interact_look()
       sVar1 = prompt_yes_no_scroll(0,0xf4,&local_18);
       if ((sVar1 != 0) && (sVar1 < 4)) {
         local_18 = (uint)(sVar1 == 2);
-        /* HACK: was a bare `echo_yes_no_to_scroll();` -- dropped
-           argument, the same class of bug fixed repeatedly elsewhere
-           in this file. local_18, just set on the line above from the
-           prompt's own answer, is obviously the intended argument
-           here. */
+        /* HACK: was a bare `echo_yes_no_to_scroll();` -- dropped argument, the same class of bug
+           fixed repeatedly elsewhere in this file. local_18, just set on the line above from the
+           prompt's own answer, is obviously the intended argument here. */
         echo_yes_no_to_scroll(local_18);
       }
       message_scroll_print_wrapped(&s_scroll_newline_0008522c);
@@ -225,16 +203,7 @@ void interact_look()
 
 
 
-// was FUN_0003f2c4, briefly named interact_converse by an earlier
-// pass. Renamed: its body never actually starts a conversation --
-// when the target is in range but line-of-sight is blocked (a door,
-// a lever behind an obstruction, etc.) it calls use_object_on_target;
-// otherwise it just prints message 0xb9 (unless the target is type
-// 0x16e) and does nothing else. Real UW1's own mode ordering (user-
-// confirmed: Talk/Get/Look/Attack/Use, top to bottom of the icon
-// bar) has NO separate "converse" mode at all -- Talk is its own
-// mode (interact_talk_npc, mode 5); this function is Use (mode 1,
-// table index 0), matching "open doors, use pull chains, etc."
+// was FUN_0003f2c4, briefly named interact_converse by an earlier pass.
 void interact_use()
 
 {
@@ -292,14 +261,8 @@ void interact_attack()
 
 
 
-// was FUN_0006fed4 -- triggers the "illustrated book/scroll" full-
-// screen picture feature (via record_illustration_discovery_and_display -> display_book_or_scroll_page, see the
-// "SPECIAL ILLUSTRATED BOOK/SCROLL" comment elsewhere in this file for
-// how display_book_or_scroll_page's argument selects which picture) with illustration
-// index 0x100 and the current level (DAT_00201b68) as payload. Its one
-// caller fires this when reading a terrain description for a terrain
-// type flagged 9 in DAT_0023add0 -- a special "you've found something"
-// discovery moment, not an ordinary terrain read.
+// was FUN_0006fed4 -- triggers the "illustrated book/scroll" full- screen picture feature (via
+// record_illustration_discovery_and_display -> display_book_or_scroll_page)...
 void trigger_terrain_discovery_illustration()
 
 {
@@ -312,11 +275,9 @@ void trigger_terrain_discovery_illustration()
 
 
 
-// was FUN_0006fee8 -- trigger_terrain_discovery_illustration's sibling,
-// illustration index 0x101: fired after reading a sign/plaque or
-// gravestone inscription whose text is non-empty (param_1 is the
-// inscription's own first character, only used here as a "was there
-// any text at all" guard).
+// was FUN_0006fee8 -- trigger_terrain_discovery_illustration's sibling, illustration index 0x101:
+// fired after reading a sign/plaque or gravestone inscription whose text is non-empty (param_1 is
+// the inscription's own first character, only used here as a "was there any text at all" guard).
 void trigger_inscription_illustration(param_1)
 undefined4 param_1;
 
@@ -332,13 +293,9 @@ undefined4 param_1;
 
 
 
-// was FUN_00072598 -- rolls a skill check (roll_skill_check(param_2,8))
-// against the first contained item in container param_1, but only if
-// that item's own quality/type field (after resolving through a link
-// when a specific bit is set) is below 3 -- e.g. checking whether a
-// container holds something pickable/breakable in a low-quality state.
-// param_2 is the skill id to check, most plausibly the picklock skill
-// given the container-contents-search shape (not otherwise confirmed).
+// was FUN_00072598 -- rolls a skill check (roll_skill_check(param_2,8)) against the first contained
+// item in container param_1, but only if that item's own quality/type field (after resolving
+// through a link when a specific bit is set) is below 3...
 undefined4 roll_container_lockpick_check(param_1,param_2)
 char *param_1;
 undefined4 param_2;
@@ -367,18 +324,9 @@ undefined4 param_2;
 
 
 
-// was FUN_0007266c -- roll_container_lockpick_check's sibling for the
-// "disarm trap" mechanic: same container-contents/quality-gated setup,
-// but rolls a disarm skill check (roll_skill_check(param_2,8)) and
-// handles all three outcomes -- critical failure (<0: trap triggers,
-// via apply_trap_or_link_effect/refresh_object_link_chain or resolve_skill_gated_unlock_or_use depending on whether
-// the trapped item resolved through a link) with "Your bumbling
-// attempts have set o[ff the trap]", plain failure (==0: "Unable to
-// defuse trap"), and success (>0: "X was successfully dearmed on the
-// Y" followed by free_linked_object_recursive removing the trap).
-// acStackY_84f50's 544536-byte size is this project's established
-// phantom-oversized-local artifact (only ever holds a short string
-// copy here), not a real requirement.
+// was FUN_0007266c -- roll_container_lockpick_check's sibling for the "disarm trap" mechanic: same
+// container-contents/quality-gated setup, but rolls a disarm skill check
+// (roll_skill_check(param_2,8)) and handles all three outcomes -- critical failure...
 undefined4 roll_container_trap_disarm_check(param_1,param_2)
 char *param_1;
 undefined4 param_2;
@@ -479,18 +427,8 @@ undefined4 param_2;
 }
 
 
-// was FUN_0007cdbc -- confirmed by its callers as the general
-// skill-gated "use item on object" resolver behind
-// force_unlock_target_object (action code 5 == unlock, gated on a
-// pick-locks skill check via roll_skill_check against the lock's
-// difficulty byte) and trigger_object_trap_or_use_action (higher-
-// class linked-content matches). param_4 is the requested action
-// code, checked against a per-lock-class table (DAT_0024cfe0) indexed
-// by param_3's low nibble; param_1 is the acting object (player or
-// tool), param_2 a secondary context object gating an extra class/
-// quality-bit check. Returns 2 for "denied"; on success, delegates to
-// apply_trap_or_link_effect (trap/effect application) and, when the lock record
-// has bits set at +6 (0xffc0), also refreshes it via refresh_object_link_chain.
+// was FUN_0007cdbc -- confirmed by its callers as the general skill-gated "use item on object"
+// resolver behind force_unlock_target_object...
 uint resolve_skill_gated_unlock_or_use(param_1,param_2,param_3,param_4)
 ushort * param_1;
 ushort * param_2;
@@ -570,26 +508,11 @@ ushort param_4;
 
 
 
-/* HACK: param_2 and param_3 were both `undefined4` -- truncated real
-   64-bit pointers (both are `ushort *` at every call site, e.g.
-   resolve_skill_gated_unlock_or_use's own `param_2` and `iVar3`/
-   resolve_object_link's result, in src/interact.c now), the same bug
-   class as DAT_0024cff0's own identical fix just above. Confirmed live
-   (bug-pull-chain-crash.txt): pulling a chain crashed with
-   EXC_BAD_ACCESS on a wild, obviously-truncated address
-   (0x4c029128) dereferenced one call further down, in dispatch_trap_type_effect --
-   param_3 is passed straight through as that function's own real
-   `ushort *param_1`. */
-// was FUN_0007d074 -- thin re-entrancy-guarded wrapper around the
-// trap/link-effect type dispatcher dispatch_trap_type_effect (not yet named, a
-// large switch on the trap/link record's type code). Stashes param_1/
-// param_2 (the acting object and a secondary context object) into
-// DAT_0024cff4/DAT_0024cff0 only on the OUTERMOST call (DAT_0024cff4
-// was 0), so a trap effect that itself triggers another trap keeps
-// referring back to the original triggering context; resets
-// DAT_0024cff4 to 0 unconditionally afterward. Confirmed by callers'
-// own comments as the general "trap/effect application" step invoked
-// alongside resolve_skill_gated_unlock_or_use.
+/* HACK: param_2 and param_3 were both `undefined4` -- truncated real 64-bit pointers (both are
+   `ushort *` at every call site, e.g. resolve_skill_gated_unlock_or_use's own `param_2` and
+   `iVar3`/ resolve_object_link's result, in src/interact.c now)... */
+// was FUN_0007d074 -- thin re-entrancy-guarded wrapper around the trap/link-effect type dispatcher
+// dispatch_trap_type_effect (not yet named, a large switch on the trap/link record's type code).
 undefined4 apply_trap_or_link_effect(param_1,param_2,param_3,param_4,param_5)
 char *param_1;
 ushort *param_2;
@@ -611,22 +534,13 @@ short param_5;
 
 
 
-// was FUN_0007deec -- recursive helper for refresh_object_link_chain:
-// walks param_1's object link chain (resolve_object_link), and for
-// each entry whose class matches 0x1a0 (bits 0x1f0) and whose quality/
-// tag field (bits >>6) equals the shared "current tag" global
-// (DAT_0024cfd0, set by refresh_object_link_chain before calling in),
-// unlinks and frees it and decrements the shared remaining-count
-// global (DAT_0024cfd8). Also recurses into any entry's own nested
-// link chain (bits 0xffc0 at +6) when that entry isn't itself flagged
-// 0x8000. Reads as "purge stale tagged marker objects from this
-// chain", consistent with refresh_object_link_chain's own role
-// refreshing a lock/link record's linked-object state.
+// was FUN_0007deec -- recursive helper for refresh_object_link_chain: walks param_1's object link
+// chain (resolve_object_link), and for each entry whose class matches 0x1a0 (bits 0x1f0) and whose
+// quality/ tag field (bits >>6) equals the shared "current tag" global...
 void purge_tagged_objects_from_chain(param_1)
-ushort *param_1;  /* was `undefined4` -- truncated the real object-record
-                     pointer (passed to resolve_object_link and to itself
-                     recursively as `puVar1+3`), latent until those calls
-                     started actually using their arguments */
+ushort *param_1;  /* was `undefined4` -- truncated the real object-record pointer (passed to resolve_object_link and
+   to itself recursively as `puVar1+3`), latent until those calls started actually using their
+   arguments */
 
 {
   ushort *puVar1;
@@ -649,18 +563,9 @@ ushort *param_1;  /* was `undefined4` -- truncated the real object-record
 
 
 
-// was FUN_0007dfd8 -- confirmed by callers' own comments
-// (resolve_skill_gated_unlock_or_use, trigger_object_trap_or_use_action)
-// as the "refresh" step run after a lock/link record's own use/pull
-// action. Reads param_2's own quality field (bits 0x1e at +1) as a
-// "remaining tag count"; if nonzero, stashes param_2's own slot index
-// as the shared "current tag" (DAT_0024cfd0) and scans every world
-// object slot (DAT_002029cc, up to 0x1000 entries) with a link chain,
-// calling purge_tagged_objects_from_chain on each to remove any
-// stale 0x1a0-class markers tagged with this record. Afterward, looks
-// up param_1 via find_object_by_encoded_slot_in_chain (not yet named) and, if found, unlinks
-// and frees DAT_002046b4 (a global whose own role isn't pinned down
-// here).
+// was FUN_0007dfd8 -- confirmed by callers' own comments (resolve_skill_gated_unlock_or_use,
+// trigger_object_trap_or_use_action) as the "refresh" step run after a lock/link record's own
+// use/pull action.
 void refresh_object_link_chain(param_1,param_2)
 undefined4 param_1;
 int param_2;
@@ -696,16 +601,9 @@ int param_2;
 
 
 
-// was FUN_00028488 -- the actual talk-interaction worker: handles the
-// mantra-chant and special-lever/statue item ids, then for creatures
-// checks whether a real CNV.ARK conversation record exists
-// (probe_archive_entry_exists) and switches to Talk game mode if so,
-// else prints a "no conversation here"-style fallback scroll message.
-// Own "[babl]" debug trace. NOT the same function as the
-// zero-argument interact_talk_npc() just above (that's the
-// interaction dispatch-table's own thin wrapper, itself calling this
-// one with g_interact_target) -- named separately to avoid colliding
-// with that already-established name.
+// was FUN_00028488 -- the actual talk-interaction worker: handles the mantra-chant and
+// special-lever/statue item ids, then for creatures checks whether a real CNV.ARK conversation
+// record exists (probe_archive_entry_exists) and switches to Talk game mode if so...
 void attempt_talk_interaction(param_1)
 ushort * param_1;
 
@@ -771,25 +669,16 @@ LAB_000285e4:
   }
   uVar3 = 0xe01;
 LAB_0002865c:
-  /* Was two separate calls with message_scroll_print_wrapped()'s arg
-     dropped -- same register-forwarding hazard already fixed at
-     load_npc_conversation_record's own sVar1<0 branch (uw.c ~10987, see its comment)
-     and, unfixed, exactly what crashed replaying bug-critter-talk.txt
-     one step further than this file's other Talk-crash fixes: Bragit
-     has no CNV.ARK conversation record, so start_npc_conversation hits this
-     same pattern too (uw.c ~19211) printing "You get no response"
-     before the crash. */
+  /* Was two separate calls with message_scroll_print_wrapped()'s arg dropped -- same
+     register-forwarding hazard already fixed at load_npc_conversation_record's own sVar1<0 branch
+     (uw.c ~10987, see its comment) and, unfixed... */
   message_scroll_print_wrapped(get_message_string(uVar3));
   return;
 }
 
 
-// was FUN_0003ee10 -- called from interact_default (src/interact.c:90)
-// right before a grabbed object is attached to the cursor. Only acts
-// while DAT_002020ec (the "grab mode" flag interact_default itself
-// gates on) is still set: triggers the object's pickup trap/use action,
-// unlinks it from its tile's object list (it's leaving the tile for the
-// cursor/inventory), ticks the scheduler, and clears the grab-mode flag.
+// was FUN_0003ee10 -- called from interact_default (src/interact.c:90) right before a grabbed
+// object is attached to the cursor.
 void finalize_object_pickup(param_1)
 char *param_1;
 
@@ -804,12 +693,9 @@ char *param_1;
 }
 
 
-/* param_2 (the picked object, g_interact_target -- a real ushort*) and param_3
-   (DAT_002020b0 -- a tilemap byte address) were both declared `int`,
-   truncating the 64-bit pointers every caller passes; param_2 is then
-   dereferenced at `*(ushort *)(param_2 + 2)` and param_3 differenced
-   against the 64-bit tilemap base DAT_0023b814. Same pointer-truncation
-   class as the rest of this session. */
+/* param_2 (the picked object, g_interact_target -- a real ushort*) and param_3 (DAT_002020b0 -- a
+   tilemap byte address) were both declared `int`, truncating the 64-bit pointers every caller
+   passes... */
 // was FUN_0003e694
 undefined4 target_in_range(param_1,param_2,param_3)
 short param_1;
@@ -992,34 +878,17 @@ undefined4 param_1;
   int iVar2;
   ushort *puVar3;
   uint uVar4;
-  /* render_dungeon_view_frame() re-renders the HUD+3D view in "pick" mode so the
-     per-pixel object/texture id buffer DAT_0023cca0 this function reads
-     below is fresh for the current cursor position. It used to crash via
-     process_visible_tile_cell (the DAT_0023b4f4 split-symbol -- a short[]
-     pick table written inside a function pointer); with that fixed the
-     re-render is safe, so it runs by default. Set UW_DISABLE_PICK_RERENDER
-     to skip it (picks then read a stale buffer). */
+  /* render_dungeon_view_frame() re-renders the HUD+3D view in "pick" mode so the per-pixel
+     object/texture id buffer DAT_0023cca0 this function reads below is fresh for the current cursor
+     position. */
   { static int _rr = -1;
     if (_rr < 0) _rr = (getenv("UW_DISABLE_PICK_RERENDER") == NULL);
     if (_rr) render_dungeon_view_frame();
   }
   iVar2 = 0;
   DAT_002020ac = 0;
-  /* Guard never present in the decompile: nothing bounds-checked
-     g_mouse_x/g_mouse_y against the 3D viewport's own registered rect
-     (DAT_0023be5c/DAT_0023bd80 x-range, DAT_0023be80-DAT_0023be88..
-     DAT_0023be80 y-range -- the same rect register_game_view_interact_zones registers for
-     handle_game_view_click and hit_test_inventory_widget already reuses for its own 0x17
-     special case) before indexing the pick stencil DAT_0023cca0. That
-     was harmless while every right-click interact stayed inside the
-     viewport, but a held drag whose release lands elsewhere (e.g. the
-     inventory panel) still routes through here -- see handle_game_view_click,
-     called every tick a mouse button is held regardless of the
-     cursor's current position -- and reads/interprets whatever stale
-     byte happens to sit at that (out-of-viewport) stencil offset as a
-     real object slot, corrupting interact_default's pick and crashing
-     deep in place_object_in_backpack_slot/check_object_fits_in_slot (found wiring up backpack-slot
-     drops). Treat anything outside the viewport as "no object". */
+  /* Guard never present in the decompile: nothing bounds-checked g_mouse_x/g_mouse_y against the 3D
+     viewport's own registered rect (DAT_0023be5c/DAT_0023bd80 x-range, DAT_0023be80-DAT_0023be88.. */
   if ((g_mouse_x < DAT_0023be5c) || (DAT_0023be5c + DAT_0023bd80 <= g_mouse_x) ||
       (g_mouse_y < (short)(DAT_0023be80 - DAT_0023be88)) || (DAT_0023be80 <= g_mouse_y)) {
     return (ushort *)0x0;
@@ -1076,31 +945,52 @@ undefined4 param_1;
 
 
 // was FUN_0003ed6c
+/* Resolves a raw terrain pick index (DAT_002020ac -- pick_object_under_
+   cursor's own "the pick stencil wasn't an object slot, here's a wall/
+   floor texture index instead" output, byte - 0xbf) to a real texture
+   id and its message-string description. Factored out of
+   describe_picked_terrain's own real "Look" logic below (byte-for-byte
+   the same resolution, not a reimplementation) so the debug object
+   inspector (hud.c) can show the same wall/floor pick information
+   without reaching into this file's own DAT_0023ad58/DAT_0023ae58
+   terrain-property tables directly. Returns the resolved texture id;
+   *out_desc is get_message_string's own result (NULL/empty are both
+   possible, same as every other get_message_string caller). */
+int resolve_picked_terrain_texture(param_1,out_desc)
+short param_1;
+char **out_desc;
+{
+  int iVar1;
+  uint uVar2;
+
+  iVar1 = (param_1 + -1) * 0x10000 >> 0x10;
+  if (iVar1 < 0x30) {
+    uVar2 = (uint)(short)(&DAT_0023ae58)[iVar1];
+  }
+  else if (iVar1 < 0x3a) {
+    uVar2 = 0x1fe - (int)*(short *)(&DAT_0023ad58 + iVar1 * 2);
+  }
+  else {
+    uVar2 = 0x1ff;
+  }
+  *out_desc = get_message_string(uVar2 | 0x1400);
+  return (int)uVar2;
+}
+
 void describe_picked_terrain(param_1,param_2)
 byte param_1;
 short param_2;
 
 {
-  int iVar1;
-  uint uVar2;
-  
+  char *desc;
+
   if ((param_2 < 1) || (param_1 != 2)) {
     print_scroll_message_by_id(param_1 + 0x98);
   }
   else {
-    iVar1 = (param_2 + -1) * 0x10000 >> 0x10;
-    if (iVar1 < 0x30) {
-      uVar2 = (uint)(short)(&DAT_0023ae58)[iVar1];
-    }
-    else if (iVar1 < 0x3a) {
-      uVar2 = 0x1fe - (int)*(short *)(&DAT_0023ad58 + iVar1 * 2);
-    }
-    else {
-      uVar2 = 0x1ff;
-    }
+    resolve_picked_terrain_texture(param_2,&desc);
     message_scroll_print_wrapped(s_You_see_000858fc);
-    /* Ghidra dropped the argument carried in ARM's return register. */
-    message_scroll_print_wrapped(get_message_string(uVar2 | 0x1400));
+    message_scroll_print_wrapped(desc);
     message_scroll_print_wrapped(&DAT_00084f20);
   }
   return;

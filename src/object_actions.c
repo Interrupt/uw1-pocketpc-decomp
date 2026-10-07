@@ -1,9 +1,6 @@
-/* Object action dispatch: the right-click action-list builder (and its
- * duplicate variant), critter sprite tier/page resolution, and
- * placement/combination checks (carry weight, drop height, item
- * combination). Split out of uw.c (the original monolithic decompile)
- * once these functions' real roles were confirmed.
- */
+/* Object action dispatch: the right-click action-list builder (and its duplicate variant), critter
+   sprite tier/page resolution, and placement/combination checks (carry weight, drop height, item
+   combination). */
 #include "headers/object_actions.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -14,21 +11,17 @@
 static undefined *DAT_001007c8;
 undefined1 DAT_0023c3dc;
 undefined1 DAT_0023c3d8;
-/* Ghidra recovered this as "You_see" (underscores, no trailing space);
-   it's the "You see " prefix the look/identify code prepends to an
-   object/terrain name, so the real bytes are "You see " with a trailing
-   space (see describe_picked_terrain: message_scroll_print_wrapped(this) then the
-   name then "."). */
+/* Ghidra recovered this as "You_see" (underscores, no trailing space); it's the "You see " prefix
+   the look/identify code prepends to an object/terrain name, so the real bytes are "You see " with
+   a trailing space... */
 char s_You_see_000858fc[] = "You see ";
-/* Ghidra rendered the embedded space as an underscore and put it on
-   the wrong side -- real bytes at 0x85c90 (ARM UU.exe .data, confirmed
-   via tests/fixtures/static_strings.json's direct memory export):
-   " belonging to" (leading space, no trailing space). */
+/* Ghidra rendered the embedded space as an underscore and put it on the wrong side -- real bytes at
+   0x85c90 (ARM UU.exe .data, confirmed via tests/fixtures/static_strings.json's direct memory
+   export): " belonging to" (leading space, no trailing space). */
 static char s_belonging_to_00085c90[] = " belonging to";
-/* Sizing-audit pass: `read_file_handle(iVar8,&DAT_0023ce70,0x80)`
-   (ai.c's load_critter_association_tables) reads exactly 128 bytes,
-   matching its own fill loop's `<0x80` bound. HARD exact. Down from
-   8192. */
+/* Sizing-audit pass: `read_file_handle(iVar8,&DAT_0023ce70,0x80)` (ai.c's
+   load_critter_association_tables) reads exactly 128 bytes, matching its own fill loop's `<0x80`
+   bound. HARD exact. Down from 8192. */
  undefined1 DAT_0023ce70_backing[128];
 ushort DAT_00202508;
 ushort DAT_002022f8;
@@ -37,48 +30,33 @@ static ushort DAT_00202304;
 int DAT_002022fc;
 static char s_cursed_00085ca0[] = "cursed ";
 static char s_magical_00085ca8[] = "magical ";
-/* Ghidra rendered the embedded space as an underscore and dropped the
-   leading space entirely -- confirmed via a Ghidra memory dump of the
-   real UU.exe that the real bytes are " full charge\0" (with a real
-   space, not '_', between "full" and "charge"), appended right after
-   the charge count in append_object_special_name-adjacent charge-
-   count message building. */
+/* Ghidra rendered the embedded space as an underscore and dropped the leading space entirely --
+   confirmed via a Ghidra memory dump of the real UU.exe that the real bytes are " full charge\0"
+   (with a real space, not '_', between "full" and "charge")... */
 static char s_full_charge_00085cb8[] = " full charge";
-/* Was a bare scalar read through &DAT_00085cc8 as a 2-char C string
-   (the "no charges" case of the same charge-count message). Confirmed
-   via a Ghidra memory dump of the real UU.exe that the real bytes are
-   "no\0". */
+/* Was a bare scalar read through &DAT_00085cc8 as a 2-char C string (the "no charges" case of the
+   same charge-count message). Confirmed via a Ghidra memory dump of the real UU.exe that the real
+   bytes are "no\0". */
 static char DAT_00085cc8[] = "no";
-/* Was missing both its leading and trailing space -- confirmed via a
-   Ghidra memory dump of the real UU.exe that the real bytes are
-   " with \0", not "with\0"; matches the same leading/trailing-space-
-   per-fragment convention as the full_charge/DAT_00085cc8 strings
-   just above. */
+/* Was missing both its leading and trailing space -- confirmed via a Ghidra memory dump of the real
+   UU.exe that the real bytes are " with \0", not "with\0"; matches the same leading/trailing-space-
+   per-fragment convention as the full_charge/DAT_00085cc8 strings just above. */
 static char s_with_00085cd0[] = " with ";
-/* Was a zero-initialized 8192-byte placeholder (this file's own
-   adjacent comment guessed ": "-shaped, but a Ghidra memory dump of
-   the real UU.exe shows the real bytes are " of \0") -- this prefixes
-   a special/unique item's proper name onto its base name, e.g.
-   "<item> of <name>", not "<item>: <name>". */
+/* Was a zero-initialized 8192-byte placeholder (this file's own adjacent comment guessed ":
+   "-shaped, but a Ghidra memory dump of the real UU.exe shows the real bytes are " of \0") -- this
+   prefixes a special/unique item's proper name onto its base name, e.g. "<item> of <name>"... */
 /* Sizing-audit pass: confirmed 4-char content (" of \0"), no
    indexing. Sized to 16; down from 8192. */
 static undefined DAT_00085cd8_backing[16] = " of ";
 static undefined4 DAT_0024cfcc;
-/* DAT_00085ccc/ccd/cce sit right after DAT_00085cc8 ("no\0", above) in
-   real memory ("00\0" -- 0x30 0x30 0x00) and get copied into this
-   function's own digit-formatting scratch buffer before being
-   overwritten by the actual computed digits (or, for cce, already
-   relied on as the buffer's zero terminator) -- real values confirmed
-   via the same memory dump, but left as this port's zero defaults
-   since every call path here either overwrites ccc/ccd before they're
-   read or already depends on cce being 0; restating '0'/'0'/0 here
-   would change no observable behavior. */
+/* DAT_00085ccc/ccd/cce sit right after DAT_00085cc8 ("no\0", above) in real memory ("00\0" -- 0x30
+   0x30 0x00) and get copied into this function's own digit-formatting scratch buffer before being
+   overwritten by the actual computed digits... */
 static undefined1 DAT_00085ccc;
 static undefined1 DAT_00085ccd;
 static undefined1 DAT_00085cce;
-/* Was a zero-initialized 8192-byte placeholder -- confirmed via a
-   Ghidra memory dump of the real UU.exe that the real bytes are
-   "s\0", the plural suffix appended after "full charge" when the
+/* Was a zero-initialized 8192-byte placeholder -- confirmed via a Ghidra memory dump of the real
+   UU.exe that the real bytes are "s\0", the plural suffix appended after "full charge" when the
    count isn't exactly 1. */
 /* Sizing-audit pass: confirmed 1-char content ("s\0"), no indexing.
    Sized to 16; down from 8192. */
@@ -92,20 +70,14 @@ static uint DAT_00202094;
 /* Sizing pass: function-pointer table indexed as `&DAT_00087604 +
    (param_2 & 0x3f) * 4` (6-bit mask) -- real max 63*4+4=256 bytes. */
 undefined1 DAT_00087604_backing[256];
-/* Sizing pass: cast_targeted_search_effect indexes this as
-   `(&PTR_FUN_00087614)[param_2 & 0x3f]` (6-bit mask, 64 entries) --
-   a bare scalar `undefined *` only backs index 0, so every other
-   index (63 of 64 possible spell-table params) read past the end of
-   this single-pointer global. Confirmed as a real global-buffer-overflow
-   class, same "scalar declared but accessed as array" bug fixed
-   several times elsewhere in this port (e.g. DAT_002047b0's own
-   comment in hud.c) -- widened to real 64-slot backing storage. */
+/* Sizing pass: cast_targeted_search_effect indexes this as `(&PTR_FUN_00087614)[param_2 & 0x3f]`
+   (6-bit mask, 64 entries) -- a bare scalar `undefined *` only backs index 0, so every other index
+   (63 of 64 possible spell-table params) read past the end of this single-pointer global. */
 undefined *PTR_FUN_00087614_backing[64];
 #define PTR_FUN_00087614 PTR_FUN_00087614_backing[0]
-/* Sizing-audit pass: damage_all_objects_at_tile's only caller passes
-   param_3 in {1,2}, so the shared `bVar5=param_3-1` index is 0-1 --
-   max byte touched is DAT_00087634's offset 8+1=9. Sized to 16 for
-   headroom; down from 8192. */
+/* Sizing-audit pass: damage_all_objects_at_tile's only caller passes param_3 in {1,2}, so the
+   shared `bVar5=param_3-1` index is 0-1 -- max byte touched is DAT_00087634's offset 8+1=9. Sized
+   to 16 for headroom; down from 8192. */
 static undefined DAT_0008762c_backing[16];
 #define DAT_0008762c DAT_0008762c_backing[0]
 #define DAT_00087630 DAT_0008762c_backing[4]
@@ -141,15 +113,9 @@ int param_2;
   undefined1 auStack_b4 [8];
   char acStack_ac [16];
   char acStack_9c [32];
-  /* Was 80 bytes -- build_creature_look_text's creature-look text ("You see " +
-     article + description + " named " + proper name + suffix + "\n")
-     can run well past that for a creature with a real name, overflowing
-     acStack_7c and taking the fortified strcat (ce_strcat) down with
-     a SIGSEGV. Reproduced via a right-click "look" at a creature (real
-     UW_PICK_FORCE_SLOT-driven repro, not previously exercised since no
-     creature in the earlier-tested area had a real name to overflow
-     into). Widened generously, matching this session's established
-     "resize the too-small stack buffer" fix pattern. */
+  /* Was 80 bytes -- build_creature_look_text's creature-look text ("You see " + article +
+     description + " named " + proper name + suffix + "\n") can run well past that for a creature
+     with a real name... */
   char acStack_7c [256];
 
   uVar11 = 0;
@@ -166,19 +132,9 @@ int param_2;
   if (((short)param_2 == 3) && (iVar5 = identify_mushroom_type(param_1,&DAT_00202c90 + iVar9), iVar5 != 0)) {
     return;
   }
-  /* This copied "You see " into acStack_85978 (a wildly oversized,
-     547012-byte local Ghidra apparently misattributed here -- almost
-     certainly a stack-frame-size miscalculation artifact, not a real
-     array in the original binary), but nothing ever reads
-     acStack_85978 again: the real assembled message below builds up in
-     acStack_7c instead, which never got this prefix. Confirmed by the
-     user: "Look" on an ordinary item (e.g. the sack) printed just "a
-     sack" instead of "You see a sack." acStack_7c was also never
-     NUL-terminated before its first strcat (ce_strcat) below, so
-     leftover content from a PREVIOUS look call's stack frame could
-     survive and get concatenated onto -- "Multiple Looks will also
-     print them together like 'a sackasack'". Fix both: clear acStack_7c
-     and seed it with the real "You see " prefix here instead. */
+  /* This copied "You see " into acStack_85978 (a wildly oversized, 547012-byte local Ghidra
+     apparently misattributed here -- almost certainly a stack-frame-size miscalculation artifact,
+     not a real array in the original binary), but nothing ever reads acStack_85978 again... */
   acStack_7c[0] = '\0';
   ce_strcat(acStack_7c, s_You_see_000858fc);
   acStack_ac[0] = '\0';
@@ -247,10 +203,9 @@ LAB_000489fc:
   if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     ce_strcat(acStack_7c,s_belonging_to_00085c90);
-    /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's
-       char* to it truncated the pointer -> ce_strcat (strcat) walked a wild
-       address, crashing a right-click "look" at any owned container (the
-       spawn-room sack). Use the char* local. */
+    /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's char* to it
+       truncated the pointer -> ce_strcat (strcat) walked a wild address, crashing a right-click
+       "look" at any owned container (the spawn-room sack). Use the char* local. */
     pcVar6 = get_message_string((bVar1 & 0x1f) + 0x172 | 0x200);
     ce_strcat(acStack_7c,pcVar6);
   }
@@ -263,13 +218,8 @@ LAB_00048b58:
 }
 
 
-/* was FUN_000404a0. Loads (and page-caches) a \CRIT\CRnnPAGE.Nnn sprite
-   page and decodes one frame's glyph into a fresh palette-indexed bitmap.
-   Repurposes the same page-cache/glyph-index machinery as the font/glyph
-   renderer (hence the "[glyphpage]" log tag) -- param_1=critter type
-   index, param_2=animation tier, param_3=direction, param_4=frame count
-   for this direction, param_5=frame index. Sets DAT_00202508/DAT_002022f8
-   (w/h) and DAT_002022fc (bitmap pointer) on success. */
+/* was FUN_000404a0. Loads (and page-caches) a \CRIT\CRnnPAGE.Nnn sprite page and decodes one
+   frame's glyph into a fresh palette-indexed bitmap. */
 undefined4 decode_critter_sprite_page(param_1,param_2,param_3,param_4,param_5)
 int param_1;
 int param_2;
@@ -288,39 +238,23 @@ short param_5;
   int iVar10;
   byte *pbVar11;
   void **piVar12;
-  /* iVar5 above is a real int (file handle) for open_file_for_read's return,
-     reused later in this same function as if it held ce_malloc's
-     `void *` return (the decoded glyph buffer) -- same "reused scalar"
-     bug already fixed in look_at_inscribed_object this session. Separate real
-     pointer local for that use. */
+  /* iVar5 above is a real int (file handle) for open_file_for_read's return, reused later in this
+     same function as if it held ce_malloc's `void *` return (the decoded glyph buffer) -- same
+     "reused scalar" bug already fixed in look_at_inscribed_object this session. */
   void *pvVar_glyphbuf;
 
   pbVar11 = uw_load_critter_page_cached(param_1, param_2);
   if (pbVar11 == (byte *)0) {
     /* Missing/unopenable per-page resource file -- was an unconditional
-       terminate_process(0xffffffff) hard exit (only reachable for a real
-       object, class 1, that no object in the previously-tested level
-       area happened to use -- confirmed via lldb backtrace: reached
-       from emit_tile_objects's class-1 branch via resolve_critter_sprite_tier, one
-       specific door ~17 tiles from spawn). Same "graceful skip instead
-       of crash" treatment already used for other missing/unregistered
-       resources this session (lookup_grtile_by_id, blit_object_sprite_by_frame) -- return the
-       shared dummy_glyph-shaped sentinel instead of taking the whole
-       game down over one unavailable page file. */
+       terminate_process(0xffffffff) hard exit... */
     static undefined1 dummy_page[8];
     return dummy_page;
   }
   iVar1 = (param_2 + param_1 * 4) * 0x10000 >> 0x10;
   iVar9 = ((int)(((int)param_3 - (uint)*pbVar11) * 0x10000) >> 0x10) + 2;
   if ((unsigned int)iVar9 >= 0x7ffd) {
-    /* Out-of-range glyph/character code for this page (this whole
-       class-1/font-page path was unexercised before this session --
-       nothing in the previously-tested level area used it -- so an
-       out-of-bounds `param_3` relative to the page's own base char code
-       (`*pbVar11`) was never hardened against. `pbVar11` is a real
-       0x7fff-byte ce_malloc allocation; -3 keeps every access below
-       reading pbVar11[iVar9] and pbVar11[iVar9+1] in bounds. Skip
-       drawing this glyph rather than reading wildly out of the buffer. */
+    /* Out-of-range glyph/character code for this page (this whole class-1/font-page path was
+       unexercised before this session -- nothing in the previously-tested level area used it)... */
     DEBUG(ERR, "[glyphpage] index %d out of range for page base %d (param_3=%d), skipping\n",
           iVar9, (int)*pbVar11, (int)param_3);
     return 0;
@@ -364,28 +298,14 @@ short param_5;
       DAT_002022f8 = (ushort)pbVar11[1];
       DAT_00202300 = (ushort)pbVar11[2];
       DAT_00202304 = (ushort)pbVar11[3];
-      /* DAT_00202508 is WIDTH, DAT_002022f8 is HEIGHT -- confirmed
-         against the class-0 item decoder's identical header read a few
-         lines below (`bVar1 = pcVar3[1]` = the real .GR "byte1=width"
-         per uw_debug_dump_gr_entry's own documented format, assigned to
-         this same DAT_00202508; `bVar2 = pcVar3[2]` = "byte2=height"
-         assigned to this same DAT_002022f8). Every w=/h= label and the
-         uw_debug_dump_critter_sprite call below had these backwards
-         until now -- harmless for the real on-screen renderer (which
-         only ever uses them as a product, or correctly by role a few
-         hundred lines down in emit_tile_objects's own quad-vertex math),
-         but it silently fed the debug dump tool a swapped width/height,
-         so every dumped BMP read each row at the wrong stride and came
-         out looking like scrambled noise (reported live, spotted by the
-         user as "the pixel pitch ... looks off" on the dumped images --
-         not a rendering bug, a diagnostics-only one). */
+      /* DAT_00202508 is WIDTH, DAT_002022f8 is HEIGHT -- confirmed against the class-0 item
+         decoder's identical header read a few lines below... */
       if (getenv("UW_DEBUG_CRITTER"))
         fprintf(stderr, "[critter] decode_critter_sprite_page: w=%d h=%d comp_type(pbVar11[4])=%d\n",
                 (int)(short)DAT_00202508, (int)(short)DAT_002022f8, (int)pbVar11[4]);
-      /* The original decoder accepts the page's full byte-sized dimensions.
-         Goblin combat frames legitimately exceed 64 pixels (e.g. direction
-         3, frame 3 is 68x44). Rejecting those after updating the dimensions
-         left the previous texture paired with the new size, garbling it. */
+      /* The original decoder accepts the page's full byte-sized dimensions. Goblin combat frames
+         legitimately exceed 64 pixels (e.g. direction 3, frame 3 is 68x44). Rejecting those after
+         updating the dimensions left the previous texture paired with the new size, garbling it. */
       uVar7 = decompress_gr_bitmap(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
       if (getenv("UW_DEBUG_CRITTER") && uVar7) {
         fprintf(stderr, "[critter] decode_critter_sprite_page: decoded row bytes[0..15]:");
@@ -417,16 +337,9 @@ short param_5;
       }
       if (*piVar12 != 0) {
         DAT_002022fc = (intptr_t)*piVar12;
-        /* render_visible_tile_list reads each record's texture from the
-           g_tile_texptr_out[] side channel (the in-record field is 4 bytes
-           and truncates on 64-bit) -- same fix already applied to the
-           class-0 item billboard decoder just above resolve_critter_sprite_tier. Without
-           this, a critter/door billboard's record kept whatever truncated
-           32-bit pointer bits got stuffed into DAT_000acdfc, so the
-           renderer sampled a wild/bogus texture and every glyph pixel
-           came back near-0 (rendered as a dark silhouette instead of the
-           real creature bitmap). DAT_0023b83c is this object's own record
-           index, same convention as the sibling fix. */
+        /* render_visible_tile_list reads each record's texture from the g_tile_texptr_out[] side
+           channel (the in-record field is 4 bytes and truncates on 64-bit) -- same fix already
+           applied to the class-0 item billboard decoder just above resolve_critter_sprite_tier. */
         if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) {
           g_tile_texptr_emit[DAT_0023b83c] = *piVar12;
         }
@@ -440,44 +353,11 @@ short param_5;
 
 
 
-/* was FUN_0004083c. Called from emit_tile_objects's render-class-1
-   (camera-facing billboard, used for both critters and doors) branch.
-   param_1=critter type index (object id & 0x3f), param_2=direction index,
-   param_3=frame, param_4=shade (see below). Looks up the type in the
-   \CRIT\assoc.anm-derived DAT_0023ce70 table to get its real page
-   index, then hands off to decode_critter_sprite_page. Returns 0
-   (no-op) for a type with no assoc-table entry (0xff sentinel). */
-/* Tier selection REWRITTEN this session -- the shade/DAT_0023c460-
-   threshold mechanism previously here was never the real logic; that
-   original code was not recovered from disassembly, and an earlier
-   session's plausible-looking reconstruction (matching the class-0
-   item path's genuinely distance-based LOD convention) turned out to
-   be the wrong model for critters. Concrete evidence, from directly
-   inspecting the real page files: EVERY creature checked (10 distinct
-   types, including Bragit/page 26) has the identical shape -- tier 0
-   (CRnnPAGE.N00) covers direction 0-31 (states 0x1c-0x1f), tier 1
-   (.N01) covers direction 32-159 (states 0x20-0x2f), and .N02/.N03
-   simply don't exist as files for any of them. These are not graduated
-   LOD/quality levels of the same content -- they're two files that
-   together tile ONE continuous direction-index range. Separately,
-   DAT_0023bc88 (the light-level term feeding the old "shade" value) is
-   hard-clamped to a max of 0xe=14 in the normal 3D-dungeon-view path
-   (uw.c ~57521), so it could never reach anywhere near the per-page
-   threshold data (itself often just the loader's own 0xa0-default
-   fallback, uw.c ~32247, when its own metadata file fails to open) --
-   tier was structurally pinned at 0 for every creature, every dungeon
-   scene, regardless of state, which is exactly what caused states
-   >=0x20 to read past tier 0's real 32-byte table into unrelated bytes
-   (Bragit's reported "mix of attack/idle/death-looking frames").
-   Replaced with the real rule: load each candidate tier's page and use
-   whichever one's actual (base, base+span) range -- read straight from
-   that page's own header bytes via uw_load_critter_page_cached -- truly
-   contains the requested direction, instead of guessing from lighting.
-   param_4 (shade) is no longer used for tier selection; kept in the
-   signature since emit_tile_objects's call site genuinely does pass it
-   (disassembly-confirmed) and may still have a legitimate, not yet
-   identified role elsewhere in critter rendering (e.g. palette/tint) --
-   not removed, just unused here now. */
+/* was FUN_0004083c. Called from emit_tile_objects's render-class-1 (camera-facing billboard, used
+   for both critters and doors) branch. param_1=critter type index (object id & 0x3f),
+   param_2=direction index, param_3=frame, param_4=shade (see below). */
+/* Tier selection REWRITTEN this session -- the shade/DAT_0023c460- threshold mechanism previously
+   here was never the real logic; that original code was not recovered from disassembly... */
 undefined4 resolve_critter_sprite_tier(param_1,param_2,param_3,param_4)
 short param_1;
 undefined4 param_2;
@@ -529,19 +409,9 @@ uint param_4;
 
 
 
-// Dropped argument: both real call sites (uw.c:11074 `check_object_carry_weight(iVar2)`,
-// and interact_default's own `check_object_carry_weight(g_interact_target)` -- the object
-// being picked up) pass an object pointer, but this function's own
-// recovered signature took none, so it silently called calculate_object_weight()
-// bare too instead of forwarding it -- calculate_object_weight's very first line
-// unconditionally dereferences its parameter, so with nothing passed
-// through, it dereferenced whatever ARM register-leftover garbage was
-// sitting there and crashed. Confirmed live: interact_default's "grab
-// the sack" call reached exactly this line and segfaulted (bt: interact_
-// default -> check_object_carry_weight -> SIGSEGV). This is a "can the object being
-// picked up fit in the backpack" weight/capacity check -- same "wrapper
-// forgot to forward its own argument" idiom as get_equipped_item_at_slot elsewhere in
-// this file, just a missing forward instead of a hardcoded return.
+// Dropped argument: both real call sites (uw.c:11074 `check_object_carry_weight(iVar2)`, and
+// interact_default's own `check_object_carry_weight(g_interact_target)` -- the object being picked
+// up) pass an object pointer, but this function's own recovered signature took none...
 // was FUN_00046358
 bool check_object_carry_weight(param_1)
 ushort *param_1;
@@ -674,10 +544,9 @@ LAB_000489fc:
   if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     ce_strcat(acStack_7c,s_belonging_to_00085c90);
-    /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's
-       char* to it truncated the pointer -> ce_strcat (strcat) walked a wild
-       address, crashing a right-click "look" at any owned container (the
-       spawn-room sack). Use the char* local. */
+    /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's char* to it
+       truncated the pointer -> ce_strcat (strcat) walked a wild address, crashing a right-click
+       "look" at any owned container (the spawn-room sack). Use the char* local. */
     pcVar6 = get_message_string((bVar1 & 0x1f) + 0x172 | 0x200);
     ce_strcat(acStack_7c,pcVar6);
   }
@@ -692,12 +561,9 @@ LAB_00048b58:
 
 
 
-// was FUN_0004b288 -- validity gate for spawn_object_near_player's
-// freshly-copied object (param_1) placed near param_2's position: runs
-// the same collision_build_height_field/collision_height_envelope
-// machinery settle_dropped_object uses, returning 0 if the copy can't
-// actually rest here (caller frees it and falls back to the trajectory
-// placement path instead).
+// was FUN_0004b288 -- validity gate for spawn_object_near_player's freshly-copied object (param_1)
+// placed near param_2's position: runs the same
+// collision_build_height_field/collision_height_envelope machinery settle_dropped_object uses...
 undefined4 check_object_drop_height(param_1,param_2)
 ushort * param_1;
 ushort * param_2;
@@ -710,34 +576,9 @@ ushort * param_2;
   int iVar5;
   uint uVar6;
   uint uVar7;
-  /* Was three separate C locals (`ushort local_38[6]; ushort local_2c;
-     ushort local_2a;`), but collision_height_envelope/collision_build_
-     height_field write through DAT_00202c6c-relative offset arithmetic
-     expecting ONE contiguous struct (the same "collision working block"
-     layout already fixed globally as DAT_002049c8_backing, see its own
-     comment) -- Ghidra's own local-variable naming here reflects the
-     real ARM stack frame it disassembled (local_38/local_2c/local_2a =
-     stack offsets -0x38/-0x2c/-0x2a), and the gaps between those names
-     exactly match local_38's own 12-byte size then 2 more bytes, i.e.
-     local_2c sits at +0xc and local_2a at +0xe relative to local_38 --
-     exactly where DAT_002049d4/DAT_002049d6 (the tile property-flag
-     pair collision_build_height_field writes) live in the already-fixed
-     global layout. As separate, unbacked C locals here, nothing
-     guaranteed they were laid out contiguously on THIS recompile's
-     stack, so the indexed writes and the by-name reads of local_2c/
-     local_2a could land on unrelated stack memory -- the identical bug
-     class fixed once already for the global struct (commit ed49786),
-     just recurring in this function's own private local instance of
-     the same pattern. Confirmed live: this function computes the
-     collision-refined landing tile for a thrown/dropped item, and with
-     local_2c/local_2a reading garbage, the gate at the bottom of this
-     function (`(local_2a|local_2c)&0x300`) and the final tile-position
-     write it guards behaved unpredictably -- root cause of "the thrown
-     item disappears" (it got linked into a essentially-random, usually
-     off in a map corner, tile's object list instead of one near the
-     player). Backed as one real buffer, sized to match
-     DAT_002049c8_backing's own generous 64 bytes for the same safety
-     margin. */
+  /* Was three separate C locals (`ushort local_38[6]; ushort local_2c; ushort local_2a;`), but
+     collision_height_envelope/collision_build_ height_field write through DAT_00202c6c-relative
+     offset arithmetic expecting ONE contiguous struct... */
   unsigned char local_backing[64];
 #define local_38 ((ushort *)local_backing)
 #define local_2c (*(ushort *)(local_backing + 0xc))
@@ -761,37 +602,23 @@ ushort * param_2;
   *(byte *)((char *)DAT_00202c6c + 1) = (byte)((uint)iVar5 >> 8);
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] X computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
-  /* Was `DAT_00202c6c + 1` for Y's low byte -- disassembly-confirmed
-     (0x4b288 @ 0x4b3b8: `strb r3,[r1,#0x2]`) the real write target is
-     offset+2, not +1. Offset+1 is X's own high byte (just written two
-     lines above); with the wrong offset, Y's low byte clobbered X's
-     high byte immediately after it was set, corrupting the "near drop"
-     landing-tile lookup this function computes (confirmed live: X read
-     back as garbage like 6912/8=864, off the 64-tile map, sending
-     collision_build_height_field's tilemap_lookup out of bounds ->
-     early-return -> the collision-flags gate below reads uninitialized
-     stack instead of real data -> always looks blocked -> this whole
-     "place it near the player" path always silently failed and fell
-     back to the far/trajectory throw path instead). */
+  /* Was `DAT_00202c6c + 1` for Y's low byte -- disassembly-confirmed (0x4b288 @ 0x4b3b8: `strb
+     r3,[r1,#0x2]`) the real write target is offset+2, not +1. */
   iVar5 = ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2) + ((param_1[0xb] & 0x3f0) >> 1);
   *(byte *)((char *)DAT_00202c6c + 2) = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 3) = (byte)((uint)iVar5 >> 8);
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] Y computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
-  /* Both pointer args below were `DAT_00202c6c`/`DAT_00202c6c + 1` --
-     the Y output must be `+2` to match the real Y storage (offset+2/+3,
-     see the fix just above); `+1` is X's own high byte. Disassembly-
-     confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
+  /* Both pointer args below were `DAT_00202c6c`/`DAT_00202c6c + 1` -- the Y output must be `+2` to
+     match the real Y storage (offset+2/+3, see the fix just above); `+1` is X's own high byte.
+     Disassembly- confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
   project_position_by_heading(((byte)param_1[0xc] & 0x1f) + ((param_1[1] & 0x380) >> 2),
                ((&DAT_00202c91)[(*param_1 & 0x1ff) * 0xd] & 7) +
                ((&DAT_00202c91)[(*param_2 & 0x1ff) * 0xd] & 7) + '\x04',DAT_00202c6c,
                DAT_00202c6c + 2);
-  /* Was `DAT_00202c6c + 2` -- disassembly-confirmed (0x4b288 @ 0x4b474:
-     `strb r3,[r0,#0x4]`) the real target is offset+4/+5 (the same "Z"
-     field this function's own later collision calls read via
-     `*(short *)(DAT_00202c6c + 4)`), not offset+2 (Y's own low byte,
-     just written above -- this write would otherwise immediately
-     re-clobber it). */
+  /* Was `DAT_00202c6c + 2` -- disassembly-confirmed (0x4b288 @ 0x4b474: `strb r3,[r0,#0x4]`) the
+     real target is offset+4/+5 (the same "Z" field this function's own later collision calls read
+     via `*(short *)(DAT_00202c6c + 4)`), not offset+2... */
   *(byte *)((char *)DAT_00202c6c + 4) = (byte)param_1[1] & 0x7f;
   *(byte *)((char *)DAT_00202c6c + 5) = 0;
   if (getenv("UW_DEBUG_THROW"))
@@ -913,14 +740,13 @@ LAB_0007c130:
 
 
 
-// was FUN_00073b40 -- looks up tile-type id param_1 (0..0x34) in a
-// per-type 4-byte-stride table (DAT_00087530/DAT_00087533) to get a
-// "special action" type/id pair, then forwards to dispatch_special_action
-// with param_2/param_3 as the actor object and an extra parameter.
+// was FUN_00073b40 -- looks up tile-type id param_1 (0..0x34) in a per-type 4-byte-stride table
+// (DAT_00087530/DAT_00087533) to get a "special action" type/id pair, then forwards to
+// dispatch_special_action with param_2/param_3 as the actor object and an extra parameter.
 void dispatch_tile_special_action(param_1,param_2,param_3)
 uint param_1;
-undefined4 param_2;
-undefined4 param_3;
+uintptr_t param_2;
+intptr_t param_3;
 
 {
   param_1 = param_1 & 0xff;
@@ -933,21 +759,9 @@ undefined4 param_3;
 
 
 
-// was FUN_00073b74 -- the general "SPECIAL" action dispatcher (see
-// the SPECIAL ILLUSTRATED BOOK/SCROLL comment elsewhere in this file
-// for one example caller shape). param_1&0xff selects the action type
-// (0-0xe, a case switch); param_3 is the acting object (an object
-// pointer when >= DAT_002046c4/uw_object_hdr_t's own table base and
-// param_1<=0xb, else treated as something else and the no-magic tile
-// check uses fixed coordinates DAT_0023c3dc/DAT_0023c3d8 instead of
-// the object's own position). Gates on tile_is_no_magic for most
-// action types (magic-disallowed tiles suppress the action), then
-// dispatches per type: teleport/message/sign display (0-3, via
-// add_active_light_source), a "hold param_4 as cursor item" variant (4), pick-up
-// (5), several object-modifying handlers (6-10), a scheduled-drop
-// variant (0xb), a no-op (0xc), player status-effect toggles (0xd),
-// and a generic dialog-box trigger plus scheduler tick (0xe). Full
-// semantics of each numbered handler not traced individually.
+// was FUN_00073b74 -- the general "SPECIAL" action dispatcher (see the SPECIAL ILLUSTRATED
+// BOOK/SCROLL comment elsewhere in this file for one example caller shape). param_1&0xff selects
+// the action type (0-0xe, a case switch)...
 undefined4 dispatch_special_action(param_1,param_2,param_3,param_4)
 uint param_1;
 uint param_2;
@@ -1055,14 +869,9 @@ LAB_00073c90:
 
 
 
-// was FUN_00074028 -- dispatch_special_action's "reduce item
-// durability" handler (its own case 9): only applies if the target
-// object's quality bits match 0x40 (same food/potion-shaped flag
-// apply_healing_item_effect gates on) and its quality/charge field
-// (offset 4, byte) is currently above 3. Rolls param_2 d8s
-// (roll_dice_sum) and subtracts the result, clamped to a floor of 3
-// rather than letting it drop lower. Plays a sound if the target is
-// the player object.
+// was FUN_00074028 -- dispatch_special_action's "reduce item durability" handler (its own case 9):
+// only applies if the target object's quality bits match 0x40 (same food/potion-shaped flag
+// apply_healing_item_effect gates on) and its quality/charge field...
 void reduce_item_quality_on_use(param_1,param_2)
 ushort * param_1;
 char param_2;
@@ -1094,16 +903,9 @@ char param_2;
 
 
 
-// was FUN_000740b0 -- dispatch_special_action's case 5 ("spawn a
-// targeted spell-effect object") worker: param_2 (1-4) selects one of
-// four effect-object subtypes {7,5,4,6} and spawn_object_near_actor spawns that
-// object near/at param_1's location (returning whether the spawn
-// succeeded). If param_1 is the player and the spawn failed, prints
-// a "no effect" scroll message (id 0xff) via print_scroll_message_by_id. Otherwise,
-// if a mana cost was staged in DAT_0023c3e0 (set by whatever queued
-// this cast), deducts it from the player's mana stat
-// (DAT_00086df8+0x37, "play_mana" -- see babl.c's own read of the
-// same offset). DAT_0023c3e0 is always cleared back to 0 afterward.
+// was FUN_000740b0 -- dispatch_special_action's case 5 ("spawn a targeted spell-effect object")
+// worker: param_2 (1-4) selects one of four effect-object subtypes {7,5,4,6} and
+// spawn_object_near_actor spawns that object near/at param_1's location...
 /* ARM passes the actor address unchanged through r0 (0x740e8 and 0x7ca1c).
    Keep it pointer-sized here: an int truncates the queued player's address
    before projectile placement on a 64-bit host. */
@@ -1139,10 +941,7 @@ char param_2;
 // was FUN_00074150
 void *spawn_and_prime_spell_effect_object(param_1,param_2)
 /* Was `int spawn_and_prime_spell_effect_object(...)` -- returned spawn_new_object's real object
-   pointer through a 32-bit int, truncated on this host; both callers
-   (cast_single_tile_spell_effect, cast_area_spell_effect) also stored it into a 32-bit undefined4
-   before dereferencing it via encode_object_slot_index/
-   object_list_insert_head, same class of fix applied there too. */
+   pointer through a 32-bit int, truncated on this host; both callers... */
 undefined4 param_1;
 byte * param_2;
 
@@ -1172,19 +971,9 @@ byte * param_2;
 
 
 
-// was FUN_000741f0 -- forcibly unlocks a target object: bails out if
-// the object already has bit 0x8000 set, if its "lock" field (offset
-// +3, bits 0xffc0) is zero (nothing to unlock), or if it's a
-// disallowed class (0x1c0 == 0x180). Otherwise looks up the
-// container/link (find_object_in_chain) and, IF found, temporarily forces the
-// player's pick-locks skill byte (DAT_00086df8+0x2c) to a guaranteed-
-// pass value (0x2d) before invoking force_unlock_target_object's
-// underlying "use item on object" resolver (resolve_skill_gated_unlock_or_use, action code
-// 5 == unlock) so the skill check it performs against the lock's
-// difficulty always succeeds, then restores the real skill byte
-// afterward. Used for scripted/guaranteed unlocks (e.g. an "unlock"
-// spell) rather than a real skill-gated lockpick attempt (see
-// roll_container_lockpick_check in src/interact.c for that path).
+// was FUN_000741f0 -- forcibly unlocks a target object: bails out if the object already has bit
+// 0x8000 set, if its "lock" field (offset +3, bits 0xffc0) is zero (nothing to unlock), or if it's
+// a disallowed class (0x1c0 == 0x180).
 undefined4 force_unlock_target_object(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
@@ -1208,13 +997,9 @@ ushort * param_3;
 
 
 
-// was FUN_000742c0 -- casts a single-tile spell effect at tile
-// (param_1,param_2): spawns a type-0x1c5 effect object via
-// spawn_and_prime_spell_effect_object, applies its damage to just
-// that one tile (damage_all_objects_at_tile with damage-tier index 2-1=1), then
-// schedules the effect object to tick (scheduler_add_entry, type 4)
-// with a pseudo-random 0-3 initial delay. On schedule failure frees
-// the object slot; otherwise links it into param_4's object list.
+// was FUN_000742c0 -- casts a single-tile spell effect at tile (param_1,param_2): spawns a
+// type-0x1c5 effect object via spawn_and_prime_spell_effect_object, applies its damage to just that
+// one tile (damage_all_objects_at_tile with damage-tier index 2-1=1)...
 undefined4 cast_single_tile_spell_effect(param_1,param_2,param_3,param_4,param_5)
 uint param_1;
 undefined4 param_2;
@@ -1249,15 +1034,8 @@ undefined1 param_5;
 
 
 
-// was FUN_00074380 -- casts an area spell effect centered on tile
-// (param_1,param_2): spawns a type-0x1c2 effect object via
-// spawn_and_prime_spell_effect_object, applies damage (damage_all_objects_at_tile,
-// damage-tier index 1-1=0) to that tile and its four cardinal
-// neighbors (a 5-tile cross/"area" pattern), then schedules the
-// effect object to tick (scheduler_add_entry, type 4, delay 0). On
-// schedule failure frees the object slot; otherwise links it into
-// param_4's object list and calls spawn_effect_debris_burst to spawn
-// a small burst of debris/particle objects around it.
+// was FUN_00074380 -- casts an area spell effect centered on tile (param_1,param_2): spawns a
+// type-0x1c2 effect object via spawn_and_prime_spell_effect_object, applies damage...
 undefined4 cast_area_spell_effect(param_1,param_2,param_3,param_4,param_5)
 uint param_1;
 int param_2;
@@ -1292,20 +1070,8 @@ undefined1 param_5;
 
 
 
-// was FUN_00074474 -- gated trap/effect trigger: resolve_damage_type_resistance (not
-// yet named) is the shared per-object-type-flags helper used
-// throughout this cluster -- with a real multi-bit damage-type mask
-// and nonzero low bits it's a genuine resistance roll (see
-// morph_tile_object_state below), but called here with a single flag
-// bit (0x80) and a dummy pass-value (1) it works as a plain
-// membership test: it returns 0 when the target's object-type record
-// (DAT_00202c99, same 13-byte-stride per-type table used by
-// dispatch_object_action) HAS bit 0x80 set, and the nonzero pass-value
-// when it doesn't. This function fires ONLY on the "has the flag"
-// (0) case, applying a fixed damage-type-3, magnitude-0xff effect
-// (apply_typed_damage_to_object, not yet named) to the target -- i.e. it's a trap
-// effect that only harms objects whose type carries that particular
-// flag. Returns whether the object had the flag.
+// was FUN_00074474 -- gated trap/effect trigger: resolve_damage_type_resistance (not yet named) is
+// the shared per-object-type-flags helper used throughout this cluster...
 bool trigger_type_flagged_trap_effect(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
@@ -1327,14 +1093,8 @@ undefined1 param_5;
 
 
 
-// was FUN_000744e0 -- unconditional tile-trap damage effect at tile
-// (param_1,param_2): first alters the tile's texture/decoration
-// (spawn_scheduled_effect_object, group 7, subtype 4), then rolls
-// 5d4 damage and applies it to the target object (param_3) via
-// apply_typed_damage_to_object (damage type id 0x13), which internally still runs
-// the same resistance/flag check as trigger_type_flagged_trap_effect
-// above -- so a target immune to type 0x13 can still take zero
-// effective damage even though this function always "fires".
+// was FUN_000744e0 -- unconditional tile-trap damage effect at tile (param_1,param_2): first alters
+// the tile's texture/decoration (spawn_scheduled_effect_object, group 7, subtype 4)...
 undefined4 trigger_tile_damage_trap_effect(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
@@ -1361,16 +1121,9 @@ undefined1 param_5;
 
 
 
-// was FUN_0007455c -- resistance-gated object-state morph: runs a
-// real resistance roll via resolve_damage_type_resistance (mask 3, i.e. the random
-// partial-resist chance bits) against the target object (param_3);
-// if not resisted, alters the tile's texture/decoration
-// (spawn_scheduled_effect_object, group 7, subtype 4) and plays an effect on the
-// target (npc_set_goal_for_object), then -- unless param_2 is -1 ("no change")
-// -- overwrites the top 2 bits of the object's quality/link field
-// (offset +0xd/+0xe, a ushort) with param_2, leaving the lower 14
-// bits untouched. Used by the three thin wrappers immediately below
-// with different fixed state ids (2, 6, 7).
+// was FUN_0007455c -- resistance-gated object-state morph: runs a real resistance roll via
+// resolve_damage_type_resistance (mask 3, i.e. the random partial-resist chance bits) against the
+// target object (param_3); if not resisted...
 undefined4 morph_tile_object_state(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 char param_2;
@@ -1399,15 +1152,9 @@ undefined2 param_5;
 
 
 
-// was FUN_00074614 -- resistance-gated, one-time-effect object-state
-// trigger: like morph_tile_object_state, runs a real resistance roll
-// (resolve_damage_type_resistance, mask 3) before acting. On success, alters the
-// tile's texture/decoration (spawn_scheduled_effect_object) and, only the FIRST time
-// (guarded by flag bit 0x40 at offset +0x19, which it then sets
-// permanently), plays an effect on the target (npc_set_goal_for_object). Always
-// sets the object's quality/link field (offset +0xd/+0xe) top 2 bits
-// to 3 (0xc0), unlike morph_tile_object_state's caller-supplied
-// state id -- this variant hardcodes a single fixed end state.
+// was FUN_00074614 -- resistance-gated, one-time-effect object-state trigger: like
+// morph_tile_object_state, runs a real resistance roll (resolve_damage_type_resistance, mask 3)
+// before acting.
 undefined4 trigger_permanent_object_state_effect(param_1,param_2,param_3)
 undefined2 param_1;
 undefined2 param_2;
@@ -1445,10 +1192,9 @@ undefined4 param_3;
 
 
 
-// was FUN_000746d4 -- thin wrapper: morph_tile_object_state with
-// texture/effect variant 6 and object-state id -1 ("no change" --
-// this variant only affects the tile's texture/decoration, not the
-// target object's quality/link field).
+// was FUN_000746d4 -- thin wrapper: morph_tile_object_state with texture/effect variant 6 and
+// object-state id -1 ("no change" -- this variant only affects the tile's texture/decoration, not
+// the target object's quality/link field).
 void apply_tile_morph_variant_6(param_1,param_2,param_3)
 undefined4 param_1;
 undefined2 param_2;
@@ -1477,23 +1223,8 @@ undefined4 param_3;
 
 
 
-// was FUN_0007471c -- scans a rectangular tile area (top-left
-// (param_5,param_6), size param_7 x param_8, clamped to the 0-63
-// tilemap bounds) and invokes the callback param_3 ("codeval" --
-// really a function pointer, matching this function's use as a babl
-// script area-scan builtin, see scan_area_ahead_of_object below) on
-// matching objects, up to param_1 matches before returning early.
-// param_4 selects the scan mode: '@' walks each tile's floor-item
-// slot directly (skipping empty ones, bit 0xf), calling the callback
-// as (x,y,0,tile,param_2); anything else walks the full per-tile
-// object linked list instead, filtering by param_4 (-0x80 = all
-// objects, 0 = creatures only excluding a specific slot index
-// param_2, -0x40 = a third mode) and calling the callback as
-// (x,y,object,tile,param_2). Known caller: emit_noise_alert uses it
-// as a "who can hear this sound" 15x15-tile scan around the noise
-// source. See project_position_by_heading and
-// scan_area_ahead_of_object for the "area in front of an object"
-// variant built on top of this.
+// was FUN_0007471c -- scans a rectangular tile area (top-left (param_5,param_6), size param_7 x
+// param_8, clamped to the 0-63 tilemap bounds) and invokes the callback param_3...
 void scan_area_for_matching_objects(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 char param_1;
 byte param_2;
@@ -1527,25 +1258,9 @@ char param_8;
   short local_60;
   short local_5e;
 
-  /* param_3 (the match callback) legitimately arrives NULL for a
-     cone-damage/search-effect spell cast (dispatch_special_action
-     case 6/7, via cast_cone_damage_spell/cast_targeted_search_effect):
-     their own DAT_00087604/PTR_FUN_00087614 lookup tables were never
-     populated by this decompile's data-recovery (no .data initializer
-     for either symbol was found anywhere -- see cast_cone_damage_spell's
-     own comment), so every lookup into them currently yields NULL.
-     Every call site below invoked `(*param_3)(...)` unconditionally,
-     i.e. called through a NULL function pointer. Confirmed as a live
-     crash via lldb (bug_spell_crash.txt, CASTALLSPELLS spell index 31,
-     a cone-damage spell, once the pointer-truncation bug ahead of this
-     one -- see cast_cone_damage_spell's comment -- was fixed enough to
-     reach here). Recovering the real callback table contents needs
-     archaeology against the original binary's .data section, not
-     available here; treat a NULL callback as "no matches" (same
-     no-op-and-return contract this function already has for an
-     out-of-bounds scan rectangle just below) rather than crashing --
-     same defensive-NULL-guard precedent as tile_pair_los_blocked's own
-     fix for an analogous never-fully-recovered-data gap. */
+  /* param_3 (the match callback) legitimately arrives NULL for a cone-damage/search-effect spell
+     cast (dispatch_special_action case 6/7, via
+     cast_cone_damage_spell/cast_targeted_search_effect)... */
   if (param_3 == (codeval *)0) {
     return;
   }
@@ -1669,18 +1384,14 @@ LAB_000749bc:
 
 
 
-// was FUN_00074ad0 -- computes a position projected param_5 tiles
-// ahead of object param_1's facing (project_position_by_heading,
-// using its heading bits at offset+2 and location at offset+0x16),
-// then calls scan_area_for_matching_objects centered on that
-// position with a (2*param_6+1) square side, passing param_2 as the
-// match-count limit, param_3 as the callback, and param_4 as the
-// scan-mode selector. Effectively "scan a square area out in front
-// of this object" -- e.g. a breath weapon or melee sweep hitbox.
+// was FUN_00074ad0 -- computes a position projected param_5 tiles ahead of object param_1's facing
+// (project_position_by_heading, using its heading bits at offset+2 and location at offset+0x16)...
 void scan_area_ahead_of_object(param_1,param_2,param_3,param_4,param_5,param_6)
 char *param_1;
 undefined4 param_2;
-undefined4 param_3;
+/* ARM carries the callback unchanged into the scan (r11 -> pc at
+   0x749e4). A 32-bit integer truncates its native function address. */
+codeval *param_3;
 undefined4 param_4;
 undefined1 param_5;
 char param_6;
@@ -1717,16 +1428,9 @@ char param_6;
 
 
 
-// was FUN_00074be8 -- iterates the active-object slot range
-// [DAT_002046c0, DAT_002046c8), and for each object whose type-id
-// byte (offset +0x1a) matches param_1, invokes callback param_4 as
-// (object, param_3). If the callback returns nonzero, backs the scan
-// pointer up by one slot (a swap-remove-style adjustment, matching
-// how babl_builtin_set_attitude_apply's caller expects to be able to
-// mutate the set while iterating). If param_2 is 0, stops after the
-// first match; otherwise scans every matching object in range. See
-// src/babl.c's babl_builtin_set_attitude for a confirmed real caller
-// and the callback contract.
+// was FUN_00074be8 -- iterates the active-object slot range [DAT_002046c0, DAT_002046c8), and for
+// each object whose type-id byte (offset +0x1a) matches param_1, invokes callback param_4 as
+// (object, param_3).
 void for_each_object_of_type(param_1,param_2,param_3,param_4)
 ushort param_1;
 int param_2;
@@ -1760,41 +1464,9 @@ codeval * param_4;
 
 
 
-// was FUN_00074c64 -- dispatch_special_action's case 6 handler: rolls
-// 3d4 damage, then scans a 4-deep, 2-wide area in front of the
-// caster (scan_area_ahead_of_object) invoking a spell-effect callback
-// selected from a function-pointer table (DAT_00087604, indexed by
-// param_2's low 6 bits, 4-byte stride), passing the rolled damage as
-// the match-count argument and param_2's top 2 bits as the scan mode.
-//
-// param_1 was declared `undefined4` (cast_targeted_search_effect below
-// had the same bug as a plain `int`) -- truncating the real caster
-// pointer to its low 32 bits on this 64-bit host before
-// scan_area_ahead_of_object's very first dereference of it. Confirmed
-// as a live crash via lldb (bug_spell_crash.txt, CASTALLSPELLS spell
-// index 31, a cone-damage spell): param_1 arrived as 411101723
-// (0x1880EA1B), the low 32 bits of the real caster address
-// 0x1_1880EA1B, and EXC_BAD_ACCESS'd reading *(ushort*)(param_1+2) in
-// scan_area_ahead_of_object. Same truncation-bug class already fixed
-// in dispatch_special_action itself (see its own param_3/param_4
-// comment) -- this sibling handler was never patched for it.
-//
-// SEPARATE LATENT BUG (mitigated, not recovered, below): DAT_00087604_backing
-// and PTR_FUN_00087614 (used by cast_targeted_search_effect below) have
-// no initializer anywhere in the decompile -- no assignment to either
-// symbol was found by grep -- so on this host they're just
-// zero-filled globals. The original binary almost certainly had a
-// real static table of spell-effect handler addresses baked into its
-// .data section here, which this decompile's data-recovery pipeline
-// apparently didn't capture. Once the truncation above is fixed, this
-// path IS reached by real spell casts (type 6/7 in the readied-spell
-// table) and calls through a NULL function pointer -- confirmed live,
-// same repro, one step further in. Recovering the real table contents
-// would need archaeology against the original PocketPC binary's .data
-// section, out of reach here; scan_area_for_matching_objects (below)
-// now guards against a NULL callback instead of crashing, same as
-// tile_pair_los_blocked's existing NULL guard for an analogous
-// never-fully-recovered-data gap.
+// was FUN_00074c64 -- dispatch_special_action's case 6 handler: rolls 3d4 damage, then scans a
+// 4-deep, 2-wide area in front of the caster (scan_area_ahead_of_object) invoking a spell-effect
+// callback selected from a function-pointer table...
 void cast_cone_damage_spell(param_1,param_2)
 uintptr_t param_1;
 uint param_2;
@@ -1810,13 +1482,9 @@ uint param_2;
 
 
 
-// was FUN_00074cc8 -- dispatch_special_action's case 7 handler,
-// player-only: same scan-ahead-of-object shape as
-// cast_cone_damage_spell, but fixed to a single match and drawing
-// its callback from a different function-pointer table
-// (PTR_FUN_00087614, also indexed by param_2's low 6 bits).
-// param_1 had the same `int`-truncates-the-caster-pointer bug as
-// cast_cone_damage_spell above -- see that function's comment.
+// was FUN_00074cc8 -- dispatch_special_action's case 7 handler, player-only: same
+// scan-ahead-of-object shape as cast_cone_damage_spell, but fixed to a single match and drawing its
+// callback from a different function-pointer table...
 void cast_targeted_search_effect(param_1,param_2)
 uintptr_t param_1;
 uint param_2;
@@ -1830,44 +1498,11 @@ uint param_2;
 
 
 
-// was FUN_00074d20 -- dispatch_special_action's case 8 handler:
-// projects a position in front of the caster (project_position_by_
-// heading) and branches on param_2: '\x03' places a scripted trap-type-9
-// object pair at the destination tile via
-// create_scripted_trap_pair_at_tile (trap type 9 cascades to
-// dispatch_trap_type_effect's "alert nearby guards" case) and reports
-// success/fail via a scroll message -- CORRECTION: an earlier pass's
-// comment here described this as merely "probing whether the tile is
-// occupied", written before create_scripted_trap_pair_at_tile's own
-// body was examined; it unconditionally allocates and links two new
-// trap-class object records into the tile (failing only if object-
-// slot allocation itself fails), so this reads more like "place an
-// alarm trap at the target tile" than an occupancy check, though the
-// exact in-game spell this serves isn't confirmed; '\x01' spawns a
-// random monster from a nearby ID range; '\x04' ("summon monster")
-// picks a random valid, non-hostile-flagged monster from
-// g_monster_max_stats_table and does a full spawn+setup (race/
-// attitude sync for an NPC-cast summon, player-owned flag for a
-// player-cast one) -- this is the branch whose ordint_divmod-remainder
-// bug was already found and fixed in an earlier session pass (see the
-// comment on uVar6/uVar10 below, which was a genuine 100%-CPU
-// infinite-loop bug, not just a wrong-value one); any other param_2
-// spawns a fixed object id instead. On success links the new object
-// into the tile and settles it; on failure (no valid spawn point, or
-// the case-3 trap-placement path) prints a "no effect"-style scroll
-// message via print_scroll_message_by_id.
-/* ARM passes the caster/actor address unchanged through r0 (dispatch_special_action's
-   case 8, which itself already keeps this address-sized -- see that
-   function's own comment on the same host-truncation class). param_1
-   was declared `int`, which truncates the real pointer to its low 32
-   bits on this 64-bit host before the very first dereference
-   (`*(ushort *)(param_1 + 2)` below): confirmed live via lldb
-   (bug_spell_crash.txt, CASTALLSPELLS spell index 3) -- param_1 arrived
-   as 721927195 (0x2B07BB5B), the low 32 bits of g_player_object's real
-   ~5016894491 (0x12B07BB5B) address, and EXC_BAD_ACCESS'd on the very
-   first line. Kept as uintptr_t (not a real pointer type) since the
-   rest of this function already treats it as a raw byte offset via
-   explicit `*(T *)(param_1 + N)` casts throughout. */
+// was FUN_00074d20 -- dispatch_special_action's case 8 handler: projects a position in front of the
+// caster (project_position_by_ heading) and branches on param_2...
+/* ARM passes the caster/actor address unchanged through r0 (dispatch_special_action's case 8, which
+   itself already keeps this address-sized -- see that function's own comment on the same
+   host-truncation class). param_1 was declared `int`... */
 void cast_summon_or_spawn_effect(param_1,param_2)
 uintptr_t param_1;
 char param_2;
@@ -1924,33 +1559,13 @@ char param_2;
     }
   }
   else {
-    /* Was `tilemap_lookup()` -- dropped both arguments (the same K&R
-       decompile bug already found and fixed at ~30 other call sites in
-       babl.c and ai.c's npc_walk_toward_tile: Ghidra's decompiler
-       doesn't show the real ARM r0/r1 setup for some call shapes, but
-       the real binary always passes them). The intended tile
-       coordinates are local_2c/local_2e, the same tile-ified projected
-       destination (local_34/local_32 >> 3) this function later hands
-       to settle_dropped_object below -- confirmed against the matching
-       "spawn at a projected position" shape in babl.c's own
-       tilemap_lookup(uVar5,uVar6) call (same *pbVar>>4<<3 floor-height
-       read immediately after). Confirmed as a live crash: calling with
-       no args let tilemap_lookup run on whatever garbage was in its
-       parameter registers, returning a wild/NULL pointer that
-       `*pbVar5` then dereferenced unchecked -- a real SIGSEGV casting
-       any "summon/spawn" spell (dispatch_special_action case 8) via
-       cast_spell_from_rune_combo (bug_spell_crash.txt, CASTALLSPELLS
-       spell index 3: type=8 param=1, the "spawn a random monster from
-       a nearby ID range" branch). */
+    /* Was `tilemap_lookup()` -- dropped both arguments (the same K&R decompile bug already found
+       and fixed at ~30 other call sites in babl.c and ai.c's npc_walk_toward_tile: Ghidra's
+       decompiler doesn't show the real ARM r0/r1 setup for some call shapes)... */
     pbVar5 = (byte *)tilemap_lookup(local_2c,local_2e);
-    /* tilemap_lookup legitimately returns NULL for an out-of-range tile
-       (its own documented contract, see tile_pair_los_blocked's NULL
-       guard for the same reason) -- the projected destination here
-       (local_2c/local_2e, up to 9 tiles ahead of the caster per
-       project_position_by_heading above) can land off the 0-63 map
-       near an edge/corner. Treat that the same as this function's own
-       existing "couldn't place it" failure path just below (clearance
-       check failed / non-player caster) rather than dereferencing NULL. */
+    /* tilemap_lookup legitimately returns NULL for an out-of-range tile (its own documented
+       contract, see tile_pair_los_blocked's NULL guard for the same reason) -- the projected
+       destination here... */
     if (pbVar5 == (byte *)0) {
       if (param_1 != g_player_object) {
         return;
@@ -1976,28 +1591,9 @@ char param_2;
       if (uVar6 < 2) {
         uVar6 = 2;
       }
-      /* Was `ordint_divmod(uVar6,uVar4); uVar10 = (extraout_r1_01 & 0xffff) + ...`
-         -- the same fabricated-remainder bug fixed throughout this
-         session (this port's ordint_divmod never populates extraout_r1),
-         but this one was skipped by the earlier file-wide mechanical
-         sweep because uVar6 (the divisor) is a variable, not a compile-
-         time literal. Unlike every other instance of this bug found so
-         far, THIS one is a genuine, deterministic infinite loop rather
-         than a wrong-value/misbehavior bug: extraout_r1_01 never
-         changes, so uVar10/iVar8 are identical on every iteration of
-         both do-while loops below regardless of the fresh
-         ce_rand() reroll each time round -- if that one fixed
-         (wrong) candidate ever fails either loop's retry condition,
-         nothing about the computation can ever change to let it pass,
-         and the loop spins at 100% CPU forever. This is reached from
-         dispatch_special_action's spell-effect dispatch (case 8, "summon
-         monster"), for BOTH player- and NPC-cast spells (see the
-         sibling `param_1 == g_player_object` check just above) --
-         likely the real cause of the reported "game hangs in a 100%
-         busy loop" QA report, since it only triggers when something
-         actually casts this specific spell, not on every tick.
-         Gets the remainder by name off ordint_divmod's own
-         divmod_result now instead of a bypassing direct "%". */
+      /* Was `ordint_divmod(uVar6,uVar4); uVar10 = (extraout_r1_01 & 0xffff) + ...` -- the same
+         fabricated-remainder bug fixed throughout this session (this port's ordint_divmod never
+         populates extraout_r1)... */
       do {
         do {
           uVar4 = ce_rand();
@@ -2084,15 +1680,9 @@ char param_2;
 
 
 
-// was FUN_00075248 -- spawns one of 3 object-id variants (0x154-0x156,
-// chosen at random) centered in tile (param_1,param_2), sets its
-// quality field to 0x6e, and places it in the world
-// (place_object_in_world). On success, randomizes several of its
-// data fields (offsets 9, 0x10/0x11 XORed with DAT_00101928, 0x13,
-// 0x14) -- likely a sprite-variant/rotation seed for a purely
-// decorative or loot-pile-style object rather than anything
-// gameplay-mechanical. No callers found by grep in the remaining
-// decompile.
+// was FUN_00075248 -- spawns one of 3 object-id variants (0x154-0x156, chosen at random) centered
+// in tile (param_1,param_2), sets its quality field to 0x6e, and places it in the world
+// (place_object_in_world).
 undefined4 spawn_random_variant_object_at_tile(param_1,param_2)
 int param_1;
 int param_2;
@@ -2136,12 +1726,9 @@ int param_2;
 
 
 
-// was FUN_000753a0 -- prints a "creatures detected in this direction"
-// scroll message for cast_detect_life_spell below: param_1 is a 0-7
-// compass-direction bucket, param_2 is how many creatures were found
-// there. Picks a message tier (0/1/2, msgid 0x3b + tier) based on
-// the count (<=1 / 2-4 / >4), then displays it via print_message_with_proximity_qualifier with
-// a direction/compass icon index encoded as -1-param_1.
+// was FUN_000753a0 -- prints a "creatures detected in this direction" scroll message for
+// cast_detect_life_spell below: param_1 is a 0-7 compass-direction bucket, param_2 is how many
+// creatures were found there.
 void report_detected_creatures_in_direction(param_1,param_2)
 ushort param_1;
 byte param_2;
@@ -2157,18 +1744,8 @@ byte param_2;
 
 
 
-// was FUN_0007541c -- "Detect Life" spell: walks every active
-// creature (type 0x1c0==0x40) within a square radius param_1 of the
-// player, rolls a skill check (caster skill param_2 vs. a per-
-// monster-class "detect resist" nibble field, DAT_001007ed, part of
-// the same stride-0x30 table as g_monster_max_stats_table) for each
-// one in range, and buckets successful detections into 8 compass
-// directions (compute_compass_direction) relative to the player. Reports the
-// direction with the most detections via
-// report_detected_creatures_in_direction; on a count tie, falls back
-// to a random direction with at least that many; prints a "nothing
-// detected" scroll message (id 0x3e) if no creatures were found at
-// all.
+// was FUN_0007541c -- "Detect Life" spell: walks every active creature (type 0x1c0==0x40) within a
+// square radius param_1 of the player, rolls a skill check...
 void cast_detect_life_spell(param_1,param_2)
 short param_1;
 undefined4 param_2;
@@ -2257,19 +1834,9 @@ undefined4 param_2;
 
 
 
-// was FUN_000756c8 -- deferred target-click completion callback for
-// dispatch_player_command's cases 2-5 (stored into the DAT_002020b8
-// click-target callback slot, distinct from finish_object_use's own
-// DAT_00202098-driven item-use flow). Branches on DAT_00202094 (the
-// command id staged by dispatch_player_command): 3 rolls a lockpick
-// check against param_1 as a container, then a trap-disarm check on
-// success; 4 re-runs the target's duplicate right-click action list
-// (dispatch_object_action_dup) and, for most object classes, sets a
-// flag combination on it (offset +1/+3, bits 0x380); 5 checks whether
-// the player's held item combines with param_1
-// (check_object_combination) and prints a success/fail scroll
-// message. All paths then reset the click-target UI state
-// (pop_cursor_icon, g_cursor_holding_state=0, wait_for_click_release).
+// was FUN_000756c8 -- deferred target-click completion callback for dispatch_player_command's cases
+// 2-5 (stored into the DAT_002020b8 click-target callback slot, distinct from finish_object_use's
+// own DAT_00202098-driven item-use flow).
 void complete_pending_player_command_target(param_1)
 ushort * param_1;
 
@@ -2313,24 +1880,8 @@ ushort * param_1;
 
 
 
-// was FUN_00075808 -- dispatch_special_action's case 0xb handler:
-// a numbered (0-0xc) player-command dispatcher, player-only. Case 1
-// casts Detect Life directly; cases 2-5 arm a deferred "click a
-// target" mode (g_cursor_holding_state=2, callback
-// complete_pending_player_command_target, command id staged in
-// DAT_00202094); case 6 clears a player status-flag pair; case 7
-// re-triggers a "use"-style action on the player and resets the
-// custom view target; case 9 rolls 8d3 and scans a cone in front of
-// the player spawning random objects via
-// spawn_random_variant_object_at_tile (matches "Create Food"'s
-// shape: a cone of randomly-varied food-like objects); case 10 is
-// gated on a player nibble field and, if set, arms a scheduled
-// location-check callback and resets the player's tile position
-// (a "recall"/"teleport home" effect); cases 0/8/0xb funnel into a
-// shared add_active_light_source call with a different mode constant; case 0xc
-// does a broad player-state reset (clears carry weight, refreshes
-// equipment effects, redraws the HUD) -- likely a "resurrect" or
-// "reset character" command.
+// was FUN_00075808 -- dispatch_special_action's case 0xb handler: a numbered (0-0xc) player-command
+// dispatcher, player-only.
 void dispatch_player_command(param_1,param_2,param_3)
 int param_1;
 undefined4 param_2;
@@ -2392,7 +1943,7 @@ LAB_0007588c:
     else {
       DAT_00201c9c = &check_scheduled_object_location_callback;
       teleport_object_to_level_tile(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
-      set_player_tile_position(0,0);
+      set_player_tile_position(0,0,0);
       set_pending_update_flags(0x7ffe);
     }
     break;
@@ -2421,14 +1972,9 @@ LAB_00075a0c:
 
 
 
-// was FUN_00075a88 -- walks every object on tile (param_1,param_2)
-// (tilemap_lookup + the object linked list) and applies damage to
-// each one via the general damage dispatcher (apply_typed_damage_to_object, not yet
-// named): rolls dice from a damage-tier table (DAT_0008762c/
-// DAT_00087630, indexed by param_3-1) and looks up a damage-type id
-// from DAT_00087634 at the same index. A no-op if param_3 is 0.
-// Already-confirmed caller: cast_single_tile_spell_effect and
-// cast_area_spell_effect in src/object_actions.c.
+// was FUN_00075a88 -- walks every object on tile (param_1,param_2) (tilemap_lookup + the object
+// linked list) and applies damage to each one via the general damage dispatcher
+// (apply_typed_damage_to_object, not yet named): rolls dice from a damage-tier table...
 void damage_all_objects_at_tile(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 short param_2;
@@ -2464,16 +2010,9 @@ undefined1 param_4;
 
 
 
-// was FUN_00078b18 -- builds an object's display name into param_1's
-// buffer. For a creature (type class 0x1c0==0x40) with a valid
-// "whoami" id (param_2[0xd], uw_mobile_object_t's npc_whoami field),
-// looks up and copies that creature's proper name string directly.
-// For any other object, looks up the object-type's generic name
-// message and runs it through format_object_display_name (below,
-// singular/plural template substitution based on param_3, the
-// quantity) before copying the formatted result out. Returns 0 if
-// the name lookup failed or came back empty, 1 on success. Confirmed
-// caller: dispatch_object_action's own "Look" text builder.
+// was FUN_00078b18 -- builds an object's display name into param_1's buffer. For a creature (type
+// class 0x1c0==0x40) with a valid "whoami" id (param_2[0xd], uw_mobile_object_t's npc_whoami
+// field), looks up and copies that creature's proper name string directly.
 undefined4 build_object_display_name(param_1,param_2,param_3,param_4)
 char * param_1;
 ushort * param_2;
@@ -2558,11 +2097,8 @@ int param_3;
 
 
 
-// was FUN_00078c80 -- looks up message id param_1 (in the 0x200
-// message-page range) and prints it to the message scroll. Already
-// widely used by name throughout this codebase's comments (e.g.
-// trigger_type_flagged_trap_effect, apply_targeted_spell_effect) as
-// "the message-scroll-print helper".
+// was FUN_00078c80 -- looks up message id param_1 (in the 0x200 message-page range) and prints it
+// to the message scroll.
 void print_scroll_message_by_id(param_1)
 uint param_1;
 
@@ -2575,11 +2111,9 @@ uint param_1;
 
 
 
-// was FUN_00078c94 -- prints a scroll message built by concatenating
-// up to 3 message ids: param_1 is always looked up and copied first,
-// then param_2 and param_3 are each appended in turn if non-negative
-// (a caller passing -1 skips that piece). No callers found by grep
-// in the remaining decompile.
+// was FUN_00078c94 -- prints a scroll message built by concatenating up to 3 message ids: param_1
+// is always looked up and copied first, then param_2 and param_3 are each appended in turn if
+// non-negative (a caller passing -1 skips that piece).
 void print_scroll_message_concat(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
@@ -2614,16 +2148,8 @@ uint param_3;
 }
 
 
-// was FUN_0007ca0c -- deferred-target-click completion callback that
-// finishes the "cast a spell effect on this target" flow: applies
-// the staged targeted spell effect (using the same DAT_00202098/
-// DAT_00202094 globals dispatch_player_command's own cases 2-5 stage
-// via prompt_use_item_on_target-style setup -- see
-// apply_targeted_spell_effect's own comment for that encoding), then
-// resets the click-target UI state. Confirmed caller: the world-click
-// target dispatcher (uw.c, g_cursor_holding_state == 3 branch), which
-// fires exactly when dispatch_player_command's case 5 staged this same
-// flow via g_cursor_holding_state = 3.
+// was FUN_0007ca0c -- deferred-target-click completion callback that finishes the "cast a spell
+// effect on this target" flow: applies the staged targeted spell effect...
 void complete_cast_spell_on_target()
 
 {
@@ -2635,22 +2161,9 @@ void complete_cast_spell_on_target()
 }
 
 
-// was FUN_0007ca50 -- resolves an object instance's (param_1) packed
-// quality/variant field into a (class, value) pair plus a flag
-// distinguishing "ordinary quality variant" from "special/linked"
-// items. Evidence for this split: refresh_stats_panel-family equip
-// code (src/player.c) uses the (class, value) pair as an ordinary
-// item-variant key into apply_equipped_item_effect only when the flag
-// is clear, and treats a set flag as a distinct "special/linked item"
-// case instead; trigger_object_use_babl_script (src/item_use.c) only
-// fires its babl conversation script when the flag is set, describing
-// it as a check "for a real link/description on the target"; and the
-// combat-damage helper at compute_player_weapon_attack_stats (uw.c) only applies its bonus
-// when the flag is CLEAR and the class equals 0xc. The class value 9
-// is confirmed (via append_object_property_tag, uw.c) to mean "cursed" when printed
-// via the "cursed"/"magical" item-description strings. Class 0xc's
-// meaning beyond "combat-relevant" and the flag's exact semantics
-// (identified? has-babl-link? both?) are not pinned down further here.
+// was FUN_0007ca50 -- resolves an object instance's (param_1) packed quality/variant field into a
+// (class, value) pair plus a flag distinguishing "ordinary quality variant" from "special/linked"
+// items.
 undefined4 resolve_object_variant_or_special_link(param_1,param_2,param_3,param_4)
 ushort * param_1;
 ushort * param_2;
@@ -2717,15 +2230,9 @@ uint * param_4;
 
 
 
-// was FUN_0007cc30 -- called by src/player.c's equip-effect refresh
-// loop right after apply_equipped_item_effect succeeds for an
-// equipped item; only acts when the item's flags word has bit 0x8000
-// set (the same gating bit resolve_object_variant_or_special_link
-// checks first). Under a specific class-bits condition (comparing
-// bits 0x1000/0x1c0 against a 0x140 sentinel), clears bit 0x1000 from
-// the item's flags word. Reads as "consume/clear a one-shot special-
-// item marker once its effect has been applied this refresh", but the
-// exact meaning of bit 0x1000 itself isn't pinned down further here.
+// was FUN_0007cc30 -- called by src/player.c's equip-effect refresh loop right after
+// apply_equipped_item_effect succeeds for an equipped item; only acts when the item's flags word
+// has bit 0x8000 set (the same gating bit resolve_object_variant_or_special_link checks first).
 void clear_object_pending_special_flag(param_1)
 ushort * param_1;
 
@@ -2756,19 +2263,8 @@ ushort * param_1;
 
 
 
-// was FUN_0007cc78 -- trigger_object_use_babl_script's "finalize" step
-// for the interacting object (src/item_use.c's own comment already
-// names this function). Looks up param_1's linked/special sub-object
-// via the same find_object_in_chain quality-link resolver
-// resolve_object_variant_or_special_link uses, and if that linked
-// object's byte+1 bit 3 (0x8) is set, reads its quality/charge field
-// (ushort at +4). When the low-6-bit charge count is already 0, rolls
-// a 1-in-~2.5 chance (rand_below(10) < 4) to destroy the linked object
-// outright (object_list_unlink + free_object_slot); otherwise
-// decrements just the low 6 bits of the charge byte, leaving the
-// upper bits untouched. Matches the "consume a discrete use/charge
-// count, destroying the object once exhausted" pattern used elsewhere
-// for depletable linked resources.
+// was FUN_0007cc78 -- trigger_object_use_babl_script's "finalize" step for the interacting object
+// (src/item_use.c's own comment already names this function).
 void consume_linked_special_object_charge(param_1)
 int param_1;
 
@@ -2803,12 +2299,9 @@ int param_1;
 
 
 
-// was FUN_0007ec58 -- confirmed by its only caller's own pre-existing
-// comment (cast_detect_life_spell, src/object_actions.c) as bucketing
-// a relative (dx,dy) offset into one of 8 compass directions (0-7).
-// Compares |param_2| against |param_1|/2 (and vice versa) to pick the
-// dominant axis, then the sign of the dominant (and near-tied
-// secondary) component selects the final octant code.
+// was FUN_0007ec58 -- confirmed by its only caller's own pre-existing comment
+// (cast_detect_life_spell, src/object_actions.c) as bucketing a relative (dx,dy) offset into one of
+// 8 compass directions (0-7).
 char compute_compass_direction(param_1,param_2)
 char param_1;
 char param_2;
@@ -2863,20 +2356,9 @@ char param_2;
 
 
 
-// was FUN_0007ed20 -- prints param_1 (a get_message_string result at
-// every confirmed call site) via message_scroll_print_wrapped, then
-// compares two (x,y) tile positions (param_2/3 vs param_5/6) against
-// a max-distance threshold (param_8, matching the abs-diff-sum bit
-// trick used elsewhere in this file, e.g. is_out_of_player_range) to
-// decide whether the two points are "near" each other. Based on that
-// proximity result and whether a facing/direction value (param_4)
-// matches param_7 or is 0, optionally prints an extra qualifier
-// string ("very_near" or "and"), then always prints whatever is
-// currently staged in the shared scratch message buffer
-// (DAT_00084f20) to finish the sentence. Reads as "announce a
-// detected event, appending how close/what direction it came from",
-// consistent with report_detected_creatures_in_direction's own use
-// for the Detect Life spell.
+// was FUN_0007ed20 -- prints param_1 (a get_message_string result at every confirmed call site) via
+// message_scroll_print_wrapped, then compares two (x,y) tile positions (param_2/3 vs param_5/6)
+// against a max-distance threshold...
 void print_message_with_proximity_qualifier(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 undefined4 param_1;
 short param_2;
@@ -2894,16 +2376,8 @@ short param_8;
   char *pcVar4;
 
   bVar3 = false;
-  /* HACK: was a bare `message_scroll_print_wrapped();` -- dropped
-     argument, the same class of bug fixed repeatedly elsewhere in
-     this file. Every confirmed caller (report_detected_creatures_in_
-     direction, and call sites in dispatch_trap_type_effect/
-     src/player.c) builds param_1 via get_message_string specifically
-     to have a message printed -- with every OTHER print in this same
-     function passed an explicit argument (pcVar4, &DAT_00084f20) and
-     none of them being param_1, this first call is the only one that
-     would otherwise never use param_1 at all, making it obviously the
-     intended argument here. */
+  /* HACK: was a bare `message_scroll_print_wrapped();` -- dropped argument, the same class of bug
+     fixed repeatedly elsewhere in this file. */
   message_scroll_print_wrapped(param_1);
   if (param_8 < 0) {
 LAB_0007ed8c:
@@ -2934,16 +2408,9 @@ LAB_0007edd8:
 
 
 
-// was FUN_00081388 -- spawns a small burst of 2-4 debris/particle
-// objects at tile (param_2,param_3), each copied from the 8-byte
-// template param_1, given randomized position/orientation offsets
-// within the tile, linked into the tile's object list, and
-// independently scheduled (scheduler_add_entry, randomized class/
-// delay) so each despawns/animates on its own. Confirmed by two
-// distinct callers' own comments: src/ai.c's "teleport gate" effect
-// ("spawn debris around the object") and
-// cast_area_spell_effect's own area-spell visual burst
-// (src/object_actions.c).
+// was FUN_00081388 -- spawns a small burst of 2-4 debris/particle objects at tile
+// (param_2,param_3), each copied from the 8-byte template param_1, given randomized
+// position/orientation offsets within the tile, linked into the tile's object list...
 void spawn_effect_debris_burst(param_1,param_2,param_3)
 undefined1 * param_1;
 uint param_2;
@@ -3056,15 +2523,9 @@ undefined4 param_3;
 
 
 
-// was FUN_0002a35c -- initializes a newly-spawned creature's default
-// stat/flag fields on g_scratch_object_ptr: clears combat/status
-// bitfields (poison, paralysis, sleep, etc.), rolls a randomized field
-// (byte 8) from the monster combat-stat table (&DAT_001007d0, indexed
-// by class id -- the same table load_monster_combat_stats fills), and
-// resets several other packed fields to their spawn defaults. Called
-// from object_actions.c's own creature-spawn path (param_2=='\x04')
-// right after spawn_new_object, with g_scratch_object_ptr pointed at
-// the new object for the duration of the call.
+// was FUN_0002a35c -- initializes a newly-spawned creature's default stat/flag fields on
+// g_scratch_object_ptr: clears combat/status bitfields (poison, paralysis, sleep, etc.), rolls a
+// randomized field (byte 8) from the monster combat-stat table...
 undefined4 init_monster_spawn_defaults()
 
 {
@@ -3169,13 +2630,9 @@ undefined4 init_monster_spawn_defaults()
 }
 
 
-// was FUN_00048b6c -- appends a "magical"/"cursed" property tag onto
-// the caller's description buffer (param_3), resolved via
-// resolve_object_variant_or_special_link. param_2 selects which tag
-// family to check (2 always tags "magical" when a variant/special
-// link resolves at all; 3 tags "cursed" for the specific special-link
-// code 9). Called early in object_actions.c's look-description
-// builder, before the main "You see a/an X" text.
+// was FUN_00048b6c -- appends a "magical"/"cursed" property tag onto the caller's description
+// buffer (param_3), resolved via resolve_object_variant_or_special_link. param_2 selects which tag
+// family to check...
 undefined4 append_object_property_tag(param_1,param_2,param_3)
 ushort *param_1;   /* was undefined4 -- object ptr into resolve_object_variant_or_special_link */
 short param_2;
@@ -3209,15 +2666,9 @@ char *param_3;     /* was undefined4 -- caller's stack buffer for ce_strcat */
 
 
 
-// was FUN_00048bf0 -- appends a special/unique item's proper name onto
-// the caller's description buffer (param_3, called after
-// build_object_display_name), for param_2==3: resolves the item's
-// variant/special-link data, looks up a name-table message string
-// keyed by its quality/link fields (falling back to "UNNAMED" if the
-// lookup misses), and appends it prefixed by DAT_00085cd8 (" of ",
-// e.g. "<item> of <name>"). Also checks the object's own content
-// chain for a matching link entry.
-// WARNING: Type propagation algorithm not settling
+// was FUN_00048bf0 -- appends a special/unique item's proper name onto the caller's description
+// buffer (param_3, called after build_object_display_name), for param_2==3: resolves the item's
+// variant/special-link data...
 
 undefined4 append_object_special_name(param_1,param_2,param_3)
 byte * param_1;
@@ -3323,13 +2774,9 @@ LAB_00048e80:
 }
 
 
-// was FUN_00049008 -- "look" handler for inscribed objects (class
-// range 0x160, dispatched from object_actions.c's look-description
-// builder): terrain-plaque text for class 4, a gravestone epitaph
-// looked up by index in grave.dat for class 5, or a sign/TMOBJ
-// inscription (fetched via get_message_string, word-wrapped to the
-// message scroll) for class 6, triggering the matching illustration
-// popup once the full text has been shown.
+// was FUN_00049008 -- "look" handler for inscribed objects (class range 0x160, dispatched from
+// object_actions.c's look-description builder): terrain-plaque text for class 4, a gravestone
+// epitaph looked up by index in grave.dat for class 5...
 void look_at_inscribed_object(param_1,param_2)
 ushort * param_1;
 short param_2;
@@ -3349,14 +2796,8 @@ short param_2;
   short sVar10;
   char local_128 [8];
   char acStack_120 [260];
-  /* iVar5 above is a real int (file handle) for the uVar8==5/grave.dat
-     branch's open_file_for_read/CloseHandle calls -- but is reused later in the
-     shared tail (untouched by that branch, e.g. the sign/TMOBJ uVar8==6
-     case) to hold get_message_string's real `char *` return, truncating it on
-     this 64-bit host. Confirmed via lldb: right-clicking a rendered sign
-     (object type 0x166) crashed in strchr with a wild pointer, called
-     from format_object_display_name(iVar5,...) here. Separate real-pointer local so
-     each use keeps its own type. */
+  /* iVar5 above is a real int (file handle) for the uVar8==5/grave.dat branch's
+     open_file_for_read/CloseHandle calls -- but is reused later in the shared tail... */
   char *pcVar_str;
 
   DEBUG(INFO, "Look mode object interact?");
@@ -3426,18 +2867,15 @@ short param_2;
       msg_scroll_panel_reset(1);
     }
     if (((*param_1 & 0xf) == 6) || (local_128[0] == '\0')) {
-      /* was two separate calls with message_scroll_print_wrapped()'s arg
-         dropped -- same pattern already fixed at line ~9137: get_message_string's
-         return (char *) flows straight into message_scroll_print_wrapped
-         as its argument. Confirmed via UW_DEBUG_OBJPOS: this is the
-         sign/plaque "The writing reads: " lead-in line. */
+      /* was two separate calls with message_scroll_print_wrapped()'s arg dropped -- same pattern
+         already fixed at line ~9137: get_message_string's return (char *) flows straight into
+         message_scroll_print_wrapped as its argument. */
       message_scroll_print_wrapped((char *)get_message_string((*param_1 >> 9 & 0xf) + sVar10 | 0x1000));
     }
     if (pcVar_str != (char *)0x0) {
-      /* Same dropped-argument pattern: format_object_display_name's real `undefined1 *`
-         return (pcVar_str word-wrapped for the message scroll) is the
-         actual real sign/inscription text ("We attacked the entrance
-         with all manner of tools..."), confirmed via UW_DEBUG_OBJPOS. */
+      /* Same dropped-argument pattern: format_object_display_name's real `undefined1 *` return
+         (pcVar_str word-wrapped for the message scroll) is the actual real sign/inscription text
+         ("We attacked the entrance with all manner of tools..."), confirmed via UW_DEBUG_OBJPOS. */
       message_scroll_print_wrapped((char *)format_object_display_name(pcVar_str,1,0));
       message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     }
@@ -3449,12 +2887,8 @@ short param_2;
 }
 
 
-// was FUN_000492bc -- describes who a key/quest item belongs to: for
-// an object whose quality field names an owner (not 0, 0x28, or the
-// 0x3c-0x3e range), prints a scroll message (picking the "key" vs
-// generic wording by class/flag) followed by either "an adventurer."
-// (sentinel owner 0x3f) or the real owner's display name, built via a
-// synthetic object record offset by the owner id.
+// was FUN_000492bc -- describes who a key/quest item belongs to: for an object whose quality field
+// names an owner (not 0, 0x28, or the 0x3c-0x3e range)...
 void describe_object_owner(param_1,param_2)
 ushort * param_1;
 short param_2;
@@ -3496,17 +2930,8 @@ short param_2;
 
 
 
-// was FUN_000493cc -- prints a flavor-text scroll message keyed by
-// the object's own sub-quality field (offset+6 & 0x3f, message range
-// 100-163), if one exists for this object.
-// BUG FIX (unit-testing-framework merge): param_1 was `int`, but its
-// only real caller (describe_special_object_property) passes a real
-// `ushort *` object pointer, which got truncated to 32 bits storing
-// into this narrower parameter -- confirmed live (EXC_BAD_ACCESS in
-// test_inventory dereferencing the truncated pointer). Widened to
-// `ushort *`, with the +6 byte-offset access rewritten through a
-// char* cast to keep its original byte-granularity (a ushort* +6 would
-// instead mean +12 bytes).
+// was FUN_000493cc -- prints a flavor-text scroll message keyed by the object's own sub-quality
+// field (offset+6 & 0x3f, message range 100-163), if one exists for this object.
 void print_object_flavor_text(param_1,param_2)
 ushort * param_1;
 short param_2;
@@ -3523,22 +2948,9 @@ short param_2;
 
 
 
-// was FUN_000495d0 -- dispatches a "look" sub-description by object
-// class bit-fields (subcategory uVar2, sub-subcategory uVar3): keys
-// in class 0xc2-0xc6 get describe_object_owner; class-4 sub-type 3
-// objects get read_object_text (books/scrolls); sub-type 0 gets
-// print_object_flavor_text; class-5 sub-type 0 objects (ids 0-7) with
-// their own quality flag bit set print a fixed scroll message.
-// BUG FIX: param_2 was missing from this function's own declaration
-// -- both of its real call sites (object_actions.c:161/607) pass two
-// arguments, and every sibling it dispatches to
-// (describe_object_owner/print_object_flavor_text/read_object_text)
-// declares a real `short param_2` that gates its entire body
-// (`if (param_2 != 0)`/`if (0 < param_2)`). Without param_2 declared
-// here, those bare calls forwarded whatever garbage was left in that
-// register instead of the caller's real value -- same dropped-
-// parameter bug class as report_categorized_fatal_error earlier this
-// session. Declare it and forward explicitly.
+// was FUN_000495d0 -- dispatches a "look" sub-description by object class bit-fields (subcategory
+// uVar2, sub-subcategory uVar3): keys in class 0xc2-0xc6 get describe_object_owner; class-4
+// sub-type 3 objects get read_object_text (books/scrolls)...
 void describe_special_object_property(param_1,param_2)
 ushort * param_1;
 short param_2;
@@ -3575,11 +2987,8 @@ short param_2;
 }
 
 
-// was FUN_000496b0 -- called from describe_picked_terrain with a tile
-// record (param_2): only acts on special-mushroom-bearing tiles
-// (trap-type field bits 0x1e == 0x14), mapping the picked object's id
-// to one of 9 known mushroom types and printing the matching "You
-// have found a <type> mushroom" scroll-message pair.
+// was FUN_000496b0 -- called from describe_picked_terrain with a tile record (param_2): only acts
+// on special-mushroom-bearing tiles (trap-type field bits 0x1e == 0x14)...
 undefined4 identify_mushroom_type(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -3641,13 +3050,9 @@ LAB_000497a0:
 }
 
 
-// was FUN_0004a588 -- the general "spawn an object near a given
-// actor" helper: if the actor is the player, aims from the cursor
-// (compute_drop_aim_from_cursor); otherwise uses the actor's own
-// position, falling back to the current tile if the actor is outside
-// the live object arena. Used both for spell-effect object spawns
-// (apply_targeted_spell_effect) and ranged-attack spawns. Returns
-// whether the spawn succeeded.
+// was FUN_0004a588 -- the general "spawn an object near a given actor" helper: if the actor is the
+// player, aims from the cursor (compute_drop_aim_from_cursor); otherwise uses the actor's own
+// position, falling back to the current tile if the actor is outside the live object arena.
 bool spawn_object_near_actor(param_1,param_2)
 ushort *param_1;
 short param_2;
@@ -3678,12 +3083,7 @@ short param_2;
 }
 
 
-/* was check_scheduled_object_location_callback. Stored into the DAT_00201c9c generic no-arg
-   callback slot (uw.c ~30449, `(*DAT_00201c9c)();`) rather than called
-   directly. `*DAT_00072284` was a literal-pool constant resolving to
-   the already-named player-stats struct pointer DAT_00086df8; reads a
-   nibble from it at offset 0x5e and hands it (plus a fixed msgid 0x126)
-   to the already-recovered check_scheduled_object_level_match. */
+/* was check_scheduled_object_location_callback. */
 // was FUN_00072268
 void check_scheduled_object_location_callback()
 {

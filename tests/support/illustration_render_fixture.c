@@ -46,6 +46,7 @@ void load_dungeon_texture_arenas(void);
 void change_game_mode(void);
 undefined4 cursor_show_idle_tick(void);
 int uw_defer_present(void);
+int uw_take_completed_frame(void);
 void *GXBeginDraw(void);
 void assert_visible_picture(void);
 void render_dungeon_frame_timed(void);
@@ -65,6 +66,7 @@ void dispatch_sticky_mode_handlers(void);
 void uw_debug_blit_pick_buffer(void);
 void render_dungeon_view_frame(void);
 void uw_debug_draw_inv_hotspot_positions(void);
+void populate_debug_panel(void);
 void dbgui_draw(void);
 void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_dump_critter_sheet_once(void);
@@ -352,6 +354,7 @@ void *GXBeginDraw(void) { return hardware_framebuffer; }
 int GXEndDraw(void)
 {
     if (uw_defer_present()) return 1;
+    uw_take_completed_frame();
     presents++;
     if (!testing_game_tick) assert_visible_picture();
     return 1;
@@ -465,6 +468,12 @@ void render_dungeon_view_frame(void) {}
 
 void uw_debug_draw_inv_hotspot_positions(void) {}
 
+/* populate_debug_panel (hud.c) is its own function specifically so this
+   suite's isolated extraction of main_loop_hud_flush doesn't also need
+   fixtures for the object inspector's own dependencies (pick_object_
+   under_cursor, get_message_string, g_monster_max_stats_table, ...) --
+   see that function's own comment in hud.c. */
+void populate_debug_panel(void) {}
 void dbgui_draw(void) {}
 
 void uw_debug_dump_sprite_frames_once(void) {}

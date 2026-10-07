@@ -1,45 +1,20 @@
-/* The 3D "catalog object" model-rendering pipeline: animation-record
- * ticking (resolving a catalog index to its real .E model geometry),
- * emitting a catalog object (door, bridge, decal, sign) as textured
- * model geometry, and door animation-frame emission. Split out of
- * uw.c (the original monolithic decompile) once these functions' real
- * roles were confirmed.
- */
+/* The 3D "catalog object" model-rendering pipeline: animation-record ticking (resolving a catalog
+   index to its real .E model geometry), emitting a catalog object (door, bridge, decal, sign) as
+   textured model geometry, and door animation-frame emission. */
 #include "headers/models.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/* Widened from 32768: load_3d_object_models does
-   `ce_memmove(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
-   memmove, confirmed by ASAN global-buffer-overflow), matching
-   DAT_00189590's own size (985856, an earlier widening pass already
-   caught the destination but missed this source).
-
-   Sizing pass: traced 985856's own history back to its first-ever
-   widening (commit ac76d8f) -- no comment anywhere ever derived that
-   number from anything; every later fix (including this file's own
-   comment above) just matched it without re-deriving it. The one
-   concrete, confirmed figure in this whole chain is the memmove's own
-   literal 0x78580 (492928) byte count -- a fixed constant baked into
-   load_3d_object_models, copied unconditionally on every model load
-   regardless of which level/model set is active, so it's the real
-   size in the original binary, not an estimate. 985856 is exactly
-   double that. Shrunk both this array and DAT_00189590_backing below
-   to 0x80000 (524288), comfortable headroom above the confirmed need
-   without preserving an unexplained 2x. */
+/* Widened from 32768: load_3d_object_models does `ce_memmove(&DAT_00189590,&DAT_00110ff0,0x78580);`
+   (a 492928-byte memmove, confirmed by ASAN global-buffer-overflow), matching DAT_00189590's own
+   size (985856, an earlier widening pass already caught the destination but missed this source). */
 static undefined DAT_00110ff0_backing[524288];
 #define DAT_00110ff0 DAT_00110ff0_backing[0]
-/* Sizing-audit pass: DAT_00110ffc/DAT_0018959c-f's only use is inside
-   tick_anim_record's dead legacy address-walk (the same one documented
-   at DAT_00110ff0/DAT_00189590's own comment above) -- indexed by
-   `catalog*0x3c2c`, which would be a severe overflow against these
-   256-byte arrays for any catalog>0, EXCEPT that path is gated behind
-   `catalog>0 && catalog<30 && g_anim_model_slot[catalog]!=0`, which
-   intercepts every real catalog value before this code ever runs (see
-   that comment's own trace). Confirmed dead with real data; left
-   as-is rather than resizing dead code. */
+/* Sizing-audit pass: DAT_00110ffc/DAT_0018959c-f's only use is inside tick_anim_record's dead
+   legacy address-walk (the same one documented at DAT_00110ff0/DAT_00189590's own comment above) --
+   indexed by `catalog*0x3c2c`... */
 static undefined DAT_00110ffc_backing[256];
 #define DAT_00110ffc DAT_00110ffc_backing[0]
 static undefined1 DAT_00189590_backing[524288];
@@ -56,88 +31,63 @@ static undefined DAT_0018959f_backing[256];
    catalogs resets the rotation adjustment so it cannot carry between models. */
 static double g_tune_rotation_offset = 0.0;
 static int g_tune_last_catalog = -1;
-/* Debug-panel toggle (dbgui_field_toggle) for pick_object_under_cursor's
-   own UW_PICK_DIAG trace -- lets the pick stencil/object-resolution trace
-   be flipped on live from the object tuner panel instead of needing a
-   relaunch with the env var set. Read alongside getenv("UW_PICK_DIAG") at
-   each pick call, not cached, so toggling it mid-session takes effect on
-   the very next click. */
+/* Debug-panel toggle (dbgui_field_toggle) for pick_object_under_cursor's own UW_PICK_DIAG trace --
+   lets the pick stencil/object-resolution trace be flipped on live from the object tuner panel
+   instead of needing a relaunch with the env var set. */
 int g_uw_debug_pick_diag = 0;
+/* Debug-panel toggle for tick_anim_record's own UW_DISABLE_3D_OBJECTS
+   gate -- see that function's own comment. -1 = env var not yet
+   checked this process; resolved to a real 0/1 on first read (by
+   tick_anim_record or by the general debug panel, whichever runs
+   first in a given frame), then flippable live via the panel. */
+int g_uw_3d_objects_enabled = -1;
 static undefined1 *DAT_000db45c;
 static int DAT_000db458;
-// was DAT_000d91d0 -- running point count while parse_e_model_file reads
-// a .E model's POINTS block (bounded at 600, see the "Too many points"
-// error); indexes both the point-scratch arrays and the final per-model
-// output buffer's points array.
+// was DAT_000d91d0 -- running point count while parse_e_model_file reads a .E model's POINTS block
+// (bounded at 600, see the "Too many points" error); indexes both the point-scratch arrays and the
+// final per-model output buffer's points array.
 static int g_model_parse_point_count;
 static int DAT_000db4fc;
 static int *DAT_000c8b00;
-// was DAT_000db430 -- running part (face) count while parse_e_model_file
-// reads a .E model's PARTS block (bounded at 0x15e=350, see the "Too many
-// polys" error); indexes both the part-scratch arrays and the final
-// per-model output buffer's parts array.
+// was DAT_000db430 -- running part (face) count while parse_e_model_file reads a .E model's PARTS
+// block (bounded at 0x15e=350, see the "Too many polys" error); indexes both the part-scratch
+// arrays and the final per-model output buffer's parts array.
 static int g_model_parse_part_count;
 static int DAT_00084660;
 static int DAT_0008465c;
 static int DAT_00084670;
 static int DAT_0008466c;
-// DAT_000db480/DAT_000db470: gate the PARTS block's 'A' (auto-backside)
-// handling and an INTERSECTIONS-vs-other-block branch, but neither is
-// ever WRITTEN anywhere in this decompile -- always BSS-zero here, which
-// makes the 'A' backside-generation code (see vec3_cross's caller,
-// parse_e_model_file's "making backside of %d %d" branch) and the
-// INTERSECTIONS default path unconditionally taken as if these flags are
-// always off. Not renamed: unclear whether that's really how the
-// original binary behaves (a hidden writer elsewhere, not yet checked
-// via Ghidra the way DAT_00085668 and friends were) or a genuine
-// decompile gap, so a confident name isn't warranted yet.
+// DAT_000db480/DAT_000db470: gate the PARTS block's 'A' (auto-backside) handling and an
+// INTERSECTIONS-vs-other-block branch, but neither is ever WRITTEN anywhere in this decompile --
+// always BSS-zero here, which makes the 'A' backside-generation code...
 static int DAT_000db480;
 static int DAT_000db470;
 static int DAT_000db4d4;
 static int DAT_000db4d8;
 static int DAT_000db4d0;
-// DAT_000db494: gates whether parse_e_model_file resolves each PARTS
-// entry's EXTENDED_COLORS index against g_model_known_ext_colors (and the
-// function's own final scratch-to-scratch color-inheritance pass). Same
-// "never written anywhere in this decompile" situation as DAT_000db480/
-// DAT_000db470 just above -- always reads BSS-zero here, so this whole
-// resolution path is presently dead code for every model regardless of
-// whether the file actually has an EXTENDED_COLORS block. Not renamed
-// for the same reason.
+// DAT_000db494: gates whether parse_e_model_file resolves each PARTS entry's EXTENDED_COLORS index
+// against g_model_known_ext_colors (and the function's own final scratch-to-scratch
+// color-inheritance pass).
 static int DAT_000db494;
 static int DAT_000db4e0;
-// was DAT_00084678 -- a fixed table of up to 32 known 24-bit RGB values
-// (0x00RRGGBB-shaped ints) that parse_e_model_file's EXTENDED_COLORS
-// handling linearly searches to turn each entry's literal RGB (e.g.
-// "545454" in ROCKSMAL.E) into a small index, stored per-part -- a
-// palette-index lookup, not a raw-color passthrough. Gated dead by
-// DAT_000db494 above, so this table is currently never actually
-// consulted despite being real, meaningful data.
+// was DAT_00084678 -- a fixed table of up to 32 known 24-bit RGB values (0x00RRGGBB-shaped ints)
+// that parse_e_model_file's EXTENDED_COLORS handling linearly searches to turn each entry's literal
+// RGB (e.g. "545454" in ROCKSMAL.E) into a small index, stored per-part...
 static undefined4 g_model_known_ext_colors;
 static char s_unexpected_EOF___no_END_statemen_000846f8[] = "unexpected EOF - no END statement\n";
 static char s________c_0008471c[] = "%*[^}]%c";
 static char s___d__00084728[] = "(%d)\n";
-/* Sizing-audit pass: a bare NKDbgPrintfW debug-message format string
-   (no args), surrounded entirely by short (<40 char) literal strings
-   in this same table. Real content confirmed via direct Ghidra memory
-   export of UU.exe (tests/fixtures/static_strings.json): "%d ". Sized
-   to 64 for headroom; down from 8192. */
+/* Sizing-audit pass: a bare NKDbgPrintfW debug-message format string (no args), surrounded entirely
+   by short (<40 char) literal strings in this same table. Real content confirmed via direct Ghidra
+   memory export of UU.exe (tests/fixtures/static_strings.json): "%d ". */
 static undefined DAT_00084730_backing[64] = "%d ";
 #define DAT_00084730 DAT_00084730_backing[0]
 static char s_anim__d___d__c__d__d___00084734[] = "anim %d (%d,%c,%d,%d): ";
 static char s__d__1s__d__d__1s_0008474c[] = "%d,%1s,%d,%d,%1s";
 static char s_ANIMATE_00084760[] = "ANIMATE";
 static char s_Error__extended_color_for_part___00084768[] = "Error: extended color for part %d not in Mac color table\n";
-/* Was "%lx%1s" -- correct as recovered from the original 32-bit binary,
-   where 'long' and 'int' are both 4 bytes, matching the destination
-   (parse_e_model_file's `int local_208;`). On this 64-bit host 'long' is 8
-   bytes, so vfscanf wrote a full 8-byte value through ce_fscanf into
-   that 4-byte stack slot -- a real stack-buffer-overflow (confirmed via
-   ASAN), not a truncation-in-the-other-direction case like most of this
-   file's other pointer/int-width bugs. Fixed by dropping the 'l' length
-   modifier to match the 32-bit-correct destination width instead of
-   widening the destination, since every other use of this value in
-   parse_e_model_file treats it as a plain 4-byte int. */
+/* Was "%lx%1s" -- correct as recovered from the original 32-bit binary, where 'long' and 'int' are
+   both 4 bytes, matching the destination (parse_e_model_file's `int local_208;`). */
 static char s__lx_1s_000847a4[] = "%x%1s";
 static char s_EXTENDED_COLORS_000847ac[] = "EXTENDED_COLORS";
 static char s_INTERSECTIONS_000847bc[] = "INTERSECTIONS";
@@ -145,19 +95,15 @@ static char s__c__d__d__d__d__d___c__000847cc[] = "%c,%d,%d,%d,%d,%d (%c)\n";
 static char s__1s__d__d__d_1s_000847e4[] = "%1s,%d,%d,%d%1s";
 static char s__1s__d__d__d__d__d_1s_000847f4[] = "%1s,%d,%d,%d,%d,%d%1s";
 static char s_branch_0008480c[] = "branch ";
-/* Sizing-audit pass: an NKDbgPrintfW debug-message format string
-   (one %-arg, local_22c), sibling of the "branch"/"leaf" literals
-   right around it. Real content confirmed via direct Ghidra memory
-   export of UU.exe: "%d\n". Sized to 64 for headroom; down from
-   8192. */
+/* Sizing-audit pass: an NKDbgPrintfW debug-message format string (one %-arg, local_22c), sibling of
+   the "branch"/"leaf" literals right around it. Real content confirmed via direct Ghidra memory
+   export of UU.exe: "%d\n". Sized to 64 for headroom; down from 8192. */
 static undefined DAT_00084814_backing[64] = "%d\n";
 #define DAT_00084814 DAT_00084814_backing[0]
 static char s_leaf_00084818[] = "leaf ";
-/* Sizing-audit pass: a ce_fscanf format string (`ce_fscanf(pvVar_fh,
-   &DAT_00084820,&local_1e4)`, one int destination), sibling of the
-   short format-string literals around it (e.g. s__d_1s_000848c8 =
-   "%d%1s"). Real content confirmed via direct Ghidra memory export of
-   UU.exe: "%1s,". Sized to 64 for headroom; down from 8192. */
+/* Sizing-audit pass: a ce_fscanf format string (`ce_fscanf(pvVar_fh, &DAT_00084820,&local_1e4)`,
+   one int destination), sibling of the short format-string literals around it (e.g.
+   s__d_1s_000848c8 = "%d%1s"). */
 static undefined DAT_00084820_backing[64] = "%1s,";
 #define DAT_00084820 DAT_00084820_backing[0]
 static char s_SUPER_NODES_00084828[] = "SUPER_NODES";
@@ -170,10 +116,9 @@ static char s__d_1s_000848c8[] = "%d%1s";
 static char s__d__d_000848d0[] = "%d,%d";
 static char s_________c_000848d8[] = "%*[^;}]%c";
 static char s_got_sphere__d_000848e4[] = "got sphere %d\n";
-/* Sizing-audit pass: a ce_fscanf format string (multiple destination
-   pointers), sibling of "got sphere %d\n" right above it. Real
-   content confirmed via direct Ghidra memory export of UU.exe: "%d,".
-   Sized to 64 for headroom; down from 8192. */
+/* Sizing-audit pass: a ce_fscanf format string (multiple destination pointers), sibling of "got
+   sphere %d\n" right above it. Real content confirmed via direct Ghidra memory export of UU.exe:
+   "%d,". Sized to 64 for headroom; down from 8192. */
 static undefined DAT_000848f4_backing[64] = "%d,";
 #define DAT_000848f4 DAT_000848f4_backing[0]
 static char s_Too_many_polys_000848f8[] = "Too many polys\n";
@@ -188,19 +133,7 @@ static char s__d__d__d__00084980[] = "%d,%d,%d;";
 static char s_POINTS_0008498c[] = "POINTS";
 static char s__1s______1s_00084994[] = "%1s%[^\"]%1s";
 static char s_NAMES_000849a0[] = "NAMES";
-/* Unrecoverable scanf-format string constants (Ghidra never recovered
-   their content). Best-effort guesses from call shape, not confirmed
-   against real file content the way DAT_000849c8 ("END") was:
-   DAT_000849a8 is used identically to the confirmed "%1s"/"%100s%1s"
-   format strings right next to it in this same parser (single-char
-   token read into a 4-byte buffer, local_260) at most call sites, so
-   "%1s". DAT_000849ac is read right after matching the "VERSION" token,
-   with a real file's content being "VERSION {0}" (DATA3D/DFRAME.E) --
-   guessed as " {%d}" to parse the braced integer. Some call sites pass
-   more destination pointers than either guessed format has specifiers
-   for (this file's argument-count-per-call-site is already established
-   as unreliable throughout the decompile); harmless since vfscanf simply
-   won't consume args past what the format string actually specifies. */
+/* Unrecoverable scanf-format string constants (Ghidra never recovered their content). */
 /* Sizing-audit pass: recovered/guessed content is 3-4 chars, no
    indexing. Sized to 16; down from 8192. */
 static char DAT_000849a8_backing[16] = "%1s";
@@ -209,21 +142,8 @@ static char DAT_000849ac_backing[16] = "%d";
 #define DAT_000849ac DAT_000849ac_backing[0]
 static char s_VERSION_000849b0[] = "VERSION";
 static char s_error___s__c_000849b8[] = "error: %s,%c\n";
-/* Unrecoverable string constant (Ghidra never recovered its content) --
-   confirmed "END" by inspecting a real .E model file (DATA3D/DFRAME.E):
-   the game's text script parser (parse_e_model_file) brackets every model with
-   a BEGIN...END pair (see s_BEGIN_00084a14/s_Input_file_error...), and
-   this is the only unresolved string used as the closing-token
-   comparison (ce_strcmp(token,&DAT_000849c8) / ce_strncmp with
-   length 3 for a truncated-token EOF check) right where a real file's
-   content literally ends with the line "END". Leaving it empty meant
-   "END" never matched, so every model's parse fell through to the
-   unexpected-EOF/malformed-file exit path instead of completing.
-   Kept as a backing-array + #define alias (not a plain char[]) because
-   call sites take its address with '&DAT_000849c8', which only stays a
-   plain char* (not a pointer-to-array) when DAT_000849c8 is itself a
-   scalar macro'd to the array's first element, matching every other
-   widened-global in this file. */
+/* Unrecoverable string constant (Ghidra never recovered its content) -- confirmed "END" by
+   inspecting a real .E model file (DATA3D/DFRAME.E)... */
 /* Sizing-audit pass: confirmed real content is "END" (3 chars, see
    comment above), no indexing. Sized to 16; down from 8192. */
 static char DAT_000849c8_backing[16] = "END";
@@ -233,73 +153,27 @@ static char s__1s__a_z__1s_000849d8[] = "%1s%[a-z]%1s";
 static char s_Input_file_error__BEGIN_statemen_000849e8[] = "Input file error: BEGIN statement missing\n";
 static char s_BEGIN_00084a14[] = "BEGIN";
 static char s__100s_00084a1c[] = "%100s";
-/* Sizing-audit pass: ce_fopen's mode-string argument
-   (`ce_fopen(acStack_130,&DAT_00084a24)`). Real content confirmed via
-   direct Ghidra memory export of UU.exe: "r". Sized to 16; down from
-   8192. */
+/* Sizing-audit pass: ce_fopen's mode-string argument (`ce_fopen(acStack_130,&DAT_00084a24)`). Real
+   content confirmed via direct Ghidra memory export of UU.exe: "r". Sized to 16; down from 8192. */
 static undefined DAT_00084a24_backing[16] = "r";
 #define DAT_00084a24 DAT_00084a24_backing[0]
-/* DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's ".E"
-   model parser: `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor
-   there and walks it forward one 4-byte slot at a time while parsing
-   PARTS) was declared as a lone undefined4 scalar -- Ghidra only saw the
-   first slot. Its real extent is bounded by DAT_000c8a90, which the
-   parser compares the write cursor against ("Out of vertex list space"
-   if exceeded) -- but DAT_000c8a90 was ALSO just a lone undefined byte,
-   whose only meaning was "whatever address the original 32-bit linker
-   happened to place 0x3e58 bytes after DAT_000c4c38" (whatever unrelated
-   global that turned out to be). On this 64-bit recompile the two
-   globals land wherever the linker wants, nowhere near 0x3e58 bytes
-   apart, so the very first vertex written already tripped the
-   "&DAT_000c8a90 < DAT_000c8b00" bounds check. Fixed by giving
-   DAT_000c4c38 a real backing buffer sized to that same 0x3e58 byte
-   span (preserving the original capacity/behavior) and defining
-   DAT_000c8a90 as the address exactly one-past-its-end, restoring the
-   original relationship. */
+/* DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's ".E" model parser:
+   `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor there and walks it forward one 4-byte slot
+   at a time while parsing PARTS) was declared as a lone undefined4 scalar... */
 static char DAT_000c4c38_backing[0x3e58];
 #define DAT_000c4c38 (*(undefined4 *)DAT_000c4c38_backing)
 #define DAT_000c8a90 (*(undefined1 *)(DAT_000c4c38_backing + 0x3e58))
-/* INTERSECTIONS-block growing undefined4 array (DAT_000db4d0-indexed).
-   Sizing pass: this block's own dispatch was unreachable until this
-   session's control-flow fix (see the ANIMATE-mismatch `goto
-   LAB_check_clusters` comment a few hundred lines down) -- confirmed
-   live afterward (UW_DEBUG_MODEL_PARSE_HWM) that none of the 29 real
-   loaded models actually have an INTERSECTIONS block, so real usage
-   is 0. Sized to 256 bytes (room for a handful of real entries) rather
-   than 0, since the block is now genuinely reachable and a future
-   model could use it; down from the previous 65536 either way. */
+/* INTERSECTIONS-block growing undefined4 array (DAT_000db4d0-indexed). */
 static undefined1 DAT_000c8b08_backing[256];
 #define DAT_000c8b08 DAT_000c8b08_backing[0]
-/* Base of a growing per-cluster-connection undefined4 array in
-   parse_e_model_file's CLUSTERS block (`puVar8 = &DAT_000c8ca0; ... *puVar8 =
-   local_1d8; puVar8 = puVar8 + 1;`) -- same undersized-scalar bug as
-   DAT_000da868/DAT_000dab90 right above, for the same block.
-   Sizing pass: CLUSTERS's own dispatch was unreachable until this
-   session's control-flow fix (see the ANIMATE-mismatch comment a few
-   hundred lines down) -- confirmed live afterward that real usage
-   across all 29 loaded models peaks at 51 undefined4 elements (204
-   bytes, from ROCKBIG.E's 50-entry connection list). Sized to 1024
-   bytes for headroom, down from 65536. */
+/* Base of a growing per-cluster-connection undefined4 array in parse_e_model_file's CLUSTERS block
+   (`puVar8 = &DAT_000c8ca0; ... *puVar8 = local_1d8; puVar8 = puVar8 + 1;`) -- same
+   undersized-scalar bug as DAT_000da868/DAT_000dab90 right above, for the same block. */
 static undefined1 DAT_000c8ca0_backing[1024];
 #define DAT_000c8ca0 DAT_000c8ca0_backing[0]
-/* DAT_000c9540..DAT_000c9555 (22 fields): another per-record byte-field
-   cluster in parse_e_model_file's ".E" model parser (NODES block), same
-   undersized-scalar bug as DAT_000d2ab0/DAT_000c9dd8/DAT_000c8ca0/
-   DAT_000da868/DAT_000dab90 above -- found via a systematic scan of
-   every `(&DAT_x)[idx]` pattern in this function after the POINTS/PARTS/
-   CLUSTERS instances turned out not to be the only ones (a real model
-   file's parse was still corrupting an unrelated global afterward).
-   Widened the same way.
-   Sizing pass: this whole NODES block was actually unreachable code
-   until this session's separate control-flow fix (a mis-targeted
-   `goto` in the ANIMATE-mismatch case skipped past CLUSTERS and NODES
-   entirely -- see the `goto LAB_check_clusters` comment a few hundred
-   lines down) -- confirmed live (UW_DEBUG_MODEL_PARSE_HWM) that real
-   model data was being silently dropped: ROCKBIG.E etc. do have real
-   NODES content, but it never got as far as this array before the
-   fix. With the fix in, real usage across all 29 loaded models peaks
-   at 7 records (154 bytes, stride 0x16=22). Sized to 512 for
-   headroom, down from 65536. */
+/* DAT_000c9540..DAT_000c9555 (22 fields): another per-record byte-field cluster in
+   parse_e_model_file's ".E" model parser (NODES block), same undersized-scalar bug as
+   DAT_000d2ab0/DAT_000c9dd8/DAT_000c8ca0/ DAT_000da868/DAT_000dab90 above... */
 static undefined1 DAT_000c9540_backing[512];
 #define DAT_000c9540 DAT_000c9540_backing[0]
 static undefined1 DAT_000c9541_backing[512];
@@ -344,17 +218,9 @@ static undefined1 DAT_000c9554_backing[512];
 #define DAT_000c9554 DAT_000c9554_backing[0]
 static undefined1 DAT_000c9555_backing[512];
 #define DAT_000c9555 DAT_000c9555_backing[0]
-/* DAT_000c9dd8 through DAT_000c9de3 (12 globals) are byte fields of a
-   0x67(103)-byte-stride per-PART record in parse_e_model_file's ".E" model
-   parser (`iVar5 = g_model_parse_part_count * 0x67; (&DAT_000c9ddc)[iVar5] = ...`),
-   bounded by `if (0x15e < g_model_parse_part_count)` (350 parts) -- same undersized-
-   scalar-instead-of-real-table bug as the DAT_000d2ab0-family POINTS
-   record right above, just for PARTS. Widened the same way.
-   Sizing pass: 350 parts * 103 bytes = 36050 bytes needed at the real
-   code-enforced cap (unlike CLUSTERS/NODES/ANIMATE, PARTS has always
-   been reachable, so this is a real, currently-reachable bound, not
-   just today's data) -- was oversized at 65536. Sized to 49152 for
-   headroom above the real cap. */
+/* DAT_000c9dd8 through DAT_000c9de3 (12 globals) are byte fields of a 0x67(103)-byte-stride
+   per-PART record in parse_e_model_file's ".E" model parser (`iVar5 = g_model_parse_part_count *
+   0x67; (&DAT_000c9ddc)[iVar5] = ...`)... */
 static undefined1 DAT_000c9dd8_backing[49152];
 #define DAT_000c9dd8 DAT_000c9dd8_backing[0]
 static undefined1 DAT_000c9dd9_backing[49152];
@@ -379,11 +245,9 @@ static undefined1 DAT_000c9de2_backing[49152];
 #define DAT_000c9de2 DAT_000c9de2_backing[0]
 static undefined1 DAT_000c9de3_backing[49152];
 #define DAT_000c9de3 DAT_000c9de3_backing[0]
-/* DAT_000c9e0e..DAT_000c9e3e (30 fields): same bug, same parser, same
-   systematic-scan discovery as DAT_000c9540 above.
-   Sizing pass: same PARTS record as DAT_000c9dd8 above -- see its own
-   comment (350-part code-enforced cap, 36050 bytes real need). Sized
-   to 49152, down from 65536. */
+/* DAT_000c9e0e..DAT_000c9e3e (30 fields): same bug, same parser, same systematic-scan discovery as
+   DAT_000c9540 above. Sizing pass: same PARTS record as DAT_000c9dd8 above -- see its own comment
+   (350-part code-enforced cap, 36050 bytes real need). Sized to 49152, down from 65536. */
 static undefined1 DAT_000c9e0e_backing[49152];
 #define DAT_000c9e0e DAT_000c9e0e_backing[0]
 static undefined1 DAT_000c9e0f_backing[49152];
@@ -446,23 +310,8 @@ static undefined1 DAT_000c9e3d_backing[49152];
 #define DAT_000c9e3d DAT_000c9e3d_backing[0]
 static undefined1 DAT_000c9e3e_backing[49152];
 #define DAT_000c9e3e DAT_000c9e3e_backing[0]
-/* DAT_000d2ab0 through DAT_000d2ad3 (28 globals) are individual byte
-   fields of a 0x2c(44)-byte-stride per-POINT record in parse_e_model_file's
-   ".E" model parser (`iVar6 = g_model_parse_point_count * 0x2c; (&DAT_000d2ab0)[iVar6]
-   = ...;`, bounded by `if (600 < g_model_parse_point_count)`) -- up to 600 points *
-   44 bytes = 26400 bytes needed per field, but each was declared as a
-   lone `undefined1` scalar. A watchpoint confirmed this overflow
-   corrupting an unrelated global (DAT_002029cc, ~26KB+ away) during a
-   real model file's parse, which crashed much later and far from the
-   actual bad write -- the same "detected at a distance" pattern as the
-   STRINGS.PAK heap corruption. Widened with the usual backing-buffer
-   pattern.
-
-   Sizing-audit pass: real hard cap is 600 points * 0x2c (44) = 26400
-   bytes -- confirmed already comfortably covered by the current 32768
-   (24% headroom), tighter than the sibling PARTS family's own 36%
-   headroom choice just below. Left as-is rather than churning for a
-   marginal gain. */
+/* DAT_000d2ab0 through DAT_000d2ad3 (28 globals) are individual byte fields of a
+   0x2c(44)-byte-stride per-POINT record in parse_e_model_file's ".E" model parser... */
 static undefined1 DAT_000d2ab0_backing[32768];
 #define DAT_000d2ab0 DAT_000d2ab0_backing[0]
 static undefined1 DAT_000d2ab1_backing[32768];
@@ -520,14 +369,8 @@ static undefined1 DAT_000d2ad2_backing[32768];
 static undefined1 DAT_000d2ad3_backing[32768];
 #define DAT_000d2ad3 DAT_000d2ad3_backing[0]
 static undefined4 DAT_000d95d8;
-/* DAT_000d9768..DAT_000d977c (21 fields): same bug, same parser, same
-   systematic-scan discovery as the two clusters above.
-   Sizing pass: this is the ANIMATE block, which like CLUSTERS/NODES
-   was unreachable until this session's control-flow fix -- confirmed
-   live afterward that none of the 29 real loaded models actually have
-   an ANIMATE block (real usage 0). Sized to 256 bytes (room for a
-   handful of real entries, stride 0x15=21) rather than 0, since the
-   block is now genuinely reachable; down from 65536 either way. */
+/* DAT_000d9768..DAT_000d977c (21 fields): same bug, same parser, same systematic-scan discovery as
+   the two clusters above. */
 static undefined1 DAT_000d9768_backing[256];
 #define DAT_000d9768 DAT_000d9768_backing[0]
 static undefined1 DAT_000d9769_backing[256];
@@ -570,37 +413,26 @@ static undefined1 DAT_000d977b_backing[256];
 #define DAT_000d977b DAT_000d977b_backing[0]
 static undefined1 DAT_000d977c_backing[256];
 #define DAT_000d977c DAT_000d977c_backing[0]
-/* Sizing pass: live instrumentation (UW_DEBUG_MODEL_PARSE_HWM) across
-   the full 19-script regression suite (29 real .E model files loaded)
-   showed a real high-water mark of 8 chars for the unbounded %[a-z]
-   token this feeds. Sized to 64 bytes for headroom above that. */
+/* Sizing pass: live instrumentation (UW_DEBUG_MODEL_PARSE_HWM) across the full 19-script regression
+   suite (29 real .E model files loaded) showed a real high-water mark of 8 chars for the unbounded
+   %[a-z] token this feeds. Sized to 64 bytes for headroom above that. */
 static undefined1 DAT_000d98c8_backing[64];
 #define DAT_000d98c8 DAT_000d98c8_backing[0]
-/* NAMES-block growing string-table cursor base (puVar16/local_258 walk
-   forward from here, one null-terminated name per CLUSTER entry).
-   Sizing pass: real usage across all 29 loaded models peaks at 270
-   bytes. Sized to 1024 for headroom, down from 65536. */
+/* NAMES-block growing string-table cursor base (puVar16/local_258 walk forward from here, one
+   null-terminated name per CLUSTER entry). Sizing pass: real usage across all 29 loaded models
+   peaks at 270 bytes. Sized to 1024 for headroom, down from 65536. */
 static undefined1 DAT_000da480_backing[1024];
 #define DAT_000da480 DAT_000da480_backing[0]
-/* Per-CLUSTER pointer/index slot in the same ".E" model parser
-   (parse_e_model_file's CLUSTERS block) as DAT_000dab90 right below, same
-   "declared as a lone scalar, actually a large indexed table" bug --
-   `*(undefined **)(&DAT_000da868 + iVar4) = local_258;` where iVar4
-   grows per cluster. Widened the same way, matching DAT_000dab90's
-   size.
-   Sizing pass: like DAT_000c8ca0/DAT_000c9540 above, this block was
-   unreachable until this session's control-flow fix; real usage
-   afterward peaks at 8 records (32 bytes, stride 4). Sized to 128 for
-   headroom, down from 65536. */
+/* Per-CLUSTER pointer/index slot in the same ".E" model parser (parse_e_model_file's CLUSTERS
+   block) as DAT_000dab90 right below, same "declared as a lone scalar, actually a large indexed
+   table" bug... */
 static undefined1 DAT_000da868_backing[128];
 #define DAT_000da868 DAT_000da868_backing[0]
 static undefined1 DAT_000dab90_backing[128];
 #define DAT_000dab90 DAT_000dab90_backing[0]
-/* Sizing-audit pass: its only use is
-   `ce_fscanf(pvVar_fh,&DAT_000849ac,&DAT_000db454)` where DAT_000849ac
-   is the format string "%d" -- a single int destination, not a table.
-   Sized to 16 bytes for alignment/type-punning safety, down from
-   8192. */
+/* Sizing-audit pass: its only use is `ce_fscanf(pvVar_fh,&DAT_000849ac,&DAT_000db454)` where
+   DAT_000849ac is the format string "%d" -- a single int destination, not a table. Sized to 16
+   bytes for alignment/type-punning safety, down from 8192. */
 static undefined DAT_000db454_backing[16];
 #define DAT_000db454 DAT_000db454_backing[0]
 static char s__DATA3D_BED2_E_00085474[] = "\\DATA3D\\BED2.E";
@@ -627,27 +459,9 @@ static char s__DATA3D_40LOTUS_E_000855e8[] = "\\DATA3D\\40LOTUS.E";
 static char s__DATA3D_BENCH_E_000855fc[] = "\\DATA3D\\BENCH.E";
 static char s__DATA3D_FBRIDGE_E_0008560c[] = "\\DATA3D\\FBRIDGE.E";
 static char s__DATA3D_DFRAME_E_00085620[] = "\\DATA3D\\DFRAME.E";
-/* Sizing-audit pass: these ~30 per-model catalog buffers (one per .E
-   file, each passed as parse_e_model_file's own param_2) were checked
-   for oversizing like every other array in this audit, but turned out
-   NOT to be oversized -- they're already reasonably tight. Traced
-   every dynamic write into param_2 (PARTS stride 0x60 based at
-   0xc14..., POINTS stride 0xc based at +8...) and parsed all 30 real
-   data/DATA3D/*.E files directly: worst real case is SHRINE.E (76
-   parts, 47 points) at ~10383 bytes -- 63% of the declared 16384, a
-   reasonable ~37% margin.
-
-   Separately (NOT a sizing-audit finding, flagging for visibility
-   only): the PARTS block's own governing cap is 350 parts
-   (`g_model_parse_part_count`), and the per-face vertex-index loop
-   feeding +0xc18 has no cap at all tied to this buffer's size, so the
-   code's own theoretical reachable worst case (~36791 bytes) exceeds
-   16384 -- a latent gap, not a live bug, since no real shipped file
-   comes remotely close (76 parts vs the 350 cap; 5 verts/face vs the
-   ~23-24 designed slots). Left exactly as-is: this is the one family
-   in the whole audit that should arguably grow or gain an explicit
-   size guard, not shrink, and that's a separate change from this
-   sizing pass. */
+/* Sizing-audit pass: these ~30 per-model catalog buffers (one per .E file, each passed as
+   parse_e_model_file's own param_2) were checked for oversizing like every other array in this
+   audit, but turned out NOT to be oversized -- they're already reasonably tight. */
 static undefined DAT_00114c1c_backing[16384];
 #define DAT_00114c1c DAT_00114c1c_backing[0]
 static undefined DAT_00118848_backing[16384];
@@ -705,19 +519,8 @@ static undefined DAT_0017a4c0_backing[16384];
 #define DAT_0017a4c0 DAT_0017a4c0_backing[0]
 static undefined DAT_0017e0ec_backing[16384];
 #define DAT_0017e0ec DAT_0017e0ec_backing[0]
-/* g_anim_model_slot: real fix for tick_anim_record's own address-walk bug
-   (see that function's own comment). In the ORIGINAL binary, `DAT_00110ff0`
-   and these 29 model buffers are one contiguous array -- load_3d_object_models's own
-   29 parse_e_model_file calls fill slots 1..29 in exactly this order, and
-   tick_anim_record/emit_catalog_object read a model's data back by walking
-   `base + slot*0x3c2c`. This port declares every DAT_XXXXXXXX as its OWN
-   separately-allocated C global (confirmed: DAT_00114c1c_backing and
-   DAT_00110ff0_backing are unrelated arrays, not adjacent slices of one
-   buffer) -- so that walk lands in DAT_00110ff0's own unrelated, always-
-   zero memory instead of a real model, and the whole real-mesh path in
-   emit_catalog_object was silently dead. Slot 0 is deliberately NULL (no
-   parse_e_model_file call ever targets it -- see load_3d_object_models's own call
-   list, which starts at slot 1). Order matches that call list exactly. */
+/* g_anim_model_slot: real fix for tick_anim_record's own address-walk bug (see that function's own
+   comment). */
 static void * const g_anim_model_slot[30] = {
   0,                 /* 0: unused */
   &DAT_00114c1c,     /* 1: DFRAME.E */
@@ -750,62 +553,25 @@ static void * const g_anim_model_slot[30] = {
   &DAT_0017a4c0,     /* 28: CHAIRSIM.E */
   &DAT_0017e0ec,     /* 29: BED2.E */
 };
-/* Per-slot working copy for tick_anim_record's real fix -- a fresh
-   16384-byte memcpy of the real model buffer, refreshed every call rather
-   than reusing the original's incremental per-point "tick" (whose exact
-   purpose isn't needed just to get real geometry flowing, and a full fresh
-   copy is simpler and can't drift stale). Kept SEPARATE from the real
-   g_anim_model_slot buffers (not aliased directly onto them) so
-   emit_catalog_object's own writes into a face record's scratch tail
-   can never corrupt the same buffer a future real-3D-model consumer might
-   also read. */
+/* Per-slot working copy for tick_anim_record's real fix -- a fresh 16384-byte memcpy of the real
+   model buffer, refreshed every call rather than reusing the original's incremental per-point
+   "tick"... */
 static unsigned char g_anim_model_scratch[30][16384];
-/* Sizing-audit pass: both write loops index it by `iVar29 < uVar21`
-   where `uVar21 = catalog_flags & 7` -- max index 6 (7 elements, 14
-   bytes real). Sized to 16 for headroom; down from 256 (512 bytes,
-   undefined2 element type). */
+/* Sizing-audit pass: both write loops index it by `iVar29 < uVar21` where `uVar21 = catalog_flags &
+   7` -- max index 6 (7 elements, 14 bytes real). Sized to 16 for headroom; down from 256 (512
+   bytes, undefined2 element type). */
 undefined2 DAT_00189570_backing[16];
 #define DAT_00189570 DAT_00189570_backing[0]
 char *DAT_00110fc0 = DAT_00110fc0_scratch;
-/* Sizing-audit pass: investigated, NOT confidently resolved. The one
-   real caller passes `&DAT_00202520 + pcVar15[3]*0x10` into
-   decompress_gr_bitmap's param_2 (a .GR tile's compression-mode-4
-   "auxiliary nibble->8bit remap table" bank selector); the only
-   confirmed direct read of it anywhere in that function is a single
-   byte, `param_2[1]` (resources.c's select_gr_bitmap_remap_table
-   call) -- every other reference to the shared remap cursor
-   (DAT_000b5630) gets reassigned to point into the compressed input
-   stream instead before ever being dereferenced. So the real bound
-   depends entirely on how many distinct `pcVar15[3]` bank values
-   exist across every real mode-4 .GR tile in the shipped assets --
-   not derivable from the code alone. Added live instrumentation
-   (reusing UW_DEBUG_DUMP_GR, see the call site) to find that bank
-   value empirically, but this code path never fired once across the
-   full 19-script regression suite (mode-4 .GR tiles aren't exercised
-   by that corpus), so no real high-water mark was obtained. Left at
-   1024 rather than guess; worth revisiting with a broader live
-   session or a direct scan of the shipped .GR files. */
+/* Sizing-audit pass: investigated, NOT confidently resolved. */
  undefined1 DAT_00202520_backing[1024];
 short DAT_000b4620;
 static short DAT_00189584;
 static undefined2 DAT_00189586;
 ushort DAT_0018957a;
-/* .data 0x86c08: real billboard-catalog table, 30 records of 4 bytes
-   each (byte0=flags/sub-frame-count, bytes1-3=up to 3 more per-entry
-   values -- see emit_catalog_object's own use of it), recovered
-   directly from UU.exe. Was 4 lone `undefined` scalars Ghidra never
-   gave real backing to -- same "split/orphaned data table" class as
-   g_inventory_hotspot_table before its own recovery (see
-   [[inventory-hotspot-table-recovery]]) -- every reader indexes past
-   byte 3 via pointer arithmetic (`(&DAT_00086c08)[catalog_idx*4]`
-   etc.), so a plain 4-byte declaration silently truncated every
-   catalog entry past the first to out-of-bounds reads. Cross-validated:
-   this table's real end (0x86c08+0x78=0x86c80) lines up exactly with
-   DAT_00086c80's own real start below, and this whole region was dumped
-   in one contiguous pull starting from the already-known-good
-   DAT_00086b50_region/DAT_00086c00_arr immediately before it (both
-   matched their existing recovered values exactly, confirming the
-   address mapping). */
+/* .data 0x86c08: real billboard-catalog table, 30 records of 4 bytes each
+   (byte0=flags/sub-frame-count, bytes1-3=up to 3 more per-entry values -- see emit_catalog_object's
+   own use of it), recovered directly from UU.exe. */
 static unsigned char DAT_00086c08_backing[0x78] = {
   0x01,0xec,0x00,0x00, 0x21,0xeb,0x00,0x00, 0x11,0xec,0x00,0x3e, 0x01,0xe4,0x00,0x00,
   0x02,0xb6,0xb0,0x00, 0x02,0x64,0x6c,0x00, 0x02,0x64,0x6c,0x00, 0x02,0x64,0x6c,0x00,
@@ -820,10 +586,9 @@ static unsigned char DAT_00086c08_backing[0x78] = {
 #define DAT_00086c09 DAT_00086c08_backing[1]
 #define DAT_00086c0a DAT_00086c08_backing[2]
 #define DAT_00086c0b DAT_00086c08_backing[3]
-/* ARM .data 0x86ce0: one contiguous table, four door orientations by
-   four camera quarters, each with an X/Z hinge offset. The leaf's local
-   X range is [0,128]; keep its origin at the hinge rather than recentering
-   the mesh. Separate backing arrays lost both these values and the stride. */
+/* ARM .data 0x86ce0: one contiguous table, four door orientations by four camera quarters, each
+   with an X/Z hinge offset. The leaf's local X range is [0,128]; keep its origin at the hinge
+   rather than recentering the mesh. Separate backing arrays lost both these values and the stride. */
 static undefined4 DAT_00086ce0_backing[32] = {
   -64, 0, 0, -64, 64, 0, 0, 64,
   0, 64, -64, 0, 0, -64, 64, 0,
@@ -838,10 +603,9 @@ static undefined4 DAT_00086ce0_backing[32] = {
 #define DAT_00086cf4 DAT_00086ce0_backing[5]
 #define DAT_00086cf8 DAT_00086ce0_backing[6]
 #define DAT_00086cfc DAT_00086ce0_backing[7]
-/* Sizing pass: a small fixed lookup table indexed by a 4-bit nibble
-   (`(*(byte*)(obj+1)>>1 & 0xf)*2`, a ushort stride) -- real max byte
-   offset is 15*2+2=32; no comment ever justified the original 65536-
-   byte size. Sized to 64 bytes for headroom. */
+/* Sizing pass: a small fixed lookup table indexed by a 4-bit nibble (`(*(byte*)(obj+1)>>1 &
+   0xf)*2`, a ushort stride) -- real max byte offset is 15*2+2=32; no comment ever justified the
+   original 65536- byte size. Sized to 64 bytes for headroom. */
 static undefined1 DAT_00086d60_backing[64];
 #define DAT_00086d60 DAT_00086d60_backing[0]
 static short DAT_0018957e;
@@ -851,28 +615,9 @@ static short DAT_00189576;
 
 
 
-/* Ghidra lost the return value (literal `return 0`), so the sole caller
-   (emit_catalog_object) dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the
-   moment an animated tile object (door, etc.) came into view. The
-   function ticks animation record `catalog` in place; it returns that
-   record's base, &DAT_00189590 + catalog*0x3c2c (== piVar2 before the
-   loop walks it).
-
-   REAL FIX: that address-walk formula only works in the original binary,
-   where DAT_00110ff0 and the 29 model buffers were one contiguous array
-   (see g_anim_model_slot's own comment for the full trace) -- in this
-   port every DAT_XXXXXXXX is its own separate C global, so the walk
-   lands in unrelated always-zero memory and this whole function would
-   silently return an empty record for every catalog. Now resolves
-   `catalog` through g_anim_model_slot (the real per-catalog model
-   address, in the same order load_3d_object_models loads them) and hands back a
-   fresh copy in g_anim_model_scratch -- a real npts/nparts/point-list/
-   face-list a caller can actually use, without ever aliasing (and
-   risking emit_catalog_object's own scratch writes corrupting) the
-   real model buffers. Falls back to the original (harmless, always-
-   empty) address-walk behavior for any catalog with no real model --
-   e.g. plain sprite/critter catalogs were never meant to reach this
-   table at all. */
+/* Ghidra lost the return value (literal `return 0`), so the sole caller (emit_catalog_object)
+   dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the moment an animated tile object (door,
+   etc.) came into view. */
 // was FUN_0001dc04
 void *tick_anim_record(catalog)
 short catalog;
@@ -885,29 +630,16 @@ short catalog;
   int iVar5;
   void *rec_base;
 
-  /* Native 3D catalog-object rendering (doors/frames drawing as real .E
-     model geometry instead of flat sprites) is enabled by default --
-     no env var needed, unlike this project's earlier, now-removed
-     g_model_map hack (which defaulted off). UW_DISABLE_3D_OBJECTS is
-     the opt-out, for QA comparison against the pre-this-feature
-     behavior, matching the naming convention UW_DISABLE_3D_GEOMETRY
-     (this file's own sibling flag for the tile/wall/floor renderer)
-     already established. Gated here, tick_anim_record's own single
-     choke point for every caller (doors via emit_anim_object_frames,
-     bridges/decals via the generic catalog dispatch) -- when set,
-     every catalog falls through to the address-walk below exactly as
-     it did before this session's fix, which lands in unrelated always-
-     zero memory and returns an empty (point_count==0) record, so
-     callers draw nothing for these objects rather than a stale flat
-     sprite (there's no old sprite path left to fall back to -- see
-     object-rendering-findings.txt). */
-  { static int _disabled = -1;
-    if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_OBJECTS") != NULL);
-    if (!_disabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
-      void *dest = g_anim_model_scratch[catalog];
-      memcpy(dest, g_anim_model_slot[catalog], 16384);
-      return dest;
-    }
+  /* Native 3D catalog-object rendering (doors/frames drawing as real .E model geometry instead of
+     flat sprites) is enabled by default -- no env var needed, unlike this project's earlier,
+     now-removed g_model_map hack (which defaulted off). g_uw_3d_objects_enabled is a real global
+     (not a function-local static) so the general debug panel (main_loop_hud_flush, hud.c) can
+     flip it live instead of only at launch. */
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  if (g_uw_3d_objects_enabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
+    void *dest = g_anim_model_scratch[catalog];
+    memcpy(dest, g_anim_model_slot[catalog], 16384);
+    return dest;
   }
 
   iVar4 = catalog * 0x3c2c;
@@ -973,17 +705,8 @@ short frame_or_texid;
   uint catalog_u;
   char *pcVar15;
   int iVar16;
-  /* iVar16 stays `int` for its FIRST role (a small face-index scalar,
-     `faces_remaining-1`, used only to seed iVar22/local_58 before the
-     loop). Inside the loop it gets reassigned to the CURRENT face
-     record's address (`_anim + iVar22 + 0xc14`) and used purely as a
-     pointer from then on -- a real 64-bit-pointer-truncated-through-a-
-     32-bit-int bug (this whole project's own well-established bug
-     class -- see DAT_00110fc0/DAT_0023aed0's own history) that never
-     triggered here because this loop never ran with real face data
-     until tick_anim_record's own fix (see its comment) made local_48/
-     faces_remaining nonzero for the first time. Split into its own
-     real pointer, `_face_rec`, scoped to exactly its second role. */
+  /* iVar16 stays `int` for its FIRST role (a small face-index scalar, `faces_remaining-1`, used
+     only to seed iVar22/local_58 before the loop). */
   char *_face_rec;
   undefined4 uVar17;
   int iVar18;
@@ -1004,33 +727,10 @@ short frame_or_texid;
   int iVar29;
   char *_anim;
   int iVar30;
-  /* Same truncated-pointer bug as _face_rec (see its own comment), one
-     variable over: iVar30 has a genuine dual role. In the ceiling-clamp
-     pre-pass (catalog_u==1 branch, the do/while over local_60) it's a real
-     small vertex-index integer, into a 4-entry table -- left as `int`
-     there, untouched. From its first REAL pointer assignment onward
-     (`_face_rec + 8` face-record field, dereferenced to build a vertex
-     address), it's a full address -- split into its own pointer, `_vptr`. */
+  /* Same truncated-pointer bug as _face_rec (see its own comment), one variable over: iVar30 has a
+     genuine dual role. */
   char *_vptr;
-  /* DELIBERATE DEVIATION from the real binary. The per-corner UV read
-     below is fixed at point.X (U) / point.Y (V) for every face in the
-     real ARM code (fsub/fdiv/fmul at 0x63104/0x63108/0x637f4 -- no Z
-     term, no flat-face branch), transform_points_by_matrix copies those
-     ints verbatim into the arena and the rasterizer interpolates them.
-     For a horizontal face (FBRIDGE.E's 256x16x256 deck: all 4 corners at
-     Y=16) that gives V=31 on every corner -- one texture row stretched
-     along the whole bridge. That IS what the shipped binary drew (the
-     draw-list commands the same branch emits -- `2 <reg 0xb>
-     DAT_00086d60[flags]`, `0xb2 6` -- have no consumer anywhere in
-     UU.exe: the list-cursor accessors FUN_00038624/644/664 have zero
-     callers), but per direct request the deck should carry the full
-     32x32 plank/slab image like the DOS game. So, PER FACE: when every
-     corner shares one Y, take V from point.Z over the model's Z extent
-     (computed here the same way parse_e_model_file computes X/Y's);
-     every face with any Y variation keeps the exact original mapping.
-     An earlier model-wide version of this used Z but still divided by
-     the Y extent (16 units) -- V ran -248..248 on a 32-texel texture,
-     the "garbage bridge texture" QA report. */
+  /* DELIBERATE DEVIATION from the real binary. */
   int _v_offset;
   byte *_floor_tex = (byte *)0x0;
   undefined4 _vmin_bits;
@@ -1124,13 +824,8 @@ short frame_or_texid;
   else {
     local_58 = (byte *)get_texture_page((int)frame_or_texid);
     if (local_58 == (byte *)0x0) {
-      /* frame_or_texid out of get_texture_page's 0..0x73 range -- reached with
-         (uVar27 & 0xf) + DAT_00202734 (~0x2b8) from emit_tile_objects's
-         `(*catalog & 0x30) == 0x30` branch, i.e. a special animated
-         object (door frame etc.) whose texture lives in a different bank
-         than the wall/floor tile pages this helper knows. Rather than
-         dereference NULL (crash the instant such a tile comes into view),
-         skip this object's textured billboard. */
+      /* frame_or_texid out of get_texture_page's 0..0x73 range -- reached with (uVar27 & 0xf) +
+         DAT_00202734 (~0x2b8) from emit_tile_objects's `(*catalog & 0x30) == 0x30` branch... */
       return;
     }
     bVar5 = *local_58;
@@ -1182,13 +877,9 @@ short frame_or_texid;
         else {
           emit_floor_texture_select(0,DAT_0023b4e0,
                        ((*(byte *)(obj + 1) >> 1 & 0xf) - (uint)(bVar5 >> 5)) + -1);
-          /* The real branch textures the bridge through draw-list
-             commands (0x3e/0xb2) this port has no consumer for -- resolve
-             the same floor texture emit_floor_texture_select just selected (index
-             +0x30 full-res / +0x6a low-res, its own level threshold)
-             directly, so a flags>=2 bridge isn't left with a NULL
-             texture. Not live-verified: every level-1 bridge has
-             flags 0/1. */
+          /* The real branch textures the bridge through draw-list commands (0x3e/0xb2) this port
+             has no consumer for -- resolve the same floor texture emit_floor_texture_select just
+             selected (index +0x30 full-res / +0x6a low-res, its own level threshold) directly... */
           _floor_tex = (byte *)get_texture_page(
               (((*(byte *)(obj + 1) >> 1 & 0xf) - (uint)(bVar5 >> 5)) + -1) +
               (((int)(DAT_0023b4e0 & 0xff) < (int)DAT_00086b24) ? 0x30 : 0x6a));
@@ -1341,14 +1032,9 @@ short frame_or_texid;
   }
   _anim = (char *)tick_anim_record(catalog);
   faces_remaining = *(int *)(_anim + 4);
-  /* HACK: ARM 0x65394 places models at packed_slot * 32 + 16.
-     DFRAME.E's outer edges are at local X +/-128, so packed slot 3 or
-     4 leaves a 16-unit wall gap on one side and protrudes on the other.
-     No integer packed slot centers a 256-unit frame at 128. Fit only
-     the outer jamb vertices to the tile boundaries; keep the +/-64
-     opening, packed anchor and leaf hinge unchanged. This is a visual
-     compatibility correction, not a recovered ARM placement instruction.
-     Cardinal frames only: diagonal frames do not span this tile axis. */
+  /* HACK: ARM 0x65394 places models at packed_slot * 32 + 16. DFRAME.E's outer edges are at local X
+     +/-128, so packed slot 3 or 4 leaves a 16-unit wall gap on one side and protrudes on the other.
+     No integer packed slot centers a 256-unit frame at 128. */
   if (catalog_u == 1 && (local_7c & 0x3fff) == 0) {
     int _quarter = local_7c >> 14;
     int _along = ((_quarter & 1) ? DAT_0023b920 : DAT_0023b904) & 0xff;
@@ -1790,37 +1476,19 @@ LAB_000640ec:
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
   }
-  /* General object tuner (UW_MODEL_TUNER=1) -- runs for every catalog
-     this path draws, not just doors, so whatever real .E-model object
-     is currently on screen (boulder, bridge, door frame, ...) gets a
-     live rotation_offset field. Reset to 0 whenever the catalog on
-     screen changes so a leftover rotation from tuning one object
-     doesn't silently carry into the next. Applied directly to the
-     model's own real final rotation angle (degrees) before it's handed
-     to build_euler_rotation_matrix -- nudging this while walking around
-     an object spins the OBJECT, letting every face's true orientation
-     be checked without needing to physically walk a full circle around
-     it in the level (not always possible -- against a wall, etc). Only one object's panel can be shown per frame (whichever ran last). */
+  /* General object tuner (UW_MODEL_TUNER=1) -- runs for every catalog this path draws, not just
+     doors, so whatever real .E-model object is currently on screen (boulder, bridge, door frame,
+     ...) gets a live rotation_offset field. */
   if ((int)catalog_u != g_tune_last_catalog) {
     g_tune_last_catalog = (int)catalog_u;
     g_tune_rotation_offset = 0.0;
   }
-  /* Was gated behind UW_MODEL_TUNER=1 -- on unconditionally now, per
-     direct request ("turn the debug panel on by default instead of
-     needing an env var"), so no relaunch-with-env-var step is needed
-     to use it. Still only POPULATES the field list here; the panel
-     itself stays hidden until backtick (dbgui_visible()/g_visible in
-     debug_ui.c, unchanged), so this has zero effect on normal play or
-     any of the regression demo scripts -- none of them press backtick. */
-  { char _tune_title[48];
-    snprintf(_tune_title, sizeof(_tune_title), "Object Tuner (catalog=%d)", (int)catalog_u);
-    dbgui_begin(_tune_title);
-    dbgui_field_double("rotation_offset", &g_tune_rotation_offset, 5.0);
-    dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
-    dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
-    dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
-    dbgui_end();
-  }
+  /* This used to populate the shared debug-UI field list with a live per-catalog "Object Tuner"
+     panel every time a model drew, which silently overwrote whatever the general debug panel
+     (main_loop_hud_flush, hud.c) had just populated that same frame, since dbgui_begin/_end share
+     one static field list. The debug panel is a general subsystem-toggle panel now, not a model
+     debugger -- this site no longer touches it. g_tune_rotation_offset keeps applying below at
+     its known-good default (0.0); it's just no longer live-editable from the UI. */
   sVar13 = (short)((int)sVar13 + (int)g_tune_rotation_offset);
   for (; 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
   }
@@ -1835,42 +1503,15 @@ LAB_000640ec:
   if (getenv("UW_DEBUG_DOOR_POS"))
     fprintf(stderr, "[doorpos] catalog=%d emitted records [%d,%d) vtx [%d,%d) faces_remaining_was=%d\n",
             (int)catalog, _rec_start, (int)DAT_0023b83c, _vtx_start, (int)DAT_0023b838, faces_remaining);
-  /* transform_points_by_matrix is original, unmodified code -- it has no
-     idea g_tile_texptr_emit[] exists. It copies each face's texture
-     pointer (texptr) into the arena record's own byte offset +0x18..+0x1b,
-     but that's only a 32-bit field, truncating this platform's real 64-bit
-     pointer (the SAME bug class as _face_rec/_vptr above, just baked into
-     original code this time). This codebase's own rasterizer doesn't even
-     read that embedded field for this record format -- EVERY other writer
-     of this same 0x60-byte-stride record instead populates the side-
-     channel g_tile_texptr_emit[record_index], which this original
-     function was never taught to do. Backfill it for every record this
-     call just added. */
+  /* transform_points_by_matrix is original, unmodified code -- it has no idea g_tile_texptr_emit[]
+     exists. */
   { int _ti; for (_ti = _rec_start; _ti < DAT_0023b83c; _ti++) {
       if ((unsigned)_ti < UW_MAX_VIS_TILES) g_tile_texptr_emit[_ti] = texptr;
     }
   }
-  /* QA report: "backwards object model face sorting in a boulder
-     object... a portion of the floor shows through the boulder,
-     because far faces are drawn but near faces are hidden." This
-     engine has no z-buffer and no backface culling (confirmed
-     repeatedly this session), so a model's own faces are painted in
-     whatever order its .E file happens to list its parts -- a face
-     physically BEHIND another one, if listed later, simply overdraws
-     it, reading as "a hole in the model" with no geometry/winding/UV
-     bug involved. This exact fix (depth-sort a model's own just-
-     emitted records, farthest-from-camera first, right after they're
-     written) was already built, tested, and confirmed live for the
-     OLD emit_model_object/g_model_map path this session (git log
-     79e78aa on this project's own e-model-texturing branch) -- ported
-     here rather than re-invented, adapted only for this function's own
-     record range tracking (_rec_start/DAT_0023b83c, already present
-     above for the texptr backfill) since the underlying arena record
-     format (&DAT_000acde4 family, 0x60-byte stride) and vertex-position
-     storage (DAT_000a85d0_backing, 0xc-byte stride) are the exact same
-     shared structures transform_points_by_matrix just wrote into --
-     confirmed by reading its own field offsets, not assumed. Opt-out
-     via UW_MODEL_NO_DEPTH_SORT=1 for A/B comparison; on by default. */
+  /* QA report: "backwards object model face sorting in a boulder object... a portion of the floor
+     shows through the boulder, because far faces are drawn but near faces are hidden." This engine
+     has no z-buffer and no backface culling (confirmed repeatedly this session)... */
   if (getenv("UW_MODEL_NO_DEPTH_SORT") == 0 && DAT_0023b83c > _rec_start) {
     double _eye_x = *(float *)&DAT_000db438, _eye_y = *(float *)&DAT_000db43c, _eye_z = *(float *)&DAT_000db440;
     int _n = DAT_0023b83c - _rec_start;
@@ -2050,30 +1691,9 @@ ushort * obj;
     bVar4 = *(byte *)((char *)obj + 1);
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    /* Reverting the previous "quality" HACK here: fresh Ghidra headless
-       decompiles of this exact function (FUN_00064384) and
-       scheduler_step_entry (scheduler_step_entry) from the real UU.exe binary
-       (Ghidra project /Users/ccuddigan/Projects/UW1/decomp) prove this
-       line's original form -- `(bVar4 >> 1 & 7)` -- was always correct,
-       and the earlier "fix" (substituting a fabricated quality-derived
-       0/1-times-5 value) was itself the bug, not a fix. `bVar4 >> 1 & 7`
-       reads bits 9-11 of the door's own word0 -- the exact bits
-       scheduler_step_entry's class-flag-bit-2 branch (`uVar8 == 4` a
-       few hundred lines down) directly increments by the elapsed-ticks
-       parameter every tick it runs, merged back via the same `& 0xe00`
-       / `& 0x1e00` masks. Confirmed live (UW_DEBUG_DOOR): doors' real
-       loaded class-7 behavior flags are 0x84 -- bit 2 (0x04) set, bit 0
-       (0x01, the quality-ramp path this session's earlier fix wrongly
-       assumed doors used) NOT set. Quality (obj[3] & 0x3f) really does
-       just flip +8/-8 open/closed in one step (via open_door_object/
-       scheduler_finish_entry) -- that part of the earlier analysis was
-       right -- it's simply not what drives the swing angle at all; the
-       gradual six-to-eight-step sweep the original game shows comes
-       entirely from this word0 field via the bit-2 path instead, which
-       was already correctly implemented elsewhere in this file and
-       simply never got a chance to work because this line was
-       overriding its result with a fixed, oversized substitute instead
-       of reading it. */
+    /* Reverting the previous "quality" HACK here: fresh Ghidra headless decompiles of this exact
+       function (FUN_00064384) and scheduler_step_entry (scheduler_step_entry) from the real UU.exe
+       binary (Ghidra project /Users/ccuddigan/Projects/UW1/decomp) prove this line's original... */
     iVar8 = ((bVar4 >> 5 & 1) * 2 + -1) * (bVar4 >> 1 & 7);
     uVar5 = get_catalog_sprite_width(5);
     *DAT_00110fc0 = uVar5;
@@ -2223,16 +1843,9 @@ LAB_00064cdc:
             uVar11 = g_current_tile->wall_tex;
           }
           else {
-            /* Was `DAT_00202734 + door_type + 0x30` -- matches
-               load_door_frames's own (fixed) scratch base; see that
-               function's comment for why the original binary's
-               formula collided with the HUD icon preload range, and
-               why the base moved again from 60000 to 20000 (the first
-               fix broke a DIFFERENT thing: emit_catalog_object's own
-               `frame_or_texid < 0` sentinel check, a signed 16-bit
-               comparison -- 60000 wrapped negative as a short and got
-               silently reinterpreted as "no frame, use the catalog's
-               internal animation" instead of a real frame index). */
+            /* Was `DAT_00202734 + door_type + 0x30` -- matches load_door_frames's own (fixed)
+               scratch base; see that function's comment for why the original binary's formula
+               collided with the HUD icon preload range... */
             uVar11 = 20000 + door_type;
             uVar9 = 0xe;
           }
@@ -2257,20 +1870,12 @@ LAB_00064cdc:
 
 
 
-// was FUN_0001e594 -- adds a per-axis float offset (param_2/3/4, each an
-// int converted to float via ordfloat_int_to_float2) to the model animation
-// block's own stored position floats at offsets 0xc08/0xc0c/0xc10 (x/y/z).
-// The one real caller (emit_catalog_object, src/models.c) uses it to
-// apply a heading-dependent directional offset (looked up from the
-// DAT_00086cXX direction tables) before scale_model_part_offsets below
-// applies its own per-axis scale -- together these look like the
-// position+scale setup for a swinging door/portcullis model's visual
-// offset from its tile-grid position.
+// was FUN_0001e594 -- adds a per-axis float offset (param_2/3/4, each an int converted to float via
+// ordfloat_int_to_float2) to the model animation block's own stored position floats at offsets
+// 0xc08/0xc0c/0xc10 (x/y/z).
 void apply_model_position_offset(param_1,param_2,param_3,param_4)
-char *param_1;  /* was `int` -- truncated the real _anim pointer
-                   emit_catalog_object passes in, latent until the
-                   DAT_00202c9X object-property fix let real property
-                   data reach a nonzero case here */
+char *param_1;  /* was `int` -- truncated the real _anim pointer emit_catalog_object passes in, latent until the
+   DAT_00202c9X object-property fix let real property data reach a nonzero case here */
 undefined4 param_2;
 undefined4 param_3;
 undefined4 param_4;
@@ -2301,17 +1906,9 @@ undefined4 param_4;
 
 
 
-// was FUN_0001e6f0 -- multiplies (ordfloat_mul, float MULTIPLY) a model
-// animation block's own position floats by per-axis scale factors
-// (param_2/3/4). param_1[0] is read as a sub-part count; each iteration
-// scales the 3 floats at the current element's own offsets +8/+0xc/+0x10
-// (bytes) and then advances by 3 ints (12 bytes) to the next element --
-// so this walks an array of per-part transform records, scaling each
-// part's position in place. Real call sites (emit_catalog_object,
-// src/models.c) use it for door/portcullis-family catalog objects,
-// scaling by (1.0,1.2,1.0), (2.5,2.5,2.5) or (2.0,2.0,2.0) depending on
-// the specific catalog id -- the exact per-part record layout beyond
-// these 3 float fields isn't otherwise confirmed.
+// was FUN_0001e6f0 -- multiplies (ordfloat_mul, float MULTIPLY) a model animation block's own
+// position floats by per-axis scale factors (param_2/3/4). param_1[0] is read as a sub-part
+// count...
 void scale_model_part_offsets(param_1,param_2,param_3,param_4)
 int * param_1;
 undefined4 param_2;
@@ -2356,12 +1953,9 @@ undefined4 param_4;
 }
 
 
-// was FUN_00038680 -- loads every catalog 3D object model (.E files:
-// door frame, footbridge, bench, lotus, rocks, arrow, beam, shrine,
-// doors, tilemap decals, grave, gate, table, chest, nightstand,
-// barrel/closet, chair, bed) via parse_e_model_file into their
-// respective geometry buffers, then decompresses a final large shared
-// data block. The one-time 3D model-catalog init.
+// was FUN_00038680 -- loads every catalog 3D object model (.E files: door frame, footbridge, bench,
+// lotus, rocks, arrow, beam, shrine, doors, tilemap decals, grave, gate, table, chest, nightstand,
+// barrel/closet, chair, bed) via parse_e_model_file into their respective geometry buffers...
 void load_3d_object_models()
 
 {
@@ -2399,43 +1993,11 @@ void load_3d_object_models()
 }
 
 
-// was FUN_00020a74 -- parses one DATA3D/*.E text-format 3D model script
-// (param_1 = file path, param_2 = ~16KB per-model output buffer) into
-// point positions and per-part (per-face) vertex-index lists. Called 29
-// times from load_3d_object_models at startup, once per model file. Point count
-// lives at output offset 0, part count at offset 4, points at
-// `8 + i*0xc` (3 back-to-back floats), parts at `0xc14 + p*0x60` (a
-// vertex count then that many vertex-index ints from offset +4) -- see
-// emit_catalog_object's own use of this layout. Despite computing a real
-// per-face normal (vec3_sub + vec3_cross, see vec3_cross's comment) and
-// resolving per-face color (EXTENDED_COLORS against g_model_known_ext_
-// colors), neither survives into this output buffer -- confirmed by
-// tracing the whole function, including the real ARM disassembly at the
-// normal's call site, not just this decompile. Only point positions and
-// vertex-index lists persist. Full writeup: object-rendering-findings.txt
-// UPDATE (7)/(8).
-/* Every .E model file in data/DATA3D/ is CRLF-terminated (confirmed via
-   `xxd` on ROCKBIG.E: the PARTS block's last entry ends "...8);\r\n}\r\n").
-   This parser's own end-of-PARTS-block check (s___c_1____00084954,
-   "%*c%1[}]" -- skip exactly one character, then test for '}') was
-   written assuming the ORIGINAL DOS/CE C runtime's text-mode fopen()
-   would already have collapsed that \r\n to a single \n, leaving %*c's
-   one-character skip landing exactly on '}'. POSIX fopen() never does
-   that translation regardless of mode string, so on this port the raw
-   \r survives, %*c skips it, and %1[}] then fails to match the '\n'
-   that follows -- the parser concludes there's ANOTHER part still to
-   read and parses one phantom extra PARTS entry off of "}\r\n\nNODES
-   {\r\n..." garbage (a degenerate 1-vertex "face" that reliably fails
-   to rasterize at runtime, confirmed live via UW_DEBUG_FACE51: every
-   .E model tested gets its real face count plus exactly one broken
-   trailing entry). Root-caused, not guessed: bisected with UW_DEBUG_
-   NEARCLIP_RANGE that the failing record's own point count is 1 before
-   near-clip ever touches it, then UW_DEBUG_EPARSE showed the parser
-   itself emitting a 53rd part (vertcount=1) for ROCKBIG.E's 52-entry
-   PARTS block. Fixed at the real root: strip \r from the file's own
-   byte stream before scanning, replicating the text-mode translation
-   the recovered scanf patterns were always written to expect, rather
-   than reworking every parser call site individually. */
+// was FUN_00020a74 -- parses one DATA3D/*.E text-format 3D model script (param_1 = file path,
+// param_2 = ~16KB per-model output buffer) into point positions and per-part (per-face)
+// vertex-index lists. Called 29 times from load_3d_object_models at startup, once per model file.
+/* Every .E model file in data/DATA3D/ is CRLF-terminated (confirmed via `xxd` on ROCKBIG.E: the
+   PARTS block's last entry ends "...8);\r\n}\r\n"). */
 static void *uw_e_model_strip_cr(void *raw_fh) {
   FILE *f = (FILE *)raw_fh;
   long sz;
@@ -2455,10 +2017,9 @@ static void *uw_e_model_strip_cr(void *raw_fh) {
     if (buf[r] != '\r') buf[w++] = buf[r];
   }
   buf[w] = 0;
-  /* fmemopen keeps a reference to buf, not a copy -- intentionally never
-     freed (one small per-model leak at load time, ~29 models total,
-     same tolerance this codebase already extends to other load-time
-     scratch allocations). */
+  /* fmemopen keeps a reference to buf, not a copy -- intentionally never freed (one small per-model
+     leak at load time, ~29 models total, same tolerance this codebase already extends to other
+     load-time scratch allocations). */
   clean = fmemopen(buf, w, "r");
   return clean ? clean : f;
 }
@@ -2466,10 +2027,9 @@ static void *uw_e_model_strip_cr(void *raw_fh) {
 void parse_e_model_file(param_1,param_2,flip_winding)
 char *param_1;
 undefined1 * param_2;
-int flip_winding; /* HACK: not part of the original recovered signature --
-                      see its own use site (the "HACK: flip_winding"
-                      comment, right before the PARTS block's per-face
-                      vertex-reversal) for the full rationale. */
+int flip_winding; /* HACK: not part of the original recovered signature -- see its own use site (the "HACK:
+   flip_winding" comment, right before the PARTS block's per-face vertex-reversal) for the full
+   rationale. */
 
 {
   char stack0xffdc3228_buf [256];
@@ -2498,14 +2058,8 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   int *piVar20;
   undefined4 *****pppppuVar21;
   char local_260 [4];
-  /* local_25c/pvVar_fh hold the real fopen() handle from ce_fopen,
-     used across the whole function's ce_fscanf (fscanf) calls -- were
-     declared int, truncating the pointer on this 64-bit host. iVar3 is
-     reused throughout this function for unrelated numeric work
-     interleaved with "restore the file handle" (iVar3 = local_25c;)
-     idioms right before each ce_fscanf call, so it couldn't just be
-     retyped in place -- pvVar_fh takes over only those restore/use
-     sites. */
+  /* local_25c/pvVar_fh hold the real fopen() handle from ce_fopen, used across the whole function's
+     ce_fscanf (fscanf) calls -- were declared int... */
   void *local_25c;
   void *pvVar_fh;
   undefined *local_258;
@@ -2563,18 +2117,9 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   pvVar_fh = ce_fopen(acStack_130,&DAT_00084a24);
   pvVar_fh = uw_e_model_strip_cr(pvVar_fh);
   local_25c = pvVar_fh;
-  /* This whole function's 11 fatal-error checks (NKDbgPrintfW message +
-     terminate_process, killing the entire process) originally treated any
-     malformed/unparseable ".E" model script as unrecoverable. That's far
-     too strict for a recompile whose parser for this text format is
-     itself reconstructed best-effort (see DAT_000849a8/DAT_000849ac/
-     DAT_000849c8's declaration comments -- several of this parser's own
-     format strings and keywords were unrecoverable and had to be
-     inferred from a real file's content), so a wrong guess anywhere in
-     this parser previously took the whole game down instead of just
-     this one model. Redirected to the function's own cleanup label
-     (fclose + bookkeeping) instead, so a bad/partially-understood model
-     is skipped rather than fatal. */
+  /* This whole function's 11 fatal-error checks (NKDbgPrintfW message + terminate_process, killing
+     the entire process) originally treated any malformed/unparseable ".E" model script as
+     unrecoverable. */
   if (pvVar_fh == 0) {
     goto LAB_0002263c;
   }
@@ -2599,11 +2144,9 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   pppppuVar21 = (undefined4 *****)&pppuStack_244;
   pcVar15 = &DAT_000d98c8;
   ce_fscanf(pvVar_fh,s__1s__a_z__1s_000849d8,auStack_24c,&DAT_000d98c8,pppppuVar21);
-  /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION): the %[a-z]
-     conversion above has no width limit, so DAT_000d98c8's real need is
-     whatever the longest actual token in the shipped .E model files is,
-     not a value derivable from the format string alone. Reusing the
-     existing model-parse debug var to find a true high-water mark. */
+  /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION): the %[a-z] conversion above has no
+     width limit, so DAT_000d98c8's real need is whatever the longest actual token in the shipped .E
+     model files is, not a value derivable from the format string alone. */
   if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
     fprintf(stderr, "[model-parse-hwm] DAT_000d98c8 token_len=%d\n", (int)ce_strlen(&DAT_000d98c8));
   }
@@ -2623,24 +2166,8 @@ int flip_winding; /* HACK: not part of the original recovered signature --
   while( true ) {
     pvVar_fh = local_25c;
     iVar4 = ce_fscanf(local_25c,s__100s_1s_000849cc,auStack_1c8,local_260,pppppuVar21);
-    /* Real .E files are inconsistent about a space before a block
-       keyword's opening brace -- confirmed directly against the
-       shipped files (data/DATA3D/ROCKBIG.E: "CLUSTERS {" with a space;
-       data/DATA3D/BARRCLOS.E: "CLUSTERS{", "NODES{", "EXTENDED_COLORS{",
-       "SCALE_SHIFT{" with none, even though its own POINTS/PARTS use
-       the spaced form). The %100s half of this scanf includes a glued
-       brace in the token itself, so every keyword strcmp below fails
-       to match it, and %1s goes on to consume the block's own first
-       real content byte in place of the delimiter this loop's error
-       check expects -- confirmed live (UW_DEBUG_MODEL_PARSE_HWM showed
-       zero NODES/CLUSTERS/ANIMATE/INTERSECTIONS records ever parsed
-       across the full regression suite despite 12 of the 29 loaded
-       models having real CLUSTERS+NODES content) and in a live run's
-       own "error:_CLUSTERS{,(" / "error:_NODES{,L" console output.
-       Normalize: split a trailing '{' off the token and push the
-       wrongly-consumed byte back onto the stream so the block-specific
-       parser below still sees it, exactly as if the file had the
-       spaced form. */
+    /* Real .E files are inconsistent about a space before a block keyword's opening brace --
+       confirmed directly against the shipped files... */
     if (iVar4 == 2) {
       size_t _tklen = ce_strlen(auStack_1c8);
       if (_tklen > 0 && ((char *)auStack_1c8)[_tklen - 1] == '{') {
@@ -2736,17 +2263,9 @@ LAB_00022604:
             (&DAT_000d2ac1)[iVar6] = 0;
             (&DAT_000d2ac2)[iVar6] = 0;
             (&DAT_000d2ac3)[iVar6] = 0;
-            /* Was `ordfloat_int_to_float2()` with the argument dropped -- the two
-               sibling conversions right below it (Y=local_224, Z=local_214)
-               both pass their value explicitly; this one, the X coordinate,
-               did not. Confirmed via a raw memory dump of the parsed
-               ROCKSMAL.E buffer: every point's first float came out as a
-               constant 3.0 (ordfloat_int_to_float2((float)x)'s bit pattern for x=3,
-               whatever this build's calling convention happened to leave in
-               the argument register) while Y/Z matched the source file
-               exactly. Same "dropped argument, register-leftover idiom
-               doesn't survive a literal recompile" bug class as everywhere
-               else in this file. */
+            /* Was `ordfloat_int_to_float2()` with the argument dropped -- the two sibling
+               conversions right below it (Y=local_224, Z=local_214) both pass their value
+               explicitly; this one, the X coordinate, did not. */
             uVar7 = ordfloat_int_to_float2(local_204);
             param_2[iVar19 * 0xc + 8] = (char)uVar7;
             param_2[iVar19 * 0xc + 9] = (char)((uint)uVar7 >> 8);
@@ -2925,28 +2444,9 @@ LAB_000218b8:
                 param_2[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
                 param_2[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
                 param_2[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
-                /* HACK: flip_winding (new parameter, not part of the
-                   original recovered signature) -- caller-supplied,
-                   per-model opt-in to reverse every face's just-read
-                   vertex list. Added because several models' faces render
-                   backward: raster_triangle has a real, working backface
-                   cull (confirmed this session via its left/right edge-
-                   assignment gate in raster_textured_span -- not a bug, a
-                   legitimate cheap cull the original engine relies on),
-                   so a backward-wound face silently disappears depending
-                   on which side of it the camera ends up on. A real
-                   per-face fix would need each face's own normal compared
-                   against the mesh's shape (tried, reverted per explicit
-                   instruction: too complicated for what's just a handful
-                   of known-bad models, and unreliable besides -- see
-                   object-rendering-findings.txt milestone 13, where that
-                   approach's own centroid heuristic gave the wrong answer
-                   for the boulder) -- a flat "flip everything in this
-                   file" flag, opted into only for the specific models
-                   confirmed backward BY EYE (not the offline heuristic --
-                   see milestone 13/14), is simpler and does the same job
-                   for these models specifically (see the call sites in
-                   the .E load list for which ones pass 1). */
+                /* HACK: flip_winding (new parameter, not part of the original recovered signature)
+                   -- caller-supplied, per-model opt-in to reverse every face's just-read vertex
+                   list. */
                 if (flip_winding && 1 < iVar3) {
                   int _flip_lo = 0, _flip_hi = iVar3 - 1;
                   while (_flip_lo < _flip_hi) {
@@ -3300,23 +2800,8 @@ LAB_0002226c:
             }
             else {
               iVar4 = ce_strcmp(auStack_1c8,s_ANIMATE_00084760);
-              /* BUG FIX: was an unconditional `goto LAB_00022604` (the
-                 generic "skip this unrecognized block" tail) on ANY
-                 ANIMATE mismatch -- but CLUSTERS and NODES (their own
-                 real, already-written handling sits right after this
-                 whole if/else-if chain closes, as the `else` of the
-                 outer `if (DAT_000db480 == 0)`) were never actually
-                 reachable as a result: every token that wasn't VERSION/
-                 NAMES/POINTS/PARTS/INTERSECTIONS/EXTENDED_COLORS/ANIMATE
-                 got silently skipped right here, before ever trying
-                 CLUSTERS or NODES. Confirmed live (UW_DEBUG_MODEL_
-                 PARSE_HWM): zero NODES/CLUSTERS/ANIMATE/INTERSECTIONS
-                 records ever parsed across the full regression suite,
-                 despite several of the 29 real loaded models having
-                 genuine CLUSTERS+NODES content (data/DATA3D/ROCKBIG.E
-                 etc.). Falls through to the CLUSTERS check instead;
-                 the real "give up and skip" case now lives at NODES's
-                 own final mismatch below, where it belongs. */
+              /* BUG FIX: was an unconditional `goto LAB_00022604` (the generic "skip this
+                 unrecognized block" tail) on ANY ANIMATE mismatch -- but CLUSTERS and NODES... */
               if (iVar4 != 0) {
                 goto LAB_check_clusters;
               }
@@ -3444,18 +2929,8 @@ LAB_check_clusters:
           else {
             iVar4 = ce_strcmp(auStack_1c8,s_NODES_00084834);
             /* BUG FIX: was `goto LAB_0002226c`, re-entering this same
-               INTERSECTIONS/EXTENDED_COLORS/ANIMATE/CLUSTERS/NODES
-               cascade from the top with the SAME already-mismatched
-               token -- which can only mismatch every one of them again
-               (nothing re-reads a token in between), re-arriving right
-               back here in an unbounded loop. This is genuinely the
-               "none of the known block keywords matched" case (e.g. a
-               real file's own SCALE_SHIFT block, which isn't one of
-               the types this parser understands); use the same
-               skip-to-this-block's-closing-brace tail VERSION/NAMES/
-               POINTS/ANIMATE's own real matches share, so an unknown
-               block is skipped once and the outer loop moves on to the
-               next token instead of spinning. */
+               INTERSECTIONS/EXTENDED_COLORS/ANIMATE/CLUSTERS/NODES cascade from the top with the
+               SAME already-mismatched token... */
             if ((iVar4 != 0) &&
                (iVar4 = ce_strcmp(auStack_1c8,s_SUPER_NODES_00084828), iVar4 != 0)) {
               pcVar2 = s________c_0008471c;
@@ -3542,11 +3017,8 @@ LAB_check_clusters:
   }
   NKDbgPrintfW(s_unexpected_EOF___no_END_statemen_000846f8);
 LAB_0002263c:
-  /* ce_fclose is fclose-shaped, closing the handle ce_fopen (fopen)
-     opened at the top of this function -- was called with iVar3 (reused
-     throughout this function for unrelated numeric work, and not
-     reliably holding the handle by this point even before the
-     local_25c/pvVar_fh pointer-width fix), should be the real handle. */
+  /* ce_fclose is fclose-shaped, closing the handle ce_fopen (fopen) opened at the top of this
+     function -- was called with iVar3... */
   ce_fclose(local_25c);
   iVar3 = g_model_parse_part_count;
   if ((DAT_000db494 != 0) && (iVar4 = 0, 0 < g_model_parse_part_count)) {

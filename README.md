@@ -41,6 +41,10 @@ presented frame without the Pocket PC stylus hiding rules. It stays out of the
 game framebuffer, so moving it does not leave trails or enter screen backups.
 Set `UW_ALWAYS_SHOW_CURSOR=0` to restore the original stylus behavior.
 
+The display defaults to the original 320×200 game area, initially scaled 2×.
+Set `UW_TOUCHSCREEN=1 ./run.sh` to include the Pocket PC touch input strip
+below it (320×240). Leaving it unset or setting `UW_TOUCHSCREEN=0` hides it.
+
 ## Unit tests
 
 The C unit tests use [Unity](https://github.com/ThrowTheSwitch/Unity),
@@ -190,10 +194,15 @@ light strength level subtracts 16 from the unlit starting bias of +8.
 Use `UW_LIGHT_MODE=dos ./run.sh` for palette shading based on the equipped
 light's `SHADES.DAT` configuration and `LIGHT.DAT` mappings. Use
 `UW_LIGHT_MODE=arm ./run.sh` to select the default explicitly; unrecognized
-values also use ARM lighting.
+values also use ARM lighting. Mode names are case-insensitive (`DOS` and
+`dos` select the same palette shading).
 For optional ARM brightness calibration, use `UW_AMBIENT_BIAS_REDUCTION`:
 negative integers brighten the view and positive integers darken it. The
 adjustment defaults to `64` when unset. Set it to `0` to disable calibration. DOS palette shading does not use this adjustment.
+Both modes use radial eye-to-surface distance and default to screen-anchored
+ordered dithering: DOS alternates palette shades, while ARM dithers RGB565
+channel rounding. Set `UW_DITHER=0` to disable it or `UW_DITHER=1` to enable it
+explicitly.
 
 File loads are logged to stderr (`[fileio] open-read: ...`), including
 failures, which is the fastest way to tell what's missing or misnamed.

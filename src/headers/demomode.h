@@ -1,7 +1,6 @@
-/* Scripted input playback for unattended testing. Reads key names, one
- * per line, from the file named by the UW_DEMO_FILE env var and injects
- * them as real keydown/keyup events on a timer, so a crash sequence can
- * be reproduced without a human at the keyboard. */
+/* Scripted input playback for unattended testing. Reads key names, one per line, from the file
+   named by the UW_DEMO_FILE env var and injects them as real keydown/keyup events on a timer, so a
+   crash sequence can be reproduced without a human at the keyboard. */
 #ifndef DEMOMODE_H
 #define DEMOMODE_H
 
@@ -18,12 +17,9 @@ void demomode_pump(void);
  * physical keypress can be used to interrupt playback. */
 int demomode_active(void);
 
-/* Stop demo playback immediately: drop any in-progress HOLD/TYPE/WAIT,
- * release a still-held key, close the file, and hand control back to the
- * live keyboard/mouse. Does NOT exit the process (unlike running the file
- * to its end) -- the window stays open to poke at the resulting state.
- * No-op if no demo is active. Bound to the physical ESC key in
- * uw_pump_events. */
+/* Stop demo playback immediately: drop any in-progress HOLD/TYPE/WAIT, release a still-held key,
+   close the file, and hand control back to the live keyboard/mouse. Does NOT exit the process
+   (unlike running the file to its end) -- the window stays open to poke at the resulting state. */
 void demomode_abort(const char *reason);
 
 /* Shared scratch fallback buffer DAT_00110fc0/DAT_00110fcc point into;

@@ -1,14 +1,11 @@
-/* The 3D transform/rasterization pipeline: vertex math, view matrix
- * construction, camera-space transform/projection, near-plane
- * clipping, and the triangle rasterizer (edge setup, perspective-
- * correct texture span drawing). Split out of uw.c (the original
- * monolithic decompile) once these functions' real roles were
- * confirmed.
- */
+/* The 3D transform/rasterization pipeline: vertex math, view matrix construction, camera-space
+   transform/projection, near-plane clipping, and the triangle rasterizer (edge setup, perspective-
+   correct texture span drawing). */
 #include "headers/3d.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define DAT_000869cc (DAT_000869cc_str[0])
 #define DAT_000869d4 (DAT_000869d4_str[0])
@@ -16,27 +13,17 @@
 #define DAT_000869e4 (DAT_000869e4_str[0])
  void *g_tile_texptr_emit[UW_MAX_VIS_TILES];
  void *g_tile_texptr_out[UW_MAX_VIS_TILES];
-/* Ghidra only saw pointer-walking writes (build_shade_lut) and an indexed
-   read (sVar7 clamped to 0x9f, i.e. 160 entries -- see its use below), so
-   it declared this as a lone scalar instead of the real 160-entry
-   distance/lighting falloff table. That undersizing let build_shade_lut's
-   fill loop silently scribble past it into whatever the compiler placed
-   next in .bss (confirmed via `nm`: DAT_000bbef8 landed 28 bytes later,
-   exactly iteration 7 of the loop) -- invisible to ASan because a
-   non-static tentative definition like `undefined4 DAT_000b5638;` gets
-   common linkage, and Clang's ASan cannot redzone-instrument common
-   symbols. */
+/* Ghidra only saw pointer-walking writes (build_shade_lut) and an indexed read (sVar7 clamped to
+   0x9f, i.e. 160 entries -- see its use below), so it declared this as a lone scalar instead of the
+   real 160-entry distance/lighting falloff table. */
  undefined4 DAT_000b5638_backing[160];
 /* Initial byte at 0x842b0 in the original Pocket PC executable. */
 char DAT_000842b0 = 8;
 char DAT_0023b830;
 undefined2 DAT_000da47c;
-/* build_trig_tables builds these as 361-entry (0..360 degrees) sin / cos
-   tables (float bit patterns); every reader indexes
-   `(&DAT_000d99xx)[angle]`. Were lone `undefined4` scalars, so
-   build_trig_tables's `[0..360]` writes smashed ~1.4 KB of adjacent
-   globals. In UU.exe they are contiguous .bss (0xd9930 sin, 0xd9ed8
-   cos). */
+/* build_trig_tables builds these as 361-entry (0..360 degrees) sin / cos tables (float bit
+   patterns); every reader indexes `(&DAT_000d99xx)[angle]`. Were lone `undefined4` scalars, so
+   build_trig_tables's `[0..360]` writes smashed ~1.4 KB of adjacent globals. */
 /* Sizing-audit pass: build_trig_tables's own loop is `iVar2<0x169`
    (361, degrees 0-360) -- HARD exact for both sin/cos tables. Down
    from 512 each. */
@@ -48,18 +35,9 @@ undefined4 DAT_000db440;
 int DAT_000db448;
 int DAT_000db44c;
 static int DAT_000db450;
-/* DAT_000c8ac0-family: 12 separately-declared globals that are really the
-   12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
-   view/camera matrix -- build_view_matrix writes the whole matrix in one shot
-   via `multiply_matrix4x4(...,...,&DAT_000c8ac0)`, a matrix-multiply that treats
-   its output as one contiguous 64-byte buffer starting at DAT_000c8ac0
-   (including the 4 never-individually-named "column 3" slots at
-   +0xc/+0x1c/+0x2c/+0x3c, always 0/0/0/1 for this kind of matrix). As
-   separate globals our compiler doesn't guarantee they're adjacent, so
-   that write would land wherever the linker happened to place each one --
-   same lone-scalar/stray-symbol-declared-instead-of-a-real-array pattern
-   fixed repeatedly this session, just spread across a dozen names instead
-   of one. Real backing array + aliases at each element's correct offset. */
+/* DAT_000c8ac0-family: 12 separately-declared globals that are really the 12 non-translation-column
+   elements of one 4x4 (16 x undefined4, 64-byte) view/camera matrix -- build_view_matrix writes the
+   whole matrix in one shot via `multiply_matrix4x4(...,...,&DAT_000c8ac0)`... */
 static undefined4 DAT_000c8ac0_mtx[16];
 #define DAT_000c8ac0 DAT_000c8ac0_mtx[0]
 #define DAT_000c8ac4 DAT_000c8ac0_mtx[1]
@@ -74,28 +52,12 @@ static undefined4 DAT_000c8ac0_mtx[16];
 #define DAT_000c8af4 DAT_000c8ac0_mtx[13]
 #define DAT_000c8af8 DAT_000c8ac0_mtx[14]
 int DAT_000c8c98;
-/* Recovered from UU.exe .data at 0x84608: the near-clip distance,
-   float 5.0 (bit pattern 0x40a00000). render_visible_tile_list /
-   near_clip_visible_tiles pass it straight to the softfloat compare/subtract
-   ordinals as a float bit pattern. Was silently zero -> the near-plane
-   clip and the 1/(z-near) perspective divide both degenerated. */
+/* Recovered from UU.exe .data at 0x84608: the near-clip distance, float 5.0 (bit pattern
+   0x40a00000). render_visible_tile_list / near_clip_visible_tiles pass it straight to the softfloat
+   compare/subtract ordinals as a float bit pattern. */
 static undefined4 DAT_00084608 = 0x40a00000u;
-/* DAT_000bc038-family: ~40 separately-declared 1-byte globals that are
-   really one 0x88(136)-byte-stride per-tile record array (its sibling
-   DAT_000bc044 -- a few bytes further into the same original record --
-   was already fixed as a real backing array by a prior session; these
-   were missed). render_visible_tile_list's tile-visibility pass indexes them all with
-   the same `local_7c*0x88 [+ byte offset]` scheme (confirmed: the byte
-   offsets below, relative to DAT_000bc038, span exactly 0..0x87, one full
-   record). As lone scalars this walks off into whatever memory happens to
-   follow them, corrupting adjacent globals -- confirmed crashing
-   (EXC_BAD_ACCESS) a few calls further down this same file. Same
-   lone-scalar-used-as-array pattern fixed repeatedly this session.
-   Size this in records, matching the texture side tables: the old 32768
-   bytes held only 240 complete 0x88-byte records, while the input arena
-   can emit 490. Clipping a larger list wrote past this buffer and corrupted
-   other geometry state, which can make old/invalid polygons appear on screen.
-   The ARM function at 0x1f370 advances the output by 0x88 per polygon. */
+/* DAT_000bc038-family: ~40 separately-declared 1-byte globals that are really one
+   0x88(136)-byte-stride per-tile record array... */
 static undefined DAT_000bc038_backing[0x88 * UW_MAX_VIS_TILES] = {0};
 #define DAT_000bc038 DAT_000bc038_backing[0]
 #define DAT_000bc039 DAT_000bc038_backing[1]
@@ -138,18 +100,13 @@ static undefined DAT_000bc038_backing[0x88 * UW_MAX_VIS_TILES] = {0};
 #define DAT_000bc0bd DAT_000bc038_backing[0x85]
 #define DAT_000bc0be DAT_000bc038_backing[0x86]
 #define DAT_000bc0bf DAT_000bc038_backing[0x87]
-/* DAT_000c4838-family: same story, but holding real 8-byte pointers (one
-   per visible-tile record, written by near_clip_visible_tiles and read back by
-   render_visible_tile_list) rather than bytes -- was a lone `undefined4` (4 bytes),
-   which would silently truncate every pointer stored into it on this
-   64-bit port even before the out-of-bounds-array problem. Real backing
-   array of genuine pointer-sized slots, same generous record count as its
-   sibling arrays above. */
+/* DAT_000c4838-family: same story, but holding real 8-byte pointers (one per visible-tile record,
+   written by near_clip_visible_tiles and read back by render_visible_tile_list) rather than bytes
+   -- was a lone `undefined4` (4 bytes)... */
  void *DAT_000c4838_backing[4096];
-/* Recovered from UU.exe .data: the four texture-file basenames
-   load_dungeon_texture_arenas appends to "\DATA\" and loads into the arena. Were
-   silently-zero 32KB arrays, so every path was just the bare "\DATA\"
-   directory -> load_texture_arena failed -> DAT_002049e0 stayed all zero. */
+/* Recovered from UU.exe .data: the four texture-file basenames load_dungeon_texture_arenas appends
+   to "\DATA\" and loads into the arena. Were silently-zero 32KB arrays, so every path was just the
+   bare "\DATA\" directory -> load_texture_arena failed -> DAT_002049e0 stayed all zero. */
 static const char DAT_000869cc_str[] = "f16.tr";
 static const char DAT_000869d4_str[] = "w16.tr";
 static const char DAT_000869dc_str[] = "f32.tr";
@@ -180,13 +137,8 @@ undefined2 param_4;
 
 
 
-// was FUN_000137c0 -- elementwise 3-float vector subtract, param_3 = param_2
-// - param_1. Confirmed by tracing its two call sites in parse_e_model_file
-// (was FUN_00020a74): both feed a shared vertex-position array (the
-// model's own POINTS, 0xc-byte stride) and the results go straight into
-// vec3_cross (was FUN_00013904) as the two edge vectors of a real
-// per-face normal computation -- see vec3_cross's own comment for why
-// that computed normal never actually gets used.
+// was FUN_000137c0 -- elementwise 3-float vector subtract, param_3 = param_2 - param_1.
+// was FUN_00020a74
 void vec3_sub(param_1,param_2,param_3)
 undefined4 * param_1;
 undefined4 * param_2;
@@ -215,23 +167,8 @@ undefined1 * param_3;
 
 
 
-// was FUN_00013904 -- standard 3-float cross product, param_3 = param_1 x
-// param_2 (confirmed component-by-component, including the Y term's sign
-// flip the textbook formula requires). Its one real caller,
-// parse_e_model_file (was FUN_00020a74), uses it to compute each PARTS
-// face's real normal (two vec3_sub edge vectors, v1-v0 and v2-v0, crossed
-// together) right after reading that face's vertex-index list -- a
-// genuine, deliberate per-face normal computation. Traced the real ARM
-// disassembly at its call site (0x00021aa4, not just this decompile) to
-// rule out a dropped-store decompile bug: the instruction immediately
-// after `bl 0x00013904` is unrelated vertex-count bookkeeping, with no
-// store of the result anywhere in between. The original shipped binary
-// computes this normal and then genuinely never uses it -- not a
-// decompile loss, a real dead computation in the original game. See
-// object-rendering-findings.txt's UPDATE (7) ("THE .E PARSER COMPUTES A
-// REAL FACE NORMAL -- AND THROWS IT AWAY") for the full writeup, and
-// UPDATE (8) for the companion finding that UV data doesn't exist in
-// this format at all (never computed, unlike this normal).
+// was FUN_00013904 -- standard 3-float cross product, param_3 = param_1 x param_2 (confirmed
+// component-by-component, including the Y term's sign flip the textbook formula requires).
 void vec3_cross(param_1,param_2,param_3)
 undefined4 * param_1;
 undefined4 * param_2;
@@ -268,24 +205,9 @@ undefined1 * param_3;
 
 
 
-// was FUN_00014350 -- textured-triangle driver: viewport-culls, sorts
-// the 3 verts by Y, builds 3 edges via raster_edge_setup, walks
-// scanlines stepping edges (raster_edge_step) and emitting spans
-// (raster_textured_span)
-//
-// UW_DEBUG_RASTER=1: logs every call's screen-space verts/clip rect/
-// texture id, which of the four bounding-box trivial-reject checks (if
-// any) fired, and the final raster_textured_span call count. Added
-// while tracing a QA report that a TMAP decal (catalog 22) draws
-// visible pixels from the front but none from behind, despite an
-// identical raster_triangle call count either way -- confirmed by
-// reading the whole function that there is no winding/normal-based
-// reject anywhere in it (the only early-outs are the four axis-aligned
-// bbox trivial-rejects above, each screen-space-only); a boulder face
-// sweep (catalog 7, which self-occludes so a silently-empty back face
-// would never have been visually noticed) showed span_calls>0 on every
-// one of 52 faces, so whatever's producing the decal's blank back side
-// still needs to be traced with this at the decal's own repro position.
+// was FUN_00014350 -- textured-triangle driver: viewport-culls, sorts the 3 verts by Y, builds 3
+// edges via raster_edge_setup, walks scanlines stepping edges (raster_edge_step) and emitting spans
+// (raster_textured_span) UW_DEBUG_RASTER=1...
 void raster_triangle(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 undefined4 param_1;
 void *param_2; /* was undefined4 -- the framebuffer base (g_uw_framebuffer) */
@@ -308,15 +230,9 @@ int * param_8;
   uint uVar9;
   undefined4 uVar10;
   undefined4 uVar11;
-  /* auStack_c4 / auStack_7c were 12-byte locals but raster_edge_setup (called
-     on each below) writes its edge record out to param_6[10] == byte
-     0x2b, overflowing them; Ghidra named the tail of each overflow
-     `local_b8` / `local_70` (the param_6[3] scanline-count field, byte
-     0xc). Widened to real 72-byte buffers like their siblings and
-     local_b8 / local_70 folded back in as element [3]. With them
-     undersized the edge-walk counts came back as stack garbage, so
-     raster_triangle's `while (local_70 != 0 && ...)` never ran the span
-     rasterizer raster_textured_span. */
+  /* auStack_c4 / auStack_7c were 12-byte locals but raster_edge_setup (called on each below) writes
+     its edge record out to param_6[10] == byte 0x2b, overflowing them; Ghidra named the tail of
+     each overflow `local_b8` / `local_70` (the param_6[3] scanline-count field, byte 0xc). */
   undefined1 auStack_154 [72];
   undefined1 auStack_10c [72];
   undefined1 auStack_c4 [72];
@@ -448,17 +364,7 @@ LAB_00014684:
         puVar3 = auStack_7c;
         puVar5 = auStack_154;
       }
-      /* Second-half (mid vertex -> bottom vertex) scanline walk. Ghidra
-         collapsed the original's private loop counter into the memory
-         reference `local_70` -- which IS the short edge auStack_7c's
-         remaining-scanline field (byte +0xc) -- AND kept an explicit
-         `local_70--`. raster_edge_step(auStack_7c) already decrements that
-         same field every iteration, so the counter was consumed twice per
-         scanline and the bottom half of every triangle drew only half its
-         rows. That was the diagonal white seam splitting each tile quad
-         (and the ceiling "wedge" gaps). Mirror the first-half loop above:
-         count down a private copy, let raster_edge_step own the edge
-         field. */
+      /* Second-half (mid vertex -> bottom vertex) scanline walk. */
       iVar2 = local_70;
       while ((iVar2 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
         if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) &&
@@ -738,29 +644,8 @@ undefined4 * param_6;
 
 
 
-// was FUN_0001548c -- the textured span rasterizer: for one scanline
-// span between two edges, perspective-divides per pixel, samples the
-// tile texture, shade-corrects and writes RGB565 into g_uw_framebuffer
-//
-// Checked for a "special/self-illuminated colour" exclusion from the
-// distance-shade multiply (user's global fire/water palette-animation
-// search) -- there isn't one, and none is needed: every texel's colour
-// is scaled by the same distance/light factor (DAT_000b5638) regardless
-// of palette index, BUT the colour itself is sampled from g_palette_rgb565
-// fresh on every single frame (unlike the 2D HUD/paperdoll icon path,
-// which composites once into the framebuffer and never re-reads the
-// palette -- see mode-icon-and-hud-icon-flicker-fixes memory). So any
-// wall/floor/ceiling texel whose palette index falls inside a range
-// palette_cycle_range rotates would already animate through this exact
-// code, for free, with no extra plumbing. Confirmed real lava-shaped
-// textures exist using exactly the fire-gradient range (16-23) already
-// wired up for the torch-icon fix: F32.TR/F16.TR entries 24/25 are
-// 94-100% pixels in that range (entry 23 ~28%), W64.TR/W16.TR entry 206
-// is ~93% -- unmistakably lava floor and a lava/torch wall texture. The
-// level loaded from a fresh game (UW_DEBUG_TEXIDS) doesn't reference any
-// of those specific texture ids in its own 48-wall/10-floor id lists, so
-// this couldn't be verified live from the default spawn point -- would
-// need a level that actually places one of them on screen.
+// was FUN_0001548c -- the textured span rasterizer: for one scanline span between two edges,
+// perspective-divides per pixel, samples the tile texture...
 void raster_textured_span(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
 int param_1;
 intptr_t param_2; /* framebuffer base */
@@ -785,15 +670,9 @@ byte param_10;
   int iVar9;
   ushort *puVar10;
   int iVar11;
-  /* Ghidra merged two different variables into one `char *iVar12`: the
-     DAT_0023cca0-based stencil-buffer walker (used up to the puVar13
-     init) and, inside the span loop, a plain signed texel index. As a
-     pointer type the guard `-1 < iVar12` and the wrap test
-     `param_7 < iVar12` were unsigned pointer compares -- `-1` became
-     0xFFFF...F so `-1 < iVar12` was ALWAYS false and the texel fetch
-     `bVar1 = *(byte*)(iVar12 + param_8)` never ran (every span sampled
-     the flat fallback colour 0 -> nothing drawn). Signed intptr_t makes
-     both roles behave. */
+  /* Ghidra merged two different variables into one `char *iVar12`: the DAT_0023cca0-based
+     stencil-buffer walker (used up to the puVar13 init) and, inside the span loop, a plain signed
+     texel index. */
   intptr_t iVar12;
   undefined1 *puVar13;
   int iVar14;
@@ -802,7 +681,11 @@ byte param_10;
   /* HACK: optional DOS-style surface shading; unset/unknown modes retain
      the original ARM RGB falloff below. Resolve once per span, not texel. */
   const char *light_mode = getenv("UW_LIGHT_MODE");
-  bool dos_light_mode = light_mode && strcmp(light_mode, "dos") == 0;
+  bool dos_light_mode = light_mode && strcasecmp(light_mode, "dos") == 0;
+  /* HACK: ordered dithering defaults on in both lighting modes. Explicit 0
+     or an empty value disables it. */
+  const char *dither_mode = getenv("UW_DITHER");
+  bool dither_enabled = !dither_mode || (*dither_mode && strcmp(dither_mode, "0") != 0);
   intptr_t local_4; /* fb row pointer */
 
   iVar12 = (intptr_t)DAT_0023cca0;
@@ -852,6 +735,14 @@ byte param_10;
     local_34 = local_34 - iVar3;
     local_4 = param_2 + iVar9 * 2;
   }
+  /* HACK: restore radial eye-to-surface lighting in both modes instead of
+     shading whole planes by camera depth. render_visible_tile_list projects
+     x = 140 + 100*eye_x/eye_z, y = 80 - 90*eye_y/eye_z. Inverting that ray
+     gives distance = depth * sqrt(1 + ray_x^2 + ray_y^2). Camera rotations
+     preserve this distance. Include the left clip offset and advance x even
+     for transparent pixels; texture perspective interpolation stays intact. */
+  int light_x = iVar6 + iVar9;
+  double light_y = (*(int *)(param_4 + 8) - 80) / 90.0;
   if (0 < iVar11) {
     iVar6 = *(int *)(param_4 + 8) * param_1 + iVar6;
     puVar13 = (undefined1 *)(iVar6 + iVar12);
@@ -867,22 +758,36 @@ byte param_10;
         bVar1 = *(byte *)(iVar12 + param_8);
       }
       if (bVar1 != 0) {
+        double ray_x = (light_x - 140) / 100.0;
+        int light_distance = (int)(iVar6 * sqrt(1.0 + ray_x * ray_x + light_y * light_y));
+        /* DOS's alternating +0.25/+0.75 thresholds, anchored to the screen.
+           ARM applies them at RGB565 quantization rather than palette lookup. */
+        int dither_offset = dither_enabled ?
+            (((light_x + *(int *)(param_4 + 8)) & 1) ? 0xc0 : 0x40) : 0;
         if (dos_light_mode) {
           /* HACK: palette shading uses SHADES.DAT's selected light strength.
              tmap supplies w = world_depth/1500. Edge setup scales 1/w by
              16384, the span shifts it by 2, and 2^24 / that gives w*4096.
-             Convert to the world_depth/32 units used by object shading. */
-          iVar12 = (int)DAT_002506dc +
-                   ((int)DAT_0025063c * (int)((int64_t)iVar6 * 1500 >> 17) >> 6);
+             Convert to world_distance/32, retaining an 8.8 shade fraction.
+             DOS's span accumulators start at shade+0.5 +/-0.25, swapping
+             on odd rows. Use those same 0x40/0xc0 thresholds here, anchored
+             to screen x/y so clipping and triangle boundaries cannot shift
+             the dither. Deliberate deviation: keep per-pixel radial lighting,
+             rather than DOS's vertex shade/scanline gradient interpolation.
+             Reference: cimmerianpit/openabyss, src/uw_shade.c (MIT). */
+          int shade_fixed = (int)((int64_t)light_distance * 1500 * DAT_0025063c / 32768) +
+                            (int)DAT_002506dc * 256;
+          if (shade_fixed < 0) shade_fixed = 0;
+          shade_fixed += (int)DAT_0025064c * 256;
+          shade_fixed += dither_offset;
+          iVar12 = shade_fixed >> 8;
           if (iVar12 < 0) iVar12 = 0;
-          iVar12 += DAT_0025064c;
-          if (iVar12 < 0) iVar12 = 0;
-          if (iVar12 > 14) iVar12 = 14;
+          if (iVar12 > 15) iVar12 = 15;
           bVar1 = ((byte *)DAT_0024fa2c)[iVar12 * 256 + bVar1];
           *puVar10 = (ushort)(&g_palette_rgb565)[bVar1];
         }
         else {
-          iVar12 = ((iVar6 >> 4) + (int)DAT_000842b0) * 0x10000 >> 0x10;
+          iVar12 = ((light_distance >> 4) + (int)DAT_000842b0) * 0x10000 >> 0x10;
           if (iVar12 < 0) {
             iVar12 = 0;
           }
@@ -892,14 +797,21 @@ byte param_10;
             sVar7 = 0x9f;
           }
           iVar12 = (&DAT_000b5638)[sVar7];
-          *puVar10 = (ushort)(((((int)((uVar2 & 0xf800) << 1) >> 6) * (int)(iVar12) >> 0x12) << 6 |
-                              ((int)((uVar2 & 0x7e0) << 7) >> 6) * (int)(iVar12) >> 0x12) << 5) |
-                     (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * (int)(iVar12) >> 0x12);
+          /* HACK: optionally dither the fractional RGB channels before their
+             final 18-bit shift. This preserves the ARM falloff LUT and avoids
+             creating another coarse shade-index step. Integer/full-bright
+             channels stay unchanged, including the RGB565 upper bounds. */
+          int round = dither_offset * 1024;
+          int red = (((uVar2 >> 11) & 31) * 64 * (int)iVar12 + round) >> 18;
+          int green = (((uVar2 >> 5) & 63) * 64 * (int)iVar12 + round) >> 18;
+          int blue = ((uVar2 & 31) * 64 * (int)iVar12 + round) >> 18;
+          *puVar10 = (ushort)((red << 11) | (green << 5) | blue);
         }
         if (DAT_0023b830 != '\0') {
           *puVar13 = (char)DAT_000da47c;
         }
       }
+      light_x++;
       iVar11 = iVar11 + -1;
       puVar10 = puVar10 + 1;
       puVar13 = puVar13 + 1;
@@ -922,25 +834,8 @@ void build_view_matrix()
   undefined4 uVar2;
   undefined4 uVar3;
   undefined4 negated_sine;
-  /* This function's four matrices (local_198.., auStack_158, local_118,
-     auStack_d8) were each declared as only as many bytes as this function
-     happens to name individual elements of, but set_identity_matrix4x4 (called on
-     each below) zeroes+identity-inits a real 0x40(64)-byte/16-element 4x4
-     float matrix at every one of these base pointers, and multiply_matrix4x4
-     (the matrix multiply also called below) reads/writes the full 16
-     elements of whichever buffers it's given -- e.g. local_118 was only
-     `undefined4[2]` (8 bytes) despite being passed as a matrix-multiply
-     operand read up to element 10. That's a real stack-buffer overflow
-     (confirmed crashing with a __stack_chk_fail SIGABRT on a real run),
-     not just a decompiler cosmetic gap. Ghidra split each matrix into
-     these oddly-offset scalar names only because this function happens to
-     assign a handful of specific elements by name (a 2x2 rotation block
-     plus, for one matrix, a translation column) -- the untouched elements
-     still need to keep set_identity_matrix4x4's identity-matrix values, which
-     requires them to actually share one real contiguous 64-byte buffer.
-     Widened all four to real 16-element arrays and switched every named
-     element write to an indexed one at its correct offset (verified
-     against each matrix's original Ghidra byte offset from its base). */
+  /* This function's four matrices (local_198.., auStack_158, local_118, auStack_d8) were each
+     declared as only as many bytes as this function happens to name individual elements of... */
   undefined4 local_198_mtx [16];
   undefined1 auStack_158 [64];
   undefined4 local_118 [16];
@@ -948,20 +843,16 @@ void build_view_matrix()
   undefined1 auStack_98 [64];
   undefined1 auStack_58 [64];
 
-  /* build_trig_tables fills the per-degree sin/cos tables (DAT_000d9ed8 /
-     DAT_000d9930) this function's rotation blocks read from. Ghidra
-     recovered no caller for it anywhere, so the tables stayed zero and
-     every view matrix came out degenerate (all vertices projected to
-     one screen point). Build them once, lazily, right before first use. */
+  /* build_trig_tables fills the per-degree sin/cos tables (DAT_000d9ed8 / DAT_000d9930) this
+     function's rotation blocks read from. */
   {
     static int dd2c_done = 0;
     if (!dd2c_done) { dd2c_done = 1; build_trig_tables(); }
   }
 
-  /* Restore water roll to the rendered view. The ARM water animation
-     updates current_view + 0x2a, but its matrix roll angle (0xdb450)
-     has no writer. Connect the existing animation to that rotation;
-     camera tilt uses 256 units per degree, like the pitch at +0x28. */
+  /* Restore water roll to the rendered view. The ARM water animation updates current_view + 0x2a,
+     but its matrix roll angle (0xdb450) has no writer. Connect the existing animation to that
+     rotation; camera tilt uses 256 units per degree, like the pitch at +0x28. */
   DAT_000db450 = g_current_view->view_shake_y / 256;
   if (DAT_000db450 < 0) DAT_000db450 += 360;
 
@@ -1118,14 +1009,8 @@ int * param_1;
 
 
 
-/* param_1 (and every local below that's assigned an address derived from
-   it -- iVar5/6/7/12/14, local_50) was `int`, truncating the real 64-bit
-   &DAT_000a85d0 pointer this is always called with. Confirmed crashing
-   (EXC_BAD_ACCESS, param_1 read back as a tiny ~1MB-range garbage value)
-   on a real run. iVar4/13/18/19 and the local_7c/78/74/64/4c/48 group stay
-   `int` -- they're genuinely counts/loop indices/array indices, never
-   dereferenced as addresses themselves (confirmed by reading every use).
-   Same pointer-truncation pattern fixed repeatedly this session. */
+/* param_1 (and every local below that's assigned an address derived from it -- iVar5/6/7/12/14,
+   local_50) was `int`, truncating the real 64-bit &DAT_000a85d0 pointer this is always called with. */
 // was FUN_0001f370 -- near-plane (w=DAT_00084608=5.0) Sutherland-Hodgman clip of
 // each visible tile quad; writes clipped positions + interpolated texcoords into
 // the 0x88-byte render records at DAT_000bc038 and the DAT_000c4838[] pointer table
@@ -1453,15 +1338,9 @@ LAB_0002029c:
 
 
 
-// was FUN_00013b8c -- confirmed by two independent pre-existing
-// comments (uw.c's DAT_000c8ac0-family global-layout note, and
-// src/3d.c's own build_view_matrix-adjacent comment) as a 4x4
-// (really 4x3-affine, homogeneous) matrix multiply: param_1/param_2
-// are 16-float (64-byte) input matrices, param_3 the 16-float output.
-// Uses ordfloat_mul (float multiply) and ordfloat_add (float add) for
-// the 12 real rotation/translation elements; the 4 "column 3" slots
-// are hardcoded to the standard affine bottom row (0,0,0,1) rather
-// than actually computed.
+// was FUN_00013b8c -- confirmed by two independent pre-existing comments (uw.c's
+// DAT_000c8ac0-family global-layout note, and src/3d.c's own build_view_matrix-adjacent comment) as
+// a 4x4 (really 4x3-affine, homogeneous) matrix multiply...
 void multiply_matrix4x4(param_1,param_2,param_3)
 undefined4 * param_1;
 undefined4 * param_2;
@@ -1554,10 +1433,9 @@ undefined4 * param_3;
 }
 
 
-// was FUN_0001422c -- confirmed by src/3d.c's own pre-existing
-// comment ("set_identity_matrix4x4's identity-matrix values") as a 4x4 identity
-// matrix setter: zeroes the 16-float (64-byte) buffer, then sets the
-// four diagonal elements to 1.0f.
+// was FUN_0001422c -- confirmed by src/3d.c's own pre-existing comment ("set_identity_matrix4x4's
+// identity-matrix values") as a 4x4 identity matrix setter: zeroes the 16-float (64-byte) buffer,
+// then sets the four diagonal elements to 1.0f.
 void set_identity_matrix4x4(param_1)
 undefined4 * param_1;
 
@@ -1572,13 +1450,9 @@ undefined4 * param_1;
 
 
 
-/* was FUN_00014258 -- copy a 4x4 matrix param_1 -> param_2. param_1
-   was `int`, and the body
-   computed the source address as `(param_1 - (int)param_2) + (int)puVar1`
-   -- a 32-bit byte delta -- so on a 64-bit host both the source pointer
-   and the delta truncated (wild read; crashed build_euler_rotation_matrix
-   once the object-render path started calling it with real property
-   data). It's just element-wise `param_2[i] = param_1[i]` for i in 0..15. */
+/* was FUN_00014258 -- copy a 4x4 matrix param_1 -> param_2. param_1 was `int`, and the body
+   computed the source address as `(param_1 - (int)param_2) + (int)puVar1` -- a 32-bit byte delta --
+   so on a 64-bit host both the source pointer and the delta truncated... */
 void copy_matrix4x4(param_1,param_2)
 undefined4 * param_1;
 undefined4 * param_2;
@@ -1595,14 +1469,9 @@ undefined4 * param_2;
 
 
 
-// was FUN_0001dd2c -- builds the renderer's 361-entry (0..360 degrees)
-// per-degree sin/cos tables: for each angle, converts degrees to radians
-// (multiplying by the pi/180 constant folded into the ordfloat_double_mul2 call),
-// then calls cos (ordfloat_cos) into DAT_000d9ed8[angle] and sin
-// (ordfloat_sin) into DAT_000d9930[angle] -- see both ordinals' own
-// comments in src/ordinal_stubs.c. Every 3D rotation/view-matrix call
-// site in src/3d.c and src/player.c reads through these two tables
-// instead of calling sin/cos directly.
+// was FUN_0001dd2c -- builds the renderer's 361-entry (0..360 degrees) per-degree sin/cos tables:
+// for each angle, converts degrees to radians (multiplying by the pi/180 constant folded into the
+// ordfloat_double_mul2 call)...
 void build_trig_tables()
 
 {
@@ -1630,11 +1499,9 @@ void build_trig_tables()
 }
 
 
-// was FUN_0005b36c -- loads the dungeon-view texture/shade/door-
-// frame arenas at game/level startup: builds "\DATA\<filename>" paths
-// and calls load_texture_arena four times for the wall/floor texture
-// sets, then load_door_frames. Confirmed called at chargen/level-load
-// time (chargen.c, visibility.c, babl.c).
+// was FUN_0005b36c -- loads the dungeon-view texture/shade/door- frame arenas at game/level
+// startup: builds "\DATA\<filename>" paths and calls load_texture_arena four times for the
+// wall/floor texture sets, then load_door_frames.
 void load_dungeon_texture_arenas()
 
 {
@@ -1648,18 +1515,9 @@ void load_dungeon_texture_arenas()
   int iVar3;
   short local_11c [4];
   char acStack_114 [260];
-  /* acStack_86af8 / _86af0 / _86ae8 / _86ae0 were four separate stack
-     locals (8, 8, 8, 551364 bytes), but every use is `<base> + iVar3`
-     where iVar3 is strlen(acStack_114) after the "\DATA\" prefix -- i.e.
-     the code appends each texture filename at path + strlen(path). They
-     are all really acStack_114 (the path buffer); Ghidra split the
-     `+ iVar3` writes onto per-file base names. Same "one buffer, many
-     Ghidra names" bug as build_view_matrix's matrices. With them separate,
-     the filename suffix was written to a stray 8-byte local, so
-     load_texture_arena opened the bare "...\DATA\" directory and the whole
-     texture / shade / colour-light arena (DAT_002049e0) stayed zero --
-     which is why the (now-running) 3D span rasterizer drew nothing.
-     Fixed by pointing all four `+ iVar3` writes at acStack_114. */
+  /* acStack_86af8 / _86af0 / _86ae8 / _86ae0 were four separate stack locals (8, 8, 8, 551364
+     bytes), but every use is `<base> + iVar3` where iVar3 is strlen(acStack_114) after the "\DATA\"
+     prefix -- i.e. the code appends each texture filename at path + strlen(path). */
 
   DAT_0023ae38 = &DAT_002049e0;
   ce_memset(acStack_114,0,0x104);
@@ -1726,11 +1584,8 @@ void load_dungeon_texture_arenas()
 
 
 // was FUN_0005b758 -- configures the dungeon-view viewport region
-// (x=param_1,y=param_2,width=param_3,height=param_4): sets up the
-// view-Y bound, tracked hotspot rect, and interact zones for it, and
-// picks a frame-time budget based on the current display-mode flags.
-// Confirmed called once at level load with the fixed standard
-// viewport bounds (level.c).
+// (x=param_1,y=param_2,width=param_3,height=param_4): sets up the view-Y bound, tracked hotspot
+// rect, and interact zones for it...
 void configure_dungeon_viewport(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 int param_2;
@@ -1741,15 +1596,8 @@ int param_4;
   g_dungeon_view_active = 0;
   DAT_0023b020 = (undefined2)param_3;
   DAT_0023aed4 = (undefined2)param_4;
-  /* HACK: was `FUN_000129d4(param_1);` -- dropped 2 of 3 arguments,
-     the same class of bug fixed repeatedly elsewhere in this file.
-     Nothing between this function's own entry and this call touches
-     param_2/param_3, so on ARM's register-passthrough calling
-     convention they're still sitting in r1/r2 unchanged -- this
-     function's own first 3 parameters are the obviously-intended
-     arguments. The callee's return value is discarded either way (see
-     compute_view_y_bound's own comment on why this fix has no
-     observable behavioral effect). */
+  /* HACK: was `FUN_000129d4(param_1);` -- dropped 2 of 3 arguments, the same class of bug fixed
+     repeatedly elsewhere in this file. */
   compute_view_y_bound(param_1,param_2,param_3);
   set_tracked_hotspot_rect(param_1,param_2,param_3,param_4);
   register_game_view_interact_zones(param_1,param_2 + param_4 + -1,param_3,param_4);
@@ -1770,11 +1618,9 @@ int param_4;
 
 
 
-// was FUN_0005b828 -- one-time dungeon-view rendering init: resets
-// the viewport, loads the 3D object models, initializes the glyph-
-// width table and draw-command cursor, and builds the initial
-// visibility light grid. Confirmed called once from game.c's startup
-// sequence.
+// was FUN_0005b828 -- one-time dungeon-view rendering init: resets the viewport, loads the 3D
+// object models, initializes the glyph- width table and draw-command cursor, and builds the initial
+// visibility light grid. Confirmed called once from game.c's startup sequence.
 void init_dungeon_rendering()
 
 {
@@ -1816,11 +1662,9 @@ void init_dungeon_rendering()
 
 
 
-// was FUN_0005bac0 -- renders one dungeon-view frame (HUD draw
-// commands + the 3D render pass) within the dungeon viewport's clip
-// rect. Confirmed used both for normal frame rendering and (per an
-// existing comment) to re-render in "pick" mode for mouse-object
-// selection (hud.c).
+// was FUN_0005bac0 -- renders one dungeon-view frame (HUD draw commands + the 3D render pass)
+// within the dungeon viewport's clip rect. Confirmed used both for normal frame rendering and (per
+// an existing comment) to re-render in "pick" mode for mouse-object selection (hud.c).
 void render_dungeon_view_frame()
 
 {
@@ -1837,12 +1681,9 @@ void render_dungeon_view_frame()
 }
 
 
-// was FUN_0005dd84 -- flat-shaded (low-detail) texture-select emitter
-// for the "wall" surface slot (DAT_00086b38_fnptrs[0], and the
-// dynamic low-detail fallback for slots [1]/[3]): picks either a
-// texture-page byte or a hardcoded flat-shade fallback, then emits
-// the draw-command opcode sequence for it. The low-detail counterpart
-// to emit_floor_texture_select.
+// was FUN_0005dd84 -- flat-shaded (low-detail) texture-select emitter for the "wall" surface slot
+// (DAT_00086b38_fnptrs[0], and the dynamic low-detail fallback for slots [1]/[3]): picks either a
+// texture-page byte or a hardcoded flat-shade fallback...
 void emit_flat_wall_texture_select(param_1,param_2,param_3)
 byte * param_1;
 uint param_2;
@@ -1881,11 +1722,9 @@ ushort param_3;
 
 
 
-// was FUN_0005debc -- flat-shaded (low-detail) texture-select
-// emitter for the "floor-or-ceiling" surface slot
-// (DAT_00086b38_fnptrs[2]), structurally identical to
-// emit_flat_wall_texture_select but with its own fallback shade
-// (0xfa) and no detailed/textured counterpart of its own.
+// was FUN_0005debc -- flat-shaded (low-detail) texture-select emitter for the "floor-or-ceiling"
+// surface slot (DAT_00086b38_fnptrs[2]), structurally identical to emit_flat_wall_texture_select
+// but with its own fallback shade (0xfa) and no detailed/textured counterpart of its own.
 void emit_flat_floor_texture_select(param_1,param_2,param_3)
 byte * param_1;
 uint param_2;
@@ -1924,11 +1763,9 @@ uint param_3;
 
 
 
-// was FUN_0005dff4 -- flat-shaded (low-detail) texture-select
-// emitter for the "diagonal" surface slot (DAT_00086b38_fnptrs[4]),
-// using a different texture-page range (+0x3a) and fallback shade
-// (0xc0) from its wall/floor siblings. The low-detail counterpart to
-// emit_diagonal_wall_texture_select.
+// was FUN_0005dff4 -- flat-shaded (low-detail) texture-select emitter for the "diagonal" surface
+// slot (DAT_00086b38_fnptrs[4]), using a different texture-page range (+0x3a) and fallback shade
+// (0xc0) from its wall/floor siblings.
 void emit_flat_diagonal_texture_select(param_1,param_2,param_3,param_4)
 byte * param_1;
 uint param_2;
@@ -2035,13 +1872,7 @@ short param_3;
     }
   }
   else {
-    /* BUG FIX: was `FUN_0005dd84();` -- dropped all 3 arguments. This
-       function's own params (param_1,param_2,param_3) exactly match
-       emit_flat_wall_texture_select's signature, and nothing between
-       entry and this branch repurposes them (param_2 was already
-       narrowed to its low byte for the distance check just above,
-       which is the correct value to forward) -- same dropped-argument
-       idiom fixed repeatedly elsewhere this session. */
+    /* BUG FIX: was `FUN_0005dd84();` -- dropped all 3 arguments. */
     emit_flat_wall_texture_select(param_1,param_2,param_3);
   }
   return;
@@ -2049,11 +1880,8 @@ short param_3;
 
 
 
-// was FUN_0005e3c0 -- detailed (fully textured) texture-select
-// emitter for the "diagonal" surface slot (DAT_00086b38_fnptrs[5]),
-// the detailed counterpart to emit_flat_diagonal_texture_select.
-// Confirmed used for diagonal wall segments by models.c, which passes
-// the tile's own wall_tex field as its texture-id argument.
+// was FUN_0005e3c0 -- detailed (fully textured) texture-select emitter for the "diagonal" surface
+// slot (DAT_00086b38_fnptrs[5]), the detailed counterpart to emit_flat_diagonal_texture_select.
 void emit_diagonal_wall_texture_select(param_1,param_2,param_3,param_4)
 byte * param_1;
 uint param_2;
@@ -2131,30 +1959,16 @@ ushort param_4;
     }
   }
   else {
-    /* BUG FIX: was `FUN_0005dff4();` -- dropped all 4 arguments, the
-       same bug fixed just above in emit_floor_texture_select's own
-       fallback. This function's own params exactly match
-       emit_flat_diagonal_texture_select's signature, and the outer
-       condition being false here means none of the branches that
-       repurpose param_4 have executed yet, so all 4 incoming values
-       are still intact to forward. */
+    /* BUG FIX: was `FUN_0005dff4();` -- dropped all 4 arguments, the same bug fixed just above in
+       emit_floor_texture_select's own fallback. */
     emit_flat_diagonal_texture_select(param_1,param_2,param_3,param_4);
   }
   return;
 }
 
 
-// was FUN_0005d2b0 -- configures the dynamic entries (indices 1/3,
-// DAT_00086b3c/DAT_00086b44) of the tile-surface texture-emit
-// function-pointer table based on the texture detail-level setting
-// (DAT_00086df8+0xb5's high nibble, confirmed shared with
-// draw_detail_level_panel/handle_detail_level_click): higher detail
-// levels pick emit_floor_texture_select (full textured), lower pick
-// emit_flat_wall_texture_select (flat-shaded fallback). Also sets the
-// DAT_00086b2c pair-select index. NOTE: an existing comment on
-// DAT_00086b38_fnptrs attributes this patching to "FUN_0005d664",
-// which doesn't match this function's own address (0x5d2b0) -- a
-// stale/incorrect reference in that comment, corrected below.
+// was FUN_0005d2b0 -- configures the dynamic entries (indices 1/3, DAT_00086b3c/DAT_00086b44) of
+// the tile-surface texture-emit function-pointer table based on the texture detail-level setting...
 void configure_texture_detail_functions()
 
 {
@@ -2227,32 +2041,9 @@ int param_4;
   undefined4 uVar12;
   int iVar13;
   uint uVar14;
-  /* This whole local block was a run of individually-named scalars
-     (local_164, local_160, ... auStack_124[5], local_a4[2], ...) instead
-     of the real 4x4 (16-`undefined4`/64-byte) matrix buffers
-     set_identity_matrix4x4/multiply_matrix4x4/copy_matrix4x4 actually read and write --
-     same "split-symbol matrix" bug class as copy_matrix4x4's own pointer-
-     truncation fix (see its comment), just on the caller's stack instead
-     of a global. Every one of those calls overflowed by 20-60+ bytes
-     into whatever locals or padding happened to follow, corrupting the
-     stack canary -- latent for as long as build_euler_rotation_matrix's
-     only real caller (emit_catalog_object's animation-rotation path)
-     never had real per-object-type property data reaching it with a
-     nonzero angle; became a guaranteed `__stack_chk_fail` abort the
-     moment the DAT_00202c9X object-property fix above let that happen
-     (confirmed via ASAN + a stack-canary abort in exactly this
-     function). Restructured into four real 16-element matrix buffers
-     (one per set_identity_matrix4x4 call site: the unconditional one, then one per
-     param_2/3/4 branch), with each formerly-named scalar mapped to its
-     real row-major slot -- confirmed against set_identity_matrix4x4's own identity
-     writes (indices 0/5/10/15, the standard 4x4 diagonal): the named
-     locals for each cluster line up exactly on a 4-wide row stride
-     (e.g. local_164/154/144 are 0x10 apart = row 0/1/2 of column 0),
-     landing the two clusters' surviving diagonal writes (auStack_124's
-     local_fc, local_a4's local_7c) on index 10 as expected. param_2's
-     and param_4's branches are dead in every real call (the only call
-     site always passes 0 for both) so their exact rotation math wasn't
-     re-derived beyond making them memory-safe. */
+  /* This whole local block was a run of individually-named scalars (local_164, local_160, ...
+     auStack_124[5], local_a4[2], ...) instead of the real 4x4 (16-`undefined4`/64-byte) matrix
+     buffers set_identity_matrix4x4/multiply_matrix4x4/copy_matrix4x4 actually read and write... */
   undefined4 local_164_arr [16];
   undefined4 auStack_124 [16];
   undefined4 local_e4_arr [16];
