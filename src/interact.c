@@ -619,9 +619,9 @@ LAB_000285e4:
     }
   }
   else {
-    uVar5 = *(ushort *)((char *)target + 0xb) & 0xf;
+    uVar5 = ((uw_mobile_object_t *)target)->npc_goal;
     if ((((((((uVar5 != 5) && (uVar5 != 6)) && (uVar5 != 9)) ||
-           ((*(ushort *)((char *)target + 0xb) & 0xff0) != 0x10)) && ((target[7] & 0xc0) != 0)) ||
+           (((uw_mobile_object_t *)target)->npc_gtarg != 1)) && (((uw_mobile_object_t *)target)->npc_attitude != 0)) ||
          ((*(byte *)((char *)target + 0x19) & 0x40) != 0)) && (uVar6 != 0xff)) || (uVar5 == 10))
     goto LAB_000285e4;
   }

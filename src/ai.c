@@ -956,7 +956,7 @@ void build_creature_look_text(ushort *creature, char *out_text)
     pcVar3 = (char *)0x0;
   }
   if (((0xef < bVar1) && (bVar1 != 0xff)) ||
-     (pcVar4 = (char *)get_message_string((byte)((byte)creature[7] >> 6) + 0x60 | 0xa00),
+     (pcVar4 = (char *)get_message_string(((uw_mobile_object_t *)creature)->npc_attitude + 0x60 | 0xa00),
       pcVar4 == (char *)0x0 || *pcVar4 == '\0'))
   {
     pcVar4 = (char *)0x0;
@@ -3390,7 +3390,7 @@ void npc_movement_tick(ushort *npc_object, char *scratch)
          (byte)((int)((uint)((uw_mobile_object_t *)npc_object)->npc_hp + (uint)(byte)(&g_monster_max_stats_table)[iVar6]) >> 1);
   }
   if ((npc_object[5] & 0x80) == 0) {
-    bVar1 = (byte)npc_object[7] >> 6;
+    bVar1 = ((uw_mobile_object_t *)npc_object)->npc_attitude;
     if (bVar1 == 0) {
       pcVar3 = (char *)(scratch + (uint)(byte)(&DAT_001007d9)[iVar6]);
       cVar7 = *pcVar3 + -1;
@@ -3566,7 +3566,7 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
   
   uVar16 = (undefined1)((ushort)in_stack_ffffffcc >> 8);
   sVar5 = encode_object_slot_index(object);
-  if ((sVar5 != 1) && ((object[7] & 0xc0) == 0)) {
+  if ((sVar5 != 1) && (((uw_mobile_object_t *)object)->npc_attitude == 0)) {
     uVar6 = ce_rand();
     uw_ord2005_rem_101 = ((int)(uVar6)) % (2);
     if (uw_ord2005_rem_101 != 0) {
