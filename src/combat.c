@@ -1198,7 +1198,7 @@ void apply_melee_damage(byte hit_type)
             iVar11 = 0;
           }
           else {
-            sVar3 = ordint_divmod((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30],(uint)(byte)puVar6[4] * 3).quot;
+            sVar3 = ordint_divmod((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30],(uint)((uw_mobile_object_t *)puVar6)->npc_hp * 3).quot;
             iVar11 = (int)sVar3;
           }
           if (2 < (short)iVar11) {
@@ -1962,8 +1962,8 @@ int apply_damage_to_object(ushort *target, byte damage, ushort *attacker)
     DAT_00101934 = (byte)target[1] >> 3 & 0xf;
     DAT_00101940 = *(undefined4 *)(DAT_00086df8 + 0xce);
   }
-  if (damage < (byte)target[4]) {
-    *(byte *)(target + 4) = (byte)target[4] - damage;
+  if (damage < ((uw_mobile_object_t *)target)->npc_hp) {
+    ((uw_mobile_object_t *)target)->npc_hp = ((uw_mobile_object_t *)target)->npc_hp - damage;
     if (target == g_player_object) {
       refresh_experience_display();
     }
@@ -1979,7 +1979,7 @@ int apply_damage_to_object(ushort *target, byte damage, ushort *attacker)
     }
   }
   if (uVar2 == 1) {
-    sVar1 = ordint_divmod((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)(byte)target[4] << 6).quot;
+    sVar1 = ordint_divmod((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)((uw_mobile_object_t *)target)->npc_hp << 6).quot;
     uVar4 = 5;
   }
   else {
@@ -2096,7 +2096,7 @@ bool apply_object_durability_damage(ushort *object, ushort *attacker, short dama
       *(char *)((char *)object + 5) = (char)(uVar2 >> 8);
     }
     else {
-      iVar5 = (uint)(byte)object[4] - iVar5;
+      iVar5 = (uint)((uw_mobile_object_t *)object)->npc_hp - iVar5;
       iVar1 = iVar5 * 0x10000 >> 0x10;
       if (iVar1 < 1) {
         iVar5 = 0;

@@ -841,7 +841,7 @@ void reduce_item_quality_on_use(ushort *object, char dice_count)
   
   if ((*object & 0x1c0) == 0x40) {
     cVar2 = roll_dice_sum((int)dice_count,8);
-    bVar1 = (byte)object[4];
+    bVar1 = ((uw_mobile_object_t *)object)->npc_hp;
     if (3 < bVar1) {
       if ((int)((uint)bVar1 - (int)cVar2) < 4) {
         cVar2 = '\x03';

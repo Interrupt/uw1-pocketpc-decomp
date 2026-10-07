@@ -1090,7 +1090,7 @@ int sync_object_tile_position(ushort *object, ushort *position)
   ((uw_object_hdr_t *)object)->xpos = (short)(*position & 0xe0) >> 5;
   ((uw_object_hdr_t *)object)->ypos = (short)(position[1] & 0xe0) >> 5;
   if (object < DAT_002046c4) {
-    *(byte *)(object + 4) = (byte)position[0xf];
+    ((uw_mobile_object_t *)object)->npc_hp = (byte)position[0xf];
   }
   else {
     ((uw_object_hdr_t *)object)->quality = position[0xf] & 0x3f;
@@ -1105,7 +1105,7 @@ int sync_object_tile_position(ushort *object, ushort *position)
     apply_typed_damage_to_object(object,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
   }
   if (object < DAT_002046c4) {
-    *(byte *)(object + 4) = (byte)position[0xf];
+    ((uw_mobile_object_t *)object)->npc_hp = (byte)position[0xf];
   }
   else {
     ((uw_object_hdr_t *)object)->quality = position[0xf] & 0x3f;
@@ -3385,9 +3385,9 @@ void npc_movement_tick(ushort *npc_object, char *scratch)
   uVar2 = ce_rand();
   uw_ord2005_rem_100 = ((int)(uVar2)) % (8);
   ((uw_object_hdr_t *)npc_object)->heading = uw_ord2005_rem_100 & 7;
-  if (((uint)(byte)npc_object[4] < (uint)(byte)(&g_monster_max_stats_table)[iVar6]) && ((npc_object[7] & 2) == 0)) {
-    *(byte *)(npc_object + 4) =
-         (byte)((int)((uint)(byte)npc_object[4] + (uint)(byte)(&g_monster_max_stats_table)[iVar6]) >> 1);
+  if (((uint)((uw_mobile_object_t *)npc_object)->npc_hp < (uint)(byte)(&g_monster_max_stats_table)[iVar6]) && ((npc_object[7] & 2) == 0)) {
+    ((uw_mobile_object_t *)npc_object)->npc_hp =
+         (byte)((int)((uint)((uw_mobile_object_t *)npc_object)->npc_hp + (uint)(byte)(&g_monster_max_stats_table)[iVar6]) >> 1);
   }
   if ((npc_object[5] & 0x80) == 0) {
     bVar1 = (byte)npc_object[7] >> 6;
@@ -5089,7 +5089,7 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
     iVar7 = (uint)(*(byte *)((char *)object + 0x13) >> 7) * -4;
     snapshot[0x10] = (byte)iVar7;
     snapshot[0x11] = (byte)((uint)iVar7 >> 8);
-    snapshot[0x1e] = (byte)object[4];
+    snapshot[0x1e] = ((uw_mobile_object_t *)object)->npc_hp;
     bVar8 = (*object & 0x1c0) == 0x40;
     if (!bVar8) {
       uVar2 = *(undefined2 *)((char *)object + 0xb);
