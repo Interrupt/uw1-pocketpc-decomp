@@ -15,11 +15,7 @@ char *DAT_002020b0;
 static char *DAT_002020a8;
 static undefined4 DAT_002020ec;
 short DAT_002020ac;
-/* Sizing pass: indexed as `&DAT_0023ad58 + iVar1*2` where iVar1 is
-   only ever in [0x30,0x3a) (48-57, not rebased to 0) -- real max
-   57*2+2=116 bytes. */
-static undefined1 DAT_0023ad58_backing[256];
-#define DAT_0023ad58 DAT_0023ad58_backing[0]
+
 short DAT_000858c4;
 static int DAT_002020e0;
 void (*const PTR_FUN_000858c8_table[5])(void) = {
@@ -962,7 +958,7 @@ short param_2;
       uVar2 = (uint)(short)(&DAT_0023ae58)[iVar1];
     }
     else if (iVar1 < 0x3a) {
-      uVar2 = 0x1fe - (int)*(short *)(&DAT_0023ad58 + iVar1 * 2);
+      uVar2 = 0x1fe - (int)(short)(&DAT_0023adb8)[iVar1 - 0x30];
     }
     else {
       uVar2 = 0x1ff;

@@ -2068,6 +2068,12 @@
       "symbol": "s__DATA_weapons_cm_00087284",
       "address": "00087284",
       "original": "\\DATA\\weapons.cm"
+    },
+    {
+      "source": "src/game.c",
+      "symbol": "DAT_00086e00_backing",
+      "address": "00086e00",
+      "original": "F1.87"
     }
   ]
 }

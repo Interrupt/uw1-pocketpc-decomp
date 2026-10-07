@@ -130,19 +130,19 @@ static ushort DAT_000876bc_backing[128];
 ushort *DAT_000876bc = DAT_000876bc_backing;
 static short DAT_000876c0_backing[128];
 short *DAT_000876c0 = DAT_000876c0_backing;
-/* Sizing-audit pass: its ADDRESS (not its contents) is passed as register_key_binding's handler
-   function-pointer argument for key 0x1b -- a stand-in for an unrecovered callback (same class as
-   traps.c's DAT_0007e644), never read/written/indexed as data. */
-static undefined DAT_00028bfc_backing[16];
-#define DAT_00028bfc DAT_00028bfc_backing[0]
+
+/* ARM 0x28bfc is simply `cpy pc, lr`: Escape has no keybinding action. */
+static void FUN_00028bfc(void)
+{
+  return;
+}
 static char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev %d @ %2.2u.%1.1u %2.2u.%1.1u %2.2x %2.2x \n";
 static byte DAT_0023bd84;
-static undefined1 DAT_00086e05;
-static undefined1 DAT_00086e06;
-/* Sizing-audit pass: printed whole via message_scroll_print_wrapped (print_help_message), 0 writers
-   of its own text content -- content unrecovered. Sized to 128 for headroom as a display-text
-   fragment; down from 8192. */
-static undefined DAT_00086e00_backing[128];
+#define DAT_00086e05 DAT_00086e00_backing[5]
+#define DAT_00086e06 DAT_00086e00_backing[6]
+
+/* Original version string; help replaces its terminator with a newline. */
+static char DAT_00086e00_backing[8] = "F1.87";
 #define DAT_00086e00 DAT_00086e00_backing[0]
 static int DAT_000db500;
 short DAT_0024af6c;
@@ -199,9 +199,45 @@ static char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program Files\\ZI
 // DAT_000830b0 and UNK_000830b4 are the same {int msg_id; void *handler;} 8-byte-stride table
 // (dispatch_window_message walks msg_id entries from &DAT_000830b0 via an `int*`, and reads the
 // matching handler from UNK_000830b4 + index*8 -- exactly DAT_000830b0's own address + 4)...
-static undefined1 DAT_000830b0_backing[256];
-#define DAT_000830b0 DAT_000830b0_backing[0]
-#define UNK_000830b4 DAT_000830b0_backing[4]
+/* Recovered ARM window handlers (0x778f4/0x779f0/0x77a10/0x77a30).
+   The focus handlers call the GAPI suspend/resume imports; create/activate return 0. */
+static undefined4 FUN_000778f4(void)
+{
+  return 0;
+}
+static undefined4 FUN_000779f0(void)
+{
+  GXSuspend();
+  return 0;
+}
+static undefined4 FUN_00077a10(void)
+{
+  GXResume();
+  return 0;
+}
+static undefined4 FUN_00077a30(void)
+{
+  return 0;
+}
+/* UU.exe .rdata 0x830b0: native pointers replace the original 32-bit ARM addresses.
+   Keep the legacy callback declarations: each handler consumes its own subset of
+   the window procedure's four register arguments. */
+struct uw_window_message_handler {
+  uint message;
+  undefined4 (*handler)();
+};
+static const struct uw_window_message_handler DAT_000830b0[] = {
+  {0x001, FUN_000778f4}, {0x00f, blit_framebuffer_to_gx_display},
+  {0x008, FUN_000779f0}, {0x007, FUN_00077a10},
+  {0x006, FUN_00077a30}, {0x002, shutdown_game_resources},
+  {0x100, handle_keyboard_message}, {0x101, handle_keyboard_message},
+  {0x102, handle_keyboard_message}, {0x103, handle_keyboard_message},
+  {0x106, handle_keyboard_message}, {0x107, handle_keyboard_message},
+  {0x104, handle_keyboard_message}, {0x105, handle_keyboard_message},
+  {0x201, handle_mouse_message}, {0x204, handle_mouse_message},
+  {0x202, handle_mouse_message}, {0x205, handle_mouse_message},
+  {0x200, handle_mouse_message},
+};
 
 
 
@@ -744,7 +780,7 @@ void init_gameplay_session()
   register_key_binding(0x94,0x94,7,noop_key_handler);
   register_key_binding(0x95,0x95,7,noop_key_handler);
   register_key_binding(0x96,0x96,7,noop_key_handler);
-  register_key_binding(0x1b,4,4,&DAT_00028bfc);
+  register_key_binding(0x1b,4,4,FUN_00028bfc);
   register_key_binding(0x31,1,4,select_babl_menu_response);
   register_key_binding(0x32,2,4,select_babl_menu_response);
   register_key_binding(0x33,3,4,select_babl_menu_response);
@@ -1717,29 +1753,21 @@ undefined4 param_1;
 
 
 // was FUN_00077878 -- looks up window message id param_2 in a {msg_id, handler_ptr} table
-// (DAT_000830b0/UNK_000830b4, 0x13 entries, 8-byte stride) and calls the matched handler with no
-// forwarded args, or falls back to DefWindowProcW (likely DefWindowProc) if no entry matches.
-void dispatch_window_message(param_1,param_2)
-undefined4 param_1;
-int param_2;
-
+// (0x13 ARM records) and forwards the original window arguments to the matching native callback.
+void dispatch_window_message(undefined4 param_1, int param_2,
+                             undefined4 param_3, int param_4)
 {
-  uint uVar1;
-  int *piVar2;
-  
-  piVar2 = (int *)&DAT_000830b0;
-  uVar1 = 0;
-  do {
-    if (param_2 == *piVar2) {
-      (**(code **)(&UNK_000830b4 + uVar1 * 8))();
+  /* ARM 0x778e8 calls through r11 with r0-r3 still containing the message
+     arguments. The decompiler omitted them, losing key codes and mouse positions. */
+  for (uint i = 0; i < 0x13; ++i) {
+    if ((uint)param_2 == DAT_000830b0[i].message) {
+      DAT_000830b0[i].handler(param_1, param_2, param_3, param_4);
       return;
     }
-    uVar1 = uVar1 + 1;
-    piVar2 = piVar2 + 2;
-  } while (uVar1 < 0x13);
+  }
   DefWindowProcW();
-  return;
 }
+
 
 
 

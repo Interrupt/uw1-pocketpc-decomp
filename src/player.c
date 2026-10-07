@@ -115,7 +115,10 @@ static undefined1 DAT_00086da8_backing[5] = {3, 0, 1, 2, 2};
 /* Was a lone `undefined` scalar, but compute_light_source_colors
    indexes it as a 16-entry (0-0xf) light-type -> base-color-index
    table (`(&DAT_00086dc8)[light_type & 0xf]`). Widened to match. */
-static undefined DAT_00086dc8_backing[16];
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined DAT_00086dc8_backing[16] = {
+  0x0e, 0xff, 0x0d, 0x04, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x0b, 0x80, 0x80, 0x80, 0x80,
+};
 #define DAT_00086dc8 DAT_00086dc8_backing[0]
 undefined2 DAT_0023beb8;
 /* Player status record: character attributes, skills, mana, carry weights, quest flags, and world
@@ -177,7 +180,10 @@ static undefined1 DAT_0008730c_backing[16] = " 0\n";
 /* Was a lone scalar, but roll_skill_use_improvement indexes it `(&DAT_00087308)[tier]` for tier
    0..2 (classify_skill_training_tier's full range) as a per-tier probability threshold for
    ordint_divmod(uVar2, random).quot. */
-static undefined DAT_00087308_arr[3];
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined DAT_00087308_arr[3] = {
+  0x19, 0x28, 0x0a,
+};
 #define DAT_00087308 DAT_00087308_arr[0]
 /* Ghidra rendered this as "and" (dropped the real leading/trailing spaces). Real bytes at 0x87310
    (ARM UU.exe .data, confirmed via tests/fixtures/static_strings.json's direct memory export): "

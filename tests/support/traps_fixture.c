@@ -13,7 +13,7 @@ ushort * find_object_in_chain(void);
 void * alloc_object_slot(void);
 undefined4 apply_area_terrain_effect(void);
 undefined4 apply_poison_or_damage_trap_effect(void);
-undefined4 check_object_area_for_spawn_block(void);
+undefined4 check_object_area_for_spawn_block(ushort *object);
 void close_door_object(void);
 undefined4 dispatch_quest_event_code(void);
 undefined4 dispatch_trap_special_or_tile_action(void);
@@ -85,7 +85,7 @@ undefined4 apply_area_terrain_effect(void) { TEST_FAIL_MESSAGE("Unexpected apply
 
 undefined4 apply_poison_or_damage_trap_effect(void) { TEST_FAIL_MESSAGE("Unexpected apply_poison_or_damage_trap_effect in text trap"); return 0; }
 
-undefined4 check_object_area_for_spawn_block(void) { TEST_FAIL_MESSAGE("Unexpected check_object_area_for_spawn_block in text trap"); return 0; }
+undefined4 check_object_area_for_spawn_block(ushort *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected check_object_area_for_spawn_block in text trap"); return 0; }
 
 void close_door_object(void) { TEST_FAIL_MESSAGE("Unexpected close_door_object in text trap"); }
 

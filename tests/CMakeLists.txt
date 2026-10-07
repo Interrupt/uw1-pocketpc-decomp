@@ -80,7 +80,10 @@ target_compile_definitions(uw_test_support PRIVATE UW_TEST_DATA_DIR="${PROJECT_S
 target_compile_options(uw_test_support PRIVATE
   -include "${CMAKE_CURRENT_SOURCE_DIR}/support/game_fixture.h")
 
-add_game_test_library(uw_test_math src/math.c:step_value_toward_limit)
+add_game_test_library(uw_test_math src/math.c:step_value_toward_limit
+  src/math.c:@DAT_00086260_backing src/math.c:%DAT_00086260 src/math.c:%DAT_00086264
+  src/math.c:pack_angle_byte src/math.c:lookup_arctan_primary_range
+  src/math.c:lookup_arctan_reciprocal_range src/math.c:compute_angle_from_slope)
 add_supported_game_unit_test(math uw_test_math)
 
 add_supported_game_unit_test(support uw_test_support)
@@ -865,3 +868,22 @@ target_compile_options(uw_test_spell_effects PUBLIC
   -include "${CMAKE_CURRENT_SOURCE_DIR}/support/spell_effects_fixture.h")
 target_link_libraries(uw_test_spell_effects PUBLIC uw_test_support)
 add_supported_game_unit_test(spell_effects uw_test_spell_effects)
+
+# Audit fixes: test original constants and shared field views using actual game declarations.
+set(restored_tables_source "${CMAKE_CURRENT_BINARY_DIR}/restored_tables_generated.c")
+add_custom_command(OUTPUT "${restored_tables_source}"
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_restored_tables.py"
+    --root "${PROJECT_SOURCE_DIR}" --audit "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/restored_tables.json"
+    --output "${restored_tables_source}"
+  DEPENDS tools/generate_restored_tables.py tools/extract_functions.py fixtures/restored_tables.json
+    "${PROJECT_SOURCE_DIR}/src/audio.c" "${PROJECT_SOURCE_DIR}/src/babl.c"
+    "${PROJECT_SOURCE_DIR}/src/graphics.c" "${PROJECT_SOURCE_DIR}/src/input.c"
+    "${PROJECT_SOURCE_DIR}/src/player.c" "${PROJECT_SOURCE_DIR}/src/models.c"
+    "${PROJECT_SOURCE_DIR}/src/traps.c" "${PROJECT_SOURCE_DIR}/src/math.c"
+    "${PROJECT_SOURCE_DIR}/src/item_use.c" "${PROJECT_SOURCE_DIR}/src/game.c"
+  VERBATIM)
+add_library(uw_test_restored_tables STATIC "${restored_tables_source}" support/restored_tables_fixture.c)
+uw_configure_test_target(uw_test_restored_tables)
+target_include_directories(uw_test_restored_tables PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_link_libraries(uw_test_restored_tables PUBLIC uw_test_support)
+add_supported_game_unit_test(restored_tables uw_test_restored_tables)

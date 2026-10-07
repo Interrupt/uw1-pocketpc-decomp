@@ -8,27 +8,34 @@
 /* was a raw `iVar4 + 0x85638` absolute-address literal inside trigger_quest_milestone_cleanup_event
    (no declared global at all -- Ghidra never recovered this one), read as a 9-entry object-type-id
    table. */
-static undefined1 DAT_00085638[10]; /* indices 1-9 are the ones actually read (index 0 unused) */
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined1 DAT_00085638[10] = {
+  0xde, 0xd1, 0xdb, 0xd2, 0xdc, 0xd5, 0xd8, 0xd4, 0xd3, 0xdd,
+}; /* indices 1-9 are the ones actually read (index 0 unused) */
 /* Ghidra rendered the embedded spaces as underscores and dropped the
    trailing newline. Real bytes at 0x85644 (ARM UU.exe .data):
    "The book explodes in your face!\n". */
 static char s_The_book_explodes_in_your_face__00085644[] = "The book explodes in your face!\n";
-/* Both were single `undefined` scalars, but resolve_lock_difficulty_rating (the only function
-   anywhere in this decompile that touches either) indexes each one via `(&DAT_xxx)[i]` up to the
-   extents below... */
-static undefined DAT_002026d1[253];
-static undefined DAT_00202807[121];
+
+/* ARM indexes this loaded four-byte record table with type IDs 32-63. */
+#define DAT_00202807 (DAT_00202800_backing + 7) /* Loaded armor record byte 7. */
 /* Ghidra rendered the embedded space as an underscore and dropped
    the trailing newline. Real bytes at 0x87918 (ARM UU.exe .data):
    "Look, it's a text trap\n". */
 static char s_Look__it_s_a_text_trap_00087918[] = "Look, it's a text trap\n";
 static undefined4 DAT_0024cff8;
-static undefined4 DAT_0024cfd4;
-/* Sizing-audit pass: its ADDRESS is passed as scan_area_ahead_of_ object's callback argument (see
-   the GAP note below) -- a stand-in for an unrecovered callback, never read/written/indexed as
-   data. Shrunk for consistency; down from 8192. */
-static undefined DAT_0007e644_backing[16];
-#define DAT_0007e644 DAT_0007e644_backing[0]
+static ushort *DAT_0024cfd4;
+
+/* ARM 0x7e644: a nearby object with flag 0x100 blocks spawning unless
+   it is the source object or the player. Callback records are native pointers. */
+static int FUN_0007e644(int x, int y, ushort *object, byte *tile, byte owner)
+{
+  (void)x; (void)y; (void)tile; (void)owner;
+  if ((object[7] & 0x100) != 0 && object != DAT_0024cfd4 && object != g_player_object) {
+    DAT_0024cff8 = 1;
+  }
+  return DAT_0024cff8;
+}
 
 
 
@@ -654,13 +661,12 @@ byte * param_2;
 
 // was FUN_0007e694 -- its only confirmed caller is dispatch_trap_type_effect's case 7 ("spawn
 // trap"), which aborts the spawn when this returns nonzero for the target object (class 0x40).
-undefined4 check_object_area_for_spawn_block(param_1)
-undefined4 param_1;
+undefined4 check_object_area_for_spawn_block(ushort *param_1)
 
 {
   DAT_0024cff8 = 0;
   DAT_0024cfd4 = param_1;
-  scan_area_ahead_of_object(param_1,1,&DAT_0007e644,0,0,4);
+  scan_area_ahead_of_object(param_1,1,FUN_0007e644,0,0,4);
   return DAT_0024cff8;
 }
 
@@ -1358,7 +1364,7 @@ ushort * param_1;
       return (int)(char)DAT_00202807[(short)(uVar1 & 0xf) * 8];
     }
     if ((((uVar2 & 3) != 1) && ((uVar2 & 3) != 0)) && ((uVar2 & 3) < 4)) {
-      return (int)(char)DAT_002026d1[(uVar1 & 0x3f) * 4];
+      return (int)(char)(&DAT_00202750)[((uVar1 & 0x3f) - 0x20) * 4 + 1];
     }
   }
   return -1;

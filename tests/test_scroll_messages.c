@@ -117,6 +117,14 @@ static void test_terrain_looks_have_one_line_ending(void)
     TEST_ASSERT_EQUAL_STRING("You see a stone floor.", scroll_messages_fixture_line(1));
     TEST_ASSERT_EQUAL_STRING("Next", scroll_messages_fixture_line(2));
 }
+static void test_floor_terrain_looks_use_loaded_texture_ids(void)
+{
+    describe_picked_terrain(2,49); /* First floor texture follows 48 wall textures. */
+    describe_picked_terrain(2,58); /* Last floor texture. */
+    TEST_ASSERT_EQUAL_STRING("You see a stone floor.",scroll_messages_fixture_line(0));
+    TEST_ASSERT_EQUAL_STRING("You see a tiled floor.",scroll_messages_fixture_line(1));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -131,5 +139,6 @@ int main(void)
     RUN_TEST(test_alternate_look_messages_have_one_line_ending);
     RUN_TEST(test_creature_looks_have_one_line_ending);
     RUN_TEST(test_terrain_looks_have_one_line_ending);
+    RUN_TEST(test_floor_terrain_looks_use_loaded_texture_ids);
     return UNITY_END();
 }

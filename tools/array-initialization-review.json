@@ -1,0 +1,1023 @@
+{
+  "reviewed_commit": "349fbd2",
+  "scope": "Follow-up ARM recovery and confirmed fixes applied. Original findings retained under original_status. Remaining unchanged code paths reviewed after parent aliases were restored.",
+  "counts": {
+    "fixed": 34,
+    "indirect_population": 32,
+    "intentional_zero": 2,
+    "legacy_model_storage": 31,
+    "unresolved_runtime_storage": 7
+  },
+  "arrays": {
+    "DAT_00086370_backing": {
+      "status": "fixed",
+      "reason": "MOD pitch/period lookup reads. ARM 0x86370 starts with LE32 values 907,900,894,887; native table has no initializer or writer.",
+      "path": "src/audio.c",
+      "line": 27,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "8b030000840300007e03000077030000710300006b030000640300005e03000058030000520300004c03000046030000400300003a030000340300002e030000",
+        "nonzero_bytes_checked": 32
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00086810_backing": {
+      "status": "fixed",
+      "reason": "MOD vibrato/tremolo waveform. ARM has 32 nontrivial sine magnitudes; native table has no initializer or writer.",
+      "path": "src/audio.c",
+      "line": 31,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "0018314a61788da1b4c5d4e0ebf4fafdfffdfaf4ebe0d4c5b4a18d78614a3118570061007600650020004200690074007300200061006c006c006f0063002000",
+        "nonzero_bytes_checked": 47
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_000873e0_backing": {
+      "status": "fixed",
+      "reason": "Music track flags/durations. ARM contains nonzero LE32 records; native tables only read by music selection/playback.",
+      "path": "src/audio.c",
+      "line": 90,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000100000001000000010000000100000001000000010000000100000000000000000000000000000001000000010000007e00000079000000",
+        "nonzero_bytes_checked": 11
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00087414_backing": {
+      "status": "fixed",
+      "reason": "Music track flags/durations. ARM contains nonzero LE32 records; native tables only read by music selection/playback.",
+      "path": "src/audio.c",
+      "line": 40,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "010000007e000000790000007e000000880000002d000000260000002100000030000000100000002b0000000700000048000000010000000100000001000000",
+        "nonzero_bytes_checked": 16
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_000845b8_backing": {
+      "status": "fixed",
+      "reason": "Barter item-slot/crosshair coordinates. ARM contains packed LE16 X/Y pairs; overlapping fields are currently independent empty arrays. These are coordinate data, including PTR_DAT_000845c8, not callbacks.",
+      "path": "src/babl.c",
+      "line": 73,
+      "owner_sha256": "82b03ddc39c9ecc85f7dd43653a0b65ec989fcf00d87747592a75aeb023d7d98",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "94000c00a9000c0094001e00a9001e0091001300bb00130091002500bb0025005b000c0070000c005b001e0070001e0058001300820013005800250082002500",
+        "nonzero_bytes_checked": 32
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_000845ba_backing": {
+      "status": "fixed",
+      "reason": "Barter item-slot/crosshair coordinates. ARM contains packed LE16 X/Y pairs; overlapping fields are currently independent empty arrays. These are coordinate data, including PTR_DAT_000845c8, not callbacks.",
+      "path": "src/babl.c",
+      "line": 75,
+      "owner_sha256": "82b03ddc39c9ecc85f7dd43653a0b65ec989fcf00d87747592a75aeb023d7d98",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "0c00a9000c0094001e00a9001e0091001300bb00130091002500bb0025005b000c0070000c005b001e0070001e00580013008200130058002500820025006e70",
+        "nonzero_bytes_checked": 33
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_000845d8_backing": {
+      "status": "fixed",
+      "reason": "Barter item-slot/crosshair coordinates. ARM contains packed LE16 X/Y pairs; overlapping fields are currently independent empty arrays. These are coordinate data, including PTR_DAT_000845c8, not callbacks.",
+      "path": "src/babl.c",
+      "line": 77,
+      "owner_sha256": "82b03ddc39c9ecc85f7dd43653a0b65ec989fcf00d87747592a75aeb023d7d98",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "5b000c0070000c005b001e0070001e00580013008200130058002500820025006e70635f6174746974756465000000000000a040005043476400000000000000",
+        "nonzero_bytes_checked": 34
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_000845da_backing": {
+      "status": "fixed",
+      "reason": "Barter item-slot/crosshair coordinates. ARM contains packed LE16 X/Y pairs; overlapping fields are currently independent empty arrays. These are coordinate data, including PTR_DAT_000845c8, not callbacks.",
+      "path": "src/babl.c",
+      "line": 79,
+      "owner_sha256": "82b03ddc39c9ecc85f7dd43653a0b65ec989fcf00d87747592a75aeb023d7d98",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "0c0070000c005b001e0070001e00580013008200130058002500820025006e70635f6174746974756465000000000000a04000504347640000000000000034f6",
+        "nonzero_bytes_checked": 35
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "PTR_DAT_000845c8_backing": {
+      "status": "fixed",
+      "reason": "Barter item-slot/crosshair coordinates. ARM contains packed LE16 X/Y pairs; overlapping fields are currently independent empty arrays. These are coordinate data, including PTR_DAT_000845c8, not callbacks.",
+      "path": "src/babl.c",
+      "line": 115,
+      "owner_sha256": "82b03ddc39c9ecc85f7dd43653a0b65ec989fcf00d87747592a75aeb023d7d98",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "91001300bb00130091002500bb0025005b000c0070000c005b001e0070001e00580013008200130058002500820025006e70635f617474697475646500000000",
+        "nonzero_bytes_checked": 36
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_000845e8_backing": {
+      "status": "fixed",
+      "reason": "Barter item-slot/crosshair coordinates. ARM contains packed LE16 X/Y pairs; overlapping fields are currently independent empty arrays. These are coordinate data, including PTR_DAT_000845c8, not callbacks.",
+      "path": "src/babl.c",
+      "line": 120,
+      "owner_sha256": "82b03ddc39c9ecc85f7dd43653a0b65ec989fcf00d87747592a75aeb023d7d98",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "580013008200130058002500820025006e70635f6174746974756465000000000000a04000504347640000000000000034f669bf7e8ec73e022ee8bd00000000",
+        "nonzero_bytes_checked": 38
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00084a40_backing": {
+      "status": "fixed",
+      "reason": "Default palette consumed when build_rgb565_palette receives NULL. ARM starts with RGB palette entries; native table remains zero.",
+      "path": "src/graphics.c",
+      "line": 37,
+      "owner_sha256": "79c6cdec43d560c582d40f8db25031f103c1875a7e6d2c5b9ae346f9a559fa21",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000800000000080000080800000000080008000800000808000c0c0c000c0dcc000a6caf0002c0000005600000087000000c0000000ff000000002c0000",
+        "nonzero_bytes_checked": 24
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00086e70_backing": {
+      "status": "fixed",
+      "reason": "Movement-mode selection lookup in input handling. First ARM bytes are 09 08 0a 00; native lookup is all zero.",
+      "path": "src/input.c",
+      "line": 81,
+      "owner_sha256": "d9daea5ec27164d38013c207f3071d1d05ccd0dbf5be7aae247caf6e1eeea1fa",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "09080a0000000000111f1e202c2e2d1210000000ff0000000102030406080c10182030406080c000666f6e74357836692e737973000000005c444154415c4352",
+        "nonzero_bytes_checked": 48
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00086260_backing": {
+      "status": "fixed",
+      "reason": "Arctangent interpolation samples. ARM has nonzero LE16 entries, beginning 0x4000,0x3fae,0x3f5d,0x3f0b. Adjacent interpolation fields need one shared table, not independent empty arrays.",
+      "path": "src/math.c",
+      "line": 68,
+      "owner_sha256": "341574e3328340fc358618bdacfb12bbbc53e01cda63d4e5a7a874dfbcd28917",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "0040ae3f5d3f0b3fb93e683e163ec53d733d223dd03c7e3c2c3cda3b883b363be43a923a403aed399b394839f638a3385038fd37aa3757370337b0365c360836",
+        "nonzero_bytes_checked": 63
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00086264_backing": {
+      "status": "fixed",
+      "reason": "Arctangent interpolation samples. ARM has nonzero LE16 entries, beginning 0x4000,0x3fae,0x3f5d,0x3f0b. Adjacent interpolation fields need one shared table, not independent empty arrays.",
+      "path": "src/math.c",
+      "line": 69,
+      "owner_sha256": "341574e3328340fc358618bdacfb12bbbc53e01cda63d4e5a7a874dfbcd28917",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "5d3f0b3fb93e683e163ec53d733d223dd03c7e3c2c3cda3b883b363be43a923a403aed399b394839f638a3385038fd37aa3757370337b0365c360836b4356035",
+        "nonzero_bytes_checked": 64
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00086d60_backing": {
+      "status": "fixed",
+      "reason": "Catalog-2 sprite/texture draw-command lookup. ARM begins with LE16 values 228,102; native reads produce zero. Verify exact extent before recovery.",
+      "path": "src/models.c",
+      "line": 603,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "e4006600000000000000010002000300040005000600070000000001000200030004000500060007070006000500040003000200010000000007000600050004",
+        "nonzero_bytes_checked": 27
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00086dc8_backing": {
+      "status": "fixed",
+      "reason": "Light-source color bases in compute_light_source_colors. ARM has 16 bytes 0e ff 0d 04 80 80 80 80 80 80 80 0b 80 80 80 80; native array is empty.",
+      "path": "src/player.c",
+      "line": 118,
+      "owner_sha256": "b28663c80ce3860e5b70ff0f6283f14abb207604dfbfb7b0c1e723d00e5d638e",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "0eff0d04808080808080800b808080805c444154415c6631362e7472000000005c444154415c6633322e74720000000088bd23000100000046312e3837000000",
+        "nonzero_bytes_checked": 49
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00087308_arr": {
+      "status": "fixed",
+      "reason": "Skill-use improvement per-tier values. ARM first three bytes are 25,40,10; native array is empty.",
+      "path": "src/player.c",
+      "line": 180,
+      "owner_sha256": "b28663c80ce3860e5b70ff0f6283f14abb207604dfbfb7b0c1e723d00e5d638e",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "19280a0020300a0020616e64200000002c2000004368616e7420746865206d616e7472613a200000666f6e74636861722e737973000000005c444154415c7769",
+        "nonzero_bytes_checked": 51
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00085638": {
+      "status": "fixed",
+      "reason": "Quest milestone cleanup object-ID list. ARM bytes are de d1 db d2 dc d5 d8 d4 d3 dd; native loop reads indexes 1-9 of an empty array.",
+      "path": "src/traps.c",
+      "line": 11,
+      "owner_sha256": "7d191abd35687a252589c907a2bd1b5f3df96343d2fe65a42e5aa581d0f3c236",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "ded1dbd2dcd5d8d4d3dd000054686520626f6f6b206578706c6f64657320696e20796f75722066616365210a0000000050bd030090c103000000000094c10300",
+        "nonzero_bytes_checked": 51
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_000830b0_backing": {
+      "status": "fixed",
+      "reason": "Window-message dispatch records in original .rdata. First record is message 1 / callback 0x778f4. Native data and sibling callback view are placeholders; this legacy Windows path may be inactive under SDL.",
+      "path": "src/game.c",
+      "line": 202,
+      "owner_sha256": "cb3218b632b87a848420b507316aa86eefb2d31221381b5218f7cbedec21b29c",
+      "arm_evidence": {
+        "section": ".rdata",
+        "bytes_checked": 64,
+        "prefix_hex": "01000000f47807000f000000fc78070008000000f079070007000000107a070006000000307a070002000000387a0700000100002c7b0700010100002c7b0700",
+        "nonzero_bytes_checked": 33
+      },
+      "original_status": "missing_static_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00086e00_backing": {
+      "status": "fixed",
+      "reason": "Version message passed to the scroll. ARM contains F1.87 followed by NUL; native character storage is empty.",
+      "path": "src/game.c",
+      "line": 145,
+      "owner_sha256": "cb3218b632b87a848420b507316aa86eefb2d31221381b5218f7cbedec21b29c",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "46312e38370000004c657620256420402025322e32752e25312e31752025322e32752e25312e31752025322e32782025322e3278200a00000103040301fd0000",
+        "nonzero_bytes_checked": 57
+      },
+      "original_status": "missing_static_string",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00028bfc_backing": {
+      "status": "fixed",
+      "reason": "ARM addresses lie in .text, not a data table. Native arrays are passed as keybinding/scan callbacks. Recover the original functions instead of copying instruction bytes into arrays.",
+      "path": "src/game.c",
+      "line": 136,
+      "owner_sha256": "cb3218b632b87a848420b507316aa86eefb2d31221381b5218f7cbedec21b29c",
+      "arm_evidence": {
+        "section": ".text",
+        "bytes_checked": 64,
+        "prefix_hex": "0ef0a0e170402de930509fe5300015e5011b80e220009fe515c2ffeb0038a0e14338b0e10600005a0e0ca0e3010080e3823e01eb4e5a01eb9a0000eac84f0800",
+        "nonzero_bytes_checked": 55
+      },
+      "original_status": "code_as_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_0007e644_backing": {
+      "status": "fixed",
+      "reason": "ARM addresses lie in .text, not a data table. Native arrays are passed as keybinding/scan callbacks. Recover the original functions instead of copying instruction bytes into arrays.",
+      "path": "src/traps.c",
+      "line": 30,
+      "owner_sha256": "7d191abd35687a252589c907a2bd1b5f3df96343d2fe65a42e5aa581d0f3c236",
+      "arm_evidence": {
+        "section": ".text",
+        "bytes_checked": 64,
+        "prefix_hex": "0d10d2e50e30d2e5033481e138109fe50338a0e12338a0e1013c13e20700000a240011e5000052e118009f1500009015000052110100a013000081150000001a",
+        "nonzero_bytes_checked": 48
+      },
+      "original_status": "code_as_data",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00100632_backing": {
+      "status": "fixed",
+      "reason": "Offsets +2 and +4 inside the CMB.DAT block loaded at DAT_00100630 by load_combat_data_file. Independent item_use.c arrays cannot see that read.",
+      "path": "src/item_use.c",
+      "line": 22,
+      "owner_sha256": "80cefb95cdb318f0bb7585be313311b407097c49d3388970f39b6d1d7a3f55ee",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      },
+      "original_status": "disconnected_loaded_field",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00100634_backing": {
+      "status": "fixed",
+      "reason": "Offsets +2 and +4 inside the CMB.DAT block loaded at DAT_00100630 by load_combat_data_file. Independent item_use.c arrays cannot see that read.",
+      "path": "src/item_use.c",
+      "line": 17,
+      "owner_sha256": "80cefb95cdb318f0bb7585be313311b407097c49d3388970f39b6d1d7a3f55ee",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      },
+      "original_status": "disconnected_loaded_field",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_002029f9_backing": {
+      "status": "fixed",
+      "reason": "Offset +1 inside the container records loaded at g_carry_weight_limit_table (DAT_002029f8) by load_light_food_effect_tables; independent backing remains zero.",
+      "path": "src/item_use.c",
+      "line": 51,
+      "owner_sha256": "80cefb95cdb318f0bb7585be313311b407097c49d3388970f39b6d1d7a3f55ee",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      },
+      "original_status": "disconnected_loaded_field",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_002035cf_backing": {
+      "status": "fixed",
+      "reason": "Original address is DAT_00202c90 + 0x93f: COMOBJ record 182, byte 1. The real property array is loaded, but this separate puzzle-property backing is not.",
+      "path": "src/item_use.c",
+      "line": 27,
+      "owner_sha256": "80cefb95cdb318f0bb7585be313311b407097c49d3388970f39b6d1d7a3f55ee",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      },
+      "original_status": "disconnected_loaded_field",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_00202807": {
+      "status": "fixed",
+      "reason": "Offset +7 in weapon/armor records loaded at DAT_00202800 by load_armor_variant_tables. This separate traps.c backing makes lock difficulty read zero.",
+      "path": "src/traps.c",
+      "line": 20,
+      "owner_sha256": "7d191abd35687a252589c907a2bd1b5f3df96343d2fe65a42e5aa581d0f3c236",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      },
+      "original_status": "disconnected_loaded_field",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_0023ad58_backing": {
+      "status": "fixed",
+      "reason": "Reader indexes 48-57 at a two-byte stride. These addresses are exactly DAT_0023adb8[0-9], populated by reset_texture_id_lists/load_level_texture_ids. The separate array cannot see the loaded floor texture IDs.",
+      "path": "src/interact.c",
+      "line": 21,
+      "owner_sha256": "178deee620ff7292284869c3dd2c754660b99ef9b6a72815fa0e5b0148527add",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      },
+      "original_status": "disconnected_loaded_field",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_002048c2_backing": {
+      "status": "fixed",
+      "reason": "Offset +2 in the placement snapshot rooted at DAT_002048c0. build_object_placement_snapshot populates the parent through DAT_0010172c, not this separate field backing.",
+      "path": "src/movement.c",
+      "line": 68,
+      "owner_sha256": "0e82d51db70ed9b22534b90f75ec7f0caf90d4d8d8024af6da199b27d3320e5c",
+      "original_status": "disconnected_loaded_field",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_0023b90a_backing": {
+      "status": "fixed",
+      "reason": "Offset +2 in the rolling record at DAT_0023b908. ce_memmove fills the parent record, but later copies read this independent array. Needs shared backing verification before fixing.",
+      "path": "src/tmap.c",
+      "line": 163,
+      "owner_sha256": "573f9563430d352915153d8420aa4d76986f691dde35fe6e6b2784a72722c501",
+      "original_status": "disconnected_runtime_field",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_000b5638_backing": {
+      "status": "indirect_population",
+      "reason": "build_shade_lut in graphics.c writes each of 160 entries through puVar3.",
+      "path": "src/3d.c",
+      "line": 19,
+      "owner_sha256": "b7668219eaea3b8b7fb8093f3231a35d9979d6996efe0bc51f99135320121a3d",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      }
+    },
+    "DAT_000c8ac0_mtx": {
+      "status": "indirect_population",
+      "reason": "multiply_matrix4x4 receives the matrix as its output buffer.",
+      "path": "src/3d.c",
+      "line": 41,
+      "owner_sha256": "b7668219eaea3b8b7fb8093f3231a35d9979d6996efe0bc51f99135320121a3d"
+    },
+    "DAT_00101568_backing": {
+      "status": "indirect_population",
+      "reason": "save_walk_path_to_cache_slot and advance_cached_path_step write the passed cache records.",
+      "path": "src/ai.c",
+      "line": 100,
+      "owner_sha256": "f8b4d84cbc004a5b57542e30181b9120f09cd8d3ed3589f338b2d333cc5fda35"
+    },
+    "DAT_002048f0_backing": {
+      "status": "indirect_population",
+      "reason": "Selected through DAT_0010172c; build_object_placement_snapshot fills the current collision snapshot.",
+      "path": "src/ai.c",
+      "line": 115,
+      "owner_sha256": "f8b4d84cbc004a5b57542e30181b9120f09cd8d3ed3589f338b2d333cc5fda35"
+    },
+    "DAT_00204950_backing": {
+      "status": "indirect_population",
+      "reason": "Selected through DAT_0010172c; build_object_placement_snapshot fills the current collision snapshot.",
+      "path": "src/ai.c",
+      "line": 117,
+      "owner_sha256": "f8b4d84cbc004a5b57542e30181b9120f09cd8d3ed3589f338b2d333cc5fda35"
+    },
+    "DAT_002048c0_backing": {
+      "status": "indirect_population",
+      "reason": "Selected through DAT_0010172c; build_object_placement_snapshot fills the current collision snapshot.",
+      "path": "src/movement.c",
+      "line": 73,
+      "owner_sha256": "0e82d51db70ed9b22534b90f75ec7f0caf90d4d8d8024af6da199b27d3320e5c"
+    },
+    "DAT_0023c460_backing": {
+      "status": "indirect_population",
+      "reason": "Critter association/resource initialization writes puVar6[iVar7] after selecting this base.",
+      "path": "src/ai.c",
+      "line": 155,
+      "owner_sha256": "f8b4d84cbc004a5b57542e30181b9120f09cd8d3ed3589f338b2d333cc5fda35"
+    },
+    "DAT_00202a58_backing": {
+      "status": "indirect_population",
+      "reason": "init_all_sound_channel_slots walks puVar1 and initializes 16 channel records.",
+      "path": "src/audio.c",
+      "line": 9,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121"
+    },
+    "DAT_00086e6c_backing": {
+      "status": "indirect_population",
+      "reason": "Current-view record is updated through the g_current_view/DAT_00086e6c pointer aliases by update_current_view_from_subject.",
+      "path": "src/bitmap.c",
+      "line": 36,
+      "owner_sha256": "6642a8deaea0a0cdcfe7a522d5a4bb89db0f65830508bed8ad9a857c3ec11c38"
+    },
+    "DAT_00204920_backing": {
+      "status": "indirect_population",
+      "reason": "build_object_placement_snapshot receives this destination in collision.c.",
+      "path": "src/collision.c",
+      "line": 12,
+      "owner_sha256": "65c39d9803fa36e14355a2b8ddb4952c9aeb196d55ba2b700a0c8f0fb1190451"
+    },
+    "DAT_001005e0_backing": {
+      "status": "indirect_population",
+      "reason": "resolve_equipped_weapon_attack receives &DAT_001005e0 from tick_weapon_swing_state and replaces it with the equipped object pointer (or NULL). Not a missing constant table.",
+      "path": "src/combat.c",
+      "line": 37,
+      "owner_sha256": "ac04de51a5a54474e6e0273be9283e74df42d246890b9f373745b323f9d8f712",
+      "original_status": "pointer_fallback"
+    },
+    "g_fields": {
+      "status": "indirect_population",
+      "reason": "Debug-field registration obtains &g_fields[g_field_count++] and writes the returned DbgField members.",
+      "path": "src/debug_ui.c",
+      "line": 35,
+      "owner_sha256": "3885c6c3bd5b3eb17455475d1ca442e63a5ea23dd0eaec6981afff8ab77b7049"
+    },
+    "DAT_00241f08_backing": {
+      "status": "indirect_population",
+      "reason": "Startup/registry path copying writes through pcVar4/pcVar9.",
+      "path": "src/game.c",
+      "line": 179,
+      "owner_sha256": "cb3218b632b87a848420b507316aa86eefb2d31221381b5218f7cbedec21b29c"
+    },
+    "DAT_00248418_backing": {
+      "status": "indirect_population",
+      "reason": "build_rgb565_palette creates the faded palette ramp through puVar20.",
+      "path": "src/graphics.c",
+      "line": 111,
+      "owner_sha256": "79c6cdec43d560c582d40f8db25031f103c1875a7e6d2c5b9ae346f9a559fa21"
+    },
+    "DAT_00088640_backing": {
+      "status": "intentional_zero",
+      "reason": "All 768 original ARM bytes were checked and are zero. This is the black palette used by fades; zero-initialized native storage is appropriate.",
+      "path": "src/graphics.c",
+      "line": 119,
+      "owner_sha256": "79c6cdec43d560c582d40f8db25031f103c1875a7e6d2c5b9ae346f9a559fa21",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 768,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      }
+    },
+    "DAT_000879b8_backing": {
+      "status": "indirect_population",
+      "reason": "rect_fill_or_save_restore SAVE mode writes cursor background pixels through puVar8.",
+      "path": "src/graphics.c",
+      "line": 128,
+      "owner_sha256": "79c6cdec43d560c582d40f8db25031f103c1875a7e6d2c5b9ae346f9a559fa21"
+    },
+    "DAT_0023c1e8_arr": {
+      "status": "indirect_population",
+      "reason": "HUD slot creation stores sprite-list handles through psVar11.",
+      "path": "src/hud.c",
+      "line": 212,
+      "owner_sha256": "4d2a2cde513a7bd0ffcb76e942bcd4873108a7fb8adfe5b41440f0491d002a6b"
+    },
+    "DAT_0023cdb0_backing": {
+      "status": "indirect_population",
+      "reason": "Startup copies the 24 GXDisplayProperties bytes through puVar5.",
+      "path": "src/hud.c",
+      "line": 401,
+      "owner_sha256": "4d2a2cde513a7bd0ffcb76e942bcd4873108a7fb8adfe5b41440f0491d002a6b"
+    },
+    "g_msg_scroll_panel_state_backing": {
+      "status": "indirect_population",
+      "reason": "Message panel selected through DAT_00250704; msg_scroll_panel_init and scrolling write its fields through that pointer.",
+      "path": "src/hud.c",
+      "line": 405,
+      "owner_sha256": "4d2a2cde513a7bd0ffcb76e942bcd4873108a7fb8adfe5b41440f0491d002a6b"
+    },
+    "DAT_0023ce10_backing": {
+      "status": "indirect_population",
+      "reason": "Keybinding reset/setup obtains this base as puVar6 and writes packed binding fields through the pointer.",
+      "path": "src/input.c",
+      "line": 90,
+      "owner_sha256": "d9daea5ec27164d38013c207f3071d1d05ccd0dbf5be7aae247caf6e1eeea1fa"
+    },
+    "DAT_000c4c38_backing": {
+      "status": "indirect_population",
+      "reason": "Model parser scratch: POINTS/connections write through cursors, name buffers are filled by ce_fscanf/string copies. Not immutable lookup tables.",
+      "path": "src/models.c",
+      "line": 157,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_000c8ca0_backing": {
+      "status": "indirect_population",
+      "reason": "Model parser scratch: POINTS/connections write through cursors, name buffers are filled by ce_fscanf/string copies. Not immutable lookup tables.",
+      "path": "src/models.c",
+      "line": 166,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_000d98c8_backing": {
+      "status": "indirect_population",
+      "reason": "Model parser scratch: POINTS/connections write through cursors, name buffers are filled by ce_fscanf/string copies. Not immutable lookup tables.",
+      "path": "src/models.c",
+      "line": 413,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_000da480_backing": {
+      "status": "indirect_population",
+      "reason": "Model parser scratch: POINTS/connections write through cursors, name buffers are filled by ce_fscanf/string copies. Not immutable lookup tables.",
+      "path": "src/models.c",
+      "line": 418,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_000db454_backing": {
+      "status": "indirect_population",
+      "reason": "Model parser scratch: POINTS/connections write through cursors, name buffers are filled by ce_fscanf/string copies. Not immutable lookup tables.",
+      "path": "src/models.c",
+      "line": 430,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "g_anim_model_scratch": {
+      "status": "indirect_population",
+      "reason": "load_e_model_record selects dest=g_anim_model_scratch[catalog], then memcpy fills it from parsed model records.",
+      "path": "src/models.c",
+      "line": 553,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00101428_backing": {
+      "status": "indirect_population",
+      "reason": "find_nearby_door_in_candidates writes the output coordinate through its second argument.",
+      "path": "src/movement.c",
+      "line": 80,
+      "owner_sha256": "0e82d51db70ed9b22534b90f75ec7f0caf90d4d8d8024af6da199b27d3320e5c"
+    },
+    "DAT_00202c90_backing": {
+      "status": "indirect_population",
+      "reason": "load_object_catalog_data reads COMOBJ records through puVar6 and advances by 13 bytes.",
+      "path": "src/objects.c",
+      "line": 23,
+      "owner_sha256": "2bf4a5457e2ca30cdb283ca62e62e4f5f6c359afd6a2d5ef8e4c5553b43f2761"
+    },
+    "DAT_0024af98_backing": {
+      "status": "indirect_population",
+      "reason": "String decompression selects puVar6 from this arena and writes decoded characters.",
+      "path": "src/resources.c",
+      "line": 104,
+      "owner_sha256": "ae15b4ad16a79474c6ee7c8994feca6e267d922f23a4f0acdaf74b45ffbdc051"
+    },
+    "DAT_000890b0_backing": {
+      "status": "indirect_population",
+      "reason": "load_font_metrics walks puVar5, writing 128 glyph widths from the active font.",
+      "path": "src/text.c",
+      "line": 15,
+      "owner_sha256": "2feecd7b1dde54ef59f7629672573771ce364becd04f0c85fc612804889cc658"
+    },
+    "g_tile_feature_records_b92e_backing": {
+      "status": "indirect_population",
+      "reason": "Tile-feature collection writes count and IDs through puVar6. Shared-storage relationship to nearby rolling records remains a separate audit concern.",
+      "path": "src/tmap.c",
+      "line": 196,
+      "owner_sha256": "573f9563430d352915153d8420aa4d76986f691dde35fe6e6b2784a72722c501"
+    },
+    "DAT_002020f8_arr": {
+      "status": "indirect_population",
+      "reason": "free_frame_geometry_buffers clears entries through piVar1; geometry code owns the frame buffers. No immutable data initializer needed.",
+      "path": "src/visibility.c",
+      "line": 21,
+      "owner_sha256": "aa302d80c73b7b4645fedc0cd7fa1c63f69a8bbc0d34489e85595953c26e7514"
+    },
+    "DAT_002049e0_backing": {
+      "status": "indirect_population",
+      "reason": "Texture arena addressed through DAT_0023ae38 and populated by load_texture_arena.",
+      "path": "src/visibility.c",
+      "line": 53,
+      "owner_sha256": "aa302d80c73b7b4645fedc0cd7fa1c63f69a8bbc0d34489e85595953c26e7514"
+    },
+    "g_visibility_ray_fallback": {
+      "status": "intentional_zero",
+      "reason": "Fallback visibility-ray array selected when a main ray slot is NULL; zero entries represent an empty ray.",
+      "path": "src/visibility.c",
+      "line": 154,
+      "owner_sha256": "aa302d80c73b7b4645fedc0cd7fa1c63f69a8bbc0d34489e85595953c26e7514"
+    },
+    "DAT_0023c2b0_backing": {
+      "status": "unresolved_runtime_storage",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/audio.c",
+      "line": 92,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121",
+      "followup": "Reviewed original ARM xrefs. Remaining runtime/platform storage; no guessed constants or new loader introduced. See report."
+    },
+    "DAT_0023c2b1_backing": {
+      "status": "fixed",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/audio.c",
+      "line": 68,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121",
+      "original_status": "unresolved_runtime_storage",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_0023c2b2_backing": {
+      "status": "fixed",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/audio.c",
+      "line": 70,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121",
+      "original_status": "unresolved_runtime_storage",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_0023c2b3_backing": {
+      "status": "fixed",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/audio.c",
+      "line": 72,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121",
+      "original_status": "unresolved_runtime_storage",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    },
+    "DAT_0023c3d4_backing": {
+      "status": "unresolved_runtime_storage",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/audio.c",
+      "line": 109,
+      "owner_sha256": "6895972b8798e3c5057cc9e0c9a51c3eb4fb77b672340bda19caf0818aa71121",
+      "followup": "Reviewed original ARM xrefs. Remaining runtime/platform storage; no guessed constants or new loader introduced. See report."
+    },
+    "DAT_00250658_backing": {
+      "status": "unresolved_runtime_storage",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/input.c",
+      "line": 12,
+      "owner_sha256": "d9daea5ec27164d38013c207f3071d1d05ccd0dbf5be7aae247caf6e1eeea1fa",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      },
+      "followup": "Reviewed original ARM xrefs. Remaining runtime/platform storage; no guessed constants or new loader introduced. See report."
+    },
+    "DAT_00110ff0_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 13,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00110ffc_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 18,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00114c1c_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 459,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00118848_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 461,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0011c474_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 463,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_001200a0_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 465,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00123ccc_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 467,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_001278f8_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 468,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0012b524_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 470,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0012f150_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 472,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00132d7c_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 474,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_001369a8_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 476,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0013a5d4_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 478,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0013e200_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 480,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00141e2c_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 482,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00145a58_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 484,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00149684_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 486,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0014d2b0_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 488,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00150edc_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 490,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00154b08_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 492,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00158734_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 494,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0015c360_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 496,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0015ff8c_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 498,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00163bb8_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 500,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_001677e4_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 502,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0016b410_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 504,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0016f03c_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 506,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00172c68_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 508,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_00176894_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 510,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0017a4c0_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 512,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0017e0ec_backing": {
+      "status": "legacy_model_storage",
+      "reason": "Legacy address-based model catalog regions. Current loader builds native parsed records and returns before the legacy copy path; empty independent regions need a separate reachability/shared-storage audit, not guessed binary initializers.",
+      "path": "src/models.c",
+      "line": 514,
+      "owner_sha256": "1e62e3cd0688b87cda66a49c150872ca8112c0a73b55256d270063c785f1e634"
+    },
+    "DAT_0008794c_backing": {
+      "status": "unresolved_runtime_storage",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/movement.c",
+      "line": 110,
+      "owner_sha256": "0e82d51db70ed9b22534b90f75ec7f0caf90d4d8d8024af6da199b27d3320e5c",
+      "followup": "Reviewed original ARM xrefs. Remaining runtime/platform storage; no guessed constants or new loader introduced. See report."
+    },
+    "DAT_00087944_backing": {
+      "status": "unresolved_runtime_storage",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/movement.c",
+      "line": 164,
+      "owner_sha256": "0e82d51db70ed9b22534b90f75ec7f0caf90d4d8d8024af6da199b27d3320e5c",
+      "followup": "Reviewed original ARM xrefs. Remaining runtime/platform storage; no guessed constants or new loader introduced. See report."
+    },
+    "DAT_00087950_backing": {
+      "status": "unresolved_runtime_storage",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/movement.c",
+      "line": 169,
+      "owner_sha256": "0e82d51db70ed9b22534b90f75ec7f0caf90d4d8d8024af6da199b27d3320e5c",
+      "followup": "Reviewed original ARM xrefs. Remaining runtime/platform storage; no guessed constants or new loader introduced. See report."
+    },
+    "DAT_00087948_backing": {
+      "status": "unresolved_runtime_storage",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/movement.c",
+      "line": 171,
+      "owner_sha256": "0e82d51db70ed9b22534b90f75ec7f0caf90d4d8d8024af6da199b27d3320e5c",
+      "followup": "Reviewed original ARM xrefs. Remaining runtime/platform storage; no guessed constants or new loader introduced. See report."
+    },
+    "DAT_002026d1": {
+      "status": "fixed",
+      "reason": "No initializer or source-level population identified. ARM static data is zero or was not sampled; cannot infer intended runtime contents. Trace indirect aliases/platform setup/loading before changing behavior.",
+      "path": "src/traps.c",
+      "line": 19,
+      "owner_sha256": "7d191abd35687a252589c907a2bd1b5f3df96343d2fe65a42e5aa581d0f3c236",
+      "arm_evidence": {
+        "section": ".data",
+        "bytes_checked": 64,
+        "prefix_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "nonzero_bytes_checked": 0
+      },
+      "original_status": "unresolved_runtime_storage",
+      "resolution": "Original ARM contents/callback or parent-storage view restored; see implementation report and regression fixtures."
+    }
+  }
+}

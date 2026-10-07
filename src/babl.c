@@ -67,17 +67,21 @@ static undefined2 DAT_000bbfe0;
 static undefined2 DAT_000bbfb8;
 static short *DAT_000bc020; /* ARM preference lists contain signed 16-bit words. */
 static short *DAT_000bc000;
-/* Sizing-audit pass: 4 barter-icon-slot coordinate tables, explicit
-   `if(3<iVar1)` caps (init_barter_ui's capture loop, `iVar1=iVar7*4`)
-   -- max byte 3*4+1=13. Sized to 16 each for headroom; down from 256. */
-static undefined1 DAT_000845b8_backing[16];
+/* ARM has two 32-byte coordinate records; each contains four icon and four marker X/Y pairs. */
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined1 DAT_000845b8_backing[32] = {
+  0x94, 0x00, 0x0c, 0x00, 0xa9, 0x00, 0x0c, 0x00, 0x94, 0x00, 0x1e, 0x00, 0xa9, 0x00, 0x1e, 0x00,
+  0x91, 0x00, 0x13, 0x00, 0xbb, 0x00, 0x13, 0x00, 0x91, 0x00, 0x25, 0x00, 0xbb, 0x00, 0x25, 0x00,
+};
 #define DAT_000845b8 DAT_000845b8_backing[0]
-static undefined1 DAT_000845ba_backing[16];
-#define DAT_000845ba DAT_000845ba_backing[0]
-static undefined1 DAT_000845d8_backing[16];
+#define DAT_000845ba DAT_000845b8_backing[2] /* ARM overlapping coordinate view. */
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined1 DAT_000845d8_backing[32] = {
+  0x5b, 0x00, 0x0c, 0x00, 0x70, 0x00, 0x0c, 0x00, 0x5b, 0x00, 0x1e, 0x00, 0x70, 0x00, 0x1e, 0x00,
+  0x58, 0x00, 0x13, 0x00, 0x82, 0x00, 0x13, 0x00, 0x58, 0x00, 0x25, 0x00, 0x82, 0x00, 0x25, 0x00,
+};
 #define DAT_000845d8 DAT_000845d8_backing[0]
-static undefined1 DAT_000845da_backing[16];
-#define DAT_000845da DAT_000845da_backing[0]
+#define DAT_000845da DAT_000845d8_backing[2] /* ARM overlapping coordinate view. */
 /* Sizing-audit pass: sum_barter_offer_value's own `iVar4<4` loop
    bound, 4-byte stride (matching this element type exactly) -- max
    index 3. Sized to 8 for headroom; down from 256. */
@@ -109,16 +113,10 @@ static undefined4 DAT_000bc010_backing[4];
 #define DAT_000bc010 DAT_000bc010_backing[0]
 static undefined4 DAT_000bc028_backing[4];
 #define DAT_000bc028 DAT_000bc028_backing[0]
-/* Was a lone scalar pointer slot -- its only use is `&PTR_DAT_000845c8 + iVar2*4` (a 4-byte-stride
-   coordinate table, same convention as the sibling DAT_000845b8/DAT_000845d8/DAT_000845e8 tables
-   right around it in the original .data layout)... */
-static undefined1 PTR_DAT_000845c8_backing[256];
-#define PTR_DAT_000845c8 PTR_DAT_000845c8_backing[0]
-/* Sizing pass: sibling of PTR_DAT_000845c8 right above in draw_hotspot_crosshair_marker's worn-slot
-   branch (`&DAT_000845e8 + iVar2*4`, iVar2 up to 4 slots per init_barter_ui's own loop) -- same
-   bound, given the same 256-byte margin. */
-static undefined1 DAT_000845e8_backing[256];
-#define DAT_000845e8 DAT_000845e8_backing[0]
+/* Marker coordinates occupy the second half of each barter coordinate record. */
+#define PTR_DAT_000845c8 DAT_000845b8_backing[16] /* ARM overlapping coordinate view. */
+
+#define DAT_000845e8 DAT_000845d8_backing[16] /* ARM overlapping coordinate view. */
 /* ARM 0xbbfb0/0xbbfc8 are the second four words of the 0xbbfa8/0xbbfc0
    caches. init_barter_ui and item changes invalidate those words; separate
    arrays made offer evaluation reuse zero or stale values instead. */

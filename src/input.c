@@ -78,7 +78,10 @@ static undefined2 DAT_0023be84;
 static undefined2 DAT_0023be78;
 static undefined2 DAT_0023be60;
 static undefined2 DAT_0023bd7c;
-static undefined DAT_00086e70_backing[256];
+/* Recovered from the original ARM UU.exe; retain the original table bounds. */
+static undefined DAT_00086e70_backing[4] = {
+  0x09, 0x08, 0x0a, 0x00,
+};
 #define DAT_00086e70 DAT_00086e70_backing[0]
 static undefined4 DAT_0023bf50;
 /* Sizing pass: this is the real Microsoft GXKeyList struct (see
