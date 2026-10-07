@@ -1264,9 +1264,41 @@ void apply_melee_damage(byte hit_type)
 
 
 
-// was FUN_00026eb4 -- picks and plays a combat impact sound effect: id 10 for a whiffed/no-target
-// swing (param_1==0), else id 7 or 8 depending on whether the attacker's weapon type and the
-// target's armor/shield type both indicate a "blocked" match...
+// was FUN_00026eb4 -- picks and plays a combat impact sound effect: id
+// 10 for a whiffed/no-target swing (result==0), else id 7 or 8
+// depending on whether the attacker's weapon type and the target's
+// armor/shield type both indicate a "blocked" match (a metal-on-metal
+// clang vs a duller impact).
+//
+// BUG FIX (real crash, same class as play_sound_effect_at_object's own
+// fix in audio.c): the hit branch (result != 0) dereferenced
+// get_object_record_by_slot_index(DAT_00100610)'s result unconditionally
+// (`DAT_00100610 = *puVar6 & 0x1ff;`) with no NULL check -- confirmed
+// byte-for-byte against a live Ghidra decompile of the real FUN_00026eb4,
+// so this is a genuine latent bug in the original compiled game, not a
+// decompile artifact, same as every other bug on this branch: never
+// reachable before the SFX subsystem flags were fixed to their real
+// nonzero default. get_object_record_by_slot_index legitimately returns
+// NULL for an empty slot (already documented at its own definition in
+// objects.c, already guarded at several other call sites in
+// movement.c/tmap.c) -- added the same guard here, matching this
+// function's own existing "nothing to do, return 0" exit (the shared
+// tail below already does this for every other path).
+//
+// BUG FIX (real crash, SECOND pointer truncation, one level up from the
+// play_sound_effect_at_object fix): uVar4 -- which holds
+// get_object_record_by_slot_index's real pointer result on BOTH paths
+// that reach play_sound_effect_at_object(uVar5,uVar4,0) below -- was
+// `undefined4` (32-bit), truncating the real 64-bit object pointer
+// right here, before the already-fixed object-pointer type on the callee
+// side ever gets a chance to matter. Confirmed via a live Ghidra decompile
+// of the real FUN_00026eb4 that this `undefined4 uVar4;` is genuinely how
+// the original compiled game typed it too (same unrecovered-32-bit-
+// pointer-width class as every other fix on this branch). Live repro
+// (the user's own attack-crash.txt, replayed under lldb): confirmed the
+// first fix alone didn't resolve the crash because of this exact
+// truncation still happening one call frame earlier. Widened to a real
+// pointer type.
 int play_weapon_impact_sound(short result)
 {
   uint uVar1;
@@ -1276,13 +1308,16 @@ int play_weapon_impact_sound(short result)
   undefined4 uVar5;
   ushort *puVar6;
   byte bVar7;
-  
+
   if (result == 0) {
     uVar4 = get_object_record_by_slot_index((int)(short)DAT_00100610);
     uVar5 = 10;
     goto LAB_0002701c;
   }
   puVar6 = (ushort *)get_object_record_by_slot_index((int)(short)DAT_00100610);
+  if (puVar6 == (ushort *)0x0) {
+    return 0;
+  }
   DAT_00100610 = *puVar6 & 0x1ff;
   uVar1 = (uint)(short)DAT_00100610;
   if ((uVar1 == 1) || (0xff < uVar1)) {

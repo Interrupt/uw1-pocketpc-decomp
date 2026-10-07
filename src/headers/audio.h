@@ -6,6 +6,21 @@
  * this header is self-contained for any caller. */
 #include "uw.h"
 
+/* "Audio subsystem initialized" / "music enabled" gate flags -- defined
+ * in audio.c, but also set directly by platform_music.c's
+ * platform_music_init on success (see each global's own comment in
+ * audio.c for the full history). Use headers/platform_music.h for the
+ * actual init/load/start/stop/shutdown calls. */
+extern int DAT_00087454;
+extern int DAT_00087448;
+
+/* Their sound-effects-subsystem twins -- defined in audio.c, set
+ * directly by platform_sfx.c's platform_sfx_init on success (see each
+ * global's own comment in audio.c). Use headers/platform_sfx.h for the
+ * actual init/play/shutdown calls. */
+extern int DAT_00087450;
+extern int DAT_0008744c;
+
 int reset_dialogue_speech_state();
 void clear_ambient_sound_target_thunk();
 short load_voice_sample_page(char *resource, int page_index, char *header, void *out_buffer);
