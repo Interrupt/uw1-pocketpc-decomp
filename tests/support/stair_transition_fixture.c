@@ -22,29 +22,29 @@ uint clock_units;
 int scan_calls;
 
 void cancel_weapon_swing(void) {}
-void pop_cursor_icon(int state) {}
-void save_or_restore_level_special_state(int level, int save) {}
-undefined4 commit_level_to_save_slot(int level) { return 1; }
+void pop_cursor_icon(ushort state) {}
+void save_or_restore_level_special_state(short level, short save) {}
+int commit_level_to_save_slot(int level) { return 1; }
 int load_level(int level)
 {
     TEST_ASSERT_EQUAL_INT(2, level);
     loads++;
     return 1;
 }
-void set_player_tile_position(uint x, uint y)
+void set_player_tile_position(uint x, uint y, int flag)
 {
     TEST_ASSERT_EQUAL_INT(open_x, x);
     TEST_ASSERT_EQUAL_INT(open_y, y);
     positions++;
 }
-void set_pending_update_flags(int flags) {}
-void report_fatal_error_and_exit(void) { TEST_FAIL_MESSAGE("Stair transition failed"); }
+void set_pending_update_flags(ushort flags) {}
+void report_fatal_error_and_exit(ushort error_code) { (void)error_code; TEST_FAIL_MESSAGE("Stair transition failed"); }
 void full_dungeon_redraw(void) {}
 void weapon_overlay_flash_hold(int passes) {}
 void weapon_overlay_flash_restore(int passes) {}
 void *ce_memset(void *buffer, int value, unsigned size)
 { return memset(buffer, value, size); }
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, x);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, y);
@@ -58,17 +58,17 @@ int encode_object_slot_index(void *object)
     TEST_ASSERT_EQUAL_PTR(player, object);
     return 1;
 }
-undefined4 check_object_placement_clearance(int type, int slot, int x, int y, int z, int flag, int radius)
+int check_object_placement_clearance(short type, short slot, short x, short y, short z, int flag, byte radius)
 {
     TEST_ASSERT_EQUAL_INT(0x7f, type);
     TEST_ASSERT_EQUAL_INT(1, slot);
     return x == open_x * 8 + 3 && y == open_y * 8 + 3;
 }
-void *resolve_object_link(ushort *link) { return NULL; }
-undefined4 object_ptr_in_arena(void *object) { return 0; }
-ushort *discard_misplaced_object(void *head, void *object, int flag) { return NULL; }
-void tick_weapon_swing_state(int flag) {}
-void set_hud_status_value(int slot, int value) { if (slot == 0) hud_hp = value; }
+void *resolve_object_link(void *link) { return NULL; }
+int object_ptr_in_arena(void *object) { return 0; }
+ushort *discard_misplaced_object(void *head, ushort *object, int flag) { return NULL; }
+void tick_weapon_swing_state(short flag) {}
+void set_hud_status_value(byte slot, ushort value) { if (slot == 0) hud_hp = value; }
 void handle_starvation_penalty(void) { deaths++; }
 uint read_realtime_clock_units(void) { return clock_units; }
 void update_ingame_music_track(void) {}
@@ -76,7 +76,7 @@ void update_player_tick_effects(void) {}
 long ce_rand(void) { return 1; }
 void apply_level9_random_hazard_tick(void) {}
 void debug_print(char *format, ...) {}
-ushort *find_object_in_chain(ushort **link, int recursive, int group, int subclass, int type)
+ushort *find_object_in_chain(void *link, int recursive, int group, int subclass, short type)
 {
     TEST_ASSERT_EQUAL_INT(7, group);
     TEST_ASSERT_EQUAL_INT(0, subclass);

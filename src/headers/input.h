@@ -53,33 +53,33 @@ extern int g_force_flush;
 
 #define _DAT_0023ce10 (*(uint*)&DAT_0023ce10)
 
-bool apply_swim_wade_pose();
-void set_locomotion_state();
-undefined4 begin_directional_move();
-void resolve_move_vector();
-void apply_movement_mode_profile();
+bool apply_swim_wade_pose(ushort collision_mask);
+void set_locomotion_state(ushort collision_mask, int mode_flag);
+int begin_directional_move(short direction);
+void resolve_move_vector(short movement_mode, short step_scale, short *out_step);
+void apply_movement_mode_profile(byte anim_mode);
 void input_bindings_init();
 void input_bindings_free();
-int register_click_region();
-int register_key_binding();
-void unregister_key_binding();
-void poll_input_bindings();
-void dispatch_key_binding();
+int register_click_region(int left, int bottom, int right, int top, short arg, short mode_mask, void *handler);
+int register_key_binding(int key_code, int arg, int mode_mask, void *handler);
+void unregister_key_binding(short binding_id);
+void poll_input_bindings(void *input_state);
+void dispatch_key_binding(char *input_state, short key_code);
 void dispatch_sticky_mode_handlers();
-void wait_for_click_release();
+void wait_for_click_release(int mode);
 int poll_mouse_event();
-undefined4 get_alternate_keyboard_scan_code();
-uint process_pending_keyboard_scan_code();
-uint poll_input_event();
-undefined4 next_input_event();
-undefined4 peek_input_event();
+int get_alternate_keyboard_scan_code();
+uint process_pending_keyboard_scan_code(int use_alternate);
+uint poll_input_event(int peek_only);
+int next_input_event();
+int peek_input_event();
 void update_mouse_state();
-void register_game_view_interact_zones();
+void register_game_view_interact_zones(int x, int y, int width, int height);
 void unregister_game_view_interact_zones();
-void move_command_dispatch();
+void move_command_dispatch(short command);
 void uw_set_analog_move_turn(int fwd_held, int turn_dir);
-void move_key_directional_step();
-undefined4 handle_keyboard_message();
-undefined4 handle_mouse_message();
+void move_key_directional_step(int direction);
+int handle_keyboard_message(int window, int message, uint wparam);
+int handle_mouse_message(int window, uint message, uint wparam, int lparam);
 
 #endif

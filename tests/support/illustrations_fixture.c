@@ -2,17 +2,17 @@
 #include "illustrations_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-void describe_picked_terrain(int mode, int texture);
-void print_scroll_message_by_id(void);
-char *get_message_string(void);
-void msg_scroll_panel_reset(void);
-undefined1 *format_object_display_name(void);
-int message_scroll_print_wrapped(void);
-undefined4 open_file_for_read(void);
-undefined4 read_file_handle(void);
-undefined4 open_existing_file_rw_alt(const char *path);
-undefined4 seek_file_handle(int handle, int offset, int origin);
-undefined4 write_file_handle(int handle, const void *source, int count);
+void describe_picked_terrain(byte mode, short texture);
+void print_scroll_message_by_id(uint message_id);
+char *get_message_string(ushort message_id);
+void msg_scroll_panel_reset(int redraw);
+byte *format_object_display_name(byte *buffer, int flag_a, int flag_b);
+int message_scroll_print_wrapped(char *text);
+int open_file_for_read(const char *path);
+int read_file_handle(int handle, void *buffer, uint count);
+int open_existing_file_rw_alt(const char *path);
+int seek_file_handle(int handle, int offset, int origin);
+int write_file_handle(int handle, const void *source, uint count);
 long CloseHandle(int handle);
 void display_book_or_scroll_page(uint page);
 
@@ -40,24 +40,24 @@ uint displayed_page;
 
 char opened_path[260];
 
-void describe_picked_terrain(int mode, int texture)
+void describe_picked_terrain(byte mode, short texture)
 { TEST_ASSERT_EQUAL_INT(2, mode); TEST_ASSERT_EQUAL_INT(24, texture); descriptions++; }
 
-void print_scroll_message_by_id(void) { TEST_FAIL_MESSAGE("Unexpected scroll message"); }
+void print_scroll_message_by_id(uint message_id) { (void)message_id; TEST_FAIL_MESSAGE("Unexpected scroll message"); }
 
-char *get_message_string(void) { TEST_FAIL_MESSAGE("Unexpected inscription text"); return NULL; }
+char *get_message_string(ushort message_id) { (void)message_id; TEST_FAIL_MESSAGE("Unexpected inscription text"); return NULL; }
 
-void msg_scroll_panel_reset(void) { TEST_FAIL_MESSAGE("Unexpected inscription reset"); }
+void msg_scroll_panel_reset(int redraw) { (void)redraw; TEST_FAIL_MESSAGE("Unexpected inscription reset"); }
 
-undefined1 *format_object_display_name(void) { TEST_FAIL_MESSAGE("Unexpected inscription formatting"); return NULL; }
+byte *format_object_display_name(byte *buffer, int flag_a, int flag_b) { (void)buffer; (void)flag_a; (void)flag_b; TEST_FAIL_MESSAGE("Unexpected inscription formatting"); return NULL; }
 
-int message_scroll_print_wrapped(void) { TEST_FAIL_MESSAGE("Unexpected inscription printing"); return 0; }
+int message_scroll_print_wrapped(char *text) { (void)text; TEST_FAIL_MESSAGE("Unexpected inscription printing"); return 0; }
 
-undefined4 open_file_for_read(void) { TEST_FAIL_MESSAGE("Unexpected grave file"); return -1; }
+int open_file_for_read(const char *path) { (void)path; TEST_FAIL_MESSAGE("Unexpected grave file"); return -1; }
 
-undefined4 read_file_handle(void) { TEST_FAIL_MESSAGE("Unexpected grave file read"); return 0; }
+int read_file_handle(int handle, void *buffer, uint count) { (void)handle; (void)buffer; (void)count; TEST_FAIL_MESSAGE("Unexpected grave file read"); return 0; }
 
-undefined4 open_existing_file_rw_alt(const char *path)
+int open_existing_file_rw_alt(const char *path)
 {
     opens++;
     TEST_ASSERT_LESS_THAN_UINT(sizeof opened_path, strlen(path));
@@ -71,14 +71,14 @@ undefined4 open_existing_file_rw_alt(const char *path)
     return 1;
 }
 
-undefined4 seek_file_handle(int handle, int offset, int origin)
+int seek_file_handle(int handle, int offset, int origin)
 {
     if (handle != 1) return -1;
     position = origin == 0 ? offset : position + offset;
     return position;
 }
 
-undefined4 write_file_handle(int handle, const void *source, int count)
+int write_file_handle(int handle, const void *source, uint count)
 {
     if (handle != 1 || fail_write) return 0;
     TEST_ASSERT_EQUAL_INT(2, count);

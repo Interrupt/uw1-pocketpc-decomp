@@ -59,7 +59,7 @@ void dbgui_object_inspector_pick(void)
 {
   ushort *obj;
   if (!dbgui_visible()) return;
-  obj = pick_object_under_cursor();
+  obj = pick_object_under_cursor(2);
   g_dbgui_inspect_obj = obj;
   g_dbgui_inspect_tex_pick = 0;
   if (obj != 0) {

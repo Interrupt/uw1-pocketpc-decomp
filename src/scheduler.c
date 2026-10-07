@@ -23,16 +23,14 @@ static int DAT_002508fc;
 
 // was FUN_0008097c: removes a scheduler entry's own world object (tile unlink + free_object_slot)
 // -- named to match System Shock's own term for this shared timed-effects system...
-void scheduler_despawn_entry(param_1)
-short param_1;
-
+void scheduler_despawn_entry(short entry_index)
 {
   /* ARM 0x809a4 keeps the resolved object pointer in r5 and forwards
      it to both object_list_unlink and free_object_slot. */
   void *uVar1;
   int iVar2;
   
-  iVar2 = param_1 * 6;
+  iVar2 = entry_index * 6;
   uVar1 = resolve_object_link(&DAT_00250778 + iVar2);
   /* was folded into `int iVar2` (reused above as an index) -- truncated
      tilemap_lookup's real `void *` return */
@@ -41,16 +39,13 @@ short param_1;
     object_list_unlink(_tile2 + 2,uVar1);
   }
   free_object_slot(uVar1);
-  return;
 }
 
 
 
 // was FUN_000809cc: finds the scheduler entry whose encoded object link
 // matches param_1 and removes it (swap-with-last, decrement count).
-void scheduler_remove_entry(param_1)
-short param_1;
-
+void scheduler_remove_entry(short object_link)
 {
   uint uVar1;
   uint uVar2;
@@ -64,7 +59,7 @@ short param_1;
   uVar3 = (uint)g_scheduler_count;
   if (uVar3 != 0) {
     do {
-      if ((uint)(*puVar6 >> 6) == (int)param_1) break;
+      if ((uint)(*puVar6 >> 6) == (int)object_link) break;
       uVar2 = uVar2 + 1;
       puVar6 = puVar6 + 3;
     } while ((int)uVar2 < (int)uVar3);
@@ -83,7 +78,6 @@ short param_1;
       (&DAT_0025077d)[iVar4] = (&DAT_0025077d)[iVar5];
     }
   }
-  return;
 }
 
 
@@ -91,9 +85,7 @@ short param_1;
 // was FUN_00080a98: scheduler_tick's finalize step, run once an entry's
 // delay has expired -- one last scheduler_step_entry catch-up, then
 // (for class 0xf, doors) the actual final open/close quality flip.
-void scheduler_finish_entry(param_1)
-undefined4 param_1;
-
+void scheduler_finish_entry(int entry_slot)
 {
   ushort uVar1;
   ushort uVar2;
@@ -107,9 +99,9 @@ undefined4 param_1;
   uint uVar10;
   bool bVar11;
   
-  iVar9 = (short)param_1 * 6;
+  iVar9 = (short)entry_slot * 6;
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] scheduler_finish_entry ENTERED: param_1(slot)=%d\n", (int)param_1);
+    fprintf(stderr, "[door] scheduler_finish_entry ENTERED: entry_slot(slot)=%d\n", (int)entry_slot);
   puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + iVar9);
   /* HACK: resolve_object_link legitimately returns NULL (every other resolve_object_link call site
      in this file guards for it -- e.g. scheduler_add_entry's own identical fix a little above this
@@ -127,10 +119,10 @@ undefined4 param_1;
     fprintf(stderr, "[door] scheduler_finish_entry: obj0=0x%04x class=%d flags=0x%x bVar11(skip-inc)=%d quality_before=%d\n",
             (unsigned)*puVar4, (int)uVar5, (unsigned)uVar1, (int)bVar11, (int)(puVar4[3] & 0x3f));
   if (!bVar11) {
-    /* HACK: was a bare `scheduler_step_entry(param_1);` -- dropped second argument (elapsed ticks),
+    /* HACK: was a bare `scheduler_step_entry(entry_slot);` -- dropped second argument (elapsed ticks),
        same class as this file's other Ghidra-decompiled dropped-argument calls.
        scheduler_finish_entry has no elapsed value of its own to forward... */
-    scheduler_step_entry(param_1, 1);
+    scheduler_step_entry(entry_slot, 1);
   }
   if (uVar5 == 0xf) {
     uVar10 = (byte)((byte)puVar4[3] >> 4) & 3;
@@ -192,11 +184,11 @@ undefined4 param_1;
               (unsigned)*puVar4, (int)((*puVar4 & 0x1000) != 0), (int)((*puVar4 >> 9) & 7));
   }
   if ((uVar1 & 0x20) != 0) {
-    scheduler_despawn_entry(param_1);
+    scheduler_despawn_entry(entry_slot);
   }
   g_scheduler_count = g_scheduler_count - 1;
   uVar5 = (uint)g_scheduler_count;
-  if ((uVar5 != 0) && ((int)(short)param_1 != uVar5)) {
+  if ((uVar5 != 0) && ((int)(short)entry_slot != uVar5)) {
     iVar7 = uVar5 * 6;
     (&DAT_00250778)[iVar9] = (&DAT_00250778)[iVar7];
     (&DAT_00250779)[iVar9] = (&DAT_00250779)[iVar7];
@@ -205,7 +197,6 @@ undefined4 param_1;
     (&DAT_0025077c)[iVar9] = (&DAT_0025077c)[iVar7];
     (&DAT_0025077d)[iVar9] = (&DAT_0025077d)[iVar7];
   }
-  return;
 }
 
 
@@ -213,17 +204,16 @@ undefined4 param_1;
 // was FUN_00080e00 -- finds the scheduler entry currently linked to param_2 (an "old" object) and
 // re-links it to point at param_1(a "new" object) instead, matching by each entry's encoded
 // object-link field.
-void scheduler_relink_entry(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
+void scheduler_relink_entry(void *new_object_ptr, void *old_object_ptr)
 {
+  char *new_object = (char *)new_object_ptr;
+  char *old_object = (char *)old_object_ptr;
   short sVar1;
   uint uVar2;
   int iVar3;
 
-  uVar2 = encode_object_slot_index(param_1);
-  sVar1 = encode_object_slot_index(param_2);
+  uVar2 = encode_object_slot_index(new_object);
+  sVar1 = encode_object_slot_index(old_object);
   iVar3 = 0;
   if (g_scheduler_count != 0) {
     do {
@@ -236,7 +226,6 @@ undefined4 param_2;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     } while (iVar3 < (int)(uint)g_scheduler_count);
   }
-  return;
 }
 
 
@@ -244,13 +233,7 @@ undefined4 param_2;
 // was FUN_00080ed4: pushes a new entry onto the scheduler -- an encoded object link (param_1),
 // delay (param_2), initial animation offset (param_3), and tile position (param_4/param_5). The
 // object's own subtype selects its animation behavior from OBJECTS.DAT.
-uint scheduler_add_entry(param_1,param_2,param_3,param_4,param_5)
-uint param_1;
-undefined4 param_2;
-undefined1 param_3;
-undefined1 param_4;
-undefined1 param_5;
-
+uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byte tile_x, byte tile_y)
 {
   char cVar1;
   uint uVar2;
@@ -260,12 +243,12 @@ undefined1 param_5;
   
   if (g_scheduler_count + 1 < 0x41) {
     iVar4 = (uint)g_scheduler_count * 6;
-    (&DAT_00250778)[iVar4] = (&DAT_00250778)[iVar4] & 0x3f | (byte)((param_1 & 0x3ff) << 6);
-    (&DAT_00250779)[iVar4] = (char)((param_1 << 0x16) >> 0x18);
-    (&DAT_0025077a)[iVar4] = (char)param_2;
-    (&DAT_0025077b)[iVar4] = (char)((uint)param_2 >> 8);
-    (&DAT_0025077c)[iVar4] = param_4;
-    (&DAT_0025077d)[iVar4] = param_5;
+    (&DAT_00250778)[iVar4] = (&DAT_00250778)[iVar4] & 0x3f | (byte)((object_link & 0x3ff) << 6);
+    (&DAT_00250779)[iVar4] = (char)((object_link << 0x16) >> 0x18);
+    (&DAT_0025077a)[iVar4] = (char)delay;
+    (&DAT_0025077b)[iVar4] = (char)((uint)delay >> 8);
+    (&DAT_0025077c)[iVar4] = tile_x;
+    (&DAT_0025077d)[iVar4] = tile_y;
     pbVar3 = (byte *)resolve_object_link((ushort *)(&DAT_00250778 + iVar4)); /* confirmed via ARM disassembly, 0x80f50 */
     /* resolve_object_link legitimately returns NULL (every other one of this file's 140+ call sites
        guards for it -- e.g. the `!= (ushort*)0x0` checks throughout this file). */
@@ -282,7 +265,7 @@ undefined1 param_5;
           /* ARM 0x80f94..0x80fb4 uses idivmod's remainder in r1; the decompiled extraout_r1 local
              was never initialized. Gets it by name off ordint_divmod's own divmod_result now
              (divisor confirmed nonzero by the enclosing if/else). */
-          uVar5 = (cVar1 + ordint_divmod((&DAT_00250733)[iVar4],param_3).rem ^ uVar5) & 0x3f ^ uVar5;
+          uVar5 = (cVar1 + ordint_divmod((&DAT_00250733)[iVar4],animation_offset).rem ^ uVar5) & 0x3f ^ uVar5;
         }
         pbVar3[6] = (byte)uVar5;
         pbVar3[7] = (byte)(uVar5 >> 8);
@@ -303,10 +286,7 @@ undefined1 param_5;
 // was FUN_00081034: scheduler_tick's per-tick step for one still-pending entry -- per-class
 // behavior-flag bits select a gradual quality step toward a target (bit 0, e.g. a door's swing), a
 // timed decay (bit 1), or a position/orientation step via scheduler_advance_effect (bit 2).
-void scheduler_step_entry(param_1,param_2)
-undefined4 param_1;
-int param_2;
-
+void scheduler_step_entry(int entry_slot, int elapsed)
 {
   int iVar1;
   byte bVar2;
@@ -319,8 +299,8 @@ int param_2;
   ushort uVar8;
   
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] scheduler_step_entry ENTERED: param_1(slot)=%d param_2=%d\n", (int)param_1, param_2);
-  puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + (short)param_1 * 6);
+    fprintf(stderr, "[door] scheduler_step_entry ENTERED: entry_slot(slot)=%d elapsed=%d\n", (int)entry_slot, elapsed);
+  puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + (short)entry_slot * 6);
   /* HACK: same unguarded-NULL class as scheduler_finish_entry's identical fix --
      see its own comment. A stale queue entry resolves to NULL here too. */
   if (puVar4 == (ushort *)0x0) {
@@ -370,24 +350,24 @@ LAB_00081254:
           int _swing_dirbit_in = (*puVar4 & 0x1000) != 0;
           int _swing_openbits_in = (*puVar4 >> 9) & 7;
           if ((*puVar4 & 0x1000) != 0) {
-            param_2 = (short)param_2 * -0x10000 >> 0x10;
+            elapsed = (short)elapsed * -0x10000 >> 0x10;
           }
           if ((puVar4[3] & 7) == 6) {
             uVar8 = puVar4[1];
             bVar2 = (byte)uVar8;
-            *(byte *)(puVar4 + 1) = ((char)param_2 * '\x06' + bVar2 ^ bVar2) & 0x7f ^ bVar2;
+            *(byte *)(puVar4 + 1) = ((char)elapsed * '\x06' + bVar2 ^ bVar2) & 0x7f ^ bVar2;
             *(char *)((char *)puVar4 + 3) = (char)(uVar8 >> 8);
           }
           uVar5 = (uint)*puVar4;
-          uVar5 = ((uVar5 & 0xe00) + (uVar5 & 0xf000) + param_2 * 0x200 ^ uVar5) & 0x1e00 ^ uVar5;
+          uVar5 = ((uVar5 & 0xe00) + (uVar5 & 0xf000) + elapsed * 0x200 ^ uVar5) & 0x1e00 ^ uVar5;
           *(char *)puVar4 = (char)*puVar4;
           *(char *)((char *)puVar4 + 1) = (char)(uVar5 >> 8);
           if (getenv("UW_DEBUG_DOOR"))
             fprintf(stderr, "[door] scheduler_step_entry SWING: elapsed_in=%d dirbit_in=%d openbits_in=%d -> obj0=0x%04x dirbit_out=%d openbits_out=%d advance=%d\n",
-                    param_2, _swing_dirbit_in, _swing_openbits_in, (unsigned)uVar5,
+                    elapsed, _swing_dirbit_in, _swing_openbits_in, (unsigned)uVar5,
                     (int)((uVar5 & 0x1000) != 0), (int)((uVar5 >> 9) & 7), (int)((uVar5 & 0x1000) != 0));
           if ((uVar5 & 0x1000) != 0) {
-            scheduler_advance_effect(param_1,param_2);
+            scheduler_advance_effect(entry_slot,elapsed);
           }
         }
       }
@@ -395,7 +375,6 @@ LAB_00081254:
       uVar3 = uVar3 << 1;
     }
   }
-  return;
 }
 
 
@@ -403,9 +382,7 @@ LAB_00081254:
 // was FUN_0008128c: walks every live scheduler entry, called from ordinary gameplay's own per-tick
 // pacing (move_key_directional_step and its per-frame sibling, gated by DAT_000879ac -- see
 // init_gameplay_session's own comment) with param_1 = elapsed ticks.
-void scheduler_tick(param_1)
-int param_1;
-
+void scheduler_tick(int elapsed)
 {
   int iVar1;
   int iVar2;
@@ -413,11 +390,11 @@ int param_1;
   int iVar4;
 
   if (getenv("UW_DEBUG_DOOR2"))
-    fprintf(stderr, "[door] scheduler_tick called: param_1(elapsed)=%d g_scheduler_count(queue_count)=%d\n",
-            param_1, (int)(unsigned char)g_scheduler_count);
+    fprintf(stderr, "[door] scheduler_tick called: elapsed(elapsed)=%d g_scheduler_count(queue_count)=%d\n",
+            elapsed, (int)(unsigned char)g_scheduler_count);
   iVar4 = 0;
   if (g_scheduler_count != 0) {
-    iVar4 = param_1;
+    iVar4 = elapsed;
   }
   if (DAT_0023b804 != 0) {
     set_pending_update_flags(2);
@@ -450,7 +427,6 @@ int param_1;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     } while (iVar3 < (int)(uint)g_scheduler_count);
   }
-  return;
 }
 
 
@@ -460,15 +436,7 @@ int param_1;
 // was FUN_00081814 -- general "spawn a scheduled effect object" primitive: spawns a new object of
 // type (0x1c0 + param_2, the "group" -- the same 0x1c0 family cast_area_spell_effect/
 // activate_area_hazard_object use for spell/hazard effect ids)...
-undefined4 spawn_scheduled_effect_object(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-ushort * param_1;
-int param_2;
-undefined4 param_3;
-undefined1 param_4;
-ushort param_5;
-short param_6;
-short param_7;
-
+int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y)
 {
   undefined1 uVar1;
   byte bVar2;
@@ -482,43 +450,43 @@ short param_7;
                    shape at FUN_0004ad10/settle_mobile_to_immobile (see their comments) */
   byte bVar9;
 
-  iVar5 = (char *)spawn_new_object(param_2 + 0x1c0,0);
+  iVar5 = (char *)spawn_new_object(effect_group + 0x1c0,0);
   if (iVar5 == (char *)0x0) {
     return 0;
   }
-  if (param_1 != (ushort *)0x0) {
-    uVar6 = (*(ushort *)(iVar5 + 2) ^ param_1[1]) & 0x1fff ^ (uint)param_1[1];
+  if (source_object != (ushort *)0x0) {
+    uVar6 = (*(ushort *)(iVar5 + 2) ^ source_object[1]) & 0x1fff ^ (uint)source_object[1];
     uVar1 = (undefined1)uVar6;
     *(undefined1 *)(iVar5 + 2) = uVar1;
     bVar2 = (byte)(uVar6 >> 8);
     *(byte *)(iVar5 + 3) = bVar2;
-    bVar9 = *(byte *)((char *)param_1 + 3);
+    bVar9 = *(byte *)((char *)source_object + 3);
     *(undefined1 *)(iVar5 + 2) = uVar1;
     *(byte *)(iVar5 + 3) = (bVar9 ^ bVar2) & 0x1c ^ bVar2;
   }
-  if ((short)param_5 < 0) {
+  if ((short)heading_adjust < 0) {
     uVar3 = *(undefined2 *)(iVar5 + 2);
-    bVar9 = (byte)uVar3 ^ (byte)((uint)param_5 * -0x10000 >> 0x10);
+    bVar9 = (byte)uVar3 ^ (byte)((uint)heading_adjust * -0x10000 >> 0x10);
   }
   else {
-    if (param_1 == (ushort *)0x0) goto LAB_00081980;
-    bVar9 = (byte)(&DAT_00202c90)[(*param_1 & 0x1ff) * 0xd] >> 3;
+    if (source_object == (ushort *)0x0) goto LAB_00081980;
+    bVar9 = (byte)(&DAT_00202c90)[(*source_object & 0x1ff) * 0xd] >> 3;
     uVar3 = *(undefined2 *)(iVar5 + 2);
     if (bVar9 == 0) {
       bVar9 = 1;
     }
-    bVar9 = (char)param_5 * bVar9 + (char)param_1[1] ^ (byte)uVar3;
+    bVar9 = (char)heading_adjust * bVar9 + (char)source_object[1] ^ (byte)uVar3;
   }
   *(byte *)(iVar5 + 2) = bVar9 & 0x7f ^ (byte)uVar3;
   *(char *)(iVar5 + 3) = (char)((ushort)uVar3 >> 8);
 LAB_00081980:
   uVar7 = encode_object_slot_index(iVar5);
-  sVar4 = scheduler_add_entry(uVar7,param_3,param_4,(int)param_6 & 0xff,(char)param_7);
+  sVar4 = scheduler_add_entry(uVar7,delay,animation_offset,(int)tile_x & 0xff,(char)tile_y);
   if (sVar4 == -1) {
     free_object_slot(iVar5);
     return 0;
   }
-  iVar8 = (char *)tilemap_lookup((int)param_6,(int)param_7);
+  iVar8 = (char *)tilemap_lookup((int)tile_x,(int)tile_y);
   object_list_append_tail(iVar8 + 2,iVar5);
   return 1;
 }
@@ -527,16 +495,16 @@ LAB_00081980:
 
 // was FUN_000819f0: linear-searches the scheduler for the entry whose encoded link matches
 // encode_object_slot_index()'s last result...
-int scheduler_find_entry(param_1)
-char *param_1;  /* the object/link record whose slot index is searched for (ARM 0x819f0: r0 passes straight into encode_object_slot_index) */
-
+/* the object/link record whose slot index is searched for (ARM 0x819f0: r0 passes straight into
+   encode_object_slot_index) */
+int scheduler_find_entry(char *object)
 {
   short sVar1;
   int iVar2;
   uint uVar3;
   int iVar4;
   
-  sVar1 = encode_object_slot_index(param_1);
+  sVar1 = encode_object_slot_index(object);
   iVar4 = 0;
   uVar3 = (uint)g_scheduler_count;
   if (uVar3 != 0) {
@@ -555,14 +523,13 @@ char *param_1;  /* the object/link record whose slot index is searched for (ARM 
 
 
 // was FUN_00081a84: reads scheduler_find_entry's result's delay field.
-int scheduler_get_delay(param_1)
-undefined4 param_1;
-
+int scheduler_get_delay(void *object_ptr)
 {
+  char *object = (char *)object_ptr;
   short sVar1;
   int iVar2;
 
-  sVar1 = scheduler_find_entry(param_1);
+  sVar1 = scheduler_find_entry(object);
   if (sVar1 < 0) {
     iVar2 = -2;
   }
@@ -575,31 +542,25 @@ undefined4 param_1;
 
 
 // was FUN_00081abc: re-arms scheduler_find_entry's result's delay field.
-void scheduler_set_delay(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
+void scheduler_set_delay(void *object_ptr, int delay)
 {
+  char *object = (char *)object_ptr;
   short sVar1;
   int iVar2;
   
-  sVar1 = scheduler_find_entry(param_1);
+  sVar1 = scheduler_find_entry(object);
   if (-1 < sVar1) {
     iVar2 = sVar1 * 6;
-    (&DAT_0025077a)[iVar2] = (char)param_2;
-    (&DAT_0025077b)[iVar2] = (char)((uint)param_2 >> 8);
+    (&DAT_0025077a)[iVar2] = (char)delay;
+    (&DAT_0025077b)[iVar2] = (char)((uint)delay >> 8);
   }
-  return;
 }
 
 
 
 // was FUN_00081af4: scheduler_step_entry's bit-2 sub-handler, called for entries whose per-class
 // behavior flags select a positional/ directional step each tick...
-undefined4 scheduler_advance_effect(param_1,param_2)
-short param_1;
-int param_2;
-
+int scheduler_advance_effect(short entry_slot, int elapsed)
 {
   byte bVar1;
   ushort *puVar2;
@@ -613,7 +574,7 @@ int param_2;
   int iVar10;
   bool bVar11;
   
-  iVar8 = param_1 * 6;
+  iVar8 = entry_slot * 6;
   iVar10 = 5;
   /* HACK: adds the NULL guard every other resolve_object_link call site in this file has (this one
      had none at all -- a stale queue entry resolving to NULL would dereference puVar2 below
@@ -650,11 +611,11 @@ int param_2;
     bVar1 = (byte)((uVar5 & 0xefff) >> 8);
     *(char *)puVar2 = (char)(uVar5 & 0xefff);
     *(byte *)((char *)puVar2 + 1) =
-         ((byte)((uVar5 & 0xe00) + (param_2 + 1) * -0x200 >> 8) ^ bVar1) & 0x1e ^ bVar1;
+         ((byte)(((uVar5 & 0xe00) + (elapsed + 1) * -0x200) >> 8) ^ bVar1) & 0x1e ^ bVar1;
     iVar6 = scheduler_get_delay(puVar2);
     if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] scheduler_advance_effect: param_2(elapsed)=%d obj0(after settle)=0x%04x dirbit=%d openbits=%d get_delay=%d anim_type(iVar10)=%d\n",
-              param_2, (unsigned)*puVar2, (int)((*puVar2 & 0x1000) != 0), (int)((*puVar2 >> 9) & 7),
+      fprintf(stderr, "[door] scheduler_advance_effect: elapsed(elapsed)=%d obj0(after settle)=0x%04x dirbit=%d openbits=%d get_delay=%d anim_type(iVar10)=%d\n",
+              elapsed, (unsigned)*puVar2, (int)((*puVar2 & 0x1000) != 0), (int)((*puVar2 >> 9) & 7),
               (int)iVar6, iVar10);
     iVar4 = (int)(short)iVar6;
     bVar11 = -1 < iVar4;
@@ -681,20 +642,18 @@ int param_2;
 // was FUN_00081ce4: loads the whole scheduler table (g_scheduler_table,
 // 0x180 bytes = 64 entries * 6) from a save file, then recomputes
 // g_scheduler_count by re-scanning for the first empty entry.
-undefined4 scheduler_load(param_1,param_2)
-/* .ark handle-struct pointer -- was `undefined4`, truncating the stack
-   struct load_level_object_table passes and crashing read_archive_entry below. */
-undefined1 * param_1;
-int param_2;
-
+/* .ark handle-struct pointer -- was `undefined4`, truncating the stack struct
+   load_level_object_table passes and crashing read_archive_entry below. */
+int scheduler_load(void *archive_ptr, int level_number)
 {
+  byte *archive = (byte *)archive_ptr;
   short sVar1;
   undefined4 uVar2;
   int iVar3;
   ushort *puVar4;
   
   puVar4 = (ushort *)&DAT_00250778;
-  sVar1 = read_archive_entry(param_1,param_2 + 8,&DAT_00250778);
+  sVar1 = read_archive_entry(archive,level_number + 8,&DAT_00250778);
   if (sVar1 == 0x180) {
     g_scheduler_count = '\0';
     iVar3 = 0;
@@ -718,13 +677,12 @@ int param_2;
 // was FUN_00081d74: saves the whole scheduler table (g_scheduler_table, 0x180 bytes) to a save
 // file, and (if g_scheduler_count < 0x40) blanks out one trailing empty entry first so a stale
 // leftover doesn't get misread as real data on the next scheduler_load.
-undefined4 scheduler_save(param_1,param_2)
 /* Was `undefined4` -- truncated the real 64-bit archive-handle-struct pointer
-   (write_level_tilemap_to_archive's own `auStack_20`) write_archive_entry needs as its own param_1. */
-undefined4 *param_1;
-int param_2;
-
+   (write_level_tilemap_to_archive's own `auStack_20`) write_archive_entry needs as its own
+   param_1. */
+int scheduler_save(void *archive_ptr, int level_number)
 {
+  uint *archive = (uint *)archive_ptr;
   int iVar1;
   
   if (g_scheduler_count < 0x40) {
@@ -734,5 +692,5 @@ int param_2;
   }
   /* Was `write_archive_entry(...); return 0;` -- a fabricated `return 0` masking a real result
      (same bug class as the torch/ambient-light fix earlier this session). */
-  return write_archive_entry(param_1,param_2 + 8,&DAT_00250778,0x180);
+  return write_archive_entry(archive,level_number + 8,&DAT_00250778,0x180);
 }

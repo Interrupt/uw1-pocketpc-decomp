@@ -31,27 +31,25 @@ static char DAT_00202c1c;
 
 // was FUN_0002b7a0. Builds the collision_build_height_field scratch buffer (DAT_00202c6c, a local
 // 24-byte struct) for param_1, then returns a combined height/step-limit field.
-int build_collision_height_field_for_object(param_1)
-ushort * param_1;
-
+int build_collision_height_field_for_object(ushort *object)
 {
-  undefined2 uVar1;
-  int iVar2;
-  undefined1 local_24 [24];
+  undefined2 slot_index;
+  int field;
+  undefined1 height_scratch [24];
   
-  DAT_00202c6c = local_24;
-  uVar1 = encode_object_slot_index(param_1);
-  DAT_00202c6c[10] = (char)uVar1;
-  DAT_00202c6c[0xb] = (char)((ushort)uVar1 >> 8);
-  DAT_00202c6c[8] = (&DAT_00202c91)[(*param_1 & 0x1ff) * 0xd] & 7;
-  DAT_00202c6c[9] = (&DAT_00202c90)[(*param_1 & 0x1ff) * 0xd];
-  iVar2 = ((param_1[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)param_1 + 3) >> 5);
-  *DAT_00202c6c = (char)iVar2;
-  DAT_00202c6c[1] = (char)((uint)iVar2 >> 8);
-  iVar2 = ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2) + ((param_1[0xb] & 0x3f0) >> 1);
-  DAT_00202c6c[2] = (char)iVar2;
-  DAT_00202c6c[3] = (char)((uint)iVar2 >> 8);
-  DAT_00202c6c[4] = (byte)param_1[1] & 0x7f;
+  DAT_00202c6c = height_scratch;
+  slot_index = encode_object_slot_index(object);
+  DAT_00202c6c[10] = (char)slot_index;
+  DAT_00202c6c[0xb] = (char)((ushort)slot_index >> 8);
+  DAT_00202c6c[8] = (&DAT_00202c91)[(*object & 0x1ff) * 0xd] & 7;
+  DAT_00202c6c[9] = (&DAT_00202c90)[(*object & 0x1ff) * 0xd];
+  field = ((object[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)object + 3) >> 5);
+  *DAT_00202c6c = (char)field;
+  DAT_00202c6c[1] = (char)((uint)field >> 8);
+  field = ((*(byte *)((char *)object + 3) & 0x1c) >> 2) + ((object[0xb] & 0x3f0) >> 1);
+  DAT_00202c6c[2] = (char)field;
+  DAT_00202c6c[3] = (char)((uint)field >> 8);
+  DAT_00202c6c[4] = (byte)object[1] & 0x7f;
   DAT_00202c6c[5] = 0;
   collision_build_height_field(8);
   return (int)(short)(*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc));
@@ -66,18 +64,15 @@ ushort * param_1;
 /* Second argument was previously left undeclared, relying on it still sitting in the same ABI
    register (r1) at the tail call to movement_collision_sweep() -- a K&R "dropped-argument" idiom
    already seen (and fixed) elsewhere this session (tile_is_no_magic). */
-undefined4 apply_placement_collision_sweep(param_1,param_2)
-intptr_t param_1;
-intptr_t param_2;
-
+int apply_placement_collision_sweep(void *snapshot, void *sweep_flags)
 {
-  /* param_1 was `int`, truncating the real 64-bit pointers callers pass (&DAT_00204920, and
+  /* snapshot was `int`, truncating the real 64-bit pointers callers pass (&DAT_00204920, and
      DAT_0010172c after its own fix above) -- same class of bug as DAT_0010172c's own fix. */
   /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI cluster this session
      (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`... */
-  *(char *)(param_1 + 0x12) = (char)(((*(byte *)((char *)DAT_0010190c + 0x14) & 7) << 0x14) >> 0x10);
-  *(undefined1 *)(param_1 + 0x13) = 0;
-  movement_collision_sweep(param_1,param_2);
+  *(char *)(snapshot + 0x12) = (char)(((*(byte *)((char *)DAT_0010190c + 0x14) & 7) << 0x14) >> 0x10);
+  *(undefined1 *)(snapshot + 0x13) = 0;
+  movement_collision_sweep(snapshot,sweep_flags);
   return 1;
 }
 
@@ -85,86 +80,82 @@ intptr_t param_2;
 
 
 // was FUN_00050c18 -- per-corner slope/blocked flag word from the packed tile height DAT_00202c78
-bool collision_corner_flags(param_1)
-uint param_1;
-
+bool collision_corner_flags(uint step_limit)
 {
-  undefined2 uVar1;
-  undefined1 uVar2;
-  uint uVar3;
-  ushort uVar4;
-  int local_14;
+  undefined2 flags_word;
+  undefined1 sampled_height;
+  uint sampled_height_wide;
+  ushort corner_flags;
+  int sample_blocked;
   
   *(byte *)(DAT_00202c6c + 0xc) = (byte)(DAT_00202c78 >> 8) & 3;
   *(undefined1 *)(DAT_00202c6c + 0xd) = 0;
-  uVar2 = collision_sample_floor_height(4,&local_14);
-  *(undefined1 *)(DAT_00202c6c + 0x10) = uVar2;
-  uVar3 = (uint)*(byte *)(DAT_00202c6c + 0x10);
+  sampled_height = collision_sample_floor_height(4,&sample_blocked);
+  *(undefined1 *)(DAT_00202c6c + 0x10) = sampled_height;
+  sampled_height_wide = (uint)*(byte *)(DAT_00202c6c + 0x10);
   if (getenv("UW_DEBUG_RAMP"))
-    fprintf(stderr, "[ramp-corner-flags] DAT_00202c78=0x%x shape=%d uVar3(sampled)=%d off4=%d param_1(steplim)=%d\n",
-            (unsigned)DAT_00202c78, (int)(DAT_00202c78 & 0xf), (int)uVar3,
-            (int)*(short *)(DAT_00202c6c + 4), (int)param_1);
-  if (uVar3 == 0x80) {
-    uVar4 = *(ushort *)(DAT_00202c6c + 0xc) | 0x200;
+    fprintf(stderr, "[ramp-corner-flags] DAT_00202c78=0x%x shape=%d sampled_height_wide(sampled)=%d off4=%d step_limit(steplim)=%d\n",
+            (unsigned)DAT_00202c78, (int)(DAT_00202c78 & 0xf), (int)sampled_height_wide,
+            (int)*(short *)(DAT_00202c6c + 4), (int)step_limit);
+  if (sampled_height_wide == 0x80) {
+    corner_flags = *(ushort *)(DAT_00202c6c + 0xc) | 0x200;
   }
-  else if ((int)((param_1 & 0xff) + (int)*(short *)(DAT_00202c6c + 4)) < (int)uVar3) {
-    uVar4 = *(ushort *)(DAT_00202c6c + 0xc) | 0x100;
+  else if ((int)((step_limit & 0xff) + (int)*(short *)(DAT_00202c6c + 4)) < (int)sampled_height_wide) {
+    corner_flags = *(ushort *)(DAT_00202c6c + 0xc) | 0x100;
   }
   else {
-    uVar4 = *(ushort *)(DAT_00202c6c + 0xc);
-    if ((int)uVar3 < (int)((int)*(short *)(DAT_00202c6c + 4) - (param_1 & 0xff))) {
-      uVar4 = uVar4 | 0x800;
+    corner_flags = *(ushort *)(DAT_00202c6c + 0xc);
+    if ((int)sampled_height_wide < (int)((int)*(short *)(DAT_00202c6c + 4) - (step_limit & 0xff))) {
+      corner_flags = corner_flags | 0x800;
     }
     else {
-      *(byte *)(DAT_00202c6c + 0xc) = (byte)uVar4 | 4;
-      *(char *)(DAT_00202c6c + 0xd) = (char)(uVar4 >> 8);
-      uVar4 = *(ushort *)(DAT_00202c6c + 0xc) | (ushort)(8 << ((int)(short)DAT_00202c78 >> 8 & 3U));
+      *(byte *)(DAT_00202c6c + 0xc) = (byte)corner_flags | 4;
+      *(char *)(DAT_00202c6c + 0xd) = (char)(corner_flags >> 8);
+      corner_flags = *(ushort *)(DAT_00202c6c + 0xc) | (ushort)(8 << ((int)(short)DAT_00202c78 >> 8 & 3U));
     }
   }
-  *(char *)(DAT_00202c6c + 0xc) = (char)uVar4;
-  *(char *)(DAT_00202c6c + 0xd) = (char)(uVar4 >> 8);
+  *(char *)(DAT_00202c6c + 0xc) = (char)corner_flags;
+  *(char *)(DAT_00202c6c + 0xd) = (char)(corner_flags >> 8);
   if (5 < (DAT_00202c78 & 0xf)) {
-    uVar1 = *(undefined2 *)(DAT_00202c6c + 0xc);
-    *(char *)(DAT_00202c6c + 0xc) = (char)uVar1;
-    *(byte *)(DAT_00202c6c + 0xd) = (byte)((ushort)uVar1 >> 8) | 0x20;
+    flags_word = *(undefined2 *)(DAT_00202c6c + 0xc);
+    *(char *)(DAT_00202c6c + 0xc) = (char)flags_word;
+    *(byte *)(DAT_00202c6c + 0xd) = (byte)((ushort)flags_word >> 8) | 0x20;
   }
-  return local_14 == 0;
+  return sample_blocked == 0;
 }
 
 
 // was FUN_00050d78 -- build the per-corner tile height field the sweep collides against
-void collision_build_height_field(param_1)
-uint param_1;
-
+void collision_build_height_field(uint step_limit)
 {
-  byte *pbVar1;
-  ushort *puVar2;
-  ushort uVar3;
-  short sVar4;
-  int iVar5;
-  uint uVar6;
-  int iVar7;
-  uint uVar8;
-  int iVar9;
-  undefined1 *puVar10;
-  byte bVar11;
-  byte bVar12;
-  byte bVar13;
-  byte bVar14;
-  short sVar15;
-  bool bVar16;
-  byte abStack_b4 [128];
-  byte local_34 [8];
+  byte *flags_ptr;
+  ushort *tile_ptr;
+  ushort tile_word;
+  short x_offset;
+  int wall_blocked;
+  uint neighbor_index;
+  int corner;
+  uint corner_shape;
+  int probe;
+  undefined1 *corner_record;
+  byte corner_a;
+  byte corner_b;
+  byte corner_c;
+  byte corner_d;
+  short y_offset;
+  bool differs;
+  byte unused_scratch [128];
+  byte neighbor_masks [8];
   
   ce_memset(&DAT_00202c70,0x11,0x12);
-  puVar10 = &DAT_00202bf8;
-  iVar7 = 5;
+  corner_record = &DAT_00202bf8;
+  corner = 5;
   do {
-    puVar10[3] = 0;
-    iVar7 = iVar7 + -1;
-    puVar10[4] = 0;
-    puVar10 = puVar10 + 5;
-  } while (iVar7 != 0);
+    corner_record[3] = 0;
+    corner = corner + -1;
+    corner_record[4] = 0;
+    corner_record = corner_record + 5;
+  } while (corner != 0);
   _DAT_00202c34 =
        (ushort *)
        tilemap_lookup((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
@@ -174,143 +165,139 @@ uint param_1;
   if (_DAT_00202c34 == (ushort *)0x0) {
     return;
   }
-  bVar11 = 4;
-  bVar12 = *DAT_00202c6c;
-  bVar13 = DAT_00202c6c[2];
+  corner_a = 4;
+  corner_b = *DAT_00202c6c;
+  corner_c = DAT_00202c6c[2];
   DAT_00202c0c = 4;
-  DAT_00202c0d = (undefined1)(bVar12 & 7);
-  DAT_00202c0e = (undefined1)(bVar13 & 7);
+  DAT_00202c0d = (undefined1)(corner_b & 7);
+  DAT_00202c0e = (undefined1)(corner_c & 7);
   if (DAT_00202c78 == 0x1111) {
-    uVar3 = *_DAT_00202c34;
-    DAT_00202c78 = (uVar3 & 0xf) +
-                   (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10;
+    tile_word = *_DAT_00202c34;
+    DAT_00202c78 = (tile_word & 0xf) +
+                   (((&DAT_0023ae40)[tile_word >> 10 & 0xf] & 0xff) + (tile_word >> 4 & 0xf)) * 0x10;
   }
-  collision_corner_flags(param_1);
-  pbVar1 = DAT_00202c6c + 0xc;
-  DAT_00202c6c[0xe] = (byte)*(undefined2 *)pbVar1;
-  DAT_00202c6c[0xf] = (byte)((ushort)*(undefined2 *)pbVar1 >> 8);
+  collision_corner_flags(step_limit);
+  flags_ptr = DAT_00202c6c + 0xc;
+  DAT_00202c6c[0xe] = (byte)*(undefined2 *)flags_ptr;
+  DAT_00202c6c[0xf] = (byte)((ushort)*(undefined2 *)flags_ptr >> 8);
   DAT_00202c6c[0x11] = DAT_00202c6c[0x10];
   if (getenv("UW_DEBUG_RAMP"))
-    fprintf(stderr, "[ramp-inside-bhf] after-copy d8=%d d9=%d uVar3(DAT_00202c6c[8])=%d\n",
+    fprintf(stderr, "[ramp-inside-bhf] after-copy d8=%d d9=%d tile_word(DAT_00202c6c[8])=%d\n",
             (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11], (int)(uint)(ushort)DAT_00202c6c[8]);
-  puVar2 = _DAT_00202c34;
-  uVar3 = (ushort)DAT_00202c6c[8];
-  if (uVar3 != 0) {
-    for (sVar15 = (bVar13 & 7) - uVar3; sVar15 < 0; sVar15 = sVar15 + 8) {
-      bVar11 = bVar11 - 3;
+  tile_ptr = _DAT_00202c34;
+  tile_word = (ushort)DAT_00202c6c[8];
+  if (tile_word != 0) {
+    for (y_offset = (corner_c & 7) - tile_word; y_offset < 0; y_offset = y_offset + 8) {
+      corner_a = corner_a - 3;
     }
-    for (sVar4 = (bVar12 & 7) - uVar3; sVar4 < 0; sVar4 = sVar4 + 8) {
-      bVar11 = bVar11 - 1;
+    for (x_offset = (corner_b & 7) - tile_word; x_offset < 0; x_offset = x_offset + 8) {
+      corner_a = corner_a - 1;
     }
-    DAT_00202bfa = (undefined1)sVar15;
-    DAT_00202bf9 = (undefined1)sVar4;
-    bVar12 = bVar11;
-    for (sVar4 = sVar4 + (ushort)DAT_00202c6c[8] * 2; 7 < sVar4; sVar4 = sVar4 + -8) {
-      bVar12 = bVar12 + 1;
+    DAT_00202bfa = (undefined1)y_offset;
+    DAT_00202bf9 = (undefined1)x_offset;
+    corner_b = corner_a;
+    for (x_offset = x_offset + (ushort)DAT_00202c6c[8] * 2; 7 < x_offset; x_offset = x_offset + -8) {
+      corner_b = corner_b + 1;
     }
-    DAT_00202bfe = (undefined1)sVar4;
-    bVar13 = bVar12;
-    for (sVar15 = sVar15 + (ushort)DAT_00202c6c[8] * 2; 7 < sVar15; sVar15 = sVar15 + -8) {
-      bVar13 = bVar13 + 3;
+    DAT_00202bfe = (undefined1)x_offset;
+    corner_c = corner_b;
+    for (y_offset = y_offset + (ushort)DAT_00202c6c[8] * 2; 7 < y_offset; y_offset = y_offset + -8) {
+      corner_c = corner_c + 3;
     }
-    DAT_00202c04 = (undefined1)sVar15;
-    bVar14 = bVar13;
-    for (sVar4 = sVar4 + (ushort)DAT_00202c6c[8] * -2; sVar4 < 0; sVar4 = sVar4 + 8) {
-      bVar14 = bVar14 - 1;
+    DAT_00202c04 = (undefined1)y_offset;
+    corner_d = corner_c;
+    for (x_offset = x_offset + (ushort)DAT_00202c6c[8] * -2; x_offset < 0; x_offset = x_offset + 8) {
+      corner_d = corner_d - 1;
     }
-    DAT_00202c08 = (undefined1)sVar4;
-    DAT_00202bf8 = bVar11;
-    DAT_00202bfd = bVar12;
+    DAT_00202c08 = (undefined1)x_offset;
+    DAT_00202bf8 = corner_a;
+    DAT_00202bfd = corner_b;
     DAT_00202bff = DAT_00202bfa;
-    DAT_00202c02 = bVar13;
+    DAT_00202c02 = corner_c;
     DAT_00202c03 = DAT_00202bfe;
-    DAT_00202c07 = bVar14;
+    DAT_00202c07 = corner_d;
     DAT_00202c09 = DAT_00202c04;
-    if (*(short *)(&DAT_00202c70 + (uint)bVar11 * 2) == 0x1111) {
-      uVar3 = collision_neighbor_shade_or_zero(_DAT_00202c34, bVar11);
-      *(ushort *)(&DAT_00202c70 + (uint)bVar11 * 2) =
-           (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
+    if (*(short *)(&DAT_00202c70 + (uint)corner_a * 2) == 0x1111) {
+      tile_word = collision_neighbor_shade_or_zero(_DAT_00202c34, corner_a);
+      *(ushort *)(&DAT_00202c70 + (uint)corner_a * 2) =
+           (tile_word & 0xf) + (((&DAT_0023ae40)[tile_word >> 10 & 0xf] & 0xff) + (tile_word >> 4 & 0xf)) * 0x10
       ;
     }
-    if (*(short *)(&DAT_00202c70 + (uint)bVar12 * 2) == 0x1111) {
-      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar12);
-      *(ushort *)(&DAT_00202c70 + (uint)bVar12 * 2) =
-           (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
+    if (*(short *)(&DAT_00202c70 + (uint)corner_b * 2) == 0x1111) {
+      tile_word = collision_neighbor_shade_or_zero(tile_ptr, corner_b);
+      *(ushort *)(&DAT_00202c70 + (uint)corner_b * 2) =
+           (tile_word & 0xf) + (((&DAT_0023ae40)[tile_word >> 10 & 0xf] & 0xff) + (tile_word >> 4 & 0xf)) * 0x10
       ;
     }
-    if (*(short *)(&DAT_00202c70 + (uint)bVar13 * 2) == 0x1111) {
-      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar13);
-      *(ushort *)(&DAT_00202c70 + (uint)bVar13 * 2) =
-           (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
+    if (*(short *)(&DAT_00202c70 + (uint)corner_c * 2) == 0x1111) {
+      tile_word = collision_neighbor_shade_or_zero(tile_ptr, corner_c);
+      *(ushort *)(&DAT_00202c70 + (uint)corner_c * 2) =
+           (tile_word & 0xf) + (((&DAT_0023ae40)[tile_word >> 10 & 0xf] & 0xff) + (tile_word >> 4 & 0xf)) * 0x10
       ;
     }
-    if (*(short *)(&DAT_00202c70 + (uint)bVar14 * 2) == 0x1111) {
-      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar14);
-      *(ushort *)(&DAT_00202c70 + (uint)bVar14 * 2) =
-           (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
+    if (*(short *)(&DAT_00202c70 + (uint)corner_d * 2) == 0x1111) {
+      tile_word = collision_neighbor_shade_or_zero(tile_ptr, corner_d);
+      *(ushort *)(&DAT_00202c70 + (uint)corner_d * 2) =
+           (tile_word & 0xf) + (((&DAT_0023ae40)[tile_word >> 10 & 0xf] & 0xff) + (tile_word >> 4 & 0xf)) * 0x10
       ;
     }
     DAT_00202c14 = 1;
-    iVar7 = 0;
+    corner = 0;
     do {
-      iVar5 = collision_classify_corner_wall(iVar7,param_1 & 0xff);
-      if (iVar5 == 0) {
-        iVar5 = iVar7 * 5;
-        if (((&DAT_00202bfc)[iVar5] & 3) == 0) {
-          local_34[1] = 0x10;
-          local_34[2] = 2;
-          local_34[3] = 8;
-          local_34[0] = 4;
-          iVar9 = 0;
-          local_34[4] = 4;
+      wall_blocked = collision_classify_corner_wall(corner,step_limit & 0xff);
+      if (wall_blocked == 0) {
+        wall_blocked = corner * 5;
+        if (((&DAT_00202bfc)[wall_blocked] & 3) == 0) {
+          neighbor_masks[1] = 0x10;
+          neighbor_masks[2] = 2;
+          neighbor_masks[3] = 8;
+          neighbor_masks[0] = 4;
+          probe = 0;
+          neighbor_masks[4] = 4;
           do {
-            pbVar1 = DAT_00202c6c;
-            uVar6 = (uint)(char)iVar9;
-            uVar8 = (uint)(&DAT_00202bf8)[iVar5];
-            bVar16 = (&DAT_00202bf8)[(iVar7 + uVar6 * -2 + 1 & 3) * 5] != uVar8;
-            if (bVar16) {
-              uVar6 = (uint)local_34[uVar6 + iVar7];
-              uVar8 = (uint)(byte)(&DAT_000878d0)[(int)*(short *)(&DAT_00202c70 + uVar8 * 2) & 0xf];
+            flags_ptr = DAT_00202c6c;
+            neighbor_index = (uint)(char)probe;
+            corner_shape = (uint)(&DAT_00202bf8)[wall_blocked];
+            differs = (&DAT_00202bf8)[(corner + neighbor_index * -2 + 1 & 3) * 5] != corner_shape;
+            if (differs) {
+              neighbor_index = (uint)neighbor_masks[neighbor_index + corner];
+              corner_shape = (uint)(byte)(&DAT_000878d0)[(int)*(short *)(&DAT_00202c70 + corner_shape * 2) & 0xf];
             }
-            if (bVar16 && (uVar6 & uVar8) != 0) {
-              (&DAT_00202bfb)[iVar5] = 0;
-              (&DAT_00202bfc)[iVar5] = 2;
-              pbVar1[0x11] = 0x80;
-              iVar9 = 2;
+            if (differs && (neighbor_index & corner_shape) != 0) {
+              (&DAT_00202bfb)[wall_blocked] = 0;
+              (&DAT_00202bfc)[wall_blocked] = 2;
+              flags_ptr[0x11] = 0x80;
+              probe = 2;
             }
-            iVar9 = iVar9 + 1;
-          } while (iVar9 * 0x1000000 >> 0x18 < 2);
+            probe = probe + 1;
+          } while (probe * 0x1000000 >> 0x18 < 2);
           DAT_00202c14 = 0;
         }
       }
-      uVar3 = *(ushort *)(DAT_00202c6c + 0xe) | DAT_00202c0a | _DAT_00202c05 | _DAT_00202c00 |
+      tile_word = *(ushort *)(DAT_00202c6c + 0xe) | DAT_00202c0a | _DAT_00202c05 | _DAT_00202c00 |
               _DAT_00202bfb;
-      DAT_00202c6c[0xe] = (byte)uVar3;
-      DAT_00202c6c[0xf] = (byte)(uVar3 >> 8);
-      iVar7 = (iVar7 + 1) * 0x1000000 >> 0x18;
-    } while (iVar7 < 4);
+      DAT_00202c6c[0xe] = (byte)tile_word;
+      DAT_00202c6c[0xf] = (byte)(tile_word >> 8);
+      corner = (corner + 1) * 0x1000000 >> 0x18;
+    } while (corner < 4);
   }
   if (getenv("UW_DEBUG_RAMP"))
     fprintf(stderr, "[ramp-bhf-end] d8=%d d9=%d macro_d8=%d macro_d9=%d\n",
             (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11],
             (int)DAT_002049d8, (int)DAT_002049d9);
-  return;
 }
 
 
 
 
 // was FUN_000518c0 -- reduce the height field to floor/ceiling envelope + block flags
-void collision_height_envelope(param_1,param_2)
-int param_1;
-int param_2;
-
+void collision_height_envelope(int mode, int collision)
 {
   char cVar1;
   int iVar2;
   ushort uVar3;
   byte bVar4;
-  intptr_t iVar5;  /* was int -- holds the void* tilemap_lookup returns (a real 64-bit tile-array pointer); truncated
+  char *iVar5;  /* was int -- holds the void* tilemap_lookup returns (a real 64-bit tile-array pointer); truncated
    to 32 bits it made `*(ushort *)(iVar5 + ...)` a wild deref -- the crash the first time a keyboard
    forward step actually dispatched. */
   ushort *puVar6;
@@ -348,7 +335,7 @@ int param_2;
   DAT_00202c6c[0x14] = 0;
   DAT_00202c18 = *DAT_00202c6c & 7;
   DAT_00202c1c = DAT_00202c6c[2] & 7;
-  if ((param_1 == 0) || (DAT_00202c6c[9] != 0)) {
+  if ((mode == 0) || (DAT_00202c6c[9] != 0)) {
     bVar4 = DAT_00202c6c[8];
     if ((local_3c != 0) && (0 < (char)bVar4)) {
       bVar4 = (byte)((uint)(((char)bVar4 + -1) * 0x1000000) >> 0x18);
@@ -416,10 +403,10 @@ int param_2;
               if (puVar7 == (ushort *)0x0) break;
               iVar10 = (*puVar7 & 0x1ff) * 0xd;
               if ((((local_3c == 0) || (((&DAT_00202c93)[iVar10] & 4) == 0)) &&
-                  (((&DAT_00202c90)[iVar10] != '\0' || (puVar7 < DAT_002046c4)))) &&
-                 ((((DAT_002046c4 <= puVar7 || ((*puVar7 & 0x1c0) == 0x40)) ||
+                  (((&DAT_00202c90)[iVar10] != '\0' || ((char *)puVar7 < DAT_002046c4)))) &&
+                 ((((DAT_002046c4 <= (char *)puVar7 || ((*puVar7 & 0x1c0) == 0x40)) ||
                    ((*(byte *)((char *)puVar7 + 0x15) & 0x80) == 0)) &&
-                  ((param_2 == 0 || (((&DAT_00202c97)[iVar10] & 1) != 0)))))) {
+                  ((collision == 0 || (((&DAT_00202c97)[iVar10] & 1) != 0)))))) {
                 collision_add_candidate_object(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
               }
             }
@@ -447,7 +434,6 @@ int param_2;
       iVar12 = (iVar12 + 1) * 0x1000000 >> 0x18;
     } while (iVar12 <= iVar9);
   }
-  return;
 }
 
 
@@ -455,132 +441,120 @@ int param_2;
 // was FUN_00050aa8 -- computes the floor height at a specific sub-tile X/Y position
 // (param_1/param_2, each 0..255 within the tile), using the tile shape's wall-type nibble
 // (DAT_00202c78) and diagonal interpolation for shapes 6/7/8/9.
-int compute_floor_height_at_position(param_1,param_2)
-ushort param_1;
-ushort param_2;
-
+int compute_floor_height_at_position(ushort x_in_tile, ushort y_in_tile)
 {
-  ushort uVar1;
-  ushort uVar2;
-  int iVar3;
+  ushort axis_position;
+  ushort tile_shape;
+  int slope_offset;
 
-  iVar3 = 0;
-  uVar2 = DAT_00202c78 & 0xf;
-  uVar1 = param_2 & 0xff;
-  if (uVar2 == 6) {
+  slope_offset = 0;
+  tile_shape = DAT_00202c78 & 0xf;
+  axis_position = y_in_tile & 0xff;
+  if (tile_shape == 6) {
 LAB_00050b14:
-    iVar3 = (int)(short)uVar1;
+    slope_offset = (int)(short)axis_position;
   }
   else {
-    if (uVar2 != 7) {
-      uVar1 = param_1 & 0xff;
-      if (uVar2 == 8) goto LAB_00050b14;
-      if (uVar2 != 9) goto LAB_00050b18;
+    if (tile_shape != 7) {
+      axis_position = x_in_tile & 0xff;
+      if (tile_shape == 8) goto LAB_00050b14;
+      if (tile_shape != 9) goto LAB_00050b18;
     }
-    iVar3 = 0xff - (short)uVar1;
+    slope_offset = 0xff - (short)axis_position;
   }
 LAB_00050b18:
-  return ((int)(short)DAT_00202c78 & 0xf0U) * 4 + (int)(short)(iVar3 >> 2);
+  return ((int)(short)DAT_00202c78 & 0xf0U) * 4 + (int)(short)(slope_offset >> 2);
 }
 
 
 
 // was FUN_00050b30 -- classifies one corner (param_1) of the collision height-field during
 // collision_build_height_field: samples its floor height, derives a wall-type/offset code...
-bool collision_classify_corner_wall(param_1,param_2)
-uint param_1;
-uint param_2;
-
+bool collision_classify_corner_wall(uint corner, uint step_limit)
 {
-  char *iVar1;
-  byte bVar2;
-  uint uVar3;
-  undefined2 uVar4;
-  int iVar5;
-  int local_20;
+  char *scratch;
+  byte floor_height;
+  uint floor_height_wide;
+  undefined2 wall_flags;
+  int corner_offset;
+  int sample_blocked;
 
-  bVar2 = collision_sample_floor_height(param_1,&local_20);
-  iVar1 = DAT_00202c6c;
-  uVar3 = (uint)bVar2;
-  if (uVar3 == 0x80) {
-    uVar4 = 0x200;
+  floor_height = collision_sample_floor_height(corner,&sample_blocked);
+  scratch = DAT_00202c6c;
+  floor_height_wide = (uint)floor_height;
+  if (floor_height_wide == 0x80) {
+    wall_flags = 0x200;
   }
-  else if ((int)((param_2 & 0xff) + (int)*(short *)(DAT_00202c6c + 4)) < (int)uVar3) {
-    uVar4 = 0x100;
+  else if ((int)((step_limit & 0xff) + (int)*(short *)(DAT_00202c6c + 4)) < (int)floor_height_wide) {
+    wall_flags = 0x100;
   }
-  else if ((int)uVar3 < (int)((int)*(short *)(DAT_00202c6c + 4) - (param_2 & 0xff))) {
-    uVar4 = 0x800;
+  else if ((int)floor_height_wide < (int)((int)*(short *)(DAT_00202c6c + 4) - (step_limit & 0xff))) {
+    wall_flags = 0x800;
   }
   else {
-    uVar4 = (undefined2)
+    wall_flags = (undefined2)
             (8 << ((int)*(short *)(&DAT_00202c70 +
-                                  (uint)(byte)(&DAT_00202bf8)[(param_1 & 0xff) * 5] * 2) >> 8 & 3U))
+                                  (uint)(byte)(&DAT_00202bf8)[(corner & 0xff) * 5] * 2) >> 8 & 3U))
     ;
   }
-  iVar5 = (param_1 & 0xff) * 5;
-  (&DAT_00202bfb)[iVar5] = (char)uVar4;
-  (&DAT_00202bfc)[iVar5] = (char)((ushort)uVar4 >> 8);
-  if (*(byte *)(iVar1 + 0x11) < uVar3) {
-    *(byte *)(iVar1 + 0x11) = bVar2;
+  corner_offset = (corner & 0xff) * 5;
+  (&DAT_00202bfb)[corner_offset] = (char)wall_flags;
+  (&DAT_00202bfc)[corner_offset] = (char)((ushort)wall_flags >> 8);
+  if (*(byte *)(scratch + 0x11) < floor_height_wide) {
+    *(byte *)(scratch + 0x11) = floor_height;
   }
-  return local_20 == 0;
+  return sample_blocked == 0;
 }
 
 
 // was FUN_00051658 -- appends object param_1 to the small (max 9) collision candidate list at
 // DAT_00202c38 if its bounding box...
-void collision_add_candidate_object(param_1,param_2,param_3,param_4,param_5)
-ushort * param_1;
-ushort param_2;
-char param_3;
-char param_4;
-int param_5;
-
+void collision_add_candidate_object(ushort *object, ushort slot_index, char tile_dx, char tile_dy, int is_raised)
 {
   undefined1 uVar1;
-  ushort uVar2;
+  ushort object_word;
   uint uVar3;
-  byte bVar4;
+  byte candidate_count;
   char cVar5;
-  undefined *puVar6;
-  int iVar7;
+  undefined *props_src;
+  int copy_count;
   byte bVar8;
   char cVar9;
   char cVar10;
   char cVar11;
   char cVar12;
-  int iVar13;
-  char *pcVar14;
-  bool bVar15;
-  char local_40 [16];
-  uint local_8;
+  int tile_offset;
+  char *props_dst;
+  bool flag;
+  char class_props [16];
+  uint slot_value;
   
-  local_8 = (uint)param_2;
-  bVar4 = *(byte *)(DAT_00202c6c + 0x14);
-  if (bVar4 < 9) {
-    uVar2 = *param_1;
-    puVar6 = &DAT_00202c90 + (uVar2 & 0x1ff) * 0xd;
-    iVar7 = 0xd;
-    pcVar14 = local_40;
+  slot_value = (uint)slot_index;
+  candidate_count = *(byte *)(DAT_00202c6c + 0x14);
+  if (candidate_count < 9) {
+    object_word = *object;
+    props_src = &DAT_00202c90 + (object_word & 0x1ff) * 0xd;
+    copy_count = 0xd;
+    props_dst = class_props;
     do {
-      iVar13 = iVar7 + -1;
-      *pcVar14 = *puVar6;
-      bVar15 = 0 < iVar7;
-      puVar6 = puVar6 + 1;
-      iVar7 = iVar13;
-      pcVar14 = pcVar14 + 1;
-    } while (iVar13 != 0 && bVar15);
-    if ((local_40[1] & 7U) == 4) {
-      cVar10 = param_3 * '\b';
-      cVar9 = param_4 * '\b';
+      tile_offset = copy_count + -1;
+      *props_dst = *props_src;
+      flag = 0 < copy_count;
+      props_src = props_src + 1;
+      copy_count = tile_offset;
+      props_dst = props_dst + 1;
+    } while (tile_offset != 0 && flag);
+    if ((class_props[1] & 7U) == 4) {
+      cVar10 = tile_dx * '\b';
+      cVar9 = tile_dy * '\b';
       cVar11 = cVar10 + '\a';
       cVar12 = cVar9 + '\a';
     }
     else {
-      cVar10 = (*(byte *)((char *)param_1 + 3) >> 5) + param_3 * '\b';
-      cVar9 = (*(byte *)((char *)param_1 + 3) >> 2 & 7) + param_4 * '\b';
-      bVar8 = local_40[1] & 7;
-      if ((((uVar2 & 0x1c0) == 0x40) && (bVar8 != 0)) && (param_5 != 0)) {
+      cVar10 = (*(byte *)((char *)object + 3) >> 5) + tile_dx * '\b';
+      cVar9 = (*(byte *)((char *)object + 3) >> 2 & 7) + tile_dy * '\b';
+      bVar8 = class_props[1] & 7;
+      if ((((object_word & 0x1c0) == 0x40) && (bVar8 != 0)) && (is_raised != 0)) {
         bVar8 = bVar8 - 1;
       }
       cVar11 = cVar10 + bVar8;
@@ -590,43 +564,40 @@ int param_5;
     }
     if (((DAT_00202c20 <= cVar11) && (cVar10 <= DAT_00202c28)) &&
        ((DAT_00202c24 <= cVar12 && (cVar9 <= DAT_00202c2c)))) {
-      iVar7 = (uint)bVar4 * 6;
-      *(byte *)(DAT_00202c6c + 0x14) = bVar4 + 1;
-      bVar4 = (byte)param_1[1] & 0x7f;
-      (&DAT_00202c39)[iVar7] = bVar4;
-      bVar15 = local_40[0] == '\0';
-      cVar5 = bVar4 + local_40[0];
-      if (bVar15) {
-        local_40[0] = cVar5 + '\x01';
+      copy_count = (uint)candidate_count * 6;
+      *(byte *)(DAT_00202c6c + 0x14) = candidate_count + 1;
+      candidate_count = (byte)object[1] & 0x7f;
+      (&DAT_00202c39)[copy_count] = candidate_count;
+      flag = class_props[0] == '\0';
+      cVar5 = candidate_count + class_props[0];
+      if (flag) {
+        class_props[0] = cVar5 + '\x01';
       }
-      (&DAT_00202c38)[iVar7] = cVar5;
-      if (bVar15) {
-        (&DAT_00202c38)[iVar7] = local_40[0];
+      (&DAT_00202c38)[copy_count] = cVar5;
+      if (flag) {
+        (&DAT_00202c38)[copy_count] = class_props[0];
       }
-      uVar3 = local_8 << 6 & 0xffff;
-      (&DAT_00202c3a)[iVar7] = (byte)(local_8 << 6) | 9;
+      uVar3 = slot_value << 6 & 0xffff;
+      (&DAT_00202c3a)[copy_count] = (byte)(slot_value << 6) | 9;
       uVar1 = (undefined1)(uVar3 >> 8);
-      (&DAT_00202c3b)[iVar7] = uVar1;
+      (&DAT_00202c3b)[copy_count] = uVar1;
       if (((cVar10 <= DAT_00202c18) && (DAT_00202c18 <= cVar11)) &&
          ((cVar9 <= DAT_00202c1c && (DAT_00202c1c <= cVar12)))) {
-        (&DAT_00202c3a)[iVar7] = (byte)uVar3 | 0x19;
-        (&DAT_00202c3b)[iVar7] = uVar1;
+        (&DAT_00202c3a)[copy_count] = (byte)uVar3 | 0x19;
+        (&DAT_00202c3b)[copy_count] = uVar1;
       }
-      iVar13 = param_4 * 0x40 + (int)param_3;
-      (&DAT_00202c3c)[iVar7] = (char)iVar13;
-      (&DAT_00202c3d)[iVar7] = (char)((uint)iVar13 >> 8);
+      tile_offset = tile_dy * 0x40 + (int)tile_dx;
+      (&DAT_00202c3c)[copy_count] = (char)tile_offset;
+      (&DAT_00202c3d)[copy_count] = (char)((uint)tile_offset >> 8);
     }
   }
-  return;
 }
 
 
 // was FUN_00051cf8 -- swaps the 6-byte collision-candidate records at index param_1 and param_1+1
 // across all six parallel arrays (DAT_00202c38..3d). The swap step sort_collision_candidates' two
 // insertion-sort passes call.
-void swap_collision_candidates(param_1)
-uint param_1;
-
+void swap_collision_candidates(uint index)
 {
   undefined1 uVar1;
   undefined1 uVar2;
@@ -637,9 +608,9 @@ uint param_1;
   int iVar7;
   int iVar8;
   
-  iVar7 = (param_1 & 0xff) * 6;
+  iVar7 = (index & 0xff) * 6;
   uVar1 = (&DAT_00202c38)[iVar7];
-  iVar8 = ((param_1 & 0xff) + 1) * 6;
+  iVar8 = ((index & 0xff) + 1) * 6;
   uVar2 = (&DAT_00202c39)[iVar7];
   uVar3 = (&DAT_00202c3a)[iVar7];
   uVar4 = (&DAT_00202c3b)[iVar7];
@@ -657,7 +628,6 @@ uint param_1;
   (&DAT_00202c3b)[iVar8] = uVar4;
   (&DAT_00202c3c)[iVar8] = uVar5;
   (&DAT_00202c3d)[iVar8] = uVar6;
-  return;
 }
 
 
@@ -666,7 +636,6 @@ uint param_1;
 // count at DAT_00202c6c+0x14) by X position then Y position, each pass swapping out-of-order pairs
 // via swap_collision_candidates...
 void sort_collision_candidates()
-
 {
   char cVar1;
   uint uVar2;
@@ -729,22 +698,13 @@ void sort_collision_candidates()
       iVar7 = uVar2 + iVar3;
     } while (iVar7 < (int)(uint)*(byte *)(DAT_00202c6c + 0x14));
   }
-  return;
 }
 
 
 // was FUN_00051fa0 -- checks whether an object of catalog type param_1 could occupy tile position
 // (param_3,param_4) at candidate height param_5 without being blocked by the current collision-
 // candidate list...
-undefined4 check_object_placement_clearance(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-short param_1;
-short param_2;
-undefined2 param_3;
-undefined2 param_4;
-short param_5;
-int param_6;
-byte param_7;
-
+int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit)
 {
   byte bVar1;
   char *uVar2;
@@ -768,18 +728,18 @@ byte param_7;
   uVar2 = DAT_00202c6c;
   ce_memset(local_pos_record, 0, sizeof(local_pos_record));
   DAT_00202c6c = local_pos_record;
-  local_33 = (&DAT_00202c90)[param_1 * 0xd];
-  local_34 = (&DAT_00202c91)[param_1 * 0xd] & 7;
-  local_38 = param_5;
-  if ((local_33 == 0x80) || ((int)((uint)local_33 + (int)param_5) < 0x80)) {
-    uVar8 = (uint)param_7;
-    local_3c = param_3;
-    local_3a = param_4;
-    local_32 = param_2;
+  local_33 = (&DAT_00202c90)[catalog_type * 0xd];
+  local_34 = (&DAT_00202c91)[catalog_type * 0xd] & 7;
+  local_38 = height;
+  if ((local_33 == 0x80) || ((int)((uint)local_33 + (int)height) < 0x80)) {
+    uVar8 = (uint)step_limit;
+    local_3c = position_x;
+    local_3a = position_y;
+    local_32 = ignore_slot;
     if (getenv("UW_DEBUG_STEPHEIGHT"))
       fprintf(stderr, "[fa0-params] p1=%d p2=%d p3=%d p4=%d p5=%u p6=%d p7=%u local33=%d local34=%d\n",
-              (int)param_1, (int)param_2, (int)(short)param_3, (int)(short)param_4,
-              (unsigned)param_5, (int)param_6, (unsigned)param_7, (int)local_33, (int)local_34);
+              (int)catalog_type, (int)ignore_slot, (int)(short)position_x, (int)(short)position_y,
+              (unsigned)height, (int)check_mode, (unsigned)step_limit, (int)local_33, (int)local_34);
     collision_build_height_field(uVar8);
     if (getenv("UW_DEBUG_STEPHEIGHT")) {
       int _i;
@@ -790,9 +750,9 @@ byte param_7;
     /* HACK: every offset below this point (0xc, 0xe, 0x10, 0x14, 0x15, 0x16) was wrong --
        DAT_00202c6c is a real `byte *`... */
     if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[fa0-check] off0xc_0xe=0x%x off0x14=%d param_2(slot)=%d\n",
+      fprintf(stderr, "[fa0-check] off0xc_0xe=0x%x off0x14=%d ignore_slot(slot)=%d\n",
               (unsigned)(*(ushort *)(DAT_00202c6c + 0xc) | *(ushort *)(DAT_00202c6c + 0xe)),
-              (int)(unsigned char)DAT_00202c6c[0x14], (int)param_2);
+              (int)(unsigned char)DAT_00202c6c[0x14], (int)ignore_slot);
     if (((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
       bVar1 = *(byte *)(DAT_00202c6c + 0x11);
       if ((int)(uVar8 + (int)*(short *)(DAT_00202c6c + 4)) < (int)(uint)bVar1) {
@@ -815,7 +775,7 @@ byte param_7;
       else {
         DAT_00202c68 = (short)(1 << ((int)*(short *)(DAT_00202c6c + 0xc) & 3U));
       }
-      if ((DAT_00202c68 == 0x10) || (uVar3 = 1, param_2 < 0x100)) {
+      if ((DAT_00202c68 == 0x10) || (uVar3 = 1, ignore_slot < 0x100)) {
         uVar3 = 0;
       }
       collision_height_envelope(uVar3,1);
@@ -855,7 +815,7 @@ byte param_7;
           DAT_00202c68 = 1;
         }
       }
-      if ((param_6 != 0) ||
+      if ((check_mode != 0) ||
          (((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x800) == 0) ||
          ((int)((int)*(short *)(DAT_00202c6c + 4) - uVar8) <= (int)(short)DAT_00202c30)) {
         DAT_00202c6c = uVar2;
@@ -903,61 +863,58 @@ ushort collision_neighbor_shade_or_zero(ushort *base, byte idx) {
 // was FUN_00050984 -- sample the floor height at one tile corner (type 0 solid -> 0x80) PHYSICS:
 // floor height source -- returns the standable height at corner param_1 of the current tile: 0x80
 // (= tile top, "no floor / solid") for a rock tile, height*8 for flat floor...
-uint collision_sample_floor_height(param_1,param_2)
-uint param_1;
-undefined4 * param_2;
-
+uint collision_sample_floor_height(uint corner, uint *out_blocked)
 {
-  byte bVar1;
-  short sVar2;
-  uint uVar3;
-  int iVar4;
+  byte shape_byte;
+  short corner_word;
+  uint floor_height;
+  int corner_offset;
 
-  iVar4 = (param_1 & 0xff) * 5;
-  sVar2 = *(short *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2);
-  *param_2 = 0;
+  corner_offset = (corner & 0xff) * 5;
+  corner_word = *(short *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[corner_offset] * 2);
+  *out_blocked = 0;
   // PHYSICS: floor height -- (corner height nibble) * 8; refined per shape below
-  uVar3 = (int)sVar2 >> 1 & 0x78;
-  switch(*(ushort *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2) & 0xf) {
+  floor_height = (int)corner_word >> 1 & 0x78;
+  switch(*(ushort *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[corner_offset] * 2) & 0xf) {
   case 0:
-    uVar3 = 0x80;
+    floor_height = 0x80;
     break;
   case 1:
     break;
   case 2:
-    if ((byte)(&DAT_00202bf9)[iVar4] <= (byte)(&DAT_00202bfa)[iVar4]) {
+    if ((byte)(&DAT_00202bf9)[corner_offset] <= (byte)(&DAT_00202bfa)[corner_offset]) {
 LAB_00050a64:
-      uVar3 = 0x80;
+      floor_height = 0x80;
     }
     goto LAB_00050a68;
   case 3:
-    if (6 < (uint)(byte)(&DAT_00202bf9)[iVar4] + (uint)(byte)(&DAT_00202bfa)[iVar4])
+    if (6 < (uint)(byte)(&DAT_00202bf9)[corner_offset] + (uint)(byte)(&DAT_00202bfa)[corner_offset])
     goto LAB_00050a64;
     goto LAB_00050a68;
   case 4:
-    if ((uint)(byte)(&DAT_00202bf9)[iVar4] + (uint)(byte)(&DAT_00202bfa)[iVar4] < 8)
+    if ((uint)(byte)(&DAT_00202bf9)[corner_offset] + (uint)(byte)(&DAT_00202bfa)[corner_offset] < 8)
     goto LAB_00050a64;
     goto LAB_00050a68;
   case 5:
-    if ((byte)(&DAT_00202bfa)[iVar4] <= (byte)(&DAT_00202bf9)[iVar4]) goto LAB_00050a64;
+    if ((byte)(&DAT_00202bfa)[corner_offset] <= (byte)(&DAT_00202bf9)[corner_offset]) goto LAB_00050a64;
 LAB_00050a68:
-    *param_2 = 1;
+    *out_blocked = 1;
     break;
   case 6:
-    bVar1 = (&DAT_00202bfa)[iVar4];
+    shape_byte = (&DAT_00202bfa)[corner_offset];
     goto LAB_00050a88;
   case 7:
-    bVar1 = (&DAT_00202bfa)[iVar4];
+    shape_byte = (&DAT_00202bfa)[corner_offset];
     goto LAB_00050a98;
   case 8:
-    bVar1 = (&DAT_00202bf9)[iVar4];
+    shape_byte = (&DAT_00202bf9)[corner_offset];
 LAB_00050a88:
-    uVar3 = (bVar1 & 7) + uVar3;
+    floor_height = (shape_byte & 7) + floor_height;
     break;
   case 9:
-    bVar1 = (&DAT_00202bf9)[iVar4];
+    shape_byte = (&DAT_00202bf9)[corner_offset];
 LAB_00050a98:
-    uVar3 = (uVar3 - (bVar1 & 7)) + 7;
+    floor_height = (floor_height - (shape_byte & 7)) + 7;
   }
-  return uVar3;
+  return floor_height;
 }

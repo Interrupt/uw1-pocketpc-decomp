@@ -1,10 +1,10 @@
 #include "hotspot_marker_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-void plot_pixel(int x, int y, int color);
+void plot_pixel(short x, short y, short color);
 void decrement_cursor_hide_depth(void);
-undefined4 cursor_show_idle_tick(void);
-undefined4 debug_noop_checkpoint(void);
+int cursor_show_idle_tick(void);
+int debug_noop_checkpoint(void);
 
 unsigned char PTR_DAT_000845c8_backing[16];
 
@@ -18,7 +18,7 @@ plot_call plots[64];
 
 int plot_count;
 
-void plot_pixel(int x, int y, int color)
+void plot_pixel(short x, short y, short color)
 {
     TEST_ASSERT_LESS_THAN_INT(64, plot_count);
     plots[plot_count].x = x;
@@ -29,9 +29,9 @@ void plot_pixel(int x, int y, int color)
 
 void decrement_cursor_hide_depth(void) {}
 
-undefined4 cursor_show_idle_tick(void) { return 0; }
+int cursor_show_idle_tick(void) { return 0; }
 
-undefined4 debug_noop_checkpoint(void) { return 0; }
+int debug_noop_checkpoint(void) { return 0; }
 
 void set_slot(unsigned char *backing, int index, short x, short y)
 {

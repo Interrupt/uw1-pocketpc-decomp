@@ -92,7 +92,7 @@ static void test_bonus_pool_caps_attributes_and_spends_remainder(void)
 
 static void test_skill_tree_collects_leaves_and_stops_at_five(void)
 {
-    const char tree[] = {1, 0, 1, 3, 1, 7, 1, 12, 1, 19};
+    char tree[] = {1, 0, 1, 3, 1, 7, 1, 12, 1, 19};
     char picks[6] = {20, 20, 20, 20, 20, 99}, field[20] = {0};
     byte cursor = 0;
     record[100] = 0;
@@ -106,7 +106,7 @@ static void test_skill_tree_collects_leaves_and_stops_at_five(void)
 
 static void test_skill_tree_selects_class_and_resumes_at_cursor(void)
 {
-    const char tree[] = {1, 1, 1, 2, 1, 3, 1, 4, 1, 5,
+    char tree[] = {1, 1, 1, 2, 1, 3, 1, 4, 1, 5,
                          1, 6, 1, 7, 1, 8, 1, 9, 1, 10};
     char picks[6] = {19, 18, 20, 20, 20, 99}, field[20] = {0};
     byte cursor = 2;
@@ -118,7 +118,7 @@ static void test_skill_tree_selects_class_and_resumes_at_cursor(void)
 
 static void test_skill_tree_branch_populates_choices_then_resumes(void)
 {
-    const char tree[] = {1, 2, 2, 5, 9, 1, 7, 1, 12, 1, 19};
+    char tree[] = {1, 2, 2, 5, 9, 1, 7, 1, 12, 1, 19};
     char picks[6] = {20, 20, 20, 20, 20, 99}, field[20] = {0};
     int list_offset = 1000;
     memcpy(field + 6, &list_offset, sizeof(list_offset));
@@ -141,7 +141,7 @@ static void test_skill_tree_branch_populates_choices_then_resumes(void)
 
 static void test_empty_skill_nodes_use_unselected_sentinel(void)
 {
-    const char tree[] = {0};
+    char tree[] = {0};
     char picks[6] = {0, 0, 0, 0, 0, 99}, field[20] = {0};
     byte cursor = 0;
     record[100] = 0;

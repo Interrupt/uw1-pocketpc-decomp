@@ -8,12 +8,12 @@
 
 /* Call once after SDL is initialized (same point as demomode_init). No-op
  * if recording is disabled (see UW_RECORD_DEMOFILE's own comment). */
-void democapture_init(void);
+void democapture_init();
 
 /* Call once per real uw_pump_events() invocation (i.e. once per actual game tick), BEFORE the SDL
    event loop -- advances the recorder's own idle-tick counter, the sole source of a recording's
    WAIT lines (see democapture.c's top comment for why this is tick-counted, not wall-clock timed). */
-void democapture_tick(void);
+void democapture_tick();
 
 /* Call from uw_pump_events for every KEYBOARD event actually pulled off SDL's queue, BEFORE any
    demo-injected/synthetic filtering -- democapture does its own synthetic check (keysym.unused ==
@@ -26,6 +26,6 @@ void democapture_record_mouse(Uint32 event_type, Uint8 button, Uint32 which, int
 
 /* Flush and close the recording file. Call once before the process exits
  * (every exit path -- SDL_QUIT and the g_running check both call this). */
-void democapture_shutdown(void);
+void democapture_shutdown();
 
 #endif

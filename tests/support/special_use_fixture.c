@@ -16,14 +16,14 @@ int DAT_00101954;
 void configure_texture_detail_functions(void) {}
 void refresh_player_equipment_effects(void) {}
 
-int roll_dice_sum(int count, int sides)
+int roll_dice_sum(int count, short sides)
 {
     TEST_ASSERT_EQUAL_INT(8, sides);
     special_use_fixture.dice++;
     return count; /* Deterministic legal minimum for the healing roll. */
 }
 void refresh_experience_display(void) { special_use_fixture.health_refreshes++; }
-void print_scroll_message_by_id(int id)
+void print_scroll_message_by_id(uint id)
 { special_use_fixture.messages++; special_use_fixture.message = id; }
 byte tile_is_no_magic(int x, int y)
 {
@@ -35,14 +35,14 @@ byte tile_is_no_magic(int x, int y)
 undefined4 rand_below(int max) { return max - 1; }
 long ce_rand(void) { return 0; }
 #endif
-void project_position_by_heading(int heading, int distance, short *x, short *y)
+void project_position_by_heading(int heading, short distance, void *x, void *y)
 {
     /* Rest scans at the actor's position: projection distance is zero. */
     TEST_ASSERT_EQUAL_INT(0, distance);
     (void)heading; (void)x; (void)y;
 }
 #ifndef UW_TEST_FULL_REST
-void handle_rest_action(int mode)
+void handle_rest_action(short mode)
 {
     /* The rest UI/time advancement is outside these functional tests. Run
        its actual safety check, including the real map scan and callback. */
@@ -53,40 +53,40 @@ void handle_rest_action(int mode)
 #endif
 
 #define UNUSED_VOID(name) void name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); }
-#define UNUSED_RESULT(name) undefined4 name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); return 0; }
-UNUSED_VOID(trigger_player_jump_if_grounded)
-UNUSED_RESULT(add_active_light_source)
-UNUSED_VOID(push_cursor_icon)
-UNUSED_VOID(apply_targeted_spell_effect)
-UNUSED_VOID(cast_cone_damage_spell)
-UNUSED_VOID(cast_targeted_search_effect)
-UNUSED_VOID(cast_summon_or_spawn_effect)
-UNUSED_VOID(reduce_item_quality_on_use)
+#define UNUSED_RESULT(name) int name(void) { TEST_FAIL_MESSAGE("Unexpected " #name); return 0; }
+void trigger_player_jump_if_grounded(char *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected trigger_player_jump_if_grounded"); }
+int add_active_light_source(uint light_id, uint duration, char flag) { (void)light_id; (void)duration; (void)flag; TEST_FAIL_MESSAGE("Unexpected add_active_light_source"); return 0; }
+void push_cursor_icon(int icon) { (void)icon; TEST_FAIL_MESSAGE("Unexpected push_cursor_icon"); }
+void apply_targeted_spell_effect(ushort *caster, char effect_index) { (void)caster; (void)effect_index; TEST_FAIL_MESSAGE("Unexpected apply_targeted_spell_effect"); }
+void cast_cone_damage_spell(void *caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_cone_damage_spell"); }
+void cast_targeted_search_effect(void *caster, uint spell_variant) { (void)caster; (void)spell_variant; TEST_FAIL_MESSAGE("Unexpected cast_targeted_search_effect"); }
+void cast_summon_or_spawn_effect(void *caster, char variant) { (void)caster; (void)variant; TEST_FAIL_MESSAGE("Unexpected cast_summon_or_spawn_effect"); }
+void reduce_item_quality_on_use(ushort *object, char dice_count) { (void)object; (void)dice_count; TEST_FAIL_MESSAGE("Unexpected reduce_item_quality_on_use"); }
 #ifndef UW_TEST_FULL_REST
-UNUSED_VOID(adjust_level7_hazard_value)
+void adjust_level7_hazard_value(void *object, char delta) { (void)object; (void)delta; TEST_FAIL_MESSAGE("Unexpected adjust_level7_hazard_value"); }
 #endif
-UNUSED_VOID(dispatch_player_command)
-UNUSED_VOID(handle_level4_maze_puzzle_button)
-UNUSED_VOID(display_book_or_scroll_page)
-UNUSED_VOID(scheduler_tick)
+void dispatch_player_command(ushort *actor, int unused, char command) { (void)actor; (void)unused; (void)command; TEST_FAIL_MESSAGE("Unexpected dispatch_player_command"); }
+void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y) { (void)button; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected handle_level4_maze_puzzle_button"); }
+void display_book_or_scroll_page(uint page_id) { (void)page_id; TEST_FAIL_MESSAGE("Unexpected display_book_or_scroll_page"); }
+void scheduler_tick(int elapsed) { (void)elapsed; TEST_FAIL_MESSAGE("Unexpected scheduler_tick"); }
 #ifndef UW_TEST_FULL_REST
-UNUSED_VOID(redraw_backpack_slot_widget)
+void redraw_backpack_slot_widget(short slot) { (void)slot; TEST_FAIL_MESSAGE("Unexpected redraw_backpack_slot_widget"); }
 #endif
 UNUSED_VOID(refresh_container_view)
-bool finish_object_use(void) { TEST_FAIL_MESSAGE("Unexpected finish_object_use"); return false; }
-UNUSED_RESULT(spawn_scheduled_door_texture_object)
-UNUSED_VOID(play_musical_instrument)
-UNUSED_VOID(arm_use_item_on_special_target_prompt)
+bool finish_object_use(void *used_object, int consume, int force_discard) { (void)used_object; (void)consume; (void)force_discard; TEST_FAIL_MESSAGE("Unexpected finish_object_use"); return false; }
+int spawn_scheduled_door_texture_object(void) {  TEST_FAIL_MESSAGE("Unexpected spawn_scheduled_door_texture_object"); return 0; }
+void play_musical_instrument(short instrument) { (void)instrument; TEST_FAIL_MESSAGE("Unexpected play_musical_instrument"); }
+void arm_use_item_on_special_target_prompt(ushort *item, int confirmed) { (void)item; (void)confirmed; TEST_FAIL_MESSAGE("Unexpected arm_use_item_on_special_target_prompt"); }
 UNUSED_RESULT(try_climb_wall)
-short *begin_holding_object_on_cursor(void) { TEST_FAIL_MESSAGE("Unexpected cursor pickup"); return NULL; }
-UNUSED_VOID(wait_for_click_release)
+short *begin_holding_object_on_cursor(short *object, uint object_type) { (void)object; (void)object_type; TEST_FAIL_MESSAGE("Unexpected cursor pickup"); return NULL; }
+void wait_for_click_release(int mode) { (void)mode; TEST_FAIL_MESSAGE("Unexpected wait_for_click_release"); }
 void prompt_use_item_on_target(ushort *object, code *callback) { TEST_FAIL_MESSAGE("Unexpected target prompt"); }
-UNUSED_VOID(complete_use_item_scatter_spawn)
-UNUSED_VOID(complete_use_item_fill_flask)
+void complete_use_item_scatter_spawn(short *target, int clicked, int confirmed) { (void)target; (void)clicked; (void)confirmed; TEST_FAIL_MESSAGE("Unexpected complete_use_item_scatter_spawn"); }
+void complete_use_item_fill_flask(ushort *target, int clicked, int confirmed) { (void)target; (void)clicked; (void)confirmed; TEST_FAIL_MESSAGE("Unexpected complete_use_item_fill_flask"); }
 UNUSED_VOID(complete_use_item_repair_object)
 #undef UNUSED_VOID
 #undef UNUSED_RESULT
-ushort *find_equipped_item_by_category(void)
+ushort *find_equipped_item_by_category(int category, int subcategory, int quality, short full_scan, void *out_slot)
 { TEST_FAIL_MESSAGE("Unexpected equipment search"); return NULL; }
 
 ushort *special_use_object(unsigned slot)

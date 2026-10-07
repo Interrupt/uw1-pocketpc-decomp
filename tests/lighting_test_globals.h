@@ -1,6 +1,6 @@
 #include "src/headers/uw.h"
 extern char *DAT_00086df8, *DAT_0023be74, *DAT_0024fa2c, *DAT_0023cca0;
-extern byte *g_scratch_object_ptr;
+extern ushort *g_scratch_object_ptr;
 extern char *g_selected_object;
 extern undefined1 DAT_00086da8, DAT_00202800_backing[256];
 extern undefined1 DAT_0023b039_backing[4096];

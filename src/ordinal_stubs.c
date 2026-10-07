@@ -11,58 +11,41 @@
 #include <sys/stat.h>
 #include <SDL.h>
 
-void uw_pump_events(void);
+void uw_pump_events();
 unsigned int handle_keyboard_message(void *param_1, unsigned int param_2, unsigned int param_3);
-int uw_take_mouse_event_pending(void);
+int uw_take_mouse_event_pending();
 
-long EnterCriticalSection(param_1,param_2,param_3,param_4)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
+long EnterCriticalSection(long critical_section, long arg2, void *arg3, long arg4)
 {
     return 0;
 }
 
-long GetSystemTime(param_1)
-long param_1;
+long GetSystemTime(void *system_time)
 {
     return 0;
 }
 
-long LocalAlloc(param_1,param_2)
-long param_1;
-long param_2;
+void *LocalAlloc(long flags, long byte_count)
 {
     return 0;
 }
 
-long LocalReAlloc(param_1,param_2,param_3)
-long param_1;
-long param_2;
-long param_3;
+void *LocalReAlloc(void *block, long byte_count, long flags)
 {
     return 0;
 }
 
-long LocalSize(param_1)
-long param_1;
+long LocalSize(void *block)
 {
     return 0;
 }
 
-long RemoteLocalReAlloc(param_1,param_2,param_3,param_4,param_5)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
-long param_5;
+long RemoteLocalReAlloc(void *arg1, void *arg2, long arg3, long arg4, long arg5)
 {
     return 0;
 }
 
-long HeapReAlloc(param_1)
-long param_1;
+long HeapReAlloc(void *heap)
 {
     return 0;
 }
@@ -75,9 +58,7 @@ long ce_wcscat()
 /* Wide-string copy-shaped call (identity inferred from call sites). Receives (destination, source)
    after FUN_0002295c converts a game path; used to fill source/destination buffers for the new-game
    archive copy. */
-long ce_wcscpy(destination, source)
-char *destination;
-const char *source;
+long ce_wcscpy(char *destination, const char *source)
 {
     if (!destination || !source) return 0;
     strcpy(destination, source);
@@ -99,11 +80,7 @@ static const unsigned short g_oem_info_str[] = {
     'H','P',',','J','o','r','n','a','d','a','_','5','4','0',0
 };
 
-long SystemParametersInfoW(action, cb, buf, fWinIni)
-unsigned int action;
-unsigned int cb;
-void *buf;
-unsigned int fWinIni;
+long SystemParametersInfoW(unsigned int action, unsigned int cb, void *buf, unsigned int fWinIni)
 {
     (void)fWinIni;
     if (action == 0x102 && buf && cb >= sizeof(g_oem_info_str)) {
@@ -112,21 +89,17 @@ unsigned int fWinIni;
     return 1;
 }
 
-long RegisterClassW(param_1)
-long param_1;
+long RegisterClassW(void *window_class)
 {
     return 0;
 }
 
-long CopyRect(param_1)
-long param_1;
+long CopyRect(void *rect)
 {
     return 0;
 }
 
-long CreateDirectoryW(param_1,param_2)
-long param_1;
-long param_2;
+long CreateDirectoryW(const char *path, void *security)
 {
     return 0;
 }
@@ -139,10 +112,7 @@ long RemoveDirectoryW()
 /* CopyFileW-shaped call (source path, destination path, fail-if-exists). Used to seed SAVE0\lev.ark
    from DATA\lev.ark for a new game, and by older save-slot copy paths. The native conversion
    adapters retain ANSI paths; uw_file_copy resolves them against UW_DATA_DIR and copies bytes. */
-long CopyFileW(source, destination, fail_if_exists)
-const char *source;
-const char *destination;
-int fail_if_exists;
+long CopyFileW(const char *source, const char *destination, int fail_if_exists)
 {
     if (!source || !destination) return 0;
     if (fail_if_exists) {
@@ -187,24 +157,12 @@ long FindFirstFileW(void *path_ptr, unsigned int *out_attrs)
     return 1;
 }
 
-long CreateFileW(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
-long param_5;
-long param_6;
-long param_7;
+long CreateFileW(const char *path, long access, long share_mode, void *security, long creation, long attributes, void *template_file)
 {
     return 0;
 }
 
-long ReadFile(param_1,param_2,param_3,param_4,param_5)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
-long param_5;
+long ReadFile(long file, void *buffer, long byte_count, void *bytes_read, void *overlapped)
 {
     return 0;
 }
@@ -226,14 +184,12 @@ long SetFilePointer()
     return 0;
 }
 
-long SetFileTime(param_1,param_2)
-long param_1;
-long param_2;
+long SetFileTime(void *file, const void *file_time)
 {
     return 0;
 }
 
-long FindNextFileW()
+long FindNextFileW(long handle, void *find_data)
 {
     return 0;
 }
@@ -248,13 +204,7 @@ int GetDiskFreeSpaceExW(void *path, unsigned int flags, void *out_struct, unsign
 /* MultiByteToWideChar-shaped call (API identity inferred from arguments). FUN_0002295c passes (0,
    2, ANSI path, -1, output buffer, 0xff) to prepare a path for WinCE file APIs. This native port
    retains ANSI bytes because its file API adapters accept narrow paths, rather than UTF-16. */
-long MultiByteToWideChar(code_page, flags, source, source_count, destination, capacity)
-unsigned int code_page;
-unsigned int flags;
-const char *source;
-int source_count;
-char *destination;
-int capacity;
+long MultiByteToWideChar(unsigned int code_page, unsigned int flags, const char *source, int source_count, char *destination, int capacity)
 {
     size_t count;
     (void)code_page;
@@ -267,27 +217,17 @@ int capacity;
     return (long)count;
 }
 
-long WideCharToMultiByte(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
-long param_5;
-long param_6;
-long param_7;
-long param_8;
+long WideCharToMultiByte(long code_page, long flags, const char *source, long source_count, char *destination, long capacity, const char *default_char, void *used_default)
 {
     return 0;
 }
 
-long GetUserDefaultLangID(param_1)
-long param_1;
+long GetUserDefaultLangID(void *arg1)
 {
     return 0;
 }
 
-long FoldStringW(param_1)
-long param_1;
+long FoldStringW(void *string)
 {
     return 0;
 }
@@ -295,16 +235,14 @@ long param_1;
 /* UTF-16 string-equality check; the only call site compares SystemParametersInfoW's SPI_GETOEMINFO
    string against a fixed device name (see SystemParametersInfoW's comment). wcscmp isn't used here
    because macOS wchar_t is 4 bytes, not the 2-byte UTF-16 units this game's strings use. */
-long _wcsicmp(a, b)
-unsigned short *a;
-unsigned short *b;
+long _wcsicmp(void *a_ptr, unsigned short *b)
 {
+  unsigned short *a = (unsigned short *)a_ptr;
     while (*a && *b && *a == *b) { a++; b++; }
     return *a == *b;
 }
 
-long CloseAllFileHandles(param_1)
-long param_1;
+long CloseAllFileHandles(void *arg1)
 {
     return 0;
 }
@@ -321,15 +259,12 @@ long DefWindowProcW()
     return 0;
 }
 
-long ShowWindow(param_1,param_2)
-long param_1;
-long param_2;
+long ShowWindow(void *window, long show_command)
 {
     return 0;
 }
 
-long UpdateWindow(param_1)
-long param_1;
+long UpdateWindow(void *window)
 {
     return 0;
 }
@@ -341,44 +276,32 @@ int FindWindowW(void *a, void *b)
     return 0; /* no existing instance / success */
 }
 
-long BatteryDrvrGetLevels(param_1)
-long param_1;
+long BatteryDrvrGetLevels(void *levels)
 {
     return 0;
 }
 
-long CeReadRecordProps(param_1,param_2)
-long param_1;
-long param_2;
+long CeReadRecordProps(void *arg1, long arg2)
 {
     return 0;
 }
 
-long waveOutClose()
+long waveOutClose(long wave_out)
 {
     return 0;
 }
 
-long waveOutPrepareHeader(param_1,param_2,param_3)
-long param_1;
-long param_2;
-long param_3;
+long waveOutPrepareHeader(long wave_out, void *header, long header_size)
 {
     return 0;
 }
 
-long waveOutUnprepareHeader(param_1,param_2,param_3)
-long param_1;
-long param_2;
-long param_3;
+long waveOutUnprepareHeader(long wave_out, void *header, long header_size)
 {
     return 0;
 }
 
-long waveOutWrite(param_1,param_2,param_3)
-long param_1;
-long param_2;
-long param_3;
+long waveOutWrite(long wave_out, void *header, long header_size)
 {
     return 0;
 }
@@ -388,33 +311,17 @@ long waveOutReset()
     return 0;
 }
 
-long waveOutOpen(param_1,param_2,param_3,param_4,param_5,param_6)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
-long param_5;
-long param_6;
+long waveOutOpen(void *wave_out, long device_id, void *format, void *callback, void *instance, long flags)
 {
     return 0;
 }
 
-long RegCloseKey(param_1)
-long param_1;
+long RegCloseKey(long key)
 {
     return 0;
 }
 
-long RegCreateKeyExW(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
-long param_5;
-long param_6;
-long param_7;
-long param_8;
-long param_9;
+long RegCreateKeyExW(long key, const unsigned short *sub_key, long reserved, void *class_name, long options, long access, void *security, void *result, void *disposition)
 {
     return 0;
 }
@@ -426,24 +333,12 @@ int RegOpenKeyExW(unsigned int hkey, void *subkey, unsigned int reserved, void *
     return 0;
 }
 
-long RegQueryValueExW(param_1,param_2,param_3,param_4,param_5,param_6)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
-long param_5;
-long param_6;
+long RegQueryValueExW(long key, const unsigned short *value_name, long reserved, void *type, void *data, void *data_size)
 {
     return 0;
 }
 
-long RegSetValueExW(param_1,param_2,param_3,param_4,param_5,param_6)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
-long param_5;
-long param_6;
+long RegSetValueExW(long key, const unsigned short *value_name, long reserved, long type, const void *data, long data_size)
 {
     return 0;
 }
@@ -484,16 +379,12 @@ long GetLastError()
     return 0;
 }
 
-long FindResourceW(param_1,param_2,param_3)
-long param_1;
-long param_2;
-long param_3;
+long FindResourceW(long module, long resource_id, long resource_type)
 {
     return 0;
 }
 
-long LoadResource(param_1)
-long param_1;
+long LoadResource(long resource)
 {
     return 0;
 }
@@ -506,17 +397,12 @@ long GetTickCount()
 
 /* CloseHandle-shaped file-close, used ~49 times across uw.c (e.g. read_buffer_from_file closes
    every file it opens through this). */
-long CloseHandle(handle)
-int handle;
+long CloseHandle(int handle)
 {
     return uw_file_close(handle);
 }
 
-long GetDlgItemTextW(param_1,param_2,param_3,param_4)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
+long GetDlgItemTextW(long dialog, long item_id, void *text, long max_count)
 {
     return 0;
 }
@@ -526,33 +412,27 @@ long DialogBoxIndirectParamW()
     return 0;
 }
 
-long EndDialog(param_1,param_2)
-long param_1;
-long param_2;
+long EndDialog(long dialog, long result)
 {
     return 0;
 }
 
-long SetForegroundWindow(param_1)
-long param_1;
+long SetForegroundWindow(long window)
 {
     return 0;
 }
 
-long ce_sprintf()
+long ce_sprintf(char *buffer, const char *format, ...)
 {
     return 0;
 }
 
-long MessageBoxW(param_1,param_2)
-long param_1;
-long param_2;
+long MessageBoxW(const void *text, const void *caption)
 {
     return 0;
 }
 
-long DispatchMessageW(param_1)
-long param_1;
+long DispatchMessageW(const void *message)
 {
     return 0;
 }
@@ -572,8 +452,7 @@ int PeekMessageW(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsign
     return (DAT_0023c448 != 0) || uw_take_mouse_event_pending();
 }
 
-long PostQuitMessage(param_1)
-long param_1;
+long PostQuitMessage(long exit_code)
 {
     return 0;
 }
@@ -584,32 +463,27 @@ int PostMessageW(void *hwnd, unsigned int msg, unsigned int wparam, int lparam)
     return (int)handle_keyboard_message(hwnd, msg, wparam);
 }
 
-long TranslateMessage(param_1)
-long param_1;
+long TranslateMessage(const void *message)
 {
     return 0;
 }
 
-long GetSystemMetrics(param_1)
-long param_1;
+long GetSystemMetrics(long index)
 {
     return 0;
 }
 
-long DeleteObject(param_1)
-long param_1;
+long DeleteObject(long object)
 {
     return 0;
 }
 
-long GetStockObject(param_1)
-long param_1;
+long GetStockObject(long object_id)
 {
     return 0;
 }
 
-long ce_atoi(param_1)
-long param_1;
+int ce_atoi(const char *text)
 {
     return 0;
 }
@@ -617,8 +491,7 @@ long param_1;
 /* cos(x): x is a double bit-pattern arriving in the return/first-arg register (chained from
    ordfloat_float_to_double in build_trig_tables, which builds the renderer's per-degree cos table
    DAT_000d9ed8). */
-long ordfloat_cos(x)
-unsigned long long x;
+long ordfloat_cos(unsigned long long x)
 {
     double d;
     memcpy(&d, &x, 8);
@@ -627,8 +500,7 @@ unsigned long long x;
     return (long)x;
 }
 
-void LocalFree(ptr)
-void *ptr;
+void LocalFree(void *ptr)
 {
     /* deliberately a leak, not free(ptr): several call sites have no argument expression at all
        (Ghidra dropped it), so ptr may be garbage -- freeing it would be a likely crash. Leaking for
@@ -636,29 +508,22 @@ void *ptr;
     (void)ptr;
 }
 
-long _itoa(param_1,param_2,param_3)
-long param_1;
-long param_2;
-long param_3;
+char *_itoa(long value, char *buffer, long radix)
 {
     return 0;
 }
 
-long ordfloat_log()
+long ordfloat_log(long lo, long hi)
 {
     return 0;
 }
 
-long _ltoa(param_1,param_2,param_3)
-long param_1;
-long param_2;
-long param_3;
+char *_ltoa(long value, char *buffer, long radix)
 {
     return 0;
 }
 
-void *ce_malloc(size)
-unsigned int size;
+void *ce_malloc(unsigned int size)
 {
     /* Was plain malloc -- real WinCE code allocating a small tracking record and never explicitly
        zeroing it (e.g. open_backpack_container's 12-byte container-tracking record, which reads its
@@ -667,10 +532,7 @@ unsigned int size;
     return calloc(1, size);
 }
 
-void *ce_memmove(dest, src, n)
-void *dest;
-void *src;
-unsigned int n;
+void *ce_memmove(void *dest, void *src, unsigned int n)
 {
     if (dest == 0 || src == 0 || n == 0 || n > (64u * 1024u * 1024u)) return dest;
     memmove(dest, src, n);
@@ -702,9 +564,7 @@ void *ce_realloc(void *ptr, unsigned int size)
 
 /* sin(x): x is a double bit-pattern split across the first two arg
    registers (build_trig_tables passes it as two ints). Builds DAT_000d9930. */
-long ordfloat_sin(lo, hi)
-unsigned int lo;
-unsigned int hi;
+long ordfloat_sin(unsigned int lo, unsigned int hi)
 {
     unsigned long long b = (unsigned long long)lo | ((unsigned long long)hi << 32);
     double d;
@@ -714,8 +574,7 @@ unsigned int hi;
     return (long)b;
 }
 
-long ce_srand(param_1)
-long param_1;
+long ce_srand(long seed)
 {
     return 0;
 }
@@ -723,9 +582,7 @@ long param_1;
 /* strcat: appends src to the NUL-terminated string in dest and returns dest. Used to assemble
    game/save paths from an install-directory prefix and suffixes such as \DATA\lev.ark and \SAVE0.
    Does not check capacity; both arguments must be valid strings. Null arguments skip the append. */
-char *ce_strcat(dest, src)
-char *dest;
-char *src;
+char *ce_strcat(char *dest, char *src)
 {
     if (dest && src) strcat(dest, src);
     return dest;
@@ -743,8 +600,7 @@ int ce_strcmp(const char *a, const char *b)
     return strcmp(a, b);
 }
 
-unsigned int ce_strlen(s)
-const char *s;
+unsigned int ce_strlen(const char *s)
 {
     if (s == 0) return 0;
     return (unsigned int)strlen(s);
@@ -758,10 +614,7 @@ int ce_strncmp(const char *a, const char *b, unsigned int n)
 
 /* MSVCRT `strncpy(dest, src, n)` -- sits right after strcmp(1065)/ strlen(1068)/strncmp(1070) in
    the ordinal table, matching that sequential string-function grouping. */
-long ce_strncpy(dest, src, n)
-char *dest;
-const char *src;
-unsigned int n;
+long ce_strncpy(char *dest, const char *src, unsigned int n)
 {
     if (dest == 0) return 0;
     if (src == 0) {
@@ -772,42 +625,36 @@ unsigned int n;
     return (long)dest;
 }
 
-long ce_strstr(param_1,param_2)
-long param_1;
-long param_2;
+char *ce_strstr(const char *haystack, const char *needle)
 {
     return 0;
 }
 
 /* Windows CE keyboard-translation ordinal (likely a VK-code-to-character case transform, given its
    sibling ce_toupper and their shared call site at uw.c ~50479)... */
-long ce_tolower(param_1)
-long param_1;
+long ce_tolower(long ch)
 {
-    return param_1;
+    return ch;
 }
 
 /* Windows CE toupper import: the automap note editor uses this to map
  * lowercase input to the uppercase-only FONT4X5P.SYS glyphs. The original
  * dropped argument was restored earlier, but the identity stub still left
  * lowercase notes invisible. Preserve nonletters and input sentinels. */
-long ce_toupper(param_1)
-long param_1;
+long ce_toupper(long ch)
 {
-    if (param_1 >= 'a' && param_1 <= 'z') return param_1 - 'a' + 'A';
-    return param_1;
+    if (ch >= 'a' && ch <= 'z') return ch - 'a' + 'A';
+    return ch;
 }
 
 /* Was, and stays, a hardcoded no-op always returning 0 (NULL) -- every single call site (the
    MOD-tracker music engine's buffer/pattern/ instrument allocators in audio.c)... */
-long cpp_operator_delete(param_1)
-long param_1;
+long cpp_operator_delete(void *block)
 {
     return 0;
 }
 
-long cpp_operator_new(param_1)
-long param_1;
+void *cpp_operator_new(long byte_count)
 {
     return 0;
 }
@@ -847,9 +694,7 @@ int ce_fclose(void *f)
 /* Zeroing allocator, called as ce_calloc(elem_size, count) at every site (e.g. the .tr texture
    loader's offset table, load_texture_arena). Was a no-op stub that returned NULL ->
    report_fatal_error_and_exit(0x1008) fatal the moment the texture files actually started loading. */
-void *ce_calloc(elem_size, count)
-unsigned int elem_size;
-unsigned int count;
+void *ce_calloc(unsigned int elem_size, unsigned int count)
 {
     if (elem_size == 0) elem_size = 1;
     if (count == 0) count = 1;
@@ -858,9 +703,7 @@ unsigned int count;
 
 /* MSVCRT `strrchr(str, c)` -- find the LAST occurrence of character `c` in `str`, or NULL if
    absent. */
-long ce_strrchr(str, c)
-char *str;
-int c;
+char *ce_strrchr(char *str, int c)
 {
     char *p;
     char *last = 0;
@@ -869,33 +712,29 @@ int c;
         if (*p == (char)c) last = p;
         if (*p == '\0') break;
     }
-    return (long)last;
+    return last;
 }
 
-long _strlwr(param_1)
-long param_1;
+char *_strlwr(char *text)
 {
     return 0;
 }
 
 /* MSVCRT `_strupr(str)` -- uppercase a string in place, return the same pointer. Sits right before
    _isctype (`_isctype`), matching MSVCRT's own clustering of case/character-type functions. */
-long _strupr(str)
-char *str;
+char *_strupr(char *str)
 {
     char *p;
     if (str == 0) return 0;
     for (p = str; *p != '\0'; p++) {
         *p = (char)toupper((unsigned char)*p);
     }
-    return (long)str;
+    return str;
 }
 
 /* MSVCRT-style `_isctype(c, mask)` character classification helper -- every call site ORs together
    the standard CRT _ctype.h bit values as its mask... */
-long _isctype(c, mask)
-int c;
-int mask;
+long _isctype(int c, int mask)
 {
     unsigned char ch = (unsigned char)c;
     int flags = 0;
@@ -914,9 +753,7 @@ int mask;
 /* ARM has no hardware integer divide, so the original WinCE/ARM compiler routed every `/` and `%`
    in the whole game through this shared runtime division helper -- it's called ~250 places across
    uw.c. */
-divmod_result ordint_divmod(divisor, dividend)
-int divisor;
-int dividend;
+divmod_result ordint_divmod(int divisor, int dividend)
 {
     divmod_result result;
     if (divisor == 0) {
@@ -932,9 +769,7 @@ int dividend;
 /* Unsigned sibling of ordint_divmod (Ordinal_2005) -- this is Ordinal_2008, misidentified in an
    earlier pass as "ordfloat_double_mul" (float multiply) from thin, as it turns out nonexistent,
    audio.c-adjacent evidence. */
-divmod_result orduint_divmod(divisor, dividend)
-unsigned int divisor;
-unsigned int dividend;
+divmod_result orduint_divmod(unsigned int divisor, unsigned int dividend)
 {
     divmod_result result;
     if (divisor == 0) {
@@ -953,18 +788,12 @@ static unsigned int ordfloat_float_to_bits(float f);
 /* Softfloat single-precision SUBTRACT: a - b (IEEE-754 bit patterns in, bit pattern out). Was a
    no-op stub, which zeroed every subtraction in the 3D vertex-clip / projection math
    (near_clip_visible_tiles &c). */
-long ordfloat_sub(a, b)
-unsigned int a;
-unsigned int b;
+long ordfloat_sub(unsigned int a, unsigned int b)
 {
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) - ordfloat_bits_to_float(b));
 }
 
-long ordfloat_double_binop(param_1,param_2,param_3,param_4)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
+long ordfloat_double_binop(long a_lo, long a_hi, long b_lo, long b_hi)
 {
     return 0;
 }
@@ -989,14 +818,12 @@ static unsigned int ordfloat_float_to_bits(float f)
 /* Called with NO explicit argument at every use site in uw.c -- Ghidra dropped the parameter
    because it's just the return-register value chained straight from the preceding ordfloat_mul/2032
    call... */
-long ordfloat_int_to_float(x)
-unsigned int x;
+long ordfloat_int_to_float(unsigned int x)
 {
     return (long)ordfloat_bits_to_float(x);
 }
 
-long ordfloat_uint_to_float(x)
-unsigned int x;
+long ordfloat_uint_to_float(unsigned int x)
 {
     return (long)ordfloat_bits_to_float(x);
 }
@@ -1004,8 +831,7 @@ unsigned int x;
 /* Softfloat float -> double: single-precision bit pattern in the
    first-arg register (chained), returns the double bit pattern. Was a
    return-0 stub -- part of build_trig_tables's sin/cos table build. */
-long ordfloat_float_to_double(x)
-unsigned long long x;
+long ordfloat_float_to_double(unsigned long long x)
 {
     unsigned int fbits = (unsigned int)x;
     float f;
@@ -1019,8 +845,7 @@ unsigned long long x;
 /* Softfloat single-precision NEGATE: -x. Called both with an explicit arg and no-arg (chained).
    build_view_matrix uses it for a view matrix's translation column (-camera_pos) and the -sin
    entries of its rotation blocks; it also appears in the sprite/billboard transform. */
-long ordfloat_negate(x)
-unsigned int x;
+long ordfloat_negate(unsigned int x)
 {
     float f;
     memcpy(&f, &x, 4);
@@ -1029,9 +854,7 @@ unsigned int x;
     return (long)x;
 }
 
-long ordfloat_mul(a, b)
-unsigned int a;
-unsigned int b;
+long ordfloat_mul(unsigned int a, unsigned int b)
 {
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) * ordfloat_bits_to_float(b));
 }
@@ -1039,11 +862,7 @@ unsigned int b;
 /* Softfloat double MULTIPLY: a * b, each passed as a lo/hi int pair.
    build_trig_tables multiplies (double)degrees by the constant
    0x3f91df45a50de271 == PI/180. Was a return-0 stub. */
-long ordfloat_double_mul2(alo, ahi, blo, bhi)
-unsigned int alo;
-unsigned int ahi;
-unsigned int blo;
-unsigned int bhi;
+long ordfloat_double_mul2(unsigned int alo, unsigned int ahi, unsigned int blo, unsigned int bhi)
 {
     unsigned long long ab = (unsigned long long)alo | ((unsigned long long)ahi << 32);
     unsigned long long bb = (unsigned long long)blo | ((unsigned long long)bhi << 32);
@@ -1058,46 +877,36 @@ unsigned int bhi;
 /* Softfloat single-precision COMPARE: returns 1 when a < b, else 0. Paired with 2030 (<=), 2036
    (>), 2038 (>=) -- inferred from the viewport-cull tests in raster_triangle (all verts left of x0
    -> cull uses 2028; all verts right of x1 -> cull uses 2036). */
-long ordfloat_lt(a, b)
-unsigned int a;
-unsigned int b;
+long ordfloat_lt(unsigned int a, unsigned int b)
 {
     return ordfloat_bits_to_float(a) < ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
 /* Softfloat single-precision COMPARE: returns 1 when a <= b, else 0. */
-long ordfloat_le(a, b)
-unsigned int a;
-unsigned int b;
+long ordfloat_le(unsigned int a, unsigned int b)
 {
     return ordfloat_bits_to_float(a) <= ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
-long ordfloat_int_to_float2(x)
-int x;
+long ordfloat_int_to_float2(int x)
 {
     return (long)ordfloat_float_to_bits((float)x);
 }
 
-long ordfloat_double_from_int(param_1)
-long param_1;
+long ordfloat_double_from_int(long value)
 {
     return 0;
 }
 
 /* Softfloat single-precision COMPARE: returns 1 when a >  b, else 0. */
-long ordfloat_gt(a, b)
-unsigned int a;
-unsigned int b;
+long ordfloat_gt(unsigned int a, unsigned int b)
 {
     return ordfloat_bits_to_float(a) > ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
 /* Softfloat single-precision COMPARE for the 3D near-plane clip test: returns 1 when a >= b, else
    0. Call sites read it as `if (ordfloat_ge(vertex_z, near_plane) == 0) { ...clip... }`. */
-long ordfloat_ge(a, b)
-unsigned int a;
-unsigned int b;
+long ordfloat_ge(unsigned int a, unsigned int b)
 {
     return ordfloat_bits_to_float(a) >= ordfloat_bits_to_float(b) ? 1 : 0;
 }
@@ -1105,8 +914,7 @@ unsigned int b;
 /* Softfloat double -> float: double bit pattern in the first-arg
    register (chained), returns the single-precision bit pattern. Was a
    return-0 stub -- the final step feeding DAT_000d9ed8 / DAT_000d9930. */
-long ordfloat_double_to_float(x)
-unsigned long long x;
+long ordfloat_double_to_float(unsigned long long x)
 {
     double d;
     float f;
@@ -1125,20 +933,14 @@ long ordfloat_double_result()
 /* Softfloat single-precision DIVIDE: a / b. Used for the near-plane
    clip interpolation factor ((near - z0) / (z1 - z0)) in near_clip_visible_tiles.
    Was a no-op stub. */
-long ordfloat_div(a, b)
-unsigned int a;
-unsigned int b;
+long ordfloat_div(unsigned int a, unsigned int b)
 {
     float fb = ordfloat_bits_to_float(b);
     if (fb == 0.0f) return 0;
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) / fb);
 }
 
-long ordfloat_double_binop2(param_1,param_2,param_3,param_4)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
+long ordfloat_double_binop2(long a_lo, long a_hi, long b_lo, long b_hi)
 {
     return 0;
 }
@@ -1146,54 +948,37 @@ long param_4;
 /* Softfloat single-precision ADD: a + b. The workhorse of the 3D matrix-multiply / vertex-transform
    math (project_verts_through_view_matrix, translate_verts_to_camera_space,
    near_clip_visible_tiles). */
-long ordfloat_add(a, b)
-unsigned int a;
-unsigned int b;
+long ordfloat_add(unsigned int a, unsigned int b)
 {
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) + ordfloat_bits_to_float(b));
 }
 
-long ordfloat_double_op3(param_1,param_2,param_3,param_4)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
+long ordfloat_double_op3(long a_lo, long a_hi, long b_lo, long b_hi)
 {
     return 0;
 }
 
-long ordaudio_op_2063(param_1,param_2,param_3,param_4)
-long param_1;
-long param_2;
-long param_3;
-long param_4;
+long ordaudio_op_2063(void *arg1, const void *arg2, long arg3, long arg4)
 {
     return 0;
 }
 
-long ordaudio_op_2135()
+long ordaudio_op_2135(void *archive, const void *buffer, long byte_count, ...)
 {
     return 0;
 }
 
-long ordaudio_op_2142(param_1)
-long param_1;
+long ordaudio_op_2142(void *archive)
 {
     return 0;
 }
 
-long ordaudio_op_2304(param_1,param_2,param_3)
-long param_1;
-long param_2;
-long param_3;
+long ordaudio_op_2304(void *arg1, void *arg2, long arg3)
 {
     return 0;
 }
 
-long ordaudio_op_2413(param_1,param_2,param_3)
-long param_1;
-long param_2;
-long param_3;
+long ordaudio_op_2413(void *arg1, long arg2, long arg3)
 {
     return 0;
 }
@@ -1203,9 +988,7 @@ long ordaudio_op_2582()
     return 0;
 }
 
-long ordaudio_op_2588(param_1,param_2)
-long param_1;
-long param_2;
+long ordaudio_op_2588(void *archive, long value)
 {
     return 0;
 }

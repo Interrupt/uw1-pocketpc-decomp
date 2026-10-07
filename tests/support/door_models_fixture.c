@@ -38,7 +38,7 @@ static void load_points(const char *name)
     fclose(file);
     TEST_ASSERT_GREATER_THAN_INT(0, model[0]);
 }
-void *tick_anim_record(int catalog)
+void *tick_anim_record(short catalog)
 {
     load_points(catalog == 1 ? "DFRAME" : "DOOR");
     return model;
@@ -161,8 +161,8 @@ void dbgui_field_button(const char *s,void (*fn)(void)) {}
 void dbgui_field_toggle(const char *s,int *n) {}
 void uw_debug_request_3d_frame_dump(void) {}
 int get_catalog_sprite_width(int id) { return id; }
-void emit_floor_texture_select(void) {}
-void *get_texture_page(int id) { static char page[4096]; return page; }
-void *lookup_grtile_by_id(int id) { static char gr[4096]={4,64,64}; return gr; }
-byte *decompress_gr_bitmap(void *src,void *dst) { return src; }
+void emit_floor_texture_select(byte *tile_record, uint depth, short texture_index) { (void)tile_record; (void)depth; (void)texture_index;}
+void *get_texture_page(short id) { static char page[4096]; return page; }
+void *lookup_grtile_by_id(short id) { static char gr[4096]={4,64,64}; return gr; }
+byte *decompress_gr_bitmap(byte *source, byte *dest, char mode) { (void)source; (void)dest; (void)mode; return source; }
 uint read_realtime_clock_units(void) { return 0; }

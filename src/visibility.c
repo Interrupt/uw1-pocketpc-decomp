@@ -171,8 +171,7 @@ static int visibility_ray_idx(const void *p) {
 
 
 // was FUN_0005b054 -- reset texture id lists to identity + default counts (0x30 wall, 10 floor)
-undefined4 reset_texture_id_lists()
-
+int reset_texture_id_lists()
 {
   int iVar1;
   int iVar2;
@@ -222,12 +221,8 @@ undefined4 reset_texture_id_lists()
 
 
 // was FUN_0005b188 -- read the level's 0x7a-byte tmap-id block (48 wall + 10 floor + 3) from the .ark
-bool load_level_texture_ids(param_1,param_2)
-/* .ark handle-struct pointer -- was `undefined4`, truncating it before
-   read_archive_entry. */
-undefined1 * param_1;
-int param_2;
-
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before read_archive_entry. */
+bool load_level_texture_ids(byte *archive, int level_number)
 {
   int iVar1;
   undefined2 uVar2;
@@ -238,7 +233,7 @@ int param_2;
      read_archive_entry reads exactly 0x7a = 122 bytes into it (96 + 20 + 6)... */
   undefined2 local_tmap_buf [64];
 
-  sVar3 = read_archive_entry(param_1,param_2 + 0x11,local_tmap_buf);
+  sVar3 = read_archive_entry(archive,level_number + 0x11,local_tmap_buf);
   if (sVar3 != 0x7a) {
     debug_print(s_bad_tmap_ids_size_000869b7 + 1);
   }
@@ -283,12 +278,7 @@ int param_2;
    truncating the real pointers -- fread'ing texture data through a chopped &DAT_002049e0 segfaulted
    the moment the .tr files actually opened. */
 // was FUN_0005b514 -- load selected entries of a .tr texture file (ids in list param_2) into an arena
-void load_texture_arena(param_1,param_2,param_3,param_4)
-char *param_1;
-short *param_2;
-short * param_3;
-char *param_4;
-
+void load_texture_arena(char *path, short *id_list, short *out_count, char *arena)
 {
   int iVar1;
   char *iVar2; /* was int -- ce_calloc() offset-table allocation */
@@ -298,11 +288,11 @@ char *param_4;
   byte local_24 [2];
   short local_22;
 
-  iVar1 = open_file_for_read(param_1);
+  iVar1 = open_file_for_read(path);
   if (iVar1 == -1) {
-    /* param_1 is built from "\DATA\" (s__DATA__00085970) with no filename ever appended -- Ghidra
+    /* path is built from "\DATA\" (s__DATA__00085970) with no filename ever appended -- Ghidra
        dropped whatever ce_strcat call(s) would have added the actual texture-LUT filename... */
-    *param_3 = 0;
+    *out_count = 0;
     return;
   }
   read_file_handle(iVar1,local_24,1);
@@ -320,40 +310,36 @@ char *param_4;
   else {
     read_file_handle(iVar1,iVar2,(int)local_22 << 2);
     iVar3 = 0;
-    if (0 < *param_3) {
+    if (0 < *out_count) {
       iVar3 = 0;
       do {
         /* Ghidra kept a byte *2 scale from the original `*(short*)((char*)base + i*2)` but also
-           retyped param_2 as short* -- the two compound, so this read every OTHER id (idlist[0],
+           retyped id_list as short* -- the two compound, so this read every OTHER id (idlist[0],
            idlist[2], idlist[4]...). */
-        iVar4 = (int)param_2[iVar3];
+        iVar4 = (int)id_list[iVar3];
         if (iVar4 < 0) break;
         seek_file_handle(iVar1,*(undefined4 *)(iVar2 + iVar4 * 4),0);
-        iVar4 = read_file_handle(iVar1,param_4,iVar5);
+        iVar4 = read_file_handle(iVar1,arena,iVar5);
         if (iVar4 != iVar5) {
           report_fatal_error_and_exit(0x3012);
         }
         iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-        param_4 = iVar5 + param_4;
-      } while (iVar3 < *param_3);
+        arena = iVar5 + arena;
+      } while (iVar3 < *out_count);
     }
   }
-  *param_3 = (short)iVar3;
+  *out_count = (short)iVar3;
   LocalFree(iVar2);
   CloseHandle(iVar1);
-  return;
 }
 
 
 
 // was FUN_0005b660 -- load TERRAIN.DAT texture-property words -> DAT_0023add0 (wall) / DAT_0023ae40 (floor)
-void load_terrain_texture_props(param_1,param_2)
 /* Both are bases into the tmap-id arrays load_level_texture_ids fills (&DAT_0023ae58 and
    &DAT_0023adb8) -- Ghidra dropped both args at the lone call site and typed them `int`, so the
    reads below hit a bogus address and segfaulted level init. */
-char *param_1;
-char *param_2;
-
+void load_terrain_texture_props(char *wall_texture_ids, char *floor_texture_ids)
 {
   char stack0xffdc3238_buf [256];
   char *stack0xffdc3238_ptr;
@@ -375,19 +361,18 @@ char *param_2;
   if (iVar3 != 0) {
     iVar4 = 0;
     do {
-      seek_file_handle(iVar3,(int)*(short *)(iVar4 * 2 + param_1) << 1,0);
+      seek_file_handle(iVar3,(int)*(short *)(iVar4 * 2 + wall_texture_ids) << 1,0);
       read_file_handle(iVar3,&DAT_0023add0 + iVar4,2);
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 0x30);
     iVar4 = 0;
     do {
-      seek_file_handle(iVar3,(*(short *)(iVar4 * 2 + param_2) + 0x100) * 2,0);
+      seek_file_handle(iVar3,(*(short *)(iVar4 * 2 + floor_texture_ids) + 0x100) * 2,0);
       read_file_handle(iVar3,&DAT_0023ae40 + iVar4,2);
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 10);
     CloseHandle(iVar3);
   }
-  return;
 }
 
 
@@ -395,17 +380,14 @@ char *param_2;
 
 // was FUN_0005b890 -- reset the draw-command list write cursor DAT_00110fc0 back to its base DAT_0023aed0
 void draw_command_list_rewind()
-
 {
-  DAT_00110fc0 = DAT_0023aed0;
-  return;
+  DAT_00110fc0 = (char *)DAT_0023aed0;
 }
 
 
 
 // was FUN_0005b8ac -- per-frame teardown: free the scratch geometry / clip-vertex lists (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via LocalFree
 void free_frame_geometry_buffers()
-
 {
   void **piVar1;
   int iVar2;
@@ -428,7 +410,6 @@ void free_frame_geometry_buffers()
     iVar2 = iVar2 + -1;
     piVar1 = piVar1 + 1;
   } while (iVar2 != 0);
-  return;
 }
 
 
@@ -436,7 +417,6 @@ void free_frame_geometry_buffers()
 
 // was FUN_0005bb5c
 void full_dungeon_redraw()
-
 {
   build_frame_draw_list();
   draw_command_list_rewind();
@@ -447,14 +427,12 @@ void full_dungeon_redraw()
   set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
   render_dungeon_view();
   set_viewport_clip_rect(0,0,0x13f,199);
-  return;
 }
 
 
 
 // was FUN_0005bbe0 -- timed dungeon-view redraw: rebuild the draw list if needed, run render_dungeon_view, measure it (read_realtime_clock_units) and feed an adaptive-quality value
 void render_dungeon_frame_timed()
-
 {
   int uw_ord2005_rem_122 = 0;
   short sVar1;
@@ -509,14 +487,12 @@ void render_dungeon_frame_timed()
   uw_ord2005_rem_122 = ((int)((int)sVar2)) % (10);
   ce_sprintf(auStack_60,s_R__lu_P__lu_S__lu_F__d__d_00086b04,iVar4,iVar8,iVar6 - iVar5,(int)sVar3,
               (int)uw_ord2005_rem_122);
-  return;
 }
 
 
 
 // was FUN_0005bc38 -- build the per-frame HUD + world draw-command list (opcodes into DAT_00110fc0) and run the visibility pass walk_visible_tiles; returns nonzero if it rebuilt
-undefined4 build_frame_draw_list()
-
+int build_frame_draw_list()
 {
   short sVar1;
   undefined2 uVar2;
@@ -527,7 +503,7 @@ undefined4 build_frame_draw_list()
   DAT_00101938 = (short)(char)((ushort)g_current_view->view_x >> 8);
   DAT_0010193c = (short)(char)((ushort)g_current_view->view_y >> 8);
   DAT_0023aecc = tilemap_lookup(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
-  bVar3 = (byte)((short)(g_current_view->view_facing >> 0xd) + 1 >> 1) & 3;
+  bVar3 = (byte)(((short)(g_current_view->view_facing >> 0xd) + 1) >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
   /* Dropped-remainder bug, same class fixed elsewhere this session. */
   extraout_r1 = (char)ordint_divmod(2,bVar3).rem;
@@ -562,9 +538,7 @@ LAB_0005bd98:
 
 
 // was FUN_0005bdcc
-void build_visibility_light_grid(param_1)
-short param_1;
-
+void build_visibility_light_grid(short size)
 {
   int iVar1;
   short sVar2;
@@ -572,7 +546,7 @@ short param_1;
   int iVar4;
   undefined1 local_30 [16];
   
-  iVar1 = (int)param_1;
+  iVar1 = (int)size;
   if (iVar1 < 0x10) {
     iVar4 = 0;
     do {
@@ -611,7 +585,6 @@ short param_1;
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 0x11);
   }
-  return;
 }
 
 
@@ -620,7 +593,6 @@ short param_1;
 
 // was FUN_0005bf40
 void seed_visibility_queue()
-
 {
   /* DAT_0023aecc is the player's current tile record; it is NULL when the player position is
      outside the 64x64 map. */
@@ -638,8 +610,8 @@ void seed_visibility_queue()
     DAT_0023aee7 = 0;
     DAT_0023aee6 = (undefined1)g_current_view->view_x;
     DAT_0023aee8 = (undefined1)g_current_view->view_y;
-    DAT_0023aeea = (undefined2)((uint)DAT_0023aecc >> 8);
-    DAT_0023aeec = (undefined1)((uint)DAT_0023aecc >> 0x18);
+    DAT_0023aeea = (undefined2)((uint)(uintptr_t)DAT_0023aecc >> 8);
+    DAT_0023aeec = (undefined1)((uint)(uintptr_t)DAT_0023aecc >> 0x18);
     DAT_0023aeed = 0x58;
     DAT_0023aeee = 0x23b0;
     DAT_0023aef0 = 0;
@@ -649,11 +621,11 @@ void seed_visibility_queue()
     DAT_0023aefc = 0;
     DAT_0023aefb = (undefined1)g_current_view->view_x;
     DAT_0023aefd = (undefined1)g_current_view->view_y;
-    DAT_0023aefe = SUB42(DAT_0023aecc,0);
-    DAT_0023af00 = (undefined2)((uint)DAT_0023aecc >> 0x10);
+    DAT_0023aefe = (undefined2)(uintptr_t)DAT_0023aecc;
+    DAT_0023af00 = (undefined2)((uint)(uintptr_t)DAT_0023aecc >> 0x10);
     _DAT_0023af02 = 0x23b058;
     g_visibility_ray_realptr2[1] = (char *)&g_visibility_ring_buffer_backing[0x20]; // same real-pointer side channel, entry 1
-    DAT_0023aee9 = (char)DAT_0023aecc;
+    DAT_0023aee9 = (char)(uintptr_t)DAT_0023aecc;
     g_visibility_ray_realptr[0] = DAT_0023aecc; // real-pointer side channel for advance_visibility_ray -- see g_visibility_ray_realptr's comment
     g_visibility_ray_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
     angle_to_screen_delta(g_current_view->view_facing + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
@@ -669,39 +641,36 @@ void seed_visibility_queue()
     DAT_0023aef6 = (short)DAT_0023aef6 >> 4;
     DAT_0023aef8 = (short)DAT_0023aef8 >> 4;
   }
-  return;
 }
 
 
 
 // Was FUN_0005c0c4. Same param_1-truncation + packed-pointer-arithmetic fix as its mirror-image sibling visibility_ray_step_backward.
 // was FUN_0005c0c4
-void visibility_ray_step_forward(param_1)
-intptr_t param_1;
-
+void visibility_ray_step_forward(void *ray_ptr)
 {
+  char *ray = (char *)ray_ptr;
   int iVar1;
   int entry_idx;
 
-  entry_idx = visibility_ray_idx(param_1);
+  entry_idx = visibility_ray_idx(ray);
   g_visibility_ray_realptr[entry_idx] =
        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
   g_visibility_ray_realptr2[entry_idx] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, entry_idx) + 2;
-  *(char *)(param_1 + 5) = *(char *)(param_1 + 5) + '\x01';
-  iVar1 = *(int *)(param_1 + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
-  *(char *)(param_1 + 9) = (char)iVar1;
-  *(char *)(param_1 + 10) = (char)((uint)iVar1 >> 8);
-  *(char *)(param_1 + 0xb) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(param_1 + 0xc) = (char)((uint)iVar1 >> 0x18);
-  iVar1 = CONCAT13(*(undefined1 *)(param_1 + 0x10),
-                   CONCAT12(*(undefined1 *)(param_1 + 0xf),
-                            CONCAT11(*(undefined1 *)(param_1 + 0xe),*(undefined1 *)(param_1 + 0xd)))
+  *(char *)(ray + 5) = *(char *)(ray + 5) + '\x01';
+  iVar1 = *(int *)(ray + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
+  *(char *)(ray + 9) = (char)iVar1;
+  *(char *)(ray + 10) = (char)((uint)iVar1 >> 8);
+  *(char *)(ray + 0xb) = (char)((uint)iVar1 >> 0x10);
+  *(char *)(ray + 0xc) = (char)((uint)iVar1 >> 0x18);
+  iVar1 = CONCAT13(*(undefined1 *)(ray + 0x10),
+                   CONCAT12(*(undefined1 *)(ray + 0xf),
+                            CONCAT11(*(undefined1 *)(ray + 0xe),*(undefined1 *)(ray + 0xd)))
                   ) + 2;
-  *(char *)(param_1 + 0xd) = (char)iVar1;
-  *(char *)(param_1 + 0xe) = (char)((uint)iVar1 >> 8);
-  *(char *)(param_1 + 0xf) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(param_1 + 0x10) = (char)((uint)iVar1 >> 0x18);
-  return;
+  *(char *)(ray + 0xd) = (char)iVar1;
+  *(char *)(ray + 0xe) = (char)((uint)iVar1 >> 8);
+  *(char *)(ray + 0xf) = (char)((uint)iVar1 >> 0x10);
+  *(char *)(ray + 0x10) = (char)((uint)iVar1 >> 0x18);
 }
 
 
@@ -709,32 +678,30 @@ intptr_t param_1;
 /* Was FUN_0005c16c. param_1 was `int`, truncating the real record pointer (same fix as its siblings
    advance_visibility_ray/compute_visibility_ray_offset). */
 // was FUN_0005c16c
-void visibility_ray_step_backward(param_1)
-intptr_t param_1;
-
+void visibility_ray_step_backward(void *ray_ptr)
 {
+  char *ray = (char *)ray_ptr;
   int iVar1;
   int entry_idx;
 
-  entry_idx = visibility_ray_idx(param_1);
+  entry_idx = visibility_ray_idx(ray);
   g_visibility_ray_realptr[entry_idx] =
        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
   g_visibility_ray_realptr2[entry_idx] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, entry_idx) + -2;
-  *(char *)(param_1 + 5) = *(char *)(param_1 + 5) + -1;
-  iVar1 = *(int *)(param_1 + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
-  *(char *)(param_1 + 9) = (char)iVar1;
-  *(char *)(param_1 + 10) = (char)((uint)iVar1 >> 8);
-  *(char *)(param_1 + 0xb) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(param_1 + 0xc) = (char)((uint)iVar1 >> 0x18);
-  iVar1 = CONCAT13(*(undefined1 *)(param_1 + 0x10),
-                   CONCAT12(*(undefined1 *)(param_1 + 0xf),
-                            CONCAT11(*(undefined1 *)(param_1 + 0xe),*(undefined1 *)(param_1 + 0xd)))
+  *(char *)(ray + 5) = *(char *)(ray + 5) + -1;
+  iVar1 = *(int *)(ray + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
+  *(char *)(ray + 9) = (char)iVar1;
+  *(char *)(ray + 10) = (char)((uint)iVar1 >> 8);
+  *(char *)(ray + 0xb) = (char)((uint)iVar1 >> 0x10);
+  *(char *)(ray + 0xc) = (char)((uint)iVar1 >> 0x18);
+  iVar1 = CONCAT13(*(undefined1 *)(ray + 0x10),
+                   CONCAT12(*(undefined1 *)(ray + 0xf),
+                            CONCAT11(*(undefined1 *)(ray + 0xe),*(undefined1 *)(ray + 0xd)))
                   ) + -2;
-  *(char *)(param_1 + 0xd) = (char)iVar1;
-  *(char *)(param_1 + 0xe) = (char)((uint)iVar1 >> 8);
-  *(char *)(param_1 + 0xf) = (char)((uint)iVar1 >> 0x10);
-  *(char *)(param_1 + 0x10) = (char)((uint)iVar1 >> 0x18);
-  return;
+  *(char *)(ray + 0xd) = (char)iVar1;
+  *(char *)(ray + 0xe) = (char)((uint)iVar1 >> 8);
+  *(char *)(ray + 0xf) = (char)((uint)iVar1 >> 0x10);
+  *(char *)(ray + 0x10) = (char)((uint)iVar1 >> 0x18);
 }
 
 
@@ -742,12 +709,9 @@ intptr_t param_1;
 /* Was FUN_0005c214. param_1 was `int`, truncating the real record pointer every caller passes --
    same fix as advance_visibility_ray. */
 // was FUN_0005c214
-undefined4 compute_visibility_ray_offset(param_1,param_2,param_3)
-intptr_t param_1;
-char param_2;
-char param_3;
-
+int compute_visibility_ray_offset(void *ray_ptr, char step_x, char step_y)
 {
+  char *ray = (char *)ray_ptr;
   byte bVar1;
   byte *pbVar2;
   byte *pbVar3;
@@ -763,21 +727,21 @@ char param_3;
   int iVar13;
   int entry_idx;
 
-  entry_idx = visibility_ray_idx(param_1);
+  entry_idx = visibility_ray_idx(ray);
   pbVar2 = (byte *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, entry_idx);
   iVar12 = (int)DAT_0023b4a0;
   bVar7 = pbVar2[1] & 0xf;
   iVar5 = iVar12 * 0x10;
   pbVar3 = (byte *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, entry_idx);
   bVar1 = *pbVar3;
-  uVar10 = (uint)*(char *)(param_1 + 5);
+  uVar10 = (uint)*(char *)(ray + 5);
   if (uVar10 == 0) {
     sVar9 = 0;
   }
   else {
     iVar4 = (uVar10 ^ (int)uVar10 >> 0x1f) - ((int)uVar10 >> 0x1f);
-    uVar11 = (int)*(char *)(param_1 + 7) >> 0x1f;
-    iVar13 = ((int)*(char *)(param_1 + 7) ^ uVar11) - uVar11;
+    uVar11 = (int)*(char *)(ray + 7) >> 0x1f;
+    iVar13 = ((int)*(char *)(ray + 7) ^ uVar11) - uVar11;
     sVar9 = 1;
     if (iVar4 != iVar13 && iVar13 <= iVar4) {
       sVar9 = 3;
@@ -845,9 +809,9 @@ char param_3;
       }
     }
     *pbVar2 = bVar6;
-    pbVar2[1] = bVar7; // was `*(byte *)(*(int *)(param_1 + 0xd) + 1)` -- pbVar2 already IS that pointer now
-    if ((param_2 != '\0') &&
-       (((uVar11 = (uint)param_3,
+    pbVar2[1] = bVar7; // was `*(byte *)(*(int *)(ray + 0xd) + 1)` -- pbVar2 already IS that pointer now
+    if ((step_x != '\0') &&
+       (((uVar11 = (uint)step_y,
          ((byte)(&DAT_000878d0)
                 [(byte)(&DAT_00086a20)
                        [(pbVar3[*(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6) * 4] & 0xf) +
@@ -855,15 +819,15 @@ char param_3;
          (((byte)(&DAT_000878d0)[uVar10] & 0x10) == (&DAT_00086af0)[uVar11 == 8])) ||
         ((((byte)(&DAT_000878d0)[uVar10] & 1) == 1 &&
          (((byte)(&DAT_000878d0)[uVar10] & 0x10) == (&DAT_00086af0)[uVar11 == 0])))))) {
-      if (param_2 == '\x01') {
-        visibility_ray_step_forward(param_1); // dropped arg; sibling call right below (visibility_ray_step_backward(param_1)) shows the intended shape
+      if (step_x == '\x01') {
+        visibility_ray_step_forward(ray); // dropped arg; sibling call right below (visibility_ray_step_backward(ray)) shows the intended shape
         uVar8 = 0;
       }
       else {
-        visibility_ray_step_backward(param_1);
+        visibility_ray_step_backward(ray);
         uVar8 = 0xff;
       }
-      *(undefined1 *)(param_1 + 6) = uVar8;
+      *(undefined1 *)(ray + 6) = uVar8;
       return 1;
     }
   }
@@ -875,10 +839,7 @@ char param_3;
 /* Was FUN_0005c70c, and was mis-named `reactions_should_merge` until the un-stub below showed what
    it does. */
 // was FUN_0005c70c
-undefined4 extend_visibility_ray_row(param_1,param_2)
-byte * param_1;
-byte * param_2;
-
+int extend_visibility_ray_row(byte *ray_a, byte *ray_b)
 {
   uint uVar1;
   uint uVar2;
@@ -892,78 +853,78 @@ byte * param_2;
   int idx2;
   short row_stride;
 
-  idx1 = visibility_ray_idx(param_1);
-  idx2 = visibility_ray_idx(param_2);
+  idx1 = visibility_ray_idx(ray_a);
+  idx2 = visibility_ray_idx(ray_b);
   row_stride = *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6);
 
-  iVar5 = *(char *)(param_1 + 7) + 1;
-  *(char *)(param_1 + 7) = (char)iVar5;
+  iVar5 = *(char *)(ray_a + 7) + 1;
+  *(char *)(ray_a + 7) = (char)iVar5;
   /* ARM FUN_0005c70c compares this row counter with the literal 0x11. The shading distance
      (historically named g_visibility_max_ring_passes) is not this bound. Substituting it stops on a
      partially filled row: level 1's value 3 makes tile (26,5) disappear at some headings. */
   if (iVar5 * 0x1000000 >> 0x18 < 0x11) {
     do {
       if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx1)[0x43] & 0xf) != 0xf) {
-        cVar3 = *(char *)(param_1 + 7);
+        cVar3 = *(char *)(ray_a + 7);
         if (('\x01' < cVar3) ||
-           (uVar7 = (uint)*(byte *)(param_1 + 6) - (int)g_current_view->view_x,
+           (uVar7 = (uint)*(byte *)(ray_a + 6) - (int)g_current_view->view_x,
            uVar1 = (int)uVar7 >> 0x1f,
-           uVar6 = (uint)*(byte *)(param_1 + 8) - (int)g_current_view->view_y,
+           uVar6 = (uint)*(byte *)(ray_a + 8) - (int)g_current_view->view_y,
            uVar2 = (int)uVar6 >> 0x1f,
            0x10 < (int)(((uVar6 ^ uVar2) - uVar2) + ((uVar7 ^ uVar1) - uVar1)))) {
-          iVar8 = (*(char *)(param_1 + 5) * 0x100 - (int)g_current_view->view_x) +
-                  (uint)*(byte *)(param_1 + 6);
+          iVar8 = (*(char *)(ray_a + 5) * 0x100 - (int)g_current_view->view_x) +
+                  (uint)*(byte *)(ray_a + 6);
           iVar5 = iVar8 * 0x10000;
           uVar1 = iVar5 >> 0x1f;
           sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1).quot;
           iVar5 = (iVar8 - sVar4) + -2;
-          *(char *)(param_1 + 1) = (char)iVar5;
-          *(char *)(param_1 + 2) = (char)((uint)iVar5 >> 8);
+          *(char *)(ray_a + 1) = (char)iVar5;
+          *(char *)(ray_a + 2) = (char)((uint)iVar5 >> 8);
           iVar5 = cVar3 * 0x100 - (int)g_current_view->view_y;
-          *(char *)(param_1 + 3) = (char)iVar5;
-          *(char *)(param_1 + 4) = (char)((uint)iVar5 >> 8);
+          *(char *)(ray_a + 3) = (char)iVar5;
+          *(char *)(ray_a + 4) = (char)((uint)iVar5 >> 8);
         }
-        *(undefined1 *)(param_1 + 8) = 0;
+        *(undefined1 *)(ray_a + 8) = 0;
         /* one row forward: tile-data cursor += row_stride*4, grid cursor += 0x42 */
         g_visibility_ray_realptr[idx1] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, idx1) + row_stride * 4;
         g_visibility_ray_realptr2[idx1] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx1) + 0x42;
-        *(char *)(param_2 + 7) = *(char *)(param_2 + 7) + '\x01';
+        *(char *)(ray_b + 7) = *(char *)(ray_b + 7) + '\x01';
         do {
           if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx2)[0x43] & 0xf) != 0xf) {
-            cVar3 = *(char *)(param_2 + 7);
+            cVar3 = *(char *)(ray_b + 7);
             if (('\x01' < cVar3) ||
-               (uVar7 = (uint)*(byte *)(param_2 + 6) - (int)g_current_view->view_x,
+               (uVar7 = (uint)*(byte *)(ray_b + 6) - (int)g_current_view->view_x,
                uVar1 = (int)uVar7 >> 0x1f,
-               uVar6 = (uint)*(byte *)(param_2 + 8) - (int)g_current_view->view_y,
+               uVar6 = (uint)*(byte *)(ray_b + 8) - (int)g_current_view->view_y,
                uVar2 = (int)uVar6 >> 0x1f,
                0x10 < (int)(((uVar6 ^ uVar2) - uVar2) + ((uVar7 ^ uVar1) - uVar1)))) {
-              iVar8 = (*(char *)(param_2 + 5) * 0x100 - (int)g_current_view->view_x) +
-                      (uint)*(byte *)(param_2 + 6);
+              iVar8 = (*(char *)(ray_b + 5) * 0x100 - (int)g_current_view->view_x) +
+                      (uint)*(byte *)(ray_b + 6);
               iVar5 = iVar8 * 0x10000;
               uVar1 = iVar5 >> 0x1f;
               sVar4 = ordint_divmod(0x32,(iVar5 >> 0x10 ^ uVar1) - uVar1).quot;
               iVar5 = iVar8 + sVar4 + 2;
-              *(char *)(param_2 + 1) = (char)iVar5;
-              *(char *)(param_2 + 2) = (char)((uint)iVar5 >> 8);
+              *(char *)(ray_b + 1) = (char)iVar5;
+              *(char *)(ray_b + 2) = (char)((uint)iVar5 >> 8);
               iVar5 = (cVar3 * 0x100 - (int)g_current_view->view_y) + -1;
-              *(char *)(param_2 + 3) = (char)iVar5;
-              *(char *)(param_2 + 4) = (char)((uint)iVar5 >> 8);
+              *(char *)(ray_b + 3) = (char)iVar5;
+              *(char *)(ray_b + 4) = (char)((uint)iVar5 >> 8);
             }
-            *(undefined1 *)(param_2 + 8) = 0;
+            *(undefined1 *)(ray_b + 8) = 0;
             g_visibility_ray_realptr2[idx2] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx2) + 0x42;
             g_visibility_ray_realptr[idx2] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, idx2) + row_stride * 4;
             return 1;
           }
-          visibility_ray_step_backward(param_2);
-          *(undefined1 *)(param_2 + 6) = 0xff;
-          compute_visibility_ray_offset((intptr_t)param_2,0,0);
-        } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
+          visibility_ray_step_backward(ray_b);
+          *(undefined1 *)(ray_b + 6) = 0xff;
+          compute_visibility_ray_offset(ray_b,0,0);
+        } while (*(char *)(ray_a + 5) <= *(char *)(ray_b + 5));
         return 0;
       }
-      visibility_ray_step_forward((intptr_t)param_1);
-      *(undefined1 *)(param_1 + 6) = 0;
-      compute_visibility_ray_offset((intptr_t)param_1,0,0);
-    } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
+      visibility_ray_step_forward(ray_a);
+      *(undefined1 *)(ray_a + 6) = 0;
+      compute_visibility_ray_offset(ray_a,0,0);
+    } while (*(char *)(ray_a + 5) <= *(char *)(ray_b + 5));
   }
   return 0;
 }
@@ -972,9 +933,7 @@ byte * param_2;
 
 // Was FUN_0005cacc.
 // was FUN_0005cacc
-void advance_visibility_ray(param_1)
-byte * param_1;
-
+void advance_visibility_ray(byte *ray)
 {
   uint uVar1;
   int iVar2;
@@ -993,39 +952,39 @@ byte * param_1;
   ushort local_32;
   int local_30;
   
-  iVar2 = (int)*(short *)(param_1 + 1);
+  iVar2 = (int)*(short *)(ray + 1);
   cVar12 = -1 < iVar2;
   iVar3 = (int)(short)(ushort)(byte)cVar12;
-  local_32 = (ushort)param_1[6];
+  local_32 = (ushort)ray[6];
   if (iVar3 == 1) {
-    local_32 = 0x100 - param_1[6];
+    local_32 = 0x100 - ray[6];
   }
   uVar1 = iVar3 << 7;
-  if ((*param_1 & 0x80) == uVar1) {
-    g_visibility_ray_clearptr[visibility_ray_idx(param_1)] =
-        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(param_1));
-    uVar7 = *(undefined4 *)(param_1 + 0xd);
-    param_1[0x11] = (byte)uVar7;
-    param_1[0x12] = (byte)((uint)uVar7 >> 8);
-    param_1[0x13] = (byte)((uint)uVar7 >> 0x10);
-    param_1[0x14] = (byte)((uint)uVar7 >> 0x18);
+  if ((*ray & 0x80) == uVar1) {
+    g_visibility_ray_clearptr[visibility_ray_idx(ray)] =
+        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(ray));
+    uVar7 = *(undefined4 *)(ray + 0xd);
+    ray[0x11] = (byte)uVar7;
+    ray[0x12] = (byte)((uint)uVar7 >> 8);
+    ray[0x13] = (byte)((uint)uVar7 >> 0x10);
+    ray[0x14] = (byte)((uint)uVar7 >> 0x18);
   }
-  local_30 = (int)*(short *)(param_1 + 3);
+  local_30 = (int)*(short *)(ray + 3);
   if ((local_30 == 0) ||
      ((iVar2 != 0 &&
       ((short)local_32 * local_30 <
-       (int)((0x100 - (uint)param_1[8]) * (int)*(short *)(&DAT_00086b00 + iVar3 * 2) * iVar2))))) {
+       (int)((0x100 - (uint)ray[8]) * (int)*(short *)(&DAT_00086b00 + iVar3 * 2) * iVar2))))) {
     do {
       iVar11 = (int)DAT_0023b4a0;
-      /* Was `*(byte **)(param_1 + 9)` -- reassembling a pointer from raw bytes the original 32-bit
+      /* Was `*(byte **)(ray + 9)` -- reassembling a pointer from raw bytes the original 32-bit
          binary packed at this offset (see seed_visibility_queue's DAT_0023aee9/aeea/aeec writes),
          which only ever captured the low 32 bits even before this port's 64-bit truncation... */
-      pbVar8 = (byte *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, visibility_ray_idx(param_1));
+      pbVar8 = (byte *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, visibility_ray_idx(ray));
       iVar2 = iVar11 * 0x10;
       cVar9 = (&DAT_00086a20)[(*pbVar8 & 0xf) + iVar2];
       if ((*(ushort *)(&DAT_00086af8 + iVar3 * 2) & (ushort)(byte)(&DAT_000878d0)[cVar9]) != 0) {
 LAB_0005cf04:
-        param_1[8] = 0xff;
+        ray[8] = 0xff;
         if ((((ushort)(byte)(&DAT_000878d0)[cVar9] & *(ushort *)(&DAT_00086af8 + iVar3 * 2)) ==
              *(ushort *)(&DAT_00086af8 + iVar3 * 2)) &&
            ((int)cVar9 == (int)*(short *)((char *)&DAT_00086afc + iVar3 * 2))) {
@@ -1034,7 +993,7 @@ LAB_0005cf04:
              divmod_result now, same fix as itoa_radix's identical pattern. */
           cVar12 = (char)ordint_divmod(2,iVar3 + 1).rem;
         }
-        param_1[6] = -cVar12;
+        ray[6] = -cVar12;
         goto LAB_0005ce50;
       }
       psVar10 = (short *)(&DAT_00086b00 + iVar3 * 2);
@@ -1048,68 +1007,67 @@ LAB_0005cf04:
                         [(byte)(&DAT_00086a20)
                                [(pbVar8[(int)*(short *)(&DAT_00086a00 + iVar11 * 6) * (int)sVar6 * 4
                                        ] & 0xf) + iVar2]]) != 0) goto LAB_0005cf04;
-      /* Was `cVar9 = ordint_divmod(...); param_1[8] = cVar9 + param_1[8];` -- param_1[8] is a 0-255
+      /* Was `cVar9 = ordint_divmod(...); ray[8] = cVar9 + ray[8];` -- ray[8] is a 0-255
          accumulated light-attenuation counter... */
-      local_atten_step = (int)ordint_divmod((int)*(short *)(param_1 + 1) * (int)sVar6,
+      local_atten_step = (int)ordint_divmod((int)*(short *)(ray + 1) * (int)sVar6,
                                             (short)local_32 * local_30).quot;
-      local_atten_step = local_atten_step + (int)(byte)param_1[8];
+      local_atten_step = local_atten_step + (int)(byte)ray[8];
       if (local_atten_step < 0) {
         local_atten_step = 0;
       }
       else if (0xff < local_atten_step) {
         local_atten_step = 0xff;
       }
-      param_1[8] = (byte)local_atten_step;
-      param_1[6] = -(char)iVar12;
+      ray[8] = (byte)local_atten_step;
+      ray[6] = -(char)iVar12;
       local_32 = 0x100;
-      if ((*param_1 & 0x80) == uVar1) {
-        compute_visibility_ray_offset(param_1,0,0);
+      if ((*ray & 0x80) == uVar1) {
+        compute_visibility_ray_offset(ray,0,0);
       }
       if (*psVar10 == 1) {
-        visibility_ray_step_forward(param_1); // dropped arg; sibling call right below shows the intended shape
+        visibility_ray_step_forward(ray); // dropped arg; sibling call right below shows the intended shape
       }
       else {
-        visibility_ray_step_backward(param_1);
+        visibility_ray_step_backward(ray);
       }
-      if (((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(param_1))[1] & 0xf) == 0xf) ||
-         (uVar4 = (int)(char)param_1[5] >> 0x1f,
-         0x10 < (int)(((int)(char)param_1[5] ^ uVar4) - uVar4))) {
+      if (((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(ray))[1] & 0xf) == 0xf) ||
+         (uVar4 = (int)(char)ray[5] >> 0x1f,
+         0x10 < (int)(((int)(char)ray[5] ^ uVar4) - uVar4))) {
         /* Same extraout_r1 register-leftover division-remainder pattern
            as above, computed directly instead. */
         if (*(short *)(&DAT_00086b00 + ((iVar3 + 1) % 2) * 2) == 1) {
-          visibility_ray_step_forward(param_1); // dropped arg; sibling call right below shows the intended shape
+          visibility_ray_step_forward(ray); // dropped arg; sibling call right below shows the intended shape
         }
         else {
-          visibility_ray_step_backward(param_1);
+          visibility_ray_step_backward(ray);
         }
-        param_1[6] = -cVar12;
-        param_1[8] = 0xff;
-        bVar5 = *param_1;
+        ray[6] = -cVar12;
+        ray[8] = 0xff;
+        bVar5 = *ray;
         goto LAB_0005ce60;
       }
-      local_30 = (int)*(short *)(param_1 + 3);
+      local_30 = (int)*(short *)(ray + 3);
     } while ((local_30 == 0) ||
             (local_30 * 0x100 <
-             (int)((0x100 - (uint)param_1[8]) * (int)*(short *)(param_1 + 1) * (int)*psVar10)));
+             (int)((0x100 - (uint)ray[8]) * (int)*(short *)(ray + 1) * (int)*psVar10)));
   }
   sVar6 = *(short *)(&DAT_00086b00 + iVar3 * 2);
-  cVar12 = ordint_divmod((int)*(short *)(param_1 + 3),
-                        (0xff - (uint)param_1[8]) * (int)*(short *)(param_1 + 1) * (int)sVar6).quot;
-  param_1[6] = cVar12 * (char)sVar6 + param_1[6];
-  param_1[8] = 0xff;
+  cVar12 = ordint_divmod((int)*(short *)(ray + 3),
+                        (0xff - (uint)ray[8]) * (int)*(short *)(ray + 1) * (int)sVar6).quot;
+  ray[6] = cVar12 * (char)sVar6 + ray[6];
+  ray[8] = 0xff;
 LAB_0005ce50:
-  bVar5 = *param_1;
+  bVar5 = *ray;
 LAB_0005ce60:
   if ((bVar5 & 0x80) != uVar1) {
-    g_visibility_ray_clearptr[visibility_ray_idx(param_1)] =
-        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(param_1));
-    uVar7 = *(undefined4 *)(param_1 + 0xd);
-    param_1[0x11] = (byte)uVar7;
-    param_1[0x12] = (byte)((uint)uVar7 >> 8);
-    param_1[0x13] = (byte)((uint)uVar7 >> 0x10);
-    param_1[0x14] = (byte)((uint)uVar7 >> 0x18);
+    g_visibility_ray_clearptr[visibility_ray_idx(ray)] =
+        VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(ray));
+    uVar7 = *(undefined4 *)(ray + 0xd);
+    ray[0x11] = (byte)uVar7;
+    ray[0x12] = (byte)((uint)uVar7 >> 8);
+    ray[0x13] = (byte)((uint)uVar7 >> 0x10);
+    ray[0x14] = (byte)((uint)uVar7 >> 0x18);
   }
-  return;
 }
 
 
@@ -1118,10 +1076,7 @@ LAB_0005ce60:
    run_visibility_flood always calls this with (`&local_20`/`&local_24`, both real
    `byte*`/`undefined1*` locals)... */
 // was FUN_0005cf74
-void merge_adjacent_visibility_rays(param_1,param_2)
-byte ** param_1;
-undefined1 ** param_2;
-
+void merge_adjacent_visibility_rays(byte **ray_cursor, byte **out_cursor)
 {
   bool bVar1;
   byte bVar2;
@@ -1138,11 +1093,11 @@ undefined1 ** param_2;
   char acStack_28 [0x15];
   int iVar10;
 
-  iVar10 = ((int)*(char *)*param_1 & 0xfU) * 0x15;
+  iVar10 = ((int)*(char *)*ray_cursor & 0xfU) * 0x15;
   pcVar9 = &g_visibility_ray_table + iVar10;
   iVar5 = ((int)*pcVar9 & 0xfU) * 0x15;
   pbVar8 = &g_visibility_ray_table + iVar5;
-  *param_2 = (undefined1 *)(g_visibility_ray_clearptr[iVar5 / 0x15] + 2);
+  *out_cursor = (undefined1 *)(g_visibility_ray_clearptr[iVar5 / 0x15] + 2);
   while( true ) {
     iVar3 = compute_visibility_ray_offset(pcVar9,1,8);
     if (iVar3 == 0) break;
@@ -1152,7 +1107,7 @@ undefined1 ** param_2;
   }
   if ((int)(char)(&DAT_0023aee5)[iVar10] < (int)(char)(&DAT_0023aee5)[iVar5]) {
     do {
-      iVar3 = compute_visibility_ray_offset(pbVar8,0xffffffff,8);
+      iVar3 = compute_visibility_ray_offset(pbVar8,-1,8);
     } while (iVar3 != 0);
   }
   iVar3 = 0x15;
@@ -1176,8 +1131,8 @@ undefined1 ** param_2;
   iVar3 = extend_visibility_ray_row(pcVar9,pbVar8);
   if (iVar3 == 0) {
 LAB_0005d064:
-    bVar2 = *(byte *)*param_1;
-    *(byte *)*param_1 = (bVar2 ^ *pbVar8) & 0xf ^ bVar2;
+    bVar2 = *(byte *)*ray_cursor;
+    *(byte *)*ray_cursor = (bVar2 ^ *pbVar8) & 0xf ^ bVar2;
     *pcVar9 = '\0';
     *pbVar8 = 0;
   }
@@ -1185,7 +1140,7 @@ LAB_0005d064:
     /* extend_visibility_ray_row returned "keep spreading". The walk below operates on acStack_28
        (the stack copy) and marks tiles via compute_visibility_ray_offset; its side-table pointers
        live in the scratch slot seeded just above. */
-    *param_1 = pbVar8;
+    *ray_cursor = pbVar8;
     if ((&DAT_0023aee5)[iVar10] != (&DAT_0023aee5)[iVar5]) {
       do {
         visibility_ray_step_forward(acStack_28);
@@ -1206,7 +1161,6 @@ LAB_0005d064:
       } while( true );
     }
   }
-  return;
 }
 
 
@@ -1214,7 +1168,6 @@ LAB_0005d064:
 // Was FUN_0005d13c.
 // was FUN_0005d13c
 void run_visibility_flood()
-
 {
   byte bVar1;
   undefined1 *puVar2;
@@ -1283,7 +1236,6 @@ void run_visibility_flood()
     }
     if (g_visibility_ring_depth < 8) g_visibility_ring_depth = 8;
   }
-  return;
 }
 
 
@@ -1293,7 +1245,6 @@ void run_visibility_flood()
 
 // was FUN_0005d290
 void rebuild_dungeon_view()
-
 {
   undefined2 uVar1;
   ushort uVar2;
@@ -1329,25 +1280,25 @@ void rebuild_dungeon_view()
   emit_glyph_draw_command(0xa0,1);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x2200;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x400;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x1100;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = 0x3300;
+  *DAT_00110fc0 = 0x0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -1400,17 +1351,13 @@ void rebuild_dungeon_view()
   if (DAT_00201b68 == 9) {
     DAT_00086b30 = uVar1;
   }
-  return;
 }
 
 
 
 // was FUN_0005d2ac -- empty hook called before the visibility walk in build_frame_draw_list (disabled / never recovered)
-void dungeon_view_prepass_stub(param_1)
-undefined4 param_1;
-
+void dungeon_view_prepass_stub(int phase)
 {
-  return;
 }
 
 
@@ -1419,9 +1366,7 @@ undefined4 param_1;
 // was FUN_00065ff0 -- (re)loads the f32.tr/f16.tr floor-texture arenas (the two floor-texture
 // resolutions), optionally updating the active "special floor" texture id (DAT_0023adc0) first
 // unless param_1 is the sentinel 0xff (keep current).
-void load_floor_texture_arenas(param_1)
-byte param_1;
-
+void load_floor_texture_arenas(byte special_floor_id)
 {
   char stack0xffdc3244_buf [256];
   char *stack0xffdc3244_ptr;
@@ -1430,8 +1375,8 @@ byte param_1;
   char *pcVar3;
   char acStack_114 [260];
   
-  if (param_1 != 0xff) {
-    DAT_0023adc0 = (ushort)param_1;
+  if (special_floor_id != 0xff) {
+    DAT_0023adc0 = (ushort)special_floor_id;
   }
   ce_memset(acStack_114,0,0x104);
   pcVar3 = &DAT_0023cca8;
@@ -1453,7 +1398,6 @@ byte param_1;
   } while (cVar1 != '\0');
   ce_strcat(acStack_114,s__DATA_f16_tr_00086dd8);
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
-  return;
 }
 
 
@@ -1465,9 +1409,7 @@ byte param_1;
 // was FUN_0006ff08 -- loads a shading-level configuration (early-outs if param_1 already matches
 // the currently-loaded DAT_000872a0): swaps in LIGHT.DAT or MONO.DAT (special-cased around shading
 // level 5) into DAT_0024fa2c...
-void load_shading_level_config(param_1)
-char param_1;
-
+void load_shading_level_config(char shading_level)
 {
   char *stack0xffdc323c_ptr;
   char cVar1;
@@ -1475,8 +1417,8 @@ char param_1;
   int iVar3;
   char *pcVar4;
   if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
-    fprintf(stderr, "[load_shading_level_config] called param_1=%d DAT_000872a0=%d DAT_00201b68=%d\n",
-            (int)param_1, (int)DAT_000872a0, (int)DAT_00201b68);
+    fprintf(stderr, "[load_shading_level_config] called shading_level=%d DAT_000872a0=%d DAT_00201b68=%d\n",
+            (int)shading_level, (int)DAT_000872a0, (int)DAT_00201b68);
   /* Ghidra modelled the 12-byte SHADES.DAT per-level header as six separate `short` locals that
      read_file_handle(&local_12c, 0xc) reads into as one contiguous block -- but the C compiler is
      free to lay them out non-contiguously / reorder them... */
@@ -1489,7 +1431,7 @@ char param_1;
 #define local_122 (_shades_hdr[5])
   char acStack_11c [260];
   
-  if (DAT_000872a0 == param_1) {
+  if (DAT_000872a0 == shading_level) {
     return;
   }
   pcVar4 = &DAT_0023cca8;
@@ -1506,7 +1448,7 @@ char param_1;
     pcVar2 = s__DATA_light_dat_000872c8;
   }
   else {
-    if (param_1 != '\x05') goto LAB_0006fff4;
+    if (shading_level != '\x05') goto LAB_0006fff4;
     ce_memset(acStack_11c,0,0x104);
     pcVar2 = pcVar4;
     stack0xffdc323c_ptr = acStack_11c;
@@ -1524,7 +1466,7 @@ char param_1;
     CloseHandle(iVar3);
   }
 LAB_0006fff4:
-  DAT_000872a0 = param_1;
+  DAT_000872a0 = shading_level;
   ce_memset(acStack_11c,0,0x104);
   /* Reset the walker after any LIGHT.DAT/MONO.DAT path construction. */
   stack0xffdc323c_ptr = acStack_11c;
@@ -1536,7 +1478,7 @@ LAB_0006fff4:
   ce_strcat(acStack_11c,s__DATA_shades_dat_000872a4);
   iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
-    seek_file_handle(iVar3,param_1 * 0xc0000 >> 0x10,0);
+    seek_file_handle(iVar3,shading_level * 0xc0000 >> 0x10,0);
     read_file_handle(iVar3,_shades_hdr,0xc);
     DAT_0025063c = local_12c;
     if (local_12c < 2) {
@@ -1551,12 +1493,11 @@ LAB_0006fff4:
     if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
       fprintf(stderr, "[load_shading_level_config] loaded SHADES.DAT record %d: DAT_0025063c=%d DAT_0025064c=%d"
               " DAT_002506dc=%d g_visibility_max_ring_passes=%d DAT_00086b28=%d DAT_00086b24=%d\n",
-              (int)param_1, (int)DAT_0025063c, (int)DAT_0025064c, (int)DAT_002506dc,
+              (int)shading_level, (int)DAT_0025063c, (int)DAT_0025064c, (int)DAT_002506dc,
               (int)g_visibility_max_ring_passes, (int)DAT_00086b28, (int)DAT_00086b24);
     build_visibility_light_grid((int)g_visibility_max_ring_passes);
     set_pending_update_flags(2);
   }
-  return;
 }
 #undef local_12c
 #undef local_12a
@@ -1572,7 +1513,6 @@ LAB_0006fff4:
 
 // was FUN_00070118
 void load_light_tables()
-
 {
   char stack0xffdc323c_buf [256];
   char *stack0xffdc323c_ptr;
@@ -1615,5 +1555,4 @@ void load_light_tables()
     read_file_handle(iVar3,&DAT_0024fa38,0x600);
     CloseHandle(iVar3);
   }
-  return;
 }

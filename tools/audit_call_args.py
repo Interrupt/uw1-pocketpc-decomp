@@ -72,7 +72,7 @@ def main():
             n = len(split_args(inner))
             calls[name] += 1
             exp = funcs[name]['param_count']
-            if n != exp: bad[name].append((rel, line, n, exp, raw.split('\n')[line-1].strip()[:110], re.sub(r'\s+', ' ', inner)))
+            if (n < exp if funcs[name].get('variadic') else n != exp): bad[name].append((rel, line, n, exp, raw.split('\n')[line-1].strip()[:110], re.sub(r'\s+', ' ', inner)))
     return data, funcs, calls, bad
 
 if __name__ == '__main__':
