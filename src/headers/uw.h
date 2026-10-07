@@ -149,7 +149,18 @@ typedef struct __attribute__((packed)) {
     unsigned short npc_xhome  : 6;  /* bits 10-15 */
 
     unsigned char  npc_heading : 5; /* offset 0x18, bits 0-4 (rest of byte unused per wiki) */
-    unsigned char  npc_hunger  : 7; /* offset 0x19, bits 0-6 */
+    unsigned char  npc_hunger  : 7; /* offset 0x19, bits 0-6 -- NOTE: bit 7 of this same byte is a
+                                        separate, real boolean confirmed via babl.c's
+                                        sync_conv_vars_to_npc/sync_conv_vars_from_npc (set when the
+                                        babl "npc_hunger" variable is < 0x20, read back as a
+                                        two-value 0x10/0xc0 split), not part of this 7-bit value and
+                                        not currently given its own field here -- and a second,
+                                        unrelated bit (bit 6, inside npc_hunger's own declared span)
+                                        gets unconditionally OR'd in the npc_attitude>=4 branch of
+                                        that same function, which doesn't fit a monotonic 0-127
+                                        hunger value either. This field's real bit layout is less
+                                        certain than it looks; left exactly as the wiki names it
+                                        pending a closer read of that function. */
     unsigned char  npc_whoami;      /* offset 0x1a, full byte */
 } uw_mobile_object_t;  /* 0x1b (27) bytes total */
 

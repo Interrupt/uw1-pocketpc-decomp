@@ -3024,8 +3024,6 @@ void sync_conv_vars_from_npc(ushort *npc)
 // was FUN_0002af88
 bool sync_conv_vars_to_npc(char *npc)
 {
-  undefined2 uVar1;
-  byte bVar2;
   uint uVar3;
   bool bVar4;
   ushort local_10;
@@ -3035,39 +3033,25 @@ bool sync_conv_vars_to_npc(char *npc)
   babl_get_variable(s_npc_hunger_00085394,&local_10,1);
   *(byte *)(npc + 0x19) = ((short)local_10 < 0x20) << 7 | *(byte *)(npc + 0x19) & 0x7f;
   babl_get_variable(s_npc_hp_00085380,&local_10,1);
-  *(char *)(npc + 8) = (char)local_10;
+  ((uw_mobile_object_t *)npc)->npc_hp = local_10;
   babl_get_variable(s_npc_xhome_00085328,&local_10,1);
-  uVar1 = *(undefined2 *)(npc + 4);
-  bVar2 = (byte)uVar1;
-  *(byte *)(npc + 4) = (bVar2 ^ (byte)local_10) & 0x3f ^ bVar2;
-  *(char *)(npc + 5) = (char)((ushort)uVar1 >> 8);
+  ((uw_object_hdr_t *)npc)->quality = local_10;
   babl_get_variable(s_npc_yhome_0008531c,&local_10,1);
-  uVar1 = *(undefined2 *)(npc + 6);
-  bVar2 = (byte)uVar1;
-  *(byte *)(npc + 6) = (bVar2 ^ (byte)local_10) & 0x3f ^ bVar2;
-  *(char *)(npc + 7) = (char)((ushort)uVar1 >> 8);
+  ((uw_object_hdr_t *)npc)->owner = local_10;
   babl_get_variable(s_npc_goal_0008535c,&local_10,1);
   babl_get_variable(s_npc_gtarg_00085350,&local_e,1);
   npc_set_goal_for_object(npc,(undefined1)local_10,local_e);
-  uVar1 = *(undefined2 *)(npc + 0xd);
-  *(char *)(npc + 0xd) = (char)uVar1;
-  *(byte *)(npc + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;
+  ((uw_mobile_object_t *)npc)->npc_talkedto = 1;
   babl_get_variable(s_npc_attitude_000845f8,&local_10,1);
   if ((short)local_10 < 4) {
-    uVar3 = *(ushort *)(npc + 0xd) & 0x3fff;
-    *(char *)(npc + 0xd) = (char)uVar3;
-    *(byte *)(npc + 0xe) = (byte)(uVar3 >> 8) | (byte)(((local_10 & 3) << 0xe) >> 8);
+    ((uw_mobile_object_t *)npc)->npc_attitude = local_10 & 3;
   }
   else {
-    uVar1 = *(undefined2 *)(npc + 0xd);
-    *(char *)(npc + 0xd) = (char)uVar1;
-    *(byte *)(npc + 0xe) = (byte)((ushort)uVar1 >> 8) | 0xc0;
+    ((uw_mobile_object_t *)npc)->npc_attitude = 3;
     *(byte *)(npc + 0x19) = *(byte *)(npc + 0x19) | 0x40;
   }
   bVar4 = local_10 == 0;
-  uVar1 = *(undefined2 *)(npc + 0xd);
-  *(char *)(npc + 0xd) = (char)uVar1;
-  *(byte *)(npc + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;
+  ((uw_mobile_object_t *)npc)->npc_talkedto = 1;
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] sync_conv_vars_to_npc: wrote npc_talkedto bit into object byte@0xe=0x%02x (obj=%p), attitude==0?%d\n", (unsigned)*(byte *)(npc + 0xe), (void *)npc, (int)bVar4);
   babl_get_variable(s_play_hunger_00085304,&local_10,1);
   *(char *)(DAT_00086df8 + 0x39) = (char)local_10;
