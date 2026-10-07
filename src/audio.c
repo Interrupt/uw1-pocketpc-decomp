@@ -655,9 +655,9 @@ void play_musical_instrument(short instrument)
     }
   }
   if ((((instrument == 1) && (DAT_00201b68 == 3)) &&
-      (uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 10) - 0x18, uVar7 = (int)uVar4 >> 0x1f,
+      (uVar4 = ((uw_mobile_object_t *)g_player_object)->npc_xhome - 0x18, uVar7 = (int)uVar4 >> 0x1f,
       (int)((uVar4 ^ uVar7) - uVar7) < 3)) &&
-     ((uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f) - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
+     ((uVar4 = ((uw_mobile_object_t *)g_player_object)->npc_yhome - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
       (int)((uVar4 ^ uVar7) - uVar7) < 3 && (iVar6 = check_secret_tune_match(local_2c), iVar6 != 0)))) {
     return;
   }

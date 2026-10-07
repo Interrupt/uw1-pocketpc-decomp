@@ -187,7 +187,7 @@ int mobile_object_tick()
 
   if (((char)DAT_0010190c[4] == '\0') &&
      (((&DAT_00202c97)[(((uw_object_hdr_t *)DAT_0010190c)->item_id) * 0xd] & 0xc) < 0xc)) {
-    iVar2 = (char *)tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
+    iVar2 = (char *)tilemap_lookup(((uw_mobile_object_t *)DAT_0010190c)->npc_xhome,((uw_mobile_object_t *)DAT_0010190c)->npc_yhome);
     iVar2 = (char *)discard_misplaced_object(iVar2 + 2,DAT_0010190c,0);
     if (iVar2 == 0) {
       return 0;
@@ -201,7 +201,7 @@ int mobile_object_tick()
   build_object_placement_snapshot(DAT_0010190c,&DAT_00204920);
   apply_placement_collision_sweep(&DAT_00204920,&DAT_002049a0);
   DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
-  DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
+  DAT_00101454 = (undefined2)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome);
   iVar2 = sync_object_tile_position(DAT_0010190c,&DAT_00204920);
   if (iVar2 != 0) {
     bVar1 = (byte)DAT_0010190c[5];
@@ -664,12 +664,12 @@ int npc_ai_tick()
   if (getenv("UW_DEBUG_NPC_POS"))
     fprintf(stderr, "[npc-pos] obj=%p type=0x%x tile=(%u,%u) hp=%d\n", (void *)DAT_0010190c,
             (unsigned)(((uw_object_hdr_t *)DAT_0010190c)->item_id),
-            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4),
+            (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_xhome), (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome),
             (int)(byte)DAT_0010190c[4]);
   DAT_00101738 = encode_object_slot_index(DAT_0010190c);
   DAT_00101404 = &DAT_001007d0 + ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
-  DAT_001013f8 = (byte)(DAT_0010190c[0xb] >> 4) & 0x3f;
+  DAT_001013f8 = ((uw_mobile_object_t *)DAT_0010190c)->npc_yhome;
   iVar5 = get_object_record_by_slot_index(1);
   puVar11 = DAT_0010190c;
   if (((100 < ((((int)(char)DAT_00101918 - (int)DAT_00101938) * 0x10000 >> 0x10) *
@@ -734,7 +734,7 @@ int npc_ai_tick()
     if (getenv("UW_DEBUG_NPC_WANDER"))
       fprintf(stderr, "[npc-sweep] obj=%p pre_tile=(%u,%u) snap0=0x%04x snap1=0x%04x\n",
               (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4),
+              (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_xhome), (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome),
               (unsigned)((ushort *)DAT_0010172c)[0], (unsigned)((ushort *)DAT_0010172c)[1]);
     /* Was `build_collision_height_field_for_object()` -- a dropped argument (K&R declared, relying
        on whatever register-content reuse the real ARM code got for free).
@@ -748,12 +748,12 @@ int npc_ai_tick()
               (unsigned)(byte)(((ushort *)DAT_0010172c)[0] >> 8),
               (unsigned)(byte)(((ushort *)DAT_0010172c)[1] >> 8));
     DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
-    DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
+    DAT_00101454 = (undefined2)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome);
     sync_object_tile_position(DAT_0010190c,DAT_0010172c);
     if (getenv("UW_DEBUG_NPC_WANDER"))
       fprintf(stderr, "[npc-sweep] obj=%p post_sync tile=(%u,%u)\n",
               (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+              (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_xhome), (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome));
     if (*(byte *)((char *)DAT_0010190c + 9) != bVar3) {
       DAT_00101430 = 1;
     }
@@ -770,7 +770,7 @@ int npc_ai_tick()
     DAT_00101438[1] = (byte)((ushort)uVar2 >> 8);
   }
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
-  uVar9 = DAT_0010190c[0xb] >> 4 & 0x3f;
+  uVar9 = ((uw_mobile_object_t *)DAT_0010190c)->npc_yhome;
   DAT_001013f8 = (byte)uVar9;
   DAT_0010140c = (byte)DAT_0010190c[1] >> 3 & 0xf;
   DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
@@ -793,12 +793,12 @@ LAB_00033830:
     if (getenv("UW_DEBUG_NPC_WANDER"))
       fprintf(stderr, "[npc-branch] obj=%p entering npc_ai_default_tick pre_tile=(%u,%u)\n",
               (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+              (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_xhome), (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome));
     npc_ai_default_tick();
     if (getenv("UW_DEBUG_NPC_WANDER"))
       fprintf(stderr, "[npc-branch] obj=%p returned from npc_ai_default_tick post_tile=(%u,%u)\n",
               (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+              (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_xhome), (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome));
     goto LAB_00033834;
   }
   bVar3 = *(byte *)((char *)DAT_0010190c + 0x15) & 0x3f;
@@ -806,7 +806,7 @@ LAB_00033830:
     if ((uVar9 & 0xf000) == 0x3000) {
       resolve_unique_npc_special_behavior(DAT_0010190c,1);
       DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
-      DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
+      DAT_00101454 = (undefined2)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome);
       /* ARM 0x3343c..0x33470 passes the dead NPC's tile x/y in r0/r1.
          Dropping these arguments leaves its final frame in the old tile list. */
       iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
@@ -889,7 +889,7 @@ LAB_00033860:
             (unsigned)((byte)puVar11[10] & 7));
   if (getenv("UW_DEBUG_NPC_WANDER"))
     fprintf(stderr, "[npc-exit] obj=%p exit_tile=(%u,%u)\n", (void *)DAT_0010190c,
-            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+            (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_xhome), (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome));
   return 1;
 }
 
@@ -1663,7 +1663,7 @@ void drop_monster_loot(byte *monster, ushort gold_nibble, ushort item_nibble)
                        spawn_new_object's real object pointer in both of
                        this function's drop branches */
 
-  iVar4 = (char *)tilemap_lookup(*(ushort *)(monster + 0x16) >> 10,(*(ushort *)(monster + 0x16) & 0x3f0) >> 4)
+  iVar4 = (char *)tilemap_lookup(((uw_mobile_object_t *)monster)->npc_xhome,((uw_mobile_object_t *)monster)->npc_yhome)
   ;
   if (((gold_nibble & 0xff) != 0) &&
      (pDropObj = (char *)spawn_new_object((short)(gold_nibble & 0xff) + 0xd8,0), pDropObj != NULL)) {
@@ -2411,9 +2411,9 @@ void handle_blocked_cached_path(byte *cache_record)
     uw_ord2005_rem_16 = ((int)(cache_record[2] & 0x7f)) % (4);
     iVar1 = (short)(bVar2 >> ((uw_ord2005_rem_16 & 0x7f) << 1) & 3) * 2;
     uVar3 = compute_movement_heading(((int)(char)(&DAT_000853b0)[iVar1] + uVar7 & 0xff) -
-                         (uint)(*(ushort *)((char *)DAT_0010190c + 0x16) >> 10),
+                         (uint)((uw_mobile_object_t *)DAT_0010190c)->npc_xhome,
                          ((int)(char)(&DAT_000853b1)[iVar1] + uVar6 & 0xff) -
-                         (*(ushort *)((char *)DAT_0010190c + 0x16) >> 4 & 0x3f));
+                         ((uw_mobile_object_t *)DAT_0010190c)->npc_yhome);
     DAT_00101920 = 1;
     *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
     ((uw_object_hdr_t *)DAT_0010190c)->heading = uVar3 & 7;
@@ -2802,7 +2802,7 @@ void setup_npc_ai_tick_state(ushort *npc)
   iVar3 = ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101404 = &DAT_001007d0 + iVar3;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
-  uVar2 = DAT_0010190c[0xb] >> 4 & 0x3f;
+  uVar2 = ((uw_mobile_object_t *)DAT_0010190c)->npc_yhome;
   DAT_001013f8 = (char)uVar2;
   DAT_0010140c = (byte)DAT_0010190c[1] >> 3 & 0xf;
   DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
@@ -2948,8 +2948,8 @@ LAB_000339fc:
             uVar11 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0x3fff;
             *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar11;
             *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
-            npc_set_walk_target(*(ushort *)((char *)g_player_object + 0x16) >> 10,
-                         *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
+            npc_set_walk_target(((uw_mobile_object_t *)g_player_object)->npc_xhome,
+                         ((uw_mobile_object_t *)g_player_object)->npc_yhome,
                          *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
             *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
           }
@@ -2991,7 +2991,7 @@ LAB_00033d18:
   if (getenv("UW_DEBUG_NPC_GOAL_SWITCH"))
     fprintf(stderr, "[npc-goal-switch] obj=%p goal=%d tile=(%u,%u)\n", (void *)DAT_0010190c,
             (int)(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf),
-            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+            (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_xhome), (unsigned)(((uw_mobile_object_t *)DAT_0010190c)->npc_yhome));
   switch(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf) {
   case 0:
     goto LAB_00033e9c;
@@ -3644,8 +3644,8 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
             *(char *)(object + 1) = (char)uVar9;
             *(char *)((char *)object + 3) = (char)(uVar9 >> 8);
             *(byte *)((char *)object + 0x19) = *(byte *)((char *)object + 0x19) | 1;
-            npc_set_walk_target(*(ushort *)((char *)g_player_object + 0x16) >> 10,
-                         *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
+            npc_set_walk_target(((uw_mobile_object_t *)g_player_object)->npc_xhome,
+                         ((uw_mobile_object_t *)g_player_object)->npc_yhome,
                          *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
             DAT_00101950 = 1;
             return 1;
