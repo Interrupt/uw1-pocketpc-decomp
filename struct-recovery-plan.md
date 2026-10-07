@@ -287,11 +287,21 @@ them.
    branch? what's really at byte 42/48 if it does?) before deciding
    whether to fix it as a real bug in its own pass.
 
-   Still genuinely open: `flags_res`/`enchanted`/`invisible` writes
-   outside the sites already converted, `npc_*` fields, and anything
-   else in `uw_mobile_object_t`'s NPC-extension region (offsets
-   0x08-0x1a) -- none of these were part of this session's item_id/
-   zpos/ypos/xpos/is_quant/heading mandate.
+   **`enchanted`/`invisible` clear writes also converted** (two
+   clean single-bit-clear sites, object_actions.c and objects.c).
+   Checked and left raw: scheduler.c/doors.c's superficially similar
+   sites (multi-field computations, not plain clears) and an
+   object_actions.c site at NPC-extension offset 0xd (same 0xefff
+   mask, but a totally different field at that offset -- not
+   enchanted).
+
+   Still genuinely open: `npc_*` fields and anything else in
+   `uw_mobile_object_t`'s NPC-extension region (offsets 0x08-0x1a) --
+   not part of this session's item_id/zpos/ypos/xpos/is_quant/
+   heading/enchanted/invisible mandate, and a large enough scope
+   (confirming each field's real byte layout against the wiki,
+   finding and verifying its own read+write sites) to deserve its
+   own dedicated session rather than being squeezed in here.
 5. **comobj.dat property record** (0xd bytes) — next-highest leverage
    after the two now-mostly-done types: well-documented, touches
    gameplay-visible logic (`dispatch_object_action`), bounded call-site
